@@ -251,13 +251,13 @@ kill_current_configuration(ErrorHandler *errh)
   // wait for thread to die
   if (verbose)
     errh->message("Waiting for Click threads to die");
-  for (int wait = 0; wait < 3; wait++) {
+  for (int wait = 0; wait < 6; wait++) {
     String s = file_string("/proc/click/threads");
     if (!s || s == "0\n")
       return;
     struct timeval tv;
     tv.tv_sec = 0;
-    tv.tv_usec = 200000;
+    tv.tv_usec = 100000;
     select(0, 0, 0, 0, &tv);
   }
   errh->error("failed to kill current Click configuration");
@@ -370,13 +370,6 @@ particular purpose.\n");
     (void) system("/sbin/rmmod click");
 
     // see if we successfully removed it
-    // wait some time before complaining in case rmmod is slow
-    for (int wait = 0; wait < 3 && access("/proc/click", F_OK) >= 0; wait++) {
-      struct timeval tv;
-      tv.tv_sec = 0;
-      tv.tv_usec = 200000;
-      select(0, 0, 0, 0, &tv);
-    }
     if (access("/proc/click", F_OK) >= 0)
       errh->warning("could not uninstall Click module");
   }
