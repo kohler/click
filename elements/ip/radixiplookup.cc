@@ -188,7 +188,7 @@ RadixIPLookup::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHandl
 	Radix* r = _radix->change(ntohl(route.addr.addr()), ~hmask + 1, -1, hmask);
 	pprev = &r->_route_index;
     } else {
-	_default_key = -1;
+	// no need to set _default_key; will happen, or not, below
 	pprev = &_default_key;
     }
 
