@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-Message([MESSAGE, I<keywords> MESSAGE, WARNING, ERROR])
+Message(MESSAGE [, TYPE])
 
 =s debugging
 
@@ -16,30 +16,15 @@ prints a message on configuration
 =d
 
 The Message element prints a message, warning, or error when configured.  It
-can be used to provide configuration-level documentation.
+can be used to provide configuration-level documentation.  The MESSAGE
+argument is the message (a string); TYPE should be MESSAGE, WARNING, or
+ERROR.  The default is MESSAGE.
 
-Keyword arguments are:
-
-=over 8
-
-=item MESSAGE
-
-Print this message (a string).
-
-=item WARNING
-
-Print this warning message (a string).
-
-=item ERROR
-
-Print this error message (a string), and cause the router to fail to
-initialize.
-
-=back
+If TYPE is ERROR the router will fail to initialize.
 
 =e
 
-   Message(WARNING "This configuration is deprecated; use test-tun.click instead.")
+   Message("This configuration is deprecated; use test-tun.click instead.", WARNING)
    tun :: KernelTap(1.0.0.1/8);
    ...
 

@@ -35,23 +35,24 @@ MessageElement::~MessageElement()
 int
 MessageElement::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    String message, warning, error;
+    String message, type = "MESSAGE";
     if (cp_va_parse(conf, this, errh,
-		    cpOptional,
 		    cpString, "message", &message,
-		    cpKeywords,
-		    "MESSAGE", cpString, "message", &message,
-		    "WARNING", cpString, "warning message", &warning,
-		    "ERROR", cpString, "error message", &error,
+		    cpOptional,
+		    cpKeyword, "message type", &type,
 		    0) < 0)
 	return -1;
-    if (message)
-	errh->verror_text(ErrorHandler::ERR_MESSAGE, String(), message);
-    if (warning)
-	errh->verror_text(ErrorHandler::ERR_WARNING, String(), warning);
-    if (error)
-	errh->verror_text(ErrorHandler::ERR_ERROR, String(), error);
-    return (error ? -1 : 0);
+    ErrorHandler::Seriousness s;
+    if (type == "MESSAGE")
+	s = ErrorHandler::ERR_MESSAGE;
+    else if (type == "WARNING")
+	s = ErrorHandler::ERR_WARNING;
+    else if (type == "ERROR")
+	s = ErrorHandler::ERR_ERROR;
+    else
+	return errh->error("unrecognized message type");
+    errh->verror_text(s, String(), message);
+    return (s >= ErrorHandler::ERR_ERROR ? ErrorHandler::ERROR_RESULT : ErrorHandler::OK_RESULT);
 }
 
 CLICK_ENDDECLS
