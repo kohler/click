@@ -31,6 +31,8 @@
 #include "timeutils.hh"
 CLICK_DECLS
 
+#define DBG 0
+
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
@@ -421,9 +423,13 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
   dsdv_assert(old && *old && !(*old)->scheduled() && oldhp && *oldhp);
 
   unsigned int jiff = dsdv_jiffies();
-  unsigned int next_trigger_time = _last_triggered_update + _min_triggered_update_period;
+  unsigned int next_trigger_jiff = _last_triggered_update + msec_to_jiff(_min_triggered_update_period);
 
-  if (jiff >= next_trigger_time) {
+#if DBG
+  click_chatter("%s: XXX trigger_hoook(%s)\n", id().cc(), ip.s().cc());
+#endif
+
+  if (jiff >= next_trigger_jiff) {
     // It's ok to send a triggered update now.  Cleanup expired timer.
     delete *old;
     delete *oldhp;
@@ -431,8 +437,14 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
     _trigger_hooks.remove(ip);
 
     send_triggered_update(ip);
+#if DBG
+    click_chatter("%s: XXX sent triggered update\n", id().cc());
+#endif
   }
   else {
+#if DBG
+    click_chatter("%s: XXX too early to send triggered update (jiff=%d, next_trigger_jiff=%d, _min_triggered_update_period=%d)\n", id().cc(), jiff, next_trigger_jiff, _min_triggered_update_period);
+#endif
     // it's too early to send this update, so cancel all oustanding
     // triggered updates that would also be too early
     Vector<IPAddress> remove_list;
@@ -448,7 +460,7 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
       dsdv_assert(oldhp && *oldhp);
 
       RTEntry *r = _rtes.findp(i.key());
-      if (r->advertise_ok_jiffies < next_trigger_time) {
+      if (r->advertise_ok_jiffies < next_trigger_jiff) {
 	delete old2;
 	delete *oldhp;
 	remove_list.push_back(i.key());
@@ -463,7 +475,7 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
     // reschedule this timer to earliest possible time -- when it
     // fires, its update will also include updates that would have
     // fired before then but were cancelled just above.
-    (*old)->schedule_after_ms(jiff_to_msec(next_trigger_time - jiff));
+    (*old)->schedule_after_ms(jiff_to_msec(next_trigger_jiff - jiff));
   }
 
   check_invariants();
@@ -641,7 +653,9 @@ void
 DSDVRouteTable::send_full_update() 
 {
   check_invariants();
-
+#if DBG
+  click_chatter("%s: XXX sending full update\n", id().cc());
+#endif
   unsigned int jiff = dsdv_jiffies();
   Vector<RTEntry> routes;
   
@@ -649,6 +663,10 @@ DSDVRouteTable::send_full_update()
     const RTEntry &r = i.value();
     if (r.advertise_ok_jiffies <= jiff)
       routes.push_back(r);
+#if DBG
+    else
+      click_chatter("%s: XXX excluding %s\n", id().cc(), r.dest_ip.s().cc());
+#endif
   }
 
   // reset ``need advertisement'' flag
@@ -712,7 +730,7 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
   for (int i = 0; i < triggered_routes.size(); i++) {
     RTEntry *r = _rtes.findp(triggered_routes[i].dest_ip);
     dsdv_assert(r);
-    r->need_seq_ad = false;
+    r->need_seq_ad = false; // XXX why not reset need_metric_ad flag as well?
     r->last_adv_metric = r->metric;
   }
 
@@ -742,19 +760,35 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
   update_wst(old_r, new_r, jiff);
 
   // If the new route is good, and the old route (if any) was good,
-  // wait for the settling time to expire before advertising.
-  // Otherwise, propagate the route immediately (e.g. a newly
-  // appearing node, or broken route)
+  // wait for the settling time to pass since we first heard this
+  // sequence number before advertising.  Otherwise, propagate the
+  // route immediately (e.g. a newly appearing node, or broken route).
+  //
+  // Note: I think the DSDV code in the ns simulator has this wrong.
+  // See line 652 in file cmu/dsdv/dsdv.cc.  That code sets the time
+  // it's ok to advertise at to the current time + 2 * wst, which
+  // would be as if we were adding jiff instead of
+  // new_r.last_seq_jiffies in the code below.
   if (new_r.good() && (!old_r || old_r->good())) // XXX comment implies: new_r.good() && old_r && old_r->good()
-    new_r.advertise_ok_jiffies = jiff + msec_to_jiff((unsigned int) (2 * new_r.wst));
+    new_r.advertise_ok_jiffies = new_r.last_seq_jiffies + msec_to_jiff((unsigned int) (2 * new_r.wst));
   else
     new_r.advertise_ok_jiffies = jiff;
+
+#if DBG
+  click_chatter("%s: XXX dest=%s advertise_ok_jiffies=%d wst=%f jiff=%d\n", 
+		id().cc(), new_r.dest_ip.s().cc(),
+		new_r.advertise_ok_jiffies, new_r.wst, jiff);
+#endif
 
   if (!old_r) {
     // Never heard of this destination before
     if (new_r.good()) {
       new_r.need_metric_ad = true;
       schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
+#if DBG
+      click_chatter("%s: XXX scheduled brand-new route to %s to be advertised in %d jiffies from now\n", id().cc(),
+		    new_r.dest_ip.s().cc(), new_r.advertise_ok_jiffies - jiff);
+#endif
     }
     insert_route(new_r, was_sender ? GridLogger::NEW_DEST_SENDER : GridLogger::NEW_DEST);
   }
