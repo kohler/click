@@ -1,3 +1,14 @@
+2003-03-27 Thursday 13:29  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/: progressbar.cc (1.24), progressbar.hh
+	(1.16): ProgressBar reads doubles, not uint64_ts; and add
+	FIXED_SIZE
+
+2003-03-27 Thursday 13:28  Eddie Kohler <kohler@icir.org>
+
+	* lib/: straccum.cc (1.30), string.cc (1.42): use %.12g for
+	converting doubles to String[Accum]s
+
 2003-03-26 Wednesday 20:59  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/: chattersocket.cc (1.15), chattersocket.hh
