@@ -80,6 +80,9 @@ DSDVRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 bool
 DSDVRouteTable::use_old_route(const IPAddress &dst, unsigned jiff)
 {
+  if (!_use_old_route)
+    return false;
+
   RTEntry *real = _rtes.findp(dst);
   RTEntry *old = _old_rtes.findp(dst);
   return
@@ -201,7 +204,9 @@ DSDVRouteTable::initialize(ErrorHandler *)
   _log_dump_timer.schedule_after_ms(_log_dump_period); 
 
   check_invariants();
-
+#if USE_OLD_SEQ
+  _use_old_route = false;
+#endif
   return 0;
 }
 
@@ -1283,6 +1288,28 @@ DSDVRouteTable::write_frozen(const String &arg, Element *el,
   return 0;
 }
 
+#if USE_OLD_SEQ
+String
+DSDVRouteTable::print_use_old_route(Element *e, void *)
+{
+  DSDVRouteTable *rt = (DSDVRouteTable *) e;
+  return (rt->_use_old_route ? "true\n" : "false\n");
+}
+
+int
+DSDVRouteTable::write_use_old_route(const String &arg, Element *el, 
+			     void *, ErrorHandler *errh)
+{
+  DSDVRouteTable *rt = (DSDVRouteTable *) el;
+  if (!cp_bool(arg, &rt->_use_old_route))
+    return errh->error("`use_old_route' must be a boolean");
+  
+  click_chatter("DSDVRouteTable %s: setting _use_old_route to %s", 
+		rt->id().cc(), rt->_use_old_route ? "true" : "false");
+  return 0;
+}
+#endif
+
 String
 DSDVRouteTable::print_dump(Element *e, void *)
 {
@@ -1342,6 +1369,10 @@ DSDVRouteTable::add_handlers()
   add_write_handler("seqno", write_seqno, 0);
   add_read_handler("frozen", print_frozen, 0);
   add_write_handler("frozen", write_frozen, 0);
+#if USE_OLD_SEQ
+  add_read_handler("use_old_route", print_use_old_route, 0);
+  add_write_handler("use_old_route", write_use_old_route, 0);
+#endif
   add_read_handler("dump", print_dump, 0);
 }
 

@@ -455,6 +455,12 @@ private:
 
   bool _frozen;
 
+#if USE_OLD_SEQ
+  bool _use_old_route;
+  static String print_use_old_route(Element *e, void *);
+  static int write_use_old_route(const String &, Element *, void *, ErrorHandler *);
+#endif
+
   void dsdv_assert_(const char *, int, const char *) const;
 
 };
