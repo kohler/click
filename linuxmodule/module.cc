@@ -19,8 +19,8 @@
  */
 
 #include <click/config.h>
-
 #include "modulepriv.hh"
+
 #include "kernelerror.hh"
 #include <click/skbmgr.hh>
 #include <click/lexer.hh>
@@ -35,6 +35,7 @@ extern "C" int click_accessible();
 #if __MTCLICK__
 extern "C" int click_threads();
 #endif
+extern "C" int click_cleanup_packages();
 
 ErrorHandler *kernel_errh = 0;
 static Lexer *lexer = 0;
@@ -42,8 +43,6 @@ Router *current_router = 0;
 
 Router::Handler *root_handlers;
 int nroot_handlers = 0;
-
-static Vector<String> *packages;
 
 
 class LinuxModuleLexerExtra : public LexerExtra { public:
@@ -54,10 +53,8 @@ class LinuxModuleLexerExtra : public LexerExtra { public:
 void
 LinuxModuleLexerExtra::require(String r, ErrorHandler *errh)
 {
-  for (int i = 0; i < packages->size(); i++)
-    if (packages->at(i) == r)
-      return;
-  errh->error("unsatisfied requirement `%s'", r.cc());
+  if (!click_has_provision(r))
+    errh->error("unsatisfied requirement `%s'", r.cc());
 }
 
 Router *
@@ -186,8 +183,10 @@ static String
 read_packages(Element *, void *)
 {
   StringAccum sa;
-  for (int i = 0; i < packages->size(); i++)
-    sa << packages->at(i) << "\n";
+  Vector<String> v;
+  click_public_packages(v);
+  for (int i = 0; i < v.size(); i++)
+    sa << v[i] << "\n";
   return sa.take_string();
 }
 
@@ -204,10 +203,24 @@ read_requirements(Element *, void *)
     return "";
 }
 
+#ifdef LINUX_2_2
+# define MIN_PRIO	1
+# define MAX_PRIO	(2 * DEF_PRIORITY)
+# define PRIO2NICE(p)	(DEF_PRIORITY - (p))
+# define NICE2PRIO(n)	(DEF_PRIORITY - (n))
+# define TASK_PRIO(t)	((t)->priority)
+#else
+# define MIN_PRIO	(-20)
+# define MAX_PRIO	19
+# define PRIO2NICE(p)	(p)
+# define NICE2PRIO(n)	(n)
+# define TASK_PRIO(t)	((t)->nice)
+#endif
+
 static String
 read_priority(Element *, void *)
 {
-  return String(DEF_PRIORITY - click_thread_priority) + "\n";
+  return String(PRIO2NICE(click_thread_priority)) + "\n";
 }
 
 static int
@@ -217,13 +230,13 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
   if (!cp_integer(cp_uncomment(conf), &priority))
     return errh->error("priority must be integer");
 
-  priority = DEF_PRIORITY - priority;
-  if (priority < 1) {
-    priority = 1;
-    errh->warning("priority pinned at %d", DEF_PRIORITY - priority);
-  } else if (priority > 2*DEF_PRIORITY) {
-    priority = 2*DEF_PRIORITY;
-    errh->warning("priority pinned at %d", DEF_PRIORITY - priority);
+  priority = NICE2PRIO(priority);
+  if (priority < MIN_PRIO) {
+    priority = MIN_PRIO;
+    errh->warning("priority pinned at %d", PRIO2NICE(priority));
+  } else if (priority > MAX_PRIO) {
+    priority = MAX_PRIO;
+    errh->warning("priority pinned at %d", PRIO2NICE(priority));
   }
 
   spin_lock(&click_thread_spinlock);
@@ -231,33 +244,13 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
   for (int i = 0; i < click_thread_pids->size(); i++) {
     struct task_struct *task = find_task_by_pid((*click_thread_pids)[i]);
     if (task)
-      task->priority = priority;
+      TASK_PRIO(task) = priority;
   }
   spin_unlock(&click_thread_spinlock);
   
   return 0;
 }
 
-
-extern "C" void
-click_provide(const char *name)
-{
-  MOD_INC_USE_COUNT;
-  packages->push_back(String(name));
-}
-
-extern "C" void
-click_unprovide(const char *name)
-{
-  String n = name;
-  for (int i = 0; i < packages->size(); i++)
-    if (packages->at(i) == n) {
-      MOD_DEC_USE_COUNT;
-      packages->at(i) = packages->back();
-      packages->pop_back();
-      break;
-    }
-}
 
 extern "C" int
 click_add_element_type(const char *name, Element *e)
@@ -312,8 +305,8 @@ init_module()
   
   init_click_sched();
   skbmgr_init();
-
-  packages = new Vector<String>;
+  
+  CLICK_DEFAULT_PROVIDES;
   lexer = new Lexer(kernel_errh);
   export_elements(lexer);
   
@@ -375,7 +368,11 @@ cleanup_module()
 
   // invalidate any remaining `/proc/click' dentry, which would be hanging
   // around because someone has a handler open
+#ifdef LINUX_2_2
   struct dentry *click_de = lookup_dentry("/proc/click", 0, LOOKUP_DIRECTORY);
+#else
+  struct dentry *click_de = lookup_one("/proc/click", 0); // XXX?
+#endif
   if (!IS_ERR(click_de)) {
     d_drop(click_de);
     dput(click_de);
@@ -383,7 +380,6 @@ cleanup_module()
   
   cleanup_click_sched();
   delete lexer;
-  delete packages;
   
   delete[] root_handlers;
   cp_va_static_cleanup();
@@ -394,6 +390,7 @@ cleanup_module()
   kernel_errh = syslog_errh = 0;
   
   skbmgr_cleanup();
+  click_cleanup_packages();
   
   printk("<1>click module exiting\n");
     

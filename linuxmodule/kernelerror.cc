@@ -19,33 +19,22 @@
  */
 
 #include <click/config.h>
+#define WANT_MOD_USE_COUNT 1	/* glue.hh should define MOD_USE_COUNTs */
+#include "modulepriv.hh"
 
 #include "kernelerror.hh"
-#include "modulepriv.hh"
 #include <click/straccum.hh>
 
 static StringAccum *all_errors = 0;
 
-static ssize_t click_errors_read(struct file *, char *, size_t, loff_t *);
-static unsigned click_errors_poll(struct file *, struct poll_table_struct *);
-
-static struct file_operations proc_click_errors_operations = {
-    NULL,			// lseek
-    click_errors_read,		// read
-    NULL,			// write
-    NULL,			// readdir
-    click_errors_poll,		// poll
-    NULL,			// ioctl
-    NULL,			// mmap
-    NULL,			// open
-    NULL,			// flush
-    NULL,			// release
-    NULL			// fsync
-};
-
-static struct inode_operations proc_click_errors_inode_operations;
+static struct file_operations proc_click_errors_operations;
 static struct proc_dir_entry *proc_click_errors_entry;
+#ifdef LINUX_2_2
+static struct inode_operations proc_click_errors_inode_operations;
 static struct wait_queue *proc_click_errors_wait_queue = 0;
+#else
+static wait_queue_head_t proc_click_errors_wait_queue;
+#endif
 
 
 static void
@@ -138,13 +127,25 @@ reset_proc_click_errors()
 void
 init_proc_click_errors()
 {
-  // work around proc_lookup not being exported
+  // set up proc_click_errors_operations
+#ifdef LINUX_2_4
+  proc_click_errors_operations.owner = THIS_MODULE;
+#endif
+  proc_click_errors_operations.read = click_errors_read;
+  proc_click_errors_operations.poll = click_errors_poll;
+
+  proc_click_errors_entry = create_proc_entry("errors", S_IFREG | proc_click_mode_r, proc_click_entry); // XXX error checking
+#ifdef LINUX_2_2
   proc_click_errors_inode_operations = proc_dir_inode_operations;
   proc_click_errors_inode_operations.default_file_ops = &proc_click_errors_operations;
-
-  proc_click_errors_entry = create_proc_entry("errors", S_IFREG | proc_click_mode_r, proc_click_entry);
-  // XXX error checking
   proc_click_errors_entry->ops = &proc_click_errors_inode_operations;
+#else
+  proc_click_errors_entry->proc_fops = &proc_click_errors_operations;
+#endif
+
+#ifdef LINUX_2_4
+  init_waitqueue_head(&proc_click_errors_wait_queue);
+#endif
   
   all_errors = new StringAccum;
 }

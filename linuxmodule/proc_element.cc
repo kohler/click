@@ -19,8 +19,8 @@
  */
 
 #include <click/config.h>
-
 #include "modulepriv.hh"
+
 #include <click/router.hh>
 #include <click/error.hh>
 
@@ -61,21 +61,10 @@ static int proc_element_handler_flush(struct file *);
 static int proc_element_handler_release(struct inode *, struct file *);
 static int proc_element_handler_ioctl(struct inode *, struct file *, unsigned, unsigned long);
 
-static struct file_operations proc_element_handler_operations = {
-    NULL,			// lseek
-    proc_element_handler_read,	// read
-    proc_element_handler_write,	// write
-    NULL,			// readdir
-    NULL,			// poll
-    proc_element_handler_ioctl,	// ioctl
-    NULL,			// mmap
-    proc_element_handler_open,	// open
-    proc_element_handler_flush,	// flush
-    proc_element_handler_release, // release
-    NULL			// fsync
-};
-
+static struct file_operations proc_element_handler_operations;
+#ifdef LINUX_2_2
 static struct inode_operations proc_element_handler_inode_operations;
+#endif
 
 
 // OPERATIONS
@@ -331,8 +320,13 @@ proc_element_handler_flush(struct file *filp)
   bool writing = (filp->f_flags & O_ACCMODE) == O_WRONLY;
   int stringno = reinterpret_cast<int>(filp->private_data);
   int retval = 0;
-  
-  if (writing && filp->f_count == 1) {
+
+#ifdef LINUX_2_2
+  int f_count = filp->f_count;
+#else
+  int f_count = atomic_read(&filp->f_count);
+#endif
+  if (writing && f_count == 1) {
     proc_dir_entry *pde = (proc_dir_entry *)filp->f_dentry->d_inode->u.generic_ip;
     int eindex = parent_proc_dir_eindex(pde);
     if (eindex < -1)
@@ -389,7 +383,11 @@ register_handler(proc_dir_entry *directory, int eindex, int handlerno)
   String name = h->name;
   proc_dir_entry *pde = create_proc_entry(name.cc(), mode, directory);
   // XXX check for NULL
+#ifdef LINUX_2_2
   pde->ops = &proc_element_handler_inode_operations;
+#else
+  pde->proc_fops = &proc_element_handler_operations;
+#endif
   pde->data = (void *)handlerno;
 }
 
@@ -430,6 +428,7 @@ make_compound_element_symlink(int ei)
   // divide into path components and create directories
   int first_pos = -1, last_pos = -1;
   int pos = 0;
+  int ncomponents = 0;
   while (pos < len) {
     // skip slashes
     while (pos < len && data[pos] == '/')
@@ -464,6 +463,7 @@ make_compound_element_symlink(int ei)
     
     parent_dir = subdir;
     pos = last_pos;
+    ncomponents++;
   }
 
   // if no component, nothing to do
@@ -477,9 +477,18 @@ make_compound_element_symlink(int ei)
     return;
 
   // make the link
+#ifdef LINUX_2_4
+  char buf[200];
+  if (ncomponents)
+    sprintf(buf, "/proc/click/%d", ei + 1);
+  else
+    sprintf(buf, "%d", ei + 1);
+  proc_dir_entry *link = proc_symlink(component.cc(), parent_dir, buf);
+#else
   proc_dir_entry *link = create_proc_entry(component.cc(), S_IFLNK | S_IRUGO | S_IWUGO | S_IXUGO, parent_dir);
   link->data = (void *)ei;
   link->readlink_proc = proc_elementlink_readlink_proc;
+#endif
   if (parent_dir == proc_click_entry)
     element_pdes[ei + nelements] = link;
 }
@@ -505,17 +514,8 @@ init_router_element_procs()
   
   // add symlinks for ELEMENTNAME -> EINDEX
   for (int i = 0; i < nelements; i++)
-    if (proc_dir_entry *pde = element_pdes[i]) {
-      String id = current_router->element(i)->id();
-      if (memchr(id.data(), '/', id.length()) != 0)
-	make_compound_element_symlink(i);
-      else {
-	if (click_find_pde(proc_click_entry, id)) continue;
-	element_pdes[i + nelements] = create_proc_entry(id.cc(), S_IFLNK | S_IRUGO | S_IWUGO | S_IXUGO, proc_click_entry);
-	element_pdes[i + nelements]->data = (void *)i;
-	element_pdes[i + nelements]->readlink_proc = proc_elementlink_readlink_proc;
-      }
-    }
+    if (proc_dir_entry *pde = element_pdes[i])
+      make_compound_element_symlink(i);
 
   // hook up per-element proc entries
   Vector<int> handlers;
@@ -532,9 +532,20 @@ init_router_element_procs()
 void
 init_proc_click_elements()
 {
-  // work around proc_lookup not being exported
+#ifdef LINUX_2_4
+  proc_element_handler_operations.owner = THIS_MODULE;
+#endif
+  proc_element_handler_operations.read = proc_element_handler_read;
+  proc_element_handler_operations.write = proc_element_handler_write;
+  proc_element_handler_operations.ioctl = proc_element_handler_ioctl;
+  proc_element_handler_operations.open = proc_element_handler_open;
+  proc_element_handler_operations.flush = proc_element_handler_flush;
+  proc_element_handler_operations.release = proc_element_handler_release;
+
+#ifdef LINUX_2_2
   proc_element_handler_inode_operations = proc_dir_inode_operations;
   proc_element_handler_inode_operations.default_file_ops = &proc_element_handler_operations;
+#endif
 }
 
 void

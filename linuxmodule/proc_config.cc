@@ -18,8 +18,8 @@
  */
 
 #include <click/config.h>
-
 #include "modulepriv.hh"
+
 #include <click/straccum.hh>
 #include <click/router.hh>
 #include <click/error.hh>
@@ -34,32 +34,16 @@ static StringAccum *build_config = 0;
 
 extern "C" {
 
-static int click_config_open(struct inode *, struct file *);
-static int click_config_flush(struct file *);
-static ssize_t click_config_read(struct file *, char *, size_t, loff_t *);
-static ssize_t click_config_write(struct file *, const char *, size_t, loff_t *);
-static unsigned click_config_poll(struct file *, struct poll_table_struct *);
-
-static struct file_operations proc_click_config_operations = {
-    NULL,			// lseek
-    click_config_read,		// read
-    click_config_write,		// write
-    NULL,			// readdir
-    click_config_poll,		// poll
-    NULL,			// ioctl
-    NULL,			// mmap
-    click_config_open,		// open
-    click_config_flush,		// flush
-    NULL,			// release
-    NULL			// fsync
-};
+static struct file_operations proc_click_config_operations;
+#ifdef LINUX_2_2
+static struct inode_operations proc_click_config_inode_operations;
+static struct wait_queue *proc_click_config_wait_queue = 0;
+#else
+static wait_queue_head_t proc_click_config_wait_queue;
+#endif
 
 static struct proc_dir_entry *proc_click_config_entry;
 static struct proc_dir_entry *proc_click_hotconfig_entry;
-  
-static struct inode_operations proc_click_config_inode_operations;
-
-static struct wait_queue *proc_click_config_wait_queue = 0;
 
 
 //
@@ -209,8 +193,13 @@ static int
 click_config_flush(struct file *filp)
 {
   bool writing = (filp->f_flags & O_ACCMODE) == O_WRONLY;
+#ifdef LINUX_2_2
   if (!writing || filp->f_count > 1)
     return 0;
+#else
+  if (!writing || atomic_read(&filp->f_count) > 1)
+    return 0;
+#endif
   
   if (atomic_read(&config_write_lock) == 0)
     return -EIO;
@@ -239,16 +228,34 @@ void
 init_proc_click_config()
 {
   atomic_set(&config_write_lock, 0);
-  
-  // work around proc_lookup not being exported
-  proc_click_config_inode_operations = proc_dir_inode_operations;
-  proc_click_config_inode_operations.default_file_ops = &proc_click_config_operations;
+
+#ifdef LINUX_2_4
+  proc_click_config_operations.owner = THIS_MODULE;
+#endif
+  proc_click_config_operations.read = click_config_read;
+  proc_click_config_operations.write = click_config_write;
+  proc_click_config_operations.poll = click_config_poll;
+  proc_click_config_operations.open = click_config_open;
+  proc_click_config_operations.flush = click_config_flush;
   
   proc_click_config_entry = create_proc_entry("config", S_IFREG | proc_click_mode_r | proc_click_mode_w, proc_click_entry);
   proc_click_hotconfig_entry = create_proc_entry("hotconfig", S_IFREG | proc_click_mode_w, proc_click_entry);
   // XXX memory exhaustion?
+
+#ifdef LINUX_2_2
+  // work around proc_lookup not being exported
+  proc_click_config_inode_operations = proc_dir_inode_operations;
+  proc_click_config_inode_operations.default_file_ops = &proc_click_config_operations;
   proc_click_config_entry->ops = &proc_click_config_inode_operations;
   proc_click_hotconfig_entry->ops = &proc_click_config_inode_operations;
+#else
+  proc_click_config_entry->proc_fops = &proc_click_config_operations;
+  proc_click_hotconfig_entry->proc_fops = &proc_click_config_operations;
+#endif
+  
+#ifdef LINUX_2_4
+  init_waitqueue_head(&proc_click_config_wait_queue);
+#endif
   
   current_config = new String;
 }

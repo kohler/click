@@ -19,8 +19,8 @@
  */
 
 #include <click/config.h>
-
 #include "modulepriv.hh"
+
 #include <click/string.hh>
 
 /*

@@ -1,15 +1,22 @@
 #ifndef MODULEPRIV_HH
 #define MODULEPRIV_HH
+#define WANT_MOD_USE_COUNT 1	/* glue.hh should use the actual macros */
 #include <click/router.hh>
 #include <click/package.hh>
 
-extern "C" {
-#define new linux_new
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
 #include <linux/poll.h>
-#undef new
-}
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+# define LINUX_2_2 1
+#else
+# define LINUX_2_4 1
+#endif
 
 extern proc_dir_entry *proc_click_entry;
 extern int proc_click_mode_r, proc_click_mode_w, proc_click_mode_x;

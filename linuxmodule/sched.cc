@@ -19,27 +19,34 @@
 
 #define CLICK_SCHED_DEBUG
 #include <click/config.h>
-
 #include "modulepriv.hh"
+
 #include "kernelerror.hh"
 #include <click/routerthread.hh>
 #include <click/glue.hh>
 #include <click/router.hh>
-extern "C" {
-#define __NO_VERSION__
-#define new linux_new
-#include <linux/module.h>
+
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <linux/sched.h>
 #include <linux/timer.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <asm/bitops.h>
-#undef new
-}
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
+
+#ifdef LINUX_2_2
+# define DEF_PRIO	DEF_PRIORITY
+# define TASK_PRIO(t)	((t)->priority)
+#else
+# define DEF_PRIO	DEF_NICE
+# define TASK_PRIO(t)	((t)->nice)
+#endif
 
 spinlock_t click_thread_spinlock;
-int click_thread_priority = DEF_PRIORITY;
+int click_thread_priority = DEF_PRIO;
 Vector<int> *click_thread_pids;
 
 static int
@@ -48,7 +55,7 @@ click_sched(void *thunk)
   RouterThread *rt = (RouterThread *)thunk;
   current->session = 1;
   current->pgrp = 1;
-  current->priority = click_thread_priority;
+  TASK_PRIO(current) = click_thread_priority;
   sprintf(current->comm, "click");
   printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
 
