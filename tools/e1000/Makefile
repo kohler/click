@@ -8,7 +8,7 @@ CC = gcc
 LINUX = /usr/src/linux
 
 # Required Flags
-CFLAGS = -DLINUX -D__KERNEL__ -DMODULE -DEXPORT_SYMTAB -O2 -pipe -I. \
+CFLAGS = -DLINUX -D__KERNEL__ -DHAVE_INTEL_CPU -DMODULE -DEXPORT_SYMTAB -O2 -pipe -I. \
 -I$(LINUX)/include
 
 # Check for SMP
