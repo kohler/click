@@ -161,7 +161,7 @@ sub _read_text ($) {
     my($fh) = @_;
     my($r, $t) = ('');
     while (defined($t = <$fh>)) {
-	last if $t =~ /^%/;
+	last if $t =~ /^\%/;
 	$t =~ s/^\\\%/\%/;
 	$r .= $t;
     }
@@ -186,8 +186,8 @@ sub _read_script_section ($$$$) {
     $t;
 }
 
-sub _read_file_section ($$$$) {
-    my($fh, $tt, $args, $secname) = @_;
+sub _read_file_section ($$$$$) {
+    my($fh, $tt, $args, $secname, $prefix) = @_;
     $args =~ s/\s+$//;
 
     # split arguments to get fileref
@@ -196,10 +196,18 @@ sub _read_file_section ($$$$) {
     # assert that we understand $secname
     die if $secname ne 'file' && $secname ne 'expect' && $secname ne 'expectv' && $secname ne 'expectx' && $secname ne 'ignore';
 
-    # check for length
-    my($length);
-    if (@args && $args[0] =~ /^\+(\d+)$/) {
-	$length = $1;
+    # check for alternates and length
+    my($alternate, $delfirst, $length) = (0, 0, undef);
+    while (@args) {
+	if ($args[0] eq '-a') {
+	    $alternate = 1;
+	} elsif ($args[0] eq '-d') {
+	    $delfirst = 1;
+	} elsif ($args[0] =~ /^\+(\d+)$/) {
+	    $length = $1;
+	} else {
+	    last;
+	}
 	shift @args;
     }
 
@@ -210,6 +218,11 @@ sub _read_file_section ($$$$) {
 	push @args, "all" if $secname eq 'ignore';
     }
 
+    # complain about '%file -a'
+    if ($secname eq 'file' && $alternate) {
+	$tt->file_err("'\%file -a' is illegal");
+    }
+    
     # read contents
     my($t, $file_data);
     if (defined($length)) {
@@ -219,7 +232,10 @@ sub _read_file_section ($$$$) {
     } else {
 	($file_data, $t) = _read_text($fh);
     }
-
+    if ($delfirst) {
+	$file_data =~ s{^.}{}mg;
+    }
+    
     # stick contents where appropriate
     my($fn);
     foreach $fn (@args) {
@@ -229,16 +245,18 @@ sub _read_file_section ($$$$) {
 	    $tt->file_err("'$fn' not meaningful for '\%$secname'");
 	}
 
-	my($hashkey) = substr($secname, 0, 1) . ":" . $fn;
-	if (exists $tt->{$hashkey}) {
-	    $tt->file_err("file '$fn' already defined");
-	} elsif ($fn !~ m/^[A-Za-z_.0-9]+$/) {
+	my($hashkey) = $prefix . ":" . $fn;
+	if ($fn !~ m/^[A-Za-z_.0-9]+$/) {
 	    $tt->file_err("fileref error: '$fn' contains illegal characters");
-	} else {
+	} elsif (!exists($tt->{$hashkey})) {
 	    push @{$tt->{$secname}}, $fn;
+	    $tt->{$hashkey} = [];
+	} elsif (!$alternate) {
+	    $tt->file_err("file '$fn' already defined");
 	}
 
-	$tt->{$hashkey} = $file_data;
+	push @{$tt->{$hashkey}}, $file_data;
+	$tt->{"F:$fn"} = 1;
     }
 
     # return next line
@@ -277,22 +295,22 @@ sub read (*;$) {
 		$tt->file_err("arguments to '\%desc' ignored") if $args ne '';
 		$t = _read_text_into($fh, $tt, 'desc');
 	    } elsif ($command eq 'stdin' || $command eq 'input') {
-		$t = _read_file_section($fh, $tt, $args, 'file');
+		$t = _read_file_section($fh, $tt, $args, 'file', 'f');
 	    } elsif ($command eq 'file') {
-		$t = _read_file_section($fh, $tt, $args, 'file');
+		$t = _read_file_section($fh, $tt, $args, 'file', 'f');
 	    } elsif ($command eq 'stdout' || $command eq 'output') {
-		$t = _read_file_section($fh, $tt, $args, 'expect');
+		$t = _read_file_section($fh, $tt, $args, 'expect', 'e');
 	    } elsif ($command eq 'stderr') {
-		$t = _read_file_section($fh, $tt, $args, 'expect');
+		$t = _read_file_section($fh, $tt, $args, 'expect', 'e');
 	    } elsif ($command eq 'expect') {
-		$t = _read_file_section($fh, $tt, $args, 'expect');
+		$t = _read_file_section($fh, $tt, $args, 'expect', 'e');
 	    } elsif ($command eq 'expectx') {
-		$t = _read_file_section($fh, $tt, $args, 'expectx');
+		$t = _read_file_section($fh, $tt, $args, 'expectx', 'x');
 	    } elsif ($command eq 'expectv' || $command eq 'expect_verbatim'
 		     || $command eq 'verbatim') {
-		$t = _read_file_section($fh, $tt, $args, 'expectv');
+		$t = _read_file_section($fh, $tt, $args, 'expectv', 'v');
 	    } elsif ($command eq 'ignore') {
-		$t = _read_file_section($fh, $tt, $args, 'ignore');
+		$t = _read_file_section($fh, $tt, $args, 'ignore', 'i');
 	    } elsif ($command eq 'eot') {
 		$tt->{'continue'} = 1;
 		last;
@@ -319,7 +337,7 @@ sub read (*;$) {
 
 sub have_file ($$) {
     my($tt, $fileref) = @_;
-    exists($tt->{"f:$fileref"}) || exists($tt->{"e:$fileref"});
+    exists($tt->{"F:$fileref"});
 }
 
 sub empty ($) {
@@ -333,7 +351,7 @@ sub save_files ($&) {
 	my($actual) = $fileref_subr->($fn);
 	next if !defined($actual);
 	open OUT, ">$actual" || die "$actual: $!\n";
-	print OUT $tt->{"f:$fn"};
+	print OUT $tt->{"f:$fn"}->[0];
 	close OUT;
     }
 }
@@ -475,52 +493,58 @@ sub _output_expectation_error ($$$$$) {
     $::errors++;
 }
 
-sub check_expects ($$) {
-    my($tt, $fileref_subr) = @_;
+sub _check_one_expect ($$$) {
+    my($tt, $fileref_subr, $efn) = @_;
     my($fp) = $tt->{'errprefix'};
-    local($/) = undef;
-    my($expectx) = 0;
+    my($xtp, $xtl, $xel);
 
-    # check expected files
-    foreach my $efn (@{$tt->{'expect'}}, '', @{$tt->{'expectx'}}) {
-	if ($efn eq '') {
-	    $expectx = 1;
+    # read file text
+    if (!open(IN, $fileref_subr->($efn))) {
+	print STDERR $fp, $efn, ": ", $!, "\n";
+	$::errors++;
+	return 0;
+    }
+    my($raw_text) = <IN>;
+    $raw_text = '' if !defined($raw_text);
+    close IN;
+
+    # prepare $ignores
+    my($ignores) = '';
+    $ignores .= join("\n", @{$tt->{"i:$efn"}}) . "\n" if exists($tt->{"i:$efn"});
+    $ignores .= join("\n", @{$tt->{"i:all"}}) . "\n" if exists($tt->{"i:all"});
+    # ignore testie messages
+    $ignores .= "testie_lineno:.*\ntestie_error:.*\n" if $efn eq 'stderr';
+    if ($ignores ne '') {
+	$ignores =~ s/([!\#<>])/\\$1/g;
+	$ignores =~ s{^([ \t]*\S[^\n]*)}{\$text =~ s<^$1\[ \\t\]*\$><\\377>mg;\n}mg;
+    }
+    
+    # now compare alternates
+    my($mode, $expect_marker) = (0, {});
+    foreach my $exp (@{$tt->{"v:$efn"}}, $expect_marker, @{$tt->{"e:$efn"}}, $expect_marker, @{$tt->{"x:$efn"}}) {
+	# check for change of mode
+	if (ref($exp)) {
+	    $mode++;
 	    next;
 	}
-	
-	if (!open(IN, $fileref_subr->($efn))) {
-	    print STDERR $fp, $efn, ": ", $!, "\n";
-	    $::errors++;
-	    next;
-	}
-	my($text) = <IN>;
-	$text = '' if !defined($text);
-	close IN;
+	my($text) = $raw_text;
 
 	# escape in common case
-	next if $text eq $tt->{"e:$efn"};
+	return 0 if $text eq $exp;
 
-	# check that files really disagree
-	my($exp) = $tt->{"e:$efn"};
-	# ignore differences in amounts of whitespace
-	$text =~ s/\s+\n/\n/g;
-	$text =~ s/\n\n+\Z/\n/;
-	$text =~ s/\A\n//;
-	$exp =~ s/\s+\n/\n/g;
-	$exp =~ s/\n\n\n+/\n\n/g;
-	$exp =~ s/\n\n+\Z/\n/;
-	next if $text eq $exp;
+	# check that files really disagree (in later modes)
+	if ($mode > 0) {
+	    # ignore differences in amounts of whitespace
+	    $text =~ s/\s+\n/\n/g;
+	    $text =~ s/\n\n+\Z/\n/;
+	    $text =~ s/\A\n//;
+	    $exp =~ s/\s+\n/\n/g;
+	    $exp =~ s/\n\n\n+/\n\n/g;
+	    $exp =~ s/\n\n+\Z/\n/;
+	    return 0 if $text eq $exp;
 
-	# ignore explicitly ignored text
-	my($ignores) = '';
-	$ignores .= $tt->{"i:$efn"} . "\n" if defined($tt->{"i:$efn"});
-	$ignores .= $tt->{"i:all"} . "\n" if defined($tt->{"i:all"});
-	# ignore testie messages
-	$ignores .= "testie_lineno:.*\ntestie_error:.*\n" if $efn eq 'stderr';
-	if ($ignores ne '') {
-	    $ignores =~ s/([!\#<>])/\\$1/g;
-	    $ignores =~ s{^([ \t]*\S[^\n]*)}{\$text =~ s<^$1\[ \\t\]*\$><\\377>mg;\n}mg;
-	    eval($ignores);
+	    # ignore explicitly ignored text
+	    eval($ignores) if $ignores ne '';
 	}
 
 	# line-by-line comparison
@@ -531,7 +555,7 @@ sub check_expects ($$) {
 	    
 	    # a single blank line in $exp matches multiple blank lines
 	    # in $text
-	    if ($el[$ep] eq '' && $tl[$tp] eq '') {
+	    if ($el[$ep] eq '' && $tl[$tp] eq '' && $mode > 0) {
 		$tp++ while $tl[$tp] eq '' || $tl[$tp] eq "\377";
 		$tp--;
 	    }
@@ -540,9 +564,9 @@ sub check_expects ($$) {
 	    $tp++ while $tl[$tp] eq "\377";
 
 	    # compare lines
-	    if ($expectx) {
+	    if ($mode == 2) {
 		last if $tl[$tp] !~ m/\A$el[$ep]\Z/;
-	    } elsif ($el[$ep] =~ /\{\{/) {
+	    } elsif ($mode == 1 && $el[$ep] =~ /\{\{/) {
 		my($t, $re) = ($el[$ep], '');
 		while ($t =~ /\A(.*?)\{\{(.*?)\}\}(.*)\Z/) {
 		    $re .= quotemeta($1) . $2;
@@ -556,30 +580,30 @@ sub check_expects ($$) {
 	    
 	    $tp++, $ep++;
 	}
-	next if $tp >= @tl || $ep >= @el;
+	return 0 if $tp >= @tl || $ep >= @el;
 
-	_output_expectation_error($fp, $efn, $tp + 1, $el[$ep], $tl[$tp]);
+	($xtp, $xel, $xtl) = ($tp + 1, $el[$ep], $tl[$tp])
+	    if !defined($xtp) || $tp + 1 > $xtp;
     }
 
-    # check expectv files
-    foreach my $efn (@{$tt->{'expectv'}}) {
-	if (!open(IN, $fileref_subr->($efn))) {
-	    print STDERR $fp, $!, "\n";
-	    $::errors++;
-	    next;
-	}
-	my($text) = <IN>;
-	close IN;
+    # if we get here, none of the attempts matched
+    _output_expectation_error($fp, $efn, $xtp, $xel, $xtl);
+}
+    
 
-	# escape in common case
-	next if $text eq $tt->{"e:$efn"};
+sub check_expects ($$) {
+    my($tt, $fileref_subr) = @_;
+    my($fp) = $tt->{'errprefix'};
+    local($/) = undef;
+    my($expectx) = 0;
+    my($tp, @tl, $ep, @el);
 
-	# find the first line of difference
-	my(@tl) = split(/\n/, $text);
-	my(@el) = split(/\n/, $tt->{"e:$efn"});
-	my($p) = 0;
-	$p++ while ($p < @tl && $p < @el && $tl[$p] eq $el[$p]);
-	_output_expectation_error($fp, $efn, $p + 1, $el[$p], $tl[$p]);
+    # check expected files
+    my(%done);
+    foreach my $efn (@{$tt->{'expect'}}, @{$tt->{'expectx'}}, @{$tt->{'expectv'}}) {
+	next if $done{$efn};
+	_check_one_expect($tt, $fileref_subr, $efn);
+	$done{$efn} = 1;
     }
 
     0;
@@ -998,29 +1022,33 @@ printed before the test results.
 
 This section is ignored. You can use it for longer comments.
 
-=item %file [+LENGTH] FILENAME...
+=item %file [-d] [+LENGTH] FILENAME...
 
 Create an input file for the script. FILENAME can be 'stdin', which sets
 the script's standard input. If LENGTH is provided, the file data consists
-of the LENGTH bytes following this line; otherwise, it consists of the data
-up to the next section. FILENAME cannot contain slashes.
+of the LENGTH bytes following this line. Otherwise, it consists of the data
+up to the next section. Supply the C<-d> option and testie will remove the
+first character from each line in the section; this makes it possible to
+include files that have lines that start with %. FILENAME cannot contain
+slashes.
 
-=item %expectv [+LENGTH] FILENAME...
+=item %expectv [-a] [-d] [+LENGTH] FILENAME...
 
 An expected output file for the script. FILENAME can be 'stdout', for
 standard output. If LENGTH is provided, the file data consists of the
 LENGTH bytes following this line; otherwise, it consists of the data up to
-the next section.
+the next section. The C<-d> option behaves as in %file.
 
-Testie will run the script, then compare the file generated by script
-with the provided data. They must match exactly or the test fails.
+Testie will run the script, then compare the script's output file with the
+provided data. They must match exactly or the test fails.
 
-=item %expect [+LENGTH] FILENAME...
+The C<-a> option declares an alternate expected output file. Testie will
+compare the script's output file with each of the alternates; the test
+succeeds if any of the alternates match.
 
-An expected output file for the script. FILENAME can be 'stdout', for
-standard output, or a filename. If LENGTH is provided, the file data
-consists of the LENGTH bytes following this line; otherwise, it consists of
-the data up to the next section. 
+=item %expect [-a] [-d] [+LENGTH] FILENAME...
+
+An expected output file for the script. Arguments are as for %expectv.
 
 Testie will run the script, then compare the file generated by script
 with the provided data. The files are compared line-by-line. Testie
@@ -1034,18 +1062,22 @@ sets of braces; so the %expect line
 
 matches either 'foo' or 'foobar'.
 
-=item %expectx [+LENGTH] FILENAME...
+=item %expectx [-a] [-d] [+LENGTH] FILENAME...
 
 %expectx is just like %expect, except that every line is treated as a
 regular expression (so there is no need for the "{{ }}" escapes).
 
 =item %stdin [+LENGTH]
 
-Same as '%file stdin [+LENGTH]'.
+Same as '%file stdin [ARGS]'.
 
-=item %stdout [+LENGTH]
+=item %stdout [-a] [-d] [+LENGTH]
 
-Same as '%expect stdout [+LENGTH]'.
+Same as '%expect stdout [ARGS]'.
+
+=item %stderr [-a] [-d] [+LENGTH]
+
+Same as '%expect stderr [ARGS]'.
 
 =item %ignore [[+LENGTH] FILENAME]
 
