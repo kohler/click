@@ -238,9 +238,9 @@ IPRateMonitor::print(_stats *s, String ip = "")
     }
     
     if (nonzero) {
-        ret += this_ip + rates + "\n";
-        if(s->counter[i].flags & SPLIT) 
-	  ret += print(s->counter[i].next_level, "\t" + this_ip);
+      ret += this_ip + rates + "\n";
+      if(s->counter[i].flags & SPLIT) 
+	ret += print(s->counter[i].next_level, "\t" + this_ip);
     }
   }
   return ret;
