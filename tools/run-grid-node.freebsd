@@ -63,8 +63,8 @@ if (@ARGV < 2) {
 }
 
 $system_type = `uname`;
-if (!($system_type =~ "OpenBSD")) {
-    print stderr "This script only supports OpenBSD\n";
+if (!($system_type =~ "FreeBSD")) {
+    print stderr "This script only supports FreeBSD\n";
     exit 1;
 }
 
@@ -203,9 +203,9 @@ my_system "/sbin/route -n delete default";
 my_system "/sbin/ifconfig $grid_if 0";
 
 # set the adapter to ad-hoc mode
-my_system "ancontrol  $grid_if -o 0";
-my_system "ancontrol  $grid_if -c $grid_channel";
-my_system "ancontrol  $grid_if -n $grid_ssid";
+my_system "ancontrol -i $grid_if -o 0";
+my_system "ancontrol -i $grid_if -c $grid_channel";
+my_system "ancontrol -i $grid_if -n $grid_ssid";
     
 # set mtu to account for grid encapsulation
 # XXX how do we know we get tun0? 
