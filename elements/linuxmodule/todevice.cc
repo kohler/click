@@ -367,5 +367,5 @@ ToDevice::add_handlers()
   add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(AnyDevice linuxmodule linux_2_2)
+ELEMENT_REQUIRES(AnyDevice linuxmodule)
 EXPORT_ELEMENT(ToDevice)

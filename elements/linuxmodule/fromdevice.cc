@@ -189,10 +189,11 @@ FromDevice::take_state(Element *e, ErrorHandler *errh)
 }
 
 /*
- * Called by net_bh() with each packet.
+ * Called by Linux net_bh[2.2]/net_rx_action[2.4] with each packet.
  */
 extern "C" int
-click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
+click_FromDevice_in(struct notifier_block *nb,
+		    unsigned long backlog_len,
 		    void *v)
 {
   struct sk_buff *skb = (struct sk_buff *)v;

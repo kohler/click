@@ -29,6 +29,9 @@ CLICK_CXX_PROTECT
 #include <linux/if_ether.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
+#if LINUX_VERSION_CODE >= 0x020400
+# include <linux/brlock.h>
+#endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
@@ -93,12 +96,18 @@ ToLinuxSniffers::push(int port, Packet *p)
   }
   
 #ifdef HAVE_CLICK_KERNEL
-  skb->nh.raw = skb->data;
-  //start_bh_atomic();
+  skb->h.raw = skb->nh.raw = skb->data;
+#if LINUX_VERSION_CODE >= 0x020400
+  local_bh_disable();
+  br_read_lock(BR_NETPROTO_LOCK);
+  ptype_dispatch(skb, 0xFFFF);	// unlikely protocol
+  br_read_unlock(BR_NETPROTO_LOCK);
+  local_bh_enable();
+#else
   lock_kernel();
-  ptype_dispatch(skb, 0xFFFF);	// an unlikely protocol number
+  ptype_dispatch(skb, 0xFFFF);
   unlock_kernel();
-  //end_bh_atomic();
+#endif
 #endif
 }
 
