@@ -617,34 +617,33 @@ static int
 write_config_handler(const String &str, Element *e, void *,
 		     ErrorHandler *errh)
 {
-  Vector<String> conf;
-  cp_argvec(str, conf);
-  if (e->live_reconfigure(conf, errh) >= 0) {
-    e->router()->set_default_configuration_string(e->eindex(), str);
-    return 0;
-  } else
-    return -EINVAL;
+    Vector<String> conf;
+    cp_argvec(str, conf);
+    if (e->live_reconfigure(conf, errh) >= 0) {
+	e->router()->set_default_configuration_string(e->eindex(), str);
+	return 0;
+    } else
+	return -EINVAL;
 }
 
 static String
 read_ports_handler(Element *e, void *)
 {
-  return e->router()->element_ports_string(e->eindex());
+    return e->router()->element_ports_string(e->eindex());
 }
 
 static String
 read_handlers_handler(Element *e, void *)
 {
-  Vector<int> handlers;
-  Router *r = e->router();
-  Router::element_hindexes(e, handlers);
-  StringAccum sa;
-  for (int i = 0; i < handlers.size(); i++) {
-    const Router::Handler *h = r->handler(handlers[i]);
-    if (h->read_visible() || h->write_visible())
-      sa << h->name() << '\t' << (h->read_visible() ? "r" : "") << (h->write_visible() ? "w" : "") << '\n';
-  }
-  return sa.take_string();
+    Vector<int> hindexes;
+    Router::element_hindexes(e, hindexes);
+    StringAccum sa;
+    for (int* hip = hindexes.begin(); hip < hindexes.end(); hip++) {
+	const Router::Handler* h = Router::handler(e, *hip);
+	if (h->read_visible() || h->write_visible())
+	    sa << h->name() << '\t' << (h->read_visible() ? "r" : "") << (h->write_visible() ? "w" : "") << '\n';
+    }
+    return sa.take_string();
 }
 
 

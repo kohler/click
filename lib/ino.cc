@@ -189,11 +189,11 @@ ClickIno::calculate_handler_conflicts(int parent_elementno)
     }
 
     // find the relevant handler indexes and names
-    Vector<int> hindexes;
-    Router::element_hindexes(Router::element(_router, parent_elementno), hindexes);
+    Vector<int> his;
+    Router::element_hindexes(Router::element(_router, parent_elementno), his);
     Vector<String> names;
-    for (int i = 0; i < hindexes.size(); i++) {
-	const Router::Handler *h = Router::handler(_router, hindexes[i]);
+    for (int* hip = his.begin(); hip < his.end(); hip++) {
+	const Router::Handler* h = Router::handler(_router, *hip);
 	if (h->visible())
 	    names.push_back(h->name());
     }
@@ -361,13 +361,13 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     if (f_pos < RD_HOFF)
 	f_pos = RD_HOFF;
     if (f_pos < RD_UOFF && INO_DT_HAS_H(ino) && elementno < nelements) {
-	Vector<int> hi;
 	Element *element = Router::element(_router, elementno);
-	Router::element_hindexes(element, hi);
-	while (f_pos >= RD_HOFF && f_pos < hi.size() + RD_HOFF) {
-	    const Router::Handler *h = Router::handler(element, hi[f_pos - RD_HOFF]);
+	Vector<int> his;
+	Router::element_hindexes(element, his);
+	while (f_pos >= RD_HOFF && f_pos < his.size() + RD_HOFF) {
+	    const Router::Handler* h = Router::handler(_router, his[f_pos - RD_HOFF]);
 	    if (h->visible())
-		FILLDIR(h->name().data(), h->name().length(), INO_MKHANDLER(elementno, hi[f_pos - RD_HOFF]), DT_REG, f_pos, thunk);
+		FILLDIR(h->name().data(), h->name().length(), INO_MKHANDLER(elementno, his[f_pos - RD_HOFF]), DT_REG, f_pos, thunk);
 	    f_pos++;
 	}
     }
