@@ -1,3 +1,31 @@
+2001-10-07 Sunday 22:48  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: probsplitter.cc (1.11), probsplitter.hh
+	(1.9), randomerror.hh (1.13), randomlossage.cc (1.23),
+	randomlossage.hh (1.16), randomsample.cc (1.1), randomsample.hh
+	(1.1): add new RandomSample element; deprecate RandomLossage and
+	ProbSplitter in favor of RandomSample
+
+2001-10-07 Sunday 22:48  Eddie Kohler <kohler@aciri.org>
+
+	* lib/router.cc (1.109): nitlet
+
+2001-10-07 Sunday 22:48  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh (1.19), lib/confparse.cc (1.82):
+	cp_unsigned_real2 did not work properly for large frac_bits
+	parameters; for example, with 28 bits of precision, 0.8 would be
+	parsed as 0. Fixed. Also added CP_REAL2_MAX_FRAC_BITS symbol to the
+	header. This is limited to 28 by unparse, not parse. (I think parse
+	could now deal with 30-31 bits.)
+
+2001-10-07 Sunday 22:46  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/standard/drivermanager.hh (1.6),
+	elements/standard/drivermanager.cc (1.12): DriverManager keeps
+	track of how many times its handle_stop_request() method has been
+	called
+
 2001-10-05 Friday 17:51  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* elements/grid/gridroutetable.cc (1.13): [no log message]
