@@ -110,6 +110,7 @@ class IPPrint : public Element { public:
   String _outfilename;
   FILE *_outfile;
 #endif
+  ErrorHandler *_errh;
 
 };
 

@@ -22,6 +22,7 @@
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
+#include <click/router.hh>
 
 #include <click/click_ip.h>
 #include <click/click_icmp.h>
@@ -65,6 +66,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
   bool print_tos = false;
   bool print_ttl = false;
   bool print_len = false;
+  String channel;
   
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
@@ -82,6 +84,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
 #if CLICK_USERLEVEL
 		  "OUTFILE", cpFilename, "output filename", &_outfilename,
 #endif
+		  "CHANNEL", cpWord, "output channel", &channel,
 		  cpEnd) < 0)
     return -1;
 
@@ -101,6 +104,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
   _print_tos = print_tos;
   _print_ttl = print_ttl;
   _print_len = print_len;
+  _errh = router()->chatter_channel(channel);
   return 0;
 }
 
@@ -273,7 +277,7 @@ IPPrint::simple_action(Packet *p)
   } else
 #endif
   {
-    click_chatter("%s", sa.cc());
+    _errh->message("%s", sa.cc());
   }
 
   return p;
