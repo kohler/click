@@ -17,7 +17,13 @@ class Packet {
     char param_off;     // for ICMP Parameter Problem, byte offset of error.
     char color;         // one of 255 colors set by Paint element.
 #ifdef __KERNEL__
-    cycles_t cycles[4];
+    union {
+      cycles_t cycles[4];
+      struct {
+	unsigned d[2];
+	unsigned i[2];
+      } cache;
+    } p;
 #endif
   };
   
@@ -133,8 +139,12 @@ class Packet {
   void set_color_anno(char c)		{ anno()->color = c; }
   char color_anno() const		{ return anno()->color; }
 #ifdef __KERNEL__
-  void set_cycle_anno(int i, cycles_t v) { anno()->cycles[i] = v; }
-  cycles_t cycle_anno(int i) const	{ return anno()->cycles[i]; }
+  void set_cycle_anno(int i, cycles_t v) { anno()->p.cycles[i] = v; }
+  void set_dcache_anno(int i, unsigned v) { anno()->p.cache.d[i] = v; }
+  void set_icache_anno(int i, unsigned v) { anno()->p.cache.i[i] = v; }
+  cycles_t cycle_anno(int i) const	{ return anno()->p.cycles[i]; }
+  unsigned dcache_anno(int i) const     { return anno()->p.cache.d[i]; }
+  unsigned icache_anno(int i) const     { return anno()->p.cache.i[i]; }
 #endif
 };
 

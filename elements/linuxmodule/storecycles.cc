@@ -38,7 +38,7 @@ int
 StoreCycles::configure(const String &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
-		     cpUnsigned, "frist index", &_idx1,
+		     cpUnsigned, "first index", &_idx1,
 		     cpUnsigned, "second index", &_idx2,
 		     cpEnd);
 }
@@ -46,7 +46,7 @@ StoreCycles::configure(const String &conf, ErrorHandler *errh)
 int
 StoreCycles::initialize(ErrorHandler *errh)
 {
-  if (_idx1 > 4 || _idx2 > 4)
+  if (_idx1 > 3 || _idx2 > 3)
     return errh->error("indexes must be between 0 and 3");
   return 0;
 }
