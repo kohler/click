@@ -10,6 +10,9 @@
 // may need to run
 //   route add 1.0.0.0 -interface 1.0.0.1
 // after starting the Click configuration.
+//
+// See test-tun.click for the KernelTun version of this configuration, which
+// is better documented.
 
 tap :: KernelTap(1.0.0.1/8);
 
