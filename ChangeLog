@@ -1,3 +1,11 @@
+2001-03-01 Thursday 14:42  Benjie Chen <benjie@lcs.mit.edu>
+
+	* acconfig.h, configure.in, elements/linuxmodule/polldevice.cc,
+	elements/standard/msqueue.cc, elements/standard/unqueue.cc: add
+	--enable-intel configuration option: if this is set, HAVE_INTEL_CPU
+	is defined, and intel specific instructions, such as prefetching,
+	are used.  by defaultit is not set
+
 2001-02-28 Wednesday 20:18  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/standard/scheduleinfo.cc, include/click/task.hh,
