@@ -1,3 +1,13 @@
+2001-04-03 Tuesday 14:45  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/run-grid-gateway.openbsd: 
+	modified for openbsd, and to be run from an rc script e/g/ checks
+	for CLICKDIR env variable
+
+2001-04-03 Tuesday 14:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid-gateway.click: added chattersocket for logging msgs.
+
 2001-04-03 Tuesday 14:12  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/linuxmodule/: tolinux.cc, tolinuxsniffers.cc: be more
