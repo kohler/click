@@ -107,7 +107,7 @@ private:
 struct grid_hdr {
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
-  static const unsigned int GRID_VERSION = 0xfed0;
+  static const unsigned int GRID_VERSION = 0xfed1;
 
   unsigned int version;     // which version of the grid protocol we are using
 
@@ -197,6 +197,16 @@ struct grid_nbr_entry {
   };
 
   unsigned int metric;
+
+  /* ping-pong stats, valid only for 1-hop nbrs */
+  /* 
+   * in our routing table, these stats are from this _neighbor's_
+   * measurements of packets sent by us; in our route advertisement
+   * packet these stats reflect _our_ measurements of packets sent by
+   * this neighbor.
+   */
+  int link_qual;
+  int link_sig;
 
   grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0), seq_no(0) 
   { assert(sizeof(grid_nbr_entry) % 4 == 0); }

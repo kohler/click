@@ -161,60 +161,76 @@ GridRouteTable::current_gateway()
 }
 
 
-void 
-GridRouteTable::update_metric(RTEntry &r, bool init)
+void
+GridRouteTable::init_metric(RTEntry &r)
 {
-  bool got_entry;
-  int dbm, qual;
+  assert(r.num_hops == 1);
+
+  switch (_metric_type) {
+  case MetricHopCount:
+    r.metric = r.num_hops;
+    r.metric_valid = true;
+    break;
+  case MetricMinDeliveryRate:
+  case MetricCumulativeDeliveryRate:
+    assert(0);
+    /* code to estimate our delivery rate to this 1-hop nbr goes here */
+    r.metric_valid = true;
+    break;
+  case MetricMinSigStrength:
+  case MetricMinSigQuality:
+    if (r.link_qual == 0 && r.link_sig == 0) {
+      click_chatter("GridRouteTable: link sig/qual stats from 1-hop neighbor %s seem to be invalid; no initializing metric\n",
+		    r.dest_ip.s().cc());
+      r.metric_valid = false;
+    }
+    else if (_metric_type == MetricMinSigQuality) 
+      r.metric = (unsigned int) r.link_qual;
+    else // _metric_type == MetricMinSigStrength
+      r.metric = (unsigned int) -r.link_sig; // deal in -dBm
+    r.metric_valid = true;
+    break;
+  default:
+    assert(0);
+  }
+} 
+
+void 
+GridRouteTable::update_metric(RTEntry &r)
+{
+  assert(r.num_hops > 1);
+
+  RTEntry *next_hop = _rtes.findp(r.next_hop_ip);
+  if (!next_hop) {
+    click_chatter("GridRouteTable: ERROR updating metric for %s; no information for next hop %s; invalidating metric",
+		  r.dest_ip.s().cc(), r.next_hop_ip.s().cc());
+    r.metric_valid = false;
+    return;
+  }
+
+  if (!next_hop->metric_valid)
+    r.metric_valid = false;
+  if (!r.metric_valid)
+    return;
+
   switch (_metric_type) {
   case MetricHopCount:
     r.metric = r.num_hops;
     r.metric_valid = true;
     break;
   case MetricCumulativeDeliveryRate:
-    assert(0);
-    if (init)
-      r.metric = 100;
+    r.metric = (r.metric * next_hop->metric) / 100;
     r.metric_valid = true;
     break;
-  case MetricMinDeliveryRate:
-    assert(0);
-    if (init)
-      r.metric = 100;
+  case MetricMinDeliveryRate: 
+    r.metric = (next_hop->metric < r.metric) ? next_hop->metric : r.metric;
     r.metric_valid = true;
     break;
   case MetricMinSigStrength:
-    got_entry = _airo_info->get_signal_info(r.next_hop_eth, dbm, qual);
-    if (got_entry) {
-      if (dbm > 0)
-	click_chatter("GridrouteTable: error!  got funky positive dBm value (%d) for signal strength from %s\n",
-		      dbm, r.next_hop_eth.s().cc());
-      else
-	dbm = -dbm; // deal in -dBm
-      if (dbm > (int) r.metric || init)
-	r.metric = dbm; // choose weakest signal, which is largest -dBm
-      r.metric_valid = true;
-    }
-    else {
-      click_chatter("GridRouteTable: error!  unable to get signal strength info to update metric for %s (next hop: %s / %s)\n",
-		    r.dest_ip.s().cc(), r.next_hop_ip.s().cc(), r.next_hop_eth.s().cc());
-      r.metric_valid = false;
-    }
-    break;
   case MetricMinSigQuality:
-    got_entry = _airo_info->get_signal_info(r.next_hop_eth, dbm, qual);
-    if (got_entry) {
-      int m = (int) r.metric;
-      if (qual < m || init)
-	m = qual;
-      r.metric = (unsigned int) m;
-      r.metric_valid = true;
-    }
-    else {
-      click_chatter("GridRouteTable: error!  unable to get signal quality info to update metric for %s (next hop: %s / %s)\n",
-		    r.dest_ip.s().cc(), r.next_hop_ip.s().cc(), r.next_hop_eth.s().cc());
-      r.metric_valid = false;
-    }
+    // choose weakest signal, which is largest -dBm
+    // *or* choose worst quality, which is smaller numbers
+    r.metric = (next_hop->metric > r.metric) ? next_hop->metric : r.metric;
     break;
   default:
     assert(0);
@@ -225,20 +241,19 @@ GridRouteTable::update_metric(RTEntry &r, bool init)
 bool
 GridRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
 {
-  int m1, m2;
+  assert(r1.metric_valid && r2.metric_valid);
+
   switch (_metric_type) {
   case MetricHopCount: 
     return r1.num_hops < r2.num_hops;
   case MetricCumulativeDeliveryRate:
-    return r1.metric > r2.metric;
   case MetricMinDeliveryRate:
     return r1.metric > r2.metric;
-  case MetricMinSigStrength: 
-    return r1.metric < r2.metric; // smaller -dBm is stronger signal
   case MetricMinSigQuality: 
-    m1 = (int) r1.metric;
-    m2 = (int) r2.metric;
-    return m1 > m2; // prefer larger quality number
+  case MetricMinSigStrength:
+    // smaller -dBm is stronger signal
+    // *or* prefer smaller quality number
+    return r1.metric < r2.metric; 
   default:
     assert(0);
   }
@@ -302,9 +317,23 @@ GridRouteTable::simple_action(Packet *packet)
     click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", 
 		  id().cc(), ipaddr.s().cc(), r->next_hop_eth.s().cc(), ethaddr.s().cc());
 
+  /* look for ping-pong link stats about us */
+  int qual = 0;
+  int sig = 0;
+  int entry_sz = hlo->nbr_entry_sz;
+  char *entry_ptr = (char *) (hlo + 1);
+  for (int i = 0; i < hlo->num_nbrs; i++, entry_ptr += entry_sz) {
+    grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
+    if (_ip == curr->ip && curr->num_hops == 1) {
+      qual = ntohl(curr->link_qual);
+      sig = ntohl(curr->link_sig);
+      break;
+    }
+  }
+
   if (ntohl(hlo->ttl) > 0) {
-    RTEntry r(ipaddr, ethaddr, gh, hlo, jiff);
-    update_metric(r, true);
+    RTEntry r(ipaddr, ethaddr, gh, hlo, jiff, qual, sig);
+    init_metric(r);
     _rtes.insert(ipaddr, r);
   }
   
@@ -314,28 +343,25 @@ GridRouteTable::simple_action(Packet *packet)
   Vector<RTEntry> triggered_rtes;
   Vector<IPAddress> broken_dests;
 
-  int entry_sz = hlo->nbr_entry_sz;
-  char *entry_ptr = (char *) (hlo + 1);
-  
   for (int i = 0; i < hlo->num_nbrs; i++, entry_ptr += entry_sz) {
     
     grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
     RTEntry route(ipaddr, ethaddr, curr, jiff);
-
-    update_metric(route);
 
     /* ignore route if ttl has run out */
     if (route.ttl <= 0)
       continue;
 
     /* ignore route to ourself */
-    if (route.dest_ip == _ip)
+    if (route.dest_ip == _ip)       
       continue;
 
     /* pseudo-split-horizon: ignore routes from nbrs that go back
        through us */
     if (curr->next_hop_ip == (unsigned int) _ip)
       continue;
+
+    update_metric(route);
 
     RTEntry *our_rte = _rtes.findp(curr->ip);
     
@@ -389,6 +415,37 @@ GridRouteTable::simple_action(Packet *packet)
      * regular route entry 
      */
 
+    /* if we don't have a route, use this one */
+    if (our_rte == 0) 
+      goto use_new;
+
+    /* prefer a strictly newer route */
+    if (our_rte->seq_no > route.seq_no) 
+      continue;
+    if (our_rte->seq_no < route.seq_no)
+      goto use_new;
+
+    /* 
+     * routes have same age, choose based on metric 
+     */
+    
+    /* prefer a route with a valid metric */
+    if (our_rte->metric_valid && !route.metric_valid)
+      continue;
+    if (!our_rte->metric_valid && route.metric_valid)
+      goto use_new;
+
+    /* if neither metric is valid, just keep the route we have -- to
+     * aid in stability */
+    if (!our_rte->metric_valid && !route.metric_valid)
+      continue;
+    
+    // both metric are valid
+    /* only use a new route if the metric is better */
+    if (!metric_preferable(route, *our_rte))
+      continue;
+    
+#if 0 // old route selection logic
     /* ignore old routes and routes with bad metrics */
     if (our_rte                                  // we already have a route
 	&& our_rte->metric_valid                 // which has a valid metric
@@ -396,8 +453,10 @@ GridRouteTable::simple_action(Packet *packet)
 	    || (our_rte->seq_no == route.seq_no  //           or the same seq_no
 		&& !metric_preferable(route, *our_rte)))) //     and no better metric
       continue;
+#endif
 
-    /* add the entry */
+  use_new:
+    /* add the new entry */
     _rtes.insert(route.dest_ip, route);
   }
 
@@ -810,7 +869,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 	     f.metric);
     _extended_logging_errh->message(str);
 
-    rte_info[i].fill_in(curr);
+    rte_info[i].fill_in(curr, _airo_info);
   }
   
   _extended_logging_errh->message("\n");
@@ -820,7 +879,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 
 
 void
-GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb)
+GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, AiroInfo *a)
 {
   nb->ip = dest_ip;
   nb->next_hop_ip = next_hop_ip;
@@ -832,6 +891,21 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb)
   nb->metric = htonl(metric);
   nb->is_gateway = is_gateway;
   nb->ttl = htonl(ttl);
+  
+  /* ping-pong link stats back to sender */
+  nb->link_qual = 0;
+  nb->link_sig = 0;
+  if (a && num_hops == 1) {
+    int sig, qual;
+    bool res = a->get_signal_info(next_hop_eth, sig, qual);
+    if (res) {
+      nb->link_qual = htonl(qual);
+      nb->link_sig = htonl(sig);
+    }
+    else
+      click_chatter("GridRouteTable: error!  unable to get signal strength or quality info for one-hop neighbor %s\n",
+		    IPAddress(dest_ip).s().cc());
+  }
 }
 
 ELEMENT_REQUIRES(userlevel)

@@ -127,10 +127,16 @@ public:
                             calling initialize_metric or
                             update_metric. */
 
+    /* link stats from us to this neighbor, only valid if is 1-hop neighbor */
+    int link_qual;
+    int link_sig;
+
+    unsigned int delivery_rate; // 0-100 percent
 
     RTEntry() : 
       _init(false), num_hops(0), loc_good(false), is_gateway(false), 
-      seq_no(0), ttl(0), last_updated_jiffies(-1), metric_valid(false) { }
+      seq_no(0), ttl(0), last_updated_jiffies(-1), metric_valid(false),
+    link_qual(0), link_sig(0) { }
     
     RTEntry(IPAddress _dest_ip, IPAddress _next_hop_ip, EtherAddress _next_hop_eth,
 	    unsigned char _num_hops, grid_location _loc, unsigned short _loc_err, 
@@ -140,15 +146,17 @@ public:
       next_hop_eth(_next_hop_eth), num_hops(_num_hops), loc(_loc), 
       loc_err(_loc_err), loc_good(_loc_good), is_gateway(_is_gateway), 
       seq_no(_seq_no), ttl(_ttl),
-      last_updated_jiffies(_last_updated_jiffies), metric_valid(false)
+      last_updated_jiffies(_last_updated_jiffies), metric_valid(false),
+      link_qual(0), link_sig(0)
     { }
 
     /* constructor for 1-hop route entry, converting from net byte order */
     RTEntry(IPAddress ip, EtherAddress eth, grid_hdr *gh, grid_hello *hlo,
-	    unsigned int jiff) :
+	    unsigned int jiff, int qual, int sig) :
       _init(true), dest_ip(ip), next_hop_ip(ip), next_hop_eth(eth), num_hops(1), 
       loc(gh->loc), loc_good(gh->loc_good), is_gateway(hlo->is_gateway),
-      last_updated_jiffies(jiff), metric_valid(false)
+      last_updated_jiffies(jiff), metric_valid(false), 
+      link_qual(qual), link_sig(sig)
     { 
       loc_err = ntohs(gh->loc_err); 
       seq_no = ntohl(hlo->seq_no); 
@@ -161,7 +169,7 @@ public:
       _init(true), dest_ip(nbr->ip), next_hop_ip(ip), next_hop_eth(eth),
       num_hops(nbr->num_hops + 1), loc(nbr->loc), loc_good(nbr->loc_good),  
       is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
-      metric_valid(false)
+      metric_valid(false), link_qual(0), link_sig(0)
     {
       loc_err = ntohs(nbr->loc_err);
       seq_no = ntohl(nbr->seq_no);
@@ -170,7 +178,7 @@ public:
     }
     
     /* copy data from this into nb, converting to net byte order */
-    void fill_in(grid_nbr_entry *nb);
+    void fill_in(grid_nbr_entry *nb, AiroInfo *a = 0);
     
   };
   friend class RTEntry;
@@ -238,9 +246,11 @@ private:
   static int msec_to_jiff(int m)
   { return (CLICK_HZ * m) / 1000; }
 
-  /* update route metric with the last hop from the advertising node
-     -- if INIT, then initialize the metric with the first link.  */
-  void update_metric(RTEntry &, bool init = false);
+  /* update route metric with the last hop from the advertising node */
+  void update_metric(RTEntry &);
+
+  /* initialize the metric for a 1-hop neighbor */
+  void init_metric(RTEntry &);
 
   /* true iff first route's metric is preferable to second route's
      metric -- note that this is a strict comparison, if the metrics
@@ -265,7 +275,7 @@ private:
     MetricCumulativeDeliveryRate,  // unsigned int percentage (0-100)
     MetricMinDeliveryRate,         // unsigned int percentage (0-100)
     MetricMinSigStrength,          // unsigned int negative dBm.  e.g. -40 dBm is 40
-    MetricMinSigQuality            // int ``quality''
+    MetricMinSigQuality            // unsigned int ``quality''
   };
 
   int _metric_type;
