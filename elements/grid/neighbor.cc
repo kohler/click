@@ -180,6 +180,7 @@ Neighbor::simple_action(Packet *packet)
        */
       int entry_sz = hlo->nbr_entry_sz;
       Vector<grid_nbr_entry> triggered_rtes;
+      Vector<IPAddress> broken_rtes;
 
       // loop through all the route entries in the packet
       for (int i = 0; i < hlo->num_nbrs; i++) {
@@ -213,6 +214,7 @@ Neighbor::simple_action(Packet *packet)
 	      new_entry.age = decr_age(ntohl(curr->age), grid_hello::MIN_AGE_DECREMENT);
 	      if (new_entry.age > 0) // don't propagate expired info
 		triggered_rtes.push_back(new_entry);
+	      broken_rtes.push_back(fe->nbr.ip);
 	    }
 	    else if (ntohl(curr->seq_no) < fe->nbr.seq_no) {
 	      // we know more recent info about a route that this
@@ -258,6 +260,9 @@ Neighbor::simple_action(Packet *packet)
     
       // send the triggered update
       send_routing_update(triggered_rtes);
+      // remove the broken routes
+      for (int i = 0; i < broken_rtes.size(); i++)
+	assert(_nbrs.remove(broken_rtes[i]));
     }
     break;
     
