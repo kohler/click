@@ -884,6 +884,7 @@ Optional Features:
   --enable-warp9          reduce PollDevice functionality for speed
   --enable-intel-cpu      enable Intel-specific machine instructions
   --disable-stride        disable stride scheduler
+  --enable-task-heap      use heap for task list
   --enable-adaptive       use adaptive scheduler to flexibly arbitrate between
                           Click and the kernel (EXPERIMENTAL)
   --enable-greedy         kernel module keeps CPU forever (requires SMP;
@@ -7146,7 +7147,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7149 "configure"
+#line 7150 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -10487,6 +10488,20 @@ fi;
 if test $enable_stride = yes; then
     cat >>confdefs.h <<\_ACEOF
 #define HAVE_STRIDE_SCHED 1
+_ACEOF
+
+fi
+
+# Check whether --enable-task-heap or --disable-task-heap was given.
+if test "${enable_task_heap+set}" = set; then
+  enableval="$enable_task_heap"
+  :
+else
+  enable_task_heap=no
+fi;
+if test $enable_task_heap = yes; then
+    cat >>confdefs.h <<\_ACEOF
+#define HAVE_TASK_HEAP 1
 _ACEOF
 
 fi

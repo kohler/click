@@ -56,6 +56,11 @@
 /* Define to 1 since we have Strings. */
 #define HAVE_STRING 1
 
+#ifdef HAVE_STRIDE_SCHED
+/* Define if you want task scheduling to use a heap, not a linked list. */
+#undef HAVE_TASK_HEAP
+#endif
+
 /* The size of a `int', as computed by sizeof. */
 #undef SIZEOF_INT
 

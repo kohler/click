@@ -531,6 +531,11 @@ if test $enable_stride = yes; then
     AC_DEFINE(HAVE_STRIDE_SCHED)
 fi
 
+AC_ARG_ENABLE(task-heap, [  --enable-task-heap      use heap for task list], :, enable_task_heap=no)
+if test $enable_task_heap = yes; then
+    AC_DEFINE(HAVE_TASK_HEAP)
+fi
+
 AC_ARG_ENABLE(adaptive, [  --enable-adaptive       use adaptive scheduler to flexibly arbitrate between    
                           Click and the kernel (EXPERIMENTAL)], :, enable_adaptive=no)
 if test "x$enable_adaptive" = xyes; then
