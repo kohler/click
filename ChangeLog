@@ -1,3 +1,9 @@
+2004-11-03 Wednesday 09:55  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
+
+	* elements/ns/: fromsimdevice.cc (1.7), fromsimdevice.hh (1.4): Was
+	ignoring packet type and always setting ethernet annotations.  Now
+	check before doing so.
+
 2004-10-28 Thursday 14:17  John Bicket <jbicket@mit.edu>
 
 	* conf/: etx.click (1.2), gen_config_roofnet.pl (1.11), srcr.click
