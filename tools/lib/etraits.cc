@@ -64,8 +64,9 @@ Driver::requirement(int d)
 static bool
 requirement_contains(const String &req, const String &n)
 {
+    assert(n.length());
     int pos = 0;
-    while ((pos = req.find_left(n)) >= 0) {
+    while ((pos = req.find_left(n, pos)) >= 0) {
 	int rpos = pos + n.length();
 	// XXX should be more careful about '|' bars
 	if ((pos == 0 || isspace(req[pos - 1]) || req[pos - 1] == '|')
