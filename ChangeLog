@@ -1,3 +1,13 @@
+2004-06-23 Wednesday 19:05  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/confparse.hh (1.50): remove !HAVE_64_BIT_LONG,
+	which is unnecessary; reported by Qinghua Ye
+
+2004-06-23 Wednesday 19:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/simplequeue.cc (1.8): fix intptr_t lack,
+	reported by Qinghua Ye
+
 2004-06-23 Wednesday 17:38  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: autoratefallback.cc (1.2), autoratefallback.hh
