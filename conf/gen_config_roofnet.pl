@@ -171,10 +171,12 @@ if ($dev =~ /ath/) {
 
 my $probes = "2 60 2 1500 4 1500 11 1500 22 1500";
 
-if ($mode =~ /g/) {
-    $probes = "2 60 12 60 2 1500 4 1500 11 1500 22 1500 12 1500 18 1500 24 1500 36 1500 48 1500 72 1500 96 1500";
-} elsif ($mode =~ /a/) {
-    $probes = "12 60 2 60 12 1500 24 1500 48 1500 72 1500 96 1500 108 1500";
+if (0) {
+    if ($mode =~ /g/) {
+	$probes = "2 60 12 60 2 1500 4 1500 11 1500 22 1500 12 1500 18 1500 24 1500 36 1500 48 1500 72 1500 96 1500";
+    } elsif ($mode =~ /a/) {
+	$probes = "12 60 2 60 12 1500 24 1500 48 1500 72 1500 96 1500 108 1500";
+    }
 }
 
 
@@ -183,10 +185,10 @@ my $srcr_forwarder_ethtype = "0943"; # data
 my $srcr_ethtype = "0944";  # queries and replies
 my $srcr_gw_ethtype = "092c"; # gateway ads
 
-if ($mode =~ /g/) {
+if (0 && $mode =~ /g/) {
     print "rates :: AvailableRates(DEFAULT 2 4 11 12 18 22 24 36 48 72 96 108,
 $wireless_mac 2 4 11 12 18 22 24 36 48 72 96 108);\n\n";
-} elsif ($mode =~ /a/) {
+} elsif (0 && $mode =~ /a/) {
     print "rates :: AvailableRates(DEFAULT 12 18 24 36 48 72 96 108,
 $wireless_mac 12 18 24 36 48 72 96 108);\n\n";
 } else {
@@ -293,7 +295,7 @@ rate_q :: NotifierQueue(50)
 				RT rates,
 				ACTIVE false)
 -> rate_probe_rate :: ProbeTXRate(OFFSET 4,
-			     WINDOW 5000,
+			     WINDOW 20000,
 			     ALT_RATE true,
 			     RT rates,
 			     ACTIVE false)
@@ -341,43 +343,14 @@ etx [3] -> etx_host; // data to me
 
 EOF
 
-    if ($txf) {
-print <<EOF;
-txf :: WifiTXFeedback() 
--> prism2_decap_txf :: Prism2Decap()
--> rate_cl :: Classifier(30/0100, 
-			 -);
-
-FromHost(rate-txf, 1.1.1.1/32) -> Discard;
-
-rate_cl 
--> txf_t :: Tee(4)
--> PushAnno() 
--> ToHost(rate-txf);
-
-rate_cl [1] 
--> txf_t2 :: Tee(3);
-
-txf_t2 [0] -> [1] data_arf_rate;
-txf_t2 [1] -> [1] data_madwifi_rate;
-txf_t2 [2] -> [1] data_probe_rate;
-
-txf_t [1] -> [1] rate_arf_rate;
-txf_t [2] -> [1] rate_madwifi_rate;
-txf_t [3] -> [1] rate_probe_rate;
-
-EOF
-}
-
-
-
 
 print <<EOF;
 
 sniff_dev 
 -> SetTimestamp() 
+-> tx_filter :: FilterTX()
 -> prism2_decap :: Prism2Decap()
--> dupe :: WifiDupeFilter(WINDOW 5) 
+-> dupe :: WifiDupeFilter(WINDOW 20) 
 -> wifi_cl :: Classifier(0/00%0c, //mgt
 			 0/04%0c, //ctl
 			 0/08%0c, //data
@@ -434,3 +407,34 @@ arp_cl [1]
 -> rate_q;
 
 EOF
+    if ($txf) {
+print <<EOF;
+tx_filter [1] 
+-> prism2_decap_txf :: Prism2Decap()
+//-> Print(txf)
+-> rate_cl :: Classifier(30/0100, 
+			 -);
+
+FromHost(rate-txf, 1.1.1.1/32) -> Discard;
+
+rate_cl 
+-> txf_t :: Tee(4)
+-> PushAnno() 
+-> ToHost(rate-txf);
+
+rate_cl [1] 
+-> txf_t2 :: Tee(3);
+
+txf_t2 [0] -> [1] data_arf_rate;
+txf_t2 [1] -> [1] data_madwifi_rate;
+txf_t2 [2] -> [1] data_probe_rate;
+
+txf_t [1] -> [1] rate_arf_rate;
+txf_t [2] -> [1] rate_madwifi_rate;
+txf_t [3] -> [1] rate_probe_rate;
+
+EOF
+}
+
+
+
