@@ -48,7 +48,8 @@ Task::make_list()
 
 Task::~Task()
 {
-    assert(!scheduled() || _thread == this);
+    if ((scheduled() || _pending) && _thread != this)
+	cleanup();
 }
 
 Master *
