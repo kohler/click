@@ -36,6 +36,7 @@ class UDPIPEncap : public Element { public:
   
   UDPIPEncap *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
+  bool can_live_reconfigure() const     { return true; }
 
   Packet *simple_action(Packet *);
 
