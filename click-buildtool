@@ -407,6 +407,57 @@ END {
 }
 
 
+quietlink_usage () {
+    echo "Usage: click-buildtool quietlink" 1>&2
+    echo "Try \`click-buildtool quietlink --help' for more information." 1>&2
+    exit 1
+}
+
+
+quietlink () {
+    while [ x"$1" != x ]; do
+    case $1 in
+    -h|--h|--he|--hel|--help)
+	cat <<'EOF' 1>&2
+`Click-buildtool quietlink' quiets the GNU linker when linking an element
+package. Specifically, it removes undefined reference complaints.
+
+Usage: ld ... 2>&1 | click-buildtool quietlink
+
+Options:
+  -h, --help               Print this message and exit.
+
+Report bugs to <click@pdos.lcs.mit.edu>.
+EOF
+	exit 0;;
+    *)
+	quietlink_usage;;
+    esac
+    done
+
+    $awk -F: 'BEGIN {
+  context = ""
+}
+/: In function/ {
+  context = $0
+  next
+}
+/: undefined reference to/ {
+  next
+}
+/: more undefined references to/ {
+  next
+}
+{
+  if (context != "") {
+    print context
+    context = ""
+  }
+  print $0
+}' 1>&2
+}
+
+
 ################
 # MAIN PROGRAM #
 ################
@@ -440,6 +491,7 @@ Usage: click-buildtool findelem [-a] [-V] [-p PREFIX] < [FILES AND DIRECTORIES]
    or: click-buildtool elem2make [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool elem2export [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool elem2package [-V] [-p PREFIX] PACKAGENAME < [ELEMENTS]
+   or: click-buildtool quietlink
 
 Options:
   -V, --verbose            Print more information.
@@ -457,6 +509,8 @@ EOF
      elem2="export"; shift 1; elem2xxx "$@"; exit 0;;
   elem2package)
      elem2="package"; shift 1; elem2xxx "$@"; exit 0;;
+  quietlink)
+     shift 1; quietlink "$@"; exit 0;;
   *)
      echo "Usage: click-buildtool TOOLNAME [ARGUMENTS]
 Try \`click-buildtool --help' for more information." 1>&2
