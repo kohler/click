@@ -53,12 +53,12 @@ class Element { public:
     Router* router() const			{ return _router; }
     Master* master() const;
     int eindex() const				{ return _eindex; }
-    int eindex(Router*) const;
+    inline int eindex(Router*) const;
 
     // INPUTS AND OUTPUTS
-    inline int nports(bool isoutput) const;
-    int ninputs() const				{ return _ninputs; }
-    int noutputs() const			{ return _noutputs; }
+    inline int nports(bool isoutput) const	{ return _nports[isoutput]; }
+    int ninputs() const				{ return _nports[0]; }
+    int noutputs() const			{ return _nports[1]; }
     void set_ninputs(int);
     void set_noutputs(int);
     void add_input()				{ set_ninputs(ninputs()+1); }
@@ -66,28 +66,28 @@ class Element { public:
     bool ports_frozen() const;
   
     class Port;
-    const Port &input(int) const;
-    const Port &output(int) const;
+    inline const Port& port(bool isoutput, int) const;
+    inline const Port& input(int) const;
+    inline const Port& output(int) const;
 
-    inline bool port_is_push(bool isoutput, int) const;
-    inline bool port_is_pull(bool isoutput, int) const;
+    inline bool port_allowed(bool isoutput, int) const;
     inline bool input_is_push(int) const;
     inline bool input_is_pull(int) const;
     inline bool output_is_push(int) const;
     inline bool output_is_pull(int) const;
   
-    void checked_output_push(int, Packet*) const;
+    inline void checked_output_push(int, Packet*) const;
 
     // PROCESSING, FLOW, AND FLAGS
     virtual const char* processing() const;
-    static const char* const AGNOSTIC;
-    static const char* const PUSH;
-    static const char* const PULL;
-    static const char* const PUSH_TO_PULL;
-    static const char* const PULL_TO_PUSH;
+    static const char AGNOSTIC[];
+    static const char PUSH[];
+    static const char PULL[];
+    static const char PUSH_TO_PULL[];
+    static const char PULL_TO_PUSH[];
     
     virtual const char* flow_code() const;
-    static const char* const COMPLETE_FLOW;
+    static const char COMPLETE_FLOW[];
     
     virtual const char* flags() const;
   
@@ -149,13 +149,11 @@ class Element { public:
     
     enum Processing { VAGNOSTIC, VPUSH, VPULL };
     void processing_vector(int* input_codes, int* output_codes, ErrorHandler*) const;
-    void initialize_ports(const int* input_codes, const int* output_codes);
-
     void port_flow(bool isoutput, int, Bitvector*) const;
-  
-    int connect_input(int which, Element*, int);
-    int connect_output(int which, Element*, int);
 
+    void initialize_ports(const int* input_codes, const int* output_codes);
+    int connect_port(bool isoutput, int port, Element*, int);
+    
     void add_default_handlers(bool writable_config);
 
 #if CLICK_STATS >= 2
@@ -167,8 +165,8 @@ class Element { public:
   
     class Port { public:
 
-	Port();
-	Port(Element*, Element*, int);
+	inline Port();
+	inline Port(Element*, Element*, int);
     
 	operator bool() const		{ return _e != 0; }
 	bool allowed() const		{ return _port >= 0; }
@@ -177,8 +175,8 @@ class Element { public:
 	Element* element() const	{ return _e; }
 	int port() const		{ return _port; }
     
-	void push(Packet* p) const;
-	Packet* pull() const;
+	inline void push(Packet* p) const;
+	inline Packet* pull() const;
 
 #if CLICK_STATS >= 1
 	unsigned npackets() const	{ return _packets; }
@@ -202,12 +200,10 @@ class Element { public:
 
     enum { INLINE_PORTS = 4 };
 
-    Port* _inputs;
-    Port* _outputs;
-    Port _ports0[INLINE_PORTS];
+    Port* _ports[2];
+    Port _inline_ports[INLINE_PORTS];
 
-    int _ninputs;
-    int _noutputs;
+    int _nports[2];
 
     Router* _router;
     int _eindex;
@@ -226,60 +222,53 @@ Element::eindex(Router* r) const
     return (router() == r ? eindex() : -1);
 }
 
-inline int
-Element::nports(bool isoutput) const
+inline const Element::Port&
+Element::port(bool isoutput, int p) const
 {
-    return isoutput ? _noutputs : _ninputs;
+    assert((unsigned) p < (unsigned) _nports[isoutput]);
+    return _ports[isoutput][p];
 }
 
 inline const Element::Port&
-Element::input(int i) const
+Element::input(int p) const
 {
-    assert(i >= 0 && i < ninputs());
-    return _inputs[i];
+    return port(false, p);
 }
 
 inline const Element::Port&
-Element::output(int o) const
+Element::output(int p) const
 {
-    assert(o >= 0 && o < noutputs());
-    return _outputs[o];
+    return port(true, p);
 }
 
 inline bool
-Element::output_is_push(int o) const
+Element::port_allowed(bool isoutput, int p) const
 {
-    return o >= 0 && o < noutputs() && _outputs[o].allowed();
+    return (unsigned) p < (unsigned) nports(isoutput) && _ports[isoutput][p].allowed();
 }
 
 inline bool
-Element::output_is_pull(int o) const
+Element::output_is_push(int p) const
 {
-    return o >= 0 && o < noutputs() && !_outputs[o].allowed();
+    return port_allowed(true, p);
 }
 
 inline bool
-Element::input_is_pull(int i) const
+Element::output_is_pull(int p) const
 {
-    return i >= 0 && i < ninputs() && _inputs[i].allowed();
+    return (unsigned) p < (unsigned) nports(true) && !_ports[1][p].allowed();
 }
 
 inline bool
-Element::input_is_push(int i) const
+Element::input_is_pull(int p) const
 {
-    return i >= 0 && i < ninputs() && !_inputs[i].allowed();
+    return port_allowed(false, p);
 }
 
 inline bool
-Element::port_is_push(bool isoutput, int p) const
+Element::input_is_push(int p) const
 {
-    return isoutput ? output_is_push(p) : input_is_push(p);
-}
-
-inline bool
-Element::port_is_pull(bool isoutput, int p) const
-{
-    return isoutput ? output_is_pull(p) : input_is_pull(p);
+    return (unsigned) p < (unsigned) nports(false) && !_ports[0][p].allowed();
 }
 
 #if CLICK_STATS >= 2
@@ -350,10 +339,10 @@ Element::Port::pull() const
 }
 
 inline void
-Element::checked_output_push(int o, Packet* p) const
+Element::checked_output_push(int port, Packet* p) const
 {
-    if ((unsigned)o < (unsigned)noutputs())
-	_outputs[o].push(p);
+    if ((unsigned) port < (unsigned) noutputs())
+	_ports[1][port].push(p);
     else
 	p->kill();
 }

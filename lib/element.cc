@@ -38,13 +38,13 @@ CLICK_CXX_UNPROTECT
 #endif
 CLICK_DECLS
 
-const char * const Element::AGNOSTIC = "a";
-const char * const Element::PUSH = "h";
-const char * const Element::PULL = "l";
-const char * const Element::PUSH_TO_PULL = "h/l";
-const char * const Element::PULL_TO_PUSH = "l/h";
+const char Element::AGNOSTIC[] = "a";
+const char Element::PUSH[] = "h";
+const char Element::PULL[] = "l";
+const char Element::PUSH_TO_PULL[] = "h/l";
+const char Element::PULL_TO_PUSH[] = "l/h";
 
-const char * const Element::COMPLETE_FLOW = "x/x";
+const char Element::COMPLETE_FLOW[] = "x/x";
 
 int Element::nelements_allocated = 0;
 
@@ -55,27 +55,29 @@ int Element::nelements_allocated = 0;
 #endif
 
 Element::Element()
-    : ELEMENT_CTOR_STATS _inputs(&_ports0[0]), _outputs(&_ports0[0]),
-      _ninputs(0), _noutputs(0), _router(0), _eindex(-1)
+    : ELEMENT_CTOR_STATS _router(0), _eindex(-1)
 {
     nelements_allocated++;
+    _ports[0] = _ports[1] = &_inline_ports[0];
+    _nports[0] = _nports[1] = 0;
 }
 
 Element::Element(int ninputs, int noutputs)
-    : ELEMENT_CTOR_STATS _inputs(&_ports0[0]), _outputs(&_ports0[0]),
-      _ninputs(0), _noutputs(0), _router(0), _eindex(-1)
+    : ELEMENT_CTOR_STATS _router(0), _eindex(-1)
 {
-    set_nports(ninputs, noutputs);
     nelements_allocated++;
+    _ports[0] = _ports[1] = &_inline_ports[0];
+    _nports[0] = _nports[1] = 0;
+    set_nports(ninputs, noutputs);
 }
 
 Element::~Element()
 {
     nelements_allocated--;
-    if (_inputs != _ports0)
-	delete[] _inputs;
-    if (_outputs != _ports0 && _outputs != _ports0 + _ninputs)
-	delete[] _outputs;
+    if (_ports[1] != _inline_ports && _ports[1] != _inline_ports + _nports[0])
+	delete[] _ports[1];
+    if (_ports[0] != _inline_ports)
+	delete[] _ports[0];
 }
 
 // CHARACTERISTICS
@@ -126,14 +128,14 @@ void
 Element::set_nports(int new_ninputs, int new_noutputs)
 {
     // exit on bad counts, or if already initialized
-    if (new_ninputs < 0 || new_noutputs < 0 || _ports0[0].initialized())
+    if (new_ninputs < 0 || new_noutputs < 0 || _inline_ports[0].initialized())
 	return;
   
     // decide if inputs & outputs were inlined
     bool old_in_inline =
-	(_inputs == _ports0);
+	(_ports[0] == _inline_ports);
     bool old_out_inline =
-	(_outputs == _ports0 || _outputs == _ports0 + _ninputs);
+	(_ports[1] == _inline_ports || _ports[1] == _inline_ports + _nports[0]);
 
     // decide if inputs & outputs should be inlined
     bool new_in_inline =
@@ -149,12 +151,12 @@ Element::set_nports(int new_ninputs, int new_noutputs)
 
     // create new port arrays
     Port *new_inputs =
-	(new_in_inline ? _ports0 : new Port[new_ninputs]);
+	(new_in_inline ? _inline_ports : new Port[new_ninputs]);
     if (!new_inputs)		// out of memory -- return
 	return;
 
     Port *new_outputs =
-	(new_out_inline ? (new_in_inline ? _ports0 + new_ninputs : _ports0)
+	(new_out_inline ? _inline_ports + (new_in_inline ? new_ninputs : 0)
 	 : new Port[new_noutputs]);
     if (!new_outputs) {		// out of memory -- return
 	if (!new_in_inline)
@@ -164,31 +166,31 @@ Element::set_nports(int new_ninputs, int new_noutputs)
 
     // install information
     if (!old_in_inline)
-	delete[] _inputs;
+	delete[] _ports[0];
     if (!old_out_inline)
-	delete[] _outputs;
-    _inputs = new_inputs;
-    _outputs = new_outputs;
-    _ninputs = new_ninputs;
-    _noutputs = new_noutputs;
+	delete[] _ports[1];
+    _ports[0] = new_inputs;
+    _ports[1] = new_outputs;
+    _nports[0] = new_ninputs;
+    _nports[1] = new_noutputs;
 }
 
 void
 Element::set_ninputs(int count)
 {
-    set_nports(count, _noutputs);
+    set_nports(count, _nports[1]);
 }
 
 void
 Element::set_noutputs(int count)
 {
-    set_nports(_ninputs, count);
+    set_nports(_nports[0], count);
 }
 
 bool
 Element::ports_frozen() const
 {
-    return _ports0[0].initialized();
+    return _inline_ports[0].initialized();
 }
 
 void
@@ -204,42 +206,34 @@ Element::notify_noutputs(int)
 void
 Element::initialize_ports(const int *in_v, const int *out_v)
 {
-    // always initialize _ports0[0] so set_nports will know whether to quit
-    if (_inputs != _ports0 && _outputs != _ports0)
-	_ports0[0] = Port(this, 0, -1);
+    // always initialize _inline_ports[0] so set_nports will know whether to
+    // quit
+    if (_ports[0] != _inline_ports && _ports[1] != _inline_ports)
+	_inline_ports[0] = Port(this, 0, -1);
   
     for (int i = 0; i < ninputs(); i++) {
 	// allowed iff in_v[i] == VPULL
 	int port = (in_v[i] == VPULL ? 0 : -1);
-	_inputs[i] = Port(this, 0, port);
+	_ports[0][i] = Port(this, 0, port);
     }
   
     for (int o = 0; o < noutputs(); o++) {
 	// allowed iff out_v[o] != VPULL
 	int port = (out_v[o] == VPULL ? -1 : 0);
-	_outputs[o] = Port(this, 0, port);
+	_ports[1][o] = Port(this, 0, port);
     }
 }
 
 int
-Element::connect_input(int i, Element *f, int port)
+Element::connect_port(bool isoutput, int port, Element* e, int e_port)
 {
-    if (i >= 0 && i < ninputs() && _inputs[i].allowed()) {
-	_inputs[i] = Port(this, f, port);
+    if (port_allowed(isoutput, port)) {
+	_ports[isoutput][port] = Port(this, e, e_port);
 	return 0;
     } else
 	return -1;
 }
 
-int
-Element::connect_output(int o, Element *f, int port)
-{
-    if (o >= 0 && o < noutputs() && _outputs[o].allowed()) {
-	_outputs[o] = Port(this, f, port);
-	return 0;
-    } else
-	return -1;
-}
 
 // FLOW
 
@@ -282,7 +276,8 @@ next_flow_code(const char*& p, int port, Bitvector& code, ErrorHandler* errh, co
 	if (p[1] == '^')
 	    negated = true, p++;
 	for (p++; *p != ']' && *p; p++) {
-	    if (isalpha(*p))
+	    // no isalpha: avoid locale and signed char dependencies
+	    if ((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z'))
 		code[*p] = true;
 	    else if (*p == '#')
 		code[port + 128] = true;
@@ -296,7 +291,7 @@ next_flow_code(const char*& p, int port, Bitvector& code, ErrorHandler* errh, co
 		errh->error("'%{element}' flow code: missing ']'", e);
 	    p--;			// don't skip over final '\0'
 	}
-    } else if (isalpha(*p))
+    } else if ((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z'))
 	code[*p] = true;
     else if (*p == '#')
 	code[port + 128] = true;
