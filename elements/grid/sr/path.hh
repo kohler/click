@@ -59,5 +59,15 @@ inline Path reverse_path (const Path &p)
 }
 
 
+inline int index_of(Path p, IPAddress ip) {
+  for (int x = 0;  x < p.size(); x++) {
+    if (p[x] == ip) {
+      return x;
+    }
+  }
+
+  return -1;
+}
+
 CLICK_ENDDECLS
 #endif /* CLICK_PATH_HH */

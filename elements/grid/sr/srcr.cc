@@ -82,6 +82,7 @@ int
 SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
+  _debug = false;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
 		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
@@ -92,6 +93,7 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "ARP", cpElement, "ARPTable element", &_arp_table,
 		    /* below not required */
 		    "SS", cpElement, "SrcrStat element", &_srcr_stat,
+		    "DEBUG", cpBool, "Debug", &_debug,
                     0);
 
   if (!_et) 
@@ -166,10 +168,12 @@ SRCR::start_query(IPAddress dstip)
   click_gettimeofday(&q->_last_query);
   q->_count++;
   q->_metric = 0;
-  click_chatter("SRCR %s: start_query %s ->  %s", 
-		id().cc(),
-		_ip.s().cc(),
-		dstip.s().cc());
+  if (_debug) {
+    click_chatter("SRCR %s: start_query %s ->  %s", 
+		  id().cc(),
+		  _ip.s().cc(),
+		  dstip.s().cc());
+  }
 
   int len = srpacket::len_wo_data(1);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
@@ -343,10 +347,12 @@ SRCR::forward_query_hook()
 void
 SRCR::forward_query(Seen *s)
 {
-  click_chatter("SRCR %s: forward_query %s -> %s\n", 
-		id().cc(),
-		s->_src.s().cc(),
-		s->_dst.s().cc());
+  if (_debug) {
+    click_chatter("SRCR %s: forward_query %s -> %s\n", 
+		  id().cc(),
+		  s->_src.s().cc(),
+		  s->_dst.s().cc());
+  }
   int nhops = s->_hops.size();
 
   srcr_assert(s->_hops.size() == s->_metrics.size()+1);
@@ -386,10 +392,12 @@ SRCR::forward_reply(struct srpacket *pk1)
   srcr_assert(type == PT_REPLY);
 
   _link_table->dijkstra();
-  click_chatter("SRCR %s: forward_reply %s <- %s\n", 
-		id().cc(),
-		pk1->get_hop(0).s().cc(),
-		IPAddress(pk1->_qdst).s().cc());
+  if (_debug) {
+    click_chatter("SRCR %s: forward_reply %s <- %s\n", 
+		  id().cc(),
+		  pk1->get_hop(0).s().cc(),
+		  IPAddress(pk1->_qdst).s().cc());
+  }
   if(pk1->next() >= pk1->num_hops()) {
     click_chatter("SRCR %s: forward_reply strange next=%d, nhops=%d", 
 		  _ip.s().cc(), 
@@ -440,10 +448,12 @@ void SRCR::start_reply(struct srpacket *pk_in)
 
   int len = srpacket::len_wo_data(pk_in->num_hops()+1);
   _link_table->dijkstra();
-  click_chatter("SRCR %s: start_reply %s <- %s\n",
-		id().cc(),
-		pk_in->get_hop(0).s().cc(),
-		IPAddress(pk_in->_qdst).s().cc());
+  if (_debug) {
+    click_chatter("SRCR %s: start_reply %s <- %s\n",
+		  id().cc(),
+		  pk_in->get_hop(0).s().cc(),
+		  IPAddress(pk_in->_qdst).s().cc());
+  }
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
@@ -485,10 +495,12 @@ SRCR::got_reply(struct srpacket *pk)
 
   IPAddress dst = IPAddress(pk->_qdst);
   srcr_assert(dst);
-  click_chatter("SRCR %s: got_reply %s <- %s\n", 
-		id().cc(),
-		_ip.s().cc(),
-		dst.s().cc());
+  if (_debug) {
+    click_chatter("SRCR %s: got_reply %s <- %s\n", 
+		  id().cc(),
+		  _ip.s().cc(),
+		  dst.s().cc());
+  }
   _link_table->dijkstra();
   
   Path p;

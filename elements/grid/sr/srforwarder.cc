@@ -162,6 +162,11 @@ SRForwarder::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> 
 
   memcpy(eh->ether_shost, _eth.data(), 6);
   EtherAddress eth_dest = _arp_table->lookup(r[1]);
+  if (eth_dest == _arp_table->_bcast) {
+    click_chatter("SRForwarder %s: arp lookup failed for %s",
+		  id().cc(),
+		  r[1].s().cc());
+  }
   memcpy(eh->ether_dhost, eth_dest.data(), 6);
   eh->ether_type = htons(_et);
   pk->_version = _sr_version;
@@ -325,6 +330,11 @@ SRForwarder::push(int port, Packet *p_in)
 
 
   EtherAddress eth_dest = _arp_table->lookup(nxt);
+  if (eth_dest == _arp_table->_bcast) {
+    click_chatter("SRForwarder %s: arp lookup failed for %s",
+		  id().cc(),
+		  nxt.s().cc());
+  }
   memcpy(eh_out->ether_dhost, eth_dest.data(), 6);
   memcpy(eh_out->ether_shost, _eth.data(), 6);
 

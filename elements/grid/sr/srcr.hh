@@ -185,7 +185,7 @@ private:
   int _bytes_replies;
 
 
-
+  bool _debug;
 
 
 

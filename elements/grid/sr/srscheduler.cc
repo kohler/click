@@ -62,31 +62,34 @@ int
 SRScheduler::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
-  _threshold = 0;
+  int threshold = 0;
   _debug_token = false;
+  int packet_to = 0;
   ret = cp_va_parse(conf, this, errh,
 		    cpKeywords,
-		    "PACKET_TIMEOUT", cpUnsigned, "packet timeout", &_max_tx_packet_ms,
-		    "THRESHOLD", cpInteger, "packets", &_threshold,
+		    "PACKET_TIMEOUT", cpUnsigned, "packet timeout", &packet_to,
+		    "THRESHOLD", cpInteger, "packets", &threshold,
 		    "SR", cpElement, "SRForwarder element", &_sr_forwarder,
 		    "DEBUG", cpBool, "Debug", &_debug_token,
                     0);
+  if (ret < 0) {
+    return ret;
+  }
 
-  if (!_max_tx_packet_ms) 
-    return errh->error("PACKET_TIMEOUT not specified");
+  ret = set_packet_timeout(errh, packet_to);
+  if (ret < 0) {
+    return ret;
+  }
 
-  if (_threshold < 0) 
-    return errh->error("THRESHOLD must be specified and > 0");
+  ret = set_threshold(errh, threshold);
+  if (ret < 0) {
+    return ret;
+  }
 
   if (!_sr_forwarder) 
     return errh->error("SR not specified");
   if (_sr_forwarder->cast("SRForwarder") == 0) 
     return errh->error("SR element is not a SRForwarder");
-
-  timerclear(&_hop_duration);
-  /* convehop path_duration from ms to a struct timeval */
-  _hop_duration.tv_sec = _max_tx_packet_ms/1000;
-  _hop_duration.tv_usec = (_max_tx_packet_ms % 1000) * 1000;
 
   unsigned int active_duration_ms = 5 * 1000;
   timerclear(&_active_duration);
@@ -100,7 +103,7 @@ SRScheduler::configure (Vector<String> &conf, ErrorHandler *errh)
   _clear_duration.tv_sec = clear_duration_ms/1000;
   _clear_duration.tv_usec = (clear_duration_ms % 1000) * 1000;
   
-  return ret;
+  return 0;
 }
 
 SRScheduler *
@@ -265,9 +268,13 @@ SRScheduler::push(int port, Packet *p_in)
       click_gettimeofday(&now);
       StringAccum sa;
       sa << "SRScheduler " << now;
-      sa << " rx_after_timeout";
+      sa << " token_dup ";
+      sa << " towards " << p[p.size()-1];
+      sa << " expected " << nfo->_towards;
       sa << " pk->seq " << pk->seq();
       sa << " nfo->seq " << nfo->_seq;
+      sa << " last_rx " << now - nfo->_last_rx;
+      sa << " first_rx " << now - nfo->_first_rx;
       click_chatter("%s", sa.take_string().cc());
     }
     if (!pk->flag(FLAG_SCHEDULE_FAKE)) {
@@ -275,34 +282,17 @@ SRScheduler::push(int port, Packet *p_in)
     }
     return;
   } 
-  if (pk->seq() != nfo->_seq && 
-      pk->seq() < nfo->_seq + (nfo->_p.size()-1)) {
-    if (_debug_token) {
-      struct timeval now;
-      click_gettimeofday(&now);
-      StringAccum sa;
-      sa << "SRScheduler " << now;
-      sa << " token_dup ";
-      sa << " towards  " << p[p.size()-1];
-      sa << " expected " << nfo->_towards;
-      sa << " pk->seq " << pk->seq();
-      sa << " nfo->seq " << nfo->_seq;
-      click_chatter("%s", sa.take_string().cc());
-    }
-    if (!pk->flag(FLAG_SCHEDULE_FAKE)) {
-      output(port).push(p_in);
-    }
-    return;
-
-  } else if (p[p.size()-1] != nfo->_towards && !nfo->is_endpoint(_sr_forwarder->ip())) {
+  if (p[p.size()-1] != nfo->_towards && !nfo->is_endpoint(_sr_forwarder->ip())) {
     if (_debug_token) {
       struct timeval now;
       click_gettimeofday(&now);
       StringAccum sa;
       sa << "SRScheduler " << now;
       sa << " rt_reset_detected";
-      sa << " towards  " << p[p.size()-1];
+      sa << " towards " << p[p.size()-1];
       sa << " expected " << nfo->_towards;
+      sa << " pk->seq " << pk->seq();
+      sa << " nfo->seq " << nfo->_seq;
       click_chatter("%s", sa.take_string().cc());
     }
       nfo->_towards = p[p.size()-1];
@@ -323,11 +313,7 @@ SRScheduler::push(int port, Packet *p_in)
       click_chatter("%s", sa.take_string().cc());
     }
     nfo->_token = true;
-    if (nfo->is_endpoint(_sr_forwarder->ip())) {
-      nfo->_seq = pk->seq() + (nfo->_p.size() - 1);
-    } else {
-      nfo->_seq = pk->seq() + 1;
-    }
+    nfo->_seq = pk->seq() + 1;
   }
 
   nfo->_packets_rx++;
@@ -343,7 +329,6 @@ SRScheduler::push(int port, Packet *p_in)
       sa << " seq " << nfo->_seq;
       sa << " first_rx";
       sa << " towards " << p[p.size()-1];
-      sa << " rx " << nfo->_packets_rx;
       click_chatter("%s", sa.take_string().cc());
     }
   }
@@ -466,7 +451,8 @@ SRScheduler::pull(int)
        * an endpoint, and the last rx packet wasn't a fake.
        */
       if (nfo._active && 
-	  nfo.endpoint_timedout(ip) && 
+	  nfo._token &&
+	  nfo.is_endpoint(ip) &&
 	  timercmp(&nfo._last_rx, &nfo._last_real, ==)) {
 	p = nfo._p;
 	break;
@@ -586,6 +572,24 @@ SRScheduler::static_print_debug(Element *f, void *)
   return sa.take_string();
 }
 
+String
+SRScheduler::static_print_packet_timeout(Element *f, void *)
+{
+  StringAccum sa;
+  SRScheduler *d = (SRScheduler *) f;
+  sa << d->_max_tx_packet_ms << "\n";
+  return sa.take_string();
+}
+
+String
+SRScheduler::static_print_threshold(Element *f, void *)
+{
+  StringAccum sa;
+  SRScheduler *d = (SRScheduler *) f;
+  sa << d->_threshold << "\n";
+  return sa.take_string();
+}
+
 
 
 String
@@ -670,6 +674,62 @@ SRScheduler::static_write_debug(const String &arg, Element *e,
   n->_debug_token = b;
   return 0;
 }
+
+
+int
+SRScheduler::static_write_packet_timeout(const String &arg, Element *e,
+			void *, ErrorHandler *errh) 
+{
+  SRScheduler *n = (SRScheduler *) e;
+  unsigned int b;
+
+  if (!cp_unsigned(arg, &b))
+    return errh->error("`packet_timeout' must be a unsigned int");
+
+  return n->set_packet_timeout(errh, b);
+}
+
+int
+SRScheduler::set_packet_timeout(ErrorHandler *errh, unsigned int x) 
+{
+
+  if (!x) {
+    return errh->error("PACKET_TIMEOUT must not be 0");
+  }
+  _max_tx_packet_ms = x;
+  timerclear(&_hop_duration);
+  /* convehop path_duration from ms to a struct timeval */
+  _hop_duration.tv_sec = _max_tx_packet_ms/1000;
+  _hop_duration.tv_usec = (_max_tx_packet_ms % 1000) * 1000;
+  return 0;
+}
+
+int
+SRScheduler::static_write_threshold(const String &arg, Element *e,
+			void *, ErrorHandler *errh) 
+{
+  SRScheduler *n = (SRScheduler *) e;
+  unsigned int b;
+
+  if (!cp_unsigned(arg, &b))
+    return errh->error("`threshold' must be a unsigned int");
+
+  return n->set_threshold(errh, b);
+}
+
+int
+SRScheduler::set_threshold(ErrorHandler *errh, int x) 
+{
+
+  if (x < 0) {
+    return errh->error("THRESHOLD must be > 0");
+  }
+  _threshold = x;
+  return 0;
+}
+
+
+
 void
 SRScheduler::add_handlers()
 {
@@ -677,6 +737,13 @@ SRScheduler::add_handlers()
   add_read_handler("stats", static_print_stats, 0);
   add_write_handler("debug", static_write_debug, 0);
   add_read_handler("debug", static_print_debug, 0);
+
+  add_write_handler("threshold", static_write_threshold, 0);
+  add_read_handler("threshold", static_print_threshold, 0);
+
+  add_write_handler("packet_timeout", static_write_packet_timeout, 0);
+  add_read_handler("packet_timeout", static_print_packet_timeout, 0);
+
 }
 
 void

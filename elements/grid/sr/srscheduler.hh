@@ -48,10 +48,20 @@ class SRScheduler : public Element {
   void clear();
   static int static_write_debug(const String &arg, Element *e,
 				void *, ErrorHandler *errh); 
+
+  static int static_write_packet_timeout(const String &arg, Element *e,
+				void *, ErrorHandler *errh); 
+  static int static_write_threshold(const String &arg, Element *e,
+				void *, ErrorHandler *errh); 
+  int set_packet_timeout(ErrorHandler *, unsigned int);
+  int set_threshold(ErrorHandler *, int);
   static String static_print_stats(Element *, void *);
   String print_stats();
 
+
   static String static_print_debug(Element *, void *);
+  static String static_print_packet_timeout(Element *, void *);
+  static String static_print_threshold(Element *, void *);
   void run_timer();
 private:
   class ScheduleInfo {
@@ -101,20 +111,6 @@ private:
 
     IPAddress other_endpoint(IPAddress ip) {
       return (ip == _p[0]) ? _p[_p.size()-1] : _p[0];
-    }
-
-    bool endpoint_timedout(IPAddress ip) const {
-      if (!_sr) {
-	return false;
-      }
-      if (!is_endpoint(ip) || !_token || !_active) {
-	return false;
-      }
-      struct timeval now;
-      struct timeval expire;
-      click_gettimeofday(&now);
-      timeradd(&_last_rx, &_sr->_hop_duration, &expire);
-      return timercmp(&expire, &now, <);
     }
 
     bool hop_timedout() const {

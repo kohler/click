@@ -71,6 +71,7 @@ int WifiTXFeedback::got_skb(struct sk_buff *skb) {
 
   Packet *p = Packet::make(skb);
   int success = WIFI_TX_SUCCESS_ANNO(p);
+  SET_WIFI_NUM_FAILURES(p, WIFI_NUM_FAILURES(p) + !success);
   if (p) {
     if (noutputs() == 2 && !success) {
       output(1).push(p);
