@@ -65,8 +65,8 @@ BeaconScanner::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpEnd) < 0)
     return -1;
 
-  if (!_rtable || _rtable->cast("AvailableRates") == 0) 
-    return errh->error("AvailableRates element is not provided or not a AvailableRates");
+  if (_rtable && _rtable->cast("AvailableRates") == 0) 
+    return errh->error("AvailableRates element is not a AvailableRates");
 
   return 0;
 }
@@ -86,14 +86,7 @@ BeaconScanner::simple_action(Packet *p)
   }
 
   if (p->length() < sizeof(struct click_wifi)) {
-    click_chatter("%{element}: packet too small: %d vs %d\n",
-		  this,
-		  p->length(),
-		  sizeof(struct click_wifi));
-
-    p->kill();
-    return 0;
-	      
+    return p;
   }
   struct click_wifi *w = (struct click_wifi *) p->data();
 
@@ -103,18 +96,11 @@ BeaconScanner::simple_action(Packet *p)
   subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
 
   if (type != WIFI_FC0_TYPE_MGT) {
-    click_chatter("%{element}: received non-management packet\n",
-		  this);
-    p->kill();
-    return 0;
+    return p;
   }
 
   if (subtype != WIFI_FC0_SUBTYPE_BEACON && subtype != WIFI_FC0_SUBTYPE_PROBE_RESP) {
-    click_chatter("%{element}: received subtype %d packet\n",
-		  this,
-		  subtype);
-    p->kill();
-    return 0;
+    return p;
   }
 
   uint8_t *ptr;

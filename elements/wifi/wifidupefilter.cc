@@ -59,6 +59,11 @@ WifiDupeFilter::simple_action(Packet *p_in)
 {
   struct timeval now;
   click_wifi *w = (click_wifi *) p_in->data();
+
+  if (p_in->length() < sizeof(click_wifi)) {
+    return p_in;
+  }
+
   EtherAddress src = EtherAddress(w->i_addr2);
   uint16_t seq = le16_to_cpu(*(uint16_t *) w->i_seq) >> WIFI_SEQ_SEQ_SHIFT;
   uint8_t frag = le16_to_cpu(*(u_int16_t *)w->i_seq) & WIFI_SEQ_FRAG_MASK;

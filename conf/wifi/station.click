@@ -47,8 +47,9 @@ winfo :: WirelessInfo(SSID "", BSSID 00:00:00:00:00:00, CHANNEL 1);
 rates :: AvailableRates(DEFAULT 2 4 11 22);
 
 q :: Queue(10)
--> SetTXRate(2)
+-> SetTXRate(22)
 -> SetTXPower(63)
+-> seq :: WifiSeq()
 -> extra_encap :: ExtraEncap()
 -> ToDevice (ath0);
 
