@@ -1739,7 +1739,7 @@ cp_handler(const String &str, Element *context, Element **result_element,
 
   int leftmost_dot = text.find_left('.');
   if (leftmost_dot < 0) {
-    *result_element = 0;
+    *result_element = context->router()->root_element();
     *result_hname = text;
     return true;
   } else if (leftmost_dot == text.length() - 1) {
@@ -1763,7 +1763,8 @@ cp_handler(const String &str, Element *context, bool need_read,
 {
   if (!errh)
     errh = ErrorHandler::silent_handler();
-  
+
+  const Router *r = context->router();
   Element *e;
   String hname;
   if (!cp_handler(str, context, &e, &hname, errh))
@@ -1771,16 +1772,16 @@ cp_handler(const String &str, Element *context, bool need_read,
 
   int hid = Router::hindex(e, hname);
   if (hid < 0) {
-    if (e) {
+    if (e != r->root_element()) {
       errh->error("element `%s' has no `%s' handler", e->id().cc(), hname.cc());
-      if (context->router()->nhandlers() <= 0)
+      if (r->nhandlers() <= 0)
 	errh->error("because handlers have not been added yet");
     } else
       errh->error("no global `%s' handler", hname.cc());
     return false;
   }
 
-  const Router::Handler *h = context->router()->handler(hid);
+  const Router::Handler *h = r->handler(hid);
   if (need_read && !h->readable()) {
     errh->error("`%s' is not a read handler", h->unparse_name(e).cc());
     return false;

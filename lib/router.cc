@@ -52,9 +52,13 @@ Router::Router()
 {
   _refcount = 0;
   _driver_runcount = 0;
+  
   // RouterThreads will add themselves to _threads
   (void) new RouterThread(this);	// quiescent thread
   (void) new RouterThread(this);	// first normal thread
+
+  _root_element = new ErrorElement;
+  _root_element->attach_router(this, -1);
 
 #ifdef CLICK_NS
   _clickinst = 0;
@@ -149,6 +153,8 @@ Router::element(const Router *r, int ei)
 {
   if (r && ei >= 0 && ei < r->nelements())
     return r->_elements[ei];
+  else if (r && ei == -1)
+    return r->root_element();
   else
     return 0;
 }
@@ -185,16 +191,6 @@ Router::elandmark(int ei) const
     return String::null_string();
   else
     return _element_landmarks[ei];
-}
-
-Element *
-Router::root_element()
-{
-  if (!_root_element) {
-    _root_element = new ErrorElement;
-    _root_element->attach_router(this, -1);
-  }
-  return _root_element;
 }
 
 
@@ -1007,7 +1003,7 @@ Router::take_state(Router *r, ErrorHandler *errh)
 String
 Router::Handler::unparse_name(Element *e, const String &hname)
 {
-  if (e)
+  if (e && e != e->router()->_root_element)
     return e->id() + "." + hname;
   else
     return hname;
@@ -1198,7 +1194,7 @@ Router::handler(const Router *r, int hi)
 const Router::Handler *
 Router::handler(const Element *e, const String &hname)
 {
-  if (e) {
+  if (e && e != e->router()->_root_element) {
     const Router *r = e->router();
     int eh = r->find_ehandler(e->eindex(), hname);
     if (eh >= 0)
@@ -1214,7 +1210,7 @@ Router::handler(const Element *e, const String &hname)
 int
 Router::hindex(const Element *e, const String &hname)
 {
-  if (e) {
+  if (e && e != e->router()->_root_element) {
     const Router *r = e->router();
     int eh = r->find_ehandler(e->eindex(), hname);
     if (eh >= 0)
@@ -1230,7 +1226,7 @@ Router::hindex(const Element *e, const String &hname)
 void
 Router::element_hindexes(const Element *e, Vector<int> &handlers)
 {
-  if (e) {
+  if (e && e != e->router()->_root_element) {
     const Router *r = e->router();
     for (int eh = r->_ehandler_first_by_element[e->eindex()];
 	 eh >= 0;
@@ -1290,8 +1286,35 @@ Router::nglobal_handlers()
   return nglobalh;
 }
 
+static String
+version_global_handler(Element *, void *)
+{
+  return String(CLICK_VERSION "\n");
+}
+
+static int
+stop_global_handler(const String &s, Element *e, void *, ErrorHandler *errh)
+{
+  if (e) {
+    int n = 1;
+    (void) cp_integer(cp_uncomment(s), &n);
+    e->router()->adjust_driver_reservations(-n);
+  } else
+    errh->message("no router to stop");
+  return 0;
+}
+
 void
-Router::cleanup_global_handlers()
+Router::static_initialize()
+{
+  if (!nglobalh) {
+    add_read_handler(0, "version", version_global_handler, 0);
+    add_write_handler(0, "stop", stop_global_handler, 0);
+  }
+}
+
+void
+Router::static_cleanup()
 {
   delete[] globalh;
   globalh = 0;

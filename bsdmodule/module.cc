@@ -198,19 +198,18 @@ init_module()
 
   // default provisions
   CLICK_DEFAULT_PROVIDES;
+  Router::static_initialize();
 
   // thread manager, sk_buff manager, config manager
   click_init_sched();
   click_init_config();
 
   // global handlers
-  Router::add_global_read_handler("version", read_version, 0);
-  Router::add_global_read_handler("packages", read_packages, 0);
-  Router::add_global_read_handler("requirements", read_requirements, 0);
-  Router::add_global_read_handler("meminfo", read_meminfo, 0);
-  Router::add_global_read_handler("cycles", read_cycles, 0);
-  Router::add_global_write_handler("stop", write_stop, 0);
-  Router::add_global_read_handler("errors", read_errors, 0);
+  Router::add_read_handler(0, "packages", read_packages, 0);
+  Router::add_read_handler(0, "requirements", read_requirements, 0);
+  Router::add_read_handler(0, "meminfo", read_meminfo, 0);
+  Router::add_read_handler(0, "cycles", read_cycles, 0);
+  Router::add_read_handler(0, "errors", read_errors, 0);
   Router::change_handler_flags(0, "errors", 0, HANDLER_REREAD);
 
   // filesystem interface
@@ -253,7 +252,7 @@ cleanup_module()
 
   // extra packages, global handlers
   click_cleanup_packages();
-  Router::cleanup_global_handlers();
+  Router::static_cleanup();
 
   // config manager, thread manager, sk_buff manager
   click_cleanup_config();

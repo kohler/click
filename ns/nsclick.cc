@@ -303,6 +303,7 @@ SimState::simmain(simclick_sim siminst,const char *router_file)
     cp_va_static_initialize();
     errh = new FileErrorHandler(stderr, "");
     ErrorHandler::static_initialize(errh);
+    Router::static_initialize();
     
     CLICK_DEFAULT_PROVIDES;
 

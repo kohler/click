@@ -281,7 +281,7 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
   }
 
   // Otherwise, find element.
-  Element *e = 0;
+  Element *e;
   int dot = canonical_name.find_left('.');
   String hname;
   
@@ -296,8 +296,10 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
     if (!e)
       return message(fd, CSERR_NO_SUCH_ELEMENT, "No element named `" + ename + "'");
     hname = canonical_name.substring(dot + 1);
-  } else
+  } else {
+    e = router()->root_element();
     hname = canonical_name;
+  }
 
   // Then find handler.
   int hid = Router::hindex(e, hname);

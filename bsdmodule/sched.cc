@@ -195,10 +195,10 @@ click_init_sched()
 {
   simple_lock_init(&click_thread_lock);
   click_thread_pids = new Vector<int>;
-  Router::add_global_read_handler("threads", read_threads, 0);
+  Router::add_read_handler(0, "threads", read_threads, 0);
 #if 0
-  Router::add_global_read_handler("priority", read_priority, 0);
-  Router::add_global_write_handler("priority", write_priority, 0);
+  Router::add_read_handler(0, "priority", read_priority, 0);
+  Router::add_write_handler(0, "priority", write_priority, 0);
 #endif
 }
 

@@ -133,7 +133,7 @@ DriverManager::initialize(ErrorHandler *errh)
 				  cpString, "data", &text,
 				  0) < 0)
 		return -1;
-	    _args[i] = (e ? e->eindex() : -1);
+	    _args[i] = e->eindex();
 	    _args2[i] = hi;
 	    _args3[i] = text;
 	} else if (_insns[i] == INSN_READ) {
@@ -141,7 +141,7 @@ DriverManager::initialize(ErrorHandler *errh)
 				  cpReadHandler, "read handler", &e, &hi,
 				  0) < 0)
 		return -1;
-	    _args[i] = (e ? e->eindex() : -1);
+	    _args[i] = e->eindex();
 	    _args2[i] = hi;
 	}
 

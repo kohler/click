@@ -46,12 +46,6 @@ read_cycles(Element *, void *)
   return sa.take_string();
 }
 
-static String
-read_version(Element *, void *)
-{
-  return String(CLICK_VERSION) + "\n";
-}
-
 #ifdef HAVE_LINUX_READ_NET_SKBCOUNT
 extern "C" int read_net_skbcount(void);
 #endif
@@ -68,18 +62,6 @@ read_meminfo(Element *, void *)
   sa << "net_skbcount " << read_net_skbcount() << "\n";
 #endif
   return sa.take_string();
-}
-
-static int
-write_stop(const String &s, Element *, void *, ErrorHandler *errh)
-{
-  if (click_router) {
-    int n = 1;
-    (void) cp_integer(cp_uncomment(s), &n);
-    click_router->adjust_driver_reservations(-n);
-  } else
-    errh->message("no router installed");
-  return 0;
 }
 
 static String
@@ -208,6 +190,7 @@ init_module()
 
   // default provisions
   CLICK_DEFAULT_PROVIDES;
+  Router::static_initialize();
 
   // thread manager, sk_buff manager, config manager
   click_init_sched();
@@ -215,12 +198,10 @@ init_module()
   click_init_config();
   
   // global handlers
-  Router::add_read_handler(0, "version", read_version, 0);
   Router::add_read_handler(0, "packages", read_packages, 0);
   Router::add_read_handler(0, "requirements", read_requirements, 0);
   Router::add_read_handler(0, "meminfo", read_meminfo, 0);
   Router::add_read_handler(0, "cycles", read_cycles, 0);
-  Router::add_write_handler(0, "stop", write_stop, 0);
   Router::add_read_handler(0, "errors", read_errors, 0);
   Router::change_handler_flags(0, "errors", 0, HANDLER_REREAD);
 
@@ -264,7 +245,7 @@ cleanup_module()
 
   // extra packages, global handlers
   click_cleanup_packages();
-  Router::cleanup_global_handlers();
+  Router::static_cleanup();
   
   // config manager, thread manager, sk_buff manager
   click_cleanup_config();

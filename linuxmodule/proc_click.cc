@@ -143,7 +143,7 @@ free_handler_string(int hs)
 static int
 prepare_handler_read(int eindex, int handlerno, int stringno)
 {
-  Element *e = (eindex >= 0 ? click_router->element(eindex) : 0);
+  Element *e = Router::element(click_router, eindex);
   String s;
 
   const Router::Handler *h = Router::handler(click_router, handlerno);
@@ -183,7 +183,7 @@ prepare_handler_write(int eindex, int handlerno, int stringno)
 static int
 finish_handler_write(int eindex, int handlerno, int stringno)
 {
-  Element *e = (eindex >= 0 ? click_router->element(eindex) : 0);
+  Element *e = Router::element(click_router, eindex);
   const Router::Handler *h = Router::handler(click_router, handlerno);
   if (!h)
     return -ENOENT;
@@ -192,9 +192,8 @@ finish_handler_write(int eindex, int handlerno, int stringno)
   else if (stringno < 0 || stringno >= handler_strings_cap)
     return -EINVAL;
   
-  String context_string = "In write handler `" + h->name() + "'";
-  if (e) context_string += String(" for `") + e->declaration() + "'";
-  ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
+  String context_string = "In write handler `" + h->unparse_name(e) + "':";
+  ContextErrorHandler cerrh(click_logged_errh, context_string);
   
   int result;
   if (handler_strings[stringno].out_of_memory())
@@ -361,7 +360,7 @@ proc_element_handler_ioctl(struct inode *ino, struct file *filp,
   int eindex = parent_proc_dir_eindex(pde);
   if (eindex < 0)
     return eindex;
-  Element *e = click_router->element(eindex);
+  Element *e = Router::element(click_router, eindex);
   
   union {
     char buf[128];

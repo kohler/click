@@ -31,15 +31,22 @@ class Router { public:
   ~Router();
   void use()					{ _refcount++; }
   void unuse();
-  
+
+  static void static_initialize();
+  static void static_cleanup();
+
   int add_element(Element *, const String &name, const String &conf, const String &landmark);
   int add_connection(int from_idx, int from_port, int to_idx, int to_port);
   
   bool initialized() const			{ return _initialized; }
-  
+
+  // accessing elements
   int nelements() const				{ return _elements.size(); }
-  static Element *element(const Router *, int);	// returns 0 on bad index
+  // returns 0 on bad index or no router, root_element() on index -1
+  static Element *element(const Router *, int);
   Element *element(int e) const			{ return element(this, e); }
+  Element *root_element() const			{ return _root_element; }
+  
   const String &ename(int) const;
   const String &elandmark(int) const;
   const Vector<Element *> &elements() const	{ return _elements; }
@@ -48,7 +55,6 @@ class Router { public:
   Element *find(const String &, ErrorHandler * = 0) const;
   Element *find(const String &, Element *context, ErrorHandler * = 0) const;
   Element *find(const String &, String prefix, ErrorHandler * = 0) const;
-  Element *root_element();
 
   const Vector<String> &requirements() const	{ return _requirements; }
   void add_requirement(const String &);
@@ -84,8 +90,6 @@ class Router { public:
   static void add_write_handler(const Element *, const String &, WriteHandler, void *);
   static int change_handler_flags(const Element *, const String &, uint32_t clear_flags, uint32_t set_flags);
   
-  static void cleanup_global_handlers();
-
   // thread(-1) is the quiescent thread
   int nthreads() const				{ return _threads.size() - 1; }
   RouterThread *thread(int id) const		{ return _threads[id + 1]; }

@@ -667,7 +667,8 @@ handler_ioctl(struct inode *inode, struct file *filp,
 	retval = -EIO;
     else if (!click_router)
 	retval = -EINVAL;
-    else if (!(e = click_router->element(INO_ELEMENTNO(inode->i_ino))))
+    else if (INO_ELEMENTNO(inode->i_ino) < 0
+	     || !(e = click_router->element(INO_ELEMENTNO(inode->i_ino))))
 	retval = -EIO;
     else {
 	union {

@@ -159,7 +159,7 @@ click_remove_element_type(int which)
 // global handlers for ControlSocket
 
 enum {
-  GH_VERSION, GH_LIST, GH_CLASSES, GH_CONFIG,
+  GH_LIST, GH_CLASSES, GH_CONFIG,
   GH_FLATCONFIG, GH_PACKAGES, GH_REQUIREMENTS
 };
 
@@ -169,9 +169,6 @@ read_global_handler(Element *, void *thunk)
   StringAccum sa;
 
   switch (reinterpret_cast<int>(thunk)) {
-
-   case GH_VERSION:
-    return String(CLICK_VERSION "\n");
 
    case GH_LIST:
     return router->element_list_string();
@@ -209,15 +206,6 @@ read_global_handler(Element *, void *thunk)
     return "<error>\n";
 
   }
-}
-
-int
-stop_global_handler(const String &s, Element *, void *, ErrorHandler *)
-{
-  int n = 1;
-  (void) cp_integer(cp_uncomment(s), &n);
-  router->adjust_driver_reservations(-n);
-  return 0;
 }
 
 
@@ -331,7 +319,8 @@ main(int argc, char **argv)
 
   errh = new FileErrorHandler(stderr, "");
   ErrorHandler::static_initialize(errh);
-  
+
+  Router::static_initialize();
   CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
@@ -513,14 +502,12 @@ particular purpose.\n");
     router->add_element(new ControlSocket, "click_driver@@ControlSocket@" + String(i + ports.size()), "unix, " + cp_quote(unix_sockets[i]), "click");
 
   // add global handlers
-  Router::add_read_handler(0, "version", read_global_handler, (void *)GH_VERSION);
   Router::add_read_handler(0, "list", read_global_handler, (void *)GH_LIST);
   Router::add_read_handler(0, "classes", read_global_handler, (void *)GH_CLASSES);
   Router::add_read_handler(0, "config", read_global_handler, (void *)GH_CONFIG);
   Router::add_read_handler(0, "flatconfig", read_global_handler, (void *)GH_FLATCONFIG);
   Router::add_read_handler(0, "packages", read_global_handler, (void *)GH_PACKAGES);
   Router::add_read_handler(0, "requirements", read_global_handler, (void *)GH_REQUIREMENTS);
-  Router::add_write_handler(0, "stop", stop_global_handler, 0);
 
   // catch control-C and SIGTERM
   signal(SIGINT, catch_signal);
