@@ -273,7 +273,7 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 DSDVRouteTable::initialize(ErrorHandler *errh)
 {
-  if (_est_type == 4 && _link_stat && _link_stat2 && 
+  if (_est_type == EstByMeas2 && _link_stat && _link_stat2 && 
       (_link_stat->get_probe_size() != table_sz1 ||
        _link_stat2->get_probe_size() != table_sz2))
     errh->warning("LinkStat probe sizes %u and %u don't match sizes %u and %u used in delivery-rate interpolation table",
@@ -341,7 +341,7 @@ DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rat
     // This test is actually wrong: I used to mistakenly believe that
     // you must hear new sequence numbers first over 1-hop routes,
     // ensuring that you would always install the 1-hop route before
-    // even thinking about another route.  But this false for 2
+    // even thinking about another route.  But this is false for 2
     // reasons: 1) 1-hop bcasts might be dropped, so you actually hear
     // the sequence number first from someone else; 2) in simulators
     // and emulators, you can delay direct broadcasts.  The bug is
@@ -375,7 +375,7 @@ DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rat
       return false;
     // lookup data rate in forward direction, must compile in this
     // size! (e.g. 134 bytes)
-    unsigned r = lookup_delivery_rate(rate1, rate2, 134);
+    unsigned r = lookup_delivery_rate(rate1, rate2, 148);
     if (r > 100)
       return false;
     rate = r;
