@@ -1,3 +1,53 @@
+2001-07-23 Monday 15:16  aguayo
+
+	* conf/grid.click (1.30): [no log message]
+
+2001-07-23 Monday 15:12  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.33), config.h.in (1.8),
+	elements/grid/gridroutetable.cc (1.6),
+	elements/grid/lookupgeogridroute.cc (1.17),
+	elements/grid/lookuplocalgridroute.cc (1.22),
+	elements/grid/radiosim.cc (1.13), elements/grid/updateroutes.cc
+	(1.21), elements/linuxmodule/fromdevice.cc (1.64),
+	elements/linuxmodule/polldevice.cc (1.119),
+	elements/linuxmodule/schedulelinux.cc (1.17),
+	elements/linuxmodule/sortedsched.cc (1.3),
+	elements/linuxmodule/staticthreadsched.cc (1.3),
+	elements/linuxmodule/todevice.cc (1.114),
+	elements/linuxmodule/tulipstats.cc (1.11),
+	elements/local/rrunqueue.cc (1.4), elements/radio/bim.cc (1.24),
+	elements/standard/addressinfo.cc (1.15),
+	elements/standard/delayshaper.cc (1.4),
+	elements/standard/delayunqueue.cc (1.4),
+	elements/standard/discard.cc (1.20),
+	elements/standard/discardnofree.cc (1.17),
+	elements/standard/drivermanager.cc (1.11),
+	elements/standard/errorelement.cc (1.7), elements/standard/idle.cc
+	(1.19), elements/standard/infinitesource.cc (1.29),
+	elements/standard/quitwatcher.cc (1.15),
+	elements/standard/randomsource.cc (1.13),
+	elements/standard/ratedsource.cc (1.40),
+	elements/standard/ratedunqueue.cc (1.14),
+	elements/standard/scheduleinfo.cc (1.33), elements/standard/tee.cc
+	(1.18), elements/standard/unqueue.cc (1.14),
+	elements/standard/unqueue2.cc (1.5), elements/userlevel/fromdump.cc
+	(1.36), elements/userlevel/kerneltap.cc (1.24),
+	elements/userlevel/todevice.cc (1.14), elements/userlevel/todump.cc
+	(1.30), lib/confparse.cc (1.79), lib/lexer.cc (1.53), lib/router.cc
+	(1.103): put standard element #includes in <click/standardd>
+
+2001-07-23 Monday 15:11  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.85), doc/Makefile.in (1.33),
+	etc/samplepackage/Makefile.in (1.20): adapt to buildtool change
+
+2001-07-23 Monday 15:10  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool (1.20): augment elements.conf format with header
+	files and exported elements; makes "elem2export" and "elem2make"
+	simpler
+
 2001-07-21 Saturday 05:20  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/chattersocket.cc (1.7),
