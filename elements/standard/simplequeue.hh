@@ -67,6 +67,7 @@ class SimpleQueue : public Element, public Storage { public:
     Packet *head() const;
 
     template <typename Filter> Packet *yank1(Filter);
+    template <typename Filter> Packet *yank1_peek(Filter);
     template <typename Filter> int yank(Filter, Vector<Packet *> &);
 
     const char *class_name() const		{ return "SimpleQueue"; }
@@ -163,6 +164,21 @@ SimpleQueue::yank1(Filter filter)
 		prev = prev_i(prev);
 	    }
 	    _head = next_i(_head);
+	    return p;
+	}
+    return 0;
+}
+
+template <typename Filter>
+Packet *
+SimpleQueue::yank1_peek(Filter filter)
+    /* return the first packet that matches
+       'filter(Packet *)'. The returned packet must *NOT* be deallocated by the
+       caller. */
+{
+    for (int trav = _head; trav != _tail; trav = next_i(trav))
+	if (filter(_q[trav])) {
+	    Packet *p = _q[trav];
 	    return p;
 	}
     return 0;
