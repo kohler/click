@@ -32,6 +32,14 @@
 @t{\arg\}
 @end rmacro
 
+@macro qsamp {arg}
+@r{``}@t{\arg\}@r{''}
+@end macro
+@tex
+% The macro definition above doesn't get space expansion right.
+\gdef\qsamp#1{@r{``}@t{#1}@r{''}}
+@end tex
+
 @syncodeindex vr cp
 @syncodeindex fn cp
 @syncodeindex tp cp
@@ -239,6 +247,12 @@ Tasks
 * Task Status::                 
 * Task Handlers::               
 * Destroying a Task::           
+
+Timers
+
+* Timer Initialization::        
+* Scheduling a Timer::          
+* Timer Status Methods::        
 
 Coding Standards
 
@@ -4148,11 +4162,11 @@ string containing two double quotes).
 
 For example:
 
-@display
-@t{cp_uncomment(}@samp{  /* blah */ "quote"/*xx*/\<2 c>}@t{)} @result{} @samp{"quote" \<2 c>}
-@t{cp_unquote(}@samp{  /* blah */ "quote"/*xx*/\<2 c>}@t{)} @result{} @samp{quote ,}
-@t{cp_quote(}@samp{quote ,}@t{)} @result{} @samp{"quote ,"}
-@end display
+@example
+cp_uncomment(@qsamp{  /* blah */ "quote"/*xx*/\<2 c>}) @result{} @qsamp{"quote" \<2 c>}
+cp_unquote(@qsamp{  /* blah */ "quote"/*xx*/\<2 c>}) @result{} @qsamp{quote ,}
+cp_quote(@qsamp{quote ,}) @result{} @qsamp{"quote ,"}
+@end example
 
 @node Config String Splitting, Parsing Functions, Quoting and Unquoting, Configuration Strings
 @section Splitting and Combining
@@ -4177,18 +4191,18 @@ contains only whitespace and comments, nothing is pushed onto
 For example:
 
 @display
-@t{cp_argvec(}@samp{  x/* ,,, */ab" c",  \<de>  , ','}@t{, @var{vec})}
-       @result{} 3 arguments:   @samp{x ab" c"}   @samp{\<de>}   @samp{','}
-@t{cp_argvec(}@samp{  /* blah, blah, blah, blah */  }@t{, @var{vec})}
+@t{cp_argvec(}@qsamp{  x/* ,,, */ab" c",  \<de>  , ','}@t{, @var{vec})}
+       @result{} 3 arguments:   @qsamp{x ab" c"}   @qsamp{\<de>}   @qsamp{','}
+@t{cp_argvec(}@qsamp{  /* blah, blah, blah, blah */  }@t{, @var{vec})}
        @result{} 0 arguments
-@t{cp_argvec(}@samp{  /* blah, blah, blah, blah */,  }@t{, @var{vec})}
-       @result{} 2 empty arguments:   @samp{}   @samp{}
-@t{cp_spacevec(}@samp{  x/* ,,, */yz" w"  \<d e>  ""}@t{, @var{vec})}
-       @result{} 4 arguments:   @samp{x}   @samp{yz" w"}   @samp{\<d e>}   @samp{""}
-@t{cp_spacevec(}@samp{  /* blah, blah, blah, blah */  }@t{, @var{vec})}
+@t{cp_argvec(}@qsamp{  /* blah, blah, blah, blah */,  }@t{, @var{vec})}
+       @result{} 2 empty arguments:   @qsamp{}   @qsamp{}
+@t{cp_spacevec(}@qsamp{  x/* ,,, */yz" w"  \<d e>  ""}@t{, @var{vec})}
+       @result{} 4 arguments:   @qsamp{x}   @qsamp{yz" w"}   @qsamp{\<d e>}   @qsamp{""}
+@t{cp_spacevec(}@qsamp{  /* blah, blah, blah, blah */  }@t{, @var{vec})}
        @result{} 0 arguments
-@t{cp_spacevec(}@samp{  /* blah, blah, blah, blah */,  }@t{, @var{vec})}
-       @result{} 1 argument:   @samp{,}
+@t{cp_spacevec(}@qsamp{  /* blah, blah, blah, blah */,  }@t{, @var{vec})}
+       @result{} 1 argument:   @qsamp{,}
 @end display
 
 Since the @code{const Vector<String> &@var{conf}} arguments passed to
@@ -4218,17 +4232,17 @@ Returns a string consisting of the elements of @var{conf} separated by
 For example:
 
 @display
-@t{cp_unargvec(}[@samp{x ab" c"}, @samp{\<de>}, @samp{','}]@t{)}
-       @result{} @samp{x ab" c", \<de>, ','}
-@t{cp_unargvec(}[@samp{whatever}]@t{)}
-       @result{} @samp{whatever}
+@t{cp_unargvec(}[@qsamp{x ab" c"}, @qsamp{\<de>}, @qsamp{','}]@t{)}
+       @result{} @qsamp{x ab" c", \<de>, ','}
+@t{cp_unargvec(}[@qsamp{whatever}]@t{)}
+       @result{} @qsamp{whatever}
 @t{cp_unargvec(}[ ]@t{)}
-       @result{} @samp{}
-@t{cp_unargvec(}[@samp{,}, @samp{,}]@t{)}
+       @result{} @qsamp{}
+@t{cp_unargvec(}[@qsamp{,}, @qsamp{,}]@t{)}
        (Probably a mistake: caller should have quoted the arguments!)
-       @result{} @samp{,, ,}
-@t{cp_unspacevec(}[@samp{xy" z"}, @samp{\<de>}, @samp{','}]@t{)}
-       @result{} @samp{xy" z" \<de> ','}
+       @result{} @qsamp{,, ,}
+@t{cp_unspacevec(}[@qsamp{xy" z"}, @qsamp{\<de>}, @qsamp{','}]@t{)}
+       @result{} @qsamp{xy" z" \<de> ','}
 @end display
 
 
@@ -4293,7 +4307,7 @@ true if parsing was successful.
 @deftypefn {Parsing Function} bool cp_string (@w{const String &@var{str}}, @w{String *@var{result}}, @w{String *@var{rest} = 0})
 Parses a string from the beginning of @var{str} and stores the result in
 @code{*@var{result}}. The parsed string may contain single and double
-quotes and hex strings (@samp{\< @dots{} >}), which are processed as by
+quotes and hex strings (@qsamp{\< @dots{} >}), which are processed as by
 @code{cp_unquote} (@pxref{Quoting and Unquoting}).
 
 If the @var{rest} argument is null and @var{str} contains any unquoted
@@ -4304,17 +4318,17 @@ leftover portion of @var{str} is stored in @code{*@var{rest}}.
 For example:
 
 @display
-@t{cp_string(}@samp{"a b c d"}@t{, @var{result})} @result{} true
-       @t{*@var{result}} = @samp{a b c d}
-@t{cp_string(}@samp{}@t{, @var{result})} @result{} false
-@t{cp_string(}@samp{""}@t{, @var{result})} @result{} true
-       @t{*@var{result}} = @samp{}
-@t{cp_string(}@samp{ "a b c d"}@t{, @var{result})} @result{} false
+@t{cp_string(}@qsamp{"a b c d"}@t{, @var{result})} @result{} true
+       @t{*@var{result}} = @qsamp{a b c d}
+@t{cp_string(}@qsamp{}@t{, @var{result})} @result{} false
+@t{cp_string(}@qsamp{""}@t{, @var{result})} @result{} true
+       @t{*@var{result}} = @qsamp{}
+@t{cp_string(}@qsamp{ "a b c d"}@t{, @var{result})} @result{} false
        (@var{str} began with an unquoted space)
-@t{cp_string(}@samp{"a b c d" e}@t{, @var{result})} @result{} false
+@t{cp_string(}@qsamp{"a b c d" e}@t{, @var{result})} @result{} false
        (@var{str} contained an unquoted space)
-@t{cp_string(}@samp{"a b c d" e}@t{, @var{result}, @var{rest})} @result{} true
-       @t{*@var{result}} = @samp{a b c d}, @t{*@var{rest}} = @samp{ e}
+@t{cp_string(}@qsamp{"a b c d" e}@t{, @var{result}, @var{rest})} @result{} true
+       @t{*@var{result}} = @qsamp{a b c d}, @t{*@var{rest}} = @qsamp{ e}
 @end display
 @end deftypefn
 
@@ -4324,7 +4338,7 @@ Parses a word from the beginning of @var{str} and stores the result in
 whitespace, control characters, non-ASCII characters (with values 127 or
 higher), or special characters (@samp{'}, @samp{"}, @samp{\}, or
 @samp{,}). @var{str} may contain single and double quotes and hex
-strings (@samp{\< @dots{} >}), which are processed as by
+strings (@qsamp{\< @dots{} >}), which are processed as by
 @code{cp_unquote} (@pxref{Quoting and Unquoting}). The unquoted result
 must not contain quote marks, whitespace, or other special characters,
 however. Returns true if and only if @var{str} contained a valid word.
@@ -4337,11 +4351,11 @@ leftover portion of @var{str} is stored in @code{*@var{rest}}.
 For example:
 
 @display
-@t{cp_word(}@samp{word}@t{, @var{result})} @result{} true
-       @t{*@var{result}} = @samp{word}
-@t{cp_word(}@samp{"wor"\<64>}@t{, @var{result})} @result{} true
-       @t{*@var{result}} = @samp{word}
-@t{cp_word(}@samp{"wor d"}@t{, @var{result})} @result{} false
+@t{cp_word(}@qsamp{word}@t{, @var{result})} @result{} true
+       @t{*@var{result}} = @qsamp{word}
+@t{cp_word(}@qsamp{"wor"\<64>}@t{, @var{result})} @result{} true
+       @t{*@var{result}} = @qsamp{word}
+@t{cp_word(}@qsamp{"wor d"}@t{, @var{result})} @result{} false
        (processed string contained a space)
 @end display
 @end deftypefn
@@ -4362,9 +4376,9 @@ leftover portion of @var{str} is stored in @code{*@var{rest}}.
 For example:
 
 @display
-@t{cp_keyword(}@samp{word}@t{, @var{result})} @result{} true
-       @t{*@var{result}} = @samp{word}
-@t{cp_keyword(}@samp{"wor"\<64>}@t{, @var{result})} @result{} false
+@t{cp_keyword(}@qsamp{word}@t{, @var{result})} @result{} true
+       @t{*@var{result}} = @qsamp{word}
+@t{cp_keyword(}@qsamp{"wor"\<64>}@t{, @var{result})} @result{} false
        (quotes not allowed in keywords)
 @end display
 @end deftypefn
@@ -5437,12 +5451,28 @@ Cleans up the @code{Task} object.
 @node Timers, Coding Standards, Tasks, Top
 @chapter Timers
 
-Timers
+Click @dfn{timers}, like Click tasks, represent callback functions that
+the driver calls when appropriate. Unlike tasks, however, timers are
+scheduled to go off at a specified time.
+
 
 @menu
+* Timer Initialization::        
+* Scheduling a Timer::          
+* Timer Status Methods::        
 @end menu
 
 
+@node Timer Initialization, Scheduling a Timer, Timers, Timers
+@section Timer Initialization
+
+
+@node Scheduling a Timer, Timer Status Methods, Timer Initialization, Timers
+@section Scheduling a Timer
+
+
+@node Timer Status Methods,  , Scheduling a Timer, Timers
+@section Timer Status Methods
 
 
 
