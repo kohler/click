@@ -14,6 +14,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include "glue.hh"
 #include "todump.hh"
 #include "confparse.hh"
 #include "error.hh"
