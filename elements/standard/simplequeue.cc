@@ -171,6 +171,28 @@ SimpleQueue::pull(int)
   return deq();
 }
 
+Vector<Packet *>
+SimpleQueue::yank(bool (filter)(const Packet *))
+{
+  // remove all packets from the queue that match filter(); return in
+  // a vector.  caller is responsible for managing the yank()-ed
+  // packets from now on, i.e. deallocating them.
+  Vector<Packet *> v;
+  
+  int next_slot = _head;
+  for (int i = _head; i != _tail; i = next_i(i)) {
+    if (filter(_q[i]))
+      v.push_back(_q[i]);
+    else {
+      _q[next_slot] = _q[i];
+      next_slot = next_i(next_slot);
+    }
+  }
+  _tail = next_slot;
+
+  return v;
+}
+
 
 String
 SimpleQueue::read_handler(Element *e, void *thunk)

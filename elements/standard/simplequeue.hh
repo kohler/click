@@ -65,6 +65,8 @@ class SimpleQueue : public Element, public Storage { public:
   Packet *deq();
   Packet *head() const;
   
+  Vector<Packet *> yank(bool (filter)(const Packet *));
+
   const char *class_name() const		{ return "SimpleQueue"; }
   const char *processing() const		{ return PUSH_TO_PULL; }
   void *cast(const char *);
