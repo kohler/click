@@ -187,17 +187,31 @@ LinkStat::read_bcast_stats(Element *xf, void *)
 {
   LinkStat *f = (LinkStat *) xf;
 
+  Vector<EtherAddress> e_vec;
+  int num = 0;
+
+  click_chatter("LS read_stats XXXX 1");
+
   String s;
   for (BigHashMap<EtherAddress, Vector<LinkStat::bcast_t> >::Iterator i = f->_bcast_stats.first(); i; i++) {
+    e_vec.push_back(i.key());
+    num++;
+  }
+
+  click_chatter("LS read_stats XXXX 2");
+
+  for (int i = 0; i < num; i++) {
+    click_chatter("LS read_stats XXXX 3");
     struct timeval when;
     unsigned int window, num_rx, num_expected;    
-    bool res = f->get_bcast_stats(i.key(), when, window, num_rx, num_expected);
+    bool res = f->get_bcast_stats(e_vec[i], when, window, num_rx, num_expected);
     if (!res || window != f->_window) 
       return "Error: inconsistent data structures\n";
 
     char timebuf[80];
     snprintf(timebuf, 80, "%lu.%06lu", when.tv_sec, when.tv_usec);
-    s += i.key().s() + " last=" + timebuf + " num_rx=" + String(num_rx) + " num_expected=" + String(num_expected) + "\n";
+    s += e_vec[i].s() + " last=" + timebuf + " num_rx=" + String(num_rx) + " num_expected=" + String(num_expected) + "\n";
+    click_chatter("LS read_stats XXXX 4");
   }
   return s;
 }

@@ -28,9 +28,11 @@
 #include "gridroutetable.hh"
 #include "timeutils.hh"
 
+#define SEQ_DELAY 25
+
 GridRouteTable::GridRouteTable() : 
   Element(1, 1), 
-  _seq_no(0),
+  _seq_no(0), _fake_seq_no(0),
   _max_hops(3), 
   _expire_timer(expire_hook, this),
   _hello_timer(hello_hook, this),
@@ -534,7 +536,7 @@ GridRouteTable::should_replace_old_route(const RTEntry &old_route, const RTEntry
     return true;
   
   /* 
-   * routes have same age, choose based on metric 
+   * routes have same seqno, choose based on metric 
    */
   
   /* prefer a route with a valid metric */
@@ -550,7 +552,11 @@ GridRouteTable::should_replace_old_route(const RTEntry &old_route, const RTEntry
     return false;;
   
   // both metrics are valid
-  /* only use a new route if the metric is better */
+  /* update is from same node as last update, we should accept it to avoid unwarranted timeout */
+  if (old_route.next_hop_ip == new_route.next_hop_ip)
+    return true;
+   
+  /* update route if the metric is better */
   return metric_is_preferable(new_route, old_route);
 }
 
@@ -1299,8 +1305,11 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
    * advertise broken routes 
    */
   assert(!(_seq_no & 1));
-  if (update_seq) 
-    _seq_no += 2;
+  if (update_seq) {
+    _fake_seq_no++;
+    if ((_fake_seq_no % SEQ_DELAY) == 0)
+      _seq_no += 2;
+  }
   
   hlo->ttl = htonl(grid_hello::MAX_TTL_DEFAULT);
 
