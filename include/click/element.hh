@@ -87,7 +87,6 @@ class Element { public:
 		      CLEANUP_CONFIGURED, CLEANUP_INITIALIZE_FAILED,
 		      CLEANUP_INITIALIZED, CLEANUP_ROUTER_INITIALIZED };
   virtual void cleanup(CleanupStage);
-  virtual void uninitialize();	// deprecated
 
   // LIVE RECONFIGURATION
   virtual void configuration(Vector<String> &) const;
@@ -182,11 +181,6 @@ class Element { public:
 
  private:
 
-  // deprecated methods
-  virtual int configure(const Vector<String> &, ErrorHandler *);
-  virtual int live_reconfigure(const Vector<String> &, ErrorHandler *);
-  virtual void configuration(Vector<String> &, bool *) const;
-  
   enum { INLINE_PORTS = 4 };
 
   Port *_inputs;

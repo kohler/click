@@ -460,13 +460,6 @@ Element::configure_phase() const
 int
 Element::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  const Vector<String> &conf2(conf);
-  return configure(conf2, errh);
-}
-
-int
-Element::configure(const Vector<String> &conf, ErrorHandler *errh)
-{
   return cp_va_parse(conf, this, errh, cpEnd);
 }
 
@@ -477,14 +470,7 @@ Element::initialize(ErrorHandler *)
 }
 
 void
-Element::cleanup(CleanupStage stage)
-{
-  if (stage >= CLEANUP_INITIALIZED)
-    uninitialize();
-}
-
-void
-Element::uninitialize()
+Element::cleanup(CleanupStage)
 {
 }
 
@@ -506,13 +492,6 @@ Element::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("cannot reconfigure %e live", this);
 }
 
-int
-Element::live_reconfigure(const Vector<String> &, ErrorHandler *)
-{
-  assert(0);
-  return -1;
-}
-
 void
 Element::take_state(Element *, ErrorHandler *)
 {
@@ -525,12 +504,6 @@ static int was_default_configuration;
 
 void
 Element::configuration(Vector<String> &conf) const
-{
-  configuration(conf, (bool *)0);
-}
-
-void
-Element::configuration(Vector<String> &conf, bool *) const
 {
   // Handle configuration(void) requests specially by preserving whitespace.
   String s = router()->default_configuration_string(eindex());
@@ -548,6 +521,8 @@ Element::configuration() const
   Vector<String> conf;
   configuration(conf);
   store_default_configuration = 0;
+  // cp_unargvec(conf) will return conf[0] if conf has one element, so
+  // store_default_configuration will work as expected.
   return cp_unargvec(conf);
 }
 
@@ -756,7 +731,7 @@ String
 Element::read_positional_handler(Element *element, void *thunk)
 {
   Vector<String> conf;
-  element->configuration(conf, 0);
+  element->configuration(conf);
   int no = (int)thunk;
   if (no >= conf.size())
     return String();
@@ -774,7 +749,7 @@ String
 Element::read_keyword_handler(Element *element, void *thunk)
 {
   Vector<String> conf;
-  element->configuration(conf, 0);
+  element->configuration(conf);
   const char *kw = (const char *)thunk;
   String s;
   for (int i = conf.size() - 1; i >= 0; i--)
