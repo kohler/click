@@ -320,6 +320,12 @@ RouterT::add_tunnel(String in, String out, const String &landmark,
 void
 RouterT::add_requirement(const String &s)
 {
+  _require_map.insert(s, 1);
+}
+
+void
+RouterT::remove_requirement(const String &s)
+{
   _require_map.insert(s, 0);
 }
 
@@ -791,7 +797,7 @@ RouterT::expand_into(RouterT *fromr, int which, RouterT *tor,
     int thunk = 0, val;
     String key;
     while (_require_map.each(thunk, key, val))
-      if (val >= 0)
+      if (val > 0)
 	tor->add_requirement(key);
   }
   
@@ -897,7 +903,7 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
     int thunk = 0, val;
     String key;
     while (_require_map.each(thunk, key, val))
-      if (val >= 0) {
+      if (val > 0) {
 	if (require_sa.length()) require_sa << ", ";
 	require_sa << cp_unsubst(key);
       }

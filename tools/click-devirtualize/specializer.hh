@@ -3,6 +3,7 @@
 #include "cxxclass.hh"
 class RouterT;
 class ErrorHandler;
+class ElementMap;
 
 String click_to_cxx_name(const String &);
 String specialized_click_name(RouterT *, int);
@@ -18,6 +19,7 @@ struct ElementTypeInfo {
 };
 
 struct SpecializedClass {
+  String old_click_name;
   String click_name;
   String cxx_name;
   CxxClass *cxxc;
@@ -38,6 +40,7 @@ class Specializer {
   HashMap<String, int> _etinfo_map;
   Vector<ElementTypeInfo> _etinfo;
   HashMap<String, int> _header_file_map;
+  HashMap<String, int> _parsed_sources;
 
   Vector<SpecializedClass> _specials;
 
@@ -49,6 +52,7 @@ class Specializer {
   const String &enew_click_type(int) const;
   const String &enew_cxx_type(int) const;
   
+  void parse_source_file(const String &, bool, String *);
   void read_source(ElementTypeInfo &, ErrorHandler *);
   int check_specialize(int, ErrorHandler *);
   void create_class(SpecializedClass &);
@@ -60,24 +64,26 @@ class Specializer {
 
  public:
 
-  Specializer(RouterT *);
+  Specializer(RouterT *, const ElementMap &);
 
   ElementTypeInfo &type_info(const String &);
   const ElementTypeInfo &type_info(const String &) const;
   ElementTypeInfo &etype_info(int);
   const ElementTypeInfo &etype_info(int) const;
   void add_type_info(const String &, const String &, const String & =String());
-  void parse_elementmap(const String &);
 
   void set_specializing_classes(const HashMap<String, int> &);
   int set_specialize_like(String, String, ErrorHandler *);
 
   void specialize(ErrorHandler *);
   void fix_elements();
+
+  int nspecials() const				{ return _specials.size(); }
+  const SpecializedClass &special(int i) const	{ return _specials[i]; }
   
   void output(StringAccum &);
   void output_package(const String &, StringAccum &);
-  String output_new_elementmap(const String &) const;
+  void output_new_elementmap(const ElementMap &, ElementMap &, const String &) const;
   
 };
 

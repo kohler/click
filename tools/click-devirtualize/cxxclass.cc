@@ -320,6 +320,11 @@ CxxClass::find_should_rewrite()
 {
   _has_push.assign(nfunctions(), 0);
   _has_pull.assign(nfunctions(), 0);
+  _should_rewrite.assign(nfunctions(), 0);
+  
+  if (_fn_map["devirtualize_never"] >= 0)
+    return false;
+  
   String push_pattern = compile_pattern("output(#0).push(#1)");
   String pull_pattern = compile_pattern("input(#0).pull()");
   String checked_push_pattern = compile_pattern("checked_push_output(#0,#1)");
@@ -331,7 +336,6 @@ CxxClass::find_should_rewrite()
       _has_pull[i] = 1;
   }
 
-  _should_rewrite.assign(nfunctions(), 0);
   Vector<int> reached(nfunctions(), 0);
   bool any = reach(_fn_map["push"], reached);
   any |= reach(_fn_map["pull"], reached);
@@ -341,14 +345,14 @@ CxxClass::find_should_rewrite()
     reach(simple_action, reached);
     _should_rewrite[simple_action] = any = true;
   }
-  int specialize_away = _fn_map["specialize_away"];
-  if (specialize_away >= 0) {
+  if (_fn_map["devirtualize_all"] >= 0) {
     for (int i = 0; i < nfunctions(); i++) {
       const String &n = _functions[i].name();
       if (n != _name && n[0] != '~')
 	_should_rewrite[i] = any = true;
     }
   }
+  
   return any;
 }
 

@@ -4,7 +4,7 @@ SHELL = @SHELL@
 srcdir := @srcdir@
 top_srcdir := @top_srcdir@
 top_builddir := ../..
-subdir := tools/click-specialize
+subdir := tools/click-devirtualize
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -38,7 +38,7 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-OBJS = cxxclass.o specializer.o click-specialize.o
+OBJS = cxxclass.o specializer.o click-devirtualize.o
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
@@ -58,12 +58,12 @@ CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: libclicktool.a all-local
-all-local: click-specialize
+all-local: click-devirtualize
 
 libclicktool.a:
 	@cd ../lib; $(MAKE) libclicktool.a
 
-click-specialize: Makefile $(OBJS) ../lib/libclicktool.a
+click-devirtualize: Makefile $(OBJS) ../lib/libclicktool.a
 	$(CXXLINK) $(OBJS) ../lib/libclicktool.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
@@ -75,13 +75,13 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click-specialize
+install: click-devirtualize
 	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click-specialize $(bindir)/click-specialize
+	$(INSTALL) click-devirtualize $(bindir)/click-devirtualize
 install-man:
 
 clean:
-	rm -f *.d *.o click-specialize
+	rm -f *.d *.o click-devirtualize
 distclean: clean
 	-rm -f Makefile
 

@@ -15,7 +15,7 @@ bindir = @bindir@
 INSTALL = @INSTALL@
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
-TOOLDIRS = click-align click-fastclassifier click-install click-specialize click-xform udpgen
+TOOLDIRS = click-align click-devirtualize click-fastclassifier click-install click-xform udpgen
 TARGETS = @TOOL_TARGETS@
 
 all: $(TARGETS)
@@ -24,12 +24,12 @@ lib: always Makefile
 	@cd lib; $(MAKE) all
 click-align: lib Makefile
 	@cd click-align; $(MAKE) all-local
+click-devirtualize: lib Makefile
+	@cd click-devirtualize; $(MAKE) all-local
 click-fastclassifier: lib Makefile
 	@cd click-fastclassifier; $(MAKE) all-local
 click-install: lib Makefile
 	@cd click-install; $(MAKE) all-local
-click-specialize: lib Makefile
-	@cd click-specialize; $(MAKE) all-local
 click-xform: lib Makefile
 	@cd click-xform; $(MAKE) all-local
 udpgen: Makefile
@@ -72,15 +72,15 @@ DISTFILES = Makefile.in lib/Makefile.in \
 	click-align/alignment.cc click-align/alignment.hh \
 	click-align/alignclass.cc click-align/alignclass.hh \
 	click-compile.in \
+	click-devirtualize/Makefile.in \
+	click-devirtualize/click-devirtualize.cc \
+	click-devirtualize/cxxclass.cc click-devirtualize/cxxclass.hh \
+	click-devirtualize/specializer.cc click-devirtualize/specializer.hh \
 	click-fastclassifier/Makefile.in \
 	click-fastclassifier/click-fastclassifier.cc \
 	click-install/Makefile.in \
 	click-install/click-install.cc \
 	click-install/click-uninstall.cc \
-	click-specialize/Makefile.in \
-	click-specialize/click-specialize.cc \
-	click-specialize/cxxclass.cc click-specialize/cxxclass.hh \
-	click-specialize/specializer.cc click-specialize/specializer.hh \
 	click-xform/Makefile.in \
 	click-xform/adjacency.cc click-xform/adjacency.hh \
 	click-xform/click-xform.cc \

@@ -20,13 +20,13 @@
 #include "straccum.hh"
 #include <ctype.h>
 
-Specializer::Specializer(RouterT *router)
+Specializer::Specializer(RouterT *router, const ElementMap &em)
   : _router(router), _nelements(router->nelements()),
     _ninputs(router->nelements(), 0), _noutputs(router->nelements(), 0),
     _specialize(router->nelements(), 1), // specialize everything by default
     _specializing_classes(1),
     _specialize_like(_nelements, -1),
-    _etinfo_map(0), _header_file_map(-1)
+    _etinfo_map(0), _header_file_map(-1), _parsed_sources(-1)
 {
   _etinfo.push_back(ElementTypeInfo());
   
@@ -38,6 +38,10 @@ Specializer::Specializer(RouterT *router)
     if (ht[i].port >= _ninputs[ht[i].idx])
       _ninputs[ht[i].idx] = ht[i].port + 1;
   }
+
+  // prepare from element map
+  for (int i = 0; i < em.size(); i++)
+    add_type_info(em.click_name(i), em.cxx_name(i), em.header_file(i));
 }
 
 inline ElementTypeInfo &
@@ -73,55 +77,18 @@ Specializer::add_type_info(const String &click_name, const String &cxx_name,
 }
 
 void
-Specializer::parse_elementmap(const String &str)
+Specializer::parse_source_file(const String &fn, bool is_header,
+			       String *includes)
 {
-  int p = 0;
-  int len = str.length();
-  const char *s = str.data();
-  
-  while (p < len) {
-    
-    // read a line
-    while (p < len && (s[p] == ' ' || s[p] == '\t'))
-      p++;
-    
-    // skip blank lines & comments
-    if (p < len && !isspace(s[p]) && s[p] != '#') {
-      
-      // read Click name
-      int p1 = p;
-      while (p < len && !isspace(s[p]))
-	p++;
-      if (p >= len || (s[p] != ' ' && s[p] != '\t'))
-	continue;
-      String click_name = str.substring(p1, p - p1);
-      
-      // read C++ name
-      while (p < len && (s[p] == ' ' || s[p] == '\t'))
-	p++;
-      p1 = p;
-      while (p < len && !isspace(s[p]))
-	p++;
-      if (p >= len || (s[p] != ' ' && s[p] != '\t'))
-	continue;
-      String cxx_name = str.substring(p1, p - p1);
-      
-      // read header filename
-      while (p < len && (s[p] == ' ' || s[p] == '\t'))
-	p++;
-      p1 = p;
-      while (p < len && !isspace(s[p]))
-	p++;
-      String header_fn = str.substring(p1, p - p1);
-      
-      // append information
-      add_type_info(click_name, cxx_name, header_fn);
-    }
-    
-    // skip past end of line
-    while (p < len && s[p] != '\n' && s[p] != '\r' && s[p] != '\f' && s[p] != '\v')
-      p++;
-    p++;
+  // don't parse a source file twice
+  if (_parsed_sources[fn] < 0) {
+    String text;
+    if (_router->archive_index(fn) >= 0)
+      text = _router->archive(fn).data;
+    else
+      text = file_string(CLICK_SHAREDIR "/src/" + fn);
+    _cxxinfo.parse_file(text, is_header, includes);
+    _parsed_sources.insert(fn, 1);
   }
 }
 
@@ -139,18 +106,10 @@ Specializer::read_source(ElementTypeInfo &etinfo, ErrorHandler *errh)
   // parse source text
   String text, filename = etinfo.header_file;
   if (filename.substring(-2) == "hh") {
-    if (_router->archive_index(filename) >= 0)
-      text = _router->archive(filename).data;
-    else
-      text = file_string(CLICK_SHAREDIR "/src/" + filename);
-    _cxxinfo.parse_file(text, true);
+    parse_source_file(filename, true, 0);
     filename = filename.substring(0, -2) + "cc";
   }
-  if (_router->archive_index(filename) >= 0)
-    text = _router->archive(filename).data;
-  else
-    text = file_string(CLICK_SHAREDIR "/src/" + filename);
-  _cxxinfo.parse_file(text, false, &etinfo.includes);
+  parse_source_file(filename, false, &etinfo.includes);
 
   // now, read source for the element class's parents
   CxxClass *cxxc = _cxxinfo.find_class(etinfo.cxx_name);
@@ -201,10 +160,7 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
 			 _router->etype_name(eindex).cc());
   
   // belongs to a non-specialized class?
-  int try_it = 1;
   if (_specializing_classes[old_eti.click_name] <= 0)
-    try_it = 0;
-  if (try_it == 0)
     return -1;
 
   // read source code
@@ -221,6 +177,7 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
 
   // if we reach here, we should definitely specialize
   SpecializedClass spc;
+  spc.old_click_name = old_eti.click_name;
   spc.click_name = specialized_click_name(_router, eindex);
   spc.cxx_name = click_to_cxx_name(spc.click_name);
   spc.cxxc = 0;
@@ -298,6 +255,8 @@ Specializer::create_class(SpecializedClass &spc)
     (CxxFunction("push_output_checked", false, "inline void",
 		 (_noutputs[eindex] ? "(int i, Packet *p) const" : "(int, Packet *p) const"),
 		 "", ""));
+  new_cxxc->defun
+    (CxxFunction("devirtualize_never", true, "void", "()", "", ""));
 
   // transfer reachable rewritable functions to new C++ class
   // with pattern replacements
@@ -636,14 +595,13 @@ Specializer::output_package(const String &package_name, StringAccum &out)
   out << "}\n";
 }
 
-String
-Specializer::output_new_elementmap(const String &filename) const
+void
+Specializer::output_new_elementmap(const ElementMap &full_em, ElementMap &em,
+				   const String &filename) const
 {
-  StringAccum out;
   for (int i = 0; i < _specials.size(); i++)
-    out << _specials[i].click_name << '\t' << _specials[i].cxx_name << '\t'
-	<< filename << '\n';
-  return out.take_string();
+    em.add(_specials[i].click_name, _specials[i].cxx_name, filename,
+	   full_em.processing_code_click(_specials[i].old_click_name));
 }
 
 // Vector template instantiation

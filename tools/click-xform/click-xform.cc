@@ -380,12 +380,14 @@ match_config(const String &pat, const String &conf,
 #define ROUTER_OPT		302
 #define PATTERNS_OPT		303
 #define OUTPUT_OPT		304
+#define REVERSE_OPT		305
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "patterns", 'p', PATTERNS_OPT, Clp_ArgString, 0 },
+  { "reverse", 'r', REVERSE_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -415,6 +417,7 @@ Options:\n\
                                 more than once.\n\
   -f, --file FILE               Read router configuration from FILE.\n\
   -o, --output FILE             Write output to FILE.\n\
+  -r, --reverse                 Apply patterns in reverse.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
@@ -443,7 +446,6 @@ read_pattern_file(const char *name, ErrorHandler *errh)
 	RouterT *rep = fclass->cast_router();
 	RouterT *pat = pat_file->type_class(ti)->cast_router();
 	if (rep && pat) {
-	  pat->flatten(errh);
 	  patterns.push_back(pat);
 	  replacements.push_back(rep);
 	  pat_names.push_back(name.substring(0, -12));
@@ -469,6 +471,7 @@ main(int argc, char **argv)
   int num_nondash_args = 0;
   const char *router_file = 0;
   const char *output_file = 0;
+  bool reverse = 0;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -507,6 +510,10 @@ particular purpose.\n");
       }
       output_file = clp->arg;
       break;
+
+     case REVERSE_OPT:
+      reverse = !clp->negated;
+      break;
       
      case Clp_NotOption:
       if (num_nondash_args == 0 && router_file) {
@@ -540,8 +547,24 @@ particular purpose.\n");
   if (!patterns_attempted)
     errh->warning("no patterns read");
 
-  // unify pattern types
+  // manipulate patterns
   if (patterns.size()) {
+    // reverse if necessary
+    if (reverse) {
+      Vector<RouterT *> new_patterns, new_replacements;
+      for (int i = patterns.size() - 1; i >= 0; i--) {
+	new_patterns.push_back(replacements[i]);
+	new_replacements.push_back(patterns[i]);
+      }
+      patterns = new_patterns;
+      replacements = new_replacements;
+    }
+
+    // flatten patterns
+    for (int i = 0; i < patterns.size(); i++)
+      patterns[i]->flatten(errh);
+
+    // unify pattern types
     for (int i = 1; i < patterns.size(); i++)
       patterns[0]->get_types_from(patterns[i]);
     patterns[0]->get_types_from(r);

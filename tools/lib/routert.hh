@@ -87,9 +87,11 @@ class RouterT : public ElementClassT {
   void kill_connection(int i)			{ _hookup_from[i].idx = -1; }
 
   void add_requirement(const String &);
+  void remove_requirement(const String &);
   const HashMap<String, int> &requirement_map() const { return _require_map; }
 
   void add_archive(const ArchiveElement &);
+  int narchive() const				{ return _archive.size(); }
   int archive_index(const String &s) const	{ return _archive_map[s]; }
   const Vector<ArchiveElement> &archive() const	{ return _archive; }
   ArchiveElement &archive(int i)		{ return _archive[i]; }

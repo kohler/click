@@ -94,7 +94,7 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
   // check requirements
   int thunk = 0, value; String package;
   while (requirements.each(thunk, package, value))
-    if (value >= 0 && have_requirements[package] == 1) {
+    if (value > 0 && have_requirements[package] == 1) {
       // have source, but not package; compile it
       
       if (!cerrh) {
@@ -356,7 +356,7 @@ particular purpose.\n");
     const HashMap<String, int> &requirements = r->requirement_map();
     int thunk = 0, value; String key;
     while (requirements.each(thunk, key, value))
-      if (value >= 0 && packages[key] < 0) {
+      if (value > 0 && packages[key] < 0) {
 	String package = clickpath_find_file
 	  (key + ".ko", "lib", CLICK_LIBDIR);
 	if (!package)

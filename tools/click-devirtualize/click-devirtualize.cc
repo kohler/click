@@ -1,5 +1,5 @@
 /*
- * click-specialize.cc -- specializer for Click configurations
+ * click-devirtualize.cc -- virtual function eliminator for Click routers
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology.
@@ -36,21 +36,23 @@
 #define USERLEVEL_OPT		306
 #define SOURCE_OPT		307
 #define CONFIG_OPT		308
-#define NO_SPECIALIZE_OPT	309
-#define SPECIALIZE_OPT		310
+#define NO_DEVIRTUALIZE_OPT	309
+#define DEVIRTUALIZE_OPT	310
 #define LIKE_OPT		311
 #define INSTRS_OPT		312
+#define REVERSE_OPT		313
 
 static Clp_Option options[] = {
   { "config", 'c', CONFIG_OPT, 0, Clp_Negate },
+  { "devirtualize", 0, DEVIRTUALIZE_OPT, Clp_ArgString, Clp_Negate },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { 0, 'n', NO_SPECIALIZE_OPT, Clp_ArgString, 0 },
+  { 0, 'n', NO_DEVIRTUALIZE_OPT, Clp_ArgString, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
   { "instructions", 'i', INSTRS_OPT, Clp_ArgString, 0 },
   { "like", 'l', LIKE_OPT, Clp_ArgString, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
-  { "specialize", 0, SPECIALIZE_OPT, Clp_ArgString, Clp_Negate },
+  { "reverse", 'r', REVERSE_OPT, 0, Clp_Negate },
   { "source", 's', SOURCE_OPT, 0, Clp_Negate },
   { "user", 'u', USERLEVEL_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
@@ -128,6 +130,66 @@ parse_instruction_file(const char *filename, HashMap<String, int> &specializing,
   }
 }
 
+static void
+reverse_transformation(RouterT *r, ErrorHandler *)
+{
+  // parse fastclassifier_config
+  if (r->archive_index("devirtualize_info") < 0)
+    return;
+  ArchiveElement &fc_ae = r->archive("devirtualize_info");
+  Vector<String> new_click_names, old_click_names;
+  parse_tabbed_lines(fc_ae.data, true, 2, &new_click_names, &old_click_names);
+
+  // make sure new types are available for use
+  for (int i = 0; i < new_click_names.size(); i++)
+    r->get_type_index(old_click_names[i]);
+  
+  // prepare type_index_map : type_index -> configuration #
+  Vector<int> type_index_map(r->ntypes(), -1);
+  for (int i = 0; i < new_click_names.size(); i++) {
+    int ti = r->type_index(new_click_names[i]);
+    if (ti >= 0)
+      type_index_map[ti] = r->type_index(old_click_names[i]);
+  }
+
+  // change configuration
+  for (int i = 0; i < r->nelements(); i++) {
+    ElementT &e = r->element(i);
+    if (type_index_map[e.type] >= 0)
+      e.type = type_index_map[e.type];
+  }
+
+  // remove requirements
+  {
+    const HashMap<String, int> &requirements = r->requirement_map();
+    int thunk = 0, value; String key;
+    Vector<String> removers;
+    while (requirements.each(thunk, key, value))
+      if (value > 0 && key.substring(0, 12) == "devirtualize")
+	removers.push_back(key);
+    for (int i = 0; i < removers.size(); i++)
+      r->remove_requirement(removers[i]);
+  }
+  
+  // remove archive elements
+  for (int i = 0; i < r->narchive(); i++) {
+    ArchiveElement &ae = r->archive(i);
+    if (ae.name.substring(0, 12) == "devirtualize")
+      ae.name = String();
+  }
+
+  // modify elementmap
+  if (r->archive_index("elementmap") >= 0) {
+    ArchiveElement &ae = r->archive("elementmap");
+    ElementMap em(ae.data);
+    for (int i = 0; i < new_click_names.size(); i++)
+      em.remove_click(new_click_names[i]);
+    ae.data = em.unparse();
+    if (!ae.data) ae.name = String();
+  }
+}
+
+
 void
 short_usage()
 {
@@ -140,29 +202,28 @@ void
 usage()
 {
   printf("\
-`Click-specialize' transforms a router configuration by generating new code\n\
-for its elements. This new code removes virtual function calls from the packet\n\
-control path. The resulting configuration has both Click-language files and\n\
-object files.\n\
+`Click-devirtualize' transforms a router configuration by removing virtual\n\
+function calls from its elements' source code. The resulting configuration has\n\
+both Click-language files and object files.\n\
 \n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
-  -f, --file FILE             Read router configuration from FILE.\n\
-  -o, --output FILE           Write output to FILE.\n\
-  -k, --kernel                Compile into Linux kernel binary package.\n\
-  -u, --user                  Compile into user-level binary package.\n\
-  -s, --source                Write source code only.\n\
-  -c, --config                Write new configuration only.\n\
-  -n, --no-specialize CLASS   Don't specialize element class CLASS.\n\
-  -l, --like ELEM1 ELEM2      Specialize ELEM1 as if it was ELEM2.\n\
-  -i, --instructions FILE     Read specialization instructions from FILE.\n\
-      --help                  Print this message and exit.\n\
-  -v, --version               Print version number and exit.\n\
+  -f, --file FILE              Read router configuration from FILE.\n\
+  -o, --output FILE            Write output to FILE.\n\
+  -k, --kernel                 Compile into Linux kernel binary package.\n\
+  -u, --user                   Compile into user-level binary package.\n\
+  -s, --source                 Write source code only.\n\
+  -c, --config                 Write new configuration only.\n\
+  -r, --reverse                Reverse devirtualization.\n\
+  -n, --no-devirtualize CLASS  Don't devirtualize element class CLASS.\n\
+  -l, --like ELEM1 ELEM2       Devirtualize ELEM1 as if it was ELEM2.\n\
+  -i, --instructions FILE      Read devirtualization instructions from FILE.\n\
+      --help                   Print this message and exit.\n\
+  -v, --version                Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
-
 
 int
 main(int argc, char **argv)
@@ -183,6 +244,7 @@ main(int argc, char **argv)
   int config_only = 0;
   int compile_kernel = 0;
   int compile_user = 0;
+  int reverse = 0;
   Vector<String> like1, like2;
   HashMap<String, int> specializing(1);
   
@@ -196,7 +258,7 @@ main(int argc, char **argv)
       break;
       
      case VERSION_OPT:
-      printf("click-specialize (Click) %s\n", VERSION);
+      printf("click-devirtualize (Click) %s\n", VERSION);
       printf("Copyright (C) 2000 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
@@ -237,11 +299,11 @@ particular purpose.\n");
       compile_user = !clp->negated;
       break;
 
-     case SPECIALIZE_OPT:
+     case DEVIRTUALIZE_OPT:
       specializing.insert(clp->arg, !clp->negated);
       break;
       
-     case NO_SPECIALIZE_OPT:
+     case NO_DEVIRTUALIZE_OPT:
       specializing.insert(clp->arg, 0);
       break;
 
@@ -260,7 +322,11 @@ particular purpose.\n");
      case INSTRS_OPT:
       parse_instruction_file(clp->arg, specializing, like1, like2, errh);
       break;
-     
+
+     case REVERSE_OPT:
+      reverse = !clp->negated;
+      break;
+      
      bad_option:
      case Clp_BadOption:
       short_usage();
@@ -282,30 +348,44 @@ particular purpose.\n");
   if (!router || errh->nerrors() > 0)
     exit(1);
   router->flatten(errh);
-  Specializer specializer(router);
   
   // find and parse `elementmap'
+  ElementMap full_elementmap;
   {
     String elementmap_fn =
       clickpath_find_file("elementmap", "share", CLICK_SHAREDIR);
     if (!elementmap_fn)
       errh->warning("cannot find `elementmap' in CLICKPATH or `%s'", CLICK_SHAREDIR);
-    else {
-      String elementmap_text = file_string(elementmap_fn, errh);
-      specializer.parse_elementmap(elementmap_text);
-    }
+    else
+      full_elementmap.parse(file_string(elementmap_fn, errh));
   }
 
   // parse `elementmap' from router archive
-  if (router->archive_index("elementmap") >= 0) {
-    const ArchiveElement &ae = router->archive("elementmap");
-    specializer.parse_elementmap(ae.data);
+  if (router->archive_index("elementmap") >= 0)
+    full_elementmap.parse(router->archive("elementmap").data);
+
+  // initialize specializer
+  Specializer specializer(router, full_elementmap);
+
+  // open output file
+  FILE *outf = stdout;
+  if (output_file && strcmp(output_file, "-") != 0) {
+    outf = fopen(output_file, "w");
+    if (!outf)
+      errh->fatal("%s: %s", output_file, strerror(errno));
+  }
+
+  // handle reversing case
+  if (reverse) {
+    reverse_transformation(router, errh);
+    write_router_file(router, outf, errh);
+    exit(0);
   }
   
   // follow instructions embedded in router definition
-  int specializer_info_class = router->type_index("SpecializerInfo");
+  int devirtualize_info_class = router->type_index("DevirtualizeInfo");
   for (int i = 0; i < router->nelements(); i++)
-    if (router->etype(i) == specializer_info_class) {
+    if (router->etype(i) == devirtualize_info_class) {
       const String &s = router->econfiguration(i);
       Vector<String> args;
       cp_argvec(s, args);
@@ -318,20 +398,21 @@ particular purpose.\n");
   for (int i = 0; i < like1.size(); i++)
     specializer.set_specialize_like(like1[i], like2[i], errh);
   
-  // open output file
-  FILE *outf = stdout;
-  if (output_file && strcmp(output_file, "-") != 0) {
-    outf = fopen(output_file, "w");
-    if (!outf)
-      errh->fatal("%s: %s", output_file, strerror(errno));
-  }
-
   // find Click binaries
   String click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
 
   // actually specialize
   specializer.specialize(errh);
 
+  // quit early if nothing was done
+  if (specializer.nspecials() == 0) {
+    if (source_only)
+      errh->message("nothing to devirtualize");
+    else
+      write_router_file(router, outf, errh);
+    exit(0);
+  }
+  
   // output
   StringAccum out;
   out << "// click-compile: -w -fno-access-control\n\
@@ -342,13 +423,13 @@ particular purpose.\n");
   specializer.output(out);
   
   // find name of package
-  String package_name = "specialize";
+  String package_name = "devirtualize";
   int uniqueifier = 1;
   while (1) {
-    if (router->archive_index(package_name) < 0)
+    if (router->archive_index(package_name + ".cc") < 0)
       break;
     uniqueifier++;
-    package_name = "specialize" + String(uniqueifier);
+    package_name = "devirtualize" + String(uniqueifier);
   }
   router->add_requirement(package_name);
 
@@ -358,7 +439,7 @@ particular purpose.\n");
   if (source_only) {
     fwrite(out.data(), 1, out.length(), outf);
     fclose(outf);
-    return 0;
+    exit(0);
   }
   
   // create temporary directory
@@ -445,10 +526,25 @@ particular purpose.\n");
     if (router->archive_index("elementmap") < 0)
       router->add_archive(init_archive_element("elementmap", 0600));
     ArchiveElement &ae = router->archive("elementmap");
-    ae.data += specializer.output_new_elementmap(package_name + ".cc");
+    ElementMap em(ae.data);
+    specializer.output_new_elementmap(full_elementmap, em, package_name + ".cc");
+    ae.data = em.unparse();
+  }
+
+  // add devirtualize_info to archive
+  {
+    if (router->archive_index("devirtualize_info") < 0)
+      router->add_archive(init_archive_element("devirtualize_info", 0600));
+    ArchiveElement &ae = router->archive("devirtualize_info");
+    StringAccum sa;
+    for (int i = 0; i < specializer.nspecials(); i++) {
+      const SpecializedClass &c = specializer.special(i);
+      sa << c.click_name << '\t' << c.old_click_name << '\n';
+    }
+    ae.data += sa.take_string();
   }
   
   // write configuration
   write_router_file(router, outf, errh);
-  return 0;
+  exit(0);
 }

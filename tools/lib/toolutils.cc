@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <dirent.h>
+#include <stdarg.h>
 
 String
 file_string(FILE *f, ErrorHandler *errh)
@@ -110,7 +111,7 @@ read_router_file(const char *filename, ErrorHandler *errh, RouterT *router)
   // add archive bits
   if (router && archive.size()) {
     for (int i = 0; i < archive.size(); i++)
-      if (archive[i].name != "config")
+      if (archive[i].name != "config" && archive[i].name)
 	router->add_archive(archive[i]);
   }
 
@@ -144,8 +145,9 @@ write_router_file(RouterT *r, FILE *f, ErrorHandler *errh)
     for (int i = 0; i < archive.size(); i++)
       if (archive[i].name && archive[i].name != "config")
 	narchive.push_back(archive[i]);
-    
-    config_str = create_ar_string(narchive, errh);
+
+    if (narchive.size() > 1)
+      config_str = create_ar_string(narchive, errh);
   }
   
   fwrite(config_str.data(), 1, config_str.length(), f);
@@ -367,6 +369,63 @@ click_mktmpdir(ErrorHandler *errh = 0)
   }
 }
 
+void
+parse_tabbed_lines(const String &str, bool allow_spaces, int n, ...)
+{
+  va_list val;
+  Vector<void *> tabs;
+  va_start(val, n);
+  for (int i = 0; i < n; i++) {
+    Vector<String> *arg = va_arg(val, Vector<String> *);
+    tabs.push_back((void *)arg);
+  }
+  va_end(val);
+  
+  int p = 0;
+  int len = str.length();
+  const char *s = str.data();
+  
+  while (p < len) {
+    
+    // read a line
+    while (p < len && (s[p] == ' ' || s[p] == '\t'))
+      p++;
+    
+    // skip blank lines & comments
+    if (p < len && !isspace(s[p]) && s[p] != '#') {
+
+      int which = 0;
+      while (p < len && !isspace(s[p])) {
+	int p1 = p;
+	if (allow_spaces) {
+	  while (p < len && s[p] != '\n' && s[p] != '\t')
+	    p++;
+	} else {
+	  while (p < len && !isspace(s[p]))
+	    p++;
+	}
+	if (which < tabs.size()) {
+	  Vector<String> *vec = (Vector<String> *)tabs[which];
+	  vec->push_back(str.substring(p1, p - p1));
+	  which++;
+	}
+	while (p < len && (s[p] == ' ' || s[p] == '\t'))
+	  p++;
+      }
+
+      for (int i = which; i < tabs.size(); i++) {
+	Vector<String> *vec = (Vector<String> *)tabs[which];
+	vec->push_back(String());
+      }
+    }
+    
+    // skip past end of line
+    while (p < len && s[p] != '\n' && s[p] != '\r' && s[p] != '\f' && s[p] != '\v')
+      p++;
+    p++;
+  }
+}
+
 ArchiveElement
 init_archive_element(const String &name, int mode)
 {
@@ -378,4 +437,108 @@ init_archive_element(const String &name, int mode)
   ae.mode = mode;
   ae.data = String();
   return ae;
+}
+
+
+// ELEMENTMAP
+
+ElementMap::ElementMap()
+  : _click_name_map(-1), _cxx_name_map(-1)
+{
+}
+
+ElementMap::ElementMap(const String &str)
+  : _click_name_map(-1), _cxx_name_map(-1)
+{
+  parse(str);
+}
+
+String
+ElementMap::processing_code_click(const String &n) const
+{
+  int i = _click_name_map[n];
+  if (i >= 0)
+    return _processing_code[i];
+  else
+    return String();
+}
+
+void
+ElementMap::add(const String &click_name, const String &cxx_name,
+		String header_file, String processing_code)
+{
+  if (!click_name || !cxx_name)
+    return;
+
+  if (header_file == "?")
+    header_file = String();
+  if (processing_code == "?")
+    processing_code = String();
+  
+  int i = _click_name_map[click_name];
+  if (i < 0) {
+    i = _click_name.size();
+    _click_name.push_back(click_name);
+    _cxx_name.push_back(cxx_name);
+    _header_file.push_back(header_file);
+    _processing_code.push_back(processing_code);
+    _click_name_map.insert(click_name, i);
+    _cxx_name_map.insert(cxx_name, i);
+  } else {
+    _click_name[i] = click_name;
+    _cxx_name[i] = cxx_name;
+    _header_file[i] = header_file;
+    _processing_code[i] = processing_code;
+  }
+}
+
+void
+ElementMap::remove(int i)
+{
+  if (i < 0 || i >= _click_name.size())
+    return;
+
+  _click_name_map.insert(_click_name[i], -1);
+  _cxx_name_map.insert(_cxx_name[i], -1);
+
+  if (i < _click_name.size() - 1) {
+    _click_name[i] = _click_name.back();
+    _cxx_name[i] = _cxx_name.back();
+    _header_file[i] = _header_file.back();
+    _processing_code[i] = _processing_code.back();
+    _click_name_map.insert(_click_name[i], i);
+    _cxx_name_map.insert(_cxx_name[i], i);
+  }
+  _click_name.pop_back();
+  _cxx_name.pop_back();
+  _header_file.pop_back();
+  _processing_code.pop_back();
+}
+
+void
+ElementMap::parse(const String &str)
+{
+  Vector<String> a, b, c, d;
+  parse_tabbed_lines(str, false, 4, &a, &b, &c, &d);
+  for (int i = 0; i < a.size(); i++)
+    add(a[i], b[i], c[i], d[i]);
+}
+
+String
+ElementMap::unparse() const
+{
+  StringAccum sa;
+  for (int i = 0; i < size(); i++) {
+    sa << _click_name[i] << '\t' << _cxx_name[i] << '\t';
+    if (_header_file[i])
+      sa << _header_file[i] << '\t';
+    else
+      sa << "?\t";
+    if (_processing_code[i])
+      sa << _processing_code[i];
+    else
+      sa << '?';
+    sa << '\n';
+  }
+  return sa.take_string();
 }

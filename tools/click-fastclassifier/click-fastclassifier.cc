@@ -38,6 +38,7 @@
 #define USERLEVEL_OPT		305
 #define SOURCE_OPT		306
 #define CONFIG_OPT		307
+#define REVERSE_OPT		308
 
 static Clp_Option options[] = {
   { "config", 'c', CONFIG_OPT, 0, Clp_Negate },
@@ -45,6 +46,7 @@ static Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "reverse", 'r', REVERSE_OPT, 0, Clp_Negate },
   { "source", 's', SOURCE_OPT, 0, Clp_Negate },
   { "user", 'u', USERLEVEL_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
@@ -79,6 +81,7 @@ Options:\n\
   -u, --user                  Compile into user-level binary package.\n\
   -s, --source                Write source code only.\n\
   -c, --config                Write new configuration only.\n\
+  -r, --reverse               Reverse transformation.\n\
       --help                  Print this message and exit.\n\
   -v, --version               Print version number and exit.\n\
 \n\
@@ -270,6 +273,7 @@ write_unchecked_program(const Classificand &c, StringAccum &source)
 
 static Vector<String> gen_eclass_names;
 static Vector<String> gen_cxxclass_names;
+static Vector<String> old_configurations;
 
 static Vector<Classificand> all_programs;
 
@@ -370,15 +374,16 @@ analyze_classifier(RouterT *r, int classifier_ei,
   String cxx_name = translate_class_name(class_name);
   gen_eclass_names.push_back(class_name);
   gen_cxxclass_names.push_back(cxx_name);
+  old_configurations.push_back(r->econfiguration(classifier_ei));
 
   header << "class " << cxx_name << " : public Element {\n\
-  void specialize_away() { }\n\
+  void devirtualize_all() { }\n\
  public:\n  "
 	 << cxx_name << "() { set_ninputs(1); set_noutputs(" << noutputs
 	 << "); MOD_INC_USE_COUNT; }\n  ~"
 	 << cxx_name << "() { MOD_DEC_USE_COUNT; }\n\
   const char *class_name() const { return \"" << class_name << "\"; }\n\
-  Processing default_processing() const { return PUSH; }\n  "
+  const char *processing() const { return PUSH; }\n  "
 	 << cxx_name << " *clone() const { return new " << cxx_name << "; }\n";
 
   if (c.output_everything >= 0) {
@@ -412,6 +417,65 @@ analyze_classifier(RouterT *r, int classifier_ei,
 }
 
 
+static void
+reverse_transformation(RouterT *r, ErrorHandler *)
+{
+  int classifier_type_index = r->get_type_index("Classifier");
+
+  // parse fastclassifier_config
+  if (r->archive_index("fastclassifier_info") < 0)
+    return;
+  ArchiveElement &fc_ae = r->archive("fastclassifier_info");
+  Vector<String> click_names, configurations;
+  parse_tabbed_lines(fc_ae.data, true, 2, &click_names, &configurations);
+
+  // prepare type_index_map : type_index -> configuration #
+  Vector<int> type_index_map(r->ntypes(), -1);
+  for (int i = 0; i < click_names.size(); i++) {
+    int ti = r->type_index(click_names[i]);
+    if (ti >= 0)
+      type_index_map[ti] = i;
+  }
+
+  // change configuration
+  for (int i = 0; i < r->nelements(); i++) {
+    ElementT &e = r->element(i);
+    if (type_index_map[e.type] >= 0) {
+      e.configuration = configurations[ type_index_map[e.type] ];
+      e.type = classifier_type_index;
+    }
+  }
+
+  // remove requirements
+  {
+    const HashMap<String, int> &requirements = r->requirement_map();
+    int thunk = 0, value; String key;
+    Vector<String> removers;
+    while (requirements.each(thunk, key, value))
+      if (value > 0 && key.substring(0, 14) == "fastclassifier")
+	removers.push_back(key);
+    for (int i = 0; i < removers.size(); i++)
+      r->remove_requirement(removers[i]);
+  }
+  
+  // remove archive elements
+  for (int i = 0; i < r->narchive(); i++) {
+    ArchiveElement &ae = r->archive(i);
+    if (ae.name.substring(0, 14) == "fastclassifier")
+      ae.name = String();
+  }
+
+  // modify elementmap
+  if (r->archive_index("elementmap") >= 0) {
+    ArchiveElement &ae = r->archive("elementmap");
+    ElementMap em(ae.data);
+    for (int i = 0; i < click_names.size(); i++)
+      em.remove_click(click_names[i]);
+    ae.data = em.unparse();
+    if (!ae.data) ae.name = String();
+  }
+}
+
 int
 main(int argc, char **argv)
 {
@@ -432,6 +496,7 @@ main(int argc, char **argv)
   int compile_user = 0;
   bool source_only = false;
   bool config_only = false;
+  bool reverse = false;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -468,6 +533,10 @@ particular purpose.\n");
       output_file = clp->arg;
       break;
 
+     case REVERSE_OPT:
+      reverse = !clp->negated;
+      break;
+      
      case SOURCE_OPT:
       source_only = !clp->negated;
       break;
@@ -510,6 +579,13 @@ particular purpose.\n");
       errh->fatal("%s: %s", output_file, strerror(errno));
   }
 
+  // handle reverse case
+  if (reverse) {
+    reverse_transformation(r, errh);
+    write_router_file(r, outf, errh);
+    exit(0);
+  }
+  
   // find Click binaries
   runclick_prog = clickpath_find_file("click", "bin", CLICK_BINDIR, errh);
   String click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
@@ -538,7 +614,7 @@ particular purpose.\n");
   String package_name = "fastclassifier";
   int uniqueifier = 1;
   while (1) {
-    if (r->archive_index(package_name) < 0)
+    if (r->archive_index(package_name + ".cc") < 0)
       break;
     uniqueifier++;
     package_name = "fastclassifier" + String(uniqueifier);
@@ -670,16 +746,35 @@ particular purpose.\n");
     if (r->archive_index("elementmap") < 0)
       r->add_archive(init_archive_element("elementmap", 0600));
     ArchiveElement &ae = r->archive("elementmap");
-    StringAccum sa;
+    ElementMap em(ae.data);
+    String header_file = package_name + ".hh";
     for (int i = 0; i < gen_eclass_names.size(); i++)
-      sa << gen_eclass_names[i] << '\t' << gen_cxxclass_names[i] << '\t'
-	 << package_name << ".hh\n";
+      em.add(gen_eclass_names[i], gen_cxxclass_names[i], header_file, "h/h");
+    ae.data = em.unparse();
+  }
+
+  // add classifier configurations to archive
+  {
+    if (r->archive_index("fastclassifier_info") < 0)
+      r->add_archive(init_archive_element("fastclassifier_info", 0600));
+    ArchiveElement &ae = r->archive("fastclassifier_info");
+    StringAccum sa;
+    for (int i = 0; i < gen_eclass_names.size(); i++) {
+      String x = cp_subst(old_configurations[i]);
+      sa << gen_eclass_names[i] << '\t';
+      for (int j = 0; j < x.length(); j++)
+	if (x[j] == '\n' || x[j] == '\t')
+	  sa << ' ';
+	else
+	  sa << x[j];
+      sa << '\n';
+    }
     ae.data += sa.take_string();
   }
   
   // write configuration
   write_router_file(r, outf, errh);
-  return 0;
+  exit(0);
 }
 
 // generate Vector template instance
