@@ -26,7 +26,7 @@ public class Util {
 	System.exit(-1);
     }
 
-    static public void assert(boolean b, String msg) {
+    static public void uassert(boolean b, String msg) {
         if (b) return;
         System.err.println("ASSERTION FAILED: " + msg);
 	try { throw new Exception("ASSERTION FAILED"); }
@@ -34,8 +34,8 @@ public class Util {
 	System.exit(-1);
     }
     
-    static public void assert(boolean b) { 
-	assert(b, "<no message>"); 
+    static public void uassert(boolean b) { 
+	uassert(b, "<no message>"); 
     }
     
     public static String printDouble(double d, int p) {
