@@ -349,7 +349,25 @@ if ($PROGMAN) {
     close TMP;
 }
 
-# 8. create doc.tar.gz
+# 8. install FAQ
+open(IN, "click-$VERSION/FAQ") || die;
+select IN;
+undef $/;
+my($faq) = <IN>;
+close IN;
+$faq =~ s/\&/&amp;/g;
+$faq =~ s/</&lt;/g;
+open(FAQ, "$WEBDIR/faq.html") || die;
+select FAQ;
+undef $/;
+my($htmlfaq) = <FAQ>;
+$htmlfaq =~ s{<!-- faq -->.*<!-- /faq -->}{<!-- faq -->$faq<!-- /faq -->}s;
+close FAQ;
+open(FAQ, ">$WEBDIR/faq.html") || die;
+print FAQ $htmlfaq;
+close(FAQ);
+
+# 9. create doc.tar.gz
 if ($DOC_TAR_GZ) {
     $DOCDIR = "/tmp/%click-webdoc/click-doc-$VERSION";
     mysystem("rm -rf $DOCDIR && mkdir $DOCDIR");
