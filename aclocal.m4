@@ -15,6 +15,7 @@ dnl
 AC_DEFUN([CLICK_INIT], [
     ac_user_cc= ; test -n "$CC" && ac_user_cc=y
     ac_user_cxx= ; test -n "$CXX" && ac_user_cxx=y
+    ac_user_build_cxx= ; test -n "$BUILD_CXX" && ac_user_build_cxx=y
     ac_user_kernel_cxx= ; test -n "$KERNEL_CXX" && ac_user_kernel_cxx=y
     ac_compile_with_warnings=y
 
@@ -100,6 +101,19 @@ by setting the "'`'"CXX' environment variable and rerunning me.
 
 
 dnl
+dnl CLICK_PROG_BUILD_CXX
+dnl Prepare the C++ compiler for the build host.
+dnl
+
+AC_DEFUN([CLICK_PROG_BUILD_CXX], [
+    dnl This doesn't really work, but it's close.
+    ac_base_build_cxx="$CXX"
+    test -z "$ac_user_build_cxx" -a -n "$ac_compile_with_warnings" && \
+	BUILD_CXX="$BUILD_CXX -Wp,-w -W -Wall -fno-exceptions -fno-rtti -fvtable-thunks"
+])
+
+
+dnl
 dnl CLICK_PROG_KERNEL_CXX
 dnl Prepare the kernel-ready C++ compiler.
 dnl
@@ -141,7 +155,7 @@ dnl already.
 dnl
 
 AC_DEFUN([CLICK_CHECK_BUILD_DYNAMIC_LINKING], [
-    saver="SAVE_CXX='$CXX' SAVE_CXXCPP='$CXXCPP' ac_cv_header_dlfcn_h='$ac_cv_header_dlfcn_h' ac_cv_func_dlopen='$ac_cv_func_dlopen' ac_cv_lib_dl_dlopen='$ac_cv_lib_dl_dlopen'"
+    saver="CXX='$CXX' CXXCPP='$CXXCPP' ac_cv_header_dlfcn_h='$ac_cv_header_dlfcn_h' ac_cv_func_dlopen='$ac_cv_func_dlopen' ac_cv_lib_dl_dlopen='$ac_cv_lib_dl_dlopen'"
     CXX="$BUILD_CXX"; CXXCPP="$BUILD_CXX -E"
     unset ac_cv_header_dlfcn_h ac_cv_func_dlopen ac_cv_lib_dl_dlopen
     BUILD_DL_LIBS=
@@ -160,7 +174,7 @@ Build system and host system don't have the same dynamic linking state!
 =========================================])
     fi
     AC_SUBST(BUILD_DL_LIBS)
-    $saver
+    eval "$saver"
 ])
 
 
