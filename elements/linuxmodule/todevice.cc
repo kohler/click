@@ -258,7 +258,7 @@ ToDevice::tx_intr()
 #if CLICK_DEVICE_ADJUST_TICKETS
   // simple additive increase multiplicative decrease scheme
   int adj = 0;
-  if (sent >= INPUT_BATCH)
+  if (sent > 2)
     adj = sent;
   else if (sent == 0)
     adj = 0-(tickets()>>4);
