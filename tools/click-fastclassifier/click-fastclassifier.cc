@@ -54,6 +54,7 @@
 #define COMBINE_OPT		311
 #define COMPILE_OPT		312
 #define QUIET_OPT		313
+#define VERBOSE_OPT		314
 
 static Clp_Option options[] = {
   { "classes", 0, COMPILE_OPT, 0, Clp_Negate },
@@ -69,6 +70,7 @@ static Clp_Option options[] = {
   { "reverse", 'r', REVERSE_OPT, 0, Clp_Negate },
   { "source", 's', SOURCE_OPT, 0, Clp_Negate },
   { "user", 'u', USERLEVEL_OPT, 0, Clp_Negate },
+  { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -76,6 +78,7 @@ static const char *program_name;
 static String::Initializer string_initializer;
 static String runclick_prog;
 static String click_compile_prog;
+static bool verbose;
 
 void
 short_usage()
@@ -275,6 +278,7 @@ operator!=(const Classifier_Program &c1, const Classifier_Program &c2)
 struct FastClassifier_Cid {
   String name;
   int guaranteed_packet_length;
+  void (*headers)(const Classifier_Program &, StringAccum &);
   void (*checked_body)(const Classifier_Program &, StringAccum &);
   void (*unchecked_body)(const Classifier_Program &, StringAccum &);
   void (*push_body)(const Classifier_Program &, StringAccum &);
@@ -286,6 +290,7 @@ static Vector<String> interesting_handler_names;
 
 int
 add_classifier_type(const String &name, int guaranteed_packet_length,
+	void (*headers)(const Classifier_Program &, StringAccum &),
 	void (*checked_body)(const Classifier_Program &, StringAccum &),
 	void (*unchecked_body)(const Classifier_Program &, StringAccum &),
 	void (*push_body)(const Classifier_Program &, StringAccum &))
@@ -293,6 +298,7 @@ add_classifier_type(const String &name, int guaranteed_packet_length,
   FastClassifier_Cid *cid = new FastClassifier_Cid;
   cid->name = name;
   cid->guaranteed_packet_length = guaranteed_packet_length;
+  cid->headers = headers;
   cid->checked_body = checked_body;
   cid->unchecked_body = unchecked_body;
   cid->push_body = push_body;
@@ -397,6 +403,8 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
     for (int i = 0; i < interesting_handler_names.size(); i++)
       cmd_sa << " -h '*." << interesting_handler_names[i] << "'";
     cmd_sa << " -q";
+    if (verbose)
+      errh->message("Running command '%s' on configuration:\n%s", cmd_sa.c_str(), nr.configuration_string().c_str());
     handler_text = shell_command_output_string(cmd_sa.take_string(), nr.configuration_string(), errh);
   }
 
@@ -556,6 +564,10 @@ output_classifier_program(int which,
   String class_name = gen_eclass_names[which];
   const Classifier_Program &prog = all_programs[which];
   FastClassifier_Cid *cid = cids[prog.type];
+  if (cid->headers) {
+    cid->headers(prog, source);
+    cid->headers = 0;		// only call cid->headers once
+  }
   
   header << "class " << cxx_name << " : public Element {\n\
   void devirtualize_all() { }\n\
@@ -904,6 +916,10 @@ particular purpose.\n");
 
      case QUIET_OPT:
       quiet = !clp->negated;
+      break;
+
+     case VERBOSE_OPT:
+      verbose = !clp->negated;
       break;
 
      bad_option:

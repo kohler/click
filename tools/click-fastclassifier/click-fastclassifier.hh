@@ -38,6 +38,7 @@ bool operator==(const Classifier_Program &, const Classifier_Program &);
 bool operator!=(const Classifier_Program &, const Classifier_Program &);
 
 int add_classifier_type(const String &name, int guaranteed_packet_length,
+	void (*headers)(const Classifier_Program &, StringAccum &),
 	void (*checked_body)(const Classifier_Program &, StringAccum &),
 	void (*unchecked_body)(const Classifier_Program &, StringAccum &),
 	void (*push_body)(const Classifier_Program &, StringAccum &));

@@ -153,10 +153,12 @@ extern "C" void
 add_fast_classifiers_2()
 {
   add_classifier_type("IPClassifier", IPCLASSIFIER_TRANSP_FAKE_OFFSET,
+		      0,
 		      write_checked_body,
 		      write_unchecked_body,
 		      write_push_body);
   add_classifier_type("IPFilter", IPCLASSIFIER_TRANSP_FAKE_OFFSET,
+		      0,
 		      write_checked_body,
 		      write_unchecked_body,
 		      write_push_body);

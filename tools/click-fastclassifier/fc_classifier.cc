@@ -132,6 +132,7 @@ extern "C" void
 add_fast_classifiers_1()
 {
   add_classifier_type("Classifier", 0,
+		      0,
 		      write_checked_body,
 		      write_unchecked_body,
 		      write_push_body);
