@@ -2609,39 +2609,11 @@ class ARPQuerier : public Element @{ public: // ...
 @end example
 @end deftypemethod
 
-Click creates new element objects by cloning existing element objects.
-The system maintains one prototype element for each element class it
-understands. When a router configuration declares a new element, the
-system finds the appropriate prototype and calls its @code{clone}
-method. This method creates and returns a new element with the same
-element class as the prototype.
-
-@deftypemethod Element {virtual Element *} clone () const
-Returns a new element with the same element class as this element. This
-method has no default implementation; every element must supply a
-definition.
-
-The @code{clone} method should return a completely fresh element object.
-In particular, the resulting element should not be configured or
-initialized, and should not share this element's configuration state. It
-will be configured independently through element initialization methods;
-see @ref{Element Initialization}, for more information.
-
-Here is a typical @code{clone} method.
-
-@example
-class ARPQuerier : public Element @{ public: // ...
-    ARPQuerier *clone() const @{ return new ARPQuerier; @}
-@}
-@end example
-
-@noindent
-Note that @code{clone}'s return type has been changed to
-@code{ARPQuerier *} rather than @w{@code{Element *}}. This is considered
-good style, since it makes the types more specific, but it is not really
-necessary. @code{clone} need not be defined in the class definition,
-although many elements do define it this way.
-@end deftypemethod
+Click creates new element objects by calling their default,
+zero-argument constructors.  The resulting element should not be
+configured or initialized.  It will be configured independently
+through element initialization methods; see @ref{Element
+Initialization}, for more information.
 
 
 @node Element Casting, Element Names, Element Class, Element Characteristics

@@ -86,10 +86,9 @@ A. There are two ways to add an element class to Click: in the main Click
      Each element class should be written as two C++ source files, FILE.cc
      and FILE.hh. The easiest way to create an element this is to copy an
      existing element and change the C++ class's name. You must change at
-     least the following functions:
+     least the following function:
 
 	const char *class_name() const;	// return your element's name
-	Element *clone() const;		// return a newly allocated element
 
      Other common functions to override include:
 
