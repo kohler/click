@@ -1,3 +1,17 @@
+2002-06-10 Monday 14:08  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.60), elements/grid/dsdvroutetable.cc (1.11),
+	elements/grid/dsdvroutetable.hh (1.11), elements/grid/gridlogger.cc
+	(1.3), elements/grid/gridlogger.hh (1.15),
+	elements/grid/gridroutetable.cc (1.55),
+	elements/grid/gridroutetable.hh (1.33),
+	elements/grid/gridtxerror.cc (1.4), elements/grid/gridtxerror.hh
+	(1.3), elements/grid/linktracker.cc (1.8),
+	elements/grid/lookuplocalgridroute.cc (1.40),
+	elements/grid/lookuplocalgridroute.hh (1.14): converted GridLogger
+	to full click element.	Multiple GridLoggers can exist in same
+	configuration, facilitating simulation
+
 2002-06-09 Sunday 02:29  Eddie Kohler <kohler@icir.org>
 
 	* DISTFILES (1.61), INSTALL (1.24), etc/README (1.2),
