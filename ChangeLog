@@ -1,3 +1,22 @@
+2001-08-17 Friday 23:48  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/libclick/.cvsignore (1.1): cvs ignore
+
+2001-08-17 Friday 23:46  Benjie Chen <benjie@lcs.mit.edu>
+
+	* bsdmodule/Makefile.in (1.3), elements/ip/iplookupradix.cc (1.1),
+	elements/ip/iplookupradix.hh (1.1), elements/ip/iproutetable.cc
+	(1.1), elements/ip/iproutetable.hh (1.1),
+	elements/ip/lookupiproute2.cc (1.19), elements/ip/lookupiproute2.hh
+	(1.10), include/click/iptable2.hh (1.2), include/click/radix.hh
+	(1.2), lib/radix.cc (1.12), linuxmodule/Makefile.in (1.60),
+	userlevel/Makefile.in (1.58): created IPRouteTable element that
+	defines generic routing table interfaces, in preparation of more IP
+	routing table lookup algorithms to be implemented in the next few
+	weeks; changed LookupIPRoute2 to IPLookupRadix; fixed bug in
+	IPLookupRadix that pushing stack allocated memory on to persistent
+	vectors; merged radix and iptable2 classes into IPLookupRadix
+
 2001-08-17 Friday 22:33  Eddie Kohler <kohler@aciri.org>
 
 	* DISTFILES (1.36), etc/linux-2.4.9-patch (1.1): initial version of
