@@ -1003,7 +1003,7 @@ Router::take_state(Router *r, ErrorHandler *errh)
 String
 Router::Handler::unparse_name(Element *e, const String &hname)
 {
-  if (e && e != e->router()->_root_element)
+  if (e && e != e->router()->root_element())
     return e->id() + "." + hname;
   else
     return hname;
