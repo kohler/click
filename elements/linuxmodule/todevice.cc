@@ -42,14 +42,14 @@ extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, 
 ToDevice::ToDevice()
   : Element(1, 0), _dev(0), _registered(0),
     _pull_calls(0), _idle_calls(0), _drain_returns(0), _busy_returns(0),
-    _rejected(0), _idle(0), _pkts_sent(0)
+    _rejected(0), _idle(0), _pkts_sent(0), _activations(0)
 {
 }
 
 ToDevice::ToDevice(const String &devname)
   : Element(1, 0), _devname(devname), _dev(0), _registered(0),
     _pull_calls(0), _idle_calls(0), _drain_returns(0), 
-    _busy_returns(0), _idle(0), _pkts_sent(0)
+    _busy_returns(0), _idle(0), _pkts_sent(0), _activations(0)
 {
 }
 
@@ -176,7 +176,8 @@ ToDevice::uninitialize()
       ifindex_map->pop_back();
     
     _registered = 0;
-    click_chatter("ToDevice(%s): %d sent", declaration().cc(), _pkts_sent);
+    click_chatter("ToDevice(%s): %d sent, %d activations", 
+	declaration().cc(), _pkts_sent, _activations);
   }
   unschedule();
 }
@@ -243,6 +244,7 @@ ToDevice::tx_intr()
     } 
     else break;
   }
+  if (sent > 0) _activations++;
   _pkts_sent+=sent;
   _idle++;
   

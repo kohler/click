@@ -70,6 +70,7 @@ class ToDevice : public Element {
   int _registered;
   int _idle; // # of times pull didn't get a packet
   int _pkts_sent;
+  int _activations;
 };
 
 #endif
