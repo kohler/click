@@ -23,13 +23,13 @@
 
 2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
 
-	* include/click/: packet.hh, packet.hh: add end_data() function (=
-	data() + length())
+	* include/click/: bighashmap.cc, hashmap.cc, bighashmap.cc,
+	hashmap.cc: add typename where required by later GCCs
 
 2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
 
-	* include/click/: bighashmap.cc, hashmap.cc, bighashmap.cc,
-	hashmap.cc: add typename where required by later GCCs
+	* include/click/: packet.hh, packet.hh: add end_data() function (=
+	data() + length())
 
 2002-10-14 Monday 18:35  Eddie Kohler <kohler@icir.org>
 
@@ -65,13 +65,13 @@
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
-	* include/click/routerthread.hh, include/click/routerthread.hh,
-	libsrc/routerthread.cc: RouterThread::driver() gives waiting
-	threads a chance before restarting (Mz)
+	* include/click/: task.hh, task.hh: remove unused method
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
-	* include/click/: task.hh, task.hh: remove unused method
+	* include/click/routerthread.hh, include/click/routerthread.hh,
+	libsrc/routerthread.cc: RouterThread::driver() gives waiting
+	threads a chance before restarting (Mz)
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
