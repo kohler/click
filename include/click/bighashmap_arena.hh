@@ -6,7 +6,12 @@ CLICK_DECLS
 class BigHashMap_Arena { public:
 
     BigHashMap_Arena(uint32_t element_size);
-    ~BigHashMap_Arena();
+
+    void use()			{ _refcount++; }
+    void unuse();
+
+    bool detached() const	{ return _detached; }
+    void detach()		{ _detached = true; }
 
     void *alloc();
     void free(void *);
@@ -28,8 +33,14 @@ class BigHashMap_Arena { public:
     char **_buffers;
     int _nbuffers;
     int _buffers_cap;
+
+    uint32_t _refcount;
+    bool _detached;
     
+    ~BigHashMap_Arena();
     void *hard_alloc();
+
+    friend class Link;		// shut up, compiler
     
 };
 
@@ -52,6 +63,14 @@ class BigHashMap_ArenaFactory { public:
     static BigHashMap_ArenaFactory *the_factory;
     
 };
+
+inline void
+BigHashMap_Arena::unuse()
+{
+    _refcount--;
+    if (_refcount <= 0)
+	delete this;
+}
 
 inline void *
 BigHashMap_Arena::alloc()

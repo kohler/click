@@ -42,14 +42,14 @@ BigHashMap<K, V>::initialize(BigHashMap_ArenaFactory *factory)
 
 template <class K, class V>
 BigHashMap<K, V>::BigHashMap()
-  : _default_v()
+  : _default_v(), _arena(0)
 {
   initialize(0);
 }
 
 template <class K, class V>
 BigHashMap<K, V>::BigHashMap(const V &def, BigHashMap_ArenaFactory *factory)
-  : _default_v(def)
+  : _default_v(def), _arena(0)
 {
   initialize(factory);
 }
@@ -58,11 +58,15 @@ template <class K, class V>
 BigHashMap<K, V>::~BigHashMap()
 {
   for (int i = 0; i < _nbuckets; i++)
-    for (Elt *e = _buckets[i]; e; e = e->next) {
+    for (Elt *e = _buckets[i]; e; ) {
+      Elt *next = e->next;
       e->key.~K();
       e->v.~V();
+      _arena->free(e);
+      e = next;
     }
   delete[] _buckets;
+  _arena->unuse();
 }
 
 template <class K, class V>
@@ -77,7 +81,10 @@ void
 BigHashMap<K, V>::set_arena(BigHashMap_ArenaFactory *factory)
 {
   assert(empty());
+  if (_arena)
+    _arena->unuse();
   _arena = BigHashMap_ArenaFactory::get_arena(sizeof(Elt), factory);
+  _arena->use();
 }
 
 template <class K, class V>
@@ -343,14 +350,14 @@ BigHashMap<K, void *>::initialize(BigHashMap_ArenaFactory *factory)
 
 template <class K>
 BigHashMap<K, void *>::BigHashMap()
-  : _default_v(0)
+  : _default_v(0), _arena(0)
 {
   initialize(0);
 }
 
 template <class K>
 BigHashMap<K, void *>::BigHashMap(void *def, BigHashMap_ArenaFactory *factory)
-  : _default_v(def)
+  : _default_v(def), _arena(0)
 {
   initialize(factory);
 }
@@ -359,9 +366,14 @@ template <class K>
 BigHashMap<K, void *>::~BigHashMap()
 {
   for (int i = 0; i < _nbuckets; i++)
-    for (Elt *e = _buckets[i]; e; e = e->next)
+    for (Elt *e = _buckets[i]; e; ) {
+      Elt *next = e->next;
       e->key.~K();
+      _arena->free(e);
+      e = next;
+    }
   delete[] _buckets;
+  _arena->unuse();
 }
 
 template <class K>
@@ -376,7 +388,10 @@ void
 BigHashMap<K, void *>::set_arena(BigHashMap_ArenaFactory *factory)
 {
   assert(empty());
+  if (_arena)
+    _arena->unuse();
   _arena = BigHashMap_ArenaFactory::get_arena(sizeof(Elt), factory);
+  _arena->use();
 }
 
 template <class K>

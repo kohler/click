@@ -26,8 +26,10 @@ BigHashMap_Arena::BigHashMap_Arena(uint32_t element_size)
     : _free(0),
       _cur_buffer(0), _buffer_pos(0),
       _element_size(element_size < sizeof(Link) ? sizeof(Link) : element_size),
-      _buffers(new char *[8]), _nbuffers(0), _buffers_cap(8)
+      _buffers(new char *[8]), _nbuffers(0), _buffers_cap(8),
+      _detached(false)
 {
+    _refcount = 0;
 }
 
 BigHashMap_Arena::~BigHashMap_Arena()
@@ -78,7 +80,10 @@ BigHashMap_ArenaFactory::~BigHashMap_ArenaFactory()
 {
     for (int which = 0; which < 2; which++) {
 	for (int i = 0; i < _narenas[which]; i++)
-	    delete _arenas[which][i];
+	    if (_arenas[which][i]) {
+		_arenas[which][i]->detach();
+		_arenas[which][i]->unuse();
+	    }
 	delete[] _arenas[which];
     }
 }
@@ -127,9 +132,11 @@ BigHashMap_ArenaFactory::get_arena_func(uint32_t element_size)
 	    return 0;
     }
 
-    if (!_arenas[which][arenanum]
-	&& !(_arenas[which][arenanum] = new BigHashMap_Arena(arenanum << shifts[which])))
-	return 0;
+    if (!_arenas[which][arenanum]) {
+	if (!(_arenas[which][arenanum] = new BigHashMap_Arena(arenanum << shifts[which])))
+	    return 0;
+	_arenas[which][arenanum]->use();
+    }
 
     return _arenas[which][arenanum];
 }

@@ -67,6 +67,9 @@ Router::~Router()
   if (_refcount > 0)
     click_chatter("deleting router while ref count > 0");
   
+  // delete the ArenaFactory, which detaches the Arenas
+  delete _arena_factory;
+
   // Clean up elements in reverse configuration order
   if (_initialized) {
     for (int ord = _elements.size() - 1; ord >= 0; ord--)
@@ -94,8 +97,6 @@ Router::~Router()
   
   delete _root_element;
   delete[] _handlers;
-
-  delete _arena_factory;
 }
 
 void
