@@ -12,6 +12,40 @@
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
+// operations on host pairs and ports values
+
+static inline const click_ip *
+good_ip_header(const Packet *p)
+{
+    // called when we already know the packet is good
+    const click_ip *iph = p->ip_header();
+    if (iph->ip_p == IP_PROTO_ICMP)
+	return reinterpret_cast<const click_ip *>(p->icmp_header() + 1); // know it exists
+    else
+	return iph;
+}
+
+static inline bool
+operator==(const AggregateIPFlows::HostPair &a, const AggregateIPFlows::HostPair &b)
+{
+    return a.a == b.a && a.b == b.b;
+}
+
+static inline uint32_t
+hashcode(const AggregateIPFlows::HostPair &a)
+{
+    return a.a ^ a.b;
+}
+
+static inline uint32_t
+flip_ports(uint32_t ports)
+{
+    return ((ports >> 16) & 0xFFFF) | (ports << 16);
+}
+
+
+// actual AggregateIPFlows operations
+
 AggregateIPFlows::AggregateIPFlows()
     : Element(1, 1), _flowinfo_file(0)
 {
@@ -46,24 +80,31 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
     _tcp_timeout = 24 * 60 * 60;
     _tcp_done_timeout = 30;
     _udp_timeout = 60;
+    _fragment_timeout = 30;
     _gc_interval = 20 * 60;
+    _fragments = 2;
     bool handle_icmp_errors = false;
+    bool gave_fragments = false, fragments = true;
     
     if (cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "TCP_TIMEOUT", cpSeconds, "timeout for active TCP connections", &_tcp_timeout,
 		    "TCP_DONE_TIMEOUT", cpSeconds, "timeout for completed TCP connections", &_tcp_done_timeout,
 		    "UDP_TIMEOUT", cpSeconds, "timeout for UDP connections", &_udp_timeout,
+		    "FRAGMENT_TIMEOUT", cpSeconds, "timeout for fragment collection", &_fragment_timeout,
 		    "REAP", cpSeconds, "garbage collection interval", &_gc_interval,
 		    "ICMP", cpBool, "handle ICMP errors?", &handle_icmp_errors,
 		    "FLOWINFO", cpFilename, "filename for flow info file", &_flowinfo_filename,
+		    cpConfirmKeywords,
+		    "FRAGMENTS", cpBool, "handle fragmented packets?", &gave_fragments, &fragments,
 		    0) < 0)
 	return -1;
     
     _smallest_timeout = (_tcp_timeout < _tcp_done_timeout ? _tcp_timeout : _tcp_done_timeout);
     _smallest_timeout = (_smallest_timeout < _udp_timeout ? _smallest_timeout : _udp_timeout);
     _handle_icmp_errors = handle_icmp_errors;
-    _frozen = false;
+    if (gave_fragments)
+	_fragments = fragments;
     return 0;
 }
 
@@ -72,12 +113,20 @@ AggregateIPFlows::initialize(ErrorHandler *errh)
 {
     _next = 1;
     _active_sec = _gc_sec = 0;
+    _timestamp_warning = false;
+    
     if (_flowinfo_filename == "-")
 	_flowinfo_file = stdout;
     else if (_flowinfo_filename && !(_flowinfo_file = fopen(_flowinfo_filename.cc(), "w")))
 	return errh->error("%s: %s", _flowinfo_filename.cc(), strerror(errno));
     else if (_flowinfo_file)
 	fprintf(_flowinfo_file, "!IPSummaryDump 1.1\n!creator \"AggregateIPFlows flow info file\"\n!data timestamp aggregate ip_src sport ip_dst dport ip_proto\n");
+
+    if (_fragments == 2)
+	_fragments = !input_is_pull(0);
+    else if (_fragments == 1 && input_is_pull(0))
+	return errh->error("`FRAGMENTS true' is incompatible with pull; run this element in a push context");
+    
     return 0;
 }
 
@@ -86,33 +135,138 @@ AggregateIPFlows::cleanup(CleanupStage)
 {
     if (_flowinfo_file && _flowinfo_file != stdout)
 	fclose(_flowinfo_file);
+    clean_map(_tcp_map);
+    clean_map(_udp_map);
 }
 
 void
-AggregateIPFlows::clean_map(Map &table, uint32_t timeout, uint32_t done_timeout)
+AggregateIPFlows::clean_map(Map &table)
 {
-    const Map::Pair *to_free = 0;
-    timeout = _active_sec - timeout;
-    done_timeout = _active_sec - done_timeout;
+    // free completed flows and emit fragments
+    for (Map::iterator iter = table.begin(); iter; iter++) {
+	HostPairInfo *hpinfo = &iter.value();
+	while (Packet *p = hpinfo->_fragment_head) {
+	    hpinfo->_fragment_head = p->next();
+	    p->kill();
+	}
+	while (FlowInfo *f = hpinfo->_flows) {
+	    hpinfo->_flows = f->_next;
+	    delete f;
+	}
+    }
+}
 
-    for (Map::iterator iter = table.begin(); iter; iter++)
-	if (!iter.value().reverse()) {
-	    FlowInfo *finfo = const_cast<FlowInfo *>(&iter.value());
-	    // circular comparison
-	    if ((int32_t)(finfo->uu.active_sec - (finfo->flow_over == 3 ? done_timeout : timeout)) < 0) {
-		finfo->uu.thunk = (Map::Pair *) to_free;
-		to_free = iter.pair();
+inline void
+AggregateIPFlows::packet_emit_hook(const Packet *p, const click_ip *iph, FlowInfo *finfo)
+{
+    // check whether this indicates the flow is over
+    if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)
+	&& p->transport_length() >= (int)sizeof(click_tcp)
+	&& PAINT_ANNO(p) < 2) {	// ignore ICMP errors
+	if (p->tcp_header()->th_flags & TH_RST)
+	    finfo->_flow_over = 3;
+	else if (p->tcp_header()->th_flags & TH_FIN)
+	    finfo->_flow_over |= (1 << PAINT_ANNO(p));
+	else if (p->tcp_header()->th_flags & TH_SYN)
+	    finfo->_flow_over = 0;
+    }
+}
+
+void
+AggregateIPFlows::assign_aggregate(Map &table, HostPairInfo *hpinfo, int emit_before_sec)
+{
+    Packet *first = hpinfo->_fragment_head;
+    uint16_t want_ip_id = good_ip_header(first)->ip_id;
+
+    // find FlowInfo
+    FlowInfo *finfo = 0;
+    if (AGGREGATE_ANNO(first)) {
+	for (finfo = hpinfo->_flows; finfo && finfo->_aggregate != AGGREGATE_ANNO(first); finfo = finfo->_next)
+	    /* nada */;
+    } else {
+	for (Packet *p = first; !finfo && p; p = p->next()) {
+	    const click_ip *iph = good_ip_header(p);
+	    if (iph->ip_id == want_ip_id) {
+		if (IP_FIRSTFRAG(iph)) {
+		    uint32_t ports = *(reinterpret_cast<const uint32_t *>(reinterpret_cast<const uint8_t *>(iph) + (iph->ip_hl << 2)));
+		    if (PAINT_ANNO(p) & 1)
+			ports = flip_ports(ports);
+		    finfo = find_flow_info(table, hpinfo, ports, PAINT_ANNO(p) & 1, p);
+		}
 	    }
 	}
+    }
 
-    while (to_free) {
-	const FlowInfo &finfo = to_free->value;
-	const Map::Pair *next = (Map::Pair *) finfo.uu.other;
-	notify(finfo._aggregate, AggregateListener::DELETE_AGG, 0);
-	IPFlowID flow = to_free->key;
-	table.remove(flow);
-	table.remove(flow.rev());
-	to_free = next;
+    // if no FlowInfo found, delete packet
+    if (!finfo) {
+	hpinfo->_fragment_head = first->next();
+	first->kill();
+	return;
+    }
+
+    // emit packets at the beginning of the list that have the same IP ID
+    const click_ip *iph;
+    int p_sec;
+    while (first && (iph = good_ip_header(first)) && iph->ip_id == want_ip_id
+	   && (!(p_sec = first->timestamp_anno().tv_sec)
+	       || (int)(p_sec - emit_before_sec) < 0
+	       || !IP_ISFRAG(iph))) {
+	Packet *p = first;
+	hpinfo->_fragment_head = first = p->next();
+	p->set_next(0);
+	bool was_fragment = IP_ISFRAG(iph);
+
+	SET_AGGREGATE_ANNO(p, finfo->aggregate());
+
+	// actually emit packet
+	if (finfo->reverse())
+	    SET_PAINT_ANNO(p, PAINT_ANNO(p) ^ 1);
+	if (p_sec)
+	    finfo->_active_sec = p_sec;
+
+	packet_emit_hook(p, iph, finfo);
+	
+	output(0).push(p);
+
+	// if not a fragment, know we don't have more fragments
+	if (!was_fragment)
+	    return;
+    }
+    
+    // assign aggregate annotation to other packets with the same IP ID
+    for (Packet *p = first; p; p = p->next())
+	if (good_ip_header(p)->ip_id == want_ip_id)
+	    SET_AGGREGATE_ANNO(p, finfo->aggregate());
+}
+
+void
+AggregateIPFlows::reap_map(Map &table, uint32_t timeout, uint32_t done_timeout)
+{
+    timeout = _active_sec - timeout;
+    done_timeout = _active_sec - done_timeout;
+    int frag_timeout = _active_sec - _fragment_timeout;
+
+    // free completed flows and emit fragments
+    for (Map::iterator iter = table.begin(); iter; iter++) {
+	HostPairInfo *hpinfo = &iter.value();
+	// fragments
+	while (hpinfo->_fragment_head && hpinfo->_fragment_head->timestamp_anno().tv_sec < frag_timeout)
+	    assign_aggregate(table, hpinfo, frag_timeout);
+
+	// completed flows
+	FlowInfo **pprev = &hpinfo->_flows;
+	FlowInfo *f = *pprev;
+	while (f) {
+	    // circular comparison
+	    if ((int32_t)(f->_active_sec - (f->_flow_over == 3 ? done_timeout : timeout)) < 0) {
+		notify(f->_aggregate, AggregateListener::DELETE_AGG, 0);
+		*pprev = f->_next;
+		delete f;
+	    } else
+		pprev = &f->_next;
+	    f = *pprev;
+	}
+	// XXX never free host pairs
     }
 }
 
@@ -120,144 +274,190 @@ void
 AggregateIPFlows::reap()
 {
     if (_gc_sec) {
-	clean_map(_tcp_map, _tcp_timeout, _tcp_done_timeout);
-	clean_map(_udp_map, _udp_timeout, _udp_timeout);
+	reap_map(_tcp_map, _tcp_timeout, _tcp_done_timeout);
+	reap_map(_udp_map, _udp_timeout, _udp_timeout);
     }
     _gc_sec = _active_sec + _gc_interval;
 }
 
 const click_ip *
-AggregateIPFlows::icmp_encapsulated_header(const Packet *p) const
+AggregateIPFlows::icmp_encapsulated_header(const Packet *p)
 {
-    const icmp_generic *icmph = reinterpret_cast<const icmp_generic *>(p->transport_header());
+    const click_icmp *icmph = p->icmp_header();
     if (icmph
-	&& (icmph->icmp_type == ICMP_DST_UNREACHABLE
-	    || icmph->icmp_type == ICMP_TYPE_TIME_EXCEEDED
-	    || icmph->icmp_type == ICMP_PARAMETER_PROBLEM
-	    || icmph->icmp_type == ICMP_SOURCE_QUENCH
+	&& (icmph->icmp_type == ICMP_UNREACH
+	    || icmph->icmp_type == ICMP_TIMXCEED
+	    || icmph->icmp_type == ICMP_PARAMPROB
+	    || icmph->icmp_type == ICMP_SOURCEQUENCH
 	    || icmph->icmp_type == ICMP_REDIRECT)) {
 	const click_ip *embedded_iph = reinterpret_cast<const click_ip *>(icmph + 1);
 	unsigned embedded_hlen = embedded_iph->ip_hl << 2;
-	if ((unsigned)p->transport_length() >= sizeof(icmp_generic) + embedded_hlen
+	if ((unsigned)p->transport_length() >= sizeof(click_icmp) + embedded_hlen
 	    && embedded_hlen >= sizeof(click_ip))
 	    return embedded_iph;
-	else
-	    return 0;
-    } else
-	return 0;
+    }
+    return 0;
 }
 
-bool
-AggregateIPFlows::handle_packet(Packet *p, bool frozen)
+int
+AggregateIPFlows::relevant_timeout(const FlowInfo *f, const Map &m) const
+{
+    if (&m == &_udp_map)
+	return _udp_timeout;
+    else if (f->_flow_over == 3)
+	return _tcp_done_timeout;
+    else
+	return _tcp_timeout;
+}
+
+// XXX timing when fragments are merged back in?
+
+AggregateIPFlows::FlowInfo *
+AggregateIPFlows::find_flow_info(Map &m, HostPairInfo *hpinfo, uint32_t ports, bool flipped, const Packet *p)
+{
+    FlowInfo **pprev = &hpinfo->_flows;
+    for (FlowInfo *t = *pprev; t; pprev = &t->_next, t = t->_next)
+	if (t->_ports == ports) {
+	    // if this flow is actually dead (but has not yet been garbage
+	    // collected), then kill it for consistent semantics
+	    int age = p->timestamp_anno().tv_sec - t->_active_sec;
+	    if (age > _smallest_timeout
+		&& age > relevant_timeout(t, m)) {
+		// old aggregate has died
+		notify(t->aggregate(), AggregateListener::DELETE_AGG, 0);
+
+		// make a new aggregate
+		t->_aggregate = _next;
+		_next++;
+		t->_reverse = flipped;
+		t->_flow_over = 0;
+		notify(t->aggregate(), AggregateListener::NEW_AGG, p);
+	    }
+
+	    // otherwise, move to the front of the list and return
+	    *pprev = t->_next;
+	    t->_next = hpinfo->_flows;
+	    hpinfo->_flows = t;
+	    return t;
+	}
+
+    // make and install new FlowInfo pair
+    FlowInfo *finfo = new FlowInfo(ports, hpinfo->_flows, _next);
+    finfo->_reverse = flipped;
+    hpinfo->_flows = finfo;
+    _next++;
+    notify(finfo->aggregate(), AggregateListener::NEW_AGG, p);
+    return finfo;
+}
+
+int
+AggregateIPFlows::handle_fragment(Packet *p, int paint, Map &table, HostPairInfo *hpinfo)
+{
+    if (hpinfo->_fragment_tail)
+	hpinfo->_fragment_tail->set_next(p);
+    else
+	hpinfo->_fragment_head = p;
+    hpinfo->_fragment_tail = p;
+    p->set_next(0);
+    SET_AGGREGATE_ANNO(p, 0);
+    SET_PAINT_ANNO(p, paint);
+    if (int p_sec = p->timestamp_anno().tv_sec)
+	_active_sec = p_sec;
+
+    // get rid of old fragments
+    int frag_timeout = _active_sec - _fragment_timeout;
+    Packet *head;
+    while ((head = hpinfo->_fragment_head)
+	   && (head->timestamp_anno().tv_sec < frag_timeout || !IP_ISFRAG(good_ip_header(head))))
+	assign_aggregate(table, hpinfo, frag_timeout);
+
+    return ACT_NONE;
+}
+
+int
+AggregateIPFlows::handle_packet(Packet *p)
 {
     const click_ip *iph = p->ip_header();
     int paint = 0;
-    
+
+    // assign timestamp if no timestamp given
+    if (!p->timestamp_anno().tv_sec) {
+	if (!_timestamp_warning) {
+	    click_chatter("%{element}: warning: packet received without timestamp", this);
+	    _timestamp_warning = true;
+	}
+	click_gettimeofday(&p->timestamp_anno());
+    }
+	
+    // extract encapsulated ICMP header if appropriate
     if (iph && iph->ip_p == IP_PROTO_ICMP && IP_FIRSTFRAG(iph)
 	&& _handle_icmp_errors) {
 	iph = icmp_encapsulated_header(p);
 	paint = 2;
     }
-    if (!iph || !IP_FIRSTFRAG(iph)
+
+    // return if not a proper TCP/UDP packet
+    if (!iph
 	|| (iph->ip_p != IP_PROTO_TCP && iph->ip_p != IP_PROTO_UDP)
-	|| (reinterpret_cast<const unsigned char *>(iph) - p->data()) + (iph->ip_hl << 2) + sizeof(click_udp) > p->length())
-	return false;
+	|| (iph->ip_src.s_addr == 0 && iph->ip_dst.s_addr == 0))
+	return ACT_DROP;
+    
+    const uint8_t *udp_ptr = reinterpret_cast<const uint8_t *>(iph) + (iph->ip_hl << 2);
+    if ((udp_ptr + sizeof(click_udp)) - p->data() > (int) p->length())
+	// packet not big enough
+	return ACT_DROP;
 
     // find relevant FlowInfo
-    IPFlowID flow(iph);
-    assert(flow);
     Map &m = (iph->ip_p == IP_PROTO_TCP ? _tcp_map : _udp_map);
-    FlowInfo *finfo = m.findp_force(flow);
-    uint32_t old_next = _next;
-    unsigned p_sec = p->timestamp_anno().tv_sec;
+    HostPair hosts(iph->ip_src.s_addr, iph->ip_dst.s_addr);
+    if (hosts.a != iph->ip_src.s_addr)
+	paint ^= 1;
+    HostPairInfo *hpinfo = m.findp_force(hosts);
 
+    // check for fragment
+    if (IP_ISFRAG(iph)) {
+	if (IP_FIRSTFRAG(iph) || _fragments)
+	    return handle_fragment(p, paint, m, hpinfo);
+	else
+	    return ACT_DROP;
+    } else if (hpinfo->_fragment_head)
+	return handle_fragment(p, paint, m, hpinfo);
+    
+    uint32_t ports = *(reinterpret_cast<const uint32_t *>(udp_ptr));
+    if (paint & 1)
+	ports = flip_ports(ports);
+    FlowInfo *finfo = find_flow_info(m, hpinfo, ports, paint & 1, p);
+    
     if (!finfo) {
 	click_chatter("out of memory!");
-	return false;
-    } else if (finfo->fresh()) {
-	if (frozen)
-	    return false;
-	finfo->_aggregate = _next;
-	FlowInfo *rfinfo = m.findp_force(flow.rev());
-	rfinfo->uu.other = finfo;
-	rfinfo->_reverse = true;
-	_next++;		// XXX check for 2^32
-	goto flow_is_fresh;
-    } else if (finfo->reverse()) {
-	finfo = finfo->uu.other;
-	paint |= 1;
-    }
-
-    // check whether flow is old; if so, we'll use a new number
-    if (p_sec && p_sec > finfo->uu.active_sec + _smallest_timeout) {
-	unsigned timeout;
-	if (iph->ip_p == IP_PROTO_UDP)
-	    timeout = _udp_timeout;
-	else if (finfo->flow_over == 3)
-	    timeout = _tcp_done_timeout;
-	else
-	    timeout = _tcp_timeout;
-	if (p_sec > finfo->uu.active_sec + timeout) {
-	    // old flow; kill old aggregate and create new aggregate
-	    notify(finfo->_aggregate, AggregateListener::DELETE_AGG, 0);
-	    if (frozen)
-		return false;
-	    if (paint & 1) {	// switch sides
-		FlowInfo *rfinfo = m.findp(flow);
-		assert(rfinfo && rfinfo != finfo);
-		finfo->_aggregate = 0;
-		finfo->uu.other = rfinfo;
-		finfo->_reverse = true;
-		rfinfo->_reverse = false;
-		finfo = rfinfo;
-		paint &= ~1;
-	    }
-	    finfo->_aggregate = _next;
-	    finfo->flow_over = 0;
-	    _next++;
-	}
-    }
-
-  flow_is_fresh:
-    if (p_sec)
-	_active_sec = finfo->uu.active_sec = p_sec;
-
-    // check whether this indicates the flow is over
-    if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)
-	&& p->transport_length() >= (int)sizeof(click_tcp)
-	&& paint < 2) {		// ignore ICMP errors
-	if (p->tcp_header()->th_flags & TH_RST)
-	    finfo->flow_over = 3;
-	else if (p->tcp_header()->th_flags & TH_FIN)
-	    finfo->flow_over |= (1 << paint);
-	else if (p->tcp_header()->th_flags & TH_SYN)
-	    finfo->flow_over = 0;
+	return ACT_DROP;
     }
 
     // mark packet with aggregate number and paint
+    _active_sec = finfo->_active_sec = p->timestamp_anno().tv_sec;
     SET_AGGREGATE_ANNO(p, finfo->aggregate());
+    if (finfo->reverse())
+	paint ^= 1;
     SET_PAINT_ANNO(p, paint);
 
-    // notify about the new flow if necessary
-    if (_next != old_next) {
-	notify(_next - 1, AggregateListener::NEW_AGG, p);
-	if (_flowinfo_file)
-	    fprintf(_flowinfo_file, "%ld.%06ld %u %s %d %s %d %c\n", p->timestamp_anno().tv_sec, p->timestamp_anno().tv_usec, _next - 1, flow.saddr().s().cc(), ntohs(flow.sport()), flow.daddr().s().cc(), ntohs(flow.dport()), (iph->ip_p == IP_PROTO_TCP ? 'T' : 'U'));
-    }
+    // packet emit hook
+    packet_emit_hook(p, iph, finfo);
+
+    return ACT_EMIT;
+}
+
+void
+AggregateIPFlows::push(int, Packet *p)
+{
+    int action = handle_packet(p);
     
     // GC if necessary
     if (_active_sec >= _gc_sec)
 	reap();
     
-    return true;
-}
-
-void
-AggregateIPFlows::push(int port, Packet *p)
-{
-    if (handle_packet(p, port == 1 || _frozen))
+    if (action == ACT_EMIT)
 	output(0).push(p);
-    else
+    else if (action == ACT_DROP)
 	checked_output_push(1, p);
 }
 
@@ -265,48 +465,42 @@ Packet *
 AggregateIPFlows::pull(int)
 {
     Packet *p = input(0).pull();
-    if (p && handle_packet(p, _frozen))
+    int action = (p ? handle_packet(p) : ACT_NONE);
+
+    // GC if necessary
+    if (_active_sec >= _gc_sec)
+	reap();
+    
+    if (action == ACT_EMIT)
 	return p;
-    else {
-	if (p)
-	    checked_output_push(1, p);
-	return 0;
-    }
+    else if (action == ACT_DROP)
+	checked_output_push(1, p);
+    return 0;
 }
 
-String
-AggregateIPFlows::read_handler(Element *e, void *thunk)
-{
-    AggregateIPFlows *af = static_cast<AggregateIPFlows *>(e);
-    switch ((intptr_t)thunk) {
-      case H_FROZEN:
-	return cp_unparse_bool(af->_frozen) + "\n";
-      default:
-	return "";
-    }
-}
+enum { H_CLEAR };
 
 int
-AggregateIPFlows::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandler *errh)
+AggregateIPFlows::write_handler(const String &, Element *e, void *thunk, ErrorHandler *)
 {
     AggregateIPFlows *af = static_cast<AggregateIPFlows *>(e);
     switch ((intptr_t)thunk) {
-      case H_FROZEN: {
-	  bool frozen;
-	  if (cp_bool(cp_uncomment(s_in), &frozen))
-	      af->_frozen = frozen;
-	  else
-	      return errh->error("`frozen' takes a Boolean value");
+      case H_CLEAR: {
+	  int active_sec = af->_active_sec, gc_sec = af->_gc_sec;
+	  af->_active_sec = af->_gc_sec = 0x7FFFFFFF;
+	  af->reap();
+	  af->_active_sec = active_sec, af->_gc_sec = gc_sec;
+	  return 0;
       }
+      default:
+	return -1;
     }
-    return 0;
 }
 
 void
 AggregateIPFlows::add_handlers()
 {
-    add_read_handler("frozen", read_handler, (void *)H_FROZEN);
-    add_write_handler("frozen", write_handler, (void *)H_FROZEN);
+    add_write_handler("clear", write_handler, (void *)H_CLEAR);
 }
 
 ELEMENT_REQUIRES(userlevel AggregateNotifier)
