@@ -5,11 +5,13 @@
 class EWMA2 {
   
   int _now_jiffies;
-  int _now;
-  int _avg;
+  
+  long long _now;
+  long long _avg;
   int _stability_shift;
 
-  static const int METER_SCALE = 12;
+  static const int METER_SCALE = 30;
+  static const int FRAC_BITS   = 10;
   
   inline int set_stability_shift(int);
   inline void update_time();
@@ -19,9 +21,9 @@ class EWMA2 {
 
   EWMA2() {}
 
-  int average() const			{ return _avg; }
+  int average() const	{ return (int) (_avg >> (METER_SCALE-FRAC_BITS)); }
   int stability_shift() const 		{ return _stability_shift; }
-  int scale() const			{ return METER_SCALE; }
+  int scale() const			{ return FRAC_BITS; }
 
   void initialize(int seconds);
   inline void update(int delta);
@@ -32,15 +34,15 @@ EWMA2::update_time()
 {
   int j = click_jiffies();
   int jj = _now_jiffies;
-  if (j >= jj+CLICK_HZ) {
+  if (j != jj) {
     // adjust the average rate using the last measured packets
-    int now_scaled = _now << METER_SCALE;
+    long long now_scaled = _now << METER_SCALE;
     int compensation = 1 << (_stability_shift - 1); // round off
     _avg += (now_scaled - _avg + compensation) >> _stability_shift;
 
     // adjust for time w/ no packets (XXX: should use table)
     // (inline copy of update_zero_period)
-    for (int t = jj + CLICK_HZ; t < j; t+= CLICK_HZ)
+    for (int t = jj + 1; t != j; t++)
       _avg += (-_avg + compensation) >> _stability_shift;
     
     _now_jiffies = j;
@@ -74,7 +76,7 @@ EWMA2::initialize(int seconds)
   _avg = 0;
   _now = 0;
   for (int j=0; j<METER_SCALE; j++) {
-    if ((1<<j) > ((seconds+1)/2)) break;
+    if ((1<<j) > ((seconds*CLICK_HZ+1)/2)) break;
   }
   if (j == METER_SCALE) j--;
   set_stability_shift(j);

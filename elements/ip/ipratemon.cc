@@ -232,7 +232,7 @@ IPRateMonitor::print(_stats *s, String ip = "")
         s->counter[i].values->at(j).update(0);
         ret+="\t";
 	ret+= cp_unparse_real
-	  (s->counter[i].values->at(j).average(),
+	  (s->counter[i].values->at(j).average() * CLICK_HZ,
 	   s->counter[i].values->at(j).scale());
       }
       ret += "\n";
