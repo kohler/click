@@ -1,3 +1,26 @@
+2003-07-30 Wednesday 13:43  Eddie Kohler <kohler@icir.org>
+
+	* elements/tcpudp/tcprewriter.hh (1.16): mention SACK
+
+2003-07-30 Wednesday 13:42  Eddie Kohler <kohler@icir.org>
+
+	* test/IPRewriter/TCPRewriter-01.testie (1.1): add validation test
+	for TCPRewriter SACK functionality
+
+2003-07-30 Wednesday 13:41  Eddie Kohler <kohler@icir.org>
+
+	* elements/: app/ftpportmapper.cc (1.24), tcpudp/checktcpheader.cc
+	(1.14), tcpudp/checkudpheader.cc (1.14), tcpudp/dynudpipencap.cc
+	(1.13), tcpudp/settcpchecksum.cc (1.11), tcpudp/setudpchecksum.cc
+	(1.3), tcpudp/tcpipsend.cc (1.10), tcpudp/udpipencap.cc (1.15): use
+	click_in_cksum_pseudohdr() where appropriate
+
+2003-07-30 Wednesday 13:41  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.52), fromipsumdump.hh
+	(1.29): support CHECKSUM keyword argument, and bug fix: "payload"
+	might cause IP header to move
+
 2003-07-30 Wednesday 13:39  Eddie Kohler <kohler@icir.org>
 
 	* include/clicknet/ip.h (1.2), lib/in_cksum.c (1.13): add
