@@ -1,3 +1,11 @@
+2003-09-22 Monday 21:02  Eddie Kohler <kohler@icir.org>
+
+	* INSTALL (1.28): INSTALL nits
+
+2003-09-22 Monday 20:53  Eddie Kohler <kohler@icir.org>
+
+	* INSTALL (1.27): improve installation instructions
+
 2003-09-22 Monday 18:48  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.56), ipsumdumpinfo.cc
