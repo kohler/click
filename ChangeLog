@@ -1,3 +1,7 @@
+2004-06-30 Wednesday 14:41  John Bicket <jbicket@mit.edu>
+
+	* conf/gen_config_roofnet.pl (1.2): add gateway support.
+
 2004-06-30 Wednesday 01:04  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/: handlers/kernel-01.testie (1.5),
