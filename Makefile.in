@@ -74,7 +74,7 @@ $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acconfig.h
 	$(SHELL) $(srcdir)/configure @ac_configure_args@
 Makefile: $(srcdir)/configure $(srcdir)/Makefile.in
 	cd $(top_builddir) && \
-	  CONFIG_FILES=$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+	  CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
 stamp-h: Makefile
 	@echo 'creating stamp-h' 1>&2
 	@echo "/* Created on" `date` "*/" > stamp-h
