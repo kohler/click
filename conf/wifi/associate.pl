@@ -7,11 +7,22 @@ my $best_rssi = 0;
 my $best_bssid = "";
 my $best_channel = 0;
 
+
+my %ssid_blacklist;
+
 if (scalar(@ARGV)) {
     $desired_ssid =  shift @ARGV;
 }
 
-my @lines = split /\n/, `read_handler.pl bs.scan`;
+
+
+my $blacklist_file = "~/.ap_blacklist";
+my @lines = grep !/^\s*$/, grep !/^\s*#/, split /\n/, `cat $blacklist_file 2>/dev/null`;
+foreach my $ssid (@lines) {
+    $ssid_blacklist{$ssid} = $ssid;
+}
+
+@lines = split /\n/, `read_handler.pl bs.scan`;
 
 foreach my $line (@lines) {
     my ($bssid, $rest) = split /\s+/, $line;
@@ -25,6 +36,11 @@ foreach my $line (@lines) {
     $line =~ / ssid (\S+) /;
     my $ssid = $1;
 
+    if (defined $ssid_blacklist{$ssid}) {
+	print "# ignoring $ssid\n";
+	next;
+    }
+
     if ($best_rssi < $rssi &&
 	(! defined $desired_ssid ||
 	 $desired_ssid eq $ssid)) {
@@ -35,7 +51,6 @@ foreach my $line (@lines) {
     }
 }
 
-print "found: ssid $best_ssid bssid $best_bssid channel $best_channel +$best_rssi\n";
 system "/sbin/iwconfig ath0 channel $best_channel";
 system "write_handler.pl winfo.bssid $best_bssid";
 system "write_handler.pl winfo.channel $best_channel";
@@ -43,4 +58,14 @@ system "write_handler.pl winfo.ssid $best_ssid";
 
 system "write_handler.pl station_auth.send_auth_req 1";
 system "write_handler.pl station_assoc.send_assoc_req 1";
+
+system "usleep 100000";
+my $associated = `read_handler.pl station_assoc.associated`;
+
+if ($associated =~ /true/) {
+    print "association SUCCESS: ssid $best_ssid bssid $best_bssid channel $best_channel +$best_rssi\n";
+    exit 0;
+}
+    print "association FAILURE: ssid $best_ssid bssid $best_bssid channel $best_channel +$best_rssi\n";
+exit -1;
 

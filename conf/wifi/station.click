@@ -51,10 +51,10 @@ q :: Queue(10)
 -> SetTXPower(63)
 -> seq :: WifiSeq()
 -> extra_encap :: ExtraEncap()
--> ToDevice (ath0);
+-> to_dev :: ToDevice (ath0);
 
 
-FromDevice(ath0)
+from_dev :: FromDevice(ath0, PROMISC true)
 -> prism2_decap :: Prism2Decap()
 -> extra_decap :: ExtraDecap()
 -> FilterPhyErr()
@@ -98,14 +98,14 @@ management_cl [2] -> beacon_t :: Tee(2)
 beacon_t [1] -> tracker :: BeaconTracker(WIRELESS_INFO winfo, TRACK 10) -> Discard;
 
 management_cl [3] -> Print ("dissoc") -> station_assoc;
-management_cl [4] -> PrintWifi(probe_resp) -> bs;
+management_cl [4] -> bs;
 management_cl [5] -> PrintWifi(auth) -> station_auth;
 
 wifi_cl [1] 
 //-> PrintWifi(data)
 -> wifi_decap :: WifiDecap() 
+-> ether_filter ::HostEtherFilter(station_address, DROP_OWN true)
 -> ToHost(station);
-
 
 FromHost(station, station_address, ETHER station_address)
 -> station_encap :: WifiEncap(0x01, WIRELESS_INFO winfo)

@@ -1,0 +1,36 @@
+If you want to use the scripts and configurations in this directory,
+you probably want to add it to your ${PATH} variable so the 
+scripts work.
+
+I usually run the following to associate with an access point:
+
+sudo click station.click > /tmp/station.log
+scan.pl
+associate.pl
+
+
+scan.pl will scan all the channels for access points. You can see them
+by running
+
+read_handler.pl bs.scan
+
+associate.pl associates with access point with the highest RSSI.
+If you run associate.pl "ssid", it will associate with that access 
+point.
+
+At this point, you can run dhclient or whatever on the "station"
+interface.
+
+----
+
+
+You can also run
+sudo click dump.click
+which will be like running tcpdump with prism headers.
+The cool thing is that you can run this while still associated to the 
+access point.
+You can also change that file to filter out things (like beacons).
+
+
+--john
+
