@@ -97,13 +97,20 @@ private:
     struct _counter counter[256];
   };
 
+  int _src_dst;
+#define SRC 0
+#define DST 1
+
   int _max;
   Vector<int> _inputs;
   struct _stats *_base;
 
   void clean(_stats *s, int value = 0, bool recurse = false);
   void update(IPAddress a, int val);
+  String print(_stats *s, String ip = "");
 
+  static String srcdst_rhandler(Element *e, void *);
+  static int srcdst_whandler(const String &conf, Element *e, void *, ErrorHandler *errh);
   static String max_rhandler(Element *e, void *);
   static int max_whandler(const String &conf, Element *e, void *, ErrorHandler *errh);
   static String look_handler(Element *e, void *);
