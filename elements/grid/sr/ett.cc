@@ -140,6 +140,7 @@ ETT::start_query(IPAddress dstip)
     return;
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
   memset(pk, '\0', len);
+  pk->_version = _srcr_version;
   pk->_type = PT_QUERY;
   pk->_flags = 0;
   pk->_qdst = dstip;
@@ -363,6 +364,7 @@ void ETT::start_reply(IPAddress src, IPAddress dst, u_long seq)
 
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
   memset(pk, '\0', len);
+  pk->_version = _srcr_version;
   pk->_type = PT_REPLY;
   pk->_flags = 0;
   pk->_qdst = dst;
@@ -481,6 +483,13 @@ ETT::push(int port, Packet *p_in)
     return;
   } else if (port ==  0 || port == 1) {
     struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
+  if (pk->_version != _srcr_version) {
+    click_chatter("SRCR %s: bad sr_pkt version. wanted %d, got %d\n",
+		  _srcr_version,
+		  pk->_version);
+    p_in->kill();
+    return;
+  }
     if(p_in->length() < 20 || p_in->length() < pk->hlen_wo_data()){
       click_chatter("ETT %s: bad sr_pkt len %d, expected %d",
 		    _ip.s().cc(),

@@ -127,7 +127,7 @@ SRCR::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> r)
   EtherAddress eth_dest = _arp_table->lookup(r[1]);
   memcpy(pk->ether_dhost, eth_dest.data(), 6);
   pk->ether_type = htons(_et);
-
+  pk->_version = _srcr_version;
   pk->_type = PT_DATA;
   pk->_dlen = htons(payload_len);
 
@@ -149,7 +149,13 @@ SRCR::push(int port, Packet *p_in)
     return;
   }
   struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
-  //click_chatter("SRCR %s: got sr packet", _ip.s().cc());
+  if (pk->_version != _srcr_version) {
+    click_chatter("SRCR %s: bad sr_pkt version. wanted %d, got %d\n",
+		  _srcr_version,
+		  pk->_version);
+    p_in->kill();
+    return;
+  }
   if(p_in->length() < 20 || p_in->length() < pk->hlen_wo_data()){
     click_chatter("SRCR %s: bad sr_pkt len %d, expected %d",
                   _ip.s().cc(),
@@ -263,6 +269,12 @@ SRCR::push(int port, Packet *p_in)
   IPAddress nxt = pk->get_hop(pk->next());
   EtherAddress eth_dest = _arp_table->lookup(nxt);
   memcpy(pk_out->ether_dhost, eth_dest.data(), 6);
+
+  /* set the ip header anno */
+  const click_ip *ip = reinterpret_cast<const click_ip *>
+    (p->data() + sr_pkt::len_wo_data(pk->num_hops()));
+  p->set_ip_header(ip, ip->ip_hl << 2);
+
 
   p_in->kill();
   output(0).push(p);

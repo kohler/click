@@ -30,32 +30,35 @@ enum SRCRPacketType { PT_QUERY = 0x11,
 		     PT_DATA  = 0x33 };
 
 
+
+static const uint8_t _srcr_version = 0x01;
+
 // Packet format.
 struct sr_pkt {
   uint8_t       ether_dhost[6];
   uint8_t       ether_shost[6];
   uint16_t      ether_type;
 
-  uint8_t _version;
+  uint8_t _version; /* see _srcr_version */
 
-  uint8_t _type;  // PacketType
-  uint16_t _flags; // PacketFlags
+  uint8_t _type;  /* see enum SRCRPacketType */
+  uint16_t _flags; 
 
-  // Route
-  uint8_t _nhops;
-  uint8_t _next;   // Index of next node who should process this packet.
-
-  uint64_t _seq;   // Originator's sequence number.
-
-  // PT_REPLY
-  // The data is in the PT_QUERY fields.
-  
   // PT_DATA
   uint16_t _dlen;
   
   // PT_QUERY
   in_addr _qdst; // Who are we looking for?
   
+  in_addr extra1;
+  in_addr extra2;
+  uint8_t extra_fwd;
+  uint8_t extra_rev;
+  
+  uint32_t _seq;   // Originator's sequence number.
+  uint8_t _nhops;
+  uint8_t _next;   // Index of next node who should process this packet.
+
 
   EtherAddress get_dhost() {
     return EtherAddress(ether_dhost);
