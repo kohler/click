@@ -331,16 +331,14 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
     return false;
     break;
   case EstBySigQual: {
-#if 0
-    click_chatter("XXX %s", ip.s().cc());
-#endif
     h(102);
-    struct timeval last;
     RTEntry *r = _rtes.findp(ip);
     if (r == 0 || r->num_hops() > 1) {
       h(103);
       return false;
     }
+#if 0
+    struct timeval last;
 #if 0
     LinkStat::stat_t *s = _link_stat->_stats.findp(r->next_hop_eth);
 #else
@@ -369,7 +367,7 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
     unsigned int window = 0;
     unsigned int num_rx = 0;
     unsigned int num_expected = 0;
-    bool res = _link_stat->get_bcast_stats(r->next_hop_eth, last, window, num_rx, num_expected);
+    bool res = false;_link_stat->get_bcast_stats(r->next_hop_eth, last, window, num_rx, num_expected);
     if (res && num_expected > 1) {
       h(105);
       double num_rx_ = num_rx;
@@ -402,9 +400,14 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
       }
       return true;
     }
+#else
+    rate = 0;
+    return false;
+#endif
   }
   h(113);
   case EstByMeas: {
+#if 0
     struct timeval last;
     RTEntry *r = _rtes.findp(ip);
     if (r == 0 || r->num_hops() > 1)
@@ -421,6 +424,7 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
       click_chatter("WARNING: est_reverse_delivery_rate: num_rx (%d) > num_expected (%d) for %s",
 		    num_rx, num_expected, r->next_hop_eth.s().cc());
     rate = (num_rx_ - 0.5) / num_expected_;
+#endif
     return true;
     break;
   }
@@ -780,7 +784,6 @@ GridRouteTable::simple_action(Packet *packet)
       if (new_r.num_hops() > 1 && r && r->num_hops() == 1) {
 	/* clear old 1-hop stats */
 	_link_tracker->remove_all_stats(r->dest_ip);
-	_link_stat->remove_all_stats(r->next_hop_eth);
       }
     }
     if (r)
@@ -877,7 +880,6 @@ GridRouteTable::simple_action(Packet *packet)
       if (route.num_hops() > 1 && our_rte && our_rte->num_hops() == 1) {
 	/* clear old 1-hop stats */
 	_link_tracker->remove_all_stats(our_rte->dest_ip);
-	_link_stat->remove_all_stats(our_rte->next_hop_eth);
 
 #if NEXT_HOP_ETH_FIXUP
 	/* fix up route entries for which this dest had been the next hop */
@@ -1224,6 +1226,7 @@ GridRouteTable::print_links(Element *e, void *)
 
     /* get our measurements of the link *from* this neighbor */
 #if 0
+#if 0
     LinkStat::stat_t *s1 = rt->_link_stat->_stats.findp(r.next_hop_eth);
 #else
     struct {
@@ -1255,6 +1258,7 @@ GridRouteTable::print_links(Element *e, void *)
 	     s1 ? s1->sig : -1, s1 ? s1->qual : -1, res1 ? ((int) (100 * tx_rate)) : -1,
 	     res2 ? tx_sig : -1, res2 ? tx_qual : -1, res3 ? (int) (100 * bcast_rate) : -1);
     s += buf;
+#endif
   }
   return s;
 }
@@ -1355,7 +1359,6 @@ GridRouteTable::expire_routes()
 	expired_next_hops.insert(i.value().dest_ip, true);
 	/* clear link stats */
 	_link_tracker->remove_all_stats(i.value().dest_ip);
-	_link_stat->remove_all_stats(i.value().next_hop_eth);
       }
     }
   }

@@ -3,33 +3,62 @@
 
 /*
  * =c
- * LinkStat(AiroInfo, WINDOW [, ETH, IP, PERIOD])
+ * LinkStat([I<KEYWORDS>])
  * =s Grid
+ * Track broadcast loss rates. 
+ *
  * =d
  *
- * Expects Grid ethernet packets as input.  Incoming packets are
- * passed through to the first output.  For each incoming packet,
- * queries the AiroInfo element and records information about the
- * packet sender's latest transmission stats (quality, signal
- * strength).  Records Grid probe packets received during the last
- * WINDOW milliseconds.  If a second output is connected, sends probe
- * packets every PERIOD milliseconds.  PERIOD defaults to 1000 (1
- * second).  The source Ethernet and IP addresses (ETH and IP) must be
- * supplied if the second output is connected.
+ * Expects Grid link probe packets as input.  Records the last WINDOW unique
+ * (not neccessarily sequential) sequence numbers of link probes from
+ * each host, and calculates loss rates over the last TAU milliseconds
+ * for each host.  If the output is connected, sends probe
+ * packets every PERIOD milliseconds.  The source Ethernet and IP
+ * addresses (ETH and IP) must be specified if the second output is
+ * connected.
  *
- * Statistics are made available to the PingPong element for sending
- * back to the transmitter's LinkTracker.
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item ETH, IP
+ *
+ * Ethernet and IP addresses of this node, respectively; required if
+ * output is connected.
+ *
+ * =item PERIOD
+ *
+ * Unsigned integer.  Millisecond period between sending link probes
+ * if second output is connected.  Defaults to 1000 (1 second).
+ *
+ * =item WINDOW
+ *
+ * Unsigned integer.  Number of most recent sequence numbers to remember
+ * for each host.  Defaults to 100.
+ *
+ * =item TAU
+ *
+ * Unsigned integer.  Millisecond period over which to calculate loss
+ * rate for each host.  Defaults to 10,000 (10 seconds).
+ *
+ * =item SIZE
+ *
+ * Unsigned integer.  Total number of bytes in probe packet.  Defaults to 1000.
+ *
+ *
+ * =back
  *
  * =a
- * AiroInfo, LinkTracker, PingPong */
+ * LinkTracker, PingPong */
 
 #include <click/bighashmap.hh>
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
+#include <elements/grid/timeutils.hh>
+#include <elements/grid/grid.hh>
 
-#include "airoinfo.hh"
 CLICK_DECLS
 
 class Timer;
@@ -37,14 +66,18 @@ class grid_link_probe;
 
 class LinkStat : public Element {
 private:
-  AiroInfo *_ai;
-  unsigned int _window; // msecs
+  unsigned int _window; // sequence numbers
+  unsigned int _tau;    // msecs
   unsigned int _period; // msecs
+
+  unsigned int _probe_size; // bytes
 
   unsigned int _seq;
   IPAddress    _ip;
   EtherAddress _eth;
 
+
+  // record probes received from other hosts
   struct probe_t {
     struct timeval when;  
     unsigned int   seq_no;  
@@ -54,58 +87,79 @@ private:
   struct probe_list_t {
     unsigned int    ip;
     unsigned int    period;   // period of this node's probes, as reported by the node
-    unsigned int    window;   // this node's stats window, as reported by the node
-    Vector<probe_t> probes;   // probes received in the _window msecs before most recent probe
-    probe_list_t(unsigned int ip_, unsigned int p, unsigned int w) : ip(ip_), period(p), window(w) { }
-    probe_list_t() : ip(0), period(0), window(0) { }
+    unsigned int    tau;      // this node's stats averaging period, as reported by the node
+    Vector<probe_t> probes;   // most recently received probes
+    probe_list_t(unsigned int ip_, unsigned int p, unsigned int t) : ip(ip_), period(p), tau(t) { }
+    probe_list_t() : ip(0), period(0), tau(0) { }
   };
 
   // Per-sender map of received probes.
-  BigHashMap<EtherAddress, probe_list_t> _bcast_stats;
+  typedef BigHashMap<EtherAddress, probe_list_t> ProbeMap;
+  ProbeMap _bcast_stats;
+
+  // record delivery date data about our outgoing links
+  struct outgoing_link_entry_t : public grid_link_entry {
+    struct timeval received_at;
+    unsigned int   tau;
+    outgoing_link_entry_t() { memset(this, 0, sizeof(*this)); }
+    outgoing_link_entry_t(grid_link_entry *l, const struct timeval &now, unsigned int t) 
+      : received_at(now), tau(t) {
+      ip = l->ip;
+      period = ntohl(l->period);
+      last_rx_time = ntoh(l->last_rx_time);
+      last_seq_no = ntohl(l->last_seq_no);
+      num_rx = ntohl(l->num_rx);
+    }
+  };
+
+  // Per-receiver map of delivery rate data
+  typedef BigHashMap<EtherAddress, outgoing_link_entry_t> ReverseProbeMap;
+  ReverseProbeMap _rev_bcast_stats;
 
   static String read_stats(Element *, void *);
   static String read_bcast_stats(Element *, void *);
+
+  // count number of probes received from specified host during last
+  // _tau msecs.
+  unsigned int count_rx(const EtherAddress &);
+  unsigned int count_rx(const IPAddress &);
+  unsigned int count_rx(const probe_list_t *);
   
+  // handlers
   static String read_window(Element *, void *);
+  static String read_period(Element *, void *);
+  static String read_tau(Element *, void *);
   static int write_window(const String &, Element *, void *, ErrorHandler *);
+  static int write_period(const String &, Element *, void *, ErrorHandler *);
+  static int write_tau(const String &, Element *, void *, ErrorHandler *);
   
   void add_bcast_stat(const EtherAddress &, const IPAddress &, const grid_link_probe *);
-
-
-  struct stat_t {
-    int            qual;
-    int            sig;
-    int            noise;
-    struct timeval when;
-  };
-
-  // Per-sender map of the most recent signal stats.
-  BigHashMap<EtherAddress, stat_t> _stats;
 
   static void static_send_hook(Timer *, void *e) { ((LinkStat *) e)->send_hook(); }
   void send_hook();
 
   Timer *_send_timer;
 
- public:
-  /*
-   * look up most recent stats for E.  LAST is the local rx time of
-   * the last packet used to collect stats for E, NUM_RX is the number
-   * actually received during the interval [LAST - WINDOW, LAST], WINDOW
-   * is the interval size in milliseconds, and NUM_EXPECTED is the
-   * number we think should have seen, based on observed sequence
-   * numbers.  Returns true if we have some data, else false.  
-   */
-  bool get_bcast_stats(const EtherAddress &e, struct timeval &last, unsigned int &window,
-		       unsigned int &num_rx, unsigned int &num_expected);
+  static unsigned int calc_pct(unsigned tau, unsigned period, unsigned num_rx);
 
-  void remove_all_stats(const EtherAddress &e);
+ public:
+  // Get forward delivery rate R to host E over period TAU
+  // milliseconds, as recorded at time T.  R is a percentage (0-100).
+  // Return true iff we have data.
+  bool get_forward_rate(const EtherAddress &e, unsigned int *r, unsigned int *tau, 
+			struct timeval *t);
+
+  // Get reverse delivery rate R from host E over period TAU
+  // milliseconds, as of now.  R is a percentage 0-100.  Return true
+  // iff we have good data.
+  bool get_reverse_rate(const EtherAddress &e, unsigned int *r, unsigned int *tau);
 
   LinkStat();
   ~LinkStat();
   
   const char *class_name() const		{ return "LinkStat"; }
-  const char *processing() const		{ return "a/a"; }
+  const char *processing() const		{ return PUSH; }
+  const char *flow_code() const                 { return "x/y"; }
   void notify_noutputs(int);
   
   LinkStat *clone() const;

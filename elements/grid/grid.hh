@@ -350,7 +350,7 @@ struct grid_link_probe {
   unsigned int seq_no;
   unsigned int period;      // period of this node's probe broadcasts, in msecs
   unsigned int num_links;   // number of grid_link_entry entries following
-  unsigned int window;      // this node's linkstat window, in msecs
+  unsigned int tau;         // this node's loss-rate averaging period, in msecs
 };
 
 struct grid_link_entry {
@@ -358,7 +358,7 @@ struct grid_link_entry {
   unsigned int period;         // period of node's probe broadcasts, in msecs
   struct timeval last_rx_time; // time of most recent probe received from node
   unsigned int last_seq_no;    // seqno of most recent probe received from this host
-  unsigned int num_rx;         // number of probe bcasts received from node during window
+  unsigned int num_rx;         // number of probe bcasts received from node during last tau msecs
 };
 
 inline String

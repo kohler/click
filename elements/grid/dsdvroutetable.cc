@@ -28,9 +28,6 @@
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
 #include <elements/grid/dsdvroutetable.hh>
-#ifdef CLICK_USERLEVEL
-  #include <elements/grid/linktracker.hh>
-#endif
 #include <elements/grid/linkstat.hh>
 #include <elements/grid/gridgatewayinfo.hh>
 #include <elements/grid/timeutils.hh>
@@ -66,7 +63,7 @@ DSDVRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 
 DSDVRouteTable::DSDVRouteTable() : 
   GridGenericRouteTable(1, 1), _gw_info(0),
-  _link_tracker(0), _link_stat(0), _log(0), 
+  _link_stat(0), _log(0), 
   _seq_no(0), _bcast_count(0),
   _max_hops(3), _alpha(88), _wst0(6000),
   _last_periodic_update(0),
@@ -125,7 +122,6 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpIPAddress, "source IP address", &_ip,
 			cpKeywords,
 			"GW", cpElement, "GridGatewayInfo element", &_gw_info,
-			"LT", cpElement, "LinkTracker element", &_link_tracker,
 			"LS", cpElement, "LinkStat element", &_link_stat,
 			"MAX_HOPS", cpUnsigned, "max hops", &_max_hops,
 			"METRIC", cpString, "route metric", &metric,
@@ -162,8 +158,8 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (_gw_info == 0)
     errh->warning("No GridGatewayInfo element specified, will not advertise as gateway");
-  if (_link_tracker == 0 || _link_stat == 0)
-    errh->warning("One or both of LinkTracker and LinkStat not specified, some metrics may not work");
+  if (_link_stat == 0)
+    errh->warning("LinkStat elements not specified, some metrics may not work");
 
   return res;
 }
@@ -198,17 +194,16 @@ DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rat
 {
   switch (_est_type) {
   case EstByMeas: {
-#ifdef CLICK_USERLEVEL
-    struct timeval last;
-    double r1;
-    bool res = _link_tracker ? _link_tracker->get_bcast_stat(ip, r1, last) : false;
-    rate = (unsigned) (100 * r1);
-    return res;
-#else
-    return false;
-#endif
-    break;
+    if (!_link_stat)
+      return false;
+    RTEntry *r = _rtes.findp(ip);
+    if (r == 0 || r->num_hops() > 1)
+      return false;
+    unsigned int tau;
+    struct timeval t;
+    return _link_stat->get_forward_rate(r->dest_eth, &rate, &tau, &t);
   }
+
   default:
     return false;
   }
@@ -219,27 +214,15 @@ DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, unsigned int &rat
 {
   switch (_est_type) {
   case EstByMeas: {
-#ifdef CLICK_USERLEVEL
-    struct timeval last;
+    if (!_link_stat)
+      return false;
     RTEntry *r = _rtes.findp(ip);
     if (r == 0 || r->num_hops() > 1)
       return false;
-    unsigned int window = 0;
-    unsigned int num_rx = 0;
-    unsigned int num_expected = 0;
-    bool res = _link_stat ? _link_stat->get_bcast_stats(r->next_hop_eth, last, window, num_rx, num_expected) : false;
-    if (!res || num_expected <= 1)
-      return false;
-    if (num_rx > num_expected)
-      click_chatter("WARNING: est_reverse_delivery_rate: num_rx (%d) > num_expected (%d) for %s",
-		    num_rx, num_expected, r->next_hop_eth.s().cc());
-    rate = (100*num_rx - 50) / num_expected;
-    return true;
-#else
-    return false;
-#endif
-    break;
+    unsigned int tau;
+    return _link_stat->get_reverse_rate(r->dest_eth, &rate, &tau);
   }
+
   default:
     return false;
   }
@@ -935,20 +918,6 @@ DSDVRouteTable::simple_action(Packet *packet)
   for (int i = 0; i < hlo->num_nbrs; i++, entry_ptr += entry_sz) {
     
     grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
-        
-    // Check for ping-pong link stats about us. We still do the
-    // ping-ponging in route ads as well as pigybacking on unicast
-    // data, in case we aren't sending data to that destination.
-#ifdef CLICK_USERLEVEL
-#ifndef SMALL_GRID_HEADERS
-    if (curr->ip == (unsigned int) _ip && curr->num_hops == 1 && _link_tracker) {
-      _link_tracker->add_stat(ipaddr, ntohl(curr->link_sig), ntohl(curr->link_qual), 
-			      ntoh(curr->measurement_time));
-      _link_tracker->add_bcast_stat(ipaddr, curr->num_rx, curr->num_expected, ntoh(curr->last_bcast));
-    }
-#endif
-#endif
-
     RTEntry route(ipaddr, ethaddr, curr, PAINT_ANNO(packet), jiff); 
     
     if (route.ttl == 0) // ignore expired ttl
@@ -1240,36 +1209,8 @@ DSDVRouteTable::print_links(Element *e, void *)
     if (!r.dest_eth)
       continue;
 
-    /* get our measurements of the link *from* this neighbor */
-#if 0 // #ifdef CLICK_USERLEVEL
-    LinkStat::stat_t *s1 = rt->_link_stat ? rt->_link_stat->_stats.findp(r.next_hop_eth) : 0;
-#else
-    struct {
-      int qual;
-      int sig;
-    } *s1 = 0;
-#endif
-    struct timeval last;
-    unsigned int window = 0;
-    unsigned int num_rx = 0;
-    unsigned int num_expected = 0;
-    bool res1 = rt->_link_stat ? 
-      rt->_link_stat->get_bcast_stats(r.next_hop_eth, last, window, num_rx, num_expected) : 0;
-
-    /* get estimates of our link *to* this neighbor */
-    int tx_sig = 0;
-    int tx_qual = 0;
-    unsigned int bcast_rate = 0;
-#ifdef CLICK_USERLEVEL
-    double b;
-    bool res2 = rt->_link_tracker ? rt->_link_tracker->get_stat(r.dest_ip, tx_sig, tx_qual, last) : false;
-    bool res3 = rt->_link_tracker? rt->_link_tracker->get_bcast_stat(r.dest_ip, b, last) : false;
-    bcast_rate = (unsigned int) (b * 100);
-#else
-    bool res2 = false;
-    bool res3 = false;
-#endif
-
+    // XXX what the heck are we trying to do here?
+#if 0
     char buf[255];
     int tx_rate = 100 * num_rx;
     tx_rate -= 50;
@@ -1279,6 +1220,7 @@ DSDVRouteTable::print_links(Element *e, void *)
 	     s1 ? s1->sig : -1, s1 ? s1->qual : -1, res1 ? tx_rate : -1,
 	     res2 ? tx_sig : -1, res2 ? tx_qual : -1, res3 ? (int) bcast_rate : -1);
     s += buf;
+#endif
   }
   return s;
 }

@@ -70,10 +70,10 @@ CLICK_DECLS
  * gateway.  If this argument is not provided, the node is not a
  * gateway.
  *
- * =item LS, LT
+ * =item LS
  *
- * LinkStat and LinkTracker elements, respectively.  Both elements are
- * required to use link metrics other than hopcount.
+ * LinkStat element.  Required to use link metrics other than
+ * hopcount.
  *
  * =item MAX_HOPS
  * 
@@ -110,7 +110,6 @@ CLICK_DECLS
 
 class GridGatewayInfo;
 class LinkStat;
-class LinkTracker;
 
 class DSDVRouteTable : public GridGenericRouteTable {
 
@@ -315,7 +314,6 @@ private:
 
 
   class GridGatewayInfo *_gw_info;
-  class LinkTracker     *_link_tracker;
   class LinkStat        *_link_stat;
 
   /* binary logging */

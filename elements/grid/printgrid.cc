@@ -16,19 +16,21 @@
  */
 
 #include <click/config.h>
-#include "printgrid.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
-
+#include <click/straccum.hh>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <clicknet/ether.h>
-#include "grid.hh"
+#include <elements/grid/grid.hh>
+#include <elements/grid/timeutils.hh>
+#include <elements/grid/printgrid.hh>
 CLICK_DECLS
 
 PrintGrid::PrintGrid()
-  : Element(1, 1), _print_routes(false), _verbose(true), _timestamp(false)
+  : Element(1, 1), _print_routes(false), _print_probe_entries(false),
+  _verbose(true), _timestamp(false)
 {
   MOD_INC_USE_COUNT;
   _label = "";
@@ -53,6 +55,7 @@ PrintGrid::configure(Vector<String> &conf, ErrorHandler* errh)
 		  cpString, "label", &_label,
 		  cpKeywords,
 		  "SHOW_ROUTES", cpBool, "print route entries in advertisments?", &_print_routes,
+		  "SHOW_PROBE_CONTENTS", cpBool, "print link probe entries?", &_print_probe_entries,
 		  "VERBOSE", cpBool, "show more detail?", &_verbose,
 		  "TIMESTAMP", cpBool, "print packet timestamps?", &_timestamp,
 		  cpEnd) < 0)
@@ -61,7 +64,7 @@ PrintGrid::configure(Vector<String> &conf, ErrorHandler* errh)
 }
 
 String
-PrintGrid::encap_to_string(grid_nbr_encap *nb)
+PrintGrid::encap_to_string(const grid_nbr_encap *nb) const
 {
   String line;
   line += "hops_travelled=" + String((unsigned int) nb->hops_travelled) + " ";
@@ -195,8 +198,19 @@ PrintGrid::simple_action(Packet *p)
     line += " reply_hop=" + String((unsigned int) rr->reply_hop);
     break;
 
+  case grid_hdr::GRID_LINK_PROBE: {
+    grid_link_probe *lp = (grid_link_probe *) (gh + 1);
+    line += " seq_no=" + String(ntohl(lp->seq_no));
+    line += " period=" + String(ntohl(lp->period));
+    line += " tau=" + String(ntohl(lp->tau));
+    line += " num_links=" + String(ntohl(lp->num_links));
+    if (_print_probe_entries)
+      line += get_probe_entries(lp);
+    break;
+  }
+
   default:
-    line += "Don't know how to print this header";
+    line += "Unknown grid header type " + String((int) gh->type);
   }
   
   click_chatter("%s", line.cc());
@@ -204,9 +218,31 @@ PrintGrid::simple_action(Packet *p)
   return p;
 }
 
+String
+PrintGrid::get_probe_entries(const grid_link_probe *lp) const
+{
+  StringAccum sa;
+  grid_link_entry *le = (grid_link_entry *) (lp + 1);
+  for (unsigned i = 0; i < ntohl(lp->num_links); i++, le++) {
+    sa << "\n\t" << IPAddress(le->ip);
+    sa << " period=" << ntohl(le->period);
+    sa << " num_rx=" << ntohl(le->num_rx);
+    sa << " last_seq_no=" << ntohl(le->last_seq_no);
+    sa << " last_rx_time=" << ntoh(le->last_rx_time);
+    unsigned pct = 0;
+    if (ntohl(le->period > 0)) {
+      unsigned num_expected = ntohl(lp->tau) / ntohl(le->period);
+      if (num_expected > 0)
+	pct = 100 * htonl(le->num_rx) / num_expected;
+    }
+    sa << " pct=" << pct;
+  }
+
+  return sa.take_string();
+}
 
 String
-PrintGrid::get_entries(grid_hello *gh)
+PrintGrid::get_entries(const grid_hello *gh) const
 {
   String ret;
   char *cp = (char *) (gh + 1);

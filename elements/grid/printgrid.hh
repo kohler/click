@@ -22,6 +22,10 @@ CLICK_DECLS
  *
  * Boolean.  Default false.  If true, print all the entries in each route advertisement.
  *
+ * =item SHOW_PROBE_CONTENTS
+ *
+ * Boolean. Default false.  If true, print all the entries in each link probe. 
+ *
  * =item VERBOSE
  *
  * Boolean.  Default true.  If false, leave out some details such as location info, etc.
@@ -52,10 +56,13 @@ class PrintGrid : public Element {
   Packet *simple_action(Packet *);
 
 private:
-  String encap_to_string(grid_nbr_encap *);
+  String encap_to_string(const grid_nbr_encap *) const;
   
   bool _print_routes;
-  String get_entries(grid_hello *);
+  String get_entries(const grid_hello *) const;
+
+  bool _print_probe_entries;
+  String get_probe_entries(const grid_link_probe *) const;
 
   bool _verbose;  
   bool _timestamp;
