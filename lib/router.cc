@@ -1161,16 +1161,18 @@ Router::add_write_handler(int eindex, const String &name,
 }
 
 int
-Router::change_handler_flags(Router *r, int eindex, const String &name,
-			     int clear_flags, int set_flags)
+Router::change_handler_flags(Element *e, const String &name,
+			     uint32_t clear_flags, uint32_t set_flags)
 {
+  Router *r = (e ? e->router() : 0);
+  int eindex = (e ? e->eindex() : -1);
   Handler to_add = fetch_handler(r, eindex, name);
-  if (to_add._use_count > 0) {	// don't create new handlers
+  if (to_add._use_count > 0) {	// only modify existing handlers
     to_add._flags = (to_add._flags & ~clear_flags) | set_flags;
-    if (eindex < 0)
-      store_global_handler(to_add);
-    else
+    if (r)
       r->store_handler(eindex, to_add);
+    else
+      store_global_handler(to_add);
     return 0;
   } else
     return -1;

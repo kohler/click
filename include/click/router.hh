@@ -71,7 +71,7 @@ class Router { public:
   void element_handlers(int, Vector<int> &) const;
   void add_read_handler(int, const String &, ReadHandler, void *);
   void add_write_handler(int, const String &, WriteHandler, void *);
-  static int change_handler_flags(Router *, int, const String &, int clear_flags, int set_flags);
+  static int change_handler_flags(Element *, const String &, uint32_t clear_flags, uint32_t set_flags);
   
   enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
   static int nglobal_handlers();
@@ -231,13 +231,12 @@ class Router { public:
 
 class Router::Handler { public:
 
-  Handler();
-  Handler(const String &);
-
-  enum { FIRST_USER_FLAG = 1 };
+  enum { DRIVER_FLAG_0 = 1, DRIVER_FLAG_1 = 2,
+	 DRIVER_FLAG_2 = 4, DRIVER_FLAG_3 = 8,
+	 USER_FLAG_SHIFT = 4, USER_FLAG_0 = 1 << USER_FLAG_SHIFT };
   
   const String &name() const	{ return _name; }
-  int flags() const		{ return _flags; }
+  uint32_t flags() const	{ return _flags; }
   
   bool readable() const		{ return _read; }
   bool read_visible() const	{ return _read; }
@@ -261,6 +260,9 @@ class Router::Handler { public:
   int _flags;
   int _use_count;
   int _next_by_name;
+
+  Handler();
+  Handler(const String &);
 
   bool compatible(const Handler &) const;
   
