@@ -146,6 +146,7 @@ include/click/vector.hh
 
 include/click/standard
 include/click/standard/addressinfo.hh
+include/click/standard/alignmentinfo.hh
 include/click/standard/drivermanager.hh
 include/click/standard/errorelement.hh
 include/click/standard/scheduleinfo.hh

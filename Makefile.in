@@ -11,7 +11,6 @@ top_srcdir = @top_srcdir@
 srcdir = @srcdir@
 top_builddir = .
 subdir = .
-AUTOHEADER = @AUTOHEADER@
 AUTOCONF = @AUTOCONF@
 PERL = @PERL@
 INSTALL = @INSTALL@
@@ -41,7 +40,7 @@ tools: Makefile
 install: stamp-h
 	@for d in @TARGETS@ tools; do (cd $$d && $(MAKE) install) || exit 1; done
 	@$(MAKE) install-local install-doc install-include
-install-local: elementmap $(srcdir)/click-buildtool click-compile $(srcdir)/click-mkelemmap
+install-local: elementmap $(srcdir)/click-buildtool click-compile
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL_IF_CHANGED) $(srcdir)/click-buildtool $(bindir)/click-buildtool
 	$(INSTALL_IF_CHANGED) click-compile $(bindir)/click-compile
