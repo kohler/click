@@ -1,6 +1,6 @@
 #ifndef IPRWPATTERNS_HH
 #define IPRWPATTERNS_HH
-#include "elements/ip/iprewriter.hh"
+#include "elements/ip/iprw.hh"
 #include "hashmap.hh"
 
 /*
@@ -24,7 +24,7 @@
 class IPRewriterPatterns : public Element {
 
   HashMap<String, int> _name_map;
-  Vector<IPRewriter::Pattern *> _patterns;
+  Vector<IPRw::Pattern *> _patterns;
 
  public:
 
@@ -33,11 +33,11 @@ class IPRewriterPatterns : public Element {
   const char *class_name() const	{ return "IPRewriterPatterns"; }
   IPRewriterPatterns *clone() const	{ return new IPRewriterPatterns; }
 
-  int configure_phase() const	{ return IPRewriter::CONFIGURE_PHASE_PATTERNS;}
+  int configure_phase() const	{ return IPRw::CONFIGURE_PHASE_PATTERNS; }
   int configure(const Vector<String> &, ErrorHandler *);
   void uninitialize();
 
-  static IPRewriter::Pattern *find(Element *, const String &, ErrorHandler *);
+  static IPRw::Pattern *find(Element *, const String &, ErrorHandler *);
   
 };
 

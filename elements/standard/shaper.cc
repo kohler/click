@@ -64,7 +64,7 @@ Shaper::pull(int)
 {
   _rate.update_time();
   
-  int r = _rate.average();
+  unsigned r = _rate.average();
   if (r >= _meter1)
     return 0;
   else {

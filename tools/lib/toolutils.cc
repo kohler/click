@@ -14,9 +14,11 @@
 # include <config.h>
 #endif
 #include "straccum.hh"
+#include "bitvector.hh"
 #include "routert.hh"
 #include "lexert.hh"
 #include "toolutils.hh"
+#include "confparse.hh"
 #include <errno.h>
 #include <string.h>
 #include <time.h>
@@ -133,32 +135,62 @@ write_router_file(RouterT *r, const char *name, ErrorHandler *errh)
 // ELEMENTMAP
 
 ElementMap::ElementMap()
-  : _name_map(-1), _cxx_name_map(-1)
+  : _name_map(0), _cxx_name_map(0), _requirement_map(-1), _nrequirements(0)
 {
+  (void) requirement("linuxmodule");
+  _requirement_map.insert("userlevel", 1);
+  _requirement_map.insert("!userlevel", 0);
+  _requirement_name[1] = "userlevel";
+  add(String(), String(), String(), String());
 }
 
 ElementMap::ElementMap(const String &str)
-  : _name_map(-1), _cxx_name_map(-1)
+  : _name_map(0), _cxx_name_map(0), _requirement_map(-1), _nrequirements(0)
 {
+  (void) requirement("linuxmodule");
+  _requirement_map.insert("userlevel", 1);
+  _requirement_map.insert("!userlevel", 0);
+  _requirement_name[1] = "userlevel";
+  add(String(), String(), String(), String());
   parse(str);
+}
+
+ElementMap::~ElementMap()
+{
+  for (int i = 0; i < _name.size(); i++) {
+    delete _requirements[i];
+    delete _provisions[i];
+  }
 }
 
 String
 ElementMap::processing_code(const String &n) const
 {
-  int i = _name_map[n];
-  if (i >= 0)
-    return _processing_code[i];
-  else
-    return String();
+  return _processing_code[ _name_map[n] ];
 }
 
-void
+int
+ElementMap::requirement(const String &s)
+{
+  bool negated = (s.length() && s[0] == '!');
+  String req = (negated ? s.substring(1) : s);
+  int i = _requirement_map[req];
+  if (i < 0) {
+    i = _nrequirements;
+    _nrequirements += 2;
+    _requirement_map.insert(req, i);
+    _requirement_name.push_back(req);
+    _requirement_name.push_back("!" + req);    
+  }
+  return i ^ (negated ? 1 : 0);
+}
+
+int
 ElementMap::add(const String &click_name, String cxx_name,
 		String header_file, String processing_code)
 {
-  if (!click_name)
-    return;
+  if (!click_name && !cxx_name)
+    return -1;
 
   if (cxx_name == "?")
     cxx_name = String();
@@ -167,61 +199,116 @@ ElementMap::add(const String &click_name, String cxx_name,
   if (processing_code == "?")
     processing_code = String();
   
-  int i = _name_map[click_name];
-  if (i < 0) {
-    i = _name.size();
-    _name.push_back(click_name);
-    _cxx_name.push_back(cxx_name);
-    _header_file.push_back(header_file);
-    _processing_code.push_back(processing_code);
-    _name_map.insert(click_name, i);
-    _cxx_name_map.insert(cxx_name, i);
-  } else {
-    _name[i] = click_name;
-    _cxx_name[i] = cxx_name;
-    _header_file[i] = header_file;
-    _processing_code[i] = processing_code;
-  }
+  int old_name = _name_map[click_name];
+  int old_cxx_name = _cxx_name_map[cxx_name];
+
+  _name.push_back(click_name);
+  _cxx_name.push_back(cxx_name);
+  _header_file.push_back(header_file);
+  _processing_code.push_back(processing_code);
+  _requirements.push_back(0);
+  _provisions.push_back(0);
+
+  int i = _name.size() - 1;
+  _name_map.insert(click_name, i);
+  _cxx_name_map.insert(cxx_name, i);
+  _name_next.push_back(old_name);
+  _cxx_name_next.push_back(old_cxx_name);
+}
+
+void
+ElementMap::add_requirement(int i, int r)
+{
+  Bitvector *b = _requirements[i];
+  if (!b)
+    b = _requirements[i] = new Bitvector(_nrequirements);
+  b->force_bit(r) = true;
+}
+
+void
+ElementMap::add_provision(int i, int r)
+{
+  Bitvector *b = _provisions[i];
+  if (!b)
+    b = _provisions[i] = new Bitvector(_nrequirements);
+  b->force_bit(r) = true;
 }
 
 void
 ElementMap::remove(int i)
 {
-  if (i < 0 || i >= _name.size())
+  if (i <= 0 || i >= _name.size())
     return;
 
-  _name_map.insert(_name[i], -1);
-  _cxx_name_map.insert(_cxx_name[i], -1);
+  int p = -1;
+  for (int t = _name_map[ _name[i] ]; t > 0; p = t, t = _name_next[t])
+    /* nada */;
+  if (p >= 0)
+    _name_next[p] = _name_next[i];
+  else
+    _name_map.insert(_name[i], _name_next[i]);
 
-  if (i < _name.size() - 1) {
-    _name[i] = _name.back();
-    _cxx_name[i] = _cxx_name.back();
-    _header_file[i] = _header_file.back();
-    _processing_code[i] = _processing_code.back();
-    _name_map.insert(_name[i], i);
-    _cxx_name_map.insert(_cxx_name[i], i);
-  }
-  _name.pop_back();
-  _cxx_name.pop_back();
-  _header_file.pop_back();
-  _processing_code.pop_back();
+  p = -1;
+  for (int t = _cxx_name_map[ _cxx_name[i] ]; t > 0; p = t, t = _cxx_name_next[t])
+    /* nada */;
+  if (p >= 0)
+    _cxx_name_next[p] = _cxx_name_next[i];
+  else
+    _cxx_name_map.insert(_cxx_name[i], _cxx_name_next[i]);
+
+  _name[i] = String();
+  _cxx_name[i] = String();
 }
 
 void
 ElementMap::parse(const String &str)
 {
-  Vector<String> a, b, c, d;
-  parse_tabbed_lines(str, &a, &b, &c, &d, (void *)0);
-  for (int i = 0; i < a.size(); i++)
-    add(a[i], b[i], c[i], d[i]);
+  Vector<String> name, cxx_name, header, processing, requirements, provisions;
+  parse_tabbed_lines(str, &name, &cxx_name, &header, &processing,
+		     &requirements, &provisions, (void *)0);
+  for (int i = 0; i < name.size(); i++) {
+    int which = add(name[i], cxx_name[i], header[i], processing[i]);
+    if (which < 0)
+      continue;
+    if (requirements[i]) {
+      Vector<String> words;
+      cp_spacevec(requirements[i], words);
+      for (int j = 0; j < words.size(); j++)
+	add_requirement(which, requirement(words[j]));
+    }
+    if (provisions[i]) {
+      Vector<String> words;
+      cp_spacevec(requirements[i], words);
+      for (int j = 0; j < words.size(); j++)
+	add_provision(which, requirement(words[j]));
+    }
+  }
+}
+
+void
+ElementMap::unparse_requirements(Bitvector *b, StringAccum &sa) const
+{
+  bool any = false;
+  sa << '"';
+  for (int j = 0; j < b->size(); j++)
+    if ((*b)[j]) {
+      sa << (any ? " " : "") << _requirement_name[j];
+      any = true;
+    }
+  sa << '"';
 }
 
 String
 ElementMap::unparse() const
 {
   StringAccum sa;
-  for (int i = 0; i < size(); i++) {
-    sa << _name[i] << '\t';
+  for (int i = 1; i < size(); i++) {
+    if (!_name[i] && !_cxx_name[i])
+      continue;
+    if (_name[i])
+      sa << _name[i] << '\t';
+    else
+      sa << "\"\"\t";
     if (_cxx_name[i])
       sa << _cxx_name[i] << '\t';
     else
@@ -231,9 +318,18 @@ ElementMap::unparse() const
     else
       sa << "?\t";
     if (_processing_code[i])
-      sa << _processing_code[i];
+      sa << _processing_code[i] << '\t';
     else
-      sa << '?';
+      sa << "?\t";
+    if (_requirements[i])
+      unparse_requirements(_requirements[i], sa);
+    else
+      sa << "\"\"";
+    sa << '\t';
+    if (_provisions[i])
+      unparse_requirements(_provisions[i], sa);
+    else
+      sa << "\"\"";
     sa << '\n';
   }
   return sa.take_string();

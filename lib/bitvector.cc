@@ -45,23 +45,16 @@ Bitvector::zero() const
 void
 Bitvector::resize(int n, bool valid_n)
 {
-  if (n <= Contains) {
-    if (_max >= Contains)
-      delete[] _data;
-    _data = &_f0;
-    return;
-  }
-  
   int want_u = ((n-1)/32) + 1;
   int have_u = (valid_n ? u_max() + 1 : 2);
-  if (want_u == have_u) return;
+  if (want_u <= have_u) return;
   
   unsigned *new_data = new unsigned[want_u];
   for (int i = 0; i < have_u; i++)
     new_data[i] = _data[i];
   for (int i = have_u; i < want_u; i++)
     new_data[i] = 0;
-  if (valid_n && _max >= Contains)
+  if (valid_n && _max >= INLINE_BITS)
     delete[] _data;
   _data = new_data;
 }
@@ -83,7 +76,7 @@ Bitvector::operator=(const Bitvector &o)
     resize(o._max + 1);
     _max = o._max;
     int copy = u_max();
-    if (copy < ContainsU-1) copy = ContainsU-1;
+    if (copy < INLINE_UNSIGNEDS - 1) copy = INLINE_UNSIGNEDS - 1;
     for (int i = 0; i <= copy; i++)
       _data[i] = o._data[i];
   }
@@ -97,7 +90,7 @@ Bitvector::assign(int n, bool value)
   _max = n - 1;
   unsigned bits = (value ? 0xFFFFFFFFU : 0U);
   int copy = u_max();
-  if (copy < ContainsU-1) copy = ContainsU-1;
+  if (copy < INLINE_UNSIGNEDS - 1) copy = INLINE_UNSIGNEDS - 1;
   for (int i = 0; i <= copy; i++)
     _data[i] = bits;
   if (value) clear_last();

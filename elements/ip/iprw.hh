@@ -44,8 +44,6 @@ class IPRw : public Element { protected:
   IPRw();
   ~IPRw();
   
-  const char *class_name() const		{ return "IPRw"; }
-
   enum ConfigurePhase {
     CONFIGURE_PHASE_PATTERNS = CONFIGURE_PHASE_INFO,
     CONFIGURE_PHASE_REWRITER = CONFIGURE_PHASE_DEFAULT,

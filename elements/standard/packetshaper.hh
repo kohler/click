@@ -12,11 +12,11 @@
  * second to pass through. It measures RATE using an exponential weighted
  * moving average. Because the granularity of the timer used for calculating
  * the moving average is coarse, PacketShaper is not accurate for rates less
- * than 30000. Use PacketShaper2 instead for those rates.
+ * than 30000. Use SlowPacketShaper instead for those rates.
  *
  * There are usually Queues both upstream and downstream
  * of Shaper elements.
- * =a Shaper, Meter, PacketMeter
+ * =a Shaper, Meter, PacketMeter, SlowPacketShaper
  */
 
 class PacketShaper : public Shaper {

@@ -45,8 +45,8 @@ IPRewriterPatterns::configure(const Vector<String> &conf, ErrorHandler *errh)
       continue;
     }
 
-    IPRewriter::Pattern *p;
-    if (IPRewriter::Pattern::parse(rest, &p, this, errh) >= 0) {
+    IPRw::Pattern *p;
+    if (IPRw::Pattern::parse(rest, &p, this, errh) >= 0) {
       p->use();
       _name_map.insert(word, _patterns.size());
       _patterns.push_back(p);
@@ -62,7 +62,7 @@ IPRewriterPatterns::uninitialize()
     _patterns[i]->unuse();
 }
 
-IPRewriter::Pattern *
+IPRw::Pattern *
 IPRewriterPatterns::find(Element *e, const String &name, ErrorHandler *errh)
 {
   const Vector<Element *> &ev = e->router()->elements();
@@ -77,5 +77,5 @@ IPRewriterPatterns::find(Element *e, const String &name, ErrorHandler *errh)
   return 0;
 }
 
-ELEMENT_REQUIRES(IPRewriter)
+ELEMENT_REQUIRES(IPRw)
 EXPORT_ELEMENT(IPRewriterPatterns)

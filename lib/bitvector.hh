@@ -5,8 +5,8 @@
 
 class Bitvector {
 
-  static const int Contains = 64;
-  static const int ContainsU = 2;
+  static const int INLINE_BITS = 64;
+  static const int INLINE_UNSIGNEDS = 2;
   
   int _max;
   unsigned *_data;
@@ -28,7 +28,7 @@ class Bitvector {
   Bitvector(int, bool);
   Bitvector(unsigned, bool);
   Bitvector(const Bitvector &);
-  ~Bitvector()			{ if (_max >= Contains) delete[] _data; }
+  ~Bitvector()			{ if (_max >= INLINE_BITS) delete[] _data; }
   
   int size() const		{ return _max + 1; }
   
@@ -37,6 +37,7 @@ class Bitvector {
   
   Bit operator[](int);
   bool operator[](int) const;
+  Bit force_bit(int);
   
   void clear();
   void resize(int n)		{ resize(n, true); }
@@ -88,21 +89,21 @@ inline
 Bitvector::Bitvector(int n)
   : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
-  if (n > Contains) resize(n, false);
+  if (n > INLINE_BITS) resize(n, false);
 }
 
 inline
 Bitvector::Bitvector(unsigned n)
   : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
-  if (n > (unsigned)Contains) resize(n, false);
+  if (n > static_cast<unsigned>(INLINE_BITS)) resize(n, false);
 }
 
 inline
 Bitvector::Bitvector(int n, bool b)
   : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
-  if (n > Contains) resize(n, false);
+  if (n > INLINE_BITS) resize(n, false);
   if (b) assign(n, b);
 }
 
@@ -110,7 +111,7 @@ inline
 Bitvector::Bitvector(unsigned n, bool b)
   : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
-  if (n > (unsigned)Contains) resize(n, false);
+  if (n > static_cast<unsigned>(INLINE_BITS)) resize(n, false);
   if (b) assign(n, b);
 }
 
@@ -118,7 +119,7 @@ inline
 Bitvector::Bitvector(const Bitvector &o)
   : _max(o._max), _data(&_f0), _f0(o._f0), _f1(o._f1)
 {
-  if (_max >= Contains) finish_copy_constructor(o);
+  if (_max >= INLINE_BITS) finish_copy_constructor(o);
 }
 
 inline bool
@@ -142,6 +143,17 @@ Bitvector::operator[](int i)
   return Bit(_data[i>>5], i&31);
 }
 
+inline Bitvector::Bit
+Bitvector::force_bit(int i)
+{
+  assert(i >= 0);
+  if (i > _max) {
+    resize(i + 1);
+    _max = i;
+  }
+  return Bit(_data[i>>5], i&31);
+}
+
 inline bool
 Bitvector::operator[](int i) const
 {
@@ -154,7 +166,7 @@ Bitvector::operator==(const Bitvector &o) const
 {
   if (_max != o._max)
     return false;
-  else if (_max < Contains)
+  else if (_max < INLINE_BITS)
     return _f0 == o._f0 && _f1 == o._f1;
   else
     return memcmp(_data, o._data, (u_max()+1)*4) == 0;
