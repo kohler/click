@@ -41,19 +41,10 @@ public:
     int got_skb(struct sk_buff *);
     static int static_got_skb(struct sk_buff *, void *arg);
     
-    bool run_task();
-    
 private:
     
     void tx_completed(Packet *p);
     
-    unsigned _burst;
-    unsigned _drops;
-    
-    Task _task;
-
-    enum { QSIZE = 511 };
-    Packet *_queue[QSIZE+1];
 };
 
 CLICK_ENDDECLS
