@@ -1,3 +1,17 @@
+2003-07-13 Sunday 20:19  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.60), dsdvroutetable.hh
+	(1.42): added 'seen' bidirectional link handshaking
+
+2003-07-13 Sunday 20:06  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: arptable.cc (1.1), arptable.hh (1.1), esrcr.cc
+	(1.1), esrcr.hh (1.1), linktable.cc (1.5), linktable.hh (1.5),
+	printsrcr.cc (1.5), srcr.cc (1.5), srcr.hh (1.4): Initial version
+	of end-to-end source routing.  Also added a simple arp table.
+	
+	--jbicket
+
 2003-07-13 Sunday 16:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: linkstat.cc (1.23), linkstat.hh (1.12): bug fix:
