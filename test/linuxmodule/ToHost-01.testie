@@ -1,0 +1,62 @@
+%info
+
+This test installs two fake devices in the kernel, then initiates a
+connection between two 'netcat' processes that bridges the two devices via
+FTPPortMapper and TCPRewriter.
+
+%script
+click-install KERNELCONFIG
+tcpdump -n -i fake0 >FAKE0 2>&1 &
+usleep 500000
+dump1=$!
+ping -n -w 1 -c 1 1.0.0.2 | grep transmitted | sed 's/^\([0-9]*\).*/\1/' >PING1
+echo 1 > /click/sw/switch
+ping -n -w 1 -c 1 1.0.0.3 | grep transmitted | sed 's/^\([0-9]*\).*/\1/' >>PING1
+kill $dump1
+cat /click/th0/drops /click/th1/drops >DROPS
+cat /click/c/count >COUNT
+
+%file KERNELCONFIG
+fh1 :: FromHost(fake0, 1.0.0.1/24);
+th0 :: ToHost(SNIFFERS true);
+th1 :: ToHost(fake0);
+
+elementclass ARPer {
+    input -> c :: Classifier(12/0806, 12/0800 23/01)
+	 -> ARPResponder(0/0 0:1:2:3:4:5) -> [0]output;
+    c[1] -> MarkIPHeader(14) -> [1]output
+}
+
+fh1 -> a1 :: ARPer -> th1;
+a1[1] -> ICMPPingResponder -> c::Counter -> sw :: Switch;
+sw[0] -> th0;
+sw[1] -> th1;
+
+ICMPSendPings(2.0.0.2, 1.0.0.1, LIMIT 1) -> EtherEncap(0x0800, fake0, fake0) -> th0;
+ICMPSendPings(2.0.0.3, 1.0.0.1, LIMIT 1) -> EtherEncap(0x0800, fake0, fake0) -> th1;
+
+%ignore FAKE0
+tcpdump: listening on.*
+.*packet.*received by.*
+.*packet.*dropped by.*
+.*arp.*
+
+%expectx FAKE0
+.* 1.0.0.1 > 1.0.0.2: icmp: echo request.*
+.* 1.0.0.2 > 1.0.0.1: icmp: echo reply
+.* 2.0.0.3 > 1.0.0.1: icmp: echo request
+.* 1.0.0.1 > 1.0.0.3: icmp: echo request.*
+.* 1.0.0.3 > 1.0.0.1: icmp: echo reply
+
+%expect PING1
+1
+1
+
+%expect DROPS
+1
+0
+
+%expect COUNT
+2
+
+%expect stderr
