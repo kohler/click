@@ -18,13 +18,13 @@
  */
 
 #include <click/config.h>
-
 #include "fromdump.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/handlercall.hh>
 #include <click/packet_anno.hh>
 #include "fakepcap.hh"
 #include <unistd.h>
@@ -592,6 +592,10 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 	  } else
 	      return errh->error("`active' should be Boolean");
       }
+      case 3:
+	fd->_active = false;
+	fd->router()->please_stop_driver();
+	return 0;
       default:
 	return -EINVAL;
     }
@@ -604,6 +608,7 @@ FromDump::add_handlers()
     add_read_handler("active", read_handler, (void *)1);
     add_write_handler("active", write_handler, (void *)1);
     add_read_handler("encap", read_handler, (void *)2);
+    add_write_handler("stop", write_handler, (void *)3);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }

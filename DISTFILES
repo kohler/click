@@ -137,6 +137,7 @@ include/click/ewma.cc
 include/click/ewma.hh
 include/click/gaprate.hh
 include/click/glue.hh
+include/click/handlercall.hh
 include/click/hashmap.cc
 include/click/hashmap.hh
 include/click/integers.hh
@@ -188,6 +189,7 @@ lib/error.cc
 lib/etheraddress.cc
 lib/gaprate.cc
 lib/glue.cc
+lib/handlercall.cc
 lib/in_cksum.c
 lib/integers.cc
 lib/ipaddress.cc

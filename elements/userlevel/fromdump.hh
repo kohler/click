@@ -181,7 +181,7 @@ class FromDump : public Element { public:
     struct timeval _last_time;
     
     Task _task;
-  
+
     struct timeval _time_offset;
     String _filename;
     FILE *_pipe;

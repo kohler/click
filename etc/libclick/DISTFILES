@@ -52,6 +52,7 @@ include/click/ewma.cc
 include/click/ewma.hh
 include/click/gaprate.hh
 include/click/glue.hh
+include/click/handlercall.hh
 include/click/hashmap.cc
 include/click/hashmap.hh
 include/click/integers.hh
@@ -104,6 +105,7 @@ lib/error.cc:libsrc/error.cc
 lib/etheraddress.cc:libsrc/etheraddress.cc
 lib/gaprate.cc:libsrc/gaprate.cc
 lib/glue.cc:libsrc/glue.cc
+lib/handlercall.cc:libsrc/handlercall.cc
 lib/in_cksum.c:libsrc/in_cksum.c
 lib/integers.cc:libsrc/integers.cc
 lib/ipaddress.cc:libsrc/ipaddress.cc
