@@ -13,8 +13,11 @@ polls packets from network device (kernel)
 =d
 
 Poll packets received by the Linux network interface named DEVNAME. Packets
-will be pushed to output 0. The packets include the link-level header. Each
-time PollDevice is scheduled, it emits at most BURST packets. By default,
+will be pushed to output 0. The packets include the link-level header. DEVNAME
+may also be an Ethernet address, in which case PollDevice searches for a
+device with that address.
+
+Each time PollDevice is scheduled, it emits at most BURST packets. By default,
 BURST is 8.
 
 If PROMISC is set (by default, it is not), then the device is put into

@@ -15,10 +15,13 @@ sends packets to network device (kernel)
 This manual page describes the Linux kernel module version of the ToDevice
 element. For the user-level element, read the ToDevice.u manual page.
 
-Sends up to BURST number of packets out the Linux network interface named
-DEVNAME. By default, BURST is 16. For good performance, you should set
-BURST to be 8 times the number of elements that could generate packets for
-this device.
+Pulls packets from its single input and sends them out the Linux network
+interface named DEVNAME. DEVNAME may also be an Ethernet address, in which
+case ToDevice searches for a device with that address.
+
+Sends up to BURST packets each time it is scheduled. By default, BURST is 16.
+For good performance, you should set BURST to be 8 times the number of
+elements that could generate packets for this device.
 
 Packets must have a link header. For Ethernet, ToDevice makes sure every
 packet is at least 60 bytes long.
