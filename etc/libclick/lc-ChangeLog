@@ -1,3 +1,8 @@
+2002-01-04 Friday 14:53  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/userutils.cc: update click-pretty manual page, and
+	click-pretty, in concert with manual page
+
 2002-01-01 Tuesday 19:53  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/userutils.hh, include/click/userutils.hh,
