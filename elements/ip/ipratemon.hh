@@ -66,7 +66,7 @@
 #endif
 #define MAX_SHIFT ((BYTES-1)*8)
 #define MAX_COUNTERS 256
-#define MAX_NRATES   4
+#define MAX_NRATES   5 // first rate is hidden
 
 class IPRateMonitor : public Element { public:
 

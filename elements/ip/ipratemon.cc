@@ -293,9 +293,9 @@ IPRateMonitor::rates_read_handler(Element *e, void *)
   IPRateMonitor *me = (IPRateMonitor *) e;
   String ret = "";
 
+  ret += String(me->_no_of_rates-1);
   for(int i = 1; i < me->_no_of_rates; i++) {
-    if(i != 1)
-      ret += "\t";
+    ret += "\t";
     ret += String(me->_rates[i]);
   }
 
