@@ -15,6 +15,7 @@
 #endif
 #include "elementt.hh"
 #include "routert.hh"
+#include "straccum.hh"
 #include <stdlib.h>
 
 ElementT::ElementT()
@@ -144,4 +145,36 @@ ElementClassT::expand_into(RouterT *fromr, int which,
 void
 ElementClassT::compound_declaration_string(StringAccum &, const String &, const String &)
 {
+}
+
+
+SynonymElementClassT::SynonymElementClassT(const String &name, ElementClassT *eclass)
+  : _name(name), _eclass(eclass)
+{
+}
+
+int
+SynonymElementClassT::expand_into(RouterT *fromr, int which,
+				  RouterT *tor, const RouterScope &scope,
+				  ErrorHandler *)
+{
+  // get element type index. add new "anonymous" element type if needed
+  int new_type = tor->get_type_index(_name, _eclass);
+  ElementClassT *new_type_class = tor->type_class(new_type);
+  if (_eclass != new_type_class)
+    new_type = tor->get_anon_type_index(_name, _eclass);
+
+  ElementT &e = fromr->element(which);
+  if (fromr == tor) {
+    e.type = new_type;
+    return which;
+  } else
+    return tor->get_eindex(scope.prefix() + e.name, new_type,
+			   scope.interpolate(e.configuration), e.landmark);
+}
+
+void
+SynonymElementClassT::compound_declaration_string(StringAccum &sa, const String &name, const String &indent)
+{
+  sa << indent << "elementclass " << name << " " << _name << ";\n";
 }

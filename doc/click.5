@@ -407,24 +407,16 @@ elementclass Queue {
 }
 .Re
 Element classes are nonrecursive and lexically scoped, so the `Queue'
-inside this definition refers to the original `Queue'. Also, elementclass
-statements don't affect elements declared earlier:
+inside this definition refers to the original `Queue'. The scope of an
+element class definition extends from immediately after its closing right
+brace to the end of the enclosing scope.
+.PP
+A variant of the elementclass statement makes synonyms for preexisting
+element classes. For example, this statement
 .Rs
-elementclass A {
-.br
-\%  input -> B -> output;
-.br
-}
-.br
-elementclass B {
-.br
-\%  input -> C -> output;
-.br
-}
-.br
-\&... -> A -> ...
+elementclass MyQueue Queue;
 .Re
-expands to `... -> B -> ...', not `... -> C -> ...'.
+makes MyQueue a synonym for Queue.
 '
 .SS "Configuration parameters"
 '

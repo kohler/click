@@ -695,27 +695,36 @@ LexerT::yelementclass()
     else
       facclass_name = n;
   }
-  
-  expect('{');
-  RouterT *old_router = _router;
-  int old_offset = _anonymous_offset;
-  _router = new RouterT(old_router);
-  _router->get_eindex("input", RouterT::TUNNEL_TYPE, String(), landmark());
-  _router->get_eindex("output", RouterT::TUNNEL_TYPE, String(), landmark());
-  _anonymous_offset = 2;
 
-  ycompound_arguments();
-  while (ystatement(true))
-    /* nada */;
-  
-  // '}' was consumed
+  Lexeme tnext = lex();
+  if (tnext.is('{')) {
+    RouterT *old_router = _router;
+    int old_offset = _anonymous_offset;
+    _router = new RouterT(old_router);
+    _router->get_eindex("input", RouterT::TUNNEL_TYPE, String(), landmark());
+    _router->get_eindex("output", RouterT::TUNNEL_TYPE, String(), landmark());
+    _anonymous_offset = 2;
+    
+    ycompound_arguments();
+    while (ystatement(true))
+      /* nada */;
+    
+    // '}' was consumed
+    
+    if (facclass_name)
+      old_router->add_type_index(facclass_name, _router);
+    
+    _router->unuse();
+    _router = old_router;
+    _anonymous_offset = old_offset;
+    
+  } else if (tnext.is(lexIdent)) {
+    ElementClassT *tclass = _router->find_type_class(tnext.string());
+    if (facclass_name)
+      _router->add_type_index(facclass_name, new SynonymElementClassT(tnext.string(), tclass));
 
-  if (facclass_name)
-    old_router->set_type_index(facclass_name, _router);
-
-  _router->unuse();
-  _router = old_router;
-  _anonymous_offset = old_offset;
+  } else
+    lerror("syntax error near `%s'", String(tnext.string()).cc());
 }
 
 void

@@ -68,7 +68,7 @@ class RouterT : public ElementClassT {
   ElementClassT *find_type_class(const String &) const;
   int get_type_index(const String &);
   int get_type_index(const String &, ElementClassT *);
-  int set_type_index(const String &, ElementClassT *);
+  int add_type_index(const String &, ElementClassT *);
   int get_anon_type_index(const String &, ElementClassT *);
   void get_types_from(const RouterT *);
   int unify_type_indexes(const RouterT *);
@@ -144,6 +144,7 @@ class RouterT : public ElementClassT {
   void add_components_to(RouterT *, const String &prefix = String()) const;
 
   int expand_into(RouterT *, int, RouterT *, const RouterScope &, ErrorHandler *);
+  bool expands_away() const			{ return true; }
   
   void check() const;
   void remove_unused_element_types();

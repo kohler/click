@@ -54,6 +54,7 @@ class ElementClassT {
  public:
 
   ElementClassT();
+  virtual ~ElementClassT()		{ }
 
   void use()				{ _use_count++; }
   void unuse()				{ if (--_use_count <= 0) delete this; }
@@ -64,7 +65,26 @@ class ElementClassT {
 			  const RouterScope &, ErrorHandler *);
   virtual void compound_declaration_string(StringAccum &, const String &, const String &);
 
+  virtual bool expands_away() const	{ return false; }
   virtual RouterT *cast_router()	{ return 0; }
+  
+};
+
+class SynonymElementClassT : public ElementClassT {
+
+  String _name;
+  ElementClassT *_eclass;
+  
+ public:
+
+  SynonymElementClassT(const String &, ElementClassT *);
+
+  int expand_into(RouterT *, int, RouterT *,
+		  const RouterScope &, ErrorHandler *);
+  void compound_declaration_string(StringAccum &, const String &,
+				   const String &);
+
+  bool expands_away() const		{ return true; }
   
 };
 

@@ -1158,7 +1158,7 @@ Lexer::yelementclass()
       add_element_type(name, e);
 
   } else {
-    lerror("expected element class");
+    lerror("syntax error near `%s'", String(tnext.string()).cc());
     add_element_type(name, new ErrorElement);
   }
 }

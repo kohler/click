@@ -187,7 +187,7 @@ RouterT::get_anon_type_index(const String &name, ElementClassT *fclass)
 }
 
 int
-RouterT::set_type_index(const String &s, ElementClassT *eclass)
+RouterT::add_type_index(const String &s, ElementClassT *eclass)
 {
   int i = _element_type_map[s];
   if (i < 0 || _element_classes[i] != eclass) {
@@ -203,6 +203,10 @@ RouterT::set_type_index(const String &s, ElementClassT *eclass)
 int
 RouterT::add_element(const ElementT &elt)
 {
+  // don't want to accept an element from ourselves because the vector might
+  // grow, invalidating the reference
+  assert(_elements.size() == 0 || &elt < &_elements[0] || &elt > &_elements.back());
+  
   int i;
   _real_ecount++;
   if (_free_element >= 0) {
@@ -642,11 +646,11 @@ RouterT::add_tunnel(String in, String out, const String &landmark,
     errh->lerror(landmark, "element `%s' already exists", out.cc());
   else if (fin.tunnel_output >= 0)
     errh->lerror(landmark, "connection tunnel input `%s' already exists", in.cc());
-  else if (_elements[out_idx].tunnel_input >= 0)
+  else if (fout.tunnel_input >= 0)
     errh->lerror(landmark, "connection tunnel output `%s' already exists", out.cc());
   else {
-    _elements[in_idx].tunnel_output = out_idx;
-    _elements[out_idx].tunnel_input = in_idx;
+    fin.tunnel_output = out_idx;
+    fout.tunnel_input = in_idx;
   }
 }
 
@@ -1084,7 +1088,9 @@ RouterT::expand_into(RouterT *fromr, int which, RouterT *tor,
 		     const RouterScope &scope, ErrorHandler *errh)
 {
   assert(fromr != this && tor != this);
-  ElementT &compound = fromr->element(which);
+  // must make a copy of `compound' because we might be growing the _elements
+  // vector, in which case our reference would die
+  ElementT compound = fromr->element(which);
   
   // parse configuration string
   Vector<String> args;
@@ -1120,7 +1126,7 @@ RouterT::expand_into(RouterT *fromr, int which, RouterT *tor,
 
   // create input/output tunnels
   if (fromr == tor)
-    compound.type = TUNNEL_TYPE;
+    tor->element(which).type = TUNNEL_TYPE;
   tor->add_tunnel(prefix + compound.name, new_prefix + "input", compound.landmark, errh);
   tor->add_tunnel(new_prefix + "output", prefix + compound.name, compound.landmark, errh);
   int new_eindex = tor->eindex(prefix + compound.name);
@@ -1172,7 +1178,7 @@ RouterT::remove_compound_elements(ErrorHandler *errh)
   int neclass = _element_classes.size();
   Vector<int> removed_eclass(neclass, 0);
   for (int i = 0; i < neclass; i++)
-    if (_element_classes[i] && _element_classes[i]->cast_router())
+    if (_element_classes[i] && _element_classes[i]->expands_away())
       removed_eclass[i] = -1;
   finish_remove_element_types(removed_eclass);
 }
