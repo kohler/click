@@ -226,6 +226,10 @@ struct Router::Handler {
     String unparse_name(Element *e) const;
 };
 
+/* The largest size a write handler is allowed to have. */
+#define LARGEST_HANDLER_WRITE 16384
+
+
 #if CLICK_USERLEVEL
 struct Router::Selector {
     int fd;
