@@ -188,7 +188,7 @@ GridRouteTable::simple_action(Packet *packet)
   // extended logging
   timeval tv;
   gettimeofday (&tv, NULL);
-  _extended_logging_errh->message ("recvd %u from %s %ld %ld", hlo->seq_no, ipaddr.s().cc(), tv.tv_sec, tv.tv_usec);
+  _extended_logging_errh->message ("recvd %u from %s %ld %ld", ntohl(hlo->seq_no), ipaddr.s().cc(), tv.tv_sec, tv.tv_usec);
 
   /*
    * add 1-hop route to packet's transmitter; perform some sanity
