@@ -1,3 +1,9 @@
+2003-01-10 Friday 00:12  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/fromipsumdump.cc (1.38): fix small bug: report
+	correct payload lengths (rather than 4 bytes too big), and better
+	TCP option handling
+
 2003-01-03 Friday 11:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/airoinfo.cc (1.9): nits
