@@ -39,7 +39,7 @@ Options:
 			  Default: $click_config_file
   --params PARAM	  Which Grid parameter file to use.
                           Default: $grid_param_file	    
-
+	  
   -h, --help              Print this message and exit.
 " 1>&2
     exit 0

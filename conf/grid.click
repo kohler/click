@@ -1,5 +1,5 @@
 // grid.click
-// to be used with tools/run-grid
+// to be used with tools/build-grid-config.sh
 
 elementclass TTLChecker {
   /* expects grid packets with MAC headers --- place on output path to
