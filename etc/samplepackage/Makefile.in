@@ -73,8 +73,9 @@ CLICK_BUILDTOOL = $(clickbindir)/click-buildtool
 U_CPPFLAGS =
 K_CPPFLAGS =
 B_CPPFLAGS =
-CFLAGS =
-CXXFLAGS =
+# Click-compile supplies CFLAGS and CXXFLAGS; override here if necessary
+# CFLAGS =
+# CXXFLAGS =
 
 U_CXXCOMPILE = $(CLICK_COMPILE) -t userlevel $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CXXFLAGS)
 K_CXXCOMPILE = $(CLICK_COMPILE) -t linuxmodule $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CXXFLAGS)
