@@ -52,7 +52,7 @@ click_sched(void *thunk)
   current->pgrp = 1;
   current->priority = click_thread_priority;
   sprintf(current->comm, "click");
-  printk("<1>click: starting router thread %p on %d\n", rt, current->pid);
+  printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
 
   rt->driver();
   
@@ -69,7 +69,7 @@ click_sched(void *thunk)
   }
   spin_unlock(&click_thread_spinlock);
   
-  printk("<1>click: stopping router thread %p\n", rt);
+  printk("<1>click: stopping router thread pid %d\n", current->pid);
   return 0;
 }
 
@@ -89,7 +89,7 @@ start_click_sched(Router *r, int threads, ErrorHandler *kernel_errh)
   spin_lock(&click_thread_spinlock);
   if (threads < 1)
     threads = 1;
-  click_chatter("starting %d threads", threads); 
+  click_chatter((threads == 1 ? "starting %d thread" : "starting %d threads"), threads);
 
   while (threads > 0) {
     RouterThread *rt;
@@ -139,7 +139,11 @@ cleanup_click_sched()
   } while (num_threads > 0 && jiffies < out_jiffies);
 
   if (num_threads > 0) {
-    printk("<1>click: %d threads are still active! Expect a crash!\n", num_threads);
+    printk("<1>click: Following threads still active, expect a crash:\n", num_threads);
+    spin_lock(&click_thread_spinlock);
+    for (int i = 0; i < click_thread_pids->size(); i++)
+      printk("<1>click:   router thread pid %d\n", (*click_thread_pids)[i]);
+    spin_unlock(&click_thread_spinlock);
     return -1;
   } else {
     delete click_thread_pids;
