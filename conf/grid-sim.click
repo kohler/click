@@ -1,7 +1,7 @@
 elementclass GridNode {
   $ena, $ipa, $lat, $lon | 
 
-  li :: LocationInfo($lat, $lon, 0);
+  li :: GridLocationInfo($lat, $lon, 0);
 //  li :: LocFromFile($ipa);
 
   input

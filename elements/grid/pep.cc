@@ -50,9 +50,9 @@ PEP::clone() const
 void *
 PEP::cast(const char *name)
 {
-  if(strcmp(name, "LocationInfo") == 0)
+  if(strcmp(name, "GridLocationInfo") == 0)
     return(this);
-  return(LocationInfo::cast(name));
+  return(GridLocationInfo::cast(name));
 }
 
 int
@@ -433,7 +433,7 @@ PEP::add_handlers()
   add_read_handler("status", pep_read_handler, (void *) 0);
 }
 
-ELEMENT_REQUIRES(LocationInfo)
+ELEMENT_REQUIRES(GridLocationInfo)
 EXPORT_ELEMENT(PEP)
 
 #include "vector.cc"

@@ -3,22 +3,22 @@
 
 /*
  * =c
- * FilterByRange(RANGE, LocationInfo)
+ * FilterByRange(RANGE, LOCINFO)
  * =d
  *
  * Expects Grid MAC layer packets on input 0.  Any packet transmitted
  * by a Grid node within RANGE metres from this node is sent to output
  * 0.  Packets transmitted by ``out of range'' nodes are sent out
  * output 1.  RANGE is an Integer.  This element is useful for
- * simulating physical topologies.  This element uses the LocationInfo
- * element named by the 2nd argument.
+ * simulating physical topologies.  This element uses the GridLocationInfo
+ * element named LOCINFO.
  *
  * =a
- * LocationInfo 
+ * GridLocationInfo 
  * FilterByGridHops */
 
 #include "element.hh"
-#include "locationinfo.hh"
+#include "elements/grid/gridlocationinfo.hh"
 
 class FilterByRange : public Element {
   
@@ -39,7 +39,7 @@ public:
   static double calc_range(grid_location l1, grid_location l2);
 
 private:
-  LocationInfo *_locinfo;
+  GridLocationInfo *_locinfo;
   int _range; // in metres
 };
 

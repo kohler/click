@@ -48,9 +48,9 @@ EstimateRouterRegion::clone() const
 void *
 EstimateRouterRegion::cast(const char *name)
 {
-  if(strcmp(name, "LocationInfo") == 0)
+  if(strcmp(name, "GridLocationInfo") == 0)
     return(this);
-  return(LocationInfo::cast(name));
+  return(GridLocationInfo::cast(name));
 }
 
 int
@@ -395,7 +395,7 @@ EstimateRouterRegion::add_handlers()
   add_read_handler("status", pep_read_handler, (void *) 0);
 }
 
-ELEMENT_REQUIRES(LocationInfo)
+ELEMENT_REQUIRES(GridLocationInfo)
 EXPORT_ELEMENT(EstimateRouterRegion)
 
 #include "vector.cc"

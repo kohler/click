@@ -7,19 +7,19 @@
  *
  * =d
  * Run the Region-based Grid Position Estimation Protocol. Subtypes
- * LocationInfo, and can be used in its place.
+ * GridLocationInfo, and can be used in its place.
  *
- * =a PEP, LocationInfo */
+ * =a PEP, GridLocationInfo */
 
 #include "element.hh"
 #include "timer.hh"
 #include "ipaddress.hh"
 #include "pep_proto.hh"
 #include "grid.hh"
-#include "locationinfo.hh"
+#include "elements/grid/gridlocationinfo.hh"
 #include "region.hh"
 
-class EstimateRouterRegion : public LocationInfo {
+class EstimateRouterRegion : public GridLocationInfo {
   
 public:
   

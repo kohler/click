@@ -42,7 +42,7 @@ FilterByRange::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "range (metres)", &_range,
-                        cpElement, "LocationInfo element", &_locinfo,
+                        cpElement, "GridLocationInfo element", &_locinfo,
 			0);
 
   if (_range < 0)
@@ -53,13 +53,13 @@ FilterByRange::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 FilterByRange::initialize(ErrorHandler *errh)
 {
-  if(_locinfo && _locinfo->cast("LocationInfo") == 0){
-    errh->warning("%s: LocationInfo argument %s has the wrong type",
+  if(_locinfo && _locinfo->cast("GridLocationInfo") == 0){
+    errh->warning("%s: GridLocationInfo argument %s has the wrong type",
                   id().cc(),
                   _locinfo->id().cc());
     _locinfo = 0;
   } else if(_locinfo == 0){
-    return errh->error("no LocationInfo argument");
+    return errh->error("no GridLocationInfo argument");
   }
 
   return 0;
@@ -143,5 +143,5 @@ FilterByRange::calc_range(grid_location l1, grid_location l2)
 }
 
 
-ELEMENT_REQUIRES(userlevel LocationInfo)
+ELEMENT_REQUIRES(userlevel GridLocationInfo)
 EXPORT_ELEMENT(FilterByRange)

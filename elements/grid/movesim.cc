@@ -57,14 +57,14 @@ MovementSimulator::read_args(const Vector<String> &conf, ErrorHandler *errh)
     Element *el = 0;
     if (cp_va_space_parse(conf[i], this, errh,
 			  cpUnsigned, "movement interval (ms)", &t,
-			  cpElement, "LocationInfo", &el,
+			  cpElement, "GridLocationInfo", &el,
 			  cpReal, "latitude", 7, &int_vlat,
 			  cpReal, "longitude", 7, &int_vlon,
 			  0) < 0)
       return -1;
-    LocationInfo *li = (LocationInfo *)el->cast("LocationInfo");
+    GridLocationInfo *li = (GridLocationInfo *)el->cast("GridLocationInfo");
     if (!li)
-      return errh->error("element is not a LocationInfo in entry %d", i);
+      return errh->error("element is not a GridLocationInfo in entry %d", i);
     
     event_entry *new_entry;
     event_entry *prev;
@@ -155,7 +155,7 @@ MovementSimulator::find_entry(unsigned int t, event_entry **retval)
   return false;
 }
 
-ELEMENT_REQUIRES(userlevel LocationInfo)
+ELEMENT_REQUIRES(userlevel GridLocationInfo)
 EXPORT_ELEMENT(MovementSimulator)
 
 #include "vector.cc"

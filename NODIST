@@ -1,5 +1,15 @@
 elements/grid/amoeba.hh
 elements/grid/amoeba.cc
+elements/grid/filterbyrange.hh
+elements/grid/filterbyrange.cc
+elements/grid/fixdstloc.hh
+elements/grid/fixdstloc.cc
+elements/grid/fixsrcloc.hh
+elements/grid/fixsrcloc.cc
+elements/grid/floodinglocquerier.hh
+elements/grid/floodinglocquerier.cc
+elements/grid/locationinfo.hh
+elements/grid/locationinfo.cc
 elements/ip/tcpipsend.hh
 elements/ip/tcpipsend.cc
 elements/ipsec/des.hh
@@ -16,6 +26,8 @@ elements/linuxmodule/perfinfo.hh
 elements/linuxmodule/perfinfo.cc
 elements/linuxmodule/perfcount.hh
 elements/linuxmodule/perfcount.cc
+elements/local/*.hh
+elements/local/*.cc
 elements/standard/block.hh
 elements/standard/block.cc
 elements/standard/oldbwshaper.hh

@@ -10,18 +10,18 @@
  * 
  * Generate programmed movement in Click-embedded Grid network
  * simulations.  Each argument tuple specifies a new velocity for the
- * LocationInfo element NODE-EL at time T milliseconds, with new
+ * GridLocationInfo element NODE-EL at time T milliseconds, with new
  * latitude velocity of V-LAT degree per second, and new longitude
  * velocity of V-LON degrees per second.
  *
  * =a
- * LocationInfo */
+ * GridLocationInfo */
 
 #include "element.hh"
 #include "grid.hh"
 #include "timer.hh"
 #include "vector.hh"
-#include "locationinfo.hh"
+#include "elements/grid/gridlocationinfo.hh"
 
 class MovementSimulator : public Element {
   
@@ -42,11 +42,11 @@ private:
   Timer _event_timer;
 
   struct node_event {
-    LocationInfo *loc_el;
+    GridLocationInfo *loc_el;
     double v_lat;
     double v_lon;
     node_event() : loc_el(0) { }
-    node_event(LocationInfo *el, double vlat, double vlon) : 
+    node_event(GridLocationInfo *el, double vlat, double vlon) : 
       loc_el(el), v_lat(vlat), v_lon(vlon) { }
   };
 

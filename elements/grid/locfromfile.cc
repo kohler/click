@@ -39,9 +39,9 @@ LocFromFile::~LocFromFile()
 void *
 LocFromFile::cast(const char *name)
 {
-  if(strcmp(name, "LocationInfo") == 0)
+  if(strcmp(name, "GridLocationInfo") == 0)
     return(this);
-  return(LocationInfo::cast(name));
+  return(GridLocationInfo::cast(name));
 }
 
 int
@@ -89,7 +89,7 @@ LocFromFile::choose_new_leg(double *nlat, double *nlon, double *nt)
     _next = 0;
 }
 
-ELEMENT_REQUIRES(userlevel LocationInfo)
+ELEMENT_REQUIRES(userlevel GridLocationInfo)
 EXPORT_ELEMENT(LocFromFile)
 
 #include "vector.cc"

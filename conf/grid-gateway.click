@@ -3,7 +3,7 @@
 
 ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 
-li :: LocationInfo(POS_LAT, POS_LON);
+li :: GridLocationInfo(POS_LAT, POS_LON);
 
 fq :: FloodingLocQuerier(GRID_MAC_ADDR, GRID_IP);
 loc_repl :: LocQueryResponder(GRID_MAC_ADDR, GRID_IP);

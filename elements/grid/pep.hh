@@ -5,7 +5,7 @@
  * =c
  * PEP(IP, [fixed?, fix-lat, fix-lon])
  * =d
- * Run the Grid Position Estimation Protocol. Subtypes LocationInfo,
+ * Run the Grid Position Estimation Protocol. Subtypes GridLocationInfo,
  * and can be used in its place.
  *
  * Produces packets with just the PEP payload. The Grid configuration
@@ -58,9 +58,9 @@
 #include "ipaddress.hh"
 #include "pep_proto.hh"
 #include "grid.hh"
-#include "locationinfo.hh"
+#include "elements/grid/gridlocationinfo.hh"
 
-class PEP : public LocationInfo {
+class PEP : public GridLocationInfo {
   
 public:
   

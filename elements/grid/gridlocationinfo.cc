@@ -1,5 +1,5 @@
 /*
- * locationinfo.{cc,hh} -- element gives the grid node's current location
+ * gridlocationinfo.{cc,hh} -- element gives the grid node's current location
  * Douglas S. J. De Couto
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -20,13 +20,13 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "elements/grid/gridlocationinfo.hh"
+#include "gridlocationinfo.hh"
 #include "glue.hh"
 #include "confparse.hh"
 #include "router.hh"
 #include "error.hh"
 
-LocationInfo::LocationInfo() : _seq_no(0)
+GridLocationInfo::GridLocationInfo() : _seq_no(0)
 {
   _move = 0;
   _lat0 = 32.2816;  // Doug's house in Bermuda.
@@ -37,12 +37,12 @@ LocationInfo::LocationInfo() : _seq_no(0)
   _vlon = 0;
 }
 
-LocationInfo::~LocationInfo()
+GridLocationInfo::~GridLocationInfo()
 {
 }
 
 int
-LocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
+GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
 {
   int do_move = 0;
   int lat_int, lon_int;
@@ -67,13 +67,13 @@ LocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   return res;
 }
 int
-LocationInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
+GridLocationInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return read_args(conf, errh);
 }
 
 double
-LocationInfo::now()
+GridLocationInfo::now()
 {
   struct timeval tv;
   double t;
@@ -84,7 +84,7 @@ LocationInfo::now()
 }
 
 double
-LocationInfo::xlat()
+GridLocationInfo::xlat()
 {
   if(_move){
     return(_lat0 + _vlat * (now() - _t0));
@@ -94,7 +94,7 @@ LocationInfo::xlat()
 }
 
 double
-LocationInfo::xlon()
+GridLocationInfo::xlon()
 {
   if(_move){
     return(_lon0 + _vlon * (now() - _t0));
@@ -104,7 +104,7 @@ LocationInfo::xlon()
 }
 
 double
-LocationInfo::uniform()
+GridLocationInfo::uniform()
 {
   double x;
         
@@ -116,7 +116,7 @@ LocationInfo::uniform()
 // to arrive there.
 // Intended to be overridden.
 void
-LocationInfo::choose_new_leg(double *nlat, double *nlon, double *nt)
+GridLocationInfo::choose_new_leg(double *nlat, double *nlon, double *nt)
 {
   *nlat = _lat0 + 0.0001 - (uniform() * 0.0002);
   *nlon = _lon0 + 0.0001 - (uniform() * 0.0002);
@@ -124,7 +124,7 @@ LocationInfo::choose_new_leg(double *nlat, double *nlon, double *nt)
 }
 
 grid_location
-LocationInfo::get_current_location(unsigned int *seq_no)
+GridLocationInfo::get_current_location(unsigned int *seq_no)
 {
   double t = now();
 
@@ -157,14 +157,14 @@ LocationInfo::get_current_location(unsigned int *seq_no)
 static String
 loc_read_handler(Element *f, void *)
 {
-  LocationInfo *l = (LocationInfo *) f;
+  GridLocationInfo *l = (GridLocationInfo *) f;
   grid_location loc = l->get_current_location();
   
   const int BUFSZ = 255;
   char buf[BUFSZ];
   int res = snprintf(buf, BUFSZ, "%f, %f\n", loc.lat(), loc.lon());
   if (res < 0) {
-    click_chatter("LocationInfo read handler buffer too small");
+    click_chatter("GridLocationInfo read handler buffer too small");
     return String("");
   }
   return String(buf);  
@@ -175,7 +175,7 @@ static int
 loc_write_handler(const String &arg, Element *element,
 		  void *, ErrorHandler *errh)
 {
-  LocationInfo *l = (LocationInfo *) element;
+  GridLocationInfo *l = (GridLocationInfo *) element;
   Vector<String> arg_list;
   cp_argvec(arg, arg_list);
 
@@ -184,7 +184,7 @@ loc_write_handler(const String &arg, Element *element,
 }
 
 void
-LocationInfo::add_handlers()
+GridLocationInfo::add_handlers()
 {
   add_default_handlers(true);
   add_write_handler("loc", loc_write_handler, (void *) 0);
@@ -193,7 +193,7 @@ LocationInfo::add_handlers()
 
 
 void
-LocationInfo::set_new_dest(double v_lat, double v_lon)
+GridLocationInfo::set_new_dest(double v_lat, double v_lon)
 { /* velocities v_lat and v_lon in degrees per sec */
 
   if (_move != 2) {
@@ -211,5 +211,5 @@ LocationInfo::set_new_dest(double v_lat, double v_lon)
 }
 
 
-ELEMENT_REQUIRES(userlevel false)
-EXPORT_ELEMENT(LocationInfo)
+ELEMENT_REQUIRES(userlevel)
+EXPORT_ELEMENT(GridLocationInfo)

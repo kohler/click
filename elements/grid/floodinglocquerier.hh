@@ -10,7 +10,7 @@
  * =d
  *
  * Argument I should be this host's IP address, E should be this host's
- * Ethernet address, and LocationInfo is a LocationInfo element that knows
+ * Ethernet address, and LOCINFO is a GridLocationInfo element that knows
  * where this host is.
  *
  * Expects GRID_NBR_ENCAP packets with MAC headers on input 0. If a
@@ -27,13 +27,13 @@
  *
  *
  * =a
- * LocQueryResponder, LocationInfo, SimpleLocQuerier */
+ * LocQueryResponder, GridLocationInfo, SimpleLocQuerier */
 
 #include "element.hh"
 #include "etheraddress.hh"
 #include "ipaddress.hh"
 #include "timer.hh"
-#include "locationinfo.hh"
+#include "elements/grid/gridlocationinfo.hh"
 #include "bighashmap.hh"
 
 class FloodingLocQuerier : public Element {

@@ -5,7 +5,7 @@
  * =c
  * LocFromFile(filename)
  * =d
- * Pretends to be a LocationInfo element, but actually reads the
+ * Pretends to be a GridLocationInfo element, but actually reads the
  * locations from a file. Each line of the file looks like
  *
  *   interval lat lon
@@ -21,13 +21,13 @@
  * 30 0 0
  *
  * =a
- * LocationInfo
+ * GridLocationInfo
  */
 
 #include "element.hh"
-#include "locationinfo.hh"
+#include "elements/grid/gridlocationinfo.hh"
 
-class LocFromFile : public LocationInfo {
+class LocFromFile : public GridLocationInfo {
 public:
   LocFromFile();
   ~LocFromFile();
