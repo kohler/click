@@ -494,10 +494,7 @@ ErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const
   }
 
   // prepend prefix, if any
-  if (prefix)
-    return prepend_lines(prefix, new_text);
-  else
-    return new_text;
+  return prepend_lines(prefix, new_text);
 }
 
 int
@@ -767,9 +764,9 @@ ErrorVeneer::count_error(Seriousness seriousness, const String &text)
 ContextErrorHandler::ContextErrorHandler(ErrorHandler *errh,
 					 const String &context,
 					 const String &indent,
-					 const String &default_landmark)
+					 const String &context_landmark)
   : ErrorVeneer(errh), _context(context), _indent(indent),
-    _default_landmark(default_landmark)
+    _context_landmark(context_landmark)
 {
 }
 
@@ -783,13 +780,13 @@ ContextErrorHandler::decorate_text(Seriousness seriousness, const String &prefix
     if (_errh->min_verbosity() > ERRVERBOSITY_CONTEXT)
       _context = _indent = String();
     else {
-      context_lines = _errh->decorate_text(ERR_MESSAGE, String(), (_default_landmark ? _default_landmark : landmark), _context);
+      context_lines = _errh->decorate_text(ERR_MESSAGE, String(), (_context_landmark ? _context_landmark : landmark), _context);
       if (context_lines && context_lines.back() != '\n')
 	context_lines += '\n';
       _context = String();
     }
   }
-  return context_lines + _errh->decorate_text(seriousness, _indent + prefix, (landmark ? landmark : _default_landmark), text);
+  return context_lines + _errh->decorate_text(seriousness, prefix, (landmark ? landmark : _context_landmark), prepend_lines(_indent, text));
 }
 
 
