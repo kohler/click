@@ -322,7 +322,7 @@ FromDevice_get_packet(u_char* clientdata,
     }
 
     // set annotations
-    p->set_timestamp_anno(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
+    p->set_timestamp_anno(Timestamp::make_usec(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec));
     SET_EXTRA_LENGTH_ANNO(p, pkthdr->len - length);
 
     if (!fd->_force_ip || fake_pcap_force_ip(p, fd->_datalink))
@@ -359,7 +359,14 @@ FromDevice::selected(int)
 	} else
 	    p->take(_snaplen - len);
 	p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
+# if SIZEOF_STRUCT_TIMEVAL == 8
 	(void) ioctl(_fd, SIOCGSTAMP, &p->timestamp_anno());
+	p->timestamp_anno()._subsec = Timestamp::usec_to_subsec(p->timestamp_anno()._subsec);
+# else
+	struct timeval tv;
+	(void) ioctl(_fd, SIOCGSTAMP, &tv);
+	p->set_timestamp_anno(tv);
+# endif
 	if (!_force_ip || fake_pcap_force_ip(p, _datalink))
 	    output(0).push(p);
 	else

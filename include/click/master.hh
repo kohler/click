@@ -33,7 +33,7 @@ class Master { public:
 
     const volatile int* runcount_ptr() const	{ return &_runcount; }
     
-    int timer_delay(Timestamp*);
+    Timestamp next_timer_expiry();
     void run_timers();
     
 #if CLICK_USERLEVEL

@@ -76,11 +76,6 @@ class Timestamp { public:
 
     void add_fix();
     void sub_fix();
-#if HAVE_NANOTIMESTAMP
-    void convert_to_timeval()	{ _subsec /= 1000; }
-#else
-    void convert_to_timeval()	{ }
-#endif
 
     String unparse() const;
 

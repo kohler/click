@@ -356,24 +356,18 @@ Master::timer_reheapify_from(int pos, Timer* t)
 
 // How long until next timer expires.
 
-int
-Master::timer_delay(Timestamp* tv)
+Timestamp
+Master::next_timer_expiry()
 {
-    int retval;
     _timer_lock.acquire();
     if (_timer_heap.size() == 0) {
-	*tv = Timestamp(1000, 0);
-	retval = 0;
+	_timer_lock.release();
+	return Timestamp();
     } else {
-	Timestamp now = Timestamp::now();
-	if (_timer_heap.at_u(0)->_expiry > now)
-	    *tv = _timer_heap.at_u(0)->_expiry - now;
-	else
-	    *tv = Timestamp();
-	retval = 1;
+	Timestamp next_expiry = _timer_heap.at_u(0)->_expiry;
+	_timer_lock.release();
+	return next_expiry;
     }
-    _timer_lock.release();
-    return retval;
 }
 
 void
@@ -553,23 +547,41 @@ Master::run_selects(bool more_tasks)
     // never wait if anything is scheduled; otherwise, if no timers, block
     // indefinitely.
 # if HAVE_POLL_H
-    int timeout;
-    if (more_tasks)
-	timeout = 0;
-    else {
-	Timestamp wait;
-	bool timers = timer_delay(&wait);
-	timeout = (timers ? (int) wait.msec1() : -1);
+    int timeout = 0;
+    if (!more_tasks) {
+	Timestamp next_expiry = next_timer_expiry();
+	if (next_expiry._sec > 0
+	    && (next_expiry -= Timestamp::now(), next_expiry._sec > 0)) {
+	    if (next_expiry._sec >= INT_MAX / 1000)
+		timeout = INT_MAX - 1000;
+	    else
+		timeout = next_expiry.msec1();
+	}
     }
 # else /* !HAVE_POLL_H */
+#  if TIMESTAMP_PUNS_TIMEVAL
     Timestamp wait;
     struct timeval *wait_ptr = (struct timeval*) &wait;
+    if (more_tasks || !(wait = next_timer_expiry()))
+	/* nada */;
+    else {
+	wait -= Timestamp::now();
+	if (wait._sec < 0)
+	    wait._sec = wait._subsec = 0;
+	else
+	    wait._subsec = Timestamp::subsec_to_usec(wait._subsec);
+    }
+#  else /* !TIMESTAMP_PUNS_TIMEVAL */
+    struct timeval wait, *wait_ptr = &wait;
+    timerclear(&wait);
     if (more_tasks)
 	/* nada */;
-    else if (!timer_delay(&wait))
-	wait_ptr = 0;
-    else
-	wait.convert_to_timeval();
+    else if (Timestamp t = next_timer_expiry()) {
+	t -= Timestamp::now();
+	if (t._sec > 0)
+	    wait = t.to_timeval();
+    }
+#  endif /* TIMESTAMP_PUNS_TIMEVAL */
 # endif /* HAVE_POLL_H */
 #endif /* CLICK_NS */
 

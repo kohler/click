@@ -367,24 +367,26 @@ RouterThread::run_os()
     _master->run_selects(!empty());
 #elif !defined(CLICK_GREEDY)
 # if CLICK_LINUXMODULE		/* Linux kernel module */
-    if (!empty()) {		// just schedule others for a second
-	current->state = TASK_RUNNING;
+    if (!empty()) {
+      short_pause:
 	SET_STATE(S_PAUSED);
+	current->state = TASK_RUNNING;
 	schedule();
-    } else {
-	Timestamp wait;
-	if (_id != 0 || !_master->timer_delay(&wait)) {
-	    SET_STATE(S_BLOCKED);
-	    schedule();
-	} else if (wait._sec > 0 || wait._subsec > (Timestamp::SUBSEC_PER_SEC / CLICK_HZ)) {
-	    SET_STATE(S_TIMER);
+    } else if (_id != 0) {
+      block:
+	SET_STATE(S_BLOCKED);
+	schedule();
+    } else if (Timestamp wait = _master->next_timer_expiry()) {
+	wait -= Timestamp::now();
+	if (!(wait._sec > 0 || wait._subsec > (Timestamp::SUBSEC_PER_SEC / CLICK_HZ)))
+	    goto short_pause;
+	SET_STATE(S_TIMER);
+	if (wait._sec >= LONG_MAX / CLICK_HZ - 1)
+	    (void) schedule_timeout(LONG_MAX - CLICK_HZ - 1);
+	else
 	    (void) schedule_timeout((wait._sec * CLICK_HZ) + (wait._subsec * CLICK_HZ / Timestamp::SUBSEC_PER_SEC) - 1);
-	} else {
-	    current->state = TASK_RUNNING;
-	    SET_STATE(S_PAUSED);
-	    schedule();
-	}
-    }
+    } else
+	goto block;
     SET_STATE(S_RUNNING);
 # elif defined(CLICK_BSDMODULE)
     if (!empty()) {	// just schedule others for a moment
@@ -453,10 +455,8 @@ RouterThread::driver()
 #ifdef CLICK_NS
 	    // If there's another timer, tell the simulator to make us
 	    // run when it's due to go off.
-	    struct timeval now, nextdelay, nexttime;
-	    if (_master->timer_delay(&nextdelay)) {
-		click_gettimeofday(&now);
-		timeradd(&now, &nextdelay, &nexttime);
+	    if (Timestamp next_expiry = _master->next_timer_expiry()) {
+		struct timeval nexttime = next_expiry.to_timeval();
 		simclick_sim_schedule(_master->_siminst, _master->_clickinst, &nexttime);
 	    }
 #endif
