@@ -36,7 +36,7 @@ MappingCreator::initialize(ErrorHandler *errh)
 
   for (int i = 0; i < ninputs(); i++) {
     Vector<Element *> rewriters;
-    IsaElementFilter filter("Rewriter");
+    CastElementFilter filter("Rewriter");
     int ok = router()->upstream_elements(this, 0, &filter, rewriters);
     if (ok < 0)
       return errh->error("upstream_elements failure");
@@ -49,7 +49,7 @@ MappingCreator::initialize(ErrorHandler *errh)
   }
   for (int i = 0; i < noutputs(); i++) {
     Vector<Element *> rewriters;
-    IsaElementFilter filter("Rewriter");
+    CastElementFilter filter("Rewriter");
     int ok = router()->downstream_elements(this, 0, &filter, rewriters);
     if (ok < 0)
       return errh->error("downstream_elements failure");

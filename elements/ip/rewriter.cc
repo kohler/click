@@ -323,7 +323,7 @@ int
 Rewriter::initialize(ErrorHandler *errh)
 {
   Vector<Element *> mcs;
-  IsaElementFilter filter("MappingCreator");
+  CastElementFilter filter("MappingCreator");
   int ok = router()->downstream_elements(this, 0, &filter, mcs);
   if (ok < 0)
     return errh->error("downstream_elements failure");
