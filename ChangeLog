@@ -1,3 +1,19 @@
+2001-06-04 Monday 17:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: rfc2507c.cc (1.20), rfc2507c.hh (1.9), rfc2507d.hh
+	(1.9): more hashcode misery
+
+2001-06-04 Monday 17:19  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/bighashmap.cc (1.7), include/click/bighashmap.hh
+	(1.5), include/click/etheraddress.hh (1.3),
+	include/click/hashmap.cc (1.3), include/click/hashmap.hh (1.3),
+	include/click/ip6address.hh (1.5), include/click/ip6flowid.hh
+	(1.2), include/click/ipaddress.hh (1.17), include/click/ipflowid.hh
+	(1.5), include/click/string.hh (1.13), lib/string.cc (1.28):
+	hashcode() is now an overloaded function, not a member function, so
+	Jinyang wants to hash with key = int
+
 2001-06-04 Monday 14:52  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/: grid/locfromfile.cc (1.12), ip/ipprint.cc (1.26),
