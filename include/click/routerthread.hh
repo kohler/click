@@ -20,6 +20,7 @@ CLICK_DECLS
 class RouterThread : public Task { public:
 
     int thread_id() const		{ return _id; }
+    Master *master() const		{ return _master; }
 
     void driver();
     void driver_once();

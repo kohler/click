@@ -51,6 +51,13 @@ Task::~Task()
     assert(!scheduled() || _thread == this);
 }
 
+Master *
+Task::master() const
+{
+    assert(_thread);
+    return _thread->master();
+}
+
 void
 Task::initialize(Router *router, bool join)
 {

@@ -14,6 +14,7 @@ CLICK_DECLS
 typedef bool (*TaskHook)(Task *, void *);
 class RouterThread;
 class TaskList;
+class Master;
 
 class Task { public:
 
@@ -39,6 +40,7 @@ class Task { public:
     Task *scheduled_next() const	{ return _next; }
     Task *scheduled_prev() const	{ return _prev; }
     RouterThread *scheduled_list() const { return _thread; }
+    Master *master() const;
  
 #ifdef HAVE_STRIDE_SCHED
     int tickets() const			{ return _tickets; }
@@ -70,6 +72,8 @@ class Task { public:
     inline void call_hook();
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
+    unsigned runs() const		{ return _runs; }
+    unsigned work_done() const		{ return _work_done; }
     inline unsigned utilization() const;
     void clear_runs()			{ _runs = _work_done = 0; }
 #endif
