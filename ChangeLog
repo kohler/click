@@ -1,3 +1,8 @@
+2003-12-05 Friday 14:29  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/make-dsdv-config.pl (1.3): Handle new metrics, and their
+	configuration strings
+
 2003-12-04 Thursday 18:22  Eddie Kohler <kohler@icir.org>
 
 	* lib/userutils.cc (1.34): fix bug with glob_match(): "*.end" would
