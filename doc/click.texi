@@ -4831,29 +4831,40 @@ Attaches the task to the router object @var{r} (or
 default value, and schedules the task if @var{scheduled} is true.
 @end deftypemethod
 
-Many elements call @code{ScheduleInfo::join_scheduler} instead of
+Many elements call @code{ScheduleInfo::initialize_task} instead of
 calling @code{Task::initialize} directly. This method queries any
 @click{ScheduleInfo} elements in the configuration to determine the
 task's scheduling parameters, then calls @code{Task::initialize} to
-schedule the task. The @code{ScheduleInfo::join_scheduler} method is
+schedule the task. The @code{ScheduleInfo::initialize_task} method is
 defined in the @code{<click/standard/scheduleinfo.hh>} header file.
 
-@deftypeop {Static Method} ScheduleInfo void join_scheduler (Element *@var{e}, Task *@var{task}, ErrorHandler *@var{errh})
+@deftypeop {Static Method} ScheduleInfo void initialize_task (Element *@var{e}, @w{Task *@var{task}}, @w{bool @var{schedule}}, @w{ErrorHandler *@var{errh}})
 Sets @var{task}'s scheduling parameters as specified by any
 @click{ScheduleInfo} elements in the router configuration. The element
 @var{e} is used to find the correct router, and provides the relevant
 name for parameter lookup---the user supplies parameters to
-@click{ScheduleInfo} by element name. Also schedules @var{task} on
-@code{@var{e}->router()}'s task queue. Reports any errors to @var{errh}.
+@click{ScheduleInfo} by element name. If @var{schedule} is true, also
+schedules @var{task} on @code{@var{e}->router()}'s task queue. Reports
+any errors to @var{errh}.
 @end deftypeop
 
-The @code{join_scheduler} method is generally called like this:
+@deftypeop {Static Method} ScheduleInfo void initialize_task (Element *@var{e}, @w{Task *@var{task}}, @w{ErrorHandler *@var{errh}})
+A synonym for @code{initialize_task(@var{e}, @var{task}, true,
+@var{errh})}.
+@end deftypeop
+
+@deftypeop {Static Method} ScheduleInfo void join_scheduler (Element *@var{e}, @w{Task *@var{task}}, @w{ErrorHandler *@var{errh}})
+A synonym for @code{initialize_task(@var{e}, @var{task}, true,
+@var{errh})}.
+@end deftypeop
+
+The @code{initialize_task} method is generally called like this:
 
 @example
 int
 SomeElement::initialize(ErrorHandler *errh)
 @{
-  ScheduleInfo::join_scheduler(this, &_task, errh);
+  ScheduleInfo::initialize_task(this, &_task, errh);
 @}
 @end example
 
