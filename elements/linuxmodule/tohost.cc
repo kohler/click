@@ -24,8 +24,16 @@ ToLinux::ToLinux()
   add_input();
 }
 
+#if 0
+static unsigned long linux_cycles = 0;
+static unsigned long linux_pkts = 0;
+#endif
+
 ToLinux::~ToLinux()
 {
+#if 0
+  click_chatter("%d pkts in %u cycles", linux_pkts, linux_cycles);
+#endif
 }
 
 ToLinux *
@@ -49,7 +57,14 @@ ToLinux::push(int port, Packet *p)
 #ifdef HAVE_CLICK_KERNEL
   skb1->nh.raw = skb1->data;
   start_bh_atomic();
+#if 0
+  unsigned long c0 = click_get_cycles();
+#endif
   ptype_dispatch(skb1, skb1->protocol);
+#if 0
+  linux_cycles += click_get_cycles() - c0;
+  linux_pkts ++;
+#endif
   end_bh_atomic();
 #endif
 }
