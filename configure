@@ -10112,9 +10112,9 @@ TARGETS=
 OTHER_TARGETS=
 
 
-for i in click-align click-check click-combine click-devirtualize click-fastclassifier click-flatten click-ipopt click-mkmindriver click-pretty click-undead click-xform click2xml; do
+for i in click-align click-check click-combine click-devirtualize click-fastclassifier click-findpackage click-flatten click-ipopt click-mkmindriver click-pretty click-undead click-xform click2xml; do
     test -d $srcdir/tools/$i &&	\
-      TOOLDIRS="$TOOLDIRS $i" TOOL_TARGETS="$TOOL_TARGETS $i"
+	TOOLDIRS="$TOOLDIRS $i" TOOL_TARGETS="$TOOL_TARGETS $i"
 done
 for i in click-install; do
     test -d $srcdir/tools/$i && TOOLDIRS="$TOOLDIRS $i"
