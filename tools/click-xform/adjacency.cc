@@ -50,7 +50,7 @@ AdjacencyMatrix::init(RouterT *r, RouterT *type_model = 0)
     if (type_model && t >= 0)
       t = type_model->type_index(r->type_name(t));
     if (t >= 0 && t != RouterT::TUNNEL_TYPE) {
-      _x[i + (i<<cap)] = t*100;
+      _x[i + (i<<cap)] = t*128;
       _default_match[i] = -1;
     }
   }
@@ -60,7 +60,7 @@ AdjacencyMatrix::init(RouterT *r, RouterT *type_model = 0)
   for (int i = 0; i < hf.size(); i++)
     // add connections. always add 1 so it's not 0 if the connection is from
     // port 0 to port 0. (DUH!)
-    if (hf[i].idx != ht[i].idx) {
+    if (hf[i].idx >= 0 && hf[i].idx != ht[i].idx) {
       int p1 = hf[i].port % 32;
       int p2 = (ht[i].port + 16) % 32;
       _x[ hf[i].idx + (ht[i].idx<<cap) ] |= (1U<<p1) | (1U<<p2);
@@ -95,7 +95,7 @@ AdjacencyMatrix::update(RouterT *r, const Vector<int> &changed_eindexes)
     // set type
     int t = r->etype(j);
     if (t >= 0 && t != RouterT::TUNNEL_TYPE) {
-      _x[ j + (j<<cap) ] = t*100;
+      _x[ j + (j<<cap) ] = t*128;
       _default_match[j] = -1;
     } else
       _default_match[j] = -2;
@@ -109,7 +109,7 @@ AdjacencyMatrix::update(RouterT *r, const Vector<int> &changed_eindexes)
   for (int i = 0; i < hf.size(); i++)
     // add connections. always add 1 so it's not 0 if the connection is from
     // port 0 to port 0. (DUH!)
-    if (hf[i].idx != ht[i].idx) {
+    if (hf[i].idx >= 0 && hf[i].idx != ht[i].idx) {
       int p1 = hf[i].port % 32;
       int p2 = (ht[i].port + 16) % 32;
       _x[ hf[i].idx + (ht[i].idx<<cap) ] |= (1U<<p1) | (1U<<p2);
@@ -121,7 +121,7 @@ AdjacencyMatrix::print() const
 {
   for (int i = 0; i < _n; i++) {
     for (int j = 0; j < _n; j++)
-      fprintf(stderr, "%3u ", _x[(i<<_cap) + j]);
+      fprintf(stderr, "%3x ", _x[(i<<_cap) + j]);
     fprintf(stderr, "\n");
   }
   fprintf(stderr, "\n");

@@ -104,14 +104,14 @@ Matcher::check_into(const Hookup &houtside, const Hookup &hinside)
   for (int i = 0; i < phf.size(); i++)
     if (pht[i] == phinside && phf[i].idx == _pat_input_idx
 	&& phf[i] < success) {
-      Vector<Hookup> pfrom_phf, from_outside;
+      Vector<Hookup> pfrom_phf, from_houtside;
       // check that it's valid: all connections from tunnels are covered
       // in body
       _pat->find_connections_from(phf[i], pfrom_phf);
-      _body->find_connections_from(houtside, from_outside);
+      _body->find_connections_from(houtside, from_houtside);
       for (int j = 0; j < pfrom_phf.size(); j++) {
 	Hookup want(_match[pfrom_phf[j].idx], pfrom_phf[j].port);
-	if (want.index_in(from_outside) < 0)
+	if (want.index_in(from_houtside) < 0)
 	  goto no_match;
       }
       // success: save it
@@ -138,14 +138,14 @@ Matcher::check_out_of(const Hookup &hinside, const Hookup &houtside)
   for (int i = 0; i < phf.size(); i++)
     if (phf[i] == phinside && pht[i].idx == _pat_output_idx
 	&& pht[i] < success) {
-      Vector<Hookup> pto_pht, to_outside;
+      Vector<Hookup> pto_pht, to_houtside;
       // check that it's valid: all connections to tunnels are covered
       // in body
       _pat->find_connections_to(pht[i], pto_pht);
-      _body->find_connections_to(houtside, to_outside);
+      _body->find_connections_to(houtside, to_houtside);
       for (int j = 0; j < pto_pht.size(); j++) {
 	Hookup want(_match[pto_pht[j].idx], pto_pht[j].port);
-	if (want.index_in(to_outside) < 0)
+	if (want.index_in(to_houtside) < 0)
 	  goto no_match;
       }
       // success: save it
@@ -171,6 +171,7 @@ Matcher::check_match()
   _defs.clear();
 
   // check configurations
+  //fprintf(stderr, "CONF\n");
   for (int i = 0; i < _match.size(); i++)
     if (_match[i] >= 0) {
       if (!match_config(_pat->econfiguration(i), _body->econfiguration(_match[i]), _defs))
@@ -201,6 +202,8 @@ Matcher::check_match()
 
   for (int i = 0; i < nhook; i++) {
     const Hookup &hf = hfrom[i], &ht = hto[i];
+    if (hf.idx < 0)
+      continue;
     int pf = _back_match[hf.idx], pt = _back_match[ht.idx];
     if (pf >= 0 && pt >= 0) {
       if (!_pat->has_connection(Hookup(pf, hf.port), Hookup(pt, ht.port)))
@@ -224,7 +227,8 @@ Matcher::check_match()
     if (pht[i].idx == _pat_output_idx && pht[i].index_in(_from_pp_from) < 0)
       return false;
   }
-  
+
+  //fprintf(stderr, "  YES\n");
   return true;
 }
 
@@ -586,7 +590,7 @@ particular purpose.\n");
       patterns[i]->unify_type_indexes(patterns[0]);
     r->unify_type_indexes(patterns[0]);
   }
-    
+  
   // clear r's flags, so we know the current element complement
   // didn't come from replacements (paranoia)
   for (int i = 0; i < r->nelements(); i++)
@@ -609,6 +613,7 @@ particular purpose.\n");
     any = false;
     for (int i = 0; i < patterns.size(); i++) {
       Matcher m(patterns[i], patterns_adj[i], r, &matrix, i + 1, errh);
+      //fprintf(stderr, ">>> %d\n", i);
       if (m.next_match()) {
 	m.replace(replacements[i], pat_names[i], String(), errh);
 	nreplace++;
