@@ -90,6 +90,8 @@ class FromHost : public AnyDevice { public:
     void cleanup(CleanupStage);
 
     int set_device_addresses(ErrorHandler *);
+
+    bool run_task();
     
   private:
 
@@ -98,8 +100,14 @@ class FromHost : public AnyDevice { public:
     IPAddress _destmask;
     net_device_stats _stats;
 
+    Task _task;
     Timer _wakeup_timer;
 
+    Packet *_queue;		// to prevent race conditions
+
+    static net_device *new_device(const char *);
+    static int fl_tx(struct sk_buff *, net_device *);
+    
 };
 
 #endif

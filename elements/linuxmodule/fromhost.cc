@@ -5,7 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
- * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2001-2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,7 @@
 #include "fromhost.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/standard/scheduleinfo.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -41,7 +42,6 @@ CLICK_CXX_UNPROTECT
 
 static int fl_open(net_device *);
 static int fl_close(net_device *);
-static int fl_tx(struct sk_buff *, net_device *);
 static net_device_stats *fl_stats(net_device *);
 static void fl_wakeup(Timer *, void *);
 
@@ -64,7 +64,7 @@ fromlinux_static_cleanup()
 
 FromHost::FromHost()
     : _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
-      _wakeup_timer(fl_wakeup, this)
+      _task(this), _wakeup_timer(fl_wakeup, this), _queue(0)
 {
     MOD_INC_USE_COUNT;
     fromlinux_static_initialize();
@@ -84,8 +84,8 @@ FromHost::clone() const
     return new FromHost;
 }
 
-static net_device *
-new_fromlinux_device(const char *name)
+net_device *
+FromHost::new_device(const char *name)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     read_lock(&dev_base_lock);
@@ -147,7 +147,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 
     // if not found, create new device
     int res;
-    _dev = new_fromlinux_device(_devname.c_str());
+    _dev = new_device(_devname.c_str());
     if (!_dev)
 	return errh->error("out of memory!", res, _devname.c_str());
     else if ((res = register_netdev(_dev)) < 0) {
@@ -161,17 +161,19 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
+#if 0 /* Why was this code here? */
 static void
 dev_locks(int up)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     if (up > 0)
 	rtnl_lock();
     else
 	rtnl_unlock();
-#endif
+# endif
 }
-    
+#endif
+
 int
 FromHost::set_device_addresses(ErrorHandler *errh)
 {
@@ -224,6 +226,7 @@ dev_updown(net_device *dev, int up, ErrorHandler *errh)
 int
 FromHost::initialize(ErrorHandler *errh)
 {
+    ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
     if (_dev->flags & IFF_UP) {
 	_wakeup_timer.initialize(this);
 	_wakeup_timer.schedule_now();
@@ -238,18 +241,23 @@ void
 FromHost::cleanup(CleanupStage)
 {
     fromlinux_map.remove(this);
+
+    if (_queue) {
+	_queue->kill();
+	_queue = 0;
+    }
+    
     if (_dev) {
 	dev_put(_dev);
-	if (fromlinux_map.lookup(_dev, 0)) {
+	if (fromlinux_map.lookup(_dev, 0))
+	    _dev = 0;		// do not free device; still in use
+	else {
+	    if (_dev->flags & IFF_UP)
+		dev_updown(_dev, -1, 0);
+	    unregister_netdev(_dev);
+	    kfree(_dev);
 	    _dev = 0;
-	    return;		// do not free device; still in use
 	}
-
-	if (_dev->flags & IFF_UP)
-	    dev_updown(_dev, -1, 0);
-	unregister_netdev(_dev);
-	kfree(_dev);
-	_dev = 0;
     }
 }
 
@@ -286,14 +294,27 @@ fl_close(net_device *dev)
     return 0;
 }
 
-static int
-fl_tx(struct sk_buff *skb, net_device *dev)
+int
+FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 {
-    if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0)) {
-	Packet *p = Packet::make(skb);
-	fl->push(0, p);
-	return 0;
-    }
+    /* 8.May.2003 - Doug and company had crashes with FromHost configurations.
+         We eventually figured out this was because fl_tx was called at
+         interrupt time -- at bottom-half time, to be exact -- and then pushed
+         a packet through the configuration. Whoops: if Click was interrupted,
+         and during the bottom-half FromHost emitted a packet into Click,
+         DISASTER -- we assume that, when running single-threaded, at most one
+         Click thread is active at a time; so there were race conditions,
+         particularly with the task list. The solution is a single-packet-long
+         queue in FromHost. fl_tx puts a packet onto the queue, a regular
+         Click Task takes the packet off the queue. We could have implemented
+         a larger queue, but why bother? Linux already maintains a queue for
+         the device. */
+    if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0))
+	if (!fl->_queue) {
+	    fl->_queue = Packet::make(skb);
+	    netif_stop_queue(dev);
+	    return 0;
+	}
     return -1;
 }
 
@@ -305,9 +326,18 @@ fl_stats(net_device *dev)
     return 0;
 }
 
-/*
- * Routing table management
- */
+bool
+FromHost::run_task()
+{
+    _task.fast_reschedule();
+    if (Packet *p = _queue) {
+	_queue = 0;
+	netif_start_queue(_dev);
+	output(0).push(p);
+	return true;
+    } else
+	return false;
+}
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)
 EXPORT_ELEMENT(FromHost)
