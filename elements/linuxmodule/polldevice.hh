@@ -9,20 +9,22 @@ extern "C" {
  * =c
  * PollDevice(devname)
  * =d
- * 
  * Poll packets received by the Linux network interface named devname.
- * Packets can be pulled from output 0. The packets include the link-level
+ * Packets will be pushed to output 0. The packets include the link-level
  * header.
  *
  * Linux won't see any packets from the device. If you want Linux to process
  * packets, you should hand them to ToLinux.
  *
+ * This element can only be used with devices that support the Click polling
+ * extension. We have written polling patches for the Tulip Ethernet driver.
+ *
  * This element is only available inside the kernel module.
  *
  * =a FromDevice
  * =a ToDevice
- * =a ToLinux
- */
+ * =a FromLinux
+ * =a ToLinux */
 
 #include "element.hh"
 #include "string.hh"

@@ -12,6 +12,11 @@
  * You should probably give Linux IP packets addressed to
  * the local machine (including broadcasts), and a copy
  * of each ARP reply.
+ *
+ * =a FromLinux
+ * =a FromDevice
+ * =a PollDevice
+ * =a ToDevice
  */
 
 class ToLinux : public Element {

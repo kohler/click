@@ -17,11 +17,16 @@ extern "C" {
  * If you want Linux to process packets, you should
  * hand them to ToLinux.
  *
+ * FromDevice accesses packets the same way Linux does: through interrupts.
+ * This is bad for performance. If you care about performance and have a
+ * polling-capable device, use PollDevice instead.
+ *
  * This element is only available inside the kernel module.
  *
+ * =a PollDevice
  * =a ToDevice
- * =a ToLinux
- */
+ * =a FromLinux
+ * =a ToLinux */
 
 #include "element.hh"
 #include "string.hh"
