@@ -378,12 +378,13 @@ CPPFLAGS="$CPPFLAGS -nostdinc -I$freebsddir"
 AC_TRY_CPP([#include <sys/param.h>
 #if __FreeBSD_version < 440002 || __FreeBSD_version >= 500000
 #include <NONEXISTENT_FILE>
-#endif], ac_cv_freebsd_version=yes, ac_cv_freebsd_version=no)])
+#endif], ac_cv_freebsd_version=yes, ac_cv_freebsd_version=no)
+CPPFLAGS="$save_flags"])
 if test $ac_cv_freebsd_version = yes; then
     AC_DEFINE_UNQUOTED(HAVE_CLICK_BSD_KERNEL, 1)
     AC_DEFINE_UNQUOTED(HAVE_BSD_POLLING, 1)
 else
-	AC_MSG_WARN([
+    AC_MSG_WARN([
 =========================================
 
 Your version of FreeBSD is old. Click works with FreeBSD 4.5 and later.
