@@ -54,7 +54,7 @@ exopc: Makefile click-buildtool stamp-h
 tools: Makefile
 	@cd tools && $(MAKE) all
 
-install: click-compile stamp-h
+install: Makefile click-buildtool click-compile stamp-h
 	@for d in $(ALL_TARGETS); do (cd $$d && $(MAKE) install) || exit 1; done
 	@$(MAKE) install-local install-doc install-local-include
 install-local: elementmap.xml click-buildtool click-compile
