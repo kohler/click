@@ -11,7 +11,7 @@ exec_prefix = @exec_prefix@
 bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
-freebsdincdir = @freebsddir@
+freebsddir = @freebsddir@
 
 VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/bsdmodule@elements_vpath@
 
@@ -67,14 +67,13 @@ EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 
 OBJS = setdef0.o $(BSDMODULE_OBJS) $(GENERIC_OBJS) $(ELEMENT_OBJS) elements.o setdef1.o
 
-CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_BSDMODULE -DKERNEL -D_KERNEL -DKLD_MODULE
+CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_BSDMODULE
 CFLAGS = @CFLAGS_NDEBUG@ -g
 CXXFLAGS = @CXXFLAGS_NDEBUG@ -g
 
 DEFS = @DEFS@ 
-INCLUDES = -nostdinc -I$(freebsdincdir) \
-	-I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(srcdir) -I$(top_srcdir) -I.
+INCLUDES = -nostdinc -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(srcdir) -I$(top_srcdir) -I. -I$(freebsddir)
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
@@ -87,7 +86,7 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: $(INSTALLOBJS) click-mount
 
-click.ko: Makefile $(OBJS)
+click.ko: Makefile vnode_if.h $(OBJS)
 	$(LD) -Bshareable -o click.ko $(OBJS)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
@@ -105,19 +104,10 @@ elements.cc: elements.conf $(top_srcdir)/click-buildtool
 	(cd $(top_srcdir); ./click-buildtool elem2export) < elements.conf > elements.cc
 	@rm -f elements.d
 
-setdef0.c: module.o
+setdef0.c setdef1.c: module.o
 	gensetdefs module.o
-setdef1.c: module.o
-	gensetdefs module.o
-
-vnode_if.h: $(srcdir)/vnode_if.pl /sys/kern/vnode_if.src
-	perl $(srcdir)/vnode_if.pl -h /sys/kern/vnode_if.src
-clickfs.cc: modulepriv.hh
-clickfs_vnops.cc: modulepriv.hh
-clickfs_tree.cc: modulepriv.hh
-clickfs_element.cc: modulepriv.hh
-module.cc: modulepriv.hh
-modulepriv.hh: vnode_if.h
+vnode_if.h: $(freebsddir)/kern/vnode_if.pl $(freebsddir)/kern/vnode_if.src
+	$(freebsddir)/kern/vnode_if.pl -h $(freebsddir)/kern/vnode_if.src
 
 # Special compile rule for click-mount because we don't want
 # to built it with -D_KERNEL, it's in user-space..
