@@ -164,7 +164,7 @@ bool
 AiroInfo::get_noise(int &avg_over_sec, int &avg_over_minute, int &max_over_minute)
 {
   struct an_req areq;
-  memeset(&areq, 0, sizeof(areq));
+  memset(&areq, 0, sizeof(areq));
 
   areq.an_len = AN_MAX_DATALEN;
   areq.an_type = AN_RID_STATUS;
@@ -185,13 +185,14 @@ AiroInfo::get_noise(int &avg_over_sec, int &avg_over_minute, int &max_over_minut
   // u_int8_t                an_max_noise_prev_min_pc;       /* 0x7E */
   // u_int8_t                an_max_noise_prev_min_db;       /* 0x7F */
 
-  u_int8_t *u8 = _ifr.ifr_data + 0x7B;
+  u_int8_t *base = (u_int8_t *) _ifr.ifr_data;
+  u_int8_t *u8 = base + 0x7B;
   avg_over_sec = *u8;
 
-  u8 = _ifr.ifr_data + 0x7D;
+  u8 = base + 0x7D;
   avg_over_minute = *u8;
 
-  u8 = _ifr.ifr_data + 0x7F;
+  u8 = base + 0x7F;
   max_over_minute = *u8;
 
   return true;
