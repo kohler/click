@@ -30,6 +30,7 @@ class WebGen : public Element {
   const char *class_name() const		{ return "WebGen"; }
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
+  void cleanup(CleanupStage);
   WebGen *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
@@ -48,8 +49,8 @@ private:
   public:
     CB();
 
-    IPAddress _src; // Our IP address.
-    unsigned short _sport; // network byte order.
+    IPAddress _src;		// Our IP address.
+    unsigned short _sport;	// network byte order.
     unsigned short _dport;
 
     unsigned _iss;
@@ -57,25 +58,76 @@ private:
     unsigned _snd_nxt;
     unsigned _irs;
     unsigned _rcv_nxt;
-    unsigned _fin_seq;
 
-    int _connected; // Got SYN+ACK
-    int _got_fin;   // Got FIN
-    int _closed;    // Got ACK for our FIN
-    int _reset;     // Got RST
-    int _do_send;
-    int _resends;
+    unsigned char
+	_connected:1,		// Got SYN+ACK
+	_got_fin:1,		// Got FIN
+	_sent_fin:1,		// Sent FIN
+	_closed:1,		// Got ACK for our FIN
+	_do_send:1,
+	_spare_bits:3;
+    char _resends;
 
-    void reset(IPAddress src);
+    struct timeval last_send;
+    char sndbuf[64];
+    int sndlen;
+
+    void reset (IPAddress src);
+
+    void remove_from_list ();
+    void add_to_list (CB **phead);
+
+    void rexmit_unlink ();
+    void rexmit_update (CB *tail);
+
+    CB *next;
+    CB **pprev;
+
+    CB *rexmit_next;
+    CB *rexmit_prev;
   };
 
-  CB *_cbs[100];
-  int _ncbs;
+  const static int htbits = 10;
+  const static int htsize = 1 << htbits;
+  const static int htmask = htsize - 1;
+  CB *cbhash[htsize];
+  CB *cbfree;
+  CB *rexmit_head, *rexmit_tail;
 
-  void tcp_output(CB *, Packet *);
-  void tcp_input(Packet *);
+  // Retransmission
+  const static int resend_dt = 1000000;	// rexmit after 1 sec
+  const static int resend_max = 5;	// rexmit at most 5 times
+
+  // Scheduling new connections
+  int start_interval;			// ms between connections
+  struct timeval start_tv;
+
+  // Performance measurement
+  const static int perf_dt = 5000000;
+  struct timeval perf_tv;
+  struct {
+    int initiated;
+    int completed;
+    int reset;
+    int timeout;
+  } perfcnt;
+
+  void do_perf_stats ();
+
+  void recycle(CB *);
   CB *find_cb(unsigned src, unsigned short sport, unsigned short dport);
   IPAddress pick_src();
+  int connhash(unsigned src, unsigned short sport);
+
+  WritablePacket *fixup_packet (Packet *p, int plen);
+
+  void tcp_input(Packet *);
+  void tcp_send(CB *, Packet *);
+  void tcp_output(WritablePacket *p,
+	IPAddress src, unsigned short sport,
+	IPAddress dst, unsigned short dport,
+	int seq, int ack, char tcpflags,
+	char *payload, int paylen);
 };
 
 CLICK_ENDDECLS
