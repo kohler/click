@@ -5,13 +5,14 @@
  * =c
  * CheckIPHeader([BADADDRS])
  * =d
- * Expects IP packets as input.
- * Checks that the packet's length is reasonable,
- * and that the IP version, header length, length, and
- * checksum fields are valid.
- * Checks that the IP source address is a legal unicast address.
- * Pushes invalid packets out on output 1, unless output 1 was unused;
- * if so, drops invalid packets.
+ *
+ * Expects IP packets as input. Checks that the packet's length is reasonable,
+ * and that the IP version, header length, length, and checksum fields are
+ * valid. Checks that the IP source address is a legal unicast address.
+ * Shortens packets to the IP length, if the IP length is shorter than the
+ * nominal packet length (due to Ethernet padding, for example). Pushes
+ * invalid packets out on output 1, unless output 1 was unused; if so, drops
+ * invalid packets.
  *
  * The BADADDRS argument is a space-separated list of IP addresses
  * that are not to be tolerated as source addresses.
@@ -21,8 +22,7 @@
  * =a CheckIPHeader2
  * =a MarkIPHeader
  * =a SetIPChecksum
- * =a StripIPHeader
- */
+ * =a StripIPHeader */
 
 #include "element.hh"
 #include "glue.hh"
