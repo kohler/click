@@ -1,17 +1,14 @@
 SHELL = @SHELL@
-@SUBMAKE@
 
-srcdir := @srcdir@
-top_srcdir := @top_srcdir@
-top_builddir := ../..
-subdir := tools/click-align
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+top_builddir = ../..
+subdir = tools/lib
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
-sbindir = @sbindir@
 libdir = @libdir@
-mandir = @mandir@
 
 VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)/tools/lib:$(top_srcdir)/lib
 
@@ -22,6 +19,8 @@ CXXCPP = @CXXCPP@
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
 INSTALL = @INSTALL@
+AR = ar
+RANLIB = @RANLIB@
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 .SUFFIXES:
@@ -37,33 +36,29 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-OBJS = alignment.o alignclass.o click-align.o
+OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
+	elementt.o routert.o lexert.o confparse.o archive.o toolutils.o \
+	clp.o @LIBOBJS@
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 
-DEFS = @DEFS@ -I. -I$(top_builddir) -I$(srcdir) \
-	-I$(top_srcdir)/tools/lib -I$(top_srcdir)/lib
+DEFS = @DEFS@ -DCLICK_BINDIR='"$(bindir)"' \
+	-I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir)/lib
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: libclicktool.a click-align
+all: libclicktool.a
 
-libclicktool.a:
-	@cd ../lib; $(MAKE) libclicktool.a
+libclicktool.a: Makefile $(OBJS)
+	$(AR) cru libclicktool.a $(OBJS)
+	$(RANLIB) libclicktool.a
 
-click-align: Makefile $(OBJS)
-	$(CXXLINK) $(OBJS) ../lib/libclicktool.a
-
-Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
@@ -72,14 +67,14 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click-align
-	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click-align $(bindir)/click-align
+install: libclicktool.a
+	$(mkinstalldirs) $(libdir)
+	$(INSTALL) libclicktool.a $(libdir)/libclicktool.a
 install-man:
 
 clean:
-	rm -f *.d *.o click-align
+	rm -f *.d *.o libclicktool.a
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean install install-bin install-man libclicktool.a
+.PHONY: all clean distclean install install-bin install-man

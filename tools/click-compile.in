@@ -8,6 +8,7 @@ includedir=@includedir@
 target=
 package=NONE
 cflags=
+compileflag=-c
 while true; do
   bad=x
   case $1 in
@@ -15,10 +16,15 @@ while true; do
       target=$2; shift 2;;
     --t=*|--ta=*|--tar=*|--targ=*|--targe=*|--target=*)
       target=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
+    --p|--pa|--pac|--pack|--packa|--packag|--package)
+      package=$2; shift 2;;
     --p=*|--pa=*|--pac=*|--pack=*|--packa=*|--packag=*|--package=*)
       package=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
     -*)
-      cflags="$cflags '$1'"; shift 1;;
+      if test $1 = -E -o $1 = -c; then
+        compileflag=$1
+      else cflags="$cflags '$1'"; fi
+      shift 1;;
     *)
       bad=;;
   esac
@@ -29,16 +35,20 @@ case $target in
   k|ke|ker|kern|kerne|kernel|m|mo|mod|modu|modul|module)
     idefs="@DEFS@ -DCLICK_LINUXMODULE"
     iincludes="-I${includedir} -I/usr/src/linux/include"
-    icxxflags="@CXXFLAGS_NDEBUG@ -fno-exceptions -fno-rtti"
-    command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} -c $cflags"
+    icxxflags="@CXXFLAGS_NDEBUG@"
+    command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=module;;
   u|us|use|user)
     idefs="@DEFS@ -DCLICK_USERLEVEL"
     iincludes="-I${includedir}"
-    icxxflags="@CXXFLAGS@ -fno-exceptions -fno-rtti"
-    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} -c $cflags"
+    icxxflags="@CXXFLAGS@"
+    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=user;;
   t|to|too|tool)
+    idefs="@DEFS@ -DCLICK_TOOL"
+    iincludes="-I${includedir}"
+    icxxflags="@CXXFLAGS@"
+    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=tool;;
   *)
     echo "click-compile: acceptable targets are \`kernel', \`user', and \`tool'" 1>&2; exit 1;;

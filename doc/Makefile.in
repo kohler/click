@@ -7,6 +7,7 @@ subdir := doc
 
 prefix = @prefix@
 mandir = @mandir@
+datadir = @datadir@
 
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
@@ -21,6 +22,9 @@ Makefile: $(srcdir)/Makefile.in
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
 install: install-man
+	$(mkinstalldirs) $(datadir)
+	/bin/sh $(top_srcdir)/findelements.sh -x -a -p $(top_srcdir) | $(PERL) mkelementmap.pl -f - $(top_srcdir)/lib/errorelement.hh -p $(top_srcdir) > $(datadir)/elementmap
+
 install-man:
 	$(mkinstalldirs) $(mandir)/man1 $(mandir)/man3 $(mandir)/man5 $(mandir)/man8 $(mandir)/mann
 	$(INSTALL_DATA) click.1 $(mandir)/man1/click.1

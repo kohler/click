@@ -35,7 +35,7 @@ public:
   ~ARPFaker();
   
   const char *class_name() const		{ return "ARPFaker"; }
-  Processing default_processing() const	{ return PUSH; }
+  Processing default_processing() const		{ return PUSH; }
   ARPFaker *clone() const;
   
   int configure(const String &, ErrorHandler *);

@@ -51,7 +51,7 @@ OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(USERLEVEL_OBJS) elements.o
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS@
-CXXFLAGS = @CXXFLAGS@ -fno-exceptions -fno-rtti
+CXXFLAGS = @CXXFLAGS@
 
 DEFS = @DEFS@
 INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) \

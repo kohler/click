@@ -48,6 +48,8 @@ class RouterT : public ElementClassT {
   int get_type_index(const String &, ElementClassT *);
   int set_type_index(const String &, ElementClassT *);
   int get_anon_type_index(const String &, ElementClassT *);
+  void get_types_from(const RouterT *);
+  int unify_type_indexes(const RouterT *);
 
   int nelements() const			{ return _elements.size(); }
   int eindex(const String &s) const	{ return _element_name_map[s]; }

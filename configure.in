@@ -68,6 +68,9 @@ if test -n "$GXX"; then
 else
   KERNEL_CXX="$CXX"
 fi
+if test -n "$GXX"; then
+  CXXFLAGS="-fno-exceptions -fno-rtti -fvtable-thunks $CXXFLAGS"
+fi
 AC_SUBST(KERNEL_CXX)
 
 dnl
@@ -131,7 +134,7 @@ dnl make FLAGS variables without `-g'
 dnl
 
 CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
-CXXFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
+CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
 AC_SUBST(CFLAGS_NDEBUG)
 AC_SUBST(CXXFLAGS_NDEBUG)
 
@@ -320,7 +323,7 @@ dnl
 dnl Output
 dnl
 
-config_files="Makefile mkelemlist.sh tools/Makefile tools/click-align/Makefile tools/click-compile tools/click-fastclassifier/Makefile tools/click-install/Makefile tools/click-xform/Makefile tools/udpgen/Makefile doc/Makefile"
+config_files="Makefile mkelemlist.sh tools/Makefile tools/lib/Makefile tools/click-align/Makefile tools/click-compile tools/click-fastclassifier/Makefile tools/click-install/Makefile tools/click-xform/Makefile tools/udpgen/Makefile doc/Makefile"
 for dir in $POSSIBLE_TARGETS; do
   config_files="$config_files $dir/Makefile"
 done

@@ -1,4 +1,5 @@
 SHELL = @SHELL@
+@SUBMAKE@
 
 srcdir := @srcdir@
 top_srcdir := @top_srcdir@
@@ -36,13 +37,11 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
-	elementt.o routert.o lexert.o confparse.o archive.o toolutils.o \
-	clp.o @LIBOBJS@ adjacency.o click-xform.o
+OBJS = adjacency.o click-xform.o
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
-CXXFLAGS = @CXXFLAGS@ -fno-exceptions -fno-rtti
+CXXFLAGS = @CXXFLAGS@
 
 DEFS = @DEFS@ -I. -I$(top_builddir) -I$(srcdir) \
 	-I$(top_srcdir)/tools/lib -I$(top_srcdir)/lib
@@ -56,10 +55,13 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: click-xform
+all: libclicktool.a click-xform
+
+libclicktool.a:
+	@cd ../lib; $(MAKE) libclicktool.a
 
 click-xform: Makefile $(OBJS)
-	$(CXXLINK) $(OBJS)
+	$(CXXLINK) $(OBJS) ../lib/libclicktool.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -80,4 +82,4 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean install install-bin install-man
+.PHONY: all clean distclean install install-bin install-man libclicktool.a

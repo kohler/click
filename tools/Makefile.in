@@ -20,14 +20,16 @@ TARGETS = @TOOL_TARGETS@
 
 all: $(TARGETS)
 
-click-align: Makefile
-	@cd click-align; $(MAKE) all
-click-fastclassifier: Makefile
-	@cd click-fastclassifier; $(MAKE) all
-click-install: Makefile
-	@cd click-install; $(MAKE) all
-click-xform: Makefile
-	@cd click-xform; $(MAKE) all
+lib: Makefile
+	@cd lib; $(MAKE) all
+click-align: lib Makefile
+	@cd click-align; $(MAKE) click-align
+click-fastclassifier: lib Makefile
+	@cd click-fastclassifier; $(MAKE) click-fastclassifier
+click-install: lib Makefile
+	@cd click-install; $(MAKE) click-install
+click-xform: lib Makefile
+	@cd click-xform; $(MAKE) click-xform
 udpgen: Makefile
 	@cd udpgen; $(MAKE) all
 
@@ -41,9 +43,9 @@ click-compile: $(srcdir)/click-compile.in
 	@chmod +x click-compile; touch click-compile
 
 clean:
-	@-for d in $(TOOLDIRS); do (cd $$d && $(MAKE) clean); done
+	@-for d in lib $(TOOLDIRS); do (cd $$d && $(MAKE) clean); done
 distclean:
-	@-for d in $(TOOLDIRS); do (cd $$d && $(MAKE) distclean); done
+	@-for d in lib $(TOOLDIRS); do (cd $$d && $(MAKE) distclean); done
 	-rm -f Makefile click-compile
 
 install: install-subdirs install-local
@@ -54,7 +56,7 @@ install-local: click-compile
 install-subdirs:
 	@for d in $(TARGETS); do (cd $$d 2>/dev/null && $(MAKE) install); done
 
-DISTFILES = Makefile.in \
+DISTFILES = Makefile.in lib/Makefile.in \
 	lib/elementt.cc lib/elementt.hh \
 	lib/lexert.cc lib/lexert.hh \
 	lib/routert.cc lib/routert.hh \
@@ -90,4 +92,4 @@ distdir:
 	done
 
 
-.PHONY: all $(TOOLDIRS) clean distclean distdir install install-man install-subdirs
+.PHONY: all lib $(TOOLDIRS) clean distclean distdir install install-man install-subdirs

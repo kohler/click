@@ -159,6 +159,43 @@ RouterT::get_anon_eindex(int type_index, const String &config,
   return get_anon_eindex(name, type_index, config, landmark);
 }
 
+void
+RouterT::get_types_from(const RouterT *r)
+{
+  for (int i = 0; i < r->ntypes(); i++)
+    get_type_index(r->type_name(i), r->type_class(i));
+}
+
+int
+RouterT::unify_type_indexes(const RouterT *r)
+{
+  Vector<int> new_tidx;
+  for (int i = 0; i < ntypes(); i++) {
+    int t = r->type_index( type_name(i) );
+    if (t < 0)
+      return -1;
+    new_tidx.push_back(t);
+  }
+
+  // trash old element classes, make new element classes
+  for (int i = 0; i < _element_classes.size(); i++)
+    if (_element_classes[i])
+      _element_classes[i]->unuse();
+
+  _element_type_map = r->_element_type_map;
+  _element_type_names = r->_element_type_names;
+  _element_classes = r->_element_classes;
+  for (int i = 0; i < _element_classes.size(); i++)
+    if (_element_classes[i])
+      _element_classes[i]->use();
+
+  // fix tindexes
+  for (int i = 0; i < nelements(); i++)
+    element(i).type = new_tidx[ element(i).type ];
+  
+  return 0;
+}
+
 
 bool
 RouterT::add_connection(const Hookup &hfrom, const Hookup &hto,
@@ -773,9 +810,9 @@ RouterT::flatten(ErrorHandler *errh)
 
 
 // MATCHES
+int ntry_match;
 int nelement_match;
 int nconnection_match;
-int nexcl_connection_match;
 
 bool
 RouterT::next_element_match(RouterT *pat, Vector<int> &match) const
@@ -810,7 +847,7 @@ RouterT::next_element_match(RouterT *pat, Vector<int> &match) const
     int want_t = type_index( pat->etype_name(match_idx) );
     int rover = match[match_idx] + 1;
     while (rover < nf) {
-      nelement_match++;
+      ntry_match++;
       if (etype(rover) == want_t) {
 	for (int j = 0; j < match_idx; j++)
 	  if (match[j] == rover)
@@ -830,6 +867,7 @@ RouterT::next_element_match(RouterT *pat, Vector<int> &match) const
     }
   }
 
+  if (match_idx >= 0) nelement_match++;
   return (match_idx >= 0 ? true : false);
 }
 
@@ -909,7 +947,6 @@ RouterT::next_exclusive_connection_match(RouterT *pat, Vector<int> &match) const
 	  goto not_match;
       } /* otherwise, connection between two non-match elements; don't care */
     }
-    nexcl_connection_match++;
     return true;
     
    not_match: /* try again */;

@@ -2,13 +2,51 @@
 
 # change a class name to a C++ name
 
-sub class_to_xx ($) {
+sub class_to_cxx ($) {
   my($x) = $_[0];
-  $x =~ s/@/-a/g;
-  $x =~ s/\//-s/g;
-  $x =~ s/_/-u/g;
-  $x =~ tr/-/_/;
-  $x;
+  if ($element_cxx{$x}) {
+    $element_cxx{$x};
+  } else {
+    $x =~ s/_/_u/g;
+    $x =~ s/@/_a/g;
+    $x =~ s/\//_s/g;
+    $x;
+  }
+}
+
+sub load_elementmaps ($$) {
+  my($path, $ext) = @_;
+  my(@path) = split(/:/, $path);
+  my($comp);
+  local($/) = "\n";
+  foreach $comp (@path) {
+    $comp = "$comp/$ext" if !-r "$comp/elementmap";
+    if (-r "$comp/elementmap") {
+      open(IN, "$comp/elementmap") || next;
+      while (<IN>) {
+	next if /^\s*#/;
+	if (/^(\S+)\s*(\S+)\s*(\S+)/) {
+	  $element_cxx{$1} = $2;
+	  $element_file{$1} = $3;
+	}
+      }
+      close IN;
+    }
+  }
+}
+
+sub open_on_path (*$$) {
+  my($handle, $filename, $path) = @_;
+  my(@path) = split(/:/, $path);
+  my($comp);
+  foreach $comp (@path) {
+    if (-r "$comp/$filename") {
+      open $handle, "$comp/$filename";
+      return 1;
+    }
+  }
+  $! = "`$filename' not on path `$path'";
+  undef;
 }
 
 # mangle a C++ symbol
@@ -53,10 +91,40 @@ sub mangle ($$@) {
 }
 
 # main program: parse options
+
+sub parse_port ($$$) {
+  my($x, $io, $num) = @_;
+  my($p, $m);
+  
+  if ($x =~ /^(.*)\.(\d+)$/) {
+    ($x, $p) = ($1, $2);
+  } else {
+    $p = "$io($num).port()";
+  }
+
+  if ($x =~ /^(.*)::(.*)$/) {
+    ($x, $m) = ($1, $2);
+  } else {
+    $m = ($io eq 'input' ? 'pull' : 'push');
+  }
+
+  eval("(\$${io}_class[$num], \$${io}_port[$num], \$${io}_method[$num])
+		= (\"$x\", \"$p\", \"$m\");");
+}
+
 undef $/;
-my(@inputs, @outputs, $new_class, $old_class, $new_class_xx, $old_class_xx,
+my(@input_class, @input_port, @input_method,
+   @output_class, @output_port, @output_method,
+   $new_class, $old_class, $new_class_cxx, $old_class_cxx,
+   $elementmap_path, $elementmap_path_ext,
    $devirtualize);
 $devirtualize = 1;
+$elementmap_path = $ENV{'ELEMENTMAPPATH'};
+if (!$elementmap_path) {
+  $elementmap_path = $ENV{'CLICKPATH'};
+  $elementmap_path_ext = 'share';
+}
+
 while (@ARGV) {
   $_ = shift @ARGV;
   if (/^-c$/ || /^--class$/) {
@@ -71,14 +139,14 @@ while (@ARGV) {
     $new_class = $1;
   } elsif (/^-i(\d+)$/ || /^--input(\d+)$/) {
     die "not enough arguments" if !@ARGV;
-    $inputs[$1] = shift @ARGV;
+    parse_port(shift @ARGV, 'input', $1);
   } elsif (/^--input(\d+)=(.*)$/) {
-    $inputs[$1] = $2;
+    parse_port($2, 'input', $1);
   } elsif (/^-o(\d+)$/ || /^--output(\d+)$/) {
     die "not enough arguments" if !@ARGV;
-    $outputs[$1] = shift @ARGV;
+    parse_port(shift @ARGV, 'output', $1);
   } elsif (/^--output(\d+)=(.*)$/) {
-    $outputs[$1] = $2;
+    parse_port($2, 'output', $1);
   } elsif (/^-./) {
     die "unknown option `$_'\n";
   } else {
@@ -87,84 +155,100 @@ while (@ARGV) {
 }
 push @files, "-" if !@files;
 
-my($ninputs, $noutputs) = ($#inputs + 1, $#outputs + 1);
+my($ninputs, $noutputs) = ($#input_class + 1, $#output_class + 1);
+
+load_elementmaps($elementmap_path, $elementmap_path_ext);
 
 # find input and output class names
-$new_class_xx = class_to_xx($new_class);
+$old_class_cxx = class_to_cxx($old_class);
+$new_class_cxx = class_to_cxx($new_class);
+
+# find old class definition
+die "no old class name given (use -c CLASSNAME)\n" if !$old_class;
+die "no old class source file found\n" if !$element_file{$old_class};
+open_on_path IN, $element_file{$old_class}, "../.." ||
+    die "can't open old class header file: $!\n";
+$old_header = <IN>;
+close IN;
+my($f) = $element_file{$old_class};
+$f =~ s/\.hh$/.cc/;
+open_on_path IN, $f, "../.." ||
+    die "can't open old class source file: $!\n";
+$old_source = <IN>;
+close IN;
+
+print STDERR $old_source;
+
 
 # canonicalize inputs and outputs; print declarations
+my(@input_func, @output_func);
+
 for ($i = 0; $i < $ninputs; $i++) {
-  $inputs[$i] .= "::pull" if $inputs[$i] && $inputs[$i] !~ /::/;
-  if ($inputs[$i] =~ /::pull$/) {
-    if ($devirtualize) {
-      $inputs[$i] = mangle($inputs[$i], "int");
-      print "extern \"C\" Packet *", $inputs[$i], "(Element *, int);\n";
-    } else {
-      $inputs[$i] = undef;
-    }
+  $input_func[$i] = undef;
+  if ($input_method[$i] eq 'pull' && $devirtualize) {
+    $input_func[$i] = mangle("$input_class[$i]::$input_method[$i]", "int");
+    print "extern \"C\" Packet *", $input_func[$i], "(Element *, int);\n";
   }
 }
+
 for ($i = 0; $i < $noutputs; $i++) {
-  $outputs[$i] .= "::push" if $outputs[$i] && $outputs[$i] !~ /::/;
-  if ($outputs[$i] =~ /::push$/) {
-    if ($devirtualize) {
-      $outputs[$i] = mangle($outputs[$i], "int", "Packet *");
-      print "extern \"C\" void ", $outputs[$i], "(Element *, int, Packet *);\n";
-    } else {
-      $outputs[$i] = undef;
-    }
+  $output_func[$i] = undef;
+  if ($output_method[$i] eq 'push' && $devirtualize) {
+    $output_func[$i] = mangle("$output_class[$i]::$output_method[$i]", "int", "Packet *");
+    print "extern \"C\" void ", $output_func[$i], "(Element *, int, Packet *);\n";
   }
 }
 
 # print pull_input function
-print "inline Packet *\n${new_class_xx}::pull_input(int port) const\n{\n";
+print "inline Packet *\n${new_class_cxx}::pull_input(int port) const\n{\n";
 for ($i = 0; $i < $ninputs; $i++) {
   print "  if (port == $i)";
-  if (!$inputs[$i]) {
-    print "\n    return input($i).pull();\n";
-  } elsif ($inputs[$i] =~ /^(.*)::(.*)$/) {
-    print " {\n    $1 *e = ($1 *)(input($i).element());\n";
-    print "    return e->$2($i);\n  }\n";
+  if ($input_func[$i]) {
+    print "\n    return ", $input_func[$i], "(input($i).element(), $input_port[$i]);\n";
+  } elsif ($input_class[$i]) {
+    print " {\n    $input_class[$i] *e = ($input_class[$i] *)(input($i).element());\n";
+    print "    return e->$input_method[$i]($input_port[$i]);\n  }\n";
   } else {
-    print "\n    return ", $inputs[$i], "(input($i).element(), $i);\n";
+    print "\n    return input($i).pull();\n";
   }
 }
 print "  return 0;\n}\n";
 
 # print push_output function
-print "inline void\n${new_class_xx}::push_output(int port, Packet *p) const\n{\n";
+print "inline void\n${new_class_cxx}::push_output(int port, Packet *p) const\n{\n";
 for ($i = 0; $i < $noutputs; $i++) {
   print "  if (port == $i)";
-  if (!$outputs[$i]) {
-    print " {\n    output($i).push(p);\n    return;\n  }\n";
-  } elsif ($outputs[$i] =~ /^(.*)::(.*)$/) {
-    print " {\n    $1 *e = ($1 *)(output($i).element());\n";
-    print "    e->$2($i, p);\n    return;\n  }\n";
+  if ($output_func[$i]) {
+    print " {\n    $output_func[$i](output($i).element(), $output_port[$i], p);\n    return;\n  }\n";
+  } elsif ($output_class[$i]) {
+    print " {\n    $output_class[$i] *e = ($output_class[$i] *)(output($i).element());\n";
+    print "    e->$output_method[$i]($output_port[$i], p);\n    return;\n  }\n";
   } else {
-    print " {\n    ", $outputs[$i], "(output($i).element(), $i, p);\n";
-    print "    return;\n  }\n";
+    print " {\n    output($i).push(p);\n    return;\n  }\n";
   }
 }
 print "  p->kill();\n}\n";
 
 # print element definition
 print <<"EOD;";
-class $new_class_xx : public $old_class_xx {
+class $new_class_cxx : public $old_class_cxx {
  public:
-  $new_class_xx() { }
-  $new_class_xx *clone() const { return new $new_class_xx; }
+  $new_class_cxx() { }
+  $new_class_cxx *clone() const { return new $new_class_cxx; }
   const char *class_name() const { return \"$new_class\"; }
   bool is_a(const char *) const;
+  void push_output(int, Packet *) const;
+  Packet *pull_input(int) const;
 };
 EOD;
 
 print <<"EOD;";
 bool
-${new_class_xx}::is_a(const char *n) const
+${new_class_cxx}::is_a(const char *n) const
 {
   if (strcmp(n, "$new_class") == 0)
     return true;
   else
-    return ${old_class_xx}::is_a(n);
+    return ${old_class_cxx}::is_a(n);
 }
 EOD;
