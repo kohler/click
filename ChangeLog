@@ -1,3 +1,14 @@
+2003-11-11 Tuesday 01:03  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.216), etc/libclick/lc-configure.in (1.26): nits
+	related to last update
+
+2003-11-11 Tuesday 00:56  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.33), aclocal.m4 (1.33), config-userlevel.h.in
+	(1.17), configure.in (1.215): support large files (problem reported
+	by David Loose)
+
 2003-11-07 Friday 17:35  Eddie Kohler <kohler@icir.org>
 
 	* include/click/llrpc.h (1.24), elements/userlevel/controlsocket.cc
