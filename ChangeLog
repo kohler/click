@@ -1,3 +1,13 @@
+2002-04-16 Tuesday 15:09  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/ipratemon.cc (1.94): fix IPRateMonitor cleanup()
+	function
+
+2002-04-16 Tuesday 14:50  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: queue.cc (1.41), queue.hh (1.30): slightly
+	different Queue fixes
+
 2002-04-15 Monday 19:18  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: policyprobe.cc (1.9), policyprobe.hh (1.8),
