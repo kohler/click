@@ -89,8 +89,6 @@ packages_to_remove(const HashMap<String, int> &active_modules,
   // go over all modules; figure out which ones are Click packages
   // by checking `packages' array; mark old Click packages for removal
   while (active_modules.each(thunk, key, value))
-    // only remove packages that weren't used in this configuration.
-    // packages used in this configuration have value > 0
     if (value == 0) {
       if (packages[key] >= 0)
 	to_remove += " " + key;

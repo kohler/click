@@ -22,7 +22,7 @@
 // determine an element's signature
 
 Signatures::Signatures(const RouterT *router)
-  : _router(router), _sigid(router->nelements(), 0)
+  : _router(router), _sigid(router->nelements(), 1)
 {
 }
 
@@ -30,11 +30,13 @@ void
 Signatures::create_phase_0(const ProcessingT &pt)
 {
   _sigs.clear();
+  _sigs.push_back(SignatureNode(-1)); // not special
+  Vector<int> sig_eclass;
+  sig_eclass.push_back(0);
 
   int ne = _router->nelements();
-  Vector<int> sig_eclass;
   for (int i = 0; i < ne; i++) {
-    if (_sigid[i] < 0)
+    if (_sigid[i] == SIG_NOT_SPECIAL)
       continue;
     int ec = _router->etype(i);
     for (int j = 0; j < _sigs.size(); j++)
@@ -53,7 +55,7 @@ void
 Signatures::check_port_numbers(int eid, const ProcessingT &pt)
 {
   int old_sigid = _sigid[eid];
-  if (old_sigid < 0)
+  if (old_sigid == SIG_NOT_SPECIAL)
     return;
 
   // create new ports array
@@ -106,7 +108,8 @@ Signatures::next_phase(int phase, int eid, Vector<int> &new_sigid,
 		       const ProcessingT &pt)
 {
   int old_sigid = _sigid[eid];
-  if (old_sigid < 0 || _sigs[old_sigid]._connections.size() == 0) {
+  if (old_sigid == SIG_NOT_SPECIAL
+      || _sigs[old_sigid]._connections.size() == 0) {
     new_sigid[eid] = old_sigid;
     return false;
   }
@@ -173,7 +176,7 @@ Signatures::specialize_class(const String &eclass_name, bool doit)
   int ec = _router->type_index(eclass_name);
   for (int i = 0; i < _router->nelements(); i++)
     if (_router->etype(i) == ec)
-      _sigid[i] = (doit ? 0 : -1);
+      _sigid[i] = (doit ? 1 : SIG_NOT_SPECIAL);
 }
 
 void

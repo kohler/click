@@ -525,7 +525,8 @@ particular purpose.\n");
     StringAccum sa;
     for (int i = 0; i < specializer.nspecials(); i++) {
       const SpecializedClass &c = specializer.special(i);
-      sa << c.click_name << '\t' << c.old_click_name << '\n';
+      if (c.special())
+	sa << c.click_name << '\t' << c.old_click_name << '\n';
     }
     ae.data += sa.take_string();
   }

@@ -25,10 +25,16 @@ struct SpecializedClass {
   String cxx_name;
   CxxClass *cxxc;
   int eindex;
+
+  SpecializedClass() : cxxc(0), eindex(-3)	{ }
+  bool special() const				{ return cxxc != 0; }
 };
 
 class Specializer {
 
+  static const int SPCE_NOT_DONE = -2;
+  static const int SPCE_NOT_SPECIAL = -1;
+  
   RouterT *_router;
   int _nelements;
   Vector<int> _ninputs;
@@ -44,16 +50,14 @@ class Specializer {
 
   CxxInfo _cxxinfo;
 
-  const String &enew_click_type(int) const;
   const String &enew_cxx_type(int) const;
   
   void parse_source_file(const String &, bool, String *);
   void read_source(ElementTypeInfo &, ErrorHandler *);
   void check_specialize(int, ErrorHandler *);
-  void create_class(SpecializedClass &);
+  bool create_class(SpecializedClass &);
   void do_simple_action(SpecializedClass &);
   void create_connector_methods(SpecializedClass &);
-  String emangle(int, bool) const;
 
   void output_includes(const ElementTypeInfo &, StringAccum &);
 

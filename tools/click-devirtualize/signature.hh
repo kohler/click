@@ -18,8 +18,12 @@ struct SignatureNode {
   
 };
 
-class Signatures {
+class Signatures { public:
 
+  static const int SIG_NOT_SPECIAL = 0;
+
+ private:
+  
   const RouterT *_router;
   
   Vector<int> _sigid;

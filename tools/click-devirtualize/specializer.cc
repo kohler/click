@@ -24,7 +24,6 @@
 Specializer::Specializer(RouterT *router, const ElementMap &em)
   : _router(router), _nelements(router->nelements()),
     _ninputs(router->nelements(), 0), _noutputs(router->nelements(), 0),
-    _specialize(router->nelements(), 1), // specialize everything by default
     _etinfo_map(0), _header_file_map(-1), _parsed_sources(-1)
 {
   _etinfo.push_back(ElementTypeInfo());
@@ -124,9 +123,9 @@ void
 Specializer::check_specialize(int eindex, ErrorHandler *errh)
 {
   int sp = _specialize[eindex];
-  if (sp < 0 || _specials[sp].eindex > -2)
+  if (_specials[sp].eindex > SPCE_NOT_DONE)
     return;
-  _specials[sp].eindex = -1;
+  _specials[sp].eindex = SPCE_NOT_SPECIAL;
   
   // get type info
   ElementTypeInfo &old_eti = etype_info(eindex);
@@ -147,24 +146,26 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
   }
 
   // don't specialize if there are no reachable functions
-  if (!old_cxxc->find_should_rewrite())
-    return;
-
-  // if we reach here, we should definitely specialize
   SpecializedClass &spc = _specials[sp];
   spc.old_click_name = old_eti.click_name;
-  spc.click_name = specialized_click_name(_router, eindex);
-  spc.cxx_name = click_to_cxx_name(spc.click_name);
-  spc.cxxc = 0;
   spc.eindex = eindex;
-  add_type_info(spc.click_name, spc.cxx_name);
+  if (!old_cxxc->find_should_rewrite()) {
+    spc.click_name = spc.old_click_name;
+    spc.cxx_name = old_eti.cxx_name;
+  } else {
+    spc.click_name = specialized_click_name(_router, eindex);
+    spc.cxx_name = click_to_cxx_name(spc.click_name);
+    add_type_info(spc.click_name, spc.cxx_name);
+  }
 }
 
-void
+bool
 Specializer::create_class(SpecializedClass &spc)
 {
   assert(!spc.cxxc);
   int eindex = spc.eindex;
+  if (spc.click_name == spc.old_click_name)
+    return false;
 
   // create new C++ class
   const ElementTypeInfo &old_eti = etype_info(eindex);
@@ -267,6 +268,8 @@ Specializer::create_class(SpecializedClass &spc)
     if (!any_pull)
       new_cxxc->find("pull_input")->kill();
   }
+
+  return true;
 }
 
 void
@@ -292,45 +295,10 @@ Specializer::do_simple_action(SpecializedClass &spc)
 }
 
 inline const String &
-Specializer::enew_click_type(int i) const
-{
-  int j = _specialize[i];
-  if (j < 0)
-    return etype_info(i).click_name;
-  else
-    return _specials[j].click_name;
-}
-
-inline const String &
 Specializer::enew_cxx_type(int i) const
 {
   int j = _specialize[i];
-  if (j < 0)
-    return etype_info(i).cxx_name;
-  else
-    return _specials[j].cxx_name;
-}
-
-String
-Specializer::emangle(int eindex, bool push) const
-{
-  // find the class, possibly a superclass, that defines the right vf
-  CxxClass *cxx_class = _cxxinfo.find_class(enew_cxx_type(eindex));
-  while (cxx_class) {
-    if (cxx_class->find(push ? "push" : "pull")) // success!
-      break;
-    if (cxx_class->nparents() == 1)
-      cxx_class = cxx_class->parent(0);
-    else			// XXX multiple inheritance
-      cxx_class = 0;
-  }
-  String cxx_name = (cxx_class ? cxx_class->name() : "Element");
-
-  // mangle function 
-  StringAccum sa;
-  sa << (push ? "push__" : "pull__") << String(cxx_name.length()) << cxx_name;
-  sa << (push ? "iP6Packet" : "i");
-  return sa.take_string();
+  return _specials[j].cxx_name;
 }
 
 void
@@ -428,45 +396,31 @@ Specializer::specialize(const Signatures &sigs, ErrorHandler *errh)
   // decide what is to be specialized
   _specialize = sigs.signature_ids();
   SpecializedClass spc;
-  spc.eindex = -2;
+  spc.eindex = SPCE_NOT_DONE;
   _specials.assign(sigs.nsignatures(), spc);
+  _specials[0].eindex = SPCE_NOT_SPECIAL;
   for (int i = 0; i < _nelements; i++)
     check_specialize(i, errh);
 
-  // rearrange _specials
-  Vector<int> new_specialize(_specials.size(), 0);
-  int s2 = 0;
-  for (int s = 0; s < _specials.size(); s++)
-    if (_specials[s].eindex >= 0) {
-      if (s2 != s) _specials[s2] = _specials[s];
-      new_specialize[s] = s2;
-      s2++;
-    } else
-      new_specialize[s] = -1;
-  _specials.resize(s2);
-  for (int i = 0; i < _nelements; i++)
-    if (_specialize[i] >= 0)
-      _specialize[i] = new_specialize[_specialize[i]];
-  
   // actually do the work
   for (int s = 0; s < _specials.size(); s++) {
-    create_class(_specials[s]);
-    if (_specials[s].cxxc->find("simple_action"))
+    if (create_class(_specials[s]) && _specials[s].cxxc->find("simple_action"))
       do_simple_action(_specials[s]);
   }
 
   for (int s = 0; s < _specials.size(); s++)
-    create_connector_methods(_specials[s]);
+    if (_specials[s].special())
+      create_connector_methods(_specials[s]);
 }
 
 void
 Specializer::fix_elements()
 {
-  for (int i = 0; i < _nelements; i++)
-    if (_specialize[i] >= 0) {
-      SpecializedClass &spc = _specials[ _specialize[i] ];
+  for (int i = 0; i < _nelements; i++) {
+    SpecializedClass &spc = _specials[ _specialize[i] ];
+    if (spc.special())
       _router->element(i).type = _router->get_type_index(spc.click_name);
-    }
+  }
 }
 
 void
@@ -514,18 +468,24 @@ Specializer::output(StringAccum &out)
 {
   // output headers
   for (int i = 0; i < _specials.size(); i++) {
-    ElementTypeInfo &eti = etype_info(_specials[i].eindex);
-    if (eti.header_file)
-      out << "#include \"" << eti.header_file << "\"\n";
-    _specials[i].cxxc->header_text(out);
+    SpecializedClass &spc = _specials[i];
+    if (spc.eindex >= 0) {
+      ElementTypeInfo &eti = etype_info(spc.eindex);
+      if (eti.header_file)
+	out << "#include \"" << eti.header_file << "\"\n";
+      if (spc.special())
+	spc.cxxc->header_text(out);
+    }
   }
 
   // output C++ code
   for (int i = 0; i < _specials.size(); i++) {
     SpecializedClass &spc = _specials[i];
-    ElementTypeInfo &eti = etype_info(spc.eindex);
-    output_includes(eti, out);
-    spc.cxxc->source_text(out);
+    if (spc.special()) {
+      ElementTypeInfo &eti = etype_info(spc.eindex);
+      output_includes(eti, out);
+      spc.cxxc->source_text(out);
+    }
   }
 }
 
@@ -541,15 +501,17 @@ Specializer::output_package(const String &package_name, StringAccum &out)
       << package_name
       << "\");\n";
   for (int i = 0; i < _specials.size(); i++)
-    out << "  hatred_of_rebecca[" << i << "] = click_add_element_type(\""
-	<< _specials[i].click_name << "\", new " << _specials[i].cxx_name
-	<< ");\n  MOD_DEC_USE_COUNT;\n";
+    if (_specials[i].special())
+      out << "  hatred_of_rebecca[" << i << "] = click_add_element_type(\""
+	  << _specials[i].click_name << "\", new " << _specials[i].cxx_name
+	  << ");\n  MOD_DEC_USE_COUNT;\n";
   out << "  return 0;\n}\n";
 
   // cleanup_module()
   out << "extern \"C\" void\ncleanup_module()\n{\n";
   for (int i = 0; i < _specials.size(); i++)
-    out << "  MOD_INC_USE_COUNT;\n  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
+    if (_specials[i].special())
+      out << "  MOD_INC_USE_COUNT;\n  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
   out << "  click_unprovide(\"" << package_name << "\");\n";
   out << "}\n";
 }
@@ -559,8 +521,9 @@ Specializer::output_new_elementmap(const ElementMap &full_em, ElementMap &em,
 				   const String &filename) const
 {
   for (int i = 0; i < _specials.size(); i++)
-    em.add(_specials[i].click_name, _specials[i].cxx_name, filename,
-	   full_em.processing_code(_specials[i].old_click_name));
+    if (_specials[i].special())
+      em.add(_specials[i].click_name, _specials[i].cxx_name, filename,
+	     full_em.processing_code(_specials[i].old_click_name));
 }
 
 // Vector template instantiation
