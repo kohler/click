@@ -17,6 +17,7 @@ RouterThread::RouterThread(Router *r)
 {
   _prev = _next = _list = this;
   router()->add_thread(this);
+  // add_thread() will call this->set_thread_id()
 }
 
 RouterThread::~RouterThread()
@@ -60,17 +61,11 @@ RouterThread::process_task_requests()
 
 #if __MTCLICK__
      case MOVE_TASK:
-      if (t->scheduled() && t->scheduled_list() == this) {
-	int want_thread = t->thread_preference();
-	if (want_thread != thread_id()) {
-	  t->fast_unschedule();
-	  if (want_thread >= 0 && want_thread < router()->nthreads())
-	    t->join_scheduler(router()->thread(want_thread));
-	}
-      }
+      if (t->scheduled_list() == this)
+	t->fast_change_thread();
       break;
 #endif
-      
+
     }
   }
 }

@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <click/sync.hh>
 #if __MTCLICK__
+# include <click/atomic.hh>
 # include <click/ewma.hh>
 #endif
 
@@ -47,6 +48,11 @@ class Task { public:
   void reschedule();
   void unschedule();
 
+#if __MTCLICK__
+  int thread_preference() const		{ return _thread_preference; }
+  void change_thread(int);
+#endif
+
   void fast_reschedule();
   int fast_unschedule();
 
@@ -55,12 +61,10 @@ class Task { public:
 #if __MTCLICK__
   int cycles() const;
   void update_cycles(unsigned c);
-  int thread_preference() const		{ return _thread_preference; }
-  void set_thread_preference(int s)	{ _thread_preference = s; }
 #endif
 
-  Task *initialized_prev() const	{ return _all_prev; }
-  Task *initialized_next() const	{ return _all_next; }
+  Task *all_tasks_prev() const		{ return _all_prev; }
+  Task *all_tasks_next() const		{ return _all_next; }
 
  private:
 
@@ -80,7 +84,7 @@ class Task { public:
   
 #if __MTCLICK__
   DirectEWMA _cycles;
-  int _thread_preference;
+  u_atomic32_t _thread_preference;
   int _update_cycle_runs;
 #endif
 
@@ -93,7 +97,9 @@ class Task { public:
   Task(const Task &);
   Task &operator=(const Task &);
   
-  void join_scheduler(RouterThread *);
+#if __MTCLICK__
+  void fast_change_thread();
+#endif
 
   static void error_hook(Task *, void *);
   
@@ -131,7 +137,7 @@ Task::Task(TaskHook hook, void *thunk)
 #endif
     _hook(hook), _thunk(thunk),
 #if __MTCLICK__
-    _thread_preference(0), _update_cycle_runs(0),
+    _update_cycle_runs(0),
 #endif
     _list(0), _all_prev(0), _all_next(0), _all_list(0)
 {
@@ -145,7 +151,7 @@ Task::Task(Element *e)
 #endif
     _hook(0), _thunk(e),
 #if __MTCLICK__
-    _thread_preference(0), _update_cycle_runs(0),
+    _update_cycle_runs(0),
 #endif
     _list(0), _all_prev(0), _all_next(0), _all_list(0)
 {
@@ -169,8 +175,8 @@ Task::fast_unschedule()
   if (_next) {
     _next->_prev = _prev;
     _prev->_next = _next;
+    _next = _prev = 0;
   }
-  _next = _prev = 0;
 #if __MTCLICK__
   return _update_cycle_runs;
 #else

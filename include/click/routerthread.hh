@@ -26,18 +26,7 @@ class RouterThread : public Task { public:
   bool attempt_lock_tasks();
   void unlock_tasks();
 
-  void add_task_request(unsigned, Task *);
   void process_task_requests();
-
-  // task request IDs
-  static const unsigned SCHEDULE_TASK = 0;
-  static const unsigned UNSCHEDULE_TASK = 1;
-#if __MTCLICK__
-  // Unschedule a task on this task list and move it to another thread. Call
-  // MOVE_TASK on the original thread; pass the Task with thread_preference()
-  // set to the destination thread.
-  static const unsigned MOVE_TASK = 2;
-#endif
   
  private:
   
@@ -58,9 +47,18 @@ class RouterThread : public Task { public:
   Vector<unsigned> _taskreq_ops;
   Vector<Task *> _taskreq_tasks;
 
+  // task request IDs
+  static const unsigned SCHEDULE_TASK = 1;
+  static const unsigned UNSCHEDULE_TASK = 2;
+#if __MTCLICK__
+  static const unsigned MOVE_TASK = 3;
+#endif
+  void add_task_request(unsigned, Task *);
+  
   void set_thread_id(int i)		{ _id = i; }
   void please_stop_driver()		{ _please_stop_driver = 1; }
 
+  friend class Task;
   friend class Router;
 
 };

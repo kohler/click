@@ -153,8 +153,6 @@ class ControlSocket : public Element { public:
 
 };
 
-extern String click_userlevel_classes_string();
-extern String click_userlevel_config_string();
-extern String click_userlevel_packages_string();
+extern bool click_userlevel_global_handler_string(Router *, const String &, String *);
 
 #endif

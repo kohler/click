@@ -42,6 +42,7 @@ BinPackingScheduler::configure(const Vector<String> &conf, ErrorHandler *errh)
     return -1;
   return 0;
 #else
+  (void) conf;
   return errh->error("BinPackingScheduler requires multithreading\n");
 #endif
 }
@@ -55,11 +56,11 @@ BinPackingScheduler::run_scheduled()
   unsigned avg_load;
   TaskList *task_list = router()->task_list();
   task_list->lock();
-  Task *t = task_list->initialized_next();
+  Task *t = task_list->all_tasks_next();
   while (t != task_list) {
     total_load += t->cycles();
     tasks.push_back(t);
-    t = t->initialized_next();
+    t = t->all_tasks_next();
   }
   task_list->unlock();
   
@@ -110,11 +111,11 @@ BinPackingScheduler::run_scheduled()
   for(int i=0; i<n; i++) load[i] = 0;
   // for(int i=0; i<sorted.size(); i++) {
   for(int i=sorted.size()-1; i>=0; i--) {
-    int min = -1;
+    int min = load[0];
     int which = 0;
     
-    for (int j=0; j<n; j++) {
-      if (load[j] < min || min < 0) {
+    for (int j = 1; j < n; j++) {
+      if (load[j] < min) {
 	which = j;
 	min = load[j];
       }
@@ -122,6 +123,8 @@ BinPackingScheduler::run_scheduled()
 
     load[which] += sorted[i]->cycles();
     schedule[which].push_back(sorted[i]);
+    sorted[i]->change_thread(which);
+#if 0
     int old = sorted[i]->thread_preference();
     if (old >= 0 && old != which) {
       sorted[i]->set_thread_preference(which);
@@ -130,6 +133,7 @@ BinPackingScheduler::run_scheduled()
     } else if (old < 0) 
       router()->thread(which)->add_task_request
 	(RouterThread::SCHEDULE_TASK, sorted[i]);
+#endif
   }
   
 #if DEBUG > 0

@@ -38,6 +38,7 @@ ThreadMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
     return -1;
   return 0;
 #else
+  (void) conf;
   return errh->error("ThreadMonitor requires multithreading\n");
 #endif
 }
@@ -51,13 +52,13 @@ ThreadMonitor::run_scheduled()
 
   TaskList *task_list = router()->task_list();
   task_list->lock();
-  Task *t = task_list->initialized_next();
+  Task *t = task_list->all_tasks_next();
   while (t != task_list) {
     int thread = t->thread_preference();
     if (thread <= 0) thread = 0;
     schedule[thread].push_back(t);
     if (t->cycles() > _thresh) print = 1;
-    t = t->initialized_next();
+    t = t->all_tasks_next();
   }
   task_list->unlock();
 

@@ -68,8 +68,9 @@ class Router { public:
   int live_reconfigure(int, const Vector<String> &, ErrorHandler *);
   void set_configuration(int, const String &);
 
-  int nthreads() const				{ return _threads.size(); }
-  RouterThread *thread(int id) const		{ return _threads[id]; }
+  // thread(-1) is the quiescent thread
+  int nthreads() const				{ return _threads.size() - 1; }
+  RouterThread *thread(int id) const		{ return _threads[id + 1]; }
   void add_thread(RouterThread *);
   void remove_thread(RouterThread *);
   

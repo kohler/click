@@ -41,7 +41,9 @@ Router::Router()
     _handlers(0), _nhandlers(0), _handlers_cap(0)
 {
   _refcount = 0;
-  new RouterThread(this);	// RouterThread will add itself to _threads
+  // RouterThreads will add themselves to _threads
+  (void) new RouterThread(this);	// quiescent thread
+  (void) new RouterThread(this);	// first normal thread
 }
 
 Router::~Router()
@@ -62,7 +64,7 @@ Router::~Router()
 void
 Router::please_stop_driver()
 {
-  for (int i = 0; i < _threads.size(); i++) {
+  for (int i = 1; i < _threads.size(); i++) {
     if (_threads[i])
       _threads[i]->please_stop_driver();
   }
@@ -194,7 +196,7 @@ Router::add_requirement(const String &r)
 void
 Router::add_thread(RouterThread *rt)
 {
-  rt->set_thread_id(_threads.size());
+  rt->set_thread_id(_threads.size() - 1);
   _threads.push_back(rt);
 }
 

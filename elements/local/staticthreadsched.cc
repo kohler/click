@@ -39,6 +39,7 @@ StaticThreadSched::configure(const Vector<String> &conf, ErrorHandler *errh)
   }
   return 0;
 #else
+  (void) conf;
   return errh->error("StaticThreadSched requires multithreading\n");
 #endif
 }
@@ -57,7 +58,7 @@ StaticThreadSched::run_scheduled()
 #if __MTCLICK__
   TaskList *task_list = router()->task_list();
   task_list->lock();
-  Task *t = task_list->initialized_next();
+  Task *t = task_list->all_tasks_next();
   while (t != task_list) {
     Element *e = t->element();
     if (e) {
@@ -66,6 +67,8 @@ StaticThreadSched::run_scheduled()
           if (_threads[i] < router()->nthreads()) {
             click_chatter("sticking element %s on thread %d", 
 	                  e->id().cc(), _threads[i]);
+	    t->change_thread(_threads[i]);
+#if 0
             int old = t->thread_preference();
             if (old >= 0 && old != _threads[i]) {
 	      t->set_thread_preference(_threads[i]);
@@ -74,12 +77,13 @@ StaticThreadSched::run_scheduled()
             } else if (old < 0)
 	      router()->thread(_threads[i])->add_task_request
 		(RouterThread::SCHEDULE_TASK, t);
+#endif
 	  }
 	  break;
 	}
       }
     }
-    t = t->initialized_next();
+    t = t->all_tasks_next();
   }
   task_list->unlock();
 #endif

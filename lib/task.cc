@@ -51,7 +51,7 @@ Task::initialize(Router *r, bool join)
 
   _list = r->thread(0);
 #if __MTCLICK__
-  set_thread_preference(_list->thread_id());
+  _thread_preference = _list->thread_id();
 #endif
   
   tl->unlock();
@@ -82,20 +82,56 @@ Task::uninitialize()
   }
 }
 
-void
-Task::join_scheduler(RouterThread *rt)
-{
-  assert(initialized() && !scheduled());
-
-  _all_list->lock();
-  _list = rt;
 #if __MTCLICK__
-  set_thread_preference(rt->thread_id());
-#endif
-  _all_list->unlock();
+void
+Task::change_thread(int thread_id)
+{
+  assert(_list);
+  RouterThread *old_list = _list;
+  Router *router = old_list->router();
 
-  reschedule();
+  if (thread_id < 0 || thread_id >= router->nthreads())
+    thread_id = -1;		// quiescent thread
+  
+  int old_preference = _thread_preference;
+  if (old_preference != thread_id)
+    _thread_preference = thread_id;
+
+  if (thread_id == old_list->thread_id())
+    /* remaining on same thread; do nothing */;
+  else if (old_list->attempt_lock_tasks()) {
+    bool was_scheduled = scheduled();
+    if (was_scheduled)
+      fast_unschedule();
+    _list = router->thread(thread_id);
+    old_list->unlock_tasks();
+    if (was_scheduled)
+      reschedule();
+  } else
+    old_list->add_task_request(RouterThread::MOVE_TASK, this);
 }
+
+void
+Task::fast_change_thread()
+{
+  // called with _list locked
+  assert(_list);
+  RouterThread *old_list = _list;
+  Router *router = old_list->router();
+  int thread_id = _thread_preference;
+  
+  if (thread_id == old_list->thread_id())
+    /* remaining on same thread; do nothing */;
+  else {
+    bool was_scheduled = scheduled();
+    if (was_scheduled)
+      fast_unschedule();
+    _list = router->thread(thread_id);
+    if (was_scheduled)
+      reschedule();
+  }
+}
+#endif
 
 void
 Task::reschedule()

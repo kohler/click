@@ -208,24 +208,7 @@ ControlSocket::global_read_handler(int fd, const String &name, String *data)
 {
   StringAccum sa;
   int ok = 0;
-  if (name == "version")
-    *data = String(CLICK_VERSION "\n");
-  else if (name == "list")
-    *data = router()->element_list_string();
-  else if (name == "classes")
-    *data = click_userlevel_classes_string();
-  else if (name == "config")
-    *data = click_userlevel_config_string();
-  else if (name == "flatconfig")
-    *data = router()->flat_configuration_string();
-  else if (name == "packages")
-    *data = click_userlevel_packages_string();
-  else if (name == "requirements") {
-    const Vector<String> &v = router()->requirements();
-    for (int i = 0; i < v.size(); i++)
-      sa << v[i] << "\n";
-    *data = sa.take_string();
-  } else
+  if (!click_userlevel_global_handler_string(router(), name, data))
     ok = message(fd, CSERR_NO_SUCH_HANDLER, "No such handler `" + name + "'");
   return ok;
 }
