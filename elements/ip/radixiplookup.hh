@@ -5,23 +5,59 @@
 #include <click/element.hh>
 #include "iproutetable.hh"
 CLICK_DECLS
-class Radix;
 
 /*
- * =c
- * RadixIPLookup()
- * =s IP, classification
- * IP lookup using a radix table
- * =d
- *
- * Performs IP lookup using a radix table, using the IPRouteTable
- * interface. See IPRouteTable for description.
- *
- * Warning: This element does not work.
- *
- * =a StaticIPLookup, LinearIPLookup, TrieIPLookup, DirectIPLookup,
- * IPRouteTable
- */
+=c
+
+RadixIPLookup(ADDR1/MASK1 [GW1] OUT1, ADDR2/MASK2 [GW2] OUT2, ...)
+
+=s IP, classification
+
+IP lookup using a radix trie
+
+=d
+
+Performs IP lookup using a radix trie.  The first level of the trie has 256
+buckets; each succeeding level has 16.  The maximum number of levels that will
+be traversed is thus 7.
+
+Expects a destination IP address annotation with each packet. Looks up that
+address in its routing table, using longest-prefix-match, sets the destination
+annotation to the corresponding GW (if specified), and emits the packet on the
+indicated OUTput port.
+
+Each argument is a route, specifying a destination and mask, an optional
+gateway IP address, and an output port.
+
+Uses the IPRouteTable interface; see IPRouteTable for description.
+
+Warning: This element is experimental.
+
+=h table read-only
+
+Outputs a human-readable version of the current routing table.
+
+=h add write-only
+
+Adds a route to the table. Format should be `C<ADDR/MASK [GW] OUT>'.
+
+=h remove write-only
+
+Removes a route from the table. Format should be `C<ADDR/MASK>'.
+
+=h ctrl write-only
+
+Adds or removes routes. Write `C<add ADDR/MASK [GW] OUT>' to add a route, and
+`C<remove ADDR/MASK>' to remove a route. You can supply multiple commands, one
+per line; all commands are executed as one atomic operation.
+
+=h lookup read-only
+
+Reports the OUTput port and GW corresponding to an address.
+
+=a IPRouteTable, StaticIPLookup, LinearIPLookup, SortedIPLookup,
+DirectIPLookup, TrieIPLookup
+*/
 
 class RadixIPLookup : public IPRouteTable { public:
     
@@ -34,177 +70,76 @@ class RadixIPLookup : public IPRouteTable { public:
     void notify_noutputs(int);
     void cleanup(CleanupStage);
 
-    int add_route(const IPRoute&, ErrorHandler *);
-    int remove_route(const IPRoute&, ErrorHandler *);
-    int lookup_route(IPAddress, IPAddress &) const;
+    int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
+    int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
+    int lookup_route(IPAddress, IPAddress&) const;
     String dump_routes() const;
 
   private:
+
+    class Radix;
     
     bool get(int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned &port) const;
 
     // Simple routing table
-    struct Entry {
-	unsigned dst;
-	unsigned mask;
-	unsigned gw;
-	unsigned port;
-	bool valid;
-    };
-    Vector<Entry *> _v;
+    Vector<IPRoute> _v;
     int _entries;
-    Radix *_radix;
+    
+    int _default_key;
+    Radix* _radix;
     
 };
 
-class Radix { public:
-    // implementation take from Sedgewick
 
-    Radix();
-    ~Radix();
 
-    void insert(unsigned v, int info);
-    void del(unsigned v);
-    bool lookup(unsigned v, int &info);
+class RadixIPLookup::Radix { public:
 
+    static Radix* make_radix(int bitshift, int n);
+    static void free_radix(Radix*);
+
+    Radix* change(uint32_t addr, uint32_t naddr, int key, uint32_t key_priority);
+    static int lookup(const Radix*, int, uint32_t addr);
+    
   private:
-    
-    struct RadixNode {
-	unsigned key;
-	int bit_idx;
-	RadixNode *left;
-	RadixNode *right;
 
-	bool valid;
-	int info;
-	RadixNode() : left(0), right(0), valid(false) { }
-	~RadixNode();
-    };
+    int32_t _route_index;
+    int _bitshift;
+    int _n;
+    int _nchildren;
+    struct Child {
+	int key;
+	uint32_t key_priority;
+	Radix* child;
+    } _children[0];
 
-    struct RadixNode *root;
-    static unsigned bits(unsigned x, unsigned y, unsigned char idx);
-    RadixNode *node_lookup(unsigned v);
-    enum { KEYSIZE = 32 };
+    Radix()			{ }
+    ~Radix()			{ }
+
+    friend class RadixIPLookup;
     
 };
 
-
-// returns j bytes which appear k from rhe right. Rightmost bit has index 0.
-inline unsigned
-Radix::bits(unsigned x, unsigned k, unsigned char j)
-{
-    return (x >> k) & (0xffffffff >> (KEYSIZE-j));
-}
-
-inline
-Radix::Radix()
-{
-    root = new RadixNode;
-    root->info = root->key = 0;
-    root->bit_idx = KEYSIZE-1;
-    root->valid = false;
-    root->left = root->right = root;
-}
-
-inline
-Radix::~Radix()
-{
-    delete root;
-}
-
 inline void
-Radix::insert(unsigned v, int info)
+RadixIPLookup::Radix::free_radix(Radix* r)
 {
-    RadixNode *t, *p;
-    int i;
+    if (r->_nchildren)
+	for (int i = 0; i < r->_n; i++)
+	    if (r->_children[i].child)
+		free_radix(r->_children[i].child);
+    delete[] (unsigned char *)r;
+}
 
-    t = node_lookup(v);
-
-    if (v == t->key)
-	return;
-
-    // Find bit for which v and t-> key differ
-    i = KEYSIZE-1;
-    while (bits(v, i, 1) == bits(t->key, i, 1))
-	i--;
-
-    // Descend to that level
-    RadixNode *x = root;
-    do {
-	p = x;
-	if(bits(v, x->bit_idx, 1) == 0)
-	    x = x->left;
-	else
-	    x = x->right;
-
-	if((x->bit_idx <= i) || (p->bit_idx <= x->bit_idx))
-	    break;
-    } while(1);
-
-    // ... and instert node
-    t = new RadixNode;
-    t->key = v;
-    t->bit_idx = i;
-    t->info = info;
-    t->valid = true;
-
-    if (bits(v, t->bit_idx, 1) == 0) {
-	t->left = t;
-	t->right = x;
-    } else {
-	t->right = t;
-	t->left = x;
+inline int
+RadixIPLookup::Radix::lookup(const Radix* r, int current, uint32_t addr)
+{
+    while (r) {
+	int i1 = addr >> r->_bitshift;
+	addr &= (1 << r->_bitshift) - 1;
+	if (r->_children[i1].key >= 0)
+	    current = r->_children[i1].key;
+	r = r->_children[i1].child;
     }
-
-    if (bits(v, p->bit_idx, 1) == 0)
-	p->left = t;
-    else
-	p->right = t;
-}
-
-
-// returns info based on key
-inline bool
-Radix::lookup(unsigned v, int &info)
-{
-    RadixNode *t;
-
-    t = node_lookup(v);
-    if (t->valid) {
-	info = t->info;
-	return true;
-    } else
-	return false;
-}
-
-inline void
-Radix::del(unsigned v)
-{
-    RadixNode *t;
-
-    t = node_lookup(v);
-
-    // only delete if this is an exact match
-    if (t->key == v)
-	t->valid = false;
-}
-
-
-// returns node based on key
-inline Radix::RadixNode *
-Radix::node_lookup(unsigned v)
-{
-    RadixNode *p, *x = root;
-
-    do {
-	p = x;
-	if (bits(v, x->bit_idx, 1) == 0)
-	    x = x->left;
-	else
-	    x = x->right;
-    } while (x->bit_idx < p->bit_idx);
-
-    return x;
+    return current;
 }
 
 CLICK_ENDDECLS

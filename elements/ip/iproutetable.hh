@@ -106,26 +106,31 @@ struct IPRoute {
     IPAddress mask;
     IPAddress gw;
     int32_t port;
+    int32_t extra;
 
     IPRoute()			: port(-1) { }
     IPRoute(IPAddress a, IPAddress m, IPAddress g, int p)
 				: addr(a), mask(m), gw(g), port(p) { }
 
-    bool contains(const IPRoute& r) const { return (r.addr & mask) == mask && r.mask.mask_as_specific(mask); }
-    bool mask_as_specific(IPAddress m) const { return mask.mask_as_specific(m); }
+    inline bool contains(IPAddress a) const;
+    inline bool contains(const IPRoute& r) const;
+    inline bool mask_as_specific(IPAddress m) const;
+    inline bool mask_as_specific(const IPRoute& r) const;
     int prefix_len() const	{ return mask.mask_to_prefix_len(); }
 
     String unparse() const;
+    String unparse_addr() const	{ return addr.unparse_with_mask(mask); }
 };
 
 class IPRouteTable : public Element { public:
 
     void* cast(const char*);
     int configure(Vector<String>&, ErrorHandler*);
+    void add_handlers();
 
-    virtual int add_route(const IPRoute&, ErrorHandler*);
-    virtual int remove_route(const IPRoute&, ErrorHandler*);
-    virtual int lookup_route(IPAddress, IPAddress&) const = 0;
+    virtual int add_route(const IPRoute& route, bool allow_replace, IPRoute* replaced_route, ErrorHandler* errh);
+    virtual int remove_route(const IPRoute& route, IPRoute* removed_route, ErrorHandler* errh);
+    virtual int lookup_route(IPAddress addr, IPAddress& gw) const = 0;
     virtual String dump_routes() const;
 
     void push(int port, Packet* p);
@@ -133,11 +138,41 @@ class IPRouteTable : public Element { public:
     static int add_route_handler(const String&, Element*, void*, ErrorHandler*);
     static int remove_route_handler(const String&, Element*, void*, ErrorHandler*);
     static int ctrl_handler(const String&, Element*, void*, ErrorHandler*);
+    static int lookup_handler(int operation, String&, Element*, const Handler*, ErrorHandler*);
     static String table_handler(Element*, void*);
 
+  private:
+
+    enum { CMD_ADD, CMD_SET, CMD_REMOVE };
+    int run_command(int command, const String &, Vector<IPRoute>* old_routes, ErrorHandler*);
+    
 };
 
 StringAccum& operator<<(StringAccum&, const IPRoute&);
+
+inline bool
+IPRoute::contains(IPAddress a) const
+{
+    return a.matches_prefix(addr, mask);
+}
+
+inline bool
+IPRoute::contains(const IPRoute& r) const
+{
+    return r.addr.matches_prefix(addr, mask) && r.mask.mask_as_specific(mask);
+}
+
+inline bool
+IPRoute::mask_as_specific(IPAddress m) const
+{
+    return mask.mask_as_specific(m);
+}
+
+inline bool
+IPRoute::mask_as_specific(const IPRoute& r) const
+{
+    return mask.mask_as_specific(r.mask);
+}
 
 CLICK_ENDDECLS
 #endif

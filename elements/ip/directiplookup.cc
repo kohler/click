@@ -70,15 +70,12 @@ DirectIPLookup::lookup_route(IPAddress dest, IPAddress &gw) const
 }
 
 int
-DirectIPLookup::add_route(const IPRoute& r, ErrorHandler *errh)
+DirectIPLookup::add_route(const IPRoute& r, bool, IPRoute*, ErrorHandler *errh)
 {
     uint32_t prefix = ntohl(r.addr.addr());
     uint32_t plen = r.prefix_len();
     int rt_i = find_entry(prefix, plen);
     uint16_t vport_i;
-
-    if (r.port >= noutputs() || r.port < 0)
-	return errh->error("Output port out of range");
 
     if (rt_i >= 0) {
 	// Attempt to replace an existing route.  Allowed only when adding
@@ -88,7 +85,7 @@ DirectIPLookup::add_route(const IPRoute& r, ErrorHandler *errh)
 	    _vport[0].port = r.port;
 	    return 0;
 	} else 
-	    return errh->error("Entry already exists");
+	    return -EEXIST;
     } else {
 	uint32_t start, end, i, j, sec_i, sec_start, sec_end, hash;
 
@@ -195,7 +192,7 @@ DirectIPLookup::add_route(const IPRoute& r, ErrorHandler *errh)
 }
 
 int
-DirectIPLookup::remove_route(const IPRoute& r, ErrorHandler *errh)
+DirectIPLookup::remove_route(const IPRoute& r, IPRoute*, ErrorHandler *errh)
 {
     uint32_t prefix = ntohl(r.addr.addr());
     uint32_t plen = r.prefix_len();

@@ -76,26 +76,19 @@ class LinearIPLookup : public IPRouteTable { public:
 
     void notify_noutputs(int);
     int initialize(ErrorHandler *);
-    void add_handlers();
 
     void push(int port, Packet *p);
 
-    int add_route(const IPRoute&, ErrorHandler *);
-    int remove_route(const IPRoute&, ErrorHandler *);
-    int lookup_route(IPAddress, IPAddress &) const;
+    int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
+    int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
+    int lookup_route(IPAddress, IPAddress&) const;
     String dump_routes() const;
 
     bool check() const;
 
-    struct Entry : public IPRoute {
-	int next;
-	Entry(const IPRoute& r_) : IPRoute(r_), next(0x7FFFFFFF) { }
-	String unparse_addr() const { return addr.unparse_with_mask(mask); }
-    };
-
   protected:
 
-    Vector<Entry> _t;
+    Vector<IPRoute> _t;
 
     IPAddress _last_addr;
     int _last_entry;

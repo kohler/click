@@ -37,9 +37,9 @@ SortedIPLookup::check() const
 {
     bool ok = LinearIPLookup::check();
 
-    // 'next' pointers are all as late as possible
+    // next pointers are all as late as possible
     for (int i = 0; i < _t.size(); i++)
-	if (_t[i].next < _t.size()) {
+	if (_t[i].extra < _t.size()) {
 	    click_chatter("%s: route %s has a nontrivial next", declaration().cc(), _t[i].unparse_addr().cc());
 	    ok = false;
 	}
@@ -88,11 +88,11 @@ SortedIPLookup::sort_table()
     }
 
     // Permute the table according to the array.
-    Vector<Entry> nt(_t);
+    Vector<IPRoute> nt(_t);
     for (int i = 0; i < _t.size(); i++) {
 	if (permute[i] != i)
 	    nt[i] = _t[permute[i]];
-	nt[i].next = 0x7FFFFFFF;
+	nt[i].extra = 0x7FFFFFFF;
     }
     _t.swap(nt);
 
@@ -100,19 +100,21 @@ SortedIPLookup::sort_table()
 }
 
 int
-SortedIPLookup::add_route(const IPRoute& r, ErrorHandler *errh)
+SortedIPLookup::add_route(const IPRoute& route, bool set, IPRoute* old, ErrorHandler *errh)
 {
-    if (LinearIPLookup::add_route(r, errh) < 0)
-	return -1;
+    int r;
+    if ((r = LinearIPLookup::add_route(route, set, old, errh)) < 0)
+	return r;
     sort_table();
     return 0;
 }
 
 int
-SortedIPLookup::remove_route(const IPRoute& r, ErrorHandler *errh)
+SortedIPLookup::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHandler *errh)
 {
-    if (LinearIPLookup::remove_route(r, errh) < 0)
-	return -1;
+    int r;
+    if ((r = LinearIPLookup::remove_route(route, old_route, errh)) < 0)
+	return r;
     sort_table();
     return 0;
 }
@@ -126,7 +128,7 @@ inline int
 SortedIPLookup::lookup_entry(IPAddress a) const
 {
     for (int i = 0; i < _t.size(); i++)
-	if ((a & _t[i].mask) == _t[i].addr)
+	if (_t[i].contains(a))
 	    return i;
     return -1;
 }
@@ -157,7 +159,7 @@ SortedIPLookup::push(int, Packet *p)
 	return;
     }
 
-    const Entry &e = _t[ei];
+    const IPRoute &e = _t[ei];
     if (e.gw)
 	p->set_dst_ip_anno(e.gw);
     output(e.port).push(p);

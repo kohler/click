@@ -369,15 +369,6 @@ TrieIPLookup::build_children_lengths(int index)
     }
 }
 
-void
-TrieIPLookup::add_handlers()
-{
-    add_write_handler("add", add_route_handler, 0);
-    add_write_handler("remove", remove_route_handler, 0);
-    add_write_handler("ctrl", ctrl_handler, 0);
-    add_read_handler("table", table_handler, 0);
-}
-
 // returns the position in the vector pf belongs
 inline int
 TrieIPLookup::binary_search(const Vector<IPRoute> &vec, const IPRoute &pf)
@@ -401,7 +392,7 @@ TrieIPLookup::binary_search(const Vector<IPRoute> &vec, const IPRoute &pf)
 }
 
 int
-TrieIPLookup::add_route(const IPRoute& pf, ErrorHandler *)
+TrieIPLookup::add_route(const IPRoute& pf, bool set, IPRoute* old_route, ErrorHandler *)
 {
     // add route to sorted _route_vector
     long n_position = binary_search(_route_vector, pf);
@@ -410,9 +401,13 @@ TrieIPLookup::add_route(const IPRoute& pf, ErrorHandler *)
         _route_vector.push_back(pf);
     } else {
         int n_compare = prefix_order_compar(&pf, &_route_vector[n_position]);
-        if (0 == n_compare)
+        if (n_compare == 0) {
+	    if (!set)
+		return -EEXIST;
+	    if (old_route)
+		*old_route = _route_vector[n_position];
             _route_vector[n_position] = pf;
-        else {
+        } else {
             assert(n_compare < 0);
             _route_vector.push_back(_route_vector[_route_vector.size() - 1]);
             for (int i = _route_vector.size() - 3; i >= n_position; i--) {
@@ -429,16 +424,17 @@ TrieIPLookup::add_route(const IPRoute& pf, ErrorHandler *)
 }
 
 int
-TrieIPLookup::remove_route(const IPRoute& pf, ErrorHandler *errh)
+TrieIPLookup::remove_route(const IPRoute& pf, IPRoute* old_route, ErrorHandler *)
 {
     long n_position = binary_search(_route_vector, pf);
     if (_route_vector.size() == n_position ||
         _route_vector[n_position].addr != pf.addr ||
-         _route_vector[n_position].mask != pf.mask) {
-        errh->warning("no routes removed");
-        return 1;
-    }
+         _route_vector[n_position].mask != pf.mask)
+	return -ENOENT;
 
+    if (old_route)
+	*old_route = _route_vector[n_position];
+    
     // shift elements forward
     for (int i = n_position; i < _route_vector.size() - 1; i++) {
         _route_vector[i] = _route_vector[i+1];

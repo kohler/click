@@ -23,6 +23,7 @@
 #include <click/ipaddress.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
+#include <click/router.hh>
 CLICK_DECLS
 
 StaticIPLookup::StaticIPLookup()
@@ -34,27 +35,28 @@ StaticIPLookup::~StaticIPLookup()
 }
 
 int
-StaticIPLookup::add_route(const IPRoute& r, ErrorHandler *errh)
+StaticIPLookup::add_route(const IPRoute& route, bool set, IPRoute* old_route, ErrorHandler *errh)
 {
     if (ports_frozen())
 	return errh->error("can't add routes dynamically");
     else
-	return LinearIPLookup::add_route(r, errh);
+	return LinearIPLookup::add_route(route, set, old_route, errh);
 }
 
 int
-StaticIPLookup::remove_route(const IPRoute& r, ErrorHandler *errh)
+StaticIPLookup::remove_route(const IPRoute& r, IPRoute* old_route, ErrorHandler *errh)
 {
     if (ports_frozen())
 	return errh->error("can't remove routes dynamically");
     else
-	return LinearIPLookup::remove_route(r, errh);
+	return LinearIPLookup::remove_route(r, old_route, errh);
 }
 
 void
 StaticIPLookup::add_handlers()
 {
     add_read_handler("table", table_handler, 0);
+    set_handler("lookup", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, lookup_handler);
 }
 
 CLICK_ENDDECLS

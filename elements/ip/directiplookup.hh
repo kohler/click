@@ -78,8 +78,8 @@ class DirectIPLookup : public IPRouteTable { public:
     void push(int port, Packet* p);
 
     int lookup_route(IPAddress, IPAddress&) const;
-    int add_route(const IPRoute&, ErrorHandler *);
-    int remove_route(const IPRoute&, ErrorHandler *);
+    int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
+    int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
     static int flush_handler(const String &, Element *, void *, ErrorHandler *);
     String dump_routes() const;
 

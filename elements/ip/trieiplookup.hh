@@ -49,10 +49,6 @@ Adds or removes routes. Write `C<add ADDR/MASK [GW] OUT>' to add a route, and
 `C<remove ADDR/MASK>' to remove a route. You can supply multiple commands, one
 per line; all commands are executed as one atomic operation.
 
-=h flush write-only
-
-Clears the entire routing table in a single atomic operation.
-
 =a IPRouteTable, StaticIPLookup, LinearIPLookup, SortedIPLookup,
 DirectIPLookup, TrieIPLookup
 */
@@ -69,11 +65,10 @@ public:
     
     void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);
-    void add_handlers();
         
-    int add_route(const IPRoute&, ErrorHandler *);
-    int remove_route(const IPRoute&, ErrorHandler *);
-    int lookup_route(IPAddress, IPAddress &) const;
+    int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
+    int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
+    int lookup_route(IPAddress, IPAddress&) const;
     String dump_routes() const;
 
     // data structures

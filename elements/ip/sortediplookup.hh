@@ -31,8 +31,8 @@ class SortedIPLookup : public LinearIPLookup { public:
 
     void push(int port, Packet *p);
 
-    int add_route(const IPRoute&, ErrorHandler *);
-    int remove_route(const IPRoute&, ErrorHandler *);
+    int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
+    int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
 
     bool check() const;
 

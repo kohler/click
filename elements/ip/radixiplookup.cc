@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2001 Massachusetts Institute of Technology
  * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,20 +28,65 @@
 #include "radixiplookup.hh"
 CLICK_DECLS
 
-Radix::RadixNode::~RadixNode()
+RadixIPLookup::Radix*
+RadixIPLookup::Radix::make_radix(int bitshift, int n)
 {
-    bit_idx = -1;
-    if (left && left->bit_idx >= 0)
-	delete left;
-    if (right && right->bit_idx >= 0)
-	delete right;
+    if (Radix* r = (Radix*) new unsigned char[sizeof(Radix) + n * sizeof(Child)]) {
+	r->_route_index = 0x7FFFFFFF;
+	r->_bitshift = bitshift;
+	r->_n = n;
+	r->_nchildren = 0;
+	memset(r->_children, 0, n * sizeof(Child));
+	for (int i = 0; i < n; i++)
+	    r->_children[i].key = -1;
+	return r;
+    } else
+	return 0;
+}
+
+RadixIPLookup::Radix*
+RadixIPLookup::Radix::change(uint32_t addr, uint32_t naddr, int key, uint32_t key_priority)
+{
+    if (naddr == 0) {
+	for (int i = 0; i < _n; i++)
+	    if (_children[i].key_priority <= key_priority) {
+		_children[i].key = key;
+		_children[i].key_priority = (key < 0 ? 0 : key_priority);
+	    }
+    } else {
+	int i1 = addr >> _bitshift;
+	int i2 = i1 + (naddr >> _bitshift);
+	addr &= (1 << _bitshift) - 1;
+	naddr &= (1 << _bitshift) - 1;
+
+	if (i1 == i2) {
+	    if (!_children[i1].child) {
+		if ((_children[i1].child = make_radix(_bitshift - 4, 16)))
+		    _nchildren++;
+	    }
+	    if (_children[i1].child)
+		return _children[i1].child->change(addr, naddr, key, key_priority);
+	}
+	
+	while (i1 < i2) {
+	    if (_children[i1].key_priority <= key_priority) {
+		if ((_children[i1].key >= 0) != (key >= 0))
+		    _nchildren += (key >= 0 ? 1 : -1);
+		_children[i1].key = key;
+		_children[i1].key_priority = (key < 0 ? 0 : key_priority);
+	    }
+	    i1++;
+	}
+    }
+    
+    return this;
 }
 
 
 RadixIPLookup::RadixIPLookup()
-    : _entries(0)
+    : _default_key(-1), _radix(Radix::make_radix(24, 256))
 {
-    _radix = new Radix;
+    add_input();
 }
 
 RadixIPLookup::~RadixIPLookup()
@@ -57,11 +103,8 @@ RadixIPLookup::notify_noutputs(int n)
 void
 RadixIPLookup::cleanup(CleanupStage)
 {
-    for (int i = 0; i < _v.size(); i++)
-	if (_v[i])
-	    delete _v[i];
     _v.clear();
-    delete _radix;
+    Radix::free_radix(_radix);
     _radix = 0;
 }
 
@@ -70,100 +113,88 @@ String
 RadixIPLookup::dump_routes() const
 {
     StringAccum sa;
-    unsigned dst, mask, gw, port;
-
-    sa << "Entries: " << _entries << "\nDST/MASK\tGW\tPORT\n";
-
-    int seen = 0; // # of valid entries handled
-    for (int i = 0; seen < _entries; i++)
-	if (get(i, dst, mask, gw, port)) {
-	    sa << IPAddress(dst) << '/' << IPAddress(mask) << '\t'
-	       << IPAddress(gw) << '\t' << port << '\n';
-	    seen++;
-	}
+    for (int i = 0; i < _v.size(); i++)
+	if (_v[i].extra >= 0)
+	    sa << _v[i] << '\n';
     return sa.take_string();
 }
 
 
 int
-RadixIPLookup::add_route(const IPRoute& r, ErrorHandler *errh)
+RadixIPLookup::add_route(const IPRoute& route, bool set, IPRoute* old_route, ErrorHandler *)
 {
-    unsigned dst = r.addr.addr();
-    unsigned mask = r.mask.addr();
-    unsigned gw = r.gw.addr();
-
+    int found = _v.size();
     for (int i = 0; i < _v.size(); i++)
-	if (_v[i]->valid && (_v[i]->dst == dst) && (_v[i]->mask == mask)) {
-	    _v[i]->gw = gw;
-	    _v[i]->port = r.port;
+	if (_v[i].extra < 0)
+	    found = i;
+	else if (_v[i].addr == route.addr && _v[i].mask == route.mask) {
+	    if (!set)
+		return -EEXIST;
+	    if (old_route)
+		*old_route = _v[i];
+	    _v[i].gw = route.gw;
+	    _v[i].port = route.port;
 	    return 0;
 	}
 
-    if (Entry *e = new Entry) {
-	e->dst = dst;
-	e->mask = mask;
-	e->gw = gw;
-	e->port = r.port;
-	e->valid = true;
-	_v.push_back(e);
-	_entries++;
-	_radix->insert((dst & mask), _v.size() - 1);
-	return 0;
-    } else
-	return errh->error("out of memory");
+    if (found == _v.size())
+	_v.push_back(route);
+    else
+	_v[found] = route;
+    uint32_t hmask = ntohl(route.mask.addr());
+    if (!hmask)
+	_default_key = found;
+    else {
+	Radix* r = _radix->change(ntohl(route.addr.addr()), ~hmask + 1, found, hmask);
+	_v[found].extra = r->_route_index;
+	r->_route_index = found;
+    }
+    return 0;
 }
 
 int
-RadixIPLookup::remove_route(const IPRoute& r, ErrorHandler *errh)
+RadixIPLookup::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHandler*)
 {
-    // XXX
-    unsigned dst = r.addr.addr();
-    unsigned mask = r.mask.addr();
-
     for (int i = 0; i < _v.size(); i++)
-	if (_v[i]->valid && (_v[i]->dst == dst) && (_v[i]->mask == mask)) {
-	    _v[i]->valid = false;
-	    _entries--;
-	    _radix->del(dst & mask);
+	if (_v[i].extra >= 0 && _v[i].addr == route.addr && _v[i].mask == route.mask) {
+	    if (old_route)
+		*old_route = _v[i];
+	    uint32_t hmask = ntohl(route.mask.addr());
+	    if (!hmask)
+		_default_key = -1;
+	    else {
+		Radix* r = _radix->change(ntohl(route.addr.addr()), ~hmask + 1, -1, hmask);
+		// add back less specific routes
+		int32_t* pprev = &r->_route_index;
+		for (int32_t j = *pprev; j < 0x7FFFFFFF; j = *pprev)
+		    if (j == i)
+			*pprev = _v[i].extra;
+		    else {
+			if (_v[j].contains(_v[i])) {
+			    hmask = ntohl(_v[j].mask.addr());
+			    (void) _radix->change(ntohl(_v[j].addr.addr()), ~hmask + 1, j, hmask);
+			}
+			pprev = &_v[j].extra;
+		    }
+	    }
+	    _v[i].extra = -1;
 	    return 0;
 	}
 
-    return errh->error("no such route");
+    return -ENOENT;
 }
 
 int
-RadixIPLookup::lookup_route(IPAddress d, IPAddress &gw) const
+RadixIPLookup::lookup_route(IPAddress addr, IPAddress &gw) const
 {
-    unsigned dst = d.addr();
-    int index;
-
-    if (!_entries || !_radix->lookup(dst, index))
-	goto nomatch;
-
-    // consider this a match if dst is part of range described by routing table
-    if((dst & _v[index]->mask) == (_v[index]->dst & _v[index]->mask)) {
-	gw = _v[index]->gw;
-	return _v[index]->port;
+    int key = Radix::lookup(_radix, _default_key, ntohl(addr.addr()));
+    if (key >= 0 && _v[key].contains(addr)) {
+	gw = _v[key].gw;
+	return _v[key].port;
+    } else {
+	gw = 0;
+	return -1;
     }
-
-  nomatch:
-    gw = 0;
-    return -1;
-}
-
-bool
-RadixIPLookup::get(int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned &port) const
-{
-    assert(i >= 0 && i < _v.size());
-    if(i < 0 || i >= _v.size() || _v[i]->valid == false) {
-	dst = mask = gw = port = 0;
-	return false;
-    }
-    dst = _v[i]->dst;
-    mask = _v[i]->mask;
-    gw = _v[i]->gw;
-    port = _v[i]->port;
-    return true;
 }
 
 // generate Vector template instance
