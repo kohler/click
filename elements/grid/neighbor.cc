@@ -88,7 +88,7 @@ Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
 
 
 int
-Neighbor::initialize(ErrorHandler *errh)
+Neighbor::initialize(ErrorHandler *)
 {
   //  ScheduleInfo::join_scheduler(this, errh);
   _hello_timer.attach(this);
@@ -374,9 +374,6 @@ Neighbor::make_hello()
 {
   int psz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
   int num_nbrs =_nbrs.count();
-#if 1
-  click_chatter("num_nbrs == %d", num_nbrs);
-#endif
 
   psz += sizeof(grid_nbr_entry) * num_nbrs;
 
@@ -391,13 +388,7 @@ Neighbor::make_hello()
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   gh->hdr_len = sizeof(grid_hdr);
   gh->total_len = psz - sizeof(click_ether);
-#if 1
-  click_chatter("total len is %d", (int) gh->total_len);
-#endif
   gh->total_len = htons(gh->total_len);
-#if 1
-  click_chatter("net order total len is %d", (int) gh->total_len);
-#endif
   gh->type = grid_hdr::GRID_LR_HELLO;
   memcpy(&gh->ip, _ipaddr.data(), 4);
 
@@ -408,21 +399,12 @@ Neighbor::make_hello()
   click_chatter("num_nbrs = %d , _hops = %d, nbrs.count() = %d",
 		num_nbrs, _max_hops, _nbrs.count());
 #endif
-#if 1
-  int fuck_me2 = ntohs(gh->total_len);
-  click_chatter("net order post fucked 2222 total len is %d", fuck_me2);
-#endif
   hlo->nbr_entry_sz = sizeof(grid_nbr_entry);
   hlo->seq_no = htonl(_seq_no);
   /* originating sequence numbers are even, starting at 0.  odd
      numbers are reserved for other nodes to advertise a broken route
      to us.  from DSDV paper. */
   _seq_no += 2;
-
-#if 1
-  int fuck_me1 = ntohs(gh->total_len);
-  click_chatter("net order post fucked 1111 total len is %d", fuck_me1);
-#endif
 
   grid_nbr_entry *curr = (grid_nbr_entry *) (p->data() + sizeof(click_ether) +
 					     sizeof(grid_hdr) + sizeof(grid_hello));
@@ -437,10 +419,6 @@ Neighbor::make_hello()
     curr++;
   }
 
-#if 1
-  int fuck_me = ntohs(gh->total_len);
-  click_chatter("net order post XXX total len is %d", fuck_me);
-#endif
   return p;
 }
 

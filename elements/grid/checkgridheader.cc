@@ -69,22 +69,25 @@ CheckGridHeader::simple_action(Packet *p)
   unsigned int hlen, tlen;
   hlen = gh->hdr_len;
   tlen = ntohs(gh->total_len);
-#if 1
-  click_chatter("check!!! total len is %d", tlen);
-#endif
 
   /* grid header size keeps changing
   if(hlen < sizeof(grid_hdr))
     goto bad;
   */
   
-  if (tlen + sizeof(click_ether) != p->length()) {
+  if (tlen + sizeof(click_ether) > p->length()) { 
+    /* can only check inequality, as short packets are padded to a
+       minimum frame size for wavelan and ethernet */
+#if 0
     click_chatter("%s: bad packet size", id().cc());
+#endif
     goto bad;
   }
 
   if (in_cksum((unsigned char *) gh, tlen) != 0) {
+#if 0
     click_chatter("%s: bad Grid checksum", id().cc());
+#endif
     goto bad;
   }
   return(p);

@@ -53,9 +53,6 @@ SetGridChecksum::simple_action(Packet *xp)
 
   gh->cksum = 0;
   gh->cksum = in_cksum((unsigned char *) gh, tlen);
-#if 1
-  click_chatter("set cksum len %d", tlen);
-#endif
 
   return p;
 

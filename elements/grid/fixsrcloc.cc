@@ -64,22 +64,9 @@ Packet *
 FixSrcLoc::simple_action(Packet *xp)
 {
   assert(_locinfo);
-#if 1
-  grid_hdr *bitch = (grid_hdr *) (xp->data() + sizeof(click_ether));
-  int asshole = ntohs(bitch->total_len);
-  click_chatter("fix pre pre ***** %d", asshole);
-#endif
   WritablePacket *p = xp->uniqueify();
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
-#if 1
-  int len1 = ntohs(gh->total_len);
-  click_chatter("fix pre XXX total len is %d", len1);
-#endif
   gh->loc = _locinfo->get_current_location();
-#if 1
-  int len = ntohs(gh->total_len);
-  click_chatter("fix XXX total len is %d", len);
-#endif
   return p;
 }
 
