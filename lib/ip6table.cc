@@ -31,14 +31,9 @@ IP6Table::lookup(IP6Address dst, IP6Address &gw, int &index)
 
   for(i = 0; i < _v.size(); i++){
     if(_v[i]._valid && IP6Address((dst & _v[i]._mask)) == _v[i]._dst){
-      //click_chatter("\n************************\n");
-
-      //(dst & _v[i]._mask).print();
-        //_v[i]._dst.print();
-      //click_chatter("\n****************** \n");
-      if(besti == -1 || ~_v[i]._mask < ~_v[besti]._mask){
+      if(besti == -1 || _v[i]._mask >_v[besti]._mask){
         besti = i;
-	click_chatter("here is besti %d", besti);
+	//click_chatter("find the match in the routing table -entry is %d", besti);
       }
     }
   }
@@ -47,7 +42,7 @@ IP6Table::lookup(IP6Address dst, IP6Address &gw, int &index)
     return(false);
   } else {
     gw = _v[besti]._gw;
-    //gw = new IP6Address(_v[besti]._gw);
+    
     index = _v[besti]._index;
     return(true);
   }
@@ -61,9 +56,6 @@ IP6Table::add(IP6Address dst, IP6Address mask, IP6Address gw, int index)
   e._dst = dst;
   e._mask = mask;
   e._gw = gw;
-  //e._dst = new IP6Address(dst);
-  //e._mask = new IP6Address(mask);
-  //e._gw = new IP6Address(gw);
 
   e._index = index;
   e._valid = 1;

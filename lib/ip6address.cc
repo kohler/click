@@ -38,6 +38,21 @@ IP6Address::IP6Address(const String &str)
       _addr.s6_addr32[i] = 0;
 }
 
+bool
+IP6Address::get_IP4Address(unsigned char ip4[4])
+{
+  if (_addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0xFFFF) {
+    ip4[0] = _addr.s6_addr[12];
+    ip4[1] = _addr.s6_addr[13];
+    ip4[2] = _addr.s6_addr[14];
+    ip4[3] = _addr.s6_addr[15];
+    return true;
+  }
+ else 
+   return false;
+    
+}
+
 String
 IP6Address::s() const
 {

@@ -23,6 +23,8 @@ class IP6Address {
   unsigned char *data()			{ return &_addr.s6_addr[0]; }
   const unsigned char *data() const	{ return &_addr.s6_addr[0]; }
   // int *hashcode() const	{ return (unsigned *)&(_addr); }
+  bool  get_IP4Address(unsigned char ip4[4]);
+
   
   operator String() const	{ return s(); }
   String s() const;
@@ -65,6 +67,18 @@ operator!=(const IP6Address &a, const IP6Address &b)
   for (int i = 0; i < 4; i++)
     if (a.addr().s6_addr32[i] != b.addr().s6_addr32[i])
       return true;
+  return false;
+}
+
+inline bool
+operator > (const IP6Address &a, const IP6Address &b)
+{
+  for (int i=0; i<4; i++) {
+    if (a.addr().s6_addr32[i] > b.addr().s6_addr32[i]) 
+      return true;
+    else if (a.addr().s6_addr32[i] < b.addr().s6_addr32[i]) 
+      return false;
+  }
   return false;
 }
 
