@@ -478,8 +478,8 @@
 
 2004-05-13 Thursday 23:38  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.50): fix click-buildtool -S: elements.conf
-	file changed format
+	* click-buildtool (1.50), click-buildtool.in (1.50): fix
+	click-buildtool -S: elements.conf file changed format
 
 2004-05-12 Wednesday 19:40  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -1205,16 +1205,17 @@
 
 2004-05-02 Sunday 11:40  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.49): remove /tmp/x reference
+	* click-buildtool (1.49), click-buildtool.in (1.49): remove /tmp/x
+	reference
 
 2004-05-02 Sunday 02:57  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.48), elements/local/forceudp.cc (1.9),
-	include/click/element.hh (1.32), include/click/lexer.hh (1.16),
-	include/click/package.hh (1.9), lib/driver.cc (1.21), lib/lexer.cc
-	(1.77), linuxmodule/config.cc (1.14), ns/nsclick.cc (1.19):
-	click-buildtool rewrite: remove need for Element::clone and the
-	attendant wasted memory
+	* click-buildtool (1.48), click-buildtool.in (1.48),
+	elements/local/forceudp.cc (1.9), include/click/element.hh (1.32),
+	include/click/lexer.hh (1.16), include/click/package.hh (1.9),
+	lib/driver.cc (1.21), lib/lexer.cc (1.77), linuxmodule/config.cc
+	(1.14), ns/nsclick.cc (1.19): click-buildtool rewrite: remove need
+	for Element::clone and the attendant wasted memory
 
 2004-05-02 Sunday 02:54  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -1874,7 +1875,8 @@
 
 2004-03-16 Tuesday 03:07  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.47): print warning if no elements found
+	* click-buildtool (1.47), click-buildtool.in (1.47): print warning
+	if no elements found
 
 2004-03-11 Thursday 14:33  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -2353,9 +2355,10 @@
 
 2004-01-08 Thursday 05:08  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.46): fix minor bug ("-xFOO" didnt work), and
-	allow multiple space-separated --exclude/--unprovisions in a single
-	argument, and add PortInfo as a default provision
+	* click-buildtool (1.46), click-buildtool.in (1.46): fix minor bug
+	("-xFOO" didnt work), and allow multiple space-separated
+	--exclude/--unprovisions in a single argument, and add PortInfo as
+	a default provision
 
 2004-01-08 Thursday 02:28  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -3249,8 +3252,8 @@
 
 2003-09-22 Monday 18:46  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.45), lib/driver.cc (1.17),
-	linuxmodule/config.cc (1.11), userlevel/click.cc (1.84):
+	* click-buildtool (1.45), click-buildtool.in (1.45), lib/driver.cc
+	(1.17), linuxmodule/config.cc (1.11), userlevel/click.cc (1.84):
 	"click-buildtool elem2export" uses click_add_element_type(), not an
 	explicit lexer; will make it easier to write programs using limited
 	sets of elements
@@ -3658,11 +3661,11 @@
 
 2003-08-06 Wednesday 15:19  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.44), include/click/lexer.hh (1.13),
-	lib/driver.cc (1.15), lib/lexer.cc (1.64), userlevel/click.cc
-	(1.82): Lexer::add_element_type can be scoped or unscoped (supports
-	user-level hotswap with packages); add userlevel "hotconfig"
-	handler before parsing configuration; nits
+	* click-buildtool (1.44), click-buildtool.in (1.44),
+	include/click/lexer.hh (1.13), lib/driver.cc (1.15), lib/lexer.cc
+	(1.64), userlevel/click.cc (1.82): Lexer::add_element_type can be
+	scoped or unscoped (supports user-level hotswap with packages); add
+	userlevel "hotconfig" handler before parsing configuration; nits
 
 2003-08-06 Wednesday 13:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
@@ -4308,8 +4311,9 @@
 	etc/make-linux24-patch (1.3), test/testie (1.15),
 	tools/build-grid-config.sh (1.13), tools/click-viz (1.3),
 	tools/make-linux-patch (1.2), tools/run-grid (1.20),
-	click-buildtool (1.43), click-compile.in (1.23), click-mkelemmap
-	(1.24), install-sh (1.2), missing (1.10): shell script nits
+	click-buildtool (1.43), click-buildtool.in (1.43), click-compile.in
+	(1.23), click-mkelemmap (1.24), install-sh (1.2), missing (1.10):
+	shell script nits
 
 2003-06-23 Monday 21:55  John Bicket <jbicket@mit.edu>
 
@@ -4509,7 +4513,7 @@
 
 2003-06-06 Friday 14:56  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.42): nawk nit
+	* click-buildtool (1.42), click-buildtool.in (1.42): nawk nit
 
 2003-06-05 Thursday 21:40  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -4562,10 +4566,10 @@
 
 2003-06-04 Wednesday 02:52  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.41), etc/samplepackage/Makefile.in (1.33):
-	click-buildtool findelem supports "-e ELEMENTMAP.xml", which adds
-	as provisions everything provided by ELEMENTMAP.xml; samplepackage
-	uses it
+	* click-buildtool (1.41), click-buildtool.in (1.41),
+	etc/samplepackage/Makefile.in (1.33): click-buildtool findelem
+	supports "-e ELEMENTMAP.xml", which adds as provisions everything
+	provided by ELEMENTMAP.xml; samplepackage uses it
 
 2003-06-01 Sunday 00:50  John Bicket <jbicket@mit.edu>
 
@@ -5169,12 +5173,12 @@
 
 2003-03-17 Monday 00:41  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.40), bsdmodule/config.cc (1.7),
-	bsdmodule/module.cc (1.12), exopc/click.cc (1.5), lib/driver.cc
-	(1.12), linuxmodule/config.cc (1.7), ns/nsclick.cc (1.10),
-	userlevel/click.cc (1.78): rename export_elements to
-	click_export_elements, and correct its namespaces (Kendy Kutzner
-	reported)
+	* click-buildtool (1.40), click-buildtool.in (1.40),
+	bsdmodule/config.cc (1.7), bsdmodule/module.cc (1.12),
+	exopc/click.cc (1.5), lib/driver.cc (1.12), linuxmodule/config.cc
+	(1.7), ns/nsclick.cc (1.10), userlevel/click.cc (1.78): rename
+	export_elements to click_export_elements, and correct its
+	namespaces (Kendy Kutzner reported)
 
 2003-03-17 Monday 00:26  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -6052,7 +6056,8 @@
 
 2003-02-03 Monday 17:34  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.39): fix findelem bug report by Mr. DeCouto
+	* click-buildtool (1.39), click-buildtool.in (1.39): fix findelem
+	bug report by Mr. DeCouto
 
 2003-02-03 Monday 10:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
@@ -7682,15 +7687,16 @@
 
 2002-08-07 Wednesday 14:56  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* Makefile.in (1.109), click-buildtool (1.38), click-compile.in
-	(1.19), click-mkelemmap (1.20), doc/mkwebdoc.pl (1.34),
-	elements/userlevel/fakepcap.cc (1.9), elements/userlevel/todump.cc
-	(1.41), ns/CUT_BinHeap.h (1.1), ns/Makefile.in (1.2),
-	ns/nsclick-test.cc (1.1), ns/nsclick.cc (1.1), tools/lib/etraits.cc
-	(1.6), elements/ns/fromsimdevice.cc (1.1),
-	elements/ns/fromsimdevice.hh (1.1), elements/ns/tosimdevice.cc
-	(1.1), elements/ns/tosimdevice.hh (1.1), elements/ns/tosimdump.cc
-	(1.1), elements/ns/tosimdump.hh (1.1): more preparation for nsclick
+	* Makefile.in (1.109), click-buildtool (1.38), click-buildtool.in
+	(1.38), click-compile.in (1.19), click-mkelemmap (1.20),
+	doc/mkwebdoc.pl (1.34), elements/userlevel/fakepcap.cc (1.9),
+	elements/userlevel/todump.cc (1.41), ns/CUT_BinHeap.h (1.1),
+	ns/Makefile.in (1.2), ns/nsclick-test.cc (1.1), ns/nsclick.cc
+	(1.1), tools/lib/etraits.cc (1.6), elements/ns/fromsimdevice.cc
+	(1.1), elements/ns/fromsimdevice.hh (1.1),
+	elements/ns/tosimdevice.cc (1.1), elements/ns/tosimdevice.hh (1.1),
+	elements/ns/tosimdump.cc (1.1), elements/ns/tosimdump.hh (1.1):
+	more preparation for nsclick
 
 2002-08-07 Wednesday 11:19  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -7814,9 +7820,9 @@
 
 2002-08-05 Monday 20:51  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.37), config-bsdmodule.h.in (1.7),
-	config-linuxmodule.h.in (1.8), config-userlevel.h.in (1.9),
-	elements/analysis/anonipaddr.cc (1.8),
+	* click-buildtool (1.37), click-buildtool.in (1.37),
+	config-bsdmodule.h.in (1.7), config-linuxmodule.h.in (1.8),
+	config-userlevel.h.in (1.9), elements/analysis/anonipaddr.cc (1.8),
 	elements/analysis/anonipaddr.hh (1.6),
 	elements/analysis/fromdagdump.cc (1.10),
 	elements/analysis/fromdagdump.hh (1.6),
@@ -9230,13 +9236,13 @@
 
 2002-05-22 Wednesday 18:19  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* Makefile.in (1.106), click-buildtool (1.36), configure.in
-	(1.186), bsdmodule/Makefile.in (1.20), doc/Makefile.in (1.44),
-	exopc/Makefile.in (1.13), linuxmodule/Makefile.in (1.72),
-	userlevel/Makefile.in (1.65): click-buildtool update: Take
-	requirements only from the command line (no special directory
-	magic). Required updates in various Makefiles. Reported as a bug by
-	Max Poletto
+	* Makefile.in (1.106), click-buildtool (1.36), click-buildtool.in
+	(1.36), configure.in (1.186), bsdmodule/Makefile.in (1.20),
+	doc/Makefile.in (1.44), exopc/Makefile.in (1.13),
+	linuxmodule/Makefile.in (1.72), userlevel/Makefile.in (1.65):
+	click-buildtool update: Take requirements only from the command
+	line (no special directory magic). Required updates in various
+	Makefiles. Reported as a bug by Max Poletto
 
 2002-05-22 Wednesday 17:34  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -10662,7 +10668,8 @@
 
 2002-03-07 Thursday 14:09  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* LICENSE (1.5), click-buildtool (1.35): nitlets
+	* LICENSE (1.5), click-buildtool (1.35), click-buildtool.in (1.35):
+	nitlets
 
 2002-03-07 Thursday 13:33  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -10806,8 +10813,8 @@
 
 2002-03-05 Tuesday 19:25  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* click-buildtool (1.34): initial support for bsdmodule targets in
-	click-buildtool elem2package
+	* click-buildtool (1.34), click-buildtool.in (1.34): initial
+	support for bsdmodule targets in click-buildtool elem2package
 
 2002-03-05 Tuesday 19:25  Eddie Kohler <kohler@cs.ucla.edu>
 
