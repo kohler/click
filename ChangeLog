@@ -1,3 +1,9 @@
+2003-02-13 Thursday 17:11  Eddie Kohler <kohler@icir.org>
+
+	* elements/: local/rrunqueue.cc (1.10), standard/msqueue.hh (1.10),
+	standard/unqueue.cc (1.22), standard/unqueue2.cc (1.11): remove
+	other steal_skb()s; reported by Tomasz Jaskolski, thanks
+
 2003-02-13 Thursday 15:01  Eddie Kohler <kohler@icir.org>
 
 	* configure.in (1.198), configure.in (1.199): configury
