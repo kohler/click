@@ -76,7 +76,7 @@ PollDevice::PollDevice(const String &devname)
 
 PollDevice::~PollDevice()
 {
-  if (_registered) uninitialize();
+  if (_registered) uninitalize();
 }
 
 void
