@@ -1,3 +1,7 @@
+2004-01-09 Friday 03:01  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/ettstat.cc (1.5): make hotswapping work better
+
 2004-01-08 Thursday 05:24  Eddie Kohler <kohler@icir.org>
 
 	* test/: analysis/FromIPSummaryDump-ipopt-01.testie (1.8),
