@@ -1062,7 +1062,13 @@ DSDVRouteTable::print_rtes_v(Element *e, void *)
 
   String s;
   for (RTIter i = n->_rtes.begin(); i; i++) {
+#if USE_OLD_SEQ
+    RTEntry f = i.value();
+    if (n->use_old_route(f.dest_ip, jiff))
+      f = n->_old_rtes[f.dest_ip];
+#else
     const RTEntry &f = i.value();
+#endif
     s += f.dest_ip.s() 
       + " next=" + f.next_hop_ip.s() 
       + " hops=" + String((int) f.num_hops()) 
@@ -1094,7 +1100,14 @@ DSDVRouteTable::print_rtes(Element *e, void *)
 
   String s;
   for (RTIter i = n->_rtes.begin(); i; i++) {
+#if USE_OLD_SEQ
+    unsigned jiff = dsdv_jiffies();
+    RTEntry f = i.value();
+    if (n->use_old_route(f.dest_ip, jiff))
+      f = n->_old_rtes[f.dest_ip];
+#else
     const RTEntry &f = i.value();
+#endif
     s += f.dest_ip.s() 
       + " next=" + f.next_hop_ip.s() 
       + " hops=" + String((int) f.num_hops()) 
