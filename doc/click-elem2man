@@ -19,7 +19,7 @@
 # legally binding.
 
 # information stored about each Click element, indexed by C++ class name
-my(%class_name, %processing, %deprecated);
+my(%class_name, %processing, %deprecated, $PREFIX);
 
 my(%section_break) =
     ( 'head1' => 1, 'c' => 1, 's' => 1, 'io' => 1, 'processing' => 1,
@@ -630,7 +630,8 @@ sub process_file ($) {
     } else {
 	$filename =~ s/\.cc$/\.hh/;
     }
-  
+
+    $filename = "$PREFIX/$filename" if !-e $filename;
     return if !-e $filename;
     if (!open(IN, $filename)) {
 	print STDERR "click-elem2man: $filename: $!\n";
@@ -734,9 +735,10 @@ Options:
   -d, --directory DIR     Place generated manual pages in directory DIR.
   -f, --files FILE        Read header filenames from FILE.
   -e, --elementmap EMAP   Read information about other elements from EMAP.
+  -p, --prefix PFX        Look for header files in PFX after looking in '.'.
   -u, --uninstall         Remove existing manual pages.
   -h, --help              Print this message and exit.
-  -p, --package PKG       Elements are in PKG package, or say 'DEFAULT'.
+  -P, --package PKG       Elements are in PKG package, or say 'DEFAULT'.
 
 Report bugs to <click\@pdos.lcs.mit.edu>.
 EOD;
@@ -752,7 +754,7 @@ while (@ARGV) {
 	$directory = shift @ARGV;
     } elsif (/^--directory=(.*)$/) {
 	$directory = $1;
-    } elsif (/^-p$/ || /^--package$/) {
+    } elsif (/^-P$/ || /^--package$/) {
 	usage() if !@ARGV;
 	$package = shift @ARGV;
     } elsif (/^--package=(.*)$/) {
@@ -773,6 +775,11 @@ while (@ARGV) {
 	read_elementmap(shift @ARGV);
     } elsif (/^--elementmap=(.*)$/) {
 	read_elementmap($1);
+    } elsif (/^-p$/ || /^--prefix$/) {
+	usage() if !@ARGV;
+	$PREFIX = shift @ARGV;
+    } elsif (/^--prefix=(.*)$/) {
+	$PREFIX = $1;
     } elsif (/^-u$/ || /^--uninstall$/) {
 	$uninstall = 1;
     } elsif (/^-h$/ || /^--help$/) {
