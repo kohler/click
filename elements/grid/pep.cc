@@ -249,7 +249,7 @@ PEP::simple_action(Packet *p)
 
   pp = (pep_proto *) p->data();
   nf = ntohl(pp->n_fixes);
-  if(nf < 0 || (const u_char*)&pp->fixes[nf + 1] > p->data()+p->length()){
+  if(nf < 0 || (const u_char*)&pp->fixes[nf] > p->data()+p->length()){
     click_chatter("PEP: bad n_fixes %d", nf);
     goto out;
   }
