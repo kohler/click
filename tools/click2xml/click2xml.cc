@@ -263,7 +263,7 @@ process(const char *infile, bool file_is_expr, bool flatten,
     ElementMap::push_default(&emap);
 
     fprintf(outf, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n\
-<!DOCTYPE configuration SYSTEM \"http://www.icir.org/kohler/clickconfig.dtd\">\n\
+<!DOCTYPE configuration SYSTEM \"http://www.pdos.lcs.mit.edu/click/clickconfig.dtd\">\n\
 <configuration>\n");
     generate_router(r, outf, "", true, errh);
     fprintf(outf, "</configuration>\n");

@@ -369,7 +369,10 @@ open(FAQ, ">$WEBDIR/faq.html") || die;
 print FAQ $htmlfaq;
 close(FAQ);
 
-# 9. create doc.tar.gz
+# 9. install clickconfig.dtd
+mysystem("cp click-$VERSION/tools/click2xml/clickconfig.dtd $WEBDIR");
+
+# 10. create doc.tar.gz
 if ($DOC_TAR_GZ) {
     $DOCDIR = "/tmp/%click-webdoc/click-doc-$VERSION";
     mysystem("rm -rf $DOCDIR && mkdir $DOCDIR");
