@@ -2,6 +2,10 @@
 #ifndef CLICK_IP6_H
 #define CLICK_IP6_H
 #include <click/click_ip.h>
+#undef s6_addr
+#undef s6_addr16
+#undef s6_addr32
+#undef s6_addr64
 
 /*
  * click_ip6.h -- our own definitions of IP6 headers

@@ -36,10 +36,10 @@ EtherMirror::simple_action(Packet *p)
 {
   if (WritablePacket *q = p->uniqueify()) {
     click_ether *ethh = reinterpret_cast<click_ether *>(q->data());
-    unsigned char tmpa[6];
-    tmpa = ethh->ether_dhost;
-    ethh->ether_dhost = ethh->ether_shost;
-    ethh->ether_shost = tmpa;
+    uint8_t tmpa[6];
+    ::memcpy(tmpa, ethh->ether_dhost, 6);
+    ::memcpy(ethh->ether_dhost, ethh->ether_shost, 6);
+    ::memcpy(ethh->ether_shost, tmpa, 6);
     return q;
   } else
     return 0;

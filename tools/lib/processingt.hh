@@ -8,7 +8,7 @@ class Bitvector;
 class ProcessingT { public:
 
     enum ProcessingCode { VAGNOSTIC = 0, VPUSH = 1, VPULL = 2 };
-    static const char * const processing_letters = "ahl";
+    static const char * const processing_letters;
 
     ProcessingT();
     ProcessingT(const RouterT *, ErrorHandler *);

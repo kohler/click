@@ -27,6 +27,8 @@
 #include <ctype.h>
 #include <string.h>
 
+const char * const ProcessingT::processing_letters = "ahl";
+
 ProcessingT::ProcessingT()
     : _router(0)
 {
@@ -651,7 +653,9 @@ ProcessingT::compound_flow_code(ErrorHandler *errh) const
 	return "x/y";
 
     // read flow codes, create `codes' array
-    Bitvector *codes = new Bitvector[noutputs](ninputs, false);
+    Bitvector *codes = new Bitvector[noutputs];
+    for (int i = 0; i < noutputs; i++)
+	codes[i].assign(ninputs, false);
     Bitvector input_vec(ninput_pidx(), false);
     int opidx = input_pidx(PortT(output, 0));
     for (int i = 0; i < ninputs; i++) {
