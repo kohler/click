@@ -130,7 +130,8 @@ Tun::push(int, Packet *p)
    * alignment bytes 
    */
   char big[2048];
-  char from[] = { 0xab, 0xcd, 0xef };
+  char to[] = { 0xfe, 0xfd, 0x0, 0x0, 0x0, 0x0 }; // ethertap driver is very picky about what address we use here
+  char *from = to;
   short protocol = htons(0x0800);
   if(p->length()+16 >= sizeof(big)){
     fprintf(stderr, "bimtun writetun pkt too big\n");
@@ -138,6 +139,7 @@ Tun::push(int, Packet *p)
   }
   bzero(big, 16);
   memcpy(big+2, from, sizeof(from)); // linux won't accept ethertap packets from eth addr 0.
+  memcpy(big+8, to, sizeof(to)); // linux TCP doesn't like packets to 0??
   memcpy(big+14, &protocol, 2);
   memcpy(big+16, p->data(), p->length());
   if (write(_fd, big, p->length()+16) != (int)p->length()+16){
