@@ -55,27 +55,41 @@ Boolean. If true, and BYTES is true, then include packets' extra length
 annotations in the byte counts. Elements like FromDump set this annotation.
 Default is true.
 
-=item STOP_AFTER_AGG I<n>
+=item STOP_AFTER_AGG
 
-Unsigned. Stop the router once I<n> distinct aggregates have been seen.
+Unsigned. Stop the router once I<N> distinct aggregates have been seen.
 Default is never to stop.
 
-=item FREEZE_AFTER_AGG I<n>
+=item FREEZE_AFTER_AGG
 
-Unsigned. Freeze the AggregateCounter once I<n> distinct aggregates have been
-seen. Default is never to freeze. You can't give both STOP_AFTER_AGG and
-FREEZE_AFTER_AGG.
+Unsigned. Freeze the AggregateCounter once I<N> distinct aggregates have been
+seen. Default is never to freeze.
 
-=item STOP_AFTER_COUNT I<n>
+=item CALL_AFTER_AGG
+
+Argument is `I<N> I<HANDLER> [I<VALUE>]'. Call the given write handler, with
+the supplied value, once I<N> distinct aggregates have been seen.
+
+The three AFTER_AGG keywords are mutually exclusive. Supply at most one of
+them.
+
+=item STOP_AFTER_COUNT
 
 Unsigned. Stop the router once the total count (of bytes or packets) has
-reached or exceeded I<n>. Default is never to stop.
+reached or exceeded I<N>. Default is never to stop.
 
-=item FREEZE_AFTER_COUNT I<n>
+=item FREEZE_AFTER_COUNT
 
 Unsigned. Freeze the AggregateCounter once the total count has reached or
-exceeded I<n>. Default is never to freeze. You can't give both
-STOP_AFTER_COUNT and FREEZE_AFTER_COUNT.
+exceeded I<N>. Default is never to freeze.
+
+=item CALL_AFTER_COUNT
+
+Argument is `I<N> I<HANDLER> [I<VALUE>]'. Call the given write handler, with
+the supplied value, once the total count has reached or exceeded I<N>.
+
+The three AFTER_COUNT keywords are mutually exclusive. Supply at most one of
+them.
 
 =back
 

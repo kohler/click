@@ -73,6 +73,7 @@ AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
     bool extra_length = true;
     uint32_t freeze_nnz, stop_nnz;
     uint64_t freeze_count, stop_count;
+    String call_nnz, call_count;
     freeze_nnz = stop_nnz = _call_nnz = (uint32_t)(-1);
     freeze_count = stop_count = _call_count = (uint64_t)(-1);
     
@@ -86,6 +87,8 @@ AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    "FREEZE_AFTER_COUNT", cpUnsigned64, "freeze after count reaches N", &freeze_count,
 		    "STOP_AFTER_AGG", cpUnsigned, "stop router after N nonzero aggregates", &stop_nnz,
 		    "STOP_AFTER_COUNT", cpUnsigned64, "stop router after count reaches N", &stop_count,
+		    "CALL_AFTER_AGG", cpArgument, "call handler after N nonzero aggregates", &call_nnz,
+		    "CALL_AFTER_COUNT", cpArgument, "call handler after count reaches N", &call_count,
 		    0) < 0)
 	return -1;
     
@@ -94,24 +97,34 @@ AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
     _use_packet_count = packet_count;
     _use_extra_length = extra_length;
 
-    if ((freeze_nnz != (uint32_t)(-1)) + (stop_nnz != (uint32_t)(-1)) > 1)
-	return errh->error("I can handle at most one of `FREEZE_AFTER_AGG' and `STOP_AFTER_AGG'");
+    if ((freeze_nnz != (uint32_t)(-1)) + (stop_nnz != (uint32_t)(-1)) + ((bool)call_nnz) > 1)
+	return errh->error("`FREEZE_AFTER_AGG', `STOP_AFTER_AGG', and `CALL_AFTER_AGG' are mutually exclusive");
     else if (freeze_nnz != (uint32_t)(-1)) {
 	_call_nnz = freeze_nnz;
 	_call_nnz_h = new HandlerCall(id() + ".freeze true");
     } else if (stop_nnz != (uint32_t)(-1)) {
 	_call_nnz = stop_nnz;
 	_call_nnz_h = new HandlerCall(id() + ".stop");
+    } else if (call_nnz) {
+	String s = cp_pop_spacevec(call_nnz);
+	if (!cp_unsigned(s, &_call_nnz))
+	    return errh->error("`CALL_AFTER_AGG' first word should be unsigned (number of aggregates)");
+	_call_nnz_h = new HandlerCall(call_nnz);
     }
     
-    if ((freeze_count != (uint64_t)(-1)) + (stop_count != (uint64_t)(-1)) > 1)
-	return errh->error("I can handle at most one of `FREEZE_AFTER_AGG' and `STOP_AFTER_AGG'");
+    if ((freeze_count != (uint64_t)(-1)) + (stop_count != (uint64_t)(-1)) + ((bool)call_count) > 1)
+	return errh->error("`FREEZE_AFTER_COUNT', `STOP_AFTER_COUNT', and `CALL_AFTER_COUNT' are mutually exclusive");
     else if (freeze_count != (uint64_t)(-1)) {
 	_call_count = freeze_count;
 	_call_count_h = new HandlerCall(id() + ".freeze true");
     } else if (stop_count != (uint64_t)(-1)) {
 	_call_count = stop_count;
 	_call_count_h = new HandlerCall(id() + ".stop");
+    } else if (call_count) {
+	String s = cp_pop_spacevec(call_count);
+	if (!cp_unsigned64(s, &_call_count))
+	    return errh->error("`CALL_AFTER_COUNT' first word should be unsigned (count)");
+	_call_count_h = new HandlerCall(call_count);
     }
     
     return 0;
