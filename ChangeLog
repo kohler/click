@@ -1,3 +1,14 @@
+2004-11-17 Wednesday 14:00  John Bicket <jbicket@mit.edu>
+
+	* elements/userlevel/: todevice.cc (1.41), todevice.hh (1.30): 
+	ToDevice.u change - Linux select marks datagram fd's as writeable
+	when the socket buffer has enough space to do a send
+	(sock_writeable() in sock.h). BSD select always marks datagram fd's
+	as writeable (bpf_poll() in sys/net/bpf.c) This function should
+	behave appropriately under both.  It makes use of select if it
+	correctly tells us when buffers are available, and it schedules a
+	backoff timer if buffers are not available.  --jbicket
+
 2004-11-16 Tuesday 21:45  Nikitas Liogkas <nikitas@cs.ucla.edu>
 
 	* elements/local/ticketstat.cc (1.1): file ticketstat.cc was
