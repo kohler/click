@@ -34,7 +34,7 @@ EtherAddress::operator bool() const
 inline unsigned
 EtherAddress::hashcode() const
 {
-  return (_data[0] | (_data[1] << 16)) ^ (_data[2] << 9);
+  return (_data[2] | (_data[1] << 16)) ^ (_data[0] << 9);
 }
 
 inline bool
@@ -42,6 +42,12 @@ operator==(const EtherAddress &a, const EtherAddress &b)
 {
   return (a.sdata()[0] == b.sdata()[0] && a.sdata()[1] == b.sdata()[1]
 	  && a.sdata()[2] == b.sdata()[2]);
+}
+
+inline bool
+operator!=(const EtherAddress &a, const EtherAddress &b)
+{
+  return !(a == b);
 }
 
 #endif
