@@ -1,0 +1,166 @@
+/*
+ * tcpack.{cc,hh} -- provides TCP like acknowledgement service
+ * Benjie Chen
+ *
+ * Copyright (c) 2001 Massachusetts Institute of Technology
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, subject to the conditions
+ * listed in the Click LICENSE file. These conditions include: you must
+ * preserve this copyright notice, and you cannot mention the copyright
+ * holders in advertising related to the Software without their permission.
+ * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+ * notice is a summary of the Click LICENSE file; the license in that file is
+ * legally binding.
+ */
+
+#include <click/config.h>
+#include <click/confparse.hh>
+#include <click/click_ip.h>
+#include <click/click_tcp.h>
+#include <click/elemfilter.hh>
+#include <click/router.hh>
+#include <click/error.hh>
+#include "tcpbuffer.hh"
+#include "tcpack.hh"
+
+TCPAck::TCPAck()
+  : Element(2, 3), _timer(this)
+{
+  MOD_INC_USE_COUNT;
+}
+
+TCPAck::~TCPAck()
+{
+  MOD_DEC_USE_COUNT;
+}
+
+int
+TCPAck::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  _heartbeat_ms = 20;
+  return cp_va_parse(conf, this, errh, 
+                     cpOptional, 
+		     cpUnsigned, "heartebat (ms)", &_heartbeat_ms, 0);
+}
+
+
+int
+TCPAck::initialize(ErrorHandler *errh)
+{
+  CastElementFilter filter("TCPBuffer");
+  Vector<Element*> tcpbuffers;
+  
+  if (router()->downstream_elements(this, 0, &filter, tcpbuffers) < 0)
+    return errh->error("flow-based router context failure");
+  if (tcpbuffers.size() < 1) 
+    return errh->error
+      ("%d downstream elements found, expecting at least 1", tcpbuffers.size());
+
+  for(int i=0; i<tcpbuffers.size(); i++) {
+    _tcpbuffer = reinterpret_cast<TCPBuffer*>(tcpbuffers[i]->cast("TCPBuffer"));
+    if (_tcpbuffer)
+      break;
+  }
+  if (!_tcpbuffer)
+    return errh->error("no TCPBuffer element found!", tcpbuffers[0]->id().cc());
+
+  _synack = false;
+  _timer.initialize(this);
+  _timer.schedule_after_ms(_heartbeat_ms);
+  return 0;
+}
+
+void
+TCPAck::uninitialize()
+{
+}
+
+void
+TCPAck::push(int port, Packet *p)
+{
+  bool forward;
+  if (port == 0)
+    forward = iput(p);
+  else
+    forward = oput(p);
+  if (forward)
+    output(port).push(p);
+}
+
+Packet *
+TCPAck::pull(int port)
+{
+  bool forward;
+  Packet *p = input(port).pull();
+  if (port == 0)
+    forward = iput(p);
+  else
+    forward = oput(p);
+  if (forward) 
+    return p;
+  else {
+    p->kill();
+    return 0;
+  }
+}
+
+bool
+TCPAck::iput(Packet *p)
+{
+  const click_tcp *tcph =
+    reinterpret_cast<const click_tcp *>(p->transport_header());
+  if (!_synack && (tcph->th_flags&(TH_SYN|TH_ACK))==(TH_SYN|TH_ACK)) {
+    /* synack on input, meaning our next seqn to use is the ackn
+     * in the packet and our next ackn is the seqn in the packet
+     */
+    _seq_nxt = ntohl(tcph->th_ack);
+    _ack_nxt = ntohl(tcph->th_seq)+1;
+    _synack = true;
+  }
+  if (!_synack)
+    return false;
+  if ((tcph->th_flags&(TH_SYN|TH_FIN|TH_RST)) != 0)
+    return true;
+
+  if (TCPBuffer::seqno(p) == _ack_nxt) {
+    bool v = _tcpbuffer->first_missing_seq_no(_ack_nxt);
+    assert(v);
+    if (TCPBuffer::seqno(p) == _ack_nxt)
+      _ack_nxt += TCPBuffer::seqlen(p);
+  } else {
+    click_chatter("seqno != ack_nxt: out of order or loss packet");
+  }
+  click_chatter("next ack: got %u, ack_nxt %u, seq_nxt %u", 
+                TCPBuffer::seqno(p), _ack_nxt, _seq_nxt);
+  return true;
+}
+
+bool
+TCPAck::oput(Packet *p)
+{
+  const click_tcp *tcph =
+    reinterpret_cast<const click_tcp *>(p->transport_header());
+  if (tcph->th_flags&(TH_SYN|TH_ACK) == (TH_SYN|TH_ACK)) {
+    /* synack on output, meaning our next seqn to use is the seqn 
+     * in the packet and our next ackn is the ackn in the packet
+     */
+    _seq_nxt = ntohl(tcph->th_seq)+1;
+    _ack_nxt = ntohl(tcph->th_ack);
+    _synack = true;
+  }
+  if (!_synack)
+    return false;
+  _seq_nxt = TCPBuffer::seqno(p)+TCPBuffer::seqlen(p);
+  return true;
+}
+
+void
+TCPAck::run_scheduled()
+{
+  _timer.reschedule_after_ms(_heartbeat_ms);
+}
+
+EXPORT_ELEMENT(TCPAck)
+

@@ -82,7 +82,7 @@ public:
 
   /* returns true if there is a missing sequence, set seqno to 
    * that sequence number */
-  bool first_missing_seq_no(unsigned &seqno);
+  bool first_missing_seq_no(unsigned& seqno);
 
   static unsigned seqlen(Packet *); 
   static unsigned seqno(Packet *);
@@ -159,7 +159,7 @@ TCPBuffer::TCPBufferElt::kill_elt()
 }
 
 inline bool 
-TCPBuffer::first_missing_seq_no(unsigned &sn)
+TCPBuffer::first_missing_seq_no(unsigned& sn)
 {
   TCPBufferElt *elt = _chain;
   if (elt) {
@@ -174,6 +174,12 @@ TCPBuffer::first_missing_seq_no(unsigned &sn)
       expect += seqlen(p);
       elt = elt->next();
     }
+    sn = expect;
+    return true;
+  }
+  else if (_start_pull) {
+    sn = _first_seq;
+    return true;
   }
   return false;
 }
