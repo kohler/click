@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * kerneltap.{cc,hh} -- element accesses network via /dev/tun device
+ * kerneltap.{cc,hh} -- element accesses network via /dev/tap device
  * Robert Morris, Douglas S. J. De Couto, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -31,16 +31,19 @@
 #include <arpa/inet.h>
 
 #if defined(__linux__) && defined(HAVE_LINUX_IF_TUN_H)
-# define KERNELTAP_LINUX 1
+# define KERNELTUN_LINUX 1
 #elif defined(HAVE_NET_IF_TUN_H)
-# define KERNELTAP_NET 1
+# define KERNELTUN_NET 1
+#elif defined(__APPLE__)
+# define KERNELTUN_OSX 1 
+// assume tun driver installed from http://chrisp.de/en/projects/tunnel.html
+// this driver doesn't produce or expect packets with an address family prepended
 #endif
 
+#include <net/if.h>
 #if HAVE_NET_IF_TUN_H
-# include <net/if.h>
 # include <net/if_tun.h>
 #elif HAVE_LINUX_IF_TUN_H
-# include <linux/if.h>
 # include <linux/if_tun.h>
 #endif
 
@@ -48,6 +51,7 @@ CLICK_DECLS
 
 KernelTap::KernelTap()
   : Element(1, 1), _fd(-1), _task(this),
+    _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
     _ignore_q_errs(false), _printed_write_err(false), _printed_read_err(false)
 {
   MOD_INC_USE_COUNT;
@@ -61,17 +65,18 @@ KernelTap::~KernelTap()
 int
 KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    errh->warning("KernelTap is deprecated; use KernelTun instead");
-    
   _gw = IPAddress();
-  _headroom = 0;
+  _headroom = Packet::DEFAULT_HEADROOM;
+  _mtu_out = DEFAULT_MTU;
+
   if (cp_va_parse(conf, this, errh,
 		  cpIPPrefix, "network address", &_near, &_mask,
 		  cpOptional,
-		  cpIPAddress, "default gateway", &_gw,
-		  cpUnsigned, "packet data headroom", &_headroom,
 		  cpKeywords,
+		  "HEADROOM", cpUnsigned, "default headroom for generated packets", &_headroom,
+		  "ETHER", cpEthernetAddress, "fake device Ethernet address", &_macaddr,
 		  "IGNORE_QUEUE_OVERFLOWS", cpBool, "ignore queue overflow errors?", &_ignore_q_errs,
+		  "MTU", cpInteger, "MTU", &_mtu_out,
 		  cpEnd) < 0)
     return -1;
 
@@ -88,7 +93,7 @@ KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-#if KERNELTAP_LINUX
+#if KERNELTUN_LINUX
 int
 KernelTap::try_linux_universal(ErrorHandler *errh)
 {
@@ -98,7 +103,7 @@ KernelTap::try_linux_universal(ErrorHandler *errh)
 
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
-    ifr.ifr_flags = IFF_TUN;
+    ifr.ifr_flags = IFF_TAP;
     int err = ioctl(fd, TUNSETIFF, (void *)&ifr);
     if (err < 0) {
 	errh->warning("Linux universal tun failed: %s", strerror(errno));
@@ -122,7 +127,6 @@ KernelTap::try_tun(const String &dev_name, ErrorHandler *)
 	return -errno;
 
     _dev_name = dev_name;
-    _type = LINUXBSD_TUN;
     _fd = fd;
     return 0;
 }
@@ -135,15 +139,16 @@ KernelTap::try_tun(const String &dev_name, ErrorHandler *)
 int
 KernelTap::alloc_tun(ErrorHandler *errh)
 {
-#if !KERNELTAP_LINUX && !KERNELTAP_NET
-    return errh->error("KernelTap is not yet supported on this system.\n(Please report this message to click@pdos.lcs.mit.edu.)");
+    #if !KERNELTUN_LINUX && !KERNELTUN_NET && !KERNELTUN_OSX
+    return errh->error("KernelTun is not yet supported on this system.\n(Please report this message to click@pdos.lcs.mit.edu.)");
 #endif
 
     int error, saved_error = 0;
     String saved_device, saved_message;
     StringAccum tried;
     
-#if KERNELTAP_LINUX
+#if KERNELTUN_LINUX
+    _type = LINUX_UNIVERSAL;
     if ((error = try_linux_universal(errh)) >= 0)
 	return error;
     else if (!saved_error || error != -ENOENT) {
@@ -155,8 +160,13 @@ KernelTap::alloc_tun(ErrorHandler *errh)
 #endif
 
 #ifdef __linux__
+    _type = LINUX_ETHERTAP;
     String dev_prefix = "tap";
+#elif defined(KERNELTUN_OSX)
+    _type = OSX_TUN;
+    String dev_prefix = "tun";
 #else
+    _type = BSD_TUN;
     String dev_prefix = "tun";
 #endif
 
@@ -203,6 +213,21 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
     }
 #endif
     
+
+    if (_macaddr) {
+	sprintf(tmp, "/sbin/ifconfig %s hw ether %s", _dev_name.cc(),
+		_macaddr.s().cc());
+	if (system(tmp) != 0) {
+	    errh->error("%s: %s", tmp, strerror(errno));
+	}
+	
+	sprintf(tmp, "/sbin/ifconfig %s arp", _dev_name.cc());
+	if (system(tmp) != 0) 
+	    return errh->error("%s: %s", tmp, strerror(errno));
+    }
+
+    
+
 #if defined(TUNSIFHEAD) || defined(__FreeBSD__)
     // Each read/write prefixed with a 32-bit address family,
     // just as in OpenBSD.
@@ -234,7 +259,17 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
 	if (system(tmp) != 0)
 	    return errh->error("%s: %s", tmp, strerror(errno));
     }
-    
+
+        // calculate maximum packet size needed to receive data from
+    // tun/tap.
+    if (_type == LINUX_UNIVERSAL)
+	_mtu_in = _mtu_out + 4;
+    else if (_type == BSD_TUN)
+	_mtu_in = _mtu_out + 4;
+    else if (_type == OSX_TUN)
+	_mtu_in = _mtu_out + 4; // + 0?
+    else /* _type == LINUX_ETHERTAP */
+	_mtu_in = _mtu_out + 16;
     return 0;
 }
 
@@ -273,59 +308,37 @@ KernelTap::cleanup(CleanupStage)
 void
 KernelTap::selected(int fd)
 {
-#if KERNELTAP_LINUX || KERNELTAP_NET
-    int cc;
-    unsigned char b[2048];
-
     if (fd != _fd)
 	return;
-  
-    cc = read(_fd, b, sizeof(b));
+    WritablePacket *p = Packet::make(_headroom, 0, _mtu_in, 0);
+    if (!p) {
+	click_chatter("out of memory!");
+	return;
+    }
+    
+    int cc = read(_fd, p->data(), _mtu_in);
     if (cc > 0) {
-# if KERNELTAP_NET
-	// BSDs prefix packet with 32-bit address family.
-	int af = ntohl(*(unsigned *)b);
-	struct click_ether *e;
-	WritablePacket *p = Packet::make(_headroom + cc - 4 + sizeof(click_ether));
-	p->pull(_headroom);
-	e = (struct click_ether *) p->data();
-	memset(e, '\0', sizeof(*e));
-	if(af == AF_INET){
-	    e->ether_type = htons(ETHERTYPE_IP);
-	} else if(af == AF_INET6){
-	    e->ether_type = htons(ETHERTYPE_IP6);
-	} else {
-	    click_chatter("KernelTap: don't know af %d", af);
-	    p->kill();
-	    return;
-	}
-	memcpy(p->data() + sizeof(click_ether), b + 4, cc - 4);
-# elif KERNELTAP_LINUX
-	Packet *p = Packet::make(_headroom, b, cc, 0);
-	if (_type == LINUX_UNIVERSAL)
-	    /* Two zero bytes of padding, then the Ethernet type, then the
-	       Ethernet header including the type */
-	    /* XXX alignment */
+	p->take(_mtu_in - cc);
+	
+	if (_type == LINUX_UNIVERSAL) {
+	    // 2-byte padding followed by an Ethernet type
 	    p->pull(4);
-	else
-	    /* Two zero bytes of padding, then the Ethernet header */
+	} else if (_type == BSD_TUN) {
+	    // 4-byte address family followed by IP header
+	    p->pull(4);
+	} else if (_type == OSX_TUN) {
+	} else { /* _type == LINUX_ETHERTAP */
 	    p->pull(2);
-# endif
-
-	struct timeval tv;
-	int res = gettimeofday(&tv, 0);
-	if (res == 0) 
-	    p->set_timestamp_anno(tv);
+	}
+	
+	(void) click_gettimeofday(&p->timestamp_anno());
 	output(0).push(p);
     } else {
 	if (!_ignore_q_errs || !_printed_read_err || (errno != ENOBUFS)) {
 	    _printed_read_err = true;
-	    perror("KernelTap read");
+	    perror("KernelTun read");
 	}
     }
-#else
-    (void) fd;
-#endif
 }
 
 bool
@@ -344,82 +357,46 @@ KernelTap::push(int, Packet *p)
     // Every packet has a 14-byte Ethernet header.
     // Extract the packet type, then ignore the Ether header.
 
+    const click_ip *iph = p->ip_header();
     click_ether *e = (click_ether *) p->data();
+    
+    if (!iph) {
+	click_chatter("KernelTun(%s): no network header", _dev_name.cc());
+	p->kill();
+    }
     if(p->length() < sizeof(*e)){
 	click_chatter("KernelTap: packet to small");
 	p->kill();
 	return;
     }
-    int type = ntohs(e->ether_type);
-    const unsigned char *data = p->data() + sizeof(*e);
-    unsigned length = p->length() - sizeof(*e);
-
-    int num_written;
-    int num_expected_written;
-#if KERNELTAP_NET
-    char big[2048];
-    int af;
-
-    if(type == ETHERTYPE_IP){
-	af = AF_INET;
-    } else if(type == ETHERTYPE_IP6){
-	af = AF_INET6;
-    } else {
-	click_chatter("KernelTap: unknown ether type %04x", type);
-	p->kill();
-	return;
+    WritablePacket *q;
+    if (_type == LINUX_UNIVERSAL) {
+	// 2-byte padding followed by an Ethernet type
+	uint32_t ethertype = (iph->ip_v == 4 ? htonl(ETHERTYPE_IP) : htonl(ETHERTYPE_IP6));
+	if ((q = p->push(4)))
+	    *(uint32_t *)(q->data()) = ethertype;
+    } else if (_type == BSD_TUN) { 
+	uint32_t af = (iph->ip_v == 4 ? htonl(AF_INET) : htonl(AF_INET6));
+	if ((q = p->push(4)))
+	    *(uint32_t *)(q->data()) = af;
+    } else if (_type == OSX_TUN) {
+	// send raw IP
+	q = p->uniqueify();
+    } else { /* _type == LINUX_ETHERTAP */
+	q = p->push(2);
     }
-
-    if(length+4 >= sizeof(big)){
-	click_chatter("KernelTap: packet too big (%d bytes)", length);
-	p->kill();
-	return;
-    }
-    af = htonl(af);
-    memcpy(big, &af, 4);
-    memcpy(big+4, data, length);
-  
-    num_written = write(_fd, big, length + 4);
-    num_expected_written = (int) length + 4;
-#elif KERNELTAP_LINUX
-    /*
-     * Ethertap is linux equivalent of/dev/tun; wants ethernet header plus 2
-     * alignment bytes */
-    char big[2048];
-    /*
-     * ethertap driver is very picky about what address we use here.
-     * e.g. if we have the wrong address, linux might ignore all the
-     * packets, or accept udp or icmp, but ignore tcp.  aaarrrgh, well
-     * this works.  -ddc */
-    char to[] = { 0xfe, 0xfd, 0x0, 0x0, 0x0, 0x0 }; 
-    char *from = to;
-    short protocol = htons(type);
-    if(length+16 >= sizeof(big)){
-	fprintf(stderr, "bimtun writetun pkt too big\n");
-	return;
-    }
-    memset(big, 0, 16);
-    memcpy(big+2, from, sizeof(from)); // linux won't accept ethertap packets from eth addr 0.
-    memcpy(big+8, to, sizeof(to)); // linux TCP doesn't like packets to 0??
-    memcpy(big+14, &protocol, 2);
-    memcpy(big+16, data, length);
-
-    num_written = write(_fd, big, length + 16);
-    num_expected_written = (int) length + 16;
-#else
-    (void) type;
-    num_written = write(_fd, data, length);
-    num_expected_written = (int) length;
-#endif
-
-    if (num_written != num_expected_written &&
-	(!_ignore_q_errs || !_printed_write_err || (errno != ENOBUFS))) {
-	_printed_write_err = true;
-	perror("KernelTap write");
-    }
-
-    p->kill();
+    
+    if (q) {
+	int w = write(_fd, q->data(), q->length());
+	if (w != (int) q->length() && (errno != ENOBUFS || !_ignore_q_errs || !_printed_write_err)) {
+	    _printed_write_err = true;
+	    click_chatter("KernelTun(%s): write failed: %s", _dev_name.cc(), strerror(errno));
+	}
+	q->kill();
+    } else
+	click_chatter("%{element}: out of memory", this);
 }
+
 
 String
 KernelTap::print_dev_name(Element *e, void *) 
