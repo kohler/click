@@ -105,7 +105,8 @@ to_grid_if :: TTLChecker;
 to_grid_if [0] -> FixSrcLoc(li)
                -> PingPong(ls)
                -> SetGridChecksum
-	       -> ToDevice(GRID_NET_DEVICE);
+	       -> ToDevice(GRID_NET_DEVICE, SET_ERROR_ANNO true) 
+               -> GridTxError;
 
 // linux ip layer els
 tun0 :: KernelTap(GRID_IP/GRID_NETMASK, 1.2.3.4, TUN_INPUT_HEADROOM)
