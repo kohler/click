@@ -35,15 +35,13 @@
  * OF SUCH DAMAGE.
  *
  * $FreeBSD: src/sys/crypto/rc4/rc4.h,v 1.3 2000/07/16 05:53:14 peter Exp $
- * $Id: rc4.hh,v 1.1 2005/01/06 18:05:11 jbicket Exp $
+ * $Id: rc4.hh,v 1.2 2005/01/06 23:04:00 jbicket Exp $
  */
 
-#ifndef _SYS_CRYPTO_RC4_RC4_H_
-#define _SYS_CRYPTO_RC4_RC4_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef CLICK_RC4
+#define CLICK_RC4
 
+#include <click/config.h>
 struct rc4_state {
 	unsigned char	perm[256];
 	unsigned char	index1;
@@ -54,9 +52,8 @@ extern void rc4_init(struct rc4_state *state, const unsigned char *key, int keyl
 extern void rc4_crypt_skip(struct rc4_state *state,
 		const unsigned char *inbuf, unsigned char *outbuf, int buflen, int skip);
 
-#ifdef __cplusplus
-}
-#endif
+
+extern u_int32_t rfc_2083_crc_update(u_int32_t crc, u_int8_t *buf, int len);
 
 #endif
 

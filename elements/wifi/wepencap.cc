@@ -74,13 +74,18 @@ WepEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _debug = false;
   _strict = false;
+  _keyid = 0;
   if (cp_va_parse(conf, this, errh,
+		  cpOptional, 
+		  cpString, "key", &_key,
 		  /* not required */
 		  cpKeywords,
+		  "KEYID", _keyid,
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  "STRICT", cpBool, "strict header check", &_strict,
 		  cpEnd) < 0)
     return -1;
+  memset(&_rc4, 0,sizeof(_rc4));
   return 0;
 }
 
@@ -89,11 +94,28 @@ WepEncap::simple_action(Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
   struct click_wifi *w = (struct click_wifi *) p->data();
-
+  int type = w->i_fc[0] & WIFI_FC0_TYPE_MASK;
+  int subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
+  if (type != WIFI_FC0_TYPE_DATA &&
+      !(type == WIFI_FC0_TYPE_MGT && subtype == WIFI_FC0_SUBTYPE_AUTH)) {
+    /* only encrypt data and auth frames */
+    return p;
+  }
   w->i_fc[1] |= WIFI_FC1_WEP;
 
   p->push(WIFI_WEP_HEADERSIZE);
   memmove((void *) p->data(), p->data() + WIFI_WEP_HEADERSIZE, sizeof(click_wifi));
+  u_int8_t *ivp = p->data() + sizeof(click_wifi);
+  u_int32_t iv = random()  & 0xffffff;
+  if ((iv & 0xff00) == 0xff00) {
+    int B = (iv & 0xff0000) >> 16;
+    if (3 <= B && B < 16)
+      iv += 0x0100;
+  }
+
+  memcpy(ivp, &iv, 3);
+  ivp[3] = _keyid;
+	
 
   u_int8_t rc4key[WIFI_WEP_IVLEN + WIFI_KEYBUF_SIZE];
   u_int8_t crcbuf[WIFI_WEP_CRCLEN];
@@ -102,12 +124,12 @@ WepEncap::simple_action(Packet *p_in)
 
   
   memcpy(rc4key, p->data() + sizeof(click_wifi), WIFI_WEP_IVLEN);
-  memcpy(rc4key + WIFI_WEP_IVLEN, key, keylen);
-  rc4_init(&_rc4, rc4key, WIFI_WEP_IVLEN + keylen);
+  memcpy(rc4key + WIFI_WEP_IVLEN, _key.cc(), _key.length());
+  rc4_init(&_rc4, rc4key, WIFI_WEP_IVLEN + _key.length());
   
   /* calculate CRC over unencrypted data */
-  crc = update_crc(~0,
-		   (char *)(p->data() + sizeof(click_wifi) + WIFI_WEP_HEADERSIZE),
+  crc = rfc_2083_crc_update(~0,
+		   (p->data() + sizeof(click_wifi) + WIFI_WEP_HEADERSIZE),
 		   p->length() - (sizeof(click_wifi) + WIFI_WEP_HEADERSIZE)); 
 
   /* encrypt data */
@@ -119,7 +141,9 @@ WepEncap::simple_action(Packet *p_in)
   /* tack on ICV */
   *(u_int32_t *)crcbuf = cpu_to_le32(~crc);
   p = p->put(WIFI_WEP_CRCLEN);
-  rc4_crypt_skip(&_rc4, icv, crcbuf, WIFI_WEP_CRCLEN, 0);
+  icv = p->end_data() - WIFI_WEP_CRCLEN;
+  rc4_crypt_skip(&_rc4, crcbuf, icv, WIFI_WEP_CRCLEN, 0);
+
   return p;
 	  
 }

@@ -53,8 +53,8 @@ class WepEncap : public Element { public:
 
   u_int32_t iv;
   struct rc4_state _rc4;
-  u_int8_t key[16];
-  int keylen;
+  String _key;
+  int _keyid;
  private:
 
 };

@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <clicknet/ether.h>
 #include <elements/wifi/rc4.hh>
+#include <clicknet/wifi.h>
 CLICK_DECLS
 
 /*
@@ -53,8 +54,7 @@ class WepDecap : public Element { public:
 
   u_int32_t iv;
   struct rc4_state _rc4;
-  u_int8_t key[16];
-  int keylen;
+  String _keys[WIFI_WEP_NKID];
  private:
 
 };

@@ -114,4 +114,48 @@ rc4_crypt_skip(struct rc4_state *const state,
 	}
 }
 
+
+/*                                                                                  
+ * CRC 32 -- routine from RFC 2083                                                  
+ */
+
+/* Table of CRCs of all 8-bit messages */
+static u_int32_t crc_table[256];
+
+/* Make the table for a fast CRC. */
+static void
+crc_init(void)
+{
+  u_int32_t c;
+  int n, k;
+  
+  for (n = 0; n < 256; n++) {
+    c = (u_int32_t)n;
+    for (k = 0; k < 8; k++) {
+      if (c & 1)
+	c = 0xedb88320UL ^ (c >> 1);
+      else
+	c = c >> 1;
+    }
+    crc_table[n] = c;
+  }
+}
+
+u_int32_t
+rfc_2083_crc_update(u_int32_t crc, u_int8_t *buf, int len)
+{
+  u_int8_t *endbuf;
+  static int initialized = 0;
+
+  if (initialized == 0) {
+    initialized = 1;
+    crc_init();
+  }
+
+  for (endbuf = buf + len; buf < endbuf; buf++)
+    crc = crc_table[(crc ^ *buf) & 0xff] ^ (crc >> 8);
+  return crc;
+}
+
+
 ELEMENT_PROVIDES(rc4)

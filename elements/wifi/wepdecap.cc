@@ -15,6 +15,37 @@
  * legally binding.
  */
 
+/*-
+ * Copyright (c) 2002-2005 Sam Leffler, Errno Consulting
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * Alternatively, this software may be distributed under the terms of the
+ * GNU General Public License ("GPL") version 2 as published by the Free
+ * Software Foundation.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include <click/config.h>
 #include "wepdecap.hh"
 #include <click/etheraddress.hh>
@@ -45,13 +76,22 @@ WepDecap::configure(Vector<String> &conf, ErrorHandler *errh)
   _strict = false;
   if (cp_va_parse(conf, this, errh,
 		  /* not required */
+		  cpOptional, 
+		  cpString, "key", &_keys[0],
+		  cpString, "key", &_keys[1],
+		  cpString, "key", &_keys[2],
+		  cpString, "key", &_keys[3],
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  "STRICT", cpBool, "strict header check", &_strict,
 		  cpEnd) < 0)
     return -1;
+  memset(&_rc4, 0,sizeof(_rc4));
   return 0;
 }
+
+
+
 
 Packet *
 WepDecap::simple_action(Packet *p_in)
@@ -69,35 +109,47 @@ WepDecap::simple_action(Packet *p_in)
   u_int8_t rc4key[WIFI_WEP_IVLEN + WIFI_KEYBUF_SIZE];
   u_int8_t crcbuf[WIFI_WEP_CRCLEN];
   u_int8_t *icv;
+  u_int8_t *icp = p->data() + sizeof(click_wifi);
   u_int32_t crc;
-  memcpy(rc4key, p->data() + sizeof(click_wifi), WIFI_WEP_IVLEN);
-  memcpy(rc4key + WIFI_WEP_IVLEN, key, keylen);
+  u_int32_t iv;
+  u_int8_t keyid = icp[WIFI_WEP_IVLEN];
 
-  rc4_init(&_rc4, key, WIFI_WEP_IVLEN + keylen);
+  iv = icp[0] | (icp[1] << 8) | (icp[2] << 16) | (icp[3] << 24);
 
+  memcpy(rc4key, icp, WIFI_WEP_IVLEN);
+  memcpy(rc4key + WIFI_WEP_IVLEN, _keys[keyid].cc(), _keys[keyid].length());
+  rc4_init(&_rc4, rc4key, WIFI_WEP_IVLEN + _keys[keyid].length());
+
+  u_int8_t *payload = p->data() + sizeof(click_wifi) + WIFI_WEP_HEADERSIZE;
+  int payload_len = p->length() - (sizeof(click_wifi) + WIFI_WEP_HEADERSIZE + WIFI_WEP_CRCLEN);
   /* decrypt data */
-  rc4_crypt_skip(&_rc4,
-		 p->data() + sizeof(click_wifi) + WIFI_WEP_HEADERSIZE,
-		 p->data() + sizeof(click_wifi) + WIFI_WEP_HEADERSIZE,
-		 p->length() - (sizeof(click_wifi) + WIFI_WEP_HEADERSIZE + WIFI_WEP_CRCLEN),
-		 0);
+  rc4_crypt_skip(&_rc4, payload, payload, payload_len, 0);
+
   /* calculate CRC over unencrypted data */
-  crc = update_crc(~0,
-		   (char *) (p->data() + sizeof(click_wifi) + WIFI_WEP_HEADERSIZE),
-		   p->length() - (sizeof(click_wifi) + WIFI_WEP_HEADERSIZE + WIFI_WEP_CRCLEN));
+  crc = rfc_2083_crc_update(~0, payload, payload_len);
+
   /* decrypt ICV and compare to CRC */
-  icv = p->data() + (p->length() - WIFI_WEP_CRCLEN);
-  rc4_crypt_skip(&_rc4, crcbuf, icv, WIFI_WEP_CRCLEN, 0);
+  icv = payload + payload_len;
+  rc4_crypt_skip(&_rc4, icv, crcbuf, WIFI_WEP_CRCLEN, 0);
   
   if (crc != ~le32_to_cpu(*(u_int32_t *)crcbuf)) {
+    click_chatter("crc failed keyid %d iv %d %x wanted %x %x\n",
+		  keyid,
+		  iv,
+		  crc, 
+		  ~le32_to_cpu(*(u_int32_t *)crcbuf),
+		  *(u_int32_t *)crcbuf);
     /* packet failed decrypt */
-    checked_output_push(1, p);
+    return p;
   }
   /* strip the wep header off */
   memmove((void *)(p->data() + WIFI_WEP_HEADERSIZE), p->data(), sizeof(click_wifi));
   p->pull(WIFI_WEP_HEADERSIZE);
   /* strip the wep crc off the tail of the packet */
   p->take(WIFI_WEP_CRCLEN);
+
+  w = (struct click_wifi *) p->data();
+  w->i_fc[1] &= ~WIFI_FC1_WEP;
   return p;
 }
 
