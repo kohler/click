@@ -47,11 +47,11 @@
 /* Define if IPsec support is enabled. */
 #undef HAVE_IPSEC
 
+/* Define if packet timestamps are measured in nanoseconds. */
+#undef HAVE_NANOTIMESTAMP
+
 /* Define if you want to use the stride scheduler. */
 #undef HAVE_STRIDE_SCHED
-#ifndef HAVE_STRIDE_SCHED
-# define RR_SCHED
-#endif
 
 /* Define to 1 since we have Strings. */
 #define HAVE_STRING 1
@@ -69,6 +69,9 @@
 
 /* The size of a `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
+
+/* The size of a `struct timeval', as computed by sizeof. */
+#undef SIZEOF_STRUCT_TIMEVAL
 
 /* Define if you want to run multithreaded Click. */
 #undef __MTCLICK__

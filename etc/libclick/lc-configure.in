@@ -107,9 +107,20 @@ if test "x$enable_int64" = xyes; then
     AC_CHECK_SIZEOF(long long)
     CLICK_CHECK_INT64_TYPES
 fi
+AC_CHECK_SIZEOF(struct timeval)
 CLICK_CHECK_ENDIAN
 CLICK_CHECK_ADDRESSABLE_VA_LIST
 CLICK_CHECK_INTEGER_BUILTINS
+
+
+dnl
+dnl nanosecond-precision timestamps
+dnl
+
+AC_ARG_ENABLE(nanotimestamp, [  --enable-nanotimestamp  enable nanosecond timestamps], :, enable_nanotimestamp=yes)
+if test "x$enable_nanotimestamp" = xyes; then
+    AC_DEFINE(HAVE_NANOTIMESTAMP)
+fi
 
 
 dnl
@@ -332,12 +343,11 @@ fi
 shell_expand bindir
 shell_expand libdir
 shell_expand datadir
-shell_expand infodir
 
 AC_DEFINE_UNQUOTED(CLICK_BINDIR, "$bindir")
 AC_DEFINE_UNQUOTED(CLICK_LIBDIR, "$libdir")
 AC_DEFINE_UNQUOTED(CLICK_SHAREDIR, "$datadir/click")
-AC_DEFINE_UNQUOTED(CLICK_INFODIR, "$infodir")
+
 
 dnl
 dnl Provisions
