@@ -1,3 +1,8 @@
+2002-07-31 Wednesday 15:03  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/: todump.cc (1.38), todump.hh (1.26): ToDump
+	emits packets on its output, if you give it an output
+
 2002-07-29 Monday 17:06  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* userlevel/click.cc (1.68): avoid warnings on macos x for long
