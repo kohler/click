@@ -48,6 +48,7 @@ class WifiDecap : public Element { public:
 
 
   bool _debug;
+  bool _strict;
  private:
 
 };

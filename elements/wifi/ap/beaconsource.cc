@@ -38,11 +38,13 @@ CLICK_DECLS
 #define max(x,y)      ((x)>(y) ? (x) : (y))
 
 BeaconSource::BeaconSource()
-  : Element(0, 1),
+  : Element(1, 1),
     _timer(this),
     _rtable(0)
 {
   MOD_INC_USE_COUNT;
+  _bcast = EtherAddress();
+  memset(_bcast.data(), 0xff, 6);
 }
 
 BeaconSource::~BeaconSource()
@@ -93,71 +95,83 @@ BeaconSource::initialize (ErrorHandler *)
 void
 BeaconSource::run_timer() 
 {
-  send_beacon();
+  send_beacon(_bcast, false);
   _timer.schedule_after_ms(_interval_ms);
 }
 
 void
-BeaconSource::send_beacon()
+BeaconSource::send_beacon(EtherAddress dst, bool probe)
 {
 
   Vector<int> rates = _rtable->lookup(_bssid);
-  int len = sizeof (struct click_wifi) + 
+  int max_len = sizeof (struct click_wifi) + 
     8 +                  /* timestamp */
     2 +                  /* beacon interval */
     2 +                  /* cap_info */
     2 + _ssid.length() + /* ssid */
-    2 + min(WIFI_RATES_MAXSIZE, rates.size()) +  /* rates */
+    2 + WIFI_RATES_MAXSIZE +  /* rates */
+    2 + WIFI_RATES_MAXSIZE +  /* xrates */
     2 + 1 +              /* ds parms */
     2 + 4 +              /* tim */
     0;
     
-  WritablePacket *p = Packet::make(len);
+
+  WritablePacket *p = Packet::make(max_len);
 
   if (p == 0)
     return;
 
   struct click_wifi *w = (struct click_wifi *) p->data();
 
-  w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_BEACON;
+  w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT;
+  if (probe) {
+    w->i_fc[0] |= WIFI_FC0_SUBTYPE_PROBE_RESP;
+  } else {
+    w->i_fc[0] |=  WIFI_FC0_SUBTYPE_BEACON;
+  }
+
   w->i_fc[1] = WIFI_FC1_DIR_NODS;
 
-  memset(w->i_addr1, 0xff, 6);
+  memcpy(w->i_addr1, dst.data(), 6);
   memcpy(w->i_addr2, _bssid.data(), 6);
   memcpy(w->i_addr3, _bssid.data(), 6);
 
-  
   *(uint16_t *) w->i_dur = 0;
   *(uint16_t *) w->i_seq = 0;
 
   uint8_t *ptr;
   
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
+  int actual_length = sizeof (struct click_wifi);
+
 
   /* timestamp is set in the hal. ??? */
   memset(ptr, 0, 8);
   ptr += 8;
-
+  actual_length += 8;
   
   uint16_t beacon_int = (uint16_t) _interval_ms;
   *(uint16_t *)ptr = cpu_to_le16(beacon_int);
   ptr += 2;
+  actual_length += 2;
 
   uint16_t cap_info = 0;
   cap_info |= WIFI_CAPINFO_ESS;
   *(uint16_t *)ptr = cpu_to_le16(cap_info);
   ptr += 2;
+  actual_length += 2;
 
   /* ssid */
   ptr[0] = WIFI_ELEMID_SSID;
   ptr[1] = _ssid.length();
   memcpy(ptr + 2, _ssid.data(), _ssid.length());
   ptr += 2 + _ssid.length();
+  actual_length += 2 + _ssid.length();
 
   /* rates */
   ptr[0] = WIFI_ELEMID_RATES;
-  ptr[1] = min(WIFI_RATES_MAXSIZE, rates.size());
-  for (int x = 0; x < min (WIFI_RATES_MAXSIZE, rates.size()); x++) {
+  ptr[1] = min(WIFI_RATE_SIZE, rates.size());
+  for (int x = 0; x < min (WIFI_RATE_SIZE, rates.size()); x++) {
     ptr[2 + x] = (uint8_t) rates[x];
     
     if (rates[x] == 2) {
@@ -165,14 +179,33 @@ BeaconSource::send_beacon()
     }
     
   }
-  ptr += 2 + rates.size();
+  ptr += 2 + min(WIFI_RATE_SIZE, rates.size());
+  actual_length += 2 + min(WIFI_RATE_SIZE, rates.size());
+
+
+  int num_xrates = rates.size() - WIFI_RATE_SIZE;
+  if (num_xrates > 0) {
+    /* rates */
+    ptr[0] = WIFI_ELEMID_XRATES;
+    ptr[1] = num_xrates;
+    for (int x = 0; x < num_xrates; x++) {
+      ptr[2 + x] = (uint8_t) rates[x + WIFI_RATE_SIZE];
+      
+      if (rates[x + WIFI_RATE_SIZE] == 2) {
+	ptr [2 + x] |= WIFI_RATE_BASIC;
+      }
+      
+    }
+    ptr += 2 + num_xrates;
+    actual_length += 2 + num_xrates;
+  }
 
   /* channel */
   ptr[0] = WIFI_ELEMID_DSPARMS;
   ptr[1] = 1;
   ptr[2] = (uint8_t) _channel;
   ptr += 2 + 1;
-
+  actual_length += 2 + 1;
 
   /* tim */
 
@@ -184,11 +217,130 @@ BeaconSource::send_beacon()
   ptr[4] = 0; //bitmap control
   ptr[5] = 0; //paritial virtual bitmap
   ptr += 2 + 4;
+  actual_length += 2 + 4;
 
+  p->take(max_len - actual_length);
   SET_WIFI_FROM_CLICK(p);
   output(0).push(p);
 }
 
+
+
+void
+BeaconSource::push(int, Packet *p)
+{
+
+  uint8_t dir;
+  uint8_t type;
+  uint8_t subtype;
+
+  if (p->length() < sizeof(struct click_wifi)) {
+    click_chatter("%{element}: packet too small: %d vs %d\n",
+		  this,
+		  p->length(),
+		  sizeof(struct click_wifi));
+
+    p->kill();
+    return;
+	      
+  }
+  struct click_wifi *w = (struct click_wifi *) p->data();
+
+
+  dir = w->i_fc[1] & WIFI_FC1_DIR_MASK;
+  type = w->i_fc[0] & WIFI_FC0_TYPE_MASK;
+  subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
+
+  if (type != WIFI_FC0_TYPE_MGT) {
+    click_chatter("%{element}: received non-management packet\n",
+		  this);
+    p->kill();
+    return;
+  }
+
+  if (subtype != WIFI_FC0_SUBTYPE_PROBE_REQ) {
+    click_chatter("%{element}: received non-probe-req packet\n",
+		  this);
+    p->kill();
+    return;
+  }
+
+  uint8_t *ptr;
+  
+  ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
+
+  uint8_t *end  = (uint8_t *) p->data() + p->length();
+
+  uint8_t *ssid_l = NULL;
+  uint8_t *rates_l = NULL;
+
+  while (ptr < end) {
+    switch (*ptr) {
+    case WIFI_ELEMID_SSID:
+      ssid_l = ptr;
+      break;
+    case WIFI_ELEMID_RATES:
+      rates_l = ptr;
+      break;
+    default:
+      if (_debug) {
+	click_chatter("%{element}: ignored element id %u %u \n",
+		      this,
+		      *ptr,
+		      ptr[1]);
+      }
+    }
+    ptr += ptr[1] + 2;
+
+  }
+
+  StringAccum sa;
+  String ssid = "";
+  if (ssid_l && ssid_l[1]) {
+    ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
+  }
+
+
+  /* respond to blank ssid probes also */
+  if (ssid != "" && ssid != _ssid) {
+    if (_debug) {
+      click_chatter("%{element}: other ssid %s wanted %s\n",
+		    this,
+		    ssid.cc(),
+		    _ssid.cc());
+    }
+    p->kill();
+    return;
+  }
+  
+  EtherAddress src = EtherAddress(w->i_addr2);
+
+  sa << "ProbeReq: " << src << " ssid " << ssid << " ";
+
+  sa << "rates {";
+  if (rates_l) {
+    for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
+      uint8_t rate = rates_l[x + 2];
+      
+      if (rate & WIFI_RATE_BASIC) {
+	sa << " * " << (int) (rate ^ WIFI_RATE_BASIC);
+      } else {
+	sa << " " << (int) rate;
+      }
+    }
+  }
+  sa << " }";
+
+  if (_debug) {
+    click_chatter("%{element}: %s\n",
+		  this,
+		  sa.take_string().cc());
+  }
+  send_beacon(src, true);
+  
+  p->kill();
+  return;
+}
 
 enum {H_DEBUG, H_BSSID, H_SSID, H_CHANNEL, H_INTERVAL};
 
@@ -280,3 +432,4 @@ BeaconSource::add_handlers()
 #endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(BeaconSource)
+  

@@ -134,6 +134,7 @@ BeaconScanner::simple_action(Packet *p)
 
   uint8_t *ssid_l = NULL;
   uint8_t *rates_l = NULL;
+  uint8_t *xrates_l = NULL;
   uint8_t *ds_l = NULL;
   while (ptr < end) {
     switch (*ptr) {
@@ -142,6 +143,9 @@ BeaconScanner::simple_action(Packet *p)
       break;
     case WIFI_ELEMID_RATES:
       rates_l = ptr;
+      break;
+    case WIFI_ELEMID_XRATES:
+      xrates_l = ptr;
       break;
     case WIFI_ELEMID_FHPARMS:
       break;
@@ -206,8 +210,22 @@ BeaconScanner::simple_action(Packet *p)
   Vector<int> all_rates;
   click_gettimeofday(&ap->_last_rx);
   if (rates_l) {
-    for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
+    for (int x = 0; x < min((int)rates_l[1], WIFI_RATE_SIZE); x++) {
       uint8_t rate = rates_l[x + 2];
+      
+      if (rate & WIFI_RATE_BASIC) {
+	ap->_basic_rates.push_back((int)(rate & WIFI_RATE_VAL));
+      } else {
+	ap->_rates.push_back((int)(rate & WIFI_RATE_VAL));
+      }
+      all_rates.push_back((int)(rate & WIFI_RATE_VAL));
+    }
+  }
+
+  
+  if (xrates_l) {
+    for (int x = 0; x < min((int)xrates_l[1], WIFI_RATE_SIZE); x++) {
+      uint8_t rate = xrates_l[x + 2];
       
       if (rate & WIFI_RATE_BASIC) {
 	ap->_basic_rates.push_back((int)(rate & WIFI_RATE_VAL));
@@ -244,7 +262,7 @@ BeaconScanner::scan_string()
     }
 
     sa << "last_rx " << now - ap._last_rx << " ";
-    sa << "+" << ap._rssi << " ";
+    sa << "rssi " << ap._rssi << " ";
     sa << "beacon_interval " << ap._beacon_int << " ";
     sa << "[ ";
     if (ap._capability & WIFI_CAPINFO_ESS) {

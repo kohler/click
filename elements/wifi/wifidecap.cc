@@ -41,10 +41,12 @@ WifiDecap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
+  _strict = false;
   if (cp_va_parse(conf, this, errh,
 		  /* not required */
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
+		  "STRICT", cpBool, "strict header check", &_strict,
 		  cpEnd) < 0)
     return -1;
   return 0;
@@ -58,30 +60,17 @@ WifiDecap::simple_action(Packet *p)
   uint8_t dir;
   uint8_t type;
   uint8_t subtype;
-
-
-  if (p->length() < sizeof(struct click_wifi)) {
-    if (0) {
-      click_chatter("%{element}: packet too small: %d vs %d\n",
-		    this,
-		    p->length(),
-		    sizeof(struct click_wifi));
-    }
-      
-    p->kill();
-    return 0;
-	      
-  }
   struct click_wifi *w = (struct click_wifi *) p->data();
-
   EtherAddress bssid;
   EtherAddress src;
   EtherAddress dst;
 
+  if (p->length() < sizeof(struct click_wifi)) {
+    p->kill();
+    return 0;
+  }
+  
   dir = w->i_fc[1] & WIFI_FC1_DIR_MASK;
-  type = w->i_fc[0] & WIFI_FC0_TYPE_MASK;
-  subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
-
 
   switch (dir) {
   case WIFI_FC1_DIR_NODS:
@@ -105,34 +94,44 @@ WifiDecap::simple_action(Packet *p)
     bssid = EtherAddress(w->i_addr3);
     break;
   default:
-    click_chatter("%{element}: invalid dir %d\n",
-		  this,
-		  dir);
-    p->kill();
-    return 0;
+    if (_strict) {
+      click_chatter("%{element}: invalid dir %d\n",
+		    this,
+		    dir);
+      p->kill();
+      return 0;
+    }
+    dst = EtherAddress(w->i_addr1);
+    src = EtherAddress(w->i_addr2);
+    bssid = EtherAddress(w->i_addr3);
   }
 
   WritablePacket *p_out = p->uniqueify();
   if (!p_out) {
-    p->kill();
     return 0;
   }
 
   p_out->pull(sizeof(click_wifi));
-
-
+  
   struct click_llc *llc = (struct click_llc *) p_out->data();
 
   uint16_t ether_type;
-  if (llc->llc_dsap == LLC_SNAP_LSAP && llc->llc_ssap == LLC_SNAP_LSAP &&
-      llc->llc_un.type_u.control == LLC_UI && llc->llc_un.type_snap.org_code[0] == 0 &&
-      llc->llc_un.type_snap.org_code[1] == 0 && llc->llc_un.type_snap.org_code[2] == 0) {
+  if (!_strict || 
+      (llc->llc_dsap == LLC_SNAP_LSAP && llc->llc_ssap == LLC_SNAP_LSAP &&
+       llc->llc_un.type_u.control == LLC_UI && llc->llc_un.type_snap.org_code[0] == 0 &&
+       llc->llc_un.type_snap.org_code[1] == 0 && llc->llc_un.type_snap.org_code[2] == 0)) {
     ether_type = llc->llc_un.type_snap.ether_type;
     p_out->pull(sizeof(struct click_llc));
+  } else {
+    p_out->kill();
+    return 0;
   }
 
+  p_out = p_out->push_mac_header(14);
+  if (!p_out) {
+    return 0;
+  }
 
-  p_out->push_mac_header(14);
   memcpy(p_out->data(), dst.data(), 6);
   memcpy(p_out->data() + 6, src.data(), 6);
   memcpy(p_out->data() + 12, &ether_type, 2);

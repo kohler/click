@@ -85,12 +85,13 @@ PrintWifi::simple_action(Packet *p)
   }
 
 
-
-  switch (wh->i_fc[0] & WIFI_FC0_TYPE_MASK) {
+  int type = wh->i_fc[0] & WIFI_FC0_TYPE_MASK;
+  int subtype = wh->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
+  switch (type) {
   case WIFI_FC0_TYPE_MGT:
     sa << "mgt ";
 
-    switch (wh->i_fc[0] & WIFI_FC0_SUBTYPE_MASK) {
+    switch (subtype) {
     case WIFI_FC0_SUBTYPE_ASSOC_REQ:
       sa << "assoc_req ";
       break;
@@ -161,7 +162,6 @@ PrintWifi::simple_action(Packet *p)
     sa << "unknown-type-" << (int) (wh->i_fc[0] & WIFI_FC0_TYPE_MASK) << " ";
   }
 
-
   sa << EtherAddress(wh->i_addr2);
   sa << " -> ";
   sa << " " << EtherAddress(wh->i_addr1);
@@ -171,6 +171,20 @@ PrintWifi::simple_action(Packet *p)
 
   sa << "+" << (int) WIFI_SIGNAL_ANNO(p) << "/" <<  (int) WIFI_NOISE_ANNO(p);
 
+  uint8_t *ptr;
+  ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
+
+  if (subtype == WIFI_FC0_SUBTYPE_AUTH) {
+    uint16_t algo = le16_to_cpu(*(uint16_t *) ptr);
+    ptr += 2;
+    
+    uint16_t seq =le16_to_cpu(*(uint16_t *) ptr);
+    ptr += 2;
+    
+    uint16_t status =le16_to_cpu(*(uint16_t *) ptr);
+    ptr += 2;
+    sa << "alg " << (int)  algo << " seq " << (int) seq << " status " << status;
+  }
   click_chatter("%s\n", sa.cc());
 
   return p;

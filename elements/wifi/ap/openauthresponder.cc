@@ -123,7 +123,11 @@ OpenAuthResponder::push(int, Packet *p)
     return;
   }
 
-  if (seq != 0) {
+  if (seq != 1) {
+    click_chatter("%{element}: auth %d weird sequence number %d\n",
+		  this,
+		  algo,
+		  seq);
     p->kill();
     return;
   }

@@ -48,7 +48,8 @@ class BeaconSource : public Element { public:
   void run_timer();
   int initialize (ErrorHandler *);
 
-  void send_beacon();
+  void send_beacon(EtherAddress, bool);
+  void push(int, Packet *);
 
 
   Timer _timer;
@@ -59,7 +60,7 @@ class BeaconSource : public Element { public:
   class AvailableRates *_rtable;
   int _interval_ms;
 
-
+  EtherAddress _bcast;
   String scan_string();
  private:
 

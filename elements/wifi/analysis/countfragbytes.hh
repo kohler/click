@@ -50,6 +50,19 @@ class CountFragBytes : public Element { public:
 
   unsigned _frag_size;
   int _bytes;
+
+  bool _adaptive;
+  int _adaptive_window;
+
+  int _adaptive_window_bytes;
+  int _adaptive_window_packets;
+
+  int _adaptive_window_larger_bytes;
+
+  int _adaptive_window_smaller_bytes;
+  int _adaptive_window_smaller_packets;
+
+  int _adaptive_window_smaller_sample;
 };
 
 CLICK_ENDDECLS

@@ -51,8 +51,13 @@ class AssociationRequester : public Element { public:
   void add_handlers();
   void reset();
 
+
+  void process_response(Packet *p);
+  void process_disassociation(Packet *p);
   bool _debug;
 
+
+  bool _associated;
   EtherAddress _eth;
   EtherAddress _bssid;
   String _ssid;

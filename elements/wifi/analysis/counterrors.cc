@@ -69,16 +69,10 @@ CountErrors::push (int port, Packet *p_in)
   int ok_bytes = 0;
 
   StringAccum sa;
-  sa << " [\n";
+  if (_runs) {
+    sa << " [\n";
+  }
   for (unsigned int x = 0; x < _length; x++) {
-    if (x > 11 && x < 23) {
-      continue;
-    }
-    if (x == 23 || x == 24) {
-      /* 802.11 sequence bytes */
-      continue;
-    }
-
     bool error = false;
     if (x < p_in->length()) {
       error = (ptr[x] != 0xff);
@@ -86,7 +80,7 @@ CountErrors::push (int port, Packet *p_in)
       error = true;
     }
     if (error) {
-      if (!bad && ok) {
+      if (_runs && !bad && ok) {
 	sa << " ok " << ok << "\n";;
       }
 
@@ -97,7 +91,7 @@ CountErrors::push (int port, Packet *p_in)
 
     } else {
       ok_bytes++;
-      if (bad && !ok) {
+      if (_runs && bad && !ok) {
 	sa << " bad " << bad << "\n";
 	bad_runs++;
       }
@@ -109,21 +103,23 @@ CountErrors::push (int port, Packet *p_in)
   }
 
 
-  if (ok) {
+  if (_runs && ok) {
     sa << " ok " << ok << "\n";
   }
   
-  if (bad) {
+  if (_runs &&bad) {
     sa << " bad " << bad << "\n";
     bad_runs++;
   }
 
-  sa << " ]";
+  if (_runs) {
+    sa << " ]";
+  }
 
   _error_bytes += errors;
   _ok_bytes += ok_bytes;
-
-  sa << "\nerrors " << errors;
+  sa << "ok_bytes " << ok_bytes << "\n";
+  sa << "errors " << errors;
   sa << "\nbad_runs " << bad_runs << "\n";
   click_chatter("%s", sa.take_string().cc());
 

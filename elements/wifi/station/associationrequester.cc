@@ -51,6 +51,7 @@ AssociationRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
+  _associated = false;
   if (cp_va_parse(conf, this, errh,
 		  /* not required */
 		  cpKeywords,
@@ -70,21 +71,20 @@ void
 AssociationRequester::send_assoc_req()
 {
   Vector<int> rates = _rtable->lookup(_bssid);
-  int len = sizeof (struct click_wifi) + 
+  int max_len = sizeof (struct click_wifi) + 
     2 + /* cap_info */
     2 + /* listen_int */
     2 + _ssid.length() +
-    2 + min(8, rates.size());
+    2 + WIFI_RATES_MAXSIZE +  /* rates */
+    2 + WIFI_RATES_MAXSIZE +  /* xrates */
+    0;
     
     
-  WritablePacket *p = Packet::make(len);
-
-
-
+  WritablePacket *p = Packet::make(max_len);
 
   if(p == 0)
     return;
-
+  
 
   if (!rates.size()) {
     click_chatter("%{element}: couldn't lookup rates for %s\n",
@@ -106,6 +106,7 @@ AssociationRequester::send_assoc_req()
   memcpy(w->i_addr3, _bssid.data(), 6);
 
   uint8_t *ptr = (uint8_t *)  p->data() + sizeof(click_wifi);
+  int actual_length = sizeof (struct click_wifi);
 
   uint16_t capability = 0;
   capability |= WIFI_CAPINFO_ESS;
@@ -113,75 +114,64 @@ AssociationRequester::send_assoc_req()
   /* capability */
   *(uint16_t *) ptr = cpu_to_le16(capability);
   ptr += 2;
+  actual_length += 2;
 
   /* listen_int */
   *(uint16_t *) ptr = cpu_to_le16(1);
   ptr += 2;
+  actual_length += 2;
 
   ptr[0] = WIFI_ELEMID_SSID;
   ptr[1] = _ssid.length();
   ptr += 2;
+  actual_length += 2;
 
   memcpy(ptr, _ssid.cc(), _ssid.length());
   ptr += _ssid.length();
-
-
-  ptr[0] = WIFI_ELEMID_RATES;
-  ptr[1] = min(8, rates.size());
-
-  ptr += 2;
-  for (int x = 0; x < min(8, rates.size()); x++) {
-    ptr[x] = rates[x];
-    if (ptr[x] == 2) {
-      ptr[x] |= WIFI_RATE_BASIC;
-    }
-  }
+  actual_length += _ssid.length();
   
+  /* rates */
+  ptr[0] = WIFI_ELEMID_RATES;
+  ptr[1] = min(WIFI_RATE_SIZE, rates.size());
+  for (int x = 0; x < min (WIFI_RATE_SIZE, rates.size()); x++) {
+    ptr[2 + x] = (uint8_t) rates[x];
+    
+    if (rates[x] == 2) {
+      ptr [2 + x] |= WIFI_RATE_BASIC;
+    }
+    
+  }
+  ptr += 2 + min(WIFI_RATE_SIZE, rates.size());
+  actual_length += 2 + min(WIFI_RATE_SIZE, rates.size());
 
+
+  int num_xrates = rates.size() - WIFI_RATE_SIZE;
+  if (num_xrates > 0) {
+    /* rates */
+    ptr[0] = WIFI_ELEMID_XRATES;
+    ptr[1] = num_xrates;
+    for (int x = 0; x < num_xrates; x++) {
+      ptr[2 + x] = (uint8_t) rates[x + WIFI_RATE_SIZE];
+      
+      if (rates[x + WIFI_RATE_SIZE] == 2) {
+	ptr [2 + x] |= WIFI_RATE_BASIC;
+      }
+      
+    }
+    ptr += 2 + num_xrates;
+    actual_length += 2 + num_xrates;
+  }  
+
+  p->take(max_len - actual_length);
   SET_WIFI_FROM_CLICK(p);
+  _associated = false;
   output(0).push(p);
 }
-void
-AssociationRequester::push(int, Packet *p)
+
+void 
+AssociationRequester::process_response(Packet *p) 
 {
-
-  uint8_t dir;
-  uint8_t type;
-  uint8_t subtype;
-
-
-  if (p->length() < sizeof(struct click_wifi)) {
-    click_chatter("%{element}: packet too small: %d vs %d\n",
-		  this,
-		  p->length(),
-		  sizeof(struct click_wifi));
-
-    p->kill();
-    return ;
-	      
-  }
-
   struct click_wifi *w = (struct click_wifi *) p->data();
-
-
-  dir = w->i_fc[1] & WIFI_FC1_DIR_MASK;
-  type = w->i_fc[0] & WIFI_FC0_TYPE_MASK;
-  subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
-
-  if (type != WIFI_FC0_TYPE_MGT) {
-    click_chatter("%{element}: received non-management packet\n",
-		  this);
-    p->kill();
-    return ;
-  }
-
-  if (subtype != WIFI_FC0_SUBTYPE_ASSOC_RESP) {
-    click_chatter("%{element}: received non-assoc response packet\n",
-		  this);
-    p->kill();
-    return ;
-  }
-
   EtherAddress bssid = EtherAddress(w->i_addr3);
   uint8_t *ptr;
   
@@ -258,11 +248,93 @@ AssociationRequester::push(int, Packet *p)
   if (_rtable) {
     _rtable->insert(bssid, all_rates);
   }
-  p->kill();
+
+  if (status == 0) {
+    _associated = true;
+  }
   return;
 }
 
-enum {H_DEBUG, H_BSSID, H_ETH, H_SSID, H_LISTEN_INTERVAL, H_SEND_ASSOC_REQ};
+void 
+AssociationRequester::process_disassociation(Packet *p) 
+{
+  struct click_wifi *w = (struct click_wifi *) p->data();
+  uint8_t *ptr = (uint8_t *) p->data() + sizeof(struct click_wifi); 
+  EtherAddress bssid = EtherAddress(w->i_addr3);
+  uint16_t reason = le16_to_cpu(*(uint16_t *) ptr);
+
+  ptr += 2;
+
+  if (bssid == _bssid) {
+    click_chatter("%{element} disassociation from %s reason %d\n",
+		  bssid.s().cc(),
+		  reason);
+    _associated = false;
+  } else {
+    click_chatter("%{element} BAD disassociation from %s reason %d\n",
+		  bssid.s().cc(),
+		  reason);
+  }
+  return;
+}
+void
+AssociationRequester::push(int, Packet *p)
+{
+
+  uint8_t dir;
+  uint8_t type;
+  uint8_t subtype;
+
+
+  if (p->length() < sizeof(struct click_wifi)) {
+    click_chatter("%{element}: packet too small: %d vs %d\n",
+		  this,
+		  p->length(),
+		  sizeof(struct click_wifi));
+
+    p->kill();
+    return ;
+	      
+  }
+
+  struct click_wifi *w = (struct click_wifi *) p->data();
+
+
+  dir = w->i_fc[1] & WIFI_FC1_DIR_MASK;
+  type = w->i_fc[0] & WIFI_FC0_TYPE_MASK;
+  subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
+
+  if (type != WIFI_FC0_TYPE_MGT) {
+    click_chatter("%{element}: received non-management packet\n",
+		  this);
+    p->kill();
+    return ;
+  }
+
+  if (subtype == WIFI_FC0_SUBTYPE_ASSOC_RESP) {
+    process_response(p);
+    p->kill();
+    return;
+  }
+
+  if (subtype == WIFI_FC0_SUBTYPE_DISASSOC) {
+    process_disassociation(p);
+    p->kill();
+    return;
+  }
+
+
+  click_chatter("%{element}: received non-assoc response packet\n",
+		this);
+  p->kill();
+  return ;
+
+}
+
+enum {H_DEBUG, H_BSSID, H_ETH, H_SSID, 
+      H_LISTEN_INTERVAL, H_SEND_ASSOC_REQ,
+      H_ASSOCIATED,
+};
 
 static String 
 AssociationRequester_read_param(Element *e, void *thunk)
@@ -271,6 +343,8 @@ AssociationRequester_read_param(Element *e, void *thunk)
     switch ((uintptr_t) thunk) {
     case H_DEBUG:
       return String(td->_debug) + "\n";
+    case H_ASSOCIATED:
+      return String(td->_associated) + "\n";
     case H_BSSID:
       return td->_bssid.s() + "\n";
     case H_ETH:
@@ -339,6 +413,7 @@ AssociationRequester::add_handlers()
   add_read_handler("eth", AssociationRequester_read_param, (void *) H_ETH);
   add_read_handler("ssid", AssociationRequester_read_param, (void *) H_SSID);
   add_read_handler("listen_interval", AssociationRequester_read_param, (void *) H_LISTEN_INTERVAL);
+  add_read_handler("associated", AssociationRequester_read_param, (void *) H_ASSOCIATED);
 
 
   add_write_handler("debug", AssociationRequester_write_param, (void *) H_DEBUG);

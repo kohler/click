@@ -63,7 +63,7 @@ WifiEncap::simple_action(Packet *p)
   EtherAddress src;
   EtherAddress dst;
   uint16_t ethtype;
-
+  WritablePacket *p_out = 0;
 
   if (p->length() < sizeof(struct click_ether)) {
     click_chatter("%{element}: packet too small: %d vs %d\n",
@@ -82,15 +82,19 @@ WifiEncap::simple_action(Packet *p)
   ethtype = eh->ether_type;
 
 
-  WritablePacket *p_out = p->uniqueify();
+  p_out = p->uniqueify();
   if (!p_out) {
-    p->kill();
     return 0;
   }
 
 
   p_out->pull(sizeof(struct click_ether));
-  p_out->push(sizeof(struct click_llc));
+  p_out = p_out->push(sizeof(struct click_llc));
+
+  if (!p_out) {
+    return 0;
+  }
+
   struct click_llc *llc = (struct click_llc *) p_out->data();
   llc->llc_dsap = llc->llc_ssap = LLC_SNAP_LSAP;
   llc->llc_control = LLC_UI;
@@ -101,6 +105,12 @@ WifiEncap::simple_action(Packet *p)
 
   p_out->push(sizeof(struct click_wifi));
   struct click_wifi *w = (struct click_wifi *) p_out->data();
+
+  memset(p_out->data(), 0, sizeof(click_wifi));
+  w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_DATA;
+  w->i_fc[1] = 0;
+  w->i_fc[1] |= (WIFI_FC1_DIR_MASK & _mode);
+
 
   switch (_mode) {
   case WIFI_FC1_DIR_NODS:
@@ -127,25 +137,13 @@ WifiEncap::simple_action(Packet *p)
     click_chatter("%{element}: invalid mode %d\n",
 		  this,
 		  _mode);
-    p->kill();
+    p_out->kill();
     return 0;
   }
 
-
-  w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_DATA;
-  w->i_fc[1] = 0;
-  w->i_fc[1] |= (WIFI_FC1_DIR_MASK & _mode);
-
-  w->i_dur[0] = 0;
-  w->i_dur[1] = 0;
-
-  w->i_seq[0] = 0;
-  w->i_seq[1] = 0;
-  
   SET_WIFI_FROM_CLICK(p_out);
-
-
   return p_out;
+
 }
 
 

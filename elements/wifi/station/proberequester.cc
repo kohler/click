@@ -75,12 +75,13 @@ void
 ProbeRequester::send_probe_request()
 {
   Vector<int> rates = _rtable->lookup(_eth);
-  int len = sizeof (struct click_wifi) + 
+  int max_len = sizeof (struct click_wifi) + 
     2 + _ssid.length() + /* ssid */
-    2 + min(WIFI_RATES_MAXSIZE, rates.size()) +  /* rates */
+    2 + WIFI_RATE_SIZE + /* rates */
+    2 + WIFI_RATE_SIZE + /* xrates */
     0;
     
-  WritablePacket *p = Packet::make(len);
+  WritablePacket *p = Packet::make(max_len);
 
   if (p == 0)
     return;
@@ -98,20 +99,20 @@ ProbeRequester::send_probe_request()
   *(uint16_t *) w->i_dur = 0;
   *(uint16_t *) w->i_seq = 0;
 
-  uint8_t *ptr;
-  
-  ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
+  uint8_t *ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
+  int actual_length = sizeof (struct click_wifi);
 
   /* ssid */
   ptr[0] = WIFI_ELEMID_SSID;
   ptr[1] = _ssid.length();
   memcpy(ptr + 2, _ssid.data(), _ssid.length());
   ptr += 2 + _ssid.length();
+  actual_length += 2 + _ssid.length();
 
-  /* rates */
+    /* rates */
   ptr[0] = WIFI_ELEMID_RATES;
-  ptr[1] = min(WIFI_RATES_MAXSIZE, rates.size());
-  for (int x = 0; x < min (WIFI_RATES_MAXSIZE, rates.size()); x++) {
+  ptr[1] = min(WIFI_RATE_SIZE, rates.size());
+  for (int x = 0; x < min (WIFI_RATE_SIZE, rates.size()); x++) {
     ptr[2 + x] = (uint8_t) rates[x];
     
     if (rates[x] == 2) {
@@ -119,8 +120,28 @@ ProbeRequester::send_probe_request()
     }
     
   }
-  ptr += 2 + rates.size();
+  ptr += 2 + min(WIFI_RATE_SIZE, rates.size());
+  actual_length += 2 + min(WIFI_RATE_SIZE, rates.size());
 
+
+  int num_xrates = rates.size() - WIFI_RATE_SIZE;
+  if (num_xrates > 0) {
+    /* rates */
+    ptr[0] = WIFI_ELEMID_XRATES;
+    ptr[1] = num_xrates;
+    for (int x = 0; x < num_xrates; x++) {
+      ptr[2 + x] = (uint8_t) rates[x + WIFI_RATE_SIZE];
+      
+      if (rates[x + WIFI_RATE_SIZE] == 2) {
+	ptr [2 + x] |= WIFI_RATE_BASIC;
+      }
+      
+    }
+    ptr += 2 + num_xrates;
+    actual_length += 2 + num_xrates;
+  }  
+
+  p->take(max_len - actual_length);
   SET_WIFI_FROM_CLICK(p);
   output(0).push(p);
 }
