@@ -131,10 +131,6 @@ distdir:
 	    ln $$d/$$cfile $(distdir)/$$cfile; \
 	  done; \
 	done
-	@echo Copying tool files...
-	@for subdir in tools; do \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(distdir) distdir=../$(distdir)/$$subdir distdir) || exit 1; \
-	done
 	@echo Removing files not meant for distribution...
 	@if test -r $(srcdir)/NODIST; then \
 	for i in `cat $(srcdir)/NODIST`; do \

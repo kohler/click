@@ -61,59 +61,5 @@ install: install-subdirs
 install-subdirs: lib
 	@for d in lib $(TARGETS); do (cd $$d && $(MAKE) install) || exit 1; done
 
-DISTFILES = Makefile.in lib/Makefile.in \
-	lib/elementt.cc lib/elementt.hh \
-	lib/lexert.cc lib/lexert.hh \
-	lib/routert.cc lib/routert.hh \
-	lib/processingt.cc lib/processingt.hh \
-	lib/toolutils.cc lib/toolutils.hh \
-	lib/hashmapi.cc \
-	lib/vectori.cc \
-	click-align/Makefile.in \
-	click-align/click-align.cc \
-	click-align/alignment.cc click-align/alignment.hh \
-	click-align/alignclass.cc click-align/alignclass.hh \
-	click-check/Makefile.in \
-	click-check/click-check.cc \
-	click-combine/Makefile.in \
-	click-combine/click-combine.cc click-combine/click-uncombine.cc \
-	click-devirtualize/Makefile.in \
-	click-devirtualize/click-devirtualize.cc \
-	click-devirtualize/cxxclass.cc click-devirtualize/cxxclass.hh \
-	click-devirtualize/signature.cc click-devirtualize/signature.hh \
-	click-devirtualize/specializer.cc click-devirtualize/specializer.hh \
-	click-fastclassifier/Makefile.in \
-	click-fastclassifier/click-fastclassifier.cc \
-	click-fastclassifier/click-fastclassifier.hh \
-	click-fastclassifier/fc_classifier.cc \
-	click-fastclassifier/fc_ipclassifier.cc \
-	click-install/Makefile.in \
-	click-install/click-install.cc \
-	click-install/click-uninstall.cc \
-	click-mkmindriver/Makefile.in \
-	click-mkmindriver/click-mkmindriver.cc \
-	click-undead/Makefile.in \
-	click-undead/click-undead.cc \
-	click-xform/Makefile.in \
-	click-xform/adjacency.cc click-xform/adjacency.hh \
-	click-xform/click-xform.cc \
-	udpgen/Makefile.in udpgen/udpgen.c udpgen/udpcount.c
-
-distdir:
-	rm -rf $(distdir)
-	mkdir $(distdir)
-	@-chmod 777 $(distdir)
-	@-for d in lib $(TOOLDIRS) udpgen; do mkdir $(distdir)/$$d; chmod 777 $(distdir)/$$d; done
-	@for file in $(DISTFILES); do \
-	  d=$(srcdir); \
-	  if test -d $$d/$$file; then \
-	    cp -pr $$d/$$file $(distdir)/$$file; \
-	  else \
-	    test -f $(distdir)/$$file \
-	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
-	    || cp -p $$d/$$file $(distdir)/$$file || :; \
-	  fi; \
-	done
-
 
 .PHONY: all always lib $(TOOLDIRS) clean distclean distdir install install-man install-subdirs
