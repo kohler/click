@@ -41,10 +41,9 @@ click-compile: $(srcdir)/click-compile.in
 
 clean:
 	@-for d in $(TOOLS); do (cd $$d 2>/dev/null && $(MAKE) clean); done
-	rm -f click-compile
 distclean:
 	@-for d in $(TOOLS); do (cd $$d 2>/dev/null && $(MAKE) distclean); done
-	-rm -f Makefile
+	-rm -f Makefile click-compile
 
 install: install-subdirs install-local
 install-local: click-compile

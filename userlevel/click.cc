@@ -22,6 +22,7 @@
 #include "router.hh"
 #include "error.hh"
 #include "timer.hh"
+#include "straccum.hh"
 #include "clp.h"
 
 #define HELP_OPT		300
@@ -223,25 +224,38 @@ particular purpose.\n");
   }
   
  done:
-  FileLexerSource *fp;
+  FILE *f;
+  String filename;
   if (router_file && strcmp(router_file, "-") != 0) {
-    FILE *f = fopen(router_file, "r");
+    f = fopen(router_file, "r");
     if (!f)
       errh->fatal("%s: %s", router_file, strerror(errno));
-    fp = new FileLexerSource(router_file, f);
-  } else
-    fp = new FileLexerSource("<stdin>", stdin);
+    filename = router_file;
+  } else {
+    f = stdin;
+    filename = "<stdin>";
+  }
+
+  StringAccum config_sa;
+  while (!feof(f)) {
+    if (char *x = config_sa.reserve(1024)) {
+      int r = fread(x, 1, 1024, f);
+      config_sa.forward(r);
+    } else
+      errh->fatal("out of memory");
+  }
+  if (f != stdin)
+    fclose(f);
   
   Lexer *lex = new Lexer(errh);
   export_elements(lex);
   lex->save_element_types();
   
-  lex->reset(fp);
+  lex->reset(config_sa.take_string(), filename);
   while (lex->ystatement())
     /* do nothing */;
   
   Router *router = lex->create_router();
-  delete fp;
   lex->clear();
   
   signal(SIGINT, catch_sigint);

@@ -41,15 +41,13 @@ Router *current_router = 0;
 static Vector<String> packages;
 
 
-class LinuxModuleLexerSource : public MemoryLexerSource {
- public:
-  LinuxModuleLexerSource(const char *d, unsigned l)
-    : MemoryLexerSource(d, l) { }
+class LinuxModuleLexerExtra : public LexerExtra { public:
+  LinuxModuleLexerExtra() { }
   void require(const String &, ErrorHandler *);
 };
 
 void
-LinuxModuleLexerSource::require(const String &r, ErrorHandler *errh)
+LinuxModuleLexerExtra::require(const String &r, ErrorHandler *errh)
 {
   for (int i = 0; i < packages.size(); i++)
     if (packages[i] == r)
@@ -58,10 +56,10 @@ LinuxModuleLexerSource::require(const String &r, ErrorHandler *errh)
 }
 
 void
-initialize_router(const char *data, unsigned len)
+initialize_router(const String &s)
 {
-  LinuxModuleLexerSource memsource(data, len);
-  lexer->reset(&memsource);
+  LexerExtra lextra;
+  lexer->reset(s, "line ", &lextra);
   cleanup_router_element_procs();
   reset_proc_click_errors();
   delete current_router;

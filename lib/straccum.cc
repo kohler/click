@@ -18,18 +18,23 @@
 #include "confparse.hh"
 #include "glue.hh"
 
-void
+bool
 StringAccum::grow(int want)
 {
-  int ocap = _cap;
-  _cap = (_cap ? _cap * 2 : 128);
-  while (_cap <= want)
-    _cap *= 2;
+  int ncap = (_cap ? _cap * 2 : 128);
+  while (ncap <= want)
+    ncap *= 2;
   
-  unsigned char *n = new unsigned char[_cap];
-  if (_s) memcpy(n, _s, ocap);
+  unsigned char *n = new unsigned char[ncap];
+  if (!n)
+    return false;
+  
+  if (_s)
+    memcpy(n, _s, _cap);
   delete[] _s;
   _s = n;
+  _cap = ncap;
+  return true;
 }
 
 String
@@ -43,7 +48,8 @@ StringAccum &
 StringAccum::operator<<(const char *s)
 {
   int len = strlen(s);
-  memcpy(extend(len), s, len);
+  if (char *x = extend(len))
+    memcpy(x, s, len);
   return *this;
 }
 
@@ -51,7 +57,8 @@ StringAccum::operator<<(const char *s)
 StringAccum &
 StringAccum::operator<<(PermString s)
 {
-  memcpy(extend(s.length()), s.cc(), s.length());
+  if (char *x = extend(s.length()))
+    memcpy(x, s.cc(), s.length());
   return *this;
 }
 #endif
@@ -59,25 +66,30 @@ StringAccum::operator<<(PermString s)
 StringAccum &
 StringAccum::operator<<(const String &s)
 {
-  memcpy(extend(s.length()), s.data(), s.length());
+  if (char *x = extend(s.length()))
+    memcpy(x, s.data(), s.length());
   return *this;
 }
 
 StringAccum &
 StringAccum::operator<<(int i)
 {
-  int len;
-  sprintf(reserve(256), "%d%n", i, &len);
-  forward(len);
+  if (char *x = reserve(256)) {
+    int len;
+    sprintf(x, "%d%n", i, &len);
+    forward(len);
+  }
   return *this;
 }
 
 StringAccum &
 StringAccum::operator<<(unsigned u)
 {
-  int len;
-  sprintf(reserve(256), "%u%n", u, &len);
-  forward(len);
+  if (char *x = reserve(256)) {
+    int len;
+    sprintf(x, "%u%n", u, &len);
+    forward(len);
+  }
   return *this;
 }
 
@@ -85,9 +97,11 @@ StringAccum::operator<<(unsigned u)
 StringAccum &
 StringAccum::operator<<(double d)
 {
-  int len;
-  sprintf(reserve(256), "%g%n", d, &len);
-  forward(len);
+  if (char *x = reserve(256)) {
+    int len;
+    sprintf(x, "%g%n", d, &len);
+    forward(len);
+  }
   return *this;
 }
 #endif
@@ -97,11 +111,14 @@ StringAccum::operator<<(unsigned long long q)
 {
 #ifndef CLICK_TOOL
   String qstr = cp_unparse_ulonglong(q, 10, false);
-  memcpy(extend(qstr.length()), qstr.data(), qstr.length());
+  if (char *x = extend(qstr.length()))
+    memcpy(x, qstr.data(), qstr.length());
 #else
-  int len;
-  sprintf(reserve(256), "%qu%n", q, &len);
-  forward(len);
+  if (char *x = reserve(256)) {
+    int len;
+    sprintf(x, "%qu%n", q, &len);
+    forward(len);
+  }
 #endif
   return *this;
 }

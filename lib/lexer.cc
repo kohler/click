@@ -88,7 +88,7 @@ Lexer::Compound::is_a(const char *s) const
 //
 
 Lexer::Lexer(ErrorHandler *errh)
-  : _data(0), _len(0), _pos(0), _source(0), _lineno(1),
+  : _data(0), _len(0), _pos(0), _lineno(1), _lextra(0),
     _tpos(0), _tfull(0),
     _element_type_map(-1),
     _default_element_type(new ErrorElement),
@@ -114,11 +114,24 @@ Lexer::~Lexer()
 }
 
 void
-Lexer::reset(LexerSource *source)
+Lexer::reset(const String &data, const String &filename,
+	     LexerExtra *lextra)
 {
   clear();
-  _source = source;
+  
+  _big_string = data;
+  _data = _big_string.data();
+  _len = _big_string.length();
+
+  if (!filename)
+    _filename = "line ";
+  else if (filename.back() != ':')
+    _filename = filename + ":";
+  else
+    _filename = filename;
   _lineno = 1;
+
+  _lextra = lextra;
 }
 
 void
@@ -149,8 +162,9 @@ Lexer::clear()
   _data = 0;
   _len = 0;
   _pos = 0;
-  _source = 0;
+  _filename = "";
   _lineno = 0;
+  _lextra = 0;
   _tpos = 0;
   _tfull = 0;
   
@@ -160,46 +174,6 @@ Lexer::clear()
 
 
 // LEXING: LOWEST LEVEL
-
-bool
-Lexer::get_data()
-{
-  if (!_source) {
-    _errh->error("no configuration source");
-    return false;
-  }
-  
-  char *data = 0;
-  unsigned cap = 0;
-  unsigned len = 0;
-  
-  while (cap < 65536) {
-    cap = (cap ? cap * 2 : 1024);
-    char *new_data = new char[cap];
-    if (!new_data) break;
-    if (data) memcpy(new_data, data, len);
-    delete[] data;
-    data = new_data;
-    
-    unsigned read = _source->more_data(data + len, cap - len);
-    len += read;
-    if (read == 0)
-      goto done;
-  }
-  
-  _errh->error("configuration file too large (there's currently a 64K max)");
-  delete[] data;
-  data = 0;
-  cap = len = 0;
-  return false;
-  
- done:
-  if (len < cap) data[len] = 0;
-  _big_string = String::claim_string(data, (len < cap ? len + 1 : len));
-  _data = _big_string.data();
-  _len = len;
-  return true;
-}
 
 unsigned
 Lexer::skip_line(unsigned pos)
@@ -235,8 +209,6 @@ Lexer::skip_slash_star(unsigned pos)
 Lexeme
 Lexer::next_lexeme()
 {
-  if (!_data && !get_data()) return Lexeme();
-  
   unsigned pos = _pos;
   while (true) {
     while (pos < _len && isspace(_data[pos])) {
@@ -302,8 +274,6 @@ Lexer::next_lexeme()
 String
 Lexer::lex_config()
 {
-  if (!_data && !get_data()) return String();
-  
   unsigned config_pos = _pos;
   unsigned pos = _pos;
   unsigned paren_depth = 1;
@@ -335,8 +305,6 @@ Lexer::lex_config()
 String
 Lexer::lex_compound_body()
 {
-  if (!_data && !get_data()) return String();
-  
   unsigned config_pos = _pos;
   unsigned pos = _pos;
   unsigned paren_depth = 0;
@@ -435,7 +403,7 @@ Lexer::expect(int kind, bool report_error = true)
 String
 Lexer::landmark() const
 {
-  return _source ? _source->landmark(_lineno) : String();
+  return _filename + String(_lineno);
 }
 
 int
@@ -710,9 +678,9 @@ Lexer::element_name(int fid) const
     char buf[100];
     sprintf(buf, "@%d", fid);
     if (_elements[fid] == _tunnel_element_type)
-      return "##tunnel##" + String(buf);
+      return "<tunnel " + String(buf) + ">";
     else if (!_elements[fid])
-      return "##null##" + String(buf);
+      return "<null " + String(buf) + ">";
     else
       return _elements[fid]->class_name() + String(buf);
   }
@@ -1031,7 +999,8 @@ Lexer::yrequire()
     Vector<String> args;
     cp_argvec(requirement, args);
     for (int i = 0; i < args.size(); i++) {
-      _source->require(args[i], _errh);
+      if (_lextra)
+	_lextra->require(args[i], _errh);
       _requirements.push_back(args[i]);
     }
     expect(')');
@@ -1151,66 +1120,14 @@ Lexer::create_router()
 
 
 //
-// LEXERSOURCES
+// LEXEREXTRA
 //
 
-String
-LexerSource::landmark(unsigned lineno) const
-{
-  return String("line ") + String(lineno);
-}
-
 void
-LexerSource::require(const String &, ErrorHandler *)
+LexerExtra::require(const String &, ErrorHandler *)
 {
 }
 
-
-#ifndef __KERNEL__
-
-FileLexerSource::FileLexerSource(const char *filename, FILE *f)
-  : _filename(filename), _f(f), _own_f(f == 0)
-{
-  if (!_f) _f = fopen(filename, "r");
-}
-
-FileLexerSource::~FileLexerSource()
-{
-  if (_f && _own_f) fclose(_f);
-}
-
-unsigned
-FileLexerSource::more_data(char *data, unsigned max)
-{
-  if (!_f) return 0;
-  
-  return fread(data, 1, max, _f);
-  // if amt == 0, is it possible there's been a transient error?
-}
-
-String
-FileLexerSource::landmark(unsigned lineno) const
-{
-  return String(_filename) + ":" + String(lineno);
-}
-
-#endif
-
-
-MemoryLexerSource::MemoryLexerSource(const char *data, unsigned len)
-  : _data(data), _pos(0), _len(len)
-{
-}
-    
-unsigned
-MemoryLexerSource::more_data(char *buf, unsigned max)
-{
-  if (_pos + max > _len)
-    max = _len - _pos;
-  memcpy(buf, _data + _pos, max);
-  _pos += max;
-  return max;
-}
 
 //
 // LEXER::TUNNELEND RELATED STUFF

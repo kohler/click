@@ -14,15 +14,12 @@
 # include <config.h>
 #endif
 #include "modulepriv.hh"
+#include "straccum.hh"
 #include "router.hh"
 
 static int config_write_lock = 0;
-static char *current_config = 0;
-static int current_config_len = 0;
-
-static char *build_config = 0;
-static int build_config_len = 0;
-static int build_config_cap = 0;
+static String *current_config = 0;
+static StringAccum *build_config = 0;
 
 //
 // DECLARE FILE OPERATIONS
@@ -77,11 +74,13 @@ click_config_open(struct inode *, struct file *filp)
   if (writing) {
     if (config_write_lock)
       return -EBUSY;
-    build_config = kmalloc(1024, GFP_KERNEL);
+    if (!build_config)
+      build_config = new StringAccum;
     if (!build_config)
       return -ENOMEM;
-    build_config_cap = 1024;
-    build_config_len = 0;
+    build_config->clear();
+    if (!build_config->reserve(1024))
+      return -ENOMEM;
     config_write_lock = 1;
   }
   
@@ -98,11 +97,13 @@ DECLARE_RELEASE_FILEOP(click_config_release)
     if (!config_write_lock)
       return -EIO;
     if (build_config) {
-      kfree(current_config);
-      current_config = build_config;
-      current_config_len = build_config_len;
-      initialize_router(current_config, current_config_len);
-      proc_click_config_entry.size = current_config_len;
+      if (!current_config)
+	current_config = new String;
+      if (current_config) {
+	*current_config = build_config->take_string();
+	initialize_router(*current_config);
+	proc_click_config_entry.size = current_config->length();
+      }
     }
     config_write_lock = 0;
     MOD_DEC_USE_COUNT;
@@ -118,11 +119,12 @@ static
 DECLARE_READ_FILEOP(click_config_read)
 {
   loff_t f_pos = FILEOP_F_POS;
-  if (!current_config || f_pos > current_config_len)
+  loff_t len = current_config->length();
+  if (!current_config || f_pos > len)
     return 0;
-  if (f_pos + count > current_config_len)
-    count = current_config_len - f_pos;
-  if (copy_to_user(buffer, current_config + f_pos, count) > 0)
+  if (f_pos + count > len)
+    count = len - f_pos;
+  if (copy_to_user(buffer, current_config->data() + f_pos, count) > 0)
     return -EFAULT;
   FILEOP_F_POS += count;
   return count;
@@ -135,33 +137,22 @@ DECLARE_WRITE_FILEOP(click_config_write)
   
   if (!build_config)
     return -ENOMEM;
+
+  loff_t last_len = build_config->length();
+  loff_t end_pos = f_pos + count;
+  char *x;
+  if (end_pos > last_len)
+    x = build_config->extend(end_pos - last_len);
+  else
+    x = build_config->data() + f_pos;
+  if (!x)
+    return -ENOMEM;
   
-  // XXX very long files -- integer overflow?
-  
-  if (f_pos + count > build_config_cap) {
-    int newcap = build_config_cap + 1024;
-    while (newcap < f_pos + count)
-      newcap += 1024;
-    char *new_build_config = kmalloc(newcap, GFP_KERNEL);
-    if (!new_build_config) {
-      kfree(build_config);
-      build_config = 0;
-      return -ENOMEM;
-    }
-    memcpy(new_build_config, build_config, build_config_len);
-    kfree(build_config);
-    build_config = new_build_config;
-    build_config_cap = newcap;
-  }
-  
-  if (f_pos > build_config_len)
-    memset(build_config + build_config_len, 0, f_pos - build_config_len);
-  
-  if (copy_from_user(build_config + f_pos, buffer, count) > 0)
+  if (f_pos > last_len)
+    memset(x, 0, f_pos - last_len);
+  if (copy_from_user(x + (f_pos - last_len), buffer, count) > 0)
     return -EFAULT;
   
-  if (f_pos + count > build_config_len)
-    build_config_len = f_pos + count;
   FILEOP_F_POS += count;
   return count;
 }
@@ -181,7 +172,6 @@ init_proc_click_config()
 void
 cleanup_proc_click_config()
 {
-  kfree(current_config);
-  if (current_config != build_config)
-    kfree(build_config);
+  delete current_config;
+  delete build_config;
 }

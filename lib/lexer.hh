@@ -3,7 +3,7 @@
 #include "hashmap.hh"
 #include "router.hh"
 #include "glue.hh"
-class LexerSource;
+class LexerExtra;
 
 enum Lexemes {
   lexEOF = 0,
@@ -46,10 +46,10 @@ class Lexer {
   unsigned _len;
   unsigned _pos;
   
-  LexerSource *_source;
+  String _filename;
   unsigned _lineno;
+  LexerExtra *_lextra;
   
-  bool get_data();
   unsigned skip_line(unsigned);
   unsigned skip_slash_star(unsigned);
   Lexeme next_lexeme();
@@ -110,7 +110,8 @@ class Lexer {
   Lexer(ErrorHandler * = 0);
   virtual ~Lexer();
   
-  void reset(LexerSource *);
+  void reset(const String &data, const String &filename = String(),
+	     LexerExtra * = 0);
   
   const Lexeme &lex();
   void unlex(const Lexeme &);
@@ -155,47 +156,13 @@ class Lexer {
   
 };
 
-class LexerSource { public:
+class LexerExtra { public:
   
-  LexerSource()				{ }
-  virtual ~LexerSource()		{ }
+  LexerExtra()				{ }
+  virtual ~LexerExtra()			{ }
   
-  virtual unsigned more_data(char *, unsigned) = 0;
-  virtual String landmark(unsigned) const;
   virtual void require(const String &, ErrorHandler *);
 
 };
   
-#ifndef __KERNEL__
-class FileLexerSource : public LexerSource {
-  
-  const char *_filename;
-  FILE *_f;
-  bool _own_f;
-  
- public:
-  
-  FileLexerSource(const char *, FILE * = 0);
-  ~FileLexerSource();
-  
-  unsigned more_data(char *, unsigned);
-  String landmark(unsigned lineno) const;
-  
-};
-#endif
-
-class MemoryLexerSource : public LexerSource {
-  
-  const char *_data;
-  unsigned _pos;
-  unsigned _len;
-  
- public:
-  
-  MemoryLexerSource(const char *, unsigned);
-  
-  unsigned more_data(char *, unsigned);
-  
-};
-
 #endif

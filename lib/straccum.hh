@@ -11,7 +11,7 @@ class StringAccum {
   int _len;
   int _cap;
   
-  void grow(int);
+  bool grow(int);
   void erase()				{ _s = 0; _len = 0; _cap = 0; }
   
  public:
@@ -69,8 +69,8 @@ StringAccum::StringAccum(int cap)
 inline void
 StringAccum::push(unsigned char c)
 {
-  if (_len >= _cap) grow(_len);
-  _s[_len++] = c;
+  if (_len < _cap || grow(_len))
+    _s[_len++] = c;
 }
 
 inline void
@@ -82,15 +82,17 @@ StringAccum::push(char c)
 inline char *
 StringAccum::reserve(int hm)
 {
-  if (_len + hm > _cap) grow(_len + hm);
-  return (char *)(_s + _len);
+  if (_len + hm <= _cap || grow(_len + hm))
+    return (char *)(_s + _len);
+  else
+    return 0;
 }
 
 inline char *
 StringAccum::extend(int amt)
 {
   char *c = reserve(amt);
-  _len += amt;
+  if (c) _len += amt;
   return c;
 }
 
