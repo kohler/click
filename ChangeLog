@@ -1,3 +1,24 @@
+2001-07-24 Tuesday 15:54  Eddie Kohler <kohler@aciri.org>
+
+	* lib/router.cc (1.105): Router: cut out on first error unless
+	verbose_errors. (Too much work? Are we losing clean efficiency to
+	features?)
+
+2001-07-24 Tuesday 15:30  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.91), click-compile.in (1.12): Makefile nitlets
+
+2001-07-24 Tuesday 15:30  Eddie Kohler <kohler@aciri.org>
+
+	* lib/router.cc (1.104), include/click/router.hh (1.22): add
+	verbose_errors argument to Router::initialize() to quiet context
+	messages
+
+2001-07-24 Tuesday 15:29  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool (1.23): sort elements.conf on output to match
+	older behavior
+
 2001-07-24 Tuesday 04:04  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/fromdevice.cc (1.25),
