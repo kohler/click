@@ -228,14 +228,13 @@ Classifier::DominatorOptimizer::print()
     if (_domlist_start[i] == _domlist_start[i+1])
       fprintf(stderr, "S-%d   NO DOMINATORS\n", i);
     else {
-      int done = 0;
+      fprintf(stderr, "S-%d : ", i);
       for (int j = _domlist_start[i]; j < _domlist_start[i+1]; j++) {
-	fprintf(stderr, (done ? "    ": "S-%d "), i);
-	fprintf(stderr, ": ");
+	if (j > _domlist_start[i])
+	  fprintf(stderr, "    : ");
 	for (int k = _dom_start[j]; k < _dom_start[j+1]; k++)
 	  fprintf(stderr, " %d.%c", stateno(_dom[k]), br(_dom[k]) ? 'Y' : 'N');
 	fprintf(stderr, "\n");
-	done = 1;
       }
     }
   }
