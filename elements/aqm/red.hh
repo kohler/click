@@ -99,7 +99,7 @@ Congestion Avoidance>. ACM Transactions on Networking, B<1>(4), August
 1993, pp 397-413.
 
 Sally Floyd. "Optimum functions for computing the drop
-probability", October 1997. L<http://www.aciri.org/floyd/REDfunc.html>. */
+probability", October 1997. L<http://www.icir.org/floyd/REDfunc.txt>. */
 
 class RED : public Element { public:
 
