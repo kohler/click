@@ -1,3 +1,54 @@
+2000-10-23 Monday 15:34  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* click-mkelemmap, elements/ip/ipprint.cc, elements/ip/ipprint.hh,
+	elements/standard/quitwatcher.cc, elements/standard/quitwatcher.hh,
+	etc/samplepackage/Makefile.in, include/click/click_tcp.h,
+	include/click/packet.hh, lib/router.cc: other changes from Mazu
+
+2000-10-23 Monday 15:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/string.hh, lib/string.cc: from Mazu: add
+	String(long) constructor
+
+2000-10-23 Monday 15:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: linuxmodule/fromdevice.hh, linuxmodule/fromlinux.hh,
+	linuxmodule/polldevice.hh, linuxmodule/todevice.cc,
+	linuxmodule/todevice.hh, linuxmodule/tulipstats.cc,
+	linuxmodule/tulipstats.hh, local/tulipstats.cc,
+	local/tulipstats.hh: from Mazu: some updates for TulipStats
+
+2000-10-23 Monday 15:32  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* README, acconfig.h, configure.in: from Mazu: dont compile udpgen
+	and udpcount by default; add HAVE_TULIP_INTERRUPT_HOOK
+
+2000-10-23 Monday 15:31  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* etc/linux-2.2.16-patch: from Mazu: add tulip_interrupt_hook,
+	remove udpcount_hook, clean up patch slightly
+
+2000-10-23 Monday 15:30  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click-elem2man: from Mazu: support blank lines in verbatim
+	sections
+
+2000-10-23 Monday 15:30  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* click-buildtool, tools/lib/Makefile.in, userlevel/Makefile.in:
+	from Mazu: create libclick.a containing supporting code for Click
+	userlevel program
+
+2000-10-23 Monday 15:29  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/confparse.cc: from Mazu: bug fix: cp_ip_address could look at
+	a character that didnt exist
+
+2000-10-23 Monday 15:27  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/error.cc: from Mazu: support "%#c" flag in ErrorHandler for
+	printing characters in a human-readable way
+
 2000-10-18 Wednesday 14:52  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/linuxmodule/: fastudpsrc.cc, fastudpsrc.hh:
