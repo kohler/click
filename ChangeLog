@@ -1,3 +1,11 @@
+2003-11-05 Wednesday 17:23  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/: drr.cc (1.7), drr.hh (1.6), priosched.cc
+	(1.12), priosched.hh (1.13), priosched2.cc (1.2), priosched2.hh
+	(1.2), rrsched.cc (1.11), rrsched.hh (1.14), stridesched.cc (1.19),
+	stridesched.hh (1.20), strideswitch.cc (1.12): schedulers use
+	notification
+
 2003-11-02 Sunday 01:25  John Bicket <jbicket@mit.edu>
 
 	* elements/: grid/linktable.hh (1.17), standard/notifierqueue.hh
