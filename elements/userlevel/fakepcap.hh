@@ -62,6 +62,14 @@ const char *fake_pcap_unparse_dlt(int);
 
 // Handling FORCE_IP.
 bool fake_pcap_dlt_force_ipable(int);
-bool fake_pcap_force_ip(Packet *, int);
+bool fake_pcap_force_ip(Packet *&, int);
+bool fake_pcap_force_ip(WritablePacket *&, int);
+
+
+inline bool
+fake_pcap_force_ip(WritablePacket *&p, int dlt)
+{
+    return fake_pcap_force_ip(reinterpret_cast<Packet *&>(p), dlt);
+}
 
 #endif

@@ -65,8 +65,21 @@ fake_pcap_dlt_force_ipable(int dlt)
 	    || dlt == FAKE_DLT_FDDI || dlt == FAKE_DLT_ATM_RFC1483);
 }
 
+#if HAVE_INDIFFERENT_ALIGNMENT
+#define UNALIGNED_NET_SHORT_EQ(x, y) ((x) == htons((y)))
+#else
+static inline uint16_t
+unaligned_net_short(const void *v)
+{
+    const uint8_t *d = reinterpret_cast<const uint8_t *>(v);
+    return (d[0] << 8) | d[1];
+}
+#define UNALIGNED_NET_SHORT_EQ(x, y) (unaligned_net_short(&(x)) == (y))
+#endif
+
+// NB: May change 'p', but will never free it.
 bool
-fake_pcap_force_ip(Packet *p, int dlt)
+fake_pcap_force_ip(Packet *&p, int dlt)
 {
     const click_ip *iph = 0;
     switch (dlt) {
@@ -80,7 +93,7 @@ fake_pcap_force_ip(Packet *p, int dlt)
       case FAKE_DLT_EN10MB: {
 	  const click_ether *ethh = (const click_ether *) p->data();
 	  if (p->length() >= sizeof(click_ether)
-	      && ethh->ether_type == htons(ETHERTYPE_IP))
+	      && UNALIGNED_NET_SHORT_EQ(ethh->ether_type, ETHERTYPE_IP))
 	      iph = (const click_ip *)(ethh + 1);
 	  break;
       }
@@ -92,7 +105,7 @@ fake_pcap_force_ip(Packet *p, int dlt)
 	      break;
 	  const click_fddi_snap *fsh = (const click_fddi_snap *) fh;
 	  if (memcmp(&fsh->dsap, FDDI_SNAP_EXPECTED, FDDI_SNAP_EXPECTED_LEN) == 0
-	      && fsh->ether_type == htons(ETHERTYPE_IP))
+	      && UNALIGNED_NET_SHORT_EQ(fsh->ether_type, ETHERTYPE_IP))
 	      iph = (const click_ip *) (fsh + 1);
 	  break;
       }
@@ -101,7 +114,7 @@ fake_pcap_force_ip(Packet *p, int dlt)
 	  const click_rfc1483 *rh = (const click_rfc1483 *) p->data();
 	  if (p->length() >= sizeof(click_rfc1483)
 	      && memcmp(rh->snap, RFC1483_SNAP_EXPECTED, RFC1483_SNAP_EXPECTED_LEN) == 0
-	      && rh->ether_type == htons(ETHERTYPE_IP))
+	      && UNALIGNED_NET_SHORT_EQ(rh->ether_type, ETHERTYPE_IP))
 	      iph = (const click_ip *) (rh + 1);
 	  break;
       }
@@ -112,8 +125,23 @@ fake_pcap_force_ip(Packet *p, int dlt)
     }
 
     if (!iph)
-	/* nada */;
-    else if (iph->ip_v == 4) {
+	return false;
+
+#if !HAVE_INDIFFERENT_ALIGNMENT
+    // Machine may crash if we try to access 'iph'. Align it on a word
+    // boundary.
+    uintptr_t header_ptr = reinterpret_cast<uintptr_t>(iph);
+    if (header_ptr & 3) {
+	int header_off = header_ptr - reinterpret_cast<uintptr_t>(p->data());
+	if (Packet *q = p->shift_data(-(header_ptr & 3), false)) {
+	    p = q;
+	    iph = reinterpret_cast<const click_ip *>(q->data() + header_off);
+	} else			// cannot align; return it as a non-IP packet
+	    return false;
+    }
+#endif
+    
+    if (iph->ip_v == 4) {
 	int offset = (const uint8_t *) iph - p->data();
 	if (iph->ip_hl >= 5
 	    && (int) p->length() - offset >= (iph->ip_hl << 2)) {
