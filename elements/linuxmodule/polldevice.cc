@@ -50,6 +50,8 @@ PollDevice::PollDevice()
   _dcu_cycles_touch = 0;
   _l2misses_rx = 0;
   _dcu_cycles_rx = 0;
+  _l2misses_first = 0;
+  _dcu_cycles_first = 0;
 #endif
 }
 
@@ -75,6 +77,8 @@ PollDevice::PollDevice(const String &devname)
   _dcu_cycles_touch = 0;
   _l2misses_rx = 0;
   _dcu_cycles_rx = 0;
+  _l2misses_first = 0;
+  _dcu_cycles_first = 0;
 #endif
 }
 
@@ -179,9 +183,26 @@ PollDevice::run_scheduled()
   while(got<POLLDEV_MAX_PKTS_PER_RUN) {
     unsigned long tt;
 
-    if (got == 0 && _activations>0) tt = get_cycles();
+    if (got == 0 && _activations>0) {
+      tt = get_cycles();
+    }
+   
     skb = _dev->rx_poll(_dev);
-    if (got == 0 && _activations>0) _time_first_recv += get_cycles()-tt;
+    
+    if (got == 0 && _activations>0) {
+      _time_first_recv += get_cycles()-tt;
+      
+      rdpmc(0, low01, high);
+      rdpmc(1, low11, high);
+    
+      _dcu_cycles_first += 
+        (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+      _l2misses_first += 
+        (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+  
+      rdpmc(0, low00, high); 
+      rdpmc(1, low10, high);
+    }
 
     if (!skb) break;
 
@@ -203,8 +224,12 @@ PollDevice::run_scheduled()
   rdpmc(0, low01, high);
   rdpmc(1, low11, high);
 
-  if (got > 0) _dcu_cycles_rx += (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-  if (got > 0) _l2misses_rx += (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+  if (got > 0) {
+    _dcu_cycles_rx += 
+      (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+    _l2misses_rx += 
+      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+  }
   
   rdpmc(0, low00, high);
   rdpmc(1, low10, high);
@@ -218,8 +243,12 @@ PollDevice::run_scheduled()
   rdpmc(0, low01, high);
   rdpmc(1, low11, high);
   
-  if (got > 0) _dcu_cycles_clean += (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-  if (got > 0) _l2misses_clean += (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+  if (got > 0) {
+    _dcu_cycles_clean += 
+      (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+    _l2misses_clean += 
+      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+  }
 
 #if DEV_KEEP_STATS
   if (_activations > 0 || got > 0) {
@@ -299,6 +328,8 @@ PollDevice_read_calls(Element *f, void *)
     String(kw->_time_running) + " cycles running\n" +
     String(kw->_time_first_recv) + " cycles first rx\n" +
     String(kw->_time_clean) + " cycles cleaning\n" +
+    String(kw->_l2misses_first) + " l2 misses first\n" +
+    String(kw->_dcu_cycles_first) + " dcu cycles first\n" +
     String(kw->_l2misses_rx) + " l2 misses rx\n" +
     String(kw->_dcu_cycles_rx) + " dcu cycles rx\n" +
     String(kw->_l2misses_clean) + " l2 misses cleaning\n" +
