@@ -155,6 +155,7 @@ else
   dnl This is wrong!! Should at least check that HOST_CC and HOST_CXX work.
   AC_CHECK_PROGS(BUILD_CC, gcc)
   AC_CHECK_PROGS(BUILD_CXX, g++)
+	CLICK_PROG_BUILD_CXX
   AC_CHECK_PROGS(BUILD_AR, ar)
   AC_CHECK_PROGS(BUILD_RANLIB, ranlib, :)
   HOST_TOOLS=$enable_tools
