@@ -205,7 +205,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
       nb2->dst_loc_err = htons(ae->loc_err);
       nb2->dst_loc_good = ae->loc_good;
       if (!ae->loc_good)
-	click_chatter("FloodingLocQuerier %s: ``bad'' location information in table!  sending packet anyway...", id().cc());
+	click_chatter("FloodingLocQuerier %s: ``bad'' location information in table!  sending packet anyway...", id().cc()); // XXX lame, should cache the packet and wait for some new info that is good.
       output(0).push(q);
     } 
     else { 
@@ -220,7 +220,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
       ae->last_response_jiffies = click_jiffies();
       send_query_for(nb->dst_ip);
     }
-  } 
+  }
   else {
     // no entry, create new entry and issue query
 #if NOISY

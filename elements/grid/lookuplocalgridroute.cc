@@ -142,7 +142,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
   else {
     /*
      * input from higher level protocol -- expects IP packets
-     * annotated with src IP address.
+     * annotated with dst IP address.
      */
     assert(port == 1);
     // check to see is the desired dest is our neighbor
@@ -251,7 +251,6 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     // no UpdateGridRoutes next-hop table in configuration
     click_chatter("%s: can't forward packet for %s; there is no routing table, trying geographic forwarding", id().cc(), dest_ip.s().cc());
     output(2).push(packet);
-    xp->kill();
     return;
   }
 
