@@ -37,6 +37,7 @@ class PrintSR : public Element {
   
   Packet *simple_action(Packet *);
 
+  bool _print_anno;
 };
 
 CLICK_ENDDECLS

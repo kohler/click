@@ -59,7 +59,6 @@ public:
 
   ETTMetric();
   ~ETTMetric();
-
   const char *class_name() const { return "ETTMetric"; }
   const char *processing() const { return AGNOSTIC; }
   ETTMetric *clone()  const { return new ETTMetric; } 

@@ -314,8 +314,9 @@ SRCR::process_query(struct srpacket *pk1)
   }
   _link_table->dijkstra();
   /* also get the metric from the neighbor */
-  int fwd_m = get_fwd_metric(pk1->get_hop(pk1->num_hops()-1));
-  int rev_m = get_rev_metric(pk1->get_hop(pk1->num_hops()-1));
+  IPAddress neighbor = pk1->get_hop(pk1->num_hops()-1);
+  int fwd_m = get_fwd_metric(neighbor);
+  int rev_m = get_rev_metric(neighbor);
   rev_metric += rev_m;
   fwd_metric += fwd_m;
   fwd_metrics.push_back(fwd_m);
@@ -739,7 +740,12 @@ SRCR::push(int port, Packet *p_in)
     if (q->_metric > best_metric) {
       q->_metric = best_metric;
     }
-    if (sent_packet && best_metric < 2 * q->_metric) {
+    if (sent_packet && 
+	best_metric < 2 * q->_metric && 
+	best_metric < 7777) {
+      /* don't send another query if we have a within 2x path
+       * that is valid (ie metric is < 7777
+       */
       return;
     }
     
@@ -886,6 +892,15 @@ SRCR::print_stats()
 }
 
 String
+SRCR::static_print_ip(Element *f, void *)
+{
+  SRCR *d = (SRCR *) f;
+  StringAccum sa;
+  sa << d->_ip << "\n";
+  return sa.take_string();
+}
+
+String
 SRCR::print_path_cache()
 {
   StringAccum sa;
@@ -999,11 +1014,35 @@ SRCR::link_failure(EtherAddress dst)
   _link_table->dijkstra();
 }
 
+int
+SRCR::static_write_debug(const String &arg, Element *e,
+			void *, ErrorHandler *errh) 
+{
+  SRCR *n = (SRCR *) e;
+  bool b;
+
+  if (!cp_bool(arg, &b))
+    return errh->error("`debug' must be a boolean");
+
+  n->_debug = b;
+  return 0;
+}
+String
+SRCR::static_print_debug(Element *f, void *)
+{
+  StringAccum sa;
+  SRCR *d = (SRCR *) f;
+  sa << d->_debug << "\n";
+  return sa.take_string();
+}
 void
 SRCR::add_handlers()
 {
   add_read_handler("stats", static_print_stats, 0);
   add_read_handler("path_cache", static_print_path_cache, 0);
+  add_read_handler("debug", static_print_debug, 0);
+
+  add_write_handler("debug", static_write_debug, 0);
   add_write_handler("clear", static_clear, 0);
   add_write_handler("start", static_start, 0);
   add_write_handler("link_failure", static_link_failure, 0);

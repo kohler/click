@@ -49,7 +49,9 @@ class SRCR : public Element {
   static int static_clear(const String &arg, Element *e,
 			  void *, ErrorHandler *errh); 
   void clear();
-
+  static String static_print_debug(Element *f, void *);
+  static int static_write_debug(const String &arg, Element *e,
+				void *, ErrorHandler *errh); 
   static int static_start(const String &arg, Element *e,
 			  void *, ErrorHandler *errh); 
   void start(IPAddress dst);
@@ -65,6 +67,7 @@ class SRCR : public Element {
   static String static_print_stats(Element *e, void *);
   String print_stats();
 
+  static String static_print_ip(Element *e, void *);
   static String static_print_path_cache(Element *e, void *);
   String print_path_cache();
 

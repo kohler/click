@@ -115,7 +115,7 @@ DupeFilter::read_stats(Element *xf, void *)
     sa << "age " << now - nfo._last;
     sa << " packets " << nfo._packets;
     sa << " dupes " << nfo._dupes;
-    sa << " [ " << path_to_string(nfo._p) << "]\n";
+    sa << " [ " << path_to_string(nfo._p) << " ]\n";
   }
   return sa.take_string();
 }

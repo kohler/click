@@ -29,7 +29,8 @@
 CLICK_DECLS
 
 PrintSR::PrintSR()
-  : Element(1, 1)
+  : Element(1, 1),
+    _print_anno(false)
 {
   MOD_INC_USE_COUNT;
   _label = "";
@@ -110,7 +111,7 @@ PrintSR::simple_action(Packet *p)
   if (pk->flag(FLAG_ECN)) {
     sa << " ECN ";
   }
-  sa << flags << ") ";
+  sa << flags << ")";
 
   if (pk->_type == PT_DATA) {
     sa << " len " << pk->hlen_with_data();
@@ -119,13 +120,14 @@ PrintSR::simple_action(Packet *p)
   }
   
   sa << " cksum " << (unsigned long) ntohs(pk->_cksum);
-  int failures = WIFI_NUM_FAILURES(p);
-  sa << " failures " << failures;
-  int success = WIFI_TX_SUCCESS_ANNO(p);
-  sa << " success " << success;
-  int rate = WIFI_RATE_ANNO(p);
-  sa << " rate " << rate;
-
+  if (_print_anno) {
+    int failures = WIFI_NUM_FAILURES(p);
+    sa << " failures " << failures;
+    int success = WIFI_TX_SUCCESS_ANNO(p);
+    sa << " success " << success;
+    int rate = WIFI_RATE_ANNO(p);
+    sa << " rate " << rate;
+  }
   if (pk->_type == PT_DATA) {
     sa << " dataseq " << pk->data_seq();
   } else {
@@ -144,8 +146,10 @@ PrintSR::simple_action(Packet *p)
   sa << " [";
   for(int i = 0; i< pk->num_hops(); i++) {
     sa << " "<< pk->get_hop(i).s().cc() << " ";
+    int fwd = pk->get_fwd_metric(i);
+    int rev = pk->get_rev_metric(i);
     if (i != pk->num_hops() - 1) {
-      sa << "<" << pk->get_fwd_metric(i) << "," << pk->get_rev_metric(i) << ">";
+      sa << "<" << fwd << "," << rev << ">";
     }
 
   }

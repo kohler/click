@@ -311,7 +311,9 @@ LinkTable::valid_route(Vector<IPAddress> route)
     return false;
   }
   /* ensure the metrics are all valid */
-  if (get_route_metric(route) == 0){
+  int metric = get_route_metric(route);
+  if (metric  == 0 ||
+      metric >= 7777){
     return false;
   }
 
