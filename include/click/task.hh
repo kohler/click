@@ -21,18 +21,18 @@ class Task { public:
   static const int MAX_TICKETS = 1<<15;
   static const int DEFAULT_TICKETS = 1<<10;
 #endif
-  
+
   Task(TaskHook, void *);
   Task(Element *);			// call element->run_scheduled()
   ~Task();
 
   bool initialized() const		{ return _all_prev; }
-  bool scheduled() const		{ return _prev; }
+  bool scheduled() const		{ return _prev != 0; }
 
   TaskHook hook() const			{ return _hook; }
   void *thunk() const			{ return _thunk; }
   Element *element() const;
-  
+
   Task *scheduled_next() const		{ return _next; }
   Task *scheduled_prev() const		{ return _prev; }
   RouterThread *scheduled_list() const	{ return _list; }
@@ -174,7 +174,7 @@ Task::element()	const
 inline int
 Task::fast_unschedule()
 {
-  if (_next) {
+  if (_prev) {
     _next->_prev = _prev;
     _prev->_next = _next;
     _next = _prev = 0;
@@ -210,7 +210,7 @@ inline void
 Task::fast_reschedule()
 {
   // should not be scheduled at this point
-  assert(_list && !_next);
+  assert(_list && !_prev);
 
   // increase pass
   _pass += _stride;
@@ -245,7 +245,7 @@ Task::fast_reschedule()
 inline void
 Task::fast_reschedule()
 {
-  assert(_list && !_next);
+  assert(_list && !_prev);
   _prev = _list->_prev;
   _next = _list;
   _list->_prev = this;
