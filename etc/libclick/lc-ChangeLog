@@ -1,3 +1,12 @@
+2002-09-03 Tuesday 01:58  Eddie Kohler <kohler@icir.org>
+
+	* include/click/bighashmap.cc, include/click/bighashmap.hh,
+	include/click/bighashmap_arena.hh, include/click/router.hh,
+	include/click/bighashmap.cc, include/click/bighashmap.hh,
+	include/click/bighashmap_arena.hh, include/click/router.hh,
+	libsrc/bighashmap_arena.cc, libsrc/router.cc: new BigHashMap_Arena
+	story: shared arenas between HashMaps
+
 2002-08-30 Friday 14:41  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/templatei.cc: adapt to const_iterators change

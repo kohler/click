@@ -1,3 +1,15 @@
+2002-09-03 Tuesday 01:58  Eddie Kohler <kohler@icir.org>
+
+	* elements/icmp/icmppingrewriter.cc (1.17),
+	elements/ip/ipaddrrewriter.cc (1.16), elements/ip/iprw.hh (1.25),
+	elements/tcpudp/iprewriter.cc (1.38),
+	elements/tcpudp/tcprewriter.cc (1.27), include/click/bighashmap.cc
+	(1.15), include/click/bighashmap.hh (1.13),
+	include/click/bighashmap_arena.hh (1.7), include/click/router.hh
+	(1.38), lib/bighashmap_arena.cc (1.9), lib/router.cc (1.131),
+	linuxmodule/module.cc (1.73): new BigHashMap_Arena story: shared
+	arenas between HashMaps
+
 2002-08-30 Friday 15:15  Eddie Kohler <kohler@icir.org>
 
 	* doc/mkwebdoc.pl (1.35): whoops
