@@ -123,6 +123,9 @@ private:
   /* interval at which to check RT entries for expiry */
   static const unsigned int EXPIRE_TIMER_PERIOD = 100; // msecs
 
+  // extended logging
+  ErrorHandler *_extended_logging_errh;
+  void GridRouteTable::log_route_table (); // print route table on 'routelog' chatter channel
 
   /* this node's addresses */
   IPAddress _ip;
@@ -133,7 +136,6 @@ private:
 
   /* local DSDV radius */
   int _max_hops;
-
 
   Timer _expire_timer;
   Timer _hello_timer;

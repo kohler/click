@@ -56,6 +56,24 @@ GridRouteTable::cast(const char *n)
 
 
 
+void
+GridRouteTable::log_route_table ()
+{
+  for (RTIter i = _rtes.first(); i; i++) {
+    const RTEntry &f = i.value();
+    _extended_logging_errh->message ("%s %f %f %s %d %c %d\n", 
+				     f.dest_ip.s().cc(),
+				     f.loc.lat(),
+				     f.loc.lon(),
+				     f.next_hop_ip.s().cc(),
+				     f.num_hops,
+				     (f.is_gateway ? 'y' : 'n'),
+				     f.seq_no);
+  }
+  _extended_logging_errh->message ("\n");
+}
+
+
 int
 GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
@@ -89,6 +107,8 @@ GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
     return errh->error("jitter is bigger than period");
   if (_max_hops < 0)
     return errh->error("max hops must be greater than 0");
+
+  _extended_logging_errh = router()->chatter_channel(String("routelog"));
 
   return res;
 }
@@ -153,26 +173,33 @@ GridRouteTable::simple_action(Packet *packet)
   EtherAddress ethaddr((unsigned char *) eh->ether_shost);
 
   // this should be redundant (see HostEtherFilter in grid.click)
-//   if (ethaddr == _eth) {
-//     click_chatter("GridRouteTable %s: received own Grid packet; ignoring it", id().cc());
-//     packet->kill();
-//     return 0;
-//   }
+  if (ethaddr == _eth) {
+    click_chatter("GridRouteTable %s: received own Grid packet; ignoring it", id().cc());
+    packet->kill();
+    return 0;
+  }
 
   grid_hello *hlo = (grid_hello *) (gh + 1);
    
+  // extended logging
+  timeval tv;
+  gettimeofday (&tv, NULL);
+  _extended_logging_errh->message ("recvd %d from %s %d %d", hlo->seq_no, ipaddr.s().cc(), tv.tv_sec, tv.tv_usec);
+
   /*
    * add 1-hop route to packet's transmitter; perform some sanity
    * checking if entry already existed 
    */
+
   RTEntry *r = _rtes.findp(ipaddr);
+
   if (!r)
     click_chatter("GridRouteTable %s: adding new 1-hop route %s -- %s", 
 		  id().cc(), ipaddr.s().cc(), ethaddr.s().cc()); 
   else if (r->num_hops == 1 && r->next_hop_eth != ethaddr)
     click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", 
 		  id().cc(), ipaddr.s().cc(), r->next_hop_eth.s().cc(), ethaddr.s().cc());
-  
+
   _rtes.insert(ipaddr, RTEntry(ipaddr, ethaddr, gh, hlo, jiff));
   
   /*
@@ -265,6 +292,8 @@ GridRouteTable::simple_action(Packet *packet)
     bool removed = _rtes.remove(broken_dests[i]);
     assert(removed);
   }
+
+  log_route_table ();  // extended logging
 
   /* send triggered updates */
   if (triggered_rtes.size() > 0)
@@ -375,6 +404,9 @@ GridRouteTable::expire_routes()
   xip_t expired_rtes;
   xip_t expired_next_hops;
 
+  timeval tv;
+  gettimeofday (&tv, NULL);
+
   /* 1. loop through RT once, remembering destinations which have been
      in our RT too long (last_updated_jiffies too old) or have
      exceeded their ttl.  Also note those expired 1-hop entries --
@@ -383,6 +415,9 @@ GridRouteTable::expire_routes()
     if (jiff - i.value().last_updated_jiffies > _timeout_jiffies ||
 	decr_ttl(i.value().ttl, jiff_to_msec(jiff - i.value().last_updated_jiffies)) == 0) {
       expired_rtes.insert(i.value().dest_ip, true);
+
+      _extended_logging_errh->message ("expiring %s %d %d", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
+
       if (i.value().num_hops == 1) /* may be another route's next hop */
 	expired_next_hops.insert(i.value().dest_ip, true);
     }
@@ -394,8 +429,11 @@ GridRouteTable::expire_routes()
     // don't re-expire 1-hop routes, they are their own next hop
     if (i.value().num_hops > 1 &&
 	expired_next_hops.findp(i.value().next_hop_ip) &&
-	!expired_rtes.findp(i.value().dest_ip))
+	!expired_rtes.findp(i.value().dest_ip)) {
       expired_rtes.insert(i.value().dest_ip, true);
+
+      _extended_logging_errh->message ("next to %s expired %d %d", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
+    }
   }
   
   /* 3. Then, push all expired entries onto the return vector and
@@ -413,6 +451,8 @@ GridRouteTable::expire_routes()
     bool removed = _rtes.remove(i.key());
     assert(removed);
   }
+
+  log_route_table ();  // extended logging
 
   return retval;
 }
@@ -461,7 +501,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rte_info,
   int max_rtes = (1500 - hdr_sz) / sizeof(grid_nbr_entry);
   int num_rtes = (max_rtes < rte_info.size() ? max_rtes : rte_info.size()); // min
   int psz = hdr_sz + sizeof(grid_nbr_entry) * num_rtes;
-  
+
   assert(psz <= 1500);
   if (num_rtes < rte_info.size())
     click_chatter("GridRouteTable %s: too many routes, truncating route advertisement",
@@ -510,13 +550,31 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rte_info,
   if (update_seq) 
     _seq_no += 2;
   
-  
+  // extended logging
+  gettimeofday (&tv, NULL);
+  _extended_logging_errh->message ("sending %d %d %d", _seq_no, tv.tv_sec, tv.tv_usec);
+
   hlo->age = htonl(grid_hello::MAX_AGE_DEFAULT);
 
   grid_nbr_entry *curr = (grid_nbr_entry *) (hlo + 1);
-  for (int i = 0; i < num_rtes; i++, curr++) 
-    rte_info[i].fill_in(curr);
+  for (int i = 0; i < num_rtes; i++, curr++) {
+
+    // extended logging    
+    IPAddress ip((unsigned char *) &curr->ip);
+    IPAddress next((unsigned char *) &curr->next_hop_ip);
+    _extended_logging_errh->message ("%s %f %f %s %d %c %d\n", 
+		   ip.s().cc(),
+		   curr->loc.lat(),
+		   curr->loc.lon(),
+		   next.s().cc(),
+		   curr->num_hops,
+		   (curr->is_gateway ? 'y' : 'n'),
+		   curr->seq_no);
     
+    rte_info[i].fill_in(curr);
+  }
+  _extended_logging_errh->message ("\n");
+
   output(0).push(p);
 }
 
@@ -533,7 +591,6 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb)
   nb->seq_no = htonl(seq_no);
   nb->age = htonl(ttl);
 }
-
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridRouteTable)

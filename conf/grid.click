@@ -27,6 +27,7 @@ elementclass TTLChecker {
 
 ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 ChatterSocket(tcp, 7776);
+ChatterSocket(tcp, 7766, CHANNEL routelog);
 
 li :: GridLocationInfo(POS_LAT, POS_LON);
 
