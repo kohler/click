@@ -1,3 +1,17 @@
+2001-03-06 Tuesday 19:11  Benjie Chen <benjie@lcs.mit.edu>
+
+	* lib/confparse.cc: fix confparser to parse des cblock
+
+2001-03-06 Tuesday 19:10  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/standard/ratedsource.cc: fix braindead bug: don't keep
+	on pulling if over limit
+
+2001-03-06 Tuesday 17:38  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/standard/ratedsource.cc: pull version of ratedsource
+	honor _stop
+
 2001-03-06 Tuesday 17:13  Benjie Chen <benjie@lcs.mit.edu>
 
 	* lib/task.cc: bug fix in uninitialize(); have join_scheduler
