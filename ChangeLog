@@ -1,3 +1,11 @@
+2001-02-12 Monday 14:42  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/clp.c, tools/click-align/alignclass.cc,
+	tools/click-align/alignclass.hh, tools/click-align/alignment.cc,
+	tools/click-align/alignment.hh, tools/click-align/click-align.cc,
+	tools/lib/routert.cc, tools/lib/toolutils.cc: nitlets, and
+	click-align fixes (?) reported by Benjie, Dan Aguayo, et al
+
 2001-02-10 Saturday 21:27  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* conf/make-ip-conf.pl: buglet caught by the ever-enterprising
