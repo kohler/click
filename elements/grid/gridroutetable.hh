@@ -131,14 +131,27 @@ private:
     IPAddress next_hop_ip; // IP address of next hop for this destination
     EtherAddress next_hop_eth; // hardware address of next hop
 
-    unsigned char num_hops; // number of hops to dest
+  private:
+    unsigned char _num_hops; // number of hops to dest
+  public:
+    unsigned char num_hops() const { check(); return _num_hops; }
+
+    void invalidate() { 
+      check();
+      assert(_num_hops > 0 && !(_seq_no & 1));
+      _num_hops = 0; _seq_no++;
+      check();
+    }
 
     struct grid_location loc; // location of dest, as contained in its route ads
     unsigned short loc_err;
     bool loc_good;
     bool is_gateway;
 
-    unsigned int seq_no; 
+  private:
+    unsigned int _seq_no; 
+  public:
+    unsigned int seq_no() const { check(); return _seq_no; }
     unsigned int ttl;  // msecs
 
     int last_updated_jiffies; // last time this entry was updated
@@ -150,50 +163,53 @@ private:
                             update_metric. */
 
     RTEntry() : 
-      _init(false), num_hops(0), loc_good(false), is_gateway(false), 
-      seq_no(0), ttl(0), last_updated_jiffies(-1), metric_valid(false)
+      _init(false), _num_hops(0), loc_good(false), is_gateway(false), 
+      _seq_no(0), ttl(0), last_updated_jiffies(-1), metric_valid(false)
     { }
-    
+
+  public:
     RTEntry(IPAddress _dest_ip, IPAddress _next_hop_ip, EtherAddress _next_hop_eth,
-	    unsigned char _num_hops, grid_location _loc, unsigned short _loc_err, 
-	    bool _loc_good, bool _is_gateway, unsigned int _seq_no, unsigned int _ttl, 
+	    unsigned char num_hops, grid_location _loc, unsigned short _loc_err, 
+	    bool _loc_good, bool _is_gateway, unsigned int seq_no, unsigned int _ttl, 
 	    unsigned int _last_updated_jiffies) :
       _init(true), dest_ip(_dest_ip), next_hop_ip(_next_hop_ip), 
-      next_hop_eth(_next_hop_eth), num_hops(_num_hops), loc(_loc), 
+      next_hop_eth(_next_hop_eth), _num_hops(num_hops), loc(_loc), 
       loc_err(_loc_err), loc_good(_loc_good), is_gateway(_is_gateway), 
-      seq_no(_seq_no), ttl(_ttl),
+      _seq_no(seq_no), ttl(_ttl),
       last_updated_jiffies(_last_updated_jiffies), metric_valid(false)
-    { }
+    { check(); }
 
     /* constructor for 1-hop route entry, converting from net byte order */
     RTEntry(IPAddress ip, EtherAddress eth, grid_hdr *gh, grid_hello *hlo,
 	    unsigned int jiff) :
-      _init(true), dest_ip(ip), dest_eth(eth), next_hop_ip(ip), next_hop_eth(eth), num_hops(1), 
+      _init(true), dest_ip(ip), dest_eth(eth), next_hop_ip(ip), next_hop_eth(eth), _num_hops(1), 
       loc(gh->loc), loc_good(gh->loc_good), is_gateway(hlo->is_gateway),
       last_updated_jiffies(jiff), metric_valid(false)
     { 
       loc_err = ntohs(gh->loc_err); 
-      seq_no = ntohl(hlo->seq_no); 
+      _seq_no = ntohl(hlo->seq_no); 
       ttl = ntohl(hlo->ttl);
+      check();
     }
 
     /* constructor from grid_nbr_entry, converting from net byte order */
     RTEntry(IPAddress ip, EtherAddress eth, grid_nbr_entry *nbr, 
 	    unsigned int jiff) :
       _init(true), dest_ip(nbr->ip), next_hop_ip(ip), next_hop_eth(eth),
-      num_hops(nbr->num_hops + 1), loc(nbr->loc), loc_good(nbr->loc_good),  
+      _num_hops(nbr->num_hops ? nbr->num_hops + 1 : 0), loc(nbr->loc), loc_good(nbr->loc_good),  
       is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
       metric_valid(nbr->metric_valid)
     {
       loc_err = ntohs(nbr->loc_err);
-      seq_no = ntohl(nbr->seq_no);
+      _seq_no = ntohl(nbr->seq_no);
       ttl = ntohl(nbr->ttl);
       metric = ntohl(nbr->metric);
+      check();
     }
     
     /* copy data from this into nb, converting to net byte order */
     void fill_in(grid_nbr_entry *nb, LinkStat *ls = 0);
-    
+    void check() const { assert(_init); assert((_num_hops > 0) != (_seq_no & 1)); }
   }; 
  
   typedef BigHashMap<IPAddress, RTEntry> RTable;
@@ -360,7 +376,7 @@ private:
   RouteEntry make_generic_rte(const RTEntry &rte) {
     return RouteEntry(rte.dest_ip, rte.loc_good, rte.loc_err, rte.loc, 
 		      rte.next_hop_eth, rte.next_hop_ip, 
-		      rte.seq_no, rte.num_hops);
+		      rte.seq_no(), rte.num_hops());
   }
 
 };

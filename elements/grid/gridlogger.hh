@@ -265,8 +265,8 @@ public:
     add_one_byte(why);
     add_ip(r.dest_ip);
     add_ip(r.next_hop_ip);
-    add_one_byte(r.num_hops);
-    add_long(r.seq_no);
+    add_one_byte(r.num_hops());
+    add_long(r.seq_no());
   }
 
   void log_added_route(reason_t why, const GridGenericRouteTable::RouteEntry &r, const unsigned extra) {
@@ -276,8 +276,8 @@ public:
     add_one_byte(why);
     add_ip(r.dest_ip);
     add_ip(r.next_hop_ip);
-    add_one_byte(r.num_hops);
-    add_long(r.seq_no);
+    add_one_byte(r.num_hops());
+    add_long(r.seq_no());
     add_long(extra);
   }
 
@@ -341,8 +341,8 @@ public:
       const GridGenericRouteTable::RouteEntry &r = rt[i];
       add_ip(r.dest_ip);
       add_ip(r.next_hop_ip);
-      add_one_byte(r.num_hops);
-      add_long(r.seq_no);
+      add_one_byte(r.num_hops());
+      add_long(r.seq_no());
     }
     write_buf();
   }

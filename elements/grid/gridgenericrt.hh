@@ -28,8 +28,12 @@ public:
     class EtherAddress   next_hop_eth; // hardware address of next hop
     class IPAddress      next_hop_ip;  // IP address of next hop
     
-    unsigned int         seq_no;
-    unsigned char        num_hops;
+  protected:
+    unsigned int         _seq_no;
+    unsigned char        _num_hops;
+  public:
+    unsigned int         seq_no()   const { return _seq_no;   }
+    unsigned char        num_hops() const { return _num_hops; }
 
     RouteEntry(const IPAddress &dst, 
 	       bool lg, unsigned short le, const grid_location &l, 
@@ -37,10 +41,10 @@ public:
 	       unsigned int sn, unsigned char nh) :
       dest_ip(dst), dest_loc(l), loc_good(lg), loc_err(le), 
       next_hop_eth(nhe), next_hop_ip(nhi),
-      seq_no(sn), num_hops(nh) 
+      _seq_no(sn), _num_hops(nh) 
     { }
 
-    RouteEntry() : loc_good(false), loc_err(0), seq_no(0), num_hops(0) { }
+    RouteEntry() : loc_good(false), loc_err(0), _seq_no(0), _num_hops(0) { }
   };
 
 

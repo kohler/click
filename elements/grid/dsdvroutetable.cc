@@ -197,7 +197,7 @@ DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, double &rate)
   case EstByMeas: {
     struct timeval last;
     RTEntry *r = _rtes.findp(ip);
-    if (r == 0 || r->num_hops > 1)
+    if (r == 0 || r->num_hops() > 1)
       return false;
     unsigned int window = 0;
     unsigned int num_rx = 0;
@@ -223,7 +223,8 @@ void
 DSDVRouteTable::insert_route(const RTEntry &r, const GridLogger::reason_t why)
 {
   check_invariants();
-
+  r.check();
+  
   RTEntry *old_r = _rtes.findp(r.dest_ip);
   
   // invariant check: running timers exist for all current good
@@ -284,7 +285,7 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
   assert(r != 0);
   
   // 2. route to expire should be good
-  assert(r->good() && (r->seq_no & 1) == 0);
+  assert(r->good() && (r->seq_no() & 1) == 0);
   
   // 3. the expire timer for this dest should exist, but should not be
   // running.
@@ -314,7 +315,7 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
   // therefore the if() will be true.  For other metrics, there can be
   // cases where we should not expire n2 just because n1 expires, if
   // n1 is not its own next hop.
-  if (r->num_hops == 1) {
+  if (r->num_hops() == 1) {
     assert(r->next_hop_ip == r->dest_ip);
     for (RTIter i = _rtes.first(); i; i++) {
       RTEntry r = i.value();
@@ -357,10 +358,8 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
     _expire_hooks.remove(r->dest_ip);
 
     // mark route as broken
-    r->num_hops = 0;
-    r->seq_no++;
+    r->invalidate(jiff);
     r->ttl = grid_hello::MAX_TTL_DEFAULT;
-    r->last_expired_jiffies = jiff;
 
     // set up triggered ad
     r->advertise_ok_jiffies = jiff;
@@ -465,11 +464,11 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
 void
 DSDVRouteTable::init_metric(RTEntry &r)
 {
-  assert(r.num_hops == 1);
+  assert(r.num_hops() == 1);
 
   switch (_metric_type) {
   case MetricHopCount:
-    r.metric = metric_t(r.num_hops);
+    r.metric = metric_t(r.num_hops());
     break;
   case MetricEstTxCount: {
     double fwd_rate = 0;
@@ -509,18 +508,18 @@ DSDVRouteTable::update_wst(RTEntry *old_r, RTEntry &new_r, unsigned int jiff)
     new_r.wst = _wst0;
     new_r.last_seq_jiffies = jiff;
   }
-  else if (old_r->seq_no == new_r.seq_no) {
+  else if (old_r->seq_no() == new_r.seq_no()) {
     new_r.wst = old_r->wst;
     new_r.last_seq_jiffies = old_r->last_seq_jiffies;
   }
-  else if (old_r->seq_no < new_r.seq_no) {
+  else if (old_r->seq_no() < new_r.seq_no()) {
     assert(old_r->last_updated_jiffies >= old_r->last_seq_jiffies);
     new_r.wst = _alpha * old_r->wst + 
       (1 - _alpha) * jiff_to_msec(old_r->last_updated_jiffies - old_r->last_seq_jiffies);
     new_r.last_seq_jiffies = jiff;
   }
   else {
-    assert(old_r->seq_no > new_r.seq_no);
+    assert(old_r->seq_no() > new_r.seq_no());
     // Do nothing.  We will never accept this route anyway.
   }
   
@@ -536,7 +535,7 @@ DSDVRouteTable::update_wst(RTEntry *old_r, RTEntry &new_r, unsigned int jiff)
 void 
 DSDVRouteTable::update_metric(RTEntry &r)
 {
-  assert(r.num_hops > 1);
+  assert(r.num_hops() > 1);
 
   RTEntry *next_hop = _rtes.findp(r.next_hop_ip);
   if (!next_hop) {
@@ -558,15 +557,15 @@ DSDVRouteTable::update_metric(RTEntry &r)
   case MetricHopCount:
     if (next_hop->metric.val > 1)
       click_chatter("DSDVRouteTable: WARNING metric type is hop count but next-hop %s metric is > 1 (%u)",
-		    next_hop->dest_ip.s().cc(), next_hop->metric);
+		    next_hop->dest_ip.s().cc(), next_hop->metric.val);
   case MetricEstTxCount: 
     if (_metric_type == MetricEstTxCount) {
-      if (r.metric.val < (unsigned) 100 * (r.num_hops - 1))
-	click_chatter("update_metric WARNING received metric (%d) too low for %s (%d hops)",
-		      r.metric, r.dest_ip.s().cc(), r.num_hops);
+      if (r.metric.val < (unsigned) 100 * (r.num_hops() - 1))
+	click_chatter("update_metric WARNING received metric (%u) too low for %s (%d hops)",
+		      r.metric.val, r.dest_ip.s().cc(), r.num_hops());
       if (next_hop->metric.val < 100)
-	click_chatter("update_metric WARNING next hop %s for %s metric is too low (%d)",
-		      next_hop->dest_ip.s().cc(), r.dest_ip.s().cc(), next_hop->metric);
+	click_chatter("update_metric WARNING next hop %s for %s metric is too low (%u)",
+		      next_hop->dest_ip.s().cc(), r.dest_ip.s().cc(), next_hop->metric.val);
     }
     r.metric.val += next_hop->metric.val;
     break;
@@ -589,7 +588,7 @@ DSDVRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
   // prefer a 5-hop route or a 2-hop route, given that you don't have
   // any other information about them?  duh.
   if (!r1.metric.valid && !r2.metric.valid) {
-    return r1.num_hops < r2.num_hops;
+    return r1.num_hops() < r2.num_hops();
   }
   
   assert(r1.metric.valid && r2.metric.valid);
@@ -710,10 +709,11 @@ void
 DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsigned int jiff)
 {
   check_invariants();
+  new_r.check();
 
-  assert(was_sender ? new_r.num_hops == 1 : new_r.num_hops != 1);
+  assert(was_sender ? new_r.num_hops() == 1 : new_r.num_hops() != 1);
 
-  if (new_r.good() && new_r.num_hops >_max_hops)
+  if (new_r.good() && new_r.num_hops() >_max_hops)
     return; // ignore ``non-local'' routes
 
   if (was_sender)
@@ -741,7 +741,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
     }
     insert_route(new_r, was_sender ? GridLogger::NEW_DEST_SENDER : GridLogger::NEW_DEST);
   }
-  else if (old_r->seq_no == new_r.seq_no) {
+  else if (old_r->seq_no() == new_r.seq_no()) {
     // Accept if better route
     assert(new_r.good() ? old_r->good() : old_r->broken()); // same seq ==> same broken state
     if (new_r.good() && metric_preferable(new_r, *old_r)) {
@@ -752,7 +752,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
       insert_route(new_r, was_sender ? GridLogger::BETTER_RTE_SENDER : GridLogger::BETTER_RTE);
     }
   }
-  else if (old_r->seq_no < new_r.seq_no) {
+  else if (old_r->seq_no() < new_r.seq_no()) {
     // Must *always* accept newer info
     new_r.need_seq_ad = true; // XXX this may not be best, see bake-off paper
     schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
@@ -761,7 +761,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
     insert_route(new_r, was_sender ? GridLogger::NEWER_SEQ_SENDER : GridLogger::NEWER_SEQ);
   }
   else {
-    assert(old_r->seq_no > new_r.seq_no);
+    assert(old_r->seq_no() > new_r.seq_no());
     if (new_r.broken() && old_r->good()) {
       // Someone has stale info, give them good info
       old_r->advertise_ok_jiffies = jiff;
@@ -913,11 +913,11 @@ DSDVRouteTable::print_rtes_v(Element *e, void *)
     const RTEntry &f = i.value();
     s += f.dest_ip.s() 
       + " next=" + f.next_hop_ip.s() 
-      + " hops=" + String((int) f.num_hops) 
+      + " hops=" + String((int) f.num_hops()) 
       + " gw=" + (f.is_gateway ? "y" : "n")
       + " loc=" + f.dest_loc.s()
       + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
-      + " seq=" + String(f.seq_no)
+      + " seq=" + String(f.seq_no())
       + " metric_valid=" + (f.metric.valid ? "yes" : "no")
       + " metric=" + String(f.metric.val)
       + " ttl=" + String(f.ttl)
@@ -945,9 +945,9 @@ DSDVRouteTable::print_rtes(Element *e, void *)
     const RTEntry &f = i.value();
     s += f.dest_ip.s() 
       + " next=" + f.next_hop_ip.s() 
-      + " hops=" + String((int) f.num_hops) 
+      + " hops=" + String((int) f.num_hops()) 
       + " gw=" + (f.is_gateway ? "y" : "n")
-      + " seq=" + String(f.seq_no)
+      + " seq=" + String(f.seq_no())
       + "\n";
   }
   
@@ -1284,13 +1284,14 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
 void
 DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls) const
 {
+  check();
   nb->ip = dest_ip;
   nb->next_hop_ip = next_hop_ip;
-  nb->num_hops = num_hops;
+  nb->num_hops = num_hops();
   nb->loc = dest_loc;
   nb->loc_err = htons(loc_err);
   nb->loc_good = loc_good;
-  nb->seq_no = htonl(seq_no);
+  nb->seq_no = htonl(seq_no());
   nb->metric = htonl(metric.val);
   nb->metric_valid = metric.valid;
   nb->is_gateway = is_gateway;
@@ -1303,7 +1304,7 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls) const
   nb->link_qual = 0;
   nb->link_sig = 0;
   nb->measurement_time.tv_sec = nb->measurement_time.tv_usec = 0;
-  if (ls && num_hops == 1) {
+  if (ls && num_hops() == 1) {
     LinkStat::stat_t *s = ls ? ls->_stats.findp(next_hop_eth) : 0;
     if (s) {
       nb->link_qual = htonl(s->qual);
@@ -1352,13 +1353,14 @@ DSDVRouteTable::log_dump_hook(bool reschedule)
 void
 DSDVRouteTable::RTEntry::dump() const
 {
+  check();
   unsigned int jiff = click_jiffies();
   click_chatter(" 	dest_ip: %s", dest_ip.s().cc());
   click_chatter("      dest_eth: %s", dest_eth.s().cc());
   click_chatter("   next_hop_ip: %s", next_hop_ip.s().cc());
   click_chatter("  next_hop_eth: %s", next_hop_eth.s().cc());
-  click_chatter(" 	 seq_no: %u", seq_no);
-  click_chatter("      num_hops: %u", (unsigned int) num_hops);
+  click_chatter(" 	 seq_no: %u", seq_no());
+  click_chatter("      num_hops: %u", (unsigned int) num_hops());
   click_chatter("  last_updated: %s", jiff_diff_string(last_updated_jiffies, jiff).cc());
   click_chatter("  last_expired: %s", jiff_diff_string(last_expired_jiffies, jiff).cc());
   click_chatter("      last_seq: %s", jiff_diff_string(last_seq_jiffies, jiff).cc());
@@ -1374,6 +1376,8 @@ DSDVRouteTable::check_invariants(const IPAddress *ignore) const
 {
   for (RTIter i = _rtes.first(); i; i++) {
     const RTEntry &r = i.value();
+
+    r.check();
 
     if (ignore && *ignore == i.key())
       continue;

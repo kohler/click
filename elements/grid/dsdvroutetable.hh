@@ -139,6 +139,8 @@ private:
    * route table entry
    */
   class RTEntry : public RouteEntry {
+  private:
+    bool                _init;
 
   public:
     class EtherAddress  dest_eth;              // hardware address of destination; 
@@ -162,13 +164,23 @@ private:
     bool                need_metric_ad;
     unsigned int        last_expired_jiffies;  // when the route was expired (if broken)
 
-    bool broken() const { return num_hops == 0; }
-    bool good()   const { return num_hops != 0; }
+    bool broken() const { check(); return num_hops() == 0; }
+    bool good()   const { check(); return num_hops() != 0; }
 
-    void dump() const; // click_chatter indo about this entry
+    void dump()   const; // click_chatter info about this entry
+    void check()  const { assert(_init); assert((num_hops() > 0) != (seq_no() & 1)); } 
+
+    void invalidate(unsigned int jiff) {
+      check();
+      assert(num_hops() > 0);
+      _num_hops = 0;
+      _seq_no++;
+      last_expired_jiffies = jiff;
+      check();
+    }
 
     RTEntry() : 
-      is_gateway(false), ttl(0), last_updated_jiffies(0), wst(0), 
+      _init(false), is_gateway(false), ttl(0), last_updated_jiffies(0), wst(0), 
       last_seq_jiffies(0), advertise_ok_jiffies(0), need_seq_ad(false), 
       need_metric_ad(false), last_expired_jiffies(0)
     { }
@@ -177,13 +189,14 @@ private:
     RTEntry(IPAddress ip, EtherAddress eth, grid_hdr *gh, grid_hello *hlo,
 	    unsigned int jiff) :
       RouteEntry(ip, gh->loc_good, gh->loc_err, gh->loc, eth, ip, hlo->seq_no, 1),
-      dest_eth(eth), is_gateway(hlo->is_gateway), ttl(hlo->ttl), last_updated_jiffies(jiff), 
+      _init(true), dest_eth(eth), is_gateway(hlo->is_gateway), ttl(hlo->ttl), last_updated_jiffies(jiff), 
       wst(0), last_seq_jiffies(jiff), advertise_ok_jiffies(0), need_seq_ad(false), 
       need_metric_ad(false), last_expired_jiffies(0)
     { 
       loc_err = ntohs(loc_err); 
-      seq_no = ntohl(seq_no); 
+      _seq_no = ntohl(_seq_no); 
       ttl = ntohl(ttl);
+      check();
     }
 
     /* constructor from grid_nbr_entry, converting from net byte order */
@@ -191,15 +204,16 @@ private:
 	    unsigned int jiff) :
       RouteEntry(nbr->ip, nbr->loc_good, nbr->loc_err, nbr->loc,
 		 eth, ip, nbr->seq_no, nbr->num_hops > 0 ? nbr->num_hops + 1 : 0),
-      is_gateway(nbr->is_gateway), ttl(nbr->ttl), last_updated_jiffies(jiff), 
+      _init(true), is_gateway(nbr->is_gateway), ttl(nbr->ttl), last_updated_jiffies(jiff), 
       metric(nbr->metric, nbr->metric_valid), wst(0), last_seq_jiffies(0), 
       advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false),
       last_expired_jiffies(nbr->num_hops > 0 ? 0 : jiff)
     {
       loc_err = ntohs(loc_err);
-      seq_no = ntohl(seq_no);
+      _seq_no = ntohl(_seq_no);
       ttl = ntohl(ttl);
       metric.val = ntohl(metric.val);
+      check();
     }
     
     /* copy data from this into nb, converting to net byte order */

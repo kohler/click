@@ -40,7 +40,7 @@ GridRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry)
   
   entry = RouteEntry(dest_ip, r->loc_good, r->loc_err, r->loc,
 		     r->next_hop_eth, r->next_hop_ip, 
-		     r->seq_no, r->num_hops);
+		     r->seq_no(), r->num_hops());
   return true;  
 }
 
@@ -51,7 +51,7 @@ GridRouteTable::get_all_entries(Vector<RouteEntry> &vec)
     const RTEntry &rte = iter.value();
     vec.push_back(RouteEntry(rte.dest_ip, rte.loc_good, rte.loc_err, rte.loc, 
 			     rte.next_hop_eth, rte.next_hop_ip, 
-			     rte.seq_no, rte.num_hops));
+			     rte.seq_no(), rte.num_hops()));
   }
 }
 
@@ -97,15 +97,15 @@ GridRouteTable::log_route_table ()
   char str[80];
   for (RTIter i = _rtes.first(); i; i++) {
     const RTEntry &f = i.value();
-    
+
     snprintf(str, sizeof(str), 
 	     "%s %s %s %d %c %u\n", 
 	     f.dest_ip.s().cc(),
 	     f.loc.s().cc(),
 	     f.next_hop_ip.s().cc(),
-	     f.num_hops,
+	     f.num_hops(),
 	     (f.is_gateway ? 'y' : 'n'),
-	     f.seq_no);
+	     f.seq_no());
     _extended_logging_errh->message(str);
   }
   _extended_logging_errh->message("\n");
@@ -190,7 +190,7 @@ GridRouteTable::current_gateway(RouteEntry &entry)
 
     if (f.is_gateway) {
       entry = RouteEntry(f.dest_ip, f.loc_good, f.loc_err, f.loc, 
-			 f.next_hop_eth, f.next_hop_ip, f.seq_no, f.num_hops);
+			 f.next_hop_eth, f.next_hop_ip, f.seq_no(), f.num_hops());
       return true;
       }
   }
@@ -333,7 +333,7 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
     h(102);
     struct timeval last;
     RTEntry *r = _rtes.findp(ip);
-    if (r == 0 || r->num_hops > 1) {
+    if (r == 0 || r->num_hops() > 1) {
       h(103);
       return false;
     }
@@ -395,7 +395,7 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
   case EstByMeas: {
     struct timeval last;
     RTEntry *r = _rtes.findp(ip);
-    if (r == 0 || r->num_hops > 1)
+    if (r == 0 || r->num_hops() > 1)
       return false;
     unsigned int window = 0;
     unsigned int num_rx = 0;
@@ -421,11 +421,11 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
 void
 GridRouteTable::init_metric(RTEntry &r)
 {
-  assert(r.num_hops == 1);
+  assert(r.num_hops() == 1);
 
   switch (_metric_type) {
   case MetricHopCount:
-    r.metric = r.num_hops;
+    r.metric = r.num_hops();
     r.metric_valid = true;
     break;
   case MetricMinDeliveryRate:
@@ -520,7 +520,7 @@ GridRouteTable::init_metric(RTEntry &r)
 void 
 GridRouteTable::update_metric(RTEntry &r)
 {
-  if (r.num_hops == 0)
+  if (r.num_hops() == 0)
     return; // is broken route ad
 
   RTEntry *next_hop = _rtes.findp(r.next_hop_ip);
@@ -546,9 +546,9 @@ GridRouteTable::update_metric(RTEntry &r)
 		    next_hop->dest_ip.s().cc(), next_hop->metric);
   case MetricEstTxCount: 
     if (_metric_type == MetricEstTxCount) {
-      if (r.metric < (unsigned) 100 * (r.num_hops - 1))
+      if (r.metric < (unsigned) 100 * (r.num_hops() - 1))
 	click_chatter("update_metric WARNING received metric (%d) too low for %s (%d hops)",
-		      r.metric, r.dest_ip.s().cc(), r.num_hops);
+		      r.metric, r.dest_ip.s().cc(), r.num_hops());
       if (next_hop->metric < 100)
 	click_chatter("update_metric WARNING next hop %s for %s metric is too low (%d)",
 		      next_hop->dest_ip.s().cc(), r.dest_ip.s().cc(), next_hop->metric);
@@ -606,9 +606,9 @@ bool
 GridRouteTable::should_replace_old_route(const RTEntry &old_route, const RTEntry &new_route)
 {
   /* prefer a strictly newer route */
-  if (old_route.seq_no > new_route.seq_no) 
+  if (old_route.seq_no() > new_route.seq_no()) 
     return false;
-  if (old_route.seq_no < new_route.seq_no)
+  if (old_route.seq_no() < new_route.seq_no())
     return true;
   
   /* 
@@ -630,7 +630,7 @@ GridRouteTable::should_replace_old_route(const RTEntry &old_route, const RTEntry
    * bwahhhaaaahahaha!!! */
   if (!old_route.metric_valid && !new_route.metric_valid) {
     // return false;
-    return new_route.num_hops < old_route.num_hops;
+    return new_route.num_hops() < old_route.num_hops();
   }
   
   // both metrics are valid
@@ -706,7 +706,7 @@ GridRouteTable::simple_action(Packet *packet)
   if (!r)
     click_chatter("GridRouteTable %s: adding new 1-hop route %s -- %s", 
 		  id().cc(), ipaddr.s().cc(), ethaddr.s().cc()); 
-  else if (r->num_hops == 1 && r->next_hop_eth != ethaddr)
+  else if (r->num_hops() == 1 && r->next_hop_eth != ethaddr)
     click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", 
 		  id().cc(), ipaddr.s().cc(), r->next_hop_eth.s().cc(), ethaddr.s().cc());
 
@@ -762,7 +762,7 @@ GridRouteTable::simple_action(Packet *packet)
       if (_log)
 	_log->log_added_route(GridLogger::WAS_SENDER, make_generic_rte(new_r));
       _rtes.insert(ipaddr, new_r);
-      if (new_r.num_hops > 1 && r && r->num_hops == 1) {
+      if (new_r.num_hops() > 1 && r && r->num_hops() == 1) {
 	/* clear old 1-hop stats */
 	_link_tracker->remove_all_stats(r->dest_ip);
 	_link_stat->remove_all_stats(r->next_hop_eth);
@@ -806,7 +806,7 @@ GridRouteTable::simple_action(Packet *packet)
      */
     if (curr->num_hops == 0) {
 
-      if ((route.seq_no & 1) == 0) {
+      if ((route.seq_no() & 1) == 0) {
 	// broken routes should have odd seq_no
 	click_chatter("ignoring invalid broken route entry from %s for %s: num_hops was 0 but seq_no was even\n",
 		      ipaddr.s().cc(), route.dest_ip.s().cc());
@@ -823,7 +823,7 @@ GridRouteTable::simple_action(Packet *packet)
        * remove the broken route. 
        */
       if (our_rte->next_hop_ip == ipaddr &&
-	  route.seq_no > our_rte->seq_no) {
+	  route.seq_no() > our_rte->seq_no()) {
 	broken_dests.push_back(route.dest_ip);
 	
 	/* generate triggered broken route advertisement */
@@ -837,8 +837,8 @@ GridRouteTable::simple_action(Packet *packet)
        * to the destination with a newer seq_no, advertise our new
        * information. 
        */
-      else if (route.seq_no < our_rte->seq_no) {
-	assert(!(our_rte->seq_no & 1)); // valid routes have even seq_no
+      else if (route.seq_no() < our_rte->seq_no()) {
+	assert(!(our_rte->seq_no() & 1)); // valid routes have even seq_no
 	if (our_rte->ttl > 0 && our_rte->metric_valid) {
 	  triggered_rtes.push_back(*our_rte);
 
@@ -851,7 +851,7 @@ GridRouteTable::simple_action(Packet *packet)
 
     /* skip routes with too many hops */
     // this would change if using proxies
-    if (route.num_hops + 1 > _max_hops)
+    if (route.num_hops() + 1 > _max_hops)
       continue;
 
     /* 
@@ -859,7 +859,7 @@ GridRouteTable::simple_action(Packet *packet)
      */
     if (our_rte == 0 || should_replace_old_route(*our_rte, route)) {
       _rtes.insert(route.dest_ip, route);
-      if (route.num_hops > 1 && our_rte && our_rte->num_hops == 1) {
+      if (route.num_hops() > 1 && our_rte && our_rte->num_hops() == 1) {
 	/* clear old 1-hop stats */
 	_link_tracker->remove_all_stats(our_rte->dest_ip);
 	_link_stat->remove_all_stats(our_rte->next_hop_eth);
@@ -925,11 +925,11 @@ GridRouteTable::print_rtes_v(Element *e, void *)
     const RTEntry &f = i.value();
     s += f.dest_ip.s() 
       + " next=" + f.next_hop_ip.s() 
-      + " hops=" + String((int) f.num_hops) 
+      + " hops=" + String((int) f.num_hops()) 
       + " gw=" + (f.is_gateway ? "y" : "n")
       + " loc=" + f.loc.s()
       + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
-      + " seq=" + String(f.seq_no)
+      + " seq=" + String(f.seq_no())
       + " metric_valid=" + (f.metric_valid ? "yes" : "no")
       + " metric=" + String(f.metric)
       + "\n";
@@ -948,11 +948,11 @@ GridRouteTable::print_rtes(Element *e, void *)
     const RTEntry &f = i.value();
     s += f.dest_ip.s() 
       + " next=" + f.next_hop_ip.s() 
-      + " hops=" + String((int) f.num_hops) 
+      + " hops=" + String((int) f.num_hops()) 
       + " gw=" + (f.is_gateway ? "y" : "n")
       //      + " loc=" + f.loc.s()
       //      + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
-      + " seq=" + String(f.seq_no)
+      + " seq=" + String(f.seq_no())
       + "\n";
   }
   
@@ -967,7 +967,7 @@ GridRouteTable::print_nbrs_v(Element *e, void *)
   String s;
   for (RTIter i = n->_rtes.first(); i; i++) {
     /* only print immediate neighbors */
-    if (i.value().num_hops != 1)
+    if (i.value().num_hops() != 1)
       continue;
     s += i.key().s();
     s += " eth=" + i.value().next_hop_eth.s();
@@ -989,7 +989,7 @@ GridRouteTable::print_nbrs(Element *e, void *)
   String s;
   for (RTIter i = n->_rtes.first(); i; i++) {
     /* only print immediate neighbors */
-    if (i.value().num_hops != 1)
+    if (i.value().num_hops() != 1)
       continue;
     s += i.key().s();
     s += " eth=" + i.value().next_hop_eth.s();
@@ -1204,7 +1204,7 @@ GridRouteTable::print_links(Element *e, void *)
 
   for (RTIter i = rt->_rtes.first(); i; i++) {
     const RTEntry &r = i.value();
-    if (r.num_hops > 1)
+    if (r.num_hops() > 1)
       continue;
 
     /* get our measurements of the link *from* this neighbor */
@@ -1326,7 +1326,7 @@ GridRouteTable::expire_routes()
       if (_log)
 	_log->log_expired_route(GridLogger::TIMEOUT, i.value().dest_ip);
 
-      if (i.value().num_hops == 1) {
+      if (i.value().num_hops() == 1) {
 	/* may be another route's next hop */
 	expired_next_hops.insert(i.value().dest_ip, true);
 	/* clear link stats */
@@ -1340,7 +1340,7 @@ GridRouteTable::expire_routes()
      entries whose next hop is expired, and are not yet expired. */
   for (RTIter i = _rtes.first(); i; i++) {
     // don't re-expire 1-hop routes, they are their own next hop
-    if (i.value().num_hops > 1 &&
+    if (i.value().num_hops() > 1 &&
 	expired_next_hops.findp(i.value().next_hop_ip) &&
 	!expired_rtes.findp(i.value().dest_ip)) {
       expired_rtes.insert(i.value().dest_ip, true);
@@ -1357,9 +1357,7 @@ GridRouteTable::expire_routes()
   for (xip_t::Iterator i = expired_rtes.first(); i; i++) {
     RTEntry *r = _rtes.findp(i.key());
     assert(r);
-    r->num_hops = 0;
-    r->seq_no++; // odd numbers indicate broken routes
-    assert(r->seq_no & 1);
+    r->invalidate();
     r->ttl = grid_hello::MAX_TTL_DEFAULT;
     retval.push_back(*r);
   }
@@ -1531,9 +1529,9 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 	     f.dest_ip.s().cc(),
 	     f.loc.s().cc(),
 	     f.next_hop_ip.s().cc(),
-	     f.num_hops,
+	     f.num_hops(),
 	     (f.is_gateway ? 'y' : 'n'),
-	     f.seq_no, 
+	     f.seq_no(), 
 	     f.metric);
     _extended_logging_errh->message(str);
 
@@ -1549,13 +1547,14 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 void
 GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
 {
+  check();
   nb->ip = dest_ip;
   nb->next_hop_ip = next_hop_ip;
-  nb->num_hops = num_hops;
+  nb->num_hops = num_hops();
   nb->loc = loc;
   nb->loc_err = htons(loc_err);
   nb->loc_good = loc_good;
-  nb->seq_no = htonl(seq_no);
+  nb->seq_no = htonl(seq_no());
   nb->metric = htonl(metric);
   nb->metric_valid = metric_valid;
   nb->is_gateway = is_gateway;
@@ -1565,7 +1564,7 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
   nb->link_qual = 0;
   nb->link_sig = 0;
   nb->measurement_time.tv_sec = nb->measurement_time.tv_usec = 0;
-  if (ls && num_hops == 1) {
+  if (ls && num_hops() == 1) {
     LinkStat::stat_t *s = ls->_stats.findp(next_hop_eth);
     if (s) {
       nb->link_qual = htonl(s->qual);
