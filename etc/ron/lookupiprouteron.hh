@@ -137,16 +137,6 @@ public:
   FlowTable();
   ~FlowTable();
 
-  /*
-  // Inserts TableEntries where:
-  //   - The first waiting pkt is a SYN
-  //   - and (the dst has no pending probes OR 
-  //     this SYN has been waiting too long)
-  // If there are similar TableEntries that match, only insert the
-  // oldest one.
-  void get_waiting_syns(Vector<FlowTableEntry*> *t);
-  */
-
   // If exact match exists, returns a pointer to that FlowTableEntry
   // If no matching flow exists, return null
   LookupIPRouteRON::FlowTableEntry *
@@ -162,11 +152,6 @@ public:
       unsigned short sport, unsigned short dport, 
       unsigned probe_time);
 
-  /*
-  // frees all waiting packets from similar flows to <dst>
-  void send_similar_waiting(IPAddress dst, const Element::Port p);
-  */
-
   void del(IPAddress src, IPAddress dst, 
 	   unsigned short sport, unsigned short dport);
   //void clear()  { _v.clear(); }
@@ -174,7 +159,8 @@ public:
 
 private:
   
-   Vector<FlowTableEntry> _v;
+  FlowTableEntry *_last_entry;
+  Vector<FlowTableEntry> _v;
 };    
 
 class LookupIPRouteRON::DstTableEntry {
@@ -203,6 +189,7 @@ public:
 
 private:
   int q;
+  DstTableEntry *_last_entry;
   Vector<DstTableEntry> _v;
 };
 

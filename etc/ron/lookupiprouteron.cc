@@ -23,6 +23,8 @@
 #include <click/glue.hh>
 #include <click/click_tcp.h>
 
+#define rtprintf if(0)printf
+
 LookupIPRouteRON::LookupIPRouteRON() 
   : _expire_timer(expire_hook, (void *) this)
 {
@@ -101,18 +103,18 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
   match = _flow_table->lookup(IPAddress(p->ip_header()->ip_src), p->dst_ip_anno(),
 			      ntohs(tcph->th_sport), ntohs(tcph->th_dport));
   
-  printf ("FOR TCP SYN\n");
+  rtprintf ("FOR TCP SYN\n");
   
   if (match) {
     // Match found
     match->saw_forward_packet();
     
     if (match->is_pending()){
-      printf("FLOW match(pending), send PROBE\n");
+      rtprintf("FLOW match(pending), send PROBE\n");
       match->outstanding_syns++;
       duplicate_pkt(p);
     } else {
-      printf("FLOW match, FORW\n");
+      rtprintf("FLOW match, FORW\n");
       output(match->outgoing_port).push(p);
     }    
   } else {
@@ -129,9 +131,9 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
     if (dst_match){
       new_entry->outgoing_port = dst_match->outgoing_port;
       output(new_entry->outgoing_port).push(p);
-      printf("DST match, FORW\n");
+      rtprintf("DST match, FORW\n");
     } else {
-      printf("DST nomatch, send PROBE\n");
+      rtprintf("DST nomatch, send PROBE\n");
       new_entry->outgoing_port = 0;
       new_entry->outstanding_syns++;
       duplicate_pkt(p);
@@ -147,20 +149,20 @@ void LookupIPRouteRON::push_forward_fin(Packet *p)
 
   tcph = p->tcp_header();
   
-  printf("FOR TCP FIN\n");
+  rtprintf("FOR TCP FIN\n");
 
   match = _flow_table->lookup(IPAddress(p->ip_header()->ip_src), p->dst_ip_anno(),
 			      ntohs(tcph->th_sport), ntohs(tcph->th_dport));
   if (match) {
     if (!match->is_pending()) {
-      printf(" found non-pending match, ending forward connection\n");
+      rtprintf(" found non-pending match, ending forward connection\n");
       match->saw_forward_packet();
       match->forw_alive = 0; // forward flow is over
       output(match->outgoing_port).push(p);
       return;
     } 
   }
-  printf(" could not find non-pending match, killing pkt.\n");
+  rtprintf(" could not find non-pending match, killing pkt.\n");
   p->kill();
   return;
 }
@@ -171,14 +173,14 @@ void LookupIPRouteRON::push_forward_rst(Packet *p)
   FlowTableEntry *match = NULL;
 
   tcph = p->tcp_header();
-  printf("FOR TCP RST\n");
+  rtprintf("FOR TCP RST\n");
 
   match = _flow_table->lookup(IPAddress(p->ip_header()->ip_src), p->dst_ip_anno(),
 			      ntohs(tcph->th_sport), ntohs(tcph->th_dport));
   
   if (match) {
     if (!match->is_pending()) {
-      printf("found match, non-pending, forwarding...\n");
+      rtprintf("found match, non-pending, forwarding...\n");
       match->saw_forward_packet();
       match->forw_alive = 0; // forward & reverse flows are over
       match->rev_alive = 0; 
@@ -187,7 +189,7 @@ void LookupIPRouteRON::push_forward_rst(Packet *p)
     }
   }
   
-  printf("could not find non-pending match. Killing packet\n");
+  rtprintf("could not find non-pending match. Killing packet\n");
   p->kill();
 }
 
@@ -199,21 +201,21 @@ void LookupIPRouteRON::push_forward_normal(Packet *p)
 
   tcph = p->tcp_header();
 
-  printf("FOR TCP normal pkt\n");
+  rtprintf("FOR TCP normal pkt\n");
 
   match = _flow_table->lookup(IPAddress(p->ip_header()->ip_src), p->dst_ip_anno(),
 			      ntohs(tcph->th_sport), ntohs(tcph->th_dport));
   
   if (match) {
     if (!match->is_pending()) {
-      printf("found match, not pending, forwarding...\n");
+      rtprintf("found match, not pending, forwarding...\n");
       match->saw_forward_packet();
       output(match->outgoing_port).push(p);
       return;
     }
   }
   
-  printf("could not find non-pending match. Killing packet\n");
+  rtprintf("could not find non-pending match. Killing packet\n");
   p->kill();
 
 }
@@ -225,7 +227,7 @@ void LookupIPRouteRON::push_forward_packet(Packet *p)
   // if non-TCP just forward direct 
   // (YIPAL: perhaps this could be more intelligent)
   if (p->ip_header()->ip_p != IP_PROTO_TCP) {
-    printf("non-TCP proto(%d)\n", p->ip_header()->ip_p);
+    rtprintf("non-TCP proto(%d)\n", p->ip_header()->ip_p);
     output(1).push(p);
     return;
   }
@@ -252,13 +254,13 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
   match = _flow_table->lookup(p->dst_ip_anno(),IPAddress(p->ip_header()->ip_src),
 			      ntohs(tcph->th_dport), ntohs(tcph->th_sport));
   
-  printf ("REV TCP SYN-ACK inport(%d)\n", inport);
+  rtprintf ("REV TCP SYN-ACK inport(%d)\n", inport);
   
   if (match) { 
     match->saw_reply_packet();
     
     if (match->is_pending()) {
-      printf("FLOW match(pending), setting up flow, FORW\n");
+      printf("FLOW match(pending), setting up flow port(%d), FORW\n", inport);
       _dst_table->insert(IPAddress(p->ip_header()->ip_src), inport); // save to dst_table
       match->outgoing_port = inport;
       match->outstanding_syns = 0;
@@ -266,15 +268,15 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
     } else {
       // FLOW not pending
       if (inport == match->outgoing_port){
-	printf("Correct return port, forwarding reverse SYN-ACK\n");
+	rtprintf("Correct return port, forwarding reverse SYN-ACK\n");
 	output(0).push(p);
       } else {
-	printf("Incorrect return port, killing SYN-ACK\n");
+	rtprintf("Incorrect return port, killing SYN-ACK\n");
 	p->kill();
       }
     }
   } else {
-    printf("FLOW no match, killing SYN-ACK\n");
+    rtprintf("FLOW no match, killing SYN-ACK\n");
     p->kill();
   }
 
@@ -288,11 +290,11 @@ void LookupIPRouteRON::push_reverse_fin(Packet *p)
   match = _flow_table->lookup(p->dst_ip_anno(),IPAddress(p->ip_header()->ip_src),
 			      ntohs(tcph->th_dport), ntohs(tcph->th_sport));
   
-  printf("REV TCP FIN\n");
+  rtprintf("REV TCP FIN\n");
 
   if (match) {
     if (!match->is_pending()) {
-      printf(" found match, not pending, ending reverse direction\n");
+      rtprintf(" found match, not pending, ending reverse direction\n");
       match->saw_reply_packet();
       match->rev_alive = 0;
       output(0).push(p);
@@ -300,7 +302,7 @@ void LookupIPRouteRON::push_reverse_fin(Packet *p)
     }
   }
 
-  printf(" could not find non-pending match. Killing pkt.\n");
+  rtprintf(" could not find non-pending match. Killing pkt.\n");
   p->kill();
 }
 void LookupIPRouteRON::push_reverse_rst(Packet *p) 
@@ -311,11 +313,11 @@ void LookupIPRouteRON::push_reverse_rst(Packet *p)
   match = _flow_table->lookup(p->dst_ip_anno(),IPAddress(p->ip_header()->ip_src),
 			      ntohs(tcph->th_dport), ntohs(tcph->th_sport));
   
-  printf("REV TCP RST\n");
+  rtprintf("REV TCP RST\n");
 
   if (match) {
     if (!match->is_pending()) {
-      printf(" found match, not pending, ending reverse direction\n");
+      rtprintf(" found match, not pending, ending reverse direction\n");
       match->saw_reply_packet();
       match->forw_alive = 0;
       match->rev_alive = 0;
@@ -324,7 +326,7 @@ void LookupIPRouteRON::push_reverse_rst(Packet *p)
     }
   }
 
-  printf(" could not find non-pending match. Killing pkt.\n");
+  rtprintf(" could not find non-pending match. Killing pkt.\n");
   p->kill();
 }
 void LookupIPRouteRON::push_reverse_normal(Packet *p) 
@@ -336,18 +338,18 @@ void LookupIPRouteRON::push_reverse_normal(Packet *p)
   match = _flow_table->lookup(p->dst_ip_anno(),IPAddress(p->ip_header()->ip_src),
 			      ntohs(tcph->th_dport), ntohs(tcph->th_sport));
 
-  printf("REV TCP normal pkt\n");
+  rtprintf("REV TCP normal pkt\n");
 
   if (match) {
     if (!match->is_pending()) {
-      printf("found match, not pending, forwarding...\n");
+      rtprintf("found match, not pending, forwarding...\n");
       match->saw_reply_packet();
       output(0).push(p);
       return;
     }
   }
   
-  printf("could not find non-pending match. Killing packet\n");
+  rtprintf("could not find non-pending match. Killing packet\n");
   p->kill();
 }
 
@@ -359,7 +361,7 @@ void LookupIPRouteRON::push_reverse_packet(int inport, Packet *p)
   // if non-TCP just forward direct 
   // (YIPAL: perhaps this could be more intelligent)
   if (p->ip_header()->ip_p != IP_PROTO_TCP) {
-    printf("non-TCP proto(%d)\n", p->ip_header()->ip_p);
+    rtprintf("non-TCP proto(%d)\n", p->ip_header()->ip_p);
     output(0).push(p);
     return;
   }
@@ -392,7 +394,7 @@ LookupIPRouteRON::push(int inport, Packet *p)
 
   /*
   //// ---- TEST CODE -----  
-  printf("adding address to table(%u): \n", click_jiffies());
+  rtprintf("adding address to table(%u): \n", click_jiffies());
   tcph = p->tcp_header();
   
   _t->add(IPAddress(p->ip_header()->ip_src), p->dst_ip_anno(), 
@@ -406,14 +408,17 @@ LookupIPRouteRON::push(int inport, Packet *p)
 			  80, 1410, &e);
   
   if (e)
-    printf("match type(%d) ports %u -> %u\n",matchState, e->sport, e->dport);
+    rtprintf("match type(%d) ports %u -> %u\n",matchState, e->sport, e->dport);
   else
-    printf("no match\n");
+    rtprintf("no match\n");
   */
 
+  
+#ifdef 0
   _flow_table->print();  
   _dst_table->print();
-  printf("\n");
+  rtprintf("\n");
+#endif
 }
 
 void LookupIPRouteRON::expire_hook(Timer *, void *thunk) 
@@ -442,6 +447,8 @@ LookupIPRouteRON::add_handlers()
 
 // ------ FlowTable methods -------
 LookupIPRouteRON::FlowTable::FlowTable() {
+  _last_entry = NULL;
+
 }
 
 LookupIPRouteRON::FlowTable::~FlowTable() {
@@ -451,21 +458,29 @@ LookupIPRouteRON::FlowTableEntry *
 LookupIPRouteRON::FlowTable::lookup(IPAddress src, IPAddress dst,
 				    unsigned short sport, unsigned short dport){
 
-  printf("LOOKUP: %d.%d.%d.%d(%d) -> %d.%d.%d.%d(%d)\n",
-	 src.data()[0], src.data()[1], src.data()[2], src.data()[3], sport,
-	 dst.data()[0], dst.data()[1], dst.data()[2], dst.data()[3], dport);
+  rtprintf("LOOKUP: %d.%d.%d.%d(%d) -> %d.%d.%d.%d(%d)\n",
+	   src.data()[0], src.data()[1], src.data()[2], src.data()[3], sport,
+	   dst.data()[0], dst.data()[1], dst.data()[2], dst.data()[3], dport);
+
+  // check cache first
+  if (_last_entry && _last_entry->is_valid() && 
+      (_last_entry->src   == src) && 
+      (_last_entry->dst   == dst) && 
+      (_last_entry->sport == sport) && 
+      (_last_entry->dport == dport)) {
+    return _last_entry;
+  }
+
   // find a valid match
   for (int i = 0; i < _v.size(); i++){
     
-    if ( (src == _v[i].src) && (dst == _v[i].dst) && 
-	 (sport == _v[i].sport) && (dport == _v[i].dport)) {
+    if (_v[i].is_valid() && 
+	(src == _v[i].src) && (dst == _v[i].dst) && 
+	(sport == _v[i].sport) && (dport == _v[i].dport)) {
 
-      if (_v[i].is_valid()) {
 	// exact match is found
+      _last_entry = &_v[i]; // cache this match
 	return &_v[i];
-      } else
-	printf("TABLE: invalid match found\n"); 
-      
     }
   }
   // no match found
@@ -496,7 +511,7 @@ LookupIPRouteRON::FlowTable::add(IPAddress src, IPAddress dst,
     if ((src == _v[i].src) && (dst == _v[i].dst) && 
 	(sport == _v[i].sport) && (dport == _v[i].dport)) {
       _v[i] = e;
-      printf("  replacing existing entry in table\n");
+      rtprintf("  replacing existing entry in table\n");
       return &_v[i];
     }
 
@@ -504,12 +519,12 @@ LookupIPRouteRON::FlowTable::add(IPAddress src, IPAddress dst,
   for (int i = 0; i < _v.size(); i++)
     if (!_v[i].is_valid() || (!_v[i].is_active() && _v[i].is_old()) ) {
       _v[i] = e;
-      printf("  replacing invalid entry in table\n");
+      rtprintf("  replacing invalid entry in table\n");
       return &_v[i];
     }
 
   // just push new entry onto back of table.
-  printf("  adding new entry to table\n");
+  rtprintf("  adding new entry to table\n");
   _v.push_back(e);
   return &_v[_v.size()-1];
 
@@ -535,11 +550,11 @@ LookupIPRouteRON::FlowTable::del(IPAddress src, IPAddress dst,
 
 void
 LookupIPRouteRON::FlowTable::print() {
-  printf("  Table contents size(%d):\n", _v.size());
+  rtprintf("  Table contents size(%d):\n", _v.size());
   for (int i = 0; i < _v.size(); i++) {
     if (_v[i].is_valid()) {
-      //printf( "    [%d] %02x%02x%02x%02x(%u) -> %02x%02x%02x%02x(%u) ",
-      printf( "    [%d] %d.%d.%d.%d(%u) -> %d.%d.%d.%d(%u) \t",
+      //rtprintf( "    [%d] %02x%02x%02x%02x(%u) -> %02x%02x%02x%02x(%u) ",
+      rtprintf( "    [%d] %d.%d.%d.%d(%u) -> %d.%d.%d.%d(%u) \t",
 	      //_v[i].get_state(),
 	      0,
 	      _v[i].src.data()[0],_v[i].src.data()[1], 
@@ -549,7 +564,7 @@ LookupIPRouteRON::FlowTable::print() {
 	      _v[i].dst.data()[0],_v[i].dst.data()[1], 
 	      _v[i].dst.data()[2],_v[i].dst.data()[3],
 	      _v[i].dport);
-      printf("outport(%d) pending(%d) waiting(%d) \tage(%u) FR = %d%d\n", 
+      rtprintf("outport(%d) pending(%d) waiting(%d) \tage(%u) FR = %d%d\n", 
 	     _v[i].outgoing_port, _v[i].outstanding_syns,
 	     //_v[i].waiting.size(), 
 	     0,
@@ -562,16 +577,29 @@ LookupIPRouteRON::FlowTable::print() {
 }
 
 LookupIPRouteRON::DstTable::DstTable() {
+  _last_entry = NULL;
 }
 LookupIPRouteRON::DstTable::~DstTable() {
 }
 
 LookupIPRouteRON::DstTableEntry*
 LookupIPRouteRON::DstTable::lookup(IPAddress dst) {
+
+  // check cache first.
+  if (_last_entry && 
+      _last_entry->is_valid() &&
+      _last_entry->is_recent() &&
+      _last_entry->dst == dst) {
+    return _last_entry;
+  }
+
+  // search
   for(int i=0; i<_v.size(); i++) {
-    if (_v[i].dst == dst && 
+    if (_v[i].is_valid() &&
 	_v[i].is_recent() &&
-	_v[i].is_valid() ) {
+	_v[i].dst == dst) {
+      
+      _last_entry = &_v[i]; // cache last match
       return &_v[i];
     }
   }
@@ -611,12 +639,12 @@ LookupIPRouteRON::DstTable::insert(IPAddress dst, unsigned short assigned_port) 
 
 void
 LookupIPRouteRON::DstTable::print() {
-  printf("DST Table Contents(%d)\n", _v.size());
+  rtprintf("DST Table Contents(%d)\n", _v.size());
   for(int i=0; i<_v.size(); i++) {
-    printf("  %d.%d.%d.%d \t port(%d) valid(%d) recent(%d)\n", 
-	   _v[i].dst.data()[0], _v[i].dst.data()[1], 
-	   _v[i].dst.data()[2], _v[i].dst.data()[3], 
-	   _v[i].outgoing_port, _v[i].is_valid(), _v[i].is_recent());
+    rtprintf("  %d.%d.%d.%d \t port(%d) valid(%d) recent(%d)\n", 
+	     _v[i].dst.data()[0], _v[i].dst.data()[1], 
+	     _v[i].dst.data()[2], _v[i].dst.data()[3], 
+	     _v[i].outgoing_port, _v[i].is_valid(), _v[i].is_recent());
   }
 }
 
