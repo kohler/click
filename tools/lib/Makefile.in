@@ -80,7 +80,7 @@ endif
 ifeq ($(HOST_TOOLS),build)
 all: libclicktool_build.a
 endif
-ifeq ($(HOST_TOOLS),target)
+ifeq ($(HOST_TOOLS),host)
 all: libclicktool.a
 endif
 
