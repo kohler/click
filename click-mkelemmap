@@ -237,9 +237,11 @@ foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
 
   my($p) = $processing[$id];
   $p = parents_processing($id) if !$p;
+  $p = '""' if !$p;
 
   my($flow) = $flow_code[$id];
   $flow = parents_flow_code($id) if !$flow;
+  $flow = '""' if !$flow;
 
   my($flags) = $flags[$id];
   $flags = parents_flags($id) if !defined($flags);
