@@ -194,6 +194,7 @@ PollDevice::uninitialize()
   }
   if (_dev && _promisc)
       dev_set_promiscuity(_dev, -1);
+  dev_put(_dev);
   _task.unschedule();
 #endif
 }
