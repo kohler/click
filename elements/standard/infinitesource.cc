@@ -231,27 +231,11 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
      if (!cp_bool(s, &active))
        return errh->error("active parameter must be boolean");
      is->_active = active;
-     if (is->output_is_push(0) && !is->_task.scheduled() && active)
-       is->_task.reschedule();
-
-     if (!is->output_is_push(0) && 
-	 is->_active && 
-	 !is->signal_active()) {
-       is->wake_listeners();
-     }
      break;
    }
 
    case 5: {			// reset
      is->_count = 0;
-     if (!is->_task.scheduled() && is->_active)
-       is->_task.reschedule();
-
-     if (!is->output_is_push(0) && 
-	 is->_active && 
-	 !is->signal_active()) {
-       is->wake_listeners();
-     }
      break;
    }
 
@@ -263,6 +247,15 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
      is->setup_packet();
      break;
    }
+  }
+
+
+  if (is->_active && is->_limit > 0 && is->_count < is->_limit) {
+    if (is->output_is_push(0) && !is->_task.scheduled())
+      is->_task.reschedule();
+    
+    if (is->output_is_pull(0) && !is->signal_active())
+      is->wake_listeners();
   }
   return 0;
 }
