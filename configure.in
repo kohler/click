@@ -189,6 +189,15 @@ DL_LIBRARY="-ldl"])])
 AC_SUBST(DL_LIBRARY)
 
 dnl
+dnl sockets
+dnl
+
+SOCKET_LIBS=
+AC_CHECK_LIB(nsl, gethostbyname, SOCKET_LIBS="-lnsl $SOCKET_LIBS")
+AC_CHECK_LIB(socket, connect, SOCKET_LIBS="-lsocket $SOCKET_LIBS")
+AC_SUBST(SOCKET_LIBS)
+
+dnl
 dnl check for stuff in the linux kernel
 dnl
 
