@@ -58,7 +58,8 @@ CLICKDIR/tools/click-compile	... compiles element source code portably
 CLICKDIR/tools/click-devirtualize   ... removes virtual functions from source
 CLICKDIR/tools/click-fastclassifier ... specializes Classifiers into C++ code
 CLICKDIR/tools/click-mkmindriver    ... build environments for minimal drivers
-CLICKDIR/tools/click-install	... installs configuration into Linux module
+CLICKDIR/tools/click-install	... installs configuration into kernel module
+CLICKDIR/tools/click-pretty	... pretty-prints Click configuration as HTML
 CLICKDIR/tools/click-undead	... removes dead code from configurations
 CLICKDIR/tools/click-xform	... pattern-based configuration optimizer
 CLICKDIR/userlevel		user-level `click' driver
