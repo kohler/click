@@ -1,3 +1,8 @@
+2001-05-31 Thursday 02:23  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi (1.25), include/click/straccum.hh (1.12): add
+	operator<<(StringAccum &, bool)
+
 2001-05-30 Wednesday 20:22  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/userlevel/controlsocket.cc (1.25), lib/archive.cc
