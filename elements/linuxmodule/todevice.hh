@@ -41,6 +41,12 @@ the router is initialized, then ToDevice will report a warning (rather than an
 error). Later, while the router is running, if a device named DEVNAME appears,
 ToDevice will seamlessly begin sending packets to it. Default is false.
 
+=item NO_PAD
+
+Boolean. If true, don't force packets to be at least 60 bytes (the
+minimum Ethernet packet size).  This is useful because some 802.11
+cards can send shorter Ethernet format packets.  Defaults false.
+
 =back
 
 =n
@@ -111,6 +117,8 @@ class ToDevice : public AnyTaskDevice { public:
   uint64_t _perfcnt2_queue;
   uint32_t _activations; 
 #endif
+  uint32_t _runs;
+  uint32_t _pulls;
   uint32_t _npackets;
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
   uint64_t _pull_cycles;
@@ -130,6 +138,7 @@ class ToDevice : public AnyTaskDevice { public:
   unsigned _burst;
   int _dev_idle;
   NotifierSignal _signal;
+  bool _no_pad;
   
   int queue_packet(Packet *p);
   

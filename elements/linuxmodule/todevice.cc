@@ -67,7 +67,7 @@ todev_static_cleanup()
 }
 
 ToDevice::ToDevice()
-    : _dev_idle(0), _rejected(0), _hard_start(0)
+    : _dev_idle(0), _rejected(0), _hard_start(0), _no_pad(false)
 {
     MOD_INC_USE_COUNT;
     todev_static_initialize();
@@ -93,6 +93,7 @@ ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpKeywords,
 		    "BURST", cpUnsigned, "burst size", &_burst,
 		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &allow_nonexistent,
+		    "NO_PAD", cpBool, "don't pad packets to 60 bytes?", &_no_pad,
 		    cpEnd) < 0)
 	return -1;
     return find_device(allow_nonexistent, &to_device_map, errh);
@@ -132,6 +133,8 @@ ToDevice::reset_counts()
   _npackets = 0;
   
   _busy_returns = 0; 
+  _runs = 0;
+  _pulls = 0;
 #if CLICK_DEVICE_STATS
   _activations = 0;
   _time_clean = 0;
@@ -174,6 +177,8 @@ ToDevice::run_task()
     int busy;
     int sent = 0;
 
+    _runs++;
+
 #if LINUX_VERSION_CODE >= 0x020400
     local_bh_disable();
     if (!spin_trylock(&_dev->xmit_lock)) {
@@ -215,6 +220,8 @@ ToDevice::run_task()
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
 	uint64_t before_pull_cycles = click_get_cycles();
 #endif
+
+	_pulls++;
 
 	Packet *p = input(0).pull();
 	if (!p)
@@ -301,7 +308,7 @@ ToDevice::queue_packet(Packet *p)
      * I can't figure out where Linux does this, so I don't
      * know the correct procedure.
      */
-    if (skb1->len < 60) {
+    if (!_no_pad && skb1->len < 60) {
 	if (skb_tailroom(skb1) < 60 - skb1->len) {
 	    printk("ToDevice: too small: len %d tailroom %d\n",
 		   skb1->len, skb_tailroom(skb1));
@@ -370,6 +377,8 @@ ToDevice_read_calls(Element *f, void *)
 	String(td->_hard_start) + " hard start xmit\n" +
 	String(td->_busy_returns) + " device busy returns\n" +
 	String(td->_npackets) + " packets sent\n" +
+	String(td->_runs) + " calls to run_task()\n" +
+	String(td->_pulls) + " pulls\n" +
 #if CLICK_DEVICE_STATS
 	String(td->_pull_cycles) + " cycles pull\n" +
 	String(td->_time_clean) + " cycles clean\n" +
