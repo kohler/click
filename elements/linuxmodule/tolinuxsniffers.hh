@@ -34,7 +34,7 @@ class ToLinuxSniffers : public Element {
   const char *processing() const		{ return PUSH; }
   const char *flags() const			{ return "S2"; }
 
-  int configure_phase() const	{ return FromLinux::TODEVICE_CONFIGURE_PHASE; }
+  int configure_phase() const	{ return FromLinux::CONFIGURE_PHASE_TODEVICE; }
   int configure(const Vector<String> &, ErrorHandler *);
   ToLinuxSniffers *clone() const;
   

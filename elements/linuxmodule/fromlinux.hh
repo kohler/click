@@ -50,8 +50,8 @@ extern "C" {
 
 class FromLinux : public AnyDevice { public:
 
-  enum { FROMLINUX_CONFIGURE_PHASE = CONFIGURE_PHASE_DEFAULT,
-	 TODEVICE_CONFIGURE_PHASE };
+  enum { CONFIGURE_PHASE_FROMLINUX = CONFIGURE_PHASE_DEFAULT,
+	 CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMLINUX + 1 };
   
   FromLinux();
   ~FromLinux();
@@ -62,7 +62,7 @@ class FromLinux : public AnyDevice { public:
 
   enet_statistics *stats()		{ return &_stats; }
 
-  int configure_phase() const		{ return FROMLINUX_CONFIGURE_PHASE; }
+  int configure_phase() const		{ return CONFIGURE_PHASE_FROMLINUX; }
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   int initialize_device(ErrorHandler *);

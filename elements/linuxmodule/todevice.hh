@@ -52,7 +52,7 @@ class ToDevice : public AnyDevice {
   const char *processing() const	{ return PULL; }
   ToDevice *clone() const		{ return new ToDevice; }
   
-  int configure_phase() const	{ return FromLinux::TODEVICE_CONFIGURE_PHASE; }
+  int configure_phase() const	{ return FromLinux::CONFIGURE_PHASE_TODEVICE; }
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
