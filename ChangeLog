@@ -1,3 +1,17 @@
+2003-01-27 Monday 17:57  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/: fromdump.cc (1.72), fromdump.hh (1.40): add
+	packet_filepos handler
+
+2003-01-27 Monday 17:57  Eddie Kohler <kohler@icir.org>
+
+	* lib/handlercall.cc (1.7): ReadHandlerCalls didn't work
+
+2003-01-27 Monday 17:56  Eddie Kohler <kohler@icir.org>
+
+	* include/click/string.hh (1.25), lib/string.cc (1.41): add
+	String::trim_space() method
+
 2003-01-27 Monday 16:32  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: toipsumdump.cc (1.36), toipsumdump.hh (1.31):

@@ -1,3 +1,12 @@
+2003-01-27 Monday 17:57  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/handlercall.cc: ReadHandlerCalls didn't work
+
+2003-01-27 Monday 17:56  Eddie Kohler <kohler@icir.org>
+
+	* include/click/string.hh, include/click/string.hh,
+	libsrc/string.cc: add String::trim_space() method
+
 2003-01-24 Friday 19:04  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/confparse.cc: nitlet
