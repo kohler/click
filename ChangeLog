@@ -1,3 +1,27 @@
+2004-01-14 Wednesday 20:18  Eddie Kohler <kohler@icir.org>
+
+	* Makefile.in (1.112), bsdmodule/Makefile.in (1.28),
+	doc/Makefile.in (1.46), doc/click-elem2man (1.25),
+	etc/samplepackage/Makefile.in (1.37), linuxmodule/Makefile.in
+	(1.85), ns/Makefile.in (1.12), tools/Makefile.in (1.49),
+	tools/click-align/Makefile.in (1.18), tools/click-check/Makefile.in
+	(1.14), tools/click-combine/Makefile.in (1.14),
+	tools/click-devirtualize/Makefile.in (1.14),
+	tools/click-fastclassifier/Makefile.in (1.19),
+	tools/click-flatten/Makefile.in (1.10),
+	tools/click-install/Makefile.in (1.22),
+	tools/click-mkmindriver/Makefile.in (1.13),
+	tools/click-pretty/Makefile.in (1.7),
+	tools/click-undead/Makefile.in (1.13),
+	tools/click-xform/Makefile.in (1.22), tools/click2xml/Makefile.in
+	(1.5), tools/lib/Makefile.in (1.34), userlevel/Makefile.in (1.77):
+	support "make uninstall"
+
+2004-01-14 Wednesday 20:17  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/fromipsumdump.cc (1.58), lib/confparse.cc
+	(1.117): avoid warnings
+
 2004-01-14 Wednesday 13:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/linkstat.hh (1.17): badd gcc 2.96ness?
