@@ -1,0 +1,13 @@
+This Java program is a graphical user interface for interacting with
+user-level Click configurations via the ControlSocket(n) element. Say a
+Click configuration is running on host HOSTNAME with a ControlSocket
+element listening on port PORT. Then you can start ClickController with the
+command line
+
+	java ClickController HOSTNAME PORT
+
+to see the configuration, including its elements and their handlers.
+
+The ClickController program is preliminary and is being provided "as is".
+Would you like to hack on it? Please do! Compiling it requires Java-1.2 or
+above, including the Swing elements.

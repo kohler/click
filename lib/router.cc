@@ -1299,7 +1299,7 @@ Router::element_ports_string(int fi) const
   Subvector<int> out_pers(pers, f->ninputs(), f->noutputs());
   f->processing_vector(in_pers, out_pers, 0);
 
-  sa << f->ninputs() << " inputs\n";
+  sa << f->ninputs() << (f->ninputs() == 1 ? " input\n" : " inputs\n");
   for (int i = 0; i < f->ninputs(); i++) {
     // processing
     const char *persid = (f->input_is_pull(i) ? "pull" : "push");
@@ -1326,7 +1326,7 @@ Router::element_ports_string(int fi) const
     sa << "\n";
   }
 
-  sa << f->noutputs() << " outputs\n";
+  sa << f->noutputs() << (f->noutputs() == 1 ? " output\n" : " outputs\n");
   for (int i = 0; i < f->noutputs(); i++) {
     // processing
     const char *persid = (f->output_is_push(i) ? "push" : "pull");

@@ -18,6 +18,8 @@ CONTENTS
 --------
 
 CLICKDIR			this directory
+CLICKDIR/apps			Click-related applications
+CLICKDIR/apps/ClickController	... Java program for interacting with drivers
 CLICKDIR/conf			configuration files
 CLICKDIR/doc			documentation
 CLICKDIR/elements		element source code

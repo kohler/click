@@ -142,7 +142,9 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	linuxmodule/proc_element.cc \
 	linuxmodule/proc_mgr.cc \
 	linuxmodule/read-pmc.c \
-	linuxmodule/sched.cc
+	linuxmodule/sched.cc \
+	apps/ClickController apps/ClickController/README \
+	apps/ClickController/*.java
 
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -153,7 +155,7 @@ distdir:
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
 	@echo Copying library, documentation, configuration, and driver files...
-	@mkdir $(distdir)/conf $(distdir)/doc $(distdir)/etc $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
+	@mkdir $(distdir)/apps $(distdir)/conf $(distdir)/doc $(distdir)/etc $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
 	@-chmod 777 $(distdir)/conf $(distdir)/doc $(distdir)/etc $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
