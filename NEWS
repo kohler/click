@@ -4,8 +4,18 @@ Version 1.4
 
 * Elements
 
-** Major rearrangment of Grid/Wifi elements (John Bicket).  Add
+** Major rearrangement of Grid/Wifi elements (John Bicket).  Add
    "--enable-wifi" configuration option, to select the wifi elements.
+   There are elements in the elements/wifi/ap directory that will allow you
+   to build an access point. Also, There is a driver available at 
+   http://www.pdos.lcs.mit.edu/~jbicket/madwifi.stripped 
+   that works with Atheros-based 802.11a/b/g cars which sends/receives
+   802.11 packets.  To compile with that driver, download the driver and 
+   then point configure at it using "--with-wifi=DIR".  The elements 
+   WifiEncap and WifiDecap to encapsulate/decapsulate 802.3 packets 
+   into 802.11 before they go to FromDev and after they come from ToDev.  
+   Elements such as SetTXPower and SetTXRate allow per-packet transmit 
+   control and bit-rate control, respectively.
 
 ** Add FromSocket, ToSocket, IPFlowRawSockets, FromRawSocket, and
    ToRawSocket elements from Mark Huang.  These elements let user-level
@@ -1400,3 +1410,5 @@ Version 0.51   12.Nov.1999
 Version 0.5   20.Oct.1999
 
 * First public release.
+
+ LocalWords:  FromSocket
