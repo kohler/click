@@ -423,7 +423,7 @@ cp_quote(const String &str, bool allow_newlines = false)
   for (; i < len; i++)
     switch (s[i]) {
       
-     case '\\': case '\"':
+     case '\\': case '\"': case '$':
       sa << str.substring(start, i - start) << '\\' << s[i];
       start = i + 1;
       break;
@@ -759,7 +759,8 @@ cp_string(const String &str, String *return_value, String *rest = 0)
       if (i < len - 1 && s[i+1] == '<' && quote_state == 0) {
 	for (i += 2; i < len && s[i] != '>'; i++)
 	  /* nada */;
-      }
+      } else if (i < len - 1 && quote_state == '\"')
+	i++;
       break;
       
     }
@@ -1667,9 +1668,12 @@ cp_va_parsev(const Vector<String> &args,
       }
       signature += "]";
     }
-    
+
     const char *whoops = (too_few_args ? "few" : "many");
-    errh->error("too %s %ss; expected `%s'", whoops, argname, signature.cc());
+    if (signature)
+      errh->error("too %s %ss; expected `%s'", whoops, argname, signature.cc());
+    else
+      errh->error("expected zero arguments");
   }
   
  done:

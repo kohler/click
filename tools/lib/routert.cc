@@ -1058,11 +1058,18 @@ RouterScope::interpolate(const String &config) const
   int config_pos = 0;
   int pos = 0;
   int len = config.length();
+  int quote = 0;
   String output;
   
   for (; pos < len; pos++)
-    if (data[pos] == '\\' && pos < len - 1)
+    if (data[pos] == '\\' && pos < len - 1 && quote == '\"')
       pos++;
+    else if (data[pos] == '\'' && quote == 0)
+      quote = '\'';
+    else if (data[pos] == '\"' && quote == 0)
+      quote = '\"';
+    else if (data[pos] == quote)
+      quote = 0;
     else if (data[pos] == '/' && pos < len - 1) {
       if (data[pos+1] == '/') {
 	for (pos += 2; pos < len && data[pos] != '\n' && data[pos] != '\r'; )
@@ -1074,7 +1081,7 @@ RouterScope::interpolate(const String &config) const
 	    break;
 	  }
       }
-    } else if (data[pos] == '$') {
+    } else if (data[pos] == '$' && quote != '\'') {
       unsigned word_pos = pos;
       for (pos++; isalnum(data[pos]) || data[pos] == '_'; pos++)
 	/* nada */;
@@ -1082,7 +1089,13 @@ RouterScope::interpolate(const String &config) const
       for (int variable = 0; variable < _formals.size(); variable++)
 	if (name == _formals[variable]) {
 	  output += config.substring(config_pos, word_pos - config_pos);
-	  output += _values[variable];
+	  String value = _values[variable];
+	  if (quote == '\"') {	// interpolate inside the quotes
+	    value = cp_quote(cp_unquote(value));
+	    if (value[0] == '\"')
+	      value = value.substring(1, value.length() - 2);
+	  }
+	  output += value;
 	  config_pos = pos;
 	}
       pos--;

@@ -286,7 +286,7 @@ LexerT::lex_config()
       else if (_data[pos+1] == '*')
 	pos = skip_slash_star(pos + 2) - 1;
     } else if (_data[pos] == '\'' || _data[pos] == '\"')
-      pos = skip_quote(pos + 1, _data[pos]);
+      pos = skip_quote(pos + 1, _data[pos]) - 1;
   
   _pos = pos;
   return _big_string.substring(config_pos, pos - config_pos);

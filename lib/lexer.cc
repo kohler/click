@@ -379,12 +379,13 @@ Lexer::lex_config()
   unsigned pos = _pos;
   unsigned paren_depth = 1;
   bool have_arguments = _variable_values.size() != 0;
+  int quote = 0;
   String output;
   
   for (; pos < _len; pos++)
-    if (_data[pos] == '(')
+    if (_data[pos] == '(' && !quote)
       paren_depth++;
-    else if (_data[pos] == ')') {
+    else if (_data[pos] == ')' && !quote) {
       paren_depth--;
       if (!paren_depth) break;
     } else if (_data[pos] == '\n')
@@ -392,14 +393,19 @@ Lexer::lex_config()
     else if (_data[pos] == '\r') {
       if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
       _lineno++;
-    } else if (_data[pos] == '/' && pos < _len - 1) {
+    } else if (_data[pos] == '/' && pos < _len - 1 && !quote) {
       if (_data[pos+1] == '/')
 	pos = skip_line(pos + 2) - 1;
       else if (_data[pos+1] == '*')
 	pos = skip_slash_star(pos + 2) - 1;
-    } else if (_data[pos] == '\'' || _data[pos] == '\"')
-      pos = skip_quote(pos + 1, _data[pos]);
-    else if (_data[pos] == '$' && have_arguments) {
+    } else if ((_data[pos] == '\'' || _data[pos] == '\"') && !quote)
+      quote = _data[pos];
+    else if (quote && _data[pos] == quote)
+      quote = 0;
+    else if (_data[pos] == '\\' && pos < _len - 1 && quote == '\"') {
+      if (_data[pos+1] == '\"' || _data[pos+1] == '$')
+	pos++;
+    } else if (_data[pos] == '$' && have_arguments && quote != '\'') {
       unsigned word_pos = pos;
       for (pos++; isalnum(_data[pos]) || _data[pos] == '_'; pos++)
 	/* nada */;
@@ -407,7 +413,12 @@ Lexer::lex_config()
       int variable = _variable_map[name];
       if (variable >= 0) {
 	output += _big_string.substring(config_pos, word_pos - config_pos);
-	output += _variable_values[variable];
+	String value = _variable_values[variable];
+	if (quote == '\"') {	// interpolate inside the quotes
+	  value = cp_quote(cp_unquote(value));
+	  if (value[0] == '\"') value = value.substring(1, value.length() - 2);
+	}
+	output += value;
 	config_pos = pos;
       }
       pos--;
@@ -439,16 +450,16 @@ Lexer::lex_compound_body()
       if (!brace_depth) break;
     } else if (_data[pos] == '/' && pos < _len - 1) {
       if (_data[pos+1] == '/')
-	pos = skip_line(pos + 2);
+	pos = skip_line(pos + 2) - 1;
       else if (_data[pos+1] == '*')
-	pos = skip_slash_star(pos + 2);
+	pos = skip_slash_star(pos + 2) - 1;
     } else if (_data[pos] == '\n')
       _lineno++;
     else if (_data[pos] == '\r') {
       if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
       _lineno++;
     } else if ((_data[pos] == '\'' || _data[pos] == '\"') && paren_depth)
-      pos = skip_quote(pos + 1, _data[pos]);
+      pos = skip_quote(pos + 1, _data[pos]) - 1;
   
   _pos = pos;
   return _big_string.substring(config_pos, pos - config_pos);

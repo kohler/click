@@ -62,21 +62,21 @@ elementclass GatewayDevice {
 // packet to ToLinuxSniffers, so that you can use tcpdump(1) to debug the
 // gateway.
 
-// elementclass GatewayDevice {
-//   $device |
-//   from :: FromDevice($device)
-//	-> t1 :: Tee
-// 	-> output;
-//   input -> q :: Queue(1024)
-//	-> t2 :: PullTee
-// 	-> ToDevice($device);
-//   t1[1] -> ToLinuxSniffers;
-//   t2[1] -> ToLinuxSniffers($device);
-//   ScheduleInfo(from .1, to 1);
-// }
+elementclass SniffGatewayDevice {
+  $device |
+  from :: FromDevice($device)
+	-> t1 :: Tee
+	-> output;
+  input -> q :: Queue(1024)
+	-> t2 :: PullTee
+	-> to :: ToDevice($device);
+  t1[1] -> Print(x \$device) -> ToLinuxSniffers;
+  t2[1] -> ToLinuxSniffers($device);
+  ScheduleInfo(from .1, to 1);
+}
 
-extern_dev :: GatewayDevice(extern:eth);
-intern_dev :: GatewayDevice(intern:eth);
+extern_dev :: SniffGatewayDevice(extern:eth);
+intern_dev :: SniffGatewayDevice(intern:eth);
 
 to_linux :: EtherEncap(0x0800, 1:1:1:1:1:1, intern)
 	-> ToLinux;
@@ -105,11 +105,11 @@ intern_arp_class[3] -> Discard;
 
 // REWRITERS
 
-IPRewriterPatterns(to_outside_pat intern 50000-65535 - -,
-		to_server_pat extern 50000-65535 intern_server -);
+IPRewriterPatterns(to_world_pat extern 50000-65535 - -,
+		to_server_pat intern 50000-65535 intern_server -);
 
 rw :: IPRewriter(// internal traffic to outside world
-		 pattern to_outside_pat 0 1, 
+		 pattern to_world_pat 0 1, 
 		 // external traffic redirected to 'intern_server'
 		 pattern to_server_pat 1 0,
 		 // internal traffic redirected to 'intern_server'
@@ -117,10 +117,10 @@ rw :: IPRewriter(// internal traffic to outside world
 		 // virtual wire to output 0 if no mapping
 		 nochange 0,
 		 // drop if no mapping
-		 drop);
+		 nochange 2);
 
 tcp_rw :: TCPRewriter(// internal traffic to outside world
-		pattern to_outside_pat 0 1,
+		pattern to_world_pat 0 1,
 		// everything else is dropped
 		drop);
 
@@ -143,6 +143,9 @@ rw[0] -> ip_to_extern_class :: IPClassifier(dst host intern, -);
   ip_to_extern_class[1] -> ip_to_extern;
 // to server
 rw[1] -> ip_to_intern;
+rw[2] -> ip_to_intern_class :: IPClassifier(dst host extern, -);
+  ip_to_intern_class[0] -> to_linux;
+  ip_to_intern_class[1] -> ip_to_intern;
 
 // tcp_rw is used only for FTP control traffic
 tcp_rw[0] -> ip_to_extern;
@@ -151,7 +154,7 @@ tcp_rw[1] -> ip_to_intern;
 
 // FILTER & REWRITE IP PACKETS FROM OUTSIDE
 
-ip_from_extern :: IPClassifier(dst host intern,
+ip_from_extern :: IPClassifier(dst host extern,
 			-);
 my_ip_from_extern :: IPClassifier(dst tcp ssh,
 			dst tcp www or https,
@@ -197,7 +200,7 @@ ip_from_intern[0] -> my_ip_from_intern; // stuff for 10.0.0.1 from inside
 				// returning redirect HTTP traffic from server
   my_ip_from_intern[5] -> to_linux; // non TCP or UDP traffic, to linux
 ip_from_intern[1] -> to_linux;	// other net 10 stuff, like broadcasts
-ip_from_intern[2] -> FTPPortMapper(tcp_rw, rw, to_outside_pat 0 1)
+ip_from_intern[2] -> FTPPortMapper(tcp_rw, rw, to_world_pat 0 1)
 		-> [0]tcp_rw;	// FTP traffic for outside needs special
 				// treatment
 ip_from_intern[3] -> [0]rw;	// stuff for outside
