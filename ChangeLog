@@ -1,3 +1,8 @@
+2003-05-10 Saturday 17:44  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: rtmdsr.cc (1.3), rtmdsr.hh (1.3): some one-hop
+	functionality
+
 2003-05-10 Saturday 12:34  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: rtmdsr.cc (1.2), rtmdsr.hh (1.2): xx
