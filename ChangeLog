@@ -1,3 +1,7 @@
+2001-12-02 Sunday 23:14  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.42): update NEWS for Grid
+
 2001-12-02 Sunday 21:36  Eddie Kohler <kohler@aciri.org>
 
 	* elements/linuxmodule/polldevice.cc (1.124),
