@@ -45,10 +45,10 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 	@/bin/mv $*.d $*.hd
 .c.bo:
-	$(COMPILE) -c $< -o $@
+	$(BUILD_COMPILE) -c $< -o $@
 	@sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
 .cc.bo:
-	$(CXXCOMPILE) -c $< -o $@
+	$(BUILD_CXXCOMPILE) -c $< -o $@
 	@sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
 
 
@@ -71,6 +71,8 @@ LIBS = @LIBS@
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+BUILD_CXXCOMPILE = $(BUILD_CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
+BUILD_COMPILE = $(BUILD_CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 
 ifeq ($(HOST_TOOLS),mixed)
 all: libclicktool.a libclicktool_build.a
