@@ -226,9 +226,21 @@ frob_nested_routerlink(ElementT &e)
   e.configuration = cp_unargvec(words);
 }
 
-static void
-combine_links()
+static int
+combine_links(ErrorHandler *errh)
 {
+  // check for same name used as both source and destination
+  int before = errh->nerrors();
+  for (int i = 1; i < links_from.size(); i++)
+    for (int j = 0; j < i; j++)
+      if (links_from[i] == links_to[j] || links_from[j] == links_to[i]) {
+	const Hookup &h = links_from[i];
+	errh->error("router `%s' element `%s' used as both source and destination", router_names[h.idx].cc(), routers[h.idx]->ename(h.port).cc());
+      }
+  if (errh->nerrors() != before)
+    return -1;
+  
+  // combine links
   link_id.clear();
   for (int i = 0; i < links_from.size(); i++)
     link_id.push_back(i);
@@ -243,6 +255,8 @@ combine_links()
 	  done = false;
 	}
   }
+
+  return 0;
 }
 
 static void
@@ -261,6 +275,7 @@ make_link(const Vector<Hookup> &from, const Vector<Hookup> &to,
     int r = all[i].idx, e = all[i].port;
     String name = router_names[r] + "/" + routers[r]->ename(e);
     combes.push_back(combined->eindex(name));
+    assert(combes.back() >= 0);
     words.push_back(router_names[r] + " " + routers[r]->ename(e)
 		    + " " + routers[r]->etype_name(e));
     words.push_back(routers[r]->econfiguration(e));
@@ -440,7 +455,8 @@ particular purpose.\n");
   // make links
   if (links_from.size() == 0)
     errh->warning("no links between routers");
-  combine_links();
+  if (combine_links(p_errh) < 0)
+    exit(1);
   add_links(combined);
   combined->remove_tunnels();
   
