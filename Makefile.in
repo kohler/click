@@ -35,8 +35,10 @@ exopc: Makefile
 tools: Makefile elementmap
 	@cd tools && $(MAKE) all
 
-install: elementmap click-compile
+install:
 	@for d in @TARGETS@ tools; do (cd $$d && $(MAKE) install) || exit 1; done
+	@$(MAKE) install-local install-doc install-include
+install-local: elementmap click-compile
 	$(mkinstalldirs) $(bindir)
 	@chmod +x click-compile
 	$(INSTALL) click-compile $(bindir)/click-compile
@@ -45,7 +47,6 @@ install: elementmap click-compile
 	(cd $(top_srcdir); pwd) > $(datadir)/srcdir
 	/bin/rm -rf $(datadir)/src
 	/bin/ln -s `cd $(top_srcdir); pwd` $(datadir)/src
-	@$(MAKE) install-doc install-include
 install-doc:
 	@cd doc && $(MAKE) install
 install-man:
@@ -133,4 +134,4 @@ distdir:
 
 .PHONY: all elemlist elemlists elemlist-simple \
 	linuxmodule userlevel exopc tools clean distclean dist distdir \
-	install install-man
+	install install-doc install-man install-local install-include
