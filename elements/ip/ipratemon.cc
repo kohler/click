@@ -349,7 +349,4 @@ IPRateMonitor::add_handlers()
   add_write_handler("reset", reset_write_handler, 0);
 }
 
-#include "vector.cc"
-template class Vector<EWMA2>;
-
 EXPORT_ELEMENT(IPRateMonitor)
