@@ -11,12 +11,14 @@ network. See the end of this document for portability notes for other
 architectures.
 
 The Linux kernel module requires a patched Linux 2.2 or 2.4 system. We
-provide patches for Linux 2.2.18 through 2.2.21 and 2.4.18 through 2.4.20.
+provide patches for Linux 2.2.18 through 2.2.21 and 2.4.18 through
+2.4.20. The patches do not apply against Red Hat kernels; use vanilla
+kernels from kernel.org.
 
 The preliminary FreeBSD Click kernel module compiles against unpatched
 FreeBSD-STABLE versions after 440002.
 
-The clickns module for XXX.
+(Instructions for nsclick should follow.)
 
 CONFIGURING
 -----------
@@ -88,8 +90,9 @@ and running Linux kernels.
     kernel.
 
  2. Get a suitable Linux kernel source distribution, for example from
-    www.kernel.org. Unpack this distribution into /usr/src/linux. (Save the
-    old kernel source tree, if you had one.)
+    www.kernel.org. (Patched kernels may or may not work. Kernels from Red
+    Hat, for example, may not work.) Unpack this distribution into
+    /usr/src/linux. (Save the old kernel source tree, if you had one.)
 
     We supply patches for Linux 2.2.18 through 2.2.21, and 2.4.18 through
     2.4.21.
@@ -117,16 +120,17 @@ and running Linux kernels.
     old kernel without module versioning, you WILL need to recompile
     modules.
 
- 4. Configure the new kernel. The Click patch does not add any
-    configuration options, so you can start from your old configuration, or
-    you can do the usual `make menuconfig'.
-
- 5. If your archived, working kernel has the same version number as the
+ 4. If your archived, working kernel has the same version number as the
     patched kernel (they're both 2.4.18, for example), then it is a good
     idea to change the patched kernel's `EXTRAVERSION'. This way, the
     modules for the new kernel won't overwrite the old, working modules.
     Edit /usr/src/linux/Makefile and change the line `EXTRAVERSION =' to
     `EXTRAVERSION = -click', or whatever you would like.
+
+ 5. Configure the new kernel. The Click patch does not add any
+    configuration options, so you can start from your old configuration, or
+    you can do the usual `make menuconfig'. Use a minimal set of
+    options.
 
  6. Compile and install the kernel:
 
@@ -136,32 +140,50 @@ and running Linux kernels.
 	make modules
 	make modules_install
 
+    You may get errors in one of these steps, such as the 'make bzImage'
+    step. This indicates that you turned on too many options when
+    configuring your kernel. Return to Step 5, turn off the option that
+    seems to be causing a problem, and try again.
+
  7. Edit /etc/lilo.conf to tell it about the new kernel, then run
     /sbin/lilo.
 
  8. Reboot your machine with the new kernel.
 
-Now you are ready to compile and install the Click module. Rerun
-`./configure' to tell the system about your new kernel:
+ 9. Now you are ready to compile and install the Click module. Rerun
+    `./configure' to tell the system about your new kernel:
 
 	rm -f config.cache ; ./configure [OPTIONS]
 
-If your Linux source is not in /usr/src/linux, give `./configure' the
-`--with-linux=LINUXDIR' option. If your System.map file is not in
-LINUXDIR/System.map, give it the `--with-linux-map=MAPFILE' option.
+    If your Linux source is not in /usr/src/linux, give `./configure' the
+    `--with-linux=LINUXDIR' option. If your System.map file is not in
+    LINUXDIR/System.map, give it the `--with-linux-map=MAPFILE' option.
 
-Then build and install the click module, its companion proclikefs module,
-and the language tools:
+    If './configure' reports "Your header files must be patched before a
+    C++ program can include them", check that you applied the patch in Step
+    3, and that you supplied the correct '--with-linux' option to
+    './configure'.
+
+10. Then build and install the click module, its companion proclikefs
+    module, and the language tools:
 
 	gmake install
 
-This will create two module object files, `linuxmodule/click.o' and
-`linuxmodule/proclikefs.o', and place them in `CLICKPREFIX/lib'. To install
-these module and a router configuration, run
+    If you get errors while compiling the Linux kernel module (the
+    'linuxmodule' directory), and the errors look like they are in Linux
+    header files, you may have turned on too many options when configuring
+    your kernel. Return to Step 5, turn off the option that seems to be
+    causing a problem (for example, an error involving the "atalk_iface *"
+    type means you should turn off AppleTalk via CONFIG_ATALK), and try
+    again.
+
+11. This will create two module object files, `linuxmodule/click.o' and
+    `linuxmodule/proclikefs.o', and place them in `CLICKPREFIX/lib'. To
+    install these modules and a router configuration, run
 
 	CLICKPREFIX/sbin/click-install ROUTERCONFIGFILE
 
-Alternatively you could use /sbin/insmod by hand.
+    Alternatively you could use /sbin/insmod by hand.
 
 PORTABILITY
 -----------
