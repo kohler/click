@@ -53,8 +53,8 @@ class OpenAuthRequester : public Element { public:
 
 
   bool _debug;
-  EtherAddress _bssid;
   EtherAddress _eth;
+  class WirelessInfo *_winfo;
  private:
 
 

@@ -27,6 +27,7 @@
 #include <click/hashmap.hh>
 #include <click/packet_anno.hh>
 #include <elements/wifi/availablerates.hh>
+#include <elements/wifi/wirelessinfo.hh>
 #include "associationrequester.hh"
 
 CLICK_DECLS
@@ -36,7 +37,8 @@ CLICK_DECLS
 
 AssociationRequester::AssociationRequester()
   : Element(1, 1),
-    _rtable(0)
+    _rtable(0),
+    _winfo(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -57,6 +59,7 @@ AssociationRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  "ETH", cpEthernetAddress, "eth", &_eth,
+		  "WIRELESS_INFO", cpElement, "wirleess_info", &_winfo,
 		  "RT", cpElement, "availablerates", &_rtable,
 		  cpEnd) < 0)
     return -1;
@@ -70,11 +73,14 @@ AssociationRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 AssociationRequester::send_assoc_req()
 {
-  Vector<int> rates = _rtable->lookup(_bssid);
+  EtherAddress bssid = _winfo ? _winfo->_bssid : EtherAddress();
+  String ssid = _winfo ? _winfo->_ssid : "";
+  int linterval = _winfo ? _winfo->_interval : 1;
+  Vector<int> rates = _rtable->lookup(bssid);
   int max_len = sizeof (struct click_wifi) + 
     2 + /* cap_info */
     2 + /* listen_int */
-    2 + _ssid.length() +
+    2 + ssid.length() +
     2 + WIFI_RATES_MAXSIZE +  /* rates */
     2 + WIFI_RATES_MAXSIZE +  /* xrates */
     0;
@@ -89,7 +95,7 @@ AssociationRequester::send_assoc_req()
   if (!rates.size()) {
     click_chatter("%{element}: couldn't lookup rates for %s\n",
 		  this,
-		  _bssid.s().cc());
+		  bssid.s().cc());
   }
   struct click_wifi *w = (struct click_wifi *) p->data();
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_ASSOC_REQ;
@@ -101,9 +107,9 @@ AssociationRequester::send_assoc_req()
   w->i_seq[0] = 0;
   w->i_seq[1] = 0;
 
-  memcpy(w->i_addr1, _bssid.data(), 6);
+  memcpy(w->i_addr1, bssid.data(), 6);
   memcpy(w->i_addr2, _eth.data(), 6);
-  memcpy(w->i_addr3, _bssid.data(), 6);
+  memcpy(w->i_addr3, bssid.data(), 6);
 
   uint8_t *ptr = (uint8_t *)  p->data() + sizeof(click_wifi);
   int actual_length = sizeof (struct click_wifi);
@@ -117,18 +123,18 @@ AssociationRequester::send_assoc_req()
   actual_length += 2;
 
   /* listen_int */
-  *(uint16_t *) ptr = cpu_to_le16(1);
+  *(uint16_t *) ptr = cpu_to_le16(linterval);
   ptr += 2;
   actual_length += 2;
 
   ptr[0] = WIFI_ELEMID_SSID;
-  ptr[1] = _ssid.length();
+  ptr[1] = ssid.length();
   ptr += 2;
   actual_length += 2;
 
-  memcpy(ptr, _ssid.cc(), _ssid.length());
-  ptr += _ssid.length();
-  actual_length += _ssid.length();
+  memcpy(ptr, ssid.cc(), ssid.length());
+  ptr += ssid.length();
+  actual_length += ssid.length();
   
   /* rates */
   ptr[0] = WIFI_ELEMID_RATES;
@@ -265,7 +271,7 @@ AssociationRequester::process_disassociation(Packet *p)
 
   ptr += 2;
 
-  if (bssid == _bssid) {
+  if (_winfo && _winfo->_bssid == bssid) {
     click_chatter("%{element} disassociation from %s reason %d\n",
 		  bssid.s().cc(),
 		  reason);
@@ -331,8 +337,8 @@ AssociationRequester::push(int, Packet *p)
 
 }
 
-enum {H_DEBUG, H_BSSID, H_ETH, H_SSID, 
-      H_LISTEN_INTERVAL, H_SEND_ASSOC_REQ,
+enum {H_DEBUG, H_ETH, 
+      H_SEND_ASSOC_REQ,
       H_ASSOCIATED,
 };
 
@@ -345,14 +351,8 @@ AssociationRequester_read_param(Element *e, void *thunk)
       return String(td->_debug) + "\n";
     case H_ASSOCIATED:
       return String(td->_associated) + "\n";
-    case H_BSSID:
-      return td->_bssid.s() + "\n";
     case H_ETH:
       return td->_eth.s() + "\n";
-    case H_SSID:
-      return td->_ssid + "\n";
-    case H_LISTEN_INTERVAL:
-      return String(td->_listen_interval) + "\n";
     default:
       return String();
     }
@@ -371,29 +371,11 @@ AssociationRequester_write_param(const String &in_s, Element *e, void *vparam,
     f->_debug = debug;
     break;
   }
-  case H_BSSID: {    //debug
-    EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
-      return errh->error("bssid parameter must be ethernet address");
-    f->_bssid = e;
-    break;
-  }
   case H_ETH: {    //debug
     EtherAddress e;
     if (!cp_ethernet_address(s, &e)) 
       return errh->error("eth parameter must be ethernet address");
     f->_eth = e;
-    break;
-  }
-  case H_SSID: {    //debug
-    f->_ssid = s;
-    break;
-  }
-  case H_LISTEN_INTERVAL: {    
-    int m;
-    if (!cp_integer(s, &m)) 
-      return errh->error("listen_interval parameter must be int");
-    f->_listen_interval = m;
     break;
   }
   case H_SEND_ASSOC_REQ: {
@@ -409,18 +391,12 @@ AssociationRequester::add_handlers()
   add_default_handlers(true);
 
   add_read_handler("debug", AssociationRequester_read_param, (void *) H_DEBUG);
-  add_read_handler("bssid", AssociationRequester_read_param, (void *) H_BSSID);
   add_read_handler("eth", AssociationRequester_read_param, (void *) H_ETH);
-  add_read_handler("ssid", AssociationRequester_read_param, (void *) H_SSID);
-  add_read_handler("listen_interval", AssociationRequester_read_param, (void *) H_LISTEN_INTERVAL);
   add_read_handler("associated", AssociationRequester_read_param, (void *) H_ASSOCIATED);
 
 
   add_write_handler("debug", AssociationRequester_write_param, (void *) H_DEBUG);
-  add_write_handler("bssid", AssociationRequester_write_param, (void *) H_BSSID);
   add_write_handler("eth", AssociationRequester_write_param, (void *) H_ETH);
-  add_write_handler("ssid", AssociationRequester_write_param, (void *) H_SSID);
-  add_write_handler("listen_interval", AssociationRequester_write_param, (void *) H_LISTEN_INTERVAL);
   add_write_handler("send_assoc_req", AssociationRequester_write_param, (void *) H_SEND_ASSOC_REQ);
 
 }

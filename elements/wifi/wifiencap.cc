@@ -24,11 +24,13 @@
 #include <clicknet/wifi.h>
 #include <clicknet/llc.h>
 #include <click/packet_anno.hh>
+#include <elements/wifi/wirelessinfo.hh>
 CLICK_DECLS
 
 
 WifiEncap::WifiEncap()
-  : Element(1, 1)
+  : Element(1, 1),
+    _winfo(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -46,9 +48,11 @@ WifiEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   _mode = WIFI_FC1_DIR_NODS;
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "mode", &_mode, 
+		  cpOptional,
 		  cpEthernetAddress, "bssid", &_bssid,
 		  /* not required */
 		  cpKeywords,
+		  "WIRELESS_INFO", cpElement, "wirleess_info", &_winfo,
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  cpEnd) < 0)
     return -1;
@@ -62,6 +66,8 @@ WifiEncap::simple_action(Packet *p)
 
   EtherAddress src;
   EtherAddress dst;
+  EtherAddress bssid = _winfo ? _winfo->_bssid : _bssid;
+
   uint16_t ethtype;
   WritablePacket *p_out = 0;
 
@@ -111,27 +117,26 @@ WifiEncap::simple_action(Packet *p)
   w->i_fc[1] = 0;
   w->i_fc[1] |= (WIFI_FC1_DIR_MASK & _mode);
 
-
   switch (_mode) {
   case WIFI_FC1_DIR_NODS:
     memcpy(w->i_addr1, dst.data(), 6);
     memcpy(w->i_addr2, src.data(), 6);
-    memcpy(w->i_addr3, _bssid.data(), 6);
+    memcpy(w->i_addr3, bssid.data(), 6);
     break;
   case WIFI_FC1_DIR_TODS:
-    memcpy(w->i_addr1, _bssid.data(), 6);
+    memcpy(w->i_addr1, bssid.data(), 6);
     memcpy(w->i_addr2, src.data(), 6);
     memcpy(w->i_addr3, dst.data(), 6);
     break;
   case WIFI_FC1_DIR_FROMDS:
     memcpy(w->i_addr1, dst.data(), 6);
-    memcpy(w->i_addr2, _bssid.data(), 6);
+    memcpy(w->i_addr2, bssid.data(), 6);
     memcpy(w->i_addr3, src.data(), 6);
     break;
   case WIFI_FC1_DIR_DSTODS:
     memcpy(w->i_addr1, dst.data(), 6);
     memcpy(w->i_addr2, src.data(), 6);
-    memcpy(w->i_addr3, _bssid.data(), 6);
+    memcpy(w->i_addr3, bssid.data(), 6);
     break;
   default:
     click_chatter("%{element}: invalid mode %d\n",

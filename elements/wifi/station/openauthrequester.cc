@@ -28,6 +28,7 @@
 #include <click/packet_anno.hh>
 #include <click/error.hh>
 #include "openauthrequester.hh"
+#include <elements/wifi/wirelessinfo.hh>
 
 CLICK_DECLS
 
@@ -52,7 +53,7 @@ OpenAuthRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  "ETH", cpEthernetAddress, "eth", &_eth,
-		  "BSSID", cpEthernetAddress, "bssid", &_bssid,
+		  "WIRELESS_INFO", cpElement, "wirleess_info", &_winfo,
 		  cpEnd) < 0)
     return -1;
 
@@ -140,6 +141,7 @@ void
 OpenAuthRequester::send_auth_request()
 {
 
+  EtherAddress bssid = _winfo ? _winfo->_bssid : EtherAddress();
   int len = sizeof (struct click_wifi) + 
     2 +                  /* alg */
     2 +                  /* seq */
@@ -156,9 +158,9 @@ OpenAuthRequester::send_auth_request()
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_AUTH;
   w->i_fc[1] = WIFI_FC1_DIR_NODS;
 
-  memcpy(w->i_addr1, _bssid.data(), 6);
+  memcpy(w->i_addr1, bssid.data(), 6);
   memcpy(w->i_addr2, _eth.data(), 6);
-  memcpy(w->i_addr3, _bssid.data(), 6);
+  memcpy(w->i_addr3, bssid.data(), 6);
 
   
   *(uint16_t *) w->i_dur = 0;
@@ -181,7 +183,7 @@ OpenAuthRequester::send_auth_request()
 }
 
 
-enum {H_DEBUG, H_BSSID, H_ETH, H_SEND_AUTH_REQ};
+enum {H_DEBUG, H_ETH, H_SEND_AUTH_REQ};
 
 static String 
 OpenAuthRequester_read_param(Element *e, void *thunk)
@@ -190,8 +192,6 @@ OpenAuthRequester_read_param(Element *e, void *thunk)
   switch ((uintptr_t) thunk) {
   case H_DEBUG:
     return String(td->_debug) + "\n";
-  case H_BSSID:
-    return td->_bssid.s() + "\n";
   case H_ETH:
     return td->_eth.s() + "\n";
   default:
@@ -210,13 +210,6 @@ OpenAuthRequester_write_param(const String &in_s, Element *e, void *vparam,
     if (!cp_bool(s, &debug)) 
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
-    break;
-  }
-  case H_BSSID: {    //debug
-    EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
-      return errh->error("bssid parameter must be ethernet address");
-    f->_bssid = e;
     break;
   }
   case H_ETH: {    //debug
@@ -240,11 +233,9 @@ OpenAuthRequester::add_handlers()
   add_default_handlers(true);
 
   add_read_handler("debug", OpenAuthRequester_read_param, (void *) H_DEBUG);
-  add_read_handler("bssid", OpenAuthRequester_read_param, (void *) H_BSSID);
   add_read_handler("eth", OpenAuthRequester_read_param, (void *) H_ETH);
 
   add_write_handler("debug", OpenAuthRequester_write_param, (void *) H_DEBUG);
-  add_write_handler("bssid", OpenAuthRequester_write_param, (void *) H_BSSID);
   add_write_handler("eth", OpenAuthRequester_write_param, (void *) H_ETH);
   add_write_handler("send_auth_req", OpenAuthRequester_write_param, (void *) H_SEND_AUTH_REQ);
 }

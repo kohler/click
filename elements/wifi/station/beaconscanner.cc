@@ -27,6 +27,7 @@
 #include <click/hashmap.hh>
 #include <click/packet_anno.hh>
 #include <elements/wifi/availablerates.hh>
+#include <elements/wifi/wirelessinfo.hh>
 #include "beaconscanner.hh"
 
 
@@ -39,7 +40,8 @@ CLICK_DECLS
 
 BeaconScanner::BeaconScanner()
   : Element(1, 1),
-    _rtable(0)
+    _rtable(0),
+    _winfo(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -54,12 +56,11 @@ BeaconScanner::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
-  _channel = 0;
   if (cp_va_parse(conf, this, errh,
 		  /* not required */
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
-		  "CHANNEL", cpInteger, "channel", &_channel,
+		  "WIRELESS_INFO", cpElement, "wirleess_info", &_winfo,
 		  "RT", cpElement, "availablerates", &_rtable,
 		  cpEnd) < 0)
     return -1;
@@ -80,7 +81,7 @@ BeaconScanner::simple_action(Packet *p)
   uint8_t subtype;
 
 
-  if (_channel < 0) {
+  if (_winfo && _winfo->_channel < 0) {
     return p;
   }
 
@@ -177,7 +178,7 @@ BeaconScanner::simple_action(Packet *p)
   }
 
 
-  if (_channel > 0 && ds_l && ds_l[2] != _channel) {
+  if (_winfo && _winfo->_channel > 0 && ds_l && ds_l[2] != _winfo->_channel) {
     return p;
   }
   String ssid = "";
@@ -305,7 +306,7 @@ BeaconScanner::reset()
   _waps.clear();
 }
 
-enum {H_DEBUG, H_SCAN, H_RESET, H_CHANNEL};
+enum {H_DEBUG, H_SCAN, H_RESET};
 
 static String 
 BeaconScanner_read_param(Element *e, void *thunk)
@@ -316,8 +317,6 @@ BeaconScanner_read_param(Element *e, void *thunk)
 	return String(td->_debug) + "\n";
       case H_SCAN:
 	return td->scan_string();
-      case H_CHANNEL:
-	return String(td->_channel) + "\n";
     default:
       return String();
     }
@@ -339,14 +338,6 @@ BeaconScanner_write_param(const String &in_s, Element *e, void *vparam,
   case H_RESET: {    //reset
     f->reset();
   }
-  case H_CHANNEL: {    //channel
-    int channel;
-    if (!cp_integer(s, &channel)) 
-      return errh->error("channel parameter must be integer");
-    f->_channel = channel;
-    break;
-  }
-
   }
   return 0;
 }
@@ -358,11 +349,9 @@ BeaconScanner::add_handlers()
 
   add_read_handler("debug", BeaconScanner_read_param, (void *) H_DEBUG);
   add_read_handler("scan", BeaconScanner_read_param, (void *) H_SCAN);
-  add_read_handler("channel", BeaconScanner_read_param, (void *) H_CHANNEL);
 
   add_write_handler("debug", BeaconScanner_write_param, (void *) H_DEBUG);
   add_write_handler("reset", BeaconScanner_write_param, (void *) H_RESET);
-  add_write_handler("channel", BeaconScanner_write_param, (void *) H_CHANNEL);
 }
 
 

@@ -67,7 +67,6 @@ class BeaconScanner : public Element { public:
   void reset();
 
   bool _debug;
-  int _channel;
 
   String scan_string();
  private:
@@ -92,6 +91,7 @@ class BeaconScanner : public Element { public:
   
   class APTable _waps;
   class AvailableRates *_rtable;
+  class WirelessInfo *_winfo;
 };
 
 CLICK_ENDDECLS

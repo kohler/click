@@ -29,6 +29,7 @@
 #include <click/error.hh>
 #include "proberequester.hh"
 #include <elements/wifi/availablerates.hh>
+#include <elements/wifi/wirelessinfo.hh>
 
 CLICK_DECLS
 
@@ -39,7 +40,8 @@ CLICK_DECLS
 
 ProbeRequester::ProbeRequester()
   : Element(0, 1),
-    _rtable(0)  
+    _rtable(0),
+    _winfo(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -54,12 +56,11 @@ ProbeRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
-  _ssid = "";
   if (cp_va_parse(conf, this, errh,
 		  /* not required */
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
-		  "SSID", cpString, "ssid", &_ssid,
+		  "WIRELESS_INFO", cpElement, "wirleess_info", &_winfo,
 		  "ETH", cpEthernetAddress, "bssid", &_eth,
 		  "RT", cpElement, "availablerates", &_rtable,
 		  cpEnd) < 0)
@@ -76,7 +77,7 @@ ProbeRequester::send_probe_request()
 {
   Vector<int> rates = _rtable->lookup(_eth);
   int max_len = sizeof (struct click_wifi) + 
-    2 + _ssid.length() + /* ssid */
+    2 + (_winfo ? _winfo->_ssid.length() : 0) + /* ssid */
     2 + WIFI_RATE_SIZE + /* rates */
     2 + WIFI_RATE_SIZE + /* xrates */
     0;
@@ -102,12 +103,15 @@ ProbeRequester::send_probe_request()
   uint8_t *ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
   int actual_length = sizeof (struct click_wifi);
 
+  String ssid = _winfo ? _winfo->_ssid : "";  
   /* ssid */
   ptr[0] = WIFI_ELEMID_SSID;
-  ptr[1] = _ssid.length();
-  memcpy(ptr + 2, _ssid.data(), _ssid.length());
-  ptr += 2 + _ssid.length();
-  actual_length += 2 + _ssid.length();
+  ptr[1] = ssid.length();
+  if (_winfo) {
+    memcpy(ptr + 2, ssid.data(), ssid.length());
+  }
+  ptr += 2 + ssid.length();
+  actual_length += 2 + ssid.length();
 
     /* rates */
   ptr[0] = WIFI_ELEMID_RATES;
@@ -146,7 +150,7 @@ ProbeRequester::send_probe_request()
 }
 
 
-enum {H_DEBUG, H_ETH, H_SSID, H_SEND_PROBE};
+enum {H_DEBUG, H_ETH, H_SEND_PROBE};
 
 static String 
 ProbeRequester_read_param(Element *e, void *thunk)
@@ -157,8 +161,6 @@ ProbeRequester_read_param(Element *e, void *thunk)
     return String(td->_debug) + "\n";
   case H_ETH:
     return td->_eth.s() + "\n";
-  case H_SSID:
-    return td->_ssid + "\n";
   default:
     return String();
   }
@@ -184,10 +186,6 @@ ProbeRequester_write_param(const String &in_s, Element *e, void *vparam,
     f->_eth = e;
     break;
   }
-  case H_SSID: {
-    f->_ssid = s;
-    break;
-  }
   case H_SEND_PROBE: {
     f->send_probe_request();
   }
@@ -202,11 +200,9 @@ ProbeRequester::add_handlers()
 
   add_read_handler("debug", ProbeRequester_read_param, (void *) H_DEBUG);
   add_read_handler("eth", ProbeRequester_read_param, (void *) H_ETH);
-  add_read_handler("ssid", ProbeRequester_read_param, (void *) H_SSID);
 
   add_write_handler("debug", ProbeRequester_write_param, (void *) H_DEBUG);
   add_write_handler("eth", ProbeRequester_write_param, (void *) H_ETH);
-  add_write_handler("ssid", ProbeRequester_write_param, (void *) H_SSID);
   add_write_handler("send_probe", ProbeRequester_write_param, (void *) H_SEND_PROBE);
 }
 

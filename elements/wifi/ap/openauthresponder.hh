@@ -55,7 +55,8 @@ class OpenAuthResponder : public Element { public:
 
 
   bool _debug;
-  EtherAddress _bssid;
+
+  class WirelessInfo *_winfo;
  private:
 
 

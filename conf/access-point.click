@@ -17,6 +17,8 @@
 
 AddressInfo(ap_bssid 10.0.0.1/8 00:05:4E:46:97:28);
 
+winfo :: WirelessInfo(SSID "click-ssid", BSSID 00:05:4E:46:97:28, CHANNEL 1);
+
 rates :: AvailableRates(DEFAULT 2 4 11 22);
 
 q :: Queue(10)
@@ -47,25 +49,25 @@ wifi_cl [0]
 
 
 mgt_cl [0] -> Print ("assoc_req")
--> ar :: AssociationResponder(INTERVAL 100, SSID "click-ssid", BSSID ap_bssid,
+-> ar :: AssociationResponder(WIRELESS_INFO winfo,
 			      RT rates)
 -> q;
 
 mgt_cl [1] -> Print ("assoc_resp") -> Discard;
 
 mgt_cl [2]
--> beacon_source :: BeaconSource(INTERVAL 100, CHANNEL 11,SSID "click-ssid",
-				 BSSID ap_bssid, RT rates)
+-> beacon_source :: BeaconSource(WIRELESS_INFO winfo,
+				 RT rates)
 -> q;
 
 mgt_cl [3] -> Print ("probe_resp", 200) -> Discard;
 mgt_cl [4] -> bs :: BeaconScanner(RT rates) -> Discard; 
 mgt_cl [5] -> Print ("disassoc") -> Discard;
-mgt_cl [6] -> Print ("auth") -> auth :: OpenAuthResponder(BSSID ap_bssid) -> q;
+mgt_cl [6] -> Print ("auth") -> auth :: OpenAuthResponder(WIRELESS_INFO winfo) -> q;
 
 
 FromHost(ap, ap_bssid, ETHER ap_bssid)
--> wifi_encap :: WifiEncap(0x02, ap_bssid)
+-> wifi_encap :: WifiEncap(0x02, WIRELESS_INFO winfo)
 -> q;
 
 

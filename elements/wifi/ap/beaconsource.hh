@@ -57,14 +57,14 @@ class BeaconSource : public Element { public:
 
   Timer _timer;
   bool _debug;
-  int _channel;
-  EtherAddress _bssid;
-  String _ssid;
-  class AvailableRates *_rtable;
-  int _interval_ms;
+
 
   EtherAddress _bcast;
   String scan_string();
+  
+  class WirelessInfo *_winfo;
+  class AvailableRates *_rtable;
+
  private:
 
 

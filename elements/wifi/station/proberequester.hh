@@ -21,9 +21,8 @@ class ProbeRequester : public Element { public:
 
   bool _debug;
   EtherAddress _eth;
-  String _ssid;
   class AvailableRates *_rtable;
-
+  class WirelessInfo *_winfo;
  private:
 
 

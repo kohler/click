@@ -56,14 +56,12 @@ class AssociationResponder : public Element { public:
 
 
   bool _debug;
-  EtherAddress _bssid;
-  String _ssid;
-  int _interval_ms;
 
   uint16_t _associd;
 
   String scan_string();
   class AvailableRates *_rtable;
+  class WirelessInfo *_winfo;
  private:
 
 

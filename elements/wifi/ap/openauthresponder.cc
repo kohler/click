@@ -28,6 +28,7 @@
 #include <click/packet_anno.hh>
 #include <click/error.hh>
 #include "openauthresponder.hh"
+#include <elements/wifi/wirelessinfo.hh>
 
 CLICK_DECLS
 
@@ -51,9 +52,13 @@ OpenAuthResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 		  /* not required */
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
-		  "BSSID", cpEthernetAddress, "bssid", &_bssid,
+		  "WIRELESS_INFO", cpElement, "wireless_info", &_winfo,
 		  cpEnd) < 0)
     return -1;
+
+  if (!_winfo || _winfo->cast("WirelessInfo") == 0)
+    return errh->error("No WIRELESS_INFO or it's not a WirelessInfo element\n");
+
 
   return 0;
 }
@@ -165,8 +170,8 @@ OpenAuthResponder::send_auth_response(EtherAddress dst, uint16_t seq, uint16_t s
   w->i_fc[1] = WIFI_FC1_DIR_NODS;
 
   memcpy(w->i_addr1, dst.data(), 6);
-  memcpy(w->i_addr2, _bssid.data(), 6);
-  memcpy(w->i_addr3, _bssid.data(), 6);
+  memcpy(w->i_addr2, _winfo->_bssid.data(), 6);
+  memcpy(w->i_addr3, _winfo->_bssid.data(), 6);
 
   
   *(uint16_t *) w->i_dur = 0;
@@ -189,7 +194,7 @@ OpenAuthResponder::send_auth_response(EtherAddress dst, uint16_t seq, uint16_t s
 }
 
 
-enum {H_DEBUG, H_BSSID};
+enum {H_DEBUG};
 
 static String 
 OpenAuthResponder_read_param(Element *e, void *thunk)
@@ -198,8 +203,6 @@ OpenAuthResponder_read_param(Element *e, void *thunk)
   switch ((uintptr_t) thunk) {
   case H_DEBUG:
     return String(td->_debug) + "\n";
-  case H_BSSID:
-    return td->_bssid.s() + "\n";
   default:
     return String();
   }
@@ -218,13 +221,6 @@ OpenAuthResponder_write_param(const String &in_s, Element *e, void *vparam,
     f->_debug = debug;
     break;
   }
-  case H_BSSID: {    //debug
-    EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
-      return errh->error("bssid parameter must be ethernet address");
-    f->_bssid = e;
-    break;
-  }
   }
   return 0;
 }
@@ -235,10 +231,8 @@ OpenAuthResponder::add_handlers()
   add_default_handlers(true);
 
   add_read_handler("debug", OpenAuthResponder_read_param, (void *) H_DEBUG);
-  add_read_handler("bssid", OpenAuthResponder_read_param, (void *) H_BSSID);
 
   add_write_handler("debug", OpenAuthResponder_write_param, (void *) H_DEBUG);
-  add_write_handler("bssid", OpenAuthResponder_write_param, (void *) H_BSSID);
 }
 
 

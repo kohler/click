@@ -30,6 +30,7 @@
 #include <click/error.hh>
 #include "beaconsource.hh"
 #include <elements/wifi/availablerates.hh>
+#include <elements/wifi/wirelessinfo.hh>
 
 CLICK_DECLS
 
@@ -57,17 +58,11 @@ BeaconSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
-  _channel = 0;
-  _ssid = String();
-  _interval_ms = 0;
   if (cp_va_parse(conf, this, errh,
 		  /* not required */
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
-		  "CHANNEL", cpInteger, "channel", &_channel,
-		  "SSID", cpString, "ssid", &_ssid,
-		  "BSSID", cpEthernetAddress, "bssid", &_bssid,
-		  "INTERVAL", cpInteger, "interval_ms", &_interval_ms,
+		  "WIRELESS_INFO", cpElement, "wirleess_info", &_winfo,
 		  "RT", cpElement, "availablerates", &_rtable,
 		  cpEnd) < 0)
     return -1;
@@ -76,8 +71,10 @@ BeaconSource::configure(Vector<String> &conf, ErrorHandler *errh)
   if (!_rtable || _rtable->cast("AvailableRates") == 0) 
     return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
+  if (!_winfo || _winfo->cast("WirelessInfo") == 0)
+    return errh->error("WirelessInfo element is not provided or not a WirelessInfo");
 
-  if (_interval_ms <= 0) {
+  if (_winfo->_interval <= 0) {
     return errh->error("INTERVAL must be >0\n");
   }
 
@@ -88,7 +85,7 @@ int
 BeaconSource::initialize (ErrorHandler *)
 {
   _timer.initialize(this);
-  _timer.schedule_after_ms(_interval_ms);
+  _timer.schedule_after_ms(_winfo->_interval);
   return 0;
 }
 
@@ -96,19 +93,20 @@ void
 BeaconSource::run_timer() 
 {
   send_beacon(_bcast, false);
-  _timer.schedule_after_ms(_interval_ms);
+  _timer.schedule_after_ms(_winfo->_interval);
 }
 
 void
 BeaconSource::send_beacon(EtherAddress dst, bool probe)
 {
-
-  Vector<int> rates = _rtable->lookup(_bssid);
+  EtherAddress bssid = _winfo ? _winfo->_bssid : EtherAddress();
+  String my_ssid = _winfo ? _winfo->_ssid : "";
+  Vector<int> rates = _rtable->lookup(bssid);
   int max_len = sizeof (struct click_wifi) + 
     8 +                  /* timestamp */
     2 +                  /* beacon interval */
     2 +                  /* cap_info */
-    2 + _ssid.length() + /* ssid */
+    2 + my_ssid.length() + /* ssid */
     2 + WIFI_RATES_MAXSIZE +  /* rates */
     2 + WIFI_RATES_MAXSIZE +  /* xrates */
     2 + 1 +              /* ds parms */
@@ -133,8 +131,8 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
   w->i_fc[1] = WIFI_FC1_DIR_NODS;
 
   memcpy(w->i_addr1, dst.data(), 6);
-  memcpy(w->i_addr2, _bssid.data(), 6);
-  memcpy(w->i_addr3, _bssid.data(), 6);
+  memcpy(w->i_addr2, bssid.data(), 6);
+  memcpy(w->i_addr3, bssid.data(), 6);
 
   *(uint16_t *) w->i_dur = 0;
   *(uint16_t *) w->i_seq = 0;
@@ -150,7 +148,7 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
   ptr += 8;
   actual_length += 8;
   
-  uint16_t beacon_int = (uint16_t) _interval_ms;
+  uint16_t beacon_int = (uint16_t) _winfo->_interval;
   *(uint16_t *)ptr = cpu_to_le16(beacon_int);
   ptr += 2;
   actual_length += 2;
@@ -163,10 +161,10 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
 
   /* ssid */
   ptr[0] = WIFI_ELEMID_SSID;
-  ptr[1] = _ssid.length();
-  memcpy(ptr + 2, _ssid.data(), _ssid.length());
-  ptr += 2 + _ssid.length();
-  actual_length += 2 + _ssid.length();
+  ptr[1] = my_ssid.length();
+  memcpy(ptr + 2, my_ssid.data(), my_ssid.length());
+  ptr += 2 + my_ssid.length();
+  actual_length += 2 + my_ssid.length();
 
   /* rates */
   ptr[0] = WIFI_ELEMID_RATES;
@@ -203,7 +201,7 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
   /* channel */
   ptr[0] = WIFI_ELEMID_DSPARMS;
   ptr[1] = 1;
-  ptr[2] = (uint8_t) _channel;
+  ptr[2] = (uint8_t) _winfo->_channel;
   ptr += 2 + 1;
   actual_length += 2 + 1;
 
@@ -301,12 +299,12 @@ BeaconSource::push(int, Packet *p)
 
 
   /* respond to blank ssid probes also */
-  if (ssid != "" && ssid != _ssid) {
+  if (ssid != "" && ssid != _winfo->_ssid) {
     if (_debug) {
       click_chatter("%{element}: other ssid %s wanted %s\n",
 		    this,
 		    ssid.cc(),
-		    _ssid.cc());
+		    _winfo->_ssid.cc());
     }
     p->kill();
     return;
@@ -341,7 +339,7 @@ BeaconSource::push(int, Packet *p)
   return;
 }
 
-enum {H_DEBUG, H_BSSID, H_SSID, H_CHANNEL, H_INTERVAL};
+enum {H_DEBUG};
 
 static String 
 BeaconSource_read_param(Element *e, void *thunk)
@@ -350,14 +348,6 @@ BeaconSource_read_param(Element *e, void *thunk)
   switch ((uintptr_t) thunk) {
   case H_DEBUG:
     return String(td->_debug) + "\n";
-  case H_BSSID:
-    return td->_bssid.s() + "\n";
-  case H_SSID:
-    return td->_ssid + "\n";
-  case H_CHANNEL:
-    return String(td->_channel) + "\n";
-  case H_INTERVAL:
-    return String(td->_interval_ms) + "\n";
   default:
     return String();
   }
@@ -376,31 +366,6 @@ BeaconSource_write_param(const String &in_s, Element *e, void *vparam,
     f->_debug = debug;
     break;
   }
-  case H_BSSID: {    //debug
-    EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
-      return errh->error("bssid parameter must be ethernet address");
-    f->_bssid = e;
-    break;
-  }
-  case H_SSID: {    //debug
-    f->_ssid = s;
-    break;
-  }
-  case H_CHANNEL: {    //channel
-    int channel;
-    if (!cp_integer(s, &channel)) 
-      return errh->error("channel parameter must be int");
-    f->_channel = channel;
-    break;
-  }
-  case H_INTERVAL: {    //mode
-    int m;
-    if (!cp_integer(s, &m)) 
-      return errh->error("interval parameter must be int");
-    f->_interval_ms = m;
-    break;
-  }
   }
   return 0;
 }
@@ -411,16 +376,8 @@ BeaconSource::add_handlers()
   add_default_handlers(true);
 
   add_read_handler("debug", BeaconSource_read_param, (void *) H_DEBUG);
-  add_read_handler("bssid", BeaconSource_read_param, (void *) H_BSSID);
-  add_read_handler("ssid", BeaconSource_read_param, (void *) H_SSID);
-  add_read_handler("channel", BeaconSource_read_param, (void *) H_CHANNEL);
-  add_read_handler("interval", BeaconSource_read_param, (void *) H_INTERVAL);
 
   add_write_handler("debug", BeaconSource_write_param, (void *) H_DEBUG);
-  add_write_handler("bssid", BeaconSource_write_param, (void *) H_BSSID);
-  add_write_handler("ssid", BeaconSource_write_param, (void *) H_SSID);
-  add_write_handler("channel", BeaconSource_write_param, (void *) H_CHANNEL);
-  add_write_handler("interval", BeaconSource_write_param, (void *) H_INTERVAL);
 }
 
 

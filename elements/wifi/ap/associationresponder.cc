@@ -29,6 +29,7 @@
 #include <click/error.hh>
 #include "associationresponder.hh"
 #include <elements/wifi/availablerates.hh>
+#include <elements/wifi/wirelessinfo.hh>
 CLICK_DECLS
 
 #define min(x,y)      ((x)<(y) ? (x) : (y))
@@ -37,8 +38,8 @@ CLICK_DECLS
 AssociationResponder::AssociationResponder()
   : Element(1, 1),
     _associd(0),
-    _rtable(0)
-  
+    _rtable(0),
+    _winfo(0)  
 {
   MOD_INC_USE_COUNT;
 }
@@ -53,15 +54,11 @@ AssociationResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
-  _ssid = String();
-  _interval_ms = 0;
   if (cp_va_parse(conf, this, errh,
 		  /* not required */
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
-		  "SSID", cpString, "ssid", &_ssid,
-		  "BSSID", cpEthernetAddress, "bssid", &_bssid,
-		  "INTERVAL", cpInteger, "interval_ms", &_interval_ms,
+		  "WIRELESS_INFO", cpElement, "wireless_info", &_winfo,
 		  "RT", cpElement, "availablerates", &_rtable,
 		  cpEnd) < 0)
     return -1;
@@ -70,9 +67,6 @@ AssociationResponder::configure(Vector<String> &conf, ErrorHandler *errh)
   if (!_rtable || _rtable->cast("AvailableRates") == 0) 
     return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
-  if (_interval_ms <= 0) {
-    return errh->error("INTERVAL must be >0\n");
-  }
   return 0;
 }
 
@@ -169,6 +163,7 @@ AssociationResponder::recv_association_request(Packet *p)
 
 
   String ssid;
+  String my_ssid = _winfo ? _winfo->_ssid : "";
   if (ssid_l && ssid_l[1]) {
     ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
   } else {
@@ -178,12 +173,12 @@ AssociationResponder::recv_association_request(Packet *p)
 
 
     /* respond to blank ssid probes also */
-  if (ssid != "" && ssid != _ssid) {
+  if (ssid != "" && ssid != my_ssid) {
     if (_debug) {
       click_chatter("%{element}: other ssid %s wanted %s\n",
 		    this,
 		    ssid.cc(),
-		    _ssid.cc());
+		    my_ssid.cc());
     }
     p->kill();
     return;
@@ -259,8 +254,8 @@ AssociationResponder::push(int, Packet *p)
 void
 AssociationResponder::send_association_response(EtherAddress dst, uint16_t status, uint16_t associd)
 {
-
-  Vector<int> rates = _rtable->lookup(_bssid);
+  EtherAddress bssid = _winfo ? _winfo->_bssid : EtherAddress();
+  Vector<int> rates = _rtable->lookup(bssid);
   int max_len = sizeof (struct click_wifi) + 
     2 +                  /* cap_info */
     2 +                  /* status  */
@@ -280,8 +275,8 @@ AssociationResponder::send_association_response(EtherAddress dst, uint16_t statu
   w->i_fc[1] = WIFI_FC1_DIR_NODS;
 
   memcpy(w->i_addr1, dst.data(), 6);
-  memcpy(w->i_addr2, _bssid.data(), 6);
-  memcpy(w->i_addr3, _bssid.data(), 6);
+  memcpy(w->i_addr2, bssid.data(), 6);
+  memcpy(w->i_addr3, bssid.data(), 6);
 
   
   *(uint16_t *) w->i_dur = 0;
@@ -347,6 +342,7 @@ void
 AssociationResponder::send_disassociation(EtherAddress dst, uint16_t reason)
 {
 
+  EtherAddress bssid = _winfo ? _winfo->_bssid : EtherAddress();
   int len = sizeof (struct click_wifi) + 
     2 +                  /* reason */
     0;
@@ -362,8 +358,8 @@ AssociationResponder::send_disassociation(EtherAddress dst, uint16_t reason)
   w->i_fc[1] = WIFI_FC1_DIR_NODS;
 
   memcpy(w->i_addr1, dst.data(), 6);
-  memcpy(w->i_addr2, _bssid.data(), 6);
-  memcpy(w->i_addr3, _bssid.data(), 6);
+  memcpy(w->i_addr2, bssid.data(), 6);
+  memcpy(w->i_addr3, bssid.data(), 6);
 
   
   *(uint16_t *) w->i_dur = 0;
@@ -381,7 +377,7 @@ AssociationResponder::send_disassociation(EtherAddress dst, uint16_t reason)
 }
 
 
-enum {H_DEBUG, H_BSSID, H_SSID, H_INTERVAL};
+enum {H_DEBUG};
 
 static String 
 AssociationResponder_read_param(Element *e, void *thunk)
@@ -390,12 +386,6 @@ AssociationResponder_read_param(Element *e, void *thunk)
   switch ((uintptr_t) thunk) {
   case H_DEBUG:
     return String(td->_debug) + "\n";
-  case H_BSSID:
-    return td->_bssid.s() + "\n";
-  case H_SSID:
-    return td->_ssid + "\n";
-  case H_INTERVAL:
-    return String(td->_interval_ms) + "\n";
   default:
     return String();
   }
@@ -414,25 +404,6 @@ AssociationResponder_write_param(const String &in_s, Element *e, void *vparam,
     f->_debug = debug;
     break;
   }
-  case H_BSSID: {    //debug
-    EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
-      return errh->error("bssid parameter must be ethernet address");
-    f->_bssid = e;
-    break;
-  }
-  case H_SSID: {    //debug
-    f->_ssid = s;
-    break;
-  }
-
-  case H_INTERVAL: {    //mode
-    int m;
-    if (!cp_integer(s, &m)) 
-      return errh->error("interval parameter must be int");
-    f->_interval_ms = m;
-    break;
-  }
   }
   return 0;
 }
@@ -443,14 +414,8 @@ AssociationResponder::add_handlers()
   add_default_handlers(true);
 
   add_read_handler("debug", AssociationResponder_read_param, (void *) H_DEBUG);
-  add_read_handler("bssid", AssociationResponder_read_param, (void *) H_BSSID);
-  add_read_handler("ssid", AssociationResponder_read_param, (void *) H_SSID);
-  add_read_handler("interval", AssociationResponder_read_param, (void *) H_INTERVAL);
 
   add_write_handler("debug", AssociationResponder_write_param, (void *) H_DEBUG);
-  add_write_handler("bssid", AssociationResponder_write_param, (void *) H_BSSID);
-  add_write_handler("ssid", AssociationResponder_write_param, (void *) H_SSID);
-  add_write_handler("interval", AssociationResponder_write_param, (void *) H_INTERVAL);
 }
 
 

@@ -62,10 +62,8 @@ class AssociationRequester : public Element { public:
 
   bool _associated;
   EtherAddress _eth;
-  EtherAddress _bssid;
-  String _ssid;
-  uint16_t _listen_interval;
   class AvailableRates *_rtable;
+  class WirelessInfo *_winfo;
 
   String scan_string();
  private:

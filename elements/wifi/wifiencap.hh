@@ -65,6 +65,7 @@ class WifiEncap : public Element { public:
 
   unsigned _mode;
   EtherAddress _bssid;
+  class WirelessInfo *_winfo;
  private:
 
 };
