@@ -34,6 +34,12 @@ private:
   Vector<Entry> _v;
   int entries;
 
+
+  struct bit {
+    u_int8_t  from_level;
+    u_int16_t value;
+  };
+
   // is fast routing table up-to-date?
   bool dirty;
 
@@ -47,7 +53,6 @@ private:
 #define CHUNK      0xc000
 
   // data structures for level 1
-  u_int16_t bitvector1[4096];
   u_int16_t codewords1[4096];
   u_int16_t baseindex1[1024];
   Vector<u_int16_t> l1ptrs;
@@ -56,17 +61,17 @@ private:
   void add(unsigned dst, unsigned mask, unsigned gw, bool update);
 
   // maptable
-  Vector<u_int16_t> IPTable2::all_masks(int);
+  Vector<u_int16_t> IPTable2::all_masks(int, bool toplevel = true);
   void build_maptable();
   inline u_int16_t mt_indexfind(u_int16_t);
 
   // Used for building level 1 data structure
   void build();
-  inline int set_single_bit(u_int16_t*, u_int32_t, u_int32_t, u_int32_t);
-  void set_all_bits(u_int16_t high16, int bit_index, u_int16_t masked, int router_entry, int value, Vector<int> &affected);
-
-  static void sort(void *const pbase, size_t total_elems);
-  static int entry_compare(const void *e1, const void *e1);
+  void set_single_bit(u_int16_t bitvector[], struct bit bit_admin[],
+      u_int32_t from_level, u_int32_t to_level, u_int32_t value,
+      u_int16_t headinfo, Vector<int> &affected);
+  void set_all_bits(u_int16_t bitvector[], struct bit bit_admin[], u_int16_t high16,
+      int router_entry, Vector<int> &affected);
 };
 
 #endif

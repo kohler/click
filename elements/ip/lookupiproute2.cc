@@ -1,6 +1,6 @@
 /*
- * lookupiproute2.{cc,hh} -- element looks up next-hop address in static
- * routing table
+ * lookupiproute2.{cc,hh} -- element looks up next-hop address in pokeable
+ * routing table.
  * Thomer M. Gil
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -43,15 +43,18 @@ LookupIPRoute2::push(int, Packet *p)
   int index = 0;
 
   IPAddress a = p->dst_ip_anno();
+  /*
+  add_route_handler("1.0.0.0 255.255.0.0 5.5.5.5", this, (void *)0, (ErrorHandler *)0);
+  add_route_handler("2.1.0.0 255.255.0.0 1.1.1.1", this, (void *)0, (ErrorHandler *)0);
+  add_route_handler("2.2.0.0 255.255.0.0 2.2.2.2", this, (void *)0, (ErrorHandler *)0);
+  add_route_handler("2.244.0.0 255.255.0.0 3.3.3.3", this, (void *)0, (ErrorHandler *)0);
+  add_route_handler("2.0.0.0 255.255.0.0 4.4.4.4", this, (void *)0, (ErrorHandler *)0);
+  */
 
-  add_route_handler("2.1.0.0 255.255.0.0 123.200.123.200", this, (void *)0, (ErrorHandler *)0);
-  add_route_handler("2.0.0.0 255.255.0.0 123.200.123.200", this, (void *)0, (ErrorHandler *)0);
-  add_route_handler("1.0.0.0 255.255.0.0 231.100.231.100", this, (void *)0, (ErrorHandler *)0);
-  click_chatter("Looking up for %x", ntohl(a));
-
-  _t.lookup(a, gw, index);
-
-  click_chatter("Gateway for %x is %x", ntohl(a), ntohl(gw));
+  // click_chatter("Lookup for %x", ntohl(a.saddr()));
+  _t.lookup(a.saddr(), gw, index);
+  p->set_dst_ip_anno(gw);
+  // click_chatter("Gateway for %x is %x", ntohl(a.saddr()), ntohl(gw));
   output(0).push(p);
 }
 

@@ -1,7 +1,8 @@
 /*
  * iptable2.{cc,hh} -- a fast IP routing table. Implementation based on "Small
  * Forwarding Tables for Fast Routing Lookups" by Mikael Degermark, Andrej
- * Brodnik, Svante Carlsson and Stephen Pink.
+ * Brodnik, Svante Carlsson and Stephen Pink. Sigcomm '97. Also called the
+ * "Lulea Algorithm". Ocassionaly I refer to sections from this Article,
  * Thomer M. Gil
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -19,12 +20,12 @@
 #include "integers.hh"
 
 
-#define MT_MAX         675
-#define HACK  (MT_MAX + 5)     // arbitrary value > MT_MAX
+#define MT_MAX                   675
+#define DIRECT_POINTER  (MT_MAX + 5)            // arbitrary value > MT_MAX
 
-bool IPTable2::_mt_done = false;                // built maptable?
-u_int8_t IPTable2::_maptable[MT_MAX+1][8];      // See Degermark SIGCOMM '97
-u_int16_t IPTable2::_mask2index[256][256];      // For mapping masks to _maptable
+bool IPTable2::_mt_done = false;
+u_int8_t IPTable2::_maptable[MT_MAX+1][8];
+u_int16_t IPTable2::_mask2index[256][256];      // see build_maptable()
 
 IPTable2::IPTable2()
   : entries(0), dirty(false)
@@ -63,9 +64,7 @@ IPTable2::add(unsigned dst, unsigned mask, unsigned gw)
 void
 IPTable2::del(unsigned dst, unsigned mask)
 {
-  int i;
-
-  for(i = 0; i < _v.size(); i++){
+  for(int i = 0; i < _v.size(); i++){
     if(_v[i]._valid && (_v[i]._dst == dst) && (_v[i]._mask == mask)) {
       _v[i]._valid = 0;
       entries--;
@@ -75,6 +74,7 @@ IPTable2::del(unsigned dst, unsigned mask)
   }
 }
 
+// Returns the i-th record.
 bool
 IPTable2::get(int i, unsigned &dst, unsigned &mask, unsigned &gw)
 {
@@ -96,7 +96,8 @@ IPTable2::get(int i, unsigned &dst, unsigned &mask, unsigned &gw)
 bool
 IPTable2::lookup(unsigned dst, unsigned &gw, int &index)
 {
-  // just in time. Change this to timer.
+#if 0
+  // Just in time. XXX: Change this to timer.
   if(dirty) {
     build();
     dirty = false;
@@ -111,192 +112,298 @@ IPTable2::lookup(unsigned dst, unsigned &gw, int &index)
   u_int16_t ten = (codeword & 0xffc0) >> 6;     // upper 10 bits.
   u_int8_t six = codeword & 0x003f;             // lower  6 bits.
 
-  // Hackflag? offset is not offset but pointer to routing table.
-  if(ten == HACK) {
+  // Offset is not offset but pointer to routing table. See 4.2.1 of Degermark.
+  if(ten == DIRECT_POINTER) {
     index = six;
     goto done;
   }
 
-  u_int16_t pix = baseindex1[bix] + six + _maptable[ten][bit+1];
+  // Figure 10 in Degermark is wrong.
+  int offset = _maptable[ten][bit >> 1];
+  if(bit & 0x0001) // odd
+    offset &= 0x0f;
+  else
+    offset >>= 4;
+  u_int16_t pix = baseindex1[bix] + six + offset;
   index = l1ptrs[pix];
+
+done:
+  gw = _v[index & 0x3fff]._gw;
+  return(true);
+
+#endif
+  // just in time. Change this to timer.
+  if(dirty) {
+    build();
+    dirty = false;
+  }
+    
+  dst = ntohl(dst);
+
+  click_chatter("dst = %x", dst);
+  u_int16_t ix = (dst & 0xfff00000) >> 20;      // upper 12 bits.
+  click_chatter("ix: %x", ix);
+  u_int16_t bix = (dst & 0xffc00000) >> 22;     // upper 10 bits.
+  click_chatter("bix: %x", bix);
+  u_int8_t bit = (dst & 0x000f0000) >> 16;      // lower  4 of upper 16 bits.
+  click_chatter("bit: %x", bit);
+  u_int16_t codeword = codewords1[ix];
+  click_chatter("codeword = %x", codeword);
+  u_int16_t ten = (codeword & 0xffc0) >> 6;     // upper 10 bits.
+  click_chatter("ten = %x", ten);
+  click_chatter("maptable for record %x\n-----------", ten);
+  for(int i=0; i<7; i++) {
+    click_chatter("%x", _maptable[ten][i]);
+  }
+  u_int8_t six = codeword & 0x003f;             // lower  6 bits.
+  click_chatter("six = %x", six);
+
+  // Hackflag? offset is not offset but pointer to routing table.
+  if(ten == DIRECT_POINTER) {
+    index = six;
+    goto done;
+  }
+
+  click_chatter("baseindex1[bix] = (d) %d", baseindex1[bix]);
+  click_chatter("_maptable[ten][bit >> 1] = (x) %x", _maptable[ten][bit >> 1]);
+  int maptable_offset = _maptable[ten][bit >> 1];
+  if(bit & 0x0001) // odd
+    maptable_offset &= 0x0f;
+  else
+    maptable_offset >>= 4;
+  click_chatter("maptable_offset = (x) %x", maptable_offset);
+
+  u_int16_t pix = baseindex1[bix] + six + maptable_offset;
+  click_chatter("pix = (d) %d", pix);
+  index = l1ptrs[pix];
+  click_chatter("index = (x) %x", index);
+
+  for(int i = 0; i < l1ptrs.size(); i++)
+    click_chatter("l1prts[(d) %d] = (x) %x", i, l1ptrs[i]);
+
 
 done:
   gw = _v[index & 0x3fff]._gw;
   return(true);
 }
 
-
-
-
-// sets bits in bitvector based on highest bits in IP address. the lowest bytes
-// in the bitvector are affected before the larger ones.
-void
-IPTable2::set_all_bits(u_int16_t high16, int bit_index, u_int16_t masked, int router_entry, int value, Vector<int> &affected)
-{
-  int b;
-  if(bit_index == 16) {
-    b = set_single_bit(bitvector1, bit_index, 16, value);
-    affected.push_back(b);
-    l1ptrs.push_back(((masked & 0xffff0000) ? CHUNK : NEXT_HOP) | router_entry);
-    return;
-  }
-
-  value = high16 >> (15-bit_index);
-
-  // Depending on 0 or 1: set correct bit at level 16. Do this in a way that the
-  // lowest bits get set first. In order.
-  if(value & 0x0001) {
-    b = set_single_bit(bitvector1, bit_index, 16, (value >> 1));
-    l1ptrs.push_back(NEXT_HOP | router_entry);
-    set_all_bits(high16, bit_index+1, masked, router_entry, value, affected);
-  } else {
-    set_all_bits(high16, bit_index+1, masked, router_entry, value, affected);
-    b = set_single_bit(bitvector1, bit_index+1, 16, value | 0x0001);
-    l1ptrs.push_back(NEXT_HOP | router_entry);
-  }
-  affected.push_back(b);
-}
-
-// Builds the whole Degermark structure
+// Builds the whole structure as described by the Lulea Algorithm.
+// After execution l1ptrs, codewords1 and baseindex1 represent routing table.
 //
-// sort routing table;
-// for every IP address
-//   1. set bits in bitvector from least sign. to most sign. while adding
-//      pointers to l1ptrs.
+// (NOT FINISHED: level 2 and 3)
 //
-//   2. Write the codewords that correspond to 0 or 1 bitvectors
-//
-// Build codewords array and baseindex array.
-//
+// bitvector1 contains bitvector as described in section 4.2 of Degermark.
+// bit_admin contains an entry for each bit in bitvector1.
+// Both are temporary.
 void
 IPTable2::build()
 {
+  u_int16_t bitvector1[4096];
+  struct bit bit_admin[65536];
+
+  for(register int i = 0; i < 65536; i++)
+    bit_admin[i].from_level = bit_admin[i].value = 0;
   for(register int i = 0; i < 4096; i++)
     codewords1[i] = bitvector1[i] = 0;
   for(register int i = 0; i < 1024; i++)
     baseindex1[i] = 0;
   l1ptrs.clear();
 
-  // Make sorted routing table and delete old one.
-  struct Entry* sorted = new struct Entry[entries];
-  int sorted_index = 0;
-  for(register int i = 0; i < _v.size(); i++)
-    if(_v[i]._valid)
-      sorted[sorted_index++] = _v[i];
-  sort(sorted, sorted_index);
-  clear();
-
   Vector<int> affected;
-  for(int i = 0; i < sorted_index; i++) {
-    // Build new (simple) routing table based on sorted version.
-    add(sorted[i]._dst, sorted[i]._mask, sorted[i]._gw);
+  for(int i = 0; i < entries; i++) {
+    if(_v[i]._valid == 0)
+      continue;
 
     // masked, high16, dst, mask and 0x0000ffff in network order!
     // masked == (IP address range from router table)
-    u_int32_t masked = (sorted[i]._dst & sorted[i]._mask);
+    u_int32_t masked = (_v[i]._dst & _v[i]._mask);
     u_int16_t high16 = masked & 0x0000ffff;
     if(high16 == 0)
       continue;
     high16 = ntohs(high16);
 
+    click_chatter("Inserting %x", high16);
+
     // set bits in bitvector for this routing table entry
     affected.clear();
-    set_all_bits(high16, 0, masked, i, 0, affected);
+    set_all_bits(bitvector1, bit_admin, high16, i, affected);
 
-    // For all affected double-bytes in bitvector, check whether or not they are
-    // 0 or 1 and if so, administer the routertable entry in codewords for which
-    // that happened. This is an optimization proposed by Degermark.
+    // For all affected shorts in bitvector, check whether or not they are
+    // 0 or 1 and if so apply the optimization described in section 4.2.1 of
+    // Degermark.
     u_int16_t bv;
     int af_index;
     for(int j = 0; j < affected.size(); j++) {
       af_index = affected[j];
       bv = bitvector1[af_index];
-      if(bv == 0 || bv == 1) {
-        codewords1[af_index] = ((HACK) << 6);
+      if(!(bv & 0xfffe)) { // bv == 0 || bv == 1
+        codewords1[af_index] = ((DIRECT_POINTER) << 6);
         codewords1[af_index] += i;
       }
     }
   }
 
-  // Although we called add() in this loop, the routing table is not dirty.
-  dirty = false;
-  delete[] sorted;
+  // Now build l1ptrs, based on set bits in bitvector1. See section 4.2 of
+  // Degermark.
+  for(register int i = 0; i < 65536; i++)
+    if(bit_admin[i].value) {
+      l1ptrs.push_back(bit_admin[i].value);
+      click_chatter("Pushed bit %d (== %x) on vector (index = %d) : %x", i, bit_admin[i].value, l1ptrs.size()-1, l1ptrs[l1ptrs.size()-1]);
+    }
 
-  // build codewords1 array and base index array based on current bitvector.
-  int bi1_index = 0;
-  int bits_so_far = 0;
-  u_int16_t bv;
+
+  // First entry of baseindex1 always 0.
+  int bi1_idx = 0;
+  baseindex1[bi1_idx++] = 0;
+
+  int mt_index = 0, bits_so_far = 0;
   for(int j = 0; j < 4096; j++) {
-    bv = bitvector1[j];
+    u_int16_t bv = bitvector1[j];
+    click_chatter("bitvector1[%d] = %x", j, bitvector1[j]);
 
-    // Write record-index of maptable in upper 10 bits. There is no such index
-    // for records where bv == 0 or 1
-    int mt_index = -1;
+    // Write record-index of maptable in upper 10 bits. No such index exists
+    // for records where bv == 0 or bv == 1 (see section 4.2.1).
     if(bv & 0xfffe) { // if (bv != 0x0000 && bv != 0x0001)
       mt_index = mt_indexfind(bitvector1[j]);
       codewords1[j] = mt_index << 6;
     }
 
-    // In most cases: lower 6 bits contain offset.
+    // Lower 6 bits of codewords contain offset. Every fourth codeword starts
+    // with offset 0.
     //
-    // For bv == 0 or 1, there might be hack-entry in the corresponding
-    // codeword. Don't overwrite that. It points directly to the router table
-    // and not to the maptable.
-    if(j & 0x0003) { // not dividable by 4
-      if(((codewords1[j] & 0xffc0) >> 6) != HACK) { // not hacked.
+    // For codewords related to a bv == 0 or bv == 1, there might be direct
+    // routing table index in the related codeword (section 4.2.1). Don't
+    // overwrite that entry.
+
+    // Every non 4th codeword.
+    if(j & 0x0003) {
+      if(((codewords1[j] & 0xffc0) >> 6) != DIRECT_POINTER) {
         codewords1[j] += bits_so_far;
-      } else {
-        // only codewords that correspond to a bitvector doublebyte that is 0 or
-        // 1 can have their hackflag set.
-        assert(bv == 0 || bv == 1);
       }
+      // else {
+      //   this means that related bv == 0 or bv == 1
+      // }
+
+
+    // Every 4th codeword: 0 and set baseindex.
     } else if(j) {
-      if(bi1_index)
-        baseindex1[bi1_index] = baseindex1[bi1_index-1] + bits_so_far;
-      else
-        baseindex1[bi1_index] = bits_so_far;
-      bi1_index++;
+      baseindex1[bi1_idx] = baseindex1[bi1_idx-1] + bits_so_far;
+      click_chatter("baseindex1[%d] = %d", bi1_idx, baseindex1[bi1_idx]);
+      bi1_idx++;
       bits_so_far = 0;
     }
-    // else if(j == 0)
-    //   codewords1[j].offset = 0; has already that value
 
-    if(bv & 0xfffe) // if (bv != 0x0000 && bv != 0x0001)
-      bits_so_far += _maptable[mt_index][7] & 0x0f;
+    // Raise bits_so_far.
+
+    // The number of bits in a short from the bitvector can be retrieved from
+    // maptable, although we still have to check for the most sign. bit since
+    // maptable only tells the # of set bits BEFORE the x-th bit.
+    //
+    // For bv == 0 or bv == 1 there is no maptable entry. Just check.
+    if(bv & 0xfffe) // bv != 0x0000 && bv != 0x0001
+      bits_so_far += ((_maptable[mt_index][7] & 0x0f) + ((bv & 0x8000) ? 1 : 0));
     else
-      bits_so_far += (bv & 0x0001); // no entry in maptable exists.
+      bits_so_far += (bv & 0x0001);
+
+    click_chatter("codewords1[%d] is %x", j, codewords1[j]);
   }
 }
 
 
-// Sets a bit in bitvector and returns the index of the doublebyte in bitvector
-// that it has changed.
-inline int
+
+
+// Sets all necessary bits in bitvector based on a (part of a) IP address. Read
+// section 4.2 of Degermark to see which bits are set and what they mean.
+//
+// bitvector    - bitvector as described in 4.2 of Degermark
+// bit_admin    - table to temp. store info on each bit in bitvector
+// high16       - 16 most sign. bits of IP address
+// rtable_idx   - index in sorted routing table where high16 came from
+// affected     - vector with indices of altered shorts in bitvector 
+void
+IPTable2::set_all_bits(u_int16_t bitvector[],
+                       struct bit bit_admin[],
+                       u_int16_t high16,
+                       int rtable_idx,
+                       Vector<int> &affected)
+{
+  u_int16_t value;
+
+  u_int16_t headinfo = (NEXT_HOP | rtable_idx);
+  for(int i = 0; i < 16; i++) {
+    value = high16 >> (15-i);
+
+    // Every node must have 0 or 2 children. Every node has to set a 1 in the
+    // bitvector where its range starts. See Degermark figure 5.
+    if(value & 0x0001)
+      set_single_bit(bitvector, bit_admin, i, 16, (value >> 1), headinfo, affected);
+    else
+      set_single_bit(bitvector, bit_admin, i+1, 16, value | 0x0001, headinfo, affected);
+  }
+
+  click_chatter("Setting bit on level 16");
+  u_int16_t masked = _v[rtable_idx]._dst & _v[rtable_idx]._mask;
+  headinfo = (((masked & 0xffff0000) ? CHUNK : NEXT_HOP) | rtable_idx);
+  set_single_bit(bitvector, bit_admin, 16, 16, value, headinfo, affected);
+  return;
+}
+
+
+
+// Sets a single bit in the supplied bitvector.
+//
+// See section 4. What Degermark doesn't tell you is that expanding the prefix
+// tree to be complete causes annoying collisions of bits in the bitvector:
+// different entries of the routing table might try to set the same bit in the
+// bitvector. A node closest to the bitvector can override bits set by nodes
+// further away from the bitvector. Figure 4 illustrates this (the two rightmost
+// nodes; e2 'hides' entries of e1. e2 can do this because it is closer to the
+// bitvector).
+//
+// bitvector    - where bit has to be set
+// bit_admin    - contains info on what entry caused which bit to be set.
+// from_level   - since prefix tree is complete, every node at whatever level
+// can cause a bit to be set down in the bitvector. From_level tells this method
+// from which level this bit is set. Later needed to see who can override other
+// ones bits.
+//
+// to_level     - 16 for level 1, 24 for level 2, 32 for level 3.
+// value        - The prefix of an IP address. The number of relevant bits
+// equals from_level.
+//
+// headinfo     - The headinfo to be placed in l1ptrs in a later phase.
+inline void
 IPTable2::set_single_bit(u_int16_t bitvector[],
-                         u_int32_t from_level, // 1 .. 16
-                         u_int32_t to_level,   // 1 .. 16
-                         u_int32_t value)      // 0000 0000 .. ffff ffff
+                         struct bit bit_admin[],
+                         u_int32_t from_level,
+                         u_int32_t to_level,
+                         u_int32_t value,
+                         u_int16_t headinfo,
+                         Vector<int> &affected)
 {
   assert(from_level <= to_level);
 
-  // How many levels are there between?
   unsigned int leveldiff = to_level - from_level;
-  unsigned bits_before = value << leveldiff;
+  unsigned bit_in_vector = value << leveldiff;
+  int vector_index = bit_in_vector >> 4;
+  int bit_in_short = bit_in_vector & 0x000f;
 
-  // write bit with index bits_before that is in byte
-  int bvi = bits_before >> 4;
+  // Only override set bit if it is set from a lower level in prefix tree.
+  if(bitvector[vector_index] & (0x0001 << bit_in_short))
+    if(bit_admin[bit_in_vector].from_level >= from_level)
+      return;
+  bitvector[vector_index] |= (0x0001 << bit_in_short);
+  bit_admin[bit_in_vector].value = headinfo;
+  bit_admin[bit_in_vector].from_level = from_level;
+  affected.push_back(vector_index);
 
-  // Bitnumber to write within byte.
-  int bit_index = bits_before & 0x000f;
-
-  // Set the bit.
-  bitvector[bvi] |= (0x0001 << bit_index);
-  return(bvi);
+  click_chatter("bitvector[%d] is %x", vector_index, bitvector[vector_index]);
 }
 
 
 
 
+// Returns the index in _maptable where mask can be found.
 inline u_int16_t
 IPTable2::mt_indexfind(u_int16_t mask)
 {
@@ -318,12 +425,11 @@ IPTable2::build_maptable()
 
   for(int i = 0; i < masks.size(); i++) {
     mask = masks[i];
-    // _maptable[i][0] = set_bits = 0;
-    set_bits = 0;
-    for(u_int8_t j = 0; j < 16; j++) {
-      if(mask & 0x8000)
+    _maptable[i][0] = set_bits = 0;
+    for(u_int8_t j = 1; j < 16; j++) {
+      if(mask & 0x0001)
         set_bits++;
-      mask <<= 1;
+      mask >>= 1;
 
       // j even: set upper 4 bits.
       if((j & 0x0001) == 0)
@@ -337,9 +443,12 @@ IPTable2::build_maptable()
 }
 
 // Generates all possible masks of length 2^length AND a mapping from these
-// masks to record numbers for maptable.
+// See section 4.2 formula (2).
+//
+// _mask2index is a two-dimensional array that translates masks to the index in
+// maptable related to that mask.
 Vector<u_int16_t>
-IPTable2::all_masks(int length)
+IPTable2::all_masks(int length, bool toplevel = true)
 {
   assert(length >= 0 && length <= 4);
 
@@ -349,27 +458,28 @@ IPTable2::all_masks(int length)
     return v;
   }
 
-  v = all_masks(length-1);
+  v = all_masks(length-1, false);
 
   // Create the shifted version of all of masks in v.
   Vector<u_int16_t> shifted_v;
   for(int i = 0; i < v.size(); i++)
     shifted_v.push_back(v[i] << (0x0001 << (length-1)));
 
-  // On level 4, don't put 1 in there. Optimization.
+  // On toplevel, don't put 1 in there. See section 4.2.1
   Vector<u_int16_t> v_new;
-  if(length != 4)
+  if(!toplevel)
     v_new.push_back(0x0001);
 
   // Create all masks of length 2^length.
   int mt_index = 0;
-  u_int16_t mask;
   for(int i = 0; i < shifted_v.size(); i++) {
     for(int j = 0; j < v.size(); j++) {
-      mask = shifted_v[i] | v[j];
+      u_int16_t mask = shifted_v[i] | v[j];
       v_new.push_back(mask);
-      if(length == 4)
+      if(toplevel) {
+         click_chatter("Record %d is for mask %x", mt_index, mask);
         _mask2index[mask >> 8][mask & 0x00ff] = mt_index++;
+      }
     }
   }
 
@@ -379,242 +489,3 @@ IPTable2::all_masks(int length)
 // generate Vector template instance
 #include "vector.cc"
 template class Vector<IPTable2::Entry>;
-
-/*
- *
- * QUICKSORT. Taken from GNU glibc; slightly adjusted for speedup.
- *
- */
-
-/* Byte-wise swap two items of size SIZE. */
-#define SWAP(a, b, size)						      \
-  do									      \
-    {									      \
-      register size_t __size = (size);					      \
-      register char *__a = (a), *__b = (b);				      \
-      do								      \
-	{								      \
-	  char __tmp = *__a;						      \
-	  *__a++ = *__b;						      \
-	  *__b++ = __tmp;						      \
-	} while (--__size > 0);						      \
-    } while (0)
-
-/* Discontinue quicksort algorithm when partition gets below this size.
-   This particular magic number was chosen to work best on a Sun 4/260. */
-#define MAX_THRESH 4
-
-/* Stack node declarations used to store unfulfilled partition obligations. */
-typedef struct
-  {
-    char *lo;
-    char *hi;
-  } stack_node;
-
-/* The next 4 #defines implement a very fast in-line stack abstraction. */
-#define STACK_SIZE	(8 * sizeof(unsigned long int))
-#define PUSH(low, high)	((void) ((top->lo = (low)), (top->hi = (high)), ++top))
-#define	POP(low, high)	((void) (--top, (low = top->lo), (high = top->hi)))
-#define	STACK_NOT_EMPTY	(stack < top)
-
-
-/* Order size using quicksort.  This implementation incorporates
-   four optimizations discussed in Sedgewick:
-
-   1. Non-recursive, using an explicit stack of pointer that store the
-      next array partition to sort.  To save time, this maximum amount
-      of space required to store an array of MAX_INT is allocated on the
-      stack.  Assuming a 32-bit integer, this needs only 32 *
-      sizeof(stack_node) == 136 bits.  Pretty cheap, actually.
-
-   2. Chose the pivot element using a median-of-three decision tree.
-      This reduces the probability of selecting a bad pivot value and
-      eliminates certain extraneous comparisons.
-
-   3. Only quicksorts TOTAL_ELEMS / MAX_THRESH partitions, leaving
-      insertion sort to order the MAX_THRESH items within each partition.
-      This is a big win, since insertion sort is faster for small, mostly
-      sorted array segments.
-
-   4. The larger of the two sub-partitions is always pushed onto the
-      stack first, with the algorithm then concentrating on the
-      smaller partition.  This *guarantees* no more than log (n)
-      stack size is needed (actually O(1) in this case)!  */
-
-void
-IPTable2::sort(void *const pbase, size_t total_elems)
-{
-  register char *base_ptr = (char *) pbase;
-  size_t size = sizeof(struct Entry);
-
-  /* Allocating SIZE bytes for a pivot buffer facilitates a better
-     algorithm below since we can do comparisons directly on the pivot. */
-  char *pivot_buffer = new char[size];
-  const size_t max_thresh = MAX_THRESH * size;
-
-  if (total_elems == 0)
-    /* Avoid lossage with unsigned arithmetic below.  */
-    return;
-
-  if (total_elems > MAX_THRESH)
-    {
-      char *lo = base_ptr;
-      char *hi = &lo[size * (total_elems - 1)];
-      /* Largest size needed for 32-bit int!!! */
-      stack_node stack[STACK_SIZE];
-      stack_node *top = stack + 1;
-
-      while (STACK_NOT_EMPTY)
-        {
-          char *left_ptr;
-          char *right_ptr;
-
-	  char *pivot = pivot_buffer;
-
-	  /* Select median value from among LO, MID, and HI. Rearrange
-	     LO and HI so the three values are sorted. This lowers the
-	     probability of picking a pathological pivot value and
-	     skips a comparison for both the LEFT_PTR and RIGHT_PTR. */
-
-	  char *mid = lo + size * ((hi - lo) / size >> 1);
-
-	  if (entry_compare((void *) mid, (void *) lo) < 0)
-	    SWAP (mid, lo, size);
-	  if (entry_compare((void *) hi, (void *) mid) < 0)
-	    SWAP (mid, hi, size);
-	  else
-	    goto jump_over;
-	  if (entry_compare((void *) mid, (void *) lo) < 0)
-	    SWAP (mid, lo, size);
-	jump_over:;
-	  memcpy (pivot, mid, size);
-	  pivot = pivot_buffer;
-
-	  left_ptr  = lo + size;
-	  right_ptr = hi - size;
-
-	  /* Here's the famous ``collapse the walls'' section of quicksort.
-	     Gotta like those tight inner loops!  They are the main reason
-	     that this algorithm runs much faster than others. */
-	  do
-	    {
-	      while (entry_compare((void *) left_ptr, (void *) pivot) < 0)
-		left_ptr += size;
-
-	      while (entry_compare((void *) pivot, (void *) right_ptr) < 0)
-		right_ptr -= size;
-
-	      if (left_ptr < right_ptr)
-		{
-		  SWAP (left_ptr, right_ptr, size);
-		  left_ptr += size;
-		  right_ptr -= size;
-		}
-	      else if (left_ptr == right_ptr)
-		{
-		  left_ptr += size;
-		  right_ptr -= size;
-		  break;
-		}
-	    }
-	  while (left_ptr <= right_ptr);
-
-          /* Set up pointers for next iteration.  First determine whether
-             left and right partitions are below the threshold size.  If so,
-             ignore one or both.  Otherwise, push the larger partition's
-             bounds on the stack and continue sorting the smaller one. */
-
-          if ((size_t) (right_ptr - lo) <= max_thresh)
-            {
-              if ((size_t) (hi - left_ptr) <= max_thresh)
-		/* Ignore both small partitions. */
-                POP (lo, hi);
-              else
-		/* Ignore small left partition. */
-                lo = left_ptr;
-            }
-          else if ((size_t) (hi - left_ptr) <= max_thresh)
-	    /* Ignore small right partition. */
-            hi = right_ptr;
-          else if ((right_ptr - lo) > (hi - left_ptr))
-            {
-	      /* Push larger left partition indices. */
-              PUSH (lo, right_ptr);
-              lo = left_ptr;
-            }
-          else
-            {
-	      /* Push larger right partition indices. */
-              PUSH (left_ptr, hi);
-              hi = right_ptr;
-            }
-        }
-    }
-
-  /* Once the BASE_PTR array is partially sorted by quicksort the rest
-     is completely sorted using insertion sort, since this is efficient
-     for partitions below MAX_THRESH size. BASE_PTR points to the beginning
-     of the array to sort, and END_PTR points at the very last element in
-     the array (*not* one beyond it!). */
-
-#define min(x, y) ((x) < (y) ? (x) : (y))
-
-  {
-    char *const end_ptr = &base_ptr[size * (total_elems - 1)];
-    char *tmp_ptr = base_ptr;
-    char *thresh = min(end_ptr, base_ptr + max_thresh);
-    register char *run_ptr;
-
-    /* Find smallest element in first threshold and place it at the
-       array's beginning.  This is the smallest array element,
-       and the operation speeds up insertion sort's inner loop. */
-
-    for (run_ptr = tmp_ptr + size; run_ptr <= thresh; run_ptr += size)
-      if (entry_compare((void *) run_ptr, (void *) tmp_ptr) < 0)
-        tmp_ptr = run_ptr;
-
-    if (tmp_ptr != base_ptr)
-      SWAP (tmp_ptr, base_ptr, size);
-
-    /* Insertion sort, running from left-hand-side up to right-hand-side.  */
-
-    run_ptr = base_ptr + size;
-    while ((run_ptr += size) <= end_ptr)
-      {
-	tmp_ptr = run_ptr - size;
-	while (entry_compare((void *) run_ptr, (void *) tmp_ptr) < 0)
-	  tmp_ptr -= size;
-
-	tmp_ptr += size;
-        if (tmp_ptr != run_ptr)
-          {
-            char *trav;
-
-	    trav = run_ptr + size;
-	    while (--trav >= run_ptr)
-              {
-                char c = *trav;
-                char *hi, *lo;
-
-                for (hi = lo = trav; (lo -= size) >= tmp_ptr; hi = lo)
-                  *hi = *lo;
-                *hi = c;
-              }
-          }
-      }
-  }
-}
-
-
-int
-IPTable2::entry_compare(const void *e1, const void *e2)
-{
-  unsigned dst1 = ntohl(((struct IPTable2::Entry *)e1)->_dst);
-  unsigned dst2 = ntohl(((struct IPTable2::Entry *)e2)->_dst);
-
-  if(dst1 < dst2)
-    return -1;
-  if(dst1 > dst2)
-    return 1;
-  return 0;
-}
