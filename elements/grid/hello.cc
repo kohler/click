@@ -77,9 +77,6 @@ Hello::initialize(ErrorHandler *errh)
                   id().cc());
   }
 
-  if(_nbr)
-    click_chatter("%s: using Neighbor %s", id().cc(), _nbr->id().cc());
-
   return 0;
 }
 
@@ -137,7 +134,6 @@ Hello::make_hello()
     // only include nbrs that are not too many hops away
     if (nbrs[i].num_hops <= _hops) {
       memcpy(curr, &nbrs[i], sizeof(grid_nbr_entry));
-      curr->loc.htonloc();
       curr++;
     }
   }

@@ -55,11 +55,6 @@ FilterByRange::initialize(ErrorHandler *errh)
     return errh->error("no LocationInfo argument");
   }
 
-  if(_locinfo)
-    click_chatter("%s: using LocationInfo %s",
-                  id().cc(),
-                  _locinfo->id().cc());
-
   return 0;
 }
 
@@ -69,8 +64,6 @@ FilterByRange::push(int, Packet *p)
   assert(p);
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   grid_location remote_loc(gh->loc);
-
-  remote_loc.ntohloc();
 
   assert(_locinfo);
   grid_location our_loc = _locinfo->get_current_location();
@@ -100,10 +93,10 @@ FilterByRange::calc_range(grid_location l1, grid_location l2)
    */
 
   // convert degrees to radians
-  double l1_lat = l1.lat * GRID_RAD_PER_DEG;
-  double l1_lon = l1.lon * GRID_RAD_PER_DEG;
-  double l2_lat = l2.lat * GRID_RAD_PER_DEG;
-  double l2_lon = l2.lon * GRID_RAD_PER_DEG;
+  double l1_lat = l1.lat() * GRID_RAD_PER_DEG;
+  double l1_lon = l1.lon() * GRID_RAD_PER_DEG;
+  double l2_lat = l2.lat() * GRID_RAD_PER_DEG;
+  double l2_lon = l2.lon() * GRID_RAD_PER_DEG;
 
   double diff_lon;
   if (sign(l1_lon) == sign(l2_lon))
@@ -133,10 +126,10 @@ FilterByRange::calc_range(grid_location l1, grid_location l2)
     click_chatter("l1_lon: %0.30f", l1_lon);
     click_chatter("l2_lat: %0.30f", l2_lat);
     click_chatter("l2_lon: %0.30f", l2_lon);
-    click_chatter("l1.lat: %0.30f", l1.lat);
-    click_chatter("l1.lon: %0.30f", l1.lon);
-    click_chatter("l2.lat: %0.30f", l2.lat);
-    click_chatter("l2.lon: %0.30f", l2.lon);
+    click_chatter("l1.lat: %0.30f", l1.lat());
+    click_chatter("l1.lon: %0.30f", l1.lon());
+    click_chatter("l2.lat: %0.30f", l2.lat());
+    click_chatter("l2.lon: %0.30f", l2.lon());
 #endif
     return -1; // bogus angles
   }

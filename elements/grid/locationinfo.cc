@@ -43,9 +43,8 @@ LocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   if (lon > 180 || lon < -180)
     return errh->error("%s: longitude must be between +/- 180 degrees", id().cc());
 
-  _loc.lat = lat;
-  _loc.lon = lon;
-  
+  _loc.set(lat, lon);
+
   return res;
 }
 int
@@ -62,7 +61,7 @@ loc_read_handler(Element *f, void *)
   
   const int BUFSZ = 255;
   char buf[BUFSZ];
-  int res = snprintf(buf, BUFSZ, "%f, %f\n", (double) loc.lat, (double) loc.lon);
+  int res = snprintf(buf, BUFSZ, "%f, %f\n", loc.lat(), loc.lon());
   if (res < 0) {
     click_chatter("LocationInfo read handler buffer too small");
     return String("");

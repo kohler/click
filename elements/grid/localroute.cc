@@ -68,9 +68,6 @@ LocalRoute::initialize(ErrorHandler *errh)
                   id().cc());
   }
 
-  if(_nbr)
-    click_chatter("%s: using Neighbor %s", id().cc(), _nbr->id().cc());
-
   if (input_is_pull(0))
     ScheduleInfo::join_scheduler(this, errh);
   return 0;

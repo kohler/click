@@ -56,11 +56,6 @@ FixSrcLoc::initialize(ErrorHandler *errh)
     return errh->error("no LocationInfo argument");
   }
 
-  if(_locinfo)
-    click_chatter("%s: using LocationInfo %s",
-                  id().cc(),
-                  _locinfo->id().cc());
-
   return 0;
 }
 
@@ -72,8 +67,6 @@ FixSrcLoc::simple_action(Packet *p)
   assert(p);
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   gh->loc = _locinfo->get_current_location();
-
-  gh->loc.htonloc();
 
   return p;
 }

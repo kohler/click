@@ -120,7 +120,6 @@ Neighbor::simple_action(Packet *packet)
     _nbrs.push_back(far_entry(jiff, grid_nbr_entry(gh->ip, gh->ip, 1)));
     _nbrs[i].last_updated_jiffies = jiff;
     _nbrs[i].nbr.loc = gh->loc;
-    _nbrs[i].nbr.loc.ntohloc();
   }
   else { 
     // update pre-existing information
@@ -132,7 +131,6 @@ Neighbor::simple_action(Packet *packet)
       _nbrs[i].nbr.num_hops = 1;
       _nbrs[i].nbr.next_hop_ip = gh->ip;
       _nbrs[i].nbr.loc = gh->loc;
-      _nbrs[i].nbr.loc.ntohloc();
     }
   }
   
@@ -167,7 +165,6 @@ Neighbor::simple_action(Packet *packet)
 	  // we don't already know about this nbr
 	  _nbrs.push_back(far_entry(jiff, grid_nbr_entry(curr->ip, gh->ip, curr->num_hops + 1)));
 	  _nbrs[j].nbr.loc = curr->loc;
-	  _nbrs[j].nbr.loc.ntohloc();
 	  _nbrs[j].last_updated_jiffies = jiff;
 	}
 	else { 
@@ -178,7 +175,6 @@ Neighbor::simple_action(Packet *packet)
 	    _nbrs[j].nbr.num_hops = curr->num_hops + 1;
 	    _nbrs[j].nbr.next_hop_ip = gh->ip;
 	    _nbrs[j].nbr.loc = curr->loc;
-	    _nbrs[j].nbr.loc.ntohloc();
 	    _nbrs[j].last_updated_jiffies = jiff;
 	  }
 	}

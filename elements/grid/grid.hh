@@ -3,40 +3,56 @@
 
 // XXX when these settle, we can reorder, align and pack the fields etc...
 
-// lat/lon in decimal degrees. +: north/east, -: south/west
+// A geographical position.
+// Suitable for including inside a packet.
 struct grid_location {
-  float lat; 
-  float lon; 
-  // XXX clearly needs to be better than this!
-  grid_location() : lat(0), lon(0) { };
-  grid_location(float _lat, float _lon) : lat(_lat), lon(_lon) { }
+  // Internally, we remember positions as lat/lon in milliseconds,
+  // as 32-bit integers in network order.
+  long _mslat;
+  long _mslon;
 
-  void ntohloc() {
-    assert(sizeof(float) == sizeof(unsigned long));
-    long t1 = ntohl(*(unsigned long *) &lat);
-    long t2 = ntohl(*(unsigned long *) &lon);
-    lat = *(float *) &t1;
-    lon = *(float *) &t2;
+  grid_location() : _mslat(0), _mslon(0) { };
+  grid_location(float lat, float lon) {
+    set(lat, lon);
+  }    
+
+  // Convert milliseconds to degrees.
+  static double toDeg(long ms) {
+    return(ntohl(ms) / (1000.0 * 60.0 * 60.0));
   }
 
-  void htonloc() {
-    assert(sizeof(float) == sizeof(unsigned long));
-    long t1 = htonl(*(unsigned long *) &lat);
-    long t2 = htonl(*(unsigned long *) &lon);
-    lat = *(float *) &t1;
-    lon = *(float *) &t2;
+  // Convert degrees to milliseconds.
+  static long toMS(double d){
+    assert(d >= -180.0 && d <= 180.0);
+    return(htonl((long)(d * 1000 * 60 * 60)));
+  }
+
+  // Latitude in degrees.
+  double lat() {
+    return(toDeg(_mslat));
+  }
+
+  // Longitude in degrees.
+  double lon() {
+    return(toDeg(_mslon));
+  }
+
+  // Set the lat and lon, in degrees.
+  void set(double lat, double lon) {
+    _mslat = toMS(lat);
+    _mslon = toMS(lon);
   }
 };
 
 struct grid_hdr {
-  unsigned char hdr_len; // bytes
+  unsigned char hdr_len;    // sizeof(grid_hdr)
   unsigned char type;
 #define GRID_HELLO     1
 #define GRID_NBR_ENCAP 2
-  unsigned int ip;
-  struct grid_location loc;
-  unsigned short total_len; // bytes
-  unsigned short cksum; // over whole packet
+  unsigned int ip;          // Sender's IP address.
+  struct grid_location loc; // Sender's location, set by FixSrcLoc.
+  unsigned short total_len; // Of the whole packet, starting at grid_hdr.
+  unsigned short cksum;     // Over the whole packet, starting at grid_hdr.
 
   grid_hdr()
     : hdr_len(sizeof(grid_hdr)), total_len(sizeof(grid_hdr)), cksum(0) { }
