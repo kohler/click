@@ -1,3 +1,16 @@
+2002-03-04 Monday 03:02  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: add cp_unparse_interval
+
+2002-03-04 Monday 03:02  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/elemfilter.hh, include/click/elemfilter.hh,
+	libsrc/elemfilter.cc, libsrc/router.cc: update ElementFilter
+	interface to take port as well as element; add ElementFilters for
+	input and output processing types, and a DisjunctionElementFilter
+	that acts like the "or" of several other EFs
+
 2002-02-28 Thursday 12:18  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/router.cc: fix problem reported by Anne Dudfield

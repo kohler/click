@@ -1,3 +1,49 @@
+2002-03-04 Monday 03:17  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/notifierqueue.cc (1.2): fix _sleepiness
+	definition in NotifierQueue
+
+2002-03-04 Monday 03:04  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: ip/ipaddrrewriter.cc (1.12), ip/ipaddrrewriter.hh
+	(1.5), ip/iprw.cc (1.42), ip/iprw.hh (1.21), tcpudp/iprewriter.cc
+	(1.30), tcpudp/iprewriter.hh (1.17), tcpudp/tcprewriter.cc (1.18),
+	tcpudp/tcprewriter.hh (1.8): rewriter elements set destination
+	address annotation
+
+2002-03-04 Monday 03:03  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.48): distribution nitlet
+
+2002-03-04 Monday 03:02  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/queue.hh (1.27): nitlet
+
+2002-03-04 Monday 03:02  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh (1.27), lib/confparse.cc (1.94): add
+	cp_unparse_interval
+
+2002-03-04 Monday 03:02  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/elemfilter.hh (1.3), lib/elemfilter.cc (1.12),
+	lib/router.cc (1.117): update ElementFilter interface to take port
+	as well as element; add ElementFilters for input and output
+	processing types, and a DisjunctionElementFilter that acts like the
+	"or" of several other EFs
+
+2002-03-04 Monday 03:00  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: delayunqueue.cc (1.7), delayunqueue.hh (1.5):
+	DelayUnqueue uses the ActivityNotifier interface
+
+2002-03-04 Monday 03:00  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: activity.cc (1.1), activity.hh (1.1),
+	notifierqueue.cc (1.1), notifierqueue.hh (1.1): add ActivitySignal
+	and ActivityNotifier and NotifierQueue, a queue that wakes up Tasks
+	downstream when appropriate
+
 2002-02-28 Thursday 12:18  Eddie Kohler <kohler@aciri.org>
 
 	* lib/router.cc (1.116): fix problem reported by Anne Dudfield
