@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_SETTIMESTAMP_HH
 #define CLICK_SETTIMESTAMP_HH
 #include <click/element.hh>
@@ -18,25 +19,22 @@ Store the specified TIMESTAMP in the packet's timestamp annotation. If
 TIMESTAMP is not specified, then sets the annotation to the system time when
 the packet arrived at the SetTimestamp element.
 
-=a PrintOld */
+=a StoreTimestamp, PrintOld */
 
 class SetTimestamp : public Element { public:
   
-  SetTimestamp();
-  ~SetTimestamp();
+    SetTimestamp();
+    ~SetTimestamp();
   
-  const char *class_name() const		{ return "SetTimestamp"; }
-  const char *processing() const		{ return AGNOSTIC; }
-
-  int configure(Vector<String> &, ErrorHandler *);
+    const char *class_name() const		{ return "SetTimestamp"; }
+    const char *processing() const		{ return AGNOSTIC; }
+    int configure(Vector<String> &, ErrorHandler *);
   
-  inline void smaction(Packet *);
-  void push(int, Packet *p);
-  Packet *pull(int);
+    Packet *simple_action(Packet *);
 
- private:
+  private:
 
-  struct timeval _tv;
+    struct timeval _tv;
 
 };
 

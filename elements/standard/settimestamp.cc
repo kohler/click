@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * settimestamp.{cc,hh} -- set timestamp annotations
  * Douglas S. J. De Couto
@@ -19,58 +20,40 @@
 #include <click/config.h>
 #include "settimestamp.hh"
 #include <click/confparse.hh>
-#include <click/error.hh>
-#include <click/glue.hh>
 CLICK_DECLS
 
 SetTimestamp::SetTimestamp()
+    : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
-  add_input();
-  add_output();
+    MOD_INC_USE_COUNT;
 }
 
 SetTimestamp::~SetTimestamp()
 {
-  MOD_DEC_USE_COUNT;
+    MOD_DEC_USE_COUNT;
 }
 
 int
 SetTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _tv.tv_sec = -1;
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpTimeval, "timestamp", &_tv,
-		  cpEnd) < 0)
-    return -1;
-  return 0;
-}
-
-inline void
-SetTimestamp::smaction(Packet *p)
-{
-  struct timeval &tv = p->timestamp_anno();
-  if (_tv.tv_sec >= 0)
-    tv = _tv;
-  else
-    click_gettimeofday(&tv);
-}
-
-void
-SetTimestamp::push(int, Packet *p)
-{
-  smaction(p);
-  output(0).push(p);
+    _tv.tv_sec = -1;
+    if (cp_va_parse(conf, this, errh,
+		    cpOptional,
+		    cpTimeval, "timestamp", &_tv,
+		    cpEnd) < 0)
+	return -1;
+    return 0;
 }
 
 Packet *
-SetTimestamp::pull(int)
+SetTimestamp::simple_action(Packet *p)
 {
-  Packet *p = input(0).pull();
-  if (p)
-    smaction(p);
-  return p;
+    struct timeval &tv = p->timestamp_anno();
+    if (_tv.tv_sec >= 0)
+	tv = _tv;
+    else
+	click_gettimeofday(&tv);
+    return p;
 }
 
 CLICK_ENDDECLS
