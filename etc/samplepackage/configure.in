@@ -50,8 +50,8 @@ if test ! -r $clickprefix/include/click/pathvars.h ; then
     AC_MSG_ERROR([
 ==============================================
 
-\`$clickprefix/include/click/pathvars.h' not found.
-Are you sure \`$clickprefix' is a Click install directory?
+'$clickprefix/include/click/pathvars.h' not found.
+Are you sure '$clickprefix' is a Click install directory?
 
 ==============================================])
 fi
