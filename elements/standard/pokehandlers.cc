@@ -2,6 +2,7 @@
 /*
  * pokehandlers.{cc,hh} -- element runs read and write handlers
  * Eddie Kohler
+ * Pausing idea & initial implementation from Daniel Aguayo.
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2001 International Computer Science Institute
