@@ -1,3 +1,10 @@
+2004-08-12 Thursday 14:39  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: madwifirate.cc (1.4), wifidecap.cc (1.5),
+	ap/openauthresponder.hh (1.2), sr/srquerier.cc (1.3),
+	sr/srqueryresponder.cc (1.2): make it compile, reported by Romain
+	Groleau.
+
 2004-08-12 Thursday 13:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.120), bsdmodule/Makefile.in (1.31),
@@ -11,8 +18,12 @@
 	tools/click-fastclassifier/Makefile.in (1.20),
 	tools/click-flatten/Makefile.in (1.11),
 	tools/click-install/Makefile.in (1.23),
-	tools/click-mkmindriver/Makefile.in (1.14): $(DESTDIR) update
-	suggested by Rick Stewart and Jeff Gold
+	tools/click-mkmindriver/Makefile.in (1.14),
+	tools/click-pretty/Makefile.in (1.8),
+	tools/click-undead/Makefile.in (1.14),
+	tools/click-xform/Makefile.in (1.23), tools/click2xml/Makefile.in
+	(1.6), tools/lib/Makefile.in (1.36), userlevel/Makefile.in (1.83):
+	$(DESTDIR) update suggested by Rick Stewart and Jeff Gold
 
 2004-08-12 Thursday 00:37  John Bicket <jbicket@mit.edu>
 
