@@ -67,6 +67,8 @@ class KernelTap : public Element {
   int _headroom;
   Task _task;
 
+  static String print_dev_name(Element *e, void *);
+
   int alloc_tun(struct in_addr near, struct in_addr far, ErrorHandler *errh);
   void dealloc_tun();
 };

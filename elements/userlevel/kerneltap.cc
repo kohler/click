@@ -340,11 +340,21 @@ KernelTap::push(int, Packet *p)
   p->kill();
 }
 
+String
+KernelTap::print_dev_name(Element *e, void *) 
+{
+  KernelTap *kt = (KernelTap *) e;
+  return kt->_dev_name;
+}
+
+
 void
 KernelTap::add_handlers()
 {
   if (input_is_pull(0))
     add_task_handlers(&_task);
+
+  add_read_handler("dev_name", print_dev_name, 0);
 }
 
 ELEMENT_REQUIRES(userlevel)
