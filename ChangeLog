@@ -1,3 +1,11 @@
+2001-05-24 Thursday 14:55  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* DISTFILES (1.26): added ClickController to DISTFILES
+
+2001-05-24 Thursday 14:49  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* LICENSE (1.3): updated license dates
+
 2001-05-22 Tuesday 17:42  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/: app/ftpportmapper.cc (1.13), ethernet/arpfaker.cc
