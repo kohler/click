@@ -1,3 +1,14 @@
+2003-06-21 Saturday 22:54  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: txstat.cc (1.1), txstat.hh (1.1),
+	wifitxfeedback.cc (1.1), wifitxfeedback.hh (1.1): WifiTXFeedback -
+	Element written by Dan Aguayo that provides feedback about packets
+	sent over a wireless device.  Reports success, tx count, rate,
+	using user packet annotation.  TXStat - keeps track of statistics
+	from WifiFeedback on a per-neighbor basis.
+	
+	--john
+
 2003-06-19 Thursday 16:12  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.51), dsdvroutetable.hh
