@@ -1,5 +1,22 @@
 Click NEWS
 
+Version 1.4.1   7.Jul.2004
+
+* Added Element::static_initialize() and static_cleanup() methods.
+  Elements use these methods to set up and tear down global state.  See the
+  programming manual (doc/click.info*) for details.
+
+* Fix click-mkmindriver (reported by Harvey Jones).
+
+* Fix IPInputCombo (reported by Jerry Parente).
+
+* Grid/Wifi updates (John Bicket).
+
+* Add /click/messages handler.
+
+* Updates so that Click may be compiled by gcc-3.4.1.
+
+
 Version 1.4   29.Jun.2004
 
 * Elements
