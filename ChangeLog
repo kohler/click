@@ -1,3 +1,19 @@
+2004-12-30 Thursday 11:49  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: autoratefallback.cc (1.15), autoratefallback.hh
+	(1.12), filterfailures.cc (1.7), filterfailures.hh (1.6),
+	linktable.cc (1.15), madwifirate.cc (1.15), madwifirate.hh (1.9),
+	probetxrate.cc (1.17), probetxrate.hh (1.16), setwifiextraflag.cc
+	(1.1), setwifiextraflag.hh (1.1), wifiencap.hh (1.5),
+	sr/metricflood.cc (1.2), sr/printsr.cc (1.7), sr/printsr.hh (1.2),
+	sr/setgateway.hh (1.4), sr/srforwarder.cc (1.8), sr/srlog.cc (1.1),
+	sr/srlog.hh (1.1), sr/srquerier.cc (1.8), sr/srquerier.hh (1.5),
+	station/beaconscanner.hh (1.7): adaptive stepup for arf. sort
+	linktable entries in handlers. fix length issue with wifiencap.
+	make beaconscanner compile.  srlog logs source routed packet
+	headers. setwifiextra flags lets you indicate where or not you want
+	txfeedback on a packet.
+
 2004-12-30 Thursday 11:34  John Bicket <jbicket@mit.edu>
 
 	* elements/userlevel/: fromhost.cc (1.4), fromhost.hh (1.4): remove
