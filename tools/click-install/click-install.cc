@@ -29,10 +29,12 @@
 #define HELP_OPT		300
 #define VERSION_OPT		301
 #define ROUTER_OPT		302
+#define UNINSTALL_OPT		303
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
+  { "uninstall", 'u', UNINSTALL_OPT, 0, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -56,6 +58,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
+  -u, --uninstall               Uninstall Click from the Linux kernel.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
@@ -82,6 +85,35 @@ read_packages(HashMap<String, int> &packages, ErrorHandler *errh)
   }
 }
 
+static String
+packages_to_remove(const HashMap<String, int> &active_modules,
+		   const HashMap<String, int> &packages)
+{
+  // remove extra packages
+  int thunk = 0, value; String key;
+  String to_remove;
+  // go over all modules; figure out which ones are Click packages
+  // by checking `packages' array; mark old Click packages for removal
+  while (active_modules.each(thunk, key, value))
+    // only remove packages that weren't used in this configuration.
+    // packages used in this configuration have value > 0
+    if (value == 0) {
+      if (packages[key] >= 0)
+	to_remove += " " + key;
+      else {
+	// check for removing an old archive package;
+	// they are identified by a leading underscore.
+	int p;
+	for (p = 0; p < key.length() && key[p] == '_'; p++)
+	  /* nada */;
+	String s = key.substring(p);
+	if (s && packages[s] >= 0)
+	  to_remove += " " + key;
+      }
+    }
+  return to_remove;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -96,6 +128,7 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
+  bool uninstall = 0;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -124,6 +157,10 @@ particular purpose.\n");
       router_file = clp->arg;
       break;
 
+     case UNINSTALL_OPT:
+      uninstall = true;
+      break;
+
      bad_option:
      case Clp_BadOption:
       short_usage();
@@ -137,14 +174,22 @@ particular purpose.\n");
   }
   
  done:
-  RouterT *r = read_router_file(router_file, errh);
-  if (!r || errh->nerrors() > 0)
-    exit(1);
-  r->flatten(errh);
+  RouterT *r = 0;
+  if (uninstall) {
+    if (router_file)
+      errh->warning("`-u' and router file don't mix");
+  } else {
+    r = read_router_file(router_file, errh);
+    if (!r || errh->nerrors() > 0)
+      exit(1);
+    r->flatten(errh);
+  }
 
   // check for Click module; install it if not available
   {
     if (access("/proc/click", F_OK) < 0) {
+      if (uninstall)
+	exit(0);
       // try to install module
       String click_o =
 	clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
@@ -172,6 +217,23 @@ particular purpose.\n");
   HashMap<String, int> packages(-1);
   read_packages(packages, errh);
 
+  // if uninstall, get rid of everything
+  if (uninstall) {
+    String to_remove = packages_to_remove(active_modules, packages);
+    if (to_remove) {
+      String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
+      (void) system(cmdline);
+    }
+    String cmdline = "/sbin/rmmod click 2>/dev/null";
+    (void) system(cmdline);
+    if (access("/proc/click", F_OK) < 0)
+      exit(0);
+    else {
+      errh->error("couldn't uninstall");
+      exit(1);
+    }
+  }
+  
   // install archived objects. mark them with leading underscores.
   // may require renaming to avoid clashes in `insmod'
   {
@@ -252,28 +314,7 @@ particular purpose.\n");
 
   // remove unused packages
   {
-    int thunk = 0, value; String key;
-    String to_remove;
-    // go over all modules; figure out which ones are Click packages
-    // by checking `packages' array; mark old Click packages for removal
-    while (active_modules.each(thunk, key, value))
-      // only remove packages that weren't used in this configuration.
-      // packages used in this configuration have value > 0
-      if (value == 0) {
-	if (packages[key] >= 0)
-	  to_remove += " " + key;
-	else {
-	  // check for removing an old archive package;
-	  // they are identified by a leading underscore.
-	  int p;
-	  for (p = 0; p < key.length() && key[p] == '_'; p++)
-	    /* nada */;
-	  String s = key.substring(p);
-	  if (s && packages[s] >= 0)
-	    to_remove += " " + key;
-	}
-      }
-    // actually call `rmmod'
+    String to_remove = packages_to_remove(active_modules, packages);
     if (to_remove) {
       String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
       (void) system(cmdline);
