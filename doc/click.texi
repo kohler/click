@@ -2922,9 +2922,9 @@ Inside the @code{add_handlers}, @code{initialize}, and
 @code{uninitialize} methods.
 
 @item run
-At run time. That is, inside some @code{run_scheduled}, @code{push}, or
-@code{pull} method, or some handler, or some function called from one of
-these places.
+At run time. That is, inside some @code{push} or @code{pull} method,
+or some task or timer callback, or some handler, or some function
+called from one of these places.
 @end table
 
 
@@ -5130,7 +5130,7 @@ Click schedules a router's CPU or CPUs with one or more @dfn{task
 queues}. These queues are simply lists of @dfn{tasks}, which represent
 functions that would like access to the CPU. Tasks are generally
 associated with elements. When scheduled, most tasks call some element's
-@code{run_scheduled} method.
+@code{run_task} method.
 
 Click tasks are represented by @code{Task} objects. An element that
 would like special access to a router's CPU should include and
@@ -5170,11 +5170,11 @@ relevant router. (You must initialize the task even if it will not be
 scheduled right away.)
 
 @code{Task} has two constructors. One of them asks the task to call an
-element's @code{run_scheduled} method when scheduled; the other asks it
+element's @code{run_task} method when scheduled; the other asks it
 to call an arbitrary function pointer.
 
 @deftypeop Constructor Task {} Task (Element *@var{e})
-When this task is scheduled, call @code{@var{e}->run_scheduled()}.
+When this task is scheduled, call @code{@var{e}->run_task()}.
 @end deftypeop
 
 @deftypeop Constructor Task {} Task (TaskHook @var{hook}, void *@var{thunk})
@@ -5285,9 +5285,9 @@ method avoids locking overhead, so it is faster than @code{reschedule}.
 @strong{Caution}: You may call a @code{Task}'s @code{fast_reschedule}
 method only from within its callback function. For instance, if an
 element has a task, @w{@code{_task}}, that calls the element's
-@code{run_scheduled} method when scheduled, and if @code{run_scheduled}
+@code{run_task} method when scheduled, and if @code{run_task}
 is called only by that task's callback, then that element's
-@code{run_scheduled} method should call @code{_task.fast_reschedule()}
+@code{run_task} method should call @code{_task.fast_reschedule()}
 instead of @code{_task.reschedule()}.
 @end quotation
 @end deftypemethod
@@ -5484,7 +5484,7 @@ function. Later, after the router is initialized, you must initialize
 and, optionally, schedule it.
 
 @deftypeop Constructor Timer {} Timer (@w{Element *@var{e}})
-When this timer goes off, call @code{@var{e}->run_scheduled()}.
+When this timer goes off, call @code{@var{e}->run_timer()}.
 @end deftypeop
 
 @deftypeop Constructor Timer {} Timer (@w{Task *@var{t}})
