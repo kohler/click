@@ -1,3 +1,8 @@
+2002-05-20 Monday 15:09  Eddie Kohler <kohler@aciri.org>
+
+	* conf/make-ip-conf.pl (1.16): Adopt and adapt Scott's cleanups of
+	make-ip-conf.pl
+
 2002-05-17 Friday 19:48  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridlogger.hh (1.10): BUG
