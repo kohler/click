@@ -80,6 +80,12 @@ ones. Defaults to false.
 Boolean. If true, then output binary records instead of ASCII lines. Defaults
 to false.
 
+=item GZIP
+
+Boolean. If true, then run C<gzip> to compress completed trace files. (The
+resulting files have F<.gz> appended to their OUTPUT_PATTERN names.) Defaults
+to false.
+
 =item OPT
 
 Boolean. If true, then output any interesting TCP options present on TCP
@@ -183,6 +189,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	int add_note(const String &, ErrorHandler *);
 
 	int output(ErrorHandler *);
+	void compress(ErrorHandler *);
 	inline void unlink(ErrorHandler *);
 	
       private:
@@ -229,6 +236,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     bool _absolute_time : 1;
     bool _absolute_seq : 1;
     bool _binary : 1;
+    bool _gzip : 1;
     bool _opt : 1;
     bool _ip_id : 1;
 

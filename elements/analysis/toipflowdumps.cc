@@ -297,6 +297,22 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
     return 0;
 }
 
+void
+ToIPFlowDumps::Flow::compress(ErrorHandler *errh)
+{
+    if (_filename != "-") {
+	StringAccum cmd;
+	cmd << "gzip -c <" << _filename << " >" + _filename << ".gz 2>/dev/null";
+	int retval = system(cmd.cc());
+	if (retval < 0)
+	    errh->error("%s: gzip: %s", _filename.cc(), strerror(errno));
+	else if (WEXITSTATUS(retval) != 0)
+	    errh->error("%s: gzip exited with status %d", _filename.cc(), WEXITSTATUS(retval));
+	else
+	    ::unlink(_filename.cc());
+    }
+}
+
 inline void
 ToIPFlowDumps::Flow::unlink(ErrorHandler *errh)
 {
@@ -491,7 +507,7 @@ int
 ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
-    bool absolute_time = false, absolute_seq = false, binary = false, opt = false, ip_id = false;
+    bool absolute_time = false, absolute_seq = false, binary = false, opt = false, ip_id = false, gzip = false;
     _output_larger = 0;
     
     if (cp_va_parse(conf, this, errh,
@@ -504,6 +520,7 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "ABSOLUTE_SEQ", cpBool, "print absolute sequence numbers?", &absolute_seq,
 		    "BINARY", cpBool, "output binary records?", &binary,
 		    "OPT", cpBool, "output TCP options?", &opt,
+		    "GZIP", cpBool, "gzip output files?", &gzip,
 		    "IP_ID", cpBool, "output IP IDs?", &ip_id,
 		    "OUTPUT_LARGER", cpUnsigned, "output flows with more than this many packets", &_output_larger,
 		    0) < 0)
@@ -522,6 +539,7 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
     _binary = binary;
     _opt = opt;
     _ip_id = ip_id;
+    _gzip = gzip;
 
     return 0;
 }
@@ -529,9 +547,11 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 ToIPFlowDumps::end_flow(Flow *f, ErrorHandler *errh)
 {
-    if (f->npackets() > _output_larger)
+    if (f->npackets() > _output_larger) {
 	f->output(errh);
-    else
+	if (_gzip)
+	    f->compress(errh);
+    } else
 	f->unlink(errh);
     delete f;
 }
