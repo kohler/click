@@ -1,3 +1,13 @@
+2003-04-14 Monday 18:37  Eddie Kohler <kohler@icir.org>
+
+	* lib/driver.cc (1.14): missing "config" section in an archive
+	causes failure
+
+2003-04-14 Monday 18:24  Eddie Kohler <kohler@icir.org>
+
+	* tools/lib/toolutils.cc (1.48): raise limit on
+	shell_command_output_string's results
+
 2003-04-14 Monday 16:49  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/: rripmapper.cc (1.13), rripmapper.hh (1.9): fix
