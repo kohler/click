@@ -1,3 +1,15 @@
+2001-05-17 Thursday 18:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* config.h.in (1.4), configure.in (1.119),
+	elements/linuxmodule/polldevice.cc (1.106),
+	elements/standard/addressinfo.cc (1.11),
+	elements/standard/addressinfo.hh (1.10), include/click/confparse.hh
+	(1.16), include/click/ipaddress.hh (1.15), lib/confparse.cc (1.69),
+	lib/string.cc (1.25), linuxmodule/Makefile.in (1.56),
+	tools/lib/Makefile.in (1.13), userlevel/Makefile.in (1.54): fixlets
+	to config.h.in; also, only compile IP6-related objects --
+	ip6address, ip6flowid, ip6table -- when --enable-ip6 is supplied
+
 2001-05-17 Thursday 16:54  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/linuxmodule/: fromdevice.cc (1.55), polldevice.cc
