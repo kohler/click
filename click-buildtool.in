@@ -339,8 +339,8 @@ EOF
   INCLUDES[$1] = 1;
   sub(/EXPORT_ELEMENT\(/, "", $2);
   sub(/\)/, "", $2);
-  B = B "  CLICK_DMALLOC_REG(\"" $2 "\");\n  hatred_of_rebecca[" nrebecca "] = click_add_element_type(0, new " $2 ");\n  MOD_DEC_USE_COUNT;\n";
-  C = C "  MOD_INC_USE_COUNT;\n  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
+  B = B "  CLICK_DMALLOC_REG(\"" $2 "\");\n  hatred_of_rebecca[" nrebecca "] = click_add_element_type(0, new " $2 ");\n";
+  C = C "  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
   nrebecca++;
 }
 END {
@@ -352,7 +352,7 @@ END {
   }
   print "static int hatred_of_rebecca[", nrebecca, "];";
   print "extern \"C\" int\ninit_module()\n{\n  click_provide(\"", packname, "\");";
-  print B, "  CLICK_DMALLOC_REG(\"nXXX\");\n  return 0;\n}";
+  print B, "  CLICK_DMALLOC_REG(\"nXXX\");\n  while (MOD_IN_USE > 1)\n    MOD_DEC_USE_COUNT;\n  return 0;\n}";
   print "extern \"C\" void\ncleanup_module()\n{\n", C, "  click_unprovide(\"", packname, "\");\n}";
 }
 '

@@ -685,7 +685,7 @@ compile_classifiers(RouterT *r, const String &package_name,
 	 << "#include <click/package.hh>\n#include <click/element.hh>\n";
   source << "#include <click/config.h>\n";
   source << "#include \"" << package_name << ".hh\"\n\
-#include \"glue.hh\"\n";
+#include <click/glue.hh>\n";
   
   // write Classifier programs
   for (int i = 0; i < classifiers.size(); i++)
@@ -704,13 +704,12 @@ compile_classifiers(RouterT *r, const String &package_name,
       source << "  CLICK_DMALLOC_REG(\"FC" << i << "  \");\n"
 	     << "  hatred_of_rebecca[" << i << "] = click_add_element_type(\""
 	     << gen_eclass_names[i] << "\", new "
-	     << gen_cxxclass_names[i] << ");\n\
-  CLICK_DMALLOC_REG(\"FCxx\");\n  MOD_DEC_USE_COUNT;\n";
+	     << gen_cxxclass_names[i] << ");\n";
     
-    source << "  return 0;\n}\nextern \"C\" void\ncleanup_module()\n{\n";
+    source << "  CLICK_DMALLOC_REG(\"FCxx\");\n  while (MOD_IN_USE > 1)\n    MOD_DEC_USE_COUNT;\n  return 0;\n}\n";
+    source << "extern \"C\" void\ncleanup_module()\n{\n";
     for (int i = 0; i < nclasses; i++)
-      source << "  MOD_INC_USE_COUNT;\n\
-  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
+      source << "  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
     source << "  click_unprovide(\"" << package_name << "\");\n}\n";
   }
 

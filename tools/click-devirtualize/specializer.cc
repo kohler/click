@@ -538,14 +538,14 @@ Specializer::output_package(const String &package_name, StringAccum &out)
     if (_specials[i].special())
       out << "  hatred_of_rebecca[" << i << "] = click_add_element_type(\""
 	  << _specials[i].click_name << "\", new " << _specials[i].cxx_name
-	  << ");\n  MOD_DEC_USE_COUNT;\n";
-  out << "  return 0;\n}\n";
+	  << ");\n";
+  out << "  while (MOD_IN_USE > 1)\n    MOD_DEC_USE_COUNT;\n  return 0;\n}\n";
 
   // cleanup_module()
   out << "extern \"C\" void\ncleanup_module()\n{\n";
   for (int i = 0; i < _specials.size(); i++)
     if (_specials[i].special())
-      out << "  MOD_INC_USE_COUNT;\n  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
+      out << "  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
   out << "  click_unprovide(\"" << package_name << "\");\n";
   out << "}\n";
 }
