@@ -2,6 +2,7 @@
 
 # make-ip-conf.pl
 # Make a Click IP router configuration.
+# The output is only useful with the Linux kernel module.
 
 # Change this array to suit your router.
 # One line per network interface, containing:
