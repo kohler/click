@@ -110,6 +110,7 @@ include/click/packet_anno.hh
 include/click/perfctr.hh
 include/click/radix.hh
 include/click/router.hh
+include/click/routerthread.hh
 include/click/skbmgr.hh
 include/click/straccum.hh
 include/click/string.hh
@@ -148,6 +149,7 @@ lib/lexer.cc
 lib/packet.cc
 lib/radix.cc
 lib/router.cc
+lib/routerthread.cc
 lib/straccum.cc
 lib/strerror.c
 lib/string.cc
