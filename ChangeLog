@@ -1,3 +1,12 @@
+2004-07-29 Thursday 12:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click.1 (1.15), userlevel/click.cc (1.95): add support for -h
+	"ELEMENTCLASS.handler"
+
+2004-07-29 Thursday 11:40  Max Krohn <krohn@mit.edu>
+
+	* conf/click-mkclgw.pl (1.8): typo fix.
+
 2004-07-29 Thursday 11:00  John Bicket <jbicket@mit.edu>
 
 	* include/click/packet_anno.hh (1.23): add more packet annotations.
