@@ -13,6 +13,7 @@ class IPAddress {
   explicit IPAddress(const unsigned char *);
   IPAddress(u_int32_t);			// network byte order IP address
   explicit IPAddress(int32_t);		// network byte order IP address
+  explicit IPAddress(unsigned long);	// network byte order IP address
   explicit IPAddress(const String &);	// "18.26.4.99"
   IPAddress(struct in_addr);
   static IPAddress make_prefix(int);
@@ -50,6 +51,12 @@ IPAddress::IPAddress(u_int32_t a)
 
 inline
 IPAddress::IPAddress(int32_t a)
+  : _addr(a)
+{
+}
+
+inline
+IPAddress::IPAddress(unsigned long a)
   : _addr(a)
 {
 }
