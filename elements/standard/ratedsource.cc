@@ -116,6 +116,12 @@ RatedSource::run_scheduled()
       _count++;
     }
 
+    // prevent overflow, we reset
+    if (_count > (int)(_rate * 600)) {
+      _count = 0;
+      _start_time = now;
+    }
+
     reschedule();
   }
 }
