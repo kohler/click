@@ -105,22 +105,54 @@ proclikefs_register_filesystem(const char *name,
 
     if (newfs_is_new)
 	register_filesystem(&newfs->fs); /* XXX check return value */
-    else {
+    else if (reread_super) {
 	struct super_block *sb;
 	/* transfer superblocks */
 	for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks); 
 	     sb = sb_entry(sb->s_list.next))
-	    if (sb->s_type == &newfs->fs) {
-		lock_super(sb);
+	    if (sb->s_type == &newfs->fs)
 		(*reread_super)(sb);
-		unlock_super(sb);
-	    }
     }
     
     MOD_INC_USE_COUNT;
 
     spin_unlock(&fslist_lock);
     return newfs;
+}
+
+static void
+proclikefs_kill_super(struct super_block *sb)
+{
+    struct dentry *dentry, *all_dentries;
+
+    lock_super(sb);
+
+    sb->s_op = &proclikefs_null_super_operations;
+
+    /* clear out dentries, starting from the root */
+    /* XXX locking? */
+    all_dentries = sb->s_root;
+    if (all_dentries) {
+	d_drop(all_dentries);
+	all_dentries->d_op = 0;
+	all_dentries->d_fsdata = 0;
+    }
+    while (all_dentries) {
+	struct list_head *next;
+	dentry = all_dentries;
+	all_dentries = (struct dentry *)dentry->d_fsdata;
+	next = dentry->d_subdirs.next;
+	while (next != &dentry->d_subdirs) {
+	    struct dentry *child = list_entry(next, struct dentry, d_child);
+	    next = next->next;
+	    d_drop(child);
+	    child->d_op = 0;
+	    child->d_fsdata = (void *)all_dentries;
+	    all_dentries = child;
+	}
+    }
+
+    unlock_super(sb);
 }
 
 void
@@ -134,36 +166,11 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	return;
     
     spin_lock(&fslist_lock);
-    spin_lock(&pfs->lock);
-    spin_lock(&inode_lock);
-
-    /* clear out superblock operations */
-    for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks); 
-	 sb = sb_entry(sb->s_list.next)) {
-	if (sb->s_type != &pfs->fs)
-	    continue;
-	lock_super(sb);
-	sb->s_op = &proclikefs_null_super_operations;
-	unlock_super(sb);
-    }
-
-    /* clear out inode operations, and attach inodes to the main superblock */
-    {
-	struct list_head *next = pfs->i_list.next;
-	while (next != &pfs->i_list) {
-	    struct list_head *tmp = next;
-	    next = next->next;
-	    inode = list_entry(tmp, struct inode, u);
-	    make_bad_inode(inode);
-	}
-    }
-    
-    spin_unlock(&inode_lock);
-    spin_unlock(&pfs->lock);
 
     /* clear out file operations */
     /* inuse_filps is protected by the single kernel lock */
     /* Borrow make_bad_inode's file operations. */
+    /* XXX locking? */
     make_bad_inode(&dummy_inode);
     for (filp = inuse_filps; filp; filp = filp->f_next) {
 	struct dentry *dentry = filp->f_dentry;
@@ -174,11 +181,36 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	    continue;
 	filp->f_op = dummy_inode.i_op->default_file_ops;
     }
+    
+    spin_lock(&pfs->lock);
+    spin_lock(&inode_lock);
 
+    /* clear out inode operations */
+    {
+	struct list_head *next = pfs->i_list.next;
+	while (next != &pfs->i_list) {
+	    struct list_head *tmp = next;
+	    next = next->next;
+	    inode = list_entry(tmp, struct inode, u);
+	    make_bad_inode(inode);
+	}
+    }
+    
+    /* clear out superblock operations */
+    for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks); 
+	 sb = sb_entry(sb->s_list.next)) {
+	if (sb->s_type != &pfs->fs)
+	    continue;
+	proclikefs_kill_super(sb);
+    }
+
+    spin_unlock(&inode_lock);
+    
     pfs->live = 0;
     pfs->fs.read_super = proclikefs_null_read_super;
     MOD_DEC_USE_COUNT;
 
+    spin_unlock(&pfs->lock);
     spin_unlock(&fslist_lock);
 }
 
