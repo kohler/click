@@ -1,7 +1,7 @@
 #ifndef MAPPINGCREATOR_HH
 #define MAPPINGCREATOR_HH
 
-#include "rewriter2.hh"
+#include "rewriter.hh"
 
 /*
  * =c

@@ -13,7 +13,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "rewriter2.hh"
+#include "rewriter.hh"
 #include "click_ip.h"
 #include "click_tcp.h"
 #include "click_udp.h"
