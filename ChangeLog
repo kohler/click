@@ -1,3 +1,15 @@
+2002-11-13 Wednesday 23:40  Eddie Kohler <kohler@icir.org>
+
+	* tools/: Makefile.in (1.48), click-align/Makefile.in (1.16),
+	click-check/Makefile.in (1.12), click-combine/Makefile.in (1.12),
+	click-devirtualize/Makefile.in (1.12),
+	click-fastclassifier/Makefile.in (1.17), click-flatten/Makefile.in
+	(1.8), click-install/Makefile.in (1.20),
+	click-mkmindriver/Makefile.in (1.11), click-pretty/Makefile.in
+	(1.5), click-undead/Makefile.in (1.11), click-xform/Makefile.in
+	(1.20), click2xml/Makefile.in (1.3), lib/Makefile.in (1.28): add
+	install-local target
+
 2002-10-31 Thursday 20:04  Eddie Kohler <kohler@icir.org>
 
 	* include/click/routerthread.hh (1.14), include/click/task.hh
