@@ -1,3 +1,15 @@
+2001-06-19 Tuesday 16:34  Benjie Chen <benjie@lcs.mit.edu>
+
+	* conf/delay.click (1.3): DelayShaper example
+
+2001-06-19 Tuesday 16:18  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/: local/delayunqueue.cc (1.6), local/delayunqueue.hh
+	(1.3), standard/delayshaper.cc (1.1), standard/delayshaper.hh
+	(1.1), standard/delayunqueue.cc (1.1), standard/delayunqueue.hh
+	(1.1): added DelayShaper element; moved delay elements to standards
+	directory
+
 2001-06-19 Tuesday 13:40  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/local/delayunqueue.hh (1.2): 1 more line of comment
