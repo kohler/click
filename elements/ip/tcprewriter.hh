@@ -15,6 +15,8 @@ class TCPRewriter : public IPRw {
 
     TCPMapping();
 
+    TCPMapping *reverse() const		{ return static_cast<TCPMapping *>(_reverse); }
+    
     void update_seqno_delta(int);
     void update_ackno_delta(int);
     

@@ -171,10 +171,8 @@ FTPPortMapper::simple_action(Packet *p)
   // update sequence numbers in old mapping
   IPFlowID p_flow(p);
   if (TCPRewriter::TCPMapping *p_mapping = _rewriter->get_mapping(true, p_flow)) {
-    TCPRewriter::TCPMapping *rev_mapping =
-      static_cast<TCPRewriter::TCPMapping *>(p_mapping->reverse());
     p_mapping->update_seqno_delta(buflen - port_arg_len);
-    rev_mapping->update_ackno_delta(port_arg_len - buflen);
+    p_mapping->reverse()->update_ackno_delta(port_arg_len - buflen);
     // update sequence number in this packet so TCPRewriter will fix it
     // XXX check if _rewriter is downstream
     wp_tcph->th_seq = htonl(ntohl(wp_tcph->th_seq) - buflen + port_arg_len);
