@@ -1,3 +1,8 @@
+2001-12-04 Tuesday 19:37  Eddie Kohler <kohler@aciri.org>
+
+	* bsdmodule/: Makefile.in (1.12), Makefile.in (1.13): Makefile
+	nitlet
+
 2001-12-04 Tuesday 19:21  Eddie Kohler <kohler@aciri.org>
 
 	* README (1.29): nitlets
