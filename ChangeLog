@@ -1,3 +1,24 @@
+2003-04-25 Friday 17:16  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.30), aclocal.m4 (1.30), click-compile.in (1.22),
+	etc/libclick/lc-libsrc-Makefile.in (1.11), etc/ron/Makefile.in
+	(1.5), etc/samplepackage/Makefile.in (1.32),
+	linuxmodule/Makefile.in (1.80), ns/Makefile.in (1.6),
+	tools/click-align/Makefile.in (1.17), tools/click-check/Makefile.in
+	(1.13), tools/click-combine/Makefile.in (1.13),
+	tools/click-devirtualize/Makefile.in (1.13),
+	tools/click-fastclassifier/Makefile.in (1.18),
+	tools/click-flatten/Makefile.in (1.9),
+	tools/click-install/Makefile.in (1.21),
+	tools/click-mkmindriver/Makefile.in (1.12),
+	tools/click-pretty/Makefile.in (1.6),
+	tools/click-undead/Makefile.in (1.12),
+	tools/click-xform/Makefile.in (1.21), tools/click2xml/Makefile.in
+	(1.4), tools/lib/Makefile.in (1.30), tools/udpgen/Makefile.in
+	(1.7), userlevel/Makefile.in (1.69): stick dependency-generation
+	options in their own variable, DEPCFLAGS -- some g++ compilers
+	can't handle the combination of -MD and -o
+
 2003-04-25 Friday 14:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* include/click/.cvsignore (1.4), ns/.cvsignore (1.1),
