@@ -10,20 +10,23 @@
  * =d
  *
  * PacketShaper2 is a pull element that allows a maxmimum of RATE packets per
- * second to pass through. RATE has to be less than 1000000. It has a us
- * granularity, which means it will send at most 1 pkt per us.
+ * second to pass through. Differs from PacketShaper in that RATEs are not
+ * kept using moving averages.
  *
  * There are usually Queues both upstream and downstream of PacketShaper2
  * elements.
  *
  * =a PacketShaper
  * =a Shaper
+ * =a RatedSampler
  */
 
 class PacketShaper2 : public Element { protected:
 
-  unsigned _last;
-  unsigned _interval;
+  unsigned _meter;
+  unsigned _ugap;
+  unsigned _total;
+  struct timeval _start;
 
  public:
   

@@ -43,30 +43,38 @@ PacketShaper2::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  0) < 0)
     return -1;
 
-  if (rate > 1000000) 
-    return errh->error("rate must be less than 1000000");
- 
-  _interval = 1000000/rate;
-  _last = 0;
+  _meter = rate;
+  _ugap = 1000000/rate;
+  _total = 0;
+  _start.tv_sec = 0;
+  _start.tv_usec = 0;
   return 0;
 }
 
 Packet *
 PacketShaper2::pull(int)
 {
-  struct timeval t;
-  click_gettimeofday(&t);
-  unsigned now = t.tv_sec * 1000000 + t.tv_usec;
-  
-  bool need = (_last == 0) || (now - _last) > _interval;
+  struct timeval now;
+  click_gettimeofday(&now);
 
-  if (need) {
-    if (_last == 0) 
-      _last = now;
-    else
-      _last += _interval;
-    Packet *p = input(0).pull();
-    return p;
+  if (_start.tv_sec == 0) _start = now;
+  else {
+    struct timeval diff;
+    timersub(&now, &_start, &diff);
+    
+    unsigned need = diff.tv_sec * _meter;
+    need += diff.tv_usec / _ugap;
+
+    if (need > _total) {
+      _total++;
+      Packet *p = input(0).pull();
+      return p;
+    }
+
+    if (_total > _meter * 360) {
+      _total = 0;
+      _start = now;
+    }
   }
   return 0;
 }
