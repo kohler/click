@@ -48,11 +48,6 @@
 #include "elements/standard/quitwatcher.hh"
 #include "elements/userlevel/controlsocket.hh"
 
-#if defined(HAVE_DLFCN_H) && defined(HAVE_LIBDL)
-# define HAVE_DYNAMIC_LINKING 1
-# include <dlfcn.h>
-#endif
-
 #define HELP_OPT		300
 #define VERSION_OPT		301
 #define CLICKPATH_OPT		302
@@ -137,63 +132,12 @@ catch_sigint(int)
 }
 
 
-// stuff for dynamic linking
-
-#if HAVE_DYNAMIC_LINKING
-extern "C" {
-typedef int (*init_module_func)(void);
-}
-
-static int
-load_package(String package, ErrorHandler *errh)
-{
-#ifndef RTLD_NOW
-  void *handle = dlopen((char *)package.cc(), RTLD_LAZY);
-#else
-  void *handle = dlopen((char *)package.cc(), RTLD_NOW);
-#endif
-  if (!handle)
-    return errh->error("cannot load package: %s", dlerror());
-  void *init_sym = dlsym(handle, "init_module");
-  if (!init_sym)
-    return errh->error("package `%s' has no `init_module'", package.cc());
-  init_module_func init_func = (init_module_func)init_sym;
-  if (init_func() != 0)
-    return errh->error("error initializing package `%s'", package.cc());
-  return 0;
-}
-#endif
-
-
 // functions for packages
 
 static String::Initializer crap_initializer;
 static Lexer *lexer;
-static Vector<String> packages;
-static HashMap<String, int> package_map(0);
 static String configuration_string;
-
-extern "C" void
-click_provide(const char *package)
-{
-  packages.push_back(package);
-  int &count = package_map.find_force(package);
-  count++;
-}
-
-extern "C" void
-click_unprovide(const char *package)
-{
-  String s = package;
-  for (int i = 0; i < packages.size(); i++)
-    if (packages[i] == s) {
-      packages[i] = packages.back();
-      packages.pop_back();
-      int &count = package_map.find_force(s);
-      count--;
-      return;
-    }
-}
+static Vector<ArchiveElement> archive;
 
 extern "C" int
 click_add_element_type(const char *ename, Element *e)
@@ -235,8 +179,10 @@ click_userlevel_global_handler_string(Router *router, const String &name, String
     *data = router->flat_configuration_string();
   
   else if (name == "packages") {
-    for (int i = 0; i < packages.size(); i++)
-      sa << packages[i] << "\n";
+    Vector<String> p;
+    click_public_packages(p);
+    for (int i = 0; i < p.size(); i++)
+      sa << p[i] << "\n";
     *data = sa.take_string();
     
   } else if (name == "requirements") {
@@ -347,128 +293,6 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
 }
 
     
-// compile packages
-
-#if HAVE_DYNAMIC_LINKING
-
-static bool
-prepare_compile_tmpdir(Vector<ArchiveElement> &archive,
-		       String &tmpdir, String &compile_prog,
-		       ErrorHandler *errh)
-{
-  ContextErrorHandler cerrh(errh, "While preparing to compile packages:");
-  
-  // change to temporary directory
-  tmpdir = click_mktmpdir(&cerrh);
-  if (!tmpdir)
-    return false;
-  if (chdir(tmpdir.cc()) < 0)
-    cerrh.fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
-
-  // find compile program
-  compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, &cerrh);
-  if (!compile_prog)
-    return false;
-
-  // look for .hh files
-  for (int i = 0; i < archive.size(); i++)
-    if (archive[i].name.substring(-3) == ".hh") {
-      String filename = archive[i].name;
-      FILE *f = fopen(filename, "w");
-      if (!f)
-	cerrh.warning("%s: %s", filename.cc(), strerror(errno));
-      else {
-	fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
-	fclose(f);
-      }
-    }
-
-  return true;
-}
-
-static void
-compile_archive_packages(Vector<ArchiveElement> &archive,
-			 ErrorHandler *errh)
-{
-  HashMap<String, int> have_requirements(-1);
-
-  // analyze archive
-  for (int i = 0; i < archive.size(); i++) {
-    const ArchiveElement &ae = archive[i];
-    if (ae.name.substring(-5) == ".u.cc") {
-      int &have = have_requirements.find_force(ae.name.substring(0, -5));
-      if (have == -1 || have >= 0) // prefer .u.cc to .cc
-	have = i;
-    } else if (ae.name.substring(-3) == ".cc" && (ae.name.length() < 5 || ae.name[ae.name.length()-5] != '.')) {
-      int &have = have_requirements.find_force(ae.name.substring(0, -3));
-      if (have == -1)
-	have = i;
-    } else if (ae.name.substring(-3) == ".uo") {
-      int &have = have_requirements.find_force(ae.name.substring(0, -3));
-      have = -2;
-    }
-  }
-  
-  String tmpdir;
-  String click_compile_prog;
-  
-  // check requirements
-  for (HashMap<String, int>::Iterator iter = have_requirements.first();
-       iter; iter++)
-    if (iter.value() >= 0) {
-      // have source, but not package; compile it
-      // XXX what if it's not required?
-      String package = iter.key();
-      int archive_index = iter.value();
-      
-      if (!click_compile_prog)
-	if (!prepare_compile_tmpdir(archive, tmpdir, click_compile_prog, errh))
-	  exit(1);
-
-      ContextErrorHandler cerrh
-	(errh, "While compiling package `" + package + ".uo':");
-
-      // write .cc file
-      String filename = archive[archive_index].name;
-      String source_text = archive[archive_index].data;
-      FILE *f = fopen(filename, "w");
-      if (!f)
-	cerrh.fatal("%s: %s", filename.cc(), strerror(errno));
-      fwrite(source_text.data(), 1, source_text.length(), f);
-      fclose(f);
-      // grab compiler options
-      String compiler_options;
-      if (source_text.substring(0, 17) == "// click-compile:") {
-	const char *s = source_text.data();
-	int pos = 17;
-	int len = source_text.length();
-	while (pos < len && s[pos] != '\n' && s[pos] != '\r')
-	  pos++;
-	// XXX check user input for shell metas?
-	compiler_options = source_text.substring(17, pos - 17) + " ";
-      }
-      
-      // run click-compile
-      errh->message("Compiling `%s.uo'...", package.cc());
-      String compile_command = click_compile_prog + " --target=user --package=" + package + ".uo " + compiler_options + filename;
-      int compile_retval = system(compile_command.cc());
-      if (compile_retval == 127)
-	cerrh.fatal("could not run `%s'", compile_command.cc());
-      else if (compile_retval < 0)
-	cerrh.fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
-      else if (compile_retval != 0)
-	cerrh.fatal("`%s' failed", compile_command.cc());
-
-      // grab object file and add to archive
-      ArchiveElement ae = init_archive_element(package + ".uo", 0600);
-      ae.data = file_string(package + ".uo", &cerrh);
-      archive.push_back(ae);
-    }
-}
-
-#endif
-
-
 // include requirements
 
 class RequireLexerExtra : public LexerExtra { public:
@@ -482,20 +306,12 @@ class RequireLexerExtra : public LexerExtra { public:
 void
 RequireLexerExtra::require(String name, ErrorHandler *errh)
 {
-  if (package_map[name] == 0) {
-#if HAVE_DYNAMIC_LINKING
-    String package = clickpath_find_file(name + ".uo", "lib", CLICK_LIBDIR);
-    if (!package)
-      package = clickpath_find_file(name + ".o", "lib", CLICK_LIBDIR);
-    if (!package) {
-      errh->message("cannot find required package `%s.uo'", name.cc());
-      errh->fatal("in CLICKPATH or `%s'", CLICK_LIBDIR);
-    }
-    load_package(package, errh);
+#ifdef HAVE_DYNAMIC_LINKING
+  if (!click_has_provision(name))
+    clickdl_load_requirement(name, &archive, errh);
 #endif
-    if (package_map[name] == 0)
-      errh->error("requirement `%s' not available", name.cc());
-  }
+  if (!click_has_provision(name))
+    errh->error("requirement `%s' not available", name.cc());
 }
 
 
@@ -511,6 +327,8 @@ main(int argc, char **argv)
 
   errh = new FileErrorHandler(stderr, "");
   ErrorHandler::static_initialize(errh);
+  
+  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =
@@ -631,14 +449,8 @@ particular purpose.\n");
   lexer = new Lexer(errh);
   export_elements(lexer);
   
-  // XXX locals should override
-#if HAVE_DYNAMIC_LINKING
-  int num_packages = 0;
-#endif
-  
   // find config string in archive
   if (config_str.length() != 0 && config_str[0] == '!') {
-    Vector<ArchiveElement> archive;
     separate_ar_string(config_str, archive, errh);
     bool found_config = false;
     for (int i = 0; i < archive.size(); i++)
@@ -646,21 +458,6 @@ particular purpose.\n");
 	config_str = archive[i].data;
 	found_config = true;
       }
-#if HAVE_DYNAMIC_LINKING
-    compile_archive_packages(archive, errh);
-    for (int i = 0; i < archive.size(); i++)
-      if (archive[i].name.substring(-3) == ".uo") {
-	num_packages++;
-	String tmpnam = unique_tmpnam("package" + String(num_packages) + "-*.uo", errh);
-	if (!tmpnam) exit(1);
-	FILE *f = fopen(tmpnam.cc(), "wb");
-	fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
-	fclose(f);
-	int ok = load_package(tmpnam, errh);
-	unlink(tmpnam.cc());
-	if (ok < 0) exit(1);
-      }
-#endif
     if (!found_config) {
       errh->error("archive has no `config' section");
       config_str = String();

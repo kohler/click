@@ -48,9 +48,10 @@ GENERIC_OBJS = string.o straccum.o \
 	packet.o \
 	error.o glue.o task.o timer.o atomic.o gaprate.o \
 	element.o \
-	confparse.o variableenv.o lexer.o archive.o elemfilter.o \
+	confparse.o variableenv.o lexer.o elemfilter.o \
 	routerthread.o router.o \
 	crc32.o in_cksum.o iptable.o iptable2.o radix.o \
+	archive.o packageutils.o userutils.o \
 	$(EXTRA_DRIVER_OBJS)
 
 EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
@@ -59,7 +60,7 @@ EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 
 LIBOBJS = $(GENERIC_OBJS) \
 	addressinfo.o alignmentinfo.o errorelement.o scheduleinfo.o \
-	drivermanager.o userutils.o clp.o
+	drivermanager.o clp.o
 OBJS = $(ELEMENT_OBJS) elements.o click.o
 
 CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_USERLEVEL
