@@ -1,3 +1,8 @@
+2001-06-28 Thursday 19:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* README (1.25): added sample diagrams and diagram-making macros to
+	repository
+
 2001-06-28 Thursday 17:46  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* etc/linux-2.2.18-patch (1.5): Add polling support for the
