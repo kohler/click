@@ -163,7 +163,6 @@ proclikefs_kill_super(struct super_block *sb, struct inode *dummy_inode)
 {
     struct dentry *dentry_tree;
     struct list_head *p;
-    struct inode *old_root;
 
     DEBUG("killing files");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)

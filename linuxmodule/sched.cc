@@ -107,9 +107,9 @@ click_sched(void *thunk)
 	break;
       }
     }
+  printk("<1>click: stopping router thread pid %d\n", current->pid);
   spin_unlock(&click_thread_lock);
   
-  printk("<1>click: stopping router thread pid %d\n", current->pid);
   return 0;
 }
 
