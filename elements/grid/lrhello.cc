@@ -116,7 +116,9 @@ SendGridLRHello::make_hello()
     psz += sizeof(grid_nbr_entry) * num_nbrs;
   }
 
-  WritablePacket *p = Packet::make(psz);
+  WritablePacket *p = Packet::make(psz + 2);
+  ASSERT_ALIGNED(p->data());
+  p->pull(2);
   memset(p->data(), 0, p->length());
 
   click_ether *eh = (click_ether *) p->data();

@@ -3,6 +3,9 @@
 
 // XXX when these settle, we can reorder, align and pack the fields etc...
 
+// packet data should be 4 byte aligned
+#define ASSERT_ALIGNED(p) assert(((unsigned int)(p) % 4) == 0)
+
 /* All multibyte values sent over the wire in network byte order,
    unless otherwise noted (e.g. IP addresses) */
 
@@ -63,6 +66,8 @@ struct grid_hdr {
   static const unsigned char GRID_LOC_QUERY = 4;  // followed by grid_loc_query
   static const unsigned char GRID_LOC_REPLY = 5;  // followed by grid_nbr_encap header 
 
+  unsigned char pad1, pad2;
+
   /*
    * Sender is who originally created this packet and injected it into
    * the network.  i.e. the following five fields (ip, ...,
@@ -85,12 +90,14 @@ struct grid_hdr {
   struct grid_location loc; // Sender's location, set by FixSrcLoc.
   unsigned short loc_err;   // Error radius of position, in metres.  
   bool loc_good;            // If false, don't believe loc  
+  unsigned char pad3;       // assume bool is char aligned
   unsigned int loc_seq_no;  
 
   unsigned int tx_ip;       // Transmitter 
   struct grid_location tx_loc;
   unsigned short tx_loc_err;
   bool tx_loc_good;
+  unsigned char pad4;
   unsigned int tx_loc_seq_no;
 
   /* XXX this location err and sequence number info needs to be
@@ -104,7 +111,7 @@ struct grid_hdr {
   unsigned short cksum;     // Over the whole packet, starting at grid_hdr.
 
   grid_hdr() : hdr_len(sizeof(grid_hdr)), cksum(0) 
-  { total_len = htons(sizeof(grid_hdr)); }
+  { total_len = htons(sizeof(grid_hdr)); assert(total_len % 4 == 0); }
 
   static String type_string(unsigned char type);
 };
@@ -121,10 +128,12 @@ struct grid_nbr_entry {
   unsigned int seq_no;
   unsigned int age; 
 
-  grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0), seq_no(0) { }
+  grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0), seq_no(0) 
+  { assert(sizeof(grid_nbr_entry) % 4 == 0); }
 
   grid_nbr_entry(unsigned int _ip, unsigned int _nhip, unsigned char h, unsigned int s)
-    : ip(_ip), next_hop_ip(_nhip), num_hops(h), loc(0, 0), seq_no(s) { } 
+    : ip(_ip), next_hop_ip(_nhip), num_hops(h), loc(0, 0), seq_no(s)
+    { assert(sizeof(grid_nbr_entry) % 4 == 0); }
 };
 
 struct grid_hello {
@@ -135,13 +144,15 @@ struct grid_hello {
   // for GRID_LR_HELLO packets, followed by num_nbrs grid_nbr_entry
   // structs.
 
-  grid_hello() : num_nbrs(0), nbr_entry_sz(sizeof(grid_nbr_entry)) { }
+  grid_hello() : num_nbrs(0), nbr_entry_sz(sizeof(grid_nbr_entry)) 
+  { assert(sizeof(grid_hello) % 4 == 0); }
 
   static const unsigned int MIN_AGE_DECREMENT = 10;
   static const unsigned int MAX_AGE_DEFAULT = 30000; // ~ 30 secs
 };
 
 struct grid_nbr_encap {
+  grid_nbr_encap() { assert(sizeof(grid_nbr_encap) % 4 == 0); }
   unsigned int dst_ip;
   struct grid_location dst_loc;
   unsigned short dst_loc_err;
@@ -150,6 +161,7 @@ struct grid_nbr_encap {
 };
 
 struct grid_loc_query {
+  grid_loc_query() { assert(sizeof(grid_loc_query) % 4 == 0); }
   unsigned int dst_ip;
   unsigned int seq_no;
 };

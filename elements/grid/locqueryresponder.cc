@@ -121,7 +121,9 @@ LocQueryResponder::simple_action(Packet *p)
   _query_seqs.insert(gh->ip, seq_t(seq_no, click_jiffies()));
 
   // construct the response
-  WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
+  WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap) + 2);
+  ASSERT_ALIGNED(q->data());
+  q->pull(2);
   memset(q->data(), 0, q->length());
   e = (click_ether *) q->data();
   grid_hdr *ngh = (grid_hdr *) (e + 1);

@@ -540,7 +540,9 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
   int psz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
   psz += sizeof(grid_nbr_entry) * num_rtes;
 
-  WritablePacket *p = Packet::make(psz);
+  WritablePacket *p = Packet::make(psz + 2); // for alignment
+  ASSERT_ALIGNED(p->data());
+  p->pull(2);
   memset(p->data(), 0, p->length());
 
   click_ether *eh = (click_ether *) p->data();
@@ -548,14 +550,14 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
   eh->ether_type = htons(ETHERTYPE_GRID);
   memcpy(eh->ether_shost, _ethaddr.data(), 6);
 
-  grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
+  grid_hdr *gh = (grid_hdr *) (eh + 1);
+  ASSERT_ALIGNED(gh);
   gh->hdr_len = sizeof(grid_hdr);
   gh->total_len = psz - sizeof(click_ether);
   gh->total_len = htons(gh->total_len);
   gh->type = grid_hdr::GRID_LR_HELLO;
-  gh->ip = gh->tx_ip = _ipaddr;
-
-  grid_hello *hlo = (grid_hello *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
+  gh->ip = gh->tx_ip = _ipaddr.addr();
+  grid_hello *hlo = (grid_hello *) (gh + 1);
   assert(num_rtes <= 255);
   hlo->num_nbrs = (unsigned char) num_rtes;
   hlo->nbr_entry_sz = sizeof(grid_nbr_entry);
@@ -572,8 +574,7 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
   
   hlo->age = htonl(grid_hello::MAX_AGE_DEFAULT);
 
-  grid_nbr_entry *curr = (grid_nbr_entry *) (p->data() + sizeof(click_ether) +
-					     sizeof(grid_hdr) + sizeof(grid_hello));
+  grid_nbr_entry *curr = (grid_nbr_entry *) (hlo + 1);
   for (int i = 0; i < num_rtes; i++) {
     *curr = rte_info[i];
     curr->seq_no = htonl(curr->seq_no);
@@ -584,68 +585,6 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
   output(1).push(p);
 }
 
-#if 0
-Packet *
-UpdateGridRoutes::make_hello()
-{
-  int psz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
-  
-  expire_routes();
-
-  int num_rtes = _rtes.count();
-
-  psz += sizeof(grid_nbr_entry) * num_rtes;
-
-  WritablePacket *p = Packet::make(psz);
-  memset(p->data(), 0, p->length());
-
-  click_ether *eh = (click_ether *) p->data();
-  memset(eh->ether_dhost, 0xff, 6); // broadcast
-  eh->ether_type = htons(ETHERTYPE_GRID);
-  memcpy(eh->ether_shost, _ethaddr.data(), 6);
-
-  grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
-  gh->hdr_len = sizeof(grid_hdr);
-  gh->total_len = psz - sizeof(click_ether);
-  gh->total_len = htons(gh->total_len);
-  gh->type = grid_hdr::GRID_LR_HELLO;
-  gh->ip = gh->tx_ip = _ipaddr;
-
-  grid_hello *hlo = (grid_hello *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
-  assert(num_rtes <= 255);
-  hlo->num_rtes = (unsigned char) num_rtes;
-#if 1
-  click_chatter("num_rtes = %d , _hops = %d, rtes.count() = %d",
-		num_rtes, _max_hops, _nbrs.count());
-#endif
-  hlo->nbr_entry_sz = sizeof(grid_nbr_entry);
-  hlo->seq_no = htonl(_seq_no);
-  /* originating sequence numbers are even, starting at 0.  odd
-     numbers are reserved for other nodes to advertise a broken route
-     to us.  from DSDV paper. */
-  _seq_no += 2;
-  
-  hlo->age = htonl(grid_hello::MAX_AGE_DEFAULT);
-
-  grid_nbr_entry *curr = (grid_nbr_entry *) (p->data() + sizeof(click_ether) +
-					     sizeof(grid_hdr) + sizeof(grid_hello));
-  for (UpdateGridRoutes::FarTable::Iterator iter = _rtes.first(); iter; iter++) {
-    /* XXX if everyone is using the same max-hops parameter, we could
-       leave out all of our entries that are exactly max-hops hops
-       away, because we know those entries will be greater than
-       max-hops at any neighbor.  but, let's leave it in case we have
-       different max-hops across the network */
-    /* becuase we called expire_routes() at the top of this function,
-       we know we are not propagating any route entries with age of 0 */
-    memcpy(curr, &iter.value().nbr, sizeof(grid_nbr_entry));
-    curr->seq_no = htonl(curr->seq_no);
-    curr->age = htonl(curr->age);
-    curr++;
-  }
-
-  return p;
-}
-#endif
 
 
 ELEMENT_REQUIRES(userlevel)

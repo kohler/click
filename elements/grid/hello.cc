@@ -91,7 +91,9 @@ SendGridHello::make_hello()
 {
   int psz = sizeof(click_ether) + sizeof(grid_hdr);
 
-  WritablePacket *p = Packet::make(psz);
+  WritablePacket *p = Packet::make(psz + 2); // for alignment
+  ASSERT_ALIGNED(p->data());
+  p->pull(2);
   memset(p->data(), 0, p->length());
 
   click_ether *eh = (click_ether *) p->data();
@@ -99,7 +101,7 @@ SendGridHello::make_hello()
   eh->ether_type = htons(ETHERTYPE_GRID);
   memcpy(eh->ether_shost, _from_eth.data(), 6);
 
-  grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
+  grid_hdr *gh = (grid_hdr *) (eh + 1);
   gh->hdr_len = sizeof(grid_hdr);
   gh->total_len = htons(sizeof(grid_hdr));
   gh->type = grid_hdr::GRID_HELLO;
