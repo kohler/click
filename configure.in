@@ -446,10 +446,9 @@ int main(int c, char **v) {
   return 0;
 }], ac_cv_cxx_aware_system=yes, ac_cv_cxx_aware_system=no, 
     ac_cv_cxx_aware_system=no))
+
+  dnl check whether -fpermissive is required
   if test $ac_cv_cxx_aware_system = yes; then
-    TARGETS="$TARGETS linuxmodule"
-    TOOL_TARGETS="$TOOL_TARGETS click-install"
-    AC_DEFINE_UNQUOTED(HAVE_LINUXMODULE_TARGET, 1)
     SAVE_CXX="$CXX"
     CXX="$KERNEL_CXX"
 
@@ -469,11 +468,35 @@ int main(int c, char **v) {
 #include <linux/skbuff.h>], [], 
 	ac_cv_f_permissive=no, ac_cv_f_permissive=yes))
 
+    if test $ac_cv_f_permissive = yes; then
+      CXX="$KERNEL_CXX -fpermissive"
+      AC_CACHE_CHECK(whether -fpermissive is allowed, ac_cv_f_permissive_ok,
+	AC_LANG_CPLUSPLUS
+	AC_TRY_LINK([#define __KERNEL__
+#define MODULE
+#define _FEATURES_H
+#define new xxx_new
+#define this xxx_this
+#define delete xxx_delete
+#define class xxx_class
+#include <linux/skbuff.h>], [], 
+	ac_cv_f_permissive_ok=yes, ac_cv_f_permissive_ok=no))
+
+      if test $ac_cv_f_permissive_ok = no; then
+	ac_cv_cxx_aware_system=no
+      else
+	KERNEL_CXX="$KERNEL_CXX -fpermissive"
+      fi
+    fi
+
     CXX="$SAVE_CXX"
     CPPFLAGS="$saveflags"
-    if test $ac_cv_f_permissive = yes; then
-      KERNEL_CXX="$KERNEL_CXX -fpermissive"
-    fi
+  fi
+
+  if test $ac_cv_cxx_aware_system = yes; then
+    TARGETS="$TARGETS linuxmodule"
+    TOOL_TARGETS="$TOOL_TARGETS click-install"
+    AC_DEFINE_UNQUOTED(HAVE_LINUXMODULE_TARGET, 1)
   else
     AC_MSG_WARN(Your header files must be patched before a C++ program
 can include them. Apply the patch that came with this distribution
