@@ -90,11 +90,10 @@ PrintGrid::simple_action(Packet *p)
     }
   }
 
-  click_chatter("PrintGrid%s%s : %s %s %s %s %.4f %.4f %s",
+  click_chatter("PrintGrid%s%s : %s %s %s %.4f %.4f %s",
                 _label.cc()[0] ? " " : "",
                 _label.cc(),
                 seth.s().cc(),
-                deth.s().cc(),
                 type,
                 xip.s().cc(),
                 gh->loc.lat(),
