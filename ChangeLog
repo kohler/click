@@ -1,3 +1,10 @@
+2005-03-04 Friday 17:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* bsdmodule/module.cc (1.17), elements/ip/directiplookup.cc (1.11),
+	elements/ip/directiplookup.hh (1.10), elements/ip/lineariplookup.hh
+	(1.13), test/ip/iplookups-01.testie (1.2): DirectIPLookup handler
+	updates from Marko Zec
+
 2005-03-03 Thursday 18:23  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* drivers/e1000-5.x/src/e1000_main.c (1.6): e1000
