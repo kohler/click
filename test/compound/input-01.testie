@@ -1,0 +1,77 @@
+%info
+Test simple inputs and outputs
+
+%script
+click -e '
+RatedSource(DATA "I love myself\n", RATE 10000, LIMIT 10, STOP true)
+   -> Print
+   -> Discard
+' 2>A
+
+click -e '
+elementclass RS {
+   RatedSource(DATA "I love myself\n", RATE 10000, LIMIT 10, STOP true)
+      -> output
+}
+elementclass P {
+   input[0] -> Print -> [0]output
+}
+elementclass D {
+   input[0] -> Discard
+}
+RS -> P -> D
+' 2>B
+
+click -e '
+elementclass RS {
+   __REST__ $rest | RatedSource($rest)
+      -> output
+}
+elementclass P {
+   input[0] -> Print -> [0]output
+}
+elementclass D {
+   input[0] -> Discard
+}
+RS(DATA "I love myself\n", RATE 10000, LIMIT 10, STOP true) -> P -> D
+' 2>C
+
+click-flatten -e '
+elementclass RS {
+   RatedSource(DATA "I love myself\n", RATE 10000, LIMIT 10, STOP true)
+      -> output
+}
+elementclass P {
+   input[0] -> Print -> [0]output
+}
+elementclass D {
+   input[0] -> Discard
+}
+RS -> P -> D
+' | click 2>D
+
+click-flatten -e '
+elementclass RS {
+   __REST__ $rest | RatedSource($rest)
+      -> output
+}
+elementclass P {
+   input[0] -> Print -> [0]output
+}
+elementclass D {
+   input[0] -> Discard
+}
+RS(DATA "I love myself\n", RATE 10000, LIMIT 10, STOP true) -> P -> D
+' | click 2>E
+
+%expect A B C D E
+  14 | 49206c6f 7665206d 7973656c 660a
+  14 | 49206c6f 7665206d 7973656c 660a
+  14 | 49206c6f 7665206d 7973656c 660a
+  14 | 49206c6f 7665206d 7973656c 660a
+  14 | 49206c6f 7665206d 7973656c 660a
+  14 | 49206c6f 7665206d 7973656c 660a
+  14 | 49206c6f 7665206d 7973656c 660a
+  14 | 49206c6f 7665206d 7973656c 660a
+  14 | 49206c6f 7665206d 7973656c 660a
+  14 | 49206c6f 7665206d 7973656c 660a
