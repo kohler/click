@@ -1,12 +1,16 @@
+/* -*- c-basic-offset: 4 -*- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <inttypes.h>
 #include <click/llrpc.h>
 
 static void complain(const char *, char *);
+
+static const char *clickfs_prefix;
 
 int
 main(int argc, const char *argv[])
@@ -28,7 +32,23 @@ main(int argc, const char *argv[])
 	exit(1);
     }
 
-    /* Open the handler file `/proc/click/ELEMENT/name'. */
+    /* Find the Click prefix */
+    if (access("/click/config", F_OK) >= 0)
+	clickfs_prefix = "/click";
+    else if (errno != ENOENT) {
+	fprintf(stderr, "click-readcounter: /click/config: %s\n", strerror(errno));
+	exit(1);
+    } else if (access("/proc/click/config", F_OK) >= 0)
+	clickfs_prefix = "/proc/click";
+    else if (errno != ENOENT) {
+	fprintf(stderr, "click-readcounter: /proc/click/config: %s\n", strerror(errno));
+	exit(1);
+    } else {
+	fprintf(stderr, "click-readcounter: the Click file system does not exist\n  (Have you installed Click yet?)\n");
+	exit(1);
+    }
+    
+    /* Open the handler file `/click/ELEMENT/name'. */
     /* To call an LLRPC on some Click element, you must first open one of its
        handler files (to get a file descriptor you can ioctl() on). It
        currently doesn't matter which handler you choose, or what access mode
@@ -36,7 +56,7 @@ main(int argc, const char *argv[])
     buf = malloc(strlen(argv[1]) + 50);
     if (!buf)
 	abort();
-    sprintf(buf, "/proc/click/%s/name", argv[1]);
+    sprintf(buf, "%s/%s/name", clickfs_prefix, argv[1]);
     f = fopen(buf, "r");
     if (!f) {
 	/* Try to narrow down the error message. */
@@ -73,20 +93,11 @@ complain(const char *element, char *buf)
     if (!buf)
 	abort();
 
-    /* Check /proc/click */
-    if (access("/proc/click", F_OK) < 0) {
-	if (errno == ENOENT)
-	    fprintf(stderr, "click-readcounter: `/proc/click' does not exist\n  (Have you installed Click yet?)\n");
-	else
-	    fprintf(stderr, "click-readcounter: /proc/click: %s\n", strerror(errno));
-	return;
-    }
-
-    /* Check /proc/click/ELEMENT */
+    /* Check /click/ELEMENT */
     nbuf = malloc(strlen(element) + 50);
     if (!nbuf)
 	abort();
-    sprintf(nbuf, "/proc/click/%s", element);
+    sprintf(nbuf, "%s/%s", clickfs_prefix, element);
     if (access(nbuf, F_OK) < 0) {
 	if (errno == ENOENT)
 	    fprintf(stderr, "click-readcounter: `%s' does not exist\n  (Does the configuration have an element named `%s'?)\n", nbuf, element);
