@@ -38,11 +38,11 @@ extern "C" {
 }
 #endif
 
-const char *Element::AGNOSTIC = "a";
-const char *Element::PUSH = "h";
-const char *Element::PULL = "l";
-const char *Element::PUSH_TO_PULL = "h/l";
-const char *Element::PULL_TO_PUSH = "l/h";
+const char * const Element::AGNOSTIC = "a";
+const char * const Element::PUSH = "h";
+const char * const Element::PULL = "l";
+const char * const Element::PUSH_TO_PULL = "h/l";
+const char * const Element::PULL_TO_PUSH = "l/h";
 
 int Element::nelements_allocated = 0;
 

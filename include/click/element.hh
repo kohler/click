@@ -18,11 +18,12 @@ typedef int (*WriteHandler)(const String &, Element *, void *, ErrorHandler *);
 class Element { public:
   
   enum Processing { VAGNOSTIC, VPUSH, VPULL };
-  static const char *AGNOSTIC, *PUSH, *PULL, *PUSH_TO_PULL, *PULL_TO_PUSH;
+  static const char * const AGNOSTIC, * const PUSH, * const PULL;
+  static const char * const PUSH_TO_PULL, * const PULL_TO_PUSH;
 
   enum ConfigurePhase {
     CONFIGURE_PHASE_ZERO = 0,
-    CONFIGURE_PHASE_INFO = 1,
+    CONFIGURE_PHASE_INFO = 20,
     CONFIGURE_PHASE_DEFAULT = 100,
     CONFIGURE_PHASE_LATE = 2000
   };
