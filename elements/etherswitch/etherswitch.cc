@@ -32,6 +32,12 @@ EtherSwitch::EtherSwitch()
 
 EtherSwitch::~EtherSwitch()
 {
+  int i=0;
+  EtherAddress s;
+  AddrInfo *a;
+  while (_table.each(i, s, a))
+    delete a;
+  _table.clear();
 }
 
 void
