@@ -1,5 +1,5 @@
-THE CLICK MODULAR ROUTER RELEASE 1.1
-====================================
+THE CLICK MODULAR ROUTER RELEASE 1.2.0
+======================================
 
     This is the README file for the source release for the Click modular
 software router. The first thing you should do is look for more recent
@@ -26,6 +26,7 @@ CLICKDIR/elements		element source code
 CLICKDIR/elements/app		... for application-level protocol elements
 CLICKDIR/elements/ethernet	... for Ethernet elements
 CLICKDIR/elements/etherswitch	... for Ethernet-switch elements
+CLICKDIR/elements/grid		... for Grid elements (experimental)
 CLICKDIR/elements/icmp		... for ICMP elements
 CLICKDIR/elements/ip		... for IP, ICMP, and TCP/UDP elements
 CLICKDIR/elements/ip6		... for IPv6 elements
@@ -46,6 +47,7 @@ CLICKDIR/tools/click-combine	... merges routers into combined configuration
 CLICKDIR/tools/click-compile	... compiles element source code portably
 CLICKDIR/tools/click-devirtualize   ... removes virtual functions from source
 CLICKDIR/tools/click-fastclassifier ... specializes Classifiers into C++ code
+CLICKDIR/tools/click-mkmindriver    ... build environments for minimal drivers
 CLICKDIR/tools/click-install	... installs configuration into Linux module
 CLICKDIR/tools/click-undead	... removes dead code from configurations
 CLICKDIR/tools/click-xform	... pattern-based configuration optimizer

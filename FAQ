@@ -12,9 +12,9 @@ A. Yes.
 Q. The Click Linux patch does not apply cleanly.
 
 A. You need a specific version of Linux. We currently distribute pactches
-   for Linux 2.2.17 or Linux 2.2.18. Most of the patch will apply no matter
-   what version of Linux 2.2 you use. The problems are with device drivers,
-   which seem to change a lot between versions.
+   for Linux 2.2.18. Most of the patch will apply no matter what version of
+   Linux 2.2 you use. The problems are with device drivers, which seem to
+   change a lot between versions.
 
 
 Q. How fast can Click route packets?
@@ -48,10 +48,10 @@ SECTION 2: QUESTIONS ABOUT POLLING
 
 Q. How can I change a device driver to use the Click polling extensions?
 
-A. Benjie Chen, who designed the extensions, will be writing a document
-   soon that describes how to do this. For now, though, you'll have to look
-   at our additions to Linux's `struct device', and the way they are used
-   by our Tulip driver. You can always write us and ask for help:
+A. Benjie Chen, who designed the extensions, should be writing a document
+   that describes how to do this. For now, though, you'll have to look at
+   our additions to Linux's `struct device', and the way they are used by
+   our Tulip driver. You can always write us and ask for help:
    <click@pdos.lcs.mit.edu>.
 
 
@@ -59,8 +59,4 @@ Q. Can I use Click without updating device drivers (that is, without
    polling)?
 
 A. Sure you can. Just use FromDevice elements instead of PollDevice
-   elements. Your performance will suck. In fact, it may suck even more
-   than it used to. Earlier versions of Click had a couple hacks that made
-   performance a bit better on a non-polling system. We removed those hacks
-   for Click 1.0, now that we know how to make a high-performance system:
-   use polling.
+   elements. Your performance will suck though.

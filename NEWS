@@ -1,21 +1,79 @@
 Click NEWS
 
+Version 1.2.0
 
-* Kernel patch
+* General
 
-** Changed device polling interface: skb recycling is moved out of device
-   driver and into Click (linuxmodule/skbmgr.c). skb recycling can now be 
-   used with different device drivers. This requires a different 2.2.18 
-   patch.
+** Added support for Click multithreading: multiple processors processing
+   packets through the Click configuration simultaneously. This required
+   extensive source code changes and adding optional locks to several
+   elements. Turn multithreading on at configure time with
+   `--enable-multithread=[NTHREADS]'. Everyone loves Benjie!!
 
-** Add new Intel EEPro 1000 gigabit driver: this new driver delivers much
-   higher throughput for 64 byte packets. Upto 1 million 64 byte packets
-   can be sent and received.
+** Added preliminary support for cross-compilation. Everyone loves Doug!!
+
+** Many bug fixes, and being careful about out-of-memory situations.
+
+** Added support for special Intel-only assembly instructions, which make
+   things faster. Turn it on at configure time with `--enable-intel-cpu'.
+
+* Kernel driver
+
+** Changed device polling interface: sk_buff recycling moved out of
+   individual device drivers and into Click (linuxmodule/skbmgr.cc). This
+   requires a different 2.2.18 patch. You will need to apply the patch in
+   this distribution and recompile.
+
+** Added a polling Intel EEPro 1000 gigabit driver, which can receive or
+   send up to 1 million 64 byte packets.
+
+** Added `accessible' and `priority' module parameters (see
+   click-install(1)'s `--private' and `--priority' options).
 
 * Elements
 
-** Device elements are changed. They now use the new polling interface. See
-   "Kernel patch" bullet above.
+** Kernel module device elements changed to use the new polling interface.
+   See above.
+
+** Added MarkIPCE element for ECN support.
+
+** Added ECN syntax (`ip ect' and `ip ce') and `ip ttl' to IPFilter and
+   IPClassifier.
+
+** Added DriverManager element that says how to handle please_stop_driver()
+   events.
+
+** Added keyword arguments to Print, IPPrint, InfiniteSource, RatedSource,
+   RED, TimedSource, ....
+
+** Added DRRSched, PrintOld, PushNull, PullNull, and SetTimestamp elements.
+
+** Real number parsing functions handle overflow and rounding better.
+
+** IPRewriter garbage collection optimizations from Benjie.
+
+* Tools
+
+** Added click-mkmindriver(1).
+
+** click-align(1) and click-devirtualize(1) bug fixes.
+
+** Add `-C CLICKPATH' argument to all relevant tools.
+
+* C++ API changes
+
+** Added preliminary programmer documentation in Texinfo format
+   (doc/click.texi). Removed old Element and Connection man pages, which
+   were obsolete.
+
+** The Element class no longer inherents from `ElementLink'. Elements that
+   wish to be scheduled must include and initialize a `Task' object.
+
+** Changed TimerHook type to `void (*)(Timer *, void *)'.
+
+** Added Element methods `flow_code' and `configuration'.
+
+** Renamed `Element::Connection' class to `Element::Port'.
 
 
 Version 1.1   15.Dec.2000
