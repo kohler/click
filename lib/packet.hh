@@ -300,9 +300,7 @@ Packet::nonunique_push(unsigned int nbytes)
     return expensive_push(nbytes);
 }
 
-/*
- * Get rid of some bytes at the start of a packet.
- */
+/* Get rid of some bytes at the start of a packet */
 inline void
 Packet::pull(unsigned int nbytes)
 {
@@ -315,6 +313,22 @@ Packet::pull(unsigned int nbytes)
 #else
   _data += nbytes;
 #endif
+}
+
+/* Get rid of some bytes at the end of a packet */
+inline void
+Packet::take(unsigned int nbytes)
+{
+  if (nbytes > length()) {
+    click_chatter("Packet::take %d > length %d\n", nbytes, length());
+    nbytes = length();
+  }
+#ifdef __KERNEL__
+  skb()->tail -= nbytes;
+  skb()->len -= nbytes;
+#else
+  _tail -= nbytes;
+#endif    
 }
 
 inline const IP6Address &

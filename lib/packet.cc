@@ -252,17 +252,3 @@ Packet::put(unsigned int nbytes)
   } else
     return expensive_put(nbytes);
 }
-
-void
-Packet::take(unsigned int nbytes)
-{
-  if (nbytes <= length()) {
-#ifdef __KERNEL__
-    skb()->tail -= nbytes;
-    skb()->len -= nbytes;
-#else
-    _tail -= nbytes;
-#endif    
-  } else
-    click_chatter("Packet::take oops");
-}
