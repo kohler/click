@@ -8,6 +8,10 @@ Version 1.0.7
    into a directory (directory path specified using -d option) or stdout on a
    regular basis (duration between each dump specified using -u option).
 
+* Tools
+
+** Fixed click-uncombine bugs and changed its order of arguments.
+
 
 Version 1.0.6   6.May.2000
 

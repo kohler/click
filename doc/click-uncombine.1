@@ -37,8 +37,8 @@ configuration
 '
 .SH SYNOPSIS
 .B click-uncombine
-.I \%[options]
-\%[\fIcomponent\fR | \fIfile component\fR]
+.RI \%[ options ]
+.RI \%[ router\-file " [" \fIcomponent\fR ]]
 '
 .SH DESCRIPTION
 The
@@ -54,9 +54,8 @@ name, as originally specified to
 If any filename argument is a single dash "-",
 .B click-uncombine
 will use the standard input or output instead, as appropriate. You can give
-one or two non-option arguments. If you give one, it is used as the
-component name; if you give two, the first is the router file and the
-second is the component name.
+one or two non-option arguments; the first is the router file and the
+second, the component name.
 '
 .TP 5
 .BI \-f " file"

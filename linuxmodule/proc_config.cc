@@ -102,8 +102,10 @@ static
 DECLARE_READ_FILEOP(click_config_read)
 {
   loff_t f_pos = FILEOP_F_POS;
+  if (!current_config)
+    return 0;
   loff_t len = current_config->length();
-  if (!current_config || f_pos > len)
+  if (f_pos > len)
     return 0;
   if (f_pos + count > len)
     count = len - f_pos;
@@ -195,18 +197,14 @@ DECLARE_RELEASE_FILEOP(click_config_release)
     return -EIO;
 
   int success = -EINVAL;
-  if (build_config) {
-    if (!current_config)
-      current_config = new String;
-    if (current_config) {
-      reset_proc_click_errors();
-      unsigned inum = filp->f_dentry->d_inode->i_ino;
-      if (inum == proc_click_hotconfig_entry.low_ino)
-	success = hotswap_config();
-      else
-	success = swap_config();
-      proc_click_config_entry.size = current_config->length();
-    }
+  if (build_config && current_config) {
+    reset_proc_click_errors();
+    unsigned inum = filp->f_dentry->d_inode->i_ino;
+    if (inum == proc_click_hotconfig_entry.low_ino)
+      success = hotswap_config();
+    else
+      success = swap_config();
+    proc_click_config_entry.size = current_config->length();
   }
   config_write_lock = 0;
   MOD_DEC_USE_COUNT;
@@ -224,6 +222,7 @@ init_proc_click_config()
   proc_click_config_inode_operations.default_file_ops = &proc_click_config_operations;
   click_register_pde(&proc_click_entry, &proc_click_config_entry);
   click_register_pde(&proc_click_entry, &proc_click_hotconfig_entry);
+  current_config = new String;
 }
 
 void

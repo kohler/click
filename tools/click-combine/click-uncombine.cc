@@ -64,7 +64,7 @@ usage()
 `Click-uncombine' reads a combined Click configuration produced by\n\
 click-combine and writes one of its components to the standard output.\n\
 \n\
-Usage: %s [OPTION]... [COMPONENTNAME | ROUTERFILE COMPONENTNAME]\n\
+Usage: %s [OPTION]... [ROUTERFILE [COMPONENTNAME]]\n\
 \n\
 Options:\n\
   -f, --file FILE             Read router configuration from FILE.\n\
@@ -81,10 +81,13 @@ static Vector<int> component_endpoints;
 static void
 remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
 {
+  // prepare
   int link_type = r->type_index("RouterLink");
   if (link_type < 0)
     return;
+  component_endpoints.clear();
 
+  // find all links
   Vector<int> links;
   for (int i = 0; i < r->nelements(); i++)
     if (r->etype(i) == link_type)
@@ -195,105 +198,14 @@ frob_nested_routerlinks(RouterT *r, const String &compname)
     }
 }
 
-int
-main(int argc, char **argv)
+static void
+remove_toplevel_component(String component, RouterT *r, const char *filename,
+			  ErrorHandler *errh, const String &component_prefix)
 {
-  String::static_initialize();
-  ErrorHandler::static_initialize(new FileErrorHandler(stderr));
-  ErrorHandler *errh = ErrorHandler::default_handler();
-  ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-uncombine: ");
-
-  // read command line arguments
-  Clp_Parser *clp =
-    Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
-  Clp_SetOptionChar(clp, '+', Clp_ShortNegated);
-  program_name = Clp_ProgramName(clp);
-
-  const char *router_file = 0;
-  const char *output_file = 0;
-  bool auto_router_file = true;
-  String component;
-
-  while (1) {
-    int opt = Clp_Next(clp);
-    switch (opt) {
-      
-     case HELP_OPT:
-      usage();
-      exit(0);
-      break;
-      
-     case VERSION_OPT:
-      printf("click-uncombine (Click) %s\n", VERSION);
-      printf("Copyright (C) 2000 Massachusetts Institute of Technology\n\
-This is free software; see the source for copying conditions.\n\
-There is NO warranty, not even for merchantability or fitness for a\n\
-particular purpose.\n");
-      exit(0);
-      break;
-      
-     case ROUTER_OPT:
-      if (router_file) {
-	p_errh->error("combined router specified twice");
-	goto bad_option;
-      }
-      auto_router_file = false;
-      router_file = clp->arg;
-      break;
-
-     case OUTPUT_OPT:
-      if (output_file) {
-	p_errh->error("output file specified twice");
-	goto bad_option;
-      }
-      output_file = clp->arg;
-      break;
-
-     case NAME_OPT:
-      if (component) {
-	p_errh->error("component name specified twice");
-	goto bad_option;
-      }
-      component = clp->arg;
-      break;
-
-     case Clp_NotOption:
-      // if only one argument given, it's a component name
-      if (router_file && component) {
-	p_errh->error("component name specified twice");
-	goto bad_option;
-      } else if (component)
-	router_file = component;
-      component = clp->arg;
-      break;
-      
-     bad_option:
-     case Clp_BadOption:
-      short_usage();
-      exit(1);
-      break;
-      
-     case Clp_Done:
-      goto done;
-      
-    }
-  }
-  
- done:
-  RouterT *r = 0;
-  r = read_router_file(router_file, errh);
-  if (!r || errh->nerrors() > 0)
-    exit(1);
-  if (!router_file || strcmp(router_file, "-") == 0)
-    router_file = "<stdin>";
-  r->flatten(errh);
-
   // find component names
   HashMap<String, int> component_map(-1);
   Vector<String> component_names;
-  if (r->archive_index("componentmap") < 0)
-    errh->fatal("%s: not created by `click-combine' (no `componentmap')", router_file);
-  {
+  if (r->archive_index("componentmap") >= 0) {
     ArchiveElement &ae = r->archive("componentmap");
     cp_spacevec(cp_subst(ae.data), component_names);
     for (int i = 0; i < component_names.size(); i++)
@@ -301,12 +213,10 @@ particular purpose.\n");
   }
 
   // check if component exists
-  if (!component)
-    p_errh->fatal("no component specified");
-  else if (component.find_left('/') >= 0)
-    p_errh->fatal("cannot extract nested component");
-  else if (component_map[component] < 0)
-    p_errh->fatal("%s: no `%s' component", router_file, component.cc());
+  if (component_map[component] < 0) {
+    String g = component_prefix + component;
+    errh->fatal("%s: no `%s' component", filename, g.cc());
+  }
 
   // remove top-level links
   remove_component_links(r, errh, component);
@@ -352,6 +262,117 @@ particular purpose.\n");
       ae.data = sa.take_string();
     else
       ae.kill();
+  }
+}
+
+int
+main(int argc, char **argv)
+{
+  String::static_initialize();
+  ErrorHandler::static_initialize(new FileErrorHandler(stderr));
+  ErrorHandler *errh = ErrorHandler::default_handler();
+  ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-uncombine: ");
+
+  // read command line arguments
+  Clp_Parser *clp =
+    Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
+  Clp_SetOptionChar(clp, '+', Clp_ShortNegated);
+  program_name = Clp_ProgramName(clp);
+
+  const char *router_file = 0;
+  const char *output_file = 0;
+  String component;
+
+  while (1) {
+    int opt = Clp_Next(clp);
+    switch (opt) {
+      
+     case HELP_OPT:
+      usage();
+      exit(0);
+      break;
+      
+     case VERSION_OPT:
+      printf("click-uncombine (Click) %s\n", VERSION);
+      printf("Copyright (C) 2000 Massachusetts Institute of Technology\n\
+This is free software; see the source for copying conditions.\n\
+There is NO warranty, not even for merchantability or fitness for a\n\
+particular purpose.\n");
+      exit(0);
+      break;
+      
+     case ROUTER_OPT:
+      if (router_file) {
+	p_errh->error("combined router specified twice");
+	goto bad_option;
+      }
+      router_file = clp->arg;
+      break;
+
+     case OUTPUT_OPT:
+      if (output_file) {
+	p_errh->error("output file specified twice");
+	goto bad_option;
+      }
+      output_file = clp->arg;
+      break;
+
+     case NAME_OPT:
+      if (component) {
+	p_errh->error("component name specified twice");
+	goto bad_option;
+      }
+      component = clp->arg;
+      break;
+
+     case Clp_NotOption:
+      // if only one argument given, it's a component name
+      if (router_file && component) {
+	p_errh->error("component name specified twice");
+	goto bad_option;
+      } else if (router_file)
+	component = clp->arg;
+      else
+	router_file = clp->arg;
+      break;
+      
+     bad_option:
+     case Clp_BadOption:
+      short_usage();
+      exit(1);
+      break;
+      
+     case Clp_Done:
+      goto done;
+      
+    }
+  }
+  
+ done:
+  RouterT *r = 0;
+  r = read_router_file(router_file, errh);
+  if (!r || errh->nerrors() > 0)
+    exit(1);
+  if (!router_file || strcmp(router_file, "-") == 0)
+    router_file = "<stdin>";
+  r->flatten(errh);
+
+  // find component names
+  if (r->archive_index("componentmap") < 0)
+    errh->fatal("%s: not created by `click-combine' (no `componentmap')", router_file);
+  else if (!component)
+    p_errh->fatal("no component specified");
+  
+  // walk down one slash at a time
+  String prefix;
+  while (component) {
+    int p = component.find_left('/');
+    if (p < 0) p = component.length();
+    String toplevel = component.substring(0, p);
+    String suffix = component.substring(p + 1);
+    remove_toplevel_component(toplevel, r, router_file, errh, prefix);
+    component = suffix;
+    prefix += component + "/";
   }
   
   // open output file
