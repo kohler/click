@@ -32,7 +32,6 @@ RTMDSR::RTMDSR()
   add_input();
   add_output();
   add_output();
-  add_output();
 }
 
 RTMDSR::~RTMDSR()
@@ -45,8 +44,11 @@ RTMDSR::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   ret = cp_va_parse(conf, this, errh,
-		     cpIPAddress, "IP address", &_ip,
-		     0);
+                    cpIPAddress, "IP address", &_ip,
+                    cpEthernetAddress, "Ethernet address", &_en,
+                    cpUnsigned, "Ethernet encapsulation type", &_et,
+                    0);
+  _et = htons(_et);
   return ret;
 }
 
@@ -76,6 +78,13 @@ RTMDSR::run_timer ()
     if(_seen[i]._when + QueryLife >= now)
       v.push_back(_seen[i]);
   _seen = v;
+
+  // Delete stale entries from our ARP-like cache.
+  Vector<ARP> av;
+  for(i = 0; i < _arp.size(); i++)
+    if(_arp[i]._when + ARPLife >= now)
+      av.push_back(_arp[i]);
+  _arp = av;
 
   _timer.schedule_after_ms(1000);
 }
@@ -229,31 +238,84 @@ RTMDSR::forward(const struct pkt *pk1)
   send(p);
 }
 
+// A packet has arrived from ip/en.
+// Enter the pair in our ARP table.
+void
+RTMDSR::got_arp(IPAddress ip, u_char xen[6])
+{
+  EtherAddress en(xen);
+  int i;
+  for(i = 0; i < _arp.size(); i++){
+    if(_arp[i]._ip == ip){
+      if(_arp[i]._en != en){
+        click_chatter("DSR %s: got_arp %s changed from %s to %s",
+                      _ip.s().cc(),
+                      ip.s().cc(),
+                      _arp[i]._en.s().cc(),
+                      en.s().cc());
+      }
+      _arp[i]._en = en;
+      _arp[i]._when = time();
+      return;
+    }
+  }
+
+  click_chatter("DSR %s: got_arp %s %s",
+                _ip.s().cc(),
+                ip.s().cc(),
+                en.s().cc());
+      
+  _arp.push_back(ARP(ip, en));
+}
+
+// Given an IP address, look in our local ARP table to see
+// if we happen to know that node's ethernet address.
+// If we don't, just use ff:ff:ff:ff:ff:ff
+bool
+RTMDSR::find_arp(IPAddress ip, u_char en[6])
+{
+  int i;
+  for(i = 0; i < _arp.size(); i++){
+    if(_arp[i]._ip == ip){
+      memcpy(en, _arp[i]._en.data(), 6);
+      click_chatter("DSR %s: find_arp %s %s",
+                    _ip.s().cc(),
+                    ip.s().cc(),
+                    _arp[i]._en.s().cc());
+      return true;
+    }
+  }
+  click_chatter("DSR %s: find_arp %s ???",
+                _ip.s().cc(),
+                ip.s().cc());
+  memcpy(en, "\xff\xff\xff\xff\xff\xff", 6);
+  return false;
+}
+
 // Send a packet.
 // Decides whether to broadcast or unicast according to type.
 // Assumes the _next field already points to the next hop.
 void
-RTMDSR::send(Packet *p)
+RTMDSR::send(WritablePacket *p)
 {
-  const struct pkt *pk = (const struct pkt *) p->data();
-  struct in_addr nxt;
-  int outnum;
+  struct pkt *pk = (struct pkt *) p->data();
+
+  pk->ether_type = _et;
+  memcpy(pk->ether_shost, _en.data(), 6);
 
   u_long type = ntohl(pk->_type);
   if(type == PT_QUERY){
-    nxt.s_addr = 0xffffffff;
-    outnum = 1;
+    memcpy(pk->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
   } else if(type == PT_REPLY || type == PT_DATA){
     u_short next = ntohs(pk->_next);
-    nxt = pk->_hops[next];
-    outnum = 2;
+    struct in_addr nxt = pk->_hops[next];
+    find_arp(IPAddress(nxt), pk->ether_dhost);
   } else {
     assert(0);
     return;
   }
 
-  p->set_dst_ip_anno(nxt); // For ARP.
-  output(outnum).push(p);
+  output(1).push(p);
 }
 
 // Continue flooding a query by broadcast.
@@ -264,8 +326,7 @@ RTMDSR::forward_query(struct pkt *pk1)
   IPAddress src(pk1->_hops[0]);
   int i;
   for(i = 0; i < _seen.size(); i++){
-    if(src == _seen[i]._src &&
-       pk1->_seq == _seen[i]._seq){
+    if(src == _seen[i]._src && pk1->_seq == _seen[i]._seq){
       _seen[i]._when = time();
       return;
     }
@@ -385,6 +446,12 @@ RTMDSR::got_pkt(Packet *p_in)
                   p_in->length());
     return;
   }
+  if(pk->ether_type != _et){
+    click_chatter("DSR %s: bad ether_type %04x",
+                  _ip.s().cc(),
+                  ntohs(pk->ether_type));
+    return;
+  }
 
   u_long type = ntohl(pk->_type);
   u_short nhops = ntohs(pk->_nhops);
@@ -411,6 +478,10 @@ RTMDSR::got_pkt(Packet *p_in)
                     IPAddress(pk->_hops[next]).s().cc());
       return;
     }
+    if(next + 1 == nhops)
+      got_arp(IPAddress(pk->_qdst), pk->ether_shost);
+    else
+      got_arp(IPAddress(pk->_hops[next+1]), pk->ether_shost);
     if(next == 0){
       // I'm the ultimate consumer of this reply. Add to routing tbl.
       got_reply(pk);

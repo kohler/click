@@ -4,28 +4,40 @@
 #include <click/glue.hh>
 #include <click/timer.hh>
 #include <click/ipaddress.hh>
+#include <click/etheraddress.hh>
 #include <click/vector.hh>
 CLICK_DECLS
 
 /*
  * =c
- * RTMDSR(IP)
+ * RTMDSR(IP, ETH, ETHERTYPE)
  * =d
  * DSR-inspired ad-hoc routing protocol.
- * Data packets from higher layer into input zero, with IP Dst
- * annotation set.
- * Protocol packets into input one.
- * Output zero goes to upper layers on this host.
- * Broadcast packets out output one.
- * Unicast packets out output two.
+ * Input 0: packets from higher layer (probably IP), w/ ip addr anno.
+ * Input 1: ethernet packets.
+ * Output 0: packets for higher layer (probably IP).
+ * Output 1: ethernet packets.
  *
  * To Do:
+ * Need something like ARP to avoid broadcasting data, and to get ACKs
  * Assumes just one network interface.
  * Save the packet we're querying for, like ARP does.
  * Signal broken links &c.
- * Test multiple routes, metrics.
  * Integrate with tx count machinery.
- * =e
+=e
+kt :: KernelTun(1.0.0.1/24);
+dsr :: RTMDSR(1.0.0.1);
+fd :: FromDevice(wi0, 1);
+td :: ToDevice(wi0);
+kt -> [0]dsr;
+dsr[0] -> CheckIPHeader -> kt;
+fd -> Classifier(12/0807) -> Strip(14) -> [1]dsr;
+dsr[1]
+  -> EtherEncap(0x0807, 1:2:3:4:5:6, ff:ff:ff:ff:ff:ff)
+  -> td;
+dsr[2]
+  -> EtherEncap(0x0807, 1:2:3:4:5:6, ff:ff:ff:ff:ff:ff)
+  -> td;
  */
 
 class RTMDSR : public Element {
@@ -49,10 +61,13 @@ private:
     MaxSeen = 200,  // Max size of table of already-seen queries.
     MaxHops = 30,   // Max hop count for queries.
     QueryInterval = 10, // Don't re-query a dead dst too often.
-    QueryLife = 3;  // Forget already-seen queries this often.
+    QueryLife = 3,  // Forget already-seen queries this often.
+    ARPLife = 30;   // ARP cache timeout.
 
   Timer _timer;
-  IPAddress _ip; // Our IP address.
+  IPAddress _ip;    // My IP address.
+  EtherAddress _en; // My ethernet address.
+  uint16_t _et;     // This protocol's ethertype.
 
   enum PacketType { PT_QUERY = 0x01010101,
                     PT_REPLY = 0x02020202,
@@ -60,6 +75,10 @@ private:
 
   // Packet format.
   struct pkt {
+    uint8_t	ether_dhost[6];
+    uint8_t	ether_shost[6];
+    uint16_t	ether_type;
+
     u_long _type; // PacketType
 
     // PT_QUERY
@@ -132,8 +151,24 @@ private:
   };
   Vector<Seen> _seen;
 
+  // Poor man's ARP cache. We're layered under IP, so cannot
+  // use ordinary ARP. Just keep track of IP/ether mappings
+  // we happen to hear of.
+  class ARP {
+  public:
+    IPAddress _ip;
+    EtherAddress _en;
+    time_t _when; // When we last heard from this node.
+    ARP(IPAddress ip, EtherAddress en) {
+      _ip = ip; _en = en; _when = time();
+    }
+  };
+  Vector<ARP> _arp;
+
   int find_dst(IPAddress ip, bool create);
   Route &best_route(IPAddress);
+  bool find_arp(IPAddress ip, u_char en[6]);
+  void got_arp(IPAddress ip, u_char xen[6]);
   void got_pkt(Packet *p_in);
   void start_query(IPAddress);
   void forward_query(struct pkt *pk);
@@ -143,7 +178,7 @@ private:
   void start_data(const u_char *data, u_long len, Route &r);
   void got_data(struct pkt *pk);
   void forward_data(struct pkt *pk);
-  void send(Packet *);
+  void send(WritablePacket *);
   void forward(const struct pkt *pk1);
 };
 
