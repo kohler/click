@@ -44,4 +44,20 @@ struct click_tcp {
 #define SEQ_GT(x,y)	((int)((x)-(y)) > 0)
 #define SEQ_GEQ(x,y)	((int)((x)-(y)) >= 0)
 
+/*
+ * TCP options
+ */
+
+#define TCPOPT_EOL		0
+#define TCPOPT_NOP		1
+#define TCPOPT_MAXSEG		2
+#define TCPOLEN_MAXSEG		4
+#define TCPOPT_WSCALE		3
+#define TCPOLEN_WSCALE		3
+#define TCPOPT_SACK_PERMITTED	4
+#define TCPOLEN_SACK_PERMITTED	2
+#define TCPOPT_SACK		5
+#define TCPOPT_TIMESTAMP	8
+#define TCPOLEN_TIMESTAMP	10
+
 #endif
