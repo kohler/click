@@ -34,9 +34,10 @@ ICMPPing::clone() const
 }
 
 
-void
-ICMPPing::make_echo_response(Packet *p)
+Packet *
+ICMPPing::make_echo_response(Packet *p_in)
 {
+  WritablePacket *p = p_in->uniqueify();
   click_ether *eth_header = (click_ether *) p->data();
   click_ip *ip_header = (click_ip *) (eth_header+1);
   struct icmp_echo *icmp = (struct icmp_echo *) p->transport_header();
@@ -66,34 +67,38 @@ ICMPPing::make_echo_response(Packet *p)
   /* calculate ICMP checksum */
   icmp->icmp_cksum = in_cksum((unsigned char *)icmp, len);
 
-  int pktlen = sizeof(click_ether)+ntohs(ip_header->ip_len);
+  int pktlen = sizeof(click_ether) + ntohs(ip_header->ip_len);
   p->take(p->length()-pktlen);
+  return p;
 }
 
 
 Packet *
 ICMPPing::simple_action(Packet *p)
 {
-  click_ether *eth_header = (click_ether *) p->data();
-  click_ip *ip_header = (click_ip *) (eth_header+1);
-  struct icmp_generic *icmp = (struct icmp_generic *) (ip_header+1);
+  const click_ether *eth_header =
+    reinterpret_cast<const click_ether *>(p->data());
+  const click_ip *ip_header =
+    reinterpret_cast<const click_ip *>(eth_header + 1);
+  const icmp_generic *icmp =
+    reinterpret_cast<const icmp_generic *>(ip_header + 1);
 
-  if (ip_header->ip_p != IP_PROTO_ICMP)
-  {
+  if (ip_header->ip_p != IP_PROTO_ICMP) {
     click_chatter("icmpresponder: packet not an ICMP packet");
     p->kill();
     return 0;
   }
 
   switch (icmp->icmp_type) {
+    
    case ICMP_ECHO:
-    p = p->uniqueify();
-    make_echo_response(p);
-    return p;
+    return make_echo_response(p);
+    
    default:
     click_chatter("icmpresponder: packet not an ICMP-echo packet");
     p->kill();
     return 0;
+    
   }
 }
 

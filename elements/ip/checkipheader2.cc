@@ -81,7 +81,7 @@ CheckIPHeader2::configure(const Vector<String> &conf, ErrorHandler *errh)
 inline Packet *
 CheckIPHeader2::smaction(Packet *p)
 {
-  click_ip *ip = (click_ip *) p->data();
+  const click_ip *ip = reinterpret_cast<const click_ip *>(p->data());
   unsigned int src;
   unsigned hlen;
   

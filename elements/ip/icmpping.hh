@@ -14,17 +14,19 @@
 #include "element.hh"
 
 class ICMPPing : public Element {
-  void make_echo_response(Packet *);
+  
+  Packet *make_echo_response(Packet *);
 
-public:
+ public:
+  
   ICMPPing();
-  ~ICMPPing() {}
   
   const char *class_name() const		{ return "ICMPPing"; }
   const char *processing() const		{ return AGNOSTIC; }
   
   ICMPPing *clone() const;
   Packet *simple_action(Packet *);
+  
 };
 
 #endif

@@ -113,7 +113,7 @@ CheckIPHeader::drop_it(Packet *p)
 Packet *
 CheckIPHeader::simple_action(Packet *p)
 {
-  click_ip *ip = (click_ip *) p->data();
+  const click_ip *ip = reinterpret_cast<const click_ip *>(p->data());
   unsigned int src;
   unsigned hlen;
   

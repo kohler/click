@@ -118,7 +118,7 @@ private:
   Packet *nonunique_push(unsigned nb);
   void pull(unsigned nb);		// Get rid of initial bytes.
   WritablePacket *put(unsigned nb);	// Add bytes to end of pkt.
-  WritablePacket *take(unsigned nb);	// Delete bytes from end of pkt.
+  void take(unsigned nb);		// Delete bytes from end of pkt.
 
 #ifdef __KERNEL__
   const click_ip *ip_header() const	{ return (click_ip *)skb()->nh.iph; }
@@ -127,7 +127,7 @@ private:
   const click_ip *ip_header() const		{ return _nh_iph; }
   const unsigned char *transport_header() const	{ return _h_raw; }
 #endif
-  void set_ip_header(click_ip *, unsigned);
+  void set_ip_header(const click_ip *, unsigned);
   unsigned ip_header_offset() const;
   unsigned ip_header_length() const;
   unsigned transport_header_offset() const;
@@ -163,6 +163,7 @@ private:
   unsigned metric0_anno(int i) const	{ return anno()->p.perf.m0[i]; }
   unsigned metric1_anno(int i) const	{ return anno()->p.perf.m1[i]; }
 #endif
+  
 };
 
 
@@ -279,13 +280,13 @@ Packet::pull(unsigned int nbytes)
 }
 
 inline void
-Packet::set_ip_header(click_ip *iph, unsigned len)
+Packet::set_ip_header(const click_ip *iph, unsigned len)
 {
 #ifdef __KERNEL__
   skb()->nh.iph = (struct iphdr *)iph;
   skb()->h.raw = (unsigned char *)iph + len;
 #else
-  _nh_iph = iph;
+  _nh_iph = (click_ip *)iph;
   _h_raw = (unsigned char *)iph + len;
 #endif
 }

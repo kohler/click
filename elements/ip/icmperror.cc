@@ -196,7 +196,7 @@ ICMPError::simple_action(Packet *p)
   q = Packet::make(sizeof(click_ip) + sizeof(struct icmp_generic) + xlen);
   // guaranteed that packet data is aligned
   memset(q->data(), '\0', q->length());
-  nip = (click_ip *) q->data();
+  nip = reinterpret_cast<click_ip *>(q->data());
   nip->ip_v = IPVERSION;
   nip->ip_hl = sizeof(click_ip) >> 2;
   nip->ip_len = htons(q->length());
@@ -205,7 +205,7 @@ ICMPError::simple_action(Packet *p)
   nip->ip_ttl = 200;
   nip->ip_src = _src_ip.in_addr();
   nip->ip_dst = ipp->ip_src;
-  nip->ip_sum = in_cksum((unsigned char *) nip, sizeof(click_ip));
+  nip->ip_sum = in_cksum((unsigned char *)nip, sizeof(click_ip));
 
   icp = (struct icmp_generic *) (nip + 1);
   icp->icmp_type = _type;

@@ -152,7 +152,8 @@ IPFragmenter::fragment(Packet *p)
   }
 
   // XXX alignment???
-  WritablePacket *q = p->take(p->length() - (hlen + len));
+  WritablePacket *q = p->uniqueify();
+  q->take(q->length() - (hlen + len));
   click_ip *qip = reinterpret_cast<click_ip *>(q->data());
   qip->ip_len = htons(hlen + len);
   qip->ip_off = htons(ipoff | IP_MF);

@@ -33,7 +33,6 @@ CheckCRC32::~CheckCRC32()
 Packet *
 CheckCRC32::simple_action(Packet *p)
 {
-  Packet *q = 0;
   unsigned int crc;
 
   int len = p->length();
@@ -47,16 +46,15 @@ CheckCRC32::simple_action(Packet *p)
   if(pcrc != crc)
     goto drop;
 
-  q = p->take(4);
-  
-  return(q);
+  p->take(4);
+  return p;
 
  drop:
   click_chatter("CRC32 failed, len %d",
               p->length());
   p->kill();
   _drops++;
-  return(0);
+  return 0;
 }
 
 

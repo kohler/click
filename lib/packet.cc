@@ -227,20 +227,16 @@ Packet::put(unsigned int nbytes)
   }
 }
 
-WritablePacket *
+void
 Packet::take(unsigned int nbytes)
 {
   if (nbytes <= length()) {
-    WritablePacket *p = uniqueify();
 #ifdef __KERNEL__
     skb()->tail -= nbytes;
     skb()->len -= nbytes;
 #else
-    p->_tail -= nbytes;
+    _tail -= nbytes;
 #endif    
-    return p;
-  } else {
+  } else
     click_chatter("Packet::take oops");
-    return 0;
-  }
 }
