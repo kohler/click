@@ -11,9 +11,9 @@ with the network. See the end of this document for portability notes for
 other architectures.
 
 The Linux kernel module requires a patched Linux 2.2 system. We provide
-tested patches for Linux 2.2.18, 2.2.19, and 2.2.20. We also distribute a
-Linux 2.4 patch, which we are working on, but as of now, Linux 2.4 support
-is not as stable as Linux 2.2 support.
+patches for Linux 2.2.18 through 2.2.21. We also distribute a Linux 2.4
+patch, which we are working on, but as of now, Linux 2.4 support is not as
+stable as Linux 2.2 support.
 
 Finally, the preliminary FreeBSD Click kernel module compiles against
 unpatched FreeBSD-STABLE versions after 440002.
@@ -92,7 +92,7 @@ and running Linux kernels.
     www.kernel.org. Unpack this distribution into /usr/src/linux. (Save the
     old kernel source tree, if you had one.)
 
-    We supply patches for Linux 2.2.18, 2.2.19, 2.2.20, and a
+    We supply patches for Linux 2.2.18 through 2.2.21, and a
     preliminary patch for Linux 2.4.9.
 
  3. Install the Click Linux kernel patch:
@@ -101,7 +101,7 @@ and running Linux kernels.
 	patch -p0 -b < CLICKDIR/etc/linux-VERSION-patch
 
     VERSION is generally the kernel version you chose, but for Linux
-    2.2.20, use `linux-2.2.19-patch'.
+    2.2.20 or 2.2.21, use `linux-2.2.19-patch'.
 
     The patch fixes syntax errors in several header files (the C++ compiler
     doesn't accept them), adds several new functions, and changes the
@@ -114,7 +114,7 @@ and running Linux kernels.
     configuration, or you can do the usual `make menuconfig'.
 
  5. If your archived, working kernel has the same version number as the
-    patched kernel (they're both 2.2.20, for example), then it is a good
+    patched kernel (they're both 2.2.21, for example), then it is a good
     idea to change the patched kernel's `EXTRAVERSION'. This way, the
     modules for the new kernel won't overwrite the old, working modules.
     Edit /usr/src/linux/Makefile and change the line `EXTRAVERSION =' to

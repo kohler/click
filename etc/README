@@ -1,0 +1,12 @@
+Use the patches in this directory as follows:
+
+For this version of Linux	Use this patch
+2.2.18				linux-2.2.18-patch
+2.2.19				linux-2.2.19-patch
+2.2.20				linux-2.2.19-patch
+2.2.21				linux-2.2.19-patch
+2.4.9				linux-2.4.9-patch
+
+Patch Linux using a command like this:
+% cd LINUXDIR
+% patch -p0 < CLICKDIR/etc/linux-VERSION-patch
