@@ -157,6 +157,7 @@ FastUDPSource::pull(int)
   }
 
   if(p){
+assert(_skb->users > 1);
     _count++;
     if(_count == 1)
       _first = click_jiffies();
