@@ -41,8 +41,8 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-OBJS = click-install.o
-UN_OBJS = click-uninstall.o
+OBJS = common.o click-install.o
+UN_OBJS = common.o click-uninstall.o
 
 CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_TOOL
 CFLAGS = @CFLAGS@

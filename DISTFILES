@@ -347,6 +347,8 @@ tools/click-flatten/click-flatten.cc
 
 tools/click-install
 tools/click-install/Makefile.in
+tools/click-install/common.cc
+tools/click-install/common.hh
 tools/click-install/click-install.cc
 tools/click-install/click-uninstall.cc
 

@@ -4,6 +4,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -17,8 +18,8 @@
  */
 
 #include <click/config.h>
-#include <click/pathvars.h>
 
+#include "common.hh"
 #include "routert.hh"
 #include "lexert.hh"
 #include <click/error.hh>
@@ -34,6 +35,10 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#if FOR_BSDMODULE
+# include <sys/param.h>
+# include <sys/mount.h>
+#endif
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -55,18 +60,26 @@ static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "hot-swap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
+  { "hotswap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
+#if FOR_LINUXMODULE
   { "map", 'm', MAP_OPT, 0, 0 },
   { "priority", 'n', PRIORITY_OPT, Clp_ArgInt, 0 },
   { "private", 'p', PRIVATE_OPT, 0, Clp_Negate },
   { "threads", 't', THREADS_OPT, Clp_ArgUnsigned, 0 },
+#endif
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
   { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, Clp_Negate },
 };
 
 static const char *program_name;
-static bool verbose;
+#if FOR_LINUXMODULE 
 static bool output_map;
+#endif
+
+static String::Initializer string_initializer;
+static String tmpdir;
+static String click_compile_prog;
 
 void
 short_usage()
@@ -80,59 +93,63 @@ void
 usage()
 {
   printf("\
-`Click-install' installs a Click configuration into the current Linux kernel.\n\
+`Click-install' installs a kernel Click configuration. It loads the Click\n\
+kernel module, and any other necessary modules, as required.\n\
 \n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE          Read router configuration from FILE.\n\
   -h, --hot-swap           Hot-swap install new configuration.\n\
-  -u, --uninstall          Uninstall Click from kernel, then reinstall.\n\
+  -u, --uninstall          Uninstall Click from kernel, then reinstall.\n",
+	 program_name);
+#if FOR_LINUXMODULE
+  printf("\
   -m, --map                Print load map to the standard output.\n\
   -n, --priority N         Set kernel thread priority to N (lower is better).\n\
   -p, --private            Make /proc/click readable only by root.\n\
-  -t, --threads N          Use N threads (multithreaded Click only).\n\
+  -t, --threads N          Use N threads (multithreaded Click only).\n");
+#endif
+  printf("\
   -V, --verbose            Print information about files installed.\n\
   -C, --clickpath PATH     Use PATH for CLICKPATH.\n\
       --help               Print this message and exit.\n\
   -v, --version            Print version number and exit.\n\
 \n\
-Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
+Report bugs to <click@pdos.lcs.mit.edu>.\n");
 }
 
-static bool
-prepare_compile_tmpdir(RouterT *r, String &tmpdir, String &compile_prog,
-		       ErrorHandler *errh)
+static void
+prepare_tmpdir(RouterT *r, ErrorHandler *errh)
 {
   ContextErrorHandler cerrh(errh, "While preparing to compile packages:");
+  BailErrorHandler berrh(&cerrh);
   
   // change to temporary directory
-  tmpdir = click_mktmpdir(&cerrh);
-  if (!tmpdir)
-    return false;
+  tmpdir = click_mktmpdir(&berrh);
+  assert(tmpdir);
   if (chdir(tmpdir.cc()) < 0)
-    cerrh.fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
+    berrh.fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
 
   // find compile program
-  compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, &cerrh);
-  if (!compile_prog)
-    return false;
+  click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, &cerrh);
+  assert(click_compile_prog);
 
   // look for .hh files
-  const Vector<ArchiveElement> &archive = r->archive();  
-  for (int i = 0; i < archive.size(); i++)
-    if (archive[i].name.substring(-3) == ".hh") {
-      String filename = archive[i].name;
-      FILE *f = fopen(filename, "w");
-      if (!f)
-	cerrh.warning("%s: %s", filename.cc(), strerror(errno));
-      else {
-	fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
-	fclose(f);
+  if (r) {
+    const Vector<ArchiveElement> &archive = r->archive();  
+    for (int i = 0; i < archive.size(); i++)
+      if (archive[i].name.substring(-3) == ".hh") {
+	String filename = archive[i].name;
+	FILE *f = fopen(filename, "w");
+	if (!f)
+	  cerrh.warning("%s: %s", filename.cc(), strerror(errno));
+	else {
+	  fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
+	  fclose(f);
+	}
       }
-    }
-
-  return true;
+  }
 }
 
 static void
@@ -140,33 +157,28 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
 {
   Vector<String> requirements = r->requirements();
 
-  String tmpdir;
-  String click_compile_prog;
-  
   // go over requirements
   for (int i = 0; i < requirements.size(); i++) {
     const String &req = requirements[i];
 
-    // skip if already have .ko
-    if (r->archive_index(req + ".ko") >= 0)
+    // skip if already have object file
+    if (r->archive_index(req + OBJSUFFIX) >= 0)
       continue;
 
-    // look for .k.cc or .cc
-    int source_ae = r->archive_index(req + ".k.cc");
+    // look for source file, prepare temporary directory
+    int source_ae = r->archive_index(req + CXXSUFFIX);
     if (source_ae < 0)
       source_ae = r->archive_index(req + ".cc");
     if (source_ae < 0)
       continue;
+    if (!tmpdir)
+      prepare_tmpdir(r, errh);
 
     // found source file, so compile it
     ArchiveElement ae = r->archive(source_ae);
-    if (!click_compile_prog)
-      if (!prepare_compile_tmpdir(r, tmpdir, click_compile_prog, errh))
-	exit(1);
-
     errh->message("Compiling package %s from config archive", ae.name.cc());
     ContextErrorHandler cerrh
-      (errh, "While compiling package `" + req + ".ko':");
+      (errh, "While compiling package `" + req + OBJSUFFIX "':");
 
     // write .cc file
     String filename = req + ".cc";
@@ -178,7 +190,7 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
     fclose(f);
     
     // run click-compile
-    String compile_command = click_compile_prog + " --target=kernel --package=" + req + ".ko " + filename;
+    String compile_command = click_compile_prog + " --target=" COMPILETARGET " --package=" + req + OBJSUFFIX " " + filename;
     int compile_retval = system(compile_command.cc());
     if (compile_retval == 127)
       cerrh.fatal("could not run `%s'", compile_command.cc());
@@ -188,10 +200,33 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
       cerrh.fatal("`%s' failed", compile_command.cc());
     
     // grab object file and add to archive
-    ArchiveElement obj_ae = init_archive_element(req + ".ko", 0600);
-    obj_ae.data = file_string(req + ".ko", &cerrh);
+    ArchiveElement obj_ae = init_archive_element(req + OBJSUFFIX, 0600);
+    obj_ae.data = file_string(req + OBJSUFFIX, &cerrh);
     r->add_archive(obj_ae);
   }
+}
+
+static void
+install_module(const String &filename, const String &options,
+	       ErrorHandler *errh)
+{
+#if FOR_LINUXMODULE
+  String cmdline = "/sbin/insmod ";
+  if (output_map)
+    cmdline += "-m ";
+  cmdline += filename;
+  if (options)
+    cmdline += " " + options;
+  int retval = system(cmdline.cc());
+  if (retval != 0)
+    errh->fatal("`%s' failed", cmdline.cc());
+#else
+  String cmdline = "/sbin/kldload " + filename;
+  assert(!options);
+  int retval = system(cmdline.cc());
+  if (retval != 0)
+    errh->fatal("`%s' failed", cmdline.cc());
+#endif
 }
 
 static void
@@ -209,138 +244,66 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
     String req = requirements[i];
 
     // look for object in archive
-    int obj_aei = r->archive_index(req + ".ko");
+    int obj_aei = r->archive_index(req + OBJSUFFIX);
     if (obj_aei >= 0) {
       // install archived objects. mark them with leading underscores.
       // may require renaming to avoid clashes in `insmod'
       
       // choose module name
-      String insmod_name = "_" + req;
+      String insmod_name = "_" + req + OBJSUFFIX;
       while (active_modules[insmod_name] >= 0)
 	insmod_name = "_" + insmod_name;
 
       if (verbose)
-	errh->message("Installing package %s (%s.ko from config archive)", insmod_name.cc(), req.cc());
-	
+	errh->message("Installing package %s (%s" OBJSUFFIX " from config archive)", insmod_name.cc(), req.cc());
+      
       // install module
+      if (!tmpdir)
+	prepare_tmpdir(0, errh);
       const ArchiveElement &ae = r->archive(obj_aei);
-      String tmpnam = unique_tmpnam("x*.o", errh);
-      if (!tmpnam) exit(1);
+      String tmpnam = tmpdir + insmod_name;
       FILE *f = fopen(tmpnam.cc(), "w");
+      if (!f)
+	errh->fatal("%s: %s", tmpnam.cc(), strerror(errno));
       fwrite(ae.data.data(), 1, ae.data.length(), f);
       fclose(f);
-      String cmdline = "/sbin/insmod ";
-      if (output_map)
-	cmdline += "-m ";
-      cmdline += "-o " + insmod_name + " " + tmpnam;
-      int retval = system(cmdline);
-      if (retval != 0)
-	errh->fatal("`insmod %s' failed", req.cc());
 
+      install_module(tmpnam, String(), errh);
+      
       // cleanup
       packages.insert(req, 1);
       active_modules.insert(insmod_name, 1);
       
     } else if (packages[req] < 0) {
       // install required package from CLICKPATH
-      String fn = clickpath_find_file(req + ".ko", "lib", CLICK_LIBDIR);
-      if (!fn)
-	fn = clickpath_find_file(req + ".o", "lib", CLICK_LIBDIR);
-      if (!fn)
-	errh->fatal("cannot find required package `%s.ko'\nin CLICKPATH or `%s'", req.cc(), CLICK_LIBDIR);
+      String filename = req + OBJSUFFIX;
+      String pathname = clickpath_find_file(filename, "lib", CLICK_LIBDIR);
+      if (!pathname) {
+	filename = req + ".o";
+	pathname = clickpath_find_file(filename, "lib", CLICK_LIBDIR);
+	if (!pathname)
+	  errh->fatal("cannot find required package `%s" OBJSUFFIX "'\nin CLICKPATH or `%s'", req.cc(), CLICK_LIBDIR);
+      }
 
       // install module
       if (verbose)
-	errh->message("Installing package %s (%s)", req.cc(), fn.cc());
-      String cmdline = "/sbin/insmod ";
-      if (output_map)
-	cmdline += "-m ";
-      cmdline += fn;
-      int retval = system(cmdline);
-      if (retval != 0)
-	errh->fatal("`insmod %s' failed: %s", fn.cc(), strerror(errno));
-      active_modules.insert(req, 1);
+	errh->message("Installing package %s (%s)", req.cc(), pathname.cc());
+
+      install_module(pathname, String(), errh);
+
+      packages.insert(req, 1);
+      active_modules.insert(filename, 1);
+      
+    } else {
+      // package already loaded; note in 'active_modules' that we still need
+      // it
+      String filename = req + OBJSUFFIX;
+      if (active_modules[filename] < 0)
+	filename = req + ".o";
+      if (active_modules[filename] == 0)
+	active_modules.insert(filename, 1);
     }
   }
-}
-
-static bool
-read_package_file(String filename, StringMap &packages, ErrorHandler *errh)
-{
-  if (!errh && access(filename.cc(), F_OK) < 0)
-    return false;
-  String text = file_string(filename, errh);
-  const char *s = text.data();
-  int pos = 0;
-  int len = text.length();
-  while (pos < len) {
-    int start = pos;
-    while (pos < len && !isspace(s[pos]))
-      pos++;
-    packages.insert(text.substring(start, pos - start), 0);
-    pos = text.find_left('\n', pos) + 1;
-  }
-  return (bool)text;
-}
-
-static String
-packages_to_remove(const StringMap &active_modules, const StringMap &packages)
-{
-  // remove extra packages
-  String to_remove;
-  // go over all modules; figure out which ones are Click packages
-  // by checking `packages' array; mark old Click packages for removal
-  for (StringMap::Iterator iter = active_modules.first(); iter; iter++)
-    // only remove packages that weren't used in this configuration.
-    // packages used in this configuration have value > 0
-    if (iter.value() == 0) {
-      String key = iter.key();
-      if (packages[key] >= 0)
-	to_remove += " " + key;
-      else {
-	// check for removing an old archive package;
-	// they are identified by a leading underscore.
-	int p;
-	for (p = 0; p < key.length() && key[p] == '_'; p++)
-	  /* nada */;
-	String s = key.substring(p);
-	if (s && packages[s] >= 0)
-	  to_remove += " " + key;
-	else if (key.length() > 3 && key.substring(key.length() - 3) == ".ko") {
-	  // check for .ko packages
-	  s = key.substring(0, key.length() - 3);
-	  if (s && packages[s] >= 0)
-	    to_remove += " " + key;
-	}
-      }
-    }
-  return to_remove;
-}
-
-static void
-kill_current_configuration(ErrorHandler *errh)
-{
-  if (verbose)
-    errh->message("Writing blank configuration to /proc/click/config");
-  FILE *f = fopen("/proc/click/config", "w");
-  if (!f)
-    errh->fatal("cannot uninstall configuration: %s", strerror(errno));
-  fputs("// nothing\n", f);
-  fclose(f);
-
-  // wait for thread to die
-  if (verbose)
-    errh->message("Waiting for Click threads to die");
-  for (int wait = 0; wait < 6; wait++) {
-    String s = file_string("/proc/click/threads");
-    if (!s || s == "0\n")
-      return;
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 100000;
-    select(0, 0, 0, 0, &tv);
-  }
-  errh->error("failed to kill current Click configuration");
 }
 
 int
@@ -364,7 +327,9 @@ main(int argc, char **argv)
   bool hotswap = false;
   bool accessible = true;
   int priority = -100;
+#if FOR_LINUXMODULE
   output_map = false;
+#endif
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -380,6 +345,7 @@ main(int argc, char **argv)
       printf("Click packages in %s, binaries in %s\n", CLICK_LIBDIR, CLICK_BINDIR);
       printf("Copyright (c) 1999-2000 Massachusetts Institute of Technology\n\
 Copyright (c) 2000 Mazu Networks, Inc.\n\
+Copyright (c) 2002 International Computer Science Institute\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -398,7 +364,8 @@ particular purpose.\n");
       }
       router_file = clp->arg;
       break;
-     
+
+#if FOR_LINUXMODULE
      case THREADS_OPT:
       threads = clp->val.u;
       if (threads < 1) {
@@ -415,16 +382,17 @@ particular purpose.\n");
       priority = clp->val.i;
       break;
 
+     case MAP_OPT:
+      output_map = !clp->negated;
+      break;
+#endif
+
      case UNINSTALL_OPT:
       uninstall = !clp->negated;
       break;
 
      case HOTSWAP_OPT:
       hotswap = !clp->negated;
-      break;
-
-     case MAP_OPT:
-      output_map = !clp->negated;
       break;
 
      case VERBOSE_OPT:
@@ -454,77 +422,82 @@ particular purpose.\n");
   if (!r || errh->nerrors() > 0)
     exit(1);
 
-  // uninstall Click if requested
-  if (uninstall && access("/proc/click/version", F_OK) >= 0) {
-    // install blank configuration
-    kill_current_configuration(errh);
-    // find current packages
-    HashMap<String, int> active_modules(-1);
-    HashMap<String, int> packages(-1);
-    read_package_file("/proc/modules", active_modules, errh);
-    read_package_file("/proc/click/packages", packages, errh);
-    // remove packages
-    String to_remove = packages_to_remove(active_modules, packages);
-    if (to_remove) {
-      if (verbose)
-	errh->message("Removing packages:%s", to_remove.cc());
-      String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
-      (void) system(cmdline);
-    }
-    if (verbose)
-      errh->message("Removing Click module");
-    (void) system("/sbin/rmmod click");
-
-    // see if we successfully removed it
-    if (access("/proc/click/version", F_OK) >= 0)
-      errh->warning("could not uninstall Click module");
-  }
+  // pathnames of important Click files
+  String clickfs_config = clickfs_prefix + String("/config");
+  String clickfs_hotconfig = clickfs_prefix + String("/hotconfig");
+  String clickfs_errors = clickfs_prefix + String("/errors");
+  String clickfs_packages = clickfs_prefix + String("/packages");
+  String clickfs_priority = clickfs_prefix + String("/priority");
   
-  // check for Click module; install it if not available
-  if (access("/proc/click/version", F_OK) < 0) {
+  // uninstall Click if requested
+  if (uninstall)
+    unload_click(errh);
+  
+  // install Click module if required
+  if (access(clickfs_prefix, F_OK) < 0) {
+    // find loadable module 
+#if FOR_LINUXMODULE
     String click_o =
       clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
+#elif FOR_BSDMODULE
+    String click_o =
+      clickpath_find_file("click.ko", "lib", CLICK_LIBDIR, errh);
+#endif
     if (verbose)
       errh->message("Installing Click module (%s)", click_o.cc());
-    String cmdline = "/sbin/insmod ";
-    if (output_map)
-      cmdline += "-m ";
-    cmdline += click_o;
-    if (threads > 1) {
-      cmdline += " threads=";
-      cmdline += String(threads);
-    }
+
+    // install it in the kernel
+#if FOR_LINUXMODULE
+    String options;
+    if (threads > 1)
+      options += "threads=" + String(threads);
     if (!accessible)
-      cmdline += " accessible=0";
-    (void) system(cmdline);
-    if (access("/proc/click/version", F_OK) < 0)
+      options += " accessible=0";
+    install_module(click_o, options, errh);
+#elif FOR_BSDMODULE
+    install_module(click_o, String(), errh);
+#endif
+
+#if FOR_BSDMODULE
+    // mount Click file system
+    int mount_retval = mount("click", clickfs_prefix, 0, 0);
+    if (mount_retval < 0)
+      errh->fatal("cannot mount %s: %s", clickfs_prefix, strerror(errno));
+#endif
+
+    // check that all is well
+    if (access(clickfs_prefix, F_OK) < 0)
       errh->fatal("cannot install Click module");
-  } else if (threads > 1)
-      errh->warning("Click module already installed, `--threads' option ignored");
+  } else {
+#if FOR_LINUXMODULE
+    if (threads > 1)
+      errh->warning("Click module already installed, `--threads' ignored");
+#endif
+  }
 
   // find current packages
   HashMap<String, int> active_modules(-1);
   HashMap<String, int> packages(-1);
-  read_package_file("/proc/modules", active_modules, errh);
-  read_package_file("/proc/click/packages", packages, errh);
+  read_active_modules(active_modules, errh);
+  read_package_file(clickfs_packages, packages, errh);
 
   // install required packages
   install_required_packages(r, packages, active_modules, errh);
 
   // set priority
   if (priority > -100) {
-    FILE *f = fopen("/proc/click/priority", "w");
+    FILE *f = fopen(clickfs_priority.cc(), "w");
     if (!f)
-      errh->fatal("cannot open /proc/click/priority: %s", strerror(errno));
+      errh->fatal("%s: %s", clickfs_priority.cc(), strerror(errno));
     fprintf(f, "%d\n", priority);
     fclose(f);
   }
 
   // write flattened configuration to /proc/click/config
-  const char *config_place = (hotswap ? "/proc/click/hotconfig" : "/proc/click/config");
+  String config_place = (hotswap ? clickfs_hotconfig : clickfs_config);
   if (verbose)
-    errh->message("Writing configuration to %s", config_place);
-  FILE *f = fopen(config_place, "w");
+    errh->message("Writing configuration to %s", config_place.cc());
+  FILE *f = fopen(config_place.cc(), "w");
   if (!f)
     errh->fatal("cannot install configuration: %s", strerror(errno));
   // XXX include packages?
@@ -535,9 +508,9 @@ particular purpose.\n");
   // report errors
   {
     char buf[1024];
-    int fd = open("/proc/click/errors", O_RDONLY | O_NONBLOCK);
+    int fd = open(clickfs_errors.cc(), O_RDONLY | O_NONBLOCK);
     if (fd < 0)
-      errh->warning("/proc/click/errors: %s", strerror(errno));
+      errh->warning("%s: %s", clickfs_errors.cc(), strerror(errno));
     else {
       if (verbose)
 	errh->message("Waiting for errors");
@@ -545,7 +518,7 @@ particular purpose.\n");
       struct stat s;
       while (1) {
 	if (fstat(fd, &s) < 0) { // find length of errors file
-	  errh->error("/proc/click/errors: %s", strerror(errno));
+	  errh->error("%s: %s", clickfs_errors.cc(), strerror(errno));
 	  break;
 	}
 	if (pos >= s.st_size)
@@ -558,7 +531,7 @@ particular purpose.\n");
 	  fwrite(buf, 1, got, stderr);
 	  pos += got;
 	} else if (errno != EINTR && errno != EAGAIN) {
-	  errh->error("/proc/click/errors: %s", strerror(errno));
+	  errh->error("%s: %s", clickfs_errors.cc(), strerror(errno));
 	  break;
 	}
       }
@@ -567,15 +540,7 @@ particular purpose.\n");
   }
 
   // remove unused packages
-  {
-    String to_remove = packages_to_remove(active_modules, packages);
-    if (to_remove) {
-      if (verbose)
-	errh->message("Removing old packages:%s", to_remove.cc());
-      String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
-      (void) system(cmdline);
-    }
-  }
+  remove_unneeded_packages(active_modules, packages, errh);
   
   if (verbose)
     errh->message("Done");
