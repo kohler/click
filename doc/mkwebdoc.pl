@@ -199,10 +199,10 @@ sub element_li ($) {
     push @x, "D" if $edeprecated{$e};
     if ($ereq{$e}) {
 	my($r) = $ereq{$e};
-	push @x, "U</b>" if $r =~ /\buserlevel\b/;
-	push @x, "L</b>" if $r =~ /\blinuxmodule\b/;
-	push @x, "B</b>" if $r =~ /\bbsdmodule\b/;
-	push @x, "Ns</b>" if $r =~ /\bns\b/;
+	push @x, "U" if $r =~ /\buserlevel\b/;
+	push @x, "L" if $r =~ /\blinuxmodule\b/;
+	push @x, "B" if $r =~ /\bbsdmodule\b/;
+	push @x, "Ns" if $r =~ /\bns\b/;
     }
     $t .= " <small>[" . join('&nbsp;', @x) . "]</small>" if @x;
     "$t</li>\n";
