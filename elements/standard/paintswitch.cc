@@ -59,8 +59,16 @@ PaintSwitch::configuration(Vector<String> &) const
 void
 PaintSwitch::push(int, Packet *p)
 {
-  int output = static_cast<int>(PAINT_ANNO(p));
-  checked_output_push(output, p);
+  int output_port = static_cast<int>(PAINT_ANNO(p));
+  if (output_port != 0xFF) 
+    checked_output_push(output_port, p);
+  else { // duplicate to all output ports
+    int n = noutputs();
+    for (int i = 0; i < n - 1; i++) 
+      if (Packet *q = p->clone())
+	output(i).push(q);
+    output(n - 1).push(p);
+  }
 }
 
 
