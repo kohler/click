@@ -1,3 +1,13 @@
+2003-01-29 Wednesday 23:50  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/: ipfilter.cc (1.34), ipfilter.hh (1.21):
+	IPFilter(deny) semantic change: now it means drop, not "1 or drop"
+
+2003-01-29 Wednesday 23:12  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/: fromdevice.cc (1.46), fromdevice.hh (1.25):
+	FromDevice.u: add OUTBOUND keyword
+
 2003-01-29 Wednesday 18:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: kerneltap.cc (1.34), kerneltap.hh (1.13):
