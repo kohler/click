@@ -173,7 +173,7 @@ install-man: always
 	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$(DRIVERS)" -r $(package) | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -f -
 
 clean:
-	-rm -f *.d *.kd *.ud *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf elementmap.$(package) conftest.[12]
+	-rm -f *.d *.kd *.ud *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf elementmap.$(package) conftest.*
 distclean: clean
 	-rm -f Makefile config.h config.status config.cache config.log 
 
