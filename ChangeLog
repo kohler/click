@@ -1,3 +1,19 @@
+2002-03-28 Thursday 02:20  Eddie Kohler <kohler@aciri.org>
+
+	* etc/libclick/: DISTFILES (1.10), lc-configure.in (1.17):
+	config-bsdmodule.h and config-linuxmodule.h are useless for
+	libclick
+
+2002-03-28 Thursday 02:20  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdump.cc (1.62): more alignment fixes in
+	FromDump
+
+2002-03-28 Thursday 02:19  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdevice.cc (1.39): handle unknown
+	FromDevice types in FromDevice::kernel_drops()
+
 2002-03-28 Thursday 00:09  Eddie Kohler <kohler@aciri.org>
 
 	* elements/: analysis/fromdagdump.cc (1.4), userlevel/fromdump.cc

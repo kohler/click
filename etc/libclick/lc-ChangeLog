@@ -1,3 +1,8 @@
+2002-03-28 Thursday 02:20  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in: config-bsdmodule.h and config-linuxmodule.h are
+	useless for libclick
+
 2002-03-28 Thursday 00:08  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/userutils.cc, include/click/userutils.hh,
@@ -7,11 +12,6 @@
 2002-03-27 Wednesday 23:06  Eddie Kohler <kohler@aciri.org>
 
 	* README: add elements/test directory, for testing elements
-
-2002-03-27 Wednesday 23:04  Eddie Kohler <kohler@aciri.org>
-
-	* config-linuxmodule.h.in: define uintptr_t in linuxmodule
-	(<linux/types.h> doesn't define it
 
 2002-03-26 Tuesday 20:50  Eddie Kohler <kohler@aciri.org>
 
@@ -66,9 +66,8 @@
 
 2002-03-06 Wednesday 21:06  Eddie Kohler <kohler@aciri.org>
 
-	* config-bsdmodule.h.in, config-linuxmodule.h.in, pathvars.h.in:
-	HAVE_BSDMODULE_DRIVER and HAVE_LINUXMODULE_DRIVER moved to
-	pathvars.h
+	* pathvars.h.in: HAVE_BSDMODULE_DRIVER and HAVE_LINUXMODULE_DRIVER
+	moved to pathvars.h
 
 2002-03-06 Wednesday 21:06  Eddie Kohler <kohler@aciri.org>
 
@@ -94,8 +93,7 @@
 
 2002-03-05 Tuesday 19:27  Eddie Kohler <kohler@aciri.org>
 
-	* config-bsdmodule.h.in, config-linuxmodule.h.in,
-	config-userlevel.h.in: config.h is responsible for defining the
+	* config-userlevel.h.in: config.h is responsible for defining the
 	assert macro
 
 2002-03-05 Tuesday 19:25  Eddie Kohler <kohler@aciri.org>
@@ -156,12 +154,6 @@
 	* libsrc-Makefile.in, include/click/integers.hh,
 	include/click/integers.hh, libsrc/integers.cc: add first_bit_set
 	method to integers.hh
-
-2002-02-14 Thursday 16:30  Eddie Kohler <kohler@aciri.org>
-
-	* config-bsdmodule.h.in, config-linuxmodule.h.in: restore
-	HAVE_BSDMODULE_TARGET and HAVE_LINUXMODULE_TARGET symbols; packages
-	use them
 
 2002-02-13 Wednesday 17:52  Eddie Kohler <kohler@aciri.org>
 
@@ -365,10 +357,9 @@
 
 2001-12-05 Wednesday 14:04  Eddie Kohler <kohler@aciri.org>
 
-	* config-bsdmodule.h.in, config-linuxmodule.h.in, libsrc/glue.cc:
-	In linuxmodule and bsdmodule, use "operator new() throw ()". This
-	tells GCC that new might return null, so don't optimize away the
-	check. Noticed by Gordon Lee at Mazu
+	* libsrc/glue.cc: In linuxmodule and bsdmodule, use "operator new()
+	throw ()". This tells GCC that new might return null, so don't
+	optimize away the check. Noticed by Gordon Lee at Mazu
 
 2001-12-04 Tuesday 22:50  Eddie Kohler <kohler@aciri.org>
 
@@ -489,10 +480,6 @@
 2001-12-01 Saturday 22:01  Eddie Kohler <kohler@aciri.org>
 
 	* click-compile.in: nitlets
-
-2001-12-01 Saturday 15:53  Eddie Kohler <kohler@aciri.org>
-
-	* config-bsdmodule.h.in: fix from Luigi Rizzo
 
 2001-11-29 Thursday 04:12  Eddie Kohler <kohler@aciri.org>
 
@@ -708,8 +695,7 @@
 
 2001-10-15 Monday 14:54  Eddie Kohler <kohler@aciri.org>
 
-	* acclick.m4, config-bsdmodule.h.in, config.h.in,
-	config-linuxmodule.h.in, config-userlevel.h.in, Makefile.in,
+	* acclick.m4, config.h.in, config-userlevel.h.in, Makefile.in,
 	configure.in, libsrc/error.cc: split config.h into config.h,
 	config-bsdmodule.h, config-linuxmodule.h, and config-userlevel.h.
 	Also change the names of a couple symbols, and add the "int64"
