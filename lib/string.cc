@@ -92,12 +92,20 @@ String::String(unsigned long u)
   assign(buf, -1);
 }
 
-String::String(unsigned long long u)
+// Implemented a lovely [unsigned] long long converter in StringAccum
+// (use the code even at user level to hunt out bugs)
+
+String::String(long long q)
 {
   StringAccum sa;
-  // Implemented a lovely unsigned long long converter in StringAccum
-  // (use the code even at user level to hunt out bugs)
-  sa << u;
+  sa << q;
+  assign(sa.data(), sa.length());
+}
+
+String::String(unsigned long long q)
+{
+  StringAccum sa;
+  sa << q;
   assign(sa.data(), sa.length());
 }
 

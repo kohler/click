@@ -27,6 +27,7 @@ class String { public:
   explicit String(unsigned);
   explicit String(long);
   explicit String(unsigned long);
+  explicit String(long long);
   explicit String(unsigned long long);
 #ifndef __KERNEL__
   explicit String(double);
