@@ -144,8 +144,10 @@ RED::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 		    "STABILITY", cpUnsigned, "stability shift", &stability,
 		    0) < 0)
 	return -1;
-    if (queues_string)
-	errh->warning("QUEUES argument ignored");
+    // XXX This warning is a pain in the ass for "max_p" write handlers, so
+    // it's commented out.
+    //if (queues_string)
+    //    errh->warning("QUEUES argument ignored");
     return finish_configure(min_thresh, max_thresh, max_p, stability, String(), errh);
 }
 
