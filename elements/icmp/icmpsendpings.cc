@@ -27,7 +27,7 @@
 CLICK_DECLS
 
 ICMPSendPings::ICMPSendPings()
-  : _timer(this)
+  : _timer(this), _limit(-1)
 {
   MOD_INC_USE_COUNT;
   add_output();
@@ -47,7 +47,6 @@ ICMPSendPings::clone() const
 int
 ICMPSendPings::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _ip_id = 1;
   _icmp_id = 0;
   _interval = 1000;
   _data = String();
@@ -57,7 +56,9 @@ ICMPSendPings::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "INTERVAL", cpSecondsAsMilli, "time between pings (s)", &_interval,
 		  "IDENTIFIER", cpUnsignedShort, "ICMP echo identifier", &_icmp_id,
-		  "DATA", cpString, "payload", &_data, 0) < 0)
+		  "DATA", cpString, "payload", &_data,
+		  "LIMIT", cpInteger, "total packet count", &_limit,
+		  cpEnd) < 0)
     return -1;
   if (_interval == 0)
     errh->warning("INTERVAL so small that it is zero");
@@ -67,8 +68,10 @@ ICMPSendPings::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 ICMPSendPings::initialize(ErrorHandler *)
 {
+  _count = 0;
   _timer.initialize(this);
-  _timer.schedule_after_ms(_interval);
+  if (_limit != 0)
+    _timer.schedule_after_ms(_interval);
   return 0;
 }
 
@@ -83,7 +86,8 @@ ICMPSendPings::run_timer()
   nip->ip_v = 4;
   nip->ip_hl = sizeof(click_ip) >> 2;
   nip->ip_len = htons(q->length());
-  nip->ip_id = htons(_ip_id);
+  uint16_t ip_id = (_count % 0xFFFF) + 1; // ensure ip_id != 0
+  nip->ip_id = htons(ip_id);
   nip->ip_p = IP_PROTO_ICMP; /* icmp */
   nip->ip_ttl = 200;
   nip->ip_src = _src;
@@ -95,10 +99,10 @@ ICMPSendPings::run_timer()
   icp->icmp_code = 0;
 #ifdef __linux__
   icp->icmp_identifier = _icmp_id;
-  icp->icmp_sequence = _ip_id;
+  icp->icmp_sequence = ip_id;
 #else
   icp->icmp_identifier = htons(_icmp_id);
-  icp->icmp_sequence = htons(_ip_id);
+  icp->icmp_sequence = htons(ip_id);
 #endif
 
   icp->icmp_cksum = click_in_cksum((const unsigned char *)icp, sizeof(click_icmp_sequenced) + _data.length());
@@ -109,8 +113,9 @@ ICMPSendPings::run_timer()
 
   output(0).push(q);
 
-  _timer.reschedule_after_ms(_interval);
-  _ip_id++;
+  _count++;
+  if (_count < _limit || _limit < 0)
+    _timer.reschedule_after_ms(_interval);
 }
 
 CLICK_ENDDECLS

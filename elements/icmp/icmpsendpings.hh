@@ -34,6 +34,11 @@ Amount of time between pings, in seconds. Default is 1.
 Integer. Determines the ICMP identifier field in emitted pings. Default is
 0.
 
+=item LIMIT
+
+Integer. The number of pings to send; but if LIMIT is negative, sends pings
+forever. Default is -1.
+
 =item DATA
 
 String. Extra data in emitted pings. Default is the empty string (nothing).
@@ -62,7 +67,8 @@ class ICMPSendPings : public Element { public:
   
   struct in_addr _src;
   struct in_addr _dst;
-  uint16_t _ip_id;
+  int _count;
+  int _limit;
   uint16_t _icmp_id;
   int _interval;
   Timer _timer;
