@@ -1,9 +1,9 @@
 /* -*- c-basic-offset: 4 -*- */
-#include <cstdio>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <cstring>
-#include <cerrno>
+#include <string.h>
+#include <errno.h>
 #include <sys/ioctl.h>
 #include <inttypes.h>
 #include <click/llrpc.h>
