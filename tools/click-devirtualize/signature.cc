@@ -70,12 +70,12 @@ Signatures::check_port_numbers(int eid, const ProcessingT &pt)
   int ni = e->ninputs(), no = e->noutputs();
   for (int i = 0; i < ni; i++) {
     const PortT &h = pt.input_connection(eid, i);
-    if (h.elt)
+    if (h.element)
       new_ports.push_back(h.port);
   }
   for (int i = 0; i < no; i++) {
     const PortT &h = pt.output_connection(eid, i);
-    if (h.elt)
+    if (h.element)
       new_ports.push_back(h.port);
   }
 
@@ -127,13 +127,13 @@ Signatures::next_phase(int phase, int eid, Vector<int> &new_sigid,
   int ni = e->ninputs(), no = e->noutputs();
   for (int i = 0; i < ni; i++) {
     const PortT &h = pt.input_connection(eid, i);
-    if (h.elt)
-      new_connections.push_back(_sigid[h.idx()]);
+    if (h.element)
+      new_connections.push_back(_sigid[h.eindex()]);
   }
   for (int i = 0; i < no; i++) {
     const PortT &h = pt.output_connection(eid, i);
-    if (h.elt)
-      new_connections.push_back(_sigid[h.idx()]);
+    if (h.element)
+      new_connections.push_back(_sigid[h.eindex()]);
   }
 
   // add new node to list
@@ -182,7 +182,7 @@ void
 Signatures::specialize_class(const String &eclass_name, bool doit)
 {
   for (RouterT::const_type_iterator x = _router->begin_elements(ElementClassT::default_class(eclass_name)); x; x++)
-    _sigid[x->idx()] = (doit ? 1 : SIG_NOT_SPECIAL);
+    _sigid[x->eindex()] = (doit ? 1 : SIG_NOT_SPECIAL);
 }
 
 void

@@ -45,15 +45,11 @@ class RouterT { public:
     int real_element_count() const	{ return _real_ecount; }
     
     inline const ElementT *element(const String &) const;
-    inline const ElementT *elt(const String &) const;
     inline ElementT *element(const String &);
-    inline ElementT *elt(const String &);
     int eindex(const String &s) const	{ return _element_name_map[s]; }
     
     const ElementT *element(int i) const{ return _elements[i]; }
-    const ElementT *elt(int i) const	{ return _elements[i]; }
     ElementT *element(int i)		{ return _elements[i]; }
-    ElementT *elt(int i)		{ return _elements[i]; }
     
     bool elive(int i) const		{ return _elements[i]->live(); }
     bool edead(int i) const		{ return _elements[i]->dead(); }
@@ -194,8 +190,8 @@ class RouterT { public:
 
 class RouterT::const_iterator { public:
     operator bool() const		{ return _e; }
-    int idx() const			{ return _e->idx(); }
-    void operator++(int)		{ if (_e) step(_e->router(), idx()+1);}
+    int eindex() const			{ return _e->eindex(); }
+    void operator++(int)		{ if (_e) step(_e->router(), eindex()+1);}
     void operator++()			{ (*this)++; }
     operator const ElementT *() const	{ return _e; }
     const ElementT *operator->() const	{ return _e; }
@@ -221,7 +217,7 @@ class RouterT::iterator : public RouterT::const_iterator { public:
 
 class RouterT::const_type_iterator { public:
     operator bool() const		{ return _e; }
-    int idx() const			{ return _e->idx(); }
+    int eindex() const			{ return _e->eindex(); }
     inline void operator++(int);
     inline void operator++();
     operator const ElementT *() const	{ return _e; }
@@ -287,7 +283,7 @@ inline void
 RouterT::const_type_iterator::operator++(int)
 {
     if (_e)
-	step(_e->router(), _e->type(), _e->idx() + 1);
+	step(_e->router(), _e->type(), _e->eindex() + 1);
 }
 
 inline void
@@ -303,23 +299,11 @@ RouterT::element(const String &s) const
     return (i >= 0 ? _elements[i] : 0);
 }
 
-inline const ElementT *
-RouterT::elt(const String &s) const
-{
-    return element(s);
-}
-
 inline ElementT *
 RouterT::element(const String &s)
 {
     int i = _element_name_map[s];
     return (i >= 0 ? _elements[i] : 0);
-}
-
-inline ElementT *
-RouterT::elt(const String &s)
-{
-    return element(s);
 }
 
 inline String

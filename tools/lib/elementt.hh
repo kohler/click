@@ -12,7 +12,7 @@ struct ElementT {
     ~ElementT();
 
     RouterT *router() const		{ return _owner; }
-    int idx() const			{ return _idx; }
+    int eindex() const			{ return _eindex; }
     inline ElementClassT *enclosing_type() const;
     
     bool live() const			{ return _type; }
@@ -59,7 +59,7 @@ struct ElementT {
     
   private:
 
-    int _idx;
+    int _eindex;
     mutable String _name;		// mutable for cc()
     ElementClassT *_type;
     String _configuration;
@@ -80,17 +80,17 @@ struct ElementT {
 
 struct PortT {
   
-    ElementT *elt;
+    ElementT *element;
     int port;
 
-    PortT()				: elt(0) { }
-    PortT(ElementT *e, int p)		: elt(e), port(p) { }
+    PortT()				: element(0) { }
+    PortT(ElementT *e, int p)		: element(e), port(p) { }
 
-    bool live() const			{ return elt != 0; }
-    bool dead() const			{ return elt == 0; }
-    RouterT *router() const		{ return (elt ? elt->router() : 0); }
+    bool live() const			{ return element != 0; }
+    bool dead() const			{ return element == 0; }
+    RouterT *router() const		{ return (element ? element->router() : 0); }
 
-    int idx() const			{ return (elt ? elt->idx() : -1); }
+    int eindex() const			{ return (element ? element->eindex() : -1); }
     
     int index_in(const Vector<PortT> &, int start = 0) const;
     int force_index_in(Vector<PortT> &, int start = 0) const;
@@ -110,15 +110,15 @@ class ConnectionT { public:
 
     bool live() const			{ return _from.live(); }
     bool dead() const			{ return _from.dead(); }
-    void kill()				{ _from.elt = 0; }
+    void kill()				{ _from.element = 0; }
     
     const PortT &from() const		{ return _from; }
     const PortT &to() const		{ return _to; }
-    ElementT *from_elt() const		{ return _from.elt; }
-    int from_idx() const		{ return _from.idx(); }
+    ElementT *from_element() const	{ return _from.element; }
+    int from_eindex() const		{ return _from.eindex(); }
     int from_port() const		{ return _from.port; }
-    ElementT *to_elt() const		{ return _to.elt; }
-    int to_idx() const			{ return _to.idx(); }
+    ElementT *to_element() const	{ return _to.element; }
+    int to_eindex() const		{ return _to.eindex(); }
     int to_port() const			{ return _to.port; }
     const String &landmark() const	{ return _landmark; }
 
@@ -174,37 +174,37 @@ ElementT::tunnel_connected() const
 inline bool
 operator==(const PortT &h1, const PortT &h2)
 {
-    return h1.elt == h2.elt && h1.port == h2.port;
+    return h1.element == h2.element && h1.port == h2.port;
 }
 
 inline bool
 operator!=(const PortT &h1, const PortT &h2)
 {
-    return h1.elt != h2.elt || h1.port != h2.port;
+    return h1.element != h2.element || h1.port != h2.port;
 }
 
 inline bool
 operator<(const PortT &h1, const PortT &h2)
 {
-    return h1.idx() < h2.idx() || (h1.elt == h2.elt && h1.port < h2.port);
+    return h1.eindex() < h2.eindex() || (h1.element == h2.element && h1.port < h2.port);
 }
 
 inline bool
 operator>(const PortT &h1, const PortT &h2)
 {
-    return h1.idx() > h2.idx() || (h1.elt == h2.elt && h1.port > h2.port);
+    return h1.eindex() > h2.eindex() || (h1.element == h2.element && h1.port > h2.port);
 }
 
 inline bool
 operator<=(const PortT &h1, const PortT &h2)
 {
-    return h1.idx() < h2.idx() || (h1.elt == h2.elt && h1.port <= h2.port);
+    return h1.eindex() < h2.eindex() || (h1.element == h2.element && h1.port <= h2.port);
 }
 
 inline bool
 operator>=(const PortT &h1, const PortT &h2)
 {
-    return h1.idx() > h2.idx() || (h1.elt == h2.elt && h1.port >= h2.port);
+    return h1.eindex() > h2.eindex() || (h1.element == h2.element && h1.port >= h2.port);
 }
 
 #endif

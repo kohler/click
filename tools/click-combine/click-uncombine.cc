@@ -163,13 +163,13 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
   
   // mark endpoints
   for (int i = 0; i < component_endpoints.size(); i++)
-    live[component_endpoints[i]->idx()] = 1;
+    live[component_endpoints[i]->eindex()] = 1;
 
   // mark everything named with a `compname' prefix
   int compname_len = compname.length();
   for (RouterT::iterator e = r->begin_elements(); e; e++)
     if (e->name().substring(0, compname_len) == compname)
-      live[e->idx()] = 1;
+      live[e->eindex()] = 1;
 
   // now find things connected to live elements
   bool changed;
@@ -178,11 +178,11 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
     for (int i = 0; i < nh; i++)
       if (conn[i].dead())
 	/* nada */;
-      else if (live[conn[i].from_idx()] && !live[conn[i].to_idx()]) {
-	live[conn[i].to_idx()] = 1;
+      else if (live[conn[i].from_eindex()] && !live[conn[i].to_eindex()]) {
+	live[conn[i].to_eindex()] = 1;
 	changed = true;
-      } else if (live[conn[i].to_idx()] && !live[conn[i].from_idx()]) {
-	live[conn[i].from_idx()] = 1;
+      } else if (live[conn[i].to_eindex()] && !live[conn[i].from_eindex()]) {
+	live[conn[i].from_eindex()] = 1;
 	changed = true;
       }
   } while (changed);
@@ -239,7 +239,7 @@ remove_toplevel_component(String component, RouterT *r, const char *filename,
   
   // remove everything not part of the component
   for (RouterT::iterator e = r->begin_elements(); e; e++)
-    if (e->live() && !live[e->idx()])
+    if (e->live() && !live[e->eindex()])
       e->kill();
   r->free_dead_elements();
 

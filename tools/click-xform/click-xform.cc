@@ -99,11 +99,11 @@ bool
 Matcher::check_into(const PortT &houtside, const PortT &hinside)
 {
   const Vector<ConnectionT> &pconn = _pat->connections();
-  PortT phinside(_back_match[hinside.idx()], hinside.port);
+  PortT phinside(_back_match[hinside.eindex()], hinside.port);
   PortT success;
   // now look for matches
   for (int i = 0; i < pconn.size(); i++)
-    if (pconn[i].to() == phinside && pconn[i].from_elt() == _pat_input
+    if (pconn[i].to() == phinside && pconn[i].from_element() == _pat_input
 	&& (success.dead() || pconn[i].from() < success)) {
       Vector<PortT> pfrom_phf, from_houtside;
       // check that it's valid: all connections from tunnels are covered
@@ -111,7 +111,7 @@ Matcher::check_into(const PortT &houtside, const PortT &hinside)
       _pat->find_connections_from(pconn[i].from(), pfrom_phf);
       _body->find_connections_from(houtside, from_houtside);
       for (int j = 0; j < pfrom_phf.size(); j++) {
-	PortT want(_match[pfrom_phf[j].idx()], pfrom_phf[j].port);
+	PortT want(_match[pfrom_phf[j].eindex()], pfrom_phf[j].port);
 	if (want.index_in(from_houtside) < 0)
 	  goto no_match;
       }
@@ -132,11 +132,11 @@ bool
 Matcher::check_out_of(const PortT &hinside, const PortT &houtside)
 {
   const Vector<ConnectionT> &pconn = _pat->connections();
-  PortT phinside(_back_match[hinside.idx()], hinside.port);
+  PortT phinside(_back_match[hinside.eindex()], hinside.port);
   PortT success;
   // now look for matches
   for (int i = 0; i < pconn.size(); i++)
-    if (pconn[i].from() == phinside && pconn[i].to_elt() == _pat_output
+    if (pconn[i].from() == phinside && pconn[i].to_element() == _pat_output
 	&& (success.dead() || pconn[i].to() < success)) {
       Vector<PortT> pto_pht, to_houtside;
       // check that it's valid: all connections to tunnels are covered
@@ -144,7 +144,7 @@ Matcher::check_out_of(const PortT &hinside, const PortT &houtside)
       _pat->find_connections_to(pconn[i].to(), pto_pht);
       _body->find_connections_to(houtside, to_houtside);
       for (int j = 0; j < pto_pht.size(); j++) {
-	PortT want(_match[pto_pht[j].idx()], pto_pht[j].port);
+	PortT want(_match[pto_pht[j].eindex()], pto_pht[j].port);
 	if (want.index_in(to_houtside) < 0)
 	  goto no_match;
       }
@@ -174,7 +174,7 @@ Matcher::check_match()
   //fprintf(stderr, "CONF\n");
   for (int i = 0; i < _match.size(); i++)
     if (_match[i]) {
-      if (!match_config(_pat->elt(i)->configuration(), _match[i]->configuration(), _defs))
+      if (!match_config(_pat->element(i)->configuration(), _match[i]->configuration(), _defs))
 	return false;
     }
   
@@ -183,7 +183,7 @@ Matcher::check_match()
   bool all_previous_match = true;
   for (int i = 0; i < _match.size(); i++)
     if (ElementT *m = _match[i]) {
-      _back_match[m->idx()] = _pat->elt(i);
+      _back_match[m->eindex()] = _pat->element(i);
       if (m->flags != _patid)	// doesn't come from replacement of same pat
 	all_previous_match = false;
     }
@@ -202,7 +202,7 @@ Matcher::check_match()
     if (conn[i].dead())
       continue;
     const PortT &hf = conn[i].from(), &ht = conn[i].to();
-    ElementT *pf = _back_match[hf.idx()], *pt = _back_match[ht.idx()];
+    ElementT *pf = _back_match[hf.eindex()], *pt = _back_match[ht.eindex()];
     if (pf && pt) {
       if (!_pat->has_connection(PortT(pf, hf.port), PortT(pt, ht.port)))
 	return false;
@@ -219,10 +219,10 @@ Matcher::check_match()
   //fprintf(stderr, "UNC\n");
   const Vector<ConnectionT> &pconn = _pat->connections();
   for (int i = 0; i < pconn.size(); i++) {
-    if (pconn[i].from_elt() == _pat_input
+    if (pconn[i].from_element() == _pat_input
 	&& pconn[i].from().index_in(_to_pp_to) < 0)
       return false;
-    if (pconn[i].to_elt() == _pat_output
+    if (pconn[i].to_element() == _pat_output
 	&& pconn[i].to().index_in(_from_pp_from) < 0)
       return false;
   }
@@ -306,7 +306,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   Vector<String> old_names;
   for (int i = 0; i < _match.size(); i++)
     if (_match[i]) {
-      changed_elements.push_back(_match[i]->idx());
+      changed_elements.push_back(_match[i]->eindex());
       old_names.push_back(_match[i]->name());
       _body->free_element(_match[i]);
     } else

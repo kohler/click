@@ -190,15 +190,15 @@ ProcessingT::processing_error(const ConnectionT &conn, int processing_from,
   const char *type1 = (processing_from == VPUSH ? "push" : "pull");
   const char *type2 = (processing_from == VPUSH ? "pull" : "push");
   if (conn.landmark() == "<agnostic>")
-    errh->lerror(conn.from_elt()->landmark(),
+    errh->lerror(conn.from_element()->landmark(),
 		 "agnostic `%s' in mixed context: %s input %d, %s output %d",
-		 conn.from_elt()->name_cc(), type2, conn.to_port(),
+		 conn.from_element()->name_cc(), type2, conn.to_port(),
 		 type1, conn.from_port());
   else
     errh->lerror(conn.landmark(),
 		 "`%s' %s output %d connected to `%s' %s input %d",
-		 conn.from_elt()->name_cc(), type1, conn.from_port(),
-		 conn.to_elt()->name_cc(), type2, conn.to_port());
+		 conn.from_element()->name_cc(), type1, conn.from_port(),
+		 conn.to_element()->name_cc(), type2, conn.to_port());
 }
 
 void
@@ -210,7 +210,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
     for (int i = 0; i < ninput_pidx(); i++)
 	if (_input_processing[i] == VAGNOSTIC) {
 	    ElementT *e = const_cast<ElementT *>(_input_elt[i]);
-	    int ei = e->idx();
+	    int ei = e->eindex();
 	    int port = i - _input_pidx[ei];
 	    int opidx = _output_pidx[ei];
 	    int noutputs = _output_pidx[ei+1] - opidx;
@@ -293,20 +293,20 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	if (_output_processing[fp] == VPUSH && output_used[fp] >= 0) {
 	    errh->lerror(conn[c].landmark(),
 			 "reuse of `%s' push output %d",
-			 hf.elt->name_cc(), hf.port);
+			 hf.element->name_cc(), hf.port);
 	    errh->lmessage(conn[output_used[fp]].landmark(),
 			   "  `%s' output %d previously used here",
-			   hf.elt->name_cc(), hf.port);
+			   hf.element->name_cc(), hf.port);
 	} else
 	    output_used[fp] = c;
 
 	if (_input_processing[tp] == VPULL && input_used[tp] >= 0) {
 	    errh->lerror(conn[c].landmark(),
 			 "reuse of `%s' pull input %d",
-			 ht.elt->name_cc(), ht.port);
+			 ht.element->name_cc(), ht.port);
 	    errh->lmessage(conn[input_used[tp]].landmark(),
 			   "  `%s' input %d previously used here",
-			   ht.elt->name_cc(), ht.port);
+			   ht.element->name_cc(), ht.port);
 	} else
 	    input_used[tp] = c;
     }
@@ -317,7 +317,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	    const ElementT *e = _input_elt[i];
 	    if (e->dead())
 		continue;
-	    int port = i - _input_pidx[e->idx()];
+	    int port = i - _input_pidx[e->eindex()];
 	    errh->lerror(e->landmark(),
 			 "`%s' %s input %d not connected",
 			 e->name_cc(), processing_name(_input_processing[i]), port);
@@ -328,7 +328,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	    const ElementT *e = _output_elt[i];
 	    if (e->dead())
 		continue;
-	    int port = i - _output_pidx[e->idx()];
+	    int port = i - _output_pidx[e->eindex()];
 	    errh->lerror(e->landmark(),
 			 "`%s' %s output %d not connected",
 			 e->name_cc(), processing_name(_output_processing[i]), port);
@@ -407,7 +407,7 @@ String
 ProcessingT::processing_code(const ElementT *e) const
 {
     assert(e->router() == _router);
-    int ei = e->idx();
+    int ei = e->eindex();
     StringAccum sa;
     for (int i = _input_pidx[ei]; i < _input_pidx[ei+1]; i++)
 	sa << processing_letters[_input_processing[i]];
@@ -610,7 +610,7 @@ ProcessingT::set_flowed_inputs(const Bitvector &outputs, Bitvector &inputs, Erro
 		if (outputs[j]) {
 		    PortT p = output_port(j);
 		    (void) backward_flow(p, &bv, errh);
-		    inputs.or_at(bv, _input_pidx[p.elt->idx()]);
+		    inputs.or_at(bv, _input_pidx[p.element->eindex()]);
 		}
 	}
 }
@@ -629,7 +629,7 @@ ProcessingT::set_flowed_outputs(const Bitvector &inputs, Bitvector &outputs, Err
 		if (inputs[j]) {
 		    PortT p = input_port(j);
 		    (void) forward_flow(p, &bv, errh);
-		    outputs.or_at(bv, _output_pidx[p.elt->idx()]);
+		    outputs.or_at(bv, _output_pidx[p.element->eindex()]);
 		}
 	}
 }

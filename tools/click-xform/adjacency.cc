@@ -78,8 +78,8 @@ AdjacencyMatrix::init(RouterT *r)
     // avoid bounds checks
     const ConnectionT *conn = &(r->connections()[0]);
     for (int i = 0; i < nh; i++)
-      if (conn[i].live() && conn[i].from_idx() != conn[i].to_idx())
-	_x[ conn[i].from_idx() + (conn[i].to_idx()<<cap) ] |=
+      if (conn[i].live() && conn[i].from_eindex() != conn[i].to_eindex())
+	_x[ conn[i].from_eindex() + (conn[i].to_eindex()<<cap) ] |=
 	  connection_indicator(conn[i].from_port(), conn[i].to_port());
   }
 
@@ -129,8 +129,8 @@ AdjacencyMatrix::update(const Vector<int> &changed_eindexes)
     // avoid bounds checks
     const ConnectionT *conn = &(r->connections()[0]);
     for (int i = 0; i < nh; i++)
-      if (conn[i].live() && conn[i].from_idx() != conn[i].to_idx())
-	_x[ conn[i].from_idx() + (conn[i].to_idx()<<cap) ] |=
+      if (conn[i].live() && conn[i].from_eindex() != conn[i].to_eindex())
+	_x[ conn[i].from_eindex() + (conn[i].to_eindex()<<cap) ] |=
 	  connection_indicator(conn[i].from_port(), conn[i].to_port());
   }
 
@@ -146,11 +146,11 @@ AdjacencyMatrix::init_pattern() const
   const Vector<ConnectionT> &conn = r->connections();
   for (int i = 0; i < conn.size(); i++)
     if (conn[i].live() && conn[i].from_port() == 0) {
-      int fromi = conn[i].from_idx();
-      if (conn[i].to_idx() == fromi || output_0[fromi] >= 0)
+      int fromi = conn[i].from_eindex();
+      if (conn[i].to_eindex() == fromi || output_0[fromi] >= 0)
 	output_0[fromi] = -2;
       else if (output_0[fromi] == -1)
-	output_0[fromi] = conn[i].to_idx();
+	output_0[fromi] = conn[i].to_eindex();
     }
 
   // set _output_0_of
@@ -187,17 +187,17 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
 
   // assign 'matchv' from 'matchv_e'
   Vector<int> matchv(_default_match);
-  int match_idx;
+  int match_eindex;
   int direction;
   
   if (matchv_e.size() == 0) {
-    match_idx = 0;
+    match_eindex = 0;
     direction = 1;
   } else {
     for (int i = 0; i < matchv.size(); i++)
       if (matchv[i] == -1)
-	matchv[i] = matchv_e[i]->idx();
-    match_idx = pat_n - 1;
+	matchv[i] = matchv_e[i]->eindex();
+    match_eindex = pat_n - 1;
     direction = -1;
   }
   
@@ -210,23 +210,23 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
   //fprintf(stderr, "input:\n");
   //input->print();
   
-  while (match_idx >= 0 && match_idx < pat_n) {
-    int rover = match[match_idx] + 1;
+  while (match_eindex >= 0 && match_eindex < pat_n) {
+    int rover = match[match_eindex] + 1;
     int max_rover;
     if (rover < 0) {
-      match_idx += direction;
+      match_eindex += direction;
       continue;
-    } else if (output_0_of[match_idx] >= 0) {
+    } else if (output_0_of[match_eindex] >= 0) {
       // Speed hack: often we have E1[0] -> [p]E2, the only connection from
       // E1[0], where E1 and E2 are both real elements in the pattern (not
       // `input' or `output'). In this case, the match to E2 will be the
       // single element connected from (match[E1])[0]. Find it directly so we
       // don't have to scan over all elements in the input.
-      PortT output(input_r->elt(match[output_0_of[match_idx]]), 0), result;
+      PortT output(input_r->element(match[output_0_of[match_eindex]]), 0), result;
       if (rover > 0 || !input_r->find_connection_from(output, result))
 	max_rover = -1;
       else {
-	rover = result.idx();
+	rover = result.eindex();
 	max_rover = rover + 1;
       }
     } else
@@ -235,23 +235,23 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
     while (rover < max_rover) {
       // S_{k,k}(input) =? S_{k,n}(P) * M * (S_{k,n}(P))^T
       // first check the diagonal (where element type)
-      if (pat_x[ (match_idx<<pat_cap) + match_idx ]
+      if (pat_x[ (match_eindex<<pat_cap) + match_eindex ]
 	  != input_x[ (rover<<input_cap) + rover ])
 	goto failure;
       // test only the new border
-      for (int i = 0; i < match_idx; i++) {
+      for (int i = 0; i < match_eindex; i++) {
 	int m = match[i];
 	if (m >= 0) {
-	  unsigned px = pat_x[ (i<<pat_cap) + match_idx ];
+	  unsigned px = pat_x[ (i<<pat_cap) + match_eindex ];
 	  unsigned ix = input_x[ (m<<input_cap) + rover ];
 	  if ((px & ix) != px)
 	    goto failure;
 	}
       }
-      for (int j = 0; j < match_idx; j++) {
+      for (int j = 0; j < match_eindex; j++) {
 	int m = match[j];
 	if (m >= 0) {
-	  unsigned px = pat_x[ (match_idx<<pat_cap) + j ];
+	  unsigned px = pat_x[ (match_eindex<<pat_cap) + j ];
 	  unsigned ix = input_x[ (rover<<input_cap) + m ];
 	  if ((px & ix) != px)
 	    goto failure;
@@ -263,24 +263,24 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
     }
     
     if (rover < max_rover) {
-      match[match_idx] = rover;
-      match_idx++;
+      match[match_eindex] = rover;
+      match_eindex++;
       direction = 1;
     } else {
-      match[match_idx] = -1;
-      match_idx--;
+      match[match_eindex] = -1;
+      match_eindex--;
       direction = -1;
     }
   }
 
   // initialize 'matchv_e' from 'matchv'
   matchv_e.assign(matchv.size(), 0);
-  for (int i = 0; i < match_idx; i++)
+  for (int i = 0; i < match_eindex; i++)
     if (match[i] >= 0)
       matchv_e[i] = input_r->element(match[i]);
   
   //for (int i = 0; i < pat_n; i++) fprintf(stderr,"%d ", match[i]);/* >= 0 ? input->_crap->ename(match[i]).cc() : "<crap>");*/fputs("\n",stderr);
-  return (match_idx >= 0 ? true : false);
+  return (match_eindex >= 0 ? true : false);
 }
 
 
@@ -292,7 +292,7 @@ check_subgraph_isomorphism(const RouterT *pat, const RouterT *input,
   const Vector<ConnectionT> &conn = pat->connections();
   int nh = conn.size();
   for (int i = 0; i < nh; i++) {
-    int fi = conn[i].from_idx(), ti = conn[i].to_idx();
+    int fi = conn[i].from_eindex(), ti = conn[i].to_eindex();
     if (!match[fi] || !match[ti])
       continue;
     if (!input->has_connection(PortT(match[fi], conn[i].from_port()),

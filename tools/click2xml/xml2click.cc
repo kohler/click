@@ -583,7 +583,7 @@ CxConfig::complete(ErrorHandler *errh)
 
     // set up elements
     for (CxElement *e = _elements.begin(); e != _elements.end(); e++)
-	if (ElementT *old_e = r->elt(e->name)) {
+	if (ElementT *old_e = r->element(e->name)) {
 	    int which = (intptr_t)(old_e->user_data());
 	    ElementT::redeclaration_error(errh, "element", e->name, e->xml_landmark, _elements[which].xml_landmark);
 	} else {
@@ -598,12 +598,12 @@ CxConfig::complete(ErrorHandler *errh)
 
     // set up connections
     for (CxConnection *c = _connections.begin(); c != _connections.end(); c++) {
-	ElementT *frome = r->elt(c->from);
+	ElementT *frome = r->element(c->from);
 	if (!frome) {
 	    errh->lerror(c->xml_landmark, "undeclared element '%s' (first use this block)", c->from.c_str());
 	    frome = r->get_element(c->from, ElementClassT::default_class("Error"), String(), c->xml_landmark);
 	}
-	ElementT *toe = r->elt(c->to);
+	ElementT *toe = r->element(c->to);
 	if (!toe) {
 	    errh->lerror(c->xml_landmark, "undeclared element '%s' (first use this block)", c->to.c_str());
 	    toe = r->get_element(c->to, ElementClassT::default_class("Error"), String(), c->xml_landmark);
@@ -614,7 +614,7 @@ CxConfig::complete(ErrorHandler *errh)
     // check elements' ninputs and noutputs
     for (CxElement *e = _elements.begin(); e != _elements.end(); e++)
 	if (e->ninputs >= 0 || e->noutputs >= 0)
-	    if (ElementT *et = r->elt(e->name)) {
+	    if (ElementT *et = r->element(e->name)) {
 		if (e->ninputs >= 0 && et->ninputs() != e->ninputs)
 		    errh->lerror(et->landmark(), "'%s' input port count and 'ninputs' attribute disagree", e->name.c_str());
 		if (e->noutputs >= 0 && et->noutputs() != e->noutputs)

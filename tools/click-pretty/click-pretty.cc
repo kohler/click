@@ -634,10 +634,10 @@ conn_compar(const void *v1, const void *v2)
     const ConnectionT &c2 = (*conn_compar_connvec)[*i2];
     const PortT &p1 = (conn_compar_from ? c1.from() : c1.to());
     const PortT &p2 = (conn_compar_from ? c2.from() : c2.to());
-    if (p1.elt == p2.elt)
+    if (p1.element == p2.element)
 	return p1.port - p2.port;
     else
-	return click_strcmp(p1.elt->name(), p2.elt->name());
+	return click_strcmp(p1.element->name(), p2.element->name());
 }
 
 static int
@@ -840,7 +840,7 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
 		    text = _main_attrs["inputconnection"];
 		for (int i = 0; i < conn.size(); i++) {
 		    const ConnectionT &c = _router->connection(conn[i]);
-		    run_template(text, c.from_elt(), c.from_port(), true);
+		    run_template(text, c.from_element(), c.from_port(), true);
 		    _sep = subsep;
 		}
 	    }
@@ -860,7 +860,7 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
 		    text = _main_attrs["outputconnection"];
 		for (int i = 0; i < conn.size(); i++) {
 		    const ConnectionT &c = _router->connection(conn[i]);
-		    run_template(text, c.to_elt(), c.to_port(), false);
+		    run_template(text, c.to_element(), c.to_port(), false);
 		    _sep = subsep;
 		}
 	    }

@@ -540,7 +540,7 @@ LexerT::make_element(String name, const Lexeme &location, int decl_pos2,
     }
     ElementT *e = _router->get_element(name, type, conf, lm ? lm : landmark());
     _lexinfo->notify_element_declaration(e, location.pos1(), location.pos2(), (decl_pos2 < 0 ? location.pos2() : decl_pos2));
-    return e->idx();
+    return e->eindex();
 }
 
 int
@@ -559,8 +559,8 @@ LexerT::connect(int element1, int port1, int port2, int element2)
     if (port2 < 0)
 	port2 = 0;
     _router->add_connection
-	(PortT(_router->elt(element1), port1),
-	 PortT(_router->elt(element2), port2), landmark());
+	(PortT(_router->element(element1), port1),
+	 PortT(_router->element(element2), port2), landmark());
 }
 
 

@@ -281,7 +281,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
     }
     
     for (int p = 0; p < hprev.size(); p++)
-      if (hprev[p] == -1 || (hprev[p] >= 0 && r->connection(hprev[p]).from_elt()->type() == idlet)) {
+      if (hprev[p] == -1 || (hprev[p] >= 0 && r->connection(hprev[p]).from_element()->type() == idlet)) {
 	// remove that scheduler port
 	// check configuration first
 	if (config_eq_ninputs) {
@@ -338,7 +338,7 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
     r->find_connection_vector_from(x, hnext);
     
     for (int p = hnext.size() - 1; p >= (is_pull_tee ? 1 : 0); p--)
-      if (hnext[p] == -1 || (hnext[p] >= 0 && r->connection(hnext[p]).from_elt()->type() == idlet)) {
+      if (hnext[p] == -1 || (hnext[p] >= 0 && r->connection(hnext[p]).from_element()->type() == idlet)) {
 	// remove that tee port
 	int bad_connection = hnext[p];
 	for (int pp = p + 1; pp < hnext.size(); pp++) {
@@ -397,7 +397,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
     int nin = x->ninputs();
     int nout = x->noutputs();
     int source_flag = x->type()->traits().flag_value('S');
-    int ei = x->idx();
+    int ei = x->eindex();
 
     if (source_flag == 0) {	// neither source nor sink
       dead[ei] = true;
@@ -449,7 +449,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
   while (changed) {
     changed = false;
     for (int i = 0; i < nh; i++) {
-      int f = conn[i].from_idx(), t = conn[i].to_idx();
+      int f = conn[i].from_eindex(), t = conn[i].to_eindex();
       if (f >= 0 && !sources[t] && sources[f] && !dead[t])
 	sources[t] = changed = true;
     }
@@ -460,7 +460,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
   while (changed) {
     changed = false;
     for (int i = 0; i < nh; i++) {
-      int f = conn[i].from_idx(), t = conn[i].to_idx();
+      int f = conn[i].from_eindex(), t = conn[i].to_eindex();
       if (f >= 0 && !sinks[f] && sinks[t] && !dead[f])
 	sinks[f] = changed = true;
     }
@@ -471,8 +471,8 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
 
   // find independently live elements
   for (RouterT::iterator x = r->begin_elements(); x; x++)
-    if (!live_elements[x->idx()]) {
-      int ei = x->idx();
+    if (!live_elements[x->eindex()]) {
+      int ei = x->eindex();
       int live_flag = x->type()->traits().flag_value('L');
       if (live_flag == 0)	// not live
 	continue;

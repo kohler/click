@@ -91,7 +91,7 @@ RouterT::check() const
     // check free elements
     for (ElementT *e = _free_element; e; e = e->tunnel_input()) {
 	assert(e->dead());
-	assert(_elements[e->idx()] == e);
+	assert(_elements[e->eindex()] == e);
     }
 
     // check elements
@@ -113,12 +113,12 @@ RouterT::check() const
     for (int i = 0; i < ne; i++)
 	if (_elements[i]->live()) {
 	    int ninputs = 0, noutputs = 0;
-	    const ElementT *e = elt(i);
+	    const ElementT *e = element(i);
 	    
 	    int j = _first_conn[i].from;
 	    while (j >= 0) {
 		assert(j < _conn.size());
-		assert(_conn[j].from_elt() == e);
+		assert(_conn[j].from_element() == e);
 		if (_conn[j].from().port >= noutputs)
 		    noutputs = _conn[j].from().port + 1;
 		j = _conn[j].next_from();
@@ -127,7 +127,7 @@ RouterT::check() const
 	    j = _first_conn[i].to;
 	    while (j >= 0) {
 		assert(j < _conn.size());
-		assert(_conn[j].to_elt() == e && connection_live(j));
+		assert(_conn[j].to_element() == e && connection_live(j));
 		if (_conn[j].to().port >= ninputs)
 		    ninputs = _conn[j].to().port + 1;
 		j = _conn[j].next_to();
@@ -199,7 +199,7 @@ RouterT::add_element(const ElementT &elt_in)
     _real_ecount++;
     ElementT *elt = new ElementT(elt_in);
     if (_free_element) {
-	i = _free_element->idx();
+	i = _free_element->eindex();
 	_free_element = _free_element->tunnel_input();
 	delete _elements[i];
 	_first_conn[i] = Pair(-1, -1);
@@ -211,7 +211,7 @@ RouterT::add_element(const ElementT &elt_in)
     if (_new_eindex_collector)
 	_new_eindex_collector->push_back(i);
     _elements[i] = elt;
-    elt->_idx = i;
+    elt->_eindex = i;
     elt->_owner = this;
     return elt;
 }
@@ -225,7 +225,7 @@ RouterT::get_element(const String &name, ElementClassT *type,
 	return _elements[i];
     else {
 	ElementT *e = add_element(ElementT(name, type, config, landmark));
-	_element_name_map.insert(name, e->idx());
+	_element_name_map.insert(name, e->eindex());
 	return e;
     }
 }
@@ -236,7 +236,7 @@ RouterT::add_anon_element(ElementClassT *type, const String &config,
 {
     String name = ";" + type->name() + "@" + String(_real_ecount + 1);
     ElementT *result = add_element(ElementT(name, type, config, landmark));
-    assign_element_name(result->idx());
+    assign_element_name(result->eindex());
     return result;
 }
 
@@ -318,11 +318,11 @@ bool
 RouterT::add_connection(const PortT &hfrom, const PortT &hto,
 			const String &landmark)
 {
-    assert(hfrom.router() == this && hfrom.elt->live()
-	   && hto.router() == this && hto.elt->live());
+    assert(hfrom.router() == this && hfrom.element->live()
+	   && hto.router() == this && hto.element->live());
 
-    Pair &first_from = _first_conn[hfrom.idx()];
-    Pair &first_to = _first_conn[hto.idx()];
+    Pair &first_from = _first_conn[hfrom.eindex()];
+    Pair &first_to = _first_conn[hto.eindex()];
 
     int i;
     if (_free_conn >= 0) {
@@ -337,10 +337,10 @@ RouterT::add_connection(const PortT &hfrom, const PortT &hto,
     first_from.from = first_to.to = i;
 
     // maintain port counts
-    if (hfrom.port >= hfrom.elt->_noutputs)
-	hfrom.elt->_noutputs = hfrom.port + 1;
-    if (hto.port >= hto.elt->_ninputs)
-	hto.elt->_ninputs = hto.port + 1;
+    if (hfrom.port >= hfrom.element->_noutputs)
+	hfrom.element->_noutputs = hfrom.port + 1;
+    if (hto.port >= hto.element->_ninputs)
+	hto.element->_ninputs = hto.port + 1;
 
     return true;
 }
@@ -392,7 +392,7 @@ RouterT::compact_connections()
 void
 RouterT::unlink_connection_from(int c)
 {
-    int e = _conn[c].from_idx();
+    int e = _conn[c].from_eindex();
     int port = _conn[c].from_port();
 
     // find previous connection
@@ -418,7 +418,7 @@ RouterT::unlink_connection_from(int c)
 void
 RouterT::unlink_connection_to(int c)
 {
-    int e = _conn[c].to_idx();
+    int e = _conn[c].to_eindex();
     int port = _conn[c].to_port();
 
     // find previous connection
@@ -465,7 +465,7 @@ RouterT::kill_bad_connections()
     int nc = nconnections();
     for (int i = 0; i < nc; i++) {
 	ConnectionT &c = _conn[i];
-	if (c.live() && (c.from_elt()->dead() || c.to_elt()->dead()))
+	if (c.live() && (c.from_element()->dead() || c.to_element()->dead()))
 	    kill_connection(i);
     }
 }
@@ -477,10 +477,10 @@ RouterT::change_connection_from(int c, PortT h)
     unlink_connection_from(c);
 
     _conn[c]._from = h;
-    if (h.port >= h.elt->_noutputs)
-	h.elt->_noutputs = h.port + 1;
+    if (h.port >= h.element->_noutputs)
+	h.element->_noutputs = h.port + 1;
 
-    int ei = h.idx();
+    int ei = h.eindex();
     _conn[c]._next_from = _first_conn[ei].from;
     _first_conn[ei].from = c;
 }
@@ -492,10 +492,10 @@ RouterT::change_connection_to(int c, PortT h)
     unlink_connection_to(c);
 
     _conn[c]._to = h;
-    if (h.port >= h.elt->_ninputs)
-	h.elt->_ninputs = h.port + 1;
+    if (h.port >= h.element->_ninputs)
+	h.element->_ninputs = h.port + 1;
 
-    int ei = h.idx();
+    int ei = h.eindex();
     _conn[c]._next_to = _first_conn[ei].to;
     _first_conn[ei].to = c;
 }
@@ -504,7 +504,7 @@ int
 RouterT::find_connection(const PortT &hfrom, const PortT &hto) const
 {
     assert(hfrom.router() == this && hto.router() == this);
-    int c = _first_conn[hfrom.idx()].from;
+    int c = _first_conn[hfrom.eindex()].from;
     while (c >= 0) {
 	if (_conn[c].from() == hfrom && _conn[c].to() == hto)
 	    break;
@@ -517,7 +517,7 @@ bool
 RouterT::find_connection_from(const PortT &h, PortT &out) const
 {
     assert(h.router() == this);
-    int c = _first_conn[h.idx()].from;
+    int c = _first_conn[h.eindex()].from;
     int p = h.port;
     out = PortT(0, -1);
     while (c >= 0) {
@@ -536,7 +536,7 @@ void
 RouterT::find_connections_from(const PortT &h, Vector<PortT> &v) const
 {
     assert(h.router() == this);
-    int c = _first_conn[h.idx()].from;
+    int c = _first_conn[h.eindex()].from;
     int p = h.port;
     v.clear();
     while (c >= 0) {
@@ -550,7 +550,7 @@ void
 RouterT::find_connections_from(const PortT &h, Vector<int> &v) const
 {
     assert(h.router() == this);
-    int c = _first_conn[h.idx()].from;
+    int c = _first_conn[h.eindex()].from;
     int p = h.port;
     v.clear();
     while (c >= 0) {
@@ -564,7 +564,7 @@ void
 RouterT::find_connections_to(const PortT &h, Vector<PortT> &v) const
 {
     assert(h.router() == this);
-    int c = _first_conn[h.idx()].to;
+    int c = _first_conn[h.eindex()].to;
     int p = h.port;
     v.clear();
     while (c >= 0) {
@@ -578,7 +578,7 @@ void
 RouterT::find_connections_to(const PortT &h, Vector<int> &v) const
 {
     assert(h.router() == this);
-    int c = _first_conn[h.idx()].to;
+    int c = _first_conn[h.eindex()].to;
     int p = h.port;
     v.clear();
     while (c >= 0) {
@@ -593,7 +593,7 @@ RouterT::find_connection_vector_from(ElementT *e, Vector<int> &v) const
 {
     assert(e->router() == this);
     v.clear();
-    int c = _first_conn[e->idx()].from;
+    int c = _first_conn[e->eindex()].from;
     while (c >= 0) {
 	int p = _conn[c].from().port;
 	if (p >= v.size())
@@ -611,7 +611,7 @@ RouterT::find_connection_vector_to(ElementT *e, Vector<int> &v) const
 {
     assert(e->router() == this);
     v.clear();
-    int c = _first_conn[e->idx()].to;
+    int c = _first_conn[e->eindex()].to;
     while (c >= 0) {
 	int p = _conn[c].to().port;
 	if (p >= v.size())
@@ -630,7 +630,7 @@ RouterT::insert_before(const PortT &inserter, const PortT &h)
     if (!add_connection(inserter, h))
 	return false;
 
-    int i = _first_conn[h.idx()].to;
+    int i = _first_conn[h.eindex()].to;
     while (i >= 0) {
 	int next = _conn[i].next_to();
 	if (_conn[i].to() == h && connection_live(i)
@@ -647,7 +647,7 @@ RouterT::insert_after(const PortT &inserter, const PortT &h)
     if (!add_connection(h, inserter))
 	return false;
 
-    int i = _first_conn[h.idx()].from;
+    int i = _first_conn[h.eindex()].from;
     while (i >= 0) {
 	int next = _conn[i].next_from();
 	if (_conn[i].from() == h && _conn[i].to() != inserter)
@@ -787,7 +787,7 @@ RouterT::remove_dead_elements(ErrorHandler *errh)
 	} else if (j != i) {
 	    _element_name_map.insert(_elements[i]->name(), j);
 	    _elements[j] = _elements[i];
-	    _elements[j]->_idx = j;
+	    _elements[j]->_eindex = j;
 	    _first_conn[j] = _first_conn[i];
 	}
     }
@@ -803,7 +803,7 @@ void
 RouterT::free_element(ElementT *e)
 {
     assert(e->router() == this);
-    int ei = e->idx();
+    int ei = e->eindex();
     
     // first, remove bad connections from other elements' connection lists
     Vector<int> bad_from, bad_to;
@@ -815,7 +815,7 @@ RouterT::free_element(ElementT *e)
     // now, free all of this element's connections
     for (int c = _first_conn[ei].from; c >= 0; ) {
 	int next = _conn[c].next_from();
-	if (_conn[c].to_idx() != ei)
+	if (_conn[c].to_eindex() != ei)
 	    free_connection(c);
 	c = next;
     }
@@ -850,7 +850,7 @@ RouterT::free_dead_elements()
 
     // don't free elements that have already been freed!!
     for (ElementT *e = _free_element; e; e = e->tunnel_input())
-	new_eindex[e->idx()] = 0;
+	new_eindex[e->eindex()] = 0;
 
     // get rid of connections to and from dead elements
     kill_bad_connections();
@@ -886,8 +886,8 @@ RouterT::expand_into(RouterT *tor, const VariableEnvironment &env, ErrorHandler 
     int nh = _conn.size();
     for (int i = 0; i < nh; i++) {
 	const PortT &hf = _conn[i].from(), &ht = _conn[i].to();
-	tor->add_connection(PortT(new_e[hf.idx()], hf.port),
-			    PortT(new_e[ht.idx()], ht.port),
+	tor->add_connection(PortT(new_e[hf.eindex()], hf.port),
+			    PortT(new_e[ht.eindex()], ht.port),
 			    _conn[i].landmark());
     }
 
@@ -927,7 +927,7 @@ RouterT::expand_tunnel(Vector<PortT> *port_expansions,
     expanded[0].port = PORT_EXPANDING;
 
     const PortT &me = ports[which];
-    ElementT *other_elt = (is_output ? me.elt->tunnel_input() : me.elt->tunnel_output());
+    ElementT *other_elt = (is_output ? me.element->tunnel_input() : me.element->tunnel_output());
     
     // find connections from tunnel input
     Vector<PortT> connections;
@@ -938,8 +938,8 @@ RouterT::expand_tunnel(Vector<PortT> *port_expansions,
 
     // give good errors for unused or nonexistent compound element ports
     if (!connections.size()) {
-	ElementT *in_elt = (is_output ? other_elt : me.elt);
-	ElementT *out_elt = (is_output ? me.elt : other_elt);
+	ElementT *in_elt = (is_output ? other_elt : me.element);
+	ElementT *out_elt = (is_output ? me.element : other_elt);
 	String in_name = in_elt->name();
 	String out_name = out_elt->name();
 	if (in_name + "/input" == out_name) {
@@ -962,7 +962,7 @@ RouterT::expand_tunnel(Vector<PortT> *port_expansions,
     Vector<PortT> store;
     for (int i = 0; i < connections.size(); i++) {
 	// if connected to another tunnel, expand that recursively
-	if (connections[i].elt->tunnel()) {
+	if (connections[i].element->tunnel()) {
 	    int x = connections[i].index_in(ports);
 	    if (x >= 0) {
 		expand_tunnel(port_expansions, ports, is_output, x, errh);
@@ -994,9 +994,9 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 	const ConnectionT &c = _conn[i];
 	if (c.dead())
 	    continue;
-	if (c.from_elt()->tunnel() && c.from_elt()->tunnel_input())
+	if (c.from_element()->tunnel() && c.from_element()->tunnel_input())
 	    (void) c.from().force_index_in(outputs);
-	if (c.to_elt()->tunnel() && c.to_elt()->tunnel_output())
+	if (c.to_element()->tunnel() && c.to_element()->tunnel_output())
 	    (void) c.to().force_index_in(inputs);
     }
 
@@ -1022,17 +1022,17 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 	const PortT &hf = _conn[i].from(), &ht = _conn[i].to();
 
 	// skip if uninteresting
-	if (hf.dead() || !hf.elt->tunnel() || ht.elt->tunnel())
+	if (hf.dead() || !hf.element->tunnel() || ht.element->tunnel())
 	    continue;
-	int idx = hf.index_in(outputs);
-	if (idx < 0)
+	int x = hf.index_in(outputs);
+	if (x < 0)
 	    continue;
 
 	// add cross product
 	// hf, ht are invalidated by adding new connections!
 	PortT safe_ht(ht);
 	String landmark = _conn[i].landmark(); // must not be reference!
-	const Vector<PortT> &v = out_expansions[idx];
+	const Vector<PortT> &v = out_expansions[x];
 	for (int j = 0; j < v.size(); j++)
 	    add_connection(v[j], safe_ht, landmark);
     }
@@ -1080,23 +1080,23 @@ RouterT::flatten(ErrorHandler *errh)
 
 
 void
-RouterT::const_iterator::step(const RouterT *r, int idx)
+RouterT::const_iterator::step(const RouterT *r, int eindex)
 {
     int n = (r ? r->nelements() : -1);
-    while (idx < n && (_e = r->element(idx), _e->dead()))
-	idx++;
-    if (idx >= n)
+    while (eindex < n && (_e = r->element(eindex), _e->dead()))
+	eindex++;
+    if (eindex >= n)
 	_e = 0;
 }
 
 void
-RouterT::const_type_iterator::step(const RouterT *r, ElementClassT *type, int idx)
+RouterT::const_type_iterator::step(const RouterT *r, ElementClassT *type, int eindex)
 {
     assert(type);
     int n = (r ? r->nelements() : -1);
-    while (idx < n && (_e = r->element(idx), _e->type() != type))
-	idx++;
-    if (idx >= n)
+    while (eindex < n && (_e = r->element(eindex), _e->type() != type))
+	eindex++;
+    if (eindex >= n)
 	_e = 0;
 }
 

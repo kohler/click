@@ -262,7 +262,7 @@ combine_links(ErrorHandler *errh)
     for (int j = 0; j < i; j++)
       if (links_from[i] == links_to[j] || links_from[j] == links_to[i]) {
 	const RouterPortT &h = links_from[i];
-	errh->error("router `%s' element `%s' used as both source and destination", router_names[h.port].cc(), h.elt->name_cc());
+	errh->error("router `%s' element `%s' used as both source and destination", router_names[h.port].cc(), h.element->name_cc());
       }
   if (errh->nerrors() != before)
     return -1;
@@ -300,7 +300,7 @@ make_link(const Vector<RouterPortT> &from, const Vector<RouterPortT> &to,
   Vector<String> words;
   for (int i = 0; i < all.size(); i++) {
     int r = all[i].port;
-    ElementT *e = all[i].elt;
+    ElementT *e = all[i].element;
     String name = router_names[r] + "/" + e->name();
     combes.push_back(combined->element(name));
     assert(combes.back());

@@ -29,14 +29,14 @@
 #include <stdlib.h>
 
 ElementT::ElementT()
-    : flags(0), _idx(-1), _type(0), _tunnel_input(0), _tunnel_output(0),
+    : flags(0), _eindex(-1), _type(0), _tunnel_input(0), _tunnel_output(0),
       _owner(0), _user_data(0)
 {
 }
 
 ElementT::ElementT(const String &n, ElementClassT *eclass,
 		   const String &config, const String &lm)
-    : flags(0), _idx(-1), _name(n),
+    : flags(0), _eindex(-1), _name(n),
       _type(eclass), _configuration(config), _landmark(lm),
       _ninputs(0), _noutputs(0), _tunnel_input(0), _tunnel_output(0),
       _owner(0), _user_data(0)
@@ -47,7 +47,7 @@ ElementT::ElementT(const String &n, ElementClassT *eclass,
 }
 
 ElementT::ElementT(const ElementT &o)
-    : flags(o.flags), _idx(-1), _name(o._name),
+    : flags(o.flags), _eindex(-1), _name(o._name),
       _type(o._type), _configuration(o._configuration), _landmark(o._landmark),
       _ninputs(0), _noutputs(0), _tunnel_input(0), _tunnel_output(0),
       _owner(0), _user_data(o._user_data)
@@ -136,10 +136,10 @@ static int
 PortT_sorter(const void *av, const void *bv)
 {
     const PortT *a = (const PortT *)av, *b = (const PortT *)bv;
-    if (a->elt == b->elt)
+    if (a->element == b->element)
 	return a->port - b->port;
     else
-	return a->elt->idx() - b->elt->idx();
+	return a->element->eindex() - b->element->eindex();
 }
 }
 
@@ -152,8 +152,8 @@ PortT::sort(Vector<PortT> &v)
 String
 PortT::unparse_input() const
 {
-    if (elt)
-	return "[" + String(port) + "]" + elt->name();
+    if (element)
+	return "[" + String(port) + "]" + element->name();
     else
 	return "<>";
 }
@@ -161,8 +161,8 @@ PortT::unparse_input() const
 String
 PortT::unparse_output() const
 {
-    if (elt)
-	return elt->name() + "[" + String(port) + "]";
+    if (element)
+	return element->name() + "[" + String(port) + "]";
     else
 	return "<>";
 }

@@ -88,14 +88,14 @@ inline int
 ProcessingT::input_pidx(const PortT &h) const
 {
     assert(h.router() == _router);
-    return input_pidx(h.idx(), h.port);
+    return input_pidx(h.eindex(), h.port);
 }
 
 inline int
 ProcessingT::output_pidx(const PortT &h) const
 {
     assert(h.router() == _router);
-    return output_pidx(h.idx(), h.port);
+    return output_pidx(h.eindex(), h.port);
 }
 
 inline int
@@ -113,15 +113,15 @@ ProcessingT::output_pidx(const ConnectionT &c) const
 inline PortT
 ProcessingT::input_port(int pidx) const
 {
-    const ElementT *elt = _input_elt[pidx];
-    return PortT(const_cast<ElementT *>(elt), pidx - _input_pidx[elt->idx()]);
+    const ElementT *e = _input_elt[pidx];
+    return PortT(const_cast<ElementT *>(e), pidx - _input_pidx[e->eindex()]);
 }
 
 inline PortT
 ProcessingT::output_port(int pidx) const
 {
-    const ElementT *elt = _output_elt[pidx];
-    return PortT(const_cast<ElementT *>(elt), pidx - _output_pidx[elt->idx()]);
+    const ElementT *e = _output_elt[pidx];
+    return PortT(const_cast<ElementT *>(e), pidx - _output_pidx[e->eindex()]);
 }
 
 inline int
@@ -175,13 +175,13 @@ ProcessingT::output_connection(int i, int p) const
 inline int
 ProcessingT::forward_flow(const PortT &p, Bitvector *bv, ErrorHandler *errh)
 {
-    return forward_flow(p.elt->type()->flow_code(), p.port, p.elt->noutputs(), bv, errh);
+    return forward_flow(p.element->type()->flow_code(), p.port, p.element->noutputs(), bv, errh);
 }
 
 inline int
 ProcessingT::backward_flow(const PortT &p, Bitvector *bv, ErrorHandler *errh)
 {
-    return backward_flow(p.elt->type()->flow_code(), p.port, p.elt->ninputs(), bv, errh);
+    return backward_flow(p.element->type()->flow_code(), p.port, p.element->ninputs(), bv, errh);
 }
 
 #endif

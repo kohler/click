@@ -68,7 +68,7 @@ RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
   for (int i = 0; i < ne; i++) {
     _ioffset.push_back(id);
     _ooffset.push_back(od);
-    ElementT *e = r->elt(i);
+    ElementT *e = r->element(i);
     _icount.push_back(e->ninputs());
     _ocount.push_back(e->noutputs());
     id += e->ninputs();
@@ -84,7 +84,7 @@ RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
   for (RouterT::iterator x = _router->begin_elements(); x; x++) {
     AlignClass *eclass = (AlignClass *)x->type()->cast("AlignClass");
     if (eclass)
-      _aligners[x->idx()] = eclass->create_aligner(x, _router, errh);
+      _aligners[x->eindex()] = eclass->create_aligner(x, _router, errh);
   }
 }
 
@@ -147,8 +147,8 @@ RouterAlign::have_input()
   Vector<Alignment> new_ialign(nialign, Alignment());
   for (int i = 0; i < nh; i++)
     if (conn[i].live()) {
-      int ioff = _ioffset[conn[i].to_idx()] + conn[i].to_port();
-      int ooff = _ooffset[conn[i].from_idx()] + conn[i].from_port();
+      int ioff = _ioffset[conn[i].to_eindex()] + conn[i].to_port();
+      int ooff = _ooffset[conn[i].from_eindex()] + conn[i].from_port();
       new_ialign[ioff] |= _oalign[ooff];
     }
 
@@ -180,8 +180,8 @@ RouterAlign::want_output()
   Vector<Alignment> new_oalign(noalign, Alignment());
   for (int i = 0; i < nh; i++)
     if (conn[i].live()) {
-      int ioff = _ioffset[conn[i].to_idx()] + conn[i].to_port();
-      int ooff = _ooffset[conn[i].from_idx()] + conn[i].from_port();
+      int ioff = _ioffset[conn[i].to_eindex()] + conn[i].to_port();
+      int ooff = _ooffset[conn[i].from_eindex()] + conn[i].from_port();
       new_oalign[ooff] &= _ialign[ioff];
     }
   /* for (int i = 0; i < noalign; i++)
@@ -212,7 +212,7 @@ void
 RouterAlign::print(FILE *f)
 {
   for (RouterT::iterator x = _router->begin_elements(); x; x++) {
-    int i = x->idx();
+    int i = x->eindex();
     fprintf(f, "%s :", x->name_cc());
     for (int j = 0; j < _icount[i]; j++) {
       const Alignment &a = _ialign[ _ioffset[i] + j ];
@@ -449,7 +449,7 @@ particular purpose.\n");
 	    (aligner_name(anonymizer), align_class,
 	     String(want.chunk()) + ", " + String(want.offset()),
 	     "<click-align>");
-	  router->insert_before(e, PortT(router->elt(i), j));
+	  router->insert_before(e, PortT(router->element(i), j));
 	  anonymizer++;
 	  num_aligns_added++;
 	}
@@ -463,8 +463,8 @@ particular purpose.\n");
     const Vector<ConnectionT> &conn = router->connections();
     int nhook = conn.size();
     for (int i = 0; i < nhook; i++)
-      if (conn[i].live() && conn[i].to_elt()->type() == align_class
-	  && conn[i].from_elt()->type() == align_class) {
+      if (conn[i].live() && conn[i].to_element()->type() == align_class
+	  && conn[i].from_element()->type() == align_class) {
 	// skip over hf[i]
 	Vector<PortT> above, below;
 	router->find_connections_to(conn[i].from(), above);
@@ -512,7 +512,7 @@ particular purpose.\n");
 	    (aligner_name(anonymizer), align_class,
 	     String(want.chunk()) + ", " + String(want.offset()),
 	     "<click-align>");
-	  router->insert_before(e, PortT(router->elt(i), j));
+	  router->insert_before(e, PortT(router->element(i), j));
 	  anonymizer++;
 	  num_aligns_added++;
 	}
@@ -532,9 +532,9 @@ particular purpose.\n");
     const Vector<ConnectionT> &conn = router->connections();
     int nhook = conn.size();
     for (int i = 0; i < nhook; i++)
-      if (conn[i].live() && conn[i].to_elt()->type() == align_class) {
-	Alignment have = ral._oalign[ ral._ooffset[conn[i].from_idx()] + conn[i].from_port() ];
-	Alignment want = ral._oalign[ ral._ooffset[conn[i].to_idx()] ];
+      if (conn[i].live() && conn[i].to_element()->type() == align_class) {
+	Alignment have = ral._oalign[ ral._ooffset[conn[i].from_eindex()] + conn[i].from_port() ];
+	Alignment want = ral._oalign[ ral._ooffset[conn[i].to_eindex()] ];
 	if (have <= want) {
 	  changed = true;
 	  Vector<PortT> align_dest;
@@ -575,7 +575,7 @@ particular purpose.\n");
       if (sa.length())
 	sa << ",\n  ";
       sa << x->name();
-      int i = x->idx();
+      int i = x->eindex();
       for (int j = 0; j < ral._icount[i]; j++) {
 	const Alignment &a = ral._ialign[ ral._ioffset[i] + j ];
 	sa << "  " << a.chunk() << " " << a.offset();

@@ -35,8 +35,8 @@ Specializer::Specializer(RouterT *router, const ElementMap &em)
   _etinfo.push_back(ElementTypeInfo());
   
   for (RouterT::iterator x = router->begin_elements(); x; x++) {
-    _noutputs[x->idx()] = x->noutputs();
-    _ninputs[x->idx()] = x->ninputs();
+    _noutputs[x->eindex()] = x->noutputs();
+    _ninputs[x->eindex()] = x->ninputs();
   }
 
   // prepare from element map
@@ -343,12 +343,12 @@ Specializer::create_connector_methods(SpecializedClass &spc)
   Vector<int> input_port(_ninputs[eindex], -1);
   Vector<int> output_port(_noutputs[eindex], -1);
   for (int i = 0; i < nhook; i++) {
-    if (conn[i].from_idx() == eindex) {
-      output_class[conn[i].from_port()] = enew_cxx_type(conn[i].to_idx());
+    if (conn[i].from_eindex() == eindex) {
+      output_class[conn[i].from_port()] = enew_cxx_type(conn[i].to_eindex());
       output_port[conn[i].from_port()] = conn[i].to_port();
     }
-    if (conn[i].to_idx() == eindex) {
-      input_class[conn[i].to_port()] = enew_cxx_type(conn[i].from_idx());
+    if (conn[i].to_eindex() == eindex) {
+      input_class[conn[i].to_port()] = enew_cxx_type(conn[i].from_eindex());
       input_port[conn[i].to_port()] = conn[i].from_port();
     }
   }

@@ -240,7 +240,7 @@ RouterT::unparse_connections(StringAccum &sa, const String &indent) const
 	    if (used[c] || !startchain[c])
 		continue;
 	    
-	    sa << indent << hf.elt->name();
+	    sa << indent << hf.element->name();
 	    if (hf.port)
 		sa << " [" << hf.port << "]";
 
@@ -253,7 +253,7 @@ RouterT::unparse_connections(StringAccum &sa, const String &indent) const
 		const PortT &ht = _conn[d].to();
 		if (ht.port)
 		    sa << "[" << ht.port << "] ";
-		sa << ht.elt->name();
+		sa << ht.element->name();
 		used[d] = true;
 		d = next[d];
 	    }

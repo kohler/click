@@ -207,8 +207,8 @@ generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh
 	int p = processing.output_processing(conn[i].from());
 	fprintf(f, "%s<connection from=\"%s\" fromport=\"%d\" to=\"%s\" toport=\"%d\" processing=\"%c\" />\n",
 		indent.cc(),
-		conn[i].from_elt()->name_cc(), conn[i].from_port(),
-		conn[i].to_elt()->name_cc(), conn[i].to_port(),
+		conn[i].from_element()->name_cc(), conn[i].from_port(),
+		conn[i].to_element()->name_cc(), conn[i].to_port(),
 		ProcessingT::processing_letters[p]);
     }
 }
