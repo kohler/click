@@ -1399,42 +1399,37 @@ cp_ethernet_address(const String &str, EtherAddress *address
 
 
 #ifndef CLICK_TOOL
-static Element *
-element_helper(const String &name, Element *owner, ErrorHandler *errh)
-{
-  String id = owner->id();
-  Router *router = owner->router();
-  int i = id.length();
-  const char *data = id.data();
-  
-  while (true) {
-    for (i--; i >= 0 && data[i] != '/'; i--)
-      /* nothing */;
-    if (i < 0)
-      break;
-    String n = id.substring(0, i + 1) + name;
-    if (Element *e = router->find(n, 0))
-      return e;
-  }
-  
-  return router->find(name, errh);
-}
-
 Element *
-cp_element(const String &text_in, Element *owner, ErrorHandler *errh)
+cp_element(const String &text_in, Element *context, ErrorHandler *errh)
 {
   String name;
   if (!cp_string(text_in, &name)) {
-    errh->error("bad name format");
+    if (errh)
+      errh->error("bad name format");
     return 0;
   } else
-    return element_helper(name, owner, errh);
+    return context->router()->find(name, context, errh);
+}
+
+Element *
+cp_element(const String &text_in, Router *router, ErrorHandler *errh)
+{
+  String name;
+  if (!cp_string(text_in, &name)) {
+    if (errh)
+      errh->error("bad name format");
+    return 0;
+  } else
+    return router->find(name, errh);
 }
 
 bool
 cp_handler(const String &str, Element *context, Element **result_element,
 	   String *result_hname, ErrorHandler *errh)
 {
+  if (!errh)
+    errh = ErrorHandler::silent_handler();
+  
   String text;
   if (!cp_string(str, &text)) {
     errh->error("bad name format");
@@ -1450,7 +1445,7 @@ cp_handler(const String &str, Element *context, Element **result_element,
     return false;
   }
 
-  Element *e = element_helper(text.substring(0, leftmost_dot), context, errh);
+  Element *e = context->router()->find(text.substring(0, leftmost_dot), context, errh);
   if (!e)
     return false;
 
@@ -1464,15 +1459,19 @@ cp_handler(const String &str, Element *context, bool need_read,
 	   bool need_write, Element **result_element, int *result_hid,
 	   ErrorHandler *errh)
 {
+  if (!errh)
+    errh = ErrorHandler::silent_handler();
+  
   Element *e;
   String hname;
-
   if (!cp_handler(str, context, &e, &hname, errh))
     return false;
 
   int hid = context->router()->find_handler(e, hname);
   if (hid < 0) {
     errh->error("element `%s' has no `%s' handler", e->id().cc(), hname.cc());
+    if (context->router()->nhandlers() == 0)
+      errh->error("because handlers have not been added yet!");
     return false;
   }
 
@@ -1543,6 +1542,7 @@ CpVaParseCmd
   cpArguments		= "args",
   cpString		= "string",
   cpWord		= "word",
+  cpKeyword		= "keyword",
   cpBool		= "bool",
   cpByte		= "byte",
   cpShort		= "short",
@@ -1550,9 +1550,11 @@ CpVaParseCmd
   cpInteger		= "int",
   cpUnsigned		= "u_int",
   cpReal2		= "real2",
-  cpNonnegReal2		= "u_real2",
+  cpUnsignedReal2	= "u_real2",
+  cpNonnegReal2		= "u_real2", // synonym
   cpReal10		= "real10",
-  cpNonnegReal10	= "u_real10",
+  cpUnsignedReal10	= "u_real10",
+  cpNonnegReal10	= "u_real10", // synonym
   cpMilliseconds	= "msec",
   cpTimeval		= "timeval",
   cpIPAddress		= "ip_addr",
@@ -1560,7 +1562,9 @@ CpVaParseCmd
   cpIPAddressOrPrefix	= "ip_addr_or_prefix",
   cpIPAddressSet	= "ip_addr_set",
   cpEthernetAddress	= "ether_addr",
+  cpEtherAddress	= "ether_addr", // synonym
   cpElement		= "element",
+  cpHandlerName		= "handler_name",
   cpHandler		= "handler",
   cpReadHandler		= "read_handler",
   cpWriteHandler	= "write_handler",
@@ -1580,6 +1584,7 @@ enum {
   cpiArguments,
   cpiString,
   cpiWord,
+  cpiKeyword,
   cpiBool,
   cpiByte,
   cpiShort,
@@ -1587,9 +1592,9 @@ enum {
   cpiInteger,
   cpiUnsigned,
   cpiReal2,
-  cpiNonnegReal2,
+  cpiUnsignedReal2,
   cpiReal10,
-  cpiNonnegReal10,
+  cpiUnsignedReal10,
   cpiMilliseconds,
   cpiTimeval,
   cpiIPAddress,
@@ -1598,6 +1603,7 @@ enum {
   cpiIPAddressSet,
   cpiEthernetAddress,
   cpiElement,
+  cpiHandlerName,
   cpiHandler,
   cpiReadHandler,
   cpiWriteHandler,
@@ -1709,6 +1715,11 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes word (%s)", argname, desc);
     break;
     
+   case cpiKeyword:
+    if (!cp_keyword(arg, &v->v_string))
+      errh->error("%s takes keyword (%s)", argname, desc);
+    break;
+    
    case cpiBool:
     if (!cp_bool(arg, &v->v.b))
       errh->error("%s takes bool (%s)", argname, desc);
@@ -1757,14 +1768,21 @@ default_parsefunc(cp_value *v, const String &arg,
     break;
 
    case cpiReal10:
-   case cpiNonnegReal10:
     if (!cp_real10(arg, v->extra, &v->v.i))
       errh->error("%s takes real (%s)", argname, desc);
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real10(v->v.i, v->extra);
       errh->error("overflow on %s (%s); max %s", argname, desc, m.cc());
-    } else if (argtype->internal == cpiNonnegReal10 && v->v.i < 0)
-      errh->error("%s (%s) must be >= 0", argname, desc);
+    }
+    break;
+
+   case cpiUnsignedReal10:
+    if (!cp_unsigned_real10(arg, v->extra, &v->v.u))
+      errh->error("%s takes unsigned real (%s)", argname, desc);
+    else if (cp_errno == CPE_OVERFLOW) {
+      String m = cp_unparse_real10(v->v.u, v->extra);
+      errh->error("overflow on %s (%s); max %s", argname, desc, m.cc());
+    }
     break;
 
    case cpiMilliseconds:
@@ -1796,9 +1814,8 @@ default_parsefunc(cp_value *v, const String &arg,
    }
 
    case cpiReal2:
-    assert(v->extra > 0);
     if (!cp_real2(arg, v->extra, &v->v.i)) {
-      /* CPE_INVALID would indicate a bad 'v->extra' */
+      // CPE_INVALID would indicate a bad 'v->extra'
       errh->error("%s takes real (%s)", argname, desc);
     } else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real2(v->v.i, v->extra);
@@ -1806,10 +1823,9 @@ default_parsefunc(cp_value *v, const String &arg,
     }
     break;
 
-   case cpiNonnegReal2:
-    assert(v->extra > 0);
+   case cpiUnsignedReal2:
     if (!cp_unsigned_real2(arg, v->extra, &v->v.u)) {
-      /* CPE_INVALID would indicate a bad 'v->extra' */
+      // CPE_INVALID would indicate a bad 'v->extra'
       errh->error("%s takes unsigned real (%s)", argname, desc);
     } else if (cp_errno == CPE_OVERFLOW) {
       String m  = cp_unparse_real2(v->v.u, v->extra);
@@ -1869,6 +1885,12 @@ default_parsefunc(cp_value *v, const String &arg,
      break;
    }
    
+   case cpiHandlerName: {
+     ContextErrorHandler cerrh(errh, String(argname) + " (" + desc + "):");
+     cp_handler(arg, context, &v->v.element, &v->v2_string, &cerrh);
+     break;
+   }
+
    case cpiHandler:
    case cpiReadHandler:
    case cpiWriteHandler: {
@@ -1918,7 +1940,6 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    case cpiInteger:
    case cpiReal2:
    case cpiReal10:
-   case cpiNonnegReal10:
    case cpiMilliseconds: {
      int *istore = (int *)v->store;
      *istore = v->v.i;
@@ -1926,7 +1947,8 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    }
   
    case cpiUnsigned:
-   case cpiNonnegReal2: { 
+   case cpiUnsignedReal2:
+   case cpiUnsignedReal10: {
      unsigned *ustore = (unsigned *)v->store; 
      *ustore = v->v.u; 
      break; 
@@ -1939,9 +1961,10 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      break;
    }
 
+   case cpiArgument:
    case cpiString:
    case cpiWord:
-   case cpiArgument: {
+   case cpiKeyword: {
      String *sstore = (String *)v->store;
      *sstore = v->v_string;
      break;
@@ -1951,7 +1974,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      Vector<String> *vstore = (Vector<String> *)v->store;
      int pos = 0, pos2;
      for (int len_pos = 0; len_pos < v->v2_string.length(); ) {
-       int next = v->v2_string.find_left(' ', pos);
+       int next = v->v2_string.find_left(' ', len_pos);
        cp_integer(v->v2_string.substring(len_pos, next - len_pos), &pos2);
        vstore->push_back(v->v_string.substring(pos, pos2 - pos));
        pos = pos2;
@@ -2014,6 +2037,14 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    case cpiElement: {
      Element **elementstore = (Element **)v->store;
      *elementstore = v->v.element;
+     break;
+   }
+
+   case cpiHandlerName: {
+     Element **elementstore = (Element **)v->store;
+     String *hnamestore = (String *)v->store2;
+     *elementstore = v->v.element;
+     *hnamestore = v->v2_string;
      break;
    }
 
@@ -2599,6 +2630,7 @@ cp_va_static_initialize()
   cp_register_argtype(cpArguments, "args", 0, default_parsefunc, default_storefunc, cpiArguments);
   cp_register_argtype(cpString, "string", 0, default_parsefunc, default_storefunc, cpiString);
   cp_register_argtype(cpWord, "word", 0, default_parsefunc, default_storefunc, cpiWord);
+  cp_register_argtype(cpKeyword, "keyword", 0, default_parsefunc, default_storefunc, cpiKeyword);
   cp_register_argtype(cpBool, "bool", 0, default_parsefunc, default_storefunc, cpiBool);
   cp_register_argtype(cpByte, "byte", 0, default_parsefunc, default_storefunc, cpiByte);
   cp_register_argtype(cpShort, "short", 0, default_parsefunc, default_storefunc, cpiShort);
@@ -2606,9 +2638,9 @@ cp_va_static_initialize()
   cp_register_argtype(cpInteger, "int", 0, default_parsefunc, default_storefunc, cpiInteger);
   cp_register_argtype(cpUnsigned, "unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned);
   cp_register_argtype(cpReal2, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal2);
-  cp_register_argtype(cpNonnegReal2, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNonnegReal2);
+  cp_register_argtype(cpUnsignedReal2, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal2);
   cp_register_argtype(cpReal10, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal10);
-  cp_register_argtype(cpNonnegReal10, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNonnegReal10);
+  cp_register_argtype(cpUnsignedReal10, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal10);
   cp_register_argtype(cpMilliseconds, "time in seconds", 0, default_parsefunc, default_storefunc, cpiMilliseconds);
   cp_register_argtype(cpTimeval, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);
   cp_register_argtype(cpIPAddress, "IP address", 0, default_parsefunc, default_storefunc, cpiIPAddress);
@@ -2618,6 +2650,7 @@ cp_va_static_initialize()
   cp_register_argtype(cpEthernetAddress, "Ethernet address", 0, default_parsefunc, default_storefunc, cpiEthernetAddress);
 #ifndef CLICK_TOOL
   cp_register_argtype(cpElement, "element name", 0, default_parsefunc, default_storefunc, cpiElement);
+  cp_register_argtype(cpHandlerName, "handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiHandlerName);
   cp_register_argtype(cpHandler, "handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiHandler);
   cp_register_argtype(cpReadHandler, "read handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiReadHandler);
   cp_register_argtype(cpWriteHandler, "write handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiWriteHandler);

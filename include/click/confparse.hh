@@ -5,6 +5,7 @@
 class ErrorHandler;
 #ifndef CLICK_TOOL
 class Element;
+class Router;
 # define CP_VA_PARSE_ARGS_REST Element *, ErrorHandler *, ...
 # define CP_OPT_CONTEXT , Element *context = 0
 # define CP_CONTEXT , Element *context
@@ -89,6 +90,7 @@ bool cp_ethernet_address(const String &, EtherAddress *  CP_OPT_CONTEXT);
 
 #ifndef CLICK_TOOL
 Element *cp_element(const String &, Element *, ErrorHandler *);
+Element *cp_element(const String &, Router *, ErrorHandler *);
 bool cp_handler(const String &, Element *, Element **, String *, ErrorHandler *);
 bool cp_handler(const String &, Element *, Element **, int *, ErrorHandler *);
 bool cp_handler(const String &, Element *, bool need_r, bool need_w, Element **, int *, ErrorHandler *);
@@ -110,17 +112,18 @@ extern CpVaParseCmd
   cpArguments,	// Vector<String> *result
   cpString,	// String *result
   cpWord,	// String *result
+  cpKeyword,	// String *result
   cpBool,	// bool *result
   cpByte,	// unsigned char *result
   cpShort,	// short *result
-  cpUnsignedShort,	// unsigned short *result
+  cpUnsignedShort, // unsigned short *result
   cpInteger,	// int *result
   cpUnsigned,	// unsigned *result
-  cpReal2,	  // int frac_bits, int *result
-  cpNonnegReal2,  // int frac_bits, unsigned *result
-  cpReal10,	  // int frac_digits, int *result
-  cpNonnegReal10, // int frac_digits, unsigned *result
-  cpMilliseconds, // int *result (user writes "1.02", result is 1020)
+  cpReal2,	    // int frac_bits, int *result
+  cpUnsignedReal2,  // int frac_bits, unsigned *result
+  cpReal10,	    // int frac_digits, int *result
+  cpUnsignedReal10, // int frac_digits, unsigned *result
+  cpMilliseconds,   // int *result (user writes "1.02", result is 1020)
   cpTimeval,	// struct timeval *result
   cpIPAddress,	// unsigned char result[4] (or IPAddress *, or unsigned int *)
   cpIPPrefix,	// unsigned char result[4], unsigned char result_mask[4]
@@ -128,13 +131,18 @@ extern CpVaParseCmd
   cpIPAddressSet,	// IPAddressSet *result
   cpEthernetAddress,	// unsigned char result[6] (or EtherAddress *)
   cpElement,	  // Element **result
-  cpHandler,	  // Element **result_element, int *result_hid
-  cpReadHandler,  // Element **result_element, int *result_hid
-  cpWriteHandler, // Element **result_element, int *result_hid
+  cpHandlerName,  // Element **result_e, String *result_hname
+  cpHandler,	  // Element **result_e, int *result_hid (INITIALIZE TIME ONLY)
+  cpReadHandler,  // Element **result_e, int *result_hid (INITIALIZE TIME ONLY)
+  cpWriteHandler, // Element **result_e, int *result_hid (INITIALIZE TIME ONLY)
   cpIP6Address,	// unsigned char result[16] (or IP6Address *)
   cpIP6Prefix,	// unsigned char result[16], unsigned char result_mask[16]
   cpIP6AddressOrPrefix,	// unsigned char result[16], unsigned char res_mask[16]
-  cpDesCblock;		// unsigned char result[8]
+  cpDesCblock,		// unsigned char result[8]
+  // old names, here for compatibility:
+  cpNonnegReal2,  // int frac_bits, unsigned *result
+  cpNonnegReal10, // int frac_digits, unsigned *result
+  cpEtherAddress; // unsigned char result[6] (or EtherAddress *)
 
 int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse(const String &, CP_VA_PARSE_ARGS_REST);
@@ -145,7 +153,8 @@ int cp_va_parse_keyword(const String &, CP_VA_PARSE_ARGS_REST);
 //        CpVaParseCmd type_id,			actual argument
 //		const char *description,
 //		[[from table above; usually T *result]]
-// Stores no values in the value_store arguments on error.
+// Returns the number of result arguments set, or negative on error.
+// Stores no values in the result arguments on error.
 
 void cp_va_static_initialize();
 void cp_va_static_cleanup();
