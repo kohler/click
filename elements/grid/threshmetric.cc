@@ -109,10 +109,10 @@ ThresholdMetric::append_metric(const metric_t &r, const metric_t &l) const
     return _bad_metric;
   
   if (r.val() < 1)
-    click_chatter("ThresholdMetric %s: append_metric WARNING: metric %u%% transmissions is too low for route metric",
+    click_chatter("ThresholdMetric %s: append_metric WARNING: metric %u hops is too low for route metric",
 		  id().cc(), r.val());
   if (l.val() != 1)
-    click_chatter("ThresholdMetric %s: append_metric WARNING: metric %u%% transmissions should be one for link metric",
+    click_chatter("ThresholdMetric %s: append_metric WARNING: metric %u hops should be 1 for link metric",
 		  id().cc(), r.val());
 
   return metric_t(r.val() + l.val());
