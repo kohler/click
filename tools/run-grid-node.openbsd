@@ -162,7 +162,7 @@ $old_netmask = "";
 $old_bcast = "";
 $old_gw = "";
 
-if(!(`netstat -I $grid_if` =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)){
+if(!(`netstat -I $grid_if -n` =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)){
     print "Unable to get MAC address\n";
     exit 1;
 }
