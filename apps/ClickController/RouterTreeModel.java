@@ -72,7 +72,7 @@ public class RouterTreeModel extends DefaultTreeModel {
 	  insertNodeInto(node, root, nodePos++);
 	  
 	  Vector v = _cs.getConfigElementNames();
-	  Collections.sort(v, new Util.IgnoreCaseStringComparator());
+	  Collections.sort(v, String.CASE_INSENSITIVE_ORDER);
 	  
 	  Comparator handlerComparator = new HandlerComparator();
 	  for (int i = 0; i < v.size(); i++) {

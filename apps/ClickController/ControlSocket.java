@@ -6,15 +6,13 @@
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, subject to the following
- * conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * Further elaboration of this license, including a DISCLAIMER OF ANY
- * WARRANTY, EXPRESS OR IMPLIED, is provided in the LICENSE file, which is
- * also accessible at http://www.pdos.lcs.mit.edu/click/license.html
+ * to deal in the Software without restriction, subject to the conditions
+ * listed in the Click LICENSE file. These conditions include: you must
+ * preserve this copyright notice, and you cannot mention the copyright
+ * holders in advertising related to the Software without their permission.
+ * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+ * notice is a summary of the Click LICENSE file; the license in that file is
+ * legally binding.
  */
 
 import java.net.*;
@@ -24,7 +22,7 @@ import java.util.Vector;
 /**
  * Manage a user-level click Router via its TCP ControlSocket.  
  * 
- * @author Douglas S. J. De Couto
+ * @author Douglas S. J. De Couto, Eddie Kohler
  */
 
 public class ControlSocket {
@@ -56,6 +54,15 @@ public class ControlSocket {
 	}
     }
 
+    static public class PermissionDeniedException extends ControlSocketException {
+	PermissionDeniedException() {
+	    super("Permission denied calling handler"); 
+	}
+	PermissionDeniedException(String hid) {
+	    super("Permission denied calling handler `" + hid + "'"); 
+	}
+    }
+
     static public class HandlerErrorException extends ControlSocketException {
 	HandlerErrorException() { 
 	    super("Unspecified error calling handler"); 
@@ -65,31 +72,31 @@ public class ControlSocket {
 	}
     }
 
-    static public class PermissionDeniedException extends ControlSocketException {
-	PermissionDeniedException() {
-	    super("Permission denied calling handler"); 
+    static public class HandlerFormatException extends ControlSocketException {
+	HandlerFormatException() { 
+	    super("Unspecified error calling handler"); 
 	}
-	PermissionDeniedException(String hid) {
-	    super("Permission denied calling handler `" + hid + "'"); 
+	HandlerFormatException(String hid) { 
+	    super("Bad format in handler `" + hid + "'"); 
 	}
     }
-    
+
     private InetAddress _host;
     private int _port;
     private Socket _sock;
     private BufferedReader _in;
     private BufferedWriter _out;
     
-    private static final int _code_ok = 200;
-    private static final int _code_ok_warn = 220;
-    private static final int _code_syntax_err = 500;
-    private static final int _code_unimplemented = 501;
-    private static final int _code_no_el = 510;
-    private static final int _code_no_handler = 511;
-    private static final int _code_handler_err = 520;
-    private static final int _code_no_perm = 530;
+    private static final int CODE_OK = 200;
+    private static final int CODE_OK_WARN = 220;
+    private static final int CODE_SYNTAX_ERR = 500;
+    private static final int CODE_UNIMPLEMENTED = 501;
+    private static final int CODE_NO_EL = 510;
+    private static final int CODE_NO_HANDLER = 511;
+    private static final int CODE_HANDLER_ERR = 520;
+    private static final int CODE_NO_PERM = 530;
     
-    public static final String _ctrl_sock_ver = "1.0";
+    public static final String CTRL_SOCK_VER = "1.0";
     /* XXX not sure timeout is a good idea; if we do timeout, we should
        reset the connection (close and re-open) to get rid of all old
        data... */
@@ -133,7 +140,7 @@ public class ControlSocket {
 	    }
 	    
 	    String ver_str = banner.substring(i + 1);
-	    if (!ver_str.equals(_ctrl_sock_ver)) {
+	    if (!ver_str.equals(CTRL_SOCK_VER)) {
 		_sock.close();
 		throw new IOException("Wrong ControlSocket version");
 	    }
@@ -236,12 +243,12 @@ public class ControlSocket {
 	try {
 	    numElements = Integer.parseInt(new String(buf, 0, i));
 	} catch (NumberFormatException ex) { 
-	    throw new ControlSocketException("Bad element list from ControlSocket"); 
+	    throw new HandlerFormatException("element list"); 
 	}
 	
-	Vector v = makeList(buf, i + 1);
-	if (v == null || v.size() != numElements)
-	    throw new ControlSocketException("Bad element list from ControlSocket");
+	Vector v = StringUtils.split(buf, i + 1, '\n');
+	if (v.size() != numElements)
+	    throw new HandlerFormatException("element list");
 	return v;
     }
     
@@ -260,10 +267,7 @@ public class ControlSocket {
     public Vector getRouterClasses()
 	throws ControlSocketException, IOException {
 	char[] buf = read(null, "classes");
-	Vector v = makeList(buf, 0);
-	if (v == null)
-	    throw new ControlSocketException("Bad class list from ControlSocket");
-	return v;
+	return StringUtils.split(buf, 0, '\n');
     }
     
     /**
@@ -281,10 +285,7 @@ public class ControlSocket {
     public Vector getRouterPackages()
 	throws ControlSocketException, IOException {
 	char[] buf = read(null, "packages");
-	Vector v = makeList(buf, 0);
-	if (v == null)
-	    throw new IOException("Bad package list from ControlSocket");
-	return v;
+	return StringUtils.split(buf, 0, '\n');
     }
     
     /**
@@ -304,10 +305,7 @@ public class ControlSocket {
     public Vector getConfigRequirements()
 	throws ControlSocketException, IOException {
 	char[] buf = read(null, "requirements");
-	Vector v = makeList(buf, 0);
-	if (v == null)
-	    throw new ControlSocketException("Bad requirements list from ControlSocket");
-	return v;
+	return StringUtils.split(buf, 0, '\n');
     }
 
     public static class HandlerInfo {
@@ -362,9 +360,7 @@ public class ControlSocket {
     public Vector getElementHandlers(String elementName)
 	throws ControlSocketException, IOException {
 	char[] buf = read(elementName, "handlers");
-	Vector vh = makeList(buf, 0);
-	if (vh == null)
-	    throw new ControlSocketException("Bad handler list from ControlSocket");
+	Vector vh = StringUtils.split(buf, 0, '\n');
 	
 	Vector v = new Vector();
 	for (int i = 0; i < vh.size(); i++) {
@@ -373,13 +369,16 @@ public class ControlSocket {
 	    for (j = 0; j < s.length() && !Character.isWhitespace(s.charAt(j)); j++)
 		; // find record split
 	    if (j == s.length())
-		throw new ControlSocketException("Bad handler list from ControlSocket");
+		throw new HandlerFormatException(elementName + ".handlers");
 	    HandlerInfo hi = new HandlerInfo(elementName, s.substring(0, j).trim());
 	    for ( ; j < s.length(); j++) {
-		if (Character.toLowerCase(s.charAt(j)) == 'r')
+		char c = s.charAt(j);
+		if (Character.toLowerCase(c) == 'r')
 		    hi.canRead = true;
-		if (Character.toLowerCase(s.charAt(j)) == 'w')
+		else if (Character.toLowerCase(c) == 'w')
 		    hi.canWrite = true;
+		else if (Character.isWhitespace(c))
+		    break;
 	    }
 	    v.addElement(hi);
 	}
@@ -423,7 +422,7 @@ public class ControlSocket {
 	} while (lastLine.charAt(3) == '-');
 	
 	int code = getResponseCode(lastLine);
-	if (code != _code_ok && code != _code_ok_warn) 
+	if (code != CODE_OK && code != CODE_OK_WARN) 
 	    handleErrCode(code, elementName, handlerName, response);
 	
 	response = _in.readLine();
@@ -468,7 +467,7 @@ public class ControlSocket {
 	} while (lastLine.charAt(3) == '-');
 	
 	int code = getResponseCode(lastLine);
-	if (code != _code_ok && code != _code_ok_warn) 
+	if (code != CODE_OK && code != CODE_OK_WARN) 
 	    handleErrCode(code, elementName, handlerName, response);
     }
         
@@ -561,28 +560,6 @@ public class ControlSocket {
 	}
     }
 
-    /**
-     * Convert a buffer of \n terminated strings into a Vector of Strings.
-     */
-    private Vector makeList(char buf[], int offset) {
-	Vector v = new Vector();
-	if (offset >= buf.length)
-	    return v;
-	int i = offset;
-	while (true) {
-	    int j;
-	    for (j = i; j < buf.length && buf[j] != '\n'; j++)
-		; // find '\n' terminator
-	    if (j == buf.length) 
-		return null;
-	    String s = new String(buf, i, j - i);
-	    v.addElement(s);
-	    i = j + 1; 
-	    if (i == buf.length)
-		return v;
-	}
-    }
-
     private void handleErrCode(int code, String elementName, 
 			       String handlerName, String response) 
 	throws ControlSocketException {
@@ -592,20 +569,20 @@ public class ControlSocket {
 	    hid = elementName + "." + handlerName;
 
 	switch (code) {
-	 case _code_syntax_err: 
+	 case CODE_SYNTAX_ERR: 
 	  throw new ControlSocketException("Syntax error calling handler `" + hid + "'");
-	 case _code_unimplemented: 
+	 case CODE_UNIMPLEMENTED: 
 	  throw new ControlSocketException("Unimplemented ControlSocket command");
-	 case _code_no_el: 
+	 case CODE_NO_EL: 
 	  throw new NoSuchElementException(elementName);
-	 case _code_no_handler: 
+	 case CODE_NO_HANDLER: 
 	  throw new NoSuchHandlerException(hid); 
-	 case _code_handler_err: 
+	 case CODE_HANDLER_ERR: 
 	  throw new HandlerErrorException(hid, response);
-	 case _code_no_perm: 
+	 case CODE_NO_PERM: 
 	  throw new PermissionDeniedException(hid); 
 	 default: 
-	  throw new ControlSocketException("Unknown ControlSocket error");
+	  throw new ControlSocketException("Unknown ControlSocket error code " + code);
 	}
     }
 
