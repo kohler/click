@@ -1,3 +1,21 @@
+2003-03-05 Wednesday 18:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/qvec.hh (1.1): A poor man's double-ended queue;
+	this is a simple O(n) class derived from Vector
+
+2003-03-05 Wednesday 18:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.44), dsdvroutetable.hh
+	(1.33): Added another metric: 1-way (reverse) transmission count
+	(one_way_tx_count)
+
+2003-03-05 Wednesday 17:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.43), dsdvroutetable.hh
+	(1.32): Added new metric: dsdv_seqs counts fraction of most recent
+	dsdv sequence numbers that we actually received for each
+	destination
+
 2003-03-04 Tuesday 22:33  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.42), dsdvroutetable.hh
