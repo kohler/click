@@ -12,7 +12,7 @@ RatedSource(\<0000000011111111222222223333333344444444555555556666>,
 
         -> IPsecDES(1, 0123456789abcdef)
         -> IPsecDES(0, a12345ddd9abcdef)
-        -> IPsecDES(2, A12345ccc9abcdef)
+        -> IPsecDES(1, A12345ccc9abcdef)
 
         -> IPEncap(50, 4.0.0.10, 1.0.0.2)
         -> SetIPChecksum
@@ -22,7 +22,7 @@ RatedSource(\<0000000011111111222222223333333344444444555555556666>,
 	-> MarkIPHeader
 
         -> IPsecDES(0, A12345ccc9abcdef)
-        -> IPsecDES(2, a12345ddd9abcdef)
+        -> IPsecDES(1, a12345ddd9abcdef)
         -> IPsecDES(0, 0123456789abcdef)
 
         -> Print(auth0, 128)
