@@ -1,3 +1,8 @@
+2001-10-05 Friday 12:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_ip.h, click_ip.h: add click_update_in_cksum
+	function, for incrementally updating checksums
+
 2001-10-04 Thursday 17:20  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* include/click/: packet.hh, packet.hh: Deal with chained mbuf's,

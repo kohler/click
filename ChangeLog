@@ -1,3 +1,27 @@
+2001-10-05 Friday 12:14  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: controlsocket.cc (1.30), controlsocket.hh
+	(1.19), handlerproxy.hh (1.3), khandlerproxy.cc (1.4): fix
+	ControlSocket bugs reported by Doug: CHECKREAD and CHECKWRITE now
+	work
+
+2001-10-05 Friday 12:14  Eddie Kohler <kohler@aciri.org>
+
+	* elements/icmp/: icmppingresponder.cc (1.7), icmppingresponder.hh
+	(1.3): fix ICMPPingResponder bugs reported by <kp13@gmx.co.uk>
+	(Geir): it should set the TTL to 255, and clear the paint
+	annotation
+
+2001-10-05 Friday 12:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/click_ip.h (1.10): add click_update_in_cksum
+	function, for incrementally updating checksums
+
+2001-10-05 Friday 11:03  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* apps/csclient/: csclient.cc (1.4), csclient.hh (1.3): added
+	testing code, fixed bug in get_string_vec
+
 2001-10-05 Friday 09:34  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* apps/csclient/: csclient.cc (1.3), csclient.hh (1.2):
