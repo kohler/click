@@ -111,8 +111,10 @@ DecIPTTL::smaction(Packet *p)
     //         = ~(~old_sum + ~old_halfword + old_halfword + ~0x0100)
     //         = ~(~old_sum + ~0 + ~0x0100)
     //         = ~(~old_sum + 0xFEFF)
-    unsigned long sum = (~ntohs(ip->ip_sum) & 0xFFFF) + 0xFEFF;
-    ip->ip_sum = ~htons(sum + (sum >> 16));
+    unsigned sum = (~ntohs(ip->ip_sum) & 0xFFFF) + 0xFEFF;
+    while (sum >> 16)		// XXX necessary?
+      sum = (sum & 0xFFFF) + (sum >> 16);
+    ip->ip_sum = ~htons(sum);
     
     return p;
   }
