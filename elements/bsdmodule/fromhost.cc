@@ -45,7 +45,6 @@ int
 FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 8;	// same as in FromDevice
-    clear_need_wakeup();
 
     if (cp_va_parse(conf, this, errh,
                     cpString, "interface name", &_devname,
@@ -74,7 +73,6 @@ FromHost::initialize(ErrorHandler *errh)
             malloc(sizeof (struct ifqueue), M_DEVBUF, M_NOWAIT|M_ZERO);
     assert(_inq);
     _inq->ifq_maxlen = QSIZE;
-    clear_need_wakeup();
     ScheduleInfo::initialize_task(this, &_task, true, errh);
     splx(s);
     return 0;
@@ -90,7 +88,6 @@ FromHost::cleanup(CleanupStage)
     int s = splimp();
     struct ifqueue *q = _inq ;
     _inq = NULL;
-    clear_need_wakeup();
     device()->if_poll_xmit = NULL;
     splx(s);
 
@@ -112,14 +109,10 @@ FromHost::run_task()
     // click_chatter("FromHost::run_task().");
     while (npq < _burst) {
 	struct mbuf *m = 0;
-        int s = splimp();
         IF_DEQUEUE(_inq, m);
         if (m == NULL) {
-            set_need_wakeup();
-            splx(s);
 	    return npq > 0;
 	}
-	splx(s);
     
         // Got an mbuf, including the MAC header. Make it a real Packet.
         Packet *p = Packet::make(m);

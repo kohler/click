@@ -14,7 +14,7 @@ CLICK_DECLS
 #include <assert.h>	/* MARKO XXX */
 #endif
 
-#ifdef CLICK_BSDMODULE
+#if CLICK_BSDMODULE && !BSD_NETISRSCHED
 #define SPLCHECK				\
 	int s = splimp();			\
 	if (s == 0)				\
@@ -90,10 +90,6 @@ class Task { public:
     int thread_preference() const	{ return _thread_preference; }
     void change_thread(int);
 
-#ifdef CLICK_BSDMODULE
-    inline void wakeup();
-#endif
-  
     inline void call_hook();
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
@@ -229,7 +225,7 @@ Task::fast_unschedule()
     assert(!in_interrupt());
 #endif
 #if CLICK_BSDMODULE
-    assert(!intr_nesting_level);
+    // assert(!intr_nesting_level);
     SPLCHECK
 #endif
     if (scheduled()) {
@@ -245,9 +241,6 @@ Task::fast_unschedule()
 	_next = _prev = 0;
 #endif
     }
-#if CLICK_BSDMODULE
-    splx(s);
-#endif
 }
 
 #ifdef HAVE_STRIDE_SCHED
@@ -277,7 +270,7 @@ Task::fast_reschedule()
     // should not be scheduled at this point
     assert(_thread);
 #if CLICK_LINUXMODULE
-    // tasks never run at interrupt time
+    // tasks never run at interrupt time in Linux
     assert(!in_interrupt());
 #endif
 #if CLICK_BSDMODULE
@@ -344,7 +337,7 @@ Task::fast_reschedule()
     assert(!in_interrupt());
 #endif
 #if CLICK_BSDMODULE
-    assert(!intr_nesting_level);
+    // assert(!intr_nesting_level);
     SPLCHECK
 #endif
     if (!scheduled()) {
@@ -372,20 +365,6 @@ Task::reschedule()
 	true_reschedule();
 }
 
-#ifdef CLICK_BSDMODULE
-// XXX FreeBSD specific
-// put tasks on the list of tasks to wakeup.
-inline void
-Task::wakeup()
-{
-    assert(_thread && !_prev);
-    int s = splimp();
-    printf("Task::wakeup() - how did we get here?\n"); /* XXX MARKO */
-    _next = _thread->_wakeup_list;
-    _thread->_wakeup_list = this;
-    splx(s);
-}
-#endif
 
 inline void
 Task::call_hook()

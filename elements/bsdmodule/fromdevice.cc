@@ -37,6 +37,7 @@ CLICK_CXX_PROTECT
 #include <sys/linker.h>
 #include <net/if_var.h>
 #include <net/ethernet.h>
+#include <net/netisr.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
@@ -48,7 +49,7 @@ struct pollrec {
         struct ifnet    *ifp;
 };
 
-static int *polling;		// 1 = BSD poller; 2 = Click poller
+int *polling;			// polling mode
 static int *poll_handlers;	// # of NICs registered for BSD kernel polling
 static int *reg_frac;		// How often we have to check status registers
 static struct pollrec *pr;	// BSD kernel polling handlers
@@ -126,7 +127,7 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp, struct ether_header *eh)
     } else
 	IF_ENQUEUE(me->_inq, m);
     if (me->_polling != 1)
-	me->wakeup();
+	me->intr_reschedule();
     if (me->_polling == -1)
 	me->_polling = 1; // no need to wakeup task thread any more
 #ifdef FROMDEVICE_TSTAMP
@@ -162,7 +163,7 @@ click_ether_output(struct ifnet *ifp, struct mbuf **mp)
         m_freem(m);
     } else
         IF_ENQUEUE(me->_inq, m);
-    me->wakeup();
+    me->intr_reschedule();
     splx(s);
     return 0;
 }
@@ -405,21 +406,19 @@ FromDevice::run_task()
     }
 #endif
 
-    while (npq < _burst) {
+    while (npq <= _burst) {
 	struct mbuf *m = 0;
 
 	// Try to dequeue a packet from the interrupt input queue.
-	int s = splimp();
 	IF_DEQUEUE(_inq, m);
 	if (m == NULL) {
-	    set_need_wakeup();
-	    splx(s);
+#if CLICK_DEVICE_ADJUST_TICKETS
 	    adjust_tickets(npq);
+#endif
 	    if (_polling)
 		_task.fast_reschedule();
 	    return npq > 0;
 	}
-	splx(s);
 
 	// Got a packet, which includes the MAC header. Make it a real Packet.
 
@@ -431,6 +430,7 @@ FromDevice::run_task()
 #if CLICK_DEVICE_ADJUST_TICKETS
     adjust_tickets(npq);
 #endif
+//printf("fromdevice couldn't handle all packets\n");
     _task.fast_reschedule();
     return true;
 }

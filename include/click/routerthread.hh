@@ -96,7 +96,7 @@ class RouterThread : public Task { public:
     // XXX FreeBSD
     u_int64_t _old_tsc; /* MARKO - temp. */
     void *_sleep_ident;
-    Task *_wakeup_list;
+    int _oticks;
 #endif
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
@@ -190,7 +190,7 @@ RouterThread::unsleep()
     if (_sleeper)
 	wake_up_process(_sleeper);
 #endif
-#ifdef CLICK_BSDMODULE
+#if CLICK_BSDMODULE && !BSD_NETISRSCHED
     if (_sleep_ident)
 	wakeup_one(&_sleep_ident);
 #endif

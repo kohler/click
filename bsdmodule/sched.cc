@@ -1,10 +1,11 @@
 // -*- c-basic-offset: 4 -*-
 /*
  * sched.cc -- BSD kernel scheduler thread for click
- * Benjie Chen, Eddie Kohler
+ * Benjie Chen, Eddie Kohler, Marko Zec
  *
  * Copyright (c) 1999-2001 Massachusetts Institute of Technology
- * Copyright (c) 2001-2003 International Computer Science Institute
+ * Copyright (c) 2001-2004 International Computer Science Institute
+ * Copyright (c) 2004 University of Zagreb
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -27,23 +28,32 @@
 #include <click/straccum.hh>
 #include <click/master.hh>
 
+#ifdef BSD_NETISRSCHED
+#include <elements/bsdmodule/anydevice.hh>
+#endif
+
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <sys/resource.h>
 #include <sys/proc.h>
 #include <sys/kthread.h>
+#include <net/netisr.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
+static Router *placeholder_router;
+
+#ifdef BSD_NETISRSCHED
+struct ifnet click_dummyifnet;
+struct callout_handle click_timer_h;
+#else  //BSD_NETISRSCHED
 
 int click_thread_priority = PRIO_PROCESS;
 static Vector<int> *click_thread_pids;
-static Router *placeholder_router;
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
 static unsigned min_click_frac = 5, max_click_frac = 800;
 #endif
-
 
 static void
 click_sched(void *thunk)
@@ -99,9 +109,12 @@ kill_router_threads()
   } else
     return 0;
 }
+#endif //BSD_NETISRSCHED
 
 
 /******************************* Handlers ************************************/
+
+#ifndef BSD_NETISRSCHED
 
 static String
 read_threads(Element *, void *)
@@ -198,6 +211,8 @@ write_cpu_share(const String &conf, Element *, void *thunk, ErrorHandler *errh)
 
 #endif
 
+#endif //BSD_NETISRSCHED
+
 enum { H_TASKS_PER_ITER, H_ITERS_PER_TIMERS, H_ITERS_PER_OS };
 
 
@@ -279,10 +294,45 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 extern "C" int click_threads();
 #endif
 
+#ifdef BSD_NETISRSCHED
+
+static void
+click_poll(struct ifnet *ifp, enum poll_cmd cmd, int count)
+{
+  schednetisr(NETISR_CLICK);
+}
+
+
+static void
+click_timer(void *arg)
+{
+  if (polling && *polling)
+    ether_poll_register(click_poll, &click_dummyifnet);
+  else
+    schednetisr(NETISR_CLICK);
+  click_timer_h = timeout(click_timer, NULL, 1);
+}
+
+
+void
+click_netisr(void)
+{
+  int s = splimp();
+  RouterThread *rt = click_master->thread(0);
+
+  rt->driver();
+  splx(s);
+}
+
+#endif //BSD_NETISRSCHED
+
+
 void
 click_init_sched(ErrorHandler *errh)
 {
+#ifndef BSD_NETISRSCHED
   click_thread_pids = new Vector<int>;
+#endif
 
 #if __MTCLICK__
   click_master = new Master(click_threads());
@@ -293,10 +343,18 @@ click_init_sched(ErrorHandler *errh)
   click_master = new Master(1);
 #endif
 
+#ifdef BSD_NETISRSCHED
+  register_netisr(NETISR_CLICK, click_netisr);
+  schednetisr(NETISR_CLICK);
+  click_timer_h = timeout(click_timer, NULL, 1);
+  click_dummyifnet.if_flags |= IFF_UP|IFF_RUNNING;
+#endif
+
   placeholder_router = new Router("", click_master);
   placeholder_router->initialize(errh);
   placeholder_router->activate(errh);
 
+#ifndef BSD_NETISRSCHED
   for (int i = 0; i < click_master->nthreads(); i++) {
     struct proc *p;
     click_master->use();
@@ -311,6 +369,7 @@ click_init_sched(ErrorHandler *errh)
   Router::add_read_handler(0, "threads", read_threads, 0);
   Router::add_read_handler(0, "priority", read_priority, 0);
   Router::add_write_handler(0, "priority", write_priority, 0);
+#endif //BSD_NETISRSCHED
 #ifdef HAVE_ADAPTIVE_SCHEDULER
   static_assert(Task::MAX_UTILIZATION == 1000);
   Router::add_read_handler(0, "min_cpu_share", read_cpu_share, 0);
@@ -342,6 +401,12 @@ click_init_sched(ErrorHandler *errh)
 int
 click_cleanup_sched()
 {
+#ifdef BSD_NETISRSCHED
+  untimeout(click_timer, NULL, click_timer_h);
+  unregister_netisr(NETISR_CLICK);
+  ether_poll_deregister(&click_dummyifnet);
+  delete placeholder_router;
+#else
   if (kill_router_threads() < 0) {
     printf("click: Following threads still active, expect a crash:\n");
     for (int i = 0; i < click_thread_pids->size(); i++)
@@ -352,4 +417,5 @@ click_cleanup_sched()
     click_thread_pids = 0;
     return 0;
   }
+#endif
 }

@@ -6,14 +6,20 @@
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
+#define DEVICE_POLLING
 #include <sys/socket.h>
 #include <net/if.h>
 #include <net/if_var.h>
+#include <net/netisr.h>
 #include <machine/limits.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 #define CLICK_CYCLE_COMPENSATION 0
+
+#ifdef BSD_NETISRSCHED
+# define NETISR_CLICK 1		// must match empty slots in net/netisr.h !!!
+#endif
 
 #ifndef RR_SCHED
 # define CLICK_DEVICE_ADJUST_TICKETS 1
@@ -21,6 +27,8 @@ CLICK_CXX_UNPROTECT
 
 #define GET_STATS_RESET(a,b,c,d,e,f)	/* nothing */
 #define SET_STATS(a,b,c)		/* nothing */
+
+extern int *polling;            // 1 = BSD poller; 2 = Click poller
 
 class AnyDeviceMap;
 
@@ -43,14 +51,12 @@ class AnyDevice : public Element { public:
     AnyDevice *next() const		{ return _next; }
     void set_next(AnyDevice *d)		{ _next = d; }
     void set_max_tickets(int t)		{ _max_tickets = t; }
-    int wakeup();
-    void set_need_wakeup()		{ _need_wakeup = true; }
-    void clear_need_wakeup()		{ _need_wakeup = false; }
 
     int find_device(bool, AnyDeviceMap *, ErrorHandler *);
     void set_device(net_device *, AnyDeviceMap *);
     void clear_device(AnyDeviceMap *);
     void adjust_tickets(int work);
+    void intr_reschedule();
 
   protected:
 
@@ -63,7 +69,6 @@ class AnyDevice : public Element { public:
 
   private:
 
-    bool _need_wakeup;
     int _max_tickets;
     int _idles;
 
@@ -85,17 +90,19 @@ class AnyTaskDevice : public AnyDevice { public:
 };
 
 
-inline int
-AnyDevice::wakeup()
+inline void
+AnyDevice::intr_reschedule(void)
 {
-    if (_need_wakeup) {
-	_need_wakeup = false;
-	/* _task.wakeup(); MARKO XXX */
-	_task.reschedule(); /* MARKO XXX */
-	return 1;
-    } else
-	return 0;
+#ifdef BSD_NETISRSCHED
+    if (!_task.scheduled())
+	_task.fast_reschedule();
+    if (!polling || (polling && *polling != 2))
+	schednetisr(NETISR_CLICK);
+#else
+    _task.reschedule();
+#endif
 }
+
 
 inline void
 AnyDevice::adjust_tickets(int work)

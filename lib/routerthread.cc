@@ -66,9 +66,6 @@ RouterThread::RouterThread(Master *m, int id)
 #ifdef CLICK_LINUXMODULE
     _sleeper = 0;
 #endif
-#ifdef CLICK_BSDMODULE
-    _wakeup_list = 0;
-#endif
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     _max_click_share = 80 * Task::MAX_UTILIZATION / 100;
     _min_click_share = Task::MAX_UTILIZATION / 200;
@@ -79,7 +76,12 @@ RouterThread::RouterThread(Master *m, int id)
     _tasks_per_iter = 256;
     _iters_per_timers = 1;
 #else
+#ifdef BSD_NETISRSCHED
+    // Must be set low for Luigi's feedback scheduler to work properly
+    _tasks_per_iter = 8;
+#else
     _tasks_per_iter = 128;
+#endif
     _iters_per_timers = 32;
 #endif
 
@@ -436,12 +438,17 @@ RouterThread::driver()
 	// run occasional tasks: timers, select, etc.
 	iter++;
 	
-#ifndef HAVE_ADAPTIVE_SCHEDULER	/* Adaptive scheduler runs OS itself. */
+#if !(HAVE_ADAPTIVE_SCHEDULER||BSD_NETISRSCHED)
 	if ((iter % _iters_per_os) == 0)
 	    run_os();
 #endif
 
+#ifdef BSD_NETISRSCHED
+	if ((iter % _iters_per_timers) == 0 || _oticks != ticks) {
+	    _oticks = ticks;
+#else
 	if ((iter % _iters_per_timers) == 0) {
+#endif
 	    _master->run_timers();
 #ifdef CLICK_NS
 	    // If there's another timer, tell the simulator to make us
@@ -462,11 +469,11 @@ RouterThread::driver()
 
 #ifndef HAVE_ADAPTIVE_SCHEDULER
     // run a bunch of tasks
-#ifdef CLICK_BSDMODULE  /* XXX MARKO */
+#if CLICK_BSDMODULE && !BSD_NETISRSCHED
     int s = splimp();
 #endif
     run_tasks(_tasks_per_iter);
-#ifdef CLICK_BSDMODULE  /* XXX MARKO */
+#if CLICK_BSDMODULE && !BSD_NETISRSCHED
     splx(s);
 #endif
 #else
@@ -484,24 +491,7 @@ RouterThread::driver()
     check_restride(restride_t_before, t_now, restride_iter);
 #endif
 
-#ifdef CLICK_BSDMODULE
-    // wake up tasks that went to sleep, waiting on packets
-    if (_wakeup_list) {
-	int s = splimp();
-	int c = 100; /* XXX MARKO */
-	Task *t;
-	while ((t = _wakeup_list) != 0) {
-	    _wakeup_list = t->_next;
-	    t->reschedule();
-	    if (!c--) {
-		printf("driver _wakeup_list loop takes too long, givig up!\n");
-		break;
-	    }
-	}
-	splx(s);
-    }
-#endif
-
+#ifndef BSD_NETISRSCHED
     // check to see if driver is stopped
     if (*runcount <= 0) {
 	unlock_tasks();
@@ -510,9 +500,9 @@ RouterThread::driver()
 	if (!b)
 	    goto finish_driver;
     }
+#endif
     
-    
-#ifndef CLICK_NS
+#if !(CLICK_NS|BSD_NETISRSCHED)
     // Everyone except the NS driver stays in driver() until the driver is
     // stopped.
     goto driver_loop;

@@ -104,9 +104,11 @@ static void
 kill_router()
 {
     if (click_router) {
+	int s = splimp();
 	cleanup_router_element_procs();
 	click_router->unuse();
 	click_router = 0;
+	splx(s);
     }
 }
 

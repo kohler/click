@@ -29,7 +29,7 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 AnyDevice::AnyDevice()
-  : _dev(0), _task(this), _idles(0), _next(0), _need_wakeup(false)
+  : _dev(0), _task(this), _idles(0), _next(0)
 {
   MOD_INC_USE_COUNT;
 }

@@ -69,11 +69,6 @@ which can be used for better performance and stability).
 #include "elements/bsdmodule/anydevice.hh"
 #include <click/standard/storage.hh>
 
-enum poll_cmd { POLL_ONLY, POLL_AND_CHECK_STATUS, POLL_DEREGISTER };
-
-typedef void poll_handler_t (struct ifnet *ifp,
-                enum poll_cmd cmd, int count);
-
 
 class FromDevice : public AnyDevice, public Storage { public:
     
