@@ -35,8 +35,8 @@ String::Memo::Memo()
 }
 
 inline
-String::Memo::Memo(char *data, int dirty_capacity)
-  : _refcount(0), _capacity(dirty_capacity), _dirty(dirty_capacity),
+String::Memo::Memo(char *data, int dirty, int capacity)
+  : _refcount(0), _capacity(capacity), _dirty(dirty),
     _real_data(data)
 {
 }
@@ -117,17 +117,10 @@ String::String(double d)
 #endif
 
 String
-String::claim_string(char *str, int len)
+String::claim_string(char *str, int len, int capacity)
 {
-  if (!str)
-    len = 0;
-  else if (len < 0)
-    len = strlen(str);
-  if (len == 0) {
-    delete[] str;
-    return String();
-  } else
-    return String(str, len, new Memo(str, len));
+  assert(str && len > 0 && capacity >= len);
+  return String(str, len, new Memo(str, len, capacity));
 }
 
 String
@@ -139,6 +132,14 @@ String::stable_string(const char *str, int len)
     return String();
   else
     return String(str, len, permanent_memo);
+}
+
+String
+String::garbage_string(int len)
+{
+  String s;
+  s.append_garbage(len);
+  return s;
 }
 
 void
@@ -572,5 +573,6 @@ String::static_cleanup()
     null_string_p = 0;
     if (--null_memo->_refcount == 0) delete null_memo;
     if (--permanent_memo->_refcount == 0) delete permanent_memo;
+    null_memo = permanent_memo = 0;
   }
 }

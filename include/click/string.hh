@@ -38,7 +38,7 @@ class String { public:
   ~String();
   
   static const String &null_string()	{ return *null_string_p; }
-  static String claim_string(char *, int = -1); // claim memory
+  static String garbage_string(int n);	// n garbage characters
   static String stable_string(const char *, int = -1); // stable read-only mem.
   
   static int out_of_memory_count();
@@ -123,7 +123,7 @@ class String { public:
     char *_real_data;
     
     Memo();
-    Memo(char *, int);
+    Memo(char *, int, int);
     Memo(int, int);
     ~Memo();
   };
@@ -145,6 +145,10 @@ class String { public:
   static Memo *null_memo;
   static Memo *permanent_memo;
   static String *null_string_p;
+  
+  static String claim_string(char *, int, int); // claim memory
+
+  friend class StringAccum;
   
 };
 

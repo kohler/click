@@ -55,7 +55,11 @@ String
 StringAccum::take_string()
 {
   int len = length();
-  return String::claim_string(take(), len);
+  if (len) {
+    int capacity = _cap;
+    return String::claim_string(take(), len, capacity);
+  } else
+    return String();
 }
 
 StringAccum &

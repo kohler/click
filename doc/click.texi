@@ -366,17 +366,6 @@ situations where you wish to avoid unnecessary memory operations by
 returning string references instead of @code{String}s.
 @end deftypeop
 
-@deftypeop {Static Method} String String claim_string @w{(char *@var{s},} @w{int @var{len})}
-Creates and returns a string containing the @var{len} bytes of data
-starting at @var{s}. If @var{len} is negative, then this function treats
-@var{s} as a C string, effectively setting @var{len} to
-@code{strlen(@var{s})}. The @var{s} memory is claimed by the
-@code{String} implementation. When the last @code{String} referencing
-this memory is destroyed, the memory itself will be freed by calling
-@code{delete[] @var{s}}. (Thus, @var{s} should have been allocated with
-@code{new[]}.)
-@end deftypeop
-
 @deftypeop {Static Method} String String stable_string @w{(const char *@var{s},} @w{int @var{len})}
 Creates and returns a string containing the @var{len} bytes of data
 starting at @var{s}. If @var{len} is negative, then this function treats
@@ -387,6 +376,10 @@ references to it still exist. For example, @var{s} might be a C string
 constant. The @code{String} implementation will not alter or free
 @var{s}. Functions such as @code{mutable_data} (see below) will return
 copies of @var{s}, not @var{s} itself.
+@end deftypeop
+
+@deftypeop {Static Method} String String garbage_string @w{(@w{int @var{len}})}
+Creates and returns a string containing @var{len} bytes of garbage data.
 @end deftypeop
 
 

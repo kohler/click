@@ -72,10 +72,11 @@ ChuckCheck::read_handler(Element *e, void *)
     // XXX multiprocessors
     
     ChuckCheck *cc = (ChuckCheck *)e;
-    unsigned *buf = new unsigned[1 + BUCKETS * 4];
-    if (!buf)
-	return String("out of memory");
-  
+    String str = String::garbage_string((1 + BUCKETS*4) * sizeof(unsigned));
+    if (!str)
+	return String::stable_string("out of memory\n");
+
+    unsigned *buf = (unsigned *)(str.mutable_data());
     unsigned j = 1;
     unsigned num = cc->_head_id;
     unsigned head = cc->_head;
@@ -89,7 +90,7 @@ ChuckCheck::read_handler(Element *e, void *)
     }
 
     buf[0] = num - head;
-    return String::claim_string((char *)buf, sizeof(unsigned) * j);
+    return str;
 }
 
 void
