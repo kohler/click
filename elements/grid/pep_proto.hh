@@ -7,14 +7,14 @@
 
 #include "grid.hh"
 
-#define pep_proto_fixes 5  // Max # of fixes in a packet.
-#define pep_max_hops 10    // Don't propagate farther than this.
+static const int pep_proto_fixes = 5;  // Max # of fixes in a packet.
+static const int pep_max_hops = 10;    // Don't propagate farther than this.
 
 // Intervals, in seconds:
 
-#define pep_update 1       // Broadcast updates this often.
-#define pep_stale 5        // Don't send fixes older than this.
-#define pep_purge 100      // Delete cache entries older than this.
+static const int pep_update = 1;       // Broadcast updates this often.
+static const int pep_stale = 5;        // Don't send fixes older than this.
+static const int pep_purge = 100;      // Delete cache entries older than this.
 
 // A PEP packet carries a bunch of pep_fixes. Each fix describes the
 // probable distance to a different node with a known position.
