@@ -48,6 +48,10 @@ DSDVRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry)
   RTEntry *r = _rtes.findp(dest_ip);
   if (r == 0)
     return false;
+#if USE_OLD_SEQ
+  if (use_old_route(dest_ip, dsdv_jiffies())) 
+    r = _old_rtes.findp(dest_ip);
+#endif
   entry = *r;
   return true;  
 }
@@ -55,11 +59,35 @@ DSDVRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry)
 void
 DSDVRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 {
+#if USE_OLD_SEQ
+  unsigned jiff = dsdv_jiffies();
+#endif
   for (RTIter iter = _rtes.begin(); iter; iter++) {
     const RTEntry &rte = iter.value();
+#if USE_OLD_SEQ
+    if (use_old_route(rte.dest_ip, jiff))
+      vec.push_back(_old_rtes[rte.dest_ip]);
+    else
+      vec.push_back(rte);
+#else
     vec.push_back(rte);
+#endif
   }
 }
+
+
+#if USE_OLD_SEQ
+bool
+DSDVRouteTable::use_old_route(const IPAddress &dst, unsigned jiff)
+{
+  RTEntry *real = _rtes.findp(dst);
+  RTEntry *old = _old_rtes.findp(dst);
+  return
+    (real && real->good() &&             // if real route is bad, don't use good but old route
+     old && old->good() &&               // if old route is bad, don't use it
+     real->advertise_ok_jiffies > jiff); // if ok to advertise real route, don't use old route
+}
+#endif
 
 DSDVRouteTable::DSDVRouteTable() : 
   GridGenericRouteTable(1, 1), _gw_info(0),
@@ -283,6 +311,12 @@ DSDVRouteTable::insert_route(const RTEntry &r, const GridGenericLogger::reason_t
     _expire_hooks.insert(r.dest_ip, hp);
   }
 
+#if USE_OLD_SEQ
+  // if we are getting new seqno, save route for old seqno
+  if (old_r && old_r->seq_no() < r.seq_no()) 
+    _old_rtes.insert(r.dest_ip, *old_r);
+#endif
+
   _rtes.insert(r.dest_ip, r);
 
   // note, we don't change any pending triggered update for this
@@ -380,6 +414,11 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
 
     // mark route as broken
     r->invalidate(jiff);
+#if USE_OLD_SEQ
+    RTEntry *old_r = _old_rtes.findp(r->dest_ip);
+    if (old_r && old_r->good())
+      old_r->invalidate(jiff);
+#endif
     r->ttl = grid_hello::MAX_TTL_DEFAULT;
 
     // set up triggered ad

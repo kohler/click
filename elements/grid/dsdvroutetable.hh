@@ -108,6 +108,8 @@ CLICK_DECLS
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, LookupGeographicGridRoute
  * GridGatewayInfo, LinkStat, LinkTracker, GridRouteTable, GridLogger, Paint */
 
+#define USE_OLD_SEQ 1
+
 class GridGatewayInfo;
 class LinkStat;
 
@@ -261,6 +263,11 @@ private:
   // the DSDV description does.
 
   class RTable _rtes;
+
+#if USE_OLD_SEQ
+  class RTable _old_rtes;
+  bool use_old_route(const IPAddress &dst, unsigned jiff);
+#endif
 
   void handle_update(RTEntry &, const bool was_sender, const unsigned int jiff);  
   void insert_route(const RTEntry &, const GridGenericLogger::reason_t why);
