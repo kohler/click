@@ -4,23 +4,7 @@
 template <class K, class V> class HashMapIterator;
 
 template <class K, class V>
-class HashMap {
-  
-  struct Elt { K k; V v; };
-  
-  int _size;
-  int _capacity;
-  int _n;
-  Elt *_e;
-  V _default_v;
-  
-  void increase();
-  void check_size();
-  int bucket(const K &) const;
-
-  friend class HashMapIterator<K, V>;
-  
- public:
+class HashMap { public:
 
   typedef HashMapIterator<K, V> Iterator;
   
@@ -47,15 +31,26 @@ class HashMap {
   HashMap<K, V> &operator=(const HashMap<K, V> &);
   void swap(HashMap<K, V> &);
   
+ private:
+  
+  struct Elt { K k; V v; };
+  
+  int _size;
+  int _capacity;
+  int _n;
+  Elt *_e;
+  V _default_v;
+  
+  void increase();
+  void check_size();
+  int bucket(const K &) const;
+
+  friend class HashMapIterator<K, V>;
+  
 };
 
 template <class K, class V>
-class HashMapIterator {
-
-  const HashMap<K, V> *_hm;
-  int _pos;
-
- public:
+class HashMapIterator { public:
 
   HashMapIterator(const HashMap<K, V> *);
 
@@ -66,6 +61,11 @@ class HashMapIterator {
   V &value()				{ return _hm->_e[_pos].v; }
   const V &value() const		{ return _hm->_e[_pos].v; }
   
+ private:
+
+  const HashMap<K, V> *_hm;
+  int _pos;
+
 };
 
 

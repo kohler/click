@@ -4,19 +4,8 @@
 template <class T> class Subvector;
 
 template <class T>
-class Vector {
-  
-  T *_l;
-  int _n;
-  int _cap;
+class Vector { public:
 
-  void *velt(int i) const		{ return (void *)&_l[i]; }
-  static void *velt(T *l, int i)	{ return (void *)&l[i]; }
-
-  friend class Subvector<T>;
-  
- public:
-  
   Vector()			: _l(0), _n(0), _cap(0) { }
   explicit Vector(int capacity)	: _l(0), _n(0), _cap(0) { reserve(capacity); }
   Vector(int n, const T &e)	: _l(0), _n(0), _cap(0) { resize(n, e); }
@@ -49,6 +38,17 @@ class Vector {
 
   Subvector<T> subvector(int, int) const;
   
+ private:
+  
+  T *_l;
+  int _n;
+  int _cap;
+
+  void *velt(int i) const		{ return (void *)&_l[i]; }
+  static void *velt(T *l, int i)	{ return (void *)&l[i]; }
+
+  friend class Subvector<T>;
+  
 };
 
 template <class T> inline void
@@ -70,15 +70,7 @@ Vector<T>::pop_back()
 
 
 template <>
-class Vector<void *> {
-  
-  void **_l;
-  int _n;
-  int _cap;
-
-  friend class Subvector<void *>;
-  
- public:
+class Vector<void *> { public:
   
   Vector()			: _l(0), _n(0), _cap(0) { }
   explicit Vector(int capacity)	: _l(0), _n(0), _cap(0) { reserve(capacity); }
@@ -111,6 +103,14 @@ class Vector<void *> {
   void swap(Vector<void *> &);
 
   Subvector<void *> subvector(int, int) const;
+  
+ private:
+  
+  void **_l;
+  int _n;
+  int _cap;
+
+  friend class Subvector<void *>;
   
 };
 
