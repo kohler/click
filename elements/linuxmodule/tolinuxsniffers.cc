@@ -14,6 +14,8 @@
 # include <config.h>
 #endif
 #include "tolinuxsniffers.hh"
+#include "confparse.hh"
+#include "error.hh"
 extern "C" {
 #include <linux/if_ether.h>
 #include <linux/netdevice.h>
@@ -28,6 +30,24 @@ ToLinuxSniffers::~ToLinuxSniffers()
 {
 }
 
+int
+ToLinuxSniffers::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  String devname;
+  if (cp_va_parse(conf, this, errh,
+		  cpOptional,
+		  cpString, "device name", &devname,
+		  cpEnd) < 0)
+    return -1;
+  if (devname) {
+    _dev = dev_get(devname.cc());
+    if (!_dev)
+      return errh->error("no such device `%s'", devname.cc());
+  } else
+    _dev = 0;
+  return 0;
+}
+
 ToLinuxSniffers *
 ToLinuxSniffers::clone() const
 {
@@ -37,19 +57,20 @@ ToLinuxSniffers::clone() const
 void
 ToLinuxSniffers::push(int port, Packet *p)
 {
-  struct sk_buff *skb1 = p->steal_skb();
-  if (!skb1) return;
+  struct sk_buff *skb = p->steal_skb();
+  if (!skb) return;
   
-  skb1->mac.raw = skb1->data;
-  skb1->protocol = skb1->mac.ethernet->h_proto;
+  skb->mac.raw = skb->data;
+  skb->protocol = skb->mac.ethernet->h_proto;
+  if (_dev) skb->dev = _dev;
   /* skb->pkt_type = ???; */
   
   /* skip past ether header */
-  skb_pull(skb1, 14);
+  skb_pull(skb, 14);
 #ifdef HAVE_CLICK_KERNEL
-  skb1->nh.raw = skb1->data;
+  skb->nh.raw = skb->data;
   start_bh_atomic();
-  ptype_dispatch(skb1, 0xFFFF);	// an unlikely protocol number
+  ptype_dispatch(skb, 0xFFFF);	// an unlikely protocol number
   end_bh_atomic();
 #endif
 }
