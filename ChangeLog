@@ -1,3 +1,12 @@
+2002-06-02 Sunday 03:17  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.19), fromipsumdump.hh
+	(1.15), toipsumdump.cc (1.16), toipsumdump.hh (1.12):
+	FromIPSummaryDump and ToIPSummaryDump now handle the "ip fragoff"
+	change more smoothly: new files have a different version number,
+	and From...Dump DTRT. Also, From...Dump sets the IP length field
+	correctly for all packets.
+
 2002-05-31 Friday 16:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.6), dsdvroutetable.hh (1.7):
