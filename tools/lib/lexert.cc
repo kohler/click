@@ -19,6 +19,7 @@
 #include <click/config.h>
 
 #include "lexert.hh"
+#include "lexertinfo.hh"
 #include "routert.hh"
 #include <click/confparse.hh>
 #include <ctype.h>
@@ -32,12 +33,14 @@ LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
 {
   if (!_errh)
     _errh = ErrorHandler::default_handler();
+  _lexinfo = new LexerTInfo;
   clear();
 }
 
 LexerT::~LexerT()
 {
   clear();
+  delete _lexinfo;
 }
 
 void
@@ -237,6 +240,7 @@ LexerT::next_lexeme()
       }
       pos++;
     }
+    unsigned opos = pos;
     if (pos >= _len) {
       _pos = _len;
       return Lexeme();
@@ -247,9 +251,11 @@ LexerT::next_lexeme()
 	pos = skip_slash_star(pos + 2);
       else
 	break;
-    } else if (_data[pos] == '#' && (pos == 0 || _data[pos-1] == '\n' || _data[pos-1] == '\r'))
+      _lexinfo->notify_comment(opos, pos);
+    } else if (_data[pos] == '#' && (pos == 0 || _data[pos-1] == '\n' || _data[pos-1] == '\r')) {
       pos = process_line_directive(pos);
-    else
+      _lexinfo->notify_line_directive(opos, pos);
+    } else
       break;
   }
   
@@ -267,13 +273,16 @@ LexerT::next_lexeme()
     }
     _pos = pos;
     String word = _big_string.substring(word_pos, pos - word_pos);
-    if (word.length() == 16 && word == "connectiontunnel")
+    if (word.length() == 16 && word == "connectiontunnel") {
+      _lexinfo->notify_keyword(word, word_pos, pos);
       return Lexeme(lexTunnel, word, word_pos);
-    else if (word.length() == 12 && word == "elementclass")
+    } else if (word.length() == 12 && word == "elementclass") {
+      _lexinfo->notify_keyword(word, word_pos, pos);
       return Lexeme(lexElementclass, word, word_pos);
-    else if (word.length() == 7 && word == "require")
+    } else if (word.length() == 7 && word == "require") {
+      _lexinfo->notify_keyword(word, word_pos, pos);
       return Lexeme(lexRequire, word, word_pos);
-    else
+    } else
       return Lexeme(lexIdent, word, word_pos);
   }
 
@@ -339,6 +348,7 @@ LexerT::lex_config()
       pos = skip_backslash_angle(pos + 2) - 1;
   
   _pos = pos;
+  _lexinfo->notify_config_string(config_pos, pos);
   return _big_string.substring(config_pos, pos - config_pos);
 }
 
@@ -858,10 +868,7 @@ LexerT::ycompound(String name)
 
   created->cast_compound()->check_duplicates_until(first, _errh);
   
-  if (anonymous)
-    return old_router->get_anon_type_index(name, created);
-  else
-    return old_router->add_type_index(name, created);
+  return old_router->add_type_index(name, created, anonymous);
 }
 
 void

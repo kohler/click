@@ -1,10 +1,11 @@
-#ifndef LEXERT_HH
-#define LEXERT_HH
+#ifndef CLICK_LEXERT_HH
+#define CLICK_LEXERT_HH
 #include <click/error.hh>
 #include <stdio.h>
 class RouterT;
 class CompoundElementClassT;
 class StringAccum;
+class LexerTInfo;
 
 enum {
   lexEOF = 0,
@@ -115,6 +116,7 @@ class LexerT { public:
   int _compound_depth;
   
   // errors
+  LexerTInfo *_lexinfo;
   ErrorHandler *_errh;
   
   int lerror(const char *, ...);

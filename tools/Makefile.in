@@ -41,6 +41,8 @@ click-ipopt: lib Makefile
 	@cd click-ipopt && $(MAKE) all-local
 click-mkmindriver: lib Makefile
 	@cd click-mkmindriver && $(MAKE) all-local
+click-pretty: lib Makefile
+	@cd click-pretty && $(MAKE) all-local
 click-undead: lib Makefile
 	@cd click-undead && $(MAKE) all-local
 click-xform: lib Makefile
