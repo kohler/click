@@ -1,3 +1,7 @@
+2004-05-24 Monday 19:47  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/wifitxfeedback.cc (1.11): bugfixes.
+
 2004-05-24 Monday 15:48  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: wifitxfeedback.cc (1.10), wifitxfeedback.hh
