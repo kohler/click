@@ -2,7 +2,7 @@
 
 #
 #
-# $Id: click-mkclgw.pl,v 1.3 2004/02/26 03:45:20 max Exp $
+# $Id: click-mkclgw.pl,v 1.4 2004/03/24 22:22:15 max Exp $
 #
 # click-mkclgw
 #
@@ -1140,7 +1140,7 @@ sub lb_mapper {
 	"$mapper :: SourceIPHashMapper (\n\n" . 
 	"\t// Params: Nodes per machine=$nodes; Seed=$seed\n" .
 	"\t$nodes $seed,\n\n" .
-	"\t// Cluster Machine Entires\n";
+	"\t// Cluster Machine Entries\n";
 
     my @nodes;
     for (my $i = 0; $i < $self->{_label}->clust_full_size (); $i++) {
@@ -1706,9 +1706,9 @@ click-mkclgw < in.gw > out.click
 If you have a block of real IP addresses and are mapping to a NAT-ted,
 firewalled, and perhaps load-balanced world of internal IP addresses,
 then this script might help.  The point is to output a click 
-configuration that will server as a NAT-box, a firewall, and a 
+configuration that will serve as a NAT-box, a firewall, and a 
 poor-man's load-balancer all-in-one.  You actually don't need to
-be all that poor to not be able to afford a $10k Cisco Local Directory.
+be all that poor to not be able to afford a $10k Cisco Local Director.
 
 Output configurations can include simple NAT holes through the firewall,
 and obviously load-balanced clusters.  In the latter case, machines
@@ -1718,11 +1718,10 @@ world when making such connections.  Overlapping server pools are
 supported, but not very well error-checked.  
 
 The resultant Click configurations are based on the mazu-nat.click
-configuration in the Click release.  They also use a newly-fangled,
-and still somewhat buggy B<SourceIPHashMapper> module.  The goal
-of this module is to consistent-hash source IPs, so that users will
-be mapped to the same node in a load-balanced cluster over multiple
-different TCP sessions. 
+configuration in the Click release.  They also use a newly-fangled
+B<SourceIPHashMapper> module.  The goal of this module is to consistent-hash
+source IPs, so that users will be mapped to the same node in a load-balanced
+cluster over multiple different TCP sessions. 
 
 
 This script takes no flags, but expects configuration files of a 
