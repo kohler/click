@@ -51,6 +51,7 @@ class Print : public Element { public:
   
   Print *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
+  bool can_live_reconfigure() const		{ return true; }
   
   Packet *simple_action(Packet *);
   

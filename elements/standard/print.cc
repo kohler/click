@@ -51,15 +51,15 @@ Print::configure(const Vector<String> &conf, ErrorHandler* errh)
 #ifdef __KERNEL__
   bool print_cpu = false;
 #endif
-  _label = String();
-  _bytes = 24;
+  String label;
+  unsigned bytes = 24;
   
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
-		  cpString, "label", &_label,
-		  cpInteger, "max bytes to print", &_bytes,
+		  cpString, "label", &label,
+		  cpInteger, "max bytes to print", &bytes,
 		  cpKeywords,
-		  "NBYTES", cpInteger, "max bytes to print", &_bytes,
+		  "NBYTES", cpInteger, "max bytes to print", &bytes,
 		  "TIMESTAMP", cpBool, "print packet timestamps?", &timestamp,
 #ifdef __KERNEL__
 		  "CPU", cpBool, "print CPU IDs?", &print_cpu,
@@ -67,6 +67,8 @@ Print::configure(const Vector<String> &conf, ErrorHandler* errh)
 		  cpEnd) < 0)
     return -1;
   
+  _label = label;
+  _bytes = bytes;
   _timestamp = timestamp;
 #ifdef __KERNEL__
   _cpu = print_cpu;
@@ -78,7 +80,7 @@ Packet *
 Print::simple_action(Packet *p)
 {
   StringAccum sa(3*_bytes + _label.length() + 45);
-  if (!sa.capacity()) {
+  if (sa.out_of_memory()) {
     click_chatter("no memory for Print");
     return p;
   }
