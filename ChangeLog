@@ -1,3 +1,9 @@
+2001-11-08 Thursday 12:36  Eddie Kohler <kohler@aciri.org>
+
+	* elements/linuxmodule/: fromdevice.cc (1.66), todevice.cc (1.119):
+	fix "duplicate writer" bug: cast ifindex() to String() so String
+	addition is used, fucking C++ (Mazu)
+
 2001-11-07 Wednesday 18:03  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/make-server-ron.pl (1.4): added TCP_TIMEOUT & REAP_TCP
