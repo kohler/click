@@ -34,6 +34,18 @@ extern "C" {
 # include "fakepcap.h"
 #endif
 
+// what method do we use to write BPF?
+#ifdef HAVE_PCAP
+# if defined(__FreeBSD__) || defined(__OpenBSD__)
+#  define TOBPF_BSD_DEV_BPF 1
+#  define TOBPF_WRITE 1
+# elif defined(__linux__)
+#  define TOBPF_LINUX 1
+#  define TOBPF_SEND 1
+#  define TOBPF_SENDTO 1
+# endif
+#endif
+
 /*
  * Write packets to the ethernet via the bpf.
  * Expects packets that already have an ether header.
@@ -44,8 +56,12 @@ class ToBPF : public Element {
 
   String _ifname;
   int _fd; /* might be borrowed from FromBPF */
-  pcap_t * _pcap;
+  pcap_t *_pcap;
 
+#if TOBPF_SENDTO
+  struct sockaddr _sendto_sa;
+#endif
+  
  public:
   
   ToBPF();
@@ -63,6 +79,7 @@ class ToBPF : public Element {
   
   void push(int port, Packet *);
   void run_scheduled();
+  
 };
 
 #endif

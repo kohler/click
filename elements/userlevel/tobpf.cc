@@ -25,15 +25,13 @@
 #include <unistd.h>
 #include <errno.h>
 
-#if defined(__FreeBSD__) && defined(HAVE_PCAP)
+#if TOBPF_BSD_DEV_BPF
 # include <fcntl.h>
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <sys/ioctl.h>
 # include <net/if.h>
-#endif
-
-#ifdef __linux__
+#elif TOBPF_LINUX
 # include <sys/socket.h>
 # include <sys/ioctl.h>
 # include <net/if.h>
@@ -70,57 +68,47 @@ ToBPF::clone() const
 int
 ToBPF::configure(const String &conf, ErrorHandler *errh)
 {
-  if (_pcap) pcap_close(_pcap);
-  _pcap = 0;
-  return cp_va_parse(conf, this, errh,
-		     cpString, "interface name", &_ifname,
-		     0);
+  if (cp_va_parse(conf, this, errh,
+		  cpString, "interface name", &_ifname,
+		  0) < 0)
+    return -1;
+  if (!_ifname)
+    return errh->error("interface not set");
+  return 0;
 }
 
 int
 ToBPF::initialize(ErrorHandler *errh)
 {
-#if defined(__FreeBSD__) && defined(HAVE_PCAP)
+  _fd = -1;
+#if TOBPF_SENDTO
+  _sendto_sa.sa_family = 0;
+#endif
   
-  /* FreeBSD pcap_open_live() doesn't open for writing. */
-  if(_fd >= 0)
-    return(0);
-  else if(!_ifname)
-    return errh->error("interface not set");
-
-  int i;
-  for(i = 0; i < 16; i++){
+#if TOBPF_BSD_DEV_BPF
+  
+  /* pcap_open_live() doesn't open for writing. */
+  for (int i = 0; i < 16 && _fd < 0; i++) {
     char tmp[64];
     sprintf(tmp, "/dev/bpf%d", i);
-    int fd = open(tmp, 1);
-    if(fd >= 0){
-      _fd = fd;
-      break;
-    }
+    _fd = open(tmp, 1);
   }
-  if(_fd < 0)
-    return(errh->error("ToBPF: can't open a bpf"));
+  if (_fd < 0)
+    return(errh->error("can't open a bpf"));
 
   struct ifreq ifr;
-  (void)strncpy(ifr.ifr_name, _ifname.mutable_c_str(), sizeof(ifr.ifr_name));
+  strncpy(ifr.ifr_name, _ifname, sizeof(ifr.ifr_name));
+  ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = 0;
   if (ioctl(_fd, BIOCSETIF, (caddr_t)&ifr) < 0)
-    return errh->error("ToBPF: BIOCSETIF %s failed", ifr.ifr_name);
-  
-#else
-  
-  if (_pcap || _fd >= 0)
-    return 0;
-  else if (!_ifname)
-    return errh->error("interface not set");
+    return errh->error("BIOCSETIF %s failed", ifr.ifr_name);
 
+#elif TOBPF_LINUX
+  
   /*
    * Try to find a FromBPF with the same device and re-use its _pcap.
    * If we don't, Linux will give ToBPF's packets to FromBPF.
    */
-
-  /* XXX will need to be redone if libpcap ever starts using PF_SOCKET
-     rather than SOCK_PACKET */
-  for(int fi = 0; fi < router()->nelements(); fi++){
+  for (int fi = 0; fi < router()->nelements() && _fd < 0; fi++) {
     Element *f = router()->element(fi);
     FromBPF *lr = (FromBPF *)f->cast("FromBPF");
     if (lr && lr->get_ifname() == _ifname && lr->get_pcap())
@@ -134,48 +122,66 @@ ToBPF::initialize(ErrorHandler *errh)
 			   0,     // not promiscuous
                            0,     // don't batch packets
                            ebuf);
-# ifdef HAVE_PCAP
     if (!_pcap)
       return errh->error("%s: %s", _ifname.cc(), ebuf);
-# else
-    errh->warning("dropping all packets: not compiled with pcap support");
-# endif
     _fd = pcap_fileno(_pcap);
   }
 
-# ifdef __linux__
-  {
-#  if 1 /* Kuznetsov patch */
-    struct ifreq ifr;
-    strcpy(ifr.ifr_name, _ifname);
-    if (ioctl(_fd, SIOCGIFINDEX, &ifr) < 0) {
-      int err = errno;
-      if (_pcap) pcap_close(_pcap);
-      return errh->error("bad ioctl: %s", strerror(err));
-    }
-
-    struct sockaddr_ll sll;
-    sll.sll_family = AF_PACKET;
-    sll.sll_ifindex = ifr.ifr_ifindex;
-    sll.sll_protocol = 0;
-    if (bind(_fd, (struct sockaddr *)&sll, sizeof(sll)) < 0) {
-      int err = errno;
-      if (_pcap) pcap_close(_pcap);
-      return errh->error("cannot bind: %s", strerror(err));
-    }
-
-#  else
-    struct sockaddr sa;
-    strcpy(sa.sa_data, _ifname);
-    if (bind(_fd, &sa, sizeof(sa) < 0)) {
-      int err = errno;
-      if (_pcap) pcap_close(_pcap);
-      return errh->error("cannot bind: %s", strerror(err));
-    }
-#  endif
+  // find device ifindex
+  struct ifreq ifr;
+  strncpy(ifr.ifr_name, _ifname, sizeof(ifr.ifr_name));
+  ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = 0;
+  if (ioctl(_fd, SIOCGIFINDEX, &ifr) < 0) {
+    int err = errno;
+    if (_pcap) pcap_close(_pcap);
+    return errh->error("bad ioctl: %s", strerror(err));
   }
+
+  // bind the packet socket to the device
+  int retval;
+
+# if TOBPF_SEND
+  struct sockaddr_ll sll;
+  sll.sll_family = AF_PACKET;
+  sll.sll_ifindex = ifr.ifr_ifindex;
+  sll.sll_protocol = 0;
+  retval = bind(_fd, (struct sockaddr *)&sll, sizeof(sll));
 # endif
 
+# if TOBPF_SENDTO
+#  if TOBPF_SEND
+  if (retval < 0 && errno == EINVAL) {
+#  endif
+    // assume that libpcap does not contain Kuznetsov patches;
+    // use SOCK_PACKET method rather than newer PF_PACKET
+    _sendto_sa.sa_family = AF_INET;
+    strncpy(_sendto_sa.sa_data, _ifname, sizeof(_sendto_sa.sa_data));
+    _sendto_sa.sa_data[sizeof(_sendto_sa.sa_data) - 1] = 0;
+    retval = bind(_fd, &_sendto_sa, sizeof(_sendto_sa));
+#  if TOBPF_SEND
+  }
+#  endif
+# endif
+
+  // return error
+  if (retval < 0) {
+    int err = errno;
+    if (_pcap) pcap_close(_pcap);
+    errh->error("cannot bind: %s", strerror(err));
+# if !TOBPF_SENDTO
+    errh->message("(Perhaps you have the wrong version of libpcap. Have you applied Alexey");
+    errh->message("Kuznetsov's patches for Linux 2.2?)");
+# elif !TOBPF_SEND
+    errh->message("(Perhaps you have the wrong version of libpcap. Recompile with");
+    errh->message("TOBPF_SEND support.)");
+# endif
+    return -1;
+  }
+
+#else
+  
+  return errh->error("ToBPF is not supported on this platform");
+  
 #endif
 
   if (input_is_pull(0))
@@ -194,22 +200,33 @@ void
 ToBPF::push(int, Packet *p)
 {
   assert(p->length() >= 14);
+  
+  int retval;
+  const char *syscall;
 
-#ifdef HAVE_PCAP
-# ifdef __linux__
-  if (send(_fd, p->data(), p->length(), 0) < 0)
-    click_chatter("ToBPF(%s) send: %s", _ifname.cc(), strerror(errno));
-# endif
-
-# if defined(__FreeBSD__) || defined(__OpenBSD__)
-  int ret = write(_fd, p->data(), p->length());
-  if(ret <= 0){
-    fprintf(stderr, "ToBPF: write %d to _fd %d ret %d errno %d : %s\n",
-            p->length(), _fd, ret, errno, strerror(errno));
+#if TOBPF_WRITE
+  retval = (write(_fd, p->data(), p->length()) > 0 ? 0 : -1);
+  syscall = "write";
+#elif TOBPF_SEND && TOBPF_SENDTO
+  if (_sendto_sa.sa_family > 0) {
+    retval = sendto(_fd, p->data(), p->length(), 0, &_sendto_sa, sizeof(_sendto_sa));
+    syscall = "sendto";
+  } else {
+    retval = send(_fd, p->data(), p->length(), 0);
+    syscall = "send";
   }
-# endif
+#elif TOBPF_SEND
+  retval = send(_fd, p->data(), p->length(), 0);
+  syscall = "send";
+#elif TOBPF_SENDTO
+  retval = sendto(_fd, p->data(), p->length(), 0, &_sendto_sa, sizeof(_sendto_sa));
+  syscall = "sendto";
+#else
+  retval = 0;
 #endif
 
+  if (retval < 0)
+    click_chatter("ToBPF(%d) %s: %s", _ifname.cc(), syscall, strerror(errno));
   p->kill();
 }
 

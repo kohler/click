@@ -40,8 +40,7 @@ Version 1.0.7
 ** Added QuitWatcher, FrontDropQueue, and StripIPHeader.
 
 ** Fixed FromBPF and ToBPF bugs. Now FromBPF will not starve other router
-   processing, and ToBPF works on Linux (if a patched libpcap is installed;
-   we suggest using a libpcap-0.4 RPM, or see the FAQ).
+   processing, and ToBPF works on Linux.
 
 ** Fixed FromLinux bug: now supports multiple instances of FromLinux for same
    device (this happens while installing a new configuration: initialize is
