@@ -6,6 +6,7 @@
 #include <clicknet/ip.h>
 #include "elements/ip/iprw.hh"
 #include <click/glue.hh>
+#include <limits.h>
 CLICK_DECLS
 
 /*
@@ -30,7 +31,7 @@ CLICK_DECLS
  */
 
 //
-// $Id: siphmapper.hh,v 1.1 2004/02/23 06:08:56 max Exp $
+// $Id: siphmapper.hh,v 1.2 2004/02/24 12:51:56 max Exp $
 //
 
 //
@@ -156,7 +157,7 @@ public:
     for (unsigned short i = 0; i < max_servers; i++) {
       bool inc = false;
       for (unsigned int j = 0; j < num_nodes; j++) {
-	unsigned int tmp = random ();
+	int tmp = random (); // XXX: assumes randoms # from 0 to INT_MAX
 	if (servmap[i]) {
 	  if (!inc) {
 	    inc = true;
@@ -215,7 +216,7 @@ protected:
   Vector<IPRw::Pattern *> _patterns;
   Vector<int> _forward_outputs;
   Vector<int> _reverse_outputs;
-  chash_t<unsigned int> *_hasher;
+  chash_t<int> *_hasher;
 };
 
 CLICK_ENDDECLS

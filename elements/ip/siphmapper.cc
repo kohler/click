@@ -1,7 +1,7 @@
 /*
  * sourceipmapper.{cc,hh} -- source IP mapper (using consistent hashing)
  *
- * $Id: siphmapper.cc,v 1.1 2004/02/23 06:08:56 max Exp $
+ * $Id: siphmapper.cc,v 1.2 2004/02/24 12:51:56 max Exp $
  *
  */
 
@@ -95,7 +95,7 @@ SourceIPHashMapper::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (_hasher) 
     delete (_hasher);
-  _hasher = new chash_t<unsigned int> (idp, ids, nnodes, seed);
+  _hasher = new chash_t<int> (idp, ids, nnodes, seed);
 
   delete [] ids;
   return (errh->nerrors() == before ? 0 : -1);
@@ -134,6 +134,7 @@ SourceIPHashMapper::get_map(IPRw *rw, int ip_p, const IPFlowID &flow,
   // IPs can be hashed to different servers.
   // note that this really isn't necessary for i386 alignment...
   tmp *= ((t2 << 24) | 0x1);
+  tmp = tmp % INT_MAX;
   
   int v = _hasher->hash2ind (tmp);
   IPRw::Pattern *pat = _patterns[v];
@@ -141,7 +142,7 @@ SourceIPHashMapper::get_map(IPRw *rw, int ip_p, const IPFlowID &flow,
   int rport = _reverse_outputs[v];
 
   // debug code
-  //click_chatter ("%p -> %d", (void *)tmp, v);
+  click_chatter ("%p -> %d", (void *)tmp, v);
 
   return (rw->apply_pattern(pat, ip_p, flow, fport, rport));
 }
