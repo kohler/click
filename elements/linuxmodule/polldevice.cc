@@ -56,20 +56,6 @@ PollDevice::PollDevice()
   : _registered(false), _promisc(false)
 {
   add_output();
-#if CLICK_DEVICE_STATS
-  _activations = 0;
-  _idle_calls = 0;
-  _pkts_received = 0;
-  _time_poll = 0;
-  _time_refill = 0;
-  _time_pushing = 0;
-  _perfcnt1_poll = 0;
-  _perfcnt1_refill = 0;
-  _perfcnt1_pushing = 0;
-  _perfcnt2_poll = 0;
-  _perfcnt2_refill = 0;
-  _perfcnt2_pushing = 0;
-#endif
   polldev_static_initialize();
 }
 
@@ -152,6 +138,26 @@ PollDevice::initialize(ErrorHandler *errh)
   _last_rx = 0;
 #endif
 
+#if CLICK_DEVICE_STATS
+  _activations = 0;
+  _idle_calls = 0;
+  _pkts_received = 0;
+  _time_poll = 0;
+  _time_refill = 0;
+  _time_pushing = 0;
+  _perfcnt1_poll = 0;
+  _perfcnt1_refill = 0;
+  _perfcnt1_pushing = 0;
+  _perfcnt2_poll = 0;
+  _perfcnt2_refill = 0;
+  _perfcnt2_pushing = 0;
+#endif
+
+#if POLLDEVICE_STATS
+  _npackets = 0;
+  _push_cycles = 0;
+#endif
+  
   join_scheduler();
 
   return 0;
@@ -228,7 +234,15 @@ PollDevice::run_scheduled()
     skb_push(skb, 14);
 
     Packet *p = Packet::make(skb);
+
+#if POLLDEVICE_STATS
+    _npackets++;
+    _push_cycles -= click_get_cycles();
+#endif
     output(0).push(p);
+#if POLLDEVICE_STATS
+    _push_cycles += click_get_cycles();
+#endif
   }
 
 #if CLICK_DEVICE_STATS
@@ -295,10 +309,31 @@ PollDevice_read_calls(Element *f, void *)
 #endif
 }
 
+#if POLLDEVICE_STATS
+static String
+PollDevice_read_stats(Element *e, void *thunk)
+{
+  PollDevice *pd = (PollDevice *)e;
+  int which = reinterpret_cast<int>(thunk);
+  switch (which) {
+   case 0:
+    return String(pd->_npackets) + "\n";
+   case 1:
+    return String(pd->_push_cycles) + "\n";
+   default:
+    return String();
+  }
+}
+#endif
+
 void
 PollDevice::add_handlers()
 {
   add_read_handler("calls", PollDevice_read_calls, 0);
+#if POLLDEVICE_STATS
+  add_read_handler("packets", PollDevice_read_stats, 0);
+  add_read_handler("push_cycles", PollDevice_read_stats, (void *)1);
+#endif
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)

@@ -48,8 +48,8 @@ extern "C" {
 
 #else
 
-#define GET_STATS_RESET(a,b,c,d,e,f) ;
-#define SET_STATS(a,b,c) ;
+#define GET_STATS_RESET(a,b,c,d,e,f)	/* nothing */
+#define SET_STATS(a,b,c)		/* nothing */
 
 #endif
 
