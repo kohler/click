@@ -26,22 +26,26 @@ CLICK_CXX_UNPROTECT
 // dependency.
 CLICK_DECLS
 
+#ifdef HAVE_TASK_HEAP
+class RouterThread { public:
+#else
 class RouterThread : public Task { public:
+#endif
 
     int thread_id() const		{ return _id; }
-    Master *master() const		{ return _master; }
+    Master* master() const		{ return _master; }
 
     void driver();
     void driver_once();
 
     // Task list functions
-    bool empty() const;
+    inline bool empty() const;
 
-    void lock_tasks();
-    bool attempt_lock_tasks();
-    void unlock_tasks();
+    inline void lock_tasks();
+    inline bool attempt_lock_tasks();
+    inline void unlock_tasks();
 
-    void unschedule_all_tasks();
+    void unschedule_router_tasks(Router*);
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     // min_cpu_share() and max_cpu_share() are expressed on a scale with
@@ -71,6 +75,11 @@ class RouterThread : public Task { public:
     unsigned _iters_per_os;
 
   private:
+
+#ifdef HAVE_TASK_HEAP
+    Vector<Task*> _task_heap;
+    int _task_heap_hole;
+#endif
     
     Master *_master;
     int _id;
@@ -130,6 +139,9 @@ class RouterThread : public Task { public:
     inline void client_update_pass(int client, const struct timeval &before, const struct timeval &after);
     inline void check_restride(struct timeval &before, const struct timeval &now, int &restride_iter);
 #endif
+#ifdef HAVE_TASK_HEAP
+    void task_reheapify_from(int pos, Task*);
+#endif
     
     friend class Task;
     friend class Master;
@@ -137,11 +149,19 @@ class RouterThread : public Task { public:
 };
 
 
+#ifdef HAVE_TASK_HEAP
+inline bool
+RouterThread::empty() const
+{
+    return _task_heap.size() == 0;
+}
+#else
 inline bool
 RouterThread::empty() const
 {
     return ((const Task *)_next == this) && !_pending;
 }
+#endif
 
 inline void
 RouterThread::lock_tasks()

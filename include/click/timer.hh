@@ -36,8 +36,8 @@ class Timer { public:
     inline void schedule_after_s(uint32_t);
     inline void schedule_after_ms(uint32_t);
     inline void reschedule_after(const timeval &);
-    void reschedule_after_s(uint32_t);
-    void reschedule_after_ms(uint32_t);
+    inline void reschedule_after_s(uint32_t);
+    inline void reschedule_after_ms(uint32_t);
 
     void unschedule();
   
@@ -70,6 +70,12 @@ Timer::initialize(Element *element)
 }
 
 inline void
+Timer::reschedule_at(const timeval &tv)
+{
+    schedule_at(tv);
+}
+
+inline void
 Timer::schedule_now()
 {
     schedule_after_ms(0);
@@ -94,9 +100,15 @@ Timer::reschedule_after(const timeval &delta)
 }
 
 inline void
-Timer::reschedule_at(const timeval &tv)
+Timer::reschedule_after_s(uint32_t s)
 {
-    schedule_at(tv);
+    schedule_at(make_timeval(s + _expiry.tv_sec, _expiry.tv_usec));
+}
+
+inline void
+Timer::reschedule_after_ms(uint32_t ms)
+{
+    schedule_at(_expiry + make_timeval(ms / 1000, (ms % 1000) * 1000));
 }
 
 CLICK_ENDDECLS

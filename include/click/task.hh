@@ -46,14 +46,20 @@ class Task { public:
     ~Task();
 
     bool initialized() const		{ return _router != 0; }
+#if HAVE_TASK_HEAP
+    bool scheduled() const		{ return _schedpos >= 0; }
+#else
     bool scheduled() const		{ return _prev != 0; }
+#endif
 
     TaskHook hook() const		{ return _hook; }
     void *thunk() const			{ return _thunk; }
     inline Element *element() const;
 
+#if !HAVE_TASK_HEAP
     Task *scheduled_next() const	{ return _next; }
     Task *scheduled_prev() const	{ return _prev; }
+#endif
     RouterThread *scheduled_list() const { return _thread; }
     Master *master() const;
  
@@ -71,8 +77,12 @@ class Task { public:
     void unschedule();
     inline void reschedule();
 
-    inline int fast_unschedule();
+    inline void fast_unschedule();
+#ifdef HAVE_TASK_HEAP
+    void fast_reschedule();
+#else
     inline void fast_reschedule();
+#endif
 
     void strong_unschedule();
     void strong_reschedule();
@@ -94,6 +104,7 @@ class Task { public:
 #endif
 #if __MTCLICK__
     inline int cycles() const;
+    inline unsigned cycle_runs() const	{ return _cycle_runs; }
     inline void update_cycles(unsigned c);
 #endif
 
@@ -102,8 +113,13 @@ class Task { public:
     /* if gcc keeps this ordering, we may get some cache locality on a 16 or 32
      * byte cache line: the first three fields are used in list traversal */
 
-    Task *_prev;
-    Task *_next;
+#ifdef HAVE_TASK_HEAP
+    int _schedpos;
+#else
+    Task* _prev;
+    Task* _next;
+#endif
+    
 #ifdef HAVE_STRIDE_SCHED
     unsigned _pass;
     unsigned _stride;
@@ -111,7 +127,7 @@ class Task { public:
 #endif
   
     TaskHook _hook;
-    void *_thunk;
+    void* _thunk;
   
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     unsigned _runs;
@@ -122,27 +138,27 @@ class Task { public:
     unsigned _cycle_runs;
 #endif
 
-    RouterThread *_thread;
+    RouterThread* _thread;
     int _thread_preference;
   
-    Router *_router;
+    Router* _router;
 
     enum { RESCHEDULE = 1, CHANGE_THREAD = 2 };
     unsigned _pending;
-    Task *_pending_next;
+    Task* _pending_next;
 
-    Task(const Task &);
-    Task &operator=(const Task &);
+    Task(const Task&);
+    Task& operator=(const Task&);
 
     void add_pending(int);
-    void process_pending(RouterThread *);
+    void process_pending(RouterThread*);
     inline void fast_schedule();
     void true_reschedule();
     inline void lock_tasks();
     inline bool attempt_lock_tasks();
 
     void make_list();
-    static bool error_hook(Task *, void *);
+    static bool error_hook(Task*, void*);
   
     friend class RouterThread;
     friend class Master;
@@ -157,8 +173,12 @@ CLICK_DECLS
 
 
 inline
-Task::Task(TaskHook hook, void *thunk)
+Task::Task(TaskHook hook, void* thunk)
+#ifdef HAVE_TASK_HEAP
+    : _schedpos(-1),
+#else
     : _prev(0), _next(0),
+#endif
 #ifdef HAVE_STRIDE_SCHED
       _pass(0), _stride(0), _tickets(-1),
 #endif
@@ -175,8 +195,12 @@ Task::Task(TaskHook hook, void *thunk)
 }
 
 inline
-Task::Task(Element *e)
+Task::Task(Element* e)
+#ifdef HAVE_TASK_HEAP
+    : _schedpos(-1),
+#else
     : _prev(0), _next(0),
+#endif
 #ifdef HAVE_STRIDE_SCHED
       _pass(0), _stride(0), _tickets(-1),
 #endif
@@ -192,13 +216,13 @@ Task::Task(Element *e)
 {
 }
 
-inline Element *
+inline Element*
 Task::element()	const
 { 
     return _hook ? 0 : reinterpret_cast<Element*>(_thunk); 
 }
 
-inline int
+inline void
 Task::fast_unschedule()
 {
 #if CLICK_LINUXMODULE
@@ -208,18 +232,21 @@ Task::fast_unschedule()
     assert(!intr_nesting_level);
     SPLCHECK
 #endif
-    if (_prev) {
+    if (scheduled()) {
+#ifdef HAVE_TASK_HEAP
+	Task* back = _thread->_task_heap.back();
+	_thread->_task_heap.pop_back();
+	if (_thread->_task_heap.size() > 0)
+	    _thread->task_reheapify_from(_schedpos, back);
+	_schedpos = -1;
+#else
 	_next->_prev = _prev;
 	_prev->_next = _next;
 	_next = _prev = 0;
+#endif
     }
 #if CLICK_BSDMODULE
     splx(s);
-#endif
-#if __MTCLICK__
-    return _cycle_runs;
-#else
-    return 0;
 #endif
 }
 
@@ -243,6 +270,7 @@ Task::adj_tickets(int delta)
     set_tickets(_tickets + delta);
 }
 
+#ifndef HAVE_TASK_HEAP
 inline void
 Task::fast_reschedule()
 {
@@ -263,7 +291,7 @@ Task::fast_reschedule()
 
 #if 0
 	// look for 'n' immediately before where we should be scheduled
-	Task *n = _thread->_prev;
+	Task* n = _thread->_prev;
 	while (n != _thread && PASS_GT(n->_pass, _pass))
 	    n = n->_prev;
 
@@ -274,7 +302,7 @@ Task::fast_reschedule()
 	_next->_prev = this;
 #else
 	// look for 'n' immediately after where we should be scheduled
-	Task *n = _thread->_next;
+	Task* n = _thread->_next;
 #ifdef CLICK_BSDMODULE /* XXX MARKO a race occured here when not spl'ed */
 	while (n->_next != NULL && n != _thread && !PASS_GT(n->_pass, _pass))
 #else
@@ -290,13 +318,18 @@ Task::fast_reschedule()
 #endif
     }
 }
+#endif
 
 inline void
 Task::fast_schedule()
 {
     SPLCHECK
     assert(_tickets >= 1);
+#if HAVE_TASK_HEAP
+    _pass = (_thread->empty() ? 0 : _thread->_task_heap[0]->_pass);
+#else
     _pass = _thread->_next->_pass;
+#endif
     fast_reschedule();
 }
 
@@ -347,7 +380,7 @@ Task::wakeup()
 {
     assert(_thread && !_prev);
     int s = splimp();
-printf("Task::wakeup() - how did we get here?\n"); /* XXX MARKO */
+    printf("Task::wakeup() - how did we get here?\n"); /* XXX MARKO */
     _next = _thread->_wakeup_list;
     _thread->_wakeup_list = this;
     splx(s);
@@ -363,12 +396,12 @@ Task::call_hook()
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     _runs++;
     if (!_hook)
-	_work_done += ((Element *)_thunk)->run_task();
+	_work_done += ((Element*)_thunk)->run_task();
     else
 	_work_done += _hook(this, _thunk);
 #else
     if (!_hook)
-	(void) ((Element *)_thunk)->run_task();
+	(void) ((Element*)_thunk)->run_task();
     else
 	(void) _hook(this, _thunk);
 #endif

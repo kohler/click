@@ -79,9 +79,9 @@ class Master { public:
     void process_pending(RouterThread*);
 
     // TIMERS
-    Vector<Timer*> _timer_list;
+    Vector<Timer*> _timer_heap;
     Spinlock _timer_lock;
-    void timer_reheapify_from(int);
+    void timer_reheapify_from(int, Timer*);
 
 #if CLICK_USERLEVEL
     // SELECT

@@ -68,25 +68,18 @@ Timer::schedule_at(const timeval& when)
 {
     // acquire lock, unschedule
     assert(_router && initialized());
-    Master *master = _router->master();
+    Master* master = _router->master();
     master->_timer_lock.acquire();
 
     // set expiration timer
     _expiry = when;
 
     // manipulate list; this is essentially a "decrease-key" operation
-    if (scheduled())
-	master->timer_reheapify_from(_schedpos);
-    int pos = master->_timer_list.size();
-    master->_timer_list.push_back(0);
-    while (pos > 0 && master->_timer_list.at_u((pos-1) >> 1)->_expiry > _expiry) {
-	Timer* tt = master->_timer_list.at_u((pos-1) >> 1);
-	tt->_schedpos = pos;
-	master->_timer_list.at_u(pos) = tt;
-	pos = (pos-1) >> 1;
+    if (!scheduled()) {
+	_schedpos = master->_timer_heap.size();
+	master->_timer_heap.push_back(0);
     }
-    _schedpos = pos;
-    master->_timer_list.at_u(pos) = this;
+    master->timer_reheapify_from(_schedpos, this);
 
     // if we changed the timeout, wake up the first thread
     if (_schedpos == 0)
@@ -105,32 +98,14 @@ Timer::schedule_after(const timeval &delta)
 }
 
 void
-Timer::reschedule_after_s(uint32_t s)
-{
-    timeval t = _expiry;
-    t.tv_sec += s;
-    schedule_at(t);
-}
-
-void
-Timer::reschedule_after_ms(uint32_t ms)
-{
-    timeval t = _expiry;
-    timeval interval;
-    interval.tv_sec = ms / 1000;
-    interval.tv_usec = (ms % 1000) * 1000;
-    timeradd(&t, &interval, &t);
-    schedule_at(t);
-}
-
-void
 Timer::unschedule()
 {
     if (scheduled()) {
 	Master* master = _router->master();
 	master->_timer_lock.acquire();
-	master->timer_reheapify_from(_schedpos);
+	master->timer_reheapify_from(_schedpos, master->_timer_heap.back());
 	_schedpos = -1;
+	master->_timer_heap.pop_back();
 	master->_timer_lock.release();
     }
 }

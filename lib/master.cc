@@ -163,22 +163,8 @@ Master::remove_router(Router *router)
     }
     
     // Remove tasks
-    for (RouterThread **tp = _threads.begin(); tp < _threads.end(); tp++) {
-	(*tp)->lock_tasks();
-	Task *prev = *tp;
-	Task *t;
-	for (t = prev->_next; t != *tp; t = t->_next)
-	    if (t->_router == router)
-		t->_prev = 0;
-	    else {
-		prev->_next = t;
-		t->_prev = prev;
-		prev = t;
-	    }
-	prev->_next = t;
-	t->_prev = prev;
-	(*tp)->unlock_tasks();
-    }
+    for (RouterThread **tp = _threads.begin(); tp < _threads.end(); tp++)
+	(*tp)->unschedule_router_tasks(router);
     
     {
 	SpinlockIRQ::flags_t flags = _task_lock.acquire();
@@ -203,12 +189,17 @@ Master::remove_router(Router *router)
     // Remove timers
     {
 	_timer_lock.acquire();
-	for (int i = _timer_list.size() - 1; i >= 0; i--)
-	    if (_timer_list.at_u(i)->_router == router) {
-		Timer* t = _timer_list.at_u(i);
-		timer_reheapify_from(i);
+	Timer* t;
+	for (Timer** tp = _timer_heap.end(); tp > _timer_heap.begin(); )
+	    if ((t = *--tp, t->_router == router)) {
+		timer_reheapify_from(tp - _timer_heap.begin(), _timer_heap.back());
+		// must clear _schedpos AFTER timer_reheapify_from()
 		t->_router = 0;
 		t->_schedpos = -1;
+		// recheck this slot; have moved a timer there
+		_timer_heap.pop_back();
+		if (tp < _timer_heap.end())
+		    tp++;
 	    }
 	_timer_lock.release();
     }
@@ -331,30 +322,38 @@ Master::process_pending(RouterThread *thread)
 // TIMERS
 
 void
-Master::timer_reheapify_from(int pos)
+Master::timer_reheapify_from(int pos, Timer* t)
 {
     // MUST be called with _timer_lock held
-    int ntimers = _timer_list.size() - 1;
-    Timer* t = _timer_list.at_u(ntimers);
+    int ntimers = _timer_heap.size();
+    Timer* tt;
+
+    while (pos > 0
+	   && (tt = _timer_heap.at_u((pos - 1) >> 1))->_expiry > t->_expiry) {
+	tt->_schedpos = pos;
+	_timer_heap.at_u(pos) = tt;
+	pos = (pos-1) >> 1;
+    }
 
     while (1) {
 	Timer* largest = t;
+	Timer* tt;
 	int npos = pos*2 + 1;
-	if (npos < ntimers && _timer_list.at_u(npos)->_expiry <= t->_expiry)
-	    largest = _timer_list.at_u(npos);
-	if (npos + 1 < ntimers && _timer_list.at_u(npos + 1)->_expiry <= largest->_expiry)
-	    largest = _timer_list.at_u(npos + 1), npos++;
+	if (npos < ntimers
+	    && (tt = _timer_heap.at_u(npos))->_expiry <= t->_expiry)
+	    largest = tt;
+	if (npos + 1 < ntimers
+	    && (tt = _timer_heap.at_u(npos + 1))->_expiry <= largest->_expiry)
+	    largest = tt, npos++;
 
 	largest->_schedpos = pos;
-	_timer_list.at_u(pos) = largest;
+	_timer_heap.at_u(pos) = largest;
 
 	if (largest == t)
 	    break;
 
 	pos = npos;
     }
-
-    _timer_list.pop_back();
 }
 
 // How long until next timer expires.
@@ -364,15 +363,15 @@ Master::timer_delay(struct timeval* tv)
 {
     int retval;
     _timer_lock.acquire();
-    if (_timer_list.size() == 0) {
+    if (_timer_heap.size() == 0) {
 	tv->tv_sec = 1000;
 	tv->tv_usec = 0;
 	retval = 0;
     } else {
 	struct timeval now;
 	click_gettimeofday(&now);
-	if (timercmp(&_timer_list.at_u(0)->_expiry, &now, >)) {
-	    timersub(&_timer_list.at_u(0)->_expiry, &now, tv);
+	if (timercmp(&_timer_heap.at_u(0)->_expiry, &now, >)) {
+	    timersub(&_timer_heap.at_u(0)->_expiry, &now, tv);
 	} else {
 	    tv->tv_sec = 0;
 	    tv->tv_usec = 0;
@@ -390,12 +389,13 @@ Master::run_timers()
 	if (_master_paused == 0 && _timer_lock.attempt()) {
 	    struct timeval now;
 	    click_gettimeofday(&now);
-	    while (_timer_list.size()
-		   && !timercmp(&_timer_list.at_u(0)->_expiry, &now, >)
-		   && _runcount > 0) {
-		Timer* t = _timer_list.at_u(0);
-		timer_reheapify_from(0);
-		t->_schedpos = -1;		
+	    Timer* t;
+	    while (_timer_heap.size() > 0 && _runcount > 0
+		   && (t = _timer_heap.at_u(0), t->_expiry <= now)) {
+		timer_reheapify_from(0, _timer_heap.back());
+		// must reset _schedpos AFTER timer_reheapify_from
+		t->_schedpos = -1;
+		_timer_heap.pop_back();
 		t->_hook(t, t->_thunk);
 	    }
 	    _timer_lock.release();

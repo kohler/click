@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2000-2001 Massachusetts Institute of Technology
  * Copyright (c) 2001-2002 International Computer Science Institute
+ * Copyright (c) 2004 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -51,9 +52,15 @@ CLICK_DECLS
 
 
 RouterThread::RouterThread(Master *m, int id)
+#ifdef HAVE_TASK_HEAP
+    : _task_heap_hole(0), _master(m), _id(id)
+#else
     : Task(Task::error_hook, 0), _master(m), _id(id)
+#endif
 {
+#ifndef HAVE_TASK_HEAP
     _prev = _next = _thread = this;
+#endif
     _task_lock_waiting = 0;
     _pending = 0;
 #ifdef CLICK_LINUXMODULE
@@ -92,7 +99,7 @@ RouterThread::RouterThread(Master *m, int id)
 
 RouterThread::~RouterThread()
 {
-    unschedule_all_tasks();
+    assert(empty());
 }
 
 inline void
@@ -234,6 +241,43 @@ RouterThread::task_epoch_time(uint32_t epoch) const
 /* The driver loop            */
 /******************************/
 
+#if HAVE_TASK_HEAP
+#define PASS_GE(a, b)	((int)(a - b) >= 0)
+
+void
+RouterThread::task_reheapify_from(int pos, Task* t)
+{
+    // MUST be called with task lock held
+    Task** tbegin = _task_heap.begin();
+    Task** tend = _task_heap.end();
+    int npos;
+    
+    while (pos > 0
+	   && (npos = (pos-1) >> 1, PASS_GT(tbegin[npos]->_pass, t->_pass))) {
+	tbegin[pos] = tbegin[npos];
+	tbegin[npos]->_schedpos = pos;
+	pos = npos;
+    }
+
+    while (1) {
+	Task* smallest = t;
+	Task** tp = tbegin + 2*pos + 1;
+	if (tp < tend && PASS_GE(smallest->_pass, tp[0]->_pass))
+	    smallest = tp[0];
+	if (tp + 1 < tend && PASS_GE(smallest->_pass, tp[1]->_pass))
+	    smallest = tp[1], tp++;
+
+	smallest->_schedpos = pos;
+	tbegin[pos] = smallest;
+
+	if (smallest == t)
+	    return;
+
+	pos = tp - tbegin;
+    }
+}
+#endif
+
 /* Run at most 'ntasks' tasks. */
 inline void
 RouterThread::run_tasks(int ntasks)
@@ -255,17 +299,40 @@ RouterThread::run_tasks(int ntasks)
 #endif
 
     Task *t;
+#ifdef HAVE_TASK_HEAP
+    while (_task_heap.size() > 0 && ntasks >= 0) {
+	t = _task_heap.at_u(0);
+#else
     while ((t = scheduled_next()), t != this && ntasks >= 0) {
+#endif
 
 #if __MTCLICK__
-	int runs = t->fast_unschedule();
+	int runs = t->cycle_runs();
 	if (runs > PROFILE_ELEMENT)
 	    cycles = click_get_cycles();
+#endif
+
+#ifdef HAVE_TASK_HEAP
+	t->_schedpos = -1;
+	_task_heap_hole = 1;
 #else
 	t->fast_unschedule();
 #endif
-
+	
 	t->call_hook();
+
+#ifdef HAVE_TASK_HEAP
+	if (_task_heap_hole) {
+	    Task* back = _task_heap.back();
+	    _task_heap.pop_back();
+	    if (_task_heap.size() > 0)
+		task_reheapify_from(0, back);
+	    _task_heap_hole = 0;
+	    // No need to reset _schedpos: 'back == t' only if
+	    // '_task_heap.size() == 0' now, in which case we didn't call
+	    // task_reheapify_from().
+	}
+#endif
 
 #if __MTCLICK__
 	if (runs > PROFILE_ELEMENT) {
@@ -435,25 +502,23 @@ RouterThread::driver()
     }
 #endif
 
-    // run loop again, unless driver is stopped
-    if (*runcount > 0) {
-#ifndef CLICK_NS
-	// Everyone except the NS driver stays in driver() until the driver is
-	// stopped.
-	goto driver_loop;
-#endif
-    } else {
+    // check to see if driver is stopped
+    if (*runcount <= 0) {
 	unlock_tasks();
 	bool b = _master->check_driver();
 	nice_lock_tasks();
-#ifndef CLICK_NS
-	if (b)
-	    goto driver_loop;
-#else
-	(void) b;
-#endif
+	if (!b)
+	    goto finish_driver;
     }
+    
+    
+#ifndef CLICK_NS
+    // Everyone except the NS driver stays in driver() until the driver is
+    // stopped.
+    goto driver_loop;
+#endif
 
+  finish_driver:
     unlock_tasks();
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
@@ -476,8 +541,13 @@ RouterThread::driver_once()
     int s = splimp();
 #endif
     lock_tasks();
+#if HAVE_TASK_HEAP
+    if (_task_heap.size() > 0) {
+	Task* t = _task_heap.at_u(0);
+#else
     Task *t = scheduled_next();
     if (t != this) {
+#endif
 	t->fast_unschedule();
 	t->call_hook();
     }
@@ -488,12 +558,35 @@ RouterThread::driver_once()
 }
 
 void
-RouterThread::unschedule_all_tasks()
+RouterThread::unschedule_router_tasks(Router* r)
 {
     lock_tasks();
-    Task *t;
-    while ((t = scheduled_next()), t != this)
-	t->fast_unschedule();
+#if HAVE_TASK_HEAP
+    Task* t;
+    for (Task** tp = _task_heap.end(); tp > _task_heap.begin(); )
+	if ((t = *--tp, t->_router == r)) {
+	    task_reheapify_from(tp - _task_heap.begin(), _task_heap.back());
+	    // must clear _schedpos AFTER task_reheapify_from
+	    t->_schedpos = -1;
+	    // recheck this slot; have moved a task there
+	    _task_heap.pop_back();
+	    if (tp < _task_heap.end())
+		tp++;
+	}
+#else
+    Task* prev = this;
+    Task* t;
+    for (t = prev->_next; t != this; t = t->_next)
+	if (t->_router == r)
+	    t->_prev = 0;
+	else {
+	    prev->_next = t;
+	    t->_prev = prev;
+	    prev = t;
+	}
+    prev->_next = t;
+    t->_prev = prev;
+#endif
     unlock_tasks();
 }
 
