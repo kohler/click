@@ -42,8 +42,11 @@ struct click_ip {
 #endif
   unsigned char ip_tos;			/* 1     type of service */
 #define IP_DSCPMASK 0xFC		/*         diffserv code point */
-#define IP_ECN_ECT 0x02			/*         ECN capable transport */
-#define IP_ECN_CE 0x01			/*         ECN congestion exp'd */
+#define IP_ECNMASK 0x03			/*	   ECN code point */
+#define IP_ECN_NOT_ECT 0x00		/*         not ECN capable transport */
+#define IP_ECN_ECT1 0x01		/*         ECN capable transport */
+#define IP_ECN_ECT2 0x02		/*         ECN capable transport */
+#define IP_ECN_CE 0x03			/*         ECN congestion exp'd */
   unsigned short ip_len;		/* 2-3   total length */
   unsigned short ip_id;			/* 4-5   identification */
   unsigned short ip_off;		/* 6-7   fragment offset field */
