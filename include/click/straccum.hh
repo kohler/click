@@ -17,21 +17,24 @@ class StringAccum { public:
 
   char *data() const			{ return (char *)_s; }
   int length() const			{ return _len; }
+  int capacity() const			{ return _cap; }
   const char *cc()			{ return c_str(); }
   const char *c_str();
   
   char operator[](int i) const	{ assert(i>=0&&i<_len); return (char)_s[i]; }
   char &operator[](int i)	{ assert(i>=0&&i<_len); return (char &)_s[i]; }
+  char back() const		{ assert(_len>0); return (char)_s[_len-1]; }
+  char &back()			{ assert(_len>0); return (char &)_s[_len-1]; }
 
   void clear()				{ _len = 0; }
   
-  char *reserve(int);
   char *extend(int);
   
   void append(char);
   void append(unsigned char);
   void append(const char *, int);
 
+  char *reserve(int);
   void forward(int n)		{ assert(n>=0 && _len+n<=_cap);	_len += n; }
   void pop_back(int n = 1)	{ assert(n>=0 && _len>=n);	_len -= n; }  
   
@@ -86,6 +89,8 @@ StringAccum::StringAccum(int cap)
   : _s(new unsigned char[cap]), _len(0), _cap(cap)
 {
   assert(cap > 0);
+  if (!_s)
+    _cap = 0;
 }
 
 inline void
@@ -122,6 +127,8 @@ StringAccum::extend(int amt)
 inline void
 StringAccum::append(const char *s, int len)
 {
+  if (len < 0)
+    len = strlen(s);
   if (char *x = extend(len))
     memcpy(x, s, len);
 }
