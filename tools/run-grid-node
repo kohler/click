@@ -2,7 +2,7 @@
 # run-grid-node
 # Douglas S. J. De Couto
 
-# $Id: run-grid-node,v 1.7 2000/08/06 00:59:45 decouto Exp $
+# $Id: run-grid-node,v 1.8 2000/08/06 03:00:50 decouto Exp $
 
 # usage: run-grid-node <ip-addr> [-no-gw -debug]
 
@@ -130,6 +130,32 @@ elsif ($system_type =~ /FreeBSD/) {
 	exit 1;
     }
     $hw_addr = $1;
+    if(!($ifconfig_out =~ /\n\s+inet (\d+.\d+.\d+.\d+)/)){
+	print "Unable to get old IP address\n";
+    }
+    else {
+	$old_ip_addr = $1;
+    }
+    if(!($ifconfig_out =~ /netmask (0x[0-9a-fA-F]{8})/)){
+	print "Unable to get old netmask\n";
+    }
+    else {
+	$old_netmask = $1;
+    }
+    if(!($ifconfig_out =~ /broadcast (\d+.\d+.\d+.\d+)/)){
+	print "Unable to get old broadcast address\n";
+    }
+    else {
+	$old_bcast = $1;
+    }
+
+    $route_info = `route -n get default`;
+    if(!($route_info =~ /\n\s+gateway: (\d+.\d+.\d+.\d+)/)){
+	print "Unable to get old gateway\n";
+    }
+    else {
+	$old_gw = $1;
+    }
 
     $tun_dev = "tun";
 }
@@ -150,8 +176,14 @@ if ($system_type =~ /Linux/) {
     system "iwconfig $grid_if mode ad-hoc channel $grid_channel";
 }
 elsif ($system_type =~ /FreeBSD/) {
-    print stderr "Not yet implemented for this system\n";
-    exit 1;
+    # remove all routes through the grid interface, and make sure it is up
+    # assume the default route was the one through the adapter! XXX
+    system "route -n delete default";
+    system "ifconfig $grid_if 0";
+
+    # set the adapter to ad-hoc mode
+    system "wicontrol -i $grid_if -p 3";
+    system "wicontrol -i $grid_if -f $grid_channel";
 }
 else {
     print stderr "This system is not supported\n";
@@ -203,8 +235,13 @@ if ($do_cleanup) {
 	}
     }
     elsif ($system_type =~ /FreeBSD/) {
-	print stderr "Not yet implemented for this system\n";
-	exit 1;
+	system "ifconfig $grid_if $old_ip_addr netmask $old_netmask broadcast $old_bcast";
+	system "wicontrol -i $grid_if -p 1";
+	if ($grid_gw != "0.0.0.0") {
+	    system "route delete default";
+	    system "route add default $old_gw";
+	}
+
     }
     else {
 	print stderr "This system is not supported\n";
