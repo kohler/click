@@ -218,14 +218,14 @@ LinkStat::simple_action(Packet *p)
   click_ether *eh = (click_ether *) p->data();
 
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
-    //click_chatter("LinkStat %s: got non-Grid packet type", id().cc());
+    click_chatter("LinkStat %s: got non-Grid packet type", id().cc());
     p->kill();
     return 0;
   }
 
   grid_hdr *gh = (grid_hdr *) (eh + 1);
   if (gh->type != grid_hdr::GRID_LINK_PROBE) {
-    //click_chatter("LinkStat %s: got non-Probe packet", id().cc());
+    click_chatter("LinkStat %s: got non-Probe packet", id().cc());
     p->kill();
     return 0;
   }
