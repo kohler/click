@@ -35,6 +35,7 @@
 # include <click/router.hh>
 # include <click/handlercall.hh>
 # include <click/standard/addressinfo.hh>
+# include <click/standard/portinfo.hh>
 # define CP_CONTEXT_ARG , Element *context
 # define CP_PASS_CONTEXT , context
 #else
@@ -1763,6 +1764,28 @@ cp_ethernet_address(const String &str, EtherAddress *address
 }
 
 
+bool
+cp_tcpudp_port(const String &str, int ip_p, uint16_t *return_value
+	       CP_CONTEXT_ARG)
+{
+  uint32_t value;
+  if (str && isdigit(str[0]) && cp_unsigned(str, &value)) {
+    if (value <= 0xFFFF) {
+      *return_value = value;
+      return true;
+    } else {
+      cp_errno = CPE_OVERFLOW;
+      return false;
+    }
+  }
+#ifndef CLICK_TOOL
+  return PortInfo::query(str, ip_p, *return_value, context);
+#else
+  return false;
+#endif
+}
+
+
 #ifndef CLICK_TOOL
 Element *
 cp_element(const String &text_in, Element *context, ErrorHandler *errh)
@@ -1992,6 +2015,8 @@ CpVaParseCmd
   cpIPAddressList	= "ip_addr_list",
   cpEthernetAddress	= "ether_addr",
   cpEtherAddress	= "ether_addr", // synonym
+  cpTCPPort		= "tcp_port",
+  cpUDPPort		= "udp_port",
   cpElement		= "element",
   cpHandlerName		= "handler_name",
   cpHandler		= "handler",
@@ -2042,6 +2067,8 @@ enum {
   cpiIPAddressOrPrefix,
   cpiIPAddressList,
   cpiEthernetAddress,
+  cpiTCPPort,
+  cpiUDPPort,
   cpiElement,
   cpiHandlerName,
   cpiHandler,
@@ -2347,6 +2374,16 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes Ethernet address (%s)", argname, desc);
     break;
 
+   case cpiTCPPort:
+    if (!cp_tcpudp_port(arg, IP_PROTO_TCP, (uint16_t *) v->v.address CP_PASS_CONTEXT))
+      errh->error("%s takes TCP port (%s)", argname, desc);
+    break;
+
+   case cpiUDPPort:
+    if (!cp_tcpudp_port(arg, IP_PROTO_UDP, (uint16_t *) v->v.address CP_PASS_CONTEXT))
+      errh->error("%s takes UDP port (%s)", argname, desc);
+    break;
+
 #ifdef HAVE_IPSEC
    case cpiDesCblock:
     if (!cp_des_cblock(arg, v->v.address))
@@ -2428,6 +2465,13 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    case cpiUnsignedShort: {
      unsigned short *usstore = (unsigned short *)v->store;
      *usstore = v->v.u;
+     break;
+   }
+    
+   case cpiTCPPort:
+   case cpiUDPPort: {
+     uint16_t *u16store = (uint16_t *)v->store;
+     *u16store = *((uint16_t *)v->v.address);
      break;
    }
    
@@ -3418,6 +3462,8 @@ cp_va_static_initialize()
   cp_register_argtype(cpIPAddressOrPrefix, "IP address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPAddressOrPrefix);
   cp_register_argtype(cpIPAddressList, "list of IP addresses", 0, default_parsefunc, default_storefunc, cpiIPAddressList);
   cp_register_argtype(cpEthernetAddress, "Ethernet address", 0, default_parsefunc, default_storefunc, cpiEthernetAddress);
+  cp_register_argtype(cpTCPPort, "TCP port", 0, default_parsefunc, default_storefunc, cpiTCPPort);
+  cp_register_argtype(cpUDPPort, "UDP port", 0, default_parsefunc, default_storefunc, cpiUDPPort);
 #ifndef CLICK_TOOL
   cp_register_argtype(cpElement, "element name", 0, default_parsefunc, default_storefunc, cpiElement);
   cp_register_argtype(cpHandlerName, "handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiHandlerName);

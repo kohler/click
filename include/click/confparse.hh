@@ -126,6 +126,8 @@ class EtherAddress;
 bool cp_ethernet_address(const String &, unsigned char *  CP_OPT_CONTEXT);
 bool cp_ethernet_address(const String &, EtherAddress *  CP_OPT_CONTEXT);
 
+bool cp_tcpudp_port(const String &, int ip_p, uint16_t *  CP_OPT_CONTEXT);
+
 #ifndef CLICK_TOOL
 Element *cp_element(const String &, Element *, ErrorHandler *);
 Element *cp_element(const String &, Router *, ErrorHandler *);
@@ -187,6 +189,8 @@ extern CpVaParseCmd
     cpIPAddressOrPrefix,//			IPAddress *a, IPAddress *mask
     cpIPAddressList,	//			IPAddressList *
     cpEthernetAddress,	//			EtherAddress *
+    cpTCPPort,		// 			uint16_t *
+    cpUDPPort,		// 			uint16_t *
     cpElement,		//			Element **
     cpHandlerName,	//			Element **e, String *hname
     cpHandler,		//			Element **e, int *hid (INITIALIZE TIME)
