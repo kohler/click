@@ -7,22 +7,18 @@
 CLICK_DECLS
 
 /*
- * =c
- * 
- * PushAnno([I<KEYWORDS>])
- *
- * =s wifi
- * Aggregates large packets from the madwifi.stripped driver.
- * Assumes fragemented packets are sent in order, and
- * the the WIFI_RX_MORE_ANNO is set to a non-zero value
- * if the next packet contains more fragments.
- * 
- * usual configurations look like:
- * FromDevice(ath0) -> PushAnno() -> xxxx
- * 
- * =s wifi
- *
- */
+=c 
+PushAnno([I<KEYWORDS>])
+=s wifi
+=d
+Pushes Packet::USER_ANNO_SIZE bytes on a packet and copies
+Packet::anno() to the beginning of the packet.
+
+=e
+FromDevice(ath0) -> PushAnno() -> ToDump()
+
+=a ReadAnno
+*/
 
 
 class PushAnno : public Element { public:

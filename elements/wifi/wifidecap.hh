@@ -9,9 +9,9 @@ CLICK_DECLS
 
 WifiDecap(ETHERTYPE, SRC, DST)
 
-=s decapsulation, Wifi -> Ethernet
+=s decapsulation
 
-Turns 80211 packets into ethernet packets encapsulates packets in Ethernet header
+Turns 802.11 packets into ethernet packets encapsulates packets in Ethernet header
 
 =d
 

@@ -7,21 +7,21 @@
 CLICK_DECLS
 
 /*
- * =c
- * 
- * FilterTX([I<KEYWORDS>])
- *
- * =s wifi
- * Filters out packets that were sent by this node, and
- * got received via transmit feedback.
- * Sends these packets to output 1 if it is present, 
- * otherwise it drops the packets.
- * 
- * =s wifi
- *
- * =a WifiTXFeedback
- * 
- */
+=c
+FilterTX([, I<KEYWORDS>])
+
+=s wifi
+
+=d
+Filters out packets that were sent by this node, and
+received via transmit feedback.
+Sends these packets to output 1 if it is present, 
+otherwise it drops the packets.
+
+=a 
+WifiTXFeedback
+
+*/
 
 
 class FilterTX : public Element { public:

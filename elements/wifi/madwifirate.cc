@@ -36,6 +36,7 @@ MadwifiRate::MadwifiRate()
     _stepup(0),
     _stepdown(0),
     _offset(0), 
+    _timer(this),
     _packet_size_threshold(0)
 {
   MOD_INC_USE_COUNT;
@@ -45,11 +46,24 @@ MadwifiRate::MadwifiRate()
   _bcast = EtherAddress(bcast_addr);
 }
 
+
+void
+MadwifiRate::run_timer()
+{
+  _timer.schedule_after_ms(1000);
+}
 MadwifiRate::~MadwifiRate()
 {
   MOD_DEC_USE_COUNT;
 }
 
+int 
+MadwifiRate::initialize(ErrorHandler *) 
+{
+  _timer.initialize(this);
+  _timer.schedule_now();
+  return 0;
+}
 int
 MadwifiRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -64,6 +78,80 @@ MadwifiRate::configure(Vector<String> &conf, ErrorHandler *errh)
 			"ACTIVE", cpBool, "xxx", &_active,
 			0);
   return ret;
+}
+
+void 
+MadwifiRate::adjust_all()
+{
+  Vector<EtherAddress> n;
+  for (NIter iter = _neighbors.begin(); iter; iter++) {
+    DstInfo nfo = iter.value();
+    n.push_back(nfo._eth);
+  }
+
+  for (int x =0; x < n.size(); x++) {
+    adjust(n[x]);
+  }
+
+}
+
+void 
+MadwifiRate::adjust(EtherAddress dst) 
+{
+  DstInfo *nfo = _neighbors.findp(dst);
+    bool stepup = false;
+  bool stepdown = false;
+  if (nfo->_failures > 0 && nfo->_successes == 0) {
+    stepdown = true;
+  }
+
+  bool enough = (nfo->_successes + nfo->_failures) > 10;
+
+  /* all packets need retry in average */
+  if (enough && nfo->_successes < nfo->_retries)
+    stepdown = true;
+
+  /* no error and less than 10% of packets need retry */
+  if (enough && nfo->_failures == 0 && nfo->_successes > nfo->_retries * 10)
+    stepup = true;
+
+  if (stepdown) {
+    if (nfo->_rates.size()) {
+      if (_debug && max(nfo->_current_index - 1, 0) != nfo->_current_index) {
+	click_chatter("%{element} stepping down for %s from %d to %d\n",
+		      this,
+		      nfo->_eth.s().cc(),
+		      nfo->_rates[nfo->_current_index],
+		      nfo->_rates[max(0, nfo->_current_index - 1)]);
+      }
+    }
+    nfo->_current_index = max(nfo->_current_index - 1, 0);
+    nfo->_successes = 0;
+    nfo->_failures = 0;
+    nfo->_retries = 0;
+  } else if (stepup) {
+    if (nfo->_current_index == nfo->_rates.size() - 1) {
+      return;
+    }
+    if (nfo->_rates.size()) {
+      if (_debug) {
+	click_chatter("%{element} steping up for %s from %d to %d\n",
+		      this,
+		      nfo->_eth.s().cc(),
+		      nfo->_rates[nfo->_current_index],
+		      nfo->_rates[min(nfo->_rates.size() - 1, 
+				      nfo->_current_index + 1)]);
+      }
+    }
+    nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
+    nfo->_successes = 0;
+    nfo->_failures = 0;
+    nfo->_retries = 0;
+  }
+  
+
+
+
 }
 
 void
@@ -131,57 +219,6 @@ MadwifiRate::process_feedback(Packet *p_in)
     nfo->_retries += 4;
   }
 
-  bool stepup = false;
-  bool stepdown = false;
-  if (nfo->_failures > 0 && nfo->_successes == 0) {
-    stepdown = true;
-  }
-
-  bool enough = (nfo->_successes + nfo->_failures) > 10;
-
-  /* all packets need retry in average */
-  if (enough && nfo->_successes < nfo->_retries)
-    stepdown = true;
-
-  /* no error and less than 10% of packets need retry */
-  if (enough && nfo->_failures == 0 && nfo->_successes > nfo->_retries * 10)
-    stepup = true;
-
-  if (stepdown) {
-    if (nfo->_rates.size()) {
-      if (_debug && max(nfo->_current_index - 1, 0) != nfo->_current_index) {
-	click_chatter("%{element} stepping down for %s from %d to %d\n",
-		      this,
-		      nfo->_eth.s().cc(),
-		      nfo->_rates[nfo->_current_index],
-		      nfo->_rates[max(0, nfo->_current_index - 1)]);
-      }
-    }
-    nfo->_current_index = max(nfo->_current_index - 1, 0);
-    nfo->_successes = 0;
-    nfo->_failures = 0;
-    nfo->_retries = 0;
-  } else if (stepup) {
-    if (nfo->_current_index == nfo->_rates.size() - 1) {
-      return;
-    }
-    if (nfo->_rates.size()) {
-      if (_debug) {
-	click_chatter("%{element} steping up for %s from %d to %d\n",
-		      this,
-		      nfo->_eth.s().cc(),
-		      nfo->_rates[nfo->_current_index],
-		      nfo->_rates[min(nfo->_rates.size() - 1, 
-				      nfo->_current_index + 1)]);
-      }
-    }
-    nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
-    nfo->_successes = 0;
-    nfo->_failures = 0;
-    nfo->_retries = 0;
-  }
-  
-
   return;
 }
 
@@ -217,8 +254,11 @@ MadwifiRate::assign_rate(Packet *p_in)
     nfo->_successes = 0;
     nfo->_retries = 0;
     nfo->_failures = 0;
-    /* initial to max? */
-    nfo->_current_index = 0;
+    /* initial to 24 in g/a, 11 in b */
+    int ndx = nfo->rate_index(48);
+    ndx = ndx > 0 ? ndx : nfo->rate_index(22);
+    ndx = max(ndx, 0);
+    nfo->_current_index = ndx;
     if (_debug) {
       click_chatter("%{element} initial rate for %s is %d\n",
 		    this,
@@ -408,9 +448,11 @@ MadwifiRate::add_handlers()
 // generate Vector template instance
 #include <click/bighashmap.cc>
 #include <click/dequeue.cc>
+#include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class HashMap<EtherAddress, MadwifiRate::DstInfo>;
 template class DEQueue<MadwifiRate::tx_result>;
+template class Vector<EtherAddress>;
 #endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(MadwifiRate)

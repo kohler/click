@@ -5,46 +5,23 @@
 #include <click/etheraddress.hh>
 #include <click/bighashmap.hh>
 #include <click/glue.hh>
+#include <click/timer.hh>
 CLICK_DECLS
 
 /*
- * =c
- * 
- * MadwifiRate([I<KEYWORDS>])
- * 
- * =s wifi
- * 
- * Automatically determine the txrate for a give ethernet dst
- * =over 8
- *
- * =item RATE_WINDOW
- * 
- * How long to remember tx packets
- *
- * =item STEPUP
- *
- * a value from 0 to 100 of what the percentage must be before
- * the rate is increased
- * 
- * =item STEPDOWN
- *
- * a value from 0 to 100. when the percentage of successful packets
- * falls below this value, the card will try the next lowest rate
- *
- * =item BEFORE_SWITCH
- *
- * how many packets must be received before you calculate the rate
- * for a give host. i.e. if you set this to 4, each rate will try
- * at least 4 packets before switching up or down.
- *
- *
- *
- * This element should be used in conjunction with SetTXRate
- * and a wifi-enabled kernel module. (like hostap or airo).
- *
- * =a
- * SetTXRate, WifiTXFeedback
- */
+=c
+
+MadwifiRate([I<KEYWORDS>])
+
+=s wifi
+
+=d 
+Rate Control present in the Madwifi driver
+(http://sourceforge.net/project/madwifi).
+
+=a 
+SetTXRate, FilterTX, AutoRateFallback
+*/
 
 
 class MadwifiRate : public Element { public:
@@ -58,6 +35,10 @@ class MadwifiRate : public Element { public:
   
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
+  int initialize(ErrorHandler *);
+  void run_timer();
+  void adjust_all();
+  void adjust(EtherAddress);
 
 
   void push (int, Packet *);
@@ -79,6 +60,8 @@ class MadwifiRate : public Element { public:
   int _stepdown;
   bool _debug;
   unsigned _offset;
+  Timer _timer;
+
   unsigned _packet_size_threshold;
 
   struct DstInfo {
@@ -133,7 +116,6 @@ class MadwifiRate : public Element { public:
       return _rates[0];
     }
   };
-  
   
   typedef HashMap<EtherAddress, DstInfo> NeighborTable;
   typedef NeighborTable::const_iterator NIter;

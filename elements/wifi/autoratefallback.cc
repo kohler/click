@@ -182,8 +182,8 @@ AutoRateFallback::assign_rate(Packet *p_in)
     nfo = _neighbors.findp(dst);
     nfo->_rates = _rtable->lookup(dst);
     nfo->_successes = 0;
-
-    nfo->_current_index = 0;
+    
+    nfo->_current_index = nfo->_rates[nfo->_rates.size()-1];
     click_chatter("%{element} initial rate for %s is %d\n",
 		  this,
 		  nfo->_eth.s().cc(),
@@ -192,8 +192,8 @@ AutoRateFallback::assign_rate(Packet *p_in)
 
   int rate = nfo->pick_rate();
   int alt_rate = (_alt_rate) ? nfo->pick_alt_rate() : 0;
-  int max_retries = (_alt_rate) ? 3 : WIFI_MAX_RETRIES;
-  int alt_max_retries = (_alt_rate) ? WIFI_MAX_RETRIES - 3 : 0;
+  int max_retries = (_alt_rate) ? 2 : WIFI_MAX_RETRIES;
+  int alt_max_retries = (_alt_rate) ? WIFI_MAX_RETRIES - 2 : 0;
   eh->rate = rate;
   eh->max_retries = max_retries;
   eh->alt_rate = alt_rate;

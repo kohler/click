@@ -7,18 +7,18 @@
 CLICK_DECLS
 
 /*
- * =c
- * 
- * PhyErrFilter([I<KEYWORDS>])
- *
- * =s wifi
- * Filters out packets that have the phy err annotation set
- * Sends these packets to output 1 if it is present, 
- * otherwise it drops the packets.
- * 
- * =s wifi
- *
- */
+=c
+PhyErrFilter([I<KEYWORDS>])
+
+=s wifi
+
+=d
+Filters out packets that have the phy err annotation set
+in the wifi_extra_header, and sends these packets to output 1 
+if it is present.
+
+=a ExtraDecap
+*/
 
 
 class PhyErrFilter : public Element { public:

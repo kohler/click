@@ -6,17 +6,15 @@ CLICK_DECLS
 
 /*
 =c
-
 ExtraEncap()
 
-=s encapsulation, Extra -> 802.11
+=s wifi, encapsulation
 
-Removes the extra header and sets the corresponding wifi packet annotations (RSSI, NOISE, and RATE).
 =d
+Copies the wifi_extra_header from Packet::anno() and pushes it onto the packet.
 
-=a
-
-EtherEncap */
+=a ExtraDecap, SetTXRate
+*/
 
 class ExtraEncap : public Element { public:
   

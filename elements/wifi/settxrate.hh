@@ -6,36 +6,28 @@
 CLICK_DECLS
 
 /*
- * =c
- * 
- * SetTXRate([I<KEYWORDS>])
- * 
- * =s wifi
- * 
- * Sets the Wifi TXRate Annotation on a packet.
- * 
- * Regular Arguments:
- * =over 8
- *
- * =item RATE
- * 
- * Unsigned integer. Valid rates are 1, 2, 5, and 11.
- *
- * =back
- *
- *  Keywords arguments:
- *
- * =item AUTO
- * 
- * AutoTXRate element.  When used in conjunction with this 
- * element, settxrate will autoscale the rate.
- *
- *
- * =a
- * AutoTXRate, WifiTXFeedback
- *
- *
- */
+=c
+SetTXRate([I<KEYWORDS>])
+
+=s wifi
+
+=d
+Sets the Wifi TXRate Annotation on a packet.
+
+Regular Arguments:
+=over 8
+
+=item RATE 
+Unsigned integer. Rate value is multiplied by 2 (i.e. 2
+means 1 Mbps, 11 means 5.5 Mbps)
+
+=back 8
+
+=h rate read/write
+Same as RATE Argument
+
+=a AutoRateFallback, MadwifiRate, ProbeRate, ExtraEncap
+*/
 
 class SetTXRate : public Element { public:
   

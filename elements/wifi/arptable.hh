@@ -8,11 +8,18 @@
 CLICK_DECLS
 
 /*
- * =c
- * 
- * ARPTable()
- * 
- *
+=c
+ARPTable
+
+=d 
+Tracks ethernet to ip mappings for individual elements. This element
+does not process packets.
+
+=h mappings read-only
+Returns a String with "EtherAddress IP" mappings on each line
+=h insert write-only
+Insert a "EtherAddress IP" pair into the table
+
  */
 
 

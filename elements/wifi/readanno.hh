@@ -7,22 +7,20 @@
 CLICK_DECLS
 
 /*
- * =c
- * 
- * ReadAnno([I<KEYWORDS>])
- *
- * =s wifi
- * Aggregates large packets from the madwifi.readped driver.
- * Assumes fragemented packets are sent in order, and
- * the the WIFI_RX_MORE_ANNO is set to a non-zero value
- * if the next packet contains more fragments.
- * 
- * usual configurations look like:
- * FromDevice(ath0) -> ReadAnno() -> xxxx
- * 
- * =s wifi
- *
- */
+=c
+ReadAnno([I<KEYWORDS>])
+
+=s wifi
+
+=d
+Pulls Packet::USER_ANNO_SIZE bytes from a packet and copies
+them to Packet::anno()
+
+=e
+FromDump(file) -> ReadAnno() -> xxxx
+
+=a PushAnno
+*/
 
 
 class ReadAnno : public Element { public:

@@ -6,15 +6,20 @@
 CLICK_DECLS
 
 /*
- * =c
- * 
- * SetRTS(Bool)
- * 
- * =s wifi
- * 
- * Enable/Disable RTS/CTS for a packet
- * 
- */
+=c
+
+SetRTS(Bool)
+
+=s wifi
+
+=d
+Enable/disable RTS/CTS for a packet
+
+=h rts read/write
+Enable/disable rts/cts for a packet.
+
+=a ExtraEncap, ExtraDecap
+*/
 
 class SetRTS : public Element { public:
   
