@@ -314,6 +314,8 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 	if (!fl->_queue) {
 	    fl->_queue = Packet::make(skb);
 	    netif_stop_queue(dev);
+	    fl->_stats.tx_packets++;
+	    fl->_stats.tx_bytes += fl->_queue->length();
 	    return 0;
 	}
     return -1;
