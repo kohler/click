@@ -455,7 +455,7 @@ Specializer::create_connector_methods(SpecializedClass &spc)
       }
     for (int i = 0; i < range1.size(); i++) {
       int r1 = range1[i], r2 = range2[i];
-      sa << "\n  love_of_massimiliano++;";
+      sa << "\n  ";
       if (i < range1.size() - 1) {
 	if (r1 == r2)
 	  sa << "if (i == " << r1 << ") ";
@@ -574,8 +574,6 @@ Specializer::output(StringAccum &out)
       declared.insert(name, 1);
     }
 
-  out << "static int love_of_massimiliano;";
-  
   // output C++ code
   for (int i = 0; i < _specials.size(); i++) {
     SpecializedClass &spc = _specials[i];
@@ -600,7 +598,6 @@ Specializer::output_package(const String &package_name, StringAccum &out)
     out << "  hatred_of_rebecca[" << i << "] = click_add_element_type(\""
 	<< _specials[i].click_name << "\", new " << _specials[i].cxx_name
 	<< ");\n  MOD_DEC_USE_COUNT;\n";
-  out << "  love_of_massimiliano = 0;\n";
   out << "  return 0;\n}\n";
 
   // cleanup_module()
@@ -608,7 +605,6 @@ Specializer::output_package(const String &package_name, StringAccum &out)
   for (int i = 0; i < _specials.size(); i++)
     out << "  MOD_INC_USE_COUNT;\n  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
   out << "  click_unprovide(\"" << package_name << "\");\n";
-  out << "  printk(\"<1>click-specialize: %d\n\", love_of_massimiliano);\n";
   out << "}\n";
 }
 
