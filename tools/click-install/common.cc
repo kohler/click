@@ -76,6 +76,7 @@ read_active_modules(StringMap &packages, ErrorHandler *errh)
 #if FOR_LINUXMODULE
   return read_package_file("/proc/modules", packages, errh);
 #else
+  int before = errh->nerrors();
   String output = shell_command_output_string
     ("/sbin/kldstat | /usr/bin/awk \'/Name/ {\n"
      "  for (i = 1; i <= NF; i++)\n"
@@ -84,7 +85,10 @@ read_active_modules(StringMap &packages, ErrorHandler *errh)
      "  next;\n"
      "}\n"
      "{ print $n }\'", String(), errh);
-  return read_package_string(output, packages);
+  if (!output && errh->nerrors() != before)
+    return false;
+  read_package_string(output, packages);
+  return true;
 #endif
 }
 
