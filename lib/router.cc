@@ -819,10 +819,12 @@ void
 Router::preinitialize()
 {
 #if CLICK_USERLEVEL
+# if !HAVE_POLL_H
   FD_ZERO(&_read_select_fd_set);
   FD_ZERO(&_write_select_fd_set);
   _max_select_fd = -1;
-  assert(!_selectors.size());
+# endif
+  assert(!_pollfds.size() && !_read_poll_elements.size() && !_write_poll_elements.size());
 #endif
 
   // initialize handlers to empty
@@ -1362,25 +1364,37 @@ Router::add_select(int fd, int element, int mask)
 {
   if (fd < 0)
     return -1;
-  assert(element >= 0 && element < nelements() && (mask & ~SELECT_RELEVANT) == 0);
+  assert(element >= 0 && element < nelements() && (mask & ~(SELECT_READ | SELECT_WRITE)) == 0);
 
-  int our_si = -1;
-  for (int si = 0; si < _selectors.size(); si++)
-    if (_selectors[si].fd == fd) {
-      // There is exactly one match per element-fd pair.
-      assert(our_si == -1 || _selectors[si].element != element);
-      if (_selectors[si].element == element)
-	our_si = si;
-      else if (_selectors[si].mask & mask)
+  int si;
+  for (si = 0; si < _pollfds.size(); si++)
+    if (_pollfds[si].fd == fd) {
+      // There is exactly one match per fd.
+      if (((mask & SELECT_READ) && (_pollfds[si].events & POLLIN) && _read_poll_elements[si] != element)
+	  || ((mask & SELECT_WRITE) && (_pollfds[si].events & POLLOUT) && _write_poll_elements[si] != element))
 	return -1;
+      break;
     }
 
   // Add a new selector
-  if (our_si >= 0)
-    _selectors[our_si].mask |= mask;
-  else
-    _selectors.push_back(Selector(fd, element, mask));
+  if (si == _pollfds.size()) {
+    _pollfds.push_back(pollfd());
+    _pollfds.back().fd = fd;
+    _read_poll_elements.push_back(-1);
+    _write_poll_elements.push_back(-1);
+  }
 
+  // Add selectors
+  if (mask & SELECT_READ) {
+    _pollfds[si].events |= POLLIN;
+    _read_poll_elements[si] = element;
+  }
+  if (mask & SELECT_WRITE) {
+    _pollfds[si].events |= POLLOUT;
+    _write_poll_elements[si] = element;
+  }
+
+#if !HAVE_POLL_H
   // Add 'mask' to the fd_sets
   if (mask & SELECT_READ)
     FD_SET(fd, &_read_select_fd_set);
@@ -1388,6 +1402,7 @@ Router::add_select(int fd, int element, int mask)
     FD_SET(fd, &_write_select_fd_set);
   if ((mask & (SELECT_READ | SELECT_WRITE)) && fd > _max_select_fd)
     _max_select_fd = fd;
+#endif
 
   return 0;
 }
@@ -1397,34 +1412,44 @@ Router::remove_select(int fd, int element, int mask)
 {
   if (fd < 0)
     return -1;
-  assert(element >= 0 && element < nelements() && (mask & ~SELECT_RELEVANT) == 0);
+  assert(element >= 0 && element < nelements() && (mask & ~(SELECT_READ | SELECT_WRITE)) == 0);
 
+#if !HAVE_POLL_H
   // Exit early if no selector defined
   if ((!(mask & SELECT_READ) || !FD_ISSET(fd, &_read_select_fd_set))
       && (!(mask & SELECT_WRITE) || !FD_ISSET(fd, &_write_select_fd_set)))
     return 0;
+#endif
 
   // Otherwise, search for selector
-  for (int i = 0; i < _selectors.size(); i++) {
-    Selector &s = _selectors[i];
-    if (s.fd == fd && s.element == element) {
-      mask &= s.mask;
-      if (!mask)
-	return -1;
-      if (mask & SELECT_READ)
+  for (pollfd *p = _pollfds.begin(); p != _pollfds.end(); p++)
+    if (p->fd == fd) {
+      int pi = p - _pollfds.begin();
+      int ok = 0;
+      if ((mask & SELECT_READ) && (p->events & POLLIN) && _read_poll_elements[pi] == element) {
+	p->events &= ~POLLIN;
+#if !HAVE_POLL_H
 	FD_CLR(fd, &_read_select_fd_set);
-      if (mask & SELECT_WRITE)
-	FD_CLR(fd, &_write_select_fd_set);
-      s.mask &= ~mask;
-      if (!(s.mask & SELECT_RELEVANT)) {
-	s = _selectors.back();
-	_selectors.pop_back();
-	if (_selectors.size() == 0)
-	  _max_select_fd = -1;
+#endif
+	ok++;
       }
-      return 0;
+      if ((mask & SELECT_WRITE) && (p->events & POLLOUT) && _write_poll_elements[pi] == element) {
+	p->events &= ~POLLOUT;
+#if !HAVE_POLL_H
+	FD_CLR(fd, &_write_select_fd_set);
+#endif
+	ok++;
+      }
+      if (!p->events) {
+	*p = _pollfds.back();
+	_pollfds.pop_back();
+#if !HAVE_POLL_H
+	if (!_pollfds.size())
+	  _max_select_fd = -1;
+#endif
+      }
+      return (ok ? 0 : -1);
     }
-  }
   
   return -1;
 }
@@ -1437,37 +1462,98 @@ Router::run_selects(bool more_tasks)
   // selected() methods.
 
   // Return early if there are no selectors and there are tasks to run.
-  if (_selectors.size() == 0 && more_tasks)
+  if (_pollfds.size() == 0 && more_tasks)
     return;
 
-  fd_set read_mask = _read_select_fd_set;
-  fd_set write_mask = _write_select_fd_set;
-
+  // Decide how long to wait.
+#if CLICK_NS
+  // never block if we're running in the simulator
+# if HAVE_POLL_H
+  int timeout = -1;
+# else
+  struct timeval wait, *wait_ptr = &wait;
+  timerclear(&wait);
+# endif
+#else /* !CLICK_NS */
   // never wait if anything is scheduled; otherwise, if no timers, block
   // indefinitely.
-  struct timeval wait, *wait_ptr = &wait;
-  bool timers = _timer_list.get_next_delay(&wait);
+# if HAVE_POLL_H
+  int timeout;
   if (more_tasks)
-    wait.tv_sec = wait.tv_usec = 0;
-  else if (!timers)
+    timeout = 0;
+  else {
+    struct timeval wait;
+    bool timers = _timer_list.get_next_delay(&wait);
+    timeout = (timers ? wait.tv_sec * 1000 + wait.tv_usec / 1000 : -1);
+  }
+# else /* !HAVE_POLL_H */
+  struct timeval wait, *wait_ptr = &wait;
+  if (more_tasks)
+    timerclear(&wait);
+  else if (!_timer_list.get_next_delay(&wait))
     wait_ptr = 0;
-#ifdef CLICK_NS
-  // Never block if we're running in the simulator.
-  wait.tv_sec = wait.tv_usec = 0;
-#endif
+# endif /* HAVE_POLL_H */
+#endif /* CLICK_NS */
+
+#if HAVE_POLL_H
+  int n = poll(_pollfds.begin(), _pollfds.size(), timeout);
+
+  if (n < 0 && errno != EINTR)
+    perror("poll");
+  else if (n > 0) {
+    for (struct pollfd *p = _pollfds.begin(); p < _pollfds.end(); p++)
+      if (p->revents & (POLLIN | POLLOUT)) {
+	int pi = p - _pollfds.begin();
+
+	// Beware: calling 'selected()' might call remove_select(), causing
+	// disaster! Load everything we need out of the vectors before calling
+	// out.
+
+	int fd = p->fd;
+	int read_elt = (p->revents & POLLIN ? _read_poll_elements[pi] : -1);
+	int write_elt = (p->revents & POLLOUT ? _write_poll_elements[pi] : -1);
+
+	if (read_elt >= 0)
+	  _elements[read_elt]->selected(fd);
+	if (write_elt >= 0 && write_elt != read_elt)
+	  _elements[write_elt]->selected(fd);
+
+	if (p < _pollfds.end() && fd != p->fd)
+	  p--;
+      }
+  }
+
+#else /* !HAVE_POLL_H */
+  fd_set read_mask = _read_select_fd_set;
+  fd_set write_mask = _write_select_fd_set;
 
   int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set *)0, wait_ptr);
   
   if (n < 0 && errno != EINTR)
     perror("select");
   else if (n > 0) {
-    for (int i = 0; i < _selectors.size(); i++) {
-      const Selector &s = _selectors[i];
-      if (((s.mask & SELECT_READ) && FD_ISSET(s.fd, &read_mask))
-	  || ((s.mask & SELECT_WRITE) && FD_ISSET(s.fd, &write_mask)))
-	_elements[s.element]->selected(s.fd);
-    }
+    for (struct pollfd *p = _pollfds.begin(); p < _pollfds.end(); p++)
+      if (FD_ISSET(p->fd, &read_mask) || FD_ISSET(p->fd, &write_mask)) {
+	int pi = p - _pollfds.begin();
+
+	// Beware: calling 'selected()' might call remove_select(), causing
+	// disaster! Load everything we need out of the vectors before calling
+	// out.
+
+	int fd = p->fd;
+	int read_elt = (FD_ISSET(fd, &read_mask) ? _read_poll_elements[pi] : -1);
+	int write_elt = (FD_ISSET(fd, &write_mask) ? _write_poll_elements[pi] : -1);
+
+	if (read_elt >= 0)
+	  _elements[read_elt]->selected(fd);
+	if (write_elt >= 0 && write_elt != read_elt)
+	  _elements[write_elt]->selected(fd);
+
+	if (p < _pollfds.end() && fd != p->fd)
+	  p--;
+      }
   }
+#endif /* HAVE_POLL_H */
 }
 
 #endif

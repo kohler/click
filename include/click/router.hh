@@ -8,6 +8,9 @@
 #include <click/task.hh>
 #if CLICK_USERLEVEL
 # include <unistd.h>
+# if HAVE_POLL_H
+#  include <poll.h>
+# endif
 #endif
 #if CLICK_NS
 # include <click/simclick.h>
@@ -168,12 +171,16 @@ class Router { public:
   Spinlock _runcount_lock;
 
 #if CLICK_USERLEVEL
-  enum { SELECT_RELEVANT = (SELECT_READ | SELECT_WRITE) };
-  struct Selector;
+# if !HAVE_POLL_H
+  struct pollfd;
+  enum { POLLIN = SELECT_READ, POLLOUT = SELECT_WRITE };
   fd_set _read_select_fd_set;
   fd_set _write_select_fd_set;
   int _max_select_fd;
-  Vector<Selector> _selectors;
+# endif
+  Vector<struct pollfd> _pollfds;
+  Vector<int> _read_poll_elements;
+  Vector<int> _write_poll_elements;
   Spinlock _wait_lock;
 #endif
 
@@ -318,13 +325,10 @@ class Router::Handler { public:
 #define LARGEST_HANDLER_WRITE 65536
 
 
-#if CLICK_USERLEVEL
-struct Router::Selector {
+#if CLICK_USERLEVEL && !HAVE_POLL_H
+struct Router::pollfd {
   int fd;
-  int element;
-  int mask;
-  Selector()				: fd(-1), element(-1), mask(0) { }
-  Selector(int f, int e, int m)		: fd(f), element(e), mask(m) { }
+  int events;
 };
 #endif
 

@@ -2,41 +2,11 @@
 #ifndef CLICK_CONFIG_USERLEVEL_H
 #define CLICK_CONFIG_USERLEVEL_H
 
-/* Define if <new> exists and works. */
-#undef HAVE_NEW_HDR
-
-/* Define if <new.h> exists and works. */
-#undef HAVE_NEW_H
-
-/* Define if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
+/* Define if <pcap.h> uses bpf_timeval. */
+#undef HAVE_BPF_TIMEVAL
 
 /* Define if you have the <byteswap.h> header file. */
 #undef HAVE_BYTESWAP_H
-
-/* Define if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
-
-/* Define if you have the <termio.h> header file. */
-#undef HAVE_TERMIO_H
-
-/* Define if you have u_intXX_t types but not uintXX_t types. */
-#undef HAVE_U_INT_TYPES
-
-/* Define if you have the snprintf function. */
-#undef HAVE_SNPRINTF
-
-/* Define if you have the vsnprintf function. */
-#undef HAVE_VSNPRINTF
-
-/* Define if you have the strerror function. */
-#undef HAVE_STRERROR
-
-/* Define if you have the strtoul function. */
-#undef HAVE_STRTOUL
-
-/* Define if you have the tcgetpgrp function. */
-#undef HAVE_TCGETPGRP
 
 /* Define if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -44,31 +14,66 @@
 /* Define if dynamic linking is possible. */
 #undef HAVE_DYNAMIC_LINKING
 
-/* Define if you have the <sys/mman.h> header file. */
-#undef HAVE_SYS_MMAN_H
+/* Floating point arithmetic is allowed. */
+#define HAVE_FLOAT_TYPES 1
 
-/* Define if you have the mmap function. */
-#undef HAVE_MMAP
-
-/* Define if you have the madvise function. */
-#undef HAVE_MADVISE
-
-/* Define if mmap is allowed. */
-#if defined(HAVE_SYS_MMAN_H) && defined(HAVE_MMAP)
-# define ALLOW_MMAP 1
-#endif
-
-/* Define if you have -lpcap and pcap.h. */
-#undef HAVE_PCAP
-
-/* Define if <pcap.h> uses bpf_timeval. */
-#undef HAVE_BPF_TIMEVAL
+/* Define if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
 
 /* Define if you have the <linux/if_tun.h> header file. */
 #undef HAVE_LINUX_IF_TUN_H
 
+/* Define if you have the madvise function. */
+#undef HAVE_MADVISE
+
+/* Define if you have the mmap function. */
+#undef HAVE_MMAP
+
 /* Define if you have the <net/if_tun.h> header file. */
 #undef HAVE_NET_IF_TUN_H
+
+/* Define if <new.h> exists and works. */
+#undef HAVE_NEW_H
+
+/* Define if <new> exists and works. */
+#undef HAVE_NEW_HDR
+
+/* Define if you have -lpcap and pcap.h. */
+#undef HAVE_PCAP
+
+/* Define if you have the <poll.h> header file. */
+#undef HAVE_POLL_H
+
+/* Placement new is always provided below. */
+#define HAVE_PLACEMENT_NEW 1
+
+/* Define if you have the snprintf function. */
+#undef HAVE_SNPRINTF
+
+/* Define if you have the strerror function. */
+#undef HAVE_STRERROR
+
+/* Define if you have the strtoul function. */
+#undef HAVE_STRTOUL
+
+/* Define if you have the <sys/mman.h> header file. */
+#undef HAVE_SYS_MMAN_H
+
+/* Define if you have the tcgetpgrp function. */
+#undef HAVE_TCGETPGRP
+
+/* Define if you have the <termio.h> header file. */
+#undef HAVE_TERMIO_H
+
+/* Define if you have u_intXX_t types but not uintXX_t types. */
+#undef HAVE_U_INT_TYPES
+
+/* Define if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define if you have the vsnprintf function. */
+#undef HAVE_VSNPRINTF
+
 
 /* Include integer type definitions. */
 #ifdef HAVE_INTTYPES_H
@@ -95,8 +100,10 @@ typedef unsigned long uintptr_t;
 # include <assert.h>
 #endif
 
-/* Floating point arithmetic is allowed. */
-#define HAVE_FLOAT_TYPES 1
+/* Define if mmap is allowed. */
+#if defined(HAVE_SYS_MMAN_H) && defined(HAVE_MMAP)
+# define ALLOW_MMAP 1
+#endif
 
 /* Prototype strerror if we don't have it. */
 #ifndef HAVE_STRERROR
@@ -113,7 +120,6 @@ char *strerror(int errno);
 #else
 inline void *operator new(size_t, void *v) { return v; }
 #endif
-#define HAVE_PLACEMENT_NEW 1
 
 /* Define macros that surround Click declarations. */
 #ifndef CLICK_DECLS
