@@ -1,3 +1,22 @@
+2001-07-19 Thursday 23:45  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.32), elements/linuxmodule/polldevice.cc (1.118),
+	include/click/driver.hh (1.1), include/click/package.hh (1.6),
+	linuxmodule/modulepriv.hh (1.22), tools/click-align/click-align.cc
+	(1.34), tools/click-check/click-check.cc (1.19),
+	tools/click-combine/click-combine.cc (1.20),
+	tools/click-combine/click-uncombine.cc (1.17),
+	tools/click-devirtualize/click-devirtualize.cc (1.25),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.41),
+	tools/click-flatten/click-flatten.cc (1.2),
+	tools/click-install/click-install.cc (1.41),
+	tools/click-install/click-uninstall.cc (1.18),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.13),
+	tools/click-undead/click-undead.cc (1.18),
+	tools/click-xform/click-xform.cc (1.35), userlevel/click.cc (1.59):
+	split package.hh into two header files, package.hh (included by
+	drivers and packages) and driver.hh (included only by drivers)
+
 2001-07-19 Thursday 22:07  Eddie Kohler <kohler@aciri.org>
 
 	* click-compile.in (1.10): nitlet
