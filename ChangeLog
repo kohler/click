@@ -1,3 +1,8 @@
+2003-01-17 Friday 17:35  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-viz (1.2): new version of click-viz from Jose
+	Vasconcellos: support require()
+
 2003-01-16 Thursday 14:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.61): Add READONLY keyword for new
