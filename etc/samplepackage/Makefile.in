@@ -153,7 +153,7 @@ upackage.cc: uelements.conf $(clickbindir)/click-buildtool
 	@rm -f upackage.ud
 
 elementmap.$(package): $(clickbindir)/click-mkelemmap always
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$(DRIVERS)" -r $(package) | $(clickbindir)/click-mkelemmap -f - > elementmap.$(package)
+	r="$(DRIVERS) $(package)"; echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$$r" | $(clickbindir)/click-mkelemmap -r "$$r" > elementmap.$(package)
 always:
 	@:
 

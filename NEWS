@@ -13,13 +13,14 @@ Version 1.2.2
 ** Added `etc/libclick' directory, which contains a self-sufficient
    distribution for building the Click user-level library.
 
-** Added `--enable-warp9' configuration option, which loosens element
+** Add `--enable-warp9' configuration option, which loosens element
    specifications to enable high-speed tests. For example, with
    `--enable-warp9' on, PollDevice does not set timestamps on packets it
    receives.
 
-** Time arguments understand suffixes like "ms", for milliseconds, and
-   "us", for microseconds. So you can say `1ms' or `2sec' or `5000usec'.
+** Add `--enable-greedy' configuration option, which prevents the Linux
+   kernel driver from giving up the CPU. Use only if you have multiple
+   CPUs!
 
 ** Many bug fixes.
 
@@ -28,11 +29,19 @@ Version 1.2.2
 ** Add polling support for EEpro 100 devices (Nickolai B. Zeldovich), and
    improve polling support for Tulip and Acenic (Benjie Chen, Nickolai).
 
+* Parsing
+
+** Time arguments understand suffixes like "ms", for milliseconds, and
+   "us", for microseconds. So you can say `1ms' or `2sec' or `5000usec'.
+
+** Support IP prefix syntax like `192.111/16'. Requested by Vern Paxson
+   <vern@aciri.org>.
+
 * Elements
 
 ** FromDump is significantly faster, supports new keyword arguments, and
-   can read Linux tcpdump files. Also, FromDump and user-level FromDevice
-   have preliminary support for FDDI encapsulation.
+   can read Linux tcpdump files. Also, FromDump supports FDDI
+   encapsulation.
 
 ** ToDump can write to standard output.
 
@@ -44,7 +53,9 @@ Version 1.2.2
 
 ** Bug fixes to IPRewriter, TCPRewriter, Switch, PullSwitch, ....
 
-** Added functionality to ControlSocket, RED,
+** Added functionality to ControlSocket, RED, FromLinux, FromDump, ....
+
+** Add SetPacketType, IPLookupRadix, ....
 
 * Internal
 
@@ -53,6 +64,17 @@ Version 1.2.2
 ** The header files for ScheduleInfo, AddressInfo, AlignmentInfo, Error,
    and DriverManager are stored in `C<include/click/standard>'. This makes
    it simpler to distribute a self-contained Click library.
+
+** Bug fix: Elements are uninitialized and destroyed in the reverse order
+   from which they were initialized. Reported by Kyle Jamieson
+   <jamieson@mit.edu>.
+
+** Made most Click configuration tests into Autoconf macros.
+
+** Check for byte order, and provide CLICK_BYTE_ORDER configuration
+   constant.
+
+** Add Packet::tcp_header() and Packet::udp_header() convenience functions.
 
 
 Version 1.2.1   26.Jun.2001

@@ -646,12 +646,12 @@ Try \`click-elem2man --help' for more information.\n";
 }
 
 sub help () {
-  print STDERR <<'EOD;';
+  print STDERR <<"EOD;";
 \`Click-elem2man' translates Click element documentation into manual pages.
 
 Usage: click-elem2man [-l | -L] [-d DIRECTORY] [-f FILE | FILE]...
 
-Each FILE is a Click header file. `-' means standard input.
+Each FILE is a Click header file. \`-' means standard input.
 
 Options:
   -l, --list              Generate the elements(n) manual page as well.
@@ -660,7 +660,7 @@ Options:
   -f, --files FILE        Read header filenames from FILE.
   -h, --help              Print this message and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click\@pdos.lcs.mit.edu>.
 EOD;
   exit 0;
 }

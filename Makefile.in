@@ -80,7 +80,7 @@ elemlist elemlists:
 	done
 
 elementmap: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
-	t="@element_groups@ @TARGETS@"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@" | $(PERL) ./click-mkelemmap -f - -r "@provisions@ $$t" -Iinclude) > elementmap
+	t="@element_groups@ @TARGETS@"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@" | $(PERL) ./click-mkelemmap -r "@provisions@ $$t" -Iinclude) > elementmap
 always:
 	@:
 

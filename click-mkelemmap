@@ -234,10 +234,32 @@ sub read_files_from ($) {
 }
 
 sub long_option_match ($$$) {
-  my($have, $want, $len) = @_;
-  $have = $1 if $have =~ /^(--[^=]*)=/;
-  my($hl) = length($have);
-  ($hl <= length($want) && $hl >= $len && $have eq substr($want, 0, $hl));
+    my($have, $want, $len) = @_;
+    $have = $1 if $have =~ /^(--[^=]*)=/;
+    my($hl) = length($have);
+    ($hl <= length($want) && $hl >= $len && $have eq substr($want, 0, $hl));
+}
+
+sub help () {
+    print STDERR <<"EOD;";
+\`Click-mkelemmap' creates an elementmap file from a collection of Click
+elements.
+
+Usage: click-mkelemmap [-l | -L] [-d DIRECTORY] [-f FILE | SRCFILE]...
+
+Each SRCFILE is a Click header file. \`-' means standard input. Default is
+\`-f -' if no \`-f' or \`SRCFILE' options are supplied.
+
+Options:
+  -f, --files FILE        Read header filenames, or an \`elements.conf' file,
+                          from FILE.
+  -r, --provides PROV     Output elementmap notes provisions PROV.
+  -I, --include DIR       Look for header files in DIR.
+  -h, --help              Print this message and exit.
+
+Report bugs to <click\@pdos.lcs.mit.edu>.
+EOD;
+    exit 0;
 }
 
 undef $/;
@@ -270,6 +292,8 @@ while (@ARGV) {
 	push @includes, $1;
     } elsif (/^-I(.+)$/) {
 	push @includes, $1;
+    } elsif (/^-h$/ || long_option_match($_, '--help', 3)) {
+	help();
     } elsif (/^-./) {
 	die "unknown option `$_'\n";
     } elsif (/^-$/) {
