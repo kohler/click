@@ -29,8 +29,6 @@ CLICK_DECLS
 // CLASSIFIER::EXPR OPERATIONS
 //
 
-#define UBYTES ((int)sizeof(uint32_t))
-
 bool
 Classifier::Expr::implies(const Expr &e) const
   /* Returns true iff a packet that matches `*this' must match `e'. */
@@ -1667,7 +1665,6 @@ Classifier::sort_and_expr_subtree(int from, int success, int failure)
 #endif
 
 
-#undef UBYTES
 ELEMENT_REQUIRES(AlignmentInfo)
 EXPORT_ELEMENT(Classifier)
 ELEMENT_MT_SAFE(Classifier)

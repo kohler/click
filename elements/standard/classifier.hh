@@ -119,6 +119,8 @@ class Classifier : public Element { public:
   };
 
  protected:
+
+  enum { UBYTES = (int)(sizeof(uint32_t)) };
   
   Vector<Expr> _exprs;
   int _output_everything;
