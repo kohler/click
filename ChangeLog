@@ -1,3 +1,8 @@
+2003-09-05 Friday 01:53  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: arptable.cc (1.7), arptable.hh (1.5): add insert
+	write handlers
+
 2003-09-04 Thursday 11:58  Eddie Kohler <kohler@icir.org>
 
 	* etc/libclick/lc-libsrc-Makefile.in (1.12): refer to
