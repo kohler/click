@@ -112,7 +112,6 @@ if ($hostname =~ /rn-pdos(\S+)-wired/) {
 
 
 my $srcr_ip = "5." . $suffix;
-my $etx_ip = "4." . $suffix;
 my $safe_ip = "6." . $suffix;
 my $rate_ip = "7." . $suffix;
 
@@ -348,18 +347,10 @@ Idle -> [1] data_arf_rate;
 srcr :: srcr_ett($srcr_ip, $srcr_nm, $wireless_mac, $gateway, 
 		 "$probes");
 
-etx :: srcr_etx($etx_ip, $srcr_nm, $wireless_mac, $gateway, 
-		 "2 132");
-
-
 
 // make sure this is listed first so it gets tap0
 srcr_host :: LinuxIPHost(srcr, $srcr_ip, $srcr_nm)
 -> [1] srcr;
-
-// make sure this is listed first so it gets tap0
-etx_host :: LinuxIPHost(etx, $etx_ip, $srcr_nm)
--> [1] etx;
 
 
 route_encap :: WifiEncap(0x0, 00:00:00:00:00:00)
@@ -372,11 +363,6 @@ srcr [1] -> route_encap;   // bcast_stats
 srcr [2] -> data_encap;    // data
 srcr [3] -> srcr_host; // data to me
 
-
-etx [0] -> route_encap;   // queries, replies
-etx [1] -> route_encap;   // bcast_stats
-etx [2] -> data_encap;    // data
-etx [3] -> etx_host; // data to me
 
 EOF
 
@@ -405,12 +391,11 @@ rate_cl [1]
 -> rxstats :: RXStats()
 -> ncl :: Classifier(
 		     12/09??,
-		     12/0a??,
 		     -);
 
 
 ncl [0] -> srcr;
-ncl [1] -> etx;
+
 
 
 
