@@ -71,7 +71,7 @@ DSDVRouteTable::DSDVRouteTable() :
   _last_triggered_update(0), 
   _hello_timer(static_hello_hook, this),
   _log_dump_timer(static_log_dump_hook, this),
-  _metric_type(MetricEstTxCount),
+  _metric_type(MetricHopCount),
   _est_type(EstByMeas),
   _frozen(false)
 {
@@ -670,7 +670,7 @@ DSDVRouteTable::metric_val_lt(unsigned int v1, unsigned int v2)
 
   switch (_metric_type) {
   case MetricHopCount:               return v1 < v2; break;
-  case MetricEstTxCount:             return v2 > v1 + 25; break; // add 0.25 tx count fudge factor
+  case MetricEstTxCount:             return v1 < v2; break; // + 25; break; // add 0.25 tx count fudge factor
   case MetricDeliveryRateProduct:    return v1 > v2; break;
   case MetricRevDeliveryRateProduct: return v1 > v2; break;
   default: dsdv_assert(0);
