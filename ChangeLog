@@ -1,3 +1,12 @@
+2003-03-25 Tuesday 17:13  Eddie Kohler <kohler@icir.org>
+
+	* elements/test/bhmtest.cc (1.1), elements/test/bhmtest.hh (1.1),
+	include/click/bighashmap.cc (1.21), include/click/bighashmap.hh
+	(1.17): BigHashMap has a copy constructor, and a (private,
+	nonexistent) assignment operator [I am an idiot, it should have had
+	these for years]; add BigHashMapTest test element with some trivial
+	tests
+
 2003-03-23 Sunday 00:10  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
 
 	* include/click/simclick.h (1.2): Added field for keeping original
