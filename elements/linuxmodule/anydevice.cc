@@ -116,7 +116,6 @@ AnyDevice::clear_device(AnyDeviceMap *adm)
 AnyTaskDevice::AnyTaskDevice()
     : _task(this), _idles(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 
