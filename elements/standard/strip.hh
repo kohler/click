@@ -31,9 +31,6 @@ class Strip : public Element {
   int configure(const String &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
-  /* inline void smaction(Packet *);
-     void push(int, Packet *p);
-     Packet *pull(int); */
   
 };
 

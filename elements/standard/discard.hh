@@ -25,7 +25,7 @@ class Discard : public Element {
   int initialize(ErrorHandler *);
   void uninitialize();
   
-  void push(int, Packet *);
+  void push(int, Packet *p) { p->kill(); }
   
   void run_scheduled();
   

@@ -32,10 +32,8 @@ public:
   FixIPSrc *clone() const;
   int configure(const String &, ErrorHandler *);
 
+  void fix_it(Packet *);
   Packet *simple_action(Packet *);
-  /*inline Packet *smaction(Packet *);
-    void push(int, Packet *p);
-    Packet *pull(int);*/
   
 };
 

@@ -174,28 +174,15 @@ IPGWOptions::handle_options(Packet *p)
   return 0;
 }
 
-void
-IPGWOptions::push(int, Packet *p)
+Packet *
+IPGWOptions::simple_action(Packet *p)
 {
   click_ip *ip = p->ip_header();
   assert(ip);
   unsigned hlen = ip->ip_hl << 2;
-  if (hlen <= sizeof(click_ip)
-      || (p = handle_options(p)))
-    output(0).push(p);
-}
-
-Packet *
-IPGWOptions::pull(int)
-{
-  Packet *p = input(0).pull();
-  if (p) {
-    click_ip *ip = p->ip_header();
-    unsigned hlen = ip->ip_hl << 2;
-    if (hlen > sizeof(click_ip))
-      p = handle_options(p);
-  }
-  return p;
+  if (hlen <= sizeof(click_ip) || (p = handle_options(p)))
+    return(p);
+  return(0);
 }
 
 static String

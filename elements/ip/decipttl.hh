@@ -46,9 +46,7 @@ class DecIPTTL : public Element {
   void add_handlers();
 
   Packet *simple_action(Packet *);
-  /*inline Packet *smaction(Packet *);
-    void push(int, Packet *p);
-    Packet *pull(int);*/
+  void drop_it(Packet *);
   
 };
 

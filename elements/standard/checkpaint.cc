@@ -33,12 +33,12 @@ CheckPaint::configure(const String &conf, ErrorHandler *errh)
   return 0;
 }
 
-void
-CheckPaint::push(int, Packet *p)
+Packet *
+CheckPaint::simple_action(Packet *p)
 {
   if (p->color_anno() == _color)
     output(1).push(p->clone());
-  output(0).push(p);
+  return(p);
 }
 
 EXPORT_ELEMENT(CheckPaint)

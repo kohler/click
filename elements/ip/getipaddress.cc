@@ -45,28 +45,4 @@ GetIPAddress::simple_action(Packet *p)
   return p;
 }
 
-#if 0
-inline void
-GetIPAddress::smaction(Packet *p)
-{
-  p->set_dst_ip_anno(IPAddress(p->data() + _offset));
-}
-
-void
-GetIPAddress::push(int, Packet *p)
-{
-  smaction(p);
-  output(0).push(p);
-}
-
-Packet *
-GetIPAddress::pull(int)
-{
-  Packet *p = input(0).pull();
-  if(p)
-    smaction(p);
-  return(p);
-}
-#endif
-
 EXPORT_ELEMENT(GetIPAddress)

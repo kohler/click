@@ -30,12 +30,12 @@ class CheckPaint : public Element {
   CheckPaint()						: Element(1, 2) { }
   
   const char *class_name() const		{ return "CheckPaint"; }
-  const char *processing() const	{ return PUSH; }
+  const char *processing() const	{ return "a/ah"; }
   
   CheckPaint *clone() const;
   int configure(const String &, ErrorHandler *);
   
-  void push(int, Packet *);
+  Packet *simple_action(Packet *);
   
 };
 

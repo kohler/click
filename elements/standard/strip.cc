@@ -48,26 +48,4 @@ Strip::simple_action(Packet *p)
   return p;
 }
 
-/* inline void
-Strip::smaction(Packet *p)
-{
-  p->pull(_nbytes);
-}
-
-void
-Strip::push(int, Packet *p)
-{
-  smaction(p);
-  output(0).push(p);
-}
-
-Packet *
-Strip::pull(int)
-{
-  Packet *p = input(0).pull();
-  if(p)
-    smaction(p);
-  return(p);
-} */
-
 EXPORT_ELEMENT(Strip)

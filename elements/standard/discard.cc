@@ -38,12 +38,6 @@ Discard::uninitialize()
 }
 
 void
-Discard::push(int, Packet *p)
-{
-  p->kill();
-}
-
-void
 Discard::run_scheduled()
 {
   Packet *p = input(0).pull();

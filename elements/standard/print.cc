@@ -63,7 +63,7 @@ Print::simple_action(Packet *p)
     if ((i % 4) == 3) _buf[pos++] = ' ';
   }
   _buf[pos++] = '\0';
-  click_chatter("Print %s |%4d : %s", _label.cc(), p->length(), _buf);
+  click_chatter("Print %s %x |%4d : %s", _label.cc(), p->data(), p->length(), _buf);
   return p;
 }
 

@@ -50,28 +50,4 @@ Paint::simple_action(Packet *p)
   return p;
 }
 
-/*
-inline void
-Paint::smaction(Packet *p)
-{
-  p->set_color_anno(_color);
-}
-
-void
-Paint::push(int, Packet *p)
-{
-  smaction(p);
-  output(0).push(p);
-}
-
-Packet *
-Paint::pull(int)
-{
-  Packet *p = input(0).pull();
-  if(p)
-    smaction(p);
-  return(p);
-}
-*/
-
 EXPORT_ELEMENT(Paint)

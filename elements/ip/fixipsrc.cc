@@ -48,58 +48,28 @@ FixIPSrc::configure(const String &conf, ErrorHandler *errh)
   return 0;
 }
 
+void
+FixIPSrc::fix_it(Packet *p)
+{
+  click_ip *ip = p->ip_header();
+  p->set_fix_ip_src_anno(0);
+  click_chatter("FixIPSrc changed %x to %x",
+                ip->ip_src.s_addr,
+                _my_ip.s_addr);
+  ip->ip_src = _my_ip;
+  int hlen = ip->ip_hl << 2;
+  ip->ip_sum = 0;
+  ip->ip_sum = in_cksum((unsigned char *)ip, hlen);
+}
+
 Packet *
 FixIPSrc::simple_action(Packet *p)
 {
   click_ip *ip = p->ip_header();
   if(p->fix_ip_src_anno() && ip){
-    p->set_fix_ip_src_anno(0);
-    click_chatter("FixIPSrc changed %x to %x",
-                  ip->ip_src.s_addr,
-                  _my_ip.s_addr);
-    ip->ip_src = _my_ip;
-    int hlen = ip->ip_hl << 2;
-    ip->ip_sum = 0;
-    ip->ip_sum = in_cksum((unsigned char *)ip, hlen);
+    fix_it(p);
   }
-
   return(p);
 }
-
-#if 0
-inline Packet *
-FixIPSrc::smaction(Packet *p)
-{
-  click_ip *ip = p->ip_header();
-  if(p->fix_ip_src_anno() && ip){
-    p->set_fix_ip_src_anno(0);
-    click_chatter("FixIPSrc changed %x to %x",
-                  ip->ip_src.s_addr,
-                  _my_ip.s_addr);
-    ip->ip_src = _my_ip;
-    int hlen = ip->ip_hl << 2;
-    ip->ip_sum = 0;
-    ip->ip_sum = in_cksum((unsigned char *)ip, hlen);
-  }
-
-  return(p);
-}
-
-void
-FixIPSrc::push(int, Packet *p)
-{
-  if((p = smaction(p)) != 0)
-    output(0).push(p);
-}
-
-Packet *
-FixIPSrc::pull(int)
-{
-  Packet *p = input(0).pull();
-  if(p)
-    p = smaction(p);
-  return(p);
-}
-#endif
 
 EXPORT_ELEMENT(FixIPSrc)

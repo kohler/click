@@ -50,8 +50,7 @@ class IPGWOptions : public Element {
   int drops() { return(_drops); }
   
   Packet *handle_options(Packet *);
-  void push(int, Packet *p);
-  Packet *pull(int);
+  Packet *simple_action(Packet *);
   
 };
 

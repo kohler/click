@@ -26,10 +26,8 @@ class DropBroadcasts : public Element {
 
   int drops() const { return(_drops); }
 
+  void drop_it(Packet *);
   Packet *simple_action(Packet *);
-  /* inline Packet *smaction(Packet *);
-     void push(int, Packet *p);
-     Packet *pull(int); */
 
 private:
   int _drops;
