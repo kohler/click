@@ -1,3 +1,8 @@
+2003-05-14 Wednesday 17:42  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: rtmdsr.cc (1.9), rtmdsr.hh (1.10): Fix bug with
+	dummy/static route.
+
 2003-05-13 Tuesday 02:32  jbicket
 
 	* elements/local/: rtmdsr.cc (1.8), rtmdsr.hh (1.9): Fixed
