@@ -88,7 +88,7 @@ DelayShaper::pull(int)
     
     if (_p) {
 	Timestamp now = Timestamp::now();
-	Timestamp diff = _p->timestamp_anno() - now;;
+	Timestamp diff = _p->timestamp_anno() - now;
 	
 	if (diff._sec < 0 || (diff._sec == 0 && diff._subsec == 0)) {
 	    // packet ready for output
