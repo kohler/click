@@ -59,7 +59,7 @@ LookupLocalGridRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
 			cpIPAddress, "source IP address", &_ipaddr,
-                        cpElement, "UpdadateGridRoutes element", &_nbr,
+                        cpElement, "UpdateGridRoutes element", &_nbr,
 			0);
   return res;
 }
