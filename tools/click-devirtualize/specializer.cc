@@ -172,7 +172,7 @@ Specializer::create_class(SpecializedClass &spc)
   CxxClass *old_cxxc = _cxxinfo.find_class(old_eti.cxx_name);
   CxxClass *new_cxxc = _cxxinfo.make_class(spc.cxx_name);
   assert(old_cxxc && new_cxxc);
-  bool specialize_away = (old_cxxc->find("specialize_away") != 0);
+  bool specialize_away = (old_cxxc->find("devirtualize_all") != 0);
   String parent_cxx_name = old_eti.cxx_name;
   if (specialize_away) {
     CxxClass *parent = old_cxxc->parent(0);
