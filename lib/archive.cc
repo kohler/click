@@ -13,11 +13,11 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include "glue.hh"
 #include "archive.hh"
 #include "error.hh"
 #include "confparse.hh"
 #include "straccum.hh"
-#include "glue.hh"
 
 /* `ar' file format:
 
