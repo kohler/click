@@ -1,3 +1,36 @@
+2004-05-05 Wednesday 17:57  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/lib/lexert.cc (1.60): nit
+
+2004-05-05 Wednesday 17:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click.5 (1.34): mention new empty argument plan
+
+2004-05-05 Wednesday 17:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/confparse.hh (1.45), lib/confparse.cc (1.124),
+	tools/lib/lexert.cc (1.59): do not ignore *all* empty arguments --
+	only one empty argument at the end of the argument list. Also add
+	cp_skip_comment_space, cleanup
+
+2004-05-05 Wednesday 17:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/lexer.cc (1.78): nits
+
+2004-05-05 Wednesday 17:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/icmp/ICMPPingEncap-01.testie (1.2): support different
+	tcpdumps
+
+2004-05-05 Wednesday 17:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/variableenv.cc (1.11): use cp_skip_comment_space, and use
+	iterator style
+
+2004-05-05 Wednesday 17:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/variableenv.hh (1.5): whitespace
+
 2004-05-05 Wednesday 12:07  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/master.hh (1.4), lib/master.cc (1.11): fix
