@@ -263,7 +263,7 @@ dnl
 
 TARGETS=
 AC_SUBST(TARGETS)
-TOOL_TARGETS="click-align click-compile click-devirtualize click-fastclassifier click-xform"
+TOOL_TARGETS="click-align click-check click-compile click-devirtualize click-fastclassifier click-xform"
 AC_SUBST(TOOL_TARGETS)
 
 dnl check userlevel for pcap library
@@ -337,6 +337,23 @@ int main(int c, char **v) {
     TARGETS="$TARGETS linuxmodule"
     TOOL_TARGETS="$TOOL_TARGETS click-install udpgen"
     AC_DEFINE_UNQUOTED(HAVE_LINUXMODULE_TARGET, 1)
+    SAVE_CXX="$CXX"
+    CXX="$KERNEL_CXX"
+    AC_CACHE_CHECK(whether -fpermissive is required, ac_cv_f_permissive,
+      AC_LANG_CPLUSPLUS
+      AC_TRY_LINK([#define __KERNEL__
+#define MODULE
+#define _FEATURES_H
+#define new xxx_new
+#define this xxx_this
+#define delete xxx_delete
+#define class xxx_class
+#include <linux/skbuff.h>], [], 
+	ac_cv_f_permissive=no, ac_cv_f_permissive=yes))
+    CXX="$SAVE_CXX"
+    if test $ac_cv_f_permissive = yes; then
+      KERNEL_CXX="$KERNEL_CXX -fpermissive"
+    fi
   else
     AC_MSG_WARN(Your header files must be patched before a C++ program
 can include them. Apply the patch that came with this distribution
@@ -370,7 +387,7 @@ dnl
 dnl Output
 dnl
 
-config_files="Makefile mkelemlist.sh tools/Makefile tools/lib/Makefile tools/click-align/Makefile tools/click-compile tools/click-devirtualize/Makefile tools/click-fastclassifier/Makefile tools/click-install/Makefile tools/click-xform/Makefile tools/udpgen/Makefile doc/Makefile"
+config_files="Makefile mkelemlist.sh tools/Makefile tools/lib/Makefile tools/click-align/Makefile tools/click-check/Makefile tools/click-compile tools/click-devirtualize/Makefile tools/click-fastclassifier/Makefile tools/click-install/Makefile tools/click-xform/Makefile tools/udpgen/Makefile doc/Makefile"
 for dir in $POSSIBLE_TARGETS; do
   config_files="$config_files $dir/Makefile"
 done

@@ -12,12 +12,24 @@
 
 #include "glue.hh"
 #include "vector.hh"
+#include "subvector.hh"
 
 template <class T>
 Vector<T>::Vector(const Vector<T> &o)
   : _l(0), _n(0), _cap(0)
 {
   *this = o;
+}
+
+template <class T>
+Vector<T>::Vector(const Subvector<T> &o)
+  : _l(0), _n(0), _cap(0)
+{
+  if (reserve(o._n)) {
+    _n = o._n;
+    for (int i = 0; i < _n; i++)
+      new(velt(i)) T(o._l[i]);
+  }
 }
 
 template <class T>
@@ -59,9 +71,8 @@ Vector<T>::reserve(int want)
     want = _cap > 0 ? _cap * 2 : 4;
   if (want <= _cap)
     return true;
-  _cap = want;
   
-  T *new_l = (T *)new unsigned char[sizeof(T) * _cap];
+  T *new_l = (T *)new unsigned char[sizeof(T) * want];
   if (!new_l) return false;
   
   for (int i = 0; i < _n; i++) {
@@ -69,7 +80,9 @@ Vector<T>::reserve(int want)
     _l[i].~T();
   }
   delete[] (unsigned char *)_l;
+  
   _l = new_l;
+  _cap = want;
   return true;
 }
 

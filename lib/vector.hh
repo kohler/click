@@ -7,15 +7,19 @@
 inline void *operator new(size_t, void *v) { return v; }
 #endif
 
+template <class T> class Subvector;
+
 template <class T>
 class Vector {
   
   T *_l;
   int _n;
   int _cap;
-  
+
   void *velt(int i) const		{ return (void *)&_l[i]; }
   static void *velt(T *l, int i)	{ return (void *)&l[i]; }
+
+  friend class Subvector<T>;
   
  public:
   
@@ -23,6 +27,7 @@ class Vector {
   explicit Vector(int capacity)	: _l(0), _n(0), _cap(0) { reserve(capacity); }
   Vector(int n, const T &e)	: _l(0), _n(0), _cap(0) { resize(n, e); }
   Vector(const Vector<T> &);
+  Vector(const Subvector<T> &);
   ~Vector();
   
   int size() const			{ return _n; }
@@ -47,6 +52,8 @@ class Vector {
   Vector<T> &operator=(const Vector<T> &);
   Vector<T> &assign(int n, const T &e = T());
   void swap(Vector<T> &);
+
+  Subvector<T> subvector(int, int) const;
   
 };
 
@@ -63,7 +70,8 @@ template <class T> inline void
 Vector<T>::pop_back()
 {
   assert(_n > 0);
-  _l[--_n].~T();
+  --_n;
+  _l[_n].~T();
 }
 
 
@@ -74,12 +82,15 @@ class Vector<void *> {
   int _n;
   int _cap;
 
+  friend class Subvector<void *>;
+  
  public:
   
   Vector()			: _l(0), _n(0), _cap(0) { }
   explicit Vector(int capacity)	: _l(0), _n(0), _cap(0) { reserve(capacity); }
   Vector(int n, void *e)	: _l(0), _n(0), _cap(0) { resize(n, e); }
   Vector(const Vector<void *> &);
+  Vector(const Subvector<void *> &);
   ~Vector();
   
   int size() const			{ return _n; }
@@ -104,6 +115,8 @@ class Vector<void *> {
   Vector<void *> &operator=(const Vector<void *> &);
   Vector<void *> &assign(int n, void *e = 0);
   void swap(Vector<void *> &);
+
+  Subvector<void *> subvector(int, int) const;
   
 };
 
@@ -119,7 +132,7 @@ Vector<void *>::push_back(void *e)
 inline void
 Vector<void *>::pop_back()
 {
-  assert(_n >= 0);
+  assert(_n > 0);
   --_n;
 }
 
@@ -135,7 +148,10 @@ class Vector<T *>: private Vector<void *> {
   explicit Vector(int capacity)	: Base(capacity) { }
   Vector(int n, T *e)		: Base(n, (void *)e) { }
   Vector(const Vector<T *> &o)	: Base(o) { }
+  Vector(const Subvector<T *> &o) : Base(o) { }
   ~Vector()			{ }
+  
+  int size() const		{ return Base::size(); }
   
   T *operator[](int i) const	{ return (T *)(Base::at(i)); }
   T *at(int i) const		{ return (T *)(Base::at(i)); }
@@ -150,8 +166,6 @@ class Vector<T *>: private Vector<void *> {
   void push_back(T *e)		{ Base::push_back((void *)e); }
   void pop_back()		{ Base::pop_back(); }
   
-  int size() const		{ return Base::size(); }
-  
   void clear()			{ Base::clear(); }
   bool reserve(int n)		{ return Base::reserve(n); }
   void resize(int n, T *e = 0)	{ Base::resize(n, (void *)e); }
@@ -161,6 +175,8 @@ class Vector<T *>: private Vector<void *> {
   Vector<T *> &assign(int n, T *e = 0)
   		{ Base::assign(n, (void *)e); return *this; }
   void swap(Vector<T *> &o)	{ Base::swap(o); }
+  
+  Subvector<T *> subvector(int, int) const;
   
 };
 

@@ -35,7 +35,7 @@ class RatedSource : public Element { protected:
   RatedSource();
   
   const char *class_name() const		{ return "RatedSource"; }
-  Processing default_processing() const		{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   void add_handlers();
   
   RatedSource *clone() const;

@@ -19,6 +19,7 @@
 #include "straccum.hh"
 #include "elemfilter.hh"
 #include "confparse.hh"
+#include "subvector.hh"
 #include "timer.hh"
 #include <stdarg.h>
 #include <unistd.h>
@@ -389,9 +390,11 @@ Router::check_push_and_pull(ErrorHandler *errh)
   // set up processing vectors
   Vector<int> input_pers(ninput_pidx(), 0);
   Vector<int> output_pers(noutput_pidx(), 0);
-  for (int f = 0; f < nelements(); f++)
-    _elements[f]->processing_vector(input_pers, _input_pidx[f],
-				    output_pers, _output_pidx[f], errh);
+  for (int f = 0; f < nelements(); f++) {
+    Subvector<int> i(input_pers, _input_pidx[f], _elements[f]->ninputs());
+    Subvector<int> o(output_pers, _output_pidx[f], _elements[f]->noutputs());
+    _elements[f]->processing_vector(i, o, errh);
+  }
   
   // add fake connections for agnostics
   Vector<Hookup> hookup_from = _hookup_from;
@@ -454,9 +457,11 @@ Router::check_push_and_pull(ErrorHandler *errh)
   if (errh->nerrors() != before)
     return -1;
   
-  for (int f = 0; f < nelements(); f++)
-    _elements[f]->set_processing_vector(input_pers, _input_pidx[f],
-					output_pers, _output_pidx[f]);
+  for (int f = 0; f < nelements(); f++) {
+    Subvector<int> i(input_pers, _input_pidx[f], _elements[f]->ninputs());
+    Subvector<int> o(output_pers, _output_pidx[f], _elements[f]->noutputs());
+    _elements[f]->set_processing_vector(i, o);
+  }
   return 0;
 }
 
@@ -1062,9 +1067,10 @@ Router::element_inputs_string(int fi) const
   if (fi < 0 || fi >= nelements()) return String();
   StringAccum sa;
   Element *f = _elements[fi];
-  Vector<int> in_pers(f->ninputs(), 0);
-  Vector<int> out_pers(f->noutputs(), 0);
-  f->processing_vector(in_pers, 0, out_pers, 0, 0);
+  Vector<int> pers(f->ninputs() + f->noutputs(), 0);
+  Subvector<int> in_pers(pers, 0, f->ninputs());
+  Subvector<int> out_pers(pers, f->ninputs(), f->noutputs());
+  f->processing_vector(in_pers, out_pers, 0);
   sa << f->ninputs() << "\n";
   for (int i = 0; i < f->ninputs(); i++) {
     // processing
@@ -1100,9 +1106,10 @@ Router::element_outputs_string(int fi) const
   if (fi < 0 || fi >= nelements()) return String();
   StringAccum sa;
   Element *f = _elements[fi];
-  Vector<int> in_pers(f->ninputs(), 0);
-  Vector<int> out_pers(f->noutputs(), 0);
-  f->processing_vector(in_pers, 0, out_pers, 0, 0);
+  Vector<int> pers(f->ninputs() + f->noutputs(), 0);
+  Subvector<int> in_pers(pers, 0, f->ninputs());
+  Subvector<int> out_pers(pers, f->ninputs(), f->noutputs());
+  f->processing_vector(in_pers, out_pers, 0);
   sa << f->noutputs() << "\n";
   for (int i = 0; i < f->noutputs(); i++) {
     // processing

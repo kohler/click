@@ -71,9 +71,9 @@ class Element : public ElementLink { public:
   // PUSH OR PULL PROCESSING
   virtual const char *processing() const;
   
-  virtual void processing_vector(Vector<int> &, int, Vector<int> &, int,
+  virtual void processing_vector(Subvector<int> &, Subvector<int> &,
 				 ErrorHandler *) const;
-  void set_processing_vector(const Vector<int>&, int, const Vector<int>&, int);
+  void set_processing_vector(const Subvector<int> &, const Subvector<int> &);
   
   bool output_is_push(int) const;
   bool input_is_pull(int) const;

@@ -26,7 +26,7 @@ public:
   ~UDPEncap();
   
   const char *class_name() const	{ return "UDPEncap"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   UDPEncap *clone() const;
   int configure(const String &, ErrorHandler *);

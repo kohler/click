@@ -21,6 +21,7 @@
 #include "error.hh"
 #include "router.hh"
 #include "straccum.hh"
+#include "subvector.hh"
 #include <errno.h>
 
 const char *Element::AGNOSTIC = "a";
@@ -237,7 +238,7 @@ next_processing_code(const char *&p, ErrorHandler *errh)
     p++;
     return Element::VAGNOSTIC;
 
-   case '/': case 0:
+   case '/': case '#': case 0:
     return -2;
 
    default:
@@ -249,8 +250,7 @@ next_processing_code(const char *&p, ErrorHandler *errh)
 }
 
 void
-Element::processing_vector(Vector<int> &in_v, int in_offset,
-			   Vector<int> &out_v, int out_offset,
+Element::processing_vector(Subvector<int> &in_v, Subvector<int> &out_v,
 			   ErrorHandler *errh) const
 {
   const char *p_in = processing();
@@ -261,7 +261,7 @@ Element::processing_vector(Vector<int> &in_v, int in_offset,
   for (int i = 0; i < ninputs(); i++) {
     if (last_val >= 0) last_val = next_processing_code(p, errh);
     if (last_val >= 0) val = last_val;
-    in_v[in_offset + i] = val;
+    in_v[i] = val;
   }
 
   while (*p && *p != '/')
@@ -275,7 +275,7 @@ Element::processing_vector(Vector<int> &in_v, int in_offset,
   for (int i = 0; i < noutputs(); i++) {
     if (last_val >= 0) last_val = next_processing_code(p, errh);
     if (last_val >= 0) val = last_val;
-    out_v[out_offset + i] = val;
+    out_v[i] = val;
   }
 }
 
@@ -286,16 +286,16 @@ Element::processing() const
 }
 
 void
-Element::set_processing_vector(const Vector<int> &in_v, int in_offset,
-			       const Vector<int> &out_v, int out_offset)
+Element::set_processing_vector(const Subvector<int> &in_v,
+			       const Subvector<int> &out_v)
 {
   for (int i = 0; i < ninputs(); i++)
-    if (in_v[in_offset+i] == VPULL)
+    if (in_v[i] == VPULL)
       _inputs[i].clear();
     else
       _inputs[i].disallow();
   for (int o = 0; o < noutputs(); o++)
-    if (out_v[out_offset+o] == VPUSH)
+    if (out_v[o] == VPUSH)
       _outputs[o].clear();
     else
       _outputs[o].disallow();

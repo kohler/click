@@ -195,28 +195,19 @@ This function is used by the default implementation of
 .Sp
 '
 .TP 5
-.BR "virtual void processing_vector(" "Vector<int> &\fIinput_vector\fP,"
+.BR "virtual void processing_vector(" "Subvector<int> &\fIinput_vector\fP,"
 .TP 5
-.RB "\%            int \fIinput_offset\fP, Vector<int> &\fIoutput_vector\fP,"
+.RB "\%            Subvector<int> &\fIoutput_vector\fP,"
 .TP 5
-.RB "\%            int \fIoutput_offset\fP, ErrorHandler *\fIerrh\fP" ") const"
+.RB "\%            ErrorHandler *\fIerrh\fP" ") const"
 Should set elements of \fIinput_vector\fP and \fIoutput_vector\fP to
 indicate whether the element's input and output ports are push, pull, or
-agnostic. Specifically, this routine should set the
-.B ninputs()
-consecutive integers starting at
-.BR input_vector[input_offset] ,
-and the
-.B noutputs()
-consecutive integers starting at
-.BR output_vector[output_offset] .
-Possible values are
-.BR VPUSH ", " VPULL ", and " VAGNOSTIC .
-If \fIn\fP is a valid input port (0 <= \fIn\fP < \fBninputs()\fP), then
-the value at
+agnostic. If \fIn\fP is a valid input port (0 <= \fIn\fP <
+\fBninputs()\fP), then the value at
 .BR input_vector[input_offset+\fIn\fP]
 should be that port's initial processing type, and similarly for output
-ports.
+ports. Possible processing types are
+.BR VPUSH ", " VPULL ", and " VAGNOSTIC .
 .Sp
 There is generally no reason to override this function; override
 .BR processing()

@@ -15,11 +15,21 @@
 #endif
 #include "glue.hh"
 #include "vector.hh"
+#include "subvector.hh"
 
 Vector<void *>::Vector(const Vector<void *> &o)
   : _l(0), _n(0), _cap(0)
 {
   *this = o;
+}
+
+Vector<void *>::Vector(const Subvector<void *> &o)
+  : _l(0), _n(0), _cap(0)
+{
+  if (reserve(o._n)) {
+    _n = o._n;
+    memcpy(_l, o._l, sizeof(void *) * _n);
+  }
 }
 
 Vector<void *>::~Vector()
@@ -59,13 +69,16 @@ Vector<void *>::reserve(int want)
     want = _cap > 0 ? _cap * 2 : 4;
   if (want <= _cap)
     return true;
-  _cap = want;
   
-  void **new_l = new void *[_cap];
-  if (!new_l) return false;
+  void **new_l = new void *[want];
+  if (!new_l)
+    return false;
+  
   memcpy(new_l, _l, sizeof(void *) * _n);
   delete[] _l;
+  
   _l = new_l;
+  _cap = want;
   return true;
 }
 
