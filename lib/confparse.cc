@@ -44,7 +44,7 @@
 #ifdef CLICK_USERLEVEL
 # include <pwd.h>
 #endif
-#include <cstdarg>
+#include <stdarg.h>
 CLICK_DECLS
 
 int cp_errno;

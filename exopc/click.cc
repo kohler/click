@@ -1,6 +1,6 @@
-#include <cstdio>
-#include <cstring>
-#include <csignal>
+#include <stdio.h>
+#include <string.h>
+#include <signal.h>
 
 #include "lexer.hh"
 #include "router.hh"

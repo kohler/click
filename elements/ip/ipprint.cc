@@ -30,7 +30,7 @@
 #include <clicknet/udp.h>
 
 #if CLICK_USERLEVEL
-# include <cstdio>
+# include <stdio.h>
 #endif
 
 CLICK_DECLS

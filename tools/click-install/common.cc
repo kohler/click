@@ -23,10 +23,10 @@
 #include "common.hh"
 #include "toolutils.hh"
 #include <unistd.h>
-#include <cctype>
-#include <cerrno>
-#include <cstring>
-#include <cstdlib>
+#include <ctype.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
 #if FOR_BSDMODULE
 # include <sys/param.h>
 # include <sys/mount.h>

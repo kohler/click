@@ -4,7 +4,7 @@
 #include <click/string.hh>
 #include <click/straccum.hh>
 #include <click/hashmap.hh>
-#include <cstdio>
+#include <stdio.h>
 
 String html_quote_attr(const String &);
 String html_quote_text(const String &);

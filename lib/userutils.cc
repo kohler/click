@@ -23,16 +23,16 @@
 #include <click/confparse.hh>
 #include <click/userutils.hh>
 #include <click/error.hh>
-#include <cerrno>
-#include <cstring>
-#include <ctime>
+#include <errno.h>
+#include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <csignal>
+#include <signal.h>
 #include <dirent.h>
-#include <cstdarg>
+#include <stdarg.h>
 
 #if HAVE_DYNAMIC_LINKING && defined(HAVE_DLFCN_H)
 # include <dlfcn.h>

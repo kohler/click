@@ -24,8 +24,7 @@
 #include <click/standard/scheduleinfo.hh>
 #include <click/packet_anno.hh>
 
-#include <cstdio>
-#include <cassert>
+#include <stdio.h>
 #include <unistd.h>
 
 #if TODEVICE_BSD_DEV_BPF

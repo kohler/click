@@ -6,12 +6,12 @@
  * STL skills.
  */
 
-#include <cstdlib>
-#include <cstdio>
+#include <stdlib.h>
+#include <stdio.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <cstring>
-#include <cctype>
+#include <string.h>
+#include <ctype.h>
 #include <stl.h>
 #include <hash_map.h>
 #include "CUT_BinHeap.h"

@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <cstddef>
+#include <stddef.h>
 #include "filterbyhops.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -24,7 +24,7 @@
 #include <clicknet/ether.h>
 #include <click/glue.hh>
 #include "grid.hh"
-#include <cmath>
+#include <math.h>
 CLICK_DECLS
 
 FilterByGridHops::FilterByGridHops() : Element(1, 2)

@@ -8,7 +8,7 @@
 #elif defined(CLICK_BSDMODULE)
 # include <sys/systm.h>
 #else	/* User-space */
-# include <cstring>
+# include <string.h>
 #endif
 CLICK_DECLS
 

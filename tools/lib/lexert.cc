@@ -24,8 +24,8 @@
 #include "lexertinfo.hh"
 #include "routert.hh"
 #include <click/confparse.hh>
-#include <cctype>
-#include <cstdlib>
+#include <ctype.h>
+#include <stdlib.h>
 
 static LexerTInfo *stub_lexinfo = 0;
 

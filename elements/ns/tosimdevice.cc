@@ -38,8 +38,7 @@
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 
-#include <cstdio>
-#include <cassert>
+#include <stdio.h>
 #include <unistd.h>
 CLICK_DECLS
 

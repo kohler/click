@@ -10,9 +10,9 @@
 #include "toolutils.hh"
 #include "elementmap.hh"
 #include <click/clp.h>
-#include <cstdio>
-#include <cctype>
-#include <ctime>
+#include <stdio.h>
+#include <ctype.h>
+#include <time.h>
 
 #define HELP_OPT		300
 #define VERSION_OPT		301

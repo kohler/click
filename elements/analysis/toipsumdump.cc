@@ -26,8 +26,7 @@
 #include <clicknet/udp.h>
 #include <clicknet/tcp.h>
 #include <unistd.h>
-#include <ctime>
-#include <sys/time.h>
+#include <time.h>
 CLICK_DECLS
 
 #ifdef i386

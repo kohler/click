@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <cstddef>
+#include <stddef.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>

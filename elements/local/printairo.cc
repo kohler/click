@@ -23,7 +23,7 @@
 #include <click/straccum.hh>
 #include <click/etheraddress.hh>
 #ifdef CLICK_USERLEVEL
-#include <cmath>
+#include <math.h>
 #endif
 
 CLICK_DECLS

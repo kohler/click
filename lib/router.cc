@@ -30,7 +30,7 @@
 #include <click/bighashmap_arena.hh>
 #include <click/standard/errorelement.hh>
 #include <click/standard/drivermanager.hh>
-#include <cstdarg>
+#include <stdarg.h>
 #ifdef CLICK_USERLEVEL
 # include <unistd.h>
 #endif

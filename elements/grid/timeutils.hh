@@ -8,7 +8,7 @@
 #define TIMEUTIL_H
 
 #ifdef CLICK_USERLEVEL
-#include <cmath>
+#include <math.h>
 #endif
 #include <click/string.hh>
 #include <click/glue.hh>	/* for htonl() and ntohl() */

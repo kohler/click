@@ -9,11 +9,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <cstring>
-#include <cerrno>
-#include <cassert>
-#include <cstdio>
-#include <cctype>
+#include <string.h>
+#include <errno.h>
+#include <assert.h>
+#include <stdio.h>
+#include <ctype.h>
 
 #include <algorithm>
 

@@ -3,10 +3,8 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 
-#include <cstdio>
-#include <cassert>
+#include <stdio.h>
 #include <unistd.h>
-#include <cerrno>
 
 
 extern "C" {

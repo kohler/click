@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <cstddef>
+#include <stddef.h>
 #include "airoinfo.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -25,7 +25,7 @@
 #include <click/glue.hh>
 #include <click/etheraddress.hh>
 #include "grid.hh"
-#include <cmath>
+#include <math.h>
 #include <sys/ioctl.h>
 
 #define ANLLFAIL

@@ -25,7 +25,6 @@
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/packet_anno.hh>
-#include <cstring>
 #include "fakepcap.hh"
 CLICK_DECLS
 

@@ -22,8 +22,8 @@
 #include "toolutils.hh"
 #include "elementmap.hh"
 #include <click/error.hh>
-#include <cstdio>
-#include <cstring>
+#include <stdio.h>
+#include <string.h>
 
 // determine an element's signature
 

@@ -23,7 +23,7 @@
 #include <click/glue.hh>
 #include <sys/time.h>
 #include "grid.hh"
-#include <cmath>
+#include <math.h>
 #include "timeutils.hh"
 CLICK_DECLS
 

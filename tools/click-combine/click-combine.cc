@@ -27,15 +27,15 @@
 #include <click/straccum.hh>
 #include <click/variableenv.hh>
 #include <click/driver.hh>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <cctype>
-#include <cerrno>
-#include <ctime>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <errno.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <cstdarg>
+#include <stdarg.h>
 
 #define HELP_OPT		300
 #define VERSION_OPT		301

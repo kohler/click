@@ -21,7 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include "grid.hh"
-#include <cmath>
+#include <math.h>
 CLICK_DECLS
 
 PEP::PEP()

@@ -27,8 +27,8 @@
 #include "alignclass.hh"
 #include "toolutils.hh"
 #include <click/clp.h>
-#include <cstdio>
-#include <cctype>
+#include <stdio.h>
+#include <ctype.h>
 
 struct RouterAlign {
 

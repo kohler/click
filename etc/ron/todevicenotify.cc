@@ -16,6 +16,7 @@
  */
 
 #include <click/config.h>
+#include <click/glue.hh>
 #include "todevicenotify.hh"
 #include <click/elemfilter.hh>
 #include <click/error.hh>
@@ -24,8 +25,7 @@
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 
-#include <cstdio>
-#include <cassert>
+#include <stdio.h>
 #include <unistd.h>
 
 #if TODEVICE_BSD_DEV_BPF

@@ -26,7 +26,7 @@
 #include <click/straccum.hh>
 #include <click/confparse.hh>
 #include <click/variableenv.hh>
-#include <cstdlib>
+#include <stdlib.h>
 
 ElementT::ElementT()
     : flags(0), _idx(-1), _type(0), _tunnel_input(0), _tunnel_output(0),

@@ -2,7 +2,7 @@
 #ifndef CLICK_LEXERT_HH
 #define CLICK_LEXERT_HH
 #include <click/error.hh>
-#include <cstdio>
+#include <stdio.h>
 class RouterT;
 class ElementClassT;
 class CompoundElementClassT;

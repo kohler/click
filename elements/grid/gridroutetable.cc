@@ -18,7 +18,6 @@
 #include <click/config.h>
 #include "timeutils.hh" /* includes <cmath> which may #undef NULL, so
 			   must become before <cstddef> */
-#include <cstddef>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>

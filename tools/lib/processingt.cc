@@ -24,8 +24,8 @@
 #include <click/bitvector.hh>
 #include <click/straccum.hh>
 #include "elementmap.hh"
-#include <cctype>
-#include <cstring>
+#include <ctype.h>
+#include <string.h>
 
 const char * const ProcessingT::processing_letters = "ahl";
 

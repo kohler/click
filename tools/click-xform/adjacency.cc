@@ -19,7 +19,7 @@
 
 #include "adjacency.hh"
 #include "routert.hh"
-#include <cstdio>
+#include <stdio.h>
 
 AdjacencyMatrix::AdjacencyMatrix(RouterT *r)
   : _x(0)
