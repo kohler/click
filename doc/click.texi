@@ -256,6 +256,8 @@ specification}---an ASCII string that, properly interpreted, specifies
 the processing type for each port.
 
 @deftypemethod Element {virtual const char *} processing () const
+Returns the element's processing specification as a null-terminated C
+string.
 @end deftypemethod
 
 Processing specifications look like this:
@@ -279,6 +281,29 @@ many times as necessary; any extra characters are ignored. Thus, the
 processing specifications @code{"aaaaaaaa/haaaaaaa"} and @code{"a/ha"}
 behave identically.
 
+The @code{Element} class provides mnemonic names for five common
+processing specifications:
+
+@table @code
+@item AGNOSTIC
+@code{"a/a"} (agnostic ports).
+@item PUSH
+@code{"h/h"} (push ports).
+@item PULL
+@code{"l/l"} (pull ports).
+@item PUSH_TO_PULL
+@code{"h/l"} (push input ports, pull output ports).
+@item PULL_TO_PUSH
+@code{"l/h"} (pull input ports, push output ports).
+@end table
+
+The default implementation for @code{Element::processing} returns
+@code{AGNOSTIC}.
+
+The @code{processing} method should be declared as an inline function in
+the element's C class definition. It should return a C string constant
+or one of the five mnemonic names above. This makes the element's
+processing code easy to extract automatically.
 
 
 @node initialize, configure_phase, processing, Element Initialization
