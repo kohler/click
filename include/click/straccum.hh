@@ -42,6 +42,7 @@ class StringAccum { public:
   void append(unsigned char);
   void append(const char *, int);
   void append(const unsigned char *, int);
+  void append_fill(int c, int len);
 
   char *reserve(int);
   void set_length(int l)	{ assert(l>=0 && _len<=_cap);	_len = l; }

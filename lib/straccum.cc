@@ -80,6 +80,13 @@ StringAccum::take_string()
     return String();
 }
 
+void
+StringAccum::append_fill(int c, int len)
+{
+  if (char *s = extend(len))
+    memset(s, c, len);
+}
+
 StringAccum &
 operator<<(StringAccum &sa, long i)
 {
