@@ -1,3 +1,17 @@
+2002-07-19 Friday 20:08  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/element.cc: nitlets
+
+2002-07-19 Friday 20:08  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: llrpc.h, llrpc.h: LLRPC numbers encode "safety"
+	("safe" LLRPCs may proceed in parallel)
+
+2002-07-19 Friday 19:46  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* acclick.m4: quote [ and ] in grep expression so big-endian
+	machines work
+
 2002-07-16 Tuesday 21:14  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: cxxprotect.h, cxxunprotect.h, cxxprotect.h,

@@ -1,3 +1,33 @@
+2002-07-19 Friday 20:08  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/anonipaddr.cc (1.7), lib/element.cc (1.71):
+	nitlets
+
+2002-07-19 Friday 20:08  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/clickfs.cc (1.18): LLRPC: fix IOC_ bugs (forgot to
+	use the Click _CLICK_IOC constants), and lock differently for
+	unsafe LLRPCs
+
+2002-07-19 Friday 20:08  Eddie Kohler <kohler@icir.org>
+
+	* include/click/llrpc.h (1.19): LLRPC numbers encode "safety"
+	("safe" LLRPCs may proceed in parallel)
+
+2002-07-19 Friday 20:07  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/counter.cc (1.25): handlers drop rates after
+	zero periods
+
+2002-07-19 Friday 20:07  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.texi (1.39): add info on handlers
+
+2002-07-19 Friday 19:46  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* acclick.m4 (1.16), aclocal.m4 (1.16): quote [ and ] in grep
+	expression so big-endian machines work
+
 2002-07-16 Tuesday 21:16  Eddie Kohler <kohler@icir.org>
 
 	* configure.in (1.188): update protected symbols
