@@ -37,9 +37,10 @@ enum CpErrors {
 };
 extern int cp_errno;
 
-// words
+// strings and words
 bool cp_string(const String &, String *, String *rest = 0);
 bool cp_word(const String &, String *, String *rest = 0);
+bool cp_keyword(const String &, String *, String *rest = 0);
 
 // numbers
 bool cp_bool(const String &, bool *);
@@ -91,7 +92,7 @@ Element *cp_element(const String &, Element *, ErrorHandler *);
 #endif
 
 #ifdef HAVE_IPSEC
-bool cp_des_cblock(const String &, unsigned char *, String *rest = 0);
+bool cp_des_cblock(const String &, unsigned char *);
 #endif
 
 typedef const char * const CpVaParseCmd;
