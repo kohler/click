@@ -71,6 +71,8 @@ IPFilter::create_wordmap()
   wordmap->insert("smtp",	WT(TYPE_PORT, 25));
   wordmap->insert("domain",	WT(TYPE_PORT, 53));
   wordmap->insert("dns",	WT(TYPE_PORT, 53));
+  wordmap->insert("bootps",	WT(TYPE_PORT, 67));
+  wordmap->insert("bootpc",	WT(TYPE_PORT, 68));
   wordmap->insert("tftp",	WT(TYPE_PORT, 69));
   wordmap->insert("finger",	WT(TYPE_PORT, 79));
   wordmap->insert("www",	WT(TYPE_PORT, 80));
