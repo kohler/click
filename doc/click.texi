@@ -246,7 +246,7 @@ Tasks
 * Task Thread Choice::          
 * Task Status::                 
 * Task Handlers::               
-* Destroying a Task::           
+* Task Cleanup::                
 
 Timers
 
@@ -5153,7 +5153,7 @@ file.
 * Task Thread Choice::          
 * Task Status::                 
 * Task Handlers::               
-* Destroying a Task::           
+* Task Cleanup::                
 @end menu
 
 
@@ -5163,28 +5163,28 @@ file.
 Task initialization is a two-step process. First, when a @code{Task}
 object is constructed, you must supply information about the function
 that it should call when it is scheduled. Second, when the router is
-initialized, you must schedule the task on the router's task queue.
+initialized, you must initialize the task by supplying it with the
+relevant router. (You must initialize the task even if it will not be
+scheduled right away.)
 
 @code{Task} has two constructors. One of them asks the task to call an
 element's @code{run_scheduled} method when scheduled; the other asks it
 to call an arbitrary function pointer.
 
-@deftypemethod Task {} Task (Element *@var{e})
+@deftypeop Constructor Task {} Task (Element *@var{e})
 When this task is scheduled, call @code{@var{e}->run_scheduled()}.
-@end deftypemethod
+@end deftypeop
 
-@deftypemethod Task {} Task (TaskHook @var{hook}, void *@var{thunk})
+@deftypeop Constructor Task {} Task (TaskHook @var{hook}, void *@var{thunk})
 When this task is scheduled, call @code{@var{hook}(this, @var{thunk})}.
 The @var{hook} argument is a function pointer with type @code{void
 (*)(Task *, void *)}.
-@end deftypemethod
+@end deftypeop
 
-Later, when the router is initialized, each task must be attached to the
-router via the @code{Task::initialize} method. This places the task on a
-router-wide list of @code{Task}s, associates the task with a particular
-task queue, and, optionally, schedules it. Typically, an element's
-@code{initialize} method calls @code{Task::initialize}
-(@pxref{initialize}).
+The @code{Task::initialize} method places the task on a router-wide list
+of @code{Task}s, associates the task with a particular task queue, and,
+optionally, schedules it. Typically, an element's @code{initialize}
+method calls @code{Task::initialize} (@pxref{initialize}).
 
 @deftypemethod Task void initialize (Router *@var{r}, bool @var{scheduled})
 @deftypemethodx Task void initialize (Element *@var{e}, bool @var{scheduled})
@@ -5402,7 +5402,7 @@ element. Otherwise, returns a null pointer.
 @end deftypemethod
 
 
-@node Task Handlers, Destroying a Task, Task Status, Tasks
+@node Task Handlers, Task Cleanup, Task Status, Tasks
 @section Task Handlers
 
 By convention, elements with tasks should provide handlers that access
@@ -5432,8 +5432,8 @@ multithreaded Click. Example result: @strcode{"2\n"}.
 @end table
 
 
-@node Destroying a Task,  , Task Handlers, Tasks
-@section Destroying a Task
+@node Task Cleanup,  , Task Handlers, Tasks
+@section Task Cleanup
 
 You generally don't need to worry about destroying @code{Task} objects:
 they are automatically unscheduled and removed when the @code{Router} is
@@ -5452,9 +5452,12 @@ Cleans up the @code{Task} object.
 @chapter Timers
 
 Click @dfn{timers}, like Click tasks, represent callback functions that
-the driver calls when appropriate. Unlike tasks, however, timers are
-scheduled to go off at a specified time.
+the driver calls when appropriate. Unlike tasks, however, you schedule
+timers to go off at a specified time. Timers are intended for more
+infrequent and/or slower tasks.
 
+Timers are scheduled with microsecond precision, but on current
+hardware, only millisecond precision is likely to be achievable.
 
 @menu
 * Timer Initialization::        
@@ -5466,14 +5469,108 @@ scheduled to go off at a specified time.
 @node Timer Initialization, Scheduling a Timer, Timers, Timers
 @section Timer Initialization
 
+Timer initialization resembles task initialization. When the timer is
+constructed, you must supply it with information about its callback
+function. Later, after the router is initialized, you must initialize
+and, optionally, schedule it.
+
+@deftypeop Constructor Timer {} Timer (@w{Element *@var{e}})
+When this timer goes off, call @code{@var{e}->run_scheduled()}.
+@end deftypeop
+
+@deftypeop Constructor Timer {} Timer (@w{Task *@var{t}})
+When this timer goes off, call @code{@var{t}->reschedule()}.
+@end deftypeop
+
+@deftypeop Constructor Timer {} Timer (@w{TimerHook @var{hook}}, @w{void *@var{thunk}})
+When this timer goes off, call @code{@var{hook}(this, @var{thunk})}. The
+@var{hook} argument is a function pointer with type @code{void (*)(Timer
+*, void *)}.
+@end deftypeop
+
+@deftypemethod Timer void initialize (@w{Router *@var{r}})
+@deftypemethodx Timer void initialize (@w{Element *@var{e}})
+Attaches the timer to the router object @var{r} (or
+@code{@var{e}->router()}).
+@end deftypemethod
+
+Typically, an element's @code{initialize} method (@pxref{initialize})
+calls @code{Timer::initialize}, and possibly one of the @code{schedule}
+functions described below.
+
 
 @node Scheduling a Timer, Timer Status Methods, Timer Initialization, Timers
 @section Scheduling a Timer
+
+A variety of methods schedule timers to go off at specified times. The
+basic method is @code{schedule_at}, which schedules the timer for a
+specified time. Subsidiary methods schedule the timer relative to the
+current time (the @code{schedule_after} methods), or relative to the
+last time the timer was scheduled to run (the @code{reschedule_after}
+methods). Finally, @code{unschedule} unschedules the timer.
+
+All @code{schedule} and @code{reschedule} functions first unschedule the
+timer if it was already scheduled.
+
+@deftypemethod Timer void schedule_at (@w{const struct timeval &@var{when}})
+Schedule the timer to go off at @var{when}. You must have initialized
+the timer earlier.
+@end deftypemethod
+
+@deftypemethod Timer void schedule_now ()
+Schedule the timer to go off as soon as possible.
+@end deftypemethod
+
+@deftypemethod Timer void schedule_after_s (@w{uint32_t @var{delay}})
+Schedule the timer to go off @var{delay} seconds after the current time.
+@end deftypemethod
+
+@deftypemethod Timer void schedule_after_ms (@w{uint32_t @var{delay}})
+Schedule the timer to go off @var{delay} milliseconds after the current
+time.
+@end deftypemethod
+
+@deftypemethod Timer void reschedule_after_s (@w{uint32_t @var{delay}})
+Schedule the timer to go off @var{delay} seconds after it was last
+scheduled to go off. If the timer was never previously scheduled to go
+off, this method will schedule the timer for some arbitrary time.
+@end deftypemethod
+
+@deftypemethod Timer void reschedule_after_ms (@w{uint32_t @var{delay}})
+Schedule the timer to go off @var{delay} milliseconds after it was last
+scheduled to go off.
+@end deftypemethod
+
+@deftypemethod Timer void unschedule ()
+Unschedules the timer, if it was scheduled.
+@end deftypemethod
 
 
 @node Timer Status Methods,  , Scheduling a Timer, Timers
 @section Timer Status Methods
 
+These methods return information about a timer, including when it is
+scheduled to expire.
+
+@deftypemethod Timer bool initialized () const
+Returns true iff the timer has been initialized with a call to
+@code{initialize()}. Uninitialized timers must not be scheduled.
+@end deftypemethod
+
+@deftypemethod Timer bool scheduled () const
+Returns true iff the timer is scheduled to expire some time in the
+future.
+@end deftypemethod
+
+@deftypemethod Timer {const struct timeval &} when () const
+Returns the time that the timer is set to expire. If the timer has never
+been scheduled, the value is garbage. If the timer has already expired,
+the value is most recent last expiry time.
+@end deftypemethod
+ 
+
+@node Timer Cleanup
+@section Timer Cleanup
 
 
 @node Coding Standards, Index, Timers, Top
