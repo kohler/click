@@ -134,6 +134,7 @@ include/click/error.hh
 include/click/etheraddress.hh
 include/click/ewma.cc
 include/click/ewma.hh
+include/click/ewma64.hh
 include/click/gaprate.hh
 include/click/glue.hh
 include/click/handlercall.hh
@@ -186,6 +187,7 @@ lib/element.cc
 lib/elemfilter.cc
 lib/error.cc
 lib/etheraddress.cc
+lib/ewma64.cc
 lib/gaprate.cc
 lib/glue.cc
 lib/handlercall.cc
@@ -256,6 +258,7 @@ tools/lib/elementt.cc
 tools/lib/elementt.hh
 tools/lib/lexert.cc 
 tools/lib/lexert.hh
+tools/lib/lexertinfo.hh
 tools/lib/routert.cc
 tools/lib/routert.hh
 tools/lib/processingt.cc
