@@ -270,7 +270,6 @@ AddressTranslator::lookup(IP6Address &iai, unsigned short &ipi, IP6Address &mai,
 		}
 		  
 	      _v[i]._t = time(NULL); 
-
 	      return (true);
 	    }
 	  else
@@ -399,7 +398,7 @@ AddressTranslator::handle_outward(Packet *p)
 	}
       else
 	{
-	  click_chatter(" failed for mapping the ip6 address and port for icmpv6 packet ");
+	  //click_chatter(" failed for mapping the ip6 address and port for an icmpv6 packet ");
 	  p->kill();
 	}
     }
@@ -423,7 +422,7 @@ AddressTranslator::handle_outward(Packet *p)
 	}
       else
 	{
-	  click_chatter(" failed to map the ip6 address and portfor tcp packet");
+	  //click_chatter(" failed to map the ip6 address and port for a tcp packet");
 	  p->kill();
 	}
     }
@@ -446,7 +445,7 @@ AddressTranslator::handle_outward(Packet *p)
 	}
       else 
 	{
-	  click_chatter(" failed to map the ip6 address and portfor tcp packet");
+	  //click_chatter(" failed to map the ip6 address and port for a udp packet");
 	  p->kill();
 	}
     }
@@ -529,7 +528,7 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
 	}
       else
 	{
-	  click_chatter(" failed for mapping the dst ip6 address and port for icmpv6 packet");
+	  //click_chatter(" failed for mapping the dst ip6 address and port for an icmpv6 packet -inward");
 	  p->kill();
 	}
     }
@@ -554,35 +553,12 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
 	}
        else
 	{
-	  click_chatter(" failed for mapping the dst ip6 address and port for an tcp packet ");
+	  //click_chatter(" failed for mapping the dst ip6 address and port for a tcp packet -inward");
 	  p->kill();
 	}
     }
 
-  else if (ip6_new->ip6_nxt ==0x6) //the upper layer is a tcp packet
-    {
-       click_tcp *tcp_new  = (click_tcp *)(ip6_new+1);
-       sport = ntohs(tcp_new->th_sport);
-       mport = ntohs(tcp_new->th_dport);
-      if (lookup(ip6_dst, dport,ip6_mdst, mport, ip6_src, sport, 1))
-	{
-	  ip6_new->ip6_dst = ip6_dst;
-	  tcp_new->th_dport = htons(dport);
-	  //recalculate the checksum for TCP, deal with fragment later
-	  tcp_new->th_sum = 0;
-	  tcp_new->th_sum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, ip6_new->ip6_nxt, tcp_new->th_sum, (unsigned char *)tcp_new, ip6_new->ip6_plen));
-	 
-	  
-	  p->kill();
-	  output(1).push(q);
-	}
-       else
-	{
-	  click_chatter(" failed for mapping the dst ip6 address and port -2 ");
-	  p->kill();
-	}
-    }
- 
+  
   else if (ip6_new->ip6_nxt ==0x11) //the upper layer is a udp packet
     {
        click_udp *udp_new  = (click_udp *)(ip6_new+1);
@@ -601,7 +577,7 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
 	}
        else
 	{
-	  click_chatter(" failed for mapping the dst ip6 address and port for an udp packet");
+	  //click_chatter(" failed for mapping the dst ip6 address and port for a udp packet - inward");
 	  p->kill();
 	}
     }
