@@ -184,7 +184,8 @@ ARPQuerier::expire_hook(Timer *timer, void *thunk)
 
     // Mark entries for polling, and delete packets to make space.
     while (ae) {
-	if (jiff - ae->last_response_jiffies > 60*CLICK_HZ)
+	// Only set polling on timer calls.
+	if (jiff - ae->last_response_jiffies > 60*CLICK_HZ && timer)
 	    ae->polling = 1;
 	else if (arpq->_cache_size < arpq->_capacity)
 	    break;
