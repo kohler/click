@@ -39,12 +39,13 @@ public:
   static const int POLICY_LOCAL                 = 0;
   static const int POLICY_RANDOM                = 1;
   static const int POLICY_PROBE3                = 2;
-  
   static const int POLICY_PROBE3_LOCAL          = 3;
+
   static const int POLICY_PROBE3_UNPROBED       = 4;
   static const int POLICY_PROBE3_UNPROBED_LOCAL = 5;
+  static const int POLICY_PROBE_ALL             = 6;
 
-  static const int NUM_POLICIES = 3;
+  static const int NUM_POLICIES = 4;
 
   LookupIPRouteRON();
   ~LookupIPRouteRON();

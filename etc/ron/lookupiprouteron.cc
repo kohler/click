@@ -86,7 +86,7 @@ LookupIPRouteRON::initialize(ErrorHandler *)
 
 int
 LookupIPRouteRON::myrandom(int x) {
-  return (int) ( x * (float) (random() / (float)0xffffffff) );
+  return (int) (x * ( (float)(random() & 0xffff) / (float)(0xffff)));
 }
 
 void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool first_syn)
@@ -105,6 +105,7 @@ void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool f
     click_chatter("randomly choosing path %d", flow->outgoing_port);
     output(flow->outgoing_port).push(p);
     break;
+
   case POLICY_PROBE3:
     if (noutputs() - 1 < 3) {
       click_chatter("not enough output ports to choose from");
@@ -115,17 +116,17 @@ void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool f
     // TODO: optimize this. It's really dumb.
     if (first_syn) {
       flow->probed_ports[0] = 1 + myrandom(noutputs()-1);
-      click_chatter("chose %d", flow->probed_ports[0]);
+      click_chatter(" chose %d", flow->probed_ports[0]);
       for (flow->probed_ports[1] = 1 + myrandom(noutputs()-1);
 	   flow->probed_ports[1] == flow->probed_ports[0]; 
 	   flow->probed_ports[1] = 1 + myrandom(noutputs()-1));
-      click_chatter("chose %d", flow->probed_ports[1]);
+      click_chatter(" chose %d", flow->probed_ports[1]);
       
       for (flow->probed_ports[2] = 1 + myrandom(noutputs()-1);
 	   (flow->probed_ports[2] == flow->probed_ports[0] || 
 	    flow->probed_ports[2] == flow->probed_ports[1]);
 	   flow->probed_ports[2] = 1 + myrandom(noutputs()-1));
-      click_chatter("chose %d", flow->probed_ports[2]);
+      click_chatter(" chose %d", flow->probed_ports[2]);
     }
 
     for(i=0; i<3; i++) { 
@@ -133,6 +134,40 @@ void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool f
 	output(flow->probed_ports[i]).push(q);
     }
     break;
+
+  case POLICY_PROBE3_LOCAL:
+    if (noutputs() - 1 < 3) {
+      click_chatter("not enough output ports to choose from");
+      assert(0);
+    }      
+
+    // Choose 3 random unique ports
+    // TODO: optimize this. It's really dumb.
+    if (first_syn) {
+      flow->probed_ports[0] = 1;
+      click_chatter(" chose %d", flow->probed_ports[0]);
+      for (flow->probed_ports[1] = 1 + myrandom(noutputs()-1);
+	   flow->probed_ports[1] == flow->probed_ports[0]; 
+	   flow->probed_ports[1] = 1 + myrandom(noutputs()-1));
+      click_chatter(" chose %d", flow->probed_ports[1]);
+      
+      for (flow->probed_ports[2] = 1 + myrandom(noutputs()-1);
+	   (flow->probed_ports[2] == flow->probed_ports[0] || 
+	    flow->probed_ports[2] == flow->probed_ports[1]);
+	   flow->probed_ports[2] = 1 + myrandom(noutputs()-1));
+      click_chatter(" chose %d", flow->probed_ports[2]);
+    }
+
+    for(i=0; i<3; i++) { 
+      if (Packet *q = p->clone())
+	output(flow->probed_ports[i]).push(q);
+    }
+    break;
+
+  case POLICY_PROBE_ALL:
+    duplicate_pkt(p);
+    break;
+
   default:
     click_chatter("Unknown policy syn");
     assert(0);
@@ -140,6 +175,67 @@ void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool f
   }
   return;
     
+}
+
+void
+LookupIPRouteRON::policy_handle_synack(FlowTableEntry *flow, unsigned int port, Packet *p)
+{
+  int portno;
+
+  switch (flow->policy) {
+  case POLICY_LOCAL:
+  case POLICY_RANDOM:
+    if (port == flow->outgoing_port) {
+      flow->outstanding_syns = 0;
+      output(0).push(p);
+    } else { // Wrong incoming port: send reset
+      send_rst(p, flow, port);
+    }
+    break;
+
+  case POLICY_PROBE3:
+  case POLICY_PROBE3_LOCAL:
+    // if this is the first synack returned, choose this port
+    if (flow->outstanding_syns > 0) {
+      flow->outstanding_syns = 0;
+      flow->outgoing_port = port;
+    }
+
+    if (port == flow->outgoing_port) {
+      flow->outgoing_port = port;
+      output(0).push(p);
+    } else { // Wrong incoming port: send reset
+      send_rst(p, flow, port);
+    }
+    break;
+
+  case POLICY_PROBE_ALL:
+
+    if (flow->outstanding_syns > 0) {
+      //portno = 1+ myrandom(noutputs()-1);
+      click_chatter("Choosing(%d)", port);
+      // dont save to dst_table
+      // _dst_table->insert(IPAddress(p->ip_header()->ip_src), portno); 
+      
+      // remember which port the first syn-ack came back on
+      flow->outgoing_port = port;
+      flow->outstanding_syns = 0;
+    }    
+
+    if (flow->outgoing_port == port)
+      output(0).push(p);
+    else {
+      // send RST to first replier
+      send_rst(p, flow, port);
+    }
+    break;
+    
+  default:
+    click_chatter("Unknown policy synack");
+    assert(0);
+    break;
+  }
+  return;
 }
 
 void LookupIPRouteRON::duplicate_pkt(Packet *p) {
@@ -224,7 +320,7 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 #if MULTI_POLICY
       // We're seeing the first syn, choose policy
       new_entry->policy = myrandom(NUM_POLICIES);
-      new_entry->policy = 2;
+      new_entry->policy = 6;
       click_chatter("Policy(%d)", new_entry->policy);
       policy_handle_syn(new_entry, p, true);
 #else
@@ -342,10 +438,6 @@ void LookupIPRouteRON::push_forward_packet(Packet *p)
 
 void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p) 
 {
-#if MEASURE_NATRON
-  unsigned int portno;
-#endif
-
   char buf[128];
   const click_tcp *tcph;
   FlowTableEntry *match = NULL;
@@ -366,26 +458,7 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
 	     p->dst_ip_anno().s().cc(), 
 	     IPAddress(p->ip_header()->ip_src).s().cc() );
 
-#if MEASURE_NATRON
-      portno = 1+ myrandom(noutputs()-1);
-      click_chatter("Choosing(%d)", portno);
-      // dont save to dst_table
-      // _dst_table->insert(IPAddress(p->ip_header()->ip_src), portno); 
-
-      // remember which port the first syn-ack came back on
-      match->outgoing_port = portno;
-      match->outstanding_syns = 0;
-
-      if (portno == inport)
-	output(0).push(p);
-      else {
-	// send RST to first replier
-	send_rst(p, match, inport);
-      }
-
-      return;
-
-#elif MULTI_POLICY
+#if MULTI_POLICY
       policy_handle_synack(match, inport, p);
       return;
 #else
@@ -625,43 +698,6 @@ LookupIPRouteRON::add_handlers()
 {
   // needed for QuitWatcher
   add_read_handler("scheduled", read_handler, 0);
-}
-
-
-void
-LookupIPRouteRON::policy_handle_synack(FlowTableEntry *flow, unsigned int port, Packet *p)
-{
-  switch (flow->policy) {
-  case POLICY_LOCAL:
-  case POLICY_RANDOM:
-    if (port == flow->outgoing_port) {
-      flow->outstanding_syns = 0;
-      output(0).push(p);
-    } else { // Wrong incoming port: send reset
-      send_rst(p, flow, port);
-    }
-    break;
-
-  case POLICY_PROBE3:
-    // if this is the first synack returned, choose this port
-    if (flow->outstanding_syns > 0) {
-      flow->outstanding_syns = 0;
-      flow->outgoing_port = port;
-    }
-
-    if (port == flow->outgoing_port) {
-      flow->outgoing_port = port;
-      output(0).push(p);
-    } else { // Wrong incoming port: send reset
-      send_rst(p, flow, port);
-    }
-    break;
-  default:
-    click_chatter("Unknown policy synack");
-    assert(0);
-    break;
-  }
-  return;
 }
 
 
