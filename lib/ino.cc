@@ -241,19 +241,17 @@ ClickIno::nlink(ino_t ino)
     
     // otherwise, it is a directory
     int nlink = 2;
-    if (INO_DIRTYPE(ino) != INO_DT_H) {
-	if (INO_DT_HAS_U(ino) && _router)
-	    nlink += _router->nelements();
-	if (INO_DT_HAS_N(ino)) {
-	    int xi = xindex(elementno) + 1;
-	    if (!(_x[xi - 1].flags & X_SUBDIR_CONFLICTS_CALCULATED))
-		calculate_handler_conflicts(elementno);
-	    int next_xi = next_xindex(elementno);
-	    while (xi < next_xi) {
-		if (!(_x[xi].flags & X_HANDLER_CONFLICT) || INO_DIRTYPE(ino) == INO_DT_N)
-		    nlink++;
-		xi += _x[xi].skip + 1;
-	    }
+    if (INO_DT_HAS_U(ino) && _router)
+	nlink += _router->nelements();
+    if (INO_DT_HAS_N(ino)) {
+	int xi = xindex(elementno) + 1;
+	if (!(_x[xi - 1].flags & X_SUBDIR_CONFLICTS_CALCULATED))
+	    calculate_handler_conflicts(elementno);
+	int next_xi = next_xindex(elementno);
+	while (xi < next_xi) {
+	    if (!(_x[xi].flags & X_HANDLER_CONFLICT) || INO_DIRTYPE(ino) == INO_DT_N)
+		nlink++;
+	    xi += _x[xi].skip + 1;
 	}
     }
     return nlink;
