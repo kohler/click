@@ -1,3 +1,9 @@
+2001-07-05 Thursday 23:15  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/standard/: delayshaper.cc (1.2), delayshaper.hh (1.2),
+	delayunqueue.cc (1.2), delayunqueue.hh (1.2): make delay elements
+	take us
+
 2001-07-05 Thursday 17:29  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/make-adapt-ron.pl (1.2): changed usage
