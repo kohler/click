@@ -466,12 +466,14 @@ ElementMap::processing_code(const String &n) const
 }
 
 void
-ElementMap::add(const String &click_name, const String &cxx_name,
+ElementMap::add(const String &click_name, String cxx_name,
 		String header_file, String processing_code)
 {
-  if (!click_name || !cxx_name)
+  if (!click_name)
     return;
 
+  if (cxx_name == "?")
+    cxx_name = String();
   if (header_file == "?")
     header_file = String();
   if (processing_code == "?")
@@ -531,7 +533,11 @@ ElementMap::unparse() const
 {
   StringAccum sa;
   for (int i = 0; i < size(); i++) {
-    sa << _name[i] << '\t' << _cxx_name[i] << '\t';
+    sa << _name[i] << '\t';
+    if (_cxx_name[i])
+      sa << _cxx_name[i] << '\t';
+    else
+      sa << "?\t";
     if (_header_file[i])
       sa << _header_file[i] << '\t';
     else

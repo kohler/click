@@ -49,7 +49,7 @@ class ElementMap {
   int find(const String &n) const		{ return _name_map[n]; }
   int find_cxx(const String &n) const		{ return _cxx_name_map[n]; }
 
-  void add(const String &, const String &, String, String);
+  void add(const String &, String, String, String);
   void remove(int);
   void remove(const String &n)			{ remove(find(n)); }
 

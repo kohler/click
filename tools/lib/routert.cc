@@ -231,6 +231,18 @@ RouterT::get_anon_eindex(int type_index, const String &config,
 }
 
 void
+RouterT::change_ename(int ei, const String &new_name)
+{
+  ElementT &e = _elements[ei];
+  if (e.type >= 0) {
+    if (_element_name_map[e.name] == ei)
+      _element_name_map.insert(e.name, -1);
+    e.name = new_name;
+    _element_name_map.insert(new_name, ei);
+  }
+}
+
+void
 RouterT::get_types_from(const RouterT *r)
 {
   for (int i = 0; i < r->ntypes(); i++)
@@ -734,6 +746,14 @@ RouterT::finish_free_elements(Vector<int> &new_eindex)
       _free_element = i;
       _real_ecount--;
     }
+}
+
+void
+RouterT::free_element(int e)
+{
+  Vector<int> new_eindex(nelements(), 0);
+  new_eindex[e] = -1;
+  finish_free_elements(new_eindex);
 }
 
 void

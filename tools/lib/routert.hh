@@ -77,6 +77,7 @@ class RouterT : public ElementClassT {
   int eindex(const String &s) const	{ return _element_name_map[s]; }
   const ElementT &element(int i) const	{ return _elements[i]; }
   ElementT &element(int i)		{ return _elements[i]; }
+  bool eblank(int ei) const		{ return _elements[ei].type < 0; }
   String ename(int) const;
   String ename_upref(int) const;
   int etype(int) const;
@@ -90,6 +91,9 @@ class RouterT : public ElementClassT {
   int get_eindex(const String &name, int etype_index, const String &configuration, const String &landmark);
   int get_anon_eindex(const String &name, int ftype_index, const String &configuration = String(), const String &landmark = String());
   int get_anon_eindex(int ftype_index, const String &configuration = String(), const String &landmark = String());
+  void free_element(int);
+  void blank_element(int i)			{ _elements[i].type = -1; }
+  void change_ename(int, const String &);
 
   void set_new_eindex_collector(Vector<int> *v) { _new_eindex_collector = v; }
   
@@ -125,8 +129,8 @@ class RouterT : public ElementClassT {
   void find_connection_vector_to(int, Vector<int> &) const;
   void count_ports(Vector<int> &, Vector<int> &) const;
 
-  bool insert_before(int fidx, const Hookup &);
-  bool insert_after(int fidx, const Hookup &);
+  bool insert_before(int, const Hookup &);
+  bool insert_after(int, const Hookup &);
   
   void add_components_to(RouterT *, const String &prefix = String()) const;
 
