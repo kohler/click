@@ -387,7 +387,8 @@ Thermometer::run_scheduled()
 	    break;
     }
 
-    _timer.reschedule_after_ms(_interval);
+    if (_status != ST_DONE)
+	_timer.reschedule_after_ms(_interval);
     if (_status == ST_FIRST)
 	_status = ST_MIDDLE;
 }

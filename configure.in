@@ -161,7 +161,7 @@ dnl functions
 dnl
 
 AC_REPLACE_FUNCS(strerror)
-AC_CHECK_FUNCS(strtoul)
+AC_CHECK_FUNCS(snprintf strtoul tcgetpgrp vsnprintf)
 
 
 dnl

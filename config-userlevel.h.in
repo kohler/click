@@ -14,11 +14,20 @@
 /* Define if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define if you have the snprintf function. */
+#undef HAVE_SNPRINTF
+
+/* Define if you have the vsnprintf function. */
+#undef HAVE_VSNPRINTF
+
 /* Define if you have the strerror function. */
 #undef HAVE_STRERROR
 
 /* Define if you have the strtoul function. */
 #undef HAVE_STRTOUL
+
+/* Define if you have the tcgetpgrp function. */
+#undef HAVE_TCGETPGRP
 
 /* Define if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
