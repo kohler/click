@@ -1,3 +1,13 @@
+2004-11-16 Tuesday 21:45  Nikitas Liogkas <nikitas@cs.ucla.edu>
+
+	* elements/local/ticketstat.cc (1.1): file ticketstat.cc was
+	initially added on branch RADSCHED-1.
+
+2004-11-16 Tuesday 21:45  Nikitas Liogkas <nikitas@cs.ucla.edu>
+
+	* elements/local/ticketstat.hh (1.1): file ticketstat.hh was
+	initially added on branch RADSCHED-1.
+
 2004-11-14 Sunday 20:34  John Bicket <jbicket@mit.edu>
 
 	* elements/standard/infinitesource.cc (1.49): fix logic bug I
