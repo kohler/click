@@ -5,7 +5,7 @@
 /*
  * =c
  * ChuckCheck()
- * =d
+ * 
  */
 
 class ChuckCheck : public Element {
