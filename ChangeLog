@@ -1,3 +1,9 @@
+2004-02-24 Tuesday 07:51  max
+
+	* elements/ip/: siphmapper.cc (1.2), siphmapper.hh (1.2): bug
+	fixes; random () only gives ints from 0 to 2^31, so, we'll scale
+	everything down to that range.
+
 2004-02-23 Monday 01:08  max
 
 	* elements/ip/: siphmapper.cc (1.1), siphmapper.hh (1.1):
