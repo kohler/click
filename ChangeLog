@@ -1,3 +1,15 @@
+2001-09-21 Friday 10:22  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* apps/csclient/csclient.cc (1.2): oops.  got rid of some compile
+	warnings
+
+2001-09-21 Friday 10:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* apps/csclient/: csclient.cc (1.1), csclient.hh (1.1): added new
+	csclient.{cc,hh} files which implement a ControlSocketClient class
+	in c++.  Still lots of work to be done for it, but it at least can
+	be used to call read handlers now
+
 2001-09-19 Wednesday 14:03  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* tools/run-grid (1.4): lots of fixes; changed ssid/channel, proper
