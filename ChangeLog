@@ -1,3 +1,8 @@
+2003-05-19 Monday 11:04  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: rtmdsr.cc (1.15), rtmdsr.hh (1.18): Mark
+	"better" routes to see how effective the optimization is.
+
 2003-05-19 Monday 10:09  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: rtmdsr.cc (1.14), rtmdsr.hh (1.17): Pass queries
