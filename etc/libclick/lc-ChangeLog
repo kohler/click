@@ -1,3 +1,14 @@
+2002-07-22 Monday 06:06  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: router.hh, router.hh: more nitlets inspired by
+	the manual
+
+2002-07-22 Monday 05:54  Eddie Kohler <kohler@icir.org>
+
+	* include/click/router.hh, include/click/router.hh,
+	libsrc/router.cc: Router::Handler interface adjustments inspired by
+	manual writing
+
 2002-07-19 Friday 20:08  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/element.cc: nitlets

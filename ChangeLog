@@ -1,3 +1,23 @@
+2002-07-22 Monday 06:06  Eddie Kohler <kohler@icir.org>
+
+	* include/click/router.hh (1.34): more nitlets inspired by the
+	manual
+
+2002-07-22 Monday 06:06  Eddie Kohler <kohler@icir.org>
+
+	* doc/: click.texi (1.42), click.texi (1.43): doc updates
+
+2002-07-22 Monday 05:54  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/config.cc (1.5), bsdmodule/module.cc (1.9),
+	linuxmodule/config.cc (1.3), linuxmodule/module.cc (1.72),
+	linuxmodule/modulepriv.hh (1.32): adjust to interface changes
+
+2002-07-22 Monday 05:54  Eddie Kohler <kohler@icir.org>
+
+	* include/click/router.hh (1.33), lib/router.cc (1.127):
+	Router::Handler interface adjustments inspired by manual writing
+
 2002-07-21 Sunday 18:24  Eddie Kohler <kohler@icir.org>
 
 	* tools/lib/routert.cc (1.59): make sure that new_name has at least
