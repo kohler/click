@@ -61,6 +61,8 @@ KernelTap::~KernelTap()
 int
 KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    errh->warning("KernelTap is deprecated; use KernelTun instead");
+    
   _gw = IPAddress();
   _headroom = 0;
   if (cp_va_parse(conf, this, errh,
