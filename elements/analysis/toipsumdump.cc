@@ -206,7 +206,7 @@ ToIPSummaryDump::store_ip_opt_ascii(const uint8_t *opt, int opt_len, int content
 	  case IPOPT_NOP:
 	    if (contents & DO_IPOPT_PADDING) {
 		sa << sep << "nop";
-		sep = ",";
+		sep = ";";
 	    }
 	    opt++;
 	    break;
@@ -239,18 +239,18 @@ ToIPSummaryDump::store_ip_opt_ascii(const uint8_t *opt, int opt_len, int content
 		    if (o == op) {
 			if (opt[0] == IPOPT_RR)
 			    break;
-			sep = "*";
+			sep = "^";
 		    }
 		    sa << sep << (int)o[0] << '.' << (int)o[1] << '.' << (int)o[2] << '.' << (int)o[3];
-		    sep = ":";
+		    sep = ",";
 		}
 		if (o == ol && o == op && opt[0] != IPOPT_RR)
-		    sa << '*';
+		    sa << '^';
 		sa << '}';
 		if (o + 4 <= ol && o == op && opt[0] == IPOPT_RR)
 		    sa << '+' << (ol - o) / 4;
 		opt = ol;
-		sep = ",";
+		sep = ";";
 		break;
 	    }
 	  case IPOPT_TS: {
@@ -272,12 +272,13 @@ ToIPSummaryDump::store_ip_opt_ascii(const uint8_t *opt, int opt_len, int content
 		  if (o == op) {
 		      if (flag != 3)
 			  break;
-		      sep = "*";
+		      sep = "^";
 		  }
 		  if (flag != 0) {
 		      sa << sep << (int)o[0] << '.' << (int)o[1] << '.' << (int)o[2] << '.' << (int)o[3] << '=';
 		      o += 4;
-		  }
+		  } else
+		      sa << sep;
 		  if (flag == 3 && o > op)
 		      sa.pop_back();
 		  else {
@@ -286,17 +287,17 @@ ToIPSummaryDump::store_ip_opt_ascii(const uint8_t *opt, int opt_len, int content
 			  sa << '!';
 		      sa << (v & 0x7FFFFFFFU);
 		  }
-		  sep = ":";
+		  sep = ",";
 	      }
-	      if (o == ol && o == op && opt[0] != IPOPT_RR)
-		  sa << '*';
+	      if (o == ol && o == op)
+		  sa << '^';
 	      sa << '}';
-	      if (o + size <= ol && o == op && opt[0] == IPOPT_RR)
+	      if (o + size <= ol && o == op)
 		  sa << '+' << (ol - o) / size;
 	      if (opt[3] & 0xF0)
 		  sa << '+' << '+' << (opt[3] >> 4);
 	      opt = ol;
-	      sep = ",";
+	      sep = ";";
 	      break;
 	  }
 	  default: {
@@ -311,7 +312,7 @@ ToIPSummaryDump::store_ip_opt_ascii(const uint8_t *opt, int opt_len, int content
 		  sa << opt_sep << (int)(*opt);
 		  opt_sep = ':';
 	      }
-	      sep = ",";
+	      sep = ";";
 	      break;
 	  }
 	  unknown:
@@ -351,7 +352,7 @@ ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int conten
 	  case TCPOPT_NOP:
 	    if (contents & DO_TCPOPT_PADDING) {
 		sa << sep << "nop";
-		sep = ",";
+		sep = ";";
 	    }
 	    opt++;
 	    break;
@@ -362,7 +363,7 @@ ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int conten
 		goto unknown;
 	    sa << sep << "mss" << ((opt[2] << 8) | opt[3]);
 	    opt += TCPOLEN_MAXSEG;
-	    sep = ",";
+	    sep = ";";
 	    break;
 	  case TCPOPT_WSCALE:
 	    if (opt + opt[1] > end_opt || opt[1] != TCPOLEN_WSCALE)
@@ -371,7 +372,7 @@ ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int conten
 		goto unknown;
 	    sa << sep << "wscale" << (int)(opt[2]);
 	    opt += TCPOLEN_WSCALE;
-	    sep = ",";
+	    sep = ";";
 	    break;
 	  case TCPOPT_SACK_PERMITTED:
 	    if (opt + opt[1] > end_opt || opt[1] != TCPOLEN_SACK_PERMITTED)
@@ -380,7 +381,7 @@ ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int conten
 		goto unknown;
 	    sa << sep << "sackok";
 	    opt += TCPOLEN_SACK_PERMITTED;
-	    sep = ",";
+	    sep = ";";
 	    break;
 	  case TCPOPT_SACK: {
 	      if (opt + opt[1] > end_opt || (opt[1] % 8 != 2))
@@ -392,7 +393,7 @@ ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int conten
 		  uint32_t buf[2];
 		  memcpy(&buf[0], opt, 8);
 		  sa << sep << "sack" << ntohl(buf[0]) << ':' << ntohl(buf[1]);
-		  sep = ",";
+		  sep = ";";
 	      }
 	      break;
 	  }
@@ -405,7 +406,7 @@ ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int conten
 	      memcpy(&buf[0], opt + 2, 8);
 	      sa << sep << "ts" << ntohl(buf[0]) << ':' << ntohl(buf[1]);
 	      opt += TCPOLEN_TIMESTAMP;
-	      sep = ",";
+	      sep = ";";
 	      break;
 	  }
 	  default: {
@@ -420,7 +421,7 @@ ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int conten
 		  sa << opt_sep << (int)(*opt);
 		  opt_sep = ':';
 	      }
-	      sep = ",";
+	      sep = ";";
 	      break;
 	  }
 	  unknown:

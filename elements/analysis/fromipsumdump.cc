@@ -452,10 +452,12 @@ FromIPSummaryDump::parse_ip_opt_ascii(const char *data, int pos, String *result,
 	    int pointer = -1;
 	    sa << '\0' << '\0';
 	    next = const_cast<char *>(data + pos);
-	    if (*next == '*')	// initial pointer?
-		pointer = 4, next++;
 	    // loop over entries
-	    while (isdigit(*next)) {
+	    while (1) {
+		if (*next == '^' && pointer < 0)
+		    pointer = sa.length() - sa_pos + 1, next++;
+		if (!isdigit(*next))
+		    break;
 		for (int i = 0; i < 4; i++) {
 		    if (!isdigit(*next)
 			|| (u1 = strtoul(next, &next, 0)) > 255
@@ -463,11 +465,8 @@ FromIPSummaryDump::parse_ip_opt_ascii(const char *data, int pos, String *result,
 			goto bad_opt;
 		    sa << (char)u1;
 		}
-		if (next[0] == '*' && pointer < 0)
-		    pointer = sa.length() - sa_pos + 1;
-		else if (next[0] != '-' && next[0] != ':')
-		    break;
-		next++;
+		if (*next == ',')
+		    next++;
 	    }
 	    if (*next != '}')	// must end with a brace
 		goto bad_opt;
@@ -519,12 +518,13 @@ FromIPSummaryDump::parse_ip_opt_ascii(const char *data, int pos, String *result,
 		pos += 3;
 	    next = const_cast<char *>(data + pos);
 	    int pointer = -1;
-	    // check for initial pointer
-	    if (*next == '*')
-		pointer = 5, next++;
 	    
 	    // loop over timestamp entries
-	    while (isdigit(*next) || *next == '!') {
+	    while (1) {
+		if (*next == '^' && pointer < 0)
+		    pointer = sa.length() - sa_pos + 1, next++;
+		if (!isdigit(*next) && *next != '!')
+		    break;
 		char *entry = next;
 	      retry_entry:
 		if (flag == 1 || flag == 3 || flag == -2) {
@@ -568,11 +568,8 @@ FromIPSummaryDump::parse_ip_opt_ascii(const char *data, int pos, String *result,
 		sa << (char)(u1 >> 24) << (char)(u1 >> 16) << (char)(u1 >> 8) << (char)u1;
 	      done_entry:
 		// check separator
-		if (*next == '*' && pointer < 0)
-		    pointer = sa.length() - sa_pos + 1;
-		else if (*next != '-' && *next != ':')
-		    break;
-		next++;
+		if (*next == ',')
+		    next++;
 	    }
 	    
 	    // done with entries
@@ -639,7 +636,7 @@ FromIPSummaryDump::parse_ip_opt_ascii(const char *data, int pos, String *result,
 	    // otherwise ok
 	    *result = sa.take_string();
 	    return pos;
-	} else if (data[pos] != ',')
+	} else if (data[pos] != ',' && data[pos] != ';')
 	    goto bad_opt;
 
 	pos++;
@@ -757,7 +754,7 @@ FromIPSummaryDump::parse_tcp_opt_ascii(const char *data, int pos, String *result
 	    // otherwise ok
 	    *result = sa.take_string();
 	    return pos;
-	} else if (data[pos] != ',')
+	} else if (data[pos] != ',' && data[pos] != ';')
 	    goto bad_opt;
 
 	pos++;

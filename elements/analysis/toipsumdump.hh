@@ -168,18 +168,37 @@ Single IP option fields have the following representations.
 
     EOL, NOP        Not written, but FromIPSummaryDump
                     understands 'eol' and 'nop'
-    RR              'rr{10.0.0.1:20.0.0.2}+5' (addresses
+
+    RR              'rr{10.0.0.1,20.0.0.2}+5' (addresses
                     inside the braces come before the
 		    pointer; '+5' means there is space for
 		    5 more addresses after the pointer)
-    SSRR, LSRR      like RR, starting with 'ssrr' or 'lsrr'
+
+    SSRR, LSRR      'ssrr{1.0.0.1,1.0.0.2^1.0.0.3}'
+                    ('^' indicates the pointer)
+
+    TS              'ts{1,10000,!45}+2++3' (timestamps only
+                    [type 0]; timestamp values 1, 10000,
+		    and 45 [but 45 has the "nonstandard
+		    timestamp" bit set]; the option has
+		    room for 2 more timestamps; the
+		    overflow counter is set to 3)
+		    
+		    'ts.ip{1.0.0.1=1,1.0.0.2=2}+5'
+		    (timestamps with IP addresses [type 1])
+
+		    'ts.preip{1.0.0.1=1^1.0.0.2,1.0.0.3}'
+		    (prespecified IP addresses [type 3];
+		    the caret is the pointer)
+		    
     Other options   '98' (option 98, no data),
                     '99=0:5:10' (option with data, data
 		    octets separated by colons)
 
-Multiple options are separated by commas. Any invalid option causes the entire
-field to be replaced by a single question mark 'C<?>'. A period 'C<.>' is used
-for packets with no options (except possibly EOL and NOP).
+Multiple options are separated by semicolons. (No single option will ever
+contain a semicolon.) Any invalid option causes the entire field to be
+replaced by a single question mark 'C<?>'. A period 'C<.>' is used for packets
+with no options (except possibly EOL and NOP).
 
 =head1 TCP OPTIONS
 
@@ -197,9 +216,10 @@ Single TCP option fields have the following representations.
                     '99=0:5:10' (option with data, data
 		    octets separated by colons)
 
-Multiple options are separated by commas. Any invalid option causes the entire
-field to be replaced by a single question mark 'C<?>'. A period 'C<.>' is used
-for packets with no options (except possibly EOL and NOP).
+Multiple options are separated by semicolons. (No single option will ever
+contain a semicolon.) Any invalid option causes the entire field to be
+replaced by a single question mark 'C<?>'. A period 'C<.>' is used for packets
+with no options (except possibly EOL and NOP).
 
 =head1 BINARY FORMAT
 
