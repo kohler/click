@@ -106,7 +106,7 @@ elemlist elemlists:
 
 MKELEMMAPFLAGS =
 elementmap.xml: click-buildtool $(srcdir)/click-mkelemmap always
-	echo "@element_groups@ $(TARGETS)" | $(top_builddir)/click-buildtool findelem -r "$(PROVISIONS) $(TARGETS)" -p $(top_srcdir) | $(PERL) $(top_srcdir)/click-mkelemmap -r "$(PROVISIONS)" -p $(top_srcdir) -Iinclude -s `cd $(top_srcdir) && pwd` $(MKELEMMAPFLAGS) > elementmap.xml
+	echo $(TARGETS) @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "$(PROVISIONS) $(TARGETS)" -p $(top_srcdir) | $(PERL) $(top_srcdir)/click-mkelemmap -r "$(PROVISIONS)" -p $(top_srcdir) -Iinclude -s `cd $(top_srcdir) && pwd` $(MKELEMMAPFLAGS) > elementmap.xml
 always:
 	@:
 
