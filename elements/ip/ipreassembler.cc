@@ -52,6 +52,12 @@ IPReassembler::~IPReassembler()
     MOD_DEC_USE_COUNT;
 }
 
+void
+IPReassembler::notify_noutputs(int n)
+{
+    set_noutputs(n < 2 ? 1 : 2);
+}
+
 int
 IPReassembler::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -370,7 +376,8 @@ IPReassembler::reap_overfull(int now)
 		if (q->timestamp_anno().tv_sec < now - delta) {
 		    *pprev = (WritablePacket *)q->next();
 		    _mem_used -= IPH_MEM_USED + q->transport_length();
-		    q->kill();
+		    q->set_next(0);
+		    checked_output_push(1, q);
 		    if (_mem_used <= _mem_low_thresh)
 			return;
 		} else
@@ -392,7 +399,8 @@ IPReassembler::reap(int now)
 	for (WritablePacket *q = *q_pprev; q; ) {
 	    if (q->timestamp_anno().tv_sec < kill_time) {
 		*q_pprev = (WritablePacket *)q->next();
-		q->kill();
+		q->set_next(0);
+		checked_output_push(1, q);
 	    } else
 		q_pprev = (WritablePacket **)&q->next();
 	    q = *q_pprev;

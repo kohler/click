@@ -18,12 +18,13 @@ Reassembles fragmented IP packets
 
 =d
 
-Expects IP packets as input to port 0. If input packets are 
-fragments, IPReassembler holds them until it has enough fragments
-to recreate a complete packet. If a set of fragments making a single
-packet is incomplete and dormant for 30 seconds, the fragments are
-dropped. When a complete packet is constructed, it is pushed onto
-output 0.
+Expects IP packets as input to port 0. If input packets are fragments,
+IPReassembler holds them until it has enough fragments to recreate a complete
+packet. When a complete packet is constructed, it is emitted onto output 0. If
+a set of fragments making a single packet is incomplete and dormant for 30
+seconds, the fragments are generally dropped. If IPReassembler has two
+outputs, however, a single packet containing all the received fragments at
+their proper offsets is pushed onto output 1.
 
 IPReassembler's memory usage is bounded. When memory consumption rises above
 HIMEM bytes, IPReassembler throws away old fragments until memory consumption
@@ -39,6 +40,11 @@ The upper bound for memory consumption, in bytes. Default is 256K.
 
 =back
 
+=n
+
+You may want to attach an C<ICMPError(ADDR, timeexceeded, reassembly)> to the
+second output.
+
 =a IPFragmenter */
 
 class IPReassembler : public Element { public:
@@ -47,9 +53,10 @@ class IPReassembler : public Element { public:
     ~IPReassembler();
 
     const char *class_name() const	{ return "IPReassembler"; }
-    const char *processing() const	{ return AGNOSTIC; }
+    const char *processing() const	{ return "a/ah"; }
     IPReassembler *clone() const	{ return new IPReassembler; }
 
+    void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
