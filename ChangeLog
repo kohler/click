@@ -1,3 +1,17 @@
+2004-12-23 Thursday 00:05  John Bicket <jbicket@mit.edu>
+
+	* conf/: access-point.click (1.3), pseudo-ibss.click (1.1),
+	station.click (1.2): more sample wifi configs
+
+2004-12-23 Thursday 00:01  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: filterphyerr.cc (1.1), filterphyerr.hh (1.1),
+	phyerrfilter.cc (1.7), phyerrfilter.hh (1.4), settxpower.cc (1.7),
+	settxrate.cc (1.19), settxrate.hh (1.14), station/beacontracker.cc
+	(1.1), station/beacontracker.hh (1.1): phyerrfilter -> filterphyerr
+	add beacontracker (to tell when stations become disconnected) no
+	more auto for settxrate.
+
 2004-12-21 Tuesday 13:28  John Bicket <jbicket@mit.edu>
 
 	* NEWS (1.155): news for wifi elements
