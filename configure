@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir HAVE_WIFI wifidir freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS element_groups elements_vpath HAVE_CLICKFS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS POSSIBLE_TARGETS TARGETS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath HAVE_WIFI wifidir freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS HAVE_CLICKFS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS POSSIBLE_TARGETS TARGETS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -861,26 +861,26 @@ Optional Features:
   --disable-linuxmodule   disable Linux kernel driver
   --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)
   --enable-nsclick        enable NS simulator driver (EXPERIMENTAL)
+  --enable-all-elements   include all provided element groups
+  --enable-analysis       include elements for network analysis
+  --disable-app           do not include application-level elements
+  --disable-aqm           do not include active queue management elements
+  --disable-ethernet      do not include Ethernet elements
+  --enable-etherswitch    include Ethernet switch elements (EXPERIMENTAL)
+  --enable-grid           include Grid elements (see FAQ)
+  --disable-icmp          do not include ICMP elements
+  --disable-ip            do not include IP elements
+  --enable-ip6            include IPv6 elements (EXPERIMENTAL)
+  --enable-ipsec          include IP security elements
+  --enable-local          include local elements
+  --enable-radio          include radio elements (EXPERIMENTAL)
+  --disable-standard      do not include standard elements
+  --disable-tcpudp        do not include TCP and UDP elements
+  --enable-test           include regression test elements
+  --enable-wifi           include wifi linuxmodule support (EXPERIMENTAL)
   --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
   --enable-multithread[=NUM] support kernel multithreading, NUM threads max
   --disable-int64         disable 64-bit integer support
-  --disable-standard      do not include standard elements
-  --disable-ethernet      do not include Ethernet elements
-  --disable-aqm           do not include active queue management elements
-  --disable-ip            do not include IP elements
-  --disable-icmp          do not include ICMP elements
-  --disable-tcpudp        do not include TCP and UDP elements
-  --enable-snmp           include SNMP elements
-  --disable-app           do not include application-level elements
-  --enable-analysis       include elements for network analysis
-  --enable-ipsec          include IP security elements
-  --enable-ip6            include IPv6 elements (EXPERIMENTAL)
-  --enable-etherswitch    include Ethernet switch elements (EXPERIMENTAL)
-  --enable-radio          include radio elements (EXPERIMENTAL)
-  --enable-local          include local elements
-  --enable-grid           include Grid elements (see FAQ)
-  --enable-test           include regression test elements
-  --enable-wifi           include wifi kernel support (requires linuxmodule) (EXPERIMENTAL)
   --enable-warp9          reduce PollDevice functionality for speed
   --disable-clickfs       disable Click filesystem (use /proc instead)
   --enable-intel-cpu      enable Intel-specific machine instructions
@@ -897,7 +897,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]
   --with-linux-map[=FILE] filename for Linux System.map [LINUXDIR/System.map]
-  --with-wifi[=DIR]      Wifi driver (madwifi.stripped) source code is in DIR
+  --with-wifi[=DIR]       Wifi driver (madwifi.stripped) source code is in DIR
   --with-freebsd[=SRC,INC] FreeBSD source code is in SRC [/usr/src/sys],
                           include directory is INC [/usr/include]
   --with-expat[=PREFIX]   Prefix where expat library is installed (optional)
@@ -4141,6 +4141,203 @@ _ACEOF
 
 
 
+# Check whether --enable-all-elements or --disable-all-elements was given.
+if test "${enable_all_elements+set}" = set; then
+  enableval="$enable_all_elements"
+
+fi;
+
+element_groups=""
+
+
+
+# Check whether --enable-analysis or --disable-analysis was given.
+if test "${enable_analysis+set}" = set; then
+  enableval="$enable_analysis"
+
+else
+  enable_analysis=NO
+fi; test "x$enable_all_elements" = xyes -a "x$enable_analysis" = xNO && enable_analysis=yes
+if test "x$enable_analysis" = xyes; then
+  element_groups="$element_groups analysis"
+
+fi
+# Check whether --enable-app or --disable-app was given.
+if test "${enable_app+set}" = set; then
+  enableval="$enable_app"
+
+else
+  enable_app=yes
+fi; test "x$enable_all_elements" = xyes -a "x$enable_app" = xNO && enable_app=yes
+if test "x$enable_app" = xyes; then
+  element_groups="$element_groups app"
+
+fi
+# Check whether --enable-aqm or --disable-aqm was given.
+if test "${enable_aqm+set}" = set; then
+  enableval="$enable_aqm"
+
+else
+  enable_aqm=yes
+fi; test "x$enable_all_elements" = xyes -a "x$enable_aqm" = xNO && enable_aqm=yes
+if test "x$enable_aqm" = xyes; then
+  element_groups="$element_groups aqm"
+
+fi
+# Check whether --enable-ethernet or --disable-ethernet was given.
+if test "${enable_ethernet+set}" = set; then
+  enableval="$enable_ethernet"
+
+else
+  enable_ethernet=yes
+fi; test "x$enable_all_elements" = xyes -a "x$enable_ethernet" = xNO && enable_ethernet=yes
+if test "x$enable_ethernet" = xyes; then
+  element_groups="$element_groups ethernet"
+
+fi
+# Check whether --enable-etherswitch or --disable-etherswitch was given.
+if test "${enable_etherswitch+set}" = set; then
+  enableval="$enable_etherswitch"
+
+else
+  enable_etherswitch=NO
+fi; test "x$enable_all_elements" = xyes -a "x$enable_etherswitch" = xNO && enable_etherswitch=yes
+if test "x$enable_etherswitch" = xyes; then
+  element_groups="$element_groups etherswitch"
+
+fi
+# Check whether --enable-grid or --disable-grid was given.
+if test "${enable_grid+set}" = set; then
+  enableval="$enable_grid"
+
+else
+  enable_grid=NO
+fi; test "x$enable_all_elements" = xyes -a "x$enable_grid" = xNO && enable_grid=yes
+if test "x$enable_grid" = xyes; then
+  element_groups="$element_groups grid"
+
+fi
+# Check whether --enable-icmp or --disable-icmp was given.
+if test "${enable_icmp+set}" = set; then
+  enableval="$enable_icmp"
+
+else
+  enable_icmp=yes
+fi; test "x$enable_all_elements" = xyes -a "x$enable_icmp" = xNO && enable_icmp=yes
+if test "x$enable_icmp" = xyes; then
+  element_groups="$element_groups icmp"
+
+fi
+# Check whether --enable-ip or --disable-ip was given.
+if test "${enable_ip+set}" = set; then
+  enableval="$enable_ip"
+
+else
+  enable_ip=yes
+fi; test "x$enable_all_elements" = xyes -a "x$enable_ip" = xNO && enable_ip=yes
+if test "x$enable_ip" = xyes; then
+  element_groups="$element_groups ip"
+
+fi
+# Check whether --enable-ip6 or --disable-ip6 was given.
+if test "${enable_ip6+set}" = set; then
+  enableval="$enable_ip6"
+
+else
+  enable_ip6=NO
+fi; test "x$enable_all_elements" = xyes -a "x$enable_ip6" = xNO && enable_ip6=yes
+if test "x$enable_ip6" = xyes; then
+  element_groups="$element_groups ip6"
+  cat >>confdefs.h <<\_ACEOF
+#define HAVE_IP6 1
+_ACEOF
+
+fi
+# Check whether --enable-ipsec or --disable-ipsec was given.
+if test "${enable_ipsec+set}" = set; then
+  enableval="$enable_ipsec"
+
+else
+  enable_ipsec=NO
+fi; test "x$enable_all_elements" = xyes -a "x$enable_ipsec" = xNO && enable_ipsec=yes
+if test "x$enable_ipsec" = xyes; then
+  element_groups="$element_groups ipsec"
+  cat >>confdefs.h <<\_ACEOF
+#define HAVE_IPSEC 1
+_ACEOF
+
+fi
+# Check whether --enable-local or --disable-local was given.
+if test "${enable_local+set}" = set; then
+  enableval="$enable_local"
+
+else
+  enable_local=NO
+fi; test "x$enable_all_elements" = xyes -a "x$enable_local" = xNO && enable_local=yes
+if test "x$enable_local" = xyes; then
+  element_groups="$element_groups local"
+
+fi
+# Check whether --enable-radio or --disable-radio was given.
+if test "${enable_radio+set}" = set; then
+  enableval="$enable_radio"
+
+else
+  enable_radio=NO
+fi; test "x$enable_all_elements" = xyes -a "x$enable_radio" = xNO && enable_radio=yes
+if test "x$enable_radio" = xyes; then
+  element_groups="$element_groups radio"
+
+fi
+# Check whether --enable-standard or --disable-standard was given.
+if test "${enable_standard+set}" = set; then
+  enableval="$enable_standard"
+
+else
+  enable_standard=yes
+fi; test "x$enable_all_elements" = xyes -a "x$enable_standard" = xNO && enable_standard=yes
+if test "x$enable_standard" = xyes; then
+  element_groups="$element_groups standard"
+
+fi
+# Check whether --enable-tcpudp or --disable-tcpudp was given.
+if test "${enable_tcpudp+set}" = set; then
+  enableval="$enable_tcpudp"
+
+else
+  enable_tcpudp=yes
+fi; test "x$enable_all_elements" = xyes -a "x$enable_tcpudp" = xNO && enable_tcpudp=yes
+if test "x$enable_tcpudp" = xyes; then
+  element_groups="$element_groups tcpudp"
+
+fi
+# Check whether --enable-test or --disable-test was given.
+if test "${enable_test+set}" = set; then
+  enableval="$enable_test"
+
+else
+  enable_test=NO
+fi; test "x$enable_all_elements" = xyes -a "x$enable_test" = xNO && enable_test=yes
+if test "x$enable_test" = xyes; then
+  element_groups="$element_groups test"
+
+fi
+# Check whether --enable-wifi or --disable-wifi was given.
+if test "${enable_wifi+set}" = set; then
+  enableval="$enable_wifi"
+
+else
+  enable_wifi=NO
+fi; test "x$enable_all_elements" = xyes -a "x$enable_wifi" = xNO && enable_wifi=yes
+if test "x$enable_wifi" = xyes; then
+  element_groups="$element_groups wifi"
+
+fi
+
+elements_vpath=`(cd $srcdir/elements; for i in $element_groups; do find $i -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' :`
+
+
+
 
 
 
@@ -4193,9 +4390,6 @@ fi
 cat >>confdefs.h <<_ACEOF
 #define WIFI_SRCDIR "${wifidir}"
 _ACEOF
-
-
-
 
 
 
@@ -6498,7 +6692,7 @@ if test "${ac_cv_endian+set}" = set; then
 else
   	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 6501 "configure"
+#line 6695 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -9171,192 +9365,6 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 
-element_groups=""
-
-
-
-# Check whether --enable-standard or --disable-standard was given.
-if test "${enable_standard+set}" = set; then
-  enableval="$enable_standard"
-
-else
-  enable_standard=yes
-fi; if test "x$enable_standard" = xyes; then
-  element_groups="$element_groups standard"
-
-fi
-# Check whether --enable-ethernet or --disable-ethernet was given.
-if test "${enable_ethernet+set}" = set; then
-  enableval="$enable_ethernet"
-
-else
-  enable_ethernet=yes
-fi; if test "x$enable_ethernet" = xyes; then
-  element_groups="$element_groups ethernet"
-
-fi
-# Check whether --enable-aqm or --disable-aqm was given.
-if test "${enable_aqm+set}" = set; then
-  enableval="$enable_aqm"
-
-else
-  enable_aqm=yes
-fi; if test "x$enable_aqm" = xyes; then
-  element_groups="$element_groups aqm"
-
-fi
-# Check whether --enable-ip or --disable-ip was given.
-if test "${enable_ip+set}" = set; then
-  enableval="$enable_ip"
-
-else
-  enable_ip=yes
-fi; if test "x$enable_ip" = xyes; then
-  element_groups="$element_groups ip"
-
-fi
-# Check whether --enable-icmp or --disable-icmp was given.
-if test "${enable_icmp+set}" = set; then
-  enableval="$enable_icmp"
-
-else
-  enable_icmp=yes
-fi; if test "x$enable_icmp" = xyes; then
-  element_groups="$element_groups icmp"
-
-fi
-# Check whether --enable-tcpudp or --disable-tcpudp was given.
-if test "${enable_tcpudp+set}" = set; then
-  enableval="$enable_tcpudp"
-
-else
-  enable_tcpudp=yes
-fi; if test "x$enable_tcpudp" = xyes; then
-  element_groups="$element_groups tcpudp"
-
-fi
-# Check whether --enable-snmp or --disable-snmp was given.
-if test "${enable_snmp+set}" = set; then
-  enableval="$enable_snmp"
-
-else
-  enable_snmp=no
-fi; if test "x$enable_snmp" = xyes; then
-  element_groups="$element_groups snmp"
-
-fi
-# Check whether --enable-app or --disable-app was given.
-if test "${enable_app+set}" = set; then
-  enableval="$enable_app"
-
-else
-  enable_app=yes
-fi; if test "x$enable_app" = xyes; then
-  element_groups="$element_groups app"
-
-fi
-# Check whether --enable-analysis or --disable-analysis was given.
-if test "${enable_analysis+set}" = set; then
-  enableval="$enable_analysis"
-
-else
-  enable_analysis=no
-fi; if test "x$enable_analysis" = xyes; then
-  element_groups="$element_groups analysis"
-
-fi
-# Check whether --enable-ipsec or --disable-ipsec was given.
-if test "${enable_ipsec+set}" = set; then
-  enableval="$enable_ipsec"
-
-else
-  enable_ipsec=no
-fi; if test "x$enable_ipsec" = xyes; then
-  element_groups="$element_groups ipsec"
-  cat >>confdefs.h <<\_ACEOF
-#define HAVE_IPSEC 1
-_ACEOF
-
-fi
-# Check whether --enable-ip6 or --disable-ip6 was given.
-if test "${enable_ip6+set}" = set; then
-  enableval="$enable_ip6"
-
-else
-  enable_ip6=no
-fi; if test "x$enable_ip6" = xyes; then
-  element_groups="$element_groups ip6"
-  cat >>confdefs.h <<\_ACEOF
-#define HAVE_IP6 1
-_ACEOF
-
-fi
-# Check whether --enable-etherswitch or --disable-etherswitch was given.
-if test "${enable_etherswitch+set}" = set; then
-  enableval="$enable_etherswitch"
-
-else
-  enable_etherswitch=no
-fi; if test "x$enable_etherswitch" = xyes; then
-  element_groups="$element_groups etherswitch"
-
-fi
-# Check whether --enable-radio or --disable-radio was given.
-if test "${enable_radio+set}" = set; then
-  enableval="$enable_radio"
-
-else
-  enable_radio=no
-fi; if test "x$enable_radio" = xyes; then
-  element_groups="$element_groups radio"
-
-fi
-# Check whether --enable-local or --disable-local was given.
-if test "${enable_local+set}" = set; then
-  enableval="$enable_local"
-
-else
-  enable_local=no
-fi; if test "x$enable_local" = xyes; then
-  element_groups="$element_groups local"
-
-fi
-# Check whether --enable-grid or --disable-grid was given.
-if test "${enable_grid+set}" = set; then
-  enableval="$enable_grid"
-
-else
-  enable_grid=no
-fi; if test "x$enable_grid" = xyes; then
-  element_groups="$element_groups grid"
-
-fi
-# Check whether --enable-test or --disable-test was given.
-if test "${enable_test+set}" = set; then
-  enableval="$enable_test"
-
-else
-  enable_test=no
-fi; if test "x$enable_test" = xyes; then
-  element_groups="$element_groups test"
-
-fi
-# Check whether --enable-wifi or --disable-wifi was given.
-if test "${enable_wifi+set}" = set; then
-  enableval="$enable_wifi"
-
-else
-  enable_wifi=no
-fi; if test "x$enable_wifi" = xyes; then
-  element_groups="$element_groups wifi"
-
-fi
-
-elements_vpath=`(cd $srcdir/elements; for i in $element_groups; do find $i -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' :`
-
-
-
-
 # Check whether --enable-warp9 or --disable-warp9 was given.
 if test "${enable_warp9+set}" = set; then
   enableval="$enable_warp9"
@@ -11985,6 +11993,8 @@ s,@STRIP@,$STRIP,;t t
 s,@ac_ct_STRIP@,$ac_ct_STRIP,;t t
 s,@AR_CREATEFLAGS@,$AR_CREATEFLAGS,;t t
 s,@linuxdir@,$linuxdir,;t t
+s,@element_groups@,$element_groups,;t t
+s,@elements_vpath@,$elements_vpath,;t t
 s,@HAVE_WIFI@,$HAVE_WIFI,;t t
 s,@wifidir@,$wifidir,;t t
 s,@freebsd_srcdir@,$freebsd_srcdir,;t t
@@ -12000,8 +12010,6 @@ s,@DL_LIBS@,$DL_LIBS,;t t
 s,@LDMODULEFLAGS@,$LDMODULEFLAGS,;t t
 s,@BUILD_DL_LIBS@,$BUILD_DL_LIBS,;t t
 s,@SOCKET_LIBS@,$SOCKET_LIBS,;t t
-s,@element_groups@,$element_groups,;t t
-s,@elements_vpath@,$elements_vpath,;t t
 s,@HAVE_CLICKFS@,$HAVE_CLICKFS,;t t
 s,@EXTRA_DRIVER_OBJS@,$EXTRA_DRIVER_OBJS,;t t
 s,@EXTRA_TOOL_OBJS@,$EXTRA_TOOL_OBJS,;t t
