@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 #ifndef DRIVERMANAGER_HH
 #define DRIVERMANAGER_HH
 #include <click/element.hh>
@@ -89,36 +90,39 @@ the router configuration is destroyed.
 */
 
 class DriverManager : public Element { public:
-  
-  DriverManager();
-  ~DriverManager();
-  
-  const char *class_name() const	{ return "DriverManager"; }
-  DriverManager *clone() const		{ return new DriverManager; }
-  
-  int configure(const Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
 
-  void run_scheduled();
-  void handle_stopped_driver();
-  
- private:
+    DriverManager();
+    ~DriverManager();
 
-  enum Insn { INSN_WAIT_STOP, INSN_WAIT, INSN_STOP, INSN_WRITE, INSN_READ };
-  
-  Vector<int> _insns;
-  Vector<int> _args;
-  Vector<int> _args2;
-  Vector<String> _args3;
+    const char *class_name() const	{ return "DriverManager"; }
+    DriverManager *clone() const	{ return new DriverManager; }
 
-  int _insn_pos;
-  int _insn_arg;
+    int configure(const Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
 
-  Timer _timer;
+    void run_scheduled();
+    void handle_stopped_driver();
 
-  void add_insn(int, int, const String & = String());
-  bool step_insn();
-  
+    int stopped_count() const		{ return _stopped_count; }
+
+  private:
+
+    enum Insn { INSN_WAIT_STOP, INSN_WAIT, INSN_STOP, INSN_WRITE, INSN_READ };
+
+    Vector<int> _insns;
+    Vector<int> _args;
+    Vector<int> _args2;
+    Vector<String> _args3;
+
+    int _insn_pos;
+    int _insn_arg;
+    int _stopped_count;
+
+    Timer _timer;
+
+    void add_insn(int, int, const String & = String());
+    bool step_insn();
+
 };
 
 #endif
