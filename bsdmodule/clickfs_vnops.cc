@@ -17,6 +17,7 @@
 
 #include <click/config.h>
 #include "modulepriv.hh"
+#include "clickfs_tree.hh"
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -31,33 +32,22 @@ CLICK_CXX_UNPROTECT
 #include <click/string.hh>
 #include <click/straccum.hh>
 
-#define UIO_MX		32
+#define UIO_MX			32
+#define	CLICKFS_DEBUG		1
+#define	CLICKFS_DEBUG_DEF	0
 
 vop_t **clickfs_vnops;
-enum clickfs_nodetype {
-    CLICKFS_ROOT = 0,
-    CLICKFS_CONFIG,
-    CLICKFS_ELEMENT,
-    CLICKFS_ELEMENT_SYMLINK
-};
-
-static char *clickfs_root_fixedfiles[] = {
-    ".",
-    "..",
-    "config",
-    NULL
-};
 
 static enum vtype clickfs_vtype[] = {
-    VDIR,	/* CLICKFS_ROOT */
-    VREG,	/* CLICKFS_CONFIG */
-    VDIR,	/* CLICKFS_ELEMENT */
-    VLNK	/* CLICKFS_ELEMENT_SYMLINK */
+    VDIR,		/* CLICKFS_DIRENT_DIR */
+    VREG,		/* CLICKFS_DIRENT_EHANDLE */
+    VLNK,		/* CLICKFS_DIRENT_ELINK */
+    VREG		/* CLICKFS_DIRENT_CONFIG */
 };
 
 struct clickfs_node {
-    enum clickfs_nodetype type;		/* Type of this node */
-    int idx;				/* Router element index */
+    struct clickfs_dirent *dirent;	/* Directory tree node */
+    String *rwbuf;
 };
 
 String *current_config = 0;
@@ -76,9 +66,10 @@ clickfs_rootvnode(struct mount *mp, struct vnode **vpp)
     vp = *vpp;
 
     cp = (struct clickfs_node *) malloc(sizeof(*cp), M_TEMP, M_WAITOK);
-    cp->type = CLICKFS_ROOT;
+    cp->dirent = clickfs_tree_root;
+    cp->rwbuf = NULL;
     vp->v_data = cp;
-    vp->v_type = VDIR;
+    vp->v_type = clickfs_vtype[cp->dirent->type];
     vp->v_flag = VROOT;
     return 0;
 }
@@ -90,12 +81,12 @@ clickfs_lookup(struct vop_lookup_args *ap)
     struct vnode **vpp = ap->a_vpp;
     struct vnode *dvp = ap->a_dvp;
     char *pname = cnp->cn_nameptr;
+    int plen = cnp->cn_namelen;
     struct proc *p = cnp->cn_proc;
     struct clickfs_node *cp = (struct clickfs_node *) dvp->v_data;
+    struct clickfs_dir *cdp;
+    struct clickfs_dirent *cde;
     int error = 0;
-
-    enum clickfs_nodetype newtype;
-    int newidx;
 
     *vpp = NULLVP;
 
@@ -105,69 +96,38 @@ clickfs_lookup(struct vop_lookup_args *ap)
 	return EROFS;
     VOP_UNLOCK(dvp, 0, p);
 
-#ifdef CLICKFS_DEBUG
+#if CLICKFS_DEBUG
     {
 	char *p;
+	int i;
 
 	printf("lookup(");
-	for (p=pname; *p; p++)
+	for (p=pname, i=0; *p && i<plen; p++, i++)
 	    printf("%c", *p);
-	printf(") on a %d type node\n", cp->type);
+	printf(") on a %d type node\n", cp->dirent->type);
     }
 #endif
 
-    if (cnp->cn_namelen == 1 && *pname == '.') {
+    if (plen == 1 && *pname == '.') {
 	*vpp = dvp;
 	VREF(dvp);
 	goto done;
     }
 
-    if (cp->type == CLICKFS_ROOT) {
-	if (cnp->cn_namelen == 6 && !strncmp(pname, "config", 6)) {
-	    newtype = CLICKFS_CONFIG;
-	    goto found;
-	}
+    cdp = (struct clickfs_dir *)cp->dirent->param;
+    cde = cdp->ent_head;
+    while (cde) {
+	if (plen == strlen(cde->name) &&
+	    !strncmp(pname, cde->name, plen)) break;
 
-	/*
-	 * See if this is a number -- if so, it's probably a router
-	 * element.
-	 */
-	int all_numeric = 1;
-	int nelements = current_router->nelements();
-
-	for (int i=0; i<cnp->cn_namelen; i++)
-	    if (!isdigit(pname[i])) all_numeric = 0;
-	if (all_numeric) {
-	    int idx = (int)strtol(pname, 0, 10);
-
-	    if (idx > 0 && idx <= nelements) {
-		newtype = CLICKFS_ELEMENT;
-		newidx = idx;
-		goto found;
-	    }
-	}
-
-	/*
-	 * Check if it's a name of an element -- which is actually
-	 * a symlink to the numeric name.
-	 */
-	for (int i=0; i<nelements; i++) {
-	    const String &id = current_router->element(i)->id();
-	    const char *data = id.data();
-
-	    if (cnp->cn_namelen == id.length() &&
-			!strncmp(data, pname, cnp->cn_namelen)) {
-		newtype = CLICKFS_ELEMENT_SYMLINK;
-		newidx = i+1;
-		goto found;
-	    }
-	}
+	cde = cde->next;
     }
 
-    error = (cnp->cn_nameiop == LOOKUP) ? ENOENT : EROFS;
-    goto done;
+    if (!cde) {
+	error = (cnp->cn_nameiop == LOOKUP) ? ENOENT : EROFS;
+	goto done;
+    }
 
-found:
     error = getnewvnode(VT_NON, dvp->v_mount, clickfs_vnops, vpp);
     if (error)
 	goto done;
@@ -175,10 +135,9 @@ found:
 	   M_TEMP, M_WAITOK);
     cp = (struct clickfs_node *) (*vpp)->v_data;
 
-    cp->type = newtype;
-    cp->idx = newidx;
-
-    (*vpp)->v_type = clickfs_vtype[cp->type];
+    cp->dirent = cde;
+    cp->rwbuf = NULL;
+    (*vpp)->v_type = clickfs_vtype[cp->dirent->type];
     vn_lock(*vpp, LK_SHARED | LK_RETRY, p);
     return 0;
 
@@ -196,7 +155,7 @@ clickfs_getattr(struct vop_getattr_args *ap)
 
     bzero(vap, sizeof(*vap));
     vap->va_type = vp->v_type;
-    vap->va_mode = (vp->v_type == VREG) ? 0644 : 0755;
+    vap->va_mode = cp->dirent->perm;
     vap->va_nlink = 1;
     vap->va_fsid = VNOVAL;
     vap->va_fileid = VNOVAL;
@@ -212,7 +171,7 @@ clickfs_setattr(struct vop_setattr_args *ap)
     struct clickfs_node *cp = (struct clickfs_node *)vp->v_data;
     struct vattr *vap = ap->a_vap;
 
-    if (cp->type == CLICKFS_CONFIG)
+    if (cp->dirent->type == CLICKFS_DIRENT_CONFIG)
 	return 0;
     return EOPNOTSUPP;
 }
@@ -221,9 +180,13 @@ int
 clickfs_reclaim(struct vop_reclaim_args *ap)
 {
     struct vnode *vp = ap->a_vp;
+    struct clickfs_node *cp = (struct clickfs_node *)vp->v_data;
 
-    if (vp->v_data)
-	free(vp->v_data, M_TEMP);
+    if (cp) {
+	if(cp->rwbuf)
+	    delete cp->rwbuf;
+	free(cp, M_TEMP);
+    }
 
     return 0;
 }
@@ -280,7 +243,12 @@ clickfs_readdir(struct vop_readdir_args *ap)
     struct uio *uio = ap->a_uio;
     struct vnode *vp = ap->a_vp;
     struct clickfs_node *cp = (struct clickfs_node *)vp->v_data;
-    char **entry_ptr;
+    struct clickfs_dir *dp;
+    struct clickfs_dirent *de;
+
+#if CLICKFS_DEBUG
+    printf("clickfs_readdir(type=%d)\n", cp->dirent->type);
+#endif
 
     if (vp->v_type != VDIR)
 	return ENOTDIR;
@@ -290,41 +258,31 @@ clickfs_readdir(struct vop_readdir_args *ap)
 	return EINVAL;
 
     skip = (u_int) off / UIO_MX;
-    error = 0;
-
-    entry_ptr = clickfs_root_fixedfiles;
     filecnt = 0;
 
-    while (*entry_ptr && uio->uio_resid >= UIO_MX) {
-	error = clickfs_int_send_dirent(*(entry_ptr++), &skip, &filecnt, uio);
-	if (error) break;
+    if (!error) error = clickfs_int_send_dirent(".", &skip, &filecnt, uio);
+    if (!error) error = clickfs_int_send_dirent("..", &skip, &filecnt, uio);
+
+    dp = (struct clickfs_dir *)cp->dirent->param;
+    de = dp->ent_head;
+    while (de && !error) {
+	error = clickfs_int_send_dirent(de->name, &skip, &filecnt, uio);
+	de = de->next;
     }
-
-    if (current_router) {
-	int nelements = current_router->nelements();
-	int curelem;
-
-	for (curelem=0; curelem<nelements && uio->uio_resid >= UIO_MX;
-			curelem++) {
-	    char buf[64];
-
-	    sprintf(buf, "%d", curelem+1);
-	    error = clickfs_int_send_dirent(buf, &skip, &filecnt, uio);
-	    if (error) break;
-
-	    const String &id = current_router->element(curelem)->id();
-	    char *data = (char *) id.data();
-	    strncpy(buf, data, sizeof(buf));
-	    buf[sizeof(buf)-1] = '\0';
-	    buf[id.length()] = '\0';
-	    error = clickfs_int_send_dirent(buf, &skip, &filecnt, uio);
-	    if (error) break;
-	}
-    }
-
+ 
     uio->uio_offset = filecnt * UIO_MX;
 
     return error;
+}
+
+static const Router::Handler *
+find_handler(int eindex, int handlerno)
+{
+    if (current_router && current_router->handler_ok(handlerno))
+	return &current_router->handler(handlerno);
+    if (Router::global_handler_ok(handlerno))
+	return &Router::global_handler(handlerno);
+    return 0;
 }
 
 int
@@ -334,7 +292,7 @@ clickfs_open(struct vop_open_args *ap)
     struct clickfs_node *cp = (struct clickfs_node *) vp->v_data;
     int mode = ap->a_mode;
 
-    if (cp->type == CLICKFS_CONFIG) {
+    if (cp->dirent->type == CLICKFS_DIRENT_CONFIG) {
 	if (mode & FWRITE) {
 	    if (!build_config)
 		build_config = new StringAccum;
@@ -343,6 +301,27 @@ clickfs_open(struct vop_open_args *ap)
 	    build_config->clear();
 	    if (!build_config->reserve(1024))
 		return ENOMEM;
+	}
+	return 0;
+    }
+
+    if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE) {
+	int *handler_params = (int *) cp->dirent->param;
+	int eindex = handler_params[1];
+	Element *e = eindex >= 0 ? current_router->element(eindex) : 0;
+	const Router::Handler *h = find_handler(eindex, handler_params[0]);
+
+	if (!h) return ENOENT;
+
+	if (mode & FWRITE) {
+	    if (!h->write_visible()) return EPERM;
+	    return EOPNOTSUPP;
+	}
+	if (mode & FREAD) {
+	    if (!h->read_visible()) return EPERM;
+	    String *s = new String();
+	    *s = h->call_read(e);
+	    cp->rwbuf = s;
 	}
 	return 0;
     }
@@ -358,27 +337,27 @@ clickfs_read(struct vop_read_args *ap)
     struct vnode *vp = ap->a_vp;
     struct uio *uio = ap->a_uio;
     struct clickfs_node *cp = (struct clickfs_node *) vp->v_data;
-    int off = uio->uio_offset;
-    int error;
+    int len, off = uio->uio_offset;
+    String *read_str = NULL;
 
-    if (vp->v_type == VDIR)
+    if (vp->v_type != VREG)
 	return EOPNOTSUPP;
 
-    error = EOPNOTSUPP;
-    if (cp->type == CLICKFS_CONFIG) {
-	error = 0;
-	int len;
+    if (cp->dirent->type == CLICKFS_DIRENT_CONFIG)
+	read_str = current_config;
+    else
+    if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE)
+	read_str = cp->rwbuf;
+    else
+	return EOPNOTSUPP;
 
-	if (!current_config)
-	    return 0;
+    if (!read_str)
+	return 0;
 
-	len = current_config->length();
-	if (off > len)
-	    return 0;
-	error = uiomove((char *)current_config->data() + off, len - off, uio);
-    }
-
-    return error;
+    len = read_str->length();
+    if (off > len)
+	return 0;
+    return uiomove((char *)read_str->data() + off, len - off, uio);
 }
 
 int
@@ -411,7 +390,7 @@ clickfs_close(struct vop_close_args *ap)
     struct clickfs_node *cp = (struct clickfs_node *) vp->v_data;
     int flags = ap->a_fflag;
 
-    if (cp->type == CLICKFS_CONFIG && (flags & FWRITE)) {
+    if (cp->dirent->type == CLICKFS_DIRENT_CONFIG && (flags & FWRITE)) {
 	*current_config = build_config->take_string();
 	kill_current_router();
 
@@ -436,13 +415,9 @@ clickfs_readlink(struct vop_readlink_args *ap)
     struct clickfs_node *cp = (struct clickfs_node *) vp->v_data;
     struct uio *uio = ap->a_uio;
 
-    if (cp->type == CLICKFS_ELEMENT_SYMLINK) {
-	int len;
-	char buf[64];
-
-	len = sprintf(buf, "%d", cp->idx);
-	return uiomove(buf, len, uio);
-    }
+    if (cp->dirent->type == CLICKFS_DIRENT_SYMLINK)
+	return uiomove(cp->dirent->lnk_name,
+		       strlen(cp->dirent->lnk_name)+1, uio);
 
     return EINVAL;
 }
@@ -451,7 +426,7 @@ int
 clickfs_default(struct vop_generic_args *ap)
 {
     int ret = vop_defaultop(ap);
-#ifdef CLICKFS_DEBUG
+#if CLICKFS_DEBUG_DEF
     printf("clickfs_default: %s() = %d\n", ap->a_desc->vdesc_name, ret);
 #endif
     return ret;

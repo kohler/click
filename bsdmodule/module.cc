@@ -62,7 +62,7 @@ kill_current_router()
   if (current_router) {
     current_router->please_stop_driver();
     // printf("  killed\n");
-    //cleanup_router_element_procs();
+    cleanup_router_element_procs();
     // printf("  cleaned\n");
     current_router->unuse();
     // printf("  deleted\n");
@@ -75,7 +75,7 @@ install_current_router(Router *r)
 {
   current_router = r;
   r->use();
-  //init_router_element_procs();
+  init_router_element_procs();
 #if __MTCLICK__
   if (r->initialized())
     start_click_sched(r, click_threads(), kernel_errh);

@@ -35,6 +35,9 @@ void init_click_sched();
 int start_click_sched(Router *, int, ErrorHandler *);
 int cleanup_click_sched();
 
+void init_router_element_procs();
+void cleanup_router_element_procs();
+
 extern struct vfsops clickfs_vfsops;
 extern struct vnodeopv_desc clickfs_vnodeop_opv_desc;
 extern String *current_config;

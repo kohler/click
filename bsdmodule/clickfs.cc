@@ -17,6 +17,7 @@
 
 #include <click/config.h>
 #include "modulepriv.hh"
+#include "clickfs_tree.hh"
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -146,6 +147,7 @@ clickfs_init(struct vfsconf *vfsp)
     String::static_initialize();
 
     current_config = new String;
+    clickfs_tree_init();
     return 0;
 }
 
