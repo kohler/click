@@ -3,7 +3,7 @@ click CONFIG < DUMP | grep -v '^!'
 
 %file CONFIG
 FromIPSummaryDump(-, STOP true)
-	-> Queue -> LinkUnqueue(0.005s, 100)
+	-> Queue -> LinkUnqueue(0.005s, 100kb/s)
 	-> SetTimestampDelta
 	-> ToIPSummaryDump(-, CONTENTS timestamp ip_src);
 DriverManager(wait, wait_time 0.38s, stop)
