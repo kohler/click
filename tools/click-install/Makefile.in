@@ -18,10 +18,12 @@ ifeq ($(HOST_TOOLS),build)
 CC = @BUILD_CC@
 CXX = @BUILD_CXX@
 LIBCLICKTOOL = libclicktool_build.a
+DL_LIBS = @BUILD_DL_LIBS@
 else
 CC = @CC@
 CXX = @CXX@
 LIBCLICKTOOL = libclicktool.a
+DL_LIBS = @DL_LIBS@
 endif
 INSTALL = @INSTALL@
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
@@ -50,7 +52,7 @@ DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(top_srcdir)/tools/lib -I$(srcdir)
 LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@ @DL_LIBS@
+LIBS = @LIBS@ $(DL_LIBS)
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
