@@ -283,7 +283,8 @@ ToDevice::queue_packet(Packet *p)
     _hard_start++;
   }
   if(ret != 0){
-    printk("<1>ToDevice %s tx oops\n", _dev->name);
+    if(_rejected == 0)
+      printk("<1>ToDevice %s tx oops\n", _dev->name);
     kfree_skb(skb1);
     _rejected++;
   }
