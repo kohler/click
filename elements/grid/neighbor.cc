@@ -130,7 +130,8 @@ Neighbor::push(int port, Packet *packet)
       break;
     case GRID_NBR_ENCAP:
       // XXX do we need to annotate the packet??  
-      packet->pull(sizeof(click_ether) + gh->len);
+      // check actual header length in case versions differ
+      packet->pull(sizeof(click_ether) + gh->len); 
       output(1).push(packet);
       break;
     default:

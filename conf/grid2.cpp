@@ -1,4 +1,3 @@
-// -*- c++ *-
 // grid2.cpp
 
 // version of grid2.click designed for running through cpp

@@ -3,7 +3,7 @@
 
 // like grid-single-if-gw.click, but designed to be run through cpp
 
-// use like: gcc -E -P grid2.cpp | click
+// use like: gcc -E -P grid-single-if-gw.cpp | click
 
 #include "grid-node-info.h"
 #include "grid-gw-info.h"
