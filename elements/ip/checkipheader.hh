@@ -12,22 +12,25 @@ checks IP header
 
 =d
 
-Input packets should have IP headers starting OFFSET bytes in. Default
-OFFSET is zero. Checks that the packet's length is reasonable, and that the
-IP version, header length, length, and checksum fields are valid. Checks
-that the IP source address is a legal unicast address -- that is, that it
-is not 0.0.0.0 or 255.255.255.255, or a local broadcast addresses in
-BADADDRS. Shortens packets to the IP length, if the IP length is shorter
-than the nominal packet length (due to Ethernet padding, for example).
-Pushes invalid packets out on output 1, unless output 1 was unused; if so,
-drops invalid packets.
+Input packets should have IP headers starting OFFSET bytes in. Default OFFSET
+is zero. Checks that the packet's length is reasonable, and that the IP
+version, header length, length, and checksum fields are valid. Checks that the
+IP source address is a legal unicast address -- that is, that it is not
+0.0.0.0 or 255.255.255.255, or a local broadcast addresses in BADADDRS.
+Shortens packets to the IP length, if the IP length is shorter than the
+nominal packet length (due to Ethernet padding, for example). Also sets the
+destination IP address annotation to the actual destination IP address, unless
+that annotation was already set.
+
+CheckIPHeader emits valid packets on output 0. Invalid packets are pushed out
+on output 1, unless output 1 was unused; if so, drops invalid packets.
 
 The BADADDRS argument is a space-separated list of IP addresses that are
 not to be tolerated as source addresses. Usually consists of the subnet
 broadcast addresses on each interface (RFC1812 5.3.7).
 
-Prints a message to the console the first time it encounters an incorrect IP
-packet (but see VERBOSE below).
+CheckIPHeader prints a message to the console the first time it encounters an
+incorrect IP packet (but see VERBOSE below).
 
 Keyword arguments are:
 

@@ -153,11 +153,11 @@ CheckIPHeader::simple_action(Packet *p)
   if (_aligned)
     val = ip_fast_csum((unsigned char *)ip, ip->ip_hl);
   else
-    val = click_in_cksum((unsigned char *)ip, hlen);
+    val = click_in_cksum((const unsigned char *)ip, hlen);
 #elif HAVE_FAST_CHECKSUM
   val = ip_fast_csum((unsigned char *)ip, ip->ip_hl);
 #else
-  val = click_in_cksum((unsigned char *)ip, hlen);
+  val = click_in_cksum((const unsigned char *)ip, hlen);
 #endif
   if (val != 0)
     return drop(BAD_CHECKSUM, p);
@@ -182,6 +182,11 @@ CheckIPHeader::simple_action(Packet *p)
   // shorten packet according to IP length field -- 7/28/2000
   if (plen > len)
     p->take(plen - len);
+
+  // set destination IP address annotation if it doesn't exist already --
+  // 9/26/2001
+  if (!p->dst_ip_anno())
+    p->set_dst_ip_anno(ip->ip_dst);
   
   return(p);
 }
