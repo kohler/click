@@ -282,11 +282,13 @@ AssociationRequester::process_disassociation(Packet *p)
 
   if (_winfo && _winfo->_bssid == bssid) {
     click_chatter("%{element} disassociation from %s reason %d\n",
+		  this,
 		  bssid.s().cc(),
 		  reason);
     _associated = false;
   } else {
     click_chatter("%{element} BAD disassociation from %s reason %d\n",
+		  this, 
 		  bssid.s().cc(),
 		  reason);
   }

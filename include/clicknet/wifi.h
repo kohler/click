@@ -44,10 +44,10 @@ struct click_wifi_extra {,
   u_int8_t rate2;              /* bitrate in Mbps*2 */
   u_int8_t rate3;              /* bitrate in Mbps*2 */
 
-  u_int8_t max_retries;
-  u_int8_t max_retries1;
-  u_int8_t max_retries2;
-  u_int8_t max_retries3;
+  u_int8_t max_tries;
+  u_int8_t max_tries1;
+  u_int8_t max_tries2;
+  u_int8_t max_tries3;
 
   u_int8_t virt_col;
   u_int8_t retries;

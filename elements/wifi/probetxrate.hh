@@ -86,13 +86,15 @@ class ProbeTXRate : public Element { public:
     int _rate;
     bool _success;
     int _time;
-    
+    int _tries;
+
     tx_result(const Timestamp &t, int rate, 
-	      bool success, int time) : 
+	      bool success, int time, int tries) : 
       _when(t), 
       _rate(rate), 
       _success(success),
-      _time(time)
+      _time(time),
+      _tries(tries)
     { }
     tx_result() {}
   };
@@ -111,6 +113,7 @@ class ProbeTXRate : public Element { public:
     Vector<int> _total_success;
     Vector<int> _total_fail;
     Vector<int> _perfect_time;
+    Vector<int> _total_tries;
 
 
     unsigned _count;
@@ -124,6 +127,7 @@ class ProbeTXRate : public Element { public:
       _total_time = Vector<int>(_rates.size(), 0);
       _total_success = Vector<int>(_rates.size(), 0);
       _total_fail = Vector<int>(_rates.size(), 0);
+      _total_tries = Vector<int>(_rates.size(), 0);
       _perfect_time = Vector<int>(_rates.size(), 0);
 
 
@@ -179,28 +183,28 @@ class ProbeTXRate : public Element { public:
       }
     }
 
-    void add_result(const Timestamp &now, int rate, int success,
+    void add_result(const Timestamp &now, int rate, int tries, int success,
 		    int time) {
       int ndx = rate_index(rate);
       if (!rate || ndx < 0 || ndx > _rates.size()){
 	return;
       }
       _total_time[ndx] += time;
+      _total_tries[ndx] += tries;
+      _packets[ndx]++;
       if (success) {
 	_total_success[ndx]++;
       } else {
 	_total_fail[ndx]++;
       }
       _results.push_back(tx_result(now, rate, 
-				   success, time));
+				   success, time, tries));
     }
 
 
 
     void trim(const Timestamp &ts) {
-      int trimmed = 0;
       while (_results.size() && _results[0]._when < ts) {
-	trimmed++;
 	tx_result t = _results[0];
 	_results.pop_front();
 
@@ -216,7 +220,9 @@ class ProbeTXRate : public Element { public:
 	} else {
 	  _total_fail[ndx]--;
 	}
+	_packets[ndx]--;
 	_total_time[ndx] -= t._time;
+	_total_tries[ndx] -= t._tries;
 	
       }
     }
@@ -246,10 +252,19 @@ class ProbeTXRate : public Element { public:
 	  }
 	}
       }
-      return (found) ? best_ndx : -1;
+      if (found) {
+	return best_ndx;
+      }
+
+      for (int x = _rates.size()-1; x > 0; x--) {
+	if (_total_fail[x] < 3) {
+	  return x;
+	}
+      }
+      return 0;
     }
 
-    Vector<int> pick_rate(unsigned min_sample) {
+    Vector<int> pick_rate() {
       int best_ndx = best_rate_ndx();
 
       if (_rates.size() == 0) {
@@ -274,12 +289,7 @@ class ProbeTXRate : public Element { public:
 	if (_total_fail[x] > 3 && !_total_success[x]) {
 	  continue;
 	}
-	int avg = average(x);
-	if (_total_success[x] + _total_fail[x] < (int) min_sample ||
-	    (avg && avg - best_time <= best_time / 15 &&
-	     _total_success[x] + _total_fail[x] < (int) min_sample * 2)) {
-	  possible_rates.push_back(_rates[x]);
-	}
+	possible_rates.push_back(_rates[x]);
       }
       
       return possible_rates;
@@ -297,11 +307,8 @@ class ProbeTXRate : public Element { public:
   Timestamp _rate_window;
 
   AvailableRates *_rtable;
-  bool _filter_low_rates;
-  bool _filter_never_success;
-  bool _aggressive_alt_rate;
 
-  bool _alt_rate;
+
   bool _active;
   unsigned _original_retries;
   unsigned _min_sample;

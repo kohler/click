@@ -272,10 +272,10 @@ MadwifiRate::assign_rate(Packet *p_in)
   ceh->rate2 = (ndx - 2 >= 0) ? nfo->_rates[max(ndx - 2, 0)] : 0;
   ceh->rate3 = (ndx - 3 >= 0) ? nfo->_rates[max(ndx - 3, 0)] : 0;
 
-  ceh->max_retries = 4;
-  ceh->max_retries1 = (ndx - 1 >= 0) ? 2 : 0;
-  ceh->max_retries2 = (ndx - 2 >= 0) ? 2 : 0;
-  ceh->max_retries3 = (ndx - 3 >= 0) ? 2 : 0;
+  ceh->max_tries = 4;
+  ceh->max_tries1 = (ndx - 1 >= 0) ? 2 : 0;
+  ceh->max_tries2 = (ndx - 2 >= 0) ? 2 : 0;
+  ceh->max_tries3 = (ndx - 3 >= 0) ? 2 : 0;
 
   return;
   

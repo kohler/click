@@ -73,10 +73,10 @@ TXFLog_read_param(Element *e, void *thunk)
       sa << " rate3 " << (int)ceh->rate3;
 
 
-      sa << " max_retries " << (int)ceh->max_retries;
-      sa << " max_retries1 " << (int)ceh->max_retries1;
-      sa << " max_retries2 " << (int)ceh->max_retries2;
-      sa << " max_retries3 " << (int)ceh->max_retries3;
+      sa << " max_tries " << (int)ceh->max_tries;
+      sa << " max_tries1 " << (int)ceh->max_tries1;
+      sa << " max_tries2 " << (int)ceh->max_tries2;
+      sa << " max_tries3 " << (int)ceh->max_tries3;
 
       sa << " virt_col " << (int) ceh->virt_col;
       sa << " rssi " << (int)ceh->rssi;
