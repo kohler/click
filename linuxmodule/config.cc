@@ -133,7 +133,6 @@ swap_config(const String &s)
 {
   set_current_config(s);
   kill_router();
-  int before_errors = click_logged_errh->nerrors();
   Router *router = parse_router(s);
   if (router) {
     router->preinitialize();
