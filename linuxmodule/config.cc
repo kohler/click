@@ -5,6 +5,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000-2002 Mazu Networks, Inc.
  * Copyright (c) 2001-2002 International Computer Science Institute
+ * Copyright (c) 2004 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -79,7 +80,7 @@ parse_router(String s)
   int cookie = lexer->begin_parse(s, "line ", &lextra, click_logged_errh);
   while (lexer->ystatement())
     /* do nothing */;
-  Router *r = lexer->create_router();
+  Router *r = lexer->create_router(click_master);
   lexer->end_parse(cookie);
   return r;
 }
@@ -92,34 +93,23 @@ extern "C" int click_threads();
 #endif
 
 static void
-set_current_config(const String &s)
-{
-  *current_config = s;
-  click_config_generation++;
-}
-
-static void
-install_router(Router *r)
+install_router(const String &config, Router *r)
 {
   click_router = r;
-  r->use();
+  if (click_router) {
+    click_router->use();
 #ifdef HAVE_PROC_CLICK
-  init_router_element_procs();
+    init_router_element_procs();
 #endif
-#if __MTCLICK__
-  if (r->initialized())
-    click_start_sched(r, click_threads(), click_logged_errh);
-#else
-  if (r->initialized())
-    click_start_sched(r, 1, click_logged_errh);
-#endif
+  }
+  *current_config = config;
+  click_config_generation++;
 }
 
 static void
 kill_router()
 {
   if (click_router) {
-    click_router->please_stop_driver();
 #ifdef HAVE_PROC_CLICK
     cleanup_router_element_procs();
 #endif
@@ -134,48 +124,39 @@ kill_router()
 static int
 swap_config(const String &s)
 {
-  set_current_config(s);
   kill_router();
-  Router *router = parse_router(s);
-  if (router) {
-    router->preinitialize();
-    router->initialize(click_logged_errh);
-    install_router(router);
-    return router->initialized() ? 0 : -EINVAL;
-  } else
+  if (Router *router = parse_router(s)) {
+    if (router->initialize(click_logged_errh) >= 0)
+      router->activate(click_logged_errh);
+    install_router(s, router);
+    return (router->initialized() ? 0 : -EINVAL);
+  } else {
+    install_router(s, 0);
     return -EINVAL;
+  }
 }
 
 static int
 hotswap_config(const String &s)
 {
   int before_errors = click_logged_errh->nerrors();
-  Router *r = parse_router(s);
-  if (!r)
+  Router *router = parse_router(s);
+  if (!router)
     return -EINVAL;
 
   // XXX should we lock the kernel?
 
   // register hotswap router on new router
   if (click_router && click_router->initialized())
-    r->pre_take_state(click_router);
+    router->set_hotswap_router(click_router);
   
   if (click_logged_errh->nerrors() == before_errors
-      && r->initialize(click_logged_errh) >= 0) {
-    // perform hotswap
-    if (click_router && click_router->initialized()) {
-      // turn off all threads on current router before you take_state
-      if (click_kill_router_threads() >= 0) {
-	printk("<1>click: performing hotswap\n");
-	r->take_state(click_logged_errh);
-      }
-    }
-    // install
+      && router->initialize(click_logged_errh) >= 0) {
+    router->activate(click_logged_errh);
     kill_router();
-    install_router(r);
-    set_current_config(s);
+    install_router(s, router);
   } else
-    delete r;
+    delete router;
   
   return 0;
 }

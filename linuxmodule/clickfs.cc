@@ -174,7 +174,7 @@ click_inode(struct super_block *sb, ino_t ino)
 
     inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
     proclikefs_read_inode(inode);
-	
+    
     MDEBUG("%lx:%p:%p: leaving click_inode", ino, inode, inode->i_op);
     return inode;
 }

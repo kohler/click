@@ -79,6 +79,17 @@ DriverManager adds an implicit `C<stop>' instruction to the end of its
 instruction list. As a special case, `C<DriverManager()>', with no arguments,
 is equivalent to `C<DriverManager(wait_pause, stop)>'.
 
+DriverManager accepts the following keyword argument:
+
+=over 8
+
+=item CHECK_HANDLERS
+
+Boolean. If false, then DriverManager will ignore bad handler names, rather
+than failing to initialize. Default is true.
+
+=back
+
 A router configuration can contain at most one DriverManager element.
 
 =e
@@ -124,6 +135,7 @@ class DriverManager : public Element { public:
     int _insn_pos;
     int _insn_arg;
     int _stopped_count;
+    bool _check_handlers;
 
     Timer _timer;
 

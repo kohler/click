@@ -25,6 +25,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
+#include <click/master.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -59,6 +60,7 @@ CLICK_CXX_UNPROTECT
 static spinlock_t click_thread_lock;
 static int click_thread_priority = DEF_PRIO;
 static Vector<int> *click_thread_pids;
+static Router *placeholder_router;
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
 static unsigned min_click_frac = 5, max_click_frac = 800;
@@ -101,8 +103,8 @@ click_sched(void *thunk)
   // driver loop; does not return for a while
   rt->driver();
 
-  // release router (router preserved in click_start_sched)
-  rt->router()->unuse();
+  // release master (preserved in click_init_sched)
+  click_master->unuse();
 
   // remove pid from thread list
   SOFT_SPIN_LOCK(&click_thread_lock);
@@ -120,52 +122,12 @@ click_sched(void *thunk)
   return 0;
 }
 
-int
-click_start_sched(Router *r, int threads, ErrorHandler *errh)
-{
-  // no thread if no router
-  if (r->nelements() == 0)
-    return 0;
-
-#ifdef __SMP__
-  if (smp_num_cpus > NUM_CLICK_CPUS)
-    click_chatter("warning: click compiled for %d cpus, machine allows %d", 
-	          NUM_CLICK_CPUS, smp_num_cpus);
-#endif
-
-  if (threads < 1)
-    threads = 1;
-  click_chatter((threads == 1 ? "starting %d thread" : "starting %d threads"), threads);
-
-  while (threads > 0) {
-    RouterThread *rt;
-    if (threads > 1) 
-      rt = new RouterThread(r);
-    else
-      rt = r->thread(0);
-
-    r->use();			// preserve router
-    pid_t pid = kernel_thread 
-      (click_sched, rt, CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
-    
-    if (pid < 0) {
-      r->unuse();		// release router (no thread)
-      delete rt;
-      errh->error("cannot create kernel thread!"); 
-      return -1;
-    }
-    
-    threads--;
-  }
-
-  return 0;
-}
-
-int
-click_kill_router_threads()
+static int
+kill_router_threads()
 {
   if (click_router)
-    click_router->please_stop_driver();
+    click_router->adjust_driver_reservations(-10000);
+  delete placeholder_router;
   
   // wait up to 5 seconds for routers to exit
   unsigned long out_jiffies = jiffies + 5 * HZ;
@@ -237,6 +199,15 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 }
 
 
+#if CLICK_DEBUG_MASTER
+static String
+read_master_info(Element *, void *)
+{
+  return click_master->info();
+}
+#endif
+
+
 #ifdef HAVE_ADAPTIVE_SCHEDULER
 
 static String
@@ -251,8 +222,8 @@ read_cur_cpu_share(Element *, void *)
 {
   if (click_router) {
     String s;
-    for (int i = 0; i < click_router->nthreads(); i++)
-      s += cp_unparse_real10(click_router->thread(i)->cur_cpu_share(), 3) + "\n";
+    for (int i = 0; i < click_master->nthreads(); i++)
+      s += cp_unparse_real10(click_master->thread(i)->cur_cpu_share(), 3) + "\n";
     return s;
   } else
     return "0\n";
@@ -270,9 +241,8 @@ write_cpu_share(const String &conf, Element *, void *thunk, ErrorHandler *errh)
   (thunk ? max_click_frac : min_click_frac) = frac;
 
   // change current thread priorities
-  if (click_router)
-    for (int i = 0; i < click_router->nthreads(); i++)
-      click_router->thread(i)->set_cpu_share(min_click_frac, max_click_frac);
+  for (int i = 0; i < click_master->nthreads(); i++)
+    click_master->thread(i)->set_cpu_share(min_click_frac, max_click_frac);
   
   return 0;
 }
@@ -283,10 +253,34 @@ write_cpu_share(const String &conf, Element *, void *thunk, ErrorHandler *errh)
 /********************** Initialization and cleanup ***************************/
 
 void
-click_init_sched()
+click_init_sched(ErrorHandler *errh)
 {
   spin_lock_init(&click_thread_lock);
   click_thread_pids = new Vector<int>;
+
+#if __MTCLICK__
+  click_master = new Master(click_threads());
+  if (smp_num_cpus != NUM_CLICK_CPUS)
+    click_chatter("warning: click compiled for %d cpus, machine allows %d", 
+	          NUM_CLICK_CPUS, smp_num_cpus);
+#else
+  click_master = new Master(1);
+#endif
+
+  placeholder_router = new Router("", click_master);
+  placeholder_router->initialize(errh);
+  placeholder_router->activate(errh);
+
+  for (int i = 0; i < click_master->nthreads(); i++) {
+    click_master->use();
+    pid_t pid = kernel_thread 
+      (click_sched, click_master->thread(i), CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
+    if (pid < 0) {
+      errh->error("cannot create kernel thread for Click thread %i!", i); 
+      click_master->unuse();
+    }
+  }
+
   Router::add_read_handler(0, "threads", read_threads, 0);
   Router::add_read_handler(0, "priority", read_priority, 0);
   Router::add_write_handler(0, "priority", write_priority, 0);
@@ -298,12 +292,15 @@ click_init_sched()
   Router::add_write_handler(0, "max_cpu_share", write_cpu_share, (void *)1);
   Router::add_read_handler(0, "cpu_share", read_cur_cpu_share, 0);
 #endif
+#if CLICK_DEBUG_MASTER
+  Router::add_read_handler(0, "master_info", read_master_info, 0);
+#endif
 }
 
 int
 click_cleanup_sched()
 {
-  if (click_kill_router_threads() < 0) {
+  if (kill_router_threads() < 0) {
     printk("<1>click: Following threads still active, expect a crash:\n");
     SOFT_SPIN_LOCK(&click_thread_lock);
     for (int i = 0; i < click_thread_pids->size(); i++)

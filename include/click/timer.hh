@@ -1,114 +1,95 @@
-// -*- c-basic-offset: 2; related-file-name: "../../lib/timer.cc" -*-
+// -*- c-basic-offset: 4; related-file-name: "../../lib/timer.cc" -*-
 #ifndef CLICK_TIMER_HH
 #define CLICK_TIMER_HH
 #include <click/sync.hh>
 #include <click/glue.hh>
+#include <click/element.hh>
 CLICK_DECLS
 class Element;
 class Router;
 class Timer;
-class TimerList;
 class Task;
 
 typedef void (*TimerHook)(Timer *, void *);
 
 class Timer { public:
 
-  Timer(TimerHook, void *);
-  Timer(Element *);			// call element->run_timer()
-  Timer(Task *);			// call task->reschedule()
-  ~Timer()				{ if (scheduled()) unschedule(); }
+    Timer(TimerHook, void *);
+    Timer(Element *);			// call element->run_timer()
+    Timer(Task *);			// call task->reschedule()
+    ~Timer()				{ if (scheduled()) unschedule(); }
 
-  bool initialized() const		{ return _head != 0; }
-  bool scheduled() const		{ return _prev != 0; }
-  const struct timeval &expiry() const	{ return _expiry; }
-  bool is_list() const;
+    bool initialized() const		{ return _router != 0; }
+    bool scheduled() const		{ return _prev != 0; }
+    const struct timeval &expiry() const { return _expiry; }
   
-  void initialize(TimerList *);
-  void initialize(Router *);
-  void initialize(Element *);
-  void cleanup()			{ unschedule(); }
-  void uninitialize()			{ cleanup(); }	// deprecated
+    inline void initialize(Router *);
+    inline void initialize(Element *);
+    void cleanup()			{ unschedule(); }
+    void uninitialize()			{ cleanup(); }	// deprecated
 
-  void schedule_at(const struct timeval &);
-  void reschedule_at(const struct timeval &);		// synonym
+    void schedule_at(const struct timeval &);
+    inline void reschedule_at(const struct timeval &); // synonym
 
-  void schedule_now();
-  void schedule_after(const struct timeval &);
-  void schedule_after_s(uint32_t);
-  void schedule_after_ms(uint32_t);
-  void reschedule_after(const struct timeval &);
-  void reschedule_after_s(uint32_t);
-  void reschedule_after_ms(uint32_t);
+    inline void schedule_now();
+    void schedule_after(const struct timeval &);
+    void schedule_after_s(uint32_t);
+    void schedule_after_ms(uint32_t);
+    inline void reschedule_after(const struct timeval &);
+    void reschedule_after_s(uint32_t);
+    void reschedule_after_ms(uint32_t);
 
-  void unschedule();
+    void unschedule();
   
- private:
+  private:
   
-  Timer *_prev;
-  Timer *_next;
-  struct timeval _expiry;
-  TimerHook _hook;
-  void *_thunk;
-  TimerList *_head;
+    Timer *_prev;
+    Timer *_next;
+    struct timeval _expiry;
+    TimerHook _hook;
+    void *_thunk;
+    Router *_router;
 
-  Timer(const Timer &);
-  Timer &operator=(const Timer &);
+    Timer(const Timer &);
+    Timer &operator=(const Timer &);
 
-  friend class TimerList;
-  
-};
+    // list functions
+    void make_list();
+    void unmake_list();
 
-class TimerList : public Timer { public:
-
-  TimerList();
-
-  void run(const volatile int * = 0);
-  int get_next_delay(struct timeval *tv);
-
-  void unschedule_all();
-  
- private:
-
-  Spinlock _lock;
-  
-  void acquire_lock()			{ _lock.acquire(); }
-  bool attempt_lock()			{ return _lock.attempt(); }
-  void release_lock()			{ _lock.release(); }
-
-  friend class Timer;
+    friend class Master;
   
 };
 
 inline void
-Timer::initialize(TimerList *t)
+Timer::initialize(Router *router)
 {
-  assert(!initialized());
-  _head = t;
+    assert(!initialized());
+    _router = router;
 }
 
-inline bool
-Timer::is_list() const
+inline void
+Timer::initialize(Element *element)
 {
-  return _head == this;
+    initialize(element->router());
 }
 
 inline void
 Timer::schedule_now()
 {
-  schedule_after_ms(0);
+    schedule_after_ms(0);
 }
 
 inline void
 Timer::reschedule_after(const struct timeval &delta)
 {
-  schedule_at(_expiry + delta);
+    schedule_at(_expiry + delta);
 }
 
 inline void
 Timer::reschedule_at(const struct timeval &tv)
 {
-  schedule_at(tv);
+    schedule_at(tv);
 }
 
 CLICK_ENDDECLS

@@ -22,6 +22,9 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+#if CLICK_NS
+# include <click/master.hh>
+#endif
 #if CLICK_USERLEVEL
 # include <unistd.h>
 #endif
@@ -72,7 +75,7 @@ AddressInfo::add_info(const Vector<String> &conf, const String &prefix,
       String simeth;
       const char* simsuffix = ":simnet";
       Router* myrouter = router();
-      simclick_sim mysiminst = myrouter->get_siminst();
+      simclick_sim mysiminst = myrouter->master()->siminst();
 
       int colon = simif.find_right(':');
       if ((colon >= 0) && (simif.substring(colon).lower() == simsuffix)) {

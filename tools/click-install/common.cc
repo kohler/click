@@ -97,30 +97,13 @@ kill_current_configuration(ErrorHandler *errh)
 {
   if (verbose)
     errh->message("Installing blank configuration in kernel");
-
   String clickfs_config = clickfs_prefix + String("/config");
-  String clickfs_threads = clickfs_prefix + String("/threads");
-  
   FILE *f = fopen(clickfs_config.c_str(), "w");
   if (!f)
     errh->fatal("cannot uninstall configuration: %s", strerror(errno));
   fputs("// nothing\n", f);
   fclose(f);
-
-  // wait for thread to die
-  if (verbose)
-    errh->message("Waiting for Click threads to die");
-  for (int wait = 0; wait < 6; wait++) {
-    String s = file_string(clickfs_threads);
-    if (!s)
-      return 0;
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 100000;
-    select(0, 0, 0, 0, &tv);
-  }
-  
-  return errh->error("failed to kill current Click configuration");
+  return 0;
 }
 
 int

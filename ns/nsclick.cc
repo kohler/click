@@ -43,6 +43,7 @@
 #include <click/driver.hh>
 #include <click/userutils.hh>
 #include <click/confparse.hh>
+#include <click/master.hh>
 #include <click/simclick.h>
 #include "elements/standard/quitwatcher.hh"
 #include "elements/userlevel/controlsocket.hh"
@@ -104,9 +105,7 @@ static simclick_simstate* getsimstate() {
   return cursimclickstate;
 }
 
-static Router *router;
 static ErrorHandler *errh;
-static bool started = 0;
 
 // functions for packages
 
@@ -297,8 +296,7 @@ SimState::simmain(simclick_sim siminst, const char *router_file)
   if (!newstate->router)
     exit(1);
   
-  newstate->router->set_clickinst((simclick_click)newstate);
-  newstate->router->set_siminst(siminst);
+  newstate->router->master()->initialize_ns(siminst, (simclick_click)newstate);
 
   if (newstate->router->nelements() == 0 && warnings)
     errh->warning("%s: configuration has no elements", router_file);
@@ -306,6 +304,7 @@ SimState::simmain(simclick_sim siminst, const char *router_file)
   if (errh->nerrors() > 0 || newstate->router->initialize(errh) < 0)
     exit(1);
 
+  newstate->router->activate(errh);
   return newstate;
 }
 
@@ -324,10 +323,10 @@ void simclick_click_run(simclick_click clickinst,simclick_simstate* state) {
   setsimstate(state);
   //fprintf(stderr,"Hey! Need to implement simclick_click_run!\n");
   // not right - mostly smoke testing for now...
-  ((SimState*)clickinst)->router->thread(0)->driver();
+  ((SimState*)clickinst)->router->master()->thread(0)->driver();
 }
 
-void simclick_click_kill(simclick_click clickinst,simclick_simstate* state) {
+void simclick_click_kill(simclick_click, simclick_simstate* state) {
   fprintf(stderr,"Hey! Need to implement simclick_click_kill!\n");
   setsimstate(state);
 }
@@ -350,7 +349,7 @@ int simclick_click_send(simclick_click clickinst,simclick_simstate* state,
   int result = 0;
   
   ((SimState*)clickinst)->router->sim_incoming_packet(ifid,type,data,len,pinfo);
-  ((SimState*)clickinst)->router->thread(0)->driver();
+  ((SimState*)clickinst)->router->master()->thread(0)->driver();
   return result;
 }
 

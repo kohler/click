@@ -41,12 +41,11 @@ void click_clear_error_log();
 void click_init_config();
 void click_cleanup_config();
 
+extern Master *click_master;
 extern Router *click_router;
-int click_kill_router_threads();
 
-void click_init_sched();
+void click_init_sched(ErrorHandler *);
 int click_cleanup_sched();
-int click_start_sched(Router *, int, ErrorHandler *);
 
 extern int click_mode_r, click_mode_w, click_mode_x, click_mode_dir;
 

@@ -95,7 +95,7 @@ class Lexer { public:
   void find_connections(const Hookup &, bool, Vector<Hookup> &) const;
   void expand_connection(const Hookup &, bool, Vector<Hookup> &) const;
   
-  Router *create_router();
+  Router *create_router(Master *);
 
  private:
     

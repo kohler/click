@@ -63,10 +63,15 @@ CLICK_DECLS
 #endif
 
 
-RouterThread::RouterThread(Router *r)
-    : Task(Task::error_hook, 0), _router(r)
+RouterThread::RouterThread(Master *m, int id)
+    : Task(Task::error_hook, 0), _master(m), _id(id)
 {
     _prev = _next = _thread = this;
+    _task_lock_waiting = 0;
+    _pending = 0;
+#ifdef CLICK_LINUXMODULE
+    _sleeper = 0;
+#endif
 #ifdef CLICK_BSDMODULE
     _wakeup_list = 0;
 #endif
@@ -75,34 +80,11 @@ RouterThread::RouterThread(Router *r)
     _min_click_share = Task::MAX_UTILIZATION / 200;
     _cur_click_share = 0;	// because we aren't yet running
 #endif
-    _task_lock_waiting = 0;
-    _pending = 0;
-    router()->add_thread(this);
-    // add_thread() will call this->set_thread_id()
 }
 
 RouterThread::~RouterThread()
 {
     unschedule_all_tasks();
-    router()->remove_thread(this);
-}
-
-inline void
-RouterThread::process_task_requests()
-{
-    TaskList *task_list = router()->task_list();
-    task_list->lock();
-    Task *t = task_list->_pending_next;
-    task_list->_pending_next = task_list;
-    _pending = 0;
-    task_list->unlock();
-
-    while (t != task_list) {
-	Task *next = t->_pending_next;
-	t->_pending_next = 0;
-	t->process_pending(this);
-	t = next;
-    }
 }
 
 inline void
@@ -269,11 +251,27 @@ RouterThread::run_os()
     unlock_tasks();
 
 #if CLICK_USERLEVEL
-    router()->master()->run_selects(!empty());
+    _master->run_selects(!empty());
 #elif !defined(CLICK_GREEDY)
-# if CLICK_LINUXMODULE			/* Linux kernel module */
-    schedule();
-# else					/* BSD kernel module */
+# if CLICK_LINUXMODULE		/* Linux kernel module */
+    if (!empty())		// just schedule others for a second
+	schedule();
+    else {
+	struct timeval wait;
+	if (_id != 0 || !_master->timer_delay(&wait)) {
+	    _sleeper = current;
+	    current->state = TASK_INTERRUPTIBLE;
+	    schedule();
+	    _sleeper = 0;
+	} else if (wait.tv_sec > 0 || wait.tv_usec > (1000000 / CLICK_HZ)) {
+	    _sleeper = current;
+	    current->state = TASK_INTERRUPTIBLE;
+	    (void) schedule_timeout((wait.tv_sec * CLICK_HZ) + (wait.tv_usec * CLICK_HZ / 1000000) - 1);
+	    _sleeper = 0;
+	} else
+	    schedule();
+    }
+# else				/* BSD kernel module */
     extern int click_thread_priority;
     int s = splhigh();
     curproc->p_priority = curproc->p_usrpri = click_thread_priority;
@@ -289,7 +287,7 @@ RouterThread::run_os()
 void
 RouterThread::driver()
 {
-    const volatile int * const runcount = _router->driver_runcount_ptr();
+    const volatile int * const runcount = _master->runcount_ptr();
     int iter = 0;
 
     nice_lock_tasks();
@@ -338,11 +336,11 @@ RouterThread::driver()
     }
 #endif
 
+    // run task requests
+    if (_pending)
+	_master->process_pending(this);
+    
     if (*runcount > 0) {
-	// run task requests
-	if (_pending)
-	    process_task_requests();
-
 	// run occasional tasks: timers, select, etc.
 	iter++;
 	if (iter % DRIVER_ITER_ANY == 0)
@@ -351,7 +349,7 @@ RouterThread::driver()
 
 #ifndef CLICK_NS
     // run loop again, unless driver is stopped
-    if (*runcount > 0 || _router->check_driver())
+    if (*runcount > 0 || _master->check_driver())
 	goto driver_loop;
 #endif
     
@@ -371,16 +369,15 @@ RouterThread::wait(int iter)
 #endif
 
     if (iter % DRIVER_ITER_TIMERS == 0) {
-	router()->master()->timer_list()->run(router()->driver_runcount_ptr());
+	_master->run_timers();
 #ifdef CLICK_NS
 	// If there's another timer, tell the simulator to make us
 	// run when it's due to go off.
 	struct timeval now, nextdelay, nexttime;
-	if (router()->master()->timer_list()->get_next_delay(&nextdelay)) {
+	if (_master->timer_delay(&nextdelay)) {
 	    click_gettimeofday(&now);
 	    timeradd(&now, &nextdelay, &nexttime);
-	    simclick_sim_schedule(router()->get_siminst(),
-				  router()->get_clickinst(), &nexttime);
+	    simclick_sim_schedule(_master->_siminst, _master->_clickinst, &nexttime);
 	}
 #endif
     }
@@ -394,7 +391,7 @@ RouterThread::wait(int iter)
 void
 RouterThread::driver_once()
 {
-    if (!_router->check_driver())
+    if (!_master->check_driver())
 	return;
   
     lock_tasks();

@@ -20,9 +20,9 @@
 #include <click/timer.hh>
 #include <click/element.hh>
 #include <click/router.hh>
+#include <click/master.hh>
 #include <click/routerthread.hh>
 #include <click/task.hh>
-#include <click/master.hh>
 CLICK_DECLS
 
 /*
@@ -55,176 +55,121 @@ list_hook(Timer *, void *)
 
 
 Timer::Timer(TimerHook hook, void *thunk)
-    : _prev(0), _next(0), _hook(hook), _thunk(thunk), _head(0)
+    : _prev(0), _next(0), _hook(hook), _thunk(thunk), _router(0)
 {
 }
 
 Timer::Timer(Element *e)
-    : _prev(0), _next(0), _hook(element_hook), _thunk(e), _head(0)
+    : _prev(0), _next(0), _hook(element_hook), _thunk(e), _router(0)
 {
 }
 
 Timer::Timer(Task *t)
-    : _prev(0), _next(0), _hook(task_hook), _thunk(t), _head(0)
+    : _prev(0), _next(0), _hook(task_hook), _thunk(t), _router(0)
 {
-}
-
-TimerList::TimerList()
-    : Timer(list_hook, 0)
-{
-    _prev = _next = _head = this;
 }
 
 void
-Timer::initialize(Router *r)
+Timer::make_list()
 {
-    initialize(r->master()->timer_list());
+    assert(!scheduled());
+    _hook = list_hook;
+    _prev = _next = this;
 }
 
 void
-Timer::initialize(Element *e)
+Timer::unmake_list()
 {
-    initialize(e->router()->master()->timer_list());
+    assert(_hook == list_hook);
+    _prev = _next = 0;
 }
 
 void
 Timer::schedule_at(const struct timeval &when)
 {
-  // acquire lock, unschedule
-  assert(!is_list() && initialized());
-  _head->acquire_lock();
-  if (scheduled())
-    unschedule();
+    // acquire lock, unschedule
+    assert(_router && initialized());
+    Master *master = _router->master();
+    master->_timer_lock.acquire();
+    if (scheduled())
+	unschedule();
 
-  // set expiration timer
-  _expiry = when;
+    // set expiration timer
+    _expiry = when;
 
-  // manipulate list
-  Timer *prev = _head;
-  Timer *trav = prev->_next;
-  while (trav != _head && timercmp(&_expiry, &trav->_expiry, >)) {
-    prev = trav;
-    trav = trav->_next;
-  }
-  _prev = prev;
-  _next = trav;
-  _prev->_next = this;
-  trav->_prev = this;
+    // manipulate list
+    Timer *head = &master->_timer_list;
+    Timer *prev = head;
+    Timer *trav = prev->_next;
+    while (trav != head && timercmp(&_expiry, &trav->_expiry, >)) {
+	prev = trav;
+	trav = trav->_next;
+    }
+    _prev = prev;
+    _next = trav;
+    _prev->_next = this;
+    trav->_prev = this;
 
-  // done
-  _head->release_lock();
+    // if we changed the timeout, wake up the first thread
+    if (head->_next == this)
+	master->_threads[1]->unsleep();
+
+    // done
+    master->_timer_lock.release();
 }
 
 void
 Timer::schedule_after_s(uint32_t s)
 {
-  struct timeval t;
-  click_gettimeofday(&t);
-  t.tv_sec += s;
-  schedule_at(t);
+    struct timeval t;
+    click_gettimeofday(&t);
+    t.tv_sec += s;
+    schedule_at(t);
 }
 
 void
 Timer::schedule_after_ms(uint32_t ms)
 {
-  struct timeval t, interval;
-  click_gettimeofday(&t);
-  interval.tv_sec = ms / 1000;
-  interval.tv_usec = (ms % 1000) * 1000;
-  timeradd(&t, &interval, &t);
-  schedule_at(t);
+    struct timeval t, interval;
+    click_gettimeofday(&t);
+    interval.tv_sec = ms / 1000;
+    interval.tv_usec = (ms % 1000) * 1000;
+    timeradd(&t, &interval, &t);
+    schedule_at(t);
 }
 
 void
 Timer::reschedule_after_s(uint32_t s)
 {
-  struct timeval t = _expiry;
-  t.tv_sec += s;
-  schedule_at(t);
+    struct timeval t = _expiry;
+    t.tv_sec += s;
+    schedule_at(t);
 }
 
 void
 Timer::reschedule_after_ms(uint32_t ms)
 {
-  struct timeval t = _expiry;
-  struct timeval interval;
-  interval.tv_sec = ms / 1000;
-  interval.tv_usec = (ms % 1000) * 1000;
-  timeradd(&t, &interval, &t);
-  schedule_at(t);
+    struct timeval t = _expiry;
+    struct timeval interval;
+    interval.tv_sec = ms / 1000;
+    interval.tv_usec = (ms % 1000) * 1000;
+    timeradd(&t, &interval, &t);
+    schedule_at(t);
 }
 
 void
 Timer::unschedule()
 {
-  if (scheduled()) {
-    _head->acquire_lock();
-    _prev->_next = _next;
-    _next->_prev = _prev;
-    _prev = _next = 0;
-    _head->release_lock();
-  }
-}
-
-void
-TimerList::run(const volatile int *runcount)
-{
-  static int one = 1;
-  if (attempt_lock()) {
-    struct timeval now;
-    click_gettimeofday(&now);
-    if (!runcount)
-      runcount = &one;
-    while (_next != this
-	   && !timercmp(&_next->_expiry, &now, >)
-	   && *runcount > 0) {
-      Timer *t = _next;
-      _next = t->_next;
-      _next->_prev = this;
-      t->_prev = 0;
-      t->_hook(t, t->_thunk);
+    if (scheduled()) {
+	Master *master = _router->master();
+	master->_timer_lock.acquire();
+	_prev->_next = _next;
+	_next->_prev = _prev;
+	_prev = _next = 0;
+	master->_timer_lock.release();
     }
-    release_lock();
-  }
 }
 
-// How long select() should wait until next timer expires.
-
-int
-TimerList::get_next_delay(struct timeval *tv)
-{
-  int retval;
-  acquire_lock();
-  if (_next == this) {
-    tv->tv_sec = 1000;
-    tv->tv_usec = 0;
-    retval = 0;
-  } else {
-    struct timeval now;
-    click_gettimeofday(&now);
-    if (timercmp(&_next->_expiry, &now, >)) {
-      timersub(&_next->_expiry, &now, tv);
-    } else {
-      tv->tv_sec = 0;
-      tv->tv_usec = 0;
-    }
-    retval = 1;
-  }
-  release_lock();
-  return retval;
-}
-
-void
-TimerList::unschedule_all()
-{
-  acquire_lock();
-  while (_next != this) {
-    Timer *t = _next;
-    _next = t->_next;
-    _next->_prev = this;
-    t->_prev = 0;
-  }
-  release_lock();
-}
+// list-related functions in master.cc
 
 CLICK_ENDDECLS

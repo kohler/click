@@ -11,10 +11,6 @@ CLICK_DECLS
 
 class RouterThread : public Task { public:
 
-    RouterThread(Router *);
-    ~RouterThread();
-  
-    Router *router() const		{ return _router; }
     int thread_id() const		{ return _id; }
 
     void driver();
@@ -38,15 +34,21 @@ class RouterThread : public Task { public:
     void set_cpu_share(unsigned min_share, unsigned max_share);
 #endif
 
+    inline void unsleep();
+
   private:
     
-    Router *_router;
+    Master *_master;
     int _id;
 
     Spinlock _lock;
     uatomic32_t _task_lock_waiting;
     uatomic32_t _pending;
 
+#ifdef CLICK_LINUXMODULE
+    struct task_struct *_sleeper;
+#endif
+    
 #ifdef CLICK_BSDMODULE
     // XXX FreeBSD
     Task *_wakeup_list;
@@ -67,12 +69,12 @@ class RouterThread : public Task { public:
     unsigned _cur_click_share;		// current Click share
 #endif
 
-    // called by Router
-    void set_thread_id(int i)		{ _id = i; }
+    // called by Master
+    RouterThread(Master *, int);
+    ~RouterThread();
 
-    // task request IDs
-    void add_pending()			{ _pending++; }
-    void process_task_requests();
+    // task requests
+    inline void add_pending();
 
     // task running functions
     inline void nice_lock_tasks();
@@ -86,7 +88,7 @@ class RouterThread : public Task { public:
     void wait(int iter);
     
     friend class Task;
-    friend class Router;
+    friend class Master;
 
 };
 
@@ -94,7 +96,7 @@ class RouterThread : public Task { public:
 inline bool
 RouterThread::empty() const
 {
-    return (const Task *)_next == this;
+    return ((const Task *)_next == this) && !_pending;
 }
 
 inline void
@@ -115,6 +117,22 @@ inline void
 RouterThread::unlock_tasks()
 {
     _lock.release();
+}
+
+inline void
+RouterThread::unsleep()
+{
+#ifdef CLICK_LINUXMODULE
+    if (_sleeper)
+	wake_up_process(_sleeper);
+#endif
+}
+
+inline void
+RouterThread::add_pending()
+{
+    _pending++;
+    unsleep();
 }
 
 CLICK_ENDDECLS

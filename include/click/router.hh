@@ -26,7 +26,7 @@ class Router { public:
     Hookup(int i, int p)			: idx(i), port(p) { }
   };
   
-  Router(const String &configuration = String());
+  Router(const String &configuration, Master *);
   ~Router();
   void use()					{ _refcount++; }
   void unuse();
@@ -34,7 +34,9 @@ class Router { public:
   static void static_initialize();
   static void static_cleanup();
 
-  bool initialized() const			{ return _initialized; }
+  enum { ROUTER_NEW, ROUTER_PRECONFIGURE, ROUTER_PREINITIALIZE,
+	 ROUTER_LIVE, ROUTER_DEAD };
+  bool initialized() const			{ return _state == ROUTER_LIVE; }
 
   // ELEMENTS
   int nelements() const				{ return _elements.size(); }
@@ -84,30 +86,21 @@ class Router { public:
   const Vector<String> &requirements() const	{ return _requirements; }
 
   Router *hotswap_router() const		{ return _hotswap_router; }
+  void set_hotswap_router(Router *);
   ErrorHandler *chatter_channel(const String &) const;
   HashMap_ArenaFactory *arena_factory() const;
 
   // MASTER
   Master *master() const			{ return _master; }
-  
-  // THREADS
-  int nthreads() const				{ return _threads.size() - 1; }
-  RouterThread *thread(int id) const		{ return _threads[id + 1]; }
-  // thread(-1) is the quiescent thread
-  void add_thread(RouterThread *);
-  void remove_thread(RouterThread *);
+  bool running() const				{ return _running; }
   
   // DRIVER RESERVATIONS
   void please_stop_driver()		{ adjust_driver_reservations(-1); }
   void reserve_driver()			{ adjust_driver_reservations(1); }
   void set_driver_reservations(int);
   void adjust_driver_reservations(int);
-  bool check_driver();
-  const volatile int *driver_runcount_ptr() const { return &_driver_runcount; }
+  int runcount() const			{ return _runcount; }
 
-  // TIMERS AND SELECTS
-  TaskList *task_list()				{ return &_task_list; }
-  
   // UNPARSING
   const String &configuration_string() const	{ return _configuration; }
   void unparse(StringAccum &, const String & = String()) const;
@@ -123,10 +116,8 @@ class Router { public:
   int add_element(Element *, const String &name, const String &conf, const String &landmark);
   int add_connection(int from_idx, int from_port, int to_idx, int to_port);
   
-  void preinitialize();
-  void pre_take_state(Router *);
   int initialize(ErrorHandler *);
-  void take_state(ErrorHandler *);
+  void activate(ErrorHandler *);
 
 #if CLICK_NS
   int sim_get_ifid(const char *ifname);
@@ -136,17 +127,9 @@ class Router { public:
 		simclick_simpacketinfo *pinfo);
   int sim_incoming_packet(int ifid, int ptype, const unsigned char *, int len,
                           simclick_simpacketinfo* pinfo);
-  void set_siminst(simclick_sim newinst) { _siminst = newinst; }
-  simclick_sim get_siminst() const	{ return _siminst; }
-
-  void set_clickinst(simclick_click newinst) { _clickinst = newinst; }
-  simclick_click get_clickinst() const	{ return _clickinst; }
 
  protected:
-  simclick_sim _siminst;
-  simclick_click _clickinst;
   Vector<Vector<int> *> _listenvecs;
-
   Vector<int> *sim_listenvec(int ifid);
 #endif
   
@@ -154,9 +137,7 @@ class Router { public:
 
   Master *_master;
   
-  TaskList _task_list;
-  volatile int _driver_runcount;
-  Spinlock _runcount_lock;
+  volatile int _runcount;
 
   uatomic32_t _refcount;
   
@@ -166,8 +147,6 @@ class Router { public:
   Vector<String> _element_landmarks;
   Vector<int> _element_configure_order;
 
-  Vector<RouterThread *> _threads;
-  
   Vector<Hookup> _hookup_from;
   Vector<Hookup> _hookup_to;
   
@@ -181,13 +160,9 @@ class Router { public:
 
   Vector<String> _requirements;
 
-  bool _preinitialized : 1;
-  bool _initialized : 1;
-  bool _initialize_attempted : 1;
-  bool _cleaned : 1;
-  bool _have_connections : 1;
-  bool _have_hookpidx : 1;
+  int _state;
   mutable bool _allow_star_handler : 1;
+  int _running;
   
   Vector<int> _ehandler_first_by_element;
   Vector<int> _ehandler_to_handler;
@@ -207,6 +182,8 @@ class Router { public:
 
   HashMap_ArenaFactory *_arena_factory;
   Router *_hotswap_router;
+
+  Router *_next_router;
   
   Router(const Router &);
   Router &operator=(const Router &);
@@ -250,6 +227,8 @@ class Router { public:
 
   // global handlers
   static String router_read_handler(Element *, void *);
+
+  friend class Master;
   
 };
 

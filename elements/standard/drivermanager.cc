@@ -56,6 +56,10 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("router has more than one DriverManager element");
     router()->set_attachment("DriverManager", this);
 
+    _check_handlers = true;
+    if (cp_va_parse_remove_keywords(conf, 0, this, errh, "CHECK_HANDLERS", cpBool, "check handlers for correctness?", &_check_handlers, 0) < 0)
+	return -1;
+    
     int before = errh->nerrors();
 
     for (int i = 0; i < conf.size(); i++) {
@@ -122,6 +126,10 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 DriverManager::initialize(ErrorHandler *errh)
 {
+    if (!_check_handlers)
+	errh = ErrorHandler::silent_handler();
+    int before = errh->nerrors();
+    
     // process 'read' and 'write' instructions
     Element *e;
     int hi;
@@ -132,17 +140,21 @@ DriverManager::initialize(ErrorHandler *errh)
 				  cpWriteHandler, "write handler", &e, &hi,
 				  cpString, "data", &text,
 				  0) < 0)
-		return -1;
-	    _args[i] = e->eindex();
-	    _args2[i] = hi;
-	    _args3[i] = text;
+		_insns[i] = INSN_IGNORE;
+	    else {
+		_args[i] = e->eindex();
+		_args2[i] = hi;
+		_args3[i] = text;
+	    }
 	} else if (_insns[i] == INSN_READ) {
 	    if (cp_va_space_parse(_args3[i], this, errh,
 				  cpReadHandler, "read handler", &e, &hi,
 				  0) < 0)
-		return -1;
-	    _args[i] = e->eindex();
-	    _args2[i] = hi;
+		_insns[i] = INSN_IGNORE;
+	    else {
+		_args[i] = e->eindex();
+		_args2[i] = hi;
+	    }
 	}
 
     _insn_pos = 0;
@@ -155,7 +167,7 @@ DriverManager::initialize(ErrorHandler *errh)
     if (insn == INSN_WAIT)
 	_timer.schedule_after_ms(_args[_insn_pos]);
     
-    return 0;
+    return (errh->nerrors() == before || !_check_handlers ? 0 : -1);
 }
 
 bool
@@ -164,7 +176,7 @@ DriverManager::step_insn()
     _insn_pos++;
 
     int insn = _insns[_insn_pos];
-    if (insn == INSN_WRITE_SKIP && *(router()->driver_runcount_ptr()) >= 0)
+    if (insn == INSN_WRITE_SKIP && router()->runcount() >= 0)
 	insn = INSN_WRITE;
     if (insn == INSN_STOP)
 	router()->please_stop_driver();
@@ -187,7 +199,7 @@ DriverManager::step_insn()
 	ErrorHandler *errh = ErrorHandler::default_handler();
 	errh->message("%s:\n%s\n", h->unparse_name(e).cc(), result.cc());
 	return true;
-    } else if (insn == INSN_WRITE_SKIP)
+    } else if (insn == INSN_WRITE_SKIP || insn == INSN_IGNORE)
 	return true;
 
     return false;

@@ -1,10 +1,11 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/task.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/task.hh" -*-
 /*
  * task.{cc,hh} -- a linked list of schedulable entities
  * Eddie Kohler, Benjie Chen
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2004 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -21,10 +22,12 @@
 #include <click/task.hh>
 #include <click/router.hh>
 #include <click/routerthread.hh>
+#include <click/master.hh>
 CLICK_DECLS
 
 // - Changes to _thread are protected by _thread->lock.
-// - Changes to _thread_preference are protected by _all_list->lock.
+// - Changes to _thread_preference are protected by
+//   _router->master()->task_lock.
 // - If _pending is nonzero, then _pending_next is nonnull.
 // - Either _thread_preference == _thread->thread_id(), or
 //   _thread->thread_id() == -1.
@@ -32,208 +35,224 @@ CLICK_DECLS
 bool
 Task::error_hook(Task *, void *)
 {
-  assert(0);
-  return false;
+    assert(0);
+    return false;
+}
+
+void
+Task::make_list()
+{
+    _hook = error_hook;
+    _pending_next = _all_prev = _all_next = this;
 }
 
 Task::~Task()
 {
-  assert(!scheduled() || _thread == this);
+    assert(!scheduled() || _thread == this);
 }
 
 void
-Task::initialize(Router *r, bool join)
+Task::initialize(Router *router, bool join)
 {
-  assert(!initialized() && !scheduled());
+    assert(!initialized() && !scheduled());
 
-  TaskList *tl = r->task_list();
-  tl->lock();
-  
-  _all_list = tl;
-  _all_prev = tl;
-  _all_next = tl->_all_next;
-  tl->_all_next = _all_next->_all_prev = this;
+    Master *m = router->master();
+    m->_task_lock.acquire();
 
-  _thread = r->thread(0);
-  _thread_preference = 0;
+    _router = router;
+    _all_prev = &m->_task_list;
+    _all_next = m->_task_list._all_next;
+    m->_task_list._all_next = _all_next->_all_prev = this;
+
+    _thread = router->master()->thread(0);
+    _thread_preference = 0;
 #ifdef HAVE_STRIDE_SCHED
-  set_tickets(DEFAULT_TICKETS);
+    set_tickets(DEFAULT_TICKETS);
 #endif
   
-  tl->unlock();
+    m->_task_lock.release();
 
-  if (join)
-    reschedule();
+    if (join)
+	add_pending(RESCHEDULE);
 }
 
 void
 Task::initialize(Element *e, bool join)
 {
-  initialize(e->router(), join);
+    initialize(e->router(), join);
 }
 
 void
 Task::cleanup()
 {
-  if (initialized()) {
-    unschedule();
-    
-    _all_list->lock();
+    if (initialized()) {
+	unschedule();
 
-    _all_prev->_all_next = _all_next; 
-    _all_next->_all_prev = _all_prev; 
-    _all_next = _all_prev = _all_list = 0;
-    _thread = 0;
+	Master *m = _router->master();
+	m->_task_lock.acquire();
+
+	if (_pending) {
+	    Task *prev = &m->_task_list;
+	    for (Task *t = prev->_pending_next; t != &m->_task_list; prev = t, t = t->_pending_next)
+		if (t == this) {
+		    prev->_pending_next = t->_pending_next;
+		    break;
+		}
+	    _pending = 0;
+	    _pending_next = 0;
+	}
+	
+	_all_prev->_all_next = _all_next; 
+	_all_next->_all_prev = _all_prev; 
+	_all_next = _all_prev = 0;
+	_router = 0;
+	_thread = 0;
     
-    _all_list->unlock();
-  }
+	m->_task_lock.release();
+    }
 }
 
 inline void
 Task::lock_tasks()
 {
-  while (1) {
-    RouterThread *t = _thread;
-    t->lock_tasks();
-    if (t == _thread)
-      return;
-    t->unlock_tasks();
-  }
+    while (1) {
+	RouterThread *t = _thread;
+	t->lock_tasks();
+	if (t == _thread)
+	    return;
+	t->unlock_tasks();
+    }
 }
 
 inline bool
 Task::attempt_lock_tasks()
 {
-  RouterThread *t = _thread;
-  if (t->attempt_lock_tasks()) {
-    if (t == _thread)
-      return true;
-    t->unlock_tasks();
-  }
-  return false;
+    RouterThread *t = _thread;
+    if (t->attempt_lock_tasks()) {
+	if (t == _thread)
+	    return true;
+	t->unlock_tasks();
+    }
+    return false;
 }
 
 void
 Task::add_pending(int p)
 {
-  _all_list->lock();
-  _pending |= p;
-  if (!_pending_next && _pending) {
-    _pending_next = _all_list->_pending_next;
-    _all_list->_pending_next = this;
-  }
-  if (_pending)
-    _thread->add_pending();
-  _all_list->unlock();
+    Master *m = _router->master();
+    m->_task_lock.acquire();
+    _pending |= p;
+    if (!_pending_next && _pending) {
+	_pending_next = m->_task_list._pending_next;
+	m->_task_list._pending_next = this;
+    }
+    if (_pending)
+	_thread->add_pending();
+    m->_task_lock.release();
 }
 
 void
 Task::unschedule()
 {
-  // Thanksgiving 2001: unschedule() will always unschedule the task. This
-  // seems more reliable, since some people depend on unschedule() ensuring
-  // that the task is not scheduled any more, no way, no how. Possible
-  // problem: calling unschedule() from run_task() will hang!
-  if (_thread) {
-    lock_tasks();
-    fast_unschedule();
-    _pending &= ~RESCHEDULE;
-    _thread->unlock_tasks();
-  }
+    // Thanksgiving 2001: unschedule() will always unschedule the task. This
+    // seems more reliable, since some people depend on unschedule() ensuring
+    // that the task is not scheduled any more, no way, no how. Possible
+    // problem: calling unschedule() from run_task() will hang!
+    if (_thread) {
+	lock_tasks();
+	fast_unschedule();
+	_pending &= ~RESCHEDULE;
+	_thread->unlock_tasks();
+    }
 }
 
 void
 Task::true_reschedule()
 {
-  assert(_thread);
-  if (attempt_lock_tasks()) {
-    if (!scheduled())
-      fast_schedule();
-    _thread->unlock_tasks();
-  } else
-    add_pending(RESCHEDULE);
+    assert(_thread);
+    if (_router->running() && attempt_lock_tasks()) {
+	if (!scheduled()) {
+	    fast_schedule();
+	    _thread->unsleep();
+	}
+	_thread->unlock_tasks();
+    } else
+	add_pending(RESCHEDULE);
 }
 
 void
 Task::strong_unschedule()
 {
-  // unschedule() and move to the quiescent thread, so that subsequent
-  // reschedule()s won't have any effect
-  if (_thread) {
-    lock_tasks();
-    fast_unschedule();
-    RouterThread *old_thread = _thread;
-    _pending &= ~(RESCHEDULE | CHANGE_THREAD);
-    _thread = old_thread->router()->thread(-1);
-    old_thread->unlock_tasks();
-  }
+    // unschedule() and move to the quiescent thread, so that subsequent
+    // reschedule()s won't have any effect
+    if (_thread) {
+	lock_tasks();
+	fast_unschedule();
+	RouterThread *old_thread = _thread;
+	_pending &= ~(RESCHEDULE | CHANGE_THREAD);
+	_thread = _router->master()->thread(-1);
+	old_thread->unlock_tasks();
+    }
 }
 
 void
 Task::strong_reschedule()
 {
-  assert(_thread);
-  lock_tasks();
-  fast_unschedule();
-  RouterThread *old_thread = _thread;
-  _thread = old_thread->router()->thread(_thread_preference);
-  add_pending(RESCHEDULE);
-  old_thread->unlock_tasks();
+    assert(_thread);
+    lock_tasks();
+    fast_unschedule();
+    RouterThread *old_thread = _thread;
+    _thread = _router->master()->thread(_thread_preference);
+    add_pending(RESCHEDULE);
+    old_thread->unlock_tasks();
 }
 
 void
 Task::change_thread(int new_preference)
 {
-  Router *router = _thread->router();
-  _thread_preference = new_preference;
-  if (_thread_preference < 0 || _thread_preference >= router->nthreads())
-    _thread_preference = -1;	// quiescent thread
+    _thread_preference = new_preference;
+    if (_thread_preference < 0 || _thread_preference >= _router->master()->nthreads())
+	_thread_preference = -1; // quiescent thread
 
-  if (attempt_lock_tasks()) {
-    RouterThread *old_thread = _thread;
-    if (_thread_preference != old_thread->thread_id()) {
-      if (scheduled()) {
-	fast_unschedule();
-	_pending |= RESCHEDULE;
-      }
-      _thread = router->thread(_thread_preference);
-      old_thread->unlock_tasks();
-      add_pending(0);
+    if (attempt_lock_tasks()) {
+	RouterThread *old_thread = _thread;
+	if (_thread_preference != old_thread->thread_id()) {
+	    if (scheduled()) {
+		fast_unschedule();
+		_pending |= RESCHEDULE;
+	    }
+	    _thread = _router->master()->thread(_thread_preference);
+	    old_thread->unlock_tasks();
+	    add_pending(0);
+	} else
+	    old_thread->unlock_tasks();
     } else
-      old_thread->unlock_tasks();
-  } else
-    add_pending(CHANGE_THREAD);
+	add_pending(CHANGE_THREAD);
 }
 
 void
 Task::process_pending(RouterThread *thread)
 {
-  // must be called with thread->lock held
-  
-  if (_thread == thread) {
-    if (_pending & CHANGE_THREAD) {
-      // see also change_thread() above
-      _pending &= ~CHANGE_THREAD;
-      if (scheduled()) {
-	fast_unschedule();
-	_pending |= RESCHEDULE;
-      }
-      _thread = thread->router()->thread(_thread_preference);
-    } else if (_pending & RESCHEDULE) {
-      _pending &= ~RESCHEDULE;
-      if (!scheduled())
-	fast_schedule();
+    // must be called with thread->lock held
+
+    if (_thread == thread) {
+	if (_pending & CHANGE_THREAD) {
+	    // see also change_thread() above
+	    _pending &= ~CHANGE_THREAD;
+	    if (scheduled()) {
+		fast_unschedule();
+		_pending |= RESCHEDULE;
+	    }
+	    _thread = _router->master()->thread(_thread_preference);
+	} else if (_pending & RESCHEDULE) {
+	    _pending &= ~RESCHEDULE;
+	    if (!scheduled())
+		fast_schedule();
+	}
     }
-  }
 
-  if (_pending)
-    add_pending(0);
-}
-
-TaskList::TaskList()
-  : Task(Task::error_hook, 0)
-{
-  _pending_next = _all_prev = _all_next = _all_list = this;
+    if (_pending)
+	add_pending(0);
 }
 
 CLICK_ENDDECLS

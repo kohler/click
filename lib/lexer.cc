@@ -1556,9 +1556,9 @@ Lexer::expand_compound_element(int which, const VariableEnvironment &ve)
 }
 
 Router *
-Lexer::create_router()
+Lexer::create_router(Master *master)
 {
-  Router *router = new Router(_big_string);
+  Router *router = new Router(_big_string, master);
   if (!router)
     return 0;
   

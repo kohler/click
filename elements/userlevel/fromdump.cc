@@ -27,6 +27,9 @@
 #include <click/handlercall.hh>
 #include <click/packet_anno.hh>
 #include <click/userutils.hh>
+#if CLICK_NS
+# include <click/master.hh>
+#endif
 #include "fakepcap.hh"
 #include <unistd.h>
 #include <sys/types.h>
@@ -155,8 +158,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 
 #ifdef CLICK_NS
     if (per_node) {
-	Router* myrouter = router();
-	simclick_sim mysiminst = myrouter->get_siminst();
+	simclick_sim mysiminst = router()->master()->siminst();
 	char tmp[255];
 	simclick_sim_get_node_name(mysiminst,tmp,255);
 	_ff.filename() = String(tmp) + String("_") +  _ff.filename();

@@ -34,6 +34,7 @@
 #include <click/lexer.hh>
 #include <click/routerthread.hh>
 #include <click/router.hh>
+#include <click/master.hh>
 #include <click/error.hh>
 #include <click/timer.hh>
 #include <click/straccum.hh>
@@ -130,7 +131,7 @@ catch_signal(int sig)
   if (!started)
     kill(getpid(), sig);
   else
-    router->please_stop_driver();
+    router->adjust_driver_reservations(-10000);
 }
 }
 
@@ -211,18 +212,34 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
 }
 
 
+// hotswapping
+
+static Router *hotswap_router;
+static Router *hotswap_thunk_router;
+static bool hotswap_hook(Task *, void *);
+static Task hotswap_task(hotswap_hook, 0);
+
+static bool
+hotswap_hook(Task *, void *)
+{
+  hotswap_router->activate(ErrorHandler::default_handler());
+  router->unuse();
+  router = hotswap_router;
+  hotswap_router = 0;
+  return true;
+}
+
 // switching configurations
 
 static Vector<String> cs_unix_sockets;
 static Vector<int> cs_ports;
 static bool warnings = true;
-static Router *hotswap_router = 0;
 
 static Router *
 parse_configuration(const String &text, bool text_is_expr, bool hotswap,
 		    ErrorHandler *errh)
 {
-  Router *r = click_read_router(text, text_is_expr, errh, false);
+  Router *r = click_read_router(text, text_is_expr, errh, false, (router ? router->master() : 0));
   if (!r)
     return 0;
 
@@ -247,7 +264,7 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
 
   // register hotswap router on new router
   if (hotswap && router && router->initialized())
-    r->pre_take_state(router);
+    r->set_hotswap_router(router);
   
   if (errh->nerrors() > 0 || r->initialize(errh) < 0) {
     delete r;
@@ -262,21 +279,11 @@ hotconfig_handler(const String &text, Element *, void *, ErrorHandler *errh)
   if (Router *q = parse_configuration(text, true, true, errh)) {
     if (hotswap_router)
       delete hotswap_router;
-    else
-      router->set_driver_reservations(-10000);
     hotswap_router = q;
+    hotswap_task.reschedule();
     return 0;
   } else
     return -EINVAL;
-}
-
-static void
-finish_hotswap()
-{
-  hotswap_router->take_state(errh);
-  delete router;
-  router = hotswap_router;
-  hotswap_router = 0;
 }
 
 
@@ -400,6 +407,7 @@ particular purpose.\n");
   router = parse_configuration(router_file, file_is_expr, false, errh);
   if (!router)
     exit(1);
+  router->use();
 
   int exit_value = 0;
 
@@ -431,12 +439,15 @@ particular purpose.\n");
   // run driver
   if (!quit_immediately) {
     started = true;
-   hotswap_loop:
-    router->thread(0)->driver();
-    if (hotswap_router) {
-      finish_hotswap();
-      goto hotswap_loop;
+    router->activate(errh);
+    if (allow_reconfigure) {
+      hotswap_thunk_router = new Router("", router->master());
+      hotswap_thunk_router->initialize(errh);
+      hotswap_task.initialize(hotswap_thunk_router, false);
+      hotswap_thunk_router->activate(errh);
+      hotswap_thunk_router->set_driver_reservations(0);
     }
+    router->master()->thread(0)->driver();
   }
 
   gettimeofday(&after_time, 0);
@@ -459,7 +470,7 @@ particular purpose.\n");
     if (call_read_handlers(handlers, errh) < 0)
       exit_value = 1;
 
-  delete router;
+  router->unuse();
   click_static_cleanup();
   exit(exit_value);
 }

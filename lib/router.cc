@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2004 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -44,56 +45,45 @@ static Router::Handler *globalh;
 static int nglobalh;
 static int globalh_cap;
 
-Router::Router(const String &configuration)
-  : _master(new Master),
-    _preinitialized(false), _initialized(false), _initialize_attempted(false),
-    _cleaned(false), _have_connections(false), _have_hookpidx(false),
-    _allow_star_handler(true),
+Router::Router(const String &configuration, Master *m)
+  : _master(m), _state(ROUTER_NEW),
+    _allow_star_handler(true), _running(false),
     _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0),
     _configuration(configuration), _arena_factory(new HashMap_ArenaFactory),
-    _hotswap_router(0)
+    _hotswap_router(0), _next_router(0)
 {
   _refcount = 0;
-  _driver_runcount = 0;
+  _runcount = 0;
   
-  // RouterThreads will add themselves to _threads
-  (void) new RouterThread(this);	// quiescent thread
-  (void) new RouterThread(this);	// first normal thread
-
   _root_element = new ErrorElement;
   _root_element->attach_router(this, -1);
 
-#ifdef CLICK_NS
-  _clickinst = 0;
-  _siminst = 0;
-#endif
+  _master->use();
 }
 
 Router::~Router()
 {
   if (_refcount > 0)
     click_chatter("deleting router while ref count > 0");
+
+  // unuse the hotswap router
+  if (_hotswap_router)
+    _hotswap_router->unuse();
   
-  // delete the ArenaFactory, which detaches the Arenas
+  // Delete the ArenaFactory, which detaches the Arenas
   delete _arena_factory;
 
   // Clean up elements in reverse configuration order
-  if (_initialized) {
+  if (_state == ROUTER_LIVE) {
+    // Unschedule tasks and timers
+    _master->remove_router(this);
     for (int ord = _elements.size() - 1; ord >= 0; ord--)
       _elements[ _element_configure_order[ord] ]->cleanup(Element::CLEANUP_ROUTER_INITIALIZED);
-  } else if (!_cleaned) {
-    assert(_element_configure_order.size() == 0);
+  } else if (_state != ROUTER_DEAD) {
+    assert(_element_configure_order.size() == 0 && _state <= ROUTER_PRECONFIGURE);
     for (int i = _elements.size() - 1; i >= 0; i--)
       _elements[i]->cleanup(Element::CLEANUP_NO_ROUTER);
   }
-  
-  // Unschedule tasks and timers, delete threads
-  for (int i = 0; i < _threads.size(); i++) {
-    _threads[i]->unschedule_all_tasks();
-    delete _threads[i];
-  }
-
-  delete _master;
   
   // Delete elements in reverse configuration order
   if (_element_configure_order.size())
@@ -105,6 +95,7 @@ Router::~Router()
   
   delete _root_element;
   delete[] _handlers;
+  _master->unuse();
 }
 
 void
@@ -126,7 +117,7 @@ Router::find(const String &name, String prefix, ErrorHandler *errh) const
     for (int i = 0; i < _elements.size(); i++)
       if (_element_names[i] == n) {
 	if (got >= 0) {
-	  if (errh) errh->error("more than one element named `%s'", n.cc());
+	  if (errh) errh->error("more than one element named '%s'", n.cc());
 	  return 0;
 	} else
 	  got = i;
@@ -141,7 +132,7 @@ Router::find(const String &name, String prefix, ErrorHandler *errh) const
   }
   
   if (errh)
-    errh->error("no element named `%s'", name.c_str());
+    errh->error("no element named '%s'", name.c_str());
   return 0;
 }
 
@@ -206,7 +197,8 @@ Router::add_element(Element *e, const String &ename, const String &conf,
 		    const String &landmark)
 {
   // router now owns the element
-  if (_preinitialized || !e) return -1;
+  if (_state != ROUTER_NEW || !e)
+    return -1;
   _elements.push_back(e);
   _element_names.push_back(ename);
   _element_landmarks.push_back(landmark);
@@ -220,7 +212,8 @@ int
 Router::add_connection(int from_idx, int from_port, int to_idx, int to_port)
 {
   assert(from_idx >= 0 && from_port >= 0 && to_idx >= 0 && to_port >= 0);
-  if (_preinitialized) return -1;
+  if (_state != ROUTER_NEW)
+    return -1;
   Hookup hfrom(from_idx, from_port);
   Hookup hto(to_idx, to_port);
   // only add new connections
@@ -237,23 +230,6 @@ Router::add_requirement(const String &r)
 {
   assert(cp_is_word(r));
   _requirements.push_back(r);
-}
-
-void
-Router::add_thread(RouterThread *rt)
-{
-  rt->set_thread_id(_threads.size() - 1);
-  _threads.push_back(rt);
-}
-
-void
-Router::remove_thread(RouterThread *rt)
-{
-  for (int i = 0; i < _threads.size(); i++)
-    if (_threads[i] == rt) {
-      _threads[i] = 0;
-      return;
-    }
 }
 
 
@@ -291,13 +267,13 @@ Router::check_hookup_elements(ErrorHandler *errh)
     int before = errh->nerrors();
     
     if (hfrom.idx < 0 || hfrom.idx >= nelements() || !_elements[hfrom.idx])
-      errh->error("bad element number `%d'", hfrom.idx);
+      errh->error("bad element number '%d'", hfrom.idx);
     if (hto.idx < 0 || hto.idx >= nelements() || !_elements[hto.idx])
-      errh->error("bad element number `%d'", hto.idx);
+      errh->error("bad element number '%d'", hto.idx);
     if (hfrom.port < 0)
-      errh->error("bad port number `%d'", hfrom.port);
+      errh->error("bad port number '%d'", hfrom.port);
     if (hto.port < 0)
-      errh->error("bad port number `%d'", hto.port);
+      errh->error("bad port number '%d'", hto.port);
     
     // remove the connection if there were errors
     if (errh->nerrors() != before) {
@@ -337,9 +313,9 @@ Router::check_hookup_range(ErrorHandler *errh)
     int before = errh->nerrors();
     
     if (hfrom.port >= _elements[hfrom.idx]->noutputs())
-      hookup_error(hfrom, true, "`%{element}' has no %s %d", errh);
+      hookup_error(hfrom, true, "'%{element}' has no %s %d", errh);
     if (hto.port >= _elements[hto.idx]->ninputs())
-      hookup_error(hto, false, "`%{element}' has no %s %d", errh);
+      hookup_error(hto, false, "'%{element}' has no %s %d", errh);
     
     // remove the connection if there were errors
     if (errh->nerrors() != before) {
@@ -366,10 +342,10 @@ Router::check_hookup_completeness(ErrorHandler *errh)
     int to_pidx = _input_pidx[hto.idx] + hto.port;
     if (used_outputs[from_pidx]
 	&& _elements[hfrom.idx]->output_is_push(hfrom.port))
-      hookup_error(hfrom, true, "can't reuse `%{element}' push %s %d", errh);
+      hookup_error(hfrom, true, "can't reuse '%{element}' push %s %d", errh);
     else if (used_inputs[to_pidx]
 	     && _elements[hto.idx]->input_is_pull(hto.port))
-      hookup_error(hto, false, "can't reuse `%{element}' pull %s %d", errh);
+      hookup_error(hto, false, "can't reuse '%{element}' pull %s %d", errh);
     
     // remove the connection if there were errors
     if (errh->nerrors() != before) {
@@ -385,12 +361,12 @@ Router::check_hookup_completeness(ErrorHandler *errh)
   for (int i = 0; i < ninput_pidx(); i++)
     if (!used_inputs[i]) {
       Hookup h(input_pidx_element(i), input_pidx_port(i));
-      hookup_error(h, false, "`%{element}' %s %d unused", errh);
+      hookup_error(h, false, "'%{element}' %s %d unused", errh);
     }
   for (int i = 0; i < noutput_pidx(); i++)
     if (!used_outputs[i]) {
       Hookup h(output_pidx_element(i), output_pidx_port(i));
-      hookup_error(h, true, "`%{element}' %s %d unused", errh);
+      hookup_error(h, true, "'%{element}' %s %d unused", errh);
     }
 }
 
@@ -454,12 +430,14 @@ Router::output_pidx_port(int pidx) const
 void
 Router::make_hookpidxes()
 {
-  if (_have_hookpidx) return;
-  for (int c = 0; c < _hookup_from.size(); c++) {
-    int p1 = _output_pidx[_hookup_from[c].idx] + _hookup_from[c].port;
-    _hookpidx_from.push_back(p1);
-    int p2 = _input_pidx[_hookup_to[c].idx] + _hookup_to[c].port;
-    _hookpidx_to.push_back(p2);
+  if (_hookpidx_from.size() != _hookup_from.size()) {
+    for (int c = 0; c < _hookup_from.size(); c++) {
+      int p1 = _output_pidx[_hookup_from[c].idx] + _hookup_from[c].port;
+      _hookpidx_from.push_back(p1);
+      int p2 = _input_pidx[_hookup_to[c].idx] + _hookup_to[c].port;
+      _hookpidx_to.push_back(p2);
+    }
+    assert(_hookpidx_from.size() == _hookup_from.size());
   }
 }
 
@@ -472,11 +450,11 @@ Router::processing_error(const Hookup &hfrom, const Hookup &hto, bool aggie,
   const char *type1 = (processing_from == Element::VPUSH ? "push" : "pull");
   const char *type2 = (processing_from == Element::VPUSH ? "pull" : "push");
   if (!aggie)
-    errh->error("`%{element}' %s output %d connected to `%{element}' %s input %d",
+    errh->error("'%{element}' %s output %d connected to '%{element}' %s input %d",
 		_elements[hfrom.idx], type1, hfrom.port,
 		_elements[hto.idx], type2, hto.port);
   else
-    errh->error("agnostic `%{element}' in mixed context: %s input %d, %s output %d",
+    errh->error("agnostic '%{element}' in mixed context: %s input %d, %s output %d",
 		_elements[hfrom.idx], type2, hto.port, type1, hfrom.port);
   return -1;
 }
@@ -594,38 +572,25 @@ Router::set_connections()
 void
 Router::set_driver_reservations(int x)
 {
-  _runcount_lock.acquire();
-  _driver_runcount = x;
-  _runcount_lock.release();
+  _master->_runcount_lock.acquire();
+  _runcount = x;
+  if (_runcount < _master->_runcount) {
+    _master->_runcount = _runcount;
+    // ensure that at least one thread is awake to handle the stop event
+    if (_master->_runcount <= 0)
+      _master->_threads[1]->unsleep();
+  }
+  _master->_runcount_lock.release();
 }
 
 void
 Router::adjust_driver_reservations(int x)
 {
-  _runcount_lock.acquire();
-  _driver_runcount += x;
-  _runcount_lock.release();
-}
-
-bool
-Router::check_driver()
-{
-  _runcount_lock.acquire();
-
-  if (_driver_runcount <= 0) {
-    DriverManager *dm = (DriverManager *)(attachment("DriverManager"));
-    if (dm && initialized())
-      while (1) {
-	int was_runcount = _driver_runcount;
-	dm->handle_stopped_driver();
-	if (_driver_runcount <= was_runcount || _driver_runcount > 0)
-	  break;
-      }
-  }
-  bool more = (_driver_runcount > 0);
-
-  _runcount_lock.release();
-  return more;
+  _master->_runcount_lock.acquire();
+  _runcount += x;
+  if (_runcount < _master->_runcount)
+    _master->_runcount = _runcount;
+  _master->_runcount_lock.release();
 }
 
 
@@ -635,7 +600,7 @@ int
 Router::downstream_inputs(Element *first_element, int first_output,
 			  ElementFilter *stop_filter, Bitvector &results)
 {
-  if (!_have_connections)
+  if (_state < ROUTER_PREINITIALIZE)
     return -1;
   make_hookpidxes();
   int nipidx = ninput_pidx();
@@ -713,7 +678,7 @@ int
 Router::upstream_outputs(Element *first_element, int first_input,
 			 ElementFilter *stop_filter, Bitvector &results)
 {
-  if (!_have_connections)
+  if (_state < ROUTER_PREINITIALIZE)
     return -1;
   make_hookpidxes();
   int nipidx = ninput_pidx();
@@ -797,7 +762,7 @@ Router::context_message(int element_no, const char *message) const
   StringAccum sa;
   if (e->landmark())
     sa << e->landmark() << ": ";
-  sa << message << " `" << e->declaration() << "':";
+  sa << message << " '" << e->declaration() << "':";
   return sa.take_string();
 }
 
@@ -810,19 +775,6 @@ configure_order_compar(const void *athunk, const void *bthunk)
   const int *a = (const int *)athunk, *b = (const int *)bthunk;
   return (*configure_order_phase)[*a] - (*configure_order_phase)[*b];
 }
-}
-
-void
-Router::preinitialize()
-{
-  // initialize handlers to empty
-  initialize_handlers(false, false);
-  
-  // clear attachments
-  _attachment_names.clear();
-  _attachments.clear();
-
-  _preinitialized = true;
 }
 
 void
@@ -849,25 +801,22 @@ Router::initialize_handlers(bool defaults, bool specifics)
 int
 Router::initialize(ErrorHandler *errh)
 {
-  assert(!_initialized);
-  if (!_preinitialized)
-    preinitialize();
-  if (_initialize_attempted)
+  if (_state != ROUTER_NEW)
     return errh->error("second attempt to initialize router");
-  _driver_runcount = 1;
-  _initialize_attempted = true;
+  _state = ROUTER_PRECONFIGURE;
 
-#if CLICK_DMALLOC
-  char dmalloc_buf[12];
-#endif
+  // initialize handlers to empty
+  initialize_handlers(false, false);
+  
+  // clear attachments
+  _attachment_names.clear();
+  _attachments.clear();
   
   if (check_hookup_elements(errh) < 0)
     return -1;
   
-  Bitvector element_ok(nelements(), true);
-  bool all_ok = true;
-
-  notify_hookup_range();
+  _runcount = 1;
+  _master->register_router(this);
 
   // set up configuration order
   _element_configure_order.assign(nelements(), 0);
@@ -881,10 +830,18 @@ Router::initialize(ErrorHandler *errh)
     click_qsort(&_element_configure_order[0], _element_configure_order.size(), sizeof(int), configure_order_compar);
   }
 
+  // notify elements of hookup range
+  notify_hookup_range();
+
   // Configure all elements in configure order. Remember the ones that failed
+  Bitvector element_ok(nelements(), true);
+  bool all_ok = true;
   Element::CleanupStage failure_stage = Element::CLEANUP_CONFIGURE_FAILED;
   Element::CleanupStage success_stage = Element::CLEANUP_CONFIGURED;
   Vector<String> conf;
+#if CLICK_DMALLOC
+  char dmalloc_buf[12];
+#endif
   for (int ord = 0; ord < _elements.size(); ord++) {
     int i = _element_configure_order[ord];
 #if CLICK_DMALLOC
@@ -913,7 +870,7 @@ Router::initialize(ErrorHandler *errh)
   check_push_and_pull(errh);
   check_hookup_completeness(errh);
   set_connections();
-  _have_connections = true;
+  _state = ROUTER_PREINITIALIZE;
   if (before != errh->nerrors())
     all_ok = false;
 
@@ -934,7 +891,7 @@ Router::initialize(ErrorHandler *errh)
 	int before = cerrh.nerrors();
 	if (_elements[i]->initialize(&cerrh) < 0) {
 	  element_ok[i] = all_ok = false;
-	  // don't report `unspecified error' for ErrorElements: keep error
+	  // don't report 'unspecified error' for ErrorElements: keep error
 	  // messages clean
 	  if (cerrh.nerrors() == before && !_elements[i]->cast("Error"))
 	    cerrh.error("unspecified error");
@@ -950,54 +907,69 @@ Router::initialize(ErrorHandler *errh)
   // If there were errors, uninitialize any elements that we initialized
   // successfully and return -1 (error). Otherwise, we're all set!
   if (all_ok) {
-    _initialized = true;
+    _state = ROUTER_LIVE;
     return 0;
   } else {
+    _state = ROUTER_DEAD;
     errh->verror_text(ErrorHandler::ERR_CONTEXT_ERROR, "", "Router could not be initialized!");
     
+    // Unschedule tasks and timers
+    master()->remove_router(this);
+
     // Clean up elements
     for (int ord = _elements.size() - 1; ord >= 0; ord--) {
       int i = _element_configure_order[ord];
       _elements[i]->cleanup(element_ok[i] ? success_stage : failure_stage);
     }
-    _cleaned = true;
     
-    // Unschedule tasks and timers
-    for (int i = 0; i < _threads.size(); i++)
-      _threads[i]->unschedule_all_tasks();
-    master()->timer_list()->unschedule_all();
-
     // Remove element-specific handlers
     initialize_handlers(true, false);
     
-    _driver_runcount = 0;
+    _runcount = 0;
     return -1;
   }
+}
+
+void
+Router::activate(ErrorHandler *errh)
+{
+  if (_state != ROUTER_LIVE || _running)
+    return;
+  
+  // Take state if appropriate
+  if (_hotswap_router && _hotswap_router->_state == ROUTER_LIVE) {
+    // Unschedule tasks and timers
+    master()->remove_router(_hotswap_router);
+      
+    for (int i = 0; i < _elements.size(); i++) {
+      Element *e = _elements[i];
+      if (Element *other = e->hotswap_element()) {
+	ContextErrorHandler cerrh
+	  (errh, context_message(i, "While hot-swapping state into"));
+	e->take_state(other, &cerrh);
+      }
+    }
+  }
+  if (_hotswap_router) {
+    _hotswap_router->unuse();
+    _hotswap_router = 0;
+  }
+
+  // Activate router
+  _running = true;
+  master()->run_router(this);
 }
 
 
 // steal state
 
 void
-Router::pre_take_state(Router *r)
+Router::set_hotswap_router(Router *r)
 {
-  assert(!_initialized && !_hotswap_router && (!r || r->initialized()));
+  assert(_state == ROUTER_NEW && !_hotswap_router && (!r || r->initialized()));
   _hotswap_router = r;
-}
-
-void
-Router::take_state(ErrorHandler *errh)
-{
-  assert(_initialized && _hotswap_router);
-  for (int i = 0; i < _elements.size(); i++) {
-    Element *e = _elements[i];
-    if (Element *other = e->hotswap_element()) {
-      ContextErrorHandler cerrh
-	(errh, context_message(i, "While hot-swapping state into"));
-      e->take_state(other, &cerrh);
-    }
-  }
-  _hotswap_router = 0;
+  if (_hotswap_router)
+    _hotswap_router->use();
 }
 
 
@@ -1024,7 +996,7 @@ Router::Handler::unparse_name(Element *e) const
 // 11.Jul.2000 - We had problems with handlers for medium-sized configurations
 // (~400 elements): the Linux kernel would crash with a "kmalloc too large".
 // The solution: Observe that most handlers are shared. For example, all
-// `name' handlers can share a Handler structure, since they share the same
+// 'name' handlers can share a Handler structure, since they share the same
 // read function, read thunk, write function (0), write thunk, and name. This
 // introduced a bunch of structure to go from elements to handler indices and
 // from handler names to handler indices, but it was worth it: it reduced the
@@ -1608,7 +1580,7 @@ Router::static_cleanup()
 
 int
 Router::sim_get_ifid(const char* ifname) {
-  return simclick_sim_ifid_from_name(_siminst,ifname);
+  return simclick_sim_ifid_from_name(_master->siminst(), ifname);
 }
 
 Vector<int> *
@@ -1637,12 +1609,12 @@ Router::sim_listen(int ifid, int element) {
 int
 Router::sim_write(int ifid,int ptype,const unsigned char* data,int len,
 		     simclick_simpacketinfo* pinfo) {
-  return simclick_sim_send_to_if(_siminst,_clickinst,ifid,ptype,data,len,pinfo);
+  return simclick_sim_send_to_if(_master->siminst(),_master->clickinst(),ifid,ptype,data,len,pinfo);
 }
 
 int
 Router::sim_if_ready(int ifid) {
-  return simclick_sim_if_ready(_siminst,_clickinst,ifid);
+  return simclick_sim_if_ready(_master->siminst(),_master->clickinst(),ifid);
 }
 
 int

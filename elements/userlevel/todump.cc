@@ -22,6 +22,9 @@
 #include "todump.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
+#if CLICK_NS
+# include <click/master.hh>
+#endif
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/packet_anno.hh>
@@ -97,8 +100,7 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 
 #ifdef CLICK_NS
     if (per_node) {
-	Router* myrouter = router();
-	simclick_sim mysiminst = myrouter->get_siminst();
+	simclick_sim mysiminst = router()->master()->siminst();
 	char tmp[255];
 	simclick_sim_get_node_name(mysiminst,tmp,255);
 	_filename = String(tmp) + String("_") +  _filename;

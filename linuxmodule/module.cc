@@ -34,6 +34,7 @@ extern "C" int click_cleanup_packages();
 
 ErrorHandler *click_logged_errh = 0;
 Router *click_router = 0;
+Master *click_master = 0;
 
 
 /***************************** Global handlers *******************************/
@@ -201,7 +202,7 @@ init_module()
   Router::static_initialize();
 
   // thread manager, sk_buff manager, config manager
-  click_init_sched();
+  click_init_sched(ErrorHandler::default_handler());
   skbmgr_init();
   click_init_config();
   

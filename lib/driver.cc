@@ -24,6 +24,7 @@
 # define WANT_MOD_USE_COUNT 1	/* glue.hh should not define MOD_USE_COUNTs */
 #endif
 
+#include <click/driver.hh>
 #include <click/package.hh>
 #include <click/hashmap.hh>
 #include <click/error.hh>
@@ -44,7 +45,7 @@
 #endif
 
 #ifdef CLICK_USERLEVEL
-# include <click/driver.hh>
+# include <click/master.hh>
 # include <click/straccum.hh>
 #endif
 
@@ -391,7 +392,7 @@ click_static_cleanup()
 }
 
 Router *
-click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initialize)
+click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initialize, Master *master)
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
@@ -425,12 +426,12 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
 
     // lex
     if (!click_lexer)
-	click_lexer = new Lexer;
+	click_lexer = new Lexer();
     RequireLexerExtra lextra(&archive);
     int cookie = click_lexer->begin_parse(config_str, filename, &lextra, errh);
     while (click_lexer->ystatement())
 	/* do nothing */;
-    Router *router = click_lexer->create_router();
+    Router *router = click_lexer->create_router(master ? master : new Master(1));
     click_lexer->end_parse(cookie);
 
     // initialize if requested
