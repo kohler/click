@@ -93,6 +93,7 @@ Neighbor::push(int port, Packet *packet)
     // perform further packet processing
     switch (gh->type) {
     case GRID_HELLO:
+      click_chatter("got hello");
       // nothing further to do
       packet->kill();
       break;
@@ -127,7 +128,7 @@ Neighbor::push(int port, Packet *packet)
       memcpy(eh->ether_shost, _ethaddr.data(), 6);
       eh->ether_type = htons(ETHERTYPE_GRID);
       
-      grid_hdr *gh = (grid_hdr *) packet->data() + sizeof(click_ether);
+      grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
       gh->len = sizeof(grid_hdr);
       gh->type = GRID_NBR_ENCAP;
       memcpy((unsigned char *) &gh->ip, _ipaddr.data(), 4);

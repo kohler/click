@@ -79,13 +79,13 @@ Hello::run_scheduled()
 Packet *
 Hello::make_hello()
 {
-  Packet *p = Packet::make(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hdr)); 
+  Packet *p = Packet::make(sizeof(click_ether) + sizeof(grid_hdr)); 
   memset(p->data(), 0, p->length());
   click_ether *eh = (click_ether *) p->data();
   memset(eh->ether_dhost, 0xff, 6); // broadcast
   eh->ether_type = htons(ETHERTYPE_GRID);
   memcpy(eh->ether_shost, _from_eth.data(), 6);
-  grid_hdr *gh = (grid_hdr *) p->data() + sizeof(click_ether);
+  grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   gh->len = sizeof(grid_hdr);
   gh->type = GRID_HELLO;
   memcpy(&gh->ip, _from_ip.data(), 4);
