@@ -64,10 +64,14 @@ Task::initialize(Router *router, bool join)
     assert(!initialized() && !scheduled());
 
     _router = router;
-    _thread = router->master()->thread(0);
+    
     _thread_preference = router->initial_thread_preference(this, join);
     if (_thread_preference == ThreadSched::THREAD_PREFERENCE_UNKNOWN)
 	_thread_preference = 0;
+    // Master::thread() returns the quiescent thread if its argument is out of
+    // range
+    _thread = router->master()->thread(_thread_preference);
+    
 #ifdef HAVE_STRIDE_SCHED
     set_tickets(DEFAULT_TICKETS);
 #endif
@@ -230,8 +234,8 @@ Task::change_thread(int new_preference)
     assert(!in_interrupt());
 #endif
     _thread_preference = new_preference;
-    if (_thread_preference < 0 || _thread_preference >= _router->master()->nthreads())
-	_thread_preference = -1; // quiescent thread
+    // no need to verify _thread_preference; Master::thread() returns the
+    // quiescent thread if its argument is out of range
 
     if (attempt_lock_tasks()) {
 	RouterThread *old_thread = _thread;
