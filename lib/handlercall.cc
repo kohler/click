@@ -51,6 +51,8 @@ HandlerCall::initialize(String what, bool write, Element *context, ErrorHandler 
 
     if (context->router()->nhandlers() < 0)
     	_value = original_what;
+    else if (!write)
+	_value = String::stable_string(READ_MARKER);
     return 0;
 }
 
