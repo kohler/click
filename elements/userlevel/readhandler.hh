@@ -21,6 +21,7 @@ class ReadHandlerCaller : public Element {
 
   const char *class_name() const	{ return "ReadHandlerCaller"; }
   const char *processing() const	{ return AGNOSTIC; }
+  int initialize(ErrorHandler *);
   ReadHandlerCaller *clone() const	{ return new ReadHandlerCaller; }
   
   void run_scheduled();

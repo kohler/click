@@ -144,21 +144,6 @@ ElementLink::join_scheduler()
   reschedule();
 }
 
-inline void
-ElementLink::schedule_immediately()
-{
-  // should not be scheduled at this point
-  if (_next) {
-    _next->_prev = _prev;
-    _prev->_next = _next;
-  }
-
-  _next = _list->_next;
-  _prev = _list;
-  _list->_next = this;
-  _next->_prev = this;
-}
-
 #else /* RR_SCHED */
 
 inline void
@@ -179,5 +164,20 @@ ElementLink::join_scheduler()
 }
 
 #endif /* RR_SCHED */
+
+inline void
+ElementLink::schedule_immediately()
+{
+  // should not be scheduled at this point
+  if (_next) {
+    _next->_prev = _prev;
+    _prev->_next = _next;
+  }
+
+  _next = _list->_next;
+  _prev = _list;
+  _list->_next = this;
+  _next->_prev = this;
+}
 
 #endif

@@ -6,11 +6,13 @@
 # include <config.h>
 #endif
 #include "readhandler.hh"
+#include "../standard/scheduleinfo.hh"
   
 int
 ReadHandlerCaller::initialize(ErrorHandler *errh)
 {
   ScheduleInfo::join_scheduler(this, errh);
+  return 0;
 }
   
 void

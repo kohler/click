@@ -48,14 +48,12 @@
 #define OUTPUT_OPT		304
 #define HANDLER_OPT		305
 #define TIME_OPT		306
-#define DURATION_OPT		307
-#define DIR_OPT			308
+#define DIR_OPT			307
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "handler", 'h', HANDLER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "duration", 'u', DURATION_OPT, Clp_ArgUnsigned, 0 },
   { "directory", 'd', DIR_OPT, Clp_ArgString, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "quit", 'q', QUIT_OPT, 0, 0 },
@@ -87,8 +85,6 @@ Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
   -h, --handler ELEMENT.H       Call ELEMENT's read handler H after running\n\
                                 driver and print result to standard output.\n\
-  -u, --duration DURATION	Call specified read handlers once every \n\
-                                DURATION number of seconds while running. \n\
   -d, --directory DIR		Write output of read handlers into DIR. \n\
   -o, --output FILE             Write flat configuration to FILE.\n\
   -q, --quit                    Do not run driver.\n\
@@ -102,9 +98,7 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 static Router *router;
 static Vector<String> call_handlers;
 static ErrorHandler *errh;
-static int handler_duration = -1;
 static const char *handler_dir = 0;
-static ReadHandlerCaller* readhandler_element = 0;
 
 static void
 catch_sigint(int)
@@ -360,15 +354,6 @@ int call_read_handlers()
   return 0;
 }
 
-static void
-catch_sigalrm(int)
-{
-  click_chatter("signal alarm");
-  if (readhandler_element) 
-    readhandler_element->schedule_immediately();
-  alarm(handler_duration);
-}
-
 // main
 
 extern void export_elements(Lexer *);
@@ -419,14 +404,6 @@ main(int argc, char **argv)
 	goto bad_option;
       }
       handler_dir = clp->arg;
-      break;
-
-     case DURATION_OPT:
-      if (handler_duration > -1) {
-	errh->error("duration specified twice");
-	goto bad_option;
-      }
-      handler_duration = clp->val.u;
       break;
 
      case HANDLER_OPT:
@@ -522,7 +499,6 @@ particular purpose.\n");
   lexer->end_parse(cookie);
   
   signal(SIGINT, catch_sigint);
-  signal(SIGALRM, catch_sigalrm);
 
   if (router->initialize(errh) < 0)
     exit(1);
@@ -560,12 +536,6 @@ particular purpose.\n");
     e->add_handlers();
   }
   
-  // create a ReadHandlerCaller element: is this kosher? we don't use
-  // ReadHandlerCaller anywhere else...
-  readhandler_element = new ReadHandlerCaller();
-  readhandler_element->initialize_link(router);
-  alarm(handler_duration);
-
   // run driver
   if (!quit_immediately)
     router->driver();
@@ -590,7 +560,6 @@ particular purpose.\n");
   if ((ev = call_read_handlers()))
     exit_value = ev;
 
-  delete readhandler_element;
   delete router;
   delete lexer;
   exit(exit_value);
