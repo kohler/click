@@ -105,7 +105,7 @@ private:
     static size_t len1(int nhops, int dlen) {
       return hlen1(nhops) + dlen;
     }
-    u_char *data() { return ((u_char*)&_type) + hlen(); }
+    u_char *data() { return ether_dhost + hlen(); }
   };
 
   // Description of a single hop in a route.
