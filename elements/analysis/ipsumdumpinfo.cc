@@ -98,15 +98,17 @@ IPSummaryDumpInfo::parse_content(const String &word)
 	return W_IP_TOS;
     else if (word == "ip_ttl")
 	return W_IP_TTL;
+    else if (word == "none")
+	return W_NONE;
     else if (find(word, ' ') != word.end()) {
 	const char *space = find(word, ' ');
 	return parse_content(word.substring(word.begin(), space) + "_" + word.substring(space + 1, word.end()));
     } else
-	return W_NONE;
+	return -1;
 }
 
 static int content_binary_sizes[] = {
-    -10000, 8, 4, 4, 4,	// W_NONE, W_TIMESTAMP, W_TS_SEC, W_TS_USEC, W_SRC
+    0, 8, 4, 4, 4,	// W_NONE, W_TIMESTAMP, W_TS_SEC, W_TS_USEC, W_SRC
     4, 4, 1, 2, 2,	// W_DST, W_LENGTH, W_PROTO, W_IPID, W_SPORT
     2, 4, 4, 1, 4,	// W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS, W_PL_LEN
     4, 1, 2, -10000, 1,	// W_COUNT, W_FRAG, W_FRAGOFF, W_PAYLOAD, W_LINK
