@@ -1,3 +1,8 @@
+2005-03-11 Friday 17:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: rangeiplookup.cc (1.2), rangeiplookup.hh (1.2): use
+	memset(), not bzero()
+
 2005-03-11 Friday 09:49  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/error.hh (1.29), lib/error.cc (1.55): fix
