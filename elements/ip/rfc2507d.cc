@@ -13,21 +13,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#ifdef __linux__
-# define _BSD_SOURCE
-#endif
 #include "rfc2507d.hh"
-
 #include <string.h>
-#ifndef __linux__
-#define tcphdr tcp_header
-#ifndef IPOPT_OFFSET
-/* for alpha */
-#define IPOPT_OFFSET          2
-#endif
-# include <netinet/ip_var.h>
-# include <netinet/tcpip.h>
-#endif
 
 RFC2507d::RFC2507d()
 {
