@@ -710,17 +710,22 @@ esac
 
 dnl add Linux provisions
 if test $ac_have_linux_kernel = y; then
-  ac_linux_version_code=`grep LINUX_VERSION_CODE $linuxdir/include/linux/version.h | sed 's/^.*CODE //'`
-  if test $ac_linux_version_code -ge 131584 -a $ac_linux_version_code -lt 131840; then
-    provisions="linux_2_2 $provisions"
-  elif test $ac_linux_version_code -ge 132096 -a $ac_linux_version_code -lt 132352; then
-    provisions="linux_2_4 $provisions"
-  fi
+    ac_linux_version_code=`grep LINUX_VERSION_CODE $linuxdir/include/linux/version.h | sed 's/^.*CODE //'`
+    if test $ac_linux_version_code -ge 131584 -a $ac_linux_version_code -lt 131840; then
+	provisions="linux_2_2 $provisions"
+    elif test $ac_linux_version_code -ge 132096 -a $ac_linux_version_code -lt 132352; then
+	provisions="linux_2_4 $provisions"
+    fi
 fi
 
 dnl add `int64' if 64-bit integers are available
 if test "x$have_int64_types" = xyes; then
-  provisions="int64 $provisions"
+    provisions="int64 $provisions"
+fi
+
+dnl add `ip6' if ip6 elements are available
+if test "x$enable_ip6" = xyes; then
+    provisions="ip6 $provisions"
 fi
 
 AC_SUBST(provisions)

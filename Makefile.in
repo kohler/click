@@ -23,6 +23,7 @@ INSTALL_DATA_IF_CHANGED = @INSTALL_IF_CHANGED@ -m 644
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 EXTRA_PROVIDES =
+PROVISIONS = @provisions@ $(EXTRA_PROVIDES)
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -78,12 +79,12 @@ install-include: install-local-include
 	@cd tools && $(MAKE) install-include
 
 elemlist elemlists:
-	for dir in @TARGETS@; do \
-	  echo $$dir @element_groups@ | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@") > $$dir/elements.conf; \
+	for target in @TARGETS@; do \
+	  echo $$target @element_groups@ | (cd $(top_srcdir); ./click-buildtool findelem -r "$$target $(PROVISIONS)") > $$target/elements.conf; \
 	done
 
 elementmap: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
-	t="@element_groups@ @TARGETS@ $(EXTRA_PROVIDES)"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@ $(EXTRA_PROVIDES)" | $(PERL) ./click-mkelemmap -r "@provisions@ $$t" -Iinclude) > elementmap
+	t="@element_groups@ @TARGETS@ $(EXTRA_PROVIDES)"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "$(PROVISIONS) @TARGETS@" | $(PERL) ./click-mkelemmap -r "$(PROVISIONS) $$t" -Iinclude) > elementmap
 always:
 	@:
 

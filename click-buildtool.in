@@ -91,8 +91,8 @@ are not available until reaching a stable set of sources. It expects a list of
 files and directories on standard input. Directories are searched for .cc/.c
 source files. Only files containing EXPORT_ELEMENT() or ELEMENT_PROVIDES() are
 considered. The initial list of available requirements is the list of
-directories given on the standard input, plus the list of EXPORT_ELEMENT() and
-ELEMENT_PROVIDES() keywords, plus any extra requirements specified with `-r'.
+requirements specified with `-r', plus the list of EXPORT_ELEMENT() and
+ELEMENT_PROVIDES() keywords.
 
 Usage: click-buildtool findelem [-a] [-V] [-p PREFIX] < [FILES AND DIRECTORIES]
 
@@ -123,7 +123,7 @@ EOF
 
     # add standards to provisions if necessary
     if test "x$standards" != x; then
-	provisions="$provisions AddressInfo AlignmentInfo DriverManager ErrorElement ScheduleInfo"
+	provisions="$provisions AddressInfo AlignmentInfo DriverManager ErrorElement ScheduleInfo Storage"
     fi
 
     # expand provisions and unprovisions: require one per line
@@ -148,8 +148,6 @@ $bad_first_files" | sort | uniq -u`
 	    pprefix="${prefix}elements/"
 	fi
 	if test -d "${pprefix}$i"; then
-	    provisions=`echo $i | sed 's/^\.\///'`"
-$provisions"
 	    files="$files
 "`find ${pprefix}$i -follow \( -name \*.cc -o -name \*.c \) -print | grep -v '/[.,][^/]*$'`
 	elif test -r "${pprefix}$i"; then
