@@ -1,3 +1,39 @@
+2005-02-09 Wednesday 23:33  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/gen_config_roofnet.pl (1.4): fix typo.
+
+2005-02-09 Wednesday 23:29  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/gen_config_roofnet.pl (1.3): remove etx from config.
+
+2005-02-09 Wednesday 23:26  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/gen_config_roofnet.pl (1.2): find correct srcr.click
+	using $0.
+
+2005-02-09 Wednesday 23:01  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/: access-point.click (1.4), associate.pl (1.5),
+	dump.click (1.5), scan.pl (1.4), station.click (1.6),
+	write_handler.pl (1.2): some small fixes to wifi configuration.
+
+2005-02-09 Wednesday 22:49  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/: gen_config_roofnet.pl (1.1), srcr.click (1.1): move
+	stuff out of roofnet directory into wifi.
+
+2005-02-09 Wednesday 22:48  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/bitrate.cc (1.1), elements/wifi/bitrate.hh (1.1),
+	elements/wifi/probetxrate.hh (1.18),
+	elements/wifi/setwifiextraflag.cc (1.3),
+	elements/wifi/setwifiextraflag.hh (1.2),
+	elements/wifi/wifidupefilter.cc (1.6),
+	elements/wifi/sr/ettmetric.hh (1.11), include/clicknet/wifi.h
+	(1.19), elements/wifi/sr/txcountmetric.hh (1.3): move transmit time
+	calculation out of clicknet dir - it is in bitrate.cc, and elements
+	can include wifi/bitrate.cc and use ELEMENT_REQUIRES(bitrate).
+
 2005-02-09 Wednesday 17:04  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: directiplookup.hh (1.3), lineariplookup.hh (1.5),
@@ -1431,9 +1467,7 @@
 2004-10-28 Thursday 14:17  John Bicket <jbicket@mit.edu>
 
 	* conf/: etx.click (1.2), gen_config_roofnet.pl (1.11), srcr.click
-	(1.2), roofnet/etx.click (1.1), roofnet/gen_config_roofnet.pl
-	(1.1), roofnet/read_handler.pl (1.1), roofnet/srcr.click (1.1):
-	move roofnet scripts.
+	(1.2): move roofnet scripts.
 
 2004-10-27 Wednesday 11:34  Eddie Kohler <kohler@cs.ucla.edu>
 
