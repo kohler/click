@@ -1,5 +1,5 @@
 /*
- * stridesched.{cc,hh} -- stride scheduler
+ * stridesched.{cc,hh} -- stride-scheduling packet scheduler
  * Max Poletto, Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology.

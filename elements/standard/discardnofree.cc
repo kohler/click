@@ -44,7 +44,7 @@ DiscardNoFree::push(int, Packet *)
 void
 DiscardNoFree::run_scheduled()
 {
-  if (Packet *p = input(0).pull())
+  if (input(0).pull())
     reschedule();
 }
 

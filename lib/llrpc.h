@@ -42,15 +42,15 @@ extern "C" {
 		 : (size == 2 ? get_user(*__CLICK_LLRPC_CAST(unsigned short *)(local), __CLICK_LLRPC_CAST(unsigned short *)(remote)) \
 		    : (size == 4 ? get_user(*__CLICK_LLRPC_CAST(unsigned *)(local), __CLICK_LLRPC_CAST(unsigned *)(remote)) \
 		       : __CLICK_LLRPC_GENERIC_GET_DATA(local, remote, size))))
-		 
+
 # define __CLICK_LLRPC_GENERIC_PUT_DATA(remote, local, size) \
 		(copy_to_user(remote, local, size) > 0 ? -EFAULT : 0)
 # define __CLICK_LLRPC_CONSTANT_PUT_DATA(remote, local, size) \
 		(size == 1 ? put_user(*__CLICK_LLRPC_CAST(unsigned char *)(local), __CLICK_LLRPC_CAST(unsigned char *)(remote)) \
 		 : (size == 2 ? put_user(*__CLICK_LLRPC_CAST(unsigned short *)(local), __CLICK_LLRPC_CAST(unsigned short *)(remote)) \
 		    : (size == 4 ? put_user(*__CLICK_LLRPC_CAST(unsigned *)(local), __CLICK_LLRPC_CAST(unsigned *)(remote)) \
-		       : __CLICK_LLRPC_GENERIC_PUT_DATA(local, remote, size))))
-		 
+		       : __CLICK_LLRPC_GENERIC_PUT_DATA(remote, local, size))))
+
 # define CLICK_LLRPC_GET_DATA(local, remote, size) \
 		(__builtin_constant_p(size) && size <= 4 \
 		 ? __CLICK_LLRPC_CONSTANT_GET_DATA(local, remote, size) \
