@@ -47,7 +47,10 @@
 @top
 
 @ifinfo
-This document describes@dots{}
+This document describes the Click modular router's programming
+interface. Read this if you're interested in writing new elements for
+Click. You shouldn't need to read it if you are just building routers
+that use existing elements.
 @end ifinfo
 
 @menu
@@ -84,7 +87,7 @@ Helper Classes
 
 String
 
-* String Initialization::
+* String Initialization::       
 * String Constructors::         
 * String Contents::             
 * String Characters::           
@@ -109,9 +112,9 @@ ErrorHandler
 * Reporting Errors::            
 * Error Format Strings::        
 * Counting Errors::             
-* Basic ErrorHandlers::        
+* Basic ErrorHandlers::         
 * Error Veneers::               
-* Writing ErrorHandlers::      
+* Writing ErrorHandlers::       
 
 IPAddress
 
@@ -185,7 +188,10 @@ Moving Packets
 
 Handlers
 
-* add_read_handler add_write_handler::  
+* Read and Write Handler Overview::  
+* Adding Handlers::             
+* Default Handlers::            
+* LLRPC Overview::              
 
 Live Reconfiguration
 
@@ -194,9 +200,10 @@ Live Reconfiguration
 Configuration Strings
 
 * Config String Structure::     
-* Quoting::                     
+* Quoting and Unquoting::       
 * Config String Splitting::     
 * Parsing Functions::           
+* cp_va::                       
 
 Parsing Functions
 
@@ -211,6 +218,11 @@ Parsing Functions
 * Parsing Handlers::            
 * Parsing Miscellaneous::       
 
+Parsing Argument Lists
+
+* cp_va Concepts::              
+* cp_va Initialization::        
+
 Tasks
 
 * Task Initialization::         
@@ -223,8 +235,8 @@ Tasks
 
 Coding Standards
 
-* Upper and lower case names::
-* Common name patterns::
+* Upper and lower case names::  
+* Common name patterns::        
 
 @end detailmenu
 @end menu
@@ -269,7 +281,7 @@ generally share memory. @code{String}s may be assigned, stored, and
 passed to functions.
 
 @menu
-* String Initialization::
+* String Initialization::       
 * String Constructors::         
 * String Contents::             
 * String Characters::           
@@ -976,9 +988,9 @@ with error veneers, and how to write new @code{ErrorHandler}s.
 * Reporting Errors::            
 * Error Format Strings::        
 * Counting Errors::             
-* Basic ErrorHandlers::        
+* Basic ErrorHandlers::         
 * Error Veneers::               
-* Writing ErrorHandlers::      
+* Writing ErrorHandlers::       
 @end menu
 
 
@@ -1250,7 +1262,7 @@ taken place in some complex piece of code. For example:
 int before_nerrors = errh->nerrors();
 // @r{@dots{} complex code that may report errors to @code{errh} @dots{}}
 if (errh->nerrors() != before_nerrors) @{
-  // @r{an error has taken place}
+    // @r{an error has taken place}
 @}
 @end example
 
@@ -1352,8 +1364,8 @@ function, which prints two error messages:
 
 @example
 void f(ErrorHandler *errh) @{
-  errh->error("First line\nSecond line");
-  errh->lwarning("here", "Third line");
+    errh->error("First line\nSecond line");
+    errh->lwarning("here", "Third line");
 @}
 @end example
 
@@ -2562,7 +2574,7 @@ Here is a typical @code{class_name} method.
 
 @example
 class ARPQuerier : public Element @{ public: // ...
-  const char *class_name() const @{ return "ARPQuerier"; @}
+    const char *class_name() const @{ return "ARPQuerier"; @}
 @}
 @end example
 @end deftypemethod
@@ -2589,7 +2601,7 @@ Here is a typical @code{clone} method.
 
 @example
 class ARPQuerier : public Element @{ public: // ...
-  ARPQuerier *clone() const @{ return new ARPQuerier; @}
+    ARPQuerier *clone() const @{ return new ARPQuerier; @}
 @}
 @end example
 
@@ -2643,10 +2655,10 @@ first try at @code{Derived}'s @code{cast} implementation:
 void *
 Derived::cast(const char *name)
 @{
-  if (strcmp(name, "Derived") == 0)
-    return (Derived *)this;
-  else // rely on Base::cast to check for "Base"
-    return Base::cast(name);
+    if (strcmp(name, "Derived") == 0)
+        return (Derived *)this;
+    else // rely on Base::cast to check for "Base"
+        return Base::cast(name);
 @}
 @end example
 
@@ -2665,12 +2677,12 @@ example:
 void *
 Derived::cast(const char *name)
 @{
-  if (strcmp(name, "Derived") == 0)
-    return (Derived *)this;
-  else if (strcmp(name, "Base") == 0)
-    return (Base *)this;
-  else
-    return 0;
+    if (strcmp(name, "Derived") == 0)
+        return (Derived *)this;
+    else if (strcmp(name, "Base") == 0)
+        return (Base *)this;
+    else
+        return 0;
 @}
 @end example
 
@@ -2849,7 +2861,7 @@ configuration topology call @code{Router}'s @code{upstream_elements} and
 
 This chart shows when it is OK to call particular @code{Element}
 methods. Methods not mentioned here are generally not called by the
-user; for example, generally only the system calls @code{clone}.
+user; for example, most users won't need to call @code{clone}.
 
 @example
   Method Name                    constr notify config  init   run  
@@ -2957,7 +2969,7 @@ outputs to one or two, depending on how many outputs were actually used:
 void
 ARPQuerier::notify_noutputs(int n)
 @{
-  set_noutputs(n < 2 ? 1 : 2);
+    set_noutputs(n < 2 ? 1 : 2);
 @}
 @end example
 
@@ -3135,7 +3147,7 @@ Here is a typical @code{processing} method.
 
 @example
 class ARPQuerier : public Element @{ public: // ...
-  const char *processing() const @{ return PUSH; @}
+    const char *processing() const @{ return PUSH; @}
 @}
 @end example
 
@@ -3234,7 +3246,7 @@ Here is a typical @code{flow_code} method.
 
 @example
 class ARPQuerier : public Element @{ public: // ...
-  const char *flow_code() const @{ return "xy/x"; @}
+    const char *flow_code() const @{ return "xy/x"; @}
 @}
 @end example
 
@@ -3300,29 +3312,27 @@ distribution's elements use @code{COMPLETE_FLOW}.
 
 
 @node add_handlers, initialize, flow_code, Element Initialization
-@section @code{add_handlers}---Adding Handlers
+@section @code{add_handlers}---Creating Handlers
 
 After successfully configuring every element and assigning ports to push
 or pull, the driver calls every element's @code{add_handlers} method.
-This method should create any handlers the element provides.
+This method should create any handlers provided by the element.
 @xref{Handlers}, for more information on handlers.
 
 @deftypemethod Element {virtual void} add_handlers ()
 This method takes no arguments and returns no results. Its only side
 effect should be to create the element's class-specific handlers. Most
 @code{add_handlers} methods simply call @code{add_read_handler} and
-@code{add_write_handler} one or more times (@pxref{add_read_handler
-add_write_handler}), and possibly @code{add_task_handlers} (@pxref{Task
-Handlers}).
+@code{add_write_handler} one or more times (@pxref{Adding Handlers}),
+and possibly @code{add_task_handlers} (@pxref{Task Handlers}).
 
 The default implementation does nothing.
 @end deftypemethod
 
 @anchor{add_default_handlers} The driver also calls every element's
 @code{add_default_handlers} method. This nonvirtual method adds the
-default handlers that every element shares: @handler{class},
-@handler{name}, @handler{config}, @handler{ports}, and
-@handler{handlers}.
+default handlers that every element shares. See @ref{Default Element
+Handlers}, for more information.
 
 @deftypemethod Element {void} add_default_handlers (bool @var{config_writable})
 Adds the default collection of handlers for the element. Most of these
@@ -3331,80 +3341,6 @@ but only if @var{config_writable} is true and the
 @code{can_live_reconfigure} method also returns true
 (@pxref{can_live_reconfigure}).
 @end deftypemethod
-
-The default handlers are as follows:
-
-@table @asis
-@item @handler{class}
-Returns the element's class name, as returned by @code{class_name()},
-followed by a newline. Example result: @strcode{"ARPQuerier\n"}.
-
-@item @handler{name}
-Returns the element's name, as returned by @code{id()}, followed by a
-newline. Example result: @strcode{"arpq_0\n"}.
-
-@item @handler{config}
-Returns the element's configuration string. If the configuration string
-does not end in @samp{\} or newline, the hander appends a newline
-itself. Example result: @strcode{"18.26.7.1, 00:00:C0:4F:71:EF\n"}.
-
-If @code{can_live_reconfigure} returns true, @handler{config} is also a
-write handler. Writing to it reconfigures the element.
-@xref{Live Reconfiguration}.
-
-@item ports
-Returns a multi-line string describing the element's ports and what they
-are connected to. The string has the form
-
-@example
-@var{M} input[s]
-@r{@dots{} @var{M} input port descriptions, one per line @dots{}}
-@var{N} output[s]
-@r{@dots{} @var{N} output port descriptions, one per line @dots{}}
-@end example
-
-@noindent
-Each port description lists the port's processing type, a dash, and then
-a comma-separated list of all the ports to which this port is connected.
-The processing type is either @samp{push} or @samp{pull}; formerly
-agnostic ports are indicated by a trailing hyphen (@samp{push-} or
-@samp{pull-}). Example result:
-
-@example
-1 input
-push-   -       Strip@@2 [0]
-2 outputs
-push-   -       [0] GetIPAddress@@4
-push    -       [0] Print@@7
-@end example
-
-@noindent
-If Click was compiled with statistics collection enabled, the dash on
-each line is replaced by a packet count.
-
-@item handlers
-Returns a string listing the element's handlers, one per line. Each line
-contains the handler name, a tab, and then either @samp{r}, @samp{w}, or
-@samp{rw}, depending on whether the handler is read-only, write-only, or
-read/write. Example result for an @click{InfiniteSource} element, which
-has many handlers:
-
-@example
-scheduled       r
-tickets r
-reset   w
-count   r
-active  rw
-burstsize       rw
-limit   rw
-data    rw
-handlers        r
-ports   r
-config  rw
-name    r
-class   r
-@end example
-@end table
 
 
 @node initialize, uninitialize, add_handlers, Element Initialization
@@ -3638,8 +3574,8 @@ outputs.
 void
 BadTee::push(int, Packet *p)
 @{
-  output(0).push(p);
-  output(1).push(p);
+    output(0).push(p);
+    output(1).push(p);
 @}
 @end example
 
@@ -3653,8 +3589,8 @@ modified or even freed the packet before returning control to
 void
 GoodTee::push(int, Packet *p)
 @{
-  output(0).push(p->clone());
-  output(1).push(p);
+    output(0).push(p->clone());
+    output(1).push(p);
 @}
 @end example
 
@@ -3667,11 +3603,11 @@ contains a memory leak:
 void
 Leaky::push(int, Packet *p)
 @{
-  const click_ip *iph = p->ip_header();
-  // @r{@dots{} more processing @dots{}}
-  _counter++;
-  return;  // XXX @r{Oops!}
-  // @r{Must push the packet on, store it, or kill it before returning.}
+    const click_ip *iph = p->ip_header();
+    // @r{@dots{} more processing @dots{}}
+    _counter++;
+    return;  // XXX @r{Oops!}
+    // @r{Must push the packet on, store it, or kill it before returning.}
 @}
 @end example
 
@@ -3683,15 +3619,189 @@ Leaky::push(int, Packet *p)
 @node Handlers, Live Reconfiguration, Running Tasks, Element Runtime
 @section Handlers
 
-Click users interact with a running router through @dfn{handlers}.
+@dfn{Handlers} are access points through which users can interact with
+elements in a running Click router, or with the router as a whole.
+@dfn{Read} and @dfn{write handlers} behave like files in a file system,
+while @dfn{LLRPCs} provide a remote procedure call interface.
 
 @menu
-* add_read_handler add_write_handler::  
+* Read and Write Handler Overview::  
+* Adding Handlers::             
+* Default Handlers::            
+* LLRPC Overview::              
 @end menu
 
 
-@node add_read_handler add_write_handler,  , Handlers, Handlers
+@node Read and Write Handler Overview, Adding Handlers, Handlers, Handlers
+@subsection Read and Write Handler Overview
+
+Read and write handlers appear to the user like files in a file system,
+or alternatively, like a limited RPC mechanism that uses ASCII strings
+for data transfer. To the element programmer, a read handler is simply a
+function that takes an element and returns a String; a write handler is
+a function that takes an element and a String and returns an error code.
+
+@deftypefn {Function Type} String {(*ReadHandler)} (@w{Element *@var{element}}, @w{void *@var{thunk}})
+Read handler functions have this type. When the user accesses a read
+handler on an element, Click calls some @code{ReadHandler} function and
+passes the element as an argument. The @var{thunk} argument contains
+callback data specified when the handler was added (@pxref{Adding
+Handlers}). The function's String return value is passed back to the
+user.
+@end deftypefn
+
+@deftypefn {Function Type} int {(*WriteHandler)} (@w{const String &@var{data}}, @w{Element *@var{element}}, @w{void *@var{thunk}}, @w{ErrorHandler *@var{errh}})
+Write handler functions have this type. When the user accesses some
+element write handler by passing in a string, Click calls some
+@code{WriteHandler} function and passes the data and the relevant
+element as arguments. The @var{thunk} argument contains callback data
+specified when the handler was added (@pxref{Adding Handlers}). The
+return value is an error code: zero when there are no errors, and the
+negative of some @code{errno} value when there is an error. More
+detailed information about any errors should be reported to the
+@var{errh} argument.
+@end deftypefn
+
+Each handler has an ASCII @dfn{name}. Handler names must be unique
+within each element; for example, there can be at most one @code{x} read
+handler in a given element. A given name can be shared by a read handler
+and a write handler, however. Such a handler pair is colloquially called
+a ``read/write handler'', although its two components need not have
+anything to do with one another.
+
+There is currently no way to pass data to a read handler or return data
+from a write handler. Use LLRPCs if you need a more RPC-like read-write
+interface.
+
+Note that read and write handler functions are regular functions, not
+virtual functions. Often, therefore, handler functions are defined as
+private static member functions in the relevant element class.
+
+Read and write handlers need not use ASCII-formatted data. Most existing
+handlers do format their data in ASCII, however, and use
+@code{cp_uncomment} to ignore leading and trailing whitespace and
+comments @code{cp_uncomment} (@pxref{Quoting and Unquoting}). You may
+want to do the same for consistency's sake.
+
+Be careful when writing handlers that modify element state, or read
+state that packet processing can modify. On an SMP machine, a handler
+may be called on one processor while packets are passing through the
+router on another processor. Furthermore, multiple read handlers and
+safe LLRPCs (@pxref{LLRPC Overview}) may be active simultaneously on
+different processors. Write handlers are serialized with respect to
+other handlers and LLRPCs (but not packet processing). That is, no other
+handler or LLRPC will proceed while a write handler is active.
+
+
+@node Adding Handlers, Default Handlers, Read and Write Handler Overview, Handlers
 @subsection Adding Handlers
+
+Use @code{Element}'s @code{add_read_handler} and
+@code{add_write_handler} methods to add handlers for an element. You
+will generally call these methods only from within your element's
+@code{add_handlers} method (@pxref{add_handlers}), although nothing
+prevents you from adding handlers at any time.
+
+@deftypemethod Element void add_read_handler (@w{const String &@var{name}}, @w{ReadHandler @var{handler}}, @w{void *@var{thunk}})
+Adds a read handler named @var{name} for this element. When handler
+@var{name} is accessed, the function @var{handler} will be called with
+@code{this} and @var{thunk} as parameters.
+@end deftypemethod
+
+@deftypemethod Element void add_write_handler (@w{const String &@var{name}}, @w{WriteHandler @var{handler}}, @w{void *@var{thunk}})
+Adds a write handler named @var{name} for this element. When handler
+@var{name} is accessed, the function @var{handler} will be called with
+the relevant data, @code{this}, @var{thunk}, and an @code{ErrorHandler}
+as parameters.
+@end deftypemethod
+
+To create a read/write handler, call @code{add_read_handler} and
+@code{add_write_handler} for the component handlers.
+
+
+@node Default Handlers, LLRPC Overview, Adding Handlers, Handlers
+@subsection Default Read and Write Handlers
+
+Every element automatically provides five handlers, @handler{class},
+@handler{name}, @handler{config}, @handler{ports}, and
+@handler{handlers}. There is no need to add these handlers yourself. The
+default handlers behave as follows:
+
+@table @asis
+@item @handler{class}
+Returns the element's class name, as returned by @code{class_name()},
+followed by a newline. Example result: @strcode{"ARPQuerier\n"}.
+
+@item @handler{name}
+Returns the element's name, as returned by @code{id()}, followed by a
+newline. Example result: @strcode{"arpq_0\n"}.
+
+@item @handler{config}
+Returns the element's configuration string. If the configuration string
+does not end in newline, the hander appends a newline itself. Example
+result: @strcode{"18.26.7.1, 00:00:C0:4F:71:EF\n"}.
+
+If @code{can_live_reconfigure} returns true, @handler{config} is also a
+write handler. Writing to it reconfigures the element.
+@xref{Live Reconfiguration}.
+
+@item @handler{ports}
+Returns a multi-line string describing the element's ports and what they
+are connected to. The string has the form
+
+@example
+@var{M} input[s]
+@r{@dots{} @var{M} input port descriptions, one per line @dots{}}
+@var{N} output[s]
+@r{@dots{} @var{N} output port descriptions, one per line @dots{}}
+@end example
+
+@noindent
+Each port description lists the port's processing type, a dash, and then
+a comma-separated list of all the ports to which this port is connected.
+The processing type is either @samp{push} or @samp{pull}; formerly
+agnostic ports are indicated by a trailing hyphen (@samp{push-} or
+@samp{pull-}). Example result:
+
+@example
+1 input
+push-   -       Strip@@2 [0]
+2 outputs
+push-   -       [0] GetIPAddress@@4
+push    -       [0] Print@@7
+@end example
+
+@noindent
+If Click was compiled with statistics collection enabled, the dash on
+each line is replaced by a packet count.
+
+@item @handler{handlers}
+Returns a string listing the element's handlers, one per line. Each line
+contains the handler name, a tab, and then either @samp{r}, @samp{w}, or
+@samp{rw}, depending on whether the handler is read-only, write-only, or
+read/write. Example result for an @click{InfiniteSource} element, which
+has many handlers:
+
+@example
+scheduled       r
+tickets r
+reset   w
+count   r
+active  rw
+burstsize       rw
+limit   rw
+data    rw
+handlers        r
+ports   r
+config  rw
+name    r
+class   r
+@end example
+@end table
+
+
+@node LLRPC Overview,  , Default Handlers, Handlers
+@subsection LLRPC Overview
 
 @node Live Reconfiguration,  , Handlers, Element Runtime
 @section Live Reconfiguration
@@ -3709,13 +3819,13 @@ Click users interact with a running router through @dfn{handlers}.
 
 @menu
 * Config String Structure::     
-* Quoting::                     
+* Quoting and Unquoting::       
 * Config String Splitting::     
 * Parsing Functions::           
 * cp_va::                       
 @end menu
 
-@node Config String Structure, Quoting, Configuration Strings, Configuration Strings
+@node Config String Structure, Quoting and Unquoting, Configuration Strings, Configuration Strings
 @section Structure
 
 Configuration strings consist of a list of comma-separated
@@ -3822,7 +3932,7 @@ such sequences expand to @samp{@key{CHAR}}, but their semantics may
 eventually change.
 
 
-@node Quoting, Config String Splitting, Config String Structure, Configuration Strings
+@node Quoting and Unquoting, Config String Splitting, Config String Structure, Configuration Strings
 @section Quoting and Unquoting
 
 These functions interpret quote sequences and comments in configuration
@@ -3862,7 +3972,7 @@ For example:
 @t{cp_quote(}@samp{quote ,}@t{)} @result{} @samp{"quote ,"}
 @end display
 
-@node Config String Splitting, Parsing Functions, Quoting, Configuration Strings
+@node Config String Splitting, Parsing Functions, Quoting and Unquoting, Configuration Strings
 @section Splitting and Combining
 
 @deftypefun void cp_argvec (@w{const String &@var{str}}, @w{Vector<String> &@var{conf}})
@@ -3907,10 +4017,11 @@ processed by @code{cp_argvec}, there is no need to process them with
 The @code{cp_unargvec} and @code{cp_unspacevec} functions take a vector
 of arguments and combine them into a single string. These functions do
 not protect their arguments by quoting; use @code{cp_quote} explicitly
-when necessary (@pxref{Quoting}). If the arguments are properly quoted,
-then calling @code{cp_argvec(cp_unargvec(@var{conf}), @var{conf2})} or
-@code{cp_spacevec(cp_unspacevec(@var{conf}), @var{conf2})} will produce
-a new vector of arguments equal to the original.
+when necessary (@pxref{Quoting and Unquoting}). If the arguments are
+properly quoted, then calling @code{cp_argvec(cp_unargvec(@var{conf}),
+@var{conf2})} or @code{cp_spacevec(cp_unspacevec(@var{conf}),
+@var{conf2})} will produce a new vector of arguments equal to the
+original.
 
 @deftypefun String cp_unargvec (@w{const Vector<String> &@var{conf}})
 Returns a string consisting of the elements of @var{conf} separated by
@@ -4001,7 +4112,7 @@ true if parsing was successful.
 Parses a string from the beginning of @var{str} and stores the result in
 @code{*@var{result}}. The parsed string may contain single and double
 quotes and hex strings (@samp{\< @dots{} >}), which are processed as by
-@code{cp_unquote} (@pxref{Quoting}).
+@code{cp_unquote} (@pxref{Quoting and Unquoting}).
 
 If the @var{rest} argument is null and @var{str} contains any unquoted
 whitespace, then parsing will fail. If @var{rest} is not null, then
@@ -4032,9 +4143,9 @@ whitespace, control characters, non-ASCII characters (with values 127 or
 higher), or special characters (@samp{'}, @samp{"}, @samp{\}, or
 @samp{,}). @var{str} may contain single and double quotes and hex
 strings (@samp{\< @dots{} >}), which are processed as by
-@code{cp_unquote} (@pxref{Quoting}). The unquoted result must not
-contain quote marks, whitespace, or other special characters, however.
-Returns true if and only if @var{str} contained a valid word.
+@code{cp_unquote} (@pxref{Quoting and Unquoting}). The unquoted result
+must not contain quote marks, whitespace, or other special characters,
+however. Returns true if and only if @var{str} contained a valid word.
 
 If the @var{rest} argument is null and @var{str} contains any unquoted
 whitespace, then parsing will fail. If @var{rest} is not null, then
@@ -4879,7 +4990,7 @@ The @code{initialize_task} method is generally called like this:
 int
 SomeElement::initialize(ErrorHandler *errh)
 @{
-  ScheduleInfo::initialize_task(this, &_task, errh);
+    ScheduleInfo::initialize_task(this, &_task, errh);
 @}
 @end example
 
@@ -5074,8 +5185,8 @@ Timers
 
 
 @menu
-* Upper and lower case names::
-* Common name patterns::
+* Upper and lower case names::  
+* Common name patterns::        
 @end menu
 
 
