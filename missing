@@ -205,7 +205,9 @@ WARNING: \`$1' is missing on your system.  I will not be able to
     # Process Makefiles and remove GNU-specific sections.
     shift 1
     for f in "$@"; do
-	awk '/^#!gmake/, /^#!end gmake/ { next; }' < $f > $f~ || exit 1
+	echo "## Stripped of GNU makeisms by 'missing'." > $f~ || exit 1
+	awk '/^#!gmake/, /^#!end gmake/ { next; }
+{ print $0; }' < $f >> $f~ || exit 1
 	mv $f~ $f || exit 1
     done
     ;;

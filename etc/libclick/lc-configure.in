@@ -330,7 +330,7 @@ dnl
 dnl check for GNU make
 dnl
 
-if test ${GMAKE-NO} = NO; then
+if test "x${GMAKE-NO}" = xNO; then
   AC_CACHE_CHECK(for GNU make, ac_cv_gnu_make,
 [if /bin/sh -c 'make -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
   ac_cv_gnu_make='make'
@@ -338,7 +338,7 @@ elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; th
   ac_cv_gnu_make='gmake'
 else
   AC_MSG_RESULT(not found)
-  AC_MSG_WARNING([can't find GNU make, not doing dependency tracking])
+  AC_MSG_WARN([can't find GNU make, not doing dependency tracking])
   ac_cv_gnu_make=''
 fi])
   GMAKE="$ac_cv_gnu_make"
