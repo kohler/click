@@ -2,13 +2,14 @@
 #ifndef CLICK_NOTIFIER_HH
 #define CLICK_NOTIFIER_HH
 #include <click/task.hh>
+#include <click/atomic.hh>
 CLICK_DECLS
 
 class NotifierSignal { public:
 
     inline NotifierSignal();		// always active
     inline NotifierSignal(bool);
-    inline NotifierSignal(volatile uint32_t *value, uint32_t mask);
+    inline NotifierSignal(atomic_uint32_t *value, uint32_t mask);
 
     static inline NotifierSignal always_active_signal();
     static inline NotifierSignal always_inactive_signal();
@@ -24,13 +25,15 @@ class NotifierSignal { public:
 
     NotifierSignal &operator+=(const NotifierSignal &);
 
+    static void static_initialize();
+
   private:
 
-    volatile uint32_t *_value;
+    atomic_uint32_t *_value;
     uint32_t _mask;
 
     enum { TRUE_MASK = 1, CONFLICT_MASK = 2 };
-    static const uint32_t true_value;
+    static atomic_uint32_t true_value;
     friend bool operator==(const NotifierSignal &, const NotifierSignal &);
     friend bool operator!=(const NotifierSignal &, const NotifierSignal &);
 
@@ -106,18 +109,18 @@ class ActiveNotifier : public PassiveNotifier { public:
 
 inline
 NotifierSignal::NotifierSignal()
-    : _value(const_cast<uint32_t *>(&true_value)), _mask(TRUE_MASK)
+    : _value(&true_value), _mask(TRUE_MASK)
 {
 }
 
 inline
 NotifierSignal::NotifierSignal(bool always_on)
-    : _value(const_cast<uint32_t *>(&true_value)), _mask(always_on ? TRUE_MASK : 0)
+    : _value(&true_value), _mask(always_on ? TRUE_MASK : 0)
 {
 }
 
 inline
-NotifierSignal::NotifierSignal(volatile uint32_t *value, uint32_t mask)
+NotifierSignal::NotifierSignal(atomic_uint32_t *value, uint32_t mask)
     : _value(value), _mask(mask)
 {
 }
@@ -125,31 +128,31 @@ NotifierSignal::NotifierSignal(volatile uint32_t *value, uint32_t mask)
 inline NotifierSignal
 NotifierSignal::always_active_signal()
 {
-    return NotifierSignal(const_cast<uint32_t *>(&true_value), TRUE_MASK);
+    return NotifierSignal(&true_value, TRUE_MASK);
 }
 
 inline NotifierSignal
 NotifierSignal::always_inactive_signal()
 {
-    return NotifierSignal(const_cast<uint32_t *>(&true_value), 0);
+    return NotifierSignal(&true_value, 0);
 }
 
 inline NotifierSignal
 NotifierSignal::conflicted_signal()
 {
-    return NotifierSignal(const_cast<uint32_t *>(&true_value), CONFLICT_MASK);
+    return NotifierSignal(&true_value, CONFLICT_MASK);
 }
 
 inline bool
 NotifierSignal::always_active() const
 {
-    return (_value == const_cast<uint32_t *>(&true_value) && _mask != 0);
+    return (_value == &true_value && _mask != 0);
 }
 
 inline bool
 NotifierSignal::conflicted() const
 {
-    return (_value == const_cast<uint32_t *>(&true_value) && _mask == CONFLICT_MASK);
+    return (_value == &true_value && _mask == CONFLICT_MASK);
 }
 
 inline void

@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2004 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -24,12 +25,15 @@
 #include <click/bitvector.hh>
 CLICK_DECLS
 
-#define NUM_SIGNALS 4096
-static uint32_t signals[NUM_SIGNALS / 32];
-
-const uint32_t NotifierSignal::true_value = 0xFFFFFFFFU;
+// should be const, but we need to explicitly initialize it
+atomic_uint32_t NotifierSignal::true_value;
 const char * const Notifier::EMPTY_NOTIFIER = "Notifier.EMPTY";
 
+void
+NotifierSignal::static_initialize()
+{
+    true_value = 0xFFFFFFFFU;
+}
 
 NotifierSignal &
 NotifierSignal::operator+=(const NotifierSignal &o)
@@ -79,16 +83,10 @@ Notifier::remove_listener(Task *)
 int
 PassiveNotifier::initialize(Router *r)
 {
-    if (_signal == NotifierSignal()) {
-	void *&val = r->force_attachment("NotifierSignal count");
-	uintptr_t nsignals = (uintptr_t) val;
-	if (nsignals >= NUM_SIGNALS)
-	    return -1;
-	_signal = NotifierSignal(&signals[nsignals / 32], 1 << (nsignals % 32));
-	_signal.set_active(true);
-	val = (void *)(nsignals + 1);
-    }
-    return 0;
+    if (_signal == NotifierSignal())
+	return r->new_notifier_signal(_signal);
+    else
+	return 0;
 }
 
 NotifierSignal
