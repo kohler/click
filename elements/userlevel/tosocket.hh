@@ -9,8 +9,6 @@
 CLICK_DECLS
 
 /*
-=title ToSocket.u
-
 =c
 
 ToSocket("TCP", IP, PORTNUMBER [, I<KEYWORDS>])
