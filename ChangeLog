@@ -1,3 +1,20 @@
+2001-07-31 Tuesday 20:06  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: fromdump.cc (1.38), fromdump.hh (1.22):
+	nitlets
+
+2001-07-31 Tuesday 20:05  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdevice.cc (1.27): portability headache:
+	change #if defined(BIOCSSEESENT) || defined(__FreeBSD__) [why or?]
+	to #ifdef BIOCSSEESENT, etc.
+
+2001-07-31 Tuesday 20:05  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click.texi (1.29), include/click/string.hh (1.15),
+	lib/string.cc (1.31): String::append_garbage is a better name than
+	append_space
+
 2001-07-31 Tuesday 04:05  Eddie Kohler <kohler@aciri.org>
 
 	* acclick.m4 (1.2), aclocal.m4 (1.2): CLICK_CHECK_LIBPCAP nitlet
