@@ -29,7 +29,9 @@ CLICK_DECLS
 ACKRetrySender2::ACKRetrySender2() 
   : Element(2, 1), _timeout(0), _max_tries(0), 
     _num_tries(0), _history_length(500), _waiting_packet(0), 
-    _verbose (true), _timer(this), _task(this)
+    _verbose (true), _timer(this), _task(this),
+    sum_tx(0), num_pkts(0), num_fail(0),
+    max_txc(0), min_txc(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -65,10 +67,7 @@ ACKRetrySender2::push(int port, Packet *p)
   }
   
   // ahhh, ACK was for us.
-  _history.push_back(tx_result_t(_waiting_packet->timestamp_anno(),
-				 _num_tries, true));
-  while (_history.size() > (int) _history_length)
-      _history.pop_front();
+  add_stat(_waiting_packet->timestamp_anno(), _num_tries, true);
   _waiting_packet->kill();
   _waiting_packet = 0;
   _num_tries = 0;
@@ -158,9 +157,7 @@ ACKRetrySender2::run_timer()
   Packet *p = _waiting_packet;
   
   if (_num_tries >= _max_tries) {
-    _history.push_back(tx_result_t(p->timestamp_anno(), _num_tries, false));
-    while (_history.size() > (int) _history_length)
-      _history.pop_front();
+    add_stat(p->timestamp_anno(), _num_tries, false);
     _waiting_packet->kill();
     _waiting_packet = p = 0;
     _num_tries = 0;
@@ -218,38 +215,17 @@ String
 ACKRetrySender2::print_summary(Element *e, void *) 
 {
   ACKRetrySender2 *a = (ACKRetrySender2 *) e;
-  unsigned num_succ = 0;
-  unsigned num_fail = 0;
-  double sum_tx = 0;
-  unsigned max_tx = 0;
-  unsigned min_tx = 0;
-  int n = a->_history.size();
-
-  for (ACKRetrySender2::HistQ::const_iterator i = a->_history.begin(); 
-       i != a->_history.end(); i++) {
-    if (sum_tx == 0)
-      max_tx = min_tx = i->num_tx;
-    else {
-      max_tx = max_tx > i->num_tx ? max_tx : i->num_tx;
-      min_tx = min_tx < i->num_tx ? min_tx : i->num_tx;
-    }
-    if (i->success)
-      num_succ++;
-    else
-      num_fail++;
-    sum_tx += i->num_tx;
-  }
 
   double txc = 0;
-  if (n > 0)
-    txc = sum_tx / n;
+  if (a->num_pkts > 0)
+    txc = (double) a->sum_tx / a->num_pkts;
  
   StringAccum s;
-  s << "packets: " << n << "\n"
-    << "success: " << num_succ << "\n"
-    << "fail: " << num_fail << "\n"
-    << "min_txc: " << min_tx << "\n"
-    << "max_txc: " << max_tx << "\n"
+  s << "packets: " << a->num_pkts << "\n"
+    << "success: " << a->num_pkts - a->num_fail << "\n"
+    << "fail: " << a->num_fail << "\n"
+    << "min_txc: " << a->min_txc << "\n"
+    << "max_txc: " << a->max_txc << "\n"
     << "avg_txc: " << txc << "\n";
   return s.take_string();
 }
@@ -260,6 +236,38 @@ ACKRetrySender2::clear_history(const String &, Element *e, void *, ErrorHandler 
   ACKRetrySender2 *a = (ACKRetrySender2 *) e;
   a->_history.clear();
   return 0;
+}
+
+int
+ACKRetrySender2::reset_stats(const String &, Element *e, void *, ErrorHandler *)
+{
+  ACKRetrySender2 *a = (ACKRetrySender2 *) e;
+  a->sum_tx = 0;
+  a->num_pkts = 0;
+  a->num_fail = 0;
+  a->max_txc = 0;
+  a->min_txc = 0;
+  return 0;
+}
+
+void
+ACKRetrySender2::add_stat(const struct timeval &t, unsigned num_tx, bool succ) 
+{
+  _history.push_back(tx_result_t(t, num_tx, succ));
+  while (_history.size() > (int) _history_length)
+    _history.pop_front();
+  
+  if (num_pkts == 0) 
+    max_txc = min_txc = num_tx;
+  else {
+    max_txc = (max_txc < num_tx) ? num_tx : max_txc;
+    min_txc = (min_txc > num_tx) ? num_tx : min_txc;
+  }
+
+  num_pkts++;
+  sum_tx += num_tx;
+  if (!succ) 
+    num_fail++;
 }
 
 #include <click/dequeue.cc>

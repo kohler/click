@@ -75,6 +75,8 @@ CLICK_DECLS
  * =h clear write-only
  * Clear out packet retry history.
  *
+ * =h reset write-only
+ * Reset packet retry statistics.
  * =a 
  * ACKResponder2, ACKRetrySender, ACKResponder, EtherEncap */
 
@@ -138,11 +140,19 @@ private:
   Timer _timer;
   Task _task;
 
+  unsigned sum_tx;
+  unsigned num_pkts;
+  unsigned num_fail;
+  unsigned max_txc, min_txc;
+
   void check();
+
+  void add_stat(const struct timeval &t, unsigned num_tx, bool succ);
 
   static String print_history(Element *e, void *);
   static String print_summary(Element *e, void *);
   static int clear_history(const String &, Element *, void *, ErrorHandler *);
+  static int reset_stats(const String &, Element *, void *, ErrorHandler *);
 };
 
 CLICK_ENDDECLS
