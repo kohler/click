@@ -38,6 +38,10 @@
 #define SET_GRID_ROUTE_CB_ANNO(p, v)    ((p)->set_user_anno_c(11, (v)))
 
 // bytes 10 - 15
+#define WIFI_FROM_CLICK(p)           (((p)->user_anno_c(9) == 0xaa)
+#define SET_WIFI_FROM_CLICK(p)    ((p)->set_user_anno_c(9, (0xaa)))
+
+
 #define WIFI_TX_SUCCESS_ANNO(p)           ((p)->user_anno_c(10))
 #define SET_WIFI_TX_SUCCESS_ANNO(p, v)    ((p)->set_user_anno_c(10, (v)))
 
