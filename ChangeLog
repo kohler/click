@@ -1,3 +1,9 @@
+2003-07-17 Thursday 00:11  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.64), dsdvroutetable.hh
+	(1.44): keyword for specifying the wireless interface's MTU, which
+	is the maximum route ad size
+
 2003-07-15 Tuesday 22:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsdvroutetable.cc (1.63): we are only seen by
