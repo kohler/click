@@ -1,3 +1,9 @@
+2003-09-23 Tuesday 13:21  John Bicket <jbicket@mit.edu>
+
+	* elements/standard/simplequeue.hh (1.7): add yank1_peek, which,
+	like yank, returns the first packet that matches a filter, but
+	doesn't remove it from the queue.
+
 2003-09-22 Monday 21:02  Eddie Kohler <kohler@icir.org>
 
 	* INSTALL (1.28): INSTALL nits
