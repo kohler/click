@@ -115,10 +115,12 @@ AggregateFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 		while (agg1 <= agg2) {
 		    if (!g || g->groupno != (agg1 & GROUPMASK))
 			g = find_group(agg1);
-		    if (g->filters[agg1 & INGROUPMASK])
-			errh->warning("pattern %d: aggregate %u already filtered to output %d", argno, agg1, g->filters[agg1 & INGROUPMASK] - 1);
+		    int which = agg1 & INGROUPMASK;
+		    if (g->filters[which] && g->filters[which] != port + 1)
+			errh->warning("pattern %d: aggregate %u already filtered to output %d", argno, agg1, g->filters[which] - 1);
 		    else
-			g->filters[agg1 & INGROUPMASK] = port + 1;
+			g->filters[which] = port + 1;
+		    agg1++;
 		}
 	    }
     }
