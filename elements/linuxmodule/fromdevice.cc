@@ -184,19 +184,18 @@ FromDevice::cleanup(CleanupStage stage)
 void
 FromDevice::take_state(Element *e, ErrorHandler *errh)
 {
-  FromDevice *fd = (FromDevice *)e->cast("FromDevice");
-  if (!fd) return;
-  
-  if (_head != _tail) {
-    errh->error("already have packets enqueued, can't take state");
-    return;
-  }
+    if (FromDevice *fd = (FromDevice *)e->cast("FromDevice")) {
+	if (_head != _tail) {
+	    errh->error("already have packets enqueued, can't take state");
+	    return;
+	}
 
-  memcpy(_queue, fd->_queue, sizeof(Packet *) * (QSIZE + 1));
-  _head = fd->_head;
-  _tail = fd->_tail;
+	memcpy(_queue, fd->_queue, sizeof(Packet *) * (QSIZE + 1));
+	_head = fd->_head;
+	_tail = fd->_tail;
   
-  fd->_head = fd->_tail = 0;
+	fd->_head = fd->_tail = 0;
+    }
 }
 
 void
@@ -214,13 +213,11 @@ extern "C" {
 static int
 packet_notifier_hook(struct notifier_block *nb, unsigned long backlog_len, void *v)
 {
-  struct sk_buff *skb = (struct sk_buff *)v;
-
-  int stolen = 0;
-  if (FromDevice *fd = (FromDevice *)from_device_map.lookup(skb->dev, 0))
-      stolen = fd->got_skb(skb);
-  
-  return (stolen ? NOTIFY_STOP_MASK : 0);
+    struct sk_buff *skb = (struct sk_buff *)v;
+    int stolen = 0;
+    if (FromDevice *fd = (FromDevice *)from_device_map.lookup(skb->dev, 0))
+	stolen = fd->got_skb(skb);
+    return (stolen ? NOTIFY_STOP_MASK : 0);
 }
 #endif
 
@@ -261,7 +258,7 @@ FromDevice::got_skb(struct sk_buff *skb)
 	Packet *p = Packet::make(skb);
 	_queue[_tail] = p; /* hand it to run_task */
 	_tail = next;
-#if 0 /* Doug */
+#if 1 /* Doug */
 	_task.reschedule();
 #endif
 
@@ -291,7 +288,7 @@ FromDevice::run_task()
 #if CLICK_DEVICE_ADJUST_TICKETS
     adjust_tickets(npq);
 #endif
-#if 0 /* Doug */
+#if 1 /* Doug */
     if (npq > 0)
 #endif
 	_task.fast_reschedule();

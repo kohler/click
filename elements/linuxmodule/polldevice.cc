@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2004 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -320,7 +321,7 @@ PollDevice::change_device(net_device *dev)
     if (_dev == dev)		// no op
 	return;
     
-    _task.unschedule();
+    _task.strong_unschedule();
     
     if (dev && (!dev->poll_on || dev->polling < 0)) {
 	click_chatter("%s: device `%s' does not support polling", declaration().cc(), _devname.cc());
@@ -336,7 +337,7 @@ PollDevice::change_device(net_device *dev)
 	_dev->poll_on(_dev);
 
     if (_dev)
-	_task.reschedule();
+	_task.strong_reschedule();
 #else
     (void) dev;
 #endif /* HAVE_LINUX_POLLING */
