@@ -44,7 +44,7 @@ FromFile::FromFile()
       _mmap(true),
 # endif
 #endif
-      _filename(), _pipe(0), _landmark_pattern("%f"), _lineno(1)
+      _filename(), _pipe(0), _landmark_pattern("%f"), _lineno(0)
 {
 }
 
