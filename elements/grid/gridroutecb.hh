@@ -28,7 +28,8 @@ public:
     ForwardDSDV,     // data = next hop ip
     FallbackToGF,
     ForwardGF,       // data = next hop ip, data2 = best nbr ip
-    Drop             // data = drop reason
+    Drop,            // data = drop reason
+    ProbeFinished
   };
 
   enum DropReason {
@@ -59,15 +60,12 @@ public:
     if (id < 0)
       return -1;
     _cbs[id] = cb;
-    click_chatter("YYY just installed cb %d, set to %p\n", id, (void *) cb);
     return id;
   }
 
 private:
   static bool cb_is_set(Packet *p, unsigned int cb_num) {
     unsigned int mask = 1 << cb_num;
-    click_chatter("ZZZ mask is %x, cb_num is %d, packet_anno is %x\n",
-		  mask, cb_num, (unsigned) GRID_ROUTE_CB_ANNO(p));
     return mask & GRID_ROUTE_CB_ANNO(p);
   }
 
@@ -93,10 +91,8 @@ protected:
   void notify_route_cbs(Packet *p, unsigned int dest_ip, GridRouteActionCallback::Action a,
 			unsigned int data, unsigned int data2) {
     for (int i = 0; i < _max_route_cbs; i++) {
-      if (_cbs[i] && cb_is_set(p, i)) {
-	click_chatter("XXX cb %d is set\n", i);
+      if (_cbs[i] && cb_is_set(p, i)) 
 	_cbs[i]->route_cb(i, dest_ip, a, data, data2);
-      }
     }    
   }
 };

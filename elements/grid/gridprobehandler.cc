@@ -149,25 +149,38 @@ GridProbeHandler::push(int port, Packet *p)
     _cached_reply_pkt = 0;
   }
   
+  /* before figuring out what to do with the cached reply, check to
+     see if the callback stuff is set up okay */
   if (_lr_el && _gf_el && _lr_cb_id > -1 && _gf_cb_id > -1) {
-    /* cache reply to wait for route action callback */
-    _cached_reply_pkt = q;
+    /* yes, the callbacks are cool */
+    if (_ip != nb->dst_ip) {
+      /* probe should be forwarded, cache reply and wait for callbacks
+         after forwarding decision */
+      _cached_reply_pkt = q;
+      set_route_cb_bit(p, _gf_cb_id);
+      set_route_cb_bit(p, _lr_cb_id);
+    }
+    else {
+      /* we are probe's final dest, there will be no routing action
+         callback -- so send reply now */
+      rr->route_action = htonl(ProbeFinished);
+      _cached_reply_pkt = 0;
+      output(1).push(q);
+    }  
   }
   else {
-    /* the route action callbacks are f-ed up, so just send the packet anyway */
+    /* the route action callbacks are f-ed up, so just send the reply
+       packet anyway */
+    rr->route_action = htonl(UnknownAction);
     _cached_reply_pkt = 0;
     output(1).push(q);
   }
   
-#if 0
-  set_route_cb_bit(p, _gf_cb_id);
-  set_route_cb_bit(p, _lr_cb_id);
-#endif
 
   /* pass through probe if we aren't the destination */
-  if (_ip != nb->dst_ip)
+  if (_ip != nb->dst_ip) 
     output(0).push(p);
-  else
+  else 
     p->kill();
 }
 
@@ -208,7 +221,7 @@ GridProbeHandler::route_cb(int id, unsigned int dest_ip, Action a, unsigned int 
   case ForwardDSDV:
   case ForwardGF:
   case Drop:
-    output(0).push(_cached_reply_pkt);
+    output(1).push(_cached_reply_pkt);
     _cached_reply_pkt = 0;
     break;
   case FallbackToGF:
@@ -217,7 +230,7 @@ GridProbeHandler::route_cb(int id, unsigned int dest_ip, Action a, unsigned int 
   case UnknownAction:
   default:
     click_chatter("GridProbeHandler: error!!! route action callback invoked with an unknown action (%d), sending reply now\n", a);
-    output(0).push(_cached_reply_pkt);
+    output(1).push(_cached_reply_pkt);
     _cached_reply_pkt = 0;
     break;
   }

@@ -103,7 +103,7 @@ GridProbeReplyReceiver::simple_action(Packet *p)
 
   struct timeval rtt = p->timestamp_anno() - tx_time;
 
-  char buf[100];
+  char buf[200];
   snprintf(buf, sizeof(buf),
 	   "dest=%s nonce=%u hop=%s hopcount=%u rtt=%lu.%06lu tx_time=%lu.%06lu act=%u d1=%u d2=%u",
 	   IPAddress(rr->probe_dest).s().cc(),

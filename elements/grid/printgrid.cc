@@ -171,7 +171,7 @@ PrintGrid::simple_action(Packet *p)
     rr = (grid_route_reply *) (nb + 1);
     line += " nonce=" + String(ntohl(rr->nonce));
     line += " probe_dest=" + IPAddress(rr->probe_dest).s();
-    line += " reply_hop=" + String((unsigned char) rr->reply_hop);
+    line += " reply_hop=" + String((unsigned int) rr->reply_hop);
     break;
 
   default:
