@@ -237,7 +237,7 @@ sub nroffize ($) {
 
     if ($t =~ /^ /m) {
 	# worry about verbatims
-	$t =~ s/^( .*)\n(\n+) /$1 . "\n" . (" \n" x length($2)) . " "/mge;
+	$t =~ s/^( .*)\n(\n+)(?= )/$1 . "\n" . (" \n" x length($2))/mge;
 	my(@x) = split(/(^ .*$)/m, $t);
 	my($o, $i) = '';
 	for ($i = 0; $i < @x; $i += 2) {

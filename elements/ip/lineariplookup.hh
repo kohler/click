@@ -15,6 +15,11 @@ simple IP routing table
 
 =d
 
+B<Note:> Lookups and table updates with LinearIPLookup are extremely slow; the
+RadixIPLookup and DirectIPLookup elements should be preferred in almost all
+cases.  See IPRouteTable for a performance comparison.  We provide
+LinearIPLookup nevertheless for its simplicity.
+
 Expects a destination IP address annotation with each packet. Looks up that
 address in its routing table, using longest-prefix-match, sets the destination
 annotation to the corresponding GW (if specified), and emits the packet on the
@@ -69,8 +74,8 @@ add a route, and `C<remove ADDR/MASK>' to remove a route. You can supply
 multiple commands, one per line; all commands are executed as one atomic
 operation.
 
-=a StaticIPLookup, SortedIPLookup, RadixIPLookup, DirectIPLookup,
-LinuxIPLookup */
+=a RadixIPLookup, DirectIPLookup, StaticIPLookup, SortedIPLookup,
+LinuxIPLookup, IPRouteTable */
 
 #define IP_RT_CACHE2 1
 

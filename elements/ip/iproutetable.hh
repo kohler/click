@@ -22,6 +22,45 @@ elements. It parses configuration strings -- see LinearIPLookup for an example
 function uses those virtual functions to look up routes and output packets
 accordingly. There are also some functions useful for implementing handlers.
 
+=head1 PERFORMANCE
+
+Click provides several elements that implement all or part of the IPRouteTable
+interface.  Marko Zec has compared their performance, in terms of lookup speed
+and memory size, for full BGP feeds; here are the results.
+
+          ICSI BGP dump, 150700 routes, 2 next-hops
+
+         Element    | cycles  | lookups | setup | lookup 
+                    | /lookup | /sec    | time  | tbl. size
+     ---------------+---------+---------+-------+----------
+     RadixIPLookup  |   1025  |  2.73M  | 0.59s |  5.8 MB   
+     DirectIPLookup |    432  |  6.48M  | 0.74s | 33   MB   
+
+       routeviews.org dump, 167000 routes, 52 nexthops
+
+         Method     | cycles  | lookups | setup | lookup 
+                    | /lookup | /sec    | time  | tbl. size
+     ---------------+---------+---------+-------+----------
+     RadixIPLookup  |   1095  |  2.55M  | 0.67s |  6.6 MB   
+     DirectIPLookup |    434  |  6.45M  | 0.77s | 33   MB   
+
+The RadixIPLookup and DirectIPLookup elements are well suited for implementing
+large tables.  We also provide the LinearIPLookup, StaticIPLookup, and
+SortedIPLookup elements; they are simple, but their O(N) lookup speed is
+orders of magnitude slower.  RadixIPLookup or DirectIPLookup should be
+preferred for almost all purposes.
+ 
+           1500-entry fraction of the ICSI BGP dump
+   
+         Method     | cycles  | lookups | setup | lookup 
+                    | /lookup | /sec    | time  | tbl. size
+     ---------------+---------+---------+-------+----------
+     LinearIPLookup |  12000  |  233K   |  10s  |   29 KB
+     StaticIPLookup |  12000  |  233K   |  10s  |   29 KB
+     SortedIPLookup |  12500  |  224K   |  38s  |   29 KB
+
+=head1 INTERFACE
+
 These four IPRouteTable virtual functions should generally be overridden by
 particular routing table elements.
 
@@ -105,8 +144,8 @@ the B<dump_routes> function. Normally hooked up to the `C<table>' handler.
 
 =back
 
-=a RadixIPLookup, StaticIPLookup, LinearIPLookup, DirectIPLookup,
-LinuxIPLookup */
+=a RadixIPLookup, DirectIPLookup, StaticIPLookup, LinearIPLookup,
+SortedIPLookup, LinuxIPLookup */
 
 struct IPRoute {
     IPAddress addr;

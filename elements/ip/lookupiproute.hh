@@ -15,6 +15,11 @@ simple static IP routing table
 
 =d
 
+B<Note:> Lookups and table updates with StaticIPLookup are extremely slow; the
+RadixIPLookup and DirectIPLookup elements should be preferred in almost all
+cases.  See IPRouteTable for a performance comparison.  We provide
+StaticIPLookup nevertheless for its simplicity.
+
 This element acts like LinearIPLookup, but does not allow dynamic adding and
 deleting of routes.
 
@@ -26,8 +31,8 @@ Outputs a human-readable version of the current routing table.
 
 Reports the OUTput port and GW corresponding to an address.
 
-=a LinearIPLookup, SortedIPLookup, RadixIPLookup, LinuxIPLookup,
-DirectIPLookup */
+=a RadixIPLookup, DirectIPLookup, LinearIPLookup, SortedIPLookup,
+LinuxIPLookup, IPRouteTable */
 
 class StaticIPLookup : public LinearIPLookup { public:
 

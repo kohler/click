@@ -13,12 +13,13 @@ SortedIPLookup(ADDR1/MASK1 [GW1] OUT1, ADDR2/MASK2 [GW2] OUT2, ...)
 
 simple IP routing table
 
+=deprecated LinearIPLookup
+
 =d
 
 SortedIPLookup is a version of LinearIPLookup that sorts the routing table.
-This may, or may not, marginally speed up its operation relative to
-LinearIPLookup. Its worst-case lookup time is still O(N), where N is the
-number of routes.
+In practice, however, it performs worse than LinearIPLookup, which itself
+performs terribly, so it is deprecated.
 
 =a LinearIPLookup */
 
@@ -28,6 +29,7 @@ class SortedIPLookup : public LinearIPLookup { public:
     ~SortedIPLookup();
 
     const char *class_name() const	{ return "SortedIPLookup"; }
+    int configure(Vector<String> &, ErrorHandler *);
 
     void push(int port, Packet *p);
 

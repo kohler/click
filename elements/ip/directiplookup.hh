@@ -65,6 +65,11 @@ operation.
 
 Clears the entire routing table in a single atomic operation.
 
+=n
+
+See IPRouteTable for a performance comparison of the various IP routing
+elements.
+
 =a RadixIPLookup, StaticIPLookup, LinearIPLookup, SortedIPLookup,
 LinuxIPLookup
 

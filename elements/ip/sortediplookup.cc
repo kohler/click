@@ -33,6 +33,13 @@ SortedIPLookup::~SortedIPLookup()
 {
 }
 
+int
+SortedIPLookup::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+    errh->warning("SortedIPLookup is deprecated; use LinearIPLookup or RadixIPLookup instead");
+    return LinearIPLookup::configure(conf, errh);
+}
+
 bool
 SortedIPLookup::check() const
 {

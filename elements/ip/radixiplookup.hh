@@ -31,8 +31,6 @@ gateway IP address, and an output port.
 
 Uses the IPRouteTable interface; see IPRouteTable for description.
 
-Warning: This element is experimental.
-
 =h table read-only
 
 Outputs a human-readable version of the current routing table.
@@ -60,6 +58,11 @@ Adds or removes a group of routes. Write `C<add>/C<set ADDR/MASK [GW] OUT>' to
 add a route, and `C<remove ADDR/MASK>' to remove a route. You can supply
 multiple commands, one per line; all commands are executed as one atomic
 operation.
+
+=n
+
+See IPRouteTable for a performance comparison of the various IP routing
+elements.
 
 =a IPRouteTable, StaticIPLookup, LinearIPLookup, SortedIPLookup,
 DirectIPLookup, LinuxIPLookup
