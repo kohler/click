@@ -1,3 +1,8 @@
+2002-06-07 Friday 08:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.58), tools/build-grid-config.sh (1.9): doc
+	nitlet
+
 2002-06-06 Thursday 17:26  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: radiosim.cc (1.17), radiosim.hh (1.10): allow x/y
