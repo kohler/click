@@ -29,7 +29,6 @@
 #include <click/etheraddress.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
-#include <click/skbmgr.hh>
 #include "elements/standard/scheduleinfo.hh"
 extern "C" {
 #define new xxx_new
@@ -175,7 +174,8 @@ ToDevice::run_scheduled()
     }
 #endif
 
-    if (skbs) skbmgr_recycle_skbs(skbs, 1);
+    if (skbs)
+      skbmgr_recycle_skbs(skbs, 1);
     
 #if CLICK_DEVICE_STATS
     if (_activations > 0 && skbs) {
