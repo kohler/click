@@ -80,6 +80,17 @@ extern "C" {
 # define CLICK_LLRPC_PUT(remote_addr, local_obj) \
 		put_user((local_obj), (remote_addr))
 
+#elif CLICK_BSDMODULE
+
+/*
+ * XXX  LLRPC isn't implemented for BSD yet.
+ */
+
+# define CLICK_LLRPC_GET_DATA(local, remote, size) ((void)(local), (void)(remote), (void)(size), -EFAULT)
+# define CLICK_LLRPC_PUT_DATA(remote, local, size) ((void)(local), (void)(remote), (void)(size), -EFAULT)
+# define CLICK_LLRPC_GET(local_obj, remote_addr) ((void)(local_obj), (void)(remote_addr), -EFAULT)
+# define CLICK_LLRPC_PUT(remote_addr, local_obj) ((void)(local_obj), (void)(remote_addr), -EFAULT)
+
 #endif
 
 #endif
