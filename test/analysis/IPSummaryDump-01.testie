@@ -1,0 +1,35 @@
+%require -q
+click-buildtool provides FromIPSummaryDump Truncate
+
+%script
+
+# read from a hand-written IPSummaryDump file; check headers, emit to a dump
+click -e "
+FromIPSummaryDump(IN1, STOP true, ZERO true)
+	-> s :: RoundRobinSwitch
+	-> t :: ToIPSummaryDump(OUT1, BAD_PACKETS true, DATA sport dport tcp_urp tcp_opt)
+s[1] -> Truncate(3) -> t
+s[2] -> Truncate(6) -> t
+s[3] -> Truncate(21) -> t
+s[4] -> Truncate(24) -> t
+"
+
+%file IN1
+!data sport dport tcp_urp tcp_opt
+1 2 3 wscale10
+2 3 4 wscale10
+3 4 5 wscale10
+4 5 6 wscale10
+5 6 7 wscale10
+
+%expect OUT1
+1 2 3 wscale10
+2 3 4 -
+3 4 - -
+4 - - -
+- - - -
+
+%ignore
+!.*
+
+%eof
