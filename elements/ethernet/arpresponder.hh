@@ -30,7 +30,7 @@
  * as well as proxy ARP for all machines on net 18.26.7
  * directing their packets to the local machine:
  *
- *   c :: Classifier(12/0806 20/0002, ...);
+ *   c :: Classifier(12/0806 20/0001, ...);
  *   ar :: ARPResponder(18.26.4.24 18.26.7.0/24 00:00:C0:AE:67:EF);
  *   c[0] -> ar;
  *   ar -> ToDevice(eth0);

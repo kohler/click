@@ -322,7 +322,7 @@ Nat624::make_icmp_translate64(unsigned char *a,
 	ip4_srca = IPAddress(ip4_src);
       click_chatter("nat624::make_icmp_translate64 - 2, ip6->ip6_plen is %x", ip6->ip6_plen);
       q3 = make_translate64(ip4_srca, ip4_dsta, ip6->ip6_plen, ip6->ip6_hlim, ip6->ip6_nxt, start_of_q3_content, ip6->ip6_plen);
-      unsigned char * q3d = q3->data();
+      const unsigned char * q3d = q3->data();
       click_chatter("nat624::make_icmp_translate64 - 1, %x, %x, %x, %x, %x, %x, %x, %x", q3d[0], q3d[1], q3d[2], q3d[3], q3d[4], q3d[5], q3d[6], q3d[7]);
       click_chatter("nat624::make_icmp_translate64 - 1, %x, %x, %x, %x, %x, %x, %x, %x", q3d[20], q3d[21], q3d[2], q3d[23], q3d[24], q3d[25], q3d[26], q3d[27]);
       
