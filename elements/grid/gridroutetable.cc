@@ -31,11 +31,6 @@
 
 #define NEXT_HOP_ETH_FIXUP 0
 
-/* these are here because I am too lazy to make a gridlogger.cc file */
-int GridLogger::_fd = -1;
-bool GridLogger::_log_full_ip = false;
-String GridLogger::_fn;
-
 bool
 GridRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry) 
 {
@@ -93,7 +88,7 @@ GridRouteTable::cast(const char *n)
 {
   if (strcmp(n, "GridRouteTable") == 0)
     return (GridRouteTable *) this;
-  else if (strcmp(n, "GenericGridRouteTable") == 0)
+  else if (strcmp(n, "GridGenericRouteTable") == 0)
     return (GridGenericRouteTable *) this;
   else
     return 0;
@@ -1645,6 +1640,7 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
 }
 
 ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(gridlogger)
 EXPORT_ELEMENT(GridRouteTable)
 
 #include <click/bighashmap.cc>
