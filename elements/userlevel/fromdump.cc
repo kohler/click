@@ -414,6 +414,7 @@ FromDump::read_packet(ErrorHandler *errh)
     p = _ff.get_packet(caplen, ph->ts.tv_sec, ph->ts.tv_usec, errh);
     if (!p)
 	return false;
+    SET_EXTRA_LENGTH_ANNO(p, len - caplen);
     _ff.shift_pos(skiplen);
 
     p->set_mac_header(p->data());
