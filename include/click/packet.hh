@@ -76,7 +76,7 @@ class Packet { public:
 
   Packet *shift_data(int offset, bool free_on_failure = true);
 #ifdef CLICK_USERLEVEL
-  void change_headroom_and_length(uint32_t headroom, uint32_t length);
+  void shrink_data(const unsigned char *, uint32_t length);
 #endif
 
   // HEADER ANNOTATIONS
@@ -579,11 +579,11 @@ Packet::take(uint32_t nbytes)
 
 #ifdef CLICK_USERLEVEL
 inline void
-Packet::change_headroom_and_length(uint32_t headroom, uint32_t length)
+Packet::shrink_data(const unsigned char *d, uint32_t length)
 {
-  if (headroom + length <= buffer_length()) {
-    _data = _head + headroom;
-    _tail = _data + length;
+  if (d > _head && d + length < _end) {
+    _head = _data = d;
+    _tail = _end = d + length;
   }
 }
 #endif
