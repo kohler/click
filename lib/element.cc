@@ -768,11 +768,8 @@ Element::read_positional_handler(Element *element, void *thunk)
     return String();
   String s = conf[no];
   // add trailing "\n" if appropriate
-  if (s) {
-    int c = s.back();
-    if (c != '\n')
-      s += "\n";
-  }
+  if (s && s.back() != '\n')
+    s += "\n";
   return s;
 }
 
@@ -788,11 +785,8 @@ Element::read_keyword_handler(Element *element, void *thunk)
 			    kw, cpArgument, &s, 0) > 0)
       break;
   // add trailing "\n" if appropriate
-  if (s) {
-    int c = s.back();
-    if (c != '\n')
-      s += "\n";
-  }
+  if (s && s.back() != '\n')
+    s += "\n";
   return s;
 }
 
