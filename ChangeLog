@@ -1,3 +1,17 @@
+2001-08-02 Thursday 19:41  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.94), click-mkelemmap (1.10),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.14),
+	tools/lib/toolutils.cc (1.37), tools/lib/toolutils.hh (1.25):
+	elementmap format is self-describing
+
+2001-08-02 Thursday 18:58  Eddie Kohler <kohler@aciri.org>
+
+	* elements/tcpudp/dynudpipencap.cc (1.8),
+	elements/tcpudp/udpipencap.cc (1.10), lib/in_cksum.c (1.11): fix
+	UDP checksum bug reported by Julio Garcia
+	<julio_garcia@agilent.com>
+
 2001-07-31 Tuesday 20:06  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/: fromdump.cc (1.38), fromdump.hh (1.22):
