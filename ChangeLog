@@ -1,3 +1,8 @@
+2001-11-11 Sunday 15:08  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/lookupiprouteron.cc (1.11): added set_ip_header and
+	set_network_header for rst pkt creation
+
 2001-11-09 Friday 22:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.42), tools/build-grid-config.sh (1.2),
