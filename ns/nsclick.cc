@@ -275,14 +275,11 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
 
 // main
 
-extern void click_export_elements();
-
 SimState*
 SimState::simmain(simclick_sim siminst, const char *router_file)
 {
   if (!didinit_) {
     click_static_initialize();
-    click_export_elements();
     errh = ErrorHandler::default_handler();
     didinit_ = true;
   }
