@@ -26,6 +26,7 @@
 
 
 AddressTranslator::AddressTranslator()
+  : _in_map(0), _out_map(0), _nmappings(0), _rover(0), _rover2(0)
 {
   add_input(); /*IPv6 arriving outward packets */
   add_input(); /*IPv6 arriving inward packets */
@@ -35,30 +36,146 @@ AddressTranslator::AddressTranslator()
 
 
 AddressTranslator::~AddressTranslator()
-{ }
+{ 
+  uninitialize();
+}
+
+AddressTranslator::Mapping::Mapping()
+  :  _prev(0), _next(0), _free_next(0)
+{
+}
+
+void 
+AddressTranslator::uninitialize()
+{
+  if (_dynamic_mapping_allocation_direction==0)
+    {
+      clean_map(_in_map, 1);
+      clean_map(_out_map, 0);
+    }
+  else 
+    {
+      clean_map(_in_map, 0);
+      clean_map(_out_map, 1);
+    }
+}
+
+void
+AddressTranslator::mapping_freed(Mapping *m, bool major_map)
+{
+  if (major_map)
+  {
+    if (_rover == m) {
+      _rover = m->get_next();
+      if (_rover == m)
+	_rover = 0;
+    }
+
+    _nmappings--;
+    if (_nmappings) { 
+      Mapping * m_prev = m->free_next();
+      m_prev->set_next(m->get_next());
+    }
+  }
+
+ else 
+   {
+     if(_rover2 == m) {
+       _rover2 = m->get_next();
+       if (_rover2 == m)
+	 _rover2 = 0;
+     }
+     _nmappings2--;
+    if (_nmappings2) { 
+      Mapping * m_prev = m->free_next();
+      m_prev->set_next(m->get_next());
+    }
+   }
+}
+
+void
+AddressTranslator::clean_map(Map6 &table, bool major_map)
+{
+ 
+  Mapping *to_free=0;
+  for (Map6::Iterator iter = table.first(); iter; iter++) {
+    Mapping *m = iter.value();
+    m->set_free_next(to_free);
+    to_free = m;
+  }
+  
+  while (to_free) {
+    Mapping *next = to_free->free_next();
+    mapping_freed(to_free, major_map);
+    delete to_free;
+    to_free = next;
+  }
+  table.clear();
+}
+
+unsigned short
+AddressTranslator::find_mport( )
+{
+  if (_mportl == _mporth || !_rover)
+    return _mportl;
+
+  Mapping * r = _rover;
+  Mapping * r2 = _rover2;
+  unsigned short this_mport = r->sport();
+  //click_chatter("in find_mport(), this_mport is %x", this_mport);
+
+  do {
+    Mapping *next = r->get_next();
+    Mapping *next2 = r2->get_next();
+    unsigned short next_mport = next->sport();
+    if (next_mport > this_mport +1)
+      {
+      goto found;
+     }
+    else if (next_mport <= this_mport) {
+      if (this_mport < _mporth)
+	{ 
+	  goto found;
+	}
+      else if (next_mport > _mportl) {
+	this_mport = _mportl -1;
+	goto found;
+      }
+    }
+    r = next;
+    r2=next2;
+    this_mport = next_mport;
+  } while (r!=_rover);
+  
+  return 0;
+
+ found:
+  _rover = r;
+  _rover2 = r2;
+  return this_mport+1;
+
+}
 
 //add an entry to the mapping table for dynamic mapping
 void
-AddressTranslator::add_map(IP6Address &mai, unsigned short mpi,  bool binding)
+AddressTranslator::add_map(IP6Address &mai,  bool binding)
 { 
   struct EntryMap e;
 
    if (_dynamic_mapping_allocation_direction ==0)  //outward address allocation
     {
       e._mai = mai;
-      e._mpi = mpi;
     }
    else //inward address allocation
      {
        e._iai = mai;
-       e._ipi = mpi;
      }
   e._binding = binding;
   e._static = false;
   _v.push_back(e);
 }
 
-//add an entry to the mapping table for static mapping
+//add an entry to the mapping table for static address (and port) mapping
 void
 AddressTranslator::add_map(IP6Address &iai, unsigned short ipi, IP6Address &mai, unsigned short mpi, IP6Address &ea, unsigned short ep, bool binding)
 {
@@ -102,8 +219,10 @@ AddressTranslator::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   if (_number_of_smap==0)
     s = 1;
+  
   else 
     {
+      
       s = _number_of_smap+2;
       if (!cp_bool(conf[1], &_static_portmapping))
 	errh->error("argument %d should be : bool", 2);
@@ -134,9 +253,10 @@ AddressTranslator::configure(const Vector<String> &conf, ErrorHandler *errh)
 	    cp_ip6_address(words0[++j],(unsigned char *)&ma);
 	  if (_static_mapping[3] ==1)
 	    cp_integer(words0[++j], &mp);
-	  add_map(ia, ip, ma, mp, ea, ep, 1);
+	  add_map(ia, ip, ma, mp, ea, ep, 1);  
 	}
     }
+   
   
   //get the dynamic mapping entries for the mapping table
   if (!cp_bool(conf[s], &_dynamic_mapping))
@@ -145,183 +265,262 @@ AddressTranslator::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (!_dynamic_mapping)
     return (before ==errh->nerrors() ? 0: -1);
 
-  _outwardLookupFields[0]=1;
-  _outwardLookupFields[1]=0;
-  _outwardLookupFields[2]=0;
-  _outwardLookupFields[3]=0;
-  _outwardLookupFields[4]=1; 
-  _outwardLookupFields[5]=0;
-   
-  _inwardLookupFields[0]=0;
-  _inwardLookupFields[1]=0;
-  _inwardLookupFields[2]=1;
-  _inwardLookupFields[3]=0;
-  _inwardLookupFields[4]=1; 
-  _inwardLookupFields[5]=0;
-
   if (!cp_bool(conf[s+1], &_dynamic_portmapping))
       errh->error("argument %d should be : bool", s+1);
-
-  if (_dynamic_portmapping)
-    {
-      _outwardLookupFields[1] = 1;
-      _outwardLookupFields[5] = 1;
-      _inwardLookupFields[3] = 1;
-      _inwardLookupFields[5] = 1;
-    }
-    
+  
   if (!cp_bool(conf[s+2], &_dynamic_mapping_allocation_direction))
       errh->error("argument %d should be : bool", s+2);
 
- //get the rest of the arguments: Mapped_IP6Address port_start# port_end#, ...
-  //unsigned char total_entry = 0;
-  for (int i=3; i<(conf.size()-s); i++)
+ //get the rest of the arguments for dynamic mapping
+ 
+  
+  // get the argument for dynamic address mapping: 
+  // Mapped_Ip6Address1, Mapped_IP6Address2...
+  if (!_dynamic_portmapping)
     {
-      Vector<String> words1;
       IP6Address ipa6;
-      int  port_start, port_end;
-      cp_spacevec(conf[s+i], words1);
-      
-      if (cp_ip6_address(words1[0], (unsigned char *)&ipa6) && cp_integer(words1[1], &port_start) && cp_integer(words1[2], &port_end))
+      for (int i =3; i<(conf.size()-s); i++)
 	{
-	  //total_entry += ((port_end) - (port_start));
-	  for (int j=port_start; j<=(port_end); j++)
-	    add_map(ipa6, j, 0);
-	}     
-      else
+	  if  (cp_ip6_address(conf[s+i], (unsigned char *)&ipa6))
+	    add_map(ipa6, 0);
+	  else
+	    errh->error("argument %d should be : <IP6Address>", i);
+	}
+      return (before ==errh->nerrors() ? 0: -1);
+    }
+  
+
+  // get the argument for dynamic add & port mapping: 
+  // Mapped_IP6Address port_start# port_end#
+  int i = 3;
+  Vector<String> words1;
+  IP6Address ipa6;
+  int  port_start, port_end;
+  cp_spacevec(conf[s+i], words1);
+
+     
+  if (cp_ip6_address(words1[0], (unsigned char *)&ipa6) && cp_integer(words1[1], &port_start) && cp_integer(words1[2], &port_end))
+    {
+	  _maddr = ipa6;
+	  _mportl = port_start;
+	  _mporth = port_end;
+    }     
+  else
 	  errh->error("argument %d should be : <IP6Address> <unsigned char> <unsigned char>", i);
 	
-    }
- 
+  //click_chatter("configuration for AT is successful");
   return (before ==errh->nerrors() ? 0: -1);
 }
 
 bool
 AddressTranslator::lookup(IP6Address &iai, unsigned short &ipi, IP6Address &mai, unsigned short &mpi, IP6Address &ea, unsigned short &ep, bool lookup_direction)
-{ 
-  bool lookupFields[6];
-  if (lookup_direction ==0) {
-    for (int i = 0; i<6; i++)
-      {
-	lookupFields[i] = _outwardLookupFields[i];
-      }
-  }
-  else {
-    for (int i = 0; i<6; i++)
-      {
-	lookupFields[i] = _inwardLookupFields[i];
-      }
-  }
+{
 
-  //find the mapped entry in the table
-  for (int i=0; i<_v.size(); i++) 
+  if (( _number_of_smap >0 ) || (!_dynamic_portmapping))
     {
-      bool match = true;
-      if (_v[i]._static) //this is a static mapping entry 
+      //find the mapped entry in the table
+      for (int i=0; i<_v.size(); i++) 
 	{
-	  
-	  if (_static_mapping[0]  && (lookup_direction ==_dynamic_mapping_allocation_direction))
-	    match =  match && (_v[i]._iai == iai);
-	  if (_static_mapping[1]  && (lookup_direction ==_dynamic_mapping_allocation_direction))
-	    match =  match && (_v[i]._ipi == ipi);
-	  if (_static_mapping[0] && (lookup_direction != _dynamic_mapping_allocation_direction))
-  	    match =  match && (_v[i]._mai == mai);
-  	  if (_static_mapping[1] && (lookup_direction != _dynamic_mapping_allocation_direction))
-  	    match =  match && (_v[i]._mpi == mpi); 
-	  
-	  if (match)
+	  bool match = true;
+	  if (_v[i]._static) //this is a static mapping entry 
 	    {
-	      if (_static_mapping[2] && (lookup_direction == _dynamic_mapping_allocation_direction))
-		mai = _v[i]._mai;
-	      else if (_static_mapping[2] && (lookup_direction != _dynamic_mapping_allocation_direction))
-		iai = _v[i]._iai;
-	      else if (lookup_direction == _dynamic_mapping_allocation_direction)
- 		mai = iai;
-	      else if (lookup_direction != _dynamic_mapping_allocation_direction)
-  		iai = _v[i]._iai;
+	  
+	      if (_static_mapping[0]  && (lookup_direction ==_dynamic_mapping_allocation_direction))
+		match =  match && (_v[i]._iai == iai);
+	      if (_static_mapping[1]  && (lookup_direction ==_dynamic_mapping_allocation_direction))
+		match =  match && (_v[i]._ipi == ipi);
+	      if (_static_mapping[0] && (lookup_direction != _dynamic_mapping_allocation_direction))
+		match =  match && (_v[i]._mai == mai);
+	      if (_static_mapping[1] && (lookup_direction != _dynamic_mapping_allocation_direction))
+		match =  match && (_v[i]._mpi == mpi); 
+	  
+	      if (match)
+		{
+		  if (_static_mapping[2] && (lookup_direction == _dynamic_mapping_allocation_direction))
+		    mai = _v[i]._mai;
+		  else if (_static_mapping[2] && (lookup_direction != _dynamic_mapping_allocation_direction))
+		    iai = _v[i]._iai;
+		  else if (lookup_direction == _dynamic_mapping_allocation_direction)
+		    mai = iai;
+		  else if (lookup_direction != _dynamic_mapping_allocation_direction)
+		    iai = _v[i]._iai;
 
-	      if (_static_mapping[3])
-		mpi = _v[i]._mpi;
-	      else if (lookup_direction == _dynamic_mapping_allocation_direction) 
-		mpi = ipi;
-	      else if (lookup_direction !=_dynamic_mapping_allocation_direction) 
-  		ipi = mpi; 
-	      return (true);
+		  if (_static_mapping[3])
+		    mpi = _v[i]._mpi;
+		  else if (lookup_direction == _dynamic_mapping_allocation_direction) 
+		    mpi = ipi;
+		  else if (lookup_direction !=_dynamic_mapping_allocation_direction) 
+		    ipi = mpi; 
+		  return (true);
+		}
+	    }
+
+	  else  if (_v[i]._binding) //this is a dynamic bindign entry
+	    {
+	      if (lookup_direction ==0)
+		match =  (_v[i]._iai == iai);  //outward, check if the inner address matches
+	      else 
+		match = (_v[i]._mai == mai); //inward, check if the map address matches      	 
+	      if (match)
+		{
+		  if (lookup_direction==0) //outward packet
+		    {
+		      mai = _v[i]._mai;
+		      mpi = ipi;
+		    }
+		  else //inward packet
+		    {
+		      iai = _v[i]._iai;
+		      ipi = mpi;
+		    }
+		   return (true); 
+		}
 	    }
 	}
-
-      else if (_v[i]._binding) //this is a dynamic binding entry
-	{
-	  match = true;
-	  match = match && (!lookupFields[0] || (lookupFields[0] && (_v[i]._iai == iai)));
-	  match = match && (!lookupFields[1] || (lookupFields[1] && (_v[i]._ipi == ipi)));
-	  match = match && (!lookupFields[2] || (lookupFields[2] && (_v[i]._mai == mai)));
-	  match = match && (!lookupFields[3] || (lookupFields[3] && (_v[i]._mpi == mpi)));
-	  match = match && (!lookupFields[4] || (lookupFields[4] && (_v[i]._ea == ea)));
-	  match = match && (!lookupFields[5] || (lookupFields[5] && (_v[i]._ep == ep)));	
-	  if (match)
-	    {
-	      if (lookup_direction==0) //outward packet
-		{
-		  mai = _v[i]._mai;
-		  mpi = _v[i]._mpi;
-		}
-	      else //inward packet
-		{
-		  iai = _v[i]._iai;
-		  ipi = _v[i]._ipi;
-		}
-		  
-	      _v[i]._t = time(NULL); 
-	      return (true);
-	    }
-	  else
-	    {
-
-	    }
 	
+      //no match found
+      if (!_dynamic_mapping)
+	return false;
+      if (_dynamic_mapping_allocation_direction != lookup_direction)
+	return false;
+      
+      if (!_dynamic_portmapping) // dynamic address mapping only, try to allocate an address
+	{
+	 
+	  for (int i=0; i<_v.size(); i++) {  
+	    if ((_v[i]._binding == false ) && ((!_v[i]._static)))
+	      {
+		if (lookup_direction == 0) //outward packet
+		  {
+		    _v[i]._iai = iai;
+		    mai = _v[i]._mai;
+		    mpi = ipi;
+		  }
+		else  //inward packet
+		  {
+		    _v[i]._mai = mai;
+		    iai = _v[i]._iai;
+		    ipi = mpi;
+		  }
+ 
+		_v[i]._binding = true;
+		//_v[i]._t = time(NULL);  
+		//_v[i]._t = MyEWMA2::now(); 
+
+		return (true); 
+	      }
+	      
+	  }
+	}
+      return false;
+    }
+ 
+  
+  //dynamic address and port mapping look up
+  IP6FlowID fd;
+  // create flowid & lookup in the _out_map or _in_map
+  if (lookup_direction ==0)  // outward lookup
+    { 
+      fd = IP6FlowID(iai, ipi, ea, ep);
+      Mapping *m = _out_map.find(fd);
+      if (m) {      
+	mai = m->flow_id().saddr();
+	mpi = m->flow_id().sport();
+	return true;
+      }
+    }
+  else //inward lookup
+    {
+      fd = IP6FlowID(ea, ep, mai, mpi);
+      Mapping *m = _in_map.find(fd);
+      if (m) { 
+	iai = m->flow_id().daddr();
+	ipi = m->flow_id().dport();
+	return true;
+      }
+    }
+
+
+  if (lookup_direction != _dynamic_mapping_allocation_direction )
+    return false;
+  
+  // if lookup is not successful, create a new mapping if the lookup_direction is the same as the addressAllocationDirection
+  // first find the freeport and its corresponding map address, create new flowid
+   // then add to in_map and out_map
+
+  unsigned short new_mport = 0;
+  new_mport = find_mport(); //
+  //click_chatter("***********new port is %x", new_mport); 
+  
+  if (!new_mport) {
+      click_chatter("AddressTranslator ran out of ports");
+      return false;
+  }
+
+  if (lookup_direction == 0)
+    {
+      mpi = new_mport;
+      mai = _maddr;    
+    }
+  else 
+    {
+      ipi = new_mport;
+      iai = _maddr;
+    }
+
+  IP6FlowID orig_out_flow = IP6FlowID(iai, ipi, ea, ep);
+  IP6FlowID orig_in_flow  = IP6FlowID(ea, ep, mai, mpi);
+  IP6FlowID new_out_flow = IP6FlowID(mai, mpi, ea, ep);
+  IP6FlowID new_in_flow  = IP6FlowID(ea, ep, iai, ipi);
+  Mapping *out_mapping = new Mapping;
+  out_mapping->initialize(new_out_flow);
+  Mapping *in_mapping = new Mapping;
+  in_mapping->initialize(new_in_flow);
+  if (lookup_direction == 0)
+    {
+      if (mpi==_mportl) //the first port mapping
+	{
+	  _rover = out_mapping;
+	  _rover->set_next(_rover);  
+	  _rover2= in_mapping;
+	  _rover2->set_next(_rover2);  
+	}     
+      else
+	{
+	  out_mapping->set_next(_rover->get_next());
+	  _rover->set_next(out_mapping);
+	  _rover = out_mapping;
+	  in_mapping->set_next(_rover2->get_next());
+	  _rover2->set_next(in_mapping);
+	  _rover2 = in_mapping;
+	}
+    }
+  else 
+    {
+      if (ipi == _mportl)
+	{
+	  _rover = in_mapping;
+	  _rover->set_next(_rover);
+	  _rover2 = out_mapping;
+	  _rover2->set_next(_rover2);
+	}
+      else
+	{
+	  in_mapping->set_next(_rover->get_next());
+	  _rover->set_next(in_mapping);
+	  _rover = in_mapping;
+	  out_mapping->set_next(_rover2->get_next());
+	  _rover2->set_next(out_mapping);
+	  _rover2 = out_mapping;
 	}
     }
 
-  // no match found, 
-  // if it is the allocation direction, then allocate a free entry for the connection.
-  if (_dynamic_mapping_allocation_direction == lookup_direction) { 
-    
-    //check if there's unbinded entry available or 
-    //there's an outdated entry need to be unbinded then bind
-    time_t  t = time(NULL) - 10000000; 
-    for (int i=0; i<_v.size(); i++) {  
-      if ((_v[i]._binding == false ) || ((_v[i]._t < t) && (!_v[i]._static)))
-	{
-	  
-	  if (lookup_direction == 0) //outward packet
-	    {
-	      _v[i]._iai = iai;
-	      _v[i]._ipi = ipi;
-	      mai = _v[i]._mai;
-	      mpi = _v[i]._mpi;
-	    }
-	  else  //inward packet
-	    {
-	      _v[i]._mai = mai;
-	      _v[i]._mpi = mpi;
-	      iai = _v[i]._iai;
-	      ipi = _v[i]._ipi;
-	    }
-
-	  _v[i]._ea = ea;
-	  _v[i]._ep = ep;
-	  
-	  _v[i]._binding = true;
-	  _v[i]._t = time(NULL); 
-
-	  return (true);
-	}
-    } 
-
-  }
-
-  return (false);
+  _out_map.insert(orig_out_flow, out_mapping); 
+  _in_map.insert(orig_in_flow, in_mapping);
+  _nmappings++;
+  _nmappings2++;
+  return true;
+  
 }
 
 
@@ -366,8 +565,7 @@ AddressTranslator::handle_outward(Packet *p)
     {
 
       unsigned char * icmp6_start = (unsigned char *)(ip6_new +1);
-      //unsigned char * ip6_new2 = 0;
-       if (lookup(ip6_src, dport, ip6_msrc, mport, ip6_dst, sport, _dynamic_mapping_allocation_direction))
+      if (lookup(ip6_src, dport, ip6_msrc, mport, ip6_dst, sport, _dynamic_mapping_allocation_direction))
 	{
 	 
 	  ip6_new->ip6_src = ip6_msrc;
@@ -522,11 +720,7 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
 	   default: ;
 	   }
 
-//    	  Packet *q2 = 0;
-//    	  q2= q;
   	  p->kill();
-//  	  q->kill();
-	  // output(1).push(q2);
 	  output(1).push(q);
 	}
       else
@@ -592,9 +786,14 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
     }
 }
 
-ELEMENT_REQUIRES(userlevel)
+
 EXPORT_ELEMENT(AddressTranslator)
 
 // generate Vector template instance
+#include <click/bighashmap.cc>
 #include <click/vector.cc>
 template class Vector<AddressTranslator::EntryMap>;
+#if EXPLICIT_TEMPLATE_INSTANCES
+template class BigHashMap<IP6FlowID, AddressTranslator::Mapping *>
+template class BigHashMapIterator<IP6FlowID, AddressTranslator::Mapping *>;
+#endif

@@ -23,7 +23,7 @@
  * TCP and/or UDP checksums updated.
  *
  * 
- * =a AddressTranslator */
+ * =a AddressTranslator ProtocolTranslator46*/
 
 class ProtocolTranslator64 : public Element {
   
@@ -39,27 +39,18 @@ class ProtocolTranslator64 : public Element {
   int configure(const Vector<String> &, ErrorHandler *);
   void push(int port, Packet *p);
   void handle_ip6(Packet *);
-  //  void handle_ip4(Packet *); 
  
 private:
 
   Packet * make_icmp_translate64(unsigned char *a,
 				unsigned char payload_length);
-
-//    Packet * make_icmp_translate46(IP6Address ip6_src,
-//  				 IP6Address ip6_dst,
-//  				 unsigned char *a,
-//  				 unsigned char payload_length);
   
   Packet * make_translate64(IPAddress src,
 			    IPAddress dst,
 			    click_ip6 * ip6,
 			    unsigned char *a); 
 
-//    Packet * make_translate46(IP6Address src, 
-//  			    IP6Address dst,
-//  			    click_ip * ip,
-//  			    unsigned char *a);
+
 
 };
 		   

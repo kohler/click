@@ -42,18 +42,12 @@ ProtocolTranslator46::~ProtocolTranslator46()
 int
 ProtocolTranslator46::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  //can add configuration later on to deal with other protocols' translation
-  if (conf.size()==0) 
-    {
-      //no argument, default as 4_to_6 protocol translator
-    }
-  else
-    {
-     
-    }
   int before = errh->nerrors();
+  if (!(conf.size()==0))
+    {
+     errh->error("there should be no arguments");
+    }
   return (before ==errh->nerrors() ? 0: -1);
- 
 }
 
 
