@@ -21,6 +21,7 @@ CXX = @KERNEL_CXX@
 CXXCPP = @CXXCPP@
 LD = @LD@
 STRIP = @STRIP@
+PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
@@ -107,7 +108,7 @@ elements.cc: elements.conf $(top_srcdir)/click-buildtool
 setdef0.c setdef1.c: module.o
 	gensetdefs module.o
 vnode_if.h: $(freebsddir)/kern/vnode_if.pl $(freebsddir)/kern/vnode_if.src
-	$(freebsddir)/kern/vnode_if.pl -h $(freebsddir)/kern/vnode_if.src
+	$(PERL) $(freebsddir)/kern/vnode_if.pl -h $(freebsddir)/kern/vnode_if.src
 
 # Special compile rule for click-mount because we don't want
 # to built it with -D_KERNEL, it's in user-space..
