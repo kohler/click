@@ -73,9 +73,13 @@ int
 LookupIPRoute::initialize(ErrorHandler *)
 {
   _last_addr = IPAddress();
+#ifdef IP_RT_CACHE2
+  _last_addr2 = _last_addr;
+#endif
   return 0;
 }
 
+#define EXCHANGE(a,b,t) { t = a; a = b; b = t; }
 void
 LookupIPRoute::push(int, Packet *p)
 {
@@ -83,14 +87,36 @@ LookupIPRoute::push(int, Packet *p)
   unsigned gw = 0;
   int ifi = -1;
 
-  if (a == _last_addr && a) {
-    if (_last_gw)
-      p->set_dst_ip_anno(_last_gw);
-    output(_last_output).push(p);
-    return;
+  if (a) {
+    if (a == _last_addr) {
+      if (_last_gw)
+	p->set_dst_ip_anno(_last_gw);
+      output(_last_output).push(p);
+      return;
+    } 
+#ifdef IP_RT_CACHE2
+    else if (a == _last_addr2) {
+#if 0
+      IPAddress tmpa; 
+      int tmpi;
+      EXCHANGE(_last_addr, _last_addr2, tmpa);
+      EXCHANGE(_last_gw, _last_gw2, tmpa);
+      EXCHANGE(_last_output, _last_output2, tmpi);
+#endif
+      if (_last_gw2)
+	p->set_dst_ip_anno(_last_gw2);
+      output(_last_output2).push(p);
+      return;
+    }
+#endif
   }
   
   if (_t.lookup(a.saddr(), gw, ifi) == true) {
+#ifdef IP_RT_CACHE2
+    _last_addr2 = _last_addr;
+    _last_gw2 = _last_gw;
+    _last_output2 = _last_output;
+#endif
     _last_addr = a;
     _last_gw = gw;
     _last_output = ifi;

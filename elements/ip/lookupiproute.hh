@@ -40,6 +40,8 @@
 #include "element.hh"
 #include "iptable.hh"
 
+#define IP_RT_CACHE2 1
+
 class LookupIPRoute : public Element {
 public:
   LookupIPRoute();
@@ -57,9 +59,16 @@ public:
 private:
 
   IPTable _t;
+
   IPAddress _last_addr;
   IPAddress _last_gw;
   int _last_output;
+
+#ifdef IP_RT_CACHE2
+  IPAddress _last_addr2;
+  IPAddress _last_gw2;
+  int _last_output2;
+#endif
   
 };
 
