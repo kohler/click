@@ -1,3 +1,26 @@
+2004-05-15 Saturday 18:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/icmpsendpings.cc (1.29): linuxmodule cxxprotect
+
+2004-05-15 Saturday 18:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/icmpsendpings.cc (1.28): vmalloc
+
+2004-05-15 Saturday 18:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/icmpsendpings.cc (1.27): check out of memory
+
+2004-05-15 Saturday 17:55  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/: icmpsendpings.cc (1.26), icmpsendpings.hh (1.12):
+	ICMPSendPings can act as a full ping program
+
+2004-05-15 Saturday 17:49  John Bicket <jbicket@mit.edu>
+
+	* include/click/routerthread.hh (1.24), lib/routerthread.cc (1.40),
+	linuxmodule/sched.cc (1.48): add tasks_per_iter, iters_per_timers,
+	and iters_per_os handlers for the linuxmodule scheduler.
+
 2004-05-15 Saturday 16:50  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/routerthread.hh (1.23), lib/routerthread.cc (1.39):
