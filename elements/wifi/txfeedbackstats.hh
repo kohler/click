@@ -43,7 +43,6 @@
 #include <click/glue.hh>
 #include <click/etheraddress.hh>
 #include <click/dequeue.hh>
-#include <elements/grid/grid.hh>
 
 CLICK_DECLS
 

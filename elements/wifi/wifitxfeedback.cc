@@ -116,7 +116,7 @@ WifiTXFeedback::add_handlers()
 
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(linuxmodule)
-ELEMENT_REQUIRES(HAVE_WIFI)
+
 EXPORT_ELEMENT(WifiTXFeedback)
 
 

@@ -24,7 +24,7 @@
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
 #include <elements/grid/srcr.hh>
-#include <elements/grid/txstat.hh>
+#include <elements/wifi/txstat.hh>
 CLICK_DECLS
 
 TXStat::TXStat()

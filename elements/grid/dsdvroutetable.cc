@@ -30,8 +30,9 @@
 #include <elements/grid/dsdvroutetable.hh>
 #include <elements/grid/linkstat.hh>
 #include <elements/grid/gridgatewayinfo.hh>
-#include <elements/grid/txfeedbackstats.hh>
 #include <elements/grid/timeutils.hh>
+#include <elements/wifi/txfeedbackstats.hh>
+
 CLICK_DECLS
 
 #define DBG  0

@@ -22,8 +22,7 @@
 #include <click/glue.hh>
 #include <click/timer.hh>
 #include <click/straccum.hh>
-#include <elements/grid/grid.hh>
-#include <elements/grid/txfeedbackstats.hh>
+#include <elements/wifi/txfeedbackstats.hh>
 #include <elements/grid/timeutils.hh>
 CLICK_DECLS
 
