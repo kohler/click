@@ -1,6 +1,7 @@
 #ifndef PACKET_HH
 #define PACKET_HH
 #include "ipaddress.hh"
+#include "ip6address.hh"
 #include "glue.hh"
 class IP6Address;
 struct click_ip;
@@ -150,8 +151,8 @@ private:
   
   IPAddress dst_ip_anno() const		{ return anno()->dst_ip; }
   void set_dst_ip_anno(IPAddress a)	{ anno()->dst_ip = a; }
-  const IP6Address &dst_ip6_anno() const;
-  void set_dst_ip6_anno(const IP6Address &a);
+  IP6Address dst_ip6_anno() const;
+  void set_dst_ip6_anno(const IP6Address a);
 
   bool sniffed_anno() const		{ return anno()->sniffed; }
   void set_sniffed_anno(bool s)		{ anno()->sniffed = s; }
@@ -293,16 +294,17 @@ Packet::pull(unsigned int nbytes)
 #endif
 }
 
-inline const IP6Address &
+inline IP6Address 
 Packet::dst_ip6_anno() const
 {
-  return *(reinterpret_cast<const IP6Address *>(anno()->dst_ip6));
+  //return *(reinterpret_cast<const IP6Address *>(anno()->dst_ip6));
+  return IP6Address(anno()->dst_ip6);
 }
 
 inline void
-Packet::set_dst_ip6_anno(const IP6Address &a)
+Packet::set_dst_ip6_anno(const IP6Address a)
 {
-  memcpy(anno()->dst_ip6, &a, 16);
+  memcpy(anno()->dst_ip6, a.data(), 16);
 }
 
 inline void
