@@ -36,14 +36,34 @@
 class LookupIPRouteRON : public Element {
 public:
 
+  // In POLICY_LOCAL, the local path is always chosen.
   static const int POLICY_LOCAL                 = 0;
+
+  // In POLICY_RANDOM, a path is chosen at random out of all possible paths.
   static const int POLICY_RANDOM                = 1;
+
+  // In POLICY_PROBE3, three random paths are chosen, and the path with shorted
+  // rtt for the SYN/SYN-ACK is chosen.
   static const int POLICY_PROBE3                = 2;
+
+  // In POLICY_PROBE3_LOCAL, two random paths and the local path are chosen to
+  // be probed. The path with the shorted rtt for the SYN/SYN-ACK is chosen.
   static const int POLICY_PROBE3_LOCAL          = 3;
 
+
+
+  // In POLICY_PROBE3_UNPROBED, two least recently probed paths and the path with
+  // previous shortest rtt are chosen to be probed.
   static const int POLICY_PROBE3_UNPROBED       = 4;
+  
+  // In POLICY_PROBE3_UNPROBED_LOCAL, one least recently probed path, the path 
+  // with the shortest rtt, and the local path are chosen to be probed.
   static const int POLICY_PROBE3_UNPROBED_LOCAL = 5;
+
+  // In POLICY_PROBE_ALL, all paths are probed in parallel.
   static const int POLICY_PROBE_ALL             = 6;
+
+
 
   static const int NUM_POLICIES = 4;
 
@@ -61,6 +81,7 @@ public:
   void push(int inport, Packet *p);
   static void print_time(char* s);
 
+  static int myrandom(int x);
 
 
 protected:
@@ -88,7 +109,6 @@ protected:
   void policy_handle_syn(FlowTableEntry *flow, Packet *p, bool first_syn);
   void policy_handle_synack(FlowTableEntry *flow, unsigned int port, Packet *p);
 
-  int myrandom(int x);
 
 private:
   FlowTable *_flow_table;
@@ -120,6 +140,7 @@ public:
 
   int policy;
   int probed_ports[32];
+  unsigned long first_syn_sec, first_syn_usec;
   
 
   FlowTableEntry() {valid = 1; all_answered = 1;}
@@ -130,6 +151,7 @@ public:
   bool is_valid() const      { return (valid); }
   bool is_active() const     { return ((forw_alive || rev_alive) && 
 				       !is_pending() ); }
+  void saw_first_syn();
   
   unsigned get_age() {
     if (all_answered && is_active()) return 0; 
@@ -187,17 +209,35 @@ private:
 };    
 
 class LookupIPRouteRON::DstTableEntry {
+
+  struct ProbeInfo {
+    int port_number;
+    long last_probe_time;
+    unsigned long rtt_sec, rtt_usec;
+    struct ProbeInfo *next;
+  };
+
 public:
   IPAddress dst;
   unsigned outgoing_port;
   unsigned probe_time;
+  struct ProbeInfo *probes; // more recent probes are closer to the front
   
+  void add_probe_info(int port, long rtt_sec, long rtt_usec);
+
+  // returns a port to probe. last recently used, excludes not1, not2 if greater than zero
+  int  choose_least_recent_port(int noutputs, int not1, int not2); 
+  int  choose_fastest_port();
+  void save_rtt(int port, long sec, long usec);
+
   void invalidate()           { outgoing_port = 0;}  
   //unsigned get_age()          { return click_jiffies() - probe_time; }
 
   bool is_valid()             { return outgoing_port != 0; }
   bool is_recent()            { return (probe_time + DST_TABLE_TIMEOUT
 					>= click_jiffies());}
+
+  
 };
 
 class LookupIPRouteRON::DstTable {
@@ -206,7 +246,7 @@ public:
   ~DstTable();
 
   LookupIPRouteRON::DstTableEntry* lookup(IPAddress dst);
-  void insert(IPAddress dst, unsigned short assigned_port);
+  LookupIPRouteRON::DstTableEntry* insert(IPAddress dst, unsigned short assigned_port);
   void print();
   //void invalidate(IPAddress dst) {insert(dst, 0); }
 
