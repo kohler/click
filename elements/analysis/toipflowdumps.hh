@@ -188,6 +188,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
 	uint32_t aggregate() const	{ return _aggregate; }
 	uint32_t npackets() const	{ return _packet_count; }
+	String filename() const		{ return _filename; }
 	Flow *next() const		{ return _next; }
 	void set_next(Flow *f)		{ _next = f; }
 
@@ -255,10 +256,14 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
     Timer _gc_timer;
     Vector<uint32_t> _gc_aggs;
+
+    Vector<String> _compressables;
+    int _compress_child;
     
     String expand_filename(const Packet *, ErrorHandler *) const;
     Flow *find_aggregate(uint32_t, const Packet * = 0);
     void end_flow(Flow *, ErrorHandler *);
+    int add_compressable(const String &, ErrorHandler *);
     inline void smaction(Packet *);
     static void gc_hook(Timer *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler*);

@@ -310,22 +310,6 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
     return 0;
 }
 
-void
-ToIPFlowDumps::Flow::compress(ErrorHandler *errh)
-{
-    if (_filename != "-") {
-	StringAccum cmd;
-	cmd << "gzip -c <" << _filename << " >" + _filename << ".gz 2>/dev/null";
-	int retval = system(cmd.cc());
-	if (retval < 0)
-	    errh->error("%s: gzip: %s", _filename.cc(), strerror(errno));
-	else if (WEXITSTATUS(retval) != 0)
-	    errh->error("%s: gzip exited with status %d", _filename.cc(), WEXITSTATUS(retval));
-	else
-	    ::unlink(_filename.cc());
-    }
-}
-
 inline void
 ToIPFlowDumps::Flow::unlink(ErrorHandler *errh)
 {
@@ -501,7 +485,7 @@ ToIPFlowDumps::Flow::add_note(const String &s, ErrorHandler *errh)
 
 ToIPFlowDumps::ToIPFlowDumps()
     : Element(1, 0), _nnoagg(0), _nagg(0), _agg_notifier(0), _task(this),
-      _gc_timer(gc_hook, this)
+      _gc_timer(gc_hook, this), _compress_child(-1)
 {
     MOD_INC_USE_COUNT;
     for (int i = 0; i < NFLOWMAP; i++)
@@ -568,13 +552,87 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
+int
+ToIPFlowDumps::add_compressable(const String &filename, ErrorHandler *errh)
+{
+    bool nowait = filename.length();
+
+    // append current filename
+    if (filename)
+	_compressables.push_back(filename);
+    if (_compressables.size() < 10 && nowait)
+	return 0;
+
+    // wait for current compression child
+    if (_compress_child >= 0) {
+	int status;
+	int retval = waitpid(_compress_child, &status, (nowait ? WNOHANG : 0));
+	if (retval == 0)
+	    return 0;
+	else if (retval < 0)
+	    return errh->lerror(declaration(), "compressor: waitpid: %s;\ncancelling compression", strerror(errno));
+	else {
+	    _compress_child = -1;
+	    if (WIFSIGNALED(status))
+		return errh->lerror(declaration(), "compressor exited with signal %d;\ncancelling compression", WTERMSIG(status));
+	    else if (!WIFEXITED(status) || WEXITSTATUS(status))
+		return errh->lerror(declaration(), "compressor did not exit normally;\ncancelling compression");
+	}
+    }
+    if (_compressables.size() == 0)
+	return 0;
+
+    // calculate maximum argument list size
+#ifdef _SC_ARG_MAX
+    int arg_space = sysconf(_SC_ARG_MAX);
+#elif defined(ARG_MAX)
+    int arg_space = ARG_MAX;
+#else
+    int arg_space = 1024;
+#endif
+    arg_space -= 8;
+
+    // fork child
+    Vector<const char *> args;
+    args.push_back("gzip");
+    args.push_back("-f");
+    int n = 0;
+    for (int i = _compressables.size() - 1; i >= 0; i--, n++) {
+	if (_compressables[i][0] == '-') // beware initial dashes
+	    _compressables[i] = "./" + _compressables[i];
+	arg_space -= _compressables[i].length() + 1; // not too long a line
+	if (arg_space < 0)
+	    break;
+	args.push_back(_compressables[i].cc());
+    }
+    args.push_back((const char *) 0);
+
+    if ((_compress_child = fork()) == 0) {
+	if (execvp("gzip", (char * const *) &args[0]) < 0) {
+	    errh->lerror(declaration(), "gzip failed: %s", strerror(errno));
+	    abort();
+	}
+    } else if (_compress_child < 0)
+	errh->lerror(declaration(), "fork failed: %s;\ncancelling compression", strerror(errno));
+
+    // remove old compressables
+    _compressables.resize(_compressables.size() - n);
+
+    // done
+    if (n == 0)
+	return errh->lerror(declaration(), "compressor failed: argument list too long; cancelling compression");
+    else
+	return 0;
+}
+
 void
 ToIPFlowDumps::end_flow(Flow *f, ErrorHandler *errh)
 {
     if (f->npackets() > _output_larger) {
 	f->output(errh);
-	if (_gzip)
-	    f->compress(errh);
+	if (_gzip && f->filename() != "-")
+	    if (add_compressable(f->filename(), errh) < 0)
+		_gzip = false;
     } else
 	f->unlink(errh);
     delete f;
@@ -583,13 +641,17 @@ ToIPFlowDumps::end_flow(Flow *f, ErrorHandler *errh)
 void
 ToIPFlowDumps::cleanup(CleanupStage)
 {
+    ErrorHandler *errh = ErrorHandler::default_handler();
     for (int i = 0; i < NFLOWMAP; i++)
 	while (Flow *f = _flowmap[i]) {
 	    _flowmap[i] = f->next();
-	    end_flow(f, ErrorHandler::default_handler());
+	    end_flow(f, errh);
 	}
     if (_nnoagg > 0 && _nagg == 0)
-	ErrorHandler::default_handler()->lwarning(declaration(), "saw no packets with aggregate annotations");
+	errh->lwarning(declaration(), "saw no packets with aggregate annotations");
+    while ((_compress_child >= 0 || _compressables.size())
+	   && add_compressable("", errh) >= 0)
+	/* nada */;
 }
 
 int
