@@ -140,6 +140,14 @@ aggregate, with its number of occurrences in the multiset as its count.
 Returns or sets the banner that is written to the head of any output file.
 Default is empty.
 
+=h call_after_agg read/write
+
+Returns or sets the CALL_AFTER_AGG setting.
+
+=h call_after_count read/write
+
+Returns or sets the CALL_AFTER_COUNT setting.
+
 =n
 
 The aggregate identifier is stored in host byte order. Thus, the aggregate ID
@@ -186,7 +194,8 @@ class AggregateCounter : public Element { public:
     void push(int, Packet *);
     Packet *pull(int);
 
-    void clear();
+    bool empty() const			{ return _num_nonzero == 0; }
+    int clear(ErrorHandler * = 0);
     int write_file(String, bool, ErrorHandler *) const;
     void reaggregate_counts();
     

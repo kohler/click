@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "aggcounter.hh"
-#include "handlercall.hh"
+#include <click/handlercall.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
@@ -106,8 +106,7 @@ AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
 	_call_nnz = stop_nnz;
 	_call_nnz_h = new HandlerCall(id() + ".stop");
     } else if (call_nnz) {
-	String s = cp_pop_spacevec(call_nnz);
-	if (!cp_unsigned(s, &_call_nnz))
+	if (!cp_unsigned(cp_pop_spacevec(call_nnz), &_call_nnz))
 	    return errh->error("`CALL_AFTER_AGG' first word should be unsigned (number of aggregates)");
 	_call_nnz_h = new HandlerCall(call_nnz);
     }
@@ -121,8 +120,7 @@ AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
 	_call_count = stop_count;
 	_call_count_h = new HandlerCall(id() + ".stop");
     } else if (call_count) {
-	String s = cp_pop_spacevec(call_count);
-	if (!cp_unsigned64(s, &_call_count))
+	if (!cp_unsigned64(cp_pop_spacevec(call_count), &_call_count))
 	    return errh->error("`CALL_AFTER_COUNT' first word should be unsigned (count)");
 	_call_count_h = new HandlerCall(call_count);
     }
@@ -138,7 +136,8 @@ AggregateCounter::initialize(ErrorHandler *errh)
     if (_call_count_h && _call_count_h->initialize_write(this, errh) < 0)
 	return -1;
 
-    clear();
+    if (clear(errh) < 0)
+	return -1;
     
     _frozen = false;
     _active = true;
@@ -279,9 +278,9 @@ AggregateCounter::update(Packet *p, bool frozen)
     
     // update _num_nonzero; possibly call handler
     if (amount && !n->count) {
-	if (_num_nonzero == _call_nnz) {
-	    _call_nnz_h->call_write(this);
+	if (_num_nonzero >= _call_nnz) {
 	    _call_nnz = (uint32_t)(-1);
+	    _call_nnz_h->call_write(this);
 	    // handler may have changed our state; reupdate
 	    return update(p, frozen || _frozen);
 	}
@@ -291,8 +290,8 @@ AggregateCounter::update(Packet *p, bool frozen)
     n->count += amount;
     _count += amount;
     if (_count >= _call_count) {
-	_call_count_h->call_write(this);
 	_call_count = (uint64_t)(-1);
+	_call_count_h->call_write(this);
     }
     return true;
 }
@@ -300,7 +299,7 @@ AggregateCounter::update(Packet *p, bool frozen)
 void
 AggregateCounter::push(int port, Packet *p)
 {
-    port = update(p, _frozen || (port == 1));
+    port = !update(p, _frozen || (port == 1));
     output(noutputs() == 1 ? 0 : port).push(p);
 }
 
@@ -326,21 +325,24 @@ AggregateCounter::clear_node(Node *n)
     free_node(n);
 }
 
-void
-AggregateCounter::clear()
+int
+AggregateCounter::clear(ErrorHandler *errh)
 {
     if (_root)
 	clear_node(_root);
     
     if (!(_root = new_node())) {
 	uninitialize();
-	return errh->error("out of memory!");
+	if (errh)
+	    errh->error("out of memory!");
+	return -1;
     }
     _root->aggregate = 0;
     _root->count = 0;
     _root->child[0] = _root->child[1] = 0;
     _num_nonzero = 0;
     _count = 0;
+    return 0;
 }
 
 
@@ -457,7 +459,8 @@ AggregateCounter::write_file_handler(const String &data, Element *e, void *thunk
 }
 
 enum {
-    AC_FROZEN, AC_ACTIVE, AC_BANNER, AC_STOP, AC_REAGGREGATE, AC_CLEAR
+    AC_FROZEN, AC_ACTIVE, AC_BANNER, AC_STOP, AC_REAGGREGATE, AC_CLEAR,
+    AC_CALL_AFTER_AGG, AC_CALL_AFTER_COUNT
 };
 
 String
@@ -471,6 +474,16 @@ AggregateCounter::read_handler(Element *e, void *thunk)
 	return cp_unparse_bool(ac->_active) + "\n";
       case AC_BANNER:
 	return ac->_output_banner;
+      case AC_CALL_AFTER_AGG:
+	if (ac->_call_nnz == (uint32_t)(-1))
+	    return "";
+	else
+	    return String(ac->_call_nnz) + " " + ac->_call_nnz_h->unparse(ac);
+      case AC_CALL_AFTER_COUNT:
+	if (ac->_call_count == (uint64_t)(-1))
+	    return "";
+	else
+	    return String(ac->_call_count) + " " + ac->_call_count_h->unparse(ac);
       default:
 	return "<error>";
     }
@@ -511,8 +524,35 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
 	    ac->_output_banner = "";
 	return 0;
       case AC_CLEAR:
-	ac->clear();
-	return 0;
+	return ac->clear(errh);
+      case AC_CALL_AFTER_AGG:
+	if (!s) {
+	    ac->_call_nnz = (uint32_t)(-1);
+	    return 0;
+	}
+	if (!ac->_call_nnz_h)
+	    ac->_call_nnz_h = new HandlerCall;
+	if (!cp_unsigned(cp_pop_spacevec(s), &ac->_call_nnz))
+	    return errh->error("argument to `call_after_agg' should be `N HANDLER [VALUE]'");
+	else if (ac->_call_nnz_h->initialize_write(s, ac, errh) < 0) {
+	    ac->_call_nnz = (uint32_t)(-1);
+	    return -1;
+	} else
+	    return 0;
+      case AC_CALL_AFTER_COUNT:
+	if (!s) {
+	    ac->_call_count = (uint64_t)(-1);
+	    return 0;
+	}
+	if (!ac->_call_count_h)
+	    ac->_call_count_h = new HandlerCall;
+	if (!cp_unsigned64(cp_pop_spacevec(s), &ac->_call_count))
+	    return errh->error("argument to `call_after_count' should be `N HANDLER [VALUE]'");
+	else if (ac->_call_count_h->initialize_write(s, ac, errh) < 0) {
+	    ac->_call_count = (uint64_t)(-1);
+	    return -1;
+	} else
+	    return 0;
       default:
 	return errh->error("internal error");
     }
@@ -523,8 +563,8 @@ AggregateCounter::add_handlers()
 {
     add_write_handler("write_ascii_file", write_file_handler, (void *)0);
     add_write_handler("write_file", write_file_handler, (void *)1);
-    add_read_handler("freeze", read_handler, (void *)AC_FREEZE);
-    add_write_handler("freeze", write_handler, (void *)AC_FREEZE);
+    add_read_handler("freeze", read_handler, (void *)AC_FROZEN);
+    add_write_handler("freeze", write_handler, (void *)AC_FROZEN);
     add_read_handler("active", read_handler, (void *)AC_ACTIVE);
     add_write_handler("active", write_handler, (void *)AC_ACTIVE);
     add_write_handler("stop", write_handler, (void *)AC_STOP);
@@ -532,7 +572,11 @@ AggregateCounter::add_handlers()
     add_read_handler("banner", read_handler, (void *)AC_BANNER);
     add_write_handler("banner", write_handler, (void *)AC_BANNER);
     add_write_handler("clear", write_handler, (void *)AC_CLEAR);
+    add_read_handler("call_after_agg", read_handler, (void *)AC_CALL_AFTER_AGG);
+    add_write_handler("call_after_agg", write_handler, (void *)AC_CALL_AFTER_AGG);
+    add_read_handler("call_after_count", read_handler, (void *)AC_CALL_AFTER_COUNT);
+    add_write_handler("call_after_count", write_handler, (void *)AC_CALL_AFTER_COUNT);
 }
 
-ELEMENT_REQUIRES(userlevel HandlerCall)
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(AggregateCounter)
