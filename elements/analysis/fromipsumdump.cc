@@ -34,7 +34,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-const char * const FromIPSummaryDump::tcp_flags_word = "FSRPAUXY";
+const char * const FromIPSummaryDump::tcp_flags_word = "FSRPAUEW";
 static uint8_t flag_mapping[256];
 
 FromIPSummaryDump::FromIPSummaryDump()
@@ -46,6 +46,9 @@ FromIPSummaryDump::FromIPSummaryDump()
 	const char *x = tcp_flags_word;
 	for (int i = 0; *x; x++, i++)
 	    flag_mapping[(uint8_t)(*x)] = i + 1;
+	// old mappings for flag bits 6 and 7
+	flag_mapping[(uint8_t)('X')] = 6 + 1;
+	flag_mapping[(uint8_t)('Y')] = 7 + 1;
     }
 }
 
