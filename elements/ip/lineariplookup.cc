@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * lookupiproute.{cc,hh} -- element looks up next-hop address in static
+ * lineariplookup.{cc,hh} -- element looks up next-hop address in linear
  * routing table
  * Robert Morris, Eddie Kohler
  *
@@ -19,7 +19,7 @@
  */
 
 #include <click/config.h>
-#include "lookupiproute.hh"
+#include "lineariplookup.hh"
 #include <click/ipaddress.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
@@ -60,7 +60,7 @@ LinearIPLookup::check() const
     for (int i = 0; i < _t.size(); i++)
 	for (int j = i + 1; j < _t[i].next && j < _t.size(); j++)
 	    if ((_t[j].addr & _t[i].mask) == _t[i].addr
-		&& _t[j].mask.mask_more_specific(_t[i].mask)) {
+		&& _t[j].mask.mask_as_long(_t[i].mask)) {
 		click_chatter("%s: bad next pointers: routes %s, %s", declaration().cc(), _t[i].unparse_addr().cc(), _t[j].unparse_addr().cc());
 		ok = false;
 	    }
@@ -137,12 +137,12 @@ LinearIPLookup::add_route(IPAddress addr, IPAddress mask, IPAddress gw,
 
     // patch up 'next' pointers
     for (int i = found - 1; i >= 0; i--)
-	if (mask.mask_more_specific(_t[i].mask)
+	if (mask.mask_as_long(_t[i].mask)
 	    && (addr & _t[i].mask) == _t[i].addr
 	    && _t[i].next > found)
 	    _t[i].next = found;
     for (int i = found + 1; i < _t.size(); i++)
-	if (_t[i].mask.mask_more_specific(mask)
+	if (_t[i].mask.mask_as_long(mask)
 	    && (_t[i].addr & mask) == addr) {
 	    _t[found].next = i;
 	    break;
@@ -222,7 +222,7 @@ LinearIPLookup::lookup_entry(IPAddress a) const
 	    int found = i;
 	    for (int j = _t[i].next; j < _t.size(); j++)
 		if ((a & _t[j].mask) == _t[j].addr
-		    && _t[j].mask.mask_more_specific(_t[found].mask))
+		    && _t[j].mask.mask_as_long(_t[found].mask))
 		    found = j;
 	    return found;
 	}

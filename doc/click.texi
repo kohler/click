@@ -1598,10 +1598,10 @@ specified by @var{addr1} and the netmask @var{mask}. Equivalent to
 @code{(addr() & @var{mask}.addr()) == @var{addr1}.addr()}.
 @end deftypemethod
 
-@deftypemethod IPAddress bool mask_more_specific (@w{IPAddress @var{mask}}) const
+@deftypemethod IPAddress bool submask (@w{IPAddress @var{mask}}) const
 Returns true if and only if this @code{IPAddress}, interpreted as a
-netmask, is more specific than @var{mask}. Equivalent to @code{(addr() &
-@var{mask}.addr()) == @var{mask}.addr()}.
+netmask, is at least as specific as @var{mask}. Equivalent to
+@code{(addr() & @var{mask}.addr()) == @var{mask}.addr()}.
 @end deftypemethod
 
 @deftypefun IPAddress {operator&} (IPAddress @var{addr1}, IPAddress @var{addr2})

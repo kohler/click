@@ -152,7 +152,7 @@ ARPResponder::lookup(IPAddress a, EtherAddress &ena) const
   int best = -1;
   for (int i = 0; i < _v.size(); i++)
     if (a.matches_prefix(_v[i].dst, _v[i].mask)) {
-      if (best < 0 || _v[i].mask.mask_more_specific(_v[best].mask))
+      if (best < 0 || _v[i].mask.mask_as_long(_v[best].mask))
         best = i;
     }
 

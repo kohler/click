@@ -29,7 +29,7 @@ class IPAddress { public:
   
   int mask_to_prefix_len() const;
   bool matches_prefix(IPAddress addr, IPAddress mask) const;
-  bool mask_more_specific(IPAddress) const;
+  bool mask_as_long(IPAddress) const;
 
   // bool operator==(IPAddress, IPAddress);
   // bool operator==(IPAddress, uint32_t);
@@ -146,7 +146,7 @@ IPAddress::matches_prefix(IPAddress a, IPAddress mask) const
 }
 
 inline bool
-IPAddress::mask_more_specific(IPAddress mask) const
+IPAddress::mask_as_long(IPAddress mask) const
 {
   return (addr() & mask.addr()) == mask.addr();
 }

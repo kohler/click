@@ -36,7 +36,7 @@ IPTable::lookup(IPAddress dst, IPAddress &gw, int &index) const
   // longest prefix match
   for (int i = 0; i < _v.size(); i++)
     if (dst.matches_prefix(_v[i].dst, _v[i].mask)) {
-      if (best < 0 || _v[i].mask.mask_more_specific(_v[best].mask))
+      if (best < 0 || _v[i].mask.mask_as_long(_v[best].mask))
 	best = i;
     }
 

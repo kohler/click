@@ -1,5 +1,11 @@
 Click NEWS
 
+Version
+
+** Renamed IPAddress::mask_more_specific() method to
+   IPAddress::mask_as_long(), to emphasize that it allows equality.
+
+
 Version 1.2.3   4.Dec.2001
 
 * Drivers

@@ -98,7 +98,7 @@ class LinearIPLookup : public IPRouteTable { public:
 	String unparse_addr() const { return addr.unparse_with_mask(mask); }
     };
 
-  private:
+  protected:
 
     Vector<Entry> _t;
 
