@@ -95,13 +95,10 @@ click_sched(void *thunk)
     click_thread_pids->push_back(current->pid);
   spin_unlock(&click_thread_lock);
 
-  // preserve router
-  rt->router()->use();
-
   // driver loop; does not return for a while
   rt->driver();
 
-  // release router
+  // release router (router preserved in click_start_sched)
   rt->router()->unuse();
 
   // remove pid from thread list
@@ -143,13 +140,18 @@ click_start_sched(Router *r, int threads, ErrorHandler *errh)
       rt = new RouterThread(r);
     else
       rt = r->thread(0);
+
+    r->use();			// preserve router
     pid_t pid = kernel_thread 
-      (click_sched, rt, CLONE_FS | CLONE_FILES | CLONE_SIGHAND); 
+      (click_sched, rt, CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
+    
     if (pid < 0) {
+      r->unuse();		// release router (no thread)
       delete rt;
       errh->error("cannot create kernel thread!"); 
       return -1;
     }
+    
     threads--;
   }
 
