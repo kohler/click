@@ -60,7 +60,7 @@ LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
                         cpElement, "GridRouteTable element", &_rtes,
                         cpElement, "GridGatewayInfo element", &_gw_info,
 			0);
-  _any_gateway_ip = (_ipaddr.addr & 0xFFffFF00) | 254;
+  _any_gateway_ip = (_ipaddr.addr() & 0xFFffFF00) | 254;
   return res;
 }
 
