@@ -1,3 +1,10 @@
+2003-12-21 Sunday 11:54  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: etx2metric.cc (1.1), etx2metric.hh (1.1),
+	etxmetric.hh (1.5), gridgenericmetric.hh (1.6), linkstat.cc (1.28),
+	linkstat.hh (1.16): added two-size etx predictor, plus required
+	changes and nitle3s for other els
+
 2003-12-15 Monday 13:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.74), dsdvroutetable.hh
