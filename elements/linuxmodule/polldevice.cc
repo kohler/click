@@ -35,6 +35,7 @@
 
 extern "C" {
 #include <linux/netdevice.h>
+#include <linux/sched.h>
 #include <unistd.h>
 }
 
@@ -132,6 +133,8 @@ PollDevice::initialize(ErrorHandler *errh)
   if (l->next() == 0) {
     /* turn off interrupt if interrupts weren't already off */
     _dev->poll_on(_dev);
+    if (_dev->polling != 1)
+      return errh->error("PollDevice detected wrong version of polling patch");
   }
  
   if (_promisc) dev_set_promiscuity(_dev, 1);
@@ -143,10 +146,6 @@ PollDevice::initialize(ErrorHandler *errh)
   set_tickets(ScheduleInfo::DEFAULT);
 #endif
 
-#if CLICK_DEVICE_ADJUST_TICKETS
-  _last_rx = 0;
-#endif
-  
   join_scheduler();
 
   reset_counts();
@@ -164,7 +163,6 @@ PollDevice::reset_counts()
 
 #if CLICK_DEVICE_STATS
   _activations = 0;
-  _idle_calls = 0;
   _time_poll = 0;
   _time_refill = 0;
   _perfcnt1_poll = 0;
@@ -217,8 +215,6 @@ PollDevice::run_scheduled()
 		    _perfcnt1_poll, _perfcnt2_poll, _time_poll);
   if (got > 0)
     _activations++;
-  else
-    _idle_calls++;
 #endif
   
   _dev->rx_refill(_dev);
@@ -266,32 +262,7 @@ PollDevice::run_scheduled()
   }
 #endif
 
-#if CLICK_DEVICE_ADJUST_TICKETS
-  int base = tickets() / 4;
-  if (base < 2) base = 2;
-  int adj = 0;
-  
-  /*
-   * bursty traffic: sent substantially more packets this time than last time,
-   * so increase our tickets a lot to adapt.
-   */
-  if (got == INPUT_BATCH && _last_rx <= INPUT_BATCH/8) 
-    adj = base * 2;
-  /* 
-   * was able to get many packets, so increase our ticket some to adapt.
-   */
-  else if (got == INPUT_BATCH)
-    adj = base;
-  /*
-   * no packets, decrease tickets by some
-   */
-  else if (got < INPUT_BATCH/4) 
-    adj = -base;
-
-  adj_tickets(adj);
-  _last_rx = got;
-#endif
-
+  adjust_tickets(got);
   reschedule();
 
 #endif /* HAVE_POLLING */
@@ -304,7 +275,6 @@ PollDevice_read_calls(Element *f, void *)
   return
 #if CLICK_DEVICE_STATS
     String(kw->_npackets) + " packets received\n" +
-    String(kw->_idle_calls) + " idle calls\n" +
     String(kw->_time_poll) + " cycles poll\n" +
     String(kw->_time_refill) + " cycles refill\n" +
     String(kw->_push_cycles) + " cycles pushing\n" +

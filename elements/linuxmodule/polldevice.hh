@@ -58,7 +58,6 @@ class PollDevice : public AnyDevice {
   
   unsigned long _npackets;
 #if CLICK_DEVICE_STATS
-  unsigned long long _idle_calls;
   unsigned long long _time_poll;
   unsigned long long _time_refill;
   unsigned long long _perfcnt1_poll;
@@ -77,10 +76,6 @@ class PollDevice : public AnyDevice {
 
   bool _registered;
   bool _promisc;
-
-#if CLICK_DEVICE_ADJUST_TICKETS
-  unsigned int _last_rx;
-#endif
 
 };
 

@@ -47,8 +47,7 @@ extern "C" {
 
 ToDevice::ToDevice()
   : _polling(0), _registered(0),
-    _dev_idle(0), _last_tx(0), _last_busy(0), 
-    _rejected(0), _hard_start(0)
+    _dev_idle(0), _rejected(0), _hard_start(0)
 {
   // no MOD_INC_USE_COUNT; rely on AnyDevice
   add_input();
@@ -104,7 +103,7 @@ ToDevice::initialize(ErrorHandler *errh)
   /* start out with max number of tickets */
   int max_tickets = ScheduleInfo::query(this, errh);
   set_max_tickets(max_tickets);
-  set_tickets(max_tickets);
+  set_tickets(ScheduleInfo::DEFAULT);
 #endif
   join_scheduler();
 
@@ -120,8 +119,6 @@ ToDevice::reset_counts()
   _busy_returns = 0; 
 #if CLICK_DEVICE_STATS
   _activations = 0;
-  _idle_pulls = 0; 
-  _idle_calls = 0; 
   _linux_pkts_sent = 0; 
   _time_clean = 0;
   _time_queue = 0;
@@ -255,14 +252,8 @@ should only be called from net_bh().
   if (sent > 0 || _activations > 0) _activations++;
 #endif
 
-#if CLICK_DEVICE_STATS
-  if (_activations > 0) {
-    if (sent == 0) _idle_calls++;
-    if (sent == 0 && !busy) _idle_pulls++;
-  }
-#endif
   if (busy) _busy_returns++;
-  
+
 #if HAVE_POLLING
   if (_polling) {
     if (busy && sent == 0) {
@@ -277,34 +268,8 @@ should only be called from net_bh().
       _dev_idle = 0;
   }
 #endif
- 
-#if CLICK_DEVICE_ADJUST_TICKETS
-  int base = tickets()/4;
-  if (base < 2) base = 2;
-  int adj = 0;
 
-  /* 
-   * didn't get much traffic and did not fill up the device, slow down.
-   */
-  if (!busy && sent < (OUTPUT_BATCH/4)) 
-    adj = -base;
-  /* 
-   * sent many packets, increase ticket.
-   */
-  else if (sent > (OUTPUT_BATCH/2)) 
-    adj = base * 2;
-  /*
-   * was able to send more packets than last time, and last time device wasn't
-   * busy, this means we are getting more packets from queue.
-   */
-  else if (sent > (OUTPUT_BATCH/4) && sent > _last_tx && !_last_busy)
-    adj = base;
-
-  adj_tickets(adj);
-#endif
-  
-  _last_tx = sent;
-  _last_busy = busy;
+  adjust_tickets(sent);
   reschedule();
 }
 
@@ -340,7 +305,8 @@ ToDevice::queue_packet(Packet *p)
     _hard_start++;
   }
   if(ret != 0){
-    printk("<1>ToDevice %s tx oops\n", _dev->name);
+    if(_rejected == 0)
+      printk("<1>ToDevice %s rejected a packet!\n", _dev->name);
     kfree_skb(skb1);
     _rejected++;
   }
@@ -363,8 +329,6 @@ ToDevice_read_calls(Element *f, void *)
     String(td->_busy_returns) + " device busy returns\n" +
     String(td->_npackets) + " packets sent\n" +
 #if CLICK_DEVICE_STATS
-    String(td->_idle_calls) + " idle tx calls\n" +
-    String(td->_idle_pulls) + " idle pulls\n" +
     String(td->_linux_pkts_sent) + " linux packets sent\n" +
     String(td->_pull_cycles) + " cycles pull\n" +
     String(td->_time_clean) + " cycles clean\n" +
