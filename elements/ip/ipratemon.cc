@@ -1,6 +1,7 @@
 /*
  * ipratemon.{cc,hh} -- counts packets clustered by src/dst addr.
  * Thomer M. Gil
+ * Benjie Chen (minor changes)
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
@@ -15,6 +16,7 @@
 #endif
 #include "ipratemon.hh"
 #include "confparse.hh"
+#include "straccum.hh"
 #include "click_ip.h"
 #include "error.hh"
 #include "glue.hh"
@@ -106,7 +108,6 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
 #endif
 }
 
-
 IPRateMonitor *
 IPRateMonitor::clone() const
 {
@@ -130,55 +131,6 @@ IPRateMonitor::simple_action(Packet *p)
 
   return p;
 }
-
-
-//
-// Dives in tables based on a and raises all rates by val.
-//
-// XXX: Make this interrupt driven.
-//
-void
-IPRateMonitor::update(IPAddress a, int val)
-{
-  unsigned int saddr = a.saddr();
-
-  struct _stats *s = _base;
-  struct _counter *c = NULL;
-  int bitshift;
-
-  // Find entry on correct level
-  for(bitshift = 0; bitshift <= MAX_SHIFT; bitshift += 8) {
-    unsigned char byte = (saddr >> bitshift) & 0x000000ff;
-    c = &(s->counter[byte]);
-
-    if(c->flags & SPLIT)
-      s = c->next_level;
-    else
-      break;
-  }
-
-  // Is vector allocated already?
-  if(c->values == NULL) {
-    c->values = new Vector<EWMA>;
-    c->values->resize(_no_of_rates);
-    for(int i = 0; i < _no_of_rates; i++)
-      c->values->at(i).initialize();
-  }
-
-  // Update values.
-  for(int i = 0; i < _no_of_rates; i++)
-    c->values->at(i).update(val*_rates[i]);
-
-  // Did value get larger than THRESH in the specified period?
-  if(c->values->at(0).average() >= _thresh)
-    if(bitshift < MAX_SHIFT) {
-      c->flags |= SPLIT;
-      struct _stats *tmp = new struct _stats;
-      clean(tmp);
-      c->next_level = tmp;
-    }
-}
-
 
 //
 // Recursively destroys tables.
@@ -270,12 +222,19 @@ IPRateMonitor::print(_stats *s, String ip = "")
     if(s->counter[i].flags & SPLIT) {
       ret += this_ip + "\t*\n";
       ret += print(s->counter[i].next_level, "\t" + this_ip);
-    } else if(s->counter[i].values != 0) {
+    } else if(s->counter[i].values != 0) { 
+      int j;
       ret += this_ip;
-
+  
       // First rate is hidden
-      for(int j = 1; j < _no_of_rates; j++)
-        ret += "\t" + String(s->counter[i].values->at(j).average());
+      for(j = 1; j < _no_of_rates; j++) {
+	// Update the rate first, so we have correct info
+        s->counter[i].values->at(j).update(0);
+        ret+="\t";
+	ret+= cp_unparse_real
+	  (s->counter[i].values->at(j).average(),
+	   s->counter[i].values->at(j).scale());
+      }
       ret += "\n";
     }
   }
@@ -348,7 +307,8 @@ IPRateMonitor::rates_read_handler(Element *e, void *)
 
 
 int
-IPRateMonitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+IPRateMonitor::thresh_write_handler
+(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
@@ -368,7 +328,8 @@ IPRateMonitor::thresh_write_handler(const String &conf, Element *e, void *, Erro
 
 
 int
-IPRateMonitor::reset_write_handler(const String &, Element *e, void *, ErrorHandler *)
+IPRateMonitor::reset_write_handler
+(const String &, Element *e, void *, ErrorHandler *)
 {
   IPRateMonitor* me = (IPRateMonitor *) e;
   me->destroy(me->_base);
@@ -392,6 +353,6 @@ IPRateMonitor::add_handlers()
 }
 
 #include "vector.cc"
-template class Vector<EWMA>;
+template class Vector<EWMA2>;
 
 EXPORT_ELEMENT(IPRateMonitor)

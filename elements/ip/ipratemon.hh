@@ -6,13 +6,24 @@
  * IPRateMonitor(DS, PB, OFF, THRESH/PERIOD, T1, T2, ...)
  * =d
  *
- * See FlexMonitor.
+ * Monitors network traffic rates, much like IPFlexMonitor. Can monitor either
+ * packet or byte rate for either dst IP addresses or src IP addresses. Can
+ * keep rates over several time periods. When the rate for a particular IP
+ * network address exceeds the threshold, rates will then be kept for host or
+ * subnet addresses within that network.
  *
- * DS: "SRC" or "DST". Look at src or dst IP address
- * PB: count packets or bytes
+ * DS: SRC or DST. Look at src or dst IP address.
+ *
+ * PB: PACKETS or BYTES. Count number of packets or bytes.
+ *
  * OFF: offset in packet where IP header starts
- * THRESH/PERIOD: THRESH per PERIOD seconds causes a split
- * T1, T2: Instructs IPRateMonitor to keep track of last Tx seconds
+ * 
+ * THRESH/PERIOD: THRESH number of packets or bytes per PERIOD seconds will
+ *                IPRateMonitor to monitor subnet or host addresses within a
+ *                network.
+ *
+ * T1, T2, etc.: Instructs IPRateMonitor to keep track of rates over the given
+ *               time periods.
  *
  * =h look (read)
  * Returns the rate of counted to/from a cluster of IP addresses. The first
@@ -29,39 +40,46 @@
  * When read, returns THRESH/PERIOD. When written, expects THRESH/PERIOD.
  *
  * =h rates (read)
- * Returns rates T1, T2, ...
+ * Returns rates over T1, T2, ...
  *
  * =e
+ * Example: 
  *
- * =a FlexMonitor
+ * IPRateMonitor(DST, PACKETS, 0, 100000/10, 30 60)
+ *
+ * Monitors packet rates on dst IP addresses. When rate for a network address
+ * (e.g. 18.26.*.*) exceeds 100000 packets per 10 seconds, start monitor
+ * subnet or host addresses (e.g. 18.26.4.*). For each host or network
+ * address, keeps packet rates over the last 30 and 60 seconds.
+ *
+ * =a IPFlexMonitor
  */
+
 #include "glue.hh"
 #include "click_ip.h"
 #include "element.hh"
-#include "ewma.hh"
+#include "ewma2.hh"
 #include "vector.hh"
 
+#if IPVERSION == 4
+#define BYTES 4
+#endif
+#define MAX_SHIFT ((BYTES-1)*8)
+#define MAX_COUNTERS 256
 
-class IPRateMonitor : public Element {
-public:
+class IPRateMonitor : public Element { public:
+
   IPRateMonitor();
   ~IPRateMonitor();
   
   const char *class_name() const		{ return "IPRateMonitor"; }
   const char * default_processing() const	{ return AGNOSTIC; }
+  
   int configure(const String &conf, ErrorHandler *errh);
   IPRateMonitor *clone() const;
-  // void push(int port, Packet *p);
   Packet *simple_action(Packet *);
 
 private:
-
-// XXX: Is this somewhere defined already?
-#if IPVERSION == 4
-#define BYTES 4
-#endif
-
-#define MAX_SHIFT ((BYTES-1)*8)
 
   unsigned char _sd;
 #define SRC 0
@@ -73,36 +91,33 @@ private:
 
   unsigned char _offset;
 
-  // One of these associated with each input.
+  // one for each input
   struct _inp {
     int change;
     unsigned char srcdst;
   };
 
+  // one for each address
   struct _stats;
-
-  // For each (cluster of) IP address(es).
   struct _counter {
     unsigned char flags;
 #define SPLIT     0x0001
-
     union {
-      Vector<EWMA> *values;
+      Vector<EWMA2> *values;
       struct _stats *next_level;
     };
-
     int last_update;
   };
 
   struct _stats {
-    struct _counter counter[256];
+    struct _counter counter[MAX_COUNTERS];
   };
 
   int _thresh;
-  Vector<unsigned int> _rates;          // value associated with each input
-  unsigned short _no_of_rates;          // equals _rates.size()
-  struct _stats *_base;                 // base struct for monitoring
-  long unsigned int _resettime;         // time of last reset
+  Vector<unsigned int> _rates;      // number of rates to keep
+  unsigned short _no_of_rates;      // equals _rates.size()
+  struct _stats *_base;
+  long unsigned int _resettime;     // time of last reset
 
   void set_resettime();
   bool set_thresh(String str);
@@ -119,8 +134,57 @@ private:
   static String srcdst_read_handler(Element *e, void *);
   static String rates_read_handler(Element *e, void *);
 
-  static int thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
-  static int reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
+  static int thresh_write_handler
+    (const String &conf, Element *e, void *, ErrorHandler *errh);
+  static int reset_write_handler
+    (const String &conf, Element *e, void *, ErrorHandler *errh);
 };
 
+
+//
+// Dives in tables based on a and raises all rates by val.
+//
+inline void
+IPRateMonitor::update(IPAddress a, int val)
+{
+  unsigned int saddr = a.saddr();
+
+  struct _stats *s = _base;
+  struct _counter *c = NULL;
+  int bitshift;
+
+  // find entry on correct level
+  for(bitshift = 0; bitshift <= MAX_SHIFT; bitshift += 8) {
+    unsigned char byte = (saddr >> bitshift) & 0x000000ff;
+    c = &(s->counter[byte]);
+
+    if(c->flags & SPLIT)
+      s = c->next_level;
+    else
+      break;
+  }
+
+  // is vector allocated already?
+  if(c->values == NULL) {
+    c->values = new Vector<EWMA2>;
+    c->values->resize(_no_of_rates);
+    for(int i = 0; i < _no_of_rates; i++)
+      c->values->at(i).initialize(_rates[i]);
+  }
+
+  // update values.
+  for(int i = 0; i < _no_of_rates; i++)
+    c->values->at(i).update(val);
+
+  // did value get larger than THRESH in the specified period?
+  if(c->values->at(0).average() >= _thresh)
+    if(bitshift < MAX_SHIFT) {
+      c->flags |= SPLIT;
+      struct _stats *tmp = new struct _stats;
+      clean(tmp);
+      c->next_level = tmp;
+    }
+}
+
 #endif /* IPRATEMON_HH */
+
