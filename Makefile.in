@@ -100,7 +100,7 @@ check-filenames:
 
 clean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) clean); done
-	-rm -f elementmap
+	-rm -f elementmap conftest.*
 distclean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) distclean); done
 	-rm -f Makefile config.status

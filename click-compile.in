@@ -33,7 +33,7 @@ while true; do
   bad=x
   case $1 in
     --de|--def|--defs)
-      echo @PCAP_HEADER_PATH@
+      echo @PCAP_HEADER_PATH@ -I$includedir
       exit 0;;
     --l|--li|--lib|--libs)
       echo @PCAP_LIBRARY_PATH@ @PCAP_LIBRARY@ @DL_LIBRARY@ @SOCKET_LIBS@
@@ -60,8 +60,8 @@ relevant for userlevel Click drivers.
 Usage: click-compile -t TARGET [OPTIONS] SOURCEFILE...
 
 Options:
-      --libs              Outputs link options for userlevel drivers.
       --defs              Outputs preprocessor options for userlevel drivers.
+      --libs              Outputs link options for userlevel drivers.
   -t, --target TARGET     Sets target to `kernel', `user', or `tool'.
   -p, --package PACKAGE   Build a dynamically loadable package named PACKAGE.
   -d, --directory DIR     Change to directory DIR.
