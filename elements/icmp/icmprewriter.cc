@@ -130,15 +130,15 @@ ICMPRewriter::rewrite_ping_packet(WritablePacket *p, click_ip *embedded_iph,
   icmph->icmp_cksum = click_in_cksum((unsigned char *)icmph, p->length() - p->transport_header_offset());
 }
 
-void
-ICMPRewriter::push(int, Packet *p_in)
+Packet *
+ICMPRewriter::simple_action(Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
-  click_ip *iph = p->ip_header();
-  
-  if (iph->ip_p != IP_PROTO_ICMP) {
-    p_in->kill();
-    return;
+  if (!p)
+    return 0;
+  else if (p->ip_header()->ip_p != IP_PROTO_ICMP) {
+    p->kill();
+    return 0;
   }
   
   icmp_generic *icmph = reinterpret_cast<icmp_generic *>(p->transport_header());
@@ -152,7 +152,7 @@ ICMPRewriter::push(int, Packet *p_in)
      // check length of embedded IP header
      click_ip *embedded_iph = reinterpret_cast<click_ip *>(icmph + 1);
      unsigned hlen = embedded_iph->ip_hl << 2;
-     if (p->length() - p->transport_header_offset() < sizeof(icmp_generic) + hlen + 8
+     if (p->transport_length() < (int)(sizeof(icmp_generic) + hlen + 8)
 	 || hlen < sizeof(click_ip))
        goto bad;
 
@@ -195,21 +195,17 @@ ICMPRewriter::push(int, Packet *p_in)
      } else
        goto unmapped;
        
-     output(0).push(p);
-     break;
+     return p;
    }
 
    bad:
     p->kill();
-    break;
+    return 0;
 
    unmapped:
    default:
-    if (noutputs() == 1)
-      p->kill();
-    else
-      output(1).push(p);
-    break;
+    checked_output_push(1, p);
+    return 0;
 
   }
 }

@@ -55,13 +55,13 @@ class ICMPRewriter : public Element { public:
   ~ICMPRewriter();
 
   const char *class_name() const	{ return "ICMPRewriter"; }
-  const char *processing() const	{ return PUSH; }
+  const char *processing() const	{ return AGNOSTIC; }
   ICMPRewriter *clone() const		{ return new ICMPRewriter; }
 
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
 
-  void push(int, Packet *);
+  Packet *simple_action(Packet *);
   
  protected:
 
