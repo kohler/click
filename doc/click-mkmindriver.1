@@ -85,18 +85,33 @@ Specifies the package name.
 .BI \-\-file " file"
 Read a router configuration from
 .IR file .
-The default is the standard input.
+.B Click-mkmindriver
+reads a configuration from the standard input unless you give a
+.BR \-\-file ,
+.BR \-\-expression ,
+or
+.B \-\-no\-file
+option.
+'
+.Sp
+.TP
+.BI \-e " expr"
+.TP
+.BI \-\-expression " expr"
+Use
+.IR expr ,
+a string in the Click language, as a router configuration.
 '
 .Sp
 .TP
 .BI \-a
 .TP
 .BI \-\-all
-Include every primitive element class mentioned in later FILEs, even those in
-compound elements that are not, themselves, used. This is useful to add
-support for
-.M click-xform 1
-support, for example.
+Include every primitive element class, even those in compound elements that
+are not themselves used, in the following router configurations. This is
+useful to add support for
+.M click-xform 1 ,
+for example.
 '
 .Sp
 .TP
@@ -131,7 +146,7 @@ options.) The default directory is `.'.
 '
 .Sp
 .TP
-.BI \-e " elts"
+.BI \-E " elts"
 .TP
 .BI \-\-elements " elts"
 Include the element classes

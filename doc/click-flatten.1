@@ -80,16 +80,6 @@ instead of the usual configuration.
 '
 .Sp
 .TP 5
-.BI \-e " expr"
-.PD 0
-.TP
-.BI \-\-expression " expr"
-Read the router configuration text from a command-line argument,
-.IR expr ,
-instead of from a file.
-'
-.Sp
-.TP 5
 .BI \-f " file"
 .PD 0
 .TP
@@ -97,6 +87,16 @@ instead of from a file.
 Read the router configuration to flatten from
 .IR file .
 The default is the standard input.
+'
+.Sp
+.TP 5
+.BI \-e " expr"
+.PD 0
+.TP
+.BI \-\-expression " expr"
+Use
+.IR expr ,
+a string in the Click language, as the router configuration to flatten.
 '
 .Sp
 .TP
