@@ -87,23 +87,23 @@ private:
     CB *rexmit_prev;
   };
 
-  const static int htbits = 10;
-  const static int htsize = 1 << htbits;
-  const static int htmask = htsize - 1;
+  static const int htbits = 10;
+  static const int htsize = 1 << htbits;
+  static const int htmask = htsize - 1;
   CB *cbhash[htsize];
   CB *cbfree;
   CB *rexmit_head, *rexmit_tail;
 
   // Retransmission
-  const static int resend_dt = 1000000;	// rexmit after 1 sec
-  const static int resend_max = 5;	// rexmit at most 5 times
+  static const int resend_dt = 1000000;	// rexmit after 1 sec
+  static const int resend_max = 5;	// rexmit at most 5 times
 
   // Scheduling new connections
   int start_interval;			// ms between connections
   struct timeval start_tv;
 
   // Performance measurement
-  const static int perf_dt = 5000000;
+  static const int perf_dt = 5000000;
   struct timeval perf_tv;
   struct {
     int initiated;

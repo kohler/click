@@ -240,7 +240,6 @@ lib/ipaddressset.cc
 lib/ip6flowid.cc
 lib/ipflowid.cc
 lib/iptable.cc
-lib/iptable2.cc
 lib/ip6table.cc
 lib/lexer.cc
 lib/notifier.cc
