@@ -778,7 +778,8 @@ so I won't try to compile the linuxmodule driver.
 
 There are two common reasons for this error:
 1. You have not applied the Linux kernel patch that comes with this
-   distribution.  Apply the right patch and try again.
+   distribution.  Apply the right patch and try again.  See the INSTALL
+   file for more information.
 2. Your Linux configuration enables some functionality that is not yet
    covered by our patches.  Turn off this functionality and try again,
    or fix the error and tell us how you did it.  See the config.log file

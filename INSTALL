@@ -11,8 +11,8 @@ network. See the end of this document for portability notes for other
 architectures.
 
 The Linux kernel module requires a patched Linux 2.2 or 2.4 system. We
-provide patches for Linux 2.2.18 through 2.2.21 and 2.4.18 through
-2.4.21. The patches do not apply against Red Hat kernels; use vanilla
+provide patches for Linux 2.2.18 through 2.2.21, 2.4.18 through 2.4.28, and
+2.6.11. The patches do not apply against Red Hat kernels; use vanilla
 kernels from kernel.org.
 
 The preliminary FreeBSD Click kernel module compiles against unpatched
@@ -116,6 +116,7 @@ and running Linux kernels.
     2.4.26-Debian	debian-2.4.26-patch
     2.4.27		linux-2.4.26-patch
     2.4.28		linux-2.4.26-patch
+    2.6.11.6		linux-2.6.11.6-patch
 
     The patch fixes syntax errors in several header files (the C++ compiler
     doesn't accept them), adds several new functions, and changes the
