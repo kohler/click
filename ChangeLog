@@ -1,3 +1,15 @@
+2001-07-24 Tuesday 04:04  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdevice.cc (1.25),
+	elements/userlevel/fromdump.cc (1.37), etc/libclick/lc-configure.in
+	(1.2), etc/libclick/lc-libsrc-Makefile.in (1.2), Makefile.in
+	(1.90): nitlets
+
+2001-07-24 Tuesday 03:46  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.89), etc/libclick/lc-Makefile.in (1.3): distclean
+	removes config.h and pathvars.h
+
 2001-07-24 Tuesday 03:29  Eddie Kohler <kohler@aciri.org>
 
 	* Makefile.in (1.88), configure.in (1.131), linuxmodule/Makefile.in
