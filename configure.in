@@ -376,7 +376,7 @@ AC_CACHE_CHECK(FreeBSD version, ac_cv_freebsd_version,
 [save_flags="$CPPFLAGS"
 CPPFLAGS="$CPPFLAGS -nostdinc -I$freebsddir"
 AC_TRY_CPP([#include <sys/param.h>
-#if __FreeBSD_version < 450000 && __FreeBSD_version >= 500000
+#if __FreeBSD_version < 440002 || __FreeBSD_version >= 500000
 #include <NONEXISTENT_FILE>
 #endif], ac_cv_freebsd_version=yes, ac_cv_freebsd_version=no)])
 if test $ac_cv_freebsd_version = yes; then

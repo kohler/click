@@ -76,10 +76,10 @@ Version 1.2.3
 ** Various Linux 2.4 improvements.
 
 ** FreeBSD driver is coming along nicely. You should compile this version
-   of the driver against an *unmodified* FreeBSD 4.5 kernel. (Thanks to
-   Luigi Rizzo, some of the improvements in the Click kernel patch have
-   been checked in to the latest FreeBSD source!) Bug fixes: can handle
-   chained mbufs, etc.
+   of the driver against an *unmodified* FreeBSD kernel (RELENG_4 branch,
+   version 440002 or later). Thanks to Luigi Rizzo, some of the
+   improvements in the Click kernel patch have been checked in to the
+   latest FreeBSD source! Bug fixes: can handle chained mbufs, etc.
 
 ** Better support for cross-compiling tools, via the `--enable-tools'
    configuration switch.
