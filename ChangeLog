@@ -1,3 +1,8 @@
+2001-05-15 Tuesday 18:11  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in (1.116): also #define virtual to xxx_virtual,
+	because Linux 2.4 files use "virtual" as fields
+
 2001-05-15 Tuesday 16:03  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/ip/ipratemon.cc (1.89): remove redundant locking
