@@ -143,7 +143,11 @@ typedef int (*init_module_func)(void);
 static int
 load_package(String package, ErrorHandler *errh)
 {
-  void *handle = dlopen(package.cc(), RTLD_NOW);
+#ifndef RTLD_NOW
+  void *handle = dlopen((char *)package.cc(), RTLD_LAZY);
+#else
+  void *handle = dlopen((char *)package.cc(), RTLD_NOW);
+#endif
   if (!handle)
     return errh->error("cannot load package: %s", dlerror());
   void *init_sym = dlsym(handle, "init_module");

@@ -146,8 +146,10 @@ dnl dynamic linking
 dnl
 
 AC_CHECK_HEADERS(unistd.h dlfcn.h)
-AC_CHECK_LIB(dl, dlopen, [AC_DEFINE(HAVE_LIBDL)
-DL_LIBRARY="-ldl"], DL_LIBRARY=)
+DL_LIBRARY=
+AC_CHECK_FUNC(dlopen, [AC_DEFINE(HAVE_LIBDL)],
+[AC_CHECK_LIB(dl, dlopen, [AC_DEFINE(HAVE_LIBDL)
+DL_LIBRARY="-ldl"])])
 AC_SUBST(DL_LIBRARY)
 
 dnl
