@@ -1,3 +1,8 @@
+2002-06-18 Tuesday 18:56  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-install/common.cc (1.8): click-install nitlets for
+	bsd
+
 2002-06-18 Tuesday 13:59  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/: ipreassembler.cc (1.14), ipreassembler.hh (1.9):
