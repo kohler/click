@@ -168,6 +168,7 @@ class Router { public:
   Spinlock _runcount_lock;
 
 #if CLICK_USERLEVEL
+  enum { SELECT_RELEVANT = (SELECT_READ | SELECT_WRITE) };
   struct Selector;
   fd_set _read_select_fd_set;
   fd_set _write_select_fd_set;

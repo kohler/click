@@ -1361,47 +1361,63 @@ Router::chatter_channel(const String &name) const
 int
 Router::add_select(int fd, int element, int mask)
 {
-  if (fd < 0) return -1;
-  assert(fd >= 0 && element >= 0 && element < nelements());
+  if (fd < 0)
+    return -1;
+  assert(element >= 0 && element < nelements() && (mask & ~SELECT_RELEVANT) == 0);
 
-  for (int i = 0; i < _selectors.size(); i++)
-    if (_selectors[i].fd == fd && _selectors[i].element != element
-	&& (_selectors[i].mask & mask))
-      return -1;
-  
+  int our_si = -1;
+  for (int si = 0; si < _selectors.size(); si++)
+    if (_selectors[si].fd == fd) {
+      // There is exactly one match per element-fd pair.
+      assert(our_si == -1 || _selectors[si].element != element);
+      if (_selectors[si].element == element)
+	our_si = si;
+      else if (_selectors[si].mask & mask)
+	return -1;
+    }
+
+  // Add a new selector
+  if (our_si >= 0)
+    _selectors[our_si].mask |= mask;
+  else
+    _selectors.push_back(Selector(fd, element, mask));
+
+  // Add 'mask' to the fd_sets
   if (mask & SELECT_READ)
     FD_SET(fd, &_read_select_fd_set);
   if (mask & SELECT_WRITE)
     FD_SET(fd, &_write_select_fd_set);
   if ((mask & (SELECT_READ | SELECT_WRITE)) && fd > _max_select_fd)
     _max_select_fd = fd;
-  
-  for (int i = 0; i < _selectors.size(); i++)
-    if (_selectors[i].fd == fd && _selectors[i].element == element) {
-      _selectors[i].mask |= mask;
-      return 0;
-    }
-  _selectors.push_back(Selector(fd, element, mask));
+
   return 0;
 }
 
 int
 Router::remove_select(int fd, int element, int mask)
 {
-  if (fd < 0) return -1;
-  assert(fd >= 0 && element >= 0 && element < nelements());
-  
+  if (fd < 0)
+    return -1;
+  assert(element >= 0 && element < nelements() && (mask & ~SELECT_RELEVANT) == 0);
+
+  // Exit early if no selector defined
+  if ((!(mask & SELECT_READ) || !FD_ISSET(fd, &_read_select_fd_set))
+      && (!(mask & SELECT_WRITE) || !FD_ISSET(fd, &_write_select_fd_set)))
+    return 0;
+
+  // Otherwise, search for selector
   for (int i = 0; i < _selectors.size(); i++) {
     Selector &s = _selectors[i];
     if (s.fd == fd && s.element == element) {
       mask &= s.mask;
-      if (!mask) return -1;
+      if (!mask)
+	return -1;
       if (mask & SELECT_READ)
 	FD_CLR(fd, &_read_select_fd_set);
       if (mask & SELECT_WRITE)
 	FD_CLR(fd, &_write_select_fd_set);
       s.mask &= ~mask;
-      if (!s.mask) {
+      if (!(s.mask & SELECT_RELEVANT)) {
 	s = _selectors.back();
 	_selectors.pop_back();
 	if (_selectors.size() == 0)
@@ -1414,10 +1430,6 @@ Router::remove_select(int fd, int element, int mask)
   return -1;
 }
 
-#endif
-
-
-#if CLICK_USERLEVEL
 
 void
 Router::run_selects(bool more_tasks)
