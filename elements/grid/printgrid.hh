@@ -2,6 +2,7 @@
 #define PRINTGRID_HH
 #include <click/element.hh>
 #include <click/string.hh>
+#include "grid.hh"
 
 /*
  * =c
@@ -29,6 +30,9 @@ class PrintGrid : public Element {
   int configure(const Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
+
+private:
+  String encap_to_string(grid_nbr_encap *);
   
 };
 

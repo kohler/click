@@ -55,6 +55,23 @@ PrintGrid::configure(const Vector<String> &conf, ErrorHandler* errh)
   return(0);
 }
 
+String
+PrintGrid::encap_to_string(grid_nbr_encap *nb)
+{
+  String line;
+  line += "hops_travelled=" + String((unsigned int) nb->hops_travelled) + " ";
+  line += "dst=" + IPAddress(nb->dst_ip).s() + " ";
+  if (nb->dst_loc_good) {
+    char buf[50];
+    snprintf(buf, 50, "dst_lat=%.5f dst_lon=%.5f ", nb->dst_loc.lat(), nb->dst_loc.lon());
+    line += buf;
+    line += "dst_loc_err=" + String(ntohs(nb->dst_loc_err)) + " ";
+  }
+  else 
+    line += "bad-dst-loc";
+  return line;
+}
+
 Packet *
 PrintGrid::simple_action(Packet *p)
 {
@@ -117,6 +134,8 @@ PrintGrid::simple_action(Packet *p)
   grid_hello *gh2 = 0;
   grid_nbr_encap *nb = 0;
   grid_loc_query *lq = 0;
+  grid_route_probe *rp = 0;
+  grid_route_reply *rr = 0;
 
   switch (gh->type) {
 
@@ -130,22 +149,29 @@ PrintGrid::simple_action(Packet *p)
   case grid_hdr::GRID_NBR_ENCAP:
   case grid_hdr::GRID_LOC_REPLY:
     nb = (grid_nbr_encap *) (gh + 1);
-    line += "hops_travelled=" + String((unsigned int) nb->hops_travelled) + " ";
-    line += "dst=" + IPAddress(nb->dst_ip).s() + " ";
-    if (nb->dst_loc_good) {
-      char buf[50];
-      snprintf(buf, 50, "dst_lat=%.5f dst_lon=%.5f ", nb->dst_loc.lat(), nb->dst_loc.lon());
-      line += buf;
-      line += "dst_loc_err=" + String(ntohs(nb->dst_loc_err)) + " ";
-    }
-    else 
-      line += "bad-dst-loc";
+    line += encap_to_string(nb);
     break;
 
   case grid_hdr::GRID_LOC_QUERY:
     lq = (grid_loc_query *) (gh + 1);
     line += "dst_ip=" + IPAddress(lq->dst_ip).s() + " ";
     line += "seq_no=" + String(ntohl(lq->seq_no));
+    break;
+
+  case grid_hdr::GRID_ROUTE_PROBE: 
+    nb = (grid_nbr_encap *) (gh + 1);
+    line += encap_to_string(nb) + " ";
+    rp = (grid_route_probe *) (nb + 1);
+    line += " nonce=" + String(ntohl(rp->nonce));
+    break;
+
+  case grid_hdr::GRID_ROUTE_REPLY: break;
+    nb = (grid_nbr_encap *) (gh + 1);
+    line += encap_to_string(nb) + " ";
+    rr = (grid_route_reply *) (nb + 1);
+    line += " nonce=" + String(ntohl(rr->nonce));
+    line += " probe_dest=" + IPAddress(rr->probe_dest).s();
+    line += " reply_hop=" + String((unsigned char) rr->reply_hop);
     break;
 
   default:
