@@ -200,6 +200,12 @@ if (!$LOC_AWARE && (defined $POS_LAT || defined $POS_LON)) {
     exit -1;
 }
 
+if ($LOC_AWARE && (!defined $POS_LAT  || !defined $POS_LON)) {
+    print "run_grid:  missing latitude or longitude for location-aware node\n";
+    exit -1;
+}
+    
+
 if ($GRID_IP =~ /18.26.7.\d+/) {
     $GRID_NETMASK = "255.255.255.0";
 } elsif  ($GRID_IP =~ /10.2.\d+.\d+/) {
@@ -238,7 +244,12 @@ if (defined($LOC_TAG)) {
     $LOC_TAG_OPTION = "--loc-tag $LOC_TAG";
 }
 
-my_system("$BUILDSCRIPT $GRID_IP $GRID_NETMASK $GRID_IF $GW_OPTIONS $LOC_TAG_OPTION --config $CLICK_CONFIG --params $GRID_PARAMS --click $REAL_CLICK > $CLICK_CONFIG_OUT");
+$LOC_OPTION = "--no-location";
+if ($LOC_AWARE) {
+    $LOC_OPTION = "--location $POS_LAT $POS_LON";
+}
+
+my_system("$BUILDSCRIPT $GRID_IP $GRID_NETMASK $GRID_IF $GW_OPTIONS $LOC_OPTION $LOC_TAG_OPTION --config $CLICK_CONFIG --params $GRID_PARAMS --click $REAL_CLICK > $CLICK_CONFIG_OUT");
 $CLICK_CONFIG_CMD = "cpp -DCPP_IS_GATEWAY=$IS_GATEWAY $CLICK_CONFIG";
 
 
