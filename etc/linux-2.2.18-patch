@@ -664,8 +664,8 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
  /*#define USE_IO*/
  static const char *version =
  "eepro100.c:v1.09j-t 9/29/99 Donald Becker http://cesdis.gsfc.nasa.gov/linux/drivers/eepro100.html\n"
--"eepro100.c: $Revision: 1.20.2.10 $ 2000/05/31 Modified by Andrey V. Savochkin <saw@saw.sw.com.sg> and others\n"
-+"eepro100.c: $Revision: 1.2 $ 2000/05/31 Modified by Andrey V. Savochkin <saw@saw.sw.com.sg> and others\n"
+-"eepro100.c: $Revision: 1.5 $ 2000/05/31 Modified by Andrey V. Savochkin <saw@saw.sw.com.sg> and others\n"
++"eepro100.c: $Revision: 1.5 $ 2000/05/31 Modified by Andrey V. Savochkin <saw@saw.sw.com.sg> and others\n"
  "eepro100.c: VA Linux custom, Dragan Stancevic <visitor@valinux.com> 2000/11/15\n";
  
  /* A few user-configurable values that apply to all boards.
@@ -869,7 +869,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
 +			skb_reserve(skb, sizeof(struct RxFD));
 +
 +			rxf = sp->rx_ringp[entry];
-+			rxf->rx_buf_addr = virt_to_bus(rxf);
++			rxf->rx_buf_addr = virt_to_bus(skb->tail);
 +		} else {
 +			rxf = sp->rx_ringp[entry];
 +		}
