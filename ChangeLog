@@ -1,3 +1,12 @@
+2004-05-18 Tuesday 21:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipfilter.cc (1.45): backquote nits
+
+2004-05-18 Tuesday 21:19  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: settimestamp.cc (1.7), settimestamp.hh (1.6):
+	use simple_action
+
 2004-05-18 Tuesday 15:48  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/routerthread.cc (1.42): idiot
