@@ -49,7 +49,8 @@ static int globalh_cap;
 Router::Router(const String &configuration, Master *m)
     : _master(m), _state(ROUTER_NEW),
       _allow_star_handler(true), _running(RUNNING_INACTIVE),
-      _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0),
+      _handler_bufs(0), _n_handler_bufs(0), _nhandlers(-1),
+      _root_element(0),
       _configuration(configuration),
       _notifier_signals(0), _n_notifier_signals(0),
       _arena_factory(new HashMap_ArenaFactory),
@@ -97,7 +98,9 @@ Router::~Router()
 	    delete _elements[i];
   
     delete _root_element;
-    delete[] _handlers;
+    for (int i = 0; i < _n_handler_bufs; i++)
+	delete[] _handler_bufs[i];
+    delete[] _handler_bufs;
     delete[] _notifier_signals;
     _master->unuse();
 }
@@ -1012,6 +1015,12 @@ Router::Handler::unparse_name(Element *e) const
 // elements) more or less. Detecting this sharing would be harder to
 // implement.)
 
+inline Router::Handler*
+Router::xhandler(int hi) const
+{
+    return &_handler_bufs[hi / HANDLER_BUFSIZ][hi % HANDLER_BUFSIZ];
+}
+
 int
 Router::find_ehandler(int eindex, const String &name) const
 {
@@ -1019,16 +1028,16 @@ Router::find_ehandler(int eindex, const String &name) const
   int star_h = -1;
   while (eh >= 0) {
     int h = _ehandler_to_handler[eh];
-    const String &hname = _handlers[h].name();
+    const String &hname = xhandler(h)->name();
     if (hname == name)
       return eh;
     else if (hname.length() == 1 && hname[0] == '*')
       star_h = h;
     eh = _ehandler_next[eh];
   }
-  if (_allow_star_handler && star_h >= 0 && _handlers[star_h].writable()) {
+  if (_allow_star_handler && star_h >= 0 && xhandler(star_h)->writable()) {
     _allow_star_handler = false;
-    if (_handlers[star_h].call_write(name, element(eindex), ErrorHandler::default_handler()) >= 0)
+    if (xhandler(star_h)->call_write(name, element(eindex), ErrorHandler::default_handler()) >= 0)
       eh = find_ehandler(eindex, name);
     _allow_star_handler = true;
   }
@@ -1052,7 +1061,7 @@ Router::store_local_handler(int eindex, const Handler &to_store)
   int old_eh = find_ehandler(eindex, to_store.name());
   _allow_star_handler = allow_star_handler;
   if (old_eh >= 0)
-    _handlers[_ehandler_to_handler[old_eh]]._use_count--;
+    xhandler(_ehandler_to_handler[old_eh])->_use_count--;
   
   // find the offset in _name_handlers
   int name_index;
@@ -1060,7 +1069,7 @@ Router::store_local_handler(int eindex, const Handler &to_store)
        name_index < _handler_first_by_name.size();
        name_index++) {
     int h = _handler_first_by_name[name_index];
-    if (_handlers[h]._name == to_store._name)
+    if (xhandler(h)->_name == to_store._name)
       break;
   }
   if (name_index == _handler_first_by_name.size())
@@ -1071,42 +1080,44 @@ Router::store_local_handler(int eindex, const Handler &to_store)
   int blank_h = -1;
   int stored_h = -1;
   while (h >= 0 && stored_h < 0) {
-    const Handler &han = _handlers[h];
-    if (han.compatible(to_store))
-      stored_h = h;
-    else if (han._use_count == 0)
-      blank_h = h;
-    h = han._next_by_name;
+      Handler* han = xhandler(h);
+      if (han->compatible(to_store))
+	  stored_h = h;
+      else if (han->_use_count == 0)
+	  blank_h = h;
+      h = han->_next_by_name;
   }
 
   // if none exists, assign this one to a blank spot
   if (stored_h < 0 && blank_h >= 0) {
     stored_h = blank_h;
-    _handlers[stored_h] = to_store;
-    _handlers[stored_h]._use_count = 0;
+    *xhandler(stored_h) = to_store;
+    xhandler(stored_h)->_use_count = 0;
   }
 
   // if no blank spot, add a handler
   if (stored_h < 0) {
-    if (_nhandlers >= _handlers_cap) {
-      int new_cap = (_handlers_cap ? 2*_handlers_cap : 16);
-      Handler *new_handlers = new Handler[new_cap];
-      if (!new_handlers) {	// out of memory
-	if (old_eh >= 0)	// restore use count
-	  _handlers[_ehandler_to_handler[old_eh]]._use_count++;
-	return;
-      }
-      for (int i = 0; i < _nhandlers; i++)
-	new_handlers[i] = _handlers[i];
-      delete[] _handlers;
-      _handlers = new_handlers;
-      _handlers_cap = new_cap;
+    if (_nhandlers >= _n_handler_bufs * HANDLER_BUFSIZ) {
+	Handler** new_handler_bufs = new Handler*[_n_handler_bufs + 1];
+	Handler* new_handler_buf = new Handler[HANDLER_BUFSIZ];
+	if (!new_handler_buf || !new_handler_bufs) {	// out of memory
+	    delete[] new_handler_bufs;
+	    delete[] new_handler_buf;
+	    if (old_eh >= 0)	// restore use count
+		xhandler(_ehandler_to_handler[old_eh])->_use_count++;
+	    return;
+	}
+	memcpy(new_handler_bufs, _handler_bufs, sizeof(Handler*) * _n_handler_bufs);
+	new_handler_bufs[_n_handler_bufs] = new_handler_buf;
+	delete[] _handler_bufs;
+	_handler_bufs = new_handler_bufs;
+	_n_handler_bufs++;
     }
     stored_h = _nhandlers;
     _nhandlers++;
-    _handlers[stored_h] = to_store;
-    _handlers[stored_h]._use_count = 0;
-    _handlers[stored_h]._next_by_name = _handler_first_by_name[name_index];
+    *xhandler(stored_h) = to_store;
+    xhandler(stored_h)->_use_count = 0;
+    xhandler(stored_h)->_next_by_name = _handler_first_by_name[name_index];
     _handler_first_by_name[name_index] = stored_h;
   }
 
@@ -1121,7 +1132,7 @@ Router::store_local_handler(int eindex, const Handler &to_store)
   }
 
   // increment use count
-  _handlers[stored_h]._use_count++;
+  xhandler(stored_h)->_use_count++;
 }
 
 void
@@ -1167,7 +1178,7 @@ const Router::Handler *
 Router::handler(const Router *r, int hi)
 {
     if (r && hi >= 0 && hi < r->_nhandlers)
-	return &r->_handlers[hi];
+	return r->xhandler(hi);
     else if (hi >= FIRST_GLOBAL_HANDLER && hi < FIRST_GLOBAL_HANDLER + nglobalh)
 	return &globalh[hi - FIRST_GLOBAL_HANDLER];
     else
@@ -1181,7 +1192,7 @@ Router::handler(const Element *e, const String &hname)
 	const Router *r = e->router();
 	int eh = r->find_ehandler(e->eindex(), hname);
 	if (eh >= 0)
-	    return &r->_handlers[r->_ehandler_to_handler[eh]];
+	    return r->xhandler(r->_ehandler_to_handler[eh]);
     } else {			// global handler
 	for (int i = 0; i < nglobalh; i++)
 	    if (globalh[i]._name == hname)

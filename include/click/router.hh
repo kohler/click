@@ -179,10 +179,11 @@ class Router { public:
     Vector<int> _ehandler_next;
 
     Vector<int> _handler_first_by_name;
-  
-    Handler *_handlers;
+
+    enum { HANDLER_BUFSIZ = 256 };
+    Handler **_handler_bufs;
+    int _n_handler_bufs;
     int _nhandlers;
-    int _handlers_cap;
 
     Vector<String> _attachment_names;
     Vector<void *> _attachments;
@@ -230,6 +231,7 @@ class Router { public:
 
     // private handler methods
     void initialize_handlers(bool, bool);
+    inline Handler* xhandler(int) const;
     int find_ehandler(int, const String &) const;
     static inline Handler fetch_handler(const Element *, const String &);
     void store_local_handler(int, const Handler &);
