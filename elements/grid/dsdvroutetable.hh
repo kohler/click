@@ -464,6 +464,9 @@ private:
   bool _use_old_route;
   static String print_use_old_route(Element *e, void *);
   static int write_use_old_route(const String &, Element *, void *, ErrorHandler *);
+#if USE_GOOD_NEW_ROUTES
+  bool _use_good_new_route;
+#endif
 #endif
 
   void dsdv_assert_(const char *, int, const char *) const;

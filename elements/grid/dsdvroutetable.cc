@@ -88,17 +88,14 @@ DSDVRouteTable::use_old_route(const IPAddress &dst, unsigned jiff)
   RTEntry *real = _rtes.findp(dst);
   RTEntry *old = _old_rtes.findp(dst);
 #if USE_GOOD_NEW_ROUTES
-  return
-    (real && real->good() && 
-     old && old->good() &&
-     (real->advertise_ok_jiffies > jiff ||
-      metric_preferable(*real, *old)));
-#else
+  // never use an old route if the new one is better
+  if (_use_good_new_route && real && old && metric_preferable(*real, *old))
+    return false;
+#endif
   return
     (real && real->good() &&             // if real route is bad, don't use good but old route
      old && old->good() &&               // if old route is bad, don't use it
      real->advertise_ok_jiffies > jiff); // if ok to advertise real route, don't use old route
-#endif
 }
 #endif
 
@@ -216,6 +213,9 @@ DSDVRouteTable::initialize(ErrorHandler *)
   check_invariants();
 #if USE_OLD_SEQ
   _use_old_route = false;
+#if USE_GOOD_NEW_ROUTES
+  _use_good_new_route = false;
+#endif
 #endif
   return 0;
 }
@@ -239,12 +239,25 @@ DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rat
   case EstByMeas: {
     if (!_link_stat) 
       return false;
+
+#if 0 // LEAVE THIS DISABLED
+    // This test is actually wrong: I used to mistakenly believe that
+    // you must hear new sequence numbers first over 1-hop routes,
+    // ensuring that you would always install the 1-hop route before
+    // even thinking about another route.  But this false for 2
+    // reasons: 1) 1-hop bcasts might be dropped, so you actually hear
+    // the sequence number first from someone else; 2) in simulators
+    // and emulators, you can delay direct broadcasts.  The bug is
+    // that if you don't hear the first route of a sequence number
+    // over the direct link, you might never be able to get a link
+    // measurement for the 1-hop direct link.
     RTEntry *r = _rtes.findp(ip);
     if (r == 0 || r->num_hops() > 1) 
       return false;
+#endif
     unsigned int tau;
     struct timeval t;
-    bool res = _link_stat->get_forward_rate(r->dest_eth, &rate, &tau, &t);
+    bool res = _link_stat->get_forward_rate(ip, &rate, &tau, &t);
     if (res && rate > 100) {
       click_chatter("DSDVRouteTable %s: ERROR: forward rate %u%% is too high for %s, capping at 100%%",
 		    id().cc(), rate, ip.s().cc());
@@ -265,11 +278,14 @@ DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, unsigned int &rat
   case EstByMeas: {
     if (!_link_stat)
       return false;
+#if 0
+    // see comment in est_forward_delivery_rate()
     RTEntry *r = _rtes.findp(ip);
     if (r == 0 || r->num_hops() > 1)
       return false;
+#endif
     unsigned int tau;
-    bool res = _link_stat->get_reverse_rate(r->dest_eth, &rate, &tau);
+    bool res = _link_stat->get_reverse_rate(ip, &rate, &tau);
     if (res && rate > 100) {
       click_chatter("DSDVRouteTable %s: ERROR: reverse rate %u%% is too high for %s, capping at 100%%",
 		    id().cc(), rate, ip.s().cc());
@@ -701,6 +717,7 @@ DSDVRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
   click_chatter("%s: XXX metric_preferable valid?  1:%s  2:%s   1 < 2? %s", id().cc(),
 		(r1.metric.valid ? "yes" : "no"), (r2.metric.valid ? "yes" : "no"),
 		(metric_val_lt(r1.metric.val, r2.metric.val) ? "yes" : "no"));
+  click_chatter("\tr1.metric=%u, r2.metric=%u", r1.metric.val, r2.metric.val);
 #endif
   // prefer a route with a valid metric
   if (r1.metric.valid && !r2.metric.valid)
@@ -871,7 +888,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
     new_r.advertise_ok_jiffies = jiff;
 
 #if DBG
-  click_chatter("%s: XXX dest=%s advertise_ok_jiffies=%d wst=%f jiff=%d\n", 
+  click_chatter("%s: XXX dest=%s advertise_ok_jiffies=%u wst=%u jiff=%d\n", 
 		id().cc(), new_r.dest_ip.s().cc(),
 		new_r.advertise_ok_jiffies, new_r.wst, jiff);
 #endif
@@ -1316,7 +1333,12 @@ String
 DSDVRouteTable::print_use_old_route(Element *e, void *)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) e;
-  return (rt->_use_old_route ? "true\n" : "false\n");
+  String s(rt->_use_old_route ? "true " : "false ");
+#if USE_GOOD_NEW_ROUTES
+  s += (rt->_use_good_new_route ? "(use good new routes immediately)\n" : 
+	"(wait to use good new routes)\n");
+#endif
+  return s;
 }
 
 int
@@ -1324,11 +1346,33 @@ DSDVRouteTable::write_use_old_route(const String &arg, Element *el,
 			     void *, ErrorHandler *errh)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
-  if (!cp_bool(arg, &rt->_use_old_route))
-    return errh->error("`use_old_route' must be a boolean");
+  unsigned u;
+  if (!cp_unsigned(arg, &u))
+    return errh->error("`use_old_route' must be an unsigned integer");
+
+  bool use_good = false;
   
+  switch (u) {
+  case 0:
+    rt->_use_old_route = false;
+    use_good = false;
+    break;
+  case 1:
+    rt->_use_old_route = true;
+    use_good = false;
+    break;
+  default:
+    rt->_use_old_route = true;
+    use_good = true;
+  };
+
   click_chatter("DSDVRouteTable %s: setting _use_old_route to %s", 
 		rt->id().cc(), rt->_use_old_route ? "true" : "false");
+#if USE_GOOD_NEW_ROUTES
+  rt->_use_good_new_route = use_good;
+  click_chatter("DSDVRouteTable %s: setting _use_good_new_route to %s", 
+		rt->id().cc(), rt->_use_good_new_route ? "true" : "false");
+#endif
   return 0;
 }
 #endif

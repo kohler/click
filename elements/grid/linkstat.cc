@@ -160,16 +160,6 @@ LinkStat::send_hook()
 }
 
 unsigned int
-LinkStat::count_rx(const EtherAddress  &e) 
-{
-  probe_list_t *pl = _bcast_stats.findp(e);
-  if (pl)
-    return count_rx(pl);
-  else
-    return 0;
-}
-
-unsigned int
 LinkStat::count_rx(const probe_list_t *pl)
 {
   if (!pl)
@@ -191,13 +181,13 @@ LinkStat::count_rx(const probe_list_t *pl)
 }
 
 unsigned int
-LinkStat::count_rx(const IPAddress  &ip) 
+LinkStat::count_rx(const IPAddress &ip) 
 {
-  for (ProbeMap::const_iterator i = _bcast_stats.begin(); i; i++) {
-    if (i.value().ip == (unsigned int) ip) 
-      return count_rx(i.key());
-  }
-  return 0;
+  probe_list_t *pl = _bcast_stats.findp(ip);
+  if (pl)
+    return count_rx(pl);
+  else
+    return 0;
 }
 
 int
@@ -221,7 +211,6 @@ Packet *
 LinkStat::simple_action(Packet *p)
 {
   click_ether *eh = (click_ether *) p->data();
-  EtherAddress ea(eh->ether_shost);
 
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
     click_chatter("LinkStat %s: got non-Grid packet type", id().cc());
@@ -237,7 +226,7 @@ LinkStat::simple_action(Packet *p)
   }
 
   grid_link_probe *lp = (grid_link_probe *) (gh + 1);
-  add_bcast_stat(ea, gh->ip, lp);
+  add_bcast_stat(gh->ip, lp);
 
   // look in received packet for info about our outgoing link
   struct timeval now;
@@ -249,8 +238,7 @@ LinkStat::simple_action(Packet *p)
 #else
     if (_ip == le->ip && _period == ntohl(le->period)) {
 #endif
-      _rev_bcast_stats.insert(EtherAddress(eh->ether_shost), 
-			      outgoing_link_entry_t(le, now, ntohl(lp->tau)));
+      _rev_bcast_stats.insert(gh->ip, outgoing_link_entry_t(le, now, ntohl(lp->tau)));
       break;
     }
   }
@@ -260,10 +248,10 @@ LinkStat::simple_action(Packet *p)
 }
 
 bool
-LinkStat::get_forward_rate(const EtherAddress &e, unsigned int *r, 
+LinkStat::get_forward_rate(const IPAddress &ip, unsigned int *r, 
 			   unsigned int *tau, struct timeval *t)
 {
-  outgoing_link_entry_t *ol = _rev_bcast_stats.findp(e);
+  outgoing_link_entry_t *ol = _rev_bcast_stats.findp(ip);
   if (!ol)
     return false;
 
@@ -289,10 +277,10 @@ LinkStat::get_forward_rate(const EtherAddress &e, unsigned int *r,
 }
 
 bool
-LinkStat::get_reverse_rate(const EtherAddress &e, unsigned int *r, 
+LinkStat::get_reverse_rate(const IPAddress &ip, unsigned int *r, 
 			   unsigned int *tau)
 {
-  probe_list_t *pl = _bcast_stats.findp(e);
+  probe_list_t *pl = _bcast_stats.findp(ip);
   if (!pl)
     return false;
 
@@ -300,7 +288,7 @@ LinkStat::get_reverse_rate(const EtherAddress &e, unsigned int *r,
     return false;
 
   unsigned num_expected = _tau / pl->period;
-  unsigned num_received = count_rx(e);
+  unsigned num_received = count_rx(ip);
 
   // will happen if our averaging period is less than the remote
   // host's sending rate.
@@ -317,7 +305,7 @@ LinkStat::get_reverse_rate(const EtherAddress &e, unsigned int *r,
 }
 
 void
-LinkStat::add_bcast_stat(const EtherAddress &e, const IPAddress &ip, const grid_link_probe *lp)
+LinkStat::add_bcast_stat(const IPAddress &ip, const grid_link_probe *lp)
 {
   struct timeval now;
   click_gettimeofday(&now);
@@ -325,11 +313,11 @@ LinkStat::add_bcast_stat(const EtherAddress &e, const IPAddress &ip, const grid_
   
   unsigned int new_period = ntohl(lp->period);
   
-  probe_list_t *l = _bcast_stats.findp(e);
+  probe_list_t *l = _bcast_stats.findp(ip);
   if (!l) {
     probe_list_t l2(ip, new_period, ntohl(lp->tau));
-    _bcast_stats.insert(e, l2);
-    l = _bcast_stats.findp(e);
+    _bcast_stats.insert(ip, l2);
+    l = _bcast_stats.findp(ip);
   }
   else if (l->period != new_period) {
     click_chatter("LinkStat %s: node %s has changed its link probe period from %u to %u; clearing probe info\n",
@@ -376,27 +364,25 @@ LinkStat::read_bcast_stats(Element *xf, void *)
 {
   LinkStat *e = (LinkStat *) xf;
 
-  typedef BigHashMap<EtherAddress, bool> EthMap;
-  EthMap eth_addrs;
+  typedef BigHashMap<IPAddress, bool> IPMap;
+  IPMap ip_addrs;
   
   for (ProbeMap::const_iterator i = e->_bcast_stats.begin(); i; i++) 
-    eth_addrs.insert(i.key(), true);
+    ip_addrs.insert(i.key(), true);
   for (ReverseProbeMap::const_iterator i = e->_rev_bcast_stats.begin(); i; i++)
-    eth_addrs.insert(i.key(), true);
+    ip_addrs.insert(i.key(), true);
 
   struct timeval now;
   click_gettimeofday(&now);
 
   StringAccum sa;
-  for (EthMap::const_iterator i = eth_addrs.begin(); i; i++) {
-    const EtherAddress &eth = i.key();
+  for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
+    const IPAddress &ip = i.key();
     
-    probe_list_t *pl = e->_bcast_stats.findp(eth);
-    outgoing_link_entry_t *ol = e->_rev_bcast_stats.findp(eth);
+    probe_list_t *pl = e->_bcast_stats.findp(ip);
+    outgoing_link_entry_t *ol = e->_rev_bcast_stats.findp(ip);
     
-    IPAddress ip(pl ? pl->ip : (ol ? ol->ip : 0));
-
-    sa << eth.s() << ' ' << ip << ' ';
+    sa << ip << ' ';
     
     sa << "fwd ";
     if (ol) {

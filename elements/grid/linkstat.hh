@@ -94,7 +94,7 @@ private:
   };
 
   // Per-sender map of received probes.
-  typedef BigHashMap<EtherAddress, probe_list_t> ProbeMap;
+  typedef BigHashMap<IPAddress, probe_list_t> ProbeMap;
   ProbeMap _bcast_stats;
 
   // record delivery date data about our outgoing links
@@ -118,7 +118,7 @@ private:
   };
 
   // Per-receiver map of delivery rate data
-  typedef BigHashMap<EtherAddress, outgoing_link_entry_t> ReverseProbeMap;
+  typedef BigHashMap<IPAddress, outgoing_link_entry_t> ReverseProbeMap;
   ReverseProbeMap _rev_bcast_stats;
 
   static String read_stats(Element *, void *);
@@ -138,7 +138,7 @@ private:
   static int write_period(const String &, Element *, void *, ErrorHandler *);
   static int write_tau(const String &, Element *, void *, ErrorHandler *);
   
-  void add_bcast_stat(const EtherAddress &, const IPAddress &, const grid_link_probe *);
+  void add_bcast_stat(const IPAddress &, const grid_link_probe *);
 
   static void static_send_hook(Timer *, void *e) { ((LinkStat *) e)->send_hook(); }
   void send_hook();
@@ -149,16 +149,16 @@ private:
   static unsigned int calc_pct(unsigned tau, unsigned period, unsigned num_rx);
 
  public:
-  // Get forward delivery rate R to host E over period TAU
+  // Get forward delivery rate R to host IP over period TAU
   // milliseconds, as recorded at time T.  R is a percentage (0-100).
   // Return true iff we have data.
-  bool get_forward_rate(const EtherAddress &e, unsigned int *r, unsigned int *tau, 
+  bool get_forward_rate(const IPAddress &ip, unsigned int *r, unsigned int *tau, 
 			struct timeval *t);
 
-  // Get reverse delivery rate R from host E over period TAU
+  // Get reverse delivery rate R from host IP over period TAU
   // milliseconds, as of now.  R is a percentage 0-100.  Return true
   // iff we have good data.
-  bool get_reverse_rate(const EtherAddress &e, unsigned int *r, unsigned int *tau);
+  bool get_reverse_rate(const IPAddress &ip, unsigned int *r, unsigned int *tau);
 
   LinkStat();
   ~LinkStat();
