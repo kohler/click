@@ -236,8 +236,8 @@ ${ppfx}$i"
 
     # first remove files that provide an unprovision
     awk_exports=`echo "$unprovisions" | sed 's/\(..*\)/dep["\1"]=-1;/'`
-    bad_files=`egrep '^EXPORT_ELEMENT|^ELEMENT_PROVIDES' $files | sed 's/EXPORT_ELEMENT(\(.*\)).*/\1/
-s/ELEMENT_PROVIDES(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'}
+    bad_files=`egrep '^EXPORT_ELEMENT|^ELEMENT_PROVIDES' $files | sed 's/EXPORT_ELEMENT[ 	]*(\(.*\)).*/\1/
+s/ELEMENT_PROVIDES[ 	]*(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'}
 {
   split($2, deps, / +/);
   for (j in deps) {
@@ -264,7 +264,7 @@ $bad_files" | sort | uniq -u`
 	awk_exports=`echo "$provides"'
 '"$provisions" | sed 's/\(..*\)/dep["\1"]=1;/'`"
 "`echo "$unprovisions" | sed 's/\(..*\)/dep["\1"]=-1;/'`
-	new_bad_files=`grep '^ELEMENT_REQUIRES' $files | sed 's/ELEMENT_REQUIRES(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'dep["true"]=1; dep["1"]=1;}
+	new_bad_files=`grep '^ELEMENT_REQUIRES' $files | sed 's/ELEMENT_REQUIRES[ 	]*(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'dep["true"]=1; dep["1"]=1;}
 {
   split($2, deps, / +/);
   for (j in deps) {
@@ -321,7 +321,7 @@ $bad_files"
   next;
 }
 /:EXPORT_ELEMENT/ {
-  sub(/.*EXPORT_ELEMENT\(/, "", $2);
+  sub(/.*EXPORT_ELEMENT[ 	]*\(/, "", $2);
   sub(/\).*/, "", $2);
   if (exports[$1] != "") {
     exports[$1] = exports[$1] " " $2
@@ -337,7 +337,7 @@ $bad_files"
   next;
 }
 /:ELEMENT_HEADER/ {
-  sub(/.*ELEMENT_HEADER\(/, "", $2)
+  sub(/.*ELEMENT_HEADER[ 	]*\(/, "", $2)
   sub(/\).*/, "", $2)
   header[$1] = $2
   next;
