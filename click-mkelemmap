@@ -122,6 +122,20 @@ sub process_file ($) {
   $req =~ s/"/\\"/g;
   $prov =~ s/^\s+//;
   $prov =~ s/"/\\"/g;
+
+  # add a fake class if there were no classes
+  if (@cxx_name == $first && $prov) {
+    push @cxx_name, '""';
+    push @source_file, $filename;
+    push @header_file, $headername;
+    push @parents, [];
+    push @click_name, "";
+    push @processing, "";
+    push @flow_code, "";
+    push @flags, undef;
+  }
+
+  # apply requirements and provisions
   for ($i = $first; $i < @processing; $i++) {
     push @requirements, $req;
     push @provisions, $prov;

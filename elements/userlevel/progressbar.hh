@@ -50,6 +50,12 @@ this frequency. Default is 1 second.
 Boolean. The progress bar will not initially display itself if this is false.
 Default is true.
 
+=item MINSIZE
+
+The minimum interesting size. If the total size returned by the SIZEHANDLERs
+is less than MINSIZE, then the progress bar will not be printed. Default is no
+minimum size.
+
 =back
 
 Only available in user-level processes.
@@ -137,12 +143,13 @@ class ProgressBar : public Element { public:
     typedef uint32_t thermometer_t;
 #endif
 
-    enum { ST_FIRST, ST_MIDDLE, ST_DONE };
+    enum { ST_FIRST, ST_MIDDLE, ST_DONE, ST_NEVER };
     
     bool _have_size;
     int _status;
     thermometer_t _size;
     thermometer_t _last_pos;
+    thermometer_t _min_size;
     struct timeval _start_time;
     struct timeval _stall_time;
     struct timeval _last_time;

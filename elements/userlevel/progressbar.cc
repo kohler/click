@@ -51,6 +51,7 @@ ProgressBar::initialize(ErrorHandler *errh)
     configuration(conf);
     _interval = 1000;
     _active = true;
+    _min_size = 0;
     String position_str, size_str;
 
     if (cp_va_parse(conf, this, errh,
@@ -61,6 +62,11 @@ ProgressBar::initialize(ErrorHandler *errh)
 		    "UPDATE", cpSecondsAsMilli, "update interval (s)", &_interval,
 		    "BANNER", cpString, "banner string", &_banner,
 		    "ACTIVE", cpBool, "start active?", &_active,
+#if HAVE_INT64_TYPES
+		    "MINSIZE", cpUnsigned64, "minimum interesting size", &_min_size,
+#else
+		    "MINSIZE", cpUnsigned, "minimum interesting size", &_min_size,
+#endif
 		    0) < 0)
 	return -1;
 
@@ -209,6 +215,10 @@ ProgressBar::run_scheduled()
 	click_gettimeofday(&_start_time);
 	_last_time = _start_time;
 	timerclear(&_stall_time);
+	if (_have_size && _min_size && _size < _min_size) {
+	    _status = ST_NEVER;
+	    return;
+	}
     }
 
     // exit if not in foreground
