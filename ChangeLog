@@ -1,3 +1,7 @@
+2003-08-27 Wednesday 14:21  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/arptable.cc (1.6): some bugfixes
+
 2003-08-26 Tuesday 11:33  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/linktable.hh (1.14): fix alignment bugs and man
