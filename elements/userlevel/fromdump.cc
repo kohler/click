@@ -68,8 +68,14 @@ FromDump::initialize(ErrorHandler *errh)
   errh->warning("can't read packets: not compiled with pcap support");
 #endif
 
-  if (_pending_packet)
-    ScheduleInfo::join_scheduler(this, errh);
+#ifndef RR_SCHED
+  int max_tickets = ScheduleInfo::query(this,errh);
+  set_max_tickets(max_tickets);
+  set_tickets(max_tickets);
+#endif
+  if (_pending_packet) 
+    join_scheduler();
+  
   return 0;
 }
 
