@@ -47,9 +47,13 @@ AC_SUBST(clickbindir)
 AC_SUBST(clicksbindir)
 
 if test ! -r $clickprefix/include/click/pathvars.h ; then
-  AC_MSG_ERROR([
-Can't read \`$clickprefix/include/click/pathvars.h'!
-(Are you sure \`$clickprefix' is a Click install directory?)])
+    AC_MSG_ERROR([
+==============================================
+
+\`$clickprefix/include/click/pathvars.h' not found.
+Are you sure \`$clickprefix' is a Click install directory?
+
+==============================================])
 fi
 
 
@@ -57,7 +61,7 @@ dnl
 dnl extract properties of the Click installation
 dnl
 
-click_have_linuxmodule=`if grep 'define HAVE_LINUXMODULE_TARGET' $clickprefix/include/click/config.h >/dev/null 2>&1; then echo 1; else echo 0; fi`
+click_have_linuxmodule=`if grep 'define HAVE_LINUXMODULE_TARGET' $clickprefix/include/click/config-linuxmodule.h >/dev/null 2>&1; then echo 1; else echo 0; fi`
 click_linuxdir=`grep LINUX_SRCDIR $clickprefix/include/click/pathvars.h | sed 's/.*"\(.*\)".*/\1/'`
 
 
@@ -82,9 +86,14 @@ CLICK_PROG_AUTOCONF
 CLICK_PROG_GMAKE
 
 if test -z "$GMAKE"; then
-    AC_MSG_ERROR([can't find GNU make. Either put "'`'"gmake' on your PATH and
+    AC_MSG_ERROR([
+==============================================
+
+I can't find GNU make. Either put "'`'"gmake' on your PATH and
 rerun "'`'"./configure', or set the GMAKE environment variable to
-GNU make's pathname.])
+GNU make's pathname.
+
+==============================================])
 fi
 
 
@@ -105,8 +114,12 @@ fi
 
 if test "x$linuxdir" != xNONE -a "x$linuxdir" != "x$click_linuxdir" -a "x$enable_linuxmodule" = xyes; then
     AC_MSG_WARN([
-Specified Linux directory for package \`$linuxdir'
-differs from Linux directory used for Click \`$click_linuxdir'!])
+=========================================
+
+The Linux directory you specified for this package, \`$linuxdir',
+differs from the Linux directory used for Click, \`$click_linuxdir'.
+
+=========================================])
 fi
 
 if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != xyes; then
@@ -116,13 +129,21 @@ elif test -r $linuxdir/include/linux/skbuff.h; then
     ac_have_linux_kernel=y
     if test $click_have_linuxmodule = 0; then
 	AC_MSG_WARN([
-Compiling for Linux kernel module, although Click reports it has not compiled
-a Linux kernel module])
+=========================================
+
+Compiling package for Linux kernel module,
+although Click reports it has not compiled a Linux kernel module.
+
+=========================================])
     fi
 else
-    AC_MSG_ERROR([
-Can't find \`$linuxdir/include/linux/skbuff.h'!
-(Are you sure \`$linuxdir' holds the Linux source code?)])
+  AC_MSG_ERROR([
+=========================================
+
+I can't find $linuxdir/include/linux/skbuff.h!
+Are you sure $linuxdir contains Linux kernel source?
+
+=========================================])
 fi
 AC_SUBST(linuxdir)
 
