@@ -181,11 +181,8 @@ Signatures::print_signature() const
 void
 Signatures::specialize_class(const String &eclass_name, bool doit)
 {
-  ElementClassT *ec = _router->try_type(eclass_name);
-  if (ec)
-    for (int i = 0; i < _router->nelements(); i++)
-      if (_router->etype(i) == ec)
-	_sigid[i] = (doit ? 1 : SIG_NOT_SPECIAL);
+  for (RouterT::const_type_iterator x = _router->begin_elements(ElementClassT::default_class(eclass_name)); x; x++)
+    _sigid[x->idx()] = (doit ? 1 : SIG_NOT_SPECIAL);
 }
 
 void

@@ -53,56 +53,46 @@ If any filename argument is a single dash "-",
 will use the standard input or output instead, as appropriate.
 '
 .TP 5
-.BI \-c
+.BR \-c ", " \-\-classes
 .PD 0
-.TP
-.BI \-\-classes
 Output an alphabetical list of the element classes used by the flattened
 router file, one per line, instead of the usual configuration.
 '
 .Sp
 .TP 5
-.BI \-n
-.PD 0
-.TP
-.BI \-\-elements
+.BR \-n ", " \-\-elements
 Output an alphabetical list of the element names in the flattened router
 file, one per line, instead of the usual configuration.
 '
 .Sp
 .TP 5
-.BI \-d
-.PD 0
-.TP
-.BI \-\-declarations
+.BR \-d ", " \-\-declaration
 Output the element declarations in the flattened router file, one per line,
 instead of the usual configuration.
 '
 .Sp
 .TP 5
-.BI \-f " file"
-.PD 0
-.TP
-.BI \-\-file " file"
+.BR \-f ", " \-\-file " \fIfile"
 Read the router configuration to flatten from
 .IR file .
 The default is the standard input.
 '
 .Sp
 .TP 5
-.BI \-e " expr"
-.PD 0
-.TP
-.BI \-\-expression " expr"
+.BR \-e ", " \-\-expression " \fIexpr"
 Use
 .IR expr ,
 a string in the Click language, as the router configuration to flatten.
 '
 .Sp
 .TP
-.BI \-o " file"
+.BR \-\-config
+Output flattened configuration only -- if the input was an archive, ignore
+other archive elements.
+'
+.Sp
 .TP
-.BI \-\-output " file"
+.BR \-o ", " \-\-output " \fIfile"
 Write the flattened router configuration to
 .IR file .
 The default is the standard output.

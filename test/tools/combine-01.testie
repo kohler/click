@@ -1,0 +1,26 @@
+%script
+
+click-combine -n A -f AI -n B -f BI A.eth1=B.eth0 > C
+click-uncombine C A | click-flatten --config > AO
+click-uncombine C B | click-flatten --config > BO
+
+%file AI
+x::ThisIsA -> y::ToDevice(eth1)
+
+%file BI
+x::FromDevice(eth0) -> y::ThisIsB
+
+%file C
+
+%expect AO
+x :: ThisIsA;
+y :: ToDevice(eth1);
+x -> y;
+
+%expect BO
+y :: ThisIsB;
+x :: FromDevice(eth0);
+x -> y;
+
+%ignore
+#.*

@@ -13,7 +13,7 @@ struct ElementT {
 
     RouterT *router() const		{ return _owner; }
     int idx() const			{ return _idx; }
-    ElementClassT *enclosing_type() const;
+    inline ElementClassT *enclosing_type() const;
     
     bool live() const			{ return _type; }
     bool dead() const			{ return !_type; }
@@ -41,17 +41,18 @@ struct ElementT {
     String &landmark()			{ return _landmark; }
     
     bool tunnel() const		{ return _type==ElementClassT::tunnel_type(); }
-    bool tunnel_connected() const;
+    inline bool tunnel_connected() const;
     ElementT *tunnel_input() const	{ return _tunnel_input; }
     ElementT *tunnel_output() const	{ return _tunnel_output; }
 
     int ninputs() const			{ return _ninputs; }
     int noutputs() const		{ return _noutputs; }
     
-    String declaration() const;
+    inline String declaration() const;
 
     void *user_data() const		{ return _user_data; }
     void set_user_data(void *v)		{ _user_data = v; }
+    void set_user_data(intptr_t v)	{ _user_data = (void *)v; }
 
     static bool name_ok(const String &, bool allow_anon_names = false);
     static void redeclaration_error(ErrorHandler *, const char *type, String name, const String &landmark, const String &old_landmark);

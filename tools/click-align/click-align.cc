@@ -412,7 +412,7 @@ particular purpose.\n");
     router->flatten(errh);
   if (!router || errh->nerrors() > 0)
     exit(1);
-  ElementClassT *align_class = router->get_type("Align");
+  ElementClassT *align_class = ElementClassT::default_class("Align");
   assert(align_class);
 
   int original_nelements = router->nelements();
@@ -551,7 +551,7 @@ particular purpose.\n");
   }
 
   // remove unused Aligns (they have no input) and old AlignmentInfos
-  ElementClassT *aligninfo_class = router->get_type("AlignmentInfo");
+  ElementClassT *aligninfo_class = ElementClassT::default_class("AlignmentInfo");
   {
     for (RouterT::iterator x = router->begin_elements(); x; x++)
       if (x->type() == align_class && (x->ninputs() == 0 || x->noutputs() == 0)) {

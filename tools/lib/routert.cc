@@ -158,20 +158,30 @@ RouterT::is_flat() const
 
 
 ElementClassT *
-RouterT::try_type(const String &name) const
+RouterT::locally_declared_type(const String &name) const
 {
     int i = _etype_map[name];
     return (i >= 0 ? _etypes[i].eclass : 0);
 }
 
 ElementClassT *
-RouterT::get_type(ElementClassT *ec, bool install_name)
+RouterT::declared_type(const String &name, int scope_cookie) const
+{
+    for (const RouterT *r = this; r; scope_cookie = r->_enclosing_scope_cookie, r = r->_enclosing_scope)
+	for (int i = r->_etype_map[name]; i >= 0; i = r->_etypes[i].prev_name)
+	    if (r->_etypes[i].scope_cookie <= scope_cookie)
+		return r->_etypes[i].eclass;
+    return 0;
+}
+
+ElementClassT *
+RouterT::install_type(ElementClassT *ec, bool install_name)
 {
     assert(ec);
     if (install_name) {
 	if (!ec->name()) 
 	    _etypes.push_back(ElementType(ec, _scope_cookie, -1));
-	else if (try_type(ec->name()) != ec) {
+	else if (locally_declared_type(ec->name()) != ec) {
 	    int prev = _etype_map[ec->name()];
 	    if (prev >= 0)	// increment scope_cookie if redefining class
 		_scope_cookie++;
@@ -180,38 +190,6 @@ RouterT::get_type(ElementClassT *ec, bool install_name)
 	}
     }
     return ec;
-}
-
-ElementClassT *
-RouterT::get_type(const String &name)
-{
-    int i = _etype_map[name];
-    if (i >= 0)
-	return _etypes[i].eclass;
-    ElementClassT *ec = 0;
-    if (_enclosing_scope)
-	ec = _enclosing_scope->get_type(name, _enclosing_scope_cookie);
-    if (!ec)
-	ec = ElementClassT::default_class(name);
-    return get_type(ec, true);
-}
-
-ElementClassT *
-RouterT::get_type(const String &name, int scope_cookie) const
-{
-    for (int i = _etype_map[name]; i >= 0; i = _etypes[i].prev_name)
-	if (_etypes[i].scope_cookie <= scope_cookie)
-	    return _etypes[i].eclass;
-    return get_enclosing_type(name);
-}
-
-ElementClassT *
-RouterT::get_enclosing_type(const String &name) const
-{
-    if (_enclosing_scope)
-	return _enclosing_scope->get_type(name, _enclosing_scope_cookie);
-    else
-	return 0;
 }
 
 ElementT *
@@ -1101,215 +1079,6 @@ RouterT::flatten(ErrorHandler *errh)
 }
 
 
-// PRINTING
-
-static void
-add_line_directive(StringAccum &sa, const String &landmark)
-{
-    int colon = landmark.find_right(':');
-    // XXX protect filename
-    if (colon >= 0)
-	sa << "# " << landmark.substring(colon + 1) << " \""
-	   << landmark.substring(0, colon) << "\"\n";
-    else
-	sa << "# 0 \"" << landmark << "\"\n";
-}
-
-void
-RouterT::unparse_requirements(StringAccum &sa, const String &indent) const
-{
-    if (_requirements.size() > 0) {
-	sa << indent << "require(";
-	for (int i = 0; i < _requirements.size(); i++) {
-	    if (i) sa << ", ";
-	    sa << _requirements[i];
-	}
-	sa << ");\n\n";
-    }
-}
-
-void
-RouterT::unparse_classes(StringAccum &sa, const String &indent) const
-{
-    int nelemtype = _etypes.size();
-    int old_sa_len = sa.length();
-    for (int i = 0; i < nelemtype; i++)
-	_etypes[i].eclass->unparse_declaration(sa, indent, ElementClassT::UNPARSE_NAMED, 0);
-    if (sa.length() != old_sa_len)
-	sa << "\n";
-}
-
-void
-RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
-{
-    int nelements = _elements.size();
-    int ntypes = _etypes.size();
-    check();
-
-    // We may need to interleave element class declarations and element
-    // declarations because of scope issues.
-
-    // uid_to_scope[] maps each type name to the latest scope in which it is
-    // good.
-    HashMap<int, int> uid_to_scope(-2);
-    for (int i = 0; i < ntypes; i++) {
-	const ElementType &t = _etypes[i];
-	uid_to_scope.insert(t.eclass->uid(), _scope_cookie);
-	if (t.prev_name >= 0) {
-	    const ElementType &pt = _etypes[t.prev_name];
-	    uid_to_scope.insert(pt.eclass->uid(), pt.scope_cookie);
-	}
-    }
-    // XXX FIXME
-    //for (const_iterator e = begin_elements(); e; e++)
-    //    assert(e->tunnel() || uid_to_scope[e->type_uid()] >= -1);
-
-    // For each scope:
-    // First print the element class declarations with that scope,
-    // then print the elements whose classes are good only at that scope.
-    int print_state = 0;
-    for (int scope = -2; scope <= _scope_cookie; scope++) {
-	for (int i = 0; i < ntypes; i++)
-	    if (_etypes[i].scope_cookie == scope && _etypes[i].name()
-		&& !_etypes[i].eclass->simple()) {
-		ElementClassT *stop_class;
-		if (_etypes[i].prev_name >= 0)
-		    stop_class = _etypes[ _etypes[i].prev_name ].eclass;
-		else
-		    stop_class = get_enclosing_type(_etypes[i].eclass->name());
-		if (print_state == 2)
-		    sa << "\n";
-		_etypes[i].eclass->unparse_declaration(sa, indent, ElementClassT::UNPARSE_NAMED, stop_class);
-		print_state = 1;
-	    }
-
-	for (const_iterator e = begin_elements(); e; e++) {
-	    if (e->dead() || e->tunnel()
-		|| uid_to_scope[e->type_uid()] != scope)
-		continue;
-	    if (print_state == 1)
-		sa << "\n";
-	    add_line_directive(sa, e->landmark());
-	    sa << indent << e->name() << " :: ";
-	    if (e->type()->name())
-		sa << e->type()->name();
-	    else
-		e->type()->unparse_declaration(sa, indent, ElementClassT::UNPARSE_ANONYMOUS, 0);
-	    if (e->configuration())
-		sa << "(" << e->configuration() << ")";
-	    sa << ";\n";
-	    print_state = 2;
-	}
-    }
-    
-    // print tunnel pairs
-    for (int i = 0; i < nelements; i++)
-	if (_elements[i]->tunnel() && _elements[i]->tunnel_output()) {
-	    add_line_directive(sa, _elements[i]->landmark());
-	    if (print_state > 0)
-		sa << "\n";
-	    sa << indent << "connectiontunnel " << _elements[i]->name()
-	       << " -> " << _elements[i]->tunnel_output()->name() << ";\n";
-	    print_state = 3;
-	}
-}
-
-void
-RouterT::unparse_connections(StringAccum &sa, const String &indent) const
-{
-    // mark loser connections
-    int nc = _conn.size();
-    Bitvector used(nc, false);
-    for (int c = 0; c < nc; c++)
-	if (_conn[c].dead())
-	    used[c] = true;
-
-    // prepare hookup chains
-    Vector<int> next(nc, -1);
-    Bitvector startchain(nc, true);
-    for (int c = 0; c < nc; c++) {
-	const PortT &ht = _conn[c].to();
-	if (ht.port != 0 || used[c])
-	    continue;
-	int result = -1;
-	for (int d = 0; d < nc; d++)
-	    if (d != c && _conn[d].from() == ht && !used[d]) {
-		result = d;
-		if (_conn[d].to().port == 0)
-		    break;
-	    }
-	if (result >= 0) {
-	    next[c] = result;
-	    startchain[result] = false;
-	}
-    }
-
-    // count line numbers so we can give reasonable error messages
-    if (nc) {
-	int lineno = 1;
-	const char *s = sa.data();
-	int len = sa.length();
-	for (int i = 0; i < len; i++)
-	    if (s[i] == '\n')
-		lineno++;
-	sa << "# " << lineno + 1 << " \"\"\n";
-    }
-
-    // print hookup
-    bool done = false;
-    while (!done) {
-	// print chains
-	for (int c = 0; c < nc; c++) {
-	    const PortT &hf = _conn[c].from();
-	    if (used[c] || !startchain[c])
-		continue;
-	    
-	    sa << indent << hf.elt->name();
-	    if (hf.port)
-		sa << " [" << hf.port << "]";
-
-	    int d = c;
-	    while (d >= 0 && !used[d]) {
-		if (d == c)
-		    sa << " -> ";
-		else
-		    sa << "\n" << indent << "    -> ";
-		const PortT &ht = _conn[d].to();
-		if (ht.port)
-		    sa << "[" << ht.port << "] ";
-		sa << ht.elt->name();
-		used[d] = true;
-		d = next[d];
-	    }
-
-	    sa << ";\n";
-	}
-
-	// add new chains to include cycles
-	done = true;
-	for (int c = 0; c < nc && done; c++)
-	    if (!used[c])
-		startchain[c] = true, done = false;
-    }
-}
-
-void
-RouterT::unparse(StringAccum &sa, const String &indent) const
-{
-    unparse_requirements(sa, indent);
-    unparse_declarations(sa, indent);
-    unparse_connections(sa, indent);
-}
-
-String
-RouterT::configuration_string() const
-{
-    StringAccum sa;
-    unparse(sa);
-    return sa.take_string();
-}
-
-
 void
 RouterT::const_iterator::step(const RouterT *r, int idx)
 {
@@ -1321,7 +1090,7 @@ RouterT::const_iterator::step(const RouterT *r, int idx)
 }
 
 void
-RouterT::type_iterator::step(RouterT *r, ElementClassT *type, int idx)
+RouterT::const_type_iterator::step(const RouterT *r, ElementClassT *type, int idx)
 {
     assert(type);
     int n = (r ? r->nelements() : -1);

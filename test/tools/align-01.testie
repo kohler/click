@@ -1,0 +1,31 @@
+%script
+
+click-align -e "
+src :: Whatever
+	-> c :: Classifier(12/0800)
+	-> s :: Strip(14)
+	-> ch :: CheckIPHeader
+	-> d :: Discard
+"
+
+%expect stdout
+src :: Whatever;
+c :: Classifier(12/0800);
+s :: Strip(14);
+ch :: CheckIPHeader;
+d :: Discard;
+Align@click_align@{{\d+}} :: Align(4, 2);
+AlignmentInfo@click_align@{{\d+}} :: AlignmentInfo(src,
+  c  4 2,
+  s  4 2,
+  ch  4 0,
+  d  4 0,
+  Align@click_align@{{\d+}}  1 0);
+src -> Align@click_align@{{\d+}}
+    -> c
+    -> s
+    -> ch
+    -> d;
+
+%ignore
+#.*

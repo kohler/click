@@ -71,6 +71,8 @@ static bool verbose;
 static HashMap<String, int> element_ninputs(-1);
 static HashMap<String, int> element_noutputs(-1);
 
+static ElementClassT *idlet;
+
 void
 short_usage()
 {
@@ -117,10 +119,7 @@ save_element_nports(RouterT *r)
 static void
 remove_static_switches(RouterT *r, ErrorHandler *errh)
 {
-  ElementClassT *t = r->try_type("StaticSwitch");
-  if (!t)
-    return;
-  ElementClassT *idlet = r->get_type("Idle");
+  ElementClassT *t = ElementClassT::default_class("StaticSwitch");
 
   for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
     assert(x->type() == t);
@@ -167,10 +166,7 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
 static void
 remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
 {
-  ElementClassT *t = r->try_type("StaticPullSwitch");
-  if (!t)
-    return;
-  ElementClassT *idlet = r->get_type("Idle");
+  ElementClassT *t = ElementClassT::default_class("StaticPullSwitch");
 
   for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
     assert(x->type() == t);
@@ -265,7 +261,6 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
 {
   if (!t)
     return false;
-  ElementClassT *idlet = r->get_type("Idle");
 
   bool changed = false;
   for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
@@ -329,7 +324,6 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
 {
   if (!t)
     return false;
-  ElementClassT *idlet = r->get_type("Idle");
 
   bool changed = false;
   for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
@@ -510,7 +504,7 @@ replace_blank_ports(RouterT *r)
     for (int p = 0; p < connv.size(); p++)
       if (connv[p] == -1) {	// unconnected port
 	if (!idle)
-	  idle = r->add_anon_element(r->get_type("Idle"), "", "<click-undead>");
+	  idle = r->add_anon_element(idlet, "", "<click-undead>");
 	r->add_connection(idle, idle_next_out++, x, p);
       }
 
@@ -519,7 +513,7 @@ replace_blank_ports(RouterT *r)
     for (int p = 0; p < connv.size(); p++)
       if (connv[p] == -1) {	// unconnected port
 	if (!idle)
-	  idle = r->add_anon_element(r->get_type("Idle"), "", "<click-undead>");
+	  idle = r->add_anon_element(idlet, "", "<click-undead>");
 	r->add_connection(x, p, idle, idle_next_in++);
       }
   }
@@ -657,10 +651,13 @@ particular purpose.\n");
   // save numbers of inputs and outputs for later
   save_element_nports(r);
 
+  // set types
+  idlet = ElementClassT::default_class("Idle");
+  
   // remove elements who make static routing decisions
   remove_static_switches(r, default_errh);
   remove_static_pull_switches(r, default_errh);
-  remove_nulls(r, r->try_type("Null"), default_errh);
+  remove_nulls(r, ElementClassT::default_class("Null"), default_errh);
 
   // remove dead elements to improve processing checking
   r->remove_dead_elements();
@@ -698,11 +695,11 @@ particular purpose.\n");
   // remove redundant schedulers
   while (1) {
     int nchanges = 0;
-    nchanges += remove_redundant_schedulers(r, r->try_type("RoundRobinSched"), false, default_errh);
-    nchanges += remove_redundant_schedulers(r, r->try_type("PrioSched"), false, default_errh);
-    nchanges += remove_redundant_schedulers(r, r->try_type("StrideSched"), true, default_errh);
-    nchanges += remove_redundant_tee_ports(r, r->try_type("Tee"), false, default_errh);
-    nchanges += remove_redundant_tee_ports(r, r->try_type("PullTee"), true, default_errh);
+    nchanges += remove_redundant_schedulers(r, ElementClassT::default_class("RoundRobinSched"), false, default_errh);
+    nchanges += remove_redundant_schedulers(r, ElementClassT::default_class("PrioSched"), false, default_errh);
+    nchanges += remove_redundant_schedulers(r, ElementClassT::default_class("StrideSched"), true, default_errh);
+    nchanges += remove_redundant_tee_ports(r, ElementClassT::default_class("Tee"), false, default_errh);
+    nchanges += remove_redundant_tee_ports(r, ElementClassT::default_class("PullTee"), true, default_errh);
     if (!nchanges) break;
   }
 

@@ -543,7 +543,7 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 	cerrh.lerror(_xml_landmark, "<formal> count and 'nformals' attribute disagree");
 
     // add to enclosing scope
-    enclosing_scope->get_type(c);
+    enclosing_scope->install_type(c, false);
     
     // handle elements
     if (complete(&cerrh) < 0)
@@ -581,37 +581,46 @@ CxConfig::complete(ErrorHandler *errh)
     if (!r)
 	return -1;
 
-    for (int i = 0; i < _elements.size(); i++) {
-	CxElement &e = _elements[i];
-	if (ElementT *old_e = r->elt(e.name)) {
-	    int which = (int)(old_e->user_data());
-	    ElementT::redeclaration_error(errh, "element", e.name, e.xml_landmark, _elements[which].xml_landmark);
+    // set up elements
+    for (CxElement *e = _elements.begin(); e != _elements.end(); e++)
+	if (ElementT *old_e = r->elt(e->name)) {
+	    int which = (intptr_t)(old_e->user_data());
+	    ElementT::redeclaration_error(errh, "element", e->name, e->xml_landmark, _elements[which].xml_landmark);
 	} else {
 	    ElementClassT *eclass = 0;
-	    if (e.class_id)
-		eclass = ::complete_elementclass(e.class_id, e.xml_landmark, errh);
-	    else if (e.class_name)
-		eclass = r->get_type(e.class_name);
-	    ElementT *ne = r->get_element(e.name, (eclass ? eclass : ElementClassT::default_class("Error")), e.config, (e.landmark ? e.landmark : e.xml_landmark));
-	    ne->set_user_data((void *)i);
+	    if (e->class_id)
+		eclass = ::complete_elementclass(e->class_id, e->xml_landmark, errh);
+	    else if (e->class_name)
+		eclass = ElementClassT::default_class(e->class_name);
+	    ElementT *ne = r->get_element(e->name, (eclass ? eclass : ElementClassT::default_class("Error")), e->config, (e->landmark ? e->landmark : e->xml_landmark));
+	    ne->set_user_data(e - _elements.begin());
 	}
-    }
 
-    for (int i = 0; i < _connections.size(); i++) {
-	CxConnection &c = _connections[i];
-	ElementT *frome = r->elt(c.from);
+    // set up connections
+    for (CxConnection *c = _connections.begin(); c != _connections.end(); c++) {
+	ElementT *frome = r->elt(c->from);
 	if (!frome) {
-	    errh->lerror(c.xml_landmark, "undeclared element '%s' (first use this block)", c.from.cc());
-	    frome = r->get_element(c.from, ElementClassT::default_class("Error"), String(), c.xml_landmark);
+	    errh->lerror(c->xml_landmark, "undeclared element '%s' (first use this block)", c->from.c_str());
+	    frome = r->get_element(c->from, ElementClassT::default_class("Error"), String(), c->xml_landmark);
 	}
-	ElementT *toe = r->elt(c.to);
+	ElementT *toe = r->elt(c->to);
 	if (!toe) {
-	    errh->lerror(c.xml_landmark, "undeclared element '%s' (first use this block)", c.to.cc());
-	    toe = r->get_element(c.to, ElementClassT::default_class("Error"), String(), c.xml_landmark);
+	    errh->lerror(c->xml_landmark, "undeclared element '%s' (first use this block)", c->to.c_str());
+	    toe = r->get_element(c->to, ElementClassT::default_class("Error"), String(), c->xml_landmark);
 	}
-	r->add_connection(frome, c.fromport, toe, c.toport, c.xml_landmark);
+	r->add_connection(frome, c->fromport, toe, c->toport, c->xml_landmark);
     }
 
+    // check elements' ninputs and noutputs
+    for (CxElement *e = _elements.begin(); e != _elements.end(); e++)
+	if (e->ninputs >= 0 || e->noutputs >= 0)
+	    if (ElementT *et = r->elt(e->name)) {
+		if (e->ninputs >= 0 && et->ninputs() != e->ninputs)
+		    errh->lerror(et->landmark(), "'%s' input port count and 'ninputs' attribute disagree", e->name.c_str());
+		if (e->noutputs >= 0 && et->noutputs() != e->noutputs)
+		    errh->lerror(et->landmark(), "'%s' output port count and 'noutputs' attribute disagree", e->name.c_str());
+	    }
+    
     return 0;
 }
 

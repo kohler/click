@@ -21,10 +21,9 @@ class RouterT { public:
     void check() const;
     bool is_flat() const;
 
-    ElementClassT *try_type(const String &) const;
-    ElementClassT *get_type(const String &);
-    ElementClassT *get_type(ElementClassT *, bool install_name = false);
-    ElementClassT *get_enclosing_type(const String &) const;
+    ElementClassT *locally_declared_type(const String &) const;
+    inline ElementClassT *declared_type(const String &) const;
+    ElementClassT *install_type(ElementClassT *, bool install_name = false);
     void collect_primitive_classes(HashMap<String, int> &) const;
     void collect_active_types(Vector<ElementClassT *> &) const;
 
@@ -34,19 +33,21 @@ class RouterT { public:
     class iterator;
     class const_iterator;
     class type_iterator;
-    iterator begin_elements();
-    const_iterator begin_elements() const;
-    type_iterator begin_elements(ElementClassT *);
-    iterator end_elements();
-    const_iterator end_elements() const;
+    class const_type_iterator;
+    inline iterator begin_elements();
+    inline const_iterator begin_elements() const;
+    inline type_iterator begin_elements(ElementClassT *);
+    inline const_type_iterator begin_elements(ElementClassT *) const;
+    inline iterator end_elements();
+    inline const_iterator end_elements() const;
     
     int nelements() const		{ return _elements.size(); }
     int real_element_count() const	{ return _real_ecount; }
     
-    const ElementT *element(const String &) const;
-    const ElementT *elt(const String &) const;
-    ElementT *element(const String &);
-    ElementT *elt(const String &);
+    inline const ElementT *element(const String &) const;
+    inline const ElementT *elt(const String &) const;
+    inline ElementT *element(const String &);
+    inline ElementT *elt(const String &);
     int eindex(const String &s) const	{ return _element_name_map[s]; }
     
     const ElementT *element(int i) const{ return _elements[i]; }
@@ -56,9 +57,9 @@ class RouterT { public:
     
     bool elive(int i) const		{ return _elements[i]->live(); }
     bool edead(int i) const		{ return _elements[i]->dead(); }
-    String ename(int) const;
-    ElementClassT *etype(int) const;
-    String etype_name(int) const;
+    inline String ename(int) const;
+    inline ElementClassT *etype(int) const;
+    inline String etype_name(int) const;
 
     ElementT *get_element(const String &name, ElementClassT *, const String &configuration, const String &landmark);
     ElementT *add_anon_element(ElementClassT *, const String &configuration = String(), const String &landmark = String());
@@ -77,7 +78,7 @@ class RouterT { public:
     void add_tunnel(const String &, const String &, const String &, ErrorHandler *);
 
     bool add_connection(const PortT &, const PortT &, const String &landmark = String());
-    bool add_connection(ElementT *, int, ElementT *, int, const String &landmark = String());
+    inline bool add_connection(ElementT *, int, ElementT *, int, const String &landmark = String());
     void kill_connection(int);
     void kill_bad_connections();
     void compact_connections();
@@ -92,10 +93,10 @@ class RouterT { public:
     const Vector<ArchiveElement> &archive() const{ return _archive; }
     ArchiveElement &archive(int i)		{ return _archive[i]; }
     const ArchiveElement &archive(int i) const	{ return _archive[i]; }
-    ArchiveElement &archive(const String &s);
-    const ArchiveElement &archive(const String &s) const;
+    inline ArchiveElement &archive(const String &s);
+    inline const ArchiveElement &archive(const String &s) const;
 
-    bool has_connection(const PortT &, const PortT &) const;
+    inline bool has_connection(const PortT &, const PortT &) const;
     int find_connection(const PortT &, const PortT &) const;
     void change_connection_to(int, PortT);
     void change_connection_from(int, PortT);
@@ -109,8 +110,8 @@ class RouterT { public:
 
     bool insert_before(const PortT &, const PortT &);
     bool insert_after(const PortT &, const PortT &);
-    bool insert_before(ElementT *, const PortT &);
-    bool insert_after(ElementT *, const PortT &);
+    inline bool insert_before(ElementT *, const PortT &);
+    inline bool insert_after(ElementT *, const PortT &);
 
     void add_components_to(RouterT *, const String &prefix = String()) const;
 
@@ -125,7 +126,6 @@ class RouterT { public:
 
     void unparse(StringAccum &, const String & = String()) const;
     void unparse_requirements(StringAccum &, const String & = String()) const;
-    void unparse_classes(StringAccum &, const String & = String()) const;
     void unparse_declarations(StringAccum &, const String & = String()) const;
     void unparse_connections(StringAccum &, const String & = String()) const;
     String configuration_string() const;
@@ -178,8 +178,8 @@ class RouterT { public:
 
     RouterT(const RouterT &);
     RouterT &operator=(const RouterT &);
-    
-    ElementClassT *get_type(const String &, int scope_cookie) const;
+
+    ElementClassT *declared_type(const String &, int scope_cookie) const;
     void update_noutputs(int);
     void update_ninputs(int);
     ElementT *add_element(const ElementT &);
@@ -219,19 +219,30 @@ class RouterT::iterator : public RouterT::const_iterator { public:
     friend class RouterT;
 };
 
-class RouterT::type_iterator { public:
+class RouterT::const_type_iterator { public:
     operator bool() const		{ return _e; }
     int idx() const			{ return _e->idx(); }
-    void operator++(int);
-    void operator++();
-    operator ElementT *() const		{ return _e; }
-    ElementT *operator->() const	{ return _e; }
-    ElementT &operator*() const		{ return *_e; }
+    inline void operator++(int);
+    inline void operator++();
+    operator const ElementT *() const	{ return _e; }
+    const ElementT *operator->() const	{ return _e; }
+    const ElementT &operator*() const	{ return *_e; }
   private:
-    ElementT *_e;
-    type_iterator()			: _e(0) { }
-    type_iterator(RouterT *r, ElementClassT *t, int i) { step(r, t, i); }
-    void step(RouterT *, ElementClassT *, int);
+    const ElementT *_e;
+    const_type_iterator()		: _e(0) { }
+    const_type_iterator(const RouterT *r, ElementClassT *t, int i) { step(r, t, i); }
+    void step(const RouterT *, ElementClassT *, int);
+    friend class RouterT;
+    friend class RouterT::type_iterator;
+};
+
+class RouterT::type_iterator : public RouterT::const_type_iterator { public:
+    operator ElementT *() const		{ return const_cast<ElementT *>(_e); }
+    ElementT *operator->() const	{ return const_cast<ElementT *>(_e); }
+    ElementT &operator*() const		{ return const_cast<ElementT &>(*_e); }
+  private:
+    type_iterator()			: const_type_iterator() { }
+    type_iterator(RouterT *r, ElementClassT *t, int ei)	: const_type_iterator(r, t, ei) { }
     friend class RouterT;
 };
 
@@ -254,6 +265,12 @@ RouterT::begin_elements(ElementClassT *t)
     return type_iterator(this, t, 0);
 }
 
+inline RouterT::const_type_iterator
+RouterT::begin_elements(ElementClassT *t) const
+{
+    return const_type_iterator(this, t, 0);
+}
+
 inline RouterT::const_iterator
 RouterT::end_elements() const
 {
@@ -267,14 +284,14 @@ RouterT::end_elements()
 }
 
 inline void
-RouterT::type_iterator::operator++(int)
+RouterT::const_type_iterator::operator++(int)
 {
     if (_e)
 	step(_e->router(), _e->type(), _e->idx() + 1);
 }
 
 inline void
-RouterT::type_iterator::operator++()
+RouterT::const_type_iterator::operator++()
 {
     (*this)++;
 }
@@ -321,6 +338,12 @@ inline String
 RouterT::etype_name(int e) const
 {
     return _elements[e]->type()->name();
+}
+
+inline ElementClassT *
+RouterT::declared_type(const String &name) const
+{
+    return declared_type(name, 0x7FFFFFFF);
 }
 
 inline bool

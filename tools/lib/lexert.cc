@@ -32,8 +32,7 @@ static LexerTInfo *stub_lexinfo = 0;
 LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
   : _data(0), _len(0), _pos(0), _lineno(1),
     _ignore_line_directives(ignore_line_directives),
-    _tpos(0), _tfull(0), _router(0),
-    _errh(errh)
+    _tpos(0), _tfull(0), _router(0), _default_class_map(0), _errh(errh)
 {
     if (!_errh)
 	_errh = ErrorHandler::default_handler();
@@ -51,20 +50,20 @@ LexerT::~LexerT()
 void
 LexerT::reset(const String &data, const String &filename)
 {
-  clear();
+    clear();
   
-  _big_string = data;
-  _data = _big_string.data();
-  _len = _big_string.length();
+    _big_string = data;
+    _data = _big_string.data();
+    _len = _big_string.length();
 
-  if (!filename)
-    _filename = "line ";
-  else if (filename.back() != ':' && !isspace(filename.back()))
-    _filename = filename + ":";
-  else
-    _filename = filename;
-  _original_filename = _filename;
-  _lineno = 1;
+    if (!filename)
+	_filename = "line ";
+    else if (filename.back() != ':' && !isspace(filename.back()))
+	_filename = filename + ":";
+    else
+	_filename = filename;
+    _original_filename = _filename;
+    _lineno = 1;
 }
 
 void
@@ -84,6 +83,7 @@ LexerT::clear()
     _tpos = 0;
     _tfull = 0;
 
+    _default_class_map.clear();
     _anonymous_offset = 0;
     _compound_depth = 0;
 }
@@ -486,7 +486,10 @@ ElementClassT *
 LexerT::element_type(const Lexeme &t) const
 {
     assert(t.is(lexIdent));
-    ElementClassT *type = _router->try_type(t.string());
+    String name = t.string();
+    ElementClassT *type = _router->declared_type(name);
+    if (!type)
+	type = _default_class_map[name];
     if (type)
 	_lexinfo->notify_class_reference(type, t.pos1(), t.pos2());
     return type;
@@ -497,9 +500,15 @@ LexerT::force_element_type(const Lexeme &t)
 {
     assert(t.is(lexIdent));
     String name = t.string();
-    if (_router->eindex(name) >= 0 && !_router->try_type(name))
-	lerror(t, "`%s' was previously used as an element name", name.cc());
-    ElementClassT *type = _router->get_type(name);
+    ElementClassT *type = _router->declared_type(name);
+    if (!type)
+	type = _default_class_map[name];
+    if (!type) {
+	if (_router->eindex(name) >= 0)
+	    lerror(t, "`%s' was previously used as an element name", name.c_str());
+	type = ElementClassT::default_class(name);
+	_default_class_map.insert(name, type);
+    }
     _lexinfo->notify_class_reference(type, t.pos1(), t.pos2());
     return type;
 }
@@ -705,8 +714,8 @@ LexerT::ydeclaration(const Lexeme &first_element)
 	String name = decls[i].string();
 	if (ElementT *old_e = _router->element(name))
 	    ElementT::redeclaration_error(_errh, "element", name, landmark(), old_e->landmark());
-	else if (_router->try_type(name))
-	    lerror(decls[i], "`%s' is an element class", name.cc());
+	else if (_router->declared_type(name) || _default_class_map[name])
+	    lerror(decls[i], "class `%s' used as element name", name.c_str());
 	else
 	    make_element(name, decls[i], decl_pos2, etype, configuration.string(), lm);
     }
@@ -744,7 +753,11 @@ LexerT::yconnection()
       
 	  case ',':
 	  case lex2Colon:
-	    lerror(t, "syntax error before `%s'", t.string().cc());
+	    if (router()->element(element2)->anonymous())
+		// type used as name
+		lerror(t, "class `%s' used as element name", router()->etype_name(element2).c_str());
+	    else
+		lerror(t, "syntax error before `%s'", t.string().c_str());
 	    goto relex;
       
 	  case lexArrow:
@@ -804,10 +817,10 @@ LexerT::yelementclass(int pos1)
 	(void) ycompound(eclass_name, pos1, tname.pos1());
 
     else if (tnext.is(lexIdent)) {
-	ElementClassT *ec = _router->get_type(tnext.string());
+	ElementClassT *ec = force_element_type(tnext);
 	if (eclass_name) {
 	    ElementClassT *new_ec = new SynonymElementClassT(eclass_name, ec);
-	    _router->get_type(new_ec, true);
+	    _router->install_type(new_ec, true);
 	    _lexinfo->notify_class_declaration(new_ec, false, pos1, tname.pos1(), tnext.pos2());
 	}
 	
@@ -875,9 +888,9 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
     if (t.is(lex3Dot)) {
 	if (anonymous) {
 	    lerror(t, "cannot extend anonymous compound element class");
-	    created = _router->get_type("Error");
+	    created = ElementClassT::default_class("Error");
 	} else {
-	    created = _router->get_type(name);
+	    created = force_element_type(Lexeme(lexIdent, name, name_pos1));
 	    _lexinfo->notify_class_extension(created, t.pos1(), t.pos2());
 	}
 	expect(lex2Bar);
@@ -914,7 +927,8 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
     created->cast_compound()->check_duplicates_until(first, _errh);
     _lexinfo->notify_class_declaration(created, anonymous, decl_pos1, name_pos1, pos2);
 
-    return old_router->get_type(created, !anonymous);
+    old_router->install_type(created, !anonymous);
+    return created;
 }
 
 void
@@ -1006,3 +1020,4 @@ LexerT::finish()
 }
 
 #include <click/vector.cc>
+#include <click/hashmap.cc>

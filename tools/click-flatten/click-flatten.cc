@@ -23,10 +23,12 @@
 #define CLASSES_OPT		307
 #define ELEMENTS_OPT		308
 #define DECLARATIONS_OPT	309
+#define CONFIG_OPT		310
 
 static Clp_Option options[] = {
   { "classes", 'c', CLASSES_OPT, 0, 0 },
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
+  { "config", 0, CONFIG_OPT, 0, 0 },
   { "decls", 'd', DECLARATIONS_OPT, 0, 0 },
   { "declarations", 'd', DECLARATIONS_OPT, 0, 0 },
   { "elements", 'n', ELEMENTS_OPT, 0, 0 },
@@ -64,6 +66,7 @@ Options:\n\
   -d, --declarations        Output list of declarations in flat config.\n\
   -f, --file FILE           Read router configuration from FILE.\n\
   -e, --expression EXPR     Use EXPR as router configuration.\n\
+      --config              Output configuration only (not an archive).\n\
   -o, --output FILE         Write output configuration to FILE.\n\
   -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
       --help                Print this message and exit.\n\
@@ -136,6 +139,7 @@ particular purpose.\n");
      case CLASSES_OPT:
      case DECLARATIONS_OPT:
      case ELEMENTS_OPT:
+     case CONFIG_OPT:
       action = opt;
       break;
       
@@ -190,6 +194,12 @@ particular purpose.\n");
    case FLATTEN_OPT:
     write_router_file(router, out, errh);
     break;
+
+   case CONFIG_OPT: {
+     String s = router->configuration_string();
+     fwrite(s.data(), 1, s.length(), out);
+     break;
+   }
 
    case CLASSES_OPT: {
      HashMap<String, int> m(-1);

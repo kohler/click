@@ -105,19 +105,15 @@ If any filename argument is a single dash "-",
 will use the standard input or output instead, as appropriate.
 '
 .TP 5
-.BI \-o " file"
+.BR \-o ", " \-\-output " \fIfile"
 .PD 0
-.TP
-.BI \-\-output " file"
 Write the output router configuration to
 .IR file .
 The default is the standard output.
 '
 .Sp
 .TP
-.BI \-n " name"
-.TP
-.BI \-\-name " name"
+.BR \-n ", " \-\-name " \fIname"
 The next router component will be named
 .IR name .
 This option and the
@@ -128,25 +124,35 @@ syntax.
 '
 .Sp
 .TP
-.BI \-f " file"
-.PD 0
-.TP
-.BI \-\-file " file"
+.BR \-f ", " \-\-file " \fIfile"
 Read a router configuration from
 .IR file .
-This option and
+Together with the
 .BR \-\-name
-provide an alternative to the
+option, the
+.B \-\-file
+and
+.B \-\-expression
+options provide an alternative to the
 .IR name = file
 syntax.
 '
 .Sp
 .TP
-.BI \-l " component1\fR.\fIelement1\fR=\fIcomponent2\fR.\fIelement2"
-.PD 0
+.BR \-e ", " \-\-expression " \fIexpr"
+Use
+.IR expr ,
+a string in the Click language, as the next router configuration.
+'
+.Sp
 .TP
-.BI \-\-link " component1\fR.\fIelement1\fR=\fIcomponent2\fR.\fIelement2"
+.BR \-l ", " \-\-link " \fIcomponent1\fR.\fIelement1\fR=\fIcomponent2\fR.\fIelement2"
 Add a link specification as described above.
+'
+.Sp
+.TP
+.BR \-c ", " \-\-config
+Output new configuration only (not an archive with extra information).
 '
 .Sp
 .TP 5

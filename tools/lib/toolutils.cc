@@ -153,7 +153,8 @@ read_router(const String &whatever, bool is_expr, ErrorHandler *errh)
 void
 write_router_file(RouterT *r, FILE *f, ErrorHandler *errh)
 {
-  if (!r) return;
+  if (!r)
+    return;
   
   String config_str = r->configuration_string();
   

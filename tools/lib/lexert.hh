@@ -2,6 +2,7 @@
 #ifndef CLICK_LEXERT_HH
 #define CLICK_LEXERT_HH
 #include <click/error.hh>
+#include <click/hashmap.hh>
 #include <stdio.h>
 class RouterT;
 class ElementClassT;
@@ -113,6 +114,9 @@ class LexerT { public:
     int _anonymous_offset;
     int _compound_depth;
   
+    // what names represent types? (builds up linearly)
+    HashMap<String, ElementClassT *> _default_class_map;
+
     // errors
     LexerTInfo *_lexinfo;
     ErrorHandler *_errh;
@@ -127,7 +131,9 @@ class LexerT { public:
     
     ElementClassT *element_type(const Lexeme &) const;
     ElementClassT *force_element_type(const Lexeme &);
-  
+
+    LexerT(const LexerT &);
+    LexerT &operator=(const LexerT &);
     int make_element(String, const Lexeme &, int decl_pos2, ElementClassT *, const String &, const String &);
     int make_anon_element(const Lexeme &, int decl_pos2, ElementClassT *, const String &, const String &);
     void connect(int f1, int p1, int p2, int f2);

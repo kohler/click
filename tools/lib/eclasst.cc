@@ -114,6 +114,8 @@ ElementClassT::set_default_class(ElementClassT *ec)
 ElementClassT *
 ElementClassT::default_class(const String &name)
 {
+    if (!name)
+	return 0;
     int i = default_class_map[name];
     if (i >= 0)
 	return default_classes[i];
@@ -253,13 +255,6 @@ ElementClassT::collect_prerequisites(Vector<ElementClassT *> &)
 {
 }
 
-void
-ElementClassT::unparse_declaration(StringAccum &sa, const String &, UnparseKind uk, ElementClassT *)
-{
-    if (uk == UNPARSE_OVERLOAD)
-	sa << " ...\n";
-}
-
 String
 ElementClassT::signature(const String &name, int ninputs, int noutputs, int nargs)
 {
@@ -304,15 +299,6 @@ SynonymElementClassT::collect_prerequisites(Vector<ElementClassT *> &v)
 {
     _eclass->collect_prerequisites(v);
     v.push_back(_eclass);
-}
-
-void
-SynonymElementClassT::unparse_declaration(StringAccum &sa, const String &indent, UnparseKind uk, ElementClassT *)
-{
-    if (uk == UNPARSE_OVERLOAD)
-	sa << " ...\n";
-    else if (uk == UNPARSE_NAMED)
-	sa << indent << "elementclass " << name() << " " << _eclass->name() << ";\n";
 }
 
 const ElementTraits *
@@ -558,45 +544,4 @@ CompoundElementClassT::find_traits() const
 	*(_traits.component(Traits::D_FLOW_CODE)) = pt.compound_flow_code(errh);
     }
     return &_traits;
-}
-
-void
-CompoundElementClassT::unparse_declaration(StringAccum &sa, const String &indent, UnparseKind uk, ElementClassT *stop)
-{
-    assert(!_circularity_flag && (name() || uk != UNPARSE_NAMED));
-
-    // stop early: scope control
-    if (stop == this) {
-	if (uk == UNPARSE_OVERLOAD)
-	    sa << " ...\n";
-	return;
-    }
-    
-    _circularity_flag = true;
-
-    if (uk == UNPARSE_NAMED)
-	sa << indent << "elementclass " << name() << " {";
-    else if (uk == UNPARSE_ANONYMOUS)
-	sa << '{';
-
-    if (_prev) {
-	_prev->unparse_declaration(sa, indent, UNPARSE_OVERLOAD, stop);
-	sa << indent << "||";
-    }
-
-    // print formals
-    for (int i = 0; i < _formals.size(); i++)
-	sa << (i ? ", " : " ") << _formals[i];
-    if (_formals.size())
-	sa << " |";
-    sa << "\n";
-
-    _router->unparse(sa, indent + "  ");
-
-    if (uk == UNPARSE_NAMED)
-	sa << indent << "}\n";
-    else if (uk == UNPARSE_ANONYMOUS)
-	sa << indent << '}';
-
-    _circularity_flag = false;
 }

@@ -43,8 +43,12 @@
 #define OUTPUT_OPT		303
 #define NAME_OPT		304
 #define LINK_OPT		305
+#define EXPRESSION_OPT		306
+#define CONFIG_OPT		307
 
 static Clp_Option options[] = {
+  { "config", 'c', CONFIG_OPT, 0, 0 },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "link", 'l', LINK_OPT, Clp_ArgString, 0 },
@@ -77,15 +81,17 @@ extract components from these combined configurations.\n\
 Usage: %s [OPTION]... [ROUTERFILE | ROUTERNAME=FILE | LINKSPEC]\n\
 \n\
 Options:\n\
-  -o, --output FILE     Write combined configuration to FILE.\n\
-  -n, --name NAME       The next router component name is NAME.\n\
-  -f, --file FILE       Read router component configuration from FILE.\n\
-  -l, --link LINKSPEC   Add a link between router components. LINKSPEC has the\n\
-                        form `NAME1.COMP1=NAME2.COMP2'. Each NAME is a router\n\
-                        component name. Each COMP is either an element name or\n\
-                        a device name (for linking at From/To/PollDevices).\n\
-      --help            Print this message and exit.\n\
-  -v, --version         Print version number and exit.\n\
+  -o, --output FILE      Write combined configuration to FILE.\n\
+  -n, --name NAME        The next router component name is NAME.\n\
+  -f, --file FILE        Read router component configuration from FILE.\n\
+  -e, --expression EXPR  Use EXPR as router component configuration.\n\
+  -l, --link LINKSPEC    Add a link between router components. LINKSPEC has the\n\
+                         form `NAME1.COMP1=NAME2.COMP2'. Each NAME is a router\n\
+                         component name. Each COMP is either an element name or\n\
+                         a device name (for linking at From/To/PollDevices).\n\
+  -c, --config           Output config only (not an archive).\n\
+      --help             Print this message and exit.\n\
+  -v, --version          Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
@@ -98,8 +104,8 @@ static Vector<RouterPortT> links_to;
 static Vector<int> link_id;
 
 static void
-read_router(String name, String &next_name, int &next_number,
-	    const char *filename, ErrorHandler *errh)
+cc_read_router(String name, String &next_name, int &next_number,
+	       const char *filename, bool file_is_expr, ErrorHandler *errh)
 {
   if (name && next_name)
     errh->warning("router name specified twice (`%s' and `%s')",
@@ -107,7 +113,7 @@ read_router(String name, String &next_name, int &next_number,
   else if (name)
     next_name = name;
   
-  RouterT *r = read_router_file(filename, errh);
+  RouterT *r = read_router(filename, file_is_expr, errh);
   
   if (r) {
     r->flatten(errh);
@@ -140,8 +146,8 @@ try_find_device(String devname, String class1, String class2,
     devname = words[0];
   }
   
-  ElementClassT *t1 = r->try_type(class1);
-  ElementClassT *t2 = r->try_type(class2);
+  ElementClassT *t1 = ElementClassT::default_class(class1);
+  ElementClassT *t2 = ElementClassT::default_class(class2);
   ElementT *found = 0;
   bool duplicate = false;
   for (int i = 0; i < r->nelements(); i++) {
@@ -303,7 +309,7 @@ make_link(const Vector<RouterPortT> &from, const Vector<RouterPortT> &to,
   }
 
   // add new element
-  ElementClassT *link_type = combined->get_type("RouterLink");
+  ElementClassT *link_type = ElementClassT::default_class("RouterLink");
   ElementT *newe = combined->get_element
     ("link" + String(++linkno), link_type, cp_unargvec(words), "<click-combine>");
 
@@ -357,6 +363,7 @@ main(int argc, char **argv)
   String next_name;
   int next_number = 1;
   Vector<String> link_texts;
+  bool config_only = false;
 
   while (1) {
     int opt = Clp_Next(clp);
@@ -377,7 +384,11 @@ particular purpose.\n");
       break;
       
      case ROUTER_OPT:
-      read_router(String(), next_name, next_number, clp->arg, errh);
+      cc_read_router(String(), next_name, next_number, clp->arg, false, errh);
+      break;
+
+     case EXPRESSION_OPT:
+      cc_read_router(String(), next_name, next_number, clp->arg, true, errh);
       break;
 
      case OUTPUT_OPT:
@@ -397,18 +408,22 @@ particular purpose.\n");
      case LINK_OPT:
       link_texts.push_back(clp->arg);
       break;
+
+     case CONFIG_OPT:
+      config_only = true;
+      break;
       
      case Clp_NotOption:
       if (const char *s = strchr(clp->arg, ':'))
-	read_router(String(clp->arg, s - clp->arg), next_name, next_number, s + 1, errh);
+	cc_read_router(String(clp->arg, s - clp->arg), next_name, next_number, s + 1, false, errh);
       else if (const char *eq = strchr(clp->arg, '=')) {
 	const char *dot = strchr(clp->arg, '.');
 	if (!dot || dot > eq)
-	  read_router(String(clp->arg, eq - clp->arg), next_name, next_number, eq + 1, errh);
+	  cc_read_router(String(clp->arg, eq - clp->arg), next_name, next_number, eq + 1, false, errh);
 	else
 	  link_texts.push_back(clp->arg);
       } else
-	read_router(String(), next_name, next_number, clp->arg, errh);
+	cc_read_router(String(), next_name, next_number, clp->arg, false, errh);
       break;
       
      bad_option:
@@ -462,7 +477,7 @@ particular purpose.\n");
     exit(1);
 
   // nested combinations: change config strings of included RouterLinks
-  ElementClassT *link_type = combined->try_type("RouterLink");
+  ElementClassT *link_type = ElementClassT::default_class("RouterLink");
   for (RouterT::type_iterator x = combined->begin_elements(link_type); x; x++)
     frob_nested_routerlink(x);
 
@@ -475,7 +490,7 @@ particular purpose.\n");
   combined->remove_tunnels();
   
   // add elementmap to archive
-  {
+  if (!config_only) {
     ElementMap em;
     if (link_id.size())
 	em.add("RouterLink", "", "", "l/h", "x/x", "S3", "", "");
@@ -493,7 +508,7 @@ particular purpose.\n");
   }
 
   // add componentmap to archive
-  {
+  if (!config_only) {
     combined->add_archive(init_archive_element("componentmap", 0600));
     ArchiveElement &ae = combined->archive("componentmap");
     StringAccum sa;

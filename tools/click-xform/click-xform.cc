@@ -480,7 +480,7 @@ read_pattern_file(const char *name, ErrorHandler *errh)
     String name = compounds[i]->name();
     if (compounds[i]->cast_compound() && name.length() > 12
 	&& name.substring(-12) == "_Replacement") {
-      ElementClassT *tt = pat_file->try_type(name.substring(0, -12));
+      ElementClassT *tt = pat_file->locally_declared_type(name.substring(0, -12));
       if (tt && tt->cast_compound()) {
 	RouterT *rep = compounds[i]->cast_router();
 	RouterT *pat = tt->cast_router();
