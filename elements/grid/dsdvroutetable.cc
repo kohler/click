@@ -26,6 +26,7 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
+#include <click/packet_anno.hh>
 #include "dsdvroutetable.hh"
 #include "timeutils.hh"
 CLICK_DECLS
@@ -816,8 +817,10 @@ DSDVRouteTable::simple_action(Packet *packet)
   unsigned int jiff = dsdv_jiffies();
 
   /* 
-   * sanity check the packet, get pointers to headers 
-   */  
+   * sanity check the packet, get pointers to headers.  These should
+   * be redundant due to classifiers etc. in the Grid Click
+   * configuration, but don't dis paranoia.
+   */
   click_ether *eh = (click_ether *) packet->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
     click_chatter("DSDVRouteTable %s: got non-Grid packet type", id().cc());
@@ -835,7 +838,6 @@ DSDVRouteTable::simple_action(Packet *packet)
   IPAddress ipaddr((unsigned char *) &gh->tx_ip);
   EtherAddress ethaddr((unsigned char *) eh->ether_shost);
 
-  // this should be redundant (see HostEtherFilter in grid.click)
   if (ethaddr == _eth) {
     click_chatter("DSDVRouteTable %s: received own Grid packet; ignoring it", id().cc());
     packet->kill();
@@ -868,7 +870,7 @@ DSDVRouteTable::simple_action(Packet *packet)
     click_chatter("DSDVRouteTable %s: ethernet address of %s changed from %s to %s", 
 		  id().cc(), ipaddr.s().cc(), r->dest_eth.s().cc(), ethaddr.s().cc());
 
-  RTEntry new_r(ipaddr, ethaddr, gh, hlo, jiff);
+  RTEntry new_r(ipaddr, ethaddr, gh, hlo, PAINT_ANNO(packet), jiff);
   handle_update(new_r, true, jiff);
   
   // update this dest's eth
@@ -893,7 +895,7 @@ DSDVRouteTable::simple_action(Packet *packet)
       _link_tracker->add_bcast_stat(ipaddr, curr->num_rx, curr->num_expected, ntoh(curr->last_bcast));
     }
 
-    RTEntry route(ipaddr, ethaddr, curr, jiff); 
+    RTEntry route(ipaddr, ethaddr, curr, PAINT_ANNO(packet), jiff); 
     
     if (route.ttl == 0) // ignore expired ttl
       continue;
@@ -983,6 +985,7 @@ DSDVRouteTable::print_rtes(Element *e, void *)
       + " hops=" + String((int) f.num_hops()) 
       + " gw=" + (f.is_gateway ? "y" : "n")
       + " seq=" + String(f.seq_no())
+      + " if=" + String((int) f.next_hop_interface)
       + "\n";
   }
   
@@ -1002,8 +1005,9 @@ DSDVRouteTable::print_nbrs_v(Element *e, void *)
     s += i.key().s();
     s += " eth=" + i.value().dest_eth.s();
     char buf[300];
-    snprintf(buf, 300, " metric_valid=%s metric=%d",
-	     i.value().metric.valid ? "yes" : "no", i.value().metric.val);
+    snprintf(buf, 300, " metric_valid=%s metric=%d if=%d",
+	     i.value().metric.valid ? "yes" : "no", 
+	     i.value().metric.val, (int) i.value().next_hop_interface);
     s += buf;
     s += "\n";
   }
@@ -1023,6 +1027,7 @@ DSDVRouteTable::print_nbrs(Element *e, void *)
       continue;
     s += i.key().s();
     s += " eth=" + i.value().dest_eth.s();
+    s += " if=" + String((int) i.value().next_hop_interface);
     s += "\n";
   }
 
@@ -1419,6 +1424,7 @@ DSDVRouteTable::RTEntry::dump() const
      << "      dest_eth: " << dest_eth.s().cc() << "\n"
      << "   next_hop_ip: " << next_hop_ip.s().cc() << "\n"
      << "  next_hop_eth: " << next_hop_eth.s().cc() << "\n"
+     << "next_hop_iface: " << next_hop_interface << "\n"
      << "        seq_no: " << seq_no() << "\n"
      << "      num_hops: " << (unsigned int) num_hops() << "\n"
      << "  last_updated: " << jiff_diff_string(last_updated_jiffies, jiff).cc() << "\n"

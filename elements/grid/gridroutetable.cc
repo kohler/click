@@ -41,6 +41,7 @@ GridRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry)
   
   entry = RouteEntry(dest_ip, r->loc_good, r->loc_err, r->loc,
 		     r->next_hop_eth, r->next_hop_ip, 
+		     0, // ignore interface number info
 		     r->seq_no(), r->num_hops());
   return true;  
 }
@@ -51,7 +52,7 @@ GridRouteTable::get_all_entries(Vector<RouteEntry> &vec)
   for (RTIter iter = _rtes.first(); iter; iter++) {
     const RTEntry &rte = iter.value();
     vec.push_back(RouteEntry(rte.dest_ip, rte.loc_good, rte.loc_err, rte.loc, 
-			     rte.next_hop_eth, rte.next_hop_ip, 
+			     rte.next_hop_eth, rte.next_hop_ip, 0, // ignore interface info
 			     rte.seq_no(), rte.num_hops()));
   }
 }
@@ -191,7 +192,8 @@ GridRouteTable::current_gateway(RouteEntry &entry)
 
     if (f.is_gateway) {
       entry = RouteEntry(f.dest_ip, f.loc_good, f.loc_err, f.loc, 
-			 f.next_hop_eth, f.next_hop_ip, f.seq_no(), f.num_hops());
+			 f.next_hop_eth, f.next_hop_ip, 0, // ignore interface info
+			 f.seq_no(), f.num_hops());
       return true;
       }
   }

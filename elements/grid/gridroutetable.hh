@@ -376,6 +376,7 @@ private:
   RouteEntry make_generic_rte(const RTEntry &rte) {
     return RouteEntry(rte.dest_ip, rte.loc_good, rte.loc_err, rte.loc, 
 		      rte.next_hop_eth, rte.next_hop_ip, 
+		      0, // ignore interface number information
 		      rte.seq_no(), rte.num_hops());
   }
 

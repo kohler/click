@@ -27,6 +27,9 @@ CLICK_DECLS
  * CMU ns implementation.  I make no guarantees that any of the above
  * are actually achieved.
  *
+ * DSDVRouteTable expects the Paint annotation to be set on Grid
+ * packets arriving from the network.
+ *
  * There must only be one of DSDVRouteTable or GridRouteTable in a
  * grid configuration.
  *
@@ -100,7 +103,7 @@ CLICK_DECLS
  *
  * =a
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, LookupGeographicGridRoute
- * GridGatewayInfo, LinkStat, LinkTracker, GridRouteTable, GridLogger */
+ * GridGatewayInfo, LinkStat, LinkTracker, GridRouteTable, GridLogger, Paint */
 
 class DSDVRouteTable : public GridGenericRouteTable {
 
@@ -196,8 +199,8 @@ private:
 
     /* constructor for 1-hop route entry, converting from net byte order */
     RTEntry(IPAddress ip, EtherAddress eth, grid_hdr *gh, grid_hello *hlo,
-	    unsigned int jiff) :
-      RouteEntry(ip, gh->loc_good, gh->loc_err, gh->loc, eth, ip, hlo->seq_no, 1),
+	    unsigned char interface, unsigned int jiff) :
+      RouteEntry(ip, gh->loc_good, gh->loc_err, gh->loc, eth, ip, interface, hlo->seq_no, 1),
       _init(true), dest_eth(eth), is_gateway(hlo->is_gateway), ttl(hlo->ttl), last_updated_jiffies(jiff), 
       wst(0), last_seq_jiffies(jiff), advertise_ok_jiffies(0), need_seq_ad(false), 
       need_metric_ad(false), last_expired_jiffies(0)
@@ -210,9 +213,10 @@ private:
 
     /* constructor from grid_nbr_entry, converting from net byte order */
     RTEntry(IPAddress ip, EtherAddress eth, grid_nbr_entry *nbr, 
-	    unsigned int jiff) :
+	    unsigned char interface, unsigned int jiff) :
       RouteEntry(nbr->ip, nbr->loc_good, nbr->loc_err, nbr->loc,
-		 eth, ip, nbr->seq_no, nbr->num_hops > 0 ? nbr->num_hops + 1 : 0),
+		 eth, ip, interface, 
+		 nbr->seq_no, nbr->num_hops > 0 ? nbr->num_hops + 1 : 0),
       _init(true), is_gateway(nbr->is_gateway), ttl(nbr->ttl), last_updated_jiffies(jiff), 
       metric(nbr->metric, nbr->metric_valid), wst(0), last_seq_jiffies(0), 
       advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false),

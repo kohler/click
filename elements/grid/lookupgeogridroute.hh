@@ -17,8 +17,9 @@
  * packets aren't for us.
  *
  * Output 0 pushes out packets to be sent by a device, with next hop
- * info filled in.  These will be Grid packets with MAC
- * headers.
+ * info filled in.  These will be Grid packets with MAC headers.
+ * Output packets have their paint annotation set to the output
+ * interface number, e.g. for use with PaintSwitch.
  *
  * Output 1 is the error output: it pushes out packets the
  * LookupGeographicGridRoute doesn't know how to handle (e.g. we don't
@@ -29,7 +30,10 @@
  * =a
  * LookupLocalGridRoute
  * GridGenericRouteTable
- * GridLocationInfo */
+ * GridLocationInfo 
+ * Paint
+ * PaintSwitch
+ */
 
 #include <click/element.hh>
 #include <click/glue.hh>
@@ -64,7 +68,8 @@ class LookupGeographicGridRoute : public Element, public GridRouteActor {
 private:
 
   bool get_next_geographic_hop(grid_location dest_loc, EtherAddress *dest_eth,
-			       IPAddress *dest_ip, IPAddress *best_nbr_ip) const;
+			       IPAddress *dest_ip, IPAddress *best_nbr_ip,
+			       unsigned char *next_hop_interface) const;
 
   void increment_hops_travelled(WritablePacket *p) const;
   bool dont_forward(const Packet *p) const;

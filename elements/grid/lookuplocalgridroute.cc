@@ -251,7 +251,8 @@ LookupLocalGridRoute::add_handlers()
 }
 
 bool
-LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, IPAddress *next_hop_ip) const
+LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, 
+				   IPAddress *next_hop_ip, unsigned char *next_hop_interface) const
 {
   assert(dest_eth != 0);
 
@@ -277,6 +278,7 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, IP
   if (found_route) {
     *dest_eth = rte.next_hop_eth;
     *next_hop_ip = rte.next_hop_ip;
+    *next_hop_interface = rte.next_hop_interface;
     return true;
   }
 
@@ -314,7 +316,8 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 
   EtherAddress next_hop_eth;
   IPAddress next_hop_ip;
-  bool found_next_hop = get_next_hop(dest_ip, &next_hop_eth, &next_hop_ip);
+  unsigned char next_hop_interface = 0;
+  bool found_next_hop = get_next_hop(dest_ip, &next_hop_eth, &next_hop_ip, &next_hop_interface);
 
   if (found_next_hop) {
     struct click_ether *eh = (click_ether *) packet->data();
@@ -330,6 +333,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     _link_tracker->get_stat(next_hop_ip, sig, qual, tv);
     unsigned int data2 = (qual << 16) | ((-sig) & 0xFFff);
     notify_route_cbs(packet, dest_ip, GRCB::ForwardDSDV, next_hop_ip, data2);
+    SET_PAINT_ANNO(packet, next_hop_interface);
     output(0).push(packet);
   }
   else {

@@ -141,8 +141,10 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
 
   EtherAddress next_hop_eth;
   IPAddress next_hop_ip;
+  unsigned char next_hop_interface = 0;
   IPAddress best_nbr_ip;
-  bool found_next_hop = get_next_geographic_hop(get_dest_loc(packet), &next_hop_eth, &next_hop_ip, &best_nbr_ip);
+  bool found_next_hop = get_next_geographic_hop(get_dest_loc(packet), &next_hop_eth, &next_hop_ip, 
+						&best_nbr_ip, &next_hop_interface);
 
   WritablePacket *xp = packet->uniqueify();
 
@@ -155,6 +157,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     increment_hops_travelled(xp);
     notify_route_cbs(packet, dest_ip, GRCB::ForwardGF, next_hop_ip, best_nbr_ip);
     // leave src location update to FixSrcLoc element
+    SET_PAINT_ANNO(xp, next_hop_interface);
     output(0).push(xp);
   }
   else {
@@ -181,7 +184,8 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
 
 bool 
 LookupGeographicGridRoute::get_next_geographic_hop(grid_location dest_loc, EtherAddress *dest_eth, 
-						   IPAddress *dest_ip, IPAddress *best_nbr) const
+						   IPAddress *dest_ip, IPAddress *best_nbr, 
+						   unsigned char *next_hop_interface) const
 {
   /*
    * search through table for all nodes we have routes to and for whom
@@ -231,6 +235,7 @@ LookupGeographicGridRoute::get_next_geographic_hop(grid_location dest_loc, Ether
 
   *dest_eth = best_nbr_entry.next_hop_eth;
   *dest_ip = best_nbr_entry.next_hop_ip;
+  *next_hop_interface = best_nbr_entry.next_hop_interface;
   *best_nbr = best_nbr_entry.dest_ip;
   
   return true;

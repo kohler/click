@@ -12,7 +12,9 @@
  * machine's addresses.
  *
  * Input 0 is from the device, output 0 is to the device.  Both should
- * be GRID_NBR_ENCAP packets with MAC headers.
+ * be GRID_NBR_ENCAP packets with MAC headers.  Output packets have
+ * their paint annotation set to the output interface number, e.g. for
+ * use with PaintSwitch.
  *
  * Input 1 is down from higher level protocols, output 1 is is up to
  * higher level protocols. The format of both is IP packets.
@@ -35,9 +37,9 @@
  *
  * =back
  *
- * =a
- * LookupGeographicGridRoute, GenericGridRouteTable, GridGatewayInfo, LinkTracker, GridLogger
- */
+ * =a 
+ * LookupGeographicGridRoute, GenericGridRouteTable,
+ * GridGatewayInfo, LinkTracker, GridLogger, Paint, PaintSwitch */
 
 #include <click/element.hh>
 #include <click/glue.hh>
@@ -74,7 +76,8 @@ class LookupLocalGridRoute : public Element, public GridRouteActor  {
 
 private:
 
-  bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, IPAddress *next_hop_ip) const;
+  bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, 
+		    IPAddress *next_hop_ip, unsigned char *next_ho_interface) const;
   void forward_grid_packet(Packet *packet, IPAddress dest_ip);
 
   GridGatewayInfo *_gw_info;
