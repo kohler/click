@@ -43,7 +43,7 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 OBJS = cxxclass.o specializer.o signature.o click-devirtualize.o
 
-CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_TOOL
+CPPFLAGS = @CPPFLAGS@ -DCLICK_TOOL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 

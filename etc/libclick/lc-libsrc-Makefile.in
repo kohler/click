@@ -57,7 +57,7 @@ LIBOBJS = $(GENERIC_OBJS) \
 	addressinfo.o alignmentinfo.o errorelement.o scheduleinfo.o \
 	drivermanager.o clp.o
 
-CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_USERLEVEL
+CPPFLAGS = @CPPFLAGS@ -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 

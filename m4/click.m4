@@ -32,7 +32,7 @@ dnl
 AC_DEFUN([CLICK_PROG_CC], [
     AC_REQUIRE([AC_PROG_CC])
     test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
-	CC="$CC -Wall"
+	echo foo 1>&2 && CC="$CC -Wall -MD"
 
     CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
     AC_SUBST(CFLAGS_NDEBUG)
@@ -93,7 +93,7 @@ by setting the "'`'"CXX' environment variable and rerunning me.
 
     ac_base_cxx="$CXX"
     test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX="$CXX -Wp,-w -W -Wall -fno-exceptions -fno-rtti -fvtable-thunks"
+	CXX="$CXX -Wp,-w -W -Wall -fno-exceptions -fno-rtti -fvtable-thunks -MD"
 
     CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
     AC_SUBST(CXXFLAGS_NDEBUG)
@@ -121,9 +121,9 @@ dnl
 AC_DEFUN([CLICK_PROG_KERNEL_CXX], [
     AC_REQUIRE([CLICK_PROG_CXX])
     test -z "$ac_user_kernel_cxx" && \
-	KERNEL_CXX="$ac_base_cxx"
+	KERNEL_CXX="$ac_base_cxx -MD"
     test -z "$ac_user_kernel_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CXX="$ac_base_cxx -w -Wall -fno-exceptions -fno-rtti -fvtable-thunks"
+	KERNEL_CXX="$ac_base_cxx -w -Wall -fno-exceptions -fno-rtti -fvtable-thunks -MD"
     AC_SUBST(KERNEL_CXX)
 ])
 

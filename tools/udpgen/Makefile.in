@@ -36,7 +36,7 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-CPPFLAGS = @CPPFLAGS@ -MD
+CPPFLAGS = @CPPFLAGS@
 CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@ -fno-exceptions -fno-rtti
 

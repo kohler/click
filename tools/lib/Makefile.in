@@ -60,7 +60,7 @@ OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
 	userutils.o toolutils.o clp.o @LIBOBJS@ @EXTRA_TOOL_OBJS@
 BUILDOBJS = $(patsubst %.o,%.bo,$(OBJS))
 
-CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_TOOL
+CPPFLAGS = @CPPFLAGS@ -DCLICK_TOOL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 
