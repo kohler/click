@@ -60,6 +60,7 @@ conf/udpgen.click
 
 etc
 etc/linux-2.2.18-patch
+etc/linux-2.4.4-patch
 
 etc/samplepackage
 etc/samplepackage/Makefile.in

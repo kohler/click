@@ -1,0 +1,698 @@
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.4-pure/fs/proc/inode.c ./fs/proc/inode.c
+*** ../linux-2.4.4-pure/fs/proc/inode.c	Tue Apr 17 23:16:39 2001
+--- ./fs/proc/inode.c	Tue May 22 11:19:43 2001
+***************
+*** 147,152 ****
+--- 147,157 ----
+  	if (!inode)
+  		goto out_fail;
+  	
++ 	/* Click change: don't double-increment de's use count if the inode
++ 	 * existed already */
++ 	if (inode->u.generic_ip == (void *) de)
++ 		de_put(de);
++ 
+  	inode->u.generic_ip = (void *) de;
+  	if (de) {
+  		if (de->mode) {
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.4-pure/include/asm-i386/string.h ./include/asm-i386/string.h
+*** ../linux-2.4.4-pure/include/asm-i386/string.h	Fri Apr 27 15:48:21 2001
+--- ./include/asm-i386/string.h	Wed May 23 23:37:41 2001
+***************
+*** 29,34 ****
+--- 29,35 ----
+   *		consider these trivial functions to be PD.
+   */
+  
++ #if __GNUC__ > 2 || __GNUC_MINOR__ != 96 || !defined(CLICK_LINUXMODULE)
+  #define __HAVE_ARCH_STRCPY
+  static inline char * strcpy(char * dest,const char *src)
+  {
+***************
+*** 42,47 ****
+--- 43,49 ----
+  	:"0" (src),"1" (dest) : "memory");
+  return dest;
+  }
++ #endif
+  
+  #define __HAVE_ARCH_STRNCPY
+  static inline char * strncpy(char * dest,const char *src,size_t count)
+***************
+*** 102,107 ****
+--- 104,110 ----
+  return dest;
+  }
+  
++ #if __GNUC__ > 2 || __GNUC_MINOR__ != 96 || !defined(CLICK_LINUXMODULE)
+  #define __HAVE_ARCH_STRCMP
+  static inline int strcmp(const char * cs,const char * ct)
+  {
+***************
+*** 122,127 ****
+--- 125,131 ----
+  		     :"1" (cs),"2" (ct));
+  return __res;
+  }
++ #endif
+  
+  #define __HAVE_ARCH_STRNCMP
+  static inline int strncmp(const char * cs,const char * ct,size_t count)
+***************
+*** 182,187 ****
+--- 186,192 ----
+  return __res;
+  }
+  
++ #if __GNUC__ > 2 || __GNUC_MINOR__ != 96 || !defined(CLICK_LINUXMODULE)
+  #define __HAVE_ARCH_STRLEN
+  static inline size_t strlen(const char * s)
+  {
+***************
+*** 195,200 ****
+--- 200,206 ----
+  	:"=c" (__res), "=&D" (d0) :"1" (s),"a" (0), "0" (0xffffffff));
+  return __res;
+  }
++ #endif
+  
+  static inline void * __memcpy(void * to, const void * from, size_t n)
+  {
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.4-pure/include/linux/highmem.h ./include/linux/highmem.h
+*** ../linux-2.4.4-pure/include/linux/highmem.h	Fri Apr 27 15:48:31 2001
+--- ./include/linux/highmem.h	Mon May 14 23:35:36 2001
+***************
+*** 61,67 ****
+  
+  	if (offset + size > PAGE_SIZE)
+  		BUG();
+! 	kaddr = kmap(page);
+  	memset(kaddr + offset, 0, size);
+  	kunmap(page);
+  }
+--- 61,67 ----
+  
+  	if (offset + size > PAGE_SIZE)
+  		BUG();
+! 	kaddr = (char *) kmap(page);
+  	memset(kaddr + offset, 0, size);
+  	kunmap(page);
+  }
+***************
+*** 75,81 ****
+  
+  	if (offset + size > PAGE_SIZE)
+  		BUG();
+! 	kaddr = kmap(page);
+  	memset(kaddr + offset, 0, size);
+  	flush_page_to_ram(page);
+  	kunmap(page);
+--- 75,81 ----
+  
+  	if (offset + size > PAGE_SIZE)
+  		BUG();
+! 	kaddr = (char *) kmap(page);
+  	memset(kaddr + offset, 0, size);
+  	flush_page_to_ram(page);
+  	kunmap(page);
+***************
+*** 85,92 ****
+  {
+  	char *vfrom, *vto;
+  
+! 	vfrom = kmap(from);
+! 	vto = kmap(to);
+  	copy_user_page(vto, vfrom, vaddr);
+  	kunmap(from);
+  	kunmap(to);
+--- 85,92 ----
+  {
+  	char *vfrom, *vto;
+  
+! 	vfrom = (char *) kmap(from);
+! 	vto = (char *) kmap(to);
+  	copy_user_page(vto, vfrom, vaddr);
+  	kunmap(from);
+  	kunmap(to);
+***************
+*** 96,103 ****
+  {
+  	char *vfrom, *vto;
+  
+! 	vfrom = kmap(from);
+! 	vto = kmap(to);
+  	copy_page(vto, vfrom);
+  	kunmap(from);
+  	kunmap(to);
+--- 96,103 ----
+  {
+  	char *vfrom, *vto;
+  
+! 	vfrom = (char *) kmap(from);
+! 	vto = (char *) kmap(to);
+  	copy_page(vto, vfrom);
+  	kunmap(from);
+  	kunmap(to);
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.4-pure/include/linux/inetdevice.h ./include/linux/inetdevice.h
+*** ../linux-2.4.4-pure/include/linux/inetdevice.h	Mon Aug 23 10:01:02 1999
+--- ./include/linux/inetdevice.h	Tue May 15 10:01:57 2001
+***************
+*** 119,125 ****
+  	struct in_device *in_dev;
+  
+  	read_lock(&inetdev_lock);
+! 	in_dev = dev->ip_ptr;
+  	if (in_dev)
+  		atomic_inc(&in_dev->refcnt);
+  	read_unlock(&inetdev_lock);
+--- 119,125 ----
+  	struct in_device *in_dev;
+  
+  	read_lock(&inetdev_lock);
+! 	in_dev = (struct in_device *) dev->ip_ptr;
+  	if (in_dev)
+  		atomic_inc(&in_dev->refcnt);
+  	read_unlock(&inetdev_lock);
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.4-pure/include/linux/mm.h ./include/linux/mm.h
+*** ../linux-2.4.4-pure/include/linux/mm.h	Fri Apr 27 15:48:35 2001
+--- ./include/linux/mm.h	Thu May 24 12:12:22 2001
+***************
+*** 458,464 ****
+  
+  extern unsigned long do_brk(unsigned long, unsigned long);
+  
+- struct zone_t;
+  /* filemap.c */
+  extern void remove_inode_page(struct page *);
+  extern unsigned long page_unuse(struct page *);
+--- 458,463 ----
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.4-pure/include/linux/netdevice.h ./include/linux/netdevice.h
+*** ../linux-2.4.4-pure/include/linux/netdevice.h	Fri Apr 27 15:48:51 2001
+--- ./include/linux/netdevice.h	Thu May 24 15:21:19 2001
+***************
+*** 446,451 ****
+--- 446,454 ----
+  extern int		unregister_netdevice(struct net_device *dev);
+  extern int 		register_netdevice_notifier(struct notifier_block *nb);
+  extern int		unregister_netdevice_notifier(struct notifier_block *nb);
++ extern int		register_net_in(struct notifier_block *nb); /* Click */
++ extern int		unregister_net_in(struct notifier_block *nb); /* Click */
++ extern int		ptype_dispatch(struct sk_buff *skb, unsigned short type); /* Click */
+  extern int		dev_new_index(void);
+  extern struct net_device	*dev_get_by_index(int ifindex);
+  extern struct net_device	*__dev_get_by_index(int ifindex);
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.4-pure/include/linux/skbuff.h ./include/linux/skbuff.h
+*** ../linux-2.4.4-pure/include/linux/skbuff.h	Fri Apr 27 15:48:50 2001
+--- ./include/linux/skbuff.h	Thu May 24 12:12:22 2001
+***************
+*** 124,138 ****
+  	skb_frag_t	frags[MAX_SKB_FRAGS];
+  };
+  
+  struct sk_buff {
+  	/* These two members must be first. */
+  	struct sk_buff	* next;			/* Next buffer in list 				*/
+  	struct sk_buff	* prev;			/* Previous buffer in list 			*/
+  
+! 	struct sk_buff_head * list;		/* List we are on				*/
+! 	struct sock	*sk;			/* Socket we are owned by 			*/
+! 	struct timeval	stamp;			/* Time we arrived				*/
+  	struct net_device	*dev;		/* Device we arrived on/are leaving by		*/
+  
+  	/* Transport layer header */
+  	union
+--- 124,154 ----
+  	skb_frag_t	frags[MAX_SKB_FRAGS];
+  };
+  
++ /* Click: overload sk_buff.pkt_type to contain information about whether
++    a packet is clean. Clean packets have the following fields zero:
++    dst, destructor, pkt_bridged, prev, list, sk, security, priority. */
++ #define PACKET_CLEAN		128		/* Is packet clean? */
++ #define PACKET_TYPE_MASK	127		/* Actual packet type */
++ 
++ /* Click: change sk_buff structure so all fields used for router are grouped
++  * together on one cache line, we hope */
+  struct sk_buff {
+  	/* These two members must be first. */
+  	struct sk_buff	* next;			/* Next buffer in list 				*/
+  	struct sk_buff	* prev;			/* Previous buffer in list 			*/
+  
+! 	unsigned int 	len;			/* Length of actual data			*/
+! 	unsigned char	*data;			/* Data head pointer				*/
+! 	unsigned char	*tail;			/* Tail pointer					*/
+  	struct net_device	*dev;		/* Device we arrived on/are leaving by		*/
++ 	unsigned char 	__unused,		/* Dead field, may be reused			*/
++ 			cloned, 		/* head may be cloned (check refcnt to be sure). */
++   			pkt_type,		/* Packet class					*/
++   			ip_summed;		/* Driver fed us an IP checksum			*/
++ 	atomic_t	users;			/* User count - see datagram.c,tcp.c 		*/
++ 	unsigned int	truesize;		/* Buffer size 					*/
++ 	unsigned char	*head;			/* Head of buffer 				*/
++ 	unsigned char 	*end;			/* End pointer					*/
+  
+  	/* Transport layer header */
+  	union
+***************
+*** 163,170 ****
+  	  	unsigned char 	*raw;
+  	} mac;
+  
+- 	struct  dst_entry *dst;
+- 
+  	/* 
+  	 * This is the control buffer. It is free to use for every
+  	 * layer. Please put your private variables there. If you
+--- 179,184 ----
+***************
+*** 173,195 ****
+  	 */ 
+  	char		cb[48];	 
+  
+! 	unsigned int 	len;			/* Length of actual data			*/
+   	unsigned int 	data_len;
+  	unsigned int	csum;			/* Checksum 					*/
+- 	unsigned char 	__unused,		/* Dead field, may be reused			*/
+- 			cloned, 		/* head may be cloned (check refcnt to be sure). */
+-   			pkt_type,		/* Packet class					*/
+-   			ip_summed;		/* Driver fed us an IP checksum			*/
+  	__u32		priority;		/* Packet queueing priority			*/
+- 	atomic_t	users;			/* User count - see datagram.c,tcp.c 		*/
+  	unsigned short	protocol;		/* Packet protocol from driver. 		*/
+  	unsigned short	security;		/* Security level of packet			*/
+- 	unsigned int	truesize;		/* Buffer size 					*/
+- 
+- 	unsigned char	*head;			/* Head of buffer 				*/
+- 	unsigned char	*data;			/* Data head pointer				*/
+- 	unsigned char	*tail;			/* Tail pointer					*/
+- 	unsigned char 	*end;			/* End pointer					*/
+  
+  	void 		(*destructor)(struct sk_buff *);	/* Destruct function		*/
+  #ifdef CONFIG_NETFILTER
+--- 187,203 ----
+  	 */ 
+  	char		cb[48];	 
+  
+! 	struct  dst_entry *dst;
+! 
+! 	struct sk_buff_head * list;		/* List we are on				*/
+! 	struct sock	*sk;			/* Socket we are owned by 			*/
+! 	struct timeval	stamp;			/* Time we arrived				*/
+! 
+   	unsigned int 	data_len;
+  	unsigned int	csum;			/* Checksum 					*/
+  	__u32		priority;		/* Packet queueing priority			*/
+  	unsigned short	protocol;		/* Packet protocol from driver. 		*/
+  	unsigned short	security;		/* Security level of packet			*/
+  
+  	void 		(*destructor)(struct sk_buff *);	/* Destruct function		*/
+  #ifdef CONFIG_NETFILTER
+***************
+*** 231,236 ****
+--- 239,246 ----
+  extern void			kfree_skbmem(struct sk_buff *skb);
+  extern struct sk_buff *		skb_clone(struct sk_buff *skb, int priority);
+  extern struct sk_buff *		skb_copy(const struct sk_buff *skb, int priority);
++ extern void			skb_recycled_init(struct sk_buff *buf);
++ extern struct sk_buff *		skb_recycle(struct sk_buff *buf);
+  extern struct sk_buff *		pskb_copy(struct sk_buff *skb, int gfp_mask);
+  extern int			pskb_expand_head(struct sk_buff *skb, int nhead, int ntail, int gfp_mask);
+  extern struct sk_buff *		skb_realloc_headroom(struct sk_buff *skb, unsigned int headroom);
+***************
+*** 820,826 ****
+  	return skb->data;
+  }
+  
+! static inline char *__skb_pull(struct sk_buff *skb, unsigned int len)
+  {
+  	skb->len-=len;
+  	if (skb->len < skb->data_len)
+--- 830,836 ----
+  	return skb->data;
+  }
+  
+! static inline unsigned char *__skb_pull(struct sk_buff *skb, unsigned int len)
+  {
+  	skb->len-=len;
+  	if (skb->len < skb->data_len)
+***************
+*** 848,854 ****
+  
+  extern unsigned char * __pskb_pull_tail(struct sk_buff *skb, int delta);
+  
+! static inline char *__pskb_pull(struct sk_buff *skb, unsigned int len)
+  {
+  	if (len > skb_headlen(skb) &&
+  	    __pskb_pull_tail(skb, len-skb_headlen(skb)) == NULL)
+--- 858,864 ----
+  
+  extern unsigned char * __pskb_pull_tail(struct sk_buff *skb, int delta);
+  
+! static inline unsigned char *__pskb_pull(struct sk_buff *skb, unsigned int len)
+  {
+  	if (len > skb_headlen(skb) &&
+  	    __pskb_pull_tail(skb, len-skb_headlen(skb)) == NULL)
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.4-pure/include/net/route.h ./include/net/route.h
+*** ../linux-2.4.4-pure/include/net/route.h	Fri Apr 27 15:49:18 2001
+--- ./include/net/route.h	Thu May 24 12:12:22 2001
+***************
+*** 116,122 ****
+--- 116,128 ----
+  static inline int ip_route_output(struct rtable **rp,
+  				      u32 daddr, u32 saddr, u32 tos, int oif)
+  {
++ #ifdef __cplusplus
++ 	struct rt_key key = { daddr, saddr };
++ 	key.oif = oif;
++ 	key.tos = tos;
++ #else
+  	struct rt_key key = { dst:daddr, src:saddr, oif:oif, tos:tos };
++ #endif
+  
+  	return ip_route_output_key(rp, &key);
+  }
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.4-pure/net/core/dev.c ./net/core/dev.c
+*** ../linux-2.4.4-pure/net/core/dev.c	Thu Apr 19 08:38:50 2001
+--- ./net/core/dev.c	Thu May 24 15:21:56 2001
+***************
+*** 168,173 ****
+--- 168,176 ----
+   
+  static struct notifier_block *netdev_chain=NULL;
+  
++ /* Click: input packet handlers, might steal packets from net_rx_action. */
++ static struct notifier_block *net_in_chain = 0;
++ 
+  /*
+   *	Device drivers call our routines to queue packets here. We empty the
+   *	queue in the local softnet handler.
+***************
+*** 1359,1364 ****
+--- 1362,1383 ----
+  	br_write_unlock_bh(BR_NETPROTO_LOCK);
+  }
+  
++ /*
++  * Click: Allow Click to ask to intercept input packets.
++  */
++ int
++ register_net_in(struct notifier_block *nb)
++ {
++   return notifier_chain_register(&net_in_chain, nb);
++ }
++ 
++ int
++ unregister_net_in(struct notifier_block *nb)
++ {
++   return notifier_chain_unregister(&net_in_chain, nb);
++ }
++ 
++ 
+  #if defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)
+  void (*br_handle_frame_hook)(struct sk_buff *skb) = NULL;
+  #endif
+***************
+*** 1392,1397 ****
+--- 1411,1496 ----
+  #endif   /* CONFIG_NET_DIVERT */
+  
+  
++ /*
++  * Click: Hand a packet to the ordinary Linux protocol stack.
++  * Broke this out from net_tx_action so that Click can call it.
++  * Always frees the skb one way or another.
++  *
++  * skb->pkt_type needs to be set to PACKET_{BROADCAST,MULTICAST,OTHERHOST}
++  * maybe skb->mac.raw must point to ether header.
++  * skb->protocol must be set to a htons(ETHERTYPE_?).
++  * skb->data must point to the ethernet payload (e.g. the IP header).
++  * skb->nh.raw must point to the ethernet payload also.
++  *
++  * Returns 1 if caller should skip bugdet, etc.
++  */
++ int ptype_dispatch(struct sk_buff *skb, unsigned short type)
++ {
++ 	struct packet_type *ptype, *pt_prev;
++ 
++ 	pt_prev = NULL;
++ 	for (ptype = ptype_all; ptype; ptype = ptype->next) {
++ 		if (!ptype->dev || ptype->dev == skb->dev) {
++ 			if (pt_prev) {
++ 				if (!pt_prev->data) {
++ 					deliver_to_old_ones(pt_prev, skb, 0);
++ 				} else {
++ 					atomic_inc(&skb->users);
++ 					pt_prev->func(skb,
++ 						      skb->dev,
++ 						      pt_prev);
++ 				}
++ 			}
++ 			pt_prev = ptype;
++ 		}
++ 	}
++ 
++ 	/* Click: exit if sniffers only */
++ 	if (type == 0xFFFF)
++ 		goto done;
++ 	
++ #ifdef CONFIG_NET_DIVERT
++ 	if (skb->dev->divert && skb->dev->divert->divert)
++ 		handle_diverter(skb);
++ #endif /* CONFIG_NET_DIVERT */
++ 
++ 			
++ #if defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)
++ 	if (skb->dev->br_port != NULL &&
++ 	    br_handle_frame_hook != NULL) {
++ 		handle_bridge(skb, pt_prev);
++ 		return 1;
++ 	}
++ #endif
++ 
++ 	for (ptype=ptype_base[ntohs(type)&15];ptype;ptype=ptype->next) {
++ 		if (ptype->type == type &&
++ 		    (!ptype->dev || ptype->dev == skb->dev)) {
++ 			if (pt_prev) {
++ 				if (!pt_prev->data)
++ 					deliver_to_old_ones(pt_prev, skb, 0);
++ 				else {
++ 					atomic_inc(&skb->users);
++ 					pt_prev->func(skb,
++ 						      skb->dev,
++ 						      pt_prev);
++ 				}
++ 			}
++ 			pt_prev = ptype;
++ 		}
++ 	}
++ 
++ done:
++ 	if (pt_prev) {
++ 		if (!pt_prev->data)
++ 			deliver_to_old_ones(pt_prev, skb, 1);
++ 		else
++ 			pt_prev->func(skb, skb->dev, pt_prev);
++ 	} else
++ 		kfree_skb(skb);
++ 	return 0;
++ }
++ 
+  static void net_rx_action(struct softirq_action *h)
+  {
+  	int this_cpu = smp_processor_id();
+***************
+*** 1404,1409 ****
+--- 1503,1509 ----
+  	for (;;) {
+  		struct sk_buff *skb;
+  		struct net_device *rx_dev;
++ 		int backlog;
+  
+  		local_irq_disable();
+  		skb = __skb_dequeue(&queue->input_pkt_queue);
+***************
+*** 1425,1490 ****
+  		}
+  #endif
+  		skb->h.raw = skb->nh.raw = skb->data;
+- 		{
+- 			struct packet_type *ptype, *pt_prev;
+- 			unsigned short type = skb->protocol;
+- 
+- 			pt_prev = NULL;
+- 			for (ptype = ptype_all; ptype; ptype = ptype->next) {
+- 				if (!ptype->dev || ptype->dev == skb->dev) {
+- 					if (pt_prev) {
+- 						if (!pt_prev->data) {
+- 							deliver_to_old_ones(pt_prev, skb, 0);
+- 						} else {
+- 							atomic_inc(&skb->users);
+- 							pt_prev->func(skb,
+- 								      skb->dev,
+- 								      pt_prev);
+- 						}
+- 					}
+- 					pt_prev = ptype;
+- 				}
+- 			}
+  
+! #ifdef CONFIG_NET_DIVERT
+! 			if (skb->dev->divert && skb->dev->divert->divert)
+! 				handle_diverter(skb);
+! #endif /* CONFIG_NET_DIVERT */
+! 
+! 			
+! #if defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)
+! 			if (skb->dev->br_port != NULL &&
+! 			    br_handle_frame_hook != NULL) {
+! 				handle_bridge(skb, pt_prev);
+! 				dev_put(rx_dev);
+! 				continue;
+! 			}
+! #endif
+! 
+! 			for (ptype=ptype_base[ntohs(type)&15];ptype;ptype=ptype->next) {
+! 				if (ptype->type == type &&
+! 				    (!ptype->dev || ptype->dev == skb->dev)) {
+! 					if (pt_prev) {
+! 						if (!pt_prev->data)
+! 							deliver_to_old_ones(pt_prev, skb, 0);
+! 						else {
+! 							atomic_inc(&skb->users);
+! 							pt_prev->func(skb,
+! 								      skb->dev,
+! 								      pt_prev);
+! 						}
+! 					}
+! 					pt_prev = ptype;
+! 				}
+! 			}
+  
+! 			if (pt_prev) {
+! 				if (!pt_prev->data)
+! 					deliver_to_old_ones(pt_prev, skb, 1);
+! 				else
+! 					pt_prev->func(skb, skb->dev, pt_prev);
+! 			} else
+! 				kfree_skb(skb);
+  		}
+  
+  		dev_put(rx_dev);
+--- 1525,1543 ----
+  		}
+  #endif
+  		skb->h.raw = skb->nh.raw = skb->data;
+  
+! 		/* Click: may want to steal the packet */
+!                 if (notifier_call_chain(&net_in_chain,
+! 					skb_queue_len(&queue->input_pkt_queue),
+! 					skb) & NOTIFY_STOP_MASK) {
+!                 	dev_put(rx_dev);
+! 			continue;
+! 		}
+  
+! 		/* Click: dispatch based on protocol type */
+! 		if (ptype_dispatch(skb, skb->protocol)) {
+! 			dev_put(rx_dev);
+! 			continue;
+  		}
+  
+  		dev_put(rx_dev);
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.4-pure/net/core/skbuff.c ./net/core/skbuff.c
+*** ../linux-2.4.4-pure/net/core/skbuff.c	Thu Apr 12 12:11:39 2001
+--- ./net/core/skbuff.c	Tue May 22 10:44:16 2001
+***************
+*** 444,449 ****
+--- 444,508 ----
+  #endif
+  }
+  
++ /* Click: attempts to recycle a sk_buff. if it can be recycled, return it
++  * without reinitializing any bits */
++ struct sk_buff *skb_recycle(struct sk_buff *skb)
++ {
++ 	if (atomic_dec_and_test(&skb->users)) { 
++ 
++ 		if (skb->list) {
++ 		 	printk(KERN_WARNING "Warning: kfree_skb passed an skb still "
++ 			       "on a list (from %p).\n", NET_CALLER(skb));
++ 			BUG();
++ 		}
++ 
++ 		dst_release(skb->dst); 
++ 		if(skb->destructor) {
++ 			if (in_irq()) {
++ 				printk(KERN_WARNING "Warning: kfree_skb on hard IRQ %p\n",
++ 					NET_CALLER(skb));
++ 			}
++ 			skb->destructor(skb);
++ 		}
++ #ifdef CONFIG_NETFILTER
++ 		nf_conntrack_put(skb->nfct);
++ #endif
++ 		skb_headerinit(skb, NULL, 0);
++ 
++ 		if (!skb->cloned ||
++ 		    atomic_dec_and_test(&(skb_shinfo(skb)->dataref))) {
++ 			if (skb_shinfo(skb)->nr_frags) {
++ 				int i;
++ 				for (i = 0; i < skb_shinfo(skb)->nr_frags; i++)
++ 					put_page(skb_shinfo(skb)->frags[i].page);
++ 			}
++ 
++ 			if (skb_shinfo(skb)->frag_list)
++ 				skb_drop_fraglist(skb);
++ 
++ 			/* Load the data pointers. */
++ 			skb->data = skb->head;
++ 			skb->tail = skb->data;
++ 			/* end and truesize should have never changed */
++ 			/* skb->end = skb->data + skb->truesize; */
++ 
++ 			/* set up other state */
++ 			skb->len = 0;
++ 			skb->cloned = 0;
++ 
++ 			atomic_set(&skb->users, 1);
++ 			atomic_set(&(skb_shinfo(skb)->dataref), 1);
++ 
++ 			return skb;
++ 		}
++ 
++ 		skb_head_to_pool(skb);
++ 	}
++ 
++ 	return 0;
++ }
++ 
++ 
+  /**
+   *	skb_copy	-	create private copy of an sk_buff
+   *	@skb: buffer to copy
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.4-pure/net/netsyms.c ./net/netsyms.c
+*** ../linux-2.4.4-pure/net/netsyms.c	Fri Apr 27 14:15:01 2001
+--- ./net/netsyms.c	Thu May 24 15:21:10 2001
+***************
+*** 264,269 ****
+--- 264,274 ----
+  EXPORT_SYMBOL(register_inetaddr_notifier);
+  EXPORT_SYMBOL(unregister_inetaddr_notifier);
+  
++ /* Click */
++ EXPORT_SYMBOL(register_net_in);
++ EXPORT_SYMBOL(unregister_net_in);
++ EXPORT_SYMBOL(ptype_dispatch);
++ 
+  /* needed for ip_gre -cw */
+  EXPORT_SYMBOL(ip_statistics);
+  
+***************
+*** 473,478 ****
+--- 478,484 ----
+  EXPORT_SYMBOL(__kfree_skb);
+  EXPORT_SYMBOL(skb_clone);
+  EXPORT_SYMBOL(skb_copy);
++ EXPORT_SYMBOL(skb_recycle);
+  EXPORT_SYMBOL(netif_rx);
+  EXPORT_SYMBOL(dev_add_pack);
+  EXPORT_SYMBOL(dev_remove_pack);
