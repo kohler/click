@@ -5,6 +5,7 @@
 #include "hashmap.hh"
 #include "ipflowid.hh"
 #include "click_ip.h"
+class IPMapper;
 
 /*
  * =c
@@ -57,98 +58,27 @@ class IPRewriter : public Element {
   class Pattern;
   class Mapping;
 
-  class Mapping {
-
-    IPFlowID _mapto;
-    
-    unsigned short _ip_csum_incr;
-    unsigned short _udp_csum_incr;
-
-    int _out;
-    Mapping *_reverse;
-
-    bool _used;
-    bool _is_reverse;
-
-    Pattern *_pat;
-    Mapping *_pat_prev;
-    Mapping *_pat_next;
-
-    Mapping(const IPFlowID &, const IPFlowID &, Pattern *, int, bool);
-    
-   public:
-
-    static void make_pair(const IPFlowID &, const IPFlowID &, Pattern *,
-			  int, int, Mapping *&, Mapping *&);
-    
-    const IPFlowID &flow_id() const	{ return _mapto; }
-    Pattern *pattern() const		{ return _pat; }
-    int output() const 			{ return _out; }
-    bool is_reverse() const		{ return _is_reverse; }
-    Mapping *reverse() const		{ return _reverse; }
-    bool used() const			{ return _used; }
-
-    void mark_used()			{ _used = true; }
-    void clear_used()			{ _used = false; }
-
-    unsigned short sport() const	{ return _mapto.sport(); } // n.b.o.
-    
-    void pat_insert_after(Mapping *);
-    void pat_unlink();
-    Mapping *pat_prev() const		{ return _pat_prev; }
-    Mapping *pat_next() const		{ return _pat_next; }
-
-    void apply(Packet *p);
-    
+  enum InputSpecName {
+    INPUT_SPEC_NOCHANGE, INPUT_SPEC_DROP, INPUT_SPEC_PATTERN, INPUT_SPEC_MAPPER
   };
-
-  class Pattern {
-    
-    // Pattern is <saddr/sport[-sport2]/daddr/dport>.
-    // It is associated with a IPRewriter output port.
-    // It can be applied to a specific IPFlowID (<saddr/sport/daddr/dport>)
-    // to obtain a new IPFlowID rewritten according to the Pattern.
-    // Any Pattern component can be '*', which means that the corresponding
-    // IPFlowID component is left unchanged. 
-    IPAddress _saddr;
-    int _sportl;		// host byte order
-    int _sporth;		// host byte order
-    IPAddress _daddr;
-    int _dport;			// host byte order
-
-    Mapping *_rover;		// walks along circular list ordered by port
-
-    unsigned short find_sport();
-
-   public:
-    
-    Pattern();
-
-    bool initialize(String &s);
-    void clear();
-    bool possible_conflict(const Pattern &) const;
-    bool definite_conflict(const Pattern &) const;
-
-    operator bool() const { return _saddr || _sporth || _daddr || _dport; }
-    
-    bool create_mapping(const IPFlowID &, int, int, Mapping *&, Mapping *&);
-    void mapping_freed(Mapping *);
-
-    String s() const;
-    operator String() const			{ return s(); }
-    
+  struct InputSpec {
+    int kind;
+    union {
+      int output;
+      Pattern *pattern;
+      IPMapper *mapper;
+    } u;
   };
-
-  Pattern *_patterns;
-  int _npatterns;
+  
+  Vector<InputSpec> _input_specs;
+  Vector<Pattern *> _patterns;
   HashMap<IPFlowID, Mapping *> _tcp_map;
   HashMap<IPFlowID, Mapping *> _udp_map;
 
   Timer _timer;
 
-  static const int _gc_interval_sec = 10;
+  static const int GC_INTERVAL_SEC = 10;
 
-  void install(int, Mapping *, Mapping *);
   void mark_live_tcp();
   void clean_one_map(HashMap<IPFlowID, Mapping *> &);
   void clean();
@@ -160,7 +90,6 @@ class IPRewriter : public Element {
   
   const char *class_name() const		{ return "IPRewriter"; }
   IPRewriter *clone() const			{ return new IPRewriter; }
-  void notify_ninputs(int);
   void notify_noutputs(int);
   const char *processing() const		{ return PUSH; }
   
@@ -170,18 +99,113 @@ class IPRewriter : public Element {
   void add_handlers();
   void run_scheduled();
   
-  int npatterns() const				{ return _npatterns; }
-  
-  Mapping *establish_mapping(Packet *, int, int output);
-  Mapping *establish_mapping(const IPFlowID2 &, const IPFlowID &, int output);
   Mapping *get_mapping(const IPFlowID2 &in) const;
+  void install(bool, Mapping *, Mapping *);
   
   void push(int, Packet *);
   
   String dump_table();
   String dump_patterns();
+
+  class Mapping {
+    
+    IPFlowID _mapto;
+    
+    unsigned short _ip_csum_incr;
+    unsigned short _udp_csum_incr;
+    
+    int _out;
+    Mapping *_reverse;
+    
+    bool _used;
+    bool _is_reverse;
+    
+    Pattern *_pat;
+    Mapping *_pat_prev;
+    Mapping *_pat_next;
+    
+    Mapping(const IPFlowID &, const IPFlowID &, Pattern *, int, bool);
+    
+   public:
+    
+    static bool make_pair(const IPFlowID &, const IPFlowID &, Pattern *,
+			  int, int, Mapping *&, Mapping *&);
+    
+    const IPFlowID &flow_id() const	{ return _mapto; }
+    Pattern *pattern() const		{ return _pat; }
+    int output() const 			{ return _out; }
+    bool is_reverse() const		{ return _is_reverse; }
+    Mapping *reverse() const		{ return _reverse; }
+    bool used() const			{ return _used; }
+    
+    void mark_used()			{ _used = true; }
+    void clear_used()			{ _used = false; }
+    
+    unsigned short sport() const	{ return _mapto.sport(); } // network
+    
+    void pat_insert_after(Mapping *);
+    void pat_unlink();
+    Mapping *pat_prev() const		{ return _pat_prev; }
+    Mapping *pat_next() const		{ return _pat_next; }
+    
+    void apply(Packet *p);
+    
+  };
+
+  class Pattern {
+    
+    // Pattern is <saddr/sport[-sport2]/daddr/dport>.
+    // It is associated with a IPRewriter output port.
+    // It can be applied to a specific IPFlowID (<saddr/sport/daddr/dport>)
+    // to obtain a new IPFlowID rewritten according to the Pattern.
+    // Any Pattern component can be '-', which means that the corresponding
+    // IPFlowID component is left unchanged. 
+    IPAddress _saddr;
+    int _sportl;			// host byte order
+    int _sporth;			// host byte order
+    IPAddress _daddr;
+    int _dport;				// host byte order
+
+    int _forward_output;
+    int _reverse_output;
+    
+    Mapping *_rover;		// walks along circular list ordered by port
+    
+    unsigned short find_sport();
+    
+   public:
+    
+    Pattern(const IPAddress &, int, int, const IPAddress &, int, int, int);
+    static Pattern *make(const String &, IPRewriter *, ErrorHandler *);
+    
+    bool possible_conflict(const Pattern &) const;
+    bool definite_conflict(const Pattern &) const;
+    
+    operator bool() const { return _saddr || _sporth || _daddr || _dport; }
+    
+    bool create_mapping(const IPFlowID &, Mapping *&, Mapping *&);
+    void mapping_freed(Mapping *);
+    
+    String s() const;
+    operator String() const			{ return s(); }
+    
+  };
+
+};
+
+
+class IPMapper {
+
+ public:
+
+  IPMapper()				{ }
+  virtual ~IPMapper()			{ }
+
+  void mapper_patterns(Vector<IPRewriter::Pattern *> &) const;
+  IPRewriter::Mapping *get_map(bool, const IPFlowID &, IPRewriter *);
   
 };
+
 
 inline IPRewriter::Mapping *
 IPRewriter::get_mapping(const IPFlowID2 &in) const

@@ -650,9 +650,10 @@ cp_ethernet_address(String str, EtherAddress &address, String *rest = 0)
 
 #ifndef CLICK_TOOL
 Element *
-cp_element(const String &name, const String &id, Router *router,
-	   ErrorHandler *errh)
+cp_element(const String &name, Element *owner, ErrorHandler *errh)
 {
+  String id = owner->id();
+  Router *router = owner->router();
   int i = id.length();
   const char *data = id.data();
   while (true) {
@@ -660,7 +661,7 @@ cp_element(const String &name, const String &id, Router *router,
       /* nothing */;
     if (i < 0)
       break;
-    String n = id.substring(0, i+1) + name;
+    String n = id.substring(0, i + 1) + name;
     Element *f = router->find(n, 0);
     if (f) return f;
   }
@@ -985,7 +986,7 @@ cp_va_parsev(Vector<String> &args,
        if (!lookup_name)
 	 v.v.element = 0;
        else
-	 v.v.element = cp_element(lookup_name, element->id(), element->router(), errh);
+	 v.v.element = cp_element(lookup_name, element, errh);
        break;
      }
 #endif
@@ -1020,7 +1021,7 @@ cp_va_parsev(Vector<String> &args,
     }
     
     const char *whoops = (too_few_args ? "few" : "many");
-    errh->error("too %s arguments to configuration `%s(%s)'", whoops,
+    errh->error("too %s arguments; expected `%s(%s)'", whoops,
 #ifndef CLICK_TOOL
 		String(element->class_name()).cc(),
 #else

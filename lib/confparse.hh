@@ -36,6 +36,7 @@ bool cp_ethernet_address(const String &, unsigned char *, String *rest = 0);
 class IPAddress; class EtherAddress;
 bool cp_ip_address(String, IPAddress &, String *rest = 0);
 bool cp_ethernet_address(String, EtherAddress &, String *rest = 0);
+Element *cp_element(const String &, Element *, ErrorHandler *);
 #endif
 
 #ifdef HAVE_IPSEC
