@@ -8,4 +8,5 @@
 #undef private
 #undef protected
 #undef public
+#undef namespace
 #endif

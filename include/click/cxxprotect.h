@@ -8,6 +8,7 @@
 #define private		xxx_private
 #define protected	xxx_protected
 #define public		xxx_public
+#define namespace	xxx_namespace
 #endif
 
 #ifndef CLICK_CXX_PROTECT
