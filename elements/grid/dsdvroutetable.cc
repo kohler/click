@@ -562,6 +562,28 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
   check_invariants();
 }
 
+#if SEQ_METRIC
+int
+DSDVRouteTable::count_seqs(const IPAddress &ip) 
+{
+  QVec<unsigned> *q = _seq_history.findp(ip);
+  if (!q)
+    return 0;
+  
+  RTEntry *r = _rtes.findp(ip);
+  if (!r)
+    return 0;
+
+  int num_seqs = 0;
+  unsigned first_seq = r->seq_no() - 2*MAX_SEQ_HISTORY;
+  // this is incorrect when the protocol starts up (seq_no < 2*MAX_SEQ_HISTORY)
+  for (int i = 0; i < q->size(); i++)
+    if (q->at(i) > first_seq)
+      num_seqs++;
+  return num_seqs;
+}
+#endif
+
 void
 DSDVRouteTable::init_metric(RTEntry &r)
 {
@@ -606,6 +628,14 @@ DSDVRouteTable::init_metric(RTEntry &r)
       r.metric = _bad_metric;
     break;
   }
+#if SEQ_METRIC
+  case MetricDSDVSeqs: {
+    r.metric = metric_t(r.num_hops());
+    if (count_seqs(r.dest_ip) < OLD_SEQS_NEEDED)
+      r.metric.val += 2;
+    break;
+  }
+#endif
   default:
     dsdv_assert(0);
   }
@@ -703,6 +733,13 @@ DSDVRouteTable::update_metric(RTEntry &r)
     r.metric.val /= 100;
     break;
 
+#if SEQ_METRIC
+  case MetricDSDVSeqs: {
+    r.metric.val += next_hop->metric.val;
+    break;
+  }
+#endif
+
   default:
     dsdv_assert(0);
   }
@@ -746,6 +783,9 @@ DSDVRouteTable::metric_val_lt(unsigned int v1, unsigned int v2)
   case MetricEstTxCount:             return v1 < v2; break; // + 25; break; // add 0.25 tx count fudge factor
   case MetricDeliveryRateProduct:    return v1 > v2; break;
   case MetricRevDeliveryRateProduct: return v1 > v2; break;
+#if SEQ_METRIC
+  case MetricDSDVSeqs:               return v1 < v2; break;
+#endif
   default: dsdv_assert(0);
   }
   return false;
@@ -863,6 +903,23 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
 
   if (new_r.good() && new_r.num_hops() >_max_hops)
     return; // ignore ``non-local'' routes
+
+#if SEQ_METRIC
+  // track last few sequence numbers we heard directly from this node
+  if (was_sender) {
+    dsdv_assert(new_r.good());
+    QVec<unsigned> *q = _seq_history.findp(new_r.dest_ip);
+    if (!q) {
+      _seq_history.insert(new_r.dest_ip, QVec<unsigned>());
+      q = _seq_history.findp(new_r.dest_ip);
+    }
+    // pretend sequence numbers will never wrap around
+    if (q->size() == 0 || new_r.seq_no() > q->back())
+      q->push_back(new_r.seq_no());
+    while (q->size() > MAX_SEQ_HISTORY)
+      q->pop_front();
+  }
+#endif
 
   if (was_sender)
     init_metric(new_r);
@@ -1211,6 +1268,9 @@ DSDVRouteTable::metric_type_to_string(MetricType t)
   case MetricEstTxCount:      return "est_tx_count"; break;
   case MetricDeliveryRateProduct:    return "delivery_rate_product"; break;
   case MetricRevDeliveryRateProduct: return "reverse_delivery_rate_product"; break;
+#if SEQ_METRIC
+  case MetricDSDVSeqs:       return "dsdv_seqs"; break;
+#endif
   default: 
     return "unknown_metric_type";
   }
@@ -1231,6 +1291,9 @@ DSDVRouteTable::check_metric_type(const String &s)
   else if (s2 == "est_tx_count")            return MetricEstTxCount;
   else if (s2 == "delivery_rate_product")   return MetricDeliveryRateProduct;
   else if (s2 == "reverse_delivery_rate_product")   return MetricRevDeliveryRateProduct;
+#if SEQ_METRIC
+  else if (s2 == "dsdv_seqs")               return MetricDSDVSeqs;
+#endif
   else return MetricUnknown;
 }
 

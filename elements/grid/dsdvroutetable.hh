@@ -7,6 +7,7 @@
 #include <elements/grid/gridgenericrt.hh>
 #include <click/timer.hh>
 #include <elements/grid/gridgenericlogger.hh>
+#include "qvec.hh"
 CLICK_DECLS
 
 /*
@@ -115,6 +116,10 @@ CLICK_DECLS
 // long as they have a better metric
 #define USE_GOOD_NEW_ROUTES 1
 
+#define SEQ_METRIC 1
+#define MAX_SEQ_HISTORY 3
+#define OLD_SEQS_NEEDED 2
+
 class GridGatewayInfo;
 class LinkStat;
 
@@ -146,6 +151,11 @@ public:
   
 
 private:
+
+#if SEQ_METRIC
+  BigHashMap<IPAddress, QVec<unsigned> > _seq_history;
+  int count_seqs(const IPAddress &);
+#endif
 
   struct metric_t {
     static const unsigned int bad_metric = 777777;    
@@ -438,11 +448,14 @@ private:
   bool est_reverse_delivery_rate(const IPAddress &, unsigned int &);
 
   enum MetricType {
-    MetricUnknown =                -1,
-    MetricHopCount =                0, // unsigned int hop count
-    MetricEstTxCount =              1, // unsigned int expected number of transmission, * 100
-    MetricDeliveryRateProduct =     2, // unsigned int product of fwd delivery rates, * 100
-    MetricRevDeliveryRateProduct =  3  // unsigned int product of rev delivery rates, * 100
+    MetricUnknown                = -1,
+    MetricHopCount               =  0, // unsigned int hop count
+    MetricEstTxCount             =  1, // unsigned int expected number of transmission, * 100
+    MetricDeliveryRateProduct    =  2, // unsigned int product of fwd delivery rates, * 100
+    MetricRevDeliveryRateProduct =  3, // unsigned int product of rev delivery rates, * 100
+#if SEQ_METRIC
+    MetricDSDVSeqs                = 4
+#endif
   };
 
   static String metric_type_to_string(MetricType t);
