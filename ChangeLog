@@ -1,3 +1,25 @@
+2001-03-15 Thursday 23:54  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ipsec/desp.cc, elements/ipsec/esp.cc,
+	include/click/sha1.h, include/click/sha1.hh, lib/sha1.c,
+	lib/sha1.cc, linuxmodule/Makefile.in: compile bug fix
+
+2001-03-15 Thursday 23:43  Benjie Chen <benjie@lcs.mit.edu>
+
+	* linuxmodule/Makefile.in: sha1 does not work for kernel yet
+
+2001-03-15 Thursday 23:30  Benjie Chen <benjie@lcs.mit.edu>
+
+	* linuxmodule/Makefile.in: add sha1.c to Makefile
+
+2001-03-15 Thursday 23:27  Benjie Chen <benjie@lcs.mit.edu>
+
+	* conf/ipsec-3des.click, conf/ipsec-des.click,
+	elements/ipsec/desp.cc, elements/ipsec/desp.hh,
+	elements/ipsec/esp.cc, elements/ipsec/esp.hh, include/click/sha1.h,
+	lib/sha1.c, userlevel/Makefile.in: ESP header in IPsec now can
+	optionally set SHA1 digest
+
 2001-03-15 Thursday 22:09  Benjie Chen <benjie@lcs.mit.edu>
 
 	* conf/: ipsec-3des.click, ipsec-des.click: IPsec DES examples
