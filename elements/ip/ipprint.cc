@@ -39,7 +39,6 @@ IPPrint::IPPrint()
   : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
-  _buf = 0;
 #if CLICK_USERLEVEL
   _outfile = 0;
 #endif
@@ -48,7 +47,6 @@ IPPrint::IPPrint()
 IPPrint::~IPPrint()
 {
   MOD_DEC_USE_COUNT;
-  delete[] _buf;
 }
 
 IPPrint *
@@ -67,6 +65,8 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
   bool print_id = false;
   bool print_time = false;
   bool print_paint = false;
+  bool print_tos = false;
+  bool print_ttl = false;
   
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
@@ -77,6 +77,8 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  "ID", cpBool, "print IP ID?", &print_id,
 		  "TIMESTAMP", cpBool, "print packet timestamps?", &print_time,
 		  "PAINT", cpBool, "print paint?", &print_paint,
+		  "TOS", cpBool, "print IP TOS?", &print_tos,
+		  "TTL", cpBool, "print IP TTL?", &print_ttl,
 		  "SWAP", cpBool, "swap ICMP values when printing?", &_swap,
 #if CLICK_USERLEVEL
 		  "OUTFILE", cpString, "output filename", &_outfilename,
@@ -97,15 +99,8 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
   _print_id = print_id;
   _print_timestamp = print_time;
   _print_paint = print_paint;
-  
-  delete[] _buf;
-  _buf = 0;
-
-  if (_contents) {
-    _buf = new char[3*_bytes+(_bytes/4+1)+3*(_bytes/24+1)+1];
-    if (!_buf)
-      return errh->error("out of memory");
-  }
+  _print_tos = print_tos;
+  _print_ttl = print_ttl;
   
   return 0;
 }
@@ -128,8 +123,6 @@ IPPrint::initialize(ErrorHandler *errh)
 void
 IPPrint::uninitialize()
 {
-  delete[] _buf;
-  _buf = 0;
 #if CLICK_USERLEVEL
   if (_outfile) {
     fclose(_outfile);
@@ -162,11 +155,14 @@ IPPrint::simple_action(Packet *p)
     sa << p->timestamp_anno() << ": ";
   
   if (_print_id)
-    sa << "id " << ntohs(iph->ip_id) << ": ";
-
+    sa << "id " << ntohs(iph->ip_id) << ' ';
   if (_print_paint)
-    sa << "paint " << (int)PAINT_ANNO(p) << ": ";
-  
+    sa << "paint " << (int)PAINT_ANNO(p) << ' ';
+  if (_print_ttl)
+    sa << "ttl " << (int)iph->ip_ttl << ' ';
+  if (_print_tos)
+    sa << "tos " << (int)iph->ip_tos << ' ';
+
   switch (iph->ip_p) {
     
   case IP_PROTO_TCP: {
@@ -235,31 +231,38 @@ IPPrint::simple_action(Packet *p)
 
   const unsigned char *data = p->data();
   if (_contents == 1) {
-    int pos = 0;  
-    for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
-      sprintf(_buf+pos, "%02x", data[i] & 0xff);
-      pos += 2;
-      if ((i % 24) == 23) {
-	_buf[pos++] = '\n'; _buf[pos++] = ' ';	_buf[pos++] = ' ';
-      } else if ((i % 4) == 3)
-	_buf[pos++] = ' ';
+    int amt = 3*_bytes + (_bytes/4+1) + 3*(_bytes/24+1) + 1;
+
+    sa << "\n  ";
+    char *buf = sa.reserve(amt);
+    char *orig_buf = buf;
+
+    if (buf && _contents == 1) {
+      for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
+	sprintf(buf, "%02x", data[i] & 0xff);
+	buf += 2;
+	if ((i % 24) == 23) {
+	  *buf++ = '\n'; *buf++ = ' '; *buf++ = ' ';
+	} else if ((i % 4) == 3)
+	  *buf++ = ' ';
+      }
+    } else if (buf && _contents == 2) {
+      for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
+	if (data[i] < 32 || data[i] > 126)
+	  *buf++ = '.';
+	else
+	  *buf++ = data[i];
+	if ((i % 48) == 47) {
+	  *buf++ = '\n'; *buf++ = ' '; *buf++ = ' ';
+	} else if ((i % 8) == 7)
+	  *buf++ = ' ';
+      }
     }
-    _buf[pos++] = '\0';
-    sa << "\n  " << _buf;
-  } else if (_contents == 2) {
-    int pos = 0;  
-    for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
-      if (data[i] < 32 || data[i] > 126)
-	_buf[pos++] = '.';
-      else
-	_buf[pos++] = data[i];
-      if ((i % 48) == 47) {
-	_buf[pos++] = '\n'; _buf[pos++] = ' ';	_buf[pos++] = ' ';
-      } else if ((i % 8) == 7)
-	_buf[pos++] = ' ';
+
+    if (orig_buf) {
+      assert(buf <= orig_buf + amt);
+      sa.forward(buf - orig_buf);
     }
-    _buf[pos++] = '\0';
-    sa << "\n  " << _buf;
   }
 
 #if CLICK_USERLEVEL

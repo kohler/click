@@ -40,6 +40,16 @@ dump. Default is 1500.
 Boolean. Determines whether to print each packet's IP ID field. Default is
 false.
 
+=item TTL
+
+Boolean. Determines whether to print each packet's IP TOS field. Default is
+false.
+
+=item TOS
+
+Boolean. Determines whether to print each packet's IP TOS field. Default is
+false.
+
 =item TIMESTAMP
 
 Boolean. Determines whether to print each packet's timestamp in seconds since
@@ -52,7 +62,7 @@ of ICMP sequence and ID numbers.  Default is false.  The RFC does not
 require these two-byte values to be sent in any particular byte order.
 For example, OpenBSD/i386 writes ping (ICMP echo) sequence numbers in
 network byte order, while Linux/i386 writes them in host byte order
-(little-endian).
+(often little-endian).
 
 =item OUTFILE
 
@@ -82,11 +92,12 @@ class IPPrint : public Element { public:
 
   bool _swap;
   String _label;
-  char *_buf;			// To hold hex dump message
   unsigned _bytes;		// Number of bytes to dump
   bool _print_id : 1;		// Print IP ID?
   bool _print_timestamp : 1;
   bool _print_paint : 1;
+  bool _print_tos : 1;
+  bool _print_ttl : 1;
   unsigned _contents : 2;	// Whether to dump packet contents
 
 #if CLICK_USERLEVEL
