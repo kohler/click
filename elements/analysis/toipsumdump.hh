@@ -55,6 +55,7 @@ contain those fields. Valid field names, with examples, are:
    ip_id        IP ID: '48759'
    ip_tos       IP type of service: '29'
    ip_ttl       IP time-to-live: '254'
+   ip_sum       IP checksum: '43812'
    ip_opt       IP options (see below)
    sport        TCP/UDP source port: '22'
    dport        TCP/UDP destination port: '2943'

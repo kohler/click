@@ -29,7 +29,7 @@
 CLICK_DECLS
 
 enum { T_IP_SRC, T_IP_DST, T_IP_TOS, T_IP_TTL, T_IP_FRAG, T_IP_FRAGOFF,
-       T_IP_ID, T_IP_PROTO, T_IP_OPT, T_IP_LEN, T_IP_CAPTURE_LEN,
+       T_IP_ID, T_IP_SUM, T_IP_PROTO, T_IP_OPT, T_IP_LEN, T_IP_CAPTURE_LEN,
        T_SPORT, T_DPORT, T_PAYLOAD_LEN, T_PAYLOAD };
 
 namespace IPSummaryDump {
@@ -132,6 +132,10 @@ static bool ip_extract(PacketDesc& d, int thunk)
       case T_IP_ID:
 	CHECK(6);
 	d.v = ntohs(d.iph->ip_id);
+	return true;
+      case T_IP_SUM:
+	CHECK(12);
+	d.v = ntohs(d.iph->ip_sum);
 	return true;
       case T_IP_PROTO:
 	CHECK(10);
@@ -495,6 +499,7 @@ void ip_register_unparsers()
     register_unparser("ip_frag", T_IP_FRAG | B_1, ip_prepare, ip_extract, ip_outa, outb);
     register_unparser("ip_fragoff", T_IP_FRAGOFF | B_2, ip_prepare, ip_extract, ip_outa, outb);
     register_unparser("ip_id", T_IP_ID | B_2, ip_prepare, ip_extract, num_outa, outb);
+    register_unparser("ip_sum", T_IP_SUM | B_2, ip_prepare, ip_extract, num_outa, outb);
     register_unparser("ip_proto", T_IP_PROTO | B_1, ip_prepare, ip_extract, ip_outa, outb);
     register_unparser("ip_len", T_IP_LEN | B_4, ip_prepare, ip_extract, num_outa, outb);
     register_unparser("ip_capture_len", T_IP_CAPTURE_LEN | B_4, ip_prepare, ip_extract, num_outa, outb);
