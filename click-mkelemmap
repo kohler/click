@@ -66,8 +66,8 @@ sub process_file ($) {
 
     my $first;
     $first = @cxx_name;
-    foreach $_ (split(m{^class(?=.*\{)}m, $text)) {
-	my($cxx_class) = (/^\s*(\w+)(\s|:\s).*\{/);
+    foreach $_ (split(m{^class(?=.*[\n\s]*\{)}m, $text)) {
+	my($cxx_class) = (/^\s*(\w+)(\s|:\s).*[\n\s]*\{/);
 	next if !$cxx_class;
 	push @cxx_name, $cxx_class;
 	push @source_file, $filename;
