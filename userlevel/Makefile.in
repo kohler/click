@@ -19,7 +19,7 @@ CC = @CC@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
-AR = @AR@
+AR_CREATE = @AR@ @AR_CREATEFLAGS@
 RANLIB = @RANLIB@
 INSTALL = @INSTALL@
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
@@ -87,7 +87,7 @@ click: Makefile libclick.a $(OBJS)
 	$(CXXLINK) -rdynamic $(OBJS) libclick.a $(LIBS)
 
 libclick.a: Makefile $(LIBOBJS)
-	$(AR) cru libclick.a $(LIBOBJS)
+	$(AR_CREATE) libclick.a $(LIBOBJS)
 	$(RANLIB) libclick.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status

@@ -18,11 +18,11 @@ VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)/tools/lib:$(top_srcdir)/lib
 
 CC = @CC@
 CXX = @CXX@
-AR = @AR@
+AR_CREATE = @AR@ @AR_CREATEFLAGS@
 RANLIB = @RANLIB@
 BUILD_CC = @BUILD_CC@
 BUILD_CXX = @BUILD_CXX@
-BUILD_AR = @BUILD_AR@
+BUILD_AR_CREATE = @BUILD_AR@ @AR_CREATEFLAGS@
 BUILD_RANLIB = @BUILD_RANLIB@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
@@ -34,22 +34,22 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 .c.o:
 	$(COMPILE) -c $<
-	@/bin/mv $*.d $*.hd
+	@-/bin/mv $*.d $*.hd
 .s.o:
 	$(COMPILE) -c $<
-	@/bin/mv $*.d $*.hd
+	@-/bin/mv $*.d $*.hd
 .S.o:
 	$(COMPILE) -c $<
-	@/bin/mv $*.d $*.hd
+	@-/bin/mv $*.d $*.hd
 .cc.o:
 	$(CXXCOMPILE) -c $<
-	@/bin/mv $*.d $*.hd
+	@-/bin/mv $*.d $*.hd
 .c.bo:
 	$(BUILD_COMPILE) -c $< -o $@
-	@sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
+	@-sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
 .cc.bo:
 	$(BUILD_CXXCOMPILE) -c $< -o $@
-	@sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
+	@-sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
 
 
 OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
@@ -86,10 +86,10 @@ all: libclicktool.a
 endif
 
 libclicktool.a: Makefile $(OBJS)
-	$(AR) cru libclicktool.a $(OBJS)
+	$(AR_CREATE) libclicktool.a $(OBJS)
 	$(RANLIB) libclicktool.a
 libclicktool_build.a: Makefile $(BUILDOBJS)
-	$(BUILD_AR) cru libclicktool_build.a $(BUILDOBJS)
+	$(BUILD_AR_CREATE) libclicktool_build.a $(BUILDOBJS)
 	$(BUILD_RANLIB) libclicktool_build.a
 
 Makefile: $(srcdir)/Makefile.in
