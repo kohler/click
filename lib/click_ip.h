@@ -7,8 +7,6 @@
  * based on a file from one of the BSDs
  */
 
-#define IPVERSION 4
-
 #ifndef __BYTE_ORDER
 #define __LITTLE_ENDIAN 1234
 #define __BYTE_ORDER __LITTLE_ENDIAN
@@ -17,11 +15,11 @@
 struct click_ip {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
   unsigned char ip_hl:4;		/* 0     header length */
-  unsigned char ip_v:4;			/*       & version */
+  unsigned char ip_v:4;			/*       version == 4 */
 #endif
 #if __BYTE_ORDER == __BIG_ENDIAN
-  unsigned char ip_v:4;			/* 0     version */
-  unsigned char ip_hl:4;		/*       & header length */
+  unsigned char ip_v:4;			/* 0     version == 4 */
+  unsigned char ip_hl:4;		/*       header length */
 #endif
   unsigned char ip_tos;			/* 1     type of service */
   unsigned short ip_len;		/* 2-3   total length */
