@@ -32,7 +32,7 @@ static LexerTInfo *stub_lexinfo = 0;
 LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
   : _data(0), _len(0), _pos(0), _lineno(1),
     _ignore_line_directives(ignore_line_directives),
-    _tpos(0), _tfull(0), _router(0), _compound_class(0),
+    _tpos(0), _tfull(0), _router(0),
     _errh(errh)
 {
   if (!_errh)
@@ -73,7 +73,6 @@ LexerT::clear()
   if (_router)
     delete _router;
   _router = new RouterT;
-  _compound_class = 0;
   
   _big_string = "";
   // _data was freed by _big_string
@@ -559,7 +558,7 @@ LexerT::make_element(String name, const Lexeme &location, int decl_pos2,
 	}
     }
     ElementT *e = _router->get_element(name, type, conf, lm ? lm : landmark());
-    _lexinfo->notify_element_declaration(e, _compound_class, location.pos1(), location.pos2(), (decl_pos2 < 0 ? location.pos2() : decl_pos2));
+    _lexinfo->notify_element_declaration(e, location.pos1(), location.pos2(), (decl_pos2 < 0 ? location.pos2() : decl_pos2));
     return e->idx();
 }
 
@@ -670,7 +669,7 @@ LexerT::yelement(int &element, bool comma_ok)
 		etype = force_element_type(tname);
 		element = make_anon_element(tname, tname.pos2(), etype, configuration.string(), lm);
 	    } else
-		_lexinfo->notify_element_reference(_router->element(element), _compound_class, tname.pos1(), tname.pos2());
+		_lexinfo->notify_element_reference(_router->element(element), tname.pos1(), tname.pos2());
 	}
     }
 
@@ -897,7 +896,6 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
 
     // '{' was already read
     RouterT *old_router = _router;
-    CompoundElementClassT *old_compound_class = _compound_class;
     int old_offset = _anonymous_offset;
     _compound_depth++;
     
@@ -921,18 +919,16 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
     int pos2;
     
     while (1) {
-	_router = new RouterT(old_router);
-	_router->get_element("input", ElementClassT::tunnel_type(), String(), landmark());
-	_router->get_element("output", ElementClassT::tunnel_type(), String(), landmark());
-	_compound_class = new CompoundElementClassT(name, landmark(), _router, created, _compound_depth);
+	CompoundElementClassT *compound_class = new CompoundElementClassT(name, created, _compound_depth, old_router, landmark());
+	_router = compound_class->cast_router();
 	_anonymous_offset = 2;
 
-	ycompound_arguments(_compound_class);
+	ycompound_arguments(compound_class);
 	while (ystatement(true))
 	    /* nada */;
 
-	_compound_class->finish(_errh);
-	created = _compound_class;
+	compound_class->finish(_errh);
+	created = compound_class;
 
 	// check for '||' or '}'
 	const Lexeme &t = lex();
@@ -945,7 +941,6 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
     _compound_depth--;
     _anonymous_offset = old_offset;
     _router = old_router;
-    _compound_class = old_compound_class;
     
     created->cast_compound()->check_duplicates_until(first, _errh);
     _lexinfo->notify_class_declaration(created, anonymous, decl_pos1, name_pos1, pos2);

@@ -28,14 +28,15 @@
 #include <click/variableenv.hh>
 #include <stdio.h>
 
-RouterT::RouterT(RouterT *enclosing)
-    : _use_count(0), _enclosing_scope(enclosing), _scope_cookie(0),
+RouterT::RouterT(ElementClassT *type = 0, RouterT *enclosing_scope = 0)
+    : _use_count(0), _enclosing_type(type),
+      _enclosing_scope(enclosing_scope), _scope_cookie(0),
       _etype_map(-1), _element_name_map(-1),
       _free_element(0), _real_ecount(0), _new_eindex_collector(0),
       _free_conn(-1), _archive_map(-1)
 {
     // borrow definitions from `enclosing'
-    if (enclosing) {
+    if (_enclosing_scope) {
 	_enclosing_scope_cookie = _enclosing_scope->_scope_cookie;
 	_enclosing_scope->_scope_cookie++;
 	_enclosing_scope->use();

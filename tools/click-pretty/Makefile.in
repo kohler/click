@@ -41,7 +41,7 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-OBJS = click-pretty.o
+OBJS = click-pretty.o html.o
 
 CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_TOOL
 CFLAGS = @CFLAGS@

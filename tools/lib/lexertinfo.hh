@@ -19,11 +19,9 @@ class LexerTInfo { public:
     virtual void notify_class_extension(ElementClassT *, int pos1, int pos2);
     virtual void notify_class_reference(ElementClassT *, int pos1, int pos2);
     virtual void notify_element_declaration(
-		ElementT *e,
-		ElementClassT *owner, int pos1, int name_pos2, int decl_pos2);
+		ElementT *e, int pos1, int name_pos2, int decl_pos2);
     virtual void notify_element_reference(
-		ElementT *e,
-		ElementClassT *owner, int pos1, int pos2);
+		ElementT *e, int pos1, int pos2);
   
 };
 

@@ -258,21 +258,26 @@ SynonymElementClassT::cast_router()
     return _eclass->cast_router();
 }
 
+CompoundElementClassT::CompoundElementClassT
+	(const String &name, ElementClassT *next, int depth,
+	 RouterT *enclosing_router, const String &landmark)
+    : ElementClassT(name), _landmark(landmark), _depth(depth),
+      _ninputs(0), _noutputs(0), _next(next),
+      _circularity_flag(false)
+{
+    _router = new RouterT(this, enclosing_router);
+    _router->get_element("input", ElementClassT::tunnel_type(), String(), landmark);
+    _router->get_element("output", ElementClassT::tunnel_type(), String(), landmark);
+    _router->use();
+    if (_next)
+	_next->use();
+}
+
 CompoundElementClassT::CompoundElementClassT(const String &name, RouterT *r)
     : ElementClassT(name), _router(r), _depth(0), _ninputs(0), _noutputs(0),
       _next(0), _circularity_flag(false)
 {
     _router->use();
-}
-
-CompoundElementClassT::CompoundElementClassT(const String &name, const String &landmark, RouterT *r, ElementClassT *next, int depth)
-    : ElementClassT(name), _landmark(landmark), _router(r), _depth(depth),
-      _ninputs(0), _noutputs(0), _next(next),
-      _circularity_flag(false)
-{
-    _router->use();
-    if (_next)
-	_next->use();
 }
 
 CompoundElementClassT::~CompoundElementClassT()

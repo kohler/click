@@ -13,6 +13,7 @@ struct ElementT {
 
     RouterT *router() const		{ return _owner; }
     int idx() const			{ return _idx; }
+    ElementClassT *enclosing_type() const;
     
     bool live() const			{ return _type; }
     bool dead() const			{ return !_type; }

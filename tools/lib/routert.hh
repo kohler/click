@@ -14,12 +14,14 @@ class RouterT { public:
     class const_iterator;
     class type_iterator;
 
-    RouterT(RouterT * = 0);
+    RouterT(ElementClassT * = 0, RouterT * = 0);
     virtual ~RouterT();
 
     void use()				{ _use_count++; }
     void unuse()			{ if (--_use_count <= 0) delete this; }
-  
+
+    ElementClassT *enclosing_type() const { return _enclosing_type; }
+
     void check() const;
     bool is_flat() const;
 
@@ -122,8 +124,6 @@ class RouterT { public:
     void unparse_connections(StringAccum &, const String & = String()) const;
     String configuration_string() const;
 
-    RouterT *cast_router()		{ return this; }
-
   private:
   
     struct Pair {
@@ -143,6 +143,7 @@ class RouterT { public:
     };
 
     int _use_count;
+    ElementClassT *_enclosing_type;
 
     RouterT *_enclosing_scope;
     int _enclosing_scope_cookie;
@@ -316,6 +317,12 @@ inline const ArchiveElement &
 RouterT::archive(const String &name) const
 {
     return _archive[_archive_map[name]];
+}
+
+inline ElementClassT *
+ElementT::enclosing_type() const
+{
+    return (_owner ? _owner->enclosing_type() : 0);
 }
 
 #endif

@@ -102,8 +102,8 @@ class SynonymElementClassT : public ElementClassT { public:
 
 class CompoundElementClassT : public ElementClassT { public:
 
+    CompoundElementClassT(const String &name, ElementClassT *next_class, int depth, RouterT *enclosing_scope, const String &landmark);
     CompoundElementClassT(const String &name, RouterT *);
-    CompoundElementClassT(const String &name, const String &landmark, RouterT *, ElementClassT *, int depth);
     ~CompoundElementClassT();
 
     int nformals() const		{ return _formals.size(); }
