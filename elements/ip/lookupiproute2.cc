@@ -39,6 +39,19 @@ LookupIPRoute2::clone() const
 void
 LookupIPRoute2::push(int, Packet *p)
 {
+  unsigned gw = 0;
+  int index = 0;
+
+  IPAddress a = p->dst_ip_anno();
+
+  add_route_handler("2.1.0.0 255.255.0.0 123.200.123.200", this, (void *)0, (ErrorHandler *)0);
+  add_route_handler("2.0.0.0 255.255.0.0 123.200.123.200", this, (void *)0, (ErrorHandler *)0);
+  add_route_handler("1.0.0.0 255.255.0.0 231.100.231.100", this, (void *)0, (ErrorHandler *)0);
+  click_chatter("Looking up for %x", ntohl(a));
+
+  _t.lookup(a, gw, index);
+
+  click_chatter("Gateway for %x is %x", ntohl(a), ntohl(gw));
   output(0).push(p);
 }
 
@@ -59,11 +72,9 @@ LookupIPRoute2::add_route_handler(const String &conf, Element *e, void *, ErrorH
         cp_ip_address(arg, (unsigned char *)&mask, &arg) &&
 	cp_eat_space(arg) &&
         cp_ip_address(arg, (unsigned char *)&gw, &arg) &&
-	cp_eat_space(arg)) {
-      if(!me->_t.exists(dst, mask, gw)) {
-        me->_t.add(dst, mask, gw);
-      }
-    } else {
+	cp_eat_space(arg))
+      me->_t.add(dst, mask, gw);
+    else {
       errh->error("expects DST MASK GW");
       return -1;
     }
