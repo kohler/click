@@ -193,7 +193,6 @@ ICMPError::simple_action(Packet *p)
   if (xlen > hlen + 8)
     xlen = hlen + 8;
 
-  click_chatter("icmp error: making icp error packet");
   q = Packet::make(sizeof(click_ip) + sizeof(struct icmp_generic) + xlen);
   // guaranteed that packet data is aligned
   memset(q->data(), '\0', q->length());
