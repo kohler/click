@@ -32,7 +32,7 @@ EtherSwitch::EtherSwitch()
 EtherSwitch::~EtherSwitch()
 {
   MOD_DEC_USE_COUNT;
-  for (Table::Iterator iter = _table.first(); iter; iter++)
+  for (Table::iterator iter = _table.begin(); iter; iter++)
     delete iter.value();
   _table.clear();
 }
@@ -121,7 +121,7 @@ String
 EtherSwitch::read_table(Element* f, void *) {
   EtherSwitch* sw = (EtherSwitch*)f;
   String s;
-  for (Table::Iterator iter = sw->_table.first(); iter; iter++)
+  for (Table::iterator iter = sw->_table.begin(); iter; iter++)
     s += iter.key().s() + " " + String(iter.value()->port) + "\n";
   return s;
 }

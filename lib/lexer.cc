@@ -868,7 +868,7 @@ Lexer::remove_element_type(int removed)
 void
 Lexer::element_type_names(Vector<String> &v) const
 {
-  for (HashMap<String, int>::Iterator i = _element_type_map.first(); i; i++)
+  for (HashMap<String, int>::iterator i = _element_type_map.begin(); i; i++)
     if (i.value() >= 0 && i.key() != "<tunnel>")
       v.push_back(i.key());
 }

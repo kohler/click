@@ -286,7 +286,7 @@ LinkTracker::read_stats(Element *xf, void *)
 
   char timebuf[80];
   String s;
-  for (BigHashMap<IPAddress, LinkTracker::stat_t>::Iterator i = f->_stats.first(); i; i++) {
+  for (BigHashMap<IPAddress, LinkTracker::stat_t>::iterator i = f->_stats.begin(); i; i++) {
     snprintf(timebuf, 80, " %lu.%06lu", i.value().last_update.tv_sec, i.value().last_update.tv_usec);
     s += i.key().s() 
       + String(timebuf)
@@ -303,7 +303,7 @@ LinkTracker::read_bcast_stats(Element *xf, void *)
 
   char timebuf[80];
   String s;
-  for (BigHashMap<IPAddress, LinkTracker::bcast_t>::Iterator i = f->_bcast_stats.first(); i; i++) {
+  for (BigHashMap<IPAddress, LinkTracker::bcast_t>::iterator i = f->_bcast_stats.begin(); i; i++) {
     snprintf(timebuf, 80, " %lu.%06lu", i.value().last_update.tv_sec, i.value().last_update.tv_usec);
     s += i.key().s() 
       + String(timebuf)

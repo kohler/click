@@ -176,7 +176,7 @@ LinkStat::read_stats(Element *xf, void *)
 
   String s;
 
-  for (BigHashMap<EtherAddress, LinkStat::stat_t>::Iterator i = f->_stats.first(); i; i++) {
+  for (BigHashMap<EtherAddress, LinkStat::stat_t>::iterator i = f->_stats.begin(); i; i++) {
     char timebuf[80];
     snprintf(timebuf, 80, " %lu.%06lu", i.value().when.tv_sec, i.value().when.tv_usec);
     s += i.key().s() + String(timebuf) + " sig: " + String(i.value().sig) + ", qual: " + String(i.value().qual) + "\n";
@@ -195,7 +195,7 @@ LinkStat::read_bcast_stats(Element *xf, void *)
   //  click_chatter("LS read_stats XXXX 1");
 
   String s;
-  for (BigHashMap<EtherAddress, Vector<LinkStat::bcast_t> >::Iterator i = f->_bcast_stats.first(); i; i++) {
+  for (BigHashMap<EtherAddress, Vector<LinkStat::bcast_t> >::iterator i = f->_bcast_stats.begin(); i; i++) {
     e_vec.push_back(i.key());
     num++;
   }

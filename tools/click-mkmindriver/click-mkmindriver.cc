@@ -125,7 +125,7 @@ handle_router(String filename_in, const ElementMap &default_map, ErrorHandler *e
 
   HashMap<String, int> primitives(-1);
   router->collect_primitive_classes(primitives);
-  for (HashMap<String, int>::Iterator i = primitives.first(); i; i++) {
+  for (HashMap<String, int>::iterator i = primitives.begin(); i; i++) {
     if (!emap.has_traits(i.key()))
       missing_sa << (nmissing++ ? ", " : "") << i.key();
     else if (emap.package(i.key()))
@@ -191,7 +191,7 @@ print_elements_conf(FILE *f, String package, const ElementMap &emap,
 		    HashMap<String, int> &source_files)
 {
   Vector<String> sourcevec;
-  for (HashMap<String, int>::Iterator iter = source_files.first();
+  for (HashMap<String, int>::iterator iter = source_files.begin();
        iter;
        iter++) {
     iter.value() = sourcevec.size();
@@ -438,7 +438,7 @@ particular purpose.\n");
   add_stuff(0, default_emap, provisions, requirements, source_files);
   
   // process initial requirements and provisions
-  for (HashMap<String, int>::Iterator iter = initial_requirements.first();
+  for (HashMap<String, int>::iterator iter = initial_requirements.begin();
        iter;
        iter++) {
     int emapi = default_emap.traits_index(iter.key());

@@ -373,7 +373,7 @@ particular purpose.\n");
   {
     for (int i = 0; i < instruction_files.size(); i++)
       parse_instruction_file(instruction_files[i], sigs, errh);
-    for (StringMap::Iterator iter = specializing.first(); iter; iter++)
+    for (StringMap::iterator iter = specializing.begin(); iter; iter++)
       sigs.specialize_class(iter.key(), iter.value());
   }
 

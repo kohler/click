@@ -98,7 +98,7 @@ AddressTranslator::clean_map(Map6 &table, bool major_map)
 {
  
   Mapping *to_free=0;
-  for (Map6::Iterator iter = table.first(); iter; iter++) {
+  for (Map6::iterator iter = table.begin(); iter; iter++) {
     Mapping *m = iter.value();
     m->set_free_next(to_free);
     to_free = m;

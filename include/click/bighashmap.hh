@@ -46,8 +46,8 @@ class BigHashMap { public:
   // iteration
   typedef _BigHashMap_const_iterator<K, V> const_iterator;
   typedef _BigHashMap_iterator<K, V> iterator;
-  const_iterator first() const;
-  iterator first();
+  const_iterator begin() const;
+  iterator begin();
   
   typedef iterator Iterator;
 
@@ -121,14 +121,14 @@ class _BigHashMap_iterator : public _BigHashMap_const_iterator<K, V> { public:
 
 template <class K, class V>
 inline typename BigHashMap<K, V>::const_iterator
-BigHashMap<K, V>::first() const
+BigHashMap<K, V>::begin() const
 {
   return const_iterator(this);
 }
 
 template <class K, class V>
 inline typename BigHashMap<K, V>::iterator
-BigHashMap<K, V>::first()
+BigHashMap<K, V>::begin()
 {
   return iterator(this);
 }
@@ -194,8 +194,8 @@ class BigHashMap<K, void *> { public:
   typedef _BigHashMap_const_iterator<K, void *> const_iterator;
   typedef _BigHashMap_iterator<K, void *> iterator;
 
-  const_iterator first() const;
-  iterator first();
+  const_iterator begin() const;
+  iterator begin();
 
   typedef iterator Iterator;
   
@@ -271,14 +271,14 @@ class _BigHashMap_iterator<K, void *> : public _BigHashMap_const_iterator<K, voi
 
 template <class K>
 inline typename BigHashMap<K, void *>::const_iterator
-BigHashMap<K, void *>::first() const
+BigHashMap<K, void *>::begin() const
 {
   return const_iterator(this);
 }
 
 template <class K>
 inline typename BigHashMap<K, void *>::iterator
-BigHashMap<K, void *>::first()
+BigHashMap<K, void *>::begin()
 {
   return iterator(this);
 }
@@ -345,8 +345,8 @@ class BigHashMap<K, T *> : public BigHashMap<K, void *> { public:
   typedef _BigHashMap_const_iterator<K, T *> const_iterator;
   typedef _BigHashMap_iterator<K, T *> iterator;
   
-  const_iterator first() const;
-  iterator first();
+  const_iterator begin() const;
+  iterator begin();
 
   typedef iterator Iterator;
 
@@ -388,14 +388,14 @@ class _BigHashMap_iterator<K, T *> : public _BigHashMap_const_iterator<K, T *> {
 
 template <class K, class T>
 inline typename BigHashMap<K, T *>::const_iterator
-BigHashMap<K, T *>::first() const
+BigHashMap<K, T *>::begin() const
 {
   return const_iterator(this);
 }
 
 template <class K, class T>
 inline typename BigHashMap<K, T *>::iterator
-BigHashMap<K, T *>::first()
+BigHashMap<K, T *>::begin()
 {
   return iterator(this);
 }

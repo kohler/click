@@ -421,7 +421,7 @@ IPRewriter::dump_mappings_handler(Element *e, void *thunk)
   rw->_spinlock.acquire();
 #endif
   StringAccum sa;
-  for (Map::Iterator iter = map->first(); iter; iter++) {
+  for (Map::iterator iter = map->begin(); iter; iter++) {
     Mapping *m = iter.value();
     if (m->is_primary())
       sa << m->s() << "\n";

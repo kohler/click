@@ -260,7 +260,7 @@ private:
   void schedule_triggered_update(const IPAddress &ip, unsigned int when); // when is in jiffies
   
   typedef BigHashMap<IPAddress, Timer *> TMap;
-  typedef TMap::Iterator TMIter;
+  typedef TMap::iterator TMIter;
 
   struct HookPair {
     DSDVRouteTable *obj;
@@ -271,7 +271,7 @@ private:
   };
 
   typedef BigHashMap<IPAddress, HookPair *> HMap;
-  typedef HMap::Iterator HMIter;
+  typedef HMap::iterator HMIter;
 
   // Expire timer map invariants: every good route (r.good() is true)
   // has a running timer in _expire_timers.  No broken routes have a

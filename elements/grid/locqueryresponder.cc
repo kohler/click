@@ -72,9 +72,9 @@ LocQueryResponder::expire_hook(Timer *, void *thunk)
   unsigned int jiff = click_jiffies();
 
   // flush old ``last query heard''
-  typedef seq_map::Iterator smi_t;
+  typedef seq_map::iterator smi_t;
   Vector<IPAddress> old_seqs;
-  for (smi_t i = resp->_query_seqs.first(); i; i++) 
+  for (smi_t i = resp->_query_seqs.begin(); i; i++) 
     if (jiff - i.value().last_jiffies > resp->_timeout_jiffies)
       old_seqs.push_back(i.key());
 

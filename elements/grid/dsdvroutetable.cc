@@ -51,7 +51,7 @@ DSDVRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry)
 void
 DSDVRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 {
-  for (RTIter iter = _rtes.first(); iter; iter++) {
+  for (RTIter iter = _rtes.begin(); iter; iter++) {
     const RTEntry &rte = iter.value();
     vec.push_back(rte);
   }
@@ -77,19 +77,19 @@ DSDVRouteTable::~DSDVRouteTable()
 {
   MOD_DEC_USE_COUNT;
 
-  for (TMIter i = _expire_timers.first(); i; i++) {
+  for (TMIter i = _expire_timers.begin(); i; i++) {
     if (i.value()->scheduled())
       i.value()->unschedule();
     delete i.value();
   }
-  for (TMIter i = _trigger_timers.first(); i; i++) {
+  for (TMIter i = _trigger_timers.begin(); i; i++) {
     if (i.value()->scheduled())
       i.value()->unschedule();
     delete i.value();
   }
-  for (HMIter i = _expire_hooks.first(); i; i++) 
+  for (HMIter i = _expire_hooks.begin(); i; i++) 
     delete i.value();
-  for (HMIter i = _trigger_hooks.first(); i; i++) 
+  for (HMIter i = _trigger_hooks.begin(); i; i++) 
     delete i.value();
 }
 
@@ -175,7 +175,7 @@ DSDVRouteTable::initialize(ErrorHandler *)
 bool
 DSDVRouteTable::current_gateway(RouteEntry &entry)
 {
-  for (RTIter i = _rtes.first(); i; i++) {
+  for (RTIter i = _rtes.begin(); i; i++) {
     if (i.value().is_gateway) {
       entry = i.value();
       return true;
@@ -326,7 +326,7 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
   // n1 is not its own next hop.
   if (r->num_hops() == 1) {
     dsdv_assert(r->next_hop_ip == r->dest_ip);
-    for (RTIter i = _rtes.first(); i; i++) {
+    for (RTIter i = _rtes.begin(); i; i++) {
       RTEntry r = i.value();
       if (r.dest_ip == ip)
 	continue; // don't expire this dest twice!
@@ -437,7 +437,7 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
     // it's too early to send this update, so cancel all oustanding
     // triggered updates that would also be too early
     Vector<IPAddress> remove_list;
-    for (TMIter i = _trigger_timers.first(); i; i++) {
+    for (TMIter i = _trigger_timers.begin(); i; i++) {
       if (i.key() == ip)
 	continue; // don't touch this timer, we'll reschedule it
 
@@ -646,7 +646,7 @@ DSDVRouteTable::send_full_update()
   unsigned int jiff = dsdv_jiffies();
   Vector<RTEntry> routes;
   
-  for (RTIter i = _rtes.first(); i; i++) {
+  for (RTIter i = _rtes.begin(); i; i++) {
     const RTEntry &r = i.value();
     if (r.advertise_ok_jiffies <= jiff)
       routes.push_back(r);
@@ -691,7 +691,7 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
   unsigned int jiff = dsdv_jiffies();
 
   Vector<RTEntry> triggered_routes;
-  for (RTIter i = _rtes.first(); i; i++) {
+  for (RTIter i = _rtes.begin(); i; i++) {
     const RTEntry &r = i.value();
     
     if ((r.need_seq_ad || r.need_metric_ad) && 
@@ -946,7 +946,7 @@ DSDVRouteTable::print_rtes_v(Element *e, void *)
   unsigned int jiff = dsdv_jiffies();
 
   String s;
-  for (RTIter i = n->_rtes.first(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i; i++) {
     const RTEntry &f = i.value();
     s += f.dest_ip.s() 
       + " next=" + f.next_hop_ip.s() 
@@ -978,7 +978,7 @@ DSDVRouteTable::print_rtes(Element *e, void *)
   DSDVRouteTable *n = (DSDVRouteTable *) e;
 
   String s;
-  for (RTIter i = n->_rtes.first(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i; i++) {
     const RTEntry &f = i.value();
     s += f.dest_ip.s() 
       + " next=" + f.next_hop_ip.s() 
@@ -998,7 +998,7 @@ DSDVRouteTable::print_nbrs_v(Element *e, void *)
   DSDVRouteTable *n = (DSDVRouteTable *) e;
   
   String s;
-  for (RTIter i = n->_rtes.first(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i; i++) {
     // only print immediate neighbors 
     if (!i.value().dest_eth) 
       continue;
@@ -1021,7 +1021,7 @@ DSDVRouteTable::print_nbrs(Element *e, void *)
   DSDVRouteTable *n = (DSDVRouteTable *) e;
   
   String s;
-  for (RTIter i = n->_rtes.first(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i; i++) {
     // only print immediate neighbors 
     if (!i.value().dest_eth)
       continue;
@@ -1090,7 +1090,7 @@ DSDVRouteTable::write_metric_type(const String &arg, Element *el,
   if (type != rt->_metric_type) {
     /* get rid of old metric values */
     Vector<IPAddress> entries;
-    for (RTIter i = rt->_rtes.first(); i; i++) {
+    for (RTIter i = rt->_rtes.begin(); i; i++) {
       /* skanky, but there's no reason for this to be quick.  i guess
          the BigHashMap doesn't let you change its values. */
       entries.push_back(i.key());
@@ -1162,7 +1162,7 @@ DSDVRouteTable::print_dump(Element *e, void *)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) e;
   StringAccum sa;
-  for (RTIter i = rt->_rtes.first(); i; i++) {
+  for (RTIter i = rt->_rtes.begin(); i; i++) {
     sa << i.value().dump() << "\n";
   }
 
@@ -1176,7 +1176,7 @@ DSDVRouteTable::print_links(Element *e, void *)
   
   String s = "Metric type: " + metric_type_to_string(rt->_metric_type) + "\n";
 
-  for (RTIter i = rt->_rtes.first(); i; i++) {
+  for (RTIter i = rt->_rtes.begin(); i; i++) {
     const RTEntry &r = i.value();
     if (!r.dest_eth)
       continue;
@@ -1441,7 +1441,7 @@ DSDVRouteTable::RTEntry::dump() const
 void
 DSDVRouteTable::check_invariants(const IPAddress *ignore) const
 {
-  for (RTIter i = _rtes.first(); i; i++) {
+  for (RTIter i = _rtes.begin(); i; i++) {
     const RTEntry &r = i.value();
 
     r.check();
@@ -1491,7 +1491,7 @@ DSDVRouteTable::dsdv_assert_(const char *file, int line, const char *expr) const
   click_chatter("DSDVRouteTable assertion \"%s\" failed: file %s, line %d",
 		expr, file, line);
   click_chatter("Routing table state:");
-  for (RTIter i = _rtes.first(); i; i++) {
+  for (RTIter i = _rtes.begin(); i; i++) {
     click_chatter("%s\n", i.value().dump().cc());
   }
   

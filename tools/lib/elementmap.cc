@@ -277,7 +277,7 @@ ElementMap::collect_indexes(const RouterT *router, Vector<int> &indexes,
     indexes.clear();
     HashMap<String, int> primitives(-1);
     router->collect_primitive_classes(primitives);
-    for (HashMap<String, int>::Iterator i = primitives.first(); i; i++)
+    for (HashMap<String, int>::iterator i = primitives.begin(); i; i++)
 	if (i.value() > 0) {
 	    int t = _name_map[i.key()];
 	    if (t > 0)

@@ -72,7 +72,7 @@ table_read_handler(Element *f, void *)
   String res("");
   const int BUFSZ = 255;
   char buf[BUFSZ];
-  for (LocationTable::Table::Iterator iter = l->_locs.first(); iter; iter++) {
+  for (LocationTable::Table::iterator iter = l->_locs.begin(); iter; iter++) {
     const LocationTable::entry &ent = iter.value();
     int r = snprintf(buf, BUFSZ, "%s loc=%s err=%d\n", iter.key().s().cc(), ent.loc.s().cc(), ent.err);
     if (r < 0) {

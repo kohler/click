@@ -401,7 +401,7 @@ match_config(const String &pat, const String &conf,
   }
 
   // insert my defs into defs
-  for (HashMap<String, String>::Iterator iter = my_defs.first(); iter; iter++)
+  for (HashMap<String, String>::iterator iter = my_defs.begin(); iter; iter++)
     defs.insert(iter.key(), iter.value());
   
   return true;

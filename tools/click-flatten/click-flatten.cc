@@ -195,7 +195,7 @@ particular purpose.\n");
      HashMap<String, int> m(-1);
      router->collect_primitive_classes(m);
      Vector<String> classes;
-     for (HashMap<String, int>::Iterator iter = m.first(); iter; iter++)
+     for (HashMap<String, int>::iterator iter = m.begin(); iter; iter++)
        classes.push_back(iter.key());
      output_sorted_one_per_line(classes, out);
      break;

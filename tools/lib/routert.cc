@@ -64,7 +64,7 @@ RouterT::check() const
 
     // check element type names
     int nt_found = 0;
-    for (StringMap::Iterator iter = _etype_map.first(); iter; iter++) {
+    for (StringMap::iterator iter = _etype_map.begin(); iter; iter++) {
 	int sc = _scope_cookie;
 	for (int i = iter.value(); i >= 0; i = _etypes[i].prev_name) {
 	    assert(_etypes[i].name() == iter.key());
@@ -77,7 +77,7 @@ RouterT::check() const
     assert(nt_found == nt);
 
     // check element names
-    for (StringMap::Iterator iter = _element_name_map.first(); iter; iter++) {
+    for (StringMap::iterator iter = _element_name_map.begin(); iter; iter++) {
 	String key = iter.key();
 	int value = iter.value();
 	if (value >= 0)
@@ -268,7 +268,7 @@ RouterT::collect_primitive_classes(HashMap<String, int> &m) const
 void
 RouterT::collect_active_types(Vector<ElementClassT *> &v) const
 {
-    for (StringMap::Iterator iter = _etype_map.first(); iter; iter++)
+    for (StringMap::iterator iter = _etype_map.begin(); iter; iter++)
 	v.push_back(_etypes[iter.value()].eclass);
 }
 

@@ -49,7 +49,7 @@ GridRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry)
 void
 GridRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 {
-  for (RTIter iter = _rtes.first(); iter; iter++) {
+  for (RTIter iter = _rtes.begin(); iter; iter++) {
     const RTEntry &rte = iter.value();
     vec.push_back(RouteEntry(rte.dest_ip, rte.loc_good, rte.loc_err, rte.loc, 
 			     rte.next_hop_eth, rte.next_hop_ip, 0, // ignore interface info
@@ -97,7 +97,7 @@ void
 GridRouteTable::log_route_table ()
 {
   char str[80];
-  for (RTIter i = _rtes.first(); i; i++) {
+  for (RTIter i = _rtes.begin(); i; i++) {
     const RTEntry &f = i.value();
 
     snprintf(str, sizeof(str), 
@@ -187,7 +187,7 @@ GridRouteTable::initialize(ErrorHandler *)
 bool
 GridRouteTable::current_gateway(RouteEntry &entry)
 {
-  for (RTIter i = _rtes.first(); i; i++) {
+  for (RTIter i = _rtes.begin(); i; i++) {
     const RTEntry &f = i.value();
 
     if (f.is_gateway) {
@@ -870,7 +870,7 @@ GridRouteTable::simple_action(Packet *packet)
 #if NEXT_HOP_ETH_FIXUP
 	/* fix up route entries for which this dest had been the next hop */
 	Vector<RTEntry> changed_next_hop;
-	for (RTIter i = _rtes.first(); i; i++) {
+	for (RTIter i = _rtes.begin(); i; i++) {
 	  if (i.value().next_hop_ip == route.dest_ip) {
 	    RTEntry r = i.value();
 	    /* some skoochy stuff here, this will make it very hard to keep track of things... */
@@ -924,7 +924,7 @@ GridRouteTable::print_rtes_v(Element *e, void *)
   GridRouteTable *n = (GridRouteTable *) e;
 
   String s;
-  for (RTIter i = n->_rtes.first(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i; i++) {
     const RTEntry &f = i.value();
     s += f.dest_ip.s() 
       + " next=" + f.next_hop_ip.s() 
@@ -947,7 +947,7 @@ GridRouteTable::print_rtes(Element *e, void *)
   GridRouteTable *n = (GridRouteTable *) e;
 
   String s;
-  for (RTIter i = n->_rtes.first(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i; i++) {
     const RTEntry &f = i.value();
     s += f.dest_ip.s() 
       + " next=" + f.next_hop_ip.s() 
@@ -968,7 +968,7 @@ GridRouteTable::print_nbrs_v(Element *e, void *)
   GridRouteTable *n = (GridRouteTable *) e;
   
   String s;
-  for (RTIter i = n->_rtes.first(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i; i++) {
     /* only print immediate neighbors */
     if (i.value().num_hops() != 1)
       continue;
@@ -990,7 +990,7 @@ GridRouteTable::print_nbrs(Element *e, void *)
   GridRouteTable *n = (GridRouteTable *) e;
   
   String s;
-  for (RTIter i = n->_rtes.first(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i; i++) {
     /* only print immediate neighbors */
     if (i.value().num_hops() != 1)
       continue;
@@ -1093,7 +1093,7 @@ GridRouteTable::write_metric_type(const String &arg, Element *el,
     /* make sure we don't try to use the old metric for a route */
     
     Vector<RTEntry> entries;
-    for (RTIter i = rt->_rtes.first(); i; i++) {
+    for (RTIter i = rt->_rtes.begin(); i; i++) {
       /* skanky, but there's no reason for this to be quick.  i guess
          the BigHashMap doesn't let you change its values. */
       RTEntry e = i.value();
@@ -1205,7 +1205,7 @@ GridRouteTable::print_links(Element *e, void *)
   
   String s = "Metric type: " + metric_type_to_string(rt->_metric_type) + "\n";
 
-  for (RTIter i = rt->_rtes.first(); i; i++) {
+  for (RTIter i = rt->_rtes.begin(); i; i++) {
     const RTEntry &r = i.value();
     if (r.num_hops() > 1)
       continue;
@@ -1318,7 +1318,7 @@ GridRouteTable::expire_routes()
      in our RT too long (last_updated_jiffies too old) or have
      exceeded their ttl.  Also note those expired 1-hop entries --
      they may be someone's next hop. */
-  for (RTIter i = _rtes.first(); i; i++) {
+  for (RTIter i = _rtes.begin(); i; i++) {
     if (jiff - i.value().last_updated_jiffies > _timeout_jiffies ||
 	decr_ttl(i.value().ttl, jiff_to_msec(jiff - i.value().last_updated_jiffies)) == 0) {
       expired_rtes.insert(i.value().dest_ip, true);
@@ -1341,7 +1341,7 @@ GridRouteTable::expire_routes()
   
   /* 2. Loop through RT a second time, picking up any multi-hop
      entries whose next hop is expired, and are not yet expired. */
-  for (RTIter i = _rtes.first(); i; i++) {
+  for (RTIter i = _rtes.begin(); i; i++) {
     // don't re-expire 1-hop routes, they are their own next hop
     if (i.value().num_hops() > 1 &&
 	expired_next_hops.findp(i.value().next_hop_ip) &&
@@ -1357,14 +1357,14 @@ GridRouteTable::expire_routes()
   
   /* 3. Then, push all expired entries onto the return vector and
      erase them from the RT.  */
-  for (xip_t::Iterator i = expired_rtes.first(); i; i++) {
+  for (xip_t::Iterator i = expired_rtes.begin(); i; i++) {
     RTEntry *r = _rtes.findp(i.key());
     assert(r);
     r->invalidate();
     r->ttl = grid_hello::MAX_TTL_DEFAULT;
     retval.push_back(*r);
   }
-  for (xip_t::Iterator i = expired_rtes.first(); i; i++) {
+  for (xip_t::Iterator i = expired_rtes.begin(); i; i++) {
     bool removed = _rtes.remove(i.key());
     assert(removed);
   }
@@ -1389,7 +1389,7 @@ GridRouteTable::hello_hook(Timer *, void *thunk)
   n->expire_routes();
 
   Vector<RTEntry> rte_entries;
-  for (RTIter i = n->_rtes.first(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i; i++) {
     /* because we called expire_routes() at the top of this function,
      * we know we are not propagating any route entries with ttl of 0
      * or that have timed out */

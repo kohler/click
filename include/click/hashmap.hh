@@ -16,12 +16,12 @@ CLICK_DECLS
 //		V::V()
 // V &		V::operator=(const V &)
 
-template <class K, class V> class HashMapIterator;
+template <class K, class V> class _HashMapIterator;
 
 template <class K, class V>
 class HashMap { public:
 
-  typedef HashMapIterator<K, V> Iterator;
+  typedef _HashMapIterator<K, V> iterator;
   
   HashMap();
   explicit HashMap(const V &);
@@ -40,7 +40,7 @@ class HashMap { public:
   bool insert(const K &, const V &);
   void clear();
   
-  Iterator first() const		{ return Iterator(this); }
+  iterator begin() const		{ return iterator(this); }
   
   HashMap<K, V> &operator=(const HashMap<K, V> &);
   void swap(HashMap<K, V> &);
@@ -61,14 +61,14 @@ class HashMap { public:
   void check_capacity();
   int bucket(const K &) const;
 
-  friend class HashMapIterator<K, V>;
+  friend class _HashMapIterator<K, V>;
   
 };
 
 template <class K, class V>
-class HashMapIterator { public:
+class _HashMapIterator { public:
 
-  HashMapIterator(const HashMap<K, V> *);
+  _HashMapIterator(const HashMap<K, V> *);
 
   operator bool() const			{ return _pos < _hm->_capacity; }
   void operator++(int);
