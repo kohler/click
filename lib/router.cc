@@ -40,9 +40,9 @@ static int nglobalh;
 static int globalh_cap;
 
 Router::Router()
-  : _preinitialized(0), _initialized(0), 
-  _have_connections(0), _have_hookpidx(0),
-  _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0)
+  : _preinitialized(false), _initialized(false),
+    _have_connections(false), _have_hookpidx(false),
+    _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0)
 {
   _refcount = 0;
   _driver_runcount = 0;
@@ -846,6 +846,8 @@ Router::preinitialize()
   // clear attachments
   _attachment_names.clear();
   _attachments.clear();
+
+  _preinitialized = true;
 }
 
 void
