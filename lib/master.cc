@@ -617,7 +617,7 @@ Master::run_selects_kqueue(bool more_tasks)
     }
 #  else /* SIZEOF_STRUCT_TIMESPEC != 8 */
     struct timespec wait, *wait_ptr = &wait;
-    timerclear(&wait);
+    wait.tv_sec = wait.tv_nsec = 0;
     if (!more_tasks) {
 	Timestamp t = next_timer_expiry();
 	if (t._sec == 0)
