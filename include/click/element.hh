@@ -80,6 +80,7 @@ class Element { public:
 
   // LIVE RECONFIGURATION
   virtual void configuration(Vector<String> &, bool *) const;
+  void configuration(Vector<String> &v) const	{ configuration(v, 0); }
   String configuration() const;
   
   virtual bool can_live_reconfigure() const;
