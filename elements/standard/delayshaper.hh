@@ -4,6 +4,7 @@
 #include <click/task.hh>
 
 /*
+=c
 
 DelayShaper(DELAY)
 
