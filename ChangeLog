@@ -1,3 +1,12 @@
+2001-03-06 Tuesday 17:13  Benjie Chen <benjie@lcs.mit.edu>
+
+	* lib/task.cc: bug fix in uninitialize(); have join_scheduler
+	initialize the master task list if it wasn't initialized
+
+2001-03-06 Tuesday 17:12  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/task.hh: minor change to remove compile warning
+
 2001-03-06 Tuesday 15:20  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/standard/ratedsource.cc: bug fix: if output is not push,
