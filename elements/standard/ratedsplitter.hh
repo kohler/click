@@ -15,6 +15,16 @@
  * = RatedSplitter(2000);
  * Split packets on port 1 at 2000 packets per second.
  *
+ * = elementclass RatedSampler {
+ * =   input -> rs :: RatedSplitter(2000);
+ * =   rs [0] -> [0] output;
+ * =   rs [1] -> t :: Tee;
+ * =   t [0] -> [0] output;
+ * =   t [1] -> [1] output;
+ * = };
+ * In the above example, RatedSampler is a compound element that 
+ * samples input packets at 2000 packets per second.
+ *
  * =h rate read/write
  * rate of splitting
  *

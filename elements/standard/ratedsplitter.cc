@@ -34,7 +34,10 @@ void
 RatedSplitter::set_rate(int r)
 {
   _meter = r;
-  _ugap = 1000000 / r;
+  
+  if (r > 0) _ugap = 1000000 / r;
+  else _ugap = 1;
+
   _total = 0;
   _start.tv_sec = 0;
   _start.tv_usec = 0;
@@ -54,7 +57,7 @@ RatedSplitter::push(int, Packet *p)
     unsigned need = diff.tv_sec * _meter;
     need += diff.tv_usec / _ugap;
 
-    if (need > _total) {
+    if (need > _total && _meter > 0) {
       _total++;
       output(1).push(p);
     } else
