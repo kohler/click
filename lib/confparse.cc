@@ -1683,6 +1683,7 @@ cp_va_parsev(const Vector<String> &args,
 	     Element *context,
 #endif
 	     const char *argname, const char *separator,
+	     bool keywords_only,
 	     ErrorHandler *errh, va_list val)
 {
   if (!cp_values)
@@ -1692,6 +1693,8 @@ cp_va_parsev(const Vector<String> &args,
   int nrequired = -1;
   int npositional = -1;
   int nerrors_in = errh->nerrors();
+  if (keywords_only)
+    nrequired = npositional = 0;
 
   while (1) {
     
@@ -1701,6 +1704,7 @@ cp_va_parsev(const Vector<String> &args,
 
     cp_value *v = &cp_values[nvalues];
     v->argtype = 0;
+    v->keyword = 0;
     
     if (npositional >= 0) {
       // read keyword if necessary
@@ -1768,7 +1772,7 @@ cp_va_parsev(const Vector<String> &args,
     StringAccum nonassigned_sa;
     for (int i = npositional; i < args.size(); i++)
       assign_keyword_argument(args, i, argname, nonassigned_sa, npositional, nvalues);
-    if (nonassigned_sa.length()) {
+    if (nonassigned_sa.length() && !keywords_only) {
       StringAccum keywords_sa;
       for (int i = npositional; i < nvalues; i++) {
 	if (i > npositional)
@@ -1844,13 +1848,16 @@ cp_va_parsev(const Vector<String> &args,
   
   // if success, actually set the values
   // mark unset optional arguments as dead
+  int nset = 0;
   for (int i = args.size(); i < npositional; i++)
     cp_values[i].argtype = 0;
   for (int i = 0; i < nvalues; i++)
-    if (cp_argtype *t = cp_values[i].argtype)
+    if (cp_argtype *t = cp_values[i].argtype) {
       t->store(&cp_values[i]  CP_PASS_CONTEXT);
+      nset++;
+    }
 
-  return 0;
+  return nset;
 }
 
 int
@@ -1863,9 +1870,9 @@ cp_va_parse(const Vector<String> &conf,
   va_list val;
   va_start(val, errh);
 #ifndef CLICK_TOOL
-  int retval = cp_va_parsev(conf, context, "argument", ", ", errh, val);
+  int retval = cp_va_parsev(conf, context, "argument", ", ", false, errh, val);
 #else
-  int retval = cp_va_parsev(conf, "argument", ", ", errh, val);
+  int retval = cp_va_parsev(conf, "argument", ", ", false, errh, val);
 #endif
   va_end(val);
   return retval;
@@ -1883,9 +1890,9 @@ cp_va_parse(const String &confstr,
   Vector<String> conf;
   cp_argvec(confstr, conf);
 #ifndef CLICK_TOOL
-  int retval = cp_va_parsev(conf, context, "argument", ", ", errh, val);
+  int retval = cp_va_parsev(conf, context, "argument", ", ", false, errh, val);
 #else
-  int retval = cp_va_parsev(conf, "argument", ", ", errh, val);
+  int retval = cp_va_parsev(conf, "argument", ", ", false, errh, val);
 #endif
   va_end(val);
   return retval;
@@ -1903,9 +1910,29 @@ cp_va_space_parse(const String &argument,
   Vector<String> args;
   cp_spacevec(argument, args);
 #ifndef CLICK_TOOL
-  int retval = cp_va_parsev(args, context, "word", " ", errh, val);
+  int retval = cp_va_parsev(args, context, "word", " ", false, errh, val);
 #else
-  int retval = cp_va_parsev(args, "word", " ", errh, val);
+  int retval = cp_va_parsev(args, "word", " ", false, errh, val);
+#endif
+  va_end(val);
+  return retval;
+}
+
+int
+cp_va_parse_keyword(const String &arg,
+#ifndef CLICK_TOOL
+		    Element *context,
+#endif
+		    ErrorHandler *errh, ...)
+{
+  va_list val;
+  va_start(val, errh);
+  Vector<String> conf;
+  conf.push_back(arg);
+#ifndef CLICK_TOOL
+  int retval = cp_va_parsev(conf, context, "argument", ", ", true, errh, val);
+#else
+  int retval = cp_va_parsev(conf, "argument", ", ", true, errh, val);
 #endif
   va_end(val);
   return retval;

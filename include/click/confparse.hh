@@ -121,6 +121,7 @@ enum CpVaParseCmd {
 int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse(const String &, CP_VA_PARSE_ARGS_REST);
 int cp_va_space_parse(const String &, CP_VA_PARSE_ARGS_REST);
+int cp_va_parse_keyword(const String &, CP_VA_PARSE_ARGS_REST);
 // ... is: cpEnd				stop
 //     or: cpOptional				remaining args are optional
 //     or: CpVaParseCmd type_id,		actual argument
