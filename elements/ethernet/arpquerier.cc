@@ -199,8 +199,8 @@ ARPQuerier::handle_ip(Packet *p)
     }
     
     if (ae->ok) {
-      Packet *q = p->push(sizeof(click_ether));
-      click_ether *e = (click_ether *)q->data();
+      WritablePacket *q = p->push(sizeof(click_ether));
+      click_ether *e = reinterpret_cast<click_ether *>(q->data());
       memcpy(e->ether_shost, _my_en.data(), 6);
       memcpy(e->ether_dhost, ae->en.data(), 6);
       e->ether_type = htons(ETHERTYPE_IP);
