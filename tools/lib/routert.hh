@@ -68,9 +68,7 @@ class RouterT : public ElementClassT {
   
   int nhookup() const				{ return _hookup_from.size(); }
   const Vector<Hookup> &hookup_from() const	{ return _hookup_from; }
-  Vector<Hookup> &hookup_from()			{ return _hookup_from; }
   const Vector<Hookup> &hookup_to() const	{ return _hookup_to; }
-  Vector<Hookup> &hookup_to()			{ return _hookup_to; }
   const String &hookup_landmark(int i) const	{ return _hookup_landmark[i]; }
  
   void add_tunnel(String, String, const String &, ErrorHandler *);
@@ -78,6 +76,9 @@ class RouterT : public ElementClassT {
   bool add_connection(const Hookup &, const Hookup &, const String &landmark = String());
   bool add_connection(int fidx, int fport, int tport, int tidx);
   void remove_connection(int);
+  void change_connection_to(int i, const Hookup &h) { _hookup_to[i] = h; }
+  void change_connection_from(int i, const Hookup &h) { _hookup_from[i] = h; }
+  void kill_connection(int i)			{ _hookup_from[i].idx = -1; }
 
   void add_requirement(const String &);
   const HashMap<String, int> &requirement_map() const { return _require_map; }

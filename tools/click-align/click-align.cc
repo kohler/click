@@ -165,9 +165,10 @@ RouterAlign::print(FILE *f)
 }
 
 
-void
-prepare_router(RouterT *r)
+RouterT *
+prepared_router()
 {
+  RouterT *r = new RouterT;
   r->get_type_index("Align", new AlignAlignClass);
   r->get_type_index("Strip", new StripAlignClass);
   r->get_type_index("FromDevice", new AlignClass(new GeneratorAligner(Alignment(4, 2))));
@@ -180,6 +181,7 @@ prepare_router(RouterT *r)
   a = new WantAligner(Alignment(2, 0));
   r->get_type_index("ARPResponder", new AlignClass(a));
   r->get_type_index("ARPQuerier", new AlignClass(a));
+  return r;
 }
 
 
@@ -294,11 +296,11 @@ particular purpose.\n");
   }
   
  done:
-  RouterT *router = read_router_file(router_file, errh);
+  RouterT *router = prepared_router();
+  read_router_file(router_file, errh, router);
   if (!router || errh->nerrors() > 0)
     exit(1);
   router->flatten(errh);
-  prepare_router(router);
   int align_tindex = router->type_index("Align");
 
   int original_nelements = router->nelements();
@@ -338,8 +340,8 @@ particular purpose.\n");
 
   // remove useless Aligns
   {
-    Vector<Hookup> &hf = router->hookup_from();
-    Vector<Hookup> &ht = router->hookup_to();
+    const Vector<Hookup> &hf = router->hookup_from();
+    const Vector<Hookup> &ht = router->hookup_to();
     int nhook = hf.size();
     for (int i = 0; i < nhook; i++)
       if (router->etype(ht[i].idx) == align_tindex
@@ -351,11 +353,11 @@ particular purpose.\n");
 	if (below.size() == 1) {
 	  for (int j = 0; j < nhook; j++)
 	    if (ht[j] == hf[i])
-	      ht[j] = ht[i];
+	      router->change_connection_to(j, ht[i]);
 	} else if (above.size() == 1) {
 	  for (int j = 0; j < nhook; j++)
 	    if (ht[j] == ht[i])
-	      hf[j] = above[0];
+	      router->change_connection_from(j, above[0]);
 	}
       }
   }
@@ -370,8 +372,8 @@ particular purpose.\n");
     bool changed = false;
     
     // skip redundant Aligns
-    Vector<Hookup> &hf = router->hookup_from();
-    Vector<Hookup> &ht = router->hookup_to();
+    const Vector<Hookup> &hf = router->hookup_from();
+    const Vector<Hookup> &ht = router->hookup_to();
     int nhook = hf.size();
     for (int i = 0; i < nhook; i++)
       if (router->etype(ht[i].idx) == align_tindex) {
@@ -383,7 +385,7 @@ particular purpose.\n");
 	  router->find_connections_from(ht[i], align_dest);
 	  for (int j = 0; j < align_dest.size(); j++)
 	    router->add_connection(hf[i], align_dest[j]);
-	  ht[i].idx = -1;
+	  router->kill_connection(i);
 	}
       }
 

@@ -77,6 +77,14 @@ LexerT::clear()
   _anonymous_offset = 0;
 }
 
+void
+LexerT::set_router(RouterT *r)
+{
+  if (_router)
+    _router->unuse();
+  _router = r;
+}
+
 
 // LEXING: LOWEST LEVEL
 

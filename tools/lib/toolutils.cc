@@ -71,7 +71,7 @@ file_string(const char *filename, ErrorHandler *errh)
 }
 
 RouterT *
-read_router_file(const char *filename, ErrorHandler *errh)
+read_router_file(const char *filename, ErrorHandler *errh, RouterT *router)
 {
   if (!errh)
     errh = ErrorHandler::silent_handler();
@@ -101,18 +101,20 @@ read_router_file(const char *filename, ErrorHandler *errh)
   // read router
   LexerT lexer(errh);
   lexer.reset(s);
+  if (router)
+    lexer.set_router(router);
   while (lexer.ystatement()) ;
-  RouterT *r = lexer.take_router();
+  router = lexer.take_router();
 
   // add archive bits
-  if (r && archive.size()) {
+  if (router && archive.size()) {
     for (int i = 0; i < archive.size(); i++)
       if (archive[i].name != "config")
-	r->add_archive(archive[i]);
+	router->add_archive(archive[i]);
   }
 
   // done
-  return r;
+  return router;
 }
 
 void

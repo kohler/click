@@ -7,7 +7,7 @@ class ErrorHandler;
 
 String file_string(FILE *, ErrorHandler * = 0);
 String file_string(const char *, ErrorHandler * = 0);
-RouterT *read_router_file(const char *, ErrorHandler * = 0);
+RouterT *read_router_file(const char *, ErrorHandler * = 0, RouterT * = 0);
 void write_router_file(RouterT *, FILE *, ErrorHandler * = 0);
 int write_router_file(RouterT *, const char *, ErrorHandler * = 0);
 

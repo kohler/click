@@ -78,6 +78,7 @@ class LexerT { protected:
   void reset(const String &data, const String &filename = String(),
 	     LexerTExtra * = 0);
   void clear();
+  void set_router(RouterT *);
   
   const Lexeme &lex();
   void unlex(const Lexeme &);
