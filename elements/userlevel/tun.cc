@@ -50,7 +50,7 @@ int
 Tun::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
-		  cpString, "device name prefix", &_dev_prefix,
+		  cpString, "device name prefix", &_dev_name,
 		  cpIPAddress, "address", &_near,
 		  cpIPAddress, "netmask", &_mask,
 		  cpOptional,
@@ -74,7 +74,7 @@ Tun::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 Tun::initialize(ErrorHandler *errh)
 {
-  _fd = alloc_tun(_dev_prefix.cc(), _near, _mask, errh);
+  _fd = alloc_tun(_dev_name.cc(), _near, _mask, errh);
   if (_fd < 0)
     return -1;
   if (input_is_pull(0))
@@ -91,6 +91,8 @@ Tun::uninitialize()
     close(_fd);
     remove_select(_fd, SELECT_READ);
   }
+
+  dealloc_tun();
 }
 
 void
@@ -197,6 +199,8 @@ Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr mask,
 	close(fd);
 	return errh->error("FIONBIO failed");
       }
+
+      _dev_name += String(i);
       
 #if defined(TUNSIFMODE) || defined(__FreeBSD__)
       {
@@ -211,7 +215,7 @@ Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr mask,
       strcpy(tmp0, inet_ntoa(near));
       strcpy(tmp1, inet_ntoa(mask));
       
-      sprintf(tmp, "ifconfig %s%d %s netmask %s up", dev_prefix, i, tmp0, tmp1);
+      sprintf(tmp, "ifconfig %s %s netmask %s up", _dev_name.cc(), tmp0, tmp1);
       
       if(system(tmp) != 0){
 	close(fd);
@@ -238,6 +242,16 @@ Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr mask,
 
   return errh->error("could not allocate a /dev/%s* device", dev_prefix);
 }
+
+
+void
+Tun::dealloc_tun()
+{
+  String cmd = "ifconfig " + _dev_name + " down";
+  if (system(cmd.cc()) != 0) 
+    click_chatter("%s: failed: %s", id().cc(), cmd.cc());
+}
+
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(Tun)

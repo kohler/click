@@ -21,6 +21,9 @@
  * is not 0.0.0.0), Tun tries to set up a default route through that
  * host.
  *
+ * When cleaning up, Tun attempts to bring down the devive via
+ * ifconfig.
+ *
  * =a
  * ToLinux */
 
@@ -45,13 +48,14 @@ class Tun : public Element {
   void run_scheduled();
 
  private:
-  String _dev_prefix;
+  String _dev_name;
   IPAddress _near;
   IPAddress _mask;
   IPAddress _gw;
   int _fd;
 
-  int alloc_tun(const char *dev_name, struct in_addr near, struct in_addr far, ErrorHandler *errh);
+  int alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr far, ErrorHandler *errh);
+  void dealloc_tun();
 };
 
 #endif
