@@ -78,8 +78,6 @@ public:
   int configure(const Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return true; }
 
-  grid_location get_current_location(unsigned int *seq_no = 0);
-
   void add_handlers();
   int read_args(const Vector<String> &conf, ErrorHandler *errh);
 

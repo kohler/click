@@ -72,9 +72,9 @@ FixSrcLoc::simple_action(Packet *xp)
   WritablePacket *p = xp->uniqueify();
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   gh->tx_loc = _locinfo->get_current_location(&gh->loc_seq_no);
-  gh->tx_loc_seq_no = htonl(gh->loc_seq_no);
-  gh->tx_loc_err = 0;
-  gh->tx_loc_good = true;
+  gh->tx_loc_seq_no = htonl(_locinfo->seq_no());
+  gh->tx_loc_err = htons(_locinfo->loc_err());
+  gh->tx_loc_good = _locinfo->loc_good();
   // only fill in packet originator info if we are originating...
   if (gh->ip == gh->tx_ip) {
     // click_chatter("FixSrcLoc %s: rewriting gh->loc info", id().cc());

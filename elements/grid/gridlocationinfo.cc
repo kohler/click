@@ -32,6 +32,9 @@ GridLocationInfo::GridLocationInfo() : _seq_no(0)
   _t1 = 0;
   _vlat = 0;
   _vlon = 0;
+
+  _loc_err = 0;
+  _loc_good = true;
 }
 
 GridLocationInfo::~GridLocationInfo()
@@ -45,11 +48,14 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   int do_move = 0;
   int lat_int, lon_int;
   int res = cp_va_parse(conf, this, errh,
-			// 5 fractional digits ~= 1 metre precision
+			// 5 fractional digits ~= 1 metre precision at the equator
 			cpReal10, "latitude (decimal degrees)", 5, &lat_int,
 			cpReal10, "longitude (decimal degrees)", 5, &lon_int,
                         cpOptional,
                         cpInteger, "move?", &do_move,
+			cpKeywords,
+			"LOC_GOOD", cpBool, "Is our location information valid?", &_loc_good,
+			"ERR_RADIUS", cpUnsignedShort, "Location error radius, in metres", &_loc_err,
 			0);
   float lat = ((float) lat_int) / 100000.0f;
   float lon = ((float) lon_int) / 100000.0f; 
@@ -67,6 +73,7 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
 int
 GridLocationInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  _seq_no++;
   return read_args(conf, errh);
 }
 
@@ -160,7 +167,8 @@ loc_read_handler(Element *f, void *)
   
   const int BUFSZ = 255;
   char buf[BUFSZ];
-  int res = snprintf(buf, BUFSZ, "%f, %f\n", loc.lat(), loc.lon());
+  int res = snprintf(buf, BUFSZ, "%f, %f (err=%hu good=%s seq=%u)\n", loc.lat(), loc.lon(),
+		     l->loc_err(), (l->loc_good() ? "yes" : "no"), l->seq_no());
   if (res < 0) {
     click_chatter("GridLocationInfo read handler buffer too small");
     return String("");

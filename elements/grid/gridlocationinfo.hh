@@ -3,7 +3,7 @@
 
 /*
  * =c
- * GridLocationInfo(LATITUDE, LONGITUDE, [ MOVE ])
+ * GridLocationInfo(LATITUDE, LONGITUDE, [ MOVE, KEYWORDS ])
  * =s Grid
  * =io
  * None
@@ -22,9 +22,34 @@
  * If the optional move parameter is 2, the node will accept external
  * ``set_new_dest'' directives for setting its speed etc.
  *
- * =h loc read/write
- * Returns or sets the element's location
- * information, in this format: ``lat, lon''.
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item LOC_GOOD
+ *
+ * Boolean.  If true, it means the location information (including
+ * error radius) can be believed.  If false, don't believe the hype,
+ * it's a sequel, i.e. it's all bogus.
+ *
+ * =item ERR_RADIUS
+ *
+ * Unsigned short.  The error radius in metres.  The node's actual
+ * location is within a circle of ERR_RADIUS metres, centered at the
+ * supplied location.
+ *
+ * =h loc read/write 
+ *
+ * When reading, returns the element's location information, in this
+ * format: ``lat, lon (err=<err-radius> good=<good?> seq=<seq>)''.
+ *
+ *  <err-radius> is in metres, <good?> is "yes" or "no", indicating
+ *  whether the location information is at all valid (i.e. don't
+ *  believe any of it unless <good?> is "yes"), and <seq> is the
+ *  location sequence number; it changes every time the location or
+ *  other parameters change.
+ *
+ * When writing, use the same syntax as the configuration arguments.
  *
  * =a
  * FixSrcLoc */
@@ -53,8 +78,15 @@ public:
 
   void set_new_dest(double v_lat, double v_lon);
 
+  unsigned int seq_no() { return _seq_no; }
+  bool loc_good() { return _loc_good; }
+  unsigned short loc_err() { return _loc_err; }
+
   unsigned int _seq_no;
 protected:
+
+  bool _loc_good; // if false, don't believe loc
+  unsigned short _loc_err; // error radius in meteres
 
   int _move;    // Should we move?
   double _lat0; // Where we started.

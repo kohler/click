@@ -42,7 +42,7 @@ ifdef(`IS_GATEWAY',
    ggi :: GridGatewayInfo(false);
 )
 
-gli :: GridHeaderInfo
+ghi :: GridHeaderInfo
 
 ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 ControlSocket(tcp, CONTROL2_PORT, CONTROL2_RO);
