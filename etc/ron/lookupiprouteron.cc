@@ -84,6 +84,11 @@ LookupIPRouteRON::initialize(ErrorHandler *)
   return 0;
 }
 
+int
+LookupIPRouteRON::myrandom(int x) {
+  return (int) ( x * (float) (random() / (float)0xffffffff) );
+}
+
 void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool first_syn)
 {
   int i;
@@ -96,7 +101,7 @@ void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool f
     output(1).push(p);
     break;
   case POLICY_RANDOM:
-    flow->outgoing_port = 1 + (int) (((float)(random() & 0xff)/256) * (noutputs()-1) );
+    flow->outgoing_port = 1 + myrandom(noutputs()-1);
     click_chatter("randomly choosing path %d", flow->outgoing_port);
     output(flow->outgoing_port).push(p);
     break;
@@ -109,17 +114,17 @@ void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool f
     // Choose 3 random unique ports
     // TODO: optimize this. It's really dumb.
     if (first_syn) {
-      flow->probed_ports[0] = 1 + (int) (((float)(random() & 0xff)/256) * (noutputs()-1));
+      flow->probed_ports[0] = 1 + myrandom(noutputs()-1);
       click_chatter("chose %d", flow->probed_ports[0]);
-      for (flow->probed_ports[1] = 1 + (int) (((float)(random() & 0xff)/256) * (noutputs()-1));
+      for (flow->probed_ports[1] = 1 + myrandom(noutputs()-1);
 	   flow->probed_ports[1] == flow->probed_ports[0]; 
-	   flow->probed_ports[1] = 1 + (int) (((float)(random() & 0xff)/256) * (noutputs()-1)));
+	   flow->probed_ports[1] = 1 + myrandom(noutputs()-1));
       click_chatter("chose %d", flow->probed_ports[1]);
       
-      for (flow->probed_ports[2] = 1 + (int) (((float)(random() & 0xff)/256) * (noutputs()-1));
+      for (flow->probed_ports[2] = 1 + myrandom(noutputs()-1);
 	   (flow->probed_ports[2] == flow->probed_ports[0] || 
 	    flow->probed_ports[2] == flow->probed_ports[1]);
-	   flow->probed_ports[2] = 1 + (int) (((float)(random() & 0xff)/256) * (noutputs()-1)));
+	   flow->probed_ports[2] = 1 + myrandom(noutputs()-1));
       click_chatter("chose %d", flow->probed_ports[2]);
     }
 
@@ -218,7 +223,7 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 
 #if MULTI_POLICY
       // We're seeing the first syn, choose policy
-      new_entry->policy = (int) (((float)(random() & 0xff)/256) * NUM_POLICIES );
+      new_entry->policy = myrandom(NUM_POLICIES);
       new_entry->policy = 2;
       click_chatter("Policy(%d)", new_entry->policy);
       policy_handle_syn(new_entry, p, true);
@@ -362,7 +367,7 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
 	     IPAddress(p->ip_header()->ip_src).s().cc() );
 
 #if MEASURE_NATRON
-      portno = 1+ (unsigned int) (((float)(random() & 0xff)/256) * (noutputs()-1) );
+      portno = 1+ myrandom(noutputs()-1);
       click_chatter("Choosing(%d)", portno);
       // dont save to dst_table
       // _dst_table->insert(IPAddress(p->ip_header()->ip_src), portno); 

@@ -87,6 +87,8 @@ protected:
   void policy_handle_syn(FlowTableEntry *flow, Packet *p, bool first_syn);
   void policy_handle_synack(FlowTableEntry *flow, unsigned int port, Packet *p);
 
+  int myrandom(int x);
+
 private:
   FlowTable *_flow_table;
   DstTable  *_dst_table;
