@@ -83,7 +83,7 @@ CheckIPHeader2::smaction(Packet *p)
 {
   const click_ip *ip = reinterpret_cast<const click_ip *>(p->data());
   unsigned int src;
-  unsigned hlen;
+  unsigned hlen, len;
   
   if(p->length() < sizeof(click_ip))
     goto bad;
@@ -97,8 +97,9 @@ CheckIPHeader2::smaction(Packet *p)
   
   if(hlen > p->length())
     goto bad;
-  
-  if(ntohs(ip->ip_len) < hlen)
+
+  len = ntohs(ip->ip_len);
+  if (len < hlen)
     goto bad;
 
   /*
@@ -117,6 +118,11 @@ CheckIPHeader2::smaction(Packet *p)
    */
 
   p->set_ip_header(ip, hlen);
+
+  // shorten packet according to IP length field -- 7/28/2000
+  if (p->length() > len)
+    p->take(p->length() - len);
+  
   return(p);
   
  bad:
