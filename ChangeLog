@@ -1,3 +1,20 @@
+2004-08-19 Thursday 22:16  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* acclick.m4 (1.41), aclocal.m4 (1.41), configure (1.26): obvious
+	boner
+
+2004-08-19 Thursday 22:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* acclick.m4 (1.40), aclocal.m4 (1.40), config-userlevel.h.in
+	(1.20), configure (1.25), configure.in (1.243),
+	etc/libclick/lc-configure.in (1.32): check whether <poll.h> is
+	emulated, to shut up compiles on Mac OS X
+
+2004-08-19 Thursday 21:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromipsumdump.hh (1.38), ipsumdumpinfo.cc
+	(1.16), toipsumdump.hh (1.46): the default for CWR is C, not W
+
 2004-08-19 Thursday 20:33  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/icmp/icmperror.cc (1.20): nit
