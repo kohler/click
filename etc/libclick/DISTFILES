@@ -103,6 +103,7 @@ lib/bitvector.cc:libsrc/bitvector.cc
 lib/clp.c:libsrc/clp.c
 lib/confparse.cc:libsrc/confparse.cc
 lib/crc32.c:libsrc/crc32.c
+lib/driver.cc:libsrc/driver.cc
 lib/element.cc:libsrc/element.cc
 lib/elemfilter.cc:libsrc/elemfilter.cc
 lib/error.cc:libsrc/error.cc
@@ -122,7 +123,6 @@ lib/iptable.cc:libsrc/iptable.cc
 lib/ip6table.cc:libsrc/ip6table.cc
 lib/lexer.cc:libsrc/lexer.cc
 lib/notifier.cc:libsrc/notifier.cc
-lib/packageutils.cc:libsrc/packageutils.cc
 lib/packet.cc:libsrc/packet.cc
 lib/router.cc:libsrc/router.cc
 lib/routerthread.cc:libsrc/routerthread.cc
