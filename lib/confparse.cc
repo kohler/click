@@ -54,11 +54,8 @@ cp_eat_space(String &str)
   const char *s = str.data();
   int len = str.length();
   int i = 0;
-  while (i < len) {
-    if (!isspace(s[i]))
-      break;
+  while (i < len && isspace(s[i]))
     i++;
-  }
   str = str.substring(i);
   return true;
 }
