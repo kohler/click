@@ -39,7 +39,7 @@ CLICK_DECLS
 
 
 SRScheduler::SRScheduler()
-  :  Element(1,1),
+  :  Element(2,2),
      _ps(0)
 {
   MOD_INC_USE_COUNT;

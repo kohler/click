@@ -37,7 +37,7 @@ CLICK_DECLS
 
 
 SRForwarder::SRForwarder()
-  :  Element(1,2), 
+  :  Element(1,3), 
      _ip(),
      _eth(),
      _et(0),
@@ -143,7 +143,7 @@ void
 SRForwarder::send(const u_char *payload, u_long payload_len, Vector<IPAddress> r, int flags)
 {
   Packet *p_out = encap(payload, payload_len, r, flags);
-  output(0).push(p_out);
+  output(1).push(p_out);
 
 }
 Packet *
@@ -283,7 +283,7 @@ SRForwarder::push(int port, Packet *p_in)
      */
     SET_MISC_IP_ANNO(p_out, pk->get_hop(0));
 
-    output(1).push(p_out);
+    output(2).push(p_out);
     p_in->kill();
     return;
   } 
