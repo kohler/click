@@ -180,7 +180,7 @@ void RONRouteModular::send_rst(Packet *p, unsigned long seq, int outport) {
   click_ip *iphdr;
   click_tcp *tcphdr;
 
-  click_chatter("SENDING RST: port %d seq: %u\n", outport, seq);
+  //click_chatter("SENDING RST: port %d seq: %u\n", outport, seq);
 
   rst_pkt = WritablePacket::make(40);
   rst_pkt->set_network_header(rst_pkt->data(), 20);

@@ -34,7 +34,7 @@
 PolicyProbe::PolicyProbe(RONRouteModular *parent, 
 			 long double delays, 
 			 unsigned int numprobes, 
-			 int numrandom,
+			 unsigned int numrandom,
 			 long double link_down_penalty,
 			 long double link_down_timeout,
 			 long double history_timeout,
@@ -75,7 +75,7 @@ void PolicyProbe::push_forward_syn(Packet *p) {
   unsigned long tcp_seq = ntohl(tcph->th_seq) + 
     ntohs(iph->ip_len) - (iph->ip_hl << 2) - (tcph->th_off << 2)+1;
 
-  click_chatter("Forward SYN: %u", tcp_seq);
+  //click_chatter("Forward SYN: %u", tcp_seq);
 
   // Lookup this flow
   flowentry = _flowtable->lookup(IPAddress(p->ip_header()->ip_src),
@@ -168,7 +168,7 @@ void PolicyProbe::push_forward_normal(Packet *p) {
 void PolicyProbe::push_reverse_synack(int inport, Packet *p) {
   FlowTableEntry *flowentry=NULL;
   const click_tcp *tcph= p->tcp_header();
-  click_chatter("Reverse SYN-ACK on port %d", inport);
+  //click_chatter("Reverse SYN-ACK on port %d", inport);
 
   flowentry = _flowtable->lookup(IPAddress(p->ip_header()->ip_dst),
 				 ntohs(tcph->th_dport),
@@ -194,14 +194,17 @@ void PolicyProbe::push_reverse_synack(int inport, Packet *p) {
   //_history->punt_old(inport); // do this when reading
   
   if (flowentry->chosen_port()) {
-    click_chatter("  already chose port");
+    //click_chatter("  already chose port");
     if (flowentry->chosen_port() == inport) {
        _parent->output(0).push(p);
        return;
     }
     
-    fprintf(stderr, "  port %d received synack in %Lf\n",
-	    inport, flowentry->get_rtt(inport));
+    //fprintf(stderr, "  port %d received synack in %Lf\n", inport, flowentry->get_rtt(inport));
+    fprintf(stderr, "RTT___%02d: %Lf: ", (ntohs(tcph->th_dport) / 100 % 20), gettime());
+    flowentry->print();
+    fprintf(stderr, ": port %02d rtt %Lf\n", inport, flowentry->get_rtt(inport));
+
     _timerqueue->remove(flowentry, inport);
     _parent->send_rst(p, flowentry->syn_seq, inport);
     //p->kill(); // send_rst already does this
@@ -209,8 +212,10 @@ void PolicyProbe::push_reverse_synack(int inport, Packet *p) {
   }
   
   // remember that we're using this port
-  flowentry->choose_port(inport);
-  click_chatter("CHOSE port %d", inport);
+  flowentry->choose_port(inport); 
+  fprintf(stderr, "CHOSE_%02d: %Lf: ",   (ntohs(tcph->th_dport) / 100 % 20), gettime());
+  flowentry->print();
+  fprintf(stderr, ": port %02d\n", inport);
   
   // remove this flow from the timeout queue
   _timerqueue->remove(flowentry, 0);
@@ -281,7 +286,8 @@ void PolicyProbe::expire_hook(Timer *, void *thunk) {
 
   // process each of the queued events
   while((time = me->_timerqueue->get_oldest(&flowentry, &action, &data)) < 
-	gettime() && time >= 0){
+	(gettime() + (long double)((long double)QUEUE_BATCH_TIMESPAN / (long double)1000)) && 
+	time >= 0){
     me->_timerqueue->shift();
 
     //fprintf(stderr, " dequing %Lf %d %d ", time, action, data);
@@ -293,9 +299,6 @@ void PolicyProbe::expire_hook(Timer *, void *thunk) {
       me->send_probes(flowentry, me->_numprobes);
       break;
     case PURGE: 
-      fprintf(stderr, " removing: ");
-      flowentry->print();
-      fprintf(stderr, "\n");
       me->_timerqueue->remove(flowentry, -1);
       me->_flowtable->remove(flowentry);
       break;
@@ -317,11 +320,12 @@ void PolicyProbe::send_probes(FlowTableEntry *flowentry, int numprobes) {
   long double shortest;
   Vector<long double> times;
   Vector<int> best_paths;
+  const click_tcp *tcph;
   times.resize(_numpaths+1);
   assert(numprobes < _numpaths);
   assert(_numrandom <= _numprobes);
 
-  fprintf(stderr, " Sending probes(%d of %d)\n", numprobes, _numpaths);
+  //fprintf(stderr, " Sending probes(%d of %d)\n", numprobes, _numpaths);
   // pick best <numprobes> which we haven't tried yet.
   for(i=1; i<=_numpaths; i++) { times[i] = _history->get_avg_rtt(i); }
   //for(i=1; i<=_numpaths; i++)
@@ -371,43 +375,42 @@ void PolicyProbe::send_probes(FlowTableEntry *flowentry, int numprobes) {
 	}
       }
     }
-  } else { // NO RECYCLE, just pick n best guesses
+
+  } else if (flowentry->syn_pkt) { // NO RECYCLE, just pick n best guesses
 
     // if we already sent probes, just use the same paths
     for(j=2; j<=_numpaths; j++) {
       if (flowentry->get_times_tried(j) > 0) {
-	done = 1;
-	fprintf(stderr,"  probing paths2: %d\n", j);
-	flowentry->sent_syn(j, gettime());
-	if (flowentry->syn_pkt)
-	  _parent->output(j).push(flowentry->syn_pkt->clone());
+	best_paths.push_back(j);
       }
     }
-    if (done) return;
 
-    // if this is the first syn, then pick the best paths.
-    for(i=0; i<(numprobes - _numrandom); i++) {      
-      shortest = 100;
-      done = 0;
-
-      for(j=2; !done && j<=_numpaths; j++) {
-
-	if (times[j] <= shortest) {
-	  found_already = 0;
-	  for(k=0; !found_already && k<best_paths.size(); k++)
-	    if (best_paths[k] == j) found_already = 1;
-	  if (!found_already){
-	    shortest = times[j];
-	    saveme = j;
-	    done = 1;
+    // if we have not sent probes yet, figure out which probes to make
+    if (best_paths.size() == 0) {
+      // if this is the first syn, then pick the best paths.
+      for(i=0; i<(numprobes - _numrandom); i++) {      
+	shortest = 100;
+	done = 0;
+	
+	for(j=2; !done && j<=_numpaths; j++) {
+	  
+	  if (times[j] <= shortest) {
+	    found_already = 0;
+	    for(k=0; !found_already && k<best_paths.size(); k++)
+	      if (best_paths[k] == j) found_already = 1;
+	    if (!found_already){
+	      shortest = times[j];
+	      saveme = j;
+	      done = 1;
+	    }
 	  }
 	}
-      }
-      assert (saveme);
-      if (best_paths.size() < (numprobes - _numrandom)) {
-	for(k=0; k<best_paths.size(); k++) 
-	  assert (best_paths[k] != saveme);
-	best_paths.push_back(saveme);
+	assert (saveme);
+	if (best_paths.size() < (numprobes - _numrandom)) {
+	  for(k=0; k<best_paths.size(); k++) 
+	    assert (best_paths[k] != saveme);
+	  best_paths.push_back(saveme);
+	}
       }
     }
   }
@@ -421,22 +424,27 @@ void PolicyProbe::send_probes(FlowTableEntry *flowentry, int numprobes) {
       j = myrandom(_numpaths-1) + 2;
       for(k=0; k<best_paths.size(); k++) if (best_paths[k] == j) done =0;
     } while(!done);
-    fprintf(stderr, "picking random: %d\n", j);
+    //fprintf(stderr, "picking random: %d\n", j);
     best_paths.push_back(j);
   }
+
+  assert (flowentry->syn_pkt);
+  tcph= flowentry->syn_pkt->tcp_header();
+  fprintf(stderr, "PROBES%02d: %Lf: ", (ntohs(tcph->th_sport) / 100 % 20), gettime());
+  flowentry->print();
+  fprintf(stderr, ": probing");
   
   // send a copy of the syn packet along those paths.
   for(i=0; i<best_paths.size(); i++){
-    fprintf(stderr,"  probing paths: %d\n", best_paths[i]);
+    fprintf(stderr," %d", best_paths[i]);
     if (flowentry->get_syn_time(best_paths[i]) < 0) {
       _timerqueue->insert(gettime() + _link_down_timeout, 
 			  NO_SYNACK, flowentry, best_paths[i]);
     }
     flowentry->sent_syn(best_paths[i], gettime());
-    if (flowentry->syn_pkt)
-      _parent->output(best_paths[i]).push(flowentry->syn_pkt->clone());
+    _parent->output(best_paths[i]).push(flowentry->syn_pkt->clone());
   }
-  
+  fprintf(stderr,"\n");
 }
 
 

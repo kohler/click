@@ -18,6 +18,8 @@
 #include "ronroutemodular.hh"
 //#define HISTORY 15
 
+#define QUEUE_BATCH_TIMESPAN 50
+
 class PolicyProbe : public RONRouteModular::Policy {
 
 public:
@@ -26,7 +28,7 @@ public:
   static const int NO_SYNACK = 2;
 
   PolicyProbe(RONRouteModular *parent, 
-	      long double delays, unsigned int numprobes, int numrandom,
+	      long double delays, unsigned int numprobes, unsigned int numrandom,
 	      long double link_down_penalty, long double link_down_timeout, 
 	      long double history_timeout, int recycle);
   ~PolicyProbe();
@@ -166,7 +168,7 @@ public:
   }
 
   void print() {
-    fprintf(stderr, "%s(%d) -> %s(%d)", src.unparse().cc(), sport, dst.unparse().cc(), dport);
+    fprintf(stderr, "%s.%d > %s.%d", src.unparse().cc(), sport, dst.unparse().cc(), dport);
   }
 
   void initialize(IPAddress s, unsigned short sp,
