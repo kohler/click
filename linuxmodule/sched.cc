@@ -142,9 +142,12 @@ init_click_sched()
 }
 
 int
-cleanup_click_sched()
+kill_current_router_threads()
 {
-  // wait for up to 5 seconds for routers to exit
+  if (current_router)
+    current_router->please_stop_driver();
+  
+  // wait up to 5 seconds for routers to exit
   unsigned long out_jiffies = jiffies + 5 * HZ;
   int num_threads;
   do {
@@ -156,6 +159,16 @@ cleanup_click_sched()
   } while (num_threads > 0 && jiffies < out_jiffies);
 
   if (num_threads > 0) {
+    printk("<1>click: current router threads refuse to die!\n");
+    return -1;
+  } else
+    return 0;
+}
+
+int
+cleanup_click_sched()
+{
+  if (kill_current_router_threads() < 0) {
     printk("<1>click: Following threads still active, expect a crash:\n", num_threads);
     soft_spin_lock(&click_thread_spinlock);
     for (int i = 0; i < click_thread_pids->size(); i++)
