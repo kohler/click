@@ -49,7 +49,7 @@ Stop the driver.
 
 Consume a driver stop event, then go to the next instruction.
 
-=item 'C<wait_for> TIME'
+=item 'C<wait_time> TIME'
 
 Wait for TIME seconds, or until a driver stop event occurs, whichever comes
 first; then go to the next instruction.  Any driver stop is not consumed.
@@ -115,7 +115,7 @@ clean itself up before the driver is stopped. It waits for the first driver
 stop event, then calls C<k>'s C<cleanup> handler, waits for a tenth of a
 second, and stops the driver.
 
-  DriverManager(wait_stop, write k.cleanup, wait_for 0.1, stop);
+  DriverManager(wait_stop, write k.cleanup, wait_time 0.1, stop);
 
 Use this idiom when one of your elements must emit a last packet or two before
 the router configuration is destroyed.
@@ -140,7 +140,7 @@ class DriverManager : public Element { public:
 
   private:
 
-    enum Insn { INSN_INITIAL, INSN_WAIT_STOP, INSN_WAIT_FOR, // order required
+    enum Insn { INSN_INITIAL, INSN_WAIT_STOP, INSN_WAIT_TIME, // order required
 		INSN_READ, INSN_WRITE, INSN_WRITE_SKIP, INSN_SAVE, INSN_APPEND,
 		INSN_IGNORE, INSN_STOP };
 
