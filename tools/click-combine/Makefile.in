@@ -78,7 +78,7 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click-check
+install: click-combine click-uncombine
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) click-combine $(bindir)/click-combine
 	$(INSTALL) click-uncombine $(bindir)/click-uncombine
