@@ -229,14 +229,10 @@ bool
 LinkTable::valid_route(Vector<IPAddress> route) 
 {
   if (route.size() < 1) {
-    click_chatter("LinkTable %s :route size is 0",
-		  _ip.s().cc());
     return false;
   }
   /* ensure the metrics are all valid */
   if (get_route_metric(route) == 0){
-    click_chatter("LinkTable %s :route metric  is 0",
-		  _ip.s().cc());
     return false;
   }
 
@@ -446,7 +442,7 @@ LinkTable::print_hosts()
   StringAccum sa;
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo n = iter.value();
-    sa << "host: " << n._ip.s().cc() << "\n";
+    sa << n._ip.s().cc() << "\n";
   }
   return sa.take_string();
 }
