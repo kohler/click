@@ -66,7 +66,6 @@ include/click/routerthread.hh
 include/click/skbmgr.hh
 include/click/straccum.hh
 include/click/string.hh
-include/click/subvector.hh
 include/click/sync.hh
 include/click/task.hh
 include/click/timer.hh
