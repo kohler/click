@@ -5,7 +5,8 @@ ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 
 li :: LocationInfo(POS_LAT, POS_LON);
 
-ls :: SimpleLocQuerier(LOC_DB);
+fq :: FloodingLocQuerier(GRID_MAC_ADDR, GRID_IP);
+loc_repl :: LocQueryResponder(GRID_MAC_ADDR, GRID_IP);
 
 // device interface
 eth :: FromDevice(GW_NET_DEVICE, 0);
@@ -33,10 +34,15 @@ nb :: UpdateGridRoutes(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, GRID_MAC_ADDR, GRID_IP
 lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
 geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
 
+grid_demux :: Classifier(15/GRID_NBR_ENCAP_PROTO,  // encapsulated packets 
+			 15/GRID_LOC_QUERY_PROTO,  // loc query packets
+			 15/GRID_LOC_REPLY_PROTO); // loc reply packets
+
+
 lr [0] -> to_wvlan;
 lr [1] -> ip_cl;
 
-lr [2] -> ls -> [0] geo; // for geographic forwarding
+lr [2] -> fq -> [0] geo; // for geographic forwarding
 lr [3] -> Discard; // too many hops, or bad protocol 
 
 geo [0] -> to_wvlan;
@@ -62,13 +68,23 @@ eth_demux [4] -> Strip(14) -> to_nb_ip :: GetIPAddress(16) -> [1] lr;
 wvlan_demux [0] 
 -> check_grid :: CheckGridHeader [0]
 // -> fr :: FilterByRange(RANGE, li) [0]
--> nb 
--> Classifier(15/GRID_NBR_ENCAP_PROTO)
+-> [0] nb [0]
+-> grid_demux [0]
 -> [0] lr;
+
+grid_demux [2] -> [0] lr; // forward query reply packets like encap packets
+loc_repl -> [0] lr; // forward query packets initiated by us
 
 check_grid [1]-> Print(bad_grid_hdr) -> Discard;
 // fr [1] -> Discard; // out of range
 wvlan_demux [1] -> Discard; // not a grid packet
+
+query_demux :: Classifier(48/GRID_HEX_IP, // loc query for us
+			  -);
+grid_demux [1] -> query_demux;
+query_demux [0] -> loc_repl; // reply to this query
+query_demux [1] -> [1] fq [1] -> to_wvlan; // propagate this loc query, or initiate a new loc query
+
 
 ip_cl [0] -> to_tun1;
 ip_cl [1] -> to_tun2;

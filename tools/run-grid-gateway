@@ -22,9 +22,7 @@ $radio_type = "wavelan";
 $CONTROL_PORT = "7777";
 $CONTROL_RO = "false";
 
-# XXX bogus static loc DB for manually deployed nodes
-$LOC_DB = "18.26.7.1 .0006 .00005, 18.26.7.6  .0006   .00005, 18.26.7.7  .0004   .0002, 18.26.7.8  .0005   .0002, 18.26.7.9  .0002   .00007, 18.26.7.10 .0007   0, 18.26.7.11 .0003   .00003";
-$HEADROOM = "44"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
+$HEADROOM = "64"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
 $NUM_HOPS = "10";
 $POS_LAT = "0";
 $POS_LON = "0";
@@ -40,6 +38,9 @@ $LR_PERIOD = "1300"; # msecs
 $LR_JITTER = "300"; # msecs
 $GRID_ETH_PROTO = "7FFF";
 $GRID_NBR_ENCAP_PROTO = "03";
+$GRID_LOC_QUERY_PROTO = "04";
+$GRID_LOC_REPLY_PROTO = "05";
+
 
 # gateway stuff...
 
@@ -408,6 +409,8 @@ while(<click_config_file>) {
     s/LR_JITTER/$LR_JITTER/;
     s/GRID_ETH_PROTO/$GRID_ETH_PROTO/;
     s/GRID_NBR_ENCAP_PROTO/$GRID_NBR_ENCAP_PROTO/;
+    s/GRID_LOC_QUERY_PROTO/$GRID_LOC_QUERY_PROTO/;
+    s/GRID_LOC_REPLY_PROTO/$GRID_LOC_REPLY_PROTO/;
     s/GRID_GW/$grid_gw/;
     s/GRID_IP/$grid_addr/;
     s/GRID_HEX_IP/$grid_addr_hex/;
