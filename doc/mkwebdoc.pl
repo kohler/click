@@ -197,7 +197,7 @@ sub element_li ($) {
 	push @x, "<a href='#B'>B</a>" if $r =~ /\bbsdmodule\b/;
 	push @x, "<a href='#Ns'>Ns</a>" if $r =~ /\bns\b/;
     }
-    $t .= " <small>[", join('&nbsp;', @x), "</small>" if @x;
+    $t .= " <small>[" . join('&nbsp;', @x) . "]</small>" if @x;
     "$t</li>\n";
 }
 
