@@ -1,3 +1,14 @@
+2003-12-03 Wednesday 23:17  Eddie Kohler <kohler@icir.org>
+
+	* elements/: analysis/fromtcpdump.cc (1.1), analysis/fromtcpdump.hh
+	(1.1), userlevel/fromdump.hh (1.51): add FromTcpdump element: read
+	packets from ASCII tcpdump output
+
+2003-12-03 Wednesday 23:14  Eddie Kohler <kohler@icir.org>
+
+	* elements/: userlevel/fromdump.hh (1.50),
+	analysis/fromipsumdump.hh (1.33): doc nit
+
 2003-12-03 Wednesday 21:39  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/fromdump.hh (1.49): document segfault behavior
