@@ -27,6 +27,7 @@
 #include <unistd.h>
 
 ScheduleLinux::ScheduleLinux()
+  : _task(this)
 {
   MOD_INC_USE_COUNT;
 }
