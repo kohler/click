@@ -68,7 +68,7 @@ class RouterT : public ElementClassT {
   String &econfiguration(int i)		{ return _elements[i].configuration; }
   int eflags(int i) const		{ return _elements[i].flags; }
   
-  int get_eindex(const String &name, int ftype_index = -1, const String &configuration = String(), const String &landmark = String());
+  int get_eindex(const String &name, int etype_index, const String &configuration, const String &landmark);
   int get_anon_eindex(const String &name, int ftype_index, const String &configuration = String(), const String &landmark = String());
   int get_anon_eindex(int ftype_index, const String &configuration = String(), const String &landmark = String());
   
@@ -103,7 +103,7 @@ class RouterT : public ElementClassT {
   
   void add_components_to(RouterT *, const String &prefix = String()) const;
 
-  bool expand_compound(ElementT &, RouterT *, ErrorHandler *);
+  int expand_into(RouterT *, int, RouterT *, const RouterScope &, ErrorHandler *);
   
   void remove_unused_element_types();
   void remove_blank_elements(ErrorHandler * = 0);
@@ -122,6 +122,26 @@ class RouterT : public ElementClassT {
 
   RouterT *cast_router()		{ return this; }
 
+};
+
+class RouterScope {
+
+  String _prefix;
+  Vector<String> _formals;
+  Vector<String> _values;
+
+ public:
+  
+  RouterScope()				{ }
+  RouterScope(const RouterScope &, const String &suffix);
+
+  operator bool() const			{ return _formals.size() != 0; }
+  const String &prefix() const		{ return _prefix; }
+  
+  void combine(const Vector<String> &, const Vector<String> &);
+  
+  String interpolate(const String &) const;
+  
 };
 
 

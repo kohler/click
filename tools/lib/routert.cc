@@ -132,7 +132,7 @@ RouterT::get_eindex(const String &s, int type_index, const String &config,
 		    const String &landmark)
 {
   int i = _element_name_map[s];
-  if (i < 0 && type_index >= 0) {
+  if (i < 0) {
     assert(type_index >= 0 && type_index < ntypes());
     i = _elements.size();
     _elements.push_back(ElementT(s, type_index, config, landmark));
@@ -654,24 +654,32 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 }
 
 
-static int
-resolve_upref(const String &upref, String prefix, RouterT *r)
+RouterScope::RouterScope(const RouterScope &o, const String &suffix)
+  : _prefix(o._prefix + suffix), _formals(o._formals), _values(o._values)
 {
-  while (prefix) {
-    int pos = prefix.find_right('/', prefix.length() - 2);
-    prefix = (pos >= 0 ? prefix.substring(0, pos + 1) : String());
-    
-    String try_name = prefix + upref;
-    int en = r->eindex(try_name);
-    if (en >= 0) return en;
+}
+
+void
+RouterScope::combine(const Vector<String> &formals, const Vector<String> &values)
+{
+  for (int i = 0; i < formals.size(); i++) {
+    for (int j = 0; j < _formals.size(); j++)
+      if (_formals[j] == formals[i]) {
+	_values[j] = values[i];
+	goto done;
+      }
+    _formals.push_back(formals[i]);
+    _values.push_back(values[i]);
+   done: ;
   }
-  return -1;
 }
 
 String
-RouterT::interpolate_arguments(const String &config,
-			       const Vector<String> &args) const
+RouterScope::interpolate(const String &config) const
 {
+  if (_formals.size() == 0)
+    return config;
+  
   const char *data = config.data();
   int config_pos = 0;
   int pos = 0;
@@ -700,7 +708,7 @@ RouterT::interpolate_arguments(const String &config,
       for (int variable = 0; variable < _formals.size(); variable++)
 	if (name == _formals[variable]) {
 	  output += config.substring(config_pos, word_pos - config_pos);
-	  output += args[variable];
+	  output += _values[variable];
 	  config_pos = pos;
 	}
       pos--;
@@ -712,13 +720,17 @@ RouterT::interpolate_arguments(const String &config,
     return output + config.substring(config_pos, pos - config_pos);
 }
 
-bool
-RouterT::expand_compound(ElementT &compound, RouterT *r, ErrorHandler *errh)
+int
+RouterT::expand_into(RouterT *fromr, int which, RouterT *tor,
+		     const RouterScope &scope, ErrorHandler *errh)
 {
+  assert(fromr != this && tor != this);
+  ElementT &compound = fromr->element(which);
+  
   // parse configuration string
   Vector<String> args;
   int nargs = _formals.size();
-  cp_argvec_unsubst(compound.configuration, args);
+  cp_argvec_unsubst(scope.interpolate(compound.configuration), args);
   if (args.size() != nargs) {
     const char *whoops = (args.size() < nargs ? "few" : "many");
     String signature;
@@ -735,66 +747,43 @@ RouterT::expand_compound(ElementT &compound, RouterT *r, ErrorHandler *errh)
   }
 
   // create prefix
-  String prefix;
+  String suffix;
   assert(compound.name);
   if (compound.name[compound.name.length() - 1] == '/')
-    prefix = compound.name;
+    suffix = compound.name;
   else
-    prefix = compound.name + "/";
+    suffix = compound.name + "/";
   
+  RouterScope new_scope(scope, suffix);
+  String prefix = scope.prefix();
+  String new_prefix = new_scope.prefix(); // includes previous prefix
+  new_scope.combine(_formals, args);
+
   // create input/output tunnels
-  compound.type = TUNNEL_TYPE;
-  r->add_tunnel(compound.name, prefix + "input", compound.landmark, errh);
-  r->add_tunnel(prefix + "output", compound.name, compound.landmark, errh);
+  if (fromr == tor)
+    compound.type = TUNNEL_TYPE;
+  tor->add_tunnel(prefix + compound.name, new_prefix + "input", compound.landmark, errh);
+  tor->add_tunnel(new_prefix + "output", prefix + compound.name, compound.landmark, errh);
+  int new_eindex = tor->eindex(prefix + compound.name);
 
   int nelements = _elements.size();
   Vector<int> new_fidx(nelements, -1);
   
   // add tunnel pairs and resolve uprefs
   for (int i = 0; i < nelements; i++) {
-    ElementT &e = _elements[i];
-    if (e.type == TUNNEL_TYPE && e.tunnel_output >= 0
-	&& e.tunnel_output < nelements)
-      r->add_tunnel(prefix + e.name,
-		    prefix + _elements[e.tunnel_output].name,
-		    e.landmark, errh);
-    else if (e.type == UPREF_TYPE)
-      new_fidx[i] = resolve_upref(e.name, prefix, r);
-  }
-  
-  // add component elements
-  for (int i = 0; i < _elements.size(); i++) {
-    ElementT &e = _elements[i];
-    if (new_fidx[i] >= 0) continue; // skip elements we've already resolved
-    
-    // get element type index. add new "anonymous" element type if needed
-    int ftypi = r->get_type_index(_element_type_names[e.type],
-				  _element_classes[e.type]);
-    if (_element_classes[e.type] != r->_element_classes[ftypi]
-	&& r->_element_classes[ftypi])
-      ftypi = r->get_anon_type_index(_element_type_names[e.type],
-				     _element_classes[e.type]);
-
-    // do configuration string
-    String config = e.configuration;
-    if (nargs) config = interpolate_arguments(config, args);
-    
-    // add element
-    if (e.type == UPREF_TYPE)
-      // add unresolved uprefs, but w/o prefix
-      new_fidx[i] = r->get_anon_eindex
-	(e.name, UPREF_TYPE, config, e.landmark);
+    ElementClassT *ect = _element_classes[_elements[i].type];
+    if (ect)
+      new_fidx[i] = ect->expand_into(this, i, tor, new_scope, errh);
     else
-      new_fidx[i] = r->get_eindex
-	(prefix + e.name, ftypi, config, e.landmark);
+      new_fidx[i] = ElementClassT::simple_expand_into(this, i, tor, new_scope, errh);
   }
   
   // add hookup
   for (int i = 0; i < _hookup_from.size(); i++) {
     Hookup &hfrom = _hookup_from[i], &hto = _hookup_to[i];
-    r->add_connection(Hookup(new_fidx[hfrom.idx], hfrom.port),
-		      Hookup(new_fidx[hto.idx], hto.port),
-		      _hookup_landmark[i]);
+    tor->add_connection(Hookup(new_fidx[hfrom.idx], hfrom.port),
+			Hookup(new_fidx[hto.idx], hto.port),
+			_hookup_landmark[i]);
   }
 
   // add requirements
@@ -803,38 +792,32 @@ RouterT::expand_compound(ElementT &compound, RouterT *r, ErrorHandler *errh)
     String key;
     while (_require_map.each(thunk, key, val))
       if (val >= 0)
-	r->add_requirement(key);
+	tor->add_requirement(key);
   }
   
   // yes, we expanded it
-  return true;
+  return new_eindex;
 }
 
 void
 RouterT::remove_compound_elements(ErrorHandler *errh)
 {
-  int neclass = _element_classes.size();
-  int nelem = _elements.size();
-  Vector<int> removed_eclass(neclass, 0);
-
-  for (int i = 0; i < nelem; i++) {
-    int t = _elements[i].type;
-    if (t >= 0 && t < neclass && _element_classes[t]) {
-      if (_element_classes[t]->expand_compound(_elements[i], this, errh)) {
-	if (removed_eclass[t] == 0) removed_eclass[t] = -1;
-	// recalculate #s of elements & element classes; may have added some
-	neclass = _element_classes.size();
-	removed_eclass.resize(neclass, 0);
-	nelem = _elements.size();
-      } else
-	removed_eclass[t] = 1;
+  int nelements = _elements.size();
+  RouterScope scope;
+  for (int i = 0; i < nelements; i++)
+    if (_elements[i].type >= 0) { // allow for deleted elements
+      ElementClassT *ect = _element_classes[_elements[i].type];
+      if (ect)
+	ect->expand_into(this, i, this, scope, errh);
+      else
+	ElementClassT::simple_expand_into(this, i, this, scope, errh);
     }
-  }
-
-  // remove those compound classes & any unused compound classes
+  
+  // remove all compound classes
+  int neclass = _element_classes.size();
+  Vector<int> removed_eclass(neclass, 0);
   for (int i = 0; i < neclass; i++)
-    if (removed_eclass[i] == 0 && _element_classes[i]
-	&& _element_classes[i]->cast_router())
+    if (_element_classes[i] && _element_classes[i]->cast_router())
       removed_eclass[i] = -1;
   finish_remove_element_types(removed_eclass);
 }

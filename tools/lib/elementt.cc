@@ -14,6 +14,7 @@
 # include <config.h>
 #endif
 #include "elementt.hh"
+#include "routert.hh"
 #include <stdlib.h>
 
 ElementT::ElementT()
@@ -72,11 +73,72 @@ ElementClassT::ElementClassT()
 {
 }
 
-bool
-ElementClassT::expand_compound(ElementT &, RouterT *, ErrorHandler *)
+static int
+resolve_upref(const String &upref, String prefix, RouterT *r)
 {
-  // did not expand
-  return false;
+  while (prefix) {
+    int pos = prefix.find_right('/', prefix.length() - 2);
+    prefix = (pos >= 0 ? prefix.substring(0, pos + 1) : String());
+    
+    String try_name = prefix + upref;
+    int en = r->eindex(try_name);
+    if (en >= 0) return en;
+  }
+  return -1;
+}
+
+int
+ElementClassT::simple_expand_into(RouterT *fromr, int which,
+				  RouterT *tor,
+				  const RouterScope &scope, ErrorHandler *errh)
+{
+  if (fromr == tor)
+    return which;
+
+  const ElementT &e = fromr->element(which);
+  
+  if (e.type == RouterT::UPREF_TYPE) {
+    // try and resolve the upref within the current prefix. if not, then
+    // pass the upref on up, without tacking on the prefix.
+    int new_index = resolve_upref(e.name, scope.prefix(), tor);
+    if (new_index < 0)
+      new_index = tor->get_anon_eindex(e.name, RouterT::UPREF_TYPE,
+				       e.configuration, e.landmark);
+    return new_index;
+  }
+
+  if (e.type == RouterT::TUNNEL_TYPE) {
+    // make the tunnel or tunnel pair
+    String new_name = scope.prefix() + e.name;
+    if (e.tunnel_output >= 0 && e.tunnel_output < fromr->nelements()) {
+      tor->add_tunnel(new_name,
+		      scope.prefix() + fromr->ename(e.tunnel_output),
+		      e.landmark, errh);
+      return tor->eindex(new_name);
+    } else
+      return tor->get_eindex
+	(new_name, RouterT::TUNNEL_TYPE, e.configuration, e.landmark);
+  }
+  
+  // get element type index. add new "anonymous" element type if needed
+  String type_name = fromr->type_name(e.type);
+  ElementClassT *type_class = fromr->type_class(e.type);
+  int new_type = tor->get_type_index(type_name, type_class);
+  ElementClassT *new_type_class = tor->type_class(new_type);
+  if (type_class != new_type_class && new_type_class)
+    new_type = tor->get_anon_type_index(type_name, type_class);
+  
+  // add element
+  return tor->get_eindex(scope.prefix() + e.name, new_type,
+			 scope.interpolate(e.configuration), e.landmark);
+}
+
+int
+ElementClassT::expand_into(RouterT *fromr, int which,
+			   RouterT *tor, const RouterScope &scope,
+			   ErrorHandler *errh)
+{
+  return simple_expand_into(fromr, which, tor, scope, errh);
 }
 
 void

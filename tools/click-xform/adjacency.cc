@@ -57,7 +57,9 @@ AdjacencyMatrix::init(RouterT *r, RouterT *type_model = 0)
   const Vector<Hookup> &hf = r->hookup_from();
   const Vector<Hookup> &ht = r->hookup_to();
   for (int i = 0; i < hf.size(); i++)
-    _x[ hf[i].idx + n*ht[i].idx ] += hf[i].port + 10*ht[i].port;
+    // add connections. always add 1 so it's not 0 if the connection is from
+    // port 0 to port 0. (DUH!)
+    _x[ hf[i].idx + n*ht[i].idx ] += hf[i].port + 10*ht[i].port + 1;
 }
 
 void
@@ -130,7 +132,7 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
     }
   }
 
-  //for (int i = 0; i < pat_n; i++) fprintf(stderr,"%d ", match[i]);fputs("\n",stderr);
+  //for (int i = 0; i < pat_n; i++) fprintf(stderr,"%s ", match[i] >= 0 ? input->_crap->ename(match[i]).cc() : "<crap>");fputs("\n",stderr);
   return (match_idx >= 0 ? true : false);
 }
 

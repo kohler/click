@@ -330,7 +330,8 @@ particular purpose.\n");
 	else {
 	  int ei = router->get_eindex
 	    (aligner_name(anonymizer), align_tindex,
-	     String(want.chunk()) + ", " + String(want.offset()));
+	     String(want.chunk()) + ", " + String(want.offset()),
+	     "click-align");
 	  router->insert_before(ei, Hookup(i, j));
 	  anonymizer++;
 	}
@@ -427,7 +428,8 @@ particular purpose.\n");
     int aligninfo_t = router->get_type_index("AlignmentInfo", 0);
     router->get_eindex(String("AlignmentInfo@click_align@") + String(nelem+1),
 		       aligninfo_t,
-		       sa.take_string());
+		       sa.take_string(),
+		       "click-align");
   }
   
   // write result

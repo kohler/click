@@ -229,13 +229,9 @@ Matcher::check_match()
 bool
 Matcher::next_match()
 {
-  //  while (_body->next_connection_match(_pat, _match)) {
-  //    if (check_match())
-  //      return true;
-  //  }
-  while (_pat_m->next_subgraph_isomorphism(_body_m, _match)
-	 && check_subgraph_isomorphism(_pat, _body, _match)) {
-    if (check_match())
+  while (_pat_m->next_subgraph_isomorphism(_body_m, _match)) {
+    if (check_subgraph_isomorphism(_pat, _body, _match)
+	&& check_match())
       return true;
   }
   return false;
@@ -302,8 +298,8 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   
   // add replacement
   int old_nelements = _body->nelements();
-  ElementT fake_for_compound(prefix, -1, String(), landmark);
-  replacement->expand_compound(fake_for_compound, _body, errh);
+  int new_eindex = _body->get_eindex(prefix, RouterT::TUNNEL_TYPE, String(), landmark);
+  replacement->expand_into(_body, new_eindex, _body, RouterScope(), errh);
 
   // mark replacement
   for (int i = old_nelements; i < _body->nelements(); i++) {

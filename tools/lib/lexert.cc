@@ -631,8 +631,8 @@ LexerT::yelementclass()
   RouterT *old_router = _router;
   int old_offset = _anonymous_offset;
   _router = new RouterT(old_router);
-  _router->get_eindex("input", RouterT::TUNNEL_TYPE);
-  _router->get_eindex("output", RouterT::TUNNEL_TYPE);
+  _router->get_eindex("input", RouterT::TUNNEL_TYPE, String(), landmark());
+  _router->get_eindex("output", RouterT::TUNNEL_TYPE, String(), landmark());
   _anonymous_offset = 2;
 
   ycompound_arguments();
@@ -688,8 +688,8 @@ LexerT::ylocal()
   RouterT *old_router = _router;
   int old_offset = _anonymous_offset;
   _router = new RouterT(old_router);
-  _router->get_eindex("input", RouterT::TUNNEL_TYPE);
-  _router->get_eindex("output", RouterT::TUNNEL_TYPE);
+  _router->get_eindex("input", RouterT::TUNNEL_TYPE, String(), landmark());
+  _router->get_eindex("output", RouterT::TUNNEL_TYPE, String(), landmark());
   _anonymous_offset = 2;
 
   ycompound_arguments();

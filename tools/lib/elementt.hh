@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include "vector.hh"
 class RouterT;
+class RouterScope;
 class ErrorHandler;
 class StringAccum;
 
@@ -48,8 +49,11 @@ class ElementClassT {
 
   void use()				{ _use_count++; }
   void unuse()				{ if (--_use_count <= 0) delete this; }
-  
-  virtual bool expand_compound(ElementT &, RouterT *, ErrorHandler *);
+
+  static int simple_expand_into(RouterT *, int, RouterT *,
+				const RouterScope &, ErrorHandler *);
+  virtual int expand_into(RouterT *, int, RouterT *,
+			  const RouterScope &, ErrorHandler *);
   virtual void compound_declaration_string(StringAccum &, const String &, const String &);
 
   virtual RouterT *cast_router()	{ return 0; }

@@ -251,7 +251,7 @@ analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
   
   int classifier_nei =
     nr.get_eindex(r->ename(classifier_ei), classifier_nti,
-		  r->econfiguration(classifier_ei));
+		  r->econfiguration(classifier_ei), "");
   
   int idle_nei = nr.get_anon_eindex(idle_nti);
   nr.add_connection(idle_nei, 0, 0, classifier_nei);
@@ -264,7 +264,7 @@ analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
   int nelements = r->nelements();
   for (int i = 0; i < nelements; i++)
     if (r->etype(i) == alignmentinfo_ti)
-      nr.get_eindex(r->ename(i), alignmentinfo_nti, r->econfiguration(i));
+      nr.get_eindex(r->ename(i), alignmentinfo_nti, r->econfiguration(i), "");
 
   // get the resulting program from user-level `click'
   String router_str = nr.configuration_string();
