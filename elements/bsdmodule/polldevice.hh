@@ -2,6 +2,8 @@
 #define POLLDEVICE_HH
 
 /*
+=title PollDevice.b
+
 =c
 
 PollDevice(DEVNAME [, PROMISC, BURST, I<KEYWORDS>])

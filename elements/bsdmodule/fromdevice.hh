@@ -2,6 +2,8 @@
 #define FROMDEVICE_HH
 
 /*
+=title FromDevice.b
+
 =c
 
 FromDevice(DEVNAME [, PROMISC, BURST, I<KEYWORDS>])

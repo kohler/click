@@ -2,6 +2,7 @@
 #define FASTUDPSRC_HH
 
 /*
+ * =title FastUDPSource.b
  * =c
  * FastUDPSource(RATE, LIMIT, LEN, SETHADDR, SIPADDR, SPORT, DETHADDR, DIPADDR, DPORT [, CHECKSUM?, INTERVAL, ACTIVE])
  * =s sources

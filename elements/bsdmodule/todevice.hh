@@ -2,6 +2,8 @@
 #define TODEVICE_HH
 
 /*
+=title ToDevice.b
+
 =c
 
 ToDevice(DEVNAME [, BURST, I<KEYWORDS>])
