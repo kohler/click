@@ -1,3 +1,10 @@
+2002-04-26 Friday 14:34  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/ipratemon.cc (1.96), elements/ip/ipratemon.hh (1.60),
+	elements/standard/stridesched.hh (1.18), include/click/router.hh
+	(1.31), lib/router.cc (1.123): fixes from Scott Page's stdc++
+	patches 7 and 8
+
 2002-04-25 Thursday 19:58  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ethernet/ethermirror.cc (1.11): ::memcpy doesn't work in

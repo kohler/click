@@ -1,3 +1,8 @@
+2002-04-26 Friday 14:34  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh,
+	libsrc/router.cc: fixes from Scott Page's stdc++ patches 7 and 8
+
 2002-04-25 Thursday 19:54  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: click_ip6.h, click_ip6.h: integrate version of
