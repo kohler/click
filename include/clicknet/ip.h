@@ -95,6 +95,7 @@ struct click_ip {
 #define IP_PROTO_WBEXPAK	79
 
 #define IP_PROTO_TCP_OR_UDP	256
+#define IP_PROTO_NONE		257
 
 #define	IPOPT_EOL		0	/* end of option list */
 #define	IPOPT_NOP		1	/* no operation */
