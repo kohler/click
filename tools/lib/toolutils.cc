@@ -38,43 +38,30 @@
 bool ignore_line_directives = false;
 
 RouterT *
-read_router_file(const char *filename, bool empty_ok, RouterT *router,
-		 ErrorHandler *errh)
+read_router_string(String text, const String &landmark, bool empty_ok,
+		   RouterT *router, ErrorHandler *errh)
 {
-  if (!errh)
-    errh = ErrorHandler::silent_handler();
-
-  // read file string
-  int old_nerrors = errh->nerrors();
-  String s = file_string(filename, errh);
-  if (!s && errh->nerrors() != old_nerrors)
-    return 0;
-
-  // set readable filename
-  if (!filename || strcmp(filename, "-") == 0)
-    filename = "<stdin>";
-
   // check for archive
   Vector<ArchiveElement> archive;
-  if (s.length() && s[0] == '!') {
-    separate_ar_string(s, archive, errh);
+  if (text.length() && text[0] == '!') {
+    separate_ar_string(text, archive, errh);
     int found = -1;
     for (int i = 0; i < archive.size(); i++)
       if (archive[i].name == "config")
 	found = i;
     if (found >= 0)
-      s = archive[found].data;
+      text = archive[found].data;
     else {
-      errh->error("%s: archive has no `config' section", filename);
-      s = String();
+      errh->lerror(landmark, "archive has no `config' section");
+      text = String();
     }
   }
 
   // read router
-  if (!s.length() && !empty_ok)
-    errh->warning("%s: empty configuration", filename);
+  if (!text.length() && !empty_ok)
+    errh->lwarning(landmark, "empty configuration");
   LexerT lexer(errh, ignore_line_directives);
-  lexer.reset(s, filename);
+  lexer.reset(text, landmark);
   if (router)
     lexer.set_router(router);
   else
@@ -93,6 +80,32 @@ read_router_file(const char *filename, bool empty_ok, RouterT *router,
 
   // done
   return lexer.take_router();
+}
+
+RouterT *
+read_router_string(const String &text, const String &landmark, ErrorHandler *errh)
+{
+  return read_router_string(text, landmark, false, 0, errh);
+}
+
+RouterT *
+read_router_file(const char *filename, bool empty_ok, RouterT *router,
+		 ErrorHandler *errh)
+{
+  if (!errh)
+    errh = ErrorHandler::silent_handler();
+
+  // read file string
+  int old_nerrors = errh->nerrors();
+  String s = file_string(filename, errh);
+  if (!s && errh->nerrors() != old_nerrors)
+    return 0;
+
+  // set readable filename
+  if (!filename || strcmp(filename, "-") == 0)
+    filename = "<stdin>";
+
+  return read_router_string(s, filename, empty_ok, router, errh);
 }
 
 RouterT *
@@ -522,31 +535,47 @@ ElementMap::unparse() const
   return sa.take_string();
 }
 
+int
+ElementMap::map_type(const String &tname,
+		     ErrorHandler *errh, const String &landmark) const
+{
+  int idx = _name_map[tname];
+  if (idx <= 0) {
+    if (errh)
+      errh->lerror(landmark, "unknown element class `%s'", String(tname).cc());
+    return -2;
+  } else
+    return idx;
+}
+
 void
 ElementMap::map_indexes(const RouterT *r, Vector<int> &map_indexes,
-			ErrorHandler *errh = 0) const
+			ErrorHandler *errh) const
 {
   assert(r->is_flat());
   map_indexes.assign(r->ntypes(), -1);
   for (int i = 0; i < r->nelements(); i++) {
     int t = r->etype(i);
-    if (t >= 0 && map_indexes[t] == -1) {
-      int idx = _name_map[r->type_name(t)];
-      if (idx <= 0) {
-	if (errh)
-	  errh->lerror(r->elandmark(i), "unknown element class `%s'", String(r->type_name(t)).cc());
-	map_indexes[t] = -2;
-      } else
-	map_indexes[t] = idx;
-    }
+    if (t >= 0 && map_indexes[t] == -1)
+      map_indexes[t] = map_type(r->etype_name(t), errh, r->elandmark(i));
   }
 }
 
-bool
-ElementMap::driver_indifferent(const Vector<int> &map_indexes, int driver_mask) const
+void
+ElementMap::map_indexes(const HashMap<String, int> &m,
+			Vector<int> &map_indexes, ErrorHandler *errh) const
 {
-  for (int i = 0; i < map_indexes.size(); i++) {
-    int idx = map_indexes[i];
+  map_indexes.clear();
+  for (HashMap<String, int>::Iterator i = m.first(); i; i++)
+    if (i.value() > 0)
+      map_indexes.push_back(map_type(i.key(), errh, String()));
+}
+
+bool
+ElementMap::driver_indifferent(const Vector<int> &indexes, int driver_mask) const
+{
+  for (int i = 0; i < indexes.size(); i++) {
+    int idx = indexes[i];
     if (idx > 0 && (_e[idx].driver_mask & driver_mask) != driver_mask)
       return false;
   }
@@ -554,11 +583,11 @@ ElementMap::driver_indifferent(const Vector<int> &map_indexes, int driver_mask) 
 }
 
 bool
-ElementMap::driver_compatible(const Vector<int> &map_indexes, int driver) const
+ElementMap::driver_compatible(const Vector<int> &indexes, int driver) const
 {
   int mask = 1 << driver;
-  for (int i = 0; i < map_indexes.size(); i++) {
-    int idx = map_indexes[i];
+  for (int i = 0; i < indexes.size(); i++) {
+    int idx = indexes[i];
     if (idx > 0 && !(_e[idx].driver_mask & mask)) {
       while (idx > 0) {
 	if (_e[idx].driver_mask & mask)
@@ -575,8 +604,10 @@ ElementMap::driver_compatible(const Vector<int> &map_indexes, int driver) const
 bool
 ElementMap::driver_compatible(const RouterT *router, int driver, ErrorHandler *errh = 0) const
 {
+  HashMap<String, int> primitives(-1);
+  router->collect_primitive_classes(primitives);
   Vector<int> map;
-  map_indexes(router, map, errh);
+  map_indexes(primitives, map, errh);
   return driver_compatible(map, driver);
 }
 

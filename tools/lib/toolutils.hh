@@ -5,6 +5,8 @@ class Bitvector;
 class RouterT;
 
 extern bool ignore_line_directives;
+RouterT *read_router_string(const String &text, const String &landmark, ErrorHandler *);
+RouterT *read_router_string(String text, const String &landmark, bool, RouterT *, ErrorHandler *);
 RouterT *read_router_file(const char *, ErrorHandler *);
 RouterT *read_router_file(const char *, bool, ErrorHandler *);
 RouterT *read_router_file(const char *, RouterT *, ErrorHandler *);
@@ -122,6 +124,9 @@ class ElementMap { public:
     D_FIRST_DEFAULT = D_CLASS, D_LAST_DEFAULT = D_PROVISIONS
   };
   static int parse_component(const String &);
+
+  int map_type(const String &, ErrorHandler *, const String &) const;
+  void map_indexes(const HashMap<String, int> &, Vector<int> &, ErrorHandler *) const;
   
 };
 
