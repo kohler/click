@@ -141,7 +141,9 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	     || (_base_linktype != FAKE_DLT_SUNATM
 		 && _base_linktype != FAKE_DLT_C_HDLC
 		 && _base_linktype != FAKE_DLT_EN10MB
-		 && _base_linktype != FAKE_DLT_ATM_RFC1483))
+		 && _base_linktype != FAKE_DLT_ATM_RFC1483
+		 && _base_linktype != FAKE_DLT_PPP
+		 && _base_linktype != FAKE_DLT_PPP_HDLC))
 	return errh->error("bad encapsulation type");
 
     // set other variables
@@ -298,19 +300,21 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	_linktype = _base_linktype;
 	switch (_base_linktype) {
 	    
+	  cell:
 	  case FAKE_DLT_ATM_RFC1483:
-	  atm_rfc1483:
+	  case FAKE_DLT_PPP:
+	  case FAKE_DLT_PPP_HDLC:
 	    p = _ff.get_packet(DAGCell::CELL_SIZE - DAGCell::HEADER_SIZE, tv.tv_sec, tv.tv_usec, errh);
 	    break;
 	    
 	  case FAKE_DLT_C_HDLC:
 	    wire_length = htons(*(reinterpret_cast<const uint16_t*>(cell) + 5));
-	    goto atm_rfc1483;
+	    goto cell;
 
 	  case 0:
 	    _linktype = FAKE_DLT_ATM_RFC1483;
-	    goto atm_rfc1483;
-	    
+	    goto cell;
+
 	  case FAKE_DLT_SUNATM:
 	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 12, 4, DAGCell::CELL_SIZE - 12, tv.tv_sec, tv.tv_usec, errh);
 	    break;
