@@ -15,14 +15,14 @@ extern "C" {
 #define INPUT_BATCH     8
 #define OUTPUT_BATCH    16
 
-// #define _CLICK_STATS_ 1
+// #define CLICK_DEVICE_STATS 1
 // #define _DEV_OVRN_STATS_ 1
 
 #ifndef RR_SCHED
 # define CLICK_DEVICE_ADJUST_TICKETS 1
 #endif
 
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
 
 #define SET_STATS(p0mark, p1mark, time_mark) \
   { \

@@ -55,7 +55,7 @@ class ToDevice : public AnyDevice {
   
   bool tx_intr();
 
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
   // Statistics.
   unsigned long long _idle_calls;
   unsigned long long _idle_pulls;

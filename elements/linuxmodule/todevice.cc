@@ -49,7 +49,7 @@ ToDevice::ToDevice()
     _rejected(0), _hard_start(0)
 {
   add_input();
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
   _activations = 0;
   _idle_pulls = 0; 
   _idle_calls = 0; 
@@ -213,7 +213,7 @@ ToDevice::tx_intr()
   int sent = 0;
   int queued_pkts;
   
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
   unsigned low00, low10;
   unsigned long time_now;
 #endif
@@ -224,7 +224,7 @@ ToDevice::tx_intr()
  
     queued_pkts = _dev->tx_clean(_dev);
 
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
     if (_activations > 0)
       GET_STATS_RESET(low00, low10, time_now, 
 	              _perfcnt1_clean, _perfcnt2_clean, _time_clean);
@@ -264,7 +264,7 @@ ToDevice::tx_intr()
 	 * dev->tbusy is not set... see net/sched/sch_generic.c in linux src
 	 * code */
 	sent++;
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
         _linux_pkts_sent++;
 #endif
       }
@@ -274,11 +274,11 @@ ToDevice::tx_intr()
   }
 #endif
 
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
   if (sent > 0 || _activations > 0) _activations++;
 #endif
 
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
   if (_activations > 0) {
     if (sent == 0) _idle_calls++;
     if (sent == 0 && !busy) _idle_pulls++;
@@ -384,7 +384,7 @@ ToDevice_read_calls(Element *f, void *)
   return
     String(td->_rejected) + " packets rejected\n" +
     String(td->_hard_start) + " hard start xmit\n" +
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
     String(td->_idle_calls) + " idle tx calls\n" +
     String(td->_idle_pulls) + " idle pulls\n" +
     String(td->_busy_returns) + " device busy returns\n" +

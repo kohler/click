@@ -40,7 +40,7 @@ PollDevice::PollDevice()
   : _registered(0), _manage_tx(1)
 {
   add_output();
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
   _activations = 0;
   _idle_calls = 0;
   _pkts_received = 0;
@@ -86,7 +86,7 @@ PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
     _dev = find_device_by_ether_address(_devname);
   if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
-  if (_dev->polling == POLLING_UNSUPPORTED) 
+  if (_dev->polling < 0) 
     return errh->error("device `%s' not pollable", _devname.cc());
 #endif  
   return 0;
@@ -161,7 +161,7 @@ PollDevice::uninitialize()
     _registered = 0;
   }
   if (poll_device_map.lookup(ifindex()) == 0) {
-    if (_dev && _dev->polling == POLLING_ON)
+    if (_dev && _dev->polling)
       _dev->poll_off(_dev);
   } 
   unschedule();
@@ -174,7 +174,7 @@ PollDevice::run_scheduled()
 #if HAVE_POLLING
   struct sk_buff *skb_list, *skb;
   int got=0;
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
   unsigned long time_now;
   unsigned low00, low10;
 #endif
@@ -187,7 +187,7 @@ PollDevice::run_scheduled()
   got = INPUT_BATCH;
   skb_list = _dev->rx_poll(_dev, &got);
 
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
   if (got > 0 || _activations > 0) {
     _activations++;
     GET_STATS_RESET(low00, low10, time_now, 
@@ -199,7 +199,7 @@ PollDevice::run_scheduled()
   
   _dev->rx_refill(_dev);
   
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
   if (_activations > 0)
     GET_STATS_RESET(low00, low10, time_now, 
 	            _perfcnt1_refill, _perfcnt2_refill, _time_refill);
@@ -227,7 +227,7 @@ PollDevice::run_scheduled()
   }
   assert(skb_list == NULL);
 
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
   if (_activations > 0 && got > 0) {
     GET_STATS_RESET(low00, low10, time_now, 
 	            _perfcnt1_pushing, _perfcnt2_pushing, _time_pushing);
@@ -273,7 +273,7 @@ PollDevice_read_calls(Element *f, void *)
 {
   PollDevice *kw = (PollDevice *)f;
   return
-#if _CLICK_STATS_
+#if CLICK_DEVICE_STATS
     String(kw->_idle_calls) + " idle calls\n" +
     String(kw->_pkts_received) + " packets received\n" +
     String(kw->_time_poll) + " cycles poll\n" +
