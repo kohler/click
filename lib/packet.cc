@@ -45,7 +45,9 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
 	     unsigned tailroom)
 {
   unsigned size = len + headroom + tailroom;
-  if (struct sk_buff *skb = alloc_skb(size, GFP_ATOMIC)) {
+  int want = 1;
+  struct sk_buff *skb = skbmgr_allocate_skbs(size, &want);
+  if (want == 1) {
     skb_reserve(skb, headroom);	// leave some headroom
     __skb_put(skb, len);	// leave space for data
     if (data) memcpy(skb->data, data, len);
@@ -57,6 +59,10 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
     click_chatter("oops, kernel could not allocate memory for skbuff");
     return 0;
   }
+  Packet *p = reinterpret_cast<Packet *>(skb);
+  p->clear_annotations();
+  skb->pkt_type = HOST | PACKET_CLEAN;
+  return static_cast<WritablePacket *>(p);
 }
 
 #else /* !__KERNEL__ */
