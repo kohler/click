@@ -10,10 +10,14 @@
  */
 
 /* define VERBOSE to get output as in fip180-1.txt */
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+#include <click/glue.hh>
+#include <click/sha1.hh>
 #if defined( VERBOSE )
     #include <stdio.h>
 #endif
-#include <click/sha1.h>
 
 
 void swap_endian16( void* data, int len )
@@ -112,7 +116,7 @@ void SHA1_transform(  unsigned H[ SHA1_DIGEST_WORDS ],
     unsigned E = H[ 4 ];
     unsigned W[ 16 ];
 
-    memcpy( W, M, SHA1_INPUT_BYTES );
+    memmove( W, M, SHA1_INPUT_BYTES );
 
 /* Use method B from FIPS-180 (see fip-180.txt) where the use of
    temporary array W of 80 unsigned is avoided by working in a circular
@@ -202,10 +206,10 @@ void SHA1_transform(  unsigned H[ SHA1_DIGEST_WORDS ],
 
 void SHA1_update( SHA1_ctx* ctx, const void* pdata, unsigned data_len )
 {
-    const unsigned char* data = pdata;
+    const unsigned char* data = (const unsigned char*) pdata;
     unsigned use;
     unsigned low_bits;
-    int mlen;
+    unsigned mlen;
 
 /* convert data_len to bits and add to the 64-bit bit count */
 
@@ -223,7 +227,7 @@ void SHA1_update( SHA1_ctx* ctx, const void* pdata, unsigned data_len )
 /* deal with first block */
 
     use = min( SHA1_INPUT_BYTES - mlen, data_len );
-    memcpy( ctx->M + mlen, data, use );
+    memmove( ctx->M + mlen, data, use );
     mlen += use;
     data_len -= use;
     data += use;
@@ -233,7 +237,7 @@ void SHA1_update( SHA1_ctx* ctx, const void* pdata, unsigned data_len )
 	make_big_endian32( (unsigned*)ctx->M, SHA1_INPUT_WORDS );
 	SHA1_transform( ctx->H, ctx->M );
 	use = min( SHA1_INPUT_BYTES, data_len );
-	memcpy( ctx->M, data, use );
+	memmove( ctx->M, data, use );
 	mlen = use;
 	data_len -= use;
         data += use;
@@ -243,7 +247,7 @@ void SHA1_update( SHA1_ctx* ctx, const void* pdata, unsigned data_len )
 void SHA1_final( SHA1_ctx* ctx )
 {
     int mlen;
-    int padding;
+    unsigned padding;
 #if defined( word64 )
     word64 temp;
 #endif
@@ -282,10 +286,10 @@ void SHA1_final( SHA1_ctx* ctx )
     {
 	temp = ctx->bits;
     }
-    memcpy( ctx->M + SHA1_INPUT_BYTES - BIT_COUNT_BYTES, &temp, 
+    memmove(ctx->M + SHA1_INPUT_BYTES - BIT_COUNT_BYTES, &temp, 
 	    BIT_COUNT_BYTES );
 #else
-    memcpy( ctx->M + SHA1_INPUT_BYTES - BIT_COUNT_BYTES, &(ctx->hbits), 
+    memmove( ctx->M + SHA1_INPUT_BYTES - BIT_COUNT_BYTES, &(ctx->hbits), 
 	    BIT_COUNT_BYTES );
 #endif
     SHA1_transform( ctx->H, ctx->M );
@@ -295,14 +299,11 @@ const unsigned char* SHA1_get_digest( const SHA1_ctx* ctx )
 {
     static unsigned char digest[ SHA1_DIGEST_BYTES ];
     
-    if ( little_endian )
-    {
-	memcpy( digest, ctx->H, SHA1_DIGEST_BYTES );
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	memmove( digest, ctx->H, SHA1_DIGEST_BYTES );
 	make_big_endian32( digest, SHA1_DIGEST_WORDS );
 	return digest;
-    }
-    else
-    {
+#else
 	return (const unsigned char*) ( ctx->H );
-    }
+#endif
 }

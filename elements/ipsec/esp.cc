@@ -27,7 +27,7 @@
 #include <click/click_ip.h>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <click/sha1.h>
+#include <click/sha1.hh>
 
 IPsecESPEncap::IPsecESPEncap()
   : Element(1, 1), _spi(-1)

@@ -26,7 +26,7 @@
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <click/sha1.h>
+#include <click/sha1.hh>
 #include <click/glue.hh>
 
 IPsecESPUnencap::IPsecESPUnencap()
