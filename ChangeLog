@@ -1,3 +1,9 @@
+2002-03-21 Thursday 18:23  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/: make-flexclient-ron.pl (1.1), open-nodes-big.sh (1.1),
+	push-config.pl (1.1), push-datacollection.pl (1.1), remove-logs.pl
+	(1.1): added
+
 2002-03-20 Wednesday 17:48  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: policyprobe.cc (1.4), policyprobe.hh (1.3): [no log
