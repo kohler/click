@@ -1,3 +1,14 @@
+2004-01-07 Wednesday 01:13  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/Makefile.in (1.27), include/click/element.hh (1.31),
+	ns/Makefile.in (1.10), userlevel/Makefile.in (1.74),
+	include/click/master.hh (1.1), include/click/router.hh (1.51),
+	lib/element.cc (1.83), lib/master.cc (1.1), lib/router.cc (1.153),
+	lib/routerthread.cc (1.34), lib/timer.cc (1.30),
+	linuxmodule/Makefile.in (1.83), elements/standard/addressinfo.cc
+	(1.27): begin moving run queues into master.hh/master.cc (change
+	name later?); start with TimerList and selects
+
 2004-01-04 Sunday 00:14  Eddie Kohler <kohler@icir.org>
 
 	* lib/string.cc (1.44): add explanatory comment
