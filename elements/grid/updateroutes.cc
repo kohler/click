@@ -388,6 +388,12 @@ UpdateGridRoutes::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const
 }
 
 
+bool 
+UpdateGridRoutes::get_next_geographic_hop(IPAddress dest_ip, grid_location dest_loc, EtherAddress *dest_eth) const
+{
+  return false;
+}
+
 
 void
 UpdateGridRoutes::get_nbrs(Vector<grid_nbr_entry> *retval) const

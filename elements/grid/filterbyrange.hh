@@ -10,11 +10,12 @@
  * by a Grid node within RANGE metres from this node is sent to output
  * 0.  Packets transmitted by ``out of range'' nodes are sent out
  * output 1.  RANGE is an Integer.  This element is useful for
- * simulating physical topologies.  This element uses the
- * LocationInfo element named by the 2nd argument.
+ * simulating physical topologies.  This element uses the LocationInfo
+ * element named by the 2nd argument.
  *
  * =a
- * LocationInfo */
+ * LocationInfo 
+ * FilterByGridHops */
 
 #include "element.hh"
 #include "locationinfo.hh"

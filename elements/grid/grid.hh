@@ -63,6 +63,7 @@ struct grid_hdr {
 
   unsigned int ip;          // Sender's IP address.
   struct grid_location loc; // Sender's location, set by FixSrcLoc.
+  int loc_err;              // Error ra dius of position, in metres.  if negative, don't believe loc
   unsigned short total_len; // Of the whole packet, starting at grid_hdr.
                             // Why do we need total_len? What about byte order? -- for cksum.  network order.
   unsigned short cksum;     // Over the whole packet, starting at grid_hdr.
@@ -79,7 +80,8 @@ struct grid_nbr_entry {
   unsigned char num_hops; 
   /* 0 for num_hops indicate that this dest. is unreachable.  if so,
      loc fields are meaningless */
-  grid_location loc;
+  struct grid_location loc;
+  int loc_err;
   unsigned int seq_no;
   unsigned int age; 
 
@@ -105,6 +107,8 @@ struct grid_hello {
 
 struct grid_nbr_encap {
   unsigned int dst_ip;
+  struct grid_location dst_loc;
+  int dst_loc_err;
   unsigned char hops_travelled;
 };
 

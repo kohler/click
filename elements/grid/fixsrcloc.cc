@@ -67,8 +67,10 @@ FixSrcLoc::simple_action(Packet *xp)
   WritablePacket *p = xp->uniqueify();
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   gh->loc = _locinfo->get_current_location();
+  gh->loc_err = 0;
   return p;
 }
 
 ELEMENT_REQUIRES(userlevel LocationInfo)
 EXPORT_ELEMENT(FixSrcLoc)
+

@@ -16,15 +16,16 @@
  * Input 1 is down from higher level protocols, output 1 is is up to
  * higher level protocols. The format of both is IP packets.
  *
- * Output 2 pushes out packets that LookupLocalGridRoute doesn't know what to do
- * with (we don't know have a route with a next hop), but are still
- * valid.  e.g. to be sent to geographic forwarding.
+ * Output 2 pushes out packets that LookupLocalGridRoute doesn't know
+ * what to do with (we don't know have a route with a next hop), but
+ * are still valid.  e.g. to be sent to geographic forwarding.  These
+ * packets are GRID_NBR_ENCAP packets with MAC headers.
  *
- * Output 3 pushes out packets that are bad: e.g., Grid protocol
- * packets with an unknown type, or too many hops have been
- * travelled.  
+ * Output 3 is the error output; it pushes out packets that are bad:
+ * e.g., Grid protocol packets with an unknown type.
  *
  * =a
+ * LookupGeographicGridRoute
  * UpdateGridRoutes */
 
 #include "element.hh"
@@ -58,7 +59,6 @@ private:
   void forward_grid_packet(Packet *packet, IPAddress dest_ip);
 
   UpdateGridRoutes *_nbr;
-  int _max_forwarding_hops;
   EtherAddress _ethaddr;
   IPAddress _ipaddr;
 };

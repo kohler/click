@@ -24,7 +24,7 @@
 #include "router.hh"
 #include "glue.hh"
 
-LookupLocalGridRoute::LookupLocalGridRoute() : Element(2, 4), _nbr(0), _max_forwarding_hops(5)
+LookupLocalGridRoute::LookupLocalGridRoute() : Element(2, 4), _nbr(0)
 {
 }
 
@@ -48,8 +48,6 @@ LookupLocalGridRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
 			cpIPAddress, "source IP address", &_ipaddr,
                         cpElement, "UpdadateGridRoutes element", &_nbr,
-			cpOptional,
-			cpInteger, "max hops to forward packets for", &_max_forwarding_hops,
 			0);
   return res;
 }
@@ -195,14 +193,6 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
   }
 
   struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
-  if (encap->hops_travelled > _max_forwarding_hops) {
-    click_chatter("%s: ttl %d too high, dst %s",
-                  id().cc(),
-                  encap->hops_travelled,
-                  dest_ip.s().cc());
-    output(3).push(packet);
-    return;
-  }
 
   EtherAddress next_hop_eth;
   bool found_next_hop = _nbr->get_next_hop(dest_ip, &next_hop_eth);
