@@ -67,11 +67,8 @@ FilterByRange::push(int, Packet *p)
   assert(p);
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   grid_location remote_loc(gh->loc);
-  assert(sizeof(float) == sizeof(unsigned long));
-  long t1 = ntohl(*(unsigned long *) &remote_loc.lat);
-  long t2 = ntohl(*(unsigned long *) &remote_loc.lon);
-  remote_loc.lat = *(float *) &t1;
-  remote_loc.lon = *(float *) &t2;
+
+  remote_loc.ntohloc();
 
   assert(_locinfo);
   grid_location our_loc = _locinfo->get_current_location();

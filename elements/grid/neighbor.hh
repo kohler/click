@@ -3,7 +3,7 @@
 
 /*
  * =c
- * Neighbor(TIMEOUT, ETH, IP)
+ * Neighbor(TIMEOUT, ETH, IP [, MAX-HOPS])
  * =d
  *
  * Neighbor is an immediate neighbor routing protocol for Grid.  It
@@ -16,9 +16,16 @@
  * never discard.  ETH and IP are this node's MAC (Ethernet) and Grid
  * (IP) addresses, respectively.
  *
+ * A multi-hop neighbor table is maintained from Hello packet info,
+ * with neighbors up to MAX-HOPS away.  MAX_HOPS defaults to 1.
+ *
  * Neighbor expects and produces Grid packets with MAC headers on
  * input and output 0, expects IP packets annotated with a destination
  * address on input 1, and produces IP packets on output 1.
+ *
+ * Grid packets originate by this element need to have their location
+ * and checksum information updated by some other element
+ * (e.g. FixSrcLoc, SetGridChecksum).
  *
  * =e This example runs the neighbor protocol for a host with Grid
  * address 13.0.0.2 listening on eth0.  Note that you need a Hello
@@ -30,7 +37,10 @@
  * = FromLinux(...) -> [1] nb [1] -> Queue -> ToLinux
  * = Hello(...) -> q
  *
- * =a Hello */
+ * =a Hello 
+ * =a FixSrcLoc 
+ * =a SetGridChecksum
+ */
 
 
 #include "element.hh"
@@ -38,6 +48,7 @@
 #include "hashmap.hh"
 #include "etheraddress.hh"
 #include "ipaddress.hh"
+#include "grid.hh"
 
 class Neighbor : public Element {
 
@@ -58,7 +69,14 @@ public:
     { return eth.s() + " -- " + ip.s() + " -- " + String(last_updated_jiffies); }
   };
 
-  HashMap<IPAddress, NbrEntry> _addresses;
+  HashMap<IPAddress, NbrEntry> _addresses; // immediate nbrs
+  struct far_entry {
+    far_entry() : last_updated_jiffies(0) { }
+    far_entry(int j, grid_nbr_entry n) : last_updated_jiffies(j), nbr(n) { }
+    int last_updated_jiffies;
+    grid_nbr_entry nbr;
+  };
+  Vector<far_entry> _nbrs; // immediate and multihop nbrs
 
   Neighbor();
   ~Neighbor();
@@ -80,10 +98,16 @@ public:
   // true iff nbr is an immediate neighbor we have heard from
   bool knows_about(IPAddress nbr); 
 
+  void get_nbrs(Vector<grid_nbr_entry> &v) const;
+
   int _timeout_jiffies; // -1 if we are not timing out entries
+
 private:
   IPAddress _ipaddr;
   EtherAddress _ethaddr;
+  int _max_hops;
+
+  void forward_grid_packet(Packet *packet, IPAddress dest_ip);
 };
 
 #endif

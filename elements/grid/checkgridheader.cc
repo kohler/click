@@ -61,22 +61,23 @@ CheckGridHeader::drop_it(Packet *p)
 Packet *
 CheckGridHeader::simple_action(Packet *p)
 {
-  unsigned int hlen;
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
 
   if(p->length() < sizeof(click_ether) + sizeof(grid_hdr))
     goto bad;
   
+  unsigned int hlen, tlen;
   hlen = gh->hdr_len;
+  tlen = gh->total_len;
   /* grid header size keeps changing
   if(hlen < sizeof(grid_hdr))
     goto bad;
   */
   
-  if (hlen + sizeof(click_ether) > p->length())
+  if (tlen + sizeof(click_ether) != p->length())
     goto bad;
 
-  if (in_cksum((unsigned char *) gh, hlen) != 0)
+  if (in_cksum((unsigned char *) gh, tlen) != 0)
     goto bad;
   return(p);
   

@@ -41,18 +41,17 @@ SetGridChecksum::simple_action(Packet *p)
 {
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   unsigned plen = p->length();
-  unsigned hlen;
+  unsigned int tlen = gh->total_len;
   
   if (!gh || plen < sizeof(grid_hdr) + sizeof(click_ether))
     goto bad;
 
-  hlen = gh->hdr_len;
   if (/* hlen < sizeof(grid_hdr) || */ // grid_hdr size keeps changing...
-      hlen > plen)
+      tlen > plen)
     goto bad;
 
   gh->cksum = 0;
-  gh->cksum = in_cksum((unsigned char *) gh, hlen);
+  gh->cksum = in_cksum((unsigned char *) gh, tlen);
   
   return p;
 
