@@ -175,6 +175,12 @@ struct grid_hdr {
   { total_len = htons(sizeof(grid_hdr)); assert(total_len % 4 == 0); }
 
   static String type_string(unsigned char type);
+
+  static unsigned int get_pad_bytes(struct grid_hdr &gh) 
+  { return (gh.pad1 << 24) | (gh.pad2 << 16) | (gh.pad3 << 8) | gh.pad4; }
+  
+  static void set_pad_bytes(struct grid_hdr &gh, unsigned int v) 
+  { gh.pad1 = (v >> 24); gh.pad2 = (v >> 16) & 0xff; gh.pad3 = (v >> 8) & 0xff; gh.pad4 = v & 0xff; }
 };
 
 struct grid_nbr_entry {

@@ -32,7 +32,7 @@
 
 GridRouteTable::GridRouteTable() : 
   Element(1, 1), 
-  _seq_no(0), _fake_seq_no(0),
+  _seq_no(0), _fake_seq_no(0), _bcast_count(0),
   _max_hops(3), 
   _expire_timer(expire_hook, this),
   _hello_timer(hello_hook, this),
@@ -311,9 +311,10 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
     unsigned int num_rx = 0;
     unsigned int num_expected = 0;
     bool res = _link_stat->get_bcast_stats(r->next_hop_eth, last, window, num_rx, num_expected);
-    if (res && num_expected > 0) {
+    if (res && num_expected > 1) {
       h(105);
       double num_rx_ = num_rx;
+      /* we assume all nodes have same hello period */
       double num_expected_ = num_expected;
       rate = (num_rx_ - 0.5) / num_expected_;
     }
@@ -353,7 +354,7 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
     unsigned int num_rx = 0;
     unsigned int num_expected = 0;
     bool res = _link_stat->get_bcast_stats(r->next_hop_eth, last, window, num_rx, num_expected);
-    if (!res)
+    if (!res || num_expected <= 1)
       return false;
     double num_rx_ = num_rx;
     double num_expected_ = num_expected;
@@ -1311,6 +1312,9 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
       _seq_no += 2;
   }
   
+  _bcast_count++;
+  grid_hdr::set_pad_bytes(*gh, htonl(_bcast_count));
+
   hlo->ttl = htonl(grid_hello::MAX_TTL_DEFAULT);
 
   grid_nbr_entry *curr = (grid_nbr_entry *) (hlo + 1);

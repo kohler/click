@@ -90,8 +90,8 @@ LinkStat::simple_action(Packet *p)
   if (gh->type != grid_hdr::GRID_LR_HELLO)
     return p;
 
-  grid_hello *hlo = (grid_hello *) (gh + 1);
-  add_bcast_stat(ea, ntohl(hlo->seq_no));
+  // grid_hello *hlo = (grid_hello *) (gh + 1);
+  add_bcast_stat(ea, ntohl(grid_hdr::get_pad_bytes(*gh)));
 
   return p;
 }
@@ -116,7 +116,7 @@ LinkStat::get_bcast_stats(const EtherAddress &e, struct timeval &last, unsigned 
   first_seq = v->at(0).seq;
   last_seq = v->back().seq;
 
-  num_expected = 1 + (last_seq - first_seq) / 2;
+  num_expected = 1 + (last_seq - first_seq);
   num_rx = v->size();
   last = v->back().when;
   
@@ -190,7 +190,7 @@ LinkStat::read_bcast_stats(Element *xf, void *)
   Vector<EtherAddress> e_vec;
   int num = 0;
 
-  click_chatter("LS read_stats XXXX 1");
+  //  click_chatter("LS read_stats XXXX 1");
 
   String s;
   for (BigHashMap<EtherAddress, Vector<LinkStat::bcast_t> >::Iterator i = f->_bcast_stats.first(); i; i++) {
@@ -198,10 +198,10 @@ LinkStat::read_bcast_stats(Element *xf, void *)
     num++;
   }
 
-  click_chatter("LS read_stats XXXX 2");
+  //  click_chatter("LS read_stats XXXX 2");
 
   for (int i = 0; i < num; i++) {
-    click_chatter("LS read_stats XXXX 3");
+    // click_chatter("LS read_stats XXXX 3");
     struct timeval when;
     unsigned int window, num_rx, num_expected;    
     bool res = f->get_bcast_stats(e_vec[i], when, window, num_rx, num_expected);
@@ -211,7 +211,7 @@ LinkStat::read_bcast_stats(Element *xf, void *)
     char timebuf[80];
     snprintf(timebuf, 80, "%lu.%06lu", when.tv_sec, when.tv_usec);
     s += e_vec[i].s() + " last=" + timebuf + " num_rx=" + String(num_rx) + " num_expected=" + String(num_expected) + "\n";
-    click_chatter("LS read_stats XXXX 4");
+    //    click_chatter("LS read_stats XXXX 4");
   }
   return s;
 }

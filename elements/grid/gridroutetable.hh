@@ -216,6 +216,7 @@ private:
   /* latest sequence number for this node's route entry */
   unsigned int _seq_no;
   unsigned int _fake_seq_no;
+  unsigned int _bcast_count;
 
   /* local DSDV radius */
   int _max_hops;
