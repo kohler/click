@@ -279,7 +279,9 @@ ToDevice::tx_intr()
     if (sent == 0) _idle_calls++;
     if (sent > 0) _pkts_sent+=sent;
     if (busy) _busy_returns++;
+#if HAVE_POLLING
     if (sent>0) _time_tx += get_cycles()-time_now_tx;
+#endif
   }
 #endif
 
