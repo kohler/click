@@ -27,6 +27,9 @@
  * ToDevice element for the same device. Under other operating systems, your
  * mileage may vary.
  *
+ * Sets the packet_type_anno annotation for link layer broadcast and
+ * multicast packets.
+ *
  * =e
  *   FromDevice(eth0, 0) -> ...
  *
@@ -59,6 +62,10 @@ class FromDevice : public Element {
   static void get_packet(u_char *, const struct pcap_pkthdr *,
 			 const u_char *);
 #endif
+
+  static void set_annotations(Packet *);
+  // set appropriate annotations, i.e. MAC packet type.
+  // modifies the packet.
 
  public:
 

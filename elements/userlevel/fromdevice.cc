@@ -284,6 +284,7 @@ FromDevice::get_packet(u_char* clientdata,
   FromDevice *fd = (FromDevice *) clientdata;
   int length = pkthdr->caplen;
   Packet* p = Packet::make(data, length);
+  set_annotations(p);
   fd->output(0).push(p);
 }
 #endif
@@ -302,11 +303,33 @@ FromDevice::selected(int)
   int len = recvfrom(_fd, _packetbuf, _packetbuf_size, 0,
 		     (sockaddr *)&sa, &fromlen);
   if (len > 0) {
-    if (sa.sll_pkttype != PACKET_OUTGOING)
-      output(0).push(Packet::make(_packetbuf, len));
+    if (sa.sll_pkttype != PACKET_OUTGOING) {
+      Packet *p = Packet::make(_packetbuf, len);
+      set_annotations(p);
+      output(0).push(p);
+    }
   } else if (errno != EAGAIN)
     click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
 #endif
+}
+
+void
+FromDevice::set_annotations(Packet *p)
+{
+  char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+
+  // check if multicast
+  // ! mcast => ! bcast
+  if (!(p->data()[0] & 1))
+    return; 
+  
+  // check for bcast
+  if (memcmp(bcast_addr, p->data(), 6) == 0)
+    p->set_packet_type_anno(Packet::BROADCAST);
+  else
+    p->set_packet_type_anno(Packet::MULTICAST);
+
+  return;
 }
 
 ELEMENT_REQUIRES(userlevel)
