@@ -30,7 +30,6 @@
 # include <sys/ioctl.h>
 # include <sys/socket.h>
 # include <sys/types.h>
-# include <net/if.h>
 
 #elif defined(__linux__)
 # include <features.h>
@@ -39,7 +38,6 @@
 # include <netinet/in.h>
 # include <netinet/tcp.h>
 # include <netinet/udp.h>
-# include <net/if.h>
 # include <sys/param.h>
 
 # include <linux/types.h>
@@ -81,19 +79,17 @@ int DivertSocket::parse_ports(const String &param, ErrorHandler *errh,
   *portl =  *porth = 0;;
   dash = param.find_left('-');
 
-  printf("param = %s\n", param.cc());
-  
   if (dash < 0) 
     dash = param.length();
 
   if (!cp_integer(param.substring(0,dash), portl)){
-    errh->error("1 bad port in rule spec");
+    //errh->error("1 bad port in rule spec");
     return -1;
   }
 
   if (dash < param.length()) {
     if (!cp_integer(param.substring(dash+1), porth)) {
-      errh->error("2 bad port in rule spec");
+      //errh->error("2 bad port in rule spec");
       return -1;
     }
   } else 
@@ -111,8 +107,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int confindex = 5;
   _have_sport = _have_dport = false;
-
-
+  
 
   for(int i=0; i < conf.size(); i++){
     click_chatter("  %s\n", ((String)conf[i]).cc());
@@ -145,13 +140,12 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   // parse protocol & src addr/mask
   if ((cp_va_parse(conf[3], this, errh, cpByte, "protocol", &_protocol, cpEnd) < 0) ||
-      (cp_ip_prefix(conf[4], &_saddr, &_smask, true) < 0))
+      (!cp_ip_prefix(conf[4], &_saddr, &_smask, true, this))) {
+    errh->error("invalid src addr/mask");
     return -1;
+  } 
+  _saddr &= _smask;
 
-  if (_saddr.addr() == 0) {
-    errh->error("invalid src addr");
-    return -1;
-  }
 
   if ((_protocol != IP_PROTO_UDP && _protocol != IP_PROTO_TCP) && (conf.size() > 7)) {
     errh->error("too many parameters for non TCP/UDP rule");
@@ -173,15 +167,15 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   //printf("1 confindex = %d (%s)\n", confindex, conf[confindex].cc());
   // parse dst addr/mask
-  if (cp_ip_prefix(conf[confindex], &_daddr, &_dmask, true) < 0)
-    return -1;
-  confindex++;
-  
-  if (_daddr.addr() == 0) {
-    errh->error("invalid dst addr");
+  if (!cp_ip_prefix(conf[confindex], &_daddr, &_dmask, true, this )){
+    errh->error("invalid dst addr/mask");
     return -1;
   }
 
+
+  _daddr &= _dmask;
+  confindex++;
+  
 
   // parse dst ports
   if (confindex < conf.size()) {
@@ -325,8 +319,9 @@ DivertSocket::initialize(ErrorHandler *errh)
   fw.fw_smsk.s_addr= _smask.in_addr().s_addr;
   fw.fw_dst.s_addr = _daddr.in_addr().s_addr;
   fw.fw_dmsk.s_addr= _dmask.in_addr().s_addr;
-  strcpy(fw.fw_vianame, _device.cc() );
 
+  fw.fw_outputsize=0xffff;
+  strcpy(fw.fw_vianame, _device.cc() );
 
   /* fill in the fwuser structure */
   ipfu.ipfw=fw;
