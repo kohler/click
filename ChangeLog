@@ -1,3 +1,21 @@
+2002-08-06 Tuesday 15:47  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/ipreassembler.hh (1.11): nitlet
+
+2002-08-06 Tuesday 15:47  Eddie Kohler <kohler@icir.org>
+
+	* include/click/packet_anno.hh (1.11): macros specify where the
+	PAINT_ANNO is
+
+2002-08-06 Tuesday 15:47  Eddie Kohler <kohler@icir.org>
+
+	* include/click/packet.hh (1.40): restore
+	change_headroom_and_length function
+
+2002-08-06 Tuesday 15:46  Eddie Kohler <kohler@icir.org>
+
+	* AUTHORS (1.22): nit
+
 2002-08-06 Tuesday 00:18  Eddie Kohler <kohler@icir.org>
 
 	* elements/ethernet/arpresponder.cc (1.42),

@@ -1,3 +1,17 @@
+2002-08-06 Tuesday 15:47  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: packet_anno.hh, packet_anno.hh: macros specify
+	where the PAINT_ANNO is
+
+2002-08-06 Tuesday 15:47  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: packet.hh, packet.hh: restore
+	change_headroom_and_length function
+
+2002-08-06 Tuesday 15:46  Eddie Kohler <kohler@icir.org>
+
+	* AUTHORS: nit
+
 2002-08-06 Tuesday 00:18  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/addressinfo.cc, include/click/bighashmap.cc,
