@@ -43,6 +43,7 @@ PerfInfo::configure(const String &conf, ErrorHandler *errh)
   metrics.insert("IFU_FETCH", 0x80);
   metrics.insert("IFU_FETCH_MISS", 0x81);
   metrics.insert("L2_IFETCH", 0x28 | (0xf<<8));
+  metrics.insert("L2_LD", 0x29 | (0xf<<8));
   metrics.insert("L2_LINES_OUTM", 0x27);
   metrics.insert("L2_RQSTS", 0x2e | (0xf<<8));
   metrics.insert("BUS_TRAN_MEM", 0x6f);
