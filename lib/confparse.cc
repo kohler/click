@@ -1116,17 +1116,34 @@ cp_real2(const String &str, int frac_bits, int32_t *return_value)
 // PARSING TIME
 
 static String
-cp_seconds_suffix(const String &str, int *power)
+cp_seconds_suffix(const String &str, int *power, int *factor)
 {
   int len = str.length();
   const char *s = str.data();
   *power = 0;
+  *factor = 1;
   
   if (len > 1 && s[len-1] == 's')
     len--;
   else if (len > 3 && s[len-3] == 's' && s[len-2] == 'e' && s[len-1] == 'c')
     len -= 3;
-  else
+  else if (len > 1 && s[len-1] == 'm') {
+    len--;
+    *power = 1, *factor = 6;
+    goto eat_space;
+  } else if (len > 3 && s[len-3] == 'm' && s[len-2] == 'i' && s[len-1] == 'n') {
+    len -= 3;
+    *power = 1, *factor = 6;
+    goto eat_space;
+  } else if (len > 1 && s[len-1] == 'h') {
+    len--;
+    *power = 2, *factor = 36;
+    goto eat_space;
+  } else if (len > 2 && s[len-3] == 'h' && s[len-2] == 'r') {
+    len -= 2;
+    *power = 2, *factor = 36;
+    goto eat_space;
+  } else
     return str;
 
   if (s[len - 1] == 'm')
@@ -1136,25 +1153,37 @@ cp_seconds_suffix(const String &str, int *power)
   else if (s[len - 1] == 'n')
     *power = -9, len--;
 
+ eat_space:
   while (len > 0 && isspace(s[len - 1]))
     len--;
   return str.substring(0, len);
 }
 
+static bool
+cp_seconds_as(int want_power, const String &str_in, uint32_t *return_value)
+{
+  int power, factor;
+  String str = cp_seconds_suffix(str_in, &power, &factor);
+  if (!cp_unsigned_real10(str, want_power, power, return_value))
+    return false;
+  if (*return_value > 0xFFFFFFFFU / factor) {
+    cp_errno = CPE_OVERFLOW;
+    *return_value = 0xFFFFFFFFU;
+  } else
+    *return_value *= factor;
+  return true;
+}
+
 bool
 cp_seconds_as_milli(const String &str_in, uint32_t *return_value)
 {
-  int power;
-  String str = cp_seconds_suffix(str_in, &power);
-  return cp_unsigned_real10(str, 3, power, return_value);
+  return cp_seconds_as(3, str_in, return_value);
 }
 
 bool
 cp_seconds_as_micro(const String &str_in, uint32_t *return_value)
 {
-  int power;
-  String str = cp_seconds_suffix(str_in, &power);
-  return cp_unsigned_real10(str, 6, power, return_value);
+  return cp_seconds_as(6, str_in, return_value);
 }
 
 bool
