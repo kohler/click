@@ -313,7 +313,7 @@ IPFilter::Primitive::unparse_type(int srcdst, int type)
    default: sa << "<unknown type " << type << "> "; break;
   }
 
-  sa.pop();
+  sa.pop_back();
   return sa.take_string();
 }
 
