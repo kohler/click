@@ -76,9 +76,12 @@ struct grid_hdr {
 struct grid_nbr_entry {
   unsigned int ip; 
   unsigned int next_hop_ip;
-  unsigned char num_hops; // what does 0 indicate? XXX
+  unsigned char num_hops; 
+  /* 0 for num_hops indicate that this dest. is unreachable.  if so,
+     num_hops, and loc fields are meaningless */
   grid_location loc;
   unsigned int seq_no;
+  unsigned int age; 
 
   grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0), seq_no(0) { }
 
@@ -88,12 +91,16 @@ struct grid_nbr_entry {
 
 struct grid_hello {
   unsigned int seq_no;
+  unsigned int age; // decreasing, approximately in milliseconds
   unsigned char num_nbrs;
   unsigned char nbr_entry_sz;
   // for GRID_LR_HELLO packets, followed by num_nbrs grid_nbr_entry
   // structs.
 
   grid_hello() : num_nbrs(0), nbr_entry_sz(sizeof(grid_nbr_entry)) { }
+
+  static const unsigned int MIN_AGE_DECREMENT = 10;
+  static const unsigned int MAX_AGE_DEFAULT = 30000; // ~ 30 secs
 };
 
 struct grid_nbr_encap {

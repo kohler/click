@@ -58,17 +58,19 @@ public:
  
   struct far_entry {
     far_entry() : last_updated_jiffies(0) { }
-    far_entry(int j, grid_nbr_entry n) : last_updated_jiffies(j), nbr(n) { }
+    far_entry(int j, grid_nbr_entry n) : last_updated_jiffies(j), sent_new(false), nbr(n)  { }
     int last_updated_jiffies;
+    bool sent_new;
     grid_nbr_entry nbr;
   };
   typedef BigHashMap<IPAddress, far_entry> FarTable;
   FarTable _nbrs; // immediate and multihop nbrs
   /* 
    * _nbrs is our routing table; its information is maintained by
-   * processing Grid Hello packets only.  one invariant: any entry
-   * listed as one hop in _nbrs has an entry in _addresses. 
-   */
+   * processing Grid Hello (GRID_LR_HELLO) packets only.  some
+   * invariants: any entry listed as one hop in _nbrs has an entry in
+   * _addresses.  this table should never include a broken route
+   * (indicated by num_hops == 0).  There may be entries with age 0 */
 
   Neighbor();
   ~Neighbor();
@@ -88,8 +90,7 @@ public:
   bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const;
   void get_nbrs(Vector<grid_nbr_entry> *retval) const;
 
-  Packet *make_hello();
-  
+
 private:
   int _timeout; // -1 if we are not timing out entries
   int _timeout_jiffies;
@@ -103,12 +104,30 @@ private:
   int _period;
   int _jitter;
   Timer _hello_timer;
+
+  static const unsigned int EXPIRE_TIMER_PERIOD = 100; // msecs
   Timer _expire_timer;
+
+  /* check we aren't going crazy with the routing updates... */
+  static const int SANITY_CHECK_PERIOD = 10000; // 10 secs
+  static const int SANITY_CHECK_MAX_PACKETS = 100;
+  Timer _sanity_timer;
+  int _num_updates_sent;
+
   unsigned int _seq_no;
 
   static void expire_hook(unsigned long);
   static void hello_hook(unsigned long);
-  void expire_routes();
+  static void sanity_hook(unsigned long);
+
+  Vector<grid_nbr_entry> expire_routes();
+  void send_routing_update(Vector<grid_nbr_entry> &rte_info);
+#if 0
+  Packet *make_hello();
+#endif  
+  // decrement, bottoming out at 0
+  static unsigned int decr_age(unsigned int age, unsigned int decr)
+  { return (age > decr ? age - decr : 0); }
 };
 
 #endif
