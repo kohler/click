@@ -1,3 +1,7 @@
+2002-05-28 Tuesday 13:40  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/lookuplocalgridroute.cc (1.37): [no log message]
+
 2002-05-22 Wednesday 19:43  Eddie Kohler <kohler@aciri.org>
 
 	* elements/linuxmodule/todevice.cc (1.126): oopslet
