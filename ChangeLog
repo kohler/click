@@ -1,3 +1,87 @@
+2000-12-06 Wednesday 18:02  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/cpuswitch.cc: file cpuswitch.cc was
+	initially added on branch smp_click.
+
+2000-12-06 Wednesday 18:02  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/cpuswitch.hh: file cpuswitch.hh was
+	initially added on branch smp_click.
+
+2000-12-06 Wednesday 10:41  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: linuxmodule/fromlinux.cc, linuxmodule/tolinux.cc,
+	userlevel/fromdump.cc: other changes caused by click_ip.h changes
+	(Mz)
+
+2000-12-06 Wednesday 10:40  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: counter.cc, counter.hh: Counter now always
+	keeps both byte and packet counters; therefore removed its
+	argument. Also added some new handlers and llrpcs.
+
+2000-12-06 Wednesday 10:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/: Makefile.in, lib/Makefile.in: make install bugfixes
+
+2000-12-06 Wednesday 10:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/ewma.hh: added rate() and unparse() methods
+
+2000-12-06 Wednesday 10:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipmirror.cc, ipmirror.hh: improve IPMirror: only
+	switch ports for first fragments of TCP or UDP packets
+
+2000-12-06 Wednesday 10:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/: click_icmp.h, click_icmp6.h, click_ip.h,
+	click_ip6.h, ipaddress.hh: click_ip makeover. Now IPAddress does
+	not depend on click_ip. Also added some fragmentation-related
+	macros and fixed bad #include statements.
+
+2000-12-06 Wednesday 10:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/llrpc.h: added GET_COUNTS llrpcs
+
+2000-12-06 Wednesday 10:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/confparse.cc: bug fixes: crash when printing signature, and
+	bad message
+
+2000-12-06 Wednesday 10:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click-elem2man, elements/ip/ipfilter.hh,
+	elements/ip/udpipencap.cc, elements/linuxmodule/cyclecountaccum.hh:
+	documentation fixes (mostly nitlets)
+
+2000-12-06 Wednesday 10:34  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/: proc_config.cc, proc_element.cc: fixed write
+	handlers in Linux kernel module. Incorrectly acted on first flush()
+	operation, but struct files can be shared; so when a file is
+	flushed, don't act unless filp->f_count == 1 (this is the last
+	file). Fixed problems with installing configurations via cat.
+	(Mazu)
+
+2000-12-06 Wednesday 10:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/ipratemon.hh, elements/standard/block.cc,
+	elements/standard/compblock.cc, include/click/packet.hh,
+	include/click/packet_anno.hh: changed annotations again: now
+	forward and reverse rate annotations are stored by macros into an
+	arbitrary annotation section (Mz)
+
+2000-12-06 Wednesday 10:31  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: iprewriter.cc, iprewriter.hh, iprw.cc, iprw.hh,
+	tcprewriter.cc: documentation fixes, and handle fragments correctly
+
+2000-12-06 Wednesday 09:47  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in, lib/clp.c: added check for strtoul(), and handle
+	negative numbers better in CLP when it doesn't exist
+
 2000-11-30 Thursday 01:10  Benjie Chen <benjie@lcs.mit.edu>
 
 	* etc/restore-linux: file restore-linux was initially added on
