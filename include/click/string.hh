@@ -44,6 +44,7 @@ class String { public:
   static const String &out_of_memory_string() { return *oom_string_p; }
   static String garbage_string(int n);	// n garbage characters
   static String stable_string(const char *, int = -1); // stable read-only mem.
+  static inline String stable_string(const char *, const char *);
   
   bool out_of_memory() const		{ return _memo == oom_memo; }
   
@@ -110,6 +111,7 @@ class String { public:
 #endif
 
   void append(const char *, int len);
+  inline void append(const char *, const char *);
   void append_fill(int c, int len);
   char *append_garbage(int len);
   inline String &operator+=(const String &);
@@ -238,6 +240,15 @@ String::data_shared() const
 }
 
 inline String
+String::stable_string(const char *s1, const char *s2)
+{
+    if (s1 < s2)
+	return String::stable_string(s1, s2 - s1);
+    else
+	return String();
+}
+
+inline String
 String::substring(const char *s1, const char *s2) const
 {
     if (s1 < s2 && s1 >= _data && s2 <= _data + _length)
@@ -329,6 +340,13 @@ String::operator=(const char *cc)
   deref();
   assign(cc, -1);
   return *this;
+}
+
+inline void
+String::append(const char *s1, const char *s2)
+{
+  if (s1 < s2)
+    append(s1, s2 - s1);
 }
 
 inline String &
