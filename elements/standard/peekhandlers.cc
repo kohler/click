@@ -40,6 +40,9 @@ PeekHandlers::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
   int next_timeout = 0;
   for (int i = 0; i < args.size(); i++) {
+    if (!args[i])
+      continue;
+    
     String first;
     cp_word(args[i], first);
     int gap;
@@ -47,6 +50,13 @@ PeekHandlers::configure(const String &conf, ErrorHandler *errh)
 		    cpMilliseconds, "timeout interval", &gap, 0) >= 0) {
       next_timeout += gap;
       continue;
+    } else if (first == "quit") {
+      _h_element.push_back(0);
+      _h_handler.push_back("");
+      _h_timeout.push_back(next_timeout);
+      if (i < args.size() - 1)
+	errh->warning("arguments after `quit' directive ignored");
+      break;
     } else {
       int dot = first.find_left('.');
       if (dot >= 0) {
@@ -59,6 +69,7 @@ PeekHandlers::configure(const String &conf, ErrorHandler *errh)
 	continue;
       }
     }
+    
     errh->error("argument %d: expected `TIMEOUT' or `ELEMENT.HANDLER'",
 		i + 1);
   }
@@ -94,6 +105,13 @@ PeekHandlers::timer_hook(unsigned long thunk)
   do {
     Element *he = peek->_h_element[h];
     String hname = peek->_h_handler[h];
+
+    if (he == 0) {		// `quit' directive
+      router->please_stop_driver();
+      h++;
+      break;
+    }
+      
     int i = router->find_handler(he, hname);
     if (i < 0)
       errh->error("%s: no handler `%s.%s'", peek->id().cc(), he->id().cc(), hname.cc());

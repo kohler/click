@@ -9,13 +9,13 @@
  * =io
  * None
  * =d
+ *
  * Runs read handlers automatically at specified times. Each configuration
- * argument should be either `DELAY', a delay in seconds, or
- * `ELEMENT.HANDLERNAME', a directive to call ELEMENT's
- * HANDLERNAME read handler and report the result.
- * PeekHandlers processes its arguments in order,
- * reading handlers as they appear.
- * A `DELAY' directive causes it to wait for DELAY seconds before
+ * argument should be either `DELAY', a delay in seconds;
+ * `ELEMENT.HANDLERNAME', a directive to call ELEMENT's HANDLERNAME read
+ * handler and report the result; or `quit', a directive to stop the driver.
+ * PeekHandlers processes its arguments in order, reading handlers as they
+ * appear. A `DELAY' directive causes it to wait for DELAY seconds before
  * continuing.
  *
  * At user level, the results of any read handlers are printed to standard
@@ -25,8 +25,7 @@
  * = PeekHandlers(q.length,
  * =              1.5, // delay for 1.5 seconds
  * =              q.length);
- * =a PokeHandlers
- */
+ * =a PokeHandlers */
 
 class PeekHandlers : public Element {
 

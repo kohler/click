@@ -9,13 +9,13 @@
  * =io
  * None
  * =d
+ *
  * Runs write handlers automatically at specified times. Each configuration
- * argument should be either `DELAY', a delay in seconds, or
- * `ELEMENT.HANDLERNAME VALUE', a directive to write VALUE into ELEMENT's
- * HANDLERNAME write handler. PokeHandlers processes its arguments in order,
- * writing to handlers as they appear.
- * A `DELAY' directive causes it to wait for DELAY seconds before
- * continuing.
+ * argument should be either `DELAY', a delay in seconds; `ELEMENT.HANDLERNAME
+ * VALUE', a directive to write VALUE into ELEMENT's HANDLERNAME write
+ * handler; or `quit', a directive to stop the driver. PokeHandlers processes
+ * its arguments in order, writing to handlers as they appear. A `DELAY'
+ * directive causes it to wait for DELAY seconds before continuing.
  *
  * At user level, errors reported by write handlers are printed to standard
  * error. In the Linux kernel module, they are printed to /var/log/messages
@@ -24,8 +24,7 @@
  * = PokeHandlers(red.max_p 0.8,
  * =              1.5, // delay for 1.5 seconds
  * =              red.max_p 0.5);
- * =a PeekHandlers
- */
+ * =a PeekHandlers */
 
 class PokeHandlers : public Element {
 
