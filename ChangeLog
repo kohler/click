@@ -1,3 +1,18 @@
+2003-02-03 Monday 20:38  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/: ipprint.cc (1.37), ipprint.hh (1.20): TIMESTAMP
+	defaults to true, and add AGGREGATE keyword argument
+
+2003-02-03 Monday 20:38  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/fromipsumdump.cc (1.43): use "!aggregate" value
+	when provided
+
+2003-02-03 Monday 20:27  Eddie Kohler <kohler@icir.org>
+
+	* elements/local/webgen.cc (1.14): shut up report if element was
+	never initialized
+
 2003-02-03 Monday 17:34  Eddie Kohler <kohler@icir.org>
 
 	* click-buildtool (1.39): fix findelem bug report by Mr. DeCouto
