@@ -1973,6 +1973,7 @@ DSRRouteTable::last_forwarder_eth(Packet *p)
   return (EtherAddress((unsigned char *)d));
 }
 
+ELEMENT_REQUIRES(LinkTable)
 EXPORT_ELEMENT(DSRRouteTable)
 
 #include <click/bighashmap.cc>
