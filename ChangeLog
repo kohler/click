@@ -1,3 +1,7 @@
+2003-06-09 Monday 17:59  Eddie Kohler <kohler@icir.org>
+
+	* elements/grid/printsrcr.hh (1.3): nit
+
 2003-06-06 Friday 19:36  Eddie Kohler <kohler@icir.org>
 
 	* doc/click.texi (1.57), include/click/straccum.hh (1.25): more doc
