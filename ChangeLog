@@ -1,3 +1,9 @@
+2003-08-11 Monday 23:49  Eddie Kohler <kohler@icir.org>
+
+	* click-compile.in (1.24), ns/Makefile.in (1.9),
+	userlevel/Makefile.in (1.73): click-compile --libs outputs the
+	Click library as well as other libraries
+
 2003-08-11 Monday 13:52  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: linktable.cc (1.15), linktable.hh (1.12): make
