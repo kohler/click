@@ -43,7 +43,7 @@ int click_start_sched(Router *, int, ErrorHandler *);
 extern int click_mode_r, click_mode_w, click_mode_x, click_mode_dir;
 
 #ifdef HAVE_CLICKFS
-void init_clickfs();
+int init_clickfs();
 void cleanup_clickfs();
 #endif
 

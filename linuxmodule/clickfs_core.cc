@@ -41,7 +41,7 @@ static spinlock_t click_config_lock;
 extern atomic_t click_config_generation;
 
 
-// SORT ROUTINES
+/******************************** Quicksort **********************************/
 
 static int
 click_qsort_partition(void *base_v, size_t size, int left, int right,
@@ -337,7 +337,6 @@ calculate_handler_conflicts(int parent_eindex)
 }
 
 
-
 /*************************** Inode operations ********************************/
 
 static void
@@ -409,6 +408,8 @@ click_inode(struct super_block *sb, unsigned long ino)
 
 
 /*************************** Directory operations ****************************/
+
+extern "C" {
 
 static struct dentry *
 click_dir_lookup(struct inode *dir, struct dentry *dentry)
@@ -631,10 +632,14 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
     return 1;
 }
 
+} // extern "C"
+
 
 /*************************** Superblock operations ***************************/
 
 static struct super_operations click_superblock_ops;
+
+extern "C" {
 
 static void
 click_read_inode(struct inode *inode)
@@ -671,33 +676,48 @@ click_put_inode(struct inode *inode)
 }
 
 static struct super_block *
-click_read_super(struct super_block *s, void * /* data */, int)
+click_read_super(struct super_block *sb, void * /* data */, int)
 {
-    lock_super(s);
+    lock_super(sb);
     
-    s->s_blocksize = 1024;
-    s->s_blocksize_bits = 10;
-    s->s_magic = PROC_SUPER_MAGIC;
-    s->s_op = &click_superblock_ops;
-    struct inode *root_inode = click_inode(s, INO_GLOBALDIR);
+    sb->s_blocksize = 1024;
+    sb->s_blocksize_bits = 10;
+    //sb->s_magic = PROC_SUPER_MAGIC;
+    sb->s_op = &click_superblock_ops;
+    struct inode *root_inode = click_inode(sb, INO_GLOBALDIR);
     if (!root_inode)
 	goto out_no_root;
-    s->s_root = d_alloc_root(root_inode, 0);
-    if (!s->s_root)
+    sb->s_root = d_alloc_root(root_inode, 0);
+    if (!sb->s_root)
 	goto out_no_root;
     // XXX options
-    //parse_options(data, &root_inode->i_uid, &root_inode->i_gid);
     
-    unlock_super(s);
-    proclikefs_read_super(s);
-    return s;
+    unlock_super(sb);
+    proclikefs_read_super(sb);
+    return sb;
 
   out_no_root:
-    printk("click_read_super: get root inode failed\n");
+    printk("<1>click_read_super: get root inode failed\n");
     iput(root_inode);
-    s->s_dev = 0;
-    unlock_super(s);
+    sb->s_dev = 0;
+    unlock_super(sb);
     return 0;
+}
+
+static void
+click_reread_super(struct super_block *sb)
+{
+    lock_super(sb);
+    if (sb->s_root) {
+	struct inode *old_inode = sb->s_root->d_inode;
+	sb->s_root->d_inode = click_inode(sb, INO_GLOBALDIR);
+	iput(old_inode);
+	sb->s_blocksize = 1024;
+	sb->s_blocksize_bits = 10;
+	sb->s_op = &click_superblock_ops;
+    } else
+	printk("<1>silly click_reread_super\n");
+    unlock_super(sb);
 }
 
 static void
@@ -705,6 +725,8 @@ click_delete_dentry(struct dentry *dentry)
 {
     d_drop(dentry);
 }
+
+} // extern "C"
 
 
 /*************************** Handler operations ******************************/
@@ -794,6 +816,8 @@ find_handler(int eindex, int handlerno)
     else
 	return 0;
 }
+
+extern "C" {
 
 static int
 handler_open(struct inode *inode, struct file *filp)
@@ -990,10 +1014,12 @@ handler_ioctl(struct inode *inode, struct file *filp,
     return retval;
 }
 
+} // extern "C"
+
 
 /*********************** Initialization and termination **********************/
 
-void
+int
 init_clickfs()
 {
     static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo));
@@ -1033,7 +1059,12 @@ init_clickfs()
     spin_lock_init(&handler_strings_lock);
     sorted_elements_generation = 0; // click_config_generation starts at 1
 
-    clickfs = proclikefs_register_filesystem("click", click_read_super, 0);
+    clickfs = proclikefs_register_filesystem("click", click_read_super, click_reread_super);
+    if (!clickfs) {
+	printk("<1>click: could not initialize clickfs!\n");
+	return -EINVAL;
+    } else
+	return 0;
 }
 
 void

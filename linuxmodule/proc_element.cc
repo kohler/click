@@ -433,7 +433,7 @@ register_handler(proc_dir_entry *directory, int handlerno)
 void
 cleanup_router_element_procs()
 {
-  if (!click_router)
+  if (!click_router || !element_pdes)
     return;
   int nelements = click_router->nelements();
   for (int i = 0; i < 2*nelements; i++) {
