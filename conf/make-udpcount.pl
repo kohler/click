@@ -9,6 +9,7 @@
 #             d - network number of destination (e.g. 3)
 
 my $rtrifs = [ 
+# ethernet address of card on router
 	[ "00:C0:95:E2:16:9C" ], # 1.0.0.1
 	[ "00:C0:95:E2:16:9D" ], # 2.0.0.1
 	[ "00:C0:95:E2:09:14" ], # 3.0.0.1
@@ -20,8 +21,9 @@ my $rtrifs = [
 ];
 
 my $cltifs = [
+# ethernet address of sender/receiver, interface on machine for tx/rx
 	[ "00:A0:CC:55:E3:D0", "eth1" ], # 1.0.0.2
-	[ "00:00:C0:B4:68:EF", "eth1" ], # 2.0.0.2
+	[ "00:00:C0:B4:68:EF", "eth0" ], # 2.0.0.2
 	[ "00:E0:29:05:E4:DA", "eth1" ], # 3.0.0.2
 	[ "00:00:C0:4F:71:EF", "eth1" ], # 4.0.0.2
 	[ "00:00:C0:61:67:EF", "eth1" ], # 5.0.0.2
