@@ -1,3 +1,13 @@
+2004-06-26 Saturday 20:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* drivers/e1000-4.x/src/e1000_main.c (1.3): do not print "polling!"
+	error message, since it can happen during normal operation (Andy
+	Van Maele, Nikitas)
+
+2004-06-26 Saturday 20:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* NEWS (1.149): NEWS updates
+
 2004-06-24 Thursday 16:38  John Bicket <jbicket@mit.edu>
 
 	* include/click/packet_anno.hh (1.22): more wifi annos.
