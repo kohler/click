@@ -1,3 +1,24 @@
+2004-06-17 Thursday 12:33  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: beaconscanner.cc (1.4), beaconscanner.hh (1.4),
+	linktable.cc (1.2), linktable.hh (1.2), settxrate.cc (1.13),
+	wifiencap.cc (1.3), wifistation.cc (1.2), wifistation.hh (1.2),
+	ap/openauthresponder.cc (1.1), ap/openauthresponder.hh (1.1),
+	ap/proberesponder.cc (1.2), ap/simpleauthenticator.cc (1.2),
+	ap/simpleauthenticator.hh (1.2), sr/ettmetric.cc (1.2),
+	sr/ettmetric.hh (1.2), sr/ettstat.cc (1.2), sr/ettstat.hh (1.2),
+	station/associationrequester.cc (1.1),
+	station/associationrequester.hh (1.1), station/beaconscanner.cc
+	(1.1), station/beaconscanner.hh (1.1), station/openauthrequester.cc
+	(1.1), station/openauthrequester.hh (1.1),
+	station/proberequester.cc (1.1), station/proberequester.hh (1.1):
+	add elements for association with and ap.
+
+2004-06-17 Thursday 12:22  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/controlsocket.cc (1.52): try one last time to
+	emit buffered data when ControlSocket is cleaned up
+
 2004-06-17 Thursday 00:47  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/controlsocket.cc (1.51): don't shut down when
