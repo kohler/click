@@ -117,13 +117,8 @@ by setting the "'`'"CXX' environment variable and rerunning me.
     dnl define correct warning options
 
     CXX_WARNINGS=
-    if test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings"; then
-	if test "$GXX_MAJOR" -ge 3; then
-	    CXX_WARNINGS='-W -Wall'
-	else
-	    CXX_WARNINGS='-Wp,-w -W -Wall'
-	fi
-    fi
+    test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
+	CXX_WARNINGS='-W -Wall'
 
     ac_base_cxx="$CXX"
     test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
