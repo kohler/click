@@ -31,7 +31,8 @@
  * packet.
  *
  * TODO
- *   prevent packets with bad seq no range from correcting queue
+ *   prevent packets with bad seq number range from corrupting queue;
+ *   should reject packets with overlaping seq number range
  */
 
 class TCPBuffer : public Element {
@@ -80,9 +81,15 @@ public:
   void push(int, Packet *);
   Packet *pull(int);
 
-  /* returns true if there is a missing sequence, set seqno to 
-   * that sequence number */
+  /* if there is a missing sequence, set seqno to 
+   * that sequence number. returns false if no packets
+   * have arrived at the buffer. true otherwise. */
   bool first_missing_seq_no(unsigned& seqno);
+
+  /* if there is a missing sequence after pos, set seqno 
+   * to that sequence number. returns false if no packets
+   * have arrived at the buffer. true otherwise. */
+  bool next_missing_seq_no(unsigned pos, unsigned &seqno);
 
   static unsigned seqlen(Packet *); 
   static unsigned seqno(Packet *);
@@ -161,25 +168,46 @@ TCPBuffer::TCPBufferElt::kill_elt()
 inline bool 
 TCPBuffer::first_missing_seq_no(unsigned& sn)
 {
+  if (!_chain && !_start_pull)
+    return false;
+  unsigned expect =
+    _start_pull ? _first_seq : seqno(_chain->packet());
+  return next_missing_seq_no(expect, sn);
+}
+
+inline bool
+TCPBuffer::next_missing_seq_no(unsigned pos, unsigned& sn)
+{
   TCPBufferElt *elt = _chain;
+  unsigned expect = _first_seq;
   if (elt) {
     Packet *p = elt->packet();
-    unsigned expect = _start_pull ? _first_seq : seqno(p);
+    expect = _start_pull ? _first_seq : seqno(p);
     while(elt) {
       Packet *p = elt->packet();
       if (seqno(p) != expect) {
-        sn = expect;
-	return true;
+	if (SEQ_GEQ(expect,pos)) {
+	  sn = expect; 
+	  return true;
+	}
+	else if (SEQ_GT(seqno(p), pos)) {
+	  sn = pos;
+	  return true;
+	}
       }
-      expect += seqlen(p);
+      expect = seqno(p) + seqlen(p);
       elt = elt->next();
     }
-    sn = expect;
-    return true;
   }
-  else if (_start_pull) {
-    sn = _first_seq;
-    return true;
+  if (_start_pull || _chain) {
+    if (SEQ_GEQ(expect,pos)) {
+      sn = expect;
+      return true;
+    }
+    else {
+      sn = pos;
+      return true;
+    }
   }
   return false;
 }
