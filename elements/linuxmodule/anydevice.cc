@@ -52,12 +52,12 @@ AnyDevice::find_device(bool allow_nonexistent, AnyDeviceMap *adm,
 	_dev = dev_get_by_ether_address(_devname, this);
     if (!_dev) {
 	if (!allow_nonexistent)
-	    return errh->error("unknown device `%s'", _devname.cc());
+	    return errh->error("unknown device '%s'", _devname.cc());
 	else
-	    errh->warning("unknown device `%s'", _devname.cc());
+	    errh->warning("unknown device '%s'", _devname.cc());
     }
     if (_dev && !(_dev->flags & IFF_UP)) {
-	errh->warning("device `%s' is down", _devname.cc());
+	errh->warning("device '%s' is down", _devname.cc());
 	dev_put(_dev);
 	_dev = 0;
     }
@@ -78,9 +78,9 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm)
 	return;
     
     if (_dev)
-	click_chatter("%s: device `%s' went down", declaration().cc(), _devname.cc());
+	click_chatter("%s: device '%s' went down", declaration().cc(), _devname.cc());
     if (dev)
-	click_chatter("%s: device `%s' came up", declaration().cc(), _devname.cc());
+	click_chatter("%s: device '%s' came up", declaration().cc(), _devname.cc());
 
     if (_dev && _promisc)
 	dev_set_promiscuity(_dev, -1);

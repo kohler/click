@@ -109,12 +109,12 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpEnd) < 0)
 	return -1;
     if (_devname.length() > IFNAMSIZ - 1)
-	return errh->error("device name `%s' too long", _devname.cc());
+	return errh->error("device name '%s' too long", _devname.cc());
 
     // check for duplicate element
     void *&used = router()->force_attachment("FromHost_" + _devname);
     if (used)
-	return errh->error("duplicate FromHost for device `%s'", _devname.cc());
+	return errh->error("duplicate FromHost for device '%s'", _devname.cc());
     used = this;
     
     // check for existing device
@@ -123,7 +123,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 	if (_dev->open != fl_open) {
 	    dev_put(_dev);
 	    _dev = 0;
-	    return errh->error("device `%s' already exists", _devname.cc());
+	    return errh->error("device '%s' already exists", _devname.cc());
 	} else {
 	    fromlinux_map.insert(this);
 	    return 0;
@@ -138,7 +138,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     else if ((res = register_netdev(_dev)) < 0) {
 	kfree(_dev);
 	_dev = 0;
-	return errh->error("error %d registering device `%s'", res, _devname.c_str());
+	return errh->error("error %d registering device '%s'", res, _devname.c_str());
     }
 
     dev_hold(_dev);
@@ -173,16 +173,16 @@ FromHost::set_device_addresses(ErrorHandler *errh)
     ifr.ifr_hwaddr.sa_family = _dev->type;
     memcpy(ifr.ifr_hwaddr.sa_data, _macaddr.data(), 6);
     if ((res = dev_ioctl(SIOCSIFHWADDR, &ifr)) < 0)
-	errh->error("error %d setting hardware address for device `%s'", res, _devname.cc());
+	errh->error("error %d setting hardware address for device '%s'", res, _devname.cc());
 
     sin->sin_family = AF_INET;
     sin->sin_addr = _destaddr;
     if (res >= 0 && (res = devinet_ioctl(SIOCSIFADDR, &ifr)) < 0)
-	errh->error("error %d setting address for device `%s'", res, _devname.cc());
+	errh->error("error %d setting address for device '%s'", res, _devname.cc());
 
     sin->sin_addr = _destmask;
     if (res >= 0 && (res = devinet_ioctl(SIOCSIFNETMASK, &ifr)) < 0)
-	errh->error("error %d setting netmask for device `%s'", res, _devname.cc());
+	errh->error("error %d setting netmask for device '%s'", res, _devname.cc());
 
     set_fs(oldfs);
     return res;
@@ -202,7 +202,7 @@ dev_updown(net_device *dev, int up, ErrorHandler *errh)
     (void) dev_ioctl(SIOCGIFFLAGS, &ifr);
     ifr.ifr_flags = (up > 0 ? ifr.ifr_flags | flags : ifr.ifr_flags & ~flags);
     if ((res = dev_ioctl(SIOCSIFFLAGS, &ifr)) < 0 && errh)
-	errh->error("error %d bringing %s device `%s'", res, (up > 0 ? "up" : "down"), dev->name);
+	errh->error("error %d bringing %s device '%s'", res, (up > 0 ? "up" : "down"), dev->name);
 
     set_fs(oldfs);
     return res;

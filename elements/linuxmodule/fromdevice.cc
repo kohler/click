@@ -51,6 +51,7 @@ FromDevice::static_initialize()
 #ifdef HAVE_CLICK_KERNEL
     packet_notifier.notifier_call = packet_notifier_hook;
     packet_notifier.priority = 1;
+    packet_notifier.next = 0;
 #endif
     device_notifier.notifier_call = device_notifier_hook;
     device_notifier.priority = 1;
@@ -126,7 +127,7 @@ FromDevice::initialize(ErrorHandler *errh)
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_reader_" + String(ifindex()));
 	if (used)
-	    return errh->error("duplicate reader for device `%s'", _devname.cc());
+	    return errh->error("duplicate reader for device '%s'", _devname.cc());
 	used = this;
     }
 
@@ -223,11 +224,11 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 #endif
     if (flags == NETDEV_DOWN || flags == NETDEV_UP) {
 	bool down = (flags == NETDEV_DOWN);
-	net_device *dev = (net_device *)v;
-	Vector<AnyDevice *> es;
+	net_device* dev = (net_device*)v;
+	Vector<AnyDevice*> es;
 	from_device_map.lookup_all(dev, down, es);
 	for (int i = 0; i < es.size(); i++)
-	    ((FromDevice *)(es[i]))->change_device(down ? 0 : dev);
+	    ((FromDevice*)(es[i]))->change_device(down ? 0 : dev);
     }
     return 0;
 }

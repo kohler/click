@@ -104,7 +104,7 @@ ToDevice::initialize(ErrorHandler *errh)
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_writer_" + String(ifindex()));
 	if (used)
-	    return errh->error("duplicate writer for device `%s'", _devname.cc());
+	    return errh->error("duplicate writer for device '%s'", _devname.cc());
 	used = this;
     }
 

@@ -129,7 +129,7 @@ TulipStats::configure(Vector<String> &conf, ErrorHandler *errh)
   if (!_dev)
     _dev = dev_get_by_ether_address(_devname, this);
   if (!_dev)
-    return errh->error("unknown device `%s'", _devname.cc());
+    return errh->error("unknown device '%s'", _devname.cc());
   return 0;
 }
 
@@ -141,7 +141,7 @@ TulipStats::initialize(ErrorHandler *errh)
 #endif
 
   if (tulip_stats_map.insert(this) < 0)
-    return errh->error("cannot use TulipStats for device `%s'", _devname.cc());
+    return errh->error("cannot use TulipStats for device '%s'", _devname.cc());
   
   ScheduleInfo::join_scheduler(this, &_task, errh);
 
@@ -313,6 +313,6 @@ TulipStats::add_handlers()
 }
 
 /* If you want to include TulipStats in your Click kernel driver, remove
- * `false' from the line below. */
+ * 'false' from the line below. */
 ELEMENT_REQUIRES(AnyDevice linuxmodule false)
 EXPORT_ELEMENT(TulipStats)
