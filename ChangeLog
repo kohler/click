@@ -1,3 +1,33 @@
+2001-05-15 Tuesday 20:21  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/iprw.cc (1.31), elements/linuxmodule/anydevice.hh
+	(1.28), elements/linuxmodule/fromdevice.cc (1.54),
+	elements/linuxmodule/fromlinux.cc (1.26),
+	elements/linuxmodule/fromlinux.hh (1.26),
+	elements/linuxmodule/polldevice.cc (1.104),
+	elements/linuxmodule/todevice.cc (1.103),
+	elements/linuxmodule/tolinux.cc (1.21),
+	elements/linuxmodule/tolinuxsniffers.cc (1.18),
+	elements/linuxmodule/tulipstats.cc (1.7), include/click/click_ip.h
+	(1.6), include/click/glue.hh (1.12), include/click/ipaddress.hh
+	(1.14), include/click/packet.hh (1.18), lib/element.cc (1.58),
+	lib/etheraddress.cc (1.11), lib/ip6address.cc (1.21),
+	lib/ip6flowid.cc (1.3), lib/ipaddress.cc (1.20),
+	lib/routerthread.cc (1.13), linuxmodule/skbmgr.cc (1.10): use new
+	cxxprotect.h header files; changes to support Linux 2.4
+
+2001-05-15 Tuesday 20:19  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: lookupiproute.cc (1.19), lookupiproutelinux.cc
+	(1.18), lookupiproutemp.cc (1.6): fix bug found by Atanu Ghosh
+	<atanu@aciri.org>: initialize "gw" variables to 0
+
+2001-05-15 Tuesday 20:19  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/: cxxprotect.h (1.1), cxxunprotect.h (1.1): add
+	header files to abstract all the #defines that you need to protect
+	C++ from Linux header brain damage
+
 2001-05-15 Tuesday 18:11  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* configure.in (1.116): also #define virtual to xxx_virtual,
