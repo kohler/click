@@ -278,8 +278,9 @@ Some elements, like
 take arguments that don't fit any of these types. See the element
 documentation for details.
 .PP
-All empty configuration arguments are ignored. Thus, `Element(1, 2)' and
-`Element(1, , , , 2, /* whatever */)' behave exactly alike.
+If the last argument in a configuration string is empty (containing only
+whitespace and comments), then it is ignored.  Thus, `Element(1, )',
+`Element(1, /* comment */)', and `Element(1)' behave exactly alike.
 '
 .SH "COMPOUND ELEMENTS"
 '
