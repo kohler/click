@@ -26,7 +26,7 @@
 #include <clicknet/ether.h>
 #include "srforwarder.hh"
 #include "srpacket.hh"
-#include "srcrstat.hh"
+#include "linkmetric.hh"
 #include "srcr.hh"
 #include "elements/grid/arptable.hh"
 CLICK_DECLS
@@ -46,7 +46,7 @@ SRForwarder::SRForwarder()
      _link_table(0),
      _arp_table(0),
      _srcr(0),
-     _srcr_stat(0)
+     _metric(0)
 
 {
   MOD_INC_USE_COUNT;
@@ -72,7 +72,7 @@ SRForwarder::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "ETH", cpEtherAddress, "Ethernet Address", &_eth,
 		    "ARP", cpElement, "ARPTable element", &_arp_table,
 		    /* below not required */
-		    "SS", cpElement, "SRCRStat element", &_srcr_stat,
+		    "LM", cpElement, "LinkMetric element", &_metric,
 		    "SRCR", cpElement, "SRCR element", &_srcr,
 		    "LT", cpElement, "LinkTable element", &_link_table,
                     0);
@@ -89,8 +89,8 @@ SRForwarder::configure (Vector<String> &conf, ErrorHandler *errh)
   if (_arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not a ARPTable");
 
-  if (_srcr_stat && _srcr_stat->cast("SrcrStat") == 0) 
-    return errh->error("SS element is not a SRCRStat");
+  if (_metric && _metric->cast("LinkMetric") == 0) 
+    return errh->error("LinkMetric element is not a LinkMetric");
   if (_srcr && _srcr->cast("SRCR") == 0) 
     return errh->error("SRCR element is not a SRCR");
   if (_link_table && _link_table->cast("LinkTable") == 0) 
@@ -114,17 +114,30 @@ SRForwarder::initialize (ErrorHandler *)
   return 0;
 }
 
-// Ask LinkStat for the metric for the link from other to us.
 int
-SRForwarder::get_metric(IPAddress other)
+SRForwarder::get_fwd_metric(IPAddress other)
 {
   int metric = 9999;
   srforwarder_assert(other);
-  if (_srcr_stat) {
-    metric = _srcr_stat->get_etx(other);
+  if (_metric) {
+    metric = _metric->get_fwd_metric(other);
     update_link(_ip, other, metric);
     return metric;
-    
+  } else {
+    return 0;
+  }
+}
+
+
+int
+SRForwarder::get_rev_metric(IPAddress other)
+{
+  int metric = 9999;
+  srforwarder_assert(other);
+  if (_metric) {
+    metric = _metric->get_rev_metric(other);
+    update_link(other, _ip, metric);
+    return metric;
   } else {
     return 0;
   }
@@ -189,7 +202,8 @@ SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
     if (neighbor) {
       pk->set_random_from(_ip);
       pk->set_random_to(neighbor);
-      pk->set_random_metric(get_metric(neighbor));
+      pk->set_random_fwd_metric(get_fwd_metric(neighbor));
+      pk->set_random_rev_metric(get_rev_metric(neighbor));
     }
   }
   pk->set_num_hops(r.size());
@@ -276,22 +290,26 @@ SRForwarder::push(int port, Packet *p_in)
   /* update the metrics from the packet */
   IPAddress r_from = pk->get_random_from();
   IPAddress r_to = pk->get_random_to();
-  int r_metric = pk->get_random_metric();
+  int r_fwd_metric = pk->get_random_fwd_metric();
+  int r_rev_metric = pk->get_random_rev_metric();
   if (r_from && r_to) {
-    update_link(r_from, r_to, r_metric);
+    update_link(r_from, r_to, r_fwd_metric);
+    update_link(r_to, r_from, r_rev_metric);
   }
 
   for(int i = 0; i < pk->num_hops()-1; i++) {
     IPAddress a = pk->get_hop(i);
     IPAddress b = pk->get_hop(i+1);
-    int m = pk->get_metric(i);
-    if (m != 0 && a != _ip && b != _ip) {
-      /* 
-       * don't update the link for my neighbor
-       * we'll do that below
-       */
-      //click_chatter("updating %s -> %d -> %s", a.s().cc(), m, b.s().cc());
-      update_link(a,b,m);
+    int fwd_m = pk->get_fwd_metric(i);
+    int rev_m = pk->get_rev_metric(i);
+    if (a != _ip && b != _ip) {
+      /* don't update my immediate neighbor. see below */
+      if (fwd_m) {
+	update_link(a,b,fwd_m);
+      }
+      if (rev_m) {
+	update_link(b,a,rev_m);
+      }
     }
   }
   
@@ -299,8 +317,10 @@ SRForwarder::push(int port, Packet *p_in)
   IPAddress prev = pk->get_hop(pk->next()-1);
   _arp_table->insert(prev, EtherAddress(eh->ether_shost));
 
-  int prev_metric = get_metric(prev);
-  update_link(_ip, prev, prev_metric);
+  int prev_fwd_metric = get_fwd_metric(prev);
+  int prev_rev_metric = get_rev_metric(prev);
+  update_link(_ip, prev, prev_fwd_metric);
+  update_link(prev, _ip, prev_rev_metric);
 
   if(pk->next() == pk->num_hops() - 1){
     // I'm the ultimate consumer of this data.
@@ -313,7 +333,8 @@ SRForwarder::push(int port, Packet *p_in)
     return;
   } 
 
-  pk->set_metric(pk->next() - 1, prev_metric);
+  pk->set_fwd_metric(pk->next() - 1, prev_fwd_metric);
+  pk->set_rev_metric(pk->next() - 1, prev_rev_metric);
   pk->set_next(pk->next() + 1);
 
   srforwarder_assert(pk->next() < 8);
@@ -328,7 +349,8 @@ SRForwarder::push(int port, Packet *p_in)
     if (r_neighbor) {
       pk->set_random_from(_ip);
       pk->set_random_to(r_neighbor);
-      pk->set_random_metric(get_metric(r_neighbor));
+      pk->set_random_fwd_metric(get_fwd_metric(r_neighbor));
+      pk->set_random_rev_metric(get_rev_metric(r_neighbor));
     }
   }
 

@@ -65,7 +65,7 @@ private:
   class LinkTable *_link_table;
   class ARPTable *_arp_table;
   class SRCR *_srcr;
-  class SrcrStat *_srcr_stat;
+  class LinkMetric *_metric;
   
   class PathInfo {
   public:
@@ -79,7 +79,8 @@ private:
   typedef HashMap<Path, PathInfo> PathTable;
   PathTable _paths;
   
-  int get_metric(IPAddress other);
+  int get_fwd_metric(IPAddress other);
+  int get_rev_metric(IPAddress other);
 
   void update_link(IPAddress from, IPAddress to, int metric);
   void srforwarder_assert_(const char *, int, const char *) const;

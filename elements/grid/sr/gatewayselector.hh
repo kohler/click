@@ -66,7 +66,8 @@ class GatewaySelector : public Element {
   void push(int, Packet *);
   void run_timer();
 
-  int get_metric(IPAddress other);
+  int get_fwd_metric(IPAddress other);
+  int get_rev_metric(IPAddress other);
   void update_link(IPAddress from, IPAddress to, int metric);
   void forward_ad_hook();
   IPAddress best_gateway();
@@ -76,15 +77,17 @@ private:
   public:
     IPAddress _gw;
     u_long _seq;
-    int _metric;
+    int _fwd_metric;
+    int _rev_metric;
     int _count;
     struct timeval _when; /* when we saw the first query */
     struct timeval _to_send;
     bool _forwarded;
     Vector<IPAddress> _hops;
-    Vector<int> _metrics;
-    Seen(IPAddress gw, u_long seq, int metric) {
-      _gw = gw; _seq = seq; _count = 0; _metric = metric;
+    Vector<int> _fwd_metrics;
+    Vector<int> _rev_metrics;
+    Seen(IPAddress gw, u_long seq, int fwd, int rev) {
+      _gw = gw; _seq = seq; _count = 0; _rev_metric = rev; _fwd_metric = fwd;
     }
     Seen();
   };
@@ -116,7 +119,7 @@ private:
   bool _is_gw;
 
   class LinkTable *_link_table;
-  class SrcrStat *_srcr_stat;
+  class LinkMetric *_metric;
   class ARPTable *_arp_table;
   Timer _timer;
 

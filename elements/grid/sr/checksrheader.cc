@@ -78,7 +78,7 @@ CheckSRHeader::simple_action(Packet *p)
   if (!pk)
     goto bad;
 
-  if(p->length() < sizeof(struct srpacket)) { 
+  if (p->length() < sizeof(struct srpacket)) { 
     click_chatter("%s: packet truncated", id().cc());
     goto bad;
   }

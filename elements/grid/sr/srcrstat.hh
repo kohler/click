@@ -181,6 +181,9 @@ private:
   typedef HashMap<IPAddress, probe_list_t> ProbeMap;
   ProbeMap _bcast_stats;
 
+  Vector <IPAddress> _neighbors;
+  int _next_neighbor_to_ad;
+
   static String read_stats(Element *, void *);
   static String read_bcast_stats(Element *, void *);
 
@@ -207,6 +210,8 @@ private:
   int get_etx(IPAddress);
   int get_etx(int, int);
 
+  int get_fwd(IPAddress);
+  int get_rev(IPAddress);
   SrcrStat();
   ~SrcrStat();
   

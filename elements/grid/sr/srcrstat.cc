@@ -138,32 +138,17 @@ SrcrStat::send_hook()
     _sent++;
   }
 
-  Vector<link_entry> to_send;
-  for (ProbeMap::const_iterator i = _bcast_stats.begin(); i > 0; i++) {
-    probe_list_t val = i.value();
-    struct timeval old_entry_timeout;
-    struct timeval old_entry_expire;
-    old_entry_timeout.tv_sec = 30;
-    old_entry_timeout.tv_usec = 30;
-    timeradd(&val.last_rx, &old_entry_timeout, &old_entry_expire);
-    
-    if (timercmp(&now, &old_entry_expire, <)) {
-      to_send.push_back(link_entry(val.fwd, val.rev_rate(_start), val.ip));
-      
-    }
-  }
-
-
   static bool size_warning = false;
-  if (!size_warning && max_entries < (unsigned) to_send.size()) {
+  if (!size_warning && max_entries < (unsigned) _neighbors.size()) {
     size_warning = true;
-    click_chatter("SrcrStat %s: WARNING, probe packet is too small to contain all link stats", id().cc());
+    click_chatter("SrcrStat %s: WARNING, probe packet is too small; rotating entries", id().cc());
   }
+  
 
-
-
-
-  unsigned num_entries = max_entries < (unsigned) to_send.size() ? max_entries : to_send.size();
+  unsigned num_entries = max_entries < (unsigned) _neighbors.size() 
+    ? max_entries 
+    : _neighbors.size();
+  
   link_probe *lp = (struct link_probe *) (p->data() + sizeof(click_ether));
   lp->ip = _ip.addr();
   lp->seq_no = _seq;
@@ -177,10 +162,20 @@ SrcrStat::send_hook()
 
 
   link_entry *entry = (struct link_entry *)(lp+1); 
-  for (unsigned x = 0; x < num_entries; x++) {
-    entry->ip = to_send[x].ip;
-    entry->fwd = to_send[x].fwd;
-    entry->rev = to_send[x].rev;
+  for (int i = 0; (unsigned) i < num_entries; i++) {
+    _next_neighbor_to_ad = (_next_neighbor_to_ad + 1) % _neighbors.size();
+    probe_list_t *probe = _bcast_stats.findp(_neighbors[_next_neighbor_to_ad]);
+    if (!probe) {
+      click_chatter("%{element}: lookup for %s (i=%d), %d failed in ad \n", 
+		    this,
+		    _neighbors[_next_neighbor_to_ad].s().cc(),
+		    i,
+		    _next_neighbor_to_ad);
+    } else {
+      entry->ip = probe->ip;
+      entry->fwd = probe->fwd;
+      entry->rev = probe->rev_rate(_start);
+    }
     entry = (entry+1);
   }
 
@@ -266,6 +261,8 @@ SrcrStat::simple_action(Packet *p)
     _bcast_stats.insert(ip, probe_list_t(ip, new_period, lp->tau));
     l = _bcast_stats.findp(ip);
     l->sent = 0;
+    /* add into the neighbors vector */
+    _neighbors.push_back(ip);
   } else if (l->period != new_period) {
     click_chatter("SrcrStat %s: %s has changed its link probe period from %u to %u; clearing probe info\n",
 		  id().cc(), ip.s().cc(), l->period, new_period);
@@ -346,6 +343,25 @@ SrcrStat::get_etx(IPAddress ip) {
   probe_list_t *l = _bcast_stats.findp(ip);
   if (l) {
     return get_etx(l->fwd, l->rev_rate(_start));
+  }
+  return 7777;
+}
+
+
+int 
+SrcrStat::get_fwd(IPAddress ip) {
+  probe_list_t *l = _bcast_stats.findp(ip);
+  if (l) {
+    return l->fwd;
+  }
+  return 7777;
+}
+
+int 
+SrcrStat::get_rev(IPAddress ip) {
+  probe_list_t *l = _bcast_stats.findp(ip);
+  if (l) {
+    return l->rev_rate(_start);
   }
   return 7777;
 }

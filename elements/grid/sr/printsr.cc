@@ -145,7 +145,7 @@ PrintSR::simple_action(Packet *p)
   for(int i = 0; i< pk->num_hops(); i++) {
     sa << " "<< pk->get_hop(i).s().cc() << " ";
     if (i != pk->num_hops() - 1) {
-      sa << "<" << pk->get_metric(i) << ">";
+      sa << "<" << pk->get_fwd_metric(i) << "," << pk->get_rev_metric(i) << ">";
     }
 
   }

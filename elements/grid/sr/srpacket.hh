@@ -23,7 +23,7 @@ enum SRCRPacketFlags {
   FLAG_ECN = (1<<7)
 };
 
-static const uint8_t _sr_version = 0x07;
+static const uint8_t _sr_version = 0x08;
 
 // Packet format.
 struct srpacket {
@@ -38,7 +38,8 @@ struct srpacket {
   uint16_t _flags; 
   uint16_t _dlen;
 
-  uint16_t _random_metric;
+  uint16_t _random_fwd_metric;
+  uint16_t _random_rev_metric;
 
   /* PT_QUERY
    * _qdst is used for the query destination in control packets
@@ -64,8 +65,12 @@ struct srpacket {
   void set_random_to(IPAddress ip) {
     _random_to = ip;
   }
-  void set_random_metric(uint16_t m) {
-    _random_metric = m;
+  void set_random_fwd_metric(uint16_t m) {
+    _random_fwd_metric = m;
+  }
+
+  void set_random_rev_metric(uint16_t m) {
+    _random_rev_metric = m;
   }
   IPAddress get_random_from() {
     return _random_from;
@@ -73,8 +78,11 @@ struct srpacket {
   IPAddress get_random_to() {
     return _random_to;
   }
-  int get_random_metric() {
-    return _random_metric;
+  int get_random_fwd_metric() {
+    return _random_fwd_metric;
+  }
+  int get_random_rev_metric() {
+    return _random_rev_metric;
   }
 
 
@@ -83,7 +91,9 @@ struct srpacket {
   size_t hlen_with_data() const { return len_with_data(_nhops, ntohs(_dlen)); }
   
   static size_t len_wo_data(int nhops) {
-    return sizeof(struct srpacket) + nhops * sizeof(uint32_t) + (nhops) * sizeof(uint16_t);
+    return sizeof(struct srpacket) 
+      + nhops * sizeof(uint32_t)        // each ip address
+      + 2 * (nhops) * sizeof(uint16_t); //metrics in both directions
   }
   static size_t len_with_data(int nhops, int dlen) {
     return len_wo_data(nhops) + dlen;
@@ -151,14 +161,25 @@ struct srpacket {
     _flags = htons(flags & !f);
   }
 
-  uint16_t get_metric(int h) { 
+  uint16_t get_fwd_metric(int h) { 
     uint16_t *ndx = (uint16_t *) (this+1);
-    return ndx[h + num_hops()*2];
+    return ndx[2*h + num_hops()*2];
   }
 
-  void set_metric(int hop, uint16_t s) { 
+  uint16_t get_rev_metric(int h) { 
     uint16_t *ndx = (uint16_t *) (this+1);
-    ndx[hop + num_hops()*2] = s;
+    return ndx[1 + 2*h  + num_hops()*2];
+  }
+
+  void set_fwd_metric(int hop, uint16_t s) { 
+    uint16_t *ndx = (uint16_t *) (this+1);
+    ndx[2*hop + num_hops()*2] = s;
+  }
+
+
+  void set_rev_metric(int hop, uint16_t s) { 
+    uint16_t *ndx = (uint16_t *) (this+1);
+    ndx[1 + 2*hop + num_hops()*2] = s;
   }
 
 

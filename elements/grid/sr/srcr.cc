@@ -21,7 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <elements/grid/sr/srcrstat.hh>
+#include "linkmetric.hh"
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
 #include "srpacket.hh"
@@ -41,7 +41,7 @@ SRCR::SRCR()
      _et(0),
      _sr_forwarder(0),
      _link_table(0),
-     _srcr_stat(0),
+     _metric(0),
      _arp_table(0),
      _num_queries(0),
      _bytes_queries(0),
@@ -92,7 +92,7 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "LT", cpElement, "LinkTable element", &_link_table,
 		    "ARP", cpElement, "ARPTable element", &_arp_table,
 		    /* below not required */
-		    "SS", cpElement, "SrcrStat element", &_srcr_stat,
+		    "LM", cpElement, "LinkMetric element", &_metric,
 		    "DEBUG", cpBool, "Debug", &_debug,
                     0);
 
@@ -102,8 +102,8 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("IP not specified");
   if (!_en) 
     return errh->error("ETH not specified");
-  if (!_sr_forwarder) 
-    return errh->error("SRCR not specified");
+  if (!_metric) 
+    return errh->error("LinkMetric not specified");
   if (!_link_table) 
     return errh->error("LT not specified");
   if (!_arp_table) 
@@ -116,8 +116,8 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("LinkTable element is not a LinkTable");
   if (_arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not a ARPTable");
-  if (_srcr_stat && _srcr_stat->cast("SrcrStat") == 0) 
-    return errh->error("SS element is not a SrcrStat");
+  if (_metric && _metric->cast("LinkMetric") == 0) 
+    return errh->error("LinkMetric element is not a LinkMetric");
 
   return ret;
 }
@@ -228,17 +228,32 @@ SRCR::send(WritablePacket *p)
 
 
 int
-SRCR::get_metric(IPAddress other)
+SRCR::get_fwd_metric(IPAddress other)
 {
   srcr_assert(other);
   BadNeighbor *n = _black_list.findp(other);
   int metric = 9999;
   if (n && n->still_bad() ) {
     metric = 9999;
-  } else if (_srcr_stat) {
-    metric = _srcr_stat->get_etx(other);
+  } else if (_metric) {
+    metric = _metric->get_fwd_metric(other);
   }
   update_link(_ip, other, metric);
+  return metric;
+}
+
+int
+SRCR::get_rev_metric(IPAddress other)
+{
+  srcr_assert(other);
+  BadNeighbor *n = _black_list.findp(other);
+  int metric = 9999;
+  if (n && n->still_bad() ) {
+    metric = 9999;
+  } else if (_metric) {
+    metric = _metric->get_rev_metric(other);
+  }
+  update_link(other, _ip, metric);
   return metric;
 }
 
@@ -259,14 +274,18 @@ SRCR::process_query(struct srpacket *pk1)
   int si;
 
   Vector<IPAddress> hops;
-  Vector<int> metrics;
+  Vector<int> fwd_metrics;
+  Vector<int> rev_metrics;
 
-  int metric = 0;
+  int fwd_metric = 0;
+  int rev_metric = 0;
   for(int i = 0; i < pk1->num_hops(); i++) {
     IPAddress hop = IPAddress(pk1->get_hop(i));
     if (i != pk1->num_hops() - 1) {
-      metrics.push_back(pk1->get_metric(i));
-      metric += pk1->get_metric(i);
+      fwd_metrics.push_back(pk1->get_fwd_metric(i));
+      rev_metrics.push_back(pk1->get_rev_metric(i));
+      fwd_metric += pk1->get_fwd_metric(i);
+      rev_metric += pk1->get_rev_metric(i);
     }
     hops.push_back(hop);
     if (hop == _ip) {
@@ -276,10 +295,15 @@ SRCR::process_query(struct srpacket *pk1)
   }
   _link_table->dijkstra();
   /* also get the metric from the neighbor */
-  int m = get_metric(pk1->get_hop(pk1->num_hops()-1));
-  update_link(_ip, pk1->get_hop(pk1->num_hops()-1), m);
-  metric += m;
-  metrics.push_back(m);
+  int fwd_m = get_fwd_metric(pk1->get_hop(pk1->num_hops()-1));
+  int rev_m = get_rev_metric(pk1->get_hop(pk1->num_hops()-1));
+  update_link(_ip, pk1->get_hop(pk1->num_hops()-1), fwd_m);
+  update_link(pk1->get_hop(pk1->num_hops()-1), _ip, rev_m);
+  rev_metric += rev_m;
+  fwd_metric += fwd_m;
+  fwd_metrics.push_back(fwd_m);
+  rev_metrics.push_back(rev_m);
+
   hops.push_back(_ip);
 
   
@@ -294,15 +318,16 @@ SRCR::process_query(struct srpacket *pk1)
       _seen.pop_front();
       si--;
     }
-    _seen.push_back(Seen(src, dst, seq, 0));
+    _seen.push_back(Seen(src, dst, seq, 0, 0));
   }
   _seen[si]._count++;
-  if (_seen[si]._metric && _seen[si]._metric <= metric) {
+  if (_seen[si]._rev_metric && _seen[si]._rev_metric <= rev_metric) {
     /* the metric is worse that what we've seen*/
     return;
   }
 
-  _seen[si]._metric = metric;
+  _seen[si]._rev_metric = rev_metric;
+  _seen[si]._fwd_metric = fwd_metric;
 
   click_gettimeofday(&_seen[si]._when);
   
@@ -311,7 +336,8 @@ SRCR::process_query(struct srpacket *pk1)
     start_reply(pk1);
   } else {
     _seen[si]._hops = hops;
-    _seen[si]._metrics = metrics;
+    _seen[si]._fwd_metrics = fwd_metrics;
+    _seen[si]._rev_metrics = rev_metrics;
     if (timercmp(&_seen[si]._when, &_seen[si]._to_send, <)) {
       /* a timer has already been scheduled */
       return;
@@ -355,7 +381,8 @@ SRCR::forward_query(Seen *s)
   }
   int nhops = s->_hops.size();
 
-  srcr_assert(s->_hops.size() == s->_metrics.size()+1);
+  srcr_assert(s->_hops.size() == s->_fwd_metrics.size()+1);
+  srcr_assert(s->_hops.size() == s->_rev_metrics.size()+1);
 
   //click_chatter("forward query called");
   int len = srpacket::len_wo_data(nhops);
@@ -377,7 +404,8 @@ SRCR::forward_query(Seen *s)
   }
 
   for(int i=0; i < nhops - 1; i++) {
-    pk->set_metric(i, s->_metrics[i]);
+    pk->set_fwd_metric(i, s->_fwd_metrics[i]);
+    pk->set_rev_metric(i, s->_rev_metrics[i]);
   }
 
   s->_forwarded = true;
@@ -475,14 +503,18 @@ void SRCR::start_reply(struct srpacket *pk_in)
     IPAddress hop = pk_in->get_hop(x);
     pk_out->set_hop(x, hop);
     if (x < pk_in->num_hops() - 1) {
-      int m = pk_in->get_metric(x);
-      pk_out->set_metric(x, m);
+      int fwd_m = pk_in->get_fwd_metric(x);
+      int rev_m = pk_in->get_fwd_metric(x);
+      pk_out->set_fwd_metric(x, fwd_m);
+      pk_out->set_rev_metric(x, rev_m);
     }
   }
   IPAddress prev = pk_in->get_hop(pk_in->num_hops()-1);
-  int last_hop_m = get_metric(prev);
+  int rev_m = get_rev_metric(prev);
+  int fwd_m = get_fwd_metric(prev);
   pk_out->set_hop(pk_in->num_hops(), _ip);
-  pk_out->set_metric(pk_in->num_hops()-1, last_hop_m);
+  pk_out->set_fwd_metric(pk_in->num_hops()-1, fwd_m);
+  pk_out->set_rev_metric(pk_in->num_hops()-1, rev_m);
 
   send(p);
 }
@@ -607,11 +639,13 @@ SRCR::process_data(Packet *p_in)
   for(i = 0; i < fwd.size(); i++) {
     pk->set_hop(i, fwd[i]);
     if (i < ndx_me) {
-      pk->set_metric(i, _link_table->get_hop_metric(fwd[i],fwd[i+1]));
+      pk->set_fwd_metric(i, _link_table->get_hop_metric(fwd[i],fwd[i+1]));
+      pk->set_rev_metric(i, _link_table->get_hop_metric(fwd[i+1],fwd[i]));
     }
   }
   
-  pk->set_metric(ndx_me, get_metric(fwd[ndx_me+1]));
+  pk->set_fwd_metric(ndx_me, get_fwd_metric(fwd[ndx_me+1]));
+  pk->set_rev_metric(ndx_me, get_rev_metric(fwd[ndx_me+1]));
 
   send(p);
   return;
@@ -725,13 +759,16 @@ SRCR::push(int port, Packet *p_in)
     for(int i = 0; i < pk->num_hops()-1; i++) {
       IPAddress a = pk->get_hop(i);
       IPAddress b = pk->get_hop(i+1);
-      int m = pk->get_metric(i);
-      if (m != 0 && a != _ip && b != _ip) {
-	/* 
-	 * don't update the link for my neighbor
-	 * we'll do that below
-	 */
-	update_link(a,b,m);
+      int fwd_m = pk->get_fwd_metric(i);
+      int rev_m = pk->get_fwd_metric(i);
+      if (a != _ip && b != _ip) {
+	/* don't update my immediate neighbor. see below */
+	if (fwd_m) {
+	  update_link(a,b,fwd_m);
+	}
+	if (rev_m) {
+	  update_link(b,a,rev_m);
+	}
       }
     }
     
@@ -755,7 +792,8 @@ SRCR::push(int port, Packet *p_in)
     }
 
     _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
-    update_link(_ip, neighbor, get_metric(neighbor));
+    update_link(_ip, neighbor, get_fwd_metric(neighbor));
+    update_link(neighbor, _ip, get_rev_metric(neighbor));
     if(type == PT_QUERY){
       process_query(pk);
       

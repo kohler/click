@@ -77,7 +77,8 @@ class SRCR : public Element {
   static unsigned int ms_to_jiff(unsigned int m)
   { return (CLICK_HZ * m) / 1000; }
 
-  int get_metric(IPAddress other);
+  int get_fwd_metric(IPAddress other);
+  int get_rev_metric(IPAddress other);
   void update_link(IPAddress from, IPAddress to, int metric);
   void forward_query_hook();
   IPAddress get_random_neighbor();
@@ -102,15 +103,17 @@ private:
     IPAddress _src;
     IPAddress _dst;
     u_long _seq;
-    int _metric;
+    int _fwd_metric;
+    int _rev_metric;
     int _count;
     struct timeval _when; /* when we saw the first query */
     struct timeval _to_send;
     bool _forwarded;
     Vector<IPAddress> _hops;
-    Vector<int> _metrics;
-    Seen(IPAddress src, IPAddress dst, u_long seq, int metric) {
-      _src = src; _dst = dst; _seq = seq; _count = 0; _metric = metric;
+    Vector<int> _fwd_metrics;
+    Vector<int> _rev_metrics;
+    Seen(IPAddress src, IPAddress dst, u_long seq, int fwd, int rev) {
+      _src = src; _dst = dst; _seq = seq; _count = 0; _rev_metric = rev; _fwd_metric = fwd;
     }
     Seen();
   };
@@ -192,7 +195,7 @@ private:
 
   class SRForwarder *_sr_forwarder;
   class LinkTable *_link_table;
-  class SrcrStat *_srcr_stat;
+  class LinkMetric *_metric;
   class ARPTable *_arp_table;
 
   // Statistics for handlers.

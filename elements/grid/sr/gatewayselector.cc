@@ -23,7 +23,7 @@
 #include <click/ipaddress.hh>
 #include <clicknet/ether.h>
 #include "srpacket.hh"
-#include "srcrstat.hh"
+#include "linkmetric.hh"
 #include "gatewayselector.hh"
 
 CLICK_DECLS
@@ -39,7 +39,7 @@ GatewaySelector::GatewaySelector()
      _en(),
      _et(0),
      _link_table(0),
-     _srcr_stat(0),
+     _metric(0),
      _arp_table(0),
      _timer(this)
 {
@@ -78,7 +78,7 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
 		    /* not required */
 		    "PERIOD", cpUnsigned, "Ad broadcast period (secs)", &_period,
 		    "GW", cpBool, "Gateway", &_is_gw,
-		    "SS", cpElement, "SrcrStat element", &_srcr_stat,
+		    "LM", cpElement, "LinkMetric element", &_metric,
                     0);
 
   if (!_et) 
@@ -98,8 +98,8 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
   if (_arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not an ARPtable");
 
-  if (_srcr_stat && _srcr_stat->cast("SrcrStat") == 0) 
-    return errh->error("SS element is not a SrcrStat");
+  if (_metric && _metric->cast("LinkMetric") == 0) 
+    return errh->error("LinkMetric element is not a LinkMetric");
 
   _gw_expire.tv_usec = 0;
   _gw_expire.tv_sec = _period*4;
@@ -179,17 +179,33 @@ GatewaySelector::send(WritablePacket *p)
   output(0).push(p);
 }
 
-
 int
-GatewaySelector::get_metric(IPAddress other)
+GatewaySelector::get_fwd_metric(IPAddress other)
 {
   int metric = 9999;
   gatewayselector_assert(other);
-  if (_srcr_stat) {
-    metric = _srcr_stat->get_etx(other);
+  if (_metric) {
+    metric = _metric->get_fwd_metric(other);
+    update_link(_ip, other, metric);
+    return metric;
+  } else {
+    return 0;
   }
-  update_link(_ip, other, metric);
-  return metric;
+}
+
+
+int
+GatewaySelector::get_rev_metric(IPAddress other)
+{
+  int metric = 9999;
+  gatewayselector_assert(other);
+  if (_metric) {
+    metric = _metric->get_rev_metric(other);
+    update_link(other, _ip, metric);
+    return metric;
+  } else {
+    return 0;
+  }
 }
 
 void
@@ -216,7 +232,8 @@ GatewaySelector::forward_ad(Seen *s)
 {
   int nhops = s->_hops.size();
 
-  gatewayselector_assert(s->_hops.size() == s->_metrics.size()+1);
+  gatewayselector_assert(s->_hops.size() == s->_fwd_metrics.size()+1);
+  gatewayselector_assert(s->_hops.size() == s->_rev_metrics.size()+1);
 
   int len = srpacket::len_wo_data(nhops);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
@@ -237,7 +254,8 @@ GatewaySelector::forward_ad(Seen *s)
   }
 
   for(int i=0; i < nhops - 1; i++) {
-    pk->set_metric(i, s->_metrics[i]);
+    pk->set_fwd_metric(i, s->_fwd_metrics[i]);
+    pk->set_rev_metric(i, s->_rev_metrics[i]);
   }
 
   s->_forwarded = true;
@@ -324,14 +342,18 @@ GatewaySelector::push(int port, Packet *p_in)
   for(int i = 0; i < pk->num_hops()-1; i++) {
     IPAddress a = pk->get_hop(i);
     IPAddress b = pk->get_hop(i+1);
-    int m = pk->get_metric(i);
-    if (m != 0 && a != _ip && b != _ip) {
-      /* 
-       * don't update the link for my neighbor
-       * we'll do that below
-       */
-      update_link(a,b,m);
+    int fwd_m = pk->get_fwd_metric(i);
+    int rev_m = pk->get_fwd_metric(i);
+    if (a != _ip && b != _ip) {
+      /* don't update my immediate neighbor. see below */
+      if (fwd_m) {
+	update_link(a,b,fwd_m);
+      }
+      if (rev_m) {
+	update_link(b,a,rev_m);
+      }
     }
+
   }
     
     
@@ -339,18 +361,25 @@ GatewaySelector::push(int port, Packet *p_in)
   neighbor = pk->get_hop(pk->num_hops()-1);
 
   _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
-  update_link(_ip, neighbor, get_metric(neighbor));
+  update_link(_ip, neighbor, get_fwd_metric(neighbor));
+  update_link(neighbor, _ip, get_rev_metric(neighbor));
 
 
   Vector<IPAddress> hops;
-  Vector<int> metrics;
+  Vector<int> fwd_metrics;
+  Vector<int> rev_metrics;
 
-  int metric = 0;
+  int fwd_metric = 0;
+  int rev_metric = 0;
   for(int i = 0; i < pk->num_hops(); i++) {
     IPAddress hop = IPAddress(pk->get_hop(i));
     if (i != pk->num_hops() - 1) {
-      metrics.push_back(pk->get_metric(i));
-      metric += pk->get_metric(i);
+      int fwd_m = pk->get_fwd_metric(i);
+      int rev_m = pk->get_rev_metric(i);
+      fwd_metrics.push_back(fwd_m);
+      rev_metrics.push_back(rev_m);
+      fwd_metric += fwd_m;
+      rev_metric += rev_m;
     }
     hops.push_back(hop);
     if (hop == _ip) {
@@ -360,9 +389,12 @@ GatewaySelector::push(int port, Packet *p_in)
     }
   }
   /* also get the metric from the neighbor */
-  int m = get_metric(pk->get_hop(pk->num_hops()-1));
-  metric += m;
-  metrics.push_back(m);
+  int fwd_m = get_fwd_metric(pk->get_hop(pk->num_hops()-1));
+  int rev_m = get_rev_metric(pk->get_hop(pk->num_hops()-1));
+  fwd_metric += fwd_m;
+  rev_metric += rev_m;
+  fwd_metrics.push_back(fwd_m);
+  rev_metrics.push_back(rev_m);
   hops.push_back(_ip);
 
   IPAddress gw = pk->_qdst;
@@ -389,21 +421,23 @@ GatewaySelector::push(int port, Packet *p_in)
       _seen.pop_front();
       si--;
     }
-    _seen.push_back(Seen(gw, seq, 0));
+    _seen.push_back(Seen(gw, seq, 0, 0));
   }
   _seen[si]._count++;
-  if (_seen[si]._metric && _seen[si]._metric <= metric) {
+  if (_seen[si]._rev_metric && _seen[si]._rev_metric <= rev_metric) {
     /* the metric is worse that what we've seen*/
     p_in->kill();
     return;
   }
 
-  _seen[si]._metric = metric;
+  _seen[si]._fwd_metric = fwd_metric;
+  _seen[si]._rev_metric = rev_metric;
 
   click_gettimeofday(&_seen[si]._when);
   
   _seen[si]._hops = hops;
-  _seen[si]._metrics = metrics;
+  _seen[si]._fwd_metrics = fwd_metrics;
+  _seen[si]._rev_metrics = rev_metrics;
 
   if (_is_gw) {
     p_in->kill();
