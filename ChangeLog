@@ -1,3 +1,10 @@
+2000-11-07 Tuesday 21:15  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/floodinglocquerier.cc: added comments on when src
+	MAC addr has to be filled in: answer is, when orginating queries or
+	propagating queries; NBR_ENCAP packets are filled in
+	LookupGeographicGridRoute
+
 2000-11-06 Monday 02:37  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/ip/ipfilter.cc, elements/ip/ipfilter.hh,
