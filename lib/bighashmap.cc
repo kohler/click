@@ -90,6 +90,12 @@ BigHashMap<K, V>::~BigHashMap()
   delete[] _arenas;
 }
 
+template <class K, class V>
+void
+BigHashMap<K, V>::set_dynamic_resizing(bool on)
+{
+  _capacity = (on ? 3 * _nbuckets : 0x7FFFFFFF);
+}
 
 template <class K, class V>
 BigHashMap<K, V>::Elt *
@@ -168,7 +174,8 @@ BigHashMap<K, V>::resize0(int new_nbuckets)
   Elt **old_buckets = _buckets;
   _nbuckets = new_nbuckets;
   _buckets = new_buckets;
-  _capacity = new_nbuckets * 3;
+  if (dynamic_resizing())
+    _capacity = new_nbuckets * 3;
   
   for (int i = 0; i < old_nbuckets; i++)
     for (Elt *e = old_buckets[i]; e; ) {
