@@ -1,3 +1,26 @@
+2002-02-16 Saturday 14:26  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridroutetable.cc (1.29): bug fix: can't do String
+	+ int !
+
+2002-02-16 Saturday 14:17  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridroutetable.cc (1.28), gridroutetable.hh
+	(1.15): added verbose neighbor list handler -- includes link stat
+	info in output
+
+2002-02-16 Saturday 13:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.48): new grid.click contains AiroInfo element
+
+2002-02-16 Saturday 13:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: grid.hh (1.35), gridroutetable.cc (1.27),
+	gridroutetable.hh (1.14): Added new ping-pong'' technique for
+	propagating link stats back to link sender via periodic routing
+	messages; modified route selection logic to properly handle invalid
+	metrics; incremented grid version number
+
 2002-02-14 Thursday 16:31  Eddie Kohler <kohler@aciri.org>
 
 	* etc/samplepackage/: Makefile.in (1.25), configure.in (1.3):
