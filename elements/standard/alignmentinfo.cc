@@ -39,11 +39,9 @@ int
 AlignmentInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   // check for an earlier AlignmentInfo
-  int my_number = eindex();
-  const Vector<Element *> &ev = router()->elements();
-  for (int i = 0; i < my_number; i++)
-    if (AlignmentInfo *ai = (AlignmentInfo *)ev[i]->cast("AlignmentInfo"))
-      return ai->configure(conf, errh);
+  if (void *a = router()->attachment("AlignmentInfo"))
+    return ((AlignmentInfo *)a)->configure(conf, errh);
+  router()->set_attachment("AlignmentInfo", this);
 
   // this is the first AlignmentInfo; store all information here
   for (int i = 0; i < conf.size(); i++) {
@@ -107,11 +105,10 @@ AlignmentInfo::query1(Element *e, int port, int &chunk, int &offset) const
 bool
 AlignmentInfo::query(Element *e, int port, int &chunk, int &offset)
 {
-  const Vector<Element *> &ev = e->router()->elements();
-  for (int i = 0; i < ev.size(); i++)
-    if (AlignmentInfo *ai = (AlignmentInfo *)ev[i]->cast("AlignmentInfo"))
-      return ai->query1(e, port, chunk, offset);
-  return false;
+  if (void *a = e->router()->attachment("AlignmentInfo"))
+    return ((AlignmentInfo *)a)->query1(e, port, chunk, offset);
+  else
+    return false;
 }
 
 EXPORT_ELEMENT(AlignmentInfo)

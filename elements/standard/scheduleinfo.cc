@@ -28,6 +28,7 @@
 ScheduleInfo::ScheduleInfo()
 {
   MOD_INC_USE_COUNT;
+  static_assert((1 << FRAC_BITS) == Task::DEFAULT_TICKETS);
 }
 
 ScheduleInfo::~ScheduleInfo()
@@ -46,14 +47,9 @@ ScheduleInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
     _prefix = String();
 
   // check for an earlier ScheduleInfo with the same prefix
-  const Vector<Element *> &ev = router()->elements();
-  for (int i = 0; i < eindex(); i++)
-    if (ScheduleInfo *si = (ScheduleInfo *)ev[i]->cast("ScheduleInfo"))
-      if (_prefix == si->_prefix) {
-	_active = false;
-	return si->configure(conf, errh);
-      }
-  _active = true;
+  if (void *a = router()->attachment("ScheduleInfo." + _prefix))
+    return ((ScheduleInfo *)a)->configure(conf, errh);
+  router()->set_attachment("ScheduleInfo." + _prefix, this);
   
   // compile scheduling info
   for (int i = 0; i < conf.size(); i++) {
@@ -67,12 +63,12 @@ ScheduleInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
     else {
       for (int j = 0; j < _element_names.size(); j++)
 	if (_element_names[j] == parts[0]) {
-	  if (_max_tickets[j] != mt)
+	  if (_tickets[j] != mt)
 	    errh->error("conflicting ScheduleInfo for `%s'", parts[0].cc());
 	  goto appended;
 	}
       _element_names.push_back(parts[0]);
-      _max_tickets.push_back(mt);
+      _tickets.push_back(mt);
      appended: ;
     }
   }
@@ -81,27 +77,27 @@ ScheduleInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 bool
-ScheduleInfo::query(const String &text, int &max_tickets) const
+ScheduleInfo::query(const String &text, int &tickets) const
 {
   for (int i = 0; i < _element_names.size(); i++)
     if (_element_names[i] == text) {
-      max_tickets = _max_tickets[i];
+      tickets = _tickets[i];
       return true;
     }
   return false;
 }
 
 bool
-ScheduleInfo::query_prefixes(const String &id, int &scaled_max_tickets,
+ScheduleInfo::query_prefixes(const String &id, int &scaled_tickets,
 			     String &output_id) const
 {
   // Check `id', then `id's prefix, then its prefix, and so forth.
-  int max_tickets;
+  int tickets;
   String text = id;
   while (text) {
-    if (query(text, max_tickets)) {
-      scaled_max_tickets =
-	((long long)scaled_max_tickets * max_tickets) >> FRAC_BITS;
+    if (query(text, tickets)) {
+      scaled_tickets =
+	((long long)scaled_tickets * tickets) >> FRAC_BITS;
       output_id = id.substring(text.length() + 1);
       return true;
     }
@@ -114,31 +110,22 @@ ScheduleInfo::query_prefixes(const String &id, int &scaled_max_tickets,
 int
 ScheduleInfo::query(Element *e, ErrorHandler *errh)
 {
-  const Vector<Element *> &ev = e->router()->elements();
-  Vector<Element *> schinfos;
-  for (int i = 0; i < ev.size(); i++)
-    if (ScheduleInfo *e = (ScheduleInfo *)ev[i]->cast("ScheduleInfo"))
-      if (e->_active)
-	schinfos.push_back(e);
-
   // check prefixes in order of increasing length
+  Router *r = e->router();
   String id = e->id();
   String text = id;
-  int max_tickets = DEFAULT;
+  int tickets = Task::DEFAULT_TICKETS;
   int slash;
   while (text) {
 
     // find current prefix, which includes slash
     String prefix = id.substring(0, id.length() - text.length());
     bool warning = false;	// only warn if there was partial ScheduleInfo
-    
-    for (int i = 0; i < schinfos.size(); i++) {
-      ScheduleInfo *e = (ScheduleInfo *)schinfos[i];
-      if (e->_prefix == prefix) {
-	if (e->query_prefixes(text, max_tickets, text))
-	  goto found;
-	warning = true;
-      }
+
+    if (void *a = r->attachment("ScheduleInfo." + prefix)) {
+      if (((ScheduleInfo *)a)->query_prefixes(text, tickets, text))
+	goto found;
+      warning = true;
     }
 
     slash = text.find_left('/');
@@ -157,14 +144,14 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
   }
 
   // check for too many tickets
-  if (max_tickets > Task::MAX_TICKETS) {
-    max_tickets = Task::MAX_TICKETS;
-    String m = cp_unparse_real2(max_tickets, FRAC_BITS);
+  if (tickets > Task::MAX_TICKETS) {
+    tickets = Task::MAX_TICKETS;
+    String m = cp_unparse_real2(tickets, FRAC_BITS);
     errh->warning("ScheduleInfo too high; reduced to %s", m.cc());
   }
   
   // return the result you've got
-  return max_tickets;
+  return tickets;
 }
 
 void
