@@ -3,6 +3,9 @@
 #include "element.hh"
 #include "timer.hh"
 #include "bitvector.hh"
+#if CLICK_USERLEVEL
+# include <unistd.h>
+#endif
 class ElementFilter;
 
 class Router : public ElementLink {
@@ -12,6 +15,12 @@ class Router : public ElementLink {
 
   Timer _timer_head;
   bool _please_stop_driver;
+
+#ifdef CLICK_USERLEVEL
+  fd_set _select_fd_set;
+  Vector<int> _select_fd;
+  Vector<int> _select_element;
+#endif
   
   int _refcount;
   
@@ -135,6 +144,11 @@ class Router : public ElementLink {
   void set_configuration(int, const String &);
 
   Timer *timer_head()				{ return &_timer_head; }
+
+#if CLICK_USERLEVEL
+  int add_select(int fd, int element);
+  int remove_select(int fd, int element);
+#endif
   
   void driver();
   void driver_once();

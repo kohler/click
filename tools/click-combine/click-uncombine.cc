@@ -207,7 +207,7 @@ remove_toplevel_component(String component, RouterT *r, const char *filename,
   Vector<String> component_names;
   if (r->archive_index("componentmap") >= 0) {
     ArchiveElement &ae = r->archive("componentmap");
-    cp_spacevec(cp_subst(ae.data), component_names);
+    cp_spacevec(ae.data, component_names);
     for (int i = 0; i < component_names.size(); i++)
       component_map.insert(component_names[i], 0);
   }

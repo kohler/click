@@ -8,7 +8,7 @@ out :: Queue(1024) -> ToDevice(eth4);
 
 // ARP request need to be answered, obviously
 c0[0]
-    -> ARPResponder(7.0.0.1 255.255.255.255 00:C0:95:E1:FC:D6)
+    -> ARPResponder(7.0.0.1 00:C0:95:E1:FC:D6)
     -> out;
 
 // ARP responses are handed to Linux

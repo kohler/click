@@ -18,8 +18,8 @@
  * Only available in user-level processes.
  *
  * =a ToDump
- * =a FromBPF
- * =a ToBPF */
+ * =a FromDevice.u
+ * =a ToDevice.u */
 
 #ifdef HAVE_PCAP
 extern "C" {

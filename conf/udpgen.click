@@ -1,7 +1,7 @@
 // need to change the following lines to correspond to your particular
 // udpgen setting - hopefully we will have a script soon
 
-ar   :: ARPResponder(7.0.0.2 255.255.255.255 00:E0:29:05:E2:D4);
+ar   :: ARPResponder(7.0.0.2 00:E0:29:05:E2:D4);
 udph :: UDPIPEncap(7.0.0.2, 1234, 5.0.0.2, 1234, 1);
 ethh :: EtherEncap(0x0800, 00:E0:29:05:E2:D4, 00:C0:95:E2:09:14);
 

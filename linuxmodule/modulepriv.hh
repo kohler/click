@@ -43,6 +43,7 @@ void init_proc_click_errors();
 void cleanup_proc_click_errors();
 
 extern ErrorHandler *kernel_errh;
+extern ErrorHandler *kernel_syslog_errh;
 extern Router *current_router;
 Router *parse_router(String);
 void kill_current_router();

@@ -47,7 +47,7 @@ LookupIPRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
     unsigned int dst, mask, gw;
     int output_num;
     bool ok = false;
-    if (cp_ip_address_mask(arg, (unsigned char *)&dst, (unsigned char *)&mask, &arg)) {
+    if (cp_ip_address_mask(arg, (unsigned char *)&dst, (unsigned char *)&mask, &arg, true)) { // allow base IP addresses
       cp_eat_space(arg);
       if (cp_ip_address(arg, (unsigned char *)&gw, &arg)) {
 	ok = cp_eat_space(arg) && cp_integer(arg, &output_num);
@@ -62,7 +62,7 @@ LookupIPRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
       if (output_num > maxout)
         maxout = output_num;
     } else
-      errh->error("argument %d should be `DADDR MASK [GATEWAY] OUTPUT'", i+1);
+      errh->error("argument %d should be `DADDR/MASK [GATEWAY] OUTPUT'", i+1);
   }
   if (errh->nerrors() != before)
     return -1;

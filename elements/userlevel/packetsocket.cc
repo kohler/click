@@ -123,6 +123,7 @@ PacketSocket::initialize(ErrorHandler *errh)
 
   if (input_is_pull(0))
     ScheduleInfo::join_scheduler(this, errh);
+  add_select(_fd);
   return 0;
 }
 

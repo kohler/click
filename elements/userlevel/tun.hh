@@ -37,7 +37,6 @@ class Tun : public Element {
   void uninitialize();
   Tun *clone() const;
 
-  int select_fd() { return(_fd); }
   void selected(int fd);
 
   void push(int port, Packet *);

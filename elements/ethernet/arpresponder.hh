@@ -3,7 +3,7 @@
 
 /*
  * =c
- * ARPResponder(IPPREFIX1 [IPPREFIX...] ETH1, IPPREFIX2 ETH2, ...)
+ * ARPResponder(IP/MASK1 [IP/MASK...] ETH1, IP/MASK2 ETH2, ...)
  * =d
  *
  * Input should be ARP request packets, including the Ethernet header.
@@ -12,7 +12,7 @@
  * reply giving the corresponding ETH address. Could be used for proxy ARP as
  * well as producing replies for a host's own address.
  *
- * The IPPREFIX arguments are IP network addresses (IP address/netmask pairs).
+ * The IP/MASK arguments are IP network addresses (IP address/netmask pairs).
  * The netmask can be specified in dotted decimal form
  * (`<tt>18.26.7.0/255.255.255.0</tt>') or CIDR form
  * (`<tt>18.26.7.0/24</tt>').
@@ -42,7 +42,7 @@ class ARPResponder : public Element {
   ~ARPResponder();
   
   const char *class_name() const		{ return "ARPResponder"; }
-  const char *processing() const	{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   ARPResponder *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
 

@@ -102,17 +102,18 @@ class IPClassifier : public Classifier {
     NONE = 0,
     
     TYPE_HOST = 1, TYPE_NET = 2, TYPE_PORT = 3, TYPE_PROTO = 4,
-    TYPE_TCPOPT = 5, TYPE_TOS = 6, TYPE_DSCP = 7,
+    TYPE_TCPOPT = 5, TYPE_TOS = 6, TYPE_DSCP = 7, TYPE_ICMP_TYPE = 8,
     
     SD_SRC = 1, SD_DST = 2, SD_AND = 3, SD_OR = 4,
     
     PROTO_IP = 1,
     
     DATA_NONE = 0, DATA_IP = 1, DATA_IPMASK = 2, DATA_PROTO = 3,
-    DATA_PORT = 4, DATA_INT = 5, DATA_TCPOPT = 6,
+    DATA_PORT = 4, DATA_INT = 5, DATA_TCPOPT = 6, DATA_ICMP_TYPE = 7,
     
     IP_PROTO_TCP_OR_UDP = 0x10000,
 
+    // if you change this, change click-fastclassifier.cc also
     TRANSP_FAKE_OFFSET = 64,
   };
 

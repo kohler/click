@@ -24,7 +24,6 @@
 #include "kernelerror.hh"
 #include "straccum.hh"
 #include "confparse.hh"
-#include "archive.hh"
 
 struct proc_dir_entry proc_click_entry = {
   0,				// dynamic inode
@@ -64,22 +63,6 @@ LinuxModuleLexerExtra::require(const String &r, ErrorHandler *errh)
 Router *
 parse_router(String s)
 {
-  // decompose archive
-  if (s.length() != 0 && s[0] == '!') {
-    Vector<ArchiveElement> archive;
-    separate_ar_string(s, archive, kernel_errh);
-    bool found = false;
-    for (int i = 0; i < archive.size(); i++)
-      if (archive[i].name == "config") {
-	s = archive[i].data;
-	found = true;
-      }
-    if (!found) {
-      kernel_errh->error("archive has no `config' section");
-      return 0;
-    }
-  }
-
   LinuxModuleLexerExtra lextra;
   int cookie = lexer->begin_parse(s, "line ", &lextra);
   while (lexer->ystatement())
@@ -429,7 +412,7 @@ init_module()
   FromLinux::static_initialize();
   kernel_errh = ErrorHandler::default_handler();
   extern ErrorHandler *click_chatter_errh;
-  click_chatter_errh = kernel_errh;
+  click_chatter_errh = new SyslogErrorHandler;
   lexer = new Lexer(kernel_errh);
   export_elements(lexer);
   
@@ -479,8 +462,9 @@ cleanup_module()
   cleanup_click_sched();
   
   extern ErrorHandler *click_chatter_errh;
+  delete click_chatter_errh;
   click_chatter_errh = 0;
-
+  
   delete[] root_handlers;
   ErrorHandler::static_cleanup();
   FromDevice::static_cleanup();

@@ -64,6 +64,13 @@ KernelErrorHandler::vmessage(Seriousness seriousness, const String &message)
     panic("KernelErrorHandler");
 }
 
+void
+SyslogErrorHandler::vmessage(Seriousness seriousness, const String &message)
+{
+  String str_message = message;
+  printk("<1>%s\n", str_message.cc());
+}
+
 
 static
 DECLARE_READ_FILEOP(click_errors_read)

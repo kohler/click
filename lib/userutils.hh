@@ -13,7 +13,7 @@ String clickpath_find_file(const String &filename, const char *subdir,
 			   String default_path, ErrorHandler * = 0);
 String click_mktmpdir(ErrorHandler * = 0);
 
-void parse_tabbed_lines(const String &, bool allow_spaces, int, ...);
+void parse_tabbed_lines(const String &, Vector<String> *, ...);
 
 ArchiveElement init_archive_element(const String &, int);
 

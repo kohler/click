@@ -278,12 +278,129 @@ cp_spacevec(const String &conf, Vector<String> &vec)
 }
 
 String
-cp_quote_string(const String &str)
+cp_unquote(const String &str)
+{
+  const char *s = str.data();
+  int len = str.length();
+  int i = 0;
+
+  // accumulate a word
+  StringAccum sa;
+  int start = i;
+  int quote_state = 0;
+  
+  for (; i < len; i++)
+    switch (s[i]) {
+      
+     case '\"':
+     case '\'':
+      if (quote_state == 0) {
+	if (start < i) sa << str.substring(start, i - start);
+	start = i + 1;
+	quote_state = s[i];
+      } else if (quote_state == s[i]) {
+	if (start < i) sa << str.substring(start, i - start);
+	start = i + 1;
+	quote_state = 0;
+      }
+      break;
+      
+     case '\\':
+      if (i < len - 1 && (quote_state == '\"'
+			  || (quote_state == 0 && s[i+1] == '<'))) {
+	sa << str.substring(start, i - start);
+	switch (s[i+1]) {
+	  
+	 case '\r':
+	  if (i < len - 2 && s[i+2] == '\n') i++;
+	  /* FALLTHRU */
+	 case '\n':
+	  i++;
+	  break;
+	  
+	 case 'a': sa << '\a'; i++; break;
+	 case 'b': sa << '\b'; i++; break;
+	 case 'f': sa << '\f'; i++; break;
+	 case 'n': sa << '\n'; i++; break;
+	 case 'r': sa << '\r'; i++; break;
+	 case 't': sa << '\t'; i++; break;
+	 case 'v': sa << '\v'; i++; break;
+	  
+	 case '0': case '1': case '2': case '3':
+	 case '4': case '5': case '6': case '7': {
+	   int c = 0, d = 0;
+	   for (i++; i < len && s[i] >= '0' && s[i] <= '7' && d < 3;
+		i++, d++)
+	     c = c*8 + s[i] - '0';
+	   sa << (char)c;
+	   i--;
+	   break;
+	 }
+	 
+	 case 'x': {
+	   int c = 0;
+	   for (i += 2; i < len; i++)
+	     if (s[i] >= '0' && s[i] <= '9')
+	       c = c*16 + s[i] - '0';
+	     else if (s[i] >= 'A' && s[i] <= 'F')
+	       c = c*16 + s[i] - 'A' + 10;
+	     else if (s[i] >= 'a' && s[i] <= 'f')
+	       c = c*16 + s[i] - 'a' + 10;
+	     else
+	       break;
+	   sa << (char)c;
+	   i--;
+	   break;
+	 }
+	 
+	 case '<': {
+	   int c = 0, d = 0;
+	   for (i += 2; i < len; i++) {
+	     if (s[i] == '>')
+	       break;
+	     else if (s[i] >= '0' && s[i] <= '9')
+	       c = c*16 + s[i] - '0';
+	     else if (s[i] >= 'A' && s[i] <= 'F')
+	       c = c*16 + s[i] - 'A' + 10;
+	     else if (s[i] >= 'a' && s[i] <= 'f')
+	       c = c*16 + s[i] - 'a' + 10;
+	     else
+	       continue;	// space (ignore it) or random (error)
+	     if (++d == 2) {
+	       sa << (char)c;
+	       c = d = 0;
+	     }
+	   }
+	   break;
+	 }
+	 
+	 default:
+	  sa << s[i+1];
+	  i++;
+	  break;
+	  
+	}
+	start = i + 1;
+      }
+      break;
+      
+    }
+
+  if (start == 0)
+    return str;
+  else {
+    sa << str.substring(start, i - start);
+    return sa.take_string();
+  }
+}
+
+String
+cp_quote(const String &str, bool allow_newlines = false)
 {
   if (!str)
     return String("\"\"");
   
-  const char *s = str.data();
+  const unsigned char *s = (const unsigned char *)str.data();
   int len = str.length();
   int i = 0;
   
@@ -293,21 +410,44 @@ cp_quote_string(const String &str)
   sa << '\"';
   
   for (; i < len; i++)
-    if (s[i] == '\\' || s[i] == '\"') {
-      sa << str.substring(start, i - start);
-      sa << '\\' << s[i];
+    switch (s[i]) {
+      
+     case '\\': case '\"':
+      sa << str.substring(start, i - start) << '\\' << s[i];
       start = i + 1;
-    } else if ((s[i] >= 32 && s[i] < 127) || s[i] == '\n')
-      /* nada */;
-    else {
-      sa << str.substring(start, i - start);
-      unsigned int u = *((unsigned char *)(s + i));
-      sa << '\\' << '0' + (u >> 6) << '0' + ((u >> 3) & 7) << '0' + (u & 7);
+      break;
+      
+     case '\t':
+      sa << str.substring(start, i - start) << "\\t";
       start = i + 1;
-    }
+      break;
 
-  sa << str.substring(start, i - start);
-  sa << '\"';
+     case '\r':
+      sa << str.substring(start, i - start) << "\\r";
+      start = i + 1;
+      break;
+
+     case '\n':
+      if (!allow_newlines) {
+	sa << str.substring(start, i - start) << "\\n";
+	start = i + 1;
+      }
+      break;
+
+     default:
+      if (s[i] < 32 || s[i] >= 127) {
+	unsigned u = s[i];
+	sa << str.substring(start, i - start)
+	   << '\\' << (char)('0' + (u >> 6))
+	   << (char)('0' + ((u >> 3) & 7))
+	   << (char)('0' + (u & 7));
+	start = i + 1;
+      }
+      break;
+      
+    }
+  
+  sa << str.substring(start, i - start) << '\"';
   return sa.take_string();
 }
 
@@ -596,10 +736,7 @@ cp_string(String str, String *return_value, String *rest = 0)
   int i = 0;
 
   // accumulate a word
-  StringAccum sa;
-  int start = i;
   int quote_state = 0;
-  bool any = false;
   
   for (; i < len; i++)
     switch (s[i]) {
@@ -616,108 +753,28 @@ cp_string(String str, String *return_value, String *rest = 0)
 
      case '\"':
      case '\'':
-      if (quote_state == 0) {
-	if (start > i) sa << str.substring(start, i - start);
-	start = i + 1;
+      if (quote_state == 0)
 	quote_state = s[i];
-	any = true;
-      } else if (quote_state == s[i]) {
-	if (start > i) sa << str.substring(start, i - start);
-	start = i + 1;
+      else if (quote_state == s[i])
 	quote_state = 0;
-      }
       break;
       
      case '\\':
-      if (i < len - 1 && (quote_state == '\"'
-			  || (quote_state == 0 && s[i+1] == '<'))) {
-	sa << str.substring(start, i - start);
-	switch (s[i+1]) {
-	  
-	 case '\r':
-	  if (i < len - 2 && s[i+2] == '\n') i++;
-	  /* FALLTHRU */
-	 case '\n':
-	  i++;
-	  break;
-	  
-	 case 'a': sa << '\a'; i++; break;
-	 case 'b': sa << '\b'; i++; break;
-	 case 'f': sa << '\f'; i++; break;
-	 case 'n': sa << '\n'; i++; break;
-	 case 'r': sa << '\r'; i++; break;
-	 case 't': sa << '\t'; i++; break;
-	 case 'v': sa << '\v'; i++; break;
-	  
-	 case '0': case '1': case '2': case '3':
-	 case '4': case '5': case '6': case '7': {
-	   int c = 0, d = 0;
-	   for (i++; i < len && s[i] >= '0' && s[i] <= '7' && d < 3;
-		i++, d++)
-	     c = c*8 + s[i] - '0';
-	   sa << (char)c;
-	   i--;
-	   break;
-	 }
-	 
-	 case 'x': {
-	   int c = 0;
-	   for (i += 2; i < len; i++)
-	     if (s[i] >= '0' && s[i] <= '9')
-	       c = c*16 + s[i] - '0';
-	     else if (s[i] >= 'A' && s[i] <= 'F')
-	       c = c*16 + s[i] - 'A' + 10;
-	     else if (s[i] >= 'a' && s[i] <= 'f')
-	       c = c*16 + s[i] - 'a' + 10;
-	     else
-	       break;
-	   sa << (char)c;
-	   i--;
-	   break;
-	 }
-	 
-	 case '<': {
-	   int c = 0, d = 0;
-	   any = true;
-	   for (i += 2; i < len; i++) {
-	     if (s[i] == '>')
-	       break;
-	     else if (s[i] >= '0' && s[i] <= '9')
-	       c = c*16 + s[i] - '0';
-	     else if (s[i] >= 'A' && s[i] <= 'F')
-	       c = c*16 + s[i] - 'A' + 10;
-	     else if (s[i] >= 'a' && s[i] <= 'f')
-	       c = c*16 + s[i] - 'a' + 10;
-	     else
-	       continue;	// space (ignore it) or random (error)
-	     if (++d == 2) {
-	       sa << (char)c;
-	       c = d = 0;
-	     }
-	   }
-	   break;
-	 }
-	 
-	 default:
-	  sa << s[i+1];
-	  i++;
-	  break;
-
-	}
-	start = i + 1;
+      if (i < len - 1 && s[i+1] == '<' && quote_state == 0) {
+	for (i += 2; i < len && s[i] != '>'; i++)
+	  /* nada */;
       }
       break;
       
     }
   
  done:
-  if ((!sa.length() && !any && start == i) || (!rest && i != len))
+  if (i == 0 || (!rest && i != len))
     return false;
   else {
     if (rest)
       *rest = str.substring(i);
-    sa << str.substring(start, i - start);
-    *return_value = sa.take_string();
+    *return_value = cp_unquote(str.substring(0, i));
     return true;
   }
 }
@@ -768,7 +825,7 @@ cp_ip_address(String str, unsigned char *return_value, String *rest = 0)
 bool
 cp_ip_address_mask(String str,
 		   unsigned char *return_value, unsigned char *return_mask,
-		   String *rest = 0)
+		   String *rest, bool allow_bare_address)
 {
   unsigned char value[4], mask[4];
   
@@ -776,14 +833,16 @@ cp_ip_address_mask(String str,
   if (!cp_ip_address(str, value, &mask_str))
     return false;
 
-  // move past space or /
-  bool slash = false;
-  if (mask_str.length() && mask_str[0] == '/') {
+  // move past /
+  if (mask_str.length() && mask_str[0] == '/')
     mask_str = mask_str.substring(1);
-    slash = true;
-  } else if (mask_str.length() && isspace(mask_str[0]))
-    cp_eat_space(mask_str);
-  else
+  else if (allow_bare_address
+	   && (!mask_str.length() || (rest && isspace(mask_str[0])))) {
+    if (rest) *rest = mask_str;
+    memcpy(return_value, value, 4);
+    return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 255;
+    return true;
+  } else
     return false;
 
   // check for complete IP address
@@ -791,7 +850,7 @@ cp_ip_address_mask(String str,
   if (cp_ip_address(mask_str, mask, rest))
     /* OK */;
   
-  else if (slash && cp_integer(mask_str, &relevant_bits, rest)
+  else if (cp_integer(mask_str, &relevant_bits, rest)
 	   && relevant_bits >= 0 && relevant_bits <= 32) {
     // set bits
     mask[0] = mask[1] = mask[2] = mask[3] = 0;
@@ -824,9 +883,9 @@ cp_ip_address(String str, IPAddress &address, String *rest = 0)
 
 bool
 cp_ip_address_mask(String str, IPAddress &address, IPAddress &mask,
-		   String *rest = 0)
+		   String *rest = 0, bool allow_bare_address = false)
 {
-  return cp_ip_address_mask(str, address.data(), mask.data(), rest);
+  return cp_ip_address_mask(str, address.data(), mask.data(), rest, allow_bare_address);
 }
 #endif
 
@@ -965,6 +1024,7 @@ cp_command_name(int cp_command)
    case cpArgument: return "??";
    case cpIPAddress: return "IP address";
    case cpIPAddressMask: return "IP address with netmask";
+   case cpIPAddressOptMask: return "IP address with optional netmask";
    case cpEthernetAddress: return "Ethernet address";
    case cpElement: return "element name";
    case cpDesCblock: return "DES encryption block";
@@ -1033,7 +1093,8 @@ store_value(int cp_command, Values &v)
      break;
    }
 
-   case cpIPAddressMask: {
+   case cpIPAddressMask:
+   case cpIPAddressOptMask: {
      unsigned char *addrstore = (unsigned char *)v.store;
      memcpy(addrstore, v.v.address, 4);
      unsigned char *maskstore = (unsigned char *)v.store2;
@@ -1229,12 +1290,14 @@ cp_va_parsev(const Vector<String> &args,
        break;
      }     
      
-     case cpIPAddressMask: {
+     case cpIPAddressMask:
+     case cpIPAddressOptMask: {
        const char *desc = va_arg(val, const char *);
        v.store = va_arg(val, unsigned char *);
        v.store2 = va_arg(val, unsigned char *);
        if (skip) break;
-       if (!cp_ip_address_mask(args[argno], v.v.address, v.v.address + 4))
+       bool mask_optional = (cp_command == cpIPAddressOptMask);
+       if (!cp_ip_address_mask(args[argno], v.v.address, v.v.address + 4, 0, mask_optional))
 	 errh->error("argument %d should be %s (IP address with netmask)", argno+1, desc);
        break;
      }
@@ -1318,8 +1381,7 @@ cp_va_parsev(const Vector<String> &args,
   
   // if success, actually set the values
   if (errh->nerrors() == nerrors_in) {
-    assert(args.size() <= argno);
-    for (int i = 0; i < args.size(); i++)
+    for (int i = 0; i < args.size() && i < argno; i++)
       store_value(cp_commands[i], values[i]);
   }
   

@@ -45,12 +45,12 @@ LookupIPRoute2::push(int, Packet *p)
   IPAddress a = p->dst_ip_anno();
 
   /*
-  add_route_handler("1.0.0.0 255.255.0.0 5.5.5.5", this, (void *)0, (ErrorHandler *)0);
-  add_route_handler("2.1.0.0 255.255.0.0 1.1.1.1", this, (void *)0, (ErrorHandler *)0);
-  add_route_handler("2.2.0.0 255.255.0.0 2.2.2.2", this, (void *)0, (ErrorHandler *)0);
-  add_route_handler("2.244.0.0 255.255.0.0 3.3.3.3", this, (void *)0, (ErrorHandler *)0);
-  add_route_handler("2.0.0.0 255.255.0.0 4.4.4.4", this, (void *)0, (ErrorHandler *)0);
-  del_route_handler("2.1.3.0 255.255.0.0", this, (void *)0, (ErrorHandler *)0);
+  add_route_handler("1.0.0.0/255.255.0.0 5.5.5.5", this, (void *)0, (ErrorHandler *)0);
+  add_route_handler("2.1.0.0/255.255.0.0 1.1.1.1", this, (void *)0, (ErrorHandler *)0);
+  add_route_handler("2.2.0.0/255.255.0.0 2.2.2.2", this, (void *)0, (ErrorHandler *)0);
+  add_route_handler("2.244.0.0/255.255.0.0 3.3.3.3", this, (void *)0, (ErrorHandler *)0);
+  add_route_handler("2.0.0.0/255.255.0.0 4.4.4.4", this, (void *)0, (ErrorHandler *)0);
+  del_route_handler("2.1.3.0/255.255.0.0", this, (void *)0, (ErrorHandler *)0);
   click_chatter("Lookup for %x", ntohl(a.addr()));
   */
 
@@ -75,13 +75,13 @@ LookupIPRoute2::add_route_handler(const String &conf, Element *e, void *, ErrorH
   for (int i = 0; i < args.size(); i++) {
     String arg = args[i];
     unsigned int dst, mask, gw;
-    if (cp_ip_address_mask(arg, (unsigned char *)&dst, (unsigned char *)&mask, &arg) &&
+    if (cp_ip_address_mask(arg, (unsigned char *)&dst, (unsigned char *)&mask, &arg, true) && // allow bare IP addresses
 	cp_eat_space(arg) &&
         cp_ip_address(arg, (unsigned char *)&gw, &arg) &&
 	cp_is_space(arg))
       me->_t.add(dst, mask, gw);
     else {
-      errh->error("expects DST MASK GW");
+      errh->error("expects DST/MASK GW");
       return -1;
     }
   }
@@ -101,11 +101,11 @@ LookupIPRoute2::del_route_handler(const String &conf, Element *e, void *, ErrorH
   for (int i = 0; i < args.size(); i++) {
     String arg = args[i];
     unsigned int dst, mask;
-    if (cp_ip_address_mask(arg, (unsigned char *)&dst, (unsigned char *)&mask, &arg)
+    if (cp_ip_address_mask(arg, (unsigned char *)&dst, (unsigned char *)&mask, &arg, true)
 	&& cp_is_space(arg))
       me->_t.del(dst, mask);
     else {
-      errh->error("expects DST MASK");
+      errh->error("expects DST/MASK");
       return -1;
     }
   }
@@ -124,14 +124,14 @@ LookupIPRoute2::look_route_handler(Element *e, void *)
   me = (LookupIPRoute2*) e;
 
   int size = me->_t.size();
-  ret = "Entries: " + String(size) + "\nDST\tMASK\tGW\n";
+  ret = "Entries: " + String(size) + "\nDST/MASK\tGW\n";
   if(size == 0)
     return ret;
 
   int seen = 0; // # of valid entries handled
   for(int i = 0; seen < size; i++) {
     if(me->_t.get(i, dst, mask, gw)) {  // false if not valid
-      ret += IPAddress(dst).s() + "\t" + \
+      ret += IPAddress(dst).s() + "/" + \
              IPAddress(mask).s()+ "\t" + \
              IPAddress(gw).s()  + "\n";
       seen++;

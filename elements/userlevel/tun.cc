@@ -63,6 +63,7 @@ Tun::initialize(ErrorHandler *errh)
     return -1;
   if (input_is_pull(0))
     ScheduleInfo::join_scheduler(this, errh);
+  add_select(_fd);
   return 0;
 }
 

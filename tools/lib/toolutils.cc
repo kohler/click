@@ -209,7 +209,7 @@ void
 ElementMap::parse(const String &str)
 {
   Vector<String> a, b, c, d;
-  parse_tabbed_lines(str, false, 4, &a, &b, &c, &d);
+  parse_tabbed_lines(str, &a, &b, &c, &d, (void *)0);
   for (int i = 0; i < a.size(); i++)
     add(a[i], b[i], c[i], d[i]);
 }

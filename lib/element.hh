@@ -106,12 +106,14 @@ class Element : public ElementLink { public:
   void change_configuration(const String &);
   void change_configuration(int, const String &);
   
-  // RUNNING user level input elements.
-  virtual int select_fd()		{ return(-1); }
-  virtual void selected(int)		{ }
-
+  // RUNTIME
   virtual void run_scheduled();
-  
+#if CLICK_USERLEVEL
+  int add_select(int fd) const;
+  int remove_select(int fd) const;
+  virtual void selected(int fd);
+#endif
+
   virtual void push(int port, Packet *);
   virtual Packet *pull(int port);
   virtual Packet *simple_action(Packet *);

@@ -131,7 +131,7 @@ reverse_transformation(RouterT *r, ErrorHandler *)
     return;
   ArchiveElement &fc_ae = r->archive("devirtualize_info");
   Vector<String> new_click_names, old_click_names;
-  parse_tabbed_lines(fc_ae.data, true, 2, &new_click_names, &old_click_names);
+  parse_tabbed_lines(fc_ae.data, &new_click_names, &old_click_names, (void *)0);
 
   // make sure new types are available for use
   for (int i = 0; i < new_click_names.size(); i++)

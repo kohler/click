@@ -14,8 +14,8 @@
  * This element is only available at user level.
  * 
  * =a FromDump
- * =a FromBPF
- * =a ToBPF
+ * =a FromDevice.u
+ * =a ToDevice.u
  */
 
 class ToDump : public Element {

@@ -19,4 +19,17 @@ class KernelErrorHandler : public ErrorHandler {
   
 };
 
+class SyslogErrorHandler : public ErrorHandler {
+ public:
+  
+  SyslogErrorHandler()			{ reset_counts(); }
+  
+  int nwarnings() const			{ return 0; }
+  int nerrors() const			{ return 0; }
+  void reset_counts()			{ }
+  
+  void vmessage(Seriousness, const String &);
+  
+};
+
 #endif

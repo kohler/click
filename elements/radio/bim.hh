@@ -16,7 +16,7 @@ class BIM : public Element {
   BIM();
   ~BIM();
   
-  const char *class_name() const		{ return "BIM"; }
+  const char *class_name() const	{ return "BIM"; }
   const char *processing() const	{ return PULL_TO_PUSH; }
   
   BIM *clone() const;
@@ -24,7 +24,6 @@ class BIM : public Element {
   int initialize(ErrorHandler *);
   void uninitialize();
 
-  int select_fd() { return(_fd); }
   void selected(int fd);
 
   void push(int port, Packet *);

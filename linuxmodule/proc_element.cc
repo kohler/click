@@ -194,7 +194,7 @@ finish_handler_write(int elementno, int handlerno, String *s)
   else if (!h->write)
     return -EPERM;
   
-  String context_string = "While writing `" + h->name + "'";
+  String context_string = "In write handler `" + h->name + "'";
   if (e) context_string += String(" for `") + e->declaration() + "'";
   ContextErrorHandler cerrh(kernel_errh, context_string + ":");
   

@@ -3,7 +3,7 @@
 
 /*
  * =c
- * LookupIPRoute(DST1 MASK1 [GW1] OUT1, DST2 MASK2 [GW2] OUT2, ...)
+ * LookupIPRoute(DST1/MASK1 [GW1] OUT1, DST2/MASK2 [GW2] OUT2, ...)
  * =d
  * Input: IP packets (no ether header).
  * Expects a destination IP address annotation with each packet.

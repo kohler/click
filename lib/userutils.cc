@@ -14,6 +14,7 @@
 # include <config.h>
 #endif
 #include "straccum.hh"
+#include "confparse.hh"
 #include "userutils.hh"
 #include "error.hh"
 #include <errno.h>
@@ -271,59 +272,43 @@ click_mktmpdir(ErrorHandler *errh = 0)
 }
 
 void
-parse_tabbed_lines(const String &str, bool allow_spaces, int n, ...)
+parse_tabbed_lines(const String &str, Vector<String> *fields1, ...)
 {
   va_list val;
   Vector<void *> tabs;
-  va_start(val, n);
-  for (int i = 0; i < n; i++) {
-    Vector<String> *arg = va_arg(val, Vector<String> *);
-    tabs.push_back((void *)arg);
+  va_start(val, fields1);
+  while (fields1) {
+    tabs.push_back((void *)fields1);
+    fields1 = va_arg(val, Vector<String> *);
   }
   va_end(val);
   
   int p = 0;
   int len = str.length();
-  const char *s = str.data();
   
   while (p < len) {
-    
     // read a line
-    while (p < len && (s[p] == ' ' || s[p] == '\t'))
-      p++;
-    
+    int endp = str.find_left('\n', p);
+    if (endp < 0)
+      endp = str.length();
+    String line = str.substring(p, endp - p);
+
+    // break into words
+    Vector<String> words;
+    cp_spacevec(line, words);
+
     // skip blank lines & comments
-    if (p < len && !isspace(s[p]) && s[p] != '#') {
-
-      int which = 0;
-      while (p < len && !isspace(s[p])) {
-	int p1 = p;
-	if (allow_spaces) {
-	  while (p < len && s[p] != '\n' && s[p] != '\t')
-	    p++;
-	} else {
-	  while (p < len && !isspace(s[p]))
-	    p++;
-	}
-	if (which < tabs.size()) {
-	  Vector<String> *vec = (Vector<String> *)tabs[which];
-	  vec->push_back(str.substring(p1, p - p1));
-	  which++;
-	}
-	while (p < len && (s[p] == ' ' || s[p] == '\t'))
-	  p++;
+    if (words.size() > 0 && words[0][0] != '#')
+      for (int i = 0; i < tabs.size(); i++) {
+	Vector<String> *vec = (Vector<String> *)tabs[i];
+	if (i < words.size())
+	  vec->push_back(cp_unquote(words[i]));
+	else
+	  vec->push_back(String());
       }
 
-      for (int i = which; i < tabs.size(); i++) {
-	Vector<String> *vec = (Vector<String> *)tabs[which];
-	vec->push_back(String());
-      }
-    }
-    
     // skip past end of line
-    while (p < len && s[p] != '\n' && s[p] != '\r' && s[p] != '\f' && s[p] != '\v')
-      p++;
-    p++;
+    p = endp + 1;
   }
 }
 

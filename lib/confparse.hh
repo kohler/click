@@ -19,7 +19,8 @@ String cp_subst(const String &);
 void cp_argvec(const String &, Vector<String> &);
 void cp_spacevec(const String &, Vector<String> &);
 String cp_unargvec(const Vector<String> &);
-String cp_quote_string(const String &);
+String cp_unquote(const String &);
+String cp_quote(const String &, bool allow_newlines = false);
 
 // numbers
 bool cp_bool(String, bool *, String *rest = 0);
@@ -35,12 +36,12 @@ bool cp_string(String, String *, String *rest = 0);
 
 // network addresses
 bool cp_ip_address(String, unsigned char *, String *rest = 0);
-bool cp_ip_address_mask(String, unsigned char *, unsigned char *, String *rest = 0);
+bool cp_ip_address_mask(String, unsigned char *, unsigned char *, String *rest = 0, bool allow_bare_address = false);
 bool cp_ethernet_address(const String &, unsigned char *, String *rest = 0);
 #ifndef CLICK_TOOL
 class IPAddress; class EtherAddress;
 bool cp_ip_address(String, IPAddress &, String *rest = 0);
-bool cp_ip_address_mask(String, IPAddress &, IPAddress &, String *rest = 0);
+bool cp_ip_address_mask(String, IPAddress &, IPAddress &, String *rest = 0, bool allow_bare_address = false);
 bool cp_ethernet_address(String, EtherAddress &, String *rest = 0);
 Element *cp_element(const String &, Element *, ErrorHandler *);
 #endif
@@ -69,6 +70,7 @@ enum CpVaParseCmd {
   cpArgument,	// String *value
   cpIPAddress,	// unsigned char value[4] (or IPAddress *, or unsigned int *)
   cpIPAddressMask, // unsigned char value[4], unsigned char mask[4]
+  cpIPAddressOptMask, // unsigned char value[4], unsigned char mask[4]
   cpEthernetAddress, // unsigned char value[6] (or EtherAddress *)
   cpElement,	// Element **value
   cpDesCblock,  // unsigned char value[8]

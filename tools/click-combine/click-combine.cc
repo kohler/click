@@ -485,7 +485,7 @@ particular purpose.\n");
       if (routers[i]->archive_index("componentmap") >= 0) {
 	ArchiveElement &nae = routers[i]->archive("componentmap");
 	Vector<String> combines;
-	cp_spacevec(cp_subst(nae.data), combines);
+	cp_spacevec(nae.data, combines);
 	for (int j = 0; j < combines.size(); j++)
 	  sa << router_names[i] << '/' << combines[j] << '\n';
       }

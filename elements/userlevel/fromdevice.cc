@@ -223,6 +223,9 @@ FromDevice::initialize(ErrorHandler *errh)
 #if !FROMDEVICE_LINUX
   ScheduleInfo::join_scheduler(this, errh);
 #endif
+#if FROMDEVICE_LINUX
+  add_select(_fd);
+#endif
   return 0;
 }
 

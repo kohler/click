@@ -279,15 +279,27 @@ Classifier::unaligned_optimize()
 void
 Classifier::remove_unused_states()
 {
-  // remove uninteresting expr[0]s
-  while (_output_everything < 0
-	 && (_exprs[0].yes == _exprs[0].no || _exprs[0].mask.u == 0)) {
-    int next = _exprs[0].yes;
-    if (next <= 0)
-      _output_everything = -next;
-    else
-      _exprs[0] = _exprs[next];
+  // Remove uninteresting exprs
+  int first = 0;
+  for (int i = 0; _output_everything < 0 && i < _exprs.size(); i++) {
+    Expr &e = _exprs[i];
+    int next = e.yes;
+    if (e.yes == e.no || e.mask.u == 0) {
+      if (i == first && next <= 0)
+	_output_everything = e.yes;
+      else {
+	for (int j = 0; j < i; j++) {
+	  Expr &ee = _exprs[j];
+	  if (ee.yes == i) ee.yes = next;
+	  if (ee.no == i) ee.no = next;
+	}
+	if (i == 0) first = next;
+      }
+    }
   }
+
+  if (_output_everything < 0 && first > 0)
+    _exprs[0] = _exprs[first];
   
   // Now remove unreachable states.
   for (int i = 1; i < _exprs.size(); i++) {

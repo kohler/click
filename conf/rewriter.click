@@ -16,8 +16,8 @@ exceptny :: Classifier(12/0800 26/121a0441 30/121a042f, -)
 				// Pick out ARP requests
 cl2 :: Classifier(12/0806 20/0001, -)
 				// Give proxy ARP reply for net 1.0.0.0
-arr :: ARPResponder(10.0.0.1 255.255.255.255 1:1:1:1:1:1,
-		   10.0.0.0 255.255.255.0 1:1:1:1:1:1)
+arr :: ARPResponder(10.0.0.1 1:1:1:1:1:1,
+		   10.0.0.0/24 1:1:1:1:1:1)
 //MEDIAONE
 //arq :: ARPQuerier(24.147.20.63, 00:E0:98:03:7C:AE)
 //rw :: Rewriter(1.0.0.0,24.147.20.63,3600)

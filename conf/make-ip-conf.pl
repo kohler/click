@@ -73,7 +73,7 @@ arpq$i :: ARPQuerier($ip, $ena);
 c$i [1] -> t;
 t[$i] -> [1]arpq$i;
 arpq$i -> out$i;
-ar$i :: ARPResponder($ip 255.255.255.255 $ena);
+ar$i :: ARPResponder($ip $ena);
 c$i [0] -> ar$i -> out$i;
 
 EOF
@@ -91,7 +91,7 @@ for($i = 0; $i < $nifs; $i++){
     my $ii = ip2i($ifs->[$i]->[2]);
     my $mask = ip2i($ifs->[$i]->[3]);
     printf(" %s/32 0,\n", $ifs->[$i]->[2]);
-    printf(" %s 255.255.255.255 0.0.0.0 0,\n",
+    printf(" %s/32 0,\n",
            i2ip(($ii & $mask) | ~$mask));
     printf(" %s/32 0,\n",
            i2ip($ii & $mask));

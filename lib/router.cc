@@ -742,7 +742,12 @@ int
 Router::initialize(ErrorHandler *errh)
 {
   assert(!_initialized);
-  
+#if CLICK_USERLEVEL
+  FD_ZERO(&_select_fd_set);
+  _select_fd.clear();
+  _select_element.clear();
+#endif
+    
   if (check_hookup_elements(errh) < 0)
     return -1;
   
@@ -750,7 +755,7 @@ Router::initialize(ErrorHandler *errh)
   bool all_ok = true;
 
   notify_hookup_range();
-  
+
   // set up configuration order
   Vector<int> configure_phase(nelements(), 0);
   Vector<int> configure_order(nelements(), 0);
@@ -1038,27 +1043,55 @@ Router::set_configuration(int elementno, const String &conf)
 }
 
 
+// SELECT
+
+#if CLICK_USERLEVEL
+
+int
+Router::add_select(int fd, int element)
+{
+  if (fd < 0) return -1;
+  assert(fd >= 0 && element >= 0 && element < nelements());
+  for (int i = 0; i < _select_fd.size(); i++)
+    if (_select_fd[i] == fd)
+      return -1;
+  _select_fd.push_back(fd);
+  _select_element.push_back(element);
+  FD_SET(fd, &_select_fd_set);
+  return 0;
+}
+
+int
+Router::remove_select(int fd, int element)
+{
+  if (fd < 0) return -1;
+  assert(fd >= 0 && element >= 0 && element < nelements());
+  for (int i = 0; i < _select_fd.size(); i++)
+    if (_select_fd[i] == fd && _select_element[i] == element) {
+      _select_fd[i] = _select_fd.back();
+      _select_element[i] = _select_element.back();
+      _select_fd.pop_back();
+      _select_element.pop_back();
+      FD_CLR(fd, &_select_fd_set);
+      return 0;
+    }
+  return -1;
+}
+
+#endif
+
+
 // DRIVER 
 
 void
 Router::wait()
 {
 #ifndef __KERNEL__
+  
   // Wait in select() for input or timer.
   // And call relevant elements' selected() methods.
-  
-  fd_set mask;
-  bool any = false;
-
-  FD_ZERO(&mask);
-  for (int i = 0; i < _elements.size(); i++) {
-    Element *f = _elements[i];
-    int fd = f->select_fd();
-    if (fd >= 0) {
-      FD_SET(fd, &mask);
-      any = true;
-    }
-  }
+  fd_set mask = _select_fd_set;
+  bool any = (_select_fd.size() > 0);
 
   struct timeval tv;
   // do not wait if anything is scheduled
@@ -1072,11 +1105,10 @@ Router::wait()
   if (n < 0 && errno != EINTR)
     perror("select");
   else if (n > 0) {
-    for (int i = 0; i < _elements.size(); i++) {
-      Element *f = _elements[i];
-      int fd = f->select_fd();
-      if (fd >= 0 && FD_ISSET(fd, &mask))
-        f->selected(fd);
+    for (int i = 0; i < _select_fd.size(); i++) {
+      int fd = _select_fd[i];
+      if (FD_ISSET(fd, &mask))
+	_elements[ _select_element[i] ]->selected(fd);
     }
   }
   

@@ -1,8 +1,25 @@
 Click NEWS
 
-Version 1.0.7
+Version 1.1
 
-* Incompatible API changes
+* Incompatible element changes
+
+** Added support for parsing CIDR-style [Classless Inter-Domain Routing]
+   netmasks in element configuration strings. Old-style netmasks are still
+   supported, but you must use a slash, not a space. So for the 18.26.7
+   subnet, you can write either `18.26.7.0/255.255.255.0' or
+   `18.26.7.0/24'. You will need to change the arguments to any
+   ARPResponder, FromLinux, LookupIPRoute, LookupIPRoute2, and RIPSend
+   elements in your configuration files.
+
+** Deprecated FromBPF and ToBPF in favor of FromDevice and ToDevice. (But
+   the arguments to FromDevice and ToDevice are the same as FromBPF and
+   ToBPF.)
+
+** Renamed the SetIPAddress element to StoreIPAddress. Added a different
+   SetIPAddress element.
+
+* Incompatible C++ API changes
 
 ** Made configuration argument parsing more uniform among elements. For
    example, every configuration argument is always a comma-separated
@@ -22,11 +39,6 @@ Version 1.0.7
 
 * General
 
-** Added support for parsing CIDR-style [Classless Inter-Domain Routing]
-   netmasks in element configuration strings. Old-style netmasks are still
-   supported. So for the 18.26.7 subnet, you can write either `18.26.7.0
-   255.255.255.0' or `18.26.7.0/24'.
-
 ** Added new `tickets' handler, available by default on every element.
 
 ** Improved support for large numbers of handlers by reducing memory usage.
@@ -41,7 +53,8 @@ Version 1.0.7
    into a directory (directory path specified using -d option) or stdout on a
    regular basis (duration specified by argument to ReadHandlerCaller element).
 
-** Fixed FromBPF and ToBPF, finally.
+** Fixed FromBPF and ToBPF, finally. The fixed versions are called
+   FromDevice and ToDevice.
 
 * Kernel driver
 
@@ -58,8 +71,8 @@ Version 1.0.7
 
 ** Added QuitWatcher, FrontDropQueue, StripIPHeader, and IPClassifier.
 
-** Fixed FromBPF and ToBPF bugs. Now FromBPF will not starve other router
-   processing, and ToBPF works on Linux.
+** Fixed FromBPF and ToBPF bugs. Now FromDevice will not starve other
+   router processing, and ToDevice works on Linux.
 
 ** Fixed FromLinux bug: now supports multiple instances of FromLinux for same
    device (this happens while installing a new configuration: initialize is
@@ -70,10 +83,7 @@ Version 1.0.7
    end_bh_atomic().
 
 ** Modified ToDevice: ToDevice now sends linux packets if device is idle. This
-   prevents click from starving out packets sent by other processes / linux.
-
-** Renamed the SetIPAddress element to StoreIPAddress. Added a different
-   SetIPAddress element.
+   prevents click from starving out packets sent by other processes or Linux.
 
 ** Radio elements are not compiled by default.
 
@@ -85,6 +95,8 @@ Version 1.0.7
 ** Fixed click-uncombine(1) bugs and changed its order of arguments.
 
 ** Added PollDevice and EtherEncap specifications to click-align(1).
+
+** click-fastclassifier(1): Works on IPClassifier.
 
 
 Version 1.0.6   6.May.2000

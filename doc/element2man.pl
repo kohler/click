@@ -70,7 +70,7 @@ sub nroffize ($;$$) {
       "\\fB$1\\fP$2$3";
     }
   }eg;
-  $t =~ s{\n\.M (\S+) \"(\S+)\" \(\2\)\n}{\n.M $1 "$2"\n}g;
+  $t =~ s{\n\.M (\S+) \"(\S+)\" \(\2\)(.*)\n}{\n.M $1 "$2" $3\n}g;
   1 while ($t =~ s/^\.PP\n\.PP\n/.PP\n/gm);
   $t =~ s/^= (.*\n)/.nf\n$1.fi\n/mg;
   $t =~ s/^\.fi\n\.nf\n//mg;

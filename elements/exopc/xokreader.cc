@@ -192,7 +192,7 @@ xokReader::configure(const Vector<String> &conf, ErrorHandler *errh)
   sprintf(pkrname,"/dev/pktring%d", ring_sz);
   fd = open(pkrname,0,0);
 
-  if (fd <= 0) {
+  if (fd < 0) {
     errh->error("cannot set packet ring");
     return -1;
   }
@@ -218,6 +218,7 @@ xokReader::configure(const Vector<String> &conf, ErrorHandler *errh)
   }
 
   dprintf("xokReader: ring descriptor %d (%d buffers)\n", fd, ring_sz);
+  router()->add_select(fd, elementno());
   return 0;
 }
 

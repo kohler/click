@@ -102,15 +102,16 @@ IPClassifier::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
     } else if (_data == DATA_PROTO || (_data == DATA_INT && p._type == TYPE_PROTO)) {
       _type = TYPE_PROTO;
       if (_net_proto == UNKNOWN) _net_proto = p._net_proto;
-      _data = DATA_PROTO;
     } else if (_data == DATA_PORT || (_data == DATA_INT && p._type == TYPE_PORT)) {
       _type = TYPE_PORT;
       if (!_srcdst) _srcdst = p._srcdst;
       if (_net_proto == UNKNOWN) _net_proto = p._net_proto;
       if (_transp_proto == UNKNOWN) _transp_proto = p._transp_proto;
-      _data = DATA_PORT;
     } else if (_data == DATA_TCPOPT) {
       _type = TYPE_TCPOPT;
+      if (!_srcdst) _srcdst = p._srcdst;
+    } else if (_data == DATA_ICMP_TYPE || (_data == DATA_INT && p._type == TYPE_ICMP_TYPE)) {
+      _type = TYPE_ICMP_TYPE;
       if (!_srcdst) _srcdst = p._srcdst;
     } else if (!_data && _transp_proto != UNKNOWN)
       _type = TYPE_PROTO;
@@ -172,6 +173,18 @@ IPClassifier::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
       return errh->error("pattern %d: `ip dscp' directive requires TOS value", slot);
     if (_u.i < 0 || _u.i > 63)
       return errh->error("pattern %d: IP DSCP %d out of range", slot, _u.i);
+
+  } else if (_type == TYPE_ICMP_TYPE) {
+    if (_data == DATA_INT)
+      _data = DATA_ICMP_TYPE;
+    if (_data != DATA_ICMP_TYPE)
+      return errh->error("pattern %d: `icmptype' directive requires ICMP type", slot);
+    if (_transp_proto == UNKNOWN)
+      _transp_proto = IP_PROTO_ICMP;
+    else if (_transp_proto != IP_PROTO_ICMP)
+      return errh->error("pattern %d: bad protocol %d for `icmptype' directive", slot, _transp_proto);
+    if (_u.i < 0 || _u.i > 255)
+      return errh->error("pattern %d: TCP option %d out of range", slot, _u.i);
   }
 
   // fix _srcdst
@@ -253,6 +266,19 @@ IPClassifier::Primitive::add_exprs(Classifier *c, Vector<int> &tree, bool negate
     e.value.u = 0;
     e.value.c[1] = (_type == TYPE_DSCP ? _u.i<<2 : _u.i);
     c->add_expr(tree, 0, e.value.u, e.mask.u);
+    c->finish_expr_subtree(tree, true);
+
+  } else if (_type == TYPE_TCPOPT) {
+    c->start_expr_subtree(tree);
+    e.mask.u = 0;
+    e.mask.c[1] = 0xFF;
+    e.value.u = 0;
+    e.value.c[1] = IP_PROTO_ICMP;
+    c->add_expr(tree, 8, e.value.u, e.mask.u);
+    e.mask.u = 0;
+    e.mask.c[0] = 0xFF;
+    e.value.c[0] = _u.i;
+    c->add_expr(tree, TRANSP_FAKE_OFFSET, e.value.u, e.mask.u);
     c->finish_expr_subtree(tree, true);
   }
 

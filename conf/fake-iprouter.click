@@ -64,12 +64,12 @@ fake_arpq0 -> out0;
 fake_arpq1 -> out1;
 
 // Proxy ARP on eth0 for 18.26.7, as well as cone's IP address.
-ar0 :: ARPResponder(18.26.4.24 255.255.255.255 00:00:C0:AE:67:EF,
-                    18.26.7.0  255.255.255.0 00:00:C0:AE:67:EF);
+ar0 :: ARPResponder(18.26.4.24 00:00:C0:AE:67:EF,
+                    18.26.7.0/24 00:00:C0:AE:67:EF);
 c0[0] -> ar0 -> out0;
 
 // Ordinary ARP on eth1.
-ar1 :: ARPResponder(18.26.7.1 255.255.255.255 00:00:C0:4F:71:EF);
+ar1 :: ARPResponder(18.26.7.1 00:00:C0:4F:71:EF);
 c1[0] -> ar1 -> out1;
 
 // IP routing table. Outputs:

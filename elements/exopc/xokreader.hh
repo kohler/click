@@ -51,7 +51,6 @@ class xokReader : public Element {
   xokReader *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
   
-  int select_fd() { return fd; }
   void selected(int fd);
 };
 

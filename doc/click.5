@@ -608,7 +608,7 @@ C5(#/* slash-star comment) */ and backslash \e#)
 .Re
 '
 .SH "ARCHIVES"
-The Click programs also accept
+Many Click programs also accept
 .M ar 1
 archives as configurations. The archive must contain a member called
 `config', which is treated as a Click-language configuration. The archive
@@ -617,7 +617,10 @@ may also contain package code required by the configuration. The
 and
 .M click 1
 programs will decompose the archive and install any package code before
-installing the configuration itself.
+installing the configuration itself. The
+.M click.o 8
+kernel module will not accept archives; use
+.M click-install 1 .
 '
 .SH "BNF GRAMMAR"
 '
@@ -683,6 +686,11 @@ installing the configuration itself.
 .IR requirestmt " ::= ""require"" ""("" configstring "")"""
 .br
 .IR empty " ::= "
+'
+.SH "SEE ALSO"
+.M click 1 ,
+.M click-install 1 ,
+.M click.o 8
 '
 .SH AUTHOR
 .na

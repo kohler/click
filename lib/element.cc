@@ -338,6 +338,7 @@ Element::uninitialize()
 {
 }
 
+
 // LIVE CONFIGURATION
 
 bool
@@ -359,6 +360,31 @@ void
 Element::take_state(Element *, ErrorHandler *)
 {
 }
+
+
+// SELECT
+
+#if CLICK_USERLEVEL
+
+int
+Element::add_select(int fd) const
+{
+  return router()->add_select(fd, number());
+}
+
+int
+Element::remove_select(int fd) const
+{
+  return router()->remove_select(fd, number());
+}
+
+void
+Element::selected(int)
+{
+}
+
+#endif
+
 
 // HANDLERS
 

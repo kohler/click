@@ -25,22 +25,9 @@ ErrorHandler *click_chatter_errh;
 void
 click_chatter(const char *fmt, ...)
 {
-  //va_list args;
-  //int i;
-  //char buf[256]; /* XXX */
-  //
-  //va_start(args, fmt);
-  //i = vsprintf(buf, fmt, args);
-  //va_end(args);
-  //
-  //if (click_chatter_errh)
-  //click_chatter_errh->message("chatter: %s", buf);
-  //else
-  //printk("<1>%s\n", buf);
-
   va_list val;
   va_start(val, fmt);
-  if (0 && click_chatter_errh)
+  if (click_chatter_errh)
     click_chatter_errh->verror(ErrorHandler::Message, "chatter", fmt, val);
   else {
     static char buf[512];		// XXX

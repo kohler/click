@@ -36,7 +36,6 @@ class PacketSocket : public Element {
   int initialize(ErrorHandler *);
   void uninitialize();
 
-  int select_fd() { return(_fd); }
   void selected(int fd);
 
   void push(int port, Packet *);
