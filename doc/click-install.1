@@ -95,6 +95,19 @@ are mutually exclusive.
 '
 .Sp
 .TP 5
+.BR \-t ", " "\-\-threads=\fIN\fP"
+The Click kernel module will run
+.I N
+threads per router. Click must have been build with
+\f(CW\-\-enable\-multithread\fR. This option only matters when
+.B click-install
+installs a Click kernel module. The thread count on an installed kernel
+module cannot be changed. (The
+.B \-\-uninstall
+option is useful here.)
+'
+.Sp
+.TP 5
 .BR \-n ", " "\-\-priority=\fIN\fP"
 Set the Click kernel thread's priority to
 .IR N .
