@@ -28,7 +28,7 @@ IPMirror::push(int, Packet *p)
   iph->ip_src = iph->ip_dst;
   iph->ip_dst = tmpa;
   
-  click_udp *udph = (click_udp *)(iph + 1);
+  click_udp *udph = (click_udp *)p->transport_header();
   unsigned short tmpp = udph->uh_sport;
   udph->uh_sport = udph->uh_dport;
   udph->uh_dport = tmpp;
