@@ -60,11 +60,11 @@ GENERIC_OBJS = string.o straccum.o \
 	$(EXTRA_DRIVER_OBJS)
 
 HAVE_CLICKFS = @HAVE_CLICKFS@
-ifneq ($(HAVE_CLICKFS),)
-CLICKFS_OBJS = proc_config.o proc_element.o proc_mgr.o
-else
+ifeq ($(HAVE_CLICKFS),1)
 CLICKFS_OBJS = proc_config.o proc_element.o proc_mgr.o clickfs_core.o
 INSTALLOBJS += proclikefs.o
+else
+CLICKFS_OBJS = proc_config.o proc_element.o proc_mgr.o
 endif
 
 LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o sched.o \
