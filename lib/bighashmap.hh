@@ -1,10 +1,45 @@
 #ifndef BIGHASHMAP_HH
 #define BIGHASHMAP_HH
 
+// K AND V REQUIREMENTS:
+//
+// 		k1 == k2
+//		K::K(const K &)
+// int		K::hashcode() const
+//
+//		V::V()		(can be expensive; only used for default value)
+// 		V::V(const V &)
+// V &		V::operator=(const V &)
+
+
 template <class K, class V> class BigHashMapIterator;
 
 template <class K, class V>
-class BigHashMap {
+class BigHashMap { public:
+
+  typedef BigHashMapIterator<K, V> Iterator;
+  
+  BigHashMap();
+  explicit BigHashMap(const V &);
+  ~BigHashMap();
+  
+  int count() const			{ return _n; }
+  bool empty() const			{ return _n == 0; }
+  
+  const V &find(const K &) const;
+  V *findp(const K &) const;
+  const V &operator[](const K &k) const;
+  V &find_force(const K &);
+  
+  bool insert(const K &, const V &);
+  bool remove(const K &);
+  void clear();
+
+  void swap(BigHashMap<K, V> &);
+  
+  Iterator first() const		{ return Iterator(this); }
+  
+ private:
   
   struct Elt {
     K k;
@@ -18,6 +53,7 @@ class BigHashMap {
     int _free;
     int _first;
     int _nalloc;
+    int _padding;		// pad to 8-byte boundary
     int _x[ELT_SIZE * SIZE];
 
     Arena();
@@ -51,28 +87,6 @@ class BigHashMap {
   void free(Elt *);
 
   friend class BigHashMapIterator<K, V>;
-  
- public:
-
-  typedef BigHashMapIterator<K, V> Iterator;
-  
-  BigHashMap();
-  explicit BigHashMap(const V &);
-  ~BigHashMap();
-  
-  int count() const			{ return _n; }
-  bool empty() const			{ return _n == 0; }
-  
-  const V &find(const K &) const;
-  V *findp(const K &) const;
-  const V &operator[](const K &k) const;
-  V &find_force(const K &);
-  
-  bool insert(const K &, const V &);
-  bool remove(const K &);
-  void clear();
-  
-  Iterator first() const		{ return Iterator(this); }
   
 };
 

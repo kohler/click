@@ -114,9 +114,12 @@ class IPRewriter : public Element {
   Map _udp_map;
 
   Timer _timer;
+  Vector<Pattern *> _all_patterns;
 
   static const int GC_INTERVAL_SEC = 3600;
 
+  void take_state_map(Map &, const Vector<Pattern *> &, const Vector<Pattern *> &);
+  
   void mark_live_tcp();
   void clean_map(Map &);
   void clean();
@@ -135,6 +138,7 @@ class IPRewriter : public Element {
   enum ConfigurePhase {
     CONFIGURE_PHASE_PATTERNS = CONFIGURE_PHASE_INFO,
     CONFIGURE_PHASE_REWRITER = CONFIGURE_PHASE_DEFAULT,
+    CONFIGURE_PHASE_MAPPER = CONFIGURE_PHASE_REWRITER - 1,
     CONFIGURE_PHASE_USER = CONFIGURE_PHASE_REWRITER + 1,
   };
 
@@ -143,15 +147,18 @@ class IPRewriter : public Element {
   int initialize(ErrorHandler *);
   void uninitialize();
   void add_handlers();
-  void run_scheduled();
+  void take_state(Element *, ErrorHandler *);
   
+  void run_scheduled();
+
+  void notify_pattern(Pattern *);
   Mapping *get_mapping(const IPFlowID2 &in) const;
   void install(bool, Mapping *, Mapping *);
   
   void push(int, Packet *);
   
-  String dump_table();
-  String dump_patterns();
+  String dump_mappings() const;
+  String dump_patterns() const;
 
   class Mapping {
     
@@ -170,11 +177,11 @@ class IPRewriter : public Element {
     Mapping *_pat_prev;
     Mapping *_pat_next;
     
-    Mapping(const IPFlowID &, const IPFlowID &, Pattern *, int, bool);
+    Mapping(const IPFlowID &, const IPFlowID &, int, bool);
     
    public:
     
-    static bool make_pair(const IPFlowID &, const IPFlowID &, Pattern *,
+    static bool make_pair(const IPFlowID &, const IPFlowID &,
 			  int, int, Mapping **, Mapping **);
     
     const IPFlowID &flow_id() const	{ return _mapto; }
@@ -190,7 +197,7 @@ class IPRewriter : public Element {
     
     unsigned short sport() const	{ return _mapto.sport(); } // network
     
-    void pat_insert_after(Mapping *);
+    void pat_insert_after(Pattern *, Mapping *);
     void pat_unlink();
     Mapping *pat_prev() const		{ return _pat_prev; }
     Mapping *pat_next() const		{ return _pat_next; }
@@ -233,8 +240,10 @@ class IPRewriter : public Element {
     
     bool possible_conflict(const Pattern &) const;
     bool definite_conflict(const Pattern &) const;
-    
+    bool can_accept_from(const Pattern &) const;
+
     bool create_mapping(const IPFlowID &, int, int, Mapping **, Mapping **);
+    void accept_mapping(Mapping *);
     void mapping_freed(Mapping *);
     
     String s() const;
@@ -252,7 +261,7 @@ class IPMapper {
   IPMapper()				{ }
   virtual ~IPMapper()			{ }
 
-  void mapper_patterns(Vector<IPRewriter::Pattern *> &, IPRewriter *) const;
+  void notify_rewriter(IPRewriter *, ErrorHandler *);
   IPRewriter::Mapping *get_map(bool, const IPFlowID &, IPRewriter *);
   
 };
@@ -268,8 +277,9 @@ IPRewriter::get_mapping(const IPFlowID2 &in) const
 }
 
 inline void
-IPRewriter::Mapping::pat_insert_after(Mapping *m)
+IPRewriter::Mapping::pat_insert_after(Pattern *p, Mapping *m)
 {
+  _pat = p;
   if (m) {
     _pat_prev = m;
     _pat_next = m->_pat_next;

@@ -9,13 +9,14 @@
  * =d
  *
  * Hands packets to any packet sniffers registered with Linux, such as packet
- * sockets. Expects packets with Ethernet headers.
+ * sockets. Packets are not passed to the ordinary Linux networking stack.
+ * Expects packets with Ethernet headers.
  *
- * If DEVNAME is present, the packet is marked to appear as if it originated
+ * If DEVNAME is present, each packet is marked to appear as if it originated
  * from that network device.
- *
- * Packets are not passed to the ordinary Linux networking stack.
  * 
+ * This element is only available in the Linux kernel module.
+ *
  * =a ToLinux
  * =a FromLinux
  * =a FromDevice

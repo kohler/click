@@ -33,10 +33,11 @@ class IPRoundRobinMapper : public Element, public IPMapper {
   void *cast(const char *);
   
   IPRoundRobinMapper *clone() const	{ return new IPRoundRobinMapper; }
+  int configure_phase() const		{ return IPRewriter::CONFIGURE_PHASE_MAPPER; }
   int configure(const Vector<String> &, ErrorHandler *);
   void uninitialize();
   
-  void mapper_patterns(Vector<IPRewriter::Pattern *> &, IPRewriter *) const;
+  void notify_rewriter(IPRewriter *, ErrorHandler *);
   IPRewriter::Mapping *get_map(bool, const IPFlowID &, IPRewriter *);
   
 };

@@ -40,9 +40,9 @@ extern struct proto tcp_prot;
 //
 
 IPRewriter::Mapping::Mapping(const IPFlowID &in, const IPFlowID &out,
-			     Pattern *pat, int output, bool is_reverse)
+			     int output, bool is_reverse)
   : _mapto(out), _out(output), _used(false), _is_reverse(is_reverse),
-    _pat(pat), _pat_prev(0), _pat_next(0)
+    _pat(0), _pat_prev(0), _pat_next(0)
 {
   // set checksum increments
   const unsigned short *source_words = (const unsigned short *)&in;
@@ -67,13 +67,13 @@ IPRewriter::Mapping::Mapping(const IPFlowID &in, const IPFlowID &out,
 
 bool
 IPRewriter::Mapping::make_pair(const IPFlowID &inf, const IPFlowID &outf,
-			       Pattern *pattern, int foutput, int routput,
+			       int foutput, int routput,
 			       Mapping **in_map, Mapping **out_map)
 {
-  Mapping *im = new Mapping(inf, outf, pattern, foutput, false);
+  Mapping *im = new Mapping(inf, outf, foutput, false);
   if (!im)
     return false;
-  Mapping *om = new Mapping(outf.rev(), inf.rev(), pattern, routput, true);
+  Mapping *om = new Mapping(outf.rev(), inf.rev(), routput, true);
   if (!om) {
     delete im;
     return false;
@@ -213,7 +213,8 @@ IPRewriter::Pattern::parse_with_ports(const String &conf, Pattern **pstore,
 
   if (words.size() <= 2
       || !cp_integer(words[words.size() - 2], &fport)
-      || !cp_integer(words[words.size() - 1], &rport))
+      || !cp_integer(words[words.size() - 1], &rport)
+      || fport < 0 || rport < 0)
     return errh->error("bad forward and/or reverse ports in pattern spec");
   words.resize(words.size() - 2);
 
@@ -260,6 +261,16 @@ IPRewriter::Pattern::definite_conflict(const Pattern &o) const
     return true;
   else
     return false;
+}
+
+bool
+IPRewriter::Pattern::can_accept_from(const Pattern &o) const
+{
+  return (_saddr == o._saddr
+	  && _daddr == o._daddr
+	  && _dport == o._dport
+	  && _sportl <= o._sportl
+	  && o._sporth <= _sporth);
 }
 
 inline unsigned short
@@ -315,12 +326,19 @@ IPRewriter::Pattern::create_mapping(const IPFlowID &in, int fport, int rport,
   if (!_saddr) out.set_saddr(in.saddr());
   if (!_daddr) out.set_daddr(in.daddr());
 
-  if (Mapping::make_pair(in, out, this, fport, rport, fmap, rmap)) {
-    (*fmap)->pat_insert_after(_rover);
+  if (Mapping::make_pair(in, out, fport, rport, fmap, rmap)) {
+    (*fmap)->pat_insert_after(this, _rover);
     _rover = *fmap;
     return true;
   } else
     return false;
+}
+
+void
+IPRewriter::Pattern::accept_mapping(Mapping *fmap)
+{
+  fmap->pat_insert_after(this, _rover);
+  _rover = fmap;
 }
 
 inline void
@@ -355,7 +373,7 @@ IPRewriter::Pattern::s() const
 //
 
 void
-IPMapper::mapper_patterns(Vector<IPRewriter::Pattern *> &, IPRewriter *) const
+IPMapper::notify_rewriter(IPRewriter *, ErrorHandler *)
 {
 }
 
@@ -385,6 +403,15 @@ IPRewriter::notify_noutputs(int n)
   set_noutputs(n < 1 ? 1 : n);
 }
 
+void
+IPRewriter::notify_pattern(Pattern *p)
+{
+  for (int i = 0; i < _all_patterns.size(); i++)
+    if (_all_patterns[i] == p)
+      return;
+  _all_patterns.push_back(p);
+}
+
 int
 IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
@@ -407,9 +434,10 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
     
     if (word == "nochange") {
       int outnum = 0;
-      if ((rest && !cp_integer(rest, &outnum))
-	  || (outnum < 0 || outnum >= noutputs()))
+      if (rest && !cp_integer(rest, &outnum))
 	errh->error("bad input %d spec; expected `nochange [OUTPUT]'", i);
+      else if (outnum < 0 || outnum >= noutputs())
+	errh->error("bad input %d spec: port out of range", i);
       is.kind = INPUT_SPEC_NOCHANGE;
       is.u.output = outnum;
       
@@ -420,8 +448,11 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
     } else if (word == "pattern") {
       if (Pattern::parse_with_ports(rest, &is.u.pattern.p, &is.u.pattern.fport,
 				    &is.u.pattern.rport, this, errh) >= 0) {
+	if (is.u.pattern.fport >= noutputs() || is.u.pattern.rport >= noutputs())
+	  errh->error("bad input %d spec: port out of range", i);
 	is.u.pattern.p->use();
 	is.kind = INPUT_SPEC_PATTERN;
+	notify_pattern(is.u.pattern.p);
       }
 
     } else if (Element *e = cp_element(word, this, 0)) {
@@ -431,6 +462,7 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
       else {
 	is.kind = INPUT_SPEC_MAPPER;
 	is.u.mapper = mapper;
+	mapper->notify_rewriter(this, errh);
       }
       
     } else
@@ -439,9 +471,6 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
     _input_specs.push_back(is);
   }
 
-
-  // ... all_pat ...
-  
   return (errh->nerrors() == before ? 0 : -1);
 }
 
@@ -477,6 +506,70 @@ IPRewriter::uninitialize()
 }
 
 void
+IPRewriter::take_state_map(Map &map, const Vector<Pattern *> &in_patterns,
+			   const Vector<Pattern *> &out_patterns)
+{
+  Vector<Mapping *> to_free;
+  int np = in_patterns.size();
+  int no = noutputs();
+
+  for (Map::Iterator iter = map.first(); iter; iter++) {
+    Mapping *m = iter.value();
+    if (m->is_forward()) {
+      Pattern *p = m->pattern(), *q = 0;
+      for (int i = 0; i < np; i++)
+	if (in_patterns[i] == p) {
+	  q = out_patterns[i];
+	  break;
+	}
+      if (p)
+	p->mapping_freed(m);
+      if (q && m->output() < no && m->reverse()->output() < no)
+	q->accept_mapping(m);
+      else
+	to_free.push_back(m);
+    }
+  }
+
+  for (int i = 0; i < to_free.size(); i++) {
+    Mapping *m = to_free[i];
+    map.remove(m->reverse()->flow_id().rev());
+    map.remove(m->flow_id().rev());
+    delete m->reverse();
+    delete m;
+  }
+}
+
+void
+IPRewriter::take_state(Element *e, ErrorHandler *errh)
+{
+  IPRewriter *rw = (IPRewriter *)e->cast("IPRewriter");
+  if (!rw) return;
+
+  if (noutputs() != rw->noutputs()) {
+    errh->warning("taking mappings from `%s', although it has\n%s output ports", rw->declaration().cc(), (rw->noutputs() > noutputs() ? "more" : "fewer"));
+    if (noutputs() < rw->noutputs())
+      errh->message("(out of range mappings will be dropped)");
+  }
+
+  _tcp_map.swap(rw->_tcp_map);
+  _udp_map.swap(rw->_udp_map);
+
+  // check rw->_all_patterns against our _all_patterns
+  Vector<Pattern *> pattern_map;
+  for (int i = 0; i < rw->_all_patterns.size(); i++) {
+    Pattern *p = rw->_all_patterns[i], *q = 0;
+    for (int j = 0; j < _all_patterns.size() && !q; j++)
+      if (_all_patterns[j]->can_accept_from(*p))
+	q = _all_patterns[j];
+    pattern_map.push_back(q);
+  }
+  
+  take_state_map(_tcp_map, rw->_all_patterns, pattern_map);
+  take_state_map(_udp_map, rw->_all_patterns, pattern_map);
+}
+
+void
 IPRewriter::mark_live_tcp()
 {
 #if defined(CLICK_LINUXMODULE) && defined(HAVE_TCP_PROT)
@@ -504,7 +597,7 @@ IPRewriter::clear_map(Map &h)
   
   for (Map::Iterator iter = h.first(); iter; iter++) {
     Mapping *m = iter.value();
-    if (m && m->is_forward())
+    if (m->is_forward())
       to_free.push_back(m);
   }
 
@@ -561,6 +654,8 @@ IPRewriter::run_scheduled()
 void
 IPRewriter::install(bool is_tcp, Mapping *forward, Mapping *reverse)
 {
+  assert(forward->output() >= 0 && forward->output() < noutputs()
+	 && reverse->output() >= 0 && reverse->output() < noutputs());
   IPFlowID forward_flow_id = reverse->flow_id().rev();
   IPFlowID reverse_flow_id = forward->flow_id().rev();
   if (is_tcp) {
@@ -621,19 +716,19 @@ IPRewriter::push(int port, Packet *p_in)
 
 
 String
-IPRewriter::dump_table()
+IPRewriter::dump_mappings() const
 {
   StringAccum tcps;
   for (Map::Iterator iter = _tcp_map.first(); iter; iter++) {
     Mapping *m = iter.value();
-    if (m && !m->is_reverse())
+    if (!m->is_reverse())
       tcps << iter.key().s() << " => " << m->flow_id().s() << " [" << String(m->output()) << "]\n";
   }
 
   StringAccum udps;
   for (Map::Iterator iter = _udp_map.first(); iter; iter++) {
     Mapping *m = iter.value();
-    if (m && !m->is_reverse())
+    if (!m->is_reverse())
       udps << iter.key().s() << " => " << m->flow_id().s() << " [" << String(m->output()) << "]\n";
   }
 
@@ -648,7 +743,7 @@ IPRewriter::dump_table()
 }
 
 String
-IPRewriter::dump_patterns()
+IPRewriter::dump_patterns() const
 {
   String s;
   for (int i = 0; i < _input_specs.size(); i++)
@@ -661,7 +756,7 @@ static String
 table_dump(Element *f, void *)
 {
   IPRewriter *r = (IPRewriter *)f;
-  return r->dump_table();
+  return r->dump_mappings();
 }
 
 static String

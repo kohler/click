@@ -15,7 +15,7 @@
  * This element can only be used with devices that support the Click polling
  * extension. We have written polling patches for the Tulip Ethernet driver.
  *
- * This element is only available inside the kernel module.
+ * This element is only available in the Linux kernel module.
  *
  * =a FromDevice
  * =a ToDevice

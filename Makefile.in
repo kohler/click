@@ -85,6 +85,7 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	etc/pcmcia-cs-3.1.16-patch \
 	lib/archive.cc lib/archive.hh \
 	lib/bitvector.cc lib/bitvector.hh \
+	lib/bighashmap.cc lib/bighashmap.hh \
 	lib/click_ether.h \
 	lib/click_icmp.h \
 	lib/click_ip.h \

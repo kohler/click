@@ -60,11 +60,14 @@ IPRoundRobinMapper::uninitialize()
 }
 
 void
-IPRoundRobinMapper::mapper_patterns(Vector<IPRewriter::Pattern *> &v,
-				       IPRewriter *) const
+IPRoundRobinMapper::notify_rewriter(IPRewriter *rw, ErrorHandler *errh)
 {
-  for (int i = 0; i < _patterns.size(); i++)
-    v.push_back(_patterns[i]);
+  int no = rw->noutputs();
+  for (int i = 0; i < _patterns.size(); i++) {
+    if (_forward_outputs[i] >= no || _reverse_outputs[i] >= no)
+      errh->error("port in `%s' out of range for `%s'", declaration().cc(), rw->declaration().cc());
+    rw->notify_pattern(_patterns[i]);
+  }
 }
 
 IPRewriter::Mapping *

@@ -13,6 +13,8 @@
  * the local machine (including broadcasts), and a copy
  * of each ARP reply.
  *
+ * This element is only available in the Linux kernel module.
+ *
  * =a ToLinuxSniffers
  * =a FromLinux
  * =a FromDevice

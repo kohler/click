@@ -12,14 +12,6 @@
 
 #include "bighashmap.hh"
 
-// 		k1 == k2
-//		K::K(const K &)
-// int		K::hashcode() const
-
-// 		V::V(const V &)
-// V &		V::operator=(const V &)
-
-
 template<class K, class V>
 inline
 BigHashMap<K, V>::Arena::Arena()
@@ -167,8 +159,6 @@ template <class K, class V>
 void
 BigHashMap<K, V>::free(Elt *e)
 {
-  e->k.~K();
-  e->v.~V();
   if (_free_arena >= 0 && _arenas[_free_arena]->owns(e))
     _arenas[_free_arena]->free(e);
   else {
@@ -283,6 +273,8 @@ BigHashMap<K, V>::remove(const K &key)
       prev->next = e->next;
     else
       _buckets[b] = e->next;
+    e->k.~K();
+    e->v.~V();
     free(e);
     return true;
   } else
@@ -306,7 +298,8 @@ BigHashMap<K, V>::find_force(const K &key)
   return _e[i].v;
 }
 
-template <class K, class V> void
+template <class K, class V>
+void
 BigHashMap<K, V>::clear()
 {
   for (int i = 0; i < _nbuckets; i++) {
@@ -320,6 +313,28 @@ BigHashMap<K, V>::clear()
   for (int i = 0; i < _narenas; i++)
     _arenas[i]->clear();
   _free_arena = (_narenas > 0 ? 0 : -1);
+}
+
+template <class K, class V>
+void
+BigHashMap<K, V>::swap(BigHashMap<K, V> &o)
+{
+  Elt **t_elt;
+  V t_v;
+  int t_int;
+  Arena **t_arenas;
+
+  t_elt = _buckets; _buckets = o._buckets; o._buckets = t_elt;
+  t_int = _nbuckets; _nbuckets = o._nbuckets; o._nbuckets = t_int;
+  t_v = _default_v; _default_v = o._default_v; o._default_v = t_v;
+
+  t_int = _n; _n = o._n; o._n = t_int;
+  t_int = _capacity; _n = o._capacity; o._capacity = t_int;
+  
+  t_int = _free_arena; _free_arena = o._free_arena; o._free_arena = t_int;
+  t_arenas = _arenas; _arenas = o._arenas; o._arenas = t_arenas;
+  t_int = _narenas; _narenas = o._narenas; o._narenas = t_int;
+  t_int = _arenas_cap; _arenas_cap = o._arenas_cap; o._arenas_cap = t_int;
 }
 
 template <class K, class V>

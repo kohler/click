@@ -19,6 +19,8 @@
  * = % /sbin/ifconfig DEVNAME up
  * = % /sbin/route add -net ADDR netmask MASK DEVNAME
  *
+ * This element is only available in the Linux kernel module.
+ *
  * =e
  * = FromLinux(fake0, 192.0.0.0/8) -> ...;
  *

@@ -43,9 +43,14 @@ FTPPortMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (IPRewriter::Pattern::parse_with_ports(conf[1], &_pattern, &_forward_port,
 					    &_reverse_port, this, errh) < 0)
     return -1;
-
   _pattern->use();
-  return 0;
+  _rewriter->notify_pattern(_pattern);
+  
+  if (_forward_port >= _rewriter->noutputs()
+      || _reverse_port >= _rewriter->noutputs())
+    return errh->error("port out of range for `%s'", _rewriter->declaration().cc());
+  else
+    return 0;
 }
 
 void
