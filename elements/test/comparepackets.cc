@@ -37,6 +37,19 @@ ComparePackets::~ComparePackets()
 }
 
 int
+ComparePackets::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+    bool timestamp = true;
+    if (cp_va_parse(conf, this, errh,
+		    cpKeywords,
+		    "TIMESTAMP", cpBool, "check timestamps?", &timestamp,
+		    0) < 0)
+	return -1;
+    _timestamp = timestamp;
+    return 0;
+}
+
+int
 ComparePackets::initialize(ErrorHandler *)
 {
     _signal[0] = Notifier::upstream_empty_signal(this, 0, 0);
@@ -62,7 +75,7 @@ ComparePackets::check(Packet *p, Packet *q)
 	_diff_details[D_LEN]++, different = true;
     if (memcmp(p->data(), q->data(), p->length()) != 0)
 	_diff_details[D_DATA]++, different = true;
-    if (p->timestamp_anno() != q->timestamp_anno())
+    if (p->timestamp_anno() != q->timestamp_anno() && _timestamp)
 	_diff_details[D_TIMESTAMP]++, different = true;
     
     if (p->network_header() && q->network_header()) {

@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
 =c
 
-ComparePackets()
+ComparePackets([I<keywords> TIMESTAMP])
 
 =s test
 
@@ -19,6 +19,17 @@ compare packets in pairs
 ComparePackets compares packets pulled from the first input with packets
 pulled from the second input.  Packets are considered different if they have
 different length, data, header offsets, or timestamp annotations.
+
+Keyword arguments are:
+
+=over 8
+
+=item TIMESTAMP
+
+Boolean.  If true, then ComparePackets will check packet timestamp
+annotations.  Default is true.
+
+=back
 
 =h diffs read-only
 
@@ -45,6 +56,7 @@ class ComparePackets : public Element { public:
     const char *class_name() const		{ return "ComparePackets"; }
     ComparePackets *clone() const		{ return new ComparePackets; }
     const char *processing() const		{ return PULL; }
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
     void add_handlers();
@@ -57,6 +69,8 @@ class ComparePackets : public Element { public:
     bool _available[2];
     NotifierSignal _signal[2];
 
+    bool _timestamp : 1;
+    
     uint32_t _ndiff;
     enum { D_LEN, D_DATA, D_TIMESTAMP, D_NETOFF, D_NETLEN, D_NETHDR,
 	   D_MORE_PACKETS_0, D_MORE_PACKETS_1, D_LAST };
