@@ -1,3 +1,88 @@
+2001-04-18 Wednesday 15:55  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/router.cc: another DriverManager fixlet
+
+2001-04-18 Wednesday 15:50  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: red.cc, red.hh: RED updates
+
+2001-04-18 Wednesday 15:32  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/red.cc: adjust to new Router::find interface
+
+2001-04-18 Wednesday 15:17  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/router.cc: Router::check_driver fixes: check whether router
+	is initialized before calling DriverManager, and call DriverManager
+	multiple times if please_stop_driver was called multiple times
+
+2001-04-18 Wednesday 15:04  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/scheduleinfo.cc: fix
+	ScheduleInfo::join_scheduler bug: was never setting tickets, since
+	Task::initialize now sets tickets
+
+2001-04-18 Wednesday 15:03  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: alignmentinfo.cc, pokehandlers.cc: adjust to
+	Router::find interface change
+
+2001-04-18 Wednesday 15:03  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: ip/ipratemon.cc, standard/probsplitter.cc,
+	standard/randomerror.cc, standard/randomlossage.cc: use
+	cpUnsignedReal* instead of cpNonnegReal*
+
+2001-04-18 Wednesday 15:02  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/drivermanager.cc,
+	elements/standard/drivermanager.hh, userlevel/Makefile.in: add
+	DriverManager element, make it part of libclick.a
+
+2001-04-18 Wednesday 15:00  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/string.cc: static_cleanup nitlet: cope with multiple calls
+
+2001-04-18 Wednesday 15:00  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/routerthread.hh, lib/routerthread.cc: update
+	RouterThread::driver logic; use Router's please_stop_driver
+	mechanism, rather than a per-thread variable
+
+2001-04-18 Wednesday 14:58  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/router.hh, lib/router.cc: add reserve_driver,
+	adjust_driver_reservations, and check_driver functions, for new
+	driver-stopping story; call DriverManager before stopping driver;
+	changed order of arguments to Router::find
+
+2001-04-18 Wednesday 14:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/confparse.hh, lib/confparse.cc: add cp_element that
+	takes a Router *context argument (no compound element context);
+	change cpNonnegReal* constants to cpUnsignedReal* (but keep
+	cpNonnegReal* for compatibility); add cpHandlerName, which works at
+	configure time; fix cpArguments bug, which led to infinite loops
+
+2001-04-18 Wednesday 14:52  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: peekhandlers.cc, peekhandlers.hh:
+	PeekHandlers: add "loop" argument: go back to beginning of arg list
+	and start again
+
+2001-04-18 Wednesday 14:52  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: infinitesource.cc, infinitesource.hh: add
+	BURST keyword argument
+
+2001-04-18 Wednesday 14:51  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/revsortedsched.cc: minor change
+
+2001-04-18 Wednesday 14:51  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: doc updates
+
 2001-04-18 Wednesday 11:26  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/local/: binpackingsched.cc, binpackingsched.hh,
