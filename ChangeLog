@@ -1,3 +1,7 @@
+2001-02-18 Sunday 16:50  Robert Morris <rtm@lcs.mit.edu>
+
+	* include/click/ipaddress.hh: fix for freebsd
+
 2001-02-16 Friday 19:38  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* include/click/click_ip.h: add constants for IP ECN stuff
