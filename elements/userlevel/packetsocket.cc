@@ -56,6 +56,8 @@ PacketSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpString, "device name", &_dev,
+		  cpOptional,
+		  cpBool, "be promiscuous", &_promisc,
 		  cpEnd) < 0)
     return -1;
 
@@ -80,19 +82,21 @@ PacketSocket::initialize(ErrorHandler *errh)
   }
   _ifindex = ifr.ifr_ifindex;
 
-  // set promiscuous mode
-  memset(&ifr, 0, sizeof(ifr));
-  strncpy(ifr.ifr_name, _dev.cc(), sizeof(ifr.ifr_name));
-  res = ioctl(_fd, SIOCGIFFLAGS, &ifr);
-  if (res != 0) {
-    close(_fd);
-    return errh->error("%s, SIOCGIFFLAGS: %s", _dev.cc(), strerror(errno));
-  }
-  ifr.ifr_flags |= IFF_PROMISC;
-  res = ioctl(_fd, SIOCSIFFLAGS, &ifr);
-  if (res != 0) {
-    close(_fd);
-    return errh->error("%s, SIOCSIFFLAGS: %s", _dev.cc(), strerror(errno));
+  if (_promisc) {
+    // set promiscuous mode
+    memset(&ifr, 0, sizeof(ifr));
+    strncpy(ifr.ifr_name, _dev.cc(), sizeof(ifr.ifr_name));
+    res = ioctl(_fd, SIOCGIFFLAGS, &ifr);
+    if (res != 0) {
+      close(_fd);
+      return errh->error("%s, SIOCGIFFLAGS: %s", _dev.cc(), strerror(errno));
+    }
+    ifr.ifr_flags |= IFF_PROMISC;
+    res = ioctl(_fd, SIOCSIFFLAGS, &ifr);
+    if (res != 0) {
+      close(_fd);
+      return errh->error("%s, SIOCSIFFLAGS: %s", _dev.cc(), strerror(errno));
+    }
   }
 
   // bind to the specified interface.  from packet man page, only

@@ -3,16 +3,19 @@
 
 /*
  * =c
- * PacketSocket(DEVNAME)
+ * PacketSocket(DEVNAME, PROMISC?)
  * =d
  * User-level only.  In Linux, is a replacement for To/FromBPF.  Reads
  * and writes packets from and to the network device named by
- * DEVNAME.  PacketSocket is always promiscuous.
+ * DEVNAME.  PacketSocket is promiscuous if PROMISC? is true.
  *
  * PacketSocket produces and expects Ethernet packets.
+ *
+ * This element is only available at user level.  The same cautions
+ * about forwarding apply as in FromBPF.
  * 
  * =e
- * = ... -> PacketSocket(eth0) -> ...
+ * = ... -> PacketSocket(eth0, 0) -> ...
  *
  * =a ToBPF 
  * =a FromBPF */
@@ -41,6 +44,7 @@ class PacketSocket : public Element {
   String _dev;
   int _fd;
   int _ifindex;
+  bool _promisc;
 };
 
 #endif
