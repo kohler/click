@@ -70,7 +70,7 @@ GapRate::need_update(const struct timeval &now)
 {
   if (_tv_sec < 0) {
     _tv_sec = now.tv_sec;
-    _sec_count = (now.tv_usec << UGAP_SHIFT) / _ugap;
+    _sec_count = ((now.tv_usec << UGAP_SHIFT) / _ugap) + 1;
   } else if (now.tv_sec > _tv_sec) {
     _tv_sec = now.tv_sec;
     if (_sec_count > 0)
@@ -78,18 +78,10 @@ GapRate::need_update(const struct timeval &now)
   }
 
   unsigned need = (now.tv_usec << UGAP_SHIFT) / _ugap;
-  if ((int)need > _sec_count) {
 #if DEBUG_GAPRATE
-    if (_last.tv_sec) {
-      struct timeval diff;
-      timersub(&now, &_last, &diff);
-      click_chatter("%d.%06d  (%d)", diff.tv_sec, diff.tv_usec, now.tv_sec);
-    }
-    _last = now;
+  click_chatter("%u -> %u", now.tv_usec, need);
 #endif
-    return true;
-  } else
-    return false;
+  return ((int)need >= _sec_count);
 }
 
 #endif
