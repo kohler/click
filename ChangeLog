@@ -1,3 +1,9 @@
+2005-02-28 Monday 23:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-mkelemmap (1.32), etc/elementmap.xsl (1.2): fix up
+	elementmap generation: include source file with no header file, and
+	don't report C++ class names for mere provisions (only elements)
+
 2005-02-28 Monday 02:55  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/ratedsource.cc (1.53): spacing
