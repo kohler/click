@@ -1,5 +1,5 @@
 /*
- * sched.cc -- kernel scheduler for click
+ * sched.cc -- kernel scheduler thread for click
  * Benjie Chen
  *
  * Copyright (c) 1999 Massachusetts Institute of Technology.
@@ -10,14 +10,15 @@
  * distribution.
  */
 
-#ifdef HAVE_CLICK_SCHEDULER
+#ifdef CLICK_POLLDEV
 
 #define CLICK_SCHED_DEBUG
 
-
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
+#include "router.hh"
+#include "kernelerror.hh"
 
 extern "C" {
 #define __NO_VERSION__
@@ -32,108 +33,81 @@ extern "C" {
 #include <linux/malloc.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
-#include <asm/io.h>
+#include <asm/bitops.h>
 #undef new
 }
 
+static pid_t click_sched_pid = -1;  /* kernel thread ID for click scheduler */
 
-static pid_t click_sched_pid;      /* kernel thread ID for click scheduler */
-static struct wait_queue *click_sched_wq = NULL;   /* killing sched thread */
-
-extern "C" void click_start_sched();
-extern "C" void click_kill_sched();
+extern "C" void start_click_sched(ErrorHandler *);
+extern "C" void kill_click_sched();
 
 
 static int
-click_sched(void *)
-{ 
-    struct device *dev = dev_get("eth0");
-    int total_poll_work = 0;
-    int total_intr_wait = 0;
-    int idle = 0;
-
-    if (dev == NULL)
-    {
-	printk("cannot grab device %s\n","eth0");
-	return;
-    }
-
+click_sched(void *thunk)
+{
+    Router *current_router = (Router*) thunk;
     current->session = 1;
     current->pgrp = 1;
     sprintf(current->comm, "click_sched");
-
-    dev->intr_off(dev); 
-    dev->defer_intr = 1;
-
-    for(;;) 
+    
+    while(current_router->driver())
     {
-	struct sk_buff *skb;
-
-    	skb = dev->rx_poll(dev);
-
-    	if (skb > 0) 
-    	{
-		total_poll_work ++;
-		do_bottom_half();
-    	}
-
-	else 
-	{
-	    idle++; 
-	    if (signal_pending(current)) 
-	    { 
-		printk("click_sched: received signal, quiting\n"); 
-#if 0
-	        if (sigismember(&current->signal,SIGKILL))
+	if (signal_pending(current)) 
+	{ 
+	    printk("click_sched: received signal, quiting\n"); 
+#if why_doesnt_this_work 
+	    if (sigismember(&current->signal,SIGKILL))
+#endif 
+		break; 
+#if why_doesnt_this_work
+	    flush_signals(current);
 #endif
-	        { 
-		    /* shutdown */ 
-		    wake_up(&click_sched_wq); 
-		    break; 
-		}
-#if 0
-	        flush_signals(current);
-#endif
-            } 
-	}
-
-	if (idle == 20)
-	{
-	    total_intr_wait++;
-	    dev->intr_on(dev);
-      	    interruptible_sleep_on(&dev->intr_wq); 
-	    dev->intr_off(dev);
-	    idle = 0;
 	}
     }
 
-    printk("click_sched: waited for interrupts %d times\n", total_intr_wait);
-    dev->defer_intr = 0;
-    dev->intr_on(dev); 
+    click_sched_pid = -1;
+    printk("click_sched: router stopped, exiting!\n");
     return 0;
 }
 
     
 extern "C" void
-click_start_sched()
+start_click_sched(ErrorHandler *kernel_errh)
 {
-    click_sched_pid = kernel_thread
-	(click_sched, NULL, CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
-    if (click_sched_pid < 0)
-	printk("click_sched: cannot create kernel thread, not running.\n");
-}
+    extern Router *current_router;
 
-
-extern "C" void
-click_kill_sched()
-{
     if (click_sched_pid > 0)
     {
-	kill_proc(click_sched_pid, SIGKILL, 1);
-	interruptible_sleep_on(&click_sched_wq);
+	kernel_errh->error("another click_sched running.\n");
+	return;
+    }
+    click_sched_pid = kernel_thread
+	(click_sched, current_router, CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
+    if (click_sched_pid < 0)
+    {
+	kernel_errh->error
+	    ("cannot create kernel thread, not running click_sched.\n");
+	return;
     }
 }
 
 
-#endif HAVE_CLICK_SCHEDULER
+extern "C" void
+kill_click_sched()
+{
+    if (click_sched_pid > 0)
+    {
+	kill_proc(click_sched_pid, SIGKILL, 1);
+
+	/* wait for thread to die - paranoid =) */
+	while(click_sched_pid > 0) {
+	    schedule();
+	    asm volatile ("" : : : "memory");
+	}
+    }
+}
+
+
+#endif /* CLICK_POLLDEV */
 
