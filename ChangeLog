@@ -1,3 +1,8 @@
+2004-12-03 Friday 16:43  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: extradecap.hh (1.4), extraencap.hh (1.4): more
+	doc fixes
+
 2004-12-03 Friday 16:17  John Bicket <jbicket@mit.edu>
 
 	* elements/: grid/packetlogger.hh (1.4), wifi/availablerates.hh
