@@ -1,3 +1,17 @@
+2002-07-22 Monday 14:16  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.texi (1.45): doc updates
+
+2002-07-22 Monday 13:20  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/clickfs_vnops.cc (1.12), include/click/router.hh
+	(1.35), lib/router.cc (1.128), linuxmodule/clickfs.cc (1.19): more
+	Router handler cleanups: add handlerp
+
+2002-07-22 Monday 13:17  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.texi (1.44): doc updates
+
 2002-07-22 Monday 06:06  Eddie Kohler <kohler@icir.org>
 
 	* include/click/router.hh (1.34): more nitlets inspired by the
