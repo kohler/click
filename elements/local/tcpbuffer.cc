@@ -66,7 +66,7 @@ TCPBuffer::uninitialize()
 void
 TCPBuffer::push(int, Packet *p)
 {
-  click_tcp *tcph = reinterpret_cast<click_tcp*>(p->transport_header());
+  const click_tcp *tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
   if (_initial_seq == 0)
     _initial_seq = ntohl(tcph->th_seq);
   else if (_first_seq > 0 && ntohl(tcph->th_seq) < _first_seq) {
@@ -94,7 +94,7 @@ TCPBuffer::pull(int)
   if (_chain) {
     Packet *p = _chain->packet();
     const click_ip *iph = p->ip_header();
-    click_tcp *tcph = reinterpret_cast<click_tcp*>(p->transport_header());
+    const click_tcp *tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
     if (_first_seq == 0 || _skip || ntohl(tcph->th_seq)==_first_seq) {
       _chain->kill_elt();
       unsigned seqlen = (ntohs(iph->ip_len)-(iph->ip_hl<<2)-(tcph->th_off<<2)); 
