@@ -169,7 +169,7 @@ int
 cleanup_click_sched()
 {
   if (kill_current_router_threads() < 0) {
-    printk("<1>click: Following threads still active, expect a crash:\n", num_threads);
+    printk("<1>click: Following threads still active, expect a crash:\n");
     soft_spin_lock(&click_thread_spinlock);
     for (int i = 0; i < click_thread_pids->size(); i++)
       printk("<1>click:   router thread pid %d\n", (*click_thread_pids)[i]);

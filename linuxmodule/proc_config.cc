@@ -154,8 +154,13 @@ hotswap_config()
   if (kernel_errh->nerrors() == before_errors
       && r->initialize(kernel_errh) >= 0) {
     // perform hotswap
-    if (current_router && current_router->initialized())
-      r->take_state(current_router, kernel_errh);
+    if (current_router && current_router->initialized()) {
+      // turn off all threads on current router before you take_state
+      if (kill_current_router_threads() >= 0) {
+	printk("<1>click: performing hotswap\n");
+	r->take_state(current_router, kernel_errh);
+      }
+    }
     // install
     kill_current_router();
     install_current_router(r);

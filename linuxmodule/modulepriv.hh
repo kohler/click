@@ -39,6 +39,7 @@ extern ErrorHandler *kernel_syslog_errh;
 extern Router *current_router;
 Router *parse_router(String);
 void kill_current_router();
+int kill_current_router_threads();
 void install_current_router(Router *);
 void reset_proc_click_errors();
 

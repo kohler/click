@@ -29,6 +29,8 @@ static int *handler_strings_next = 0;
 static int handler_strings_cap = 0;
 static int handler_strings_free = -1;
 
+static spinlock_t handler_strings_spinlock;
+
 
 //
 // ELEMENT NAME SYMLINK OPERATIONS
@@ -71,6 +73,11 @@ static struct inode_operations proc_element_handler_inode_operations;
 static int
 increase_handler_strings()
 {
+  // must be called with handler_strings_spinlock held
+
+  if (handler_strings_cap < 0)	// in process of cleaning up module
+    return -1;
+  
   int new_cap = (handler_strings_cap ? 2*handler_strings_cap : 16);
   String *new_strs = new String[new_cap];
   if (!new_strs)
@@ -80,6 +87,7 @@ increase_handler_strings()
     delete[] new_strs;
     return -1;
   }
+  
   for (int i = 0; i < handler_strings_cap; i++)
     new_strs[i] = handler_strings[i];
   for (int i = handler_strings_cap; i < new_cap; i++)
@@ -87,34 +95,27 @@ increase_handler_strings()
   new_nexts[new_cap - 1] = handler_strings_free;
   memcpy(new_nexts, handler_strings_next, sizeof(int) * handler_strings_cap);
 
-  // atomic
-  unsigned cli_flags;
-  save_flags(cli_flags);
-  cli();
-  
   delete[] handler_strings;
   delete[] handler_strings_next;
   handler_strings_free = handler_strings_cap;
   handler_strings_cap = new_cap;
   handler_strings = new_strs;
   handler_strings_next = new_nexts;
-  
-  restore_flags(cli_flags);
+
   return 0;
 }
 
 static int
 next_handler_string()
 {
+  spin_lock(&handler_strings_spinlock);
   if (handler_strings_free < 0)
     increase_handler_strings();
-  if (handler_strings_free < 0)
-    return -1;
-  else {
-    int i = handler_strings_free; // atomicity?
-    handler_strings_free = handler_strings_next[i];
-    return i;
-  }
+  int hs = handler_strings_free;
+  if (hs >= 0)
+    handler_strings_free = handler_strings_next[hs];
+  spin_unlock(&handler_strings_spinlock);
+  return hs;
 }
 
 static const Router::Handler *
@@ -249,8 +250,10 @@ proc_element_handler_open(struct inode *ino, struct file *filp)
     return 0;
   } else {
     // free handler string
+    spin_lock(&handler_strings_spinlock);
     handler_strings_next[stringno] = handler_strings_free;
     handler_strings_free = stringno;
+    spin_unlock(&handler_strings_spinlock);
     filp->private_data = (void *)-1;
     return retval;
   }
@@ -341,8 +344,10 @@ proc_element_handler_release(struct inode *, struct file *filp)
 
   // free handler string
   if (stringno >= 0 && stringno < handler_strings_cap) {
+    spin_lock(&handler_strings_spinlock);
     handler_strings_next[stringno] = handler_strings_free;
     handler_strings_free = stringno;
+    spin_unlock(&handler_strings_spinlock);
   }
   
   return 0;
@@ -558,12 +563,22 @@ init_proc_click_elements()
   proc_element_handler_inode_operations = proc_dir_inode_operations;
   proc_element_handler_inode_operations.default_file_ops = &proc_element_handler_operations;
 #endif
+
+  spin_lock_init(&handler_strings_spinlock);
 }
 
 void
 cleanup_proc_click_elements()
 {
   cleanup_router_element_procs();
+
+  // clean up handler_strings
+  spin_lock(&handler_strings_spinlock);
   delete[] handler_strings;
   delete[] handler_strings_next;
+  handler_strings = 0;
+  handler_strings_next = 0;
+  handler_strings_cap = -1;
+  handler_strings_free = -1;
+  spin_unlock(&handler_strings_spinlock);
 }
