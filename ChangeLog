@@ -1,3 +1,8 @@
+2001-08-14 Tuesday 10:29  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: divertsocket.cc (1.6), divertsocket.hh (1.6): debugged
+	param parsing in linux
+
 2001-08-13 Monday 16:05  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: divertsocket.cc (1.5), divertsocket.hh (1.5): adding
