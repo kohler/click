@@ -55,11 +55,11 @@ click_check_header_sizes()
     static_assert(sizeof(click_ip) == 20);
 
     // <clicknet/icmp.h>
-    static_assert(sizeof(icmp_generic) == 8);
-    static_assert(sizeof(icmp_param) == 8);
-    static_assert(sizeof(icmp_redirect) == 8);
-    static_assert(sizeof(icmp_sequenced) == 8);
-    static_assert(sizeof(icmp_time) == 20);
+    static_assert(sizeof(click_icmp) == 8);
+    static_assert(sizeof(click_icmp_paramprob) == 8);
+    static_assert(sizeof(click_icmp_redirect) == 8);
+    static_assert(sizeof(click_icmp_sequenced) == 8);
+    static_assert(sizeof(click_icmp_tstamp) == 20);
 
     // <clicknet/tcp.h>
     static_assert(sizeof(click_tcp) == 20);
