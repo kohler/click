@@ -1,3 +1,13 @@
+2005-02-11 Friday 12:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: ipprint.cc (1.43), ipprint.hh (1.24): print ICMP
+	unreachables
+
+2005-02-11 Friday 12:23  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/icmperror.hh (1.11): correct defined CODEs:
+	proto->protocol
+
 2005-02-10 Thursday 01:29  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/autoratefallback.cc (1.18),
