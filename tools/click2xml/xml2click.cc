@@ -39,21 +39,12 @@
 #define EXPRESSION_OPT		304
 #define OUTPUT_OPT		305
 
-#define FIRST_DRIVER_OPT	1000
-#define USERLEVEL_OPT		(1000 + Driver::USERLEVEL)
-#define LINUXMODULE_OPT		(1000 + Driver::LINUXMODULE)
-#define BSDMODULE_OPT		(1000 + Driver::BSDMODULE)
-
 static Clp_Option options[] = {
-    { "bsdmodule", 'b', BSDMODULE_OPT, 0, 0 },
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
     { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
     { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
     { "help", 0, HELP_OPT, 0, 0 },
-    { "kernel", 'k', LINUXMODULE_OPT, 0, 0 },
-    { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
     { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
-    { "userlevel", 0, USERLEVEL_OPT, 0, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -309,7 +300,7 @@ do_synonym(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
     
     if (xstates.back() != CX_ELEMENTCLASS) {
 	if (xstates.back() != CX_ERROR)
-	    errh->lerror(landmark, "<synonym> tag meaningless outside of <elementclass>");
+	    errh->lerror(landmark, "<synonym> tag outside of <elementclass>");
 	return CX_ERROR;
     } else if (xstack.back()->_filled) {
 	errh->lerror(landmark, "element class already defined");
@@ -365,7 +356,7 @@ do_start_compound(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
     }
 
     cx->_filled = true;
-    return CX_ELEMENTCLASS;
+    return CX_COMPOUND;
 }
 
 static CxState
@@ -461,6 +452,20 @@ end_element_handler(void *v, const XML_Char *name)
 }
 
 
+static ElementClassT *
+complete_elementclass(const String &id, const String &xml_landmark, ErrorHandler *errh)
+{
+    assert(id);
+    int which = class_id_map[id];
+    if (which < 0) {
+	errh->lerror(xml_landmark, "no such element class `%s'", String(id).cc());
+	return 0;
+    } else {
+	classes[which]->complete_elementclass(errh);
+	return classes[which]->_type;
+    }
+}
+
 int
 CxConfig::complete_elementclass(ErrorHandler *errh)
 {
@@ -472,17 +477,13 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
     _completing = true;
 
     // get referred-to class
-    ElementClassT *prev_class = 0;
-    if (_prev_class_id) {
-	int which = class_id_map[_prev_class_id];
-	if (which < 0)
-	    errh->lerror(_xml_landmark, "no such elementclass `%s'", _prev_class_id.cc());
-	else {
-	    classes[which]->complete_elementclass(errh);
-	    prev_class = classes[which]->_type;
-	}
-    } else if (_prev_class_name)
+    ElementClassT *prev_class;
+    if (_prev_class_id)
+	prev_class = ::complete_elementclass(_prev_class_id, _xml_landmark, errh);
+    else if (_prev_class_name)
 	prev_class = ElementClassT::default_class(_prev_class_name);
+    else
+	prev_class = 0;
 
     // check for synonym or empty
     if (!_filled)		// error already reported
@@ -509,7 +510,11 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 	else
 	    c->add_formal(_formals[i]);
 
-    return 0;
+    // add to enclosing scope
+    enclosing_scope->get_type(c);
+    
+    // handle elements
+    return complete(errh);
 }
 
 RouterT *
@@ -540,8 +545,12 @@ CxConfig::complete(ErrorHandler *errh)
 	    int which = (int)(old_e->user_data());
 	    ElementT::redeclaration_error(errh, "element", e.name, e.xml_landmark, _elements[which].xml_landmark);
 	} else {
-	    ElementClassT *eclass = r->get_type(e.class_name);
-	    ElementT *ne = r->get_element(e.name, eclass, e.config, (e.landmark ? e.landmark : e.xml_landmark));
+	    ElementClassT *eclass = 0;
+	    if (e.class_id)
+		eclass = ::complete_elementclass(e.class_id, e.xml_landmark, errh);
+	    else if (e.class_name)
+		eclass = r->get_type(e.class_name);
+	    ElementT *ne = r->get_element(e.name, (eclass ? eclass : ElementClassT::default_class("Error")), e.config, (e.landmark ? e.landmark : e.xml_landmark));
 	    ne->set_user_data((void *)i);
 	}
     }
@@ -706,18 +715,6 @@ particular purpose.\n");
 	    }
 	    output_file = clp->arg;
 	    break;
-
-#if 0
-	  case USERLEVEL_OPT:
-	  case LINUXMODULE_OPT:
-	  case BSDMODULE_OPT:
-	    if (specified_driver >= 0) {
-		p_errh->error("driver specified twice");
-		goto bad_option;
-	    }
-	    specified_driver = opt - FIRST_DRIVER_OPT;
-	    break;
-#endif
 
 	  bad_option:
 	  case Clp_BadOption:
