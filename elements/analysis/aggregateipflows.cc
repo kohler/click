@@ -165,6 +165,7 @@ AggregateIPFlows::handle_packet(Packet *p, bool frozen)
 
     // find relevant FlowInfo
     IPFlowID flow(iph);
+    assert(flow);
     Map &m = (iph->ip_p == IP_PROTO_TCP ? _tcp_map : _udp_map);
     FlowInfo *finfo = m.findp_force(flow);
     uint32_t old_next = _next;
