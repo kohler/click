@@ -1,3 +1,15 @@
+2002-06-03 Monday 02:30  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.20), toipsumdump.hh
+	(1.13): update ipsumudmp to 1.23: documentation updates in
+	FromIPSummaryDump, and change flag characters for bits 6 and 7 to E
+	(ECE) and W (CWR)
+
+2002-06-03 Monday 02:00  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.107): missed some distclean files (Eric
+	Freudenthal reports)
+
 2002-06-02 Sunday 03:17  Eddie Kohler <kohler@aciri.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.19), fromipsumdump.hh
