@@ -470,17 +470,20 @@ particular purpose.\n");
   
   // add elementmap to archive
   {
-    combined->add_archive(init_archive_element("elementmap", 0600));
-    ArchiveElement &ae = combined->archive("elementmap");
-    ElementMap em(ae.data);
-    em.add("RouterLink", "", "", "l/h", "x/x", "S3", "", "");
+    ElementMap em;
+    if (link_id.size())
+	em.add("RouterLink", "", "", "l/h", "x/x", "S3", "", "");
     // add data from included elementmaps
     for (int i = 0; i < routers.size(); i++)
       if (routers[i]->archive_index("elementmap") >= 0) {
 	ArchiveElement &nae = routers[i]->archive("elementmap");
 	em.parse(nae.data);
       }
-    ae.data = em.unparse();
+    if (!em.empty()) {
+	combined->add_archive(init_archive_element("elementmap", 0600));
+	ArchiveElement &ae = combined->archive("elementmap");
+	ae.data = em.unparse();
+    }
   }
 
   // add componentmap to archive
