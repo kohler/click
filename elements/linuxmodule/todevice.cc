@@ -55,6 +55,7 @@ ToDevice::ToDevice()
   _idle_calls = 0; 
   _busy_returns = 0; 
   _pkts_sent = 0; 
+  _linux_pkts_sent = 0; 
   _time_pull = 0;
   _time_clean = 0;
   _time_queue = 0;
@@ -229,6 +230,7 @@ ToDevice::tx_intr()
   }
 #endif
 
+  /* try to send from click */
   while (sent<OUTPUT_MAX_PKTS_PER_RUN && (busy=_dev->tbusy)==0) {
     int r;
     Packet *p;
@@ -247,6 +249,27 @@ ToDevice::tx_intr()
     }
     else break;
   }
+
+#if HAVE_POLLING
+  if (_polling && !_dev->tbusy && sent < OUTPUT_MAX_PKTS_PER_RUN) {
+    /* try to send from linux if click queue is empty */
+    start_bh_atomic();
+    while (sent < OUTPUT_MAX_PKTS_PER_RUN && (busy=_dev->tbusy)==0) {
+      int r;
+      if ((r = qdisc_restart(_dev)) < 0) {
+	/* if qdisc_restart returns -1, that means a packet is sent as long as
+	 * dev->tbusy is not set... see net/sched/sch_generic.c in linux src
+	 * code */
+	sent++;
+#if _CLICK_STATS_
+        _linux_pkts_sent++;
+#endif
+      }
+      else break;
+    }
+    end_bh_atomic();
+  }
+#endif
 
 #if _CLICK_STATS_
   if (sent > 0 || _activations > 0) _activations++;
@@ -276,23 +299,6 @@ ToDevice::tx_intr()
   }
 #endif
  
-#if 0 && !HAVE_POLLING
-  if (!_polling) {
-    /* If we have packets left in the queue, arrange for
-     * net_bh()/qdisc_run_queues() to call us when the device decides it's idle.
-     * This is a lot like qdisc_wakeup(), but we don't want to bother trying to
-     * send a packet from Linux's queues.
-     */
-    if (_dev->tbusy) {
-      struct Qdisc *q = _dev->qdisc;
-      if(q->h.forw == NULL) {
-        q->h.forw = qdisc_head.forw;
-        qdisc_head.forw = &q->h;
-      }
-    }
-  }
-#endif
-
 #ifndef RR_SCHED
 #ifdef ADJ_TICKETS
   /* WARNING: fined tuned black magic below, don't change! */

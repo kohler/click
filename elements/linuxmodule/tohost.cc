@@ -48,7 +48,9 @@ ToLinux::push(int port, Packet *p)
   skb_pull(skb1, 14);
 #ifdef HAVE_CLICK_KERNEL
   skb1->nh.raw = skb1->data;
+  start_bh_atomic();
   ptype_dispatch(skb1, skb1->protocol);
+  end_bh_atomic();
 #endif
 }
 

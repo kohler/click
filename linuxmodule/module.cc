@@ -17,6 +17,7 @@
 
 #include "lexer.hh"
 #include "router.hh"
+#include "elements/linuxmodule/fromlinux.hh"
 #include "elements/linuxmodule/fromdevice.hh"
 #include "elements/linuxmodule/polldevice.hh"
 #include "elements/linuxmodule/todevice.hh"
@@ -427,6 +428,7 @@ init_module()
   FromDevice::static_initialize();
   PollDevice::static_initialize();
   ToDevice::static_initialize();
+  FromLinux::static_initialize();
   kernel_errh = ErrorHandler::default_handler();
   extern ErrorHandler *click_chatter_errh;
   click_chatter_errh = kernel_errh;

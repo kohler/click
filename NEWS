@@ -29,6 +29,12 @@ Version 1.0.7
    called on the new FromLinux before the last FromLinux instance is
    uninitialized).
 
+** Fixed ToLinux: nows calls ptype_dispatch inside start_bh_atomic() and
+   end_bh_atomic().
+
+** Modified ToDevice: ToDevice now sends linux packets if device is idle. This
+   prevents click from starving out packets sent by other processes / linux.
+
 * Tools
 
 ** Fixed click-uncombine bugs and changed its order of arguments.
