@@ -1,3 +1,18 @@
+2003-12-04 Thursday 02:56  John Bicket <jbicket@mit.edu>
+
+	* elements/: grid/dsrarptable.cc (1.5), grid/dsrarptable.hh (1.4),
+	grid/dsrroutetable.cc (1.4), grid/dsrroutetable.hh (1.3),
+	grid/sr/dupefilter.cc (1.3), grid/sr/ecnqueue.cc (1.2),
+	grid/sr/ettmetric.cc (1.7), grid/sr/ettmetric.hh (1.7),
+	grid/sr/ettstat.cc (1.2), grid/sr/ettstat.hh (1.2),
+	grid/sr/inorderqueue.cc (1.6), grid/sr/printsr.cc (1.7),
+	grid/sr/printsr.hh (1.3), grid/sr/srcr.cc (1.32),
+	wifi/autotxrate.cc (1.6), wifi/autotxrate.hh (1.6),
+	wifi/settxrate.cc (1.9), wifi/settxrate.hh (1.7): add debug to dsr*
+	make dsr* not need priosched settxrate control based on ettstat,
+	instead of wifitxfeedback bugfixes to ettmetric, don't mix up fwd
+	and rev delivery rates
+
 2003-12-03 Wednesday 23:17  Eddie Kohler <kohler@icir.org>
 
 	* elements/: analysis/fromtcpdump.cc (1.1), analysis/fromtcpdump.hh
