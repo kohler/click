@@ -85,4 +85,10 @@ IPAddress::operator struct in_addr() const
 class StringAccum;
 StringAccum &operator<<(StringAccum &, IPAddress);
 
+inline IPAddress
+operator&(IPAddress a, IPAddress b)
+{
+  return IPAddress(a.addr() & b.addr());
+}
+
 #endif

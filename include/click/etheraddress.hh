@@ -66,4 +66,7 @@ operator!=(const EtherAddress &a, const EtherAddress &b)
   return !(a == b);
 }
 
+class StringAccum;
+StringAccum &operator<<(StringAccum &, const EtherAddress &);
+
 #endif

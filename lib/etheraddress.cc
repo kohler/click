@@ -23,6 +23,7 @@
 #endif
 #include <click/etheraddress.hh>
 #include <click/glue.hh>
+#include <click/straccum.hh>
 #if CLICK_LINUXMODULE
 extern "C" {
 # include <linux/kernel.h>
@@ -39,11 +40,20 @@ EtherAddress::EtherAddress(unsigned char *addr)
 String
 EtherAddress::s() const
 {
-  char buf[20];
+  char buf[24];
   const unsigned char *p = this->data();
-
   sprintf(buf, "%02x:%02x:%02x:%02x:%02x:%02x",
 	  p[0], p[1], p[2], p[3], p[4], p[5]);
+  return String(buf, 17);
+}
 
-  return buf;
+StringAccum &
+operator<<(StringAccum &sa, const EtherAddress &ea)
+{
+  char buf[24];
+  const unsigned char *p = ea.data();
+  sprintf(buf, "%02x:%02x:%02x:%02x:%02x:%02x",
+	  p[0], p[1], p[2], p[3], p[4], p[5]);
+  sa.push(buf, 17);
+  return sa;
 }
