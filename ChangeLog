@@ -1,3 +1,10 @@
+2004-09-29 Wednesday 19:17  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/frontdropqueue.cc (1.17),
+	elements/standard/notifierqueue.hh (1.15),
+	elements/standard/simplequeue.hh (1.11),
+	include/click/standard/storage.hh (1.4): updated Storage
+
 2004-09-29 Wednesday 18:31  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* aclocal.m4 (1.43), config.h.in (1.25), configure (1.30),
