@@ -229,6 +229,7 @@ public:
   int  choose_least_recent_port(int noutputs, int not1, int not2); 
   int  choose_fastest_port();
   void save_rtt(int port, long sec, long usec);
+  void sent_probe(int port);
 
   void invalidate()           { outgoing_port = 0;}  
   //unsigned get_age()          { return click_jiffies() - probe_time; }

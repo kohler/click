@@ -95,7 +95,7 @@ void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool f
   int i;
   DstTableEntry *dst_entry;
 
-  click_chatter("handle syn");
+  //click_chatter("handle syn");
 
   switch (flow->policy) {
   case POLICY_LOCAL: 
@@ -104,7 +104,7 @@ void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool f
     break;
   case POLICY_RANDOM:
     flow->outgoing_port = 1 + myrandom(noutputs()-1);
-    click_chatter("randomly choosing path %d", flow->outgoing_port);
+    click_chatter("Random(%d)", flow->outgoing_port);
     output(flow->outgoing_port).push(p);
     break;
 
@@ -118,17 +118,17 @@ void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool f
     // TODO: optimize this. It's really dumb.
     if (first_syn) {
       flow->probed_ports[0] = 1 + myrandom(noutputs()-1);
-      vfprintf(stderr," probing %d ", flow->probed_ports[0]);
+      fprintf(stderr," probing %d ", flow->probed_ports[0]);
       for (flow->probed_ports[1] = 1 + myrandom(noutputs()-1);
 	   flow->probed_ports[1] == flow->probed_ports[0]; 
 	   flow->probed_ports[1] = 1 + myrandom(noutputs()-1));
-      vfprintf(stderr,"%d ", flow->probed_ports[1]);
+      fprintf(stderr,"%d ", flow->probed_ports[1]);
       
       for (flow->probed_ports[2] = 1 + myrandom(noutputs()-1);
 	   (flow->probed_ports[2] == flow->probed_ports[0] || 
 	    flow->probed_ports[2] == flow->probed_ports[1]);
 	   flow->probed_ports[2] = 1 + myrandom(noutputs()-1));
-      vfprintf(stderr,"%d\n", flow->probed_ports[2]);
+      fprintf(stderr,"%d\n", flow->probed_ports[2]);
     }
 
     for(i=1; i<3; i++) { 
@@ -148,17 +148,17 @@ void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool f
     // TODO: optimize this. It's really dumb.
     if (first_syn) {
       flow->probed_ports[0] = 1;
-      vfprintf(stderr," probing %d ", flow->probed_ports[0]);
+      fprintf(stderr," probing %d ", flow->probed_ports[0]);
       for (flow->probed_ports[1] = 1 + myrandom(noutputs()-1);
 	   flow->probed_ports[1] == flow->probed_ports[0]; 
 	   flow->probed_ports[1] = 1 + myrandom(noutputs()-1));
-      vfprintf(stderr,"%d ", flow->probed_ports[1]);
+      fprintf(stderr,"%d ", flow->probed_ports[1]);
       
       for (flow->probed_ports[2] = 1 + myrandom(noutputs()-1);
 	   (flow->probed_ports[2] == flow->probed_ports[0] || 
 	    flow->probed_ports[2] == flow->probed_ports[1]);
 	   flow->probed_ports[2] = 1 + myrandom(noutputs()-1));
-      vfprintf(stderr,"%d\n", flow->probed_ports[2]);
+      fprintf(stderr,"%d\n", flow->probed_ports[2]);
     }
 
     for(i=1; i<3; i++) { 
@@ -192,14 +192,16 @@ void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool f
     }
 
     // forward <p> to these three chosen paths
-    vfprintf(stderr," probing: %d ", flow->probed_ports[0]);
+    fprintf(stderr," probing: %d ", flow->probed_ports[0]);
     for(i=1; i<3; i++) { 
       if (Packet *q = p->clone()) {
-	vfprintf(stderr,"%d ", flow->probed_ports[i]);
+	fprintf(stderr,"%d ", flow->probed_ports[i]);
+	dst_entry->sent_probe(flow->probed_ports[i]);
 	output(flow->probed_ports[i]).push(q);
       }
     }
-    vfprintf(stderr,"\n");
+    fprintf(stderr,"\n");
+    dst_entry->sent_probe(flow->probed_ports[0]);
     output(flow->probed_ports[0]).push(p);
     break;
     
@@ -527,16 +529,17 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
   if (match) { 
     match->saw_reply_packet();
     
+#if MULTI_POLICY
+    policy_handle_synack(match, inport, p);
+    return;
+#else
+
     if (match->is_pending()) {
       click_chatter("FLOW match(pending), port(%d) {%s}->{%s}", 
 	     inport, 
 	     p->dst_ip_anno().s().cc(), 
 	     IPAddress(p->ip_header()->ip_src).s().cc() );
 
-#if MULTI_POLICY
-      policy_handle_synack(match, inport, p);
-      return;
-#else
       // save to dst_table
       _dst_table->insert(IPAddress(p->ip_header()->ip_src), inport); 
       // remember which port the first syn-ack came back on
@@ -545,7 +548,6 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
       match->outstanding_syns = 0;
       output(0).push(p);
       return;
-#endif
 
     } else {
       // FLOW not pending
@@ -560,6 +562,8 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
       }    
 
     }
+#endif
+    
   } else {
     rtprintf("FLOW no match, killing SYN-ACK\n");
     p->kill();
@@ -949,7 +953,7 @@ LookupIPRouteRON::DstTable::lookup(IPAddress dst, bool only_valid) {
 LookupIPRouteRON::DstTableEntry*
 LookupIPRouteRON::DstTable::insert(IPAddress dst, unsigned short assigned_port) {
   int replaceme = -1;
-  
+  struct LookupIPRouteRON::DstTableEntry::ProbeInfo *p, *tp;
   DstTableEntry e;
 
   for(int i=0; i<_v.size(); i++) {
@@ -964,10 +968,16 @@ LookupIPRouteRON::DstTable::insert(IPAddress dst, unsigned short assigned_port) 
   }
   
   if (replaceme != -1) {
-      _v[replaceme].dst = dst;
-      _v[replaceme].outgoing_port = assigned_port;
-      _v[replaceme].probe_time = click_jiffies();
-      return &_v[replaceme];
+    _v[replaceme].dst = dst;
+    _v[replaceme].outgoing_port = assigned_port;
+    _v[replaceme].probe_time = click_jiffies();
+    for(p = _v[replaceme].probes; p != NULL;) {
+      tp = p->next;
+      free(p);
+      p = tp;
+    }
+    _v[replaceme].probes = NULL;
+    return &_v[replaceme];
   }
   
   e.dst = dst;
@@ -1007,6 +1017,7 @@ LookupIPRouteRON::DstTableEntry::add_probe_info(int port, long rtt_sec, long rtt
     if (prev) { // move to front
       prev->next = p->next;
       p->next = probes;
+      probes = p;
     } 
   
   } else { // create new probe info and place it at the front
@@ -1019,58 +1030,58 @@ LookupIPRouteRON::DstTableEntry::add_probe_info(int port, long rtt_sec, long rtt
   p->last_probe_time = tv.tv_sec;
 }
 
-int 
-LookupIPRouteRON::DstTableEntry::choose_least_recent_port(int noutputs, int not1, int not2)
+void
+LookupIPRouteRON::DstTableEntry::sent_probe(int port) 
 {
-  int matches=0, i, q;
-  struct ProbeInfo *p;
-  Bitvector bv(noutputs - 1);
-  bv.clear();
+  struct ProbeInfo *p, *prev = NULL;
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
 
-  if (not1 > 0) {
-    bv[not1-1] = true;
-    matches++;
-  }
-  if (not2 > 0) {
-    bv[not2-1] = true;
-    matches++;
-  }
-    
   for(p = probes; p != NULL; p = p->next) {
-    bv[p->port_number - 1] = true;
-    matches++;
+    if (p->port_number == port) {
+      p->last_probe_time = tv.tv_sec;
+      p->rtt_sec = 0xffff;
+      p->rtt_usec = 0xffff;
+      if (prev) {
+	prev->next = p->next;
+	p->next = probes;
+	probes = p;
+      }
+      
+      return;
+    }
+    prev = p;
   }
 
-  q = LookupIPRouteRON::myrandom(noutputs - 1 - matches); // randomly choose port
-  for(i=0; i<bv.size(); i++) {
-    if ( !bv[i] && (not1-1 != i) && (not2-1 != i) ){
-      if (!q)
-	break;
-      else
-	q--;
-    }
-  }
-  
-  return i+1;
+  //click_chatter("creating new ProbeInfo in sent_probe");
+  p = (struct ProbeInfo *) malloc(sizeof (struct ProbeInfo));
+  p->port_number = port;
+  p->last_probe_time = tv.tv_sec;
+  p->rtt_sec = 0xffff;
+  p->rtt_usec = 0xffff;
+
+  p->next = probes;
+  probes = p;
+  return;
 }
 
 void
 LookupIPRouteRON::DstTableEntry::save_rtt(int port, long sec, long usec)
 {
   struct ProbeInfo *p;
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
 
   for(p = probes; p != NULL; p = p->next) {
+    //click_chatter("checking port %d to %d", p->port_number, port);
     if (p->port_number == port) {
-      p->port_number = port;
-      p->last_probe_time = tv.tv_sec;
       p->rtt_sec = sec;
       p->rtt_usec = usec;
       return;
     }
   }
-  
+
+  click_chatter("creating new ProbeInfo in save_rtt: THIS SHOULD NOT HAPPEN");
+  assert(0);
+  /*
   p = (struct ProbeInfo *) malloc(sizeof (struct ProbeInfo));
   p->port_number = port;
   p->last_probe_time = tv.tv_sec;
@@ -1079,6 +1090,7 @@ LookupIPRouteRON::DstTableEntry::save_rtt(int port, long sec, long usec)
 
   p->next = probes;
   probes = p;
+  */
   return;
 }
 
@@ -1105,11 +1117,53 @@ LookupIPRouteRON::DstTableEntry::choose_fastest_port()
   return port; 
 }
 
+int 
+LookupIPRouteRON::DstTableEntry::choose_least_recent_port(int noutputs, int not1, int not2)
+{
+  int last_used = 0;
+  int matches=0, i, q;
+  struct ProbeInfo *p;
+  Bitvector bv(noutputs - 1);
+  bv.clear();
+
+  if (not1 > 0) {
+    bv[not1-1] = true;
+    matches++;
+  }
+  if (not2 > 0) {
+    bv[not2-1] = true;
+    matches++;
+  }
+    
+  for(p = probes; p != NULL; p = p->next) {
+    if (p->port_number != not1 && p->port_number != not2) {
+      last_used = p->port_number;
+      matches++;
+    }
+    bv[p->port_number - 1] = true;
+  }
+
+  if (matches == noutputs - 1)
+    return last_used;
+
+  q = LookupIPRouteRON::myrandom(noutputs - 1 - matches); // randomly choose port
+  for(i=0; i<bv.size(); i++) {
+    if ( !bv[i] && (not1-1 != i) && (not2-1 != i) ){
+      if (!q)
+	break;
+      else
+	q--;
+    }
+  }
+  
+  return i+1;
+}
+
 void 
 LookupIPRouteRON::print_time(char* s) {
   struct timeval tp;
   gettimeofday(&tp, NULL);
-  click_chatter("%s (%ld,%ld)", s, tp.tv_sec, tp.tv_usec);
+  click_chatter("%s (%ld.%06ld)", s, tp.tv_sec & 0xffff, tp.tv_usec);
 }
 
 
