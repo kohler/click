@@ -3,6 +3,7 @@
  * Douglas S. J. De Couto, Eddie Kohler, John Jannotti
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -102,6 +103,10 @@ ToDevice::initialize(ErrorHandler *errh)
   ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = 0;
   if (ioctl(_fd, BIOCSETIF, (caddr_t)&ifr) < 0)
     return errh->error("BIOCSETIF %s failed", ifr.ifr_name);
+#ifdef BIOCSHDRCMPLT
+  if (ioctl(_fd, BIOCSHDRCMPLT, 1))
+      errh->warning("BIOCSHDRCMPLT %s failed", ifr.ifr_name);
+#endif
   _my_fd = true;
 
 #elif TODEVICE_LINUX || TODEVICE_PCAP
