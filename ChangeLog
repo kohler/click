@@ -1,3 +1,7 @@
+2004-05-27 Thursday 14:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/mkwebdoc.pl (1.50): doc FAQ
+
 2004-05-27 Thursday 12:13  John Bicket <jbicket@mit.edu>
 
 	* elements/: wifi/arptable.cc (1.1), wifi/arptable.hh (1.1),
