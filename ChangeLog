@@ -1,3 +1,10 @@
+2004-06-08 Tuesday 01:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/: cyclecountaccum.cc (1.10),
+	cyclecountaccum.hh (1.11): CycleCountAccum checks to make sure
+	cycle count values arent zero (suggestion based on mail from Xavier
+	Grandmougin)
+
 2004-06-05 Saturday 17:51  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.115), configure (1.9), configure.in (1.227): add
