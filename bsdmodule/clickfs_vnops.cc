@@ -33,7 +33,7 @@ CLICK_CXX_UNPROTECT
 #include <click/error.hh>
 
 #define UIO_MX			32
-#define	CLICKFS_DEBUG		1
+#define	CLICKFS_DEBUG		0
 #define	CLICKFS_DEBUG_DEF	0
 
 vop_t **clickfs_vnops;
@@ -239,7 +239,7 @@ clickfs_int_send_dirent(char *name, int *skip, int *filecnt, struct uio *uio)
 int
 clickfs_readdir(struct vop_readdir_args *ap)
 {
-    int error, skip, filecnt, off;
+    int skip, filecnt, off, error = 0;
     struct uio *uio = ap->a_uio;
     struct vnode *vp = ap->a_vp;
     struct clickfs_node *cp = (struct clickfs_node *)vp->v_data;
@@ -442,7 +442,7 @@ clickfs_readlink(struct vop_readlink_args *ap)
 
     if (cp->dirent->type == CLICKFS_DIRENT_SYMLINK)
 	return uiomove(cp->dirent->lnk_name,
-		       strlen(cp->dirent->lnk_name)+1, uio);
+		       strlen(cp->dirent->lnk_name), uio);
 
     return EINVAL;
 }
