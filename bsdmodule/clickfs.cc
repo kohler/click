@@ -136,17 +136,12 @@ clickfs_sync(struct mount *mp, int waitfor, struct ucred *cred,
 static int
 clickfs_init(struct vfsconf *vfsp)
 {
-    String::static_initialize();
-
-    current_config = new String;
     return 0;
 }
 
 static int
 clickfs_uninit(struct vfsconf *vfsp)
 {
-    delete current_config;
-    current_config = 0;
     return 0;
 }
 

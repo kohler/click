@@ -26,7 +26,7 @@
 #include <click/lexer.hh>
 
 static String *current_config = 0;
-atomic_t click_config_generation;
+int click_config_generation;
 
 
 /*************************** Parsing configurations **************************/
@@ -88,7 +88,7 @@ static void
 set_current_config(const String &s)
 {
   *current_config = s;
-  atomic_inc(&click_config_generation);
+  click_config_generation++;
 }
 
 static void
@@ -151,7 +151,7 @@ hotswap_config(const String &s)
     if (click_router && click_router->initialized()) {
       // turn off all threads on current router before you take_state
       if (click_kill_router_threads() >= 0) {
-	printk("<1>click: performing hotswap\n");
+	printf("click: performing hotswap\n");
 	r->take_state(click_router, click_logged_errh);
       }
     }
@@ -217,7 +217,7 @@ click_init_config()
   Router::add_global_read_handler("list", read_list, 0);
   Router::add_global_read_handler("flatconfig", read_flatconfig, 0);
   
-  atomic_set(&click_config_generation, 1);
+  click_config_generation = 1;
   current_config = new String;
 }
 

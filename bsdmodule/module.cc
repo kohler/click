@@ -23,6 +23,9 @@
 #include <click/router.hh>
 #include <click/straccum.hh>
 #include <click/confparse.hh>
+#include <click/error.hh>
+
+extern "C" int click_cleanup_packages();
 
 ErrorHandler *click_logged_errh = 0;
 Router *click_router = 0;
@@ -211,6 +214,7 @@ init_module()
   Router::change_handler_flags(0, -1, "errors", 0, HANDLER_REREAD);
 
   // filesystem interface
+#if 0
   // set modes based on 'accessible'
   if (click_accessible()) {
     click_mode_r = S_IRUSR | S_IRGRP | S_IROTH;
@@ -221,8 +225,9 @@ init_module()
   }
   click_mode_w = S_IWUSR | S_IWGRP;
   click_mode_dir = S_IFDIR | click_mode_r | click_mode_x;
+#endif
 
-  init_clickfs();
+  init_router_element_procs();
 
   // netgraph hooks
   ng_ether_input_p = click_ether_input;

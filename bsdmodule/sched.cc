@@ -23,6 +23,8 @@
 #include <click/routerthread.hh>
 #include <click/glue.hh>
 #include <click/router.hh>
+#include <click/error.hh>
+#include <click/straccum.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -126,7 +128,7 @@ click_kill_router_threads()
   } while (num_threads > 0 && click_jiffies() < out_jiffies);
 
   if (num_threads > 0) {
-    printk("<1>click: current router threads refuse to die!\n");
+    printf("click: current router threads refuse to die!\n");
     return -1;
   } else
     return 0;
@@ -207,7 +209,7 @@ click_cleanup_sched()
     printf("click: Following threads still active, expect a crash:\n");
     simple_lock(&click_thread_lock);
     for (int i = 0; i < click_thread_pids->size(); i++)
-      printk("click:   router thread pid %d\n", (*click_thread_pids)[i]);
+      printf("click:   router thread pid %d\n", (*click_thread_pids)[i]);
     simple_unlock(&click_thread_lock);
     return -1;
   } else {

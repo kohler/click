@@ -30,10 +30,10 @@ init_router_element_procs()
      * directories and symlinks for them.
      */
     struct clickfs_dir *rootdp = clickfs_tree_rootdir();
-    int nelements = current_router->nelements();
+    int nelements = click_router->nelements();
 
     for (int curelem = 0; curelem<nelements; curelem++) {
-	const String &id = current_router->element(curelem)->id();
+	const String &id = click_router->element(curelem)->id();
 	char buf[64], nbuf[64];
 
 	/*
@@ -50,10 +50,10 @@ init_router_element_procs()
 	 */
 	Vector<int> handlers;
 	handlers.clear();
-	current_router->element_handlers(curelem, handlers);
+	click_router->element_handlers(curelem, handlers);
 	for (int h_idx=0; h_idx < handlers.size(); h_idx++) {
 	    int *handler_params;
-	    const Router::Handler &h = current_router->handler(handlers[h_idx]);
+	    const Router::Handler &h = click_router->handler(handlers[h_idx]);
 	    if (!h.read_visible() && !h.write_visible()) continue;
 
 	    MALLOC(handler_params, int *, 2*sizeof(int), M_TEMP, M_WAITOK);
@@ -73,10 +73,10 @@ void
 cleanup_router_element_procs()
 {
     struct clickfs_dir *rootdp = clickfs_tree_rootdir();
-    int nelements = current_router->nelements();
+    int nelements = click_router->nelements();
 
     for (int curelem = 0; curelem<nelements; curelem++) {
-	const String &id = current_router->element(curelem)->id();
+	const String &id = click_router->element(curelem)->id();
 	char buf[64], nbuf[64];
 
 	snprintf(buf, sizeof(buf), "%d", curelem+1);

@@ -45,7 +45,6 @@ void cleanup_router_element_procs();
 
 extern struct vfsops clickfs_vfsops;
 extern struct vnodeopv_desc clickfs_vnodeop_opv_desc;
-extern String *current_config;
 
 int clickfs_rootvnode(struct mount *, struct vnode **);
 

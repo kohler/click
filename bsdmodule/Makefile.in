@@ -67,7 +67,7 @@ EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 
 -include elements.mk
 
-OBJS = setdef0.o $(BSDMODULE_OBJS) $(GENERIC_OBJS) $(ELEMENT_OBJS) elements.o setdef1.o
+OBJS = setdef0.o $(GENERIC_OBJS) $(ELEMENT_OBJS) $(BSDMODULE_OBJS) elements.o setdef1.o
 
 CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_BSDMODULE
 CFLAGS = @CFLAGS_NDEBUG@ -g
