@@ -32,12 +32,9 @@ class Element : public ElementLink { public:
   virtual const char *class_name() const = 0;
   virtual void *cast(const char *);
   
-  String id() const				{ return _id; }
-  void set_id(const String &);
+  String id() const;
   String declaration() const;
-  
-  const String &landmark() const		{ return _landmark; }
-  void set_landmark(const String &s)		{ _landmark = s; }
+  String landmark() const;
   
   int number() const				{ return _number; }
   void set_number(int n)			{ _number = n; }
@@ -164,8 +161,6 @@ class Element : public ElementLink { public:
   int _ninputs;
   int _noutputs;
   
-  String _id;
-  String _landmark;
   int _number;
   int _refcount;
 

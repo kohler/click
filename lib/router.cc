@@ -28,9 +28,9 @@
 #endif
 
 Router::Router()
-  : _refcount(0),
+  : _please_stop_driver(0), _refcount(0),
     _closed(0), _initialized(0), _have_connections(0), _have_hookpidx(0),
-    _handlers(0), _nhandlers(0), _handlers_cap(0), _please_stop_driver(0)
+    _handlers(0), _nhandlers(0), _handlers_cap(0)
 {
   initialize_head();
 }
@@ -64,11 +64,11 @@ Router::find(String prefix, const String &name, ErrorHandler *errh) const
 {
   while (1) {
     int got = -1;
+    String n = prefix + name;
     for (int i = 0; i < _elements.size(); i++)
-      if (_elements[i]->id() == name) {
+      if (_element_names[i] == n) {
 	if (got >= 0) {
-	  if (errh) errh->error("more than one element named `%s'",
-				String(name).cc());
+	  if (errh) errh->error("more than one element named `%s'", n.cc());
 	  return 0;
 	} else
 	  got = i;
@@ -79,7 +79,7 @@ Router::find(String prefix, const String &name, ErrorHandler *errh) const
       break;
     
     int slash = prefix.find_right('/', prefix.length() - 2);
-    prefix = (slash >= 0 ? prefix.substring(0, slash) : String());
+    prefix = (slash >= 0 ? prefix.substring(0, slash + 1) : String());
   }
   
   if (errh) errh->error("no element named `%s'", String(name).cc());
@@ -89,9 +89,9 @@ Router::find(String prefix, const String &name, ErrorHandler *errh) const
 Element *
 Router::find(Element *me, const String &name, ErrorHandler *errh) const
 {
-  String prefix = me->id();
+  String prefix = _element_names[me->number()];
   int slash = prefix.find_right('/');
-  return find((slash >= 0 ? prefix.substring(0, slash) : String()),
+  return find((slash >= 0 ? prefix.substring(0, slash + 1) : String()),
 	      name, errh);
 }
 
@@ -114,24 +114,45 @@ Router::element(int fi) const
 }
 
 const String &
-Router::configuration(int fi) const
+Router::ename(int ei) const
 {
-  if (fi < 0 || fi >= nelements())
+  if (ei < 0 || ei >= nelements())
     return String::null_string();
   else
-    return _configurations[fi];
+    return _element_names[ei];
+}
+
+const String &
+Router::econfiguration(int ei) const
+{
+  if (ei < 0 || ei >= nelements())
+    return String::null_string();
+  else
+    return _configurations[ei];
+}
+
+const String &
+Router::elandmark(int ei) const
+{
+  if (ei < 0 || ei >= nelements())
+    return String::null_string();
+  else
+    return _element_landmarks[ei];
 }
 
 
 // CREATION 
 
 int
-Router::add(Element *f, const String &conf)
+Router::add_element(Element *e, const String &ename, const String &conf,
+		    const String &landmark)
 {
-  if (_closed || !f) return -1;
-  _elements.push_back(f);
+  if (_closed || !e) return -1;
+  _elements.push_back(e);
+  _element_names.push_back(ename);
+  _element_landmarks.push_back(landmark);
   _configurations.push_back(conf);
-  f->use();
+  e->use();
   return _elements.size() - 1;
 }
 
@@ -758,7 +779,7 @@ Router::take_state(Router *r, ErrorHandler *errh)
   assert(_initialized);
   for (int i = 0; i < _elements.size(); i++) {
     Element *e = _elements[i];
-    Element *other = r->find(e->id());
+    Element *other = r->find(_element_names[e->number()]);
     if (other) {
       ContextErrorHandler cerrh
 	(errh, context_message(i, "While hot-swapping state into"));
@@ -945,51 +966,6 @@ Router::driver_once()
 // PRINTING
 
 String
-Router::connection_number_string(const Connection &c) const
-{
-  if (!c.allowed())
-    return "X";
-  if (!c)
-    return ".";
-  Element *f = c.element();
-  String portid = "[" + String(c.port()) + "]";
-  for (int i = 0; i < _elements.size(); i++)
-    if (_elements[i] == f)
-      return String("#") + String(i) + portid;
-  return "??" + portid;
-}
-
-void
-Router::print_structure(ErrorHandler *errh)
-{
-  ContextErrorHandler cerrh(errh);
-  for (int i = 0; i < _elements.size(); i++) {
-    Element *f = _elements[i];
-    
-    String message = String("#") + String(i) + String(": ");
-    message += f->declaration() + " - ";
-    
-    String inputs = "[";
-    for (int i = 0; i < f->ninputs(); i++) {
-      if (i) inputs += ", ";
-      inputs += connection_number_string(f->input(i));
-    }
-    inputs += "]";
-    
-    String outputs = "[";
-    for (int i = 0; i < f->noutputs(); i++) {
-      if (i) outputs += ", ";
-      outputs += connection_number_string(f->output(i));
-    }
-    outputs += "]";
-    
-    message += inputs + " -> " + outputs;
-    
-    errh->message(message);
-  }
-}
-
-String
 Router::flat_configuration_string() const
 {
   StringAccum sa;
@@ -1006,7 +982,7 @@ Router::flat_configuration_string() const
   
   // element classes
   for (int i = 0; i < nelements(); i++) {
-    sa << _elements[i]->id() << " :: " << _elements[i]->class_name();
+    sa << _element_names[i] << " :: " << _elements[i]->class_name();
     if (_configurations[i])
       sa << "(" << _configurations[i] << ")";
     sa << ";\n";
@@ -1043,7 +1019,7 @@ Router::flat_configuration_string() const
       if (used[c] || !startchain[c]) continue;
       
       const Hookup &hf = _hookup_from[c];
-      sa << _elements[hf.idx]->id();
+      sa << _element_names[hf.idx];
       if (hf.port)
 	sa << " [" << hf.port << "]";
       
@@ -1054,7 +1030,7 @@ Router::flat_configuration_string() const
 	const Hookup &ht = _hookup_to[d];
 	if (ht.port)
 	  sa << "[" << ht.port << "] ";
-	sa << _elements[ht.idx]->id();
+	sa << _element_names[ht.idx];
 	used[d] = true;
 	d = next[d];
       }
@@ -1078,7 +1054,7 @@ Router::element_list_string() const
   StringAccum sa;
   sa << nelements() << "\n";
   for (int i = 0; i < nelements(); i++)
-    sa << _elements[i]->id() << "\n";
+    sa << _element_names[i] << "\n";
   return sa.take_string();
 }
 
@@ -1112,7 +1088,7 @@ Router::element_inputs_string(int fi) const
     const char *sep = "";
     for (int c = 0; c < _hookup_from.size(); c++)
       if (_hookup_to[c] == h) {
-	sa << sep << _elements[_hookup_from[c].idx]->id();
+	sa << sep << _element_names[_hookup_from[c].idx];
 	sa << " [" << _hookup_from[c].port << "]";
 	sep = " ";
       }
@@ -1152,7 +1128,7 @@ Router::element_outputs_string(int fi) const
     for (int c = 0; c < _hookup_from.size(); c++)
       if (_hookup_from[c] == h) {
 	sa << sep << "[" << _hookup_from[c].port << "] ";
-	sa << _elements[_hookup_to[c].idx]->id();
+	sa << _element_names[_hookup_to[c].idx];
 	sep = " ";
       }
     sa << "\n";

@@ -31,10 +31,12 @@ bool cp_word(String, String &, String *rest = 0);
 
 // network addresses
 bool cp_ip_address(String, unsigned char *, String *rest = 0);
+bool cp_ip_address_mask(String, unsigned char *, unsigned char *, String *rest = 0);
 bool cp_ethernet_address(const String &, unsigned char *, String *rest = 0);
 #ifndef CLICK_TOOL
 class IPAddress; class EtherAddress;
 bool cp_ip_address(String, IPAddress &, String *rest = 0);
+bool cp_ip_address_mask(String, IPAddress &, IPAddress &, String *rest = 0);
 bool cp_ethernet_address(String, EtherAddress &, String *rest = 0);
 Element *cp_element(const String &, Element *, ErrorHandler *);
 #endif
@@ -59,6 +61,7 @@ enum CpVaParseCmd {
   cpInterval,	// int *value_milliseconds
   cpString,	// String *value
   cpIPAddress,	// unsigned char value[4] (or IPAddress *, or unsigned int *)
+  cpIPAddressMask, // unsigned char value[4], unsigned char mask[4]
   cpEthernetAddress, // unsigned char value[6] (or EtherAddress *)
   cpElement,	// Element **value
   cpDesCblock,  // unsigned char value[8]

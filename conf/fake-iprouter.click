@@ -76,16 +76,16 @@ c1[0] -> ar1 -> out1;
 // 0: packets for this machine.
 // 1: packets for 18.26.4.
 // 2: packets for 18.26.7.
-// 3: default route to LCS router.
-rt :: LookupIPRoute(18.26.4.24  255.255.255.255 0.0.0.0 0,
-                 18.26.4.255 255.255.255.255 0.0.0.0 0,
-                 18.26.4.0   255.255.255.255 0.0.0.0 0,
-                 18.26.7.1   255.255.255.255 0.0.0.0 0,
-                 18.26.7.255 255.255.255.255 0.0.0.0 0,
-                 18.26.7.0   255.255.255.255 0.0.0.0 0,
-                 18.26.4.0 255.255.255.0 0.0.0.0 1,
-                 18.26.7.0 255.255.255.0 0.0.0.0 2,
-                 0.0.0.0 0.0.0.0 18.26.4.1 1);
+// All other packets are sent to output 1, with 18.26.4.1 as the gateway.
+rt :: LookupIPRoute(18.26.4.24/32 0,
+		    18.26.4.255/32 0,
+		    18.26.4.0/32 0,
+		    18.26.7.1/32 0,
+		    18.26.7.255/32 0,
+		    18.26.7.0/32 0,
+		    18.26.4.0/24 1,
+		    18.26.7.0/24 2,
+		    0.0.0.0/0 18.26.4.1 1);
 
 // Hand incoming IP packets to the routing table.
 // CheckIPHeader checks all the lengths and length fields

@@ -11,20 +11,23 @@
  * Could be used for proxy ARP as well as producing
  * replies for a host's own address.
  *
+ * The IP address and netmask can be specified in dotted decimal form (for
+ * example, `<tt>18.26.7.0 255.255.255.0</tt>') or CIDR form (for example,
+ * `<tt>18.26.7.0/24</tt>').
+ *
  * =e
  * Produce ARP replies for the local machine (18.26.4.24)
  * as well as proxy ARP for all machines on net 18.26.7
  * directing their packets to the local machine:
  *
  * = c :: Classifier(12/0806 20/0002, ...);
- * = ar :: ARPResponder(18.26.4.24 255.255.255.255 00:00:C0:AE:67:EF,
- * =                    18.26.7.0  255.255.255.0 00:00:C0:AE:67:EF)
+ * = ar :: ARPResponder(18.26.4.24/32 00:00:C0:AE:67:EF,
+ * =                    18.26.7.0/24 00:00:C0:AE:67:EF)
  * = c[0] -> ar;
  * = ar -> ToDevice(eth0);
  *
  * =a ARPQuerier
- * =a ARPFaker
- */
+ * =a ARPFaker */
 
 #include "element.hh"
 #include "etheraddress.hh"

@@ -155,6 +155,7 @@ Lexer::end_parse(int cookie)
   _elements.clear();
   _element_names.clear();
   _element_configurations.clear();
+  _element_landmarks.clear();
   _element_map.clear();
   _hookup_from.clear();
   _hookup_to.clear();
@@ -613,10 +614,9 @@ Lexer::get_element(String name, int etype, const String &conf)
   Element *et = _element_types[etype];
   if (etype == TUNNEL_TYPE)
     e = et;
-  else if ((e = et->clone())) {
-    e->set_id(name);
-    e->set_landmark(landmark());
-  } else if (et->cast("Lexer::Compound"))
+  else if ((e = et->clone()))
+    /* do nothing */;
+  else if (et->cast("Lexer::Compound"))
     return make_compound_element(name, etype, conf);
   else {
     lerror("can't clone `%s'", et->declaration().cc());
@@ -627,6 +627,7 @@ Lexer::get_element(String name, int etype, const String &conf)
   _element_map.insert(name, eid);
   _element_names.push_back(name);
   _element_configurations.push_back(conf);
+  _element_landmarks.push_back(landmark());
   _elements.push_back(e);
   if (e) e->use();
   return eid;
@@ -1224,7 +1225,9 @@ Lexer::create_router()
   Vector<int> router_id;
   for (int i = 0; i < _elements.size(); i++)
     if (_elements[i] && _elements[i] != _tunnel_element_type) {
-      int fi = router->add(_elements[i], _element_configurations[i]);
+      int fi = router->add_element
+	(_elements[i], _element_names[i], _element_configurations[i],
+	 _element_landmarks[i]);
       router_id.push_back(fi);
     } else
       router_id.push_back(-1);

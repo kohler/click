@@ -73,7 +73,7 @@ class RED : public Element {
   RED();
   
   const char *class_name() const		{ return "RED"; }
-  const char *processing() const	{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   void add_handlers();
   
   int queue_size() const;
@@ -84,6 +84,7 @@ class RED : public Element {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
+  void take_state(Element *, ErrorHandler *);
   
   bool drop();
   void push(int port, Packet *);

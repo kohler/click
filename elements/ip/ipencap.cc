@@ -49,7 +49,7 @@ IPEncap::configure(const String &conf, ErrorHandler *errh)
 }
 
 int
-IPEncap::initialize(ErrorHandler *errh)
+IPEncap::initialize(ErrorHandler *)
 {
   _id = 0;
   return 0;

@@ -8,6 +8,13 @@ Version 1.0.7
    into a directory (directory path specified using -d option) or stdout on a
    regular basis (duration specified by argument to CallReadHandler element).
 
+* Elements
+
+** Added support for parsing CIDR-style [Classless Inter-Domain Routing]
+   netmasks. Old-style netmasks are still supported. So for the 18.26.7
+   subnet, you can write either `18.26.7.0 255.255.255.0' or
+   `18.26.7.0/24'.
+
 * Tools
 
 ** Fixed click-uncombine bugs and changed its order of arguments.

@@ -3,16 +3,16 @@
 
 /*
  * =c
- * LookupIPRoute(DST1 MASK1 GW1 OUT1, DST2 MAS2 GW2 OUT2, ...)
+ * LookupIPRoute(DST1 MASK1 [GW1] OUT1, DST2 MASK2 [GW2] OUT2, ...)
  * =d
  * Input: IP packets (no ether header).
  * Expects a destination IP address annotation with each packet.
  * Looks up the address, sets the destination annotation to
- * the corresponding GW (if non-zero), and emits the packet
+ * the corresponding GW (if specified), and emits the packet
  * on the indicated OUTput.
  *
  * Each comma-separated argument is a route, specifying
- * a destination and mask, a gateway (zero means none),
+ * a destination and mask; optionally, a gateway IP address;
  * and an output index.
  *
  * =e
@@ -21,18 +21,18 @@
  * local interface, and all others via gateway 18.26.4.1:
  *
  * = ... -> GetIPAddress(16) -> rt;
- * = rt :: LookupIPRoute(18.26.4.24  255.255.255.255 0.0.0.0 0,
- * =                 18.26.4.255 255.255.255.255 0.0.0.0 0,
- * =                 18.26.4.0   255.255.255.255 0.0.0.0 0,
- * =                 18.26.4.0 255.255.255.0 0.0.0.0 1,
- * =                 0.0.0.0 0.0.0.0 18.26.4.1 1);
+ * = rt :: LookupIPRoute(18.26.4.24/32 0,
+ * =                     18.26.4.255/32 0,
+ * =                     18.26.4.0/32 0,
+ * =                     18.26.4.0/24 1,
+ * =                     0.0.0.0/0 18.26.4.1 1);
  * = rt[0] -> ToLinux;
  * = rt[1] -> ... -> ToDevice(eth0);
  *
  * =n
  * Only static routes are allowed. If you need a dynamic routing
  * protocol such as RIP, run it at user-level and use
- * LookupIPRouteLinux.
+ * LookupIPRouteLinux or LookupIPRoute2.
  *
  * =a LookupIPRoute2
  * =a LookupIPRouteLinux

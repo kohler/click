@@ -9,12 +9,17 @@ class Router : public ElementLink {
 
   struct Hookup;
   struct Handler;
-  typedef Element::Connection Connection;
 
+  Timer _timer_head;
+  bool _please_stop_driver;
+  
   int _refcount;
   
   Vector<Element *> _elements;
+  Vector<String> _element_names;
   Vector<String> _configurations;
+  Vector<String> _element_landmarks;
+  
   Vector<Hookup> _hookup_from;
   Vector<Hookup> _hookup_to;
   
@@ -38,9 +43,6 @@ class Router : public ElementLink {
   int _nhandlers;
   int _handlers_cap;
 
-  Timer _timer_head;
-  bool _please_stop_driver;
-  
   Router(const Router &);
   Router &operator=(const Router &);
   
@@ -66,7 +68,6 @@ class Router : public ElementLink {
   void set_connections();
   
   String context_message(int element_no, const char *) const;
-  String connection_number_string(const Connection &) const;
   int element_lerror(ErrorHandler *, Element *, const char *, ...) const;
   
   Element *find(String, const String &, ErrorHandler * = 0) const;
@@ -84,7 +85,7 @@ class Router : public ElementLink {
   void use()					{ _refcount++; }
   void unuse();
   
-  int add(Element *, const String &);
+  int add_element(Element *, const String &name, const String &conf, const String &landmark);
   int connect(int from_idx, int from_port, int to_idx, int to_port);
   int close(ErrorHandler *);
   bool closed() const				{ return _closed; }
@@ -93,7 +94,9 @@ class Router : public ElementLink {
   int nelements() const				{ return _elements.size(); }
   Element *element(int) const;
   int eindex(Element *);
-  const String &configuration(int) const;
+  const String &ename(int) const;
+  const String &econfiguration(int) const;
+  const String &elandmark(int) const;
   const Vector<Element *> &elements() const	{ return _elements; }
   Element *find(const String &, ErrorHandler * = 0) const;
   Element *find(Element *, const String &, ErrorHandler * = 0) const;
@@ -128,7 +131,6 @@ class Router : public ElementLink {
   void driver_once();
   void wait();
   
-  void print_structure(ErrorHandler *);
   String flat_configuration_string() const;
   String element_list_string() const;
   String element_inputs_string(int) const;

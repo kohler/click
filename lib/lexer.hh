@@ -81,6 +81,7 @@ class Lexer {
   Vector<Element *> _elements;
   Vector<String> _element_names;
   Vector<String> _element_configurations;
+  Vector<String> _element_landmarks;
   
   Vector<Hookup> _hookup_from;
   Vector<Hookup> _hookup_to;

@@ -75,12 +75,10 @@ LookupIPRoute2::add_route_handler(const String &conf, Element *e, void *, ErrorH
   for (int i = 0; i < args.size(); i++) {
     String arg = args[i];
     unsigned int dst, mask, gw;
-    if (cp_ip_address(arg, (unsigned char *)&dst, &arg) &&
-	cp_eat_space(arg) &&
-        cp_ip_address(arg, (unsigned char *)&mask, &arg) &&
+    if (cp_ip_address_mask(arg, (unsigned char *)&dst, (unsigned char *)&mask, &arg) &&
 	cp_eat_space(arg) &&
         cp_ip_address(arg, (unsigned char *)&gw, &arg) &&
-	cp_eat_space(arg))
+	cp_is_space(arg))
       me->_t.add(dst, mask, gw);
     else {
       errh->error("expects DST MASK GW");
@@ -103,10 +101,8 @@ LookupIPRoute2::del_route_handler(const String &conf, Element *e, void *, ErrorH
   for (int i = 0; i < args.size(); i++) {
     String arg = args[i];
     unsigned int dst, mask;
-    if (cp_ip_address(arg, (unsigned char *)&dst, &arg) &&
-        cp_eat_space(arg) &&
-        cp_ip_address(arg, (unsigned char *)&mask, &arg) &&
-        cp_eat_space(arg))
+    if (cp_ip_address_mask(arg, (unsigned char *)&dst, (unsigned char *)&mask, &arg)
+	&& cp_is_space(arg))
       me->_t.del(dst, mask);
     else {
       errh->error("expects DST MASK");

@@ -431,7 +431,7 @@ cp_integer(String str, int base, int &return_value, String *rest = 0)
   char *end;
   return_value = strtol(s + i, &end, base);
   if (negative) return_value = -return_value;
-  
+
   if (end - s == i)		// no characters in integer
     return false;
   
@@ -596,10 +596,49 @@ cp_ip_address(String str, unsigned char *return_value, String *rest = 0)
   }
   
   if (rest) {
-    *rest = str.substring(i);
+    *rest = str.substring(i - 1);
     return true;
   } else
     return i >= len;
+}
+
+bool
+cp_ip_address_mask(String str, unsigned char *return_value,
+		   unsigned char *return_mask, String *rest = 0)
+{
+  String mask;
+  if (!cp_ip_address(str, return_value, &mask))
+    return false;
+
+  if (mask[0] == '/') {
+    // CIDR mask
+    int relevant_bits;
+    if (!cp_integer(mask.substring(1), relevant_bits, rest))
+      return false;
+    if (relevant_bits < 0 || relevant_bits > 32)
+      return false;
+    
+    // set bits
+    return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 0;
+    unsigned char *pos = return_mask;
+    unsigned char bit = 0x80;
+    for (int i = 0; i < relevant_bits; i++) {
+      *pos |= bit;
+      bit >>= 1;
+      if (!bit) {
+	pos++;
+	bit = 0x80;
+      }
+    }
+    return true;
+    
+  } else if (isspace(mask[0])) {
+    // explicitly specified mask
+    cp_eat_space(mask);
+    return cp_ip_address(mask, return_mask, rest);
+    
+  } else
+    return false;
 }
 
 #ifndef CLICK_TOOL
@@ -607,6 +646,13 @@ bool
 cp_ip_address(String str, IPAddress &address, String *rest = 0)
 {
   return cp_ip_address(str, address.data(), rest);
+}
+
+bool
+cp_ip_address_mask(String str, IPAddress &address, IPAddress &mask,
+		   String *rest = 0)
+{
+  return cp_ip_address_mask(str, address.data(), mask.data(), rest);
 }
 #endif
 
@@ -628,11 +674,11 @@ cp_ethernet_address(const String &str, unsigned char *return_value,
     } else
       return false;
     if (d == 5) break;
-    if (i >= len || s[i] != ':')
+    if (i >= len - 1 || s[i] != ':')
       return false;
     i++;
   }
-  
+
   if (rest) {
     *rest = str.substring(i);
     return true;
@@ -736,6 +782,7 @@ cp_command_name(int cp_command)
    case cpNonnegReal: case cpNonnegReal2: return "unsigned real";
    case cpString: return "string";
    case cpIPAddress: return "IP address";
+   case cpIPAddressMask: return "IP address with netmask";
    case cpEthernetAddress: return "Ethernet address";
    case cpElement: return "element name";
    case cpDesCblock: return "DES encryption block";
@@ -792,10 +839,24 @@ store_value(int cp_command, Values &v)
    case cpEthernetAddress:
     address_bytes = 6;
     goto address;
-    
+
    case cpDesCblock:
     address_bytes = 8;
     goto address;
+   
+   address: {
+     unsigned char *addrstore = (unsigned char *)v.store;
+     memcpy(addrstore, v.v.address, address_bytes);
+     break;
+   }
+
+   case cpIPAddressMask: {
+     unsigned char *addrstore = (unsigned char *)v.store;
+     memcpy(addrstore, v.v.address, 4);
+     unsigned char *maskstore = (unsigned char *)v.store2;
+     memcpy(maskstore, v.v.address + 4, 4);
+     break;
+   }
 
 #ifndef CLICK_TOOL
    case cpElement: {
@@ -804,12 +865,6 @@ store_value(int cp_command, Values &v)
      break;
    }
 #endif
-   
-   address: {
-     unsigned char *addrstore = (unsigned char *)v.store;
-     memcpy(addrstore, v.v.address, address_bytes);
-     break;
-   }
    
    default:
     // no argument provided
@@ -952,6 +1007,16 @@ cp_va_parsev(Vector<String> &args,
        if (skip) break;
        if (!cp_ip_address(args[argno], v.v.address))
 	 errh->error("argument %d should be %s (IP address)", argno+1, desc);
+       break;
+     }     
+     
+     case cpIPAddressMask: {
+       const char *desc = va_arg(val, const char *);
+       v.store = va_arg(val, unsigned char *);
+       v.store2 = va_arg(val, unsigned char *);
+       if (skip) break;
+       if (!cp_ip_address_mask(args[argno], v.v.address, v.v.address + 4))
+	 errh->error("argument %d should be %s (IP address with netmask)", argno+1, desc);
        break;
      }
      

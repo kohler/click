@@ -67,6 +67,7 @@ sub nroffize ($;$$$) {
   $t =~ s/^\s*$/.PP\n/gm;
   $t =~ s/<i>(.*?)<\/i>/\\fI$1\\fP/ig;
   $t =~ s/<b>(.*?)<\/b>/\\fB$1\\fP/ig;
+  $t =~ s/<tt>(.*?)<\/tt>/\\f(CW$1\\fP/ig;
   $t =~ s/<\#>(.*?)<\/\#>(\S*)\s*/\n.M $1 $related_source->{$1} $2\n/g;
   1 while ($t =~ s/^\.PP\n\.PP\n/.PP\n/gm);
   $t =~ s/^= (.*\n)/.nf\n$1.fi\n/mg;
@@ -191,7 +192,7 @@ EOD;
     }
   }
 
-  if ($x{'a'} && @{$x{'a'}}) {
+  if (@related) {
     print OUT ".SH \"SEE ALSO\"\n";
     my($last) = pop @related;
     print OUT map(".M $_ " . $related_source{$_} . " ,\n", @related);

@@ -90,23 +90,23 @@ print "rt :: LookupIPRoute(\n";
 for($i = 0; $i < $nifs; $i++){
     my $ii = ip2i($ifs->[$i]->[2]);
     my $mask = ip2i($ifs->[$i]->[3]);
-    printf(" %s 255.255.255.255 0.0.0.0 0,\n", $ifs->[$i]->[2]);
+    printf(" %s/32 0,\n", $ifs->[$i]->[2]);
     printf(" %s 255.255.255.255 0.0.0.0 0,\n",
            i2ip(($ii & $mask) | ~$mask));
-    printf(" %s 255.255.255.255 0.0.0.0 0,\n",
+    printf(" %s/32 0,\n",
            i2ip($ii & $mask));
 }
 for($i = 0; $i < $nifs; $i++){
     my $ii = ip2i($ifs->[$i]->[2]);
     my $mask = ip2i($ifs->[$i]->[3]);
-    printf(" %s %s 0.0.0.0 %d,\n",
+    printf(" %s %s %d,\n",
            i2ip($ii & $mask),
            i2ip($mask),
            $i + 1);
 }
-print " 255.255.255.255 255.255.255.255 0.0.0.0 0,\n";
-print " 0.0.0.0 255.255.255.255 0.0.0.0 0,\n";
-print " 0.0.0.0 0.0.0.0 18.26.4.1 1);\n"; # XXX
+print " 255.255.255.255/32 0.0.0.0 0,\n";
+print " 0.0.0.0/32 0,\n";
+print " 0.0.0.0/0 18.26.4.1 1);\n"; # XXX
 
 print <<EOF;
 

@@ -80,16 +80,28 @@ Element::cast(const char *name)
     return 0;
 }
 
-void
-Element::set_id(const String &id)
+String
+Element::id() const
 {
-  _id = id;
+  String s;
+  if (Router *r = router())
+    s = r->ename(_number);
+  return (s ? s : String("<unknown>"));
 }
 
 String
 Element::declaration() const
 {
-  return (_id ? _id + " :: " : String("")) + class_name();
+  return id() + " :: " + class_name();
+}
+
+String
+Element::landmark() const
+{
+  String s;
+  if (Router *r = router())
+    s = r->elandmark(_number);
+  return (s ? s : String("<unknown>"));
 }
 
 // INPUTS AND OUTPUTS
@@ -365,7 +377,7 @@ read_element_name(Element *e, void *)
 static String
 read_element_config(Element *e, void *)
 {
-  String s = e->router()->configuration(e->number());
+  String s = e->router()->econfiguration(e->number());
   if (s) {
     int c = s[s.length() - 1];
     if (c != '\n' && c != '\\')
@@ -481,7 +493,7 @@ Element::configuration_read_handler(Element *element, void *vno)
 {
   Router *router = element->router();
   Vector<String> args;
-  cp_argvec(router->configuration(element->number()), args);
+  cp_argvec(router->econfiguration(element->number()), args);
   int no = (int)vno;
   if (no >= args.size())
     return String();
@@ -501,7 +513,7 @@ Element::reconfigure_write_handler(const String &arg, Element *element,
 {
   Router *router = element->router();
   Vector<String> args;
-  cp_argvec(router->configuration(element->number()), args);
+  cp_argvec(router->econfiguration(element->number()), args);
   int no = (int)vno;
   while (args.size() <= no)
     args.push_back(String());

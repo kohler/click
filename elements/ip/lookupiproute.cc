@@ -38,34 +38,41 @@ LookupIPRoute::clone() const
 int
 LookupIPRoute::configure(const String &conf, ErrorHandler *errh)
 {
-  int maxout = 0, i;
+  int maxout = -1;
+  _t.clear();
+  
   Vector<String> args;
   cp_argvec(conf, args);
 
-  _t.clear();
+  int before = errh->nerrors();
   for (int i = 0; i < args.size(); i++) {
     String arg = args[i];
     unsigned int dst, mask, gw;
-    int index;
-    if (cp_ip_address(arg, (unsigned char *)&dst, &arg) &&
-	cp_eat_space(arg) &&
-        cp_ip_address(arg, (unsigned char *)&mask, &arg) &&
-	cp_eat_space(arg) &&
-        cp_ip_address(arg, (unsigned char *)&gw, &arg) &&
-        cp_eat_space(arg) &&
-        cp_integer(arg, index, &arg)){
-      _t.add(dst, mask, gw, index);
-      if(index > maxout)
-        maxout = index;
-    } else {
-      errh->error("expects DST MASK GW INDEX");
-      return -1;
+    int output_num;
+    bool ok = false;
+    if (cp_ip_address_mask(arg, (unsigned char *)&dst, (unsigned char *)&mask, &arg)) {
+      cp_eat_space(arg);
+      if (cp_ip_address(arg, (unsigned char *)&gw, &arg)) {
+	ok = cp_eat_space(arg) && cp_integer(arg, output_num);
+      } else {
+	gw = 0;
+	ok = cp_integer(arg, output_num);
+      }
     }
-  }
 
-  for(i = 0; i <= maxout; i++)
-    add_output();
-  
+    if (ok && output_num >= 0) {
+      _t.add(dst, mask, gw, output_num);
+      if (output_num > maxout)
+        maxout = output_num;
+    } else
+      errh->error("argument %d should be `DADDR MASK [GATEWAY] OUTPUT'", i+1);
+  }
+  if (errh->nerrors() != before)
+    return -1;
+  if (maxout < 0)
+    errh->warning("no routes");
+
+  set_noutputs(maxout + 1);
   return 0;
 }
 

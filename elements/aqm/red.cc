@@ -135,6 +135,14 @@ RED::initialize(ErrorHandler *errh)
   return 0;
 }
 
+void
+RED::take_state(Element *e, ErrorHandler *)
+{
+  RED *r = (RED *)e->cast("RED");
+  if (!r) return;
+  _size = r->_size;
+}
+
 int
 RED::queue_size() const
 {

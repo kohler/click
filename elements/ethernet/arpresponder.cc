@@ -50,9 +50,7 @@ ARPResponder::configure(const String &conf, ErrorHandler *errh)
   
   for (int i = 0; i < args.size(); i++) {
     String arg = args[i];
-    if (cp_ip_address(arg, ipa, &arg)
-	&& cp_eat_space(arg)
-        && cp_ip_address(arg, mask, &arg)
+    if (cp_ip_address_mask(arg, ipa, mask, &arg)
         && cp_eat_space(arg)
 	&& cp_ethernet_address(arg, ena))
       set_map(ipa, mask, ena);
