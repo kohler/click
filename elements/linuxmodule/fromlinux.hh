@@ -30,25 +30,16 @@ extern "C" {
 #include <linux/route.h>
 }
 
-#include "hashmap.hh"
+#include "anydevice.hh"
 
-struct devrt {
-  struct device *_dev;
-  struct rtentry *_rt;
-  int _refcnt;
-};
+class FromLinux : public AnyDevice {
 
-class FromLinux : public Element {
-
-  String _devname;
   IPAddress _destaddr;
   IPAddress _destmask;
 
-  struct device *_dev;
+  struct enet_statistics _stats;
   struct rtentry *_rt;
 
-  struct enet_statistics _stats;
-  
   int init_rt();
   int init_dev();
 

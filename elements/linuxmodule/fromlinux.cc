@@ -13,6 +13,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include "router.hh"
 #include "fromlinux.hh"
 #include "confparse.hh"
 #include "error.hh"
@@ -29,7 +30,7 @@ static int iff_set(struct ifreq *ifr, short flag);
 static int iff_clear(struct ifreq *ifr, short flag);
 static int fl_init(struct device *dev);
 
-static HashMap<String, struct devrt *> devmap(0);
+static AnyDeviceMap fromlinux_map;
 
 FromLinux::FromLinux()
 {
@@ -44,7 +45,7 @@ FromLinux::~FromLinux()
 void
 FromLinux::static_initialize()
 {
-  devmap.clear();
+  fromlinux_map.initialize();
 }
 
 void
@@ -84,7 +85,6 @@ FromLinux::init_dev(void)
     goto bad;
   strncpy(_dev->name, _devname.cc(), IFNAMSIZ);
   _dev->init = fl_init;
-  _dev->priv = (void *)this;
   return 0;
 
  bad:
@@ -118,20 +118,40 @@ FromLinux::init_rt(void)
   return 0;
 }
 
+#define CLEAN_RT  { delete _rt; _rt = 0L; }
 #define CLEAN_DEV { if (_dev->name) delete[] _dev->name; \
 		    delete _dev; _dev = 0L; }
-#define CLEAN_RT  { delete _rt; _rt = 0L; }
+#define UNREG_DEV { unregister_netdev(_dev); }
+#define IF_DOWN { \
+  struct ifreq ifr; \
+  strncpy(ifr.ifr_name, _devname.cc(), IFNAMSIZ); \
+  if ((res = iff_clear(&ifr, IFF_UP)) < 0) \
+    click_chatter("FromLinux(%s): error %d bringing down interface\n", _devname.cc(), res); \
+}
+#define DEL_RT { \
+  if ((res = ip_rt_ioctl(SIOCDELRT, _rt)) < 0) \
+    click_chatter("FromLinux(%s): error %d removing route\n", _devname.cc(), res); \
+}
 
 int
 FromLinux::initialize(ErrorHandler *errh)
 {
   int res;
-  struct devrt *dr;
-
-  if ((dr = devmap.find(_devname))) {
-    _dev = dr->_dev;
-    _rt = dr->_rt;
-    dr->_refcnt++;
+  
+  for (int fi = 0; fi < router()->nelements(); fi++) {
+    Element *e = router()->element(fi);
+    if (e == this) continue;
+    if (FromLinux *fl=(FromLinux *)(e->cast("FromLinux"))) {
+      if (fl->ifindex() == ifindex())
+	return errh->error("duplicate FromLinux for `%s'", _devname.cc());
+    }
+  }
+ 
+  _dev = dev_get(_devname.cc());
+  if (_dev) {
+    _rt = (struct rtentry *) _dev->priv;
+    if (fromlinux_map.insert(this) < 0) 
+      return errh->error("cannot use FromLinux for device `%s'",_devname.cc());
     return 0;
   }
 
@@ -157,33 +177,47 @@ FromLinux::initialize(ErrorHandler *errh)
 
   if ((res = devinet_ioctl(SIOCSIFADDR, &ifr)) < 0) {
     set_fs(oldfs);
+    UNREG_DEV;
     CLEAN_DEV;
     return errh->error("error %d setting address for interface %s",
 		         res, _devname.cc());
   }
   if ((res = iff_set(&ifr, IFF_UP|IFF_RUNNING)) < 0) {
     set_fs(oldfs);
+    UNREG_DEV;
     CLEAN_DEV;
     return errh->error("error %d bringing up interface %s", 
 		         res, _devname.cc());
   }
 				  // Establish the route
   if ((res = init_rt()) < 0) {
+    IF_DOWN;
     set_fs(oldfs);
+    UNREG_DEV;
     CLEAN_DEV;
     return errh->error("error %d initializing route", res);
   }
   if ((res = ip_rt_ioctl(SIOCADDRT, _rt)) < 0) {
+    CLEAN_RT;
+    IF_DOWN;
     set_fs(oldfs);
-    CLEAN_DEV; CLEAN_RT;
+    UNREG_DEV;
+    CLEAN_DEV; 
     return errh->error("error %d establishing route", res);
+  }
+  _dev->priv = _rt;
+    
+  if (fromlinux_map.insert(this) < 0) { 
+    DEL_RT;
+    CLEAN_RT;
+    IF_DOWN;
+    set_fs(oldfs);
+    UNREG_DEV;
+    CLEAN_DEV; 
+    return errh->error("cannot use FromLinux for device `%s'",_devname.cc());
   }
 
   set_fs(oldfs);
-
-  dr = new struct devrt;
-  dr->_rt = _rt; dr->_dev = _dev; dr->_refcnt = 1;
-  devmap.insert(_devname, dr);
 
   return res;
 }
@@ -192,9 +226,10 @@ void
 FromLinux::uninitialize()
 {
   int res;
-  struct devrt *dr;
 
-  if (!(dr = devmap.find(_devname)) || --dr->_refcnt) {
+  fromlinux_map.remove(this);
+  
+  if (fromlinux_map.lookup(ifindex()) != 0) {
     _dev = 0; 
     _rt = 0;
     return;
@@ -203,26 +238,18 @@ FromLinux::uninitialize()
   mm_segment_t oldfs = get_fs();
   set_fs(get_ds());
 
-				// Remove the route
+  // Remove the route
   if (_rt) {
-    if ((res = ip_rt_ioctl(SIOCDELRT, _rt)) < 0) {
-      click_chatter("FromLinux(%s): error %d removing route\n",
-		    _devname.cc(), res);
-    }
+    DEL_RT;
     CLEAN_RT;
   }
-				// Bring down the interface
-  struct ifreq ifr;
-  strncpy(ifr.ifr_name, _devname.cc(), IFNAMSIZ);
-  if ((res = iff_clear(&ifr, IFF_UP)) < 0)
-    click_chatter("FromLinux(%s): error %d bringing down interface\n", 
-		  _devname.cc(), res);
+
+  IF_DOWN;
   set_fs(oldfs);
-				// Uninstall fake interface
-  unregister_netdev(_dev);
+
+  // Uninstall fake interface
+  UNREG_DEV;
   CLEAN_DEV;
-  devmap.insert(_devname, 0);
-  delete dr;
 }
 
 /*
@@ -250,16 +277,26 @@ fl_close(struct device *dev)
 static int
 fl_tx(struct sk_buff *skb, struct device *dev)
 {
-  FromLinux *fl = (FromLinux *)dev->priv;
-  Packet *p = Packet::make(skb);
-  fl->push(0, p);
-  return 0;
+  FromLinux *fl;
+
+  if (dev->ifindex >= 0 && dev->ifindex < MAX_DEVICES) 
+    if (fl = (FromLinux*)fromlinux_map.lookup(dev->ifindex)) {
+      Packet *p = Packet::make(skb);
+      fl->push(0, p);
+      return 0;
+    }
+  return -1;
 }
 
 static struct enet_statistics *
 fl_stats(struct device *dev)
 {
-  return ((FromLinux *)dev->priv)->stats();
+  FromLinux *fl;
+
+  if (dev->ifindex >= 0 && dev->ifindex < MAX_DEVICES) 
+    if (fl = (FromLinux*)fromlinux_map.lookup(dev->ifindex))
+      return fl->stats();
+  return 0L;
 }
 
 static int
@@ -304,8 +341,5 @@ iff_clear(struct ifreq *ifr, short flag)
 /*
  * Routing table management
  */
-
-#include "hashmap.cc"
-template class HashMap<String, struct devrt *>;
 
 EXPORT_ELEMENT(FromLinux)
