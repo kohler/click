@@ -1,7 +1,7 @@
 #ifndef ERROR_HH
 #define ERROR_HH
 #include <click/string.hh>
-#if !defined(__KERNEL__) && !defined(_KERNEL)
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 # include <stdio.h>
 #endif
 #include <stdarg.h>
@@ -56,11 +56,11 @@ class ErrorHandler { public:
   
 };
 
-#if !defined(__KERNEL__) && !defined(_KERNEL)
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 class FileErrorHandler : public ErrorHandler { public:
   
   FileErrorHandler(FILE *, const String & = String());
-  
+
   int nwarnings() const;
   int nerrors() const;
   void reset_counts();
@@ -146,5 +146,19 @@ class LandmarkErrorHandler : public ErrorVeneer { public:
   String _landmark;
   
 };
+
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+class BailErrorHandler : public ErrorVeneer { public:
+
+  BailErrorHandler(ErrorHandler *, Seriousness = ERR_ERROR);
+
+  void handle_text(Seriousness, const String &);
+
+ private:
+
+  int _exit_seriousness;
+
+};
+#endif
 
 #endif

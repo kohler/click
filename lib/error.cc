@@ -510,7 +510,7 @@ ErrorHandler::prepend_lines(const String &prepend, const String &text)
   return sa.take_string();
 }
 
-#if !defined(__KERNEL__) && !defined(_KERNEL)
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 //
 // FILE ERROR HANDLER
 //
@@ -559,7 +559,7 @@ FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
     fwrite(s.data(), 1, s.length(), _f);
   }
   
-  if (seriousness == ERR_FATAL)
+  if (seriousness >= ERR_FATAL)
     exit(1);
 }
 #endif
@@ -762,3 +762,25 @@ LandmarkErrorHandler::decorate_text(Seriousness seriousness, const String &prefi
   else
     return _errh->decorate_text(seriousness, prefix, _landmark, text);
 }
+
+
+//
+// BAIL ERROR HANDLER
+//
+
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+
+BailErrorHandler::BailErrorHandler(ErrorHandler *errh, Seriousness s)
+  : ErrorVeneer(errh), _exit_seriousness(s)
+{
+}
+
+void
+BailErrorHandler::handle_text(Seriousness s, const String &text)
+{
+  _errh->handle_text(s, text);
+  if (s >= _exit_seriousness)
+    exit(1);
+}
+
+#endif
