@@ -1,3 +1,8 @@
+2003-08-09 Saturday 02:36  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/linktable.cc (1.13): srcr random link propogation,
+	new link updates in place of errors, linktable nits
+
 2003-08-08 Friday 15:32  Eddie Kohler <kohler@icir.org>
 
 	* lib/lexer.cc (1.67): nit
