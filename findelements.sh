@@ -40,7 +40,7 @@ for i in $first_files; do
   fi
   if test -d $i; then
     files="$files
-"`find $i \( -name \*.cc -or -name \*.c \) -print`
+"`find $i \( -name \*.cc -o -name \*.c \) -print`
   else
     files="$files
 $i"
@@ -60,7 +60,7 @@ while true; do
   exports1=`grep -h '^EXPORT_ELEMENT\|^ELEMENT_PROVIDES' $files | sed 's/.*(\(.*\)).*/\1/'`
   exports2=`echo "$files" | sed 's/^elements\/\([^\/]*\)\/.*/\1/'`
   awk_exports=`echo "$exports1$exports2" | sed 's/\(.*\)/dep["\1"]=1;/'`
-  new_bad_files=`grep ^ELEMENT_REQUIRES $files | awk -F: 'BEGIN {OFS="";'"$awk_exports"'}
+  new_bad_files=`grep '^ELEMENT_REQUIRES' $files | awk -F: 'BEGIN {OFS="";'"$awk_exports"'}
 {
   sub(/ELEMENT_REQUIRES\(/, "", $2);
   sub(/\)/, "", $2);
@@ -98,7 +98,7 @@ if test $makefile = 1; then
   #   echo "*** warning: dependency check failed for $i" 1>&2
   # done
 else
-  grep ^EXPORT_ELEMENT $files | awk -F: 'BEGIN {
+  grep '^EXPORT_ELEMENT' $files | awk -F: 'BEGIN {
    OFS = "";
 }
 {
