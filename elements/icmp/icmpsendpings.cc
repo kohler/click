@@ -24,6 +24,9 @@
 #include <clicknet/ip.h>
 #include <clicknet/icmp.h>
 #include <click/packet_anno.hh>
+#if CLICK_LINUXMODULE
+# include <linux/vmalloc.h>
+#endif
 CLICK_DECLS
 
 ICMPPingSource::ICMPPingSource()
