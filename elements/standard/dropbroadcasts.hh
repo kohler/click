@@ -6,13 +6,13 @@
  * =c
  * DropBroadcasts
  * =s
- * drops link-level broadcast packets
+ * drops link-level broadcast and multicast packets
  * V<dropping>
  * =d
  * Drop packets that arrived as link-level broadcast or multicast.
  * Used to implement the requirement that IP routers not forward
  * link-level broadcasts.
- * Looks at the mac_broadcast annotation, which FromDevice sets.
+ * Looks at the packet_type_anno annotation, which FromDevice sets.
  * =a FromDevice
  */
 
