@@ -1,3 +1,23 @@
+2001-02-16 Friday 19:38  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/click_ip.h: add constants for IP ECN stuff
+
+2001-02-16 Friday 19:31  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipclassifier.hh, ipfilter.cc, ipfilter.hh: add
+	syntax for IP ECT and CE bits
+
+2001-02-16 Friday 19:30  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: red.cc, red.hh: support second output; if
+	present, RED pushes "marked" packets to second output rather than
+	dropping them
+
+2001-02-16 Friday 19:30  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: markipce.cc, markipce.hh: added element for setting
+	the ECN CE bit
+
 2001-02-15 Thursday 22:46  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* conf/: test.click, test2.click: use keyword arguments in sample
