@@ -420,6 +420,7 @@ KinkyRateMonitor::counter_row::~counter_row()
 }
 
 
+ELEMENT_REQUIRE(false)
 EXPORT_ELEMENT(KinkyRateMonitor)
 
 // template instances
