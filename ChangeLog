@@ -1,3 +1,18 @@
+2005-03-15 Tuesday 18:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/clicknet/wifi.h (1.22): nitlet
+
+2005-03-15 Tuesday 18:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/clicknet/wifi.h (1.21): use standard uintXX_t types, not
+	NONSTANDARD u_intXX_t types.  Someone should be spanked!
+
+2005-03-15 Tuesday 18:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-userlevel.h.in (1.25), configure (1.47), configure.in
+	(1.256), etc/libclick/lc-configure.in (1.40): more Solaris fixes:
+	madvise is THERE, its just not DECLARED
+
 2005-03-15 Tuesday 18:15  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/ipsumdump_anno.cc (1.5): the precedence of |
