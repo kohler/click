@@ -145,16 +145,16 @@ class Packet { public:
   // Anno must fit in sk_buff's char cb[48].
   struct Anno {
     union {
-      unsigned dst_ip4;
-      unsigned char dst_ip6[16];
-    } dst_ip;
-    
-    union {
       unsigned u[3];
       int i[3];
       unsigned char c[12];
     } user_flags;
     // flag allocations: see packet_anno.hh
+    
+    union {
+      unsigned dst_ip4;
+      unsigned char dst_ip6[16];
+    } dst_ip;
     
 #ifdef __KERNEL__
     unsigned long long perfctr;
