@@ -25,12 +25,37 @@ struct click_arp {
   unsigned short int ar_op;   /* ARP opcode (command).  */
 };
 
+//define structure of Neighborhood Solitation Message
+struct click_arp6req {
+  unsigned char type;
+  unsigned char code;
+  unsigned short int checksum;
+  unsigned int reserved;
+  unsigned char arp_tpa[16];
+  unsigned char note:4;
+  unsigned char arp_sha[6];
+};
+
+//define structure of Neighborhood Solitation Validation Message
+struct click_arp6resp {
+  unsigned char type;
+  unsigned char code;
+  unsigned short int checksum;
+  bool sender_is_router : 1;
+  bool solicited : 1;
+  bool override :1;
+  unsigned int reserved : 29;
+  unsigned char arp_tpa[16];
+};
+
 /* ARP protocol HARDWARE identifiers. */
 #define ARPHRD_ETHER    1       /* Ethernet 10Mbps      */
 
 /* ARP protocol opcodes. */
 #define ARPOP_REQUEST   1       /* ARP request          */
 #define ARPOP_REPLY 2       /* ARP reply            */
+#define NEIGH_SOLI 0x0087      /* Neighborhood Solicitation Message Type */
+#define NEIGH_ADV 0x0088      /* Neighborhood Advertisement Message Type */
 
 struct click_ether_arp {
   struct click_arp ea_hdr;    /* fixed-size header */
@@ -38,14 +63,6 @@ struct click_ether_arp {
   unsigned char arp_spa[4]; /* sender protocol address */
   unsigned char arp_tha[6]; /* target hardware address */
   unsigned char arp_tpa[4]; /* target protocol address */
-};
-
-struct click_ether_arp6 {
-  struct click_arp ea_hdr;    /* fixed-size header */
-  unsigned char arp_sha[6]; /* sender hardware address */
-  unsigned char arp_spa[16]; /* sender protocol address */
-  unsigned char arp_tha[6]; /* target hardware address */
-  unsigned char arp_tpa[16]; /* target protocol address */
 };
 
 #endif

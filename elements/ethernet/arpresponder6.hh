@@ -3,24 +3,26 @@
 
 /*
  * =c
- * ARPResponder6(IP1 MASK1 ETH1, IP2 MASK2 ETH2, ...)
+ * ARPResponder6(IP61 MASK1 ETH1, IP62 MASK2 ETH2, ...)
  * =s
  * V<ARP>
  * =d
- * Input should be ARP request packets, including the
- * ethernet header.
- * Forwards an ARP reply if we know the answer.
+ * Input should be Neighborhood Solitation Message (sort of ARP request 
+ * packets, including the
+ * ethernet header, ip6 header and message itself.
+ * Forwards an Neighborhood Reply Message (sort of ARP reply )
+ * if we know the answer.
  * Could be used for proxy ARP as well as producing
  * replies for a host's own address.
  *
  * =e
- * Produce ARP replies for the local machine (18.26.4.24)
- * as well as proxy ARP for all machines on net 18.26.7
+ * Produce ARP replies for the local machine (3ffe:1ce1:2::5)
+ * as well as proxy ARP for all machines on net 3ffe:1ce1:2::/64)
  * directing their packets to the local machine:
  *
- *   c :: Classifier(12/0806 20/0002, ...);
- *   ar :: ARPResponder(18.26.4.24 255.255.255.255 00:00:C0:AE:67:EF,
- *                      18.26.7.0  255.255.255.0 00:00:C0:AE:67:EF)
+ *   c :: Classifier(12/86dd 20/0002, ...);
+ *   ar :: ARPResponder(3ffe:1ce1:2::5 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff 00:00:C0:AE:67:EF,
+ *                      3ffe:1ce1:2::  ffff:ffff:ffff:ffff:: 00:00:C0:AE:67:EF)
  *   c[0] -> ar;
  *   ar -> ToDevice(eth0);
  *
@@ -47,8 +49,9 @@ public:
   
   //void set_map(IP6Address dst, IP6Address mask, EtherAddress);
 
-  Packet *make_response(unsigned char tha[6], unsigned char tpa[16],
-                        unsigned char sha[6], unsigned char spa[16]);
+  Packet *make_response(unsigned char dha[6], unsigned char sha[6],
+                        unsigned char dpa[16], unsigned char spa[16],
+			unsigned char tpa[16]);
 
   bool lookup(IP6Address, EtherAddress &);
 

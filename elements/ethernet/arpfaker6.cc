@@ -71,24 +71,26 @@ ARPFaker6::make_response(u_char tha[6], /* him */
                             u_char sha[6], /* me */
                             u_char spa[16])
 {
-  click_ether *e;
-  click_ether_arp6 *ea;
-  WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ea));
-  memset(q->data(), '\0', q->length());
-  e = (click_ether *) q->data();
-  ea = (click_ether_arp6 *) (e + 1);
-  memcpy(e->ether_dhost, tha, 6);
-  memcpy(e->ether_shost, sha, 6);
-  e->ether_type = htons(ETHERTYPE_ARP);
-  ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
-  ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP6);
-  ea->ea_hdr.ar_hln = 6;
-  ea->ea_hdr.ar_pln = 16;
-  ea->ea_hdr.ar_op = htons(ARPOP_REPLY);
-  memcpy(ea->arp_tha, tha, 6);
-  memcpy(ea->arp_tpa, tpa, 16);
-  memcpy(ea->arp_sha, sha, 6);
-  memcpy(ea->arp_spa, spa, 16);
+  
+//    click_ether *e;
+//    click_ether_arp6 *ea;
+//    WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ea));
+//    memset(q->data(), '\0', q->length());
+//    e = (click_ether *) q->data();
+//    ea = (click_ether_arp6 *) (e + 1);
+//    memcpy(e->ether_dhost, tha, 6);
+//    memcpy(e->ether_shost, sha, 6);
+//    e->ether_type = htons(ETHERTYPE_ARP);
+//    ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
+//    ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP6);
+//    ea->ea_hdr.ar_hln = 6;
+//    ea->ea_hdr.ar_pln = 16;
+//    ea->ea_hdr.ar_op = htons(ARPOP_REPLY);
+//    memcpy(ea->arp_tha, tha, 6);
+//    memcpy(ea->arp_tpa, tpa, 16);
+//    memcpy(ea->arp_sha, sha, 6);
+//    memcpy(ea->arp_spa, spa, 16); 
+  WritablePacket *q =0;
   return q;
 }
 

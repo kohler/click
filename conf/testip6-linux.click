@@ -3,7 +3,7 @@
 //  This configuration should print this line at the end:
 //  Print ok | 120 : 60000000 00501140 00000000 00000000 00000000 c0a80001
 //  You can run it at user level as
-// ` [userlevel]#./click ..conf/testip6.click'
+// ` [userlevel]#./click ..conf/testip6-linux.click'
 
 
 InfiniteSource( \<00 00 c0 ae 67 ef  00 00 00 00 00 00  08 00

@@ -148,29 +148,29 @@ ARPQuerier6::expire_hook(unsigned long thunk)
 void
 ARPQuerier6::send_query_for(const IP6Address &want_ip6)
 {
-  click_ether *e;
-  click_ether_arp6 *ea;
-  WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ea));
-  if (q == 0) {
-    click_chatter("in arp querier: cannot make packet!");
-    assert(0);
-  } 
-  memset(q->data(), '\0', q->length());
-  e = (click_ether *) q->data();
-  ea = (click_ether_arp6 *) (e + 1);
-  memcpy(e->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
-  memcpy(e->ether_shost, _my_en.data(), 6);
-  e->ether_type = htons(ETHERTYPE_ARP);
-  ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
-  ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP6);
-  ea->ea_hdr.ar_hln = 6;
-  ea->ea_hdr.ar_pln = 16;
-  ea->ea_hdr.ar_op = htons(ARPOP_REQUEST);
-  memcpy(ea->arp_tpa, want_ip6.data(), 16);
-  memcpy(ea->arp_sha, _my_en.data(), 6);
-  memcpy(ea->arp_spa, _my_ip6.data(), 16);
-  _arp_queries++;
-  output(noutputs()-1).push(q);
+  //  click_ether *e;
+//    click_ether_arp6 *ea;
+//    WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ea));
+//    if (q == 0) {
+//      click_chatter("in arp querier: cannot make packet!");
+//      assert(0);
+//    } 
+//    memset(q->data(), '\0', q->length());
+//    e = (click_ether *) q->data();
+//    ea = (click_ether_arp6 *) (e + 1);
+//    memcpy(e->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
+//    memcpy(e->ether_shost, _my_en.data(), 6);
+//    e->ether_type = htons(ETHERTYPE_ARP);
+//    ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
+//    ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP6);
+//    ea->ea_hdr.ar_hln = 6;
+//    ea->ea_hdr.ar_pln = 16;
+//    ea->ea_hdr.ar_op = htons(ARPOP_REQUEST);
+//    memcpy(ea->arp_tpa, want_ip6.data(), 16);
+//    memcpy(ea->arp_sha, _my_en.data(), 6);
+//    memcpy(ea->arp_spa, _my_ip6.data(), 16);
+//    _arp_queries++;
+//    output(noutputs()-1).push(q); 
 }
 
 /*
@@ -230,37 +230,37 @@ ARPQuerier6::handle_ip6(Packet *p)
 void
 ARPQuerier6::handle_response(Packet *p)
 {
-  if (p->length() < sizeof(click_ether) + sizeof(click_ether_arp6))
-    return;
+ //   if (p->length() < sizeof(click_ether) + sizeof(click_ether_arp6))
+//      return;
   
-  click_ether *ethh = (click_ether *) p->data();
-  click_ether_arp6 *arph = (click_ether_arp6 *) (ethh + 1);
-  IP6Address ipa = IP6Address(arph->arp_spa);
-  EtherAddress ena = EtherAddress(arph->arp_sha);
-  if (ntohs(ethh->ether_type) == ETHERTYPE_ARP
-      && ntohs(arph->ea_hdr.ar_hrd) == ARPHRD_ETHER
-      && ntohs(arph->ea_hdr.ar_pro) == ETHERTYPE_IP6
-      && ntohs(arph->ea_hdr.ar_op) == ARPOP_REPLY
-      && !ena.is_group()) {
+//    click_ether *ethh = (click_ether *) p->data();
+//    click_ether_arp6 *arph = (click_ether_arp6 *) (ethh + 1);
+//    IP6Address ipa = IP6Address(arph->arp_spa);
+//    EtherAddress ena = EtherAddress(arph->arp_sha);
+//    if (ntohs(ethh->ether_type) == ETHERTYPE_ARP
+//        && ntohs(arph->ea_hdr.ar_hrd) == ARPHRD_ETHER
+//        && ntohs(arph->ea_hdr.ar_pro) == ETHERTYPE_IP6
+//        && ntohs(arph->ea_hdr.ar_op) == ARPOP_REPLY
+//        && !ena.is_group()) {
     
-    int bucket = (ipa.data()[0] + ipa.data()[15]) % NMAP;
-    ARPEntry6 *ae = _map[bucket];
-    while (ae && ae->ip6 != ipa)
-      ae = ae->next;
-    if (!ae)
-      return;
+//      int bucket = (ipa.data()[0] + ipa.data()[15]) % NMAP;
+//      ARPEntry6 *ae = _map[bucket];
+//      while (ae && ae->ip6 != ipa)
+//        ae = ae->next;
+//      if (!ae)
+//        return;
     
-    if (ae->ok && ae->en != ena)
-      click_chatter("ARPQuerier6 overwriting an entry");
-    ae->en = ena;
-    ae->ok = 1;
-    ae->polling = 0;
-    ae->last_response_jiffies = click_jiffies();
-    Packet *cached_packet = ae->p;
-    ae->p = 0;
-    if (cached_packet)
-      handle_ip6(cached_packet);
-  }
+//      if (ae->ok && ae->en != ena)
+//        click_chatter("ARPQuerier6 overwriting an entry");
+//      ae->en = ena;
+//      ae->ok = 1;
+//      ae->polling = 0;
+//      ae->last_response_jiffies = click_jiffies();
+//      Packet *cached_packet = ae->p;
+//      ae->p = 0;
+//      if (cached_packet)
+//        handle_ip6(cached_packet);
+//    } 
 }
 
 void
