@@ -36,7 +36,7 @@ to_eth :: ToDevice(GW_NET_DEVICE);
 
 
 wvlan :: FromDevice(WI_NET_DEVICE, 0);
-to_wvlan :: GWTTLChecker [0] -> FixSrcLoc(li) -> SetGridChecksum -> IPPrint(to_wvlan, TIMESTAMP true) -> PrintOld(to_wvlan_po) -> ToDevice(WI_NET_DEVICE);
+to_wvlan :: GWTTLChecker [0] -> FixSrcLoc(li) -> SetGridChecksum -> ToDevice(WI_NET_DEVICE);
 connectiontunnel to_ip_cl/in -> to_ip_cl/out;
 to_wvlan [1] -> to_ip_cl/in;
 
