@@ -16,11 +16,11 @@
 #define WIFI_EXTRA_MAGIC  0x7492
 
 enum {
-  WIFI_EXTRA_TX                    = 1,
-  WIFI_EXTRA_TX_FAIL               = 2,
-  WIFI_EXTRA_TX_USED_ALT_RATE      = 3,
-  WIFI_EXTRA_RX_ERR                = 4,
-  WIFI_EXTRA_RX_MORE               = 5
+  WIFI_EXTRA_TX                    = (1<<0),
+  WIFI_EXTRA_TX_FAIL               = (1<<1),
+  WIFI_EXTRA_TX_USED_ALT_RATE      = (1<<2),
+  WIFI_EXTRA_RX_ERR                = (1<<3),
+  WIFI_EXTRA_RX_MORE               = (1<<4),
 };
 
 

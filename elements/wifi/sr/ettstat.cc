@@ -44,6 +44,7 @@ ETTStat::ETTStat()
     _arp_table(0),
     _next_neighbor_to_ad(0),
     _timer(0),
+    _stale_timer(this),
     _ads_rs_index(0),
     _rtable(0)
 {
@@ -135,7 +136,12 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
   return res;
 }
 
-
+void
+ETTStat::run_timer()
+{
+  clear_stale();
+  _stale_timer.schedule_after_ms(6000);
+}
 void
 ETTStat::take_state(Element *e, ErrorHandler *errh)
 {
@@ -384,6 +390,8 @@ ETTStat::initialize(ErrorHandler *errh)
     _timer = new Timer(static_send_hook, this);
     _timer->initialize(this);
 
+    _stale_timer.initialize(this);
+    _stale_timer.schedule_now();
     struct timeval now;
     click_gettimeofday(&now);
     
@@ -669,6 +677,30 @@ ETTStat::bad_nodes() {
 }
 
 
+void
+ETTStat::clear_stale() 
+{
+  Vector<IPAddress> new_neighbors;
+
+  struct timeval now;
+  click_gettimeofday(&now);
+  for (int x = 0; x < _neighbors.size(); x++) {
+    IPAddress n = _neighbors[x];
+    probe_list_t *l = _bcast_stats.findp(n);
+    if (!l || 
+	now.tv_sec - l->last_rx.tv_sec > 120) {
+      _bcast_stats.remove(n);
+    } else {
+      new_neighbors.push_back(n);
+    }
+  }
+
+  _neighbors.clear();
+  for (int x = 0; x < new_neighbors.size(); x++) {
+    _neighbors.push_back(new_neighbors[x]);
+  }
+
+}
 void
 ETTStat::reset()
 {

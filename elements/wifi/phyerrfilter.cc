@@ -62,17 +62,16 @@ PhyErrFilter::simple_action(Packet *p)
 {
   
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
-  if (!ceh->flags & WIFI_EXTRA_RX_ERR) {
-    return p;
-  } 
-
-  if (noutputs() == 2) {
+  if (ceh->flags & WIFI_EXTRA_RX_ERR) {
+    if (noutputs() == 2) {
       output(1).push(p);
-  } else {
-    p->kill();
+    } else {
+      p->kill();
+    }
+    _drops++;
+    return 0;
   }
-  _drops++;
-  return 0;
+  return p;
 }
 
 enum {H_DROPS };

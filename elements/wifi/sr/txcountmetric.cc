@@ -71,7 +71,7 @@ TXCountMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 
 void
 TXCountMetric::update_link(IPAddress from, IPAddress to, 
-		       Vector<RateSize> rs, 
+		       Vector<RateSize>, 
 		       Vector<int> fwd, Vector<int> rev, 
 		       uint32_t seq)
 {

@@ -67,7 +67,6 @@ ExtraEncap::simple_action(Packet *p)
   memset(eh, 0, sizeof(click_wifi_extra));
   memcpy(p_out->data(), p_out->all_user_anno(), sizeof(click_wifi_extra));
   eh->magic = WIFI_EXTRA_MAGIC;
-  eh->flags |= WIFI_EXTRA_TX;
   return p_out;
 }
 

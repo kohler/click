@@ -151,6 +151,10 @@ LinkTable::update_link(IPAddress from, IPAddress to,
   if (!from || !to || !metric) {
     return false;
   }
+  if (_stale_timeout.tv_sec < age) {
+    return true;
+  }
+
   /* make sure both the hosts exist */
   HostInfo *nfrom = _hosts.findp(from);
   if (!nfrom) {

@@ -56,6 +56,7 @@
 #include <click/etheraddress.hh>
 #include <elements/wifi/arptable.hh>
 #include <clicknet/wifi.h>
+#include <click/timer.hh>
 CLICK_DECLS
 
 class Timer;
@@ -253,7 +254,9 @@ private:
   static void static_send_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(); }
 
   Timer *_timer;
+  Timer _stale_timer;
 
+  void run_timer();
   struct timeval _next;
 
   Vector <RateSize> _ads_rs;
@@ -291,6 +294,7 @@ private:
   int initialize(ErrorHandler *);
 
   void reset();
+  void clear_stale();
   Packet *simple_action(Packet *);
 };
 

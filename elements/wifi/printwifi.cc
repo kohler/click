@@ -168,6 +168,24 @@ PrintWifi::simple_action(Packet *p)
   sa << " " << EtherAddress(wh->i_addr1);
   sa << " (" <<EtherAddress(wh->i_addr3) << ") ";
   
+
+  sa << "[ ";
+  if (ceh->flags & WIFI_EXTRA_TX) {
+    sa << " TX ";
+  }
+  if (ceh->flags & WIFI_EXTRA_TX_FAIL) {
+    sa << " TX_FAIL ";
+  }
+  if (ceh->flags & WIFI_EXTRA_TX_USED_ALT_RATE) {
+    sa << " TX_ALT_RATE ";
+  }
+  if (ceh->flags & WIFI_EXTRA_RX_ERR) {
+    sa << " RX_ERR ";
+  }
+  if (ceh->flags & WIFI_EXTRA_RX_MORE) {
+    sa << " RX_MORE ";
+  }
+  sa << " ] ";
   sa << (int) ceh->rate << " Mbps ";
 
   sa << "+" << (int) ceh->rssi << "/" <<  (int) ceh->silence;
