@@ -1,3 +1,22 @@
+2003-11-17 Monday 14:36  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: e2elossmetric.cc (1.1), e2elossmetric.hh (1.1),
+	etxmetric.hh (1.2), lirmetric.cc (1.1), lirmetric.hh (1.1): added
+	two new metrics: LIRMEtric (least-interference metric) and e2e loss
+	ratio metric E2EMetric
+
+2003-11-17 Monday 14:35  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.71), dsdvroutetable.hh
+	(1.50), gridgenericrt.hh (1.9): add get_number_direct_neighbors
+	function to GridGenericRouteTable to support LIRMetric
+
+2003-11-17 Monday 13:56  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/sr/: inorderqueue.hh (1.6), srscheduler.hh (1.8),
+	tokenqueue.hh (1.5): add friend clauses and comment out some dead
+	code to compile under g++ 2.95.3
+
 2003-11-17 Monday 00:58  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/sr/: checksrheader.cc (1.2), ettmetric.cc (1.1),
