@@ -84,7 +84,7 @@ ICMPPingSource::initialize(ErrorHandler *errh)
 {
     _count = 0;
     _timer.initialize(this);
-    if (_limit != 0 && _active)
+    if (_limit != 0 && _active && output_is_push(0))
 	_timer.schedule_after_ms(_interval);
     if (ninputs() == 1) {
 #if CLICK_LINUXMODULE
@@ -115,10 +115,12 @@ ICMPPingSource::cleanup(CleanupStage)
     }
 }
 
-void
-ICMPPingSource::run_timer()
+Packet*
+ICMPPingSource::make_packet()
 {
     WritablePacket *q = Packet::make(sizeof(click_ip) + sizeof(struct click_icmp_echo) + _data.length());
+    if (!q)
+	return 0;
     memset(q->data(), '\0', sizeof(click_ip) + sizeof(struct click_icmp_echo));
     memcpy(q->data() + sizeof(click_ip) + sizeof(struct click_icmp_echo), _data.data(), _data.length());
     
@@ -153,11 +155,27 @@ ICMPPingSource::run_timer()
     if (_receiver)
 	_receiver->send_timestamp[icp->icmp_sequence] = q->timestamp_anno();
     
-    output(0).push(q);
+    return q;
+}
 
-    _count++;
-    if (_count < _limit || _limit < 0)
-	_timer.reschedule_after_ms(_interval);
+void
+ICMPPingSource::run_timer()
+{
+    if (Packet *q = make_packet()) {
+	output(0).push(q);
+	_count++;
+	if (_count < _limit || _limit < 0)
+	    _timer.reschedule_after_ms(_interval);
+    }
+}
+
+Packet*
+ICMPPingSource::pull(int)
+{
+    Packet *p = 0;
+    if ((_count < _limit || _limit < 0) && (p = make_packet()))
+	_count++;
+    return p;
 }
 
 void
@@ -252,7 +270,7 @@ ICMPPingSource::write_handler(const String &str_in, Element *e, void *thunk, Err
       case H_ACTIVE:
 	if (!cp_bool(s, &ps->_active))
 	    return errh->error("'active' should be bool");
-	if (ps->_active && !ps->_timer.scheduled())
+	if (ps->_active && !ps->_timer.scheduled() && ps->output_is_push(0))
 	    ps->_timer.schedule_now();
 	else if (!ps->_active)
 	    ps->_timer.unschedule();
@@ -260,7 +278,7 @@ ICMPPingSource::write_handler(const String &str_in, Element *e, void *thunk, Err
       case H_LIMIT:
 	if (!cp_integer(s, &ps->_limit))
 	    return errh->error("'limit' should be integer");
-	if ((ps->_count < ps->_limit || ps->_limit < 0) && ps->_active && !ps->_timer.scheduled())
+	if ((ps->_count < ps->_limit || ps->_limit < 0) && ps->_active && !ps->_timer.scheduled() && ps->output_is_push(0))
 	    ps->_timer.schedule_after_ms(ps->_interval);
 	return 0;
       case H_INTERVAL:
@@ -271,7 +289,7 @@ ICMPPingSource::write_handler(const String &str_in, Element *e, void *thunk, Err
 	ps->_count = 0;
 	if (ReceiverInfo *ri = ps->_receiver)
 	    memset(ri, 0, sizeof(ReceiverInfo));
-	if (ps->_count < ps->_limit && ps->_active && !ps->_timer.scheduled())
+	if (ps->_count < ps->_limit && ps->_active && !ps->_timer.scheduled() && ps->output_is_push(0))
 	    ps->_timer.schedule_after_ms(ps->_interval);
 	return 0;
       default:

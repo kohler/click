@@ -19,8 +19,9 @@ periodically sends ICMP echo requests
 =d
 
 Periodically emits ping packets with source IP address SRC and destination
-address DST. Advances the "sequence" field by one each time. (The sequence
-field is stored in network byte order in the packet.)
+address DST.  Advances the "sequence" field by one each time.  (The sequence
+field is stored in network byte order in the packet.)  When its output is
+pull, generates a ping packet on every pull.
 
 ICMPPingSource's optional input accepts replies to the pings it sends.  If you
 send replies to this input, ICMPPingSource will print reply reports and keep
@@ -111,7 +112,7 @@ class ICMPPingSource : public Element { public:
     ~ICMPPingSource();
   
     const char *class_name() const		{ return "ICMPPingSource"; }
-    const char *processing() const		{ return PUSH; }
+    const char *processing() const		{ return "h/a"; }
     void notify_ninputs(int);
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
@@ -120,6 +121,7 @@ class ICMPPingSource : public Element { public:
   
     void run_timer();
     void push(int, Packet *);
+    Packet* pull(int);
   
   private:
   
@@ -150,6 +152,7 @@ class ICMPPingSource : public Element { public:
     };
     ReceiverInfo *_receiver;
 
+    Packet* make_packet();
     static String read_handler(Element*, void*);
     static int write_handler(const String&, Element*, void*, ErrorHandler*);
     
