@@ -1,3 +1,23 @@
+2002-05-30 Thursday 19:21  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/clickfs.cc (1.8): linuxmodule oops
+
+2002-05-30 Thursday 19:19  Eddie Kohler <kohler@aciri.org>
+
+	* elements/linuxmodule/tohost.cc (1.34),
+	elements/linuxmodule/tohostsniffers.cc (1.29),
+	linuxmodule/clickfs.cc (1.7), linuxmodule/module.cc (1.67),
+	linuxmodule/proclikefs.c (1.3): Linux 2.4 support
+
+2002-05-30 Thursday 19:18  Eddie Kohler <kohler@aciri.org>
+
+	* userlevel/click.cc (1.66): user-level Click catches SIGTERM
+
+2002-05-30 Thursday 19:18  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet_anno.hh (1.10): rearrange annotations:
+	AGGREGATE_ANNO and PAINT_ANNO no longer conflict
+
 2002-05-30 Thursday 12:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridroutetable.hh (1.30): doc nitlet

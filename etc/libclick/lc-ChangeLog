@@ -1,3 +1,8 @@
+2002-05-30 Thursday 19:18  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: packet_anno.hh, packet_anno.hh: rearrange
+	annotations: AGGREGATE_ANNO and PAINT_ANNO no longer conflict
+
 2002-05-28 Tuesday 15:01  Eddie Kohler <kohler@aciri.org>
 
 	* INSTALL: add README about Linux patches; update for 2.2.21
