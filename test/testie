@@ -339,9 +339,10 @@ sub script_text ($&$) {
 
     my($t) = <<'EOD';
 testie_failed () {
-    echo >&2; echo testie_failure:$1 >&2
+    echo >&2; echo testie_failure:$? >&2
     exit 1
 }
+trap testie_failed ERR
 EOD
 
     my($scriptarr, $linenoarr) = ($tt->{$script_type}, $tt->{$script_type . "_lineno"});
@@ -353,11 +354,7 @@ EOD
 	die if @c != 1;
 	chomp $c[0];
 	next if $c[0] =~ /^\s*$/s;
-	if ($c[0] =~ /\&\s*$/) {
-	    $t .= $c[0] . "\n";
-	} else {
-	    $t .= $c[0] . " || testie_failed \$?\n";
-	}
+	$t .= $c[0] . "\n";
     }
 
     $t;
