@@ -271,9 +271,12 @@ void
 BigHashMap<K, V>::clear()
 {
   for (int i = 0; i < _nbuckets; i++) {
-    for (Elt *e = _buckets[i]; e; e = e->next) {
+    Elt *ne = 0;
+    for (Elt *e = _buckets[i]; e; e = ne) {
       e->k.~K();
       e->v.~V();
+      ne = e->next;
+      free(e);
     }
     _buckets[i] = 0;
   }
