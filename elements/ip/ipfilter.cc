@@ -2,7 +2,7 @@
  * ipfilter.{cc,hh} -- IP-packet filter with tcpdumplike syntax
  * Eddie Kohler
  *
- * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2000-2001 Mazu Networks, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -52,6 +52,8 @@ IPFilter::create_wordmap()
   wordmap->insert("type",	WT(TYPE_TYPE, TYPE_ICMP_TYPE));
   wordmap->insert("frag",	WT(TYPE_TYPE, TYPE_IPFRAG));
   wordmap->insert("unfrag",	WT(TYPE_TYPE, TYPE_IPUNFRAG));
+  wordmap->insert("ect",	WT(TYPE_TYPE, TYPE_IPECT));
+  wordmap->insert("ce",		WT(TYPE_TYPE, TYPE_IPCE));
   
   wordmap->insert("icmp",	WT(TYPE_PROTO, IP_PROTO_ICMP));
   wordmap->insert("igmp",	WT(TYPE_PROTO, IP_PROTO_IGMP));
@@ -306,6 +308,8 @@ IPFilter::Primitive::unparse_type(int srcdst, int type)
    case TYPE_TCPOPT: sa << "tcp opt "; break;
    case TYPE_TOS: sa << "ip tos "; break;
    case TYPE_DSCP: sa << "ip dscp "; break;
+   case TYPE_IPECT: sa << "ip ect "; break;
+   case TYPE_IPCE: sa << "ip ce "; break;
    case TYPE_ICMP_TYPE: sa << "icmp type "; break;
    case TYPE_IPFRAG: sa << "ip frag "; break;
    case TYPE_IPUNFRAG: sa << "ip unfrag "; break;
@@ -474,6 +478,18 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     if (set_mask(0x3F, 2, errh) < 0)
       return -1;
     _type = TYPE_TOS;
+
+  } else if (_type == TYPE_IPECT) {
+    if (_data != TYPE_NONE)
+      return errh->error("`ip ect' directive takes no data");
+    _type = TYPE_TOS;
+    _u.u = _mask.u = IP_ECN_ECT;
+
+  } else if (_type == TYPE_IPCE) {
+    if (_data != TYPE_NONE)
+      return errh->error("`ip ce' directive takes no data");
+    _type = TYPE_TOS;
+    _u.u = _mask.u = IP_ECN_CE;
 
   } else if (_type == TYPE_ICMP_TYPE) {
     if (_data == TYPE_INT)

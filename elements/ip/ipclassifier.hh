@@ -58,6 +58,16 @@ value.
 DSCP is a value between 0 and 63. Matches IP packets with the given DSCP
 value (the upper 6 bits of TOS).
 
+=item B<ip ect>
+
+Matches IP packets with the ECN Capable Transport bit set (the next-lowest bit
+of TOS).
+
+=item B<ip ce>
+
+Matches IP packets with the ECN Congestion Experienced bit set (the lowest bit
+of TOS).
+
 =item B<ip frag>
 
 Matches fragmented IP packets (that is, packets with the more-fragments bit

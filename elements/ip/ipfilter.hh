@@ -144,6 +144,8 @@ class IPFilter : public Classifier { public:
     TYPE_NET	= 20,		// shorthands
     TYPE_DSCP	= 21,
     TYPE_IPUNFRAG = 22,
+    TYPE_IPECT	= 23,
+    TYPE_IPCE	= 24,
     
     UNKNOWN = -1000,
     
