@@ -10,11 +10,11 @@
 /* IPv6 address , same as from /usr/include/netinet/in.h  */
 struct click_in6_addr {
   union {
-    uint8_t u6_addr8[16];
-    uint16_t u6_addr16[8];
-    uint32_t u6_addr32[4];
+    unsigned char       u6_addr8[16];
+    unsigned short      u6_addr16[8];
+    unsigned int        u6_addr32[4];
 #if ULONG_MAX > 0xffffffff
-    uint64_t u6_addr64[2];
+    unsigned long long  u6_addr64[2];
 #endif
   } in6_u;
 #define s6_addr in6_u.u6_addr8
