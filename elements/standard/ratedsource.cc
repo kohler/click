@@ -121,7 +121,7 @@ static String
 read_count(Element *e, void *)
 {
   RatedSource *is = (RatedSource *)e;
-  return String(is->total_sent()) + " in " + is->total_us() + " us\n";
+  return String(is->total_sent()) + "\n";
 }
 
 void
