@@ -125,7 +125,7 @@ ToyTCP::tcp_output()
                                    Packet::default_tailroom(plen));
   click_tcp *th = (click_tcp *) p->data();
 
-  bzero(th, sizeof(*th));
+  memset(th, '\0', sizeof(*th));
 
   th->th_sport = _sport;
   th->th_dport = _dport;
