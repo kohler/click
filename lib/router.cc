@@ -638,7 +638,8 @@ int
 Router::downstream_inputs(Element *first_element, int first_output,
 			  ElementFilter *stop_filter, Bitvector &results)
 {
-  if (!_have_connections) return -1;
+  if (!_have_connections)
+    return -1;
   make_hookpidxes();
   int nipidx = ninput_pidx();
   int nopidx = noutput_pidx();
@@ -650,7 +651,8 @@ Router::downstream_inputs(Element *first_element, int first_output,
   
   Bitvector outputs(nopidx, false);
   int first_eid = first_element->eindex(this);
-  if (first_eid < 0) return -1;
+  if (first_eid < 0)
+    return -1;
   for (int i = 0; i < _elements[first_eid]->noutputs(); i++)
     if (first_output < 0 || first_output == i)
       outputs[_output_pidx[first_eid]+i] = true;
@@ -662,14 +664,15 @@ Router::downstream_inputs(Element *first_element, int first_output,
 	results[_hookpidx_to[i]] = true;
     
     diff = results - old_results;
-    if (diff.zero()) break;
+    if (diff.zero())
+      break;
     
     outputs.assign(nopidx, false);
     for (int i = 0; i < nipidx; i++)
       if (diff[i]) {
 	int ei = _input_eidx[i];
 	int port = input_pidx_port(i);
-	if (!stop_filter || !stop_filter->match(_elements[ei], port)) {
+	if (!stop_filter || !stop_filter->match_input(_elements[ei], port)) {
 	  _elements[ei]->forward_flow(port, &scratch);
 	  outputs.or_at(scratch, _output_pidx[ei]);
 	}
@@ -713,7 +716,8 @@ int
 Router::upstream_outputs(Element *first_element, int first_input,
 			 ElementFilter *stop_filter, Bitvector &results)
 {
-  if (!_have_connections) return -1;
+  if (!_have_connections)
+    return -1;
   make_hookpidxes();
   int nipidx = ninput_pidx();
   int nopidx = noutput_pidx();
@@ -725,7 +729,8 @@ Router::upstream_outputs(Element *first_element, int first_input,
   
   Bitvector inputs(nipidx, false);
   int first_eid = first_element->eindex(this);
-  if (first_eid < 0) return -1;
+  if (first_eid < 0)
+    return -1;
   for (int i = 0; i < _elements[first_eid]->ninputs(); i++)
     if (first_input < 0 || first_input == i)
       inputs[_input_pidx[first_eid]+i] = true;
@@ -737,14 +742,15 @@ Router::upstream_outputs(Element *first_element, int first_input,
 	results[_hookpidx_from[i]] = true;
     
     diff = results - old_results;
-    if (diff.zero()) break;
+    if (diff.zero())
+      break;
     
     inputs.assign(nipidx, false);
     for (int i = 0; i < nopidx; i++)
       if (diff[i]) {
 	int ei = _output_eidx[i];
 	int port = output_pidx_port(i);
-	if (!stop_filter || !stop_filter->match(_elements[ei], port)) {
+	if (!stop_filter || !stop_filter->match_output(_elements[ei], port)) {
 	  _elements[ei]->backward_flow(port, &scratch);
 	  inputs.or_at(scratch, _input_pidx[ei]);
 	}
