@@ -24,22 +24,23 @@ $WEBDIR .= "/doc" if !-r "$WEBDIR/template";
 -r "$WEBDIR/template" || die "`$WEBDIR/template' not found";
 
 # 1. install documentation into fake directory
+chdir('..') if -r 'click-install.1';
+-d 'linuxmodule' || die "must be in CLICKDIR or CLICKDIR/doc";
+
+mysystem("gmake dist") if ($INSTALL);
+
 my($VERSION);
-if ($INSTALL) {
-  chdir('..') if -r 'click-install.1';
-  -d 'linuxmodule' || die "must be in CLICKDIR or CLICKDIR/doc";
-  mysystem("gmake dist");
-  
-  open(MK, 'Makefile') || die "no Makefile";
-  while (<MK>) {
-    if (/VERSION\s*=\s*(\S*)/) {
-      $VERSION = $1;
-      last;
-    }
+open(MK, 'Makefile') || die "no Makefile";
+while (<MK>) {
+  if (/VERSION\s*=\s*(\S*)/) {
+    $VERSION = $1;
+    last;
   }
-  defined $VERSION || die "VERSION not defined in Makefile";
-  close MK;
-  
+}
+defined $VERSION || die "VERSION not defined in Makefile";
+close MK;
+
+if ($INSTALL) {
   mysystem("/bin/rm -rf /tmp/%click-webdoc");
   mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc && gmake install-man");
 }
@@ -112,9 +113,7 @@ close IN;
 close OUT;
 
 # 5. call `changelog2html'
-if ($INSTALL) {
-  mysystem("changelog2html -d $WEBDIR click-$VERSION/NEWS $WEBDIR/../news.html");
-}
+mysystem("changelog2html -d $WEBDIR click-$VERSION/NEWS $WEBDIR/../news.html");
 
 # 6. edit `news.html'
 open(IN, "$WEBDIR/../news.html") || die "$WEBDIR/../news.html: $!\n";
@@ -133,3 +132,26 @@ close IN;
 close OUT;
 unlink("$WEBDIR/../news.html") || die "unlink $WEBDIR/../news.html: $!\n";
 rename("$WEBDIR/../news.html.new", "$WEBDIR/../news.html") || die "rename $WEBDIR/../news.html.new: $!\n";
+
+# 7. install programming manual
+mysystem("cd click-$VERSION/doc && gmake click.html") if ($INSTALL);
+
+open(IN, "click-$VERSION/doc/click.html") || die "couldn't make click.html";
+open(OUT, ">$WEBDIR/progman.html") || die;
+open(TMP, "$WEBDIR/template") || die;
+
+while (<TMP>) {
+  s/&mantitle;/Click Programming Manual/g;
+  print OUT;
+  if (/^\<!-- man2html -->/) {
+    1 while defined($_ = <IN>) && !m{^\</head>};
+    $_ = <IN>;		# get rid of line
+    print OUT $_ while defined($_ = <IN>) && !m{^\</body>};
+    1 while defined($_ = <TMP>) && !m{^\<!-- /man2html -->};
+    print OUT $_;
+  }
+}
+
+close IN;
+close OUT;
+close TMP;

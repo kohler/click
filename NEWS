@@ -71,7 +71,9 @@ Version 1.2.0   3.May.2001
 
 ** IPRewriter garbage collection optimizations from Benjie.
 
-** Added AddressTranslator, ProtocolTranslator46, ProtocolTranslator64 elementsthat can do various translation between IPv6 networks and IPv4 networks.
+** Added AddressTranslator, ProtocolTranslator46, ProtocolTranslator64
+   elements that can translate between IPv6 networks and IPv4
+   networks.
 
 * Tools
 

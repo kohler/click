@@ -61,7 +61,7 @@ $(srcdir)/click.info: $(srcdir)/click.texi
 	@rm -f $@ $@-[0-9] $@-[0-9][0-9]
 	cd $(srcdir); $(MAKEINFO) click.texi
 click.html: $(srcdir)/click.texi
-	$(MAKEINFO) --html --no-split $(srcdir)/click.texi
+	$(MAKEINFO) --html --no-split --number-sections $(srcdir)/click.texi
 click.dvi: $(srcdir)/click.texi always
 	$(TEXI2DVI) $(srcdir)/click.texi
 
