@@ -72,6 +72,7 @@ random()
 
 extern void srandom(uint32_t);
 
+#ifdef HAVE_INT64_TYPES
 inline uint64_t
 click_get_cycles()
 {
@@ -88,6 +89,7 @@ click_get_cycles()
   return 0;
 # endif
 }
+#endif
 
 long strtol(const char *, char **, int);
 
@@ -176,11 +178,13 @@ typedef struct ifnet net_device;
 # include <netinet/in.h>
 # include <sys/time.h>
 
+#ifdef HAVE_INT64_TYPES
 inline uint64_t
 click_get_cycles()
 {
   return(0);
 }
+#endif
 
 # define click_gettimeofday(tvp) (gettimeofday(tvp, (struct timezone *) 0))
 # define CLICK_HZ 100		// click_jiffies rate

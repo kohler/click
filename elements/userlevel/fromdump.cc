@@ -632,6 +632,7 @@ FromDump::read_handler(Element *e, void *thunk)
 	return cp_unparse_bool(fd->_active) + "\n";
       case H_ENCAP:
 	return String(fake_pcap_unparse_dlt(fd->_linktype)) + "\n";
+#ifdef HAVE_INT64_TYPES
       case H_FILESIZE: {
 	  struct stat s;
 	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))
@@ -641,6 +642,11 @@ FromDump::read_handler(Element *e, void *thunk)
       }
       case H_FILEPOS:
 	return String(fd->_file_offset + fd->_pos) + "\n";
+#else
+    case H_FILESIZE: 
+    case H_FILEPOS:
+	return "<error: 64-bit types not suppported>\n";
+#endif
       default:
 	return "<error>\n";
     }
