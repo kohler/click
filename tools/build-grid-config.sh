@@ -26,6 +26,7 @@ Options:
   --no-location           Be location-unaware; this is the default.  
   --location LAT LON      Specify the node's location as decimal latitude/longitude.
 			  This option is not compatible with --no-location.
+  --location-error ERR    Location error radius, in metres.  Defaults to 0.			  
 
   --click CLICK           Where to find the Click executable.
                           Default: $click
@@ -60,6 +61,7 @@ gw_dev=
 lat=
 lon=
 no_loc=
+loc_err=0
 
 # process command line
 if test $# -lt 3; then  
@@ -85,6 +87,13 @@ case $1 in
 	fi
 	shift 1; lat=$1
 	shift 1; lon=$1;
+	shift 1;;
+    --location-err|--location-erro|--location-error)
+	if test $# -lt 2; then 
+	    echo "Missing location error."
+	    usage
+	fi
+	shift 1; loc_err=$1;
 	shift 1;;
     --gateway-dev|--gateway-devi|--gateway-devic|--gateway-device)
 	if test $# -lt 2; then 
@@ -203,9 +212,9 @@ defines=
 # add location arguments
 if [ $no_loc -eq 1 ]; then
     # XXX needs to be handled correctly
-    defines="$defines -DPOS_LAT=0 -DPOS_LON=0"
+    defines="$defines -DPOS_LAT=0 -DPOS_LON=0 -DARG_LOC_GOOD=false -DARG_LOC_ERR=0"
 else
-    defines="$defines -DPOS_LAT=$lat -DPOS_LON=$lon"
+    defines="$defines -DPOS_LAT=$lat -DPOS_LON=$lon -DARG_LOC_GOOD=false -DARG_LOC_ERR=$loc_err"
 fi
 
 # add Grid device arguments

@@ -128,9 +128,10 @@ dnl Node-specific IP, Ethernet, and geographic forwarding parameters.
 dnl These need to be defined individually for each node.
 dnl
 
-dnl Latitude and longitude, in decimal degrees. 
-dnl define(POS_LAT, ?) 
-dnl define(POS_LON, ?) 
+dnl define(POS_LAT, ?)  dnl Latitude and longitude, in decimal degrees. 
+dnl define(POS_LON, ?)  
+dnl define(ARG_LOC_GOOD, ?) dnl Boolean
+dnl define(ARG_LOC_ERR, ?) dnl Metres (unsigned short)
 
 dnl This node's IP address, e.g 18.26.7.96 
 dnl define(GRID_IP, ?) 
