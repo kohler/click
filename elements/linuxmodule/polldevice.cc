@@ -109,7 +109,7 @@ PollDevice::uninitialize()
   if (_dev)
   { 
     _num_polldevices--;
-    if (_idle >= 32) 
+    if (_idle >= POLLDEV_IDLE_LIMIT) 
       _num_idle_polldevices--;
     _idle = 0;
 
@@ -120,7 +120,6 @@ PollDevice::uninitialize()
   }
 }
 
-
 void
 PollDevice::run_scheduled()
 {
@@ -129,11 +128,12 @@ PollDevice::run_scheduled()
   struct sk_buff *skb;
   int got=0;
 
-  while((skb = _dev->rx_poll(_dev)) && got<32) {
+  /* order of && clauses important */
+  while(got<POLLDEV_MAX_PKTS_PER_RUN && (skb = _dev->rx_poll(_dev))) {
     _pkts_received++;
     _dev->fill_rx(_dev);
 
-    if (_idle >= 32)
+    if (_idle >= POLLDEV_IDLE_LIMIT)
       _num_idle_polldevices--; 
     _idle = 0;
     rtm_ipackets++;
@@ -156,8 +156,8 @@ PollDevice::run_scheduled()
   _dev->clean_tx(_dev);
   _idle++;
 
-  if (_idle >= 32) {
-    if (_idle == 32)
+  if (_idle >= POLLDEV_IDLE_LIMIT) {
+    if (_idle == POLLDEV_IDLE_LIMIT)
       _num_idle_polldevices++;
     if (_num_idle_polldevices == _num_polldevices)
     {
@@ -177,6 +177,14 @@ PollDevice::run_scheduled()
 	polldevices[i]->unschedule();
       return;
     }
+  }
+
+  if (got == POLLDEV_MAX_PKTS_PER_RUN)
+    adj_tickets(max_ntickets());
+  else if (_idle > 2) {
+    int n = ntickets()/4;
+    if (n==0) n=1;
+    adj_tickets(0-n);
   }
   reschedule();
 }
@@ -200,7 +208,7 @@ PollDevice::woke_up()
   _dev->intr_off(_dev);
   remove_wait_queue(&(_dev->intr_wq), &_self_wq);
     
-  if (_idle >= 32) 
+  if (_idle >= POLLDEV_IDLE_LIMIT) 
     _num_idle_polldevices--; 
   _idle = 0;
 
@@ -208,4 +216,4 @@ PollDevice::woke_up()
 }
 
 EXPORT_ELEMENT(PollDevice)
-ELEMENT_REQUIRES(false)
+// ELEMENT_REQUIRES(false)
