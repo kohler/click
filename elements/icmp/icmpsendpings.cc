@@ -27,7 +27,7 @@
 CLICK_DECLS
 
 ICMPSendPings::ICMPSendPings()
-  : _timer(this), _limit(-1)
+  : _limit(-1), _timer(this)
 {
   MOD_INC_USE_COUNT;
   add_output();
