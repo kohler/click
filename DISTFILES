@@ -272,3 +272,12 @@ tools/udpgen
 tools/udpgen/Makefile.in
 tools/udpgen/udpgen.c
 tools/udpgen/udpcount.c
+
+apps
+apps/ClickController
+apps/ClickController/ClickController.java
+apps/ClickController/ControlSocket.java
+apps/ClickController/NewConnectionDialog.java
+apps/ClickController/RouterTreeModel.java
+apps/ClickController/Util.java
+apps/ClickController/README
