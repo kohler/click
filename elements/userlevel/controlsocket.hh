@@ -178,6 +178,7 @@ class ControlSocket : public Element { public:
     CSERR_NO_SUCH_ELEMENT	= HandlerProxy::CSERR_NO_SUCH_ELEMENT, // 510
     CSERR_NO_SUCH_HANDLER	= HandlerProxy::CSERR_NO_SUCH_HANDLER, // 511
     CSERR_HANDLER_ERROR		= HandlerProxy::CSERR_HANDLER_ERROR,   // 520
+    CSERR_DATA_TOO_BIG		= 521,
     CSERR_PERMISSION		= HandlerProxy::CSERR_PERMISSION,      // 530
     CSERR_NO_ROUTER		= HandlerProxy::CSERR_NO_ROUTER,       // 540
     CSERR_UNSPECIFIED		= HandlerProxy::CSERR_UNSPECIFIED,     // 590

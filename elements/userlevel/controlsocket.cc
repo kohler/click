@@ -355,6 +355,11 @@ ControlSocket::write_command(int fd, const String &handlername, const String &da
 
   if (_read_only)
     return message(fd, CSERR_PERMISSION, "Permission denied for `" + handlername + "'");
+
+#ifdef LARGEST_HANDLER_WRITE
+  if (data.length() > LARGEST_HANDLER_WRITE)
+    return message(fd, CSERR_DATA_TOO_BIG, "Data too large for write handler `" + handlername + "'");
+#endif
   
   ControlSocketErrorHandler errh;
   
