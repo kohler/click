@@ -294,7 +294,7 @@ FloodingLocQuerier::handle_reply(Packet *p)
     handle_nbr_encap(cached_packet);
   }
 
-  //  p->kill();  // wha tha fuh?
+  p->kill();  
 }
 
 void 
