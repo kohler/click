@@ -60,11 +60,29 @@ conf/test-tap.click
 conf/udpgen.click
 
 etc
+etc/freebsd-4.3-patch
 etc/linux-2.2.17-patch
 etc/linux-2.2.18-patch
 etc/linux-2.2.19-patch
-etc/linux-2.4.4-patch
 etc/linux-2.4.9-patch
+
+etc/diagrams
+etc/diagrams/Makefile
+etc/diagrams/README
+etc/diagrams/elements.mp
+etc/diagrams/elemfig.sty
+etc/diagrams/samp01_examples.mp
+etc/diagrams/samp02_processing.mp
+etc/diagrams/samp03_routers.mp
+etc/diagrams/samp04_iprouter.mp
+etc/diagrams/samp05_other.mp
+
+etc/libclick
+etc/libclick/Makefile.in
+etc/libclick/lc-Makefile.in
+etc/libclick/lc-libsrc-Makefile.in
+etc/libclick/lc-configure.in
+etc/libclick/DISTFILES
 
 etc/samplepackage
 etc/samplepackage/Makefile.in
@@ -210,6 +228,21 @@ linuxmodule/read-pmc.c
 linuxmodule/sched.cc
 linuxmodule/skbmgr.cc
 
+bsdmodule
+bsdmodule/Makefile.in
+bsdmodule/click-mount.c
+bsdmodule/clickfs.cc
+bsdmodule/clickfs_element.cc
+bsdmodule/clickfs_tree.cc
+bsdmodule/clickfs_tree.hh
+bsdmodule/clickfs_vnops.cc
+bsdmodule/kernelerror.cc
+bsdmodule/kernelerror.hh
+bsdmodule/module.cc
+bsdmodule/modulepriv.hh
+bsdmodule/sched.cc
+bsdmodule/vnode_if.pl
+
 tools
 tools/Makefile.in
 
@@ -293,8 +326,11 @@ tools/udpgen/udpcount.c
 apps
 apps/ClickController
 apps/ClickController/ClickController.java
+apps/ClickController/ClickException.java
 apps/ClickController/ControlSocket.java
 apps/ClickController/NewConnectionDialog.java
+apps/ClickController/Pair.java
 apps/ClickController/RouterTreeModel.java
+apps/ClickController/StringUtils.java
 apps/ClickController/Util.java
 apps/ClickController/README
