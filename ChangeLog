@@ -1,3 +1,9 @@
+2004-01-16 Friday 16:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/linuxmodule/: todevice.cc (1.134), todevice.hh (1.65):
+	add NO_PAD option to not bother padding short packets; also added
+	some stats about calls to run_task() and pull()
+
 2004-01-16 Friday 09:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/linkstat.cc (1.29): nitlets
