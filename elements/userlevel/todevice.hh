@@ -28,6 +28,10 @@
  * ToDevice element for the same device. Under other operating systems, your
  * mileage may vary.
  *
+ * If there is an error write()ing or send()ing a packet to the
+ * device, the packet will be pushed out the (optional) output, with
+ * the SEND_ERR annotation set to the system error code.
+ *
  * This element is only available at user level.
  * 
  * =a
@@ -67,6 +71,8 @@ class ToDevice : public Element { public:
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
   void add_handlers();
+
+  void notify_noutputs(int);
 
   String ifname() const				{ return _ifname; }
   int fd() const				{ return _fd; }

@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
+#include <click/packet_anno.hh>
 
 #include <stdio.h>
 #include <assert.h>
@@ -64,6 +65,12 @@ ToDevice *
 ToDevice::clone() const
 {
   return new ToDevice;
+}
+
+void
+ToDevice::notify_noutputs(int n)
+{
+  set_noutputs(n <= 1 ? n : 1);
 }
 
 int
@@ -169,9 +176,16 @@ ToDevice::send_packet(Packet *p)
   retval = 0;
 #endif
 
-  if (retval < 0)
+  if (retval < 0) {
     click_chatter("ToDevice(%s) %s: %s", _ifname.cc(), syscall, strerror(errno));
-  p->kill();
+    unsigned char c = errno & 0xFF;
+    if (c != errno)
+      click_chatter("ToDevice(%s) truncating errno to %d", _ifname.cc(), (int) c);
+    SET_SEND_ERR_ANNO(p, c);
+    checked_output_push(0, p);
+  }
+  else
+    p->kill();
 }
 
 void
