@@ -5,4 +5,7 @@ You will need John Hobby's MetaPost, which is available from
 
 	http://cm.bell-labs.com/who/hobby/MetaPost.html
 
-Eddie Kohler wrote the macros and most of the diagrams in 1999-2000.
+or in most Unix TeX distributions.
+
+Eddie Kohler wrote the macros and most of the diagrams in 1999-2000, with
+many updates since.
