@@ -63,6 +63,9 @@ bool cp_integer64(const String &, int base, int64_t *);
 bool cp_unsigned64(const String &, uint64_t *);
 bool cp_unsigned64(const String &, int base, uint64_t *);
 #endif
+#ifdef CLICK_USERLEVEL
+bool cp_file_offset(const String &, off_t *);
+#endif
 #define CP_REAL2_MAX_FRAC_BITS 28
 bool cp_real2(const String &, int frac_bits, int32_t *);
 bool cp_unsigned_real2(const String &, int frac_bits, uint32_t *);
@@ -160,6 +163,9 @@ extern CpVaParseCmd
 #ifdef HAVE_INT64_TYPES
     cpInteger64,	//			int64_t *
     cpUnsigned64,	//			uint64_t *
+#endif
+#ifdef CLICK_USERLEVEL
+    cpFileOffset,	// 			off_t *
 #endif
     cpUnsignedReal2,	// int frac_bits	unsigned *
     cpReal10,		// int frac_digits	int *

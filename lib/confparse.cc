@@ -5,7 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000-2001 Mazu Networks, Inc.
- * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2001-2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -903,6 +903,22 @@ bool
 cp_integer64(const String &str, int64_t *return_value)
 {
   return cp_integer64(str, 0, return_value);
+}
+
+#endif
+
+#ifdef CLICK_USERLEVEL
+
+bool
+cp_file_offset(const String &str, off_t *return_value)
+{
+# if SIZEOF_OFF_T == 4
+  return cp_unsigned(str, (uint32_t *) return_value);
+# elif SIZEOF_OFF_T == 8
+  return cp_unsigned64(str, (uint64_t *) return_value);
+# else
+#  error "unexpected sizeof(off_t)"
+# endif
 }
 
 #endif
@@ -1915,18 +1931,15 @@ CpVaParseCmd
   cpUnsigned		= "u_int",
   cpInteger64		= "long_long",
   cpUnsigned64		= "u_long_long",
-  cpUnsignedLongLong	= "u_long_long", // synonym
+  cpFileOffset		= "off_t",
   cpReal2		= "real2",
   cpUnsignedReal2	= "u_real2",
-  cpNonnegReal2		= "u_real2", // synonym
   cpReal10		= "real10",
   cpUnsignedReal10	= "u_real10",
-  cpNonnegReal10	= "u_real10", // synonym
   cpDouble		= "double",
   cpSeconds		= "sec",
   cpSecondsAsMilli	= "msec",
   cpSecondsAsMicro	= "usec",
-  cpMilliseconds	= "msec", // synonym
   cpTimeval		= "timeval",
   cpInterval		= "interval",
   cpIPAddress		= "ip_addr",
@@ -1969,6 +1982,7 @@ enum {
   cpiUnsigned,
   cpiInteger64,
   cpiUnsigned64,
+  cpiFileOffset,
   cpiReal2,
   cpiUnsignedReal2,
   cpiReal10,
@@ -2150,6 +2164,13 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
       errh->error("%s (%s) too large; max %llu", argname, desc, v->v.u64);
+    break;
+#endif
+
+#ifdef CLICK_USERLEVEL
+   case cpiFileOffset:
+    if (!cp_file_offset(arg, (off_t *) &v->v))
+      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     break;
 #endif
 
@@ -2395,6 +2416,14 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    case cpiUnsigned64: {
      uint64_t *ullstore = (uint64_t *)v->store;
      *ullstore = v->v.u64;
+     break;
+   }
+#endif
+
+#ifdef CLICK_USERLEVEL
+   case cpiFileOffset: {
+     off_t *offstore = (off_t *)v->store;
+     *offstore = *((off_t *)&v->v);
      break;
    }
 #endif
@@ -3324,6 +3353,9 @@ cp_va_static_initialize()
 #ifdef HAVE_INT64_TYPES
   cp_register_argtype(cpInteger64, "64-bit int", 0, default_parsefunc, default_storefunc, cpiInteger64);
   cp_register_argtype(cpUnsigned64, "64-bit unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned64);
+#endif
+#ifdef CLICK_USERLEVEL
+  cp_register_argtype(cpFileOffset, "file offset", 0, default_parsefunc, default_storefunc, cpiFileOffset);
 #endif
   cp_register_argtype(cpReal2, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal2);
   cp_register_argtype(cpUnsignedReal2, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal2);
