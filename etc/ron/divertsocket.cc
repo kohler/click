@@ -54,7 +54,7 @@
 
 #include <click/click_ip.h>
 
-DivertSocket::DivertSocket() : Element(0,1) 
+DivertSocket::DivertSocket()
 {
   MOD_INC_USE_COUNT;
   _fd = -1;
@@ -71,6 +71,17 @@ DivertSocket *
 DivertSocket::clone() const
 {
   return new DivertSocket;
+}
+
+void
+DivertSocket::notify_ninputs(int n)
+{
+  set_ninputs(n);
+}
+void
+DivertSocket::notify_noutputs(int n)
+{
+  set_noutputs(n);
 }
 
 int DivertSocket::parse_ports(const String &param, ErrorHandler *errh,
@@ -472,9 +483,7 @@ DivertSocket::selected(int fd)
   p  = Packet::make(2, 0, 2046, 0); // YIPAL bufsize
   len = recvfrom(_fd, p->data(), p->length(), 0, (sockaddr *)&sa, &fromlen);
 
-  if (len > 0 /* && sa.sll_pkttype != PACKET_OUTGOING) {
-		 p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
-	      */) {
+  if (len > 0) {
 
     // set the timestamp 
     click_gettimeofday(&p->timestamp_anno());
@@ -487,6 +496,36 @@ DivertSocket::selected(int fd)
       click_chatter("DivertSocket: recvfrom: %s", strerror(errno));
   }
 }
+
+
+void
+DivertSocket::send_packet(Packet *p)
+{
+  int n;
+  struct sockaddr_in sa;
+
+  sa.sin_len = sizeof(sa);
+  sa.sin_family = AF_INET;
+  sa.sin_port = htons(_divertport);
+  memcpy(&sa.sin_addr.s_addr, p->data() + 16, 4);
+  //printf("address: 0x%x\n", sa.sin_addr.s_addr);
+
+  n = sendto(_fd, p->data(), p->length() , 0, 
+	     (sockaddr *)&sa, sizeof(sa));
+  //click_chatter("  %i bytes reinjected.", n);
+
+  if (n < 0)
+    click_chatter("DivertSocket: %s", strerror(errno));
+  p->kill();
+}
+
+void
+DivertSocket::push(int, Packet *p)
+{
+  assert(p->length() >= 20);
+  send_packet(p);
+}
+
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(DivertSocket)

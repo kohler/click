@@ -62,6 +62,8 @@ public:
 
   const char *class_name() const     { return "DivertSocket"; }
   const char *processing() const     { return PUSH;}
+  void notify_ninputs(int n);
+  void notify_noutputs(int n);
 
   DivertSocket *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
@@ -69,10 +71,9 @@ public:
   void uninitialize();
 
   void selected(int fd);
-
+  void push(int, Packet *p);
 
 private:
-  bool _saw_first;
   bool _setup_fw;
   bool _have_sport;
   bool _have_dport;
@@ -95,6 +96,7 @@ private:
   int setup_firewall(ErrorHandler *errh);
   int parse_ports(const String &param, ErrorHandler *errh, 
 		  int32_t *sportl, int32_t  *sporth);
+  void send_packet(Packet *p);
   
 
 

@@ -117,6 +117,7 @@ void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool f
     // Choose 3 random unique ports
     // TODO: optimize this. It's really dumb.
     if (first_syn) {
+      click_chatter("noutputs: %d", noutputs());
       flow->probed_ports[0] = 1 + myrandom(noutputs()-1);
       fprintf(stderr," probing %d ", flow->probed_ports[0]);
       for (flow->probed_ports[1] = 1 + myrandom(noutputs()-1);
