@@ -3,8 +3,9 @@
 # click-buildtool -- build tools for Click
 # Eddie Kohler
 #
-# Copyright (c) 2000 Massachusetts Institute of Technology
-# Copyright (c) 2000 Mazu Networks, Inc.
+# Copyright (c) 2000-2001 Massachusetts Institute of Technology
+# Copyright (c) 2000-2001 Mazu Networks, Inc.
+# Copyright (c) 2001 ACIRI
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -51,7 +52,7 @@ findelements () {
 	prefix=`echo "$1" | sed 's/^-p//'`/; shift 1;;
     --pre=*|--pref=*|--prefi=*|--prefix=*)
 	prefix=`echo "$1" | sed 's/^[^=]*=//'`/; shift 1;;
-    -V|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
+    -V|--verb|--verbo|--verbos|--verbose)
 	verbose=1; shift 1;;
     -a|--a|--al|--all)
 	all=1; shift 1;;
@@ -188,6 +189,7 @@ Try \`click-buildtool elem2$elem2 --help' for more information." 1>&2
 elem2make () {
     prefix=""
     driver=""
+    makevar=""
     date=`date`
     while [ x"$1" != x ]; do
     case $1 in
@@ -205,6 +207,13 @@ elem2make () {
 	driver=`echo "$1" | sed 's/^-t//'`; shift 1;;
     --t=*|--ta=*|--tar=*|--targ=*|--targe=*|--target=*)
 	driver=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
+    -v|--m|--ma|--mak|--make|--make-|--make-v|--make-va|--make-var|--make-vari|--make-varia|--make-variab|--make-variabl|--make-variable)
+	if test $# -lt 2; then elem2xxx_usage; fi
+	shift 1; makevar="$1"; shift 1;;
+    -v*)
+	makevar=`echo "$1" | sed 's/^-v//'`; shift 1;;
+    --m=*|--ma=*|--mak=*|--make=*|--make-=*|--make-v=*|--make-va=*|--make-var=*|--make-vari=*|--make-varia=*|--make-variab=*|--make-variabl=*|--make-variable=*)
+	makevar=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
     -x|--e|--ex|--exc|--excl|--exclu|--exclud|--exclude)
         if test $# -lt 2; then elem2xxx_usage; fi
 	shift 1; excludes=";s/^$1"' \\$'"//$excludes"; shift 1;;
@@ -214,7 +223,7 @@ elem2make () {
     --e=*|--ex=*|--exc=*|--excl=*|--exclu=*|--exclud=*|--exclude=*)
 	this_exclude=`echo "$1" | sed 's/^[^=]*=//'`
 	excludes=";s/^$this_exclude"' \\$'"//$excludes"; shift 1;;
-    -V|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
+    -V|--verb|--verbo|--verbos|--verbose)
 	verbose=1; shift 1;;
     -h|--h|--he|--hel|--help)
 	cat <<'EOF' 1>&2
@@ -227,6 +236,7 @@ Usage: click-buildtool elem2make [-p PREFIX] [-t TARGET] [-V] < elements.conf
 Options:
   -p, --prefix PREFIX      Preprend PREFIX to every file.
   -t, --target TARGET      Set target to TARGET (either `kernel' or `user').
+  -v, --make-variable N    Use make variable N.
   -x, --exclude FILE       Do not include FILE.
   -V, --verbose            Print more information.
   -h, --help               Print this message and exit.
@@ -244,18 +254,21 @@ EOF
     fi
 
     osuffix=".o"
-    makevar="ELEMENT_OBJS"
+    defmakevar="ELEMENT_OBJS"
     if test -n "$driver"; then
 	if test "$driver" = 'kernel'; then
 	    osuffix=".ko"
-	    makevar="K_ELEMENT_OBJS"
+	    defmakevar="K_ELEMENT_OBJS"
 	elif test "$driver" = 'user'; then
 	    osuffix=".uo"
-	    makevar="U_ELEMENT_OBJS"
+	    defmakevar="U_ELEMENT_OBJS"
 	else
 	    echo "Unknown driver $driver" 1>&2
 	    exit 1
 	fi
+    fi
+    if test -z "$makevar"; then
+	makevar=$defmakevar
     fi
 
     # expand list of files
@@ -288,7 +301,7 @@ elem2xxx () {
 	prefix=`echo "$1" | sed 's/^-p//'`; shift 1;;
     --pr=*|--pre=*|--pref=*|--prefi=*|--prefix=*)
 	prefix=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
-    -V|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
+    -V|--verb|--verbo|--verbos|--verbose)
 	verbose=1; shift 1;;
     -h|--h|--he|--hel|--help)
 	if test "$elem2" = export; then
@@ -404,7 +417,18 @@ fi
 
 while [ x"$1" != x ]; do
 case $1 in
-  -V|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
+  --vers|--versi|--versio|--version)
+     cat <<'EOF'
+click-buildtool (Click) 1.2.0
+Copyright (C) 2000-2001 Massachusetts Institute of Technology
+Copyright (C) 2000-2001 Mazu Networks, Inc.
+Copyright (C) 2001 ACIRI
+This is free software; see the source for copying conditions.
+There is NO warranty, not even for merchantability or fitness for a
+particular purpose.
+EOF
+     exit 0;;
+  -V|--verb|--verbo|--verbos|--verbose)
      verbose=1; shift 1;;
   -h|--h|--he|--hel|--help)
      cat <<'EOF' 1>&2
@@ -419,6 +443,7 @@ Usage: click-buildtool findelem [-a] [-V] [-p PREFIX] < [FILES AND DIRECTORIES]
 Options:
   -V, --verbose            Print more information.
   -h, --help               Print this message and exit.
+      --version            Print version number and exit.
 
 Report bugs to <click@pdos.lcs.mit.edu>.
 EOF
