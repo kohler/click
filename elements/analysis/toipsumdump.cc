@@ -151,14 +151,17 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 
     // Check that the IP header fields are valid.
     if (!iph || iph->ip_v != 4 || iph->ip_hl < (sizeof(click_ip) >> 2)
-	|| p->length() < (uint32_t)(p->network_header_offset() + (iph->ip_hl << 2))) {
+	|| p->length() < (uint32_t)(p->network_header_offset() + (iph->ip_hl << 2))
+	|| p->length() < (uint32_t)(p->network_header_offset() + ntohs(iph->ip_len))) {
 	if (_bad_packets) {
 	    if (!iph)
 		sa << "!bad no IP header\n";
 	    else if (iph->ip_v != 4)
 		sa << "!bad IP version " << iph->ip_v << '\n';
-	    else
+	    else if (iph->ip_hl < (sizeof(click_ip) >> 2) || p->length() < (uint32_t)(p->network_header_offset() + (iph->ip_hl << 2)))
 		sa << "!bad IP header length " << iph->ip_hl << '\n';
+	    else
+		sa << "!bad IP length " << ntohs(iph->ip_len) << '\n';
 	    return true;
 	}
 	iph = 0;
@@ -279,37 +282,44 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 	      break;
 	  }
 	  case W_LENGTH: {
-	      uint32_t len = p->length() + EXTRA_LENGTH_ANNO(p);
+	      uint32_t len;
 	      if (iph)
-		  len -= p->network_header_offset();
+		  len = ntohs(iph->ip_len) + EXTRA_LENGTH_ANNO(p);
+	      else
+		  len = p->length() + EXTRA_LENGTH_ANNO(p);
 	      sa << len;
 	      break;
 	  }
 	  case W_PAYLOAD_LENGTH: {
-	      uint32_t len = p->length() + EXTRA_LENGTH_ANNO(p);
+	      uint32_t len;
 	      if (iph) {
-		  len -= p->transport_header_offset();
+		  len = ntohs(iph->ip_len) - (iph->ip_hl << 2) + EXTRA_LENGTH_ANNO(p);
 		  if (tcph)
 		      len -= (tcph->th_off << 2);
 		  else if (udph)
 		      len -= sizeof(click_udp);
 		  else if (IP_FIRSTFRAG(iph) && (iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP))
 		      goto no_data;
-	      }
+	      } else
+		  len = p->length() + EXTRA_LENGTH_ANNO(p);
 	      sa << len;
 	      break;
 	  }
 	  case W_PAYLOAD: {
 	      int32_t off;
+	      uint32_t len;
 	      if (iph) {
 		  off = p->transport_header_offset();
 		  if (tcph)
 		      off += (tcph->th_off << 2);
 		  else if (udph)
 		      off += sizeof(click_udp);
-	      } else
+		  len = ntohs(iph->ip_len) - off + p->network_header_offset();
+	      } else {
 		  off = 0;
-	      String s = String::stable_string((const char *)(p->data() + off), p->length() - off);
+		  len = p->length();
+	      }
+	      String s = String::stable_string((const char *)(p->data() + off), len - off);
 	      sa << cp_quote(s);
 	      break;
 	  }
