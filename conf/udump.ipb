@@ -1,0 +1,5 @@
+FromBPF@1 :: FromBPF(eth0); 
+Print@2 :: Print(ok); 
+Discard@3 :: Discard;
+
+FromBPF@1 -> Print@2 -> Discard@3;
