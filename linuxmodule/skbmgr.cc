@@ -109,7 +109,7 @@ RecycledSkbBucket::cleanup()
 inline unsigned
 RecycledSkbBucket::size() const
 {
-  return (_head < _tail ? _tail - _head : _tail + SIZE - _head);
+  return (_head <= _tail ? _tail - _head : _tail + SIZE - _head);
 }
 
 inline int
