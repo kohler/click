@@ -497,6 +497,19 @@ IPRateMonitor::llrpc(unsigned command, void *data)
 {
   if (command == CLICK_LLRPC_IPRATEMON_LEVEL_FWD_AVG
       || command == CLICK_LLRPC_IPRATEMON_LEVEL_REV_AVG) {
+
+    // Data	: int data[256]
+    // Incoming : data[0] is the level to drill down; 0 is top level,
+    //		  values between 0 and 3 inclusive are valid
+    //		  data[1] is the network-byte-order IP address to drill down
+    //		  on; it is irrelevant if data[0] == 0
+    //		  data[2..255] are ignored
+    // Outgoing : If there is no data at that level, returns -EAGAIN.
+    //		  If there is data at that level, then puts the forward
+    //		  or reverse rate for each of the 256 buckets at that level
+    //		  into data[]. If a bucket has no rate, puts -1 into that
+    //		  element of data[].
+    
     int which = (command == CLICK_LLRPC_IPRATEMON_LEVEL_FWD_AVG ? 0 : 1);
     unsigned *udata = (unsigned *)data;
     unsigned level, ipaddr;
