@@ -1,44 +1,32 @@
 #ifndef BANDWIDTHSHAPER_HH
 #define BANDWIDTHSHAPER_HH
-#include "element.hh"
-#include "timer.hh"
-#include "ewma.hh"
+#include "shaper.hh"
 
 /*
  * =c
  * BandwidthShaper(RATE)
- * =s shapes traffic to maximum rate
+ * =s shapes traffic to maximum rate (bytes/s) 
  * V<packet scheduling>
  * =d
- * BandwidthShaper is a pull element that allows a maximum of RATE
- * bytes per second to pass through. It measures RATE using
- * an exponential weighted moving average.
  *
- * =a Shaper, BandwidthMeter, Meter
- */
+ * BandwidthShaper is a pull element that allows a maxmimum of RATE bytes per
+ * second to pass through. That is, output traffic is shaped to RATE bytes per
+ * second. If a BandwidthShaper receives a large number of evenly-spaced pull
+ * requests, then it will emit packets at the specified RATE with low
+ * burstiness.
+ *
+ * =a Shaper, RatedSplitter */
 
-class BandwidthShaper : public Element { protected:
-
-  RateEWMA _rate;
-  
-  unsigned _meter1;
+class BandwidthShaper : public Shaper {
 
  public:
   
-  BandwidthShaper();
-  ~BandwidthShaper();
+  BandwidthShaper()				{ }
   
   const char *class_name() const                { return "BandwidthShaper"; }
   const char *processing() const		{ return PULL; }
 
-  int rate() const				{ return _rate.average(); }
-  int rate_freq() const				{ return _rate.freq(); }
-  int rate_scale() const			{ return _rate.scale; }
-  
   BandwidthShaper *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void add_handlers();
 
   Packet *pull(int);
   

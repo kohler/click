@@ -10,6 +10,10 @@ elements/ipsec/esp.hh
 elements/ipsec/esp.cc
 elements/standard/block.hh
 elements/standard/block.cc
+elements/standard/oldbwshaper.hh
+elements/standard/oldbwshaper.cc
+elements/standard/oldshaper.hh
+elements/standard/oldshaper.cc
 elements/userlevel/readhandler.hh
 elements/userlevel/readhandler.cc
 elements/ip6/ip6fragmenter.hh
