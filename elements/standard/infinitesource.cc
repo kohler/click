@@ -36,15 +36,27 @@ InfiniteSource::~InfiniteSource()
   MOD_DEC_USE_COUNT;
 }
 
+void *
+InfiniteSource::cast(const char *n) 
+{
+  if (strcmp(n, "InfiniteSource") == 0) 
+    return (InfiniteSource *)this;
+  else if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0) 
+    return static_cast<Notifier *>(this);
+  else
+    return 0;
+}
+
 int
 InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+  ActiveNotifier::initialize(router());
   String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
   int limit = -1;
   int burstsize = 1;
   int datasize = -1;
   bool active = true, stop = false;
-  
+
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpString, "packet data", &data,
@@ -120,11 +132,19 @@ InfiniteSource::run_task()
 Packet *
 InfiniteSource::pull(int)
 {
-  if (!_active)
+  if (!_active) {
+    if (signal_active()) {
+      sleep_listeners();
+    }
     return 0;
+  }
   if (_limit >= 0 && _count >= _limit) {
     if (_stop)
       router()->please_stop_driver();
+
+    if (signal_active()) {
+      sleep_listeners();
+    }
     return 0;
   }
   _count++;
@@ -213,6 +233,12 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
      is->_active = active;
      if (is->output_is_push(0) && !is->_task.scheduled() && active)
        is->_task.reschedule();
+
+     if (!is->output_is_push(0) && 
+	 is->_active && 
+	 !is->signal_active()) {
+       is->wake_listeners();
+     }
      break;
    }
 
@@ -220,6 +246,12 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
      is->_count = 0;
      if (!is->_task.scheduled() && is->_active)
        is->_task.reschedule();
+
+     if (!is->output_is_push(0) && 
+	 is->_active && 
+	 !is->signal_active()) {
+       is->wake_listeners();
+     }
      break;
    }
 

@@ -88,12 +88,13 @@ Makes the element active or inactive.
 
 RatedSource, PokeHandlers */
 
-class InfiniteSource : public Element { public:
+class InfiniteSource : public Element, public ActiveNotifier { public:
   
   InfiniteSource();
   ~InfiniteSource();
   
   const char *class_name() const		{ return "InfiniteSource"; }
+  void *cast(const char *);
   const char *processing() const		{ return AGNOSTIC; }
   const char *flags() const			{ return "S1"; }
   void add_handlers();
