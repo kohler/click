@@ -455,7 +455,7 @@ increase_handler_strings()
 static int
 next_handler_string(const Router::Handler *h)
 {
-    spin_lock(&handler_strings_lock);
+    SPIN_LOCK(&handler_strings_lock, __FILE__, __LINE__);
     if (handler_strings_free < 0)
 	increase_handler_strings();
     int hs = handler_strings_free;
@@ -463,20 +463,20 @@ next_handler_string(const Router::Handler *h)
 	handler_strings_free = handler_strings_info[hs].next;
 	handler_strings_info[hs].flags = h->flags() | HANDLER_NEED_READ;
     }
-    spin_unlock(&handler_strings_lock);
+    SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
     return hs;
 }
 
 static void
 free_handler_string(int hs)
 {
-    spin_lock(&handler_strings_lock);
+    SPIN_LOCK(&handler_strings_lock, __FILE__, __LINE__);
     if (hs >= 0 && hs < handler_strings_cap) {
 	handler_strings[hs] = String();
 	handler_strings_info[hs].next = handler_strings_free;
 	handler_strings_free = hs;
     }
-    spin_unlock(&handler_strings_lock);
+    SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
 }
 
 extern "C" {
