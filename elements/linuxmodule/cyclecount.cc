@@ -78,5 +78,5 @@ CycleCount::pull(int)
   return(p);
 }
 
-ELEMENT_REQUIRES(linuxmodule)
+ELEMENT_REQUIRES(linuxmodule false)
 EXPORT_ELEMENT(CycleCount)

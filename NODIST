@@ -8,6 +8,14 @@ elements/ipsec/desp.hh
 elements/ipsec/desp.cc
 elements/ipsec/esp.hh
 elements/ipsec/esp.cc
+elements/linuxmodule/cyclecount.hh
+elements/linuxmodule/cyclecount.cc
+elements/linuxmodule/storecycles.hh
+elements/linuxmodule/storecycles.cc
+elements/linuxmodule/perfinfo.hh
+elements/linuxmodule/perfinfo.cc
+elements/linuxmodule/perfcount.hh
+elements/linuxmodule/perfcount.cc
 elements/standard/block.hh
 elements/standard/block.cc
 elements/standard/oldbwshaper.hh
@@ -22,3 +30,7 @@ elements/ip6/markip6header.hh
 elements/ip6/markip6header.cc
 elements/ip6/setip6address.hh
 elements/ip6/setip6address.cc
+elements/ip6/nat624.hh
+elements/ip6/nat624.cc
+elements/ip6/netaddresstranslator.hh
+elements/ip6/netaddresstranslator.cc

@@ -18,14 +18,10 @@
 #include "glue.hh"
 
 RTCycles::RTCycles()
-  : _sum(0), _pkts(0)
 {
   add_input();
   add_output();
-}
-
-RTCycles::~RTCycles()
-{
+  _accum = _npackets = 0;
 }
 
 void
@@ -33,8 +29,8 @@ RTCycles::push(int, Packet *p)
 {
   unsigned long long c = click_get_cycles();
   output(0).push(p);
-  _sum += click_get_cycles() - c;
-  if (p) _pkts++;
+  _accum += click_get_cycles() - c;
+  _npackets++;
 }
 
 Packet *
@@ -42,24 +38,41 @@ RTCycles::pull(int)
 {
   unsigned long long c = click_get_cycles();
   Packet *p = input(0).pull();
-  _sum += click_get_cycles() - c;
-  if (p) _pkts++;
+  _accum += click_get_cycles() - c;
+  if (p) _npackets++;
   return(p);
 }
 
 static String
-RTCycles_read_cycles(Element *f, void *)
+RTCycles_read_cycles(Element *e, void *thunk)
 {
-  RTCycles *s = (RTCycles *)f;
-  return
-    String(s->_sum) + " cycles\n" +
-    String(s->_pkts) + " packets\n";
+  RTCycles *s = static_cast<RTCycles *>(e);
+  int which = reinterpret_cast<int>(thunk);
+  switch (which) {
+   case 0:
+    return String(s->_npackets) + "\n";
+   case 1:
+    return String(s->_accum) + "\n";
+   default:
+    return String();
+  }
+}
+
+static int
+RTCycles_reset_counts(const String &, Element *e, void *, ErrorHandler *)
+{
+  RTCycles *s = static_cast<RTCycles *>(e);
+  s->_npackets = 0;
+  s->_accum = 0;
+  return 0;
 }
 
 void
 RTCycles::add_handlers()
 {
-  add_read_handler("cycles", RTCycles_read_cycles, 0);
+  add_read_handler("packets", RTCycles_read_cycles, (void *)0);
+  add_read_handler("cycles", RTCycles_read_cycles, (void *)1);
+  add_write_handler("reset_counts", RTCycles_reset_counts, 0);
 }
 
 

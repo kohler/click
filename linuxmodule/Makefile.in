@@ -24,7 +24,7 @@ INSTALL = @INSTALL@
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 .SUFFIXES:
-.SUFFIXES: .S .c .cc .o .s
+.SUFFIXES: .S .c .cc .o .s .ii
 
 .c.o:
 	$(COMPILE) -c $<
@@ -36,6 +36,8 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 .cc.s:
 	$(CXXCOMPILE) -S $<
+.cc.ii:
+	$(CXXCOMPILE) -E $< > $@
 
 
 GENERIC_OBJS = string.o straccum.o \

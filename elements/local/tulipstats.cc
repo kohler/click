@@ -297,5 +297,5 @@ TulipStats::add_handlers()
   add_write_handler("reset_counts", TulipStats_reset, 0);
 }
 
-ELEMENT_REQUIRES(AnyDevice linuxmodule)
+ELEMENT_REQUIRES(AnyDevice linuxmodule false)
 EXPORT_ELEMENT(TulipStats)

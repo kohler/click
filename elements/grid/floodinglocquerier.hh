@@ -7,9 +7,11 @@
  * =s
  * Sets Grid Destination location by running a flooding query protocol
  *
- * =d Argument I should be this host's IP address, E should be this
- * host's Ethernet address, and LocationInfo is a LocationInfo element
- * that knows where this host is.
+ * =d
+ *
+ * Argument I should be this host's IP address, E should be this host's
+ * Ethernet address, and LocationInfo is a LocationInfo element that knows
+ * where this host is.
  *
  * Expects GRID_NBR_ENCAP packets with MAC headers on input 0. If a
  * location is already known for the destination, the destination
@@ -25,9 +27,7 @@
  *
  *
  * =a
- * LocQueryResponder
- * LocationInfo
- * SimpleLocQuerier */
+ * LocQueryResponder, LocationInfo, SimpleLocQuerier */
 
 #include "element.hh"
 #include "etheraddress.hh"

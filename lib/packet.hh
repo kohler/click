@@ -130,12 +130,8 @@ class Packet { public:
   int rev_rate_anno() const		{ return anno()->rev_rate; }
   void set_rev_rate_anno(int r)		{ anno()->rev_rate = r; }
 #ifdef __KERNEL__
-  void set_cycle_anno(int i, cycles_t v) { anno()->p.cycles[i] = v; }
-  void set_metric0_anno(int i, unsigned v) { anno()->p.perf.m0[i] = v; }
-  void set_metric1_anno(int i, unsigned v) { anno()->p.perf.m1[i] = v; }
-  cycles_t cycle_anno(int i) const	{ return anno()->p.cycles[i]; }
-  unsigned metric0_anno(int i) const	{ return anno()->p.perf.m0[i]; }
-  unsigned metric1_anno(int i) const	{ return anno()->p.perf.m1[i]; }
+  unsigned long long perfctr_anno() const { return anno()->perfctr; }
+  void set_perfctr_anno(unsigned long long pc) { anno()->perfctr = pc; }
 #endif
   
  private:
@@ -153,13 +149,7 @@ class Packet { public:
     int fwd_rate;
     int rev_rate;
 #ifdef __KERNEL__
-    union {
-      cycles_t cycles[4];
-      struct {
-	unsigned m0[2];
-	unsigned m1[2];
-      } perf;
-    } p;
+    unsigned long long perfctr;
 #endif
   };
 

@@ -8,11 +8,7 @@
 #include "glue.hh"
 
 EtherEncap::EtherEncap()
-  : Element(1, 1), _type(-1)
-{
-}
-
-EtherEncap::~EtherEncap()
+  : Element(1, 1)
 {
 }
 
@@ -25,23 +21,16 @@ EtherEncap::clone() const
 int
 EtherEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  unsigned etht;
   if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "Ethernet encapsulation type", &_type,
-		  cpEthernetAddress, "source Ethernet address", &_src,
-		  cpEthernetAddress, "destination Ethernet address", &_dst,
+		  cpUnsigned, "Ethernet encapsulation type", &etht,
+		  cpEthernetAddress, "source address", &_ethh.ether_shost,
+		  cpEthernetAddress, "destination address", &_ethh.ether_dhost,
 		  0) < 0)
     return -1;
-  if (_type > 0xFFFF)
+  if (etht > 0xFFFF)
     return errh->error("argument 1 (Ethernet encapsulation type) must be <= 0xFFFF");
-  return 0;
-}
-
-int
-EtherEncap::initialize(ErrorHandler *errh)
-{
-  if (_type < 0)
-    return errh->error("not configured");
-  _netorder_type = htons(_type);
+  _ethh.ether_type = htons(etht);
   return 0;
 }
 
@@ -49,9 +38,7 @@ Packet *
 EtherEncap::smaction(Packet *p)
 {
   WritablePacket *q = p->push(14);
-  memcpy(q->data(), _dst, 6);
-  memcpy(q->data() + 6, _src, 6);
-  memcpy(q->data() + 12, &_netorder_type, 2);
+  memcpy(q->data(), &_ethh, 14);
   return q;
 }
 
