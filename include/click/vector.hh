@@ -54,6 +54,7 @@ class Vector { public:
   // modifiers
   inline void push_back(const T&);
   inline void pop_back();
+  iterator insert(iterator, const T&);
   inline iterator erase(iterator);
   iterator erase(iterator, iterator);
   void swap(Vector<T> &);
@@ -65,13 +66,13 @@ class Vector { public:
   size_type _n;
   size_type _capacity;
 
-  void *velt(size_type i) const		{ return (void *)&_l[i]; }
-  static void *velt(T *l, size_type i)	{ return (void *)&l[i]; }
+  void *velt(size_type i) const		{ return (void*)&_l[i]; }
+  static void *velt(T* l, size_type i)	{ return (void*)&l[i]; }
 
 };
 
 template <class T> inline void
-Vector<T>::push_back(const T &e)
+Vector<T>::push_back(const T& e)
 {
   if (_n < _capacity || reserve(-1)) {
     new(velt(_n)) T(e);
@@ -88,9 +89,9 @@ Vector<T>::pop_back()
 }
 
 template <class T> inline typename Vector<T>::iterator
-Vector<T>::erase(iterator e)
+Vector<T>::erase(iterator i)
 {
-  return (e < end() ? erase(e, e + 1) : e);
+  return (i < end() ? erase(i, i + 1) : i);
 }
 
 
@@ -144,6 +145,7 @@ class Vector<void*> { public:
   // modifiers
   inline void push_back(void*);
   inline void pop_back();
+  iterator insert(iterator, void*);
   inline iterator erase(iterator);
   iterator erase(iterator, iterator);
   void swap(Vector<void*> &);
@@ -236,6 +238,7 @@ class Vector<T*>: private Vector<void*> {
   // modifiers
   void push_back(T* e)		{ Base::push_back((void*)e); }
   void pop_back()		{ Base::pop_back(); }
+  iterator insert(iterator i, T* e) { return (iterator)Base::insert((void**)i, (void*)e); }
   iterator erase(iterator i)	{ return (iterator)Base::erase((void**)i); }
   iterator erase(iterator i, iterator j) { return (iterator)Base::erase((void**)i, (void**)j); }
   void swap(Vector<T *> &o)	{ Base::swap(o); }

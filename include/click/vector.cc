@@ -63,6 +63,22 @@ Vector<T>::assign(int n, const T &e)
 }
 
 template <class T> typename Vector<T>::iterator
+Vector<T>::insert(iterator i, const T& e)
+{
+  assert(i >= begin() && i <= end());
+  int pos = i - begin();
+  if (_n < _capacity || reserve(-1)) {
+    for (iterator j = end() - 1; j >= begin() + pos; j--) {
+      new((void*) (j+1)) T(*j);
+      j->~T();
+    }
+    new(velt(pos)) T(e);
+    _n++;
+  }
+  return begin() + pos;
+}
+
+template <class T> typename Vector<T>::iterator
 Vector<T>::erase(iterator a, iterator b)
 {
   if (b > a) {

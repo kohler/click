@@ -73,6 +73,20 @@ Vector<void*>::reserve(int want)
 }
 
 Vector<void*>::iterator
+Vector<void*>::insert(iterator i, void* e)
+{
+  assert(i >= begin() && i <= end());
+  int pos = i - begin();
+  if (_n < _capacity || reserve(-1)) {
+    i = begin() + pos;
+    memmove(i + 1, i, (end() - i) * sizeof(void*));
+    *i = e;
+    _n++;
+  }
+  return i;
+}
+
+Vector<void*>::iterator
 Vector<void*>::erase(iterator a, iterator b)
 {
   if (b > a) {
