@@ -313,4 +313,4 @@ IPRateMonitor::update_rates(Packet *p, bool forward, bool update_ewma)
     update(ip->ip_dst.s_addr, val, p, false, update_ewma);
 }
 
-#endif /* IPRATEMON_HH */
+#endif /* CLICK_IPRATEMON_HH */
