@@ -1,7 +1,7 @@
 #include <click/config.h>
 #include <click/package.hh>
 #include "../standard/scheduleinfo.hh"
-#include "binpackingsched.hh"
+#include "revsortedsched.hh"
 #include <click/task.hh>
 #include <click/routerthread.hh>
 #include <click/glue.hh>
@@ -10,29 +10,32 @@
 #include <click/router.hh>
 #include <click/error.hh>
 
-#define DEBUG 0
+#define DEBUG 2
+#define KEEP_GOOD_ASSIGNMENT 1
 
-BinPackingScheduler::BinPackingScheduler()
+
+ReverseSortedTaskSched::ReverseSortedTaskSched()
   : _timer(this)
 {
   MOD_INC_USE_COUNT;
 }
 
-BinPackingScheduler::~BinPackingScheduler()
+ReverseSortedTaskSched::~ReverseSortedTaskSched()
 {
   MOD_DEC_USE_COUNT;
 }
 
 int
-BinPackingScheduler::initialize(ErrorHandler *)
+ReverseSortedTaskSched::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
-  _timer.schedule_after_ms(1000);
+  _timer.schedule_after_ms(2000);
   return 0;
 }
   
 int 
-BinPackingScheduler::configure(const Vector<String> &conf, ErrorHandler *errh)
+ReverseSortedTaskSched::configure
+  (const Vector<String> &conf, ErrorHandler *errh)
 {
 #if __MTCLICK__
   _interval = 1000;
@@ -43,12 +46,12 @@ BinPackingScheduler::configure(const Vector<String> &conf, ErrorHandler *errh)
   return 0;
 #else
   (void) conf;
-  return errh->error("BinPackingScheduler requires multithreading\n");
+  return errh->error("ReverseSortedTaskSched requires multithreading\n");
 #endif
 }
 
 void
-BinPackingScheduler::run_scheduled()
+ReverseSortedTaskSched::run_scheduled()
 {
 #if __MTCLICK__
   Vector<Task*> tasks;
@@ -72,10 +75,11 @@ BinPackingScheduler::run_scheduled()
   task_list->unlock();
   avg_load = total_load / n;
 
+#if KEEP_GOOD_ASSIGNMENT
   int i;
   for(i=0; i<n; i++) {
     unsigned diff = avg_load>load[i] ? avg_load-load[i] : load[i]-avg_load;
-      if (diff > (avg_load>>3)) {
+    if (diff > (avg_load>>3)) {
 #if DEBUG > 2
       click_chatter("load balance, avg %u, diff %u", avg_load, diff);
 #endif
@@ -86,6 +90,7 @@ BinPackingScheduler::run_scheduled()
     _timer.schedule_after_ms(_interval);
     return;
   }
+#endif
   
 #if DEBUG > 1
   int print = 0;
@@ -128,30 +133,21 @@ BinPackingScheduler::run_scheduled()
 
   Vector<Task*> schedule[n];
   for(int i=0; i<n; i++) load[i] = 0;
-  unsigned next = 0;
-  int max, which;
-  for(int i=0; i<sorted.size(); i++) {
-redo:
-    max = load[next];
-    which = next;
-    for (int j = 0; j < n; j++) {
-      if (load[j] >= max && j != next) {
+  int min, which;
+  // bin packs in reversely sorted order, so tasks with small costs will get
+  // evenly distributed as well as tasks with large costs.
+  for(int i=sorted.size()-1; i>=0; i--) {
+    min = load[0];
+    which = 0;
+    for (int j = 1; j < n; j++) {
+      if (load[j] < min) {
 	which = j;
-	max = load[j];
-	break;
+	min = load[j];
       }
     }
-    if (which != next) {
-      load[next] += sorted[i]->cycles();
-      schedule[next].push_back(sorted[i]);
-      sorted[i]->change_thread(next);
-      next++; 
-      if (next == n) next = 0;
-    } else {
-      next++; 
-      if (next == n) next = 0;
-      goto redo;
-    }
+    load[which] += sorted[i]->cycles();
+    schedule[which].push_back(sorted[i]);
+    sorted[i]->change_thread(which);
   }
   
 #if DEBUG > 1
@@ -174,5 +170,5 @@ redo:
 #endif
 }
 
-EXPORT_ELEMENT(BinPackingScheduler)
+EXPORT_ELEMENT(ReverseSortedTaskSched)
 

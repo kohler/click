@@ -1,9 +1,9 @@
-#ifndef BINPACKING_SCHED_HH
-#define BINPACKING_SCHED_HH
+#ifndef REVERSE_SORTED_SCHED_HH
+#define REVERSE_SORTED_SCHED_HH
 
 /*
  * =c
- * BinPackingScheduler([INTERVAL])
+ * ReverseSortedTaskSched([INTERVAL])
  * =s IP
  * bin packing scheduler
  * =d
@@ -16,19 +16,19 @@
 #include <click/element.hh>
 #include <click/timer.hh>
 
-class BinPackingScheduler : public Element {
+class ReverseSortedTaskSched : public Element {
 
   Timer _timer;
   int _interval;
 
  public:
 
-  BinPackingScheduler();
-  ~BinPackingScheduler();
+  ReverseSortedTaskSched();
+  ~ReverseSortedTaskSched();
   
-  const char *class_name() const	{ return "BinPackingScheduler"; }
+  const char *class_name() const	{ return "ReverseSortedTaskSched"; }
   int configure(const Vector<String> &, ErrorHandler *);
-  BinPackingScheduler *clone() const	{ return new BinPackingScheduler; }
+  ReverseSortedTaskSched *clone() const	{ return new ReverseSortedTaskSched; }
 
   int initialize(ErrorHandler *);
   void run_scheduled();
