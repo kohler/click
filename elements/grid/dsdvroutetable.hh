@@ -203,6 +203,9 @@ CLICK_DECLS
 // count using the reverse loss rate only.
 #define ONE_WAY_TXC_METRIC 1
 
+// if 1, enable `seen' link handshaking, described in Chin, Judge,
+// William, and Kermode 2002.
+#define USE_SEEN 1
 
 class GridGatewayInfo;
 class LinkStat;
@@ -551,7 +554,6 @@ private:
     MetricOneWayTxCount          =  5,
 #endif
     MetricSymmetricHopCount      =  6, // unsigned int hop count, but only if all links symmetric
-
     MetricLast                   = 99
   };
 
@@ -587,6 +589,11 @@ private:
 #if USE_GOOD_NEW_ROUTES
   bool _use_good_new_route;
 #endif
+#endif
+
+#if USE_SEEN
+  bool _use_seen;
+  static const unsigned _metric_seen = 999999;
 #endif
   
   // be verbose about warnings and status messages?

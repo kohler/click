@@ -294,6 +294,9 @@ DSDVRouteTable::initialize(ErrorHandler *errh)
   _use_good_new_route = false;
 #endif
 #endif
+#if USE_SEEN
+  _use_seen = false;
+#endif
   return 0;
 }
 
@@ -888,6 +891,13 @@ DSDVRouteTable::update_metric(RTEntry &r)
     return;
   }
 
+#if USE_SEEN
+  if (_use_seen && next_hop->metric.val == _metric_seen) {
+    r.metric = metric_t(_metric_seen, false);
+    return;
+  }
+#endif
+
   if (!r.metric.valid)
     return;
 
@@ -1249,6 +1259,18 @@ DSDVRouteTable::simple_action(Packet *packet)
     _log->log_start_recv_advertisement(ntohl(hlo->seq_no), ipaddr, tv);
   }
   
+  // assume CheckGridHeader was used to check for truncated packets
+  // and bad checksums.  Sanity check number of entries.
+  int entry_sz = hlo->nbr_entry_sz;
+  char *entry_ptr = (char *) (hlo + 1);
+  unsigned max_entries = (ntohs(gh->total_len) - sizeof(*gh) - sizeof(*hlo)) / entry_sz;
+  unsigned num_entries = hlo->num_nbrs;
+  if (num_entries > max_entries) {
+    click_chatter("DSDVRouteTable %s: route ad from %s contains fewer routes than claimed; want %u, have no more than %u",
+		  id().cc(), ipaddr.s().cc(), num_entries, max_entries);
+    num_entries = max_entries;
+  }
+
   // maybe add new route for message transmitter, sanity check existing entry
   RTEntry *r = _rtes.findp(ipaddr);
   if (!r)
@@ -1259,6 +1281,7 @@ DSDVRouteTable::simple_action(Packet *packet)
 		  id().cc(), ipaddr.s().cc(), r->dest_eth.s().cc(), ethaddr.s().cc());
 
   RTEntry new_r(ipaddr, ethaddr, gh, hlo, PAINT_ANNO(packet), jiff);
+
 #if SEQ_METRIC
   // track last few broadcast numbers we heard directly from this node
   DEQueue<unsigned> *q = _seq_history.findp(new_r.dest_ip);
@@ -1271,24 +1294,43 @@ DSDVRouteTable::simple_action(Packet *packet)
   while (q->size() > MAX_BCAST_HISTORY)
     q->pop_front();
 #endif
-  handle_update(new_r, true, jiff);
+
+#if USE_SEEN
+  RTEntry *old = _rtes.findp(new_r.dest_ip);
+  if (_use_seen && (!old || old->metric.val == _metric_seen)) {
+    // Check to see if this node has heard about us.  If so, do
+    // normal metric initialization, else leave it marked as `seen'.
+    bool sender_saw_us = false;
+    char *c = entry_ptr;
+    for (unsigned i = 0; i < num_entries; i++, entry_ptr += entry_sz) {
+      grid_nbr_entry *e = (grid_nbr_entry *) c;
+	if (e->ip == _ip.addr() && e->num_hops > 0) {
+	  sender_saw_us = true;
+	  break;
+	}
+    }
+    if (!sender_saw_us) {
+      new_r.metric = metric_t(_metric_seen, false);
+      new_r.advertise_ok_jiffies = jiff;
+      new_r.need_metric_ad = true;
+      schedule_triggered_update(new_r.dest_ip, jiff);
+      insert_route(new_r, GridGenericLogger::NEW_DEST_SENDER);
+      goto after_sender_update;
+    }
+  }
+#endif
   
+  // insert 1-hop route
+  handle_update(new_r, true, jiff);
+
+#if USE_SEEN
+  after_sender_update:
+#endif
+
   // update this dest's eth
   r = _rtes.findp(ipaddr);
   dsdv_assert(r);
   r->dest_eth = ethaddr;
-
-  // assume CheckGridHeader was used to check for truncated packets
-  // and bad checksums.  Sanity check number of entries.
-  int entry_sz = hlo->nbr_entry_sz;
-  char *entry_ptr = (char *) (hlo + 1);
-  unsigned max_entries = (ntohs(gh->total_len) - sizeof(*gh) - sizeof(*hlo)) / entry_sz;
-  unsigned num_entries = hlo->num_nbrs;
-  if (num_entries > max_entries) {
-    click_chatter("DSDVRouteTable %s: route ad from %s contains fewer routes than claimed; want %u, have no more than %u",
-		  id().cc(), ipaddr.s().cc(), num_entries, max_entries);
-    num_entries = max_entries;
-  }
 
   // handle each entry in message
   bool need_full_update = false;
@@ -1642,27 +1684,28 @@ DSDVRouteTable::write_use_old_route(const String &arg, Element *el,
     return errh->error("`use_old_route' must be an unsigned integer");
 
   bool use_good = false;
-  
-  switch (u) {
-  case 0:
-    rt->_use_old_route = false;
-    use_good = false;
-    break;
-  case 1:
-    rt->_use_old_route = true;
-    use_good = false;
-    break;
-  default:
-    rt->_use_old_route = true;
-    use_good = true;
-  };
+  bool use_old = false;
+  bool use_seen = false;
 
+  if (u & 1)
+    use_old = true;
+  if (u & 2)
+    use_old = use_good = true;
+  if (u & 4)
+    use_seen = true;
+
+  rt->_use_old_route = use_old;
   click_chatter("DSDVRouteTable %s: setting _use_old_route to %s", 
 		rt->id().cc(), rt->_use_old_route ? "true" : "false");
 #if USE_GOOD_NEW_ROUTES
   rt->_use_good_new_route = use_good;
   click_chatter("DSDVRouteTable %s: setting _use_good_new_route to %s", 
 		rt->id().cc(), rt->_use_good_new_route ? "true" : "false");
+#endif
+#if USE_SEEN
+  rt->_use_seen = use_seen;
+  click_chatter("DSDVRouteTable %s: setting _use_seen to %s", 
+		rt->id().cc(), rt->_use_seen ? "true" : "false");
 #endif
   return 0;
 }
