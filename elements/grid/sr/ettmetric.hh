@@ -4,6 +4,7 @@
 #include "linkmetric.hh"
 #include <click/hashmap.hh>
 #include <elements/grid/linktable.hh>
+#include "loss_table.h"
 CLICK_DECLS
 
 /*
@@ -71,6 +72,7 @@ public:
 
   void *cast(const char *);
 
+  static String read_stats(Element *xf, void *);
   int get_fwd_metric(IPAddress ip);
   int get_rev_metric(IPAddress ip);
 
@@ -101,15 +103,17 @@ public:
     }
     
     int fwd_metric() {
-      if (_big_fwd > 0 && _small_rev > 0) {
-	return (100 * 100 * 100) / (_big_fwd * _small_rev);
+      int fwd_rate = lookup_delivery_rate(_small_fwd, _big_fwd, 1500);
+      if (fwd_rate > 0 && _small_rev > 0) {
+	return (100 * 100 * 100) / (fwd_rate * _small_rev);
       }
       
       return 7777;
     }
     int rev_metric() {
-      if (_big_rev > 0 && _small_fwd > 0) {
-	return (100 * 100 * 100) / (_big_rev * _small_fwd);
+      int rev_rate = lookup_delivery_rate(_small_rev, _big_rev, 1500);
+      if (rev_rate > 0 && _small_fwd > 0) {
+	return (100 * 100 * 100) / (rev_rate * _small_fwd);
       }
       return 7777;
 

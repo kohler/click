@@ -302,14 +302,19 @@ SrcrStat::simple_action(Packet *p)
     link_entry *le = (struct link_entry *) d;
     if (IPAddress(le->ip) == _ip) {
       l->fwd = le->rev;
-      if (_ett_metric) {
-	_ett_metric->update_link(this, ip, le->ip, l->rev_rate(_start), le->rev);
-      }
     } else {
       if (_ett_metric) {
 	_ett_metric->update_link(this, ip, le->ip, le->fwd, le->rev);
       }
     }
+  }
+
+  /* 
+   * always update the metric from us to them, even if we didn't hear 
+   * the fwd metric
+   */
+  if (_ett_metric) {
+    _ett_metric->update_link(this, _ip, ip, l->fwd, l->rev_rate(_start));
   }
 
   p->kill();

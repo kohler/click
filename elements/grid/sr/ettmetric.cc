@@ -16,6 +16,7 @@
 #include <click/config.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/straccum.hh>
 #include "ettmetric.hh"
 #include "srcrstat.hh"
 #include <elements/grid/linktable.hh>
@@ -90,6 +91,8 @@ ETTMetric::update_link(SrcrStat *ss, IPAddress from, IPAddress to, int fwd, int 
   if (!nfo) {
     _links.insert(p, LinkInfo(p));
     nfo = _links.findp(p);
+    nfo->update_small(0, 0);
+    nfo->update_big(0, 0);
   }
 
 
@@ -183,10 +186,33 @@ ETTMetric::get_rev_metric(IPAddress ip)
   return 7777;
 }
 
+String
+ETTMetric::read_stats(Element *xf, void *)
+{
+  ETTMetric *e = (ETTMetric *) xf;
+  StringAccum sa;
+  struct timeval now;
+  click_gettimeofday(&now);
+  for(LTable::const_iterator i = e->_links.begin(); i; i++) {
+    LinkInfo nfo = i.value();
+    sa << nfo._p._a << " " << nfo._p._b;
+    sa << " fwd_metric " << nfo.fwd_metric();
+    sa << " rev_metric " << nfo.rev_metric();
+    sa << " small_fwd " << nfo._small_fwd;
+    sa << " small_rev " << nfo._small_rev;
+    sa << " last_small " << now - nfo._last_small;
+    sa << " big_fwd " << nfo._big_fwd;
+    sa << " big_rev " << nfo._big_rev;
+    sa << " last_big " << now - nfo._last_big;
+    sa << "\n";
+  }
+  return sa.take_string();
+}
 void
 ETTMetric::add_handlers()
 {
   add_default_handlers(true);
+  add_read_handler("stats", read_stats, 0);
 }
 
 
