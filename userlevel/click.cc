@@ -178,7 +178,7 @@ click_remove_element_type(int which)
 // register handlers
 
 static int
-call_read_handler(String s, Router *r, bool print_name, ErrorHandler *errh, FILE *fout)
+call_read_handler(String s, Router *r, bool print_name, const char *handler_dir, ErrorHandler *errh)
 {
   int dot = s.find_left('.');
   if (dot < 0)
@@ -198,11 +198,36 @@ call_read_handler(String s, Router *r, bool print_name, ErrorHandler *errh, FILE
   if (!rh.read)
     return errh->error("`%s' is a write handler", s.cc());
   String result = rh.read(e, rh.read_thunk);
-  if (print_name)
+
+  char *fpath=0;
+  char *fdir=0;
+  FILE *fout = 0;
+  if (handler_dir) {
+    fpath = new char[strlen(handler_dir)+s.length()+1];
+    fdir = new char[strlen(handler_dir)+s.length()+1];
+    sprintf(fdir,"%s/%s", handler_dir,element_name.cc());
+    sprintf(fpath,"%s/%s/%s", handler_dir,element_name.cc(),handler_name.cc());
+    if ((mkdir(fdir, S_IRWXU) < 0 && errno != EEXIST)
+	|| (fout = fopen(fpath,"w")) == 0L) {
+      delete fpath;
+      delete fdir;
+      fpath = fdir = 0;
+      fout = 0;
+    } 
+  }
+  if (!fout) fout = stdout;
+
+  if (print_name && !fpath)
     fprintf(fout, "%s:\n", s.cc());
   fputs(result.cc(), fout);
-  if (print_name)
+  if (print_name && !fpath)
     fputs("\n", fout);
+
+  if (fpath) {
+    delete fpath;
+    delete fdir;
+    fclose(fout);
+  }
   return 0;
 }
 
@@ -330,28 +355,9 @@ int call_read_handlers()
   // call handlers
   if (call_handlers.size()) {
     int nerrors = errh->nerrors();
-    for (int i = 0; i < call_handlers.size(); i++) {
-      FILE *fout;
-      char *fpath = 0;
-      if (!handler_dir)
-	fout = stdout;
-      else {
-	fpath = new char[strlen(handler_dir)+call_handlers[i].length()+2];
-	sprintf(fpath, "%s/%s", handler_dir, call_handlers[i].cc());
-        fout = fopen(fpath,"w");
-	if (fout == NULL) {
-	  delete fpath;
-	  fpath = 0;
-	  fout = stdout;
-	}
-      }
-      call_read_handler(call_handlers[i], router, 
-	                call_handlers.size() > 1 && !fpath, errh, fout);
-      if (fpath) {
-	fclose(fout);
-	delete fpath;
-      }
-    }
+    for (int i = 0; i < call_handlers.size(); i++)
+      call_read_handler(call_handlers[i], router,
+	                call_handlers.size() > 1, handler_dir, errh);
     if (nerrors != errh->nerrors())
       return 1;
   }
