@@ -24,13 +24,13 @@ $WEBDIR .= "/doc" if !-r "$WEBDIR/template";
 -r "$WEBDIR/template" || die "`$WEBDIR/template' not found";
 
 # 1. install documentation into fake directory
+my($VERSION);
 if ($INSTALL) {
   chdir('..') if -r 'click-install.1';
   -d 'linuxmodule' || die "must be in CLICKDIR or CLICKDIR/doc";
   mysystem("gmake dist");
   
   open(MK, 'Makefile') || die "no Makefile";
-  my($VERSION);
   while (<MK>) {
     if (/VERSION\s*=\s*(\S*)/) {
       $VERSION = $1;
@@ -101,3 +101,24 @@ close OUT;
 
 # 4. call `man2html'
 mysystem("man2html -l -m '<b>@</b>' -t $WEBDIR/template -d $WEBDIR /tmp/%click-webdoc/man/man*/*.?");
+
+# 5. call `changelog2html'
+mysystem("changelog2html -d $WEBDIR click-$VERSION/NEWS $WEBDIR/../news.html");
+
+# 6. edit `news.html'
+open(IN, "$WEBDIR/../news.html") || die "$WEBDIR/../news.html: $!\n";
+open(OUT, ">$WEBDIR/../news.html.new") || die "$WEBDIR/../news.html.new: $!\n";
+my(%good);
+while (<IN>) {
+  while (/\b([A-Z][A-Za-z0-9]*)\b/g) {
+    if (!exists $good{$1}) {
+      $good{$1} = -r "$WEBDIR/$1.n.html";
+    }
+  }
+  s#\b([A-Z][A-Za-z0-9]*)\b#$good{$1} ? '<a href="doc/' . $1 . '.n.html">' . $1 . '</a>' : $1#eg;
+  print OUT;
+}
+close IN;
+close OUT;
+unlink("$WEBDIR/../news.html") || die "unlink $WEBDIR/../news.html: $!\n";
+rename("$WEBDIR/../news.html.new", "$WEBDIR/../news.html") || die "rename $WEBDIR/../news.html.new: $!\n";
