@@ -109,9 +109,17 @@ VariableEnvironment::interpolate(const String &config) const
       }
     } else if (data[pos] == '$' && quote != '\'') {
       unsigned word_pos = pos;
-      for (pos++; isalnum(data[pos]) || data[pos] == '_'; pos++)
-	/* nada */;
-      String name = config.substring(word_pos, pos - word_pos);
+      String name;
+      if (pos < len - 1 && data[pos+1] == '{') {
+	for (pos += 2; pos < len && data[pos] != '}'; pos++)
+	  /* nada */;
+	name = "$" + config.substring(word_pos + 2, pos - word_pos - 2);
+	if (pos < len) pos++;
+      } else {
+	for (pos++; pos < len && (isalnum(data[pos]) || data[pos] == '_'); pos++)
+	  /* nada */;
+	name = config.substring(word_pos, pos - word_pos);
+      }
       for (int variable = _formals.size() - 1; variable >= 0; variable--)
 	if (name == _formals[variable]) {
 	  output << config.substring(config_pos, word_pos - config_pos);
