@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+use Symbol 'qualify_to_ref';
 
 ## utilities
 
@@ -8,59 +9,89 @@ sub index2 ($$;$) {
     $result;
 }
 
+sub shquote ($) {
+    my($t) = @_;
+    $t =~ s/\'/\'\"\'\"\'/g;
+    "'$t'";
+}
+
 
 ## read file
 
 package Testicle;
 
-sub file_err ($$) {
-    my($tt, $text) = @_;
-    my($fn) = $tt->{'file'};
+my %_special_filenames = ('stdin' => 1, 'stdout' => 1, 'stderr' => 1);
+
+sub lineno ($$) {
+    my($tt, $lineno) = @_;
+    my($fn) = $tt->{'filename'};
     $fn = 'line ' if !defined($fn);
     $fn .= ':' if $fn !~ /[ :]$/;
+    "$fn$lineno";
+}
+
+sub file_err ($$) {
+    my($tt, $text) = @_;
     $text .= "\n" if $text !~ /\n$/s;
-    print STDERR $fn, $., ': ', $text;
+    print STDERR $tt->lineno($.), ': ', $text;
     $tt->{'err'}++;
 }
 
-sub _shell_split (\@$) {
-    my($arr, $text) = @_;
-    my($qf, $qb) = (0, 0);
+sub _shell_split (\@\@$$;$) {
+    my($arr, $lineno_arr, $text, $lineno, $rewrite_sub) = @_;
+    $rewrite_sub = sub { $_[0] } if !defined($rewrite_sub);
+    my($qf, $qb, $out) = (0, 0, '');
     my($sq, $dq, $bq, $nl) = (-2, -2, -2, -2);
     my($first, $pos) = (0, 0);
+    $lineno -= ($text =~ tr/\n//);
     
     while ($pos < length $text) {
 	$sq = ::index2($text, "\'", $pos) if $sq < $pos;
 	$dq = ::index2($text, "\"", $pos) if $dq < $pos;
 	$bq = ::index2($text, "\`", $pos) if $bq < $pos;
 	$nl = ::index2($text, "\n", $pos) if $nl < $pos;
+	
 	if ($qf == 1) {
 	    $qf = 0 if $sq < length $text;
+	    $out .= substr($text, $pos, $sq + 1 - $pos);
 	    $pos = $sq + 1;
 	    next;
 	} elsif ($qf == 2) {
 	    $qf = 0 if $dq < length $text;
+	    $out .= $rewrite_sub->(substr($text, $pos, $dq - $pos), 2) . '"';
 	    $pos = $dq + 1;
 	    next;
 	}
-	if ($sq < $dq && $sq < $bq && $sq < $nl) {
+
+	# find minimum
+	my($min, $min1) = (($sq < $dq ? $sq : $dq), ($bq < $nl ? $bq : $nl));
+	$min = $min1 if $min1 < $min;
+	$out .= $rewrite_sub->(substr($text, $pos, $min - $pos), 0) . substr($text, $min, 1);
+	
+	if ($sq == $min) {
 	    $qf = 1;
 	    $pos = $sq + 1;
-	} elsif ($dq < $sq && $dq < $bq && $dq < $nl) {
+	} elsif ($dq == $min) {
 	    $qf = 2;
 	    $pos = $dq + 1;
-	} elsif ($bq < $sq && $bq < $dq && $bq < $nl) {
+	} elsif ($bq == $min) {
 	    $qb = !$qb;
 	    $pos = $bq + 1;
 	} elsif (!$qb && ($nl == $pos || substr($text, $nl - 1, 1) ne "\\")) {
-	    push @$arr, substr($text, $first, $nl - $first + 1);
+	    push @$arr, $out;
+	    push @$lineno_arr, $lineno;
+	    $out = '';
+	    $lineno += (substr($text, $first, $nl - $first + 1) =~ tr/\n//);
 	    $first = $pos = $nl + 1;
 	} else {
 	    $pos = $nl + 1;
 	}
     }
 
-    push @$arr, substr($text, $first) if $first < length $text;
+    if ($first < length $text) {
+	push @$arr, $out;
+	push @$lineno_arr, $lineno;
+    }
     
     if ($qf == 1) {
 	"unmatched single quote";
@@ -78,7 +109,7 @@ sub _read_text ($) {
     my($r, $t) = ('');
     while (defined($t = <$fh>)) {
 	last if $t =~ /^%/;
-	$t =~ s/^\\\%/%/;
+	$t =~ s/^\|//;
 	$r .= $t;
     }
     ($r, $t);
@@ -97,7 +128,7 @@ sub _read_script_section ($$$) {
     $tt->file_err("arguments to `%script' ignored") if $args ne '';
     $tt->file_err("multiple `%script' sections defined") if $tt->{'script'};
     my($r, $t) = _read_text($fh);
-    my($what) = _shell_split(@{$tt->{'script'}}, $r);
+    my($what) = _shell_split(@{$tt->{'script'}}, @{$tt->{'script_lineno'}}, $r, $.);
     $tt->file_err("$what in `%script'") if $what ne '';
     $t;
 }
@@ -108,7 +139,7 @@ sub _read_file_section ($$$$) {
     my($fn, $length, $crap) = split(/\s+/, $args);
 
     # assert that we understand $secname
-    die if $secname ne 'file' && $secname ne 'expect' && $secname ne 'expectv';
+    die if $secname ne 'file' && $secname ne 'expect' && $secname ne 'expectv' && $secname ne 'ignore';
     
     if (!defined $fn) {
 	$tt->file_err("filename missing in `$secname' section");
@@ -155,8 +186,7 @@ sub _skip_section ($$) {
 
 sub read (*;$) {
     my($fh, $fn) = @_;
-    $fn = 'line ' if !defined $fn;
-    $fn .= ":" if $fn ne 'line ';
+    $fh = ::qualify_to_ref($fh, caller);
     
     my($tt) = bless { 'filename' => $fn, 'err' => 0 }, Testicle;
     
@@ -204,9 +234,93 @@ sub read (*;$) {
 	    $t = <$fh>;
 	}
     }
+
+    $tt;
+}
+
+
+sub save_files ($&) {
+    my($tt, $filename_subr) = @_;
+    foreach my $fn (@{$tt->{'file'}}) {
+	next if $_special_filenames{$fn};
+	my($actual) = $filename_subr->($fn);
+	next if !defined($actual);
+	open OUT, ">$actual" || die "$actual: $!\n";
+	print OUT $tt->{"f:$fn"};
+	close OUT;
+    }
+}
+
+sub script_text ($&) {
+    my($tt, $filename_subr) = @_;
+
+    # develop file-replacing subroutine
+    my($subbody) = '';
+    foreach my $fn (@{$tt->{'file'}}, @{$tt->{'expect'}}, @{$tt->{'expectv'}}, @{$tt->{'ignore'}}) {
+	next if $_special_filenames{$fn};
+	my($inner) = quotemeta($filename_subr->($fn));
+	next if !defined($inner);
+	$fn = quotemeta($fn);
+	$subbody .= "\$t =~ s/(^|[^\\\\])$fn/\$1$inner/g;\n";
+    }
+    my($code) = eval("sub { my(\$t) = \@_; $subbody\$t; }");
+
+    # run subroutine
+    my($t) = '';
+    foreach my $i (0..$#{$tt->{'script'}}) {
+	my($ln, $text) = ($tt->{'script_lineno'}[$i], $tt->{'script'}[$i]);
+	$t .= "echo " . ::shquote($tt->lineno($ln)) . " >&6\n";
+	my(@c, @d);
+	_shell_split(@c, @d, $text, 0, $code);
+	die if @c != 1;
+	$t .= $c[0] . "\n";
+    }
+    
+    $t;
 }
 
 
 package main;
 
-my($tt) = Testicle::read(STDIN);
+my $dir = "testicle$$";
+
+sub script_fn_to_fn ($) {
+    my($fn) = @_;
+    $fn = $1 if $fn =~ /^\@(.+)\@$/s;
+    "$dir/f_$fn";
+}
+
+sub run_test (;$) {
+    my($fn) = @_;
+    my($tt);
+    if (!defined($fn) || $fn eq '-') {
+	$tt = Testicle::read(STDIN, "<stdin>");
+    } else {
+	if (!open(IN, $fn)) {
+	    print STDERR "$fn: $!\n";
+	    return -1;
+	}
+	$tt = Testicle::read(IN, $fn);
+	close IN;
+    }
+    $tt->save_files(\&script_fn_to_fn);
+    print STDERR $tt->script_text(\&script_fn_to_fn);
+    0;
+}
+
+$SIG{'INT'} = $SIG{'QUIT'} = $SIG{'TERM'} = $SIG{'__DIE__'} = sub {
+    system("/bin/rm -rf $dir");
+    exit(1);
+};
+
+
+if (-d $dir) {
+    print STDERR "warning: $dir directory exists; removing it\n";
+    system("/bin/rm -rf $dir");
+    -d $dir && die "cannot remove $dir directory: $!\n";
+}
+mkdir $dir || die "cannot create $dir directory: $!\n";
+
+run_test('/tmp/x');
+
+system("/bin/rm -rf $dir");
