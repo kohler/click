@@ -3,7 +3,7 @@
 # Douglas S. J. De Couto
 # stolen from run-grid-node
 
-# $Id: run-grid-gateway,v 1.2 2000/08/06 22:30:58 decouto Exp $
+# $Id: run-grid-gateway,v 1.3 2000/08/06 22:57:29 decouto Exp $
 
 # assume we run in <clickdir>/conf XXX
 
@@ -214,40 +214,82 @@ if ($system_type =~ /Linux/) {
 
     $tun_dev = "tap";
 }
-elsif ($system_type =~ /FreeBSD/) {
-    print "BROKEN\n";
-    exit 1;
 
+elsif ($system_type =~ /FreeBSD/) {
     if (!($ifconfig_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)) {
-	print "Unable to get MAC address\n";
+	print "Unable to get Grid device MAC address\n";
 	exit 1;
     }
-    $grid_hw_addr = $1;
+    else {
+	$grid_hw_addr = $1;
+    }
     if (!($ifconfig_out =~ /\n\s+inet (\d+.\d+.\d+.\d+)/)) {
-	print "Unable to get old IP address\n";
+	print "Unable to get old Grid device IP address\n";
     }
     else {
 	$old_ip_addr = $1;
+	if (!($old_ip_addr =~ /(\d+.\d+.\d+).\d+/)) {
+	    print "Unable to get Grid device net address\n";
+	    exit 1;
+	}
+	$old_grid_dev_net = "$1"; # keep as only the first 3 digits
     }
     if (!($ifconfig_out =~ /netmask (0x[0-9a-fA-F]{8})/)) {
-	print "Unable to get old netmask\n";
+	print "Unable to get old Grid device netmask\n";
     }
     else {
 	$old_netmask = $1;
     }
     if (!($ifconfig_out =~ /broadcast (\d+.\d+.\d+.\d+)/)) {
-	print "Unable to get old broadcast address\n";
+	print "Unable to get old Grid device broadcast address\n";
     }
     else {
 	$old_bcast = $1;
     }
 
-    $route_info = `route -n get default`;
-    if (!($route_info =~ /\n\s+gateway: (\d+.\d+.\d+.\d+)/)) {
-	print "Unable to get old gateway\n";
+    # get LAN device params for routing
+    $ifconfig_lan_out = `ifconfig $lan_if`;
+    if (!($ifconfig_lan_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)) {
+	print "Unable to get LAN device MAC address\n";
+	exit 1; # we really need to know that...
     }
     else {
-	$old_gw = $1;
+	$lan_hw_addr = $1;
+    }
+    if (!($ifconfig_lan_out =~ /\n\s+inet (\d+.\d+.\d+.\d+)/)) {
+	print "Unable to get LAN device IP address\n";
+	exit 1;
+    }
+    else {
+	$lan_addr = $1;
+	if (!($lan_addr =~ /(\d+.\d+.\d+).\d+/)) {
+	    print "Unable to get LAN device net address\n";
+	    exit 1;
+	}
+	$lan_net = "$1"; # keep as only the first 3 digits
+    }
+    if (!($ifconfig_lan_out =~ /netmask (0x[0-9a-fA-f]{8})/)) {
+	print "Unable to get LAN device netmask\n";
+    }
+    else {
+	$old_lan_netmask = $1;
+    }
+    if (!($ifconfig_lan_out =~ /broadcast (\d+.\d+.\d+.\d+)/)) {
+	print "Unable to get LAN device broadcast address\n";
+    }
+    else {
+	$old_lan_bcast = $1;
+    }
+
+    # only know how to extract one default route -- whereas linux
+    # seems to be able to support multiple ``default'' routes!.
+    $route_info = `route -n get default`;
+    if (!($route_info =~ /\n\s+gateway: ($lan_net.\d+)/)) {
+	print "Unable to get gateway\n";
+	exit 1;
+    }
+    else {
+	$lan_gw = $1;
     }
 
     $tun_dev = "tun";
@@ -268,20 +310,24 @@ if ($system_type =~ /Linux/) {
     # set the adapter to ad-hoc mode
     my_system "iwconfig $grid_if mode ad-hoc channel $grid_channel";
 
-    # remove LAN device routes, and set up through click tunnel
+    # remove LAN device routes
     my_system "ifconfig $lan_if down";
     my_system "ifconfig $lan_if 0";
 
 }
 elsif ($system_type =~ /FreeBSD/) {
-    # remove all routes through the grid interface, and make sure it is up
-    # assume the default route was the one through the adapter! XXX
+    # make sure grid interface is up
     my_system "route -n delete default";
     my_system "ifconfig $grid_if 0";
 
     # set the adapter to ad-hoc mode
     my_system "wicontrol -i $grid_if -p 3";
     my_system "wicontrol -i $grid_if -f $grid_channel";
+
+    # remove default route
+    my_system, "route -n delete default";
+    # make sure LAN interface is up
+    my_system "ifconfig $lan_if 0";
 }
 else {
     print stderr "This system is not supported\n";
@@ -354,11 +400,9 @@ if ($do_cleanup) {
     elsif ($system_type =~ /FreeBSD/) {
 	my_system "ifconfig $grid_if $old_ip_addr netmask $old_netmask broadcast $old_bcast";
 	my_system "wicontrol -i $grid_if -p 1";
-	if ($grid_gw != "0.0.0.0") {
-	    my_system "route delete default";
-	    my_system "route add default $old_gw";
-	}
-
+	my_system "ifconfig $lan_if $lan_addr netmask $old_lan_netmask broadcast $old_lan_bcast";
+	my_system "route delete default";
+	my_system "route add default $lan_gw";
     }
     else {
 	print stderr "This system is not supported\n";
