@@ -174,7 +174,7 @@ IPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
 #if IPRW_SPINLOCKS
   rw->_spinlock.acquire();
 #endif
-  rw->clean_map(rw->_tcp_map);
+  rw->clean_map(rw->_tcp_map, rw->_tcp_gc_interval);
 #if IPRW_SPINLOCKS
   rw->_spinlock.release();
 #endif
@@ -188,7 +188,8 @@ IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
 #if IPRW_SPINLOCKS
   rw->_spinlock.acquire();
 #endif
-  rw->clean_map_free_tracked(rw->_tcp_map, &rw->_tcp_done);
+  rw->clean_map_free_tracked
+    (rw->_tcp_map, rw->_tcp_done_gc_interval, &rw->_tcp_done);
 #if IPRW_SPINLOCKS
   rw->_spinlock.release();
 #endif
@@ -202,11 +203,11 @@ IPRewriter::udp_gc_hook(Timer *timer, void *thunk)
 #if IPRW_SPINLOCKS
   rw->_spinlock.acquire();
 #endif
-  rw->clean_map(rw->_udp_map);
+  rw->clean_map(rw->_udp_map, rw->_udp_gc_interval);
 #if IPRW_SPINLOCKS
   rw->_spinlock.release();
 #endif
-  timer->schedule_after_ms(rw->_udp_gc_interval);
+  timer->schedule_after_ms(1000);
 }
 
 IPRw::Mapping *

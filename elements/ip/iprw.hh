@@ -58,10 +58,11 @@ class IPRw : public Element { public:
 
   static const int GC_INTERVAL_SEC = 3600;
 
-  void take_state_map(Map &, Mapping **, const Vector<Pattern *> &, const Vector<Pattern *> &);
-  void clean_map(Map &);
-  void clean_map_free_tracked(Map &, Mapping **free_tracked);
+  void take_state_map
+    (Map &, Mapping **, const Vector<Pattern *> &, const Vector<Pattern *> &);
   void clear_map(Map &);
+  void clean_map(Map &, unsigned ms);
+  void clean_map_free_tracked(Map &, unsigned ms, Mapping **free_tracked);
 
 };
 
@@ -80,12 +81,12 @@ class IPRw::Mapping { public:
   bool is_forward() const		{ return !_is_reverse; }
   bool is_reverse() const		{ return _is_reverse; }
   Mapping *reverse() const		{ return _reverse; }
-  bool used() const			{ return _used; }
+  
+  bool used(unsigned interval) const;
+  void mark_used()			{ _used = click_jiffies(); }
+  void clear_used()			{ _used = 0; }
+  
   bool marked() const			{ return _marked; }
-  
-  void mark_used()			{ _used = true; }
-  void clear_used()			{ _used = false; }
-  
   void mark()				{ _marked = true; }
   void unmark()				{ _marked = false; }
     
@@ -122,12 +123,12 @@ class IPRw::Mapping { public:
   Mapping *_reverse;
   
   bool _is_reverse : 1;
-  bool _used : 1;
   bool _marked : 1;
   bool _session_over : 1;
   bool _free_tracked : 1;
   unsigned char _ip_p;
   unsigned char _output;
+  unsigned _used;
   
   Pattern *_pat;
   Mapping *_pat_prev;
@@ -243,6 +244,12 @@ IPRw::Mapping::add_to_free_tracked(Mapping *m)
   me->_free_next = m;
   _free_tracked = _reverse->_free_tracked = true;
   return me;
+}
+
+inline bool
+IPRw::Mapping::used(unsigned interval) const
+{ 
+  return (click_jiffies()-_used)*1000/CLICK_HZ < interval;
 }
 
 #endif

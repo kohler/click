@@ -19,6 +19,7 @@
 
 #include <click/config.h>
 #include <click/package.hh>
+#include "iprw.hh"
 #include "ipaddrrewriter.hh"
 #include <click/click_ip.h>
 #include <click/confparse.hh>
@@ -149,7 +150,7 @@ IPAddrRewriter::notify_pattern(Pattern *p, ErrorHandler *errh)
 void
 IPAddrRewriter::run_scheduled()
 {
-  clean_map(_map);
+  clean_map(_map, GC_INTERVAL_SEC * 1000);
   _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);
 }
 

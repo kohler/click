@@ -44,7 +44,8 @@ extern struct proto tcp_prot;
 //
 
 IPRw::Mapping::Mapping()
-  :  _is_reverse(false), _used(false), _marked(false),
+  :  _is_reverse(false), // _used(false), 
+     _marked(false),
     _session_over(false), _free_tracked(false),
     _ip_p(0), _pat(0), _pat_prev(0), _pat_next(0), _free_next(0)
 {
@@ -598,14 +599,14 @@ IPRw::take_state_map(Map &map, Mapping **free_tracked,
 }
 
 void
-IPRw::clean_map(Map &table)
+IPRw::clean_map(Map &table, unsigned interval_ms)
 {
   Mapping *to_free = 0;
 
   for (Map::Iterator iter = table.first(); iter; iter++)
     if (Mapping *m = iter.value()) {
-      if (!m->is_reverse() && !m->used() && !m->free_tracked()
-	  && !m->reverse()->used()) {
+      if (!m->is_reverse() && !m->used(interval_ms) && !m->free_tracked()
+	  && !m->reverse()->used(interval_ms)) {
 	m->set_free_next(to_free);
 	to_free = m;
       }
@@ -622,15 +623,18 @@ IPRw::clean_map(Map &table)
     to_free = next;
   }
 
+#if 0
   for (Map::Iterator iter = table.first(); iter; iter++)
     if (Mapping *m = iter.value()) {
       if (!m->free_tracked())
 	m->clear_used();
     }
+#endif
 }
 
 void
-IPRw::clean_map_free_tracked(Map &table, Mapping **free_tracked)
+IPRw::clean_map_free_tracked
+(Map &table, unsigned interval_ms, Mapping **free_tracked)
 {
   Mapping *to_free = 0;
   Mapping **prev_ptr = free_tracked;
@@ -643,7 +647,7 @@ IPRw::clean_map_free_tracked(Map &table, Mapping **free_tracked)
       // reuse of a port; take it off the free-tracked list
       *prev_ptr = next;
       m->clear_free_tracked();
-    } else if (!m->used() && !m->reverse()->used()) {
+    } else if (!m->used(interval_ms) && !m->reverse()->used(interval_ms)) {
       *prev_ptr = next;
       m->set_free_next(to_free);
       to_free = m;
@@ -663,10 +667,12 @@ IPRw::clean_map_free_tracked(Map &table, Mapping **free_tracked)
     to_free = next;
   }
 
+#if 0
   for (m = *free_tracked; m; m = m->free_next()) {
     m->clear_used();
     m->reverse()->clear_used();
   }
+#endif
 }
 
 void

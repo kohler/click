@@ -257,7 +257,7 @@ void
 TCPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
 {
   TCPRewriter *rw = (TCPRewriter *)thunk;
-  rw->clean_map(rw->_tcp_map);
+  rw->clean_map(rw->_tcp_map, rw->_tcp_gc_interval);
   timer->schedule_after_ms(rw->_tcp_gc_interval);
 }
 
@@ -265,7 +265,8 @@ void
 TCPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
 {
   TCPRewriter *rw = (TCPRewriter *)thunk;
-  rw->clean_map_free_tracked(rw->_tcp_map, &rw->_tcp_done);
+  rw->clean_map_free_tracked
+    (rw->_tcp_map, rw->_tcp_done_gc_interval, &rw->_tcp_done);
   timer->schedule_after_ms(rw->_tcp_done_gc_interval);
 }
 
