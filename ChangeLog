@@ -1,3 +1,10 @@
+2001-12-11 Tuesday 21:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridprobehandler.cc (1.6),
+	elements/grid/gridprobereplyreceiver.cc (1.7),
+	elements/grid/gridroutecb.hh (1.4), elements/grid/printgrid.cc
+	(1.19), include/click/packet_anno.hh (1.8): grid debugging fixes
+
 2001-12-11 Tuesday 15:36  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridroutecb.hh (1.3): [no log message]
