@@ -374,8 +374,8 @@ class _BigHashMap_const_iterator<K, T *> : private _BigHashMap_const_iterator<K,
   _BigHashMap_const_iterator(const BigHashMap<K, T *> *t) : inherited(t) { }
 
   operator bool() const	{ return inherited::operator bool(); }
-  void operator++(int)	{ return inherited::operator++(0); }
-  void operator++()	{ return inherited::operator++(); }
+  void operator++(int)	{ inherited::operator++(0); }
+  void operator++()	{ inherited::operator++(); }
   
   const K &key() const	{ return inherited::key(); }
   T *value() const	{ return reinterpret_cast<T *>(inherited::value()); }
