@@ -1,3 +1,19 @@
+2002-02-17 Sunday 03:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.49), elements/grid/checkgridheader.cc (1.21),
+	elements/grid/grid.hh (1.36), elements/grid/gridroutecb.hh (1.8),
+	elements/grid/gridroutetable.cc (1.30),
+	elements/grid/gridroutetable.hh (1.16), elements/grid/linkstat.cc
+	(1.1), elements/grid/linkstat.hh (1.1),
+	elements/grid/lookuplocalgridroute.cc (1.31),
+	elements/grid/setgridchecksum.cc (1.18),
+	elements/grid/linktracker.cc (1.1), elements/grid/linktracker.hh
+	(1.1), elements/grid/pingpong.cc (1.1), elements/grid/pingpong.hh
+	(1.1): more big changes to grid metric code.  now link stats are
+	ping-ponged back to the sender on every opportunity using unicast
+	packets.  added elements PingPong, LinkStat, and LinkTracker.  This
+	code is not tested yet
+
 2002-02-16 Saturday 14:26  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridroutetable.cc (1.29): bug fix: can't do String
