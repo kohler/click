@@ -1,3 +1,22 @@
+2004-08-17 Tuesday 14:49  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: counterrors.cc (1.2), counterrors.hh (1.2): moved
+	these elements
+
+2004-08-17 Tuesday 14:47  John Bicket <jbicket@mit.edu>
+
+	* conf/gen_config_roofnet.pl (1.7): make nodes work as access
+	points also.
+
+2004-08-17 Tuesday 14:44  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: availablerates.cc (1.5), wifitxfeedback.cc
+	(1.15), analysis/counterrors.cc (1.1), analysis/counterrors.hh
+	(1.1), analysis/countfragbytes.cc (1.1), analysis/countfragbytes.hh
+	(1.1), analysis/locationhistogram.cc (1.1),
+	analysis/locationhistogram.hh (1.1), ap/openauthresponder.cc (1.4):
+	fixes, as well an phyerr analysis elements.
+
 2004-08-17 Tuesday 13:58  John Bicket <jbicket@mit.edu>
 
 	* elements/userlevel/: todump.cc (1.58), todump.hh (1.35): make
