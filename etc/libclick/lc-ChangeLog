@@ -1,3 +1,8 @@
+2001-10-10 Wednesday 10:40  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: support "h"/"hr"/"m"/"min" suffixes in
+	cp_seconds_as_*
+
 2001-10-10 Wednesday 07:08  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/drivermanager.cc: DriverManager supports global handlers

@@ -1,3 +1,8 @@
+2001-10-10 Wednesday 10:40  Eddie Kohler <kohler@aciri.org>
+
+	* lib/confparse.cc (1.83): support "h"/"hr"/"m"/"min" suffixes in
+	cp_seconds_as_*
+
 2001-10-10 Wednesday 07:08  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/drivermanager.cc (1.13): DriverManager supports
