@@ -33,8 +33,9 @@ public:
     
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *errh);
-    void cleanup();
+    void cleanup(CleanupStage);
     void add_handlers();
+    int configure_phase() const { return (CONFIGURE_PHASE_LAST-1); }
     
     
     int got_skb(struct sk_buff *);

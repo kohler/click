@@ -17,7 +17,6 @@ WifiTXFeedback::WifiTXFeedback()
 
 WifiTXFeedback::~WifiTXFeedback()
 {
-  register_click_wifi_tx_cb(NULL, NULL);
   MOD_DEC_USE_COUNT;
 }
 
@@ -49,7 +48,7 @@ WifiTXFeedback::initialize(ErrorHandler *errh)
 }
 
 void
-WifiTXFeedback::cleanup()
+WifiTXFeedback::cleanup(CleanupStage)
 {
   register_click_wifi_tx_cb(NULL, NULL);
   for (unsigned i = _head; i != _tail; i = next_i(i))
