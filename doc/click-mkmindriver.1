@@ -1,0 +1,141 @@
+.\" -*- mode: nroff -*-
+.ds V 1.2.0
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK-MKMINDRIVER 1 "28/Apr/2001" "Version \*V"
+.SH NAME
+click-mkmindriver \- generates a build environment for a minimal Click driver
+'
+.SH SYNOPSIS
+.B click-mkmindriver
+.RI "-p " packagename
+.RI \%[ options "] \e"
+.br
+.RI "\%        [" router\-files... ]
+'
+.SH DESCRIPTION
+The
+.B click-mkmindriver
+tool generates a build environment for a minimal Click driver\*Ethat is, a
+driver containing only the elements necessary to run the configurations in
+the
+.IR router\-files .
+You must supply a name for the driver,
+.IR packagename .
+.B Click-mkmindriver
+will create a Makefile named
+.RI "`Makefile." packagename "'."
+Running
+.RI "`make -f Makefile." packagename "'"
+will create either a user-level driver named
+.RI "`" packagename "click',"
+or a Linux kernel module named
+.RI "`" packagename "click.o'."
+Run
+.B click-mkmindriver
+from the respective Click build directory, or supply a relevant
+.B \-\-directory
+option.
+'
+.SH "OPTIONS"
+'
+If any filename argument is a single dash "-",
+.B click-mkmindriver
+will use the standard input or output instead, as appropriate.
+'
+.TP 5
+.BI \-p " packagename"
+.PD 0
+.TP
+.BI \-\-package " packagename"
+Specifies the package name.
+'
+.Sp
+.TP
+.BI \-f " file"
+.TP
+.BI \-\-file " file"
+Read a router configuration from
+.IR file .
+The default is the standard input.
+'
+.Sp
+.TP
+.BI \-k
+.TP
+.BI \-\-kernel
+Output a Makefile for a Linux kernel module driver.
+'
+.Sp
+.TP
+.BI \-u
+.TP
+.BI \-\-user
+Output a Makefile for a user-level driver. This is the default.
+'
+.Sp
+.TP
+.BI \-d " dir"
+.TP
+.BI \-\-directory " dir"
+Write output files (`Makefile.\fIpackagename\fR' and
+`elements_\fIpackagename\fR.conf') to the directory
+.IR dir .
+This directory must already contain a normal build environment for the
+Click Linux module or user-level driver. (The driver required depends on
+the 
+.B \-k
+and
+.B \-u
+options.) The default directory is `.'.
+'
+.Sp
+.TP 5
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "SEE ALSO"
+.M click 1 ,
+.M click.o 8
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

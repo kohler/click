@@ -68,8 +68,8 @@ CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@
 
 DEFS = @DEFS@ 
-INCLUDES = -I$(top_builddir) -I$(top_builddir)/include -I$(srcdir) \
-	-I$(top_srcdir) -I$(top_srcdir)/include -I$(linuxdir)/include
+INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(srcdir) -I$(top_srcdir) -I$(linuxdir)/include
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 

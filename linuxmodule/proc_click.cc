@@ -18,9 +18,8 @@
  * also accessible at http://www.pdos.lcs.mit.edu/click/license.html
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <click/config.h>
+
 #include "modulepriv.hh"
 #include <click/router.hh>
 #include <click/error.hh>

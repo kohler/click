@@ -64,9 +64,9 @@ CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 
-DEFS = @DEFS@ -DCLICK_BINDIR='"$(bindir)"' -DCLICK_LIBDIR='"$(libdir)"'
-INCLUDES = -I$(top_builddir) -I$(top_builddir)/include -I$(srcdir) \
-	-I$(top_srcdir) -I$(top_srcdir)/include @PCAP_HEADER_PATH@
+DEFS = @DEFS@
+INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(srcdir) -I$(top_srcdir) @PCAP_HEADER_PATH@
 LDFLAGS = @LDFLAGS@ @PCAP_LIBRARY_PATH@
 LIBS = @LIBS@ @PCAP_LIBRARY@ @DL_LIBRARY@ @SOCKET_LIBS@
 

@@ -1,6 +1,5 @@
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <click/config.h>
+
 #include <click/glue.hh>
 #include <click/router.hh>
 #include <click/routerthread.hh>

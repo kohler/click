@@ -42,9 +42,9 @@ CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 
-DEFS = @DEFS@ -DCLICK_BINDIR='"$(bindir)"' \
-	-I. -I$(top_builddir) -I$(srcdir) \
-	-I$(top_srcdir)/tools/lib -I$(top_srcdir)/include
+DEFS = @DEFS@
+INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_srcdir)/tools/lib -I$(srcdir)
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 

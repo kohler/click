@@ -51,6 +51,8 @@ install-local: elementmap $(srcdir)/click-buildtool click-compile $(srcdir)/clic
 	/bin/ln -s `cd $(top_srcdir); pwd` $(datadir)/src
 install-doc:
 	@cd doc && $(MAKE) install
+install-info:
+	@cd doc && $(MAKE) install-info
 install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
 # note: install-include installs include/click/config.h, not config.h
@@ -58,6 +60,7 @@ install-include: stamp-h
 	$(mkinstalldirs) $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.* $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/config.h $(includedir)
+	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/pathvars.h $(includedir)
 
 elemlist elemlists:
 	for dir in @TARGETS@; do \
@@ -74,8 +77,7 @@ click-compile: $(srcdir)/click-compile.in
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 	@chmod +x click-compile; touch click-compile
 
-$(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acconfig.h
-	cd $(srcdir) && $(AUTOHEADER)
+$(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/config.h.in
 	cd $(srcdir) && $(AUTOCONF)
 	$(SHELL) $(srcdir)/configure @ac_configure_args@
 Makefile: $(srcdir)/configure $(srcdir)/Makefile.in
@@ -84,7 +86,7 @@ Makefile: $(srcdir)/configure $(srcdir)/Makefile.in
 config.h: stamp-h
 stamp-h: $(srcdir)/config.h.in config.status
 	cd $(top_builddir) \
-	  && CONFIG_FILES= CONFIG_HEADERS='config.h include/click/config.h:config.h.in' $(SHELL) ./config.status
+	  && CONFIG_FILES= CONFIG_HEADERS='include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in' $(SHELL) ./config.status
 	echo > stamp-h
 
 check-filenames:
@@ -105,20 +107,23 @@ top_distdir = $(distdir)
 
 dist: distdir
 distdir:
+	@cd doc && $(MAKE) info
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
 	@echo Copying library, documentation, configuration, and driver files...
 	@for file in `cat $(srcdir)/DISTFILES`; do \
 	  d=$(srcdir); \
-	  if test -d $$d/$$file; then \
+	  if test -d "$$d/$$file"; then \
 	    mkdir $(distdir)/$$file; \
 	    chmod 777 $(distdir)/$$file; \
 	  else \
-	    test -f $(distdir)/$$file \
-	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
-	    || cp -p $$d/$$file $(distdir)/$$file || :; \
-	  fi; \
+	    for f in `cd $$d && echo $$file`; do \
+	      test -f "$(distdir)/$$f" \
+	      || ln $$d/$$f $(distdir)/$$f 2> /dev/null \
+	      || cp -p $$d/$$f $(distdir)/$$f \
+	      || echo "Could not copy $$d/$$f!" 1>&2; \
+	  done; fi; \
 	done
 	@echo Copying element files...
 	@mkdir $(distdir)/elements

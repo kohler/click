@@ -15,7 +15,7 @@
  *
  * The inputs usually come from Queues or other pull schedulers.
  *
- * =a Queue, RoundRobinSched, StrideSched
+ * =a Queue, RoundRobinSched, StrideSched, DRRSched
  */
 
 class PrioSched : public Element {

@@ -8,7 +8,7 @@
 
 DriverManager(INSTRUCTIONS...)
 
-=s info
+=s information
 
 manages driver stop events
 

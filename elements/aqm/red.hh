@@ -7,7 +7,8 @@ class Storage;
 /*
 =c
 
-RED(MIN_THRESH, MAX_THRESH, MAX_P [, QUEUES, I<KEYWORDS>])
+RED(MIN_THRESH, MAX_THRESH, MAX_P [, QUEUES])
+RED(I<KEYWORDS>)
 
 =s dropping
 

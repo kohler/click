@@ -23,7 +23,7 @@
  * =h tickets0...ticketsI<N-1> read/write
  * Returns or sets the number of tickets for each input port.
  *
- * =a PrioSched, RoundRobinSched, StrideSwitch
+ * =a PrioSched, RoundRobinSched, DRRSched, StrideSwitch
  */
 
 class StrideSched : public Element { protected:

@@ -195,6 +195,12 @@ WARNING: \`$1' is missing on your system; trying to use plain \`tex'
     tex $file
     ;;
 
+  install-info)
+    echo 1>&2 "\
+WARNING: \`$1' is missing on your system.  I will not be able to install
+         the Click Info manual."
+    ;;
+
   *)
     echo 1>&2 "\
 WARNING: \`$1' is needed, and you do not seem to have it handy on your

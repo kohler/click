@@ -87,6 +87,10 @@ struct Clp_Parser {
     double d;
     char *s;
     void *pv;
+#ifdef HAVE_INT64_TYPES
+    int64_t i64;
+    u_int64_t u64;
+#endif
   } val;
   
   Clp_Internal *internal;

@@ -1,4 +1,4 @@
-/* Process this file with autoheader to produce config.h.in */
+/* Process this file with configure to produce config.h. -*- mode: c -*- */
 #ifndef CLICK_CONFIG_H
 #define CLICK_CONFIG_H
 
@@ -27,8 +27,17 @@
 /* Define if <pcap.h> uses bpf_timeval. */
 #undef HAVE_BPF_TIMEVAL
 
-@TOP@
-@BOTTOM@
+/* Define if you have the strerror function.  */
+#undef HAVE_STRERROR
+
+/* Define if you have the strtoul function.  */
+#undef HAVE_STRTOUL
+
+/* Define if you have the <dlfcn.h> header file.  */
+#undef HAVE_DLFCN_H
+
+/* Define if you have the <unistd.h> header file.  */
+#undef HAVE_UNISTD_H
 
 /* Define stuff under a Linux module. */
 #ifdef CLICK_LINUXMODULE
@@ -149,4 +158,4 @@ inline void *operator new(size_t, void *v) { return v; }
 #endif
 #endif
 
-#endif CLICK_CONFIG_H
+#endif /* CLICK_CONFIG_H */

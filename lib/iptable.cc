@@ -17,9 +17,8 @@
  * also accessible at http://www.pdos.lcs.mit.edu/click/license.html
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <click/config.h>
+
 #include <click/iptable.hh>
 
 IPTable::IPTable()

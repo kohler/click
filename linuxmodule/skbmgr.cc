@@ -3,9 +3,8 @@
  * Benjie Chen, Eddie Kohler
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <click/config.h>
+
 #include <click/glue.hh>
 #include <click/atomic.hh>
 #include <click/skbmgr.hh>

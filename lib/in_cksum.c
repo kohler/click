@@ -3,9 +3,7 @@
  * borrowed, with bug fixes, from one of the BSDs
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <click/config.h>
 #include <click/click_ip.h>
 
 unsigned short

@@ -1,0 +1,14 @@
+/* Process this file with configure to produce pathvars.h */
+#ifndef CLICK_PATHVARS_H
+#define CLICK_PATHVARS_H
+
+/* Directory for binaries */
+#undef CLICK_BINDIR
+
+/* Directory for packages and kernel module */
+#undef CLICK_LIBDIR
+
+/* Directory for shared files */
+#undef CLICK_SHAREDIR
+
+#endif

@@ -10,10 +10,12 @@ exec_prefix = @exec_prefix@
 bindir = @bindir@
 mandir = @mandir@
 datadir = @datadir@/click
+infodir = @infodir@
 
 PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
+INSTALL_INFO = @INSTALL_INFO@
 MAKEINFO = @MAKEINFO@
 TEXI2DVI = @TEXI2DVI@
 mkinstalldirs = @top_srcdir@/mkinstalldirs
@@ -24,7 +26,7 @@ Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
-install: install-man
+install: install-man install-info
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) $(srcdir)/click-elem2man $(bindir)/click-elem2man
 install-man:
@@ -37,15 +39,27 @@ install-man:
 	$(INSTALL_DATA) $(srcdir)/click-devirtualize.1 $(mandir)/man1/click-devirtualize.1
 	$(INSTALL_DATA) $(srcdir)/click-fastclassifier.1 $(mandir)/man1/click-fastclassifier.1
 	$(INSTALL_DATA) $(srcdir)/click-install.1 $(mandir)/man1/click-install.1
+	$(INSTALL_DATA) $(srcdir)/click-mkmindriver.1 $(mandir)/man1/click-mkmindriver.1
 	$(INSTALL_DATA) $(srcdir)/click-uncombine.1 $(mandir)/man1/click-uncombine.1
 	$(INSTALL_DATA) $(srcdir)/click-undead.1 $(mandir)/man1/click-undead.1
 	$(INSTALL_DATA) $(srcdir)/click-uninstall.1 $(mandir)/man1/click-uninstall.1
 	$(INSTALL_DATA) $(srcdir)/click-xform.1 $(mandir)/man1/click-xform.1
 	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(mandir)/man7/elementdoc.7
 	$(top_srcdir)/click-buildtool findelem -a -p $(top_srcdir) | $(PERL) $(srcdir)/click-elem2man -l -d $(mandir)/mann -f -
+install-info: $(srcdir)/click.info
+	$(mkinstalldirs) $(infodir)
+	@for f in `cd $(srcdir) && echo click.info click.info-[0-9] click.info-[0-9][0-9]`; do \
+	  if test -f $(srcdir)/$$f; then \
+	    echo "  $(INSTALL_DATA) $(srcdir)/$$f $(infodir)/$$f"; \
+	    $(INSTALL_DATA) $(srcdir)/$$f $(infodir)/$$f || exit 1; fi; \
+	done
+	$(INSTALL_INFO) --info-dir=$(infodir) $(infodir)/click.info
 
-click.info: $(srcdir)/click.texi
-	$(MAKEINFO) $(srcdir)/click.texi
+info: $(srcdir)/click.info
+	@:
+$(srcdir)/click.info: $(srcdir)/click.texi
+	@rm -f $@ $@-[0-9] $@-[0-9][0-9]
+	cd $(srcdir); $(MAKEINFO) click.texi
 click.html: $(srcdir)/click.texi
 	$(MAKEINFO) --html --no-split $(srcdir)/click.texi
 click.dvi: $(srcdir)/click.texi always
@@ -57,6 +71,6 @@ always:
 clean:
 	rm -f click.aux click.cp click.cps click.dvi click.fn click.html click.ky click.pg click.tmp click.toc click.tp click.tps click.vr *.log
 distclean: clean
-	-rm -f Makefile click.info*
+	-rm -f Makefile
 
-.PHONY: all clean distclean install install-man always
+.PHONY: all clean distclean install install-man install-info info always

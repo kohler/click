@@ -18,10 +18,8 @@
  */
 
 #define CLICK_SCHED_DEBUG
+#include <click/config.h>
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 #include "modulepriv.hh"
 #include "kernelerror.hh"
 #include <click/routerthread.hh>

@@ -1,10 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(acconfig.h)
+AC_INIT(pathvars.h.in)
 AC_SUBST(ac_configure_args)
 CLICK_VERSION=1.2.0
 AC_DEFINE_UNQUOTED(CLICK_VERSION, "$CLICK_VERSION")
 AC_SUBST(CLICK_VERSION)
-AC_CONFIG_HEADER(config.h include/click/config.h:config.h.in)
+AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in)
 
 dnl support for cross compiling
 AC_CANONICAL_SYSTEM
@@ -94,19 +94,10 @@ fi
 AC_SUBST(KERNEL_CXX)
 
 dnl
-dnl autoconf and autoheader
+dnl autoconf
 dnl
 
 missing_dir=`cd $srcdir && pwd`
-
-AC_MSG_CHECKING(for working autoheader)
-AUTOHEADER=${AUTOHEADER-autoheader}
-if ($AUTOHEADER --version) < /dev/null > /dev/null 2>&1; then
-  AC_MSG_RESULT(found)
-else
-  AUTOHEADER="$missing_dir/missing autoheader"
-  AC_MSG_RESULT(missing)
-fi
 
 AC_MSG_CHECKING(for working autoconf)
 AUTOCONF=${AUTOCONF-autoconf}
@@ -606,7 +597,7 @@ fi
 AC_SUBST(PERL)
 
 dnl
-dnl Makeinfo and texi2dvi
+dnl Makeinfo, texi2dvi, install-info
 dnl
 
 AC_MSG_CHECKING(for working makeinfo)
@@ -633,8 +624,51 @@ else
   AC_MSG_RESULT(missing)
 fi
 
+AC_MSG_CHECKING(for working install-info)
+dnl Assume any version of install-info is OK
+INSTALL_INFO=${INSTALL_INFO-install-info}
+if ($INSTALL_INFO --version) < /dev/null > conftest.out 2>&1; then
+  AC_MSG_RESULT(found)
+else
+  INSTALL_INFO="$missing_dir/missing install-info"
+  AC_MSG_RESULT(missing)
+fi
+
 AC_SUBST(MAKEINFO)
 AC_SUBST(TEXI2DVI)
+AC_SUBST(INSTALL_INFO)
+
+dnl
+dnl Expand 'infodir' to check for Red Hat
+dnl
+
+if test x$infodir = 'x${prefix}/info'; then
+  test ! -d ${prefix}/info && test -d ${prefix}/share/info && infodir='${prefix}/share/info'
+fi
+
+dnl
+dnl Set path variables
+dnl
+
+shell_expand () {
+  val=`eval echo '$'"$1"`
+  while echo "x$val" | fgrep '$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
+  eval "$1='$val'"
+}
+
+dnl Preset $prefix and $exec_prefix.
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
+shell_expand bindir
+shell_expand libdir
+shell_expand datadir
+shell_expand infodir
+
+AC_DEFINE_UNQUOTED(CLICK_BINDIR, "$bindir")
+AC_DEFINE_UNQUOTED(CLICK_LIBDIR, "$libdir")
+AC_DEFINE_UNQUOTED(CLICK_SHAREDIR, "$datadir")
+AC_DEFINE_UNQUOTED(CLICK_INFODIR, "$infodir")
 
 dnl
 dnl Output
@@ -653,7 +687,7 @@ done
 rm -rf conftest*
 
 AC_OUTPUT_COMMANDS(for ac_file in $CONFIG_HEADERS; do
-  test $ac_file = config.h && echo > stamp-h
+  test $ac_file = include/click/config.h:config.h.in && echo > stamp-h
 done
 for ac_file in $CONFIG_FILES; do
   test $ac_file = click-compile && chmod +x click-compile
