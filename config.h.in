@@ -24,6 +24,9 @@
 /* Define if IPv6 support is enabled. */
 #undef HAVE_IP6
 
+/* Define if PollDevice should run fast to get good benchmark numbers */
+#undef CLICK_WARP9
+
 /* Define if <pcap.h> uses bpf_timeval. */
 #undef HAVE_BPF_TIMEVAL
 
