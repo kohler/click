@@ -1,3 +1,12 @@
+2004-02-05 Thursday 17:28  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsr.hh (1.2), elements/grid/dsrarptable.cc (1.7),
+	elements/grid/dsrarptable.hh (1.6), elements/grid/dsrroutetable.hh
+	(1.5), elements/grid/gridproxy.hh (1.3),
+	elements/grid/sr/srpacket.hh (1.10), elements/userlevel/fromdump.cc
+	(1.85), lib/routerthread.cc (1.35): Mike Neufeld's fixes for
+	nsclick compilation
+
 2004-02-05 Thursday 03:52  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/aggregateipflows.cc (1.26): there is nothing
