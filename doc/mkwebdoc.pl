@@ -36,7 +36,7 @@ chdir('..') if !-d 'linuxmodule';
 -d 'linuxmodule' || die "must be in CLICKDIR or CLICKDIR/doc";
 
 # 0. create distdir
-mysystem("gmake dist") if ($INSTALL);
+mysystem("gmake distdir") if ($INSTALL);
 
 my($VERSION);
 open(MK, 'Makefile') || die "no Makefile";
