@@ -1,3 +1,10 @@
+2001-09-27 Thursday 04:12  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: checkipheader.cc (1.40), checkipheader.hh (1.30),
+	checkipheader2.cc (1.25), checkipheader2.hh (1.18), markipheader.hh
+	(1.10): CheckIPHeader and variants set the destination IP address
+	annotation, if it was not set already
+
 2001-09-26 Wednesday 17:55  Eddie Kohler <kohler@aciri.org>
 
 	* elements/bsdmodule/fromdevice.cc (1.4), etc/freebsd-4.3-patch
