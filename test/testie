@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
 use Symbol 'qualify_to_ref';
+no locale;
+use bytes;
 
 ## utilities
 
@@ -219,7 +221,8 @@ sub read (*;$) {
     $t = <$fh>;
     while (defined($t)) {
 	if ($t =~ /^%\s*(\w+)\s*(.*?)\s*$/) {
-	    my($command, $args) = (lc($1), $2);
+	    my($command) = lc($1);
+	    my($args) = $2;
 	    if ($command eq 'script' || $command eq 'test') {
 		$t = _read_script_section($fh, $tt, $args);
 	    } elsif ($command eq 'info') {
@@ -317,7 +320,11 @@ EOD
 	die if @c != 1;
 	chomp $c[0];
 	next if $c[0] =~ /^\s*$/s;
-	$t .= $c[0] . " || testie_failed \$?\n";
+	if ($c[0] =~ /\&\s*$/) {
+	    $t .= $c[0] . "\n";
+	} else {
+	    $t .= $c[0] . " || testie_failed \$?\n";
+	}
     }
 
     $t;
