@@ -127,8 +127,10 @@ PrintSR::simple_action(Packet *p)
   }
   if (pk->_type == PT_DATA) {
     sa << " dataseq " << pk->data_seq();
-  } else {
-    sa << " qdst " << IPAddress(pk->_qdst);
+  }
+  IPAddress qdst = IPAddress(pk->_qdst);
+  if (qdst) {
+    sa << " qdst " << qdst;
   }
 
   if (pk->_type == PT_DATA) {

@@ -28,7 +28,6 @@ CLICK_DECLS
 
 
 #define MAX_RETRIES 16
-#define ORIGINAL_RETRIES 2
 
 ProbeTXRate::ProbeTXRate()
   : Element(2, 1),
@@ -58,6 +57,8 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   _debug = false;
   _alt_rate = false;
   _active = true;
+  _original_retries = 3;
+  _min_sample = 20;
   int ret = cp_va_parse(conf, this, errh,
 			cpKeywords, 
 			"OFFSET", cpUnsigned, "offset", &_offset,
@@ -69,6 +70,8 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 			"FILTER_NEVER_SUCCESS", cpBool, "foo", &_filter_never_success,
 			"AGGRESSIVE_ALT_RATE", cpBool, "foo", &_aggressive_alt_rate,
 			"ALT_RATE", cpBool, "xxx", &_alt_rate,
+			"ORIGINAL_RETRIES", cpUnsigned, "foo", &_original_retries,
+			"MIN_SAMPLE", cpUnsigned, "foo", &_min_sample,
 			"ACTIVE", cpBool, "xxx", &_active,
 			cpEnd);
   if (ret < 0) {
@@ -123,10 +126,11 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   click_gettimeofday(&now);
   timersub(&now, &_rate_window, &old);
   nfo->trim(old);
-  int rate = nfo->pick_rate();
-  int retries = (_alt_rate) ? ORIGINAL_RETRIES : MAX_RETRIES;
+  //nfo->check();
+  int rate = nfo->pick_rate(_min_sample);
+  int retries = (_alt_rate) ? _original_retries : MAX_RETRIES;
   int alt_rate = (_alt_rate) ? nfo->pick_alt_rate(_aggressive_alt_rate) : 0;
-  int alt_retries = (_alt_rate) ? MAX_RETRIES - ORIGINAL_RETRIES : 0;
+  int alt_retries = (_alt_rate) ? MAX_RETRIES - _original_retries : 0;
 
   SET_WIFI_RATE_ANNO(p_in, rate);
   SET_WIFI_MAX_RETRIES_ANNO(p_in, retries);
@@ -145,7 +149,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
   int status = WIFI_TX_STATUS_ANNO(p_in);  
-  int retries = _alt_rate ? MAX(ORIGINAL_RETRIES, WIFI_RETRIES_ANNO(p_in)) :
+  int retries = _alt_rate ? MIN(_original_retries, WIFI_RETRIES_ANNO(p_in)) :
     WIFI_RETRIES_ANNO(p_in);
   int alt_retries = WIFI_RETRIES_ANNO(p_in) - retries;
   int rate = WIFI_RATE_ANNO(p_in);
@@ -213,31 +217,29 @@ ProbeTXRate::process_feedback(Packet *p_in) {
 		  rate,
 		  WIFI_ALT_RATE_ANNO(p_in));
   }
-  bool packet_failed_alt_rate = (_alt_rate && status & WIFI_FAILURE);
   bool packet_failed_original_rate = status & WIFI_TX_STATUS_USED_ALT_RATE;
 
   unsigned time = 0;
   unsigned alt_time = 0;
-  time += calc_usecs_wifi_packet(1500, rate, retries);
   if (_alt_rate && packet_failed_original_rate) {
-    alt_time += calc_usecs_wifi_packet_tries(1500, alt_rate, 
-					     ORIGINAL_RETRIES, ORIGINAL_RETRIES + alt_retries);
+    alt_time = calc_usecs_wifi_packet_tries(1500, alt_rate, 
+					     _original_retries, _original_retries + alt_retries);
   }
-  time += alt_time;
+  time = calc_usecs_wifi_packet(1500, rate, retries);
 
   if (0) {
-    click_chatter(" rate %d retries %d time %d alt_rate %d alt_retries %d\n",
-		  rate, retries, time,
+    click_chatter(" rate %d retries %d time %d alt_time %d alt_rate %d alt_retries %d\n",
+		  rate, retries, time, alt_time,
 		  alt_rate, alt_retries);
   }
-  nfo->add_result(now, rate, success, time);
+  nfo->add_result(now, rate, success, time + alt_time);
 
   if (!success && alt_rate) {
     /* packet actually failed */
     nfo->add_result(now, alt_rate, false, alt_time);
   }
  
-  nfo->check();
+  //nfo->check();
   return ;
 }
 
@@ -283,11 +285,11 @@ ProbeTXRate::print_rates()
       sa << " " << nfo._rates[x];
       sa << " success " << nfo._total_success[x];
       sa << " fail " << nfo._total_fail[x];
-      sa << " total_usecs " << nfo._total_usecs[x];
-      sa << " perfect_usecs " << nfo._perfect_usecs[x];
+      sa << " total_usecs " << nfo._total_time[x];
+      sa << " perfect_usecs " << nfo._perfect_time[x];
       sa << " average_usecs ";
       if (nfo._total_success[x]) {
-	int usecs = nfo._total_usecs[x] / nfo._total_success[x];
+	int usecs = nfo._total_time[x] / nfo._total_success[x];
 	sa << usecs;
       } else {
 	sa << "*";
@@ -306,6 +308,7 @@ enum {H_DEBUG, H_RATES, H_THRESHOLD, H_RESET,
       H_OFFSET,
       H_ACTIVE, 
       H_ALT_RATE,
+      H_ORIGINAL_RETRIES,
      };
 
 
@@ -333,6 +336,8 @@ ProbeTXRate_read_param(Element *e, void *thunk)
     return String(td->_active) + "\n";
   case H_ALT_RATE: 
     return String(td->_alt_rate) + "\n";
+  case H_ORIGINAL_RETRIES: 
+    return String(td->_original_retries) + "\n";
   default:
     return String();
   }
@@ -379,6 +384,13 @@ ProbeTXRate_write_param(const String &in_s, Element *e, void *vparam,
     f->_packet_size_threshold = m;
     break;
   }
+  case H_ORIGINAL_RETRIES: {
+    unsigned m;
+    if (!cp_unsigned(s, &m)) 
+      return errh->error("original_retries parameter must be unsigned");
+    f->_original_retries = m;
+    break;
+  }
   case H_OFFSET: {
     unsigned m;
     if (!cp_unsigned(s, &m)) 
@@ -423,6 +435,7 @@ ProbeTXRate::add_handlers()
   add_read_handler("offset", ProbeTXRate_read_param, (void *) H_OFFSET);
   add_read_handler("active", ProbeTXRate_read_param, (void *) H_ACTIVE);
   add_read_handler("alt_rate", ProbeTXRate_read_param, (void *) H_ALT_RATE);
+  add_read_handler("original_retries", ProbeTXRate_read_param, (void *) H_ORIGINAL_RETRIES);
 
   add_write_handler("debug", ProbeTXRate_write_param, (void *) H_DEBUG);
   add_write_handler("filter_low_rates", ProbeTXRate_write_param, (void *) H_FILTER_LOW_RATES);
@@ -433,6 +446,7 @@ ProbeTXRate::add_handlers()
   add_write_handler("reset", ProbeTXRate_write_param, (void *) H_RESET);
   add_write_handler("active", ProbeTXRate_write_param, (void *) H_ACTIVE);
   add_write_handler("alt_rate", ProbeTXRate_write_param, (void *) H_ALT_RATE);
+  add_write_handler("original_retries", ProbeTXRate_write_param, (void *) H_ORIGINAL_RETRIES);
   
 }
 // generate Vector template instance

@@ -102,10 +102,10 @@ class ProbeTXRate : public Element { public:
     Vector<int> _rates;
     
     Vector<int> _packets;
-    Vector<int> _total_usecs;
+    Vector<int> _total_time;
     Vector<int> _total_success;
     Vector<int> _total_fail;
-    Vector<int> _perfect_usecs;
+    Vector<int> _perfect_time;
     
     unsigned _count;
     DstInfo() { 
@@ -115,14 +115,14 @@ class ProbeTXRate : public Element { public:
       _eth = eth;
       _rates = rates;
       _packets = Vector<int>(_rates.size(), 0);
-      _total_usecs = Vector<int>(_rates.size(), 0);
+      _total_time = Vector<int>(_rates.size(), 0);
       _total_success = Vector<int>(_rates.size(), 0);
       _total_fail = Vector<int>(_rates.size(), 0);
-      _perfect_usecs = Vector<int>(_rates.size(), 0);
+      _perfect_time = Vector<int>(_rates.size(), 0);
       
       _count = 0;
       for (int x = 0; x < _rates.size(); x++) {
-	_perfect_usecs[x] = calc_usecs_wifi_packet(1500, _rates[x], 0);
+	_perfect_time[x] = calc_usecs_wifi_packet(1500, _rates[x], 0);
       }
     }
 
@@ -136,23 +136,6 @@ class ProbeTXRate : public Element { public:
       }
       return (ndx == _rates.size()) ? -1 : ndx;
     }
-
-    void add_result(struct timeval now, int rate, int success,
-		    int time) {
-      int ndx = rate_index(rate);
-      if (!rate || ndx < 0 || ndx > _rates.size()){
-	return;
-      }
-      _total_usecs[ndx] += time;
-      if (success) {
-	_total_success[ndx]++;
-      } else {
-	_total_fail[ndx]++;
-      }
-      _results.push_back(tx_result(now, rate, 
-				   success, time));
-    }
-
 
     void check () {
       for (int x = 0; x < _rates.size(); x++) {
@@ -181,21 +164,42 @@ class ProbeTXRate : public Element { public:
 		      _rates[x],
 		      sum_fail, _total_fail[x]);
       }
-      if (sum_time != _total_usecs[x]) {
+      if (sum_time != _total_time[x]) {
 	click_chatter("rate %d mismatch time %d %d\n",
 		      _rates[x],
-		      sum_time, _total_usecs[x]);
+		      sum_time, _total_time[x]);
       }
       }
     }
+
+    void add_result(struct timeval now, int rate, int success,
+		    int time) {
+      int ndx = rate_index(rate);
+      if (!rate || ndx < 0 || ndx > _rates.size()){
+	return;
+      }
+      _total_time[ndx] += time;
+      if (success) {
+	_total_success[ndx]++;
+      } else {
+	_total_fail[ndx]++;
+      }
+      _results.push_back(tx_result(now, rate, 
+				   success, time));
+    }
+
+
+
     void trim(struct timeval t) {
+      int trimmed = 0;
       while (_results.size() && timercmp(&_results[0]._when, &t, <)) {
+	trimmed++;
 	tx_result t = _results[0];
 	_results.pop_front();
 
 	int ndx = rate_index(t._rate);
 
-	if (ndx < 0 || ndx > _rates.size()) {
+	if (ndx < 0 || ndx >= _rates.size()) {
 	  click_chatter("%s: ???", 
 			__func__);
 	  continue;
@@ -205,23 +209,23 @@ class ProbeTXRate : public Element { public:
 	} else {
 	  _total_fail[ndx]--;
 	}
-	_total_usecs[ndx] -= t._time;
+	_total_time[ndx] -= t._time;
 	
       }
     }
     int best_rate_ndx() {
       int best_ndx = -1;
-      int best_usecs = 0;
+      int best_time = 0;
       bool found = false;
       if (!_rates.size()) {
 	return -1;
       }
       for (int x = 0; x < _rates.size(); x++) {
 	if (_total_success[x]) {
-	  int usecs = _total_usecs[x] / _total_success[x];
-	  if (!found || usecs < best_usecs) {
+	  int time = _total_time[x] / _total_success[x];
+	  if (!found || time < best_time) {
 	    best_ndx = x;
-	    best_usecs = usecs;
+	    best_time = time;
 	    found = true;
 	  }
 	}
@@ -234,7 +238,7 @@ class ProbeTXRate : public Element { public:
        * pick the fastest rate that hasn't failed yet.
        */
       int best_ndx = -1;
-      int best_usecs = 0;
+      int best_time = 0;
       bool found = false;
       if (!_rates.size()) {
 	return -1;
@@ -244,10 +248,10 @@ class ProbeTXRate : public Element { public:
       }
       for (int x = 0; x < _rates.size(); x++) {
 	if (_total_success[x] && !_total_fail[x]) {
-	  int usecs = _total_usecs[x] / _total_success[x];
-	  if (!found || usecs < best_usecs) {
+	  int time = _total_time[x] / _total_success[x];
+	  if (!found || time < best_time) {
 	    best_ndx = x;
-	    best_usecs = usecs;
+	    best_time = time;
 	    found = true;
 	  }
 	}
@@ -255,7 +259,7 @@ class ProbeTXRate : public Element { public:
       return (found) ? _rates[best_ndx] : _rates[0];
     }
 
-    int pick_rate() {
+    int pick_rate(unsigned min_sample) {
       int best_ndx = best_rate_ndx();
 
       if (_rates.size() == 0) {
@@ -270,11 +274,11 @@ class ProbeTXRate : public Element { public:
 	return _rates[0];
       }
       
-      int best_usecs = _total_usecs[best_ndx] / _total_success[best_ndx];
+      int best_time = _total_time[best_ndx] / _total_success[best_ndx];
       
       Vector<int> possible_rates;
       for (int x = 0; x < _rates.size(); x++) {
-	if (best_usecs < _perfect_usecs[x]) {
+	if (best_time < _perfect_time[x]) {
 	  /* couldn't possibly be better */
 	  continue;
 	}
@@ -287,7 +291,7 @@ class ProbeTXRate : public Element { public:
 	  continue;
 	}
 
-	if (_total_success[x] + _total_fail[x] < 5) {
+	if (_total_success[x] + _total_fail[x] < min_sample) {
 	  possible_rates.push_back(_rates[x]);
 	}
       }
@@ -297,6 +301,7 @@ class ProbeTXRate : public Element { public:
 	return _rates[best_ndx];
       }
       return possible_rates[random() % possible_rates.size()];
+      //return possible_rates[0];
 
     }
     
@@ -317,6 +322,8 @@ class ProbeTXRate : public Element { public:
 
   bool _alt_rate;
   bool _active;
+  unsigned _original_retries;
+  unsigned _min_sample;
 };
 
 CLICK_ENDDECLS
