@@ -66,6 +66,8 @@ public:
 private:
   static bool cb_is_set(Packet *p, unsigned int cb_num) {
     unsigned int mask = 1 << cb_num;
+    click_chatter("ZZZ mask is %x, cb_num is %d, packet_anno is %x\n",
+		  mask, cb_num, (unsigned) GRID_ROUTE_CB_ANNO(p));
     return mask & GRID_ROUTE_CB_ANNO(p);
   }
 
