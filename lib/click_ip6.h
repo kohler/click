@@ -17,27 +17,27 @@ struct click_in6_addr {
     uint64_t u6_addr64[2];
 #endif
   } in6_u;
-#define s6_addr			in6_u.u6_addr8
-#define s6_addr16		in6_u.u6_addr16
-#define s6_addr32		in6_u.u6_addr32
-#define s6_addr64		in6_u.u6_addr64
+#define s6_addr in6_u.u6_addr8
+#define s6_addr16 in6_u.u6_addr16
+#define s6_addr32 in6_u.u6_addr32
+#define s6_addr64 in6_u.u6_addr64
 };
 
 struct click_ip6 {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-    unsigned char ip6_pri:4;		/* 0     priority */
-    unsigned char ip6_v:4;		/*       version == 6 */
+  unsigned char ip6_pri:4;		/* 0     priority */
+  unsigned char ip6_v:4;		/*       version == 6 */
 #endif
 #if __BYTE_ORDER == __BIG_ENDIAN
-    unsigned char ip6_v:4;		/* 0     version == 6 */
-    unsigned char ip6_pri:4;		/*       priority */
+  unsigned char ip6_v:4;		/* 0     version == 6 */
+  unsigned char ip6_pri:4;		/*       priority */
 #endif
-    unsigned char ip6_flow[3];		/* 1-3   flow label */
-    unsigned short ip6_plen;		/* 4-5   payload length */
-    unsigned char ip6_nxt;		/* 6     next header */
-    unsigned char ip6_hlim;     	/* 7     hop limit  */
-    struct click_in6_addr ip6_src;	/* 8-23  source address */
-    struct click_in6_addr ip6_dst;	/* 24-39 dest address */
+  unsigned char ip6_flow[3];		/* 1-3   flow label */
+  unsigned short ip6_plen;		/* 4-5   payload length */
+  unsigned char ip6_nxt;		/* 6     next header */
+  unsigned char ip6_hlim;	     	/* 7     hop limit  */
+  struct click_in6_addr ip6_src;	/* 8-23  source address */
+  struct click_in6_addr ip6_dst;	/* 24-39 dest address */
 };
 
 
