@@ -14,7 +14,7 @@
  *
  * The RandomUDPIPEncap element adds both a UDP header and an IP header.
  *
- * You can give as many arguments as you'd like. Each argument specifies a
+ * You can a maximum of 16 arguments. Each argument specifies a
  * single UDP/IP header. The element will randomly pick one argument. The
  * relative probabilities are determined by PROB.
  *
@@ -55,7 +55,7 @@ class RandomUDPIPEncap : public Element {
     int n;
     Addrs *a;
   };
-  struct Rand _randoms[65536];
+  struct Rand _randoms[16];
   short _no_of_addresses;
 
  public:
