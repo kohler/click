@@ -1,3 +1,39 @@
+2003-04-14 Monday 18:47  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.texi (1.54): doc update
+
+2003-04-14 Monday 18:47  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/config.cc (1.8), userlevel/click.cc (1.81):
+	linuxmodule and userlevel hotswapping follow the new hotswap
+	protocol
+
+2003-04-14 Monday 18:47  Eddie Kohler <kohler@icir.org>
+
+	* include/click/timer.hh (1.20), lib/timer.cc (1.29): rename
+	Timer::when() to Timer::expiry(); run() method takes a "const
+	volatile int *runcount" optional argument; add
+	[re]schedule_after(const struct timeval &)
+
+2003-04-14 Monday 18:46  Eddie Kohler <kohler@icir.org>
+
+	* include/click/router.hh (1.46), lib/router.cc (1.143): add
+	pre_take_state() and hotswap_router() methods, so elements can know
+	whether they will be hotswapped during the initialize() phase;
+	take_state() itself uses Element::hotswap_element(); pass the
+	_driver_runcount to TimerList::run(), so timers don't run after the
+	driver has been stopped
+
+2003-04-14 Monday 18:45  Eddie Kohler <kohler@icir.org>
+
+	* lib/lexer.cc (1.63): always initialize _errh
+
+2003-04-14 Monday 18:44  Eddie Kohler <kohler@icir.org>
+
+	* include/click/element.hh (1.28), lib/element.cc (1.79): add
+	hotswap_element() virtual function; rearrange virtual functions so
+	most common ones come first
+
 2003-04-14 Monday 18:37  Eddie Kohler <kohler@icir.org>
 
 	* lib/driver.cc (1.14): missing "config" section in an archive
