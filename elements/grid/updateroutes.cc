@@ -264,6 +264,9 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	    fe->nbr.seq_no = curr_seq;
 	    fe->last_updated_jiffies = jiff;
 	    fe->nbr.age = decr_age(ntohl(curr->age), grid_hello::MIN_AGE_DECREMENT);
+	    // if new entry is more than one hop away, remove from nbrs table also
+	    if (fe->nbr.num_hops > 1)
+	      _addresses.remove(fe->nbr.ip); // may fail, e.g. wasn't in nbr addresses table anyway
 	  }
 	}
       }
