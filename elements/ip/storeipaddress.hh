@@ -21,10 +21,25 @@ can be zero.
 =n
 This element doesn't recalculate any checksums, so if you store the address
 into an existing IP packet, the packet's checksum will need to be set
--- for example, with SetIPChecksum.
+-- for example, with SetIPChecksum. And don't forget that transport protocols
+might include IP header info in their checksums: TCP and UDP do, for example.
+You'll need to recalculate their checksums as well. Here's a useful compound
+element:
+
+  elementclass FixChecksums {
+      // fix the IP checksum, and any embedded checksums that include data
+      // from the IP header (TCP and UDP in particular)
+      input -> SetIPChecksum
+	  -> ipc :: IPClassifier(tcp, udp, -)
+	  -> SetTCPChecksum
+	  -> output;
+      ipc[1] -> SetUDPChecksum -> output;
+      ipc[2] -> output
+  }
+
 =a
-SetIPChecksum
- */
+SetIPChecksum, SetTCPChecksum, SetUDPChecksum
+*/
 
 class StoreIPAddress : public Element { public:
   
