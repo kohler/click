@@ -1,3 +1,12 @@
+2003-02-19 Wednesday 22:40  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/Makefile.in (1.77): nit
+
+2003-02-19 Wednesday 22:40  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/proclikefs.c (1.10): add stuff to handle MODVERSIONS
+	kernels (Doug reported the issue)
+
 2003-02-19 Wednesday 22:38  Eddie Kohler <kohler@icir.org>
 
 	* test/handlers/k01.testie (1.2): add some tests
