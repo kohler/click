@@ -54,13 +54,37 @@ click_chatter(const char *fmt, ...)
 unsigned click_new_count = 0;
 unsigned click_outstanding_news = 0;
 
+#define CHUNK_MAGIC -49281
+struct Chunk {
+  int magic;
+  int size;
+  int where;
+  Chunk *prev;
+  Chunk *next;
+};
+
+static Chunk *chunks = 0;
+int click_where;
+
 void *
 operator new(unsigned int sz)
 {
   click_new_count++;
   click_outstanding_news++;
-  void *v = kmalloc(sz, GFP_ATOMIC);
-  return v;
+#if CLICK_MEMDEBUG
+  void *v = kmalloc(sz + sizeof(Chunk), GFP_ATOMIC);
+  Chunk *c = (Chunk *)v;
+  c->magic = CHUNK_MAGIC;
+  c->size = sz;
+  c->next = chunks;
+  c->prev = 0;
+  c->where = click_where;
+  if (chunks) chunks->prev = c;
+  chunks = c;
+  return (void *)((unsigned char *)v + sizeof(Chunk));
+#else
+  return kmalloc(sz, GFP_ATOMIC);
+#endif
 }
 
 void *
@@ -68,8 +92,20 @@ operator new [] (unsigned int sz)
 {
   click_new_count++;
   click_outstanding_news++;
-  void *v = kmalloc(sz, GFP_ATOMIC);
-  return v;
+#if CLICK_MEMDEBUG
+  void *v = kmalloc(sz + sizeof(Chunk), GFP_ATOMIC);
+  Chunk *c = (Chunk *)v;
+  c->magic = CHUNK_MAGIC;
+  c->size = sz;
+  c->next = chunks;
+  c->prev = 0;
+  c->where = click_where;
+  if (chunks) chunks->prev = c;
+  chunks = c;
+  return (void *)((unsigned char *)v + sizeof(Chunk));
+#else
+  return kmalloc(sz, GFP_ATOMIC);
+#endif
 }
 
 void
@@ -77,7 +113,19 @@ operator delete(void *addr)
 {
   if (addr) {
     click_outstanding_news--;
+#if CLICK_MEMDEBUG
+    Chunk *c = (Chunk *)((unsigned char *)addr - sizeof(Chunk));
+    if (c->magic != CHUNK_MAGIC) {
+      printk("<1>click error: memory corruption on delete %p\n", addr);
+      return;
+    }
+    if (c->prev) c->prev->next = c->next;
+    else chunks = c->next;
+    if (c->next) c->next->prev = c->prev;
+    kfree((void *)c);
+#else
     kfree(addr);
+#endif
   }
 }
 
@@ -86,8 +134,33 @@ operator delete [] (void *addr)
 {
   if (addr) {
     click_outstanding_news--;
+#if CLICK_MEMDEBUG
+    Chunk *c = (Chunk *)((unsigned char *)addr - sizeof(Chunk));
+    if (c->magic != CHUNK_MAGIC) {
+      printk("<1>click error: memory corruption on delete[] %p\n", addr);
+      return;
+    }
+    if (c->prev) c->prev->next = c->next;
+    else chunks = c->next;
+    if (c->next) c->next->prev = c->prev;
+    kfree((void *)c);
+#else
     kfree(addr);
+#endif
   }
+}
+
+void
+print_and_free_chunks()
+{
+#if CLICK_MEMDEBUG
+  for (Chunk *c = chunks; c; ) {
+    Chunk *n = c->next;
+    printk("<1>  chunk at %p size %d alloc in %d\n", (void *)(c + 1), c->size, c->where);
+    kfree((void *)c);
+    c = n;
+  }
+#endif
 }
 
 extern "C" {
