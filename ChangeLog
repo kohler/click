@@ -1,3 +1,17 @@
+2004-09-29 Wednesday 18:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* aclocal.m4 (1.43), config.h.in (1.25), configure (1.30),
+	configure.in (1.246), doc/testie.1 (1.4),
+	elements/analysis/aggcounter.cc (1.30),
+	elements/analysis/anonipaddr.cc (1.13), elements/ip/ipfilter.cc
+	(1.49), elements/ip/iprw.cc (1.56), etc/libclick/lc-configure.in
+	(1.34), exopc/Makefile.in (1.17), include/click/integers.hh (1.9),
+	lib/integers.cc (1.13), m4/click.m4 (1.44): update for current
+	Autoconf macros; check for __builtin_ffs[l[l]]; rename
+	first_bit_set to ffs_msb, to echo the standard ffs() function, and
+	ffs_msb() uses __builtin_ffs when available [this last part
+	probably needs some work in the kernel]
+
 2004-09-27 Monday 18:02  John Bicket <jbicket@mit.edu>
 
 	* include/click/packet_anno.hh (1.24), elements/wifi/arptable.cc
