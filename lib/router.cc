@@ -30,6 +30,7 @@
 #include <click/confparse.hh>
 #include <click/subvector.hh>
 #include <click/timer.hh>
+#include "elements/standard/drivermanager.hh"
 #include <stdarg.h>
 #ifdef CLICK_USERLEVEL
 # include <unistd.h>
@@ -41,6 +42,7 @@ Router::Router()
     _handlers(0), _nhandlers(0), _handlers_cap(0)
 {
   _refcount = 0;
+  _driver_runcount = 0;
   // RouterThreads will add themselves to _threads
   (void) new RouterThread(this);	// quiescent thread
   (void) new RouterThread(this);	// first normal thread
@@ -62,15 +64,6 @@ Router::~Router()
 }
 
 void
-Router::please_stop_driver()
-{
-  for (int i = 1; i < _threads.size(); i++) {
-    if (_threads[i])
-      _threads[i]->please_stop_driver();
-  }
-}
-
-void
 Router::unuse()
 {
   if (_refcount.dec_and_test())
@@ -81,7 +74,7 @@ Router::unuse()
 // ACCESS
 
 Element *
-Router::find(String prefix, const String &name, ErrorHandler *errh) const
+Router::find(const String &name, String prefix, ErrorHandler *errh) const
 {
   while (1) {
     int got = -1;
@@ -108,12 +101,11 @@ Router::find(String prefix, const String &name, ErrorHandler *errh) const
 }
 
 Element *
-Router::find(Element *me, const String &name, ErrorHandler *errh) const
+Router::find(const String &name, Element *context, ErrorHandler *errh) const
 {
-  String prefix = _element_names[me->eindex()];
+  String prefix = _element_names[context->eindex()];
   int slash = prefix.find_right('/');
-  return find((slash >= 0 ? prefix.substring(0, slash + 1) : String()),
-	      name, errh);
+  return find(name, (slash >= 0 ? prefix.substring(0, slash + 1) : String()), errh);
 }
 
 Element *
@@ -565,6 +557,34 @@ Router::run_timers()
 }
 
 
+// DRIVER STOPPAGE
+
+void
+Router::adjust_driver_reservations(int x)
+{
+  _runcount_lock.acquire();
+  _driver_runcount += x;
+  _runcount_lock.release();
+}
+
+bool
+Router::check_driver()
+{
+  _runcount_lock.acquire();
+
+  if (_driver_runcount <= 0) {
+    _driver_runcount = 0;
+    DriverManager *dm = (DriverManager *)(attachment("DriverManager"));
+    if (dm)
+      dm->handle_stopped_driver();
+  }
+  bool more = (_driver_runcount > 0);
+  
+  _runcount_lock.release();
+  return more;
+}
+
+
 // FLOWS
 
 int
@@ -818,6 +838,7 @@ Router::initialize(ErrorHandler *errh)
   assert(!_initialized);
   if (!_preinitialized)
     preinitialize();
+  _driver_runcount = 1;
 
 #if CLICK_DMALLOC
   char dmalloc_buf[12];
@@ -910,6 +931,7 @@ Router::initialize(ErrorHandler *errh)
       if (element_ok[i])
 	_elements[i]->uninitialize();
     initialize_handlers(false);
+    _driver_runcount = 0;
     return -1;
   } else {
     _initialized = true;

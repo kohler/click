@@ -40,7 +40,7 @@ class Router { public:
   const String &default_configuration_string(int) const;
   void set_default_configuration_string(int, const String &);
   Element *find(const String &, ErrorHandler * = 0) const;
-  Element *find(Element *, const String &, ErrorHandler * = 0) const;
+  Element *find(const String &, Element *context, ErrorHandler * = 0) const;
 
   const Vector<String> &requirements() const	{ return _requirements; }
 
@@ -91,12 +91,20 @@ class Router { public:
   void run_selects(bool more_tasks);
 #endif
   void run_timers();
-  void please_stop_driver();
+  
+  // stopping driver
+  void please_stop_driver()		{ adjust_driver_reservations(-1); }
+  void reserve_driver()			{ adjust_driver_reservations(1); }
+  void adjust_driver_reservations(int);
+  bool check_driver();
+  const volatile int *driver_runcount_ptr() const { return &_driver_runcount; }
   
  private:
   
   TimerList _timer_list;
   TaskList _task_list;
+  volatile int _driver_runcount;
+  Spinlock _runcount_lock;
 
 #if CLICK_USERLEVEL
   struct Selector;
@@ -176,7 +184,7 @@ class Router { public:
   String context_message(int element_no, const char *) const;
   int element_lerror(ErrorHandler *, Element *, const char *, ...) const;
   
-  Element *find(String, const String &, ErrorHandler * = 0) const;
+  Element *find(const String &, String prefix, ErrorHandler * = 0) const;
   void initialize_handlers(bool);
   int find_ehandler(int, const String &, bool, bool);
   int put_handler(const Handler &);
@@ -221,7 +229,7 @@ operator!=(const Router::Hookup &a, const Router::Hookup &b)
 inline Element *
 Router::find(const String &name, ErrorHandler *errh) const
 {
-  return find("", name, errh);
+  return find(name, "", errh);
 }
 
 inline const Router::Handler &
