@@ -43,14 +43,14 @@ class atomic_uint32_t { public:
 inline atomic_uint32_t &
 atomic_uint32_t::operator|=(uint32_t u)
 {
-    atomic_clear_mask(u, &_val);
+    atomic_set_mask(u, &_val);
     return *this;
 }
 
 inline atomic_uint32_t &
 atomic_uint32_t::operator&=(uint32_t u)
 {
-    atomic_set_mask(u, &_val);
+    atomic_clear_mask(~u, &_val);
     return *this;
 }
 
