@@ -1,5 +1,5 @@
-#ifndef CLICK_WIFISTATION_HH
-#define CLICK_WIFISTATION_HH
+#ifndef CLICK_PROBEREQUESTER_HH
+#define CLICK_PROBEREQUESTER_HH
 #include <click/element.hh>
 #include <clicknet/ether.h>
 CLICK_DECLS
@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-WifiStation(CHANNEL)
+ProbeRequester(CHANNEL)
 
 =s decapsulation, Wifi -> Ethernet
 
@@ -28,40 +28,33 @@ if channel is > 0, it looks at only beacons with on channel.
 
   wifi_cl [0] -> Discard; //mgt 
   wifi_cl [1] -> Discard; //ctl
-  wifi_cl [2] -> wifi_decap :: WifiStation() -> ...
+  wifi_cl [2] -> wifi_decap :: ProbeRequester() -> ...
 
 =a
 
 EtherEncap */
 
-class WifiStation : public Element { public:
+class ProbeRequester : public Element { public:
   
-  WifiStation();
-  ~WifiStation();
+  ProbeRequester();
+  ~ProbeRequester();
 
-  const char *class_name() const	{ return "WifiStation"; }
+  const char *class_name() const	{ return "ProbeRequester"; }
   const char *processing() const	{ return PUSH; }
   
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
-
-  void push(int, Packet *);
-  void send_assoc_req();
-
   void add_handlers();
-  void reset();
+
+  void send_probe_request();
+
 
   bool _debug;
-
   EtherAddress _eth;
-  EtherAddress _bssid;
   String _ssid;
-  uint16_t _listen_interval;
   Vector<int> _rates;
 
-  String scan_string();
  private:
-
 
 
 };

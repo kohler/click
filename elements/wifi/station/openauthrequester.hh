@@ -1,5 +1,5 @@
-#ifndef CLICK_SIMPLEAUTHENTICATOR_HH
-#define CLICK_SIMPLEAUTHENTICATOR_HH
+#ifndef CLICK_OPENAUTHREQUESTER_HH
+#define CLICK_OPENAUTHREQUESTER_HH
 #include <click/element.hh>
 #include <clicknet/ether.h>
 CLICK_DECLS
@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-SimpleAuthenticator(CHANNEL)
+OpenAuthRequester(CHANNEL)
 
 =s decapsulation, Wifi -> Ethernet
 
@@ -28,30 +28,31 @@ if channel is > 0, it looks at only beacons with on channel.
 
   wifi_cl [0] -> Discard; //mgt 
   wifi_cl [1] -> Discard; //ctl
-  wifi_cl [2] -> wifi_decap :: SimpleAuthenticator() -> ...
+  wifi_cl [2] -> wifi_decap :: OpenAuthRequester() -> ...
 
 =a
 
 EtherEncap */
 
-class SimpleAuthenticator : public Element { public:
+class OpenAuthRequester : public Element { public:
   
-  SimpleAuthenticator();
-  ~SimpleAuthenticator();
+  OpenAuthRequester();
+  ~OpenAuthRequester();
 
-  const char *class_name() const	{ return "SimpleAuthenticator"; }
+  const char *class_name() const	{ return "OpenAuthRequester"; }
   const char *processing() const	{ return PUSH; }
   
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
   void add_handlers();
 
-  void send_auth_response(EtherAddress, uint16_t, uint16_t);
+  void send_auth_request();
   void push(int, Packet *);
 
 
   bool _debug;
   EtherAddress _bssid;
+  EtherAddress _eth;
  private:
 
 

@@ -71,10 +71,10 @@ public:
 
   enum {
     PROBE_SMALL = (1<<0),
-    PROBE_1 = (1<<1),
-    PROBE_2 = (1<<2),
-    PROBE_5 = (1<<5),
-    PROBE_11 = (1<<11),
+    PROBE_2 = (1<<1),
+    PROBE_4 = (1<<2),
+    PROBE_11 = (1<<5),
+    PROBE_22 = (1<<11),
   };
   struct link_probe {
     unsigned short cksum;     // internet checksum
@@ -95,14 +95,14 @@ public:
   struct link_entry {
     uint8_t fwd_small;
     uint8_t rev_small;
-    uint8_t fwd_1;
-    uint8_t rev_1;
     uint8_t fwd_2;
     uint8_t rev_2;
-    uint8_t fwd_5;
-    uint8_t rev_5;
+    uint8_t fwd_4;
+    uint8_t rev_4;
     uint8_t fwd_11;
     uint8_t rev_11;
+    uint8_t fwd_22;
+    uint8_t rev_22;
 
     uint32_t ip;
     link_entry() { }
@@ -146,27 +146,27 @@ private:
     int sent;
 
     uint8_t fwd_small;
-    uint8_t fwd_1;
     uint8_t fwd_2;
-    uint8_t fwd_5;
+    uint8_t fwd_4;
     uint8_t fwd_11;
+    uint8_t fwd_22;
 
     struct timeval last_rx;
     DEQueue<probe_t> probes_small;   // most recently received probes
-    DEQueue<probe_t> probes_1;   // most recently received probes
     DEQueue<probe_t> probes_2;   // most recently received probes
-    DEQueue<probe_t> probes_5;   // most recently received probes
+    DEQueue<probe_t> probes_4;   // most recently received probes
     DEQueue<probe_t> probes_11;   // most recently received probes
+    DEQueue<probe_t> probes_22;   // most recently received probes
     probe_list_t(const IPAddress &p, unsigned int per, unsigned int t) : 
       ip(p), 
       period(per), 
       tau(t),
       sent(0), 
       fwd_small(0), 
-      fwd_1(0), 
       fwd_2(0), 
-      fwd_5(0), 
-      fwd_11(0)
+      fwd_4(0), 
+      fwd_11(0), 
+      fwd_22(0)
     { }
     probe_list_t() : period(0), tau(0) { }
 
@@ -187,17 +187,17 @@ private:
       case 0:
 	probes = &probes_small;
 	break;
-      case 1:
-	probes = &probes_1;
-	break;
       case 2:
 	probes = &probes_2;
 	break;
-      case 5:
-	probes = &probes_5;
+      case 4:
+	probes = &probes_4;
 	break;
       case 11:
 	probes = &probes_11;
+	break;
+      case 22:
+	probes = &probes_22;
 	break;
       default:
 	return 0;
@@ -269,23 +269,23 @@ private:
   void send_probe_hook(int rate);
   void send_probe(unsigned int size, int rate);
   static void static_send_small_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(0); }
-  static void static_send_1_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(1); }
   static void static_send_2_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(2); }
-  static void static_send_5_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(5); }
+  static void static_send_4_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(4); }
   static void static_send_11_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(11); }
+  static void static_send_22_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(22); }
 
 
   Timer *_timer_small;
-  Timer *_timer_1;
   Timer *_timer_2;
-  Timer *_timer_5;
+  Timer *_timer_4;
   Timer *_timer_11;
+  Timer *_timer_22;
 
   struct timeval _next_small;
-  struct timeval _next_1;
   struct timeval _next_2;
-  struct timeval _next_5;
+  struct timeval _next_4;
   struct timeval _next_11;
+  struct timeval _next_22;
 
   bool _2hop_linkstate;
  public:

@@ -95,9 +95,10 @@ BeaconScanner::simple_action(Packet *p)
     return 0;
   }
 
-  if (subtype != WIFI_FC0_SUBTYPE_BEACON) {
-    click_chatter("%{element}: received non-beacon packet\n",
-		  this);
+  if (subtype != WIFI_FC0_SUBTYPE_BEACON && subtype != WIFI_FC0_SUBTYPE_PROBE_RESP) {
+    click_chatter("%{element}: received subtype %d packet\n",
+		  this,
+		  subtype);
     p->kill();
     return 0;
   }

@@ -144,19 +144,18 @@ ProbeResponder::push(int port, Packet *p)
   }
 
   StringAccum sa;
-  String ssid;
+  String ssid = "";
   if (ssid_l && ssid_l[1]) {
     ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
-  } else {
-    /* there was no element or it has zero length */
-    ssid = "";
   }
 
 
-  if (ssid != _ssid) {
+  /* respond to blank ssid probes also */
+  if (ssid != "" && ssid != _ssid) {
     p->kill();
     return;
   }
+  
   EtherAddress src = EtherAddress(w->i_addr2);
 
   sa << "ProbeReq: " << src << " ssid " << ssid << " ";

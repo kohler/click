@@ -53,10 +53,10 @@ ETTMetric::cast(const char *n)
 int
 ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _weight_1 = 100;
-  _weight_2 = 180;
-  _weight_5 = 260;
-  _weight_11 = 600;
+  _weight_2 = 100;
+  _weight_4 = 180;
+  _weight_11 = 260;
+  _weight_22 = 600;
 
   _enable_twoway = true;
   _estimate_ack = true;
@@ -65,10 +65,10 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 			"ETT",cpElement, "ETTStat element", &_ett_stat,
 			"IP", cpIPAddress, "IP address", &_ip,
 			"LT", cpElement, "LinkTable element", &_link_table, 
-			"1_WEIGHT", cpUnsigned, "LinkTable element", &_weight_1, 
 			"2_WEIGHT", cpUnsigned, "LinkTable element", &_weight_2, 
-			"5_WEIGHT", cpUnsigned, "LinkTable element", &_weight_5, 
+			"4_WEIGHT", cpUnsigned, "LinkTable element", &_weight_4, 
 			"11_WEIGHT", cpUnsigned, "LinkTable element", &_weight_11, 
+			"22_WEIGHT", cpUnsigned, "LinkTable element", &_weight_22, 
 			"2WAY_METRICS", cpBool, "enable 2-way metrics", &_enable_twoway,
 			"ESTIMATE_ACKS", cpBool, "estimate ack", &_estimate_ack, 
 			0);
@@ -124,12 +124,12 @@ ETTMetric::get_tx_rate(EtherAddress eth)
 void 
 ETTMetric::get_rate_and_tput(int *tput, int *rate, 
 			     int /* fwd_small */,
-			     int fwd_1,
-			     int fwd_2, 
-			     int fwd_5, 
-			     int fwd_11,  
+			     int fwd_2,
+			     int fwd_4, 
+			     int fwd_11, 
+			     int fwd_22,  
 			     int rev_small,
-			     int rev_1,
+			     int rev_2,
 			     int /* rev_2 */,
 			     int /* rev_5 */,
 			     int /* rev_11 */)
@@ -139,45 +139,45 @@ ETTMetric::get_rate_and_tput(int *tput, int *rate,
     return;
   }
 
-  int tput_1 = rev_small * fwd_1 * _weight_1 / 100;
   int tput_2 = rev_small * fwd_2 * _weight_2 / 100;
-  int tput_5 = rev_small * fwd_5 * _weight_5 / 100;
+  int tput_4 = rev_small * fwd_4 * _weight_4 / 100;
   int tput_11 = rev_small * fwd_11 * _weight_11 / 100;
+  int tput_22 = rev_small * fwd_22 * _weight_22 / 100;
 
   if (!_estimate_ack) {
-    tput_1 = fwd_1 * _weight_1;
     tput_2 = fwd_2 * _weight_2;
-    tput_5 = fwd_5 * _weight_5;
+    tput_4 = fwd_4 * _weight_4;
     tput_11 = fwd_11 * _weight_11;
+    tput_22 = fwd_22 * _weight_22;
   }
 
-  *tput = tput_1;
-  *rate = 1;
+  *tput = tput_2;
+  *rate = 2;
 
-  if (*tput < tput_2) {
-    *tput = tput_2;
-    *rate = 2;
-  }
-  if (*tput < tput_5) {
-    *tput = tput_5;
-    *rate = 5;
+  if (*tput < tput_4) {
+    *tput = tput_4;
+    *rate = 4;
   }
   if (*tput < tput_11) {
     *tput = tput_11;
     *rate = 11;
   }
+  if (*tput < tput_22) {
+    *tput = tput_22;
+    *rate = 22;
+  }
 
   if (!_enable_twoway) {
-    *tput = fwd_1 * rev_1;
+    *tput = fwd_2 * rev_2;
   }
 }
 void
 ETTMetric::update_link(IPAddress from, IPAddress to, 
 		       int fwd_small, int rev_small,
-		       int fwd_1, int rev_1,
 		       int fwd_2, int rev_2,
-		       int fwd_5, int rev_5,
-		       int fwd_11, int rev_11
+		       int fwd_4, int rev_4,
+		       int fwd_11, int rev_11,
+		       int fwd_22, int rev_22
 		       ) 
 {
 
@@ -193,25 +193,25 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
   if (!p.first(from)) {
     return update_link(to, from, 
 		       rev_small, fwd_small,
-		       rev_1, fwd_1,
 		       rev_2, fwd_2,
-		       rev_5, fwd_5, 
-		       rev_11, fwd_11);
+		       rev_4, fwd_4,
+		       rev_11, fwd_11, 
+		       rev_22, fwd_22);
   }
 
   int fwd = 0;
-  int fwd_rate = 1;
+  int fwd_rate = 2;
   get_rate_and_tput(&fwd, &fwd_rate,
 		    fwd_small,
-		    fwd_1,
-		    fwd_2, 
-		    fwd_5,
-		    fwd_11, 
+		    fwd_2,
+		    fwd_4, 
+		    fwd_11,
+		    fwd_22, 
 		    rev_small,
-		    rev_1,
 		    rev_2,
-		    rev_5,
-		    rev_11);
+		    rev_4,
+		    rev_11,
+		    rev_22);
 
   if (fwd == 0) {
     fwd = 7777;
@@ -219,18 +219,18 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
     fwd = (100*100*100)/fwd;
   }
   int rev = 0;
-  int rev_rate = 1;
+  int rev_rate = 2;
   get_rate_and_tput(&rev, &rev_rate,
 		    rev_small,
-		    rev_1,
-		    rev_2, 
-		    rev_5,
-		    rev_11, 
+		    rev_2,
+		    rev_4, 
+		    rev_11,
+		    rev_22, 
 		    fwd_small,
-		    fwd_1,
 		    fwd_2,
-		    fwd_5,
-		    fwd_11);
+		    fwd_4,
+		    fwd_11,
+		    fwd_22);
 
   if (rev == 0) {
     rev = 7777;
@@ -252,16 +252,16 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
   
 
   nfo->_fwd_small = fwd_small;
-  nfo->_fwd_1 = fwd_1;
   nfo->_fwd_2 = fwd_2;
-  nfo->_fwd_5 = fwd_5;
+  nfo->_fwd_4 = fwd_4;
   nfo->_fwd_11 = fwd_11;
+  nfo->_fwd_22 = fwd_22;
 
   nfo->_rev_small = rev_small;
-  nfo->_rev_1 = rev_1;
   nfo->_rev_2 = rev_2;
-  nfo->_rev_5 = rev_5;
+  nfo->_rev_4 = rev_4;
   nfo->_rev_11 = rev_11;
+  nfo->_rev_22 = rev_22;
   
   nfo->_fwd = fwd;
   nfo->_rev = rev;
@@ -301,14 +301,14 @@ ETTMetric::get_delivery_rate(int rate, IPAddress from, IPAddress to)
     switch (rate) {
     case 0:
       return p.first(from) ? nfo->_fwd_small : nfo->_rev_small;
-    case 1:
-      return p.first(from) ? nfo->_fwd_1 : nfo->_rev_1;
     case 2:
       return p.first(from) ? nfo->_fwd_2 : nfo->_rev_2;
-    case 5:
-      return p.first(from) ? nfo->_fwd_5 : nfo->_rev_5;
+    case 4:
+      return p.first(from) ? nfo->_fwd_4 : nfo->_rev_4;
     case 11:
       return p.first(from) ? nfo->_fwd_11 : nfo->_rev_11;
+    case 22:
+      return p.first(from) ? nfo->_fwd_22 : nfo->_rev_22;
     default:
       return 0;
     }

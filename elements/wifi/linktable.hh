@@ -122,6 +122,13 @@ public:
 
   Link random_link();
 
+
+  typedef HashMap<IPAddress, IPAddress> IPTable;
+  typedef IPTable::const_iterator IPIter;
+  
+  class IPTable _blacklist;
+  
+
 private: 
   class LinkInfo {
   public:
@@ -185,6 +192,7 @@ private:
 
   class HTable _hosts;
   class LTable _links;
+
 
   IPAddress _ip;
   struct timeval _stale_timeout;

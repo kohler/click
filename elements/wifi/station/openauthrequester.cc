@@ -1,5 +1,5 @@
 /*
- * simpleauthenticator.{cc,hh} -- sends 802.11 probe responses from requests.
+ * openauthrequester.{cc,hh} -- sends 802.11 probe responses from requests.
  * John Bicket
  *
  * Copyright (c) 2004 Massachusetts Institute of Technology
@@ -27,30 +27,31 @@
 #include <click/hashmap.hh>
 #include <click/packet_anno.hh>
 #include <click/error.hh>
-#include "simpleauthenticator.hh"
+#include "openauthrequester.hh"
 
 CLICK_DECLS
 
-SimpleAuthenticator::SimpleAuthenticator()
+OpenAuthRequester::OpenAuthRequester()
   : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
 }
 
-SimpleAuthenticator::~SimpleAuthenticator()
+OpenAuthRequester::~OpenAuthRequester()
 {
   MOD_DEC_USE_COUNT;
 }
 
 int
-SimpleAuthenticator::configure(Vector<String> &conf, ErrorHandler *errh)
+OpenAuthRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
-  _debug = false;
+  _debug = true;
   if (cp_va_parse(conf, this, errh,
 		  /* not required */
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
+		  "ETH", cpEthernetAddress, "eth", &_eth,
 		  "BSSID", cpEthernetAddress, "bssid", &_bssid,
 		  0) < 0)
     return -1;
@@ -59,7 +60,7 @@ SimpleAuthenticator::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-SimpleAuthenticator::push(int port, Packet *p)
+OpenAuthRequester::push(int port, Packet *p)
 {
 
   uint8_t dir;
@@ -130,13 +131,13 @@ SimpleAuthenticator::push(int port, Packet *p)
 		  seq,
 		  status);
   }
-  send_auth_response(src, 2, WIFI_STATUS_SUCCESS);
+
   
   p->kill();
   return;
 }
 void
-SimpleAuthenticator::send_auth_response(EtherAddress dst, uint16_t seq, uint16_t status)
+OpenAuthRequester::send_auth_request()
 {
 
   int len = sizeof (struct click_wifi) + 
@@ -159,8 +160,8 @@ SimpleAuthenticator::send_auth_response(EtherAddress dst, uint16_t seq, uint16_t
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_AUTH;
   w->i_fc[1] = WIFI_FC1_DIR_NODS;
 
-  memcpy(w->i_addr1, dst.data(), 6);
-  memcpy(w->i_addr2, _bssid.data(), 6);
+  memcpy(w->i_addr1, _bssid.data(), 6);
+  memcpy(w->i_addr2, _eth.data(), 6);
   memcpy(w->i_addr3, _bssid.data(), 6);
 
   
@@ -174,10 +175,10 @@ SimpleAuthenticator::send_auth_response(EtherAddress dst, uint16_t seq, uint16_t
   *(uint16_t *)ptr = cpu_to_le16(WIFI_AUTH_ALG_OPEN);
   ptr += 2;
 
-  *(uint16_t *)ptr = cpu_to_le16(seq);
+  *(uint16_t *)ptr = cpu_to_le16(1);
   ptr += 2;
 
-  *(uint16_t *)ptr = cpu_to_le16(status);
+  *(uint16_t *)ptr = cpu_to_le16(0);
   ptr += 2;
 
   SET_WIFI_FROM_CLICK(p);
@@ -185,26 +186,28 @@ SimpleAuthenticator::send_auth_response(EtherAddress dst, uint16_t seq, uint16_t
 }
 
 
-enum {H_DEBUG, H_BSSID};
+enum {H_DEBUG, H_BSSID, H_ETH, H_SEND_AUTH_REQ};
 
 static String 
-SimpleAuthenticator_read_param(Element *e, void *thunk)
+OpenAuthRequester_read_param(Element *e, void *thunk)
 {
-  SimpleAuthenticator *td = (SimpleAuthenticator *)e;
+  OpenAuthRequester *td = (OpenAuthRequester *)e;
   switch ((uintptr_t) thunk) {
   case H_DEBUG:
     return String(td->_debug) + "\n";
   case H_BSSID:
     return td->_bssid.s() + "\n";
+  case H_ETH:
+    return td->_eth.s() + "\n";
   default:
     return String();
   }
 }
 static int 
-SimpleAuthenticator_write_param(const String &in_s, Element *e, void *vparam,
+OpenAuthRequester_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
-  SimpleAuthenticator *f = (SimpleAuthenticator *)e;
+  OpenAuthRequester *f = (OpenAuthRequester *)e;
   String s = cp_uncomment(in_s);
   switch((int)vparam) {
   case H_DEBUG: {    //debug
@@ -221,20 +224,34 @@ SimpleAuthenticator_write_param(const String &in_s, Element *e, void *vparam,
     f->_bssid = e;
     break;
   }
+  case H_ETH: {    //debug
+    EtherAddress e;
+    if (!cp_ethernet_address(s, &e)) 
+      return errh->error("eth parameter must be ethernet address");
+    f->_eth = e;
+    break;
+  }
+  case H_SEND_AUTH_REQ: {
+    f->send_auth_request();
+    break;
+  }
   }
   return 0;
 }
  
 void
-SimpleAuthenticator::add_handlers()
+OpenAuthRequester::add_handlers()
 {
   add_default_handlers(true);
 
-  add_read_handler("debug", SimpleAuthenticator_read_param, (void *) H_DEBUG);
-  add_read_handler("bssid", SimpleAuthenticator_read_param, (void *) H_BSSID);
+  add_read_handler("debug", OpenAuthRequester_read_param, (void *) H_DEBUG);
+  add_read_handler("bssid", OpenAuthRequester_read_param, (void *) H_BSSID);
+  add_read_handler("eth", OpenAuthRequester_read_param, (void *) H_ETH);
 
-  add_write_handler("debug", SimpleAuthenticator_write_param, (void *) H_DEBUG);
-  add_write_handler("bssid", SimpleAuthenticator_write_param, (void *) H_BSSID);
+  add_write_handler("debug", OpenAuthRequester_write_param, (void *) H_DEBUG);
+  add_write_handler("bssid", OpenAuthRequester_write_param, (void *) H_BSSID);
+  add_write_handler("eth", OpenAuthRequester_write_param, (void *) H_ETH);
+  add_write_handler("send_auth_req", OpenAuthRequester_write_param, (void *) H_SEND_AUTH_REQ);
 }
 
 
@@ -244,4 +261,4 @@ SimpleAuthenticator::add_handlers()
 #if EXPLICIT_TEMPLATE_INSTANCES
 #endif
 CLICK_ENDDECLS
-EXPORT_ELEMENT(SimpleAuthenticator)
+EXPORT_ELEMENT(OpenAuthRequester)

@@ -44,10 +44,10 @@ ETTStat::ETTStat()
     _arp_table(0),
     _next_neighbor_to_ad(0),
     _timer_small(0),
-    _timer_1(0),
     _timer_2(0),
-    _timer_5(0),
-    _timer_11(0)
+    _timer_4(0),
+    _timer_11(0),
+    _timer_22(0)
 {
   MOD_INC_USE_COUNT;
   add_input();
@@ -149,27 +149,28 @@ ETTStat::take_state(Element *e, ErrorHandler *errh)
     _next_small = q->_next_small;
   }
 
-  if (timercmp(&now, &q->_next_1, <)) {
-    _timer_1->unschedule();
-    _timer_1->schedule_at(q->_next_1);
-    _next_1 = q->_next_1;
-  }
-  
   if (timercmp(&now, &q->_next_2, <)) {
     _timer_2->unschedule();
     _timer_2->schedule_at(q->_next_2);
     _next_2 = q->_next_2;
   }
   
-  if (timercmp(&now, &q->_next_5, <)) {
-    _timer_5->unschedule();
-    _timer_5->schedule_at(q->_next_5);
-    _next_5 = q->_next_5;
+  if (timercmp(&now, &q->_next_4, <)) {
+    _timer_4->unschedule();
+    _timer_4->schedule_at(q->_next_4);
+    _next_4 = q->_next_4;
   }
+  
   if (timercmp(&now, &q->_next_11, <)) {
     _timer_11->unschedule();
     _timer_11->schedule_at(q->_next_11);
     _next_11 = q->_next_11;
+  }
+
+  if (timercmp(&now, &q->_next_22, <)) {
+    _timer_22->unschedule();
+    _timer_22->schedule_at(q->_next_22);
+    _next_22 = q->_next_22;
   }
 
 
@@ -214,25 +215,25 @@ ETTStat::send_probe_hook(int rate)
     add_jitter(max_jitter, &_next_small);
     _timer_small->schedule_at(_next_small);
     break;
-  case 1:
-    timeradd(&period, &_next_1, &_next_1);
-    add_jitter(max_jitter, &_next_1);
-    _timer_1->schedule_at(_next_1);
-    break;
   case 2:
     timeradd(&period, &_next_2, &_next_2);
     add_jitter(max_jitter, &_next_2);
     _timer_2->schedule_at(_next_2);
     break;
-  case 5:
-    timeradd(&period, &_next_5, &_next_5);
-    add_jitter(max_jitter, &_next_5);
-    _timer_5->schedule_at(_next_5);
+  case 4:
+    timeradd(&period, &_next_4, &_next_4);
+    add_jitter(max_jitter, &_next_4);
+    _timer_4->schedule_at(_next_4);
     break;
-  case 11:        
+  case 11:
     timeradd(&period, &_next_11, &_next_11);
     add_jitter(max_jitter, &_next_11);
     _timer_11->schedule_at(_next_11);
+    break;
+  case 22:        
+    timeradd(&period, &_next_22, &_next_22);
+    add_jitter(max_jitter, &_next_22);
+    _timer_22->schedule_at(_next_22);
     break;
   default:
     return;
@@ -305,17 +306,17 @@ ETTStat::send_probe(unsigned int size, int rate)
   case 0: 
     lp->flags |= PROBE_SMALL;
     break;
-  case 1:
-    lp->flags |= PROBE_1;
-    break;
   case 2:
     lp->flags |= PROBE_2;
     break;
-  case 5:
-    lp->flags |= PROBE_5;
+  case 4:
+    lp->flags |= PROBE_4;
     break;
   case 11:
     lp->flags |= PROBE_11;
+    break;
+  case 22:
+    lp->flags |= PROBE_22;
     break;
   default:
     click_chatter("weird rate %d\n", 
@@ -337,16 +338,16 @@ ETTStat::send_probe(unsigned int size, int rate)
       } else {
 	entry->ip = probe->ip;
 	entry->fwd_small = probe->fwd_small;
-	entry->fwd_1 = probe->fwd_1;
 	entry->fwd_2 = probe->fwd_2;
-	entry->fwd_5 = probe->fwd_5;
+	entry->fwd_4 = probe->fwd_4;
 	entry->fwd_11 = probe->fwd_11;
+	entry->fwd_22 = probe->fwd_22;
 	
 	entry->rev_small = probe->rev_rate(_start, 0);
-	entry->rev_1 = probe->rev_rate(_start, 1);
 	entry->rev_2 = probe->rev_rate(_start, 2);
-	entry->rev_5 = probe->rev_rate(_start, 5);
+	entry->rev_4 = probe->rev_rate(_start, 4);
 	entry->rev_11 = probe->rev_rate(_start, 11);
+	entry->rev_22 = probe->rev_rate(_start, 22);
       }
       entry = (entry+1);
     }
@@ -359,7 +360,7 @@ ETTStat::send_probe(unsigned int size, int rate)
   SET_WIFI_FROM_CLICK(p);
   SET_WIFI_RATE_ANNO(p, rate);
   if (rate == 0) {
-    SET_WIFI_RATE_ANNO(p, 1);
+    SET_WIFI_RATE_ANNO(p, 2);
   }
   checked_output_push(0, p);
 }
@@ -376,39 +377,39 @@ ETTStat::initialize(ErrorHandler *errh)
     _timer_small = new Timer(static_send_small_hook, this);
     _timer_small->initialize(this);
 
-    _timer_1 = new Timer(static_send_1_hook, this);
-    _timer_1->initialize(this);
-
     _timer_2 = new Timer(static_send_2_hook, this);
     _timer_2->initialize(this);
 
-    _timer_5 = new Timer(static_send_5_hook, this);
-    _timer_5->initialize(this);
+    _timer_4 = new Timer(static_send_4_hook, this);
+    _timer_4->initialize(this);
 
     _timer_11 = new Timer(static_send_11_hook, this);
     _timer_11->initialize(this);
+
+    _timer_22 = new Timer(static_send_22_hook, this);
+    _timer_22->initialize(this);
 
     struct timeval now;
     click_gettimeofday(&now);
     
     _next_small = now;
-    _next_1 = now;
     _next_2 = now;
-    _next_5 = now;
+    _next_4 = now;
     _next_11 = now;
+    _next_22 = now;
 
     unsigned max_jitter = _period / 10;
     add_jitter(max_jitter, &_next_small);
-    add_jitter(max_jitter, &_next_1);
     add_jitter(max_jitter, &_next_2);
-    add_jitter(max_jitter, &_next_5);
+    add_jitter(max_jitter, &_next_4);
     add_jitter(max_jitter, &_next_11);
+    add_jitter(max_jitter, &_next_22);
 
     _timer_small->schedule_at(_next_small);
-    _timer_1->schedule_at(_next_1);
     _timer_2->schedule_at(_next_2);
-    _timer_5->schedule_at(_next_5);
+    _timer_4->schedule_at(_next_4);
     _timer_11->schedule_at(_next_11);
+    _timer_22->schedule_at(_next_22);
   }
   click_gettimeofday(&_start);
   return 0;
@@ -471,20 +472,20 @@ ETTStat::simple_action(Packet *p)
     click_chatter("ETTStat %s: %s has changed its link probe period from %u to %u; clearing probe info",
 		  id().cc(), ip.s().cc(), l->period, new_period);
     l->probes_small.clear();
-    l->probes_1.clear();
     l->probes_2.clear();
-    l->probes_5.clear();
+    l->probes_4.clear();
     l->probes_11.clear();
+    l->probes_22.clear();
   }
 
   if (lp->sent < (unsigned)l->sent) {
     click_chatter("ETTStat %s: %s has reset; clearing probe info",
 		  id().cc(), ip.s().cc());
     l->probes_small.clear();
-    l->probes_1.clear();
     l->probes_2.clear();
-    l->probes_5.clear();
+    l->probes_4.clear();
     l->probes_11.clear();
+    l->probes_22.clear();
   }
 
   l->period = new_period;
@@ -494,14 +495,14 @@ ETTStat::simple_action(Packet *p)
 
   if (lp->flags & PROBE_SMALL) {
     l->probes_small.push_back(probe);
-  } else if (lp->flags & PROBE_1) {
-      l->probes_1.push_back(probe);
   } else if (lp->flags & PROBE_2) {
       l->probes_2.push_back(probe);
-  } else if (lp->flags & PROBE_5) {
-      l->probes_5.push_back(probe);
+  } else if (lp->flags & PROBE_4) {
+      l->probes_4.push_back(probe);
   } else if (lp->flags & PROBE_11) {
       l->probes_11.push_back(probe);
+  } else if (lp->flags & PROBE_22) {
+      l->probes_22.push_back(probe);
   } else {
     click_chatter("Weird probe\n");
   }
@@ -512,17 +513,17 @@ ETTStat::simple_action(Packet *p)
   while ((unsigned) l->probes_small.size() > _window) 
     l->probes_small.pop_front();
 
-  while ((unsigned) l->probes_1.size() > _window) 
-    l->probes_1.pop_front();
-
   while ((unsigned) l->probes_2.size() > _window) 
     l->probes_2.pop_front();
 
-  while ((unsigned) l->probes_5.size() > _window) 
-    l->probes_5.pop_front();
+  while ((unsigned) l->probes_4.size() > _window) 
+    l->probes_4.pop_front();
 
   while ((unsigned) l->probes_11.size() > _window) 
     l->probes_11.pop_front();
+
+  while ((unsigned) l->probes_22.size() > _window) 
+    l->probes_22.pop_front();
 
 
 
@@ -541,18 +542,18 @@ ETTStat::simple_action(Packet *p)
     link_entry *le = (struct link_entry *) d;
     if (IPAddress(le->ip) == _ip) {
       l->fwd_small = le->rev_small;
-      l->fwd_1 = le->rev_1;
       l->fwd_2 = le->rev_2;
-      l->fwd_5 = le->rev_5;
+      l->fwd_4 = le->rev_4;
       l->fwd_11 = le->rev_11;
+      l->fwd_22 = le->rev_22;
     } else {
       if (_2hop_linkstate && _ett_metric) {
 	_ett_metric->update_link(ip, le->ip, 
 				 le->fwd_small, le->rev_small,
-				 le->fwd_1, le->rev_1,
 				 le->fwd_2, le->rev_2,
-				 le->fwd_5, le->rev_5,
-				 le->fwd_11, le->rev_11
+				 le->fwd_4, le->rev_4,
+				 le->fwd_11, le->rev_11,
+				 le->fwd_22, le->rev_22
 				 );
       }
     }
@@ -565,10 +566,10 @@ ETTStat::simple_action(Packet *p)
   if (_ett_metric) {
     _ett_metric->update_link(_ip, ip, 
 			     l->fwd_small, l->rev_rate(_start, 0),
-			     l->fwd_1, l->rev_rate(_start, 1),
 			     l->fwd_2, l->rev_rate(_start, 2),
-			     l->fwd_5, l->rev_rate(_start, 5),
-			     l->fwd_11, l->rev_rate(_start, 11)
+			     l->fwd_4, l->rev_rate(_start, 4),
+			     l->fwd_11, l->rev_rate(_start, 11),
+			     l->fwd_22, l->rev_rate(_start, 22)
 			     );
   }
   
@@ -603,10 +604,10 @@ ETTStat::update_links(IPAddress ip) {
     if (l) {
       _ett_metric->update_link(_ip, ip,
 			       l->fwd_small, l->rev_rate(_start, 0),
-			       l->fwd_1, l->rev_rate(_start, 1),
 			       l->fwd_2, l->rev_rate(_start, 2),
-			       l->fwd_5, l->rev_rate(_start, 5),
-			       l->fwd_11, l->rev_rate(_start, 11)
+			       l->fwd_4, l->rev_rate(_start, 4),
+			       l->fwd_11, l->rev_rate(_start, 11),
+			       l->fwd_22, l->rev_rate(_start, 22)
 			       );
     } else {
       _ett_metric->update_link(_ip, ip,
@@ -677,15 +678,15 @@ ETTStat::read_bcast_stats(Element *xf, void *)
     sa << " sent " << pl->sent;
     sa << " fwd_small " << (int)pl->fwd_small;
     sa << " rev_small " << pl->rev_rate(e->_start, 0);
-    sa << " fwd_1 " << (int)pl->fwd_1;
-    sa << " rev_1 " << pl->rev_rate(e->_start, 1);
     sa << " fwd_2 " << (int)pl->fwd_2;
     sa << " rev_2 " << pl->rev_rate(e->_start, 2);
-    sa << " fwd_5 " << (int)pl->fwd_5;
-    sa << " rev_5 " << pl->rev_rate(e->_start, 5);
+    sa << " fwd_4 " << (int)pl->fwd_4;
+    sa << " rev_4 " << pl->rev_rate(e->_start, 4);
     sa << " fwd_11 " << (int)pl->fwd_11;
     sa << " rev_11 " << pl->rev_rate(e->_start, 11);
-    sa << " etx " << e->get_etx(pl->fwd_1, pl->rev_rate(e->_start, 0));
+    sa << " fwd_22 " << (int)pl->fwd_22;
+    sa << " rev_22 " << pl->rev_rate(e->_start, 22);
+    sa << " etx " << e->get_etx(pl->fwd_2, pl->rev_rate(e->_start, 0));
     sa << " last_rx " << now - pl->last_rx;
     sa << "\n";
     

@@ -97,6 +97,59 @@ LinkTable::take_state(Element *e, ErrorHandler *) {
   _links = q->_links;
   dijkstra();
 }
+
+enum {H_BLACKLIST, H_BLACKLIST_CLEAR, H_BLACKLIST_ADD, H_BLACKLIST_REMOVE};
+
+static String 
+LinkTable_read_param(Element *e, void *thunk)
+{
+  LinkTable *td = (LinkTable *)e;
+    switch ((uintptr_t) thunk) {
+    case H_BLACKLIST: {
+      StringAccum sa;
+      typedef HashMap<IPAddress, IPAddress> IPTable;
+      typedef IPTable::const_iterator IPIter;
+  
+
+      for (IPIter iter = td->_blacklist.begin(); iter; iter++) {
+	sa << iter.value() << " ";
+      }
+      return sa.take_string() + "\n";
+    }
+    default:
+      return String();
+    }
+}
+static int 
+LinkTable_write_param(const String &in_s, Element *e, void *vparam,
+		      ErrorHandler *errh)
+{
+  LinkTable *f = (LinkTable *)e;
+  String s = cp_uncomment(in_s);
+  switch((int)vparam) {
+  case H_BLACKLIST_CLEAR: {
+    f->_blacklist.clear();
+    break;
+  }
+  case H_BLACKLIST_ADD: {
+    IPAddress m;
+    if (!cp_ip_address(s, &m)) 
+      return errh->error("blacklist_add parameter must be ipaddress");
+    f->_blacklist.insert(m, m);
+    break;
+  }
+  case H_BLACKLIST_REMOVE: {
+    IPAddress m;
+    if (!cp_ip_address(s, &m)) 
+      return errh->error("blacklist_add parameter must be ipaddress");
+    f->_blacklist.remove(m);
+    break;
+  }
+  }
+  return 0;
+}
+
+
 void
 LinkTable::add_handlers() {
   add_default_handlers(false);
@@ -107,6 +160,12 @@ LinkTable::add_handlers() {
   add_write_handler("update_link", static_update_link, 0);
   add_write_handler("dijkstra", static_dijkstra, 0);
   add_write_handler("top_n_routes", static_top_n_routes, 0);
+
+  add_read_handler("blacklist", LinkTable_read_param, (void *)H_BLACKLIST);
+  add_write_handler("blacklist_clear", LinkTable_write_param, (void *)H_BLACKLIST_CLEAR);
+  add_write_handler("blacklist_add", LinkTable_write_param, (void *)H_BLACKLIST_ADD);
+  add_write_handler("blacklist_remove", LinkTable_write_param, (void *)H_BLACKLIST_REMOVE);
+
 }
 
 
@@ -263,6 +322,9 @@ LinkTable::get_hop_metric(IPAddress from, IPAddress to)
   lt_assert(from);
   lt_assert(to);
   if (!from || !to) {
+    return 0;
+  }
+  if (_blacklist.findp(from) || _blacklist.findp(to)) {
     return 0;
   }
   IPPair p = IPPair(from, to);
@@ -651,7 +713,7 @@ LinkTable::dijkstra()
     for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
       HostInfo *neighbor = _hosts.findp(i.key());
       lt_assert(neighbor);
-      if (!neighbor->_marked) {
+      if (!neighbor->_marked && !_blacklist.findp(neighbor->_ip)) {
 	LinkInfo *lnfo = _links.findp(IPPair(current_min->_ip, neighbor->_ip));
 	if (lnfo && lnfo->_metric && (!neighbor->_metric || neighbor->_metric > current_min->_metric + lnfo->_metric)) {
 	  neighbor->_metric = current_min->_metric + lnfo->_metric;

@@ -53,7 +53,7 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   }
 
   if (_rate < 0) {
-    return errh->error("RATE must be 0, 1,2,5, or 11");
+    return errh->error("RATE must be >= 0");
   }
 
   if (_auto_l && _auto_l->cast("AutoTXRate") == 0) {
@@ -118,7 +118,7 @@ SetTXRate::rate_write_handler(const String &arg, Element *e,
     return errh->error("`rate' must be an integer");
 
   if (b < 0) {
-    return errh->error("RATE must be 0, 1,2,5, or 11");
+    return errh->error("RATE must be >=0");
   }
   n->_rate = b;
   return 0;

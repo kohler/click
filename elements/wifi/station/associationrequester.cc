@@ -1,5 +1,5 @@
 /*
- * wifistation.{cc,hh} -- decapsultates 802.11 packets
+ * associationrequester.{cc,hh} -- decapsultates 802.11 packets
  * John Bicket
  *
  * Copyright (c) 2004 Massachusetts Institute of Technology
@@ -26,37 +26,45 @@
 #include <click/vector.hh>
 #include <click/hashmap.hh>
 #include <click/packet_anno.hh>
-#include "wifistation.hh"
+#include "associationrequester.hh"
 
 CLICK_DECLS
 
-WifiStation::WifiStation()
+AssociationRequester::AssociationRequester()
   : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
 }
 
-WifiStation::~WifiStation()
+AssociationRequester::~AssociationRequester()
 {
   MOD_DEC_USE_COUNT;
 }
 
 int
-WifiStation::configure(Vector<String> &conf, ErrorHandler *errh)
+AssociationRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
   if (cp_va_parse(conf, this, errh,
-		  cpEthernetAddress, "eth", &_eth,
 		  /* not required */
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
+		  "ETH", cpEthernetAddress, "eth", &_eth,
 		  0) < 0)
     return -1;
+
+
+  /* start with normall 802.11b rates */
+  _rates.push_back(2);
+  _rates.push_back(4);
+  _rates.push_back(11);
+  _rates.push_back(22);
+
   return 0;
 }
 void
-WifiStation::send_assoc_req()
+AssociationRequester::send_assoc_req()
 {
   int len = sizeof (struct click_wifi) + 
     2 + /* cap_info */
@@ -94,8 +102,7 @@ WifiStation::send_assoc_req()
   ptr += 2;
 
   /* listen_int */
-  ptr[0] = 0;
-  ptr[1] = 1;
+  *(uint16_t *) ptr = cpu_to_le16(1);
   ptr += 2;
 
   ptr[0] = WIFI_ELEMID_SSID;
@@ -122,7 +129,7 @@ WifiStation::send_assoc_req()
   output(0).push(p);
 }
 void
-WifiStation::push(int port, Packet *p)
+AssociationRequester::push(int port, Packet *p)
 {
 
   uint8_t dir;
@@ -242,12 +249,12 @@ WifiStation::push(int port, Packet *p)
   return;
 }
 
-enum {H_DEBUG, H_BSSID, H_ETH, H_SSID, H_LISTEN_INTERVAL, H_RATES, H_CLEAR_RATES, H_RUN};
+enum {H_DEBUG, H_BSSID, H_ETH, H_SSID, H_LISTEN_INTERVAL, H_RATES, H_CLEAR_RATES, H_SEND_ASSOC_REQ};
 
 static String 
-WifiStation_read_param(Element *e, void *thunk)
+AssociationRequester_read_param(Element *e, void *thunk)
 {
-  WifiStation *td = (WifiStation *)e;
+  AssociationRequester *td = (AssociationRequester *)e;
     switch ((uintptr_t) thunk) {
     case H_DEBUG:
       return String(td->_debug) + "\n";
@@ -271,10 +278,10 @@ WifiStation_read_param(Element *e, void *thunk)
     }
 }
 static int 
-WifiStation_write_param(const String &in_s, Element *e, void *vparam,
+AssociationRequester_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
-  WifiStation *f = (WifiStation *)e;
+  AssociationRequester *f = (AssociationRequester *)e;
   String s = cp_uncomment(in_s);
   switch((int)vparam) {
   case H_DEBUG: {    //debug
@@ -319,7 +326,7 @@ WifiStation_write_param(const String &in_s, Element *e, void *vparam,
   case H_CLEAR_RATES: {
     f->_rates.clear();
   }
-  case H_RUN: {
+  case H_SEND_ASSOC_REQ: {
     f->send_assoc_req();
   }
   }
@@ -327,26 +334,26 @@ WifiStation_write_param(const String &in_s, Element *e, void *vparam,
 }
  
 void
-WifiStation::add_handlers()
+AssociationRequester::add_handlers()
   {
   add_default_handlers(true);
 
-  add_read_handler("debug", WifiStation_read_param, (void *) H_DEBUG);
-  add_read_handler("bssid", WifiStation_read_param, (void *) H_BSSID);
-  add_read_handler("eth", WifiStation_read_param, (void *) H_ETH);
-  add_read_handler("ssid", WifiStation_read_param, (void *) H_SSID);
-  add_read_handler("listen_interval", WifiStation_read_param, (void *) H_LISTEN_INTERVAL);
-  add_read_handler("rates", WifiStation_read_param, (void *) H_RATES);
+  add_read_handler("debug", AssociationRequester_read_param, (void *) H_DEBUG);
+  add_read_handler("bssid", AssociationRequester_read_param, (void *) H_BSSID);
+  add_read_handler("eth", AssociationRequester_read_param, (void *) H_ETH);
+  add_read_handler("ssid", AssociationRequester_read_param, (void *) H_SSID);
+  add_read_handler("listen_interval", AssociationRequester_read_param, (void *) H_LISTEN_INTERVAL);
+  add_read_handler("rates", AssociationRequester_read_param, (void *) H_RATES);
 
 
-  add_write_handler("debug", WifiStation_write_param, (void *) H_DEBUG);
-  add_write_handler("bssid", WifiStation_write_param, (void *) H_BSSID);
-  add_write_handler("eth", WifiStation_write_param, (void *) H_ETH);
-  add_write_handler("ssid", WifiStation_write_param, (void *) H_SSID);
-  add_write_handler("listen_interval", WifiStation_write_param, (void *) H_LISTEN_INTERVAL);
-  add_write_handler("rates", WifiStation_write_param, (void *) H_RATES);
-  add_write_handler("rates_reset", WifiStation_write_param, (void *) H_CLEAR_RATES);
-  add_write_handler("run", WifiStation_write_param, (void *) H_RUN);
+  add_write_handler("debug", AssociationRequester_write_param, (void *) H_DEBUG);
+  add_write_handler("bssid", AssociationRequester_write_param, (void *) H_BSSID);
+  add_write_handler("eth", AssociationRequester_write_param, (void *) H_ETH);
+  add_write_handler("ssid", AssociationRequester_write_param, (void *) H_SSID);
+  add_write_handler("listen_interval", AssociationRequester_write_param, (void *) H_LISTEN_INTERVAL);
+  add_write_handler("rates", AssociationRequester_write_param, (void *) H_RATES);
+  add_write_handler("rates_reset", AssociationRequester_write_param, (void *) H_CLEAR_RATES);
+  add_write_handler("send_assoc_req", AssociationRequester_write_param, (void *) H_SEND_ASSOC_REQ);
 
 }
 
@@ -357,4 +364,4 @@ WifiStation::add_handlers()
 #if EXPLICIT_TEMPLATE_INSTANCES
 #endif
 CLICK_ENDDECLS
-EXPORT_ELEMENT(WifiStation)
+EXPORT_ELEMENT(AssociationRequester)
