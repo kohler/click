@@ -15,7 +15,7 @@ if (-f "/click/version") {
 }
 
 my $value = join " ", @ARGV;
-if ($value =~ /\s+/) {
+if ($value =~ /\\/ && $value =~ /\s+/) {
     $value = "\\\"$value\\\"";
 }
 #print "$handler $value\n";
