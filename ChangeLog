@@ -1,3 +1,8 @@
+2003-07-08 Tuesday 02:08  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/standard/: simplequeue.cc (1.5), simplequeue.hh (1.5):
+	added a void* arg to the filter passed to yank
+
 2003-07-07 Monday 23:47  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: bighashmap.cc (1.22), bighashmap.hh (1.20):
