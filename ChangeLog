@@ -1,3 +1,8 @@
+2001-11-28 Wednesday 18:47  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/toipsumdump.cc (1.6): to ipsumdump 1.15: fix IP
+	length bugs
+
 2001-11-28 Wednesday 18:10  Eddie Kohler <kohler@aciri.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.12), fromipsumdump.hh
