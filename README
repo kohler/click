@@ -76,9 +76,9 @@ User-Level Program
 
     Run the user-level program by giving it the name of a configuration
 file: `click CONFIGFILE'. If you have compiled Click with pcap support,
-you'll want to use the FromBPF, ToBPF, FromDump, and ToDump elements. You
-can still play around with Click even without pcap support: check out the
-InfiniteSource and TimedSource elements, or write your own
+you'll want to use the FromDevice, ToDevice, FromDump, and ToDump elements.
+You can still play around with Click even without pcap support: check out
+the InfiniteSource and TimedSource elements, or write your own
 packet-generation element.
 
 Linux Kernel Module
@@ -86,21 +86,24 @@ Linux Kernel Module
 
     See the `doc/click.o.8' manual page for a detailed description. To
 summarize, install a configuration by running `click-install CONFIGFILE'.
-This will also install the kernel module, if necessary. (But you must run
-`make install' before `click-install' will work.) You can also install the
-kernel module with `/sbin/insmod click.o', and then install a configuration
-by hand with `cat CONFIGFILE > /proc/click/config'. If any errors occurred,
-they will appear in `/proc/click/errors'.
+This will also install the kernel module if necessary and report any errors
+to standard error. (You must run `make install' before `click-install' will
+work.)
+
+    You can also install the kernel module with `/sbin/insmod click.o', and
+then install a configuration by hand with `cat CONFIGFILE >
+/proc/click/config'. If any errors occurred, they will appear in
+`/proc/click/errors'. But `click-install' is easier.
 
 Configurations
 --------------
 
     A few configurations are included in the `conf' directory, including a
-Perl script that generated the IP router configurations used in our SOSP
-paper (`conf/make-ip-conf.pl') and a set of patterns for the Click
-optimizer (`conf/ip.clickpat'). The configurations are presently un- or
-under-documented. Please check back to our Web site for more up-to-date
-configurations.
+Perl script that generated the IP router configurations used in our TOCS
+paper (`conf/make-ip-conf.pl') and a set of patterns for the Click pattern
+optimizer, click-xform (`conf/ip.clickpat'). The configurations are
+presently un- or under-documented. Please check back to our Web site for
+more up-to-date configurations.
 
 COPYRIGHT AND LICENSE
 =====================
@@ -119,9 +122,10 @@ us at
 
 	- The Click software team:
 	  Eddie Kohler
-	  Robert Morris
 	  Benjie Chen
-	  Max Poletto
+	  Douglas S. J. DeCouto
+	  Peilei Fan
 	  Thomer M. Gil
-	  John Jannotti
+	  Robert Morris
+	  Max Poletto
 	  M. Frans Kaashoek

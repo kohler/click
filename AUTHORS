@@ -5,7 +5,7 @@ thread, device driver updates
 
 Douglas S. J. DeCouto
 decouto@lcs.mit.edu
-user level elements, Grid elements, ControlSocket Java programs
+user-level elements, Grid elements, ControlSocket Java programs
 
 Peilei Fan
 peilei@mit.edu
@@ -19,7 +19,11 @@ Eddie Kohler
 eddietwo@lcs.mit.edu
 design, core, language, Linux /proc interface, Linux kernel module,
 standard elements, tools, documentation, distribution, IP rewriting
-elements, Ethernet, IP, and userlevel element updates, other elements
+elements, global element updates, other elements
+
+Mazu Networks, Inc.
+http://www.mazunetworks.com/
+universal improvements, new elements
 
 Robert Morris
 rtm@lcs.mit.edu

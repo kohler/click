@@ -12,7 +12,7 @@ A. Yes.
 Q. The Click Linux patch does not apply cleanly.
 
 A. You need a specific version of Linux. The patch we are distributing (as
-   of version 1.0) is for Linux 2.2.14. Most of the patch will apply no
+   of version 1.1) is for Linux 2.2.16. Most of the patch will apply no
    matter what version of Linux 2.2 you use. The problem is the Tulip
    device driver, which seems to be changing a lot between versions.
 
