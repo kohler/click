@@ -1,3 +1,19 @@
+2000-10-28 Saturday 17:46  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.2.16-patch: [no log message]
+
+2000-10-28 Saturday 17:26  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.2.16-patch: [no log message]
+
+2000-10-28 Saturday 17:04  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.2.16-patch: seperate recycled skbs into buckets
+
+2000-10-28 Saturday 16:50  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.2.16-patch: minor changes to patch
+
 2000-10-26 Thursday 19:02  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/linuxmodule/: anydevice.hh, perfinfo.cc, polldevice.cc:
