@@ -55,8 +55,8 @@ Index: net/core/skbuff.c
   *	Authors:	Alan Cox <iiitac@pyr.swan.ac.uk>
   *			Florian La Roche <rzsfl@rz.uni-sb.de>
   *
-- *	Version:	$Id: click-patch-1.0.5,v 1.3 2000/04/21 03:33:17 benjie Exp $
-+ *	Version:	$Id: click-patch-1.0.5,v 1.3 2000/04/21 03:33:17 benjie Exp $
+- *	Version:	$Id: click-patch-1.0.5,v 1.4 2000/04/21 03:35:46 benjie Exp $
++ *	Version:	$Id: click-patch-1.0.5,v 1.4 2000/04/21 03:35:46 benjie Exp $
   *
   *	Fixes:	
   *		Alan Cox	:	Fixed the worst of the load balancer bugs.
@@ -448,7 +448,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Thu Mar  2 18:27:40 2000
-+++ drivers/net/tulip.c	Thu Apr 20 23:30:43 2000
++++ drivers/net/tulip.c	Thu Apr 20 23:35:24 2000
 @@ -22,9 +22,6 @@
  
  /* A few user-configurable values. */
@@ -729,7 +729,7 @@ Index: drivers/net/tulip.c
  			restore_flags(flags);
  			/* Trigger an immediate transmit demand. */
  			outl(0, ioaddr + CSR1);
-@@ -3345,3 +3424,387 @@
+@@ -3345,3 +3424,386 @@
   *  tab-width: 4
   * End:
   */
@@ -754,8 +754,7 @@ Index: drivers/net/tulip.c
 + * structures for rx and tx.
 + *
 + * dev->tbusy was used by Linux's original tulip driver to synchronize send
-+ * routines, tx_lock does that now, but I didn't change the way tbusy is used
-+ * just for consistency across versions.
++ * routines, it still is.
 + */
 +
 +static __inline__ unsigned long long
