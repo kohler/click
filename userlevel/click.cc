@@ -62,6 +62,8 @@
 #define STOP_OPT		307
 #define PORT_OPT		308
 #define UNIX_SOCKET_OPT		309
+#define NO_WARNINGS_OPT		310
+#define WARNINGS_OPT		311
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
@@ -74,6 +76,8 @@ static Clp_Option options[] = {
   { "time", 't', TIME_OPT, 0, 0 },
   { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ArgString, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
+  { "warnings", 0, WARNINGS_OPT, 0, Clp_Negate },
+  { 0, 'w', NO_WARNINGS_OPT, 0, Clp_Negate },
 };
 
 static const char *program_name;
@@ -108,6 +112,7 @@ Options:\n\
                                 multiple times. If not specified, ELEMENTS are\n\
                                 the configuration's packet sources.\n\
   -t, --time                    Print information on how long driver took.\n\
+  -w, --no-warnings             Do not print warnings.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
@@ -203,30 +208,45 @@ click_remove_element_type(int which)
 
 // global handlers for ControlSocket
 
-String
-click_userlevel_classes_string()
-{
-  Vector<String> v;
-  lexer->element_type_names(v);
-  StringAccum sa;
-  for (int i = 0; i < v.size(); i++)
-    sa << v[i] << "\n";
-  return sa.take_string();
-}
-
-String
-click_userlevel_config_string()
-{
-  return configuration_string;
-}
-
-String
-click_userlevel_packages_string()
+bool
+click_userlevel_global_handler_string(Router *router, const String &name, String *data)
 {
   StringAccum sa;
-  for (int i = 0; i < packages.size(); i++)
-    sa << packages[i] << "\n";
-  return sa.take_string();
+  
+  if (name == "version")
+    *data = String(CLICK_VERSION "\n");
+  
+  else if (name == "list")
+    *data = router->element_list_string();
+  
+  else if (name == "classes") {
+    Vector<String> v;
+    lexer->element_type_names(v);
+    for (int i = 0; i < v.size(); i++)
+      sa << v[i] << "\n";
+    *data = sa.take_string();
+    
+  } else if (name == "config")
+    *data = configuration_string;
+  
+  else if (name == "flatconfig")
+    *data = router->flat_configuration_string();
+  
+  else if (name == "packages") {
+    for (int i = 0; i < packages.size(); i++)
+      sa << packages[i] << "\n";
+    *data = sa.take_string();
+    
+  } else if (name == "requirements") {
+    const Vector<String> &v = router->requirements();
+    for (int i = 0; i < v.size(); i++)
+      sa << v[i] << "\n";
+    *data = sa.take_string();
+    
+  } else
+    return false;
+  
+  return true;
 }
 
 
@@ -247,6 +267,22 @@ call_read_handler(Element *e, String handler_name, Router *r,
 
   if (print_name)
     fprintf(stdout, "%s.%s:\n", e->id().cc(), handler_name.cc());
+  fputs(result.cc(), stdout);
+  if (print_name)
+    fputs("\n", stdout);
+
+  return 0;
+}
+
+static int
+call_global_read_handler(String handler_name, Router *r, bool print_name, ErrorHandler *errh)
+{
+  String result;
+  if (!click_userlevel_global_handler_string(r, handler_name, &result))
+    return errh->error("no `%s' handler", handler_name.cc());
+  
+  if (print_name)
+    fprintf(stdout, "%s:\n", handler_name.cc());
   fputs(result.cc(), stdout);
   if (print_name)
     fputs("\n", stdout);
@@ -282,7 +318,7 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
   for (int i = 0; i < handlers.size(); i++) {
     int dot = handlers[i].find_left('.');
     if (dot < 0) {
-      errh->error("syntax error in handler `%s': expected ELEMENTNAME.HANDLERNAME", handlers[i].cc());
+      call_global_read_handler(handlers[i], router, print_names, errh);
       continue;
     }
     
@@ -485,6 +521,7 @@ main(int argc, char **argv)
   bool report_time = false;
   bool stop = false;
   bool stop_guess = false;
+  bool warnings = true;
   Vector<String> handlers;
   Vector<String> stops;
   Vector<String> unix_sockets;
@@ -541,6 +578,14 @@ main(int argc, char **argv)
 
      case TIME_OPT:
       report_time = true;
+      break;
+
+     case WARNINGS_OPT:
+      warnings = !clp->negated;
+      break;
+
+     case NO_WARNINGS_OPT:
+      warnings = clp->negated;
       break;
       
      case HELP_OPT:
@@ -627,7 +672,7 @@ particular purpose.\n");
   router = lexer->create_router();
   lexer->end_parse(cookie);
 
-  if (router->nelements() == 0)
+  if (router->nelements() == 0 && warnings)
     errh->warning("%s: configuration has no elements", router_file);
 
   // handle stop option by adding a QuitWatcher element

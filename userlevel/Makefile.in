@@ -1,3 +1,4 @@
+## Click userlevel driver Makefile ##
 SHELL = @SHELL@
 
 srcdir := @srcdir@
@@ -37,6 +38,10 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -E $< > $@
 
 
+ifndef INSTALLPROGS
+INSTALLPROGS = click
+endif
+
 GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
 	ipaddress.o ip6address.o ipaddressset.o ipflowid.o etheraddress.o \
@@ -72,7 +77,7 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: click
+all: $(INSTALLPROGS)
 
 click: Makefile libclick.a $(OBJS)
 	$(CXXLINK) -rdynamic $(OBJS) $(LIBS) libclick.a
@@ -101,15 +106,15 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click libclick.a
+install: $(INSTALLPROGS) libclick.a
 	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click $(bindir)/click
+	for i in $(INSTALLPROGS); do $(INSTALL) $$i $(bindir)/$$i; done
 	$(mkinstalldirs) $(libdir)
 	$(INSTALL) libclick.a $(libdir)/libclick.a
 install-man:
 
 clean:
-	rm -f *.d *.o click elements.mk elements.cc elements.conf libclick.a
+	rm -f *.d *.o $(INSTALLPROGS) elements.mk elements.cc elements.conf libclick.a
 distclean: clean
 	-rm -f Makefile
 
