@@ -1,3 +1,7 @@
+%require -q
+false
+# tcpdump format changes make this test unreasonable
+
 %script
 
 # read from tcpdump output file; check headers, emit to a dump

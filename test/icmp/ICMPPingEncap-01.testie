@@ -12,6 +12,6 @@ InfiniteSource('', LIMIT 2, STOP true)
 tcpdump -n -r FOO > CHECK
 
 %file FOO
-%expectx CHECK
-.* 2\.0\.0\.2 > 1\.0\.0\.1: icmp.*: echo reply.*
-.* 2\.0\.0\.2 > 1\.0\.0\.1: icmp.*: echo reply.*
+%expectx -i CHECK
+.* 2\.0\.0\.2 > 1\.0\.0\.1: icmp.* echo reply.*
+.* 2\.0\.0\.2 > 1\.0\.0\.1: icmp.* echo reply.*

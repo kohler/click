@@ -47,12 +47,12 @@ tcpdump: listening on.*
 .*packet.*dropped by.*
 .*arp.*
 
-%expectx FAKE0
-.* 1.0.0.1 > 1.0.0.2: icmp: echo request.*
-.* 1.0.0.2 > 1.0.0.1: icmp: echo reply
-.* 2.0.0.3 > 1.0.0.1: icmp: echo request
-.* 1.0.0.1 > 1.0.0.3: icmp: echo request.*
-.* 1.0.0.3 > 1.0.0.1: icmp: echo reply
+%expectx -i FAKE0
+.* 1.0.0.1 > 1.0.0.2: icmp.* echo request.*
+.* 1.0.0.2 > 1.0.0.1: icmp.* echo reply.*
+.* 2.0.0.3 > 1.0.0.1: icmp.* echo request.*
+.* 1.0.0.1 > 1.0.0.3: icmp.* echo request.*
+.* 1.0.0.3 > 1.0.0.1: icmp.* echo reply.*
 
 %expect PING1
 1

@@ -126,6 +126,7 @@ click.info*
 click.o.8
 click.texi
 elementdoc.7
+testie.1
 texinfo.tex
 
 ./drivers:
@@ -424,8 +425,6 @@ TCPRewriter-01.testie
 
 ./test/analysis:
 FromIPSummaryDump-ipopt-01.testie
-FromTcpdump-01.testie
-FromTcpdump-02.testie
 
 ./test/compound:
 input-01.testie

@@ -1,3 +1,7 @@
+%require -q
+false
+# tcpdump format changes make this test unreasonable
+
 %script
 
 # read from tcpdump output file; check headers, emit to a dump
@@ -54,7 +58,7 @@ tcpdump -nn -tt -v -r OUT1 > OUT2
 1073554831.575698 169.232.91.3.771 > 224.0.0.2.1985:  udp 20 [tos 0xc0]  [ttl 1] (id 44446, len 48)
 1073554832.497370 169.232.91.4.771 > 224.0.0.2.1985:  udp 20 [tos 0xc0]  [ttl 1] (id 38310, len 48)
 
-%expect OUT2
+%cut %expect OUT2
 1073554818.366478 169.232.91.4.771 > 224.0.0.2.1985:{{ +(\[\|hsrp\]|udp 20)}} [tos 0xc0]  [ttl 1] (id 37528, len 48)
 1073554818.674242 169.232.91.51.1027 > 224.0.1.22.427:{{ +}}udp 138 (ttl 32, id 27748, len 166)
 1073554818.810540 192.168.1.100.32821 > 130.74.110.2.80: F [tcp sum ok] 132356736:132356736(0) ack 802695074 win 21600 <nop,nop,timestamp 1301380 3423736> (DF) (ttl 64, id 18639, len 52)
