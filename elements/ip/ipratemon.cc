@@ -214,7 +214,7 @@ IPRateMonitor::print(_stats *s, String ip = "")
 
       if (nonzero) {
 	bool updated = false;
-	bool duration = (jiffs-_resettime)/CLICK_HZ;
+	int duration = (jiffs-_resettime)/CLICK_HZ;
 	if (duration == 0) duration++;
 	ret += "\t"; 
 	ret += String((unsigned long)s->counter[i].total/duration);
