@@ -62,7 +62,7 @@ fq :: FloodingLocQuerier(GRID_MAC_ADDR, GRID_IP);
 loc_repl :: LocQueryResponder(GRID_MAC_ADDR, GRID_IP);
 
 rps :: GridProbeSender(GRID_MAC_ADDR, GRID_IP);
-rph :: GridProbeHandler(GRID_MAC_ADDR, GRID_IP);
+rph :: GridProbeHandler(GRID_MAC_ADDR, GRID_IP, lr, geo, fq);
 rpr :: GridProbeReplyReceiver(PROBE_CHANNEL);
 
 nb :: GridRouteTable(ROUTE_TIMEOUT,
