@@ -12,10 +12,32 @@ geo :: LookupGeographicGridRoute(MAC_ADDR, GRID_IP, nb);
 fq :: FloodingLocQuerier(MAC_ADDR, GRID_IP);
 loc_repl :: LocQueryResponder(MAC_ADDR, GRID_IP);
 
+elementclass TTLChecker {
+  // expects grid packets with MAC headers --- place on output path to
+  // dec TTL for next hop and provide traceroute support.
+  
+  // push -> push
+
+  // output [0] passes through the Grid MAC packets
+  // output [1] produces ICMP error packets to be passed back to 
+  // IP routing layer
+  
+  input 
+    -> cl :: Classifier(15/GRID_NBR_ENCAP_PROTO !90/GRID_HEX_IP, -) [0] // don't dec ttl for packets we originate
+    -> ckip :: MarkIPHeader(78) // 78 is offset of IP in GRID_NBR_ENCAP
+    -> dec :: DecIPTTL
+    -> output;
+
+  cl [1] -> output;
+  dec [1] -> ICMPError(GRID_IP, 11, 0) -> [1] output;
+};
+
+
 // device layer els
 from_wvlan :: FromDevice(NET_DEVICE, 0);
-to_wvlan :: FixSrcLoc(li) -> SetGridChecksum -> ToDevice(NET_DEVICE);
-
+to_wvlan :: TTLChecker [0] -> FixSrcLoc(li) -> SetGridChecksum -> ToDevice(NET_DEVICE);
+connectiontunnel to_ip_cl/in -> to_ip_cl/out;
+to_wvlan [1] -> to_ip_cl/in;
 
 // linux ip layer els
 linux :: KernelTap(GRID_IP/GRID_NETMASK, GRID_GW, HEADROOM) -> from_linux :: Strip(14);
@@ -26,12 +48,6 @@ grid_demux :: Classifier(15/GRID_NBR_ENCAP_PROTO,  // encapsulated packets
 			 15/GRID_LOC_REPLY_PROTO); // loc reply packets
 
 
-connectiontunnel to_ttl_check -> ttl_check/in;
-connectiontunnel ttl_check/out -> from_ttl_check;
-
-ttl_check/in -> ckip1 :: CheckIPHeader( , 78) -> dt1 :: DecIPTTL -> ttl_check/out;
-ckip1 [1] -> Discard;
-dt1 [1] -> icmp_err :: ICMPError(GRID_IP, 11, 0) -> [1] lr;
 
 // hook it all up
 from_wvlan -> Classifier(12/GRID_ETH_PROTO) 
@@ -40,8 +56,6 @@ from_wvlan -> Classifier(12/GRID_ETH_PROTO)
   -> [0] nb [0]
   -> grid_demux [0] 
   -> [0] lr [0] 
-  -> to_ttl_check;
-     from_ttl_check
   -> to_wvlan;
 
 query_demux :: Classifier(62/GRID_HEX_IP, // loc query for us
@@ -54,7 +68,7 @@ grid_demux [1] -> query_demux;
 grid_demux [2] -> repl_demux;
 
 repl_demux [0] -> [1] fq; // handle reply to our loc query
-repl_demux [1] -> [0] lr; // forward query reply packets like encap packets
+repl_demux [1] -> PrintGrid(FWD_REPL) -> [0] lr; // forward query reply packets like encap packets
 
 loc_repl -> [0] lr; // forward loc reply packets initiated by us
 
@@ -77,6 +91,7 @@ check_grid [1] -> Print(bad_grid_hdr) -> Discard;
 from_linux -> cl :: Classifier(16/GRID_HEX_IP, // ip for us
 			       16/GRID_NET_HEX, // ip for Grid network
 			       -); // the rest of the world
+to_ip_cl/out -> cl;
 cl [0] -> linux;
 cl [1] -> GetIPAddress(16) -> [1] lr [1] -> check :: CheckIPHeader [0] -> to_linux;
 check [1] -> Discard;
