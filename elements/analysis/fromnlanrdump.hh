@@ -19,12 +19,12 @@ reads packets from an NLANR file
 
 =d
 
-Reads packets from a file in DAG format, produced by the University of
-Waikato's DAG tools. Pushes them out the output, and optionally stops the
-driver when there are no more packets.
+Reads IP packets from a file in a format used for NLANR traces: either FR,
+FR+, or TSH. Pushes them out the output, and optionally stops the driver when
+there are no more packets.
 
-FromDAGDump also transparently reads gzip- and bzip2-compressed files, if you
-have zcat(1) and bzcat(1) installed.
+FromNLANRDump also transparently reads gzip- and bzip2-compressed files, if
+you have zcat(1) and bzcat(1) installed.
 
 Keyword arguments are:
 
@@ -34,75 +34,79 @@ Keyword arguments are:
 
 String.  Should be either 'fr', 'fr+', 'tsh', or 'guess'.  Default is 'guess'.
 
-=item SAMPLE
+=item STOP
 
-Unsigned real number between 0 and 1. FromDAGDump will output each packet with
-probability SAMPLE. Default is 1. FromDAGDump uses fixed-point arithmetic, so
-the actual sampling probability may differ substantially from the requested
-sampling probability. Use the C<sampling_prob> handler to find out the actual
-probability.
+Boolean. If true, then FromNLANRDump will ask the router to stop when it is done
+reading its tcpdump file. Default is false.
+
+=item ACTIVE
+
+Boolean. If false, then FromNLANRDump will not emit packets (until the
+`C<active>' handler is written). Default is true.
 
 =item FORCE_IP
 
-Boolean. If true, then FromDAGDump will emit only IP packets with their IP
-header annotations correctly set. (If FromDAGDump has two outputs, non-IP
-packets are pushed out on output 1; otherwise, they are dropped.) Default is
-false.
-
-=item STOP
-
-Boolean. If true, then FromDAGDump will ask the router to stop when it is done
-reading its tcpdump file. Default is false.
+Boolean. This argument is ignored; it's here for compatibility with FromDump
+and the like. FromNLANRDump behaves as if FORCE_IP was set to true.
 
 =item START
 
-Absolute time in seconds since the epoch. FromDAGDump will output packets with
+Absolute time in seconds since the epoch. FromNLANRDump will output packets with
 timestamps after that time.
 
 =item START_AFTER
 
 Argument is relative time in seconds (or supply a suffix like `min', `h').
-FromDAGDump will skip the first I<T> seconds in the log.
+FromNLANRDump will skip the first I<T> seconds in the log.
 
 =item END
 
-Absolute time in seconds since the epoch. FromDAGDump will stop when
+Absolute time in seconds since the epoch. FromNLANRDump will stop when
 encountering a packet with timestamp at or after that time.
 
 =item END_AFTER
 
 Argument is relative time in seconds (or supply a suffix like `min', `h').
-FromDAGDump will stop at the first packet whose timestamp is at least I<T>
+FromNLANRDump will stop at the first packet whose timestamp is at least I<T>
 seconds after the first timestamp in the log.
 
 =item INTERVAL
 
 Argument is relative time in seconds (or supply a suffix like `min', `h').
-FromDAGDump will stop at the first packet whose timestamp is at least I<T>
+FromNLANRDump will stop at the first packet whose timestamp is at least I<T>
 seconds after the first packet output.
 
 =item END_CALL
 
-Specify the handler to call, instead of stopping FromDAGDump, once the end
+Specify the handler to call, instead of stopping FromNLANRDump, once the end
 time is reached.
+
+=item SAMPLE
+
+Unsigned real number between 0 and 1. FromNLANRDump will output each packet with
+probability SAMPLE. Default is 1. FromNLANRDump uses fixed-point arithmetic, so
+the actual sampling probability may differ substantially from the requested
+sampling probability. Use the C<sampling_prob> handler to find out the actual
+probability.
 
 =item TIMING
 
-Boolean. If true, then FromDAGDump tries to maintain the inter-packet timing
+Boolean. If true, then FromNLANRDump tries to maintain the inter-packet timing
 of the original packet stream. False by default.
-
-=item ACTIVE
-
-Boolean. If false, then FromDAGDump will not emit packets (until the
-`C<active>' handler is written). Default is true.
 
 =item MMAP
 
-Boolean. If true, then FromDAGDump will use mmap(2) to access the tcpdump
+Boolean. If true, then FromNLANRDump will use mmap(2) to access the tcpdump
 file. This can result in slightly better performance on some machines.
-FromDAGDump's regular file discipline is pretty optimized, so the difference
+FromNLANRDump's regular file discipline is pretty optimized, so the difference
 is often small in practice. Default is true on most operating systems, but
 false on Linux.
+
+=item FILEPOS
+
+File offset. If supplied, then FromNLANRDump will start emitting packets from
+this (uncompressed) file position. This is dangerous; if you get the offset
+wrong, FromNLANRDump will emit garbage.
 
 =back
 
@@ -113,11 +117,7 @@ Only available in user-level processes.
 
 =n
 
-By default, `tcpdump -w FILENAME' dumps only the first 68 bytes of
-each packet. You probably want to run `tcpdump -w FILENAME -s 2000' or some
-such.
-
-FromDAGDump sets packets' extra length annotations to any additional length
+FromNLANRDump sets packets' extra length annotations to any additional length
 recorded in the dump.
 
 =h sampling_prob read-only
@@ -130,16 +130,27 @@ Value is a Boolean.
 
 =h encap read-only
 
-Returns the file's encapsulation type.
+Returns "IP".
+
+=h filename read-only
+
+Returns the filename supplied to FromNLANRDump.
 
 =h filesize read-only
 
-Returns the length of the FromDAGDump file, in bytes, or "-" if that
-length cannot be determined.
+Returns the length of the FromNLANRDump file, in bytes, or "-" if that length
+cannot be determined (because the file was compressed, for example).
 
 =h filepos read-only
 
-Returns FromDAGDump's position in the file, in bytes.
+Returns FromNLANRDump's position in the (uncompressed) file, in bytes.
+
+=h packet_filepos read-only
+
+Returns the (uncompressed) file position of the last packet emitted, in bytes.
+This handler is useful for elements like AggregateIPFlows that can record
+statistics about portions of a trace; with packet_filepos, they can note
+exactly where the relevant portion begins.
 
 =h extend_interval write-only
 
@@ -230,10 +241,10 @@ class FromNLANRDump : public Element { public:
     Task _task;
 
     struct timeval _time_offset;
+    off_t _packet_filepos;
 
     bool read_packet(ErrorHandler *);
 
-    void stamp_to_timeval(uint64_t, struct timeval &) const;
     void prepare_times(struct timeval &);
 
     static String read_handler(Element *, void *);

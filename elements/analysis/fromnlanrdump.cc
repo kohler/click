@@ -107,7 +107,7 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _first_time_relative = _last_time_relative = _last_time_interval = false;
     
     if ((timerisset(&first_time) != 0) + (timerisset(&first_time_off) != 0) > 1)
-	return errh->error("`START' and `START_AFTER' are mutually exclusive");
+	return errh->error("'START' and 'START_AFTER' are mutually exclusive");
     else if (timerisset(&first_time))
 	_first_time = first_time;
     else if (timerisset(&first_time_off))
@@ -118,7 +118,7 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
     }
     
     if ((timerisset(&last_time) != 0) + (timerisset(&last_time_off) != 0) + (timerisset(&interval) != 0) > 1)
-	return errh->error("`END', `END_AFTER', and `INTERVAL' are mutually exclusive");
+	return errh->error("'END', 'END_AFTER', and 'INTERVAL' are mutually exclusive");
     else if (timerisset(&last_time))
 	_last_time = last_time;
     else if (timerisset(&last_time_off))
@@ -398,7 +398,7 @@ FromNLANRDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorH
 	      fd->set_active(active);
 	      return 0;
 	  } else
-	      return errh->error("`active' should be Boolean");
+	      return errh->error("'active' should be Boolean");
       }
       case H_STOP:
 	fd->set_active(false);
@@ -412,7 +412,7 @@ FromNLANRDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorH
 		  fd->_have_last_time = true, fd->set_active(true);
 	      return 0;
 	  } else
-	      return errh->error("`extend_interval' takes a time interval");
+	      return errh->error("'extend_interval' takes a time interval");
       }
       default:
 	return -EINVAL;
