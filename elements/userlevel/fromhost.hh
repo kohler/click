@@ -106,6 +106,9 @@ class FromHost : public Element { public:
     int fd() { return _fd; }
     String dev_name() { return _dev_name; }
 
+
+    static String read_param(Element *, void *);
+
   private:
     enum { DEFAULT_MTU = 2048 };
 
@@ -119,20 +122,15 @@ class FromHost : public Element { public:
 
     EtherAddress _macaddr;
 
-    bool _ignore_q_errs;
-    bool _printed_read_err;
-
-    static String print_dev_name(Element *e, void *);
-
     int try_linux_universal(ErrorHandler *);
     int try_tun(const String &, ErrorHandler *);
     int alloc_tun(ErrorHandler *);
     int setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *);
     void dealloc_tun();
 
-protected:
+
+
     Task _task;
-public:
     NotifierSignal _nonfull_signal;
 
 };

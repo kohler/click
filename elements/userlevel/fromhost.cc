@@ -40,7 +40,6 @@ FromHost::FromHost()
   : Element(0, 1), 
     _fd(-1),
     _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
-    _ignore_q_errs(false), _printed_read_err(false),
     _task(this)
 {
   MOD_INC_USE_COUNT;
@@ -64,7 +63,6 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "ETHER", cpEthernetAddress, "fake device Ethernet address", &_macaddr,
 		  "HEADROOM", cpUnsigned, "default headroom for generated packets", &_headroom,
-		  "IGNORE_QUEUE_OVERFLOWS", cpBool, "ignore queue overflow errors?", &_ignore_q_errs,
 		  "MTU", cpInteger, "MTU", &_mtu_out,
 		  cpEnd) < 0)
     return -1;
@@ -188,15 +186,13 @@ FromHost::selected(int fd)
 	// 2-byte padding followed by an Ethernet type
 	p->pull(4);
 	const click_ip *ip = reinterpret_cast<const click_ip *>(p->data() + sizeof(click_ether));
+	p->set_dst_ip_anno(IPAddress(ip->ip_dst));
 	p->set_ip_header(ip, ip->ip_hl << 2);
 	(void) click_gettimeofday(&p->timestamp_anno());
 	output(0).push(p);
     } else {
 	p->kill();
-	if (!_ignore_q_errs || !_printed_read_err || (errno != ENOBUFS)) {
-	    _printed_read_err = true;
-	    perror("KernelTun read");
-	}
+	perror("FromHost read");
     }
 
     if (!_nonfull_signal) {
@@ -220,8 +216,8 @@ FromHost::run_task()
 
 enum {H_DEV_NAME, H_SIGNAL};
 
-static String 
-read_param(Element *e, void *thunk)
+String 
+FromHost::read_param(Element *e, void *thunk)
 {
   FromHost *td = (FromHost *)e;
     switch ((uintptr_t) thunk) {
