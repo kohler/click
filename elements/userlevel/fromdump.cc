@@ -480,7 +480,7 @@ FromDump::read_packet(ErrorHandler *errh)
 	}
 	p->change_headroom_and_length(_pos, caplen);
 	p->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
-	SET_EXTRA_LENGTH_ANNO(p, ph->len - caplen);
+	SET_EXTRA_LENGTH_ANNO(p, len - caplen);
 	_pos += caplen;
 	
     } else {
@@ -491,7 +491,7 @@ FromDump::read_packet(ErrorHandler *errh)
 	}
 	// set annotations now: may unmap earlier memory!
 	wp->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
-	SET_EXTRA_LENGTH_ANNO(wp, ph->len - caplen);
+	SET_EXTRA_LENGTH_ANNO(wp, len - caplen);
 	
 	if (read_into(wp->data(), caplen, errh) < caplen) {
 	    error_helper(errh, "short packet");
