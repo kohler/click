@@ -959,7 +959,7 @@ cp_ip6_address(const String &str, unsigned char *return_value, String *rest = 0)
     return false;
   else {
     if (rest)
-      *rest = str.substring(pos - 1);
+      *rest = str.substring(pos);
     for (d = 0; d < 8; d++) {
       return_value[d<<1] = (parts[d]>>8) & 0xFF;
       return_value[(d<<1) + 1] = parts[d] & 0xFF;
