@@ -36,6 +36,7 @@ extern "C" {
 #include "perfcount.hh"
 #include "asm/msr.h"
 
+static int registered_writers;
 static struct notifier_block notifier;
 
 extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v);
@@ -99,6 +100,10 @@ ToDevice::static_initialize()
 void
 ToDevice::static_cleanup()
 {
+#ifdef HAVE_CLICK_KERNEL 
+  if (registered_writers)
+    unregister_net_out(&notifier);
+#endif
 }
 
 
@@ -145,7 +150,14 @@ ToDevice::initialize(ErrorHandler *errh)
     return errh->error("duplicate ToDevice for device `%s'", _devname.cc());
   
   _registered = 1;
-    
+  if (!registered_writers) {
+#ifdef HAVE_CLICK_KERNEL
+    notifier.next = 0;
+    register_net_out(&notifier);
+#endif
+  }
+  registered_writers++;
+
 #ifndef RR_SCHED
   /* start out with default number of tickets, inflate up to max */
   int max_tickets = ScheduleInfo::query(this, errh);
@@ -160,6 +172,11 @@ ToDevice::initialize(ErrorHandler *errh)
 void
 ToDevice::uninitialize()
 {
+  registered_writers--;
+#ifdef HAVE_CLICK_KERNEL
+  if (registered_writers == 0) 
+    unregister_net_out(&notifier);
+#endif
   /* remove from ifindex_map */
   remove_ifindex_map(_dev->ifindex, TODEV_OBJ);
   _registered = 0;
@@ -181,9 +198,10 @@ click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v)
   int retval = 0;
   int ifindex = dev->ifindex;
   if (ifindex >= 0 && ifindex < MAX_DEVICES)
-    if (ToDevice *kw = (ToDevice*) lookup_ifindex_map(ifindex, TODEV_OBJ))
-      retval = kw->tx_intr();
-  
+    if (ToDevice *kw = (ToDevice*) lookup_ifindex_map(ifindex, TODEV_OBJ)) {
+      if (!kw->polling())
+        retval = kw->tx_intr();
+    }
   return retval;
 }
 
@@ -246,7 +264,9 @@ ToDevice::tx_intr()
     if (sent == 0 && !busy) _idle_pulls++;
     if (sent > 0) _pkts_sent+=sent;
     if (busy) _busy_returns++;
-    if ((_activations % 1000) == 0) _dev->get_stats(_dev);
+    if ((_activations % 10000) == 0) {
+      _dev->get_stats(_dev);
+    }
   }
 #endif
 
@@ -265,38 +285,41 @@ ToDevice::tx_intr()
   }
 #endif
  
-  /*
-   * If we have packets left in the queue, arrange for
-   * net_bh()/qdisc_run_queues() to call us when the
-   * device decides it's idle.
-   * This is a lot like qdisc_wakeup(), but we don't want to
-   * bother trying to send a packet from Linux's queues.
-   */
-  if (busy) {
-    struct Qdisc *q = _dev->qdisc;
-    if(q->h.forw == NULL) {
-      q->h.forw = qdisc_head.forw;
-      qdisc_head.forw = &q->h;
-    }
-  }
-  
-#ifndef RR_SCHED
-
-#ifdef ADJ_TICKETS
-  /* adjusting tickets */
-
-  int dmal;
+  if (!_polling) {
+    /* If we have packets left in the queue, arrange for
+     * net_bh()/qdisc_run_queues() to call us when the device decides it's idle.
+     * This is a lot like qdisc_wakeup(), but we don't want to bother trying to
+     * send a packet from Linux's queues.
+     */
+    /* if we don't have a scheduler, that means we are called by a bh handler,
+     * so no race conditions. if we are in interrupt mode, but uses a
+     * scheduler thread, then we lock out bh to avoid race conditions. */
 #if HAVE_POLLING
-  if (_polling)
-    dmal = _dev->tx_dma_length;
-  else
+    start_bh_atomic();
 #endif
-    dmal = 16;
+    if (_dev->tbusy) {
+      struct Qdisc *q = _dev->qdisc;
+      if(q->h.forw == NULL) {
+        q->h.forw = qdisc_head.forw;
+        qdisc_head.forw = &q->h;
+      }
+    }
+#if HAVE_POLLING
+    end_bh_atomic();
+#endif
+  }
 
-  int dma_thresh_high = dmal-dmal/8;
-  int dma_thresh_low  = dmal/4;
+#ifndef RR_SCHED
+#ifdef ADJ_TICKETS
+#if HAVE_POLLING
+  int dma_thresh_high = _dev->tx_dma_length-_dev->tx_dma_length/8;
+  int dma_thresh_low  = _dev->tx_dma_length/4;
+#else
+  int dma_thresh_high = 16-16/8;
+  int dma_thresh_low  = 16/4;
+#endif
   int adj = tickets()/4;
-  if (adj<4) adj=4;
+  if (adj < 4) adj = 4;
 
   /* tx dma ring was fairly full, slow down */
   if (busy && queued_pkts > dma_thresh_high 
@@ -315,7 +338,6 @@ ToDevice::tx_intr()
   _last_tx = sent;
   _last_busy = busy;
   reschedule();
-  
 #endif /* !RR_SCHED */
 }
 

@@ -15,12 +15,22 @@ extern "C" {
  * makes sure every packet is at least 60 bytes long.
  *
  * =n
- * The Linux networking code may also send packets out
- * the device. Click won't see those packets. Worse,
- * Linux may cause the device to be busy when
- * a ToDevice wants to send a packet.
- * Click is not clever enough to re-queue such packets,
- * and discards them.
+ * The Linux networking code may also send packets out the device. Click won't
+ * see those packets. Worse, Linux may cause the device to be busy when a
+ * ToDevice wants to send a packet. Click is not clever enough to re-queue
+ * such packets, and discards them. 
+ *
+ * ToDevice interacts with Linux in three possible modes: when Click is
+ * running with its own scheduler thread, in polling mode; when Click is
+ * running with its own scheduler thread, in interrupt mode; or when Click is
+ * not running with its own scheduler thread (i.e. not running on top of a
+ * polling capable kernel) and ToDevice is invoked by registered in/out
+ * notifiers. In the last case, there are no race conditions because ToDevice
+ * only send packets when it is notified by Linux to do so. Linux notifies
+ * ToDevice in net_bh, which is not reentrant.
+ *
+ * In the first two cases, we depend on the net driver's send operation for
+ * synchronization (e.g. tulip send operation uses a bit lock).
  *
  * This element is only available inside the kernel module.
  *
@@ -76,6 +86,7 @@ class ToDevice : public Element {
   unsigned long _activations; 
 
   int ifnum() 				{return _dev!=0 ? _dev->ifindex : -1;}
+  int polling()				{return _polling;}
   
  private:
 
