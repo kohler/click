@@ -142,4 +142,7 @@ extern int click_jiffies();
   } while (0)
 #endif
 
+/* static assert, for compile-time assertion checking */
+#define StaticAssert(c) switch (c) case 0: case (c):
+
 #endif

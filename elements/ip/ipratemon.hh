@@ -3,16 +3,13 @@
 
 /*
  * =c
- * IPRateMonitor(DS, PB, OFF, THRESH, T)
+ * IPRateMonitor(PB, OFF, THRESH, T)
  * =d
  *
- * Monitors network traffic rates, much like IPFlexMonitor. Can monitor either
- * packet or byte rate (per second) for either dst IP addresses or src IP
- * addresses. When the rate for a particular IP network address exceeds the
- * threshold, rates will then be kept for host or subnet addresses within that
- * network.
- *
- * DS: SRC or DST. Look at src or dst IP address.
+ * Monitors network traffic rates. Can monitor either packet or byte rate (per
+ * second) to and from an address. When the to or from rate for a particular
+ * address exceeds the threshold, rates will then be kept for host or subnet
+ * addresses within that address.
  *
  * PB: PACKETS or BYTES. Count number of packets or bytes.
  *
@@ -24,12 +21,9 @@
  * T: duration (in seconds) which the rate is kept for (e.g. last 60 seconds).
  *
  * =h look (read)
- * Returns the rate of counted to/from a cluster of IP addresses. The first
- * printed line is the number of 'jiffies' that have past since the last reset.
- * There are 100 jiffies in one second.
- *
- * =h srcdst (read)
- * Returns value of DS.
+ * Returns the rate of counted to and from a cluster of IP addresses. The
+ * first printed line is the number of 'jiffies' that have past since the last
+ * reset. There are 100 jiffies in one second.
  *
  * =h what (read)
  * Returns value of PB
@@ -46,12 +40,11 @@
  * =e
  * Example: 
  *
- * IPRateMonitor(DST, PACKETS, 0, 1000, 60);
+ * IPRateMonitor(PACKETS, 0, 256, 1);
  *
- * Monitors packet rates on dst IP addresses. When rate for a network address
- * (e.g. 18.26.*.*) exceeds 1000 packets per second, start monitor subnet or
- * host addresses (e.g. 18.26.4.*). Keep packet per second rate for the past
- * 60 seconds.
+ * Monitors packet rates. When rate for a network address (e.g. 18.26.*.*)
+ * exceeds 1000 packets per second, start monitor subnet or host addresses
+ * (e.g. 18.26.4.*). Keep packet per second rate for the past 1 second.
  *
  * =a IPFlexMonitor
  */
@@ -81,12 +74,10 @@ class IPRateMonitor : public Element { public:
 
   IPRateMonitor *clone() const;
   Packet *simple_action(Packet *);
+  void push(int port, Packet *p);
+  Packet *pull(int port);
 
 private:
-
-  unsigned char _sd;
-#define SRC 0
-#define DST 1
 
   unsigned char _pb;
 #define COUNT_PACKETS 0
@@ -107,7 +98,8 @@ private:
 #define CLEAN    0x0000
 #define INIT     0x0001
 #define SPLIT    0x0010
-    EWMA2 rate;
+    EWMA2 dst_rate;
+    EWMA2 src_rate;
     int last_update;
     struct _stats *next_level;
   };
@@ -122,7 +114,7 @@ private:
   long unsigned int _resettime;       // time of last reset
 
   void set_resettime();
-  void update(IPAddress a, int val, Packet *p);
+  void update(IPAddress a, bool dst, int val, Packet *p);
 
   String print(_stats *s, String ip = "");
   void clean(_stats *s);
@@ -139,12 +131,11 @@ private:
     (const String &conf, Element *e, void *, ErrorHandler *errh);
 };
 
-
 //
 // Dives in tables based on a and raises all rates by val.
 //
 inline void
-IPRateMonitor::update(IPAddress a, int val, Packet *p)
+IPRateMonitor::update(IPAddress a, bool dst, int val, Packet *p)
 {
   unsigned int saddr = a.saddr();
 
@@ -158,8 +149,14 @@ IPRateMonitor::update(IPAddress a, int val, Packet *p)
     c = &(s->counter[byte]);
 
     if(c->flags & SPLIT) {
-      c->rate.update(val);
-      c->last_update = c->rate.now();
+      if (dst) {
+	c->dst_rate.update(val);
+        c->last_update = c->dst_rate.now();
+      }
+      else {
+	c->src_rate.update(val);
+        c->last_update = c->src_rate.now();
+      }
       s = c->next_level;
     }
     else
@@ -168,20 +165,32 @@ IPRateMonitor::update(IPAddress a, int val, Packet *p)
 
   // is vector allocated already?
   if(!c->flags) {
-    c->rate.initialize(_period);  // EWMA with rates over the past minute
+    c->dst_rate.initialize(_period);
+    c->src_rate.initialize(_period);
     c->flags = INIT;
   }
 
   // update values.
-  c->rate.update(val);
-  c->last_update = c->rate.now();
+  if (dst) {
+    c->dst_rate.update(val);
+    c->last_update = c->dst_rate.now();
+  }
+  else {
+    c->src_rate.update(val);
+    c->last_update = c->src_rate.now();
+  }
 
   // write annotation
-  int r = (c->rate.average()*CLICK_HZ) >> c->rate.scale();
-  p->set_rate_anno(r);
+  int sr = (c->src_rate.average()*CLICK_HZ) >> c->src_rate.scale();
+  int dr = (c->dst_rate.average()*CLICK_HZ) >> c->dst_rate.scale();
+
+  if (dst) 
+    p->set_dst_rate_anno(dr);
+  else
+    p->set_src_rate_anno(sr);
 
   // did value get larger than THRESH in the specified period?
-  if(r >= _thresh) {
+  if(sr >= _thresh || dr >= _thresh) {
     if(bitshift < MAX_SHIFT) {
       c->flags |= SPLIT;
       struct _stats *tmp = new struct _stats;

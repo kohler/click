@@ -8,7 +8,7 @@
  * =d
  * THRESH is an integer.
  *
- * Splits packets based on the sibling annotation set by Monitor. If the
+ * Splits packets based on the dst rate annotation set by Monitor. If the
  * annotation is less or equal to THRESH, the packet is pushed on output 0,
  * otherwise on 1.
  *
@@ -26,9 +26,7 @@
  * =h thresh read/write
  * value of THRESH
  *
- * =a RED
- * =a Monitor
- * =a Discard
+ * =a IPFlexMonitor
  */
 
 class Block : public Element {

@@ -58,21 +58,11 @@ Block::initialize(ErrorHandler *)
 void
 Block::push(int, Packet *packet)
 {
-  if(_thresh == 0 || packet->rate_anno() <= _thresh)
+  if(_thresh == 0 || packet->dst_rate_anno() <= _thresh)
     output(0).push(packet);
   else
     output(1).push(packet);
 }
-
-/* Packet *                              */
-/* Block::pull(int)                      */
-/* {                                     */
-/*   while (true) {                      */
-/*     Packet *packet = input(0).pull(); */
-/*     return packet;                    */
-/*   }                                   */
-/* }                                     */
-
 
 // HANDLERS
 int
@@ -94,7 +84,6 @@ Block::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler
   me->_thresh = thresh;
   return 0;
 }
-
 
 String
 Block::thresh_read_handler(Element *e, void *)

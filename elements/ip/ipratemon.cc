@@ -22,7 +22,7 @@
 #include "glue.hh"
 
 IPRateMonitor::IPRateMonitor()
-  : Element(1,1), _sd(SRC), _pb(COUNT_PACKETS), _offset(0), _base(NULL)
+  : Element(2,2), _pb(COUNT_PACKETS), _offset(0), _period(1), _base(NULL)
 {
 }
 
@@ -38,39 +38,31 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
 
   // Enough args?
-  if(args.size() != 5)
+  if(args.size() != 4)
     return errh->error("too few or too many arguments.");
 
-  // SRC/DST
-  if(args[0] == "SRC")
-    _sd = SRC;
-  else if(args[0] == "DST")
-    _sd = DST;
-  else
-    return errh->error("first argument should be \"SRC\" or \"DST\".");
-
   // PACKETS/BYTES
-  if(args[1] == "PACKETS")
+  if(args[0] == "PACKETS")
     _pb = COUNT_PACKETS;
-  else if(args[1] == "BYTES")
+  else if(args[0] == "BYTES")
     _pb = COUNT_BYTES;
   else
     return errh->error("second argument should be \"PACKETS\" or \"BYTES\".");
 
   // OFFSET
   int offset;
-  if(!cp_integer(args[2], offset))
+  if(!cp_integer(args[1], offset))
     return errh->error
       ("third argument (OFFSET) should be a non-negative integer.");
   _offset = (unsigned int) offset;
 
   // THRESH
-  if(!cp_integer(args[3], _thresh))
+  if(!cp_integer(args[2], _thresh))
     return errh->error
       ("fourth argument (THRESH) should be non-negative integer.");
  
   // PERIOD
-  if(!cp_integer(args[4], _period))
+  if(!cp_integer(args[3], _period))
     return errh->error
       ("fifth argument (PERIOD) should be non-negative integer.");
 
@@ -99,19 +91,32 @@ Packet *
 IPRateMonitor::simple_action(Packet *p)
 {
   IPAddress a;
-
   click_ip *ip = (click_ip *) (p->data() + _offset);
-  if(_sd == SRC)
-    a = IPAddress(ip->ip_src);
-  else
-    a = IPAddress(ip->ip_dst);
-
-  // Measuring # of packets or # of bytes?
   int val = (_pb == COUNT_PACKETS) ? 1 : ip->ip_len;
-  update(a, val, p);
+  
+  a = IPAddress(ip->ip_src);
+  update(a, false, val, p);
+  a = IPAddress(ip->ip_dst);
+  update(a, true, val, p);
 
   return p;
 }
+
+void
+IPRateMonitor::push(int port, Packet *p)
+{
+  p = simple_action(p);
+  if (p) output(port).push(p);
+}
+
+Packet *
+IPRateMonitor::pull(int port)
+{
+  Packet *p = input(port).pull();
+  if (p) p = simple_action(p);
+  return p;
+}
+
 
 //
 // Recursively destroys tables.
@@ -159,16 +164,21 @@ IPRateMonitor::print(_stats *s, String ip = "")
         this_ip = String(i);
       ret += this_ip;
 
-      if (s->counter[i].rate.average() > 0) {
+      if (s->counter[i].dst_rate.average() > 0 ||
+	  s->counter[i].src_rate.average() > 0) {
 	if ((jiffs - s->counter[i].last_update) > CLICK_HZ) {
-	  s->counter[i].rate.update(0);
-	  s->counter[i].last_update = s->counter[i].rate.now();
+	  s->counter[i].src_rate.update(0);
+	  s->counter[i].dst_rate.update(0);
+	  s->counter[i].last_update = s->counter[i].dst_rate.now();
 	}
 	ret += "\t"; 
-	ret += cp_unparse_real 
-	  (s->counter[i].rate.average()*CLICK_HZ, s->counter[i].rate.scale());
+	ret += cp_unparse_real(s->counter[i].src_rate.average()*CLICK_HZ, 
+	                       s->counter[i].src_rate.scale());
+	ret += "\t"; 
+	ret += cp_unparse_real(s->counter[i].dst_rate.average()*CLICK_HZ, 
+	                       s->counter[i].dst_rate.scale());
       } 
-      else ret += "\t0";
+      else ret += "\t0\t0";
     
       ret += "\n";
       if(s->counter[i].flags & SPLIT) 
@@ -186,13 +196,6 @@ IPRateMonitor::set_resettime()
 }
 
 
-// First line: number of jiffies since last reset.
-// Other lines:
-// tabs address ['*' number | number]
-//
-// tabs = 0 - 3 tabs
-// address = string of form v[.w[.x[.y]]] denoting a (partial) IP address
-// number = integer denoting the value associated with this IP address group
 String
 IPRateMonitor::look_read_handler(Element *e, void *)
 {
@@ -208,14 +211,6 @@ IPRateMonitor::thresh_read_handler(Element *e, void *)
 {
   IPRateMonitor *me = (IPRateMonitor *) e;
   return String(me->_thresh);
-}
-
-
-String
-IPRateMonitor::srcdst_read_handler(Element *e, void *)
-{
-  IPRateMonitor *me = (IPRateMonitor *) e;
-  return (me->_sd == SRC) ? "SRC\n" : "DST\n";
 }
 
 
@@ -249,7 +244,6 @@ void
 IPRateMonitor::add_handlers()
 {
   add_read_handler("thresh", thresh_read_handler, 0);
-  add_read_handler("srcdst", srcdst_read_handler, 0);
   add_read_handler("what", what_read_handler, 0);
   add_read_handler("look", look_read_handler, 0);
   add_read_handler("period", period_read_handler, 0);

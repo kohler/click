@@ -6,6 +6,7 @@ struct click_ip;
 
 class Packet {
 
+public:
   // Anno must fit in sk_buff's char cb[48].
   struct Anno {
     IPAddress dst_ip;
@@ -16,7 +17,8 @@ class Packet {
     char fix_ip_src;    // flag: asks FixIPSrc to set ip_src.
     char param_off;     // for ICMP Parameter Problem, byte offset of error.
     char color;         // one of 255 colors set by Paint element.
-    int rate;           // written by IPRateMonitor, read by Block
+    int src_rate;       // written by IPRateMonitor, read by Block
+    int dst_rate;       // written by IPRateMonitor, read by Block
 #ifdef __KERNEL__
     union {
       cycles_t cycles[4];
@@ -27,7 +29,8 @@ class Packet {
     } p;
 #endif
   };
-  
+
+private:
 #ifndef __KERNEL__
   int _use_count;
   Packet *_data_packet;
@@ -146,8 +149,10 @@ class Packet {
   char param_off_anno() const		{ return anno()->param_off; }
   void set_color_anno(char c)		{ anno()->color = c; }
   char color_anno() const		{ return anno()->color; }
-  void set_rate_anno(int r)	        { anno()->rate = r; }
-  int rate_anno() const		        { return anno()->rate; }
+  void set_src_rate_anno(int r)	        { anno()->src_rate = r; }
+  void set_dst_rate_anno(int r)	        { anno()->dst_rate = r; }
+  int src_rate_anno() const		{ return anno()->src_rate; }
+  int dst_rate_anno() const		{ return anno()->dst_rate; }
 #ifdef __KERNEL__
   void set_cycle_anno(int i, cycles_t v) { anno()->p.cycles[i] = v; }
   void set_metric0_anno(int i, unsigned v) { anno()->p.perf.m0[i] = v; }
