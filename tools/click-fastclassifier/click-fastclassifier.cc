@@ -28,6 +28,7 @@
 #include <click/straccum.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
+#include "click-fastclassifier.hh"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,9 +38,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <stdarg.h>
-
-// magic constants imported from Click itself
-#define IPCLASSIFIER_TRANSP_FAKE_OFFSET 64
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
@@ -233,22 +231,12 @@ get_string_from_process(String cmdline, const String &input,
   return sa.take_string();
 }
 
-struct ProgramStep {
-  int yes;
-  int no;
-  int offset;
-  union {
-    unsigned char c[4];
-    unsigned u;
-  } mask;
-  union {
-    unsigned char c[4];
-    unsigned u;
-  } value;
-};
+/*
+ * FastClassifier structures
+ */
 
-static bool
-operator!=(const ProgramStep &s1, const ProgramStep &s2)
+bool
+operator!=(const Classifier_Insn &s1, const Classifier_Insn &s2)
 {
   return (s1.yes != s2.yes
 	  || s1.no != s2.no
@@ -257,20 +245,14 @@ operator!=(const ProgramStep &s1, const ProgramStep &s2)
 	  || s1.value.u != s2.value.u);
 }
 
-enum { AC_CLASSIFIER, AC_IPCLASSIFIER, AC_IPFILTER } ClassifierType;
+bool
+operator==(const Classifier_Insn &s1, const Classifier_Insn &s2)
+{
+  return !(s1 != s2);
+}
 
-struct Classificand {
-  int type;
-  int safe_length;
-  int output_everything;
-  int align_offset;
-  int noutputs;
-  Vector<ProgramStep> program;
-  int type_index;
-};
-
-static bool
-operator==(const Classificand &c1, const Classificand &c2)
+bool
+operator==(const Classifier_Program &c1, const Classifier_Program &c2)
 {
   if (c1.type != c2.type
       || c1.safe_length != c2.safe_length
@@ -284,6 +266,50 @@ operator==(const Classificand &c1, const Classificand &c2)
       return false;
   return true;
 }
+
+bool
+operator!=(const Classifier_Program &c1, const Classifier_Program &c2)
+{
+  return !(c1 == c2);
+}
+
+
+/*
+ * registering CIDs
+ */
+
+struct FastClassifier_Cid {
+  String name;
+  int guaranteed_packet_length;
+  void (*checked_body)(const Classifier_Program &, StringAccum &);
+  void (*unchecked_body)(const Classifier_Program &, StringAccum &);
+  void (*push_body)(const Classifier_Program &, StringAccum &);
+};
+
+static HashMap<String, int> cid_name_map(-1);
+static Vector<FastClassifier_Cid *> cids;
+
+int
+add_classifier_type(const String &name, int guaranteed_packet_length,
+	void (*checked_body)(const Classifier_Program &, StringAccum &),
+	void (*unchecked_body)(const Classifier_Program &, StringAccum &),
+	void (*push_body)(const Classifier_Program &, StringAccum &))
+{
+  FastClassifier_Cid *cid = new FastClassifier_Cid;
+  cid->name = name;
+  cid->guaranteed_packet_length = guaranteed_packet_length;
+  cid->checked_body = checked_body;
+  cid->unchecked_body = unchecked_body;
+  cid->push_body = push_body;
+  cids.push_back(cid);
+  cid_name_map.insert(cid->name, cids.size() - 1);
+  return cids.size() - 1;
+}
+
+
+/*
+ * translating Classifiers
+ */
 
 static String
 translate_class_name(const String &s)
@@ -301,144 +327,12 @@ translate_class_name(const String &s)
   return sa.take_string();
 }
 
-static void
-write_checked_program(const Classificand &c, StringAccum &source)
-{
-  int align_off = c.align_offset;
-  if (c.type == AC_CLASSIFIER)
-    source << "  const unsigned *data = (const unsigned *)(p->data() - "
-	   << align_off << ");\n  int l = p->length();\n";
-  else if (c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER)
-    source << "  const unsigned *ip_data = (const unsigned *)p->ip_header();\n\
-  const unsigned *transp_data = (const unsigned *)p->transport_header();\n\
-  int l = p->length() + " << IPCLASSIFIER_TRANSP_FAKE_OFFSET << " - p->transport_header_offset();\n";
-
-  source << "  assert(l < " << c.safe_length << ");\n";
-
-  for (int i = 0; i < c.program.size(); i++) {
-    const ProgramStep &e = c.program[i];
-    
-    int want_l = e.offset + 4;
-    if (!e.mask.c[3]) {
-      want_l--;
-      if (!e.mask.c[2]) {
-	want_l--;
-	if (!e.mask.c[1])
-	  want_l--;
-      }
-    }
-    
-    bool switched = (e.yes == i + 1);
-    int branch1 = (switched ? e.no : e.yes);
-    int branch2 = (switched ? e.yes : e.no);
-    
-    source << " lstep_" << i << ":\n";
-    
-    int offset;
-    String datavar;
-    String length_check;
-    if (c.type == AC_CLASSIFIER) {
-      offset = (e.offset + align_off)/4;
-      datavar = "data";
-      length_check = "l < " + String(want_l);
-    } else { // c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER
-      if (e.offset >= IPCLASSIFIER_TRANSP_FAKE_OFFSET) {
-	offset = (e.offset - IPCLASSIFIER_TRANSP_FAKE_OFFSET)/4;
-	datavar = "transp_data";
-	length_check = "l < " + String(want_l);
-      } else {
-	offset = e.offset/4;
-	datavar = "ip_data";
-	length_check = "false";
-      }
-    }
-    
-    if (want_l >= c.safe_length) {
-      branch2 = e.no;
-      goto output_branch2;
-    }
-
-    if (switched)
-      source << "  if (" << length_check << " || ("
-	     << datavar << "[" << offset << "] & "
-	     << e.mask.u << "U) != " << e.value.u << "U)";
-    else
-      source << "  if (!(" << length_check << ") && ("
-	     << datavar << "[" << offset << "] & "
-	     << e.mask.u << "U) == " << e.value.u << "U)";
-    if (branch1 <= -c.noutputs)
-      source << " {\n    p->kill();\n    return;\n  }\n";
-    else if (branch1 <= 0)
-      source << " {\n    output(" << -branch1 << ").push(p);\n    return;\n  }\n";
-    else
-      source << "\n    goto lstep_" << branch1 << ";\n";
-    
-   output_branch2:
-    if (branch2 <= -c.noutputs)
-      source << "  p->kill();\n  return;\n";
-    else if (branch2 <= 0)
-      source << "  output(" << -branch2 << ").push(p);\n  return;\n";
-    else if (branch2 != i + 1)
-      source << "  goto lstep_" << branch2 << ";\n";
-  }
-}
-
-static void
-write_unchecked_program(const Classificand &c, StringAccum &source)
-{
-  int align_off = c.align_offset;
-  if (c.type == AC_CLASSIFIER)
-    source << "  const unsigned *data = (const unsigned *)(p->data() - "
-	   << align_off << ");\n";
-  else if (c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER)
-    source << "  const unsigned *ip_data = (const unsigned *)p->ip_header();\n\
-  const unsigned *transp_data = (const unsigned *)p->transport_header();\n";
-
-  for (int i = 0; i < c.program.size(); i++) {
-    const ProgramStep &e = c.program[i];
-    
-    bool switched = (e.yes == i + 1);
-    int branch1 = (switched ? e.no : e.yes);
-    int branch2 = (switched ? e.yes : e.no);
-    source << " step_" << i << ":\n";
-
-    int offset = 0;
-    String datavar;
-    if (c.type == AC_CLASSIFIER)
-      offset = (e.offset + align_off)/4, datavar = "data";
-    else { // c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER
-      if (e.offset >= IPCLASSIFIER_TRANSP_FAKE_OFFSET)
-	offset = (e.offset - IPCLASSIFIER_TRANSP_FAKE_OFFSET)/4, datavar = "transp_data";
-      else
-	offset = e.offset/4, datavar = "ip_data";
-    }
-    
-    if (switched)
-      source << "  if ((" << datavar << "[" << offset << "] & " << e.mask.u
-	     << "U) != " << e.value.u << "U)";
-    else
-      source << "  if ((" << datavar << "[" << offset << "] & " << e.mask.u
-	     << "U) == " << e.value.u << "U)";
-    if (branch1 <= -c.noutputs)
-      source << " {\n    p->kill();\n    return;\n  }\n";
-    else if (branch1 <= 0)
-      source << " {\n    output(" << -branch1 << ").push(p);\n    return;\n  }\n";
-    else
-      source << "\n    goto step_" << branch1 << ";\n";
-    if (branch2 <= -c.noutputs)
-      source << "  p->kill();\n  return;\n";
-    else if (branch2 <= 0)
-      source << "  output(" << -branch2 << ").push(p);\n  return;\n";
-    else if (branch2 != i + 1)
-      source << "  goto step_" << branch2 << ";\n";
-  }
-}
-
 static Vector<String> gen_eclass_names;
 static Vector<String> gen_cxxclass_names;
 static Vector<String> old_configurations;
 
-static Vector<Classificand> all_programs;
+static Vector<int> program_map;
+static Vector<Classifier_Program> all_programs;
 
 static void
 change_landmark(ElementT &classifier_e)
@@ -465,114 +359,156 @@ copy_elements(RouterT *oldr, RouterT *newr, const String &tname)
 }
 
 static void
-analyze_classifier(RouterT *r, int classifier_ei,
-		   StringAccum &header, StringAccum &source,
-		   ErrorHandler *errh)
+analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
+		    ErrorHandler *errh)
 {
-  // check what kind it is
-  String classifier_tname = r->etype_name(classifier_ei);
-
-  // count number of output ports
-  int noutputs = r->noutputs(classifier_ei);
-
   // set up new router
   RouterT nr;
-  int classifier_nti = nr.get_type_index(classifier_tname);
-  int idle_nti = nr.get_type_index("Idle");
+  int idle_nei = nr.get_anon_eindex(nr.get_type_index("Idle"));
   
-  int classifier_nei =
-    nr.get_eindex(r->ename(classifier_ei), classifier_nti,
-		  r->econfiguration(classifier_ei), r->elandmark(classifier_ei));
-  
-  int idle_nei = nr.get_anon_eindex(idle_nti);
-  nr.add_connection(idle_nei, 0, 0, classifier_nei);
-  for (int i = 0; i < noutputs; i++)
-    nr.add_connection(classifier_nei, i, 0, idle_nei);
-
   // copy AlignmentInfos and AddressInfos
   copy_elements(r, &nr, "AlignmentInfo");
   copy_elements(r, &nr, "AddressInfo");
 
-  // get the resulting program from user-level `click'
-  String router_str = nr.configuration_string();
-  String handler = r->ename(classifier_ei) + ".program";
-  String program = get_string_from_process(runclick_prog + " -h " + handler + " -q", router_str, errh);
+  // copy all classifiers
+  HashMap<String, int> classifier_map(-1);
+  for (int i = 0; i < classifier_ei.size(); i++) {
+    int c = classifier_ei[i];
+    classifier_map.insert(r->ename(c), i);
+    
+    // check what kind it is
+    int classifier_nti = nr.get_type_index(r->etype_name(c));
 
-  // parse the program
-  Classificand c;
-  if (classifier_tname == "Classifier")
-    c.type = AC_CLASSIFIER;
-  else if (classifier_tname == "IPClassifier")
-    c.type = AC_IPCLASSIFIER;
-  else if (classifier_tname == "IPFilter")
-    c.type = AC_IPFILTER;
-  else
-    assert(0);
-  c.safe_length = c.output_everything = c.align_offset = -1;
-  c.noutputs = noutputs;
-  while (program) {
-    // find step
-    int newline = program.find_left('\n');
-    String step = program.substring(0, newline);
-    program = program.substring(newline + 1);
-    // check for many things
-    if (isdigit(step[0]) || isspace(step[0])) {
-      // real step
-      ProgramStep e;
-      int crap, pos;
-      int v[4], m[4];
-      sscanf(step, "%d %d/%2x%2x%2x%2x%%%2x%2x%2x%2x yes->%n",
-	     &crap, &e.offset, &v[0], &v[1], &v[2], &v[3],
-	     &m[0], &m[1], &m[2], &m[3], &pos);
-      for (int i = 0; i < 4; i++) {
-	e.value.c[i] = v[i];
-	e.mask.c[i] = m[i];
-      }
-      // read yes destination
-      step = step.substring(pos);
-      if (step[0] == '[') {
-	sscanf(step, "[%d] no->%n", &e.yes, &pos);
-	e.yes = -e.yes;
-      } else
-	sscanf(step, "step %d no->%n", &e.yes, &pos);
-      // read no destination
-      step = step.substring(pos);
-      if (step[0] == '[') {
-	sscanf(step, "[%d]", &e.no);
-	e.no = -e.no;
-      } else
-	sscanf(step, "step %d", &e.no);
-      // push expr onto list
-      c.program.push_back(e);
-    } else if (sscanf(step, "all->[%d]", &c.output_everything))
-      /* nada */;
-    else if (sscanf(step, "safe length %d", &c.safe_length))
-      /* nada */;
-    else if (sscanf(step, "alignment offset %d", &c.align_offset))
-      /* nada */;
+    // add new classifier and connections to idle_nei
+    int classifier_nei =
+      nr.get_eindex(r->ename(c), classifier_nti,
+		    r->econfiguration(c), r->elandmark(c));
+  
+    nr.add_connection(idle_nei, i, 0, classifier_nei);
+    // count number of output ports
+    int noutputs = r->noutputs(c);
+    for (int j = 0; j < noutputs; j++)
+      nr.add_connection(classifier_nei, j, 0, idle_nei);
   }
 
-  // search for an existing fast classifier with the same program
-  for (int i = 0; i < all_programs.size(); i++)
-    if (c == all_programs[i]) {
-      ElementT &classifier_e = r->element(classifier_ei);
-      classifier_e.type = all_programs[i].type_index;
-      classifier_e.configuration = String();
-      change_landmark(classifier_e);
-      return;
-    }
-  
-  // output corresponding code
-  String class_name = "Fast" + classifier_tname + "@@" + r->ename(classifier_ei);
-  String cxx_name = translate_class_name(class_name);
-  gen_eclass_names.push_back(class_name);
-  gen_cxxclass_names.push_back(cxx_name);
-  old_configurations.push_back(r->econfiguration(classifier_ei));
+  // get the resulting programs from user-level `click'
+  String router_str = nr.configuration_string();
+  String programs = get_string_from_process(runclick_prog + " -h '*.program' -q", router_str, errh);
 
+  // parse the programs
+  while (1) {
+
+    // skip to next '.program' handler
+    const char *data = programs.data();
+    int first_handler = programs.find_left(".program:");
+    if (first_handler < 0)
+      break;
+    int second_handler = programs.find_left(".program:", first_handler + 9);
+    if (second_handler >= 0) {
+      while (second_handler > first_handler + 9 && data[second_handler] != '\n')
+	second_handler--;
+      second_handler++;
+    } else
+      second_handler = programs.length();
+
+    String element_name = programs.substring(0, first_handler);
+    String program = programs.substring(first_handler + 10, second_handler - first_handler - 10);
+    programs = programs.substring(second_handler);
+    
+    // check if valid handler
+    int ci = classifier_map[element_name];
+    if (ci < 0)
+      continue;
+    int cei = classifier_ei[ci];
+
+    // yes: valid handler; now parse program
+    Classifier_Program c;
+    String classifier_tname = r->etype_name(cei);
+    c.type = cid_name_map[classifier_tname];
+    assert(c.type >= 0);
+    
+    c.safe_length = c.output_everything = c.align_offset = -1;
+    c.noutputs = r->noutputs(cei);
+    while (program) {
+      // find step
+      int newline = program.find_left('\n');
+      String step = program.substring(0, newline);
+      program = program.substring(newline + 1);
+      // check for many things
+      if (isdigit(step[0]) || isspace(step[0])) {
+	// real step
+	Classifier_Insn e;
+	int crap, pos;
+	int v[4], m[4];
+	sscanf(step, "%d %d/%2x%2x%2x%2x%%%2x%2x%2x%2x yes->%n",
+	       &crap, &e.offset, &v[0], &v[1], &v[2], &v[3],
+	       &m[0], &m[1], &m[2], &m[3], &pos);
+	for (int i = 0; i < 4; i++) {
+	  e.value.c[i] = v[i];
+	  e.mask.c[i] = m[i];
+	}
+	// read yes destination
+	step = step.substring(pos);
+	if (step[0] == '[') {
+	  sscanf(step, "[%d] no->%n", &e.yes, &pos);
+	  e.yes = -e.yes;
+	} else
+	  sscanf(step, "step %d no->%n", &e.yes, &pos);
+	// read no destination
+	step = step.substring(pos);
+	if (step[0] == '[') {
+	  sscanf(step, "[%d]", &e.no);
+	  e.no = -e.no;
+	} else
+	  sscanf(step, "step %d", &e.no);
+	// push expr onto list
+	c.program.push_back(e);
+      } else if (sscanf(step, "all->[%d]", &c.output_everything))
+	/* nada */;
+      else if (sscanf(step, "safe length %d", &c.safe_length))
+	/* nada */;
+      else if (sscanf(step, "alignment offset %d", &c.align_offset))
+	/* nada */;
+    }
+
+    // search for an existing fast classifier with the same program
+    bool found_program = false;
+    for (int i = 0; i < all_programs.size() && !found_program; i++)
+      if (c == all_programs[i]) {
+	program_map.push_back(i);
+	found_program = true;
+      }
+
+    if (!found_program) {
+      // set new names
+      String class_name = "Fast" + classifier_tname + "@@" + r->ename(cei);
+      String cxx_name = translate_class_name(class_name);
+      c.type_index = r->get_type_index(class_name);
+      
+      // add new program
+      all_programs.push_back(c);
+      gen_eclass_names.push_back(class_name);
+      gen_cxxclass_names.push_back(cxx_name);
+      old_configurations.push_back(r->econfiguration(cei));
+      program_map.push_back(all_programs.size() - 1);
+    }
+  }
+}
+
+static void
+output_classifier_program(int which,
+			  StringAccum &header, StringAccum &source,
+			  ErrorHandler *)
+{
+  String cxx_name = gen_cxxclass_names[which];
+  String class_name = gen_eclass_names[which];
+  const Classifier_Program &c = all_programs[which];
+  FastClassifier_Cid *cid = cids[c.type];
+  
   header << "class " << cxx_name << " : public Element {\n\
   void devirtualize_all() { }\n\
  public:\n  "
-	 << cxx_name << "() { set_ninputs(1); set_noutputs(" << noutputs
+	 << cxx_name << "() { set_ninputs(1); set_noutputs(" << c.noutputs
 	 << "); MOD_INC_USE_COUNT; }\n  ~"
 	 << cxx_name << "() { MOD_DEC_USE_COUNT; }\n\
   const char *class_name() const { return \"" << class_name << "\"; }\n\
@@ -582,94 +518,33 @@ analyze_classifier(RouterT *r, int classifier_ei,
   if (c.output_everything >= 0) {
     header << "  void push(int, Packet *);\n};\n";
     source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n";
-    if (c.output_everything < noutputs)
+    if (c.output_everything < c.noutputs)
       source << "  output(" << c.output_everything << ").push(p);\n";
     else
       source << "  p->kill();\n";
     source << "}\n";
   } else {
-    if (c.type == AC_CLASSIFIER || c.safe_length >= IPCLASSIFIER_TRANSP_FAKE_OFFSET) {
+    bool need_checked = (c.safe_length >= cid->guaranteed_packet_length);
+    if (need_checked) {
       header << "  void length_checked_push(Packet *);\n";
       source << "void\n" << cxx_name << "::length_checked_push(Packet *p)\n{\n";
-      write_checked_program(c, source);
+      cid->checked_body(c, source);
       source << "}\n";
     }
+    
     header << "  inline void length_unchecked_push(Packet *);\n\
   void push(int, Packet *);\n};\n";
     source << "inline void\n" << cxx_name
 	   << "::length_unchecked_push(Packet *p)\n{\n";
-    write_unchecked_program(c, source);
+    cid->unchecked_body(c, source);
     source << "}\n";
-    if (c.type == AC_CLASSIFIER) {
-      source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n\
-  if (p->length() < " << c.safe_length << ")\n    length_checked_push(p);\n\
-  else\n    length_unchecked_push(p);\n}\n";
-    } else { // c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER
-      if (c.safe_length >= IPCLASSIFIER_TRANSP_FAKE_OFFSET)
-	source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n\
-  if (p->length() + " << IPCLASSIFIER_TRANSP_FAKE_OFFSET << " - p->transport_header_offset() < " << c.safe_length << ")\n    length_checked_push(p);\n\
-  else\n    length_unchecked_push(p);\n}\n";
-      else
-	source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n\
-  length_unchecked_push(p);\n}\n";
-    }
-  }
 
-  // add type to router `r' and change element
-  c.type_index = r->get_type_index(class_name);
-  ElementT &classifier_e = r->element(classifier_ei);
-  classifier_e.type = c.type_index;
-  classifier_e.configuration = String();
-  change_landmark(classifier_e);
-  all_programs.push_back(c);
-}
-
-
-static void
-reverse_transformation(RouterT *r, ErrorHandler *)
-{
-  // parse fastclassifier_config
-  if (r->archive_index("fastclassifier_info") < 0)
-    return;
-  ArchiveElement &fc_ae = r->archive("fastclassifier_info");
-  Vector<String> click_names, old_type_names, configurations;
-  parse_tabbed_lines(fc_ae.data, &click_names, &old_type_names,
-		     &configurations, (void *)0);
-
-  // prepare type_index_map : type_index -> configuration #
-  Vector<int> type_index_map(r->ntypes(), -1);
-  for (int i = 0; i < click_names.size(); i++) {
-    int ti = r->type_index(click_names[i]);
-    if (ti >= 0)
-      type_index_map[ti] = i;
-  }
-
-  // change configuration
-  for (int i = 0; i < r->nelements(); i++) {
-    ElementT &e = r->element(i);
-    int ti = type_index_map[e.type];
-    if (ti >= 0) {
-      e.configuration = configurations[ti];
-      e.type = r->get_type_index(old_type_names[ti]);
-    }
-  }
-
-  // remove requirements
-  {
-    Vector<String> requirements = r->requirements();
-    for (int i = 0; i < requirements.size(); i++)
-      if (requirements[i].substring(0, 14) == "fastclassifier")
-	r->remove_requirement(requirements[i]);
-  }
-  
-  // remove archive elements
-  for (int i = 0; i < r->narchive(); i++) {
-    ArchiveElement &ae = r->archive(i);
-    if (ae.name.substring(0, 14) == "fastclassifier"
-	|| ae.name == "elementmap.fastclassifier")
-      ae.name = String();
+    source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n";
+    cid->push_body(c, source);
+    source << "}\n";
   }
 }
+
 
 static void
 compile_classifiers(RouterT *r, const String &package_name,
@@ -686,11 +561,23 @@ compile_classifiers(RouterT *r, const String &package_name,
   source << "#include <click/config.h>\n";
   source << "#include \"" << package_name << ".hh\"\n\
 #include <click/glue.hh>\n";
+
+  // analyze Classifiers into programs
+  analyze_classifiers(r, classifiers, errh);
   
   // write Classifier programs
-  for (int i = 0; i < classifiers.size(); i++)
-    analyze_classifier(r, classifiers[i], header, source, errh);
-    
+  for (int i = 0; i < all_programs.size(); i++)
+    output_classifier_program(i, header, source, errh);
+
+  // change element landmarks and types
+  for (int i = 0; i < classifiers.size(); i++) {
+    ElementT &classifier_e = r->element(classifiers[i]);
+    const Classifier_Program &c = all_programs[program_map[i]];
+    classifier_e.type = c.type_index;
+    classifier_e.configuration = String();
+    change_landmark(classifier_e);
+  }
+  
   // write final text
   {
     header << "#endif\n";
@@ -802,18 +689,67 @@ compile_classifiers(RouterT *r, const String &package_name,
     ArchiveElement &ae = r->archive("fastclassifier_info");
     StringAccum sa;
     for (int i = 0; i < gen_eclass_names.size(); i++) {
-      sa << gen_eclass_names[i] << '\t';
-      switch (all_programs[i].type) {
-       case AC_CLASSIFIER: sa << "Classifier\t"; break;
-       case AC_IPCLASSIFIER: sa << "IPClassifier\t"; break;
-       case AC_IPFILTER: sa << "IPFilter\t"; break;
-      }
-      sa << cp_quote(old_configurations[i]) << '\n';
+      sa << gen_eclass_names[i] << '\t'
+	 << cids[all_programs[i].type]->name << '\t'
+	 << cp_quote(old_configurations[i]) << '\n';
     }
     ae.data += sa.take_string();
   }
 }
 
+
+
+static void
+reverse_transformation(RouterT *r, ErrorHandler *)
+{
+  // parse fastclassifier_config
+  if (r->archive_index("fastclassifier_info") < 0)
+    return;
+  ArchiveElement &fc_ae = r->archive("fastclassifier_info");
+  Vector<String> click_names, old_type_names, configurations;
+  parse_tabbed_lines(fc_ae.data, &click_names, &old_type_names,
+		     &configurations, (void *)0);
+
+  // prepare type_index_map : type_index -> configuration #
+  Vector<int> type_index_map(r->ntypes(), -1);
+  for (int i = 0; i < click_names.size(); i++) {
+    int ti = r->type_index(click_names[i]);
+    if (ti >= 0)
+      type_index_map[ti] = i;
+  }
+
+  // change configuration
+  for (int i = 0; i < r->nelements(); i++) {
+    ElementT &e = r->element(i);
+    int ti = type_index_map[e.type];
+    if (ti >= 0) {
+      e.configuration = configurations[ti];
+      e.type = r->get_type_index(old_type_names[ti]);
+    }
+  }
+
+  // remove requirements
+  {
+    Vector<String> requirements = r->requirements();
+    for (int i = 0; i < requirements.size(); i++)
+      if (requirements[i].substring(0, 14) == "fastclassifier")
+	r->remove_requirement(requirements[i]);
+  }
+  
+  // remove archive elements
+  for (int i = 0; i < r->narchive(); i++) {
+    ArchiveElement &ae = r->archive(i);
+    if (ae.name.substring(0, 14) == "fastclassifier"
+	|| ae.name == "elementmap.fastclassifier")
+      ae.name = String();
+  }
+}
+
+extern "C" {
+void add_fast_classifiers_1();
+void add_fast_classifiers_2();
+}
+  
 int
 main(int argc, char **argv)
 {
@@ -937,6 +873,10 @@ particular purpose.\n");
     write_router_file(r, outf, errh);
     exit(0);
   }
+
+  // install classifier handlers
+  add_fast_classifiers_1();
+  add_fast_classifiers_2();
   
   // find Click binaries
   runclick_prog = clickpath_find_file("click", "bin", CLICK_BINDIR, errh);
@@ -944,14 +884,9 @@ particular purpose.\n");
 
   // find Classifiers
   Vector<int> classifiers;
-  {
-    int t1 = r->get_type_index("Classifier");
-    int t2 = r->get_type_index("IPClassifier");
-    int t3 = r->get_type_index("IPFilter");
-    for (int i = 0; i < r->nelements(); i++)
-      if (r->etype(i) == t1 || r->etype(i) == t2 || r->etype(i) == t3)
-	classifiers.push_back(i);
-  }
+  for (int i = 0; i < r->nelements(); i++)
+    if (cid_name_map[r->etype_name(i)] >= 0)
+      classifiers.push_back(i);
 
   // quit early if no Classifiers
   if (classifiers.size() == 0) {
@@ -1006,5 +941,5 @@ particular purpose.\n");
 
 // generate Vector template instance
 #include <click/vector.cc>
-template class Vector<ProgramStep>;
-template class Vector<Classificand>;
+template class Vector<Classifier_Insn>;
+template class Vector<Classifier_Program>;

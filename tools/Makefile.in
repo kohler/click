@@ -82,6 +82,9 @@ DISTFILES = Makefile.in lib/Makefile.in \
 	click-devirtualize/specializer.cc click-devirtualize/specializer.hh \
 	click-fastclassifier/Makefile.in \
 	click-fastclassifier/click-fastclassifier.cc \
+	click-fastclassifier/click-fastclassifier.hh \
+	click-fastclassifier/fc_classifier.cc \
+	click-fastclassifier/fc_ipclassifier.cc \
 	click-install/Makefile.in \
 	click-install/click-install.cc \
 	click-install/click-uninstall.cc \

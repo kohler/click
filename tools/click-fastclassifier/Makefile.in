@@ -36,7 +36,7 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-OBJS = click-fastclassifier.o
+OBJS = click-fastclassifier.o fc_classifier.o fc_ipclassifier.o
 
 CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
