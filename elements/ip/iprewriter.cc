@@ -32,6 +32,7 @@ extern struct proto tcp_prot;
 }
 #endif
 
+
 //
 // IPRewriter::Mapping
 //
@@ -588,6 +589,7 @@ void
 IPRewriter::mark_live_tcp()
 {
 #if defined(CLICK_LINUXMODULE) && defined(HAVE_TCP_PROT)
+#if 0
   start_bh_atomic();
 
   for (struct sock *sp = tcp_prot.sklist_next;
@@ -600,6 +602,7 @@ IPRewriter::mark_live_tcp()
   }
 
   end_bh_atomic();
+#endif
 #endif
 }
 

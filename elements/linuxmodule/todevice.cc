@@ -36,11 +36,6 @@ extern "C" {
 #include "perfcount.hh"
 #include "asm/msr.h"
 
-#if 0
-static AnyDeviceMap to_device_map;
-static struct notifier_block notifier;
-extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v);
-#endif
 static int registered_writers;
 
 ToDevice::ToDevice()
@@ -76,22 +71,11 @@ ToDevice::~ToDevice()
 void
 ToDevice::static_initialize()
 {
-#if 0
-  notifier.notifier_call = click_ToDevice_out;
-  notifier.priority = 1;
-  to_device_map.initialize();
-#endif
 }
 
 void
 ToDevice::static_cleanup()
 {
-#ifdef HAVE_CLICK_KERNEL 
-#if 0
-  if (registered_writers)
-    unregister_net_out(&notifier);
-#endif
-#endif
 }
 
 
@@ -132,18 +116,6 @@ ToDevice::initialize(ErrorHandler *errh)
     }
   }
 
-#if 0
-  if (to_device_map.insert(this) < 0)
-    return errh->error("cannot use ToDevice for device `%s'", _devname.cc());
-  
-  if (!registered_writers) {
-#ifdef HAVE_CLICK_KERNEL
-    notifier.next = 0;
-    register_net_out(&notifier);
-#endif
-  }
-  registered_writers++;
-#endif
   _registered = 1;
 
 #ifndef RR_SCHED
@@ -160,43 +132,9 @@ ToDevice::initialize(ErrorHandler *errh)
 void
 ToDevice::uninitialize()
 {
-#if 0
-  registered_writers--;
-#ifdef HAVE_CLICK_KERNEL
-  if (registered_writers == 0) 
-    unregister_net_out(&notifier);
-#endif
-  /* remove from ifindex_map */
-  if (_registered)
-    to_device_map.remove(this);
-#endif
   _registered = 0;
   unschedule();
 }
-
-#if 0
-/*
- * Called by net_bh() when an interface is ready to send.
- * Actually called by qdisc_run_queues() in sch_generic.c.
- *
- * Returning 0 means no more packets to send.
- * Returning 1 means call me again soon.
- */
-extern "C" int
-click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v)
-{
-  struct device *dev = (struct device *) v;
-  
-  int retval = 0;
-  int ifindex = dev->ifindex;
-  if (ifindex >= 0 && ifindex < MAX_DEVICES)
-    if (ToDevice *kw = (ToDevice*)to_device_map.lookup(ifindex)) {
-      if (!kw->polling())
-        retval = kw->tx_intr();
-    }
-  return retval;
-}
-#endif
 
 /*
  * The kernel thinks our device is idle.

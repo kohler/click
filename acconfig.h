@@ -56,6 +56,9 @@
 /* Define if your Linux kernel has polling extensions. */
 #undef HAVE_POLLING
 
+/* Define if your Linux kernel is running in SMP mode. */
+#undef __SMP__
+
 /* Define if you have -lpcap and pcap.h. */
 #undef HAVE_PCAP
 
