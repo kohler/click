@@ -33,6 +33,7 @@ Options:
    --no-blacklist      Don't use DSR link blacklist.
    --feedback          Use TX failure feedback to trigger route queries.  
                         Enabled by default; requires running in kernel.
+   --airo              Use AironetTXFeedback instead of WifiTXFeedback
    --no-feedback       Don't use TX failure feedback.
    --metric M          Use metric M.  Allowable values are ";
     print join ", ", @allowable_metrics;
@@ -71,6 +72,7 @@ my $eth = "";
 my $force_probes = 0;
 my $use_blacklist = 1;
 my $use_feedback = 1;
+my $airo = 0;
 
 while (scalar(@ARGV) > 0) {
     my $arg = shift @ARGV;
@@ -86,6 +88,9 @@ while (scalar(@ARGV) > 0) {
     }
     elsif ($arg eq "--ether") {
 	$eth = get_arg();
+    }
+    elsif ($arg eq "--airo") {
+	$airo = 1;
     }
     elsif ($arg eq "--kernel" || $arg eq "-k") {
 	$in_kernel = 1;
@@ -190,9 +195,9 @@ else {
 print "
 rt_q2 :: SimpleQueue(10); // just ahead of todevice
 
-dsr_ls :: LinkStat(ETH my_ether, IP me0, SIZE $probe_size) -> rt_q0 :: Queue(5);
+dsr_ls :: LinkStat(ETH my_ether, SIZE $probe_size) -> rt_q0 :: Queue(5);
 
-dsr_lt :: LinkTable(me0);
+dsr_lt :: LinkTable(IP me0);
 ";
 
 if ($metric eq "ETX") {
@@ -379,7 +384,9 @@ setup_poke :: PokeHandlers(pause, write setup.active true, wait 5, write setup.a
 ";
 
 if ($in_kernel && $use_feedback) { 
-print "
+
+if ($airo) {
+  print "
 // tx feedback
 airo_fb :: AironetTXFeedback -> 
            MSQueue -> 
@@ -391,7 +398,22 @@ airo_fb :: AironetTXFeedback ->
 fbh[0] -> Print(txf) -> Strip(14) ->
           CheckIPHeader ->
           [2]dsr_rt;
-";
+  ";
+} else {
+  print "
+// tx feedback
+wifi_fb :: WifiTXFeedback;
+
+wifi_fb[0] -> Discard; // successful transmissions
+wifi_fb[1] -> MSQueue -> // failures
+           Unqueue -> 
+           Classifier(! 0/FFFFFFFFFFFF) -> // throw out broadcasts
+          Print(txf) -> Strip(14) ->
+          CheckIPHeader ->
+          [2]dsr_rt;
+
+  ";
+}
 } else { 
   print  "
 Idle -> [2]dsr_rt;
