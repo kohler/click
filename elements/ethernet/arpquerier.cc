@@ -173,16 +173,20 @@ ARPQuerier::expire_hook(Timer *, void *thunk)
 void
 ARPQuerier::send_query_for(const IPAddress &want_ip)
 {
-  click_ether *e;
-  click_ether_arp *ea;
-  WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ea));
+  static bool zero_warned = false;  
+  if (!want_ip && !zero_warned) {
+    click_chatter("%s: querying for 0.0.0.0; missing dest IP addr annotation?");
+    zero_warned = true;
+  }
+      
+  WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
   if (q == 0) {
     click_chatter("in arp querier: cannot make packet!");
     assert(0);
   } 
   memset(q->data(), '\0', q->length());
-  e = (click_ether *) q->data();
-  ea = (click_ether_arp *) (e + 1);
+  click_ether *e = (click_ether *) q->data();
+  click_ether_arp *ea = (click_ether_arp *) (e + 1);
   memcpy(e->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
   memcpy(e->ether_shost, _my_en.data(), 6);
   e->ether_type = htons(ETHERTYPE_ARP);
