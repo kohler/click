@@ -1,3 +1,14 @@
+2002-02-17 Sunday 22:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridroutetable.cc (1.32), gridroutetable.hh
+	(1.17): added new metrics: cumulative_{sig|qual}_pct
+
+2002-02-17 Sunday 21:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: linktracker.cc (1.3), linktracker.hh (1.2):
+	updated to allow dynamically setting and reading TAU time constant
+	via controlsocket
+
 2002-02-17 Sunday 14:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: airoinfo.cc (1.3), gridroutetable.cc (1.31),
