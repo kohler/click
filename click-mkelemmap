@@ -245,6 +245,7 @@ sub parents_flow_code ($) {
 
 sub parents_flags ($) {
   my($classid) = @_;
+  return undef if !defined $classid;
   if (!defined $flags[$classid]) {
     my($parent);
     foreach $parent (@{$parents[$classid]}) {
