@@ -1,3 +1,20 @@
+2003-08-11 Monday 13:52  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: linktable.cc (1.15), linktable.hh (1.12): make
+	top_n_routes work - returns the top n routes to a paritcular
+	destination
+
+2003-08-11 Monday 13:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: checkgridheader.cc (1.25), gridheaderinfo.cc
+	(1.11), gridheaderinfo.hh (1.10): fixed bug in error message
+	printout
+
+2003-08-11 Monday 13:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/kerneltun.cc (1.43): Make sure to only push
+	out IP packets when using old-school Linux Ethertap
+
 2003-08-11 Monday 03:43  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: linktable.cc (1.14), linktable.hh (1.11): add
