@@ -22,8 +22,8 @@
 #include "glue.hh"
 
 IPRateMonitor::IPRateMonitor()
-  : _pb(COUNT_PACKETS), _offset(0), _thresh(1), _base(NULL), _alloced_mem(0),
-    _first(0), _last(0), _packet_counter(0), _prev_deleted(0)
+  : _pb(COUNT_PACKETS), _offset(0), _thresh(1), _memmax(0), _ratio(1),
+  _base(NULL), _alloced_mem(0), _first(0), _last(0), _prev_deleted(0)
 {
 }
 
@@ -51,8 +51,9 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpString, "monitor type", &count_what,
 		  cpUnsigned, "offset", &_offset,
+		  cpNonnegFixed, "ratio", 16, &_ratio,
 		  cpUnsigned, "threshold", &_thresh,
-		  cpUnsigned, "refresh", &_refresh,
+		  cpUnsigned, "memmax", &_memmax,
 		  0) < 0)
     return -1;
   if (count_what == "PACKETS")
@@ -61,6 +62,17 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
     _pb = COUNT_BYTES;
   else
     return errh->error("monitor type should be \"PACKETS\" or \"BYTES\"");
+
+  if(_memmax && _memmax < MEMMAX_MIN)
+    _memmax = MEMMAX_MIN;
+  _memmax *= 1024;      // now bytes
+
+  if (_ratio > 0x10000)
+    return errh->error("ratio must be between 0 and 1");
+
+  // Set zoom-threshold as if ratio were 1.
+  _thresh = (_thresh * _ratio) >> 16;
+
   return 0;
 }
 
@@ -87,7 +99,9 @@ IPRateMonitor::uninitialize()
 void
 IPRateMonitor::push(int port, Packet *p)
 {
-  update_rates(p, port == 0);
+  // Only inspect 1 in RATIO packets
+  if(_ratio == 1 || ((random() >> 5) & 0xffff) <= _ratio)
+    update_rates(p, port == 0);
   output(port).push(p);
 }
 
@@ -102,7 +116,7 @@ IPRateMonitor::pull(int port)
 
 
 void
-IPRateMonitor::fold(void)
+IPRateMonitor::fold(int thresh)
 {
   // Go backwards through the age list, starting at longest non-touched.
   _prev_deleted = 0;
@@ -119,8 +133,8 @@ IPRateMonitor::fold(void)
     // Below threshold?
     s->_parent->fwd_rate.update(now, 0);
     s->_parent->rev_rate.update(now, 0);
-    if(s->_parent->fwd_rate.average() < _thresh &&
-       s->_parent->rev_rate.average() < _thresh)
+    if(s->_parent->fwd_rate.average() < thresh &&
+       s->_parent->rev_rate.average() < thresh)
       delete s;   // sets _prev_deleted
     else
       _prev_deleted = s->_prev;
@@ -176,6 +190,7 @@ IPRateMonitor::Stats::~Stats()
       // Deallocate child AND record
       delete counter[i]->next_level;
       delete counter[i];
+      _rm->update_alloced_mem(-sizeof(Counter));
       counter[i] = 0;
     }
   }
@@ -224,7 +239,10 @@ IPRateMonitor::print(Stats *s, String ip = "")
   int jiffs = MyEWMA::now();
   String ret = "";
   for(int i = 0; i < MAX_COUNTERS; i++) {
-    Counter *c = s->counter[i];
+    Counter *c;
+    if(!(c = s->counter[i]))
+      continue;
+
     if (c->rev_rate.average() > 0 || c->fwd_rate.average() > 0) {
       String this_ip;
       if (ip)
@@ -273,10 +291,10 @@ IPRateMonitor::mem_read_handler(Element *e, void *)
 }
 
 String
-IPRateMonitor::refresh_read_handler(Element *e, void *)
+IPRateMonitor::memmax_read_handler(Element *e, void *)
 {
   IPRateMonitor *me = (IPRateMonitor *) e;
-  return String(me->_refresh) + "\n";
+  return String(me->_memmax) + "\n";
 }
 
 int
@@ -291,7 +309,7 @@ IPRateMonitor::reset_write_handler
 
 
 int
-IPRateMonitor::refresh_write_handler
+IPRateMonitor::memmax_write_handler
 (const String &conf, Element *e, void *, ErrorHandler *errh)
 {
   Vector<String> args;
@@ -302,12 +320,12 @@ IPRateMonitor::refresh_write_handler
     errh->error("expecting 1 integer");
     return -1;
   }
-  int refresh;
-  if(!cp_integer(args[0], refresh)) {
+  int memmax;
+  if(!cp_integer(args[0], memmax)) {
     errh->error("not an integer");
     return -1;
   }
-  me->_refresh = refresh;
+  me->_memmax = memmax;
   return 0;
 }
 
@@ -317,10 +335,10 @@ IPRateMonitor::add_handlers()
   add_read_handler("thresh", thresh_read_handler, 0);
   add_read_handler("look", look_read_handler, 0);
   add_read_handler("mem", mem_read_handler, 0);
-  add_read_handler("refresh", refresh_read_handler, 0);
+  add_read_handler("memmax", memmax_read_handler, 0);
 
   add_write_handler("reset", reset_write_handler, 0);
-  add_write_handler("refresh", refresh_write_handler, 0);
+  add_write_handler("memmax", memmax_write_handler, 0);
 }
 
 EXPORT_ELEMENT(IPRateMonitor)

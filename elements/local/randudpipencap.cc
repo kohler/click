@@ -1,6 +1,7 @@
 /*
- * rrudpipencap.{cc,hh} -- element encapsulates packet in UDP/IP header
- * Benjie Chen, Eddie Kohler
+ * randomudpipencap.{cc,hh} -- randomly sends udp/ip packets
+ * Benjie Chen, Eddie Kohler (original RoundRobinUDPIPEncap)
+ * Thomer M. Gil (modified to RandomUDPIPEncap)
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
@@ -14,7 +15,7 @@
 # include <config.h>
 #endif
 #include "click_ip.h"
-#include "rrudpipencap.hh"
+#include "randudpipencap.hh"
 #include "confparse.hh"
 #include "error.hh"
 #include "glue.hh"
@@ -23,26 +24,26 @@
 # include <net/checksum.h>
 #endif
 
-RoundRobinUDPIPEncap::RoundRobinUDPIPEncap()
-  : _addrs(0)
+RandomUDPIPEncap::RandomUDPIPEncap()
+  : _addrs(0), _total_prob(0), _no_of_addresses(0)
 {
   add_input();
   add_output();
 }
 
-RoundRobinUDPIPEncap::~RoundRobinUDPIPEncap()
+RandomUDPIPEncap::~RandomUDPIPEncap()
 {
   uninitialize();
 }
 
-RoundRobinUDPIPEncap *
-RoundRobinUDPIPEncap::clone() const
+RandomUDPIPEncap *
+RandomUDPIPEncap::clone() const
 {
-  return new RoundRobinUDPIPEncap;
+  return new RandomUDPIPEncap;
 }
 
 int
-RoundRobinUDPIPEncap::configure(const String &conf, ErrorHandler *errh)
+RandomUDPIPEncap::configure(const String &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
@@ -61,18 +62,24 @@ RoundRobinUDPIPEncap::configure(const String &conf, ErrorHandler *errh)
     if (words.size() == 4)
       words.push_back("1");
     int sport, dport;
-    if (words.size() != 5
+    int prob;
+    if (words.size() != 6
 	|| !cp_ip_address(words[0], (unsigned char *)&_addrs[i].saddr)
 	|| !cp_integer(words[1], sport)
 	|| !cp_ip_address(words[2], (unsigned char *)&_addrs[i].daddr)
 	|| !cp_integer(words[3], dport)
-	|| !cp_bool(words[4], _addrs[i].cksum)
+	|| !cp_integer(words[4], prob)
+	|| !cp_bool(words[5], _addrs[i].cksum)
 	|| sport < 0 || sport >= 0x10000 || dport < 0 || dport >= 0x10000)
-      errh->error("argument %d should be `SADDR SPORT DADDR DPORT [CHECKSUM?]'", i);
+      errh->error("argument %d should be `SADDR SPORT DADDR DPORT PROB [CHECKSUM?]'", i);
     else {
       _addrs[i].sport = sport;
       _addrs[i].dport = dport;
       _addrs[i].id = 0;
+      _total_prob += prob;
+      _randoms[_no_of_addresses].n = _total_prob;
+      _randoms[_no_of_addresses].a = &(_addrs[i]);
+      _no_of_addresses++;
     }
   }
   if (errh->nerrors() != before)
@@ -95,26 +102,33 @@ RoundRobinUDPIPEncap::configure(const String &conf, ErrorHandler *errh)
 }
 
 int
-RoundRobinUDPIPEncap::initialize(ErrorHandler *)
+RandomUDPIPEncap::initialize(ErrorHandler *)
 {
-  _pos = 0;
   return 0;
 }
 
 void
-RoundRobinUDPIPEncap::uninitialize()
+RandomUDPIPEncap::uninitialize()
 {
   delete[] _addrs;
   _addrs = 0;
 }
 
 Packet *
-RoundRobinUDPIPEncap::simple_action(Packet *p)
+RandomUDPIPEncap::simple_action(Packet *p)
 {
   // pick right address
-  Addrs *addr = &_addrs[_pos];
-  _pos++;
-  if (_pos == _naddrs) _pos = 0;
+  // XXX: Could be faster; hash.
+  int pos = random() % _total_prob;
+  int lb = 0;
+  Addrs *addr = 0;
+  for(short i=0; i<_no_of_addresses; i++) {
+    if(pos < _randoms[i].n && pos >= lb) {
+      addr = &_addrs[i];
+      break;
+    }
+    lb = _randoms[i].n;
+  }
 
   // add to packet
   p = p->push(sizeof(click_udp) + sizeof(click_ip));
@@ -183,4 +197,4 @@ RoundRobinUDPIPEncap::simple_action(Packet *p)
   return p;
 }
 
-EXPORT_ELEMENT(RoundRobinUDPIPEncap)
+EXPORT_ELEMENT(RandomUDPIPEncap)

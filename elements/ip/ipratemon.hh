@@ -2,10 +2,9 @@
 #define IPRATEMON_HH
 
 /*
- * =c
- * IPRateMonitor(PB, OFF, THRESH, REFRESH)
- * =d
+ * =c IPRateMonitor(PB, OFF, RATIO, THRESH, MEMORY)
  *
+ * =d
  * Monitors network traffic rates. Can monitor either packet or byte rate (per
  * second) to and from an address. When the to or from rate for a particular
  * address exceeds the threshold, rates will then be kept for host or subnet
@@ -17,15 +16,18 @@
  *
  * OFF: offset in packet where IP header starts
  *
- * THRESH: IPRateMonitor further splits a subnet if rate is
- * over THRESH number packets or bytes per second.
+ * RATIO: inspect 1 in n packets. 1 makes IPRateMonitor inspect every packet.
  *
- * REFRESH: Clean up per how many packets?
+ * THRESH: IPRateMonitor further splits a subnet if rate is over THRESH number
+ * packets or bytes per second. Always give specify value as if RATIO were 1.
+ *
+ * MEMORY: How much memory can IPRateMonitor use in kilobytes? Set to 100 if
+ * supplied argument < 100. 0 is unlimited memory.
  *
  * =h look (read)
- * Returns the rate of counted to and from a cluster of IP addresses. The
- * first printed line is the number of 'jiffies' that have past since the last
- * reset. There are 100 jiffies in one second.
+ * Returns the rate of counted to and from a cluster of IP
+ * addresses. The first printed line is the number of 'jiffies' that have past
+ * since the last reset. There are 100 jiffies in one second.
  *
  * =h thresh (read)
  * Returns THRESH.
@@ -33,16 +35,15 @@
  * =h reset (write)
  * When written, resets all rates.
  *
- * =e
- * Example: 
+ * =e Example: 
+ * = IPRateMonitor(PACKETS, 0, 0.5, 256, 600);
  *
- * IPRateMonitor(PACKETS, 0, 256);
- *
- * Monitors packet rates for packets coming in on one port. When rate for a
- * network address (e.g. 18.26.*.*) exceeds 1000 packets per second, start
+ * Monitors packet rates for packets coming in on one port. Approximately 50% of
+ * all packets is inspected. The memory usage is limited to 600K. When rate for
+ * a network address (e.g. 18.26.*.*) exceeds 256 packets per second, start
  * monitor subnet or host addresses (e.g. 18.26.4.*). Keep packet per second
- * rate for the past 1 second. Annotate packet's rate annotations with rates
- * for the DST IP address.
+ * rate for the past 1 second. Annotate packet's rate annotations with rates for
+ * the DST IP address.
  *
  * =a IPFlexMonitor
  */
@@ -77,7 +78,7 @@ public:
 
   struct Stats;
 
-  void update_alloced_mem(int m)		{ _alloced_mem += m; }
+  void update_alloced_mem(int m);
   void set_resettime()                          { _resettime = MyEWMA::now(); }
   void set_first(Stats *s)                      { _first = s; }
   void set_last(Stats *s)                       { _last = s; }
@@ -114,18 +115,21 @@ private:
     IPRateMonitor *_rm;             // XXX: to access update_alloced_mem()
   };
 
+
 #define COUNT_PACKETS 0
 #define COUNT_BYTES 1
   unsigned char _pb;                // packets or bytes
   int _offset;                      // offset in packet
   int _thresh;                      // threshold, when to split
-  int _refresh;                     // refresh rate
+
+#define MEMMAX_MIN 100              // kbytes
+  int _memmax;                      // max. memory usage
+  int _ratio;                       // inspect 1 in how many packets?
 
   struct Stats *_base;              // first level stats
   long unsigned int _resettime;     // time of last reset
   int _alloced_mem;                 // total allocated memory
   struct Stats *_first, *_last;     // first and last element in linked list
-  int _packet_counter;
 
 
   // XXX: HACK
@@ -133,7 +137,8 @@ private:
 
   void update_rates(Packet *, bool forward);
   void update(IPAddress saddr, int val, Packet *p, bool forward);
-  void fold();
+  void forced_fold();
+  void fold(int);
   void move_to_front(Stats *s);
   void prepend_to_front(Stats *s);
 
@@ -146,10 +151,10 @@ private:
   static String look_read_handler(Element *e, void *);
   static String what_read_handler(Element *e, void *);
   static String mem_read_handler(Element *e, void *);
-  static String refresh_read_handler(Element *e, void *);
+  static String memmax_read_handler(Element *e, void *);
   static int reset_write_handler
     (const String &conf, Element *e, void *, ErrorHandler *errh);
-  static int refresh_write_handler
+  static int memmax_write_handler
     (const String &conf, Element *e, void *, ErrorHandler *errh);
 };
 
@@ -164,6 +169,7 @@ IPRateMonitor::update(IPAddress saddr, int val,
   struct Stats *s = _base;
   Counter *c = 0;
   int bitshift;
+  bool newed = false;
 
   int now = MyEWMA::now();
 
@@ -174,6 +180,8 @@ IPRateMonitor::update(IPAddress saddr, int val,
     // Allocate Counter record if it doesn't exist yet.
     if(!(c = s->counter[byte])) {
       c = s->counter[byte] = new Counter;
+      _alloced_mem += sizeof(Counter);
+      newed = true;
       c->fwd_rate.initialize();
       c->rev_rate.initialize();
       c->next_level = 0;
@@ -201,18 +209,30 @@ IPRateMonitor::update(IPAddress saddr, int val,
   // did value get larger than THRESH in the specified period?
   if (fwd_rate >= _thresh || rev_rate >= _thresh) {
     if (bitshift < MAX_SHIFT) {
-      c->next_level = new Stats(this);
-      if(!c->next_level) {
-        // Clean up and try again
+      // Forcefully allocate next level
+      while(!(c->next_level = new Stats(this))) {
+        forced_fold();
       }
+      newed = true;
 
       // Tell parent about newly created structure and prepend to list.
       c->next_level->_parent = c;
       prepend_to_front(c->next_level);
     }
   }
+
+  // Did we allocate too much memory? Force it down by lowering the threshold
+  if(newed && _memmax && (_alloced_mem > _memmax))
+    forced_fold();
 }
 
+
+inline void
+IPRateMonitor::forced_fold()
+{
+  for(int thresh = _thresh; _alloced_mem > _memmax; thresh <<= 1)
+    fold(thresh);
+}
 
 //
 // NB: Should not be called when already first in list!
@@ -255,27 +275,15 @@ IPRateMonitor::update_rates(Packet *p, bool forward)
     update(IPAddress(ip->ip_src), val, p, true);
   else
     update(IPAddress(ip->ip_dst), val, p, false);
-
-  if(++_packet_counter == _refresh) {
-    fold();
-    _packet_counter = 0;
-  }
 }
 
+
+inline void
+IPRateMonitor::update_alloced_mem(int m)
+{
+  _alloced_mem += m;
+}
+
+
+
 #endif /* IPRATEMON_HH */
-
-
-
-// CODE TO USE WHEN PARENTS ARE NOT IN AGE LIST
-#if 0
-      // The parent of this newly created Stats thingy (i.e., s) is now in front
-      // of list (i.e., s == _first), but it has become a parent. We have to
-      // kick it out and replace it for its child.
-      if((c->next_level->_next = s->_next))
-        c->next_level->_next->_prev = c->next_level;
-      else
-        _last = c->next_level;
-      _first = c->next_level;
-      assert(s->_prev == 0);
-      s->_next = 0; // s->_prev is already 0
-#endif
