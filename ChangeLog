@@ -1,3 +1,18 @@
+2002-03-28 Thursday 23:57  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ethernet/: arpfaker.cc (1.19), arpquerier.cc (1.42),
+	arpresponder.cc (1.38), etherencap.cc (1.17), ethermirror.cc (1.9):
+	use and set the mac_header annotation in Ethernet elements
+
+2002-03-28 Thursday 23:57  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/lineariplookup.cc (1.3),
+	elements/ip/sortediplookup.cc (1.3), include/click/ipaddress.hh
+	(1.22), lib/iptable.cc (1.15): re-rename IPAddress::mask_as_long,
+	to IPAddress::mask_as_specific, since mask_as_long read
+	ambiguously. I love recompiling everything. Actually, that's not
+	true.
+
 2002-03-28 Thursday 20:22  Eddie Kohler <kohler@aciri.org>
 
 	* elements/test/packettest.cc (1.2): PacketTest: add tests for

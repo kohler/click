@@ -1,3 +1,10 @@
+2002-03-28 Thursday 23:57  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ipaddress.hh, include/click/ipaddress.hh,
+	libsrc/iptable.cc: re-rename IPAddress::mask_as_long, to
+	IPAddress::mask_as_specific, since mask_as_long read ambiguously. I
+	love recompiling everything. Actually, that's not true.
+
 2002-03-28 Thursday 20:22  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/packet.cc: preserve tailroom on Packet::shift_data() with
