@@ -161,7 +161,6 @@ ProtocolTranslator64::make_icmp_translate64(unsigned char *a,
   unsigned char *ip=0;
   unsigned char icmp6_type= a[0];
   unsigned char icmp6_code= a[1];
-  unsigned int icmp6_pointer = (unsigned int)a[4];
   unsigned char icmp_length;
   WritablePacket *q2 = 0;
 
@@ -266,7 +265,7 @@ ProtocolTranslator64::make_icmp_translate64(unsigned char *a,
 	  }
 	  else if(icmp6_code ==0)
 	    {
-	      switch (icmp6_pointer) {
+	      switch (ntohl(icmp6->pointer)) {
 	      case 0 : icmp->pointer = 0;  break;
 	      case 4 : icmp->pointer = 2;  break;
 	      case 7 : icmp->pointer = 8;  break;

@@ -24,6 +24,7 @@
 #include <click/package.hh>
 #include "ip6mirror.hh"
 #include <click/click_ip.h>
+#include <click/click_ip6.h>
 #include <click/click_udp.h>
 
 IP6Mirror::IP6Mirror()
@@ -49,7 +50,7 @@ IP6Mirror::simple_action(Packet *p_in)
   iph->ip6_dst = tmpa;
   
   // may mirror ports as well
-  if ((iph->ip6_nxt == IP_PROTO_TCP || iph->ip6_nxt == IP_PROTO_UDP) && IP_FIRSTFRAG(iph) && p->length() >= p->transport_header_offset() + 8) {
+  if ((iph->ip6_nxt == IP_PROTO_TCP || iph->ip6_nxt == IP_PROTO_UDP) &&  p->length() >= p->transport_header_offset() + 8) {
     click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
     unsigned short tmpp = udph->uh_sport;
     udph->uh_sport = udph->uh_dport;
