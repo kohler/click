@@ -1,3 +1,17 @@
+2002-05-04 Saturday 21:20  Eddie Kohler <kohler@aciri.org>
+
+	* tools/click-install/click-install.cc (1.47): better plan for
+	knowing when there are no more errors: wait a bit first
+
+2002-05-04 Saturday 21:20  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/kernelerror.cc (1.20): kernelerror.cc uses the new
+	handler-based story, and works on clickfs
+
+2002-05-04 Saturday 21:19  Eddie Kohler <kohler@aciri.org>
+
+	* lib/router.cc (1.125): nitlet
+
 2002-05-04 Saturday 16:54  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/router.hh (1.32), lib/router.cc (1.124): add

@@ -1,3 +1,7 @@
+2002-05-04 Saturday 21:19  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: nitlet
+
 2002-05-04 Saturday 16:54  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/router.hh, include/click/router.hh,
