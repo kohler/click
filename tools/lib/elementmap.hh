@@ -36,12 +36,6 @@ class ElementMap { public:
     TraitsIterator begin_elements() const;
 
     int add(const Traits&);
-    int add(const String& name, const String& cxx, const String& header_file,
-	    const String& processing_code, const String& flow_code,
-	    const String& flags,
-	    const String& requirements, const String& provisions);
-    int add(const String& name, const String& cxx, const String& header_file,
-	    const String& processing_code, const String& flow_code);
     void remove_at(int);
 
     void parse(const String& data, ErrorHandler* = 0);
@@ -87,7 +81,7 @@ class ElementMap { public:
     static ElementMap* the_element_map;
     static void bump_version();
     void incr_version() const;
-    
+
 };
 
 extern int32_t default_element_map_version;

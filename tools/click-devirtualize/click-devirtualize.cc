@@ -548,7 +548,7 @@ particular purpose.\n");
       router->add_archive(init_archive_element("elementmap-devirtualize.xml", 0600));
     ArchiveElement &ae = router->archive("elementmap-devirtualize.xml");
     ElementMap em(ae.data);
-    specializer.output_new_elementmap(full_elementmap, em, package_name + suffix + ".cc", driver_requirement);
+    specializer.output_new_elementmap(full_elementmap, em, package_name + suffix, driver_requirement);
     ae.data = em.unparse("devirtualize");
   }
 

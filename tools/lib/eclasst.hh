@@ -142,13 +142,13 @@ ElementClassT::documentation_name() const
 inline const String &
 ElementClassT::processing_code() const
 {
-    return traits().processing_code();
+    return traits().processing_code;
 }
 
 inline const String &
 ElementClassT::flow_code() const
 {
-    return traits().flow_code();
+    return traits().flow_code;
 }
 
 inline bool

@@ -729,9 +729,16 @@ compile_classifiers(RouterT *r, const String &package_name,
 	    r->add_archive(init_archive_element("elementmap-fastclassifier.xml", 0600));
 	ArchiveElement &ae = r->archive("elementmap-fastclassifier.xml");
 	ElementMap em(ae.data);
-	String header_file = package_name + ".hh";
-	for (int i = 0; i < gen_eclass_names.size(); i++)
-	    em.add(gen_eclass_names[i], gen_cxxclass_names[i], header_file, "h/h", "x/x");
+	ElementTraits t;
+	t.header_file = package_name + ".hh";
+	t.source_file = package_name + ".cc";
+	t.processing_code = "h/h";
+	t.flow_code = "x/x";
+	for (int i = 0; i < gen_eclass_names.size(); i++) {
+	    t.name = gen_eclass_names[i];
+	    t.cxx = gen_cxxclass_names[i];
+	    em.add(t);
+	}
 	ae.data = em.unparse("fastclassifier");
     }
 

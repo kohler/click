@@ -563,13 +563,17 @@ void
 Specializer::output_new_elementmap(const ElementMap &full_em, ElementMap &em,
 				   const String &filename, const String &requirements) const
 {
-  for (int i = 0; i < _specials.size(); i++)
-    if (_specials[i].special()) {
-      const Traits &e = full_em.traits(_specials[i].old_click_name);
-      em.add(_specials[i].click_name, _specials[i].cxx_name,
-	     filename, e.processing_code(), e.flow_code(),
-	     e.flags, requirements + _specials[i].old_click_name, String());
-    }
+    for (int i = 0; i < _specials.size(); i++)
+	if (_specials[i].special()) {
+	    Traits e = full_em.traits(_specials[i].old_click_name);
+	    e.name = _specials[i].click_name;
+	    e.cxx = _specials[i].cxx_name;
+	    e.header_file = filename + ".hh";
+	    e.source_file = filename + ".cc";
+	    e.requirements = requirements + _specials[i].old_click_name;
+	    e.provisions = String();
+	    em.add(e);
+	}
 }
 
 // Vector template instantiation

@@ -491,8 +491,14 @@ particular purpose.\n");
   // add elementmap to archive
   if (!config_only) {
     ElementMap em;
-    if (link_id.size())
-	em.add("RouterLink", "", "", "l/h", "x/x", "S3", "", "");
+    if (link_id.size()) {
+	ElementTraits t;
+	t.name = "RouterLink";
+	t.processing_code = "l/h";
+	t.flow_code = "x/x";
+	t.flags = "S3";
+	em.add(t);
+    }
     // add data from included elementmaps
     for (int i = 0; i < routers.size(); i++)
       if (routers[i]->archive_index("elementmap.xml") >= 0) {

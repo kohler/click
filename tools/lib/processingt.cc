@@ -134,7 +134,7 @@ ProcessingT::initial_processing_for(int ei, ErrorHandler *errh)
 	return;
 
     String landmark = e->landmark();
-    String pc = etype->traits().processing_code();
+    String pc = etype->traits().processing_code;
     if (!pc) {
 	errh->lwarning(landmark, "'%s' has no processing code; assuming agnostic", etype->printable_name_c_str());
 	return;
@@ -213,7 +213,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 	    int port = i - _input_pidx[ei];
 	    int opidx = _output_pidx[ei];
 	    int noutputs = _output_pidx[ei+1] - opidx;
-	    forward_flow(e->type()->traits().flow_code(),
+	    forward_flow(e->type()->traits().flow_code,
 			 port, noutputs, &bv, errh);
 	    for (int j = 0; j < noutputs; j++)
 		if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC)

@@ -22,6 +22,8 @@ struct ElementTraits {
     String documentation_name;
     String header_file;
     String source_file;
+    String processing_code;
+    String flow_code;
     String flags;
     String requirements;
     String provisions;
@@ -35,8 +37,6 @@ struct ElementTraits {
     
     bool allows_driver(int d) const	{ return (driver_mask&(1<<d)) != 0; }
 
-    const String &processing_code() const	{ return _processing_code; }
-    const String &flow_code() const		{ return _flow_code; }
     bool requires(const String &) const;
     bool provides(const String &) const;
     int flag_value(int) const;
@@ -58,9 +58,6 @@ struct ElementTraits {
 
   private:
     
-    String _processing_code;
-    String _flow_code;
-
     static ElementTraits the_null_traits;
 
     friend class ElementMap;

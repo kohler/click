@@ -121,33 +121,6 @@ ElementMap::add(const Traits &e)
     return i;
 }
 
-int
-ElementMap::add(const String &click_name, const String &cxx_name,
-		const String &header_file, const String &processing_code,
-		const String &flow_code, const String &flags,
-		const String &requirements, const String &provisions)
-{
-    Traits e;
-    e.name = click_name;
-    e.cxx = cxx_name;
-    e.header_file = header_file;
-    e._processing_code = processing_code;
-    e._flow_code = flow_code;
-    e.flags = flags;
-    e.requirements = requirements;
-    e.provisions = provisions;
-    return add(e);
-}
-
-int
-ElementMap::add(const String &click_name, const String &cxx_name,
-		const String &header_file, const String &processing_code,
-		const String &flow_code)
-{
-    return add(click_name, cxx_name, header_file, processing_code, flow_code,
-	       String(), String(), String());
-}
-
 void
 ElementMap::remove_at(int i)
 {
@@ -487,8 +460,8 @@ ElementMap::unparse(const String &package) const
 	    sa << " headerfile=\"" << xml_quote(e.header_file) << "\"";
 	if (e.source_file)
 	    sa << " sourcefile=\"" << xml_quote(e.source_file) << "\"";
-	sa << " processing=\"" << e.processing_code()
-	   << "\" flowcode=\"" << e.flow_code() << "\"";
+	sa << " processing=\"" << xml_quote(e.processing_code)
+	   << "\" flowcode=\"" << xml_quote(e.flow_code) << "\"";
 	if (e.flags)
 	    sa << " flags=\"" << xml_quote(e.flags) << "\"";
 	if (e.requirements)
@@ -514,8 +487,8 @@ ElementMap::unparse_nonxml() const
 	   << cp_quote(e.cxx) << '\t'
 	   << cp_quote(e.documentation_name) << '\t'
 	   << cp_quote(e.header_file) << '\t'
-	   << cp_quote(e.processing_code()) << '\t'
-	   << cp_quote(e.flow_code()) << '\t'
+	   << cp_quote(e.processing_code) << '\t'
+	   << cp_quote(e.flow_code) << '\t'
 	   << cp_quote(e.flags) << '\t'
 	   << cp_quote(e.requirements) << '\t'
 	   << cp_quote(e.provisions) << '\n';
