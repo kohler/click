@@ -1,7 +1,7 @@
 
 Index: include/linux/netdevice.h
---- include/linux/netdevice.h.orig	Tue Jul 18 14:53:16 2000
-+++ include/linux/netdevice.h	Fri Jul 21 12:22:52 2000
+--- include/linux/netdevice.h.orig	Tue Jul 25 18:09:58 2000
++++ include/linux/netdevice.h	Tue Jul 25 18:10:56 2000
 @@ -317,6 +317,42 @@
  	/* Semi-private data. Keep it at the end of device struct. */
  	struct dst_entry	*fastpath[NETDEV_FASTROUTE_HMASK+1];
@@ -59,8 +59,8 @@ Index: include/linux/netdevice.h
  extern int		dev_restart(struct device *dev);
 
 Index: include/linux/signal.h
---- include/linux/signal.h.orig	Tue Jul 18 14:53:16 2000
-+++ include/linux/signal.h	Tue Jul 18 14:58:01 2000
+--- include/linux/signal.h.orig	Tue Jul 25 18:09:58 2000
++++ include/linux/signal.h	Tue Jul 25 18:10:56 2000
 @@ -189,7 +189,7 @@
  		memset(&set->sig[1], 0, sizeof(long)*(_NSIG_WORDS-1));
  		break;
@@ -81,8 +81,8 @@ Index: include/linux/signal.h
  
 
 Index: include/linux/skbuff.h
---- include/linux/skbuff.h.orig	Tue Jul 18 14:53:16 2000
-+++ include/linux/skbuff.h	Tue Jul 18 14:58:02 2000
+--- include/linux/skbuff.h.orig	Tue Jul 25 18:09:58 2000
++++ include/linux/skbuff.h	Tue Jul 25 18:10:56 2000
 @@ -145,6 +145,7 @@
  extern struct sk_buff *		skb_peek_copy(struct sk_buff_head *list);
  extern struct sk_buff *		alloc_skb(unsigned int size, int priority);
@@ -111,8 +111,8 @@ Index: include/linux/skbuff.h
  
 
 Index: net/core/skbuff.c
---- net/core/skbuff.c.orig	Tue Jul 18 14:53:16 2000
-+++ net/core/skbuff.c	Tue Jul 18 14:53:16 2000
+--- net/core/skbuff.c.orig	Tue Jul 25 18:09:58 2000
++++ net/core/skbuff.c	Tue Jul 25 18:10:56 2000
 @@ -258,6 +258,49 @@
  }
  
@@ -165,8 +165,8 @@ Index: net/core/skbuff.c
   
 
 Index: net/core/dev.c
---- net/core/dev.c.orig	Tue Jul 18 14:53:16 2000
-+++ net/core/dev.c	Tue Jul 18 16:07:01 2000
+--- net/core/dev.c.orig	Tue Jul 25 18:09:58 2000
++++ net/core/dev.c	Tue Jul 25 18:10:56 2000
 @@ -151,6 +151,9 @@
   
  static struct notifier_block *netdev_chain=NULL;
@@ -410,8 +410,8 @@ Index: net/core/dev.c
    	/*
 
 Index: net/sched/sch_generic.c
---- net/sched/sch_generic.c.orig	Tue Jul 18 14:53:16 2000
-+++ net/sched/sch_generic.c	Tue Jul 18 14:53:16 2000
+--- net/sched/sch_generic.c.orig	Tue Jul 25 18:09:58 2000
++++ net/sched/sch_generic.c	Tue Jul 25 18:10:56 2000
 @@ -76,6 +76,24 @@
  	return q->q.qlen;
  }
@@ -463,8 +463,8 @@ Index: net/sched/sch_generic.c
  			continue;
 
 Index: net/netsyms.c
---- net/netsyms.c.orig	Tue Jul 18 14:53:16 2000
-+++ net/netsyms.c	Tue Jul 18 14:53:16 2000
+--- net/netsyms.c.orig	Tue Jul 25 18:09:58 2000
++++ net/netsyms.c	Tue Jul 25 18:10:56 2000
 @@ -335,7 +335,6 @@
  EXPORT_SYMBOL(net_reset_timer);
  EXPORT_SYMBOL(net_delete_timer);
@@ -502,8 +502,8 @@ Index: net/netsyms.c
  EXPORT_SYMBOL(netif_rx);
 
 Index: drivers/net/tulip.c
---- drivers/net/tulip.c.orig	Tue Jul 18 14:53:15 2000
-+++ drivers/net/tulip.c	Mon Jul 24 12:13:58 2000
+--- drivers/net/tulip.c.orig	Tue Jul 25 18:09:58 2000
++++ drivers/net/tulip.c	Tue Jul 25 18:10:56 2000
 @@ -26,9 +26,6 @@
  
  /* A few user-configurable values. */
@@ -1232,8 +1232,8 @@ Index: drivers/net/tulip.c
 +
 
 Index: drivers/net/acenic.c
---- drivers/net/acenic.c.orig	Fri Jul 21 10:59:34 2000
-+++ drivers/net/acenic.c	Mon Jul 24 13:30:46 2000
+--- drivers/net/acenic.c.orig	Tue Jul 25 18:23:47 2000
++++ drivers/net/acenic.c	Tue Jul 25 18:22:37 2000
 @@ -396,6 +396,68 @@
  
  static int probed __initdata = 0;
@@ -1421,7 +1421,7 @@ Index: drivers/net/acenic.c
  		idx = (idx + 1) % RX_RETURN_RING_ENTRIES;
  	}
  
-@@ -1949,6 +2039,55 @@
+@@ -1949,6 +2039,58 @@
  	goto out;
  }
  
@@ -1474,10 +1474,23 @@ Index: drivers/net/acenic.c
 +		idx = (idx + 1) % TX_RING_ENTRIES;
 +	} while (idx != txcsm);
 +}
++
++static unsigned long ace_poll_intr = 0;
++static unsigned long ace_poll_evtintr = 0;
  
  static void ace_interrupt(int irq, void *dev_id, struct pt_regs *ptregs)
  {
-@@ -1985,45 +2124,14 @@
+@@ -1970,6 +2112,9 @@
+ 	if (!(readl(&regs->HostCtrl) & IN_INT))
+ 		return;
+ 
++	if (dev->polling)
++	  	ace_poll_intr++;
++
+ 	/*
+ 	 * Tell the card not to generate interrupts while we are in here.
+ 	 */
+@@ -1985,45 +2130,14 @@
  	rxretprd = *ap->rx_ret_prd;
  	rxretcsm = ap->cur_rx;
  
@@ -1526,7 +1539,16 @@ Index: drivers/net/acenic.c
  
  		/*
  		 * Once we actually get to this point the tx ring has
-@@ -2062,7 +2170,7 @@
+@@ -2054,6 +2168,8 @@
+ 	evtprd = *ap->evt_prd;
+ 
+ 	if (evtcsm != evtprd) {
++	    if (dev->polling)
++			ace_poll_evtintr++;
+ 		evtcsm = ace_handle_event(dev, evtcsm, evtprd);
+ 		writel(evtcsm, &regs->EvtCsm);
+ 	}
+@@ -2062,7 +2178,7 @@
  	 * This has to go last in the interrupt handler and run with
  	 * the spin lock released ... what lock?
  	 */
@@ -1535,7 +1557,7 @@ Index: drivers/net/acenic.c
  		int cur_size;
  		int run_bh = 0;
  
-@@ -2266,14 +2374,43 @@
+@@ -2266,14 +2382,43 @@
  	return 0;
  }
  
@@ -1548,7 +1570,7 @@ Index: drivers/net/acenic.c
  	unsigned long addr;
 -	u32 idx, flagsize;
 +	u32 flagsize;
-+
++	
 +	ap->skb->tx_skbuff[idx].skb = skb;
 +	ap->skb->tx_skbuff[idx].mapping =
 +		pci_map_single(ap->pdev, skb->data, skb->len,
@@ -1567,12 +1589,12 @@ Index: drivers/net/acenic.c
 +	ace_set_txprd(regs, ap, idx);
 +	return idx;
 +}
-+
+ 
 +static int ace_start_xmit(struct sk_buff *skb, struct net_device *dev)
 +{
 +	struct ace_private *ap = dev->priv;
 +	u32 idx;
- 
++
 +	/* polling extension: we have to use tbusy to prevent ace_start_xmit from
 +	 * colliding with ace_tx_queue */
 +#if 1
@@ -1582,7 +1604,7 @@ Index: drivers/net/acenic.c
  	/*
  	 * ARGH, there is just no pretty way to do this
  	 */
-@@ -2283,6 +2420,7 @@
+@@ -2283,6 +2428,7 @@
  #else
  	netif_stop_queue(dev);
  #endif
@@ -1590,7 +1612,7 @@ Index: drivers/net/acenic.c
  
  	idx = ap->tx_prd;
  
-@@ -2295,22 +2433,7 @@
+@@ -2295,22 +2441,7 @@
  		return 1;
  	}
  
@@ -1614,7 +1636,7 @@ Index: drivers/net/acenic.c
  
  	/*
  	 * tx_csm is set by the NIC whereas we set tx_ret_csm which
-@@ -2966,9 +3089,223 @@
+@@ -2966,9 +3097,262 @@
  	goto out;
  }
  
@@ -1658,12 +1680,14 @@ Index: drivers/net/acenic.c
 + * counter is the number of buffer refilled onto each ring.
 + */
 +
++// #define SELECTIVE_INTR 1
++
 +static int 
 +ace_tx_queue(struct sk_buff *skb, struct device *dev)
 +{
 +	struct ace_private *ap = dev->priv;
 +	u32 idx;
-+
++     
 +	/* polling extension: we have to use tbusy to prevent ace_start_xmit from
 +	 * colliding with ace_tx_queue */
 +	if (test_and_set_bit(0, (void*)&dev->tbusy))
@@ -1727,14 +1751,32 @@ Index: drivers/net/acenic.c
 +static int 
 +ace_rx_refill(struct device *dev)
 +{
++    u32 evtcsm, evtprd;
++	struct ace_private *ap = dev->priv;
++	struct ace_regs *regs = ap->regs;
++
 +	/* this seems like what we wanted: while it does clear the bh_pending bit
 +	 * for ace, but bh_pending is only set when rx rings need to be filled, so
-+	 * we should be fine. */
++	 * we should be fine.
++	 *
++	 * ace_bh return type is void, so we always return 0, even if ace_bh says
++	 * there are no more memory to refill the rings... I guess that is really
++	 * a fatalistic condition anyways...
++	 */ 
 +	ace_bh(dev);
-+	/* ??? ace_bh return type is void, so we always return 0, even if ace_bh
-+	 * says there are no more memory to refill the rings... I guess that is
-+	 * really a fatalistic condition anyways...
++  
++#ifndef SELECTIVE_INTR
++	/* handle events... since we can't selectively mask out rx and tx
++	 * interrupts...
 +	 */
++	evtcsm = readl(&regs->EvtCsm);
++    evtprd = *ap->evt_prd;
++
++    if (evtcsm != evtprd) {
++        evtcsm = ace_handle_event(dev, evtcsm, evtprd);
++        writel(evtcsm, &regs->EvtCsm);
++    }
++#endif	
 +	return 0;
 +}
 +
@@ -1808,10 +1850,20 @@ Index: drivers/net/acenic.c
 +
 +		ap = d->priv;
 +		regs = ap->regs;
-+ 
++
++#ifdef SELECTIVE_INTR
++		/* okay, for some reason, below code segment did not turn off rx and
++		 * tx interrupts... so we need to mask interrupts completely and
++		 * depend on rx_refill to manage events.
++		 */
 +		stat = readl(&regs->ModeStat);
 +		stat |= (ACE_DONT_RUPT_SENDS | ACE_DONT_RUPT_RECVS);
 +		writel(stat, &regs->ModeStat);
++#else	
++		stat = readl(&regs->HostCtrl);
++		stat |= MASK_INTS;
++		writel(stat, &regs->HostCtrl);
++#endif
 +		dev->polling = 1;
 +	}
 +	return 0;
@@ -1821,7 +1873,7 @@ Index: drivers/net/acenic.c
 +ace_poll_off(struct device *dev)
 +{
 +    if (dev->polling) {
-+    	struct ace_private *ap;
++		struct ace_private *ap;
 +		struct ace_regs *regs;
 +		struct net_device *d = (struct net_device*)dev;
 +		u32 stat;
@@ -1829,11 +1881,20 @@ Index: drivers/net/acenic.c
 +		ap = d->priv;
 +		regs = ap->regs;
 +
-+		stat = readl(&regs->ModeStat);
-+		stat &= ~(ACE_DONT_RUPT_SENDS | ACE_DONT_RUPT_RECVS);
++#ifdef SELECTIVE_INTR
++		stat = readl(&regs->ModeStat); 
++		stat &= ~(ACE_DONT_RUPT_SENDS | ACE_DONT_RUPT_RECVS); 
 +		writel(stat, &regs->ModeStat);
-+
++#else		
++		stat = readl(&regs->HostCtrl);
++		stat &= ~MASK_INTS;
++		writel(stat, &regs->HostCtrl);
++#endif
 +		dev->polling = 0;
++
++		printk("ace polling interrupt summary: %ld %ld\n", 
++			   ace_poll_intr, ace_poll_evtintr); 
++		ace_poll_intr = ace_poll_evtintr = 0;
 +	}
 +	return 0;
 +}
@@ -1841,8 +1902,8 @@ Index: drivers/net/acenic.c
 +
 
 Index: drivers/net/acenic.h
---- drivers/net/acenic.h.orig	Fri Jul 21 10:59:38 2000
-+++ drivers/net/acenic.h	Mon Jul 24 11:57:26 2000
+--- drivers/net/acenic.h.orig	Tue Jul 25 18:09:58 2000
++++ drivers/net/acenic.h	Tue Jul 25 18:10:56 2000
 @@ -251,6 +251,9 @@
  #define ACE_WARN		0x08
  #define ACE_BYTE_SWAP_DMA	0x10

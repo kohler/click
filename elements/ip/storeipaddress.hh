@@ -9,8 +9,6 @@
  * =d
  * Copy the destination IP address annotation into the packet
  * at offset OFFSET.
- *
- * =a LoadIPAddress
  */
 
 class StoreIPAddress : public Element {
