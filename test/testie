@@ -11,14 +11,6 @@ sub index2 ($$;$) {
     $result;
 }
 
-sub min (@) {
-    my($m) = $_[0];
-    for (my $i = 1; $i < @_; $i++) {
-	$m = $_[$i] if $m > $_[$i];
-    }
-    $m;
-}
-
 sub shquote ($) {
     my($t) = @_;
     $t =~ s/\'/\'\"\'\"\'/g;
@@ -101,7 +93,9 @@ sub _shell_split (\@\@$$;$) {
 	}
 
 	# find minimum
-	my($min) = min($sq, $dq, $bq, $nl, $hh);
+	my($min, $min1) = (($sq < $dq ? $sq : $dq), ($bq < $nl ? $bq : $nl));
+	$min1 = ($min1 < $hh ? $min1 : $hh);
+	$min = $min1 if $min > $min1;
 	$out .= $rewrite_sub->(substr($text, $pos, $min - $pos), 0) . substr($text, $min, 1);
 	
 	if ($sq == $min) {
@@ -115,6 +109,7 @@ sub _shell_split (\@\@$$;$) {
 	    $pos = $bq + 1;
 	} elsif ($hh == $min) {
 	    $out .= substr($text, $min + 1, $nl - $min);
+	    $lineno++;
 	    $pos = $nl + 1;
 	} elsif (!$qb && ($nl == $pos || substr($text, $nl - 1, 1) ne "\\")) {
 	    push @$arr, $out;

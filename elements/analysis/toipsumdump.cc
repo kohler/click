@@ -700,7 +700,7 @@ ToIPSummaryDump::store_ip_opt_binary(const uint8_t *opt, int opt_len, int conten
 	// store all options
 	sa.append((char)opt_len);
 	sa.append(opt, opt_len);
-	return opt_len;
+	return opt_len + 1;
     }
 
     const uint8_t *end_opt = opt + opt_len;
@@ -748,7 +748,7 @@ ToIPSummaryDump::store_tcp_opt_binary(const uint8_t *opt, int opt_len, int conte
 	// store all options
 	sa.append((char)opt_len);
 	sa.append(opt, opt_len);
-	return opt_len;
+	return opt_len + 1;
     }
 
     const uint8_t *end_opt = opt + opt_len;

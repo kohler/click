@@ -20,6 +20,15 @@ FromDump(OUT1, FORCE_IP true, STOP true)
 	-> ToIPSummaryDump(OUT3, CONTENTS src sport dst dport proto ip_opt);
 "
 
+# go to and from a binary dump to test that
+click -e "
+FromDump(OUT1, FORCE_IP true, STOP true)
+	-> ToIPSummaryDump(OUT4, BINARY true, CONTENTS src sport dst dport proto ip_opt);
+" 
+
+click -e "FromIPSummaryDump(OUT4, STOP true)
+	-> ToIPSummaryDump(OUT5, CONTENTS src sport dst dport proto ip_opt);"
+
 %file IN1
 !data src sport dst dport proto ip_opt
 18.26.4.44 30 10.0.0.4 40 T .
@@ -34,6 +43,13 @@ FromDump(OUT1, FORCE_IP true, STOP true)
 18.26.4.44.20 > 10.0.0.8.80: . [tcp sum ok] win 0 [ttl 0] (id 0, len 60, optlen=20 SSRR{128.4.45.60 128.4.49.61#0.0.0.0 0.0.0.0} EOL)
 
 %expect OUT3
+18.26.4.44 30 10.0.0.4 40 T .
+18.26.4.44 30 10.0.0.4 40 T .
+18.26.4.44 20 10.0.0.8 80 T ssrr{128.4.45.60:128.4.49.61}+2
+
+%file OUT4
+
+%expect OUT5
 18.26.4.44 30 10.0.0.4 40 T .
 18.26.4.44 30 10.0.0.4 40 T .
 18.26.4.44 20 10.0.0.8 80 T ssrr{128.4.45.60:128.4.49.61}+2
