@@ -63,11 +63,12 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   _label = "";
   _swap = false;
   bool print_id = false;
-  bool print_time = false;
+  bool print_time = true;
   bool print_paint = false;
   bool print_tos = false;
   bool print_ttl = false;
   bool print_len = false;
+  bool print_aggregate = false;
   String channel;
   
   if (cp_va_parse(conf, this, errh,
@@ -83,6 +84,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "TTL", cpBool, "print IP TTL?", &print_ttl,
 		  "SWAP", cpBool, "swap ICMP values when printing?", &_swap,
 		  "LENGTH", cpBool, "print IP length?", &print_len,
+		  "AGGREGATE", cpBool, "print aggregate annotation?", &print_aggregate,
 #if CLICK_USERLEVEL
 		  "OUTFILE", cpFilename, "output filename", &_outfilename,
 #endif
@@ -106,6 +108,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   _print_tos = print_tos;
   _print_ttl = print_ttl;
   _print_len = print_len;
+  _print_aggregate = print_aggregate;
   _errh = router()->chatter_channel(channel);
   return 0;
 }
@@ -157,7 +160,9 @@ IPPrint::simple_action(Packet *p)
 
   if (_print_timestamp)
     sa << p->timestamp_anno() << ": ";
-  
+
+  if (_print_aggregate)
+    sa << AGGREGATE_ANNO(p) << ": ";
   if (_print_id)
     sa << "id " << ntohs(iph->ip_id) << ' ';
   if (_print_paint)

@@ -59,7 +59,12 @@ false.
 =item TIMESTAMP
 
 Boolean. Determines whether to print each packet's timestamp in seconds since
-1970. Default is false.
+1970. Default is true.
+
+=item AGGREGATE
+
+Boolean. Determines whether to print each packet's aggregate annotation.
+Default is false.
 
 =item PAINT
 
@@ -109,6 +114,7 @@ class IPPrint : public Element { public:
   bool _print_tos : 1;
   bool _print_ttl : 1;
   bool _print_len : 1;
+  bool _print_aggregate : 1;
   unsigned _contents : 2;	// Whether to dump packet contents
 
 #if CLICK_USERLEVEL
