@@ -24,13 +24,41 @@
   #1
   \end{tabular}%
 }}%
+\newcommand{\lmelementlabel}[1]{{%
+  \elementshape
+  \begin{tabular}{@{}l@{}}%
+  #1
+  \end{tabular}%
+}}%
+\newcommand{\rmelementlabel}[1]{{%
+  \elementshape
+  \begin{tabular}{@{}r@{}}%
+  #1
+  \end{tabular}%
+}}%
 \newcommand{\mlabel}[1]{{%
   \begin{tabular}{@{}c@{}}%
   #1
   \end{tabular}%
 }}%
+\newcommand{\lmlabel}[1]{{%
+  \begin{tabular}{@{}l@{}}%
+  #1
+  \end{tabular}%
+}}%
+\newcommand{\rmlabel}[1]{{%
+  \begin{tabular}{@{}r@{}}%
+  #1
+  \end{tabular}%
+}}%
 \newcommand{\portlabel}[1]{\hbox{%
   \tiny\sffamily\baselineskip6pt\begin{tabular}{@{}c@{}}#1\end{tabular}%
+}}%
+\newcommand{\lportlabel}[1]{\hbox{%
+  \tiny\sffamily\baselineskip6pt\begin{tabular}{@{}l@{}}#1\end{tabular}%
+}}%
+\newcommand{\rportlabel}[1]{\hbox{%
+  \tiny\sffamily\baselineskip6pt\begin{tabular}{@{}r@{}}#1\end{tabular}%
 }}%
 
 \makeatother
