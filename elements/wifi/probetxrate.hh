@@ -97,7 +97,7 @@ class ProbeTXRate : public Element { public:
   Packet *pull(int);
 
   void process_feedback(Packet *);
-  Packet *assign_rate(Packet *);
+  void assign_rate(Packet *);
   void add_handlers();
 
 
@@ -177,6 +177,11 @@ class ProbeTXRate : public Element { public:
     int pick_rate() {
       int best_ndx = -1;
       int best_tput = 0;
+      if (!_rates.size()) {
+	click_chatter("no rates for %s\n",
+		      _eth.s().cc());
+	return 2;
+      }
       for (int x = 0; x < _rates.size(); x++) {
 	if (_total_success[x]) {
 	  int tput = rate_to_tput(_rates[x]) * _total_tries[x] / _total_success[x];
@@ -190,11 +195,21 @@ class ProbeTXRate : public Element { public:
       if (random() % 9 == 0) {
 	int r = random() % _rates.size();
 	//click_chatter("picking random %d\n", r);
+	if (r < 0 || r > _rates.size()) {
+	  click_chatter("weird random rates for %s, index %d\n",
+			_eth.s().cc(), r);
+	  return 2;
+	}
 	return _rates[r];
       }
       if (best_ndx < 0) {
 	int r = random() % _rates.size();
 	click_chatter("no rates to pick from..random %d\n", r);
+	if (r < 0 || r > _rates.size()) {
+	  click_chatter("weird random rates for %s, index %d\n",
+			_eth.s().cc(), r);
+	  return 2;
+	}
 	return _rates[r];
       }
 

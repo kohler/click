@@ -79,21 +79,28 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 ProbeTXRate::pull(int port)
 {
-  return assign_rate(input(port).pull());
-}
-Packet *
-ProbeTXRate::assign_rate(Packet *p_in) {
-  
-  if (!p_in) {
-    return 0;
+  Packet *p = input(port).pull();
+  if (p) {
+    assign_rate(p);
   }
+  return p;
+}
+
+void
+ProbeTXRate::assign_rate(Packet *p_in) {
+
+  assert(p_in);
+  if (!p_in) {
+    return;
+  }
+
   click_ether *eh = (click_ether *) p_in->data();
   EtherAddress dst = EtherAddress(eh->ether_dhost);
   SET_WIFI_FROM_CLICK(p_in);
 
   if (dst == _bcast) {
     SET_WIFI_RATE_ANNO(p_in, 2);
-    return p_in;
+    return;
   }
   DstInfo *nfo = _neighbors.findp(dst);
   if (!nfo) {
@@ -113,7 +120,7 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   SET_WIFI_RATE_ANNO(p_in, rate);
   SET_WIFI_ALT_RATE_ANNO(p_in, 2);
   SET_WIFI_ALT_RETRIES_ANNO(p_in, 4);
-  return p_in;
+  return;
 }
 
 void
@@ -126,12 +133,17 @@ ProbeTXRate::push(int port, Packet *p_in)
     process_feedback(p_in);
     p_in->kill();
   } else {
-    output(port).push(assign_rate(p_in));
+    assign_rate(p_in);
+    output(port).push(p_in);
   }
 }
 void
 ProbeTXRate::process_feedback(Packet *p_in) {
 
+  assert(p_in);
+  if (!p_in) {
+    return;
+  }
   click_ether *eh = (click_ether *) p_in->data();
   EtherAddress dst = EtherAddress(eh->ether_dhost);
   int success = (WIFI_TX_STATUS_ANNO(p_in) == 0);  
@@ -143,9 +155,11 @@ ProbeTXRate::process_feedback(Packet *p_in) {
 
   if (dst == _bcast) {
     /* don't record info for bcast packets */
-    click_chatter("%{element}: discarding bcast %s\n",
-		  this,
-		  dst.s().cc());
+    if (_debug) {
+      click_chatter("%{element}: discarding bcast %s\n",
+		    this,
+		    dst.s().cc());
+    }
     return;
   }
 
