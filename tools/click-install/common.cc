@@ -186,8 +186,8 @@ unload_click(ErrorHandler *errh)
 
 #if FOR_BSDMODULE
   // unmount Click file system
-  int umount_retval = umount(clickfs_prefix);
-  if (umount_retval < 0)
+  int unmount_retval = unmount(clickfs_prefix, MNT_FORCE);
+  if (unmount_retval < 0)
     errh->error("could not unmount %s: %s", clickfs_prefix, strerror(errno));
 #endif
 

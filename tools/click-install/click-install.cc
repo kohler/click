@@ -61,9 +61,9 @@ static Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
   { "hot-swap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
   { "hotswap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
+  { "priority", 'n', PRIORITY_OPT, Clp_ArgInt, 0 },
 #if FOR_LINUXMODULE
   { "map", 'm', MAP_OPT, 0, 0 },
-  { "priority", 'n', PRIORITY_OPT, Clp_ArgInt, 0 },
   { "private", 'p', PRIVATE_OPT, 0, Clp_Negate },
   { "threads", 't', THREADS_OPT, Clp_ArgUnsigned, 0 },
 #endif
@@ -101,14 +101,13 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 Options:\n\
   -f, --file FILE          Read router configuration from FILE.\n\
   -h, --hot-swap           Hot-swap install new configuration.\n\
-  -u, --uninstall          Uninstall Click from kernel, then reinstall.\n",
-	 program_name);
+  -u, --uninstall          Uninstall Click from kernel, then reinstall.\n\
+  -n, --priority N         Set kernel thread priority to N (lower is better).\n", program_name);
 #if FOR_LINUXMODULE
   printf("\
-  -m, --map                Print load map to the standard output.\n\
-  -n, --priority N         Set kernel thread priority to N (lower is better).\n\
   -p, --private            Make /proc/click readable only by root.\n\
-  -t, --threads N          Use N threads (multithreaded Click only).\n");
+  -t, --threads N          Use N threads (multithreaded Click only).\n\
+  -m, --map                Print load map to the standard output.\n");
 #endif
   printf("\
   -V, --verbose            Print information about files installed.\n\
@@ -322,12 +321,12 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
-  int threads = 1;
   bool uninstall = false;
   bool hotswap = false;
-  bool accessible = true;
   int priority = -100;
 #if FOR_LINUXMODULE
+  bool accessible = true;
+  int threads = 1;
   output_map = false;
 #endif
   
