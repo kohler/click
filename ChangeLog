@@ -1,3 +1,8 @@
+2004-08-01 Sunday 03:17  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/icmppingrewriter.hh (1.12): unsigned short =>
+	uint16_t
+
 2004-07-31 Saturday 22:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/IPRewriter/: IPAddrPairRewriter-01.testie (1.1),
