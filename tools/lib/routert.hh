@@ -106,12 +106,12 @@ class RouterT : public ElementClassT {
  
   void add_tunnel(String, String, const String &, ErrorHandler *);
   
-  bool add_connection(const Hookup &, const Hookup &, const String &landmark = String());
+  bool add_connection(Hookup, Hookup, const String &landmark = String());
   bool add_connection(int fidx, int fport, int tport, int tidx);
   void kill_connection(int);
   void compact_connections();
-  void change_connection_to(int, const Hookup &);
-  void change_connection_from(int, const Hookup &);
+  void change_connection_to(int, Hookup);
+  void change_connection_from(int, Hookup);
 
   void add_requirement(const String &);
   void remove_requirement(const String &);

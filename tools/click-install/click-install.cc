@@ -34,13 +34,15 @@
 #define ROUTER_OPT		302
 #define UNINSTALL_OPT		303
 #define HOTSWAP_OPT		304
+#define VERBOSE_OPT		305
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "hot-swap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
-  { "version", 'v', VERSION_OPT, 0, 0 },
+  { "verbose", 0, VERBOSE_OPT, 0, 0 },
+  { "version", 'v', VERSION_OPT, 0, Clp_Negate },
 };
 
 static const char *program_name;
@@ -246,6 +248,7 @@ main(int argc, char **argv)
   const char *router_file = 0;
   bool uninstall = false;
   bool hotswap = false;
+  bool verbose = false;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -281,6 +284,10 @@ particular purpose.\n");
      case HOTSWAP_OPT:
       hotswap = !clp->negated;
       break;
+
+     case VERBOSE_OPT:
+      verbose = !clp->negated;
+      break;
       
      bad_option:
      case Clp_BadOption:
@@ -303,9 +310,13 @@ particular purpose.\n");
   if (!r || errh->nerrors() > 0)
     exit(1);
   r->flatten(errh);
+  if (verbose)
+    errh->message("- read router configuration");
 
   // uninstall Click if requested
   if (uninstall && access("/proc/click", F_OK) >= 0) {
+    if (verbose)
+      errh->message("- uninstalling Click");
     // install blank configuration
     FILE *f = fopen("/proc/click/config", "w");
     if (!f)
@@ -329,6 +340,8 @@ particular purpose.\n");
   }
   
   // check for Click module; install it if not available
+  if (verbose)
+    errh->message("- checking for Click module");
   if (access("/proc/click", F_OK) < 0) {
     String click_o =
       clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
@@ -341,6 +354,8 @@ particular purpose.\n");
   // find current packages
   HashMap<String, int> active_modules(-1);
   HashMap<String, int> packages(-1);
+  if (verbose)
+    errh->message("- reading active packages");
   read_package_file("/proc/modules", active_modules, errh);
   read_package_file("/proc/click/packages", packages, errh);
 
@@ -402,6 +417,8 @@ particular purpose.\n");
   }
   
   // write flattened configuration to /proc/click/config
+  if (verbose)
+    errh->message("- writing configuration");
   const char *config_place = (hotswap ? "/proc/click/hotconfig" : "/proc/click/config");
   FILE *f = fopen(config_place, "w");
   if (!f)
@@ -412,6 +429,8 @@ particular purpose.\n");
   fclose(f);
 
   // report errors
+  if (verbose)
+    errh->message("- reporting errors");
   {
     char buf[1024];
     int fd = open("/proc/click/errors", O_RDONLY | O_NONBLOCK);
@@ -444,6 +463,8 @@ particular purpose.\n");
   }
 
   // remove unused packages
+  if (verbose)
+    errh->message("- removing packages");
   {
     String to_remove = packages_to_remove(active_modules, packages);
     if (to_remove) {
@@ -452,5 +473,7 @@ particular purpose.\n");
     }
   }
   
+  if (verbose)
+    errh->message("- exiting");
   return 0;
 }
