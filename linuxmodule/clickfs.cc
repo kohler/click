@@ -41,7 +41,7 @@ static struct dentry_operations click_dentry_ops;
 static struct proclikefs_file_system *clickfs;
 
 static spinlock_t config_write_lock;
-static uint32_t config_read_count;
+static atomic_t config_read_count;
 extern uint32_t click_config_generation;
 
 
@@ -50,23 +50,25 @@ extern uint32_t click_config_generation;
 static inline void
 lock_config_read()
 {
-    spin_lock(&config_write_lock);
-    config_read_count++;
+    while (!spin_trylock(&config_write_lock))
+	schedule();
+    atomic_inc(&config_read_count);
     spin_unlock(&config_write_lock);
 }
 
 static inline void
 unlock_config_read()
 {
-    config_read_count--;
+    atomic_dec(&config_read_count);
 }
 
 static inline void
 lock_config_write()
 {
     while (1) {
-	spin_lock(&config_write_lock);
-	if (!config_read_count)
+	while (!spin_trylock(&config_write_lock))
+	    schedule();
+	if (atomic_read(&config_read_count) == 0)
 	    return;
 	spin_unlock(&config_write_lock);
 	schedule();
@@ -173,7 +175,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
     }
 
     unlock_config_read();
-    if (error != 0)
+    if (error < 0)
 	return reinterpret_cast<struct dentry *>(ERR_PTR(error));
     else if (!inode)
 	// couldn't get an inode
@@ -191,18 +193,20 @@ click_dir_revalidate(struct dentry *dentry)
     struct inode *inode = dentry->d_inode;
     if (!inode)
 	return -EINVAL;
-    int error;
+    int error = 0;
     lock_config_read();
     if (INODE_INFO(inode).config_generation != click_config_generation) {
 	if (INO_ELEMENTNO(inode->i_ino) >= 0) // not a global directory
-	    return -EIO;
-	else if ((error = click_ino.prepare(click_router, click_config_generation)) != 0)
-	    return error;
-	INODE_INFO(inode).config_generation = click_config_generation;
-	inode->i_nlink = click_ino.nlink(inode->i_ino);
+	    error = -EIO;
+	else if ((error = click_ino.prepare(click_router, click_config_generation)) < 0)
+	    /* preserve error */;
+	else {
+	    INODE_INFO(inode).config_generation = click_config_generation;
+	    inode->i_nlink = click_ino.nlink(inode->i_ino);
+	}
     }
     unlock_config_read();
-    return 0;
+    return error;
 }
 
 
@@ -759,7 +763,7 @@ init_clickfs()
 
     spin_lock_init(&handler_strings_lock);
     spin_lock_init(&config_write_lock);
-    config_read_count = 0;
+    atomic_set(&config_read_count, 0);
     click_ino.initialize();
 
     clickfs = proclikefs_register_filesystem("click", click_read_super, click_reread_super);
