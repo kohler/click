@@ -34,6 +34,11 @@ StrideSched::configure(const String &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
+  
+  if (args.size() < 1) {
+    errh->error("StrideSched must be configured with at least one ticket");
+    return -1;
+  }
   set_ninputs(args.size());
 
   for (int i = 0; i < args.size(); i++) {

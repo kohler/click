@@ -15,6 +15,8 @@
 #endif
 #include "elemlink.hh"
 
+#ifndef RR_SCHED
+
 void
 ElementLink::set_max_tickets(int n)
 {
@@ -27,3 +29,5 @@ ElementLink::set_max_tickets(int n)
   } else
     _stride = 0;
 }
+
+#endif

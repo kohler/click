@@ -30,7 +30,9 @@ Router::Router()
   : _closed(0), _initialized(0), _have_connections(0), _have_hookpidx(0),
     _please_stop_driver(0)
 {
+#ifndef RR_SCHED
   initialize_head();
+#endif
 }
 
 Router::~Router()
@@ -41,7 +43,9 @@ Router::~Router()
   for (int i = 0; i < _elements.size(); i++)
     _elements[i]->unuse();
 #ifdef __KERNEL__
+#ifndef RR_SCHED
   initialize_head();		// get rid of scheduled wait queue
+#endif
   _please_stop_driver = true;	// XXX races?
 #endif
 }
@@ -787,8 +791,10 @@ Router::wait()
     }
   }
 
+#ifndef RR_SCHED
   if (scheduled_next() != this)
     return;
+#endif
   tv.tv_sec = 1;
   tv.tv_usec = 0;
   if (!any && !Timer::get_next_delay(&tv))
@@ -818,6 +824,7 @@ Router::wait()
 
 // WORK LIST
 
+#ifndef RR_SCHED
 void
 Router::driver(unsigned count)
 {
@@ -836,6 +843,36 @@ Router::driver(unsigned count)
     }
   }
 }
+#else
+void
+Router::driver(unsigned count)
+{
+  int i,j;
+  unsigned c = count;
+  Element * todo[_elements.size()];
+
+  for (i = 0, j = 0; i < _elements.size(); i++)
+    if (_elements[i]->scheduled())
+      todo[j++] = _elements[i];
+  if (!j)
+    return;
+
+  i = 0;
+  while (!_please_stop_driver) {
+    todo[i]->run_scheduled();
+    if (count-- == 0) {
+#if !defined(__KERNEL__) || defined(HAVE_POLLING)
+      count = c;
+      wait();
+#else
+      break;
+#endif
+    }
+    if (++i == j)
+      i = 0;
+  }
+}
+#endif
 
 // PRINTING
 

@@ -3,7 +3,10 @@
 #include "glue.hh"
 #include <assert.h>
 
+
 #define PASS_GT(a, b)	((int)(a - b) > 0)
+
+#ifndef RR_SCHED
 
 class ElementLink {
 
@@ -17,8 +20,9 @@ class ElementLink {
   int _tickets;
   int _max_tickets;
   ElementLink *_list;
-  
+
  public:
+
 
   static const unsigned STRIDE1 = 1U<<16;
   static const unsigned MAX_STRIDE = 1U<<31;
@@ -133,6 +137,29 @@ ElementLink::join_scheduler()
     _pass = _list->_next->_pass;
   reschedule();
 }
+
+#else
+
+class Router;
+class ElementLink {
+  bool _scheduled;
+
+protected:
+  Router *_router;
+
+public:
+
+  ElementLink()	: _scheduled(false) { }
+
+  bool scheduled() const		{ return _scheduled; }
+  void initialize_link(Router *r) 	{ _router = r; }
+
+  void join_scheduler() 		{ _scheduled = true; }
+  void reschedule()			{ }
+  void unschedule() 			{ }
+};
+
+#endif
 
 #endif
 

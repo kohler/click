@@ -39,9 +39,11 @@ class Element : public ElementLink { public:
   
   int number() const				{ return _number; }
   void set_number(int n)			{ _number = n; }
-
+#ifndef RR_SCHED
   Router *router() const		{ return (Router *)scheduled_list(); }
-  
+#else
+  Router *router() const		{ return _router; }
+#endif
   // INPUTS
   int ninputs() const				{ return _ninputs; }
   const Connection &input(int input_id) const;

@@ -10,6 +10,7 @@
  * distribution.
  */
 
+#if 0
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -285,9 +286,10 @@ rewriter_dump(Element *f, void *v)
   return r->dump_table();
 }
 
-EXPORT_ELEMENT(Rewriter)
-ELEMENT_REQUIRES(linuxmodule)
+//EXPORT_ELEMENT(Rewriter)
+//ELEMENT_REQUIRES(linuxmodule)
 
 #include "hashmap.cc"
 template class HashMap<IPConnection, int>;
 template class Vector<Rewriter::Mapping *>;
+#endif

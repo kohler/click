@@ -5,7 +5,11 @@
 #include "bitvector.hh"
 class ElementFilter;
 
-class Router : public ElementLink {
+class Router 
+#ifndef RR_SCHED
+  : public ElementLink 
+#endif
+{
 
   struct Hookup;
   typedef Element::Connection Connection;
