@@ -832,7 +832,7 @@ bool cp_integer(const String &str, int base, int32_t *return_value)
 static uint64_t unsigned64_overflow_vals[] = { 0, 0, 9223372036854775807ULL, 6148914691236517205ULL, 4611686018427387903ULL, 3689348814741910323ULL, 3074457345618258602ULL, 2635249153387078802ULL, 2305843009213693951ULL, 2049638230412172401ULL, 1844674407370955161ULL, 1676976733973595601ULL, 1537228672809129301ULL, 1418980313362273201ULL, 1317624576693539401ULL, 1229782938247303441ULL, 1152921504606846975ULL, 1085102592571150095ULL, 1024819115206086200ULL, 970881267037344821ULL, 922337203685477580ULL, 878416384462359600ULL, 838488366986797800ULL, 802032351030850070ULL, 768614336404564650ULL, 737869762948382064ULL, 709490156681136600ULL, 683212743470724133ULL, 658812288346769700ULL, 636094623231363848ULL, 614891469123651720ULL, 595056260442243600ULL, 576460752303423487ULL, 558992244657865200ULL, 542551296285575047ULL, 527049830677415760ULL };
 
 const char *
-cp_unsigned64(const char *begin, const char *end, int base, uint64_t *return_value)
+cp_unsigned(const char *begin, const char *end, int base, uint64_t *return_value)
 {
   const char *s = begin;
   if (s < end && *s == '+')
@@ -896,7 +896,7 @@ cp_unsigned64(const char *begin, const char *end, int base, uint64_t *return_val
 }
 
 bool
-cp_unsigned64(const String &str, int base, uint64_t *return_value)
+cp_unsigned(const String &str, int base, uint64_t *return_value)
 {
   uint64_t q;
   const char *s = cp_unsigned64(str.begin(), str.end(), base, &q);
@@ -908,7 +908,7 @@ cp_unsigned64(const String &str, int base, uint64_t *return_value)
 }
 
 const char *
-cp_integer64(const char *begin, const char *end, int base, int64_t *return_value)
+cp_integer(const char *begin, const char *end, int base, int64_t *return_value)
 {
   const char *s = begin;
   bool negative = false;
@@ -918,7 +918,7 @@ cp_integer64(const char *begin, const char *end, int base, int64_t *return_value
   }
 
   uint64_t value;
-  if ((end = cp_unsigned64(s, end, base, &value)) == s)
+  if ((end = cp_unsigned(s, end, base, &value)) == s)
     return begin;
 
   uint64_t max = (negative ? 0x8000000000000000ULL : 0x7FFFFFFFFFFFFFFFULL);
@@ -932,10 +932,10 @@ cp_integer64(const char *begin, const char *end, int base, int64_t *return_value
 }
 
 bool
-cp_integer64(const String &str, int base, int64_t *return_value)
+cp_integer(const String &str, int base, int64_t *return_value)
 {
   int64_t q;
-  const char *s = cp_integer64(str.begin(), str.end(), base, &q);
+  const char *s = cp_integer(str.begin(), str.end(), base, &q);
   if (s == str.end() && str.length()) {
     *return_value = q;
     return true;
@@ -951,9 +951,9 @@ bool
 cp_file_offset(const String &str, off_t *return_value)
 {
 # if SIZEOF_OFF_T == 4
-  return cp_unsigned(str, (uint32_t *) return_value);
+  return cp_unsigned(str, reinterpret_cast<uint32_t *>(return_value));
 # elif SIZEOF_OFF_T == 8
-  return cp_unsigned64(str, (uint64_t *) return_value);
+  return cp_unsigned(str, reinterpret_cast<uint64_t *>(return_value));
 # else
 #  error "unexpected sizeof(off_t)"
 # endif
@@ -2218,14 +2218,14 @@ default_parsefunc(cp_value *v, const String &arg,
 
 #ifdef HAVE_INT64_TYPES
    case cpiInteger64:
-    if (!cp_integer64(arg, &v->v.i64))
+    if (!cp_integer(arg, &v->v.i64))
       errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
       errh->error("%s (%s) too large; max %lld", argname, desc, v->v.i64);
     break;
 
    case cpiUnsigned64:
-    if (!cp_unsigned64(arg, &v->v.u64))
+    if (!cp_unsigned(arg, &v->v.u64))
       errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
       errh->error("%s (%s) too large; max %llu", argname, desc, v->v.u64);

@@ -54,32 +54,52 @@ bool cp_keyword(const String &, String *, String *rest = 0);
 
 // numbers
 bool cp_bool(const String &, bool *);
-const char *cp_integer(const char *begin, const char *end, int base, int32_t *);
-bool cp_integer(const String &, int base, int32_t *);
-inline bool cp_integer(const String &, int32_t *);
-const char *cp_unsigned(const char *begin, const char *end, int base, uint32_t *);
-bool cp_unsigned(const String &, int base, uint32_t *);
-inline bool cp_unsigned(const String &, uint32_t *);
-#ifdef HAVE_INT64_TYPES
-const char *cp_integer64(const char *begin, const char *end, int base, int64_t *);
-bool cp_integer64(const String &, int base, int64_t *);
-inline bool cp_integer64(const String &, int64_t *);
-const char *cp_unsigned64(const char *begin, const char *end, int base, uint64_t *);
-bool cp_unsigned64(const String &, int base, uint64_t *);
-inline bool cp_unsigned64(const String &, uint64_t *);
+
+const char *cp_integer(const char *begin, const char *end, int base, int *);
+bool cp_integer(const String &, int base, int *);
+inline bool cp_integer(const String &, int *);
+const char *cp_unsigned(const char *begin, const char *end, int base, unsigned int *);
+bool cp_unsigned(const String &, int base, unsigned int *);
+inline bool cp_unsigned(const String &, unsigned int *);
+
+#if SIZEOF_LONG == SIZEOF_INT
+inline const char *cp_integer(const char *begin, const char *end, int base, long *);
+inline bool cp_integer(const String &, int base, long *);
+inline bool cp_integer(const String &, long *);
+inline const char *cp_unsigned(const char *begin, const char *end, int base, unsigned long *);
+inline bool cp_unsigned(const String &, int base, unsigned long *);
+inline bool cp_unsigned(const String &, unsigned long *);
+#elif SIZEOF_LONG != 8
+# error "long has an odd size"
 #endif
+
+#ifdef HAVE_INT64_TYPES
+# if !HAVE_64_BIT_LONG
+const char *cp_integer(const char *begin, const char *end, int base, int64_t *);
+bool cp_integer(const String &, int base, int64_t *);
+inline bool cp_integer(const String &, int64_t *);
+const char *cp_unsigned(const char *begin, const char *end, int base, uint64_t *);
+bool cp_unsigned(const String &, int base, uint64_t *);
+inline bool cp_unsigned(const String &, uint64_t *);
+# endif
+# define cp_integer64 cp_integer
+# define cp_unsigned64 cp_unsigned
+#endif
+
 #ifdef CLICK_USERLEVEL
 bool cp_file_offset(const String &, off_t *);
 #endif
+
 #define CP_REAL2_MAX_FRAC_BITS 28
 bool cp_real2(const String &, int frac_bits, int32_t *);
 bool cp_unsigned_real2(const String &, int frac_bits, uint32_t *);
 bool cp_real10(const String &, int frac_digits, int32_t *);
 bool cp_unsigned_real10(const String &, int frac_digits, uint32_t *);
-bool cp_unsigned_real10(const String &, int frac_dig, uint32_t *, uint32_t *);
+bool cp_unsigned_real10(const String &, int frac_digits, uint32_t *, uint32_t *);
 #ifdef HAVE_FLOAT_TYPES
 bool cp_double(const String &, double *);
 #endif
+
 bool cp_seconds_as(int want_power, const String &, uint32_t *);
 bool cp_seconds_as_milli(const String &, uint32_t *);
 bool cp_seconds_as_micro(const String &, uint32_t *);
@@ -301,25 +321,57 @@ inline bool cp_is_space(const String &str)
     return cp_skip_space(str.begin(), str.end()) == str.end();
 }
 
-inline bool cp_unsigned(const String &str, uint32_t *return_value)
+inline bool cp_unsigned(const String &str, unsigned int *return_value)
 {
     return cp_unsigned(str, 0, return_value);
 }
 
-inline bool cp_integer(const String &str, int32_t *return_value)
+inline bool cp_integer(const String &str, int *return_value)
 {
     return cp_integer(str, 0, return_value);
 }
 
 #ifdef HAVE_INT64_TYPES
-inline bool cp_unsigned64(const String &str, uint64_t *return_value)
+inline bool cp_unsigned(const String &str, uint64_t *return_value)
 {
-    return cp_unsigned64(str, 0, return_value);
+    return cp_unsigned(str, 0, return_value);
 }
 
-inline bool cp_integer64(const String &str, int64_t *return_value)
+inline bool cp_integer(const String &str, int64_t *return_value)
 {
-    return cp_integer64(str, 0, return_value);
+    return cp_integer(str, 0, return_value);
+}
+#endif
+
+#if SIZEOF_LONG == SIZEOF_INT
+inline const char *cp_integer(const char *begin, const char *end, int base, long *return_value)
+{
+    return cp_integer(begin, end, base, reinterpret_cast<int *>(return_value));
+}
+
+inline bool cp_integer(const String &str, int base, long *return_value)
+{
+    return cp_integer(str, base, reinterpret_cast<int *>(return_value));
+}
+
+inline bool cp_integer(const String &str, long *return_value)
+{
+    return cp_integer(str, reinterpret_cast<int *>(return_value));
+}
+
+inline const char *cp_unsigned(const char *begin, const char *end, int base, unsigned long *return_value)
+{
+    return cp_unsigned(begin, end, base, reinterpret_cast<unsigned int *>(return_value));
+}
+
+inline bool cp_unsigned(const String &str, int base, unsigned long *return_value)
+{
+    return cp_unsigned(str, base, reinterpret_cast<unsigned int *>(return_value));
+}
+
+inline bool cp_unsigned(const String &str, unsigned long *return_value)
+{
+    return cp_unsigned(str, reinterpret_cast<unsigned int *>(return_value));
 }
 #endif
 
