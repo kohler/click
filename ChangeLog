@@ -1,3 +1,8 @@
+2001-08-16 Thursday 09:41  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/3yipal2.conf (1.1): config for yipal2 used in 3 node ron
+	configuration
+
 2001-08-16 Thursday 04:04  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/fromdump.hh (1.24): nitlet
