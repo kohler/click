@@ -25,7 +25,7 @@ install: install-man
 	$(mkinstalldirs) $(datadir)
 	/bin/sh $(top_srcdir)/findelements.sh -x -a -p $(top_srcdir) | $(PERL) $(srcdir)/mkelementmap.pl -f - $(top_srcdir)/lib/errorelement.hh -p $(top_srcdir) > $(datadir)/elementmap
 	(cd $(top_srcdir); pwd) > $(datadir)/srcdir
-	/bin/rm -f $(datadir)/src
+	/bin/rm -rf $(datadir)/src
 	/bin/ln -s `cd $(top_srcdir); pwd` $(datadir)/src
 
 install-man:
