@@ -144,10 +144,6 @@ PollDevice::initialize(ErrorHandler *errh)
   set_tickets(ScheduleInfo::DEFAULT);
 #endif
 
-#if CLICK_DEVICE_ADJUST_TICKETS
-  _last_rx = 0;
-#endif
-  
   join_scheduler();
 
   reset_counts();
@@ -267,30 +263,15 @@ PollDevice::run_scheduled()
   }
 #endif
 
-#if CLICK_DEVICE_ADJUST_TICKETS
-  int base = tickets() / 4;
-  if (base < 2) base = 2;
+#if CLICK_DEVICE_ADJUST_TICKETS  
+  // simple additive increase multiplicative decrease scheme
   int adj = 0;
-  
-  /*
-   * bursty traffic: sent substantially more packets this time than last time,
-   * so increase our tickets a lot to adapt.
-   */
-  if (got == INPUT_BATCH && _last_rx <= INPUT_BATCH/8) 
-    adj = base * 2;
-  /* 
-   * was able to get many packets, so increase our ticket some to adapt.
-   */
-  else if (got == INPUT_BATCH)
-    adj = base;
-  /*
-   * no packets, decrease tickets by some
-   */
-  else if (got < INPUT_BATCH/4) 
-    adj = -base;
+  if (got > 4)
+    adj = got;
+  else if (got == 0)
+    adj = 0-(tickets()>>3);
 
   adj_tickets(adj);
-  _last_rx = got;
 #endif
 
   reschedule();

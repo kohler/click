@@ -47,8 +47,7 @@ extern "C" {
 
 ToDevice::ToDevice()
   : _polling(0), _registered(0),
-    _dev_idle(0), _last_tx(0), _last_busy(0), 
-    _rejected(0), _hard_start(0)
+    _dev_idle(0), _rejected(0), _hard_start(0)
 {
   // no MOD_INC_USE_COUNT; rely on AnyDevice
   add_input();
@@ -104,7 +103,7 @@ ToDevice::initialize(ErrorHandler *errh)
   /* start out with max number of tickets */
   int max_tickets = ScheduleInfo::query(this, errh);
   set_max_tickets(max_tickets);
-  set_tickets(max_tickets);
+  set_tickets(ScheduleInfo::DEFAULT);
 #endif
   join_scheduler();
 
@@ -257,32 +256,15 @@ ToDevice::tx_intr()
 #endif
  
 #if CLICK_DEVICE_ADJUST_TICKETS
-  int base = tickets()/4;
-  if (base < 2) base = 2;
+  // simple additive increase multiplicative decrease scheme
   int adj = 0;
-
-  /* 
-   * didn't get much traffic and did not fill up the device, slow down.
-   */
-  if (!busy && sent < (OUTPUT_BATCH/4)) 
-    adj = -base;
-  /* 
-   * sent many packets, increase ticket.
-   */
-  else if (sent > (OUTPUT_BATCH/2)) 
-    adj = base * 2;
-  /*
-   * was able to send more packets than last time, and last time device wasn't
-   * busy, this means we are getting more packets from queue.
-   */
-  else if (sent > (OUTPUT_BATCH/4) && sent > _last_tx && !_last_busy)
-    adj = base;
-
+  if (sent >= INPUT_BATCH)
+    adj = sent;
+  else if (sent == 0)
+    adj = 0-(tickets()>>4);
   adj_tickets(adj);
 #endif
   
-  _last_tx = sent;
-  _last_busy = busy;
   reschedule();
 }
 

@@ -79,10 +79,6 @@ class PollDevice : public AnyDevice {
   bool _registered;
   bool _promisc;
 
-#if CLICK_DEVICE_ADJUST_TICKETS
-  unsigned int _last_rx;
-#endif
-
 };
 
 #endif 
