@@ -26,8 +26,6 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 
-static String counter_read_rate_handler(Element *, void *);
-
 Counter::Counter()
   : Element(1, 1), _count(0)
 {
@@ -42,29 +40,9 @@ Counter::~Counter()
 void
 Counter::reset()
 {
-  _count = 0;
+  _count = _byte_count = 0;
   _rate.initialize();
 }
-
-int
-Counter::configure(const Vector<String> &conf, ErrorHandler *errh) 
-{ 
-  _bytes = false;
-  String b = "PACKETS";
-  if (cp_va_parse(conf, this, errh, 
-		  cpOptional,
-	          cpString, "count bytes?", &b,
-		  0) < 0)
-    return -1;
-  if (b.upper() == "BYTES")
-    _bytes = true;
-  else if (b.upper() == "PACKETS")
-    _bytes = false;
-  else 
-    return errh->error("argument should be \"bytes\" or \"packets\"");
-  return 0;
-}
-
 
 int
 Counter::initialize(ErrorHandler *)
@@ -76,49 +54,26 @@ Counter::initialize(ErrorHandler *)
 Packet *
 Counter::simple_action(Packet *p)
 {
-  if (!_bytes) {
-    _count++;
-    _rate.update(1);
-  } else {
-    _count += p->length();
-    _rate.update(p->length());
-  }
-  return p;
-}
-
-/*
-void
-Counter::push(int, Packet *packet)
-{
   _count++;
+  _byte_count += p->length();
   _rate.update(1);
-  output(0).push(packet);
-}
-
-Packet *
-Counter::pull(int)
-{
-  Packet *p = input(0).pull();
-  if (p) {
-    _count++;
-    _rate.update(1);
-  }
   return p;
 }
-*/
 
-static String
-counter_read_count_handler(Element *e, void *)
+String
+Counter::read_handler(Element *e, void *thunk)
 {
   Counter *c = (Counter *)e;
-  return String(c->count()) + "\n";
-}
-
-static String
-counter_read_rate_handler(Element *e, void *)
-{
-  Counter *c = (Counter *)e;
-  return cp_unparse_real(c->rate()*c->rate_freq(), c->rate_scale()) + "\n";
+  switch ((int)thunk) {
+   case 0:
+    return String(c->_count) + "\n";
+   case 1:
+    return String(c->_byte_count) + "\n";
+   case 2:
+    return c->_rate.unparse() + "\n";
+   default:
+    return "<error>\n";
+  }
 }
 
 static int
@@ -132,8 +87,9 @@ counter_reset_write_handler(const String &, Element *e, void *, ErrorHandler *)
 void
 Counter::add_handlers()
 {
-  add_read_handler("count", counter_read_count_handler, 0);
-  add_read_handler("rate", counter_read_rate_handler, 0);
+  add_read_handler("count", read_handler, (void *)0);
+  add_read_handler("byte_count", read_handler, (void *)1);
+  add_read_handler("rate", read_handler, (void *)2);
   add_write_handler("reset", counter_reset_write_handler, 0);
 }
 
@@ -142,10 +98,37 @@ Counter::llrpc(unsigned command, void *data)
 {
   if (command == CLICK_LLRPC_GET_RATE) {
     unsigned d;
-    if (CLICK_LLRPC_GET_DATA(&d, data, sizeof(d)) < 0 || d)
+    if (CLICK_LLRPC_GET_DATA(&d, data, sizeof(d)) < 0 || d != 0)
       return -EINVAL;
-    unsigned r = (rate()*rate_freq()) >> rate_scale();
+    unsigned r = _rate.rate();
     return CLICK_LLRPC_PUT_DATA(data, &r, sizeof(r));
+
+  } else if (command == CLICK_LLRPC_GET_COUNT) {
+    unsigned d;
+    if (CLICK_LLRPC_GET_DATA(&d, data, sizeof(d)) < 0 || (d != 0 && d != 1))
+      return -EINVAL;
+    unsigned *what = (d == 0 ? &_count : &_byte_count);
+    return CLICK_LLRPC_PUT_DATA(data, what, sizeof(*what));
+    
+  } else if (command == CLICK_LLRPC_GET_COUNTS || command == CLICK_LLRPC_GET_COUNTS_RESET) {
+    click_llrpc_counts_st cs;
+    if (CLICK_LLRPC_GET_DATA(&cs, data, sizeof(cs)) < 0
+	|| cs.n >= CLICK_LLRPC_COUNTS_SIZE)
+      return -EINVAL;
+    for (unsigned i = 0; i < cs.n; i++) {
+      unsigned *what;
+      if (cs.v[i].key == 0)
+	what = &_count;
+      else if (cs.v[i].key == 1)
+	what = &_byte_count;
+      else
+	return -EINVAL;
+      cs.v[i].value = *what;
+      if (command == CLICK_LLRPC_GET_COUNTS_RESET)
+	*what = 0;
+    }
+    return CLICK_LLRPC_PUT_DATA(data, &cs, sizeof(cs));
+    
   } else
     return Element::llrpc(command, data);
 }
