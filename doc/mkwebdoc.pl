@@ -302,7 +302,7 @@ if ($NEWS) {
 
 # 7. install programming manual
 if ($PROGMAN) {
-    mysystem("cd click-$VERSION/doc && gmake click.html") if ($INSTALL);
+    mysystem("cd click-$VERSION/doc && gmake click.html") if ($INSTALL || !-r "click-$VERSION/doc/click.html");
 
     open(IN, "click-$VERSION/doc/click.html") || die "couldn't make click.html";
     open(OUT, ">$DOCDIR/progman.html") || die;
