@@ -31,7 +31,7 @@
 #include <click/llrpc.h>
 #include <limits.h>
 
-IPRewriter::_global_instance_counter = 0;
+int IPRewriter::_global_instance_counter = 0;
 
 IPRewriter::IPRewriter()
   : _tcp_map(0), _udp_map(0), _tcp_done(0), 
