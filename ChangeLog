@@ -1,3 +1,48 @@
+2002-03-06 Wednesday 21:17  Eddie Kohler <kohler@aciri.org>
+
+	* tools/click-install/: common.cc (1.2), click-install.cc (1.44):
+	unmount fix
+
+2002-03-06 Wednesday 21:11  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.178): include click-install if building a
+	bsdmodule
+
+2002-03-06 Wednesday 21:09  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.50), tools/click-install/Makefile.in (1.18),
+	tools/click-install/click-install.cc (1.43),
+	tools/click-install/click-uninstall.cc (1.19),
+	tools/click-install/common.cc (1.1), tools/click-install/common.hh
+	(1.1): modularize click-install and click-uninstall, prepare them
+	for bsdmodule
+
+2002-03-06 Wednesday 21:09  Eddie Kohler <kohler@aciri.org>
+
+	* tools/: click-fastclassifier/click-fastclassifier.cc (1.49),
+	lib/toolutils.cc (1.44), lib/toolutils.hh (1.31): add
+	shell_command_output_string
+
+2002-03-06 Wednesday 21:08  Eddie Kohler <kohler@aciri.org>
+
+	* etc/samplepackage/configure.in (1.6): adapt to Click
+	configuration changes
+
+2002-03-06 Wednesday 21:06  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.177): nitlets
+
+2002-03-06 Wednesday 21:06  Eddie Kohler <kohler@aciri.org>
+
+	* config-bsdmodule.h.in (1.6), config-linuxmodule.h.in (1.5),
+	pathvars.h.in (1.4): HAVE_BSDMODULE_DRIVER and
+	HAVE_LINUXMODULE_DRIVER moved to pathvars.h
+
+2002-03-06 Wednesday 21:06  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in (1.18): click-compile bug fix: compile
+	kernelversion.c with the C compiler
+
 2002-03-06 Wednesday 18:52  Eddie Kohler <kohler@aciri.org>
 
 	* bsdmodule/module.cc (1.6): declare click_add_element_type

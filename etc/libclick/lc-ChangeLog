@@ -1,3 +1,14 @@
+2002-03-06 Wednesday 21:06  Eddie Kohler <kohler@aciri.org>
+
+	* config-bsdmodule.h.in, config-linuxmodule.h.in, pathvars.h.in:
+	HAVE_BSDMODULE_DRIVER and HAVE_LINUXMODULE_DRIVER moved to
+	pathvars.h
+
+2002-03-06 Wednesday 21:06  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in: click-compile bug fix: compile kernelversion.c
+	with the C compiler
+
 2002-03-05 Tuesday 21:12  Eddie Kohler <kohler@aciri.org>
 
 	* click-compile.in, pathvars.h.in: FreeBSD kernel module build
