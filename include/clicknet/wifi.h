@@ -16,11 +16,11 @@
 #define WIFI_EXTRA_MAGIC  0x7492
 
 enum {
-  WIFI_EXTRA_TX                    = (1<<0),
-  WIFI_EXTRA_TX_FAIL               = (1<<1),
-  WIFI_EXTRA_TX_USED_ALT_RATE      = (1<<2),
-  WIFI_EXTRA_RX_ERR                = (1<<3),
-  WIFI_EXTRA_RX_MORE               = (1<<4),
+  WIFI_EXTRA_TX                    = (1<<0), /* packet transmission */
+  WIFI_EXTRA_TX_FAIL               = (1<<1), /* transmission failed */
+  WIFI_EXTRA_TX_USED_ALT_RATE      = (1<<2), /* used alternate bitrate */
+  WIFI_EXTRA_RX_ERR                = (1<<3), /* failed crc check */
+  WIFI_EXTRA_RX_MORE               = (1<<4), /* first part of a fragmented skb */
 };
 
 
@@ -35,9 +35,9 @@ struct click_wifi_extra {,
   u_int8_t power;
   u_int8_t pad;
 
-  u_int8_t rate;
+  u_int8_t rate;              /* bitrate in Mbps*2 */
   u_int8_t max_retries;
-  u_int8_t alt_rate; 
+  u_int8_t alt_rate;          /* if specifying alternate rate is supported */
   u_int8_t alt_max_retries;
 
   u_int8_t virt_col;
@@ -135,6 +135,11 @@ typedef u_int8_t *	wifi_mgt_beacon_t;
 #define	WIFI_CAPINFO_CF_POLLABLE	0x04
 #define	WIFI_CAPINFO_CF_POLLREQ		0x08
 #define	WIFI_CAPINFO_PRIVACY		0x10
+
+
+
+#define WIFI_MAX_RETRIES 11
+
 
 
 /*
