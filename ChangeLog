@@ -1,3 +1,7 @@
+2002-10-18 Friday 14:32  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/toipsumdump.cc (1.30): nitlet
+
 2002-10-17 Thursday 14:39  Eddie Kohler <kohler@icir.org>
 
 	* etc/samplepackage/Makefile.in (1.30): forgot
