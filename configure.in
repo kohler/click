@@ -112,7 +112,7 @@ dnl
 AC_ARG_ENABLE(userlevel, [  --enable-userlevel      enable user-level driver (on by default)], :, enable_userlevel=yes)
 AC_ARG_ENABLE(linuxmodule, [  --enable-linuxmodule    enable Linux kernel driver (on by default)], :, enable_linuxmodule=yes)
 
-AC_ARG_WITH(linux, [  --with-linux[=DIR]      compile Linux kernel module; Linux sources in DIR],
+AC_ARG_WITH(linux, [  --with-linux[=DIR]      Linux source code is in DIR (default /usr/src/linux)],
   [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
   linuxdir=NONE)
 
