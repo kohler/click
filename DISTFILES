@@ -314,6 +314,7 @@ iptable.hh
 lexer.hh
 llrpc.h
 master.hh
+nameinfo.hh
 notifier.hh
 package.hh
 packet.hh
@@ -389,6 +390,7 @@ ipflowid.cc
 iptable.cc
 lexer.cc
 master.cc
+nameinfo.cc
 notifier.cc
 packet.cc
 router.cc
