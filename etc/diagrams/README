@@ -1,0 +1,8 @@
+This directory contains the macros we use to generate diagrams for Click
+papers, and some example diagrams (in the samp*.mp files).
+
+You will need John Hobby's MetaPost, which is available from
+
+	http://cm.bell-labs.com/who/hobby/MetaPost.html
+
+Eddie Kohler wrote the macros and most of the diagrams in 1999-2000.

@@ -1,0 +1,37 @@
+\makeatletter
+
+\IfFileExists{./fonts.sty}{\input{./fonts.sty}}{%
+  \IfFileExists{../fonts.sty}{\input{../fonts.sty}}{%
+    \input{times.sty}%
+  }%
+}%
+\@ifundefined{elementdefault}{}{\long\global\edef\rmdefault{\elementdefault}}
+
+% for MetaPost
+
+\renewcommand{\v}[1]{\ifmmode\mathit{#1\strut}\else\textit{#1}\fi}
+
+\let\elementshape\itshape
+\newdimen\@elementQdp\setbox0\hbox{\elementshape Q}\@elementQdp=\dp0
+\def\element#1{{\setbox0\hbox{\elementshape #1\vphantom{Q}}%
+	\dimen0=\dp0\advance\dimen0 by-0.5\@elementQdp\dp0=\dimen0\box0}}%
+\def\belement#1{\textbf{\element{#1}}}%
+\newcommand{\elementlabel}[1]{\element{#1}}
+
+\newcommand{\melementlabel}[1]{{%
+  \elementshape
+  \begin{tabular}{@{}c@{}}%
+  #1
+  \end{tabular}%
+}}%
+\newcommand{\mlabel}[1]{{%
+  \begin{tabular}{@{}c@{}}%
+  #1
+  \end{tabular}%
+}}%
+\newcommand{\portlabel}[1]{\hbox{%
+  \tiny\sffamily\baselineskip6pt\begin{tabular}{@{}c@{}}#1\end{tabular}%
+}}%
+
+\makeatother
+\endinput
