@@ -1,3 +1,20 @@
+2004-09-16 Thursday 00:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromipsumdump.cc (1.70), fromtcpdump.cc
+	(1.10), ipsumdump_anno.cc (1.1), ipsumdump_ip.cc (1.1),
+	ipsumdump_tcp.cc (1.1), ipsumdumpinfo.cc (1.17), ipsumdumpinfo.hh
+	(1.12), toipflowdumps.cc (1.36), toipsumdump.cc (1.55),
+	toipsumdump.hh (1.47): refactor ToIPSummaryDump, to make it clearer
+	and cleaner to add new content types
+
+2004-09-16 Thursday 00:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/error.cc (1.51): change PrefixErrorHandler::decorate_text():
+	use prepend_lines on the text, rather than the special-purpose
+	"const String& prefix" argument.  Using that argument was,
+	apparently, always a bad idea.	The new plan makes "prefix"
+	obsolete; it will be removed soon.
+
 2004-09-15 Wednesday 20:30  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/khandlerproxy.cc (1.22): correct static_cast
