@@ -57,7 +57,7 @@ LookupGeographicGridRoute::configure(const Vector<String> &conf, ErrorHandler *e
   int res = cp_va_parse(conf, this, errh,
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
 			cpIPAddress, "source IP address", &_ipaddr,
-                        cpElement, "UpdadateGridRoutes element", &_rt,
+                        cpElement, "GridRouteTable element", &_rt,
 			0);
   return res;
 }
@@ -66,13 +66,13 @@ int
 LookupGeographicGridRoute::initialize(ErrorHandler *errh)
 {
 
-  if(_rt && _rt->cast("UpdateGridRoutes") == 0){
-    errh->warning("%s: UpdateGridRoutes argument %s has the wrong type",
+  if(_rt && _rt->cast("GridRouteTable") == 0){
+    errh->warning("%s: GridRouteTable argument %s has the wrong type",
                   id().cc(),
                   _rt->id().cc());
     _rt = 0;
   } else if (_rt == 0) {
-    errh->warning("%s: no UpdateGridRoutes element given",
+    errh->warning("%s: no GridRouteTable element given",
                   id().cc());
   }
 
@@ -188,19 +188,19 @@ LookupGeographicGridRoute::get_next_geographic_hop(IPAddress, grid_location dest
   IPAddress next_hop;
   double d = 0;
   bool found_one = false;
-  for (UpdateGridRoutes::FarTable::Iterator iter = _rt->_rtes.first(); iter; iter++) {
-    const UpdateGridRoutes::far_entry &fe = iter.value();
-    if (!fe.nbr.loc_good)
+  for (GridRouteTable::RTIter iter = _rt->_rtes.first(); iter; iter++) {
+    const GridRouteTable::RTEntry &rte = iter.value();
+    if (!rte.loc_good)
       continue; // negative err means don't believe info at all
-    double new_d = FilterByRange::calc_range(dest_loc, fe.nbr.loc);
+    double new_d = FilterByRange::calc_range(dest_loc, rte.loc);
     if (!found_one) {
       found_one = true;
       d = new_d;
-      next_hop = fe.nbr.next_hop_ip;
+      next_hop = rte.next_hop_ip;
     }
     else if (new_d < d) {
       d = new_d;
-      next_hop = fe.nbr.next_hop_ip;
+      next_hop = rte.next_hop_ip;
     }
   }
   if (!found_one)
@@ -218,12 +218,16 @@ LookupGeographicGridRoute::get_next_geographic_hop(IPAddress, grid_location dest
      backwards decision. -- decouto  */
 
   // find the MAC address
-  UpdateGridRoutes::NbrEntry *nent = _rt->_addresses.findp(next_hop);
+  GridRouteTable::RTEntry *nent = _rt->_rtes.findp(next_hop);
   if (nent == 0) {
-    click_chatter("%s: dude, MAC nbr table and routing table are not consistent (get_next_geographic_hop)", id().cc());
+    click_chatter("%s: dude, routing table is not consistent -- there is no entry for the next hop", id().cc());
     return false;
   }
-  *dest_eth = nent->eth;
+  if (nent->num_hops != 1) {
+    click_chatter("%s: dude, routing table is not consistent -- the next hop entry is not one hop away", id().cc());
+    return false;
+  }
+  *dest_eth = nent->next_hop_eth;
   return true;
 } 
 

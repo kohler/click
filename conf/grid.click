@@ -6,7 +6,7 @@ ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 li :: GridLocationInfo(POS_LAT, POS_LON);
 
 // protocol els
-nb :: UpdateGridRoutes(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, MAC_ADDR, GRID_IP, NUM_HOPS);
+nb :: GridRouteTable(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, MAC_ADDR, GRID_IP, NUM_HOPS);
 lr :: LookupLocalGridRoute(MAC_ADDR, GRID_IP, nb);
 geo :: LookupGeographicGridRoute(MAC_ADDR, GRID_IP, nb);
 fq :: FloodingLocQuerier(MAC_ADDR, GRID_IP);
@@ -45,7 +45,8 @@ to_linux :: EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> linux;
 
 grid_demux :: Classifier(15/GRID_NBR_ENCAP_PROTO,  // encapsulated packets 
 			 15/GRID_LOC_QUERY_PROTO,  // loc query packets
-			 15/GRID_LOC_REPLY_PROTO); // loc reply packets
+			 15/GRID_LOC_REPLY_PROTO,  // loc reply packets
+			 15/GRID_LR_HELLO_PROTO);  // route advertisement packets
 
 
 
@@ -53,7 +54,6 @@ grid_demux :: Classifier(15/GRID_NBR_ENCAP_PROTO,  // encapsulated packets
 from_wvlan -> Classifier(12/GRID_ETH_PROTO) 
   -> check_grid :: CheckGridHeader
   -> fr :: FilterByRange(RANGE, li) [0] 
-  -> [0] nb [0]
   -> grid_demux [0] 
   -> [0] lr [0] 
   -> to_wvlan;
@@ -66,6 +66,7 @@ repl_demux :: Classifier(62/GRID_HEX_IP, // loc reply for us
 
 grid_demux [1] -> query_demux;
 grid_demux [2] -> repl_demux;
+grid_demux [3] -> nb;
 
 repl_demux [0] -> [1] fq; // handle reply to our loc query
 repl_demux [1] -> PrintGrid(FWD_REPL) -> [0] lr; // forward query reply packets like encap packets
@@ -96,6 +97,6 @@ cl [0] -> to_linux;
 cl [1] -> GetIPAddress(16) -> [1] lr [1] -> check :: CheckIPHeader [0] -> to_linux;
 check [1] -> Discard;
 cl [2] -> SetIPAddress(GRID_GW) -> [1] lr; // for grid gateway
-nb [1] -> to_wvlan; // Routing hello packets
+nb [0] -> to_wvlan; // Routing hello packets
 
 // SendGridHello(HELLO_PERIOD, HELLO_JITTER, MAC_ADDR, GRID_IP) -> to_wvlan;

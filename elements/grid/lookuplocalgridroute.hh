@@ -31,7 +31,7 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
-#include "updateroutes.hh"
+#include "gridroutetable.hh"
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <click/task.hh>
@@ -61,7 +61,7 @@ private:
   bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const;
   void forward_grid_packet(Packet *packet, IPAddress dest_ip);
 
-  UpdateGridRoutes *_nbr;
+  GridRouteTable *_rtes;
   EtherAddress _ethaddr;
   IPAddress _ipaddr;
   Task _task;

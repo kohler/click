@@ -5,6 +5,11 @@
  * manpage info goes here
  */
 
+#include <click/bighashmap.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include "grid.hh"
+#include <click/timer.hh>
 
 class GridRouteTable : public Element {
 
@@ -22,7 +27,7 @@ public:
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
-  void push(Packet *);
+  Packet *simple_action(Packet *);
 
   void add_handlers();
   
@@ -48,8 +53,8 @@ public:
     int last_updated_jiffies; // last time this entry was updated
 
     RTEntry() : 
-      _init(false), dest_ip(0), next_hop_eth(0), num_hops(0), loc_good(false),
-      seq_no(0), ttl(0), last_updated_jiffies(-1) { }
+      _init(false), num_hops(0), loc_good(false), seq_no(0), ttl(0), 
+      last_updated_jiffies(-1) { }
     
     RTEntry(IPAddress _dest_ip, IPAddress _next_hop_ip, EtherAddress _next_hop_eth,
 	    unsigned char _num_hops, grid_location _loc, unsigned short _loc_err, 

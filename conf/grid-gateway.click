@@ -60,14 +60,14 @@ ip_cl :: Classifier(16/GW_HEX_IP, // ip for us as wired node
 to_ip_cl/out -> ip_cl;
 
 
-nb :: UpdateGridRoutes(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, GRID_MAC_ADDR, GRID_IP, NUM_HOPS);
+nb :: GridRouteTable(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, GRID_MAC_ADDR, GRID_IP, NUM_HOPS);
 lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
 geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
 
 grid_demux :: Classifier(15/GRID_NBR_ENCAP_PROTO,  // encapsulated packets 
 			 15/GRID_LOC_QUERY_PROTO,  // loc query packets
-			 15/GRID_LOC_REPLY_PROTO); // loc reply packets
-
+			 15/GRID_LOC_REPLY_PROTO, // loc reply packets
+			 15/GRID_LR_HELLO_PROTO);  // route advertisement packets
 
 lr [0] -> to_wvlan;
 lr [1] -> ip_cl; // decrement TTL on grid packets that we forward to wired net
@@ -107,7 +107,6 @@ wvlan_demux [0]
 -> HostEtherFilter(GRID_MAC_ADDR, true)
 -> check_grid :: CheckGridHeader [0]
 -> fr :: FilterByRange(RANGE, li) [0]
--> [0] nb [0]
 -> grid_demux [0]
 -> [0] lr;
 
@@ -123,6 +122,7 @@ reply_demux :: Classifier(62/GRID_HEX_IP, // loc reply for us
 
 grid_demux [1] -> PrintGrid(QUERY) -> query_demux;
 grid_demux [2] -> PrintGrid(REPLY) -> reply_demux; 
+grid_demux [3] -> [0] nb;
 
 reply_demux [0] -> PrintGrid(REPLY_FOR_US) -> [1] fq; // handle reply to our loc query
 reply_demux [1] -> [0] lr; // forward query reply packets like encap packets
@@ -153,9 +153,8 @@ gw_cl [1] -> SetIPAddress(GW_REAL_IP) -> [0] arpq; // ARP and send gateway traff
 from_tun1 -> ip_cl;
 from_tun2 -> ip_cl;
 
-nb [1] -> to_wvlan; // routing Hello packets
+nb [0] -> to_wvlan; // routing Hello packets
 
-// h :: SendGridHello(HELLO_PERIOD, HELLO_JITTER, GRID_MAC_ADDR, GRID_IP) -> to_wvlan;
 
 
 

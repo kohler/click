@@ -28,16 +28,11 @@
 #include <click/router.hh>
 #include <click/element.hh>
 #include <click/glue.hh>
-#include <click/bighashmap.hh>
-#include <click/etheraddress.hh>
-#include <click/ipaddress.hh>
-#include "grid.hh"
-#include <click/timer.hh>
 #include "gridroutetable.hh"
 
 
 GridRouteTable::GridRouteTable() : 
-  Element(1, 2), 
+  Element(1, 1), 
   _seq_no(0),
   _max_hops(3), 
   _expire_timer(expire_hook, this),
@@ -116,12 +111,12 @@ GridRouteTable::initialize(ErrorHandler *)
 }
 
 
-void
-GridRouteTable::push(Packet *packet)
+/*
+ * expects grid LR packets, with ethernet and grid hdrs
+ */
+Packet *
+GridRouteTable::simple_action(Packet *packet)
 {
-  /*
-   * expects grid LR packets, with ethernet and grid hdrs
-   */
   assert(packet);
   int jiff = click_jiffies();
 
@@ -132,14 +127,14 @@ GridRouteTable::push(Packet *packet)
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
     click_chatter("GridRouteTable %s: got non-Grid packet type", id().cc());
     packet->kill();
-    return;
+    return 0;
   }
   grid_hdr *gh = (grid_hdr *) (eh + 1);
 
   if (gh->type != grid_hdr::GRID_LR_HELLO) {
     click_chatter("GridRouteTable %s: received unknown Grid packet; ignoring it", id().cc());
     packet->kill();
-    return;
+    return 0;
   }
     
   IPAddress ipaddr((unsigned char *) &gh->tx_ip);
@@ -148,7 +143,7 @@ GridRouteTable::push(Packet *packet)
   if (ethaddr == _eth) {
     click_chatter("GridRouteTable %s: received own Grid packet; ignoring it", id().cc());
     packet->kill();
-    return;
+    return 0;
   }
   
   grid_hello *hlo = (grid_hello *) (gh + 1);
@@ -159,11 +154,11 @@ GridRouteTable::push(Packet *packet)
    * checking if entry already existed 
    */
   RTEntry *r = _rtes.findp(ipaddr);
-  if (r && r->num_hops == 1 && r->next_hop_eth != ethaddr)
-    click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", id().cc(), ipaddr.s().cc(), r->next_hop_eth.s().cc(), ethaddr.s().cc());
-  else 
+  if (!r)
     click_chatter("GridRouteTable %s: adding new 1-hop route %s -- %s", 
 		  id().cc(), ipaddr.s().cc(), ethaddr.s().cc()); 
+  else if (r->num_hops == 1 && r->next_hop_eth != ethaddr)
+    click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", id().cc(), ipaddr.s().cc(), r->next_hop_eth.s().cc(), ethaddr.s().cc());
   
   _rtes.insert(ipaddr, RTEntry(ipaddr, ethaddr, gh, hlo, jiff));
   
@@ -263,6 +258,7 @@ GridRouteTable::push(Packet *packet)
     send_routing_update(triggered_rtes, false); // XXX should seq_no get incremented?
 
   packet->kill();
+  return 0;
 }
 
 
@@ -448,7 +444,8 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rte_info,
    */
 
   int hdr_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
-  int num_rtes = (1500 - hdr_sz) / sizeof(grid_nbr_entry);
+  int max_rtes = (1500 - hdr_sz) / sizeof(grid_nbr_entry);
+  int num_rtes = (max_rtes < rte_info.size() ? max_rtes : rte_info.size()); // min
   int psz = hdr_sz + sizeof(grid_nbr_entry) * num_rtes;
   
   assert(psz <= 1500);
@@ -504,7 +501,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rte_info,
   for (int i = 0; i < num_rtes; i++, curr++) 
     rte_info[i].fill_in(curr);
     
-  output(1).push(p);
+  output(0).push(p);
 }
 
 

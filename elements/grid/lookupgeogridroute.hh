@@ -32,7 +32,7 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
-#include "updateroutes.hh"
+#include "gridroutetable.hh"
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <click/task.hh>
@@ -61,7 +61,7 @@ private:
 
   bool get_next_geographic_hop(IPAddress dest_ip, grid_location dest_loc, EtherAddress *dest_eth) const;
 
-  UpdateGridRoutes *_rt;
+  GridRouteTable *_rt;
   EtherAddress _ethaddr;
   IPAddress _ipaddr;
   Task _task;

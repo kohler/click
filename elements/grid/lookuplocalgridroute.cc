@@ -31,7 +31,7 @@
 #include <click/glue.hh>
 
 LookupLocalGridRoute::LookupLocalGridRoute()
-  : Element(2, 4), _nbr(0), _task(this)
+  : Element(2, 4), _rtes(0), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -56,7 +56,7 @@ LookupLocalGridRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
 			cpIPAddress, "source IP address", &_ipaddr,
-                        cpElement, "UpdateGridRoutes element", &_nbr,
+                        cpElement, "GridRouteTable element", &_rtes,
 			0);
   return res;
 }
@@ -65,13 +65,13 @@ int
 LookupLocalGridRoute::initialize(ErrorHandler *errh)
 {
 
-  if(_nbr && _nbr->cast("UpdateGridRoutes") == 0){
-    errh->warning("%s: UpdateGridRoutes argument %s has the wrong type",
+  if(_rtes && _rtes->cast("GridRouteTable") == 0){
+    errh->warning("%s: GridRouteTable argument %s has the wrong type",
                   id().cc(),
-                  _nbr->id().cc());
-    _nbr = 0;
-  } else if (_nbr == 0) {
-    errh->warning("%s: no UpdateGridRoutes element given",
+                  _rtes->id().cc());
+    _rtes = 0;
+  } else if (_rtes == 0) {
+    errh->warning("%s: no GridRouteTable element given",
                   id().cc());
   }
 
@@ -194,40 +194,23 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) co
 {
   assert(dest_eth != 0);
 
-  // is the destination an immediate nbr?
-  UpdateGridRoutes::NbrEntry *ne = _nbr->_addresses.findp(dest_ip);
-  if (ne != 0) {
-#if 0
-    click_chatter("%s: found immediate nbr %s for next hop for %s",
-                  id().cc(),
-                  ne->ip.s().cc(),
-                  dest_ip.s().cc());
-#endif
-    *dest_eth = ne->eth;
-    return true;
+  GridRouteTable::RTEntry *rte = _rtes->_rtes.findp(dest_ip);
+
+  /* did we have a route? */
+  if (rte == 0)
+    return false;
+
+  *dest_eth = rte->next_hop_eth;
+
+  /* sanity check routing table entries -- does entry's next_hop_eth
+     actually match the next hop's eth? */
+  GridRouteTable::RTEntry *nhr = _rtes->_rtes.findp(rte->next_hop_ip);
+  if (nhr == 0 || nhr->next_hop_eth != rte->next_hop_eth) {
+    click_chatter("LookupLocalGridRoute %s: route table inconsistency looking up route for %s", id().cc(), dest_ip.s().cc());
+    return false;
   }
-  if (ne == 0) {
-    // not an immediate nbr, search multihop nbrs
-    UpdateGridRoutes::far_entry *fe = _nbr->_rtes.findp(dest_ip);
-    if (fe != 0) {
-      // we know how to get to this dest, look up MAC addr for next hop
-      ne = _nbr->_addresses.findp(IPAddress(fe->nbr.next_hop_ip));
-      if (ne != 0) {
-	*dest_eth = ne->eth;
-#if 0
-	click_chatter("%s: trying to use next hop %s for %s",
-		      id().cc(),
-		      ne->ip.s().cc(),
-		      dest_ip.s().cc());
-#endif
-	return true;
-      }
-      else {
-	click_chatter("%s: dude, MAC nbr table and routing table are not consistent!", id().cc());
-      }
-    }
-  }
-  return false;
+  
+  return true;
 }
 
 
@@ -244,8 +227,8 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
    * to be setup before calling this function.  
    */
 
-  if (_nbr == 0) {
-    // no UpdateGridRoutes next-hop table in configuration
+  if (_rtes == 0) {
+    // no GridRouteTable next-hop table in configuration
     click_chatter("%s: can't forward packet for %s; there is no routing table, trying geographic forwarding", id().cc(), dest_ip.s().cc());
     output(2).push(packet);
     return;

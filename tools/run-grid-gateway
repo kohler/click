@@ -40,6 +40,7 @@ $GRID_ETH_PROTO = "7FFF";
 $GRID_NBR_ENCAP_PROTO = "03";
 $GRID_LOC_QUERY_PROTO = "04";
 $GRID_LOC_REPLY_PROTO = "05";
+$GRID_LR_HELLO_PROTO = "02";
 
 
 # gateway stuff...
@@ -411,6 +412,7 @@ while(<click_config_file>) {
     s/GRID_NBR_ENCAP_PROTO/$GRID_NBR_ENCAP_PROTO/;
     s/GRID_LOC_QUERY_PROTO/$GRID_LOC_QUERY_PROTO/;
     s/GRID_LOC_REPLY_PROTO/$GRID_LOC_REPLY_PROTO/;
+    s/GRID_LR_HELLO_PROTO/$GRID_LR_HELLO_PROTO/;
     s/GRID_GW/$grid_gw/;
     s/GRID_IP/$grid_addr/;
     s/GRID_HEX_IP/$grid_addr_hex/;
