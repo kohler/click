@@ -4,6 +4,8 @@
 // byte 0
 #define PAINT_ANNO(p)			((p)->user_anno_c(0))
 #define SET_PAINT_ANNO(p, v)		((p)->set_user_anno_c(0, (v)))
+#define PAINT_ANNO_OFFSET		0
+#define PAINT_ANNO_LENGTH		1
 
 // byte 1
 #define ICMP_PARAM_PROB_ANNO(p)		((p)->user_anno_c(1))
