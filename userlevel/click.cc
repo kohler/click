@@ -573,12 +573,12 @@ particular purpose.\n");
   if (report_time) {
     struct timeval diff;
     timersub(&after.ru_utime, &before.ru_utime, &diff);
-    printf("%ld.%03ldu", diff.tv_sec, (diff.tv_usec+500)/1000);
+    printf("%ld.%03ldu", (long) diff.tv_sec, (long) (diff.tv_usec+500)/1000);
     timersub(&after.ru_stime, &before.ru_stime, &diff);
-    printf(" %ld.%03lds", diff.tv_sec, (diff.tv_usec+500)/1000);
+    printf(" %ld.%03lds", (long) diff.tv_sec, (long) (diff.tv_usec+500)/1000);
     timersub(&after_time, &before_time, &diff);
-    printf(" %ld:%02ld.%02ld", diff.tv_sec/60, diff.tv_sec%60,
-	   (diff.tv_usec+5000)/10000);
+    printf(" %ld:%02ld.%02ld", (long) diff.tv_sec/60, (long) diff.tv_sec%60,
+	   (long) (diff.tv_usec+5000)/10000);
     printf("\n");
   }
   
