@@ -56,7 +56,6 @@ CheckIP6Header::configure(const Vector<String> &conf, ErrorHandler *errh)
   
   if (conf.size() > 1)
     return errh->error("too many arguments to `CheckIP6Header([ADDRS])'");
-  click_chatter("***************configure 1*************"); 
  
  Vector<String> ips; 
  ips.push_back("0::0"); //bad IP6 address "0::0"
@@ -66,10 +65,9 @@ CheckIP6Header::configure(const Vector<String> &conf, ErrorHandler *errh)
     String s = conf[0];
     IP6Address a;
     while (s) {
-      errh->error(s);
-      if (!cp_ip6_address(s, (unsigned char *)&a, &s))
-	{ errh->error(a.s());
-	  return errh->error("expects IP6ADDRESS -a ");}
+      if (!cp_ip6_address(s, (unsigned char *)&a, &s)) { 
+	  return errh->error("expects IP6ADDRESS -a ");
+	}
       click_chatter(a.s());
       cp_eat_space(s);
       for (int j = 0; j < ips.size(); j++) {
@@ -89,25 +87,7 @@ CheckIP6Header::configure(const Vector<String> &conf, ErrorHandler *errh)
     _bad_src[i]= IP6Address(ips[i]);
   }
 
-//  if (conf.size()) {
-//      String s = conf[0];
-//      IP6Address a;    
-//      int i=0;
-//      while (s) {
-//         if (!cp_ip6_address(s, (unsigned char *)&a, &s))
-//  	return errh->error("expects IP6ADDRESS -b");
-//        cp_eat_space(s);
-//        for (int j = 0; j < i; j++)
-//  	if (_bad_src[j] == a)
-//  	  goto repeat2;
-//        _bad_src[i]=a;
-//        i++;
-//      repeat2: ;
-//      } 
-// }
-
- click_chatter("\n ########## CheckIP6Header conf successful ! \n"); 
- return 0;
+  return 0;
 }
 
 void 
@@ -117,88 +97,65 @@ CheckIP6Header::drop_it(Packet *p)
     click_chatter("IP checksum failed");
   _drops++;
   
-  if (noutputs() == 2)
-    {
+  if (noutputs() == 2) {
       output(1).push(p);
       click_chatter("noutputs()=2");
-    }
-    
-  else
-    { 
+  }
+  else { 
       p->kill();
     click_chatter("killed");
-    }
+  }
+
 }
 
 Packet *
 CheckIP6Header::simple_action(Packet *p)
 {
-  //click_chatter("CheckIP6Header::smaction ");
-  const click_ip6 *ip = (const click_ip6 *) p->data();
- 
-  
-  const click_ip6 *ip66;
+  const click_ip6 *ip = reinterpret_cast <const click_ip6 *>( p->data());
+  //const click_ip6 *ip66;
   struct IP6Address src;
   //unsigned hlen;
   
 //check if the packet is bigger than ip6 header
   click_chatter("\n length: %x \n", p->length());
-  if(p->length() < sizeof(click_ip6))        
-    {
+  if(p->length() < sizeof(click_ip6))  {
       click_chatter(" length is not right");
     goto bad;
-    }
+  }
   
 //check version
   click_chatter("\n version: %x \n", ip->ip6_v);
-  if(ip->ip6_v != 6)
-    {
+  if(ip->ip6_v != 6) {
     click_chatter("NOT VERSION 6");
     goto bad;
-    }
+  }
 
 //check if the PayloadLength field is valid
    click_chatter("\n payload length: %x \n", ip->ip6_plen);
    if(ntohs(ip->ip6_plen) < (p->length()-40))
     goto bad;
 
-  
- 
   /*
    * RFC1812 5.3.7 and 4.2.2.11: discard illegal source addresses.
    * Configuration string should have listed all subnet
    * broadcast addresses known to this router.
    */
-   // src = ip->ip6_src.s_addr;
-   
    src=ip->ip6_src;
-   //click_chatter("\n source of the packet: ");
-   //(ip->ip6_src).print();
-   for(int i = 0; i < _n_bad_src; i++)
-     {
-       //click_chatter("\n************bad src %d \n", i);
-       //_bad_src[i].print();
-     if(src == _bad_src[i])
-       {
-	 click_chatter("\n***************bad src found*********************\n");
+   for(int i = 0; i < _n_bad_src; i++) {  
+     if(src == _bad_src[i]) {
        goto bad;
-       }
      }
+   }
+
   /*
    * RFC1812 4.2.3.1: discard illegal destinations.
    * We now do this in the IP routing table.
    */
-   //click_chatter("before setip6 header");
   p->set_ip6_header(ip);
-  click_chatter("\n ######### In CheckIP6Header: set ip6 header \n");
-  //p = p->uniqueify();
-  ip66 = p->ip6_header();
-  //(ip66->ip6_src).print();
-  //(ip66->ip6_dst).print();
-  click_chatter(" \n hop limit is : %x \n", ip66->ip6_hlim);
+  //ip66 = p->ip6_header();
+  //click_chatter(" \n hop limit is : %x \n", ip66->ip6_hlim);
   return(p);
   
-
  bad:
   drop_it(p);
   return 0;

@@ -53,24 +53,20 @@ int
 CheckIP6Header2::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   
-  //click_chatter("***************configure 1*************");
-  
   if (conf.size() > 1)
     return errh->error("too many arguments to `CheckIP6Header([ADDRS])'");
-  click_chatter("***************configure 2*************");
   
- Vector<String> ips; 
- ips.push_back("0::0"); //bad IP6 address "0::0"
- ips.push_back("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"); //another bad IP6 address
+  Vector<String> ips; 
+  ips.push_back("0::0"); //bad IP6 address "0::0"
+  ips.push_back("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"); //another bad IP6 address
 
   if (conf.size()) {
     String s = conf[0];
     IP6Address a;
     while (s) {
-      errh->error(s);
-      if (!cp_ip6_address(s, (unsigned char *)&a, &s))
-	{ errh->error(a.s());
-	  return errh->error("expects IP6ADDRESS -a ");}
+      if (!cp_ip6_address(s, (unsigned char *)&a, &s)) { 
+	  return errh->error("expects IP6ADDRESS -a ");
+	}
       click_chatter(a.s());
       cp_eat_space(s);
       for (int j = 0; j < ips.size(); j++){
@@ -84,50 +80,22 @@ CheckIP6Header2::configure(const Vector<String> &conf, ErrorHandler *errh)
   }
   
   _n_bad_src = ips.size();
-  //_bad_src = new u_int [_n_bad_src];
   _bad_src = new IP6Address [_n_bad_src];
   
  for (int i = 0; i<_n_bad_src; i++) {
     _bad_src[i]= IP6Address(ips[i]);
   }
 
-//  if (conf.size()) {
-//      String s = conf[0];
-//      IP6Address a;    
-//      int i=0;
-//      while (s) {
-//         if (!cp_ip6_address(s, (unsigned char *)&a, &s))
-//  	return errh->error("expects IP6ADDRESS -b");
-//        cp_eat_space(s);
-//        for (int j = 0; j < i; j++)
-//  	if (_bad_src[j] == a)
-//  	  goto repeat2;
-//        _bad_src[i]=a;
-//        i++;
-//      repeat2: ;
-//      }
-//    }
-
- click_chatter("\n ########## CheckIP6Header conf successful ! \n"); 
  return 0;
 }
 
 inline Packet *
 CheckIP6Header2::smaction(Packet *p)
 {
-  //click_chatter("CheckIP6Header::smaction ");
   const click_ip6 *ip = reinterpret_cast<const click_ip6 *>(p->data());
- //   (ip->ip6_src).swap();  
-//    (ip->ip6_dst).swap();
-  //    unsigned char p1, p2;
-//      p1=(ip->ip6_plen & 0xff);
-//      p2=(ip->ip6_plen >>8 ) & 0xff;
-//      ip->ip6_plen =(p1 << 8) + p2;
   
   const click_ip6 *ip66;
-//unsigned int src;
   struct IP6Address src;
-  //unsigned hlen;
   
 //check if the packet is bigger than ip6 header
   click_chatter("\n length: %x \n", p->length());
@@ -160,19 +128,12 @@ CheckIP6Header2::smaction(Packet *p)
    // src = ip->ip6_src.s_addr;
    
    src=ip->ip6_src;
-   //src.swap();
-   //click_chatter("\n source of the packet: ");
-   //(ip->ip6_src).print();
-   for(int i = 0; i < _n_bad_src; i++)
-     {
-       //click_chatter("\n************bad src %d \n", i);
-       //_bad_src[i].print();
-     if(src == _bad_src[i])
-       {
-	 click_chatter("\n***************bad src found*********************\n");
+   for(int i = 0; i < _n_bad_src; i++) {
+     if(src == _bad_src[i]) {
        goto bad;
-       }
      }
+   }
+
   /*
    * RFC1812 4.2.3.1: discard illegal destinations.
    * We now do this in the IP routing table.
@@ -182,8 +143,6 @@ CheckIP6Header2::smaction(Packet *p)
   click_chatter("\n ######### In CheckIP6Header: set ip6 header \n");
   //p = p->uniqueify();
   ip66 = p->ip6_header();
-  //(ip66->ip6_src).print();
-  //(ip66->ip6_dst).print();
   click_chatter(" \n hop limit is : %x \n", ip66->ip6_hlim);
   return(p);
   
@@ -193,19 +152,14 @@ CheckIP6Header2::smaction(Packet *p)
     click_chatter("IP checksum failed");
   _drops++;
   
-  if (noutputs() == 2)
-    {
+  if (noutputs() == 2) {
       output(1).push(p);
       click_chatter("noutputs()=2");
-    }
-    
-  else
-    { 
+  }
+  else { 
       p->kill();
     click_chatter("killed");
-    }
-    
-  
+  } 
   return 0;
 }
 

@@ -977,8 +977,9 @@ cp_ip6_address(const String &str, IP6Address &address, String *rest = 0)
 #endif
 
 #if 0
+//peilei
 bool
-cp_ip6_address(String str, unsigned char *return_value, String *rest = 0)
+cp_ip6_address(const String &str, unsigned char *return_value, String *rest = 0)
 {
   int i = 0;
   const char *s = str.cc();
@@ -988,10 +989,10 @@ cp_ip6_address(String str, unsigned char *return_value, String *rest = 0)
   int k1=0;
   int k2=0;
   
+  //check if double colon appears at the beginning of the string
    if (s[0]==':' && s[1]==':'){
 	i=i+2;
 	k1=0;
-	//click_chatter(":: found!");
       }
    else {
      while (d1<8) {
@@ -1000,13 +1001,11 @@ cp_ip6_address(String str, unsigned char *return_value, String *rest = 0)
       if ((end - s == i && s[i]!=':')|| value < 0 || value > 0xffff)
 	{ return false;}
       if (s[i]==':') {
-	//click_chatter("double colon found b\n");
 	i++;
 	break;}
       if (d1 != 7 && (end[0] != ':' || (!isxdigit(end[1]) && end[1]!=':'))) 
 	return false;
       
-      //click_chatter("In first loop: %4x\n", value);
       return_value[2*d1+1] = value & 0xff;
       return_value[2*d1] = (value >> 8) & 0xff;
       i = (end - s) + 1;
@@ -1014,29 +1013,26 @@ cp_ip6_address(String str, unsigned char *return_value, String *rest = 0)
      }
      k1=d1+1;
    }
-   // printf("finish first loop.\n");
   
-  if (k1!=9) {
+   //if the string does have the double colon, then, we have to check
+   //the value after double colon, and fill "0" for those that double
+   //colon ommits.
+   if (k1!=9) {
     unsigned char return_value2[16];
     while (d2<8) {
       char *end;
-      //click_chatter("string: %s", s+i);
       int value = strtol(s + i, &end, 16);
-      //click_chatter("second loop: before all if\n");
-      //click_chatter("value is : %x", value);
       if (end - s == i || value < 0 || value > 0xffff)
-	{ //click_chatter("second loop: if 1\n");
+	{ 
 	  return false;}
       if (d2 != 7 && ((end[0] != ':' && end[0]!='\0' && !isspace(end[0])) || (!isxdigit(end[1]) && end[0]!='\0' && !isspace(end[0]))))
-	{ //click_chatter("second loop: if 2\n");
-	return false; }
+	{ 
+	  return false; }
     
-      //click_chatter("blabla %4x\n", value);
       return_value2[(2*d2)+1] = value & 0xff;
       return_value2[(2*d2)] = (value >> 8) & 0xff;
       i = (end - s) + 1;
       d2++;
-      //printf("d2 is %x\n", d2);
       
       if (end[0] == '\0' || isspace(end[0]))
 	break;
@@ -1045,26 +1041,19 @@ cp_ip6_address(String str, unsigned char *return_value, String *rest = 0)
     
     for (int j= k1; j<8-k2; j++) {
         return_value[2*j+1] = 0;
-	//printf("3rd loop: assign 0 -a\n");
 	return_value[2*j] = 0;
-	//printf("3rd loop: assign 0 -b\n");
       }
     for (int j=(8-k2); j<(8); j++) {
 	return_value[2*j+1] = return_value2[2*(j-(8-k2))+1];
 	return_value[2*j] = return_value2[2*(j-(8-k2))];
       }
-    
-  }
+  } 
 
-  //click_chatter("%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x \n", return_value[0], return_value[1], return_value[2], return_value[3], return_value[4], return_value[5], return_value[6], return_value[7], return_value[8], return_value[9], return_value[10], return_value[11], return_value[12], return_value[13], return_value[14], return_value[15]); 
-
- 
   if (!rest && i<len)
     return false;
   else {
   if (rest) {
     *rest = str.substring(i-1);
-    //click_chatter("here we finish cp_ip6_address(...) and get good result. -a \n");
    }
   return true;
   }
@@ -1104,6 +1093,7 @@ cp_ethernet_address(const String &str, unsigned char *return_value,
     return true;
   }
 }
+
 
 #ifndef CLICK_TOOL
 bool
@@ -1490,20 +1480,13 @@ cp_va_parsev(const Vector<String> &args,
      }
      
       case cpIP6Address: {
-      //printf("&&&&&&&&&&&&&& case cpIP6Address &&&&&&&&&&&&&&& \n");
-      //printf("here is val %s \n", val);
       const char *desc = va_arg(val, const char *);
-      //printf("here is desc %s \n", desc);
-       v.store = va_arg(val, unsigned char *);
-       //printf("here is v.store %s \n", v.store);  
-       if (skip) break;
-       //printf("here is args[argno] %x \n", *args[argno]);
-       //if (!cp_ip6_address(args[argno], (unsigned  char *)v.v.address, &args[argno]))
-       if (!cp_ip6_address(args[argno], (unsigned char *)v.v.address))
-	 errh->error("argument %d should be %s (IP6 address)", argno+1, desc);
-       else
-	 //click_chatter("cp ip6 ok");
-       break;
+      v.store = va_arg(val, unsigned char *);  
+      if (skip) break;
+      if (!cp_ip6_address(args[argno], (unsigned char *)v.v.address))
+	errh->error("argument %d should be %s (IP6 address)", argno+1, desc);
+      else
+	break;
      }
 
      case cpEthernetAddress: {
