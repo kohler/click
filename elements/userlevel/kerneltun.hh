@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
-#ifndef CLICK_KERNELTAP_HH
-#define CLICK_KERNELTAP_HH
+#ifndef CLICK_KERNELTUN_HH
+#define CLICK_KERNELTUN_HH
 #include <click/element.hh>
 #include <click/ipaddress.hh>
 #include <click/task.hh>
@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
  * =c
  *
- * KernelTap(ADDR/MASK [, GATEWAY, HEADROOM] [, KEYWORDS])
+ * KernelTun(ADDR/MASK [, GATEWAY, HEADROOM] [, KEYWORDS])
  *
  * =s devices
  *
@@ -19,20 +19,20 @@ CLICK_DECLS
  *
  * Reads packets from and writes packets to a /dev/tun* or /dev/tap* device.
  * This allows a user-level Click to hand packets to the ordinary kernel IP
- * processing code. KernelTap will also transfer packets from the kernel IP
+ * processing code. KernelTun will also transfer packets from the kernel IP
  * code if the kernel routing table has entries pointing at the device.
  *
- * Much like ToLinux, KernelTap produces and expects Ethernet packets, but the
+ * Much like ToLinux, KernelTun produces and expects Ethernet packets, but the
  * Ethernet source and destination addresses are meaningless; only the
  * protocol usually matters.
  *
- * KernelTap allocates a /dev/tun* or tap* device (this might fail) and runs
+ * KernelTun allocates a /dev/tun* or tap* device (this might fail) and runs
  * ifconfig(8) to set the interface's local (i.e., kernel) address to ADDR and
  * the netmask to MASK. If a nonzero GATEWAY IP address (which must be on the
- * same network as the tun) is specified, then KernelTap tries to set up a
+ * same network as the tun) is specified, then KernelTun tries to set up a
  * default route through that host.
  *
- * When cleaning up, KernelTap attempts to bring down the device via
+ * When cleaning up, KernelTun attempts to bring down the device via
  * ifconfig(8).
  *
  * HEADROOM is the number of bytes left empty before the packet data (to leave
@@ -60,15 +60,15 @@ CLICK_DECLS
  * =a
  * ToLinux, ifconfig(8) */
 
-class KernelTap : public Element { public:
+class KernelTun : public Element { public:
   
-    KernelTap();
-    ~KernelTap();
+    KernelTun();
+    ~KernelTun();
   
-    const char *class_name() const	{ return "KernelTap"; }
+    const char *class_name() const	{ return "KernelTun"; }
     const char *processing() const	{ return "a/h"; }
     const char *flow_code() const	{ return "x/y"; }
-    KernelTap *clone() const;
+    KernelTun *clone() const;
     const char *flags() const		{ return "S3"; }
   
     int configure(Vector<String> &, ErrorHandler *);

@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * kerneltap.{cc,hh} -- element accesses network via /dev/tun device
+ * kerneltun.{cc,hh} -- element accesses network via /dev/tun device
  * Robert Morris, Douglas S. J. De Couto, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -17,7 +17,7 @@
  */
 
 #include <click/config.h>
-#include "kerneltap.hh"
+#include "kerneltun.hh"
 #include <click/error.hh>
 #include <click/bitvector.hh>
 #include <click/confparse.hh>
@@ -39,26 +39,26 @@
 #endif
 CLICK_DECLS
 
-KernelTap::KernelTap()
+KernelTun::KernelTun()
   : Element(1, 1), _fd(-1), _task(this),
     _ignore_q_errs(false), _printed_write_err(false), _printed_read_err(false)
 {
   MOD_INC_USE_COUNT;
 }
 
-KernelTap::~KernelTap()
+KernelTun::~KernelTun()
 {
   MOD_DEC_USE_COUNT;
 }
 
-KernelTap *
-KernelTap::clone() const
+KernelTun *
+KernelTun::clone() const
 {
-  return new KernelTap();
+  return new KernelTun();
 }
 
 int
-KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
+KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _gw = IPAddress();
   _headroom = 0;
@@ -87,7 +87,7 @@ KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
 
 #if defined(__linux__) && defined(HAVE_LINUX_IF_TUN_H)
 int
-KernelTap::try_linux_universal(ErrorHandler *errh)
+KernelTun::try_linux_universal(ErrorHandler *errh)
 {
     int fd = open("/dev/net/tun", O_RDWR | O_NONBLOCK);
     if (fd < 0)
@@ -111,7 +111,7 @@ KernelTap::try_linux_universal(ErrorHandler *errh)
 #endif
 
 int
-KernelTap::try_tun(const String &dev_name, ErrorHandler *)
+KernelTun::try_tun(const String &dev_name, ErrorHandler *)
 {
     String filename = "/dev/" + dev_name;
     int fd = open(filename.cc(), O_RDWR | O_NONBLOCK);
@@ -130,10 +130,10 @@ KernelTap::try_tun(const String &dev_name, ErrorHandler *)
  * On success, _dev_name, _type, and _fd are valid.
  */
 int
-KernelTap::alloc_tun(ErrorHandler *errh)
+KernelTun::alloc_tun(ErrorHandler *errh)
 {
 #if !(defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__))
-    return errh->error("KernelTap is not yet supported on this system.\n(Please report this message to click@pdos.lcs.mit.edu.)");
+    return errh->error("KernelTun is not yet supported on this system.\n(Please report this message to click@pdos.lcs.mit.edu.)");
 #endif
 
     int error, saved_error = 0;
@@ -173,7 +173,7 @@ KernelTap::alloc_tun(ErrorHandler *errh)
 }
 
 int
-KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *errh)
+KernelTun::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *errh)
 {
     char tmp[512], tmp0[64], tmp1[64];
 
@@ -236,7 +236,7 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
 }
 
 void
-KernelTap::dealloc_tun()
+KernelTun::dealloc_tun()
 {
     String cmd = "/sbin/ifconfig " + _dev_name + " down";
     if (system(cmd.cc()) != 0) 
@@ -244,7 +244,7 @@ KernelTap::dealloc_tun()
 }
 
 int
-KernelTap::initialize(ErrorHandler *errh)
+KernelTun::initialize(ErrorHandler *errh)
 {
     if (alloc_tun(errh) < 0)
 	return -1;
@@ -257,7 +257,7 @@ KernelTap::initialize(ErrorHandler *errh)
 }
 
 void
-KernelTap::cleanup(CleanupStage)
+KernelTun::cleanup(CleanupStage)
 {
     if (_fd >= 0) {
 	close(_fd);
@@ -268,7 +268,7 @@ KernelTap::cleanup(CleanupStage)
 }
 
 void
-KernelTap::selected(int fd)
+KernelTun::selected(int fd)
 {
 #if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__linux__) || defined(__APPLE__)
     int cc;
@@ -292,7 +292,7 @@ KernelTap::selected(int fd)
 	} else if(af == AF_INET6){
 	    e->ether_type = htons(ETHERTYPE_IP6);
 	} else {
-	    click_chatter("KernelTap: don't know af %d", af);
+	    click_chatter("KernelTun: don't know af %d", af);
 	    p->kill();
 	    return;
 	}
@@ -317,14 +317,14 @@ KernelTap::selected(int fd)
     } else {
 	if (!_ignore_q_errs || !_printed_read_err || (errno != ENOBUFS)) {
 	    _printed_read_err = true;
-	    perror("KernelTap read");
+	    perror("KernelTun read");
 	}
     }
 #endif
 }
 
 void
-KernelTap::run_scheduled()
+KernelTun::run_scheduled()
 {
   if (Packet *p = input(0).pull()) {
     push(0, p); 
@@ -333,14 +333,14 @@ KernelTap::run_scheduled()
 }
 
 void
-KernelTap::push(int, Packet *p)
+KernelTun::push(int, Packet *p)
 {
     // Every packet has a 14-byte Ethernet header.
     // Extract the packet type, then ignore the Ether header.
 
     click_ether *e = (click_ether *) p->data();
     if(p->length() < sizeof(*e)){
-	click_chatter("KernelTap: packet to small");
+	click_chatter("KernelTun: packet to small");
 	p->kill();
 	return;
     }
@@ -359,13 +359,13 @@ KernelTap::push(int, Packet *p)
     } else if(type == ETHERTYPE_IP6){
 	af = AF_INET6;
     } else {
-	click_chatter("KernelTap: unknown ether type %04x", type);
+	click_chatter("KernelTun: unknown ether type %04x", type);
 	p->kill();
 	return;
     }
 
     if(length+4 >= sizeof(big)){
-	click_chatter("KernelTap: packet too big (%d bytes)", length);
+	click_chatter("KernelTun: packet too big (%d bytes)", length);
 	p->kill();
 	return;
     }
@@ -408,22 +408,22 @@ KernelTap::push(int, Packet *p)
     if (num_written != num_expected_written &&
 	(!_ignore_q_errs || !_printed_write_err || (errno != ENOBUFS))) {
 	_printed_write_err = true;
-	perror("KernelTap write");
+	perror("KernelTun write");
     }
 
     p->kill();
 }
 
 String
-KernelTap::print_dev_name(Element *e, void *) 
+KernelTun::print_dev_name(Element *e, void *) 
 {
-  KernelTap *kt = (KernelTap *) e;
+  KernelTun *kt = (KernelTun *) e;
   return kt->_dev_name;
 }
 
 
 void
-KernelTap::add_handlers()
+KernelTun::add_handlers()
 {
   if (input_is_pull(0))
     add_task_handlers(&_task);
@@ -432,5 +432,5 @@ KernelTap::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel false)
-EXPORT_ELEMENT(KernelTap)
+ELEMENT_REQUIRES(userlevel)
+EXPORT_ELEMENT(KernelTun)
