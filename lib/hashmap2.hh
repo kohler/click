@@ -8,6 +8,7 @@
 //  * int K::hashcode() const
 //  * K & K::operator=(const K &)
 //  * V & V::operator=(const V &)
+//  *     V::V()
 //
 // - offers insert, find, findp, erase, each, and eachp table operations
 // - offers set_hashsize operation that changes the size of the hash space
@@ -16,7 +17,6 @@
 
 template <class K, class V>
 class HashMap2 {
-  /* TODO - add memory pool */
   
   struct HashMap2Elt { 
     K k; 
