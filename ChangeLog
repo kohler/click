@@ -1,3 +1,18 @@
+2001-07-19 Thursday 17:50  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* elements/app/ftpportmapper.cc (1.16), elements/standard/print.cc
+	(1.19), lib/confparse.cc (1.77), lib/ip6address.cc (1.24),
+	lib/ipaddress.cc (1.23), lib/straccum.cc (1.18), lib/string.cc
+	(1.29): Use the return value of sprintf rather than %n because it's
+	more portable.	Also make better use of CLICK_USERLEVEL (as opposed
+	to !CLICK_LINUXMODULE) where we really just want something in
+	user-space only.
+
+2001-07-19 Thursday 17:48  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* lib/radix.cc (1.11): Don't include stdio.h since it's harmful in
+	a BSD kernel.
+
 2001-07-18 Wednesday 13:16  Eddie Kohler <kohler@aciri.org>
 
 	* apps/ClickController/: ClickController.java (1.11),
