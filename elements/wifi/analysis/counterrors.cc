@@ -69,8 +69,11 @@ CountErrors::push (int port, Packet *p_in)
   int ok_bytes = 0;
 
   StringAccum sa;
-  sa << "[";
+  sa << " [\n";
   for (unsigned int x = 0; x < _length; x++) {
+    if (x > 11 && x < 23) {
+      continue;
+    }
     if (x == 23 || x == 24) {
       /* 802.11 sequence bytes */
       continue;
@@ -84,7 +87,7 @@ CountErrors::push (int port, Packet *p_in)
     }
     if (error) {
       if (!bad && ok) {
-	sa << " ok " << ok;
+	sa << " ok " << ok << "\n";;
       }
 
       bad++;
@@ -95,7 +98,7 @@ CountErrors::push (int port, Packet *p_in)
     } else {
       ok_bytes++;
       if (bad && !ok) {
-	sa << " bad " << bad;
+	sa << " bad " << bad << "\n";
 	bad_runs++;
       }
 
@@ -107,11 +110,11 @@ CountErrors::push (int port, Packet *p_in)
 
 
   if (ok) {
-    sa << " ok " << ok;
+    sa << " ok " << ok << "\n";
   }
   
   if (bad) {
-    sa << " bad " << bad;
+    sa << " bad " << bad << "\n";
     bad_runs++;
   }
 

@@ -49,6 +49,7 @@ class CountErrors : public Element { public:
 
   int _ok_bytes;
   int _error_bytes;
+  int _correct_threshold;
 };
 
 CLICK_ENDDECLS

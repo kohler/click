@@ -61,11 +61,13 @@ WifiDecap::simple_action(Packet *p)
 
 
   if (p->length() < sizeof(struct click_wifi)) {
-    click_chatter("%{element}: packet too small: %d vs %d\n",
-		  this,
-		  p->length(),
-		  sizeof(struct click_wifi));
-
+    if (0) {
+      click_chatter("%{element}: packet too small: %d vs %d\n",
+		    this,
+		    p->length(),
+		    sizeof(struct click_wifi));
+    }
+      
     p->kill();
     return 0;
 	      

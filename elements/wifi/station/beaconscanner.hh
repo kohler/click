@@ -2,6 +2,7 @@
 #define CLICK_BEACONSCANNER_HH
 #include <click/element.hh>
 #include <clicknet/ether.h>
+#include <click/etheraddress.hh>
 CLICK_DECLS
 
 /*

@@ -65,11 +65,11 @@ WifiEncap::simple_action(Packet *p)
   uint16_t ethtype;
 
 
-  if (p->length() < sizeof(struct click_wifi)) {
+  if (p->length() < sizeof(struct click_ether)) {
     click_chatter("%{element}: packet too small: %d vs %d\n",
 		  this,
 		  p->length(),
-		  sizeof(struct click_wifi));
+		  sizeof(struct click_ether));
 
     p->kill();
     return 0;
