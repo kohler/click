@@ -1,3 +1,8 @@
+2001-12-14 Friday 11:47  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ip/radixiplookup.hh (1.2): fix braindead bug:
+	radixiplookup should be a subclass of iproutetable
+
 2001-12-13 Thursday 14:35  Eddie Kohler <kohler@aciri.org>
 
 	* elements/bsdmodule/: polldevice.cc (1.6), polldevice.hh (1.3):
