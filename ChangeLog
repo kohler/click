@@ -1,3 +1,19 @@
+2001-12-09 Sunday 18:29  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.45): put e1000 driver in DISTFILES
+
+2001-12-09 Sunday 18:27  Eddie Kohler <kohler@aciri.org>
+
+	* tools/e1000/: LICENSE (1.3), Makefile (1.7), Makefile.orig (1.3),
+	README (1.3), README-rtm (1.3), ans.c (1.3), ans.h (1.3),
+	ans_driver.c (1.3), ans_driver.h (1.3), ans_hw.c (1.3), ans_hw.h
+	(1.3), ans_os.c (1.3), ans_os.h (1.3), base_comm.h (1.3), e1000.h
+	(1.3), e1000.h.orig (1.3), e1000_fxhw.c (1.3), e1000_fxhw.h (1.3),
+	e1000_kcompat.h (1.3), e1000_main.c (1.6), e1000_main.c.orig (1.3),
+	e1000_phy.c (1.3), e1000_phy.h (1.3), e1000_proc.c (1.3),
+	e1000_proc.h (1.3), e1000_vendor_info.h (1.3): move e1000 driver
+	into CLICKDIR/drivers
+
 2001-12-07 Friday 17:24  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: lookupiprouteron.cc (1.14), lookupiprouteron.hh (1.9):
@@ -4039,8 +4055,8 @@
 
 2001-05-29 Tuesday 15:05  Eddie Kohler <kohler@aciri.org>
 
-	* tools/e1000/Makefile (1.6): add # comment sign; problem reported
-	by Brecht Vermeulen
+	* drivers/e1000/Makefile (1.6), tools/e1000/Makefile (1.6): add #
+	comment sign; problem reported by Brecht Vermeulen
 
 2001-05-25 Friday 21:15  Eddie Kohler <kohler@aciri.org>
 
@@ -4751,7 +4767,8 @@
 
 2001-05-02 Wednesday 14:21  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/Makefile (1.5): check for SMP
+	* drivers/e1000/Makefile (1.5), tools/e1000/Makefile (1.5): check
+	for SMP
 
 2001-05-02 Wednesday 14:04  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -4759,7 +4776,8 @@
 
 2001-05-02 Wednesday 14:04  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/Makefile (1.4): fix NEWS
+	* drivers/e1000/Makefile (1.4), tools/e1000/Makefile (1.4): fix
+	NEWS
 
 2001-05-02 Wednesday 12:38  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -4775,7 +4793,8 @@
 	elements/linuxmodule/threadmonitor.cc (1.1),
 	elements/linuxmodule/threadmonitor.hh (1.1),
 	elements/local/sortedsched.cc (1.2), elements/local/sortedsched.hh
-	(1.2), elements/local/staticthreadsched.cc (1.5),
+	(1.2), drivers/e1000/e1000_main.c (1.5),
+	elements/local/staticthreadsched.cc (1.5),
 	elements/local/staticthreadsched.hh (1.4),
 	elements/local/threadmonitor.cc (1.6),
 	elements/local/threadmonitor.hh (1.4), etc/linux-2.2.18-patch
@@ -5351,7 +5370,8 @@
 
 2001-04-11 Wednesday 16:32  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000_main.c (1.4): increase rx descriptors
+	* drivers/e1000/e1000_main.c (1.4), tools/e1000/e1000_main.c (1.4):
+	increase rx descriptors
 
 2001-04-11 Wednesday 16:29  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -6821,19 +6841,19 @@
 
 2001-03-01 Thursday 14:45  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/Makefile (1.3): add HAVE_INTEL_CPU in makefile...
-	need to change e1000 to either use click's config.h or have a way
-	to configure this option in Makefile
+	* drivers/e1000/Makefile (1.3), tools/e1000/Makefile (1.3): add
+	HAVE_INTEL_CPU in makefile... need to change e1000 to either use
+	click's config.h or have a way to configure this option in Makefile
 
 2001-03-01 Thursday 14:42  Benjie Chen <benjie@lcs.mit.edu>
 
 	* acconfig.h (1.30), configure.in (1.98),
 	elements/linuxmodule/polldevice.cc (1.93),
 	elements/standard/msqueue.cc (1.3), elements/standard/unqueue.cc
-	(1.8), tools/e1000/e1000_main.c (1.3): add --enable-intel
-	configuration option: if this is set, HAVE_INTEL_CPU is defined,
-	and intel specific instructions, such as prefetching, are used.  by
-	defaultit is not set
+	(1.8), drivers/e1000/e1000_main.c (1.3), tools/e1000/e1000_main.c
+	(1.3): add --enable-intel configuration option: if this is set,
+	HAVE_INTEL_CPU is defined, and intel specific instructions, such as
+	prefetching, are used.	by defaultit is not set
 
 2001-02-28 Wednesday 20:18  Eddie Kohler <kohler@aciri.org>
 
@@ -7295,15 +7315,34 @@
 
 2001-02-13 Tuesday 23:34  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/: LICENSE (1.2), Makefile (1.2), Makefile.orig (1.2),
-	README (1.2), README-rtm (1.2), ans.c (1.2), ans.h (1.2),
-	ans_driver.c (1.2), ans_driver.h (1.2), ans_hw.c (1.2), ans_hw.h
-	(1.2), ans_os.c (1.2), ans_os.h (1.2), base_comm.h (1.2), e1000.h
-	(1.2), e1000.h.orig (1.2), e1000_fxhw.c (1.2), e1000_fxhw.h (1.2),
-	e1000_kcompat.h (1.2), e1000_main.c (1.2), e1000_main.c.orig (1.2),
-	e1000_phy.c (1.2), e1000_phy.h (1.2), e1000_proc.c (1.2),
-	e1000_proc.h (1.2), e1000_vendor_info.h (1.2): e1000 driver for the
-	new kernel polling interface
+	* drivers/e1000/LICENSE (1.2), drivers/e1000/Makefile (1.2),
+	drivers/e1000/Makefile.orig (1.2), tools/e1000/LICENSE (1.2),
+	tools/e1000/Makefile (1.2), tools/e1000/Makefile.orig (1.2),
+	drivers/e1000/README (1.2), drivers/e1000/README-rtm (1.2),
+	drivers/e1000/ans.c (1.2), tools/e1000/README (1.2),
+	tools/e1000/README-rtm (1.2), tools/e1000/ans.c (1.2),
+	drivers/e1000/ans.h (1.2), tools/e1000/ans.h (1.2),
+	drivers/e1000/ans_driver.c (1.2), drivers/e1000/ans_driver.h (1.2),
+	drivers/e1000/ans_hw.c (1.2), drivers/e1000/ans_hw.h (1.2),
+	tools/e1000/ans_driver.c (1.2), tools/e1000/ans_driver.h (1.2),
+	tools/e1000/ans_hw.c (1.2), tools/e1000/ans_hw.h (1.2),
+	drivers/e1000/ans_os.c (1.2), drivers/e1000/ans_os.h (1.2),
+	drivers/e1000/base_comm.h (1.2), tools/e1000/ans_os.c (1.2),
+	tools/e1000/ans_os.h (1.2), tools/e1000/base_comm.h (1.2),
+	drivers/e1000/e1000.h (1.2), tools/e1000/e1000.h (1.2),
+	drivers/e1000/e1000.h.orig (1.2), drivers/e1000/e1000_fxhw.c (1.2),
+	tools/e1000/e1000.h.orig (1.2), tools/e1000/e1000_fxhw.c (1.2),
+	drivers/e1000/e1000_fxhw.h (1.2), tools/e1000/e1000_fxhw.h (1.2),
+	drivers/e1000/e1000_kcompat.h (1.2), drivers/e1000/e1000_main.c
+	(1.2), tools/e1000/e1000_kcompat.h (1.2), tools/e1000/e1000_main.c
+	(1.2), drivers/e1000/e1000_main.c.orig (1.2),
+	tools/e1000/e1000_main.c.orig (1.2), drivers/e1000/e1000_phy.c
+	(1.2), drivers/e1000/e1000_phy.h (1.2), drivers/e1000/e1000_proc.c
+	(1.2), tools/e1000/e1000_phy.c (1.2), tools/e1000/e1000_phy.h
+	(1.2), tools/e1000/e1000_proc.c (1.2), drivers/e1000/e1000_proc.h
+	(1.2), drivers/e1000/e1000_vendor_info.h (1.2),
+	tools/e1000/e1000_proc.h (1.2), tools/e1000/e1000_vendor_info.h
+	(1.2): e1000 driver for the new kernel polling interface
 
 2001-02-12 Monday 14:42  Eddie Kohler <kohler@aciri.org>
 
@@ -8291,133 +8330,136 @@
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000_proc.h (1.1): file e1000_proc.h was initially
-	added on branch smp_click.
+	* drivers/e1000/e1000_proc.h (1.1), tools/e1000/e1000_proc.h (1.1):
+	file e1000_proc.h was initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000_vendor_info.h (1.1): file e1000_vendor_info.h
+	* drivers/e1000/e1000_vendor_info.h (1.1),
+	tools/e1000/e1000_vendor_info.h (1.1): file e1000_vendor_info.h was
+	initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000_phy.h (1.1), tools/e1000/e1000_phy.h (1.1):
+	file e1000_phy.h was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000_proc.c (1.1), tools/e1000/e1000_proc.c (1.1):
+	file e1000_proc.c was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000_phy.c (1.1), tools/e1000/e1000_phy.c (1.1):
+	file e1000_phy.c was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000_main.c.orig (1.1),
+	tools/e1000/e1000_main.c.orig (1.1): file e1000_main.c.orig was
+	initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000_main.c (1.1), tools/e1000/e1000_main.c (1.1):
+	file e1000_main.c was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000_kcompat.h (1.1), tools/e1000/e1000_kcompat.h
+	(1.1): file e1000_kcompat.h was initially added on branch
+	smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000_fxhw.h (1.1), tools/e1000/e1000_fxhw.h (1.1):
+	file e1000_fxhw.h was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000_fxhw.c (1.1), tools/e1000/e1000_fxhw.c (1.1):
+	file e1000_fxhw.c was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000.h.orig (1.1), tools/e1000/e1000.h.orig (1.1):
+	file e1000.h.orig was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000.h (1.1), tools/e1000/e1000.h (1.1): file
+	e1000.h was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/base_comm.h (1.1), tools/e1000/base_comm.h (1.1):
+	file base_comm.h was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/ans_os.h (1.1), tools/e1000/ans_os.h (1.1): file
+	ans_os.h was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/ans_os.c (1.1), tools/e1000/ans_os.c (1.1): file
+	ans_os.c was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/ans_hw.h (1.1), tools/e1000/ans_hw.h (1.1): file
+	ans_hw.h was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/ans_hw.c (1.1), tools/e1000/ans_hw.c (1.1): file
+	ans_hw.c was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/ans_driver.h (1.1), tools/e1000/ans_driver.h (1.1):
+	file ans_driver.h was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/ans_driver.c (1.1), tools/e1000/ans_driver.c (1.1):
+	file ans_driver.c was initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/ans.h (1.1), tools/e1000/ans.h (1.1): file ans.h
 	was initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000_phy.h (1.1): file e1000_phy.h was initially
-	added on branch smp_click.
+	* drivers/e1000/README-rtm (1.1), tools/e1000/README-rtm (1.1):
+	file README-rtm was initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000_proc.c (1.1): file e1000_proc.c was initially
-	added on branch smp_click.
+	* drivers/e1000/ans.c (1.1), tools/e1000/ans.c (1.1): file ans.c
+	was initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000_phy.c (1.1): file e1000_phy.c was initially
-	added on branch smp_click.
+	* drivers/e1000/README (1.1), tools/e1000/README (1.1): file README
+	was initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000_main.c.orig (1.1): file e1000_main.c.orig was
-	initially added on branch smp_click.
+	* drivers/e1000/Makefile.orig (1.1), tools/e1000/Makefile.orig
+	(1.1): file Makefile.orig was initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000_main.c (1.1): file e1000_main.c was initially
-	added on branch smp_click.
+	* drivers/e1000/Makefile (1.1), tools/e1000/Makefile (1.1): file
+	Makefile was initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000_kcompat.h (1.1): file e1000_kcompat.h was
-	initially added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000_fxhw.h (1.1): file e1000_fxhw.h was initially
-	added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000_fxhw.c (1.1): file e1000_fxhw.c was initially
-	added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000.h.orig (1.1): file e1000.h.orig was initially
-	added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000.h (1.1): file e1000.h was initially added on
-	branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/base_comm.h (1.1): file base_comm.h was initially
-	added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans_os.h (1.1): file ans_os.h was initially added on
-	branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans_os.c (1.1): file ans_os.c was initially added on
-	branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans_hw.h (1.1): file ans_hw.h was initially added on
-	branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans_hw.c (1.1): file ans_hw.c was initially added on
-	branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans_driver.h (1.1): file ans_driver.h was initially
-	added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans_driver.c (1.1): file ans_driver.c was initially
-	added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans.h (1.1): file ans.h was initially added on branch
-	smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/README-rtm (1.1): file README-rtm was initially added
-	on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans.c (1.1): file ans.c was initially added on branch
-	smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/README (1.1): file README was initially added on
-	branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/Makefile.orig (1.1): file Makefile.orig was initially
-	added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/Makefile (1.1): file Makefile was initially added on
-	branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/LICENSE (1.1): file LICENSE was initially added on
-	branch smp_click.
+	* drivers/e1000/LICENSE (1.1), tools/e1000/LICENSE (1.1): file
+	LICENSE was initially added on branch smp_click.
 
 2000-11-16 Thursday 09:59  Benjie Chen <benjie@lcs.mit.edu>
 
