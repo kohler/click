@@ -91,7 +91,7 @@ template <class K, class V>
 inline int
 BigHashMap<K, V>::bucket(const K &key) const
 {
-  return hashcode(key) % _nbuckets;
+  return ((unsigned)hashcode(key)) % _nbuckets;
 }
 
 template <class K, class V>
@@ -398,7 +398,7 @@ template <class K>
 inline int
 BigHashMap<K, void *>::bucket(const K &key) const
 {
-  return hashcode(key) % _nbuckets;
+  return ((unsigned)hashcode(key)) % _nbuckets;
 }
 
 template <class K>
