@@ -81,7 +81,7 @@ class Queue : public Storage {
   Packet *pull(int port);
 
 #ifdef CLICK_POLLDEV
-  bool still_busy();
+  bool still_busy() const;
   struct wait_queue** get_wait_queue(); 
   void do_waiting();
   void finish_waiting();

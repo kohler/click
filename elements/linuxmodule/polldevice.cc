@@ -87,8 +87,8 @@ PollDevice::initialize(ErrorHandler *errh)
     return errh->error("device `%s' not pollable", _devname.cc());
   _dev->intr_off(_dev);
   _dev->intr_defer = 1;
-  idle = 0;
-  total_intr_wait = 0;
+  _idle = 0;
+  _total_intr_wait = 0;
   return 0;
 }
 
@@ -102,7 +102,7 @@ PollDevice::uninitialize()
     _dev->intr_on(_dev);
     click_chatter
 	("PollDevice(%s): waited with intr on %d times\n", 
-	 _dev->name, total_intr_wait);
+	 _dev->name, _total_intr_wait);
   }
 }
 
@@ -120,7 +120,7 @@ PollDevice::pull(int)
 
   if (skb != 0L)
   {
-    idle = 0;
+    _idle = 0;
     rtm_ipackets++;
     rtm_ibytes += skb->len;
 
@@ -139,23 +139,22 @@ PollDevice::pull(int)
   } 
   else 
   {
-    idle++;
+    _idle++;
     return 0L;
   }
 }
  
 
 bool
-PollDevice::still_busy()
+PollDevice::still_busy() const
 {
-  if (idle <= 100) return true;
-  return false;
+  return _idle <= 100;
 }
 
 struct wait_queue** 
 PollDevice::get_wait_queue()
 {
-  if (idle > 100) 
+  if (_idle > 100) 
     return &_dev->intr_wq;
   else
     return NULL;
@@ -164,7 +163,7 @@ PollDevice::get_wait_queue()
 void 
 PollDevice::do_waiting()
 { 
-  total_intr_wait++;
+  _total_intr_wait++;
   _dev->intr_on(_dev);
 }
 

@@ -180,48 +180,48 @@ character is special. Specifically:
 .RS
 .TP 3
 \(bu
-`\\a' -> ASCII BEL (hex 07)
+`\ea' -> ASCII BEL (hex 07)
 .TP 3
 \(bu
-`\\b' -> ASCII BS (hex 08)
+`\eb' -> ASCII BS (hex 08)
 .TP 3
 \(bu
-`\\t' -> ASCII HT (hex 09)
+`\et' -> ASCII HT (hex 09)
 .TP 3
 \(bu
-`\\n' -> ASCII LF (hex 0A)
+`\en' -> ASCII LF (hex 0A)
 .TP 3
 \(bu
-`\\v' -> ASCII VT (hex 0B)
+`\ev' -> ASCII VT (hex 0B)
 .TP 3
 \(bu
-`\\f' -> ASCII FF (hex 0C)
+`\ef' -> ASCII FF (hex 0C)
 .TP 3
 \(bu
-`\\r' -> ASCII CR (hex 0D)
+`\er' -> ASCII CR (hex 0D)
 .TP 3
 \(bu
-`\\\\' -> `\\'
+`\e\e' -> `\e'
 .TP 3
 \(bu
-`\\[1, 2, or 3 octal digits]' -> that ASCII character
+`\e[1, 2, or 3 octal digits]' -> that ASCII character
 .TP 3
 \(bu
-`\\x[any number of hex digits]' -> the ASCII character defined by the last
+`\ex[any number of hex digits]' -> the ASCII character defined by the last
 2 hex digits
 .RE
 .TP 4
 2.
-Replaces `\\< ... hex digits and spaces ... >' sequences with the ASCII
+Replaces `\e< ... hex digits and spaces ... >' sequences with the ASCII
 character data represented by the hex digits. Every resulting character is
-special. For example, the sequence `\\< 48 45 4c 4C 4f >' is replaced with
+special. For example, the sequence `\e< 48 45 4c 4C 4f >' is replaced with
 `HELLO'.
 .TP
 3.
-Removes backlash-newline sequences (`\\[LF]', `\\[CR]', or `\\[CR][LF]').
+Removes backlash-newline sequences (`\e[LF]', `\e[CR]', or `\e[CR][LF]').
 .TP
 4.
-Replaces any remaining `\\[CHAR]' sequence with the special version of
+Replaces any remaining `\e[CHAR]' sequence with the special version of
 `[CHAR]'.
 .TP
 5.
@@ -301,9 +301,9 @@ Here is a more complicated example, with multiple ports:
 .Rs
 compound :: {
 .br
-  input -> X -> output;
+\%  input -> X -> output;
 .br
-  input [1] -> Y -> [1] output;
+\%  input [1] -> Y -> [1] output;
 .br
 };
 .br
@@ -378,7 +378,7 @@ For example, this code, with an `elementclass':
 .Rs
 elementclass MyQueue {
 .br
-  input -> Queue -> Shaper(1000) -> output;
+\%  input -> Queue -> Shaper(1000) -> output;
 .br
 }
 .br
@@ -402,7 +402,7 @@ existing element classes:
 .Rs
 elementclass Queue {
 .br
-  input -> Queue -> Shaper(1000) -> output;
+\%  input -> Queue -> Shaper(1000) -> output;
 .br
 }
 .Re
@@ -412,13 +412,13 @@ statements don't affect elements declared earlier:
 .Rs
 elementclass A {
 .br
-  input -> B -> output;
+\%  input -> B -> output;
 .br
 }
 .br
 elementclass B {
 .br
-  input -> C -> output;
+\%  input -> C -> output;
 .br
 }
 .br
@@ -557,7 +557,7 @@ has an identifier `an/identifier/with/slashes' and a comment
 Configuration strings do not follow Click's usual lexical rules. A
 configuration string starts immediately following a left parenthesis `(',
 and continues up to the next unbalanced right parenthesis `)'. Backslash
-characters `\\' quote parentheses and backslashes so they doesn't affect
+characters `\e' quote parentheses and backslashes so they doesn't affect
 balancing, but they are not removed from the string. A configuration string
 can also include comments. (The configuration string parser generally
 removes the backslashes and comments itself.) Here are several examples; in
@@ -568,13 +568,13 @@ C1(#simple string#)
 .br
 C2(#string with (balanced parens)#)
 .br
-C3(#string with \\(escaped paren#)
+C3(#string with \e(escaped paren#)
 .br
 C4(#// end-of-line comment)
 .br
-   still going!#)
+\%   still going!#)
 .br
-C5(#/* slash-star comment) */ and backslash \\\\#)
+C5(#/* slash-star comment) */ and backslash \e\e#)
 .Re
 '
 .SH "ARCHIVES"

@@ -36,7 +36,7 @@ class PollDevice : public Element {
   static void static_cleanup();
   
   const char *class_name() const		{ return "PollDevice"; }
-  Processing default_processing() const	{ return PULL; }
+  Processing default_processing() const		{ return PULL; }
   
   PollDevice *clone() const;
   int configure(const String &, ErrorHandler *);
@@ -46,7 +46,7 @@ class PollDevice : public Element {
   /* process a packet. return 0 if not wanted after all. */
   int got_skb(struct sk_buff *);
 
-  bool still_busy();
+  bool still_busy() const;
   struct wait_queue** get_wait_queue(); 
   void do_waiting();
   void finish_waiting();
@@ -55,8 +55,8 @@ class PollDevice : public Element {
   
  private:
 
-  int total_intr_wait;
-  int idle;
+  int _total_intr_wait;
+  int _idle;
   String _devname;
   struct device *_dev;
 };

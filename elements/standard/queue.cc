@@ -175,7 +175,7 @@ Queue::push(int, Packet *packet)
 #ifdef CLICK_POLLDEV
 
 bool
-Queue::still_busy()
+Queue::still_busy() const
 {
   return size() > 0;
 }

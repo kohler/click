@@ -100,11 +100,13 @@ class Element : public ElementLink { public:
   virtual int select_fd()		{ return(-1); }
   virtual void selected(int)		{ }
 
+#ifdef CLICK_POLLDEV
   // for Router::wait() to use to set up event waiting
-  virtual bool still_busy() { return false; }
+  virtual bool still_busy() const	{ return false; }
   virtual struct wait_queue** get_wait_queue() { return 0; }
-  virtual void do_waiting() {}
-  virtual void finish_waiting() {}
+  virtual void do_waiting()		{ }
+  virtual void finish_waiting()		{ }
+#endif
   
   // Hooks for a non-empty Queue to tell an output driver to pull().
   virtual bool wants_packet_upstream() const;
