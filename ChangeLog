@@ -1,3 +1,27 @@
+2002-04-30 Tuesday 18:31  Eddie Kohler <kohler@aciri.org>
+
+	* elements/linuxmodule/anydevice.hh (1.37),
+	elements/linuxmodule/cyclecountaccum.hh (1.7),
+	elements/linuxmodule/perfcountaccum.cc (1.10),
+	elements/linuxmodule/perfcountaccum.hh (1.5),
+	elements/linuxmodule/polldevice.cc (1.127),
+	elements/linuxmodule/polldevice.hh (1.60),
+	elements/linuxmodule/rtcycles.cc (1.9),
+	elements/linuxmodule/rtcycles.hh (1.6),
+	elements/linuxmodule/setperfcount.cc (1.10),
+	elements/linuxmodule/todevice.cc (1.124),
+	elements/linuxmodule/todevice.hh (1.58),
+	elements/standard/randomerror.cc (1.22),
+	elements/standard/scheduleinfo.cc (1.36), include/click/element.hh
+	(1.23), include/click/glue.hh (1.24), lib/bigewma.cc (1.5),
+	lib/bigewma.hh (1.2), lib/confparse.cc (1.98), lib/error.cc (1.38),
+	lib/string.cc (1.38): replace remaining occurrences of long long
+	with [u]int64_t
+
+2002-04-30 Tuesday 18:25  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/ipratemon.hh (1.62): I give up on IPRateMon
+
 2002-04-30 Tuesday 02:11  Eddie Kohler <kohler@aciri.org>
 
 	* config.h.in (1.18), elements/etherswitch/bridgemessage.hh (1.9),

@@ -1,3 +1,11 @@
+2002-04-30 Tuesday 18:31  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc, include/click/element.hh,
+	include/click/glue.hh, include/click/element.hh,
+	include/click/glue.hh, libsrc/bigewma.cc, libsrc/bigewma.hh,
+	libsrc/confparse.cc, libsrc/error.cc, libsrc/string.cc: replace
+	remaining occurrences of long long with [u]int64_t
+
 2002-04-30 Tuesday 02:11  Eddie Kohler <kohler@aciri.org>
 
 	* config.h.in, include/click/click_ether.h,
