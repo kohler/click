@@ -17,7 +17,26 @@ CLICK_DECLS
 
 WifiTXFeedback
 
-=s storage
+=s storage, wifi
+
+When used in conjunction with a wifi-enabled kernel (the
+hostap or airo drivers), this element pushes out packets
+with the WIFI_TX_SUCCESS_ANNO set.
+
+This element MUST be used in conjunction with a MSQueue,
+because the push call runs during an interrupt.
+
+For example, the following can be used:
+
+WifiTXFeedback -> MSQueue(10) -> ...
+
+If only one output exists, it sends all packets it receives to
+that output.
+If a second one exists, it sends sucessful packets to the first output
+and failures to the second.
+
+=a
+AutoTXRate, SetTXRate
 
 */
 

@@ -28,44 +28,12 @@ CLICK_DECLS
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
-static inline int next_lower_rate(int rate) {
-    switch(rate) {
-    case 1:
-      return 1;
-    case 2:
-      return 1;
-    case 5:
-      return 2;
-    case 11:
-      return 5;
-    default:
-      return rate;
-    }
-  }
-
-
-static inline int next_higher_rate(int rate) {
-    switch(rate) {
-    case 1:
-      return 2;
-    case 2:
-      return 5;
-    case 5:
-      return 11;
-    case 11:
-      return 11;
-    default:
-      return rate;
-    }
-  }
-  
-
-
 AutoTXRate::AutoTXRate()
   : Element(1, 1),
     _stepup(0),
     _stepdown(0),
-    _before_switch(0)
+    _before_switch(0),
+    _max_rate(0)
 {
   MOD_INC_USE_COUNT;
 
@@ -91,6 +59,7 @@ AutoTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   unsigned int rate_window;
   int ret = cp_va_parse(conf, this, errh,
 			cpKeywords, 
+			"MAX_RATE", cpInteger, "int", &_max_rate,
 			"RATE_WINDOW", cpUnsigned, "ms", &rate_window,
 			"STEPUP", cpInteger, "0-100", &_stepup,
 			"STEPDOWN", cpInteger, "0-100", &_stepdown,
@@ -99,13 +68,59 @@ AutoTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   if (ret < 0) {
     return ret;
   }
-  
+  switch (_max_rate) {
+  case 1:
+    /* fallthrough */
+  case 2:
+    /* fallthrough */
+  case 5:
+    /* fallthrough */
+  case 11:
+    break;
+  default:
+    return errh->error("MAX_RATE must be 1,2,5, or 11");
+  }
   ret = set_rate_window(errh, rate_window);
   if (ret < 0) {
     return ret;
   }
   return 0;
 }
+int 
+AutoTXRate::next_lower_rate(int rate) {
+    switch(rate) {
+    case 1:
+      return min(_max_rate, 1);
+    case 2:
+      return min(_max_rate, 1);
+    case 5:
+      return min(_max_rate, 2);
+    case 11:
+      return min(_max_rate, 5);
+    default:
+      return min(_max_rate, rate);
+    }
+  }
+
+
+int 
+AutoTXRate::next_higher_rate(int rate) {
+    switch(rate) {
+    case 1:
+      return min(_max_rate, 2);
+    case 2:
+      return min(_max_rate, 5);
+    case 5:
+      return min(_max_rate, 11);
+    case 11:
+      return min(_max_rate, 11);
+    default:
+      return min(_max_rate, rate);
+    }
+  }
+  
+
+
 
 void
 AutoTXRate::update_rate(EtherAddress dst)
@@ -119,7 +134,7 @@ AutoTXRate::update_rate(EtherAddress dst)
   if (!nfo) {
     return;
   }
-
+  nfo->_rate = min(nfo->_rate, _max_rate);
   nfo->_successes = 0;
   nfo->_failures = 0;
 
@@ -152,6 +167,7 @@ AutoTXRate::update_rate(EtherAddress dst)
   } else if ((100*nfo->_successes)/total > _stepup) {
     nfo->_rate = next_higher_rate(nfo->_rate);
   }
+
   return;
 }
 
@@ -304,6 +320,34 @@ AutoTXRate::static_write_stepup(const String &arg, Element *e,
 
 
 
+int
+AutoTXRate::static_write_max_rate(const String &arg, Element *e,
+				  void *, ErrorHandler *errh) 
+{
+  AutoTXRate *n = (AutoTXRate *) e;
+  int b;
+
+  if (!cp_integer(arg, &b))
+    return errh->error("`stepup' must be an integer");
+  
+  switch (b) {
+  case 1:
+    /* fallthrough */
+  case 2:
+    /* fallthrough */
+  case 5:
+    /* fallthrough */
+  case 11:
+    break;
+  default:
+    return errh->error("MAX_RATE must be 1,2,5, or 11");
+  }
+  n->_max_rate = b;
+  return 0;
+}
+
+
+
 
 int
 AutoTXRate::set_rate_window(ErrorHandler *errh, unsigned int x) 
@@ -357,6 +401,15 @@ AutoTXRate::static_read_before_switch(Element *f, void *)
   return sa.take_string();
 }
 
+String
+AutoTXRate::static_read_max_rate(Element *f, void *)
+{
+  StringAccum sa;
+  AutoTXRate *d = (AutoTXRate *) f;
+  sa << d->_max_rate << "\n";
+  return sa.take_string();
+}
+
 void
 AutoTXRate::add_handlers()
 {
@@ -374,6 +427,9 @@ AutoTXRate::add_handlers()
 
   add_write_handler("before_switch", static_write_before_switch, 0);
   add_read_handler("before_switch", static_read_before_switch, 0);
+
+  add_write_handler("max_rate", static_write_max_rate, 0);
+  add_read_handler("max_rate", static_read_max_rate, 0);
 
 }
 // generate Vector template instance

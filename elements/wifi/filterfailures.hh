@@ -9,16 +9,21 @@ CLICK_DECLS
 /*
  * =c
  * 
- * FilterFailures(MAX_FAILURES)
- * 
- * filters out wifi packets with more than MAX_FAILURES packets
- * and sends them to output 1 if it is present.
+ * FilterFailures([I<KEYWORDS>])
+ *
+ * =s wifi
+ * Filters out packets that have failed at least MAX_FAILURES times.
+ * Sends these packets to output 1 if it is present, 
  * otherwise it drops the packets.
+ * 
+ * Arguments:
+ * =item MAX_FAILURES
  * The default MAX_FAILURES is 1
  *
  * =s wifi
  *
- *
+ * =a WifiTXFeedback
+ * 
  */
 
 

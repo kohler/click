@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * 
- * SetTXRate(RATE, [, I<KEYWORDS>])
+ * SetTXRate([I<KEYWORDS>])
  * 
  * =s wifi
  * 
@@ -29,6 +29,11 @@ CLICK_DECLS
  * 
  * AutoTXRate element.  When used in conjunction with this 
  * element, settxrate will autoscale the rate.
+ *
+ *
+ * =a
+ * AutoTXRate, WifiTXFeedback
+ *
  *
  */
 

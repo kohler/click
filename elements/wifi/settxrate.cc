@@ -77,6 +77,7 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 SetTXRate::simple_action(Packet *p_in)
 {
+  SET_WIFI_FROM_CLICK(p_in);
   click_ether *eh = (click_ether *) p_in->data();
   EtherAddress dst = EtherAddress(eh->ether_dhost);
   if (_auto) {
