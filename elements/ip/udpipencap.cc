@@ -88,10 +88,13 @@ UDPIPEncap::simple_action(Packet *p)
   }
 
   ip->ip_sum = 0;
-#ifndef __KERNEL__
+#if !defined(__KERNEL__) || 1
   ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
 #else
   ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
+  { unsigned g = (unsigned)((void *)ip);
+  if (g % 4 != 0) click_chatter("fucker!\n");
+  }
 #endif
   
   p->set_dst_ip_anno(IPAddress(_daddr));
