@@ -1,3 +1,13 @@
+2004-02-22 Sunday 17:30  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/ipfilter.cc (1.41): nits
+
+2004-02-22 Sunday 17:03  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/: ipclassifier.hh (1.28), ipfilter.cc (1.40),
+	ipfilter.hh (1.23): support arbitrary >=, >, <, and <= tests in
+	IPFilter/IPClassifier
+
 2004-02-21 Saturday 23:45  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: ackretrysender.cc (1.4), ackretrysender.hh (1.4),
