@@ -5,20 +5,28 @@
 CLICK_DECLS
 
 /*
- * =c
- * StoreIPAddress(OFFSET)
- * =s IP, annotations
- * stores dest IP address annotation in packet
- * =d
- * Copy the destination IP address annotation into the packet
- * at offset OFFSET.
+=c
+StoreIPAddress(OFFSET)
+StoreIPAddress(ADDRESS, OFFSET)
+=s IP, annotations
+stores IP address in packet
+=d
+The one-argument form writes the destination IP address annotation into the
+packet at offset OFFSET. But if the annotation is zero, it doesn't change
+the packet.
+
+The two-argument form writes ADDRESS into the packet at offset OFFSET. ADDRESS
+can be zero.
+
+=n
+This element doesn't recalculate any checksums, so if you store the address
+into an existing IP packet, the packet's checksum will need to be set
+-- for example, with SetIPChecksum.
+=a
+SetIPChecksum
  */
 
-class StoreIPAddress : public Element {
-  
-  unsigned _offset;
-  
- public:
+class StoreIPAddress : public Element { public:
   
   StoreIPAddress();
   ~StoreIPAddress();
@@ -30,6 +38,12 @@ class StoreIPAddress : public Element {
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
+
+ private:
+
+  unsigned _offset;
+  IPAddress _address;
+  bool _use_address;
   
 };
 

@@ -35,17 +35,26 @@ StoreIPAddress::~StoreIPAddress()
 int
 StoreIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpUnsigned, "byte offset of IP address", &_offset,
-		     0);
+  if (conf.size() == 1) {
+    _use_address = false;
+    return cp_va_parse(conf, this, errh,
+		       cpUnsigned, "byte offset of IP address", &_offset,
+		       0);
+  } else {
+    _use_address = true;
+    return cp_va_parse(conf, this, errh,
+		       cpIPAddress, "IP address", &_address,
+		       cpUnsigned, "byte offset of IP address", &_offset,
+		       0);
+  }
 }
 
 Packet *
 StoreIPAddress::simple_action(Packet *p)
 {
   // XXX error reporting?
-  IPAddress ipa = p->dst_ip_anno();
-  if (ipa && _offset + 4 <= p->length()) {
+  IPAddress ipa = (_use_address ? _address : p->dst_ip_anno());
+  if ((ipa || _use_address) && _offset + 4 <= p->length()) {
     WritablePacket *q = p->uniqueify();
     memcpy(q->data() + _offset, &ipa, 4);
     return q;
