@@ -43,6 +43,18 @@ struct click_ether_arp {
 };
 
 
+/* Ethernet with VLAN (802.1q) */
+
+CLICK_SIZE_PACKED_STRUCTURE(
+struct click_ether_vlan {,
+    uint8_t     ether_dhost[6];
+    uint8_t     ether_shost[6];
+    uint16_t    ether_vlan_proto;
+    uint16_t    ether_vlan_tci;
+    uint16_t    ether_vlan_encap_proto;
+});
+
+
 #define ND_SOL 0x0087       /* Neighborhood Solicitation Message Type */
 #define ND_ADV 0x0088       /* Neighborhood Advertisement Message Type */
 
@@ -58,7 +70,7 @@ struct click_nd_sol {
     uint8_t nd_sha[6];    /*source link-layer address */
 };
 
-//define structure of Neighborhood Advertisement Message -reply to multicast neighborhood solitation message
+/* define structure of Neighborhood Advertisement Message -reply to multicast neighborhood solitation message */
 struct click_nd_adv {
     uint8_t type;
     uint8_t code;
