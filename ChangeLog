@@ -1,3 +1,27 @@
+2004-09-15 Wednesday 20:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/khandlerproxy.cc (1.22): correct static_cast
+
+2004-09-15 Wednesday 20:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/mkwebdoc.pl (1.54), tools/click2xml/click2xml.cc (1.17):
+	change location of click2xml DTD
+
+2004-09-15 Wednesday 19:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/notifier.hh (1.12): doc update: remove warning
+	about calling wake_listeners() from pull places; I think a change
+	to Task has made this OK
+
+2004-09-15 Wednesday 19:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/infinitesource.hh (1.36): doc update
+
+2004-09-15 Wednesday 19:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: randomsource.cc (1.21), randomsource.hh
+	(1.14): RandomSource sets the time
+
 2004-09-15 Wednesday 19:27  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/frag/defragment.hh (1.2): make gcc warning stop
