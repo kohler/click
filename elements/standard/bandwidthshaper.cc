@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * bandwidthshaper.{cc,hh} -- element limits number of successful pulls per
  * second to a given rate (bytes/s)
@@ -23,25 +24,25 @@ CLICK_DECLS
 
 BandwidthShaper::BandwidthShaper()
 {
-  // no MOD_INC_USE_COUNT; rely on Shaper
+    // no MOD_INC_USE_COUNT; rely on Shaper
 }
 
 BandwidthShaper::~BandwidthShaper()
 {
-  // no MOD_DEC_USE_COUNT; rely on Shaper
+    // no MOD_DEC_USE_COUNT; rely on Shaper
 }
 
 Packet *
 BandwidthShaper::pull(int)
 {
-  Packet *p = 0;
-  struct timeval now;
-  click_gettimeofday(&now);
-  if (_rate.need_update(now)) {
-    if ((p = input(0).pull()))
-      _rate.update_with(p->length());
-  }
-  return p;
+    Packet *p = 0;
+    struct timeval now;
+    click_gettimeofday(&now);
+    if (_rate.need_update(now)) {
+	if ((p = input(0).pull()))
+	    _rate.update_with(p->length());
+    }
+    return p;
 }
 
 CLICK_ENDDECLS

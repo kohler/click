@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/gaprate.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/gaprate.hh" -*-
 /*
  * gaprate.{cc,hh} -- measure rates through moving gaps
  * Eddie Kohler, Benjie Chen
@@ -25,9 +25,9 @@ CLICK_DECLS
 void
 GapRate::set_rate(unsigned r, ErrorHandler *errh)
 {
-  if (r > GapRate::MAX_RATE && errh)
-    errh->error("rate too large; lowered to %u", GapRate::MAX_RATE);
-  set_rate(r);
+    if (r > GapRate::MAX_RATE && errh)
+	errh->error("rate too large; lowered to %u", GapRate::MAX_RATE);
+    set_rate(r);
 }
 
 CLICK_ENDDECLS

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_BANDWIDTHSHAPER_HH
 #define CLICK_BANDWIDTHSHAPER_HH
 #include "shaper.hh"
@@ -24,16 +25,14 @@ CLICK_DECLS
  *
  * =a Shaper, BandwidthRatedSplitter, BandwidthRatedUnqueue */
 
-class BandwidthShaper : public Shaper {
-
- public:
+class BandwidthShaper : public Shaper { public:
   
-  BandwidthShaper();
-  ~BandwidthShaper();
+    BandwidthShaper();
+    ~BandwidthShaper();
   
-  const char *class_name() const                { return "BandwidthShaper"; }
+    const char *class_name() const	{ return "BandwidthShaper"; }
 
-  Packet *pull(int);
+    Packet *pull(int);
   
 };
 
