@@ -36,6 +36,7 @@
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <click/task.hh>
+#include "gridlogger.hh"
 
 class LookupLocalGridRoute : public Element, public GridRouteActor  {
   public:
@@ -69,6 +70,8 @@ private:
   IPAddress _ipaddr;
   IPAddress _any_gateway_ip;
   Task _task;
+
+  GridLogger *_log;
 };
 
 

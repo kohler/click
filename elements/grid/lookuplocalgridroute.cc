@@ -32,7 +32,7 @@ int GridRouteActor::_next_free_cb = 0;
 #define NOISY 0
 
 LookupLocalGridRoute::LookupLocalGridRoute()
-  : Element(2, 4), _rtes(0), _any_gateway_ip(0), _task(this)
+  : Element(2, 4), _rtes(0), _any_gateway_ip(0), _task(this), _log(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -40,6 +40,9 @@ LookupLocalGridRoute::LookupLocalGridRoute()
 LookupLocalGridRoute::~LookupLocalGridRoute()
 {
   MOD_DEC_USE_COUNT;
+
+  if (_log)
+    delete _log;
 }
 
 void *
@@ -61,6 +64,9 @@ LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
                         cpElement, "GridGatewayInfo element", &_gw_info,
 			0);
   _any_gateway_ip = (_ipaddr.addr() & 0xFFffFF00) | 254;
+
+  _log = GridLogger::get_log();
+
   return res;
 }
 
@@ -327,7 +333,14 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 #if NOISY
     click_chatter("%s: unable to forward packet for %s with local routing, trying geographic routing", id().cc(), dest_ip.s().cc());
 #endif
+    
+    // logging
     notify_route_cbs(packet, dest_ip, GRCB::FallbackToGF, 0, 0);
+
+    struct timeval tv = { 0, 0 };
+    gettimeofday(&tv, 0);
+    _log->log_no_route(packet, tv);
+
     output(2).push(packet);
   }
 }

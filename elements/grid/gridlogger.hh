@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <click/click_ether.h>
+#include <click/click_ip.h>
+#include <click/click_udp.h>
 #include "grid.hh"
 #include "gridroutetable.hh"
 
@@ -79,6 +81,46 @@ class GridLogger {
     add_bytes(&tv, sizeof(tv));
   }
 
+  void log_pkt(struct click_ether *eh) {
+    struct grid_hdr *gh = (struct grid_hdr *) (eh + 1);
+    add_one_byte(gh->type);
+    switch (gh->type) {
+    case grid_hdr::GRID_LR_HELLO:
+    case grid_hdr::GRID_HELLO: {
+      struct grid_hello *hlo = (struct grid_hello *) (gh + 1);
+      add_long(ntohl(hlo->seq_no));
+      break;
+    }
+    case grid_hdr::GRID_NBR_ENCAP: {
+      struct grid_nbr_encap *nbr = (struct grid_nbr_encap *) (gh + 1);
+      add_ip(gh->ip);
+      add_ip(nbr->dst_ip);
+      log_special_pkt((struct click_ip *) (nbr + 1));
+      break;
+    }
+    default:
+      ; /* nothing */
+    }
+  }
+   
+  void log_special_pkt(struct click_ip *ip) {
+    bool special = false;
+    if (ip->ip_p == IP_PROTO_UDP) {
+      struct click_udp *udp = (struct click_udp *) (ip + 1);
+      if (udp->uh_dport == htons(8021)) { 
+	// ahh, it's an experiment packet, get the seqno
+	special = true;
+	unsigned char *data = (unsigned char *) (udp + 1);
+	int num_sent = 0;
+	memcpy(&num_sent, data, 4);
+	add_one_byte(SPECIAL_PKT_CODE);
+	add_long(num_sent);
+      }
+    }
+    if (!special)
+      add_one_byte(BORING_PKT_CODE);
+  }
+
 public:
 
   static class GridLogger *get_log() { return new GridLogger;  }
@@ -122,7 +164,9 @@ public:
   static const unsigned char RECV_EXPIRE_ROUTE_CODE     = 0x09;
   static const unsigned char ROUTE_DUMP_CODE            = 0x0A;
   static const unsigned char TX_ERR_CODE                = 0x0B;
-
+  static const unsigned char NO_ROUTE_CODE              = 0x0C;
+  static const unsigned char SPECIAL_PKT_CODE           = 0x0D;
+  static const unsigned char BORING_PKT_CODE            = 0x0E;
 
   // these need to be different than the above codes
   enum reason_t {
@@ -237,26 +281,21 @@ public:
      if (eh->ether_type != htons(ETHERTYPE_GRID)) 
       return;
     add_one_byte(TX_ERR_CODE);
-    add_long((unsigned long) err);
     add_timeval(when);
-    struct grid_hdr *gh = (struct grid_hdr *) (eh + 1);
-    add_one_byte(gh->type);
-    switch (gh->type) {
-    case grid_hdr::GRID_LR_HELLO:
-    case grid_hdr::GRID_HELLO: {
-      struct grid_hello *hlo = (struct grid_hello *) (gh + 1);
-      add_long(ntohl(hlo->seq_no));
-      break;
-    }
-    case grid_hdr::GRID_NBR_ENCAP: {
-      struct grid_nbr_encap *nbr = (struct grid_nbr_encap *) (gh + 1);
-      add_ip(nbr->dst_ip);
-      break;
-    }
-    default:
-      ; /* nothing */
-    }
-    // dump_buf();
+    add_long((unsigned long) err);
+    log_pkt(eh);
+    write_buf();
+  }
+
+  void log_no_route(const Packet *p, struct timeval when) {
+    if (_state != WAITING)
+      return;
+    struct click_ether *eh = (click_ether *) (p->data());
+    if (eh->ether_type != htons(ETHERTYPE_GRID)) 
+      return;
+    add_one_byte(NO_ROUTE_CODE);
+    add_timeval(when);
+    log_pkt(eh);
     write_buf();
   }
 
