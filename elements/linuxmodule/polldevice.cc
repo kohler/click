@@ -211,11 +211,11 @@ PollDevice::run_scheduled()
   skb_list = _dev->rx_poll(_dev, &got);
 
 #if CLICK_DEVICE_STATS
-  if (got > 0 || _activations > 0)
+  if (got > 0 || _activations > 0) {
     GET_STATS_RESET(low00, low10, time_now, 
 		    _perfcnt1_poll, _perfcnt2_poll, _time_poll);
-  if (got > 0)
     _activations++;
+  }
 #endif
 
   int nskbs = got;
