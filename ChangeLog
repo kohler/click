@@ -1,3 +1,32 @@
+2001-07-03 Tuesday 12:05  Benjie Chen <benjie@lcs.mit.edu>
+
+	* config.h.in (1.7), configure.in (1.128): --enable-warp9 feature:
+	make polldevice run fast by bypassing timestamping packet, for
+	benchmark purposes
+
+2001-07-03 Tuesday 12:01  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/polldevice.cc (1.116): by default set
+	timestamp, unless --enable-warp9 is used in configuration
+
+2001-07-03 Tuesday 11:57  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/forcetcp.cc (1.13): use forcetcp to generate buggy
+	tcp packets instead, to be consistent with mazu
+
+2001-07-03 Tuesday 11:57  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/tcpbuffer.cc (1.2): seqlen++ on SYN and FIN
+
+2001-07-03 Tuesday 11:36  Benjie Chen <benjie@lcs.mit.edu>
+
+	* conf/test-tcp.click (1.1): tcp toy test
+
+2001-07-03 Tuesday 11:34  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/: forcetcp.cc (1.12), tcpbuffer.cc (1.1),
+	tcpbuffer.hh (1.1): more tcp toys
+
 2001-07-02 Monday 18:32  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* etc/linux-2.2.18-patch (1.7): Various improvements and fixes for
