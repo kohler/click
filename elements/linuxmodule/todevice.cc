@@ -221,7 +221,6 @@ click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v)
  * accept a packet even if they've marked themselves
  * as idle. What do we do with a rejected packet?
  */
-int total_packets_sent = 0;
 bool
 ToDevice::tx_intr()
 {
@@ -229,22 +228,23 @@ ToDevice::tx_intr()
   unsigned long long c0 = click_get_cycles();
 #endif
   int busy;
+  int sent = 0;
  
 #if CLICK_POLLDEV
   _dev->clean_tx(_dev);
 #endif
 
-  while ((busy = _dev->tbusy) == 0) {
+  while (sent<TODEV_MAX_PKTS_PER_RUN && (busy=_dev->tbusy)==0) {
     Packet *p;
-    _idle++;
     if (p = input(0).pull()) {
-      _pkts_sent++;
-      push(0, p);
-      total_packets_sent++;
       _idle = 0;
+      sent++;
+      push(0, p);
     } 
     else break;
   }
+  _pkts_sent+=sent;
+  _idle++;
   
 #if CLICK_POLLDEV
   int tx_left = _dev->clean_tx(_dev);
@@ -276,11 +276,19 @@ ToDevice::tx_intr()
   _calls += 1;
   _self_cycles += c1 - c0;
 #endif
+  
+  if (sent == TODEV_MAX_PKTS_PER_RUN)
+    adj_tickets(max_ntickets());
+  else if (_idle > 2) {
+    int n = ntickets()/4;
+    if (n==0) n=1;
+    adj_tickets(0-n);
+  }
 
 #if CLICK_POLLDEV
-  if (busy || _idle <= 1024 || tx_left != 0)
+  if (busy || _idle <= TODEV_IDLE_LIMIT || tx_left != 0)
 #else
-  if (busy || _idle <= 1024)
+  if (busy || _idle <= TODEV_IDLE_LIMIT)
 #endif
     reschedule();
 }

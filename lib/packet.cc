@@ -23,10 +23,6 @@
 
 #ifdef __KERNEL__
 
-int total_packets_inherited = 0;
-int total_packets_created = 0;
-int total_packets_killed = 0;
-
 Packet::Packet()
 {
   panic("Packet constructor");
@@ -44,7 +40,6 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
   unsigned size = len + headroom + tailroom;
   struct sk_buff *skb = alloc_skb(size, GFP_ATOMIC);
   if (skb) {
-    total_packets_created++;
     skb_reserve(skb, headroom);	// leave some headroom
     skb_put(skb, len);		// leave space for data
     if (data) memcpy(skb->data, data, len);
@@ -121,7 +116,6 @@ Packet *
 Packet::clone()
 {
   struct sk_buff *n = skb_clone(skb(), GFP_ATOMIC);
-  total_packets_created++;
   return (Packet *)n;
 }
 
@@ -129,7 +123,6 @@ Packet *
 Packet::uniqueify_copy()
 {
   struct sk_buff *n = skb_copy(skb(), GFP_ATOMIC);
-  total_packets_created++;
   // all annotations, including IP header annotation, are copied,
   // but IP header will point to garbage if old header was 0
   if (!ip_header()) n->nh.iph = 0;

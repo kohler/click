@@ -24,6 +24,9 @@
 #include "string.hh"
 #include "glue.hh"
 
+#define POLLDEV_IDLE_LIMIT 32
+#define POLLDEV_MAX_PKTS_PER_RUN 8
+
 class PollDevice : public Element {
  public:
   

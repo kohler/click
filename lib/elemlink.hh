@@ -17,6 +17,7 @@ class ElementLink {
   long long _pass;
   unsigned int _stride;
   int _ntickets;
+  int _max_ntickets;
   ElementLink *_list;
   
   void stride() { _pass += _stride; }
@@ -27,11 +28,12 @@ class ElementLink {
  public:
   
   ElementLink()				
-    : _prev(0), _next(0), _pass(0), _stride(0), _ntickets(-1) { }
+    : _prev(0), _next(0), _pass(0), 
+      _stride(0), _ntickets(-1), _max_ntickets(-1) { }
   
   ElementLink(ElementLink *lst)
-    : _prev(0), _next(0), _pass(0), _stride(0), _ntickets(-1), 
-      _list(lst) { }
+    : _prev(0), _next(0), _pass(0), 
+      _stride(0), _ntickets(-1), _max_ntickets(-1), _list(lst) { }
 
   bool scheduled() const		{ return _prev; }
   ElementLink *scheduled_next() const	{ return _next; }
@@ -42,9 +44,11 @@ class ElementLink {
   void initialize_head()		{ _prev = _next = _list = this; }
   
   int ntickets() const			{ return _ntickets; }
-  void set_ntickets(int);
+  int max_ntickets() const		{ return _max_ntickets; }
+  void set_max_ntickets(int);
   void join_scheduler();
   void reschedule();
+  void adj_tickets(int);
   void unschedule();
 
   void refresh_worklist_passes();
@@ -106,6 +110,17 @@ ElementLink::schedule_before(ElementLink *n)
   }
 }
 
+inline void 
+ElementLink::adj_tickets(int n)
+{
+  _ntickets += n;
+  if (_ntickets > _max_ntickets)
+    _ntickets = _max_ntickets;
+  else if (_ntickets < 1)
+    _ntickets = 1;
+  _stride = STRIDE1 / _ntickets;
+}
+
 inline void
 ElementLink::reschedule()
 {
@@ -140,13 +155,17 @@ ElementLink::join_scheduler()
 }
 
 inline void
-ElementLink::set_ntickets(int n)
+ElementLink::set_max_ntickets(int n)
 {
-  _ntickets = n;
-  if (n > 0)
-    _stride = STRIDE1 / n;
+  _max_ntickets = n;
+  if (n > 0) {
+    _ntickets = 1;
+    _stride = STRIDE1 / _ntickets;
+  } else {
+    _ntickets = -1;
+    _stride = 0;
+  }
 }
-
 
 inline void 
 ElementLink::refresh_worklist_passes()

@@ -43,17 +43,6 @@ Router::~Router()
 #ifdef __KERNEL__
   initialize_head();		// get rid of scheduled wait queue
   _please_stop_driver = true;	// XXX races?
-  extern int total_packets_killed;
-  extern int total_packets_inherited;
-  extern int total_packets_created;
-  extern int total_packets_sent;
-  click_chatter("packets inherited %d, created %d, sent %d, killed %d",
-                total_packets_inherited, total_packets_created,
-		total_packets_sent,total_packets_killed);
-  total_packets_killed = 0;
-  total_packets_created = 0;
-  total_packets_inherited = 0;
-  total_packets_sent = 0;
 #endif
 }
 

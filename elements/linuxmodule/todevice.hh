@@ -26,6 +26,10 @@
  * =a ToLinux
  */
 
+#define TODEV_IDLE_LIMIT 32
+#define TODEV_MAX_PKTS_PER_RUN 32
+
+
 class ToDevice : public Element {
   
  public:

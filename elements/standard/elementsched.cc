@@ -41,7 +41,7 @@ ElementSched::configure(const String &conf, ErrorHandler *errh)
     else if (Element *e = router()->find(this, parts[0], errh)) {
       int c = -1;
       if (!cp_integer(parts[1], c)) errh->error("expected SCHEDULING_PARAM");
-      e->set_ntickets(c);
+      e->set_max_ntickets(c);
     } else
       errh->warning("no such element `%s'", parts[0].cc());
   }
