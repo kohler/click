@@ -1,3 +1,13 @@
+2002-07-19 Friday 22:19  Eddie Kohler <kohler@icir.org>
+
+	* DISTFILES (1.63), doc/mkwebdoc.pl (1.32),
+	etc/samplepackage/acclick.m4 (1.8), etc/samplepackage/aclocal.m4
+	(1.4), doc/mkwebdoc.pl (1.33): add --progman option
+
+2002-07-19 Friday 22:09  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.texi (1.40): nit
+
 2002-07-19 Friday 20:08  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/anonipaddr.cc (1.7), lib/element.cc (1.71):
