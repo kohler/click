@@ -42,7 +42,7 @@ GENERIC_OBJS = string.o straccum.o \
 	packet.o \
 	error.o glue.o timer.o gaprate.o \
 	elemlink.o element.o errorelement.o \
-	confparse.o lexer.o elemfilter.o router.o routerthread.o \
+	confparse.o lexer.o elemfilter.o router.o \
 	crc32.o iptable.o iptable2.o ip6table.o radix.o
 
 LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o sched.o \

@@ -26,7 +26,6 @@
 #include <fcntl.h>
 
 #include "lexer.hh"
-#include "routerthread.hh"
 #include "router.hh"
 #include "error.hh"
 #include "timer.hh"
@@ -583,7 +582,6 @@ particular purpose.\n");
     /* do nothing */;
   router = lexer->create_router();
   lexer->end_parse(cookie);
-  router->use();
 
   if (router->nelements() == 0)
     errh->warning("%s: configuration has no elements", router_file);
@@ -648,10 +646,9 @@ particular purpose.\n");
   }
 
   // run driver
-  RouterThread *rt = new RouterThread(router);
   if (!quit_immediately) {
     started = true;
-    rt->driver();
+    router->driver();
   }
 
   gettimeofday(&after_time, 0);
@@ -674,8 +671,7 @@ particular purpose.\n");
     if (call_read_handlers(handlers, errh) < 0)
       exit_value = 1;
 
-  delete rt;
-  router->unuse();
+  delete router;
   delete lexer;
   exit(exit_value);
 }
