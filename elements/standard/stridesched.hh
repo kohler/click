@@ -53,7 +53,7 @@ public:
   StrideSched();
   ~StrideSched();
 
-  int configure(const String &conf, ErrorHandler *errh);
+  int configure(const Vector<String> &conf, ErrorHandler *errh);
   void uninitialize();
   
   const char *class_name() const		{ return "StrideSched"; }

@@ -16,8 +16,11 @@
 #define ELEMENT_PROVIDES(x)
 #define EXPORT_ELEMENT(x)
 
-/* Define to 1 if <new.h> exists and works. */
+/* Define if <new.h> exists and works. */
 #undef HAVE_NEW_H
+
+/* Define if IPsec support is enabled. */
+#undef HAVE_IPSEC
 
 @TOP@
 @BOTTOM@

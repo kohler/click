@@ -42,7 +42,7 @@ class RandomLossage : public Element {
   int drops() const				{ return _drops; }
   
   RandomLossage *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   void add_handlers();

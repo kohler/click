@@ -19,7 +19,7 @@ public:
   void notify_ninputs(int);
   void notify_noutputs(int);
   
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
 

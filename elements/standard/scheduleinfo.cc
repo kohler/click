@@ -24,7 +24,7 @@ ScheduleInfo::ScheduleInfo()
 }
 
 int
-ScheduleInfo::configure(const String &conf, ErrorHandler *errh)
+ScheduleInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   // find _prefix, which includes slash
   int last_slash = id().find_right('/');
@@ -45,13 +45,11 @@ ScheduleInfo::configure(const String &conf, ErrorHandler *errh)
   _active = true;
   
   // compile scheduling info
-  Vector<String> args;
-  cp_argvec(conf, args);
-  for (int i = 0; i < args.size(); i++) {
+  for (int i = 0; i < conf.size(); i++) {
     Vector<String> parts;
     int mt;
-    cp_spacevec(args[i], parts);
-    if (parts.size() != 2 || cp_real2(parts[1], FRAC_BITS, mt) < 0)
+    cp_spacevec(conf[i], parts);
+    if (parts.size() != 2 || !cp_real2(parts[1], FRAC_BITS, &mt))
       errh->error("expected `ELEMENTNAME PARAM'");
     else {
       for (int j = 0; j < _element_names.size(); j++)

@@ -39,22 +39,20 @@ IPInputCombo::clone() const
 }
 
 int
-IPInputCombo::configure(const String &conf, ErrorHandler *errh)
+IPInputCombo::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
-
-  if(cp_va_parse(args[0], this, errh,
-                 cpUnsigned, "color", &_color,
-                 0) < 0)
-    return(-1);
+  if (cp_va_parse(conf, this, errh,
+		  cpUnsigned, "color", &_color,
+		  cpIgnoreRest,
+		  0) < 0)
+    return -1;
 
   Vector<u_int> ips;
   ips.push_back(0);
   ips.push_back(0xffffffff);
 
-  if (args.size() > 1) {
-    String s = args[1];
+  if (conf.size() > 1) {
+    String s = conf[1];
     while (s) {
       u_int a;
       if (!cp_ip_address(s, (unsigned char *)&a, &s))

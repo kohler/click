@@ -35,7 +35,7 @@ class Shaper : public Element { protected:
   int rate_scale() const			{ return _rate.scale; }
   
   Shaper *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
 

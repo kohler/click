@@ -67,7 +67,7 @@ ARPQuerier::notify_noutputs(int n)
 }
 
 int
-ARPQuerier::configure(const String &conf, ErrorHandler *errh)
+ARPQuerier::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpIPAddress, "IP address", &_my_ip,

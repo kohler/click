@@ -54,7 +54,7 @@ class Meter : public Element { protected:
   int rate_scale() const			{ return _rate.scale; }
   
   Meter *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
   

@@ -24,7 +24,7 @@ class ErrorElement : public Element {
   void notify_noutputs(int);
   
   ErrorElement *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
   Bitvector forward_flow(int) const;

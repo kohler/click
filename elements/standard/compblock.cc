@@ -31,7 +31,7 @@ CompareBlock::clone() const
 }
 
 int
-CompareBlock::configure(const String &conf, ErrorHandler *errh)
+CompareBlock::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _bad = 0;
   return cp_va_parse(conf, this, errh,
@@ -70,7 +70,7 @@ CompareBlock::fwd_weight_write_handler(const String &conf, Element *e,
     return errh->error("expecting one integer");
   }
   int weight;
-  if(!cp_integer(args[0], weight)) {
+  if(!cp_integer(args[0], &weight)) {
     return errh->error("not an integer");
   }
   me->_fwd_weight = weight;
@@ -89,7 +89,7 @@ CompareBlock::rev_weight_write_handler(const String &conf, Element *e,
     return errh->error("expecting one integer");
   }
   int weight;
-  if(!cp_integer(args[0], weight)) {
+  if(!cp_integer(args[0], &weight)) {
     return errh->error("not an integer");
   }
   me->_rev_weight = weight;
@@ -108,7 +108,7 @@ CompareBlock::thresh_write_handler(const String &conf, Element *e,
     return errh->error("expecting one integer");
   }
   int thresh;
-  if(!cp_integer(args[0], thresh)) {
+  if(!cp_integer(args[0], &thresh)) {
     return errh->error("not an integer");
   }
   me->_thresh = thresh;

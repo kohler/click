@@ -43,7 +43,7 @@ Tun::clone() const
 }
 
 int
-Tun::configure(const String &conf, ErrorHandler *errh)
+Tun::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpIPAddress, "near address", &_near,

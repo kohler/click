@@ -64,7 +64,7 @@ class RatedSource : public Element { protected:
   void add_handlers();
   
   RatedSource *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
 

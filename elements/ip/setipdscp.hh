@@ -29,7 +29,7 @@ class SetIPDSCP : public Element {
   unsigned char dscp() const			{ return _dscp; }
   
   SetIPDSCP *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   void add_handlers();
 

@@ -24,6 +24,14 @@
 #endif
 #include <stdarg.h>
 
+enum CpErrors {
+  CPE_OK = 0,
+  CPE_FORMAT,
+  CPE_NEGATIVE,
+  CPE_OVERFLOW
+};
+static int cp_errno;
+
 bool
 cp_eat_space(String &str)
 {
@@ -361,42 +369,46 @@ cp_spacevec(const String &conf, Vector<String> &vec)
 }
 
 bool
-cp_bool(String str, bool &return_value, String *rest = 0)
+cp_bool(String str, bool *return_value, String *rest = 0)
 {
   const char *s = str.data();
   int len = str.length();
   int take;
-  
+
+  bool value;
   if (len >= 1 && s[0] == '0') {
-    return_value = false;
+    value = false;
     take = 1;
   } else if (len >= 1 && s[0] == '1') {
-    return_value = true;
+    value = true;
     take = 1;
   } else if (len >= 5 && strncmp(s, "false", 5) == 0) {
-    return_value = false;
+    value = false;
     take = 5;
   } else if (len >= 4 && strncmp(s, "true", 4) == 0) {
-    return_value = true;
+    value = true;
     take = 4;
   } else if (len >= 2 && strncmp(s, "no", 2) == 0) {
-    return_value = false;
+    value = false;
     take = 2;
   } else if (len >= 3 && strncmp(s, "yes", 3) == 0) {
-    return_value = true;
+    value = true;
     take = 3;
   } else
     return false;
-  
-  if (rest) {
-    *rest = str.substring(take);
+
+  if (!rest && take != len)
+    return false;
+  else {
+    if (rest)
+      *rest = str.substring(take);
+    *return_value = value;
     return true;
-  } else
-    return take == len;
+  }
 }
 
 bool
-cp_integer(String str, int base, int &return_value, String *rest = 0)
+cp_integer(String str, int base, int *return_value, String *rest = 0)
 {
   int i = 0;
   const char *s = str.cc();
@@ -429,8 +441,8 @@ cp_integer(String str, int base, int &return_value, String *rest = 0)
     return false;
   
   char *end;
-  return_value = strtol(s + i, &end, base);
-  if (negative) return_value = -return_value;
+  int value = strtol(s + i, &end, base);
+  if (negative) value = -value;
 
   if (end - s == i)		// no characters in integer
     return false;
@@ -439,28 +451,32 @@ cp_integer(String str, int base, int &return_value, String *rest = 0)
     if (end - s <= i + 2)
       /* do nothing */;
     else if (end - s <= i + 4)
-      return_value = htons(return_value);
+      value = htons(value);
     else if (end - s <= i + 8)
-      return_value = htonl(return_value);
+      value = htonl(value);
     else
       return false;
   }
-  
-  if (rest) {
-    *rest = str.substring(end - s);
+
+  if (!rest && end - s != len)
+    return false;
+  else {
+    if (rest)
+      *rest = str.substring(end - s);
+    *return_value = value;
     return true;
-  } else
-    return end - s == len;
+  }
 }
 
 bool
-cp_integer(String str, int &return_value, String *rest = 0)
+cp_integer(String str, int *return_value, String *rest = 0)
 {
   return cp_integer(str, -1, return_value, rest);
 }
 
 bool
-cp_real(const String &str, int frac_digits, int &int_part, int &frac_part,
+cp_real(const String &str, int frac_digits,
+	int *return_int_part, int *return_frac_part,
 	String *rest = 0)
 {
   const char *s = str.data();
@@ -503,7 +519,7 @@ cp_real(const String &str, int frac_digits, int &int_part, int &frac_part,
   }
   
   // determine integer part
-  int_part = 0;
+  int int_part = 0;
   const char *c;
   for (c = int_s; c < int_e && c < int_e + exponent; c++)
     int_part = 10*int_part + *c - '0';
@@ -514,7 +530,7 @@ cp_real(const String &str, int frac_digits, int &int_part, int &frac_part,
   if (negative) int_part = -int_part;
   
   // determine fraction part
-  frac_part = 0;
+  int frac_part = 0;
   for (c = int_e + exponent; c < int_s && frac_digits > 0; c++, frac_digits--)
     /* do nothing */;
   for (; c < int_e && frac_digits > 0; c++, frac_digits--)
@@ -527,33 +543,46 @@ cp_real(const String &str, int frac_digits, int &int_part, int &frac_part,
   if (negative) frac_part = -frac_part;
   
   // done!
-  if (rest) {
-    *rest = str.substring(s - str.data());
+  if (!rest && s - str.data() != str.length())
+    return false;
+  else {
+    if (rest)
+      *rest = str.substring(s - str.data());
+    *return_int_part = int_part;
+    *return_frac_part = frac_part;
     return true;
-  } else
-    return s - str.data() == str.length();
+  }
 }
 
-int
-cp_real(const String &str, int frac_digits, int &value, String *rest = 0)
+bool
+cp_real(const String &str, int frac_digits,
+	int *return_value,
+	String *rest = 0)
 {
   int int_part, frac_part;
-  if (!cp_real(str, frac_digits, int_part, frac_part, rest))
-    return -1;
+  if (!cp_real(str, frac_digits, &int_part, &frac_part, rest)) {
+    cp_errno = CPE_FORMAT;
+    return false;
+  }
   
   int one = 1;
   for (int i = 0; i < frac_digits; i++)
     one *= 10;
   int max = 0x7FFFFFFF / one;
-  if (int_part >= 0 ? int_part >= max : -int_part >= max)
-    return -3;
+  if (int_part >= 0 ? int_part >= max : -int_part >= max) {
+    cp_errno = CPE_OVERFLOW;
+    return false;
+  }
   
-  value = (int_part * one + frac_part);
-  return 0;
+  *return_value = (int_part * one + frac_part);
+  cp_errno = CPE_OK;  
+  return true;
 }
 
-int
-cp_real2(const String &str, int frac_bits, int &value, String *rest = 0)
+bool
+cp_real2(const String &str, int frac_bits,
+	 int *return_value,
+	 String *rest = 0)
 {
   int frac_digits = 1;
   int base_ten_one = 10;
@@ -561,38 +590,61 @@ cp_real2(const String &str, int frac_bits, int &value, String *rest = 0)
     frac_digits++;
   
   int int_part, frac_part;
-  if (!cp_real(str, frac_digits, int_part, frac_part, rest))
-    return -1;
-  else if (int_part < 0 || frac_part < 0)
-    return -2;
-  else if (int_part > (1 << (32 - frac_bits)) - 1)
-    return -3;
-  else {
-    value = int_part << frac_bits;
+  if (!cp_real(str, frac_digits, &int_part, &frac_part, rest)) {
+    cp_errno = CPE_FORMAT;
+    return false;
+  } else if (int_part < 0 || frac_part < 0) {
+    cp_errno = CPE_NEGATIVE;
+    return false;
+  } else if (int_part > (1 << (32 - frac_bits)) - 1) {
+    cp_errno = CPE_OVERFLOW;
+    return false;
+  } else {
+    int value = int_part << frac_bits;
     base_ten_one /= 2;
     for (int i = frac_bits - 1; i >= 0; i--, base_ten_one /= 2)
       if (frac_part >= base_ten_one) {
 	frac_part -= base_ten_one;
 	value |= (1 << i);
       }
-    return 0;
+    cp_errno = CPE_OK;
+    *return_value = value;
+    return true;
   }
 }
 
 bool
-cp_word(String str, String &return_value, String *rest = 0)
+cp_milliseconds(const String &str, int *return_value, String *rest = 0)
+{
+  int v;
+  if (!cp_real(str, 3, &v, rest))
+    return false;
+  else if (v < 0) {
+    cp_errno = CPE_NEGATIVE;
+    return false;
+  } else {
+    *return_value = v;
+    return true;
+  }
+}
+
+bool
+cp_word(String str, String *return_value, String *rest = 0)
 {
   const char *s = str.data();
   int len = str.length();
   int pos = 0;
   while (pos < len && !isspace(s[pos]))
     pos++;
-  return_value = str.substring(0, pos);
-  if (rest) {
-    *rest = str.substring(pos);
+  String word = str.substring(0, pos);
+  if (!rest && pos != len)
+    return false;
+  else {
+    if (rest)
+      *rest = str.substring(pos);
+    *return_value = word;
     return true;
-  } else
-    return pos == len;
+  }
 }
 
 bool
@@ -601,53 +653,60 @@ cp_ip_address(String str, unsigned char *return_value, String *rest = 0)
   int i = 0;
   const char *s = str.cc();
   int len = str.length();
-  
+
+  unsigned char value[4];
   for (int d = 0; d < 4; d++) {
     char *end;
-    int value = strtol(s + i, &end, 10);
-    if (end - s == i || value < 0 || value > 255)
+    int part = strtol(s + i, &end, 10);
+    if (end - s == i || part < 0 || part > 255)
       return false;
     if (d != 3 && (end[0] != '.' || !isdigit(end[1])))
       return false;
-    return_value[d] = value;
+    value[d] = part;
     i = (end - s) + 1;
   }
   
-  if (rest) {
-    *rest = str.substring(i - 1);
+  if (!rest && i < len)
+    return false;
+  else {
+    if (rest)
+      *rest = str.substring(i - 1);
+    memcpy(return_value, value, 4);
     return true;
-  } else
-    return i >= len;
+  }
 }
 
 bool
-cp_ip_address_mask(String str, unsigned char *return_value,
-		   unsigned char *return_mask, String *rest = 0)
+cp_ip_address_mask(String str,
+		   unsigned char *return_value, unsigned char *return_mask,
+		   String *rest = 0)
 {
-  String mask;
-  if (!cp_ip_address(str, return_value, &mask))
+  unsigned char value[4], mask[4];
+  
+  String mask_str;
+  if (!cp_ip_address(str, value, &mask_str))
     return false;
 
   // move past space or /
   bool slash = false;
-  if (mask.length() && mask[0] == '/') {
-    mask = mask.substring(1);
+  if (mask_str.length() && mask_str[0] == '/') {
+    mask_str = mask_str.substring(1);
     slash = true;
-  } else if (mask.length() && isspace(mask[0]))
-    cp_eat_space(mask);
+  } else if (mask_str.length() && isspace(mask_str[0]))
+    cp_eat_space(mask_str);
   else
     return false;
 
   // check for complete IP address
   int relevant_bits;
-  if (cp_ip_address(mask, return_mask, rest))
-    return true;
+  if (cp_ip_address(mask_str, mask, rest))
+    /* OK */;
   
-  else if (slash && cp_integer(mask, relevant_bits, rest)
+  else if (slash && cp_integer(mask_str, &relevant_bits, rest)
 	   && relevant_bits >= 0 && relevant_bits <= 32) {
     // set bits
-    return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 0;
-    unsigned char *pos = return_mask;
+    mask[0] = mask[1] = mask[2] = mask[3] = 0;
+    unsigned char *pos = mask;
     unsigned char bit = 0x80;
     for (int i = 0; i < relevant_bits; i++) {
       *pos |= bit;
@@ -657,10 +716,14 @@ cp_ip_address_mask(String str, unsigned char *return_value,
 	bit = 0x80;
       }
     }
-    return true;
+    /* OK */;
     
   } else
     return false;
+
+  memcpy(return_value, value, 4);
+  memcpy(return_mask, mask, 4);
+  return true;
 }
 
 #ifndef CLICK_TOOL
@@ -685,13 +748,14 @@ cp_ethernet_address(const String &str, unsigned char *return_value,
   int i = 0;
   const char *s = str.data();
   int len = str.length();
-  
+
+  unsigned char value[6];
   for (int d = 0; d < 6; d++) {
     if (i < len - 1 && isxdigit(s[i]) && isxdigit(s[i+1])) {
-      return_value[d] = xvalue(s[i])*16 + xvalue(s[i+1]);
+      value[d] = xvalue(s[i])*16 + xvalue(s[i+1]);
       i += 2;
     } else if (i < len && isxdigit(s[i])) {
-      return_value[d] = xvalue(s[i]);
+      value[d] = xvalue(s[i]);
       i += 1;
     } else
       return false;
@@ -701,11 +765,14 @@ cp_ethernet_address(const String &str, unsigned char *return_value,
     i++;
   }
 
-  if (rest) {
-    *rest = str.substring(i);
+  if (!rest && i < len)
+    return false;
+  else {
+    if (rest)
+      *rest = str.substring(i);
+    memcpy(return_value, value, 6);
     return true;
-  } else
-    return i >= len;
+  }
 }
 
 #ifndef CLICK_TOOL
@@ -740,7 +807,7 @@ cp_element(const String &name, Element *owner, ErrorHandler *errh)
 #ifdef HAVE_IPSEC
 bool
 cp_des_cblock(const String &str, unsigned char *return_value,
-		    String *rest = 0)
+	      String *rest = 0)
 {
   int i = 0;
   const char *s = str.data();
@@ -748,20 +815,24 @@ cp_des_cblock(const String &str, unsigned char *return_value,
   
   if (len != 16)
     return false;
-  
+
+  unsigned char value[8];
   for (int d = 0; d < 8; d++) {
     if (i < len - 1 && isxdigit(s[i]) && isxdigit(s[i+1])) {
-      return_value[d] = xvalue(s[i])*16 + xvalue(s[i+1]);
+      value[d] = xvalue(s[i])*16 + xvalue(s[i+1]);
       i += 2;
     } else
       return false;
   }
-  
-  if (rest) {
-    *rest = str.substring(i);
+
+  if (!rest && len != i)
+    return false;
+  else {
+    if (rest)
+      *rest = str.substring(i);
+    memcpy(return_value, value, 8);
     return true;
-  } else
-    return len - i == 0;
+  }
 }
 #endif
 
@@ -885,7 +956,7 @@ store_value(int cp_command, Values &v)
 }
 
 static int
-cp_va_parsev(Vector<String> &args,
+cp_va_parsev(const Vector<String> &args,
 #ifndef CLICK_TOOL
 	     Element *element,
 #endif
@@ -936,7 +1007,7 @@ cp_va_parsev(Vector<String> &args,
        const char *desc = va_arg(val, const char *);
        v.store = va_arg(val, bool *);
        if (skip) break;
-       if (!cp_bool(args[argno], v.v.b))
+       if (!cp_bool(args[argno], &v.v.b))
 	 errh->error("argument %d should be %s (bool)", argno+1, desc);
        break;
      }
@@ -945,7 +1016,7 @@ cp_va_parsev(Vector<String> &args,
        const char *desc = va_arg(val, const char *);
        v.store = va_arg(val, unsigned char *);
        if (skip) break;
-       if (!cp_integer(args[argno], v.v.i))
+       if (!cp_integer(args[argno], &v.v.i))
 	 errh->error("argument %d should be %s (byte)", argno+1, desc);
        if (v.v.i < 0 || v.v.i > 255)
 	 errh->error("argument %d (%s) must be >= 0 and < 256", argno+1, desc);
@@ -957,7 +1028,7 @@ cp_va_parsev(Vector<String> &args,
        const char *desc = va_arg(val, const char *);
        v.store = va_arg(val, int *);
        if (skip) break;
-       if (!cp_integer(args[argno], v.v.i))
+       if (!cp_integer(args[argno], &v.v.i))
 	 errh->error("argument %d should be %s (integer)", argno+1, desc);
        else if (cp_command == cpUnsigned && v.v.i < 0)
 	 errh->error("argument %d (%s) must be >= 0", argno+1, desc);
@@ -965,21 +1036,33 @@ cp_va_parsev(Vector<String> &args,
      }
      
      case cpReal:
-     case cpNonnegReal:
-     case cpMilliseconds: {
+     case cpNonnegReal: {
        const char *desc = va_arg(val, const char *);
-       int frac_digits = 3; // default for cpMilliseconds
-       if (cp_command != cpMilliseconds) frac_digits = va_arg(val, int);
+       int frac_digits = va_arg(val, int);
        v.store = va_arg(val, int *);
        if (skip) break;
-       int rv = cp_real(args[argno], frac_digits, v.v.i);
-       if (rv == -1)
-	 errh->error("argument %d should be %s (real)", argno+1, desc);
-       else if (rv == -3)
-	 errh->error("overflow on argument %d (%s)", argno+1, desc);
-       else if ((cp_command == cpNonnegReal || cp_command == cpMilliseconds)
-		&& v.v.i < 0)
+       if (!cp_real(args[argno], frac_digits, &v.v.i)) {
+	 if (cp_errno == CPE_OVERFLOW)
+	   errh->error("overflow on argument %d (%s)", argno+1, desc);
+	 else
+	   errh->error("argument %d should be %s (real)", argno+1, desc);
+       } else if (cp_command == cpNonnegReal && v.v.i < 0)
 	 errh->error("argument %d (%s) must be >= 0", argno+1, desc);
+       break;
+     }
+     
+     case cpMilliseconds: {
+       const char *desc = va_arg(val, const char *);
+       v.store = va_arg(val, int *);
+       if (skip) break;
+       if (!cp_milliseconds(args[argno], &v.v.i)) {
+	 if (cp_errno == CPE_OVERFLOW)
+	   errh->error("overflow on argument %d (%s)", argno+1, desc);
+	 else if (cp_errno == CPE_NEGATIVE)
+	   errh->error("argument %d (%s) must be >= 0", argno+1, desc);
+	 else
+	   errh->error("argument %d should be %s (real)", argno+1, desc);
+       }
        break;
      }
      
@@ -990,13 +1073,14 @@ cp_va_parsev(Vector<String> &args,
        assert(frac_bits > 0);
        if (skip) break;
        
-       int retval = cp_real2(args[argno], frac_bits, v.v.i);
-       if (retval == -2)
-	 errh->error("argument %d (%s) must be >= 0", argno+1, desc);
-       else if (retval == -3)
-	 errh->error("overflow on argument %d (%s)", argno+1, desc);
-       else if (retval < 0)
-	 errh->error("argument %d should be %s (real)", argno+1, desc);
+       if (!cp_real2(args[argno], frac_bits, &v.v.i)) {
+	 if (cp_errno == CPE_NEGATIVE)
+	   errh->error("argument %d (%s) must be >= 0", argno+1, desc);
+	 else if (cp_errno == CPE_OVERFLOW)
+	   errh->error("overflow on argument %d (%s)", argno+1, desc);
+	 else
+	   errh->error("argument %d should be %s (real)", argno+1, desc);
+       }
        break;
      }
      
@@ -1054,11 +1138,11 @@ cp_va_parsev(Vector<String> &args,
        (void) va_arg(val, const char *);
        v.store = va_arg(val, Element **);
        if (skip) break;
-       const char *lookup_name = args[argno].cc();
-       if (!lookup_name)
+       const String &name = args[argno];
+       if (!name)
 	 v.v.element = 0;
        else
-	 v.v.element = cp_element(lookup_name, element, errh);
+	 v.v.element = cp_element(name, element, errh);
        break;
      }
 #endif
@@ -1117,7 +1201,7 @@ cp_va_parsev(Vector<String> &args,
 }
 
 int
-cp_va_parse(const String &argument,
+cp_va_parse(const Vector<String> &conf,
 #ifndef CLICK_TOOL
 	    Element *element,
 #endif
@@ -1125,19 +1209,17 @@ cp_va_parse(const String &argument,
 {
   va_list val;
   va_start(val, errh);
-  Vector<String> args;
-  cp_argvec(argument, args);
 #ifndef CLICK_TOOL
-  int retval = cp_va_parsev(args, element, errh, val);
+  int retval = cp_va_parsev(conf, element, errh, val);
 #else
-  int retval = cp_va_parsev(args, errh, val);
+  int retval = cp_va_parsev(conf, errh, val);
 #endif
   va_end(val);
   return retval;
 }
 
 int
-cp_va_parse(Vector<String> &args,
+cp_va_parse(const String &confstr,
 #ifndef CLICK_TOOL
 	    Element *element,
 #endif
@@ -1145,10 +1227,12 @@ cp_va_parse(Vector<String> &args,
 {
   va_list val;
   va_start(val, errh);
+  Vector<String> conf;
+  cp_argvec(confstr, conf);
 #ifndef CLICK_TOOL
-  int retval = cp_va_parsev(args, element, errh, val);
+  int retval = cp_va_parsev(conf, element, errh, val);
 #else
-  int retval = cp_va_parsev(args, errh, val);
+  int retval = cp_va_parsev(conf, errh, val);
 #endif
   va_end(val);
   return retval;
@@ -1232,11 +1316,12 @@ cp_unparse_real(int real, int frac_bits)
   return sa.take_string();
 }
 
-#if defined(__KERNEL__) || 1 /* always use this code for testing purposes */
-
 String
 cp_unparse_ulonglong(unsigned long long q, int base, bool uppercase)
 {
+  // Unparse an unsigned long long. Linux kernel sprintf can't handle %L,
+  // so we provide our own function.
+  
   char buf[256];
   char *lastbuf = buf + 255;
   char *trav;
@@ -1252,8 +1337,6 @@ cp_unparse_ulonglong(unsigned long long q, int base, bool uppercase)
   } else {
     assert(base == 10);
     
-    // Linux kernel sprintf can't handle %L, and doesn't have long long
-    // multiply or divide. THIS REQUIRES RIGAMAROLE.
     for (trav = lastbuf; q > 0; trav--) {
       
       // k = Approx[q/10] -- know that k <= q/10
@@ -1289,7 +1372,3 @@ cp_unparse_ulonglong(unsigned long long q, int base, bool uppercase)
   
   return String(trav + 1, lastbuf - trav);
 }
-
-#else
-# error "fixme"
-#endif

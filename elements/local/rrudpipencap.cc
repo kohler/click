@@ -42,14 +42,12 @@ RoundRobinUDPIPEncap::clone() const
 }
 
 int
-RoundRobinUDPIPEncap::configure(const String &conf, ErrorHandler *errh)
+RoundRobinUDPIPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
-  if (args.size() == 0)
+  if (conf.size() == 0)
     return errh->error("too few arguments");
 
-  _naddrs = args.size();
+  _naddrs = conf.size();
   _addrs = new Addrs[_naddrs];
   if (!_addrs)
     return errh->error("out of memory");
@@ -57,16 +55,16 @@ RoundRobinUDPIPEncap::configure(const String &conf, ErrorHandler *errh)
   int before = errh->nerrors();
   for (unsigned i = 0; i < _naddrs; i++) {
     Vector<String> words;
-    cp_spacevec(args[i], words);
+    cp_spacevec(conf[i], words);
     if (words.size() == 4)
       words.push_back("1");
     int sport, dport;
     if (words.size() != 5
 	|| !cp_ip_address(words[0], (unsigned char *)&_addrs[i].saddr)
-	|| !cp_integer(words[1], sport)
+	|| !cp_integer(words[1], &sport)
 	|| !cp_ip_address(words[2], (unsigned char *)&_addrs[i].daddr)
-	|| !cp_integer(words[3], dport)
-	|| !cp_bool(words[4], _addrs[i].cksum)
+	|| !cp_integer(words[3], &dport)
+	|| !cp_bool(words[4], &_addrs[i].cksum)
 	|| sport < 0 || sport >= 0x10000 || dport < 0 || dport >= 0x10000)
       errh->error("argument %d should be `SADDR SPORT DADDR DPORT [CHECKSUM?]'", i);
     else {

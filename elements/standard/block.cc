@@ -29,7 +29,7 @@ Block::clone() const
 }
 
 int
-Block::configure(const String &conf, ErrorHandler *errh)
+Block::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpInteger, "threshold", &_thresh,
@@ -58,7 +58,7 @@ Block::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler
     return -1;
   }
   int thresh;
-  if(!cp_integer(args[0], thresh)) {
+  if(!cp_integer(args[0], &thresh)) {
     errh->error("not an integer");
     return -1;
   }

@@ -47,7 +47,7 @@ class PerfInfo : public Element {
   PerfInfo *clone() const;
   
   const char *class_name() const		{ return "PerfInfo"; }
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh);
   void uninitialize();
 };

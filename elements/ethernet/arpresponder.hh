@@ -44,7 +44,7 @@ class ARPResponder : public Element {
   const char *class_name() const		{ return "ARPResponder"; }
   const char *processing() const	{ return AGNOSTIC; }
   ARPResponder *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
   

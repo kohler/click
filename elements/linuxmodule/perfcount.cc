@@ -37,7 +37,7 @@ PerfCount::clone() const
 }
 
 int
-PerfCount::configure(const String &conf, ErrorHandler *errh)
+PerfCount::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "index", &_idx,

@@ -30,7 +30,7 @@ Tee::notify_noutputs(int n)
 }
 
 int
-Tee::configure(const String &conf, ErrorHandler *errh)
+Tee::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int n = noutputs();
   if (cp_va_parse(conf, this, errh,
@@ -70,7 +70,7 @@ PullTee::notify_noutputs(int n)
 }
 
 int
-PullTee::configure(const String &conf, ErrorHandler *errh)
+PullTee::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int n = noutputs();
   if (cp_va_parse(conf, this, errh,

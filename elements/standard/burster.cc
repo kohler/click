@@ -36,7 +36,7 @@ Burster::clone() const
 }
 
 int
-Burster::configure(const String &conf, ErrorHandler *errh)
+Burster::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpMilliseconds, "packet pulling interval", &_interval,

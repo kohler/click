@@ -32,7 +32,7 @@ IPGWOptions::~IPGWOptions()
 }
 
 int
-IPGWOptions::configure(const String &conf, ErrorHandler *errh)
+IPGWOptions::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   IPAddress a;
 

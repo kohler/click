@@ -45,7 +45,7 @@ IPRateMonitor::notify_ninputs(int n)
 }
 
 int
-IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
+IPRateMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String count_what;
   if (cp_va_parse(conf, this, errh,
@@ -379,7 +379,7 @@ IPRateMonitor::memmax_write_handler
     return -1;
   }
   int memmax;
-  if (!cp_integer(args[0], memmax)) {
+  if (!cp_integer(args[0], &memmax)) {
     errh->error("not an integer");
     return -1;
   }

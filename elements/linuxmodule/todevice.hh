@@ -44,7 +44,7 @@ class ToDevice : public AnyDevice {
   const char *processing() const	{ return PULL; }
   ToDevice *clone() const		{ return new ToDevice; }
   
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void add_handlers();

@@ -31,7 +31,7 @@ SetIPDSCP::clone() const
 }
 
 int
-SetIPDSCP::configure(const String &conf, ErrorHandler *errh)
+SetIPDSCP::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned dscp_val;
   if (cp_va_parse(conf, this, errh,

@@ -98,7 +98,7 @@ B8B10::initialize(ErrorHandler *errh)
 }
 
 int
-B8B10::configure(const String &conf, ErrorHandler *errh)
+B8B10::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpInteger, "encode flag", &_flag,

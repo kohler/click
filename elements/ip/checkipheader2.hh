@@ -43,7 +43,7 @@ class CheckIPHeader2 : public Element {
   const char *class_name() const		{ return "CheckIPHeader2"; }
   const char *processing() const		{ return "a/ah"; }
   void notify_noutputs(int);
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   
   int drops() const				{ return _drops; }
   

@@ -24,7 +24,7 @@ class StoreCycles : public Element {
   const char *class_name() const		{ return "StoreCycles"; }
   const char *processing() const		{ return AGNOSTIC; }
   StoreCycles *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void add_handlers();

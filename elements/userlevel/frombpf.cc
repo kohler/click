@@ -40,7 +40,7 @@ FromBPF::clone() const
 }
 
 int
-FromBPF::configure(const String &conf, ErrorHandler *errh)
+FromBPF::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (_pcap) pcap_close(_pcap);
   _pcap = 0;

@@ -24,7 +24,7 @@ Align::Align()
 }
 
 int
-Align::configure(const String &conf, ErrorHandler *errh)
+Align::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int count;
   if (cp_va_parse(conf, this, errh,

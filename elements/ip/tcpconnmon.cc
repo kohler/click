@@ -38,24 +38,11 @@ TCPConnectionMonitor::clone() const
 }
 
 int
-TCPConnectionMonitor::configure(const String &conf, ErrorHandler *errh)
+TCPConnectionMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
-
-  // Enough args?
-  if(args.size() != 1) {
-    errh->error("expecting one argument");
-    return -1;
-  }
-
-  int thresh;
-  if(!cp_integer(args[0], thresh) || thresh < 0) {
-    errh->error("THRESH should be non-negative integer");
-    return -1;
-  }
-  _thresh = (unsigned int) thresh;
-  return 0;
+  return cp_va_parse(conf, this, errh,
+		     cpUnsigned, "threshold", &_thresh,
+		     0);
 }
 
 
@@ -152,7 +139,7 @@ TCPConnectionMonitor::thresh_write_handler(const String &conf, Element *e, void 
     return -1;
   }
   int thresh;
-  if(!cp_integer(args[0], thresh)) {
+  if(!cp_integer(args[0], &thresh)) {
     errh->error("not an integer");
     return -1;
   }

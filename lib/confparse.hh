@@ -22,13 +22,14 @@ void cp_argvec_unsubst(const String &, Vector<String> &);
 void cp_spacevec(const String &, Vector<String> &);
 
 // numbers
-bool cp_bool(String, bool &, String *rest = 0);
-bool cp_integer(String, int &, String *rest = 0);
-bool cp_integer(String, int base, int &, String *rest = 0);
-bool cp_real(const String &, int frac_digits, int &, int &, String *rest = 0);
-int cp_real(const String &, int frac_digits, int &, String *rest = 0);
-int cp_real2(const String &, int frac_bits, int &, String *rest = 0);
-bool cp_word(String, String &, String *rest = 0);
+bool cp_bool(String, bool *, String *rest = 0);
+bool cp_integer(String, int *, String *rest = 0);
+bool cp_integer(String, int base, int *, String *rest = 0);
+bool cp_real(const String &, int frac_digits, int *, int *, String *rest = 0);
+bool cp_real(const String &, int frac_digits, int *, String *rest = 0);
+bool cp_real2(const String &, int frac_bits, int *, String *rest = 0);
+bool cp_milliseconds(const String &, int *, String *rest = 0);
+bool cp_word(String, String *, String *rest = 0);
 
 // network addresses
 bool cp_ip_address(String, unsigned char *, String *rest = 0);
@@ -68,9 +69,9 @@ enum CpVaParseCmd {
   cpDesCblock,  // unsigned char value[8]
 };
 
-int cp_va_parse(const String &arg, CP_VA_PARSE_ARGS_REST);
-int cp_va_parse(Vector<String> &args, CP_VA_PARSE_ARGS_REST);
-int cp_va_space_parse(const String &arg, CP_VA_PARSE_ARGS_REST);
+int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);
+int cp_va_parse(const String &, CP_VA_PARSE_ARGS_REST);
+int cp_va_space_parse(const String &, CP_VA_PARSE_ARGS_REST);
 // ... is: cpEnd				stop
 //     or: cpOptional				remaining args are optional
 //     or: CpVaParseCmd type_id,		actual argument

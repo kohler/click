@@ -30,20 +30,17 @@ StrideSched::~StrideSched()
 }
 
 int
-StrideSched::configure(const String &conf, ErrorHandler *errh)
+StrideSched::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
-  
-  if (args.size() < 1) {
+  if (conf.size() < 1) {
     errh->error("StrideSched must be configured with at least one ticket");
     return -1;
   }
-  set_ninputs(args.size());
+  set_ninputs(conf.size());
 
-  for (int i = 0; i < args.size(); i++) {
+  for (int i = 0; i < conf.size(); i++) {
     int v;
-    if (!cp_integer(args[i], v))
+    if (!cp_integer(conf[i], &v))
       errh->error("argument %d should be number of tickets (integer)", i);
     else if (v < 0)
       errh->error("argument %d (number of tickets) must be >= 0", i);

@@ -60,7 +60,7 @@ class FromLinux : public AnyDevice {
 
   struct enet_statistics *stats() const	{ return &_stats; }
   
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
 

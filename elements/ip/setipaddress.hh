@@ -25,7 +25,7 @@ class SetIPAddress : public Element {
   const char *processing() const		{ return AGNOSTIC; }
   SetIPAddress *clone() const			{ return new SetIPAddress; }
   
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
   

@@ -32,7 +32,7 @@ class FrontDropQueue : public Queue {
   void *cast(const char *);
   
   FrontDropQueue *clone() const			{ return new FrontDropQueue; }
-  int live_reconfigure(const String &, ErrorHandler *);
+  int live_reconfigure(const Vector<String> &, ErrorHandler *);
   void take_state(Element *, ErrorHandler *);
   
   void push(int port, Packet *);

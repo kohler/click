@@ -24,7 +24,7 @@ AlignmentInfo::AlignmentInfo()
 }
 
 int
-AlignmentInfo::configure(const String &conf, ErrorHandler *errh)
+AlignmentInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   // check for an earlier AlignmentInfo
   int my_number = router()->eindex(this);
@@ -34,11 +34,9 @@ AlignmentInfo::configure(const String &conf, ErrorHandler *errh)
       return ai->configure(conf, errh);
 
   // this is the first AlignmentInfo; store all information here
-  Vector<String> args;
-  cp_argvec(conf, args);
-  for (int i = 0; i < args.size(); i++) {
+  for (int i = 0; i < conf.size(); i++) {
     Vector<String> parts;
-    cp_spacevec(args[i], parts);
+    cp_spacevec(conf[i], parts);
     
     if (parts.size() == 0)
       errh->warning("empty configuration argument %d", i);
@@ -58,9 +56,9 @@ AlignmentInfo::configure(const String &conf, ErrorHandler *errh)
       _elem_icount[number] = (parts.size() - 1) / 2;
       for (int j = 1; j < parts.size() - 1; j += 2) {
 	int c = -1, o = -1;
-	if (!cp_integer(parts[j], c))
+	if (!cp_integer(parts[j], &c))
 	  errh->error("expected CHUNK");
-	if (!cp_integer(parts[j+1], o))
+	if (!cp_integer(parts[j+1], &o))
 	  errh->error("expected OFFSET");
 	_chunks.push_back(c);
 	_offsets.push_back(o);

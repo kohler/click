@@ -25,7 +25,7 @@ GetIPAddress::GetIPAddress()
 }
 
 int
-GetIPAddress::configure(const String &conf, ErrorHandler *errh)
+GetIPAddress::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "byte offset of IP address", &_offset,

@@ -46,7 +46,7 @@ class CheckIPHeader : public Element {
   
   CheckIPHeader *clone() const;
   void notify_noutputs(int);
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   
   int drops() const				{ return _drops; }
   

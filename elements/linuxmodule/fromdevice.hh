@@ -41,7 +41,7 @@ class FromDevice : public AnyDevice {
   const char *processing() const		{ return PUSH; }
   FromDevice *clone() const			{ return new FromDevice; }
   
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void take_state(Element *, ErrorHandler *);

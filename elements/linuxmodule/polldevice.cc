@@ -74,7 +74,7 @@ PollDevice::static_cleanup()
 
 
 int
-PollDevice::configure(const String &conf, ErrorHandler *errh)
+PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_devname,

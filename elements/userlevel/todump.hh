@@ -33,7 +33,7 @@ class ToDump : public Element {
   const char *class_name() const		{ return "ToDump"; }
   ToDump *clone() const;
   
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
 

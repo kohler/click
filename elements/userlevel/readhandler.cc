@@ -11,7 +11,7 @@
 #include "../standard/scheduleinfo.hh"
  
 int
-ReadHandlerCaller::configure(const String &conf, ErrorHandler *errh)
+ReadHandlerCaller::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "approximate duration between run", &_n,
@@ -23,7 +23,7 @@ ReadHandlerCaller::configure(const String &conf, ErrorHandler *errh)
 int
 ReadHandlerCaller::initialize(ErrorHandler *errh)
 {
-  SchedulerInfo::join_scheduler(this, errh);
+  ScheduleInfo::join_scheduler(this, errh);
   _last_time = click_jiffies();
   return 0;
 }

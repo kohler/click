@@ -29,22 +29,19 @@ IPFlexMonitor::~IPFlexMonitor()
 }
 
 int
-IPFlexMonitor::configure(const String &conf, ErrorHandler *errh)
+IPFlexMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
 #if IPVERSION == 4
-  Vector<String> args;
-  cp_argvec(conf, args);
-
   // Enough args?
-  if(args.size() < 3) {
+  if(conf.size() < 3) {
     errh->error("too few arguments");
     return -1;
   }
 
   // PACKETS/BYTES
-  if(args[0] == "PACKETS")
+  if(conf[0] == "PACKETS")
     _pb = COUNT_PACKETS;
-  else if(args[0] == "BYTES")
+  else if(conf[0] == "BYTES")
     _pb = COUNT_BYTES;
   else {
     errh->error("first argument should be \"PACKETS\" or \"BYTES\"");
@@ -53,14 +50,14 @@ IPFlexMonitor::configure(const String &conf, ErrorHandler *errh)
 
   // OFFSET
   int offset;
-  if(!cp_integer(args[1], offset) || offset < 0) {
+  if(!cp_integer(conf[1], &offset) || offset < 0) {
     errh->error("second argument OFFSET should be non-negative integer");
     return -1;
   }
   _offset = (unsigned int) offset;
 
   // THRESH
-  if(!cp_integer(args[2], _thresh)) {
+  if(!cp_integer(conf[2], &_thresh)) {
     errh->error("second argument expected THRESH. Not found.");
     return -1;
   }
@@ -77,11 +74,11 @@ IPFlexMonitor::configure(const String &conf, ErrorHandler *errh)
   int change;
   String srcdst;
   struct _inp *inp;
-  for (int i = 3; i < args.size(); i++) {
-    String arg = args[i];
-    if(cp_word(arg, srcdst, &arg) &&
+  for (int i = 3; i < conf.size(); i++) {
+    String arg = conf[i];
+    if(cp_word(arg, &srcdst, &arg) &&
        cp_eat_space(arg) &&
-       cp_integer(arg, change)) {
+       cp_integer(arg, &change)) {
 
       inp = new struct _inp;
       inp->change = change;
@@ -283,7 +280,7 @@ IPFlexMonitor::thresh_write_handler(const String &conf, Element *e, void *, Erro
     return -1;
   }
   int thresh;
-  if(!cp_integer(args[0], thresh)) {
+  if(!cp_integer(args[0], &thresh)) {
     errh->error("not an integer");
     return -1;
   }
@@ -305,7 +302,7 @@ IPFlexMonitor::reset_write_handler(const String &conf, Element *e, void *, Error
     return -1;
   }
   int init;
-  if(!cp_integer(args[0], init)) {
+  if(!cp_integer(args[0], &init)) {
     errh->error("not an integer");
     return -1;
   }

@@ -31,7 +31,7 @@ Switch::notify_noutputs(int n)
 }
 
 int
-Switch::configure(const String &conf, ErrorHandler *errh)
+Switch::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _output = 0;
   if (cp_va_parse(conf, this, errh,
@@ -65,7 +65,7 @@ Switch::write_param(const String &in_s, Element *e, void *, ErrorHandler *errh)
 {
   Switch *sw = (Switch *)e;
   String s = cp_subst(in_s);
-  if (!cp_integer(s, sw->_output))
+  if (!cp_integer(s, &sw->_output))
     return errh->error("Switch output must be integer");
   if (sw->_output >= sw->noutputs())
     sw->_output = -1;

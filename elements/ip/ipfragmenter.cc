@@ -48,7 +48,7 @@ IPFragmenter::clone() const
 
 
 int
-IPFragmenter::configure(const String &conf, ErrorHandler *errh)
+IPFragmenter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
                   cpUnsigned, "MTU", &_mtu,

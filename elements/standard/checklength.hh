@@ -24,7 +24,7 @@ class CheckLength : public Element { protected:
   void notify_noutputs(int);
   
   CheckLength *clone() const			{ return new CheckLength; }
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   
   void push(int, Packet *);
   Packet *pull(int);

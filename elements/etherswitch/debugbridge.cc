@@ -40,10 +40,11 @@ DebugBridge::clone() const
 }
 
 int
-DebugBridge::configure(const String &conf, ErrorHandler *)
+DebugBridge::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  _label = conf;
-  return 0;
+  return cp_va_parse(conf, this, errh,
+		     cpString, "label", &_label,
+		     0);
 }
 
 Packet *

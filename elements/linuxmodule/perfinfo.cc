@@ -30,7 +30,7 @@ PerfInfo::clone() const
 }
 
 int
-PerfInfo::configure(const String &conf, ErrorHandler *errh)
+PerfInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String metric0, metric1;
   

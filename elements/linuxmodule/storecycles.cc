@@ -35,7 +35,7 @@ StoreCycles::clone() const
 }
 
 int
-StoreCycles::configure(const String &conf, ErrorHandler *errh)
+StoreCycles::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "first index", &_idx1,

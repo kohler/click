@@ -48,7 +48,7 @@ RED::set_C1_and_C2()
 }
 
 int
-RED::configure(const String &conf, ErrorHandler *errh)
+RED::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int min_thresh, max_thresh, max_p;
   String queues_string = String();

@@ -2,6 +2,24 @@ Click NEWS
 
 Version 1.0.7
 
+* Incompatible API changes
+
+** Made configuration argument parsing more uniform among elements. For
+   example, every configuration argument is always a comma-separated
+   string. This is enforced by passing a vector of strings to the
+   `configure' method: `cp_argvec' is called before the `configure' method
+   is called. Changed Element method `int configure(const String &,
+   ErrorHandler *)' to `int configure(const Vector<String> &, ErrorHandler
+   *)', and updated elements.
+
+** The `cp_DATATYPE' functions take pointers instead of references. The
+   pointer are much clearer.
+
+** Changed Element method `bool configure_first() const' to `int
+   configure_phase() const'. Now element classes can specify their relative
+   configuration and initialization order; for example, ToBPF specifies
+   that it should be configured and initialized after any FromBPFs.
+
 * General
 
 ** Added support for parsing CIDR-style [Classless Inter-Domain Routing]
@@ -10,11 +28,6 @@ Version 1.0.7
    255.255.255.0' or `18.26.7.0/24'.
 
 ** Added new `tickets' handler, available by default on every element.
-
-** Changed Element method `bool configure_first() const' to `int
-   configure_phase() const'. Now element classes can specify their relative
-   configuration and initialization order; for example, ToBPF specifies
-   that it should be configured and initialized after any FromBPFs.
 
 * User-level driver
 

@@ -32,7 +32,7 @@ TimedSource::clone() const
 }
 
 int
-TimedSource::configure(const String &conf, ErrorHandler *errh)
+TimedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpMilliseconds, "packet generation interval", &_interval,

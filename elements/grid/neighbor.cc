@@ -37,7 +37,7 @@ Neighbor::cast(const char *n)
 }
 
 int
-Neighbor::configure(const String &, ErrorHandler *)
+Neighbor::configure(const Vector<String> &, ErrorHandler *)
 {
   return 0;
 }

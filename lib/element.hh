@@ -84,13 +84,13 @@ class Element : public ElementLink { public:
   // CLONING AND CONFIGURATION
   virtual Element *clone() const = 0;
   virtual int configure_phase() const;
-  virtual int configure(const String &, ErrorHandler *);
+  virtual int configure(const Vector<String> &, ErrorHandler *);
   virtual int initialize(ErrorHandler *);
   virtual void uninitialize();
   
   // LIVE CONFIGURATION
   virtual bool can_live_reconfigure() const;
-  virtual int live_reconfigure(const String &, ErrorHandler *);
+  virtual int live_reconfigure(const Vector<String> &, ErrorHandler *);
   virtual void take_state(Element *, ErrorHandler *);
   
   // HANDLERS

@@ -49,7 +49,7 @@ BIM::clone() const
 }
 
 int
-BIM::configure(const String &conf, ErrorHandler *errh)
+BIM::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpString, "device name", &_dev,

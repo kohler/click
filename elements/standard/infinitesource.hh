@@ -58,7 +58,7 @@ class InfiniteSource : public Element { protected:
   void add_handlers();
   
   InfiniteSource *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   void uninitialize();

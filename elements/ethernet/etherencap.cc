@@ -23,7 +23,7 @@ EtherEncap::clone() const
 }
 
 int
-EtherEncap::configure(const String &conf, ErrorHandler *errh)
+EtherEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "Ethernet encapsulation type", &_type,

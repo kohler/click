@@ -97,7 +97,7 @@ class IPRewriter : public Element {
   void notify_noutputs(int);
   const char *processing() const		{ return PUSH; }
   
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void take_state(Element *, ErrorHandler *);
   void uninitialize();

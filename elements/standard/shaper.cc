@@ -35,7 +35,7 @@ Shaper::clone() const
 }
 
 int
-Shaper::configure(const String &conf, ErrorHandler *errh)
+Shaper::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int rate;
   if (cp_va_parse(conf, this, errh,

@@ -30,7 +30,7 @@ public:
   const char *processing() const	{ return PUSH; }
   
   TCPIPSend *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
 
 private:
   void add_handlers();

@@ -35,7 +35,7 @@ RandomLossage::notify_noutputs(int n)
 }
 
 int
-RandomLossage::configure(const String &conf, ErrorHandler *errh)
+RandomLossage::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int p_drop;
   bool on = true;

@@ -54,7 +54,7 @@ class FromBPF : public Element {
   
   FromBPF *clone() const;
   int configure_phase() const		{ return CONFIGURE_PHASE_FROMBPF; }
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
   void run_scheduled();

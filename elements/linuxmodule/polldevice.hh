@@ -37,7 +37,7 @@ class PollDevice : public AnyDevice {
   const char *processing() const		{ return PUSH; }
   PollDevice *clone() const			{ return new PollDevice; }
   
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void add_handlers();

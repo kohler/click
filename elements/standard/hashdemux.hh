@@ -31,7 +31,7 @@ class HashDemux : public Element {
   void notify_noutputs(int);
   
   HashDemux *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   
   void push(int port, Packet *);
   

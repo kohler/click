@@ -41,7 +41,7 @@ public:
   const char *processing() const		{ return PUSH; }
   ARPFaker *clone() const;
   
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
   Packet *make_response(unsigned char tha[6], unsigned char tpa[4],

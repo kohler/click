@@ -25,7 +25,7 @@ class StoreIPAddress : public Element {
   const char *processing() const		{ return AGNOSTIC; }
   StoreIPAddress *clone() const			{ return new StoreIPAddress; }
   
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
   

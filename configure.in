@@ -159,6 +159,10 @@ ELEMENTS_ARG_ENABLE(grid, [include Grid elements (on by default)], yes)
 elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
 AC_SUBST(elements_vpath)
 
+if echo "$element_groups" | grep ipsec >/dev/null 2>&1; then
+  AC_DEFINE(HAVE_IPSEC)
+fi
+
 dnl
 dnl make FLAGS variables without `-g'
 dnl

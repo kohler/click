@@ -38,7 +38,7 @@ FromDump::clone() const
 }
 
 int
-FromDump::configure(const String &conf, ErrorHandler *errh)
+FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _timing = true;
   return cp_va_parse(conf, this, errh,

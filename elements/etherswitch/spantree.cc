@@ -52,7 +52,7 @@ EtherSpanTree::notify_noutputs(int n) {
 }
 
 int
-EtherSpanTree::configure(const String &conf, ErrorHandler *errh)
+EtherSpanTree::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   Element* in;
   Element* out;

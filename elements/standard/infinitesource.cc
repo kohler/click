@@ -34,7 +34,7 @@ InfiniteSource::clone() const
 }
 
 int
-InfiniteSource::configure(const String &conf, ErrorHandler *errh)
+InfiniteSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String data = "Random bullshit in a packet, at least 64 byte long.  Well, now it is.";
   int limit = -1;
@@ -123,7 +123,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
 
    case 1: {			// limit
      int limit;
-     if (!cp_integer(s, limit))
+     if (!cp_integer(s, &limit))
        return errh->error("limit parameter must be integer");
      is->_limit = limit;
      is->change_configuration(1, s);
@@ -132,7 +132,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
    
    case 2: {			// burstsize
      int burstsize;
-     if (!cp_integer(s, burstsize) || burstsize < 1)
+     if (!cp_integer(s, &burstsize) || burstsize < 1)
        return errh->error("burstsize parameter must be integer >= 1");
      is->_burstsize = burstsize;
      is->change_configuration(2, s);
@@ -141,7 +141,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
    
    case 3: {			// active
      bool active;
-     if (!cp_bool(s, active))
+     if (!cp_bool(s, &active))
        return errh->error("active parameter must be boolean");
      is->_active = active;
      if (!is->scheduled() && active)

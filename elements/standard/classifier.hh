@@ -121,7 +121,7 @@ class Classifier : public Element {
   const char *processing() const		{ return PUSH; }
   
   Classifier *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   void add_handlers();
   
   void push(int port, Packet *);

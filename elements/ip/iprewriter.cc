@@ -163,12 +163,12 @@ IPRewriter::Pattern::make(const String &conf, ErrorHandler *errh)
     sportl = sporth = 0;
   else {
     String rest;
-    if (!cp_integer(words[1], sportl, &rest)) {
+    if (!cp_integer(words[1], &sportl, &rest)) {
       errh->error("bad source port `%s' in pattern spec", words[1].cc());
       return 0;
     }
     if (rest) {
-      if (!cp_integer(rest, sporth) || sporth > 0) {
+      if (!cp_integer(rest, &sporth) || sporth > 0) {
 	errh->error("bad source port `%s' in pattern spec", words[1].cc());
 	return 0;
       }
@@ -190,7 +190,7 @@ IPRewriter::Pattern::make(const String &conf, ErrorHandler *errh)
   
   if (words[3] == "-")
     dport = 0;
-  else if (!cp_integer(words[3], dport)) {
+  else if (!cp_integer(words[3], &dport)) {
     errh->error("bad destination port `%s' in pattern spec", words[3].cc());
     return 0;
   }
@@ -199,12 +199,12 @@ IPRewriter::Pattern::make(const String &conf, ErrorHandler *errh)
     return 0;
   }
 
-  if (!cp_integer(words[4], foutput) || foutput < 0) {
+  if (!cp_integer(words[4], &foutput) || foutput < 0) {
     errh->error("bad forward output `%s' in pattern spec", words[4].cc());
     return 0;
   }
   
-  if (!cp_integer(words[5], routput) || routput < 0) {
+  if (!cp_integer(words[5], &routput) || routput < 0) {
     errh->error("bad reverse output `%s' in pattern spec", words[5].cc());
     return 0;
   }
@@ -432,19 +432,17 @@ IPRewriter::collect_patterns(Vector<Pattern *> &pv, Vector<int> &sv)
 }
 
 int
-IPRewriter::configure(const String &conf, ErrorHandler *errh)
+IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
-  if (args.size() == 0)
+  if (conf.size() == 0)
     return errh->error("too few arguments; expected `IPRewriter(INPUTSPEC, ...)'");
-  set_ninputs(args.size());
+  set_ninputs(conf.size());
 
   // parse arguments
   int before = errh->nerrors();
-  for (int i = 0; i < args.size(); i++) {
+  for (int i = 0; i < conf.size(); i++) {
     String word, rest;
-    if (!cp_word(args[i], word, &rest)) {
+    if (!cp_word(conf[i], &word, &rest)) {
       errh->error("input %d spec is empty", i);
       continue;
     }
@@ -455,7 +453,7 @@ IPRewriter::configure(const String &conf, ErrorHandler *errh)
     
     if (word == "nochange") {
       int outnum = 0;
-      if ((rest && !cp_integer(rest, outnum))
+      if ((rest && !cp_integer(rest, &outnum))
 	  || (outnum < 0 || outnum >= noutputs()))
 	errh->error("bad input %d spec; expected `nochange [OUTPUT]'", i);
       is.kind = INPUT_SPEC_NOCHANGE;

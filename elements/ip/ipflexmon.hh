@@ -90,7 +90,7 @@ public:
   
   const char *class_name() const		{ return "IPFlexMonitor"; }
   const char * default_processing() const	{ return AGNOSTIC; }
-  int configure(const String &conf, ErrorHandler *errh);
+  int configure(const Vector<String> &conf, ErrorHandler *errh);
 
   // XXX: Do we want this?
   // bool can_live_reconfigure() const		{ return true; }

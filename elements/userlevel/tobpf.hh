@@ -73,7 +73,7 @@ class ToBPF : public Element {
   
   ToBPF *clone() const;
   int configure_phase() const	{ return FromBPF::CONFIGURE_PHASE_TOBPF; }
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   

@@ -38,26 +38,14 @@ ARPFaker::clone() const
 }
 
 int
-ARPFaker::configure(const String &conf, ErrorHandler *errh)
+ARPFaker::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
-  if(args.size() != 4){
-    errh->error("usage: ARPFaker(ip1, eth1, ip2, eth2)");
-    return(-1);
-  }
-  
-  if (cp_ip_address(args[0], _ip1) &&
-      cp_ethernet_address(args[1], _eth1) &&
-      cp_ip_address(args[2], _ip2) &&
-      cp_ethernet_address(args[3], _eth2)){
-    /* yow */
-  } else {
-    errh->error("ARPFaker configuration expected ip and ether addr");
-    return -1;
-  }
-  
-  return 0;
+  return cp_va_parse(conf, this, errh,
+		     cpIPAddress, "target IP address", &_ip1,
+		     cpEthernetAddress, "target Ethernet address", &_eth1,
+		     cpIPAddress, "sender IP address", &_ip2,
+		     cpEthernetAddress, "sender Ethernet address", &_eth2,
+		     0);
 }
 
 int

@@ -23,7 +23,7 @@ public:
   const char *processing() const		{ return AGNOSTIC; }
   Neighbor *clone() const;
   
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   void add_handlers();

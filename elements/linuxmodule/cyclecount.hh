@@ -22,7 +22,7 @@ class CycleCount : public Element {
   const char *class_name() const		{ return "CycleCount"; }
   const char *processing() const		{ return AGNOSTIC; }
   CycleCount *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   
   inline void smaction(Packet *);
   void push(int, Packet *p);

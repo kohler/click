@@ -35,24 +35,12 @@ Hello::clone() const
 }
 
 int
-Hello::configure(const String &conf, ErrorHandler *errh)
+Hello::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
-  if(args.size() != 2){
-    errh->error("usage: Hello(T, eth)");
-    return(-1);
-  }
-  
-  if (cp_integer(args[0], _period) &&
-      cp_ethernet_address(args[1], _from)){
-    /* yow */
-  } else {
-    errh->error("Hello configuration expected integer period");
-    return -1;
-  }
-  
-  return 0;
+  return cp_va_parse(conf, this, errh,
+		     cpInteger, "period (sec)", &_period,
+		     cpEthernetAddress, "source Ethernet address", &_from,
+		     0);
 }
 
 int

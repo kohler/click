@@ -29,22 +29,20 @@ PokeHandlers::~PokeHandlers()
 }
 
 int
-PokeHandlers::configure(const String &conf, ErrorHandler *errh)
+PokeHandlers::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _h_element.clear();
   _h_handler.clear();
   _h_value.clear();
   _h_timeout.clear();
   
-  Vector<String> args;
-  cp_argvec(conf, args);
   int next_timeout = 0;
-  for (int i = 0; i < args.size(); i++) {
-    if (!args[i])
+  for (int i = 0; i < conf.size(); i++) {
+    if (!conf[i])
       continue;
     
     String first, rest;
-    cp_word(args[i], first, &rest);
+    cp_word(conf[i], &first, &rest);
     cp_eat_space(rest);
     if (!rest) {
       int gap;
@@ -53,11 +51,10 @@ PokeHandlers::configure(const String &conf, ErrorHandler *errh)
 	_h_handler.push_back("");
 	_h_value.push_back("");
 	_h_timeout.push_back(next_timeout);
-	if (i < args.size() - 1)
+	if (i < conf.size() - 1)
 	  errh->warning("arguments after `quit' directive ignored");
 	break;
-      } else if (cp_va_parse(first, this, errh,
-		      cpMilliseconds, "timeout interval", &gap, 0) >= 0)
+      } else if (cp_milliseconds(first, &gap))
 	next_timeout += gap;
       continue;
     } else {

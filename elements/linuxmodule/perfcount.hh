@@ -33,7 +33,7 @@ class PerfCount : public Element {
   PerfCount *clone() const;
   void add_handlers();
 
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   
   inline void smaction(Packet *);
   void push(int, Packet *p);

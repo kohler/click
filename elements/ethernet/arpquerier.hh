@@ -55,7 +55,7 @@ class ARPQuerier : public Element {
   void add_handlers();
   
   ARPQuerier *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void take_state(Element *, ErrorHandler *);

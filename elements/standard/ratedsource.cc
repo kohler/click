@@ -34,7 +34,7 @@ RatedSource::clone() const
 }
 
 int
-RatedSource::configure(const String &conf, ErrorHandler *errh)
+RatedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String data = 
     "Random bullshit in a packet, at least 64 byte long.  Well, now it is.";
@@ -157,7 +157,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
 
    case 1: {			// rate
      int rate;
-     if (!cp_integer(s, rate) || rate < 0)
+     if (!cp_integer(s, &rate) || rate < 0)
        return errh->error("rate parameter must be integer >= 0");
      rs->change_configuration(1, s);
      rs->_rate = rate;
@@ -178,7 +178,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
 
    case 2: {			// limit
      int limit;
-     if (!cp_integer(s, limit))
+     if (!cp_integer(s, &limit))
        return errh->error("limit parameter must be integer");
      rs->_limit = limit;
      break;
@@ -186,7 +186,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
    
    case 3: {			// active
      bool active;
-     if (!cp_bool(s, active))
+     if (!cp_bool(s, &active))
        return errh->error("active parameter must be boolean");
      rs->_active = active;
      if (!rs->scheduled() && active) {

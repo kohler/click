@@ -28,7 +28,7 @@ ScheduleLinux::clone() const
 }
 
 int
-ScheduleLinux::configure(const String &conf, ErrorHandler *errh)
+ScheduleLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh, cpEnd);
 }

@@ -99,7 +99,7 @@ RandomBitErrors::set_bit_error(unsigned bit_error)
 }
 
 int
-RandomBitErrors::configure(const String &conf, ErrorHandler *errh)
+RandomBitErrors::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned bit_error;
   String kind_str = "flip";

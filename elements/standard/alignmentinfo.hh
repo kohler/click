@@ -37,7 +37,7 @@ class AlignmentInfo : public Element {
   
   AlignmentInfo *clone() const		{ return new AlignmentInfo; }
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
 
   bool query1(Element *, int port, int &chunk, int &offset) const;
   static bool query(Element *, int port, int &chunk, int &offset);

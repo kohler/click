@@ -36,21 +36,18 @@ Meter::clone() const
 }
 
 int
-Meter::configure(const String &conf, ErrorHandler *errh)
+Meter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
-  
   delete[] _meters;
   _meters = 0;
   _nmeters = 0;
 
-  if (args.size() == 0)
+  if (conf.size() == 0)
     return errh->error("too few arguments to Meter(int, ...)");
 
-  Vector<int> vals(args.size(), 0);
-  for (int i = 0; i < args.size(); i++)
-    if (!cp_integer(args[i], vals[i]))
+  Vector<int> vals(conf.size(), 0);
+  for (int i = 0; i < conf.size(); i++)
+    if (!cp_integer(conf[i], &vals[i]))
       return errh->error("argument %d should be int (rate)", i+1);
     else if (vals[i] <= 0)
       return errh->error("argument %d (rate) must be >= 0", i+1);
@@ -58,7 +55,7 @@ Meter::configure(const String &conf, ErrorHandler *errh)
       return errh->error("rate %d must be > rate %d", i+1, i);
   
   int max_value = ((0xFFFFFFFF<<_rate.scale) & ~0x80000000);
-  for (int i = 0; i < args.size(); i++) {
+  for (int i = 0; i < conf.size(); i++) {
     if (vals[i] > max_value)
       return errh->error("rate %d too large (max %d)", i+1, max_value);
     vals[i] = (vals[i]<<_rate.scale) / CLICK_HZ;

@@ -26,7 +26,7 @@ class ReadHandlerCaller : public Element {
   const char *class_name() const	{ return "ReadHandlerCaller"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  int configure(const String &conf, ErrorHandler *errh);
+  int configure(const Vector<String> &conf, ErrorHandler *errh);
   int initialize(ErrorHandler *);
   
   ReadHandlerCaller *clone() const	{ return new ReadHandlerCaller; }

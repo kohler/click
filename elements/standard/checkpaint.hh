@@ -33,7 +33,7 @@ class CheckPaint : public Element {
   const char *processing() const	{ return "a/ah"; }
   
   CheckPaint *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
   

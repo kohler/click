@@ -52,7 +52,7 @@ public:
   const char *processing() const		{ return AGNOSTIC; }
   LookupIPRoute *clone() const;
   
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   void push(int port, Packet *p);

@@ -36,7 +36,7 @@ IPEncap::clone() const
 }
 
 int
-IPEncap::configure(const String &conf, ErrorHandler *errh)
+IPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned char ip_p_uc;
   if (cp_va_parse(conf, this, errh,

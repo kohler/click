@@ -53,7 +53,7 @@ ToDump::clone() const
 }
 
 int
-ToDump::configure(const String &conf, ErrorHandler *errh)
+ToDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpString, "dump filename", &_filename,

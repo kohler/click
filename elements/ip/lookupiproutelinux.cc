@@ -48,9 +48,9 @@ LookupIPRouteLinux::~LookupIPRouteLinux()
 }
 
 int
-LookupIPRouteLinux::configure(const String &conf, ErrorHandler *)
+LookupIPRouteLinux::configure(const Vector<String> &conf, ErrorHandler *)
 {
-  cp_argvec(conf, _out2devname);
+  _out2devname = conf;
   _nout = _out2devname.size();
   set_noutputs(_nout + 1);
   return 0;

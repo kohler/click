@@ -34,7 +34,7 @@ Strip::clone() const
 }
 
 int
-Strip::configure(const String &conf, ErrorHandler *errh)
+Strip::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "number of bytes to strip", &_nbytes,

@@ -96,7 +96,7 @@ ToDevice::static_cleanup()
 
 
 int
-ToDevice::configure(const String &conf, ErrorHandler *errh)
+ToDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_devname,

@@ -16,7 +16,7 @@ class IPLoadBalancingMapper : public Element, public IPMapper {
   
   IPLoadBalancingMapper *clone() const	{ return new IPLoadBalancingMapper; }
   int configure_phase() const		{ return CONFIGURE_PHASE_IPMAPPER; }
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   
   void mapper_patterns(Vector<IPRewriter::Pattern *> &, IPRewriter *) const;
   IPRewriter::Mapping *get_map(bool, const IPFlowID &, IPRewriter *);

@@ -78,7 +78,7 @@ public:
 
   IPRateMonitor *clone() const;
   void notify_ninputs(int);  
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
 

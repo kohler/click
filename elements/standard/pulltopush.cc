@@ -19,7 +19,7 @@
 #include "elements/standard/scheduleinfo.hh"
 
 int
-PullToPush::configure(const String &conf, ErrorHandler *errh)
+PullToPush::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _burst = 1;
   return cp_va_parse(conf, this, errh,

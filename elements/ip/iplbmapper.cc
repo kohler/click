@@ -32,19 +32,17 @@ IPLoadBalancingMapper::cast(const char *name)
 }
 
 int
-IPLoadBalancingMapper::configure(const String &conf, ErrorHandler *errh)
+IPLoadBalancingMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> patspecs;
-  cp_argvec(conf, patspecs);
-  if (patspecs.size() == 0)
+  if (conf.size() == 0)
     return errh->error("no patterns given");
-  else if (patspecs.size() == 1)
+  else if (conf.size() == 1)
     errh->warning("only one pattern given");
 
   int before = errh->nerrors();
   
-  for (int i = 0; i < patspecs.size(); i++) {
-    IPRewriter::Pattern *p = IPRewriter::Pattern::make(patspecs[i], errh);
+  for (int i = 0; i < conf.size(); i++) {
+    IPRewriter::Pattern *p = IPRewriter::Pattern::make(conf[i], errh);
     if (p)
       _patterns.push_back(p);
   }

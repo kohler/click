@@ -32,7 +32,7 @@ class PullSwitch : public Element {
   
   PullSwitch *clone() const;
   void notify_ninputs(int);
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   
   Packet *pull(int);

@@ -22,8 +22,7 @@ public:
   const char *processing() const	{ return AGNOSTIC; }
   
   DeEsp *clone() const;
-  int configure(const String &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
   

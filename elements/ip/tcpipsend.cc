@@ -39,7 +39,7 @@ TCPIPSend::clone() const
 }
 
 int
-TCPIPSend::configure(const String &, ErrorHandler *)
+TCPIPSend::configure(const Vector<String> &, ErrorHandler *)
 {
   return 0;
 }

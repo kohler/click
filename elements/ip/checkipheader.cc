@@ -49,19 +49,17 @@ CheckIPHeader::notify_noutputs(int n)
 }
 
 int
-CheckIPHeader::configure(const String &conf, ErrorHandler *errh)
+CheckIPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
-  if (args.size() > 1)
+  if (conf.size() > 1)
     return errh->error("too many arguments to `CheckIPHeader([ADDRS])'");
   
   Vector<u_int> ips;
   ips.push_back(0);
   ips.push_back(0xffffffff);
 
-  if (args.size()) {
-    String s = args[0];
+  if (conf.size()) {
+    String s = conf[0];
     while (s) {
       u_int a;
       if (!cp_ip_address(s, (unsigned char *)&a, &s))

@@ -36,7 +36,7 @@ Print::clone() const
 }
 
 int
-Print::configure(const String &conf, ErrorHandler* errh)
+Print::configure(const Vector<String> &conf, ErrorHandler* errh)
 {
   _bytes = 24;
   if (cp_va_parse(conf, this, errh,

@@ -36,27 +36,24 @@ LookupIPRoute::clone() const
 }
 
 int
-LookupIPRoute::configure(const String &conf, ErrorHandler *errh)
+LookupIPRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int maxout = -1;
   _t.clear();
   
-  Vector<String> args;
-  cp_argvec(conf, args);
-
   int before = errh->nerrors();
-  for (int i = 0; i < args.size(); i++) {
-    String arg = args[i];
+  for (int i = 0; i < conf.size(); i++) {
+    String arg = conf[i];
     unsigned int dst, mask, gw;
     int output_num;
     bool ok = false;
     if (cp_ip_address_mask(arg, (unsigned char *)&dst, (unsigned char *)&mask, &arg)) {
       cp_eat_space(arg);
       if (cp_ip_address(arg, (unsigned char *)&gw, &arg)) {
-	ok = cp_eat_space(arg) && cp_integer(arg, output_num);
+	ok = cp_eat_space(arg) && cp_integer(arg, &output_num);
       } else {
 	gw = 0;
-	ok = cp_integer(arg, output_num);
+	ok = cp_integer(arg, &output_num);
       }
     }
 

@@ -36,7 +36,7 @@ class EtherEncap : public Element {
   const char *processing() const	{ return AGNOSTIC; }
   
   EtherEncap *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   Packet *smaction(Packet *);

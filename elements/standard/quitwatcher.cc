@@ -26,13 +26,11 @@ QuitWatcher::QuitWatcher()
 }
 
 int
-QuitWatcher::configure(const String &conf, ErrorHandler *errh)
+QuitWatcher::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
   int before = errh->nerrors();
-  for (int i = 0; i < args.size(); i++) {
-    Element *e = router()->find(this, args[i], errh);
+  for (int i = 0; i < conf.size(); i++) {
+    Element *e = router()->find(this, conf[i], errh);
     if (e) _e.push_back(e);
   }
   return (errh->nerrors() == before ? 0 : -1);

@@ -322,7 +322,7 @@ Element::configure_phase() const
 }
 
 int
-Element::configure(const String &conf, ErrorHandler *errh)
+Element::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh, 0);
 }
@@ -347,7 +347,7 @@ Element::can_live_reconfigure() const
 }
 
 int
-Element::live_reconfigure(const String &conf, ErrorHandler *errh)
+Element::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (can_live_reconfigure())
     return configure(conf, errh);

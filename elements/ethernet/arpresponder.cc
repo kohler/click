@@ -48,15 +48,13 @@ ARPResponder::add_map(IPAddress ipa, IPAddress mask, EtherAddress ena)
 }
 
 int
-ARPResponder::configure(const String &conf, ErrorHandler *errh)
+ARPResponder::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
   _v.clear();
 
   int before = errh->nerrors();
-  for (int i = 0; i < args.size(); i++) {
-    String arg = args[i];
+  for (int i = 0; i < conf.size(); i++) {
+    String arg = conf[i];
     IPAddress ipa, mask;
     EtherAddress ena;
     bool have_ena = false;

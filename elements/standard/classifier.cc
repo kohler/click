@@ -529,11 +529,9 @@ update_value_mask(int c, int shift, int &value, int &mask)
 }
 
 int
-Classifier::configure(const String &conf, ErrorHandler *errh)
+Classifier::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
-  set_noutputs(args.size());
+  set_noutputs(conf.size());
   
   _output_everything = -1;
   int FAIL = -noutputs();
@@ -552,10 +550,10 @@ Classifier::configure(const String &conf, ErrorHandler *errh)
     }
   }
   
-  for (int slot = 0; slot < args.size(); slot++) {
+  for (int slot = 0; slot < conf.size(); slot++) {
     int i = 0;
-    int len = args[slot].length();
-    const char *s = args[slot].data();
+    int len = conf[slot].length();
+    const char *s = conf[slot].data();
 
     int slot_branch = _exprs.size();
     Vector<Expr> slot_exprs;

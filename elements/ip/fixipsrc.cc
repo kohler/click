@@ -36,7 +36,7 @@ FixIPSrc::clone() const
 }
 
 int
-FixIPSrc::configure(const String &conf, ErrorHandler *errh)
+FixIPSrc::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   IPAddress a;
 

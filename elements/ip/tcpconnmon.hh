@@ -45,7 +45,7 @@ public:
   const char *processing() const	{ return AGNOSTIC; }
   
   TCPConnectionMonitor *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
 
   void TCPConnectionMonitor::push(int port_number, Packet *p);
 

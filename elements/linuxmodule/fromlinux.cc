@@ -60,7 +60,7 @@ FromLinux::clone() const
 }
 
 int
-FromLinux::configure(const String &conf, ErrorHandler *errh)
+FromLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpString, "interface name", &_devname,

@@ -35,7 +35,7 @@ class Burster : public Element {
   const char *processing() const       { return PULL_TO_PUSH; }
   
   Burster *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
 

@@ -62,7 +62,7 @@ FromDevice::static_cleanup()
 
 
 int
-FromDevice::configure(const String &conf, ErrorHandler *errh)
+FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh, 
 	          cpString, "interface name", &_devname, 

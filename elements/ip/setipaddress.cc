@@ -24,7 +24,7 @@ SetIPAddress::SetIPAddress()
 }
 
 int
-SetIPAddress::configure(const String &conf, ErrorHandler *errh)
+SetIPAddress::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpIPAddress, "IP address", &_ip,

@@ -27,7 +27,7 @@ class xokWriter : public Element {
   const char *processing() const	{ return AGNOSTIC; }
   
   xokWriter *clone() const;
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   
   void push(int port, Packet *);
 

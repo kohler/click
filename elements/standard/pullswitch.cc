@@ -31,7 +31,7 @@ PullSwitch::notify_ninputs(int n)
 }
 
 int
-PullSwitch::configure(const String &conf, ErrorHandler *errh)
+PullSwitch::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _input = 0;
   if (cp_va_parse(conf, this, errh,
@@ -65,7 +65,7 @@ PullSwitch::write_param(const String &in_s, Element *e, void *, ErrorHandler *er
 {
   PullSwitch *sw = (PullSwitch *)e;
   String s = cp_subst(in_s);
-  if (!cp_integer(s, sw->_input))
+  if (!cp_integer(s, &sw->_input))
     return errh->error("PullSwitch input must be integer");
   if (sw->_input >= sw->ninputs())
     sw->_input = -1;

@@ -818,7 +818,7 @@ Lexer::yport(int &port)
   
   const Lexeme &tword = lex();
   if (tword.is(lexIdent)) {
-    if (!cp_integer(tword.string(), port)) {
+    if (!cp_integer(tword.string(), &port)) {
       lerror("syntax error: port number should be integer");
       port = 0;
     }

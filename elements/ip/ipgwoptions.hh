@@ -42,7 +42,7 @@ class IPGWOptions : public Element {
   
   const char *class_name() const		{ return "IPGWOptions"; }
   const char *processing() const		{ return "a/ah"; }
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   void notify_noutputs(int);
   IPGWOptions *clone() const;
   void add_handlers();

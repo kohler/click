@@ -32,7 +32,7 @@ class Switch : public Element {
   
   Switch *clone() const;
   void notify_noutputs(int);
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   
   void push(int, Packet *);

@@ -23,7 +23,7 @@ class PullToPush : public Element {
   const char *processing() const		{ return PULL_TO_PUSH; }
   
   PullToPush *clone() const			{ return new PullToPush; }
-  int configure(const String &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   

@@ -37,7 +37,7 @@ HashDemux::notify_noutputs(int i)
 }
 
 int
-HashDemux::configure(const String &conf, ErrorHandler *errh)
+HashDemux::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "byte offset", &_offset,

@@ -33,7 +33,7 @@ ICMPError::~ICMPError()
 }
 
 int
-ICMPError::configure(const String &conf, ErrorHandler *errh)
+ICMPError::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
                   cpIPAddress, "Source IP address", &_src_ip,

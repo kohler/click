@@ -29,32 +29,28 @@ PeekHandlers::~PeekHandlers()
 }
 
 int
-PeekHandlers::configure(const String &conf, ErrorHandler *errh)
+PeekHandlers::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  ErrorHandler *silent_errh = ErrorHandler::silent_handler();
   _h_element.clear();
   _h_handler.clear();
   _h_timeout.clear();
   
-  Vector<String> args;
-  cp_argvec(conf, args);
   int next_timeout = 0;
-  for (int i = 0; i < args.size(); i++) {
-    if (!args[i])
+  for (int i = 0; i < conf.size(); i++) {
+    if (!conf[i])
       continue;
     
     String first;
-    cp_word(args[i], first);
+    cp_word(conf[i], &first);
     int gap;
-    if (cp_va_parse(first, this, silent_errh,
-		    cpMilliseconds, "timeout interval", &gap, 0) >= 0) {
+    if (cp_milliseconds(first, &gap)) {
       next_timeout += gap;
       continue;
     } else if (first == "quit") {
       _h_element.push_back(0);
       _h_handler.push_back("");
       _h_timeout.push_back(next_timeout);
-      if (i < args.size() - 1)
+      if (i < conf.size() - 1)
 	errh->warning("arguments after `quit' directive ignored");
       break;
     } else {

@@ -19,6 +19,7 @@
 #include "esp.hh"
 #include "ipaddress.hh"
 #include "confparse.hh"
+#include "click_ip.h"
 #include "error.hh"
 #include "glue.hh"
 
@@ -47,7 +48,7 @@ Esp::clone() const
 }
 
 int
-Esp::configure(const String &conf, ErrorHandler *errh)
+Esp::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned int spi_uc;
   int blk_int;

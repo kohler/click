@@ -765,7 +765,9 @@ Router::initialize(ErrorHandler *errh)
     ContextErrorHandler cerrh
       (errh, context_message(i, "While configuring"));
     int before = cerrh.nerrors();
-    if (_elements[i]->configure(_configurations[i], &cerrh) < 0) {
+    Vector<String> conf;
+    cp_argvec(_configurations[i], conf);
+    if (_elements[i]->configure(conf, &cerrh) < 0) {
       element_ok[i] = all_ok = false;
       if (cerrh.nerrors() == before)
 	cerrh.error("unspecified error");
@@ -916,7 +918,9 @@ Router::live_reconfigure(int elementno, const String &conf, ErrorHandler *errh)
   Element *f = _elements[elementno];
   if (!f->can_live_reconfigure())
     return errh->error("cannot reconfigure `%s' live", f->declaration().cc());
-  int result = f->live_reconfigure(conf, errh);
+  Vector<String> confvec;
+  cp_argvec(conf, confvec);
+  int result = f->live_reconfigure(confvec, errh);
   if (result >= 0)
     _configurations[elementno] = conf;
   return result;
