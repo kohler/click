@@ -260,4 +260,3 @@ ICMPError::simple_action(Packet *p)
 
 EXPORT_ELEMENT(ICMPError)
 ELEMENT_MT_SAFE(ICMPError)
-

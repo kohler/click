@@ -118,7 +118,7 @@ CheckICMPHeader::simple_action(Packet *p)
    case ICMP_PARAMETER_PROBLEM:
    case ICMP_SOURCE_QUENCH:
    case ICMP_REDIRECT:
-    /* check for IP header + first 64 bits of datagram = at least 28 bytes */
+    // check for IP header + first 64 bits of datagram = at least 28 bytes
     if (icmp_len < sizeof(icmp_generic) + 28)
       return drop(BAD_LENGTH, p);
     break;

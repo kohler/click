@@ -40,7 +40,7 @@ class FromDevice : public AnyDevice {
   unsigned _pusher_ptr;
 
   static const int QSIZE = 512;
-  Packet* _queue[QSIZE];
+  Packet *_queue[QSIZE];
   unsigned next_i(unsigned i) const	{ return (i!=(QSIZE-1) ? i+1 : 0); }
   
  public:

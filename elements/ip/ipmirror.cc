@@ -61,4 +61,3 @@ IPMirror::simple_action(Packet *p_in)
 
 EXPORT_ELEMENT(IPMirror)
 ELEMENT_MT_SAFE(IPMirror)
-

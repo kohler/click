@@ -89,4 +89,3 @@ FixIPSrc::simple_action(Packet *p)
 
 EXPORT_ELEMENT(FixIPSrc)
 ELEMENT_MT_SAFE(FixIPSrc)
-

@@ -117,4 +117,3 @@ IPEncap::simple_action(Packet *p_in)
 
 EXPORT_ELEMENT(IPEncap)
 ELEMENT_MT_SAFE(IPEncap)
-

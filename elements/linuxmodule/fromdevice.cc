@@ -186,9 +186,6 @@ extern "C" int
 click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
 		    void *v)
 {
-#if 0 && !HAVE_POLLING
-  static int called_times;
-#endif
   struct sk_buff *skb = (struct sk_buff *)v;
 
   int stolen = 0;
@@ -196,24 +193,6 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
   if (ifindex >= 0 && ifindex < MAX_DEVICES)
     if (FromDevice *kr = (FromDevice *)from_device_map.lookup(ifindex)) {
       stolen = kr->got_skb(skb);
-
-#if 0 && !HAVE_POLLING
-      // Call scheduled things - in a nonpolling environment, this is
-      // important because we really don't want packets to sit in a queue
-      // under high load w/o having ToDevice pull them out of there. This
-      // causes a bit of batching, so that not every packet causes Queue to
-      // put ToDevice on the work list.  What about the last packet? If
-      // net_bh's backlog queue is empty, we want to run_scheduled().
-      called_times++;
-      if (called_times == 4 || backlog_len == 0) {
-	extern Router *current_router; // module.cc
-	current_router->driver_once();
-	current_router->driver_once();
-	current_router->driver_once();
-	current_router->driver_once();
-	called_times = 0;
-      }
-#endif
     }
   
   return (stolen ? NOTIFY_STOP_MASK : 0);
@@ -251,20 +230,21 @@ FromDevice::got_skb(struct sk_buff *skb)
 void
 FromDevice::run_scheduled()
 {
-  int i=0;
-  while (i < INPUT_BATCH && _puller_ptr != _pusher_ptr) {
+  int npq = 0;
+  while (npq < INPUT_BATCH && _puller_ptr != _pusher_ptr) {
     Packet *p = _queue[_puller_ptr];
     _puller_ptr = next_i(_puller_ptr);
     output(0).push(p);
+    npq++;
   }
 
 #if CLICK_DEVICE_ADJUST_TICKETS
   int adj = tickets() / 8;
   if (adj < 4) adj = 4;
   
-  if (i == INPUT_BATCH) adj *= 2;
-  if (i < INPUT_BATCH/4) adj = 0 - adj;
-	
+  if (npq == INPUT_BATCH) adj *= 2;
+  if (npq < INPUT_BATCH/4) adj = -adj;
+  
   adj_tickets(adj);
 #endif
   

@@ -56,4 +56,3 @@ GetIPAddress::simple_action(Packet *p)
 
 EXPORT_ELEMENT(GetIPAddress)
 ELEMENT_MT_SAFE(GetIPAddress)
-

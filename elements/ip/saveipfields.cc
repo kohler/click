@@ -59,4 +59,3 @@ SaveIPFields::simple_action(Packet *p)
 ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(SaveIPFields)
 ELEMENT_MT_SAFE(SaveIPFields)
-

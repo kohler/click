@@ -123,4 +123,3 @@ Esp::simple_action(Packet *p)
 
 EXPORT_ELEMENT(Esp)
 ELEMENT_MT_SAFE(Esp)
-

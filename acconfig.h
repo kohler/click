@@ -8,8 +8,8 @@
 /* Define to 1 since we have Strings. */
 #define HAVE_STRING 1
 
-/* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_MT_SAFE,
- * and ELEMENT_PROVIDES are noops. */
+/* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_MT_SAFE, and ELEMENT_PROVIDES
+   are noops. */
 #define ELEMENT_REQUIRES(x)
 #define ELEMENT_PROVIDES(x)
 #define ELEMENT_MT_SAFE(x)
@@ -75,7 +75,7 @@
 /* Define if you have -ldl. */
 #undef HAVE_LIBDL
 
-/* Define if click multithread support should be off */
+/* Define if you want to run multithreaded Click. */
 #undef __MTCLICK__
 #undef __CLICK_NCPUS__
 

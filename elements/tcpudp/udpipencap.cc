@@ -150,4 +150,3 @@ UDPIPEncap::simple_action(Packet *p_in)
 
 EXPORT_ELEMENT(UDPIPEncap)
 ELEMENT_MT_SAFE(UDPIPEncap)
-

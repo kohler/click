@@ -71,4 +71,4 @@ PerfCountInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 ELEMENT_REQUIRES(linuxmodule PerfCountUser)
-ELEMENT_PROVIDES(PerfCountInfo)
+EXPORT_ELEMENT(PerfCountInfo)

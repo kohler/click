@@ -225,7 +225,7 @@ FastUDPSource_read_rate_handler(Element *e, void *)
   }
 }
 
-int
+static int
 FastUDPSource_reset_write_handler
 (const String &, Element *e, void *, ErrorHandler *)
 {
@@ -234,7 +234,7 @@ FastUDPSource_reset_write_handler
   return 0;
 }
 
-int
+static int
 FastUDPSource_limit_write_handler
 (const String &in_s, Element *e, void *, ErrorHandler *errh)
 {
@@ -247,7 +247,7 @@ FastUDPSource_limit_write_handler
   return 0;
 }
 
-int
+static int
 FastUDPSource_rate_write_handler
 (const String &in_s, Element *e, void *, ErrorHandler *errh)
 {
@@ -263,7 +263,7 @@ FastUDPSource_rate_write_handler
   return 0;
 }
 
-int
+static int
 FastUDPSource_active_write_handler
 (const String &in_s, Element *e, void *, ErrorHandler *errh)
 {

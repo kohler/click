@@ -59,12 +59,7 @@
 
 class FastUDPSource : public Element {
 
-  static const unsigned NO_LIMIT = 0xFFFFFFFFU;
-
   bool _rate_limited; // obey _rate? rather than as fast as possible.
-  GapRate _rate;
-  unsigned _count;
-  unsigned _limit;
   unsigned _len;
   click_ether _ethh;
   struct in_addr _sipaddr;
@@ -78,12 +73,18 @@ class FastUDPSource : public Element {
   struct sk_buff *_skb;
   unsigned long _first; // jiffies
   unsigned long _last;
-  bool _active;
 
   void incr_ports();
 
  public:
   
+  static const unsigned NO_LIMIT = 0xFFFFFFFFU;
+
+  GapRate _rate;
+  unsigned _count;
+  unsigned _limit;
+  bool _active;
+
   FastUDPSource();
   ~FastUDPSource();
   
@@ -103,12 +104,14 @@ class FastUDPSource : public Element {
   unsigned long first() { return _first; }
   unsigned long last() { return _last; }
 
+#if 0
   friend int FastUDPSource_limit_write_handler 
     (const String &, Element *e, void *, ErrorHandler *);
   friend int FastUDPSource_rate_write_handler 
     (const String &, Element *e, void *, ErrorHandler *);
   friend int FastUDPSource_active_write_handler 
     (const String &, Element *e, void *, ErrorHandler *);
+#endif
 };
 
 #endif
