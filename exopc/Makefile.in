@@ -33,7 +33,7 @@ VERSION = @VERSION@
 
 GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectori.o vectorv.o hashmapi.o \
-	ipaddress.o etheraddress.o packet.o \
+	integers.o ipaddress.o etheraddress.o packet.o \
 	error.o glue.o timer.o \
 	element.o unlimelement.o timedelement.o errorelement.o \
 	confparse.o lexer.o elemfilter.o router.o \

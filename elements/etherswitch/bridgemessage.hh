@@ -3,17 +3,18 @@
 
 #include "glue.hh"
 #include "string.hh"
+#include "integers.hh"
 
 class BridgeMessage {
 public:
   struct wire;
 
   BridgeMessage()			{ expire (); }
-  BridgeMessage(wire* msg)		{ from_wire(msg); }
+  BridgeMessage(const wire* msg)	{ from_wire(msg); }
 
 
   void reset(u_int64_t bridge_id);
-  void from_wire(wire* msg);
+  void from_wire(const wire* msg);
   void to_wire(wire* msg) const;
   static void fill_tcm(wire* msg);
 
@@ -29,7 +30,7 @@ public:
   // question, "If *I* sent this message on a certain port, how would
   // it compare?"
   int compare(const BridgeMessage* other) const;
-  int compare(wire* other) const;
+  int compare(const wire* other) const;
   int compare(const BridgeMessage* other,
 	      u_int64_t _bridge_id, u_int16_t _port_id) const;
 
@@ -40,38 +41,29 @@ public:
     u_int8_t dst[6];		// 12
     u_int8_t src[6];
 
-    u_int16_t length;		// 5
-    u_int16_t sap;
+    net_u_int16_t length;	// 5
+    net_u_int16_t sap;
     u_int8_t ctl;
 
-    u_int8_t xxx_protocol[2];	// 35
+
+    una_net_u_int16_t protocol;	// 35
     u_int8_t version;
     u_int8_t type;
     u_int8_t tc:1;
     u_int8_t reserved:6;
     u_int8_t tca:1;
-    u_int8_t xxx_root[8];
-    u_int8_t xxx_cost[4];
-    u_int8_t xxx_bridge_id[8];
-    u_int8_t xxx_port_id[2];
-    u_int8_t xxx_message_age[2];
-    u_int8_t xxx_max_age[2];
-    u_int8_t xxx_hello_time[2];
-    u_int8_t xxx_forward_delay[2];
+    una_net_u_int64_t root;
+    una_net_u_int32_t cost;
+    una_net_u_int64_t bridge_id;
+    una_net_u_int16_t port_id;
+    una_net_u_int16_t message_age;
+    una_net_u_int16_t max_age;
+    una_net_u_int16_t hello_time;
+    una_net_u_int16_t forward_delay;
 
     u_int8_t padding[8];	// 8
 
-    String s(String tag = "");
-
-    u_int16_t &protocol()	{ return (u_int16_t &)*&xxx_protocol[0]; }
-    u_int64_t &root()		{ return (u_int64_t &)*&xxx_root[0]; }
-    u_int32_t &cost()		{ return (u_int32_t &)*&xxx_cost[0]; }
-    u_int64_t &bridge_id()	{ return (u_int64_t &)*&xxx_bridge_id[0]; }
-    u_int16_t &port_id()	{ return (u_int16_t &)*&xxx_port_id[0]; }
-    u_int16_t &message_age()	{ return (u_int16_t &)*&xxx_message_age[0]; }
-    u_int16_t &max_age()	{ return (u_int16_t &)*&xxx_max_age[0]; }
-    u_int16_t &hello_time()	{ return (u_int16_t &)*&xxx_hello_time[0]; }
-    u_int16_t &forward_delay()	{ return (u_int16_t &)*&xxx_forward_delay[0]; }
+    String s(String tag = "") const;
   };
 
   // Parameters that get propagated
@@ -93,17 +85,5 @@ public:  u_int32_t _cost; private: // Put in an incrementer JJJ
   static void prep_msg(wire* msg);
   static u_int8_t _all_bridges[6];
 };
-
-inline u_int64_t htonq(u_int64_t x) {
-  u_int32_t hi = x >> 32;
-  u_int32_t lo = x & 0xffffffff;
-  return (((u_int64_t)htonl(lo)) << 32) | htonl(hi);
-}
-
-inline u_int64_t ntohq(u_int64_t x) {
-  u_int32_t hi = x >> 32;
-  u_int32_t lo = x & 0xffffffff;
-  return (((u_int64_t)ntohl(lo)) << 32) | ntohl(hi);
-}
 
 #endif

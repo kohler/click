@@ -75,6 +75,7 @@ DISTFILES = INSTALL \
 	lib/glue.cc lib/glue.hh \
 	lib/hashmap.cc lib/hashmap.hh lib/hashmapi.cc \
 	lib/in_cksum.c \
+	lib/integers.cc lib/integers.hh \
 	lib/ipaddress.cc lib/ipaddress.hh \
 	lib/iptable.cc lib/iptable.hh \
 	lib/lexer.cc lib/lexer.hh \
