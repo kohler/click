@@ -317,7 +317,7 @@ Packet::set_ip_header(const click_ip *iph, unsigned len)
 inline void
 Packet::set_ip6_header(const click_ip6 *ip6h)
 { 
-  set_ip6_header(ip6h, 10);
+  set_ip6_header(ip6h, 40);
 }
 
 inline void

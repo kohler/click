@@ -41,7 +41,7 @@ install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
 install-include:
 	$(mkinstalldirs) $(includedir)
-	$(INSTALL_DATA) $(top_builddir)/config.h $(srcdir)/lib/*.hh $(includedir)
+	$(INSTALL_DATA) $(top_builddir)/config.h $(srcdir)/lib/*.hh $(srcdir)/lib/*.h $(includedir)
 
 elemlist elemlists:
 	$(SHELL) mkelemlist.sh
@@ -114,7 +114,7 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	lib/iptable2.cc lib/iptable2.hh \
 	lib/ip6table.cc lib/ip6table.hh \
 	lib/lexer.cc lib/lexer.hh \
-	lib/llrpc.hh \
+	lib/llrpc.h \
 	lib/packet.cc lib/packet.hh \
 	lib/radix.cc lib/radix.hh \
 	lib/router.cc lib/router.hh \

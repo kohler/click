@@ -21,13 +21,14 @@
 static StringAccum *all_errors = 0;
 
 static ssize_t click_errors_read(struct file *, char *, size_t, loff_t *);
+static unsigned click_errors_poll(struct file *, struct poll_table_struct *);
 
 static struct file_operations proc_click_errors_operations = {
     NULL,			// lseek
-    click_errors_read,	// read
+    click_errors_read,		// read
     NULL,			// write
     NULL,			// readdir
-    NULL,			// select
+    click_errors_poll,		// poll
     NULL,			// ioctl
     NULL,			// mmap
     NULL,			// open
@@ -46,6 +47,9 @@ static struct proc_dir_entry proc_click_errors_entry = {
   0, &proc_click_errors_inode_operations, // inode size, operations
 };
 
+static struct wait_queue *proc_click_errors_wait_queue = 0;
+static struct inode *proc_click_errors_inode = 0;
+
 
 static void
 syslog_message(const String &message)
@@ -62,6 +66,24 @@ syslog_message(const String &message)
   }
 }
 
+static void
+update_proc_click_errors()
+{
+  unsigned len = (all_errors ? all_errors->length() : 0);
+  
+  // change inode status
+  if (proc_click_errors_inode) {
+    proc_click_errors_inode->i_mtime = proc_click_errors_inode->i_ctime
+      = CURRENT_TIME;
+    proc_click_errors_inode->i_size = len;
+  }
+  proc_click_errors_entry.size = len;
+  
+  // wake up anyone waiting for errors
+  wake_up_interruptible(&proc_click_errors_wait_queue);
+}
+
+
 void
 KernelErrorHandler::vmessage(Seriousness seriousness, const String &message)
 {
@@ -71,7 +93,7 @@ KernelErrorHandler::vmessage(Seriousness seriousness, const String &message)
 
   syslog_message(message);
   *all_errors << message << "\n";
-  proc_click_errors_entry.size = all_errors->length();
+  update_proc_click_errors();
   
   if (seriousness == Fatal)
     panic("KernelErrorHandler");
@@ -87,8 +109,14 @@ SyslogErrorHandler::vmessage(Seriousness seriousness, const String &message)
 static ssize_t
 click_errors_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 {
-  loff_t f_pos = *store_f_pos;
+  // cache inode
+  if (!proc_click_errors_inode)
+    proc_click_errors_inode = filp->f_dentry->d_inode;
+
+  // exit if no errors
   if (!all_errors) return 0;
+  
+  loff_t f_pos = *store_f_pos;
   if (f_pos > all_errors->length())
     return 0;
   if (f_pos + count > all_errors->length())
@@ -99,12 +127,23 @@ click_errors_read(struct file *filp, char *buffer, size_t count, loff_t *store_f
   return count;
 }
 
+static unsigned
+click_errors_poll(struct file *filp, struct poll_table *pollt)
+{
+  loff_t f_pos = filp->f_pos;
+  unsigned mask = 0;
+  if (all_errors && f_pos < all_errors->length())
+    mask |= POLLIN | POLLRDNORM;
+  poll_wait(filp, &proc_click_errors_wait_queue, pollt);
+  return mask;
+}
+
 
 void
 reset_proc_click_errors()
 {
   all_errors->clear();
-  proc_click_errors_entry.size = 0;
+  update_proc_click_errors();
 }
 
 void

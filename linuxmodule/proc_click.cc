@@ -79,7 +79,7 @@ static struct file_operations proc_element_handler_operations = {
     proc_element_handler_read,	// read
     proc_element_handler_write,	// write
     NULL,			// readdir
-    NULL,			// select
+    NULL,			// poll
     proc_element_handler_ioctl,	// ioctl
     NULL,			// mmap
     proc_element_handler_open,	// open

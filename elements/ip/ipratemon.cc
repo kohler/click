@@ -20,7 +20,7 @@
 #include "error.hh"
 #include "glue.hh"
 #include "mplock.hh"
-#include "llrpc.hh"
+#include "llrpc.h"
 
 IPRateMonitor::IPRateMonitor()
   : _count_packets(true), _anno_packets(true),

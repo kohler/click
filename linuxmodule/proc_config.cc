@@ -31,13 +31,14 @@ static int click_config_open(struct inode *, struct file *);
 static int click_config_release(struct inode *, struct file *);
 static ssize_t click_config_read(struct file *, char *, size_t, loff_t *);
 static ssize_t click_config_write(struct file *, const char *, size_t, loff_t *);
+static unsigned click_config_poll(struct file *, struct poll_table_struct *);
 
 static struct file_operations proc_click_config_operations = {
     NULL,			// lseek
     click_config_read,		// read
     click_config_write,		// write
     NULL,			// readdir
-    NULL,			// select
+    click_config_poll,		// poll
     NULL,			// ioctl
     NULL,			// mmap
     click_config_open,		// open
@@ -64,6 +65,9 @@ static struct proc_dir_entry proc_click_hotconfig_entry = {
   0, &proc_click_config_inode_operations, // inode size, operations
 };
 
+static struct wait_queue *proc_click_config_wait_queue = 0;
+static struct inode *proc_click_config_inode = 0;
+
 
 //
 // CONFIG
@@ -77,7 +81,7 @@ click_config_open(struct inode *, struct file *filp)
   if ((filp->f_flags & O_ACCMODE) == O_RDWR
       || (filp->f_flags & O_APPEND)
       || (writing && !(filp->f_flags & O_TRUNC))
-      || (!writing && filp->f_dentry->d_inode->i_ino ==
+      || (!writing && (filp->f_dentry->d_inode->i_ino & 0xFFFF) ==
 	  proc_click_hotconfig_entry.low_ino))
     return -EACCES;
   
@@ -115,6 +119,21 @@ click_config_read(struct file *filp, char *buffer, size_t count, loff_t *store_f
   return count;
 }
 
+static unsigned
+click_config_poll(struct file *filp, struct poll_table *pollt)
+{
+  loff_t f_pos = filp->f_pos;
+  unsigned mask = 0;
+  if ((filp->f_flags & O_ACCMODE) == O_WRONLY)
+    mask |= POLLOUT | POLLWRNORM;
+  else {
+    if (current_config && f_pos < current_config->length())
+      mask |= POLLIN | POLLRDNORM;
+    poll_wait(filp, &proc_click_config_wait_queue, pollt);
+  }
+  return mask;
+}
+
 static ssize_t
 click_config_write(struct file *filp, const char *buffer, size_t count, loff_t *store_f_pos)
 {
@@ -125,21 +144,31 @@ click_config_write(struct file *filp, const char *buffer, size_t count, loff_t *
 
   loff_t last_len = build_config->length();
   loff_t end_pos = f_pos + count;
-  char *x;
-  if (end_pos > last_len)
-    x = build_config->extend(end_pos - last_len);
-  else
-    x = build_config->data() + f_pos;
-  if (!x)
+  if (end_pos > last_len && !build_config->extend(end_pos - last_len))
     return -ENOMEM;
-  
+
+  char *x = build_config->data() + f_pos;
   if (f_pos > last_len)
     memset(x, 0, f_pos - last_len);
-  if (copy_from_user(x + (f_pos - last_len), buffer, count) > 0)
+  if (copy_from_user(x, buffer, count) > 0)
     return -EFAULT;
 
   *store_f_pos += count;
   return count;
+}
+
+static void
+set_current_config(const String &s)
+{
+  *current_config = s;
+
+  // change inode status
+  proc_click_config_inode->i_mtime = proc_click_config_inode->i_ctime
+    = CURRENT_TIME;
+  proc_click_config_inode->i_size = s.length();
+  
+  // wake up anyone waiting for errors
+  wake_up_interruptible(&proc_click_config_wait_queue);
 }
 
 static int
@@ -162,7 +191,7 @@ hotswap_config()
     // install
     kill_current_router();
     install_current_router(r);
-    *current_config = s;
+    set_current_config(s);
   } else
     delete r;
   
@@ -174,7 +203,7 @@ hotswap_config()
 static int
 swap_config()
 {
-  *current_config = build_config->take_string();
+  set_current_config(build_config->take_string());
   kill_current_router();
   Router *router = parse_router(*current_config);
   if (router) {
@@ -193,17 +222,26 @@ click_config_release(struct inode *, struct file *filp)
     MOD_DEC_USE_COUNT;
     return 0;
   }
+  
   if (!config_write_lock)
     return -EIO;
-
   int success = -EINVAL;
   if (build_config && current_config) {
     reset_proc_click_errors();
-    unsigned inum = filp->f_dentry->d_inode->i_ino;
-    if (inum == proc_click_hotconfig_entry.low_ino)
+    unsigned my_ino = filp->f_dentry->d_inode->i_ino;
+
+    // find proc_click_config_inode
+    if (!proc_click_config_inode) {
+      struct dentry *parent = filp->f_dentry->d_parent;
+      int ino = proc_click_config_entry.low_ino | (my_ino & ~(0xFFFF));
+      proc_click_config_inode = iget(parent->d_sb, ino);
+    }
+    
+    if ((my_ino & 0xFFFF) == proc_click_hotconfig_entry.low_ino)
       success = hotswap_config();
     else
       success = swap_config();
+    
     proc_click_config_entry.size = current_config->length();
   }
   config_write_lock = 0;

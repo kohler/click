@@ -7,6 +7,7 @@ extern "C" {
 #define new linux_new
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
+#include <linux/poll.h>
 #undef new
 }
 
