@@ -76,6 +76,10 @@ CLICK_DECLS
  * LinkStat element.  Required to use link metrics other than
  * hopcount.
  *
+ * =item LS2
+ *
+ * LinkStat element.  Required to use two-packet loss rate estimation.
+ *
  * =item TXFB
  *
  * TXFeedbackStats element.  Required to use 
@@ -99,8 +103,14 @@ CLICK_DECLS
  *
  * Unsigned int.  Link estimation type.  Allowable values are 1
  * (estimate using broadcast probes combined with actual transmission
- * count feedbach, requires TXFB and LS arguments), or 3 (estimate
- * using broadcast probes only, require LS argument).  Defaults to 3.
+ * count feedbach, requires TXFB and LS arguments), 3 (estimate using
+ * broadcast probes only, require LS argument), or 4 (estimate using
+ * two probe sizes, require LS2 argument).  Defaults to 3.
+ *
+ * =item EST_SIZE
+ *
+ * Unsigned int.  Packet size, in bytes.  Produce link estimates for
+ * packets of this size.  Defaults to 150 bytes.
  *
  * =item LOG
  *
@@ -415,6 +425,7 @@ private:
 
   class GridGatewayInfo *_gw_info;
   class LinkStat        *_link_stat;
+  class LinkStat        *_link_stat2;
   class TXFeedbackStats *_txfb;
 
   /* binary logging */
@@ -525,6 +536,8 @@ private:
   bool est_forward_delivery_rate(const IPAddress &, unsigned int &);
   bool est_reverse_delivery_rate(const IPAddress &, unsigned int &);
 
+  bool interpolate_loss_rate(unsigned r1, unsigned sz1, unsigned r2, unsigned sz2, unsigned sz, unsigned &rate);
+
   enum MetricType {
     MetricUnknown                = -1,
     MetricHopCount               =  0, // unsigned int hop count
@@ -547,11 +560,13 @@ private:
   
   enum MetricType _metric_type;
   unsigned int    _est_type;
+  unsigned int    _est_size;
 
   // type of delivery rate estimator to use
   enum {  
     EstByTXFB = 1,
-    EstByMeas = 3
+    EstByMeas = 3,
+    EstByMeas2 = 4
   };
 
   const metric_t _bad_metric; // default value is ``bad''

@@ -160,6 +160,8 @@ private:
   // iff we have good data.
   bool get_reverse_rate(const IPAddress &ip, unsigned int *r, unsigned int *tau);
 
+  unsigned get_probe_size() const { return _probe_size; }
+
   LinkStat();
   ~LinkStat();
   

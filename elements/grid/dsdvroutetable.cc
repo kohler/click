@@ -28,10 +28,12 @@
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
 #include <elements/grid/dsdvroutetable.hh>
+#include <elements/grid/delivery_rate_table.hh>
 #include <elements/grid/linkstat.hh>
 #include <elements/grid/gridgatewayinfo.hh>
 #include <elements/grid/timeutils.hh>
 #include <elements/wifi/txfeedbackstats.hh>
+
 
 CLICK_DECLS
 
@@ -150,7 +152,7 @@ DSDVRouteTable::use_old_route(const IPAddress &dst, unsigned jiff)
 
 DSDVRouteTable::DSDVRouteTable() : 
   GridGenericRouteTable(1, 1), _gw_info(0),
-  _link_stat(0), _txfb(0), _log(0), 
+  _link_stat(0), _link_stat2(0), _txfb(0), _log(0), 
   _seq_no(0), _bcast_count(0),
   _max_hops(3), _alpha(88), _wst0(6000),
   _last_periodic_update(0),
@@ -158,7 +160,7 @@ DSDVRouteTable::DSDVRouteTable() :
   _hello_timer(static_hello_hook, this),
   _log_dump_timer(static_log_dump_hook, this),
   _metric_type(MetricEstTxCount),
-  _est_type(EstByMeas), _verbose(true)
+  _est_type(EstByMeas), _est_size(150), _verbose(true)
 {
   MOD_INC_USE_COUNT;
 }
@@ -210,10 +212,12 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			"VERBOSE", cpBool, "verbose warnings and messages?", &_verbose,
 			"GW", cpElement, "GridGatewayInfo element", &_gw_info,
 			"LS", cpElement, "LinkStat element", &_link_stat,
+			"LS2", cpElement, "LinkStat element", &_link_stat2,
 			"TXFB", cpElement, "TXFeedbackStats element", &_txfb,
 			"MAX_HOPS", cpUnsigned, "max hops", &_max_hops,
 			"METRIC", cpString, "route metric", &metric,
 			"EST_TYPE", cpUnsigned, "link estimation type (1 or 3)", &_est_type,
+			"EST_SIZE", cpUnsigned, "packet size to estimate links at, in bytes", &_est_size,
 			"LOG", cpElement, "GridGenericLogger element", &_log,
 			"WST0", cpUnsigned, "initial weight settling time, wst0 (msec)", &_wst0,
 			"ALPHA", cpUnsigned, "alpha parameter for settling time computation, in percent (0 <= ALPHA <= 100)", &_alpha,
@@ -241,8 +245,8 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
   _metric_type = check_metric_type(metric);
   if (_metric_type < 0)
     return errh->error("Unknown metric type ``%s''", metric.cc());
-  if (_est_type != 1 && _est_type != 3)
-    return errh->error("link estimation type must be 1 or 3");
+  if (_est_type != 1 && _est_type != 3 && _est_type != 4)
+    return errh->error("link estimation type must be 1, 3, or 4");
     
 
   if (_log && _log->cast("GridGenericLogger") == 0) 
@@ -251,6 +255,8 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("GW element is not a GridGatewayInfo");
   if (_link_stat && _link_stat->cast("LinkStat") == 0)
     return errh->error("LS element is not a LinkStat");
+  if (_link_stat2 && _link_stat2->cast("LinkStat") == 0)
+    return errh->error("LS2 element is not a LinkStat");
   if (_txfb && _txfb->cast("TXFeedbackStats") == 0)
     return errh->error("TXFB element is not a TXFeedbackStats");
 
@@ -259,14 +265,20 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
   if (_link_stat == 0 && _verbose)
     errh->warning("LinkStat elements not specified, some metrics may not work");
   if (_txfb == 0 && _verbose)
-    errh->warning("TXFeedbackStats elements not specified, some metrics may not work");
+    errh->warning("TXFeedbackStats element not specified, some metrics may not work");
 
   return res;
 }
 
 int
-DSDVRouteTable::initialize(ErrorHandler *)
+DSDVRouteTable::initialize(ErrorHandler *errh)
 {
+  if (_est_type == 4 && _link_stat && _link_stat2 && 
+      (_link_stat->get_probe_size() != table_sz1 ||
+       _link_stat2->get_probe_size() != table_sz2))
+    errh->warning("LinkStat probe sizes %u and %u don't match sizes %u and %u used in delivery-rate interpolation table",
+		  _link_stat->get_probe_size(), _link_stat->get_probe_size(), table_sz1, table_sz2);
+
   _hello_timer.initialize(this);
   _hello_timer.schedule_after_ms(_period);
   _log_dump_timer.initialize(this);
@@ -351,6 +363,25 @@ DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rat
     return res;
   }
 
+  case EstByMeas2: {
+    if (!_link_stat || !_link_stat2)
+      return false;
+    unsigned int tau; // we'll ignore tau, t
+    struct timeval t;
+    unsigned rate1, rate2;
+    bool res1 = _link_stat->get_forward_rate(ip, &rate1, &tau, &t);
+    bool res2 = _link_stat2->get_forward_rate(ip, &rate2, &tau, &t);
+    if (!res1 || !res2) 
+      return false;
+    // lookup data rate in forward direction, must compile in this
+    // size! (e.g. 134 bytes)
+    unsigned r = lookup_delivery_rate(rate1, rate2, 134);
+    if (r > 100)
+      return false;
+    rate = r;
+    return true;
+  }
+
   default:
     return false;
   }
@@ -380,9 +411,66 @@ DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, unsigned int &rat
     return res;
   }
 
+  case EstByMeas2: {
+    if (!_link_stat || !_link_stat2)
+      return false;
+    unsigned int tau; // we'll ignore tau
+    unsigned rate1, rate2;
+    bool res1 = _link_stat->get_reverse_rate(ip, &rate1, &tau);
+    bool res2 = _link_stat2->get_reverse_rate(ip, &rate2, &tau);
+    if (!res1 || !res2) 
+      return false;
+    // lookup ACK rate in reverse direction, pretend it's a 1-byte
+    // data packet (although it's actually smaller...)
+    unsigned r = lookup_delivery_rate(rate1, rate2, 1);
+    if (r > 100)
+      return false;
+    rate = r;
+    return true;
+  }
+
   default:
     return false;
   }
+}
+
+bool
+DSDVRouteTable::interpolate_loss_rate(unsigned r1, unsigned sz1, unsigned r2, unsigned sz2, unsigned sz, unsigned &r)
+{
+  if (r1 > 100) r1 = 100;
+  if (r2 > 100) r2 = 100;
+  if (sz1 > 2500 || sz2 > 2500)
+    return false; // packet sizes should be reasonable
+  if (sz == sz1) {
+    r = r1;
+    return true;
+  }
+  if (sz == sz2) {
+    r = r2;
+    return true;
+  }
+
+  int r1_ = r1;
+  int r2_ = r2;
+  int s1_ = sz1;
+  int s2_ = sz2;
+  int s_ = sz;
+
+#if 0
+  // estimate using exponential fit
+  
+#else  
+  // estimate using linear fit
+  int slope = 100 * (r1_ - r2_) / (s1_ - s2_);
+  int r_ = r1_ + (s_ - s1_) * slope / 100;
+  if (r_ > 100) 
+    r = 100;
+  else if (r_ < 0)
+    r = 0;
+  else 
+    r = (unsigned) r_;
+  return true;  
+#endif
 }
 
 void
@@ -663,7 +751,7 @@ DSDVRouteTable::init_metric(RTEntry &r)
     unsigned rev_rate = 0;
     bool res = est_forward_delivery_rate(r.next_hop_ip, fwd_rate);
     bool res2 = est_reverse_delivery_rate(r.next_hop_ip, rev_rate);
-#if DBG3
+#if 0
     click_chatter("%s: XXX init_metric est_tx_count, res=%s, fwd_rate=%u, res2=%s rev_rate=%u\n",
 		  id().cc(), res ? "true" : "false", fwd_rate, res2 ? "true" : "false", rev_rate);
 #endif
@@ -674,6 +762,7 @@ DSDVRouteTable::init_metric(RTEntry &r)
 		      id().cc(), r.metric.val, r.next_hop_ip.s().cc());
       if (_est_type == EstByTXFB && _txfb) {
 	// possibly over-ride calculated etx with actual etx to this dest
+#if 0
 	unsigned etx;
 	bool res = _txfb->est_tx_count(r.dest_eth, etx);
 	if (res) {
@@ -682,6 +771,7 @@ DSDVRouteTable::init_metric(RTEntry &r)
 	else
 	  click_chatter("DSDVRouteTable %s: init_metric WARNING: TXFeedbackStats has no ETX for 1-hop neighbor %s",
 			id().cc(), r.dest_ip.s().cc());
+#endif
       }
     } 
     else 
