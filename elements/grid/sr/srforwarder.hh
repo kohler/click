@@ -82,7 +82,7 @@ private:
   int get_fwd_metric(IPAddress other);
   int get_rev_metric(IPAddress other);
 
-  void update_link(IPAddress from, IPAddress to, int metric);
+  bool update_link(IPAddress from, IPAddress to, int metric);
   void srforwarder_assert_(const char *, int, const char *) const;
 };
 

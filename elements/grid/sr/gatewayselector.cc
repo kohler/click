@@ -182,11 +182,17 @@ GatewaySelector::send(WritablePacket *p)
 int
 GatewaySelector::get_fwd_metric(IPAddress other)
 {
-  int metric = 9999;
+  int metric = 0;
   gatewayselector_assert(other);
   if (_metric) {
     metric = _metric->get_fwd_metric(other);
-    update_link(_ip, other, metric);
+    if (metric && !update_link(_ip, other, metric)) {
+      click_chatter("%{element} couldn't update fwd_metric %s > %d > %s\n",
+		    this,
+		    _ip.s().cc(),
+		    metric,
+		    other.s().cc());
+    }
     return metric;
   } else {
     return 0;
@@ -197,23 +203,34 @@ GatewaySelector::get_fwd_metric(IPAddress other)
 int
 GatewaySelector::get_rev_metric(IPAddress other)
 {
-  int metric = 9999;
+  int metric = 0;
   gatewayselector_assert(other);
   if (_metric) {
     metric = _metric->get_rev_metric(other);
-    update_link(other, _ip, metric);
+    if (metric && !update_link(other, _ip, metric)) {
+      click_chatter("%{element} couldn't update rev_metric %s > %d > %s\n",
+		    this,
+		    other.s().cc(),
+		    metric,
+		    _ip.s().cc());
+    }
     return metric;
   } else {
     return 0;
   }
 }
 
-void
+bool
 GatewaySelector::update_link(IPAddress from, IPAddress to, int metric) {
-  if (_link_table) {
-    _link_table->update_link(from, to, metric);
-    _link_table->update_link(to, from, metric);
+  if (_link_table && !_link_table->update_link(from, to, metric)) {
+    click_chatter("%{element} couldn't update link %s > %d > %s\n",
+		  this,
+		  from.s().cc(),
+		  metric,
+		  to.s().cc());
+    return false;
   }
+  return true;
 }
 
 void
@@ -346,11 +363,19 @@ GatewaySelector::push(int port, Packet *p_in)
     int rev_m = pk->get_fwd_metric(i);
     if (a != _ip && b != _ip) {
       /* don't update my immediate neighbor. see below */
-      if (fwd_m) {
-	update_link(a,b,fwd_m);
+      if (fwd_m && !update_link(a,b,fwd_m)) {
+	click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
+		      this,
+		      a.s().cc(),
+		      fwd_m,
+		      b.s().cc());
       }
-      if (rev_m) {
-	update_link(b,a,rev_m);
+      if (rev_m && !update_link(b,a,rev_m)) {
+	click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
+		      this,
+		      b.s().cc(),
+		      rev_m,
+		      a.s().cc());
       }
     }
 
@@ -361,8 +386,12 @@ GatewaySelector::push(int port, Packet *p_in)
   neighbor = pk->get_hop(pk->num_hops()-1);
 
   _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
-  update_link(_ip, neighbor, get_fwd_metric(neighbor));
-  update_link(neighbor, _ip, get_rev_metric(neighbor));
+  /* 
+   * calling these functions updates the neighbor link 
+   * in the link_table, so we can ignore the return value.
+   */
+  get_fwd_metric(neighbor);
+  get_rev_metric(neighbor);
 
 
   Vector<IPAddress> hops;

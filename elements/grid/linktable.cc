@@ -174,11 +174,15 @@ LinkTable::clear()
   _links.clear();
 
 }
-void 
+bool 
 LinkTable::update_link(IPAddress from, IPAddress to, int metric)
 {
   lt_assert(from);
   lt_assert(to);
+  
+  if (!from || !to || !metric) {
+    return false;
+  }
   /* make sure both the hosts exist */
   HostInfo *nfrom = _hosts.findp(from);
   if (!nfrom) {
@@ -202,7 +206,7 @@ LinkTable::update_link(IPAddress from, IPAddress to, int metric)
   } else {
     lnfo->update(metric);
   }
-  
+  return true;
 }
 
 
@@ -236,6 +240,9 @@ int
 LinkTable::get_host_metric(IPAddress s)
 {
   lt_assert(s);
+  if (!s) {
+    return 0;
+  }
   HostInfo *nfo = _hosts.findp(s);
   if (!nfo) {
     return 0;
@@ -248,6 +255,9 @@ LinkTable::get_hop_metric(IPAddress from, IPAddress to)
 {
   lt_assert(from);
   lt_assert(to);
+  if (!from || !to) {
+    return 0;
+  }
   IPPair p = IPPair(from, to);
   LinkInfo *nfo = _links.findp(p);
   if (!nfo) {
@@ -319,9 +329,12 @@ LinkTable::valid_route(Vector<IPAddress> route)
 Vector<IPAddress> 
 LinkTable::best_route(IPAddress dst)
 {
-  lt_assert(dst);
   Vector<IPAddress> reverse_route;
   Vector<IPAddress> route;
+  lt_assert(dst);
+  if (!dst) {
+    return route;
+  }
   HostInfo *nfo = _hosts.findp(dst);
   
   while (nfo && nfo->_metric != 0) {
@@ -388,7 +401,7 @@ LinkTable::top_n_routes(IPAddress dst, int n)
 {
   lt_assert(dst);
   Vector<Path> routes;
-
+  
   {
     Vector<IPAddress> route;
     route.push_back(_ip);

@@ -24,7 +24,7 @@
 #include <click/straccum.hh>
 #include <elements/grid/grid.hh>
 #include "srcrstat.hh"
-
+#include "ettmetric.hh"
 CLICK_DECLS
 
 
@@ -39,7 +39,7 @@ SrcrStat::SrcrStat()
     _probe_size(1000),
     _seq(0), 
     _sent(0),
-    _link_table(0),
+    _ett_metric(0),
     _arp_table(0),
     _send_timer(0)
 {
@@ -77,7 +77,7 @@ SrcrStat::configure(Vector<String> &conf, ErrorHandler *errh)
 			"PERIOD", cpUnsigned, "Probe broadcast period (msecs)", &_period,
 			"TAU", cpUnsigned, "Loss-rate averaging period (msecs)", &_tau,
 			"SIZE", cpUnsigned, "Probe size (bytes)", &_probe_size,
-			"LT", cpElement, "LinkTable element", &_link_table,
+			"ETT", cpElement, "ETT Metric element", &_ett_metric,
 			"ARP", cpElement, "ARPTable element", &_arp_table,
 			0);
   if (res < 0)
@@ -99,11 +99,11 @@ SrcrStat::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("Invalid EtherAddress specified\n");
   }
 
-  if (_link_table && _link_table->cast("LinkTable") == 0) {
-    return errh->error("LinkTable element is not a LinkTable");
+  if (_ett_metric && _ett_metric->cast("ETTMetric") == 0) {
+    return errh->error("ETTMetric element is not a ETTMetric");
   }
   if (_arp_table && _arp_table->cast("ARPTable") == 0) {
-    return errh->error("ARPTable element is not a ARPyTable");
+    return errh->error("ARPTable element is not a ARPTable");
   }
   return res;
 }
@@ -300,17 +300,15 @@ SrcrStat::simple_action(Packet *p)
   const unsigned char *d = p->data() + sizeof(click_ether) + sizeof(link_probe);
   for (unsigned i = 0; i < num_entries; i++, d += sizeof(link_entry)) {
     link_entry *le = (struct link_entry *) d;
-    int etx = 0;
     if (IPAddress(le->ip) == _ip) {
       l->fwd = le->rev;
-      etx = get_etx(le->rev, l->rev_rate(_start));
+      if (_ett_metric) {
+	_ett_metric->update_link(this, ip, le->ip, l->rev_rate(_start), le->rev);
+      }
     } else {
-      etx = get_etx(le->rev, le->fwd);
-    }
-
-    if (_link_table) {
-      _link_table->update_link(IPAddress(le->ip), ip, etx);
-      _link_table->update_link(ip, IPAddress(le->ip), etx);
+      if (_ett_metric) {
+	_ett_metric->update_link(this, ip, le->ip, le->fwd, le->rev);
+      }
     }
   }
 

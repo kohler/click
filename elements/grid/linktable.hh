@@ -85,10 +85,12 @@ public:
 
   String routes_to_string(Vector< Vector<IPAddress> > routes);
   /* other public functions */
-  void update_link(IPAddress from, IPAddress to, int metric);
-  void update_both_links(IPAddress a, IPAddress b, int metric) {
-    update_link(a,b,metric);
-    update_link(b,a,metric);
+  bool update_link(IPAddress from, IPAddress to, int metric);
+  bool update_both_links(IPAddress a, IPAddress b, int metric) {
+    if (update_link(a,b,metric)) {
+      return update_link(b,a,metric);
+    }
+    return false;
   }
 
   int get_hop_metric(IPAddress from, IPAddress to);

@@ -54,7 +54,6 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/etheraddress.hh>
-#include <elements/grid/linktable.hh>
 #include <elements/grid/arptable.hh>
 CLICK_DECLS
 
@@ -104,8 +103,10 @@ private:
   unsigned int _seq;
   uint32_t _sent;
   EtherAddress _eth;
+public:
   IPAddress _ip;
-  class LinkTable *_link_table;
+private:
+  class ETTMetric *_ett_metric;
   class ARPTable *_arp_table;
   uint16_t _et;     // This protocol's ethertype
 

@@ -12,8 +12,8 @@ public:
   
   virtual ~LinkMetric() { }
 
-  virtual int get_fwd_metric(const IPAddress &ip) const = 0;
-  virtual int get_rev_metric(const IPAddress &ip) const = 0;
+  int get_fwd_metric(IPAddress ip) { return 0;};
+  int get_rev_metric(IPAddress ip) { return 0; };
 };
 
 CLICK_ENDDECLS

@@ -117,11 +117,17 @@ SRForwarder::initialize (ErrorHandler *)
 int
 SRForwarder::get_fwd_metric(IPAddress other)
 {
-  int metric = 9999;
+  int metric = 0;
   srforwarder_assert(other);
   if (_metric) {
     metric = _metric->get_fwd_metric(other);
-    update_link(_ip, other, metric);
+    if (metric && !update_link(_ip, other, metric)) {
+      click_chatter("%{element} couldn't update fwd_metric %s > %d > %s\n",
+		    this,
+		    _ip.s().cc(),
+		    metric,
+		    other.s().cc());
+    }
     return metric;
   } else {
     return 0;
@@ -132,25 +138,35 @@ SRForwarder::get_fwd_metric(IPAddress other)
 int
 SRForwarder::get_rev_metric(IPAddress other)
 {
-  int metric = 9999;
+  int metric = 0;
   srforwarder_assert(other);
   if (_metric) {
     metric = _metric->get_rev_metric(other);
-    update_link(other, _ip, metric);
+    if (metric && !update_link(other, _ip, metric)) {
+      click_chatter("%{element} couldn't update rev_metric %s > %d > %s\n",
+		    this,
+		    other.s().cc(),
+		    metric,
+		    _ip.s().cc());
+    }
     return metric;
   } else {
     return 0;
   }
 }
 
-void
+bool
 SRForwarder::update_link(IPAddress from, IPAddress to, int metric) 
 {
-  if (_link_table) {
-    _link_table->update_link(from, to, metric);
-    _link_table->update_link(to, from, metric);
+  if (_link_table && !_link_table->update_link(from, to, metric)) {
+    click_chatter("%{element} couldn't update link %s > %d > %s\n",
+		  this,
+		  from.s().cc(),
+		  metric,
+		  to.s().cc());
+    return false;
   }
-
+  return true;
 }
 
 
@@ -293,8 +309,20 @@ SRForwarder::push(int port, Packet *p_in)
   int r_fwd_metric = pk->get_random_fwd_metric();
   int r_rev_metric = pk->get_random_rev_metric();
   if (r_from && r_to) {
-    update_link(r_from, r_to, r_fwd_metric);
-    update_link(r_to, r_from, r_rev_metric);
+    if (r_fwd_metric && !update_link(r_from, r_to, r_fwd_metric)) {
+      click_chatter("%{element} couldn't update r_fwd %s > %d > %s\n",
+		    this,
+		    r_from.s().cc(),
+		    r_fwd_metric,
+		    r_to.s().cc());
+    }
+    if (r_rev_metric && !update_link(r_to, r_from, r_rev_metric)) {
+      click_chatter("%{element} couldn't update r_rev %s > %d > %s\n",
+		    this,
+		    r_to.s().cc(),
+		    r_rev_metric, 
+		    r_from.s().cc());
+    }
   }
 
   for(int i = 0; i < pk->num_hops()-1; i++) {
@@ -304,11 +332,19 @@ SRForwarder::push(int port, Packet *p_in)
     int rev_m = pk->get_rev_metric(i);
     if (a != _ip && b != _ip) {
       /* don't update my immediate neighbor. see below */
-      if (fwd_m) {
-	update_link(a,b,fwd_m);
+      if (fwd_m && !update_link(a,b,fwd_m)) {
+	click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
+		      this,
+		      a.s().cc(),
+		      fwd_m,
+		      b.s().cc());
       }
-      if (rev_m) {
-	update_link(b,a,rev_m);
+      if (rev_m && !update_link(b,a,rev_m)) {
+	click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
+		      this,
+		      b.s().cc(),
+		      rev_m,
+		      a.s().cc());
       }
     }
   }
@@ -317,10 +353,13 @@ SRForwarder::push(int port, Packet *p_in)
   IPAddress prev = pk->get_hop(pk->next()-1);
   _arp_table->insert(prev, EtherAddress(eh->ether_shost));
 
+  /* 
+   * these functions also update the link
+   * table, so we don't need to call update_link
+   */
+
   int prev_fwd_metric = get_fwd_metric(prev);
   int prev_rev_metric = get_rev_metric(prev);
-  update_link(_ip, prev, prev_fwd_metric);
-  update_link(prev, _ip, prev_rev_metric);
 
   if(pk->next() == pk->num_hops() - 1){
     // I'm the ultimate consumer of this data.

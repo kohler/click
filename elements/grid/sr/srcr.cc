@@ -238,7 +238,13 @@ SRCR::get_fwd_metric(IPAddress other)
   } else if (_metric) {
     metric = _metric->get_fwd_metric(other);
   }
-  update_link(_ip, other, metric);
+  if (metric && !update_link(_ip, other, metric)) {
+    click_chatter("%{element} couldn't update get_fwd_metric %s > %d > %s\n",
+		  this,
+		  _ip.s().cc(),
+		  metric,
+		  other.s().cc());
+  }
   return metric;
 }
 
@@ -253,14 +259,27 @@ SRCR::get_rev_metric(IPAddress other)
   } else if (_metric) {
     metric = _metric->get_rev_metric(other);
   }
-  update_link(other, _ip, metric);
+  if (metric && !update_link(other, _ip, metric)) {
+    click_chatter("%{element} couldn't update get_rev_metric %s > %d > %s\n",
+		  this,
+		  other.s().cc(),
+		  metric,
+		  _ip.s().cc());
+  }
   return metric;
 }
 
-void
+bool
 SRCR::update_link(IPAddress from, IPAddress to, int metric) {
-  _link_table->update_link(from, to, metric);
-  _link_table->update_link(to, from, metric);
+  if (_link_table && !_link_table->update_link(from, to, metric)) {
+    click_chatter("%{element} couldn't update link %s > %d > %s\n",
+		  this,
+		  from.s().cc(),
+		  metric,
+		  to.s().cc());
+    return false;
+  }
+  return true;
 }
 
 // Continue flooding a query by broadcast.
@@ -297,8 +316,6 @@ SRCR::process_query(struct srpacket *pk1)
   /* also get the metric from the neighbor */
   int fwd_m = get_fwd_metric(pk1->get_hop(pk1->num_hops()-1));
   int rev_m = get_rev_metric(pk1->get_hop(pk1->num_hops()-1));
-  update_link(_ip, pk1->get_hop(pk1->num_hops()-1), fwd_m);
-  update_link(pk1->get_hop(pk1->num_hops()-1), _ip, rev_m);
   rev_metric += rev_m;
   fwd_metric += fwd_m;
   fwd_metrics.push_back(fwd_m);
@@ -763,11 +780,19 @@ SRCR::push(int port, Packet *p_in)
       int rev_m = pk->get_fwd_metric(i);
       if (a != _ip && b != _ip) {
 	/* don't update my immediate neighbor. see below */
-	if (fwd_m) {
-	  update_link(a,b,fwd_m);
+	if (fwd_m && !update_link(a,b,fwd_m)) {
+	  	click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
+		      this,
+		      a.s().cc(),
+		      fwd_m,
+		      b.s().cc());
 	}
-	if (rev_m) {
-	  update_link(b,a,rev_m);
+	if (rev_m && !update_link(b,a,rev_m)) {
+	  click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
+			this,
+			b.s().cc(),
+			rev_m,
+			a.s().cc());
 	}
       }
     }
@@ -792,8 +817,12 @@ SRCR::push(int port, Packet *p_in)
     }
 
     _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
-    update_link(_ip, neighbor, get_fwd_metric(neighbor));
-    update_link(neighbor, _ip, get_rev_metric(neighbor));
+    /* 
+     * calling these functions updates the neighbor link 
+     * in the link_table, so we can ignore the return value.
+     */
+    get_fwd_metric(neighbor);
+    get_rev_metric(neighbor);
     if(type == PT_QUERY){
       process_query(pk);
       

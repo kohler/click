@@ -18,6 +18,7 @@
 #include <click/error.hh>
 #include "ettmetric.hh"
 #include "srcrstat.hh"
+#include <elements/grid/linktable.hh>
 CLICK_DECLS 
 
 ETTMetric::ETTMetric()
@@ -50,6 +51,8 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpElement, "Small SrcrStat element", &_ss_small,
 			cpElement, "Big SrcrStat element", &_ss_big,
+			cpKeywords,
+			"LT", cpElement, "LinkTable element", &_link_table, 
 			0);
   if (res < 0)
     return res;
@@ -61,17 +64,80 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("Small SrcrStat argument is wrong element type (should be SrcrStat)");
   if (_ss_big->cast("SrcrStat") == 0)
     return errh->error("Big SrcrStat argument is wrong element type (should be SrcrStat)");
+  if (_link_table && _link_table->cast("LinkTable") == 0) {
+    return errh->error("LinkTable element is not a LinkTable");
+  }
   return 0;
 }
 
-int 
-ETTMetric::get_fwd_metric(const IPAddress &ip) const
+void
+ETTMetric::update_link(SrcrStat *ss, IPAddress from, IPAddress to, int fwd, int rev) 
 {
-  int small_fwd = 9999;
-  int small_rev = 9999;
-  int big_fwd = 9999;
-  int big_rev = 9999;
+  IPOrderedPair p = IPOrderedPair(from, to);
 
+  if (!p.first(from)) {
+    /* switch */
+    IPAddress t = from;
+    from = to;
+    to = t;
+
+    int t2 = fwd;
+    fwd = rev;
+    rev = t2;
+  }
+
+  LinkInfo *nfo = _links.findp(p);
+  if (!nfo) {
+    _links.insert(p, LinkInfo(p));
+    nfo = _links.findp(p);
+  }
+
+
+  struct timeval now;
+  click_gettimeofday(&now);
+  
+
+  
+  if (ss == _ss_small) {
+    nfo->update_small(fwd, rev);
+    nfo->_last_small = now;
+  } else if (ss == _ss_big) {
+    nfo->update_big(fwd, rev);
+    nfo->_last_big = now;
+  } else {
+    click_chatter("%{element} called with weird SrcrStat\n",
+		  this);
+  }
+
+  if (now.tv_sec - nfo->_last_small.tv_sec < 30 &&
+      now.tv_sec - nfo->_last_big.tv_sec < 30) {
+    /* update linktable */
+    int fwd = nfo->fwd_metric();
+    int rev = nfo->rev_metric();
+    if (!_link_table->update_link(from, to, fwd)) {
+      click_chatter("%{element} couldn't update link %s > %d > %s\n",
+		    this,
+		    from.s().cc(),
+		    fwd,
+		    to.s().cc());
+    }
+    if (!_link_table->update_link(to, from, rev)){
+      click_chatter("%{element} couldn't update link %s < %d < %s\n",
+		    this,
+		    from.s().cc(),
+		    rev,
+		    to.s().cc());
+    }
+  }
+}
+int 
+ETTMetric::get_fwd_metric(IPAddress ip)
+{
+  int small_fwd = 7777;
+  int small_rev = 7777;
+  int big_fwd = 7777;
+  int big_rev = 7777;
+  
   if (_ss_big) {
     big_fwd = _ss_big->get_fwd(ip);
     big_rev = _ss_big->get_rev(ip);
@@ -80,21 +146,25 @@ ETTMetric::get_fwd_metric(const IPAddress &ip) const
     small_fwd = _ss_small->get_fwd(ip);
     small_rev = _ss_small->get_rev(ip);
   }
+  IPAddress _ip = _ss_big->_ip;
+  update_link(_ss_big, ip, _ip, big_fwd, big_rev);
+  update_link(_ss_small, ip, _ip, small_fwd, small_rev);
 
-  if (big_fwd > 0 && small_rev > 0) {
-    return (100 * 100 * 100) / (big_fwd * small_rev);
+  IPOrderedPair p = IPOrderedPair(_ip, ip);
+  LinkInfo *nfo = _links.findp(p);
+  if (nfo) {
+    return nfo->fwd_metric();
   }
-
   return 7777;
 }
 
 int 
-ETTMetric::get_rev_metric(const IPAddress &ip) const
+ETTMetric::get_rev_metric(IPAddress ip)
 {
-  int small_fwd = 9999;
-  int small_rev = 9999;
-  int big_fwd = 9999;
-  int big_rev = 9999;
+  int small_fwd = 7777;
+  int small_rev = 7777;
+  int big_fwd = 7777;
+  int big_rev = 7777;
 
   if (_ss_big) {
     big_fwd = _ss_big->get_fwd(ip);
@@ -104,8 +174,11 @@ ETTMetric::get_rev_metric(const IPAddress &ip) const
     small_fwd = _ss_small->get_fwd(ip);
     small_rev = _ss_small->get_rev(ip);
   }
-  if (big_rev > 0 && small_fwd > 0) {
-    return (100 * 100 * 100) / (big_rev * small_fwd);
+  IPAddress _ip = _ss_big->_ip;
+  IPOrderedPair p = IPOrderedPair(_ip, ip);
+  LinkInfo *nfo = _links.findp(p);
+  if (nfo) {
+    return nfo->rev_metric();
   }
   return 7777;
 }
@@ -119,5 +192,7 @@ ETTMetric::add_handlers()
 
 ELEMENT_PROVIDES(GridGenericMetric)
 EXPORT_ELEMENT(ETTMetric)
-
+#include <click/hashmap.cc>
+#include <click/bighashmap.cc>
+template class HashMap<IPOrderedPair, ETTMetric::LinkInfo>;
 CLICK_ENDDECLS
