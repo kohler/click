@@ -31,9 +31,9 @@ BridgeMessage::s(String tag) const {
 
   sprintf(buf, "%s %16s:%04hx: %2s  %x -> %16s  m/h/d: %hx/%hx/%hx",
 	  tag.cc(),
-	  cp_unparse_ulonglong(_bridge_id,16,false).cc(), _port_id,
+	  cp_unparse_unsigned64(_bridge_id,16,false).cc(), _port_id,
 	  _tc ? "TC" : "tc",
-	  _cost, cp_unparse_ulonglong(_root,16,false).cc(),
+	  _cost, cp_unparse_unsigned64(_root,16,false).cc(),
 	  _max_age, _hello_time, _forward_delay);
   s = buf;
   delete [] buf;
@@ -179,10 +179,10 @@ BridgeMessage::wire::s(String tag) const {
 	    "a/m/h/d: %hx/%hx/%hx/%hx",
 	    tag.cc(),
 	    type ? "???" : "CFG",
-	    cp_unparse_ulonglong(ntohq(bridge_id),16,false).cc(),
+	    cp_unparse_unsigned64(ntohq(bridge_id),16,false).cc(),
 	    ntohs(port_id),
 	    tca ? "TCA":"tca", tc ? "TC" : "tc",
-	    ntohl(cost), cp_unparse_ulonglong(ntohq(root),16,false).cc(),
+	    ntohl(cost), cp_unparse_unsigned64(ntohq(root),16,false).cc(),
 	    ntohs(message_age), ntohs(max_age),
 	    ntohs(hello_time), ntohs(forward_delay));
   s = buf;
