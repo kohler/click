@@ -1,3 +1,14 @@
+2004-07-30 Friday 16:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.27), elements/analysis/aggpktcounter.hh
+	(1.6), elements/standard/drivermanager.cc (1.37),
+	elements/standard/pokehandlers.cc (1.33),
+	include/click/handlercall.hh (1.13), include/click/router.hh
+	(1.67), include/click/standard/drivermanager.hh (1.25),
+	lib/confparse.cc (1.134), lib/handlercall.cc (1.15), lib/router.cc
+	(1.170), test/handlers/handlercall-01.testie (1.2): support read
+	handlers with parameters
+
 2004-07-30 Friday 15:53  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/icmp/: ICMPError-sourceroute-01.testie (1.3),
