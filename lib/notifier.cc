@@ -113,17 +113,15 @@ Notifier::upstream_pull_signal(Element *e, int port, Task *t)
     
     notifier_filter.filter(v);
 
-    NotifierSignal signal;
-    if (ok >= 0 && v.size()) {
-	for (int i = 0; ok >= 0 && i < v.size(); i++) {
-	    Notifier *n = (Notifier *) (v[i]->cast("Notifier"));
-	    n->add_listener(t);
-	    if (i == 0)
-		signal = n->activity_signal();
-	    else
-		signal += n->activity_signal();
-	}
-    }
+    if (ok < 0 || !v.size())
+	return NotifierSignal();
 
+    NotifierSignal signal(false);
+    for (int i = 0; i < v.size(); i++) {
+	Notifier *n = (Notifier *) (v[i]->cast("Notifier"));
+	if (t)
+	    n->add_listener(t);
+	signal += n->notifier_signal();
+    }
     return signal;
 }

@@ -5,7 +5,8 @@
 
 class NotifierSignal { public:
 
-    NotifierSignal();		// always true
+    NotifierSignal();			// always true
+    NotifierSignal(bool);
     NotifierSignal(volatile uint32_t *value, uint32_t mask);
 
     bool active() const			{ return (*_value & _mask) != 0; }
@@ -31,17 +32,17 @@ class Notifier { public:
 
     int initialize(Router *);
     
-    int add_listener(Task *);	// complains on out of memory
+    int add_listener(Task *);		// complains on out of memory
     void remove_listener(Task *);
 
-    static NotifierSignal upstream_pull_signal(Element *, int port, Task *);
+    static NotifierSignal upstream_pull_signal(Element *, int port, Task* = 0);
 
     bool listeners_awake() const	{ return _signal.active(); }
     bool listeners_asleep() const	{ return !_signal.active(); }
     void wake_listeners();
     void sleep_listeners();
 
-    const NotifierSignal &activity_signal() const { return _signal; }
+    const NotifierSignal &notifier_signal() const { return _signal; }
     
   private:
     
@@ -55,6 +56,12 @@ class Notifier { public:
 inline
 NotifierSignal::NotifierSignal()
     : _value(&true_value), _mask(1)
+{
+}
+
+inline
+NotifierSignal::NotifierSignal(bool always_on)
+    : _value(&true_value), _mask(always_on)
 {
 }
 
@@ -76,7 +83,9 @@ NotifierSignal::set_active(bool b)
 inline NotifierSignal &
 NotifierSignal::operator+=(const NotifierSignal &o)
 {
-    if (_value == o._value)
+    if (!_mask)
+	_value = o._value;
+    if (_value == o._value || !o._mask)
 	_mask |= o._mask;
     else
 	_value = &true_value;
