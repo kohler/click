@@ -46,7 +46,7 @@ EtherEncap::initialize(ErrorHandler *errh)
 }
 
 Packet *
-EtherEncap::simple_action(Packet *p)
+EtherEncap::smaction(Packet *p)
 {
   Packet *q = p->push(14);
   
@@ -54,7 +54,22 @@ EtherEncap::simple_action(Packet *p)
   memcpy(q->data() + 6, _src, 6);
   memcpy(q->data() + 12, &_netorder_type, 2);
   
-  return(q);
+  return q;
+}
+
+void
+EtherEncap::push(int, Packet *p)
+{
+  output(0).push(smaction(p));
+}
+
+Packet *
+EtherEncap::pull(int)
+{
+  if (Packet *p = input(0).pull())
+    return smaction(p);
+  else
+    return 0;
 }
 
 EXPORT_ELEMENT(EtherEncap)

@@ -38,8 +38,10 @@ class EtherEncap : public Element {
   EtherEncap *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  
-  Packet *simple_action(Packet *);
+
+  Packet *smaction(Packet *);
+  void push(int, Packet *);
+  Packet *pull(int);
   
 private:
 
