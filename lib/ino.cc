@@ -224,6 +224,9 @@ ClickIno::nlink(ino_t ino)
 {
     // must be called with config_lock held
     int elementno = INO_ELEMENTNO(ino);
+    if (INO_ISHANDLER(ino))
+	return (elementno < 0 ? INO_NLINK_GLOBAL_HANDLER : INO_NLINK_LOCAL_HANDLER);
+    // otherwise, it is a directory
     int nlink = 2;
     if (INO_DIRTYPE(ino) != INO_DT_H) {
 	if (INO_DT_HAS_U(ino) && _router)
