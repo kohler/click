@@ -168,8 +168,10 @@ ToDevice::tx_intr()
     queued_pkts = _dev->tx_clean(_dev);
 
 #if CLICK_DEVICE_STATS
+    if (_activations > 0) {
     GET_STATS_RESET(low00, low10, time_now, 
 		    _perfcnt1_clean, _perfcnt2_clean, _time_clean);
+    }
 #endif
   }
 #endif
