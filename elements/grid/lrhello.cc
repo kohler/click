@@ -20,7 +20,7 @@
 #include <click/click_ether.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include "elements/userlevel/tobpf.hh"
+#include "elements/userlevel/todevice.hh"
 #include <click/router.hh>
 #include "grid.hh"
 
