@@ -1,3 +1,9 @@
+2003-03-06 Thursday 21:04  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
+
+	* ns/nsclick.cc (1.9): Lexer doesn't take ErrorHandler at
+	construction time anymore, instead pass one in when calling
+	begin_parse.
+
 2003-03-06 Thursday 09:36  Eddie Kohler <kohler@icir.org>
 
 	* lib/driver.cc (1.10): CLICK_DECLS missing; Kendy Kutzner reports
