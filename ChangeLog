@@ -1,3 +1,7 @@
+2001-03-15 Thursday 12:51  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: nitlet
+
 2001-03-14 Wednesday 19:39  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/local/: binpackingsched.cc, binpackingsched.hh,
