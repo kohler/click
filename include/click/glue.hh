@@ -54,13 +54,16 @@ typedef struct device net_device;
 
 extern "C" {
 
-__inline__ unsigned
+extern uint32_t click_random_seed;
+
+__inline__ uint32_t
 random()
 {
-  static unsigned seed = 152L;
-  seed = seed*69069L + 1;
-  return seed^jiffies;
+  click_random_seed = click_random_seed*69069L + 1;
+  return click_random_seed ^ jiffies;
 }
+
+extern void srandom(uint32_t);
 
 __inline__ uint64_t
 click_get_cycles()

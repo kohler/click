@@ -306,6 +306,17 @@ __rtti_user()
 
 #ifdef CLICK_LINUXMODULE
 
+// Random number routines.
+
+uint32_t click_random_seed = 152;
+
+void
+srandom(uint32_t seed)
+{
+  click_random_seed = seed;
+}
+
+
 /*
  * Convert a string to a long integer. use simple_strtoul, which is in the
  * kernel
