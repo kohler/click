@@ -1,3 +1,9 @@
+2003-03-05 Wednesday 18:55  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.45), dsdvroutetable.hh
+	(1.34): change dsdv_seqs metric to use broadcast count, not route
+	sequence numbers
+
 2003-03-05 Wednesday 18:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/qvec.hh (1.1): A poor man's double-ended queue;
