@@ -61,7 +61,7 @@ print "rt :: LookupIPRouteRON(", $n + 1, ");\n";
 
 print "neighborclass :: IPClassifier(\n";
 for($i=0; $i<$n; $i++) {
-    print "\tsrc ", $servers[$i], ", ";
+    print "\tsrc ", $servers[$i], ", \n";
 }
 print "-);\n";
 

@@ -43,19 +43,20 @@ sub main {
 
     
     # Push click & datacollection scripts to each node
-    for($i=0; $i<scalar(@name); $i++) {
-	
+    for($i=0; $i<scalar(@name); $i++) {print "Working on $name[$i]\n";
 	# commands of this form: 
-	#   tar czvf - -C /home/am2/yipal/ron/ click-export | ssh ron@mit.ron.lcs.mit.edu tar xzvf - -C yipal/
-	#   tar czvf - -C /home/am2/yipal/ron/ datacollection | ssh ron@mit.ron.lcs.mit.edu tar xzvf - -C yipal/
+	#   tar czf - -C /home/am2/yipal/ron/ click-export | ssh ron@mit.ron.lcs.mit.edu tar xzf - -C yipal/
+	#   tar czf - -C /home/am2/yipal/ron/ datacollection-export | ssh ron@mit.ron.lcs.mit.edu tar xzf - -C yipal/
 
-	$command = "tar czvf - -C /home/am2/yipal/ron/ click-export | ssh ron@$name[$i] tar xzvf - -C yipal/";
+	$command = "tar czf - -C /home/am2/yipal/ron/ click-export | ssh $name[$i] -l ron tar xzf - -C yipal/";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	$command = "tar czvf - -C /home/am2/yipal/ron/ datacollection | ssh ron@$name[$i] tar xzvf - -C yipal/";
+	$command = "tar czf - -C /home/am2/yipal/ron/ datacollection-export | ssh $name[$i] -l ron tar xzf - -C yipal/";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
+
+         sleep 1;
 	
     }
 }
