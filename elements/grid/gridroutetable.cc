@@ -94,7 +94,7 @@ GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
 			cpString, "log channel name", &chan,
 			0);
 
-  if (res != 0)
+  if (res < 0)
     return res;
 
   // convert msecs to jiffies
@@ -118,7 +118,8 @@ GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
     return errh->error("max hops must be greater than 0");
 
   _extended_logging_errh = router()->chatter_channel(chan);
-
+  assert(_extended_logging_errh);
+  
   return res;
 }
 

@@ -115,7 +115,7 @@ probe_write_handler(const String &arg, Element *element,
 			cpIPAddress, "IP address", &ip,
 			cpUnsigned, "Nonce (unsigned int)", &nonce,
 			0);
-  if (res != 0)
+  if (res < 0)
     return res;
 
   l->send_probe(ip, nonce);

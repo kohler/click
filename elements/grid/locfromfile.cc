@@ -49,7 +49,7 @@ LocFromFile::configure(const Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
                         cpFilename, "filename",  &filename,
                         cpEnd);
-  if(res == 0){
+  if(res >= 0){
     FILE *fp = fopen(filename.cc(), "r");
     if(fp == 0)
       return(errh->error("cannot open file %s", filename.cc()));

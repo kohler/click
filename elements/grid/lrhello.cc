@@ -53,7 +53,7 @@ SendGridLRHello::configure(const Vector<String> &conf, ErrorHandler *errh)
 			cpOptional,
 			cpInteger, "max nbr hops", &_hops,
 			0);
-  if (res != 0)
+  if (res < 0)
     return res;
 
   if (_period <= 0)

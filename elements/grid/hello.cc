@@ -50,7 +50,7 @@ SendGridHello::configure(const Vector<String> &conf, ErrorHandler *errh)
 			cpEthernetAddress, "source Ethernet address", &_from_eth,
 			cpIPAddress, "source IP address", &_from_ip,
 			0);
-  if (res != 0)
+  if (res < 0)
     return res;
 
   if (_period <= 0)

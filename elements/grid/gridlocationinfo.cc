@@ -77,8 +77,9 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
 			"ERR_RADIUS", cpUnsignedShort, "Location error radius, in metres", &_loc_err,
 			"LOGCHANNEL", cpString, "log channel name", &chan,
 			0);
-  if (res != 0)
+  if (res < 0)
     return res;
+
   float lat = ((float) lat_int) / 100000.0f;
   float lon = ((float) lon_int) / 100000.0f; 
   if (lat > 90 || lat < -90)
