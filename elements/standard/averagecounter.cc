@@ -67,7 +67,8 @@ Packet *
 AverageCounter::simple_action(Packet *p)
 {
   _first.compare_and_swap(0, click_jiffies());
-  if (click_jiffies() - _first >= _ignore) _count++;
+  if (click_jiffies() - _first >= _ignore)
+    _count++;
   _last = click_jiffies();
   return p;
 }
