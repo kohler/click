@@ -1,3 +1,15 @@
+2004-09-16 Thursday 03:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.29), configure.in (1.245), include/click/error.hh
+	(1.27), lib/error.cc (1.52), tools/lib/lexert.cc (1.61): remove the
+	"prefix" argument from decorate_text()
+
+2004-09-16 Thursday 03:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: ipsumdumpinfo.cc (1.18), ipsumdumpinfo.hh
+	(1.13), toipsumdump.cc (1.56): remove unnecessary functions, and be
+	more careful about binary unparsing
+
 2004-09-16 Thursday 00:46  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: fromipsumdump.cc (1.70), fromtcpdump.cc
