@@ -105,7 +105,7 @@ $provisions"; shift 1;;
 	shift 1; unprovisions="$1
 $unprovisions"; shift 1;;
     -x*)
-	unprovisions=`echo "$1" | sed 's/^-r//'`"
+	unprovisions=`echo "$1" | sed 's/^-x//'`"
 $unprovisions"; shift 1;;
     --u=*|--un=*|--unp=*|--unpr=*|--unpro=*|--unprov=*|--unprovi=*|--unprovid=*|--unprovide=*)
 	unprovisions=`echo "$1" | sed 's/^[^=]*=//'`"
@@ -163,7 +163,7 @@ EOF
 
     # add standards to provisions if necessary
     if test "x$standards" != x; then
-	provisions="$provisions AddressInfo AlignmentInfo DriverManager ErrorElement ScheduleInfo Storage"
+	provisions="$provisions AddressInfo AlignmentInfo DriverManager ErrorElement PortInfo ScheduleInfo Storage"
     fi
 
     # expand provisions and unprovisions: require one per line
@@ -369,13 +369,17 @@ elem2make () {
 	makevar=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
     -x|--e|--ex|--exc|--excl|--exclu|--exclud|--exclude)
         if test $# -lt 2; then elem2xxx_usage; fi
-	shift 1; excludes=";s/^$1"' \\$'"//$excludes"; shift 1;;
+	shift 1
+	for i in $1; do excludes=";s/^$i"' \\$'"//$excludes"; done
+	shift 1;;
     -x*)
 	this_exclude=`echo "$1" | sed 's/^-p//'`
-	excludes=";s/^$this_exclude"' \\$'"//$excludes"; shift 1;;
+	for i in $this_exclude; do excludes=";s/^$i"' \\$'"//$excludes"; done
+	shift 1;;
     --e=*|--ex=*|--exc=*|--excl=*|--exclu=*|--exclud=*|--exclude=*)
 	this_exclude=`echo "$1" | sed 's/^[^=]*=//'`
-	excludes=";s/^$this_exclude"' \\$'"//$excludes"; shift 1;;
+	for i in $this_exclude; do excludes=";s/^$i"' \\$'"//$excludes"; done
+	shift 1;;
     -V|--verb|--verbo|--verbos|--verbose)
 	verbose=1; shift 1;;
     -h|--h|--he|--hel|--help)
@@ -557,6 +561,7 @@ END {
 -	<click/standard/alignmentinfo.hh>	AlignmentInfo
 -	<click/standard/drivermanager.hh>	DriverManager
 -	<click/standard/errorelement.hh>	ErrorElement
+-	<click/standard/portinfo.hh>	PortInfo
 -	<click/standard/scheduleinfo.hh>	ScheduleInfo
 EOF
 	cat - /tmp/click-buildtool-standards.$$ | $awk "$awk_program"
