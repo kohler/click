@@ -55,8 +55,8 @@ Index: net/core/skbuff.c
   *	Authors:	Alan Cox <iiitac@pyr.swan.ac.uk>
   *			Florian La Roche <rzsfl@rz.uni-sb.de>
   *
-- *	Version:	$Id: click-patch-1.0.4,v 1.2 2000/04/13 20:27:47 benjie Exp $
-+ *	Version:	$Id: click-patch-1.0.4,v 1.2 2000/04/13 20:27:47 benjie Exp $
+- *	Version:	$Id: click-patch-1.0.4,v 1.3 2000/04/13 21:23:47 benjie Exp $
++ *	Version:	$Id: click-patch-1.0.4,v 1.3 2000/04/13 21:23:47 benjie Exp $
   *
   *	Fixes:	
   *		Alan Cox	:	Fixed the worst of the load balancer bugs.
@@ -448,7 +448,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Thu Mar  2 18:27:40 2000
-+++ drivers/net/tulip.c	Thu Apr 13 16:13:25 2000
++++ drivers/net/tulip.c	Thu Apr 13 17:08:32 2000
 @@ -22,9 +22,6 @@
  
  /* A few user-configurable values. */
@@ -599,23 +599,8 @@ Index: drivers/net/tulip.c
  			unsigned int dirty_tx;
  
  			for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0;
-@@ -2695,8 +2742,9 @@
- 
- 			tp->dirty_tx = dirty_tx;
- 			if (csr5 & TxDied) {
--				if (tulip_debug > 2)
--					printk(KERN_WARNING "%s: The transmitter stopped."
-+				// if (tulip_debug > 2)
-+					// printk(KERN_WARNING "%s: The transmitter stopped."
-+					printk("%s: The transmitter stopped."
- 						   "  CSR5 is %x, CSR6 %x, new CSR6 %x.\n",
- 						   dev->name, csr5, inl(ioaddr + CSR6), tp->csr6);
- 				outl(tp->csr6 | 0x0002, ioaddr + CSR6);
-@@ -2718,11 +2766,16 @@
- 				outl(tp->csr6 | 0x0002, ioaddr + CSR6);
- 				outl(tp->csr6 | 0x2002, ioaddr + CSR6);
+@@ -2720,8 +2767,11 @@
  				outl(0, ioaddr + CSR1);
-+				printk("TxFIFOUnderflow\n");
  			}
  			if (csr5 & RxDied) {		/* Missed a Rx frame. */
 +				unsigned csr8status = inl(ioaddr+CSR8);
@@ -625,45 +610,9 @@ Index: drivers/net/tulip.c
 +				tp->stats.rx_missed_errors += csr8status&0xffff;
 +				tp->stats.rx_fifo_errors += fifostatus&0x7ff;
  				outl(tp->csr6 | 0x2002, ioaddr + CSR6);
-+				printk("RxDied\n");
  			}
  			if (csr5 & (TPLnkPass | TPLnkFail | 0x08000000)) {
- 				if (tp->link_change)
-@@ -2731,6 +2784,7 @@
- 			if (csr5 & SytemError) {
- 				printk(KERN_ERR "%s: (%lu) System Error occured\n", dev->name, tp->nir);
- 			}
-+			printk("clearing error\n");
- 			/* Clear all error sources, included undocumented ones! */
- 			outl(0x0800f7ba, ioaddr + CSR5);
- 			oi++;
-@@ -2742,6 +2796,7 @@
- 					   dev->name, csr5);
- 			outl(tulip_tbl[tp->chip_id].valid_intrs, ioaddr + CSR7);
- #endif
-+			printk("resetting timer\n");
- 			tp->ttimer = 0;
- 			oi++;
- 		}
-@@ -2766,11 +2821,13 @@
- 	/* check if we card is in suspend mode */
- 	entry = tp->dirty_rx % RX_RING_SIZE;
- 	if (tp->rx_skbuff[entry] == NULL) {
--		if (tulip_debug > 1)
--			printk(KERN_WARNING "%s: in rx suspend mode: (%lu) (tp->cur_rx = %u, ttimer = %d, rx = %d) go/stay in suspend mode\n", dev->name, tp->nir, tp->cur_rx, tp->ttimer, rx);
-+		//if (tulip_debug > 1)
-+			//printk(KERN_WARNING "%s: in rx suspend mode: (%lu) (tp->cur_rx = %u, ttimer = %d, rx = %d) go/stay in suspend mode\n", dev->name, tp->nir, tp->cur_rx, tp->ttimer, rx);
-+			printk("%s: in rx suspend mode: (%lu) (tp->cur_rx = %u, ttimer = %d, rx = %d) go/stay in suspend mode\n", dev->name, tp->nir, tp->cur_rx, tp->ttimer, rx);
- 		if (tp->ttimer == 0 || (inl(ioaddr + CSR11) & 0xffff) == 0) {
--			if (tulip_debug > 1)
--				printk(KERN_WARNING "%s: in rx suspend mode: (%lu) set timer\n", dev->name, tp->nir);
-+			// if (tulip_debug > 1)
-+				// printk(KERN_WARNING "%s: in rx suspend mode: (%lu) set timer\n", dev->name, tp->nir);
-+				printk("%s: in rx suspend mode: (%lu) set timer\n", dev->name, tp->nir);
- 			outl(tulip_tbl[tp->chip_id].valid_intrs | TimerInt,
- 				ioaddr + CSR7);
- 			outl(TimerInt, ioaddr + CSR5);
-@@ -2932,8 +2989,12 @@
+@@ -2932,8 +2982,12 @@
  	if (tp->chip_id == DC21040)
  		outl(0x00000004, ioaddr + CSR13);
  
@@ -678,7 +627,7 @@ Index: drivers/net/tulip.c
  
  	del_timer(&tp->timer);
  
-@@ -2976,9 +3037,12 @@
+@@ -2976,9 +3030,14 @@
  	struct tulip_private *tp = (struct tulip_private *)dev->priv;
  	long ioaddr = dev->base_addr;
  
@@ -688,13 +637,15 @@ Index: drivers/net/tulip.c
 +	if (dev->start) {
 +  		unsigned csr8status = inl(ioaddr+CSR8);
 +        unsigned fifostatus = csr8status>>17;
++		unsigned missed = csr8status & 0x1ffff;
++		tp->stats.rx_dropped += missed & 0x10000 ? 0x10000 : missed;
 +	  	tp->stats.rx_missed_errors += csr8status&0xffff;
 +        tp->stats.rx_fifo_errors += fifostatus&0x7ff;
 +	}
  	return &tp->stats;
  }
  
-@@ -3175,7 +3239,7 @@
+@@ -3175,7 +3234,7 @@
  			/* Same setup recently queued, we need not add it. */
  		} else {
  			unsigned long flags;
@@ -703,7 +654,7 @@ Index: drivers/net/tulip.c
  
  			save_flags(flags); cli();
  			entry = tp->cur_tx++ % TX_RING_SIZE;
-@@ -3186,7 +3250,12 @@
+@@ -3186,7 +3245,12 @@
  				tp->tx_ring[entry].length =
  					(entry == TX_RING_SIZE-1) ? cpu_to_le32(DESC_RING_WRAP) : 0;
  				tp->tx_ring[entry].buffer1 = 0;
@@ -716,7 +667,7 @@ Index: drivers/net/tulip.c
  				entry = tp->cur_tx++ % TX_RING_SIZE;
  			}
  
-@@ -3201,6 +3270,10 @@
+@@ -3201,6 +3265,10 @@
  				set_bit(0, (void*)&dev->tbusy);
  				tp->tx_full = 1;
  			}
@@ -727,7 +678,7 @@ Index: drivers/net/tulip.c
  			restore_flags(flags);
  			/* Trigger an immediate transmit demand. */
  			outl(0, ioaddr + CSR1);
-@@ -3345,3 +3418,409 @@
+@@ -3345,3 +3413,409 @@
   *  tab-width: 4
   * End:
   */
@@ -755,7 +706,7 @@ Index: drivers/net/tulip.c
 +/* demand polling at 5.2us should not be used */
 +#define DEMAND_POLLTX 	1
 +/* prefetching of descriptor data */
-+// #define PREFETCH   		1
++#define PREFETCH   		1
 +
 +unsigned tulip_recycled_skb_size = 0;
 +static int tulip_recycled_skb_cnt = 0;
@@ -970,7 +921,7 @@ Index: drivers/net/tulip.c
 +   
 +#ifdef DEMAND_POLLTX
 +    csr0 = inl(ioaddr + CSR0) & ~(7<<17);
-+    csr0 = csr0 | (4<<17);
++    csr0 = csr0 | (1<<17);
 +    outl(csr0, ioaddr+CSR0);
 +#endif
 +

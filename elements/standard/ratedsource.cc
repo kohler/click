@@ -66,7 +66,14 @@ RatedSource::initialize(ErrorHandler *errh)
   _packet = Packet::make(headroom, (const unsigned char *)_data.data(), 
       			 _data.length(), 
 			 Packet::default_tailroom(_data.length()));
-  ScheduleInfo::join_scheduler(this, errh);
+#ifndef RR_SCHED
+  /* start out with default number of tickets, inflate up to max */
+  int max_tickets = ScheduleInfo::query(this, errh);
+  set_max_tickets(max_tickets);
+  set_tickets(1);
+#endif
+  join_scheduler();
+  // ScheduleInfo::join_scheduler(this, errh);
 
   click_gettimeofday(&_tv1); 
   _tv2 = _tv1; 
@@ -114,7 +121,7 @@ static String
 read_count(Element *e, void *)
 {
   RatedSource *is = (RatedSource *)e;
-  return String(is->total_sent()) + "\n";
+  return String(is->total_sent()) + " in " + is->total_us() + " us\n";
 }
 
 void
