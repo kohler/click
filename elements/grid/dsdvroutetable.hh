@@ -3,7 +3,7 @@
 
 /*
  * =c
- * DSDVRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP [, GridGatewayInfo, LinkTracker, LinkStat] [, I<KEYWORDS>])
+ * DSDVRouteTable(TIMEOUT, PERIOD, JITTER, MIN_TRIGGER_PERIOD, ETH, IP [, GridGatewayInfo, LinkTracker, LinkStat] [, I<KEYWORDS>])
  *
  * =s Grid
  * Run DSDV local routing protocol
@@ -25,15 +25,19 @@
  *
  * =item TIMEOUT
  * 
- * Unsigned integer.  Milliseconds.
+ * Unsigned integer.  Milliseconds after which to expire route entries.
  *
  * =item PERIOD
  *
- * Unsigned integer.  Milliseconds.
+ * Unsigned integer.  Milliseconds between full dumps, plus/minus some jitter (see below).
  *
  * =item JITTER
  *
- * Unsigned integer.  Milliseconds.
+ * Unsigned integer.  Maximum milliseconds by which to randomly jitter full dumps.
+ *
+ * =item MIN_TRIGGER_PERIOD
+ *
+ * Unsigned integer.  Minimum milliseconds between triggered updates.
  *
  * =item ETH
  *
@@ -152,14 +156,16 @@ private:
     // DSDV book-keeping
     double              wst;                   // weighted settling time (msecs)
     metric_t            last_adv_metric;       // last metric we advertised
-    int                 last_seq_jiffies;      // last time the seq_no changed
+    unsigned int        last_seq_jiffies;      // last time the seq_no changed
     unsigned int        advertise_ok_jiffies;  // when it is ok to advertise route
     bool                need_seq_ad;
     bool                need_metric_ad;
     unsigned int        last_expired_jiffies;  // when the route was expired (if broken)
 
-    bool broken() { return num_hops == 0; }
-    bool good()   { return num_hops != 0; }
+    bool broken() const { return num_hops == 0; }
+    bool good()   const { return num_hops != 0; }
+
+    void dump() const; // click_chatter indo about this entry
 
     RTEntry() : 
       is_gateway(false), ttl(0), last_updated_jiffies(0), wst(0), 
@@ -185,10 +191,10 @@ private:
 	    unsigned int jiff) :
       RouteEntry(nbr->ip, nbr->loc_good, nbr->loc_err, nbr->loc,
 		 eth, ip, nbr->seq_no, nbr->num_hops > 0 ? nbr->num_hops + 1 : 0),
-      is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
+      is_gateway(nbr->is_gateway), ttl(nbr->ttl), last_updated_jiffies(jiff), 
       metric(nbr->metric, nbr->metric_valid), wst(0), last_seq_jiffies(0), 
       advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false),
-      last_expired_jiffies(0)
+      last_expired_jiffies(nbr->num_hops > 0 ? 0 : jiff)
     {
       loc_err = ntohs(loc_err);
       seq_no = ntohl(seq_no);
@@ -197,9 +203,11 @@ private:
     }
     
     /* copy data from this into nb, converting to net byte order */
-    void fill_in(grid_nbr_entry *nb, LinkStat *ls = 0);
+    void fill_in(grid_nbr_entry *nb, LinkStat *ls = 0) const;
     
   };
+  
+  friend class RTEntry;
   
   typedef BigHashMap<IPAddress, RTEntry> RTable;
   typedef RTable::Iterator RTIter;
@@ -209,7 +217,7 @@ private:
 
   // 1. every route in the table that is not expired (num_hops > 0) is
   // valid: i.e. its ttl has not run out, nor has it been in the table
-  // past its timeout.  There is a expire timer for this route in
+  // past its timeout.  There is an expire timer for this route in
   // _expire_timers.
 
   // 2. no route in the table that *is* expired (num_hops == 0) has an
@@ -220,8 +228,8 @@ private:
 
   class RTable _rtes;
 
-  void handle_update(RTEntry &, const bool was_sender);  
-  void insert_route(const RTEntry &, const bool was_Sender);
+  void handle_update(RTEntry &, const bool was_sender, const unsigned int jiff);  
+  void insert_route(const RTEntry &, const bool was_sender);
   void schedule_triggered_update(const IPAddress &ip, unsigned int when); // when is in jiffies
   
   typedef BigHashMap<IPAddress, Timer *> TMap;
@@ -246,12 +254,21 @@ private:
   class HMap _expire_hooks;
 
   // Trigger timer invariants: any route may have a timer in this
-  // table.  A route with a timer in this table has need_seq_ad or
-  // need_metric_ad set.  All timers in the table must be running.
-  // Every entry in _trigger_timers has a corresponding TimerHook
-  // pointer stored in _trigger_hooks.
+  // table.  All timers in the table must be running.  Every entry in
+  // _trigger_timers has a corresponding TimerHook pointer stored in
+  // _trigger_hooks.  Note: a route entry t may have a trigger timer
+  // even r.need_seq_ad and r.need_metric_ad flags are false.  We
+  // might have sent a full update before r's triggered update timer
+  // expired, but after r.advertise_ok_jiffies: the triggered update
+  // was delayed past r.advertise_ok_jiffies to enforce the minimum
+  // triggered update period.  In that case there may be other
+  // destinations whose triggered updates were cancelled when r's
+  // trigger was delayed, and which should be advertised when r's
+  // triggered update timer finally fires, even if r needn't be.
   class TMap _trigger_timers;
   class HMap _trigger_hooks;
+
+  void check_invariants(const IPAddress *ignore = 0) const; // check table, timer, and trigger hook invariants
 
   /* max time to keep an entry in RT */
   unsigned int _timeout; // msecs
@@ -259,6 +276,8 @@ private:
   /* route broadcast timing parameters */
   unsigned int _period; // msecs
   unsigned int _jitter; // msecs
+  unsigned int _min_triggered_update_period; // msecs
+
 
   class GridGatewayInfo *_gw_info;
   class LinkTracker     *_link_tracker;
@@ -284,9 +303,6 @@ private:
   /* settling time constants */
   double          _alpha;
   unsigned int    _wst0;  // msecs
-
-  /* misc. DSDV constants */
-  static const unsigned int _min_triggered_update_period = 1000; // msecs
 
   /* track route ads */
   unsigned int _last_periodic_update;  // jiffies
@@ -337,7 +353,7 @@ private:
   void init_metric(RTEntry &);
 
   /* update weight settling time */
-  void update_wst(RTEntry *old_r, RTEntry &new_r);
+  void update_wst(RTEntry *old_r, RTEntry &new_r, const unsigned int jiff);
 
   /* true iff first route's metric is preferable to second route's
      metric -- note that this is a strict comparison, if the metrics
@@ -354,6 +370,9 @@ private:
   static String print_ip(Element *e, void *);
   static String print_eth(Element *e, void *);
   static String print_links(Element *e, void *);
+
+  static unsigned int jiff_diff_as_msec(unsigned int j1, unsigned int j2, bool &neg); // j1 - j2, in msecs
+  static String jiff_diff_string(unsigned int j1, unsigned int j2);
 
   static String print_metric_type(Element *e, void *);
   static int write_metric_type(const String &, Element *, void *, ErrorHandler *);
