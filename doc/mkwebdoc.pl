@@ -66,7 +66,7 @@ foreach $i (@examples) {
     my($fn, $title) = ('"' . $i->[0] . '"', '"' . $i->[1] . '"');
     my($html) = $fn;
     $html =~ s/\.click\"$/.html\"/;
-    mysystem("click-pretty -C /tmp/%click-webdoc -t $EXDIR/template -dfilename=$fn -dtitle=$title click-$VERSION/conf/$fn > $EXDIR/$html || true");
+    mysystem("click-pretty -C /tmp/%click-webdoc -t $EXDIR/template -dfilename=$fn -dtitle=$title click-$VERSION/conf/$fn > $EXDIR/$html");
 }
 
 # 2.0. read elementmap

@@ -269,6 +269,7 @@ SynonymElementClassT::complex_expand_element(
 	RouterT *, const VariableEnvironment &, ErrorHandler *)
 {
     assert(0);
+    return 0;
 }
 
 void
