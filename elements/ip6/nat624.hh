@@ -28,11 +28,9 @@ class Nat624 : public Element {
                            unsigned short ip6_plen, 
                            unsigned char ip6_hlim, 
 			   unsigned char ip6_nxt,
-			   unsigned char *a,
-			   unsigned char pl_length);
+			   unsigned char *a);
 			   
-  Packet *
-  Nat624::make_icmp_translate64(unsigned char *a,
+  Packet * make_icmp_translate64(unsigned char *a,
 				unsigned char payload_length);
 
   bool lookup(IP6Address, IPAddress &);
