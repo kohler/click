@@ -1105,7 +1105,7 @@ DSDVRouteTable::simple_action(Packet *packet)
   }
 #endif // ENABLE_SEEN
 
-  // insert 1-hop route, update new_r's metric as side-effect
+  // insert 1-hop route
   inserted_new_r = handle_update(new_r, true, jiff);
 
 #if ENABLE_SEEN
