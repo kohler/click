@@ -137,8 +137,6 @@ Neighbor::push(int port, Packet *packet)
       gh->type = GRID_NBR_ENCAP;
       memcpy((unsigned char *) &gh->ip, _ipaddr.data(), 4);
       
-      click_chatter("got packet for %s -- %s", dst.s().cc(), ethaddr->s().cc());
-
       output(0).push(packet);
     }
   }
@@ -178,6 +176,3 @@ Neighbor::add_handlers()
 }
 
 EXPORT_ELEMENT(Neighbor)
-  // below already in lib/templatei.cc
-  // #include "hashmap.cc"
-  // template class HashMap<IPAddress, EtherAddress>;
