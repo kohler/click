@@ -1,3 +1,8 @@
+2002-04-16 Tuesday 20:51  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/lexer.cc: identifiers can neither begin nor end with
+	slashes (before, they could end with a slash)
+
 2002-04-14 Sunday 14:20  Eddie Kohler <kohler@aciri.org>
 
 	* acclick.m4, configure.in: add patches for compiling on Solaris,

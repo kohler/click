@@ -1,3 +1,9 @@
+2002-04-16 Tuesday 20:51  Eddie Kohler <kohler@aciri.org>
+
+	* lib/lexer.cc (1.57), doc/click.5 (1.28), tools/lib/lexert.cc
+	(1.45): identifiers can neither begin nor end with slashes (before,
+	they could end with a slash)
+
 2002-04-16 Tuesday 15:09  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/ipratemon.cc (1.94): fix IPRateMonitor cleanup()
