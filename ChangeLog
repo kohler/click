@@ -1,3 +1,25 @@
+2004-07-16 Friday 19:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/handlers/KernelHandlerProxy-01.testie (1.1): add
+	KernelHandlerProxy test
+
+2004-07-16 Friday 19:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: khandlerproxy.cc (1.17), khandlerproxy.hh
+	(1.8): KernelHandlerProxy no longer relies on router->nhandlers(),
+	which was unportable
+
+2004-07-16 Friday 19:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/router.hh (1.59), lib/router.cc (1.163):
+	Router::Handlers are stored so that a "Handler*" is relatively
+	stable
+
+2004-07-16 Friday 19:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: handlerproxy.cc (1.3), handlerproxy.hh
+	(1.7): whitespace nits
+
 2004-07-16 Friday 18:33  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* ns/nsclick.cc (1.21): use the right functions for accessing
