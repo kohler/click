@@ -60,8 +60,8 @@ performs already.
     Autoconf has a useful info(1) manual.
 
 
-`install-sh', `missing', `mkinstalldirs'
-........................................
+`install-sh', `missing', `mkinstalldirs', `acclick.m4', `aclocal.m4'
+....................................................................
 
     These files support `./configure'. Use them unchanged.
 

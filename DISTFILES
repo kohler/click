@@ -121,6 +121,7 @@ etc/samplepackage
 etc/samplepackage/Makefile.in
 etc/samplepackage/README
 etc/samplepackage/acclick.m4
+etc/samplepackage/aclocal.m4
 etc/samplepackage/config.h.in
 etc/samplepackage/configure
 etc/samplepackage/configure.in
