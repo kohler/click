@@ -80,9 +80,8 @@ IPGWOptions::clone() const
 Packet *
 IPGWOptions::handle_options(Packet *p)
 {
-  /* This is lame: should be lazier. */
   WritablePacket *wp = 0;
-  const uint8_t *oa = p->transport_header();
+  const uint8_t *oa = p->network_header();
   int hlen = p->network_header_length();
 
   int oi;
@@ -96,7 +95,7 @@ IPGWOptions::handle_options(Packet *p)
       /* end of option list */
       break;
 
-    // otherwise, get length of option
+    // otherwise, get option length
     int xlen = oa[oi + 1];
     if (xlen < 2 || oi + xlen > hlen) {
       // bad length
