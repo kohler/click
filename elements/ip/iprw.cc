@@ -517,7 +517,7 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
     is.u.output = outnum;
     
   } else if (word == "keep") {
-    if (cp_va_parse(rest, this, ErrorHandler::silent_handler(),
+    if (cp_va_space_parse(rest, this, ErrorHandler::silent_handler(),
 		    cpUnsigned, "forward output", &is.u.keep.fport,
 		    cpUnsigned, "reverse output", &is.u.keep.rport,
 		    0) < 0)
