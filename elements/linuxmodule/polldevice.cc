@@ -115,8 +115,8 @@ PollDevice::uninitialize()
 
     _dev->intr_defer = 0; 
     _dev->intr_on(_dev);
-    click_chatter
-	("%s: %d intrs, %d rcvd", _dev->name, _total_intr_wait, _pkts_received);
+    click_chatter("PollDevice(%s): %d intrs, %d rcvd", 
+	_dev->name, _total_intr_wait, _pkts_received);
   }
 }
 
@@ -140,7 +140,7 @@ PollDevice::run_scheduled()
 
     assert(skb->data - skb->head >= 14);
     assert(skb->mac.raw == skb->data - 14);
-    assert(skb_shared(skb) == 0); /* else skb = skb_clone(skb, GFP_ATOMIC); */
+    assert(skb_shared(skb) == 0);
 
     /* Retrieve the ether header. */
     skb_push(skb, 14);
@@ -161,12 +161,10 @@ PollDevice::run_scheduled()
       _num_idle_polldevices++;
     if (_num_idle_polldevices == _num_polldevices)
     {
-      // click_chatter("examining scheduler list to attempt to sleep");
       Vector<PollDevice *> polldevices;
       ElementLink *n = scheduled_list()->scheduled_next();
       while(n != scheduled_list()) {
         if (!((Element*)n)->is_a(class_name())) {
-	  /* still other elements scheduled */
           reschedule();
           return;
         }
@@ -174,16 +172,12 @@ PollDevice::run_scheduled()
 	  polldevices.push_back((PollDevice*)n);
         n = n->scheduled_next();
       }
-      if (polldevices.size() != _num_idle_polldevices-1)
-	click_chatter("polldevices: scheduling mishap");
       PollDevice *p;
       for(int i=0; i<polldevices.size(); i++)
 	polldevices[i]->unschedule();
-      // click_chatter("unscheduled all polldevices");
       return;
     }
   }
-
   reschedule();
 }
  
@@ -205,6 +199,10 @@ PollDevice::woke_up()
 {
   _dev->intr_off(_dev);
   remove_wait_queue(&(_dev->intr_wq), &_self_wq);
+    
+  if (_idle >= 32) 
+    _num_idle_polldevices--; 
+  _idle = 0;
 
   join_scheduler();
 }
