@@ -196,13 +196,13 @@ sub element_li ($) {
     my($e) = @_;
     my($t) = "<li><a href='$e.n.html'>$e</a>";
     my(@x);
-    push @x, "<b>D</b>" if $edeprecated{$e};
+    push @x, "D" if $edeprecated{$e};
     if ($ereq{$e}) {
 	my($r) = $ereq{$e};
-	push @x, "<b>U</b>" if $r =~ /\buserlevel\b/;
-	push @x, "<b>L</b>" if $r =~ /\blinuxmodule\b/;
-	push @x, "<b>B</b>" if $r =~ /\bbsdmodule\b/;
-	push @x, "<b>Ns</b>" if $r =~ /\bns\b/;
+	push @x, "U</b>" if $r =~ /\buserlevel\b/;
+	push @x, "L</b>" if $r =~ /\blinuxmodule\b/;
+	push @x, "B</b>" if $r =~ /\bbsdmodule\b/;
+	push @x, "Ns</b>" if $r =~ /\bns\b/;
     }
     $t .= " <small>[" . join('&nbsp;', @x) . "]</small>" if @x;
     "$t</li>\n";
