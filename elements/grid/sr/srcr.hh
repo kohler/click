@@ -3,7 +3,7 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/timer.hh>
-#include <click/ip6address.hh>
+#include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
 #include <click/straccum.hh>
 #include <elements/grid/linktable.hh>
@@ -46,7 +46,7 @@ struct sr_pkt {
   uint8_t _next;   // Index of next node who should process this packet.
 
   uint64_t _seq;   // Originator's sequence number.
-  
+
   // PT_REPLY
   // The data is in the PT_QUERY fields.
   
@@ -54,7 +54,7 @@ struct sr_pkt {
   uint16_t _dlen;
   
   // PT_QUERY
-  click_in6_addr _qdst; // Who are we looking for?
+  in_addr _qdst; // Who are we looking for?
   
 
   EtherAddress get_dhost() {
@@ -75,7 +75,7 @@ struct sr_pkt {
   size_t hlen_with_data() const { return len_with_data(_nhops, ntohs(_dlen)); }
   
   static size_t len_wo_data(int nhops) {
-    return sizeof(struct sr_pkt) + nhops * sizeof(click_in6_addr) + nhops * sizeof(uint8_t)*2;
+    return sizeof(struct sr_pkt) + nhops * sizeof(in_addr) + nhops * sizeof(uint8_t)*2;
   }
   static size_t len_with_data(int nhops, int dlen) {
     return len_wo_data(nhops) + dlen;
@@ -103,30 +103,30 @@ struct sr_pkt {
     return ntohs(_dlen);
   }
   uint8_t get_fwd_metric(int h) { 
-    uint8_t *ndx = (uint8_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(click_in6_addr));
+    uint8_t *ndx = (uint8_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr));
     return ndx[h];
   }
 
   uint8_t get_rev_metric(int h) { 
-    uint8_t *ndx = (uint8_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(click_in6_addr) + num_hops() * sizeof(uint8_t));
+    uint8_t *ndx = (uint8_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr) + num_hops() * sizeof(uint8_t));
     return ndx[h];
   }
-  IP6Address get_hop(int h) { 
-    click_in6_addr *ndx = (click_in6_addr *) (this + 1);
-    return IP6Address(ndx[h]);
+  IPAddress get_hop(int h) { 
+    in_addr *ndx = (in_addr *) (this + 1);
+    return IPAddress(ndx[h]);
   }
   
-  void  set_hop(int hop, IP6Address p) { 
-    click_in6_addr *ndx = (click_in6_addr *) (this + 1);
-    ndx[hop] = p.in6_addr();
+  void  set_hop(int hop, IPAddress p) { 
+    in_addr *ndx = (in_addr *) (this + 1);
+    ndx[hop] = p.in_addr();
   }
   void set_fwd_metric(int hop, uint8_t s) { 
-    uint8_t *ndx = (uint8_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(click_in6_addr));
+    uint8_t *ndx = (uint8_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr));
     ndx[hop] = s;
   }
 
   void set_rev_metric(int hop, uint8_t s) { 
-    uint8_t *ndx = (uint8_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(click_in6_addr) + num_hops() * sizeof(uint8_t));
+    uint8_t *ndx = (uint8_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr) + num_hops() * sizeof(uint8_t));
     ndx[hop] = s;
   }
   
@@ -137,7 +137,7 @@ struct sr_pkt {
 
 
 
-typedef Vector<IP6Address> Path;
+typedef Vector<IPAddress> Path;
 inline unsigned
 hashcode(const Path &p)
 {
@@ -198,10 +198,10 @@ class SRCR : public Element {
 
   void push(int, Packet *);
   
-  Packet *encap(const u_char *payload, u_long len, Vector<IP6Address>);
+  Packet *encap(const u_char *payload, u_long len, Vector<IPAddress>);
 private:
 
-  IP6Address _ip;    // My IP address.
+  IPAddress _ip;    // My IP address.
   EtherAddress _eth; // My ethernet address.
   uint16_t _et;     // This protocol's ethertype
   // Statistics for handlers.
@@ -224,13 +224,14 @@ private:
   EtherAddress _bcast;
   class LinkTable *_link_table;
   class LinkStat *_link_stat;
-  IP6Address _ls_net;
+  IPAddress _ls_net;
   class RXStats *_rx_stats;
+  class ARPTable *_arp_table;
   class ETT *_ett;
   
-  int get_metric(IP6Address other);
+  int get_metric(IPAddress other);
 
-  void update_link(IP6Address from, IP6Address to, int metric);
+  void update_link(IPAddress from, IPAddress to, int metric);
   void srcr_assert_(const char *, int, const char *) const;
 };
 

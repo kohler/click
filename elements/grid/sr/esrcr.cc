@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "esrcr.hh"
-#include <click/ip6address.hh>
+#include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -73,13 +73,13 @@ ESRCR::configure (Vector<String> &conf, ErrorHandler *errh)
   int ret;
   ret = cp_va_parse(conf, this, errh,
 		    cpUnsigned, "Ethernet encapsulation type", &_et,
-                    cpIP6Address, "IP address", &_ip,
+                    cpIPAddress, "IP address", &_ip,
                     cpEthernetAddress, "Ethernet address", &_en,
 		    cpElement, "LinkTable element", &_link_table,
 		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
                     "LS", cpElement, "LinkStat element", &_link_stat,
-                    "LSNET", cpIP6Address, "LinkStat net", &_ls_net,
+                    "LSNET", cpIPAddress, "LinkStat net", &_ls_net,
                     0);
   return ret;
 }
@@ -106,7 +106,7 @@ ESRCR::run_timer ()
 }
 
 void
-ESRCR::start_query(IP6Address dstip)
+ESRCR::start_query(IPAddress dstip)
 {
   Dst *dst = _dsts.findp(dstip);
   if (!dst) {
@@ -172,7 +172,7 @@ ESRCR::send(WritablePacket *p)
 
 // Ask LinkStat for the metric for the link from other to us.
 u_short
-ESRCR::get_metric(IP6Address)
+ESRCR::get_metric(IPAddress)
 {
   return 0;
 }
@@ -192,15 +192,15 @@ static inline bool power_of_two(int x)
 void
 ESRCR::process_query(struct sr_pkt *pk1)
 {
-  IP6Address src(pk1->get_hop(0));
-  IP6Address dst(pk1->_qdst);
+  IPAddress src(pk1->get_hop(0));
+  IPAddress dst(pk1->_qdst);
   u_long seq = ntohl(pk1->_seq);
   int si;
 
-  Vector<IP6Address> hops;
+  Vector<IPAddress> hops;
   Vector<u_short> metrics;
   for(int i = 0; i < pk1->num_hops(); i++) {
-    IP6Address hop = IP6Address(pk1->get_hop(i));
+    IPAddress hop = IPAddress(pk1->get_hop(i));
     if (i != pk1->num_hops()-1) {
       //metrics.push_back(pk1->get_metric(i));
     }
@@ -248,7 +248,7 @@ ESRCR::process_query(struct sr_pkt *pk1)
 
 }
 void
-ESRCR::forward_query(Seen s, Vector<IP6Address> hops, Vector<u_short> metrics)
+ESRCR::forward_query(Seen s, Vector<IPAddress> hops, Vector<u_short> metrics)
 {
   u_short nhops = hops.size();
 
@@ -330,7 +330,7 @@ ESRCR::reply_hook(Timer *t)
 
 }
 void
-ESRCR::start_reply(IP6Address dst)
+ESRCR::start_reply(IPAddress dst)
 {
   click_chatter("ESRCR: start_reply called for %s\n", dst.s().cc());
 }
@@ -340,11 +340,11 @@ ESRCR::start_reply(IP6Address dst)
 void
 ESRCR::got_reply(struct sr_pkt *pk)
 {
-  Dst *dst = _dsts.findp(IP6Address(pk->_qdst));
+  Dst *dst = _dsts.findp(IPAddress(pk->_qdst));
   if(!dst){
     click_chatter("ESRCR %s: reply but no Dst %s",
                   _ip.s().cc(),
-                  IP6Address(pk->_qdst).s().cc());
+                  IPAddress(pk->_qdst).s().cc());
     return;
   }
   if(ntohl(pk->_seq) != dst->_seq){
@@ -359,7 +359,7 @@ ESRCR::got_reply(struct sr_pkt *pk)
 
 
 String 
-ESRCR::route_to_string(Vector<IP6Address> s) 
+ESRCR::route_to_string(Vector<IPAddress> s) 
 {
   StringAccum sa;
   sa << "[ ";
@@ -398,13 +398,13 @@ ESRCR::push(int port, Packet *p_in)
 
 
   
-  IP6Address neighbor = IP6Address();
+  IPAddress neighbor = IPAddress();
   switch (type) {
   case PT_QUERY:
-    neighbor = IP6Address(pk->get_hop(pk->num_hops() - 1));
+    neighbor = IPAddress(pk->get_hop(pk->num_hops() - 1));
     break;
   case PT_REPLY:
-    neighbor = IP6Address(pk->get_hop(pk->next()+1));
+    neighbor = IPAddress(pk->get_hop(pk->next()+1));
     break;
   default:
     esrcr_assert(0);
@@ -420,7 +420,7 @@ ESRCR::push(int port, Packet *p_in)
                     _ip.s().cc(),
                     ntohs(pk->_next),
                     ntohs(pk->_nhops),
-                    IP6Address(pk->get_hop(next)).s().cc());
+                    IPAddress(pk->get_hop(next)).s().cc());
       return;
     }
     if(next == 0){
@@ -495,10 +495,10 @@ ESRCR::static_start_query(const String &arg, Element *e,
 			void *, ErrorHandler *errh) 
 {
   ESRCR *n = (ESRCR *) e;
-  IP6Address dst = IP6Address();
+  IPAddress dst = IPAddress();
   
-  if (!cp_ip6_address(arg, &dst))
-    return errh->error("dst must be an IP6Address");
+  if (!cp_ip_address(arg, &dst))
+    return errh->error("dst must be an IPAddress");
 
   n->start_query(dst);
   return 0;
@@ -534,8 +534,8 @@ ESRCR::esrcr_assert_(const char *file, int line, const char *expr) const
 #include <click/bighashmap.cc>
 #include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<ESRCR::IP6Addresss>;
-template class HashMap<IP6Address, ESRCR::Dst>;
+template class Vector<ESRCR::IPAddresss>;
+template class HashMap<IPAddress, ESRCR::Dst>;
 #endif
 
 CLICK_ENDDECLS

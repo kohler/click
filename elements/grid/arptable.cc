@@ -65,7 +65,7 @@ ARPTable::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 EtherAddress 
-ARPTable::lookup(IP6Address ip)
+ARPTable::lookup(IPAddress ip)
 {
   DstInfo *dst = _table.findp(ip);
   if (dst) {
@@ -76,7 +76,7 @@ ARPTable::lookup(IP6Address ip)
 
 
 void
-ARPTable::insert(IP6Address ip, EtherAddress eth) 
+ARPTable::insert(IPAddress ip, EtherAddress eth) 
 {
   DstInfo *dst = _table.findp(ip);
   if (!dst) {
@@ -119,7 +119,7 @@ ARPTable::add_handlers()
 // generate Vector template instance
 #include <click/bighashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<IP6Address, ARPTable::DstInfo>;
+template class BigHashMap<IPAddress, ARPTable::DstInfo>;
 #endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(ARPTable)

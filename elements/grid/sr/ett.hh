@@ -47,7 +47,7 @@ class ETT : public Element {
 
   static int static_start(const String &arg, Element *e,
 			  void *, ErrorHandler *errh); 
-  void start(IP6Address dst);
+  void start(IPAddress dst);
 
   static String static_print_stats(Element *e, void *);
   String print_stats();
@@ -79,16 +79,16 @@ class ETT : public Element {
     }
 
   }
-  int get_metric(IP6Address other);
-  void update_link(IP6Address from, IP6Address to, int metric);
-  static String route_to_string(Vector<IP6Address> s);
+  int get_metric(IPAddress other);
+  void update_link(IPAddress from, IPAddress to, int metric);
+  static String route_to_string(Vector<IPAddress> s);
 private:
 
   class Query {
   public:
     Query() {memset(this, 0, sizeof(*this)); }
-    Query(IP6Address ip) {memset(this, 0, sizeof(*this)); _ip = ip;}
-    IP6Address _ip;
+    Query(IPAddress ip) {memset(this, 0, sizeof(*this)); _ip = ip;}
+    IPAddress _ip;
     u_long _seq;
     u_short _metric;
     struct timeval _last_query;
@@ -99,18 +99,18 @@ private:
   // List of query sequence #s that we've already seen.
   class Seen {
   public:
-    IP6Address _src;
-    IP6Address _dst;
+    IPAddress _src;
+    IPAddress _dst;
     u_long _seq;
     int _count;
     struct timeval _when; /* when we saw the first query */
-    Seen(IP6Address src, IP6Address dst, u_long seq ) {
+    Seen(IPAddress src, IPAddress dst, u_long seq ) {
       _src = src; _dst = dst; _seq = seq; _count = 0;
     }
     Seen();
   };
 
-  typedef HashMap<IP6Address, Query> QueryTable;
+  typedef HashMap<IPAddress, Query> QueryTable;
   QueryTable _queries;
 
   Vector<Seen> _seen;
@@ -122,17 +122,20 @@ private:
 
   u_long _seq;      // Next query sequence number to use.
   Timer _timer;
-  IP6Address _ip;    // My IP address.
+  IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
-  uint16_t _et;     // This protocol's ethertype
+  uint32_t _et;     // This protocol's ethertype
 
-  IP6Address _gw;
-  IP6Address _bcast_ip;
+  IPAddress _gw;
+  IPAddress _bcast_ip;
+
+  EtherAddress _bcast;
   bool _is_gw;
 
   class SRCR *_srcr;
   class LinkTable *_link_table;
   class RXStats *_rx_stats;
+  class ARPTable *_arp_table;
 
   // Statistics for handlers.
   int _num_queries;
@@ -149,17 +152,17 @@ private:
    { ((ETT *) v)->reply_hook(t); }
 
 
-  int find_dst(IP6Address ip, bool create);
-  EtherAddress find_arp(IP6Address ip);
-  void got_arp(IP6Address ip, EtherAddress en);
+  int find_dst(IPAddress ip, bool create);
+  EtherAddress find_arp(IPAddress ip);
+  void got_arp(IPAddress ip, EtherAddress en);
   void got_sr_pkt(Packet *p_in);
-  void start_query(IP6Address);
+  void start_query(IPAddress);
   void process_query(struct sr_pkt *pk);
-  void forward_query(Seen s, Vector<IP6Address> hops, Vector<u_short> metrics);
-  void start_reply(IP6Address src, IP6Address dst, u_long seq);
+  void forward_query(Seen s, Vector<IPAddress> hops, Vector<u_short> metrics);
+  void start_reply(IPAddress src, IPAddress dst, u_long seq);
   void forward_reply(struct sr_pkt *pk);
   void got_reply(struct sr_pkt *pk);
-  void start_data(const u_char *data, u_long len, Vector<IP6Address> r);
+  void start_data(const u_char *data, u_long len, Vector<IPAddress> r);
   void send(WritablePacket *);
 
   void reply_hook(Timer *t);

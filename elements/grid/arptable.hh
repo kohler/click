@@ -1,7 +1,7 @@
 #ifndef CLICK_ARPTABLE_HH
 #define CLICK_ARPTABLE_HH
 #include <click/element.hh>
-#include <click/ip6address.hh>
+#include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
 #include <click/bighashmap.hh>
 #include <click/glue.hh>
@@ -35,28 +35,28 @@ class ARPTable : public Element { public:
 
 
   /* returns ff:ff:ff:ff:ff:ff if none is found */
-  EtherAddress lookup(IP6Address ip);
+  EtherAddress lookup(IPAddress ip);
 
-  void insert(IP6Address ip, EtherAddress eth);
+  void insert(IPAddress ip, EtherAddress eth);
  private:
   
   // Poor man's ARP cache. 
   class DstInfo {
   public:
-    IP6Address _ip;
+    IPAddress _ip;
     EtherAddress _eth;
     struct timeval _when; // When we last heard from this node.
     DstInfo() { 
       memset(this, 0, sizeof(*this));
     }
 
-    DstInfo(IP6Address ip) { 
+    DstInfo(IPAddress ip) { 
       memset(this, 0, sizeof(*this));
       _ip = ip;
     }
   };
   
-  typedef BigHashMap<IP6Address, DstInfo> ATable;
+  typedef BigHashMap<IPAddress, DstInfo> ATable;
   typedef ATable::const_iterator ARPIter;
   
   ATable _table;

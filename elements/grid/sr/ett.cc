@@ -34,11 +34,14 @@ CLICK_DECLS
 ETT::ETT()
   :  Element(4,2),
      _timer(this), 
+     _gw("255.255.255.255"),
      _rx_stats(0),
+     _arp_table(0),
      _num_queries(0),
      _bytes_queries(0),
      _num_replies(0), 
      _bytes_replies(0)
+
 {
   MOD_INC_USE_COUNT;
 
@@ -54,6 +57,9 @@ ETT::ETT()
   _query_wait.tv_usec = 0;
   _reply_wait.tv_sec = 2;
   _reply_wait.tv_usec = 0;
+
+  static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+  _bcast = EtherAddress(bcast_addr);
 }
 
 ETT::~ETT()
@@ -68,9 +74,11 @@ ETT::configure (Vector<String> &conf, ErrorHandler *errh)
   _is_gw = false;
   ret = cp_va_parse(conf, this, errh,
 		    cpUnsigned, "Ethernet encapsulation type", &_et,
-                    cpIP6Address, "IP address", &_ip,
+                    cpIPAddress, "IP address", &_ip,
+		    cpEtherAddress, "EtherAddress", &_en,
 		    cpElement, "SRCR element", &_srcr,
 		    cpElement, "LinkTable element", &_link_table,
+		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
 		    "GW", cpBool, "Gateway", &_is_gw,
 		    "RX", cpElement, "RXStats element", &_rx_stats,
@@ -82,10 +90,9 @@ ETT::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("LinkTable element is not a LinkTable");
   if (_rx_stats && _rx_stats->cast("RXStats") == 0) 
     return errh->error("RX element is not a RXStats");
+  if (_arp_table && _arp_table->cast("ARPTable") == 0) 
+    return errh->error("ARPTable element is not a Arptable");
 
-  if(!_ip.ether_address(_en)) {
-    return errh->error("Couldn't get ethernet address from %s!\n", _ip.s().cc());
-  }
   return ret;
 }
 
@@ -111,7 +118,7 @@ ETT::run_timer ()
 }
 
 void
-ETT::start_query(IP6Address dstip)
+ETT::start_query(IPAddress dstip)
 {
   Query *q = _queries.findp(dstip);
   if (!q) {
@@ -163,12 +170,7 @@ ETT::send(WritablePacket *p)
   } else if(type == PT_REPLY){
     u_short next = ntohs(pk->_next);
     ett_assert(next < MaxHops + 2);
-    EtherAddress eth_dest;
-    if (!pk->get_hop(next).ether_address(eth_dest)) {
-      click_chatter("ETT %s: couldn't get mac address for %s!\n", 
-		    _ip.s().cc(),
-		    pk->get_hop(next).s().cc());
-    }
+    EtherAddress eth_dest = _arp_table->lookup(pk->get_hop(next));
     memcpy(pk->ether_dhost, eth_dest.data(), 6);
     _num_replies++;
     _bytes_replies += p->length();
@@ -182,17 +184,18 @@ ETT::send(WritablePacket *p)
 
 // Ask LinkStat for the metric for the link from other to us.
 int
-ETT::get_metric(IP6Address neighbor)
+ETT::get_metric(IPAddress neighbor)
 {
   EtherAddress eth;
-  if (_rx_stats && neighbor.ether_address(eth)) {
+  eth = _arp_table->lookup(neighbor);
+  if (_rx_stats && eth != _bcast) {
     return rate_to_metric(_rx_stats->get_rate(eth));
   }
   return rate_to_metric(0);
 }
 
 void
-ETT::update_link(IP6Address from, IP6Address to, int metric) {
+ETT::update_link(IPAddress from, IPAddress to, int metric) {
   _link_table->update_link(from, to, metric);
 }
 static inline bool power_of_two(int x)
@@ -209,15 +212,15 @@ static inline bool power_of_two(int x)
 void
 ETT::process_query(struct sr_pkt *pk1)
 {
-  IP6Address src(pk1->get_hop(0));
-  IP6Address dst(pk1->_qdst);
+  IPAddress src(pk1->get_hop(0));
+  IPAddress dst(pk1->_qdst);
   u_long seq = ntohl(pk1->_seq);
   int si;
 
-  Vector<IP6Address> hops;
+  Vector<IPAddress> hops;
   Vector<u_short> metrics;
   for(int i = 0; i < pk1->num_hops(); i++) {
-    IP6Address hop = IP6Address(pk1->get_hop(i));
+    IPAddress hop = IPAddress(pk1->get_hop(i));
     if (i != pk1->num_hops()-1) {
       metrics.push_back(pk1->get_fwd_metric(i));
     }
@@ -242,7 +245,7 @@ ETT::process_query(struct sr_pkt *pk1)
   }
   _seen[si]._count++;
 
-  if (dst == _ip || (dst == IP6Address("255.255.255.255") && _is_gw)) {
+  if (dst == _ip || (dst == IPAddress("255.255.255.255") && _is_gw)) {
     /* query for me */
     click_chatter("ETT %s: got a query for me from %s\n", 
 		  _ip.s().cc(),
@@ -274,7 +277,7 @@ ETT::process_query(struct sr_pkt *pk1)
 
 }
 void
-ETT::forward_query(Seen s, Vector<IP6Address> hops, Vector<u_short> metrics)
+ETT::forward_query(Seen s, Vector<IPAddress> hops, Vector<u_short> metrics)
 {
   u_short nhops = hops.size();
 
@@ -285,7 +288,7 @@ ETT::forward_query(Seen s, Vector<IP6Address> hops, Vector<u_short> metrics)
     return;
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
   memset(pk, '\0', len);
-
+  
   pk->_type = PT_QUERY;
   pk->_flags = 0;
   pk->_qdst = s._dst;
@@ -343,7 +346,7 @@ ETT::reply_hook(Timer *t)
   click_chatter("ETT %s: reply_hook called\n",
 		_ip.s().cc());
   for(int x = 0; x < _seen.size(); x++) {
-    if (_seen[x]._dst == _ip || (_seen[x]._dst == _bcast_ip && _gw)) {
+    if (_seen[x]._dst == _ip || (_seen[x]._dst == IPAddress("255.255.255.255") && _is_gw)) {
       click_chatter("ETT %s: on src %s\n", _ip.s().cc(),
 		    _seen[x]._src.s().cc());
       struct timeval expire;
@@ -360,7 +363,7 @@ ETT::reply_hook(Timer *t)
 
 }
 
-void ETT::start_reply(IP6Address src, IP6Address dst, u_long seq)
+void ETT::start_reply(IPAddress src, IPAddress dst, u_long seq)
 {
   click_chatter("ETT %s: start_reply called for %s\n", _ip.s().cc(), 
 		src.s().cc());
@@ -392,7 +395,6 @@ void ETT::start_reply(IP6Address src, IP6Address dst, u_long seq)
   pk->_qdst = dst;
   pk->_seq = seq;
   pk->set_num_hops(path.size());
-  
   int i;
   for(i = 0; i < path.size(); i++) {
     pk->set_hop(i, path[path.size() - 1 - i]);
@@ -413,8 +415,8 @@ void
 ETT::got_reply(struct sr_pkt *pk)
 {
 
-  IP6Address dst = IP6Address(pk->_qdst);
-  
+  IPAddress dst = IPAddress(pk->_qdst);
+
   click_chatter("ETT: got reply from %s\n", dst.s().cc());
   _link_table->dijkstra();
   
@@ -429,15 +431,18 @@ ETT::got_reply(struct sr_pkt *pk)
     _queries.insert(dst, foo);
     q = _queries.findp(dst);
   }
+  ett_assert(q);
   if (q->_metric < metric) {
     q->_metric = metric;
+    if (dst == IPAddress("255.255.255.255")) {
+      _gw = pk->get_hop(pk->num_hops() - 1);
+    }
   }
-  ett_assert(q);
 }
 
 
 String 
-ETT::route_to_string(Vector<IP6Address> s) 
+ETT::route_to_string(Vector<IPAddress> s) 
 {
   StringAccum sa;
   sa << "[ ";
@@ -452,26 +457,26 @@ ETT::push(int port, Packet *p_in)
 {
   if (port == 2 || port == 3) {
     bool sent_packet = false;
-    IP6Address dst = p_in->dst_ip6_anno();
+    IPAddress dst = p_in->dst_ip_anno();
     if (port == 3) {
-      click_chatter("ETT %s: setting packet for the gw %s", _ip.s().cc(), _gw.s().cc());
       dst = _gw;
     }
     
     ett_assert(dst);
     Path p = _link_table->best_route(dst);
     int metric = _link_table->get_route_metric(p);
-    click_chatter("ETT %s: found route %s with metric %d", _ip.s().cc(), 
-		  path_to_string(p).cc(), metric);
-    if (_link_table->valid_route(p)) {
-      Packet *p_out = _srcr->encap(p_in->data(), p_in->length(), p);
-      if (p_out) {
-	sent_packet = true;
+
+    if (dst != IPAddress("255.255.255.255")) {
+
+      if (_link_table->valid_route(p)) {
+	Packet *p_out = _srcr->encap(p_in->data(), p_in->length(), p);
+	if (p_out) {
+	  sent_packet = true;
 	output(1).push(p_out);
+	}
       }
     }
 
-    click_chatter("ETT %s: got packet to %s\n", _ip.s().cc(), dst.s().cc());
     Query *q = _queries.findp(dst);
     if (!q) {
       Query foo = Query(dst);
@@ -484,7 +489,7 @@ ETT::push(int port, Packet *p_in)
       p_in->kill();
       return;
     }
-    click_chatter("ETT %s: need route to %s\n", _ip.s().cc(), dst.s().cc());
+    //click_chatter("ETT %s: need route to %s\n", _ip.s().cc(), dst.s().cc());
     
     struct timeval n;
     click_gettimeofday(&n);
@@ -494,11 +499,8 @@ ETT::push(int port, Packet *p_in)
       click_chatter("ETT %s: calling start_query to %s\n", 
 		    _ip.s().cc(), 
 		    dst.s().cc());
-      if (port == 3) {
-	start_query(IP6Address("255.255.255.255"));
-      } else {
-	start_query(dst);
-      }
+      start_query(dst);
+    
     } else {
 	//click_chatter("recent query to %s, so discarding packet\n", dst.s().cc());
     }
@@ -531,8 +533,8 @@ ETT::push(int port, Packet *p_in)
 
   /* update the metrics from the packet */
   for(int i = 0; i < pk->num_hops()-1; i++) {
-    IP6Address a = pk->get_hop(i);
-    IP6Address b = pk->get_hop(i+1);
+    IPAddress a = pk->get_hop(i);
+    IPAddress b = pk->get_hop(i+1);
     u_short m = pk->get_fwd_metric(i);
     click_chatter("ETT %s: on address a= %s\n", 
 		  _ip.s().cc(), 
@@ -550,7 +552,7 @@ ETT::push(int port, Packet *p_in)
     p_in->kill();
     return;
   }
-  IP6Address neighbor = IP6Address();
+  IPAddress neighbor = IPAddress();
   switch (type) {
   case PT_QUERY:
     neighbor = pk->get_hop(pk->num_hops()-1);
@@ -665,16 +667,16 @@ ETT::static_start(const String &arg, Element *e,
 			void *, ErrorHandler *errh) 
 {
   ETT *n = (ETT *) e;
-  IP6Address dst;
+  IPAddress dst;
 
-  if (!cp_ip6_address(arg, &dst))
-    return errh->error("dst must be an IP6Address");
+  if (!cp_ip_address(arg, &dst))
+    return errh->error("dst must be an IPAddress");
 
   n->start(dst);
   return 0;
 }
 void
-ETT::start(IP6Address dst) 
+ETT::start(IPAddress dst) 
 {
   click_chatter("write handler called with dst %s", dst.s().cc());
   start_query(dst);
@@ -706,7 +708,7 @@ ETT::ett_assert_(const char *file, int line, const char *expr) const
 #include <click/bighashmap.cc>
 #include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<ETT::IP6Address>;
+template class Vector<ETT::IPAddress>;
 #endif
 
 CLICK_ENDDECLS

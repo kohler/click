@@ -91,7 +91,7 @@ PrintSRCR::simple_action(Packet *p)
   }
 
   if (pk->_type != PT_DATA) {
-    sa << "qdst=" << IP6Address(pk->_qdst) << " ";
+    sa << "qdst=" << IPAddress(pk->_qdst) << " ";
     sa << "seq=" << pk->_seq << " ";
   }
 
@@ -105,7 +105,7 @@ PrintSRCR::simple_action(Packet *p)
 
   sa << "[";
   for(int i = 0; i< ntohs(pk->_nhops); i++) {
-    sa << " "<< IP6Address(pk->get_hop(i)).s().cc() << " ";
+    sa << " "<< IPAddress(pk->get_hop(i)).s().cc() << " ";
     if (i != ntohs(pk->_nhops) - 1) {
       //sa << "<" << pk->get_metric(i) << ">";
     }

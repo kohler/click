@@ -54,7 +54,7 @@ LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   ret = cp_va_parse(conf, this, errh,
-                    cpIP6Address, "IP address", &_ip,
+                    cpIPAddress, "IP address", &_ip,
                     cpKeywords,
                     0);
   
@@ -115,8 +115,8 @@ LinkTable::static_update_link(const String &arg, Element *e,
 {
   LinkTable *n = (LinkTable *) e;
   Vector<String> args;
-  IP6Address from;
-  IP6Address to;
+  IPAddress from;
+  IPAddress to;
   int metric;
 
   cp_spacevec(arg, args);
@@ -126,12 +126,12 @@ LinkTable::static_update_link(const String &arg, Element *e,
   }
 
 
-  if (!cp_ip6_address(args[0], &from)) {
-    return errh->error("Couldn't read IP6Address out of from");
+  if (!cp_ip_address(args[0], &from)) {
+    return errh->error("Couldn't read IPAddress out of from");
   }
 
-  if (!cp_ip6_address(args[1], &to)) {
-    return errh->error("Couldn't read IP6Address out of to");
+  if (!cp_ip_address(args[1], &to)) {
+    return errh->error("Couldn't read IPAddress out of to");
   }
   if (!cp_integer(args[2], &metric)) {
     return errh->error("Couldn't read metric");
@@ -149,7 +149,7 @@ LinkTable::clear()
 
 }
 void 
-LinkTable::update_link(IP6Address from, IP6Address to, int metric)
+LinkTable::update_link(IPAddress from, IPAddress to, int metric)
 {
   /* make sure both the hosts exist */
   HostInfo *nfrom = _hosts.findp(from);
@@ -169,7 +169,7 @@ LinkTable::update_link(IP6Address from, IP6Address to, int metric)
 
   nfrom->_neighbors.insert(from, to);
 
-  IP6Pair p = IP6Pair(from, to);
+  IPPair p = IPPair(from, to);
   LinkInfo *lnfo = _links.findp(p);
   if (!lnfo) {
     _links.insert(p, LinkInfo(from, to, metric));
@@ -179,10 +179,10 @@ LinkTable::update_link(IP6Address from, IP6Address to, int metric)
   
 }
 
-Vector<IP6Address> 
+Vector<IPAddress> 
 LinkTable::get_hosts()
 {
-  Vector<IP6Address> v;
+  Vector<IPAddress> v;
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo n = iter.value();
     v.push_back(n._ip);
@@ -190,7 +190,7 @@ LinkTable::get_hosts()
   return v;
 }
 int 
-LinkTable::get_host_metric(IP6Address s)
+LinkTable::get_host_metric(IPAddress s)
 {
   HostInfo *nfo = _hosts.findp(s);
   if (!nfo) {
@@ -200,9 +200,9 @@ LinkTable::get_host_metric(IP6Address s)
 }
 
 int 
-LinkTable::get_hop_metric(IP6Address from, IP6Address to) 
+LinkTable::get_hop_metric(IPAddress from, IPAddress to) 
 {
-  IP6Pair p = IP6Pair(from, to);
+  IPPair p = IPPair(from, to);
   LinkInfo *nfo = _links.findp(p);
   if (!nfo) {
     return 0;
@@ -213,7 +213,7 @@ LinkTable::get_hop_metric(IP6Address from, IP6Address to)
   
   
 int 
-LinkTable::get_route_metric(Vector<IP6Address> route) 
+LinkTable::get_route_metric(Vector<IPAddress> route) 
 {
   int metric = 0;
   for (int i = 0; i < route.size() - 1; i++) {
@@ -229,7 +229,7 @@ LinkTable::get_route_metric(Vector<IP6Address> route)
 
 
 bool
-LinkTable::valid_route(Vector<IP6Address> route) 
+LinkTable::valid_route(Vector<IPAddress> route) 
 {
   if (route.size() < 1) {
     click_chatter("LinkTable %s :route size is 0",
@@ -258,11 +258,11 @@ LinkTable::valid_route(Vector<IP6Address> route)
 
   return true;
 }
-Vector<IP6Address> 
-LinkTable::best_route(IP6Address dst)
+Vector<IPAddress> 
+LinkTable::best_route(IPAddress dst)
 {
-  Vector<IP6Address> reverse_route;
-  Vector<IP6Address> route;
+  Vector<IPAddress> reverse_route;
+  Vector<IPAddress> route;
   HostInfo *nfo = _hosts.findp(dst);
   
   while (nfo && nfo->_metric != 0) {
@@ -280,8 +280,8 @@ LinkTable::best_route(IP6Address dst)
 
   return route;
 }
-Vector<Vector<IP6Address> > 
-LinkTable::update_routes(Vector<Vector<IP6Address> > routes, int size, Vector<IP6Address> route)
+Vector<Vector<IPAddress> > 
+LinkTable::update_routes(Vector<Vector<IPAddress> > routes, int size, Vector<IPAddress> route)
 {
   int x = 0;
   int y = 0;
@@ -311,12 +311,12 @@ LinkTable::update_routes(Vector<Vector<IP6Address> > routes, int size, Vector<IP
   routes[x] = route;
   return routes;
 }
-Vector <Vector <IP6Address> >
-LinkTable::top_n_routes(IP6Address dst, int n)
+Vector <Vector <IPAddress> >
+LinkTable::top_n_routes(IPAddress dst, int n)
 {
-  Vector<Vector<IP6Address> > routes;
+  Vector<Vector<IPAddress> > routes;
   {
-    Vector<IP6Address> route;
+    Vector<IPAddress> route;
     route.push_back(_ip);
     route.push_back(dst);
     update_routes(routes, n, route);
@@ -324,7 +324,7 @@ LinkTable::top_n_routes(IP6Address dst, int n)
 
   /* two hop */
   for (HTIter iter = _hosts.begin(); iter; iter++) {
-    Vector<IP6Address> route;
+    Vector<IPAddress> route;
 
     HostInfo h = iter.value();
     route.push_back(_ip);
@@ -336,7 +336,7 @@ LinkTable::top_n_routes(IP6Address dst, int n)
   /* three hop */
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     for (HTIter iter2 = _hosts.begin(); iter; iter++) {
-      Vector<IP6Address> route;
+      Vector<IPAddress> route;
       
       HostInfo h = iter.value();
       HostInfo h2 = iter2.value();
@@ -352,7 +352,7 @@ LinkTable::top_n_routes(IP6Address dst, int n)
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     for (HTIter iter2 = _hosts.begin(); iter; iter++) {
       for (HTIter iter3 = _hosts.begin(); iter; iter++) {
-      Vector<IP6Address> route;
+      Vector<IPAddress> route;
       
       HostInfo h = iter.value();
       HostInfo h2 = iter2.value();
@@ -430,12 +430,12 @@ LinkTable::print_routes()
   StringAccum sa;
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo n = iter.value();
-    Vector <IP6Address> r = best_route(n._ip);
+    Vector <IPAddress> r = best_route(n._ip);
     sa << "route: " << n._ip.s().cc() << " : ";
     for (int i = 0; i < r.size(); i++) {
       sa << " " << r[i] << " ";
       if (i != r.size()-1) {
-	LinkInfo *l = _links.findp(IP6Pair(r[i], r[i+1]));
+	LinkInfo *l = _links.findp(IPPair(r[i], r[i+1]));
 	lt_assert(l);
 	sa << "<" << l->_metric << ">";
       }
@@ -464,11 +464,11 @@ LinkTable::print_hosts()
   return sa.take_string();
 }
 
-IP6Address
+IPAddress
 LinkTable::extract_min()
 {
 
-  IP6Address min = IP6Address();
+  IPAddress min = IPAddress();
   int min_metric = 32000;
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo nfo = iter.value();
@@ -485,7 +485,7 @@ LinkTable::extract_min()
 void
 LinkTable::dijkstra() 
 {
-  IP6Address src = _ip;
+  IPAddress src = _ip;
 
   /* clear them all initially */
   for (HTIter iter = _hosts.begin(); iter; iter++) {
@@ -499,7 +499,7 @@ LinkTable::dijkstra()
   lt_assert(root_info);
   root_info->_prev = root_info->_ip;
   root_info->_metric = 0;
-  IP6Address current_min_ip = root_info->_ip;
+  IPAddress current_min_ip = root_info->_ip;
   while (current_min_ip) {
     HostInfo *current_min = _hosts.findp(current_min_ip);
     lt_assert(current_min);
@@ -510,7 +510,7 @@ LinkTable::dijkstra()
       HostInfo *neighbor = _hosts.findp(iter.value());
       lt_assert(neighbor);
       if (!neighbor->_marked) {
-	LinkInfo *lnfo = _links.findp(IP6Pair(current_min->_ip, neighbor->_ip));
+	LinkInfo *lnfo = _links.findp(IPPair(current_min->_ip, neighbor->_ip));
 	if (lnfo && lnfo->_metric && (!neighbor->_metric || neighbor->_metric > current_min->_metric + lnfo->_metric)) {
 	  neighbor->_metric = current_min->_metric + lnfo->_metric;
 	  neighbor->_prev = current_min_ip;
@@ -541,9 +541,9 @@ LinkTable::_lt_assert_(const char *file, int line, const char *expr)
 #include <click/hashmap.cc>
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<IP6Address, IP6Address>;
-template class BigHashMap<IP6Pair, LinkTable::LinkInfo>;
-template class BigHashMap<IP6Address, LinkTable::HostInfo>;
+template class BigHashMap<IPAddress, IPAddress>;
+template class BigHashMap<IPPair, LinkTable::LinkInfo>;
+template class BigHashMap<IPAddress, LinkTable::HostInfo>;
 #endif
 EXPORT_ELEMENT(LinkTable)
 CLICK_ENDDECLS

@@ -38,7 +38,9 @@ SRCR::SRCR()
      _databytes(0),
      _link_table(0),
      _link_stat(0), 
-     _rx_stats(0)
+     _rx_stats(0),
+     _arp_table(0),
+     _ett(0)
 
 {
   MOD_INC_USE_COUNT;
@@ -56,8 +58,9 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
   int res;
   res = cp_va_parse(conf, this, errh,
 		    cpUnsigned, "Ethernet encapsulation type", &_et,
-                    cpIP6Address, "IP address", &_ip,
-                    cpEthernetAddress, "Ethernet address", &_eth,
+                    cpIPAddress, "IP address", &_ip,
+		    cpEtherAddress, "Ethernet Address", &_eth,
+		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
 		    "RX", cpElement, "RXStats element", &_rx_stats,
 		    "ETT", cpElement, "ETT element", &_ett,
@@ -67,8 +70,11 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("LT LinkTable element is not a LinkTable");
   if (_rx_stats && _rx_stats->cast("RXStats") == 0) 
     return errh->error("RX element is not a RXStats");
+  if (_arp_table && _arp_table->cast("ARPTable") == 0) 
+    return errh->error("ARPTable element is not a Arptable");
   if (_ett && _ett->cast("ETT") == 0) 
     return errh->error("ETT element is not a ETT");
+
 
   if (res < 0) {
     return res;
@@ -90,7 +96,7 @@ SRCR::initialize (ErrorHandler *)
 
 // Ask LinkStat for the metric for the link from other to us.
 int
-SRCR::get_metric(IP6Address n)
+SRCR::get_metric(IPAddress n)
 {
   if (_ett) {
     return _ett->get_metric(n);
@@ -98,7 +104,7 @@ SRCR::get_metric(IP6Address n)
   return 1;
 }
 void
-SRCR::update_link(IP6Address from, IP6Address to, int metric) 
+SRCR::update_link(IPAddress from, IPAddress to, int metric) 
 {
   if (_ett) {
     _ett->update_link(from, to, metric);
@@ -108,20 +114,17 @@ SRCR::update_link(IP6Address from, IP6Address to, int metric)
 
 
 Packet *
-SRCR::encap(const u_char *payload, u_long payload_len, Vector<IP6Address> r)
+SRCR::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> r)
 {
   int hops = r.size();
   int len = sr_pkt::len_with_data(hops, payload_len);
+  srcr_assert(r.size() > 1);
   WritablePacket *p = Packet::make(len);
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
   memset(pk, '\0', len);
 
   memcpy(pk->ether_shost, _eth.data(), 6);
-  EtherAddress eth_dest;
-  if (!r[1].ether_address(eth_dest)) {
-    click_chatter("couldn't get mac address for %s!\n", 
-		  r[1].s().cc());
-  }
+  EtherAddress eth_dest = _arp_table->lookup(r[1]);
   memcpy(pk->ether_dhost, eth_dest.data(), 6);
   pk->ether_type = htons(_et);
 
@@ -178,8 +181,6 @@ SRCR::push(int port, Packet *p_in)
     p_in->kill();
     return;
   }
-  click_chatter("SRCR: %s checkpoint 1", 
-		_ip.s().cc());
 
   if(port == 0 && pk->get_hop(pk->next()) != _ip){
     // it's not for me. these are supposed to be unicast,
@@ -192,17 +193,21 @@ SRCR::push(int port, Packet *p_in)
     p_in->kill();
     return;
   }
-  click_chatter("SRCR: %s: data passed basic checks", 
-		_ip.s().cc());
 
   /* update the metrics from the packet */
   for(int i = 0; i < pk->num_hops()-1; i++) {
-    IP6Address a = pk->get_hop(i);
-    IP6Address b = pk->get_hop(i+1);
-    uint8_t m = pk->get_fwd_metric(i);
-    if (m != 0 && _link_table) {
-      click_chatter("updating %s <%d> %s", a.s().cc(), m, b.s().cc());
-      update_link(a,b,m);
+    IPAddress a = pk->get_hop(i);
+    IPAddress b = pk->get_hop(i+1);
+    int mf = pk->get_fwd_metric(i);
+    int mr = pk->get_rev_metric(i);
+    if (mf != 0 && _link_table) {
+      click_chatter("updating %s -> %d -> %s", a.s().cc(), mf, b.s().cc());
+      update_link(a,b,mf);
+    }
+
+    if (mr != 0 && _link_table) {
+      click_chatter("updating %s <- %d <- %s", a.s().cc(), mr, b.s().cc());
+      update_link(a,b,mr);
     }
   }
   
@@ -211,8 +216,8 @@ SRCR::push(int port, Packet *p_in)
     p_in->kill();
     return;
   }
-  IP6Address neighbor = IP6Address();
-  neighbor = IP6Address(pk->get_hop(pk->next()-1));
+  IPAddress neighbor = IPAddress();
+  neighbor = IPAddress(pk->get_hop(pk->next()-1));
   u_short m = get_metric(neighbor);
   if (_link_table) {
     click_chatter("updating %s <%d> %s", neighbor.s().cc(), m,  _ip.s().cc());
@@ -235,7 +240,7 @@ SRCR::push(int port, Packet *p_in)
   click_chatter("forwarding packet from %d to %d\n", 
 		pk->get_hop(0).s().cc(), pk->get_hop(pk->num_hops() - 1).s().cc());
   /* add the last hop's data onto the metric */
-  u_short last_hop_metric = get_metric(IP6Address(pk->get_hop(pk->next() - 1)));
+  u_short last_hop_metric = get_metric(IPAddress(pk->get_hop(pk->next() - 1)));
 
   int len = pk->hlen_with_data();
   WritablePacket *p = Packet::make(len);
@@ -254,12 +259,8 @@ SRCR::push(int port, Packet *p_in)
   memcpy(pk_out->ether_shost, _eth.data(), 6);
 
   srcr_assert(pk->next() < 8);
-  IP6Address nxt = pk->get_hop(pk->next());
-  EtherAddress eth_dest;
-  if (!nxt.ether_address(eth_dest)) {
-    click_chatter("couldn't get mac address for %s!\n", 
-		  nxt.s().cc());
-  }
+  IPAddress nxt = pk->get_hop(pk->next());
+  EtherAddress eth_dest = _arp_table->lookup(nxt);
   memcpy(pk_out->ether_dhost, eth_dest.data(), 6);
 
   p_in->kill();
