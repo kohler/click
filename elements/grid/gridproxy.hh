@@ -43,6 +43,9 @@ class GridProxy : public Element {
   
   click_ip _iph;
   uatomic32_t _id;
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
+  bool _aligned;
+#endif
   
   void reverse_mapping(Packet *p_in);
   void forward_mapping(Packet *p_in);
@@ -53,11 +56,7 @@ public:
     ~GridProxy();
 
     const char *class_name() const { return "GridProxy"; }
-    void *cast(const char *);
     const char *processing() const { return PUSH; }
-
-    const int ninputs ()   { return 2; }
-    const int noutputs ()  { return 2; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

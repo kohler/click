@@ -19,6 +19,8 @@
 #include "gridproxy.hh"
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+#include <click/error.hh>
+#include <click/standard/alignmentinfo.hh>
 CLICK_DECLS
 
 GridProxy::GridProxy()
@@ -28,7 +30,6 @@ GridProxy::GridProxy()
   add_input();
   add_output();
   add_output();
-  
 }
 
 GridProxy::~GridProxy()
@@ -39,15 +40,6 @@ GridProxy::~GridProxy()
 void 
 GridProxy::cleanup(CleanupStage) 
 {
-
-}
-void *
-GridProxy::cast(const char *n)
-{
-  if (strcmp(n, "GridProxy") == 0)
-    return (GridProxy *)this;
-  else
-    return 0;
 }
 
 int
@@ -71,7 +63,19 @@ GridProxy::configure(Vector<String> &conf, ErrorHandler *errh)
   if (res < 0)
     return res;
   
-
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
+  // check alignment
+  {
+    int ans, c, o;
+    ans = AlignmentInfo::query(this, 1, c, o);
+    _aligned = (ans && c == 4 && o == 0);
+    if (!_aligned)
+      errh->warning("IP header unaligned, cannot use fast IP checksum");
+    if (!ans)
+      errh->message("(Try passing the configuration through 'click-align'.)");
+  }
+#endif
+  
   _iph = iph;
   return res;
 }
