@@ -133,7 +133,6 @@ prepare_handler_read(int eindex, int handlerno, int stringno)
 {
   Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
   String s;
-  int out_of_memory = String::out_of_memory_count();
 
   const Router::Handler *h = find_handler(eindex, handlerno);
   if (!h)
@@ -151,7 +150,7 @@ prepare_handler_read(int eindex, int handlerno, int stringno)
   // restore interrupts
   restore_flags(cli_flags);
   
-  if (String::out_of_memory_count() != out_of_memory)
+  if (s.out_of_memory())
     return -ENOMEM;
 
   if (stringno >= 0 && stringno < handler_strings_cap) {
@@ -194,7 +193,11 @@ finish_handler_write(int eindex, int handlerno, int stringno)
   save_flags(cli_flags);
   cli();
 
-  int result = h->call_write(handler_strings[stringno], e, &cerrh);
+  int result;
+  if (handler_strings[stringno].out_of_memory())
+    result = -ENOMEM;
+  else
+    result = h->call_write(handler_strings[stringno], e, &cerrh);
 
   // restore interrupts
   restore_flags(cli_flags);
@@ -285,9 +288,8 @@ proc_element_handler_write(struct file *filp, const char *buffer, size_t count, 
 #endif
   
   if (f_pos + count > old_length) {
-    int out_of_memory = String::out_of_memory_count();
     s.append_fill(0, f_pos + count - old_length);
-    if (String::out_of_memory_count() != out_of_memory)
+    if (s.out_of_memory())
       return -ENOMEM;
   }
   

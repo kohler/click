@@ -193,10 +193,11 @@ click_config_flush(struct file *filp)
   if (!writing || atomic_read(&filp->f_count) > 1)
     return 0;
 #endif
-  
+
   if (atomic_read(&config_write_lock) == 0)
     return -EIO;
   int success = -EINVAL;
+  bool out_of_memory = (!build_config || build_config->out_of_memory());
   
   if (build_config && current_config) {
     reset_proc_click_errors();
@@ -211,7 +212,7 @@ click_config_flush(struct file *filp)
   }
   
   atomic_set(&config_write_lock, 0);
-  return success;
+  return (out_of_memory ? -ENOMEM : success);
 }
 
 }
