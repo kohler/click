@@ -170,7 +170,6 @@ dnl
 dnl check for stuff in the linux kernel
 dnl
 
-LINUXMODULE_SCHED_OBJ=
 if test $ac_under_linux = y; then
 
 if test ! -f /usr/src/linux/System.map; then
@@ -207,11 +206,9 @@ AC_CACHE_CHECK(for device polling kernel extension, ac_cv_poll_extension,
 else ac_cv_poll_extension=no; fi])
 if test $ac_cv_poll_extension = yes; then
   AC_DEFINE_UNQUOTED(HAVE_POLLING, 1)
-  LINUXMODULE_SCHED_OBJ=sched.o
 fi
 
 fi
-AC_SUBST(LINUXMODULE_SCHED_OBJ)
 
 
 dnl
