@@ -3,14 +3,15 @@
 
 /*
  * =c
- * IPRateMonitor(DS, PB, OFF, THRESH/PERIOD, T1, T2, ...)
+ * IPRateMonitor(DS, PB, OFF, THRESH/PERIOD, T1, ..., T3)
  * =d
  *
  * Monitors network traffic rates, much like IPFlexMonitor. Can monitor either
  * packet or byte rate for either dst IP addresses or src IP addresses. Can
- * keep rates over several time periods. When the rate for a particular IP
- * network address exceeds the threshold, rates will then be kept for host or
- * subnet addresses within that network.
+ * keep rates over up to four time periods (one threshold rate, three
+ * auxiliary rates). When the rate for a particular IP network address exceeds
+ * the threshold, rates will then be kept for host or subnet addresses within
+ * that network.
  *
  * DS: SRC or DST. Look at src or dst IP address.
  *
@@ -40,7 +41,7 @@
  * When read, returns THRESH/PERIOD. When written, expects THRESH/PERIOD.
  *
  * =h rates (read)
- * Returns rates over T1, T2, ...
+ * Returns rates over T1, T2, T3
  *
  * =e
  * Example: 
@@ -66,16 +67,19 @@
 #endif
 #define MAX_SHIFT ((BYTES-1)*8)
 #define MAX_COUNTERS 256
+#define MAX_NRATES   4
 
 class IPRateMonitor : public Element { public:
 
   IPRateMonitor();
   ~IPRateMonitor();
-  
+
   const char *class_name() const		{ return "IPRateMonitor"; }
   const char * default_processing() const	{ return AGNOSTIC; }
   
+  void uninitialize() 				{ destroy(_base); }
   int configure(const String &conf, ErrorHandler *errh);
+
   IPRateMonitor *clone() const;
   Packet *simple_action(Packet *);
 
@@ -101,9 +105,11 @@ private:
   struct _stats;
   struct _counter {
     unsigned char flags;
-#define SPLIT     0x0001
+#define CLEAN    0x0000
+#define INIT     0x0001
+#define SPLIT    0x0010
     union {
-      Vector<EWMA2> *values;
+      EWMA2 values[MAX_NRATES];
       struct _stats *next_level;
     };
     int last_update;
@@ -114,10 +120,10 @@ private:
   };
 
   int _thresh;
-  Vector<unsigned int> _rates;      // number of rates to keep
-  unsigned short _no_of_rates;      // equals _rates.size()
+  unsigned int _rates[MAX_NRATES];  // number of rates to keep
+  unsigned short _no_of_rates;        // equals _rates.size()
   struct _stats *_base;
-  long unsigned int _resettime;     // time of last reset
+  long unsigned int _resettime;       // time of last reset
 
   void set_resettime();
   bool set_thresh(String str);
@@ -165,19 +171,18 @@ IPRateMonitor::update(IPAddress a, int val)
   }
 
   // is vector allocated already?
-  if(c->values == NULL) {
-    c->values = new Vector<EWMA2>;
-    c->values->resize(_no_of_rates);
+  if(!c->flags) {
     for(int i = 0; i < _no_of_rates; i++)
-      c->values->at(i).initialize(_rates[i]);
+      c->values[i].initialize(_rates[i]);
+    c->flags = INIT;
   }
 
   // update values.
   for(int i = 0; i < _no_of_rates; i++)
-    c->values->at(i).update(val);
+    c->values[i].update(val);
 
   // did value get larger than THRESH in the specified period?
-  if(c->values->at(0).average() >= _thresh)
+  if(c->values[0].average() >= _thresh)
     if(bitshift < MAX_SHIFT) {
       c->flags |= SPLIT;
       struct _stats *tmp = new struct _stats;

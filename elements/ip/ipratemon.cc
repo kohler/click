@@ -38,8 +38,8 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
 
   // Enough args?
-  if(args.size() < 4) {
-    errh->error("too few arguments");
+  if(args.size() < 4 || args.size() > 4+MAX_NRATES-1) {
+    errh->error("too few or too many arguments");
     return -1;
   }
 
@@ -83,14 +83,16 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   for (int i = 4; i < args.size(); i++) {
     String arg = args[i];
     if(cp_integer(arg, rate) && rate > 0)
-      _rates.push_back(rate);
+      // _rates[0] used for thresh
+      _rates[i-4+1] = rate;
     else {
       errh->error("IPRates should be a positive integer");
       return -1;
     }
   }
 
-  _no_of_rates = _rates.size();
+  // _rates[0] used for thresh
+  _no_of_rates = i-4+1;
   set_resettime();
 
   // Make _base
@@ -144,9 +146,6 @@ IPRateMonitor::destroy(_stats *s)
       delete s->counter[i].next_level;
       s->counter[i].next_level = NULL;
     }
-
-    if(s->counter[i].values != NULL)
-      delete s->counter[i].values;
   }
 }
 
@@ -158,7 +157,7 @@ IPRateMonitor::clean(_stats *s)
 {
   int jiffs = click_jiffies();
   for(int i = 0; i < 256; i++) {
-    s->counter[i].flags = 0;
+    s->counter[i].flags = CLEAN;
     s->counter[i].next_level = NULL;
     s->counter[i].last_update = jiffs;
   }
@@ -195,10 +194,7 @@ IPRateMonitor::set_thresh(String str)
     return false;
 
   _thresh = tmp_thresh;
-  if(!_rates.size())
-    _rates.push_back(threshrate);
-  else
-    _rates[0] = threshrate;
+  _rates[0] = threshrate;
 
   return true;
 }
@@ -222,18 +218,18 @@ IPRateMonitor::print(_stats *s, String ip = "")
     if(s->counter[i].flags & SPLIT) {
       ret += this_ip + "\t*\n";
       ret += print(s->counter[i].next_level, "\t" + this_ip);
-    } else if(s->counter[i].values != 0) { 
+    } else if (s->counter[i].flags != 0) { 
       int j;
       ret += this_ip;
   
       // First rate is hidden
       for(j = 1; j < _no_of_rates; j++) {
 	// Update the rate first, so we have correct info
-        s->counter[i].values->at(j).update(0);
+        s->counter[i].values[j].update(0);
         ret+="\t";
 	ret+= cp_unparse_real
-	  (s->counter[i].values->at(j).average() * CLICK_HZ,
-	   s->counter[i].values->at(j).scale());
+	  (s->counter[i].values[j].average() * CLICK_HZ,
+	   s->counter[i].values[j].scale());
       }
       ret += "\n";
     }

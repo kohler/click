@@ -62,8 +62,8 @@ UDPEncap::simple_action(Packet *p)
   
   udp->uh_sport = htons(_sport);
   udp->uh_dport = htons(_dport);
-  udp->uh_ulen = p->length();
-  udp->uh_sum = in_cksum(p->data(), p->length());
+  udp->uh_ulen = htons(p->length());
+  udp->uh_sum = (_cksum ? in_cksum(p->data(), p->length()) : 0);
   return p;
 }
 
