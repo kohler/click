@@ -53,7 +53,7 @@ void
 CheckPaint::push(int, Packet *p)
 {
   if (PAINT_ANNO(p) != _color)
-    checked_push_output(1, p);
+    checked_output_push(1, p);
   else
     output(0).push(p);
 }
@@ -63,7 +63,7 @@ CheckPaint::pull(int)
 {
   Packet *p = input(0).pull();
   if (p && PAINT_ANNO(p) != _color) {
-    checked_push_output(1, p);
+    checked_output_push(1, p);
     p = 0;
   }
   return p;

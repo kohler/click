@@ -48,7 +48,7 @@ static int tulip_stats_count;
 static int tulip_stats_active;
 
 #if HAVE_TULIP_INTERRUPT_HOOK
-extern "C" void (*tulip_interrupt_hook)(struct device *, unsigned);
+extern "C" void (*tulip_interrupt_hook)(net_device *, unsigned);
 #endif
 
 /* from tulip.c */
@@ -245,7 +245,7 @@ TulipStats::reset_counts()
 }
 
 void
-TulipStats::interrupt_notifier(struct device *dev, unsigned csr5)
+TulipStats::interrupt_notifier(net_device *dev, unsigned csr5)
 {
   AnyDevice *anydev = tulip_stats_map.lookup(dev->ifindex);
   if (!anydev)

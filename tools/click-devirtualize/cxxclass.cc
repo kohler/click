@@ -334,7 +334,7 @@ CxxClass::find_should_rewrite()
   
   String push_pattern = compile_pattern("output(#0).push(#1)");
   String pull_pattern = compile_pattern("input(#0).pull()");
-  String checked_push_pattern = compile_pattern("checked_push_output(#0,#1)");
+  String checked_push_pattern = compile_pattern("checked_output_push(#0,#1)");
   for (int i = 0; i < nfunctions(); i++) {
     if (_functions[i].find_expr(push_pattern)
 	|| _functions[i].find_expr(checked_push_pattern))

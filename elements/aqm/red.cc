@@ -299,7 +299,7 @@ RED::read_stats(Element *f, void *)
     cp_unparse_real(ewma.average(), ewma.scale) + " avg queue\n" +
     String(r->drops()) + " drops\n"
 #if CLICK_STATS >= 1
-    + String(r->output(0).packet_count()) + " packets\n"
+    + String(r->output(0).npackets()) + " packets\n"
 #endif
     ;
 }

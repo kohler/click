@@ -180,7 +180,7 @@ class TulipStats : public AnyDevice {
   Task _task;
   
   void stats_poll();
-  static void interrupt_notifier(struct device *, unsigned);
+  static void interrupt_notifier(net_device *, unsigned);
   static String read_counts(Element *, void *);
   
 };

@@ -249,17 +249,17 @@ Specializer::create_class(SpecializedClass &spc)
     return v;\n  else if (strcmp(n, \"" + spc.click_name + "\") == 0\n\
 	  || strcmp(n, \"" + old_eti.click_name + "\") == 0)\n\
     return (Element *)this;\n  else\n    return 0;\n", ""));
-  // placeholders for pull_input and push_output
+  // placeholders for input_pull and output_push
   new_cxxc->defun
-    (CxxFunction("pull_input", false, "inline Packet *",
+    (CxxFunction("input_pull", false, "inline Packet *",
 		 (_ninputs[eindex] ? "(int i) const" : "(int) const"),
 		 "", ""));
   new_cxxc->defun
-    (CxxFunction("push_output", false, "inline void",
+    (CxxFunction("output_push", false, "inline void",
 		 (_noutputs[eindex] ? "(int i, Packet *p) const" : "(int, Packet *p) const"),
 		 "", ""));
   new_cxxc->defun
-    (CxxFunction("push_output_checked", false, "inline void",
+    (CxxFunction("output_push_checked", false, "inline void",
 		 (_noutputs[eindex] ? "(int i, Packet *p) const" : "(int, Packet *p) const"),
 		 "", ""));
   new_cxxc->defun
@@ -273,11 +273,11 @@ Specializer::create_class(SpecializedClass &spc)
     String noutputs_pat = compile_pattern("noutputs()");
     String noutputs_repl = String(_noutputs[eindex]);
     String push_pat = compile_pattern("output(#0).push(#1)");
-    String checked_push_pat = compile_pattern("checked_push_output(#0, #1)");
-    String checked_push_repl = compile_pattern("push_output_checked(#0, #1)");
-    String push_repl = "push_output(#0, #1)";
+    String push_repl = "output_push(#0, #1)";
+    String checked_push_pat = compile_pattern("checked_output_push(#0, #1)");
+    String checked_push_repl = compile_pattern("output_push_checked(#0, #1)");
     String pull_pat = compile_pattern("input(#0).pull()");
-    String pull_repl = "pull_input(#0)";
+    String pull_repl = "input_pull(#0)";
     bool any_checked_push = false, any_push = false, any_pull = false;
     for (int i = 0; i < old_cxxc->nfunctions(); i++)
       if (old_cxxc->should_rewrite(i)) {
@@ -295,11 +295,11 @@ Specializer::create_class(SpecializedClass &spc)
 	  any_pull = true;
       }
     if (!any_push && !any_checked_push)
-      new_cxxc->find("push_output")->kill();
+      new_cxxc->find("output_push")->kill();
     if (!any_checked_push)
-      new_cxxc->find("push_output_checked")->kill();
+      new_cxxc->find("output_push_checked")->kill();
     if (!any_pull)
-      new_cxxc->find("pull_input")->kill();
+      new_cxxc->find("input_pull")->kill();
   }
 
   return true;
@@ -318,13 +318,13 @@ Specializer::do_simple_action(SpecializedClass &spc)
   spc.cxxc->defun
     (CxxFunction("push", false, "void", "(int, Packet *p)",
 		 "\n  if (Packet *q = smaction(p))\n\
-    push_output(0, q);\n", ""));
+    output_push(0, q);\n", ""));
   spc.cxxc->defun
     (CxxFunction("pull", false, "Packet *", "(int)",
-		 "\n  Packet *p = pull_input(0);\n\
+		 "\n  Packet *p = input_pull(0);\n\
   return (p ? smaction(p) : 0);\n", ""));
-  spc.cxxc->find("push_output")->unkill();
-  spc.cxxc->find("pull_input")->unkill();
+  spc.cxxc->find("output_push")->unkill();
+  spc.cxxc->find("input_pull")->unkill();
 }
 
 inline const String &
@@ -360,8 +360,8 @@ Specializer::create_connector_methods(SpecializedClass &spc)
     }
   }
 
-  // create pull_input
-  if (cxxc->find("pull_input")->alive()) {
+  // create input_pull
+  if (cxxc->find("input_pull")->alive()) {
     StringAccum sa;
     Vector<int> range1, range2;
     for (int i = 0; i < _ninputs[eindex]; i++)
@@ -385,11 +385,11 @@ Specializer::create_connector_methods(SpecializedClass &spc)
 	 << input_class[r1] << "::pull(" << input_port[r1] << ");";
     }
     sa << "\n  return input(i).pull();\n";
-    cxxc->find("pull_input")->set_body(sa.take_string());
+    cxxc->find("input_pull")->set_body(sa.take_string());
   }
 
-  // create push_output
-  if (cxxc->find("push_output")->alive()) {
+  // create output_push
+  if (cxxc->find("output_push")->alive()) {
     StringAccum sa;
     Vector<int> range1, range2;
     for (int i = 0; i < _noutputs[eindex]; i++)
@@ -414,12 +414,12 @@ Specializer::create_connector_methods(SpecializedClass &spc)
 	 << ", p); return; }";
     }
     sa << "\n  output(i).push(p);\n";
-    cxxc->find("push_output")->set_body(sa.take_string());
+    cxxc->find("output_push")->set_body(sa.take_string());
     
     sa.clear();
-    sa << "\n  if (i < " << _noutputs[eindex] << ")\n    push_output(i, p);\n";
+    sa << "\n  if (i < " << _noutputs[eindex] << ")\n    output_push(i, p);\n";
     sa << "  else\n    p->kill();\n";
-    cxxc->find("push_output_checked")->set_body(sa.take_string());
+    cxxc->find("output_push_checked")->set_body(sa.take_string());
   }
 }
 

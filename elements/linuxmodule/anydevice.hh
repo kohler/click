@@ -78,7 +78,7 @@ class AnyDevice : public Element { public:
  protected:
 
   String _devname;
-  struct device *_dev;
+  net_device *_dev;
 
   Task _task;
   int _max_tickets;
@@ -140,6 +140,6 @@ AnyDeviceMap::lookup(unsigned ifi)
     return _map[ifi];
 }
 
-struct device *find_device_by_ether_address(const String &, Element *);
+net_device *find_device_by_ether_address(const String &, Element *);
 
 #endif

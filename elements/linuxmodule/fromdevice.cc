@@ -61,7 +61,7 @@ fromdev_static_cleanup()
 }
 
 FromDevice::FromDevice()
-  : _registered(false), _puller_ptr(0), _pusher_ptr(0), _drops(0)
+  : _registered(false), _drops(0)
 {
   // no MOD_INC_USE_COUNT; rely on AnyDevice
   add_output();
@@ -76,6 +76,16 @@ FromDevice::~FromDevice()
   fromdev_static_cleanup();
 }
 
+void *
+FromDevice::cast(const char *n)
+{
+  if (strcmp(n, "Storage") == 0)
+    return (Storage *)this;
+  else if (strcmp(n, "FromDevice") == 0)
+    return (Element *)this;
+  else
+    return 0;
+}
 
 int
 FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
@@ -138,6 +148,8 @@ FromDevice::initialize(ErrorHandler *errh)
 #endif
   _task.initialize(this, true);
 
+  _head = _tail = 0;
+  _capacity = QSIZE;
   return 0;
 }
 
@@ -153,9 +165,9 @@ FromDevice::uninitialize()
     from_device_map.remove(this);
   _registered = false;
   _task.unschedule();
-  for (unsigned i = _puller_ptr; i != _pusher_ptr; i = next_i(i))
+  for (unsigned i = _head; i != _tail; i = next_i(i))
     _queue[i]->kill();
-  _puller_ptr = _pusher_ptr = 0;
+  _head = _tail = 0;
 
   if (_promisc) dev_set_promiscuity(_dev, -1);
 }
@@ -166,16 +178,16 @@ FromDevice::take_state(Element *e, ErrorHandler *errh)
   FromDevice *fd = (FromDevice *)e->cast("FromDevice");
   if (!fd) return;
   
-  if (_puller_ptr != _pusher_ptr) {
+  if (_head != _tail) {
     errh->error("already have packets enqueued, can't take state");
     return;
   }
 
-  memcpy(_queue, fd->_queue, sizeof(Packet *) * QSIZE);
-  _puller_ptr = fd->_puller_ptr;
-  _pusher_ptr = fd->_pusher_ptr;
+  memcpy(_queue, fd->_queue, sizeof(Packet *) * (QSIZE + 1));
+  _head = fd->_head;
+  _tail = fd->_tail;
   
-  fd->_puller_ptr = fd->_pusher_ptr = 0;
+  fd->_head = fd->_tail = 0;
 }
 
 /*
@@ -203,9 +215,9 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
 int
 FromDevice::got_skb(struct sk_buff *skb)
 {
-  unsigned next = next_i(_pusher_ptr);
+  unsigned next = next_i(_tail);
   
-  if (next != _puller_ptr) { /* ours */
+  if (next != _head) { /* ours */
     assert(skb->data - skb->head >= 14);
     assert(skb->mac.raw == skb->data - 14);
     assert(skb_shared(skb) == 0); /* else skb = skb_clone(skb, GFP_ATOMIC); */
@@ -214,8 +226,8 @@ FromDevice::got_skb(struct sk_buff *skb)
     skb_push(skb, 14);
 
     Packet *p = Packet::make(skb);
-    _queue[_pusher_ptr] = p; /* hand it to run_scheduled */
-    _pusher_ptr = next;
+    _queue[_tail] = p; /* hand it to run_scheduled */
+    _tail = next;
 
   } else {
     /* queue full, drop */
@@ -231,9 +243,9 @@ FromDevice::run_scheduled()
 {
   int i=0;
   int sent = 0;
-  while (i < _burst && _puller_ptr != _pusher_ptr) {
-    Packet *p = _queue[_puller_ptr];
-    _puller_ptr = next_i(_puller_ptr);
+  while (i < _burst && _head != _tail) {
+    Packet *p = _queue[_head];
+    _head = next_i(_head);
     output(0).push(p);
     sent++;
   }
@@ -249,5 +261,5 @@ FromDevice::add_handlers()
   add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(AnyDevice linuxmodule)
+ELEMENT_REQUIRES(AnyDevice Storage linuxmodule)
 EXPORT_ELEMENT(FromDevice)

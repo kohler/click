@@ -25,11 +25,7 @@
  * =a ToLinuxSniffers, FromLinux, FromDevice, PollDevice, ToDevice
  */
 
-class ToLinux : public Element {
-  
-  struct device *_dev;
-  
- public:
+class ToLinux : public Element { public:
   
   ToLinux();
   ~ToLinux();
@@ -43,6 +39,10 @@ class ToLinux : public Element {
   ToLinux *clone() const;
   
   void push(int port, Packet *);
+
+ private:
+  
+  net_device *_dev;
 
 };
 

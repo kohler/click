@@ -54,7 +54,7 @@ void
 CheckLength::push(int, Packet *p)
 {
   if (p->length() > _max)
-    checked_push_output(1, p);
+    checked_output_push(1, p);
   else
     output(0).push(p);
 }
@@ -64,7 +64,7 @@ CheckLength::pull(int)
 {
   Packet *p = input(0).pull();
   if (p && p->length() > _max) {
-    checked_push_output(1, p);
+    checked_output_push(1, p);
     return 0;
   } else
     return p;

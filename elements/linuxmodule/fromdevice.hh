@@ -31,8 +31,9 @@
  * =a PollDevice, ToDevice, FromLinux, ToLinux, FromDevice.u */
 
 #include "elements/linuxmodule/anydevice.hh"
+#include "elements/standard/queue.hh"
 
-class FromDevice : public AnyDevice { public:
+class FromDevice : public AnyDevice, public Storage { public:
   
   FromDevice();
   ~FromDevice();
@@ -40,6 +41,7 @@ class FromDevice : public AnyDevice { public:
   const char *class_name() const	{ return "FromDevice"; }
   const char *processing() const	{ return PUSH; }
   FromDevice *clone() const		{ return new FromDevice; }
+  void *cast(const char *);
 
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
@@ -58,12 +60,9 @@ class FromDevice : public AnyDevice { public:
   bool _promisc;
   unsigned _burst;
   unsigned _drops;
-  unsigned _puller_ptr;
-  unsigned _pusher_ptr;
 
-  static const int QSIZE = 512;
-  Packet *_queue[QSIZE];
-  unsigned next_i(unsigned i) const	{ return (i!=(QSIZE-1) ? i+1 : 0); }
+  static const int QSIZE = 511;
+  Packet *_queue[QSIZE+1];
  
 };
 

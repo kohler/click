@@ -86,11 +86,11 @@ LookupIPRouteLinux::init_routes(ErrorHandler *errh)
 {
   if(_out2dev)
     delete[] _out2dev;
-  _out2dev = new struct device * [_nout];
+  _out2dev = new net_device * [_nout];
   _out2dev[0] = 0;
   int i;
   for(i = 0; i < _nout; i++){
-    struct device *dev = dev_get(_out2devname[i].cc());
+    net_device *dev = dev_get(_out2devname[i].cc());
     if(dev == 0)
       return errh->error("Cannot find device %s", _out2devname[i].cc());
   }
@@ -109,7 +109,7 @@ LookupIPRouteLinux::lookup(IPAddress a, IPAddress &gw, int &ifi)
                       0) == 0){
     gw = IPAddress(rt->rt_gateway);
     ifi = -1;
-    struct device *dev = rt->u.dst.dev;
+    net_device *dev = rt->u.dst.dev;
     int i;
     for(i = 0; i < _nout; i++){
       if(_out2dev[i] == dev)

@@ -21,12 +21,8 @@
  *
  * =a ToLinux, FromLinux, FromDevice, PollDevice, ToDevice */
 
-class ToLinuxSniffers : public Element {
+class ToLinuxSniffers : public Element { public:
 
-  struct device *_dev;
-  
- public:
-  
   ToLinuxSniffers();
   ~ToLinuxSniffers();
   
@@ -40,6 +36,10 @@ class ToLinuxSniffers : public Element {
   
   void push(int port, Packet *);
 
+ private:
+
+  net_device *_dev;
+  
 };
 
 #endif

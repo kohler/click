@@ -36,7 +36,7 @@ extern "C" {
 
 static int iff_set(struct ifreq *ifr, short flag);
 static int iff_clear(struct ifreq *ifr, short flag);
-static int fl_init(struct device *dev);
+static int fl_init(net_device *dev);
 
 static AnyDeviceMap fromlinux_map;
 static int from_linux_count;
@@ -91,10 +91,10 @@ FromLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 FromLinux::init_dev()
 {
-  _dev = new struct device;
+  _dev = new net_device;
   if (!_dev)
     goto bad;
-  memset(_dev, 0, sizeof(struct device));
+  memset(_dev, 0, sizeof(net_device));
   _dev->name = new char[IFNAMSIZ];
   if (!_dev->name)
     goto bad;
@@ -214,7 +214,7 @@ FromLinux::initialize(ErrorHandler *errh)
  */
 
 static int
-fl_open(struct device *dev)
+fl_open(net_device *dev)
 {
   // set to an arbitrary Ethernet address
   for (int i = 0; i < ETH_ALEN; i++)
@@ -225,7 +225,7 @@ fl_open(struct device *dev)
 }
 
 static int
-fl_close(struct device *dev)
+fl_close(net_device *dev)
 {
   dev->start = 0;
   dev->tbusy = 1;
@@ -233,7 +233,7 @@ fl_close(struct device *dev)
 }
 
 static int
-fl_tx(struct sk_buff *skb, struct device *dev)
+fl_tx(struct sk_buff *skb, net_device *dev)
 {
   FromLinux *fl;
   if (dev->ifindex >= 0 && dev->ifindex < MAX_DEVICES) 
@@ -246,7 +246,7 @@ fl_tx(struct sk_buff *skb, struct device *dev)
 }
 
 static enet_statistics *
-fl_stats(struct device *dev)
+fl_stats(net_device *dev)
 {
   FromLinux *fl;
 
@@ -257,7 +257,7 @@ fl_stats(struct device *dev)
 }
 
 static int
-fl_init(struct device *dev)
+fl_init(net_device *dev)
 {
   ether_setup(dev);
 

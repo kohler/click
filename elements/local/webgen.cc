@@ -44,6 +44,15 @@ WebGen::WebGen()
   }
 }
 
+WebGen::~WebGen()
+{
+  MOD_DEC_USE_COUNT;
+  for (int i = 0; i < _ncbs; i++) {
+    delete _cbs[i];
+    _cbs[i] = 0;
+  }
+}
+
 WebGen::CB::CB()
 {
 }
@@ -63,11 +72,6 @@ WebGen::CB::reset(int np)
   _closed = 0;
   _reset = 0;
   _resends = 0;
-}
-
-WebGen::~WebGen()
-{
-  MOD_DEC_USE_COUNT;
 }
 
 WebGen *

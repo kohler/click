@@ -1120,7 +1120,7 @@ Classifier::length_checked_push(Packet *p)
     pos = ex[pos].no;
   }
   
-  checked_push_output(-pos, p);
+  checked_output_push(-pos, p);
 }
 
 void
@@ -1131,7 +1131,7 @@ Classifier::push(int, Packet *p)
   int pos = 0;
   
   if (_output_everything >= 0) {
-    // must use checked_push_output because the output number might be
+    // must use checked_output_push because the output number might be
     // out of range
     pos = -_output_everything;
     goto found;
@@ -1150,7 +1150,7 @@ Classifier::push(int, Packet *p)
   } while (pos > 0);
   
  found:
-  checked_push_output(-pos, p);
+  checked_output_push(-pos, p);
 }
 
 
