@@ -69,6 +69,7 @@ Print80211::configure(Vector<String> &conf, ErrorHandler* errh)
   return 0;
 }
 
+#if defined(__FreeBSD__) && __FreeBSD__ >= 4
 static String
 hex_string(unsigned i, bool add_x = false) 
 {
@@ -77,7 +78,6 @@ hex_string(unsigned i, bool add_x = false)
   return buf;
 }
 
-#if defined(__FreeBSD__) && __FreeBSD__ >= 4
 static void
 print_data(StringAccum &s, bool /* verbose */, const u_int8_t *buf, unsigned int buflen)
 {
