@@ -23,7 +23,6 @@
 #include <click/timer.hh>
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
-#include <elements/grid/srcr.hh>
 #include <elements/wifi/txstat.hh>
 CLICK_DECLS
 
@@ -81,10 +80,10 @@ TXStat::initialize(ErrorHandler *errh)
 Packet *
 TXStat::simple_action(Packet *p_in)
 {
-  struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
+  click_ether *eh = (click_ether *) p_in->data();
   //click_chatter("SRCR %s: got sr packet", _ip.s().cc());
   
-  EtherAddress dst = EtherAddress(pk->ether_dhost);
+  EtherAddress dst = EtherAddress(eh->ether_dhost);
   if (dst == _bcast) {
     //click_chatter("TXStat %s: broadcast packet", _eth.s().cc());
     p_in->kill();

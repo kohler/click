@@ -16,10 +16,6 @@ CLICK_DECLS
  * Accumulate rxstats for each ethernet src you hear a packet from.
  * =over 8
  *
- * =item TAU
- * 
- * Unsigned integer. Values 1 - 100 on  how much last packet
- * influences counters.
  *
  */
 

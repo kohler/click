@@ -48,7 +48,6 @@ int
 RXStats::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "tau", &_tau,
 		  cpKeywords, 
 		  0) < 0) {
     return -1;
@@ -78,36 +77,38 @@ RXStats::simple_action(Packet *p_in)
   int noise = WIFI_NOISE_ANNO(p_in);
     
   DstInfo *nfo = _neighbors.findp(src);
-  if (dst != _bcast || !nfo) {
-    if (!nfo) {
-      DstInfo foo = DstInfo(src);
-      _neighbors.insert(src, foo);
-      nfo = _neighbors.findp(src);
-      nfo->_rate = rate*10;
-      nfo->_signal = signal;
-      nfo->_noise = noise;
-      nfo->_rate_guessed = false;
-    }
+  if (!nfo) {
+    DstInfo foo = DstInfo(src);
+    _neighbors.insert(src, foo);
+    nfo = _neighbors.findp(src);
     
-    if (dst == _bcast) {
-      /* 
-       * This is our first guess at what rate the link 
-       * is capable of 
-       */
-      if (signal > 40) {
-	nfo->_rate = 110;	      
-      } else if (signal > 20) {
-	nfo->_rate = 50;
-      } else if (signal > 10) {
-	nfo->_rate = 20;
-      } else {
-	nfo->_rate = 10;
-      }
-      nfo->_rate_guessed = true;
-    }
+    nfo->_signal = signal;
+    nfo->_noise = noise;
+    nfo->_rate_guessed = true;
   }
-  nfo->_signal = (((100 - _tau) * nfo->_signal) + (_tau * signal))/100;
-  nfo->_noise = (((100 - _tau) * nfo->_noise) + (_tau * noise))/100;
+
+  if (dst == _bcast && nfo->_rate_guessed) {
+    /* 
+     * This is our first guess at what rate the link 
+     * is capable of 
+     */
+    if (signal > 40) {
+      nfo->_rate = 11;
+    } else if (signal > 20) {
+      nfo->_rate = 5;
+    } else if (signal > 10) {
+      nfo->_rate = 2;
+    } else {
+      nfo->_rate = 1;
+    }
+  } else if (dst != _bcast) {
+    /* first unicast packet seen */
+    nfo->_rate = rate;
+    nfo->_rate_guessed = false;
+  }
+
+  nfo->_signal = signal;
+  nfo->_noise = noise;
   click_gettimeofday(&nfo->_last_received);
   return p_in;
 }
@@ -129,8 +130,11 @@ RXStats::print_stats()
     DstInfo n = iter.value();
     struct timeval age = now - n._last_received;
     sa << n._eth.s().cc() << " ";
-    sa << "rate: " << n._rate << " ";
-    sa << "rate_guessed: " << n._rate_guessed << " ";
+    sa << "rate: " << n._rate;
+    if (n._rate_guessed) {
+      sa << "?";
+    }
+    sa << " ";
     sa << "signal: " << n._signal << " ";
     sa << "noise: " << n._noise << " ";
     sa << "last_received: " << age << "\n";
