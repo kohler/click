@@ -1,3 +1,20 @@
+2004-07-31 Saturday 14:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipaddrrewriter.cc (1.22),
+	elements/ip/ipaddrrewriter.hh (1.13), elements/ip/iprw.cc (1.55),
+	elements/ip/iprw.hh (1.29), elements/tcpudp/iprewriter.cc (1.44),
+	elements/tcpudp/iprewriter.hh (1.25),
+	elements/tcpudp/tcprewriter.cc (1.36),
+	test/IPRewriter/IPAddrRewriter-01.testie (1.2),
+	test/IPRewriter/IPRewriter-01.testie (1.2),
+	test/IPRewriter/TCPRewriter-01.testie (1.3),
+	test/icmp/ICMPRewriter-01.testie (1.2): IPRewriter change: Now
+	instead of allocating ports/source addresses sequentially, allocate
+	them randomly (sequential allocation is still available with a #
+	modifier).  Also, check the mapping table for conflicts, rather
+	than relying on a private list.  This ups the capacity a single
+	IPRewriter can support, but slows down new-flow handling a bit.
+
 2004-07-31 Saturday 14:21  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/Makefile.in (1.50): uninstall nit
