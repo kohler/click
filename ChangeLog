@@ -1,3 +1,17 @@
+2004-02-04 Wednesday 00:08  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregateipflows.cc (1.23): NLANR traces are
+	short, so dont be too picky about TCP length
+
+2004-02-04 Wednesday 00:08  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.32), toipflowdumps.hh
+	(1.20): memory reduction, and keep track of number of flows
+
+2004-02-04 Wednesday 00:08  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregatefilter.cc (1.5): fix dumb bug
+
 2004-02-03 Tuesday 22:31  Eddie Kohler <kohler@icir.org>
 
 	* click-compile.in (1.28): include $cflags when linking
