@@ -16,6 +16,7 @@
 #include "ratedsource.hh"
 #include "confparse.hh"
 #include "error.hh"
+#include "timer.hh"
 #include "router.hh"
 #include "scheduleinfo.hh"
 #include "glue.hh"
@@ -34,7 +35,7 @@ sub_timer(struct timeval *diff, struct timeval *tv2, struct timeval *tv1)
 
 RatedSource::RatedSource()
   : _data("Random bullshit in a packet, at least 64 byte long.  Well, now it is."),
-    _time(10), _persec(10)
+    _time(10), _persec(10), _timer(this)
 {
   add_output();
 }
@@ -94,6 +95,9 @@ void
 RatedSource::run_scheduled()
 {
   unsigned sent_this_time = 0;
+#ifndef __KERNEL__
+  _timer.unschedule();
+#endif
 
   while (_total_sent < _total) {
     /* how many packets should we have sent by now? */
@@ -110,11 +114,16 @@ RatedSource::run_scheduled()
     /* get time at least once through every loop */
     click_gettimeofday(&_tv2);
     sub_timer(&_diff, &_tv2, &_tv1);
-   
+  
+#ifndef __KERNEL__
+    _timer.schedule_after_ms(0);
+#endif
     reschedule();
     return;
   }
-  // router()->please_stop_driver();
+#ifndef __KERNEL__
+  router()->please_stop_driver();
+#endif
 }
 
 static String

@@ -186,5 +186,11 @@ ToBPF::run_scheduled()
   reschedule();
 }
 
+void
+ToBPF::selected(int)
+{
+  run_scheduled();
+}
+
 EXPORT_ELEMENT(ToBPF)
 ELEMENT_REQUIRES(FromBPF)

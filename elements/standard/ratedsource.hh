@@ -1,6 +1,7 @@
 #ifndef RATEDSOURCE_HH
 #define RATEDSOURCE_HH
 #include "element.hh"
+#include "timer.hh"
 
 /*
  * =c
@@ -29,6 +30,8 @@ class RatedSource : public Element { protected:
   unsigned _ngap;
   Packet *_packet;
   struct timeval _tv1, _tv2, _diff;
+
+  Timer _timer;
   
  public:
   
@@ -44,7 +47,6 @@ class RatedSource : public Element { protected:
   void uninitialize();
 
   int total_sent() const			{ return _total_sent; }
-  unsigned long total_us() const { return _diff.tv_usec+_diff.tv_sec*1000000; }
   void run_scheduled();
 };
 

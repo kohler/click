@@ -1,5 +1,18 @@
 Click NEWS
 
+Version 1.0.5
+
+* RatedSource::run_scheduled() now places a dummy timer for 0 ms if it 
+  has other things to do. In userlevel, this is needed because RatedSource
+  doesn't listen on a descriptor, so Router::wait() must be notified, somehow,
+  that RatedSource still needs to run. I find scheduling a dummy timer is the
+  best option right now.
+
+* Added select_fd() and selected() to ToBPF
+
+* conf/make-udpgen.pl: a perl script that generates udpgen click configuration
+
+
 Version 1.0.4   13.Apr.2000
 
 * Changed how FromDevice, ToDevice, and PollDevice interact with each

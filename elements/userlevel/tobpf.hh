@@ -59,10 +59,11 @@ class ToBPF : public Element {
   int initialize(ErrorHandler *);
   void uninitialize();
   
-  void push(int port, Packet *);
-
-  void run_scheduled();
+  int select_fd()		{ return (_pcap?pcap_fileno(_pcap):-1); }
+  void selected(int);
   
+  void push(int port, Packet *);
+  void run_scheduled();
 };
 
 #endif

@@ -168,8 +168,10 @@ IPRewriter::Pattern::initialize(String &s)
   }
   if (_sportl > _sporth)
     return false;
+#if 0
   if (_sportl == 0)
     return false;
+#endif
 
   // destination address
   if (v[2] == "-")
