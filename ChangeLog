@@ -1,3 +1,18 @@
+2001-01-14 Sunday 01:23  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/ip6/: icmp6error.cc, protocoltranslator.cc: [no log
+	message]
+
+2001-01-14 Sunday 00:53  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/ip6/addresstranslator.cc: [no log message]
+
+2001-01-14 Sunday 00:46  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/ip6/: addresstranslator.cc, addresstranslator.hh,
+	protocoltranslator.cc, protocoltranslator.hh: add udp packet
+	translation.
+
 2001-01-07 Sunday 23:47  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/radio/bim.cc, elements/standard/align.cc,
