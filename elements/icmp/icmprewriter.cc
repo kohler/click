@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 2 -*- */
 /*
  * icmprewriter.{cc,hh} -- rewrites ICMP non-echoes and non-replies
  * Eddie Kohler
@@ -55,12 +56,14 @@ ICMPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (Element *e = cp_element(words[i], this, errh)) {
       if (IPRw *rw = static_cast<IPRw *>(e->cast("IPRw")))
 	_maps.push_back(rw);
+      else if (ICMPPingRewriter *rw = static_cast<ICMPPingRewriter *>(e->cast("ICMPPingRewriter")))
+	_ping_maps.push_back(rw);
       else
 	errh->error("element `%s' is not an IP rewriter", words[i].cc());
     }
   }
 
-  if (_maps.size() == 0)
+  if (_maps.size() == 0 && _ping_maps.size() == 0)
     return errh->error("no IP rewriters supplied");
   return 0;
 }
@@ -97,6 +100,36 @@ ICMPRewriter::rewrite_packet(WritablePacket *p, click_ip *embedded_iph,
 }
 
 void
+ICMPRewriter::rewrite_ping_packet(WritablePacket *p, click_ip *embedded_iph,
+				  icmp_sequenced *embedded_icmph, const IPFlowID &flow,
+				  ICMPPingRewriter::Mapping *mapping)
+{
+  click_ip *iph = p->ip_header();
+  icmp_generic *icmph = reinterpret_cast<icmp_generic *>(p->transport_header());
+
+  // XXX incremental checksums?
+  
+  IPFlowID new_flow = mapping->flow_id().rev();
+  
+  // change IP header destination if appropriate
+  if (IPAddress(iph->ip_dst) == flow.saddr()) {
+    unsigned hlen = iph->ip_hl << 2;
+    iph->ip_dst = new_flow.saddr();
+    iph->ip_sum = 0;
+    iph->ip_sum = in_cksum((unsigned char *)iph, hlen);
+  }
+  
+  // don't bother patching embedded ICMP checksum
+  embedded_iph->ip_src = new_flow.saddr();
+  embedded_iph->ip_dst = new_flow.daddr();
+  embedded_icmph->identifier = new_flow.sport();
+
+  // but must patch ICMP checksum
+  icmph->icmp_cksum = 0;
+  icmph->icmp_cksum = in_cksum((unsigned char *)icmph, p->length() - p->transport_header_offset());
+}
+
+void
 ICMPRewriter::push(int, Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
@@ -125,17 +158,42 @@ ICMPRewriter::push(int, Packet *p_in)
      // check protocol
      int embedded_p = embedded_iph->ip_p;
 
-     // create flow ID
-     click_udp *embedded_udph = reinterpret_cast<click_udp *>(reinterpret_cast<unsigned char *>(embedded_iph) + hlen);
-     IPFlowID flow(embedded_iph->ip_src, embedded_udph->uh_sport, embedded_iph->ip_dst, embedded_udph->uh_dport);
+     if (embedded_p == IP_PROTO_UDP || embedded_p == IP_PROTO_TCP) {
+       // TCP or UDP
+       // create flow ID
+       click_udp *embedded_udph = reinterpret_cast<click_udp *>(reinterpret_cast<unsigned char *>(embedded_iph) + hlen);
+       IPFlowID flow(embedded_iph->ip_src, embedded_udph->uh_sport, embedded_iph->ip_dst, embedded_udph->uh_dport);
      
-     IPRw::Mapping *mapping = 0;
-     for (int i = 0; i < _maps.size() && !mapping; i++)
-       mapping = _maps[i]->get_mapping(embedded_p, flow.rev());
-     if (!mapping)
+       IPRw::Mapping *mapping = 0;
+       for (int i = 0; i < _maps.size() && !mapping; i++)
+	 mapping = _maps[i]->get_mapping(embedded_p, flow.rev());
+       if (!mapping)
+	 goto unmapped;
+     
+       rewrite_packet(p, embedded_iph, embedded_udph, flow, mapping);
+       
+     } else if (embedded_p == IP_PROTO_ICMP) {
+       // ICMP
+       icmp_sequenced *embedded_icmph = reinterpret_cast<icmp_sequenced *>(reinterpret_cast<unsigned char *>(embedded_iph) + hlen);
+       
+       int embedded_type = embedded_icmph->icmp_type;
+       if (embedded_type != ICMP_ECHO && embedded_type != ICMP_ECHO_REPLY)
+	 goto unmapped;
+       bool ask_for_request = (embedded_type != ICMP_ECHO);
+       
+       IPFlowID flow(embedded_iph->ip_src, embedded_icmph->identifier, embedded_iph->ip_dst, embedded_icmph->identifier);
+
+       ICMPPingRewriter::Mapping *mapping = 0;
+       for (int i = 0; i < _ping_maps.size() && !mapping; i++)
+	 mapping = _ping_maps[i]->get_mapping(ask_for_request, flow.rev());
+       if (!mapping)
+	 goto unmapped;
+
+       rewrite_ping_packet(p, embedded_iph, embedded_icmph, flow, mapping);
+       
+     } else
        goto unmapped;
-     
-     rewrite_packet(p, embedded_iph, embedded_udph, flow, mapping);
+       
      output(0).push(p);
      break;
    }
@@ -155,5 +213,5 @@ ICMPRewriter::push(int, Packet *p_in)
   }
 }
 
-ELEMENT_REQUIRES(IPRw)
+ELEMENT_REQUIRES(IPRw ICMPPingRewriter)
 EXPORT_ELEMENT(ICMPRewriter)

@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 2 -*- */
 #ifndef ICMPPINGREWRITER_HH
 #define ICMPPINGREWRITER_HH
 #include <click/element.hh>
@@ -67,9 +68,10 @@ class ICMPPingRewriter : public Element { public:
 
   void push(int, Packet *);
   void run_scheduled();
-  
- protected:
 
+  class Mapping;
+  Mapping *get_mapping(bool is_request, const IPFlowID &flow) const;
+  
   class Mapping {
     
     IPFlowID _mapto;
@@ -102,6 +104,8 @@ class ICMPPingRewriter : public Element { public:
     
   };
   
+ protected:
+
   typedef BigHashMap<IPFlowID, Mapping *> Map;
 
   Map _request_map;

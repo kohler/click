@@ -1,8 +1,9 @@
+/* -*- c-basic-offset: 2 -*- */
 /*
  * icmppingrewriter.{cc,hh} -- rewrites ICMP echoes and replies
  * Eddie Kohler
  *
- * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2000-2001 Mazu Networks, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -255,6 +256,13 @@ ICMPPingRewriter::apply_pattern(const IPFlowID &flow)
   return 0;
 }
 
+ICMPPingRewriter::Mapping *
+ICMPPingRewriter::get_mapping(bool is_request, const IPFlowID &flow) const
+{
+  const Map *map = (is_request ? &_request_map : &_reply_map);
+  return map->find(flow);
+}
+
 void
 ICMPPingRewriter::push(int port, Packet *p_in)
 {
@@ -263,7 +271,6 @@ ICMPPingRewriter::push(int port, Packet *p_in)
   assert(iph->ip_p == IP_PROTO_ICMP);
 
   icmp_sequenced *icmph = reinterpret_cast<icmp_sequenced *>(p->transport_header());
-  IPFlowID flow(iph->ip_src, icmph->identifier, iph->ip_dst, icmph->identifier);
 
   Map *map;
   if (icmph->icmp_type == ICMP_ECHO)
@@ -276,6 +283,7 @@ ICMPPingRewriter::push(int port, Packet *p_in)
     return;
   }
   
+  IPFlowID flow(iph->ip_src, icmph->identifier, iph->ip_dst, icmph->identifier);
   Mapping *m = map->find(flow);
   if (!m) {
     if (port == 0 && icmph->icmp_type == ICMP_ECHO) {
@@ -319,5 +327,4 @@ ICMPPingRewriter::add_handlers()
   add_read_handler("mappings", dump_mappings_handler, (void *)0);
 }
 
-ELEMENT_REQUIRES(IPRw)
 EXPORT_ELEMENT(ICMPPingRewriter)
