@@ -1,3 +1,14 @@
+2003-02-05 Wednesday 10:54  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/lookuplocalgridroute.cc (1.49): Make route table
+	argument optional; Fix latent bug in #ifdef'ed code.
+
+2003-02-05 Wednesday 10:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.31), grid.hh (1.44),
+	gridroutetable.cc (1.64): Shrink Grid route ad size by leaving out
+	extraneous junk; bump up grid protocol version number
+
 2003-02-05 Wednesday 01:53  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/: ipfragmenter.cc (1.30), ipfragmenter.hh (1.23):
