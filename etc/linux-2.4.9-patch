@@ -1859,15 +1859,3 @@ Index: drivers/net/eepro100.c
 +}
 +
 
-Index: Makefile
---- Makefile.orig	Thu Aug 16 14:12:49 2001
-+++ Makefile	Wed Aug 22 18:49:46 2001
-@@ -1,7 +1,7 @@
- VERSION = 2
- PATCHLEVEL = 4
- SUBLEVEL = 9
--EXTRAVERSION =
-+EXTRAVERSION = -Click
- 
- KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
- 
