@@ -159,24 +159,27 @@ be part of at most two connections (once as input, once as output).
 '
 .SH "CONFIGURATION STRINGS"
 '
-The Click parser passes configuration strings verbatim to the elements.
-(The process of extracting a configuration string from a Click language
-file is described in the Lexical Issues section below.) The elements are
-free in principle to treat configuration strings however they'd like, but
-in practice, most treat them as comma-separated lists of arguments. This
-section describes how these argument lists are parsed, and the objects that
-they consist of, but any particular element class might not follow these
-guidelines. See the element documentation for more details.
+Click configuration strings are comma-separated lists of arguments, where
+each argument is a space-separated list of objects. This section describes
+some common object types. See the element documentation for argument types
+expected by a particular element.
 .PP
-The configuration string parser first performs substitutions and separates
-the string into arguments. There are two kinds of characters, normal and
-special. The entire configuration string starts out normal; special
-characters are created by backslash substitutions and are not subject to
-further substitution. The parser logically acts as follows:
+Configuration strings may contain comments (`// ... EOL' and `/* ... */'),
+which are replaced with single space characters. Inside single- or
+double-quoted strings, commas, spaces, and comment-starting sequences lose
+their regular meaning and are treated as normal characters.
+.PP
+The most common object types are:
+.TP 4
+\(bu
+.B Strings.
+Any sequence of characters. Single- or double-quoted strings are allowed
+(and required, if the string contains a space or comma). Inside
+double-quoted strings, the following backslash substitutions are performed.
+.RS
 .TP 4
 1.
-Performs C-like backslash substitutions. Every resulting
-character is special. Specifically:
+C-like substitutions. Specifically:
 .RS
 .TP 3
 \(bu
@@ -204,45 +207,31 @@ character is special. Specifically:
 `\e\e' -> `\e'
 .TP 3
 \(bu
-`\e[1, 2, or 3 octal digits]' -> that ASCII character
+`\e[1, 2, or 3 octal digits]' -> that byte
 .TP 3
 \(bu
-`\ex[any number of hex digits]' -> the ASCII character defined by the last
+`\ex[any number of hex digits]' -> the byte defined by the last
 2 hex digits
 .RE
 .TP 4
 2.
-Replaces `\e< ... hex digits and spaces ... >' sequences with the ASCII
-character data represented by the hex digits. Every resulting character is
-special. For example, the sequence `\e< 48 45 4c 4C 4f >' is replaced with
-`HELLO'.
+Data substitutions. An escape sequence `\e< ... hex digits and spaces ...
+>' is replaced with the data represented by the hex digits. For example,
+the sequence `\e< 48 45 4c 4C 4f >' is replaced with `HELLO'. As a special
+case, any `\e< ... >'  encountered outside of any quoted string acts as if
+it were enclosed in double quotes.
 .TP
 3.
-Removes backlash-newline sequences (`\e[LF]', `\e[CR]', or `\e[CR][LF]').
+Backlash-newline sequences (`\e[LF]', `\e[CR]', or `\e[CR][LF]') are removed.
 .TP
 4.
-Replaces any remaining `\e[CHAR]' sequence with the special version of
-`[CHAR]'.
-.TP
-5.
-Replaces comments (`// ... EOL' and `/* ... */') with single normal space
-characters.
-.TP
-6.
-Breaks the string into arguments by splitting it at every normal comma.
-The commas are thrown away.
-.TP
-7.
-Removes leading and trailing normal whitespace from the resulting
-arguments.
-.PD
+Any other `\e[CHAR]' sequence is replaced with `[CHAR]'.
+.RE
+.RS
 .PP
-Once this is done, the element can process the arguments. The most common
-argument types are:
-.TP 4
-\(bu
-.B Strings.
-\ 
+You can concatenate strings by juxtaposing them. For example, `a"b"c' is
+equivalent to `abc'.
+.RE
 .TP
 \(bu
 .B Booleans.
@@ -262,6 +251,10 @@ in decimal notation.
 \(bu
 .B IP addresses
 in the conventional `n.n.n.n' form (for example, `18.26.4.15').
+.TP
+\(bu
+.B IP network addresses
+in the CIDR form `n.n.n.n/k' (for example, `18.26.4.0/24').
 .TP
 \(bu
 .B Ethernet addresses
@@ -587,27 +580,24 @@ Parameters, which are used in compound elements, look like Perl variables. A
 parameter consists of a dollar sign `$' followed by one or more letters,
 numbers, and underscores.
 .PP
-Configuration strings do not follow Click's usual lexical rules. A
-configuration string starts immediately following a left parenthesis `(',
-and continues up to the next unbalanced right parenthesis `)'. Backslash
-characters `\e' quote parentheses and backslashes so they doesn't affect
-balancing, but they are not removed from the string. A configuration string
-can also include comments. (The configuration string parser generally
-removes the backslashes and comments itself.) Here are several examples; in
-each case, the configuration string starts immediately after the first `#'
-and continues to right before the second `#'.
+A configuration string starts immediately following a left parenthesis `(',
+and continues up to the next unbalanced right parenthesis `)'. However,
+parentheses inside single or double quotes or comments do not affect
+balancing. Here are several examples; in each case, the configuration
+string starts immediately after the first `#' and continues to right before
+the second `#'.
 .Rs
 C1(#simple string#)
 .br
 C2(#string with (balanced parens)#)
 .br
-C3(#string with \e(escaped paren#)
+C3(#string with ")quoted" paren#)
 .br
 C4(#// end-of-line comment)
 .br
 \%   still going!#)
 .br
-C5(#/* slash-star comment) */ and backslash \e\e#)
+C5(#/* slash-star comment) */ and backslash \e#)
 .Re
 '
 .SH "ARCHIVES"
