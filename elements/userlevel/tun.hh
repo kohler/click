@@ -17,7 +17,9 @@
  *
  * On a BSD machine, dev-prefix should be tun. On Linux, tap.
  *
- * Tun produces and expects IP packets.
+ * Tun produces and expects Ethernet packets, much like ToLinux.
+ * The only point is to look at the type field, so that e.g.
+ * IPv6 packets can be sent into a Tun.
  * 
  * Tun allocates a /dev/<dev-prefix>* device (this might fail) and
  * runs ifconfig to set the interface's local (i.e. kernel) address to
@@ -26,7 +28,7 @@
  * is not 0.0.0.0), Tun tries to set up a default route through that
  * host.
  *
- * When cleaning up, Tun attempts to bring down the devive via
+ * When cleaning up, Tun attempts to bring down the device via
  * ifconfig.
  *
  * =a

@@ -18,6 +18,7 @@
 #include "packet.hh"
 #include "confparse.hh"
 #include "glue.hh"
+#include "click_ether.h"
 #include "elements/standard/scheduleinfo.hh"
 #include <unistd.h>
 #include <errno.h>
@@ -106,12 +107,28 @@ Tun::selected(int fd)
   
   cc = read(_fd, b, sizeof(b));
   if(cc > 0){
-#if defined (__OpenBSD__)
-    Packet *p = Packet::make(b+4, cc-4);
+#if defined (__OpenBSD__) || defined(__FreeBSD__)
+    // BSDs prefix packet with 32-bit address family.
+    int af = ntohl(*(unsigned *)b);
+    struct click_ether *e;
+    WritablePacket *p = Packet::make(cc - 4 + sizeof(*e));
+    e = (struct click_ether *) p->data();
+    memset(e, '\0', sizeof(*e));
+    if(af == AF_INET){
+      e->ether_type = htons(ETHERTYPE_IP);
+    } else if(af == AF_INET6){
+      e->ether_type = htons(ETHERTYPE_IP6);
+    } else {
+      click_chatter("Tun: don't know af %d", af);
+      p->kill();
+      return;
+    }
+    memcpy(p->data() + sizeof(*e), b + 4, cc - 4);
 #elif defined (__linux__)
-    Packet *p = Packet::make(b+16, cc-16);
+    // Linux prefixes packet 2 bytes of 0, then ether_header.
+    Packet *p = Packet::make(b+2, cc-2);
 #else
-    Packet *p = Packet::make(b, cc);
+    Only know how to deal with Linux and BSDs.
 #endif
     output(0).push(p);
   } else {
@@ -131,18 +148,42 @@ Tun::run_scheduled()
 void
 Tun::push(int, Packet *p)
 {
-#if defined (__OpenBSD__)
+  // Every packet has a 14-byte Ethernet header.
+  // Extract the packet type, then ignore the Ether header.
+
+  click_ether *e = (click_ether *) p->data();
+  if(p->length() < sizeof(*e)){
+    click_chatter("Tun: packet to small");
+    p->kill();
+    return;
+  }
+  int type = ntohs(e->ether_type);
+  const unsigned char *data = p->data() + sizeof(*e);
+  unsigned length = p->length() - sizeof(*e);
+
+#if defined (__OpenBSD__) || defined(__FreeBSD__)
   char big[2048];
   int af;
 
-  if(p->length()+4 >= sizeof(big)){
-    fprintf(stderr, "bimtun writetun pkt too big\n");
+  if(type == ETHERTYPE_IP){
+    af = AF_INET;
+  } else if(type == ETHERTYPE_IP6){
+    af = AF_INET6;
+  } else {
+    click_chatter("Tun: unknown ether type %04x", type);
+    p->kill();
     return;
   }
-  af = htonl(AF_INET);
+
+  if(length+4 >= sizeof(big)){
+    click_chatter("Tun: packet too big (%d bytes)", length);
+    p->kill();
+    return;
+  }
+  af = htonl(af);
   memcpy(big, &af, 4);
-  memcpy(big+4, p->data(), p->length());
-  if(write(_fd, big, p->length()+4) != (int)p->length()+4){
+  memcpy(big+4, data, length);
+  if(write(_fd, big, length+4) != (int)length+4){
     perror("write tun");
   }
 #elif defined(__linux__)
@@ -158,8 +199,8 @@ Tun::push(int, Packet *p)
    * this works.  -ddc */
   char to[] = { 0xfe, 0xfd, 0x0, 0x0, 0x0, 0x0 }; 
   char *from = to;
-  short protocol = htons(0x0800);
-  if(p->length()+16 >= sizeof(big)){
+  short protocol = htons(type);
+  if(length+16 >= sizeof(big)){
     fprintf(stderr, "bimtun writetun pkt too big\n");
     return;
   }
@@ -167,12 +208,12 @@ Tun::push(int, Packet *p)
   memcpy(big+2, from, sizeof(from)); // linux won't accept ethertap packets from eth addr 0.
   memcpy(big+8, to, sizeof(to)); // linux TCP doesn't like packets to 0??
   memcpy(big+14, &protocol, 2);
-  memcpy(big+16, p->data(), p->length());
-  if (write(_fd, big, p->length()+16) != (int)p->length()+16){
+  memcpy(big+16, data, length);
+  if (write(_fd, big, length+16) != (int)length+16){
     perror("write tun");
   }
 #else
-  if(write(_fd, p->data(), p->length()) != (int) p->length()){
+  if(write(_fd, data, length) != (int) length){
     perror("write tun");
   }
 #endif
@@ -216,6 +257,15 @@ Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr mask,
 	}
       }
 #endif
+
+#if defined(TUNSIFHEAD) || defined(__FreeBSD__)
+      // Each read/write prefixed with a 32-bit address family,
+      // just as in OpenBSD.
+      if(ioctl(fd, TUNSIFHEAD, &yes) != 0){
+        perror("Tun: TUNSIFHEAD");
+        return errh->error("cannot set TUNSIFHEAD");
+      }
+#endif        
       
       strcpy(tmp0, inet_ntoa(near));
       strcpy(tmp1, inet_ntoa(mask));
