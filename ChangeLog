@@ -1,3 +1,7 @@
+2002-02-26 Tuesday 23:02  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.174): protect the "typename" keyword
+
 2002-02-26 Tuesday 20:20  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/iprw.cc (1.41), elements/tcpudp/iprewriter.hh (1.16),
