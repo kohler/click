@@ -94,8 +94,6 @@ next_processing_code(const String &str, int &pos, ErrorHandler *errh,
 {
   const char *s = str.data();
   int len = str.length();
-  while (pos < len && isspace(s[pos]))
-    pos++;
   if (pos >= len)
     return -2;
   
@@ -113,7 +111,7 @@ next_processing_code(const String &str, int &pos, ErrorHandler *errh,
     pos++;
     return ProcessingT::VAGNOSTIC;
 
-   case '/': case '#':
+   case '/':
     return -2;
 
    default:
