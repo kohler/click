@@ -90,7 +90,6 @@ GridGatewayInfo::add_handlers()
   add_default_handlers(true);
   add_read_handler("best_gateway", print_best_gateway, (void *) 0);
   add_read_handler("is_gateway", gw_read_handler, (void *) 0);
-
 }
 
 Packet *
@@ -102,7 +101,7 @@ GridGatewayInfo::simple_action(Packet *p)
     return p;
   } else {
     /* we couldn't find a gateway, so drop the packet */
-    click_chatter("GridGatewayInfo: couldn't find a gateway. dropping packet");
+    click_chatter("GridGatewayInfo %s: couldn't find a gateway, dropping packet.", id().cc());
     p->kill();
     return(0);
   }

@@ -7,21 +7,30 @@ CLICK_DECLS
 
 /*
  * =c
- * GridGatewayInfo(DSDVRouteTable IS_GATEWAY)
+ * GridGatewayInfo(GridGenericRouteTable, IS_GATEWAY)
  * =s Grid
- * =io
- * None
+ * Manage grid node gateway info. 
+ *
  * =d
+ *
+ * GridGatewayInfo performs two functions [probably indicating a bad
+ * design!]: first, it determines whether this particular node is a
+ * gateway (IS_GATEWAY argument); second, it sets the destinination IP
+ * address annotation of incoming packets to be the best current
+ * gateway known by the node's routing table (GridGenericRouteTable
+ * argument).
+ *
+ * GridGenericRouteTable is this node's route table.
  *
  * IS_GATEWAY is a boolean representing whether or not this node
  * should advertise itself as a gateway.
  *
- * This exists as a separate element for the sake of future
- * improvement.
  *
  * =h is_gateway read/write
  * Returns or sets boolean value of whether or not this node is a
- * gateway. */
+ * gateway. 
+ *
+ * =a DSDVRouteTable, SetIPAddress */
 
 class GridGatewayInfo : public Element {
   
