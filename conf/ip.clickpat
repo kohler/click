@@ -30,12 +30,24 @@ elementclass IPOutput_Replacement {
 }
 
 
+// remove redundant GetIPAddresses
+elementclass RedundantGetIPAddress {
+  input -> CheckIPHeader($bad_addrs)
+	-> GetIPAddress(16)
+	-> output;
+}
+
+elementclass RedundantGetIPAddress_Replacement {
+  input -> CheckIPHeader($bad_addrs)
+	-> output;
+}
+
+
 // first, case where no one else gets in at the Strip
 elementclass IPInput {
   input -> Paint($paint)
 	-> Strip(14)
 	-> CheckIPHeader($bad_addrs)
-	-> GetIPAddress(16)
 	-> output;
 }
 
@@ -49,7 +61,6 @@ elementclass IPInput2 {
   input -> Paint($paint)
 	-> s :: Strip(14)
 	-> CheckIPHeader($bad_addrs)
-	-> GetIPAddress(16)
 	-> output;
   input[1] -> s;
 }

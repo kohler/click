@@ -97,7 +97,6 @@ rt :: StaticIPLookup(18.26.4.24/32 0,
 // for sanity.
 ip ::   Strip(14)
      -> CheckIPHeader(18.26.4.255 1.255.255.255)
-     -> GetIPAddress(16)
      -> [0]rt;
 c0[2] -> Paint(1) -> ip;
 c1[2] -> Paint(2) -> ip;

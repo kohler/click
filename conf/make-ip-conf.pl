@@ -120,7 +120,6 @@ print <<EOF;
 rt[0] -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tol;
 ip ::  Strip(14)
     -> CheckIPHeader($ipharg)
-    -> GetIPAddress(16)
     -> [0]rt;
 EOF
 

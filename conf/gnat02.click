@@ -29,7 +29,6 @@ InfiniteSource( \<0000c043 71ef0090 27e0231f  0800
 
 	-> Strip(14)
 	-> CheckIPHeader()
-	-> GetIPAddress(16)
 	-> rt::StaticIPLookup(18.26.4.112/32 0,
  			18.26.4.255/32 0,
  			18.26.4.0/32 0,

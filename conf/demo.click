@@ -23,7 +23,6 @@ c0[3]
 c0[2]
     -> Strip(14)
     -> CheckIPHeader()
-    -> GetIPAddress(16)
     -> c1 :: Classifier(9/17, 9/6, -);
 
 
