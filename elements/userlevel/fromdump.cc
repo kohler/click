@@ -26,6 +26,7 @@
 #include <click/glue.hh>
 #include <click/handlercall.hh>
 #include <click/packet_anno.hh>
+#include <click/userutils.hh>
 #include "fakepcap.hh"
 #include <unistd.h>
 #include <sys/types.h>
@@ -338,15 +339,11 @@ FromDump::initialize(ErrorHandler *errh)
     // check for a gziped or bzip2d dump
     if (_fd == STDIN_FILENO || _pipe)
 	/* cannot handle gzip or bzip2 */;
-    else if (_len >= 3
-	     && ((_buffer[0] == 037 && _buffer[1] == 0213)
-		 || (_buffer[0] == 'B' && _buffer[1] == 'Z' && _buffer[2] == 'h'))) {
+    else if (compressed_data(_buffer, _len)) {
 	close(_fd);
 	_fd = -1;
-	String command = (_buffer[0] == '\037' ? "zcat " : "bzcat ") + _filename;
-	_pipe = popen(command.cc(), "r");
-	if (!_pipe)
-	    return initialize_failed(errh, "%s while executing `%s'", strerror(errno), command.cc());
+	if (!(_pipe = open_uncompress_pipe(_filename, _buffer, _len, errh)))
+	    return initialize_failed(errh, 0);
 	_fd = fileno(_pipe);
 	goto retry_file;
     }

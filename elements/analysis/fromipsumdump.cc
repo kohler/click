@@ -28,6 +28,7 @@
 #include <click/click_udp.h>
 #include <click/click_tcp.h>
 #include <click/packet_anno.hh>
+#include <click/userutils.hh>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -201,15 +202,11 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     // check for a gziped or bzip2d dump
     if (_fd == STDIN_FILENO || _pipe)
 	/* cannot handle gzip or bzip2 */;
-    else if (_len >= 3
-	     && ((_buffer[0] == '\037' && _buffer[1] == '\213')
-		 || (_buffer[0] == 'B' && _buffer[1] == 'Z' && _buffer[2] == 'h'))) {
+    else if (compressed_data(reinterpret_cast<const unsigned char *>(_buffer), _len)) {
 	close(_fd);
 	_fd = -1;
-	String command = (_buffer[0] == '\037' ? "zcat " : "bzcat ") + _filename;
-	_pipe = popen(command.cc(), "r");
-	if (!_pipe)
-	    return errh->error("%s while executing `%s'", strerror(errno), command.cc());
+	if (!(_pipe = open_uncompress_pipe(_filename, reinterpret_cast<const unsigned char *>(_buffer), _len, errh)))
+	    return -1;
 	_fd = fileno(_pipe);
 	goto retry_file;
     }

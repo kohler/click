@@ -26,6 +26,7 @@
 #include <click/handlercall.hh>
 #include <click/packet_anno.hh>
 #include <click/rfc1483.h>
+#include <click/userutils.hh>
 #include "elements/userlevel/fakepcap.hh"
 #include <unistd.h>
 #include <sys/types.h>
@@ -309,17 +310,13 @@ FromDAGDump::initialize(ErrorHandler *errh)
     // check for a gziped or bzip2d dump
     if (_fd == STDIN_FILENO || _pipe)
 	/* cannot handle gzip or bzip2 */;
-    else if (_len >= 3
-	     && ((_buffer[0] == 037 && _buffer[1] == 0213)
-		 || (_buffer[0] == 'B' && _buffer[1] == 'Z' && _buffer[2] == 'h'))
+    else if (compressed_data(_buffer, _len)
 	     && (_len < DAGCell::PAYLOAD_OFFSET + RFC1483_SNAP_EXPECTED_LEN
 		 || memcmp(_buffer + DAGCell::PAYLOAD_OFFSET, RFC1483_SNAP_EXPECTED, RFC1483_SNAP_EXPECTED_LEN) != 0)) {
 	close(_fd);
 	_fd = -1;
-	String command = (_buffer[0] == '\037' ? "zcat " : "bzcat ") + _filename;
-	_pipe = popen(command.cc(), "r");
-	if (!_pipe)
-	    return errh->error("%s while executing `%s'", strerror(errno), command.cc());
+	if (!(_pipe = open_uncompress_pipe(_filename, _buffer, _len, errh)))
+	    return -1;
 	_fd = fileno(_pipe);
 	goto retry_file;
     }
