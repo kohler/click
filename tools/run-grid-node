@@ -2,7 +2,7 @@
 # run-grid-node
 # Douglas S. J. De Couto
 
-# $Id: run-grid-node,v 1.5 2000/08/05 23:03:07 decouto Exp $
+# $Id: run-grid-node,v 1.6 2000/08/06 00:58:05 decouto Exp $
 
 # usage: run-grid-node <ip-addr> [-no-gw -debug]
 
@@ -14,6 +14,9 @@ $click_config_name = "../conf/grid3.click";
 
 
 $grid_channel = "5";
+
+$CONTROL_PORT = "7777";
+$CONTROL_RO = "false";
 
 $GRID_GW = "18.26.7.1";
 $GRID_NETMASK = "255.255.255.0";
@@ -54,7 +57,9 @@ $i = 0;
 for ($i = 2; $i < @ARGV; $i++) {
     if ($ARGV[$i] eq "-debug") {
 	$click = $click_debug;
+	$CONTROL_RO = "false";
 	print "Using DEBUG command\n";
+	print "ControlSocket is write-enabled\n";
     }
     if ($ARGV[$i] eq "-no-gw") {
 	$grid_gw = "0.0.0.0";
