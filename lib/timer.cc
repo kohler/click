@@ -113,7 +113,7 @@ Timer::schedule_at(const struct timeval &when)
 }
 
 void
-Timer::schedule_after_ms(int ms)
+Timer::schedule_after_ms(uint32_t ms)
 {
   assert(!is_list() && initialized());
   _head->acquire_lock();
@@ -129,7 +129,7 @@ Timer::schedule_after_ms(int ms)
 }
 
 void
-Timer::reschedule_after_ms(int ms)
+Timer::reschedule_after_ms(uint32_t ms)
 {
   assert(!is_list() && initialized());
   _head->acquire_lock();
