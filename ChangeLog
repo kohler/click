@@ -1,3 +1,25 @@
+2003-10-14 Tuesday 15:01  Eddie Kohler <kohler@icir.org>
+
+	* include/click/string.hh (1.28): oops
+
+2003-10-14 Tuesday 14:47  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/ipfilter.cc (1.39), elements/ip/iprwpatterns.cc
+	(1.15), elements/linuxmodule/perfcountuser.cc (1.13),
+	elements/linuxmodule/staticthreadsched.cc (1.6),
+	elements/standard/addressinfo.cc (1.26),
+	elements/standard/scheduleinfo.cc (1.38), include/click/string.hh
+	(1.27), lib/archive.cc (1.17), lib/lexer.cc (1.70), lib/router.cc
+	(1.149), lib/string.cc (1.43), lib/userutils.cc (1.33),
+	lib/variableenv.cc (1.8), linuxmodule/proc_click.cc (1.50),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.28),
+	tools/click2xml/click2xml.cc (1.13), tools/click2xml/xml2click.cc
+	(1.13), tools/lib/elementt.hh (1.29), tools/lib/lexert.cc (1.54),
+	tools/lib/routert.cc (1.75), tools/lib/routert.hh (1.63),
+	tools/lib/toolutils.cc (1.52), userlevel/click.cc (1.85):
+	String::c_str() is a const method, thanks to prodding from Matt
+	Seitz
+
 2003-10-13 Monday 13:39  Eddie Kohler <kohler@icir.org>
 
 	* tools/click2xml/: xml2click.cc (1.12), xml2click.hh (1.2):
