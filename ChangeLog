@@ -1,3 +1,32 @@
+2003-05-08 Thursday 21:35  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/: storeipaddress.hh (1.11), storeipaddress.hh (1.12),
+	storeipaddress.hh (1.13): doc update
+
+2003-05-08 Thursday 21:33  Eddie Kohler <kohler@icir.org>
+
+	* DISTFILES (1.68), conf/fromhost-tunnel.click (1.1),
+	doc/mkwebdoc.pl (1.41): add fromhost-tunnel.click example
+
+2003-05-08 Thursday 21:33  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/fromhost.cc (1.43): FromHost keeps track of
+	device statistics
+
+2003-05-08 Thursday 21:07  Eddie Kohler <kohler@icir.org>
+
+	* config-linuxmodule.h.in (1.10), configure.in (1.205),
+	doc/click.o.8 (1.12), include/click/glue.hh (1.35),
+	linuxmodule/module.cc (1.79): add and document support for
+	--enable-kassert, based on Doug code. With --enable-kassert,
+	assertion failures are reported as Click chatter, and optionally
+	(based on the /click/assert_stop value, default false) stop the
+	router.
+
+2003-05-08 Thursday 21:03  Eddie Kohler <kohler@icir.org>
+
+	* lib/element.cc (1.80): add a write handler for "tickets"
+
 2003-05-08 Thursday 18:17  Eddie Kohler <kohler@icir.org>
 
 	* elements/linuxmodule/fromhost.cc (1.42): use netif_wake_queue,
