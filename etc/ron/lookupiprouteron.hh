@@ -29,8 +29,9 @@
 #include <click/vector.hh>
 #include <click/timer.hh>
 
-#define ROUTE_TABLE_TIMEOUT 30*100
-#define DST_TABLE_TIMEOUT 60*100  // These are arbitrary values
+// These are arbitrary values
+#define ROUTE_TABLE_TIMEOUT 30*100 // 30 seconds
+#define DST_TABLE_TIMEOUT 60*100   // 60 seconds
 
 class LookupIPRouteRON : public Element {
 public:

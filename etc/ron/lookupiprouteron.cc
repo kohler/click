@@ -114,7 +114,11 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
       match->outstanding_syns++;
       duplicate_pkt(p);
     } else {
-      rtprintf("FLOW match, FORW\n");
+      printf("FLOW match, port (%d) {%s}->{%s}\n", 
+	     match->outgoing_port,
+	     IPAddress(p->ip_header()->ip_src).s().cc(), 
+	     p->dst_ip_anno().s().cc());
+      fflush(NULL);
       output(match->outgoing_port).push(p);
     }    
   } else {
@@ -131,7 +135,11 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
     if (dst_match){
       new_entry->outgoing_port = dst_match->outgoing_port;
       output(new_entry->outgoing_port).push(p);
-      rtprintf("DST match, FORW\n");
+      printf("DST match, port (%d) {%s}->{%s}\n", 
+	     new_entry->outgoing_port,
+	     IPAddress(p->ip_header()->ip_src).s().cc(), 
+	     p->dst_ip_anno().s().cc() );
+      fflush(NULL);
     } else {
       rtprintf("DST nomatch, send PROBE\n");
       new_entry->outgoing_port = 0;
@@ -260,7 +268,11 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
     match->saw_reply_packet();
     
     if (match->is_pending()) {
-      printf("FLOW match(pending), setting up flow port(%d), FORW\n", inport);
+      printf("FLOW match(pending), port(%d) {%s}->{%s}\n", 
+	     inport, 
+	     p->dst_ip_anno().s().cc(), 
+	     IPAddress(p->ip_header()->ip_src).s().cc() );
+      fflush(NULL);
       _dst_table->insert(IPAddress(p->ip_header()->ip_src), inport); // save to dst_table
       match->outgoing_port = inport;
       match->outstanding_syns = 0;
