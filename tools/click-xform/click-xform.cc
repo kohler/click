@@ -308,10 +308,10 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
     if (_match[i] >= 0) {
       changed_elements.push_back(_match[i]);
       old_names.push_back(_body->ename(_match[i]));
-      _body->kill_element(_match[i]);
+      _body->free_element(_match[i]);
     } else
       old_names.push_back(String());
-  _body->free_dead_elements();
+  //_body->check();
   
   // add replacement
   // collect new element indices in `changed_elements'
@@ -334,7 +334,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
       String n = _pat->ename(i);
       if (replacement->eindex(n) >= 0) {
 	int new_index = _body->eindex(prefix + "/" + n);
-	assert(new_index >= 0 && _body->eindex(old_names[i]) < 0);
+	assert(new_index >= 0);
 	_body->change_ename(new_index, old_names[i]);
       }
     }

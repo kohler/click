@@ -34,7 +34,7 @@ Align::configure(const Vector<String> &conf, ErrorHandler *errh)
     return -1;
   if (count != 2 && count != 4 && count != 8)
     return errh->error("align modulus must be 2, 4, or 8");
-  if (_offset >= count)
+  if (_offset >= (int)count)
     return errh->error("align offset must be smaller than modulus");
   _mask = count - 1;
   return 0;

@@ -128,10 +128,12 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
     for (int j = 0; j < words.size(); j += 2) {
       Vector<String> clauses;
       cp_spacevec(words[j], clauses);
-      if (r->eindex(clauses[1]) >= 0)
-	errh->error("RouterLink `%s' element `%s' already exists", link_name.cc(), clauses[1].cc());
-      else if (clauses[0] == component) {
-	int newe = r->get_eindex(clauses[1], r->get_type_index(clauses[2]), words[j+1], String());
+      String name = clauses[0] + "/" + clauses[1];
+      if (r->eindex(name) >= 0) {
+	errh->lerror(r->elandmark(links[i]), "RouterLink `%s' element `%s' already exists", link_name.cc(), name.cc());
+	errh->lerror(r->elandmark(r->eindex(name)), "(previous definition was here)");
+      } else if (clauses[0] == component) {
+	int newe = r->get_eindex(clauses[1], r->get_type_index(clauses[2]), words[j+1], "<click-uncombine>");
 	if (j/2 < ninputs)
 	  r->insert_before(newe, Hookup(links[i], j/2));
 	else
@@ -148,6 +150,8 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
 static void
 mark_component(RouterT *r, String compname, Vector<int> &live)
 {
+  assert(compname.back() == '/');
+  
   int ne = r->nelements();
   int nh = r->nhookup();
   const Vector<Hookup> &hf = r->hookup_from();
@@ -178,6 +182,11 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
 	changed = true;
       }
   } while (changed);
+
+  // print names of lives
+  //for (int i = 0; i < ne; i++)
+  //if (live[i])
+  //fprintf(stderr, "%s\n", r->ename(i).cc());
 }
 
 static void

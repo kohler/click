@@ -324,7 +324,8 @@ particular purpose.\n");
   int anonymizer = original_nelements + 1;
   while (router->eindex(aligner_name(anonymizer)) >= 0)
     anonymizer++;
-  
+
+  int num_aligns_added = 0;
   {
     // calculate current alignment
     RouterAlign ral(router, errh);
@@ -352,6 +353,7 @@ particular purpose.\n");
 	     "<click-align>");
 	  router->insert_before(ei, Hookup(i, j));
 	  anonymizer++;
+	  num_aligns_added++;
 	}
       }
   }
@@ -420,9 +422,11 @@ particular purpose.\n");
     router->count_ports(ninputs, noutputs);
     int nelem = router->nelements();
     for (int i = 0; i < nelem; i++)
-      if ((router->etype(i) == align_tindex
-	   && (ninputs[i] == 0 || noutputs[i] == 0))
-	  || router->etype(i) == aligninfo_tindex)
+      if (router->etype(i) == align_tindex
+	  && (ninputs[i] == 0 || noutputs[i] == 0)) {
+	router->kill_element(i);
+	num_aligns_added--;
+      } else if (router->etype(i) == aligninfo_tindex)
 	router->kill_element(i);
     router->remove_dead_elements();
   }
@@ -450,6 +454,10 @@ particular purpose.\n");
 		       aligninfo_tindex, sa.take_string(),
 		       "<click-align>");
   }
+
+  // warn if added aligns
+  if (num_aligns_added > 0)
+    errh->warning((num_aligns_added > 1 ? "added %d Align elements" : "added %d Align element"), num_aligns_added);
   
   // write result
   if (write_router_file(router, output_file, errh) < 0)

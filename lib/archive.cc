@@ -74,7 +74,7 @@ separate_ar_string(const String &s, Vector<ArchiveElement> &v,
   ArchiveElement longname_ae;
 
   // loop over sections
-  while (p+60 < len) {
+  while (p+60 <= len) {
     
     // check magic number
     if (data[p+58] != '`' || data[p+59] != '\n')
@@ -128,7 +128,7 @@ separate_ar_string(const String &s, Vector<ArchiveElement> &v,
       ae.mode = read_uint(data+p+40, 8, "mode", errh, 8);
       size = read_uint(data+p+48, 10, "size", errh);
       if (size < 0 || p+60+size > len)
-	return errh->error("truncated archive");
+	return errh->error("truncated archive, %d bytes short", p+60+size - len);
 
       // set data
       if (bsd_longname > 0) {

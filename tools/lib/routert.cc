@@ -96,13 +96,17 @@ RouterT::check() const
       assert(value < ne && _elements[value].name == key); // && _elements[value].live());
   }
 
+  // check free elements
+  for (int i = _free_element; i >= 0; i = _elements[i].tunnel_input)
+    assert(_elements[i].dead());
+  
   // check elements
   for (int i = 0; i < ne; i++) {
     const ElementT &e = _elements[i];
     assert(e.dead() || (e.type >= 0 && e.type < nt));
-    if (e.tunnel_input >= 0)
+    if (e.live() && e.tunnel_input >= 0)
       assert(e.tunnel_input < ne && _elements[e.tunnel_input].tunnel_output == i);
-    if (e.tunnel_output >= 0)
+    if (e.live() && e.tunnel_output >= 0)
       assert(e.tunnel_output < ne && _elements[e.tunnel_output].tunnel_input == i);
   }
 
@@ -855,20 +859,73 @@ RouterT::finish_free_elements(Vector<int> &new_eindex)
   // free elements
   for (int i = 0; i < nelements; i++)
     if (new_eindex[i] < 0) {
-      _element_name_map.insert(_elements[i].name, -1);
-      _elements[i].type = -1;
-      _elements[i].tunnel_input = _free_element;
+      ElementT &e = _elements[i];
+      if (_element_name_map[e.name] == i)
+	_element_name_map.insert(e.name, -1);
+      assert(e.type < 0);
+      e.type = -1;
+      e.tunnel_input = _free_element;
       _free_element = i;
       _real_ecount--;
     }
 }
 
 void
-RouterT::free_element(int e)
+RouterT::free_element(int ei)
 {
-  Vector<int> new_eindex(nelements(), 0);
-  new_eindex[e] = -1;
-  finish_free_elements(new_eindex);
+  // first, remove bad connections from other elements' connection lists
+  Vector<int> bad_from, bad_to;
+  for (int c = _hookup_first[ei].from; c >= 0; c = _hookup_next[c].from)
+    bad_to.push_back(_hookup_to[c].idx);
+  for (int c = _hookup_first[ei].to; c >= 0; c = _hookup_next[c].to)
+    bad_from.push_back(_hookup_from[c].idx);
+
+  for (int i = 0; i < bad_from.size(); i++)
+    if (bad_from[i] != ei)
+      for (int *cp = &_hookup_first[bad_from[i]].from; *cp >= 0; ) {
+	if (_hookup_to[*cp].idx == ei)
+	  *cp = _hookup_next[*cp].from;
+	else
+	  cp = &_hookup_next[*cp].from;
+      }
+  for (int i = 0; i < bad_to.size(); i++)
+    if (bad_to[i] != ei)
+      for (int *cp = &_hookup_first[bad_to[i]].to; *cp >= 0; ) {
+	if (_hookup_from[*cp].idx == ei)
+	  *cp = _hookup_next[*cp].to;
+	else
+	  cp = &_hookup_next[*cp].to;
+      }
+
+  // now, free all of this element's connections
+  for (int c = _hookup_first[ei].from; c >= 0; ) {
+    int next = _hookup_next[c].from;
+    if (_hookup_to[c].idx != ei) {
+      _hookup_from[c].idx = -1;
+      _hookup_next[c].from = _free_hookup;
+      _free_hookup = c;
+    }
+    c = next;
+  }
+  for (int c = _hookup_first[ei].to; c >= 0; ) {
+    int next = _hookup_next[c].to;
+    _hookup_from[c].idx = -1;
+    _hookup_next[c].from = _free_hookup;
+    _free_hookup = c;
+    c = next;
+  }
+  _hookup_first[ei] = Pair(-1, -1);
+
+  // finally, free the element itself
+  ElementT &e = _elements[ei];
+  if (_element_name_map[e.name] == ei)
+    _element_name_map.insert(e.name, -1);
+  e.type = -1;
+  e.tunnel_input = _free_element;
+  _free_element = ei;
+  _real_ecount--;
+
+  check();
 }
 
 void
@@ -881,6 +938,10 @@ RouterT::free_dead_elements()
   for (int i = 0; i < nelements; i++)
     if (_elements[i].dead())
       new_eindex[i] = -1;
+
+  // don't free elements that have already been freed!!
+  for (int i = _free_element; i >= 0; i = _elements[i].tunnel_input)
+    new_eindex[i] = 0;
 
   finish_free_elements(new_eindex);
 }

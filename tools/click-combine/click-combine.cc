@@ -284,7 +284,7 @@ make_link(const Vector<Hookup> &from, const Vector<Hookup> &to,
   // add new element
   int link_type = combined->get_type_index("RouterLink");
   int newe = combined->get_eindex
-    ("link" + String(++linkno), link_type, cp_unargvec(words), String());
+    ("link" + String(++linkno), link_type, cp_unargvec(words), "<click-combine>");
 
   for (int i = 0; i < from.size(); i++) {
     combined->insert_before(Hookup(newe, i), Hookup(combes[i], 0));
