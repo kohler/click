@@ -140,7 +140,7 @@ public:
 
   int policy;
   int probed_ports[32];
-  unsigned long first_syn_sec, first_syn_usec;
+  long first_syn_sec, first_syn_usec;
   
 
   FlowTableEntry() {valid = 1; all_answered = 1;}
@@ -245,7 +245,7 @@ public:
   DstTable();
   ~DstTable();
 
-  LookupIPRouteRON::DstTableEntry* lookup(IPAddress dst);
+  LookupIPRouteRON::DstTableEntry* lookup(IPAddress dst, bool only_valid);
   LookupIPRouteRON::DstTableEntry* insert(IPAddress dst, unsigned short assigned_port);
   void print();
   //void invalidate(IPAddress dst) {insert(dst, 0); }
