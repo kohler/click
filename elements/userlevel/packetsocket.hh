@@ -1,6 +1,21 @@
 #ifndef PACKETSOCKET_HH
 #define PACKETSOCKET_HH
 
+/*
+ * =c
+ * PacketSocket(DEVNAME)
+ * =d
+ * User-level only.  In Linux, is a replacement for To/FromBPF.  Reads
+ * and writes packets from and to the network device named by
+ * DEVNAME.  PacketSocket is always promiscuous.
+ *
+ * PacketSocket produces and expects Ethernet packets.
+ * 
+ * =e
+ * = ... -> PacketSocket(eth0) -> ...
+ *
+ * =a ToBPF 
+ * =a FromBPF */
 
 #include "element.hh"
 
