@@ -196,12 +196,8 @@ init_module()
 #endif
   
   // C++ static initializers
-  MDEBUG("static initializers");
   String::static_initialize();
   cp_va_static_initialize();
-
-  // default provisions
-  CLICK_DEFAULT_PROVIDES;
 
   // error initialization
   syslog_errh = new KernelErrorHandler(false);
@@ -209,15 +205,15 @@ init_module()
   ErrorHandler::static_initialize(new LandmarkErrorHandler(syslog_errh, "chatter"));
   error_log = new StringAccum;
 
-  // config manager, thread manager, sk_buff manager
-  MDEBUG("config init");
-  click_init_config();
-  MDEBUG("sched init");
+  // default provisions
+  CLICK_DEFAULT_PROVIDES;
+
+  // thread manager, sk_buff manager, config manager
   click_init_sched();
-  MDEBUG("skbmgr init");
   skbmgr_init();
+  click_init_config();
   
-  // global handlers defined here
+  // global handlers
   Router::add_global_read_handler("version", read_version, 0);
   Router::add_global_read_handler("packages", read_packages, 0);
   Router::add_global_read_handler("requirements", read_requirements, 0);
@@ -240,15 +236,12 @@ init_module()
   click_mode_dir = S_IFDIR | click_mode_r | click_mode_x;
 
 #ifdef HAVE_CLICKFS
-  MDEBUG("clickfs");
   init_clickfs();
 #endif
-
 #ifdef HAVE_PROC_CLICK
   init_proc_click();
 #endif
 
-  MDEBUG("done init");
   return 0;
 }
 
@@ -267,13 +260,16 @@ cleanup_module()
 #ifdef HAVE_PROC_CLICK
   cleanup_proc_click();
 #endif
+
+  // extra packages, global handlers
+  click_cleanup_packages();
+  Router::cleanup_global_handlers();
   
+  // config manager, thread manager, sk_buff manager
   click_cleanup_config();
   click_cleanup_sched();
-  click_cleanup_packages();
   skbmgr_cleanup();
 
-  Router::cleanup_global_handlers();
   cp_va_static_cleanup();
 
   // clean up error handlers
