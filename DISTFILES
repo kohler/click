@@ -276,10 +276,10 @@ bsdmodule/clickfs_tree.hh
 bsdmodule/clickfs_vnops.cc
 bsdmodule/kernelerror.cc
 bsdmodule/kernelerror.hh
+bsdmodule/massage-vnode_if.pl
 bsdmodule/module.cc
 bsdmodule/modulepriv.hh
 bsdmodule/sched.cc
-bsdmodule/vnode_if.pl
 
 tools
 tools/Makefile.in
