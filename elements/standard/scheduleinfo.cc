@@ -48,7 +48,9 @@ ScheduleInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
     Vector<String> parts;
     int mt;
     cp_spacevec(conf[i], parts);
-    if (parts.size() != 2 || !cp_real2(parts[1], FRAC_BITS, &mt))
+    if (parts.size() == 0)
+      /* empty argument OK */;
+    else if (parts.size() != 2 || !cp_real2(parts[1], FRAC_BITS, &mt))
       errh->error("expected `ELEMENTNAME PARAM', got `%s'", String(conf[i]).cc());
     else {
       for (int j = 0; j < _element_names.size(); j++)

@@ -193,7 +193,8 @@ EtherSpanTree::find_tree() {
 
 
 bool
-EtherSpanTree::set_state(int i, PortState state) {
+EtherSpanTree::set_state(int i, PortState state)
+{
   assert(state != LISTEN);
   assert(state != LEARN);
 
