@@ -627,22 +627,6 @@ ETT::push(int port, Packet *p_in)
     
   } else if (port ==  0) {
     struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
-  if (pk->_version != _srcr_version) {
-    click_chatter("ETT %s: bad sr_pkt version. wanted %d, got %d\n",
-		  _ip.s().cc(),
-		  _srcr_version,
-		  pk->_version);
-    p_in->kill();
-    return;
-  }
-    if(p_in->length() < 20 || p_in->length() < pk->hlen_wo_data()){
-      click_chatter("ETT %s: bad sr_pkt len %d, expected %d",
-		    _ip.s().cc(),
-		    p_in->length(),
-		    pk->hlen_wo_data());
-      p_in->kill();
-      return;
-    }
     if(pk->ether_type != htons(_et)) {
       click_chatter("ETT %s: bad ether_type %04x",
 		    _ip.s().cc(),

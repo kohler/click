@@ -45,7 +45,7 @@ struct sr_pkt {
 
   uint8_t _version; /* see _srcr_version */
   uint16_t _ttl;
-  uint16_t _chksum;
+  uint16_t _cksum;
 
   uint8_t _type;  /* see enum SRCRPacketType */
   uint16_t _flags; 
