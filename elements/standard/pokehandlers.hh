@@ -48,6 +48,10 @@ Stop the driver.
 
 Wait for DELAY seconds before continuing to the next directive.
 
+=item `pause'
+
+Wait until the `unpause' write handler is called, then continue to the next directive.
+
 =item `loop'
 
 Start over from the first directive.
@@ -59,6 +63,12 @@ Start over from the first directive.
   PokeHandlers(write red.max_p 0.8,
                wait 1.5, // delay for 1.5 seconds
                write red.max_p 0.5);
+
+=h unpause write-only
+If paused, continue to next directive.  Otherwise, there is no effect.
+
+=h paused read-only
+Returns `true' if paused, else `false'.
 
 =a dmesg(1) */
 
@@ -73,20 +83,29 @@ class PokeHandlers : public Element { public:
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
 
+    void add_handlers();
+
   private:
 
     static Element * const STOP_MARKER;
     static Element * const LOOP_MARKER;
+    static Element * const PAUSE_MARKER;
 
     int _pos;
+    bool _paused;
     Vector<Element *> _h_element;
     Vector<String> _h_handler;
     Vector<String> _h_value;
+  
     Vector<int> _h_timeout;
     Timer _timer;
 
     static void timer_hook(Timer *, void *);
     void add(Element *, const String &, const String &, int);
+    void unpause();
+
+    static String read_param(Element *, void *);
+    static int write_param(const String &, Element *, void *, ErrorHandler *);
 
 };
 

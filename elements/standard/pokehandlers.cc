@@ -27,6 +27,7 @@ CLICK_DECLS
 static const char * const READ_MARKER = "r";
 Element * const PokeHandlers::STOP_MARKER = (Element *)1;
 Element * const PokeHandlers::LOOP_MARKER = (Element *)2;
+Element * const PokeHandlers::PAUSE_MARKER = (Element *)3;
 
 PokeHandlers::PokeHandlers()
     : _timer(timer_hook, this)
@@ -64,6 +65,7 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
     for (int i = 0; i < conf.size(); i++) {
 	String text = conf[i];
 	String word = cp_pop_spacevec(text);
+
 	if (!word)
 	    /* ignore empty arguments */;
 	else if (word == "quit" || word == "stop") {
@@ -76,6 +78,9 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
 		errh->warning("arguments after `loop' directive ignored");
 	    add(LOOP_MARKER, "", "", next_timeout);
 	    break;
+	} else if (word == "pause") {
+	    add(PAUSE_MARKER, "", "", next_timeout);
+	    next_timeout = 0;
 	} else if (word == "read" || word == "print") {
 	    if (cp_handler(text, this, &e, &hname, errh)) {
 		add(e, hname, String::stable_string(READ_MARKER), next_timeout);
@@ -111,6 +116,44 @@ PokeHandlers::initialize(ErrorHandler *)
     return 0;
 }
 
+void
+PokeHandlers::add_handlers()
+{
+    add_write_handler("unpause", write_param, (void *)0);
+    add_read_handler("paused", read_param, (void *)0);
+}
+
+String
+PokeHandlers::read_param(Element *e, void *)
+{
+    PokeHandlers *p = (PokeHandlers *)e;
+    return cp_unparse_bool(p->_paused) + "\n";
+}
+
+int
+PokeHandlers::write_param(const String &in_s, Element *e, void *v,
+                          ErrorHandler *)
+{
+    PokeHandlers *p = (PokeHandlers *)e;
+    String s = cp_uncomment(in_s);
+    switch ((int) v) {
+    case 0: 
+	p->unpause();
+	break;
+    default:
+	;
+    }
+    return 0;
+}
+
+void
+PokeHandlers::unpause() {
+    if (!_paused)
+	return;
+    _paused = false;
+    if (_pos < _h_timeout.size())
+	_timer.schedule_after_ms(_h_timeout[_pos]); // XXX +1 ms? 
+}
 
 void
 PokeHandlers::timer_hook(Timer *, void *thunk)
@@ -131,8 +174,12 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
 	} else if (he == LOOP_MARKER) {
 	    hpos = 0;
 	    break;
+	} else if (he == PAUSE_MARKER) {
+	    poke->_paused = true;
+	    hpos++;
+	    break;
 	}
-
+	
 	const Router::Handler *h = Router::handler(he, hname);
 	if (!h)
 	    errh->error("%s: no handler `%s'", poke->id().cc(), Router::Handler::unparse_name(he, hname).cc());
@@ -154,7 +201,7 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
 	hpos++;
     } while (hpos < poke->_h_timeout.size() && poke->_h_timeout[hpos] == 0);
 
-    if (hpos < poke->_h_timeout.size())
+    if (hpos < poke->_h_timeout.size() && !poke->_paused)
 	poke->_timer.schedule_after_ms(poke->_h_timeout[hpos]);
     poke->_pos = hpos;
 }
