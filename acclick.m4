@@ -71,9 +71,9 @@ and Linux header files are GCC-specific.)
 
     AC_LANG_CPLUSPLUS
     if test -n "$GXX"; then
-	changequote(<<,>>)GXX_VERSION=`$CXX --version | head -1 | sed 's/^[^0-9]*\([0-9.]*\).*/\1/'`changequote([,])
+	changequote(<<,>>)GXX_VERSION=`$CXX --version | head -1 | sed 's/^[^0-9]*\([0-9.]*\).*/\1/'`
 	GXX_MAJOR=`echo $GXX_VERSION | sed 's/\..*//'`
-	GXX_MINOR=`echo $GXX_VERSION | sed 's/^[^.]*\.\([^.]*\).*/\1/'`
+	GXX_MINOR=`echo $GXX_VERSION | sed 's/^[^.]*\.\([^.]*\).*/\1/'`changequote([,])
 
 	if test $GXX_MAJOR -lt 2 -o \( $GXX_MAJOR -eq 2 -a $GXX_MINOR -le 7 \); then
 	    AC_MSG_ERROR([
