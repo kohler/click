@@ -23,6 +23,12 @@ class HandlerCall { public:
     // Return a String that will parse into an equivalent HandlerCall.
     String unparse() const;
 
+    // Return the value to be sent to a write handler.
+    const String &value() const	{ assert(initialized()); return _value; }
+
+    // Change the value to be sent to a write handler.
+    void set_value(const String &v) { assert(initialized()); _value = v; }
+
     // Call this handler and return its result. Returns the empty string or
     // negative if the HandlerCall isn't ok().
     String call_read() const;

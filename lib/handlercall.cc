@@ -23,7 +23,7 @@
 #include <click/error.hh>
 CLICK_DECLS
 
-const char * const HandlerCall::READ_MARKER = "r";
+const char * const HandlerCall::READ_MARKER = "<Read handler>";
 
 inline void
 HandlerCall::assign(Element *e, int hi, const String &value, bool write)
