@@ -188,7 +188,7 @@ if [ -n "$gw_dev" ]; then
     gw_mac=`ifconfig $gw_dev | sed -n -e 's/.*\(\([0-9a-fA-F]\{2\}:\)\{5\}[0-9a-fA-f]\{2\}\).*/\1/p'`
     if [ -z "$grid_mac" ]; then
 	# fallback case for OpenBSD, which doesn't put Ethernet MAC in ifconfig output
-	gw_mac=`netstat -I $gw_dev | sed -n -e 's/.*\(\([0-9a-fA-F]\{2\}:\)\{5\}[0-9a-fA-f]\{2\}\).*/\1/p'`
+	gw_mac=`netstat -n -I $gw_dev | sed -n -e 's/.*\(\([0-9a-fA-F]\{2\}:\)\{5\}[0-9a-fA-f]\{2\}\).*/\1/p'`
     fi
 fi
 
@@ -204,7 +204,7 @@ fi
 grid_mac=`ifconfig $grid_dev | sed -n -e 's/.*\(\([0-9a-fA-F]\{2\}:\)\{5\}[0-9a-fA-f]\{2\}\).*/\1/p'`
 if [ -z "$grid_mac" ]; then
     # fallback case for OpenBSD, which doesn't put Ethernet MAC in ifconfig output
-    grid_mac=`netstat -I $grid_dev | sed -n -e 's/.*\(\([0-9a-fA-F]\{2\}:\)\{5\}[0-9a-fA-f]\{2\}\).*/\1/p'`
+    grid_mac=`netstat -n -I $grid_dev | sed -n -e 's/.*\(\([0-9a-fA-F]\{2\}:\)\{5\}[0-9a-fA-f]\{2\}\).*/\1/p'`
 fi
 
 if [ $verbose -eq 1 ]; then
