@@ -26,6 +26,9 @@
 #endif
 #ifdef CLICK_USERLEVEL
 # include <unistd.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <fcntl.h>
 #endif
 
 void
@@ -387,15 +390,23 @@ click_random_srandom()
     click_gettimeofday((struct timeval *)(buf + pos));
     pos += sizeof(struct timeval) / sizeof(uint32_t);
 #ifdef CLICK_USERLEVEL
-    FILE *f = fopen("/dev/random", "rb");
-    if (f) {
-	fread(buf + pos, sizeof(uint32_t), bufsiz - pos, f);
-	fclose(f);
-	pos = bufsiz;
-    } else {
-	buf[pos++] = getpid();
-	buf[pos++] = getuid();
+# ifdef O_NONBLOCK
+    int fd = open("/dev/random", O_RDONLY | O_NONBLOCK);
+# elif defined(O_NDELAY)
+    int fd = open("/dev/random", O_RDONLY | O_NDELAY);
+# else
+    int fd = open("/dev/random", O_RDONLY);
+# endif
+    if (fd >= 0) {
+	int amt = read(fd, buf + pos, sizeof(uint32_t) * (bufsiz - pos));
+	close(fd);
+	if (amt > 0)
+	    pos += (amt / sizeof(uint32_t));
     }
+    if (pos < bufsiz)
+	buf[pos++] = getpid();
+    if (pos < bufsiz)
+	buf[pos++] = getuid();
 #endif
 
     uint32_t result = 0;
