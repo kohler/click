@@ -1,3 +1,7 @@
+2005-04-09 Saturday 14:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/gaprate.hh (1.9): tv_sec is a long
+
 2005-04-06 Wednesday 01:50  John Bicket <jbicket@mit.edu>
 
 	* elements/userlevel/todevice.cc (1.51): introduced another bug...
