@@ -27,7 +27,7 @@ class GapRate { public:
   
     unsigned _ugap;
     int _sec_count;
-    int _tv_sec;
+    long _tv_sec;
     unsigned _rate;
 #if DEBUG_GAPRATE
     Timestamp _last;
