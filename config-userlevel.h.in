@@ -12,6 +12,10 @@
    of 'madvise', and to 0 if you don't. */
 #undef HAVE_DECL_MADVISE
 
+/* Define to 1 if you have the declaration
+   of 'pcap_setnonblock', and to 0 if you don't. */
+#undef HAVE_DECL_PCAP_SETNONBLOCK
+
 /* Define if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
@@ -165,7 +169,7 @@ char *strerror(int errno);
 inline void *operator new(size_t, void *v) { return v; }
 #endif
 
-/* Prototype madvise if we have it, but we don't have the prototype. */
+/* Prototype madvise if we have it, but not the prototype. */
 #if ALLOW_MMAP && HAVE_MADVISE && !HAVE_DECL_MADVISE
 extern "C" int madvise(void *addr, size_t len, int behav);
 #endif

@@ -8,6 +8,10 @@
 # include <click/task.hh>
 extern "C" {
 # include <pcap.h>
+/* Prototype pcap_setnonblock if we have it, but not the prototype. */
+# if HAVE_PCAP_SETNONBLOCK && !HAVE_DECL_PCAP_SETNONBLOCK
+int pcap_setnonblock(pcap_t *p, int nonblock, char *errbuf);
+# endif
 void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*, const u_char*);
 }
 #endif

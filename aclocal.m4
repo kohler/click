@@ -274,14 +274,15 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
     fi
 
     if test "$HAVE_PCAP" = yes; then
+	saveflags="$CPPFLAGS"
+	CPPFLAGS="$saveflags $PCAP_INCLUDES"
 	AC_CACHE_CHECK(for bpf_timeval in pcap.h, ac_cv_bpf_timeval,
-	    saveflags="$CPPFLAGS"
-	    CPPFLAGS="$saveflags $PCAP_INCLUDES"
-	    AC_EGREP_HEADER(bpf_timeval, pcap.h, ac_cv_bpf_timeval=yes, ac_cv_bpf_timeval=no)
-	    CPPFLAGS="$saveflags")
+	    AC_EGREP_HEADER(bpf_timeval, pcap.h, ac_cv_bpf_timeval=yes, ac_cv_bpf_timeval=no))
 	if test "$ac_cv_bpf_timeval" = yes; then
 	    AC_DEFINE([HAVE_BPF_TIMEVAL], [1], [Define if <pcap.h> uses bpf_timeval.])
 	fi
+	AC_CHECK_DECLS(pcap_setnonblock, [], [], [#include <pcap.h>])
+	CPPFLAGS="$saveflags"
     fi
 
     test "$HAVE_PCAP" != yes && PCAP_INCLUDES=

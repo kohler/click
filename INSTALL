@@ -94,7 +94,7 @@ and running Linux kernels.
     do not work.)  Unpack this distribution into /usr/src/linux.  (Save the
     old kernel source tree, if you had one.)
 
-    We supply patches for Linux 2.2.18-21, 2.4.18-21, and 2.4.26.
+    We supply patches for Linux 2.2.18-21, 2.4.18-28, and 2.6.11.
 
  3. Install the Click Linux kernel patch:
 
