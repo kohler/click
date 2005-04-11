@@ -1,3 +1,11 @@
+2005-04-10 Sunday 19:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* INSTALL (1.38), aclocal.m4 (1.47), config-userlevel.h.in (1.27),
+	configure (1.53), elements/userlevel/fromdevice.hh (1.29),
+	etc/samplepackage/aclocal.m4 (1.16), etc/samplepackage/m4/click.m4
+	(1.6), m4/click.m4 (1.48): Mac OS X needs to check for declaration
+	of pcap_setnonblock
+
 2005-04-09 Saturday 14:28  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/gaprate.hh (1.9): tv_sec is a long
