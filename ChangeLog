@@ -1,3 +1,7 @@
+2005-04-13 Wednesday 23:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/confparse.cc (1.141): allow n, t, f, and y as booleans
+
 2005-04-10 Sunday 19:46  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* INSTALL (1.38), aclocal.m4 (1.47), config-userlevel.h.in (1.27),
