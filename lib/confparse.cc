@@ -669,9 +669,9 @@ cp_bool(const String &str, bool *return_value)
   const char *s = str.data();
   int len = str.length();
   
-  if (len == 1 && s[0] == '0')
+  if (len == 1 && (s[0] == '0' || s[0] == 'n' || s[0] == 'f'))
     *return_value = false;
-  else if (len == 1 && s[0] == '1')
+  else if (len == 1 && (s[0] == '1' || s[0] == 'y' || s[0] == 't'))
     *return_value = true;
   else if (len == 5 && memcmp(s, "false", 5) == 0)
     *return_value = false;
