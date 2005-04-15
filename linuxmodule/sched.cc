@@ -348,9 +348,9 @@ click_init_sched(ErrorHandler *errh)
 
 #if __MTCLICK__
   click_master = new Master(click_threads());
-  if (smp_num_cpus != NUM_CLICK_CPUS)
+  if (num_possible_cpus() != NUM_CLICK_CPUS)
     click_chatter("warning: click compiled for %d cpus, machine allows %d", 
-	          NUM_CLICK_CPUS, smp_num_cpus);
+	          NUM_CLICK_CPUS, num_possible_cpus());
 #else
   click_master = new Master(1);
 #endif

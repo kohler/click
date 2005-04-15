@@ -293,7 +293,7 @@ RecycledSkbPool::find_producer(int cpu, int bucket)
   if (pool[cpu]._last_producer >= 0)
     pool[pool[cpu]._last_producer]._consumers--;
 
-  for (i=0; i<smp_num_cpus; i++) {
+  for (i = 0; i < num_possible_cpus(); i++) {
     int s = pool[i].bucket(bucket).size();
     int c = pool[i]._consumers + 1;
     if (c < 1) c = 1;

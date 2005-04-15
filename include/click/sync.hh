@@ -11,6 +11,9 @@
 # endif
 # include <linux/sched.h>
 # define my_cpu click_current_processor()
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#  define num_possible_cpus()	smp_num_cpus
+# endif
 #endif
 CLICK_DECLS
 
@@ -226,7 +229,7 @@ class ReadWriteLock { public:
 inline
 ReadWriteLock::ReadWriteLock()
 {
-    _l = new lock_t[smp_num_cpus];
+    _l = new lock_t[num_possible_cpus()];
 }
 
 inline
@@ -259,7 +262,7 @@ ReadWriteLock::release_read()
 inline void
 ReadWriteLock::acquire_write()
 {
-    for (unsigned i = 0; i < smp_num_cpus; i++)
+    for (unsigned i = 0; i < num_possible_cpus(); i++)
 	_l[i]._lock.acquire();
 }
 
@@ -268,7 +271,7 @@ ReadWriteLock::attempt_write()
 {
     bool all = true;
     unsigned i;
-    for (i = 0; i < smp_num_cpus; i++)
+    for (i = 0; i < num_possible_cpus(); i++)
 	if (!(_l[i]._lock.attempt())) {
 	    all = false;
 	    break;
@@ -282,7 +285,7 @@ ReadWriteLock::attempt_write()
 inline void
 ReadWriteLock::release_write()
 {
-    for (unsigned i = 0; i < smp_num_cpus; i++)
+    for (unsigned i = 0; i < num_possible_cpus(); i++)
 	_l[i]._lock.release();
 }
 
