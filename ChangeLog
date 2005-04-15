@@ -1,3 +1,15 @@
+2005-04-15 Friday 19:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/sync.hh (1.17), linuxmodule/sched.cc (1.52),
+	linuxmodule/skbmgr.cc (1.18): #define smp_num_cpus
+	num_possible_cpus(); patch from Yun Mao
+
+2005-04-15 Friday 19:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.54), include/click/glue.hh (1.49),
+	include/click/task.hh (1.36): attempt to fix 2.6 compile errors:
+	#include <linux/hardirq.h>
+
 2005-04-13 Wednesday 23:15  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/confparse.cc (1.141): allow n, t, f, and y as booleans
