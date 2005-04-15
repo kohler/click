@@ -10,18 +10,18 @@
 CLICK_DECLS
 
 #ifdef CLICK_BSDMODULE
-#include <machine/cpu.h>
-#include <assert.h>	/* MARKO XXX */
+# include <machine/cpu.h>
+# include <assert.h>	/* MARKO XXX */
 #endif
 
 #if CLICK_BSDMODULE && !BSD_NETISRSCHED
-#define SPLCHECK				\
+# define SPLCHECK				\
 	int s = splimp();			\
 	if (s == 0)				\
 	    panic("not spl'ed: %d\n", s);	\
 	splx(s);
 #else
-#define SPLCHECK
+# define SPLCHECK
 #endif
 
 #define PASS_GT(a, b)	((int)(a - b) > 0)

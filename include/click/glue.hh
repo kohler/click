@@ -28,6 +28,8 @@ CLICK_CXX_PROTECT
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 #  include <linux/malloc.h>
 #  include <linux/interrupt.h>
+# else
+#  include <linux/hardirq.h>
 # endif
 # include <linux/ctype.h>
 # include <linux/time.h>
