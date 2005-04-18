@@ -201,8 +201,8 @@ class IPFilter : public Classifier { public:
     void set_srcdst(int, ErrorHandler *);
     void set_transp_proto(int, ErrorHandler *);
     
-    int set_mask(uint32_t full_mask, int shift, ErrorHandler *);
-    int check(const Primitive &, ErrorHandler *);
+    int set_mask(uint32_t full_mask, int shift, uint32_t provided_mask, ErrorHandler *);
+    int check(const Primitive &, uint32_t provided_mask, ErrorHandler *);
     void add_exprs(Classifier *, Vector<int> &) const;
 
     bool has_transp_proto() const;

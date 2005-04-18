@@ -145,6 +145,9 @@ effectively equivalent to 'tcp and not src tcp port 5'.) Similarly, 'icmp
 type != 4' will not match non-ICMP packets. The same goes for the '<', '>',
 '<=', and '>=' relations.
 
+Most primitives also accept bitmasks: 'DIRECTIVE & MASK [[OP] VALUE]'.  For
+instance, 'src tcp port & 10 == 8'.
+
 The B<port>, B<icmp type>, and B<tcp opt> directives will only match first
 fragments.
 

@@ -200,43 +200,48 @@ IPFilter::Primitive::set_transp_proto(int x, ErrorHandler *errh)
 }
 
 int
-IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, ErrorHandler *errh)
+IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, uint32_t provided_mask, ErrorHandler *errh)
 {
-  uint32_t data = _u.u;
+    uint32_t data = _u.u;
 
-  // Two kinds of GT or LT tests are OK: those that boil down to checking
-  // the upper bits against 0, and those that boil down to checking the upper
-  // bits against ~0.
-  if (_op == OP_GT || _op == OP_LT) {
-    // Check for comparisons that are always true or false.
-    if ((_op == OP_LT && (data == 0 || data > full_mask))
-	|| (_op == OP_GT && data >= full_mask)) {
-      bool will_be = (_op == OP_LT && data > full_mask ? !_op_negated : _op_negated);
-      errh->warning("relation '%s %u' is always %s (range 0-%u)", unparse_op().cc(), data, (will_be ? "true" : "false"), full_mask);
-      _u.u = _mask.u = 0;
-      _op_negated = !will_be;
-      _op = OP_EQ;
-      return 0;
+    // Two kinds of GT or LT tests are OK: those that boil down to checking
+    // the upper bits against 0, and those that boil down to checking the upper
+    // bits against ~0.
+    if (_op == OP_GT || _op == OP_LT) {
+	// Check for comparisons that are always true or false.
+	if ((_op == OP_LT && (data == 0 || data > full_mask))
+	    || (_op == OP_GT && data >= full_mask)) {
+	    bool will_be = (_op == OP_LT && data > full_mask ? !_op_negated : _op_negated);
+	    errh->warning("relation '%s %u' is always %s (range 0-%u)", unparse_op().cc(), data, (will_be ? "true" : "false"), full_mask);
+	    _u.u = _mask.u = 0;
+	    _op_negated = !will_be;
+	    _op = OP_EQ;
+	    return 0;
+	}
+
+	// value < X == !(value > (X - 1))
+	if (_op == OP_LT) {
+	    _u.u--;
+	    _op_negated = !_op_negated;
+	    _op = OP_GT;
+	}
+
+	_u.u = (_u.u << shift) | ((1 << shift) - 1);
+	_mask.u = (full_mask << shift) | ((1 << shift) - 1);
+	return 0;
     }
 
-    // value < X == !(value > (X - 1))
-    if (_op == OP_LT) {
-      _u.u--;
-      _op_negated = !_op_negated;
-      _op = OP_GT;
-    }
+    if (data > full_mask)
+	return errh->error("value %u out of range (0-%u)", data, full_mask);
+    if (provided_mask && (provided_mask & full_mask) != provided_mask)
+	return errh->error("mask 0x%X out of range (full mask 0x%X)", provided_mask, full_mask);
 
-    _u.u = (_u.u << shift) | ((1 << shift) - 1);
-    _mask.u = (full_mask << shift) | ((1 << shift) - 1);
+    _u.u = data << shift;
+    if (provided_mask)
+	_mask.u = provided_mask << shift;
+    else
+	_mask.u = full_mask << shift;
     return 0;
-  }
-
-  if (data > full_mask)
-    return errh->error("value %u out of range (0-%u)", data, full_mask);
-
-  _u.u = data << shift;
-  _mask.u = full_mask << shift;
-  return 0;
 }
 
 String
@@ -333,7 +338,7 @@ IPFilter::Primitive::simple_negate()
 }
 
 int
-IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
+IPFilter::Primitive::check(const Primitive &p, uint32_t provided_mask, ErrorHandler *errh)
 {
   int old_srcdst = _srcdst;
 
@@ -400,7 +405,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return errh->error("IP address missing in 'host' directive");
     if (_op != OP_EQ)
       return errh->error("can't use relational operators with 'host'");
-    _mask.u = 0xFFFFFFFFU;
+    _mask.u = (provided_mask ? provided_mask : 0xFFFFFFFFU);
     break;
 
    case TYPE_NET:
@@ -410,6 +415,8 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return errh->error("can't use relational operators with 'net'");
     _type = TYPE_HOST;
     // _mask already set
+    if (provided_mask)
+	_mask.u = provided_mask;
     break;
 
    case TYPE_PROTO:
@@ -423,10 +430,10 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     if (_data != TYPE_NONE || _u.i == UNKNOWN)
       return errh->error("IP protocol missing in 'proto' directive");
     if (_u.i >= 256) {
-      if (_op != OP_EQ)
-	return errh->error("can't use relational operators with '%s'", unparse_transp_proto(_u.i).c_str());
+      if (_op != OP_EQ || provided_mask)
+	return errh->error("can't use relational operators or masks with '%s'", unparse_transp_proto(_u.i).c_str());
       _mask.u = 0xFF;
-    } else if (set_mask(0xFF, 0, errh) < 0)
+    } else if (set_mask(0xFF, 0, provided_mask, errh) < 0)
       return -1;
     if (_op == OP_EQ && _mask.u == 0xFF && !_op_negated) // set _transp_proto if allowed
       _transp_proto = _u.i;
@@ -441,7 +448,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       _transp_proto = IP_PROTO_TCP_OR_UDP;
     else if (_transp_proto != IP_PROTO_TCP && _transp_proto != IP_PROTO_UDP && _transp_proto != IP_PROTO_TCP_OR_UDP)
       return errh->error("bad protocol %d for 'port' directive", _transp_proto);
-    if (set_mask(0xFFFF, 0, errh) < 0)
+    if (set_mask(0xFFFF, 0, provided_mask, errh) < 0)
       return -1;
     break;
 
@@ -454,25 +461,25 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       _transp_proto = IP_PROTO_TCP;
     else if (_transp_proto != IP_PROTO_TCP)
       return errh->error("bad protocol %d for 'tcp opt' directive", _transp_proto);
-    if (_op != OP_EQ || _op_negated)
-      return errh->error("can't use relational operators with 'tcp opt'");
+    if (_op != OP_EQ || _op_negated || provided_mask)
+      return errh->error("can't use relational operators or masks with 'tcp opt'");
     if (_u.i < 0 || _u.i > 255)
       return errh->error("value %d out of range", _u.i);
     _mask.i = _u.i;
     break;
 
    case TYPE_IPECT:
-    if (_data == TYPE_NONE) {
-      _mask.u = IP_ECNMASK;
-      _u.u = 0;
-      _op_negated = true;
-    } else if (_data == TYPE_INT) {
-      if (set_mask(0x3, 0, errh) < 0)
-	return -1;
-    } else
-      return errh->error("weird data given to 'ip ect' directive");
-    _type = FIELD_TOS;
-    break;
+     if (_data != TYPE_NONE && _data != TYPE_INT)
+	 return errh->error("weird data given to 'ip ect' directive");
+     if (_data == TYPE_NONE) {
+	 _mask.u = IP_ECNMASK;
+	 _u.u = 0;
+	 _op_negated = true;
+     }
+     if (set_mask(0x3, 0, provided_mask, errh) < 0)
+	 return -1;
+     _type = FIELD_TOS;
+     break;
 
    case TYPE_IPCE:
     if (_data != TYPE_NONE)
@@ -502,7 +509,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 	return errh->error("value missing in '%s' directive", unparse_type().c_str());
       int nbits = ((_type & FIELD_LENGTH_MASK) >> FIELD_LENGTH_SHIFT) + 1;
       uint32_t mask = (nbits == 32 ? 0xFFFFFFFFU : (1 << nbits) - 1);
-      if (set_mask(mask, 0, errh) < 0)
+      if (set_mask(mask, 0, provided_mask, errh) < 0)
 	return -1;
     }
     break;
@@ -966,6 +973,16 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
     pos = parse_brackets(prim, words, pos, errh);
     wd = (pos >= words.size() - 1 ? String() : words[pos]);
   }
+
+  // optional bitmask
+  uint32_t provided_mask = 0;
+  if (wd == "&" && pos < words.size() - 1
+      && cp_unsigned(words[pos + 1], &provided_mask)) {
+      pos += 2;
+      wd = (pos >= words.size() - 1 ? String() : words[pos]);
+      if (provided_mask == 0)
+	  errh->error("bitmask of 0 ignored");
+  }
   
   // optional relational operation
   pos++;
@@ -1030,7 +1047,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   }
   
   // add if it is valid
-  if (prim.check(prev_prim, errh) >= 0) {
+  if (prim.check(prev_prim, provided_mask, errh) >= 0) {
     prim.add_exprs(this, tree);
     if (negated)
       negate_expr_subtree(tree);
