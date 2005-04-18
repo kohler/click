@@ -84,7 +84,7 @@ LINUXCFLAGS = $(shell echo "$(CFLAGS)" | sed -e s,-fno-unit-at-a-time,, \
 CLICKCPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE
 CLICKCFLAGS = @CFLAGS_NDEBUG@
 CLICKCXXFLAGS = @CXXFLAGS_NDEBUG@
-CLICKDEPCFLAGS = @DEPCFLAGS@
+CLICKDEPCFLAGS = -Wp,-MD,$(depfile)
 
 CLICKDEFS = @DEFS@ 
 CLICKINCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
@@ -118,25 +118,25 @@ all: Makefile elements.mk elements.cc always
 
 
 $(addprefix $(obj)/,$(LIB_CXX_OBJS)): $(obj)/%.o : $(top_srcdir)/lib/%.cc
-	$(call cmd,cxxcompile)
+	$(call if_changed_dep,cxxcompile)
 
 $(addprefix $(obj)/,$(LIB_C_OBJS)): $(obj)/%.o : $(top_srcdir)/lib/%.c
-	$(call cmd,ccompile)
+	$(call if_changed_dep,ccompile)
 
 $(addprefix $(obj)/,$(LINUXMODULE_CXX_OBJS)): $(obj)/%.o : $(srcdir)/%.cc
-	$(call cmd,cxxcompile)
+	$(call if_changed_dep,cxxcompile)
 
 $(addprefix $(obj)/,$(LINUXMODULE_C_OBJS)): $(obj)/%.o : $(srcdir)/%.c
-	$(call cmd,ccompile)
+	$(call if_changed_dep,ccompile)
 
 $(addprefix $(obj)/,$(STD_ELEMENT_OBJS)): $(obj)/%.o : $(top_srcdir)/elements/standard/%.cc
-	$(call cmd,cxxcompile)
+	$(call if_changed_dep,cxxcompile)
 
 $(obj)/elements.o : $(obj)/elements.cc
-	$(call cmd,cxxcompile)
+	$(call if_changed_dep,cxxcompile)
 
 $(obj)/proclikefs_.o : $(srcdir)/proclikefs.c
-	$(call cmd,xcompile)
+	$(call if_changed_dep,xcompile)
 
 # Don't install in Linux directories for now
 # $(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules_install
@@ -219,6 +219,11 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: $(INSTALLOBJS)
 
+DEPFILES := $(wildcard *.d)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
+
 click.o: Makefile $(OBJS)
 	$(LD) -r -o click.o $(OBJS)
 	$(STRIP) -g click.o
@@ -242,11 +247,6 @@ endif
 
 ##########################################################################
 ## ANY LINUX								##
-
-DEPFILES := $(wildcard *.d)
-ifneq ($(DEPFILES),)
-include $(DEPFILES)
-endif
 
 elemlist:
 	@/bin/rm -f elements.conf

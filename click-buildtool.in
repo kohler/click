@@ -510,7 +510,7 @@ END {
     print "'"$makevar"' = \\\n", allsubdirs;
     for (i = 0; i < nsubdirs; i++) {
 	print "$(addprefix $(obj)/,$(ELEMENT_OBJS__", i, ")): $(obj)/%.o : $(obj)/", subdirs[i], "%.cc";
-	print "	$(call cmd,cxxcompile)";
+	print "	$(call if_changed_dep,cxxcompile)";
     }
 }' | sed "$excludes"
     else
