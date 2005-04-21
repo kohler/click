@@ -135,11 +135,11 @@ hotswap_config(const String &s)
 	return -EINVAL;
 
     // XXX should we lock the kernel?
-
+    
     // register hotswap router on new router
     if (click_router && click_router->initialized())
 	router->set_hotswap_router(click_router);
-  
+    
     if (click_logged_errh->nerrors() == before_errors
 	&& router->initialize(click_logged_errh) >= 0) {
 	router->activate(click_logged_errh);
