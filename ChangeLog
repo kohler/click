@@ -1,3 +1,13 @@
+2005-04-20 Wednesday 22:16  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/print.cc (1.29): fix buffer overrun bug on
+	PRINT_ANNO (Dan Aguayo)
+
+2005-04-20 Wednesday 22:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/packet.cc (1.58): FreeBSD fix from Marko Zec (problem
+	reported by Adam Greenhalgh)
+
 2005-04-18 Monday 18:29  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: ipclassifier.hh (1.34), ipfilter.cc (1.55),
