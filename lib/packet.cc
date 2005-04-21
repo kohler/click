@@ -132,11 +132,11 @@ Packet::alloc_data(uint32_t headroom, uint32_t len, uint32_t tailroom)
     return false;
   }
   struct mbuf *m;
-  MGETHDR(m, M_WAIT, MT_DATA);
+  MGETHDR(m, M_DONTWAIT, MT_DATA);
   if (!m)
     return false;
   if (n > MHLEN) {
-    MCLGET(m, M_WAIT);
+    MCLGET(m, M_DONTWAIT);
     if (!(m->m_flags & M_EXT)) {
       m_freem(m);
       return false;
@@ -183,6 +183,12 @@ Packet::clone()
   return reinterpret_cast<Packet *>(nskb);
   
 #elif CLICK_USERLEVEL || CLICK_BSDMODULE
+# if CLICK_BSDMODULE
+  struct mbuf *m;
+
+  if ((m = m_dup(this->_m, M_DONTWAIT)) == NULL)
+    return 0;
+# endif
   
   // timing: .31-.39 normal, .43-.55 two allocs, .55-.58 two memcpys
   Packet *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
@@ -194,7 +200,7 @@ Packet::clone()
 # if CLICK_USERLEVEL
   p->_destructor = 0;
 # else
-  p->_m = 0;
+  p->_m = m;
 # endif
   // increment our reference count because of _data_packet reference
   _use_count++;
