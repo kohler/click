@@ -238,11 +238,11 @@ static Task hotswap_task(hotswap_hook, 0);
 static bool
 hotswap_hook(Task *, void *)
 {
-  hotswap_router->activate(ErrorHandler::default_handler());
-  router->unuse();
-  router = hotswap_router;
-  hotswap_router = 0;
-  return true;
+    hotswap_router->activate(ErrorHandler::default_handler());
+    router->unuse();		// delete old router
+    router = hotswap_router;
+    hotswap_router = 0;
+    return true;
 }
 
 // switching configurations
@@ -293,7 +293,6 @@ hotconfig_handler(const String &text, Element *, void *, ErrorHandler *errh)
     if (hotswap_router)
       hotswap_router->unuse();
     hotswap_router = q;
-    hotswap_router->use();
     hotswap_task.reschedule();
     return 0;
   } else
