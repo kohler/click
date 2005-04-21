@@ -77,11 +77,16 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
 Packet *
 Print::simple_action(Packet *p)
 {
-  StringAccum sa(3*_bytes + _label.length() + 45);
-  if (sa.out_of_memory()) {
-    click_chatter("no memory for Print");
-    return p;
-  }
+    StringAccum sa(_label.length() + 2 // label:
+		   + 6		// (processor)
+		   + 28		// timestamp:
+		   + 9		// length |
+		   + Packet::USER_ANNO_SIZE*2 + 3 // annotations |
+		   + 3 * _bytes);
+    if (sa.out_of_memory()) {
+	click_chatter("no memory for Print");
+	return p;
+    }
 
   sa << _label;
 #ifdef CLICK_LINUXMODULE
