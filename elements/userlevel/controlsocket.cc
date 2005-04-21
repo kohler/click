@@ -776,8 +776,8 @@ ControlSocket::selected(int fd)
     // maybe close out
     if (((_flags[fd] & READ_CLOSED) && !_in_texts[fd].length() && !_out_texts[fd].length())
 	|| (_flags[fd] & WRITE_CLOSED)) {
-	close(fd);
 	remove_select(fd, SELECT_READ | SELECT_WRITE);
+	close(fd);
 	if (_verbose)
 	    click_chatter("%s: closed connection %d", declaration().cc(), fd);
 	_flags[fd] = -1;
