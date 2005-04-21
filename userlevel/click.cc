@@ -239,7 +239,7 @@ static bool
 hotswap_hook(Task *, void *)
 {
     hotswap_router->activate(ErrorHandler::default_handler());
-    router->unuse();		// delete old router
+    // That step releases our reference to 'router'.
     router = hotswap_router;
     hotswap_router = 0;
     return true;
