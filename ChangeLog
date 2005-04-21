@@ -1,3 +1,23 @@
+2005-04-21 Thursday 19:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/controlsocket.cc (1.59): remove_select before
+	close
+
+2005-04-21 Thursday 19:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* userlevel/click.cc (1.98): fix memory bug in userlevel hotswap:
+	dont unuse the router, it was already unused by
+	hotswap_router->activate()
+
+2005-04-21 Thursday 19:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/config.cc (1.21): nothing
+
+2005-04-21 Thursday 19:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* userlevel/click.cc (1.97): dont collect references to hotswapped
+	routers
+
 2005-04-20 Wednesday 22:16  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/print.cc (1.29): fix buffer overrun bug on
