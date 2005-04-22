@@ -23,67 +23,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
-#if HAVE_NETDB_H
-# include <netdb.h>
-#endif
 CLICK_DECLS
-
-namespace {
-
-const StaticNameDB::Entry known_ports[] = {
-    { "auth", 113 },
-    { "bootpc", 68 },
-    { "bootps", 67 },
-    { "chargen", 19 },
-    { "daytime", 13 },
-    { "discard", 9 },
-    { "dns", 53 },
-    { "domain", 53 },
-    { "echo", 7 },
-    { "finger", 79 },
-    { "ftp", 21 },
-    { "ftp-data", 20 },
-    { "https", 443 },
-    { "imap3", 220 },
-    { "imaps", 993 },
-    { "irc", 194 },
-    { "netbios-dgm", 138 },
-    { "netbios-ns", 137 },
-    { "netbios-ssn", 139 },
-    { "nntp", 119 },
-    { "ntp", 123 },
-    { "pop3", 110 },
-    { "pop3s", 995 },
-    { "rip", 520 },
-    { "route", 520 },
-    { "smtp", 25 },
-    { "snmp", 161 },
-    { "snmp-trap", 162 },
-    { "ssh", 22 },
-    { "sunrpc", 111 },
-    { "telnet", 23 },
-    { "tftp", 69 },
-    { "www", 80 }
-};
-
-#if CLICK_USERLEVEL && HAVE_NETDB_H
-class ServicesNameDB : public NameDB { public:
-    ServicesNameDB(uint32_t type)	: NameDB(type, String(), 4) { }
-    bool query(const String &name, void *value, int vsize);
-};
-bool
-ServicesNameDB::query(const String &name, void *value, int vsize)
-{
-    assert(vsize == 4);
-    if (const struct servent *srv = getservbyname(name.c_str(), (type() == IP_PROTO_TCP ? "tcp" : "udp"))) {
-	*reinterpret_cast<uint32_t*>(value) = ntohs(srv->s_port);
-	return true;
-    } else
-	return false;
-}
-#endif
-
-}
 
 
 PortInfo::PortInfo()
@@ -92,19 +32,6 @@ PortInfo::PortInfo()
 
 PortInfo::~PortInfo()
 {
-}
-
-void
-PortInfo::static_initialize()
-{
-#if CLICK_USERLEVEL && HAVE_NETDB_H
-    NameInfo::installdb(new ServicesNameDB(NameInfo::T_TCP_PORT), 0);
-    NameInfo::installdb(new ServicesNameDB(NameInfo::T_UDP_PORT), 0);
-#endif
-    NameDB *tcpdb = new StaticNameDB(NameInfo::T_TCP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
-    NameInfo::installdb(tcpdb, 0);
-    NameDB *udpdb = new StaticNameDB(NameInfo::T_UDP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
-    NameInfo::installdb(udpdb, 0);
 }
 
 int

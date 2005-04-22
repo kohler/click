@@ -22,6 +22,9 @@
 #include <clicknet/icmp.h>
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
+#if CLICK_USERLEVEL && HAVE_NETDB_H
+# include <netdb.h>
+#endif
 CLICK_DECLS
 
 static const StaticNameDB::Entry ip_protos[] = {
@@ -125,7 +128,29 @@ static const StaticNameDB::Entry known_ports[] = {
     { "www", 80 }
 };
 
-static NameDB *dbs[8];
+namespace {
+
+#if CLICK_USERLEVEL && HAVE_NETDB_H
+class ServicesNameDB : public NameDB { public:
+    ServicesNameDB(uint32_t type)	: NameDB(type, String(), 4) { }
+    bool query(const String &name, void *value, int vsize);
+};
+bool
+ServicesNameDB::query(const String &name, void *value, int vsize)
+{
+    assert(vsize == 4);
+    if (const struct servent *srv = getservbyname(name.c_str(), (type() == IP_PROTO_TCP ? "tcp" : "udp"))) {
+	*reinterpret_cast<uint32_t*>(value) = ntohs(srv->s_port);
+	return true;
+    } else
+	return false;
+}
+#endif
+
+}
+
+
+static NameDB *dbs[10];
 
 void
 IPNameInfo::static_initialize()
@@ -136,19 +161,25 @@ IPNameInfo::static_initialize()
     dbs[3] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_REDIRECT, String(), icmp_redirect_codes, sizeof(icmp_redirect_codes) / sizeof(icmp_redirect_codes[0]));
     dbs[4] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_TIMXCEED, String(), icmp_timxceed_codes, sizeof(icmp_timxceed_codes) / sizeof(icmp_timxceed_codes[0]));
     dbs[5] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_PARAMPROB, String(), icmp_paramprob_codes, sizeof(icmp_paramprob_codes) / sizeof(icmp_paramprob_codes[0]));
-    dbs[6] = new StaticNameDB(NameInfo::T_TCP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
-    dbs[7] = new StaticNameDB(NameInfo::T_UDP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
-    for (int i = 0; i < 8; i++)
-	NameInfo::installdb(dbs[i], 0);
+#if CLICK_USERLEVEL && HAVE_NETDB_H
+    dbs[6] = new ServicesNameDB(NameInfo::T_TCP_PORT);
+    dbs[7] = new ServicesNameDB(NameInfo::T_UDP_PORT);
+#endif
+    dbs[8] = new StaticNameDB(NameInfo::T_TCP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
+    dbs[9] = new StaticNameDB(NameInfo::T_UDP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
+    for (int i = 0; i < 10; i++)
+	if (dbs[i])
+	    NameInfo::installdb(dbs[i], 0);
 }
 
 void
 IPNameInfo::static_cleanup()
 {
-    for (int i = 0; i < 8; i++) {
-	NameInfo::removedb(dbs[i]);
-	delete dbs[i];
-    }
+    for (int i = 0; i < 10; i++)
+	if (dbs[i]) {
+	    NameInfo::removedb(dbs[i]);
+	    delete dbs[i];
+	}
 }
 
 CLICK_ENDDECLS
