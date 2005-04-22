@@ -1,3 +1,21 @@
+2005-04-21 Thursday 23:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/nameinfo.hh (1.4), lib/nameinfo.cc (1.5): NameDB
+	fix: maintain _installed member properly, reducing crashes on
+	unload
+
+2005-04-21 Thursday 22:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipnameinfo.cc (1.2),
+	include/click/standard/portinfo.hh (1.5),
+	elements/standard/portinfo.cc (1.6): move all static IP name
+	definitions into IPNameInfo, from PortInfo
+
+2005-04-21 Thursday 22:45  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: ipfilter.cc (1.56), ipfilter.hh (1.31): IPFilter:
+	refer to name databases relative to the current elemnet
+
 2005-04-21 Thursday 19:24  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/controlsocket.cc (1.59): remove_select before
