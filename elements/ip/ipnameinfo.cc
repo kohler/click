@@ -33,7 +33,7 @@ static const StaticNameDB::Entry ip_protos[] = {
     { "ipip", IP_PROTO_IPIP },
     { "tcp", IP_PROTO_TCP },
     { "tcpudp", IP_PROTO_TCP_OR_UDP },
-    { "transp", IP_PROTO_NONE },
+    { "transp", IP_PROTO_TRANSP },
     { "udp", IP_PROTO_UDP }
 };
 

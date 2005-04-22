@@ -83,8 +83,9 @@ class NameDB { public:
     NameDB *prefix_parent() const	{ return _prefix_parent; }
 
     virtual bool query(const String &name, void *value, int vsize) = 0;
-    virtual void define(const String &name, const void *value, int vsize);
     virtual String revfind(const void *value, int vsize);
+    virtual void define(const String &name, const void *value, int vsize);
+    inline void define_int(const String &name, int32_t value);
 
 #ifdef CLICK_NAMEDB_CHECK
     virtual void check(ErrorHandler *);
@@ -196,6 +197,12 @@ NameInfo::define_int(uint32_t type, const Element *e, const String &name, const 
 {
     if (NameDB *db = getdb(type, e, sizeof(value), true))
 	db->define(name, &value, sizeof(value));
+}
+
+inline void
+NameDB::define_int(const String &name, const int32_t value)
+{
+    define(name, &value, sizeof(value));
 }
 
 CLICK_ENDDECLS

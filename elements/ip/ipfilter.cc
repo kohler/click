@@ -203,13 +203,16 @@ int
 IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, uint32_t provided_mask, ErrorHandler *errh)
 {
     uint32_t data = _u.u;
+    uint32_t this_mask = (provided_mask ? provided_mask : full_mask);
+    if ((this_mask & full_mask) != this_mask)
+	return errh->error("mask 0x%X out of range (0-0x%X)", provided_mask, full_mask);
 
     if (_op == OP_GT || _op == OP_LT) {
 	// Check for comparisons that are always true or false.
-	if ((_op == OP_LT && (data == 0 || data > full_mask))
-	    || (_op == OP_GT && data >= full_mask)) {
-	    bool will_be = (_op == OP_LT && data > full_mask ? !_op_negated : _op_negated);
-	    errh->warning("relation '%s %u' is always %s (range 0-%u)", unparse_op().cc(), data, (will_be ? "true" : "false"), full_mask);
+	if ((_op == OP_LT && (data == 0 || data > this_mask))
+	    || (_op == OP_GT && data >= this_mask)) {
+	    bool will_be = (_op == OP_LT && data > this_mask ? !_op_negated : _op_negated);
+	    errh->warning("relation '%s %u' is always %s (range 0-%u)", unparse_op().cc(), data, (will_be ? "true" : "false"), this_mask);
 	    _u.u = _mask.u = 0;
 	    _op_negated = !will_be;
 	    _op = OP_EQ;
@@ -224,20 +227,23 @@ IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, uint32_t provided_m
 	}
 
 	_u.u = (_u.u << shift) | ((1 << shift) - 1);
-	_mask.u = (full_mask << shift) | ((1 << shift) - 1);
+	_mask.u = (this_mask << shift) | ((1 << shift) - 1);
+	// Want (_u.u & _mask.u) == _u.u.
+	// So change 'tcp[0] & 5 > 2' into 'tcp[0] & 5 > 1'.
+	if ((_u.u & _mask.u) != _u.u) {
+	    uint32_t full_mask_u = (full_mask << shift) | ((1 << shift) - 1);
+	    uint32_t missing_bits = (_u.u & _mask.u) ^ (_u.u & full_mask_u);
+	    uint32_t add_mask = 0xFFFFFFFFU >> ffs_msb(missing_bits);
+	    _u.u = (_u.u | add_mask) & _mask.u;
+	}
 	return 0;
     }
 
     if (data > full_mask)
 	return errh->error("value %u out of range (0-%u)", data, full_mask);
-    if (provided_mask && (provided_mask & full_mask) != provided_mask)
-	return errh->error("mask 0x%X out of range (full mask 0x%X)", provided_mask, full_mask);
 
     _u.u = data << shift;
-    if (provided_mask)
-	_mask.u = provided_mask << shift;
-    else
-	_mask.u = full_mask << shift;
+    _mask.u = this_mask << shift;
     return 0;
 }
 
@@ -303,7 +309,7 @@ IPFilter::Primitive::unparse_transp_proto(int transp_proto)
    case IP_PROTO_TCP: return "tcp";
    case IP_PROTO_UDP: return "udp";
    case IP_PROTO_TCP_OR_UDP: return "tcpudp";
-   case IP_PROTO_NONE: return "transp";
+   case IP_PROTO_TRANSP: return "transp";
    default: return "ip proto " + String(transp_proto);
   }
 }
@@ -531,7 +537,7 @@ add_exprs_for_proto(int32_t proto, int32_t mask, Classifier *c, Vector<int> &tre
     c->add_expr(tree, 8, htonl(IP_PROTO_TCP << 16), htonl(0x00FF0000));
     c->add_expr(tree, 8, htonl(IP_PROTO_UDP << 16), htonl(0x00FF0000));
     c->finish_expr_subtree(tree, Classifier::C_OR);
-  } else if (mask == 0xFF && proto == IP_PROTO_NONE)
+  } else if (mask == 0xFF && proto >= 256)
     /* nada */;
   else
     c->add_expr(tree, 8, htonl(proto << 16), htonl(mask << 16));
