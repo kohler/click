@@ -49,6 +49,7 @@ class NameInfo { public:
     static String revquery(uint32_t type, const Element *prefix, const void *value, int value_size);
     static inline String revquery_int(uint32_t type, const Element *prefix, int32_t value);
     static inline void define(uint32_t type, const Element *prefix, const String &name, const void *value, int value_size);
+    static inline void define_int(uint32_t type, const Element *prefix, const String &name, int32_t value);
 
 #ifdef CLICK_NAMEDB_CHECK
     void check(ErrorHandler *);
@@ -167,7 +168,7 @@ NameDB::NameDB(uint32_t type, const String &prefix, int vsize)
 
 inline
 StaticNameDB::StaticNameDB(uint32_t type, const String &prefix, const Entry *entry, int nentry)
-    : NameDB(type, prefix, 4), _entries(entry), _nentries(nentry)
+    : NameDB(type, prefix, sizeof(entry->value)), _entries(entry), _nentries(nentry)
 {
 }
 
@@ -180,7 +181,7 @@ DynamicNameDB::DynamicNameDB(uint32_t type, const String &prefix, int vsize)
 inline String
 NameInfo::revquery_int(uint32_t type, const Element *e, int32_t value)
 {
-    return revquery(type, e, &value, 4);
+    return revquery(type, e, &value, sizeof(value));
 }
 
 inline void
@@ -188,6 +189,13 @@ NameInfo::define(uint32_t type, const Element *e, const String &name, const void
 {
     if (NameDB *db = getdb(type, e, vsize, true))
 	db->define(name, value, vsize);
+}
+
+inline void
+NameInfo::define_int(uint32_t type, const Element *e, const String &name, const int32_t value)
+{
+    if (NameDB *db = getdb(type, e, sizeof(value), true))
+	db->define(name, &value, sizeof(value));
 }
 
 CLICK_ENDDECLS
