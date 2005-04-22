@@ -1,3 +1,13 @@
+2005-04-22 Friday 18:08  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipfilter.cc (1.58): nit
+
+2005-04-22 Friday 18:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipfilter.cc (1.57), elements/ip/ipnameinfo.cc (1.3),
+	include/click/nameinfo.hh (1.6), include/clicknet/ip.h (1.6): > and
+	< work properly with masks
+
 2005-04-21 Thursday 23:52  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/nameinfo.hh (1.5): add NameInfo::define_int
