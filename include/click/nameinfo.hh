@@ -86,7 +86,7 @@ class NameDB { public:
     virtual String revfind(const void *value, int vsize);
 
 #ifdef CLICK_NAMEDB_CHECK
-    virtual void check(ErrorHandler *) = 0;
+    virtual void check(ErrorHandler *);
 #endif
     
   private:

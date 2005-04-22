@@ -313,6 +313,7 @@ NameInfo::installdb(NameDB *db, const Element *prefix)
     NameDB *curdb = ni->namedb(db->type(), db->value_size(), db->prefix(), db);
     if (curdb != db) {
 	assert(!curdb->_prefix_child || curdb->_prefix_child->prefix().length() > db->prefix().length());
+	db->_installed = ni;
 	db->_prefix_child = curdb->_prefix_child;
 	db->_prefix_parent = curdb;
 	curdb->_prefix_child = db;
@@ -320,6 +321,9 @@ NameInfo::installdb(NameDB *db, const Element *prefix)
 	    child->_prefix_parent = db;
 	ni->_namedbs.push_back(db);
     }
+#if CLICK_NAMEDB_CHECK
+    ni->check(ErrorHandler::default_handler());
+#endif
 }
 
 void
@@ -360,6 +364,10 @@ NameInfo::removedb(NameDB *db)
 	}
     // Mark as not installed
     db->_installed = 0;
+
+#if CLICK_NAMEDB_CHECK
+    ni->check(ErrorHandler::default_handler());
+#endif
 }
 
 bool
@@ -419,19 +427,19 @@ NameInfo::check(ErrorHandler *errh)
 	NameDB *db = _namedb_roots[i];
 	if (i < _namedb_roots.size() - 1
 	    && db->type() >= _namedb_roots[i+1]->type())
-	    perrh.error("db roots out of order at %i (%u/%u)", i, (unsigned) db->type(), (unsigned) _namedb_roots[i+1]->type());
+	    perrh.error("db roots out of order at %i (%x/%x)", i, (unsigned) db->type(), (unsigned) _namedb_roots[i+1]->type());
 	checkdb(db, 0, &perrh);
     }
     for (int i = 0; i < _namedbs.size(); i++)
 	if (_namedbs[i]->_check_generation != _check_generation)
-	    perrh.error("DB[%u %s %p] in namedbs, but inaccessible", _namedbs[i]->_type, _namedbs[i]->_prefix.c_str(), _namedbs[i]);
+	    perrh.error("DB[%x %s %p] in namedbs, but inaccessible", _namedbs[i]->_type, _namedbs[i]->_prefix.c_str(), _namedbs[i]);
 }
 
 void
 NameInfo::checkdb(NameDB *db, NameDB *parent, ErrorHandler *errh)
 {
     StringAccum sa;
-    sa << "DB[" << db->_type << ' ';
+    sa.snprintf(20, "DB[%x ", db->_type);
     if (db->_prefix)
 	sa << db->_prefix << ' ';
     sa << (void*) db << "]: ";
@@ -440,7 +448,7 @@ NameInfo::checkdb(NameDB *db, NameDB *parent, ErrorHandler *errh)
     // check self
     if (!db->_installed)
 	perrh.error("not installed");
-    if (db->_installed != this)
+    else if (db->_installed != this)
 	perrh.error("installed in %p, not this NameInfo", db->_installed);
     if (db->_check_generation == _check_generation)
 	perrh.error("installed in more than one place");
@@ -460,20 +468,20 @@ NameInfo::checkdb(NameDB *db, NameDB *parent, ErrorHandler *errh)
     if (db->_prefix && db->_prefix.back() != '/')
 	perrh.error("prefix doesn't end with '/'");
     if (parent && parent->_type != db->_type)
-	perrh.error("parent DB[%u %s %p] has different type", parent->_type, parent->_prefix.c_str(), parent);
+	perrh.error("parent DB[%x %s %p] has different type", parent->_type, parent->_prefix.c_str(), parent);
     if (parent && parent->_value_size != db->_value_size)
-	perrh.error("parent DB[%u %s %p] has different value size (%u/%u)", parent->_type, parent->_prefix.c_str(), parent, parent->_value_size, db->_value_size);
+	perrh.error("parent DB[%x %s %p] has different value size (%u/%u)", parent->_type, parent->_prefix.c_str(), parent, parent->_value_size, db->_value_size);
     
     // check sibling relationships
     for (NameDB* sib = db->_prefix_sibling; sib; sib = sib->_prefix_sibling) {
 	int l1 = db->_prefix.length(), l2 = sib->_prefix.length();
 	if (l1 < l2 ? sib->_prefix.substring(0, l1) == db->_prefix
 	    : db->_prefix.substring(0, l2) == sib->_prefix)
-	    perrh.error("sibling DB[%u %s %p] should have parent/child relationship", sib->_type, sib->_prefix.c_str(), sib);
+	    perrh.error("sibling DB[%x %s %p] should have parent/child relationship", sib->_type, sib->_prefix.c_str(), sib);
 	if (sib->_type != db->_type)
-	    perrh.error("sibling DB[%u %s %p] has different type", sib->_type, sib->_prefix.c_str(), sib);
+	    perrh.error("sibling DB[%x %s %p] has different type", sib->_type, sib->_prefix.c_str(), sib);
 	if (sib->_value_size != db->_value_size)
-	    perrh.error("sibling DB[%u %s %p] has different value size (%u/%u)", sib->_type, sib->_prefix.c_str(), sib, sib->_value_size, db->_value_size);
+	    perrh.error("sibling DB[%x %s %p] has different value size (%u/%u)", sib->_type, sib->_prefix.c_str(), sib, sib->_value_size, db->_value_size);
     }
     
     // check db itself
@@ -487,6 +495,11 @@ NameInfo::checkdb(NameDB *db, NameDB *parent, ErrorHandler *errh)
     }
     if (db->_prefix_sibling)
 	checkdb(db->_prefix_sibling, parent, errh);
+}
+
+void
+NameDB::check(ErrorHandler *)
+{
 }
 
 void
