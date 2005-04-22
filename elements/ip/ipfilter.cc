@@ -79,17 +79,17 @@ IPFilter::lookup(String word, int type, int proto, uint32_t &data, ErrorHandler 
 {
     // type queries always win if they occur
     if (type == 0 || type == TYPE_TYPE)
-	if (NameInfo::query(NameInfo::T_IPFILTER_TYPE, 0, word, &data, sizeof(uint32_t)))
+	if (NameInfo::query(NameInfo::T_IPFILTER_TYPE, this, word, &data, sizeof(uint32_t)))
 	    return TYPE_TYPE;
     
     // query each relevant database
     int got[5];
     int32_t val[5];
-    got[0] = NameInfo::query(NameInfo::T_IP_PROTO, 0, word, &val[0], sizeof(uint32_t));
-    got[1] = NameInfo::query(NameInfo::T_TCP_PORT, 0, word, &val[1], sizeof(uint32_t));
-    got[2] = NameInfo::query(NameInfo::T_UDP_PORT, 0, word, &val[2], sizeof(uint32_t));
-    got[3] = NameInfo::query(NameInfo::T_TCP_OPT, 0, word, &val[3], sizeof(uint32_t));
-    got[4] = NameInfo::query(NameInfo::T_ICMP_TYPE, 0, word, &val[4], sizeof(uint32_t));
+    got[0] = NameInfo::query(NameInfo::T_IP_PROTO, this, word, &val[0], sizeof(uint32_t));
+    got[1] = NameInfo::query(NameInfo::T_TCP_PORT, this, word, &val[1], sizeof(uint32_t));
+    got[2] = NameInfo::query(NameInfo::T_UDP_PORT, this, word, &val[2], sizeof(uint32_t));
+    got[3] = NameInfo::query(NameInfo::T_TCP_OPT, this, word, &val[3], sizeof(uint32_t));
+    got[4] = NameInfo::query(NameInfo::T_ICMP_TYPE, this, word, &val[4], sizeof(uint32_t));
 
     // exit if no match
     if (!got[0] && !got[1] && !got[2] && !got[3] && !got[4])
@@ -204,9 +204,6 @@ IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, uint32_t provided_m
 {
     uint32_t data = _u.u;
 
-    // Two kinds of GT or LT tests are OK: those that boil down to checking
-    // the upper bits against 0, and those that boil down to checking the upper
-    // bits against ~0.
     if (_op == OP_GT || _op == OP_LT) {
 	// Check for comparisons that are always true or false.
 	if ((_op == OP_LT && (data == 0 || data > full_mask))
