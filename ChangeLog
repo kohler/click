@@ -1,3 +1,7 @@
+2005-04-21 Thursday 23:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/nameinfo.hh (1.5): add NameInfo::define_int
+
 2005-04-21 Thursday 23:26  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/nameinfo.hh (1.4), lib/nameinfo.cc (1.5): NameDB
