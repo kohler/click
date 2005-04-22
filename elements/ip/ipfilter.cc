@@ -229,7 +229,9 @@ IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, uint32_t provided_m
 	_u.u = (_u.u << shift) | ((1 << shift) - 1);
 	_mask.u = (this_mask << shift) | ((1 << shift) - 1);
 	// Want (_u.u & _mask.u) == _u.u.
-	// So change 'tcp[0] & 5 > 2' into 'tcp[0] & 5 > 1'.
+	// So change 'tcp[0] & 5 > 2' into the equivalent 'tcp[0] & 5 > 1':
+	// find the highest bit in _u that is not set in _mask,
+	// and turn on all lower bits.
 	if ((_u.u & _mask.u) != _u.u) {
 	    uint32_t full_mask_u = (full_mask << shift) | ((1 << shift) - 1);
 	    uint32_t missing_bits = (_u.u & _mask.u) ^ (_u.u & full_mask_u);
