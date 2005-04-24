@@ -69,6 +69,8 @@ unparse_word(int type, int proto, const String &word)
 {
     String tn = IPFilter::Primitive::unparse_type(0, type);
     String tr = IPFilter::Primitive::unparse_transp_proto(proto);
+    if (tn)
+	tn += " ";
     if (tr || (word && tn))
 	tr += " ";
     return tn + tr + word;
@@ -95,10 +97,6 @@ IPFilter::lookup(String word, int type, int proto, uint32_t &data, ErrorHandler 
     if (!got[0] && !got[1] && !got[2] && !got[3] && !got[4])
 	return -1;
 
-    // remove one of TCP and UDP port if they give the same value
-    if (got[1] && got[2] && val[1] == val[2])
-	got[2] = false;
-
     // filter
     int tgot[5];
     tgot[0] = got[0] && (type == 0 || type == TYPE_PROTO);
@@ -111,6 +109,10 @@ IPFilter::lookup(String word, int type, int proto, uint32_t &data, ErrorHandler 
     tgot[4] = got[4] && (type == 0 || type == FIELD_ICMP_TYPE)
 	&& (proto == UNKNOWN || proto == IP_PROTO_ICMP);
     
+    // remove one of TCP and UDP port if they give the same value
+    if (tgot[1] && tgot[2] && val[1] == val[2])
+	tgot[2] = false;
+
     // return
     int ngot = tgot[0] + tgot[1] + tgot[2] + tgot[3] + tgot[4];
     if (ngot == 1) {
