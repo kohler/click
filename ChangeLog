@@ -1,3 +1,8 @@
+2005-04-24 Sunday 02:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipfilter.cc (1.59): allow "udp dns" (Anne reported
+	bug)
+
 2005-04-22 Friday 18:08  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/ipfilter.cc (1.58): nit
