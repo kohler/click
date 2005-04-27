@@ -1,3 +1,8 @@
+2005-04-27 Wednesday 10:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/ratedunqueue.hh (1.19): RatedUnqueue/BWRUq can
+	live reconfigure (Kristof Cauwel)
+
 2005-04-24 Sunday 02:43  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/ipfilter.cc (1.59): allow "udp dns" (Anne reported
