@@ -32,6 +32,7 @@ class RatedUnqueue : public Element { public:
   
     int configure(Vector<String> &, ErrorHandler *);
     void configuration(Vector<String> &) const;
+    bool can_live_reconfigure() const	{ return true; }
     int initialize(ErrorHandler *);
     void add_handlers();
   
