@@ -108,7 +108,7 @@ CheckSRHeader::simple_action(Packet *p)
 
   if (click_in_cksum((unsigned char *) pk, tlen) != 0) {
     click_chatter("%s: bad SR checksum", id().cc());
-    click_chatter("%s: length: %d, cksum: 0x%.4x", id().cc(), (unsigned long) ntohs(pk->_cksum));
+    click_chatter("%s: length: %d, cksum: 0x%.4x", id().cc(), tlen, (unsigned long) ntohs(pk->_cksum));
     goto bad;
   }
 
