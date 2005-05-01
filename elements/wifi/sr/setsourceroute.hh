@@ -14,15 +14,35 @@ CLICK_DECLS
 /*
 =c
 
-SetSourceRoute(IP, ETH, ETHERTYPE, SRCR element, LinkTable element, ARPtable element, 
-   [METRIC GridGenericMetric], [WARMUP period in seconds])
+SetSourceRoute(IP, SRForwarder element)
 
 =s Wifi, Wireless Routing
 
-Set the Source Route for packet
+Set the Source Route for packet's destination inside the source route
+header based on the destination ip annotation. If no source route is
+found for a given packet, the unmodified packet is sent to output 1 if
+the output is present.
 
-=d
+Regular Arguments:
+=over 8
+=item IP
+IPAddress
+=item SRForwarder Element
+=back 8
 
+
+=h clear write
+Removes all routes from this element
+
+=h routes read
+Prints routes 
+
+=h set_route write
+Writing "5.0.0.1 5.0.0.2 5.0.0.3" to this element will make
+all packets destined for 5.0.0.3 from 5.0.0.1 to use a two-hop
+route through 5.0.0.2.
+
+=a SRForwarder
  */
 
 
@@ -34,6 +54,8 @@ class SetSourceRoute : public Element {
   
   const char *class_name() const		{ return "SetSourceRoute"; }
   const char *processing() const		{ return AGNOSTIC; }
+  void notify_noutputs(int);
+
   int initialize(ErrorHandler *);
   int configure(Vector<String> &conf, ErrorHandler *errh);
   Packet *simple_action(Packet *);

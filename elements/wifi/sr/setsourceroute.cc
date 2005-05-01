@@ -40,6 +40,11 @@ SetSourceRoute::SetSourceRoute()
 SetSourceRoute::~SetSourceRoute()
 {
 }
+void 
+SetSourceRoute::notify_noutputs(int n)
+{
+	set_noutputs((n > 2 || n < 1) ? 1 : n);
+}
 
 int
 SetSourceRoute::configure (Vector<String> &conf, ErrorHandler *errh)
@@ -73,24 +78,22 @@ SetSourceRoute::simple_action(Packet *p_in)
   IPAddress dst = p_in->dst_ip_anno();
 
   if (!dst) {
-    click_chatter("SetSourceRoute %s: got invalid dst %s\n",
-		  id().cc(),
-		  dst.s().cc());
-    p_in->kill();
-    return 0;
+	  click_chatter("SetSourceRoute %s: got invalid dst %s\n",
+			id().cc(),
+			dst.s().cc());
+	  p_in->kill();
+	  return 0;
   }
-
+  
   Path *p = _routes.findp(dst);
-  if (!p) {
-    click_chatter("SetSourceRoute %s: couldn't find path for dst %s\n",
-		  id().cc(),
-		  dst.s().cc());
-    p_in->kill();
-    return 0;
+  if (p) {
+	  Packet *p_out = _sr_forwarder->encap(p_in, *p, 0);
+	  return p_out;
+  } else {
+	  /* no route */
+	  checked_output_push(1, p_in);
+	  return 0;
   }
-
-  Packet *p_out = _sr_forwarder->encap(p_in, *p, 0);
-  return p_out;
 }
 
 

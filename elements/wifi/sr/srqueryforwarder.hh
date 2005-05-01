@@ -24,7 +24,6 @@ SRQueryForwarder(IP, ETH, ETHERTYPE, SRQueryForwarder element, LinkTable element
 
 Forwards Route Queries
 
-=d
 
 */
 

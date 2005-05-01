@@ -23,7 +23,6 @@ SRQuerier(IP, ETH, ETHERTYPE, SRQuerier element, LinkTable element, ARPtable ele
 =s Wifi, Wireless Routing
 Sends route queries if it can't find a valid source route.
 
-=d
  */
 
 

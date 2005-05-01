@@ -25,7 +25,6 @@ SRQueryResponder(IP, ETH, ETHERTYPE, SRQueryResponder element, LinkTable element
 
 Responds to queries destined for this node.
 
-=d
  */
 
 

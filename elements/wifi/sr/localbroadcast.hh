@@ -24,8 +24,6 @@ LocalBroadcast(IP, ETH, ETHERTYPE, LocalBroadcast element, LinkTable element, AR
 
 Floods a packet to 1-hop neighbors.
 
-=d
-
  */
 
 
