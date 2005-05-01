@@ -10,7 +10,7 @@ CLICK_DECLS
  * 
  * SetWifiExtraFlag(Unsigned)
  * 
- * =s wifi
+ * =s Wifi
  * 
  * Sets the Wifi flags on a packet.
  * 
