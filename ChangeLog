@@ -1,3 +1,43 @@
+2005-05-01 Sunday 17:24  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/setwifiextraflag.hh (1.3): fix documentation bug
+
+2005-05-01 Sunday 17:23  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/station/beaconscanner.hh (1.8): fix man pages.
+
+2005-05-01 Sunday 17:22  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/wirelessinfo.cc (1.5): fix to allow weird ssids.
+
+2005-05-01 Sunday 17:22  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: extraencap.cc (1.4), prism2encap.cc (1.4): fix
+	push bugs.
+
+2005-05-01 Sunday 17:20  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: radiotapdecap.cc (1.1), radiotapdecap.hh (1.1),
+	radiotapencap.cc (1.1), radiotapencap.hh (1.1): add radiotap
+	decap/encap.
+
+2005-05-01 Sunday 17:19  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/: localbroadcast.hh (1.3), metricflood.hh (1.4),
+	setsourceroute.cc (1.4), setsourceroute.hh (1.3), srquerier.hh
+	(1.7), srqueryforwarder.hh (1.6), srqueryresponder.hh (1.6):
+	documentation fixes.
+
+2005-05-01 Sunday 17:18  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/checksrheader.cc (1.5): fix print bug caught by
+	Wenjun Hu.
+
+2005-05-01 Sunday 17:16  John Bicket <jbicket@mit.edu>
+
+	* include/clicknet/radiotap.h (1.1): add the bsd radiotap
+	definitions.
+
 2005-04-27 Wednesday 10:28  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/ratedunqueue.hh (1.19): RatedUnqueue/BWRUq can
