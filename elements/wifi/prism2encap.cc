@@ -59,57 +59,59 @@ Prism2Encap::simple_action(Packet *p)
     return 0;
   }
 
-  p_out->push(sizeof(wlan_ng_prism2_header));
-  wlan_ng_prism2_header *ph = (wlan_ng_prism2_header *) p_out->data();
-  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();  
-
-  memset(ph, 0, sizeof(wlan_ng_prism2_header));
-  ph->msgcode = DIDmsg_lnxind_wlansniffrm;
-  ph->msglen = sizeof(wlan_ng_prism2_header);
-  //strcpy(ph->devname, dev->name);
-  
-  ph->hosttime.did = DIDmsg_lnxind_wlansniffrm_hosttime;
-  ph->hosttime.status = 0;
-  ph->hosttime.len = 4;
-  ph->hosttime.data = 0;
-  
-  /* Pass up tsf clock in mactime */
-  ph->mactime.did = DIDmsg_lnxind_wlansniffrm_mactime;
-  ph->mactime.status = 0;
-  ph->mactime.len = 4;
-  ph->mactime.data = 0;
-  
-  ph->istx.did = DIDmsg_lnxind_wlansniffrm_istx;
-  ph->istx.status = 0;
-  ph->istx.len = 4;
-  ph->istx.data = 1;
-  
-  ph->frmlen.did = DIDmsg_lnxind_wlansniffrm_frmlen;
-  ph->frmlen.status = 0;
-  ph->frmlen.len = 4;
-  ph->frmlen.data = p_out->length() - sizeof(wlan_ng_prism2_header);
-  
-  ph->channel.did = DIDmsg_lnxind_wlansniffrm_channel;
-  ph->channel.status = 0;
-  ph->channel.len = 4;
-  ph->channel.data = 0;
-  
-  ph->rssi.did = DIDmsg_lnxind_wlansniffrm_rssi;
-  ph->rssi.status = P80211ENUM_msgitem_status_no_value;
-  ph->rssi.len = 4;
-  ph->rssi.data = 0;
-	
-  ph->signal.did = DIDmsg_lnxind_wlansniffrm_signal;
-  ph->signal.status = 0;
-  ph->signal.len = 4;
-  ph->signal.data = ceh->rssi;
-  
-  ph->rate.did = DIDmsg_lnxind_wlansniffrm_rate;
-  ph->rate.status = 0;
-  ph->rate.len = 4;
-  ph->rate.data = ceh->rate;
-  
-  return p;
+  p_out = p_out->push(sizeof(wlan_ng_prism2_header));
+  if (p_out) {
+	  wlan_ng_prism2_header *ph = (wlan_ng_prism2_header *) p_out->data();
+	  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();  
+	  
+	  memset(ph, 0, sizeof(wlan_ng_prism2_header));
+	  ph->msgcode = DIDmsg_lnxind_wlansniffrm;
+	  ph->msglen = sizeof(wlan_ng_prism2_header);
+	  //strcpy(ph->devname, dev->name);
+	  
+	  ph->hosttime.did = DIDmsg_lnxind_wlansniffrm_hosttime;
+	  ph->hosttime.status = 0;
+	  ph->hosttime.len = 4;
+	  ph->hosttime.data = 0;
+	  
+	  /* Pass up tsf clock in mactime */
+	  ph->mactime.did = DIDmsg_lnxind_wlansniffrm_mactime;
+	  ph->mactime.status = 0;
+	  ph->mactime.len = 4;
+	  ph->mactime.data = 0;
+	  
+	  ph->istx.did = DIDmsg_lnxind_wlansniffrm_istx;
+	  ph->istx.status = 0;
+	  ph->istx.len = 4;
+	  ph->istx.data = 1;
+	  
+	  ph->frmlen.did = DIDmsg_lnxind_wlansniffrm_frmlen;
+	  ph->frmlen.status = 0;
+	  ph->frmlen.len = 4;
+	  ph->frmlen.data = p_out->length() - sizeof(wlan_ng_prism2_header);
+	  
+	  ph->channel.did = DIDmsg_lnxind_wlansniffrm_channel;
+	  ph->channel.status = 0;
+	  ph->channel.len = 4;
+	  ph->channel.data = 0;
+	  
+	  ph->rssi.did = DIDmsg_lnxind_wlansniffrm_rssi;
+	  ph->rssi.status = P80211ENUM_msgitem_status_no_value;
+	  ph->rssi.len = 4;
+	  ph->rssi.data = 0;
+	  
+	  ph->signal.did = DIDmsg_lnxind_wlansniffrm_signal;
+	  ph->signal.status = 0;
+	  ph->signal.len = 4;
+	  ph->signal.data = ceh->rssi;
+	  
+	  ph->rate.did = DIDmsg_lnxind_wlansniffrm_rate;
+	  ph->rate.status = 0;
+	  ph->rate.len = 4;
+	  ph->rate.data = ceh->rate;
+	  
+  }
+  return p_out;
 }
 
 

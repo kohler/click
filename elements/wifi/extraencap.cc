@@ -59,12 +59,14 @@ ExtraEncap::simple_action(Packet *p)
     return 0;
   }
 
-  p_out->push(sizeof(click_wifi_extra));
-  click_wifi_extra *eh = (click_wifi_extra *) p_out->data();
-
-  memset(eh, 0, sizeof(click_wifi_extra));
-  memcpy(p_out->data(), p_out->all_user_anno(), sizeof(click_wifi_extra));
-  eh->magic = WIFI_EXTRA_MAGIC;
+  p_out = p_out->push(sizeof(click_wifi_extra));
+  if (p_out) {
+	  click_wifi_extra *eh = (click_wifi_extra *) p_out->data();
+	  
+	  memset(eh, 0, sizeof(click_wifi_extra));
+	  memcpy(p_out->data(), p_out->all_user_anno(), sizeof(click_wifi_extra));
+	  eh->magic = WIFI_EXTRA_MAGIC;
+  }
   return p_out;
 }
 
