@@ -30,22 +30,15 @@ beacons received with that channel in the packet.
 If channel is 0, it will record statistics for all beacons received.
 If channel is less than 0, it will discard all beaconds
 
-=d
 
-
-If channel is 0, it doesn't filter any beacons.
-If channel is < 0, it doesn't look at any beconds
-if channel is > 0, it looks at only beacons with on channel.
 =e
 
-
-  wifi_cl :: Classifier (0/00%0c, 
-                         0/04%0c,
-                         0/08%0c);
-
-  wifi_cl [0] -> Discard; //mgt 
-  wifi_cl [1] -> Discard; //ctl
-  wifi_cl [2] -> wifi_decap :: BeaconScanner() -> ...
+  FromDevice(ath0) 
+  -> Prism2Decap()
+  -> ExtraDecap()
+  -> Classifier(0/80%f0)  // only beacon packets
+  -> bs :: BeaconScanner()
+  -> Discard;
 
 =a
 
