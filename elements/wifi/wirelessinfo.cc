@@ -77,10 +77,7 @@ WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
   String s = cp_uncomment(in_s);
   switch((int)vparam) {
  case H_SSID: {
-   String ssid;
-    if (!cp_string(s, &ssid)) 
-      return errh->error("ssid must be string");
-    f->_ssid = ssid;
+    f->_ssid = s;
     break;
   }
   case H_BSSID: { 
