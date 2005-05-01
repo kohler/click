@@ -52,7 +52,7 @@ sub mac_addr_to_ip($) {
 }
 
 my $dev;
-my $channel = 3;
+my $rawdev;
 my $ssid;
 my $mode = "g";
 my $gateway = 0;
@@ -62,7 +62,6 @@ my $interval = 10000;
 my $rate_control = "static-2";
 my $kernel = 0;
 GetOptions('device=s' => \$dev,
-	   'channel=i' => \$channel,
 	   'ssid=s' => \$ssid,
 	   'mode=s' => \$mode,
 	   'gateway' => \$gateway,
@@ -104,7 +103,6 @@ my $wireless_mac = mac_addr_from_dev($dev);
 my $suffix;
 if ($hostname =~ /rn-pdos(\S+)-wired/) {
     $suffix = "0.0.$1";
-    $channel = "11";
 } else {
     $suffix = mac_addr_to_ip($wireless_mac);
 }
@@ -128,19 +126,21 @@ if ($wireless_mac eq "" or
     print STDERR "got invalid mac address!";
     exit -1;
 }
-system "/sbin/ifconfig $dev up";
+
+$rawdev = $dev;
+
+if ($dev =~ /ath/) {
+    $rawdev = "${dev}raw";
+    system "sysctl -w dev.$dev.rawdev_type=2 > /dev/null 2>&1";
+    system "sysctl -w dev.$dev.rawdev=1 > /dev/null 2>&1";
+    system "/sbin/ifconfig $rawdev up";
+}
+
 my $iwconfig = "/home/roofnet/bin/iwconfig";
 
 if (-f "/sbin/iwconfig") {
     $iwconfig = "/sbin/iwconfig";
 }
-
-system "$iwconfig $dev mode Ad-Hoc";
-
-
-#system "/sbin/ifconfig $dev $safe_ip";
-system "/sbin/ifconfig $dev mtu 1800";
-
 
 if ($dev =~ /wlan/) {
     system "/home/roofnet/bin/prism2_param $dev ptype 6";
@@ -156,10 +156,9 @@ if ($dev =~ /wlan/) {
 }
 
 if ($dev =~ /ath/) {
-    system "/sbin/ifconfig ath0 txqueuelen 5";
+    system "/sbin/ifconfig $dev txqueuelen 5";
 }
 
-system "$iwconfig $dev channel $channel";
 
 system "/sbin/modprobe tun > /dev/null 2>&1";
 my $probes = "2 60 2 1500 4 1500 11 1500 22 1500";
@@ -308,13 +307,11 @@ if (!$kernel) {
 }
 
 print <<EOF;
-sniff_dev :: SniffDevice($dev, false);
+sniff_dev :: SniffDevice($rawdev, false);
 
 sched :: PrioSched()
-//-> prism2_encap :: Prism2Encap()
--> set_power :: SetTXPower(POWER 63)
--> extra_encap :: ExtraEncap()
-//-> Print ("to_dev", TIMESTAMP true)
+-> set_power :: SetTXPower(POWER 60)
+-> radiotap_encap :: RadiotapEncap()
 -> sniff_dev;
 
 route_q :: FullNoteQueue(10) 
@@ -372,6 +369,7 @@ sniff_dev
 -> prism2_decap :: Prism2Decap()
 -> phyerr_filter :: FilterPhyErr()
 -> extra_decap :: ExtraDecap()
+-> radiotap_decap :: RadiotapDecap()
 //-> PrintWifi(fromdev)
 -> beacon_cl :: Classifier(0/00%0c 0/80%f0, //beacons
 			    -)
@@ -380,9 +378,6 @@ sniff_dev
 
 beacon_cl [1]
 -> Classifier(0/08%0c) //data
--> rate_cl :: Classifier(30/9000,-); //rate packets
-
-rate_cl [1] 
 -> tx_filter :: FilterTX()
 -> dupe :: WifiDupeFilter() 
 -> WifiDecap()
@@ -419,81 +414,3 @@ txf_t2 [2] -> [1] data_probe_rate;
 
 EOF
 }
-
-
-
-print <<EOF;
-
-
-
-rate_arf_rate :: AutoRateFallback(OFFSET 4,
-                             ACTIVE false,
-                             STEPUP 10,
-                             THRESHOLD 0,
-                             ADAPTIVE_STEPUP false,
-                             RT rates);
-rate_aarf_rate :: AutoRateFallback(OFFSET 4,
-                             ACTIVE false,
-                             STEPUP 10,
-                             THRESHOLD 0,
-                             ADAPTIVE_STEPUP true,
-			      RT rates);
-
-rate_madwifi_rate :: MadwifiRate(OFFSET 4,
-                            ACTIVE false,
-                            THRESHOLD 0,
-                            RT rates);
-rate_probe_rate :: ProbeTXRate(OFFSET 4,
-                          ACTIVE false,
-                          WINDOW 10000,
-                          THRESHOLD 0,
-                          RT rates);
-rate_static_rate :: SetTXRate(RATE 2);
-
-
-
-rate_cl [0] 
--> rate_tx_filter :: FilterTX()
--> rate_dupe :: WifiDupeFilter() 
-//-> Print(fromdev, 60)
--> WifiDecap()
--> HostEtherFilter($wireless_mac, DROP_OTHER true, DROP_OWN true) 
--> rate_rxstats :: RXStats()
--> rate_count :: Counter()
--> Discard;
-
-rate_inf_src :: InfiniteSource(DATA $data, LIMIT -1, ACTIVE false)
-//-> seq :: IncrementSeqNo(FIRST 0)
--> rate_ee :: EtherEncap(0x9000, $wireless_mac, ff:ff:ff:ff:ff:ff)
--> rate_wifi_encap :: WifiEncap(0x00, 0:0:0:0:0:0)
--> rate_static_rate
--> rate_arf_rate
--> rate_aarf_rate
--> rate_madwifi_rate
--> rate_probe_rate
--> [2] sched;
-
-rate_poke :: PokeHandlers(pause,
-                     write rate_inf_src.active true,
-                     wait 30,
-                     write rate_inf_src.active false,
-                     loop);
-
-
-rate_static_poke :: PokeHandlers(pause,
-                     write rate_inf_src.active true,
-                     wait 1,
-                     write rate_inf_src.active false,
-		     loop);
-
-
-rate_tx_filter[1]
-//-> Print(txf, 60)
--> [1] rate_arf_rate [1]
--> [1] rate_aarf_rate [1]
--> [1] rate_madwifi_rate [1]
--> [1] rate_probe_rate [1]
--> FilterFailures()
--> rate_send_count :: Counter()
--> Discard;
-EOF

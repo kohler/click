@@ -48,7 +48,13 @@ rates :: AvailableRates(DEFAULT 2 4 11 22);
 
 q :: Queue(10)
 -> wep_encap :: WepEncap(ACTIVE false)
--> set_rate :: SetTXRate(22)
+-> set_rate :: SetTXRate(2)
+
+-> rate :: ProbeTXRate(OFFSET 4,
+		       THRESHOLD 0,
+		       WINDOW 10000,
+		       RT rates)
+
 -> SetTXPower(63)
   //-> seq :: WifiSeq()
 -> extra_encap :: ExtraEncap()
@@ -114,3 +120,4 @@ FromHost(station, station_address, ETHER station_address)
 -> q;
 
 
+tx_filter [1] -> [1] rate [1] -> Discard;
