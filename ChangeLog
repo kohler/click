@@ -1,3 +1,9 @@
+2005-05-01 Sunday 18:49  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/: dump.click (1.6), gen_config_roofnet.pl (1.6),
+	station.click (1.7): fix gen_config_roofnet.pl for radiotap
+	headers.
+
 2005-05-01 Sunday 17:24  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/setwifiextraflag.hh (1.3): fix documentation bug
