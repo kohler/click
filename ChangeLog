@@ -1,3 +1,8 @@
+2005-05-02 Monday 12:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* userlevel/click.cc (1.99): user level hotswap bug: avoid
+	destroying router early
+
 2005-05-01 Sunday 18:49  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/: dump.click (1.6), gen_config_roofnet.pl (1.6),
