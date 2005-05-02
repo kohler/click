@@ -1,3 +1,7 @@
+2005-05-02 Monday 18:17  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/gen_config_roofnet.pl (1.7): autodetect which mode.
+
 2005-05-02 Monday 12:00  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* userlevel/click.cc (1.99): user level hotswap bug: avoid
