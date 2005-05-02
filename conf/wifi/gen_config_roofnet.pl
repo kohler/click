@@ -10,9 +10,7 @@ sub usage() {
     print STDERR "usage:
     --dev {e. g. ath0}
     --ssid
-    --channel
     --gateway
-    --mode {a/b/g}
     --ap ( act as an access point. off by default)
     --txf (enable/disable tx-feedback. on by default)
 ";
@@ -54,7 +52,6 @@ sub mac_addr_to_ip($) {
 my $dev;
 my $rawdev;
 my $ssid;
-my $mode = "g";
 my $gateway = 0;
 my $ap = 0;
 my $txf = 1;
@@ -63,7 +60,6 @@ my $rate_control = "static-2";
 my $kernel = 0;
 GetOptions('device=s' => \$dev,
 	   'ssid=s' => \$ssid,
-	   'mode=s' => \$mode,
 	   'gateway' => \$gateway,
 	   'ap!' => \$ap,
 	   'txf!' => \$txf,
@@ -93,9 +89,6 @@ if ($gateway) {
     $gateway = "true";
 } else{
     $gateway = "false";
-}
-if ($dev =~ /wlan/) {
-    $mode= "b";
 }
 
 my $hostname = `hostname`;
@@ -131,8 +124,9 @@ $rawdev = $dev;
 
 if ($dev =~ /ath/) {
     $rawdev = "${dev}raw";
-    system "sysctl -w dev.$dev.rawdev_type=2 > /dev/null 2>&1";
-    system "sysctl -w dev.$dev.rawdev=1 > /dev/null 2>&1";
+    system "/sbin/sysctl -w dev.$dev.rxfilter=0xff > /dev/null 2>&1";
+    system "/sbin/sysctl -w dev.$dev.rawdev_type=2 > /dev/null 2>&1";
+    system "/sbin/sysctl -w dev.$dev.rawdev=1 > /dev/null 2>&1";
     system "/sbin/ifconfig $rawdev up";
 }
 
@@ -159,6 +153,18 @@ if ($dev =~ /ath/) {
     system "/sbin/ifconfig $dev txqueuelen 5";
 }
 
+my $mode = "b";
+my $iwconfig_result = `$iwconfig $dev 2>/dev/null`;
+if ($iwconfig_result =~ /Frequency:(\d+)\.(\d+)GHz/) {
+    my $channel = "$1.$2";
+    if ($channel > 5.0) {
+	$mode = "a";
+    } elsif ($dev =~ /ath/) {
+	$mode = "g";
+    }
+}
+
+print STDERR "using mode $mode\n";
 
 system "/sbin/modprobe tun > /dev/null 2>&1";
 my $probes = "2 60 2 1500 4 1500 11 1500 22 1500";
