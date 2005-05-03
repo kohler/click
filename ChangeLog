@@ -1,3 +1,14 @@
+2005-05-03 Tuesday 16:36  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/gatewayselector.cc (1.11): record only one hit
+	for each sequence number.
+
+2005-05-03 Tuesday 15:50  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/: gatewayselector.cc (1.10), gatewayselector.hh
+	(1.7): add more informative handlers for gatewayselector. keep
+	track of number of floods seen.
+
 2005-05-03 Tuesday 15:26  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/radiotapdecap.cc (1.2): remove fcs when radiotap
