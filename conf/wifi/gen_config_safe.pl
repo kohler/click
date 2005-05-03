@@ -94,10 +94,10 @@ my $suffix = mac_addr_to_ip($wireless_mac);
 my $safe_ip = "6." . $suffix;
 
 print <<EOF;
-AddressInfo(safe_addr $safe_ip/8 $dev);
+AddressInfo(safe_addr $safe_ip/8 $wireless_mac);
 winfo :: WirelessInfo(BSSID 00:00:00:00:00:00);
 
-FromHost(safe, safe_addr, ETHER $wireless_mac)
+FromHost(safe, safe_addr, ETHER safe_addr)
 -> q :: Queue()
 -> encap :: WifiEncap(0x0, WIRELESS_INFO winfo)
 -> set_power :: SetTXPower(63)
