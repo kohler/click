@@ -112,7 +112,7 @@ FromHost(safe, safe_addr, ETHER safe_addr)
 // ether[34:4] == 0 and ether[38:2] == 0 means a bssid of 00:00:00:00:00:00
 // ether[48] is the ethertype
 from_dev :: FromDevice($rawdev,
-	   	   BPF_FILTER "ether[2:2] == 0x1200 and ether[18] == 0x08 and ether[34:4] == 0 and ether[38:2] == 0 and ether[48] == 0x09"
+	   	   BPF_FILTER "ether[2:2] == 0x1200 and ether[18] == 0x08 and ether[34:4] == 0 and ether[38:2] == 0 and ether[48] == 0x08"
 )
 -> prism2_decap :: Prism2Decap()
 -> extra_decap :: ExtraDecap()
