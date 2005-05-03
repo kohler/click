@@ -348,9 +348,11 @@ GatewaySelector::push(int port, Packet *p_in)
   if (!nfo) {
     _gateways.insert(gw, GWInfo());
     nfo = _gateways.findp(gw);
+    nfo->_first_update = Timestamp::now();
   }
   nfo->_ip = gw;
   nfo->_last_update = Timestamp::now();
+  nfo->_seen++;
 
   if (_is_gw) {
     p_in->kill();
@@ -402,11 +404,13 @@ GatewaySelector::print_gateway_stats()
     for(GWIter iter = _gateways.begin(); iter; iter++) {
       GWInfo nfo = iter.value();
       sa << nfo._ip.s().cc() << " ";
-      sa << now - nfo._last_update << " ";
+      sa << "seen " << nfo._seen << " ";
+      sa << "first_update " << now - nfo._first_update << " ";
+      sa << "last_update " << now - nfo._last_update << " ";
       
       Path p = _link_table->best_route(nfo._ip, false);
       int metric = _link_table->get_route_metric(p);
-      sa << metric << "\n";
+      sa << "current_metric " << metric << "\n";
     }
     
   return sa.take_string();
@@ -515,6 +519,7 @@ GatewaySelector::add_handlers()
 {
   add_read_handler("is_gateway", read_param, (void *) 0);
   add_read_handler("gateway_stats", read_param, (void *) 1);
+  add_read_handler("stats", read_param, (void *) 1);
   add_read_handler("ignore", read_param, (void *) 2);
   add_read_handler("allow", read_param, (void *) 3);
   

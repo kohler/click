@@ -100,7 +100,9 @@ private:
   class GWInfo {
   public:
     IPAddress _ip;
+    Timestamp _first_update;
     Timestamp _last_update;
+    int _seen;
     GWInfo() {memset(this,0,sizeof(*this)); }
   };
 
