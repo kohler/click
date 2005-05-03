@@ -150,6 +150,10 @@ RadiotapDecap::simple_action(Packet *p)
 			ceh->flags |= WIFI_EXTRA_TX;
 			if (flags & IEEE80211_RADIOTAP_F_TX_FAIL) 
 				ceh->flags |= WIFI_EXTRA_TX_FAIL;
+
+			if (flags & IEEE80211_RADIOTAP_F_FCS) {
+				p->take(4);
+			}
 		}
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_DATA_RETRIES))
