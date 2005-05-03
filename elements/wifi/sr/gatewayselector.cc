@@ -343,20 +343,9 @@ GatewaySelector::push(int port, Packet *p_in)
   }
   
   IPAddress gw = pk->_qdst;
-  sr_assert(gw);
-  GWInfo *nfo = _gateways.findp(gw);
-  if (!nfo) {
-    _gateways.insert(gw, GWInfo());
-    nfo = _gateways.findp(gw);
-    nfo->_first_update = Timestamp::now();
-  }
-  nfo->_ip = gw;
-  nfo->_last_update = Timestamp::now();
-  nfo->_seen++;
-
-  if (_is_gw) {
-    p_in->kill();
-    return;
+  if (!gw) {
+	  p_in->kill();
+	  return;
   }
 
   int si = 0;
@@ -377,6 +366,22 @@ GatewaySelector::push(int port, Packet *p_in)
     _seen.push_back(Seen(gw, seq, 0, 0));
   }
   _seen[si]._count++;
+
+  GWInfo *nfo = _gateways.findp(gw);
+  if (!nfo) {
+	  _gateways.insert(gw, GWInfo());
+	  nfo = _gateways.findp(gw);
+	  nfo->_first_update = Timestamp::now();
+  }
+  
+  nfo->_ip = gw;
+  nfo->_last_update = Timestamp::now();
+  nfo->_seen++;
+
+  if (_is_gw) {
+    p_in->kill();
+    return;
+  }
 
 
   /* schedule timer */
