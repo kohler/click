@@ -1,3 +1,12 @@
+2005-05-03 Tuesday 15:26  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/radiotapdecap.cc (1.2): remove fcs when radiotap
+	header flags IEEE80211_RADIOTAP_F_FCS.
+
+2005-05-03 Tuesday 15:01  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/radiotapencap.cc (1.2): fix alignment bug.
+
 2005-05-03 Tuesday 14:26  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/gen_config_safe.pl (1.3): use ip packets, not srcr
