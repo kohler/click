@@ -7,13 +7,22 @@ arp :: ARPTable();
 lt :: LinkTable(IP $srcr_ip);
 
 
- gw :: GatewaySelector(ETHTYPE 0x092c,
+tracker :: GatewaySelector(ETHTYPE 0x092d,
 			   IP $srcr_ip,
 			   ETH $wireless_mac,
 			   LT lt,
 			   ARP arp,
-			   PERIOD 15,
-			   GW $gateway);
+			   PERIOD 600,
+			   GW true);
+tracker -> SetSRChecksum -> [0] output;
+
+gw :: GatewaySelector(ETHTYPE 0x092c,
+		      IP $srcr_ip,
+		      ETH $wireless_mac,
+		      LT lt,
+		      ARP arp,
+		      PERIOD 15,
+		      GW $gateway);
 
 
 gw -> SetSRChecksum -> [0] output;
@@ -115,6 +124,7 @@ from_gw_cl [1] -> [1] set_gw [1] -> [3] output;
 			12/0945 , //replies
 			12/0941 , //srcr_es
 			12/092c , //srcr_gw
+			12/092d , //srcr_tracker
 			);
  
  
@@ -123,6 +133,7 @@ from_gw_cl [1] -> [1] set_gw [1] -> [3] output;
  ncl[2] -> CheckSRHeader() -> query_responder;
  ncl[3] -> es;
  ncl[4] -> CheckSRHeader() -> gw;
+ ncl[5] -> CheckSRHeader() -> tracker;
  
 }
 
