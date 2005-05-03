@@ -23,14 +23,16 @@ FromHost(safe, safe_addr, ETHER safe_addr)
 -> encap :: WifiEncap(0x0, WIRELESS_INFO winfo)
 -> set_power :: SetTXPower(63)
 -> set_rate :: SetTXRate(2)
--> extra_encap :: ExtraEncap()
--> to_dev :: ToDevice(ath0);
+-> radiotap_encap :: RadiotapEncap()
+-> to_dev :: ToDevice(ath0raw);
 
 
 
-from_dev :: FromDevice(ath0)
+from_dev :: FromDevice(ath0raw,
+		       BPF_FILTER "ether[18:4] == 0x08 and ")
 -> prism2_decap :: Prism2Decap()
 -> extra_decap :: ExtraDecap()
+-> radiotap_decap :: RadiotapDecap()
 -> phyerr_filter :: FilterPhyErr()
 -> tx_filter :: FilterTX()
 -> dupe :: WifiDupeFilter()

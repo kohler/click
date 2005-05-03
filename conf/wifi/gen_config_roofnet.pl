@@ -300,7 +300,14 @@ elementclass LinuxIPHost {
 
 elementclass SniffDevice {
     \$device, \$promisc|
-  from_dev :: FromDevice(\$device, PROMISC \$promisc) -> output;
+	// we only want txf for NODS packets
+	// ether[2:2] == 0x1200 means it has an ath_rx_radiotap header (it is 18 bytes long)
+	// ether[2:2] == 0x1000 means it has an ath_tx_radiotap header (it is 16 bytes long)
+	// ether[18] == 0x08 means NODS
+  from_dev :: FromDevice(\$device, 
+			 BPF_FILTER "(ether[2:2] == 0x1200 and ether[18] == 0x08) or (ether[2:2] == 0x1000 and ether[16] == 0x08)",
+			 PROMISC \$promisc) 
+  -> output;
   input -> to_dev :: ToDevice(\$device);
 }
 
