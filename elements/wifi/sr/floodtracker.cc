@@ -28,7 +28,7 @@
 CLICK_DECLS
 
 FloodTracker::FloodTracker()
-  :  Element(1,1)
+	:  Element(1,1)
 {
 }
 
@@ -39,87 +39,90 @@ FloodTracker::~FloodTracker()
 int
 FloodTracker::configure (Vector<String> &conf, ErrorHandler *errh)
 {
-  int ret;
-  ret = cp_va_parse(conf, this, errh,
-                    cpKeywords,
-                    cpEnd);
-
-  return ret;
+	int ret;
+	ret = cp_va_parse(conf, this, errh,
+			  cpKeywords,
+			  cpEnd);
+	
+	return ret;
 }
 
 Packet *
 FloodTracker::simple_action(Packet *p_in)
 {
-  click_ether *eh = (click_ether *) p_in->data();
-  struct srpacket *pk = (struct srpacket *) (eh+1);
-
-  IPAddress gw = pk->get_link_node(0);
-  int si = 0;
-  uint32_t seq = pk->seq();
-  for(si = 0; si < _seen.size(); si++){
-    if(gw == _seen[si]._gw && seq == _seen[si]._seq){
-      _seen[si]._count++;
-      return p_in;
-    }
-  }
-
-  if (si == _seen.size()) {
-    if (_seen.size() == 100) {
-      _seen.pop_front();
-      si--;
-    }
-    _seen.push_back(Seen(gw, seq, 0, 0));
-  }
-  _seen[si]._count++;
-
-  GWInfo *nfo = _gateways.findp(gw);
-  if (!nfo) {
-	  _gateways.insert(gw, GWInfo());
-	  nfo = _gateways.findp(gw);
-	  nfo->_first_update = Timestamp::now();
-  }
-  
-  nfo->_ip = gw;
-  nfo->_last_update = Timestamp::now();
-  nfo->_seen++;
-
-  return p_in;
+	click_ether *eh = (click_ether *) p_in->data();
+	struct srpacket *pk = (struct srpacket *) (eh+1);
+	
+	IPAddress ip = pk->get_link_node(0);
+	int si = 0;
+	uint32_t seq = pk->seq();
+	
+	for(si = 0; si < _seen.size(); si++){
+		if (ip == _seen[si]._ip && seq == _seen[si]._seq){
+			_seen[si]._count++;
+			return p_in;
+		}
+	}
+	
+	if (si == _seen.size()) {
+		if (_seen.size() == 100) {
+			_seen.pop_front();
+			si--;
+		}
+		_seen.push_back(Seen(ip, seq));
+	}
+	_seen[si]._count++;
+	
+	IPInfo *nfo = _gateways.findp(ip);
+	if (!nfo) {
+		_gateways.insert(ip, IPInfo());
+		nfo = _gateways.findp(ip);
+		nfo->_first_update = Timestamp::now();
+	}
+	
+	nfo->_ip = ip;
+	nfo->_last_update = Timestamp::now();
+	nfo->_seen++;
+	
+	return p_in;
 }
 
 
 String
 FloodTracker::print_gateway_stats()
 {
-    StringAccum sa;
-    Timestamp now = Timestamp::now();
-    for(GWIter iter = _gateways.begin(); iter; iter++) {
-      GWInfo nfo = iter.value();
-      sa << nfo._ip.s().cc() << " ";
-      sa << "seen " << nfo._seen << " ";
-      sa << "first_update " << now - nfo._first_update << " ";
-      sa << "last_update " << now - nfo._last_update << " ";
-    }
-    
-  return sa.take_string();
-
+	StringAccum sa;
+	Timestamp now = Timestamp::now();
+	for(IPIter iter = _gateways.begin(); iter; iter++) {
+		IPInfo nfo = iter.value();
+		sa << nfo._ip.s().cc() << " ";
+		sa << "seen " << nfo._seen << " ";
+		sa << "first_update " << now - nfo._first_update << " ";
+		sa << "last_update " << now - nfo._last_update << " ";
+		sa << "\n";
+	}
+	
+	return sa.take_string();
+	
 }
 
+enum { H_STATS };
 String
 FloodTracker::read_param(Element *e, void *vparam)
 {
-  FloodTracker *f = (FloodTracker *) e;
-  switch ((int)vparam) {
-  case 0: return f->print_gateway_stats();
-  default:
-    return "";
-  }
-  
+	FloodTracker *f = (FloodTracker *) e;
+	switch ((int)vparam) {
+	case H_STATS: return f->print_gateway_stats();
+	default:
+		return "";
+	}
+	
 }
 
 void
 FloodTracker::add_handlers()
 {
-  add_read_handler("stats", read_param, (void *) 0);
+	add_read_handler("stats", read_param, (void *) H_STATS);
 }
 
 // generate Vector template instance

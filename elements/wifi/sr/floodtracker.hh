@@ -46,7 +46,7 @@ class FloodTracker : public Element {
   ~FloodTracker();
   
   const char *class_name() const		{ return "FloodTracker"; }
-  const char *processing() const		{ return PUSH; }
+  const char *processing() const		{ return AGNOSTIC; }
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
   /* handler stuff */
@@ -61,15 +61,12 @@ private:
     // List of query sequence #s that we've already seen.
   class Seen {
   public:
-    IPAddress _gw;
+    IPAddress _ip;
     u_long _seq;
     int _count;
     Timestamp _when; /* when we saw the first query */
-    Timestamp _to_send;
-    bool _forwarded;
-    Seen(IPAddress gw, u_long seq, int fwd, int rev) {
-	(void) fwd, (void) rev;
-	_gw = gw; 
+    Seen(IPAddress ip, u_long seq) {
+	_ip = ip; 
 	_seq = seq; 
 	_count = 0;
     }
@@ -78,18 +75,18 @@ private:
   
   DEQueue<Seen> _seen;
 
-  class GWInfo {
+  class IPInfo {
   public:
     IPAddress _ip;
     Timestamp _first_update;
     Timestamp _last_update;
     int _seen;
-    GWInfo() {memset(this,0,sizeof(*this)); }
+    IPInfo() {memset(this,0,sizeof(*this)); }
   };
 
-  typedef HashMap<IPAddress, GWInfo> GWTable;
-  typedef GWTable::const_iterator GWIter;
-  GWTable _gateways;
+  typedef HashMap<IPAddress, IPInfo> IPTable;
+  typedef IPTable::const_iterator IPIter;
+  IPTable _gateways;
 };
 
 
