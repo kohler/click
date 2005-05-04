@@ -1,3 +1,7 @@
+2005-05-04 Wednesday 14:39  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/srcr.click (1.4): remove debugging stuff.
+
 2005-05-04 Wednesday 13:31  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/sr/: floodtracker.cc (1.2), floodtracker.hh (1.2):
