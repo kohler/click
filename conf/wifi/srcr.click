@@ -57,10 +57,10 @@ tracker_forwarder :: MetricFlood(ETHTYPE 0x092e,
 				 ARP arp,
 				 DEBUG false);
 
-TimedSource(60, "") 
+TimedSource(600, "") 
 -> SetIPAddress(255.255.255.255)
 -> [1] tracker_forwarder
--> SetSRChecksum -> PrintSR(tracking) -> [0] output;
+-> SetSRChecksum -> [0] output;
 
 tracker_forwarder [1] -> Discard;
 
@@ -139,7 +139,7 @@ from_gw_cl [1] -> [1] set_gw [1] -> [3] output;
  ncl[2] -> CheckSRHeader() -> query_responder;
  ncl[3] -> es;
  ncl[4] -> CheckSRHeader() -> gw;
- ncl[5] -> CheckSRHeader() -> PrintSR(tracker) 
+ ncl[5] -> CheckSRHeader() 
 -> tracker :: FloodTracker()
 -> tracker_forwarder;
  
