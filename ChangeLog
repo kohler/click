@@ -1,3 +1,13 @@
+2005-05-04 Wednesday 13:31  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/: floodtracker.cc (1.2), floodtracker.hh (1.2):
+	floodtracker should be agnostic, not push.
+
+2005-05-04 Wednesday 13:09  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/srcr.click (1.3), elements/wifi/sr/floodtracker.cc
+	(1.1), elements/wifi/sr/floodtracker.hh (1.1): add tracker element.
+
 2005-05-03 Tuesday 16:36  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/sr/gatewayselector.cc (1.11): record only one hit
