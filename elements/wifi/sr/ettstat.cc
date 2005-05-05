@@ -395,7 +395,7 @@ ETTStat::send_probe()
 	link_info *lnfo = (struct link_info *) (ptr + x*sizeof(link_info));
 	lnfo->_size = rs._size;
 	lnfo->_rate = rs._rate;
-	lnfo->_fwd = probe->_fwd_rates[x];
+	lnfo->_fwd = probe->fwd_rate(rs._rate, rs._size);
 	lnfo->_rev = probe->rev_rate(_start, rs._rate, rs._size);
 	
 	rates.push_back(rs);
@@ -677,14 +677,6 @@ static int ipaddr_sorter(const void *va, const void *vb) {
     return (ntohl(a->addr()) < ntohl(b->addr())) ? -1 : 1;
 }
 
-static int ratesize_sorter(const void *va, const void *vb) {
-  RateSize *a = (RateSize *)va, *b = (RateSize *)vb;
-  if (a->_rate == b->_rate) {
-    return a->_size - b->_size;
-  }
-  return a->_rate - b->_rate;
-}
-
 String
 ETTStat::read_bcast_stats()
 {
@@ -715,14 +707,13 @@ ETTStat::read_bcast_stats()
       sa << " ?";
     }
 
-    click_qsort(pl->_probe_types.begin(), pl->_probe_types.size(), sizeof(RateSize), ratesize_sorter);
-    for (int x = 0; x < pl->_probe_types.size(); x++) {
-      sa << " [ " << pl->_probe_types[x]._rate << " ";
-      sa << pl->_probe_types[x]._size << " ";
-      int rev_rate = pl->rev_rate(_start, pl->_probe_types[x]._rate, 
-				  pl->_probe_types[x]._size);
-      sa << pl->_fwd_rates[x] << " ";
-      sa << rev_rate << " ]";
+    for (int x = 0; x < _ads_rs.size(); x++) {
+	    int rate = _ads_rs[x]._rate;
+	    int size = _ads_rs[x]._size;
+	    int rev = pl->rev_rate(_start, rate, size);
+	    int fwd = pl->fwd_rate(rate, size);
+	    sa << " [ " << rate << " " << size << " ";
+	    sa << fwd << " " << rev << " ]";
     }
     sa << " seq " << pl->_seq;
     sa << " period " << pl->_period;
@@ -730,7 +721,6 @@ ETTStat::read_bcast_stats()
     sa << " sent " << pl->_sent;
     sa << " last_rx " << now - pl->_last_rx;
     sa << "\n";
-    
   }
 
   return sa.take_string();

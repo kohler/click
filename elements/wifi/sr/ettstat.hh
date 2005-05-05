@@ -214,6 +214,18 @@ public:
       return MIN(100, 100 * num / num_expected);
 
     }
+	  int fwd_rate(int rate, int size) {
+		  if (Timestamp::now() - _last_rx > Timestamp::make_msec(_tau)) {
+			  return 0;
+		  }
+		  for (int x = 0; x < _probe_types.size(); x++) {
+			  if (_probe_types[x]._size == size && 
+			      _probe_types[x]._rate == rate) {
+				  return _fwd_rates[x];
+			  }
+		  }
+		  return 0;
+	  }
   };
 
 public:
