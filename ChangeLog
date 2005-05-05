@@ -1,3 +1,9 @@
+2005-05-05 Thursday 10:52  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/: ettstat.cc (1.21), ettstat.hh (1.15),
+	setgateway.cc (1.5), setgateway.hh (1.6): don't remove stale
+	entries in ettstat.  fix idle timeout bug in setgateway.
+
 2005-05-04 Wednesday 23:21  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/sr/: ettstat.cc (1.20), ettstat.hh (1.14): ettstat:
