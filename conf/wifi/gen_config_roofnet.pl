@@ -137,16 +137,18 @@ if (-f "/sbin/iwconfig") {
 }
 
 if ($dev =~ /wlan/) {
-    system "/home/roofnet/bin/prism2_param $dev ptype 6";
-    system "/home/roofnet/bin/prism2_param $dev pseudo_ibss 1";
-    system "/home/roofnet/bin/prism2_param $dev monitor_type 1";
+    system "/sbin/ifconfig $dev mtu 1800";
+#    system "/home/roofnet/scripts/prism2_param $dev ptype 6";
+    system "/home/roofnet/scripts/prism2_param $dev pseudo_ibss 1";
+    system "$iwconfig $dev mode ad-hoc";
+#    system "/home/roofnet/scripts/prism2_param $dev monitor_type 1";
     system "$iwconfig $dev essid $ssid";
     system "$iwconfig $dev rts off";
     system "$iwconfig $dev retries 16";
     # make sure we broadcast at a fixed power
-    system "/home/roofnet/bin/prism2_param $dev alc 0";
+    system "/home/roofnet/scripts/prism2_param $dev alc 0";
     system "$iwconfig $dev txpower 23";
-
+    system "/sbin/ifconfig $dev up";
 }
 
 if ($dev =~ /ath/) {
@@ -305,7 +307,6 @@ elementclass SniffDevice {
 	// ether[2:2] == 0x1000 means it has an ath_tx_radiotap header (it is 16 bytes long)
 	// ether[18] == 0x08 means NODS
   from_dev :: FromDevice(\$device, 
-			 BPF_FILTER "(ether[2:2] == 0x1200 and ether[18] == 0x08) or (ether[2:2] == 0x1000 and ether[16] == 0x08)",
 			 PROMISC \$promisc) 
   -> output;
   input -> to_dev :: ToDevice(\$device);
@@ -384,7 +385,7 @@ sniff_dev
 -> extra_decap :: ExtraDecap()
 -> radiotap_decap :: RadiotapDecap()
 //-> PrintWifi(fromdev)
--> beacon_cl :: Classifier(0/00%0c 0/80%f0, //beacons
+-> beacon_cl :: Classifier(0/80, //beacons
 			    -)
 -> bs :: BeaconScanner(RT rates)
 -> Discard;
