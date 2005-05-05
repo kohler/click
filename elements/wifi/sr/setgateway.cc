@@ -80,114 +80,111 @@ SetGateway::run_timer ()
 void 
 SetGateway::push_fwd(Packet *p_in, IPAddress best_gw) 
 {
-  const click_tcp *tcph = p_in->tcp_header();
-  IPFlowID flowid = IPFlowID(p_in);
-  FlowTableEntry *match = _flow_table.findp(flowid);
+	const click_tcp *tcph = p_in->tcp_header();
+	IPFlowID flowid = IPFlowID(p_in);
+	FlowTableEntry *match = _flow_table.findp(flowid);
+	
+	
+	if ((tcph->th_flags & TH_SYN) && match && match->is_pending()) {
+		match->_outstanding_syns++;
+		p_in->set_dst_ip_anno(match->_gw);
+		output(0).push(p_in);
+		return;
+	}  else if (!(tcph->th_flags & TH_SYN)) {
+		if (match) {
+			match->saw_forward_packet();
+			if (tcph->th_flags & (TH_RST | TH_FIN)) {
+				match->_fwd_alive = false; // forward flow is over
+			}
+			if (tcph->th_flags & TH_RST) {
+				match->_rev_alive = false; // rev flow is over
+			}
+			p_in->set_dst_ip_anno(match->_gw);
+			output(0).push(p_in);
+			return;
+		}
+		
+		click_chatter("%{element}::%s no match. guessing for %s\n",
+			      this, __func__, flowid.s().cc());
+	}
+	
+	if (!best_gw) {
+		p_in->kill();
+		return;
+	}
 
-  if (!(tcph->th_flags & TH_SYN)) {
-    if (match && !match->is_pending()) {
-      match->saw_forward_packet();
-      if (tcph->th_flags & (TH_RST | TH_FIN)) {
-	match->_fwd_alive = false; // forward flow is over
-      }
-      if (tcph->th_flags & TH_RST) {
-	match->_rev_alive = false; // rev flow is over
-      }
-      p_in->set_dst_ip_anno(match->_gw);
-      output(0).push(p_in);
-      return;
-    }
-    
-    click_chatter("SetGateway %s: couldn't find non-pending match, killing\n",
-		  id().cc());
-    p_in->kill();
-    return;
-  }
-
-  if (match && match->is_pending()) {
-    match->_outstanding_syns++;
-    p_in->set_dst_ip_anno(match->_gw);
-    output(0).push(p_in);
-    return;
-  } 
-
-  if (!best_gw) {
-    p_in->kill();
-    return;
-  }
-
-  /* no match */
-  _flow_table.insert(flowid, FlowTableEntry());
-  match = _flow_table.findp(flowid);
-  match->_id = flowid;
-  match->_gw = best_gw;
-  match->saw_forward_packet();
-  match->_outstanding_syns++;
-  p_in->set_dst_ip_anno(best_gw);
-  output(0).push(p_in);
+	/* no match */
+	_flow_table.insert(flowid, FlowTableEntry());
+	match = _flow_table.findp(flowid);
+	match->_id = flowid;
+	match->_gw = best_gw;
+	match->saw_forward_packet();
+	match->_outstanding_syns++;
+	p_in->set_dst_ip_anno(best_gw);
+	output(0).push(p_in);
 }
 
 
 void 
 SetGateway::push_rev(Packet *p_in) 
 {
-  const click_tcp *tcph = p_in->tcp_header();
-  IPFlowID flowid = IPFlowID(p_in).rev();
-  FlowTableEntry *match = _flow_table.findp(flowid);
-
-  if ((tcph->th_flags & TH_SYN) && (tcph->th_flags & TH_ACK)) {
-    if (match) {
-      /* yes, using the dst_ip_anno is a bit weird to mark
-       * the gw it came from, but there aren't any other
-       * convenient ip annos. also in srcr.cc
-       * --jbicket
-       */
-      if (match->_gw != MISC_IP_ANNO(p_in)) {
-	click_chatter("SetGateway %s: got packet from weird gw %s, expected %s\n",
-		      id().cc(),
-		      p_in->dst_ip_anno().s().cc(),
-		      match->_gw.s().cc());
-	p_in->kill();
+	const click_tcp *tcph = p_in->tcp_header();
+	IPFlowID flowid = IPFlowID(p_in).rev();
+	FlowTableEntry *match = _flow_table.findp(flowid);
+	
+	if ((tcph->th_flags & TH_SYN) && (tcph->th_flags & TH_ACK)) {
+		if (match) {
+			/* yes, using the dst_ip_anno is a bit weird to mark
+			 * the gw it came from, but there aren't any other
+			 * convenient ip annos. also in srcr.cc
+			 * --jbicket
+			 */
+			if (match->_gw != MISC_IP_ANNO(p_in)) {
+				click_chatter("%{element}::%s flow %s got packet from weird gw %s, expected %s\n",
+					      this, __func__,
+					      flowid.s().cc(),
+					      p_in->dst_ip_anno().s().cc(),
+					      match->_gw.s().cc());
+				p_in->kill();
+				return;
+			}
+			match->saw_reply_packet();
+			match->_outstanding_syns = 0;
+			output(1).push(p_in);
+			return;
+		}
+		
+		click_chatter("SetGateway %s: no match, killing SYN_ACK\n",
+			      id().cc());
+		p_in->kill();
+		return;
+	}
+	
+	
+	/* not a syn-ack packet */
+	if (match) {
+		match->saw_reply_packet();
+		if (tcph->th_flags & (TH_FIN | TH_RST)) {
+			match->_rev_alive = false;
+		}
+		if (tcph->th_flags & TH_RST) {
+			match->_fwd_alive = false;
+		}
+		output(1).push(p_in);
+		return;
+	}
+	
+	click_chatter("%{element}::%s couldn't find non-pending match, creating %s\n",
+		      this, __func__, flowid.s().cc());
+	
+	_flow_table.insert(flowid, FlowTableEntry());
+	match = _flow_table.findp(flowid);
+	match->_id = flowid;
+	match->_gw = MISC_IP_ANNO(p_in);
+	match->saw_reply_packet();
+	
+	output(1).push(p_in);
 	return;
-      }
-      match->saw_reply_packet();
-      match->_outstanding_syns = 0;
-      output(1).push(p_in);
-      return;
-    }
-
-    click_chatter("SetGateway %s: no match, killing SYN_ACK\n",
-		  id().cc());
-    p_in->kill();
-    return;
-  }
-    
-
-  /* not a syn-ack packet */
-  if (match && !match->is_pending()) {
-    match->saw_reply_packet();
-    if (tcph->th_flags & (TH_FIN | TH_RST)) {
-      match->_rev_alive = false;
-    }
-    if (tcph->th_flags & TH_RST) {
-      match->_fwd_alive = false;
-    }
-    output(1).push(p_in);
-    return;
-  }
-
-  click_chatter("SetGateway %s: couldn't find non-pending match, creating for %s\n",
-		id().cc(),
-		flowid.s().cc());
-
-  _flow_table.insert(flowid, FlowTableEntry());
-  match = _flow_table.findp(flowid);
-  match->_id = flowid;
-  match->_gw = MISC_IP_ANNO(p_in);
-  match->saw_reply_packet();
-
-  output(1).push(p_in);
-  return;
 }
 
 void
@@ -237,20 +234,20 @@ SetGateway::push(int port, Packet *p_in)
 
 void 
 SetGateway::cleanup() {
-  FlowTable new_table;
-  Timestamp timeout(60, 0);
-
-  for(FTIter i = _flow_table.begin(); i; i++) {
-    FlowTableEntry f = i.value();
-    if (f.age() < timeout) {
-      new_table.insert(f._id, f);
-    }
-  }
-  _flow_table.clear();
-  for(FTIter i = new_table.begin(); i; i++) {
-    FlowTableEntry f = i.value();
-    _flow_table.insert(f._id, f);
-  }
+	FlowTable new_table;
+	Timestamp timeout(60, 0);
+	
+	for(FTIter i = _flow_table.begin(); i; i++) {
+		FlowTableEntry f = i.value();
+		if (f.age() < timeout && f._fwd_alive || f._rev_alive) {
+			new_table.insert(f._id, f);
+		}
+	}
+	_flow_table.clear();
+	for(FTIter i = new_table.begin(); i; i++) {
+		FlowTableEntry f = i.value();
+		_flow_table.insert(f._id, f);
+	}
 }
 String
 SetGateway::static_print_flows(Element *f, void *) 

@@ -243,12 +243,9 @@ public:
   void add_bcast_stat(IPAddress, const link_probe &);
   
   void update_link(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int> fwd, Vector<int> rev, uint32_t seq);
-  void send_probe_hook();
   void send_probe();
-  static void static_send_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(); }
 
-  Timer *_timer;
-  Timer _stale_timer;
+  Timer _timer;
 
   void run_timer();
   Timestamp _next;

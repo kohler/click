@@ -68,6 +68,8 @@ private:
     bool _all_answered;
     FlowTableEntry() {
       _all_answered = true;
+      _fwd_alive = true;
+      _rev_alive = true;
     }
 
     FlowTableEntry(const FlowTableEntry &e) : 
@@ -90,14 +92,12 @@ private:
     void saw_reply_packet() {
       _last_reply = Timestamp::now();
       _all_answered = true;
+      _outstanding_syns = 0;
     }
     bool is_pending() const    { return (_outstanding_syns > 0);}
 
     Timestamp age() {
-      if (_fwd_alive || _rev_alive)
-	  return Timestamp();
-      else
-	  return Timestamp::now() - _last_reply;
+	    return Timestamp::now() - _last_reply;
     }
   };
 

@@ -128,8 +128,7 @@ ETTStat::ETTStat()
     _etx_metric(0),
     _arp_table(0),
     _next_neighbor_to_ad(0),
-    _timer(0),
-    _stale_timer(this),
+    _timer(this),
     _ads_rs_index(0),
     _rtable(0)
 {
@@ -203,12 +202,29 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
   return res;
 }
 
+void add_jitter(unsigned int max_jitter, Timestamp *t) {
+  unsigned j = (unsigned) (random() % (max_jitter + 1));
+  if (random() & 1) {
+      *t += Timestamp::make_msec(j);
+  } else {
+      *t -= Timestamp::make_msec(j);
+  }
+  return;
+}
+
 void
 ETTStat::run_timer()
 {
-  clear_stale();
-  _stale_timer.schedule_after_ms(6000);
+	int p = _period / _ads_rs.size();
+	unsigned max_jitter = p / 10;
+	
+	send_probe();
+	
+	_next += Timestamp::make_msec(p);
+	add_jitter(max_jitter, &_next);
+	_timer.schedule_at(_next);
 }
+
 void
 ETTStat::take_state(Element *e, ErrorHandler *errh)
 {
@@ -233,22 +249,12 @@ ETTStat::take_state(Element *e, ErrorHandler *errh)
   _start = q->_start;
 
   if (Timestamp::now() < q->_next) {
-    _timer->unschedule();
-    _timer->schedule_at(q->_next);
+    _timer.unschedule();
+    _timer.schedule_at(q->_next);
     _next = q->_next;
   }
 
   
-}
-
-void add_jitter(unsigned int max_jitter, Timestamp *t) {
-  unsigned j = (unsigned) (random() % (max_jitter + 1));
-  if (random() & 1) {
-      *t += Timestamp::make_msec(j);
-  } else {
-      *t -= Timestamp::make_msec(j);
-  }
-  return;
 }
 
 void 
@@ -268,19 +274,6 @@ ETTStat::update_link(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<i
 
 
 
-
-void 
-ETTStat::send_probe_hook() 
-{
-  int p = _period / _ads_rs.size();
-  unsigned max_jitter = p / 10;
-
-  send_probe();
-  
-  _next += Timestamp::make_msec(p);
-  add_jitter(max_jitter, &_next);
-  _timer->schedule_at(_next);
-}
 
 void
 ETTStat::send_probe() 
@@ -421,8 +414,6 @@ ETTStat::send_probe()
   checked_output_push(0, p);
 }
 
-
-
 int
 ETTStat::initialize(ErrorHandler *errh)
 {
@@ -430,18 +421,13 @@ ETTStat::initialize(ErrorHandler *errh)
     if (!_eth) 
       return errh->error("Source Ethernet address must be specified to send probes");
     
-    _timer = new Timer(static_send_hook, this);
-    _timer->initialize(this);
-
-    _stale_timer.initialize(this);
-    _stale_timer.schedule_now();
-    
+    _timer.initialize(this);    
     _next = Timestamp::now();
 
     unsigned max_jitter = _period / 10;
     add_jitter(max_jitter, &_next);
 
-    _timer->schedule_at(_next);
+    _timer.schedule_at(_next);
   }
 
   reset();
