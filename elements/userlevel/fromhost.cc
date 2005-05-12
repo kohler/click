@@ -76,8 +76,11 @@ int
 FromHost::try_linux_universal(ErrorHandler *errh)
 {
     int fd = open("/dev/net/tun", O_RDWR | O_NONBLOCK);
-    if (fd < 0)
-	return -errno;
+    if (fd < 0) {
+	int e = errno;
+	errh->error("open /dev/net/tun: %s", strerror(e));
+	return -e;
+    }
 
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
