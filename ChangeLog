@@ -1,3 +1,8 @@
+2005-05-11 Wednesday 20:38  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/fromhost.cc (1.7): report error when you cant
+	open /dev/net/tun
+
 2005-05-05 Thursday 14:25  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/gen_config_roofnet.pl (1.9): fix for prism cards.
