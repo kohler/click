@@ -1,3 +1,13 @@
+2005-05-13 Friday 11:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: aggcounter.cc (1.33), aggcounter.hh (1.30):
+	more renaming
+
+2005-05-13 Friday 11:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* userlevel/: click.cc (1.100), click.cc (1.101): fix bug where
+	click would crash on a bad router config
+
 2005-05-13 Friday 04:33  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: aggcounter.cc (1.32), aggcounter.hh (1.29):
