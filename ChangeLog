@@ -1,3 +1,12 @@
+2005-05-13 Friday 04:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: aggcounter.cc (1.32), aggcounter.hh (1.29):
+	writing paper: add write_pdf_file, rename reaggregate_counts to pdf
+
+2005-05-13 Friday 04:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipprint.cc (1.45): printer nit
+
 2005-05-11 Wednesday 20:38  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/fromhost.cc (1.7): report error when you cant
