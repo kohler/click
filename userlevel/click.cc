@@ -280,7 +280,8 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
     r->set_hotswap_router(router);
   
   if (errh->nerrors() > 0 || r->initialize(errh) < 0) {
-    router->use();		// Account for 'r' reference to 'router'
+    if (router)
+      router->use();		// Account for 'r' reference to 'router'
     delete r;
     return 0;
   } else
