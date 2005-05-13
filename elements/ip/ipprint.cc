@@ -97,7 +97,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   else if (contents == "ASCII")
     _contents = 2;
   else
-    return errh->error("bad contents value `%s'; should be `false', `hex', or `ascii'", contents.cc());
+    return errh->error("bad contents value '%s'; should be 'false', 'hex', or 'ascii'", contents.cc());
 
   int payloadv;
   payload = payload.upper();
@@ -108,7 +108,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   else if (payload == "ASCII")
     payloadv = 2;
   else
-    return errh->error("bad payload value `%s'; should be `false', `hex', or `ascii'", contents.cc());
+    return errh->error("bad payload value '%s'; should be 'false', 'hex', or 'ascii'", contents.cc());
 
   if (payloadv > 0 && _contents > 0)
     return errh->error("specify at most one of PAYLOAD and CONTENTS");
