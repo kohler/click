@@ -17,7 +17,7 @@ counts packets per aggregate annotation
 
 AggregateCounter maintains counts of how many packets or bytes it has seen for
 each aggregate value. Each aggregate annotation value gets a different count.
-Call its C<write_file> or C<write_ascii_file> write handler to get a dump of
+Call its C<write_file> or C<write_text_file> write handler to get a dump of
 the information.
 
 The C<freeze> handler, and the C<AGGREGATE_FREEZE> and C<COUNT_FREEZE>
@@ -103,24 +103,24 @@ probably begin with a comment character, like '!' or '#'. Default is empty.
 
 Argument is a filename, or 'C<->', meaning standard out. Write a packed binary
 file containing all current data to the specified filename. The format is a
-couple ASCII lines, followed by a line containing 'C<!packed_le>' or
+couple text lines, followed by a line containing 'C<!packed_le>' or
 'C<!packed_be>', followed by N 8-byte records. In each record, bytes 1-4 are
 the aggregate, and bytes 5-8 are the count. Both values are 32-bit integers.
 The byte order is indicated by the 'C<!packed>' line: 'C<!packed_le>' means
 little-endian, 'C<!packed_be>' means big-endian.
 
-=h write_ascii_file write-only
+=h write_text_file write-only
 
-Argument is a filename, or 'C<->', meaning standard out. Write an ASCII file
+Argument is a filename, or 'C<->', meaning standard out. Write a text file
 containing all current data to the specified filename. The format is a couple
-ASCII lines, followed by N data lines, each containing the aggregate ID in
+text lines, followed by N data lines, each containing the aggregate ID in
 decimal, a space, then the count in decimal.
 
 =h write_ip_file write-only
 
-Argument is a filename, or 'C<->', meaning standard out. Write an ASCII file
+Argument is a filename, or 'C<->', meaning standard out. Write a text file
 containing all current data to the specified filename. The format is as in
-C<write_ascii_file>, except that aggregate IDs are printed as IP addresses.
+C<write_text_file>, except that aggregate IDs are printed as IP addresses.
 
 =h freeze read/write
 
@@ -138,7 +138,7 @@ pass. It starts out active.
 When any value is written to this handler, AggregateCounter sets 'active' to
 false and additionally stops the driver.
 
-=h reaggregate_counts write-only
+=h pdf write-only
 
 When any value is written to this handler, AggregateCounter will recalculate
 its counters. The new aggregate identifiers equal the old counts; the new
@@ -174,7 +174,7 @@ Only available in user-level processes.
 
 This configuration reads an IP summary dump in from standard input, aggregates
 based on destination IP address, and counts packets. When the dump is done,
-Click will write the aggregate counter's data to standard output, in ASCII
+Click will write the aggregate counter's data to standard output, in text
 form.
 
   FromIPSummaryDump(-, STOP true)
@@ -183,7 +183,7 @@ form.
 	-> Discard;
 
   DriverManager(wait_pause,
-	write ac.write_ascii_file -);
+	write ac.write_text_file -);
 
 =a
 
@@ -210,7 +210,7 @@ class AggregateCounter : public Element { public:
 
     bool empty() const			{ return _num_nonzero == 0; }
     int clear(ErrorHandler * = 0);
-    enum WriteFormat { WR_ASCII = 0, WR_BINARY = 1, WR_ASCII_IP = 2 };
+    enum WriteFormat { WR_TEXT = 0, WR_BINARY = 1, WR_TEXT_IP = 2, WR_TEXT_PDF = 3 };
     int write_file(String, WriteFormat, ErrorHandler *) const;
     void reaggregate_counts();
     
@@ -251,7 +251,7 @@ class AggregateCounter : public Element { public:
     void reaggregate_node(Node *);
     void clear_node(Node *);
 
-    static void write_nodes(Node *, FILE *, WriteFormat, uint32_t *, int &, int, ErrorHandler *);
+    void write_nodes(Node *, FILE *, WriteFormat, uint32_t *, int &, int, ErrorHandler *) const;
     static int write_file_handler(const String &, Element *, void *, ErrorHandler *);
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);

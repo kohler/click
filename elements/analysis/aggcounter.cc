@@ -350,14 +350,17 @@ AggregateCounter::reaggregate_counts()
 
 static void
 write_batch(FILE *f, AggregateCounter::WriteFormat format,
-	    uint32_t *buffer, int pos, ErrorHandler *)
+	    uint32_t *buffer, int pos, double count, ErrorHandler *)
 {
     if (format == AggregateCounter::WR_BINARY)
 	fwrite(buffer, sizeof(uint32_t), pos, f);
-    else if (format == AggregateCounter::WR_ASCII_IP)
+    else if (format == AggregateCounter::WR_TEXT_IP)
 	for (int i = 0; i < pos; i += 2)
 	    fprintf(f, "%d.%d.%d.%d %u\n", (buffer[i] >> 24) & 255, (buffer[i] >> 16) & 255, (buffer[i] >> 8) & 255, buffer[i] & 255, buffer[i+1]);
-    else
+    else if (format == AggregateCounter::WR_TEXT_PDF)
+	for (int i = 0; i < pos; i += 2)
+	    fprintf(f, "%u %.12g\n", buffer[i], buffer[i+1] / count);
+    else if (format == AggregateCounter::WR_TEXT)
 	for (int i = 0; i < pos; i += 2)
 	    fprintf(f, "%u %u\n", buffer[i], buffer[i+1]);
 }
@@ -365,13 +368,13 @@ write_batch(FILE *f, AggregateCounter::WriteFormat format,
 void
 AggregateCounter::write_nodes(Node *n, FILE *f, WriteFormat format,
 			      uint32_t *buffer, int &pos, int len,
-			      ErrorHandler *errh)
+			      ErrorHandler *errh) const
 {
     if (n->count > 0) {
 	buffer[pos++] = n->aggregate;
 	buffer[pos++] = n->count;
 	if (pos == len) {
-	    write_batch(f, format, buffer, pos, errh);
+	    write_batch(f, format, buffer, pos, _count, errh);
 	    pos = 0;
 	}
     }
@@ -404,16 +407,16 @@ AggregateCounter::write_file(String where, WriteFormat format,
 #elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
 	fprintf(f, "!packed_le\n");
 #else
-	format = WR_ASCII;
+	format = WR_TEXT;
 #endif
-    } else if (format == WR_ASCII_IP)
+    } else if (format == WR_TEXT_IP)
 	fprintf(f, "!ip\n");
     
     uint32_t buf[1024];
     int pos = 0;
     write_nodes(_root, f, format, buf, pos, 1024, errh);
     if (pos)
-	write_batch(f, format, buf, pos, errh);
+	write_batch(f, format, buf, pos, _count, errh);
 
     bool had_err = ferror(f);
     if (f != stdout)
@@ -437,7 +440,7 @@ AggregateCounter::write_file_handler(const String &data, Element *e, void *thunk
 
 enum {
     AC_FROZEN, AC_ACTIVE, AC_BANNER, AC_STOP, AC_REAGGREGATE, AC_CLEAR,
-    AC_AGGREGATE_CALL, AC_COUNT_CALL, AC_NAGG
+    AC_AGGREGATE_CALL, AC_COUNT_CALL, AC_NAGG, AC_COUNT
 };
 
 String
@@ -461,6 +464,8 @@ AggregateCounter::read_handler(Element *e, void *thunk)
 	    return "";
 	else
 	    return String(ac->_call_count) + " " + ac->_call_count_h->unparse();
+      case AC_COUNT:
+	return String(ac->_count) + "\n";
       case AC_NAGG:
 	return String(ac->_num_nonzero) + "\n";
       default:
@@ -534,15 +539,18 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
 void
 AggregateCounter::add_handlers()
 {
-    add_write_handler("write_ascii_file", write_file_handler, (void *)WR_ASCII);
+    add_write_handler("write_text_file", write_file_handler, (void *)WR_TEXT);
+    add_write_handler("write_ascii_file", write_file_handler, (void *)WR_TEXT);
     add_write_handler("write_file", write_file_handler, (void *)WR_BINARY);
-    add_write_handler("write_ip_file", write_file_handler, (void *)WR_ASCII_IP);
+    add_write_handler("write_ip_file", write_file_handler, (void *)WR_TEXT_IP);
+    add_write_handler("write_pdf_file", write_file_handler, (void *)WR_TEXT_PDF);
     add_read_handler("freeze", read_handler, (void *)AC_FROZEN);
     add_write_handler("freeze", write_handler, (void *)AC_FROZEN);
     add_read_handler("active", read_handler, (void *)AC_ACTIVE);
     add_write_handler("active", write_handler, (void *)AC_ACTIVE);
     add_write_handler("stop", write_handler, (void *)AC_STOP);
     add_write_handler("reaggregate_counts", write_handler, (void *)AC_REAGGREGATE);
+    add_write_handler("pdf", write_handler, (void *)AC_REAGGREGATE);
     add_read_handler("banner", read_handler, (void *)AC_BANNER);
     add_write_handler("banner", write_handler, (void *)AC_BANNER);
     add_write_handler("clear", write_handler, (void *)AC_CLEAR);
@@ -550,6 +558,7 @@ AggregateCounter::add_handlers()
     add_write_handler("aggregate_call", write_handler, (void *)AC_AGGREGATE_CALL);
     add_read_handler("count_call", read_handler, (void *)AC_COUNT_CALL);
     add_write_handler("count_call", write_handler, (void *)AC_COUNT_CALL);
+    add_read_handler("count", read_handler, (void *)AC_COUNT);
     add_read_handler("nagg", read_handler, (void *)AC_NAGG);
 }
 
