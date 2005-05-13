@@ -550,7 +550,7 @@ AggregateCounter::add_handlers()
     add_write_handler("active", write_handler, (void *)AC_ACTIVE);
     add_write_handler("stop", write_handler, (void *)AC_STOP);
     add_write_handler("reaggregate_counts", write_handler, (void *)AC_REAGGREGATE);
-    add_write_handler("pdf", write_handler, (void *)AC_REAGGREGATE);
+    add_write_handler("counts_pdf", write_handler, (void *)AC_REAGGREGATE);
     add_read_handler("banner", read_handler, (void *)AC_BANNER);
     add_write_handler("banner", write_handler, (void *)AC_BANNER);
     add_write_handler("clear", write_handler, (void *)AC_CLEAR);

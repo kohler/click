@@ -138,7 +138,7 @@ pass. It starts out active.
 When any value is written to this handler, AggregateCounter sets 'active' to
 false and additionally stops the driver.
 
-=h pdf write-only
+=h counts_pdf write-only
 
 When any value is written to this handler, AggregateCounter will recalculate
 its counters. The new aggregate identifiers equal the old counts; the new
