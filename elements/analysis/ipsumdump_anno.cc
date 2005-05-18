@@ -102,7 +102,7 @@ static void anno_outa(const PacketDesc& d, int thunk)
 
 #ifdef i386
 # define PUT4(p, d)	*reinterpret_cast<uint32_t *>((p)) = htonl((d))
-# define GET4(p)	ntohl(*reinterpret_cast<uint32_t *>((p)))
+# define GET4(p)	ntohl(*reinterpret_cast<const uint32_t *>((p)))
 #else
 # define PUT4(p, d)	do { (p)[0] = (d)>>24; (p)[1] = (d)>>16; (p)[2] = (d)>>8; (p)[3] = (d); } while (0)
 # define GET4(p)	((p)[0]<<24 | (p)[1]<<16 | (p)[2]<<8 | (p)[3])

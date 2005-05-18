@@ -279,9 +279,9 @@ bool field_missing(const PacketDesc& d, int what, const char* header_name, int l
 # define PUT4NET(p, d)	*reinterpret_cast<uint32_t *>((p)) = (d)
 # define PUT4(p, d)	*reinterpret_cast<uint32_t *>((p)) = htonl((d))
 # define PUT2(p, d)	*reinterpret_cast<uint16_t *>((p)) = htons((d))
-# define GET4NET(p)	*reinterpret_cast<uint32_t *>((p))
-# define GET4(p)	ntohl(*reinterpret_cast<uint32_t *>((p)))
-# define GET2(p)	ntohs(*reinterpret_cast<uint16_t *>((p)))
+# define GET4NET(p)	*reinterpret_cast<const uint32_t *>((p))
+# define GET4(p)	ntohl(*reinterpret_cast<const uint32_t *>((p)))
+# define GET2(p)	ntohs(*reinterpret_cast<const uint16_t *>((p)))
 #else
 # define PUT4NET(p, d)	do { uint32_t d__ = ntohl((d)); (p)[0] = d__>>24; (p)[1] = d__>>16; (p)[2] = d__>>8; (p)[3] = d__; } while (0)
 # define PUT4(p, d)	do { (p)[0] = (d)>>24; (p)[1] = (d)>>16; (p)[2] = (d)>>8; (p)[3] = (d); } while (0)
