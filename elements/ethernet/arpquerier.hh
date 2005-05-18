@@ -67,6 +67,26 @@ instances of ARPQuerier.
 ARPQuerier uses packets' destination IP address annotations, and can destroy
 their next packet annotations.
 
+=h table read-only
+
+Returns a textual representation of the ARP table.
+
+=h stats read-only
+
+Returns textual statistics (queries and drops).
+
+=h queries read-only
+
+Returns the number of queries sent.
+
+=h responses read-only
+
+Returns the number of responses received.
+
+=h drops read-only
+
+Returns the number of packets dropped.
+
 =a
 
 ARPResponder, ARPFaker, AddressInfo

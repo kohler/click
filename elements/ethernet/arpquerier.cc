@@ -29,7 +29,7 @@
 CLICK_DECLS
 
 ARPQuerier::ARPQuerier()
-  : _expire_timer(expire_hook, this)
+    : _age_head(0), _age_tail(0), _expire_timer(expire_hook, this)
 {
   add_input(); /* IP packets */
   add_input(); /* ether/ARP responses */
@@ -191,7 +191,8 @@ ARPQuerier::expire_hook(Timer *timer, void *thunk)
 	    break;
 	while (arpq->_cache_size >= arpq->_capacity && ae->head) {
 	    Packet *p = ae->head;
-	    ae->head = p->next();
+	    if (!(ae->head = p->next()))
+		ae->tail = 0;
 	    p->kill();
 	    arpq->_cache_size--;
 	    arpq->_drops++;
@@ -432,8 +433,10 @@ ARPQuerier::read_stats(Element *e, void *thunk)
         String(q->_drops.value()) + " packets killed\n" +
         String(q->_arp_queries.value()) + " ARP queries sent\n";
     case 1:
-      return String(q->_arp_responses.value()) + "\n";
+      return String(q->_arp_queries.value()) + "\n";
     case 2:
+      return String(q->_arp_responses.value()) + "\n";
+    case 3:
       return String(q->_drops.value()) + "\n";
     default:
       return String();
@@ -445,8 +448,9 @@ ARPQuerier::add_handlers()
 {
     add_read_handler("table", read_table, (void *)0);
     add_read_handler("stats", read_stats, (void *)0);
-    add_read_handler("responses", read_stats, (void *)1);
-    add_read_handler("drops", read_stats, (void *)2);
+    add_read_handler("queries", read_stats, (void *)1);
+    add_read_handler("responses", read_stats, (void *)2);
+    add_read_handler("drops", read_stats, (void *)3);
 }
 
 CLICK_ENDDECLS
