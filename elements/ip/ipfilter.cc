@@ -31,17 +31,22 @@ CLICK_DECLS
 
 static const StaticNameDB::Entry type_entries[] = {
     { "ce", IPFilter::TYPE_IPCE },
+    { "dest", IPFilter::TYPE_SYNTAX },
     { "dscp", IPFilter::FIELD_DSCP },
+    { "dst", IPFilter::TYPE_SYNTAX },
     { "ect", IPFilter::TYPE_IPECT },
     { "frag", IPFilter::TYPE_IPFRAG },
     { "hl", IPFilter::FIELD_HL },
     { "host", IPFilter::TYPE_HOST },
     { "id", IPFilter::FIELD_ID },
+    { "ip", IPFilter::TYPE_SYNTAX },
     { "len", IPFilter::FIELD_IPLEN },
     { "net", IPFilter::TYPE_NET },
+    { "not", IPFilter::TYPE_SYNTAX },
     { "opt", IPFilter::TYPE_TCPOPT },
     { "port", IPFilter::TYPE_PORT },
     { "proto", IPFilter::TYPE_PROTO },
+    { "src", IPFilter::TYPE_SYNTAX },
     { "tos", IPFilter::FIELD_TOS },
     { "ttl", IPFilter::FIELD_TTL },
     { "type", IPFilter::FIELD_ICMP_TYPE },
@@ -82,7 +87,7 @@ IPFilter::lookup(String word, int type, int proto, uint32_t &data, ErrorHandler 
     // type queries always win if they occur
     if (type == 0 || type == TYPE_TYPE)
 	if (NameInfo::query(NameInfo::T_IPFILTER_TYPE, this, word, &data, sizeof(uint32_t)))
-	    return TYPE_TYPE;
+	    return (data == TYPE_SYNTAX ? -1 : TYPE_TYPE);
     
     // query each relevant database
     int got[5];
