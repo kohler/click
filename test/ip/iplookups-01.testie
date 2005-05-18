@@ -1,6 +1,6 @@
 %script
 
-for rtable in RadixIPLookup DirectIPLookup RangeIPLookup LinearIPLookup SortedIPLookup; do
+for rtable in RadixIPLookup DirectIPLookup RangeIPLookup LinearIPLookup; do
 	click -e "
 i :: Idle
 	-> r :: $rtable()
@@ -89,22 +89,7 @@ done
 0 7.0.0.7
 -1
 
-0 1.0.0.1
-1 2.0.0.2
-1 2.0.0.2
-2 3.0.0.3
-2 3.0.0.3
-2 3.0.0.3
-0 4.0.0.4
-0 5.0.0.5
-0 4.0.0.4
-0 4.0.0.4
-0 7.0.0.7
--1
-
 %expect stderr
-While calling 'r.add'{{.*}}:
-  conflict with existing route '18.16.0.0/12 4.0.0.4 0'
 While calling 'r.add'{{.*}}:
   conflict with existing route '18.16.0.0/12 4.0.0.4 0'
 While calling 'r.add'{{.*}}:
