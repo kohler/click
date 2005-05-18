@@ -1,3 +1,8 @@
+2005-05-18 Wednesday 16:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: ipsumdump_anno.cc (1.7), ipsumdumpinfo.cc
+	(1.24): fix compile errors on Linux
+
 2005-05-18 Wednesday 11:10  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ethernet/arpquerier.cc (1.53),
