@@ -139,7 +139,7 @@ static bool none_extract(PacketDesc&, int)
 
 static Field* fields;
 const Field null_field = {
-    "none", B_0, 0, none_extract, num_outa, outb, 0, 0
+    "none", B_0, 0, none_extract, num_outa, outb, inb, 0, 0
 };
 
 int Field::binary_size() const
@@ -180,7 +180,12 @@ const Field* find_field(const String& name, bool likely_synonyms)
     return 0;
 }
 
-int register_unparser(const char* name, int thunk, void (*prepare)(PacketDesc&), bool (*extract)(PacketDesc&, int), void (*outa)(const PacketDesc&, int), void (*outb)(const PacketDesc&, bool, int))
+int register_unparser(const char* name, int thunk,
+		      void (*prepare)(PacketDesc&),
+		      bool (*extract)(PacketDesc&, int),
+		      void (*outa)(const PacketDesc&, int),
+		      void (*outb)(const PacketDesc&, bool, int),
+		      const uint8_t *(*inb)(PacketDesc&, const uint8_t*, const uint8_t*, int))
 {
     Field* f = const_cast<Field*>(find_field(name, false));
     if (f) {
@@ -190,7 +195,8 @@ int register_unparser(const char* name, int thunk, void (*prepare)(PacketDesc&),
 	    || (f->prepare && f->prepare != prepare)
 	    || (f->extract && f->extract != extract)
 	    || (f->outa && f->outa != outa)
-	    || (f->outb && f->outb != outb))
+	    || (f->outb && f->outb != outb)
+	    || (f->inb && f->inb != inb))
 	    return -1;
 	if (!f->prepare && prepare)
 	    f->prepare = prepare;
@@ -200,6 +206,8 @@ int register_unparser(const char* name, int thunk, void (*prepare)(PacketDesc&),
 	    f->outa = outa;
 	if (!f->outb && outb)
 	    f->outb = outb;
+	if (!f->inb && inb)
+	    f->inb = inb;
     } else if (!f) {
 	if (!(f = new Field))
 	    return -1;
@@ -209,6 +217,7 @@ int register_unparser(const char* name, int thunk, void (*prepare)(PacketDesc&),
 	f->extract = extract;
 	f->outa = outa;
 	f->outb = outb;
+	f->inb = inb;
 	f->synonym = 0;
 	f->next = fields;
 	fields = f;
@@ -270,10 +279,16 @@ bool field_missing(const PacketDesc& d, int what, const char* header_name, int l
 # define PUT4NET(p, d)	*reinterpret_cast<uint32_t *>((p)) = (d)
 # define PUT4(p, d)	*reinterpret_cast<uint32_t *>((p)) = htonl((d))
 # define PUT2(p, d)	*reinterpret_cast<uint16_t *>((p)) = htons((d))
+# define GET4NET(p)	*reinterpret_cast<uint32_t *>((p))
+# define GET4(p)	ntohl(*reinterpret_cast<uint32_t *>((p)))
+# define GET2(p)	ntohs(*reinterpret_cast<uint16_t *>((p)))
 #else
 # define PUT4NET(p, d)	do { uint32_t d__ = ntohl((d)); (p)[0] = d__>>24; (p)[1] = d__>>16; (p)[2] = d__>>8; (p)[3] = d__; } while (0)
 # define PUT4(p, d)	do { (p)[0] = (d)>>24; (p)[1] = (d)>>16; (p)[2] = (d)>>8; (p)[3] = (d); } while (0)
 # define PUT2(p, d)	do { (p)[0] = (d)>>8; (p)[1] = (d); } while (0)
+# define GET4NET(p)	htonl((p)[0]<<24 | (p)[1]<<16 | (p)[2]<<8 | (p)[3])
+# define GET4(p)	((p)[0]<<24 | (p)[1]<<16 | (p)[2]<<8 | (p)[3])
+# define GET2(p)	((p)[0]<<8 | (p)[1])
 #endif
 #define PUT1(p, d)	((p)[0] = (d))
 
@@ -313,6 +328,45 @@ void outb(const PacketDesc& d, bool, int thunk)
 	  PUT4NET(c, d.v);
 	  break;
       }
+    }
+}
+
+const uint8_t *inb(PacketDesc& d, const uint8_t *s, const uint8_t *end, int thunk)
+{
+    d.v = 0;
+    switch (thunk & B_TYPEMASK) {
+      case B_0:
+	return s;
+      case B_1:
+	if (s >= end)
+	    goto bad;
+	d.v = s[0];
+	return s + 1;
+      case B_2:
+	if (s + 1 >= end)
+	    goto bad;
+	d.v = GET2(s);
+	return s + 2;
+      case B_4:
+	if (s + 3 >= end)
+	    goto bad;
+	d.v = GET4(s);
+	return s + 4;
+      case B_8:
+	if (s + 7 >= end)
+	    goto bad;
+	d.v = GET4(s);
+	d.v2 = GET4(s + 4);
+	return s + 8;
+      case B_4NET:
+	if (s + 3 >= end)
+	    goto bad;
+	d.v = GET4NET(s);
+	return s + 4;
+      bad:
+      default:
+	d.v = d.v2 = 0;
+	return end;
     }
 }
 

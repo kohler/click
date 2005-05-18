@@ -22,9 +22,15 @@ struct PacketDesc {
     const click_ip* iph;
     const click_udp* udph;
     const click_tcp* tcph;
-    
-    uint32_t v;
-    uint32_t v2;
+
+    union {
+	uint32_t v;
+	const uint8_t *vptr;
+    };
+    union {
+	uint32_t v2;
+	const uint8_t *end_vptr;
+    };
     
     StringAccum* sa;
     StringAccum* bad_sa;
@@ -42,6 +48,7 @@ struct Field {
     bool (*extract)(PacketDesc&, int);
     void (*outa)(const PacketDesc&, int);
     void (*outb)(const PacketDesc&, bool ok, int);
+    const uint8_t *(*inb)(PacketDesc&, const uint8_t*, const uint8_t*, int);
     Field* synonym;
     Field* next;
     int binary_size() const;
@@ -50,7 +57,11 @@ struct Field {
 extern const Field null_field;
 const Field* find_field(const String&, bool likely_synonyms = true);
 
-int register_unparser(const char* name, int thunk, void (*prepare)(PacketDesc&), bool (*extract)(PacketDesc&, int), void (*outa)(const PacketDesc&, int), void (*outb)(const PacketDesc&, bool, int));
+int register_unparser(const char* name, int thunk, void (*prepare)(PacketDesc&),
+		      bool (*extract)(PacketDesc&, int),
+		      void (*outa)(const PacketDesc&, int),
+		      void (*outb)(const PacketDesc&, bool, int),
+		      const uint8_t *(*inb)(PacketDesc&, const uint8_t*, const uint8_t*, int) = 0);
 int register_synonym(const char* name, const char* synonym);
 void static_cleanup();
 
@@ -66,6 +77,7 @@ enum { B_TYPEMASK = 0x70000000,
        B_SPECIAL = 0x60000000,
        B_NOTALLOWED = 0x70000000 };
 void outb(const PacketDesc&, bool ok, int);
+const uint8_t *inb(PacketDesc&, const uint8_t*, const uint8_t*, int);
 
 enum { MISSING_IP = 0,
        MISSING_IP_TRANSPORT = 1 };

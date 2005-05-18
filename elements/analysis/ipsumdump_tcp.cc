@@ -1,6 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * ipsumdump_general.{cc,hh} -- general IP summary dump unparsers
+ * ipsumdump_tcp.{cc,hh} -- IP transport summary dump unparsers
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
@@ -60,26 +60,38 @@ static bool tcp_extract(PacketDesc& d, int thunk)
 	return true;
       case T_TCP_OPT:
 	// need to check that d.tcph->th_off exists
-	if (d.tcph && transport_length >= 13
-	    && (d.tcph->th_off <= 5 || transport_length >= (int)(d.tcph->th_off << 2)))
-	    return true;
-	else
-	    return field_missing(d, MISSING_IP_TRANSPORT, "TCP", transport_length + 1);
+	if (!d.tcph || transport_length < 13 || (d.tcph->th_off > 5 && transport_length < (int)(d.tcph->th_off << 2)))
+	    goto no_tcp_opt;
+	if (d.tcph->th_off <= 5)
+	    d.vptr = 0, d.v2 = 0;
+	else {
+	    d.vptr = (const uint8_t *) (d.tcph + 1);
+	    d.v2 = (int)(d.tcph->th_off << 2) - sizeof(click_tcp);
+	}
+	return true;
       case T_TCP_NTOPT:
       case T_TCP_SACK:
 	// need to check that d.tcph->th_off exists
-	if (d.tcph && transport_length >= 13
-	    && (d.tcph->th_off <= 5
-		|| transport_length >= (int)(d.tcph->th_off << 2)
-		|| (d.tcph->th_off == 8 && transport_length >= 24 && *(reinterpret_cast<const uint32_t *>(d.tcph + 1)) == htonl(0x0101080A))))
-	    return true;
-	else
-	    return field_missing(d, MISSING_IP_TRANSPORT, "TCP", transport_length + 1);
+	if (!d.tcph || transport_length < 13)
+	    goto no_tcp_opt;
+	else if (d.tcph->th_off <= 5
+		 || (d.tcph->th_off == 8 && transport_length >= 24
+		     && *(reinterpret_cast<const uint32_t *>(d.tcph + 1)) == htonl(0x0101080A)))
+	    d.vptr = 0, d.v2 = 0;
+	else if (transport_length < (int)(d.tcph->th_off << 2))
+	    goto no_tcp_opt;
+	else {
+	    d.vptr = (const uint8_t *) (d.tcph + 1);
+	    d.v2 = (int)(d.tcph->th_off << 2) - sizeof(click_tcp);
+	}
+	return true;
 	
 #undef CHECK
 
       default:
 	return false;
+      no_tcp_opt:
+	return field_missing(d, MISSING_IP_TRANSPORT, "TCP", transport_length + 1);
     }
 }
 
@@ -99,26 +111,22 @@ static void tcp_outa(const PacketDesc& d, int thunk)
 		    *d.sa << tcp_flags_word[flag];
 	break;
       case T_TCP_OPT:
-	if (d.tcph->th_off <= 5)
+	if (!d.vptr)
 	    *d.sa << '.';
 	else
-	    unparse_tcp_opt(*d.sa, d.tcph, DO_TCPOPT_ALL_NOPAD);
+	    unparse_tcp_opt(*d.sa, d.vptr, d.v2, DO_TCPOPT_ALL_NOPAD);
 	break;
       case T_TCP_NTOPT:
-	if (d.tcph->th_off <= 5
-	    || (d.tcph->th_off == 8
-		&& *(reinterpret_cast<const uint32_t *>(d.tcph + 1)) == htonl(0x0101080A)))
+	if (!d.vptr)
 	    *d.sa << '.';
 	else
-	    unparse_tcp_opt(*d.sa, d.tcph, DO_TCPOPT_NTALL);
+	    unparse_tcp_opt(*d.sa, d.vptr, d.v2, DO_TCPOPT_NTALL);
 	break;
       case T_TCP_SACK:
-	if (d.tcph->th_off <= 5
-	    || (d.tcph->th_off == 8
-		&& *(reinterpret_cast<const uint32_t *>(d.tcph + 1)) == htonl(0x0101080A)))
+	if (!d.vptr)
 	    *d.sa << '.';
 	else
-	    unparse_tcp_opt(*d.sa, d.tcph, DO_TCPOPT_SACK);
+	    unparse_tcp_opt(*d.sa, d.vptr, d.v2, DO_TCPOPT_SACK);
 	break;
     }
 }
@@ -127,28 +135,40 @@ static void tcp_outb(const PacketDesc& d, bool ok, int thunk)
 {
     switch (thunk & ~B_TYPEMASK) {
       case T_TCP_OPT:
-	if (!ok || d.tcph->th_off <= (sizeof(click_tcp) >> 2))
+	if (!ok || !d.vptr)
 	    *d.sa << '\0';
 	else
-	    unparse_tcp_opt_binary(*d.sa, d.tcph, DO_TCPOPT_ALL);
+	    unparse_tcp_opt_binary(*d.sa, d.vptr, d.v2, DO_TCPOPT_ALL);
 	break;
       case T_TCP_NTOPT:
-	if (!ok || d.tcph->th_off <= (sizeof(click_tcp) >> 2)
-	    || (d.tcph->th_off == 8
-		&& *(reinterpret_cast<const uint32_t *>(d.tcph + 1)) == htonl(0x0101080A)))
+	if (!ok || !d.vptr)
 	    *d.sa << '\0';
 	else
-	    unparse_tcp_opt_binary(*d.sa, d.tcph, DO_TCPOPT_NTALL);
+	    unparse_tcp_opt_binary(*d.sa, d.vptr, d.v2, DO_TCPOPT_NTALL);
 	break;
       case T_TCP_SACK:
-	if (!ok || d.tcph->th_off <= (sizeof(click_tcp) >> 2)
-	    || (d.tcph->th_off == 8
-		&& *(reinterpret_cast<const uint32_t *>(d.tcph + 1)) == htonl(0x0101080A)))
+	if (!ok || !d.vptr)
 	    *d.sa << '\0';
 	else
-	    unparse_tcp_opt_binary(*d.sa, d.tcph, DO_TCPOPT_SACK);
+	    unparse_tcp_opt_binary(*d.sa, d.vptr, d.v2, DO_TCPOPT_SACK);
 	break;
     }
+}    
+
+static const uint8_t* tcp_inb(PacketDesc& d, const uint8_t* s, const uint8_t* ends, int thunk)
+{
+    switch (thunk & ~B_TYPEMASK) {
+      case T_TCP_OPT:
+      case T_TCP_NTOPT:
+      case T_TCP_SACK:
+	if (s + s[0] + 1 <= ends) {
+	    d.vptr = s + 1;
+	    d.v2 = s[0];
+	    return s + s[0] + 1;
+	}
+	break;
+    }
+    return ends;
 }    
 
 
@@ -314,14 +334,14 @@ void unparse_tcp_opt_binary(StringAccum& sa, const click_tcp *tcph, int mask)
 
 void tcp_register_unparsers()
 {
-    register_unparser("tcp_seq", T_TCP_SEQ | B_4, ip_prepare, tcp_extract, num_outa, outb);
-    register_unparser("tcp_ack", T_TCP_ACK | B_4, ip_prepare, tcp_extract, num_outa, outb);
-    register_unparser("tcp_flags", T_TCP_FLAGS | B_1, ip_prepare, tcp_extract, tcp_outa, outb);
-    register_unparser("tcp_window", T_TCP_WINDOW | B_2, ip_prepare, tcp_extract, num_outa, outb);
-    register_unparser("tcp_urp", T_TCP_URP | B_2, ip_prepare, tcp_extract, num_outa, outb);
-    register_unparser("tcp_opt", T_TCP_OPT | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb);
-    register_unparser("tcp_ntopt", T_TCP_NTOPT | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb);
-    register_unparser("tcp_sack", T_TCP_SACK | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb);
+    register_unparser("tcp_seq", T_TCP_SEQ | B_4, ip_prepare, tcp_extract, num_outa, outb, inb);
+    register_unparser("tcp_ack", T_TCP_ACK | B_4, ip_prepare, tcp_extract, num_outa, outb, inb);
+    register_unparser("tcp_flags", T_TCP_FLAGS | B_1, ip_prepare, tcp_extract, tcp_outa, outb, inb);
+    register_unparser("tcp_window", T_TCP_WINDOW | B_2, ip_prepare, tcp_extract, num_outa, outb, inb);
+    register_unparser("tcp_urp", T_TCP_URP | B_2, ip_prepare, tcp_extract, num_outa, outb, inb);
+    register_unparser("tcp_opt", T_TCP_OPT | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb, tcp_inb);
+    register_unparser("tcp_ntopt", T_TCP_NTOPT | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb, tcp_inb);
+    register_unparser("tcp_sack", T_TCP_SACK | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb, tcp_inb);
 
     register_synonym("tcp_seqno", "tcp_seq");
     register_synonym("tcp_ackno", "tcp_ack");
@@ -352,7 +372,7 @@ static bool udp_extract(PacketDesc& d, int thunk)
 
 void udp_register_unparsers()
 {
-    register_unparser("udp_len", T_UDP_LEN | B_4, ip_prepare, udp_extract, num_outa, outb);
+    register_unparser("udp_len", T_UDP_LEN | B_4, ip_prepare, udp_extract, num_outa, outb, inb);
 }
 
 }

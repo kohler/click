@@ -152,14 +152,14 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     enum { DO_IPOPT_PADDING = 1, DO_IPOPT_ROUTE = 2, DO_IPOPT_TS = 4,
 	   DO_IPOPT_UNKNOWN = 32,
 	   DO_IPOPT_ALL = 0xFFFFFFFFU, DO_IPOPT_ALL_NOPAD = 0xFFFFFFFEU };
-    static const char *parse_ip_opt_ascii(const char *begin, const char *end, String *, int);
+    static const unsigned char *parse_ip_opt_ascii(const unsigned char *begin, const unsigned char *end, String *, int);
 
     enum { DO_TCPOPT_PADDING = 1, DO_TCPOPT_MSS = 2, DO_TCPOPT_WSCALE = 4,
 	   DO_TCPOPT_SACK = 8, DO_TCPOPT_TIMESTAMP = 16,
 	   DO_TCPOPT_UNKNOWN = 32,
 	   DO_TCPOPT_ALL = 0xFFFFFFFFU, DO_TCPOPT_ALL_NOPAD = 0xFFFFFFFEU,
 	   DO_TCPOPT_NTALL = 0xFFFFFFEEU };
-    static const char *parse_tcp_opt_ascii(const char *begin, const char *end, String *, int);
+    static const unsigned char *parse_tcp_opt_ascii(const unsigned char *begin, const unsigned char *end, String *, int);
     
   private:
 

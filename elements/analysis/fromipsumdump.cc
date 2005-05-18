@@ -313,14 +313,14 @@ append_net_uint32_t(StringAccum &sa, uint32_t u)
     sa << (char)(u >> 24) << (char)(u >> 16) << (char)(u >> 8) << (char)u;
 }
 
-const char *
-FromIPSummaryDump::parse_ip_opt_ascii(const char *begin, const char *end, String *result, int contents)
+const unsigned char *
+FromIPSummaryDump::parse_ip_opt_ascii(const unsigned char *begin, const unsigned char *end, String *result, int contents)
 {
     StringAccum sa;
-    const char *s = begin;
+    const unsigned char *s = begin;
     
     while (1) {
-	const char *t;
+	const unsigned char *t;
 	uint32_t u1;
 
 	if (s + 3 < end && memcmp(s, "rr{", 3) == 0
@@ -404,7 +404,7 @@ FromIPSummaryDump::parse_ip_opt_ascii(const char *begin, const char *end, String
 		    pointer = sa.length() - sa_pos + 1, s++;
 		if (s >= end || (!isdigit(*s) && *s != '!'))
 		    break;
-		const char *entry = s;
+		const unsigned char *entry = s;
 		
 	      retry_entry:
 		if (flag == 1 || flag == 3 || flag == -2) {
@@ -533,11 +533,11 @@ FromIPSummaryDump::parse_ip_opt_ascii(const char *begin, const char *end, String
     return begin;
 }
 
-const char *
-FromIPSummaryDump::parse_tcp_opt_ascii(const char *begin, const char *end, String *result, int contents)
+const unsigned char *
+FromIPSummaryDump::parse_tcp_opt_ascii(const unsigned char *begin, const unsigned char *end, String *result, int contents)
 {
     StringAccum sa;
-    const char *s = begin;
+    const unsigned char *s = begin;
     
     while (1) {
 	uint32_t u1, u2;
@@ -569,7 +569,7 @@ FromIPSummaryDump::parse_tcp_opt_ascii(const char *begin, const char *end, Strin
 	    sa << (char)TCPOPT_SACK << (char)0;
 	    s += 4;
 	    while (1) {
-		const char *t = cp_unsigned(s, end, 0, &u1);
+		const unsigned char *t = cp_unsigned(s, end, 0, &u1);
 		if (t >= end || (*t != ':' && *t != '-'))
 		    goto bad_opt;
 		t = cp_unsigned(t + 1, end, 0, &u2);
@@ -585,7 +585,7 @@ FromIPSummaryDump::parse_tcp_opt_ascii(const char *begin, const char *end, Strin
 	    sa[sa_pos + 1] = (char)(sa.length() - sa_pos);
 	} else if (s + 2 < end && memcmp(s, "ts", 2) == 0
 		   && (contents & DO_TCPOPT_TIMESTAMP)) {
-	    const char *t = cp_unsigned(s + 2, end, 0, &u1);
+	    const unsigned char *t = cp_unsigned(s + 2, end, 0, &u1);
 	    if (t >= end || *t != ':')
 		goto bad_opt;
 	    t = cp_unsigned(t + 1, end, 0, &u2);
@@ -620,7 +620,7 @@ FromIPSummaryDump::parse_tcp_opt_ascii(const char *begin, const char *end, Strin
 		   && (contents & DO_TCPOPT_PADDING)) {
 	    sa << (char)TCPOPT_NOP;
 	    s += 3;
-	} else if (s + 3 <= end && strncmp(s, "eol", 3) == 0
+	} else if (s + 3 <= end && strncmp((const char *) s, "eol", 3) == 0
 		   && (contents & DO_TCPOPT_PADDING)
 		   && (s + 3 == end || s[3] != ',')) {
 	    sa << (char)TCPOPT_EOL;
@@ -740,8 +740,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    return 0;
 	}
 
-	const char *data = line.begin();
-	const char *end = line.end();
+	const unsigned char *data = (const unsigned char *) line.begin();
+	const unsigned char *end = (const unsigned char *) line.end();
 
 	if (data == end)
 	    continue;
@@ -770,8 +770,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	bool have_tcp_opt = false;
 	
 	for (int i = 0; data < end && i < _contents.size(); i++) {
-	    const char *original_data = data;
-	    const char *next;
+	    const unsigned char *original_data = data;
+	    const unsigned char *next;
 	    uint32_t u1 = 0, u2 = 0;
 
 	    // check binary case
@@ -836,9 +836,9 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    data++;	// u1 already 0
 		    break;
 		  case W_IP_OPT: {
-		      const char *endopt = data + 1 + *data;
+		      const unsigned char *endopt = data + 1 + *data;
 		      if (endopt <= end) {
-			  ip_opt = line.substring(data + 1, endopt);
+			  ip_opt = line.substring((const char *) data + 1, (const char *) endopt);
 			  have_ip_opt = true;
 			  data = endopt;
 		      }
@@ -847,9 +847,9 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		  case W_TCP_OPT:
 		  case W_TCP_NTOPT:
 		  case W_TCP_SACK: {
-		      const char *endopt = data + 1 + *data;
+		      const unsigned char *endopt = data + 1 + *data;
 		      if (endopt <= end) {
-			  tcp_opt = line.substring(data + 1, endopt);
+			  tcp_opt = line.substring((const char *) data + 1, (const char *) endopt);
 			  have_tcp_opt = true;
 			  data = endopt;
 		      }
@@ -922,7 +922,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_IP_SRC:
 	      case W_IP_DST:
 		for (int j = 0; j < 4; j++) {
-		    const char *first = data;
+		    const unsigned char *first = data;
 		    int x = 0;
 		    while (data < end && isdigit(*data) && x < 256)
 			(x = (x * 10) + *data - '0'), data++;
@@ -981,8 +981,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		else if (*data == '.')
 		    data++;
 		else
-		    while (data < end && IPSummaryDump::tcp_flag_mapping[(unsigned char)*data]) {
-			u1 |= 1 << (IPSummaryDump::tcp_flag_mapping[(unsigned char)*data] - 1);
+		    while (data < end && IPSummaryDump::tcp_flag_mapping[*data]) {
+			u1 |= 1 << (IPSummaryDump::tcp_flag_mapping[*data] - 1);
 			data++;
 		    }
 		break;
@@ -1037,14 +1037,14 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_PAYLOAD:
 		if (*data == '\"') {
 		    payload.clear();
-		    const char *fdata = data + 1;
+		    const unsigned char *fdata = data + 1;
 		    for (data++; data < end && *data != '\"'; data++)
 			if (*data == '\\' && data < end - 1) {
-			    payload.append(fdata, data);
-			    fdata = cp_process_backslash(data, end, payload);
+			    payload.append((const char *) fdata, (const char *) data);
+			    fdata = (const unsigned char *) cp_process_backslash((const char *) data, (const char *) end, payload);
 			    data = fdata - 1; // account for loop increment
 			}
-		    payload.append(fdata, data);
+		    payload.append((const char *) fdata, (const char *) data);
 		    // bag payload if it didn't parse correctly
 		    if (data >= end || *data != '\"')
 			data = original_data;

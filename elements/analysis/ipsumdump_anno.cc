@@ -102,8 +102,10 @@ static void anno_outa(const PacketDesc& d, int thunk)
 
 #ifdef i386
 # define PUT4(p, d)	*reinterpret_cast<uint32_t *>((p)) = htonl((d))
+# define GET4(p)	ntohl(*reinterpret_cast<uint32_t *>((p)))
 #else
 # define PUT4(p, d)	do { (p)[0] = (d)>>24; (p)[1] = (d)>>16; (p)[2] = (d)>>8; (p)[3] = (d); } while (0)
+# define GET4(p)	((p)[0]<<24 | (p)[1]<<16 | (p)[2]<<8 | (p)[3])
 #endif
 
 static void timestamp_outb(const PacketDesc& d, bool, int)
@@ -113,19 +115,28 @@ static void timestamp_outb(const PacketDesc& d, bool, int)
     PUT4(c + 4, d.v2 / 1000);
 }
 
+static const uint8_t *timestamp_inb(PacketDesc& d, const uint8_t* s, const uint8_t *ends, int)
+{
+    if (s + 7 <= ends)
+	return ends;
+    d.v = GET4(s);
+    d.v2 = GET4(s + 4) * 1000;
+    return s + 8;
+}
+
 void anno_register_unparsers()
 {
-    register_unparser("timestamp", T_TIMESTAMP | B_8, 0, anno_extract, anno_outa, timestamp_outb);
-    register_unparser("ntimestamp", T_TIMESTAMP | B_8, 0, anno_extract, anno_outa, outb);
-    register_unparser("ts_sec", T_TIMESTAMP_SEC | B_4, 0, anno_extract, num_outa, outb);
-    register_unparser("ts_usec", T_TIMESTAMP_USEC | B_4, 0, anno_extract, num_outa, outb);
-    register_unparser("ts_usec1", T_TIMESTAMP_USEC1 | B_8, 0, anno_extract, anno_outa, outb);
-    register_unparser("first_timestamp", T_FIRST_TIMESTAMP | B_8, 0, anno_extract, anno_outa, timestamp_outb);
-    register_unparser("first_ntimestamp", T_FIRST_TIMESTAMP | B_8, 0, anno_extract, anno_outa, outb);
-    register_unparser("count", T_COUNT | B_4, 0, anno_extract, num_outa, outb);
-    register_unparser("link", T_LINK | B_1, 0, anno_extract, num_outa, outb);
-    register_unparser("direction", T_DIRECTION | B_1, 0, anno_extract, anno_outa, outb);
-    register_unparser("aggregate", T_AGGREGATE | B_4, 0, anno_extract, num_outa, outb);
+    register_unparser("timestamp", T_TIMESTAMP | B_8, 0, anno_extract, anno_outa, timestamp_outb, timestamp_inb);
+    register_unparser("ntimestamp", T_TIMESTAMP | B_8, 0, anno_extract, anno_outa, outb, inb);
+    register_unparser("ts_sec", T_TIMESTAMP_SEC | B_4, 0, anno_extract, num_outa, outb, inb);
+    register_unparser("ts_usec", T_TIMESTAMP_USEC | B_4, 0, anno_extract, num_outa, outb, inb);
+    register_unparser("ts_usec1", T_TIMESTAMP_USEC1 | B_8, 0, anno_extract, anno_outa, outb, inb);
+    register_unparser("first_timestamp", T_FIRST_TIMESTAMP | B_8, 0, anno_extract, anno_outa, timestamp_outb, timestamp_inb);
+    register_unparser("first_ntimestamp", T_FIRST_TIMESTAMP | B_8, 0, anno_extract, anno_outa, outb, inb);
+    register_unparser("count", T_COUNT | B_4, 0, anno_extract, num_outa, outb, inb);
+    register_unparser("link", T_LINK | B_1, 0, anno_extract, num_outa, outb, inb);
+    register_unparser("direction", T_DIRECTION | B_1, 0, anno_extract, anno_outa, outb, inb);
+    register_unparser("aggregate", T_AGGREGATE | B_4, 0, anno_extract, num_outa, outb, inb);
     
     register_synonym("utimestamp", "timestamp");
     register_synonym("ts", "utimestamp");

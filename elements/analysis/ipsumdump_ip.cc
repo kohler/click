@@ -142,10 +142,15 @@ static bool ip_extract(PacketDesc& d, int thunk)
 	d.v = d.iph->ip_p;
 	return true;
       case T_IP_OPT:
-	if (d.iph && (d.iph->ip_hl <= 5 || network_length >= (int)(d.iph->ip_hl << 2)))
-	    return true;
-	else
+	if (!d.iph || (d.iph->ip_hl > 5 && network_length < (int)(d.iph->ip_hl << 2)))
 	    return field_missing(d, MISSING_IP, "IP", (d.iph ? d.iph->ip_hl << 2 : 20));
+	if (d.iph->ip_hl <= 5)
+	    d.vptr = 0, d.v2 = 0;
+	else {
+	    d.vptr = (const uint8_t *) (d.iph + 1);
+	    d.v2 = (d.iph->ip_hl << 2) - sizeof(click_ip);
+	}
+	return true;
       case T_IP_LEN:
 	if (d.iph)
 	    d.v = ntohs(d.iph->ip_len) + (d.force_extra_length ? EXTRA_LENGTH_ANNO(d.p) : 0);
@@ -189,10 +194,10 @@ static void ip_outa(const PacketDesc& d, int thunk)
 	}
 	break;
       case T_IP_OPT:
-	if (d.iph->ip_hl <= 5)
+	if (!d.vptr)
 	    *d.sa << '.';
 	else
-	    unparse_ip_opt(*d.sa, d.iph, DO_IPOPT_ALL_NOPAD);
+	    unparse_ip_opt(*d.sa, d.vptr, d.v2, DO_IPOPT_ALL_NOPAD);
 	break;
     }
 }
@@ -200,11 +205,21 @@ static void ip_outa(const PacketDesc& d, int thunk)
 static void ip_outb(const PacketDesc& d, bool ok, int thunk)
 {
     if ((thunk & ~B_TYPEMASK) == T_IP_OPT) {
-	if (!ok || d.iph->ip_hl <= (sizeof(click_ip) >> 2))
+	if (!ok || !d.vptr)
 	    *d.sa << '\0';
 	else
-	    unparse_ip_opt_binary(*d.sa, d.iph, DO_IPOPT_ALL);
+	    unparse_ip_opt_binary(*d.sa, d.vptr, d.v2, DO_IPOPT_ALL);
     }
+}
+
+static const uint8_t* ip_inb(PacketDesc& d, const uint8_t *s, const uint8_t *ends, int thunk)
+{
+    if ((thunk & ~B_TYPEMASK) == T_IP_OPT && s + s[0] + 1 <= ends) {
+	d.vptr = s + 1;
+	d.v2 = s[0];
+	return s + s[0] + 1;
+    } else
+	return ends;
 }
 
 
@@ -492,23 +507,23 @@ void unparse_ip_opt_binary(StringAccum& sa, const click_ip *iph, int mask)
 
 void ip_register_unparsers()
 {
-    register_unparser("ip_src", T_IP_SRC | B_4NET, ip_prepare, ip_extract, ip_outa, outb);
-    register_unparser("ip_dst", T_IP_DST | B_4NET, ip_prepare, ip_extract, ip_outa, outb);
-    register_unparser("ip_tos", T_IP_TOS | B_1, ip_prepare, ip_extract, num_outa, outb);
-    register_unparser("ip_ttl", T_IP_TTL | B_1, ip_prepare, ip_extract, num_outa, outb);
-    register_unparser("ip_frag", T_IP_FRAG | B_1, ip_prepare, ip_extract, ip_outa, outb);
-    register_unparser("ip_fragoff", T_IP_FRAGOFF | B_2, ip_prepare, ip_extract, ip_outa, outb);
-    register_unparser("ip_id", T_IP_ID | B_2, ip_prepare, ip_extract, num_outa, outb);
-    register_unparser("ip_sum", T_IP_SUM | B_2, ip_prepare, ip_extract, num_outa, outb);
-    register_unparser("ip_proto", T_IP_PROTO | B_1, ip_prepare, ip_extract, ip_outa, outb);
-    register_unparser("ip_len", T_IP_LEN | B_4, ip_prepare, ip_extract, num_outa, outb);
-    register_unparser("ip_capture_len", T_IP_CAPTURE_LEN | B_4, ip_prepare, ip_extract, num_outa, outb);
-    register_unparser("ip_opt", T_IP_OPT | B_SPECIAL, ip_prepare, ip_extract, ip_outa, ip_outb);
+    register_unparser("ip_src", T_IP_SRC | B_4NET, ip_prepare, ip_extract, ip_outa, outb, inb);
+    register_unparser("ip_dst", T_IP_DST | B_4NET, ip_prepare, ip_extract, ip_outa, outb, inb);
+    register_unparser("ip_tos", T_IP_TOS | B_1, ip_prepare, ip_extract, num_outa, outb, inb);
+    register_unparser("ip_ttl", T_IP_TTL | B_1, ip_prepare, ip_extract, num_outa, outb, inb);
+    register_unparser("ip_frag", T_IP_FRAG | B_1, ip_prepare, ip_extract, ip_outa, outb, inb);
+    register_unparser("ip_fragoff", T_IP_FRAGOFF | B_2, ip_prepare, ip_extract, ip_outa, outb, inb);
+    register_unparser("ip_id", T_IP_ID | B_2, ip_prepare, ip_extract, num_outa, outb, inb);
+    register_unparser("ip_sum", T_IP_SUM | B_2, ip_prepare, ip_extract, num_outa, outb, inb);
+    register_unparser("ip_proto", T_IP_PROTO | B_1, ip_prepare, ip_extract, ip_outa, outb, inb);
+    register_unparser("ip_len", T_IP_LEN | B_4, ip_prepare, ip_extract, num_outa, outb, inb);
+    register_unparser("ip_capture_len", T_IP_CAPTURE_LEN | B_4, ip_prepare, ip_extract, num_outa, outb, inb);
+    register_unparser("ip_opt", T_IP_OPT | B_SPECIAL, ip_prepare, ip_extract, ip_outa, ip_outb, ip_inb);
 
-    register_unparser("sport", T_SPORT | B_2, ip_prepare, transport_extract, num_outa, outb);
-    register_unparser("dport", T_DPORT | B_2, ip_prepare, transport_extract, num_outa, outb);
-    register_unparser("payload_len", T_PAYLOAD_LEN | B_4, ip_prepare, transport_extract, num_outa, outb);
-    register_unparser("payload", T_PAYLOAD | B_NOTALLOWED, ip_prepare, transport_extract, transport_outa, 0);
+    register_unparser("sport", T_SPORT | B_2, ip_prepare, transport_extract, num_outa, outb, inb);
+    register_unparser("dport", T_DPORT | B_2, ip_prepare, transport_extract, num_outa, outb, inb);
+    register_unparser("payload_len", T_PAYLOAD_LEN | B_4, ip_prepare, transport_extract, num_outa, outb, inb);
+    register_unparser("payload", T_PAYLOAD | B_NOTALLOWED, ip_prepare, transport_extract, transport_outa, 0, 0);
 
     register_synonym("length", "ip_len");
     register_synonym("ip_p", "ip_proto");
