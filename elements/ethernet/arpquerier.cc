@@ -250,85 +250,91 @@ ARPQuerier::send_query_for(IPAddress want_ip)
 void
 ARPQuerier::handle_ip(Packet *p)
 {
-  // delete packet if we are not configured
-  if (!_my_ip) {
-    p->kill();
-    _drops++;
-    return;
-  }
-  
-  IPAddress ipa = p->dst_ip_anno();
-  int bucket = ip_bucket(ipa);
+    // delete packet if we are not configured
+    if (!_my_ip) {
+	p->kill();
+	_drops++;
+	return;
+    }
 
-  _lock.acquire_read();
+    IPAddress ipa = p->dst_ip_anno();
+    int bucket = ip_bucket(ipa);
+    ARPEntry *ae;
 
-  ARPEntry *ae = _map[bucket];
+    // Easy case: requires only read lock
+  retry_read_lock:
+    _lock.acquire_read();
+    ae = _map[bucket];
+    while (ae && ae->ip != ipa)
+	ae = ae->next;
+    if (ae && ae->ok) {
+	int was_polling = ae->polling;
+	ae->polling = 0;
+	if (WritablePacket *q = p->push_mac_header(sizeof(click_ether))) {
+	    click_ether *e = q->ether_header();
+	    memcpy(e->ether_shost, _my_en.data(), 6);
+	    memcpy(e->ether_dhost, ae->en.data(), 6);
+	    e->ether_type = htons(ETHERTYPE_IP);
+	    _lock.release_read();
+	    output(0).push(q);
+	} else {
+	    _drops++;
+	    _lock.release_read();
+	}
+	if (was_polling)
+	    send_query_for(ipa);
+	return;
+    }
+    _lock.release_read();
 
-  while (ae && ae->ip != ipa)
-    ae = ae->next;
-
-  if (ae) {
-      if (ae->ok) {
-	  if (WritablePacket *q = p->push_mac_header(sizeof(click_ether))) {
-	      click_ether *e = q->ether_header();
-	      memcpy(e->ether_shost, _my_en.data(), 6);
-	      memcpy(e->ether_dhost, ae->en.data(), 6);
-	      e->ether_type = htons(ETHERTYPE_IP);
-	      _lock.release_read();
-	      output(0).push(q);
-	  } else {
-	      _drops++;
-	      _lock.release_read();
-	  }
-	  if (!ae->polling)
-	      return;
-	  ae->polling = 0;
-      } else {
-	  _lock.release_read();
-	  _lock.acquire_write();
-	  if (_cache_size >= _capacity)	// get some space if necessary
-	      expire_hook(0, this);
-	  if (ae->tail)
-	      ae->tail->set_next(p);
-	  else
-	      ae->head = p;
-	  ae->tail = p;
-	  p->set_next(0);
-	  _cache_size++;
-	  _lock.release_write();
-      }
-  } else {
-      _lock.release_read();
-      _lock.acquire_write();
-      if (_cache_size >= _capacity)
-	  expire_hook(0, this);
-      if (ARPEntry *ae = new ARPEntry) {
-	  ae->ip = ipa;
-	  ae->ok = ae->polling = 0;
-	  
-	  ae->head = ae->tail = p;
-	  p->set_next(0);
-	  
-	  ae->pprev = &_map[bucket];
-	  if ((ae->next = _map[bucket]))
-	      ae->next->pprev = &ae->next;
-	  _map[bucket] = ae;
-	  
-	  if (_age_tail)
-	      ae->age_pprev = &_age_tail->age_next;
-	  else
-	      ae->age_pprev = &_age_head;
-	  _age_tail = *ae->age_pprev = ae;
-	  ae->age_next = 0;
-	  
-	  _cache_size++;
-      } else {
-	  p->kill();
-	  _drops++;
-      }
-      _lock.release_write();
-  }
-  send_query_for(ipa);
+    // Hard case: requires write lock
+    // 18.May.2005 -- must expire BEFORE we grab the ae pointer!!
+    // because expiring might in fact DELETE the ae pointer.
+    if (_cache_size >= _capacity)	// get some space if necessary
+	expire_hook(0, this);
+    
+    _lock.acquire_write();
+    ae = _map[bucket];
+    while (ae && ae->ip != ipa)
+	ae = ae->next;
+    if (ae && ae->ok) {
+	_lock.release_write();
+	goto retry_read_lock;
+    } else if (ae) {
+	if (ae->tail)
+	    ae->tail->set_next(p);
+	else
+	    ae->head = p;
+	ae->tail = p;
+	p->set_next(0);
+	_cache_size++;
+    } else if ((ae = new ARPEntry)) {
+	ae->ip = ipa;
+	ae->ok = ae->polling = 0;
+	
+	ae->head = ae->tail = p;
+	p->set_next(0);
+	
+	ae->pprev = &_map[bucket];
+	if ((ae->next = _map[bucket]))
+	    ae->next->pprev = &ae->next;
+	_map[bucket] = ae;
+	
+	if (_age_tail)
+	    ae->age_pprev = &_age_tail->age_next;
+	else
+	    ae->age_pprev = &_age_head;
+	_age_tail = *ae->age_pprev = ae;
+	ae->age_next = 0;
+	
+	_cache_size++;
+    } else {
+	p->kill();
+	_drops++;
+    }
+    
+    _lock.release_write();
+    send_query_for(ipa);
 }
 
 /*

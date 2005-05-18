@@ -133,10 +133,10 @@ class ARPQuerier : public Element { public:
     atomic_uint32_t _arp_responses;
     
     static inline int ip_bucket(IPAddress);
-  void send_query_for(IPAddress);
+    void send_query_for(IPAddress);
   
-  void handle_ip(Packet *);
-  void handle_response(Packet *);
+    void handle_ip(Packet *);
+    void handle_response(Packet *);
 
     enum { EXPIRE_TIMEOUT_MS = 60 * 1000 };
     static void expire_hook(Timer *, void *);
