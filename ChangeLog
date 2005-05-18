@@ -1,3 +1,21 @@
+2005-05-18 Wednesday 01:38  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/ip/iplookups-01.testie (1.5): fix test
+
+2005-05-18 Wednesday 01:38  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromipsumdump.cc (1.73), fromipsumdump.hh
+	(1.40), ipsumdump_anno.cc (1.6), ipsumdump_ip.cc (1.6),
+	ipsumdump_tcp.cc (1.4), ipsumdumpinfo.cc (1.23), ipsumdumpinfo.hh
+	(1.20): add "inb" operation (beginning of migrating
+	FromIPSummaryDump to the Field structure); FromIPSummaryDump uses
+	unsigned chars to eliminate signedness errors
+
+2005-05-18 Wednesday 01:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/confparse.hh (1.56): add unsigned char * versions
+	of cp_unsigned functions, to ease programming
+
 2005-05-18 Wednesday 00:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: ipfilter.cc (1.60), ipfilter.hh (1.32): add special
