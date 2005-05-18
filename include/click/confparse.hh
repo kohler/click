@@ -64,6 +64,7 @@ const char *cp_integer(const char* begin, const char* end, int base, int*);
 bool cp_integer(const String&, int base, int*);
 inline bool cp_integer(const String&, int*);
 const char *cp_unsigned(const char* begin, const char* end, int base, unsigned int*);
+inline const unsigned char *cp_unsigned(const unsigned char* begin, const unsigned char* end, int base, unsigned int*);
 bool cp_unsigned(const String&, int base, unsigned int*);
 inline bool cp_unsigned(const String&, unsigned int*);
 
@@ -83,6 +84,7 @@ const char *cp_integer(const char* begin, const char* end, int base, int64_t*);
 bool cp_integer(const String&, int base, int64_t*);
 inline bool cp_integer(const String&, int64_t*);
 const char *cp_unsigned(const char* begin, const char* end, int base, uint64_t*);
+inline const unsigned char *cp_unsigned(const unsigned char* begin, const unsigned char* end, int base, uint64_t*);
 bool cp_unsigned(const String&, int base, uint64_t*);
 inline bool cp_unsigned(const String&, uint64_t*);
 # define cp_integer64 cp_integer
@@ -332,6 +334,11 @@ inline bool cp_is_space(const String& str)
     return cp_skip_space(str.begin(), str.end()) == str.end();
 }
 
+inline const unsigned char *cp_unsigned(const unsigned char *begin, const unsigned char *end, int base, unsigned int* return_value)
+{
+    return (const unsigned char *) cp_unsigned((const char *) begin, (const char *) end, base, return_value);
+}
+
 inline bool cp_unsigned(const String& str, unsigned int* return_value)
 {
     return cp_unsigned(str, 0, return_value);
@@ -343,6 +350,11 @@ inline bool cp_integer(const String& str, int* return_value)
 }
 
 #ifdef HAVE_INT64_TYPES
+inline const unsigned char *cp_unsigned(const unsigned char *begin, const unsigned char *end, int base, uint64_t* return_value)
+{
+    return (const unsigned char *) cp_unsigned((const char *) begin, (const char *) end, base, return_value);
+}
+
 inline bool cp_unsigned(const String& str, uint64_t* return_value)
 {
     return cp_unsigned(str, 0, return_value);
