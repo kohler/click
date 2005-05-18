@@ -1,3 +1,8 @@
+2005-05-18 Wednesday 00:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: ipfilter.cc (1.60), ipfilter.hh (1.32): add special
+	entries for IPFilter-specific types to avoid accidental overloading
+
 2005-05-13 Friday 11:47  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: aggcounter.cc (1.33), aggcounter.hh (1.30):
