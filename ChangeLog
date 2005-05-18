@@ -1,3 +1,10 @@
+2005-05-18 Wednesday 10:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ethernet/: arpquerier.cc (1.52), arpquerier.hh (1.37):
+	attempt to fix crash seen by Adam Greenhalgh at UCL, using his
+	debugging: bad idea to expire parts of the ARP request cache when
+	youre holding on to a random pointer into that cache!!
+
 2005-05-18 Wednesday 01:38  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/ip/iplookups-01.testie (1.5): fix test
