@@ -1,3 +1,13 @@
+2005-05-19 Thursday 12:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/driver.cc (1.29), lib/string.cc (1.52), userlevel/click.cc
+	(1.102): valgrind-inspired nits
+
+2005-05-19 Thursday 12:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: directiplookup.cc (1.13), directiplookup.hh (1.15):
+	mark as BSD-module-aware
+
 2005-05-19 Thursday 12:31  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: directiplookup.cc (1.12), directiplookup.hh (1.14):
