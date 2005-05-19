@@ -1274,6 +1274,9 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	} else if (!ip_ok)
 	    q->set_network_header(0, 0);
 
+	// set destination IP address annotation
+	q->set_dst_ip_anno(iph->ip_dst);
+
 	// set checksum
 	if (_checksum && ip_ok)
 	    set_checksums(q, iph);
