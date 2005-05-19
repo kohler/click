@@ -1,3 +1,8 @@
+2005-05-19 Thursday 12:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: directiplookup.cc (1.12), directiplookup.hh (1.14):
+	mark a suser-level only
+
 2005-05-19 Thursday 02:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/fromipsumdump.cc (1.74): set destination IP
