@@ -511,4 +511,6 @@ particular purpose.\n");
   click_static_cleanup();
   Clp_DeleteParser(clp);
   exit(exit_value);
+  // Will leave String objects allocated because of 'handlers' and
+  // 'exit_handler' above
 }

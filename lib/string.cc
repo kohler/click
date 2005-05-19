@@ -564,12 +564,12 @@ String::static_cleanup()
     null_string_p = 0;
     delete oom_string_p;
     oom_string_p = 0;
-    if (--null_memo->_refcount == 0)
-      delete null_memo;
-    if (--permanent_memo->_refcount == 0)
-      delete permanent_memo;
     if (--oom_memo->_refcount == 0)
       delete oom_memo;
+    if (--permanent_memo->_refcount == 0)
+      delete permanent_memo;
+    if (--null_memo->_refcount == 0)
+      delete null_memo;
     null_memo = permanent_memo = oom_memo = 0;
   }
 }

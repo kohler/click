@@ -155,30 +155,28 @@ CLICK_ENDDECLS
 #if HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE)
 CLICK_DECLS
 
-static String::Initializer crap_initializer;
-static String click_compile_prog, tmpdir;
+static String *click_compile_prog, *tmpdir;
 
 static bool
 check_tmpdir(const Vector<ArchiveElement> *archive, ErrorHandler *errh)
 {
     // change to temporary directory
-    if (tmpdir)
-	return tmpdir;
-    if (!(tmpdir = click_mktmpdir(errh)))
-	return String();
+    if (!tmpdir)
+	tmpdir = new String(click_mktmpdir(errh));
+    if (!*tmpdir)
+	return *tmpdir;
 
     // find compile program
-    if (!click_compile_prog) {
-	click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
-	if (!click_compile_prog)
-	    return String();
-    }
+    if (!click_compile_prog)
+	click_compile_prog = new String(clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh));
+    if (!*click_compile_prog)
+	return *click_compile_prog;
 
     // store .hh files in temporary directory
     if (archive)
 	for (int i = 0; i < archive->size(); i++)
 	    if ((*archive)[i].name.substring(-3) == ".hh") {
-		String filename = tmpdir + (*archive)[i].name;
+		String filename = *tmpdir + (*archive)[i].name;
 		FILE *f = fopen(filename.c_str(), "w");
 		if (!f)
 		    errh->warning("%s: %s", filename.c_str(), strerror(errno));
@@ -188,7 +186,7 @@ check_tmpdir(const Vector<ArchiveElement> *archive, ErrorHandler *errh)
 		}
 	    }
 
-    return tmpdir;
+    return *tmpdir;
 }
 
 static String
@@ -210,7 +208,7 @@ compile_archive_file(String package, const Vector<ArchiveElement> *archive, int 
 
     // write .cc file
     const ArchiveElement &ae = archive->at(ai);
-    String filename = tmpdir + ae.name;
+    String filename = *tmpdir + ae.name;
     FILE *f = fopen(filename.c_str(), "w");
     if (!f) {
 	cerrh.error("%s: %s", filename.c_str(), strerror(errno));
@@ -220,7 +218,7 @@ compile_archive_file(String package, const Vector<ArchiveElement> *archive, int 
     fclose(f);
   
     // run click-compile
-    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=" + target + " --package=" + package_file + " " + filename;
+    String compile_command = *click_compile_prog + " --directory=" + *tmpdir + " --driver=" + target + " --package=" + package_file + " " + filename;
     errh->message("%s", compile_command.cc());
     int compile_retval = system(compile_command.cc());
     if (compile_retval == 127)
@@ -230,7 +228,7 @@ compile_archive_file(String package, const Vector<ArchiveElement> *archive, int 
     else if (compile_retval != 0)
 	cerrh.error("'%s' failed", compile_command.cc());
     else
-	return tmpdir + package_file;
+	return *tmpdir + package_file;
 
     return String();
 }
@@ -256,7 +254,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     if ((ai = archive_index(archive, name + suffix)) >= 0) {
 	if (!check_tmpdir(archive, &cerrh))
 	    return;
-	package = tmpdir + "/" + name + suffix;
+	package = *tmpdir + "/" + name + suffix;
 	FILE *f = fopen(package.c_str(), "wb");
 	if (!f) {
 	    cerrh.error("cannot open '%s': %s", package.c_str(), strerror(errno));
@@ -392,6 +390,9 @@ click_static_cleanup()
     cp_va_static_cleanup();
     NameInfo::static_cleanup();
     HashMap_ArenaFactory::static_cleanup();
+    delete tmpdir;
+    delete click_compile_prog;
+    tmpdir = click_compile_prog = 0;
     String::static_cleanup();
 }
 
