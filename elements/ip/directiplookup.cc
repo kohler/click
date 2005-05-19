@@ -490,5 +490,5 @@ DirectIPLookup::vport_unref(uint16_t vport_i)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(IPRouteTable userlevel)
+ELEMENT_REQUIRES(IPRouteTable userlevel|bsdmodule)
 EXPORT_ELEMENT(DirectIPLookup)

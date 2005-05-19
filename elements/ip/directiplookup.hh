@@ -70,9 +70,10 @@ Clears the entire routing table in a single atomic operation.
 See IPRouteTable for a performance comparison of the various IP routing
 elements.
 
-Because DirectIPLookup allocates a huge table, it is currently user-level
-only.  A useful project would be to make it suitable for the Linux kernel
-module, by changing its memory allocation to use vmalloc().
+DirectIPLookup's memory allocation does not work in the Linux kernel, because
+Linux uses a special function vmalloc() to allocate huge objects.  A useful
+project would be to make DirectIPLookup suitable for the Linux kernel module,
+by changing its memory allocation to use vmalloc().
 
 =a IPRouteTable, RangeIPLookup, RadixIPLookup, StaticIPLookup, LinearIPLookup,
 SortedIPLookup, LinuxIPLookup
