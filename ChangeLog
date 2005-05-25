@@ -1,3 +1,7 @@
+2005-05-25 Wednesday 03:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipfilter.cc (1.61): allow "ip proto 6 or 17"
+
 2005-05-19 Thursday 12:51  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/driver.cc (1.29), lib/string.cc (1.52), userlevel/click.cc
