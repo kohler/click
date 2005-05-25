@@ -385,8 +385,8 @@ IPFilter::Primitive::check(const Primitive &p, uint32_t provided_mask, ErrorHand
       break;
       
      case TYPE_INT:
-      if (!(p._type & TYPE_FIELD) && p._type != TYPE_PORT)
-	return errh->error("specify header field or 'port'");
+      if (!(p._type & TYPE_FIELD) && p._type != TYPE_PROTO && p._type != TYPE_PORT)
+	return errh->error("specify header field or 'port'", p._type);
       _data = p._type;
       goto retry;
 
