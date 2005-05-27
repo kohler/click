@@ -1,3 +1,9 @@
+2005-05-27 Friday 12:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: aggregateip.cc (1.18), aggregateipaddrpair.cc
+	(1.1), aggregateipaddrpair.hh (1.1), aggregateipflows.cc (1.30):
+	add initial AggIPAddrPair; copyright
+
 2005-05-25 Wednesday 03:10  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/ipfilter.cc (1.61): allow "ip proto 6 or 17"
