@@ -1,3 +1,12 @@
+2005-05-29 Sunday 13:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* Makefile.in (1.128), click-buildtool.in (1.68),
+	elements/ip/checkipheader2.hh (1.25), elements/ip/ipclassifier.hh
+	(1.35), elements/ip/ipnameinfo.cc (1.4),
+	elements/linuxmodule/tohostsniffers.hh (1.21): click-buildtool:
+	only call "static_initialize/static_cleanup" when
+	"static_initialize" was declared
+
 2005-05-27 Friday 12:15  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: aggregateip.cc (1.18), aggregateipaddrpair.cc
