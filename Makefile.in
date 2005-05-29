@@ -101,7 +101,7 @@ uninstall-local-include:
 	cd $(srcdir)/include/click/standard; for i in *.hh; do /bin/rm -f $(DESTDIR)$(clickincludedir)/standard/$$i; done
 	cd $(srcdir)/include/clicknet; for i in *.h; do /bin/rm -f $(DESTDIR)$(netincludedir)/$$i; done
 
-elemlist elemlists:
+elemlist elemlists: click-buildtool
 	@for d in $(DRIVERS); do (cd $$d && $(MAKE) elemlist) || exit 1; done
 
 MKELEMMAPFLAGS =

@@ -158,8 +158,7 @@ opt syn' (just say 'syn'), 'net 10.0.0.0/24' (just say '10.0.0.0/24'), and
 qualifiers, too: 'src port 80 or 81' is the same as 'src port 80 or src
 port 81'.
 
-As a special case, a pattern consisting of "-", "any", or "all" matches
-every packet.
+A pattern consisting entirely of "-", "any", or "all" matches every packet.
 
 The patterns are scanned in order, and the packet is sent to the output
 corresponding to the first matching pattern. Thus more specific patterns
@@ -232,10 +231,6 @@ class IPClassifier : public IPFilter { public:
   IPClassifier();
   ~IPClassifier();
 
-  // prevent IPFilter::static_initialize() from being called twice
-  static void static_initialize()		{ }
-  static void static_cleanup()			{ }
-  
   const char *class_name() const		{ return "IPClassifier"; }
   const char *processing() const		{ return PUSH; }
   

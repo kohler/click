@@ -306,14 +306,18 @@ $bad_files"
 	postprocess=sort
     fi
 
-    egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^class|^[ 	]*const *char *\* *class_name' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
+    egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^class|^[ 	]*const *char *\* *class_name|^[ 	]*static *void *static_initialize|^}' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
   OFS = ""; cur_class = ""
 }
 /:class[ 	]/ {
   sub(/^class[ 	]*/, "", $2);
   sub(/[ 	]*$/, "", $2);
   cur_class = $2;
-  next;
+  next
+}
+/:}/ {
+  cur_class = "";
+  next
 }
 /:EXPORT_ELEMENT/ {
   sub(/.*EXPORT_ELEMENT[ 	]*\(/, "", $2);
@@ -323,25 +327,29 @@ $bad_files"
   } else {
     exports[$1] = $2
   }
-  next;
+  next
 }
 /:ELEMENT_PROVIDES/ {
   if (!($1 in exports)) {
     exports[$1] = ""
   }
-  next;
+  next
 }
 /:ELEMENT_HEADER/ {
   sub(/.*ELEMENT_HEADER[ 	]*\(/, "", $2)
   sub(/\).*/, "", $2)
   header[$1] = $2
-  next;
+  next
 }
 /class_name/ {
   sub(/.*return "/, "", $0);
   sub(/".*/, "", $0);
   class_name[cur_class] = $0
-  next;
+  next
+}
+/static_initialize/ {
+  static_initialize[cur_class] = 1
+  next
 }
 END {
   n = 0
@@ -356,12 +364,20 @@ END {
       }
       split(ex, exes, / /); ex = ""
       for (j in exes) {
-        if (exes[j] ~ /-/)
-          ex = ex exes[j] " ";
-        else if (class_name[exes[j]] == "")
-          ex = ex exes[j] "-" exes[j] " ";
-        else
-          ex = ex exes[j] "-" class_name[exes[j]] " ";
+        dash = index(exes[j], "-")
+	if (dash == 0) {
+	  dash = length(exes[j]);
+          if (class_name[exes[j]] == "")
+            exes[j] = exes[j] "-" exes[j];
+          else
+            exes[j] = exes[j] "-" class_name[exes[j]];
+        }
+	ex = ex exes[j] " ";
+	klass = substr(exes[j], 1, dash)
+        if (static_initialize[klass]) {
+	  ex = ex klass "-!static";
+	  static_initialize[klass] = 0
+	}
       }
       print i, "\t", header[i], "\t", ex
       n++
@@ -596,16 +612,15 @@ EOF
   INCLUDES[$2] = 1;
   for (i = 3; i <= NF; i++) {
     split($i, ans, /-/);
-    name = (ans[2] == "" ? "0" : "\"" ans[2] "\"");
-    B = B "  hatred_of_rebecca[" nrebecca "] = click_add_element_type(" name ", beetlemonkey, " nrebecca ");\n"
-    C = C "  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
-    D = D "   case " nrebecca ": return new " ans[1] ";\n";
-    if (!(ans[1] in static_done)) {
+    if (ans[2] == "!static") {
       B = B "  " ans[1] "::static_initialize();\n";
       C = C "  " ans[1] "::static_cleanup();\n";
-      static_done[ans[1]] = 1;
+    } else {
+      B = B "  hatred_of_rebecca[" nrebecca "] = click_add_element_type(\"" name "\", beetlemonkey, " nrebecca ");\n"
+      C = C "  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
+      D = D "   case " nrebecca ": return new " ans[1] ";\n";
+      nrebecca++;
     }
-    nrebecca++;
   }
 }
 END {
@@ -639,13 +654,12 @@ END {
   INCLUDES[$2] = 1;
   for (i = 3; i <= NF; i++) {
     split($i, ans, /-/);
-    name = "\"" ans[2] "\""
-    B = B "  (void) click_add_element_type(" name ", beetlemonkey, " nrebecca ");\n";
-    D = D "   case " nrebecca ": return new " ans[1] ";\n";
-    if (!(ans[1] in static_done)) {
+    if (ans[2] == "!static") {
       B = B "  " ans[1] "::static_initialize();\n";
       C = C "  " ans[1] "::static_cleanup();\n";
-      static_done[ans[1]] = 1;
+    } else {
+      B = B "  (void) click_add_element_type(\"" ans[2] "\", beetlemonkey, " nrebecca ");\n";
+      D = D "   case " nrebecca ": return new " ans[1] ";\n";
     }
     nrebecca++;
   }

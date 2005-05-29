@@ -179,6 +179,7 @@ IPNameInfo::static_cleanup()
 	if (dbs[i]) {
 	    NameInfo::removedb(dbs[i]);
 	    delete dbs[i];
+	    dbs[i] = 0;
 	}
 }
 
