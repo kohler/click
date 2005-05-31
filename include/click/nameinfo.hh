@@ -31,10 +31,10 @@ class NameInfo { public:
 	T_IP_PORT = 0x04020000,
 	T_TCP_PORT = 0x04020006,
 	T_UDP_PORT = 0x04020011,
-	T_IP_FIELD = 0x04030000,
-	T_ICMP_FIELD = 0x04030001,
-	T_TCP_FIELD = 0x04030006,
-	T_UDP_FIELD = 0x04030011,
+	T_IP_FIELDNAME = 0x04030000,
+	T_ICMP_FIELDNAME = 0x04030001,
+	T_TCP_FIELDNAME = 0x04030006,
+	T_UDP_FIELDNAME = 0x04030011,
 	T_IP6_ADDR = 0x06000001,
 	T_IP6_PREFIX = 0x06000002
     };
@@ -159,8 +159,7 @@ class DynamicNameDB : public NameDB { public:
 inline
 NameDB::NameDB(uint32_t type, const String &prefix, int vsize)
     : _type(type), _prefix(prefix), _value_size(vsize),
-      _prefix_parent(0), _prefix_sibling(0), _prefix_child(0),
-      _installed(0)
+      _prefix_parent(0), _prefix_sibling(0), _prefix_child(0), _installed(0)
 {
 #ifdef CLICK_NAMEDB_CHECK
     _check_generation = 0;
