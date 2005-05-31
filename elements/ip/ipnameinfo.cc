@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include "ipnameinfo.hh"
 #include <click/nameinfo.hh>
+#include <click/confparse.hh>
 #include <clicknet/ip.h>
 #include <clicknet/icmp.h>
 #include <clicknet/tcp.h>
@@ -31,6 +32,7 @@ static const StaticNameDB::Entry ip_protos[] = {
     { "icmp", IP_PROTO_ICMP },
     { "igmp", IP_PROTO_IGMP },
     { "ipip", IP_PROTO_IPIP },
+    { "payload", IP_PROTO_PAYLOAD },
     { "tcp", IP_PROTO_TCP },
     { "tcpudp", IP_PROTO_TCP_OR_UDP },
     { "transp", IP_PROTO_TRANSP },
@@ -139,35 +141,64 @@ bool
 ServicesNameDB::query(const String &name, void *value, int vsize)
 {
     assert(vsize == 4);
-    if (const struct servent *srv = getservbyname(name.c_str(), (type() == IP_PROTO_TCP ? "tcp" : "udp"))) {
-	*reinterpret_cast<uint32_t*>(value) = ntohs(srv->s_port);
-	return true;
-    } else
+
+    // Check common case: integer
+    int32_t crap;
+    if (cp_integer(name, &crap))
 	return false;
+
+    if (type() == NameInfo::T_IP_PROTO) {
+	if (const struct protoent *proto = getprotobyname(name.c_str())) {
+	    *reinterpret_cast<uint32_t*>(value) = proto->p_proto;
+	    return true;
+	}
+    }
+
+    if (type() >= NameInfo::T_IP_PORT && type() < NameInfo::T_IP_PORT + 256) {
+	int proto = type() - NameInfo::T_IP_PORT;
+	const char *proto_name;
+	if (proto == IP_PROTO_TCP)
+	    proto_name = "tcp";
+	else if (proto == IP_PROTO_UDP)
+	    proto_name = "udp";
+	else if (const struct protoent *pe = getprotobynumber(proto))
+	    proto_name = pe->p_name;
+	else
+	    return false;
+	if (const struct servent *srv = getservbyname(name.c_str(), proto_name)) {
+	    *reinterpret_cast<uint32_t*>(value) = ntohs(srv->s_port);
+	    return true;
+	}
+    }
+
+    return false;
 }
 #endif
 
 }
 
 
-static NameDB *dbs[10];
+static NameDB *dbs[11];
 
 void
 IPNameInfo::static_initialize()
 {
-    dbs[0] = new StaticNameDB(NameInfo::T_IP_PROTO, String(), ip_protos, sizeof(ip_protos) / sizeof(ip_protos[0]));
-    dbs[1] = new StaticNameDB(NameInfo::T_ICMP_TYPE, String(), icmp_types, sizeof(icmp_types) / sizeof(icmp_types[0]));
-    dbs[2] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_UNREACH, String(), icmp_unreach_codes, sizeof(icmp_unreach_codes) / sizeof(icmp_unreach_codes[0]));
-    dbs[3] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_REDIRECT, String(), icmp_redirect_codes, sizeof(icmp_redirect_codes) / sizeof(icmp_redirect_codes[0]));
-    dbs[4] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_TIMXCEED, String(), icmp_timxceed_codes, sizeof(icmp_timxceed_codes) / sizeof(icmp_timxceed_codes[0]));
-    dbs[5] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_PARAMPROB, String(), icmp_paramprob_codes, sizeof(icmp_paramprob_codes) / sizeof(icmp_paramprob_codes[0]));
 #if CLICK_USERLEVEL && HAVE_NETDB_H
-    dbs[6] = new ServicesNameDB(NameInfo::T_TCP_PORT);
-    dbs[7] = new ServicesNameDB(NameInfo::T_UDP_PORT);
+    dbs[0] = new ServicesNameDB(NameInfo::T_IP_PROTO);
 #endif
-    dbs[8] = new StaticNameDB(NameInfo::T_TCP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
-    dbs[9] = new StaticNameDB(NameInfo::T_UDP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
-    for (int i = 0; i < 10; i++)
+    dbs[1] = new StaticNameDB(NameInfo::T_IP_PROTO, String(), ip_protos, sizeof(ip_protos) / sizeof(ip_protos[0]));
+    dbs[2] = new StaticNameDB(NameInfo::T_ICMP_TYPE, String(), icmp_types, sizeof(icmp_types) / sizeof(icmp_types[0]));
+    dbs[3] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_UNREACH, String(), icmp_unreach_codes, sizeof(icmp_unreach_codes) / sizeof(icmp_unreach_codes[0]));
+    dbs[4] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_REDIRECT, String(), icmp_redirect_codes, sizeof(icmp_redirect_codes) / sizeof(icmp_redirect_codes[0]));
+    dbs[5] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_TIMXCEED, String(), icmp_timxceed_codes, sizeof(icmp_timxceed_codes) / sizeof(icmp_timxceed_codes[0]));
+    dbs[6] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_PARAMPROB, String(), icmp_paramprob_codes, sizeof(icmp_paramprob_codes) / sizeof(icmp_paramprob_codes[0]));
+#if CLICK_USERLEVEL && HAVE_NETDB_H
+    dbs[7] = new ServicesNameDB(NameInfo::T_TCP_PORT);
+    dbs[8] = new ServicesNameDB(NameInfo::T_UDP_PORT);
+#endif
+    dbs[9] = new StaticNameDB(NameInfo::T_TCP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
+    dbs[10] = new StaticNameDB(NameInfo::T_UDP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
+    for (int i = 0; i < 11; i++)
 	if (dbs[i])
 	    NameInfo::installdb(dbs[i], 0);
 }
@@ -175,7 +206,7 @@ IPNameInfo::static_initialize()
 void
 IPNameInfo::static_cleanup()
 {
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 11; i++)
 	if (dbs[i]) {
 	    NameInfo::removedb(dbs[i]);
 	    delete dbs[i];
