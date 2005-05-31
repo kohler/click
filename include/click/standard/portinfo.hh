@@ -12,7 +12,7 @@ PortInfo(NAME PORT[/PROTOCOL], ...)
 
 =s information
 
-specifies address information
+stores named TCP/UDP port information
 
 =io
 

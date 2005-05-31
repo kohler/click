@@ -48,13 +48,15 @@ PortInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 
 	String port_str = cp_pop_spacevec(str);
 	uint32_t port;
-	int proto = 0;
+	int32_t proto = IP_PROTO_TCP_OR_UDP;
 	const char *slash = cp_unsigned(port_str.begin(), port_str.end(), 0, &port);
 	if (slash != port_str.end() && *slash == '/') {
 	    if (slash + 4 == port_str.end() && memcmp(slash, "/tcp", 4) == 0)
 		proto = IP_PROTO_TCP;
 	    else if (slash + 4 == port_str.end() && memcmp(slash, "/udp", 4) == 0)
 		proto = IP_PROTO_UDP;
+	    else if (NameInfo::query_int(NameInfo::T_IP_PROTO, this, port_str.substring(slash + 1, port_str.end()), &proto))
+		/* got proto */;
 	    else
 		continue;
 	} else if (slash == port_str.begin() || slash != port_str.end()) {
@@ -63,10 +65,11 @@ PortInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	}
 
 	do {
-	    if (proto == 0 || proto == IP_PROTO_TCP)
+	    if (proto == IP_PROTO_TCP_OR_UDP) {
 		NameInfo::define(NameInfo::T_TCP_PORT, this, name_str, &port, 4);
-	    if (proto == 0 || proto == IP_PROTO_UDP)
 		NameInfo::define(NameInfo::T_UDP_PORT, this, name_str, &port, 4);
+	    } else
+		NameInfo::define(NameInfo::T_IP_PORT + proto, this, name_str, &port, 4);
 	    name_str = cp_pop_spacevec(str);
 	} while (name_str && name_str[0] != '#');
     }
