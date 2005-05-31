@@ -1,3 +1,30 @@
+2005-05-31 Tuesday 03:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: analysis/aggregateip.cc (1.19),
+	analysis/aggregateip.hh (1.16), ip/ipfieldinfo.cc (1.1),
+	ip/ipfieldinfo.hh (1.1): add IPFieldInfo (hooray, finally at last);
+	use it in AggregateIP (but not yet IPFilter)
+
+2005-05-31 Tuesday 03:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/clicknet/ip.h (1.7): define IP_PROTO_PAYLOAD
+
+2005-05-31 Tuesday 03:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipnameinfo.cc (1.5): read IP protocols from
+	/etc/protocols
+
+2005-05-31 Tuesday 03:45  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/nameinfo.hh (1.7): T_IP_FIELDNAME, etc., instead of
+	T_IP_FIELD, because it really stores names only
+
+2005-05-31 Tuesday 03:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/portinfo.cc (1.7),
+	include/click/standard/portinfo.hh (1.6): PortInfo can store ports
+	for non-tcp/udp
+
 2005-05-29 Sunday 13:24  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.128), click-buildtool.in (1.68),
