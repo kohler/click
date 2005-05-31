@@ -2,6 +2,7 @@
 #ifndef CLICK_AGGREGATEIP_HH
 #define CLICK_AGGREGATEIP_HH
 #include <click/element.hh>
+#include "elements/ip/ipfieldinfo.hh"
 CLICK_DECLS
 
 /*
@@ -20,10 +21,8 @@ of that packet's IP header, transport header, or payload, depending on the
 value of the FIELD argument.
 
 FIELD can be the name of a header field, like C<"ip tos">, or a general
-offset-length specification, like C<"ip[8, 2]">. Either form can be modified
-with a mask, such as C<"ip src/8"> or C<"ip[8, 2] & 0x3F0">. (Note that the
-offset-length form contains a comma, which you must protect with single or
-double quotes.)
+offset-length specification, like C<"ip[8:2]">. Either form can be modified
+with a mask, such as C<"ip src/8"> or C<"ip[8:2] & 0x3F0">.
 
 The aggregate annotation value uses host byte order.
 
@@ -46,7 +45,7 @@ comes the offset and length, which can take several forms:
 
 =over 8
 
-=item C<[OFFSET, LENGTH]>
+=item C<[OFFSET:LENGTH]>
 
 The LENGTH bytes starting at byte OFFSET.
 
@@ -58,7 +57,7 @@ From byte OFFSET1 to byte OFFSET2, inclusive.
 
 The single byte at OFFSET.
 
-=item C<{OFFSET, LENGTH}>, C<{OFFSET1-OFFSET2}>, C<{OFFSET}>
+=item C<{OFFSET:LENGTH}>, C<{OFFSET1-OFFSET2}>, C<{OFFSET}>
 
 Similar, but OFFSETs and LENGTHs are measured in bits.
 
@@ -147,42 +146,6 @@ class AggregateIP : public Element { public:
     void push(int, Packet *);
     Packet *pull(int);
     
-    enum {
-	AG_NONE = 0, AG_IP = 1, AG_TRANSP = 2, AG_PAYLOAD = 3
-    };
-    
-    class Field { public:
-
-	Field()			: _type(0), _offset(0), _length(0) { }
-	Field(uint32_t type, uint32_t offset, uint32_t length);
-	Field(uint32_t type, uint32_t proto, uint32_t offset, uint32_t length);
-
-	uint32_t type() const	{ return _type; }
-	uint32_t proto() const	{ return _proto; }
-	uint32_t offset() const	{ return _offset; }
-	uint32_t length() const	{ return _length; }
-	
-	const char *unparse_type() const;
-	void unparse(StringAccum &) const;
-	String unparse() const;
-
-	int parse(const String &, ErrorHandler *);
-	
-      private:
-	
-	uint32_t _type : 8;
-	uint32_t _proto : 24;
-	uint32_t _offset;
-	uint32_t _length;
-
-	static void initialize_wordmap();
-	int add_word(String, ErrorHandler *);
-	int apply_mask(uint32_t, const char *, ErrorHandler *);
-	
-    };
-
-    struct ChunkMap;
-    
   private:
 
     uint32_t _offset;
@@ -190,7 +153,7 @@ class AggregateIP : public Element { public:
     uint32_t _mask;
     bool _incremental;
     bool _unshift_ip_addr;
-    Field _f;
+    IPField _f;
 
     Packet *handle_packet(Packet *);
     Packet *bad_packet(Packet *);
@@ -198,21 +161,6 @@ class AggregateIP : public Element { public:
     static String read_handler(Element *, void *);
     
 };
-
-
-inline
-AggregateIP::Field::Field(uint32_t type, uint32_t offset, uint32_t length)
-    : _type(type), _offset(offset), _length(length)
-{
-    assert(_type != AG_TRANSP);
-}
-
-inline
-AggregateIP::Field::Field(uint32_t type, uint32_t proto, uint32_t offset, uint32_t length)
-    : _type(type), _proto(proto), _offset(offset), _length(length)
-{
-    assert(_type == AG_TRANSP);
-}
 
 CLICK_ENDDECLS
 #endif
