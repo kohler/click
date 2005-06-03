@@ -212,7 +212,7 @@ class FromDAGDump : public Element { public:
 	} u;
 	enum { HEADER_SIZE = 16, CELL_SIZE = 64 };
 	enum { TYPE_LEGACY = 0, TYPE_HDLC_POS = 1, TYPE_ETH = 2, TYPE_ATM = 3,
-	       TYPE_AAL5 = 4 };
+	       TYPE_AAL5 = 4, TYPE_MAX = TYPE_AAL5 };
     };
     
     static const uint32_t BUFFER_SIZE = 32768;

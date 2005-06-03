@@ -134,7 +134,8 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		 && _base_linktype != FAKE_DLT_EN10MB
 		 && _base_linktype != FAKE_DLT_ATM_RFC1483
 		 && _base_linktype != FAKE_DLT_PPP
-		 && _base_linktype != FAKE_DLT_PPP_HDLC))
+		 && _base_linktype != FAKE_DLT_PPP_HDLC
+		 && _base_linktype != FAKE_DLT_RAW))
 	return errh->error("bad encapsulation type");
 
     // set other variables
@@ -285,7 +286,8 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 
     // determine read length and wire length
     uint32_t wire_length = 0;
-    if (cell->type == 0 || _base_linktype > 0) {
+    if (cell->type == DAGCell::TYPE_LEGACY || _base_linktype >= 0) {
+      use_base_linktype:
 	_linktype = _base_linktype;
 	switch (_base_linktype) {
 	    
@@ -335,9 +337,15 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	  case DAGCell::TYPE_HDLC_POS:
 	    _linktype = FAKE_DLT_C_HDLC;
 	    break;
-	  default:
-	    _linktype = FAKE_DLT_NONE;
-	    break;
+	  default:		// indicates an old-format dump
+	    if (_base_linktype == FAKE_DLT_NONE)
+		_base_linktype = FAKE_DLT_ATM_RFC1483;
+	    if (errh) {
+		errh->warning("odd DAG cell type %d, assuming old-style ATM encapsulation", cell->type);
+		errh->message("(To avoid this warning, specify an explicit ENCAP.)");
+	    } else
+		click_chatter("%{element}: DAG cell with odd type %d, assuming old-style\n  ATM encapsulation for rest of dump.  Packets may have been read incorrectly!\n  (To avoid this warning, specify an explicit ENCAP.)", this, cell->type);
+	    goto use_base_linktype;
 	}
 	if (read_length < DAGCell::HEADER_SIZE)
 	    return false;
