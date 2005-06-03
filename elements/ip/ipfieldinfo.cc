@@ -54,8 +54,8 @@ static const StaticNameDB::Entry ip_fields[] = {
 static const StaticNameDB::Entry udp_fields[] = {
     { "dport",	BITFIELD(IP_PROTO_UDP, 2*8, 16) },
     { "len",	BITFIELD(IP_PROTO_UDP, 4*8, 16) },
-    { "sum",	BITFIELD(IP_PROTO_UDP, 6*8, 16) },
-    { "sport",	BITFIELD(IP_PROTO_UDP, 0, 16) }
+    { "sport",	BITFIELD(IP_PROTO_UDP, 0, 16) },
+    { "sum",	BITFIELD(IP_PROTO_UDP, 6*8, 16) }
 };
 
 static const StaticNameDB::Entry tcp_fields[] = {
