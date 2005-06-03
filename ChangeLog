@@ -1,3 +1,14 @@
+2005-06-03 Friday 18:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ethernet/arpquerier.cc (1.54),
+	elements/ethernet/arpquerier.hh (1.39),
+	test/ethernet/ARPQuerier-02.testie (1.1): ARPQuerier sends at most
+	10 requests per second for any given address
+
+2005-06-03 Friday 18:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipfieldinfo.cc (1.2): correct alphabetical order
+
 2005-06-03 Friday 15:09  John Bicket <jbicket@mit.edu>
 
 	* etc/: README (1.11), make-linux-wifi-patch (1.2): remove wifi
