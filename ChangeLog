@@ -1,3 +1,12 @@
+2005-06-03 Friday 00:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* userlevel/click.cc (1.103): slightly different reference counting
+	story (to make it safe for elements to use()/unuse())
+
+2005-06-03 Friday 00:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/icmppingresponder.cc (1.15): error checking
+
 2005-05-31 Tuesday 03:49  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/: analysis/aggregateip.cc (1.19),
