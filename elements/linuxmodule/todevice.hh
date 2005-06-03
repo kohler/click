@@ -111,6 +111,7 @@ class ToDevice : public AnyTaskDevice { public:
 
   void reset_counts();
   void change_device(net_device *);
+  void tx_wake_queue(net_device *);
   bool tx_intr();
 
 #if CLICK_DEVICE_STATS

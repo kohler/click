@@ -440,6 +440,14 @@ if test $ac_cv_click_kernel = yes; then
     AC_DEFINE(HAVE_CLICK_KERNEL)
 fi
 
+AC_CACHE_CHECK(for Click Linux kernel extensions for transmit notification, ac_cv_click_kernel_tx_notify,
+[if grep register_net_tx $linux_system_map >/dev/null 2>&1; then
+    ac_cv_click_kernel_tx_notify=yes
+else ac_cv_click_kernel_tx_notify=no; fi])
+if test $ac_cv_click_kernel_tx_notify = yes; then
+    AC_DEFINE(HAVE_CLICK_KERNEL_TX_NOTIFY)
+fi
+
 AC_CACHE_CHECK(for read_net_skbcount kernel extension, ac_cv_linux_read_net_skbcount,
 [if grep read_net_skbcount $linux_system_map >/dev/null 2>&1; then
   ac_cv_linux_read_net_skbcount=yes

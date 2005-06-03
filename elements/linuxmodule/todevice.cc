@@ -43,24 +43,65 @@ CLICK_CXX_UNPROTECT
 /* for watching when devices go offline */
 static AnyDeviceMap to_device_map;
 static struct notifier_block device_notifier;
+static struct notifier_block tx_notifier;
+static int registered_tx_notifiers;
 extern "C" {
 static int device_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
+static int tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
 }
 
 void
 ToDevice::static_initialize()
 {
     to_device_map.initialize();
+#ifdef HAVE_CLICK_KERNEL_TX_NOTIFY
+    tx_notifier.notifier_call = tx_notifier_hook;
+    tx_notifier.priority = 1;
+    tx_notifier.next = 0;
+#endif
     device_notifier.notifier_call = device_notifier_hook;
     device_notifier.priority = 1;
     device_notifier.next = 0;
     register_netdevice_notifier(&device_notifier);
+
 }
 
 void
 ToDevice::static_cleanup()
 {
     unregister_netdevice_notifier(&device_notifier);
+#ifdef HAVE_CLICK_KERNEL_TX_NOTIFY
+    if (registered_tx_notifiers) {
+	unregister_net_tx(&tx_notifier);
+    }
+#endif
+}
+
+
+
+extern "C" {
+static int
+tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v) 
+{
+    struct net_device *dev = (struct net_device *)v;
+    if (!dev) {
+	return 0;
+    }
+    Vector<AnyDevice *> es;
+    bool down = true;
+    to_device_map.lookup_all(dev, down, es);
+    for (int i = 0; i < es.size(); i++) 
+	((ToDevice *)(es[i]))->tx_wake_queue(dev);
+
+    return 0;
+}
+}
+
+void
+ToDevice::tx_wake_queue(net_device *dev) 
+{
+    //click_chatter("%{element}::%s for dev %s\n", this, __func__, dev->name);
+    _task.reschedule();
 }
 
 ToDevice::ToDevice()
@@ -99,6 +140,10 @@ ToDevice::initialize(ErrorHandler *errh)
     errh->warning("not compiled for a Click kernel");
 #endif
 
+#ifndef HAVE_CLICK_KERNEL_TX_NOTIFY
+    errh->warning("not compiled for a Click kernel with transmit notification");
+#endif
+
     // check for duplicate writers
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_writer_" + String(ifindex()));
@@ -106,6 +151,16 @@ ToDevice::initialize(ErrorHandler *errh)
 	    return errh->error("duplicate writer for device '%s'", _devname.cc());
 	used = this;
     }
+
+    if (!registered_tx_notifiers) {
+#ifdef HAVE_CLICK_KERNEL_TX_NOTIFY
+	tx_notifier.next = 0;
+	register_net_tx(&tx_notifier);
+#else
+	errh->warning("can't get dev transmit notification: not compiled for a Click kernel");
+#endif
+    }
+    registered_tx_notifiers++;
 
     ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
@@ -149,8 +204,17 @@ ToDevice::reset_counts()
 }
 
 void
-ToDevice::cleanup(CleanupStage)
+ToDevice::cleanup(CleanupStage stage)
 {
+    if (stage >= CLEANUP_INITIALIZED) {
+	registered_tx_notifiers--;
+#ifdef HAVE_CLICK_KERNEL_TX_NOTIFY
+	if (registered_tx_notifiers == 0) {
+	    unregister_net_tx(&tx_notifier);
+	}
+#endif
+    }
+
     clear_device(&to_device_map);
 }
 
@@ -189,7 +253,7 @@ ToDevice::run_task()
     uint64_t time_now;
     SET_STATS(low00, low10, time_now);
 #endif
- 
+    
 #if HAVE_LINUX_POLLING
     bool is_polling = (_dev->polling > 0);
     if (is_polling) {
@@ -259,7 +323,7 @@ ToDevice::run_task()
 	_activations++;
 #endif
 
-    if (busy)
+    if (busy && sent == 0)
 	_busy_returns++;
 
 #if HAVE_LINUX_POLLING
@@ -285,14 +349,20 @@ ToDevice::run_task()
     adjust_tickets(sent);
     // If we're polling, never go to sleep! We're relying on ToDevice to clean
     // the transmit ring.
-    // Also don't go to sleep if the transmitting device was busy (as opposed
-    // to the queue being empty).
-#if HAVE_LINUX_POLLING
-    if (is_polling || sent > 0 || busy || _signal)
-#else
-    if (sent > 0 || busy || _signal)
+    // Otherwise, don't go to sleep if the signal isn't active and
+    // we didn't just send any packets
+#ifdef HAVE_CLICK_KERNEL_TX_NOTIFY
+    bool reschedule = ((!busy) && (sent > 0 || _signal.active()));
+#else 
+    bool reschedule = (busy || sent > 0 || _signal.active());
 #endif
+#if HAVE_LINUX_POLLING
+    reschedule |= is_polling;
+#endif /* HAVE_LINUX_POLLING */
+
+    if (reschedule) {
 	_task.fast_reschedule();
+    }
     return sent > 0;
 }
 
