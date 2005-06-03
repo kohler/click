@@ -1,3 +1,17 @@
+2005-06-03 Friday 15:09  John Bicket <jbicket@mit.edu>
+
+	* etc/: README (1.11), make-linux-wifi-patch (1.2): remove wifi
+	patches.
+
+2005-06-03 Friday 14:46  John Bicket <jbicket@mit.edu>
+
+	* configure.in (1.262), config-linuxmodule.h.in (1.11),
+	elements/linuxmodule/todevice.cc (1.141),
+	elements/linuxmodule/todevice.hh (1.70): add configure test for
+	register_net_tx and use it in linuxmodule's todevice;
+	register_net_tx gives notification for when netif_wake_queue is
+	called.
+
 2005-06-03 Friday 14:07  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: fromdagdump.cc (1.28), fromdagdump.hh (1.17):
