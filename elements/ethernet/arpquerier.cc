@@ -312,6 +312,7 @@ ARPQuerier::handle_ip(Packet *p)
     } else if ((ae = new ARPEntry)) {
 	ae->ip = ipa;
 	ae->ok = ae->polling = 0;
+	ae->last_response_jiffies = click_jiffies() - CLICK_HZ;
 	
 	ae->head = ae->tail = p;
 	p->set_next(0);
@@ -332,10 +333,18 @@ ARPQuerier::handle_ip(Packet *p)
     } else {
 	p->kill();
 	_drops++;
+	_lock.release_write();
+	return;
     }
     
     _lock.release_write();
-    send_query_for(ipa);
+
+    // Send a query for any given address at most 10 times a second.
+    int jiff = click_jiffies();
+    if ((int) (jiff - ae->last_response_jiffies) >= CLICK_HZ / 10) {
+	ae->last_response_jiffies = jiff;
+	send_query_for(ipa);
+    }
 }
 
 /*

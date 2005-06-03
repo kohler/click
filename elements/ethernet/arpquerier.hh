@@ -67,6 +67,8 @@ instances of ARPQuerier.
 ARPQuerier uses packets' destination IP address annotations, and can destroy
 their next packet annotations.
 
+ARPQuerier will send at most 10 queries a second for any IP address.
+
 =h table read-only
 
 Returns a textual representation of the ARP table.

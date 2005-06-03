@@ -1,0 +1,34 @@
+%info
+Check that ARPQuerier correctly rate-limits queries per IP address.
+
+%script
+click CONFIG
+
+%file CONFIG
+RatedSource(RATE 1000, LIMIT 1500, STOP true)
+	-> IPEncap(tcp, 1.0.0.1, 2.0.0.2)
+	-> arpq::ARPQuerier(1.0.0.3, 2:1:1:1:1:1)
+	-> c::Counter
+	-> Discard;
+Idle -> [1]arpq;
+
+RatedSource(RATE 10, LIMIT 15, STOP true)
+	-> IPEncap(tcp, 1.0.0.1, 2.0.0.2)
+	-> arpq2::ARPQuerier(1.0.0.3, 2:1:1:1:1:1)
+	-> c2::Counter
+	-> Discard;
+Idle -> [1]arpq2;
+
+RatedSource(RATE 8, LIMIT 3, STOP true)
+	-> IPEncap(tcp, 1.0.0.1, 2.0.0.2)
+	-> arpq3::ARPQuerier(1.0.0.3, 2:1:1:1:1:1)
+	-> c3::Counter
+	-> Discard;
+Idle -> [1]arpq3;
+
+DriverManager(wait_stop 3, save c.count -, save c2.count -, save c3.count -)
+
+%expect stdout
+{{15|16}}
+{{13|14|15}}
+{{2|3}}
