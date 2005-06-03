@@ -1,3 +1,12 @@
+2005-06-03 Friday 14:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromdagdump.cc (1.28), fromdagdump.hh (1.17):
+	better detection of old-style DAG dumps
+
+2005-06-03 Friday 14:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/icmppingresponder.cc (1.16): nit
+
 2005-06-03 Friday 00:09  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* userlevel/click.cc (1.103): slightly different reference counting
