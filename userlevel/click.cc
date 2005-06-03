@@ -239,8 +239,9 @@ static bool
 hotswap_hook(Task *, void *)
 {
     hotswap_router->activate(ErrorHandler::default_handler());
-    // That step releases our reference to 'router'.
+    router->unuse();
     router = hotswap_router;
+    router->use();
     hotswap_router = 0;
     return true;
 }
@@ -280,8 +281,6 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
     r->set_hotswap_router(router);
   
   if (errh->nerrors() > 0 || r->initialize(errh) < 0) {
-    if (hotswap && router && router->initialized())
-      router->use();		// Account for 'r' reference to 'router'
     delete r;
     return 0;
   } else
@@ -428,6 +427,7 @@ particular purpose.\n");
   router = parse_configuration(router_file, file_is_expr, false, errh);
   if (!router)
     exit(1);
+  router->use();
 
   int exit_value = 0;
 
@@ -507,7 +507,9 @@ particular purpose.\n");
     }
   }
 
-  delete router->master();
+  Master *master = router->master();
+  router->unuse();
+  delete master;
   click_static_cleanup();
   Clp_DeleteParser(clp);
   exit(exit_value);
