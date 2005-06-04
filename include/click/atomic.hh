@@ -71,7 +71,7 @@ atomic_uint32_t::operator&=(uint32_t u)
 inline uint32_t
 atomic_uint32_t::read_and_add(uint32_t delta)
 {
-# if defined(__i386__) || defined(__arch_um__)
+# if defined(__i386__) || defined(__arch_um__) || defined(__x86_64__)
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     asm volatile (LOCK "xaddl %0,%1"
 		  : "=r" (delta), "=m" (_val.counter) 
@@ -104,7 +104,7 @@ atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
     //   return old_value;
 
     uint32_t old_value;
-# if defined(__i386__) || defined(__arch_um__)
+# if defined(__i386__) || defined(__arch_um__) || defined(__x86_64__)
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     asm (LOCK "cmpxchgl %2,%0"
 	 : "=m" (_val.counter), "=a" (old_value)
