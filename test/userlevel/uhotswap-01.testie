@@ -13,6 +13,8 @@ write hotconfig Idle -> s :: Switch(1) -> Idle; s[1] -> Idle; DriverManager(wait
 read s.config
 write hotconfig Print
 read s.config
+write hotconfig Pofdskaofjdsajfdsa
+read s.config
 write stop true
 
 %expect CSOUT
@@ -28,6 +30,11 @@ DATA 2
 520-{{.*}}Print' input 0 unused
 520-{{.*}}Print' output 0 unused
 520 Router could not be initialized!
+200 Read handler{{.*}}
+DATA 2
+1
+520-Write handler{{.*}}error:
+520 {{.*}}undeclared element{{.*}}
 200 Read handler{{.*}}
 DATA 2
 1
