@@ -1,3 +1,12 @@
+2005-06-04 Saturday 19:48  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/atomic.hh (1.14): add x86_64 support (Adam
+	Greenhalgh etc.)
+
+2005-06-04 Saturday 19:48  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/userlevel/uhotswap-01.testie (1.3): nit
+
 2005-06-03 Friday 18:41  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ethernet/arpquerier.cc (1.54),
