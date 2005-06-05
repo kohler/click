@@ -142,7 +142,7 @@ BSD-like license. See the 'LICENSE' file for details.
     Portions of the Click software are derived from the Linux kernel, and
 are thus distributed under the GNU General Public License, version 2. The
 GNU General Public License is available via the Web at
-<http://www.gnu.org/copyleft/gpl.html>, or in the COPYING file in this
+<http://www.gnu.org/licenses/gpl.html>, or in the COPYING file in this
 directory. The GPL applies to the source files in drivers/e1000*, to the
 files etc/linux-*-patch, linuxmodule/clickfs.cc, linuxmodule/proclikefs.c,
 linuxmodule/sched.cc, and linuxmodule/skbmgr.cc, and possibly to some of
