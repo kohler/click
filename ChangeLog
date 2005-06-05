@@ -1,3 +1,11 @@
+2005-06-05 Sunday 14:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.69): fix boneheadedness
+
+2005-06-05 Sunday 14:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* README (1.50): license nit
+
 2005-06-04 Saturday 19:48  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/atomic.hh (1.14): add x86_64 support (Adam
