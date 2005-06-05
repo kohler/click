@@ -616,7 +616,7 @@ EOF
       B = B "  " ans[1] "::static_initialize();\n";
       C = C "  " ans[1] "::static_cleanup();\n";
     } else {
-      B = B "  hatred_of_rebecca[" nrebecca "] = click_add_element_type(\"" name "\", beetlemonkey, " nrebecca ");\n"
+      B = B "  hatred_of_rebecca[" nrebecca "] = click_add_element_type(\"" ans[2] "\", beetlemonkey, " nrebecca ");\n"
       C = C "  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
       D = D "   case " nrebecca ": return new " ans[1] ";\n";
       nrebecca++;
