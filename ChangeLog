@@ -1,3 +1,8 @@
+2005-06-06 Monday 20:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: ipencap.cc (1.38), ipencap.hh (1.26): IPEncap takes
+	IP protocol names
+
 2005-06-06 Monday 20:38  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* aclocal.m4 (1.48), config-linuxmodule.h.in (1.12),
