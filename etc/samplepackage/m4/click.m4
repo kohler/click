@@ -274,14 +274,15 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
     fi
 
     if test "$HAVE_PCAP" = yes; then
+	saveflags="$CPPFLAGS"
+	CPPFLAGS="$saveflags $PCAP_INCLUDES"
 	AC_CACHE_CHECK(for bpf_timeval in pcap.h, ac_cv_bpf_timeval,
-	    saveflags="$CPPFLAGS"
-	    CPPFLAGS="$saveflags $PCAP_INCLUDES"
-	    AC_EGREP_HEADER(bpf_timeval, pcap.h, ac_cv_bpf_timeval=yes, ac_cv_bpf_timeval=no)
-	    CPPFLAGS="$saveflags")
+	    AC_EGREP_HEADER(bpf_timeval, pcap.h, ac_cv_bpf_timeval=yes, ac_cv_bpf_timeval=no))
 	if test "$ac_cv_bpf_timeval" = yes; then
 	    AC_DEFINE([HAVE_BPF_TIMEVAL], [1], [Define if <pcap.h> uses bpf_timeval.])
 	fi
+	AC_CHECK_DECLS(pcap_setnonblock, [], [], [#include <pcap.h>])
+	CPPFLAGS="$saveflags"
     fi
 
     test "$HAVE_PCAP" != yes && PCAP_INCLUDES=
@@ -553,7 +554,7 @@ void f1(long) {
 void f1(int64_t) { // will fail if long and int64_t are the same type
 }]], [[]])], ac_cv_long_64=no, ac_cv_long_64=yes)])
 	if test $ac_cv_long_64 = yes; then
-	    AC_DEFINE([HAVE_64_BIT_LONG], [1], [Define if '[unsigned] long' has 64 bits.])
+	    AC_DEFINE([HAVE_INT64_IS_LONG_USERLEVEL], [1], [Define if 'int64_t' is typedefed to 'long' at user level.])
 	fi
     fi])
 
