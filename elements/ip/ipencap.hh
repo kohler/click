@@ -67,6 +67,8 @@ Wraps packets in an IP header specifying IP protocol 4
 
   IPEncap(4, 18.26.4.24, 140.247.60.147)
 
+You could also say "C<IPEncap(ipip, ...)>".
+
 =h src read/write
 
 Returns or sets the SRC parameter.

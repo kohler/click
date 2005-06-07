@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "ipencap.hh"
-#include <click/ipaddress.hh>
+#include <click/nameinfo.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -44,12 +44,12 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   iph.ip_off = 0;
   iph.ip_ttl = 250;
   iph.ip_sum = 0;
-  int tos = -1, dscp = -1;
+  int proto, tos = -1, dscp = -1;
   bool ce = false, df = false;
   String ect_str;
   
   if (cp_va_parse(conf, this, errh,
-		  cpByte, "protocol", &iph.ip_p,
+		  cpNamedInteger, "protocol", NameInfo::T_IP_PROTO, &proto,
 		  cpIPAddress, "source address", &iph.ip_src,
 		  cpIPAddress, "destination address", &iph.ip_dst,
 		  cpKeywords,
@@ -62,6 +62,10 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpEnd) < 0)
     return -1;
 
+  if (proto < 0 || proto > 255)
+      return errh->error("bad IP protocol");
+  iph.ip_p = proto;
+  
   int ect = 0;
   if (ect_str) {
     bool x;
