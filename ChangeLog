@@ -1,3 +1,8 @@
+2005-06-06 Monday 22:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.56), etc/samplepackage/aclocal.m4 (1.17),
+	etc/samplepackage/m4/click.m4 (1.7): more of the same
+
 2005-06-06 Monday 20:46  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: ipencap.cc (1.38), ipencap.hh (1.26): IPEncap takes
