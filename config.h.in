@@ -17,9 +17,6 @@
 /* Define if PollDevice should run fast to get good benchmark numbers */
 #undef CLICK_WARP9
 
-/* Define if 'long' is the same type as 'int64_t'. */
-#undef HAVE_64_BIT_LONG
-
 /* Define if you have the __builtin_clz function. */
 #undef HAVE___BUILTIN_CLZ
 

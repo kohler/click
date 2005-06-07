@@ -56,8 +56,8 @@ extern "C" int read_net_skbcount(void);
 static String
 read_meminfo(Element *, void *)
 {
-  extern int click_new_count; /* glue.cc */
-  extern int click_outstanding_news; /* glue.cc */
+  extern size_t click_new_count; /* glue.cc */
+  extern size_t click_outstanding_news; /* glue.cc */
   StringAccum sa;
   sa << "outstanding news " << click_outstanding_news << "\n";
   sa << "news " << click_new_count << "\n";

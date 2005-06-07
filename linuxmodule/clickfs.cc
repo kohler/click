@@ -430,7 +430,7 @@ static int handler_strings_cap = 0;
 static int handler_strings_free = -1;
 static spinlock_t handler_strings_lock;
 
-#define FILP_STRINGNO(filp)		(reinterpret_cast<int>((filp)->private_data))
+#define FILP_STRINGNO(filp)		(reinterpret_cast<intptr_t>((filp)->private_data))
 #define FILP_READ_STRINGNO(filp)	FILP_STRINGNO(filp)
 #define FILP_WRITE_STRINGNO(filp)	FILP_STRINGNO(filp)
 

@@ -554,7 +554,7 @@ void f1(long) {
 void f1(int64_t) { // will fail if long and int64_t are the same type
 }]], [[]])], ac_cv_long_64=no, ac_cv_long_64=yes)])
 	if test $ac_cv_long_64 = yes; then
-	    AC_DEFINE([HAVE_64_BIT_LONG], [1], [Define if '[unsigned] long' has 64 bits.])
+	    AC_DEFINE([HAVE_INT64_IS_LONG_USERLEVEL], [1], [Define if 'int64_t' is typedefed to 'long' at user level.])
 	fi
     fi])
 

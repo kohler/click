@@ -53,8 +53,7 @@ static String
 RTCycles_read_cycles(Element *e, void *thunk)
 {
   RTCycles *s = static_cast<RTCycles *>(e);
-  int which = reinterpret_cast<int>(thunk);
-  switch (which) {
+  switch (reinterpret_cast<intptr_t>(thunk)) {
    case 0:
     return String(s->_npackets) + "\n";
    case 1:

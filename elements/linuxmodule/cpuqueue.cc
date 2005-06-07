@@ -102,8 +102,7 @@ String
 CPUQueue::read_handler(Element *e, void *thunk)
 {
   CPUQueue *q = static_cast<CPUQueue *>(e);
-  int which = reinterpret_cast<int>(thunk);
-  switch (which) {
+  switch (reinterpret_cast<intptr_t>(thunk)) {
    case 0:
     return String(q->capacity()) + "\n";
    case 1:

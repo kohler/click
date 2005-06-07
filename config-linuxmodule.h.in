@@ -15,6 +15,9 @@
 /* Define if your Linux kernel has Click transmit notification extensions. */
 #undef HAVE_CLICK_KERNEL_TX_NOTIFY
 
+/* Define if 'int64_t' is typedefed to 'long' in linuxmodule. */
+#undef HAVE_INT64_IS_LONG_LINUXMODULE
+
 /* Define if your Linux kernel has read_net_skbcount. */
 #undef HAVE_LINUX_READ_NET_SKBCOUNT
 
@@ -54,6 +57,11 @@
 #include <linux/types.h>
 typedef ptrdiff_t intptr_t;
 typedef unsigned long uintptr_t; /* XXX? */
+
+/* Define HAVE_INT64_IS_LONG based on HAVE_INT64_IS_LONG_LINUXMODULE. */
+#ifdef HAVE_INT64_IS_LONG_LINUXMODULE
+# define HAVE_INT64_IS_LONG HAVE_INT64_IS_LONG_LINUXMODULE
+#endif
 
 #ifdef __cplusplus
 

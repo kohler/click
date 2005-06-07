@@ -385,8 +385,7 @@ static String
 PollDevice_read_stats(Element *e, void *thunk)
 {
   PollDevice *pd = (PollDevice *)e;
-  int which = reinterpret_cast<int>(thunk);
-  switch (which) {
+  switch (reinterpret_cast<intptr_t>(thunk)) {
    case 0:
     return String(pd->_npackets) + "\n";
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS

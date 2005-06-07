@@ -347,8 +347,7 @@ static String
 FromDevice_read_stats(Element *e, void *thunk)
 {
     FromDevice *fd = (FromDevice *) e;
-    int which = reinterpret_cast<int>(thunk);
-    switch (which) {
+    switch (reinterpret_cast<intptr_t>(thunk)) {
     case 0: return String(fd->drops()) + "\n"; break;
     case 1: {
 	StringAccum sa;

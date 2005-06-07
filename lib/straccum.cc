@@ -119,7 +119,7 @@ operator<<(StringAccum &sa, unsigned long u)
     return sa;
 }
 
-#if HAVE_INT64_TYPES && !HAVE_64_BIT_LONG
+#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
 StringAccum &
 operator<<(StringAccum &sa, int64_t q)
 {

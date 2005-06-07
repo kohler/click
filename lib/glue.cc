@@ -120,8 +120,8 @@ click_chatter(const char *fmt, ...)
 
 // DEBUG MALLOC
 
-unsigned click_new_count = 0;
-unsigned click_outstanding_news = 0;
+size_t click_new_count = 0;
+size_t click_outstanding_news = 0;
 uint32_t click_dmalloc_where = 0x3F3F3F3F;
 
 #if CLICK_LINUXMODULE || CLICK_BSDMODULE
@@ -139,8 +139,8 @@ uint32_t click_dmalloc_where = 0x3F3F3F3F;
 #  define CHUNK_MAGIC_FREED	0xc66b04f5
 struct Chunk {
     uint32_t magic;
-    uint32_t size;
     uint32_t where;
+    size_t size;
     Chunk *prev;
     Chunk *next;
 };
@@ -170,7 +170,7 @@ printable_where(Chunk *c)
 # endif
 
 void *
-operator new(unsigned sz) throw ()
+operator new(size_t sz) throw ()
 {
   click_new_count++;
   click_outstanding_news++;
@@ -190,7 +190,7 @@ operator new(unsigned sz) throw ()
 }
 
 void *
-operator new[](unsigned sz) throw ()
+operator new[](size_t sz) throw ()
 {
   click_new_count++;
   click_outstanding_news++;
