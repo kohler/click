@@ -61,6 +61,9 @@ FromDevice accesses packets the same way Linux does: through interrupts.
 This is bad for performance. If you care about performance and have a
 polling-capable device, use PollDevice instead.
 
+Linux device drivers, and thus FromDevice, should set packets' timestamp,
+packet-type, and device annotations.
+
 =a PollDevice, ToDevice, FromHost, ToHost, FromDevice.u */
 
 #include "elements/linuxmodule/anydevice.hh"

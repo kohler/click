@@ -57,6 +57,9 @@ device.
 This element can only be used with devices that support the Click polling
 extension. We have written polling patches for the Tulip Ethernet driver.
 
+Linux device drivers, and thus FromDevice, should set packets' timestamp,
+packet-type, and device annotations.
+
 =h count read-only
 
 Returns the number of packets PollDevice has received from the input card.
