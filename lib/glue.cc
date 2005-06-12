@@ -364,18 +364,18 @@ click_qsort_partition(void *base_v, size_t size, int left, int right,
     // base[i] == pivot for all left <= i < middle
     while (middle <= right) {
 	int cmp = compar(&base[size * middle], &pivot[0], thunk);
-	if (cmp < 0) {
-	    memcpy(&tmp[0], &base[size * left], size);
-	    memcpy(&base[size * left], &base[size * middle], size);
+	int swapper = (cmp < 0 ? left : right);
+	if (cmp != 0 && middle != swapper) {
+	    memcpy(&tmp[0], &base[size * swapper], size);
+	    memcpy(&base[size * swapper], &base[size * middle], size);
 	    memcpy(&base[size * middle], &tmp[0], size);
+	}
+	if (cmp < 0) {
 	    left++;
 	    middle++;
-	} else if (cmp > 0) {
-	    memcpy(&tmp[0], &base[size * right], size);
-	    memcpy(&base[size * right], &base[size * middle], size);
-	    memcpy(&base[size * middle], &tmp[0], size);
+	} else if (cmp > 0)
 	    right--;
-	} else
+	else
 	    middle++;
     }
 
