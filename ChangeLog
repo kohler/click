@@ -1,3 +1,12 @@
+2005-06-12 Sunday 19:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/glue.cc (1.49): minor shrinkage
+
+2005-06-12 Sunday 19:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/: fromdevice.hh (1.41), polldevice.hh
+	(1.68): document annotations
+
 2005-06-06 Monday 22:01  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.56), etc/samplepackage/aclocal.m4 (1.17),
