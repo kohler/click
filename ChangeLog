@@ -1,3 +1,7 @@
+2005-06-12 Sunday 23:14  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/gen_config_roofnet.pl (1.10): only use b bit-rates
+
 2005-06-12 Sunday 19:10  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/glue.cc (1.49): minor shrinkage
