@@ -171,10 +171,12 @@ print STDERR "using mode $mode\n";
 system "/sbin/modprobe tun > /dev/null 2>&1";
 my $probes = "2 60 2 1500 4 1500 11 1500 22 1500";
 
+# only probe at b rates for now.
+
 if ($mode =~ /g/) {
-    $probes = "2 60 12 60 2 1500 4 1500 11 1500 22 1500 12 1500 18 1500 24 1500 36 1500 48 1500 72 1500 96 1500";
+#    $probes = "2 60 12 60 2 1500 4 1500 11 1500 22 1500 12 1500 18 1500 24 1500 36 1500 48 1500 72 1500 96 1500";
 } elsif ($mode =~ /a/) {
-    $probes = "12 60 2 60 12 1500 24 1500 48 1500 72 1500 96 1500 108 1500";
+#    $probes = "12 60 2 60 12 1500 24 1500 48 1500 72 1500 96 1500 108 1500";
 }
 
 
@@ -184,7 +186,7 @@ my $srcr_forwarder_ethtype = "0943"; # data
 my $srcr_ethtype = "0944";  # queries and replies
 my $srcr_gw_ethtype = "092c"; # gateway ads
 
-if ($mode =~ /g/) {
+if (0 && $mode =~ /g/) {
     print "rates :: AvailableRates(DEFAULT 2 4 11 12 18 22 24 36 48 72 96 108,
 $wireless_mac 2 4 11 12 18 22 24 36 48 72 96 108);\n\n";
 } elsif ($mode =~ /a/) {
