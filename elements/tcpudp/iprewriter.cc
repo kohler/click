@@ -287,7 +287,6 @@ void
 IPRewriter::push(int port, Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
-  IPFlowID flow(p);
   click_ip *iph = p->ip_header();
 #if IPRW_RWLOCKS
   bool has_lock = false;
@@ -309,6 +308,7 @@ IPRewriter::push(int port, Packet *p_in)
 #elif IPRW_SPINLOCKS
   _spinlock.acquire();
 #endif
+  IPFlowID flow(p);
   Mapping *m = (ip_p == IP_PROTO_TCP ? _tcp_map.find(flow) : _udp_map.find(flow));
 
 #if IPRW_RWLOCKS
