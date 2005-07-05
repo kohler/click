@@ -1,3 +1,9 @@
+2005-07-05 Tuesday 15:44  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: fromdevice.cc (1.54), fromdevice.hh (1.30):
+	FromDevice in Linux supports both PCAP and LINUX capture methods. 
+	Inspired by Bicket and questions on list
+
 2005-07-05 Tuesday 14:16  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/confparse.cc (1.142): dont count ending _
