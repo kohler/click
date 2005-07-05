@@ -747,7 +747,7 @@ cp_unsigned(const char *begin, const char *end, int base, uint32_t *return_value
     return begin;
   else {
     *return_value = (cp_errno ? 0xFFFFFFFFU : val);
-    return s;
+    return (s > begin && s[-1] == '_' ? s - 1 : s);
   }
 }
 
@@ -862,7 +862,7 @@ cp_unsigned(const char *begin, const char *end, int base, uint64_t *return_value
     return begin;
   else {
     *return_value = (cp_errno ? 0xFFFFFFFFFFFFFFFFULL : val);
-    return s;
+    return (s > begin && s[-1] == '_' ? s - 1 : s);
   }
 }
 
