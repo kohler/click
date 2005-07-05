@@ -1,3 +1,9 @@
+2005-07-05 Tuesday 12:42  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/clicknet/: ether.h (1.6), icmp.h (1.5), ip.h (1.8), tcp.h
+	(1.5), udp.h (1.2): add byte offsets, field descriptions, and RFC
+	references for documentation
+
 2005-06-21 Tuesday 16:18  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/tcpudp/iprewriter.cc (1.46): dont initialize IPFlowID
