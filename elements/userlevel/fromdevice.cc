@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -54,9 +55,10 @@ CLICK_DECLS
 FromDevice::FromDevice()
     : Element(0, 1),
 #if FROMDEVICE_LINUX
-      _fd(-1),
-#elif FROMDEVICE_PCAP
-      _pcap(0), _task(this), _pcap_complaints(0),
+      _linux_fd(-1),
+#endif
+#if FROMDEVICE_PCAP
+      _pcap(0), _pcap_task(this), _pcap_complaints(0),
 #endif
       _promisc(0), _snaplen(0)
 {
@@ -72,7 +74,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     bool promisc = false, outbound = false, sniffer = true;
     _snaplen = 2046;
     _force_ip = false;
-    String bpf_filter;
+    String bpf_filter, capture;
     if (cp_va_parse(conf, this, errh,
 		    cpString, "interface name", &_ifname,
 		    cpOptional,
@@ -83,18 +85,44 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "PROMISC", cpBool, "be promiscuous?", &promisc,
 		    "SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
 		    "FORCE_IP", cpBool, "force IP packets?", &_force_ip,
+		    "CAPTURE", cpWord, "capture method", &capture,
 		    "BPF_FILTER", cpString, "BPF filter", &bpf_filter,
 		    "OUTBOUND", cpBool, "emit outbound packets?", &outbound,
 		    cpEnd) < 0)
 	return -1;
     if (_snaplen > 8190 || _snaplen < 14)
 	return errh->error("maximum packet length out of range");
+    
 #if FROMDEVICE_PCAP
     _bpf_filter = bpf_filter;
-#else
-    if (bpf_filter)
-	errh->warning("not using pcap library, BPF filter ignored");
 #endif
+
+    // set _capture
+    if (capture == "") {
+#if FROMDEVICE_PCAP && FROMDEVICE_LINUX
+	_capture = (bpf_filter ? CAPTURE_PCAP : CAPTURE_LINUX);
+#elif FROMDEVICE_LINUX
+	_capture = CAPTURE_LINUX;
+#elif FROMDEVICE_PCAP
+	_capture = CAPTURE_PCAP;
+#else
+	return errh->error("this platform does not support any capture method");
+#endif
+    }
+#if FROMDEVICE_LINUX
+    else if (capture == "LINUX")
+	_capture = CAPTURE_LINUX;
+#endif
+#if FROMDEVICE_PCAP
+    else if (capture == "PCAP")
+	_capture = CAPTURE_PCAP;
+#endif
+    else
+	return errh->error("capture method '%s' not supported", capture.c_str());
+    
+    if (bpf_filter && _capture != CAPTURE_PCAP)
+	errh->warning("not using PCAP capture method, BPF filter ignored");
+    
     if (!sniffer)
 	return errh->error("SNIFFER must be set to true for now");
     _promisc = promisc;
@@ -180,92 +208,88 @@ FromDevice::initialize(ErrorHandler *errh)
     if (!_ifname)
 	return errh->error("interface not set");
 
-    /* 
-     * Later versions of pcap distributed with linux (e.g. the redhat
-     * linux pcap-0.4-16) want to have a filter installed before they
-     * will pick up any packets.
-     */
-
 #if FROMDEVICE_PCAP
-  
-    assert(!_pcap);
-    char *ifname = _ifname.mutable_c_str();
-    char ebuf[PCAP_ERRBUF_SIZE];
-    _pcap = pcap_open_live(ifname, _snaplen, _promisc,
-			   1,     /* timeout: don't wait for packets */
-			   ebuf);
-    // Note: pcap error buffer will contain the interface name
-    if (!_pcap)
-	return errh->error("%s", ebuf);
+    if (_capture == CAPTURE_PCAP) {
+	assert(!_pcap);
+	char *ifname = _ifname.mutable_c_str();
+	char ebuf[PCAP_ERRBUF_SIZE];
+	_pcap = pcap_open_live(ifname, _snaplen, _promisc,
+			       1,     /* timeout: don't wait for packets */
+			       ebuf);
+	// Note: pcap error buffer will contain the interface name
+	if (!_pcap)
+	    return errh->error("%s", ebuf);
 
-    // nonblocking I/O on the packet socket so we can poll
-    int pcap_fd = fd();
+	// nonblocking I/O on the packet socket so we can poll
+	int pcap_fd = fd();
 # if HAVE_PCAP_SETNONBLOCK
-    if (pcap_setnonblock(_pcap, 1, ebuf) < 0)
-	errh->warning("pcap_setnonblock: %s", ebuf);
+	if (pcap_setnonblock(_pcap, 1, ebuf) < 0)
+	    errh->warning("pcap_setnonblock: %s", ebuf);
 # else
-    if (fcntl(pcap_fd, F_SETFL, O_NONBLOCK) < 0)
-	errh->warning("setting nonblocking: %s", strerror(errno));
+	if (fcntl(pcap_fd, F_SETFL, O_NONBLOCK) < 0)
+	    errh->warning("setting nonblocking: %s", strerror(errno));
 # endif
 
 # ifdef BIOCSSEESENT
-    {
-	int accept = _outbound;
-	if (ioctl(pcap_fd, BIOCSSEESENT, &accept) != 0)
-	    return errh->error("FromDevice: BIOCSEESENT failed");
-    }
+	{
+	    int accept = _outbound;
+	    if (ioctl(pcap_fd, BIOCSSEESENT, &accept) != 0)
+		return errh->error("FromDevice: BIOCSEESENT failed");
+	}
 # endif
 
 # if defined(BIOCIMMEDIATE) && !defined(__sun) // pcap/bpf ioctl, not in DLPI/bufmod
-    {
-	int yes = 1;
-	if (ioctl(pcap_fd, BIOCIMMEDIATE, &yes) != 0)
-	    return errh->error("FromDevice: BIOCIMMEDIATE failed");
-    }
+	{
+	    int yes = 1;
+	    if (ioctl(pcap_fd, BIOCIMMEDIATE, &yes) != 0)
+		return errh->error("FromDevice: BIOCIMMEDIATE failed");
+	}
 # endif
 
-    bpf_u_int32 netmask;
-    bpf_u_int32 localnet;
-    if (pcap_lookupnet(ifname, &localnet, &netmask, ebuf) < 0)
-	errh->warning("%s", ebuf);
+	bpf_u_int32 netmask;
+	bpf_u_int32 localnet;
+	if (pcap_lookupnet(ifname, &localnet, &netmask, ebuf) < 0)
+	    errh->warning("%s", ebuf);
   
-    // compile the BPF filter
-    struct bpf_program fcode;
-    if (pcap_compile(_pcap, &fcode, _bpf_filter.mutable_c_str(), 0, netmask) < 0)
-	return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
-    if (pcap_setfilter(_pcap, &fcode) < 0)
-	return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
+	// Later versions of pcap distributed with linux (e.g. the redhat
+	// linux pcap-0.4-16) want to have a filter installed before they
+	// will pick up any packets.
 
-    add_select(pcap_fd, SELECT_READ);
+	// compile the BPF filter
+	struct bpf_program fcode;
+	if (pcap_compile(_pcap, &fcode, _bpf_filter.mutable_c_str(), 0, netmask) < 0)
+	    return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
+	if (pcap_setfilter(_pcap, &fcode) < 0)
+	    return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
 
-    _datalink = pcap_datalink(_pcap);
-    if (_force_ip && !fake_pcap_dlt_force_ipable(_datalink))
-	errh->warning("%s: strange data link type %d, FORCE_IP will not work", ifname, _datalink);
+	add_select(pcap_fd, SELECT_READ);
 
-    ScheduleInfo::initialize_task(this, &_task, false, errh);
+	_datalink = pcap_datalink(_pcap);
+	if (_force_ip && !fake_pcap_dlt_force_ipable(_datalink))
+	    errh->warning("%s: strange data link type %d, FORCE_IP will not work", ifname, _datalink);
 
-#elif FROMDEVICE_LINUX
+	ScheduleInfo::initialize_task(this, &_pcap_task, false, errh);
+    }
+#endif
 
-    _fd = open_packet_socket(_ifname, errh);
-    if (_fd < 0)
-	return -1;
+#if FROMDEVICE_LINUX
+    if (_capture == CAPTURE_LINUX) {
+	_linux_fd = open_packet_socket(_ifname, errh);
+	if (_linux_fd < 0)
+	    return -1;
 
-    int promisc_ok = set_promiscuous(_fd, _ifname, _promisc);
-    if (promisc_ok < 0) {
-	if (_promisc)
-	    errh->warning("cannot set promiscuous mode");
-	_was_promisc = -1;
-    } else
-	_was_promisc = promisc_ok;
+	int promisc_ok = set_promiscuous(_linux_fd, _ifname, _promisc);
+	if (promisc_ok < 0) {
+	    if (_promisc)
+		errh->warning("cannot set promiscuous mode");
+	    _was_promisc = -1;
+	} else
+	    _was_promisc = promisc_ok;
 
-    add_select(_fd, SELECT_READ);
+	add_select(_linux_fd, SELECT_READ);
 
-    _datalink = FAKE_DLT_EN10MB;
-
-#else
-
-    return errh->error("FromDevice is not supported on this platform");
-  
+	_datalink = FAKE_DLT_EN10MB;
+    }
 #endif
     
     return 0;
@@ -275,17 +299,18 @@ void
 FromDevice::cleanup(CleanupStage)
 {
 #if FROMDEVICE_LINUX
-  if (_fd >= 0) {
-    if (_was_promisc >= 0)
-	set_promiscuous(_fd, _ifname, _was_promisc);
-    close(_fd);
-    _fd = -1;
-  }
-#elif FROMDEVICE_PCAP
-  if (_pcap) {
-      pcap_close(_pcap);
-      _pcap = 0;
-  }
+    if (_linux_fd >= 0) {
+	if (_was_promisc >= 0)
+	    set_promiscuous(_linux_fd, _ifname, _was_promisc);
+	close(_linux_fd);
+	_linux_fd = -1;
+    }
+#endif
+#if FROMDEVICE_PCAP
+    if (_pcap) {
+	pcap_close(_pcap);
+	_pcap = 0;
+    }
 #endif
 }
 
@@ -345,39 +370,44 @@ void
 FromDevice::selected(int)
 {
 #if FROMDEVICE_PCAP
-    // Read and push() at most one packet.
-    int r = pcap_dispatch(_pcap, 1, FromDevice_get_packet, (u_char *) this);
-    if (r > 0)
-	_task.reschedule();
-    else if (r < 0 && ++_pcap_complaints < 5)
-	ErrorHandler::default_handler()->error("%{element}: %s", this, pcap_geterr(_pcap));
-#elif FROMDEVICE_LINUX
-    struct sockaddr_ll sa;
-    socklen_t fromlen = sizeof(sa);
-    // store data offset 2 bytes into the packet, assuming that first 14
-    // bytes are ether header, and that we want remaining data to be
-    // 4-byte aligned.  this assumes that _packetbuf is 4-byte aligned,
-    // and that the buffer allocated by Packet::make is also 4-byte
-    // aligned.  Actually, it doesn't matter if the packet is 4-byte
-    // aligned; perhaps there is some efficiency aspect?  who cares....
-    WritablePacket *p = Packet::make(2, 0, _snaplen, 0);
-    int len = recvfrom(_fd, p->data(), p->length(), MSG_TRUNC, (sockaddr *)&sa, &fromlen);
-    if (len > 0 && (sa.sll_pkttype != PACKET_OUTGOING || _outbound)) {
-	if (len > _snaplen) {
-	    assert(p->length() == (uint32_t)_snaplen);
-	    SET_EXTRA_LENGTH_ANNO(p, len - _snaplen);
-	} else
-	    p->take(_snaplen - len);
-	p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
-	p->timestamp_anno().set_timeval_ioctl(_fd, SIOCGSTAMP);
-	if (!_force_ip || fake_pcap_force_ip(p, _datalink))
-	    output(0).push(p);
-	else
+    if (_capture == CAPTURE_PCAP) {
+	// Read and push() at most one packet.
+	int r = pcap_dispatch(_pcap, 1, FromDevice_get_packet, (u_char *) this);
+	if (r > 0)
+	    _pcap_task.reschedule();
+	else if (r < 0 && ++_pcap_complaints < 5)
+	    ErrorHandler::default_handler()->error("%{element}: %s", this, pcap_geterr(_pcap));
+    }
+#endif
+#if FROMDEVICE_LINUX
+    if (_capture == CAPTURE_LINUX) {
+	struct sockaddr_ll sa;
+	socklen_t fromlen = sizeof(sa);
+	// store data offset 2 bytes into the packet, assuming that first 14
+	// bytes are ether header, and that we want remaining data to be
+	// 4-byte aligned.  this assumes that _packetbuf is 4-byte aligned,
+	// and that the buffer allocated by Packet::make is also 4-byte
+	// aligned.  Actually, it doesn't matter if the packet is 4-byte
+	// aligned; perhaps there is some efficiency aspect?  who cares....
+	WritablePacket *p = Packet::make(2, 0, _snaplen, 0);
+	int len = recvfrom(_linux_fd, p->data(), p->length(), MSG_TRUNC, (sockaddr *)&sa, &fromlen);
+	if (len > 0 && (sa.sll_pkttype != PACKET_OUTGOING || _outbound)) {
+	    if (len > _snaplen) {
+		assert(p->length() == (uint32_t)_snaplen);
+		SET_EXTRA_LENGTH_ANNO(p, len - _snaplen);
+	    } else
+		p->take(_snaplen - len);
+	    p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
+	    p->timestamp_anno().set_timeval_ioctl(_linux_fd, SIOCGSTAMP);
+	    if (!_force_ip || fake_pcap_force_ip(p, _datalink))
+		output(0).push(p);
+	    else
+		p->kill();
+	} else {
 	    p->kill();
-    } else {
-	p->kill();
-	if (len <= 0 && errno != EAGAIN)
-	    click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
+	    if (len <= 0 && errno != EAGAIN)
+		click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
+	}
     }
 #endif
 }
@@ -389,7 +419,7 @@ FromDevice::run_task()
     // Read and push() at most one packet.
     int r = pcap_dispatch(_pcap, 1, FromDevice_get_packet, (u_char *) this);
     if (r > 0)
-	_task.fast_reschedule();
+	_pcap_task.fast_reschedule();
     else if (r < 0 && ++_pcap_complaints < 5)
 	ErrorHandler::default_handler()->error("%{element}: %s", this, pcap_geterr(_pcap));
     return r > 0;
@@ -399,19 +429,17 @@ FromDevice::run_task()
 void
 FromDevice::kernel_drops(bool& known, int& max_drops) const
 {
-#if FROMDEVICE_PCAP
-    struct pcap_stat stats;
-    if (pcap_stats(_pcap, &stats) >= 0)
-	known = true, max_drops = stats.ps_drop;
-    else
-	known = false, max_drops = -1;
-#elif FROMDEVICE_LINUX
+#if FROMDEVICE_LINUX
     // You might be able to do this better by parsing netstat/ifconfig output,
     // but for now, we just give up.
+#endif
     known = false, max_drops = -1;
-#else
-    // Drop statistics unknown.
-    known = false, max_drops = -1;
+#if FROMDEVICE_PCAP
+    if (_capture == CAPTURE_PCAP) {
+	struct pcap_stat stats;
+	if (pcap_stats(_pcap, &stats) >= 0)
+	    known = true, max_drops = stats.ps_drop;
+    }
 #endif
 }
 

@@ -3,7 +3,8 @@
 #include <click/element.hh>
 #ifdef __linux__
 # define FROMDEVICE_LINUX 1
-#elif defined(HAVE_PCAP)
+#endif
+#ifdef HAVE_PCAP
 # define FROMDEVICE_PCAP 1
 # include <click/task.hh>
 extern "C" {
@@ -22,7 +23,7 @@ CLICK_DECLS
 
 =c
 
-FromDevice(DEVNAME [, I<keywords> SNIFFER, PROMISC, SNAPLEN, FORCE_IP, BPF_FILTER, OUTBOUND])
+FromDevice(DEVNAME [, I<keywords> SNIFFER, PROMISC, SNAPLEN, FORCE_IP, CAPTURE, BPF_FILTER, OUTBOUND])
 
 =s devices
 
@@ -75,11 +76,18 @@ Defaults to 2046.
 Boolean. If true, then output only IP packets. (Any link-level header remains,
 but the IP header annotation has been set appropriately.) Default is false.
 
+=item CAPTURE
+
+Word.  Defines the capture method FromDevice will use to read packets from the
+kernel.  Linux targets generally support PCAP and LINUX; other targets support
+only PCAP.  Defaults to LINUX on Linux targets (unless you give a BPF_FILTER),
+and PCAP elsewhere.
+
 =item BPF_FILTER
 
-String. A BPF filter expression used to select the interesting packets.
-Default is the empty string, which means all packets. If FromDevice is not
-using the pcap library to read its packets, any filter expression is ignored.
+String.  A BPF filter expression used to select the interesting packets.
+Default is the empty string, which means all packets.  If CAPTURE is not PCAP,
+then any filter expression is ignored with a warning.
 
 =item OUTBOUND
 
@@ -113,70 +121,84 @@ Returns a string indicating the encapsulation type on this link. Can be
 
 class FromDevice : public Element { public:
 
-  enum ConfigurePhase {
-    CONFIGURE_PHASE_FROMDEVICE = CONFIGURE_PHASE_DEFAULT,
-    CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMDEVICE + 1
-  };
+    enum ConfigurePhase {
+	CONFIGURE_PHASE_FROMDEVICE = CONFIGURE_PHASE_DEFAULT,
+	CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMDEVICE + 1
+    };
   
-  FromDevice();
-  ~FromDevice();
+    FromDevice();
+    ~FromDevice();
   
-  const char *class_name() const	{ return "FromDevice"; }
-  const char *processing() const	{ return PUSH; }
+    const char *class_name() const	{ return "FromDevice"; }
+    const char *processing() const	{ return PUSH; }
   
-  int configure_phase() const		{ return CONFIGURE_PHASE_FROMDEVICE; }
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void add_handlers();
+    int configure_phase() const		{ return CONFIGURE_PHASE_FROMDEVICE; }
+    int configure(Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void cleanup(CleanupStage);
+    void add_handlers();
   
-  String ifname() const			{ return _ifname; }
-#if FROMDEVICE_LINUX
-  int fd() const			{ return _fd; }
-#elif FROMDEVICE_PCAP
-  int fd() const			{ return pcap_fileno(_pcap); }
-#endif
+    String ifname() const		{ return _ifname; }
+    inline int fd() const;
 
-  void selected(int fd);
+    void selected(int fd);
 #if FROMDEVICE_PCAP
-  bool run_task();
+    bool run_task();
 #endif
 
 #if FROMDEVICE_LINUX
-  static int open_packet_socket(String, ErrorHandler *);
-  static int set_promiscuous(int, String, bool);
+    static int open_packet_socket(String, ErrorHandler *);
+    static int set_promiscuous(int, String, bool);
 #endif
 
-  void kernel_drops(bool& known, int& max_drops) const;
+    void kernel_drops(bool& known, int& max_drops) const;
   
- private:
+  private:
   
 #if FROMDEVICE_LINUX
-  int _fd;
-  unsigned char *_packetbuf;
-#elif FROMDEVICE_PCAP
-  pcap_t* _pcap;
-  Task _task;
-  int _pcap_complaints;
-  friend void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*,
-				    const u_char*);
+    int _linux_fd;
+    unsigned char *_linux_packetbuf;
 #endif
-  bool _force_ip;
-  int _datalink;
-  
-  String _ifname;
-  bool _promisc : 1;
-  bool _outbound : 1;
-  int _was_promisc : 2;
-  int _snaplen;
 #if FROMDEVICE_PCAP
-  String _bpf_filter;
+    pcap_t* _pcap;
+    Task _pcap_task;
+    int _pcap_complaints;
+    friend void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*,
+				      const u_char*);
+#endif
+    bool _force_ip;
+    int _datalink;
+  
+    String _ifname;
+    bool _promisc : 1;
+    bool _outbound : 1;
+    int _was_promisc : 2;
+    int _snaplen;
+    enum { CAPTURE_PCAP, CAPTURE_LINUX };
+    int _capture;
+#if FROMDEVICE_PCAP
+    String _bpf_filter;
 #endif
 
-  static String read_kernel_drops(Element*, void*);
-  static String read_encap(Element*, void*);
+    static String read_kernel_drops(Element*, void*);
+    static String read_encap(Element*, void*);
 
 };
+
+
+inline int
+FromDevice::fd() const
+{
+#if FROMDEVICE_LINUX
+    if (_linux_fd >= 0)
+	return _linux_fd;
+#endif
+#if FROMDEVICE_PCAP
+    if (_pcap)
+	return pcap_fileno(_pcap);
+#endif
+    return -1;
+}
 
 CLICK_ENDDECLS
 #endif
