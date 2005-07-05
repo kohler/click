@@ -3,45 +3,47 @@
 #define CLICKNET_ETHER_H
 
 /*
- * <clicknet/ether.h> -- our own definitions of Ethernet and ARP headers
- * based on a file from one of the BSDs
+ * <clicknet/ether.h> -- Ethernet and ARP headers, based on one of the BSDs.
+ *
+ * Relevant RFCs include:
+ *   RFC826	Ethernet Address Resolution Protocol: or, Converting Network
+ *		Protocol Addresses to 48.bit Ethernet Address for Transmission
+ *		on Ethernet Hardware
+ *   RFC894	Standard for the transmission of IP datagrams over Ethernet
+ *		networks
+ * Also see the relevant IEEE 802 standards.
  */
-  
+
 CLICK_SIZE_PACKED_STRUCTURE(
 struct click_ether {,
-    uint8_t	ether_dhost[6];
-    uint8_t	ether_shost[6];
-    uint16_t	ether_type;
+    uint8_t	ether_dhost[6];		/* 0-5   Ethernet destination address */
+    uint8_t	ether_shost[6];		/* 6-11  Ethernet source address      */
+    uint16_t	ether_type;		/* 12-13 Ethernet protocol	      */
 });
 
 #define ETHERTYPE_IP		0x0800
 #define ETHERTYPE_ARP		0x0806
 #define ETHERTYPE_8021Q		0x8100
 #define ETHERTYPE_IP6		0x86DD
-
 #define ETHERTYPE_GRID		0x7fff	/* wvlan_cs driver won't transmit frames with high bit of protocol number set */
 
-struct click_arp {
-    uint16_t	ar_hrd;		/* Format of hardware address.  */
-    uint16_t	ar_pro;		/* Format of protocol address.  */
-    uint8_t	ar_hln;		/* Length of hardware address.  */
-    uint8_t	ar_pln;		/* Length of protocol address.  */
-    uint16_t	ar_op;		/* ARP opcode (command).  */
+struct click_arp {		/* Offsets relative to ARP (Ethernet) header */
+    uint16_t	ar_hrd;		/* 0-1 (14-15)  hardware address format      */
+#define ARPHRD_ETHER    1       /*		  Ethernet 10Mbps	     */
+    uint16_t	ar_pro;		/* 2-3 (16-17)  protocol address format      */
+    uint8_t	ar_hln;		/* 4   (18)     hardware address length      */
+    uint8_t	ar_pln;		/* 5   (19)     protocol address length      */
+    uint16_t	ar_op;		/* 6-7 (20-21)  opcode (command)	     */
+#define ARPOP_REQUEST   1       /*		  ARP request		     */
+#define ARPOP_REPLY	2       /*		  ARP reply		     */
 };
 
-/* ARP protocol HARDWARE identifiers. */
-#define ARPHRD_ETHER    1       /* Ethernet 10Mbps      */
-
-/* ARP protocol opcodes. */
-#define ARPOP_REQUEST   1       /* ARP request          */
-#define ARPOP_REPLY 2           /* ARP reply            */
-
 struct click_ether_arp {
-    struct click_arp ea_hdr;	/* fixed-size header */
-    uint8_t	arp_sha[6];	/* sender hardware address */
-    uint8_t	arp_spa[4];	/* sender protocol address */
-    uint8_t	arp_tha[6];	/* target hardware address */
-    uint8_t	arp_tpa[4];	/* target protocol address */
+    struct click_arp ea_hdr;	/* 0-7   (14-21)  fixed-size ARP header	     */
+    uint8_t	arp_sha[6];	/* 8-13  (22-27)  sender hardware address    */
+    uint8_t	arp_spa[4];	/* 14-17 (28-31)  sender protocol address    */
+    uint8_t	arp_tha[6];	/* 18-23 (32-37)  target hardware address    */
+    uint8_t	arp_tpa[4];	/* 24-27 (38-41)  target protocol address    */
 };
 
 
@@ -49,11 +51,11 @@ struct click_ether_arp {
 
 CLICK_SIZE_PACKED_STRUCTURE(
 struct click_ether_vlan {,
-    uint8_t     ether_dhost[6];
-    uint8_t     ether_shost[6];
-    uint16_t    ether_vlan_proto;
-    uint16_t    ether_vlan_tci;
-    uint16_t    ether_vlan_encap_proto;
+    uint8_t     ether_dhost[6];		/* 0-5   Ethernet source address      */
+    uint8_t     ether_shost[6];		/* 6-11  Ethernet destination address */
+    uint16_t    ether_vlan_proto;	/* 12-13 == ETHERTYPE_8021Q	      */
+    uint16_t    ether_vlan_tci;		/* 14-15 tag control information      */
+    uint16_t    ether_vlan_encap_proto;	/* 16-17 Ethernet protocol	      */
 });
 
 

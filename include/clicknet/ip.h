@@ -13,39 +13,42 @@ CLICK_CXX_PROTECT
 #endif
 
 /*
- * <clicknet/ip.h> -- our own definitions of IP headers
- * based on a file from one of the BSDs
+ * <clicknet/ip.h> -- IP header definitions, based on one of the BSDs.
+ *
+ * Relevant RFCs include:
+ *   RFC791	Internet Protocol
+ *   RFC3168	The Addition of Explicit Congestion Notification (ECN) to IP
  */
 
 struct click_ip {
 #if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
-    unsigned	ip_v : 4;		/* 0     version == 4 */
-    unsigned	ip_hl : 4;		/*       header length */
+    unsigned	ip_v : 4;		/* 0     version == 4		     */
+    unsigned	ip_hl : 4;		/*       header length		     */
 #elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
-    unsigned	ip_hl : 4;		/* 0     header length */
-    unsigned	ip_v : 4;		/*       version == 4 */
+    unsigned	ip_hl : 4;		/* 0     header length		     */
+    unsigned	ip_v : 4;		/*       version == 4		     */
 #else
 #   error "unknown byte order"
 #endif
-    uint8_t	ip_tos;			/* 1     type of service */
-#define IP_DSCPMASK 0xFC		/*         diffserv code point */
-#define IP_ECNMASK 0x03			/*	   ECN code point */
-#define IP_ECN_NOT_ECT 0x00		/*         not ECN capable transport */
-#define IP_ECN_ECT1 0x01		/*         ECN capable transport */
-#define IP_ECN_ECT2 0x02		/*         ECN capable transport */
-#define IP_ECN_CE 0x03			/*         ECN congestion exp'd */
-    uint16_t	ip_len;			/* 2-3   total length */
-    uint16_t	ip_id;			/* 4-5   identification */
-    uint16_t	ip_off;			/* 6-7   fragment offset field */
-#define	IP_RF 0x8000			/*         reserved fragment flag */
-#define	IP_DF 0x4000			/*         don't fragment flag */
-#define	IP_MF 0x2000			/*         more fragments flag */
-#define	IP_OFFMASK 0x1fff		/*         mask for fragmenting bits */
-    uint8_t	ip_ttl;			/* 8     time to live */
-    uint8_t	ip_p;			/* 9     protocol */
-    uint16_t	ip_sum;			/* 10-11 checksum */
-    struct in_addr ip_src;		/* 12-15 source address */
-    struct in_addr ip_dst;		/* 16-19 destination address */
+    uint8_t	ip_tos;			/* 1     type of service	     */
+#define IP_DSCPMASK	0xFC		/*         diffserv code point	     */
+#define IP_ECNMASK	0x03		/*	   ECN code point	     */
+#define   IP_ECN_NOT_ECT  0x00		/*         not ECN capable transport */
+#define   IP_ECN_ECT1	  0x01		/*         ECN capable transport     */
+#define   IP_ECN_ECT2	  0x02		/*         ECN capable transport     */
+#define   IP_ECN_CE	  0x03		/*         ECN congestion exp'd	     */
+    uint16_t	ip_len;			/* 2-3   total length		     */
+    uint16_t	ip_id;			/* 4-5   identification		     */
+    uint16_t	ip_off;			/* 6-7   fragment offset field	     */
+#define	IP_RF		0x8000		/*         reserved fragment flag    */
+#define	IP_DF		0x4000		/*         don't fragment flag	     */
+#define	IP_MF		0x2000		/*         more fragments flag	     */
+#define	IP_OFFMASK	0X1FFF		/*         mask for fragmenting bits */
+    uint8_t	ip_ttl;			/* 8     time to live		     */
+    uint8_t	ip_p;			/* 9     protocol		     */
+    uint16_t	ip_sum;			/* 10-11 checksum		     */
+    struct in_addr ip_src;		/* 12-15 source address		     */
+    struct in_addr ip_dst;		/* 16-19 destination address	     */
 };
 
 /* ip_protocol */
