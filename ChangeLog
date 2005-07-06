@@ -1,3 +1,8 @@
+2005-07-06 Wednesday 04:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/todevice.cc (1.142): turn off the warnings
+	that are freaking people out
+
 2005-07-05 Tuesday 15:44  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/: fromdevice.cc (1.54), fromdevice.hh (1.30):
