@@ -141,7 +141,7 @@ ToDevice::initialize(ErrorHandler *errh)
 #endif
 
 #ifndef HAVE_CLICK_KERNEL_TX_NOTIFY
-    errh->warning("not compiled for a Click kernel with transmit notification");
+    //errh->warning("not compiled for a Click kernel with transmit notification");
 #endif
 
     // check for duplicate writers
@@ -156,8 +156,6 @@ ToDevice::initialize(ErrorHandler *errh)
 #ifdef HAVE_CLICK_KERNEL_TX_NOTIFY
 	tx_notifier.next = 0;
 	register_net_tx(&tx_notifier);
-#else
-	errh->warning("can't get dev transmit notification: not compiled for a Click kernel");
 #endif
     }
     registered_tx_notifiers++;
