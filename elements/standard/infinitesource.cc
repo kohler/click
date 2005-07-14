@@ -106,25 +106,23 @@ InfiniteSource::cleanup(CleanupStage)
 bool
 InfiniteSource::run_task()
 {
-  if (!_active || !_nonfull_signal)
-    return false;
-  int n = _burstsize;
-  if (_limit >= 0 && _count + n >= _limit)
-    n = _limit - _count;
-  if (n > 0) {
+    if (!_active || !_nonfull_signal)
+	return false;
+    int n = _burstsize;
+    if (_limit >= 0 && _count + n >= _limit)
+	n = _limit - _count;
+    if (n <= 0)
+	return false;
     for (int i = 0; i < n; i++) {
-      Packet *p = _packet->clone();
-      p->timestamp_anno().set_now();
-      output(0).push(p);
+	Packet *p = _packet->clone();
+	p->timestamp_anno().set_now();
+	output(0).push(p);
     }
     _count += n;
+    if (_stop && _limit >= 0 && _count >= _limit)
+	router()->please_stop_driver();
     _task.fast_reschedule();
     return true;
-  } else {
-    if (_stop)
-      router()->please_stop_driver();
-    return false;
-  }
 }
 
 Packet *
