@@ -35,7 +35,7 @@ NotifierQueue::cast(const char *n)
     if (strcmp(n, "NotifierQueue") == 0)
 	return (NotifierQueue *)this;
     else if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0)
-	return static_cast<Notifier *>(this);
+	return static_cast<Notifier *>(&_empty_note);
     else
 	return SimpleQueue::cast(n);
 }
@@ -43,7 +43,7 @@ NotifierQueue::cast(const char *n)
 int
 NotifierQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    ActiveNotifier::initialize(router());
+    _empty_note.initialize(router());
     return SimpleQueue::configure(conf, errh);
 }
 
@@ -64,13 +64,13 @@ NotifierQueue::push(int, Packet *p)
 #if !NOTIFIERQUEUE_LOCK
 	// This can leave a single packet in the queue indefinitely in
 	// multithreaded Click, because of a race condition with pull().
-        if (!signal_active()) 
-	    wake_listeners(); 
+        if (!_empty_note.signal_active()) 
+	    _empty_note.wake_listeners(); 
 #else
         if (s == 1) {
             _lock.acquire();
-	    if (!signal_active())
-	        wake_listeners();
+	    if (!_empty_note.signal_active())
+	        _empty_note.wake_listeners();
 	    _lock.release();
 	}
 #endif
@@ -92,11 +92,11 @@ NotifierQueue::pull(int)
 	_sleepiness = 0;
     else if (++_sleepiness == SLEEPINESS_TRIGGER) {
 #if !NOTIFIERQUEUE_LOCK
-        sleep_listeners();
+        _empty_note.sleep_listeners();
 #else
 	_lock.acquire();
 	if (_head == _tail)  // if still empty...
-	    sleep_listeners();
+	    _empty_note.sleep_listeners();
 	_lock.release();
 #endif
     }
@@ -112,9 +112,9 @@ NotifierQueue::read_handler(Element *e, void *)
 {
     StringAccum sa;
     NotifierQueue *nq = static_cast<NotifierQueue *>(e);
-    sa << "notifier " << (nq->signal_active() ? "on" : "off") << '\n';
+    sa << "notifier " << (nq->_empty_note.signal_active() ? "on" : "off") << '\n';
     Vector<Task *> v;
-    nq->listeners(v);
+    nq->_empty_note.listeners(v);
     for (int i = 0; i < v.size(); i++) {
 	sa << "task " << ((void *)v[i]) << ' ';
 	if (Element *e = v[i]->element())

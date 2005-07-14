@@ -127,8 +127,8 @@ FrontDropQueue::push(int, Packet *p)
     int s = size();
     if (s > _highwater_length)
 	_highwater_length = s;
-    if (s == 1 && !signal_active())
-	wake_listeners();
+    if (s == 1 && !_empty_note.signal_active())
+	_empty_note.wake_listeners();
 }
 
 CLICK_ENDDECLS

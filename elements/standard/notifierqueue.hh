@@ -62,7 +62,7 @@ When written, drops all packets in the queue.
 
 =a Queue, SimpleQueue, MixedQueue, FrontDropQueue */
 
-class NotifierQueue : public SimpleQueue, public ActiveNotifier { public:
+class NotifierQueue : public SimpleQueue { public:
 
     NotifierQueue();
     ~NotifierQueue();
@@ -86,6 +86,7 @@ class NotifierQueue : public SimpleQueue, public ActiveNotifier { public:
 #if NOTIFIERQUEUE_LOCK
     Spinlock _lock;
 #endif
+    ActiveNotifier _empty_note;
 
     friend class MixedQueue;
     friend class InOrderQueue;

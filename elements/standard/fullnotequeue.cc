@@ -64,13 +64,13 @@ FullNoteQueue::push(int, Packet *p)
 #if !NOTIFIERQUEUE_LOCK
 	// This can leave a single packet in the queue indefinitely in
 	// multithreaded Click, because of a race condition with pull().
-        if (!signal_active()) 
-	    wake_listeners(); 
+        if (!_empty_note.signal_active()) 
+	    _empty_note.wake_listeners(); 
 #else
         if (s == 1) {
             _lock.acquire();
-	    if (!signal_active())
-	        wake_listeners();
+	    if (!_empty_note.signal_active())
+	        _empty_note.wake_listeners();
 	    _lock.release();
 	}
 #endif
@@ -98,11 +98,11 @@ FullNoteQueue::pull(int)
 	
     } else if (++_sleepiness == SLEEPINESS_TRIGGER) {
 #if !NOTIFIERQUEUE_LOCK
-        sleep_listeners();
+        _empty_note.sleep_listeners();
 #else
 	_lock.acquire();
 	if (_head == _tail)  // if still empty...
-	    sleep_listeners();
+	    _empty_note.sleep_listeners();
 	_lock.release();
 #endif
     }
