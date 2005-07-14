@@ -1,3 +1,16 @@
+2005-07-14 Thursday 18:08  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: frontdropqueue.cc (1.19), fullnotequeue.cc
+	(1.4), mixedqueue.cc (1.4), notifierqueue.cc (1.14),
+	notifierqueue.hh (1.17): NotifierQueue has an explicit _empty_note
+	member, rather than inheriting from ActiveNotifier
+
+2005-07-14 Thursday 18:08  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/infinitesource.cc (1.52): STOP applies
+	immediately after sending the last packet, not the next time
+	InfiniteSource is scheduled
+
 2005-07-06 Wednesday 04:04  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/todevice.cc (1.142): turn off the warnings
