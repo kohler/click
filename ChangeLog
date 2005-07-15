@@ -1,3 +1,17 @@
+2005-07-14 Thursday 21:22  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/sr/: ecnqueue.cc (1.5), inorderqueue.cc (1.5),
+	tokenqueue.cc (1.7): more fixes for NotifierQueue change
+
+2005-07-14 Thursday 21:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/Makefile.in (1.99): combine clean
+
+2005-07-14 Thursday 20:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/sr/: ecnqueue.cc (1.4), tokenqueue.cc (1.6): adapt
+	to NotifierQueue changes
+
 2005-07-14 Thursday 18:08  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/: frontdropqueue.cc (1.19), fullnotequeue.cc
