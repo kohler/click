@@ -182,8 +182,8 @@ void
 ECNQueue::push(int, Packet *p_in)
 {
     bubble_up(p_in);
-    if (!signal_active() && !empty()) {
-	wake_listeners();
+    if (!_empty_note.signal_active() && !empty()) {
+	_empty_note.wake_listeners();
     }
     return;
 }
@@ -195,7 +195,7 @@ ECNQueue::pull(int) {
     if (packet)
 	_sleepiness = 0;
     else if (++_sleepiness == SLEEPINESS_TRIGGER)
-	sleep_listeners();
+	_empty_note.sleep_listeners();
     return packet;
 }
 
