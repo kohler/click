@@ -146,13 +146,6 @@ install: Makefile elements.mk elements.cc all
 uninstall:
 	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
 
-clean:
-	-rm -f *~ *.d *.o *.ko *.mod.c
-	-rm -f .version .*.o.flags .*.o.d .*.o.cmd .*.ko.cmd
-	-rm -f elements.mk elements.cc elements.conf
-distclean: clean
-	-rm -f Makefile
-
 else
 
 ##########################################################################
@@ -237,11 +230,6 @@ install: $(INSTALLOBJS)
 uninstall:
 	for i in $(INSTALLOBJS); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
 
-clean:
-	-rm -f *.d *.o elements.mk elements.cc elements.conf
-distclean: clean
-	-rm -f Makefile
-
 endif
 
 
@@ -265,5 +253,12 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 
 always:
 	@:
+
+clean:
+	-rm -f *~ *.d *.o *.mod.c
+	-rm -f .version .*.o.flags .*.o.d .*.o.cmd .*.ko.cmd
+	-rm -f elements.mk elements.cc elements.conf
+distclean: clean
+	-rm -f Makefile
 
 .PHONY: all clean distclean elemlist install uninstall always
