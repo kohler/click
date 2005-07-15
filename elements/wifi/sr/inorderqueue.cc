@@ -60,9 +60,6 @@ InOrderQueue::cast(const char *n)
 int
 InOrderQueue::configure (Vector<String> &conf, ErrorHandler *errh)
 {
-
-    ActiveNotifier::initialize(router());
-    
   int ret;
   _debug = false;
   int packet_to = 0;
@@ -77,7 +74,6 @@ InOrderQueue::configure (Vector<String> &conf, ErrorHandler *errh)
     return ret;
   }
 
-  _capacity = new_capacity;
   ret = set_packet_timeout(errh, packet_to);
   if (ret < 0) {
     return ret;
@@ -85,7 +81,10 @@ InOrderQueue::configure (Vector<String> &conf, ErrorHandler *errh)
 
   _timer.initialize(this);
   _timer.schedule_now();
-  return 0;
+
+  Vector<String> nqconf;
+  nqconf.push_back(String(new_capacity));
+  return NotifierQueue::configure(nqconf, errh);
 }
 void
 InOrderQueue::run_timer() 

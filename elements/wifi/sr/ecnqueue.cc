@@ -59,9 +59,6 @@ ECNQueue::cast(const char *n)
 int
 ECNQueue::configure (Vector<String> &conf, ErrorHandler *errh)
 {
-
-    ActiveNotifier::initialize(router());
-    
   int ret;
   _debug = false;
   int new_capacity = 1000;
@@ -76,12 +73,9 @@ ECNQueue::configure (Vector<String> &conf, ErrorHandler *errh)
     return ret;
   }
 
-  _capacity = new_capacity;
-  if (ret < 0) {
-    return ret;
-  }
-
-  return 0;
+  Vector<String> nqconf;
+  nqconf.push_back(String(new_capacity));
+  return NotifierQueue::configure(nqconf, errh);
 }
 
 

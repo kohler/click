@@ -63,9 +63,6 @@ TokenQueue::cast(const char *n)
 int
 TokenQueue::configure (Vector<String> &conf, ErrorHandler *errh)
 {
-
-    ActiveNotifier::initialize(router());
-    
   int ret;
   int threshold = 0;
   _debug = false;
@@ -87,7 +84,6 @@ TokenQueue::configure (Vector<String> &conf, ErrorHandler *errh)
   if (!_et) 
       return errh->error("ETHTYPE not specified");
 
-  _capacity = new_capacity;
   ret = set_packet_timeout(errh, packet_to);
   if (ret < 0) {
     return ret;
@@ -111,7 +107,10 @@ TokenQueue::configure (Vector<String> &conf, ErrorHandler *errh)
   
   _timer.initialize(this);
   _timer.schedule_now();
-  return 0;
+
+  Vector<String> nqconf;
+  nqconf.push_back(String(new_capacity));
+  return NotifierQueue::configure(nqconf, errh);
 }
 void
 TokenQueue::run_timer() 
