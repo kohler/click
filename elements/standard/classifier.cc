@@ -149,7 +149,7 @@ Classifier::Expr::s() const
 //
 
 Classifier::Classifier()
-  : Element(1, 0)
+    : Element(1, 0), _output_everything(-1)
 {
 }
 
@@ -802,7 +802,6 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   set_noutputs(conf.size());
   
-  _output_everything = -1;
   int before = errh->nerrors();
 
   // set align offset
