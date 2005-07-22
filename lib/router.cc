@@ -68,7 +68,7 @@ Router::Router(const String &configuration, Master *m)
 
 Router::~Router()
 {
-    if (_refcount > 0)
+    if (_refcount != 0)
 	click_chatter("deleting router while ref count = %d", _refcount.value());
 
     // unuse the hotswap router
@@ -97,7 +97,7 @@ Router::~Router()
     else
 	for (int i = 0; i < _elements.size(); i++)
 	    delete _elements[i];
-  
+    
     delete _root_element;
 
 #if CLICK_LINUXMODULE
@@ -116,7 +116,8 @@ Router::~Router()
     delete[] _handler_bufs;
     delete[] _notifier_signals;
     delete _name_info;
-    _master->unregister_router(this);
+    if (_master)
+	_master->unregister_router(this);
 }
 
 void
@@ -617,9 +618,23 @@ void
 Router::adjust_runcount(int delta)
 {
     _master->_runcount_lock.acquire();
-    _runcount += delta;
-    if (_runcount < _master->_runcount)
+    
+    // beware of overflow
+    bool overflow = false;
+    if (delta > 0 && _runcount > INT_MAX - delta)
+	_runcount = INT_MAX;
+    else if (delta < 0 && _runcount < INT_MIN - delta)
+	_runcount = INT_MIN, overflow = true;
+    else
+	_runcount += delta;
+    
+    if (_runcount < _master->_runcount || overflow) {
 	_master->_runcount = _runcount;
+	// ensure that at least one thread is awake to handle the stop event
+	if (_master->_runcount <= 0)
+	    _master->_threads[1]->unsleep();
+    }
+    
     _master->_runcount_lock.release();
 }
 

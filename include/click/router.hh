@@ -42,6 +42,7 @@ class Router { public:
     };
     bool initialized() const			{ return _state == ROUTER_LIVE; }
     bool handlers_ready() const			{ return _state > ROUTER_PRECONFIGURE; }
+    bool running() const			{ return _running > 0; }
 
     // ELEMENTS
     int nelements() const			{ return _elements.size(); }

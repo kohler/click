@@ -71,8 +71,10 @@ Master::~Master()
     _refcount++;
     while (_routers) {
 	Router *r = _routers;
+	r->use();
 	_master_lock.release();
-	delete r;
+	unregister_router(r);
+	r->unuse();
 	_master_lock.acquire();
     }
     _refcount--;
@@ -249,8 +251,11 @@ Master::kill_router(Router *router)
 void
 Master::unregister_router(Router *router)
 {
+    assert(router && (!router->_master || router->_master == this));
+    if (!router->_master)
+	return;
+    
     _master_lock.acquire();
-    assert(router && router->_master == this);
     if (router->_running >= Router::RUNNING_PREPARING)
 	kill_router(router);
     
@@ -262,6 +267,7 @@ Master::unregister_router(Router *router)
 	}
     *pprev = 0;
     _refcount--;		// balanced in register_router()
+    router->_master = 0;
     _master_lock.release();
 }
 
