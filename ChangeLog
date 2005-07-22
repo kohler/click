@@ -1,3 +1,23 @@
+2005-07-22 Friday 16:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/: clickfs.cc (1.44), config.cc (1.22), proclikefs.c
+	(1.16), proclikefs.h (1.5), sched.cc (1.53), skbmgr.cc (1.19):
+	linuxmodule updates: fix reread_super protocol, which was horribly
+	broken (depended on uninitialized locks, uninitialized variables,
+	and so forth) (Mazu reported)
+
+2005-07-22 Friday 16:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/router.hh (1.73), lib/master.cc (1.29),
+	lib/router.cc (1.177): Master delete protocol: deleting a Master
+	unregisters its Routers, it does not immediately delete them; also,
+	better overflow detection/wakeup on Router::adjust_runcount()
+
+2005-07-22 Friday 16:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: ip/ipfilter.cc (1.62), standard/classifier.cc (1.51):
+	nits
+
 2005-07-14 Thursday 21:22  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/wifi/sr/: ecnqueue.cc (1.5), inorderqueue.cc (1.5),
