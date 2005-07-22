@@ -78,6 +78,7 @@ static struct super_operations proclikefs_null_super_operations;
 static struct inode_operations proclikefs_null_root_inode_operations;
 
 EXPORT_SYMBOL(proclikefs_register_filesystem);
+EXPORT_SYMBOL(proclikefs_reinitialize_supers);
 EXPORT_SYMBOL(proclikefs_unregister_filesystem);
 EXPORT_SYMBOL(proclikefs_read_super);
 EXPORT_SYMBOL(proclikefs_put_super);
@@ -101,11 +102,11 @@ proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry)
 struct proclikefs_file_system *
 proclikefs_register_filesystem(const char *name, int fs_flags,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-	struct super_block *(*get_sb) (struct file_system_type *, int, const char *, void *),
+	struct super_block *(*get_sb) (struct file_system_type *, int, const char *, void *)
 #else
-	struct super_block *(*read_super) (struct super_block *, void *, int),
+	struct super_block *(*read_super) (struct super_block *, void *, int)
 #endif
-	void (*reread_super) (struct super_block *))
+	)
 {
     struct proclikefs_file_system *newfs = 0;
     struct list_head *next;
@@ -175,30 +176,39 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
 	int err = register_filesystem(&newfs->fs);
 	if (err != 0)
 	    printk("<1>proclikefs: error %d while initializing pfs[%p] (%s)\n", -err, newfs, name);
-    } else if (reread_super) {
-	/* transfer superblocks */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
-	struct list_head *p;
-	spin_lock(&sb_lock);
-	for (p = newfs->fs.fs_supers.next; p != &newfs->fs.fs_supers; p = p->next) {
-	    struct super_block *sb = list_entry(p, struct super_block, s_instances);
-	    if (sb->s_type == &newfs->fs)
-		(*reread_super)(sb);
-	    else
-		printk("<1>proclikefs: confusion\n");
-	}
-	spin_unlock(&sb_lock);
-#else
-	struct super_block *sb;
-	for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks); 
-	     sb = sb_entry(sb->s_list.next))
-	    if (sb->s_type == &newfs->fs)
-		(*reread_super)(sb);
-#endif
     }
 
     spin_unlock(&fslist_lock);
     return newfs;
+}
+
+void
+proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
+			       void (*reread_super) (struct super_block *))
+{
+    struct super_block *sb;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+	struct list_head *p;
+#endif
+    spin_lock(&fslist_lock);
+    /* transfer superblocks */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+    spin_lock(&sb_lock);
+    for (p = pfs->fs.fs_supers.next; p != &pfs->fs.fs_supers; p = p->next) {
+	sb = list_entry(p, struct super_block, s_instances);
+	if (sb->s_type == &pfs->fs)
+	    (*reread_super)(sb);
+	else
+	    printk("<1>proclikefs: confusion\n");
+    }
+    spin_unlock(&sb_lock);
+#else
+    for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks); 
+	 sb = sb_entry(sb->s_list.next))
+	if (sb->s_type == &pfs->fs)
+	    (*reread_super)(sb);
+#endif
+    spin_unlock(&fslist_lock);
 }
 
 static void

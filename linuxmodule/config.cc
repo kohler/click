@@ -92,17 +92,18 @@ extern "C" int click_threads();
 static void
 install_router(const String &config, Router *r)
 {
+    click_config_generation++;
     click_router = r;
     if (click_router)
 	click_router->use();
     *current_config = config;
-    click_config_generation++;
 }
 
 static void
 kill_router()
 {
     if (click_router) {
+	click_config_generation++;
 	click_router->unuse();
 	click_router = 0;
     }
@@ -110,6 +111,9 @@ kill_router()
 
 
 /******************************* Handlers ************************************/
+
+extern spinlock_t clickfs_write_lock;
+extern atomic_t clickfs_read_count;
 
 static int
 swap_config(const String &s)
@@ -134,15 +138,15 @@ hotswap_config(const String &s)
     if (!router)
 	return -EINVAL;
 
-    // XXX should we lock the kernel?
-    
     // register hotswap router on new router
     if (click_router && click_router->initialized())
 	router->set_hotswap_router(click_router);
     
     if (click_logged_errh->nerrors() == before_errors
 	&& router->initialize(click_logged_errh) >= 0) {
+	click_config_generation++;
 	router->activate(click_logged_errh);
+	assert(spin_is_locked(&clickfs_write_lock) && atomic_read(&clickfs_read_count) == 0);
 	kill_router();
 	install_router(s, router);
     } else
@@ -155,6 +159,7 @@ static int
 write_config(const String &s, Element *, void *thunk, ErrorHandler *)
 {
     click_clear_error_log();
+    assert(spin_is_locked(&clickfs_write_lock) && atomic_read(&clickfs_read_count) == 0);
     int retval = (thunk ? hotswap_config(s) : swap_config(s));
     return retval;
 }
@@ -189,4 +194,6 @@ click_cleanup_config()
     click_unexport_elements();
     delete current_config;
     delete lexer;
+    current_config = 0;
+    lexer = 0;
 }

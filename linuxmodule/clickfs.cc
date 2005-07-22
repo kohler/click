@@ -42,9 +42,10 @@ static struct inode_operations *click_handler_inode_ops;
 static struct dentry_operations click_dentry_ops;
 static struct proclikefs_file_system *clickfs;
 
-static spinlock_t config_write_lock;
-static atomic_t config_read_count;
+spinlock_t clickfs_write_lock;
+atomic_t clickfs_read_count;
 extern uint32_t click_config_generation;
+static int clickfs_ready;
 
 //#define SPIN_LOCK_MSG(l, file, line, what)	printk("<1>%s:%d: pid %d: %sing %p in clickfs\n", (file), (line), current->pid, (what), (l))
 #define SPIN_LOCK_MSG(l, file, line, what)	((void)(file), (void)(line))
@@ -62,29 +63,30 @@ extern uint32_t click_config_generation;
 static inline void
 lock_config_read(const char *file, int line)
 {
-    SPIN_LOCK_MSG(&config_write_lock, file, line, "soft lock");
-    while (!spin_trylock(&config_write_lock))
+    SPIN_LOCK_MSG(&clickfs_write_lock, file, line, "soft lock");
+    while (!spin_trylock(&clickfs_write_lock))
 	schedule();
-    atomic_inc(&config_read_count);
-    SPIN_UNLOCK(&config_write_lock, file, line);
+    atomic_inc(&clickfs_read_count);
+    SPIN_UNLOCK(&clickfs_write_lock, file, line);
 }
 
 static inline void
 unlock_config_read()
 {
-    atomic_dec(&config_read_count);
+    assert(atomic_read(&clickfs_read_count) > 0);
+    atomic_dec(&clickfs_read_count);
 }
 
 static inline void
 lock_config_write(const char *file, int line)
 {
     while (1) {
-	SPIN_LOCK_MSG(&config_write_lock, file, line, "soft lock");
-	while (!spin_trylock(&config_write_lock))
+	SPIN_LOCK_MSG(&clickfs_write_lock, file, line, "soft lock");
+	while (!spin_trylock(&clickfs_write_lock))
 	    schedule();
-	if (atomic_read(&config_read_count) == 0)
+	if (atomic_read(&clickfs_read_count) == 0)
 	    return;
-	SPIN_UNLOCK(&config_write_lock, file, line);
+	SPIN_UNLOCK(&clickfs_write_lock, file, line);
 	schedule();
     }
 }
@@ -92,7 +94,7 @@ lock_config_write(const char *file, int line)
 static inline void
 unlock_config_write(const char *file, int line)
 {
-    SPIN_UNLOCK(&config_write_lock, file, line);
+    SPIN_UNLOCK(&clickfs_write_lock, file, line);
 }
 
 
@@ -335,6 +337,9 @@ click_put_inode(struct inode *inode)
 static struct super_block *
 click_read_super(struct super_block *sb, void * /* data */, int)
 {
+    struct inode *root_inode = 0;
+    if (!clickfs_ready)
+	goto out_no_root;
     MDEBUG("click_read_super");
     sb->s_blocksize = 1024;
     sb->s_blocksize_bits = 10;
@@ -342,7 +347,7 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     sb->s_op = &click_superblock_ops;
     MDEBUG("click_config_lock");
     LOCK_CONFIG_READ();
-    struct inode *root_inode = click_inode(sb, INO_GLOBALDIR);
+    root_inode = click_inode(sb, INO_GLOBALDIR);
     UNLOCK_CONFIG_READ();
     if (!root_inode)
 	goto out_no_root;
@@ -765,11 +770,11 @@ init_clickfs()
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    clickfs = proclikefs_register_filesystem("click", 0, click_get_sb, click_reread_super);
+    clickfs = proclikefs_register_filesystem("click", 0, click_get_sb);
 #else
     // NB: remove FS_SINGLE if it will ever make sense to have different
     // Click superblocks -- if we introduce mount options, for example
-    clickfs = proclikefs_register_filesystem("click", FS_SINGLE, click_read_super, click_reread_super);
+    clickfs = proclikefs_register_filesystem("click", FS_SINGLE, click_read_super);
 #endif
     if (!clickfs
 	|| !(click_dir_file_ops = proclikefs_new_file_operations(clickfs))
@@ -816,9 +821,12 @@ init_clickfs()
 #endif
 
     spin_lock_init(&handler_strings_lock);
-    spin_lock_init(&config_write_lock);
-    atomic_set(&config_read_count, 0);
+    spin_lock_init(&clickfs_write_lock);
+    atomic_set(&clickfs_read_count, 0);
     click_ino.initialize();
+
+    proclikefs_reinitialize_supers(clickfs, click_reread_super);
+    clickfs_ready = 1;
 
     // initialize a symlink from /proc/click -> /click, to ease transition
 #ifdef LINUX_2_4
@@ -846,6 +854,7 @@ cleanup_clickfs()
 
     // kill filesystem
     MDEBUG("proclikefs_unregister_filesystem");
+    clickfs_ready = 0;
     proclikefs_unregister_filesystem(clickfs);
 
     // clean up handler_strings
