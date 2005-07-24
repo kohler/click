@@ -1,3 +1,10 @@
+2005-07-24 Sunday 13:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/linux-2.6.11.6-patch (1.3), drivers/e1000-5.x/src/Makefile
+	(1.3), drivers/e1000-5.x/src/e1000_main.c (1.8),
+	include/click/sync.hh (1.18), linuxmodule/proclikefs.c (1.17):
+	x86_64 + Linux 2.6 updates from Felipe Huici
+
 2005-07-22 Friday 16:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* linuxmodule/: clickfs.cc (1.44), config.cc (1.22), proclikefs.c
