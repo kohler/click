@@ -2654,10 +2654,10 @@ e1000_clean_rx_irq(struct e1000_adapter *adapter)
 					le16_to_cpu(rx_desc->special) &
 					E1000_RXD_SPC_VLAN_MASK);
 		} else {
-			netif_receive_skb(skb);
+			netif_receive_skb(skb, skb->protocol, 0);
 		}
 #else
-		netif_receive_skb(skb);
+		netif_receive_skb(skb, skb->protocol, 0);
 #endif
 #else /* CONFIG_E1000_NAPI */
 #ifdef NETIF_F_HW_VLAN_TX
@@ -3744,13 +3744,13 @@ e1000_poll_on(struct net_device *dev)
 	if (!dev->polling) {
 		printk("e1000_poll_on\n");
 
-		save_flags(flags);
-		cli();
+		local_save_flags(flags);
+		local_irq_disable();
 
 		dev->polling = 2;
 		e1000_irq_disable(adapter);
 
-		restore_flags(flags);
+		local_irq_restore(flags);
 	}
 
 	return 0;

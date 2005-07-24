@@ -23,7 +23,6 @@
 #endif
 #ifdef CONFIG_MODVERSIONS
 # define MODVERSIONS
-# include <linux/modversions.h>
 #endif
 #include <linux/module.h>
 #include "proclikefs.h"

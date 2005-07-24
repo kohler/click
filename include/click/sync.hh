@@ -44,7 +44,7 @@ inline
 Spinlock::Spinlock()
     : _lock(0), _depth(0), _owner(-1)
 {
-#ifndef __i386__
+#if !defined(__i386__) && !defined(__x86_64__)
 # error "no multithread support for non i386 click"
 #endif
 } 

@@ -2143,7 +2143,7 @@ diff -ru ../linux-2.6.11.6/include/asm-x86_64/desc.h ./include/asm-x86_64/desc.h
   * This is the ldt that every process will get unless we need
 diff -ru ../linux-2.6.11.6/include/asm-x86_64/mmu_context.h ./include/asm-x86_64/mmu_context.h
 --- ../linux-2.6.11.6/include/asm-x86_64/mmu_context.h	2005-03-25 19:28:17.000000000 -0800
-+++ ./include/asm-x86_64/mmu_context.h	2005-03-28 21:30:33.000000000 -0800
++++ ./include/asm-x86_64/mmu_context.h	2005-07-24 09:55:21.000000000 -0700
 @@ -40,7 +40,7 @@
  		write_pda(active_mm, next);
  #endif
@@ -2158,7 +2158,7 @@ diff -ru ../linux-2.6.11.6/include/asm-x86_64/mmu_context.h ./include/asm-x86_64
  			 * to make sure to use no freed page tables.
  			 */
 -			asm volatile("movq %0,%%cr3" :: "r" (__pa(next->pgd)) : "memory");
-+			asm volatile("movq %0,%%cr3" : "r" (__pa(next->pgd)) : "memory");
++			asm volatile("movq %0,%%cr3" : : "r" (__pa(next->pgd)) : "memory");
  			load_LDT_nolock(&next->context, cpu);
  		}
  	}
@@ -2347,6 +2347,18 @@ diff -ru ../linux-2.6.11.6/include/asm-x86_64/system.h ./include/asm-x86_64/syst
  #endif
  #define read_barrier_depends()	do {} while(0)
  #define set_mb(var, value) do { xchg(&var, value); } while (0)
+diff -ru ../linux-2.6.11.6/include/asm-x86_64/thread_info.h ./include/asm-x86_64/thread_info.h
+--- ../linux-2.6.11.6/include/asm-x86_64/thread_info.h	2005-03-25 19:28:24.000000000 -0800
++++ ./include/asm-x86_64/thread_info.h	2005-07-24 09:57:38.000000000 -0700
+@@ -60,7 +60,7 @@
+ static inline struct thread_info *current_thread_info(void)
+ { 
+ 	struct thread_info *ti;
+-	ti = (void *)(read_pda(kernelstack) + PDA_STACKOFFSET - THREAD_SIZE);
++	ti = (struct thread_info *)(read_pda(kernelstack) + PDA_STACKOFFSET - THREAD_SIZE);
+ 	return ti; 
+ }
+ 
 diff -ru ../linux-2.6.11.6/include/asm-x86_64/tlbflush.h ./include/asm-x86_64/tlbflush.h
 --- ../linux-2.6.11.6/include/asm-x86_64/tlbflush.h	2005-03-25 19:28:14.000000000 -0800
 +++ ./include/asm-x86_64/tlbflush.h	2005-03-28 21:21:48.000000000 -0800

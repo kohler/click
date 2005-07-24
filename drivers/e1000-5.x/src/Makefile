@@ -194,7 +194,7 @@ endif
 ###########################################################################
 # 2.4.x & 2.6.x Specific rules
 
-K_VERSION:=$(echo $(BUILD_KERNEL) | cut -c1-3 | sed 's/2\.[56]/2\.6/')
+K_VERSION:=$(shell echo $(BUILD_KERNEL) | cut -c1-3 | sed 's/2\.[56]/2\.6/')
 
 ifeq ($(K_VERSION), 2.6)
 
