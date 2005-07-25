@@ -1,3 +1,8 @@
+2005-07-25 Monday 17:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/skbmgr.cc (1.20): SMP skbmgr fix hopefully avoids
+	crashes; patch from Qinghua Ye
+
 2005-07-24 Sunday 13:07  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/linux-2.6.11.6-patch (1.3), drivers/e1000-5.x/src/Makefile
