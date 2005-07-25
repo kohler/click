@@ -1,3 +1,8 @@
+2005-07-25 Monday 19:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/read-pmc.c (1.3): add <click/config.h>, to grab
+	__KERNEL__ definition
+
 2005-07-25 Monday 17:15  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* linuxmodule/skbmgr.cc (1.20): SMP skbmgr fix hopefully avoids
