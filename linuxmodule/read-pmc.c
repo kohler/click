@@ -15,6 +15,7 @@
    * 0x79 cycles in which the cpu is NOT halted.
    */
 
+#include <click/config.h>
 #include <linux/types.h>
 #include <linux/config.h>
 #include <linux/kernel.h>
