@@ -88,8 +88,8 @@ class RecycledSkbPool { public:
   int _pad[5];
 #endif
   
-  void lock();
-  void unlock();
+  inline void lock();
+  inline void unlock();
   struct sk_buff *allocate(unsigned hr, unsigned sz, int, int *);
   void recycle(struct sk_buff *);
 
@@ -323,6 +323,7 @@ RecycledSkbPool::recycle(struct sk_buff *skbs)
     int bucket = size_to_lower_bucket(skb->end - skb->head);
     // try to put in that bucket
     if (bucket >= 0) {
+      lock();
       int tail = _buckets[bucket]._tail;
       int next = _buckets[bucket].next_i(tail);
       if (next != _buckets[bucket]._head) {
@@ -336,6 +337,7 @@ RecycledSkbPool::recycle(struct sk_buff *skbs)
         _recycle_freed++;
 #endif
       }
+      unlock();
     }
     // if not taken care of, then free it
     if (skb) {
