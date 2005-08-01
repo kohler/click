@@ -17,7 +17,7 @@
 input rboxes;
 prologues := 1;
 string defaultelementfont;
-input fonts;
+defaultelementfont := defaultfont;
 defaultscale := 1;
 linejoin := mitered;
 
