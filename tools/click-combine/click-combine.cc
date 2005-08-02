@@ -468,8 +468,9 @@ particular purpose.\n");
 
   // combine routers
   RouterT *combined = new RouterT;
+  VariableEnvironment empty_ve;
   for (int i = 0; i < routers.size(); i++)
-    routers[i]->expand_into(combined, VariableEnvironment(router_names[i]), errh);
+      routers[i]->expand_into(combined, router_names[i], empty_ve, errh);
 
   // exit if there have been errors (again)
   if (errh->nerrors() != 0)

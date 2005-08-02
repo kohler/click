@@ -24,22 +24,6 @@
 #include <click/confparse.hh>
 CLICK_DECLS
 
-VariableEnvironment::VariableEnvironment(const String &prefix)
-    : _prefix(prefix)
-{
-    int pl = _prefix.length();
-    if (pl > 0 && _prefix[pl - 1] != '/')
-	_prefix += '/';
-}
-
-VariableEnvironment::VariableEnvironment(const VariableEnvironment &o, const String &suffix)
-    : _prefix(o._prefix + suffix), _formals(o._formals), _values(o._values), _depths(o._depths)
-{
-    int pl = _prefix.length();
-    if (pl > 0 && _prefix[pl - 1] != '/')
-	_prefix += '/';
-}
-
 void
 VariableEnvironment::enter(const VariableEnvironment &ve)
 {

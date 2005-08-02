@@ -8,11 +8,9 @@ CLICK_DECLS
 class VariableEnvironment { public:
   
     VariableEnvironment()		{ }
-    VariableEnvironment(const String &suffix);
-    VariableEnvironment(const VariableEnvironment &, const String &suffix);
+    VariableEnvironment(const VariableEnvironment &ve) { enter(ve); }
 
     operator bool() const		{ return _formals.size() != 0; }
-    const String &prefix() const	{ return _prefix; }
     int depth() const			{ return _depths.size() ? _depths.back() : -1; }
 
     void enter(const VariableEnvironment &);
@@ -23,7 +21,6 @@ class VariableEnvironment { public:
 
   private:
 
-    String _prefix;
     Vector<String> _formals;
     Vector<String> _values;
     Vector<int> _depths;

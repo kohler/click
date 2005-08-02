@@ -321,7 +321,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
 
   // expand 'replacement' into '_body'; need crap compound element
   Vector<String> crap_args;
-  replacement->complex_expand_element(new_e, String(), crap_args, _body, VariableEnvironment(), errh);
+  replacement->complex_expand_element(new_e, String(), crap_args, _body, String(), VariableEnvironment(), errh);
 
   // mark replacement
   for (int i = 0; i < changed_elements.size(); i++) {

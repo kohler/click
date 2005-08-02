@@ -918,7 +918,7 @@ RouterT::free_dead_elements()
 
 
 void
-RouterT::expand_into(RouterT *tor, const VariableEnvironment &env, ErrorHandler *errh)
+RouterT::expand_into(RouterT *tor, const String &prefix, const VariableEnvironment &env, ErrorHandler *errh)
 {
     assert(tor != this);
 
@@ -928,7 +928,7 @@ RouterT::expand_into(RouterT *tor, const VariableEnvironment &env, ErrorHandler 
     // add tunnel pairs and expand below
     for (int i = 0; i < nelements; i++)
 	if (_elements[i]->live())
-	    new_e[i] = ElementClassT::expand_element(_elements[i], tor, env, errh);
+	    new_e[i] = ElementClassT::expand_element(_elements[i], tor, prefix, env, errh);
 
     // add hookup
     int nh = _conn.size();
@@ -1105,7 +1105,7 @@ RouterT::remove_compound_elements(ErrorHandler *errh)
     VariableEnvironment env;
     for (int i = 0; i < nelements; i++)
 	if (_elements[i]->live()) // allow deleted elements
-	    ElementClassT::expand_element(_elements[i], this, env, errh);
+	    ElementClassT::expand_element(_elements[i], this, String(), env, errh);
 }
 
 void
@@ -1257,7 +1257,8 @@ RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *
 ElementT *
 RouterT::complex_expand_element(
 	ElementT *compound, const String &, Vector<String> &args,
-	RouterT *tor, const VariableEnvironment &env, ErrorHandler *errh)
+	RouterT *tor, const String &prefix,
+	const VariableEnvironment &env, ErrorHandler *errh)
 {
     RouterT *fromr = compound->router();
     assert(fromr != this && tor != this);
@@ -1285,9 +1286,10 @@ RouterT::complex_expand_element(
 
     // create prefix
     assert(compound->name());
-    VariableEnvironment new_env(env, compound->name());
-    String prefix = env.prefix();
-    String new_prefix = new_env.prefix(); // includes previous prefix
+    VariableEnvironment new_env(env);
+    String new_prefix = prefix + compound->name(); // includes previous prefix
+    if (new_prefix.back() != '/')
+	new_prefix += '/';
     new_env.limit_depth(_declaration_depth);
     new_env.enter(_formals, args, _declaration_depth);
 
@@ -1299,7 +1301,7 @@ RouterT::complex_expand_element(
     ElementT *new_e = tor->element(prefix + compound->name());
 
     // dump compound router into 'tor'
-    expand_into(tor, new_env, errh);
+    expand_into(tor, new_prefix, new_env, errh);
 
     // yes, we expanded it
     _circularity_flag = false;
