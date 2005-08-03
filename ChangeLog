@@ -1,3 +1,12 @@
+2005-08-02 Tuesday 19:57  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/variableenv.hh (1.6), lib/variableenv.cc (1.13),
+	tools/click-combine/click-combine.cc (1.40),
+	tools/click-xform/click-xform.cc (1.59), tools/lib/eclasst.cc
+	(1.32), tools/lib/eclasst.hh (1.24), tools/lib/routert.cc (1.80),
+	tools/lib/routert.hh (1.66): remove VariableEnvironment::_prefix
+	for simplification
+
 2005-08-01 Monday 13:56  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/diagrams/elements.mp (1.8): dont require fonts.mp
