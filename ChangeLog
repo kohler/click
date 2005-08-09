@@ -1,3 +1,8 @@
+2005-08-09 Tuesday 16:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/diagrams/: Makefile (1.6), elements.mp (1.9): allow
+	"drawelement(foo) dashed evenly"
+
 2005-08-02 Tuesday 19:57  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/variableenv.hh (1.6), lib/variableenv.cc (1.13),
