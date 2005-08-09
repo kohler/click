@@ -117,6 +117,10 @@ vardef clearelement_(suffix $) =
   generic_redeclare(numeric) _n;
 enddef;
 
+def drawelemboxed(suffix $) =
+  draw bpath.$
+enddef;
+
 vardef _elementit@#(expr label_str, ninputs, noutputs, personality, down_var, rev_var) =
   picture _label_; numeric _x_, _y_;
   
@@ -164,7 +168,7 @@ vardef _elementit@#(expr label_str, ninputs, noutputs, personality, down_var, re
   @#.borderscale = defaultelementborderscale;
   @#.portscale = defaultelementportscale;
   
-  elemdraw_@# = "drawboxes";
+  elemdraw_@# = "drawelemboxed";
   
   expandafter def expandafter clearboxes expandafter =
     clearboxes clearelement_(@#);
@@ -289,12 +293,12 @@ vardef draw_element_outputs(suffix $) =
   endfor;
 enddef;
 
-vardef drawelement(text elements) =
-  drawelementbox(elements);
+vardef drawelement(text elements) text rest =
+  drawelementbox(elements) rest;
   drawunboxed(elements);
 enddef;
 
-vardef drawelementbox(text elements) =
+vardef drawelementbox(text elements) text rest =
   save $, oldpen; oldpen := savepen;
   interim linejoin := mitered;
   fixelementsize(elements);
@@ -306,7 +310,7 @@ vardef drawelementbox(text elements) =
       if $.nout > 0: draw_element_outputs($); fi;
     fi;
     pickup elementpen.border scaled $.borderscale;
-    scantokens elemdraw_$($);
+    scantokens elemdraw_$($) rest;
   endfor;
   pickup oldpen;
 enddef;
@@ -322,25 +326,25 @@ enddef;
 
 %% queues
 
-vardef _drawqueued(expr p,delta,rot,lim,pp) =
+vardef _drawqueued(expr p,delta,rot,lim,pp) text rest =
   save i; interim linecap := squared; i := delta;
   forever:
-    draw (p) shifted ((i,0) rotated rot) withpen currentpen scaled 0.25;
+    draw (p) shifted ((i,0) rotated rot) withpen currentpen scaled 0.25 rest;
     i := i + delta; exitunless i < lim;
   endfor;
-  draw (pp);
+  draw (pp) rest;
 enddef;
-vardef drawqueued(suffix $) =
-  _drawqueued($.ne -- $.se, 6, 180, .9*$.width, $.nw -- $.ne -- $.se -- $.sw);
+def drawqueued(suffix $) =
+  _drawqueued($.ne -- $.se, 6, 180, .9*$.width, $.nw -- $.ne -- $.se -- $.sw)
 enddef;
-vardef drawrqueued(suffix $) =
-  _drawqueued($.nw -- $.sw, 6, 0, .9*$.width, $.ne -- $.nw -- $.sw -- $.se);
+def drawrqueued(suffix $) =
+  _drawqueued($.nw -- $.sw, 6, 0, .9*$.width, $.ne -- $.nw -- $.sw -- $.se)
 enddef;
-vardef drawvqueued(suffix $) =
-  _drawqueued($.se -- $.sw, 5, 90, .9*$.height, $.nw -- $.sw -- $.se -- $.ne);
+def drawvqueued(suffix $) =
+  _drawqueued($.se -- $.sw, 5, 90, .9*$.height, $.nw -- $.sw -- $.se -- $.ne)
 enddef;
-vardef drawrvqueued(suffix $) =
-  _drawqueued($.ne -- $.nw, 5, 270, .9*$.height, $.sw -- $.nw -- $.ne -- $.se);
+def drawrvqueued(suffix $) =
+  _drawqueued($.ne -- $.nw, 5, 270, .9*$.height, $.sw -- $.nw -- $.ne -- $.se)
 enddef;
 
 vardef queueit@#(expr s) =

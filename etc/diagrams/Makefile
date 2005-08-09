@@ -13,12 +13,9 @@ all: $(FIGS)
 
 # after making the figure, run perl to fix Computer Modern font names to
 # uppercase
-%.1 %.2 %.3 %.4 %.5 %.6 %.7 %.8 %.9: %.mp elements.mp elemfig.sty fonts.mp
+%.1 %.2 %.3 %.4 %.5 %.6 %.7 %.8 %.9: %.mp elements.mp elemfig.sty
 	TEX=$(LATEX) $(METAPOST) $<
 	perl -pi -e 'use bytes; next if $$x eq $$ARGV; $$x = $$ARGV if /%%EndProlog/; s=/([a-z][a-z0-9]+) def=/\U$$1\E def= if !/^%%/; s=\b([a-z][a-z0-9]+)\b=\U$$1\E=g if /^%%DocumentFonts/ || /^%%\+/;' $(subst .mp,,$<).[0-9]*
-
-fonts.mp:
-	echo '% nothing' > fonts.mp
 
 always:
 	@:
