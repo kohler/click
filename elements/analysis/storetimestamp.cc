@@ -26,12 +26,10 @@ CLICK_DECLS
 StoreTimestamp::StoreTimestamp()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 StoreTimestamp::~StoreTimestamp()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int
