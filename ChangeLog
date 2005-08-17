@@ -1,3 +1,12 @@
+2005-08-17 Wednesday 05:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/storetimestamp.cc (1.2): nit
+
+2005-08-17 Wednesday 05:48  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: storetimestamp.cc (1.1), storetimestamp.hh
+	(1.1): add potentially useful element
+
 2005-08-17 Wednesday 02:56  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/tcpudp/: statelesstcpresp.cc (1.1), statelesstcpresp.hh
