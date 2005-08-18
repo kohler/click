@@ -1,3 +1,13 @@
+2005-08-18 Thursday 17:46  Nikitas Liogkas <nikitas@cs.ucla.edu>
+
+	* elements/local/taskschedule.hh (1.1): file taskschedule.hh was
+	initially added on branch RADSCHED-1.
+
+2005-08-18 Thursday 17:46  Nikitas Liogkas <nikitas@cs.ucla.edu>
+
+	* elements/local/taskschedule.cc (1.1): file taskschedule.cc was
+	initially added on branch RADSCHED-1.
+
 2005-08-17 Wednesday 05:50  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/storetimestamp.cc (1.2): nit
