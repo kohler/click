@@ -232,17 +232,21 @@ FromDevice::initialize(ErrorHandler *errh)
 
 # ifdef BIOCSSEESENT
 	{
-	    int accept = _outbound;
-	    if (ioctl(pcap_fd, BIOCSSEESENT, &accept) != 0)
-		return errh->error("FromDevice: BIOCSEESENT failed");
+	    int r, accept = _outbound;
+	    if ((r = ioctl(pcap_fd, BIOCSSEESENT, &accept)) == -1)
+		return errh->error("%s: BIOCSSEESENT: %s", ifname, strerror(errno));
+	    else if (r != 0)
+		errh->warning("%s: BIOCSSEESENT returns %d", ifname, r);
 	}
 # endif
 
 # if defined(BIOCIMMEDIATE) && !defined(__sun) // pcap/bpf ioctl, not in DLPI/bufmod
 	{
-	    int yes = 1;
-	    if (ioctl(pcap_fd, BIOCIMMEDIATE, &yes) != 0)
-		return errh->error("FromDevice: BIOCIMMEDIATE failed");
+	    int r, yes = 1;
+	    if ((r = ioctl(pcap_fd, BIOCIMMEDIATE, &yes)) == -1)
+		return errh->error("%s: BIOCIMMEDIATE: %s", ifname, strerror(errno));
+	    else if (r != 0)
+		errh->warning("%s: BIOCIMMEDIATE returns %d", ifname, r);
 	}
 # endif
 
