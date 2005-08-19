@@ -1,3 +1,15 @@
+2005-08-19 Friday 14:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/iproutetable.cc (1.16), lib/glue.cc (1.50),
+	lib/master.cc (1.30), tools/click-align/alignclass.hh (1.9),
+	tools/lib/elementt.hh (1.30), tools/lib/lexertinfo.hh (1.6):
+	gcc-4.0 cleanups
+
+2005-08-19 Friday 14:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/fromdevice.cc (1.55): report actual ioctl
+	errors
+
 2005-08-18 Thursday 17:46  Nikitas Liogkas <nikitas@cs.ucla.edu>
 
 	* elements/local/taskschedule.hh (1.1): file taskschedule.hh was
