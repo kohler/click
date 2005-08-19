@@ -4,9 +4,9 @@
 #include "eclasst.hh"
 #include "elementt.hh"
 
-class Aligner {
- public:
-  Aligner() { }
+class Aligner { public:
+    Aligner()		{ }
+    virtual ~Aligner()	{ }
   virtual void have_flow(const Vector<Alignment> &in, int ioff, int nin,
 			 Vector<Alignment> &out, int ooff, int nout);
   virtual void want_flow(Vector<Alignment> &in, int ioff, int nin,
@@ -15,8 +15,7 @@ class Aligner {
 			   const Vector<Alignment> &out, int ooff, int nout);
 };
 
-class NullAligner : public Aligner {
- public:
+class NullAligner : public Aligner { public:
   NullAligner() { }
   void have_flow(const Vector<Alignment> &in, int ioff, int nin,
 		 Vector<Alignment> &out, int ooff, int nout);

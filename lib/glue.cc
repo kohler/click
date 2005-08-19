@@ -340,7 +340,7 @@ srandom(uint32_t seed)
 static int
 click_qsort_partition(void *base_v, size_t size, int left, int right,
 		      int (*compar)(const void *, const void *, void *),
-		      int &split_left, int &split_right, void *thunk)
+		      int *split_left, int *split_right, void *thunk)
 {
     if (size >= 64) {
 #if CLICK_LINUXMODULE
@@ -348,6 +348,7 @@ click_qsort_partition(void *base_v, size_t size, int left, int right,
 #elif CLICK_BSDMODULE
 	printf("click_qsort_partition: elements too large!\n");
 #endif
+	*split_left = *split_right = 0;
 	return -E2BIG;
     }
     
@@ -381,8 +382,8 @@ click_qsort_partition(void *base_v, size_t size, int left, int right,
 
     // afterwards, middle == right + 1
     // so base[i] == pivot for all left <= i <= right
-    split_left = left - 1;
-    split_right = right + 1;
+    *split_left = left - 1;
+    *split_right = right + 1;
     return 0;
 }
 
@@ -392,7 +393,7 @@ click_qsort_subroutine(void *base, size_t size, int left, int right, int (*compa
     // XXX recursion
     if (left < right) {
 	int split_left, split_right;
-	click_qsort_partition(base, size, left, right, compar, split_left, split_right, thunk);
+	click_qsort_partition(base, size, left, right, compar, &split_left, &split_right, thunk);
 	click_qsort_subroutine(base, size, left, split_left, compar, thunk);
 	click_qsort_subroutine(base, size, split_right, right, compar, thunk);
     }

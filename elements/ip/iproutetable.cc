@@ -215,7 +215,7 @@ IPRouteTable::ctrl_handler(const String &conf_in, Element *e, void *, ErrorHandl
     const char* s = conf.begin(), *end = conf.end();
     
     Vector<IPRoute> old_routes;
-    int r;
+    int r = 0;
     
     while (s < end) {
 	const char* nl = find(s, end, '\n');
@@ -245,13 +245,13 @@ IPRouteTable::ctrl_handler(const String &conf_in, Element *e, void *, ErrorHandl
 
   rollback:
     while (old_routes.size()) {
-	const IPRoute& r = old_routes.back();
-	if (r.extra == CMD_REMOVE)
-	    table->add_route(r, false, 0, errh);
-	else if (r.extra == CMD_ADD)
-	    table->remove_route(r, 0, errh);
+	const IPRoute& rt = old_routes.back();
+	if (rt.extra == CMD_REMOVE)
+	    table->add_route(rt, false, 0, errh);
+	else if (rt.extra == CMD_ADD)
+	    table->remove_route(rt, 0, errh);
 	else
-	    table->add_route(r, true, 0, errh);
+	    table->add_route(rt, true, 0, errh);
 	old_routes.pop_back();
     }
     return r;

@@ -7,7 +7,8 @@ class ElementClassT;
 
 class LexerTInfo { public:
 
-    LexerTInfo() { }
+    LexerTInfo()		{ }
+    virtual ~LexerTInfo()	{ }
     
     virtual void notify_comment(int pos1, int pos2);
     virtual void notify_error(const String &message, int pos1, int pos2);

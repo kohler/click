@@ -81,7 +81,7 @@ struct PortT {
     ElementT *element;
     int port;
 
-    PortT()				: element(0) { }
+    PortT()				: element(0), port(-1) { }
     PortT(ElementT *e, int p)		: element(e), port(p) { }
 
     bool live() const			{ return element != 0; }
