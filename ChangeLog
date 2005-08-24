@@ -1,3 +1,8 @@
+2005-08-23 Tuesday 20:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/diagrams/elements.mp (1.10): scaled arrowheads don't push
+	beyond their path endpoints
+
 2005-08-19 Friday 14:40  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/iproutetable.cc (1.16), lib/glue.cc (1.50),
