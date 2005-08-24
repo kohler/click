@@ -367,6 +367,8 @@ enddef;
 
 %% connections
 
+picture _cutarrpic;
+
 vardef arrowhead expr p =
   save q,h,e,f; path q,h; pair e,f;
   e = point length p of p;
@@ -377,9 +379,28 @@ vardef arrowhead expr p =
   f = point 0 of h;
   (q rotated .5ahangle & reverse q rotated -.5ahangle -- f -- cycle)  shifted e
 enddef;
+def _cutarr(expr b,e) text t =
+  _cutarrpic := image(draw (0,0) -- (1,0) -- cycle t);
+  _cutarramt := (2ypart urcorner _cutarrpic / sind .5ahangle) - 0.75;
+  if _cutarramt > 0:
+    _apth := subpath (xpart(_apth intersectiontimes makepath(pencircle
+	  scaled (b*_cutarramt)) shifted (point 0 of _apth)),
+      xpart(_apth intersectiontimes makepath(pencircle scaled (e*_cutarramt))
+  shifted (point length _apth of _apth))) of _apth;
+  fi
+enddef;
 def _finarr text t =
+  _cutarr(0,1) t;
   draw (subpath (0, xpart(_apth intersectiontimes makepath(pencircle scaled 1.2ahlength) shifted (point length _apth of _apth))) of _apth) t;
   fill arrowhead _apth  t
+enddef;
+def _findarr text t =
+  _cutarr(1,1) t;
+  draw (subpath
+    (xpart(_apth intersectiontimes makepath(pencircle scaled 1.2ahlength) shifted (point 0 of _apth)),
+     xpart(_apth intersectiontimes makepath(pencircle scaled 1.2ahlength) shifted (point length _apth of _apth))) of _apth) t;
+  fill arrowhead _apth  t;
+  fill arrowhead reverse _apth  t
 enddef;
 
 def connectpath(suffix $,#,##,$$) =
