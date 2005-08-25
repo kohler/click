@@ -55,7 +55,10 @@ Master::Master(int nthreads)
     // Add a null 'struct pollfd', then take it off. This ensures that
     // _pollfds.begin() is nonnull, preventing crashes on Mac OS X
     struct pollfd dummy;
-    dummy.revents = dummy.events = dummy.fd = 0;
+    dummy.events = dummy.fd = 0;
+# if HAVE_POLL_H
+    dummy.revents = 0;
+# endif
     _pollfds.push_back(dummy);
     _pollfds.clear();
 #endif
