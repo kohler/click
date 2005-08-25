@@ -244,5 +244,11 @@ private:
   Packet *simple_action(Packet *);
 };
 
+template <class T> void grid_swap(T &a, T &b) {
+    T t = a;
+    a = b;
+    b = t;
+}
+
 CLICK_ENDDECLS
 #endif

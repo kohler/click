@@ -85,8 +85,8 @@ ThresholdMetric::get_link_metric(const EtherAddress &e, bool data_sender) const
   // Translate LinkStat fwd/rev data path fwd/rev
   // reverse.
   if (!data_sender) {
-    swap(res_fwd, res_rev);
-    swap(r_fwd, r_rev);
+    grid_swap(res_fwd, res_rev);
+    grid_swap(r_fwd, r_rev);
   }
 
   if (!res_fwd || (_twoway && !res_rev))

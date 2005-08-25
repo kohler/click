@@ -117,12 +117,6 @@ void click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, 
 
 // OTHER
 
-template <class T> void swap(T &x, T &y) {
-    T t = x;
-    x = y;
-    y = t;
-}
-
 #if CLICK_LINUXMODULE
 
 // current processor
