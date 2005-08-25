@@ -1,3 +1,11 @@
+2005-08-25 Thursday 00:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/grid/e2elossmetric.cc (1.6), elements/grid/linkstat.hh
+	(1.20), elements/grid/threshmetric.cc (1.7),
+	elements/grid/yarvismetric.cc (1.5), include/click/glue.hh (1.50):
+	remove Click's swap() function, since it causes compilation errors
+	with gcc-4.0
+
 2005-08-23 Tuesday 20:30  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/diagrams/elements.mp (1.10): scaled arrowheads don't push
