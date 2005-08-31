@@ -1,3 +1,16 @@
+2005-08-31 Wednesday 13:42  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-userlevel.h.in (1.29), configure (1.57), configure.in
+	(1.264), elements/userlevel/changeuid.cc (1.1),
+	elements/userlevel/changeuid.hh (1.1),
+	elements/userlevel/fromdevice.hh (1.31),
+	etc/libclick/lc-configure.in (1.42), include/click/element.hh
+	(1.39): support set-uid-root programs a bit better.  Now those
+	elements that need root privilege, namely From and ToDevice, are
+	configured at CONFIGURE_PHASE_PRIVILEGED or below.  A new element,
+	ChangeUID, runs immediately after, and drops root privilege. 
+	Requested by Mark Allman
+
 2005-08-25 Thursday 00:43  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/master.cc (1.31): pollfd::revents doesnt always exist
