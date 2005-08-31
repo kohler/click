@@ -122,8 +122,8 @@ Returns a string indicating the encapsulation type on this link. Can be
 class FromDevice : public Element { public:
 
     enum ConfigurePhase {
-	CONFIGURE_PHASE_FROMDEVICE = CONFIGURE_PHASE_DEFAULT,
-	CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMDEVICE + 1
+	CONFIGURE_PHASE_FROMDEVICE = CONFIGURE_PHASE_PRIVILEGED - 1,
+	CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_PRIVILEGED
     };
   
     FromDevice();

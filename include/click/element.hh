@@ -97,7 +97,8 @@ class Element { public:
 
     enum ConfigurePhase {
 	CONFIGURE_PHASE_FIRST = 0, CONFIGURE_PHASE_INFO = 20,
-	CONFIGURE_PHASE_DEFAULT = 100, CONFIGURE_PHASE_LAST = 2000
+	CONFIGURE_PHASE_PRIVILEGED = 90, CONFIGURE_PHASE_DEFAULT = 100,
+	CONFIGURE_PHASE_LAST = 2000
     };
     virtual int configure_phase() const;
     virtual int configure(Vector<String>&, ErrorHandler*);
