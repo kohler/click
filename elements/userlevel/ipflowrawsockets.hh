@@ -14,8 +14,6 @@
  * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
- *
- * $Id: ipflowrawsockets.hh,v 1.4 2004/06/22 16:54:39 eddietwo Exp $
  */
 
 #ifndef CLICK_IPFLOWRAWSOCKETS_HH
@@ -160,7 +158,7 @@ class IPFlowRawSockets : public Element, public AggregateListener { public:
 	int rd()			{ return _rd; }
 	pcap_t *pcap()			{ return _pcap; }
 	int datalink()			{ return _datalink; }
-
+	int sport()                     { return _flowid.sport(); }
 	void send_pkt(Packet *, ErrorHandler *);
 
       private:

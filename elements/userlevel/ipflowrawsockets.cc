@@ -14,8 +14,6 @@
  * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
- *
- * $Id: ipflowrawsockets.cc,v 1.9 2005/02/07 20:41:11 eddietwo Exp $
  */
 
 #include <click/config.h>
@@ -42,6 +40,7 @@ extern "C" {
 }
 
 #include "fakepcap.hh"
+#include <clicknet/udp.h>
 
 CLICK_DECLS
 
@@ -322,13 +321,13 @@ IPFlowRawSockets::selected(int fd)
     Flow *f = _flows[fd];
     assert(f);
 
-    if (f->pcap()) {
-	// Read and push() at most one packet.
-	p = Packet::make(_snaplen);
-	if (!p)
-	    return;
-	p->take(p->length());
+    // Read and push() at most one packet.
+    p = Packet::make(_snaplen);
+    if (!p)
+	return;
+    p->take(p->length());
 
+    if (f->pcap()) {
 	pcap_dispatch(f->pcap(), 1, IPFlowRawSockets_get_packet, (u_char *) p);
 	if (p->length() && fake_pcap_force_ip(p, f->datalink())) {
 	    // Pull off the link header
@@ -337,35 +336,45 @@ IPFlowRawSockets::selected(int fd)
 	} else
 	    p->kill();
     } else {
-	// Read as many packets as are buffered.
-	do {
-	    p = Packet::make(_snaplen);
+	// read data from socket
+	len = read(fd, p->end_data(), p->tailroom());
+
+	if (len > 0) {
+	    p = p->put(len);
 	    if (!p)
-		break;
-	    p->take(p->length());
+		return;
 
-	    // read data from socket
-	    len = read(fd, p->end_data(), p->tailroom());
-
-	    if (len > 0) {
-		p = p->put(len);
-		if (!p)
-		    break;
 #ifdef SIOCGSTAMP
-		// set timestamp
-		p->timestamp_anno().set_timeval_ioctl(fd, SIOCGSTAMP);
+	    // set timestamp
+	    p->timestamp_anno().set_timeval_ioctl(fd, SIOCGSTAMP);
 #endif
-		// set IP annotations
-		if (fake_pcap_force_ip(p, FAKE_DLT_RAW)) {
-		    output(0).push(p);
-		    continue;
+	    // set IP annotations
+	    if (fake_pcap_force_ip(p, FAKE_DLT_RAW)) {
+		switch (p->ip_header()->ip_p) {
+		case IPPROTO_TCP:
+		    //click_chatter("TCP ports: %d %d", f->sport(),
+		    //	      p->tcp_header()->th_dport);
+		    if (f->sport() != p->tcp_header()->th_dport)
+			goto drop;
+		    break;
+		case IPPROTO_UDP:
+		    //click_chatter("UDP ports: %d %d", f->sport(),
+		    //      p->udp_header()->uh_dport);
+		    if (f->sport() != p->udp_header()->uh_dport)
+			goto drop;
+		    break;
+		default:
+		    break;
 		}
+		output(0).push(p);
+		return;
 	    }
+	}
 
-	    p->kill();
-	    if (len <= 0 && errno != EAGAIN)
-		errh->error("%s: read: %s", declaration().cc(), strerror(errno));
-	} while (len > 0);
+    drop:
+	p->kill();
+	if (len <= 0 && errno != EAGAIN)
+	    errh->error("%s: read: %s", declaration().cc(), strerror(errno));
     }
 }
 
