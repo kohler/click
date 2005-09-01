@@ -1,3 +1,8 @@
+2005-09-01 Thursday 02:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/proclikefs.c (1.18): restore #include
+	<linux/modversions.h> for 2.4 -- Juncheol Park reported the fix
+
 2005-08-31 Wednesday 20:58  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/: fromrawsocket.cc (1.4), fromrawsocket.hh
