@@ -23,6 +23,9 @@
 #endif
 #ifdef CONFIG_MODVERSIONS
 # define MODVERSIONS
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#  include <linux/modversions.h>
+# endif
 #endif
 #include <linux/module.h>
 #include "proclikefs.h"
