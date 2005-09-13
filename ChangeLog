@@ -1,3 +1,14 @@
+2005-09-13 Tuesday 02:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/: clickfs.cc (1.46), clickfs.cc (1.47), clickfs.cc
+	(1.48): oops: threads are on Master
+
+2005-09-13 Tuesday 02:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/master.hh (1.13), include/click/router.hh (1.74),
+	lib/router.cc (1.178), linuxmodule/clickfs.cc (1.45): add EXCLUSIVE
+	handler flag (Thomas Paine/Mike Walfish) (not tested)
+
 2005-09-13 Tuesday 01:17  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* bsdmodule/module.cc (1.19), etc/samplellrpc/README (1.2),
