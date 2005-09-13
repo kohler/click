@@ -56,15 +56,21 @@ extern "C" int read_net_skbcount(void);
 static String
 read_meminfo(Element *, void *)
 {
-  extern size_t click_new_count; /* glue.cc */
-  extern size_t click_outstanding_news; /* glue.cc */
-  StringAccum sa;
-  sa << "outstanding news " << click_outstanding_news << "\n";
-  sa << "news " << click_new_count << "\n";
-#ifdef HAVE_LINUX_READ_NET_SKBCOUNT
-  sa << "net_skbcount " << read_net_skbcount() << "\n";
+    extern size_t click_dmalloc_curnew, click_dmalloc_totalnew;
+#if CLICK_DMALLOC
+    extern size_t click_dmalloc_curmem, click_dmalloc_maxmem;
 #endif
-  return sa.take_string();
+    StringAccum sa;
+    sa << "outstanding news " << click_dmalloc_totalnew << "\n"
+       << "news " << click_dmalloc_curnew << "\n";
+#if CLICK_DMALLOC
+    sa << "current allocated mem " << click_dmalloc_curmem << '\n'
+       << "max allocated mem " << click_dmalloc_maxmem << '\n';
+#endif
+#ifdef HAVE_LINUX_READ_NET_SKBCOUNT
+    sa << "net_skbcount " << read_net_skbcount() << "\n";
+#endif
+    return sa.take_string();
 }
 
 static String
@@ -263,8 +269,7 @@ void click_dmalloc_cleanup();
 extern "C" void
 cleanup_module()
 {
-  extern int click_new_count; /* glue.cc */
-  extern int click_outstanding_news; /* glue.cc */
+  extern size_t click_dmalloc_curnew; /* glue.cc */
   
   // filesystem interface
   cleanup_clickfs();
@@ -298,8 +303,8 @@ cleanup_module()
   // report memory leaks
   if (Element::nelements_allocated)
     printk("<1>click error: %d elements still allocated\n", Element::nelements_allocated);
-  if (click_outstanding_news) {
-    printk("<1>click error: %d outstanding news\n", click_outstanding_news);
+  if (click_dmalloc_curnew) {
+    printk("<1>click error: %d outstanding news\n", click_dmalloc_curnew);
     click_dmalloc_cleanup();
   }
 #ifdef HAVE_LINUX_READ_NET_SKBCOUNT

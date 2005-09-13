@@ -120,9 +120,13 @@ click_chatter(const char *fmt, ...)
 
 // DEBUG MALLOC
 
-size_t click_new_count = 0;
-size_t click_outstanding_news = 0;
 uint32_t click_dmalloc_where = 0x3F3F3F3F;
+size_t click_dmalloc_curnew = 0;
+size_t click_dmalloc_totalnew = 0;
+#if CLICK_DMALLOC
+size_t click_dmalloc_curmem = 0;
+size_t click_dmalloc_maxmem = 0;
+#endif
 
 #if CLICK_LINUXMODULE || CLICK_BSDMODULE
 
@@ -172,8 +176,8 @@ printable_where(Chunk *c)
 void *
 operator new(size_t sz) throw ()
 {
-  click_new_count++;
-  click_outstanding_news++;
+  click_dmalloc_curnew++;
+  click_dmalloc_totalnew++;
 # if CLICK_DMALLOC
   void *v = CLICK_ALLOC(sz + sizeof(Chunk));
   Chunk *c = (Chunk *)v;
@@ -183,6 +187,9 @@ operator new(size_t sz) throw ()
   c->prev = &chunks;
   c->next = chunks.next;
   c->next->prev = chunks.next = c;
+  click_dmalloc_curmem += sz;
+  if (click_dmalloc_curmem > click_dmalloc_maxmem)
+      click_dmalloc_maxmem = click_dmalloc_curmem;
   return (void *)((unsigned char *)v + sizeof(Chunk));
 # else
   return CLICK_ALLOC(sz);
@@ -192,8 +199,8 @@ operator new(size_t sz) throw ()
 void *
 operator new[](size_t sz) throw ()
 {
-  click_new_count++;
-  click_outstanding_news++;
+  click_dmalloc_curnew++;
+  click_dmalloc_totalnew++;
 # if CLICK_DMALLOC
   void *v = CLICK_ALLOC(sz + sizeof(Chunk));
   Chunk *c = (Chunk *)v;
@@ -203,6 +210,9 @@ operator new[](size_t sz) throw ()
   c->prev = &chunks;
   c->next = chunks.next;
   c->next->prev = chunks.next = c;
+  click_dmalloc_curmem += sz;
+  if (click_dmalloc_curmem > click_dmalloc_maxmem)
+      click_dmalloc_maxmem = click_dmalloc_curmem;
   return (void *)((unsigned char *)v + sizeof(Chunk));
 # else
   return CLICK_ALLOC(sz);
@@ -213,7 +223,7 @@ void
 operator delete(void *addr)
 {
   if (addr) {
-    click_outstanding_news--;
+    click_dmalloc_curnew--;
 # if CLICK_DMALLOC
     Chunk *c = (Chunk *)((unsigned char *)addr - sizeof(Chunk));
     if (c->magic == CHUNK_MAGIC_FREED) {
@@ -225,6 +235,7 @@ operator delete(void *addr)
       click_chatter("click error: memory corruption on delete %p\n", addr);
       return;
     }
+    click_dmalloc_curmem -= c->size;
     c->magic = CHUNK_MAGIC_FREED;
     c->prev->next = c->next;
     c->next->prev = c->prev;
@@ -239,7 +250,7 @@ void
 operator delete[](void *addr)
 {
   if (addr) {
-    click_outstanding_news--;
+    click_dmalloc_curnew--;
 # if CLICK_DMALLOC
     Chunk *c = (Chunk *)((unsigned char *)addr - sizeof(Chunk));
     if (c->magic == CHUNK_MAGIC_FREED) {
@@ -251,6 +262,7 @@ operator delete[](void *addr)
       click_chatter("click error: memory corruption on delete[] %p\n", addr);
       return;
     }
+    click_dmalloc_curmem -= c->size;
     c->magic = CHUNK_MAGIC_FREED;
     c->prev->next = c->next;
     c->next->prev = c->prev;

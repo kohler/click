@@ -54,11 +54,17 @@ read_cycles(Element *, void *)
 static String
 read_meminfo(Element *, void *)
 {
-    extern size_t click_new_count; /* glue.cc */
-    extern size_t click_outstanding_news; /* glue.cc */
+    extern size_t click_dmalloc_curnew, click_dmalloc_totalnew;
+#if CLICK_DMALLOC
+    extern size_t click_dmalloc_curmem, click_dmalloc_maxmem;
+#endif
     StringAccum sa;
-    sa << "outstanding news " << click_outstanding_news << "\n";
-    sa << "news " << click_new_count << "\n";
+    sa << "outstanding news " << click_dmalloc_totalnew << "\n"
+       << "news " << click_dmalloc_curnew << "\n";
+#if CLICK_DMALLOC
+    sa << "current allocated mem " << click_dmalloc_curmem << '\n'
+       << "max allocated mem " << click_dmalloc_maxmem << '\n';
+#endif
     return sa.take_string();
 }
 
@@ -267,8 +273,7 @@ void click_dmalloc_cleanup();
 extern "C" void
 cleanup_module()
 {
-    extern int click_new_count; /* glue.cc */
-    extern int click_outstanding_news; /* glue.cc */
+    extern int click_dmalloc_curnew; /* glue.cc */
 
     // netgraph hooks
     ng_ether_input_p = 0;
@@ -305,8 +310,8 @@ cleanup_module()
     // report memory leaks
     if (Element::nelements_allocated)
 	printf("click error: %d elements still allocated\n", Element::nelements_allocated);
-    if (click_outstanding_news) {
-	printf("click error: %d outstanding news\n", click_outstanding_news);
+    if (click_dmalloc_curnew) {
+	printf("click error: %d outstanding news\n", click_dmalloc_curnew);
 	click_dmalloc_cleanup();
     }
 }
