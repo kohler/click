@@ -1,3 +1,9 @@
+2005-09-13 Tuesday 01:17  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* bsdmodule/module.cc (1.19), etc/samplellrpc/README (1.2),
+	lib/glue.cc (1.51), linuxmodule/module.cc (1.90): count amount of
+	memory allocated (idea from Alastair McKinley)
+
 2005-09-01 Thursday 02:40  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* linuxmodule/proclikefs.c (1.18): restore #include
