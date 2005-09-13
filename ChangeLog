@@ -1,3 +1,8 @@
+2005-09-13 Tuesday 11:31  John Bicket <jbicket@mit.edu>
+
+	* elements/ethernet/etherencap.cc (1.23): read/write ethertype in
+	addition to src/dst
+
 2005-09-13 Tuesday 02:13  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* linuxmodule/: clickfs.cc (1.46), clickfs.cc (1.47), clickfs.cc
