@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/straccum.hh>
 CLICK_DECLS
 
 EtherEncap::EtherEncap()
@@ -80,6 +81,7 @@ EtherEncap::read_handler(Element *e, void *thunk)
   switch ((intptr_t)thunk) {
    case 0:	return EtherAddress(ee->_ethh.ether_shost).s() + "\n";
    case 1:	return EtherAddress(ee->_ethh.ether_dhost).s() + "\n";
+   case 2:	return String(ntohs(ee->_ethh.ether_type)) + "\n";
    default:	return "<error>\n";
   }
 }
@@ -91,6 +93,8 @@ EtherEncap::add_handlers()
   add_write_handler("src", reconfigure_positional_handler, (void *)1);
   add_read_handler("dst", read_handler, (void *)1);
   add_write_handler("dst", reconfigure_positional_handler, (void *)2);
+  add_read_handler("etht", read_handler, (void *)2);
+  add_write_handler("etht", reconfigure_positional_handler, (void *)0);
 }
 
 CLICK_ENDDECLS
