@@ -515,7 +515,7 @@ static void
 unlock_threads()
 {
     click_master->release_lock();
-    for (int i = click_master->nthreads() - 1; r >= 0; i--)
+    for (int i = click_master->nthreads() - 1; i >= 0; i--)
 	click_master->thread(i)->unlock_tasks();
 }
 
