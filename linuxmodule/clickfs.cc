@@ -501,6 +501,24 @@ free_handler_string(int hs)
     SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
 }
 
+static void
+lock_threads(Router *r)
+{
+    for (int i = 0; i < r->nthreads(); i++)
+	while (!r->thread(i)->attempt_lock_tasks())
+	    schedule();
+    r->master()->acquire_lock();
+}
+
+static void
+unlock_threads(Router *r)
+{
+    r->master()->release_lock();
+    for (int i = r->nthreads() - 1; r >= 0; i--)
+	r->thread(i)->unlock_tasks();
+}
+
+
 extern "C" {
 
 static int
@@ -565,7 +583,12 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	else {
 	    int eindex = INO_ELEMENTNO(inode->i_ino);
 	    Element *e = Router::element(click_router, eindex);
-	    handler_strings[stringno] = h->call_read(e);
+	    if (h->exclusive()) {
+		lock_threads(click_router);
+		handler_strings[stringno] = h->call_read(e);
+		unlock_threads(click_router);
+	    } else
+		handler_strings[stringno] = h->call_read(e);
 	    retval = (handler_strings[stringno].out_of_memory() ? -ENOMEM : 0);
 	}
 	UNLOCK_CONFIG_READ();
@@ -655,7 +678,12 @@ handler_flush(struct file *filp)
 	    if (e)
 		context_string += String(" for '") + e->declaration() + "'";
 	    ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
-	    retval = h->call_write(handler_strings[stringno], e, &cerrh);
+	    if (h->exclusive()) {
+		lock_threads(click_router);
+		retval = h->call_write(handler_strings[stringno], e, &cerrh);
+		unlock_threads(click_router);
+	    } else
+		retval = h->call_write(handler_strings[stringno], e, &cerrh);
 	}
 	
 	UNLOCK_CONFIG_WRITE();

@@ -264,10 +264,11 @@ class Handler { public:
 
     enum {
 	OP_READ = 1, OP_WRITE = 2, READ_PARAM = 4, ONE_HOOK = 8,
-	PRIVATE_MASK = 0xF, 
-	DRIVER_FLAG_0 = 16, DRIVER_FLAG_1 = 32, DRIVER_FLAG_2 = 64,
-	DRIVER_FLAG_3 = 128,
-	USER_FLAG_SHIFT = 8, USER_FLAG_0 = 1 << USER_FLAG_SHIFT
+	PRIVATE_MASK = 0xF,
+	EXCLUSIVE = 16,
+	DRIVER_FLAG_0 = 32, DRIVER_FLAG_1 = 64,
+	DRIVER_FLAG_2 = 128, DRIVER_FLAG_3 = 256,
+	USER_FLAG_SHIFT = 9, USER_FLAG_0 = 1 << USER_FLAG_SHIFT
     };
 
     const String& name() const	{ return _name; }
@@ -281,6 +282,7 @@ class Handler { public:
     bool writable() const	{ return _flags & OP_WRITE; }
     bool write_visible() const	{ return _flags & OP_WRITE; }
     bool visible() const	{ return _flags & (OP_READ | OP_WRITE); }
+    bool exclusive() const	{ return _flags & EXCLUSIVE; }
 
     inline String call_read(Element*, ErrorHandler* = 0) const;
     String call_read(Element*, const String&, ErrorHandler* = 0) const;

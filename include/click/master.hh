@@ -50,6 +50,9 @@ class Master { public:
     simclick_click clickinst() const		{ return _clickinst; }
 #endif
 
+    void acquire_lock()				{ _master_lock.acquire(); }
+    void release_lock()				{ _master_lock.release(); }
+    
 #if CLICK_DEBUG_MASTER
     String info() const;
 #endif
