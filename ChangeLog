@@ -392,18 +392,313 @@
 	elements/standard/painttee.cc (1.15), elements/standard/painttee.hh
 	(1.9), elements/standard/pokehandlers.cc (1.36),
 	elements/standard/print.cc (1.30), elements/standard/print.hh
-	(1.17): Begin adding doxygen documentation comments to important
-	header files.  For now, Element and String.  Deprecate
-	String::null_string() in favor of String::empty_string(). 
-	Deprecate String::cc() in favor of String::c_str().  Add
-	Element::port_count() method.  This returns a port count
-	descriptor, such as "1/1-2" (one input port, one or two output
-	ports), sort of like a processing descriptor.  port_count() is
-	preferred to notify_ninputs(), notify_noutputs(), set_ninputs(),
-	set_noutputs(), add_input(), and add_output(), and all those
-	functions are now deprecated.  This allows Router to set up port
-	counts, processing, and connections *before* configure() runs
-	(although for compatibility configure() can still call
+	(1.17), elements/standard/priosched.cc (1.15),
+	elements/standard/priosched.hh (1.15),
+	elements/standard/pullswitch.cc (1.24),
+	elements/standard/pullswitch.hh (1.19),
+	elements/standard/randomerror.cc (1.27),
+	elements/standard/randomerror.hh (1.18),
+	elements/standard/randomsample.cc (1.8),
+	elements/standard/randomsample.hh (1.9),
+	elements/standard/randomsource.cc (1.24),
+	elements/standard/randomsource.hh (1.15),
+	elements/standard/randomswitch.cc (1.5),
+	elements/standard/randomswitch.hh (1.4),
+	elements/standard/ratedsource.cc (1.54),
+	elements/standard/ratedsource.hh (1.31),
+	elements/standard/ratedsplitter.cc (1.23),
+	elements/standard/ratedsplitter.hh (1.21),
+	elements/standard/ratedunqueue.cc (1.28),
+	elements/standard/ratedunqueue.hh (1.20),
+	elements/standard/rrsched.cc (1.14), elements/standard/rrsched.hh
+	(1.16), elements/standard/rrswitch.cc (1.14),
+	elements/standard/rrswitch.hh (1.15),
+	elements/standard/scheduleinfo.cc (1.42),
+	elements/standard/setannobyte.cc (1.6),
+	elements/standard/setannobyte.hh (1.4),
+	elements/standard/setcrc32.cc (1.15), elements/standard/setcrc32.hh
+	(1.10), elements/standard/setpackettype.cc (1.6),
+	elements/standard/setpackettype.hh (1.5),
+	elements/standard/settimestamp.cc (1.11),
+	elements/standard/settimestamp.hh (1.9),
+	elements/standard/shaper.cc (1.36), elements/standard/shaper.hh
+	(1.24), elements/standard/simplequeue.cc (1.12),
+	elements/standard/simplequeue.hh (1.13),
+	elements/standard/spinlockacquire.cc (1.8),
+	elements/standard/spinlockacquire.hh (1.9),
+	elements/standard/spinlockrelease.cc (1.8),
+	elements/standard/spinlockrelease.hh (1.9),
+	elements/standard/staticpullswitch.cc (1.14),
+	elements/standard/staticpullswitch.hh (1.10),
+	elements/standard/staticswitch.cc (1.14),
+	elements/standard/staticswitch.hh (1.9),
+	elements/standard/storedata.cc (1.4),
+	elements/standard/storedata.hh (1.3),
+	elements/standard/stridesched.cc (1.23),
+	elements/standard/stridesched.hh (1.23),
+	elements/standard/strideswitch.cc (1.14),
+	elements/standard/strideswitch.hh (1.14),
+	elements/standard/strip.cc (1.20), elements/standard/strip.hh
+	(1.19), elements/standard/striptonet.cc (1.4),
+	elements/standard/striptonet.hh (1.4),
+	elements/standard/suppressor.cc (1.21),
+	elements/standard/suppressor.hh (1.16), elements/standard/switch.cc
+	(1.25), elements/standard/switch.hh (1.23),
+	elements/standard/tee.cc (1.24), elements/standard/tee.hh (1.16),
+	elements/standard/timedsink.cc (1.29),
+	elements/standard/timedsink.hh (1.19),
+	elements/standard/timedsource.cc (1.34),
+	elements/standard/timedsource.hh (1.21),
+	elements/standard/unqueue.cc (1.30), elements/standard/unqueue.hh
+	(1.15), elements/standard/unqueue2.cc (1.15),
+	elements/standard/unqueue2.hh (1.8), elements/standard/unstrip.cc
+	(1.9), elements/standard/unstrip.hh (1.6),
+	elements/tcpudp/checktcpheader.cc (1.20),
+	elements/tcpudp/checktcpheader.hh (1.10),
+	elements/tcpudp/checkudpheader.cc (1.20),
+	elements/tcpudp/checkudpheader.hh (1.10),
+	elements/tcpudp/dynudpipencap.cc (1.19),
+	elements/tcpudp/dynudpipencap.hh (1.12),
+	elements/tcpudp/iprewriter.cc (1.47), elements/tcpudp/iprewriter.hh
+	(1.27), elements/tcpudp/settcpchecksum.cc (1.16),
+	elements/tcpudp/settcpchecksum.hh (1.7),
+	elements/tcpudp/setudpchecksum.cc (1.6),
+	elements/tcpudp/setudpchecksum.hh (1.5),
+	elements/tcpudp/snooptcp.cc (1.10), elements/tcpudp/snooptcp.hh
+	(1.9), elements/tcpudp/tcpipsend.cc (1.17),
+	elements/tcpudp/tcpipsend.hh (1.6), elements/tcpudp/tcprewriter.cc
+	(1.39), elements/tcpudp/tcprewriter.hh (1.19),
+	elements/tcpudp/udpipencap.cc (1.21), elements/tcpudp/udpipencap.hh
+	(1.12), elements/test/checkpacket.cc (1.5),
+	elements/test/checkpacket.hh (1.4), elements/test/comparepackets.cc
+	(1.5), elements/test/comparepackets.hh (1.4),
+	elements/test/queueyanktest.cc (1.4),
+	elements/test/queueyanktest.hh (1.3),
+	elements/test/schedordertest.cc (1.3),
+	elements/test/schedordertest.hh (1.3), elements/test/truncate.cc
+	(1.3), elements/test/truncate.hh (1.2),
+	elements/test/upstreamnotifier.cc (1.3),
+	elements/test/upstreamnotifier.hh (1.2),
+	elements/userlevel/chattersocket.cc (1.20),
+	elements/userlevel/controlsocket.cc (1.60),
+	elements/userlevel/fromdevice.cc (1.56),
+	elements/userlevel/fromdevice.hh (1.32),
+	elements/userlevel/fromdump.cc (1.97),
+	elements/userlevel/fromdump.hh (1.58),
+	elements/userlevel/fromfile.cc (1.10),
+	elements/userlevel/fromhost.cc (1.8),
+	elements/userlevel/fromhost.hh (1.7),
+	elements/userlevel/handlerproxy.cc (1.5),
+	elements/userlevel/ipflowrawsockets.cc (1.11),
+	elements/userlevel/ipflowrawsockets.hh (1.6),
+	elements/userlevel/kerneltap.cc (1.46),
+	elements/userlevel/kerneltap.hh (1.22),
+	elements/userlevel/kerneltun.cc (1.53),
+	elements/userlevel/kerneltun.hh (1.23),
+	elements/userlevel/khandlerproxy.cc (1.24),
+	elements/userlevel/printold.cc (1.13),
+	elements/userlevel/printold.hh (1.6),
+	elements/userlevel/rawsocket.cc (1.2),
+	elements/userlevel/rawsocket.hh (1.2), elements/userlevel/socket.cc
+	(1.2), elements/userlevel/socket.hh (1.2),
+	elements/userlevel/todevice.cc (1.52),
+	elements/userlevel/todevice.hh (1.32), elements/userlevel/todump.cc
+	(1.63), elements/userlevel/todump.hh (1.38),
+	elements/userlevel/tohost.cc (1.4), elements/userlevel/tohost.hh
+	(1.3), elements/wifi/arptable.cc (1.6), elements/wifi/arptable.hh
+	(1.4), elements/wifi/autoratefallback.cc (1.19),
+	elements/wifi/autoratefallback.hh (1.13),
+	elements/wifi/availablerates.cc (1.9),
+	elements/wifi/availablerates.hh (1.4), elements/wifi/copyrxstats.cc
+	(1.7), elements/wifi/copyrxstats.hh (1.4),
+	elements/wifi/extradecap.cc (1.4), elements/wifi/extradecap.hh
+	(1.5), elements/wifi/extraencap.cc (1.5),
+	elements/wifi/extraencap.hh (1.5), elements/wifi/filterfailures.cc
+	(1.9), elements/wifi/filterfailures.hh (1.7),
+	elements/wifi/filterphyerr.cc (1.3), elements/wifi/filterphyerr.hh
+	(1.2), elements/wifi/filtertx.cc (1.5), elements/wifi/filtertx.hh
+	(1.5), elements/wifi/linkfailuredetection.cc (1.13),
+	elements/wifi/linkfailuredetection.hh (1.7),
+	elements/wifi/linktable.cc (1.18), elements/wifi/madwifirate.cc
+	(1.18), elements/wifi/madwifirate.hh (1.10),
+	elements/wifi/printtxfeedback.cc (1.5),
+	elements/wifi/printtxfeedback.hh (1.2), elements/wifi/printwifi.cc
+	(1.14), elements/wifi/printwifi.hh (1.3),
+	elements/wifi/prism2decap.cc (1.4), elements/wifi/prism2decap.hh
+	(1.3), elements/wifi/prism2encap.cc (1.5),
+	elements/wifi/prism2encap.hh (1.3), elements/wifi/probetxrate.cc
+	(1.21), elements/wifi/probetxrate.hh (1.20),
+	elements/wifi/pushanno.cc (1.3), elements/wifi/pushanno.hh (1.4),
+	elements/wifi/radiotapdecap.cc (1.3),
+	elements/wifi/radiotapdecap.hh (1.2),
+	elements/wifi/radiotapencap.cc (1.3),
+	elements/wifi/radiotapencap.hh (1.2), elements/wifi/readanno.cc
+	(1.3), elements/wifi/readanno.hh (1.4), elements/wifi/rxstats.cc
+	(1.14), elements/wifi/rxstats.hh (1.12), elements/wifi/setrts.cc
+	(1.3), elements/wifi/setrts.hh (1.4), elements/wifi/settxpower.cc
+	(1.9), elements/wifi/settxpower.hh (1.7),
+	elements/wifi/settxrate.cc (1.22), elements/wifi/settxrate.hh
+	(1.15), elements/wifi/setwifiextraflag.cc (1.4),
+	elements/wifi/setwifiextraflag.hh (1.4),
+	elements/wifi/txfeedbackstats.cc (1.7),
+	elements/wifi/txfeedbackstats.hh (1.4), elements/wifi/txflog.cc
+	(1.4), elements/wifi/txflog.hh (1.3), elements/wifi/txstat.cc
+	(1.8), elements/wifi/txstat.hh (1.5), elements/wifi/wepdecap.cc
+	(1.7), elements/wifi/wepdecap.hh (1.4), elements/wifi/wepencap.cc
+	(1.6), elements/wifi/wepencap.hh (1.4), elements/wifi/wifidecap.cc
+	(1.14), elements/wifi/wifidecap.hh (1.6),
+	elements/wifi/wifidefrag.cc (1.3), elements/wifi/wifidefrag.hh
+	(1.2), elements/wifi/wifidupefilter.cc (1.7),
+	elements/wifi/wifidupefilter.hh (1.3), elements/wifi/wifiencap.cc
+	(1.14), elements/wifi/wifiencap.hh (1.7),
+	elements/wifi/wififragment.cc (1.3), elements/wifi/wififragment.hh
+	(1.2), elements/wifi/wifiseq.cc (1.4), elements/wifi/wifiseq.hh
+	(1.3), elements/wifi/wirelessinfo.cc (1.6),
+	elements/wifi/wirelessinfo.hh (1.4),
+	elements/wifi/analysis/counterrors.cc (1.6),
+	elements/wifi/analysis/counterrors.hh (1.4),
+	elements/wifi/analysis/countfecbytes.cc (1.3),
+	elements/wifi/analysis/countfecbytes.hh (1.3),
+	elements/wifi/analysis/countfragbytes.cc (1.6),
+	elements/wifi/analysis/countfragbytes.hh (1.5),
+	elements/wifi/analysis/errorthreshold.cc (1.3),
+	elements/wifi/analysis/errorthreshold.hh (1.3),
+	elements/wifi/analysis/locationhistogram.cc (1.4),
+	elements/wifi/analysis/locationhistogram.hh (1.3),
+	elements/wifi/ap/associationresponder.cc (1.10),
+	elements/wifi/ap/associationresponder.hh (1.5),
+	elements/wifi/ap/beaconsource.cc (1.10),
+	elements/wifi/ap/beaconsource.hh (1.6),
+	elements/wifi/ap/openauthresponder.cc (1.9),
+	elements/wifi/ap/openauthresponder.hh (1.5),
+	elements/wifi/ap/proberesponder.cc (1.9),
+	elements/wifi/ap/proberesponder.hh (1.4),
+	elements/wifi/ap/stationtable.cc (1.4),
+	elements/wifi/ap/stationtable.hh (1.3),
+	elements/wifi/frag/checkfragment.cc (1.3),
+	elements/wifi/frag/checkfragment.hh (1.3),
+	elements/wifi/frag/defragment.cc (1.3),
+	elements/wifi/frag/defragment.hh (1.5),
+	elements/wifi/frag/fragment.cc (1.3),
+	elements/wifi/frag/fragment.hh (1.3),
+	elements/wifi/frag/fragmentack.cc (1.4),
+	elements/wifi/frag/fragmentack.hh (1.5),
+	elements/wifi/frag/fragmentdecap.cc (1.3),
+	elements/wifi/frag/fragmentdecap.hh (1.3),
+	elements/wifi/frag/fragmentdupefilter.cc (1.3),
+	elements/wifi/frag/fragmentdupefilter.hh (1.4),
+	elements/wifi/frag/fragmentencap.cc (1.3),
+	elements/wifi/frag/fragmentencap.hh (1.3),
+	elements/wifi/frag/fragmentresender.cc (1.3),
+	elements/wifi/frag/fragmentresender.hh (1.4),
+	elements/wifi/frag/printfragment.cc (1.3),
+	elements/wifi/frag/printfragment.hh (1.3),
+	elements/wifi/sr/checksrheader.cc (1.6),
+	elements/wifi/sr/checksrheader.hh (1.5),
+	elements/wifi/sr/counterflood.cc (1.6),
+	elements/wifi/sr/counterflood.hh (1.4),
+	elements/wifi/sr/dupefilter.cc (1.3),
+	elements/wifi/sr/dupefilter.hh (1.2), elements/wifi/sr/ecnqueue.cc
+	(1.6), elements/wifi/sr/ecnqueue.hh (1.3),
+	elements/wifi/sr/ettmetric.cc (1.10), elements/wifi/sr/ettmetric.hh
+	(1.12), elements/wifi/sr/ettstat.cc (1.22),
+	elements/wifi/sr/ettstat.hh (1.16), elements/wifi/sr/flashflood.cc
+	(1.10), elements/wifi/sr/flashflood.hh (1.4),
+	elements/wifi/sr/floodtracker.cc (1.3),
+	elements/wifi/sr/floodtracker.hh (1.3),
+	elements/wifi/sr/gatewayselector.cc (1.12),
+	elements/wifi/sr/gatewayselector.hh (1.8),
+	elements/wifi/sr/inorderqueue.cc (1.6),
+	elements/wifi/sr/inorderqueue.hh (1.3),
+	elements/wifi/sr/ipaddresscounter.cc (1.4),
+	elements/wifi/sr/ipaddresscounter.hh (1.4),
+	elements/wifi/sr/linkmetric.hh (1.6),
+	elements/wifi/sr/localbroadcast.cc (1.6),
+	elements/wifi/sr/localbroadcast.hh (1.4),
+	elements/wifi/sr/metricflood.cc (1.5),
+	elements/wifi/sr/metricflood.hh (1.5), elements/wifi/sr/path.hh
+	(1.2), elements/wifi/sr/pflood.cc (1.6), elements/wifi/sr/pflood.hh
+	(1.3), elements/wifi/sr/printsr.cc (1.9),
+	elements/wifi/sr/printsr.hh (1.3), elements/wifi/sr/setgateway.cc
+	(1.6), elements/wifi/sr/setgateway.hh (1.7),
+	elements/wifi/sr/setsourceroute.cc (1.5),
+	elements/wifi/sr/setsourceroute.hh (1.4),
+	elements/wifi/sr/setsrchecksum.cc (1.4),
+	elements/wifi/sr/setsrchecksum.hh (1.3),
+	elements/wifi/sr/setsrflag.cc (1.3), elements/wifi/sr/setsrflag.hh
+	(1.2), elements/wifi/sr/srforwarder.cc (1.10),
+	elements/wifi/sr/srforwarder.hh (1.6), elements/wifi/sr/srlog.cc
+	(1.3), elements/wifi/sr/srlog.hh (1.2),
+	elements/wifi/sr/srquerier.cc (1.12), elements/wifi/sr/srquerier.hh
+	(1.8), elements/wifi/sr/srqueryforwarder.cc (1.9),
+	elements/wifi/sr/srqueryforwarder.hh (1.7),
+	elements/wifi/sr/srqueryresponder.cc (1.9),
+	elements/wifi/sr/srqueryresponder.hh (1.7),
+	elements/wifi/sr/stripsrheader.cc (1.3),
+	elements/wifi/sr/stripsrheader.hh (1.3),
+	elements/wifi/sr/tokenqueue.cc (1.8),
+	elements/wifi/sr/tokenqueue.hh (1.3),
+	elements/wifi/sr/txcountmetric.cc (1.5),
+	elements/wifi/sr/txcountmetric.hh (1.4),
+	elements/wifi/station/associationrequester.cc (1.15),
+	elements/wifi/station/associationrequester.hh (1.7),
+	elements/wifi/station/beaconscanner.cc (1.12),
+	elements/wifi/station/beaconscanner.hh (1.9),
+	elements/wifi/station/beacontracker.cc (1.4),
+	elements/wifi/station/beacontracker.hh (1.3),
+	elements/wifi/station/openauthrequester.cc (1.8),
+	elements/wifi/station/openauthrequester.hh (1.4),
+	elements/wifi/station/proberequester.cc (1.10),
+	elements/wifi/station/proberequester.hh (1.5), etc/ron/changeuid.cc
+	(1.8), etc/ron/changeuid.hh (1.4), etc/ron/divertsocket.cc (1.25),
+	etc/ron/divertsocket.hh (1.16), etc/ron/ipdecappaint.cc (1.5),
+	etc/ron/ipdecappaint.hh (1.3), etc/ron/ipencap2.cc (1.9),
+	etc/ron/ipencap2.hh (1.5), etc/ron/ipencappaint.cc (1.8),
+	etc/ron/ipencappaint.hh (1.5), etc/ron/lookupiprouteron.cc (1.32),
+	etc/ron/lookupiprouteron.hh (1.23), etc/ron/policyprobe.hh (1.10),
+	etc/ron/portclassifier.cc (1.9), etc/ron/portclassifier.hh (1.5),
+	etc/ron/printtime.cc (1.7), etc/ron/printtime.hh (1.3),
+	etc/ron/ronroutemodular.cc (1.14), etc/ron/ronroutemodular.hh
+	(1.6), include/click/element.hh (1.40), include/click/router.hh
+	(1.75), include/click/straccum.hh (1.35), include/click/string.hh
+	(1.39), include/click/standard/errorelement.hh (1.10),
+	lib/confparse.cc (1.143), lib/driver.cc (1.30), lib/element.cc
+	(1.94), lib/lexer.cc (1.81), lib/notifier.cc (1.15), lib/router.cc
+	(1.179), lib/string.cc (1.54), lib/userutils.cc (1.40),
+	linuxmodule/config.cc (1.23), ns/nsclick.cc (1.24),
+	test/IPRewriter/IPRewriter-02.testie (1.2),
+	test/tools/mkmindriver-02.testie (1.2),
+	tools/click-align/click-align.cc (1.53),
+	tools/click-combine/click-combine.cc (1.41),
+	tools/click-combine/click-uncombine.cc (1.34),
+	tools/click-devirtualize/click-devirtualize.cc (1.48),
+	tools/click-devirtualize/cxxclass.cc (1.13),
+	tools/click-devirtualize/signature.cc (1.19),
+	tools/click-devirtualize/specializer.cc (1.41),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.70),
+	tools/click-flatten/click-flatten.cc (1.22),
+	tools/click-install/click-install.cc (1.59),
+	tools/click-install/common.cc (1.20),
+	tools/click-pretty/click-pretty.cc (1.28),
+	tools/click-pretty/html.cc (1.7),
+	tools/click-undead/click-undead.cc (1.38),
+	tools/click-xform/adjacency.cc (1.25), tools/click2xml/click2xml.cc
+	(1.19), tools/click2xml/xml2click.cc (1.17), tools/lib/eclasst.hh
+	(1.25), tools/lib/elementmap.cc (1.18), tools/lib/etraits.cc
+	(1.12), tools/lib/etraits.hh (1.9), tools/lib/lexert.cc (1.62),
+	tools/lib/processingt.cc (1.35), tools/lib/routert.cc (1.81),
+	tools/lib/toolutils.cc (1.54), userlevel/click.cc (1.104): Begin
+	adding doxygen documentation comments to important header files. 
+	For now, Element and String.  Deprecate String::null_string() in
+	favor of String::empty_string().  Deprecate String::cc() in favor
+	of String::c_str().  Add Element::port_count() method.	This
+	returns a port count descriptor, such as "1/1-2" (one input port,
+	one or two output ports), sort of like a processing descriptor. 
+	port_count() is preferred to notify_ninputs(), notify_noutputs(),
+	set_ninputs(), set_noutputs(), add_input(), and add_output(), and
+	all those functions are now deprecated.  This allows Router to set
+	up port counts, processing, and connections *before* configure()
+	runs (although for compatibility configure() can still call
 	set_ninputs() for now).  Update all elements to replace cc() with
 	c_str(), and to use port_count().  Hopefully no errors but you
 	never know.
