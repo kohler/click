@@ -306,7 +306,7 @@ $bad_files"
 	postprocess=sort
     fi
 
-    egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^class|^[ 	]*const *char *\* *class_name|^[ 	]*static *void *static_initialize|^}' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
+    egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^class|^[ 	]*const *char *\* *class_name|^[ 	]*static *void *static_[ic]|^}' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
   OFS = ""; cur_class = ""
 }
 /:class[ 	]/ {
@@ -351,6 +351,10 @@ $bad_files"
   static_initialize[cur_class] = 1
   next
 }
+/static_cleanup/ {
+  static_cleanup[cur_class] = 1
+  next
+}
 END {
   n = 0
   for (i in exports) {
@@ -375,8 +379,12 @@ END {
 	ex = ex exes[j] " ";
 	klass = substr(exes[j], 1, dash)
         if (static_initialize[klass]) {
-	  ex = ex klass "-!static";
+	  ex = ex klass "-!si ";
 	  static_initialize[klass] = 0
+	}
+        if (static_cleanup[klass]) {
+	  ex = ex klass "-!sc ";
+	  static_cleanup[klass] = 0
 	}
       }
       print i, "\t", header[i], "\t", ex
@@ -612,10 +620,11 @@ EOF
   INCLUDES[$2] = 1;
   for (i = 3; i <= NF; i++) {
     split($i, ans, /-/);
-    if (ans[2] == "!static") {
+    if (ans[2] == "!si")
       B = B "  " ans[1] "::static_initialize();\n";
+    else if (ans[2] == "!sc")
       C = C "  " ans[1] "::static_cleanup();\n";
-    } else {
+    else {
       B = B "  hatred_of_rebecca[" nrebecca "] = click_add_element_type(\"" ans[2] "\", beetlemonkey, " nrebecca ");\n"
       C = C "  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
       D = D "   case " nrebecca ": return new " ans[1] ";\n";
@@ -654,10 +663,11 @@ END {
   INCLUDES[$2] = 1;
   for (i = 3; i <= NF; i++) {
     split($i, ans, /-/);
-    if (ans[2] == "!static") {
+    if (ans[2] == "!si")
       B = B "  " ans[1] "::static_initialize();\n";
+    else if (ans[2] == "!sc")
       C = C "  " ans[1] "::static_cleanup();\n";
-    } else {
+    else {
       B = B "  (void) click_add_element_type(\"" ans[2] "\", beetlemonkey, " nrebecca ");\n";
       D = D "   case " nrebecca ": return new " ans[1] ";\n";
     }
