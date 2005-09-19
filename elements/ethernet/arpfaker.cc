@@ -28,7 +28,6 @@ CLICK_DECLS
 ARPFaker::ARPFaker()
   : _timer(this)
 {
-  add_output();
 }
 
 ARPFaker::~ARPFaker()

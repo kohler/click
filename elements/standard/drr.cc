@@ -25,7 +25,6 @@ CLICK_DECLS
 DRRSched::DRRSched()
     : _quantum(500), _head(0), _deficit(0), _signals(0), _next(0)
 {
-    add_output();
 }
 
 DRRSched::~DRRSched()
@@ -45,12 +44,6 @@ Notifier::SearchOp
 DRRSched::notifier_search_op()
 {
     return SEARCH_WAKE_CONTINUE;
-}
-
-void
-DRRSched::notify_ninputs(int i)
-{
-    set_ninputs(i);
 }
 
 int

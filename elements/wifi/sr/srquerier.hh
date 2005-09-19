@@ -33,6 +33,7 @@ class SRQuerier : public Element {
   ~SRQuerier();
   
   const char *class_name() const		{ return "SRQuerier"; }
+  const char *port_count() const		{ return "1/2"; }
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "#/#"; }
   int initialize(ErrorHandler *);

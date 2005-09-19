@@ -25,18 +25,11 @@
 CLICK_DECLS
 
 ICMPRewriter::ICMPRewriter()
-  : Element(1, 1)
 {
 }
 
 ICMPRewriter::~ICMPRewriter()
 {
-}
-
-void
-ICMPRewriter::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int
@@ -58,7 +51,7 @@ ICMPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
       else if (ICMPPingRewriter *rw = static_cast<ICMPPingRewriter *>(e->cast("ICMPPingRewriter")))
 	_ping_maps.push_back(rw);
       else
-	errh->error("element `%s' is not an IP rewriter", words[i].cc());
+	errh->error("element `%s' is not an IP rewriter", words[i].c_str());
     }
   }
 

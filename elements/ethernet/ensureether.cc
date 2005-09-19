@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 EnsureEther::EnsureEther()
-  : Element(1, 1)
 {
 }
 

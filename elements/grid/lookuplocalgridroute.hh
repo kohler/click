@@ -74,13 +74,12 @@ class LookupLocalGridRoute : public Element, public GridRouteActor  {
 
   const char *class_name() const		{ return "LookupLocalGridRoute"; }
   void *cast(const char *);
+  const char *port_count() const		{ return "2/4"; }
   const char *processing() const		{ return PUSH; }
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
-  void add_handlers();
-  
   bool run_task();
 
   void push(int port, Packet *);

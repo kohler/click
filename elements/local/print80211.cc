@@ -32,7 +32,6 @@ CLICK_DECLS
 #endif
 
 Print80211::Print80211()
-  : Element(1, 1)
 {
 }
 
@@ -126,7 +125,7 @@ print_ctl(StringAccum &s, bool /* verbose */, const u_int8_t *buf, unsigned int 
   case IEEE80211_FC0_SUBTYPE_CTS:
   case IEEE80211_FC0_SUBTYPE_ACK: {
     EtherAddress ra(buf + 4);
-    s << "RA: " << ra.s().cc();
+    s << "RA: " << ra.s().c_str();
     break;
   }
   case IEEE80211_FC0_SUBTYPE_PS_POLL: {
@@ -204,7 +203,7 @@ frame_type(const u_int8_t *fctl)
   default:
     s = "Unknown type " + hex_string(type);
   }
-  return s.cc();
+  return s.c_str();
 }
 #endif // __FreeBSD__ version check
 
@@ -250,7 +249,7 @@ Print80211::simple_action(Packet *p)
   }
 #endif
 
-  click_chatter("%s", sa.cc());
+  click_chatter("%s", sa.c_str());
   return p;
 }
 

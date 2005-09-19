@@ -3,7 +3,7 @@
 
 /*
  * =c
- * LookupIPRouteRON(n)
+ * LookupIPRouteRON([N])
  * =s IP, classification
  * Path selecting RON routing table. 
  * =d
@@ -13,14 +13,15 @@
  * Probes outgoing paths for unknown destinations. Selects path
  * with loweset latency for the new path. Emits packets on chosen port.
  *
- * Reverse IP packets(no ether header) on ports 1 -> n.
- * Reply packets from path i are pushed onto input port i. 
+ * Reverse IP packets(no ether header) on ports 1 -> N.
+ * Reply packets from path I are pushed onto input port I. 
  *
  * Output:
  * Forward path packets are output on the ports connected to the chosen path.
  * Reverse path packets output on port 0. Duplicate ACKs are filtered.
  *
- * n is the number of outgoing paths, including the direct path.
+ * N is the number of outgoing paths, including the direct path.  It is
+ * optional; the correct number is taken from the configuration.
  *
  * =a LookupIPRoute2, LookupIPRouteLinux
  */
@@ -77,6 +78,7 @@ public:
   ~LookupIPRouteRON();
   
   const char *class_name() const		{ return "LookupIPRouteRON"; }
+  const char *port_count() const		{ return "2-/="; }
   const char *processing() const		{ return PUSH; }
   
   int configure(const Vector<String> &, ErrorHandler *);

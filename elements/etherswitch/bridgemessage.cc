@@ -30,10 +30,10 @@ BridgeMessage::s(String tag) const {
   String s;
 
   sprintf(buf, "%s %16s:%04hx: %2s  %x -> %16s  m/h/d: %hx/%hx/%hx",
-	  tag.cc(),
-	  cp_unparse_unsigned64(_bridge_id,16,false).cc(), _port_id,
+	  tag.c_str(),
+	  cp_unparse_unsigned64(_bridge_id,16,false).c_str(), _port_id,
 	  _tc ? "TC" : "tc",
-	  _cost, cp_unparse_unsigned64(_root,16,false).cc(),
+	  _cost, cp_unparse_unsigned64(_root,16,false).c_str(),
 	  _max_age, _hello_time, _forward_delay);
   s = buf;
   delete [] buf;
@@ -162,16 +162,16 @@ BridgeMessage::wire::s(String tag) const {
   */
 
   if (type == 128)
-    sprintf(buf, "%s TCM", tag.cc());
+    sprintf(buf, "%s TCM", tag.c_str());
   else
     sprintf(buf, "%s %3s %16s:%04hx: %3s %2s  %08x -> %16s  "
 	    "a/m/h/d: %hx/%hx/%hx/%hx",
-	    tag.cc(),
+	    tag.c_str(),
 	    type ? "???" : "CFG",
-	    cp_unparse_unsigned64(ntohq(bridge_id),16,false).cc(),
+	    cp_unparse_unsigned64(ntohq(bridge_id),16,false).c_str(),
 	    ntohs(port_id),
 	    tca ? "TCA":"tca", tc ? "TC" : "tc",
-	    ntohl(cost), cp_unparse_unsigned64(ntohq(root),16,false).cc(),
+	    ntohl(cost), cp_unparse_unsigned64(ntohq(root),16,false).c_str(),
 	    ntohs(message_age), ntohs(max_age),
 	    ntohs(hello_time), ntohs(forward_delay));
   s = buf;

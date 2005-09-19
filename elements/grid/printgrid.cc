@@ -30,7 +30,7 @@
 CLICK_DECLS
 
 PrintGrid::PrintGrid()
-  : Element(1, 1), _print_routes(false), _print_probe_entries(false),
+  : _print_routes(false), _print_probe_entries(false),
     _verbose(true), _timestamp(false), _print_eth(false)
 {
   _label = "";
@@ -67,7 +67,7 @@ PrintGrid::encap_to_string(const grid_nbr_encap *nb) const
 #ifndef SMALL_GRID_HEADERS
     if (nb->dst_loc_good) {
       char buf[50];
-      snprintf(buf, 50, "dst_loc=%s ", nb->dst_loc.s().cc());
+      snprintf(buf, 50, "dst_loc=%s ", nb->dst_loc.s().c_str());
       line += buf;
       line += "dst_loc_err=" + String(ntohs(nb->dst_loc_err)) + " ";
     }
@@ -86,9 +86,9 @@ PrintGrid::simple_action(Packet *p)
   click_ether *eh = (click_ether *) p->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID && ntohs(eh->ether_type) != LinkStat::ETHERTYPE_LINKSTAT) {
     click_chatter("PrintGrid %s%s%s : not a Grid packet", 
-		  id().cc(),
-		  _label.cc()[0] ? " " : "",
-		  _label.cc());
+		  id().c_str(),
+		  _label.c_str()[0] ? " " : "",
+		  _label.c_str());
     return p;
   }
 
@@ -233,7 +233,7 @@ PrintGrid::print_ether_linkstat(Packet *p) const
     click_ether *eh = (click_ether *) p->data();
     char buf[100];
     snprintf(buf, sizeof(buf), "%s %s %04hx ", 
-	     EtherAddress(eh->ether_shost).s().cc(), EtherAddress(eh->ether_dhost).s().cc(),
+	     EtherAddress(eh->ether_shost).s().c_str(), EtherAddress(eh->ether_dhost).s().c_str(),
 	     ntohs(eh->ether_type));
     line << buf;
   }

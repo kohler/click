@@ -25,8 +25,6 @@ CLICK_DECLS
 
 TCPReflector::TCPReflector()
 {
-  add_input();
-  add_output();
 }
 
 TCPReflector::~TCPReflector()

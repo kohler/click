@@ -53,14 +53,13 @@ DSRRouteTable::DSRRouteTable()
   click_gettimeofday(&tv);
   _rreq_id = tv.tv_sec & 0xffff;
 
-  
-  add_input();  // IP packets - input 0
-  add_input();  // incoming DSR packets - input 1
-  add_input();  // packets for which tx failed - input 2
+  // IP packets - input 0
+  // incoming DSR packets - input 1
+  // packets for which tx failed - input 2
 
-  add_output(); // IP packets for the kernel - output 0
-  add_output(); // DSR routing packets - output 1
-  add_output(); // DSR data packets - output 2
+  // IP packets for the kernel - output 0
+  // DSR routing packets - output 1
+  // DSR data packets - output 2
 }
 
 DSRRouteTable::~DSRRouteTable()
@@ -251,8 +250,8 @@ DSRRouteTable::rreq_expire_hook()
       }
     }
 
-//     click_chatter("i.key is %s %s %d %d\n", i.key()._src.s().cc(), 
-// 		  i.key()._target.s().cc(), i.key()._id,
+//     click_chatter("i.key is %s %s %d %d\n", i.key()._src.s().c_str(), 
+// 		  i.key()._target.s().c_str(), i.key()._id,
 // 		  diff_in_ms(curr_time, i.value()._time_forwarded));
 
     if (diff_in_ms(curr_time, i.value()._time_forwarded) > DSR_RREQ_TIMEOUT) {
@@ -260,7 +259,7 @@ DSRRouteTable::rreq_expire_hook()
       IPAddress dst(i.key()._target);
       unsigned int id = i.key()._id;
       DEBUG_CHATTER("RREQ entry has expired; %s -> %s (%d)\n",
-		    src.s().cc(), dst.s().cc(), id);
+		    src.s().c_str(), dst.s().c_str(), id);
       
       remove_list.push_back(i.key());
     }
@@ -304,7 +303,7 @@ DSRRouteTable::sendbuffer_timer_hook()
     IPAddress dst = i.key();
 
     if (! sb.size()) {
-      // DEBUG_CHATTER(" * send buffer for destination %s is empty\n", dst.s().cc());
+      // DEBUG_CHATTER(" * send buffer for destination %s is empty\n", dst.s().c_str());
       continue;
     }
 
@@ -319,7 +318,7 @@ DSRRouteTable::sendbuffer_timer_hook()
       DEBUG_CHATTER(" * send buffer has %d packet%s with destination %s\n",
 		    sb.size(),
 		    sb.size() == 1 ? "" : "s",
-		    dst.s().cc());
+		    dst.s().c_str());
       
       // search route for destination in the link cache first
       _link_table->dijkstra(false);
@@ -330,7 +329,7 @@ DSRRouteTable::sendbuffer_timer_hook()
 	
 	for (int j=0; j<route.size(); j++)
 	  DEBUG_CHATTER(" - %d  %s \n",
-			j, route[j].s().cc());
+			j, route[j].s().c_str());
 	
 	if (total < DSR_SENDBUFFER_MAX_BURST) {
 
@@ -363,7 +362,7 @@ DSRRouteTable::sendbuffer_timer_hook()
 
       } else {
 	DEBUG_CHATTER("still no route to %s\n",
-		      dst.s().cc());
+		      dst.s().c_str());
       }
     }
 
@@ -399,7 +398,7 @@ void
 DSRRouteTable::buffer_packet(Packet *p)
 {
   IPAddress dst = IPAddress(p->dst_ip_anno());
-  DEBUG_CHATTER("buffering packet for %s", dst.s().cc());
+  DEBUG_CHATTER("buffering packet for %s", dst.s().c_str());
 
   SendBuffer *sb = _sendbuffer_map.findp(dst);
   if (!sb) {
@@ -436,7 +435,7 @@ DSRRouteTable::blacklist_timer_hook()
       
       BlacklistEntry &e = i.value();
       
-      DEBUG_CHATTER(" * downgrading blacklist entry for host %s\n", i.key().s().cc());
+      DEBUG_CHATTER(" * downgrading blacklist entry for host %s\n", i.key().s().c_str());
       
       e._status = DSR_BLACKLIST_UNI_QUESTIONABLE;
     }
@@ -457,8 +456,8 @@ DSRRouteTable::push(int port, Packet *p_in)
     IPAddress dst_addr(ip->ip_dst.s_addr);
 
     DEBUG_CHATTER(" * DSR (%s): got IP packet with destination is %s\n", 
-		  this->id().cc(),
-		  dst_addr.s().cc());
+		  this->id().c_str(),
+		  dst_addr.s().c_str());
     
     if (dst_addr == *me) { // for simpler debugging config
       // out to the kernel  
@@ -473,7 +472,7 @@ DSRRouteTable::push(int port, Packet *p_in)
       DEBUG_CHATTER(" * have cached route:\n");
 
       for (int j=0; j < route.size(); j++)
-	DEBUG_CHATTER(" - %d  %s\n", j, route[j].s().cc());
+	DEBUG_CHATTER(" - %d  %s\n", j, route[j].s().c_str());
       
       // add DSR headers to packet..
       Packet *p = add_dsr_header(p_in, route);
@@ -483,7 +482,7 @@ DSRRouteTable::push(int port, Packet *p_in)
 
     } else {
 
-      DEBUG_CHATTER(" * don't have route to %s; buffering packet\n", dst_addr.s().cc());
+      DEBUG_CHATTER(" * don't have route to %s; buffering packet\n", dst_addr.s().c_str());
 
       buffer_packet(p_in);
       start_issuing_request(dst_addr);
@@ -508,8 +507,8 @@ DSRRouteTable::push(int port, Packet *p_in)
       IPAddress dst_addr(dsr_rreq->target.s_addr);
 
       DEBUG_CHATTER(" * DSR (%s): got route request for destination %s\n", 
-		    this->id().cc(),
-		    dst_addr.s().cc());
+		    this->id().c_str(),
+		    dst_addr.s().c_str());
 
       // add the info from the RREQ to the linkcache
       DSRRoute request_route = extract_request_route(p_in);
@@ -520,7 +519,7 @@ DSRRouteTable::push(int port, Packet *p_in)
       
       for (int j=0; j<request_route.size(); j++)
 	  DEBUG_CHATTER(" - %d   %s (%d)\n",
-			j, request_route[j].ip().s().cc(),
+			j, request_route[j].ip().s().c_str(),
 			request_route[j]._metric);
 
       add_route_to_link_table(request_route);
@@ -537,7 +536,7 @@ DSRRouteTable::push(int port, Packet *p_in)
 	DEBUG_CHATTER(" * Generating route reply with source route:\n");
 	for (int j=0; j<reply_route.size(); j++)
 	  DEBUG_CHATTER(" - %d   %s (%d)\n",
-			j, reply_route[j].ip().s().cc(),
+			j, reply_route[j].ip().s().c_str(),
 			reply_route[j]._metric);
 	
 	issue_rrep(dst_addr, src_addr, request_route, reply_route);
@@ -601,7 +600,7 @@ DSRRouteTable::push(int port, Packet *p_in)
 	  // or:
 	  //	  IPAddress last_forwarder = request_route[request_route.size()-2];
 
-	  // click_chatter ("last_forwarder is %s\n", last_forwarder.s().cc());
+	  // click_chatter ("last_forwarder is %s\n", last_forwarder.s().c_str());
 
 	  int status = check_blacklist(last_forwarder);
 
@@ -688,11 +687,11 @@ DSRRouteTable::push(int port, Packet *p_in)
       add_route_to_link_table(reply_route);
       
       DEBUG_CHATTER(" * DSR (%s): received route reply with reply route:\n",
-		    this->id().cc());
+		    this->id().c_str());
       for (int i=0; i<reply_route.size(); i++)
 	DEBUG_CHATTER(" - %d  %s (%d)\n",
 		      i,
-		      reply_route[i].ip().s().cc(),
+		      reply_route[i].ip().s().c_str(),
 		      reply_route[i]._metric);
 
       // now check for packets in the sendbuffer whose destination has
@@ -702,7 +701,7 @@ DSRRouteTable::push(int port, Packet *p_in)
 
       // remove the last forwarder from the blacklist, if present
       IPAddress last_forwarder = IPAddress(DSR_LAST_HOP_IP_ANNO(p_in));
-      // click_chatter ("last_forwarder is %s\n", last_forwarder.s().cc());
+      // click_chatter ("last_forwarder is %s\n", last_forwarder.s().c_str());
 
 	// last_sr_hop(p_in, 
 	// (sizeof(click_ip)+
@@ -718,12 +717,12 @@ DSRRouteTable::push(int port, Packet *p_in)
 	// might be doing reply-from-cache	
 	IPAddress reply_dst = reply_route[reply_route.size()-1].ip();
 	DEBUG_CHATTER(" * killed (route to %s reached final destination, %s)\n", 
-		      reply_dst.s().cc(), dst_addr.s().cc());
+		      reply_dst.s().c_str(), dst_addr.s().c_str());
 	stop_issuing_request(reply_dst);
 	p_in->kill();
 	return;
       } else {
-	DEBUG_CHATTER(" * forwarding towards destination %s\n", dst_addr.s().cc());
+	DEBUG_CHATTER(" * forwarding towards destination %s\n", dst_addr.s().c_str());
 	forward_rrep(p_in); // determines next hop, sets dest ip anno, and then pushes out to arp table.
 	return;
       }
@@ -731,7 +730,7 @@ DSRRouteTable::push(int port, Packet *p_in)
     } else if (dsr_option->dsr_type == DSR_TYPE_RERR) {
 
       DEBUG_CHATTER(" * DSR (%s): got route error packet\n",
-		    this->id().cc());
+		    this->id().c_str());
  
       // get a pointer to the route error header
       const click_dsr_rerr *dsr_rerr = (click_dsr_rerr *)dsr_option;
@@ -747,7 +746,7 @@ DSRRouteTable::push(int port, Packet *p_in)
       
       // now remove the entries from the linkcache
       DEBUG_CHATTER(" - removing link from %s to %s; rerr destination is %s\n", 
-		    err_src.s().cc(), unreachable.s().cc(), err_dst.s().cc());
+		    err_src.s().c_str(), unreachable.s().c_str(), err_dst.s().c_str());
       
       // XXX DSR_INVALID_HOP_METRIC isn't really an appropriate name here
       _link_table->update_both_links(err_src, unreachable, 0, 0, DSR_INVALID_ROUTE_METRIC);
@@ -779,15 +778,15 @@ DSRRouteTable::push(int port, Packet *p_in)
       IPAddress dst_addr(ip_dst);
 
       DEBUG_CHATTER(" * DSR (%s): incoming data pkt for %s; dsr_type is %d\n", 
-		    this->id().cc(),
-		    dst_addr.s().cc(), dsr_option->dsr_type);
+		    this->id().c_str(),
+		    dst_addr.s().c_str(), dsr_option->dsr_type);
 
       // remove the last forwarder from the blacklist, if present
       IPAddress last_forwarder = IPAddress(DSR_LAST_HOP_IP_ANNO(p_in));
 	                        //  last_sr_hop(p_in, 
 				//	        sizeof(click_ip)+sizeof(click_dsr));
       set_blacklist(last_forwarder, DSR_BLACKLIST_NOENTRY);
-      // click_chatter ("last_forwarder is %s\n", last_forwarder.s().cc());
+      // click_chatter ("last_forwarder is %s\n", last_forwarder.s().c_str());
       
       if (dst_addr == *me) {
 	Packet *p = strip_headers(p_in);
@@ -795,7 +794,7 @@ DSRRouteTable::push(int port, Packet *p_in)
 	output(0).push(p);
 	return;
       } else {
-	// DEBUG_CHATTER("need to forward\n",dst_addr.s().cc());
+	// DEBUG_CHATTER("need to forward\n",dst_addr.s().c_str());
 	
 	// determines next hop, sets dest ip anno, and then pushes out to arp table.
 	forward_data(p_in);
@@ -841,11 +840,11 @@ DSRRouteTable::push(int port, Packet *p_in)
     }
 
     DEBUG_CHATTER(" * packet had bad source route with next hop %s\n", 
-		  bad_dst.s().cc());
+		  bad_dst.s().c_str());
     
     if (dsr_option->dsr_type == DSR_TYPE_RREP) {
       DEBUG_CHATTER(" * tx error sending route reply; adding entry to blacklist for %s\n", 
-		    bad_dst.s().cc());
+		    bad_dst.s().c_str());
       set_blacklist(bad_dst, DSR_BLACKLIST_UNI_PROBABLE);
     } else if (dsr_option->dsr_type == DSR_TYPE_RREQ) {
       // XXX are we only supposed to set this for failed RREPs?
@@ -1156,7 +1155,7 @@ DSRRouteTable::issue_rrep(IPAddress src, IPAddress dst,
   // setting the next hop annotation
   p->set_dst_ip_anno(source_route[1]._ip);
   IPAddress dst_anno_address(p->dst_ip_anno());
-  DEBUG_CHATTER(" * created RREP packet with next hop %s\n", dst_anno_address.s().cc());
+  DEBUG_CHATTER(" * created RREP packet with next hop %s\n", dst_anno_address.s().c_str());
   
   output(1).push(p);
 }
@@ -1276,7 +1275,7 @@ DSRRouteTable::issue_rerr(IPAddress bad_src, IPAddress bad_dst, IPAddress src,
 
   IPAddress dst_anno_address(p->dst_ip_anno());
   DEBUG_CHATTER(" * created RERR packet with next hop as %s\n",
-		dst_anno_address.s().cc() );
+		dst_anno_address.s().c_str() );
 
   output(1).push(p);
 }
@@ -1550,7 +1549,7 @@ DSRRouteTable::forward_sr(Packet *p_in, unsigned int offset, int port)
   dsr_source->dsr_segsleft--;
   p->set_dst_ip_anno(next_sr_hop(p, offset));
 
-  DEBUG_CHATTER("forward_sr: forwarding to %s\n", next_sr_hop(p, offset).s().cc());
+  DEBUG_CHATTER("forward_sr: forwarding to %s\n", next_sr_hop(p, offset).s().c_str());
   
   output(port).push(p);
   return;
@@ -1661,7 +1660,7 @@ DSRRouteTable::start_issuing_request(IPAddress host)
   InitiatedReq *r = _initiated_rreq_map.findp(host);
   
   if (r) {
-    DEBUG_CHATTER(" * start_issuing_request:  already issuing requests for %s\n", host.s().cc());
+    DEBUG_CHATTER(" * start_issuing_request:  already issuing requests for %s\n", host.s().c_str());
     return;
   } else {
     // send out the initial request and add an entry to the table
@@ -1678,7 +1677,7 @@ DSRRouteTable::stop_issuing_request(IPAddress host)
 {
   InitiatedReq *r = _initiated_rreq_map.findp(host);
   if (!r) {
-    DEBUG_CHATTER(" * stop_issuing_request:  no entry in request table for %s\n", host.s().cc());
+    DEBUG_CHATTER(" * stop_issuing_request:  no entry in request table for %s\n", host.s().c_str());
     return;
   } else {
     _initiated_rreq_map.remove(host);
@@ -1718,7 +1717,7 @@ DSRRouteTable::rreq_issue_hook()
     } else {
       if (diff_in_ms(curr_time, ir._time_last_issued) > ir._backoff_interval) {
 	
-	DEBUG_CHATTER("time to issue new request for host %s\n", ir._target.s().cc());
+	DEBUG_CHATTER("time to issue new request for host %s\n", ir._target.s().c_str());
 	
 	if (ir._times_issued == 1) {
 	  // if this is the second request
@@ -1799,7 +1798,7 @@ DSRRouteTable::add_route_to_link_table(DSRRoute route)
       _link_table->update_both_links(ip1, ip2, 0, 0, metric);
     
     // DEBUG_CHATTER("_link_table->update_link %s %s %d\n",
-    //               route[i].s().cc(), route[i+1].s().cc(), metric);
+    //               route[i].s().c_str(), route[i+1].s().c_str(), metric);
   }
 }
 
@@ -1819,7 +1818,7 @@ DSRRouteTable::check_blacklist(IPAddress ip)
 void
 DSRRouteTable::set_blacklist(IPAddress ip, int s)
 {
-  //  DEBUG_CHATTER ("set blacklist: %s %d\n", ip.s().cc(), s);
+  //  DEBUG_CHATTER ("set blacklist: %s %d\n", ip.s().c_str(), s);
   //  DEBUG_CHATTER ("set blacklist: %d\n", check_blacklist(ip));
 
   _blacklist.remove(ip);

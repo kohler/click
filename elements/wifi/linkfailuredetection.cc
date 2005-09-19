@@ -28,8 +28,7 @@
 CLICK_DECLS
 
 LinkFailureDetection::LinkFailureDetection()
-  : Element(1, 1),
-    _threshold(1)
+  : _threshold(1)
 {
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
@@ -52,7 +51,7 @@ LinkFailureDetection::configure(Vector<String> &conf, ErrorHandler *errh)
   }
 
   if (!cp_handler_name(conf[1], &_handler_e, &_handler_name, this, errh)) {
-    return errh->error("invalid handler %s", conf[1].cc());
+    return errh->error("invalid handler %s", conf[1].c_str());
   }
   return 0;
 }
@@ -64,8 +63,8 @@ LinkFailureDetection::call_handler(EtherAddress dst) {
   
   const Handler *h = Router::handler(_handler_e, _handler_name);
   if (!h) {
-    errh->error("%s: no handler `%s'", id().cc(), 
-		Handler::unparse_name(_handler_e, _handler_name).cc());
+    errh->error("%s: no handler `%s'", id().c_str(), 
+		Handler::unparse_name(_handler_e, _handler_name).c_str());
   }
   
   if (h->writable()) {
@@ -74,8 +73,8 @@ LinkFailureDetection::call_handler(EtherAddress dst) {
     h->call_write(dst.s(), _handler_e, &cerrh);
   } else {
     errh->error("%s: no write handler `%s'", 
-		id().cc(), 
-		h->unparse_name(_handler_e).cc());
+		id().c_str(), 
+		h->unparse_name(_handler_e).c_str());
   }
 
 }
@@ -111,8 +110,8 @@ LinkFailureDetection::simple_action(Packet *p_in)
 		    this,
 		    nfo->_successive_failures,
 		    ntohs(eh->ether_type),
-		    nfo->_eth.s().cc(),
-		    sa.take_string().cc());
+		    nfo->_eth.s().c_str(),
+		    sa.take_string().c_str());
 
 
       /* call handler */
@@ -139,7 +138,7 @@ LinkFailureDetection::print_stats()
   for (NIter iter = _neighbors.begin(); iter; iter++) {
     DstInfo n = iter.value();
     struct timeval age = now - n._last_received;
-    sa << n._eth.s().cc();
+    sa << n._eth.s().c_str();
     sa << " successive_failures: " << n._successive_failures;
     if (n._notified) {
       sa << "*";
@@ -151,7 +150,6 @@ LinkFailureDetection::print_stats()
 void
 LinkFailureDetection::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("stats", static_print_stats, 0);
 
 }

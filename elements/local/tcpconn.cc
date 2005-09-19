@@ -28,7 +28,7 @@
 CLICK_DECLS
 
 TCPConn::TCPConn()
-  : Element(2, 3), _active(false)
+  : _active(false)
 {
 }
 

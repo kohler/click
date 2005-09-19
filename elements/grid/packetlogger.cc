@@ -9,7 +9,6 @@
 CLICK_DECLS
 
 PacketLogger::PacketLogger()
-  : Element(1, 1)
 {
 }
 
@@ -68,7 +67,6 @@ PacketLogger::simple_action(Packet *p_in)
 void
 PacketLogger::add_handlers()
 {
-  add_default_handlers(false);
   add_read_handler("log", print_log, 0);
 }
 

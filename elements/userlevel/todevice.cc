@@ -50,7 +50,7 @@
 CLICK_DECLS
 
 ToDevice::ToDevice()
-  : Element(1, 0), _task(this), _timer(this), _fd(-1), _my_fd(false),
+  : _task(this), _timer(this), _fd(-1), _my_fd(false),
     _q(0),
     _pulls(0)
 {
@@ -58,12 +58,6 @@ ToDevice::ToDevice()
 
 ToDevice::~ToDevice()
 {
-}
-
-void
-ToDevice::notify_noutputs(int n)
-{
-  set_noutputs(n <= 2 ? n : 0);
 }
 
 int
@@ -141,7 +135,7 @@ ToDevice::initialize(ErrorHandler *errh)
   // check for duplicate writers
   void *&used = router()->force_attachment("device_writer_" + _ifname);
   if (used)
-    return errh->error("duplicate writer for device `%s'", _ifname.cc());
+    return errh->error("duplicate writer for device `%s'", _ifname.c_str());
   used = this;
 
   ScheduleInfo::join_scheduler(this, &_task, errh);
@@ -211,7 +205,7 @@ ToDevice::selected(int)
 	}
 	return;
       } else {
-	click_chatter("ToDevice(%s) %s: %s", _ifname.cc(), syscall, strerror(errno));
+	click_chatter("ToDevice(%s) %s: %s", _ifname.c_str(), syscall, strerror(errno));
 	checked_output_push(1, p);
       }
     } else {
@@ -222,7 +216,7 @@ ToDevice::selected(int)
   if (!_q && !p && !_signal) {
     if (remove_select(_fd, SELECT_WRITE) < 0) {
       click_chatter("%s %{element} remove_select failed %d\n", 
-		    Timestamp::now().unparse().cc(), this, _fd);
+		    Timestamp::now().unparse().c_str(), this, _fd);
     }
   }
 }
@@ -232,14 +226,14 @@ ToDevice::run_timer()
 {
   if (_debug) {
     click_chatter("%s %{element}::%s\n",
-		  Timestamp::now().unparse().cc(), this, __func__);
+		  Timestamp::now().unparse().c_str(), this, __func__);
 
   }
 
   if (_q || _signal) {
     if (add_select(_fd, SELECT_WRITE) < 0) {
       click_chatter("%s %{element}::%s add_select failed %d\n", 
-		    Timestamp::now().unparse().cc(), this, __func__, _fd);
+		    Timestamp::now().unparse().c_str(), this, __func__, _fd);
     }
     selected(_fd);
   }
@@ -251,7 +245,7 @@ ToDevice::run_task()
   if (_q || _signal) {
     if (add_select(_fd, SELECT_WRITE) < 0) {
       click_chatter("%s %{element}::%s add_select failed %d\n", 
-		    Timestamp::now().unparse().cc(), this, __func__, _fd);
+		    Timestamp::now().unparse().c_str(), this, __func__, _fd);
     }
     selected(_fd);
     return true;

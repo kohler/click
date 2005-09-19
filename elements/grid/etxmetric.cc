@@ -21,7 +21,7 @@
 CLICK_DECLS 
 
 ETXMetric::ETXMetric()
-  : GridGenericMetric(0, 0), _ls(0)
+  : _ls(0)
 {
 }
 
@@ -100,18 +100,12 @@ ETXMetric::append_metric(const metric_t &r, const metric_t &l) const
   
   if (r.val() < 100)
     click_chatter("ETXMetric %s: append_metric WARNING: metric %u%% transmissions is too low for route metric",
-		  id().cc(), r.val());
+		  id().c_str(), r.val());
   if (l.val() < 100)
     click_chatter("ETXMetric %s: append_metric WARNING: metric %u%% transmissions is too low for link metric",
-		  id().cc(), r.val());
+		  id().c_str(), r.val());
 
   return metric_t(r.val() + l.val());
-}
-
-void
-ETXMetric::add_handlers()
-{
-  add_default_handlers(true);
 }
 
 unsigned char

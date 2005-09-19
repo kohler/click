@@ -27,7 +27,7 @@
 CLICK_DECLS
 
 TCPAck::TCPAck()
-  : Element(2, 3), _timer(this)
+  : _timer(this)
 {
 }
 

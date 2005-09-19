@@ -181,6 +181,7 @@ class Router { public:
     Vector<String> _requirements;
 
     int _state;
+    bool _have_connections : 1;
     mutable bool _allow_star_handler : 1;
     int _running;
   
@@ -221,9 +222,9 @@ class Router { public:
     void remove_hookup(int);
     void hookup_error(const Hookup&, bool, const char*, ErrorHandler*);
     int check_hookup_elements(ErrorHandler*);
-    void notify_hookup_range();
-    void check_hookup_range(ErrorHandler*);
-    void check_hookup_completeness(ErrorHandler*);  
+    void notify_hookup_range(ErrorHandler*);
+    int check_hookup_range(ErrorHandler*, bool check_only);
+    int check_hookup_completeness(ErrorHandler*, bool check_only);
   
     int processing_error(const Hookup&, const Hookup&, bool, int, ErrorHandler*);
     int check_push_and_pull(ErrorHandler*);
@@ -256,6 +257,8 @@ class Router { public:
 
     friend class Master;
     friend class Task;
+    friend bool Element::ports_frozen() const;
+    friend int Element::set_nports(int, int);
   
 };
 

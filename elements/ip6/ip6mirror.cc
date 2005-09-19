@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 IP6Mirror::IP6Mirror()
-  : Element(1, 1)
 {
 }
 

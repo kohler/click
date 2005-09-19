@@ -21,7 +21,6 @@
 CLICK_DECLS
 
 StripIPHeader::StripIPHeader()
-  : Element(1, 1)
 {
 }
 

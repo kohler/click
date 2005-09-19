@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 RatedSplitter::RatedSplitter()
-    : Element(1, 2)
 {
 }
 

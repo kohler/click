@@ -91,9 +91,9 @@ class AggregatePacketCounter : public Element { public:
     ~AggregatePacketCounter();
 
     const char *class_name() const	{ return "AggregatePacketCounter"; }
+    const char *port_count() const	{ return "1-/1-"; }
     const char *processing() const	{ return AGNOSTIC; }
     const char *flow_code() const	{ return "#/#"; }
-    void notify_ninputs(int);
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

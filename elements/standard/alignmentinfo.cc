@@ -77,7 +77,7 @@ AlignmentInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 			old_icount * sizeof(int)) != 0
 	      || memcmp(&_offsets[old_offset], &_offsets[_elem_offset[number]],
 			old_icount * sizeof(int)) != 0))
-	errh->error("conflicting AlignmentInfo for `%s'", parts[0].cc());
+	errh->error("conflicting AlignmentInfo for '%s'", parts[0].c_str());
       
     }
   }

@@ -27,8 +27,7 @@
 #include <click/timer.hh>
 
 ChangeUID::ChangeUID()
-  : Element(0, 0),
-    _timer(timer_hook, this)
+  : _timer(timer_hook, this)
 {
 }
 

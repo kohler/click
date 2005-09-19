@@ -21,8 +21,6 @@ CLICK_DECLS
 
 RFC2507c::RFC2507c()
 {
-  add_input();
-  add_output();
 }
 
 RFC2507c::~RFC2507c()

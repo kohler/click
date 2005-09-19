@@ -27,7 +27,6 @@
 CLICK_DECLS
 
 SetTXRate::SetTXRate()
-  : Element(1, 1)
 {
 }
 
@@ -113,7 +112,6 @@ SetTXRate::write_handler(const String &arg, Element *e,
 void
 SetTXRate::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("rate", read_handler, (void *) H_RATE);
   add_write_handler("rate", write_handler, (void *) H_RATE);
 }

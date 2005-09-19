@@ -62,9 +62,9 @@ GridLocationInfo2::read_args(const Vector<String> &conf, ErrorHandler *errh)
   const int msec_per_deg = 1000 * 60 * 60;
 
   if (lat > 90*msec_per_deg || lat < -90*msec_per_deg)
-    return errh->error("%s: latitude arg %d must be between +/- 90 degrees (+/- %d milliseconds)", id().cc(), lat, 90*msec_per_deg);
+    return errh->error("%s: latitude arg %d must be between +/- 90 degrees (+/- %d milliseconds)", id().c_str(), lat, 90*msec_per_deg);
   if (lon > 180*msec_per_deg || lon < -180*msec_per_deg)
-    return errh->error("%s: longitude arg %d must be between +/- 180 degrees (+/- %d milliseconds)", id().cc(), lon, 180*msec_per_deg);
+    return errh->error("%s: longitude arg %d must be between +/- 180 degrees (+/- %d milliseconds)", id().c_str(), lon, 180*msec_per_deg);
 
   _loc = grid_location((long) lat, (long) lon, (long) h);
   return res;
@@ -96,7 +96,7 @@ loc_read_handler(Element *f, void *)
   
   const int BUFSZ = 255;
   char buf[BUFSZ];
-  int res = snprintf(buf, BUFSZ, "%s (err=%hu good=%s seq=%u)\n", loc.s().cc(),
+  int res = snprintf(buf, BUFSZ, "%s (err=%hu good=%s seq=%u)\n", loc.s().c_str(),
 		     l->loc_err(), (l->loc_good() ? "yes" : "no"), l->seq_no());
   if (res < 0) {
     click_chatter("GridLocationInfo2 read handler buffer too small");
@@ -138,7 +138,6 @@ tag_write_handler(const String &arg, Element *element,
 void
 GridLocationInfo2::add_handlers()
 {
-  add_default_handlers(true);
   add_write_handler("loc", loc_write_handler, (void *) 0);
   add_read_handler("loc", loc_read_handler, (void *) 0);
   add_write_handler("tag", tag_write_handler, (void *) 0);

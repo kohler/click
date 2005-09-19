@@ -25,7 +25,7 @@
 CLICK_DECLS
 
 TimeSortedSched::TimeSortedSched()
-    : Element(1, 1), _vec(0), _signals(0)
+    : _vec(0), _signals(0)
 {
 }
 
@@ -46,12 +46,6 @@ Notifier::SearchOp
 TimeSortedSched::notifier_search_op()
 {
     return SEARCH_WAKE_CONTINUE;
-}
-
-void
-TimeSortedSched::notify_ninputs(int n)
-{
-    set_ninputs(n);
 }
 
 int

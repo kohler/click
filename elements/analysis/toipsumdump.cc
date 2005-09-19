@@ -31,7 +31,7 @@
 CLICK_DECLS
 
 ToIPSummaryDump::ToIPSummaryDump()
-    : Element(1, 0), _f(0), _task(this)
+    : _f(0), _task(this)
 {
 }
 
@@ -130,7 +130,7 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
     if (_filename != "-") {
 	_f = fopen(_filename.c_str(), "wb");
 	if (!_f)
-	    return errh->error("%s: %s", _filename.cc(), strerror(errno));
+	    return errh->error("%s: %s", _filename.c_str(), strerror(errno));
     } else {
 	_f = stdout;
 	_filename = "<stdout>";

@@ -37,18 +37,12 @@ CLICK_CXX_UNPROTECT
 CLICK_DECLS
 
 ICMPPingSource::ICMPPingSource()
-    : Element(0, 1), _limit(-1), _timer(this), _receiver(0)
+    : _limit(-1), _timer(this), _receiver(0)
 {
 }
 
 ICMPPingSource::~ICMPPingSource()
 {
-}
-
-void
-ICMPPingSource::notify_ninputs(int n)
-{
-    set_ninputs(n < 1 ? 0 : 1);
 }
 
 int

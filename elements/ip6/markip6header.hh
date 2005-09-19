@@ -27,6 +27,7 @@ class MarkIP6Header : public Element {
   ~MarkIP6Header();
   
   const char *class_name() const		{ return "MarkIP6Header"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);

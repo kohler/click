@@ -29,8 +29,6 @@ CLICK_DECLS
 
 ICMP6Error::ICMP6Error()
 {
-  add_input();
-  add_output();
   _code = _type = -1;
 }
 

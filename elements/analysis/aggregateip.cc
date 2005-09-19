@@ -29,18 +29,11 @@
 CLICK_DECLS
 
 AggregateIP::AggregateIP()
-    : Element(1, 1)
 {
 }
 
 AggregateIP::~AggregateIP()
 {
-}
-
-void
-AggregateIP::notify_noutputs(int n)
-{
-    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int

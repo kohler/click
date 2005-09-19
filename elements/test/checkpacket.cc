@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 CheckPacket::CheckPacket()
-    : Element(1, 1)
 {
 }
 
@@ -85,30 +84,30 @@ CheckPacket::simple_action(Packet *p)
     // check length
     if (_length_op == '=') {
 	if (p->length() != _length)
-	    errh->error("%s: bad length %d (wanted %d)", declaration().cc(), p->length(), _length);
+	    errh->error("%s: bad length %d (wanted %d)", declaration().c_str(), p->length(), _length);
     } else if (_length_op == '>') {
 	if (p->length() <= _length)
-	    errh->error("%s: bad length %d (wanted > %d)", declaration().cc(), p->length(), _length);
+	    errh->error("%s: bad length %d (wanted > %d)", declaration().c_str(), p->length(), _length);
     } else if (_length_op == '<') {
 	if (p->length() >= _length)
-	    errh->error("%s: bad length %d (wanted < %d)", declaration().cc(), p->length(), _length);
+	    errh->error("%s: bad length %d (wanted < %d)", declaration().c_str(), p->length(), _length);
     }
 
     // check data
     if (_data_op) {
 	if (p->length() < _data.length() + _data_offset)
-	    errh->error("%s: data too short (%d bytes, wanted %d)", declaration().cc(), p->length(), _data.length() + _data_offset);
+	    errh->error("%s: data too short (%d bytes, wanted %d)", declaration().c_str(), p->length(), _data.length() + _data_offset);
 	else if (_data_op == '=' && p->length() > _data.length() + _data_offset)
-	    errh->error("%s: data too long (%d bytes, wanted %d)", declaration().cc(), p->length(), _data.length() + _data_offset);
+	    errh->error("%s: data too long (%d bytes, wanted %d)", declaration().c_str(), p->length(), _data.length() + _data_offset);
 	else if (memcmp(p->data() + _data_offset, _data.data(), _data.length()) != 0)
-	    errh->error("%s: bad data (does not match)", declaration().cc());
+	    errh->error("%s: bad data (does not match)", declaration().c_str());
     }
 
     // check alignment
     if (_alignment_chunk >= 0) {
 	int alignment = reinterpret_cast<uintptr_t>(p->data()) & (_alignment_chunk - 1);
 	if (alignment != _alignment_offset)
-	    errh->error("%s: bad alignment (%d/%d, expected %d/%d)", declaration().cc(), _alignment_chunk, alignment, _alignment_chunk, _alignment_offset);
+	    errh->error("%s: bad alignment (%d/%d, expected %d/%d)", declaration().c_str(), _alignment_chunk, alignment, _alignment_chunk, _alignment_offset);
     }
     
     return 0;

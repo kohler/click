@@ -29,10 +29,10 @@ AddressTranslator::AddressTranslator()
   : _dynamic_mapping_allocation_direction(0),
     _in_map(0), _out_map(0), _rover(0), _rover2(0), _nmappings(0)
 {
-  add_input(); /*IPv6 arriving outward packets */
-  add_input(); /*IPv6 arriving inward packets */
-  add_output(); /* IPv6 outgoing outward packets with mapped addresses and port*/
-  add_output(); /* IPv6 outgoing inward packets with mapped address and port */
+    // input 0: IPv6 arriving outward packets
+    // input 1: IPv6 arriving inward packets
+    // output 0: IPv6 outgoing outward packets with mapped addresses and port
+    // output 1: IPv6 outgoing inward packets with mapped address and port
 }
 
 

@@ -106,11 +106,9 @@ class Socket : public Element { public:
 
 
   const char *class_name() const	{ return "Socket"; }
+  const char *port_count() const	{ return "0-1/0-1"; }
   const char *processing() const	{ return "l/h"; }
   const char *flow_code() const		{ return "x/y"; }
-
-  void notify_ninputs(int);
-  void notify_noutputs(int);
 
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);

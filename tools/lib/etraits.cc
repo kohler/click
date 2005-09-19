@@ -162,6 +162,7 @@ ElementTraits::component(int what)
       case D_CXX_CLASS:		return &cxx;
       case D_HEADER_FILE:	return &header_file;
       case D_SOURCE_FILE:	return &source_file;
+      case D_PORT_COUNT:	return &port_count_code;
       case D_PROCESSING:	return &processing_code;
       case D_FLOW_CODE:		return &flow_code;
       case D_FLAGS:		return &flags;
@@ -183,6 +184,7 @@ ElementTraits::parse_component(const String &s)
 	components.insert("cxxclass", D_CXX_CLASS);
 	components.insert("headerfile", D_HEADER_FILE);
 	components.insert("sourcefile", D_SOURCE_FILE);
+	components.insert("portcount", D_PORT_COUNT);
 	components.insert("processing", D_PROCESSING);
 	components.insert("flowcode", D_FLOW_CODE);
 	components.insert("requires", D_REQUIREMENTS);

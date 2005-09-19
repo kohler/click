@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 SchedOrderTest::SchedOrderTest()
-    : Element(0, 0), _count(0), _limit(0), _buf_begin(0), _bufsiz(0),
+    : _count(0), _limit(0), _buf_begin(0), _bufsiz(0),
       _task(this), _stop(false)
 {
 }

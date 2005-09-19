@@ -50,7 +50,6 @@ struct click_radiotap_header {
 
 
 RadiotapEncap::RadiotapEncap()
-  : Element(1, 1)
 {
 }
 
@@ -138,8 +137,6 @@ RadiotapEncap_write_param(const String &in_s, Element *e, void *vparam,
 void
 RadiotapEncap::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", RadiotapEncap_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", RadiotapEncap_write_param, (void *) H_DEBUG);

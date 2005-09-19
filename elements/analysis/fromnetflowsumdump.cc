@@ -36,7 +36,7 @@
 CLICK_DECLS
 
 FromNetFlowSummaryDump::FromNetFlowSummaryDump()
-    : Element(0, 1), _work_packet(0), _task(this)
+    : _work_packet(0), _task(this)
 {
     _ff.set_landmark_pattern("%f:%l");
 }

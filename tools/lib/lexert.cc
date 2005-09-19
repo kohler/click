@@ -421,13 +421,13 @@ LexerT::expect(int kind, bool report_error)
 	    return true;
 	}
 	if (report_error)
-	    lerror(_tcircle[_tpos], "expected %s", lexeme_string(kind).cc());
+	    lerror(_tcircle[_tpos], "expected %s", lexeme_string(kind).c_str());
     } else {
 	unsigned old_pos = _pos;
 	if (next_lexeme().is(kind))
 	    return true;
 	if (report_error)
-	    lerror(old_pos, _pos, "expected %s", lexeme_string(kind).cc());
+	    lerror(old_pos, _pos, "expected %s", lexeme_string(kind).c_str());
 	_pos = old_pos;
     }
     return false;
@@ -535,7 +535,7 @@ LexerT::make_element(String name, const Lexeme &location, int decl_pos2,
 	    if (!isdigit(name[i]))
 		ok = true;
 	if (!ok) {
-	    lerror(location, "element name '%s' has all-digit component", name.cc());
+	    lerror(location, "element name '%s' has all-digit component", name.c_str());
 	    break;
 	}
     }
@@ -580,7 +580,7 @@ LexerT::yport(int &port, int &pos1, int &pos2)
     const Lexeme &tword = lex();
     if (tword.is(lexIdent)) {
 	String p = tword.string();
-	const char *ps = p.cc();
+	const char *ps = p.c_str();
 	if (isdigit(ps[0]) || ps[0] == '-')
 	    port = strtol(ps, (char **)&ps, 0);
 	if (*ps != 0) {
@@ -808,7 +808,7 @@ LexerT::yelementclass(int pos1)
     } else {
 	String n = tname.string();
 	if (_router->eindex(n) >= 0)
-	    lerror(tname, "'%s' already used as an element name", n.cc());
+	    lerror(tname, "'%s' already used as an element name", n.c_str());
 	else
 	    eclass_name = n;
     }

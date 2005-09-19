@@ -26,7 +26,6 @@
 CLICK_DECLS
 
 SetRTS::SetRTS()
-  : Element(1, 1)
 {
 }
 
@@ -97,7 +96,6 @@ SetRTS_write_param(const String &in_s, Element *e, void *vparam,
 void
 SetRTS::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("rts", SetRTS_read_param, (void *) H_RTS);
   add_write_handler("rts", SetRTS_write_param, (void *) H_RTS);
 }

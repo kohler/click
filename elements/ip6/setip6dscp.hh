@@ -28,6 +28,7 @@ class SetIP6DSCP : public Element {
   ~SetIP6DSCP();
   
   const char *class_name() const	{ return "SetIP6DSCP"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
   uint8_t dscp() const			{ return _dscp >> IP6_DSCP_SHIFT; }

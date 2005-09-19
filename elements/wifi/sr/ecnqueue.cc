@@ -39,8 +39,6 @@ CLICK_DECLS
 
 ECNQueue::ECNQueue()
 {
-    set_ninputs(1);
-    set_noutputs(1);
 }
 
 ECNQueue::~ECNQueue()
@@ -116,7 +114,7 @@ ECNQueue::bubble_up(Packet *p_in)
 		sa << " pk->seq " << pk->data_seq();
 		sa << " on ";
 		sa << path_to_string(p);
-		click_chatter("%s", sa.take_string().cc());
+		click_chatter("%s", sa.take_string().c_str());
 
 		p_in->kill();
 		return 0;
@@ -133,7 +131,7 @@ ECNQueue::bubble_up(Packet *p_in)
 			sa << " pk2->seq " << pk2->data_seq();
 			sa << " on ";
 			sa << path_to_string(p);
-			click_chatter("%s", sa.take_string().cc());
+			click_chatter("%s", sa.take_string().c_str());
 		    }
 		}
 		Packet *tmp = _q[x];
@@ -159,7 +157,7 @@ ECNQueue::bubble_up(Packet *p_in)
 	sa << " drop";
 	sa << " pk->seq " << pk->data_seq();
 	sa << path_to_string(nfo->_p);
-	click_chatter("%s", sa.take_string().cc());
+	click_chatter("%s", sa.take_string().c_str());
     } else if (nfo->_ecn) {
 	pk->set_flag(FLAG_ECN);
 	/* finally, we altered the packet, so we need to redo 

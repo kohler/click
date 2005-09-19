@@ -87,6 +87,7 @@ class ChuckCheck : public Element {
   ~ChuckCheck();
   
   const char *class_name() const		{ return "ChuckCheck"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
   void add_handlers();
   

@@ -37,7 +37,7 @@ StaticIPLookup::~StaticIPLookup()
 int
 StaticIPLookup::add_route(const IPRoute& route, bool set, IPRoute* old_route, ErrorHandler *errh)
 {
-    if (ports_frozen())
+    if (router()->initialized())
 	return errh->error("can't add routes dynamically");
     else
 	return LinearIPLookup::add_route(route, set, old_route, errh);
@@ -46,7 +46,7 @@ StaticIPLookup::add_route(const IPRoute& route, bool set, IPRoute* old_route, Er
 int
 StaticIPLookup::remove_route(const IPRoute& r, IPRoute* old_route, ErrorHandler *errh)
 {
-    if (ports_frozen())
+    if (router()->initialized())
 	return errh->error("can't remove routes dynamically");
     else
 	return LinearIPLookup::remove_route(r, old_route, errh);

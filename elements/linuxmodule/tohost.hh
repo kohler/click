@@ -87,6 +87,7 @@ class ToHost : public AnyDevice { public:
     static void static_cleanup();
 
     const char *class_name() const	{ return "ToHost"; }
+    const char *port_count() const	{ return PORTS_1_0; }
     const char *processing() const	{ return PUSH; }
     const char *flags() const		{ return "S2"; }
 

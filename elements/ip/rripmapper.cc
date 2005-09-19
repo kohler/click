@@ -78,7 +78,7 @@ RoundRobinIPMapper::notify_rewriter(IPRw *rw, ErrorHandler *errh)
   int no = rw->noutputs();
   for (int i = 0; i < _patterns.size(); i++) {
     if (_forward_outputs[i] >= no || _reverse_outputs[i] >= no)
-      errh->error("port in `%s' out of range for `%s'", declaration().cc(), rw->declaration().cc());
+      errh->error("port in `%s' out of range for `%s'", declaration().c_str(), rw->declaration().c_str());
     rw->notify_pattern(_patterns[i], errh);
   }
 }

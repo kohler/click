@@ -76,6 +76,7 @@ class FromDevice : public AnyDevice, public Storage { public:
     ~FromDevice();
 
     const char *class_name() const	{ return "FromDevice"; }
+    const char *port_count() const	{ return PORTS_0_1; }
     const char *processing() const	{ return PUSH; }
     void *cast(const char *);
 

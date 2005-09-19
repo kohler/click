@@ -192,7 +192,7 @@ RouterAlign::want_output()
   bool changed = false;
   for (int i = 0; i < noalign && !changed; i++)
     if (new_oalign[i] != _oalign[i]) {
-      /* fprintf(stderr, "%s[%d] %s <- %s\n", _router->ename(oindex_eindex(i)).cc(), oindex_port(i), new_oalign[i].s().cc(), _oalign[i].s().cc()); */
+      /* fprintf(stderr, "%s[%d] %s <- %s\n", _router->ename(oindex_eindex(i)).c_str(), oindex_port(i), new_oalign[i].s().c_str(), _oalign[i].s().c_str()); */
       changed = true;
     }
   _oalign.swap(new_oalign);

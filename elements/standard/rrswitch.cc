@@ -21,18 +21,11 @@ CLICK_DECLS
 
 RoundRobinSwitch::RoundRobinSwitch()
 {
-  add_input();
   _next = 0;
 }
 
 RoundRobinSwitch::~RoundRobinSwitch()
 {
-}
-
-void
-RoundRobinSwitch::notify_noutputs(int i)
-{
-  set_noutputs(i < 1 ? 0 : i);
 }
 
 void

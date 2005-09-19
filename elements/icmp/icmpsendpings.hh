@@ -112,8 +112,8 @@ class ICMPPingSource : public Element { public:
     ~ICMPPingSource();
   
     const char *class_name() const		{ return "ICMPPingSource"; }
+    const char *port_count() const		{ return "0-1/1"; }
     const char *processing() const		{ return "h/a"; }
-    void notify_ninputs(int);
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);

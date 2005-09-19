@@ -67,7 +67,7 @@ flip_ports(uint32_t ports)
 // actual AggregateIPFlows operations
 
 AggregateIPFlows::AggregateIPFlows()
-    : Element(1, 1), _traceinfo_file(0), _packet_source(0), _filepos_h(0)
+    : _traceinfo_file(0), _packet_source(0), _filepos_h(0)
 {
 }
 
@@ -84,12 +84,6 @@ AggregateIPFlows::cast(const char *n)
 	return (Element *)this;
     else
 	return Element::cast(n);
-}
-
-void
-AggregateIPFlows::notify_noutputs(int n)
-{
-    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int
@@ -136,14 +130,14 @@ AggregateIPFlows::initialize(ErrorHandler *errh)
     
     if (_traceinfo_filename == "-")
 	_traceinfo_file = stdout;
-    else if (_traceinfo_filename && !(_traceinfo_file = fopen(_traceinfo_filename.cc(), "w")))
-	return errh->error("%s: %s", _traceinfo_filename.cc(), strerror(errno));
+    else if (_traceinfo_filename && !(_traceinfo_file = fopen(_traceinfo_filename.c_str(), "w")))
+	return errh->error("%s: %s", _traceinfo_filename.c_str(), strerror(errno));
     if (_traceinfo_file) {
 	fprintf(_traceinfo_file, "<?xml version='1.0' standalone='yes'?>\n\
 <trace");
 	if (_packet_source) {
 	    if (String s = HandlerCall::call_read(_packet_source, "filename").trim_space())
-		fprintf(_traceinfo_file, " file='%s'", s.cc());
+		fprintf(_traceinfo_file, " file='%s'", s.c_str());
 	    (void) HandlerCall::reset_read(_filepos_h, _packet_source, "packet_filepos");
 	}
 	fprintf(_traceinfo_file, ">\n");
@@ -182,7 +176,7 @@ AggregateIPFlows::delete_flowinfo(const HostPair &hp, FlowInfo *finfo, bool real
 	fprintf(_traceinfo_file, "<flow aggregate='%u' src='%s' sport='%d' dst='%s' dport='%d' begin='" PRITIMESTAMP "' duration='" PRITIMESTAMP "'",
 
 		sinfo->_aggregate,
-		src.s().cc(), sport, dst.s().cc(), dport,
+		src.s().c_str(), sport, dst.s().c_str(), dport,
 		sinfo->_first_timestamp.sec(), sinfo->_first_timestamp.subsec(),
 		duration.sec(), duration.subsec());
 	if (sinfo->_filepos)

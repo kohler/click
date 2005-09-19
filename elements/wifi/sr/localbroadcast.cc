@@ -27,8 +27,7 @@
 CLICK_DECLS
 
 LocalBroadcast::LocalBroadcast()
-  :  Element(2,2),
-     _timer(this), 
+  :  _timer(this), 
      _en(),
      _et(0),
      _packets_originated(0),

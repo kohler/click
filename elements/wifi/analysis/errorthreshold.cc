@@ -26,18 +26,11 @@
 CLICK_DECLS
 
 ErrorThreshold::ErrorThreshold()
-  : Element(1,1)
 {
 }
 
 ErrorThreshold::~ErrorThreshold()
 {
-}
-
-void
-ErrorThreshold::notify_noutputs(int n) 
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int
@@ -95,12 +88,6 @@ ErrorThreshold::push (int, Packet *p_in)
   return;
 }
 
-void
-ErrorThreshold::add_handlers()
-{
-  add_default_handlers(true);
-
-}
 CLICK_ENDDECLS
 EXPORT_ELEMENT(ErrorThreshold)
 

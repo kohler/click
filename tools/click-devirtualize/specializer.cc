@@ -89,7 +89,7 @@ ElementTypeInfo::locate_header_file(RouterT *for_archive, ErrorHandler *errh)
     else if (String found = clickpath_find_file(header_file, 0, source_directory))
       found_header_file = found;
     else {
-      errh->warning("can't locate header file \"%s\"", header_file.cc());
+      errh->warning("can't locate header file \"%s\"", header_file.c_str());
       found_header_file = header_file;
     }
   }
@@ -127,7 +127,7 @@ Specializer::read_source(ElementTypeInfo &etinfo, ErrorHandler *errh)
     return;
   etinfo.read_source = true;
   if (!etinfo.header_file) {
-    errh->warning("element class '%s' has no source file", etinfo.click_name.cc());
+    errh->warning("element class '%s' has no source file", etinfo.click_name.c_str());
     return;
   }
 
@@ -142,7 +142,7 @@ Specializer::read_source(ElementTypeInfo &etinfo, ErrorHandler *errh)
   if (cxxc)
     for (int i = 0; i < cxxc->nparents(); i++) {
       const String &p = cxxc->parent(i)->name();
-      if (p != "Element" && p != "TimedElement" && p != "UnlimitedElement")
+      if (p != "Element")
 	read_source(type_info(p), errh);
     }
 }
@@ -159,7 +159,7 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
   ElementTypeInfo &old_eti = etype_info(eindex);
   if (!old_eti.click_name) {
     errh->warning("no information about element class '%s'",
-		  _router->etype_name(eindex).cc());
+		  _router->etype_name(eindex).c_str());
     return;
   }
   
@@ -169,7 +169,7 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
   CxxClass *old_cxxc = _cxxinfo.find_class(old_eti.cxx_name);
   if (!old_cxxc) {
     errh->warning("C++ class '%s' not found for element class '%s'",
-		  old_eti.cxx_name.cc(), old_eti.click_name.cc());
+		  old_eti.cxx_name.c_str(), old_eti.click_name.c_str());
     return;
   }
 

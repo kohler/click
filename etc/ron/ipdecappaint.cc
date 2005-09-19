@@ -27,7 +27,6 @@
 
 
 IPDecapPaint::IPDecapPaint()
-  : Element(1, 1)
 {
 }
 

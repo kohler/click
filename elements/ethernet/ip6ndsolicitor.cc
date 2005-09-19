@@ -29,21 +29,15 @@ CLICK_DECLS
 IP6NDSolicitor::IP6NDSolicitor()
 : _expire_timer(expire_hook, this)
 {
-  add_input(); /* IP6 packets */
-  add_input(); /* ether/N.Advertisement responses */
-  add_output();/* ether/IP6 and ether/N.Solicitation queries */
+    // input 0: IP6 packets
+    // input 1: ether/N.Advertisement responses
+    // output 0: ether/IP6 and ether/N.Solicitation queries
   for (int i = 0; i < NMAP; i++)
     _map[i] = 0;
 }
 
 IP6NDSolicitor::~IP6NDSolicitor()
 {
-}
-
-void
-IP6NDSolicitor::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int

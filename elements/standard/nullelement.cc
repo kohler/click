@@ -20,7 +20,6 @@
 CLICK_DECLS
 
 NullElement::NullElement()
-  : Element(1, 1)
 {
 }
 
@@ -35,7 +34,6 @@ NullElement::simple_action(Packet *p)
 }
 
 PushNullElement::PushNullElement()
-  : Element(1, 1)
 {
 }
 
@@ -50,7 +48,6 @@ PushNullElement::push(int, Packet *p)
 }
 
 PullNullElement::PullNullElement()
-  : Element(1, 1)
 {
 }
 

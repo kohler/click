@@ -27,7 +27,6 @@
 CLICK_DECLS
 
 SetWifiExtraFlag::SetWifiExtraFlag()
-  : Element(1, 1)
 {
 }
 
@@ -94,7 +93,6 @@ SetWifiExtraFlag_write_param(const String &in_s, Element *e, void *vparam,
 void
 SetWifiExtraFlag::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("flag", SetWifiExtraFlag_read_param, (void *) H_FLAG);
   add_write_handler("flag", SetWifiExtraFlag_write_param, (void *) H_FLAG);
 }

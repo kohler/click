@@ -22,7 +22,6 @@
 CLICK_DECLS
 
 SetIP6Address::SetIP6Address()
-  : Element(1, 1)
 {
 }
 

@@ -61,15 +61,14 @@ public:
   LookupLocalGridRoute2();
   ~LookupLocalGridRoute2();
 
-  const char *class_name() const		{ return "LookupLocalGridRoute2"; }
+  const char *class_name() const	{ return "LookupLocalGridRoute2"; }
   void *cast(const char *);
-  const char *processing() const		{ return AGNOSTIC; }
+  const char *port_count() const	{ return PORTS_1_1; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
-  void add_handlers();
-  
   Packet *simple_action(Packet *);
 
 private:

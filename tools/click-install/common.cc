@@ -146,7 +146,7 @@ remove_unneeded_packages(const StringMap &active_modules, const StringMap &packa
     for (int i = 0; i < removals.size(); i++)
       to_remove += " " + removals[i];
     if (verbose)
-      errh->message("Removing packages:%s", to_remove.cc());
+      errh->message("Removing packages:%s", to_remove.c_str());
 
 #if FOR_LINUXMODULE
     String cmdline = "/sbin/rmmod" + to_remove + " 2>/dev/null";

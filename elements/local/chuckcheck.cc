@@ -22,7 +22,6 @@
 CLICK_DECLS
 
 ChuckCheck::ChuckCheck()
-  : Element(1, 1)
 {
 }
 

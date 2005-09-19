@@ -26,7 +26,6 @@
 CLICK_DECLS
 
 SetUDPChecksum::SetUDPChecksum()
-    : Element(1, 1)
 {
 }
 

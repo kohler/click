@@ -67,9 +67,9 @@ class AggregateLast : public Element, public AggregateListener { public:
     ~AggregateLast();
   
     const char *class_name() const	{ return "AggregateLast"; }
+    const char *port_count() const	{ return "1/1-2"; }
     const char *processing() const	{ return PUSH; }
 
-    void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);

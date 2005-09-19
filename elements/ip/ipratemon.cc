@@ -39,13 +39,6 @@ IPRateMonitor::~IPRateMonitor()
 {
 }
 
-void
-IPRateMonitor::notify_ninputs(int n)
-{
-  set_ninputs(n == 1 ? 1 : 2);
-  set_noutputs(n == 1 ? 1 : 2);
-}
-
 int
 IPRateMonitor::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -59,6 +59,7 @@ class ProbeTXRate : public Element { public:
   ~ProbeTXRate();
   
   const char *class_name() const		{ return "ProbeTXRate"; }
+  const char *port_count() const		{ return "2/0-2"; }
   const char *processing() const		{ return "ah/a"; }
   const char *flow_code() const			{ return "#/#"; }
   
@@ -69,7 +70,6 @@ class ProbeTXRate : public Element { public:
   void push (int, Packet *);
 
   Packet *pull(int);
-  void notify_noutputs(int);
   void process_feedback(Packet *);
   void assign_rate(Packet *);
   void add_handlers();
@@ -269,7 +269,7 @@ class ProbeTXRate : public Element { public:
 
       if (_rates.size() == 0) {
 	click_chatter("no rates to pick from for %s\n", 
-		      _eth.s().cc());
+		      _eth.s().c_str());
 	return _rates;
       }
       

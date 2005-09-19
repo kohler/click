@@ -40,6 +40,7 @@ public:
   ~ARPFaker();
   
   const char *class_name() const		{ return "ARPFaker"; }
+  const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return PUSH; }
   
   int configure(Vector<String> &, ErrorHandler *);

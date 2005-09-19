@@ -13,9 +13,8 @@ class CheckFragment : public Element { public:
   ~CheckFragment();
 
   const char *class_name() const	{ return "CheckFragment"; }
-  const char *processing() const		{ return "a/ah"; }
-  
-  void notify_noutputs(int);
+  const char *port_count() const	{ return "1/0-2"; }
+  const char *processing() const	{ return "a/ah"; }
   
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
@@ -23,8 +22,6 @@ class CheckFragment : public Element { public:
   Packet *simple_action(Packet *);
 
 
-  void add_handlers();
-  
   bool _header_only;
 
  private:

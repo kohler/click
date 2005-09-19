@@ -54,9 +54,9 @@ class AggregateFilter : public Element { public:
     ~AggregateFilter();
   
     const char *class_name() const	{ return "AggregateFilter"; }
+    const char *port_count() const	{ return "1/1-254"; }
     const char *processing() const	{ return PUSH; }
 
-    void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);
     void cleanup(CleanupStage);
 

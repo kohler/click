@@ -35,20 +35,13 @@ EtherSpanTree::~EtherSpanTree()
 {
 }
 
-void
-EtherSpanTree::notify_ninputs(int n) {
-  set_ninputs(n);
-  set_noutputs(n);
-  // the rest is redundant with notify_noutputs below
-  _port.resize(n);
-}
-
 int
 EtherSpanTree::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   Element* in;
   Element* out;
   Element* sw;
+  _port.resize(noutputs());
 
   if (cp_va_parse(conf, this, errh,
 		  cpEthernetAddress, "bridge address", _addr,

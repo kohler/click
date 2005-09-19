@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 SetTimestampDelta::SetTimestampDelta()
-    : Element(1, 1)
 {
 }
 

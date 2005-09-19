@@ -25,7 +25,6 @@ CLICK_DECLS
 
 LookupIP6Route::LookupIP6Route()
 {
-  add_input();
 }
 
 LookupIP6Route::~LookupIP6Route()
@@ -73,8 +72,9 @@ LookupIP6Route::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
   if (maxout <0)
     errh->warning("no routes");
-  
-  set_noutputs(maxout +1);
+
+  if (maxout >= noutputs())
+      return errh->error("need %d or more output ports", maxout + 1);
   return 0;
 
 }

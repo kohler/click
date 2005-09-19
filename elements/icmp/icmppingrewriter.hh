@@ -57,10 +57,9 @@ class ICMPPingRewriter : public Element { public:
   ~ICMPPingRewriter();
 
   const char *class_name() const	{ return "ICMPPingRewriter"; }
+  const char *port_count() const	{ return "1-2/1-2"; }
   const char *processing() const	{ return PUSH; }
   
-  void notify_ninputs(int);
-  void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

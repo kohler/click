@@ -21,7 +21,7 @@
 CLICK_DECLS 
 
 YarvisMetric::YarvisMetric()
-  : GridGenericMetric(0, 0), _ls(0)
+  : _ls(0)
 {
 }
 
@@ -104,15 +104,9 @@ YarvisMetric::append_metric(const metric_t &r, const metric_t &l) const
   
   if (l.val() > 15)
     click_chatter("YarvisMetric %s: append_metric WARNING: metric %u%% is too large (> 15!) for link metric",
-		  id().cc(), r.val());
+		  id().c_str(), r.val());
 
   return metric_t(r.val() + l.val());
-}
-
-void
-YarvisMetric::add_handlers()
-{
-  add_default_handlers(true);
 }
 
 CLICK_ENDDECLS

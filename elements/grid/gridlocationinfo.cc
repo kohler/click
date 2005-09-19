@@ -63,7 +63,7 @@ GridLocationInfo::logging_hook(Timer *, void *thunk) {
   
   const int BUFSZ = 255;
   char buf[BUFSZ];
-  int res = snprintf(buf, BUFSZ, "loc %s\n\n", loc.s().cc());
+  int res = snprintf(buf, BUFSZ, "loc %s\n\n", loc.s().c_str());
   if (res < 0) {
     click_chatter("LocationInfo read handler buffer too small");
     return;
@@ -101,9 +101,9 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   double lon = ((double) lon_int) / 1e5; 
   double h = ((double) h_int) / 1e3;
   if (lat > 90 || lat < -90)
-    return errh->error("%s: latitude must be between +/- 90 degrees", id().cc());
+    return errh->error("%s: latitude must be between +/- 90 degrees", id().c_str());
   if (lon > 180 || lon < -180)
-    return errh->error("%s: longitude must be between +/- 180 degrees", id().cc());
+    return errh->error("%s: longitude must be between +/- 180 degrees", id().c_str());
 
   _lat0 = lat;
   _lon0 = lon;
@@ -218,7 +218,7 @@ loc_read_handler(Element *f, void *)
   
   const int BUFSZ = 255;
   char buf[BUFSZ];
-  int res = snprintf(buf, BUFSZ, "%s (err=%hu good=%s seq=%u)\n", loc.s().cc(),
+  int res = snprintf(buf, BUFSZ, "%s (err=%hu good=%s seq=%u)\n", loc.s().c_str(),
 		     l->loc_err(), (l->loc_good() ? "yes" : "no"), l->seq_no());
   if (res < 0) {
     click_chatter("GridLocationInfo read handler buffer too small");
@@ -260,7 +260,6 @@ tag_write_handler(const String &arg, Element *element,
 void
 GridLocationInfo::add_handlers()
 {
-  add_default_handlers(true);
   add_write_handler("loc", loc_write_handler, (void *) 0);
   add_read_handler("loc", loc_read_handler, (void *) 0);
   add_write_handler("tag", tag_write_handler, (void *) 0);
@@ -273,7 +272,7 @@ GridLocationInfo::set_new_dest(double v_lat, double v_lon)
 { /* velocities v_lat and v_lon in degrees per sec */
 
   if (_move != 2) {
-    click_chatter("%s: not configured to accept set_new_dest directives!", id().cc());
+    click_chatter("%s: not configured to accept set_new_dest directives!", id().c_str());
     return;
   }
 

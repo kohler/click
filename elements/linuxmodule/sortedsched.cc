@@ -218,7 +218,7 @@ BalancedThreadSched::run_timer()
 	    Element *e = sorted[i]->element();
 	    if (e)
 		click_chatter("%u: %s %d, was on %d", 
-			      now, e->id().cc(), 
+			      now, e->id().c_str(), 
 			      sorted[i]->cycles(), 
 			      sorted[i]->thread_preference());
 	}
@@ -257,7 +257,7 @@ BalancedThreadSched::run_timer()
 	    Element *e = sorted[i]->element();
 	    if (e) 
 		click_chatter("%u: %s %d, now on %d (%d)", 
-			      now, e->id().cc(), 
+			      now, e->id().c_str(), 
 			      sorted[i]->cycles(), 
 			      sorted[i]->thread_preference(), avg_load);
 	}

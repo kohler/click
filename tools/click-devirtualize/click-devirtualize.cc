@@ -114,7 +114,7 @@ parse_instruction(const String &text, Signatures &sigs,
     for (int i = 1; i < words.size(); i++)
       sigs.specialize_class(words[i], 0);
   } else
-    errh->error("unknown command '%s'", words[0].cc());
+    errh->error("unknown command '%s'", words[0].c_str());
 }
 
 static void
@@ -494,25 +494,25 @@ particular purpose.\n");
     // compile kernel module
     if (compile_kernel > 0) {
       String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=kernel --package=" + package_name + ".ko " + cxx_filename;
-      int compile_retval = system(compile_command.cc());
+      int compile_retval = system(compile_command.c_str());
       if (compile_retval == 127)
-	errh->fatal("could not run '%s'", compile_command.cc());
+	errh->fatal("could not run '%s'", compile_command.c_str());
       else if (compile_retval < 0)
-	errh->fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
+	errh->fatal("could not run '%s': %s", compile_command.c_str(), strerror(errno));
       else if (compile_retval != 0)
-	errh->fatal("'%s' failed", compile_command.cc());
+	errh->fatal("'%s' failed", compile_command.c_str());
     }
     
     // compile userlevel
     if (compile_user > 0) {
       String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=user --package=" + package_name + ".uo " + cxx_filename;
-      int compile_retval = system(compile_command.cc());
+      int compile_retval = system(compile_command.c_str());
       if (compile_retval == 127)
-	errh->fatal("could not run '%s'", compile_command.cc());
+	errh->fatal("could not run '%s'", compile_command.c_str());
       else if (compile_retval < 0)
-	errh->fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
+	errh->fatal("could not run '%s': %s", compile_command.c_str(), strerror(errno));
       else if (compile_retval != 0)
-	errh->fatal("'%s' failed", compile_command.cc());
+	errh->fatal("'%s' failed", compile_command.c_str());
     }
   }
 

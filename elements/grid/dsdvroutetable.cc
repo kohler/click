@@ -167,7 +167,6 @@ DSDVRouteTable::use_old_route(const IPAddress &dst, unsigned jiff)
 #endif
 
 DSDVRouteTable::DSDVRouteTable() : 
-  GridGenericRouteTable(1, 1),
 #if SEQ_METRIC
   _use_seq_metric(false),
 #endif
@@ -544,7 +543,7 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
   unsigned int next_trigger_jiff = _last_triggered_update + msec_to_jiff(_min_triggered_update_period);
 
 #if DBG
-  click_chatter("%s: XXX trigger_hoook(%s)\n", id().cc(), ip.s().cc());
+  click_chatter("%s: XXX trigger_hoook(%s)\n", id().c_str(), ip.s().c_str());
 #endif
 
   if (jiff >= next_trigger_jiff) {
@@ -556,12 +555,12 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
 
     send_triggered_update(ip);
 #if DBG
-    click_chatter("%s: XXX sent triggered update\n", id().cc());
+    click_chatter("%s: XXX sent triggered update\n", id().c_str());
 #endif
   }
   else {
 #if DBG
-    click_chatter("%s: XXX too early to send triggered update (jiff=%d, next_trigger_jiff=%d, _min_triggered_update_period=%d)\n", id().cc(), jiff, next_trigger_jiff, _min_triggered_update_period);
+    click_chatter("%s: XXX too early to send triggered update (jiff=%d, next_trigger_jiff=%d, _min_triggered_update_period=%d)\n", id().c_str(), jiff, next_trigger_jiff, _min_triggered_update_period);
 #endif
     // it's too early to send this update, so cancel all oustanding
     // triggered updates that would also be too early
@@ -676,7 +675,7 @@ DSDVRouteTable::update_metric(RTEntry &r)
   RTEntry *next_hop = _rtes.findp(r.next_hop_ip);
   if (!next_hop) {
     click_chatter("DSDVRouteTable %s: ERROR updating metric for %s; no information for next hop %s; invalidating metric",
-		  id().cc(), r.dest_ip.s().cc(), r.next_hop_ip.s().cc());
+		  id().c_str(), r.dest_ip.s().c_str(), r.next_hop_ip.s().c_str());
     r.metric = _bad_metric;
     return;
   }
@@ -706,7 +705,7 @@ DSDVRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
 {
   // true if r1 is preferable to r2
 #if DBG2
-  click_chatter("%s: XXX metric_preferable valid?  1:%s  2:%s   1 < 2? %s", id().cc(),
+  click_chatter("%s: XXX metric_preferable valid?  1:%s  2:%s   1 < 2? %s", id().c_str(),
 		(r1.metric.good() ? "yes" : "no"), (r2.metric.good() ? "yes" : "no"),
 		(metric_val_lt(r1.metric.val(), r2.metric.val()) ? "yes" : "no"));
   click_chatter("\tr1.metric=%u, r2.metric=%u", r1.metric.val(), r2.metric.val());
@@ -761,7 +760,7 @@ DSDVRouteTable::send_full_update()
 {
   check_invariants();
 #if DBG
-  click_chatter("%s: XXX sending full update\n", id().cc());
+  click_chatter("%s: XXX sending full update\n", id().c_str());
 #endif
   unsigned int jiff = dsdv_jiffies();
   Vector<RTEntry> routes;
@@ -772,7 +771,7 @@ DSDVRouteTable::send_full_update()
       routes.push_back(r);
 #if DBG
     else
-      click_chatter("%s: XXX excluding %s\n", id().cc(), r.dest_ip.s().cc());
+      click_chatter("%s: XXX excluding %s\n", id().c_str(), r.dest_ip.s().c_str());
 #endif
   }
 
@@ -784,7 +783,7 @@ DSDVRouteTable::send_full_update()
       ad_routes.clear();
 #if DBG
       click_chatter("%s: too many routes; sending out partial full dump (%d)\n", 
-		    id().cc(), i);
+		    id().c_str(), i);
 #endif
     }
 
@@ -852,7 +851,7 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
       ad_routes.clear();
 #if DBG
       click_chatter("%s: too many routes; sending out partial triggered update (%d)\n", 
-		    id().cc(), i);
+		    id().c_str(), i);
 #endif
     }
 
@@ -910,7 +909,7 @@ DSDVRouteTable::handle_update(RTEntry new_r, const bool was_sender, const unsign
 
 #if DBG
   click_chatter("%s: XXX dest=%s advertise_ok_jiffies=%u wst=%u jiff=%d\n", 
-		id().cc(), new_r.dest_ip.s().cc(),
+		id().c_str(), new_r.dest_ip.s().c_str(),
 		new_r.advertise_ok_jiffies, new_r.wst, jiff);
 #endif
 
@@ -920,8 +919,8 @@ DSDVRouteTable::handle_update(RTEntry new_r, const bool was_sender, const unsign
       new_r.need_metric_ad = true;
       schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
 #if DBG
-      click_chatter("%s: XXX scheduled brand-new route to %s to be advertised in %d jiffies from now\n", id().cc(),
-		    new_r.dest_ip.s().cc(), new_r.advertise_ok_jiffies - jiff);
+      click_chatter("%s: XXX scheduled brand-new route to %s to be advertised in %d jiffies from now\n", id().c_str(),
+		    new_r.dest_ip.s().c_str(), new_r.advertise_ok_jiffies - jiff);
 #endif
     }
     insert_route(new_r, was_sender ? GridGenericLogger::NEW_DEST_SENDER : GridGenericLogger::NEW_DEST);
@@ -931,8 +930,8 @@ DSDVRouteTable::handle_update(RTEntry new_r, const bool was_sender, const unsign
     dsdv_assert(new_r.good() ? old_r->good() : old_r->broken()); // same seq ==> same broken state
 #if DBG2
     click_chatter("%s: XXX checking for better route to %s from %s with same seqno %u",
-		  id().cc(), new_r.dest_ip.s().cc(), new_r.next_hop_ip.s().cc(), new_r.seq_no());
-    click_chatter("%s: XXX good=%s  preferable=%s", id().cc(), new_r.good() ? "yes" : "no",
+		  id().c_str(), new_r.dest_ip.s().c_str(), new_r.next_hop_ip.s().c_str(), new_r.seq_no());
+    click_chatter("%s: XXX good=%s  preferable=%s", id().c_str(), new_r.good() ? "yes" : "no",
 		  metric_preferable(new_r, *old_r) ? "yes" : "no");
 #endif
     if (new_r.good() && metric_preferable(new_r, *old_r)) {
@@ -999,14 +998,14 @@ DSDVRouteTable::simple_action(Packet *packet)
    */
   click_ether *eh = (click_ether *) packet->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
-    click_chatter("DSDVRouteTable %s: got non-Grid packet type", id().cc());
+    click_chatter("DSDVRouteTable %s: got non-Grid packet type", id().c_str());
     packet->kill();
     return 0;
   }
   grid_hdr *gh = (grid_hdr *) (eh + 1);
 
   if (gh->type != grid_hdr::GRID_LR_HELLO) {
-    click_chatter("DSDVRouteTable %s: received unknown Grid packet; ignoring it", id().cc());
+    click_chatter("DSDVRouteTable %s: received unknown Grid packet; ignoring it", id().c_str());
     packet->kill();
     return 0;
   }
@@ -1015,7 +1014,7 @@ DSDVRouteTable::simple_action(Packet *packet)
   EtherAddress ethaddr((unsigned char *) eh->ether_shost);
 
   if (ethaddr == _eth) {
-    click_chatter("DSDVRouteTable %s: received own Grid packet; ignoring it", id().cc());
+    click_chatter("DSDVRouteTable %s: received own Grid packet; ignoring it", id().c_str());
     packet->kill();
     return 0;
   }
@@ -1033,7 +1032,7 @@ DSDVRouteTable::simple_action(Packet *packet)
   unsigned num_entries = hlo->num_nbrs;
   if (num_entries > max_entries) {
     click_chatter("DSDVRouteTable %s: route ad from %s contains fewer routes than claimed; want %u, have no more than %u",
-		  id().cc(), ipaddr.s().cc(), num_entries, max_entries);
+		  id().c_str(), ipaddr.s().c_str(), num_entries, max_entries);
     num_entries = max_entries;
   }
 
@@ -1041,10 +1040,10 @@ DSDVRouteTable::simple_action(Packet *packet)
   RTEntry *r = _rtes.findp(ipaddr);
   if (!r)
     click_chatter("DSDVRouteTable %s: new 1-hop nbr %s -- %s", 
-		  id().cc(), ipaddr.s().cc(), ethaddr.s().cc()); 
+		  id().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
   else if (r->dest_eth && r->dest_eth != ethaddr)
     click_chatter("DSDVRouteTable %s: ethernet address of %s changed from %s to %s", 
-		  id().cc(), ipaddr.s().cc(), r->dest_eth.s().cc(), ethaddr.s().cc());
+		  id().c_str(), ipaddr.s().c_str(), r->dest_eth.s().c_str(), ethaddr.s().c_str());
 
 #if SEQ_METRIC
   // track last few broadcast numbers we heard directly from this node
@@ -1081,10 +1080,10 @@ DSDVRouteTable::simple_action(Packet *packet)
 #if 0
   if (old)
     click_chatter("XXX %s %s snd_saw %s  old metric %u  old last seen %u\n",
-		  id().cc(), ipaddr.s().cc(), sender_saw_us ? "y" : "n", old->metric.val, old->last_seen_jiffies);
+		  id().c_str(), ipaddr.s().c_str(), sender_saw_us ? "y" : "n", old->metric.val, old->last_seen_jiffies);
   else 
     click_chatter("XXX %s %s snd_saw %s\n",
-		id().cc(), ipaddr.s().cc(), sender_saw_us ? "y" : "n");
+		id().c_str(), ipaddr.s().c_str(), sender_saw_us ? "y" : "n");
 #endif
   if (_use_seen && !sender_saw_us &&
       (!old || old->metric.val() == _metric_seen || (jiff - old->last_seen_jiffies) > 3*msec_to_jiff(_period))) {
@@ -1325,7 +1324,7 @@ DSDVRouteTable::write_paused(const String &arg, Element *el,
     return errh->error("`paused' must be a boolean");
   
   click_chatter("DSDVRouteTable %s: %s", 
-		rt->id().cc(), rt->_paused ? "pausing packet routes (_paused = true)" : 
+		rt->id().c_str(), rt->_paused ? "pausing packet routes (_paused = true)" : 
 		"unpausing packet routes (_paused = false)");
 
   if (!was_paused && rt->_paused) {
@@ -1391,17 +1390,17 @@ DSDVRouteTable::write_use_old_route(const String &arg, Element *el,
 #if USE_OLD_SEQ
   rt->_use_old_route = use_old;
   click_chatter("DSDVRouteTable %s: setting _use_old_route to %s", 
-		rt->id().cc(), rt->_use_old_route ? "true" : "false");
+		rt->id().c_str(), rt->_use_old_route ? "true" : "false");
 #endif
 #if USE_GOOD_NEW_ROUTES
   rt->_use_good_new_route = use_good;
   click_chatter("DSDVRouteTable %s: setting _use_good_new_route to %s", 
-		rt->id().cc(), rt->_use_good_new_route ? "true" : "false");
+		rt->id().c_str(), rt->_use_good_new_route ? "true" : "false");
 #endif
 #if ENABLE_SEEN
   rt->_use_seen = use_seen;
   click_chatter("DSDVRouteTable %s: setting _use_seen to %s", 
-		rt->id().cc(), rt->_use_seen ? "true" : "false");
+		rt->id().c_str(), rt->_use_seen ? "true" : "false");
 #endif
   return 0;
 }
@@ -1421,7 +1420,6 @@ DSDVRouteTable::print_dump(Element *e, void *)
 void
 DSDVRouteTable::add_handlers()
 {
-  add_default_handlers(false);
   add_read_handler("nbrs_v", print_nbrs_v, 0);
   add_read_handler("nbrs", print_nbrs, 0);
   add_read_handler("rtes_v", print_rtes_v, 0);
@@ -1496,7 +1494,7 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
   /* allocate and align the packet */
   WritablePacket *p = Packet::make(psz + 2); // for alignment
   if (p == 0) {
-    click_chatter("DSDVRouteTable %s: cannot make packet!", id().cc());
+    click_chatter("DSDVRouteTable %s: cannot make packet!", id().c_str());
     dsdv_assert(0);
   } 
   ASSERT_ALIGNED(p->data());
@@ -1592,17 +1590,17 @@ DSDVRouteTable::RTEntry::dump() const
   
   StringAccum sa;
   sa << "  curr jiffies: "  << jiff << "\n"
-     << "       dest_ip: " << dest_ip.s().cc() << "\n"
-     << "      dest_eth: " << dest_eth.s().cc() << "\n"
-     << "   next_hop_ip: " << next_hop_ip.s().cc() << "\n"
-     << "  next_hop_eth: " << next_hop_eth.s().cc() << "\n"
+     << "       dest_ip: " << dest_ip.s().c_str() << "\n"
+     << "      dest_eth: " << dest_eth.s().c_str() << "\n"
+     << "   next_hop_ip: " << next_hop_ip.s().c_str() << "\n"
+     << "  next_hop_eth: " << next_hop_eth.s().c_str() << "\n"
      << "next_hop_iface: " << next_hop_interface << "\n"
      << "        seq_no: " << seq_no() << "\n"
      << "      num_hops: " << (unsigned int) num_hops() << "\n"
-     << "  last_updated: " << jiff_diff_string(last_updated_jiffies, jiff).cc() << "\n"
-     << "  last_expired: " << jiff_diff_string(last_expired_jiffies, jiff).cc() << "\n"
-     << "      last_seq: " << jiff_diff_string(last_seq_jiffies, jiff).cc() << "\n"
-     << "  advertise_ok: " << jiff_diff_string(advertise_ok_jiffies, jiff).cc() << "\n"
+     << "  last_updated: " << jiff_diff_string(last_updated_jiffies, jiff).c_str() << "\n"
+     << "  last_expired: " << jiff_diff_string(last_expired_jiffies, jiff).c_str() << "\n"
+     << "      last_seq: " << jiff_diff_string(last_seq_jiffies, jiff).c_str() << "\n"
+     << "  advertise_ok: " << jiff_diff_string(advertise_ok_jiffies, jiff).c_str() << "\n"
      << "        metric: " << metric.val() << "\n"
      << "need_metric_ad: " << need_metric_ad << "\n"
      << "   need_seq_ad: " << need_seq_ad << "\n"
@@ -1663,10 +1661,10 @@ void
 DSDVRouteTable::dsdv_assert_(const char *file, int line, const char *expr) const
 {
   click_chatter("DSDVRouteTable %s assertion \"%s\" failed: file %s, line %d",
-		id().cc(), expr, file, line);
+		id().c_str(), expr, file, line);
   click_chatter("Routing table state:");
   for (RTIter i = _rtes.begin(); i; i++) {
-    click_chatter("%s\n", i.value().dump().cc());
+    click_chatter("%s\n", i.value().dump().c_str());
   }
 #ifdef CLICK_USERLEVEL  
   abort();

@@ -43,7 +43,6 @@ LinkTester::LinkTester() :
   _bcast_lambda(1),
   _data_buf(0)
 {
-  add_output();
 }
 
 LinkTester::~LinkTester()
@@ -131,8 +130,8 @@ LinkTester::timer_hook()
 {
   Timestamp tv = Timestamp::now();
 #if 1
-  click_chatter("OK %{timestamp}    (delta: %s)\n", tv.unparse().cc(),
-		(tv - _last_time).unparse().cc());
+  click_chatter("OK %{timestamp}    (delta: %s)\n", tv.unparse().c_str(),
+		(tv - _last_time).unparse().c_str());
 #endif
   _last_time = tv;
   switch (_curr_state) {

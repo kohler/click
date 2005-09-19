@@ -9,7 +9,7 @@
 CLICK_DECLS
 
 PacketLogger2::PacketLogger2()
-  : Element(1, 1), _nb(34), _p(1000)
+  : _nb(34), _p(1000)
 {
 }
 
@@ -46,7 +46,7 @@ PacketLogger2::simple_action(Packet *p_in)
   int s_post = _p.size();
   
   if (s_post != s_pre + 1) 
-    click_chatter("PacketLogger2 %s: ERROR: couldn't add packet to log, log size = %d", id().cc(), s_pre);
+    click_chatter("PacketLogger2 %s: ERROR: couldn't add packet to log, log size = %d", id().c_str(), s_pre);
       
   return p_in;
 }
@@ -54,7 +54,6 @@ PacketLogger2::simple_action(Packet *p_in)
 void
 PacketLogger2::add_handlers()
 {
-  add_default_handlers(false);
   add_read_handler("log", print_log, 0);
   add_write_handler("clear", clear, 0);
   add_read_handler("left", left, 0);

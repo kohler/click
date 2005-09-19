@@ -281,7 +281,7 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
     if (match[i] >= 0)
       matchv_e[i] = input_r->element(match[i]);
   
-  //for (int i = 0; i < pat_n; i++) fprintf(stderr,"%d ", match[i]);/* >= 0 ? input->_crap->ename(match[i]).cc() : "<crap>");*/fputs("\n",stderr);
+  //for (int i = 0; i < pat_n; i++) fprintf(stderr,"%d ", match[i]);/* >= 0 ? input->_crap->ename(match[i]).c_str() : "<crap>");*/fputs("\n",stderr);
   return (match_eindex >= 0 ? true : false);
 }
 

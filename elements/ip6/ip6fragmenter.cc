@@ -28,20 +28,10 @@ IP6Fragmenter::IP6Fragmenter()
 {
   _fragments = 0;
   _mtu = 0;
-  add_input();
-  add_output();
 }
 
 IP6Fragmenter::~IP6Fragmenter()
 {
-}
-
-void
-IP6Fragmenter::notify_noutputs(int n)
-{
-  // allow 2 outputs -- then packet is pushed onto 2d output instead of
-  // dropped
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 

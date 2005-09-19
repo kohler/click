@@ -33,6 +33,7 @@ class ARPTable : public Element { public:
   ~ARPTable();
   
   const char *class_name() const		{ return "ARPTable"; }
+  const char *port_count() const		{ return PORTS_0_0; }
 
   int configure(Vector<String> &, ErrorHandler *);
   void *cast(const char *n);

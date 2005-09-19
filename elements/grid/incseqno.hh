@@ -50,6 +50,7 @@ class IncrementSeqNo : public Element  {
   ~IncrementSeqNo();
 
   const char *class_name() const		{ return "IncrementSeqNo"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
   
   int configure(Vector<String> &, ErrorHandler *);

@@ -65,7 +65,6 @@ todev_static_cleanup()
 
 ToDevice::ToDevice()
 {
-    add_input();
     todev_static_initialize();
 }
 

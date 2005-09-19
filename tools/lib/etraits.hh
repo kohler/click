@@ -22,6 +22,7 @@ struct ElementTraits {
     String documentation_name;
     String header_file;
     String source_file;
+    String port_count_code;
     String processing_code;
     String flow_code;
     String flags;
@@ -48,7 +49,7 @@ struct ElementTraits {
 
     enum {
 	D_NONE,
-	D_CLASS, D_CXX_CLASS, D_HEADER_FILE, D_PROCESSING,
+	D_CLASS, D_CXX_CLASS, D_HEADER_FILE, D_PORT_COUNT, D_PROCESSING,
 	D_FLOW_CODE, D_FLAGS, D_REQUIREMENTS, D_PROVISIONS,
 	D_SOURCE_FILE, D_DOC_NAME,
 	D_FIRST_DEFAULT = D_CLASS, D_LAST_DEFAULT = D_PROVISIONS

@@ -43,8 +43,8 @@ class CPUQueue : public Element {
   ~CPUQueue();
   
   const char *class_name() const		{ return "CPUQueue"; }
+  const char *port_count() const		{ return "1/1-"; }
   const char *processing() const		{ return PUSH_TO_PULL; }
-  void notify_noutputs(int);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
 

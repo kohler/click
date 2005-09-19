@@ -30,18 +30,11 @@ CLICK_DECLS
 #define RED_DEBUG 0
 
 RED::RED()
-    : Element(1, 1)
 {
 }
 
 RED::~RED()
 {
-}
-
-void
-RED::notify_noutputs(int n)
-{
-    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 void
@@ -169,7 +162,7 @@ RED::initialize(ErrorHandler *errh)
 	if (Storage *s = (Storage *)_queue_elements[i]->cast("Storage"))
 	    _queues.push_back(s);
 	else
-	    errh->error("`%s' is not a Storage element", _queue_elements[i]->id().cc());
+	    errh->error("`%s' is not a Storage element", _queue_elements[i]->id().c_str());
     if (_queues.size() != _queue_elements.size())
 	return -1;
     else if (_queues.size() == 1)
@@ -244,13 +237,13 @@ RED::should_drop()
     if (avg <= _min_thresh) {
 	_count = -1;
 #if RED_DEBUG
-	click_chatter("%s: no drop", declaration().cc());
+	click_chatter("%s: no drop", declaration().c_str());
 #endif
 	return false;
     } else if (avg > _max_thresh * 2) {
 	_count = -1;
 #if RED_DEBUG
-	click_chatter("%s: drop, over max_thresh", declaration().cc());
+	click_chatter("%s: drop, over max_thresh", declaration().c_str());
 #endif
 	return true;
     }
@@ -266,7 +259,7 @@ RED::should_drop()
     // note: division had Approx[]
     if (_count > 0 && p_b > 0 && _count > _random_value / p_b) {
 #if RED_DEBUG
-	click_chatter("%s: drop, random drop (%d, %d, %d, %d)", declaration().cc(), _count, p_b, _random_value, _random_value/p_b);
+	click_chatter("%s: drop, random drop (%d, %d, %d, %d)", declaration().c_str(), _count, p_b, _random_value, _random_value/p_b);
 #endif
 	_count = 0;
 	_random_value = (random() >> 5) & 0xFFFF;
@@ -278,7 +271,7 @@ RED::should_drop()
 	_random_value = (random() >> 5) & 0xFFFF;
     
 #if RED_DEBUG
-    click_chatter("%s: no drop", declaration().cc());
+    click_chatter("%s: no drop", declaration().c_str());
 #endif
     return false;
 }

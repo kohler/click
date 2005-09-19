@@ -26,8 +26,6 @@ CLICK_DECLS
 
 FixIPSrc::FixIPSrc()
 {
-  add_input();
-  add_output();
 }
 
 FixIPSrc::~FixIPSrc()

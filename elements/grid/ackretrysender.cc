@@ -28,7 +28,7 @@
 CLICK_DECLS
 
 ACKRetrySender::ACKRetrySender() 
-  : Element(2, 1), _timeout(0), _max_tries(0), 
+  : _timeout(0), _max_tries(0), 
     _num_tries(0), _history_length(500),
     _waiting_packet(0), _verbose(true), 
     _timer(this), _task(this)
@@ -48,14 +48,14 @@ ACKRetrySender::push(int port, Packet *p)
   if (!_waiting_packet) {
     // we aren't waiting for ACK
     if (_verbose)
-      click_chatter("ACKRetrySender %s: got unexpected ACK", id().cc());
+      click_chatter("ACKRetrySender %s: got unexpected ACK", id().c_str());
     p->kill();
     return;
   }
 
   click_ether *e_ack = (click_ether *) p->data();
   if (ntohs(e_ack->ether_type) != ETHERTYPE_GRID_ACK) {
-    click_chatter("ACKRetrySender %d: got non-ACK packet on second input", id().cc());
+    click_chatter("ACKRetrySender %d: got non-ACK packet on second input", id().c_str());
     p->kill();
     return;
   }
@@ -66,7 +66,7 @@ ACKRetrySender::push(int port, Packet *p)
       memcmp(e_ack->ether_dhost, e_waiting->ether_shost, 6)) {
     // no, it wasn't for our packet...
     if (_verbose)
-      click_chatter("ACKRetrySender %s: got ACK for wrong packet", id().cc());
+      click_chatter("ACKRetrySender %s: got ACK for wrong packet", id().c_str());
     p->kill();
     return;
   }
@@ -193,7 +193,6 @@ ACKRetrySender::check()
 void
 ACKRetrySender::add_handlers()
 {
-  add_default_handlers(false);
   add_read_handler("history", print_history, 0);
   add_read_handler("summary", print_summary, 0);
   add_write_handler("clear", clear_history, 0);

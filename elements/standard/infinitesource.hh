@@ -95,6 +95,7 @@ class InfiniteSource : public Element, public ActiveNotifier { public:
   
   const char *class_name() const		{ return "InfiniteSource"; }
   void *cast(const char *);
+  const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return AGNOSTIC; }
   const char *flags() const			{ return "S1"; }
   void add_handlers();

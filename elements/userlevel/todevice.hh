@@ -75,6 +75,7 @@ class ToDevice : public Element { public:
   ~ToDevice();
   
   const char *class_name() const		{ return "ToDevice"; }
+  const char *port_count() const		{ return "1/0-2"; }
   const char *processing() const		{ return "l/h"; }
   const char *flags() const			{ return "S2"; }
   
@@ -83,8 +84,6 @@ class ToDevice : public Element { public:
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
   void add_handlers();
-
-  void notify_noutputs(int);
 
   String ifname() const				{ return _ifname; }
   int fd() const				{ return _fd; }

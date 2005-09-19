@@ -71,7 +71,6 @@ FromDevice::static_cleanup()
 
 FromDevice::FromDevice()
 {
-    add_output();
     _head = _tail = 0;
 }
 
@@ -125,7 +124,7 @@ FromDevice::initialize(ErrorHandler *errh)
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_reader_" + String(ifindex()));
 	if (used)
-	    return errh->error("duplicate reader for device '%s'", _devname.cc());
+	    return errh->error("duplicate reader for device '%s'", _devname.c_str());
 	used = this;
     }
 

@@ -29,7 +29,7 @@ SpinlockRelease::configure(Vector<String> &conf, ErrorHandler *errh)
 	(SpinlockInfo *)(router()->element(i)->cast("SpinlockInfo"))) {
       _lock = si->query(name, id());
       if (!_lock)
-        return errh->error("cannot locate spinlock %s",name.cc());
+        return errh->error("cannot locate spinlock %s",name.c_str());
       break;
     }
   }

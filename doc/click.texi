@@ -2904,7 +2904,7 @@ Inside the @code{configure} method.
 
 @item init
 Inside the @code{add_handlers}, @code{initialize}, and
-@code{uninitialize} methods.
+@code{cleanup} methods.
 
 @item run
 At run time. That is, inside some @code{push} or @code{pull} method,

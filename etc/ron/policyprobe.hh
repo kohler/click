@@ -168,7 +168,7 @@ public:
   }
 
   void print() {
-    fprintf(stderr, "%s.%d > %s.%d", src.unparse().cc(), sport, dst.unparse().cc(), dport);
+    fprintf(stderr, "%s.%d > %s.%d", src.unparse().c_str(), sport, dst.unparse().c_str(), dport);
   }
 
   void initialize(IPAddress s, unsigned short sp,

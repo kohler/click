@@ -43,7 +43,7 @@
 CLICK_DECLS
 
 ToSimDevice::ToSimDevice()
-  : Element(1, 0), _fd(-1), _my_fd(false), _task(this), _encap_type(SIMCLICK_PTYPE_ETHER)
+  : _fd(-1), _my_fd(false), _task(this), _encap_type(SIMCLICK_PTYPE_ETHER)
 {
 }
 
@@ -83,7 +83,7 @@ ToSimDevice::initialize(ErrorHandler *errh)
 
   // Get the simulator ifid
   Router* myrouter = router();
-  _fd = myrouter->sim_get_ifid(_ifname.cc());
+  _fd = myrouter->sim_get_ifid(_ifname.c_str());
   if (_fd < 0) return -1;
 
   _my_fd = true;

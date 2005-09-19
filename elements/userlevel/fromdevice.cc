@@ -53,7 +53,7 @@
 CLICK_DECLS
 
 FromDevice::FromDevice()
-    : Element(0, 1),
+    : 
 #if FROMDEVICE_LINUX
       _linux_fd(-1),
 #endif
@@ -136,16 +136,16 @@ FromDevice::open_packet_socket(String ifname, ErrorHandler *errh)
 {
     int fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
     if (fd == -1)
-	return errh->error("%s: socket: %s", ifname.cc(), strerror(errno));
+	return errh->error("%s: socket: %s", ifname.c_str(), strerror(errno));
 
     // get interface index
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, ifname.cc(), sizeof(ifr.ifr_name));
+    strncpy(ifr.ifr_name, ifname.c_str(), sizeof(ifr.ifr_name));
     int res = ioctl(fd, SIOCGIFINDEX, &ifr);
     if (res != 0) {
 	close(fd);
-	return errh->error("%s: SIOCGIFINDEX: %s", ifname.cc(), strerror(errno));
+	return errh->error("%s: SIOCGIFINDEX: %s", ifname.c_str(), strerror(errno));
     }
     int ifindex = ifr.ifr_ifindex;
 
@@ -160,7 +160,7 @@ FromDevice::open_packet_socket(String ifname, ErrorHandler *errh)
     res = bind(fd, (struct sockaddr *)&sa, sizeof(sa));
     if (res != 0) {
 	close(fd);
-	return errh->error("%s: bind: %s", ifname.cc(), strerror(errno));
+	return errh->error("%s: bind: %s", ifname.c_str(), strerror(errno));
     }
 
     // nonblocking I/O on the packet socket so we can poll
@@ -175,7 +175,7 @@ FromDevice::set_promiscuous(int fd, String ifname, bool promisc)
     // get interface flags
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, ifname.cc(), sizeof(ifr.ifr_name));
+    strncpy(ifr.ifr_name, ifname.c_str(), sizeof(ifr.ifr_name));
     if (ioctl(fd, SIOCGIFFLAGS, &ifr) != 0)
 	return -2;
     int was_promisc = (ifr.ifr_flags & IFF_PROMISC ? 1 : 0);
@@ -410,7 +410,7 @@ FromDevice::selected(int)
 	} else {
 	    p->kill();
 	    if (len <= 0 && errno != EAGAIN)
-		click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
+		click_chatter("FromDevice(%s): recvfrom: %s", _ifname.c_str(), strerror(errno));
 	}
     }
 #endif

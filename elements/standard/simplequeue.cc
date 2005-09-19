@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 SimpleQueue::SimpleQueue()
-    : Element(1, 1), _q(0)
+    : _q(0)
 {
 }
 

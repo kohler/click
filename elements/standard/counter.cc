@@ -29,7 +29,7 @@ CLICK_DECLS
 #endif
 
 Counter::Counter()
-  : Element(1, 1), _count_trigger_h(0), _byte_trigger_h(0)
+  : _count_trigger_h(0), _byte_trigger_h(0)
 {
 }
 

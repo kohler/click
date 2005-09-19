@@ -27,7 +27,8 @@ class StripSRHeader : public Element {
   StripSRHeader();
   ~StripSRHeader();
   
-  const char *class_name() const		{ return "StripSRHeader"; }
+  const char *class_name() const	{ return "StripSRHeader"; }
+  const char *port_count() const	{ return PORTS_1_1; }
 
   Packet *simple_action(Packet *);
   

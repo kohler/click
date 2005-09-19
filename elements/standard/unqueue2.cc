@@ -28,7 +28,7 @@
 CLICK_DECLS
 
 Unqueue2::Unqueue2()
-  : Element(1, 1), _task(this)
+  : _task(this)
 {
 }
 

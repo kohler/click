@@ -39,8 +39,7 @@ CLICK_DECLS
 
 
 BeaconTracker::BeaconTracker()
-  : Element(1, 1),
-    _winfo(0)
+  : _winfo(0)
 {
 }
 
@@ -211,8 +210,6 @@ write_param(const String &in_s, Element *e, void *vparam,
 void
 BeaconTracker::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", read_param, (void *) H_DEBUG);
   add_read_handler("scan", read_param, (void *) H_SCAN);
   add_read_handler("stats", read_param, (void *) H_STATS);

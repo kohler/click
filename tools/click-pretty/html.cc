@@ -241,6 +241,6 @@ output_template_until_tag(const char *templ, FILE *outf,
 {
     StringAccum sa;
     templ = output_template_until_tag(templ, sa, tag, attrs, unquote, sep);
-    fputs(sa.cc(), outf);
+    fputs(sa.c_str(), outf);
     return templ;
 }

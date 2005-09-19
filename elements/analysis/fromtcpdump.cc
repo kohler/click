@@ -36,7 +36,7 @@
 CLICK_DECLS
 
 FromTcpdump::FromTcpdump()
-    : Element(0, 1), _task(this)
+    : _task(this)
 {
     _ff.set_landmark_pattern("%f:%l");
 }

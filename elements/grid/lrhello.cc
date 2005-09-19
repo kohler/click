@@ -25,7 +25,7 @@
 CLICK_DECLS
 
 SendGridLRHello::SendGridLRHello()
-  : Element(0, 1), _timer(this), _nbr(0), _hops(1)
+  : _timer(this), _nbr(0), _hops(1)
 {
 }
 
@@ -67,12 +67,12 @@ SendGridLRHello::initialize(ErrorHandler *errh)
 
   if(_nbr && _nbr->cast("UpdateLocalGridRoutes") == 0){
     errh->warning("%s: UpdateLocalGridRoutes argument %s has the wrong type",
-                  id().cc(),
-                  _nbr->id().cc());
+                  id().c_str(),
+                  _nbr->id().c_str());
     _nbr = 0;
   } else if (_nbr == 0) {
     errh->warning("%s: no UpdateLocalGridRoutes element given",
-                  id().cc());
+                  id().c_str());
   }
 
   return 0;
@@ -110,7 +110,7 @@ SendGridLRHello::make_hello()
 
   WritablePacket *p = Packet::make(psz + 2);
   if (p == 0) {
-    click_chatter("in %s: cannot make packet!", id().cc());
+    click_chatter("in %s: cannot make packet!", id().c_str());
     assert(0);
   } 
   ASSERT_ALIGNED(p->data());

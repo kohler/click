@@ -22,17 +22,10 @@ CLICK_DECLS
 
 RandomSwitch::RandomSwitch()
 {
-    add_input();
 }
 
 RandomSwitch::~RandomSwitch()
 {
-}
-
-void
-RandomSwitch::notify_noutputs(int i)
-{
-    set_noutputs(i < 1 ? 0 : i);
 }
 
 void

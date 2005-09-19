@@ -6,18 +6,11 @@
 CPUQueue::CPUQueue()
   : _last(0), _drops(0)
 {
-  set_ninputs(1);
   memset(&_q, 0, sizeof(_q));
 }
 
 CPUQueue::~CPUQueue()
 {
-}
-
-void
-CPUQueue::notify_noutputs(int i)
-{
-  set_noutputs(i < 1 ? 1 : i);
 }
 
 int

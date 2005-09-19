@@ -51,6 +51,7 @@ class Unqueue : public Element { public:
   ~Unqueue();
   
   const char *class_name() const		{ return "Unqueue"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PULL_TO_PUSH; }
   
   int configure(Vector<String> &, ErrorHandler *);

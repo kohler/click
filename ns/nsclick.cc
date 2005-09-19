@@ -205,14 +205,14 @@ call_read_handler(Element *e, String handler_name, Router *r,
   const Handler *rh = Router::handler(e, handler_name);
   String full_name = Handler::unparse_name(e, handler_name);
   if (!rh || !rh->visible())
-    return errh->error("no `%s' handler", full_name.cc());
+    return errh->error("no `%s' handler", full_name.c_str());
   else if (!rh->read_visible())
-    return errh->error("`%s' is a write handler", full_name.cc());
+    return errh->error("`%s' is a write handler", full_name.c_str());
 
   if (print_name)
-    fprintf(stdout, "%s:\n", full_name.cc());
+    fprintf(stdout, "%s:\n", full_name.c_str());
   String result = rh->call_read(e);
-  fputs(result.cc(), stdout);
+  fputs(result.c_str(), stdout);
   if (print_name)
     fputs("\n", stdout);
 
@@ -262,7 +262,7 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
     else if (expand_handler_elements(element_name, handler_name, elements, router))
       print_names = true;
     else
-      errh->error("no element matching `%s'", element_name.cc());
+      errh->error("no element matching `%s'", element_name.c_str());
 
     for (int j = 0; j < elements.size(); j++)
       call_read_handler(elements[j], handler_name, router, print_names, errh);

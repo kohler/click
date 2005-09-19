@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 FTPPortMapper::FTPPortMapper()
-  : Element(1, 1), _pattern(0)
+  : _pattern(0)
 {
 }
 
@@ -66,7 +66,7 @@ FTPPortMapper::configure(Vector<String> &conf, ErrorHandler *errh)
   
   if (_forward_port >= _data_rewriter->noutputs()
       || _reverse_port >= _data_rewriter->noutputs())
-    return errh->error("port out of range for `%s'", _data_rewriter->declaration().cc());
+    return errh->error("port out of range for `%s'", _data_rewriter->declaration().c_str());
   else
     return 0;
 }
@@ -82,7 +82,7 @@ FTPPortMapper::initialize(ErrorHandler *errh)
   for (int i = 0; i < elts.size(); i++)
     if (elts[i] == _control_rewriter)
       goto found_control_rewriter;
-  errh->warning("control packet rewriter `%s' is not downstream", _control_rewriter->declaration().cc());
+  errh->warning("control packet rewriter `%s' is not downstream", _control_rewriter->declaration().c_str());
 
  found_control_rewriter:
   return 0;

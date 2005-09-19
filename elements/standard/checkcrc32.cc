@@ -21,7 +21,6 @@
 CLICK_DECLS
 
 CheckCRC32::CheckCRC32()
-  : Element(1, 1)
 {
   _drops = 0;
 }

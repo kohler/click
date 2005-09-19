@@ -15,7 +15,6 @@ class GridGenericRouteTable : public Element {
 public:
   
   GridGenericRouteTable() { }
-  GridGenericRouteTable(int ninputs, int noutputs) : Element(ninputs, noutputs) { }
 
   struct RouteEntry {
 

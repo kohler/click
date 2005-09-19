@@ -26,7 +26,7 @@
 #include "gridgenericlocinfo.hh"
 CLICK_DECLS
 
-FixSrcLoc::FixSrcLoc() : Element(1, 1), _locinfo(0)
+FixSrcLoc::FixSrcLoc() : _locinfo(0)
 {
 }
 
@@ -48,8 +48,8 @@ FixSrcLoc::initialize(ErrorHandler *errh)
 {
   if(_locinfo && _locinfo->cast("GridGenericLocInfo") == 0){
     errh->warning("%s: GridGenericLocInfo argument %s has the wrong type",
-                  id().cc(),
-                  _locinfo->id().cc());
+                  id().c_str(),
+                  _locinfo->id().c_str());
     _locinfo = 0;
   } else if(_locinfo == 0){
     return errh->error("no GridGenericLocInfo argument");

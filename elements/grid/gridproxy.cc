@@ -25,10 +25,6 @@ CLICK_DECLS
 
 GridProxy::GridProxy()
 {
-  add_input();
-  add_input();
-  add_output();
-  add_output();
 }
 
 GridProxy::~GridProxy()
@@ -104,7 +100,7 @@ GridProxy::reverse_mapping(Packet *p_in) {
   IPAddress dst = IPAddress(p_in->ip_header()->ip_dst);
   DstInfo *nfo = _map.findp(dst);
   if (!nfo) {
-    //click_chatter("couldn't find a gateway for %s!\n", dst.s().cc());
+    //click_chatter("couldn't find a gateway for %s!\n", dst.s().c_str());
     p_in->kill();
     return;
   }
@@ -182,8 +178,8 @@ GridProxy::print_stats()
 
   for (ProxyMap::iterator iter = _map.begin(); iter; iter++) {
     DstInfo nfo = iter.value();
-    sa << nfo._ip.s().cc() << " ";
-    sa << nfo._gw.s().cc() << " ";
+    sa << nfo._ip.s().c_str() << " ";
+    sa << nfo._gw.s().c_str() << " ";
     sa << now - nfo._last_updated << "\n";
     
   }
@@ -193,7 +189,6 @@ GridProxy::print_stats()
 void
 GridProxy::add_handlers()
 {
-  add_default_handlers(false);
   add_read_handler("stats", static_print_stats, 0);
 }
 

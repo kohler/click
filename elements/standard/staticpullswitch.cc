@@ -23,17 +23,10 @@ CLICK_DECLS
 
 StaticPullSwitch::StaticPullSwitch()
 {
-  add_output();
 }
 
 StaticPullSwitch::~StaticPullSwitch()
 {
-}
-
-void
-StaticPullSwitch::notify_ninputs(int n)
-{
-  set_ninputs(n);
 }
 
 int

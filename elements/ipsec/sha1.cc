@@ -33,18 +33,10 @@ CLICK_DECLS
 
 IPsecAuthSHA1::IPsecAuthSHA1()
 {
-  add_input();
-  add_output();
 }
 
 IPsecAuthSHA1::~IPsecAuthSHA1()
 {
-}
-
-void
-IPsecAuthSHA1::notify_noutputs(int n)
-{ 
-  set_noutputs(n);
 }
 
 int

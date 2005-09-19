@@ -38,12 +38,12 @@ class GridEncap : public Element { public:
   ~GridEncap();
   
   const char *class_name() const		{ return "GridEncap"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
   
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   int initialize(ErrorHandler *);
-  void add_handlers();
 
   Packet *simple_action(Packet *);
   

@@ -225,7 +225,7 @@ Classifier_Program::handler_value(const String &name) const
   for (int i = 0; i < handler_names.size(); i++)
     if (handler_names[i] == name)
       return handler_values[i];
-  return String::null_string();
+  return String::empty_string();
 }
 
 bool
@@ -552,7 +552,7 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
   // complain if any programs missing
   for (int i = 0; i < iprograms.size(); i++)
     if (program_map[i] < 0)
-      errh->fatal("classifier program missing for '%s :: %s'!", classifiers[i]->name_c_str(), classifiers[i]->type_name().cc());
+      errh->fatal("classifier program missing for '%s :: %s'!", classifiers[i]->name_c_str(), classifiers[i]->type_name().c_str());
 }
 
 static void
@@ -572,11 +572,9 @@ output_classifier_program(int which,
   header << "class " << cxx_name << " : public Element {\n\
   void devirtualize_all() { }\n\
  public:\n  "
-	 << cxx_name << "() { set_ninputs(1); set_noutputs(" << prog.noutputs
-	 << "); }\n  ~"
-	 << cxx_name << "() { }\n\
+	 << cxx_name << "() { }\n  ~" << cxx_name << "() { }\n\
   const char *class_name() const { return \"" << class_name << "\"; }\n\
-  " << cxx_name << " *clone() const { return new " << cxx_name << "; }\n\
+  const char *port_count() const { return \"1/" << prog.noutputs << "\"; }\n\
   const char *processing() const { return PUSH; }\n";
 
   if (prog.output_everything >= 0) {
@@ -671,32 +669,32 @@ compile_classifiers(RouterT *r, const String &package_name,
 	String cxx_filename = package_name + ".cc";
 	f = fopen((tmpdir + cxx_filename).c_str(), "w");
 	if (!f)
-	    errh->fatal("%s%s: %s", tmpdir.cc(), cxx_filename.cc(), strerror(errno));
+	    errh->fatal("%s%s: %s", tmpdir.c_str(), cxx_filename.c_str(), strerror(errno));
 	fwrite(source.data(), 1, source.length(), f);
 	fclose(f);
     
 	// compile kernel module
 	if (compile_kernel) {
 	    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=kernel --package=" + package_name + ".ko " + cxx_filename;
-	    int compile_retval = system(compile_command.cc());
+	    int compile_retval = system(compile_command.c_str());
 	    if (compile_retval == 127)
-		errh->fatal("could not run '%s'", compile_command.cc());
+		errh->fatal("could not run '%s'", compile_command.c_str());
 	    else if (compile_retval < 0)
-		errh->fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
+		errh->fatal("could not run '%s': %s", compile_command.c_str(), strerror(errno));
 	    else if (compile_retval != 0)
-		errh->fatal("'%s' failed", compile_command.cc());
+		errh->fatal("'%s' failed", compile_command.c_str());
 	}
 
 	// compile userlevel
 	if (compile_user) {
 	    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=user --package=" + package_name + ".uo " + cxx_filename;
-	    int compile_retval = system(compile_command.cc());
+	    int compile_retval = system(compile_command.c_str());
 	    if (compile_retval == 127)
-		errh->fatal("could not run '%s'", compile_command.cc());
+		errh->fatal("could not run '%s'", compile_command.c_str());
 	    else if (compile_retval < 0)
-		errh->fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
+		errh->fatal("could not run '%s': %s", compile_command.c_str(), strerror(errno));
 	    else if (compile_retval != 0)
-		errh->fatal("'%s' failed", compile_command.cc());
+		errh->fatal("'%s' failed", compile_command.c_str());
 	}
     }
 

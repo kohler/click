@@ -39,8 +39,7 @@
 CLICK_DECLS
 
 ToHost::ToHost()
-  : Element(1, 0), 
-    _fd(-1)
+  : _fd(-1)
 {
 }
 
@@ -78,7 +77,7 @@ ToHost::initialize(ErrorHandler *errh)
     }
     
     return errh->error("ToHost(%s) requires an initialized FromHost with the same dev_name",
-		       _dev_name.cc());
+		       _dev_name.c_str());
 }
 
 void
@@ -100,7 +99,7 @@ ToHost::push(int, Packet *p)
 	static bool _printed_write_err = false;
 	if (w != (int) q->length() && (errno != ENOBUFS || !_printed_write_err)) {
 	    _printed_write_err = true;
-	    click_chatter("KernelTun(%s): write failed: %s", _dev_name.cc(), strerror(errno));
+	    click_chatter("KernelTun(%s): write failed: %s", _dev_name.c_str(), strerror(errno));
 	}
 	q->kill();
     } else

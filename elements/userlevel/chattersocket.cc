@@ -135,7 +135,7 @@ ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
       return errh->error("filename too long");
 
   } else
-    return errh->error("unknown socket type `%s'", socktype.cc());
+    return errh->error("unknown socket type `%s'", socktype.c_str());
 
   // Create channel now, so that other configure() methods will get it.
   ChatterSocketErrorHandler *cserrh;
@@ -212,7 +212,7 @@ ChatterSocket::initialize_socket(ErrorHandler *errh)
     // bind to port
     struct sockaddr_un sa;
     sa.sun_family = AF_UNIX;
-    memcpy(sa.sun_path, _unix_pathname.cc(), _unix_pathname.length() + 1);
+    memcpy(sa.sun_path, _unix_pathname.c_str(), _unix_pathname.length() + 1);
     if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
       return initialize_socket_error(errh, "bind");
   }
@@ -441,7 +441,7 @@ ChatterSocket::selected(int fd)
 
     if (new_fd < 0) {
       if (errno != EAGAIN)
-	click_chatter("%s: accept: %s", declaration().cc(), strerror(errno));
+	click_chatter("%s: accept: %s", declaration().c_str(), strerror(errno));
       return;
     }
     
@@ -464,7 +464,7 @@ ChatterSocket::selected(int fd)
       String s = String("Click::ChatterSocket/") + protocol_version + "\r\n";
       int w = write(fd, s.data(), s.length());
       if (w != s.length())
-	click_chatter("%s fd %d: unable to write greeting!", declaration().cc(), fd);
+	click_chatter("%s fd %d: unable to write greeting!", declaration().c_str(), fd);
     }
   }
 

@@ -219,14 +219,14 @@ compile_archive_file(String package, const Vector<ArchiveElement> *archive, int 
   
     // run click-compile
     String compile_command = *click_compile_prog + " --directory=" + *tmpdir + " --driver=" + target + " --package=" + package_file + " " + filename;
-    errh->message("%s", compile_command.cc());
-    int compile_retval = system(compile_command.cc());
+    errh->message("%s", compile_command.c_str());
+    int compile_retval = system(compile_command.c_str());
     if (compile_retval == 127)
-	cerrh.error("could not run '%s'", compile_command.cc());
+	cerrh.error("could not run '%s'", compile_command.c_str());
     else if (compile_retval < 0)
-	cerrh.error("could not run '%s': %s", compile_command.cc(), strerror(errno));
+	cerrh.error("could not run '%s': %s", compile_command.c_str(), strerror(errno));
     else if (compile_retval != 0)
-	cerrh.error("'%s' failed", compile_command.cc());
+	cerrh.error("'%s' failed", compile_command.c_str());
     else
 	return *tmpdir + package_file;
 
@@ -274,7 +274,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
 	if (!package)
 	    package = clickpath_find_file(name + ".o", "lib", CLICK_LIBDIR);
 	if (!package)
-	    cerrh.error("can't find required package '%s%s'\nin CLICKPATH or '%s'", name.cc(), suffix.cc(), CLICK_LIBDIR);
+	    cerrh.error("can't find required package '%s%s'\nin CLICKPATH or '%s'", name.c_str(), suffix.c_str(), CLICK_LIBDIR);
     }
 
     p->loaded = true;
@@ -308,7 +308,7 @@ RequireLexerExtra::require(String name, ErrorHandler *errh)
 	clickdl_load_requirement(name, _archive, errh);
 # endif
     if (!click_has_provision(name.c_str()))
-	errh->error("requirement '%s' not available", name.cc());
+	errh->error("requirement '%s' not available", name.c_str());
 }
 
 }

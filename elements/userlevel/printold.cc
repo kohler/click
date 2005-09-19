@@ -25,7 +25,6 @@
 CLICK_DECLS
 
 PrintOld::PrintOld()
-  : Element(1, 1)
 {
 }
 
@@ -55,7 +54,7 @@ Packet *
 PrintOld::simple_action(Packet *p)
 {
   if (p->timestamp_anno()._sec == 0) {
-    click_chatter("%s: packet timestamp not set", id().cc());
+    click_chatter("%s: packet timestamp not set", id().c_str());
     return p;
   }
 
@@ -77,7 +76,7 @@ PrintOld::simple_action(Packet *p)
   assert(sizeof(long) == sizeof(int));
   if (age_ms > _thresh)
     click_chatter("%s Now-FromDevice age is %d (FromDevice time: %{timestamp}  dsec %ld  dusec %ld)", 
-		  id().cc(), age_ms, &p->timestamp_anno(), age_s, age_u);
+		  id().c_str(), age_ms, &p->timestamp_anno(), age_s, age_u);
 #endif
 
 #if 1
@@ -86,7 +85,7 @@ PrintOld::simple_action(Packet *p)
   pcap_tv.tv_sec = (long) p->user_anno_i(0);
   pcap_tv.tv_usec = (long) p->user_anno_i(1);
   if (pcap_tv.tv_sec == 0) {
-    // click_chatter("%s pcap time not set", id().cc());
+    // click_chatter("%s pcap time not set", id().c_str());
   }
   else {
     long age2_s = p->timestamp_anno().tv_sec - pcap_tv.tv_sec;
@@ -94,7 +93,7 @@ PrintOld::simple_action(Packet *p)
     long age2_ms = age2_s * 1000 + age2_u / 1000;
     if (age2_ms > _thresh)
       click_chatter("%s FromDevice-PCAP age is %d (PCAP time: %ld.%06ld  dsec %ld  dusec %ld)", 
-		    id().cc(), age2_ms, 
+		    id().c_str(), age2_ms, 
 		    pcap_tv.tv_sec, pcap_tv.tv_usec,
 		    age2_s, age2_u);
   }
@@ -121,7 +120,7 @@ PrintOld::simple_action(Packet *p)
   }
   sa.forward(pos);
 
-  click_chatter("%s", sa.cc());
+  click_chatter("%s", sa.c_str());
 
   return p;
 }

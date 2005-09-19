@@ -25,6 +25,7 @@ class xokWriter : public Element {
   ~xokWriter() {}
   
   const char *class_name() const		{ return "xokWriter"; }
+  const char *port_count() const		{ return PORTS_1_0; }
   const char *processing() const		{ return AGNOSTIC; }
   
   int configure(Vector<String> &, ErrorHandler *);

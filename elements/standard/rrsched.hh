@@ -31,9 +31,9 @@ class RRSched : public Element { public:
     ~RRSched();
   
     const char *class_name() const	{ return "RoundRobinSched"; }
+    const char *port_count() const	{ return "-/1"; }
     const char *processing() const	{ return PULL; }
   
-    void notify_ninputs(int);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
   

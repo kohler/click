@@ -59,7 +59,7 @@ GridRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 
 
 GridRouteTable::GridRouteTable() : 
-  GridGenericRouteTable(1, 1), _log(0), _dump_tick(0),
+  _log(0), _dump_tick(0),
   _seq_no(0), _fake_seq_no(0), _bcast_count(0),
   _seq_delay(1),
   _max_hops(3), 
@@ -100,9 +100,9 @@ GridRouteTable::log_route_table ()
 
     snprintf(str, sizeof(str), 
 	     "%s %s %s %d %c %u\n", 
-	     f.dest_ip.s().cc(),
-	     f.loc.s().cc(),
-	     f.next_hop_ip.s().cc(),
+	     f.dest_ip.s().c_str(),
+	     f.loc.s().c_str(),
+	     f.next_hop_ip.s().c_str(),
 	     f.num_hops(),
 	     (f.is_gateway ? 'y' : 'n'),
 	     f.seq_no());
@@ -145,7 +145,7 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
       return errh->error("timeout interval is too small");
   }
   else
-    click_chatter("%s: not timing out table entries", id().cc());
+    click_chatter("%s: not timing out table entries", id().c_str());
 
   if (_period <= 0)
     return errh->error("period must be greater than 0");
@@ -161,7 +161,7 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _metric_type = check_metric_type(metric);
   if (_metric_type < 0)
-    return errh->error("Unknown metric type ``%s''", metric.cc());
+    return errh->error("Unknown metric type ``%s''", metric.c_str());
 
   return res;
 }
@@ -253,7 +253,7 @@ GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
     else if (_est_type == EstBySigQual) {
       h(2);
 #if 0
-      click_chatter("XXX %s", ip.s().cc());
+      click_chatter("XXX %s", ip.s().c_str());
 #endif
       /* 
        * use jinyang's parameters, based on 1sec broadcast loss rates
@@ -419,7 +419,7 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
     double num_expected_ = num_expected;
     if (num_rx > num_expected)
       click_chatter("WARNING: est_reverse_delivery_rate: num_rx (%d) > num_expected (%d) for %s",
-		    num_rx, num_expected, r->next_hop_eth.s().cc());
+		    num_rx, num_expected, r->next_hop_eth.s().c_str());
     rate = (num_rx_ - 0.5) / num_expected_;
 #endif
     return true;
@@ -457,7 +457,7 @@ GridRouteTable::init_metric(RTEntry &r)
     bool res = _link_tracker->get_stat(r.dest_ip, sig, qual, last);
     if (!res) {
       click_chatter("GridRouteTable: no link sig/qual stats from 1-hop neighbor %s; not initializing metric\n",
-		    r.dest_ip.s().cc());
+		    r.dest_ip.s().c_str());
       r.metric = _bad_metric;
       r.metric_valid = false;
       return;
@@ -468,7 +468,7 @@ GridRouteTable::init_metric(RTEntry &r)
     int delta_ms = 1000 * now.tv_sec + (now.tv_usec / 1000);
     if (delta_ms > _timeout) {
       click_chatter("GridRouteTable: link sig/qual stats from 1-hop neighbor %s are too old; not initializing metric\n",
-		    r.dest_ip.s().cc());
+		    r.dest_ip.s().c_str());
       r.metric = _bad_metric;
       r.metric_valid = false;
       return;
@@ -495,7 +495,7 @@ GridRouteTable::init_metric(RTEntry &r)
 #if 0
     char buf[255];
     snprintf(buf, 255, "YYY %s %s -- res: %s, res2: %s, fwd: %f, rev: %f",
-	     r.dest_ip.s().cc(), r.next_hop_ip.s().cc(),
+	     r.dest_ip.s().c_str(), r.next_hop_ip.s().c_str(),
 	     res ? "true" : "false", res2 ? "true" : "false",
 	     fwd_rate, rev_rate);
     click_chatter(buf);
@@ -503,18 +503,18 @@ GridRouteTable::init_metric(RTEntry &r)
     if (res && res2 && fwd_rate > 0 && rev_rate > 0) {
       if (fwd_rate >= 1) {
 	click_chatter("init_metric ERROR: fwd rate %d is too high for %s",
-		      (int) (100 * fwd_rate), r.next_hop_ip.s().cc());
+		      (int) (100 * fwd_rate), r.next_hop_ip.s().c_str());
 	fwd_rate = 1;
       }
       if (rev_rate >= 1) {
 	click_chatter("init_metric ERROR: rev rate %d is too high for %s",
-		      (int) (100 * rev_rate), r.next_hop_ip.s().cc());
+		      (int) (100 * rev_rate), r.next_hop_ip.s().c_str());
 	rev_rate = 1;
       }
       r.metric = (int) (100 / (fwd_rate * rev_rate));
       if (r.metric < 100) 
 	click_chatter("init_metric WARNING: metric too small (%d) for %s",
-		      r.metric, r.next_hop_ip.s().cc());
+		      r.metric, r.next_hop_ip.s().c_str());
       r.metric_valid = true;
       h(201);
     } 
@@ -539,7 +539,7 @@ GridRouteTable::update_metric(RTEntry &r)
   RTEntry *next_hop = _rtes.findp(r.next_hop_ip);
   if (!next_hop) {
     click_chatter("GridRouteTable: ERROR updating metric for %s; no information for next hop %s; invalidating metric",
-		  r.dest_ip.s().cc(), r.next_hop_ip.s().cc());
+		  r.dest_ip.s().c_str(), r.next_hop_ip.s().c_str());
     r.metric_valid = false;
     return;
   }
@@ -556,15 +556,15 @@ GridRouteTable::update_metric(RTEntry &r)
   case MetricHopCount:
     if (next_hop->metric > 1)
       click_chatter("GridRouteTable: WARNING metric type is hop count but next-hop %s metric is > 1 (%u)",
-		    next_hop->dest_ip.s().cc(), next_hop->metric);
+		    next_hop->dest_ip.s().c_str(), next_hop->metric);
   case MetricEstTxCount: 
     if (_metric_type == MetricEstTxCount) {
       if (r.metric < (unsigned) 100 * (r.num_hops() - 1))
 	click_chatter("update_metric WARNING received metric (%d) too low for %s (%d hops)",
-		      r.metric, r.dest_ip.s().cc(), r.num_hops());
+		      r.metric, r.dest_ip.s().c_str(), r.num_hops());
       if (next_hop->metric < 100)
 	click_chatter("update_metric WARNING next hop %s for %s metric is too low (%d)",
-		      next_hop->dest_ip.s().cc(), r.dest_ip.s().cc(), next_hop->metric);
+		      next_hop->dest_ip.s().c_str(), r.dest_ip.s().c_str(), next_hop->metric);
     }
     r.metric += next_hop->metric;
     break;
@@ -670,14 +670,14 @@ GridRouteTable::simple_action(Packet *packet)
    */  
   click_ether *eh = (click_ether *) packet->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
-    click_chatter("GridRouteTable %s: got non-Grid packet type", id().cc());
+    click_chatter("GridRouteTable %s: got non-Grid packet type", id().c_str());
     packet->kill();
     return 0;
   }
   grid_hdr *gh = (grid_hdr *) (eh + 1);
 
   if (gh->type != grid_hdr::GRID_LR_HELLO) {
-    click_chatter("GridRouteTable %s: received unknown Grid packet; ignoring it", id().cc());
+    click_chatter("GridRouteTable %s: received unknown Grid packet; ignoring it", id().c_str());
     packet->kill();
     return 0;
   }
@@ -687,7 +687,7 @@ GridRouteTable::simple_action(Packet *packet)
 
   // this should be redundant (see HostEtherFilter in grid.click)
   if (ethaddr == _eth) {
-    click_chatter("GridRouteTable %s: received own Grid packet; ignoring it", id().cc());
+    click_chatter("GridRouteTable %s: received own Grid packet; ignoring it", id().c_str());
     packet->kill();
     return 0;
   }
@@ -696,7 +696,7 @@ GridRouteTable::simple_action(Packet *packet)
    
   // extended logging
   Timestamp ts = Timestamp::now();
-  _extended_logging_errh->message("recvd %u from %s %d %d", ntohl(hlo->seq_no), ipaddr.s().cc(), ts.sec(), ts.usec());
+  _extended_logging_errh->message("recvd %u from %s %d %d", ntohl(hlo->seq_no), ipaddr.s().c_str(), ts.sec(), ts.usec());
   if (_log)
     _log->log_start_recv_advertisement(ntohl(hlo->seq_no), ipaddr, ts);
   
@@ -717,10 +717,10 @@ GridRouteTable::simple_action(Packet *packet)
 
   if (!r)
     click_chatter("GridRouteTable %s: adding new 1-hop route %s -- %s", 
-		  id().cc(), ipaddr.s().cc(), ethaddr.s().cc()); 
+		  id().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
   else if (r->num_hops() == 1 && r->next_hop_eth != ethaddr)
     click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", 
-		  id().cc(), ipaddr.s().cc(), r->next_hop_eth.s().cc(), ethaddr.s().cc());
+		  id().c_str(), ipaddr.s().c_str(), r->next_hop_eth.s().c_str(), ethaddr.s().c_str());
 
   /*
    * well, for now we'll just do the ping-pong on route ads.  ideally
@@ -823,7 +823,7 @@ GridRouteTable::simple_action(Packet *packet)
       if ((route.seq_no() & 1) == 0) {
 	// broken routes should have odd seq_no
 	click_chatter("ignoring invalid broken route entry from %s for %s: num_hops was 0 but seq_no was even\n",
-		      ipaddr.s().cc(), route.dest_ip.s().cc());
+		      ipaddr.s().c_str(), route.dest_ip.s().c_str());
 	continue;
       }
     
@@ -1078,7 +1078,7 @@ GridRouteTable::write_metric_type(const String &arg, Element *el,
   GridRouteTable *rt = (GridRouteTable *) el;
   MetricType type = check_metric_type(arg);
   if (type < 0)
-    return errh->error("unknown metric type ``%s''", ((String) arg).cc());
+    return errh->error("unknown metric type ``%s''", ((String) arg).c_str());
   
   if (type != rt->_metric_type) {
     rt->_metric_type = type;
@@ -1157,7 +1157,7 @@ GridRouteTable::write_est_type(const String &arg, Element *el,
 			       void *, ErrorHandler *)
 {
   GridRouteTable *rt = (GridRouteTable *) el;
-  rt->_est_type = atoi(((String) arg).cc());
+  rt->_est_type = atoi(((String) arg).c_str());
 
   return 0;
 }
@@ -1176,7 +1176,7 @@ GridRouteTable::write_seq_delay(const String &arg, Element *el,
 				void *, ErrorHandler *)
 {
   GridRouteTable *rt = (GridRouteTable *) el;
-  rt->_seq_delay = atoi(((String) arg).cc());
+  rt->_seq_delay = atoi(((String) arg).c_str());
 
   return 0;
 }
@@ -1195,7 +1195,7 @@ GridRouteTable::write_frozen(const String &arg, Element *el,
 				void *, ErrorHandler *)
 {
   GridRouteTable *rt = (GridRouteTable *) el;
-  rt->_frozen = atoi(((String) arg).cc());
+  rt->_frozen = atoi(((String) arg).c_str());
 
   click_chatter("GridRouteTable: setting _frozen to %s", rt->_frozen ? "true" : "false");
 
@@ -1244,7 +1244,7 @@ GridRouteTable::print_links(Element *e, void *)
     tx_rate -= 0.5;
     tx_rate /= num_expected;
     snprintf(buf, 255, "%s %s metric=%u (%s) rx_sig=%d rx_qual=%d rx_rate=%d tx_sig=%d tx_qual=%d tx_rate=%d\n",
-	     r.dest_ip.s().cc(), r.next_hop_eth.s().cc(), r.metric, r.metric_valid ? "valid" : "invalid",
+	     r.dest_ip.s().c_str(), r.next_hop_eth.s().c_str(), r.metric, r.metric_valid ? "valid" : "invalid",
 	     s1 ? s1->sig : -1, s1 ? s1->qual : -1, res1 ? ((int) (100 * tx_rate)) : -1,
 	     res2 ? tx_sig : -1, res2 ? tx_qual : -1, res3 ? (int) (100 * bcast_rate) : -1);
     s += buf;
@@ -1256,7 +1256,6 @@ GridRouteTable::print_links(Element *e, void *)
 void
 GridRouteTable::add_handlers()
 {
-  add_default_handlers(false);
   add_read_handler("nbrs_v", print_nbrs_v, 0);
   add_read_handler("nbrs", print_nbrs, 0);
   add_read_handler("rtes_v", print_rtes_v, 0);
@@ -1334,7 +1333,7 @@ GridRouteTable::expire_routes()
 	decr_ttl(i.value().ttl, jiff_to_msec(jiff - i.value().last_updated_jiffies)) == 0) {
       expired_rtes.insert(i.value().dest_ip, true);
 
-      _extended_logging_errh->message ("expiring %s %d %d", i.value().dest_ip.s().cc(), ts.sec(), ts.usec());  // extended logging
+      _extended_logging_errh->message ("expiring %s %d %d", i.value().dest_ip.s().c_str(), ts.sec(), ts.usec());  // extended logging
       table_changed = true;
 
       if (_log)
@@ -1358,7 +1357,7 @@ GridRouteTable::expire_routes()
 	!expired_rtes.findp(i.value().dest_ip)) {
       expired_rtes.insert(i.value().dest_ip, true);
 
-      _extended_logging_errh->message("next to %s expired %d %d", i.value().dest_ip.s().cc(), ts.sec(), ts.usec());  // extended logging
+      _extended_logging_errh->message("next to %s expired %d %d", i.value().dest_ip.s().c_str(), ts.sec(), ts.usec());  // extended logging
       
       if (_log)
 	_log->log_expired_route(GridLogger::NEXT_HOP_EXPIRED, i.value().dest_ip);
@@ -1468,12 +1467,12 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   assert(psz <= 1500);
   if (num_rtes < rte_info.size())
     click_chatter("GridRouteTable %s: too many routes, truncating route advertisement",
-		  id().cc());
+		  id().c_str());
 
   /* allocate and align the packet */
   WritablePacket *p = Packet::make(psz + 2); // for alignment
   if (p == 0) {
-    click_chatter("in %s: cannot make packet!", id().cc());
+    click_chatter("in %s: cannot make packet!", id().c_str());
     assert(0);
   } 
   ASSERT_ALIGNED(p->data());
@@ -1536,9 +1535,9 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
     const RTEntry &f = rte_info[i];
     snprintf(str, sizeof(str), 
 	     "%s %s %s %d %c %u %u\n", 
-	     f.dest_ip.s().cc(),
-	     f.loc.s().cc(),
-	     f.next_hop_ip.s().cc(),
+	     f.dest_ip.s().c_str(),
+	     f.loc.s().c_str(),
+	     f.next_hop_ip.s().c_str(),
 	     f.num_hops(),
 	     (f.is_gateway ? 'y' : 'n'),
 	     f.seq_no(), 
@@ -1593,7 +1592,7 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
     }
     else
       click_chatter("GridRouteTable: error!  unable to get signal strength or quality info for one-hop neighbor %s\n",
-		    IPAddress(dest_ip).s().cc());
+		    IPAddress(dest_ip).s().c_str());
 
     nb->num_rx = 0;
     nb->num_expected = 0;
@@ -1605,7 +1604,7 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
     if (res) {
       if (num_rx > 255 || num_expected > 255) {
 	click_chatter("GridRouteTable: error! overflow on broadcast loss stats for one-hop neighbor %s",
-		      IPAddress(dest_ip).s().cc());
+		      IPAddress(dest_ip).s().c_str());
 	num_rx = num_expected = 255;
       }
       nb->num_rx = num_rx;

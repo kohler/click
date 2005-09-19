@@ -29,18 +29,6 @@ ErrorElement::~ErrorElement()
 {
 }
 
-void
-ErrorElement::notify_ninputs(int i)
-{
-    set_ninputs(i);
-}
-
-void
-ErrorElement::notify_noutputs(int i)
-{
-    set_noutputs(i);
-}
-
 int
 ErrorElement::configure(Vector<String> &, ErrorHandler *)
 {

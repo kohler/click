@@ -28,8 +28,7 @@
 CLICK_DECLS
 
 GatewaySelector::GatewaySelector()
-  :  Element(1,1),
-     _ip(),
+  :  _ip(),
      _en(),
      _et(0),
      _link_table(0),
@@ -156,9 +155,9 @@ GatewaySelector::update_link(IPAddress from, IPAddress to, uint32_t seq,
   if (_link_table && !_link_table->update_link(from, to, seq, 0, metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
-		  from.s().cc(),
+		  from.s().c_str(),
 		  metric,
-		  to.s().cc());
+		  to.s().c_str());
     return false;
   }
   return true;
@@ -188,7 +187,7 @@ GatewaySelector::forward_ad(Seen *s)
     click_chatter("%{element} :: %s :: invalid route from src %s\n",
 		  this,
 		  __func__,
-		  src.s().cc());
+		  src.s().c_str());
     return;
   }
 
@@ -270,7 +269,7 @@ GatewaySelector::push(int port, Packet *p_in)
 {
   if (port != 0) {
     click_chatter("GatewaySelector %s: bad port %d",
-		  id().cc(),
+		  id().c_str(),
 		  port);
     p_in->kill();
     return;
@@ -279,7 +278,7 @@ GatewaySelector::push(int port, Packet *p_in)
   struct srpacket *pk = (struct srpacket *) (eh+1);
   if(eh->ether_type != htons(_et)) {
     click_chatter("GatewaySelector %s: bad ether_type %04x",
-		  _ip.s().cc(),
+		  _ip.s().c_str(),
 		  ntohs(eh->ether_type));
     p_in->kill();
     return;
@@ -322,16 +321,16 @@ GatewaySelector::push(int port, Packet *p_in)
     if (fwd_m && !update_link(a,b,seq,fwd_m)) {
       click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
 		    this,
-		    a.s().cc(),
+		    a.s().c_str(),
 		    fwd_m,
-		    b.s().cc());
+		    b.s().c_str());
     }
     if (rev_m && !update_link(b,a,seq,rev_m)) {
       click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
 		    this,
-		    b.s().cc(),
+		    b.s().c_str(),
 		    rev_m,
-		    a.s().cc());
+		    a.s().c_str());
     }
 
   
@@ -408,7 +407,7 @@ GatewaySelector::print_gateway_stats()
     Timestamp now = Timestamp::now();
     for(GWIter iter = _gateways.begin(); iter; iter++) {
       GWInfo nfo = iter.value();
-      sa << nfo._ip.s().cc() << " ";
+      sa << nfo._ip.s().c_str() << " ";
       sa << "seen " << nfo._seen << " ";
       sa << "first_update " << now - nfo._first_update << " ";
       sa << "last_update " << now - nfo._last_update << " ";

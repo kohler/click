@@ -200,17 +200,6 @@ TCPRewriter::cast(const char *n)
     return 0;
 }
 
-void
-TCPRewriter::notify_noutputs(int n)
-{
-  if (n < 1)
-    set_noutputs(1);
-  else if (n > 256)
-    set_noutputs(256);
-  else
-    set_noutputs(n);
-}
-
 int
 TCPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -233,9 +222,8 @@ TCPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
        cpEnd) < 0)
     return -1;
 
-  if (conf.size() == 0)
-    return errh->error("too few arguments; expected `INPUTSPEC, ...'");
-  set_ninputs(conf.size());
+  if (conf.size() != ninputs())
+      return errh->error("need %d arguments, one per input port", ninputs());
   
   for (int i = 0; i < conf.size(); i++) {
     InputSpec is;
@@ -290,7 +278,7 @@ TCPRewriter::take_state(Element *e, ErrorHandler *errh)
   if (!rw) return;
 
   if (noutputs() != rw->noutputs()) {
-    errh->warning("taking mappings from `%s', although it has %s output ports", rw->declaration().cc(), (rw->noutputs() > noutputs() ? "more" : "fewer"));
+    errh->warning("taking mappings from `%s', although it has %s output ports", rw->declaration().c_str(), (rw->noutputs() > noutputs() ? "more" : "fewer"));
     if (noutputs() < rw->noutputs())
       errh->message("(out of range mappings will be dropped)");
   }

@@ -134,7 +134,7 @@ clickfs_tree_add_handle(struct clickfs_dirent *cde,
     de->type = CLICKFS_DIRENT_HANDLE;
     if (h->read_visible()) de->perm |= 0444;
     if (h->write_visible()) de->perm |= 0200;
-    strncpy(de->name, name.cc(), sizeof(de->name));
+    strncpy(de->name, name.c_str(), sizeof(de->name));
     de->next = cde->data.dir.head;
     cde->data.dir.head = de;
     de->file_refcnt = 1;

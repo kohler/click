@@ -132,17 +132,10 @@ ETTStat::ETTStat()
     _ads_rs_index(0),
     _rtable(0)
 {
-  add_input();
 }
 
 ETTStat::~ETTStat()
 {
-}
-
-void
-ETTStat::notify_noutputs(int n) 
-{
-  set_noutputs(n > 0 ? 1 : 0);  
 }
 
 
@@ -304,7 +297,7 @@ ETTStat::send_probe()
 
   WritablePacket *p = Packet::make(size + 2); // +2 for alignment
   if (p == 0) {
-    click_chatter("ETTStat %s: cannot make packet!", id().cc());
+    click_chatter("ETTStat %s: cannot make packet!", id().c_str());
     return;
   }
   ASSERT_ALIGNED(p->data());
@@ -361,7 +354,7 @@ ETTStat::send_probe()
     if (!probe) {
       click_chatter("%{element}: lookup for %s, %d failed in ad \n", 
 		    this,
-		    _neighbors[_next_neighbor_to_ad].s().cc(),
+		    _neighbors[_next_neighbor_to_ad].s().c_str(),
 		    _next_neighbor_to_ad);
     } else {
 
@@ -445,7 +438,7 @@ ETTStat::simple_action(Packet *p)
 
   unsigned min_sz = sizeof(click_ether) + sizeof(link_probe);
   if (p->length() < min_sz) {
-    click_chatter("ETTStat %s: packet is too small", id().cc());
+    click_chatter("ETTStat %s: packet is too small", id().c_str());
     p->kill(); 
     return 0;
   }
@@ -453,7 +446,7 @@ ETTStat::simple_action(Packet *p)
   click_ether *eh = (click_ether *) p->data();
 
   if (ntohs(eh->ether_type) != _et) {
-    click_chatter("ETTStat %s: got non-ETTStat packet type", id().cc());
+    click_chatter("ETTStat %s: got non-ETTStat packet type", id().c_str());
     p->kill();
     return 0;
   }
@@ -466,7 +459,7 @@ ETTStat::simple_action(Packet *p)
       click_chatter ("%{element}: unknown sr version %x from %s", 
 		     this,
 		     lp->_version,
-		     EtherAddress(eh->ether_shost).s().cc());
+		     EtherAddress(eh->ether_shost).s().c_str());
     }
 
     
@@ -476,7 +469,7 @@ ETTStat::simple_action(Packet *p)
 
 
   if (click_in_cksum((unsigned char *) lp, lp->_psz) != 0) {
-    click_chatter("ETTStat %s: failed checksum", id().cc());
+    click_chatter("ETTStat %s: failed checksum", id().c_str());
     p->kill();
     return 0;
   }
@@ -484,7 +477,7 @@ ETTStat::simple_action(Packet *p)
 
   if (p->length() < lp->_psz + sizeof(click_ether)) {
     click_chatter("ETTStat %s: packet is smaller (%d) than it claims (%u)",
-		  id().cc(), p->length(), lp->_psz);
+		  id().c_str(), p->length(), lp->_psz);
   }
 
 
@@ -493,7 +486,7 @@ ETTStat::simple_action(Packet *p)
   if (ip == _ip) {
     click_chatter("%{element} got own packet %s\n",
 		  this,
-		  _ip.s().cc());
+		  _ip.s().c_str());
     p->kill();
     return 0;
   }
@@ -525,17 +518,17 @@ ETTStat::simple_action(Packet *p)
     _neighbors.push_back(ip);
   } else if (l->_period != new_period) {
     click_chatter("ETTStat %s: %s has changed its link probe period from %u to %u; clearing probe info",
-		  id().cc(), ip.s().cc(), l->_period, new_period);
+		  id().c_str(), ip.s().c_str(), l->_period, new_period);
     l->_probes.clear();
   } else if (l->_tau != lp->_tau) {
     click_chatter("ETTStat %s: %s has changed its link tau from %u to %u; clearing probe info",
-		  id().cc(), ip.s().cc(), l->_tau, lp->_tau);
+		  id().c_str(), ip.s().c_str(), l->_tau, lp->_tau);
     l->_probes.clear();
   }
 
   if (lp->_sent < (unsigned)l->_sent) {
     click_chatter("ETTStat %s: %s has reset; clearing probe info",
-		  id().cc(), ip.s().cc());
+		  id().c_str(), ip.s().c_str());
     l->_probes.clear();
   }
   
@@ -597,7 +590,7 @@ ETTStat::simple_action(Packet *p)
 		    this,
 		    link_number,
 		    lp->_num_links,
-		    neighbor.s().cc(),
+		    neighbor.s().c_str(),
 		    num_rates);
     }
 
@@ -611,8 +604,8 @@ ETTStat::simple_action(Packet *p)
       if (0) {
 	click_chatter("%{element} on %s neighbor %s: size %d rate %d fwd %d rev %d\n",
 		      this,
-		      ip.s().cc(),
-		      neighbor.s().cc(),
+		      ip.s().c_str(),
+		      neighbor.s().c_str(),
 		      nfo->_size,
 		      nfo->_rate,
 		      nfo->_fwd,
@@ -685,7 +678,7 @@ ETTStat::read_bcast_stats()
     if (_arp_table) {
       EtherAddress eth_dest = _arp_table->lookup(ip);
       if (eth_dest) {
-	sa << " " << eth_dest.s().cc();
+	sa << " " << eth_dest.s().c_str();
       } else {
 	sa << " ?";
       }
@@ -720,7 +713,7 @@ ETTStat::bad_nodes() {
   for (BadTable::const_iterator i = _bad_table.begin(); i; i++) {
     uint8_t version = i.value();
     EtherAddress dst = i.key();
-    sa << this << " eth " << dst.s().cc() << " version " << (int) version << "\n";
+    sa << this << " eth " << dst.s().c_str() << " version " << (int) version << "\n";
   }
 
   return sa.take_string();
@@ -739,7 +732,7 @@ ETTStat::clear_stale()
     if (!l || 
 	(unsigned) now._sec - l->_last_rx._sec > 2 * l->_tau/1000) {
       click_chatter("%{element} clearing stale neighbor %s age %d\n ",
-		    this, n.s().cc(),
+		    this, n.s().c_str(),
 		    now._sec - l->_last_rx._sec);
       _bcast_stats.remove(n);
     } else {

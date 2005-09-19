@@ -22,7 +22,6 @@
 CLICK_DECLS
 
 StoreData::StoreData()
-    : Element(1, 1)
 {
 }
 

@@ -25,7 +25,6 @@
 CLICK_DECLS
 
 AvailableRates::AvailableRates()
-  : Element(0, 0)
 {
 
   /* bleh */
@@ -55,7 +54,7 @@ AvailableRates::parse_and_insert(String s, ErrorHandler *errh)
   Vector<String> args;
   cp_spacevec(s, args);
   if (args.size() < 2) {
-    return errh->error("error param %s must have > 1 arg", s.cc());
+    return errh->error("error param %s must have > 1 arg", s.c_str());
   }
   bool default_rates = false;
   if (args[0] == "DEFAULT") {
@@ -63,7 +62,7 @@ AvailableRates::parse_and_insert(String s, ErrorHandler *errh)
     _default_rates.clear();
   } else {
     if (!cp_ethernet_address(args[0], &e)) 
-      return errh->error("error param %s: must start with ethernet address", s.cc());
+      return errh->error("error param %s: must start with ethernet address", s.c_str());
   }
   
   for (int x = 1; x< args.size(); x++) {
@@ -115,7 +114,7 @@ Vector<int>
 AvailableRates::lookup(EtherAddress eth)
 {
   if (!eth) {
-    click_chatter("%s: lookup called with NULL eth!\n", id().cc());
+    click_chatter("%s: lookup called with NULL eth!\n", id().c_str());
     return Vector<int>();
   }
 
@@ -137,8 +136,8 @@ AvailableRates::insert(EtherAddress eth, Vector<int> rates)
   if (!(eth)) {
     if (_debug) {
       click_chatter("AvailableRates %s: You fool, you tried to insert %s\n",
-		    id().cc(),
-		    eth.s().cc());
+		    id().c_str(),
+		    eth.s().c_str());
     }
     return -1;
   }
@@ -187,7 +186,7 @@ AvailableRates_read_param(Element *e, void *thunk)
     }
     for (AvailableRates::RIter iter = td->_rtable.begin(); iter; iter++) {
       AvailableRates::DstInfo n = iter.value();
-      sa << n._eth.s().cc() << " ";
+      sa << n._eth.s().c_str() << " ";
       for (int x = 0; x < n._rates.size(); x++) {
 	sa << " " << n._rates[x];
       }
@@ -230,9 +229,6 @@ AvailableRates_write_param(const String &in_s, Element *e, void *vparam,
 void
 AvailableRates::add_handlers()
 {
-  add_default_handlers(true);
-
-
   add_read_handler("debug", AvailableRates_read_param, (void *) H_DEBUG);
   add_read_handler("rates", AvailableRates_read_param, (void *) H_RATES);
 

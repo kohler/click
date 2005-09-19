@@ -24,6 +24,7 @@ class StationTable : public Element { public:
   ~StationTable();
   
   const char *class_name() const		{ return "StationTable"; }
+  const char *port_count() const		{ return PORTS_0_0; }
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }

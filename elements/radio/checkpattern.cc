@@ -22,7 +22,6 @@
 CLICK_DECLS
 
 CheckPattern::CheckPattern()
-  : Element(1, 1)
 {
   _len = 1;
 }

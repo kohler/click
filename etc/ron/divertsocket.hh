@@ -61,9 +61,8 @@ public:
   ~DivertSocket();
 
   const char *class_name() const     { return "DivertSocket"; }
+  const char *port_count() const     { return "-/-"; }
   const char *processing() const     { return PUSH;}
-  void notify_ninputs(int n);
-  void notify_noutputs(int n);
 
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh);

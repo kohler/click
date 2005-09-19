@@ -27,7 +27,6 @@
 CLICK_DECLS
 
 ExtraDecap::ExtraDecap()
-  : Element(1, 1)
 {
 }
 
@@ -98,8 +97,6 @@ ExtraDecap_write_param(const String &in_s, Element *e, void *vparam,
 void
 ExtraDecap::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", ExtraDecap_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", ExtraDecap_write_param, (void *) H_DEBUG);

@@ -42,24 +42,24 @@ AnyDevice::AnyDevice()
 AnyDevice::~AnyDevice()
 {
     if (_in_map || _dev)
-	click_chatter("%s: bad device destructor!", id().cc());
+	click_chatter("%s: bad device destructor!", id().c_str());
 }
 
 int
 AnyDevice::find_device(bool allow_nonexistent, AnyDeviceMap *adm,
 		       ErrorHandler *errh)
 {
-    _dev = dev_get_by_name(_devname.cc());
+    _dev = dev_get_by_name(_devname.c_str());
     if (!_dev)
 	_dev = dev_get_by_ether_address(_devname, this);
     if (!_dev) {
 	if (!allow_nonexistent)
-	    return errh->error("unknown device '%s'", _devname.cc());
+	    return errh->error("unknown device '%s'", _devname.c_str());
 	else
-	    errh->warning("unknown device '%s'", _devname.cc());
+	    errh->warning("unknown device '%s'", _devname.c_str());
     }
     if (_dev && !(_dev->flags & IFF_UP)) {
-	errh->warning("device '%s' is down", _devname.cc());
+	errh->warning("device '%s' is down", _devname.c_str());
 	dev_put(_dev);
 	_dev = 0;
     }
@@ -80,9 +80,9 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm)
 	return;
     
     if (_dev)
-	click_chatter("%s: device '%s' went down", declaration().cc(), _devname.cc());
+	click_chatter("%s: device '%s' went down", declaration().c_str(), _devname.c_str());
     if (dev)
-	click_chatter("%s: device '%s' came up", declaration().cc(), _devname.cc());
+	click_chatter("%s: device '%s' came up", declaration().c_str(), _devname.c_str());
 
     if (_dev && _promisc)
 	dev_set_promiscuity(_dev, -1);

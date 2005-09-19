@@ -89,6 +89,7 @@ class FastUDPSource : public Element {
   ~FastUDPSource();
   
   const char *class_name() const	{ return "FastUDPSource"; }
+  const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PULL; }
   
   int configure(Vector<String> &, ErrorHandler *);

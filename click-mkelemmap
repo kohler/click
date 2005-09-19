@@ -16,14 +16,17 @@
 # notice is a summary of the Click LICENSE file; the license in that file is
 # legally binding.
 
+my(%port_count_constants) =
+    ('PORTS_0_0' => '0/0', 'PORTS_0_1' => '0/1', 'PORTS_1_0' => '1/0',
+     'PORTS_1_1' => '1/1');
 my(%processing_constants) =
     ('AGNOSTIC' => 'a/a', 'PUSH' => 'h/h', 'PULL' => 'l/l',
      'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h');
 my(%flow_code_constants) =
     ('COMPLETE_FLOW' => 'x/x');
 my(@source_file, @header_file, @click_name, @cxx_name, @doc_name,
-   @parents, @processing, @flow_code, @flags, @requirements, @provisions,
-   %click_name_to_id, %cxx_name_to_id);
+   @parents, @port_count, @processing, @flow_code, @flags, @requirements,
+   @provisions, %click_name_to_id, %cxx_name_to_id);
 my(@includes) = ( '.' );
 
 sub driver_mask ($) {
@@ -83,6 +86,14 @@ sub process_file ($) {
 	    push @click_name, $1;
 	} else {
 	    push @click_name, "";
+	}
+	if (/port_count.*return\s*(.*?);/) {
+	    my $p = $1;
+	    $p = $port_count_constants{$p} if exists($port_count_constants{$p});
+	    $p =~ tr/\" \t\r\n//d;
+	    push @port_count, $p;
+	} else {
+	    push @port_count, "";
 	}
 	if (/processing.*return\s*(.*?);/) {
 	    my $p = $1;
@@ -165,6 +176,7 @@ sub process_file ($) {
 		push @source_file, $source_file[$i];
 		push @header_file, $header_file[$i];
 		push @parents, $parents[$i];
+		push @port_count, $port_count[$i];
 		push @processing, $processing[$i];
 		push @flow_code, $flow_code[$i];
 		push @flags, $flags[$i];
@@ -181,6 +193,7 @@ sub process_file ($) {
 	push @source_file, $filename;
 	push @header_file, $headername;
 	push @parents, [];
+	push @port_count, "";
 	push @processing, "";
 	push @flow_code, "";
 	push @flags, undef;
@@ -207,6 +220,24 @@ sub process_file ($) {
 	}
 	$click_name_to_id{$click_name[$i]} = $i;
     }
+}
+
+sub parents_port_count ($) {
+    my($classid) = @_;
+    return undef if !defined $classid;
+    if (!$port_count[$classid]) {
+	my($parent);
+	foreach $parent (@{$parents[$classid]}) {
+	    if ($parent eq 'Element') {
+		$port_count[$classid] = '0/0';
+		last;
+	    } elsif ($parent ne '') {
+		$port_count[$classid] = &parents_port_count($cxx_name_to_id{$parent});
+		last if $port_count[$classid];
+	    }
+	}
+    }
+    return $port_count[$classid];
 }
 
 sub parents_processing ($) {
@@ -450,6 +481,10 @@ foreach $id (sort sorter 0..$#click_name) {
     my($sf) = $source_file[$id];
     $sf =~ s/^$prefix\/*//;
     print OUT " sourcefile=\"", xml_quote($sf), "\"" if $sf;
+
+    my($pc) = $port_count[$id];
+    $pc = parents_port_count($id) if !$pc;
+    print OUT " portcount=\"", $pc, "\"" if $pc;
 
     my($p) = $processing[$id];
     $p = parents_processing($id) if !$p;

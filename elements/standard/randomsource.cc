@@ -25,7 +25,7 @@
 CLICK_DECLS
 
 RandomSource::RandomSource()
-  : Element(0, 1), _task(this)
+  : _task(this)
 {
 }
 

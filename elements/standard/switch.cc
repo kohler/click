@@ -24,17 +24,10 @@ CLICK_DECLS
 
 Switch::Switch()
 {
-  add_input();
 }
 
 Switch::~Switch()
 {
-}
-
-void
-Switch::notify_noutputs(int n)
-{
-  set_noutputs(n);
 }
 
 int

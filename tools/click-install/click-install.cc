@@ -132,8 +132,8 @@ prepare_tmpdir(RouterT *r, ErrorHandler *errh)
   // change to temporary directory
   tmpdir = click_mktmpdir(&berrh);
   assert(tmpdir);
-  if (chdir(tmpdir.cc()) < 0)
-    berrh.fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
+  if (chdir(tmpdir.c_str()) < 0)
+    berrh.fatal("cannot chdir to %s: %s", tmpdir.c_str(), strerror(errno));
 
   // find compile program
   click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, &cerrh);
@@ -180,7 +180,7 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
 
     // found source file, so compile it
     ArchiveElement ae = r->archive(source_ae);
-    errh->message("Compiling package %s from config archive", ae.name.cc());
+    errh->message("Compiling package %s from config archive", ae.name.c_str());
     ContextErrorHandler cerrh
       (errh, "While compiling package '" + req + OBJSUFFIX "':");
 
@@ -195,13 +195,13 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
     
     // run click-compile
     String compile_command = click_compile_prog + " --driver=" COMPILETARGET " --package=" + req + OBJSUFFIX " " + filename;
-    int compile_retval = system(compile_command.cc());
+    int compile_retval = system(compile_command.c_str());
     if (compile_retval == 127)
-      cerrh.fatal("could not run '%s'", compile_command.cc());
+      cerrh.fatal("could not run '%s'", compile_command.c_str());
     else if (compile_retval < 0)
-      cerrh.fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
+      cerrh.fatal("could not run '%s': %s", compile_command.c_str(), strerror(errno));
     else if (compile_retval != 0)
-      cerrh.fatal("'%s' failed", compile_command.cc());
+      cerrh.fatal("'%s' failed", compile_command.c_str());
     
     // grab object file and add to archive
     ArchiveElement obj_ae = init_archive_element(req + OBJSUFFIX, 0600);
@@ -221,15 +221,15 @@ install_module(const String &filename, const String &options,
   cmdline += filename;
   if (options)
     cmdline += " " + options;
-  int retval = system(cmdline.cc());
+  int retval = system(cmdline.c_str());
   if (retval != 0)
-    errh->fatal("'%s' failed", cmdline.cc());
+    errh->fatal("'%s' failed", cmdline.c_str());
 #else
   String cmdline = "/sbin/kldload " + filename;
   assert(!options);
-  int retval = system(cmdline.cc());
+  int retval = system(cmdline.c_str());
   if (retval != 0)
-    errh->fatal("'%s' failed", cmdline.cc());
+    errh->fatal("'%s' failed", cmdline.c_str());
 #endif
 }
 
@@ -259,7 +259,7 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
 	insmod_name = "_" + insmod_name;
 
       if (verbose)
-	errh->message("Installing package %s (%s" OBJSUFFIX " from config archive)", insmod_name.cc(), req.cc());
+	errh->message("Installing package %s (%s" OBJSUFFIX " from config archive)", insmod_name.c_str(), req.c_str());
       
       // install module
       if (!tmpdir)
@@ -286,12 +286,12 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
 	filename = req + ".o";
 	pathname = clickpath_find_file(filename, "lib", CLICK_LIBDIR);
 	if (!pathname)
-	  errh->fatal("cannot find required package '%s" OBJSUFFIX "'\nin CLICKPATH or '%s'", req.cc(), CLICK_LIBDIR);
+	  errh->fatal("cannot find required package '%s" OBJSUFFIX "'\nin CLICKPATH or '%s'", req.c_str(), CLICK_LIBDIR);
       }
 
       // install module
       if (verbose)
-	errh->message("Installing package %s (%s)", req.cc(), pathname.cc());
+	errh->message("Installing package %s (%s)", req.c_str(), pathname.c_str());
 
       install_module(pathname, String(), errh);
 
@@ -453,7 +453,7 @@ particular purpose.\n");
 	clickpath_find_file("proclikefs.o", "lib", CLICK_LIBDIR, errh);
 # endif
       if (verbose)
-	errh->message("Installing proclikefs (%s)", proclikefs_o.cc());
+	errh->message("Installing proclikefs (%s)", proclikefs_o.c_str());
       install_module(proclikefs_o, String(), errh);
     }
 #endif
@@ -467,7 +467,7 @@ particular purpose.\n");
       clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
 #endif
     if (verbose)
-      errh->message("Installing Click module (%s)", click_o.cc());
+      errh->message("Installing Click module (%s)", click_o.c_str());
 
     // install it in the kernel
 #if FOR_LINUXMODULE
@@ -533,8 +533,8 @@ particular purpose.\n");
   {
     String config_place = (hotswap ? clickfs_hotconfig : clickfs_config);
     if (verbose)
-      errh->message("Writing configuration to %s", config_place.cc());
-    int fd = open(config_place.cc(), O_WRONLY | O_TRUNC);
+      errh->message("Writing configuration to %s", config_place.c_str());
+    int fd = open(config_place.c_str(), O_WRONLY | O_TRUNC);
     if (fd < 0)
       errh->fatal("cannot install configuration: %s", strerror(errno));
     // XXX include packages?
@@ -545,21 +545,21 @@ particular purpose.\n");
       if (written >= 0)
 	pos += written;
       else if (errno != EAGAIN && errno != EINTR)
-	errh->fatal("%s: %s", config_place.cc(), strerror(errno));
+	errh->fatal("%s: %s", config_place.c_str(), strerror(errno));
     }
     int retval = close(fd);
     if (retval < 0 && errno == EINVAL)
       exit_status = 2;
     else if (retval < 0)
-      errh->error("%s: %s", config_place.cc(), strerror(errno));
+      errh->error("%s: %s", config_place.c_str(), strerror(errno));
   }
 
   // report errors
   {
     char buf[1024];
-    int fd = open(clickfs_errors.cc(), O_RDONLY | O_NONBLOCK);
+    int fd = open(clickfs_errors.c_str(), O_RDONLY | O_NONBLOCK);
     if (fd < 0)
-      errh->warning("%s: %s", clickfs_errors.cc(), strerror(errno));
+      errh->warning("%s: %s", clickfs_errors.c_str(), strerror(errno));
     else {
       if (verbose)
 	errh->message("Waiting for errors");
@@ -574,7 +574,7 @@ particular purpose.\n");
 	else if (got == 0)
 	  break;
 	else if (errno != EINTR && errno != EAGAIN) {
-	  errh->error("%s: %s", clickfs_errors.cc(), strerror(errno));
+	  errh->error("%s: %s", clickfs_errors.c_str(), strerror(errno));
 	  break;
 	}
       }

@@ -19,7 +19,8 @@ class EtherMirror : public Element { public:
   EtherMirror();
   ~EtherMirror();
   
-  const char *class_name() const		{ return "EtherMirror"; }
+  const char *class_name() const	{ return "EtherMirror"; }
+  const char *port_count() const	{ return PORTS_1_1; }
     
   Packet *simple_action(Packet *);
   

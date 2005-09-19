@@ -58,7 +58,6 @@
 CLICK_DECLS
 
 WepEncap::WepEncap()
-  : Element(1, 1)
 {
 }
 
@@ -127,7 +126,7 @@ WepEncap::simple_action(Packet *p_in)
 
   
   memcpy(rc4key, p->data() + sizeof(click_wifi), WIFI_WEP_IVLEN);
-  memcpy(rc4key + WIFI_WEP_IVLEN, _key.cc(), _key.length());
+  memcpy(rc4key + WIFI_WEP_IVLEN, _key.data(), _key.length());
   rc4_init(&_rc4, rc4key, WIFI_WEP_IVLEN + _key.length());
   
   /* calculate CRC over unencrypted data */
@@ -209,8 +208,6 @@ write_param(const String &in_s, Element *e, void *vparam,
 void
 WepEncap::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", read_param, (void *) H_DEBUG);
   add_read_handler("active", read_param, (void *) H_ACTIVE);
   add_read_handler("key", read_param, (void *) H_KEY);

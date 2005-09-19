@@ -27,8 +27,6 @@ CLICK_DECLS
 
 LookupIPRoute2::LookupIPRoute2()
 {
-  add_input();
-  add_output();
 }
 
 LookupIPRoute2::~LookupIPRoute2()

@@ -17,7 +17,6 @@
 CLICK_DECLS
 
 IP6Print::IP6Print()
-    : Element(1, 1)
 {
 }
 
@@ -81,7 +80,7 @@ IP6Print::simple_action(Packet *p)
 	    sa.forward(buf - orig_buf);
 	}
     }
-    click_chatter("%s", sa.cc());
+    click_chatter("%s", sa.c_str());
     return p;
 }
 

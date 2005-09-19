@@ -27,10 +27,9 @@ class SimplePrioSched : public Element { public:
     ~SimplePrioSched();
   
     const char *class_name() const	{ return "SimplePrioSched"; }
+    const char *port_count() const	{ return "-/1"; }
     const char *processing() const	{ return PULL; }
 
-    void notify_ninputs(int);
-  
     Packet *pull(int port);
   
 };

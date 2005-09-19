@@ -28,17 +28,10 @@ CLICK_DECLS
 LinearIPLookup::LinearIPLookup()
     : _zero_route(-1)
 {
-    add_input();
 }
 
 LinearIPLookup::~LinearIPLookup()
 {
-}
-
-void
-LinearIPLookup::notify_noutputs(int n)
-{
-    set_noutputs(n);
 }
 
 int
@@ -63,7 +56,7 @@ LinearIPLookup::check() const
 	    continue;
 	for (int j = i + 1; j < _t[i].extra && j < _t.size(); j++)
 	    if (_t[i].contains(_t[j]) && _t[j].real()) {
-		click_chatter("%s: bad next pointers: routes %s, %s", declaration().cc(), _t[i].unparse_addr().cc(), _t[j].unparse_addr().cc());
+		click_chatter("%s: bad next pointers: routes %s, %s", declaration().c_str(), _t[i].unparse_addr().c_str(), _t[j].unparse_addr().c_str());
 		ok = false;
 	    }
 #if 0
@@ -71,7 +64,7 @@ LinearIPLookup::check() const
 	int j = _t[i].extra;
 	if (j < _t.size())
 	    if (!_t[i].contains(_t[j]) && _t[j].real()) {
-		click_chatter("%s: bad next pointers': routes %s, %s", declaration().cc(), _t[i].unparse_addr().cc(), _t[j].unparse_addr().cc());
+		click_chatter("%s: bad next pointers': routes %s, %s", declaration().c_str(), _t[i].unparse_addr().c_str(), _t[j].unparse_addr().c_str());
 		ok = false;
 	    }
 #endif
@@ -81,18 +74,18 @@ LinearIPLookup::check() const
     for (int i = 0; i < _t.size(); i++)
 	for (int j = i + 1; j < _t.size(); j++)
 	    if (_t[i].addr == _t[j].addr && _t[i].mask == _t[j].mask && _t[i].real() && _t[j].real()) {
-		click_chatter("%s: duplicate routes for %s", declaration().cc(), _t[i].unparse_addr().cc());
+		click_chatter("%s: duplicate routes for %s", declaration().c_str(), _t[i].unparse_addr().c_str());
 		ok = false;
 	    }
 
     // caches point to the right place
     if (_last_addr && lookup_entry(_last_addr) != _last_entry) {
-	click_chatter("%s: bad cache entry for %s", declaration().cc(), _last_addr.unparse().cc());
+	click_chatter("%s: bad cache entry for %s", declaration().c_str(), _last_addr.unparse().c_str());
 	ok = false;
     }
 #ifdef IP_RT_CACHE2
     if (_last_addr2 && lookup_entry(_last_addr2) != _last_entry2) {
-	click_chatter("%s: bad cache entry for %s", declaration().cc(), _last_addr2.unparse().cc());
+	click_chatter("%s: bad cache entry for %s", declaration().c_str(), _last_addr2.unparse().c_str());
 	ok = false;
     }
 #endif

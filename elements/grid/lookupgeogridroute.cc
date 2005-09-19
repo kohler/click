@@ -33,7 +33,7 @@
 CLICK_DECLS
 
 LookupGeographicGridRoute::LookupGeographicGridRoute()
-  : Element(1, 2), _rt(0), _task(this)
+  : _rt(0), _task(this)
 {
 }
 
@@ -65,15 +65,15 @@ LookupGeographicGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (_rt->cast("GridGenericRouteTable") == 0) {
     errh->warning("%s: GridGenericRouteTable argument %s has the wrong type",
-                  id().cc(),
-                  _rt->id().cc());
+                  id().c_str(),
+                  _rt->id().c_str());
     return -1;
   }
 
   if (_li->cast("GridLocationInfo") == 0) {
     errh->warning("%s: GridLocationInfo argument %s has the wrong type",
-                  id().cc(),
-                  _li->id().cc());
+                  id().c_str(),
+                  _li->id().c_str());
     return -1;
   }
 
@@ -113,7 +113,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
 
   if (dont_forward(packet)) {
     click_chatter("LookupGeographicGridRoute %s: not supposed to forward packet of type %s",
-		  id().cc(), grid_hdr::type_string(gh->type).cc());
+		  id().c_str(), grid_hdr::type_string(gh->type).c_str());
     notify_route_cbs(packet, 0, GRCB::Drop, GRCB::UnknownType, 0);
     output(1).push(packet);
     return;
@@ -127,7 +127,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
   
 
   if (!_li->loc_good()) {
-    click_chatter("LookupGeographicGridRoute %s: can't forward packet; we don't know our own location", id().cc());
+    click_chatter("LookupGeographicGridRoute %s: can't forward packet; we don't know our own location", id().c_str());
     notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::OwnLocUnknown, 0);
     output(1).push(packet);
     return;
@@ -135,7 +135,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
 
   if (!dest_loc_good(packet)) {
     click_chatter("LookupGeographicGridRoute %s: received packet of type %s without good destination location",
-		  id().cc(), grid_hdr::type_string(gh->type).cc());
+		  id().c_str(), grid_hdr::type_string(gh->type).c_str());
     notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::NoDestLoc, 0);
     output(1).push(packet);
     return;
@@ -165,7 +165,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
   }
   else {
     click_chatter("LookupGeographicGridRoute %s: unable to forward %s packet with geographic routing", 
-		  id().cc(), grid_hdr::type_string(gh->type).cc());
+		  id().c_str(), grid_hdr::type_string(gh->type).c_str());
 #if 0
     if (gh->type ==  grid_hdr::GRID_NBR_ENCAP) {
       int ip_off = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap);
@@ -176,7 +176,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
       unsigned short *dp = (unsigned short *) (xp->data() + 22);
       unsigned short src_port = ntohs(*sp);
       unsigned short dst_port = ntohs(*dp);
-      click_chatter("IP packet info: %s:%hu -> %s:%hu", src_ip.s().cc(), src_port, dst_ip.s().cc(), dst_port);
+      click_chatter("IP packet info: %s:%hu -> %s:%hu", src_ip.s().c_str(), src_port, dst_ip.s().c_str(), dst_port);
     }
 #endif
     notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::NoCloserNode, 0);
@@ -243,14 +243,6 @@ LookupGeographicGridRoute::get_next_geographic_hop(grid_location dest_loc, Ether
   
   return true;
 } 
-
-
-
-void
-LookupGeographicGridRoute::add_handlers()
-{
-  add_default_handlers(true);
-}
 
 
 void

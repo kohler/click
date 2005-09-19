@@ -151,14 +151,14 @@ call_read_handler(Element *e, String handler_name,
   const Handler *rh = Router::handler(e, handler_name);
   String full_name = Handler::unparse_name(e, handler_name);
   if (!rh || !rh->visible())
-    return errh->error("no '%s' handler", full_name.cc());
+    return errh->error("no '%s' handler", full_name.c_str());
   else if (!rh->read_visible())
-    return errh->error("'%s' is a write handler", full_name.cc());
+    return errh->error("'%s' is a write handler", full_name.c_str());
 
   if (print_name)
-    fprintf(stdout, "%s:\n", full_name.cc());
+    fprintf(stdout, "%s:\n", full_name.c_str());
   String result = rh->call_read(e);
-  fputs(result.cc(), stdout);
+  fputs(result.c_str(), stdout);
   if (print_name)
     fputs("\n", stdout);
 

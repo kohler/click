@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 Burster::Burster()
-  : Element(1, 1), _npackets(0), _timer(this)
+  : _npackets(0), _timer(this)
 {
 }
 

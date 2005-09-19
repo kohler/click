@@ -26,7 +26,6 @@
 CLICK_DECLS
 
 CountFragBytes::CountFragBytes()
-  : Element(1,1)
 {
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
@@ -259,7 +258,6 @@ CountFragBytes_read_param(Element *e, void *thunk)
 void
 CountFragBytes::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("byte_count", CountFragBytes_read_param, (void *) H_BYTES);
 
 }

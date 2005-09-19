@@ -30,8 +30,6 @@ CLICK_DECLS
 
 ProtocolTranslator64::ProtocolTranslator64()
 {
-  add_input(); /*IPv6 packets */
-  add_output(); /* IPv4 packets */
 }
 
 

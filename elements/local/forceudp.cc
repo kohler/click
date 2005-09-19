@@ -25,7 +25,6 @@
 CLICK_DECLS
 
 ForceUDP::ForceUDP()
-  : Element(1, 1)
 {
   _count = 0;
   _dport = -1;

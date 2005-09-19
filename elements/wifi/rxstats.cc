@@ -27,7 +27,6 @@
 CLICK_DECLS
 
 RXStats::RXStats()
-  : Element(1, 1)
 {
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
@@ -90,7 +89,7 @@ RXStats_read_param(Element *e, void *thunk)
     for (RXStats::NIter iter = td->_neighbors.begin(); iter; iter++) {
       RXStats::DstInfo n = iter.value();
       struct timeval age = now - n._last_received;
-      sa << n._eth.s().cc();
+      sa << n._eth.s();
       sa << " rate " << n._rate;
       sa << " signal " << n._signal;
       sa << " noise " << n._noise;
@@ -125,7 +124,6 @@ RXStats_write_param(const String &in_s, Element *e, void *vparam,
 void
 RXStats::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("stats", RXStats_read_param, (void *) H_STATS);
   add_write_handler("reset", RXStats_write_param, (void *) H_RESET);
 

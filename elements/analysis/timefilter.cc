@@ -25,19 +25,13 @@
 CLICK_DECLS
 
 TimeFilter::TimeFilter()
-    : Element(1, 1), _last_h(0)
+    : _last_h(0)
 {
 }
 
 TimeFilter::~TimeFilter()
 {
     delete _last_h;
-}
-
-void
-TimeFilter::notify_noutputs(int n)
-{
-    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int

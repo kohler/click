@@ -25,7 +25,6 @@
 CLICK_DECLS
 
 IPEncap::IPEncap()
-  : Element(1, 1)
 {
 }
 
@@ -74,7 +73,7 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     else if (ect_str == "2")
       ect = 2;
     else
-      return errh->error("bad ECT value '%s'", ect_str.cc());
+      return errh->error("bad ECT value '%s'", ect_str.c_str());
   }
   
   if (tos >= 0 && dscp >= 0)

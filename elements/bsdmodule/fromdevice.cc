@@ -202,7 +202,6 @@ FromDevice::FromDevice()
 {
     _readers = 0; // noone registered so far
     _polling = 0; // we do not poll until NIC driver registers itself
-    add_output();
     fromdev_static_initialize();
 }
 
@@ -263,7 +262,7 @@ FromDevice::initialize(ErrorHandler *errh)
 	    if (FromDevice *fd = (FromDevice *)(e->cast("FromDevice"))) {
 		if (fd->ifindex() == ifindex())
 		    return errh->error("duplicate FromDevice for `%s'",
-				       _devname.cc());
+				       _devname.c_str());
 	    }
 	}
 

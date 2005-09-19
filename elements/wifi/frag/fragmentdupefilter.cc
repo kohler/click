@@ -30,18 +30,11 @@ CLICK_DECLS
 
 
 FragmentDupeFilter::FragmentDupeFilter()
-  : Element(1, 1)
 {
 }
 
 FragmentDupeFilter::~FragmentDupeFilter()
 {
-}
-
-void
-FragmentDupeFilter::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int
@@ -104,13 +97,6 @@ FragmentDupeFilter::simple_action(Packet *p)
 }
 
 
-
- 
-void
-FragmentDupeFilter::add_handlers()
-{
-  add_default_handlers(true);
-}
 #include <click/vector.cc>
 #include <click/dequeue.cc>
 #include <click/hashmap.cc>

@@ -23,6 +23,7 @@ class NullElement : public Element { public:
   ~NullElement();
   
   const char *class_name() const	{ return "Null"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
   
   Packet *simple_action(Packet *);
@@ -49,6 +50,7 @@ class PushNullElement : public Element { public:
   ~PushNullElement();
   
   const char *class_name() const	{ return "PushNull"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
   
   void push(int, Packet *);
@@ -75,6 +77,7 @@ class PullNullElement : public Element { public:
   ~PullNullElement();
   
   const char *class_name() const	{ return "PullNull"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PULL; }
   
   Packet *pull(int);

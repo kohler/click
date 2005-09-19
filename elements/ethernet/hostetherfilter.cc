@@ -25,18 +25,11 @@
 CLICK_DECLS
 
 HostEtherFilter::HostEtherFilter()
-  : Element(1, 1)
 {
 }
 
 HostEtherFilter::~HostEtherFilter()
 {
-}
-
-void
-HostEtherFilter::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int

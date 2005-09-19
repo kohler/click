@@ -22,7 +22,6 @@ CLICK_DECLS
 
 MixedQueue::MixedQueue()
 {
-    set_ninputs(2);
 }
 
 MixedQueue::~MixedQueue()

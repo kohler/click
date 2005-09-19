@@ -130,6 +130,7 @@ class IPFlowRawSockets : public Element, public AggregateListener { public:
     ~IPFlowRawSockets();
   
     const char *class_name() const	{ return "IPFlowRawSockets"; }
+    const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return "a/h"; }
     const char *flow_code() const	{ return "x/y"; }
 

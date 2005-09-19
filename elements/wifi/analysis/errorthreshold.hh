@@ -13,6 +13,7 @@ class ErrorThreshold : public Element { public:
   ~ErrorThreshold();
   
   const char *class_name() const		{ return "ErrorThreshold"; }
+  const char *port_count() const		{ return "1/1-2"; }
   const char *processing() const		{ return PUSH; }
   
   int configure(Vector<String> &, ErrorHandler *);
@@ -20,8 +21,6 @@ class ErrorThreshold : public Element { public:
 
   void push (int port, Packet *p_in);
 
-  void add_handlers();
-  void notify_noutputs(int n);
   unsigned _correct_threshold;
   unsigned _length;
 };

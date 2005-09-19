@@ -26,7 +26,6 @@
 CLICK_DECLS
 
 LocationHistogram::LocationHistogram()
-  : Element(1,1)
 {
 }
 
@@ -97,7 +96,6 @@ LocationHistogram_read_param(Element *e, void *thunk)
 void
 LocationHistogram::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("histogram", LocationHistogram_read_param, (void *) H_HISTOGRAM);
 
 }

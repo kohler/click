@@ -33,6 +33,7 @@ class MadwifiRate : public Element { public:
   ~MadwifiRate();
   
   const char *class_name() const		{ return "MadwifiRate"; }
+  const char *port_count() const		{ return "2/0-2"; }
   const char *processing() const		{ return "ah/a"; }
   const char *flow_code() const			{ return "#/#"; }
   
@@ -48,7 +49,6 @@ class MadwifiRate : public Element { public:
 
   Packet *pull(int);
 
-  void notify_noutputs(int);
   void add_handlers();
   static String static_print_stats(Element *e, void *);
   String print_rates();
@@ -103,7 +103,7 @@ class MadwifiRate : public Element { public:
     int pick_rate() {
       if (_rates.size() == 0) {
 	click_chatter("no rates to pick from for %s\n", 
-		      _eth.s().cc());
+		      _eth.s().c_str());
 	return 2;
       }
       if (_current_index > 0 && _current_index < _rates.size()) {
@@ -115,7 +115,7 @@ class MadwifiRate : public Element { public:
     int pick_alt_rate() {
       if (_rates.size() == 0) {
 	click_chatter("no rates to pick from for %s\n", 
-		      _eth.s().cc());
+		      _eth.s().c_str());
 	return 2;
       }
       return _rates[0];

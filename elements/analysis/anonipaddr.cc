@@ -33,7 +33,7 @@
 CLICK_DECLS
 
 AnonymizeIPAddr::AnonymizeIPAddr()
-    : Element(1, 0), _root(0), _free(0)
+    : _root(0), _free(0)
 {
 }
 
@@ -61,12 +61,6 @@ static uint32_t
 rand32()
 {
     return ((random() << 8) & 0xFFFF0000) | ((random() >> 12) & 0x0000FFFF);
-}
-
-void
-AnonymizeIPAddr::notify_noutputs(int n)
-{
-    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int
@@ -99,7 +93,7 @@ AnonymizeIPAddr::configure(Vector<String> &conf, ErrorHandler *errh)
 	    if (cp_integer(words[i], &what) && what >= 0 && what < 256)
 		_preserve_8.push_back(what);
 	    else
-		return errh->error("bad PRESERVE_8 argument `%s', should be integer between 0 and 255", words[i].cc());
+		return errh->error("bad PRESERVE_8 argument `%s', should be integer between 0 and 255", words[i].c_str());
     }
 
     // install seed if required

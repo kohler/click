@@ -15,6 +15,7 @@ class FragmentResender : public Element { public:
   ~FragmentResender();
 
   const char *class_name() const	{ return "FragmentResender"; }
+  const char *port_count() const	{ return "2/2"; }
   const char *processing() const	{ return "lh/l"; }
   
   int initialize (ErrorHandler *);

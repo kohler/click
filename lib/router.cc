@@ -50,7 +50,7 @@ static int nglobalh;
 static int globalh_cap;
 
 Router::Router(const String &configuration, Master *m)
-    : _master(0), _state(ROUTER_NEW),
+    : _master(0), _state(ROUTER_NEW), _have_connections(false),
       _allow_star_handler(true), _running(RUNNING_INACTIVE),
       _handler_bufs(0), _nhandlers_bufs(0), _free_handler(-1),
       _root_element(0),
@@ -139,7 +139,7 @@ Router::find(const String &name, String prefix, ErrorHandler *errh) const
     for (int i = 0; i < _elements.size(); i++)
       if (_element_names[i] == n) {
 	if (got >= 0) {
-	  if (errh) errh->error("more than one element named '%s'", n.cc());
+	  if (errh) errh->error("more than one element named '%s'", n.c_str());
 	  return 0;
 	} else
 	  got = i;
@@ -181,7 +181,7 @@ const String &
 Router::ename(int ei) const
 {
     if (ei < 0 || ei >= nelements())
-	return String::null_string();
+	return String::empty_string();
     else
 	return _element_names[ei];
 }
@@ -190,7 +190,7 @@ const String &
 Router::default_configuration_string(int ei) const
 {
     if (ei < 0 || ei >= nelements())
-	return String::null_string();
+	return String::empty_string();
     else
 	return _element_configurations[ei];
 }
@@ -206,7 +206,7 @@ const String &
 Router::elandmark(int ei) const
 {
     if (ei < 0 || ei >= nelements())
-	return String::null_string();
+	return String::empty_string();
     else
 	return _element_landmarks[ei];
 }
@@ -330,7 +330,7 @@ Router::check_hookup_elements(ErrorHandler *errh)
 }
 
 void
-Router::notify_hookup_range()
+Router::notify_hookup_range(ErrorHandler *errh)
 {
     // Count inputs and outputs, and notify elements how many they have
     Vector<int> nin(nelements(), -1);
@@ -341,15 +341,15 @@ Router::notify_hookup_range()
 	if (_hookup_to[c].port > nin[_hookup_to[c].idx])
 	    nin[_hookup_to[c].idx] = _hookup_to[c].port;
     }
-    for (int f = 0; f < nelements(); f++) {
-	_elements[f]->notify_ninputs(nin[f] + 1);
-	_elements[f]->notify_noutputs(nout[f] + 1);
-    }
+    for (int f = 0; f < nelements(); f++)
+	_elements[f]->notify_nports(nin[f] + 1, nout[f] + 1, errh);
 }
 
-void
-Router::check_hookup_range(ErrorHandler *errh)
+int
+Router::check_hookup_range(ErrorHandler *errh, bool check_only)
 {
+    int before_all = errh->nerrors();
+    
     // Check each hookup to ensure its port numbers are within range
     for (int c = 0; c < _hookup_from.size(); c++) {
 	Hookup &hfrom = _hookup_from[c];
@@ -362,18 +362,23 @@ Router::check_hookup_range(ErrorHandler *errh)
 	    hookup_error(hto, false, "'%{element}' has no %s %d", errh);
     
 	// remove the connection if there were errors
-	if (errh->nerrors() != before) {
+	if (errh->nerrors() == before)
+	    /* do nothing */;
+	else if (!check_only) {
 	    remove_hookup(c);
 	    c--;
 	}
     }
+    
+    return errh->nerrors() == before_all ? 0 : -1;
 }
 
-void
-Router::check_hookup_completeness(ErrorHandler *errh)
+int
+Router::check_hookup_completeness(ErrorHandler *errh, bool check_only)
 {
     Bitvector used_outputs(ngports(true), false);
     Bitvector used_inputs(ngports(false), false);
+    int before_all = errh->nerrors();
   
     // Check each hookup to ensure it doesn't reuse a port.
     // Completely duplicate connections never got into the Router
@@ -392,12 +397,12 @@ Router::check_hookup_completeness(ErrorHandler *errh)
 	    hookup_error(hto, false, "can't reuse '%{element}' pull %s %d", errh);
 	
 	// remove the connection if there were errors
-	if (errh->nerrors() != before) {
-	    remove_hookup(c);
-	    c--;
-	} else {
+	if (errh->nerrors() == before) {
 	    used_outputs[fromg] = true;
 	    used_inputs[tog] = true;
+	} else if (!check_only) {
+	    remove_hookup(c);
+	    c--;
 	}
     }
 
@@ -408,6 +413,8 @@ Router::check_hookup_completeness(ErrorHandler *errh)
     for (int g = 0; g < ngports(true); g++)
 	if (!used_outputs[g])
 	    hookup_error(gport_hookup(true, g), true, "'%{element}' %s %d unused", errh);
+
+    return errh->nerrors() == before_all ? 0 : -1;
 }
 
 
@@ -418,6 +425,8 @@ Router::make_gports()
 {
     _gports[0].e2g.assign(1, 0);
     _gports[1].e2g.assign(1, 0);
+    _gports[0].g2e.clear();
+    _gports[1].g2e.clear();
     for (int i = 0; i < _elements.size(); i++) {
 	Element *e = _elements[i];
 	_gports[0].e2g.push_back(_gports[0].e2g.back() + e->ninputs());
@@ -595,6 +604,7 @@ Router::set_connections()
 	frome->connect_port(true, hfrom.port, toe, hto.port);
 	toe->connect_port(false, hto.port, frome, hfrom.port);
     }
+    _have_connections = true;
 }
 
 
@@ -644,7 +654,7 @@ Router::adjust_runcount(int delta)
 int
 Router::global_port_flow(bool forward, Element* first_element, int first_port, ElementFilter* stop_filter, Bitvector& results)
 {
-    if (_state < ROUTER_PREINITIALIZE || first_element->router() != this)
+    if (!_have_connections || first_element->router() != this)
 	return -1;
     make_hookup_gports();
     int nresult = ngports(!forward);
@@ -818,13 +828,19 @@ Router::initialize(ErrorHandler *errh)
     }
 
     // notify elements of hookup range
-    notify_hookup_range();
+    // XXX Note: When set_ninputs/set_noutputs is fully removed, this should
+    // change to report errors and bail out if necessary.
+    notify_hookup_range(errh);
+    if (check_hookup_range(ErrorHandler::silent_handler(), true) >= 0) {
+	make_gports();
+	if (check_push_and_pull(ErrorHandler::silent_handler()) >= 0
+	    && check_hookup_completeness(ErrorHandler::silent_handler(), true) >= 0)
+	    set_connections();
+    }
 
     // Configure all elements in configure order. Remember the ones that failed
-    Bitvector element_ok(nelements(), true);
+    Vector<int> element_stage(nelements(), Element::CLEANUP_CONFIGURED);
     bool all_ok = true;
-    Element::CleanupStage failure_stage = Element::CLEANUP_CONFIGURE_FAILED;
-    Element::CleanupStage success_stage = Element::CLEANUP_CONFIGURED;
     Vector<String> conf;
 #if CLICK_DMALLOC
     char dmalloc_buf[12];
@@ -841,7 +857,8 @@ Router::initialize(ErrorHandler *errh)
 	conf.clear();
 	cp_argvec(_element_configurations[i], conf);
 	if (_elements[i]->configure(conf, &cerrh) < 0) {
-	    element_ok[i] = all_ok = false;
+	    element_stage[i] = Element::CLEANUP_CONFIGURE_FAILED;
+	    all_ok = false;
 	    if (cerrh.nerrors() == before)
 		cerrh.error("unspecified error");
 	}
@@ -852,23 +869,23 @@ Router::initialize(ErrorHandler *errh)
 #endif
   
     int before = errh->nerrors();
-    check_hookup_range(errh);
-    make_gports();
-    check_push_and_pull(errh);
-    check_hookup_completeness(errh);
-    set_connections();
+    if (!_have_connections) {
+	check_hookup_range(errh, false);
+	make_gports();
+	check_push_and_pull(errh);
+	check_hookup_completeness(errh, false);
+	set_connections();
+    }
     _state = ROUTER_PREINITIALIZE;
     if (before != errh->nerrors())
 	all_ok = false;
 
     // Initialize elements if OK so far.
     if (all_ok) {
-	failure_stage = Element::CLEANUP_INITIALIZE_FAILED;
-	success_stage = Element::CLEANUP_INITIALIZED;
 	initialize_handlers(true, true);
-	for (int ord = 0; ord < _elements.size(); ord++) {
+	for (int ord = 0; all_ok && ord < _elements.size(); ord++) {
 	    int i = _element_configure_order[ord];
-	    assert(element_ok[i]);
+	    assert(element_stage[i] == Element::CLEANUP_CONFIGURED);
 #if CLICK_DMALLOC
 	    sprintf(dmalloc_buf, "i%d  ", i);
 	    CLICK_DMALLOC_REG(dmalloc_buf);
@@ -876,12 +893,15 @@ Router::initialize(ErrorHandler *errh)
 	    ContextErrorHandler cerrh
 		(errh, context_message(i, "While initializing"));
 	    int before = cerrh.nerrors();
-	    if (_elements[i]->initialize(&cerrh) < 0) {
-		element_ok[i] = all_ok = false;
+	    if (_elements[i]->initialize(&cerrh) >= 0)
+		element_stage[i] = Element::CLEANUP_INITIALIZED;
+	    else {
 		// don't report 'unspecified error' for ErrorElements:
 		// keep error messages clean
 		if (cerrh.nerrors() == before && !_elements[i]->cast("Error"))
 		    cerrh.error("unspecified error");
+		element_stage[i] = Element::CLEANUP_INITIALIZE_FAILED;
+		all_ok = false;
 	    }
 	}
     }
@@ -908,7 +928,7 @@ Router::initialize(ErrorHandler *errh)
 	// Clean up elements
 	for (int ord = _elements.size() - 1; ord >= 0; ord--) {
 	    int i = _element_configure_order[ord];
-	    _elements[i]->cleanup(element_ok[i] ? success_stage : failure_stage);
+	    _elements[i]->cleanup((Element::CleanupStage) element_stage[i]);
 	}
     
 	// Remove element-specific handlers
@@ -931,7 +951,7 @@ Router::activate(bool foreground, ErrorHandler *errh)
 	master()->kill_router(_hotswap_router);
       
 	for (int i = 0; i < _elements.size(); i++) {
-	    Element *e = _elements[i];
+	    Element *e = _elements[_element_configure_order[i]];
 	    if (Element *other = e->hotswap_element()) {
 		ContextErrorHandler cerrh
 		    (errh, context_message(i, "While hot-swapping state into"));

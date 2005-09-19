@@ -31,6 +31,7 @@ class TokenQueue : public NotifierQueue { public:
     
     const char *class_name() const	{ return "TokenQueue"; }
     void *cast(const char *);
+    const char *port_count() const	{ return "3/2"; }
     const char *processing() const	{ return "hhh/lh"; }
     inline bool enq(Packet *p);
     Packet *pull(int);

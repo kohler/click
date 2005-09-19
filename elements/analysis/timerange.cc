@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 TimeRange::TimeRange()
-    : Element(1, 1)
 {
 }
 

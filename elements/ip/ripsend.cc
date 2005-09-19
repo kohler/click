@@ -26,7 +26,6 @@ CLICK_DECLS
 RIPSend::RIPSend()
   : _timer(this)
 {
-  add_output();
 }
 
 RIPSend::~RIPSend()

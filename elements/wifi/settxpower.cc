@@ -27,7 +27,6 @@
 CLICK_DECLS
 
 SetTXPower::SetTXPower()
-  : Element(1, 1)
 {
 }
 
@@ -99,7 +98,6 @@ SetTXPower_write_param(const String &in_s, Element *e, void *vparam,
 void
 SetTXPower::add_handlers()
   {
-  add_default_handlers(true);
   add_read_handler("power", SetTXPower_read_param, (void *) H_POWER);
   add_write_handler("power", SetTXPower_write_param, (void *) H_POWER);
 }

@@ -28,10 +28,9 @@ class CheckGridHeader : public Element {
   ~CheckGridHeader();
   
   const char *class_name() const		{ return "CheckGridHeader"; }
+  const char *port_count() const		{ return "1/1-2"; }
   const char *processing() const		{ return "a/ah"; }
   
-  void notify_noutputs(int);
-
   int drops() const				{ return _drops; }
   
   void add_handlers();

@@ -33,7 +33,6 @@
 CLICK_DECLS
 
 SnoopTCP::SnoopTCP()
-  : Element(2, 4)
 {
 }
 

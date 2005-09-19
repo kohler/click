@@ -22,17 +22,10 @@ CLICK_DECLS
 
 SimplePrioSched::SimplePrioSched()
 {
-    add_output();
 }
 
 SimplePrioSched::~SimplePrioSched()
 {
-}
-
-void
-SimplePrioSched::notify_ninputs(int i)
-{
-    set_ninputs(i);
 }
 
 Packet *

@@ -21,11 +21,9 @@ public:
   ~SpinlockAcquire()			{}
 
   const char *class_name() const	{ return "SpinlockAcquire"; }
+  const char *port_count() const	{ return "-/-"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  void notify_ninputs(int n)		{ set_ninputs(n); }
-  void notify_noutputs(int n)		{ set_noutputs(n); }
-
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *p)  	{ _lock->acquire(); return p; }

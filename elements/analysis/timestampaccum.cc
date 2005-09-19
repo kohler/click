@@ -22,7 +22,6 @@
 CLICK_DECLS
 
 TimestampAccum::TimestampAccum()
-    : Element(1, 1)
 {
 }
 

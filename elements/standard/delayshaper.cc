@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 DelayShaper::DelayShaper()
-    : Element(1, 1), _p(0), _timer(this)
+    : _p(0), _timer(this)
 {
 }
 

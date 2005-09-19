@@ -22,7 +22,6 @@
 CLICK_DECLS
 
 SetIPAddress::SetIPAddress()
-  : Element(1, 1)
 {
 }
 

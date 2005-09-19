@@ -23,17 +23,10 @@
 
 PortClassifier::PortClassifier()
 {
-  add_input();
 }
 
 PortClassifier::~PortClassifier()
 {
-}
-
-void
-PortClassifier::notify_noutputs(int n)
-{
-  set_noutputs(n);
 }
 
 int

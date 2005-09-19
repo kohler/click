@@ -37,6 +37,7 @@ class SetTXRate : public Element { public:
   ~SetTXRate();
   
   const char *class_name() const		{ return "SetTXRate"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
   
   int configure(Vector<String> &, ErrorHandler *);

@@ -21,18 +21,11 @@ CLICK_DECLS
 
 SimpleRRSched::SimpleRRSched()
 {
-  add_output();
   _next = 0;
 }
 
 SimpleRRSched::~SimpleRRSched()
 {
-}
-
-void
-SimpleRRSched::notify_ninputs(int i)
-{
-  set_ninputs(i);
 }
 
 Packet *

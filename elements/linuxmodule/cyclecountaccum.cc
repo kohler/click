@@ -21,7 +21,7 @@
 #include <click/glue.hh>
 
 CycleCountAccum::CycleCountAccum()
-    : Element(1, 1), _accum(0), _count(0), _zero_count(0)
+    : _accum(0), _count(0), _zero_count(0)
 {
 }
 

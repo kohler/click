@@ -27,8 +27,6 @@ CLICK_DECLS
 
 LinkTestReceiver::LinkTestReceiver() : _ai(0)
 {
-  add_input();
-  add_output();
 }
 
 LinkTestReceiver::~LinkTestReceiver()
@@ -81,7 +79,7 @@ LinkTestReceiver::simple_action(Packet *p)
   click_chatter("%{timestamp},%u.%06u,%s,%s,%hu,%d,%u,%u\n",
 		&p->timestamp_anno(),
 		ntohl(payload->tx_sec), ntohl(payload->tx_usec),
-		src.s().cc(), dst.s().cc(), ntohs(payload->size),
+		src.s().c_str(), dst.s().c_str(), ntohs(payload->size),
 		payload->before ? 1 : 0, ntohl(payload->iteration), 
 		ntohl(payload->seq_no));
 		

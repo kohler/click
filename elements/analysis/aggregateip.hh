@@ -137,9 +137,9 @@ class AggregateIP : public Element { public:
     ~AggregateIP();
 
     const char *class_name() const	{ return "AggregateIP"; }
-
-    void notify_noutputs(int);
+    const char *port_count() const	{ return "1/1-2"; }
     const char *processing() const	{ return "a/ah"; }
+    
     int configure(Vector<String> &, ErrorHandler *);
     void add_handlers();
 

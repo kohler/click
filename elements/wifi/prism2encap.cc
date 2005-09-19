@@ -27,7 +27,6 @@
 CLICK_DECLS
 
 Prism2Encap::Prism2Encap()
-  : Element(1, 1)
 {
 }
 
@@ -149,8 +148,6 @@ Prism2Encap_write_param(const String &in_s, Element *e, void *vparam,
 void
 Prism2Encap::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", Prism2Encap_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", Prism2Encap_write_param, (void *) H_DEBUG);

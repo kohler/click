@@ -103,26 +103,26 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 	    if (cp_time(conf[i], &ts))
 		add_insn(INSN_WAIT_TIME, ts.sec(), ts.subsec());
 	    else
-		errh->error("expected '%s TIME'", insn_name.cc());
+		errh->error("expected '%s TIME'", insn_name.c_str());
 
 	} else if (insn_name == "stop" || insn_name == "quit") {
 	    if (!conf[i]) {
 		if (i < conf.size() - 1)
-		    errh->warning("arguments after '%s' ignored", insn_name.cc());
+		    errh->warning("arguments after '%s' ignored", insn_name.c_str());
 		add_insn(INSN_STOP, 0);
 	    } else
-		errh->error("expected '%s'", insn_name.cc());
+		errh->error("expected '%s'", insn_name.c_str());
 
 #if CLICK_USERLEVEL || CLICK_TOOL
 	} else if (insn_name == "loop") {
 	    if (!conf[i])
 		add_insn(INSN_GOTO, 0);
 	    else
-		errh->error("expected '%s'", insn_name.cc());
+		errh->error("expected '%s'", insn_name.c_str());
 #endif
 
 	} else
-	    errh->error("unknown instruction '%s'", insn_name.cc());
+	    errh->error("unknown instruction '%s'", insn_name.c_str());
     }
 
     if (_insns.size() == 0)
@@ -212,7 +212,7 @@ DriverManager::step_insn()
 	  const Handler *h = (const Handler*) _args2[_insn_pos];
 	  ErrorHandler *errh = ErrorHandler::default_handler();
 	  String result = h->call_read(e, _args3[_insn_pos], errh);
-	  errh->message("%s:\n%s\n", h->unparse_name(e).cc(), result.cc());
+	  errh->message("%s:\n%s\n", h->unparse_name(e).c_str(), result.c_str());
 	  return true;
       }
 #if CLICK_USERLEVEL || CLICK_TOOL

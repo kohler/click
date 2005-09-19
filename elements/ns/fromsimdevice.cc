@@ -47,7 +47,7 @@
 CLICK_DECLS
 
 FromSimDevice::FromSimDevice()
-  : Element(0, 1), _packetbuf_size(0),_packetbuf(0)
+  : _packetbuf_size(0),_packetbuf(0)
 {
 
 }
@@ -79,7 +79,7 @@ FromSimDevice::initialize(ErrorHandler *errh)
 
   // Get the simulator ifid
   Router* myrouter = router();
-  _fd = myrouter->sim_get_ifid(_ifname.cc());
+  _fd = myrouter->sim_get_ifid(_ifname.c_str());
   if (_fd < 0) return errh->error("unable to open netowrk interface");
   // create packet buffer
   _packetbuf = new unsigned char[_packetbuf_size];

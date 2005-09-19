@@ -25,7 +25,6 @@
 CLICK_DECLS
 
 AverageCounter::AverageCounter()
-  : Element(1, 1)
 {
 }
 

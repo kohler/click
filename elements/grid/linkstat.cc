@@ -32,17 +32,10 @@ LinkStat::LinkStat()
   _probe_size(1000), _seq(0), _send_timer(0), 
   _use_proto2(false)
 {
-  add_input();
 }
 
 LinkStat::~LinkStat()
 {
-}
-
-void
-LinkStat::notify_noutputs(int n) 
-{
-  set_noutputs(n > 0 ? 1 : 0);  
 }
 
 
@@ -74,7 +67,7 @@ LinkStat::send_hook()
 {
   WritablePacket *p = Packet::make(_probe_size + 2); // +2 for alignment
   if (p == 0) {
-    click_chatter("LinkStat %s: cannot make packet!", id().cc());
+    click_chatter("LinkStat %s: cannot make packet!", id().c_str());
     return;
   }
   ASSERT_ALIGNED(p->data());
@@ -95,7 +88,7 @@ LinkStat::send_hook()
   static bool size_warning = false;
   if (!size_warning && max_entries < (unsigned) _bcast_stats.size()) {
     size_warning = true;
-    click_chatter("LinkStat %s: WARNING, probe packet is too small to contain all link stats", id().cc());
+    click_chatter("LinkStat %s: WARNING, probe packet is too small to contain all link stats", id().c_str());
   }
   unsigned num_entries = max_entries < (unsigned) _bcast_stats.size() ? max_entries : _bcast_stats.size();
 
@@ -115,7 +108,7 @@ LinkStat::send_hook()
     }
     unsigned n = count_rx(&val);
     if (n > 0xFFff) 
-      click_chatter("LinkStat %s: WARNING, overflow in number of probes received from %s", id().cc(), val.eth.s().cc());
+      click_chatter("LinkStat %s: WARNING, overflow in number of probes received from %s", id().c_str(), val.eth.s().c_str());
     link_entry le(val.eth, n & 0xFFff);
     d += le.write(d);
   }
@@ -183,7 +176,7 @@ LinkStat::simple_action(Packet *p)
 {
   unsigned min_sz = sizeof(click_ether) + link_probe::size;
   if (p->length() < min_sz) {
-    click_chatter("LinkStat %s: packet is too small", id().cc());
+    click_chatter("LinkStat %s: packet is too small", id().c_str());
     p->kill(); 
     return 0;
   }
@@ -191,21 +184,21 @@ LinkStat::simple_action(Packet *p)
   click_ether *eh = (click_ether *) p->data();
 
   if (ntohs(eh->ether_type) != (_use_proto2 ? ETHERTYPE_LINKSTAT2 : ETHERTYPE_LINKSTAT)) {
-    click_chatter("LinkStat %s: got non-LinkStat packet type", id().cc());
+    click_chatter("LinkStat %s: got non-LinkStat packet type", id().c_str());
     p->kill();
     return 0;
   }
 
   link_probe lp(p->data() + sizeof(click_ether));
   if (link_probe::calc_cksum(p->data() + sizeof(click_ether)) != 0) {
-    click_chatter("LinkStat %s: bad checksum from %s", id().cc(), EtherAddress(eh->ether_shost).s().cc());
+    click_chatter("LinkStat %s: bad checksum from %s", id().c_str(), EtherAddress(eh->ether_shost).s().c_str());
     p->kill();
     return 0;
   }
 
   if (p->length() < lp.psz) 
     click_chatter("LinkStat %s: packet is smaller (%d) than it claims (%u)",
-		  id().cc(), p->length(), lp.psz);
+		  id().c_str(), p->length(), lp.psz);
   
   add_bcast_stat(EtherAddress(eh->ether_shost), lp);
 
@@ -216,7 +209,7 @@ LinkStat::simple_action(Packet *p)
   unsigned int num_entries = lp.num_links;
   if (num_entries > max_entries) {
     click_chatter("LinkStat %s: WARNING, probe packet from %s contains fewer link entries (at most %u) than claimed (%u)", 
-		  id().cc(), EtherAddress(eh->ether_shost).s().cc(), max_entries, num_entries);
+		  id().c_str(), EtherAddress(eh->ether_shost).s().c_str(), max_entries, num_entries);
     num_entries = max_entries;
   }
 
@@ -307,7 +300,7 @@ LinkStat::add_bcast_stat(const EtherAddress &eth, const link_probe &lp)
   }
   else if (l->period != new_period) {
     click_chatter("LinkStat %s: %s has changed its link probe period from %u to %u; clearing probe info\n",
-		  id().cc(), eth.s().cc(), l->period, new_period);
+		  id().c_str(), eth.s().c_str(), l->period, new_period);
     l->probes.clear();
     l->period = new_period;
     return;

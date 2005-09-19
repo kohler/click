@@ -34,7 +34,6 @@
 #endif
 
 IPPrintTime::IPPrintTime()
-  : Element(1, 1)
 {
 #if CLICK_USERLEVEL
   _outfile = 0;
@@ -145,7 +144,7 @@ IPPrintTime::simple_action(Packet *p)
   }
 
 
-  _errh->message("%s", sa.cc());
+  _errh->message("%s", sa.c_str());
   return p;
 }
 

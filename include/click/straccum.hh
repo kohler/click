@@ -29,7 +29,7 @@ class StringAccum { public:
     bool out_of_memory() const		{ return _cap < 0; }
   
     const char *c_str();
-    const char *cc()			{ return c_str(); }
+    inline const char *cc() __attribute__((deprecated));
   
     char operator[](int i) const { assert(i>=0&&i<_len); return (char)_s[i]; }
     char &operator[](int i)	{ assert(i>=0&&i<_len); return (char &)_s[i]; }
@@ -113,6 +113,12 @@ StringAccum::StringAccum(int cap)
     assert(cap > 0);
     if (!_s)
 	_cap = -1;
+}
+
+inline const char *
+StringAccum::cc()
+{
+    return c_str();
 }
 
 inline void

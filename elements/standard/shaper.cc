@@ -26,7 +26,6 @@
 CLICK_DECLS
 
 Shaper::Shaper()
-    : Element(1, 1)
 {
 }
 

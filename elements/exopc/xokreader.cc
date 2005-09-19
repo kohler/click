@@ -25,7 +25,7 @@ extern int vos_prd_ring_id(int);
 
 
 xokReader::xokReader()
-  : Element(0, 0), fd(-1)
+  : fd(-1)
 {
   for(int i=0; i<MAX_DPF_FILTERS; i++)
     dpf_ids[i] = -1;
@@ -33,8 +33,7 @@ xokReader::xokReader()
 
 
 xokReader::xokReader(const xokReader &f)
-  : Element(0, f.noutputs()), 
-    fd(f.fd)
+  : fd(f.fd)
 {
   for(int i=0; i<MAX_DPF_FILTERS; i++)
   {
@@ -94,8 +93,6 @@ xokReader::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
   }
 
-  add_output();
- 
   const char *ringsz_s = args[0].data();
 	          
   int ring_sz = atoi(ringsz_s);

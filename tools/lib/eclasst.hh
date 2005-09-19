@@ -36,7 +36,8 @@ class ElementClassT { public:
     
     const ElementTraits &traits() const;
     virtual const ElementTraits *find_traits() const;
-    
+
+    const String &port_count_code() const;
     const String &processing_code() const;
     const String &flow_code() const;
     bool requires(const String &) const;
@@ -137,6 +138,12 @@ inline const String &
 ElementClassT::documentation_name() const
 {
     return traits().documentation_name;
+}
+
+inline const String &
+ElementClassT::port_count_code() const
+{
+    return traits().port_count_code;
 }
 
 inline const String &

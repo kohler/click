@@ -99,12 +99,11 @@ class KernelTun : public Element { public:
     ~KernelTun();
   
     const char *class_name() const	{ return "KernelTun"; }
+    const char *port_count() const	{ return "0-1/1-2"; }
     const char *processing() const	{ return "a/h"; }
     const char *flow_code() const	{ return "x/y"; }
     const char *flags() const		{ return "S3"; }
 
-    void notify_ninputs(int);
-    void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);

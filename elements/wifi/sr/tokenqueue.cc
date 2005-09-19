@@ -39,8 +39,6 @@ CLICK_DECLS
 TokenQueue::TokenQueue()
     : _timer(this)
 {
-    set_ninputs(3);
-    set_noutputs(2);
     _catchup_timeout = Timestamp(2, 0);
     _tokens = 0;
     _retransmits = 0;
@@ -132,7 +130,7 @@ TokenQueue::run_timer()
 	  StringAccum sa;
 	  sa << id() << " " << Timestamp::now();
 	  sa << " mark_inactive " << path_to_string(nfo->_p);
-	  click_chatter("%s", sa.take_string().cc());
+	  click_chatter("%s", sa.take_string().c_str());
       }
   }
   _timer.schedule_after_ms(_active_duration.sec()/2);
@@ -177,8 +175,8 @@ TokenQueue::ready_for(const Packet *p_in, Path match) {
     PathInfo *nfo = find_path_info(p);
     if (!nfo) {
 	click_chatter("TokenQueue %s: couldn't find info for %s!\n",
-		      id().cc(),
-		      path_to_string(p).cc());
+		      id().c_str(),
+		      path_to_string(p).c_str());
 	return false;
     }
 
@@ -241,7 +239,7 @@ TokenQueue::pull(int)
 		sa << " tx_time " << now - nfo->_first_tx;
 		sa << " total_time " << now - nfo->_first_rx;
 		sa << " token " << pk->flag(FLAG_SCHEDULE_TOKEN);
-		click_chatter("%s", sa.take_string().cc());
+		click_chatter("%s", sa.take_string().c_str());
 	    }
 	    _retransmits--;
 	    goto done;
@@ -285,7 +283,7 @@ TokenQueue::pull(int)
 	    sa << " fake    ";
 	    sa << " towards " << p[p.size()-1].s();
 	    sa << " rx " << nfo->_packets_rx;
-	    click_chatter("%s", sa.take_string().cc());
+	    click_chatter("%s", sa.take_string().c_str());
 	}	
     }
 
@@ -307,7 +305,7 @@ TokenQueue::pull(int)
 		sa << " seq " << nfo->_seq;
 		sa << " towards " << nfo->_towards;
 		sa << " rx " << nfo->_packets_rx;
-		click_chatter("%s", sa.take_string().cc());
+		click_chatter("%s", sa.take_string().c_str());
 	    }
 	}
 	pk->set_seq2(nfo->_seq);
@@ -322,7 +320,7 @@ TokenQueue::pull(int)
 		sa << " tx " << nfo->_packets_tx;
 		sa << " tx_time " << now - nfo->_first_tx;
 		sa << " total_time " << now - nfo->_first_rx;
-		click_chatter("%s", sa.take_string().cc());
+		click_chatter("%s", sa.take_string().c_str());
 	    }
 	    
 	    nfo->_token = false;
@@ -389,7 +387,7 @@ TokenQueue::bubble_up(Packet *p_in)
 			sa << " pk2->seq " << pk2->data_seq();
 			sa << " on ";
 			sa << path_to_string(p);
-			click_chatter("%s", sa.take_string().cc());
+			click_chatter("%s", sa.take_string().c_str());
 		    }
 		    Packet *tmp = _q[x];
 		    _q[x] = p_in;
@@ -420,7 +418,7 @@ TokenQueue::bubble_up(Packet *p_in)
 	    sa << " ECN";
 	    sa << " pk->seq " << pk->data_seq();
 	    sa << path_to_string(nfo->_p);
-	    click_chatter("%s", sa.take_string().cc());
+	    click_chatter("%s", sa.take_string().c_str());
 	}
 	nfo->_congestion = false;
     }
@@ -443,7 +441,7 @@ TokenQueue::process_source(struct srpacket *pk)
 	    StringAccum sa;
 	    sa << id() << " " << Timestamp::now();
 	    sa << " create:  new_path " << path_to_string(p);
-	    click_chatter("%s", sa.take_string().cc());
+	    click_chatter("%s", sa.take_string().c_str());
 	}
 	_paths.insert(p, PathInfo(p, this));
 	nfo = _paths.findp(p);
@@ -488,7 +486,7 @@ TokenQueue::process_forward(struct srpacket *pk)
 	    sa << " old_seq";
 	    sa << " towards " << p[p.size()-1];
 	    sa << " expected " << nfo->_seq;
-	    click_chatter("%s", sa.take_string().cc());
+	    click_chatter("%s", sa.take_string().c_str());
 	}
 	return;
     }
@@ -510,7 +508,7 @@ TokenQueue::process_forward(struct srpacket *pk)
 		sa << " seq " << pk->seq2();
 		sa << " towards " << p[p.size()-1];
 		sa << " expected " << nfo->_seq;
-		click_chatter("%s", sa.take_string().cc());
+		click_chatter("%s", sa.take_string().c_str());
 	    }
 	    return;
 	}
@@ -528,7 +526,7 @@ TokenQueue::process_forward(struct srpacket *pk)
 	    sa << " first_rx";
 	    sa << " seq " << pk->seq2();
 	    sa << " since_tx " << now - nfo->_last_tx;
-	    click_chatter("%s", sa.take_string().cc());
+	    click_chatter("%s", sa.take_string().c_str());
 	}
     } 
     nfo->_last_rx = now;
@@ -538,7 +536,7 @@ TokenQueue::process_forward(struct srpacket *pk)
 	    sa << id() << " " << now;
 	    sa << " dup_token";
 	    sa << " seq " << pk->seq2();
-	    click_chatter("%s", sa.take_string().cc());
+	    click_chatter("%s", sa.take_string().c_str());
 	} else {
 	    nfo->_expected_rx = pk->seq() + 1;
 	    nfo->_rx_token = true;
@@ -550,7 +548,7 @@ TokenQueue::process_forward(struct srpacket *pk)
 		sa << " expected " << nfo->_expected_rx;
 		sa << " packets_rx " << nfo->_packets_rx;
 		sa << " rx_time " << now - nfo->_first_rx;
-		click_chatter("%s", sa.take_string().cc());
+		click_chatter("%s", sa.take_string().c_str());
 	    }
 	}
     }
@@ -563,7 +561,7 @@ TokenQueue::process_forward(struct srpacket *pk)
 	    sa << " final_rx";
 	    sa << " seq " << pk->seq2();
 	    sa << " rx_time " << now - nfo->_first_rx;
-	    click_chatter("%s", sa.take_string().cc());
+	    click_chatter("%s", sa.take_string().c_str());
 	}
 	nfo->_token = true;
 	_tokens++;
@@ -596,7 +594,7 @@ TokenQueue::push(int port, Packet *p_in)
 	    StringAccum sa;
 	    sa << id() << " " << now;
 	    sa << " retransmit";
-	    click_chatter("%s", sa.take_string().cc());
+	    click_chatter("%s", sa.take_string().c_str());
 	}
 
     } else {
@@ -724,8 +722,8 @@ TokenQueue::clear()
 
   for (int x = 0; x < to_clear.size(); x++) {
       click_chatter("TokenQueue %s: removing %s\n", 
-		    id().cc(),
-		    path_to_string(to_clear[x]).cc());
+		    id().c_str(),
+		    path_to_string(to_clear[x]).c_str());
       _paths.remove(to_clear[x]);
   }
 }

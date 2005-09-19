@@ -14,7 +14,7 @@ rw :: IPAddrRewriter(pattern 1.0.0.1 1x - - 0 1,
   pattern 1.0.0.0 0-255 - - 0 1,
   pattern 1.0.0.0 456-19 - - 0 1,
   pattern 1.0.0.0 456-65536 - - 0 1)
-i -> [0]rw i[1] -> [1]rw i[2] -> [2]rw
+i -> [0]rw i[1] -> [1]rw i[2] -> [2]rw i[3] -> [3]rw
 rw[0] -> i rw[1] -> i
 " 2>X || true
 

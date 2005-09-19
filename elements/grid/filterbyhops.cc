@@ -27,7 +27,7 @@
 #include <math.h>
 CLICK_DECLS
 
-FilterByGridHops::FilterByGridHops() : Element(1, 2)
+FilterByGridHops::FilterByGridHops()
 {
 }
 

@@ -36,8 +36,7 @@ CLICK_DECLS
 #define max(x,y)      ((x)>(y) ? (x) : (y))
 
 ProbeResponder::ProbeResponder()
-  : Element(1, 1),
-    _rtable(0)
+  : _rtable(0)
 {
 }
 
@@ -156,8 +155,8 @@ ProbeResponder::push(int, Packet *p)
     if (_debug) {
       click_chatter("%{element}: other ssid %s wanted %s\n",
 		    this,
-		    ssid.cc(),
-		    _ssid.cc());
+		    ssid.c_str(),
+		    _ssid.c_str());
     }
     p->kill();
     return;
@@ -184,7 +183,7 @@ ProbeResponder::push(int, Packet *p)
   if (_debug) {
     click_chatter("%{element}: %s\n",
 		  this,
-		  sa.take_string().cc());
+		  sa.take_string().c_str());
   }
   send_probe_response(src);
   
@@ -349,8 +348,6 @@ ProbeResponder_write_param(const String &in_s, Element *e, void *vparam,
 void
 ProbeResponder::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", ProbeResponder_read_param, (void *) H_DEBUG);
   add_read_handler("bssid", ProbeResponder_read_param, (void *) H_BSSID);
   add_read_handler("ssid", ProbeResponder_read_param, (void *) H_SSID);

@@ -27,20 +27,13 @@ CLICK_DECLS
 
 
 FilterPhyErr::FilterPhyErr()
-  : Element(1, 1),
-    _drops(0)
+  : _drops(0)
   
 {
 }
 
 FilterPhyErr::~FilterPhyErr()
 {
-}
-
-void
-FilterPhyErr::notify_noutputs(int n) 
-{
-  set_noutputs((n > 3 || n < 1) ? 1 : n);
 }
 
 int

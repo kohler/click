@@ -34,7 +34,6 @@ FastUDPFlows::FastUDPFlows()
   _rate_limited = true;
   _first = _last = 0;
   _count = 0;
-  add_output();
 }
 
 FastUDPFlows::~FastUDPFlows()

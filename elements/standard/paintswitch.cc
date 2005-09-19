@@ -24,17 +24,10 @@ CLICK_DECLS
 
 PaintSwitch::PaintSwitch()
 {
-  add_input();
 }
 
 PaintSwitch::~PaintSwitch()
 {
-}
-
-void
-PaintSwitch::notify_noutputs(int n)
-{
-  set_noutputs(n);
 }
 
 int

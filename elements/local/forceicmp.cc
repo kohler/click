@@ -25,7 +25,6 @@
 CLICK_DECLS
 
 ForceICMP::ForceICMP()
-  : Element(1, 1)
 {
   _count = 0;
   _type = -1;

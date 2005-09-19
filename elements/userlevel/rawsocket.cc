@@ -42,7 +42,7 @@
 CLICK_DECLS
 
 RawSocket::RawSocket()
-  : Element(1, 1), _task(this), _timer(this),
+  : _task(this), _timer(this),
     _fd(-1), _port(0), _snaplen(2048),
     _rq(0), _wq(0)
 {
@@ -50,18 +50,6 @@ RawSocket::RawSocket()
 
 RawSocket::~RawSocket()
 {
-}
-
-void
-RawSocket::notify_ninputs(int n)
-{
-  set_ninputs(n <= 1 ? n : 1);
-}
-
-void
-RawSocket::notify_noutputs(int n)
-{
-  set_noutputs(n <= 1 ? n : 1);
 }
 
 int
@@ -100,7 +88,7 @@ RawSocket::configure(Vector<String> &conf, ErrorHandler *errh)
   else if (socktype == "ICMP")
     _protocol = IPPROTO_ICMP;
   else
-    return errh->error("unknown socket type `%s'", socktype.cc());
+    return errh->error("unknown socket type `%s'", socktype.c_str());
 
   return 0;
 }
@@ -139,7 +127,7 @@ RawSocket::initialize(ErrorHandler *errh)
     if (bind(_fd, (struct sockaddr *)&sin, sizeof(sin)) < 0)
       return initialize_socket_error(errh, "bind");
 
-    click_chatter("%s(%d, %d)\n", declaration().cc(), _protocol, _port);
+    click_chatter("%s(%d, %d)\n", declaration().c_str(), _protocol, _port);
   }
 
   // nonblocking I/O and close-on-exec for the socket

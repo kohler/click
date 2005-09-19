@@ -86,11 +86,11 @@ class RangeIPLookup : public IPRouteTable { public:
     ~RangeIPLookup();
 
     const char *class_name() const      { return "RangeIPLookup"; }
+    const char *port_count() const	{ return "1/-"; }
     const char *processing() const      { return PUSH; }
 
     int initialize(ErrorHandler *);
     void add_handlers();
-    void notify_noutputs(int n);
     void push(int port, Packet* p);
 
     int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);

@@ -28,8 +28,7 @@ CLICK_DECLS
 
 
 FlashFlood::FlashFlood()
-  :  Element(2,2),
-     _en(),
+  :  _en(),
      _et(0),
      _link_table(0),
      _packets_originated(0),
@@ -533,8 +532,8 @@ FlashFlood::get_wait_time(uint32_t seq, IPAddress last_sender) {
 	click_chatter("%{element} seq %d sender %s neighbor %s prob %d neighbor-weight %d expected_rx %d metric %d\n",
 		      this,
 		      seq,
-		      last_sender.s().cc(),
-		      my_neighbors[x].s().cc(),
+		      last_sender.s().c_str(),
+		      my_neighbors[x].s().c_str(),
 		      p_ever,
 		      neighbor_nweight,
 		      neighbor_expected_rx,
@@ -558,7 +557,7 @@ FlashFlood::get_wait_time(uint32_t seq, IPAddress last_sender) {
       click_chatter("%{element} seq %d sender %s erx_slot %d nweight_slot %d neighbor_weight %d max_neighbor_weight %d expected_rx %d\n",
 		    this,
 		    seq,
-		    last_sender.s().cc(),
+		    last_sender.s().c_str(),
 		    slot_erx,
 		    slot_nweight,
 		    my_neighbor_weight,
@@ -580,7 +579,7 @@ FlashFlood::get_wait_time(uint32_t seq, IPAddress last_sender) {
 	click_chatter("%{element} seq %d sender %s max_delay_ms %d delay_ms %d expected_rx %d\n",
 		      this,
 		      seq,
-		      last_sender.s().cc(),
+		      last_sender.s().c_str(),
 		      max_delay_ms,
 		      delay_ms,
 		      my_expected_rx
@@ -621,7 +620,7 @@ FlashFlood::update_probs(uint32_t seq, uint32_t link_seq, IPAddress src) {
     click_chatter("%{element} link_seq is 0 for seq %d src %s\n",
 		  this, 
 		  seq,
-		  src.s().cc());
+		  src.s().c_str());
   }
   SeqProbMap *m = findmap(seq);
   if (!m) {
@@ -652,7 +651,7 @@ FlashFlood::update_probs(uint32_t seq, uint32_t link_seq, IPAddress src) {
     click_chatter("%{element} error setting prob seq %d src %s to %d\n",
 		  this, 
 		  seq,
-		  src.s().cc(),
+		  src.s().c_str(),
 		  100);
   }
   for (int x = 0; x < neighbors.size(); x++) {
@@ -672,15 +671,15 @@ FlashFlood::update_probs(uint32_t seq, uint32_t link_seq, IPAddress src) {
       click_chatter("%{element} error getting prob seq d src %s\n",
 		    this, 
 		    seq,
-		    neighbors[x].s().cc());
+		    neighbors[x].s().c_str());
     }
 
     int p_ever = (100 - (((100 - p_before) * (100 - p_now))/100));
     if (p_ever > 100) {
       click_chatter("%{element} src %s neighbor %s p_ever %d p_before %d p_now %d\n",
 		    this,
-		    src.s().cc(),
-		    neighbors[x].s().cc(),
+		    src.s().c_str(),
+		    neighbors[x].s().c_str(),
 		    p_ever,
 		    p_before,
 		    p_now);
@@ -690,7 +689,7 @@ FlashFlood::update_probs(uint32_t seq, uint32_t link_seq, IPAddress src) {
       click_chatter("%{element} error setting prob seq d src %s to %d\n",
 		    this, 
 		    seq,
-		    neighbors[x].s().cc(),
+		    neighbors[x].s().c_str(),
 		    p_ever);
     }
   }

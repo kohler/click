@@ -93,7 +93,6 @@ static u_int8_t *rt_el_offset(struct ieee80211_radiotap_header *th, u_int32_t el
 }
 
 RadiotapDecap::RadiotapDecap()
-  : Element(1, 1)
 {
 }
 
@@ -200,8 +199,6 @@ RadiotapDecap_write_param(const String &in_s, Element *e, void *vparam,
 void
 RadiotapDecap::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", RadiotapDecap_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", RadiotapDecap_write_param, (void *) H_DEBUG);

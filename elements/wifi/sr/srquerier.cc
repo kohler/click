@@ -31,8 +31,7 @@ CLICK_DECLS
 
 
 SRQuerier::SRQuerier()
-  :  Element(1,2),
-     _en(),
+  :  _en(),
      _sr_forwarder(0),
      _link_table(0)
 {
@@ -120,7 +119,7 @@ SRQuerier::push(int, Packet *p_in)
   if (!dst) {
     click_chatter("%{element}: got invalid dst %s\n",
 		  this,
-		  dst.s().cc());
+		  dst.s().c_str());
     p_in->kill();
     return;
   }
@@ -172,7 +171,7 @@ SRQuerier::push(int, Packet *p_in)
     click_chatter("%{element} :: %s no valid route to %s\n",
 		  this,
 		  __func__,
-		  dst.s().cc());
+		  dst.s().c_str());
     p_in->kill();
   }
 

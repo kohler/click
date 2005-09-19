@@ -43,7 +43,7 @@ CLICK_DECLS
 	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
 FromDAGDump::FromDAGDump()
-    : Element(0, 1), _packet(0), _end_h(0), _task(this)
+    : _packet(0), _end_h(0), _task(this)
 {
     static_assert(sizeof(DAGCell) == 64 && DAGCell::CELL_SIZE == 64);
 }
@@ -51,12 +51,6 @@ FromDAGDump::FromDAGDump()
 FromDAGDump::~FromDAGDump()
 {
     delete _end_h;
-}
-
-void
-FromDAGDump::notify_noutputs(int n)
-{
-    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int

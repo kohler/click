@@ -31,8 +31,7 @@ CLICK_DECLS
 
 
 SRForwarder::SRForwarder()
-  :  Element(1,2), 
-     _ip(),
+  :  _ip(),
      _eth(),
      _et(0),
      _datas(0), 
@@ -98,9 +97,9 @@ SRForwarder::update_link(IPAddress from, IPAddress to,
   if (_link_table && !_link_table->update_link(from, to, seq, age, metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
-		  from.s().cc(),
+		  from.s().c_str(),
 		  metric,
-		  to.s().cc());
+		  to.s().c_str());
     return false;
   }
   return true;
@@ -124,18 +123,18 @@ SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
   int next = index_of(r, _ip) + 1;
   if (next < 0 || next >= r.size()) {
     click_chatter("SRForwarder %s: encap couldn't find %s (%d) in path %s",
-		  id().cc(),
-		  _ip.s().cc(),
+		  id().c_str(),
+		  _ip.s().c_str(),
 		  next,
-		  path_to_string(r).cc());
+		  path_to_string(r).c_str());
     p_in->kill();
     return (0);
   }
   EtherAddress eth_dest = _arp_table->lookup(r[next]);
   if (eth_dest == _arp_table->_bcast) {
     click_chatter("SRForwarder %s: arp lookup failed for %s",
-		  id().cc(),
-		  r[next].s().cc());
+		  id().c_str(),
+		  r[next].s().c_str());
   }
   
   click_ether *eh = (click_ether *) p->data();
@@ -197,7 +196,7 @@ SRForwarder::push(int port, Packet *p_in)
 
   if(eh->ether_type != htons(_et)){
     click_chatter("SRForwarder %s: bad ether_type %04x",
-                  _ip.s().cc(),
+                  _ip.s().c_str(),
                   ntohs(eh->ether_type));
     p->kill();
     return;
@@ -205,7 +204,7 @@ SRForwarder::push(int port, Packet *p_in)
 
   if (pk->_type != PT_DATA) {
     click_chatter("SRForwarder %s: bad packet_type %04x",
-                  _ip.s().cc(),
+                  _ip.s().c_str(),
                   pk->_type);
     p->kill();
     return ;
@@ -221,12 +220,12 @@ SRForwarder::push(int port, Packet *p_in)
        * don't complain. But otherwise, something's up
        */
       click_chatter("SRForwarder %s: data not for me seq %d %d/%d ip %s eth %s",
-		    id().cc(),
+		    id().c_str(),
 		    pk->data_seq(),
 		    pk->next(),
 		    pk->num_links(),
-		    pk->get_link_node(pk->next()).s().cc(),
-		    EtherAddress(eh->ether_dhost).s().cc());
+		    pk->get_link_node(pk->next()).s().c_str(),
+		    EtherAddress(eh->ether_dhost).s().c_str());
     }
     p->kill();
     return;
@@ -244,16 +243,16 @@ SRForwarder::push(int port, Packet *p_in)
     if (r_fwd_metric && !update_link(r_from, r_to, r_seq, r_age, r_fwd_metric)) {
       click_chatter("%{element} couldn't update r_fwd %s > %d > %s\n",
 		    this,
-		    r_from.s().cc(),
+		    r_from.s().c_str(),
 		    r_fwd_metric,
-		    r_to.s().cc());
+		    r_to.s().c_str());
     }
     if (r_rev_metric && !update_link(r_to, r_from, r_seq, r_age, r_rev_metric)) {
       click_chatter("%{element} couldn't update r_rev %s > %d > %s\n",
 		    this,
-		    r_to.s().cc(),
+		    r_to.s().c_str(),
 		    r_rev_metric, 
-		    r_from.s().cc());
+		    r_from.s().c_str());
     }
   }
 
@@ -268,16 +267,16 @@ SRForwarder::push(int port, Packet *p_in)
     if (fwd_m && !update_link(a,b,seq,age,fwd_m)) {
       click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
 		    this,
-		    a.s().cc(),
+		    a.s().c_str(),
 		    fwd_m,
-		    b.s().cc());
+		    b.s().c_str());
     }
     if (rev_m && !update_link(b,a,seq,age,rev_m)) {
       click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
 		    this,
-		    b.s().cc(),
+		    b.s().c_str(),
 		    rev_m,
-		    a.s().cc());
+		    a.s().c_str());
     }
   }
   
@@ -322,7 +321,7 @@ SRForwarder::push(int port, Packet *p_in)
     click_chatter("%{element}::%s arp lookup failed for %s",
 		  this,
 		  __func__,
-		  nxt.s().cc());
+		  nxt.s().c_str());
   }
   memcpy(eh->ether_dhost, eth_dest.data(), 6);
   memcpy(eh->ether_shost, _eth.data(), 6);

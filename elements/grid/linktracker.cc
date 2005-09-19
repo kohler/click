@@ -29,8 +29,6 @@ CLICK_DECLS
 
 LinkTracker::LinkTracker()
 {
-  add_input();
-  add_output();
 }
 
 LinkTracker::~LinkTracker()
@@ -75,7 +73,7 @@ LinkTracker::add_stat(IPAddress dst, int sig, int qual, struct timeval when)
 {
   if (sig == 0 && qual == 0) {
     click_chatter("LinkTracker: ignoring probably bad link info from %s\n",
-		  dst.s().cc());
+		  dst.s().c_str());
     return;
   }
 
@@ -164,7 +162,7 @@ LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num
 
   if (num_rx > num_expected) 
     click_chatter("LinkTracker::add_bcast_stat WARNING num_rx (%d) > num_expected (%d) for %s",
-		  num_rx, num_expected, dst.s().cc());
+		  num_rx, num_expected, dst.s().c_str());
 
   double num_rx_ = num_rx;
   double num_expected_ = num_expected;
@@ -313,7 +311,7 @@ LinkTracker::write_tau(const String &arg, Element *el,
 		       void *, ErrorHandler *errh)
 {
   LinkTracker *e = (LinkTracker *) el;
-  double tau = atof(((String) arg).cc());
+  double tau = atof(((String) arg).c_str());
   if (tau < 0)
     return errh->error("tau must be >= 0");
   e->_tau = tau * 0.001;

@@ -27,7 +27,6 @@
 CLICK_DECLS
 
 SimpleLocQuerier::SimpleLocQuerier()
-  : Element(1, 1)
 {
 }
 
@@ -72,7 +71,7 @@ SimpleLocQuerier::push(int, Packet *p)
   grid_location *l = _locs.findp(dst_ip);
   if (l == 0) {
     click_chatter("SimpleLocQuerier %s: dropping packet for %s; there is no location information",
-		  id().cc(), dst_ip.s().cc());
+		  id().c_str(), dst_ip.s().c_str());
     wp->kill();
   }
   else {

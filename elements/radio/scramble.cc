@@ -20,7 +20,6 @@
 CLICK_DECLS
 
 Scramble::Scramble()
-  : Element(1, 1)
 {
 }
 

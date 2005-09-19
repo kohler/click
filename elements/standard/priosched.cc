@@ -23,18 +23,12 @@
 CLICK_DECLS
 
 PrioSched::PrioSched()
-    : Element(0, 1), _signals(0)
+    : _signals(0)
 {
 }
 
 PrioSched::~PrioSched()
 {
-}
-
-void
-PrioSched::notify_ninputs(int i)
-{
-    set_ninputs(i);
 }
 
 int 

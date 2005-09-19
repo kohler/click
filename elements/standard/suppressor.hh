@@ -33,9 +33,9 @@ class Suppressor : public Element {
   ~Suppressor();
   
   const char *class_name() const		{ return "Suppressor"; }
+  const char *port_count() const		{ return "-/="; }
   const char *processing() const		{ return AGNOSTIC; }
   const char *flow_code() const			{ return "#/#"; }
-  void notify_ninputs(int);
   
   int initialize(ErrorHandler *);
   void add_handlers();

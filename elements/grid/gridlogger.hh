@@ -88,7 +88,7 @@ class GridLogger : public GridGenericLogger {
     size_t avail = sizeof(_buf) - _bufptr;
     if (avail < needed) {
       click_chatter("GridLogger %s: log buffer is too small.  total buf size: %u, needed at least %u",
-		    id().cc(), sizeof(_buf), needed + _bufptr);
+		    id().c_str(), sizeof(_buf), needed + _bufptr);
       return false;
     }
     return true;
@@ -101,10 +101,10 @@ class GridLogger : public GridGenericLogger {
     int res = write(_fd, _buf, _bufptr);
     if (res < 0)
       click_chatter("GridLogger %s: error writing log buffer: %s",
-		    id().cc(), strerror(errno));
+		    id().c_str(), strerror(errno));
     else if (res != (int) _bufptr)
       click_chatter("GridLogger %s: bad write to log buffer, had %u bytes in buffer but wrote %d bytes",
-		    id().cc(), (unsigned) _bufptr, res);
+		    id().c_str(), (unsigned) _bufptr, res);
     _bufptr = 0;
   }
   void clear_buf() { _bufptr = 0; }

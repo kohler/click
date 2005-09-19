@@ -121,12 +121,6 @@ MovementSimulator::event_hook(Timer *, void *thunk)
   delete next_event;
 }
 
-void
-MovementSimulator::add_handlers()
-{
-  //  add_default_handlers(true);
-}
-
 
 bool
 MovementSimulator::find_entry(unsigned int t, event_entry **retval)

@@ -109,7 +109,7 @@ cc_read_router(String name, String &next_name, int &next_number,
 {
   if (name && next_name)
     errh->warning("router name specified twice ('%s' and '%s')",
-		  next_name.cc(), name.cc());
+		  next_name.c_str(), name.c_str());
   else if (name)
     next_name = name;
   
@@ -118,10 +118,10 @@ cc_read_router(String name, String &next_name, int &next_number,
   if (r) {
     r->flatten(errh);
     if (next_name) {
-      int span = strspn(next_name.cc(), "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_/@0123456789");
-      if (span != next_name.length() || strstr(next_name.cc(), "//") != 0
+      int span = strspn(next_name.c_str(), "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_/@0123456789");
+      if (span != next_name.length() || strstr(next_name.c_str(), "//") != 0
 	  || next_name[0] == '/')
-	errh->error("router name '%s' is not a legal Click identifier", next_name.cc());
+	errh->error("router name '%s' is not a legal Click identifier", next_name.c_str());
       router_names.push_back(next_name);
     } else
       router_names.push_back(String(next_number));
@@ -161,10 +161,10 @@ try_find_device(String devname, String class1, String class2,
 	  found = e;
 	else if (!duplicate) {
 	  if (class2)
-	    errh->error("more than one '%s(%s)' or '%s(%s)' element in router '%s'", class1.cc(), devname.cc(), class2.cc(), devname.cc(), router_name.cc());
+	    errh->error("more than one '%s(%s)' or '%s(%s)' element in router '%s'", class1.c_str(), devname.c_str(), class2.c_str(), devname.c_str(), router_name.c_str());
 	  else
 	    errh->error("more than one '%s(%s)' element in router '%s'",
-			class1.cc(), devname.cc(), router_name.cc());
+			class1.c_str(), devname.c_str(), router_name.c_str());
 	  duplicate = true;
 	  found = 0;
 	}
@@ -194,7 +194,7 @@ parse_link(String text, ErrorHandler *errh)
   // check for errors
   if (words.size() != 7 || words[1] != "." || words[3] != "="
       || words[5] != ".")
-    return errh->error("bad link definition '%s'", text.cc());
+    return errh->error("bad link definition '%s'", text.c_str());
 
   // find pieces
   int router1 = -1, router2 = -1;
@@ -205,8 +205,8 @@ parse_link(String text, ErrorHandler *errh)
       router2 = i;
   }
   if (router1 < 0 || router2 < 0) {
-    if (router1 < 0) errh->error("no router named '%s'", words[0].cc());
-    if (router2 < 0) errh->error("no router named '%s'", words[4].cc());
+    if (router1 < 0) errh->error("no router named '%s'", words[0].c_str());
+    if (router2 < 0) errh->error("no router named '%s'", words[4].c_str());
     return -1;
   }
   ElementT *element1 = routers[router1]->element(words[2]);
@@ -217,9 +217,9 @@ parse_link(String text, ErrorHandler *errh)
     element2 = try_find_device(words[6], "FromDevice", "PollDevice", router2, errh);
   if (!element1 || !element2) {
     if (!element1)
-      errh->error("router '%s' has no element or device named '%s'", words[0].cc(), words[2].cc());
+      errh->error("router '%s' has no element or device named '%s'", words[0].c_str(), words[2].c_str());
     if (!element2)
-      errh->error("router '%s' has no element or device named '%s'", words[4].cc(), words[6].cc());
+      errh->error("router '%s' has no element or device named '%s'", words[4].c_str(), words[6].c_str());
     return -1;
   }
 
@@ -227,12 +227,12 @@ parse_link(String text, ErrorHandler *errh)
   String tn1 = element1->type_name();
   String tn2 = element2->type_name();
   if (tn1 != "ToDevice") {
-    errh->warning("router '%s' element '%s' has unexpected class", words[0].cc(), words[2].cc());
-    errh->message("  expected ToDevice, got %s", tn1.cc());
+    errh->warning("router '%s' element '%s' has unexpected class", words[0].c_str(), words[2].c_str());
+    errh->message("  expected ToDevice, got %s", tn1.c_str());
   }
   if (tn2 != "FromDevice" && tn2 != "PollDevice") {
-    errh->warning("router '%s' element '%s' has unexpected class", words[4].cc(), words[6].cc());
-    errh->message("  expected FromDevice or PollDevice, got %s", tn2.cc());
+    errh->warning("router '%s' element '%s' has unexpected class", words[4].c_str(), words[6].c_str());
+    errh->message("  expected FromDevice or PollDevice, got %s", tn2.c_str());
   }
   
   // append link definition
@@ -446,7 +446,7 @@ particular purpose.\n");
   HashMap<String, int> name_map(-1);
   for (int i = 0; i < routers.size(); i++) {
     if (name_map[router_names[i]] >= 0)
-      p_errh->fatal("two routers named '%s'", router_names[i].cc());
+      p_errh->fatal("two routers named '%s'", router_names[i].c_str());
     name_map.insert(router_names[i], i);
   }
 

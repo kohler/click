@@ -31,8 +31,6 @@
 #define d2printf if(1)click_chatter
 
 RONRouteModular::RONRouteModular() {
-  add_input();
-
   _flowtable = new FlowTable();
 
   _policies.push_back(new PolicyProbe(this, .4, 3, 1, 75, 75, 300, 1));
@@ -62,17 +60,6 @@ RONRouteModular::initialize(ErrorHandler *){
     _policies[i]->initialize(noutputs()-1);
 
   return 0;
-}
-
-void RONRouteModular::notify_ninputs(int n) { 
-  set_ninputs(n);
-}
-void RONRouteModular::notify_noutputs(int n) {
-  set_noutputs(n);
-  if (noutputs() != ninputs()) {
-    click_chatter("RONRouteModular: number of inputs does not match outputs");
-    exit(-1);
-  }
 }
 
 void RONRouteModular::push(int inport, Packet *p)
@@ -251,7 +238,7 @@ RONRouteModular::FlowTable::insert(IPAddress src, unsigned short sport,
   
   FlowTableEntry e(src, sport, dst, dport, policy);
   _v.push_back(e);
-  //  d2printf(" inserting %s(%d) -> %s(%d)", src.unparse().cc(), _v[_v.size()-1].sport, dst.unparse().cc(), _v[_v.size()-1].dport);
+  //  d2printf(" inserting %s(%d) -> %s(%d)", src.unparse().c_str(), _v[_v.size()-1].sport, dst.unparse().c_str(), _v[_v.size()-1].dport);
   return &_v[_v.size()-1];
 }
 

@@ -59,7 +59,7 @@ int
 HandlerProxy::check_handler(const String &hname, bool, ErrorHandler *errh)
 {
     errh->set_error_code(CSERR_UNSPECIFIED);
-    errh->error("Handler '%#s' status unknown", hname.printable().cc());
+    errh->error("Handler '%#s' status unknown", hname.printable().c_str());
     return -1;
 }
 

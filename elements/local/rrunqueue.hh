@@ -23,10 +23,8 @@ class RoundRobinUnqueue : public Element { public:
   RoundRobinUnqueue();
   ~RoundRobinUnqueue();
 
-  void notify_ninputs(int i) 		{ set_ninputs(i); }
-  void notify_noutputs(int i) 		{ set_noutputs(i); }
-
   const char *class_name() const	{ return "RoundRobinUnqueue"; }
+  const char *port_count() const	{ return "-/-"; }
   const char *processing() const	{ return PULL_TO_PUSH; }
  
   int configure(Vector<String> &, ErrorHandler *);

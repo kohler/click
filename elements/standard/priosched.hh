@@ -28,9 +28,9 @@ class PrioSched : public Element { public:
     ~PrioSched();
   
     const char *class_name() const	{ return "PrioSched"; }
+    const char *port_count() const	{ return "-/1"; }
     const char *processing() const	{ return PULL; }
 
-    void notify_ninputs(int);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
   

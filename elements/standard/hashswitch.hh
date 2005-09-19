@@ -33,8 +33,8 @@ class HashSwitch : public Element {
   ~HashSwitch();
   
   const char *class_name() const		{ return "HashSwitch"; }
+  const char *port_count() const		{ return "1/1-"; }
   const char *processing() const		{ return PUSH; }
-  void notify_noutputs(int);
   
   int configure(Vector<String> &, ErrorHandler *);
   

@@ -30,12 +30,12 @@ syslog_message(const String &message)
   int pos = 0, nl;
   while ((nl = message.find_left('\n', pos)) >= 0) {
     String x = message.substring(pos, nl - pos);
-    printf("%s\n", x.cc());
+    printf("%s\n", x.c_str());
     pos = nl + 1;
   }
   if (pos < message.length()) {
     String x = message.substring(pos);
-    printf("%s\n", x.cc());
+    printf("%s\n", x.c_str());
   }
 }
 

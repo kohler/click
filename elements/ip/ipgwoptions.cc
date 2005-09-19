@@ -29,8 +29,6 @@ CLICK_DECLS
 IPGWOptions::IPGWOptions()
 {
   _drops = 0;
-  add_input();
-  add_output();
 }
 
 IPGWOptions::~IPGWOptions()
@@ -48,14 +46,6 @@ IPGWOptions::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
   _my_addrs.insert(_preferred_addr);
   return 0;
-}
-
-void
-IPGWOptions::notify_noutputs(int n)
-{
-  // allow 2 outputs -- then packet is pushed onto 2d output instead of
-  // dropped
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 Packet *

@@ -144,18 +144,18 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
     if (ElementClassT *older = c->overload_type())
 	generate_type(older, f, indent, errh);
 
-    fprintf(f, "%s<elementclass ", indent.cc());
+    fprintf(f, "%s<elementclass ", indent.c_str());
     if (c->name())
 	fprintf(f, "classname=\"%s\" ", c->name().c_str());
     print_class_reference(f, c, "");
     
     if (SynonymElementClassT *synonym = c->cast_synonym()) {
-	fprintf(f, ">\n%s  <synonym ", indent.cc());
+	fprintf(f, ">\n%s  <synonym ", indent.c_str());
 	print_class_reference(f, synonym->synonym_of(), "");
 	fprintf(f, " />\n");
     } else if (RouterT *compound = c->cast_router()) {
 	print_landmark_attributes(f, compound->landmark());
-	fprintf(f, ">\n%s  <compound", indent.cc());
+	fprintf(f, ">\n%s  <compound", indent.c_str());
 	if (ElementClassT *prev = compound->overload_type()) {
 	    fprintf(f, " ");
 	    print_class_reference(f, prev, "overload");
@@ -167,17 +167,17 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 	for (int i = 0; i < compound->nformals(); i++) {
 	    assert(compound->formals()[i]);
 	    fprintf(f, "%s<formal number=\"%d\" name=\"%s\" ",
-		    new_indent.cc(), i, compound->formals()[i].c_str());
+		    new_indent.c_str(), i, compound->formals()[i].c_str());
 	    if (compound->formal_types()[i])
 		fprintf(f, "key=\"%s\" ", compound->formal_types()[i].c_str());
 	    fprintf(f, "/>\n");
 	}
 	generate_router(compound->cast_router(), f, new_indent, false, errh);
 	
-	fprintf(f, "%s  </compound>\n", indent.cc());
+	fprintf(f, "%s  </compound>\n", indent.c_str());
     }
     
-    fprintf(f, "%s</elementclass>\n", indent.cc());
+    fprintf(f, "%s</elementclass>\n", indent.c_str());
 }
 
 static void
@@ -194,15 +194,15 @@ generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh
     
     for (RouterT::iterator e = r->begin_elements(); e; e++)
 	if (!e->tunnel()) {
-	    fprintf(f, "%s<element name=\"%s\" ", indent.cc(), e->name_c_str());
+	    fprintf(f, "%s<element name=\"%s\" ", indent.c_str(), e->name_c_str());
 	    print_class_reference(f, e->type(), "");
 	    print_landmark_attributes(f, e->landmark());
 	    fprintf(f, " ninputs=\"%d\" noutputs=\"%d\"",
 		    e->ninputs(), e->noutputs());
 	    if (e->ninputs() || e->noutputs())
-		fprintf(f, " processing=\"%s\"", processing.processing_code(e).cc());
+		fprintf(f, " processing=\"%s\"", processing.processing_code(e).c_str());
 	    if (e->config())
-		fprintf(f, " config=\"%s\"", xml_quote(e->config()).cc());
+		fprintf(f, " config=\"%s\"", xml_quote(e->config()).c_str());
 	    fprintf(f, " />\n");
 	}
 
@@ -211,7 +211,7 @@ generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh
     for (int i = 0; i < conn.size(); i++) {
 	int p = processing.output_processing(conn[i].from());
 	fprintf(f, "%s<connection from=\"%s\" fromport=\"%d\" to=\"%s\" toport=\"%d\" processing=\"%c\" />\n",
-		indent.cc(),
+		indent.c_str(),
 		conn[i].from_element()->name_c_str(), conn[i].from_port(),
 		conn[i].to_element()->name_c_str(), conn[i].to_port(),
 		ProcessingT::processing_letters[p]);

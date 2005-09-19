@@ -26,8 +26,6 @@
 
 SetPerfCount::SetPerfCount()
 {
-  add_input();
-  add_output();
 }
 
 SetPerfCount::~SetPerfCount()

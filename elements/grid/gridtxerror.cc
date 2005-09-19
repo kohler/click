@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 GridTxError::GridTxError() 
-  : Element(1, 0), _log(0)
+  : _log(0)
 {
 }
 

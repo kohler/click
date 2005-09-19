@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 Strip::Strip()
-    : Element(1, 1)
 {
 }
 

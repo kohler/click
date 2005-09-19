@@ -13,7 +13,6 @@ class GridGenericMetric : public Element {
 public:
   
   GridGenericMetric() { }
-  GridGenericMetric(int ninputs, int noutputs) : Element(ninputs, noutputs) { }
   
   virtual ~GridGenericMetric() { }
 

@@ -29,7 +29,7 @@
 CLICK_DECLS
 
 Des::Des()
-  : Element(1, 1), _op(0)
+  : _op(0)
 {
 }
 
@@ -39,8 +39,6 @@ Des::~Des()
 
 Des::Des(int decrypt, unsigned char * key)
 {
-  add_input();
-  add_output();
   _op = decrypt;
   memcpy(_key, key, 8);
 }

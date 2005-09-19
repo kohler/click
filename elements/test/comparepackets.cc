@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 ComparePackets::ComparePackets()
-    : Element(2, 2), _ndiff(0)
+    : _ndiff(0)
 {
     _p[0] = _p[1] = 0;
     _available[0] = _available[1] = true;

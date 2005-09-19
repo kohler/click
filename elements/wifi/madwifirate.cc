@@ -35,8 +35,7 @@ CLICK_DECLS
 #define STEPUP_RETRY_THRESHOLD 10
 
 MadwifiRate::MadwifiRate()
-  : Element(2, 1),
-    _stepup(0),
+  : _stepup(0),
     _stepdown(0),
     _offset(0), 
     _timer(this),
@@ -60,11 +59,6 @@ MadwifiRate::~MadwifiRate()
 {
 }
 
-void
-MadwifiRate::notify_noutputs(int n)
-{
-  set_noutputs(n <= 2 ? n : 1);
-}
 int 
 MadwifiRate::initialize(ErrorHandler *) 
 {
@@ -130,7 +124,7 @@ MadwifiRate::adjust(EtherAddress dst)
     if (_debug && max(nfo->_current_index - 1, 0) != nfo->_current_index) {
       click_chatter("%{element} stepping down for %s from %d to %d\n",
 		    this,
-		    nfo->_eth.s().cc(),
+		    nfo->_eth.s().c_str(),
 		    nfo->_rates[nfo->_current_index],
 		    nfo->_rates[max(0, nfo->_current_index - 1)]);
     }
@@ -142,7 +136,7 @@ MadwifiRate::adjust(EtherAddress dst)
       if (_debug) {
 	click_chatter("%{element} steping up for %s from %d to %d\n",
 		      this,
-		      nfo->_eth.s().cc(),
+		      nfo->_eth.s().c_str(),
 		      nfo->_rates[nfo->_current_index],
 		      nfo->_rates[min(nfo->_rates.size() - 1, 
 				      nfo->_current_index + 1)]);
@@ -196,7 +190,7 @@ MadwifiRate::process_feedback(Packet *p_in)
   if (!success && _debug) {
     click_chatter("%{element} packet failed %s success %d rate %d alt %d\n",
 		  this,
-		  dst.s().cc(),
+		  dst.s().c_str(),
 		  success,
 		  ceh->rate,
 		  ceh->rate1
@@ -260,7 +254,7 @@ MadwifiRate::assign_rate(Packet *p_in)
     if (_debug) {
       click_chatter("%{element} initial rate for %s is %d\n",
 		    this,
-		    nfo->_eth.s().cc(),
+		    nfo->_eth.s().c_str(),
 		    nfo->_rates[nfo->_current_index]);
     }
   }
@@ -439,8 +433,6 @@ MadwifiRate_write_param(const String &in_s, Element *e, void *vparam,
 void
 MadwifiRate::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", MadwifiRate_read_param, (void *) H_DEBUG);
   add_read_handler("rates", MadwifiRate_read_param, (void *) H_RATES);
   add_read_handler("threshold", MadwifiRate_read_param, (void *) H_THRESHOLD);

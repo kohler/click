@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 SaveIPFields::SaveIPFields()
-  : Element(1, 1)
 {
 }
 

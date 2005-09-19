@@ -28,8 +28,7 @@
 CLICK_DECLS
 
 PrintTXFeedback::PrintTXFeedback()
-  : Element(1, 1),
-    _print_anno(false),
+  : _print_anno(false),
     _print_checksum(false)
 {
   _label = "";
@@ -66,7 +65,7 @@ PrintTXFeedback::simple_action(Packet *p)
   
   StringAccum sa;
   if (_label[0] != 0) {
-    sa << _label.cc() << ":";
+    sa << _label.c_str() << ":";
   } else {
       sa << "PrintTXFeedback";
   }
@@ -80,7 +79,7 @@ PrintTXFeedback::simple_action(Packet *p)
   sa << " retries " << (int) ceh->retries;
   sa << " virt_col " << (int) ceh->virt_col;
 
-  click_chatter("%s\n", sa.take_string().cc());
+  click_chatter("%s\n", sa.c_str());
 
     
   return p;

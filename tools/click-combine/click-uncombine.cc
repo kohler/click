@@ -106,7 +106,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
     int ninputs = links[i]->ninputs();
     int noutputs = links[i]->noutputs();
     if (words.size() != 2 * (ninputs + noutputs) || !ninputs || !noutputs) {
-      errh->error("RouterLink '%s' has strange configuration", link_name.cc());
+      errh->error("RouterLink '%s' has strange configuration", link_name.c_str());
       continue;
     }
     
@@ -116,7 +116,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
       Vector<String> clauses;
       cp_spacevec(words[j], clauses);
       if (clauses.size() != 3) {
-	errh->error("RouterLink '%s' has strange configuration", link_name.cc());
+	errh->error("RouterLink '%s' has strange configuration", link_name.c_str());
 	bad = true;
       } else if (clauses[0] == component)
 	interesting = true;
@@ -136,7 +136,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
       cp_spacevec(words[j], clauses);
       String name = clauses[0] + "/" + clauses[1];
       if (ElementT *preexist = r->element(name)) {
-	errh->lerror(links[i]->landmark(), "RouterLink '%s' element '%s' already exists", link_name.cc(), name.cc());
+	errh->lerror(links[i]->landmark(), "RouterLink '%s' element '%s' already exists", link_name.c_str(), name.c_str());
 	errh->lerror(preexist->landmark(), "(previous definition was here)");
       } else if (clauses[0] == component) {
 	ElementT *newe = r->get_element(clauses[1], ElementClassT::base_type(clauses[2]), words[j+1], "<click-uncombine>");
@@ -190,7 +190,7 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
   // print names of lives
   //for (int i = 0; i < ne; i++)
   //if (live[i])
-  //fprintf(stderr, "%s\n", r->ename(i).cc());
+  //fprintf(stderr, "%s\n", r->ename(i).c_str());
 }
 
 static void
@@ -226,7 +226,7 @@ remove_toplevel_component(String component, RouterT *r, const char *filename,
   // check if component exists
   if (component_map[component] < 0) {
     String g = component_prefix + component;
-    errh->fatal("%s: no '%s' component", filename, g.cc());
+    errh->fatal("%s: no '%s' component", filename, g.c_str());
   }
 
   // remove top-level links

@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 MarkIPCE::MarkIPCE()
-  : Element(1, 1)
 {
 }
 

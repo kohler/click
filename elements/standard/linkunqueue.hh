@@ -62,6 +62,7 @@ class LinkUnqueue : public Element, public Storage { public:
     ~LinkUnqueue();
 
     const char *class_name() const	{ return "LinkUnqueue"; }
+    const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return PULL_TO_PUSH; }
     void *cast(const char *);
 

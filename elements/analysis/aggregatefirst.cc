@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 AggregateFirst::AggregateFirst()
-    : Element(1, 1), _agg_notifier(0)
+    : _agg_notifier(0)
 {
     memset(_kills, 0, sizeof(_kills));
     memset(_counts, 0, sizeof(_counts));
@@ -31,12 +31,6 @@ AggregateFirst::AggregateFirst()
 
 AggregateFirst::~AggregateFirst()
 {
-}
-
-void
-AggregateFirst::notify_noutputs(int n)
-{
-    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int
@@ -51,7 +45,7 @@ AggregateFirst::configure(Vector<String> &conf, ErrorHandler *errh)
 	return -1;
     
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
-	return errh->error("%s is not an AggregateNotifier", e->id().cc());
+	return errh->error("%s is not an AggregateNotifier", e->id().c_str());
 
     return 0;
 }

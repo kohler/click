@@ -10,7 +10,6 @@
 CLICK_DECLS
 
 TXFLog::TXFLog()
-  : Element(1, 1)
 {
 }
 
@@ -118,7 +117,6 @@ TXFLog_write_param(const String &in_s, Element *e, void *vparam,
 void
 TXFLog::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("more", TXFLog_read_param, (void *) H_MORE);
   add_read_handler("log", TXFLog_read_param, (void *) H_LOG);
   add_write_handler("reset", TXFLog_write_param, (void *) H_RESET);

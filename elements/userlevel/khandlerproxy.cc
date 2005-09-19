@@ -98,7 +98,7 @@ KernelHandlerProxy::complain_about_open(ErrorHandler *errh,
     String try_fn = "/click/" + k_elt;
     if (access("/click", F_OK) < 0)
       complain(errh, hname, CSERR_NO_ROUTER, "No router installed");
-    else if (k_elt != "0" && access(try_fn.cc(), F_OK) < 0)
+    else if (k_elt != "0" && access(try_fn.c_str(), F_OK) < 0)
       complain(errh, hname, CSERR_NO_SUCH_ELEMENT, "No element named '" + k_elt.printable() + "'");
     else
       complain(errh, hname, CSERR_NO_SUCH_HANDLER, "No handler named '" + hname.printable() + "'");
@@ -156,20 +156,20 @@ KernelHandlerProxy::check_handler(const String &hname, bool write, ErrorHandler 
     return 0;
 
   String fn = handler_name_to_file_name(hname);
-  if (access(fn.cc(), (write ? W_OK : R_OK)) < 0) {
+  if (access(fn.c_str(), (write ? W_OK : R_OK)) < 0) {
     complain_about_open(errh, hname, errno);
     return 0;
   }
 
   // If accessible, it still might be a directory rather than a handler.
   struct stat buf;
-  stat(fn.cc(), &buf);
+  stat(fn.c_str(), &buf);
   if (S_ISDIR(buf.st_mode)) {
     errh->set_error_code(CSERR_NO_SUCH_HANDLER);
-    errh->error("No handler named '%#s'", hname.printable().cc());
+    errh->error("No handler named '%#s'", hname.printable().c_str());
     return 0;
   } else {
-    errh->message("%s handler '%s' OK", (write ? "Write" : "Read"), hname.printable().cc());
+    errh->message("%s handler '%s' OK", (write ? "Write" : "Read"), hname.printable().c_str());
     return 1;
   }
 }

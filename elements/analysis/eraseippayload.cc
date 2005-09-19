@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 EraseIPPayload::EraseIPPayload()
-    : Element(1, 1)
 {
 }
 

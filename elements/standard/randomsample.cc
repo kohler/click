@@ -24,18 +24,11 @@
 CLICK_DECLS
 
 RandomSample::RandomSample()
-    : Element(1, 1)
 {
 }
 
 RandomSample::~RandomSample()
 {
-}
-
-void
-RandomSample::notify_noutputs(int n)
-{
-    set_noutputs(n < 2 ? 1 : 2);
 }
 
 int

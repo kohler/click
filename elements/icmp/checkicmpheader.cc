@@ -35,7 +35,7 @@ const char *CheckICMPHeader::reason_texts[NREASONS] = {
 };
 
 CheckICMPHeader::CheckICMPHeader()
-  : Element(1, 1), _reason_drops(0)
+  : _reason_drops(0)
 {
   _drops = 0;
 }
@@ -43,12 +43,6 @@ CheckICMPHeader::CheckICMPHeader()
 CheckICMPHeader::~CheckICMPHeader()
 {
   delete[] _reason_drops;
-}
-
-void
-CheckICMPHeader::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int

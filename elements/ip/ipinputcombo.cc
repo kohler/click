@@ -28,8 +28,6 @@ CLICK_DECLS
 IPInputCombo::IPInputCombo()
 {
   _drops = 0;
-  add_input();
-  add_output();
 }
 
 IPInputCombo::~IPInputCombo()

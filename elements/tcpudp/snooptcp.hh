@@ -30,6 +30,7 @@ class SnoopTCP : public Element { public:
   ~SnoopTCP();
   
   const char *class_name() const		{ return "SnoopTCP"; }
+  const char *port_count() const		{ return "2/4"; }
   const char *processing() const		{ return "aa/aahh"; }
   const char *flow_code() const			{ return "xyz/xy"; }
   

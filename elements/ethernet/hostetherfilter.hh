@@ -52,9 +52,9 @@ class HostEtherFilter : public Element { public:
   ~HostEtherFilter();
 
   const char *class_name() const		{ return "HostEtherFilter"; }
+  const char *port_count() const		{ return "1/1-2"; }
   const char *processing() const		{ return "a/ah"; }
 
-  void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);

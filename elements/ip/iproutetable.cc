@@ -151,7 +151,7 @@ IPRouteTable::push(int, Packet *p)
     } else {
 	static int complained = 0;
 	if (++complained <= 5)
-	    click_chatter("IPRouteTable: no route for %s", p->dst_ip_anno().s().cc());
+	    click_chatter("IPRouteTable: no route for %s", p->dst_ip_anno().s().c_str());
 	p->kill();
     }
 }

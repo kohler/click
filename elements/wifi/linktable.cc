@@ -108,7 +108,7 @@ LinkTable::static_update_link(const String &arg, Element *e,
   cp_spacevec(arg, args);
 
   if (args.size() != 5) {
-    return errh->error("Must have three arguments: currently has %d: %s", args.size(), args[0].cc());
+    return errh->error("Must have three arguments: currently has %d: %s", args.size(), args[0].c_str());
   }
 
 
@@ -192,7 +192,7 @@ LinkTable::random_link()
     }
   }
   click_chatter("LinkTable %s: random_link overestimated number of elements\n",
-		id().cc());
+		id().c_str());
   return Link();
 
 }
@@ -389,7 +389,7 @@ LinkTable::best_route(IPAddress dst, bool from_me)
 String routes_to_string(Vector<Path> routes) {
   StringAccum sa;
   for (int x = 1; x < routes.size(); x++) {
-    sa << path_to_string(routes[x]).cc() << "\n";
+    sa << path_to_string(routes[x]) << "\n";
   }
   return sa.take_string();
 }
@@ -403,7 +403,7 @@ LinkTable::print_links()
   click_gettimeofday(&now);
   for (LTIter iter = _links.begin(); iter; iter++) {
     LinkInfo n = iter.value();
-    sa << n._from.s().cc() << " " << n._to.s().cc();
+    sa << n._from.s() << " " << n._to.s();
     sa << " " << n._metric;
     sa << " " << n._seq << " " << n.age() << "\n";
   }
@@ -435,7 +435,7 @@ LinkTable::print_routes(bool from_me)
     IPAddress ip = ip_addrs[x];
     Vector <IPAddress> r = best_route(ip, from_me);
     if (valid_route(r)) {
-      sa << ip.s().cc() << " ";
+      sa << ip.s() << " ";
       for (int i = 0; i < r.size(); i++) {
 	sa << " " << r[i] << " ";
 	if (i != r.size()-1) {
@@ -485,8 +485,8 @@ LinkTable::clear_stale() {
 	click_chatter("%{element} :: %s removing link %s -> %s metric %d seq %d age %d\n",
 		      this,
 		      __func__,
-		      nfo._from.s().cc(),
-		      nfo._to.s().cc(),
+		      nfo._from.s().c_str(),
+		      nfo._to.s().c_str(),
 		      nfo._metric,
 		      nfo._seq, 
 		      nfo.age());
@@ -640,7 +640,7 @@ LinkTable::dijkstra(bool from_me)
   timersub(&finish, &start, &dijkstra_time);
   //StringAccum sa;
   //sa << "dijstra took " << finish - start;
-  //click_chatter("%s: %s\n", id().cc(), sa.take_string().cc());
+  //click_chatter("%s: %s\n", id().c_str(), sa.take_string().c_str());
 }
 
 
@@ -719,7 +719,6 @@ LinkTable_write_param(const String &in_s, Element *e, void *vparam,
 
 void
 LinkTable::add_handlers() {
-  add_default_handlers(false);
   add_read_handler("routes", LinkTable_read_param, (void *)H_ROUTES_FROM);
   add_read_handler("routes_from", LinkTable_read_param, (void *)H_ROUTES_FROM);
   add_read_handler("routes_to", LinkTable_read_param, (void *)H_ROUTES_TO);

@@ -26,7 +26,6 @@
 CLICK_DECLS
 
 WifiDecap::WifiDecap()
-  : Element(1, 1)
 {
 }
 
@@ -141,9 +140,9 @@ WifiDecap::simple_action(Packet *p)
     click_chatter("%{element}: dir %d src %s dst %s bssid %s\n",
 		  this,
 		  dir,
-		  src.s().cc(),
-		  dst.s().cc(),
-		  bssid.s().cc());
+		  src.s().c_str(),
+		  dst.s().c_str(),
+		  bssid.s().c_str());
   }
 
   return p_out;
@@ -184,8 +183,6 @@ WifiDecap_write_param(const String &in_s, Element *e, void *vparam,
 void
 WifiDecap::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", WifiDecap_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", WifiDecap_write_param, (void *) H_DEBUG);

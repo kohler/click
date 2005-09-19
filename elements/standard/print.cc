@@ -31,7 +31,6 @@ CLICK_CXX_UNPROTECT
 CLICK_DECLS
 
 Print::Print()
-  : Element(1, 1)
 {
 }
 
@@ -124,7 +123,7 @@ Print::simple_action(Packet *p)
   }
   sa.forward(pos);
 
-  click_chatter("%s", sa.cc());
+  click_chatter("%s", sa.c_str());
 
   return p;
 }

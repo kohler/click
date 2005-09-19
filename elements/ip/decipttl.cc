@@ -22,21 +22,12 @@
 CLICK_DECLS
 
 DecIPTTL::DecIPTTL()
-  : Element(1, 1)
 {
   _drops = 0;
 }
 
 DecIPTTL::~DecIPTTL()
 {
-}
-
-void
-DecIPTTL::notify_noutputs(int n)
-{
-  // allow 2 outputs -- then packet is pushed onto 2d output instead of
-  // dropped
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 void

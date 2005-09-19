@@ -12,7 +12,6 @@
 CLICK_DECLS
 
 SRLog::SRLog()
-  : Element(1, 1)
 {
 }
 
@@ -89,7 +88,7 @@ SRLog_read_param(Element *e, void *thunk)
       sa << " rate " << td->_p[0].rate;
       sa << " retries " << td->_p[0].retries;
 
-      sa << " " << s.cc() << "\n";
+      sa << " " << s << "\n";
 
       x++;
       td->_p.pop_front();
@@ -132,7 +131,6 @@ SRLog_write_param(const String &in_s, Element *e, void *vparam,
 void
 SRLog::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("more", SRLog_read_param, (void *) H_MORE);
   add_read_handler("log", SRLog_read_param, (void *) H_LOG);
   add_read_handler("active", SRLog_read_param, (void *) H_ACTIVE);

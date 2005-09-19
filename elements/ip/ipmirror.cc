@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 IPMirror::IPMirror()
-  : Element(1, 1)
 {
 }
 

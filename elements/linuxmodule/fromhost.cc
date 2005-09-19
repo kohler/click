@@ -59,7 +59,6 @@ FromHost::FromHost()
     : _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
       _task(this), _wakeup_timer(fl_wakeup, this), _queue(0)
 {
-    add_output();
     memset(&_stats, 0, sizeof(_stats));
 }
 
@@ -113,21 +112,21 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpEnd) < 0)
 	return -1;
     if (_devname.length() > IFNAMSIZ - 1)
-	return errh->error("device name '%s' too long", _devname.cc());
+	return errh->error("device name '%s' too long", _devname.c_str());
 
     // check for duplicate element
     void *&used = router()->force_attachment("FromHost_" + _devname);
     if (used)
-	return errh->error("duplicate FromHost for device '%s'", _devname.cc());
+	return errh->error("duplicate FromHost for device '%s'", _devname.c_str());
     used = this;
     
     // check for existing device
-    _dev = dev_get_by_name(_devname.cc());
+    _dev = dev_get_by_name(_devname.c_str());
     if (_dev) {
 	if (_dev->open != fl_open) {
 	    dev_put(_dev);
 	    _dev = 0;
-	    return errh->error("device '%s' already exists", _devname.cc());
+	    return errh->error("device '%s' already exists", _devname.c_str());
 	} else {
 	    fromlinux_map.insert(this);
 	    return 0;
@@ -177,16 +176,16 @@ FromHost::set_device_addresses(ErrorHandler *errh)
     ifr.ifr_hwaddr.sa_family = _dev->type;
     memcpy(ifr.ifr_hwaddr.sa_data, _macaddr.data(), 6);
     if ((res = dev_ioctl(SIOCSIFHWADDR, &ifr)) < 0)
-	errh->error("error %d setting hardware address for device '%s'", res, _devname.cc());
+	errh->error("error %d setting hardware address for device '%s'", res, _devname.c_str());
 
     sin->sin_family = AF_INET;
     sin->sin_addr = _destaddr;
     if (res >= 0 && (res = devinet_ioctl(SIOCSIFADDR, &ifr)) < 0)
-	errh->error("error %d setting address for device '%s'", res, _devname.cc());
+	errh->error("error %d setting address for device '%s'", res, _devname.c_str());
 
     sin->sin_addr = _destmask;
     if (res >= 0 && (res = devinet_ioctl(SIOCSIFNETMASK, &ifr)) < 0)
-	errh->error("error %d setting netmask for device '%s'", res, _devname.cc());
+	errh->error("error %d setting netmask for device '%s'", res, _devname.c_str());
 
     set_fs(oldfs);
     return res;

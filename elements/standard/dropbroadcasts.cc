@@ -4,19 +4,12 @@
 CLICK_DECLS
 
 DropBroadcasts::DropBroadcasts()
-  : Element(1, 1)
 {
   _drops = 0;
 }
 
 DropBroadcasts::~DropBroadcasts()
 {
-}
-
-void
-DropBroadcasts::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 void

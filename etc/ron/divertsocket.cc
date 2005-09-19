@@ -64,17 +64,6 @@ DivertSocket::~DivertSocket()
   uninitialize();
 }
 
-void
-DivertSocket::notify_ninputs(int n)
-{
-  set_ninputs(n);
-}
-void
-DivertSocket::notify_noutputs(int n)
-{
-  set_noutputs(n);
-}
-
 int DivertSocket::parse_ports(const String &param, ErrorHandler *errh,
 			      int32_t *portl, int32_t *porth) {
   int dash;
@@ -112,7 +101,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
   _setup_fw = true;
 #ifdef 0
   for(int i=0; i < conf.size(); i++){
-    click_chatter("  %s\n", ((String)conf[i]).cc());
+    click_chatter("  %s\n", ((String)conf[i]).c_str());
   }
 #endif	
 
@@ -136,7 +125,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
   /*
   click_chatter("Hello 1 this = %x\n", (void *)this);
   click_chatter("Hello 2 this = %x\n", (void *)this);
-  click_chatter("conf[0] = %s\n", conf[0].cc());
+  click_chatter("conf[0] = %s\n", conf[0].c_str());
   */
 
   // parse devicename
@@ -177,7 +166,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
     return -1;
   }
 
-  //printf("1 confindex = %d (%s)\n", confindex, conf[confindex].cc());
+  //printf("1 confindex = %d (%s)\n", confindex, conf[confindex].c_str());
   // parse dst addr/mask
   if (!cp_ip_prefix(conf[confindex], &_daddr, &_dmask, true, this )){
     errh->error("invalid dst addr/mask");
@@ -191,7 +180,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   // parse dst ports
   if (confindex < conf.size()) {
-    //printf("2 confindex = %d (%s)\n", confindex, conf[confindex].cc());
+    //printf("2 confindex = %d (%s)\n", confindex, conf[confindex].c_str());
     if (_protocol == IP_PROTO_UDP || _protocol == IP_PROTO_TCP) {
       if (parse_ports(conf[confindex], errh, &_dportl, &_dporth) < 0)
 	_have_dport = false;
@@ -210,7 +199,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_parse(conf[confindex], this, errh, cpString, "in/out", &_inout, cpEnd) < 0)
       return -1;
     if ( (_inout != "") && (_inout != "in") && (_inout != "out") ) {
-      errh->error("illegal direction specifier: '%s'", _inout.cc());
+      errh->error("illegal direction specifier: '%s'", _inout.c_str());
       return -1;
     }
   }
@@ -258,8 +247,8 @@ DivertSocket::setup_firewall(ErrorHandler *errh) {
 
   sprintf(tmp, "/sbin/ipfw add %u divert %u %s from %s:%s %s to %s:%s %s %s via %s",
 	  _rulenumber, _divertport, 
-	  prot, _saddr.s().cc(), _smask.s().cc(), sport,
-	  _daddr.s().cc(), _dmask.s().cc(), dport, _inout.cc(), _device.cc() );
+	  prot, _saddr.s().c_str(), _smask.s().c_str(), sport,
+	  _daddr.s().c_str(), _dmask.s().c_str(), dport, _inout.c_str(), _device.c_str() );
   printf("%s\n", tmp);
 
   if (system(tmp) != 0) {
@@ -296,7 +285,7 @@ DivertSocket::setup_firewall(ErrorHandler *errh) {
   fw.fw_dmsk.s_addr= _dmask.in_addr().s_addr;
 
   fw.fw_outputsize=0xffff;
-  strcpy(fw.fw_vianame, _device.cc() );
+  strcpy(fw.fw_vianame, _device.c_str() );
 
   /* fill in the fwuser structure */
   ipfu.ipfw=fw;
@@ -362,15 +351,15 @@ DivertSocket::initialize(ErrorHandler *errh)
 
 
 #ifdef 0
-  printf("Device  : \t%s\n", _device.cc());
+  printf("Device  : \t%s\n", _device.c_str());
   printf("DIV port: \t%u\n", _divertport);
   printf("Rule Num: \t%u\n", _rulenumber);
   printf("Protocol: \t%d\n", _protocol);
-  printf("src/mask: \t%s / %s\n", _saddr.s().cc(), _smask.s().cc());
-  printf("dst/mask: \t%s / %s\n", _daddr.s().cc(), _dmask.s().cc());
+  printf("src/mask: \t%s / %s\n", _saddr.s().c_str(), _smask.s().c_str());
+  printf("dst/mask: \t%s / %s\n", _daddr.s().c_str(), _dmask.s().c_str());
   printf("sport   : \t%u - %u\n", _sportl, _sporth);
   printf("dport   : \t%u - %u\n", _dportl, _dporth);
-  printf("in/out  : \t%s\n", _inout.cc());
+  printf("in/out  : \t%s\n", _inout.c_str());
 #endif
 
   // Setup divert socket

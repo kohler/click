@@ -6,24 +6,24 @@
 #endif
 CLICK_DECLS
 
+/** @file <click/string.hh>
+ * @brief Click's String class.
+ */
+
 class String { public:
   
   // Call static_initialize() before any function which might deal with
   // Strings, and declare a String::Initializer in any file in which you
   // declare static global Strings.
-  struct Initializer { Initializer(); };
-  friend class String::Initializer;
   static void static_initialize();
   static void static_cleanup();
+  struct Initializer { Initializer(); };
 
   inline String();
   inline String(const String &);
-  String(const char *cc)		{ assign(cc, -1); }
-  String(const char *cc, int l)		{ assign(cc, l); }
-  String(const char *s1, const char *s2) { assign(s1, (s2>s1 ? s2-s1 : 0)); }
-#ifdef HAVE_PERMSTRING
-  inline String(PermString p);
-#endif
+  inline String(const char *cstr);
+  inline String(const char *s, int len);
+  inline String(const char *begin, const char *end);
   explicit inline String(bool);
   explicit inline String(char);
   explicit inline String(unsigned char);
@@ -35,50 +35,35 @@ class String { public:
   explicit String(int64_t);
   explicit String(uint64_t);
 #endif
-#ifndef __KERNEL__
+#ifdef CLICK_USERLEVEL
   explicit String(double);
 #endif
   inline ~String();
   
-  static const String &null_string()	{ return *null_string_p; }
-  static const String &out_of_memory_string() { return *oom_string_p; }
-  static const char *out_of_memory_data() { return &oom_string_data; }
+  static inline const String &empty_string();
+  static inline const String &null_string() __attribute__((deprecated));
   static String garbage_string(int n);	// n garbage characters
   static String stable_string(const char *, int = -1); // stable read-only mem.
   static inline String stable_string(const char *, const char *);
   
-  bool out_of_memory() const		{ return _data == &oom_string_data; }
-  
-  int length() const			{ return _length; }
-  const char *data() const		{ return _data; }
+  inline int length() const;
+  inline const char *data() const;
   
   typedef const char *const_iterator;
   typedef const_iterator iterator;
-  const_iterator begin() const		{ return _data; }
-  const_iterator end() const		{ return _data + _length; }
-
-  inline bool data_shared() const;
-  char *mutable_data();
-  char *mutable_c_str();
+  inline const_iterator begin() const;
+  inline const_iterator end() const;
   
-  operator bool()			{ return _length != 0; }
-  operator bool() const			{ return _length != 0; }
+  inline operator bool() const;
+  inline operator bool();
   
-#ifdef HAVE_PERMSTRING
-  operator PermString()			{ return PermString(_data, _length); }
-  operator PermString() const		{ return PermString(_data, _length); }
-#endif
+  inline char operator[](int i) const;
+  inline char at(int i) const;
+  inline char front() const;
+  inline char back() const;
   
   const char *c_str() const;		// pointer returned is semi-transient
-  const char *cc() const		{ return c_str(); }
-  
-  char operator[](int i) const		{ return _data[i]; }
-  char at(int i) const			{ assert(i>=0&&i<_length); return _data[i]; }
-  char front() const			{ return _data[0]; }
-  char back() const			{ return _data[_length-1]; }
-  int find_left(int c, int start = 0) const;
-  int find_left(const String &s, int start = 0) const;
-  int find_right(int c, int start = 0x7FFFFFFF) const;
+  inline const char *cc() const __attribute__((deprecated));
   
   bool equals(const char *, int) const;
   // bool operator==(const String &, const String &);
@@ -88,17 +73,21 @@ class String { public:
   // bool operator!=(const String &, const char *);
   // bool operator!=(const char *, const String &);
 
-  int compare(const char *, int) const;
-  int compare(const String &x) const	{ return compare(x._data, x._length); }
   static inline int compare(const String &a, const String &b);
+  inline int compare(const String &) const;
+  int compare(const char *, int) const;
   // bool operator<(const String &, const String &);
   // bool operator<=(const String &, const String &);
   // bool operator>(const String &, const String &);
   // bool operator>=(const String &, const String &);
 
-  String substring(const char *begin, const char *end) const;
+  inline String substring(const char *begin, const char *end) const;
   String substring(int pos, int len) const;
-  String substring(int pos) const	{ return substring(pos, _length); }
+  inline String substring(int pos) const;
+  
+  int find_left(char c, int start = 0) const;
+  int find_left(const String &s, int start = 0) const;
+  int find_right(char c, int start = 0x7FFFFFFF) const;
   
   String lower() const;			// lowercase
   String upper() const;			// uppercase
@@ -108,20 +97,14 @@ class String { public:
   
   inline String &operator=(const String &);
   inline String &operator=(const char *);
-#ifdef HAVE_PERMSTRING
-  inline String &operator=(PermString);
-#endif
 
-  void append(const char *, int len);
-  inline void append(const char *, const char *);
+  void append(const char *s, int len);
+  inline void append(const char *begin, const char *end);
   void append_fill(int c, int len);
   char *append_garbage(int len);
   inline String &operator+=(const String &);
   inline String &operator+=(const char *);
   inline String &operator+=(char);
-#ifdef HAVE_PERMSTRING
-  inline String &operator+=(PermString p);
-#endif
 
   // String operator+(String, const String &);
   // String operator+(String, const char *);
@@ -132,9 +115,18 @@ class String { public:
   // String operator+(const char *, PermString);
   // String operator+(PermString, PermString);
   // String operator+(String, char);
-  
+
+  inline bool data_shared() const;
+  char *mutable_data();
+  char *mutable_c_str();
+
+  inline bool out_of_memory() const;
+  static inline const String &out_of_memory_string();
+  static inline const char *out_of_memory_data();
+    
  private:
-   
+
+  /** @cond never */
   struct Memo {
     int _refcount;
     int _capacity;
@@ -146,7 +138,8 @@ class String { public:
     Memo(int, int);
     ~Memo();
   };
-  
+  /** @endcond never */
+    
   mutable const char *_data;	// mutable for c_str()
   mutable int _length;
   mutable Memo *_memo;
@@ -155,9 +148,6 @@ class String { public:
   
   inline void assign(const String &) const;
   void assign(const char *, int);
-#ifdef HAVE_PERMSTRING
-  inline void assign(PermString);
-#endif
   inline void deref() const;
   void make_out_of_memory();
   
@@ -170,6 +160,7 @@ class String { public:
   
   static String claim_string(char *, int, int); // claim memory
 
+  friend class String::Initializer;
   friend class StringAccum;
   
 };
@@ -198,6 +189,7 @@ String::deref() const
     delete _memo;
 }
 
+/** @brief Create an empty String (with length 0). */
 inline
 String::String()
   : _data(null_memo->_real_data), _length(0), _memo(null_memo)
@@ -205,6 +197,56 @@ String::String()
   _memo->_refcount++;
 }
 
+/** @brief Create a String containing a copy of the C string @a cstr.
+ * @param cstr a null-terminated C string.
+ * @return A String containing the characters of @a cstr, up to but not
+ * including the terminating null character.
+ *
+ * If @a cstr equals String::out_of_memory_data(), returns an
+ * out-of-memory string.
+ */
+inline
+String::String(const char *cstr)
+{
+  assign(cstr, -1);
+}
+
+/** @brief Create a String containing a copy of the first @a l characters of
+ * string @a cc.
+ * @param cc a string.
+ * @param l number of characters to take from @a cc.  If @a l @< 0, then takes
+ * @c strlen(@a l) characters.
+ * @return A String containing @a l characters of @a cc.
+ *
+ * If @a cc equals String::out_of_memory_data(), returns an
+ * out-of-memory string.
+ */
+inline
+String::String(const char *cc, int l)
+{
+  assign(cc, l);
+}
+
+/** @brief Create a String containing a copy of the characters from @a begin
+ * to @a end.
+ * @param begin first character in string (begin iterator).
+ * @param end pointer one past last character in string (end iterator).
+ * @return A String containing the characters from @a begin to @a end.
+ *
+ * Returns a null string if @a begin @> @a end. 
+ * If @a begin equals String::out_of_memory_data(), returns an
+ * out-of-memory string.
+ */
+inline
+String::String(const char *begin, const char *end)
+{
+  assign(begin, (end > begin ? end - begin : 0));
+}
+
+/** @brief Create a String equal to "true" or "false" depending on the
+ * value of @a b.
+ * @param b a boolean variable.
+ */
 inline
 String::String(bool b)
   : _data(b ? "true" : "false"), _length(b ? 4 : 5), _memo(permanent_memo)
@@ -212,121 +254,340 @@ String::String(bool b)
   _memo->_refcount++;
 }
 
+/** @brief Create a String containing the single character @a c.
+ * @param c a character.
+ */
 inline
 String::String(char c)
 {
   assign(&c, 1);
 }
 
+/** @brief Create a String containing the single character @a c.
+ * @param c an unsigned character.
+ */
 inline
 String::String(unsigned char c)
 {
   assign(reinterpret_cast<char *>(&c), 1);
 }
 
+/** @brief Create a String containing a copy of the String @a s.
+ * @param s a String.
+ */
 inline
 String::String(const String &s)
 {
   assign(s);
 }
 
+/** @brief Destroy a String, freeing memory if necessary. */
 inline
 String::~String()
 {
   deref();
 }
 
+/** @brief Return the string's length. */
+inline int
+String::length() const
+{
+  return _length;
+}
+
+/** @brief Return a pointer to the string's data.
+ *
+ * Only the first length() characters are valid, and the string data might not
+ * be null-terminated. */
+inline const char *
+String::data() const
+{
+  return _data;
+}
+
+/** @brief Return an iterator for the first character in the string.
+ *
+ * String iterators are simply pointers into string data, so they are quite
+ * efficient.  @sa String::data */
+inline String::const_iterator
+String::begin() const
+{
+  return _data;
+}
+
+/** @brief Return an iterator for the end of the string.
+ *
+ * The return value points one character beyond the last character in the
+ * string. */
+inline String::const_iterator
+String::end() const
+{
+  return _data + _length;
+}
+
+/** @brief Returns true iff the string is nonempty. */
+inline
+String::operator bool() const
+{
+  return _length != 0;
+}
+
+/** @overload
+ */
+inline
+String::operator bool()
+{
+  return _length != 0;
+}
+  
+/** @brief Returns the @a i th character in the string.
+ *
+ * Does not check bounds.
+ * @sa String::at */
+inline char
+String::operator[](int i) const
+{
+  return _data[i];
+}
+
+/** @brief Returns the @a i th character in the string.
+ *
+ * Checks bounds: an assertion will fail if @a i is less than 0 or not less
+ * than length().
+ * @sa String::operator[]
+ */
+inline char
+String::at(int i) const
+{
+  assert(i >= 0 && i < _length);
+  return _data[i];
+}
+
+/** @brief Returns the first character in the string.
+ *
+ * Does not do check bounds.  Same as (*this)[0]. */
+inline char
+String::front() const
+{
+  return _data[0];
+}
+
+/** @brief Returns the last character in the string.
+ *
+ * Does not check bounds.  Same as (*this)[length() - 1]. */
+inline char
+String::back() const
+{
+  return _data[_length - 1];
+}
+
+/** @brief Return true iff the String's data is shared or immutable. */
 inline bool
 String::data_shared() const
 {
   return !_memo->_capacity || _memo->_refcount != 1;
 }
 
-inline String
-String::stable_string(const char *s1, const char *s2)
+/** @brief Return an empty String.
+ *
+ * Returns a global constant, so it's quicker than String::String().
+ */
+inline const String &
+String::empty_string()
 {
-    if (s1 < s2)
-	return String::stable_string(s1, s2 - s1);
+  return *null_string_p;
+}
+
+/** @brief Return an empty String (deprecated).
+ * @deprecated Use empty_string() instead.
+ * Returns a global constant, so it's quicker than String::String().
+ */
+inline const String &
+String::null_string()
+{
+  return *null_string_p;
+}
+
+/** @brief Return a String that directly references the character data in
+ * [@a begin, @a end).
+ * @param begin pointer to the first character in the character data.
+ * @param end pointer one beyond the last character in the character data.
+ *
+ * This function is suitable for static constant strings whose data is known
+ * to stay around forever, such as C string constants.  Returns a null string
+ * if @a begin @> @a end.
+ */
+inline String
+String::stable_string(const char *begin, const char *end)
+{
+    if (begin < end)
+	return String::stable_string(begin, end - begin);
     else
 	return String();
 }
 
-inline String
-String::substring(const char *s1, const char *s2) const
+/** @brief Null-terminates the string (deprecated).
+ *
+ * @deprecated This function is a synonym for c_str().  You should call
+ * c_str() instead, since the C++ standard library uses that name. */
+inline const char *
+String::cc() const
 {
-    if (s1 < s2 && s1 >= _data && s2 <= _data + _length)
-	return String(s1, s2 - s1, _memo);
+  return c_str();
+}
+
+/** @brief Return a substring of the current string starting at @a begin and
+ * ending before @a end.
+ * @param begin pointer to the first character in the desired substring.
+ * @param end pointer one beyond the last character in the desired substring.
+ *
+ * Returns a null string if @a begin @> @a end, or if @a begin or @a end is
+ * out of range (i.e., either less than this->begin() or greater than
+ * this->end()).
+ */
+inline String
+String::substring(const char *begin, const char *end) const
+{
+    if (begin < end && begin >= _data && end <= _data + _length)
+	return String(begin, end - begin, _memo);
     else
 	return String();
 }
 
+/** @brief Return the suffix of the current string starting at index @a pos.
+ *
+ * Same as String::substring(@a pos, INT_MAX).
+ */
+inline String
+String::substring(int pos) const
+{
+  return substring(pos, _length);
+}
+
+/** @brief Compare two strings.
+ * @param a first string to compare
+ * @param b second string to compare
+ *
+ * Returns 0 if @a a == @a b, negative if @a a @< @a b in lexicographic
+ * order, and positive if @a a @> @a b in lexicographic order.
+ */
 inline int
 String::compare(const String &a, const String &b)
 {
   return a.compare(b);
 }
 
-inline bool
-operator==(const String &s1, const String &s2)
+/** @brief Compare this string with string @a s.
+ * Same as String::compare(*this, @a s).
+ * @sa String::compare(const String &a, const String &b) */
+inline int
+String::compare(const String &s) const
 {
-  return s1.equals(s2.data(), s2.length());
+  return compare(s._data, s._length);
 }
 
+/** @relates String
+ * @brief Compares two strings for equality.
+ *
+ * Returns true iff the two operands have the same lengths and the same
+ * characters in the same order.  At most one of the operands can be a
+ * null-terminated C string.
+ * @sa String::compare
+ */
 inline bool
-operator==(const char *cc1, const String &s2)
+operator==(const String &a, const String &b)
 {
-  return s2.equals(cc1, -1);
+  return a.equals(b.data(), b.length());
 }
 
+/** @relates String */
 inline bool
-operator==(const String &s1, const char *cc2)
+operator==(const char *a, const String &b)
 {
-  return s1.equals(cc2, -1);
+  return b.equals(a, -1);
 }
 
+/** @relates String */
 inline bool
-operator!=(const String &s1, const String &s2)
+operator==(const String &a, const char *b)
 {
-  return !s1.equals(s2.data(), s2.length());
+  return a.equals(b, -1);
 }
 
+/** @relates String
+ * @brief Compare two Strings for inequality.
+ *
+ * Returns true iff !(@a a == @a b).  At most one of the operands can be a
+ * null-terminated C string. */
 inline bool
-operator!=(const char *cc1, const String &s2)
+operator!=(const String &a, const String &b)
 {
-  return !s2.equals(cc1, -1);
+  return !a.equals(b.data(), b.length());
 }
 
+/** @relates String */
 inline bool
-operator!=(const String &s1, const char *cc2)
+operator!=(const char *a, const String &b)
 {
-  return !s1.equals(cc2, -1);
+  return !b.equals(a, -1);
 }
 
+/** @relates String */
 inline bool
-operator<(const String &s1, const String &s2)
+operator!=(const String &a, const char *b)
 {
-  return s1.compare(s2.data(), s2.length()) < 0;
+  return !a.equals(b, -1);
 }
 
+/** @relates String
+ * @brief Compare two Strings.
+ *
+ * Returns true iff @a a @< @a b in lexicographic order.
+ * @sa String::compare
+ */
 inline bool
-operator<=(const String &s1, const String &s2)
+operator<(const String &a, const String &b)
 {
-  return s1.compare(s2.data(), s2.length()) <= 0;
+  return a.compare(b.data(), b.length()) < 0;
 }
 
+/** @relates String
+ * @brief Compare two Strings.
+ *
+ * Returns true iff @a a @<= @a b in lexicographic order.
+ * @sa String::compare
+ */
 inline bool
-operator>(const String &s1, const String &s2)
+operator<=(const String &a, const String &b)
 {
-  return s1.compare(s2.data(), s2.length()) > 0;
+  return a.compare(b.data(), b.length()) <= 0;
 }
 
+/** @relates String
+ * @brief Compare two Strings.
+ *
+ * Returns true iff @a a @> @a b in lexicographic order.
+ * @sa String::compare
+ */
 inline bool
-operator>=(const String &s1, const String &s2)
+operator>(const String &a, const String &b)
 {
-  return s1.compare(s2.data(), s2.length()) >= 0;
+  return a.compare(b.data(), b.length()) > 0;
 }
 
+/** @relates String
+ * @brief Compare two Strings.
+ *
+ * Returns true iff @a a @>= @a b in lexicographic order.
+ * @sa String::compare
+ */
+inline bool
+operator>=(const String &a, const String &b)
+{
+  return a.compare(b.data(), b.length()) >= 0;
+}
 
+/** @brief Makes this string a copy of @a s. */
 inline String &
 String::operator=(const String &s)
 {
@@ -337,21 +598,28 @@ String::operator=(const String &s)
   return *this;
 }
 
+/** @brief Make this string a copy of the C string @a cstr. */
 inline String &
-String::operator=(const char *cc)
+String::operator=(const char *cstr)
 {
   deref();
-  assign(cc, -1);
+  assign(cstr, -1);
   return *this;
 }
 
+/** @brief Appends the data from @a begin to @a end to the end of this string.
+ *
+ * Does nothing if @a begin @> @a end. */
 inline void
-String::append(const char *s1, const char *s2)
+String::append(const char *begin, const char *end)
 {
-  if (s1 < s2)
-    append(s1, s2 - s1);
+  if (begin < end)
+    append(begin, end - begin);
 }
 
+/** @brief Append a copy of @a s to the end of this string.
+ *
+ * Returns the result. */
 inline String &
 String::operator+=(const String &s)
 {
@@ -359,13 +627,19 @@ String::operator+=(const String &s)
   return *this;
 }
 
+/** @brief Append a copy of the C string @a cstr to the end of this string.
+ *
+ * Returns the result. */
 inline String &
-String::operator+=(const char *cc)
+String::operator+=(const char *cstr)
 {
-  append(cc, -1);
+  append(cstr, -1);
   return *this;
 }
 
+/** @brief Append the character @a c to the end of this string.
+ *
+ * Returns the result. */
 inline String &
 String::operator+=(char c)
 {
@@ -373,150 +647,87 @@ String::operator+=(char c)
   return *this;
 }
 
+/** @relates String
+ * @brief Concatenate the operands and return the result.
+ *
+ * At most one of the two operands can be a null-terminated C string. */
 inline String
-operator+(String s1, const String &s2)
+operator+(String a, const String &b)
 {
-  s1 += s2;
-  return s1;
-}
-
-inline String
-operator+(String s1, const char *cc2)
-{
-  s1.append(cc2, -1);
-  return s1;
-}
-
-inline String
-operator+(const char *cc1, const String &s2)
-{
-  String s1(cc1);
-  s1 += s2;
-  return s1;
-}
-
-inline String
-operator+(String s1, char c2)
-{
-  s1.append(&c2, 1);
-  return s1;
-}
-
-#ifdef HAVE_PERMSTRING
-
-inline void
-String::assign(PermString p)
-{
-  assert(p && "null PermString");
-  _data = p.cc();
-  _length = p.length();
-  _memo = permanent_memo;
-  _memo->_refcount++;
-}
-
-inline
-String::String(PermString p)
-{
-  assign(p);
-}
-
-inline bool
-operator==(PermString p1, const String &s2)
-{
-  return p1 && s2.equals(p1.cc(), p1.length());
-}
-
-inline bool
-operator==(const String &s1, PermString p2)
-{
-  return p2 && s1.equals(p2.cc(), p2.length());
-}
-
-inline bool
-operator!=(PermString p1, const String &s2)
-{
-  return !s2.equals(p1.cc(), p1.length());
-}
-
-inline bool
-operator!=(const String &s1, PermString p2)
-{
-  return !s1.equals(p2.cc(), p2.length());
-}
-
-inline String &
-String::operator=(PermString p)
-{
-  deref();
-  assign(p);
-  return *this;
-}
-
-inline String &
-String::operator+=(PermString p)
-{
-  append(p.cc(), p.length());
-  return *this;
-}
-
-inline String
-operator+(String s1, PermString p2)
-{
-  s1.append(p2.cc(), p2.length());
-  return s1;
-}
-
-inline String
-operator+(PermString p1, const String &s2)
-{
-  String s1(p1);
-  s1 += s2;
-  return s1;
-}
-
-inline String
-operator+(PermString p1, const char *cc2)
-{
-  String s1(p1);
-  s1.append(cc2, -1);
-  return s1;
-}
-
-inline String
-operator+(const char *cc1, PermString p2)
-{
-  String s1(cc1);
-  s1 += p2;
-  return s1;
-}
-
-inline String
-operator+(PermString p1, PermString p2)
-{
-  String s1(p1);
-  s1 += p2;
-  return s1;
-}
-
-#endif
-
-int hashcode(const String &);
-
-// find methods
-
-inline const char *find(const char *a, const char *b, char c)
-{
-  while (a < b && *a != c)
-    a++;
+  a += b;
   return a;
 }
 
-inline const char *rfind(const char *a, const char *b, char c)
+/** @relates String */
+inline String
+operator+(String a, const char *b)
 {
-  for (const char *bb = b - 1; bb >= a; bb--)
+  a.append(b, -1);
+  return a;
+}
+
+/** @relates String */
+inline String
+operator+(const char *a, const String &b)
+{
+  String s1(a);
+  s1 += b;
+  return s1;
+}
+
+/** @relates String
+ * @brief Concatenate the operands and return the result.
+ *
+ * The second operand is a single character. */
+inline String
+operator+(String a, char b)
+{
+  a.append(&b, 1);
+  return a;
+}
+
+/** @relates String */
+int hashcode(const String &);
+
+/** @brief Returns true iff this is an out-of-memory string. */
+inline bool
+String::out_of_memory() const
+{
+  return _data == &oom_string_data;
+}
+
+/** @brief Return a reference to an out-of-memory String. */
+inline const String &
+String::out_of_memory_string()
+{
+  return *oom_string_p;
+}
+
+/** @brief Return the data pointer used for out-of-memory strings.
+ *
+ * The returned value may be dereferenced; it points to a null character. 
+ */
+inline const char *
+String::out_of_memory_data()
+{
+  return &oom_string_data;
+}
+
+// find methods
+
+inline const char *find(const char *begin, const char *end, char c)
+{
+  while (begin < end && *begin != c)
+    begin++;
+  return begin;
+}
+
+inline const char *rfind(const char *begin, const char *end, char c)
+{
+  for (const char *bb = end - 1; bb >= begin; bb--)
     if (*bb == c)
       return bb;
-  return b;
+  return end;
 }
 
 inline const char *find(const String &s, char c)

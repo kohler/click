@@ -172,7 +172,7 @@ Signatures::print_signature() const
 {
   fprintf(stderr, "[");
   for (int i = 0; i < _router->nelements(); i++) {
-    fprintf(stderr, (i ? ", %s %d" : "%s %d"), _router->ename(i).cc(),
+    fprintf(stderr, (i ? ", %s %d" : "%s %d"), _router->ename(i).c_str(),
 	    _sigid[i]);
   }
   fprintf(stderr, "]\n");

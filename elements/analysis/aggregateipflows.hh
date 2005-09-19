@@ -150,9 +150,9 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
 
     const char *class_name() const	{ return "AggregateIPFlows"; }
     void *cast(const char *);
-
-    void notify_noutputs(int);
+    const char *port_count() const	{ return "1/1-2"; }
     const char *processing() const	{ return "a/ah"; }
+    
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void add_handlers();

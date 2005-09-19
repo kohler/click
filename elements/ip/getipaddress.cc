@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 GetIPAddress::GetIPAddress()
-  : Element(1, 1)
 {
 }
 

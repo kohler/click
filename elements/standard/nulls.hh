@@ -31,10 +31,11 @@ class Null1 : public Element {
   
  public:
   
-  Null1()				: Element(1, 1) { }
+  Null1()				{ }
   ~Null1()				{ }
   
   const char *class_name() const	{ return "Null1"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
@@ -45,10 +46,11 @@ class Null2 : public Element {
   
  public:
   
-  Null2()				: Element(1, 1) { }
+  Null2()				{ }
   ~Null2()				{ }
   
   const char *class_name() const	{ return "Null2"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
@@ -59,10 +61,11 @@ class Null3 : public Element {
   
  public:
   
-  Null3()				: Element(1, 1) { }
+  Null3()				{ }
   ~Null3()				{ }
   
   const char *class_name() const	{ return "Null3"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
@@ -73,10 +76,11 @@ class Null4 : public Element {
   
  public:
   
-  Null4()				: Element(1, 1) { }
+  Null4()				{ }
   ~Null4()				{ }
   
   const char *class_name() const	{ return "Null4"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
@@ -87,10 +91,11 @@ class Null5 : public Element {
   
  public:
   
-  Null5()				: Element(1, 1) { }
+  Null5()				{ }
   ~Null5()				{ }
   
   const char *class_name() const	{ return "Null5"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
@@ -101,10 +106,11 @@ class Null6 : public Element {
   
  public:
   
-  Null6()				: Element(1, 1) { }
+  Null6()				{ }
   ~Null6()				{ }
   
   const char *class_name() const	{ return "Null6"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
@@ -115,10 +121,11 @@ class Null7 : public Element {
   
  public:
   
-  Null7()				: Element(1, 1) { }
+  Null7()				{ }
   ~Null7()				{ }
   
   const char *class_name() const	{ return "Null7"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
@@ -129,10 +136,11 @@ class Null8 : public Element {
   
  public:
   
-  Null8()				: Element(1, 1) { }
+  Null8()				{ }
   ~Null8()				{ }
   
   const char *class_name() const	{ return "Null8"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }

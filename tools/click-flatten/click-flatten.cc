@@ -107,7 +107,7 @@ output_sorted_one_per_line(Vector<String> &v, FILE *out)
   if (v.size())
     qsort((void *)&v[0], v.size(), sizeof(String), string_sorter);
   for (int i = 0; i < v.size(); i++)
-    fprintf(out, "%s\n", v[i].cc());
+    fprintf(out, "%s\n", v[i].c_str());
 }
 
 int

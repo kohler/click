@@ -29,8 +29,7 @@ CLICK_DECLS
 
 
 WifiEncap::WifiEncap()
-  : Element(1, 1),
-    _winfo(0)
+  : _winfo(0)
 {
 }
 
@@ -203,8 +202,6 @@ WifiEncap_write_param(const String &in_s, Element *e, void *vparam,
 void
 WifiEncap::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", WifiEncap_read_param, (void *) H_DEBUG);
   add_read_handler("mode", WifiEncap_read_param, (void *) H_MODE);
   add_read_handler("bssid", WifiEncap_read_param, (void *) H_BSSID);

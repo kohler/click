@@ -34,7 +34,7 @@ const char *CheckUDPHeader::reason_texts[NREASONS] = {
 };
 
 CheckUDPHeader::CheckUDPHeader()
-  : Element(1, 1), _reason_drops(0)
+  : _reason_drops(0)
 {
   _drops = 0;
 }
@@ -42,12 +42,6 @@ CheckUDPHeader::CheckUDPHeader()
 CheckUDPHeader::~CheckUDPHeader()
 {
   delete[] _reason_drops;
-}
-
-void
-CheckUDPHeader::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int

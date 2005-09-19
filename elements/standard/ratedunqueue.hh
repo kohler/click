@@ -27,6 +27,7 @@ class RatedUnqueue : public Element { public:
     ~RatedUnqueue();
   
     const char *class_name() const	{ return "RatedUnqueue"; }
+    const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return PULL_TO_PUSH; }
     bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
   

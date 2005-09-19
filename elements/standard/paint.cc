@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 Paint::Paint()
-  : Element(1, 1)
 {
   _color = 0;
 }

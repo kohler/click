@@ -95,8 +95,8 @@ class FromHost : public Element { public:
     ~FromHost();
   
     const char *class_name() const	{ return "FromHost"; }
+    const char *port_count() const	{ return PORTS_0_1; }
     const char *processing() const	{ return PUSH; }
-  
 
     int configure_phase() const		{ return CONFIGURE_PHASE_FROMHOST; }
     int configure(Vector<String> &, ErrorHandler *);

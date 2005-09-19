@@ -26,8 +26,6 @@
 
 PerfCountAccum::PerfCountAccum()
 {
-  add_input();
-  add_output();
 }
 
 PerfCountAccum::~PerfCountAccum()

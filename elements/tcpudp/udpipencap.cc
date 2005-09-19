@@ -28,7 +28,6 @@
 CLICK_DECLS
 
 UDPIPEncap::UDPIPEncap()
-  : Element(1, 1)
 {
 }
 

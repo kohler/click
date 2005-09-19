@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 BandwidthMeter::BandwidthMeter()
-  : Element(1, 1), _meters(0), _nmeters(0)
+  : _meters(0), _nmeters(0)
 {
 }
 
@@ -67,7 +67,8 @@ BandwidthMeter::configure(Vector<String> &conf, ErrorHandler *errh)
     _nmeters = vals.size();
   }
 
-  set_noutputs(_nmeters + 1);
+  if (_nmeters + 1 != noutputs())
+      return errh->error("need %d arguments, one less than the number of output ports", noutputs() - 1);
   return 0;
 }
 

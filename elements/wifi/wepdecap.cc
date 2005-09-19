@@ -58,7 +58,6 @@
 CLICK_DECLS
 
 WepDecap::WepDecap()
-  : Element(1, 1)
 {
 }
 
@@ -118,7 +117,7 @@ WepDecap::simple_action(Packet *p_in)
   iv = icp[0] | (icp[1] << 8) | (icp[2] << 16) | (icp[3] << 24);
 
   memcpy(rc4key, icp, WIFI_WEP_IVLEN);
-  memcpy(rc4key + WIFI_WEP_IVLEN, _key.cc(), _key.length());
+  memcpy(rc4key + WIFI_WEP_IVLEN, _key.c_str(), _key.length());
   rc4_init(&_rc4, rc4key, WIFI_WEP_IVLEN + _key.length());
 
   u_int8_t *payload = p->data() + sizeof(click_wifi) + WIFI_WEP_HEADERSIZE;
@@ -204,8 +203,6 @@ write_param(const String &in_s, Element *e, void *vparam,
 void
 WepDecap::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", read_param, (void *) H_DEBUG);
   add_read_handler("key", read_param, (void *) H_KEY);
   add_read_handler("keyid", read_param, (void *) H_KEYID);

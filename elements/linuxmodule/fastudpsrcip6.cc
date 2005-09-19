@@ -33,7 +33,6 @@ FastUDPSourceIP6::FastUDPSourceIP6()
   _rate_limited = true;
   _first = _last = 0;
   _count = 0;
-  add_output();
 }
 
 FastUDPSourceIP6::~FastUDPSourceIP6()

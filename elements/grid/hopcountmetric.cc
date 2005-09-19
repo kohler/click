@@ -21,7 +21,6 @@ CLICK_DECLS
 const GridGenericMetric::metric_t GridGenericMetric::_bad_metric(777777, false);
 
 HopcountMetric::HopcountMetric()
-  : GridGenericMetric(0, 0)
 {
 }
 
@@ -69,12 +68,6 @@ HopcountMetric::append_metric(const metric_t &r, const metric_t &l) const
     return _bad_metric;
   else
     return metric_t(r.val() + l.val());
-}
-
-void
-HopcountMetric::add_handlers()
-{
-  add_default_handlers(true);
 }
 
 

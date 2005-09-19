@@ -31,21 +31,15 @@ CLICK_DECLS
 ARPQuerier::ARPQuerier()
     : _age_head(0), _age_tail(0), _expire_timer(expire_hook, this)
 {
-  add_input(); /* IP packets */
-  add_input(); /* ether/ARP responses */
-  add_output();/* ether/IP and ether/ARP queries */
+    // input 0: IP packets
+    // input 1: ARP responses
+    // output 0: ether/IP and ether/ARP queries
   for (int i = 0; i < NMAP; i++)
     _map[i] = 0;
 }
 
 ARPQuerier::~ARPQuerier()
 {
-}
-
-void
-ARPQuerier::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int
@@ -210,7 +204,7 @@ ARPQuerier::send_query_for(IPAddress want_ip)
 {
   static bool zero_warned = false;  
   if (!want_ip && !zero_warned) {
-    click_chatter("%s: querying for 0.0.0.0; missing dest IP addr annotation?", declaration().cc());
+    click_chatter("%s: querying for 0.0.0.0; missing dest IP addr annotation?", declaration().c_str());
     zero_warned = true;
   }
   

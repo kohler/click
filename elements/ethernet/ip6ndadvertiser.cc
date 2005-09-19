@@ -28,7 +28,6 @@
 CLICK_DECLS
 
 IP6NDAdvertiser::IP6NDAdvertiser()
-  : Element(1, 1)
 {
 }
 

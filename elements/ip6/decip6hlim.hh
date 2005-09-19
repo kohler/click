@@ -38,8 +38,8 @@ class DecIP6HLIM : public Element {
   ~DecIP6HLIM();
   
   const char *class_name() const		{ return "DecIP6HLIM"; }
+  const char *port_count() const		{ return "1/1-2"; }
   const char *processing() const		{ return "a/ah"; }
-  void notify_noutputs(int);
   
   int drops()					{ return _drops; }
   

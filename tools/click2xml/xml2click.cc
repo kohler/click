@@ -364,7 +364,7 @@ do_formal(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 	xstack.back()->_formal_types.push_back(String());
     }
     if (xstack.back()->_formals[number])
-	errh->lerror(landmark, "formal parameter %d already defined as '$%s'", number, xstack.back()->_formals[number].cc());
+	errh->lerror(landmark, "formal parameter %d already defined as '$%s'", number, xstack.back()->_formals[number].c_str());
     else {
 	xstack.back()->_formals[number] = name;
 	xstack.back()->_formal_types[number] = key;
@@ -457,7 +457,7 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
     if (_type)			// already complete
 	return 0;
     if (_completing)
-	return errh->lerror(_xml_landmark, "circular definition of elementclass '%s'", readable_name().cc());
+	return errh->lerror(_xml_landmark, "circular definition of elementclass '%s'", readable_name().c_str());
     _completing = true;
     
     ContextErrorHandler cerrh(errh, String("In definition of elementclass '") + _name + "' (id '" + _id + "'):", "  ", _xml_landmark);
@@ -503,7 +503,7 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 	else if (_formals[i][0] != '$')
 	    cerrh.lerror(_xml_landmark, "formal %d ('%s') does not begin with '$'", i, _formals[i].c_str());
 	else if (formal_map[_formals[i]] >= 0)
-	    cerrh.lerror(_xml_landmark, "redeclaration of formal '%s'", _formals[i].cc());
+	    cerrh.lerror(_xml_landmark, "redeclaration of formal '%s'", _formals[i].c_str());
 	else {
 	    if ((!_formal_types[i] && formal_state == 1)
 		|| (_formal_types[i] == "__REST__" && i != _formals.size() - 1))

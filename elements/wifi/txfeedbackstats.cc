@@ -29,8 +29,6 @@ CLICK_DECLS
 TXFeedbackStats::TXFeedbackStats()
   : _tau(10000), _min_pkts(10)
 {
-  add_input();
-  add_output();
 }
 
 TXFeedbackStats::~TXFeedbackStats()
@@ -69,7 +67,7 @@ TXFeedbackStats::simple_action(Packet *p)
 
   if (p->length() < sizeof(click_ether)) {
     click_chatter("TXFeedbackStats %s: got short packet, expected at least %u, but only got %u", 
-		  id().cc(), p->length());
+		  id().c_str(), p->length());
     return p;
   }  
 
@@ -217,7 +215,6 @@ TXFeedbackStats::read_params(Element *xf, void *n)
 void
 TXFeedbackStats::add_handlers()
 {
-  add_default_handlers(false);
   add_read_handler("tau", read_params, (void *)0);
   add_read_handler("min_pkts", read_params, (void *)1);
   add_read_handler("stats", read_params, (void *)2);

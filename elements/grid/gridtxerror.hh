@@ -25,6 +25,7 @@ class GridTxError : public Element { public:
   ~GridTxError();
 
   const char *class_name() const { return "GridTxError"; }
+  const char *port_count() const { return PORTS_1_0; }
   const char *processing() const { return PUSH; }
 
   int initialize(ErrorHandler *);

@@ -30,6 +30,7 @@ class ReadAnno : public Element { public:
   ~ReadAnno();
   
   const char *class_name() const		{ return "ReadAnno"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return "a/a"; }
 
   int configure(Vector<String> &, ErrorHandler *);

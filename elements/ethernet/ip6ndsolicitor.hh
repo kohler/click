@@ -54,10 +54,10 @@ class IP6NDSolicitor : public Element {
   ~IP6NDSolicitor();
   
   const char *class_name() const		{ return "IP6NDSolicitor"; }
+  const char *port_count() const		{ return "2/1-2"; }
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "xy/x"; }
 
-  void notify_noutputs(int);
   void add_handlers();
   
   int configure(Vector<String> &, ErrorHandler *);

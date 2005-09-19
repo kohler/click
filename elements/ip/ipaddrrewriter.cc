@@ -82,23 +82,11 @@ IPAddrRewriter::cast(const char *n)
 	return 0;
 }
 
-void
-IPAddrRewriter::notify_noutputs(int n)
-{
-    if (n < 1)
-	set_noutputs(1);
-    else if (n > 256)
-	set_noutputs(256);
-    else
-	set_noutputs(n);
-}
-
 int
 IPAddrRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (conf.size() == 0)
-	return errh->error("too few arguments; expected 'INPUTSPEC, ...'");
-    set_ninputs(conf.size());
+    if (conf.size() != ninputs())
+	return errh->error("need %d arguments, one per input port", ninputs());
 
     int before = errh->nerrors();
     for (int i = 0; i < conf.size(); i++) {

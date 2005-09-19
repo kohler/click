@@ -26,8 +26,6 @@ CLICK_DECLS
 
 IPAddressCounter::IPAddressCounter()
 {
-  add_input();
-  add_output();
 }
 
 IPAddressCounter::~IPAddressCounter()
@@ -92,7 +90,7 @@ IPAddressCounter::stats()
 
   for (IPIter iter = _table.begin(); iter; iter++) {
     IPAddressInfo n = iter.value();
-    sa << n._ip.s().cc();
+    sa << n._ip.s().c_str();
     sa << " packets " << n._packets;
     sa << " kbytes " << n._bytes / 1024;
     sa << "\n";

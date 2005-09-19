@@ -36,8 +36,7 @@ CLICK_DECLS
 #define max(x,y)      ((x)>(y) ? (x) : (y))
 
 AssociationRequester::AssociationRequester()
-  : Element(1, 1),
-    _rtable(0),
+  : _rtable(0),
     _winfo(0)
 {
 }
@@ -93,7 +92,7 @@ AssociationRequester::send_assoc_req()
   if (!rates.size()) {
     click_chatter("%{element}: couldn't lookup rates for %s\n",
 		  this,
-		  bssid.s().cc());
+		  bssid.s().c_str());
   }
   struct click_wifi *w = (struct click_wifi *) p->data();
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_ASSOC_REQ;
@@ -133,7 +132,7 @@ AssociationRequester::send_assoc_req()
   ptr += 2;
   actual_length += 2;
 
-  memcpy(ptr, ssid.cc(), ssid.length());
+  memcpy(ptr, ssid.c_str(), ssid.length());
   ptr += ssid.length();
   actual_length += ssid.length();
   
@@ -257,7 +256,7 @@ AssociationRequester::process_response(Packet *p)
   if (_debug) {
     click_chatter("%{element}: response %s\n",
 		  this,
-		  sa.take_string().cc());
+		  sa.take_string().c_str());
   }
     
   if (_rtable) {
@@ -283,13 +282,13 @@ AssociationRequester::process_disassociation(Packet *p)
   if (_winfo && _winfo->_bssid == bssid) {
     click_chatter("%{element} disassociation from %s reason %d\n",
 		  this,
-		  bssid.s().cc(),
+		  bssid.s().c_str(),
 		  reason);
     _associated = false;
   } else {
     click_chatter("%{element} BAD disassociation from %s reason %d\n",
 		  this, 
-		  bssid.s().cc(),
+		  bssid.s().c_str(),
 		  reason);
   }
   return;
@@ -399,8 +398,6 @@ AssociationRequester_write_param(const String &in_s, Element *e, void *vparam,
 void
 AssociationRequester::add_handlers()
   {
-  add_default_handlers(true);
-
   add_read_handler("debug", AssociationRequester_read_param, (void *) H_DEBUG);
   add_read_handler("eth", AssociationRequester_read_param, (void *) H_ETH);
   add_read_handler("associated", AssociationRequester_read_param, (void *) H_ASSOCIATED);

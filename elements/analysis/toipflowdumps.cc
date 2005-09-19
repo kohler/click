@@ -96,12 +96,12 @@ ToIPFlowDumps::Flow::create_directories(const String &n, ErrorHandler *errh)
     if (slash <= 0)
 	return 0;
     String component = n.substring(0, slash);
-    if (access(component.cc(), F_OK) >= 0)
+    if (access(component.c_str(), F_OK) >= 0)
 	return 0;
     else if (create_directories(component, errh) < 0)
 	return -1;
-    else if (mkdir(component.cc(), 0777) < 0)
-	return errh->error("making directory %s: %s", component.cc(), strerror(errno));
+    else if (mkdir(component.c_str(), 0777) < 0)
+	return errh->error("making directory %s: %s", component.c_str(), strerror(errno));
     else
 	return 0;
 }
@@ -179,13 +179,13 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
     if (_filename == "-")
 	fd = STDOUT_FILENO;
     else if (_outputted)
-	fd = open(_filename.cc(), O_WRONLY | O_APPEND);
+	fd = open(_filename.c_str(), O_WRONLY | O_APPEND);
     else if (create_directories(_filename, errh) < 0)
 	return -1;
     else
-	fd = open(_filename.cc(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+	fd = open(_filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (fd < 0)
-	return errh->error("%s: %s", _filename.cc(), strerror(errno));
+	return errh->error("%s: %s", _filename.c_str(), strerror(errno));
 
     // make a guess about how much data we'll need
     sa.clear();
@@ -313,7 +313,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
     while (pos < sa.length()) {
 	int written = write(fd, sa.data() + pos, sa.length() - pos);
 	if (written < 0 && errno != EINTR) {
-	    errh->error("%s: %s", _filename.cc(), strerror(errno));
+	    errh->error("%s: %s", _filename.c_str(), strerror(errno));
 	    break;
 	}
 	pos += written;
@@ -328,8 +328,8 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 inline void
 ToIPFlowDumps::Flow::unlink(ErrorHandler *errh)
 {
-    if (_outputted && ::unlink(_filename.cc()) < 0)
-	errh->error("%s: %s", _filename.cc(), strerror(errno));
+    if (_outputted && ::unlink(_filename.c_str()) < 0)
+	errh->error("%s: %s", _filename.c_str(), strerror(errno));
 }
 
 void
@@ -511,7 +511,7 @@ ToIPFlowDumps::Flow::add_note(const String &s, ErrorHandler *errh)
 
 
 ToIPFlowDumps::ToIPFlowDumps()
-    : Element(1, 0), _nnoagg(0), _nagg(0), _agg_notifier(0), _task(this),
+    : _nnoagg(0), _nagg(0), _agg_notifier(0), _task(this),
       _gc_timer(gc_hook, this), _compress_child(-1)
 {
     for (int i = 0; i < NFLOWMAP; i++)
@@ -526,12 +526,6 @@ String
 ToIPFlowDumps::output_pattern() const
 {
     return (_gzip ? _filename_pattern + ".gz" : _filename_pattern);
-}
-
-void
-ToIPFlowDumps::notify_noutputs(int n)
-{
-    set_noutputs(n < 1 ? 0 : 1);
 }
 
 int
@@ -565,7 +559,7 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 	errh->warning("OUTPUT_PATTERN has no %% escapes, so output files will get overwritten");
     
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
-	return errh->error("%s is not an AggregateNotifier", e->id().cc());
+	return errh->error("%s is not an AggregateNotifier", e->id().c_str());
 
     _absolute_time = absolute_time;
     _absolute_seq = absolute_seq;
@@ -641,7 +635,7 @@ ToIPFlowDumps::add_compressable(const String &filename, ErrorHandler *errh)
 	my_arg_space -= _compressables[i].length() + 1; // not too long a line
 	if (my_arg_space < 0)
 	    break;
-	args.push_back(_compressables[i].cc());
+	args.push_back(_compressables[i].c_str());
     }
     args.push_back((const char *) 0);
 

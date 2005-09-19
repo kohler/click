@@ -100,10 +100,10 @@ class ARPQuerier : public Element { public:
   ~ARPQuerier();
   
   const char *class_name() const		{ return "ARPQuerier"; }
+  const char *port_count() const		{ return "2/1-2"; }
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "xy/x"; }
 
-  void notify_noutputs(int);
   void add_handlers();
   
   int configure(Vector<String> &, ErrorHandler *);

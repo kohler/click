@@ -39,8 +39,7 @@ CLICK_DECLS
 
 
 ProbeRequester::ProbeRequester()
-  : Element(0, 1),
-    _rtable(0),
+  : _rtable(0),
     _winfo(0)
 {
 }
@@ -202,8 +201,6 @@ ProbeRequester_write_param(const String &in_s, Element *e, void *vparam,
 void
 ProbeRequester::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", ProbeRequester_read_param, (void *) H_DEBUG);
   add_read_handler("eth", ProbeRequester_read_param, (void *) H_ETH);
 

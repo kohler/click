@@ -23,7 +23,7 @@
 #include "ackresponder2.hh"
 CLICK_DECLS
 
-ACKResponder2::ACKResponder2() : Element(1, 2)
+ACKResponder2::ACKResponder2()
 {
 }
 

@@ -29,8 +29,7 @@ CLICK_DECLS
 #define PROBE_MAX_RETRIES 6
 
 ProbeTXRate::ProbeTXRate()
-  : Element(2, 1),
-    _offset(0),
+  : _offset(0),
     _packet_size_threshold(0),
     _rate_window_ms(0),
     _rtable(0)
@@ -44,11 +43,6 @@ ProbeTXRate::~ProbeTXRate()
 {
 }
 
-void
-ProbeTXRate::notify_noutputs(int n)
-{
-  set_noutputs(n <= 2 ? n : 1);
-}
 int
 ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -166,7 +160,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     if (_debug) {
       click_chatter("%{element}: discarding bcast %s\n",
 		    this,
-		    dst.s().cc());
+		    dst.s().c_str());
     }
     return;
   }
@@ -176,7 +170,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     if (_debug) {
           click_chatter("%{element} no rate set for %s\n",
 			this,
-			dst.s().cc());
+			dst.s().c_str());
     }
     return;
   }
@@ -190,7 +184,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     if (_debug) {
           click_chatter("%{element} short success for %s\n",
 			this,
-			dst.s().cc());
+			dst.s().c_str());
     }
     return;
   }
@@ -200,7 +194,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     if (_debug) {
           click_chatter("%{element} no info for %s\n",
 			this,
-			dst.s().cc());
+			dst.s().c_str());
     }
     return;
   }
@@ -208,7 +202,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   if (!success && _debug) {
     click_chatter("%{element} packet failed %s retries %d rate %d alt %d\n",
 		  this,
-		  dst.s().cc(),
+		  dst.s().c_str(),
 		  retries,
 		  ceh->rate,
 		  ceh->rate1);
@@ -362,8 +356,6 @@ ProbeTXRate_write_param(const String &in_s, Element *e, void *vparam,
 void
 ProbeTXRate::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", ProbeTXRate_read_param, (void *) H_DEBUG);
   add_read_handler("rates", ProbeTXRate_read_param, (void *) H_RATES);
   add_read_handler("threshold", ProbeTXRate_read_param, (void *) H_THRESHOLD);

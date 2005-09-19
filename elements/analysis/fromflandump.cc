@@ -42,7 +42,7 @@
 	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
 FromFlanDump::FromFlanDump()
-    : Element(0, 1), _task(this)
+    : _task(this)
 {
     for (int i = 0; i < FF_LAST; i++)
 	_ff[i] = 0;
@@ -113,20 +113,20 @@ FromFlanDump::FlanFile::open(const String &basename, const String &filename, int
     path += filename;
 
     // look for compressed versions
-    if (access(path.cc(), R_OK) >= 0) {
-	_fd = open(path.cc(), O_RDONLY);
+    if (access(path.c_str(), R_OK) >= 0) {
+	_fd = open(path.c_str(), O_RDONLY);
 	if (_fd < 0)
-	    return errh->error("%s: %s", path.cc(), strerror(errno));
-    } else if (access((path + ".gz").cc(), R_OK) >= 0) {
+	    return errh->error("%s: %s", path.c_str(), strerror(errno));
+    } else if (access((path + ".gz").c_str(), R_OK) >= 0) {
 	char buf[3] = "\037\213";
 	_pipe = open_uncompress_pipe(path + ".gz", (unsigned char *)buf, 2, errh);
 	return (_fd = (_pipe ? fileno(_pipe) : -1));
-    } else if (access((path + ".bz2").cc(), R_OK) >= 0) {
+    } else if (access((path + ".bz2").c_str(), R_OK) >= 0) {
 	char buf[3] = "BZh";
 	_pipe = open_uncompress_pipe(path + ".bz2", (unsigned char *)buf, 3, errh);
 	return (_fd = (_pipe ? fileno(_pipe) : -1));
     } else
-	return errh->error("%s: no such file", path.cc());
+	return errh->error("%s: no such file", path.c_str());
 }
 
 int
@@ -163,9 +163,9 @@ int
 FromFlanDump::error_helper(ErrorHandler *errh, const char *x)
 {
     if (errh)
-	errh->error("%s: %s", _dirname.cc(), x);
+	errh->error("%s: %s", _dirname.c_str(), x);
     else
-	click_chatter("%s: %s", declaration().cc(), x);
+	click_chatter("%s: %s", declaration().c_str(), x);
     return -1;
 }
 
@@ -177,9 +177,9 @@ FromFlanDump::initialize(ErrorHandler *errh)
 	_fd = STDIN_FILENO;
 	_filename = "<stdin>";
     } else
-	_fd = open(_filename.cc(), O_RDONLY);
+	_fd = open(_filename.c_str(), O_RDONLY);
     if (_fd < 0)
-	return errh->error("%s: %s", _filename.cc(), strerror(errno));
+	return errh->error("%s: %s", _filename.c_str(), strerror(errno));
 
   retry_file:
 #ifdef ALLOW_MMAP
@@ -190,7 +190,7 @@ FromFlanDump::initialize(ErrorHandler *errh)
     if (result < 0)
 	return -1;
     else if (result == 0)
-	return errh->error("%s: empty file", _filename.cc());
+	return errh->error("%s: empty file", _filename.c_str());
 
     // check for a gziped or bzip2d dump
     if (_fd == STDIN_FILENO || _pipe)
@@ -209,7 +209,7 @@ FromFlanDump::initialize(ErrorHandler *errh)
     // if forcing IP packets, check datalink type to ensure we understand it
     if (_force_ip) {
 	if (!fake_pcap_dlt_force_ipable(_linktype))
-	    return errh->error("%s: unknown linktype %d; can't force IP packets", _filename.cc(), _linktype);
+	    return errh->error("%s: unknown linktype %d; can't force IP packets", _filename.c_str(), _linktype);
 	if (_timing)
 	    return errh->error("FORCE_IP and TIMING options are incompatible");
     }

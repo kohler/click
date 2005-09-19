@@ -177,10 +177,10 @@ class FromDump : public Element { public:
     ~FromDump();
 
     const char *class_name() const		{ return "FromDump"; }
+    const char *port_count() const		{ return "0/1-2"; }
     const char *processing() const		{ return "a/ah"; }
     void *cast(const char *);
 
-    void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);

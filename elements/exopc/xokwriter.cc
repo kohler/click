@@ -17,13 +17,12 @@ extern int iptable_find_if_name(const char *);
 
 
 xokWriter::xokWriter(int c)
-  : Element(1, 0), cardno(c)
+  : cardno(c)
 {
 }
 
 
 xokWriter::xokWriter(const String &ifname)
-  : Element(1, 0)
 {
   const char *name = ifname.data();
   cardno = iptable_find_if_name(name);

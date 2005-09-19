@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 B8B10::B8B10()
-  : Element(1, 1)
 {
 }
 

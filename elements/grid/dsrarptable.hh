@@ -81,6 +81,7 @@ public:
   ~DSRArpTable();
   
   const char *class_name() const	{ return "DSRArpTable"; }
+  const char *port_count() const	{ return "3/3"; }
   const char *processing() const	{ return "llh/llh"; }
   
   int configure(Vector<String> &, ErrorHandler *);

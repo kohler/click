@@ -29,8 +29,6 @@ CLICK_DECLS
 
 ProtocolTranslator46::ProtocolTranslator46()
 {
-  add_input();  /*IPv4 packets */
-  add_output(); /* IPv6 packets */
 }
 
 

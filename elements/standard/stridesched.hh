@@ -38,6 +38,7 @@ class StrideSched : public Element { public:
     ~StrideSched();
 
     const char *class_name() const		{ return "StrideSched"; }
+    const char *port_count() const		{ return "1-/1"; }
     const char *processing() const		{ return PULL; }
   
     int configure(Vector<String> &conf, ErrorHandler *);

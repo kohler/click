@@ -35,6 +35,7 @@ class SRQueryForwarder : public Element {
   ~SRQueryForwarder();
   
   const char *class_name() const		{ return "SRQueryForwarder"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "#/#"; }
   int initialize(ErrorHandler *);
@@ -71,6 +72,7 @@ class SRQueryForwarder : public Element {
       _dst = dst; 
       _seq = seq; 
       _count = 0;
+      (void) fwd, (void) rev;
     }
     Seen();
   };

@@ -25,7 +25,7 @@
 #include <clicknet/ether.h>
 CLICK_DECLS
 
-FixDstLoc::FixDstLoc() : Element(1, 1), _loctab(0)
+FixDstLoc::FixDstLoc() : _loctab(0)
 {
 }
 
@@ -47,8 +47,8 @@ FixDstLoc::initialize(ErrorHandler *errh)
 {
   if(_loctab && _loctab->cast("LocationTable") == 0){
     errh->warning("%s: LocationTable argument %s has the wrong type",
-                  id().cc(),
-                  _loctab->id().cc());
+                  id().c_str(),
+                  _loctab->id().c_str());
     _loctab = 0;
   } else if(_loctab == 0) {
     return errh->error("no LocationTable argument");
@@ -63,7 +63,7 @@ FixDstLoc::simple_action(Packet *xp)
   assert(_loctab); 
   grid_hdr *gh = (grid_hdr *) (xp->data() + sizeof(click_ether));
   if (gh->type != grid_hdr::GRID_NBR_ENCAP) {
-    click_chatter("FixDstLoc %s: not an encapsulated data packet; not modifying it\n", id().cc());
+    click_chatter("FixDstLoc %s: not an encapsulated data packet; not modifying it\n", id().c_str());
     return xp;
   }
 

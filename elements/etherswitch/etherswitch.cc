@@ -40,13 +40,6 @@ EtherSwitch::AddrInfo::AddrInfo(int p, const timeval& s)
 {
 }
 
-void
-EtherSwitch::notify_ninputs(int n)
-{
-  set_ninputs(n);
-  set_noutputs(n);
-}
-
 
 void
 EtherSwitch::broadcast(int source, Packet *p)
@@ -75,8 +68,8 @@ EtherSwitch::push(int source, Packet *p)
 #if 0
   click_chatter("Got a packet %p on %d at %d.%06d with src %s and dst %s",
 	      p, source, t.tv_sec, t.tv_usec,
-              src.s().cc(),
-              dst.s().cc());
+              src.s().c_str(),
+              dst.s().c_str());
 #endif
 
   if (AddrInfo* src_info = _table[src]) {

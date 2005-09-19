@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 QueueYankTest::QueueYankTest()
-    : Element(0, 0), _t(this)
+    : _t(this)
 {
 }
 

@@ -54,7 +54,7 @@ String print_fragids(Vector<fragid> v) {
 void bubble_sort(Vector<fragid> *v) {
 
 
-  click_chatter("%s\n", print_fragids(*v).cc());
+  click_chatter("%s\n", print_fragids(*v).c_str());
 }
 
 
@@ -86,8 +86,7 @@ FragmentResender::fix() {
 
 
 FragmentResender::FragmentResender()
-  : Element(2, 2),
-    _timer(this),
+  : _timer(this),
     _max_retries(15)
 {
 }
@@ -139,7 +138,7 @@ FragmentResender::run_timer ()
     sa << " ack_timeout";
     click_chatter("%{element} %s\n", 
 		  this,
-		  sa.take_string().cc());
+		  sa.take_string().c_str());
   }
   _send_ack = true;
 
@@ -174,7 +173,7 @@ FragmentResender::process_ack(Packet *p) {
     if (!nfo || frag > nfo->frag_status.size()) {
       click_chatter("%{element} weird fragid %s\n",
 		    this,
-		    ack.s().cc());
+		    ack.s().c_str());
       continue;
     }
     nfo->frag_status[frag] = 1;
@@ -201,7 +200,7 @@ FragmentResender::process_ack(Packet *p) {
        << max_packet_acked << " ]";
     click_chatter("%{element} %s\n", 
 		  this,
-		  sa.take_string().cc());
+		  sa.take_string().c_str());
   }
 
   fix();
@@ -247,7 +246,7 @@ FragmentResender::print_window() {
       click_chatter("%{element} print_window fuck packet %d : %s\n",
 		    this,
 		    packets[x],
-		    print_fragids(outstanding).cc());
+		    print_fragids(outstanding).c_str());
       return;
     }
     sa << "packet " << packets[x];
@@ -268,7 +267,7 @@ FragmentResender::print_window() {
 		  this,
 		  resend_index,
 		  resend_limit,
-		  sa.take_string().cc());
+		  sa.take_string().c_str());
   }
 }
 
@@ -323,7 +322,7 @@ FragmentResender::ack_request() {
        << " ackme " << (fh->flags & FRAG_ACKME);
     click_chatter("%{element} %s\n", 
 		  this,
-		  sa.take_string().cc());
+		  sa.take_string().c_str());
   }
   fh->num_frags = num_frags;
   fh->num_frags_packet = 0;
@@ -369,7 +368,7 @@ FragmentResender::do_resend() {
     if (nfo->frag_sends[frag]++ > _max_retries) {
       click_chatter("%{element} dropping frag %s\n",
 		    this,
-		    fragid(packet, frag).s().cc());
+		    fragid(packet, frag).s().c_str());
       for (int y = 0; y < outstanding.size(); y++) {
 	if (outstanding[y].packet_num == packet) {
 	  outstanding[y].mark_invalid();
@@ -417,7 +416,7 @@ FragmentResender::do_resend() {
        << max_packet_resent << " ]";
     click_chatter("%{element} %s\n", 
 		  this,
-		  sa.take_string().cc());
+		  sa.take_string().c_str());
   }
   fh->num_frags = num_frags;
   //fh->num_frags_packet = 0;
@@ -484,7 +483,7 @@ FragmentResender::pull(int port) {
     sa << " send packet  " << fh->packet_num;
     click_chatter("%{element} %s\n", 
 		  this,
-		  sa.take_string().cc());
+		  sa.take_string().c_str());
   }
 
   return p;
@@ -525,8 +524,6 @@ FragmentResender_write_param(const String &in_s, Element *e, void *vparam,
 void
 FragmentResender::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", FragmentResender_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", FragmentResender_write_param, (void *) H_DEBUG);

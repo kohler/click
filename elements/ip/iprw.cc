@@ -542,7 +542,7 @@ inline IPRw::Mapping *
 IPRw::Mapping::free_from_list(Map &map, bool notify)
 {
     // see also clear_map below
-    //click_chatter("kill %s", reverse()->flow_id().rev().s().cc());
+    //click_chatter("kill %s", reverse()->flow_id().rev().s().c_str());
     Mapping *next = _free_next;
     if (notify && _pat)
 	_pat->mapping_freed(primary());

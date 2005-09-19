@@ -29,9 +29,6 @@ ToyTCP::ToyTCP()
   : _timer(this)
 {
 
-  add_input();
-  add_output();
-
   _dport = 0;
 
   _ingood = 0;

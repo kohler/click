@@ -21,7 +21,7 @@
 CLICK_DECLS 
 
 BottleneckMetric::BottleneckMetric()
-  : GridGenericMetric(0, 0), _ls(0)
+  : _ls(0)
 {
 }
 
@@ -94,22 +94,16 @@ BottleneckMetric::append_metric(const metric_t &r, const metric_t &l) const
   
   if (r.val() > 100)
     click_chatter("BottleneckMetric %s: append_metric WARNING: metric %u%% delivery ratio is too large for route metric",
-		  id().cc(), r.val());
+		  id().c_str(), r.val());
   if (l.val() > 100)
     click_chatter("BottleneckMetric %s: append_metric WARNING: metric %u%% delivery ratio is too large for link metric",
-		  id().cc(), r.val());
+		  id().c_str(), r.val());
 
   // return min metric (bottleneck delivery ratio)
   if (r.val() < l.val())
     return r;
   else
     return l;
-}
-
-void
-BottleneckMetric::add_handlers()
-{
-  add_default_handlers(true);
 }
 
 

@@ -28,7 +28,6 @@
 CLICK_DECLS
 
 TCPIPSend::TCPIPSend()
-  : Element(0, 1)
 {
 }
 

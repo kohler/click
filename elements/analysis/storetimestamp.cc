@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 StoreTimestamp::StoreTimestamp()
-    : Element(1, 1)
 {
 }
 

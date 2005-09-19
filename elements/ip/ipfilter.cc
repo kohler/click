@@ -219,7 +219,7 @@ IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, uint32_t provided_m
 	if ((_op == OP_LT && (data == 0 || data > this_mask))
 	    || (_op == OP_GT && data >= this_mask)) {
 	    bool will_be = (_op == OP_LT && data > this_mask ? !_op_negated : _op_negated);
-	    errh->warning("relation '%s %u' is always %s (range 0-%u)", unparse_op().cc(), data, (will_be ? "true" : "false"), this_mask);
+	    errh->warning("relation '%s %u' is always %s (range 0-%u)", unparse_op().c_str(), data, (will_be ? "true" : "false"), this_mask);
 	    _u.u = _mask.u = 0;
 	    _op_negated = !will_be;
 	    _op = OP_EQ;
@@ -403,7 +403,7 @@ IPFilter::Primitive::check(const Primitive &p, uint32_t provided_mask, ErrorHand
 	if ((_type & FIELD_PROTO_MASK) && _transp_proto == UNKNOWN)
 	  _transp_proto = (_type & FIELD_PROTO_MASK) >> FIELD_PROTO_SHIFT;
       } else
-	return errh->error("unknown type '%s'", unparse_type(0, _data).cc());
+	return errh->error("unknown type '%s'", unparse_type(0, _data).c_str());
       break;
 
     }
@@ -733,12 +733,6 @@ separate_text(const String &text, Vector<String> &words)
   }
 }
 
-void
-IPFilter::notify_noutputs(int n)
-{
-  set_noutputs(n);
-}
-
 /*
  * expr ::= orexpr
  *	|   orexpr ? expr : expr
@@ -1048,13 +1042,13 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
 
     else {
       if (prim._op != OP_EQ || prim._op_negated)
-	errh->error("dangling operator near '%s'", wd.cc());
+	errh->error("dangling operator near '%s'", wd.c_str());
       pos--;
     }
   }
 
   if (pos == first_pos) {
-    errh->error("empty term near '%s'", wd.cc());
+    errh->error("empty term near '%s'", wd.c_str());
     return pos;
   }
   
@@ -1115,7 +1109,7 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	  slot = noutputs();
 	}
       } else
-	cerrh.error("unknown slot ID '%s'", slotwd.cc());
+	cerrh.error("unknown slot ID '%s'", slotwd.c_str());
     }
 
     start_expr_subtree(tree);
@@ -1140,9 +1134,9 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 
   finish_expr_subtree(tree, C_OR, -noutputs(), -noutputs());
   
-  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
+  //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   optimize_exprs(errh);
-  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
+  //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   return (errh->nerrors() == before_nerrors ? 0 : -1);
 }
 

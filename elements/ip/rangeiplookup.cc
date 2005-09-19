@@ -29,18 +29,11 @@ CLICK_DECLS
 RangeIPLookup::RangeIPLookup()
     : _active(0)
 {
-    add_input();
     flush_table();
 }
 
 RangeIPLookup::~RangeIPLookup()
 {
-}
-
-void
-RangeIPLookup::notify_noutputs(int n)
-{
-    set_noutputs(n);
 }
 
 int

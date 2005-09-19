@@ -53,17 +53,17 @@ int
 AnyDevice::find_device(bool allow_nonexistent, AnyDeviceMap *adm,
                        ErrorHandler *errh)
 {
-    _dev = ifunit((char *) _devname.cc());
+    _dev = ifunit((char *) _devname.c_str());
     if (!_dev)
 	_dev = find_device_by_ether_address(_devname, this);
     if (!_dev) {
 	if (!allow_nonexistent)
-	    return errh->error("unknown device `%s'", _devname.cc());
+	    return errh->error("unknown device `%s'", _devname.c_str());
 	else
-	    errh->warning("unknown device `%s'", _devname.cc());
+	    errh->warning("unknown device `%s'", _devname.c_str());
     }
     if (_dev && !(_dev->if_flags & IFF_UP)) {
-	errh->warning("device `%s' is down", _devname.cc());
+	errh->warning("device `%s' is down", _devname.c_str());
 	_dev = 0;
     }
 

@@ -10,7 +10,6 @@
 CLICK_DECLS
 
 CopyRXStats::CopyRXStats()
-  : Element(1, 1)
 {
 }
 

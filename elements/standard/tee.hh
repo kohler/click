@@ -17,9 +17,9 @@ CLICK_DECLS
  * Each time the pull output pulls a packet, it
  * sends a copy out the push outputs.
  *
- * By default, Tee and PullTee have an unlimited number of outputs,
- * but you can set a specific number of outputs by giving the optional
- * argument N.
+ * Tee and PullTee have however many outputs are used in the configuration,
+ * but you can say how many outputs you expect with the optional argument
+ * N.
  */
 
 class Tee : public Element {
@@ -30,9 +30,9 @@ class Tee : public Element {
   ~Tee();
   
   const char *class_name() const		{ return "Tee"; }
+  const char *port_count() const		{ return "1/1-"; }
   const char *processing() const		{ return PUSH; }
   
-  void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
   
   void push(int, Packet *);
@@ -47,9 +47,9 @@ class PullTee : public Element {
   ~PullTee();
   
   const char *class_name() const		{ return "PullTee"; }
+  const char *port_count() const		{ return "1/1-"; }
   const char *processing() const		{ return "l/lh"; }
   
-  void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *pull(int);

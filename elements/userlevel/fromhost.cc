@@ -37,8 +37,7 @@
 CLICK_DECLS
 
 FromHost::FromHost()
-  : Element(0, 1), 
-    _fd(-1),
+  : _fd(-1),
     _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
     _task(this)
 {
@@ -91,12 +90,12 @@ FromHost::try_linux_universal(ErrorHandler *errh)
      * setting ifr_name this allows us to select an aribitrary 
      * interface name. 
      */
-    strcpy(ifr.ifr_name, _dev_name.cc());
+    strcpy(ifr.ifr_name, _dev_name.c_str());
 
     int err = ioctl(fd, TUNSETIFF, (void *)&ifr);
     if (err < 0) {
 	errh->warning("Linux universal tun failed for %s: %s", 
-		      _dev_name.cc(),
+		      _dev_name.c_str(),
 		      strerror(errno));
 	close(fd);
 	return -errno;
@@ -113,22 +112,22 @@ FromHost::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *errh
     char tmp[512], tmp0[64], tmp1[64];
 
     if (_macaddr) {
-	sprintf(tmp, "/sbin/ifconfig %s hw ether %s", _dev_name.cc(),
-		_macaddr.s().cc());
+	sprintf(tmp, "/sbin/ifconfig %s hw ether %s", _dev_name.c_str(),
+		_macaddr.s().c_str());
 	if (system(tmp) != 0) {
 	    errh->error("%s: %s", tmp, strerror(errno));
 	}
 	
-	sprintf(tmp, "/sbin/ifconfig %s arp", _dev_name.cc());
+	sprintf(tmp, "/sbin/ifconfig %s arp", _dev_name.c_str());
 	if (system(tmp) != 0) 
 	    return errh->error("%s: couldn't set arp flags: %s", tmp, strerror(errno));
     }
     
     strcpy(tmp0, inet_ntoa(near));
     strcpy(tmp1, inet_ntoa(mask));
-    sprintf(tmp, "/sbin/ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.cc(), tmp0, tmp1);
+    sprintf(tmp, "/sbin/ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.c_str(), tmp0, tmp1);
     if (system(tmp) != 0) {
-	return errh->error("%s: `%s' failed\n(Perhaps Ethertap is in a kernel module that you haven't loaded yet?)", _dev_name.cc(), tmp);
+	return errh->error("%s: `%s' failed\n(Perhaps Ethertap is in a kernel module that you haven't loaded yet?)", _dev_name.c_str(), tmp);
     }
     
     // calculate maximum packet size needed to receive data from
@@ -141,8 +140,8 @@ void
 FromHost::dealloc_tun()
 {
     String cmd = "/sbin/ifconfig " + _dev_name + " down";
-    if (system(cmd.cc()) != 0) 
-	click_chatter("%s: failed: %s", id().cc(), cmd.cc());
+    if (system(cmd.c_str()) != 0) 
+	click_chatter("%s: failed: %s", id().c_str(), cmd.c_str());
 }
 
 int

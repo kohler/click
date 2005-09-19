@@ -22,7 +22,6 @@
 CLICK_DECLS
 
 Pad::Pad()
-    : Element(1, 1)
 {
 }
 

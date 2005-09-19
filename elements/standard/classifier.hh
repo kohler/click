@@ -79,6 +79,7 @@ class Classifier : public Element { public:
   ~Classifier();
   
   const char *class_name() const		{ return "Classifier"; }
+  const char *port_count() const		{ return "1/-"; }
   const char *processing() const		{ return PUSH; }
   
   int configure(Vector<String> &, ErrorHandler *);

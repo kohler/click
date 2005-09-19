@@ -29,9 +29,9 @@ class FilterPhyErr : public Element { public:
   ~FilterPhyErr();
   
   const char *class_name() const		{ return "FilterPhyErr"; }
+  const char *port_count() const		{ return "1/1-3"; }
   const char *processing() const		{ return "a/ah"; }
 
-  void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
 
   void add_handlers();

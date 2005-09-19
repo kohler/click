@@ -27,7 +27,7 @@
 CLICK_DECLS
 
 ACKRetrySender2::ACKRetrySender2() 
-  : Element(2, 1), _timeout(0), _max_tries(0), 
+  : _timeout(0), _max_tries(0), 
     _num_tries(0), _history_length(500), _waiting_packet(0), 
     _verbose (true), _timer(this), _task(this),
     sum_tx(0), num_pkts(0), num_fail(0),
@@ -48,7 +48,7 @@ ACKRetrySender2::push(int port, Packet *p)
   if (!_waiting_packet) {
     // we aren't waiting for ACK
     if (_verbose)
-      click_chatter("ACKRetrySender2 %s: got unexpected ACK", id().cc());
+      click_chatter("ACKRetrySender2 %s: got unexpected ACK", id().c_str());
     p->kill();
     return;
   }
@@ -59,7 +59,7 @@ ACKRetrySender2::push(int port, Packet *p)
   if (dst != _ip) {
     // no, it wasn't for our packet...
     if (_verbose)
-      click_chatter("ACKRetrySender2 %s: got ACK for wrong packet", id().cc());
+      click_chatter("ACKRetrySender2 %s: got ACK for wrong packet", id().c_str());
     p->kill();
     return;
   }
@@ -191,7 +191,6 @@ ACKRetrySender2::check()
 void
 ACKRetrySender2::add_handlers()
 {
-  add_default_handlers(false);
   add_read_handler("history", print_history, 0);
   add_read_handler("summary", print_summary, 0);
   add_write_handler("clear", clear_history, 0);

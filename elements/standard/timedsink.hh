@@ -26,6 +26,7 @@ class TimedSink : public Element {
   ~TimedSink();
   
   const char *class_name() const		{ return "TimedSink"; }
+  const char *port_count() const		{ return PORTS_1_0; }
   const char *processing() const		{ return PULL; }
   
   int configure(Vector<String> &, ErrorHandler *);

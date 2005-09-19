@@ -993,15 +993,15 @@ RouterT::expand_tunnel(Vector<PortT> *port_expansions,
 	if (in_name + "/input" == out_name) {
 	    const char *message = (is_output ? "'%s' input %d unused"
 				   : "'%s' has no input %d");
-	    errh->lerror(in_elt->landmark(), message, in_name.cc(), me.port);
+	    errh->lerror(in_elt->landmark(), message, in_name.c_str(), me.port);
 	} else if (in_name == out_name + "/output") {
 	    const char *message = (is_output ? "'%s' has no output %d"
 				   : "'%s' output %d unused");
-	    errh->lerror(out_elt->landmark(), message, out_name.cc(), me.port);
+	    errh->lerror(out_elt->landmark(), message, out_name.c_str(), me.port);
 	} else {
 	    errh->lerror(other_elt->landmark(),
 			 "tunnel '%s -> %s' %s %d unused",
-			 in_name.cc(), out_name.cc(),
+			 in_name.c_str(), out_name.c_str(),
 			 (is_output ? "input" : "output"), me.port);
 	}
     }
@@ -1112,15 +1112,15 @@ void
 RouterT::flatten(ErrorHandler *errh)
 {
     check();
-    //String s = configuration_string(); fprintf(stderr, "1.\n%s\n\n", s.cc());
+    //String s = configuration_string(); fprintf(stderr, "1.\n%s\n\n", s.c_str());
     remove_compound_elements(errh);
-    //s = configuration_string(); fprintf(stderr, "2.\n%s\n\n", s.cc());
+    //s = configuration_string(); fprintf(stderr, "2.\n%s\n\n", s.c_str());
     remove_tunnels(errh);
-    //s = configuration_string(); fprintf(stderr, "3.\n%s\n\n", s.cc());
+    //s = configuration_string(); fprintf(stderr, "3.\n%s\n\n", s.c_str());
     remove_dead_elements();
-    //s = configuration_string(); fprintf(stderr, "4.\n%s\n\n", s.cc());
+    //s = configuration_string(); fprintf(stderr, "4.\n%s\n\n", s.c_str());
     compact_connections();
-    //s = configuration_string(); fprintf(stderr, "5.\n%s\n\n", s.cc());
+    //s = configuration_string(); fprintf(stderr, "5.\n%s\n\n", s.c_str());
     _declared_type_map.clear();
     _declared_types.clear();
     check();

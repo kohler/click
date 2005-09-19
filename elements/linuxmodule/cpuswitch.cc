@@ -19,17 +19,10 @@
 
 CPUSwitch::CPUSwitch()
 {
-  set_ninputs(1);
 }
 
 CPUSwitch::~CPUSwitch()
 {
-}
-
-void
-CPUSwitch::notify_noutputs(int i)
-{
-  set_noutputs(i < 1 ? 1 : i);
 }
 
 int

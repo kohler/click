@@ -29,7 +29,7 @@
 CLICK_DECLS
 
 ICMPError::ICMPError()
-  : Element(1, 1), _type(-1), _code(-1)
+  : _type(-1), _code(-1)
 {
 }
 

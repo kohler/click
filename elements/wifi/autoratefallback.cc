@@ -33,8 +33,7 @@ CLICK_DECLS
 
 
 AutoRateFallback::AutoRateFallback()
-  : Element(2, 1),
-    _stepup(10),
+  : _stepup(10),
     _stepdown(1),
     _offset(0),
     _packet_size_threshold(0)
@@ -47,12 +46,6 @@ AutoRateFallback::AutoRateFallback()
 
 AutoRateFallback::~AutoRateFallback()
 {
-}
-
-void
-AutoRateFallback::notify_noutputs(int n)
-{
-  set_noutputs(n <= 2 ? n : 1);
 }
 
 int
@@ -127,7 +120,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
     if (_debug) {
       click_chatter("%{element} stepping down for %s from %d to %d\n",
 		    this,
-		    nfo->_eth.s().cc(),
+		    nfo->_eth.s().c_str(),
 		    nfo->_rates[nfo->_current_index],
 		    nfo->_rates[next_index]);
     }
@@ -164,7 +157,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
     if (_debug) {
       click_chatter("%{element} steping up for %s from %d to %d\n",
 		    this,
-		    nfo->_eth.s().cc(),
+		    nfo->_eth.s().c_str(),
 		    nfo->_rates[nfo->_current_index],
 		    nfo->_rates[min(nfo->_rates.size() - 1, 
 				    nfo->_current_index + 1)]);
@@ -214,7 +207,7 @@ AutoRateFallback::assign_rate(Packet *p_in)
     if (_debug) {
       click_chatter("%{element} initial rate for %s is %d\n",
 		    this,
-		    nfo->_eth.s().cc(),
+		    nfo->_eth.s().c_str(),
 		    nfo->_rates[nfo->_current_index]);
     }
   }
@@ -365,8 +358,6 @@ AutoRateFallback_write_param(const String &in_s, Element *e, void *vparam,
 void
 AutoRateFallback::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", AutoRateFallback_read_param, (void *) H_DEBUG);
   add_read_handler("rates", AutoRateFallback_read_param, (void *) H_RATES);
   add_read_handler("threshold", AutoRateFallback_read_param, (void *) H_THRESHOLD);

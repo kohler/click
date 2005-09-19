@@ -8,7 +8,6 @@
 #include <click/packet_anno.hh>
 
 AggregateLength::AggregateLength()
-    : Element(1, 1)
 {
 }
 

@@ -25,17 +25,10 @@ CLICK_DECLS
 HashSwitch::HashSwitch()
   : _offset(-1)
 {
-  set_ninputs(1);
 }
 
 HashSwitch::~HashSwitch()
 {
-}
-
-void
-HashSwitch::notify_noutputs(int i)
-{
-  set_noutputs(i < 1 ? 1 : i);
 }
 
 int

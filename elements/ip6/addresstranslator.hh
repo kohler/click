@@ -75,6 +75,7 @@ class AddressTranslator : public Element {
   ~AddressTranslator();
   
   const char *class_name() const		{ return "AddressTranslator"; }
+  const char *port_count() const		{ return "2/2"; }
   const char *processing() const	{ return AGNOSTIC; }
   int configure(Vector<String> &, ErrorHandler *);
   void push(int port, Packet *p);

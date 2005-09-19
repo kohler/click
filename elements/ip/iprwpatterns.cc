@@ -48,7 +48,7 @@ IPRewriterPatterns::configure(Vector<String> &conf, ErrorHandler *errh)
     cp_eat_space(rest);
 
     if (_name_map[word] >= 0) {
-      errh->error("pattern name `%s' has already been defined", word.cc());
+      errh->error("pattern name `%s' has already been defined", word.c_str());
       continue;
     }
 

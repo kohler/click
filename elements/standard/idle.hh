@@ -23,11 +23,10 @@ class Idle : public Element, public Notifier { public:
   ~Idle();
   
   const char *class_name() const	{ return "Idle"; }
+  const char *port_count() const	{ return "-/-"; }
   const char *processing() const	{ return "a/a"; }
   const char *flow_code() const		{ return "x/y"; }
   void *cast(const char *);
-  void notify_ninputs(int);
-  void notify_noutputs(int);
   const char *flags() const		{ return "S0"; }
   NotifierSignal notifier_signal();
   

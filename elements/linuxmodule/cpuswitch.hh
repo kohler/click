@@ -22,8 +22,8 @@ class CPUSwitch : public Element {
   ~CPUSwitch();
   
   const char *class_name() const		{ return "CPUSwitch"; }
+  const char *port_count() const		{ return "1/1-"; }
   const char *processing() const		{ return PUSH; }
-  void notify_noutputs(int);
   
   int configure(Vector<String> &, ErrorHandler *);
   

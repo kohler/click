@@ -25,7 +25,7 @@
 CLICK_DECLS
 
 BufferConverter::BufferConverter()
-  : Element(2, 1), _timer(this)
+  : _timer(this)
 {
 }
 
@@ -96,13 +96,13 @@ BufferConverter::oput(const String &s)
 
   unsigned char *data = q->data() + sizeof(*ip) + sizeof(*tcp);
   if (_obuf.length() > _mtu) {
-    memmove(data, _obuf.cc(), _mtu);
+    memmove(data, _obuf.c_str(), _mtu);
     _obuf = _obuf.substring(_mtu, _obuf.length()-_mtu);
     dlen -= _mtu;
     data += _mtu;
   } 
   else if (_obuf.length() > 0) {
-    memmove(data, _obuf.cc(), _obuf.length());
+    memmove(data, _obuf.c_str(), _obuf.length());
     dlen -= _obuf.length();
     data += _obuf.length();
     _obuf = "";

@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 SetIPDSCP::SetIPDSCP()
-  : Element(1, 1)
 {
 }
 

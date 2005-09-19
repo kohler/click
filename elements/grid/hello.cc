@@ -25,7 +25,7 @@
 CLICK_DECLS
 
 SendGridHello::SendGridHello()
-  : Element(0, 1), _timer(this)
+  : _timer(this)
 {
 }
 
@@ -85,7 +85,7 @@ SendGridHello::make_hello()
 
   WritablePacket *p = Packet::make(psz + 2); // for alignment
   if (p == 0) {
-    click_chatter("in %s: cannot make packet!", id().cc());
+    click_chatter("in %s: cannot make packet!", id().c_str());
     assert(0);
   } 
   ASSERT_ALIGNED(p->data());

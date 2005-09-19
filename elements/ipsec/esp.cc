@@ -28,14 +28,12 @@
 CLICK_DECLS
 
 IPsecESPEncap::IPsecESPEncap()
-  : Element(1, 1), _spi(-1)
+  : _spi(-1)
 {
 }
 
 IPsecESPEncap::IPsecESPEncap(int spi)
 {
-  add_input();
-  add_output();
   _spi = spi;
 }
 

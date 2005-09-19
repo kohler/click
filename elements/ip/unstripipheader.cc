@@ -21,7 +21,6 @@
 CLICK_DECLS
 
 UnstripIPHeader::UnstripIPHeader()
-  : Element(1, 1)
 {
 }
 

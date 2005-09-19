@@ -96,19 +96,12 @@ RadixIPLookup::Radix::change(uint32_t addr, uint32_t naddr, int key, uint32_t ke
 RadixIPLookup::RadixIPLookup()
     : _vfree(-1), _default_key(-1), _radix(Radix::make_radix(24, 256))
 {
-    add_input();
 }
 
 RadixIPLookup::~RadixIPLookup()
 {
 }
 
-
-void
-RadixIPLookup::notify_noutputs(int n)
-{
-    set_noutputs(n);
-}
 
 void
 RadixIPLookup::cleanup(CleanupStage)

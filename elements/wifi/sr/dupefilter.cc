@@ -30,8 +30,7 @@
 CLICK_DECLS
 
 DupeFilter::DupeFilter()
-  : Element(1, 1),
-    _window(10),
+  : _window(10),
     _debug(0)
 {
 }
@@ -76,7 +75,7 @@ DupeFilter::simple_action(Packet *p_in)
       click_chatter("%{element}: reset seq %d path %s\n",
 		    this,
 		    seq,
-		    path_to_string(p).cc());
+		    path_to_string(p).c_str());
     }
     nfo->clear();
   }
@@ -88,7 +87,7 @@ DupeFilter::simple_action(Packet *p_in)
 	click_chatter("%{element}: dup seq %d path %s\n",
 		      this,
 		      seq,
-		      path_to_string(p).cc());
+		      path_to_string(p).c_str());
       }
       nfo->_dupes++;
       p_in->kill();
@@ -159,7 +158,6 @@ DupeFilter::static_write_debug(const String &arg, Element *e,
 void
 DupeFilter::add_handlers() 
 {
-  add_default_handlers(true);
   add_read_handler("stats", static_read_stats, 0);
   add_read_handler("debug", static_read_debug, 0);
   add_write_handler("debug", static_write_debug, 0);

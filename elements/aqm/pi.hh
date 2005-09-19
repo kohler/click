@@ -13,13 +13,13 @@ class PI : public Element { public:
     ~PI();
 
     const char *class_name() const		{ return "PI"; }
+    const char *port_count() const		{ return "1/1-2"; }
     const char *processing() const		{ return "a/ah"; }
 
     int queue_size() const;
     const DirectEWMA64 &average_queue_size() const { return _size; }
     int drops() const				{ return _drops; }
 
-    void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);
     int check_params(double, double, double, unsigned, unsigned, ErrorHandler *) const ;
     int initialize(ErrorHandler *);

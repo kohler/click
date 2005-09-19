@@ -11,19 +11,12 @@ CLICK_DECLS
 
 
 FilterFailures::FilterFailures()
-  : Element(1, 1),
-    _drops(0)
+  : _drops(0)
 {
 }
 
 FilterFailures::~FilterFailures()
 {
-}
-
-void
-FilterFailures::notify_noutputs(int n) 
-{
-  set_noutputs((n > 3 || n < 1) ? 1 : n);
 }
 
 int

@@ -26,7 +26,6 @@
 CLICK_DECLS
 
 CountFecBytes::CountFecBytes()
-  : Element(1,1)
 {
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
@@ -143,7 +142,6 @@ CountFecBytes_read_param(Element *e, void *thunk)
 void
 CountFecBytes::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("byte_count", CountFecBytes_read_param, (void *) H_BYTES);
 
 }

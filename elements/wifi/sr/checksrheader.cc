@@ -33,8 +33,6 @@ CLICK_DECLS
 CheckSRHeader::CheckSRHeader()
   : _drops(0)
 {
-  add_input();
-  add_output();
 }
 
 CheckSRHeader::~CheckSRHeader()
@@ -42,16 +40,10 @@ CheckSRHeader::~CheckSRHeader()
 }
 
 void
-CheckSRHeader::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
-}
-
-void
 CheckSRHeader::drop_it(Packet *p)
 {
   if (_drops == 0)
-    click_chatter("CheckSRHeader %s: first drop", id().cc());
+    click_chatter("CheckSRHeader %s: first drop", id().c_str());
   _drops++;
   
   if (noutputs() == 2)
@@ -71,7 +63,7 @@ CheckSRHeader::simple_action(Packet *p)
     goto bad;
 
   if (p->length() < sizeof(struct srpacket)) { 
-    click_chatter("%s: packet truncated", id().cc());
+    click_chatter("%s: packet truncated", id().c_str());
     goto bad;
   }
 
@@ -89,9 +81,9 @@ CheckSRHeader::simple_action(Packet *p)
     if (!version_warning) {
       version_warning = true;
       click_chatter ("%s: unknown sr version %x from %s", 
-		     id().cc(), 
+		     id().c_str(), 
 		     pk->_version,
-		     EtherAddress(eh->ether_shost).s().cc());
+		     EtherAddress(eh->ether_shost).s().c_str());
     }
 
      
@@ -101,22 +93,22 @@ CheckSRHeader::simple_action(Packet *p)
   if (tlen > p->length()) { 
     /* can only check inequality, as short packets are padded to a
        minimum frame size for wavelan and ethernet */
-    click_chatter("%s: bad packet size, wanted %d, only got %d", id().cc(),
+    click_chatter("%s: bad packet size, wanted %d, only got %d", id().c_str(),
 		  tlen + sizeof(click_ether), p->length());
     goto bad;
   }
 
   if (click_in_cksum((unsigned char *) pk, tlen) != 0) {
-    click_chatter("%s: bad SR checksum", id().cc());
-    click_chatter("%s: length: %d, cksum: 0x%.4x", id().cc(), tlen, (unsigned long) ntohs(pk->_cksum));
+    click_chatter("%s: bad SR checksum", id().c_str());
+    click_chatter("%s: length: %d, cksum: 0x%.4x", id().c_str(), tlen, (unsigned long) ntohs(pk->_cksum));
     goto bad;
   }
 
 
   if (pk->next() > pk->num_links()){
     click_chatter("%s: data with bad next hop from %s\n", 
-		  id().cc(),
-		  pk->get_link_node(0).s().cc());
+		  id().c_str(),
+		  pk->get_link_node(0).s().c_str());
     goto bad;
   }
 
@@ -139,7 +131,7 @@ CheckSRHeader::bad_nodes() {
   for (BadTable::const_iterator i = _bad_table.begin(); i; i++) {
     uint8_t version = i.value();
     EtherAddress dst = i.key();
-    sa << this << " eth " << dst.s().cc() << " version " << (int) version << "\n";
+    sa << this << " eth " << dst.s().c_str() << " version " << (int) version << "\n";
   }
 
   return sa.take_string();

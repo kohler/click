@@ -49,7 +49,6 @@ hashcode(const AggregateIPAddrPair::HostPair &a)
 // actual AggregateIPAddrPair operations
 
 AggregateIPAddrPair::AggregateIPAddrPair()
-    : Element(1, 1)
 {
 }
 

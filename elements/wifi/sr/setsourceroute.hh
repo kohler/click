@@ -53,8 +53,8 @@ class SetSourceRoute : public Element {
   ~SetSourceRoute();
   
   const char *class_name() const		{ return "SetSourceRoute"; }
+  const char *port_count() const		{ return "1/1-2"; }
   const char *processing() const		{ return AGNOSTIC; }
-  void notify_noutputs(int);
 
   int initialize(ErrorHandler *);
   int configure(Vector<String> &conf, ErrorHandler *errh);

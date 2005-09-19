@@ -26,7 +26,6 @@ CLICK_DECLS
 
 
 PushAnno::PushAnno()
-  : Element(1, 1)
 {
 }
 

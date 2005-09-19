@@ -45,18 +45,6 @@ Idle::notifier_signal()
 }
 
 void
-Idle::notify_ninputs(int n)
-{
-  set_ninputs(n);
-}
-
-void
-Idle::notify_noutputs(int n)
-{
-  set_noutputs(n);
-}
-
-void
 Idle::push(int, Packet *p)
 {
   p->kill();

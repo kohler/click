@@ -26,7 +26,6 @@
 CLICK_DECLS
 
 TCPDemux::TCPDemux()
-  : Element(1, 1)
 {
 }
 

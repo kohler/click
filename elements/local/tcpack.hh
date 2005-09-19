@@ -65,6 +65,7 @@ public:
   ~TCPAck();
   
   const char *class_name() const		{ return "TCPAck"; }
+  const char *port_count() const		{ return "2/3"; }
   const char *processing() const		{ return "aa/aah"; }
 
   int initialize(ErrorHandler *);

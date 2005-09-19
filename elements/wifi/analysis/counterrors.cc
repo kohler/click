@@ -26,7 +26,6 @@
 CLICK_DECLS
 
 CountErrors::CountErrors()
-  : Element(1,1)
 {
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
@@ -119,7 +118,7 @@ CountErrors::push (int port, Packet *p_in)
   sa << "ok_bytes " << ok_bytes << "\n";
   sa << "errors " << errors << "\n";
   sa << "bad_runs " << bad_runs << "\n";
-  click_chatter("%s", sa.take_string().cc());
+  click_chatter("%s", sa.take_string().c_str());
 
   output(port).push(p_in);
   return;
@@ -143,7 +142,6 @@ CountErrors_read_param(Element *e, void *thunk)
 void
 CountErrors::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("error_bytes", CountErrors_read_param, (void *) H_ERROR_BYTES);
   add_read_handler("correct_bytes", CountErrors_read_param, (void *) H_CORRECT_BYTES);
 

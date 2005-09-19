@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 Align::Align()
-  : Element(1, 1)
 {
 }
 

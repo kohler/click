@@ -54,6 +54,7 @@ class ComparePackets : public Element { public:
     ~ComparePackets();
 
     const char *class_name() const		{ return "ComparePackets"; }
+    const char *port_count() const		{ return "2/2"; }
     const char *processing() const		{ return PULL; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

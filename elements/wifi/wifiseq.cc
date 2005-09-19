@@ -29,7 +29,6 @@ CLICK_DECLS
 
 
 WifiSeq::WifiSeq()
-  : Element(1, 1)
 {
 }
 
@@ -143,8 +142,6 @@ WifiSeq::write_param(const String &in_s, Element *e, void *vparam,
 void
 WifiSeq::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", read_param, (void *) H_DEBUG);
   add_read_handler("seq", read_param, (void *) H_SEQ);
   add_read_handler("offset", read_param, (void *) H_OFFSET);

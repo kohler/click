@@ -24,7 +24,7 @@
 CLICK_DECLS
 
 TimedSource::TimedSource()
-  : Element(0, 1), _packet(0), _timer(this)
+  : _packet(0), _timer(this)
 {
 }
 

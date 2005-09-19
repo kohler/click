@@ -14,9 +14,8 @@ public:
   ~EtherSpanTree();
   
   const char *class_name() const		{ return "EtherSpanTree"; }
+  const char *port_count() const		{ return "-/="; }
   const char *processing() const		{ return "h/h"; }
-  
-  void notify_ninputs(int);
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

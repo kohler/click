@@ -78,6 +78,7 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
     static void static_cleanup();
 
     const char *class_name() const	{ return "FromDevice"; }
+    const char *port_count() const	{ return PORTS_0_1; }
     const char *processing() const	{ return PUSH; }
     void *cast(const char *);
 

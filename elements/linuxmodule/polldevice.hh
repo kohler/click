@@ -81,6 +81,7 @@ class PollDevice : public AnyTaskDevice { public:
   static void static_cleanup();
   
   const char *class_name() const	{ return "PollDevice"; }
+  const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PUSH; }
   
   int configure_phase() const		{ return CONFIGURE_PHASE_POLLDEVICE; }

@@ -34,10 +34,10 @@ class DRRSched : public Element, public PassiveNotifier { public:
     ~DRRSched();
   
     const char *class_name() const		{ return "DRRSched"; }
+    const char *port_count() const		{ return "-/1"; }
     const char *processing() const		{ return PULL; }
     void *cast(const char *);
   
-    void notify_ninputs(int);
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);

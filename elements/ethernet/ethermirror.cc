@@ -21,7 +21,6 @@
 CLICK_DECLS
 
 EtherMirror::EtherMirror()
-  : Element(1, 1)
 {
 }
 

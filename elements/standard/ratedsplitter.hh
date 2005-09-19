@@ -44,6 +44,7 @@ class RatedSplitter : public Element { public:
     ~RatedSplitter();
 
     const char *class_name() const	{ return "RatedSplitter"; }
+    const char *port_count() const	{ return "1/2"; }
     const char *processing() const	{ return PUSH; }
     bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
  

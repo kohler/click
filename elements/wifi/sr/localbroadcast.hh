@@ -34,6 +34,7 @@ class LocalBroadcast : public Element {
   ~LocalBroadcast();
   
   const char *class_name() const		{ return "LocalBroadcast"; }
+  const char *port_count() const		{ return "2/2"; }
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
   int configure(Vector<String> &conf, ErrorHandler *errh);

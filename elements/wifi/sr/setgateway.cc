@@ -30,8 +30,7 @@ CLICK_DECLS
 
 
 SetGateway::SetGateway()
-  :  Element(2,2),
-     _gw_sel(0),
+  :  _gw_sel(0),
      _timer(this)
 {
 
@@ -105,7 +104,7 @@ SetGateway::push_fwd(Packet *p_in, IPAddress best_gw)
 		}
 		
 		click_chatter("%{element}::%s no match. guessing for %s\n",
-			      this, __func__, flowid.s().cc());
+			      this, __func__, flowid.s().c_str());
 	}
 	
 	if (!best_gw) {
@@ -142,9 +141,9 @@ SetGateway::push_rev(Packet *p_in)
 			if (match->_gw != MISC_IP_ANNO(p_in)) {
 				click_chatter("%{element}::%s flow %s got packet from weird gw %s, expected %s\n",
 					      this, __func__,
-					      flowid.s().cc(),
-					      p_in->dst_ip_anno().s().cc(),
-					      match->_gw.s().cc());
+					      flowid.s().c_str(),
+					      p_in->dst_ip_anno().s().c_str(),
+					      match->_gw.s().c_str());
 				p_in->kill();
 				return;
 			}
@@ -155,7 +154,7 @@ SetGateway::push_rev(Packet *p_in)
 		}
 		
 		click_chatter("SetGateway %s: no match, killing SYN_ACK\n",
-			      id().cc());
+			      id().c_str());
 		p_in->kill();
 		return;
 	}
@@ -175,7 +174,7 @@ SetGateway::push_rev(Packet *p_in)
 	}
 	
 	click_chatter("%{element}::%s couldn't find non-pending match, creating %s\n",
-		      this, __func__, flowid.s().cc());
+		      this, __func__, flowid.s().c_str());
 	
 	_flow_table.insert(flowid, FlowTableEntry());
 	match = _flow_table.findp(flowid);

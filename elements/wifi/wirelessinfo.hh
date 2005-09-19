@@ -66,6 +66,7 @@ class WirelessInfo : public Element { public:
   ~WirelessInfo();
   
   const char *class_name() const		{ return "WirelessInfo"; }
+  const char *port_count() const		{ return PORTS_0_0; }
 
   int configure(Vector<String> &, ErrorHandler *);
   void add_handlers();

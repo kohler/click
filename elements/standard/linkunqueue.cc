@@ -30,7 +30,7 @@
 CLICK_DECLS
 
 LinkUnqueue::LinkUnqueue()
-    : Element(1, 1), _qhead(0), _qtail(0), _task(this), _timer(&_task)
+    : _qhead(0), _qtail(0), _task(this), _timer(&_task)
 {
 }
 

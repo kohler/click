@@ -22,7 +22,6 @@
 CLICK_DECLS
 
 SetRandIPAddress::SetRandIPAddress()
-  : Element(1, 1)
 {
   _max = -1;
   _addrs = 0;

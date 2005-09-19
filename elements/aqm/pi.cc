@@ -30,18 +30,12 @@ CLICK_DECLS
 #define PI_DEBUG 0
 
 PI::PI()
-    : Element(1, 1), _timer(this)
+    : _timer(this)
 {
 }
 
 PI::~PI()
 {
-}
-
-void
-PI::notify_noutputs(int n)
-{
-    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int
@@ -175,7 +169,7 @@ PI::initialize(ErrorHandler *errh)
 	if (Storage *s = (Storage *)_queue_elements[i]->cast("Storage"))
 	    _queues.push_back(s);
 	else
-	    errh->error("`%s' is not a Storage element", _queue_elements[i]->id().cc());
+	    errh->error("`%s' is not a Storage element", _queue_elements[i]->id().c_str());
     if (_queues.size() != _queue_elements.size())
 	return -1;
     else if (_queues.size() == 1)

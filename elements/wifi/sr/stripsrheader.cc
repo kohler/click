@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 StripSRHeader::StripSRHeader()
-  : Element(1, 1)
 {
 }
 

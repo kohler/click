@@ -25,7 +25,6 @@
 CLICK_DECLS
 
 ARPTable::ARPTable()
-  : Element(0, 0)
 {
 
   /* bleh */
@@ -69,7 +68,7 @@ EtherAddress
 ARPTable::lookup(IPAddress ip)
 {
   if (!ip) {
-    click_chatter("%s: lookup called with NULL ip!\n", id().cc());
+    click_chatter("%s: lookup called with NULL ip!\n", id().c_str());
     return _bcast;
   }
   DstInfo *dst = _table.findp(ip);
@@ -83,7 +82,7 @@ IPAddress
 ARPTable::reverse_lookup(EtherAddress eth)
 {
   if (!eth) {
-    click_chatter("%s: lookup called with NULL eth!\n", id().cc());
+    click_chatter("%s: lookup called with NULL eth!\n", id().c_str());
     return IPAddress();
   }
   IPAddress *ip = _rev_table.findp(eth);
@@ -99,9 +98,9 @@ ARPTable::insert(IPAddress ip, EtherAddress eth)
 {
   if (!(ip && eth)) {
     click_chatter("ARPTable %s: You fool, you tried to insert %s, %s\n",
-		  id().cc(),
-		  ip.s().cc(),
-		  eth.s().cc());
+		  id().c_str(),
+		  ip.s().c_str(),
+		  eth.s().c_str());
     return -1;
   }
   DstInfo *dst = _table.findp(ip);
@@ -133,8 +132,8 @@ ARPTable::print_mappings()
   for (ARPIter iter = _table.begin(); iter; iter++) {
     DstInfo n = iter.value();
     struct timeval age = now - n._when;
-    sa << n._ip.s().cc() << " ";
-    sa << n._eth.s().cc() << " ";
+    sa << n._ip.s().c_str() << " ";
+    sa << n._eth.s().c_str() << " ";
     sa << "last_received: " << age << "\n";
   }
   return sa.take_string();
@@ -152,7 +151,7 @@ ARPTable::static_insert(const String&arg, Element *e,
   if (args.size() % 2 != 0) {
     return errh->error("Must have mod two arguments: currently has %d: %s",
 		       args.size(),
-		       args[0].cc());
+		       args[0].c_str());
   }
 
   for (int x = 0; x < args.size(); x += 2) {
@@ -173,7 +172,6 @@ ARPTable::static_insert(const String&arg, Element *e,
 void
 ARPTable::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("mappings", static_print_mappings, 0);
   add_write_handler("insert", static_insert, 0);
   

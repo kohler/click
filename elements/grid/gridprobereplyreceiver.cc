@@ -30,7 +30,6 @@ CLICK_DECLS
 
 GridProbeReplyReceiver::GridProbeReplyReceiver() 
 {
-  add_input();
 }
 
 int
@@ -69,7 +68,7 @@ GridProbeReplyReceiver::simple_action(Packet *p)
 
   if (gh->type != grid_hdr::GRID_ROUTE_REPLY) {
     click_chatter("GridProbeReplyReceiver %s: received unexpected Grid packet type %s; is the configuration wrong?",
-		  id().cc(), grid_hdr::type_string(gh->type).cc());
+		  id().c_str(), grid_hdr::type_string(gh->type).c_str());
     p->kill();
     return 0;
   }
@@ -83,9 +82,9 @@ GridProbeReplyReceiver::simple_action(Packet *p)
   char buf[200];
   snprintf(buf, sizeof(buf),
 	   "dest=%s nonce=%u hop=%s hopcount=%u rtt=%ld.%06ld tx_time=%ld.%06ld act=%u d1=%u d2=%u",
-	   IPAddress(rr->probe_dest).s().cc(),
+	   IPAddress(rr->probe_dest).s().c_str(),
 	   (unsigned int) ntohl(rr->nonce),
-	   IPAddress(gh->ip).s().cc(),
+	   IPAddress(gh->ip).s().c_str(),
 	   (unsigned int) rr->reply_hop,
 	   (long) rtt.tv_sec, (long) rtt.tv_usec,
 	   (long) tx_time.tv_sec,

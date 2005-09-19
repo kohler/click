@@ -32,18 +32,12 @@ CLICK_DECLS
 
 
 SetSourceRoute::SetSourceRoute()
-  :  Element(1,1),
-     _sr_forwarder(0)
+  :  _sr_forwarder(0)
 {
 }
 
 SetSourceRoute::~SetSourceRoute()
 {
-}
-void 
-SetSourceRoute::notify_noutputs(int n)
-{
-	set_noutputs((n > 2 || n < 1) ? 1 : n);
 }
 
 int
@@ -79,8 +73,8 @@ SetSourceRoute::simple_action(Packet *p_in)
 
   if (!dst) {
 	  click_chatter("SetSourceRoute %s: got invalid dst %s\n",
-			id().cc(),
-			dst.s().cc());
+			id().c_str(),
+			dst.s().c_str());
 	  p_in->kill();
 	  return 0;
   }
@@ -111,14 +105,14 @@ SetSourceRoute::static_set_route(const String &arg, Element *e,
     if (!cp_ip_address(args[x], &ip)) {
       return errh->error("Couldn't read arg %d to ip: %s",
 			 x,
-			 args[x].cc());
+			 args[x].c_str());
     }
     p.push_back(ip);
   }
   if (p[0] != n->_ip) {
     return errh->error("First hop %s doesn't match my ip %s",
-		       p[0].s().cc(),
-		       n->_ip.s().cc());
+		       p[0].s().c_str(),
+		       n->_ip.s().c_str());
   }
   n->set_route(p);
   return 0;
@@ -129,13 +123,13 @@ SetSourceRoute::set_route(Path p)
 {
   if (p.size() < 1) {
     click_chatter("SetSourceRoute %s: Path must be longer than 0\n",
-		  id().cc());
+		  id().c_str());
   }
   if (p[0] != _ip) {
     click_chatter("SetSourceRoute %s: First node must be me (%s) not %s!\n",
-		  id().cc(),
-		  _ip.s().cc(),
-		  p[0].s().cc());
+		  id().c_str(),
+		  _ip.s().c_str(),
+		  p[0].s().c_str());
   }
 
   _routes.insert(p[p.size()-1], p);

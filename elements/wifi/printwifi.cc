@@ -32,8 +32,7 @@ CLICK_DECLS
 #define max(x,y)      ((x)>(y) ? (x) : (y))
 
 PrintWifi::PrintWifi()
-  : Element(1, 1),
-    _print_anno(false),
+  : _print_anno(false),
     _print_checksum(false)
 {
   _label = "";
@@ -325,7 +324,7 @@ PrintWifi::simple_action(Packet *p)
 
   StringAccum sa;
   if (_label[0] != 0) {
-    sa << _label.cc() << ": ";
+    sa << _label << ": ";
   }
   if (_timestamp)
     sa << p->timestamp_anno() << ": ";
@@ -498,7 +497,7 @@ PrintWifi::simple_action(Packet *p)
 
   if (subtype == WIFI_FC0_SUBTYPE_BEACON || subtype == WIFI_FC0_SUBTYPE_PROBE_RESP) {
 
-    click_chatter("%s\n", sa.cc());
+    click_chatter("%s\n", sa.c_str());
     return p;
     
   }
@@ -548,7 +547,7 @@ PrintWifi::simple_action(Packet *p)
   sa << "] ";
 
  done:
-  click_chatter("%s\n", sa.cc());
+  click_chatter("%s\n", sa.c_str());
   return p;
 }
 

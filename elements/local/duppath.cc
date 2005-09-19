@@ -5,9 +5,7 @@
 CLICK_DECLS
 
 DupPath::DupPath()
-  : Element(1,2)
 {
-  set_ninputs(1);
   _q._q = 0;
   _q._head = _q._tail = 0;
 }

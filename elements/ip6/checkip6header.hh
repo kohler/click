@@ -39,9 +39,9 @@ class CheckIP6Header : public Element {
   ~CheckIP6Header();
   
   const char *class_name() const		{ return "CheckIP6Header"; }
+  const char *port_count() const		{ return "1/1-2"; }
   const char *processing() const		{ return "a/ah"; }
 
-  void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
   
   int drops() const				{ return _drops; }

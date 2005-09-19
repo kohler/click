@@ -99,14 +99,12 @@ public:
   ~ACKRetrySender2();
 
   const char *class_name() const { return "ACKRetrySender2"; }
+  const char *port_count() const { return "-/-"; }
   const char *processing() const { return "la/hh"; }
   const char *flow_code()  const { return "xy/xx"; }
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh);
-
-  void notify_ninputs(int n)  { set_ninputs(n); }
-  void notify_noutputs(int n) { set_noutputs(n); }
 
   bool run_task();
   void run_timer();

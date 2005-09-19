@@ -69,18 +69,6 @@ RadioSim::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-void
-RadioSim::notify_noutputs(int n)
-{
-  set_noutputs(n);
-}
-
-void
-RadioSim::notify_ninputs(int n)
-{
-  set_ninputs(n);
-}
-
 int
 RadioSim::initialize(ErrorHandler *errh)
 {
@@ -164,14 +152,14 @@ RadioSim::rs_write_handler(const String &arg, Element *element,
      !cp_integer(words[0], 10, &xi) ||
      !cp_real10(words[1], 5, &xlat) ||
      !cp_real10(words[2], 5, &xlon))
-    return errh->error("%s: expecting node-index lat lon", l->id().cc());
+    return errh->error("%s: expecting node-index lat lon", l->id().c_str());
   if(xi >= 0 && xi < l->nnodes()){
     double lat = ((double)xlat) / 100000.0;
     double lon = ((double)xlon) / 100000.0;
     l->set_node_loc(xi, lat, lon);
     return(0);
   } else {
-    return errh->error("%s: illegal index %d", l->id().cc(), xi);
+    return errh->error("%s: illegal index %d", l->id().c_str(), xi);
   }
 }
 
@@ -196,7 +184,6 @@ RadioSim::rs_read_handler(Element *f, void *)
 void
 RadioSim::add_handlers()
 {
-  add_default_handlers(true);
   add_write_handler("loc", rs_write_handler, (void *) 0);
   add_read_handler("loc", rs_read_handler, (void *) 0);
 }

@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 StripToNetworkHeader::StripToNetworkHeader()
-    : Element(1, 1)
 {
 }
 

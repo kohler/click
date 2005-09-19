@@ -26,7 +26,6 @@
 CLICK_DECLS
 
 GridEncap::GridEncap()
-  : Element(1, 1)
 {
 }
 
@@ -91,12 +90,6 @@ GridEncap::simple_action(Packet *p_in)
   return p;
 }
 
-
-void
-GridEncap::add_handlers()
-{
-  add_default_handlers(true);
-}
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(GridEncap)

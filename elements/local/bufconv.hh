@@ -37,6 +37,7 @@ public:
   ~BufferConverter();
   
   const char *class_name() const	{ return "BufferConverter"; }
+  const char *port_count() const	{ return "2/1"; }
   const char *processing() const	{ return "lh/h"; }
 
   int initialize(ErrorHandler *);

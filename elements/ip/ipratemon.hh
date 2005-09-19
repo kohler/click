@@ -78,9 +78,9 @@ public:
   ~IPRateMonitor();
 
   const char *class_name() const		{ return "IPRateMonitor"; }
-  const char *default_processing() const	{ return AGNOSTIC; }
+  const char *port_count() const		{ return "1-2/1-2"; }
+  const char *processing() const		{ return AGNOSTIC; }
 
-  void notify_ninputs(int);  
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

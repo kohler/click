@@ -107,7 +107,6 @@ ToDevice::tx_wake_queue(net_device *dev)
 ToDevice::ToDevice()
     : _dev_idle(0), _rejected(0), _hard_start(0), _no_pad(false)
 {
-    add_input();
 }
 
 ToDevice::~ToDevice()
@@ -148,7 +147,7 @@ ToDevice::initialize(ErrorHandler *errh)
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_writer_" + String(ifindex()));
 	if (used)
-	    return errh->error("duplicate writer for device '%s'", _devname.cc());
+	    return errh->error("duplicate writer for device '%s'", _devname.c_str());
 	used = this;
     }
 

@@ -28,7 +28,6 @@ CLICK_DECLS
 
 GridProbeSender::GridProbeSender() 
 {
-  add_output();
 }
 
 int
@@ -117,7 +116,6 @@ probe_write_handler(const String &arg, Element *element,
 void
 GridProbeSender::add_handlers()
 {
-  add_default_handlers(true);
   add_write_handler("send_probe", probe_write_handler, (void *) 0);
 }
 

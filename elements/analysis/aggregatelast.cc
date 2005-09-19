@@ -24,7 +24,7 @@
 CLICK_DECLS
 
 AggregateLast::AggregateLast()
-    : Element(1, 1), _agg_notifier(0), _clear_task(this), _needs_clear(0)
+    : _agg_notifier(0), _clear_task(this), _needs_clear(0)
 {
     memset(_packets, 0, sizeof(_packets));
     memset(_counts, 0, sizeof(_counts));
@@ -32,12 +32,6 @@ AggregateLast::AggregateLast()
 
 AggregateLast::~AggregateLast()
 {
-}
-
-void
-AggregateLast::notify_noutputs(int n)
-{
-    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int
@@ -54,7 +48,7 @@ AggregateLast::configure(Vector<String> &conf, ErrorHandler *errh)
 	return -1;
     
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
-	return errh->error("%s is not an AggregateNotifier", e->id().cc());
+	return errh->error("%s is not an AggregateNotifier", e->id().c_str());
 
     return 0;
 }

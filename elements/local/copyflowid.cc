@@ -22,7 +22,6 @@
 CLICK_DECLS
 
 CopyFlowID::CopyFlowID()
-  : Element(2, 2)
 {
 }
 

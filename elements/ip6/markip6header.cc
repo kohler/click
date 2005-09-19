@@ -23,8 +23,6 @@ CLICK_DECLS
 
 MarkIP6Header::MarkIP6Header()
 {
-  add_input();
-  add_output();
 }
 
 MarkIP6Header::~MarkIP6Header()

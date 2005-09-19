@@ -125,7 +125,7 @@ IPFlowRawSockets::Flow::initialize(ErrorHandler *errh, int snaplen, bool usepcap
     // build the BPF filter
     StringAccum ss;
     ss << "ip src host ";
-    ss << _flowid.daddr().unparse().cc();
+    ss << _flowid.daddr().unparse().c_str();
     ss << " and ";
     ss << (_ip_p == IP_PROTO_TCP ? "tcp" : "udp");
     ss << " src port ";
@@ -173,7 +173,7 @@ IPFlowRawSockets::Flow::send_pkt(Packet *p, ErrorHandler *errh)
 }
 
 IPFlowRawSockets::IPFlowRawSockets()
-    : Element(1, 1), _nnoagg(0), _nagg(0), _agg_notifier(0), _task(this),
+    : _nnoagg(0), _nagg(0), _agg_notifier(0), _task(this),
       _gc_timer(gc_hook, this)
 {
     for (int i = 0; i < NFLOWMAP; i++)
@@ -200,7 +200,7 @@ IPFlowRawSockets::configure(Vector<String> &conf, ErrorHandler *errh)
 	return -1;
 
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
-	return errh->error("%s is not an AggregateNotifier", e->id().cc());
+	return errh->error("%s is not an AggregateNotifier", e->id().c_str());
 
     return 0;
 }
@@ -374,7 +374,7 @@ IPFlowRawSockets::selected(int fd)
     drop:
 	p->kill();
 	if (len <= 0 && errno != EAGAIN)
-	    errh->error("%s: read: %s", declaration().cc(), strerror(errno));
+	    errh->error("%s: read: %s", declaration().c_str(), strerror(errno));
     }
 }
 

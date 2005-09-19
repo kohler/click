@@ -40,6 +40,7 @@ public:
   ~AiroInfo();
   
   const char *class_name() const		{ return "AiroInfo"; }
+  const char *port_count() const		{ return PORTS_0_0; }
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

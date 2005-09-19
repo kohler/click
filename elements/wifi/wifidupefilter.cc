@@ -30,8 +30,7 @@
 CLICK_DECLS
 
 WifiDupeFilter::WifiDupeFilter()
-  : Element(1, 1),
-    _debug(false),
+  : _debug(false),
     _dupes(0),
     _packets(0)
 {
@@ -90,7 +89,7 @@ WifiDupeFilter::simple_action(Packet *p_in)
       click_chatter("%{element}: reset seq %d src %s\n",
 		    this,
 		    seq,
-		    src.s().cc());
+		    src.s().c_str());
     }
     nfo->clear();
   }
@@ -105,7 +104,7 @@ WifiDupeFilter::simple_action(Packet *p_in)
 			this,
 			seq,
 			frag,
-			src.s().cc());
+			src.s().c_str());
 	}
 	nfo->_dupes++;
 	_dupes++;
@@ -191,8 +190,6 @@ WifiDupeFilter_write_param(const String &in_s, Element *e, void *vparam,
 void
 WifiDupeFilter::add_handlers() 
 {
-  add_default_handlers(true);
-  
   add_read_handler("debug", WifiDupeFilter_read_param, (void *) H_DEBUG);
   add_read_handler("dupes", WifiDupeFilter_read_param, (void *) H_DUPES);
   add_read_handler("drops", WifiDupeFilter_read_param, (void *) H_DUPES);

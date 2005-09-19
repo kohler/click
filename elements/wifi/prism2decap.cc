@@ -27,7 +27,6 @@
 CLICK_DECLS
 
 Prism2Decap::Prism2Decap()
-  : Element(1, 1)
 {
 }
 
@@ -107,8 +106,6 @@ Prism2Decap_write_param(const String &in_s, Element *e, void *vparam,
 void
 Prism2Decap::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", Prism2Decap_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", Prism2Decap_write_param, (void *) H_DEBUG);

@@ -95,7 +95,7 @@ ElementMap::documentation_url(const ElementTraits &t) const
     String name = t.documentation_name;
     if (name)
 	return percent_substitute(_def[t.def_index].dochref,
-				  's', name.cc(),
+				  's', name.c_str(),
 				  0);
     else
 	return "";
@@ -627,7 +627,7 @@ ElementMap::parse_requirement_files(RouterT *r, const String &default_path, Erro
     if (not_found_store)
 	*not_found_store = not_found;
     if (not_found) {
-	errh->warning("cannot find package-specific elementmaps:\n  %s", not_found.cc());
+	errh->warning("cannot find package-specific elementmaps:\n  %s", not_found.c_str());
 	return false;
     } else
 	return true;
@@ -661,9 +661,9 @@ ElementMap::report_file_not_found(String default_path, bool found_default,
     if (!allows_default)
 	errh->message("Searched in CLICKPATH '%s'.)", path);
     else if (!path)
-	errh->message("Searched in install directory '%s'.)", default_path.cc());
+	errh->message("Searched in install directory '%s'.)", default_path.c_str());
     else
-	errh->message("Searched in CLICKPATH and '%s'.)", default_path.cc());
+	errh->message("Searched in CLICKPATH and '%s'.)", default_path.c_str());
 }
 
 

@@ -29,18 +29,11 @@
 CLICK_DECLS
 
 ICMPPingResponder::ICMPPingResponder()
-    : Element(1, 1)
 {
 }
 
 ICMPPingResponder::~ICMPPingResponder()
 {
-}
-
-void
-ICMPPingResponder::notify_noutputs(int n)
-{
-    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 Packet *

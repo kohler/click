@@ -53,6 +53,7 @@ class MSQueue : public Element {
   
   const char *class_name() const		{ return "MSQueue"; }
   void *cast(const char *);
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PUSH_TO_PULL; }
   
   int size() const; 

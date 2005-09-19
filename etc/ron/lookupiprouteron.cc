@@ -33,7 +33,6 @@
 LookupIPRouteRON::LookupIPRouteRON() 
   : _expire_timer(expire_hook, (void *) this)
 {
-  add_input();
   _flow_table = new FlowTable();
   _dst_table  = new DstTable();
 }
@@ -48,17 +47,14 @@ LookupIPRouteRON::~LookupIPRouteRON()
 int
 LookupIPRouteRON::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  int n = noutputs();
+  int n = noutputs() - 1;
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
-		  cpUnsigned, "number of ports", &n,
+		  cpUnsigned, "number of outgoing paths", &n,
 		  cpEnd) < 0)
     return -1;
-  if (n < 1)
-    return errh->error("number of ports must be at least 1");
-
-  set_noutputs(n+1);
-  set_ninputs(n+1);
+  if (n != noutputs() - 1)
+      return errh->error("%d outputs implies %d outgoing paths", noutputs(), noutputs() - 1);
   return 0;
 }
 
@@ -358,8 +354,8 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
       // was removed from the flow table.
       click_chatter("FLOW match, port (%d) {%s}->{%s}", 
 		    match->outgoing_port,
-		    IPAddress(p->ip_header()->ip_src).s().cc(), 
-		    p->dst_ip_anno().s().cc());
+		    IPAddress(p->ip_header()->ip_src).s().c_str(), 
+		    p->dst_ip_anno().s().c_str());
       return;
     }
       
@@ -377,8 +373,8 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
       new_entry->outgoing_port = dst_match->outgoing_port;
       click_chatter("DST match, port (%d) {%s}->{%s}", 
 		    new_entry->outgoing_port,
-		    IPAddress(p->ip_header()->ip_src).s().cc(), 
-		    p->dst_ip_anno().s().cc() );
+		    IPAddress(p->ip_header()->ip_src).s().c_str(), 
+		    p->dst_ip_anno().s().c_str() );
       output(new_entry->outgoing_port).push(p);
       return;
       
@@ -530,8 +526,8 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
     if (match->is_pending()) {
       click_chatter("FLOW match(pending), port(%d) {%s}->{%s}", 
 	     inport, 
-	     p->dst_ip_anno().s().cc(), 
-	     IPAddress(p->ip_header()->ip_src).s().cc() );
+	     p->dst_ip_anno().s().c_str(), 
+	     IPAddress(p->ip_header()->ip_src).s().c_str() );
 
       // save to dst_table
       _dst_table->insert(IPAddress(p->ip_header()->ip_src), inport); 

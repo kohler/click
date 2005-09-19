@@ -12,7 +12,7 @@ CLICK_DECLS
 
 
 MSQueue::MSQueue()
-    : Element(1, 1), _q(0)
+    : _q(0)
 {
     _drops = 0;
 }

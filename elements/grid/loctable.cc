@@ -51,7 +51,7 @@ LocationTable::read_args(const Vector<String> &conf, ErrorHandler *errh)
     bool is_new = _locs.insert(ip, entry(loc, err));
     if (!is_new)
       return errh->error("LocationTable %s: %s already has a location mapping",
-			 id().cc(), ip.s().cc());
+			 id().c_str(), ip.s().c_str());
   }
   return 0;
 }
@@ -72,9 +72,9 @@ table_read_handler(Element *f, void *)
   char buf[BUFSZ];
   for (LocationTable::Table::iterator iter = l->_locs.begin(); iter; iter++) {
     const LocationTable::entry &ent = iter.value();
-    int r = snprintf(buf, BUFSZ, "%s loc=%s err=%d\n", iter.key().s().cc(), ent.loc.s().cc(), ent.err);
+    int r = snprintf(buf, BUFSZ, "%s loc=%s err=%d\n", iter.key().s().c_str(), ent.loc.s().c_str(), ent.err);
     if (r < 0) {
-      click_chatter("LocationTable %s read handler buffer too small", l->id().cc());
+      click_chatter("LocationTable %s read handler buffer too small", l->id().c_str());
       return String("");
     }
     res += buf;
@@ -118,7 +118,6 @@ loc_write_handler(const String &arg, Element *element,
 void
 LocationTable::add_handlers()
 {
-  add_default_handlers(true);
   add_write_handler("loc", loc_write_handler, (void *) 0);
   add_read_handler("table", table_read_handler, (void *) 0);
 }

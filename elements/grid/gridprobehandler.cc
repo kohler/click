@@ -32,9 +32,6 @@ GridProbeHandler::GridProbeHandler() :
   _lr_el(0), _gf_el(0), _fq_el(0), 
   _cached_reply_pkt(0)
 {
-  add_input();
-  add_output();
-  add_output();
 }
 
 int
@@ -42,17 +39,17 @@ GridProbeHandler::initialize(ErrorHandler *errh)
 {
   if (!_lr_el || !_lr_el->cast("LookupLocalGridRoute")) {
     errh->warning("%s: LookupLocalGridRoute argument is missing or has the wrong type, probe replies will not contain all info",
-		  id().cc());
+		  id().c_str());
     _lr_el = 0;
   }
   if (!_gf_el || !_gf_el->cast("LookupGeographicGridRoute")) {
     errh->warning("%s: LookupGeographicGridRoute argument is missing or has the wrong type, probe replies will not contain all info",
-		  id().cc());
+		  id().c_str());
     _gf_el = 0;
   }
   if (!_fq_el || !_fq_el->cast("FloodingLocQuerier")) {
     errh->warning("%s: FloodingLocQuerier argument is missing or has the wrong type, probe replies will not contain all info",
-		  id().cc());
+		  id().c_str());
     _fq_el = 0;
   }
 
@@ -65,13 +62,13 @@ GridProbeHandler::initialize(ErrorHandler *errh)
 
   if (_lr_cb_id < 0) 
     errh->warning("%s: unable to install local routing action callback, probe replies will not contain all info",
-		  id().cc());
+		  id().c_str());
   if (_gf_cb_id < 0) 
     errh->warning("%s: unable to install geographic forwarding action callback, probe replies will not contain all info",
-		  id().cc());
+		  id().c_str());
   if (_fq_cb_id < 0) 
     errh->warning("%s: unable to install loc query action callback, probe replies will not contain all info",
-		  id().cc());
+		  id().c_str());
   
   return 0;
 }
@@ -108,7 +105,7 @@ GridProbeHandler::push(int port, Packet *p)
 
   if (gh->type != grid_hdr::GRID_ROUTE_PROBE) {
     click_chatter("GridProbeHandler %s: received unexpected Grid packet type %s; is the configuration wrong?",
-		  id().cc(), grid_hdr::type_string(gh->type).cc());
+		  id().c_str(), grid_hdr::type_string(gh->type).c_str());
     p->kill();
     return;
   }

@@ -22,6 +22,7 @@ class UnstripIPHeader : public Element { public:
   ~UnstripIPHeader();
   
   const char *class_name() const		{ return "UnstripIPHeader"; }
+  const char *port_count() const		{ return PORTS_1_1; }
 
   Packet *simple_action(Packet *);
   

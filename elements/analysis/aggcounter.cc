@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 AggregateCounter::AggregateCounter()
-    : Element(1, 1), _root(0), _free(0), _call_nnz_h(0), _call_count_h(0)
+    : _root(0), _free(0), _call_nnz_h(0), _call_count_h(0)
 {
 }
 
@@ -48,18 +48,6 @@ AggregateCounter::new_node_block()
     block[block_size - 1].child[0] = 0;
     _free = &block[1];
     return &block[0];
-}
-
-void
-AggregateCounter::notify_ninputs(int n)
-{
-    set_ninputs(n <= 1 ? 1 : 2);
-}
-
-void
-AggregateCounter::notify_noutputs(int n)
-{
-    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int
@@ -393,9 +381,9 @@ AggregateCounter::write_file(String where, WriteFormat format,
     if (where == "-")
 	f = stdout;
     else
-	f = fopen(where.cc(), (format == WR_BINARY ? "wb" : "w"));
+	f = fopen(where.c_str(), (format == WR_BINARY ? "wb" : "w"));
     if (!f)
-	return errh->error("%s: %s", where.cc(), strerror(errno));
+	return errh->error("%s: %s", where.c_str(), strerror(errno));
 
     fwrite(_output_banner.data(), 1, _output_banner.length(), f);
     if (_output_banner.length() && _output_banner.back() != '\n')
@@ -422,7 +410,7 @@ AggregateCounter::write_file(String where, WriteFormat format,
     if (f != stdout)
 	fclose(f);
     if (had_err)
-	return errh->error("%s: file error", where.cc());
+	return errh->error("%s: file error", where.c_str());
     else
 	return 0;
 }

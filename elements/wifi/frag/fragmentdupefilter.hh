@@ -15,9 +15,8 @@ class FragmentDupeFilter : public Element { public:
   ~FragmentDupeFilter();
 
   const char *class_name() const	{ return "FragmentDupeFilter"; }
-  const char *processing() const		{ return "a/ah"; }
-  
-  void notify_noutputs(int);
+  const char *port_count() const	{ return "1/1-2"; }
+  const char *processing() const	{ return "a/ah"; }
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
@@ -44,7 +43,6 @@ class FragmentDupeFilter : public Element { public:
 
   EtherAddress _en;
   unsigned _et;
-  void add_handlers();
   unsigned _window_size;
 
 

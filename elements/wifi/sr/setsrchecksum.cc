@@ -28,8 +28,6 @@ CLICK_DECLS
 
 SetSRChecksum::SetSRChecksum()
 {
-  add_input();
-  add_output();
 }
 
 SetSRChecksum::~SetSRChecksum()
@@ -66,7 +64,7 @@ SetSRChecksum::simple_action(Packet *xp)
 
  bad:
   click_chatter("%s: bad lengths plen %d, tlen %d", 
-		id().cc(),
+		id().c_str(),
 		plen,
 		tlen);
   xp->kill();

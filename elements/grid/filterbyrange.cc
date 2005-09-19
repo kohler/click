@@ -25,7 +25,7 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
-FilterByRange::FilterByRange() : Element(1, 2), _locinfo(0)
+FilterByRange::FilterByRange() : _locinfo(0)
 {
 }
 
@@ -49,8 +49,8 @@ FilterByRange::initialize(ErrorHandler *errh)
 {
   if(_locinfo && _locinfo->cast("GridLocationInfo") == 0){
     errh->warning("%s: GridLocationInfo argument %s has the wrong type",
-                  id().cc(),
-                  _locinfo->id().cc());
+                  id().c_str(),
+                  _locinfo->id().c_str());
     _locinfo = 0;
   } else if(_locinfo == 0){
     return errh->error("no GridLocationInfo argument");
@@ -77,7 +77,7 @@ FilterByRange::push(int, Packet *p)
   double dist = grid_location::calc_range(our_loc, remote_loc);
 #if 0
   IPAddress tx(gh->tx_ip);
-  click_chatter("XXXXX range %s %f", tx.s().cc(), dist);
+  click_chatter("XXXXX range %s %f", tx.s().c_str(), dist);
 #endif
   if (dist < 0) {
     click_chatter("bogus location info in grid header");

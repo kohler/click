@@ -26,8 +26,6 @@ CLICK_DECLS
 
 IndexTreesIPLookup::IndexTreesIPLookup()
 {
-  add_input();
-  add_output();
   for (int i=0; i<INDEX_SIZE; i++)
     _trees[i] = 0;
 }

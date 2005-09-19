@@ -1,3 +1,6 @@
+%require
+click-buildtool provides linuxmodule
+
 %script
 click-mkmindriver -E Print -p foo --no-check -k
 mv elements_foo.conf elements_foo.conf~

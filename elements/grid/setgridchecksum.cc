@@ -27,8 +27,6 @@ CLICK_DECLS
 
 SetGridChecksum::SetGridChecksum()
 {
-  add_input();
-  add_output();
 }
 
 SetGridChecksum::~SetGridChecksum()

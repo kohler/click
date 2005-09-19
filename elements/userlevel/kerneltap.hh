@@ -77,6 +77,7 @@ class KernelTap : public Element { public:
     ~KernelTap();
   
     const char *class_name() const	{ return "KernelTap"; }
+    const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return "a/h"; }
     const char *flow_code() const	{ return "x/y"; }
     const char *flags() const		{ return "S3"; }

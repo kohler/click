@@ -28,8 +28,8 @@ class RoundRobinSwitch : public Element {
   ~RoundRobinSwitch();
   
   const char *class_name() const	{ return "RoundRobinSwitch"; }
+  const char *port_count() const	{ return "1/1-"; }
   const char *processing() const	{ return PUSH; }
-  void notify_noutputs(int);
   
   void push(int, Packet *);
   

@@ -103,6 +103,7 @@ class FTPPortMapper : public Element {
   ~FTPPortMapper();
 
   const char *class_name() const	{ return "FTPPortMapper"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

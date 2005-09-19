@@ -28,7 +28,6 @@
 CLICK_DECLS
 
 ARPResponder::ARPResponder()
-    : Element(1, 1)
 {
 }
 

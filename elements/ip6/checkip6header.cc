@@ -32,19 +32,11 @@ CLICK_DECLS
 CheckIP6Header::CheckIP6Header()
   : _bad_src(0), _drops(0)
 {
-  add_input();
-  add_output();
 }
 
 CheckIP6Header::~CheckIP6Header()
 {
   delete[] _bad_src;
-}
-
-void
-CheckIP6Header::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int

@@ -72,6 +72,7 @@ public:
   ~TCPBuffer();
   
   const char *class_name() const		{ return "TCPBuffer"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PUSH_TO_PULL; }
   
   int initialize(ErrorHandler *);

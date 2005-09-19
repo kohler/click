@@ -29,7 +29,7 @@ CxxFunction::CxxFunction(const String &name, bool in_header,
     _alive(true), _ret_type(ret_type), _args(args),
     _body(body), _clean_body(clean_body)
 {
-  //fprintf(stderr, "%s::%s\n", _name.cc(), _body.cc());
+  //fprintf(stderr, "%s::%s\n", _name.c_str(), _body.c_str());
 }
 
 String
@@ -188,7 +188,7 @@ CxxFunction::replace_expr(const String &pattern, const String &replacement)
   if (!find_expr(pattern, &pos1, &pos2, match_pos, match_len))
     return false;
 
-  //fprintf(stderr, ":::::: %s\n", _body.cc());
+  //fprintf(stderr, ":::::: %s\n", _body.c_str());
   
   StringAccum sa, clean_sa;
   const char *s = replacement.data();
@@ -215,7 +215,7 @@ CxxFunction::replace_expr(const String &pattern, const String &replacement)
   _body = new_body;
   _clean_body = new_clean_body;
 
-  //fprintf(stderr, ">>>>>> %s\n", _body.cc());
+  //fprintf(stderr, ">>>>>> %s\n", _body.c_str());
   return true;
 }
 
@@ -227,7 +227,7 @@ CxxFunction::replace_expr(const String &pattern, const String &replacement)
 CxxClass::CxxClass(const String &name)
   : _name(name), _fn_map(-1)
 {
-  //fprintf(stderr, "!!!!!%s\n", _name.cc());
+  //fprintf(stderr, "!!!!!%s\n", _name.c_str());
 }
 
 void

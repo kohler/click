@@ -1,7 +1,7 @@
 /*
  * sourceipmapper.{cc,hh} -- source IP mapper (using consistent hashing)
  *
- * $Id: siphmapper.cc,v 1.6 2005/02/07 20:40:53 eddietwo Exp $
+ * $Id: siphmapper.cc,v 1.7 2005/09/19 22:39:39 eddietwo Exp $
  *
  */
 
@@ -116,7 +116,7 @@ SourceIPHashMapper::notify_rewriter(IPRw *rw, ErrorHandler *errh)
   int no = rw->noutputs();
   for (int i = 0; i < _patterns.size(); i++) {
     if (_forward_outputs[i] >= no || _reverse_outputs[i] >= no)
-      errh->error("port in `%s' out of range for `%s'", declaration().cc(), rw->declaration().cc());
+      errh->error("port in `%s' out of range for `%s'", declaration().c_str(), rw->declaration().c_str());
     rw->notify_pattern(_patterns[i], errh);
   }
 }

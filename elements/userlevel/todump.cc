@@ -32,18 +32,12 @@
 CLICK_DECLS
 
 ToDump::ToDump()
-    : Element(1, 0), _fp(0), _task(this), _use_encap_from(0)
+    : _fp(0), _task(this), _use_encap_from(0)
 {
 }
 
 ToDump::~ToDump()
 {
-}
-
-void
-ToDump::notify_noutputs(int n)
-{
-    set_noutputs(n < 1 ? 0 : 1);
 }
 
 int
@@ -163,7 +157,7 @@ ToDump::initialize(ErrorHandler *errh)
 
 	size_t wrote_header = fwrite(&h, sizeof(h), 1, _fp);
 	if (wrote_header != 1)
-	    return errh->error("%s: unable to write file header", _filename.cc());
+	    return errh->error("%s: unable to write file header", _filename.c_str());
     }
 
     if (input_is_pull(0) && noutputs() == 0) {
@@ -216,7 +210,7 @@ ToDump::write_packet(Packet *p)
 	|| fwrite(p->data(), 1, to_write, _fp) == 0) {
 	if (errno != EAGAIN) {
 	    _active = false;
-	    click_chatter("ToDump(%s): %s", _filename.cc(), strerror(errno));
+	    click_chatter("ToDump(%s): %s", _filename.c_str(), strerror(errno));
 	}
     }
 }

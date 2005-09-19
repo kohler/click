@@ -58,6 +58,7 @@ class ToSimDevice : public Element { public:
   ~ToSimDevice();
   
   const char *class_name() const		{ return "ToSimDevice"; }
+  const char *port_count() const		{ return PORTS_1_0; }
   const char *processing() const		{ return AGNOSTIC; }
   //const char *flags() const			{ return "S2"; }
   

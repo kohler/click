@@ -206,7 +206,7 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
 	
     } else if (pt != NONE) {
 	Bitvector flow;
-	if (e->port_allowed(pt, port) // went from pull <-> push
+	if (e->port_active(pt, port) // went from pull <-> push
 	    || (e->port_flow(pt, port, &flow), flow.zero())) {
 	    _signal = NotifierSignal::always_active_signal();
 	    return true;

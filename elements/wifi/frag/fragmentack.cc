@@ -30,18 +30,11 @@ CLICK_DECLS
 
 
 FragmentAck::FragmentAck()
-  : Element(1, 1)
 {
 }
 
 FragmentAck::~FragmentAck()
 {
-}
-
-void
-FragmentAck::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int
@@ -102,7 +95,7 @@ FragmentAck::send_ack(EtherAddress src)
   if (_debug) {
     click_chatter("%{element} acking %s\n",
 		  this,
-		  sa.take_string().cc());
+		  sa.take_string().c_str());
   }
 
 
@@ -148,12 +141,6 @@ FragmentAck::simple_action(Packet *p)
 
 
 
- 
-void
-FragmentAck::add_handlers()
-{
-  add_default_handlers(true);
-}
 #include <click/vector.cc>
 #include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES

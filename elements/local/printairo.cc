@@ -54,7 +54,6 @@ struct an_rxframe {
 } __attribute__((packed));
 
 PrintAiro::PrintAiro()
-  : Element(1, 1)
 {
 }
 
@@ -113,7 +112,7 @@ PrintAiro::simple_action(Packet *p)
   struct an_rxframe *frame = (struct an_rxframe *) p->data();
 
   if (p->length() < sizeof(*frame)) {
-    click_chatter("%s: Packet too short to hold Aironet header", id().cc());
+    click_chatter("%s: Packet too short to hold Aironet header", id().c_str());
     return 0;
   }
 
@@ -128,7 +127,7 @@ PrintAiro::simple_action(Packet *p)
   unsigned int len = frame->an_rx_payload_len + ieee80211_header_len;
   if (len > sizeof(buf)) {
     click_chatter("%s: Frame too big to copy into buffer (%d > %d)\n", 
-		  id().cc(), len, sizeof(buf));
+		  id().c_str(), len, sizeof(buf));
     return 0;
   }
 
@@ -154,7 +153,7 @@ PrintAiro::simple_action(Packet *p)
       bool print5 = (r * 2 < frame->an_rx_rate);
       char info[1024];
       snprintf(info, sizeof(info), "%s%4d | RSSI: %d  Rate: %d%s Mbps   Chan: %d", 
-	       sa.cc(), p->length(), (int) frame->an_rx_signal_strength,
+	       sa.c_str(), p->length(), (int) frame->an_rx_signal_strength,
 	       r, print5 ? ".5" : "", (int) frame->an_rx_chan);
       click_chatter("%s", info);
       

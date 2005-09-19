@@ -43,9 +43,6 @@ WebGen::WebGen()
   : _timer(this)
 {
 
-  add_input();
-  add_output();
-
   cbfree = NULL;
   rexmit_head = NULL;
   rexmit_tail = NULL;

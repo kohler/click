@@ -74,9 +74,9 @@ class RadixIPLookup : public IPRouteTable { public:
     ~RadixIPLookup();
 
     const char *class_name() const		{ return "RadixIPLookup"; }
+    const char *port_count() const		{ return "1/-"; }
     const char *processing() const		{ return PUSH; }
 
-    void notify_noutputs(int);
     void cleanup(CleanupStage);
 
     int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);

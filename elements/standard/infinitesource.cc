@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 InfiniteSource::InfiniteSource()
-  : Element(0, 1), _packet(0), _task(this)
+  : _packet(0), _task(this)
 {
 }
 

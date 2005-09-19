@@ -44,10 +44,9 @@ class WifiSeq : public Element { public:
   ~WifiSeq();
 
   const char *class_name() const	{ return "WifiSeq"; }
+  const char *port_count() const	{ return "1/-"; }
   const char *processing() const	{ return AGNOSTIC; }
 
-
-  void notify_noutpus(int n) { set_noutputs(n); }
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
 

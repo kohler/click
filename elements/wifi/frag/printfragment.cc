@@ -30,7 +30,6 @@ CLICK_DECLS
 
 
 PrintFragment::PrintFragment()
-  : Element(1, 1)
 {
 }
 
@@ -61,7 +60,7 @@ PrintFragment::simple_action(Packet *p)
   
   StringAccum sa;
   if (_label[0] != 0) {
-    sa << _label.cc() << ": ";
+    sa << _label << ": ";
   } else {
     sa << "PrintFragment: ";
   }
@@ -102,18 +101,11 @@ PrintFragment::simple_action(Packet *p)
   }
   sa << "\n";
 
-  click_chatter("%s", sa.take_string().cc());
+  click_chatter("%s", sa.take_string().c_str());
   return p;
 }
 
 
-
- 
-void
-PrintFragment::add_handlers()
-{
-  add_default_handlers(true);
-}
 
 #include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES

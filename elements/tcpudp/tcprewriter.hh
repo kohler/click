@@ -102,7 +102,7 @@ class TCPRewriter : public IPRw { public:
   
   const char *class_name() const		{ return "TCPRewriter"; }
   void *cast(const char *);
-  void notify_noutputs(int);
+  const char *port_count() const		{ return "1-/1-256"; }
   const char *processing() const		{ return PUSH; }
 
   int configure(Vector<String> &, ErrorHandler *);

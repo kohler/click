@@ -33,7 +33,6 @@
 CLICK_DECLS
 
 OpenAuthResponder::OpenAuthResponder()
-  : Element(1, 1)
 {
 }
 
@@ -121,7 +120,7 @@ OpenAuthResponder::push(int, Packet *p)
     click_chatter("%{element}: auth %d from %s not supported\n",
 		  this,
 		  algo,
-		  src.s().cc());
+		  src.s().c_str());
     p->kill();
     return;
   }
@@ -226,8 +225,6 @@ OpenAuthResponder_write_param(const String &in_s, Element *e, void *vparam,
 void
 OpenAuthResponder::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", OpenAuthResponder_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", OpenAuthResponder_write_param, (void *) H_DEBUG);

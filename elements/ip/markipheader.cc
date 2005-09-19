@@ -22,7 +22,6 @@
 CLICK_DECLS
 
 MarkIPHeader::MarkIPHeader()
-  : Element(1, 1)
 {
 }
 

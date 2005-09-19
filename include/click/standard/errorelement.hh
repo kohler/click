@@ -23,10 +23,9 @@ class ErrorElement : public Element { public:
     ~ErrorElement();
   
     const char *class_name() const		{ return "Error"; }
+    const char *port_count() const		{ return "-/-"; }
     const char *processing() const		{ return AGNOSTIC; }
     const char *flow_code() const		{ return "x/y"; }
-    void notify_ninputs(int);
-    void notify_noutputs(int);
   
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

@@ -38,6 +38,11 @@ CLICK_CXX_UNPROTECT
 #endif
 CLICK_DECLS
 
+const char Element::PORTS_0_0[] = "0";
+const char Element::PORTS_0_1[] = "0/1";
+const char Element::PORTS_1_0[] = "1/0";
+const char Element::PORTS_1_1[] = "1";
+
 const char Element::AGNOSTIC[] = "a";
 const char Element::PUSH[] = "h";
 const char Element::PULL[] = "l";
@@ -54,6 +59,10 @@ int Element::nelements_allocated = 0;
 # define ELEMENT_CTOR_STATS
 #endif
 
+/** @class Element
+ * Elements. */
+
+/** @brief Constructs an Element with zero input ports and output ports. */
 Element::Element()
     : ELEMENT_CTOR_STATS _router(0), _eindex(-1)
 {
@@ -62,6 +71,18 @@ Element::Element()
     _nports[0] = _nports[1] = 0;
 }
 
+/** @brief Constructs an Element with @a ninputs input ports and @a noutputs
+ * output ports (deprecated).
+ *
+ * @param ninputs number of input ports
+ * @param noutputs number of output ports
+ *
+ * @deprecated This constructor is deprecated.  Elements should use the
+ * port_count() function, not the constructor, to define the expected numbers
+ * of ports.
+ *
+ * @sa port_count
+ */
 Element::Element(int ninputs, int noutputs)
     : ELEMENT_CTOR_STATS _router(0), _eindex(-1)
 {
@@ -82,6 +103,25 @@ Element::~Element()
 
 // CHARACTERISTICS
 
+/** @fn Element::class_name() const
+ * @brief Return the element's class name.
+ *
+ * Each element class must override this function to return its class name.
+ *
+ * Click tools extract class names from the source.  For Click to find a class
+ * name, the function definition must appear inline, on a single line, inside
+ * the element class's declaration, and must return a C string constant.  It
+ * should also have public accessibility.  Here's an acceptable class_name()
+ * definition:
+ *
+ * @code
+ * const char *class_name() const     { return "ARPQuerier"; }
+ * @endcode
+ */
+
+/** 
+ *
+ */
 void *
 Element::cast(const char *name)
 {
@@ -92,45 +132,62 @@ Element::cast(const char *name)
 	return 0;
 }
 
+/** @brief Return the element's master. */
 Master *
 Element::master() const
 {
     return _router->master();
 }
 
+/** @brief Return the element's name.
+ *
+ * This is the name used to declare the element in the router configuration,
+ * with all compound elements expanded. */
 String
 Element::id() const
 {
     String s;
     if (Router *r = router())
 	s = r->ename(_eindex);
-    return (s ? s : String("<unknown>"));
+    return (s ? s : String::stable_string("<unknown>", 9));
 }
 
+/** @brief Return a string giving the element's name and class name.
+ *
+ * The result has the form &quot;@e name :: @e class_name&quot;. */
 String
 Element::declaration() const
 {
     return id() + " :: " + class_name();
 }
 
+/** @brief Return a string describing where the element was declared.
+ *
+ * The string generally has the form
+ * &quot;<em>filename</em>:<em>linenumber</em>&quot;. */
 String
 Element::landmark() const
 {
     String s;
     if (Router *r = router())
 	s = r->elandmark(_eindex);
-    return (s ? s : String("<unknown>"));
+    return (s ? s : String::stable_string("<unknown>", 9));
 }
 
 // INPUTS AND OUTPUTS
 
-void
+int
 Element::set_nports(int new_ninputs, int new_noutputs)
 {
     // exit on bad counts, or if already initialized
-    if (new_ninputs < 0 || new_noutputs < 0 || _inline_ports[0].initialized())
-	return;
-  
+    if (new_ninputs < 0 || new_noutputs < 0)
+	return -EINVAL;
+    if (_router->_have_connections) {
+	if (_router->_state >= Router::ROUTER_PREINITIALIZE)
+	    return -EBUSY;
+	_router->_have_connections = false;
+    }
+    
     // decide if inputs & outputs were inlined
     bool old_in_inline =
 	(_ports[0] == _inline_ports);
@@ -153,7 +210,7 @@ Element::set_nports(int new_ninputs, int new_noutputs)
     Port *new_inputs =
 	(new_in_inline ? _inline_ports : new Port[new_ninputs]);
     if (!new_inputs)		// out of memory -- return
-	return;
+	return -ENOMEM;
 
     Port *new_outputs =
 	(new_out_inline ? _inline_ports + (new_in_inline ? new_ninputs : 0)
@@ -161,7 +218,7 @@ Element::set_nports(int new_ninputs, int new_noutputs)
     if (!new_outputs) {		// out of memory -- return
 	if (!new_in_inline)
 	    delete[] new_inputs;
-	return;
+	return -ENOMEM;
     }
 
     // install information
@@ -173,50 +230,209 @@ Element::set_nports(int new_ninputs, int new_noutputs)
     _ports[1] = new_outputs;
     _nports[0] = new_ninputs;
     _nports[1] = new_noutputs;
+    return 0;
 }
 
-void
-Element::set_ninputs(int count)
-{
-    set_nports(count, _nports[1]);
-}
-
-void
-Element::set_noutputs(int count)
-{
-    set_nports(_nports[0], count);
-}
-
+/** @brief Returns true iff the element's ports are frozen (deprecated).
+ *
+ * @deprecated This function is deprecated.  Elements should not set their
+ * port counts directly; instead, they should use the port_count() function to
+ * give acceptable port count ranges.  In future, ports may be frozen even
+ * before configure() runs.
+ *
+ * An element can change its input and output port counts until after its
+ * configure() method returns.  After that point, the ports are frozen, and
+ * any attempt to add or remove a port will fail.  The ports_frozen() function
+ * returns true once an element's ports are frozen. */
 bool
 Element::ports_frozen() const
 {
-    return _inline_ports[0].initialized();
+    return _router->_state > Router::ROUTER_PRECONFIGURE;
 }
 
-void
-Element::notify_ninputs(int)
+/** @brief Called to fetch the element's port count specifier.
+ *
+ * An element class overrides this virtual function to return a C string
+ * describing its port counts.  The string gives acceptable input and output
+ * ranges, separated by a slash.  Examples:
+ *
+ * <dl>
+ * <dt><tt>"1/1"</tt></dt> <dd>The element has exactly one input port and one
+ * output port.</dd>
+ * <dt><tt>"1-2/0"</tt></dt> <dd>One or two input ports and zero output
+ * ports.</dd>
+ * <dt><tt>"1/-6"</tt></dt> <dd>One input port and up to six output ports.</dd>
+ * <dt><tt>"2-/-"</tt></dt> <dd>At least two input ports and any number of
+ * output ports.</dd>
+ * <dt><tt>"3"</tt></dt> <dd>Exactly three input and output ports.  (If no
+ * slash appears, the text is used for both input and output ranges.)</dd>
+ * <dt><tt>"1-/="</tt></dt> <dd>At least one input port and @e the @e same
+ * number of output ports.</dd>
+ * </dl>
+ *
+ * These ranges help Click determine whether a configuration uses too few or
+ * too many ports, and lead to errors such as "'e' has no input 3" and "'e'
+ * input 3 unused".
+ *
+ * Click extracts port count specifiers from the source for use by tools.  For
+ * Click to find a port count specifier, the function definition must appear
+ * inline, on a single line, inside the element class's declaration, and must
+ * return a C string constant.  It should also have public accessibility.
+ * Here's an acceptable port_count() definition:
+ *
+ * @code
+ * const char *port_count() const     { return "1/1"; }
+ * @endcode
+ *
+ * The default port_count() method effectively returns @c "0/0".  (In reality,
+ * it returns a special value that causes Click to call notify_ninputs() and
+ * notify_noutputs(), as in previous releases.  This behavior is deprecated;
+ * code should be updated to use port_count() semantics.)
+ *
+ * The following names are available for common port count specifiers.
+ *
+ * @arg @c PORTS_0_0 for @c "0/0"
+ * @arg @c PORTS_0_1 for @c "0/1"
+ * @arg @c PORTS_1_0 for @c "1/0"
+ * @arg @c PORTS_1_1 for @c "1/1"
+ *
+ * Since port_count() should return a C string constant with no other
+ * processing, it shouldn't matter when it's called; nevertheless, it is
+ * called before configure().
+ */
+const char *
+Element::port_count() const
 {
+    return "";
 }
 
-void
-Element::notify_noutputs(int)
+static int
+notify_nports_pair(const char *&s, const char *ends, int &lo, int &hi)
 {
+    if (s == ends || *s == '-')
+	lo = 0;
+    else if (isdigit(*s))
+	s = cp_integer(s, ends, 10, &lo);
+    else
+	return -1;
+    if (s < ends && *s == '-') {
+	s++;
+	if (s < ends && isdigit(*s))
+	    s = cp_integer(s, ends, 10, &hi);
+	else
+	    hi = INT_MAX;
+    } else
+	hi = lo;
+    return 0;
+}
+
+int
+Element::notify_nports(int ninputs, int noutputs, ErrorHandler *errh)
+{
+    const char *s_in = port_count();
+    if (!*s_in) {
+	notify_ninputs(ninputs);
+	notify_noutputs(noutputs);
+	return 0;
+    }
+
+    const char *s = s_in, *ends = s + strlen(s);
+    int ninlo, ninhi, noutlo, nouthi;
+    bool equal = false;
+
+    if (notify_nports_pair(s, ends, ninlo, ninhi) < 0)
+	goto parse_error;
+    
+    if (s == ends)
+	s = s_in;
+    else if (*s == '/')
+	s++;
+    else
+	goto parse_error;
+
+    if (*s == '=' && s + 1 == ends)
+	equal = true;
+    else if (notify_nports_pair(s, ends, noutlo, nouthi) < 0 || s != ends)
+	goto parse_error;
+
+    if (ninputs < ninlo)
+	ninputs = ninlo;
+    else if (ninputs > ninhi)
+	ninputs = ninhi;
+
+    if (equal)
+	noutputs = ninputs;
+    else if (noutputs < noutlo)
+	noutputs = noutlo;
+    else if (noutputs > nouthi)
+	noutputs = nouthi;
+
+    set_nports(ninputs, noutputs);
+    return 0;
+
+  parse_error:
+    if (errh)
+	errh->error("%{element}: bad port count", this);
+    return -1;
+}
+
+/** @brief Informs an element how many of its input ports were used
+ * (deprecated).
+ *
+ * @param ninputs number of input ports
+ *
+ * @deprecated The notify_ninputs() function is deprecated.  Elements should
+ * use port_count() instead.
+ *
+ * Click calls the notify_ninputs() function to inform an element how many of
+ * its input ports are used in the configuration.  Thus, if input ports 0-2
+ * were used, @a ninputs will be 3.  A typical notify_ninputs() implementation
+ * will call set_ninputs() to set the actual number of input ports equal to
+ * the number used.
+ *
+ * notify_ninputs() is called before configure().
+ *
+ * @sa notify_noutputs, set_ninputs, port_count
+ */
+void
+Element::notify_ninputs(int ninputs)
+{
+    (void) ninputs;
+}
+
+/** @brief Informs an element how many of its output ports were used
+ * (deprecated).
+ *
+ * @param noutputs number of output ports
+ *
+ * @deprecated The notify_noutputs() function is deprecated.  Elements should
+ * use port_count() instead.
+ *
+ * Click calls the notify_noutputs() function to inform an element how many of
+ * its output ports are used in the configuration.  Thus, if output ports 0-2
+ * were used, @a noutputs will be 3.  A typical notify_noutputs()
+ * implementation will call set_noutputs() to set the actual number of output
+ * ports equal to the number used.
+ *
+ * notify_noutputs() is called after notify_ninputs() and before configure().
+ *
+ * @sa notify_ninputs, set_noutputs, port_count
+ */
+void
+Element::notify_noutputs(int noutputs)
+{
+    (void) noutputs;
 }
 
 void
 Element::initialize_ports(const int *in_v, const int *out_v)
 {
-    // always initialize _inline_ports[0] so set_nports will know whether to
-    // quit
-    if (_ports[0] != _inline_ports && _ports[1] != _inline_ports)
-	_inline_ports[0] = Port(this, 0, -1);
-  
     for (int i = 0; i < ninputs(); i++) {
 	// allowed iff in_v[i] == VPULL
 	int port = (in_v[i] == VPULL ? 0 : -1);
 	_ports[0][i] = Port(this, 0, port);
     }
-  
+    
     for (int o = 0; o < noutputs(); o++) {
 	// allowed iff out_v[o] != VPULL
 	int port = (out_v[o] == VPULL ? -1 : 0);
@@ -227,7 +443,7 @@ Element::initialize_ports(const int *in_v, const int *out_v)
 int
 Element::connect_port(bool isoutput, int port, Element* e, int e_port)
 {
-    if (port_allowed(isoutput, port)) {
+    if (port_active(isoutput, port)) {
 	_ports[isoutput][port] = Port(this, e, e_port);
 	return 0;
     } else
@@ -237,6 +453,131 @@ Element::connect_port(bool isoutput, int port, Element* e, int e_port)
 
 // FLOW
 
+/** @brief Called to fetch the element's internal packet flow specifier (its
+ * <em>flow code</em>).
+ *
+ * An element class overrides this virtual function to return a C string
+ * describing how packets flow within the element.  That is, can packets that
+ * arrive on input port X be emitted on output port Y, for all X and Y?  This
+ * information helps Click answer questions such as "What Queues are
+ * downstream of this element?" and "Should this agnostic port be push or
+ * pull?".  See below for more.
+ *
+ * A flow code string consists of an input specification and an output
+ * specification, separated by a slash.  Each specification is a sequence of
+ * @e port @e codes.  Packets can travel from an input port to an output port
+ * only if the port codes match.
+ *
+ * The simplest port code is a single case-sensitive letter.  For example, the
+ * flow code @c "x/x" says that packets can travel from the element's input
+ * port to its output port, while @c "x/y" says that packets never travel
+ * between ports.
+ *
+ * A port code may also be a sequence of letters in brackets, such as
+ * <tt>[abz]</tt>. Two port codes match iff they have at least one letter in
+ * common, so <tt>[abz]</tt> matches <tt>a</tt>, but <tt>[abz]</tt> and
+ * <tt>[cde]</tt> do not match. The opening bracket may be followed by a caret
+ * <tt>^</tt>; this makes the port code match letters @e not mentioned between
+ * the brackets. Thus, the port code <tt>[^bc]</tt> is equivalent to
+ * <tt>[ABC...XYZadef...xyz]</tt>.
+ *
+ * Finally, the @c # character is also a valid port code, and may be used
+ * within brackets.  One @c # matches another @c # only when they represent
+ * the same port number -- for example, when one @c # corresponds to input
+ * port 2 and the other to output port 2.  @c # never matches any letter.
+ * Thus, for an element with exactly 2 inputs and 2 outputs, the flow code @c
+ * "##/##" behaves like @c "xy/xy".
+ *
+ * The last code in each specification is duplicated as many times as
+ * necessary, and any extra codes are ignored.  The flow codes @c
+ * "[x#][x#][x#]/x######" and @c "[x#]/x#" behave identically.
+ *
+ * Here are some example flow codes.
+ *
+ * <dl>
+ * <dt><tt>"x/x"</tt></dt>
+ * <dd>Packets may travel from any input port to any output port.  Most
+ * elements use this flow code.</dd>
+ *
+ * <dt><tt>"xy/x"</tt></dt>
+ * <dd>Packets arriving on input port 0 may travel to any output port, but
+ * those arriving on other input ports will not be emitted on any output.
+ * @e ARPQuerier uses this flow code.</dd>
+ *
+ * <dt><tt>"x/y"</tt></dt> <dd>Packets never travel between input and output
+ * ports. @e Idle and @e Error use this flow code.  So does @e KernelTun,
+ * since its input port and output port are decoupled (packets received on its
+ * input are sent to the kernel; packets received from the kernel are sent to
+ * its output).</dd>
+ *
+ * <dt><tt>"#/#"</tt></dt> <dd>Packets arriving on input port @e K may travel
+ * only to output port @e K.  @e Suppressor uses this flow code.</dd>
+ *
+ * <dt><tt>"#/[^#]"</tt></dt> <dd>Packets arriving on input port @e K may
+ * travel to any output port except @e K.  @e EtherSwitch uses this flow
+ * code.</dd> </dl>
+ *
+ * Click extracts flow codes from the source for use by tools.  For Click to
+ * find a flow code, the function definition must appear inline, on a single
+ * line, inside the element class's declaration, and must return a C string
+ * constant.  It should also have public accessibility.  Here's an acceptable
+ * flow_code() definition:
+ *
+ * @code
+ * const char *flow_code() const     { return "xy/x"; }
+ * @endcode
+ *
+ * The default flow_code() method returns @c "x/x", which indicates that
+ * packets may travel from any input to any output.  This default is
+ * acceptable for the vast majority of elements.
+ *
+ * The following name is available for a common flow code.
+ *
+ * @arg @c COMPLETE_FLOW for @c "x/x"
+ *
+ * Since flow_code() should return a C string constant with no other
+ * processing, it shouldn't matter when it's called; nevertheless, it is
+ * called before configure().
+ *
+ * <h3>Determining an element's flow code</h3>
+ *
+ * What does it mean for a packet to travel from one port to another?  To pick
+ * the right flow code for an element, consider how a flow code would affect a
+ * simple router.
+ *
+ * Given an element @e E with input port @e M and output port @e N, imagine
+ * this simple configuration (or a similar configuration):
+ * 
+ * <tt>... -> RED -> [@e M] E [@e N] -> Queue -> ...;</tt>
+ *
+ * Now, should the @e RED element include the @e Queue element in its queue
+ * length calculation?  If so, then the flow code's <em>M</em>th input port
+ * code and <em>N</em>th output port code should match.  If not, they
+ * shouldn't.
+ *
+ * For example, consider @e ARPQuerier's second input port.  On receiving an
+ * ARP response on that input, @e ARPQuerier may emit a held-over IP packet to
+ * its first output.  However, a @e RED element upstream of that second input
+ * port probably wouldn't count the downstream @e Queue in its queue length
+ * calculation.  After all, the ARP responses are effectively dropped; packets
+ * emitted onto the @e Queue originally came from @e ARPQuerier's first input
+ * port.  Therefore, @e ARPQuerier's flow code, <tt>"xy/x"</tt>, specifies
+ * that packets arriving on the second input port are not emitted on any
+ * output port.
+ *
+ * The @e ARPResponder element provides a contrasting example.  It has one
+ * input port, which receives ARP queries, and one output port, which emits
+ * the corresponding ARP responses.  A @e RED element upstream of @e
+ * ARPResponder probably @e would want to include a downstream @e Queue, since
+ * queries received by @e ARPResponder are effectively transmuted into emitted
+ * responses. Thus, @e ARPResponder's flow code, <tt>"x/x"</tt> (the default),
+ * specifies that packets travel through it, even though the packets it emits
+ * are completely different from the packets it receives.
+ *
+ * If you find this confusing, don't fret.  It is perfectly fine to be
+ * conservative when assigning flow codes, and the vast majority of the Click
+ * distribution's elements use @c COMPLETE_FLOW.
+ */
 const char *
 Element::flow_code() const
 {
@@ -324,11 +665,11 @@ Element::port_flow(bool isoutput, int port, Bitvector* bv) const
   
     const char* f_in = f;
     const char* f_out = strchr(f, '/');
-    if (!f_out || f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
+    f_out = (f_out ? f_out + 1 : f_in);
+    if (*f_out == '\0' || *f_out == '/') {
 	errh->error("'%{element}' flow code: missing or bad '/'", this);
 	return;
     }
-    f_out++;
 
     if (isoutput) {
 	const char* f_swap = f_in;
@@ -349,16 +690,65 @@ Element::port_flow(bool isoutput, int port, Bitvector* bv) const
     }
 }
 
+
 // PUSH OR PULL PROCESSING
 
+/** @brief Called to fetch the element's processing specifier.
+ *
+ * An element class overrides this virtual function to return a C string
+ * describing which of its ports are push, pull, or agnostic.  The string
+ * gives acceptable input and output ranges, separated by a slash; the
+ * characters @c "h", @c "l", and @c "a" indicate push, pull, and agnostic
+ * ports, respectively.  Examples:
+ *
+ * @arg @c "h/h" All input and output ports are push.
+ * @arg @c "h/l" Push input ports and pull output ports.
+ * @arg @c "a/ah" All input ports are agnostic.  The first output port is also
+ * agnostic, but the second and subsequent output ports are push.
+ * @arg @c "hl/hlh" Input port 0 and output port 0 are push.  Input port 1 and
+ * output port 1 are pull.  All remaining inputs are pull; all remaining
+ * outputs are push.
+ * @arg @c "a" All input and output ports are agnostic.  (If no slash appears,
+ * the text is used for both input and output ports.)
+ *
+ * Thus, each character indicates a single port's processing type, except that
+ * the last character in the input section is used for all remaining input
+ * ports (and similarly for outputs).  It's OK to have more characters than
+ * ports; any extra characters are ignored.
+ *
+ * Click extracts processing specifiers from the source for use by tools.  For
+ * Click to find a processing specifier, the function definition must appear
+ * inline, on a single line, inside the element class's declaration, and must
+ * return a C string constant.  It should also have public accessibility.
+ * Here's an acceptable processing() definition:
+ *
+ * @code
+ * const char *processing() const     { return "a/ah"; }
+ * @endcode
+ *
+ * The default processing() method returns @c "a/a", which sets all ports to
+ * agnostic.
+ *
+ * The following names are available for common processing specifiers.
+ *
+ * @arg @c AGNOSTIC for @c "a/a"
+ * @arg @c PUSH for @c "h/h"
+ * @arg @c PULL for @c "l/l"
+ * @arg @c PUSH_TO_PULL for @c "h/l"
+ * @arg @c PULL_TO_PUSH for @c "l/h"
+ *
+ * Since processing() should return a C string constant with no other
+ * processing, it shouldn't matter when it's called; nevertheless, it is
+ * called before configure().
+ */
 const char*
 Element::processing() const
 {
     return AGNOSTIC;
 }
 
-static int
-next_processing_code(const char*& p, ErrorHandler* errh)
+int
+Element::next_processing_code(const char*& p, ErrorHandler* errh)
 {
     switch (*p) {
     
@@ -379,7 +769,7 @@ next_processing_code(const char*& p, ErrorHandler* errh)
 
       default:
 	if (errh)
-	    errh->error("invalid character '%c' in processing code", *p);
+	    errh->error("bad processing code");
 	p++;
 	return -1;
     
@@ -427,27 +817,259 @@ Element::flags() const
 
 // CLONING AND CONFIGURING
 
+/** @brief Called to fetch the element's configure phase, which determines the
+ * order in which elements are configured and initialized.
+ *
+ * Click configures and initializes elements in increasing order of
+ * configure_phase().  An element with configure phase 1 will always be
+ * configured (have its configure() method called) before an element with
+ * configure phase 2.  Thus, if two element classes must be configured in a
+ * given order, they should define configure_phase() functions to enforce that
+ * order.  For example, the @e AddressInfo element defines address
+ * abbreviations for other elements to use; it should thus be configured
+ * before other elements, and its configure_phase() method returns a low
+ * value.
+ *
+ * Configure phases should be defined relative to the following constants,
+ * which are listed in increasing order.
+ *
+ * <dl>
+ * <dt><tt>CONFIGURE_PHASE_FIRST</tt></dt>
+ * <dd>Configure before other elements.  Used by @e AddressInfo.</dd>
+ *
+ * <dt><tt>CONFIGURE_PHASE_INFO</tt></dt>
+ * <dd>Configure early.  Appropriate for most information elements, such as @e ScheduleInfo.</dd>
+ *
+ * <dt><tt>CONFIGURE_PHASE_PRIVILEGED</tt></dt>
+ * <dd>Intended for elements that require root
+ * privilege when run at user level, such as @e FromDevice and
+ * @e ToDevice.  The @e ChangeUID element, which reliquishes root
+ * privilege, runs at configure phase @c CONFIGURE_PHASE_PRIVILEGED + 1.</dd>
+ *
+ * <dt><tt>CONFIGURE_PHASE_DEFAULT</tt></dt> <dd>The default implementation
+ * returns @c CONFIGURE_PHASE_DEFAULT, so most elements are configured at this
+ * phase.  Appropriate for most elements.</dd>
+ *
+ * <dt><tt>CONFIGURE_PHASE_LAST</tt></dt>
+ * <dd>Configure after other elements.</dd>
+ * </dl>
+ *
+ * The body of a configure_phase() method should consist of a single @c return
+ * statement returning some constant.  Although it shouldn't matter when it's
+ * called, it is called before configure().
+ */
 int
 Element::configure_phase() const
 {
     return CONFIGURE_PHASE_DEFAULT;
 }
 
+/** @brief Called to parse the element's configuration arguments.
+ *
+ * @param conf configuration arguments
+ * @param errh error handler
+ *
+ * The configure() method is passed the element's configuration arguments.  It
+ * should parse them, report any errors, and initialize the element's internal
+ * state.
+ *
+ * The @a conf argument is the element's configuration string, divided into
+ * configuration arguments by splitting at commas and removing comments and
+ * leading and trailing whitespace (see cp_argvec()).  If @a conf is empty,
+ * the element was not supplied with a configuration string (or its
+ * configuration string contained only comments and whitespace).  It is safe
+ * to modify @a conf; modifications will be thrown away when the function
+ * returns.
+ *
+ * Any errors, warnings, or messages should be reported to @a errh.  Messages
+ * should not specify the element name or type, since this information will be
+ * provided as context.
+ *
+ * configure() should return a negative number if configuration fails.
+ * Returning a negative number prevents the router from initializing.  The
+ * default configure() method succeeds if and only if there are no
+ * configuration arguments.
+ *
+ * configure() methods are called in order of configure_phase().  All
+ * elements' configure() methods are called, even if an early configure()
+ * method fails; this is to report all relevant error messages to the user,
+ * rather than just the first.
+ *
+ * configure() is called early in the initialization process, and cannot check
+ * whether a named handler exists.  That function must be left for
+ * initialize().  Assuming all router connections are valid and all
+ * configure() methods succeed, the add_handlers() functions will be called
+ * next.
+ *
+ * A configure() method should not perform potentially harmful actions, such
+ * as truncating files or attaching to devices.  These actions should be left
+ * for the initialize() method, which is called later.  This avoids harm if
+ * another element cannot be configured, or if the router is incorrectly
+ * connected, since in those cases initialize() will never be called.
+ *
+ * Elements that support live reconfiguration (see can_live_reconfigure())
+ * should expect configure() to be called at run time, when a user writes to
+ * the element's @c config handler.  In that case, configure() must be careful
+ * not to disturb the existing configuration unless the new configuration is
+ * error-free.
+ *
+ * @note In previous releases, configure() could not determine whether a port
+ * is push or pull or query the router for information about neighboring
+ * elements.  Those functions had to be left for initialize().  Even in the
+ * current release, if any element in a configuration calls the deprecated
+ * set_ninputs() or set_noutputs() function from configure(), then all push,
+ * pull, and neighbor information is invalidated until initialize() time.
+ */
 int
 Element::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     return cp_va_parse(conf, this, errh, cpEnd);
 }
 
-int
-Element::initialize(ErrorHandler *)
+/** @brief Called when an element should install its handlers.
+ *
+ * The add_handlers() method should install any handlers the element provides
+ * by calling add_read_handler(), add_write_handler(), and set_handler().
+ * These functions may also be called from configure(), initialize(), or even
+ * later, during router execution.  However, it is better in most cases to
+ * initialize handlers in configure() or add_handlers(), since elements that
+ * depend on other handlers often check in initialize() whether those handlers
+ * exist.
+ *
+ * add_handlers() is called after configure() and before initialize().  When
+ * it runs, it is guaranteed that every configure() method succeeded and that
+ * all connections are correct (push and pull match up correctly and there are
+ * no unused or badly-connected ports).
+ * 
+ * Most add_handlers() methods simply call add_read_handler(),
+ * add_write_handler(), add_task_handlers(), and possibly set_handler() one or
+ * more times.  The default add_handlers() method does nothing.
+ *
+ * Click automatically provides five handlers for each element: @c class, @c
+ * name, @c config, @c ports, and @c handlers.  There is no need to provide
+ * these yourself.
+ */
+void
+Element::add_handlers()
 {
+}
+
+/** @brief Called to initialize an element.
+ *
+ * @param errh error handler
+ *
+ * The initialize() method is called just before the router is placed on
+ * line. It performs any final initialization, and provides the last chance to
+ * abort router installation with an error.  Any errors, warnings, or messages
+ * should be reported to @a errh.  Messages should not specify the element
+ * name; this information will be supplied externally.
+ *
+ * initialize() should return zero if initialization succeeds, or a negative
+ * number if it fails.  Returning a negative number prevents the router from
+ * initializing.  The default initialize() method always returns zero
+ * (success).
+ *
+ * initialize() methods are called in order of configure_phase(), using the
+ * same order as for configure().  When an initialize() method fails, router
+ * initialization stops immediately, and no more initialize() methods are
+ * called.  Thus, at most one initialize() method can fail per router
+ * configuration.
+ *
+ * initialize() is called after add_handlers() and before take_state().  When
+ * it runs, it is guaranteed that every configure() method succeeded, that all
+ * connections are correct (push and pull match up correctly and there are no
+ * unused or badly-connected ports), and that every add_handlers() method has
+ * been called.
+ *
+ * If every element's initialize() method succeeds, then the router is
+ * installed, and will remain installed until another router replaces it.  Any
+ * errors that occur later than initialize() -- during take_state(), push(),
+ * or pull(), for example -- will not take the router off line.
+ *
+ * Strictly speaking, the only task that @e must go in initialize() is
+ * checking whether a handler exists, since that information isn't available
+ * at configure() time.  It's often convenient, however, to put other
+ * functionality in initialize().  For example, opening files for writing fits
+ * well in initialize(): if the configuration has errors before the relevant
+ * element is initialized, any existing file will be left as is.  Common tasks
+ * performed in initialize() methods include:
+ *
+ *   - Initializing Task objects.
+ *   - Allocating memory.
+ *   - Opening files.
+ *   - Initializing network devices.
+ *
+ * @note initialize() methods may not create or destroy input and output
+ * ports, but this functionality is deprecated anyway.
+ *
+ * @note In previous releases, configure() could not determine whether a port
+ * was push or pull or query the router for information about neighboring
+ * elements, so those tasks were relegated to initialize() methods.  In the
+ * current release, configure() can perform these tasks too.
+ */
+int
+Element::initialize(ErrorHandler *errh)
+{
+    (void) errh;
     return 0;
 }
 
+/** @brief Called when this element should take @a old_element's state, if
+ * possible, during a hotswap operation.
+ *
+ * @param old_element element in the old configuration; result of
+ * hotswap_element()
+ * @param errh error handler
+ *
+ * The take_state() method supports hotswapping, and is the last stage of
+ * configuration installation.  When a configuration is successfully installed
+ * with the hotswap option, the driver (1) stops the old configuration, (2)
+ * searches the two configurations for pairs of compatible elements, (3) calls
+ * take_state() on the new elements in those pairs to give them a chance to
+ * take state from the old elements, and (4) starts the new configuration.
+ *
+ * take_state() is called only when a configuration is hotswapped in.  The
+ * default take_state() implementation does nothing; there's no need to
+ * override it unless your element has state you want preserved across
+ * hotswaps.
+ *
+ * take_state()
+ * The @a old_element argument is guaranteed to the non-null result of calling
+ * this->hotswap_element().  Generally, this 
+ *
+ * Errors and warnings should be reported to @a errh, but the router will be
+ * installed whether or not there are errors.  take_state() should always
+ * leave this element in a state that's safe to run, and @a old_element in a
+ * state that's safe to cleanup().
+ *
+ * take_state() is called after initialize().  When it runs, it is guaranteed
+ * that this element's configuration (its router()) will shortly be installed.
+ * Every configure() and initialize() method succeeded, all connections are
+ * correct (push and pull match up correctly and there are no unused or
+ * badly-connected ports), and every add_handlers() method has been called.
+ * It is also guaranteed that the old configuration (of which old_element is a
+ * part) had been successfully installed, but that none of its tasks are
+ * running at the moment.
+ *
+ */
 void
-Element::cleanup(CleanupStage)
+Element::take_state(Element *old_element, ErrorHandler *errh)
 {
+}
+
+Element *
+Element::hotswap_element() const
+{
+    if (Router *other = router()->hotswap_router())
+	return other->find(id());
+    else
+	return 0;
+}
+
+void
+Element::cleanup(CleanupStage stage)
+{
+    (void) stage;
 }
 
 
@@ -466,20 +1088,6 @@ Element::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
     return configure(conf, errh);
   else
     return errh->error("cannot reconfigure %{element} live", this);
-}
-
-Element *
-Element::hotswap_element() const
-{
-  if (Router *other = router()->hotswap_router())
-    return other->find(id());
-  else
-    return 0;
-}
-
-void
-Element::take_state(Element *, ErrorHandler *)
-{
 }
 
 
@@ -733,11 +1341,6 @@ Element::add_task_handlers(Task *task, const String &prefix)
 #endif
 }
 
-void
-Element::add_handlers()
-{
-}
-
 String
 Element::read_positional_handler(Element *element, void *thunk)
 {
@@ -845,47 +1448,49 @@ Element::local_llrpc(unsigned command, void *data)
 void
 Element::push(int, Packet *p)
 {
-  p = simple_action(p);
-  if (p) output(0).push(p);
+    p = simple_action(p);
+    if (p)
+	output(0).push(p);
 }
 
 Packet *
 Element::pull(int)
 {
-  Packet *p = input(0).pull();
-  if (p) p = simple_action(p);
-  return p;
+    Packet *p = input(0).pull();
+    if (p)
+	p = simple_action(p);
+    return p;
 }
 
 Packet *
 Element::simple_action(Packet *p)
 {
-  return p;
+    return p;
 }
 
 bool
 Element::run_task()
 {
-  static int nwarn = 0;
-  if (nwarn++ < 3)
-    click_chatter("warning: calling deprecated run_scheduled() method;\nreplace with run_task() in your code");
-  run_scheduled();
-  return true;
+    static int nwarn = 0;
+    if (nwarn++ < 3)
+	click_chatter("warning: calling deprecated run_scheduled() method;\nreplace with run_task() in your code");
+    run_scheduled();
+    return true;
 }
 
 void
 Element::run_timer()
 {
-  static int nwarn = 0;
-  if (nwarn++ < 3)
-    click_chatter("warning: calling deprecated run_scheduled() method;\nreplace with run_timer() in your code");
-  run_scheduled();
+    static int nwarn = 0;
+    if (nwarn++ < 3)
+	click_chatter("warning: calling deprecated run_scheduled() method;\nreplace with run_timer() in your code");
+    run_scheduled();
 }
 
 void
 Element::run_scheduled()
 {
-  assert(0 && "bad run_task");
+    assert(0 && "bad run_task");
 }
 
 CLICK_ENDDECLS

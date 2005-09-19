@@ -28,6 +28,7 @@ class Discard : public Element { public:
   ~Discard();
   
   const char *class_name() const		{ return "Discard"; }
+  const char *port_count() const		{ return PORTS_1_0; }
   const char *processing() const		{ return AGNOSTIC; }
   
   int initialize(ErrorHandler *);

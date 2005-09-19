@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 SendPattern::SendPattern()
-  : Element(0, 1)
 {
   _len = 1;
 }

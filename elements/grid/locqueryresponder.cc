@@ -32,8 +32,6 @@ CLICK_DECLS
 LocQueryResponder::LocQueryResponder()
   : _expire_timer(expire_hook, this)
 {
-  add_input();
-  add_output();
 }
 
 int
@@ -87,14 +85,14 @@ LocQueryResponder::simple_action(Packet *p)
   
   if (gh->type != grid_hdr::GRID_LOC_QUERY) {
     click_chatter("LocQueryResponder %s: received unexpected Grid packet type %s; is the configuration wrong?",
-		  id().cc(), grid_hdr::type_string(gh->type).cc());
+		  id().c_str(), grid_hdr::type_string(gh->type).c_str());
     p->kill();
     return 0;
   }
 
   if (lq->dst_ip != (unsigned int) _ip) {
     click_chatter("LocQueryResponder %s: received location query for someone else (%s); is the configuration wrong?",
-		  id().cc(), IPAddress(lq->dst_ip).s().cc());
+		  id().c_str(), IPAddress(lq->dst_ip).s().c_str());
     p->kill();
     return 0;
   }
@@ -104,7 +102,7 @@ LocQueryResponder::simple_action(Packet *p)
   seq_t *old_seq = _query_seqs.findp(gh->ip);
   if (old_seq && old_seq->seq_no >= seq_no) {
 #if NOISY
-    click_chatter("LocQueryResponder %s: ignoring old query from %s (%u) ", id().cc(), IPAddress(gh->ip).s().cc(), seq_no);
+    click_chatter("LocQueryResponder %s: ignoring old query from %s (%u) ", id().c_str(), IPAddress(gh->ip).s().c_str(), seq_no);
 #endif
     p->kill();
     return 0;
@@ -114,7 +112,7 @@ LocQueryResponder::simple_action(Packet *p)
   // construct the response
   WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap) + 2);
   if (q == 0) {
-    click_chatter("in %s: cannot make packet!", id().cc());
+    click_chatter("in %s: cannot make packet!", id().c_str());
     assert(0);
   } 
   ASSERT_ALIGNED(q->data());

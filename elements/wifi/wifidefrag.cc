@@ -28,7 +28,6 @@ CLICK_DECLS
 
 
 WifiDefrag::WifiDefrag()
-  : Element(1, 1)
 {
 }
 
@@ -67,7 +66,7 @@ WifiDefrag::simple_action(Packet *p)
     if (_debug) {
       click_chatter("%{element}: no defrag %s seq %d frag %d\n",
 		    this,
-		    src.s().cc(),
+		    src.s().c_str(),
 		    seq,
 		    frag);
     }
@@ -83,7 +82,7 @@ WifiDefrag::simple_action(Packet *p)
     if (_debug) {
       click_chatter("%{element}: unrelated frag %s seq %d frag %d\n",
 		    this,
-		    src.s().cc(),
+		    src.s().c_str(),
 		    seq,
 		    frag);
       if (nfo) {
@@ -112,7 +111,7 @@ WifiDefrag::simple_action(Packet *p)
     if (_debug) {
       click_chatter("%{element}: first frag %s seq %d frag %d\n",
 		    this,
-		    src.s().cc(),
+		    src.s().c_str(),
 		    seq,
 		    frag);
     }
@@ -136,7 +135,7 @@ WifiDefrag::simple_action(Packet *p)
   if (_debug) {
     click_chatter("%{element}: last frag %s seq %d frag %d\n",
 		  this,
-		  src.s().cc(),
+		  src.s().c_str(),
 		  seq,
 		  frag);
   }
@@ -189,8 +188,6 @@ WifiDefrag::write_param(const String &in_s, Element *e, void *vparam,
 void
 WifiDefrag::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", write_param, (void *) H_DEBUG);

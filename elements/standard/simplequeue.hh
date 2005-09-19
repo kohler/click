@@ -73,6 +73,7 @@ class SimpleQueue : public Element, public Storage { public:
     template <typename Filter> int yank(Filter, Vector<Packet *> &);
 
     const char* class_name() const		{ return "SimpleQueue"; }
+    const char *port_count() const		{ return PORTS_1_1; }
     const char* processing() const		{ return PUSH_TO_PULL; }
     void* cast(const char*);
   

@@ -33,7 +33,8 @@ IPClassifier::~IPClassifier()
 int
 IPClassifier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  set_noutputs(conf.size());
+    if (conf.size() != noutputs())
+	return errh->error("need %d arguments, one per output port", noutputs());
 
   // leverage IPFilter's parsing
   Vector<String> new_conf;

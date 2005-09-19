@@ -31,7 +31,7 @@
 CLICK_DECLS
 
 BIM::BIM()
-  : Element(1, 1), _task(this)
+  : _task(this)
 {
   _speed = 9600;
   _fd = -1;

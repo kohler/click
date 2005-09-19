@@ -98,6 +98,7 @@ class IPPrint : public Element { public:
   ~IPPrint();
   
   const char *class_name() const		{ return "IPPrint"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
   
   int configure(Vector<String> &, ErrorHandler *);

@@ -40,7 +40,7 @@ inline String path_to_string(const Path &p)
 {
   StringAccum sa;
   for(int x = 0; x < p.size(); x++) {
-    sa << p[x].s().cc();
+    sa << p[x].s();
     if (x != p.size() - 1) {
       sa << " ";
     }

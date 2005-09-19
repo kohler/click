@@ -29,7 +29,6 @@ CLICK_DECLS
 
 
 FragmentDecap::FragmentDecap()
-  : Element(1, 1)
 {
 }
 
@@ -122,8 +121,6 @@ FragmentDecap_write_param(const String &in_s, Element *e, void *vparam,
 void
 FragmentDecap::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", FragmentDecap_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", FragmentDecap_write_param, (void *) H_DEBUG);

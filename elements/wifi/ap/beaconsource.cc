@@ -39,8 +39,7 @@ CLICK_DECLS
 #define max(x,y)      ((x)>(y) ? (x) : (y))
 
 BeaconSource::BeaconSource()
-  : Element(1, 1),
-    _timer(this),
+  : _timer(this),
     _rtable(0)
 {
   _bcast = EtherAddress();
@@ -301,8 +300,8 @@ BeaconSource::push(int, Packet *p)
     if (_debug) {
       click_chatter("%{element}: other ssid %s wanted %s\n",
 		    this,
-		    ssid.cc(),
-		    _winfo->_ssid.cc());
+		    ssid.c_str(),
+		    _winfo->_ssid.c_str());
     }
     p->kill();
     return;
@@ -329,7 +328,7 @@ BeaconSource::push(int, Packet *p)
   if (_debug) {
     click_chatter("%{element}: %s\n",
 		  this,
-		  sa.take_string().cc());
+		  sa.take_string().c_str());
   }
   send_beacon(src, true);
   
@@ -371,8 +370,6 @@ BeaconSource_write_param(const String &in_s, Element *e, void *vparam,
 void
 BeaconSource::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", BeaconSource_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", BeaconSource_write_param, (void *) H_DEBUG);

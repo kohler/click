@@ -40,13 +40,12 @@ public:
   ~RONRouteModular();
   
   const char *class_name() const		{ return "RONRouteModular"; }
+  const char *port_count() const		{ return "-/="; }
   const char *processing() const		{ return PUSH; }
   
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
-  void notify_ninputs(int);
-  void notify_noutputs(int);
 
   void push(int inport, Packet *p);
   void send_rst(Packet *p, unsigned long seq, int outport);

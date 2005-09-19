@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 Unstrip::Unstrip(unsigned nbytes)
-  : Element(1, 1), _nbytes(nbytes)
+  : _nbytes(nbytes)
 {
 }
 

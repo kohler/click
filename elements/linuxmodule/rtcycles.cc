@@ -21,7 +21,6 @@
 #include <click/glue.hh>
 
 RTCycles::RTCycles()
-  : Element(1, 1)
 {
   _accum = _npackets = 0;
 }

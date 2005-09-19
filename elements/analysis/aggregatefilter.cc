@@ -30,7 +30,7 @@ AggregateFilter::Group::Group(uint32_t aggregate)
 }
 
 AggregateFilter::AggregateFilter()
-    : Element(1, 1), _default_output(1)
+    : _default_output(1)
 {
     for (unsigned i = 0; i < NBUCKETS; i++)
 	_groups[i] = 0;
@@ -38,12 +38,6 @@ AggregateFilter::AggregateFilter()
 
 AggregateFilter::~AggregateFilter()
 {
-}
-
-void
-AggregateFilter::notify_noutputs(int n)
-{
-    set_noutputs(n <= 254 ? n : 254);
 }
 
 AggregateFilter::Group *
@@ -104,7 +98,7 @@ AggregateFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 		    dash = find(words[i], '-');
 		    if (!cp_unsigned(words[i].substring(words[i].begin(), dash), &agg1)
 			|| !cp_unsigned(words[i].substring(dash + 1, words[i].end()), &agg2)) {
-			errh->error("pattern %d: bad aggregate number `%#s'", words[i].cc());
+			errh->error("pattern %d: bad aggregate number `%#s'", words[i].c_str());
 			continue;
 		    }
 		}

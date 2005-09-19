@@ -1211,7 +1211,7 @@ cp_double(const String &in_str, double *result)
   errno = 0;
   String str = in_str;
   char *endptr;
-  double val = strtod(str.cc(), &endptr);
+  double val = strtod(str.c_str(), &endptr);
   if (*endptr)			// bad format; garbage after number
     return false;
 
@@ -1905,7 +1905,7 @@ cp_filename(const String &str, String *return_value)
       while (off < fn.length() && fn[off] != '/')
 	off++;
       String username = fn.substring(1, off - 1);
-      struct passwd *pwd = getpwnam(username.cc());
+      struct passwd *pwd = getpwnam(username.c_str());
       if (pwd && pwd->pw_dir)
 	fn = String(pwd->pw_dir) + fn.substring(off);
     }
@@ -2215,7 +2215,7 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes real (%s)", argname, desc);
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real10(v->v.i, v->extra);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
+      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
     }
     break;
 
@@ -2224,7 +2224,7 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes unsigned real (%s)", argname, desc);
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real10(v->v.u, v->extra);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
+      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
     }
     break;
 
@@ -2249,7 +2249,7 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes time in seconds (%s)", argname, desc);
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_milliseconds(v->v.u);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
+      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
     }
     break;
 
@@ -2258,7 +2258,7 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes time in seconds (%s)", argname, desc);
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_microseconds(v->v.u);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
+      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
     }
     break;
 
@@ -2284,7 +2284,7 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes bandwidth (%s)", argname, desc);
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_bandwidth(v->v.u);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
+      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
     } else if (cp_errno == CPE_NOUNITS)
       errh->warning("no units on bandwidth %s (%s), assuming Bps", argname, desc);
     break;
@@ -2295,7 +2295,7 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes real (%s)", argname, desc);
     } else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real2(v->v.i, v->extra);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
+      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
     }
     break;
 
@@ -2305,7 +2305,7 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes unsigned real (%s)", argname, desc);
     } else if (cp_errno == CPE_OVERFLOW) {
       String m  = cp_unparse_real2(v->v.u, v->extra);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
+      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
     }
     break;
 
@@ -2926,7 +2926,7 @@ CpVaHelper::finish_keyword_error(const char *format, const char *bad_keywords, E
 	    keywords_sa << ", ";
 	keywords_sa << cp_values[i].keyword;
     }
-    errh->error(format, bad_keywords, keywords_sa.cc());
+    errh->error(format, bad_keywords, keywords_sa.c_str());
     return -EINVAL;
 }
 
@@ -2972,7 +2972,7 @@ CpVaHelper::assign_arguments(const Vector<String> &args, const char *argname, Er
   
   // report keyword argument errors
   if (keyword_error_sa.length() && !keywords_only)
-    return finish_keyword_error("bad keyword(s) %s\n(valid keywords are %s)", keyword_error_sa.cc(), errh);
+    return finish_keyword_error("bad keyword(s) %s\n(valid keywords are %s)", keyword_error_sa.c_str(), errh);
   
   // report missing mandatory keywords
   for (int i = npositional; i < nvalues; i++)
@@ -2982,7 +2982,7 @@ CpVaHelper::assign_arguments(const Vector<String> &args, const char *argname, Er
       keyword_error_sa << cp_values[i].keyword;
     }
   if (keyword_error_sa.length())
-    return errh->error("missing mandatory keyword(s) %s", keyword_error_sa.cc());
+    return errh->error("missing mandatory keyword(s) %s", keyword_error_sa.c_str());
   
   // if wrong number of arguments, print signature
   if (npositional_supplied < nrequired
@@ -3010,7 +3010,7 @@ CpVaHelper::assign_arguments(const Vector<String> &args, const char *argname, Er
 
     const char *whoops = (npositional_supplied > npositional ? "too many" : "too few");
     if (signature.length())
-      errh->error("%s %ss; expected '%s'", whoops, argname, signature.cc());
+      errh->error("%s %ss; expected '%s'", whoops, argname, signature.c_str());
     else
       errh->error("expected empty %s list", argname);
     return -EINVAL;
@@ -3052,7 +3052,7 @@ CpVaHelper::parse_arguments(const char *argname,
     if (v->argtype) {
       StringAccum sa;
       sa << "keyword " << v->keyword;
-      v->argtype->parse(v, v->v_string, errh, sa.cc()  CP_PASS_CONTEXT);
+      v->argtype->parse(v, v->v_string, errh, sa.c_str()  CP_PASS_CONTEXT);
     }
   }
 
@@ -3373,7 +3373,7 @@ cp_unparse_real2(uint32_t real, int frac_bits)
 void
 test_unparse_real2()
 {
-#define TEST(s, frac_bits, result) { String q = (#s); uint32_t r; if (!cp_unsigned_real2(q, (frac_bits), &r)) fprintf(stderr, "FAIL: %s unparsable\n", q.cc()); else { String qq = cp_unparse_real2(r, (frac_bits)); fprintf(stderr, "%s: %s %d/%d %s\n", (qq == (result) ? "PASS" : "FAIL"), q.cc(), r, (frac_bits), qq.cc()); }}
+#define TEST(s, frac_bits, result) { String q = (#s); uint32_t r; if (!cp_unsigned_real2(q, (frac_bits), &r)) fprintf(stderr, "FAIL: %s unparsable\n", q.c_str()); else { String qq = cp_unparse_real2(r, (frac_bits)); fprintf(stderr, "%s: %s %d/%d %s\n", (qq == (result) ? "PASS" : "FAIL"), q.c_str(), r, (frac_bits), qq.c_str()); }}
   TEST(0.418, 8, "0.418");
   TEST(0.417, 8, "0.418");
   TEST(0.416, 8, "0.414");

@@ -123,11 +123,11 @@ TulipStats::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpString, "device name", &_devname,
 		  cpEnd) < 0)
     return -1;
-  _dev = dev_get_by_name(_devname.cc());
+  _dev = dev_get_by_name(_devname.c_str());
   if (!_dev)
     _dev = dev_get_by_ether_address(_devname, this);
   if (!_dev)
-    return errh->error("unknown device '%s'", _devname.cc());
+    return errh->error("unknown device '%s'", _devname.c_str());
   return 0;
 }
 
@@ -139,7 +139,7 @@ TulipStats::initialize(ErrorHandler *errh)
 #endif
 
   if (tulip_stats_map.insert(this) < 0)
-    return errh->error("cannot use TulipStats for device '%s'", _devname.cc());
+    return errh->error("cannot use TulipStats for device '%s'", _devname.c_str());
   
   ScheduleInfo::join_scheduler(this, &_task, errh);
 

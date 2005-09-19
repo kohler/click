@@ -40,8 +40,6 @@ CLICK_DECLS
 InOrderQueue::InOrderQueue()
     : _timer(this)
 {
-    set_ninputs(1);
-    set_noutputs(1);
 }
 
 InOrderQueue::~InOrderQueue()
@@ -119,7 +117,7 @@ InOrderQueue::ready_for(const Packet *p_in) {
     if (!nfo) {
 	click_chatter("%{element} nfo for path is NULL! [%s]\n",
 		      this,
-		      path_to_string(p).cc());
+		      path_to_string(p).c_str());
 	return true;
     }
     uint32_t seq = pk->data_seq();
@@ -139,7 +137,7 @@ InOrderQueue::ready_for(const Packet *p_in) {
 	    sa << " reset [" << path_to_string(nfo->_p) << "]";
 	    sa << " nfo_seq " << nfo->_seq;
 	    sa << " pk_seq " << seq;
-	    click_chatter("%s", sa.take_string().cc());
+	    click_chatter("%s", sa.take_string().c_str());
 	}
 	nfo->_seq = seq;
 	nfo->_last_tx = Timestamp::now();
@@ -155,7 +153,7 @@ InOrderQueue::ready_for(const Packet *p_in) {
 	    sa << " <= [" << path_to_string(nfo->_p) << "]";
 	    sa << " nfo_seq " << nfo->_seq;
 	    sa << " pk_seq " << seq;
-	    click_chatter("%s", sa.take_string().cc());
+	    click_chatter("%s", sa.take_string().c_str());
 	}
 	return true;
     }
@@ -169,7 +167,7 @@ InOrderQueue::ready_for(const Packet *p_in) {
 	    sa << " ecn [" << path_to_string(nfo->_p) << "]";
 	    sa << " nfo_seq " << nfo->_seq;
 	    sa << " pk_seq " << seq;
-	    click_chatter("%s", sa.take_string().cc());
+	    click_chatter("%s", sa.take_string().c_str());
 	}
 	nfo->_seq = max(nfo->_seq, seq);
 	nfo->_last_tx = Timestamp::now();
@@ -187,7 +185,7 @@ InOrderQueue::ready_for(const Packet *p_in) {
 	    sa << " nfo_seq " << nfo->_seq;
 	    sa << " pk_seq " << seq;
 	    sa << " " << age;
-	    click_chatter("%s", sa.take_string().cc());
+	    click_chatter("%s", sa.take_string().c_str());
 	}
 	nfo->_seq = seq;
 	nfo->_last_tx = Timestamp::now();
@@ -225,7 +223,7 @@ InOrderQueue::bubble_up(Packet *p_in)
 		sa << " pk->seq " << pk->data_seq();
 		sa << " on ";
 		sa << path_to_string(p);
-		click_chatter("%s", sa.take_string().cc());
+		click_chatter("%s", sa.take_string().c_str());
 
 		p_in->kill();
 		return 0;
@@ -242,7 +240,7 @@ InOrderQueue::bubble_up(Packet *p_in)
 			sa << " pk2->seq " << pk2->data_seq();
 			sa << " on ";
 			sa << path_to_string(p);
-			click_chatter("%s", sa.take_string().cc());
+			click_chatter("%s", sa.take_string().c_str());
 		    }
 		}
 		Packet *tmp = _q[x];
@@ -266,7 +264,7 @@ InOrderQueue::bubble_up(Packet *p_in)
 	sa << " drop";
 	sa << " pk->seq " << pk->data_seq();
 	sa << path_to_string(nfo->_p);
-	click_chatter("%s", sa.take_string().cc());
+	click_chatter("%s", sa.take_string().c_str());
     }
     return 0;
 

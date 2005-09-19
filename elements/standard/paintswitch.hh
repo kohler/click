@@ -31,9 +31,9 @@ class PaintSwitch : public Element { public:
   ~PaintSwitch();
   
   const char *class_name() const		{ return "PaintSwitch"; }
+  const char *port_count() const		{ return "1/-"; }
   const char *processing() const		{ return PUSH; }
   
-  void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
   void configuration(Vector<String> &) const;
   bool can_live_reconfigure() const		{ return true; }

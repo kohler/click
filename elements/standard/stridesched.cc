@@ -37,13 +37,13 @@ StrideSched::~StrideSched()
 int
 StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (conf.size() < 1) {
-	errh->error("%s must be configured with at least one ticket", class_name());
-	return -1;
+    if (processing() == PULL) {
+	if (conf.size() != ninputs())
+	    return errh->error("need %d arguments, one per input port", ninputs());
+    } else {
+	if (conf.size() != noutputs())
+	    return errh->error("need %d arguments, one per output port", noutputs());
     }
-  
-    set_ninputs(conf.size());
-    set_noutputs(1);
 
     int before = errh->nerrors();
     for (int i = 0; i < conf.size(); i++) {

@@ -28,18 +28,11 @@ CLICK_DECLS
 
 DirectIPLookup::DirectIPLookup()
 {
-    add_input();
     flush_table();
 }
 
 DirectIPLookup::~DirectIPLookup()
 {
-}
-
-void
-DirectIPLookup::notify_noutputs(int n)
-{
-    set_noutputs(n);
 }
 
 int

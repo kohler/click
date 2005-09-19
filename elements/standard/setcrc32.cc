@@ -21,7 +21,6 @@
 CLICK_DECLS
 
 SetCRC32::SetCRC32()
-  : Element(1, 1)
 {
 }
 

@@ -38,7 +38,6 @@
 CLICK_DECLS
 
 IPPrint::IPPrint()
-  : Element(1, 1)
 {
 #if CLICK_USERLEVEL
   _outfile = 0;
@@ -97,7 +96,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   else if (contents == "ASCII")
     _contents = 2;
   else
-    return errh->error("bad contents value '%s'; should be 'false', 'hex', or 'ascii'", contents.cc());
+    return errh->error("bad contents value '%s'; should be 'false', 'hex', or 'ascii'", contents.c_str());
 
   int payloadv;
   payload = payload.upper();
@@ -108,7 +107,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   else if (payload == "ASCII")
     payloadv = 2;
   else
-    return errh->error("bad payload value '%s'; should be 'false', 'hex', or 'ascii'", contents.cc());
+    return errh->error("bad payload value '%s'; should be 'false', 'hex', or 'ascii'", contents.c_str());
 
   if (payloadv > 0 && _contents > 0)
     return errh->error("specify at most one of PAYLOAD and CONTENTS");

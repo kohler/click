@@ -28,7 +28,6 @@
 CLICK_DECLS
 
 IPsecESPUnencap::IPsecESPUnencap()
-  : Element(1, 1)
 {
 }
 

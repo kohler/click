@@ -7,7 +7,7 @@
 #include "gridsrforwarder.hh"
 CLICK_DECLS
 
-GridSRForwarder::GridSRForwarder() : Element(1, 2)
+GridSRForwarder::GridSRForwarder()
 {
 
 }

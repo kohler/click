@@ -102,8 +102,8 @@ class IPAddrRewriter : public IPRw { public:
 
     const char *class_name() const		{ return "IPAddrRewriter"; }
     void *cast(const char *);
+    const char *port_count() const		{ return "1-/1-256"; }
     const char *processing() const		{ return PUSH; }
-    void notify_noutputs(int);
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

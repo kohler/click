@@ -21,7 +21,7 @@
 CLICK_DECLS
 
 DiscardNoFree::DiscardNoFree()
-  : Element(1, 0), _task(this)
+  : _task(this)
 {
 }
 

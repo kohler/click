@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 EtherEncap::EtherEncap()
-  : Element(1, 1)
 {
 }
 

@@ -35,6 +35,7 @@ class SetAnnoByte : public Element {
   ~SetAnnoByte();
   
   const char *class_name() const		{ return "SetAnnoByte"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
 
   bool can_live_reconfigure() const             { return true; }

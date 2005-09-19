@@ -14,6 +14,12 @@ class ErrorHandler;
 class Bitvector;
 class Handler;
 
+/** @file <click/element.hh>
+ * @brief Click's Element class.
+ */
+
+#define CLICK_ELEMENT_PORT_COUNT_DEPRECATED __attribute__((deprecated))
+
 // #define CLICK_STATS 5
 
 typedef int (*HandlerHook)(int operation, String&, Element*, const Handler*, ErrorHandler*);
@@ -23,12 +29,9 @@ typedef int (*WriteHandler)(const String&, Element*, void*, ErrorHandler*);
 class Element { public:
     
     Element();
-    Element(int ninputs, int noutputs);
+    Element(int ninputs, int noutputs) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
     virtual ~Element();
     static int nelements_allocated;
-
-    static void static_initialize()	{ }
-    static void static_cleanup()	{ }
 
     // RUNTIME
     virtual void push(int port, Packet*);
@@ -40,77 +43,91 @@ class Element { public:
 #if CLICK_USERLEVEL
     virtual void selected(int fd);
 #endif
-    virtual void run_scheduled();	// deprecated, use run_{task,timer}()
   
-    // CHARACTERISTICS
-    virtual const char* class_name() const = 0;
-    virtual void* cast(const char*);
-  
-    String id() const;
-    String declaration() const;
-    String landmark() const;
-  
-    Router* router() const			{ return _router; }
-    Master* master() const;
-    int eindex() const				{ return _eindex; }
-    inline int eindex(Router*) const;
+    // ELEMENT CHARACTERISTICS
+    virtual const char *class_name() const = 0;
 
-    // INPUTS AND OUTPUTS
-    inline int nports(bool isoutput) const	{ return _nports[isoutput]; }
-    int ninputs() const				{ return _nports[0]; }
-    int noutputs() const			{ return _nports[1]; }
-    void set_ninputs(int);
-    void set_noutputs(int);
-    void add_input()				{ set_ninputs(ninputs()+1); }
-    void add_output()				{ set_noutputs(noutputs()+1); }
-    bool ports_frozen() const;
-  
-    class Port;
-    inline const Port& port(bool isoutput, int) const;
-    inline const Port& input(int) const;
-    inline const Port& output(int) const;
-
-    inline bool port_allowed(bool isoutput, int) const;
-    inline bool input_is_push(int) const;
-    inline bool input_is_pull(int) const;
-    inline bool output_is_push(int) const;
-    inline bool output_is_pull(int) const;
-  
-    inline void checked_output_push(int, Packet*) const;
-
-    // PROCESSING, FLOW, AND FLAGS
-    virtual const char* processing() const;
+    virtual const char *port_count() const;
+    static const char PORTS_0_0[];
+    static const char PORTS_0_1[];
+    static const char PORTS_1_0[];
+    static const char PORTS_1_1[];
+    
+    virtual const char *processing() const;
     static const char AGNOSTIC[];
     static const char PUSH[];
     static const char PULL[];
     static const char PUSH_TO_PULL[];
     static const char PULL_TO_PUSH[];
     
-    virtual const char* flow_code() const;
+    virtual const char *flow_code() const;
     static const char COMPLETE_FLOW[];
     
-    virtual const char* flags() const;
-  
-    // CONFIGURATION AND INITIALIZATION
-    virtual void notify_ninputs(int);
-    virtual void notify_noutputs(int);
+    virtual const char *flags() const;
 
+    virtual void *cast(const char *);
+    
+    // CONFIGURATION, INITIALIZATION, AND CLEANUP
     enum ConfigurePhase {
-	CONFIGURE_PHASE_FIRST = 0, CONFIGURE_PHASE_INFO = 20,
-	CONFIGURE_PHASE_PRIVILEGED = 90, CONFIGURE_PHASE_DEFAULT = 100,
+	CONFIGURE_PHASE_FIRST = 0,
+	CONFIGURE_PHASE_INFO = 20,
+	CONFIGURE_PHASE_PRIVILEGED = 90,
+	CONFIGURE_PHASE_DEFAULT = 100,
 	CONFIGURE_PHASE_LAST = 2000
     };
     virtual int configure_phase() const;
+    
     virtual int configure(Vector<String>&, ErrorHandler*);
+    
+    virtual void add_handlers();
+  
     virtual int initialize(ErrorHandler*);
+    
+    virtual void take_state(Element*, ErrorHandler*);
+    virtual Element *hotswap_element() const;
 
-    // CLEANUP
     enum CleanupStage {
-	CLEANUP_NO_ROUTER, CLEANUP_CONFIGURE_FAILED, CLEANUP_CONFIGURED,
-	CLEANUP_INITIALIZE_FAILED, CLEANUP_INITIALIZED,
-	CLEANUP_ROUTER_INITIALIZED, CLEANUP_MANUAL
+	CLEANUP_NO_ROUTER,
+	CLEANUP_CONFIGURE_FAILED,
+	CLEANUP_CONFIGURED,
+	CLEANUP_INITIALIZE_FAILED,
+	CLEANUP_INITIALIZED,
+	CLEANUP_ROUTER_INITIALIZED,
+	CLEANUP_MANUAL
     };
     virtual void cleanup(CleanupStage);
+
+    static inline void static_initialize();
+    static inline void static_cleanup();
+
+    // ELEMENT ROUTER CONNECTIONS
+    String id() const;
+    String declaration() const;
+    String landmark() const;
+  
+    inline Router *router() const;
+    Master *master() const;
+    inline int eindex() const;
+    inline int eindex(Router *) const;
+
+    // INPUTS AND OUTPUTS
+    inline int nports(bool isoutput) const;
+    inline int ninputs() const;
+    inline int noutputs() const;
+
+    class Port;
+    inline const Port &port(bool isoutput, int) const;
+    inline const Port &input(int) const;
+    inline const Port &output(int) const;
+
+    inline bool port_active(bool isoutput, int) const;
+    inline bool input_is_push(int) const;
+    inline bool input_is_pull(int) const;
+    inline bool output_is_push(int) const;
+    inline bool output_is_pull(int) const;
+    void port_flow(bool isoutput, int, Bitvector*) const;
+  
+    inline void checked_output_push(int, Packet*) const;
 
     // LIVE RECONFIGURATION, HOTSWAP
     virtual void configuration(Vector<String>&) const;
@@ -119,17 +136,12 @@ class Element { public:
     virtual bool can_live_reconfigure() const;
     virtual int live_reconfigure(Vector<String>&, ErrorHandler*);
 
-    virtual Element* hotswap_element() const;
-    virtual void take_state(Element*, ErrorHandler*);
-
     // HANDLERS
-    virtual void add_handlers();
-  
     void add_read_handler(const String&, ReadHandler, void*);
     void add_write_handler(const String&, WriteHandler, void*);
     void set_handler(const String&, int flags, HandlerHook, void* = 0, void* = 0);
     void add_task_handlers(Task*, const String& prefix = String());
-  
+
     static String read_positional_handler(Element*, void*);
     static String read_keyword_handler(Element*, void*);
     static int reconfigure_positional_handler(const String&, Element*, void*, ErrorHandler*);
@@ -137,25 +149,13 @@ class Element { public:
   
     virtual int llrpc(unsigned command, void* arg);
     int local_llrpc(unsigned command, void* arg);
-  
+
 #if CLICK_USERLEVEL
     // SELECT
     enum { SELECT_READ = 1, SELECT_WRITE = 2 };
     int add_select(int fd, int mask);
     int remove_select(int fd, int mask);
 #endif
-
-    // METHODS USED BY ROUTER
-    void attach_router(Router* r, int n)	{ _router = r; _eindex = n; }
-    
-    enum Processing { VAGNOSTIC, VPUSH, VPULL };
-    void processing_vector(int* input_codes, int* output_codes, ErrorHandler*) const;
-    void port_flow(bool isoutput, int, Bitvector*) const;
-
-    void initialize_ports(const int* input_codes, const int* output_codes);
-    int connect_port(bool isoutput, int port, Element*, int);
-    
-    void add_default_handlers(bool writable_config);
 
 #if CLICK_STATS >= 2
     // STATISTICS
@@ -170,7 +170,7 @@ class Element { public:
 	inline Port(Element*, Element*, int);
     
 	operator bool() const		{ return _e != 0; }
-	bool allowed() const		{ return _port >= 0; }
+	bool active() const		{ return _port >= 0; }
 	bool initialized() const	{ return _port >= -1; }
     
 	Element* element() const	{ return _e; }
@@ -197,6 +197,18 @@ class Element { public:
     
     };
 
+    // DEPRECATED
+    virtual void notify_ninputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
+    virtual void notify_noutputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
+
+    inline void set_ninputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
+    inline void set_noutputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
+    inline void add_input() CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
+    inline void add_output() CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
+    bool ports_frozen() const __attribute__((deprecated));
+    
+    virtual void run_scheduled() __attribute__((deprecated));
+    
   private:
 
     enum { INLINE_PORTS = 4 };
@@ -212,17 +224,199 @@ class Element { public:
     Element(const Element &);
     Element &operator=(const Element &);
   
-    void set_nports(int, int);
-  
+    // METHODS USED BY ROUTER
+    inline void attach_router(Router* r, int n)	{ _router = r; _eindex = n; }
+    
+    int set_nports(int, int);
+    int notify_nports(int, int, ErrorHandler *);
+    enum Processing { VAGNOSTIC, VPUSH, VPULL };
+    static int next_processing_code(const char*& p, ErrorHandler* errh);
+    void processing_vector(int* input_codes, int* output_codes, ErrorHandler*) const;
+
+    void initialize_ports(const int* input_codes, const int* output_codes);
+    int connect_port(bool isoutput, int port, Element*, int);
+    
+    void add_default_handlers(bool writable_config);
+
+    friend class Router;
+    
 };
 
 
+/** @brief Initialize static data for this element class.
+ *
+ * Elements that need to initialize global state, such as global hash tables
+ * or configuration parsing functions, should place that initialization code
+ * inside a static_initialize() static member function.  Click's build
+ * machinery will find that function and cause it to be called when the
+ * element code is loaded, before any elements of the class are created.
+ *
+ * static_initialize functions are called in an arbitrary and unpredictable
+ * order (not, for example, the configure_phase() order).  Element authors are
+ * responsible for handling static initialization dependencies.
+ *
+ * For Click to find a static_initialize declaration, it must appear inside
+ * the element class's class declaration on its own line and have the
+ * following prototype:
+ *
+ * @code
+ * static void static_initialize();
+ * @endcode
+ *
+ * It must also have public accessibility.
+ *
+ * @sa Element::static_cleanup
+ */
+inline void
+Element::static_initialize()
+{
+}
+
+/** @brief Clean up static data for this element class.
+ *
+ * Elements that need to free global state, such as global hash tables or
+ * configuration parsing functions, should place that code inside a
+ * static_cleanup() static member function.  Click's build machinery will find
+ * that function and cause it to be called when the element code is unloaded.
+ *
+ * static_cleanup functions are called in an arbitrary and unpredictable order
+ * (not, for example, the configure_phase() order, and not the reverse of the
+ * static_initialize order).  Element authors are responsible for handling
+ * static cleanup dependencies.
+ *
+ * For Click to find a static_cleanup declaration, it must appear inside the
+ * element class's class declaration on its own line and have the following
+ * prototype:
+ *
+ * @code
+ * static void static_cleanup();
+ * @endcode
+ *
+ * It must also have public accessibility.
+ *
+ * @sa Element::static_initialize
+ */
+inline void
+Element::static_cleanup()
+{
+}
+
+/** @brief Return the element's router. */
+inline Router*
+Element::router() const
+{
+    return _router;
+}
+
+/** @brief Return the element's index within its router.
+ * @invariant this == router()->element(eindex())
+ */
+inline int
+Element::eindex() const
+{
+    return _eindex;
+}
+
+/** @brief Return the element's index within router @a r.
+ * 
+ * Returns -1 if @a r != router(). */
 inline int
 Element::eindex(Router* r) const
 {
-    return (router() == r ? eindex() : -1);
+    return (router() == r ? _eindex : -1);
 }
 
+/** @brief Return the number of input or output ports.
+ * @param isoutput false for input ports, true for output ports */
+inline int
+Element::nports(bool isoutput) const
+{
+    return _nports[isoutput];
+}
+
+/** @brief Return the number of input ports. */
+inline int
+Element::ninputs() const
+{
+    return _nports[0];
+}
+
+/** @brief Return the number of output ports. */
+inline int
+Element::noutputs() const
+{
+    return _nports[1];
+}
+
+/** @brief Sets the element's number of input ports (deprecated).
+ *
+ * @param ninputs number of input ports
+ *
+ * @deprecated The set_ninputs() function is deprecated.  Elements should
+ * instead use port_count() to define an acceptable range of input port
+ * counts.  Elements that called set_ninputs() from configure(), setting the
+ * number of input ports based on configuration arguments, should compare the
+ * desired number of ports to ninputs() and signal an error if they disagree.
+ *
+ * This function can be called from the constructor, notify_ninputs(),
+ * notify_noutputs(), or configure(), but not from initialize() or later.  */
+inline void
+Element::set_ninputs(int ninputs)
+{
+    set_nports(ninputs, _nports[1]);
+}
+
+/** @brief Sets the element's number of output ports (deprecated).
+ *
+ * @param noutputs number of output ports
+ *
+ * @deprecated The set_noutputs() function is deprecated.  Elements should
+ * instead use port_count() to define an acceptable range of output port
+ * counts.  Elements that called set_noutputs() from configure(), setting the
+ * number of output ports based on configuration arguments, should compare the
+ * desired number of ports to noutputs() and signal an error if they disagree.
+ *
+ * This function can be called from the constructor, notify_ninputs(),
+ * notify_noutputs(), or configure(), but not from initialize() or later.  */
+inline void
+Element::set_noutputs(int noutputs)
+{
+    set_nports(_nports[0], noutputs);
+}
+
+/** @brief Adds an input port (deprecated).
+ *
+ * @deprecated See the deprecation note at set_ninputs().
+ *
+ * An abbreviation for set_ninputs(ninputs() + 1).  Subject to the same
+ * restrictions as set_ninputs().
+ *
+ * @sa set_ninputs */
+inline void
+Element::add_input()
+{
+    set_nports(_nports[0] + 1, _nports[1]);
+}
+
+/** @brief Adds an output port (deprecated).
+ *
+ * @deprecated See the deprecation note at set_noutputs().
+ *
+ * An abbreviation for set_noutputs(noutputs() + 1).  Subject to the same
+ * restrictions as set_noutputs().
+ *
+ * @sa set_noutputs */
+inline void
+Element::add_output()
+{
+    set_nports(_nports[0], _nports[1] + 1);
+}
+
+/** @brief Return one of the element's ports.
+ * @param isoutput false for input ports, true for output ports
+ * @param p port number
+ *
+ * An assertion fails if @a p is out of range. */
 inline const Element::Port&
 Element::port(bool isoutput, int p) const
 {
@@ -230,46 +424,72 @@ Element::port(bool isoutput, int p) const
     return _ports[isoutput][p];
 }
 
+/** @brief Return one of the element's input ports.
+ * @param p port number
+ *
+ * An assertion fails if @a p is out of range.  @sa port */
 inline const Element::Port&
 Element::input(int p) const
 {
     return port(false, p);
 }
 
+/** @brief Return one of the element's output ports.
+ * @param p port number
+ *
+ * An assertion fails if @a p is out of range.  @sa port */
 inline const Element::Port&
 Element::output(int p) const
 {
     return port(true, p);
 }
 
+/** @brief Check whether a port is active.
+ * @param isoutput false for input ports, true for output ports
+ * @param p port number
+ *
+ * Returns true iff @a p is in range and @a p is active.  Push outputs and
+ * pull inputs are active; pull outputs and push inputs are not. */
 inline bool
-Element::port_allowed(bool isoutput, int p) const
+Element::port_active(bool isoutput, int p) const
 {
-    return (unsigned) p < (unsigned) nports(isoutput) && _ports[isoutput][p].allowed();
+    return (unsigned) p < (unsigned) nports(isoutput) && _ports[isoutput][p].active();
 }
 
+/** @brief Check whether output port @a p is push.
+ *
+ * Returns true iff output port @a p exists and is push.  @sa port_active */
 inline bool
 Element::output_is_push(int p) const
 {
-    return port_allowed(true, p);
+    return port_active(true, p);
 }
 
+/** @brief Check whether output port @a p is pull.
+ *
+ * Returns true iff output port @a p exists and is pull. */
 inline bool
 Element::output_is_pull(int p) const
 {
-    return (unsigned) p < (unsigned) nports(true) && !_ports[1][p].allowed();
+    return (unsigned) p < (unsigned) nports(true) && !_ports[1][p].active();
 }
 
+/** @brief Check whether input port @a p is pull.
+ *
+ * Returns true iff input port @a p exists and is pull.  @sa port_active */
 inline bool
 Element::input_is_pull(int p) const
 {
-    return port_allowed(false, p);
+    return port_active(false, p);
 }
 
+/** @brief Check whether input port @a p is push.
+ *
+ * Returns true iff input port @a p exists and is push. */
 inline bool
 Element::input_is_push(int p) const
 {
-    return (unsigned) p < (unsigned) nports(false) && !_ports[0][p].allowed();
+    return (unsigned) p < (unsigned) nports(false) && !_ports[0][p].active();
 }
 
 #if CLICK_STATS >= 2

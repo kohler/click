@@ -44,8 +44,8 @@ redeclaration_error(ErrorHandler *errh, const char *what, String name, const Str
   if (!what)
     what = "";
   const char *sp = (strlen(what) ? " " : "");
-  errh->lerror(landmark, "redeclaration of %s%s'%s'", what, sp, name.cc());
-  errh->lerror(old_landmark, "'%s' previously declared here", name.cc());
+  errh->lerror(landmark, "redeclaration of %s%s'%s'", what, sp, name.c_str());
+  errh->lerror(old_landmark, "'%s' previously declared here", name.c_str());
 }
 
 //
@@ -102,7 +102,7 @@ class Lexer::Compound : public Element { public:
   Compound(const String &, const String &, int);
 
   const String &name() const		{ return _name; }
-  const char *printable_name_cc();
+  const char *printable_name_c_str();
   const String &landmark() const	{ return _landmark; }
   int nformals() const			{ return _formals.size(); }
   const Vector<String> &formals() const	{ return _formals; }
@@ -116,7 +116,7 @@ class Lexer::Compound : public Element { public:
   int resolve(Lexer *, int etype, int ninputs, int noutputs, Vector<String> &, ErrorHandler *, const String &landmark);
   void expand_into(Lexer *, int, const VariableEnvironment &);
   
-  const char *class_name() const	{ return _name.cc(); }
+  const char *class_name() const	{ return _name.c_str(); }
   void *cast(const char *);
   Compound *clone() const		{ return 0; }
 
@@ -155,10 +155,10 @@ Lexer::Compound::Compound(const String &name, const String &lm, int depth)
 }
 
 const char *
-Lexer::Compound::printable_name_cc()
+Lexer::Compound::printable_name_c_str()
 {
   if (_name)
-    return _name.cc();
+    return _name.c_str();
   else
     return "<anonymous>";
 }
@@ -220,17 +220,17 @@ Lexer::Compound::finish(Lexer *lexer, ErrorHandler *errh)
   // store information
   _ninputs = from_in.size();
   if (to_in)
-    errh->lerror(_landmark, "'%s' pseudoelement 'input' may only be used as output", printable_name_cc());
+    errh->lerror(_landmark, "'%s' pseudoelement 'input' may only be used as output", printable_name_c_str());
   for (int i = 0; i < from_in.size(); i++)
     if (!from_in[i])
-      errh->lerror(_landmark, "compound element '%s' input %d unused", printable_name_cc(), i);
+      errh->lerror(_landmark, "compound element '%s' input %d unused", printable_name_c_str(), i);
   
   _noutputs = to_out.size();
   if (from_out)
-    errh->lerror(_landmark, "'%s' pseudoelement 'output' may only be used as input", printable_name_cc());
+    errh->lerror(_landmark, "'%s' pseudoelement 'output' may only be used as input", printable_name_c_str());
   for (int i = 0; i < to_out.size(); i++)
     if (!to_out[i])
-      errh->lerror(_landmark, "compound element '%s' output %d unused", printable_name_cc(), i);
+      errh->lerror(_landmark, "compound element '%s' output %d unused", printable_name_c_str(), i);
 
   // deanonymize element names
   for (int i = 0; i < _elements.size(); i++)
@@ -347,7 +347,7 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, const VariableEnvironment 
       eidx_map.push_back(-1);
     } else {
       if (lexer->_element_type_map[cname] >= 0)
-	errh->lerror(lexer->element_landmark(which), "'%s' is an element class", cname.cc());
+	errh->lerror(lexer->element_landmark(which), "'%s' is an element class", cname.c_str());
       eidx = lexer->get_element(cname, _elements[i], ve.interpolate(_element_configurations[i]), _element_landmarks[i]);
       eidx_map.push_back(eidx);
     }
@@ -780,7 +780,7 @@ Lexer::expect(int kind, bool report_error)
     _pos = old_pos;
   }
   if (report_error)
-    lerror("expected %s", lexeme_string(kind).cc());
+    lerror("expected %s", lexeme_string(kind).c_str());
   return false;
 }
 
@@ -847,7 +847,7 @@ Lexer::force_element_type(String s)
   int ftid = _element_type_map[s];
   if (ftid >= 0)
     return ftid;
-  lerror("unknown element class '%s'", s.cc());
+  lerror("unknown element class '%s'", s.c_str());
   return ADD_ELEMENT_TYPE(s, error_element_factory, 0, true);
 }
 
@@ -974,7 +974,7 @@ Lexer::get_element(String name, int etype, const String &conf, const String &lm)
       if (!isdigit(name[i]))
 	ok = true;
     if (!ok) {
-      lerror("element name '%s' has all-digit component", name.cc());
+      lerror("element name '%s' has all-digit component", name.c_str());
       break;
     }
   }
@@ -1122,7 +1122,7 @@ Lexer::yelement(int &element, bool comma_ok)
     if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok))
       ydeclaration(name);
     else if (_element_map[name] < 0) {
-      lerror("undeclared element '%s' (first use this block)", name.cc());
+      lerror("undeclared element '%s' (first use this block)", name.c_str());
       get_element(name, ERROR_TYPE);
     }
     element = _element_map[name];
@@ -1186,11 +1186,11 @@ Lexer::ydeclaration(const String &first_element)
     String name = decls[i];
     if (_element_map[name] >= 0) {
       int e = _element_map[name];
-      lerror("redeclaration of element '%s'", name.cc());
+      lerror("redeclaration of element '%s'", name.c_str());
       if (_elements[e] != TUNNEL_TYPE)
-	_errh->lerror(_element_landmarks[e], "element '%s' previously declared here", name.cc());
+	_errh->lerror(_element_landmarks[e], "element '%s' previously declared here", name.c_str());
     } else if (_element_type_map[name] >= 0)
-      lerror("'%s' is an element class", name.cc());
+      lerror("'%s' is an element class", name.c_str());
     else
       get_element(name, etype, configuration, lm);
   }
@@ -1228,7 +1228,7 @@ Lexer::yconnection()
       
      case ',':
      case lex2Colon:
-      lerror("syntax error before '%#s'", t.string().cc());
+      lerror("syntax error before '%#s'", t.string().c_str());
       goto relex;
       
      case lexArrow:
@@ -1255,7 +1255,7 @@ Lexer::yconnection()
       return true;
       
      default:
-      lerror("syntax error near '%#s'", t.string().cc());
+      lerror("syntax error near '%#s'", t.string().c_str());
       if (t.kind() >= lexIdent)	// save meaningful tokens
 	unlex(t);
       return true;
@@ -1289,7 +1289,7 @@ Lexer::yelementclass()
     ADD_ELEMENT_TYPE(name, _element_types[t].factory, _element_types[t].thunk, true);
 
   } else {
-    lerror("syntax error near '%#s'", tnext.string().cc());
+    lerror("syntax error near '%#s'", tnext.string().c_str());
     ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
   }
 }
@@ -1396,7 +1396,7 @@ Lexer::ycompound(String name)
     if (dots.is(lex3Dot)) {
       // '...' marks an extension type
       if (_element_type_map[name] < 0) {
-	lerror("cannot extend unknown element class '%s'", name.cc());
+	lerror("cannot extend unknown element class '%s'", name.c_str());
 	ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
       }
       extension = _element_type_map[name];
@@ -1522,7 +1522,7 @@ Lexer::ystatement(bool nested)
     
    default:
    syntax_error:
-    lerror("syntax error near '%#s'", t.string().cc());
+    lerror("syntax error near '%#s'", t.string().c_str());
     return true;
     
   }
@@ -1724,16 +1724,16 @@ Lexer::TunnelEnd::expand(const Lexer *lexer, Vector<Router::Hookup> &into)
 	const char *message = (_output ? "'%s' input %d unused"
 			       : "'%s' has no input %d");
 	lexer->errh()->lerror(lexer->element_landmark(inh.idx), message,
-			      in_name.cc(), inh.port);
+			      in_name.c_str(), inh.port);
       } else if (in_name == out_name + "/output") {
 	const char *message = (_output ? "'%s' has no output %d"
 			       : "'%s' output %d unused");
 	lexer->errh()->lerror(lexer->element_landmark(outh.idx), message,
-			      out_name.cc(), outh.port);
+			      out_name.c_str(), outh.port);
       } else {
 	lexer->errh()->lerror(lexer->element_landmark(_other->_port.idx),
 			      "tunnel '%s -> %s' %s %d unused",
-			      in_name.cc(), out_name.cc(),
+			      in_name.c_str(), out_name.c_str(),
 			      (_output ? "input" : "output"), _port.idx);
       }
     }
@@ -1774,7 +1774,7 @@ Lexer::expand_connection(const Hookup &this_end, bool is_out,
     else if ((dp = (is_out ? _definputs : _defoutputs)->find(this_end)))
       _errh->lerror(_element_landmarks[this_end.idx],
 		    (is_out ? "'%s' used as output" : "'%s' used as input"),
-		    element_name(this_end.idx).cc());
+		    element_name(this_end.idx).c_str());
   }
 }
 

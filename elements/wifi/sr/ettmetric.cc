@@ -83,8 +83,8 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
   if (!from || !to) {
     click_chatter("%{element}::update_link called with %s %s\n",
 		  this,
-		  from.s().cc(),
-		  to.s().cc());
+		  from.s().c_str(),
+		  to.s().c_str());
     return;
   }
 
@@ -170,25 +170,19 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
       !_link_table->update_link(from, to, seq, 0, fwd_metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
-		  from.s().cc(),
+		  from.s().c_str(),
 		  fwd_metric,
-		  to.s().cc());
+		  to.s().c_str());
   }
   if (rev_metric && 
       _link_table && 
       !_link_table->update_link(to, from, seq, 0, rev_metric)){
     click_chatter("%{element} couldn't update link %s < %d < %s\n",
 		  this,
-		  from.s().cc(),
+		  from.s().c_str(),
 		  rev_metric,
-		  to.s().cc());
+		  to.s().c_str());
   }
-}
-
-void
-ETTMetric::add_handlers()
-{
-  add_default_handlers(true);
 }
 
 

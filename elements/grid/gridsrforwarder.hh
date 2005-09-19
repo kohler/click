@@ -13,6 +13,7 @@ public:
 
   const char *class_name() const { return "GridSRForwarder"; }
   void *cast(const char *);
+  const char *port_count() const { return "1/2"; }
   const char *processing() const { return "h/h"; }
   const char *flow_code() const { return "x/x"; }
   int configure(Vector<String> &, ErrorHandler *);

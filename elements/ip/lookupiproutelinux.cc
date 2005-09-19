@@ -40,8 +40,6 @@ CLICK_DECLS
 
 LinuxIPLookup::LinuxIPLookup()
 {
-  add_input();
-
   _nout = 0;
 #ifdef CLICK_LINUXMODULE
   _out2dev = 0;
@@ -57,11 +55,12 @@ LinuxIPLookup::~LinuxIPLookup()
 }
 
 int
-LinuxIPLookup::configure(Vector<String> &conf, ErrorHandler *)
+LinuxIPLookup::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _out2devname = conf;
   _nout = _out2devname.size();
-  set_noutputs(_nout + 1);
+  if (_nout + 1 >= noutputs())
+      return errh->error("need %d or more output ports", _nout + 1);
   return 0;
 }
 
@@ -85,9 +84,9 @@ LinuxIPLookup::init_routes(ErrorHandler *errh)
   _out2dev[0] = 0;
   int i;
   for(i = 0; i < _nout; i++){
-    net_device *dev = dev_get_by_name(_out2devname[i].cc());
+    net_device *dev = dev_get_by_name(_out2devname[i].c_str());
     if (dev == 0)
-      return errh->error("Cannot find device %s", _out2devname[i].cc());
+      return errh->error("Cannot find device %s", _out2devname[i].c_str());
   }
   return(0);
 }

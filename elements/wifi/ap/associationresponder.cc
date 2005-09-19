@@ -36,8 +36,7 @@ CLICK_DECLS
 #define max(x,y)      ((x)>(y) ? (x) : (y))
 
 AssociationResponder::AssociationResponder()
-  : Element(1, 1),
-    _associd(0),
+  : _associd(0),
     _rtable(0),
     _winfo(0)  
 {
@@ -175,8 +174,8 @@ AssociationResponder::recv_association_request(Packet *p)
     if (_debug) {
       click_chatter("%{element}: other ssid %s wanted %s\n",
 		    this,
-		    ssid.cc(),
-		    my_ssid.cc());
+		    ssid.c_str(),
+		    my_ssid.c_str());
     }
     p->kill();
     return;
@@ -225,7 +224,7 @@ AssociationResponder::recv_association_request(Packet *p)
 
   click_chatter("%{element}: request %s\n",
 		this,
-		sa.take_string().cc());
+		sa.take_string().c_str());
 
 
 
@@ -234,7 +233,7 @@ AssociationResponder::recv_association_request(Packet *p)
   if (_debug) {
     click_chatter("%{element}: association %s associd %d\n",
 		  this,
-		  src.s().cc(),
+		  src.s().c_str(),
 		  associd);		  
   }
   send_association_response(src, WIFI_STATUS_SUCCESS, associd);
@@ -409,8 +408,6 @@ AssociationResponder_write_param(const String &in_s, Element *e, void *vparam,
 void
 AssociationResponder::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", AssociationResponder_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", AssociationResponder_write_param, (void *) H_DEBUG);

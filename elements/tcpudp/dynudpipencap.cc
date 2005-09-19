@@ -28,7 +28,6 @@
 CLICK_DECLS
 
 DynamicUDPIPEncap::DynamicUDPIPEncap()
-  : Element(1, 1)
 {
 }
 

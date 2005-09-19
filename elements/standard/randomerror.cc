@@ -73,7 +73,6 @@ static unsigned char bit_flip_array[] = {
 };
 
 RandomBitErrors::RandomBitErrors()
-  : Element(1, 1)
 {
 }
 
@@ -129,7 +128,7 @@ RandomBitErrors::configure(Vector<String> &conf, ErrorHandler *errh)
     kind = 0;
   else
     return errh->error("bad action `%s' (must be `set', `clear', or `flip')",
-		       kind_str.cc());
+		       kind_str.c_str());
   
   if (bit_error > 0x10000)
     return errh->error("drop probability must be between 0 and 1");

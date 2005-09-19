@@ -357,7 +357,7 @@ FromFile::initialize(ErrorHandler *errh)
     if (!_filename || _filename == "-")
 	_fd = STDIN_FILENO;
     else
-	_fd = open(_filename.cc(), O_RDONLY);
+	_fd = open(_filename.c_str(), O_RDONLY);
     if (_fd < 0)
 	return errh->error("%s: %s", print_filename().c_str(), strerror(errno));
 

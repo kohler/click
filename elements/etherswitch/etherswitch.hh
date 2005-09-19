@@ -13,10 +13,9 @@ class EtherSwitch : public Element {
   ~EtherSwitch();
   
   const char *class_name() const		{ return "EtherSwitch"; }
+  const char *port_count() const		{ return "-/="; }
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "#/[^#]"; }
-  
-  void notify_ninputs(int);
 
   void push(int port, Packet* p);
 

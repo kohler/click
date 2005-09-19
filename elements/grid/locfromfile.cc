@@ -49,9 +49,9 @@ LocFromFile::configure(Vector<String> &conf, ErrorHandler *errh)
                         cpFilename, "filename",  &filename,
                         cpEnd);
   if(res >= 0){
-    FILE *fp = fopen(filename.cc(), "r");
+    FILE *fp = fopen(filename.c_str(), "r");
     if(fp == 0)
-      return(errh->error("cannot open file %s", filename.cc()));
+      return(errh->error("cannot open file %s", filename.c_str()));
     char buf[512];
     while(fgets(buf, sizeof(buf), fp)){
       struct delta d;
@@ -59,15 +59,15 @@ LocFromFile::configure(Vector<String> &conf, ErrorHandler *errh)
         _deltas.push_back(d);
       } else {
         fclose(fp);
-        return(errh->error("cannot parse a line in file %s", filename.cc()));
+        return(errh->error("cannot parse a line in file %s", filename.c_str()));
       }
     }
     fclose(fp);
     if(_deltas.size() < 1)
-      return(errh->error("no locations in file %s", filename.cc()));
+      return(errh->error("no locations in file %s", filename.c_str()));
     click_chatter("read %d deltas from %s",
                   _deltas.size(),
-                  filename.cc());
+                  filename.c_str());
   }
   return res;
 }

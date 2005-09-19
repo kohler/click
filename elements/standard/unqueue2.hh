@@ -26,6 +26,7 @@ class Unqueue2 : public Element { public:
   ~Unqueue2();
   
   const char *class_name() const		{ return "Unqueue2"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PULL_TO_PUSH; }
   
   int configure(Vector<String> &, ErrorHandler *);

@@ -29,7 +29,6 @@ CLICK_DECLS
 
 
 Defragment::Defragment()
-  : Element(1, 1)
 {
 }
 
@@ -208,8 +207,6 @@ Defragment_write_param(const String &in_s, Element *e, void *vparam,
 void
 Defragment::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", Defragment_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", Defragment_write_param, (void *) H_DEBUG);

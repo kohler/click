@@ -75,6 +75,7 @@ class ToDevice : public AnyDevice {
   ~ToDevice();
   
   const char *class_name() const	{ return "ToDevice"; }
+  const char *port_count() const	{ return PORTS_1_0; }
   const char *processing() const	{ return PULL; }
   
   int configure_phase() const		{ return CONFIGURE_PHASE_TODEVICE; }

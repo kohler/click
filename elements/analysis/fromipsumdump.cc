@@ -46,7 +46,7 @@ CLICK_DECLS
 #define GET1(p)		((p)[0])
 
 FromIPSummaryDump::FromIPSummaryDump()
-    : Element(0, 1), _work_packet(0), _task(this)
+    : _work_packet(0), _task(this)
 {
     _ff.set_landmark_pattern("%f:%l");
 }
@@ -152,7 +152,7 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
 	return -1;
     else if (line.substring(0, 14) == "!IPSummaryDump") {
 	int major_version;
-	if (sscanf(line.cc() + 14, " %d.%d", &major_version, &_minor_version) == 2) {
+	if (sscanf(line.c_str() + 14, " %d.%d", &major_version, &_minor_version) == 2) {
 	    if (major_version != IPSummaryDump::MAJOR_VERSION || _minor_version > IPSummaryDump::MINOR_VERSION) {
 		_ff.warning(errh, "unexpected IPSummaryDump version %d.%d", major_version, _minor_version);
 		_minor_version = IPSummaryDump::MINOR_VERSION;

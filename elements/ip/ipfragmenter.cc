@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 IPFragmenter::IPFragmenter()
-    : Element(1, 1), _honor_df(true), _verbose(false), _mtu(0)
+    : _honor_df(true), _verbose(false), _mtu(0)
 {
     _fragments = 0;
     _drops = 0;
@@ -34,14 +34,6 @@ IPFragmenter::IPFragmenter()
 
 IPFragmenter::~IPFragmenter()
 {
-}
-
-void
-IPFragmenter::notify_noutputs(int n)
-{
-    // allow 2 outputs -- then packet is pushed onto 2d output instead of
-    // dropped
-    set_noutputs(n < 2 ? 1 : 2);
 }
 
 
@@ -101,7 +93,7 @@ IPFragmenter::fragment(Packet *p_in)
 
     if (((ip_in->ip_off & htons(IP_DF)) && _honor_df) || first_dlen < 8) {
 	if (_verbose || _drops < 5)
-	    click_chatter("IPFragmenter(%d) DF %s %s len=%d", _mtu, IPAddress(ip_in->ip_src).s().cc(), IPAddress(ip_in->ip_dst).s().cc(), p_in->length());
+	    click_chatter("IPFragmenter(%d) DF %s %s len=%d", _mtu, IPAddress(ip_in->ip_src).s().c_str(), IPAddress(ip_in->ip_dst).s().c_str(), p_in->length());
 	_drops++;
 	checked_output_push(1, p_in);
 	return;

@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 DebugBridge::DebugBridge()
-  : Element(1, 1)
 {
 }
 
@@ -44,7 +43,7 @@ DebugBridge::simple_action(Packet *p)
 {
   const BridgeMessage::wire *msg =
     reinterpret_cast<const BridgeMessage::wire *>(p->data());
-  click_chatter("%s",msg->s(_label).cc());
+  click_chatter("%s",msg->s(_label).c_str());
   return p;
 }
 

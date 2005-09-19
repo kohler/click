@@ -28,7 +28,6 @@
 CLICK_DECLS
 
 SetSRFlag::SetSRFlag()
-  : Element(1, 1)
 {
   _flags = 0;
 }
@@ -52,7 +51,7 @@ SetSRFlag::configure(Vector<String> &conf, ErrorHandler* errh)
     } else if (word == "FLAG_UPDATE") {
       flags |= FLAG_UPDATE;
     } else {
-      return errh->error("unknown flag '%#s'", word.cc());
+      return errh->error("unknown flag '%#s'", word.c_str());
     }
   }
   _flags = flags;

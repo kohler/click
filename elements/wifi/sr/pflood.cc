@@ -27,8 +27,7 @@
 CLICK_DECLS
 
 PFlood::PFlood()
-  :  Element(2,2),
-     _en(),
+  :  _en(),
      _et(0),
      _packets_originated(0),
      _packets_tx(0),

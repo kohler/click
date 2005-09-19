@@ -30,7 +30,7 @@
 #include <click/standard/alignmentinfo.hh>
 
 IPEncapPaint::IPEncapPaint()
-  : Element(1, 1), _ip_p(-1)
+  : _ip_p(-1)
 {
 }
 

@@ -34,7 +34,7 @@
 CLICK_DECLS
 
 Socket::Socket()
-  : Element(1, 1), _task(this), _timer(this),
+  : _task(this), _timer(this),
     _fd(-1), _active(-1), _rq(0), _wq(0),
     _snaplen(2048), _nodelay(1),
     _verbose(false), _client(false)
@@ -45,28 +45,11 @@ Socket::~Socket()
 {
 }
 
-void
-Socket::notify_ninputs(int n)
-{
-  // if no inputs, then assume that this is a server socket
-  if (!n)
-    _client = false;
-  set_ninputs(n <= 1 ? n : 1);
-}
-
-void
-Socket::notify_noutputs(int n)
-{
-  // if no outputs, then assume that this is a client socket
-  if (!n)
-    _client = true;
-  set_noutputs(n <= 1 ? n : 1);
-}
-
 int
 Socket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String socktype;
+  _client = (noutputs() == 0);
   if (cp_va_parse(conf, this, errh,
 		  cpString, "type of socket (`TCP' or `UDP' or `UNIX' or `UNIX_DGRAM')", &socktype,
 		  cpIgnoreRest,
@@ -108,7 +91,7 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
   }
 
   else
-    return errh->error("unknown socket type `%s'", socktype.cc());
+    return errh->error("unknown socket type `%s'", socktype.c_str());
 
   return 0;
 }
@@ -144,7 +127,7 @@ Socket::initialize(ErrorHandler *errh)
   }
   else {
     _sa.un.sun_family = _family;
-    strcpy(_sa.un.sun_path, _pathname.cc());
+    strcpy(_sa.un.sun_path, _pathname.c_str());
     _sa_len = offsetof(struct sockaddr_un, sun_path) + _pathname.length() + 1;
   }
 
@@ -161,7 +144,7 @@ Socket::initialize(ErrorHandler *errh)
       if (connect(_fd, (struct sockaddr *)&_sa, _sa_len) < 0)
 	return initialize_socket_error(errh, "connect");
       if (_verbose)
-	click_chatter("%s: opened connection %d to %s:%d", declaration().cc(), _fd, IPAddress(_sa.in.sin_addr).unparse().cc(), ntohs(_sa.in.sin_port));
+	click_chatter("%s: opened connection %d to %s:%d", declaration().c_str(), _fd, IPAddress(_sa.in.sin_addr).unparse().c_str(), ntohs(_sa.in.sin_port));
     }
     _active = _fd;
   } else {
@@ -174,9 +157,9 @@ Socket::initialize(ErrorHandler *errh)
 	return initialize_socket_error(errh, "listen");
       if (_verbose) {
 	if (_family == AF_INET)
-	  click_chatter("%s: listening for connections on %s:%d (%d)", declaration().cc(), IPAddress(_sa.in.sin_addr).unparse().cc(), ntohs(_sa.in.sin_port), _fd);
+	  click_chatter("%s: listening for connections on %s:%d (%d)", declaration().c_str(), IPAddress(_sa.in.sin_addr).unparse().c_str(), ntohs(_sa.in.sin_port), _fd);
 	else
-	  click_chatter("%s: listening for connections on %s (%d)", declaration().cc(), _sa.un.sun_path, _fd);
+	  click_chatter("%s: listening for connections on %s (%d)", declaration().c_str(), _sa.un.sun_path, _fd);
       }
     } else {
       _active = _fd;
@@ -235,15 +218,15 @@ Socket::selected(int fd)
 
       if (_active < 0) {
 	if (errno != EAGAIN)
-	  click_chatter("%s: accept: %s", declaration().cc(), strerror(errno));
+	  click_chatter("%s: accept: %s", declaration().c_str(), strerror(errno));
 	return;
       }
 
       if (_verbose) {
 	if (_family == AF_INET)
-	  click_chatter("%s: opened connection %d from %s:%d", declaration().cc(), _active, IPAddress(_sa.in.sin_addr).unparse().cc(), ntohs(_sa.in.sin_port));
+	  click_chatter("%s: opened connection %d from %s:%d", declaration().c_str(), _active, IPAddress(_sa.in.sin_addr).unparse().c_str(), ntohs(_sa.in.sin_port));
 	else
-	  click_chatter("%s: opened connection %d from %s", declaration().cc(), _active, _sa.un.sun_path);
+	  click_chatter("%s: opened connection %d from %s", declaration().c_str(), _active, _sa.un.sun_path);
       }
 
       fcntl(_active, F_SETFL, O_NONBLOCK);
@@ -279,7 +262,7 @@ Socket::selected(int fd)
       } else {
 	if (len == 0 || errno != EAGAIN) {
 	  if (errno != EAGAIN)
-	    click_chatter("%s: %s", declaration().cc(), strerror(errno));
+	    click_chatter("%s: %s", declaration().c_str(), strerror(errno));
 	  goto err;
 	}
       }
@@ -327,7 +310,7 @@ Socket::selected(int fd)
 	  } else {
 	    // connection probably terminated
 	    if (_verbose)
-	      click_chatter("%s: %s", declaration().cc(), _sa.un.sun_path);
+	      click_chatter("%s: %s", declaration().c_str(), _sa.un.sun_path);
 	    p->kill();
 	    goto err;
 	  }
@@ -353,7 +336,7 @@ Socket::selected(int fd)
     remove_select(_active, SELECT_READ | SELECT_WRITE);
     close(_active);
     if (_verbose)
-      click_chatter("%s: closed connection %d", declaration().cc(), _active);
+      click_chatter("%s: closed connection %d", declaration().c_str(), _active);
     _active = -1;
   }
 }

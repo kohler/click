@@ -30,13 +30,6 @@ Suppressor::~Suppressor()
 {
 }
 
-void
-Suppressor::notify_ninputs(int i)
-{
-  set_ninputs(i);
-  set_noutputs(i);
-}
-
 bool
 Suppressor::set(int output, bool sup)
 {

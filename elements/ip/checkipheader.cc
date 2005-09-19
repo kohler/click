@@ -61,7 +61,7 @@ ipaddr_list_parse(cp_value *v, const String &arg, ErrorHandler *errh, const char
       if (cp_ip_address(words[i], &addr[0], context))
 	memcpy(sa.extend(4), &addr[0], 4);
       else {
-	errh->error("%s takes list of IP addresses (%s) [%s]", argname, v->description, words[i].cc());
+	errh->error("%s takes list of IP addresses (%s) [%s]", argname, v->description, words[i].c_str());
 	return;
       }
     if (v->argtype->user_data == IPADDR_LIST_BADSRC_OLD)
@@ -115,7 +115,7 @@ CheckIPHeader::static_cleanup()
 }
 
 CheckIPHeader::CheckIPHeader()
-  : Element(1, 1), _checksum(true), _reason_drops(0)
+  : _checksum(true), _reason_drops(0)
 {
   _drops = 0;
 }
@@ -123,12 +123,6 @@ CheckIPHeader::CheckIPHeader()
 CheckIPHeader::~CheckIPHeader()
 {
   delete[] _reason_drops;
-}
-
-void
-CheckIPHeader::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int
@@ -176,9 +170,9 @@ CheckIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 #endif
 
   //for (int i = 0; i < _bad_src.n; i++)
-  //  click_chatter("bad: %s", IPAddress(_bad_src.vec[i]).s().cc());
+  //  click_chatter("bad: %s", IPAddress(_bad_src.vec[i]).s().c_str());
   //for (int i = 0; i < _good_dst.n; i++)
-  //  click_chatter("good: %s", IPAddress(_good_dst.vec[i]).s().cc());
+  //  click_chatter("good: %s", IPAddress(_good_dst.vec[i]).s().c_str());
   
   return 0;
 }

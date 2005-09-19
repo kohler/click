@@ -103,7 +103,7 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
     if (tickets_out > Task::MAX_TICKETS) {
 	tickets_out = Task::MAX_TICKETS;
 	String m = cp_unparse_real2(tickets_out, FRAC_BITS);
-	errh->warning("ScheduleInfo too high; reduced to %s", m.cc());
+	errh->warning("ScheduleInfo too high; reduced to %s", m.c_str());
     }
   
     // return the result you've got

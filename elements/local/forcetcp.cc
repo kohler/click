@@ -25,7 +25,6 @@
 CLICK_DECLS
 
 ForceTCP::ForceTCP()
-  : Element(1, 1)
 {
   _count = 0;
   _random = false;

@@ -95,6 +95,7 @@ class FastTCPFlows : public Element {
   ~FastTCPFlows();
   
   const char *class_name() const	{ return "FastTCPFlows"; }
+  const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PULL; }
   
   int configure(Vector<String> &, ErrorHandler *);

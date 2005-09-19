@@ -27,25 +27,13 @@
 CLICK_DECLS
 
 ICMPPingRewriter::ICMPPingRewriter()
-  : Element(1, 1), _request_map(0), _reply_map(0), _timer(this)
+  : _request_map(0), _reply_map(0), _timer(this)
 {
 }
 
 ICMPPingRewriter::~ICMPPingRewriter()
 {
   assert(!_timer.scheduled());
-}
-
-void
-ICMPPingRewriter::notify_ninputs(int n)
-{
-  set_ninputs(n < 2 ? 1 : 2);
-}
-
-void
-ICMPPingRewriter::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int
@@ -102,7 +90,7 @@ ICMPPingRewriter::take_state(Element *e, ErrorHandler *errh)
   if (!rw) return;
 
   if (noutputs() != rw->noutputs()) {
-    errh->warning("taking mappings from `%s', although it has\n%s output ports", rw->declaration().cc(), (rw->noutputs() > noutputs() ? "more" : "fewer"));
+    errh->warning("taking mappings from `%s', although it has\n%s output ports", rw->declaration().c_str(), (rw->noutputs() > noutputs() ? "more" : "fewer"));
     if (noutputs() < rw->noutputs())
       errh->message("(out of range mappings will be dropped)");
   }

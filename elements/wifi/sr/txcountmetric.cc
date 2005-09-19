@@ -85,25 +85,19 @@ TXCountMetric::update_link(IPAddress from, IPAddress to,
       !_link_table->update_link(from, to, seq, 0, metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
-		  from.s().cc(),
+		  from.s().c_str(),
 		  metric,
-		  to.s().cc());
+		  to.s().c_str());
   }
   if (metric && 
       _link_table && 
       !_link_table->update_link(to, from, seq, 0, metric)){
     click_chatter("%{element} couldn't update link %s < %d < %s\n",
 		  this,
-		  from.s().cc(),
+		  from.s().c_str(),
 		  metric,
-		  to.s().cc());
+		  to.s().c_str());
   }
-}
-
-void
-TXCountMetric::add_handlers()
-{
-  add_default_handlers(true);
 }
 
 

@@ -30,15 +30,6 @@ StrideSwitch::~StrideSwitch()
 {
 }
 
-int
-StrideSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
-{
-  int x = StrideSched::configure(conf, errh);
-  set_ninputs(1);
-  set_noutputs(conf.size());
-  return x;
-}
-
 void
 StrideSwitch::push(int, Packet *p)
 {

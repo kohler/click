@@ -29,8 +29,7 @@ CLICK_DECLS
 
 
 SRQueryForwarder::SRQueryForwarder()
-  :  Element(1,1),
-     _ip(),
+  :  _ip(),
      _en(),
      _et(0),
      _link_table(0),
@@ -119,9 +118,9 @@ SRQueryForwarder::update_link(IPAddress from, IPAddress to,
   if (_link_table && !_link_table->update_link(from, to, seq, age, metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
-		  from.s().cc(),
+		  from.s().c_str(),
 		  metric,
-		  to.s().cc());
+		  to.s().c_str());
     return false;
   }
   return true;
@@ -202,7 +201,7 @@ SRQueryForwarder::forward_query(Seen *s)
     click_chatter("%{element} :: %s :: waited %s\n",
 		  this,
 		  __func__,
-		  sa.take_string().cc());
+		  sa.take_string().c_str());
   }
 
   IPAddress src = s->_src;
@@ -213,15 +212,15 @@ SRQueryForwarder::forward_query(Seen *s)
     click_chatter("%{element} :: %s :: invalid route from src %s\n",
 		  this,
 		  __func__,
-		  src.s().cc());
+		  src.s().c_str());
     return;
   }
 
   if (_debug) {
     click_chatter("%{element}: forward_query %s -> %s\n", 
 		  this,
-		  s->_src.s().cc(),
-		  s->_dst.s().cc());
+		  s->_src.s().c_str(),
+		  s->_dst.s().c_str());
   }
 
   int links = best.size() - 1;
@@ -305,16 +304,16 @@ SRQueryForwarder::push(int, Packet *p_in)
     if (fwd_m && !update_link(a, b, seq, age, fwd_m)) {
       click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
 		    this,
-		    a.s().cc(),
+		    a.s().c_str(),
 		    fwd_m,
-		    b.s().cc());
+		    b.s().c_str());
     }
     if (rev_m && !update_link(b, a, seq, age, rev_m)) {
       click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
 		    this,
-		    b.s().cc(),
+		    b.s().c_str(),
 		    rev_m,
-		    a.s().cc());
+		    a.s().c_str());
     }
   }
   

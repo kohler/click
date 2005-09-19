@@ -149,7 +149,7 @@ Classifier::Expr::s() const
 //
 
 Classifier::Classifier()
-    : Element(1, 0), _output_everything(-1)
+    : _output_everything(-1)
 {
 }
 
@@ -253,7 +253,7 @@ void
 Classifier::DominatorOptimizer::print()
 {
   String s = Classifier::program_string(_c, 0);
-  fprintf(stderr, "%s\n", s.cc());
+  fprintf(stderr, "%s\n", s.c_str());
   for (int i = 0; i < _domlist_start.size() - 1; i++) {
     if (_domlist_start[i] == _domlist_start[i+1])
       fprintf(stderr, "S-%d   NO DOMINATORS\n", i);
@@ -596,7 +596,7 @@ Classifier::optimize_exprs(ErrorHandler *errh, int sort_stopper)
   // sort 'and' expressions
   bubble_sort_and_exprs(sort_stopper);
   
-  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
+  //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
 
   // optimize using dominators
   {
@@ -608,7 +608,7 @@ Classifier::optimize_exprs(ErrorHandler *errh, int sort_stopper)
     (void) remove_unused_states();
   }
   
-  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
+  //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   
   // Check for case where all patterns have conflicts: _exprs will be empty
   // but _output_everything will still be < 0. We require that, when _exprs
@@ -643,7 +643,7 @@ Classifier::optimize_exprs(ErrorHandler *errh, int sort_stopper)
     if (!used_patterns[i])
       errh->warning("pattern %d matches no packets", i);
 
-  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
+  //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
 }
 
 //
@@ -800,7 +800,8 @@ update_value_mask(int c, int shift, int &value, int &mask)
 int
 Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  set_noutputs(conf.size());
+    if (conf.size() != noutputs())
+	return errh->error("need %d arguments, one per output port", noutputs());
   
   int before = errh->nerrors();
 
@@ -946,9 +947,9 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
 
   finish_expr_subtree(tree, C_OR, -noutputs(), -noutputs());
 
-  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
+  //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   optimize_exprs(errh);
-  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
+  //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   return (errh->nerrors() == before ? 0 : -1);
 }
 
@@ -1135,8 +1136,8 @@ Classifier::remove_duplicate_states()
   int splitter = duplicates[0];
   Expr &splite = _exprs[splitter];
   assert(splite.no > 0 && splite.yes > 0);
-  //click_chatter("%s", program_string(this, 0).cc());
-  //click_chatter("******** %s", splite.s().cc());
+  //click_chatter("%s", program_string(this, 0).c_str());
+  //click_chatter("******** %s", splite.s().c_str());
   int orig_nexprs = _exprs.size();
   int orig_no_branch = splite.no;
   splite.no = orig_nexprs;
@@ -1146,7 +1147,7 @@ Classifier::remove_duplicate_states()
     if (e.no > 0) e.no += orig_nexprs - orig_no_branch;
     _exprs.push_back(e);
   }
-  click_chatter("%s", program_string(this, 0).cc());
+  click_chatter("%s", program_string(this, 0).c_str());
   return true;
 }
 
@@ -1551,7 +1552,7 @@ Classifier::drift_expr(int ei)
   // redundant
   e.yes = check_path(ei, true);
   e.no = check_path(ei, false);
-  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
+  //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
 }
 #endif
 
@@ -1613,7 +1614,7 @@ Classifier::sort_and_expr_subtree(int from, int success, int failure)
   //for (int i = from; i < nexprs; i++) {
   //  sa << (i < 10 ? ">> " : ">>") << i << " [" << (id[i] < 10 ? " " : "") << id[i] << "] " << _exprs[i] << "\n";
   //}
-  //click_chatter("%s", sa.cc()); }
+  //click_chatter("%s", sa.c_str()); }
 
   // extract equivalence classes from 'id' array
   Vector<int> equiv_classes;
@@ -1680,7 +1681,7 @@ Classifier::sort_and_expr_subtree(int from, int success, int failure)
   //for (int i = from; i < nexprs; i++) {
   //  sa << (i < 10 ? " " : "") << i << " " << _exprs[i] << "\n";
   //}
-  //click_chatter("%s", sa.cc()); }
+  //click_chatter("%s", sa.c_str()); }
 }
 #endif
 

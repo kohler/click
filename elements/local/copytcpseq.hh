@@ -32,6 +32,7 @@ public:
   ~CopyTCPSeq();
   
   const char *class_name() const	{ return "CopyTCPSeq"; }
+  const char *port_count() const	{ return "2/2"; }
   const char *processing() const	{ return AGNOSTIC; }
 
   int initialize(ErrorHandler *);

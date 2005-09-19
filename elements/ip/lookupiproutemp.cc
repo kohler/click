@@ -35,7 +35,6 @@ CLICK_DECLS
 
 LookupIPRouteMP::LookupIPRouteMP()
 {
-  add_input();
 }
 
 LookupIPRouteMP::~LookupIPRouteMP()
@@ -77,8 +76,9 @@ LookupIPRouteMP::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
   if (maxout < 0)
     errh->warning("no routes");
+  if (maxout >= noutputs())
+      return errh->error("need %d or more output ports", maxout + 1);
 
-  set_noutputs(maxout + 1);
   return 0;
 }
 

@@ -22,7 +22,6 @@
 CLICK_DECLS
 
 CopyTCPSeq::CopyTCPSeq()
-  : Element(2, 2)
 {
 }
 

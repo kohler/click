@@ -311,7 +311,7 @@ unique_tmpnam(const String &pattern, ErrorHandler *errh)
   int uniqueifier = getpid();
   while (1) {
     String name = tmpdir + left + String(uniqueifier) + right;
-    int result = open(name.cc(), O_WRONLY | O_CREAT | O_EXCL, S_IRWXU);
+    int result = open(name.c_str(), O_WRONLY | O_CREAT | O_EXCL, S_IRWXU);
     if (result >= 0) {
       close(result);
       remove_file_on_exit(name);
@@ -445,15 +445,15 @@ path_find_file_2(const String &filename, const String &path,
 	    // look for 'dir/subdir/click/filename' and 'dir/subdir/filename'
 	    if (subdir) {
 		fn = dir + subdir + "click/" + filename;
-		if (access(fn.cc(), F_OK) >= 0)
+		if (access(fn.c_str(), F_OK) >= 0)
 		    goto found;
 		fn = dir + subdir + filename;
-		if (access(fn.cc(), F_OK) >= 0)
+		if (access(fn.c_str(), F_OK) >= 0)
 		    goto found;
 	    }
 	    // look for 'dir/filename'
 	    fn = dir + filename;
-	    if (access(fn.cc(), F_OK) >= 0) {
+	    if (access(fn.c_str(), F_OK) >= 0) {
 	      found:
 		results.push_back(fn);
 		if (exit_early)
@@ -492,10 +492,10 @@ clickpath_find_file(const String &filename, const char *subdir,
 	    errh->fatal("cannot find file '%s'\nin CLICKPATH '%s'", filename.c_str(), path);
 	} else if (!path) {
 	    // CLICKPATH not set
-	    errh->fatal("cannot find file '%s'\nin install directory '%s'\n(Try setting the CLICKPATH environment variable.)", filename.c_str(), was_default_path.cc());
+	    errh->fatal("cannot find file '%s'\nin install directory '%s'\n(Try setting the CLICKPATH environment variable.)", filename.c_str(), was_default_path.c_str());
 	} else {
 	    // CLICKPATH set, left opportunity to use default pathb
-	    errh->fatal("cannot find file '%s'\nin CLICKPATH or '%s'", filename.c_str(), was_default_path.cc());
+	    errh->fatal("cannot find file '%s'\nin CLICKPATH or '%s'", filename.c_str(), was_default_path.c_str());
 	}
     }
     
@@ -547,7 +547,7 @@ click_mktmpdir(ErrorHandler *errh)
     int uniqueifier = getpid();
     while (1) {
 	String tmpsubdir = tmpdir + "/clicktmp" + String(uniqueifier);
-	int result = mkdir(tmpsubdir.cc(), 0700);
+	int result = mkdir(tmpsubdir.c_str(), 0700);
 	if (result >= 0) {
 	    remove_file_on_exit(tmpsubdir);
 	    return tmpsubdir + "/";
@@ -630,10 +630,10 @@ open_uncompress_pipe(const String &filename, const unsigned char *buf, int, Erro
 	command = "/usr/bin/gzcat " + filename;
     else 
 	command = "zcat " + filename;
-    if (FILE *p = popen(command.cc(), "r"))
+    if (FILE *p = popen(command.c_str(), "r"))
 	return p;
     else {
-	errh->error("'%s': %s", command.cc(), strerror(errno));
+	errh->error("'%s': %s", command.c_str(), strerror(errno));
 	return 0;
     }
 }
@@ -652,18 +652,18 @@ clickdl_load_package(String package, ErrorHandler *errh)
 # define RTLD_GLOBAL 0
 #endif
 #ifndef RTLD_NOW
-  void *handle = dlopen((char *)package.cc(), RTLD_LAZY | RTLD_GLOBAL);
+  void *handle = dlopen((char *)package.c_str(), RTLD_LAZY | RTLD_GLOBAL);
 #else
-  void *handle = dlopen((char *)package.cc(), RTLD_NOW | RTLD_GLOBAL);
+  void *handle = dlopen((char *)package.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #endif
   if (!handle)
     return errh->error("package %s", dlerror());
   void *init_sym = dlsym(handle, "init_module");
   if (!init_sym)
-    return errh->error("package '%s' has no 'init_module'", package.cc());
+    return errh->error("package '%s' has no 'init_module'", package.c_str());
   init_module_func init_func = (init_module_func)init_sym;
   if ((*init_func)() != 0)
-    return errh->error("error initializing package '%s'", package.cc());
+    return errh->error("error initializing package '%s'", package.c_str());
   return 0;
 }
 

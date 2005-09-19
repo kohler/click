@@ -27,7 +27,7 @@
 #include <click/standard/alignmentinfo.hh>
 
 IPEncap2::IPEncap2()
-  : Element(1, 1), _ip_p(-1)
+  : _ip_p(-1)
 {
 }
 

@@ -20,7 +20,6 @@
 #include <click/glue.hh>
 
 SetCycleCount::SetCycleCount()
-  : Element(1, 1)
 {
 }
 

@@ -54,8 +54,8 @@
 
 CLICK_DECLS
 
-AiroInfo::AiroInfo() : 
-  Element(0, 0), _fd(-1)
+AiroInfo::AiroInfo()
+    : _fd(-1)
 {
 }
 
@@ -79,11 +79,11 @@ int
 AiroInfo::initialize(ErrorHandler *errh)
 {
   memset(&_ifr, 0, sizeof(_ifr));
-  strncpy(_ifr.ifr_name, _ifname.cc(), sizeof(_ifr.ifr_name));
+  strncpy(_ifr.ifr_name, _ifname.c_str(), sizeof(_ifr.ifr_name));
   _ifr.ifr_name[sizeof(_ifr.ifr_name) - 1] = 0;
 #ifdef __linux__
   memset(&_ifr2, 0, sizeof(_ifr2));
-  strncpy(_ifr2.ifr_name, _ifname.cc(), sizeof(_ifr2.ifr_name));
+  strncpy(_ifr2.ifr_name, _ifname.c_str(), sizeof(_ifr2.ifr_name));
   _ifr2.ifr_name[sizeof(_ifr2.ifr_name) - 1] = 0;
 #endif
 

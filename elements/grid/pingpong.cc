@@ -26,8 +26,6 @@ CLICK_DECLS
 
 PingPong::PingPong()
 {
-  add_input();
-  add_output();
 }
 
 PingPong::~PingPong()
@@ -84,7 +82,7 @@ PingPong::simple_action(Packet *p)
     }
     else
       click_chatter("PingPong: error!  unable to get signal strength or quality info for one-hop neighbor %s\n",
-		    IPAddress(nb->dst_ip).s().cc());
+		    IPAddress(nb->dst_ip).s().c_str());
     
     nb->num_rx = 0;
     nb->num_expected = 0;
@@ -96,7 +94,7 @@ PingPong::simple_action(Packet *p)
     if (res) {
       if (num_rx > 255 || num_expected > 255) {
 	click_chatter("PingPong: error! overflow on broadcast loss stats for one-hop neighbor %s",
-		      IPAddress(nb->dst_ip).s().cc());
+		      IPAddress(nb->dst_ip).s().c_str());
 	num_rx = num_expected = 255;
       }
       nb->num_rx = num_rx;

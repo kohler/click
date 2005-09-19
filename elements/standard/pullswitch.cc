@@ -24,17 +24,10 @@ CLICK_DECLS
 
 PullSwitch::PullSwitch()
 {
-  add_output();
 }
 
 PullSwitch::~PullSwitch()
 {
-}
-
-void
-PullSwitch::notify_ninputs(int n)
-{
-  set_ninputs(n);
 }
 
 int

@@ -24,20 +24,10 @@ CLICK_DECLS
 DecIP6HLIM::DecIP6HLIM()
   : _drops(0)
 {
-  add_input();
-  add_output();
 }
 
 DecIP6HLIM::~DecIP6HLIM()
 {
-}
-
-void
-DecIP6HLIM::notify_noutputs(int n)
-{
-  // allow 2 outputs -- then packet is pushed onto 2d output instead of
-  // dropped
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 void

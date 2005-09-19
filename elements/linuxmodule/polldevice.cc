@@ -64,7 +64,6 @@ PollDevice::static_cleanup()
 
 PollDevice::PollDevice()
 {
-    add_output();
 }
 
 PollDevice::~PollDevice()
@@ -97,7 +96,7 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     if (find_device(allow_nonexistent, &poll_device_map, errh) < 0)
 	return -1;
     if (_dev && (!_dev->poll_on || _dev->polling < 0))
-	return errh->error("device '%s' not pollable, use FromDevice instead", _devname.cc());
+	return errh->error("device '%s' not pollable, use FromDevice instead", _devname.c_str());
 #endif
 
     return 0;
@@ -116,7 +115,7 @@ PollDevice::initialize(ErrorHandler *errh)
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_reader_" + String(ifindex()));
 	if (used)
-	    return errh->error("duplicate reader for device '%s'", _devname.cc());
+	    return errh->error("duplicate reader for device '%s'", _devname.c_str());
 	used = this;
 
 	if (!router()->attachment("device_writer_" + String(ifindex())))
@@ -315,7 +314,7 @@ PollDevice::change_device(net_device *dev)
     _task.strong_unschedule();
     
     if (dev && (!dev->poll_on || dev->polling < 0)) {
-	click_chatter("%s: device '%s' does not support polling", declaration().cc(), _devname.cc());
+	click_chatter("%s: device '%s' does not support polling", declaration().c_str(), _devname.c_str());
 	dev = 0;
     }
     

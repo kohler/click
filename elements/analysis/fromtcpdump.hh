@@ -118,6 +118,7 @@ class FromTcpdump : public Element { public:
     ~FromTcpdump();
 
     const char *class_name() const	{ return "FromTcpdump"; }
+    const char *port_count() const	{ return PORTS_0_1; }
     const char *processing() const	{ return AGNOSTIC; }
     void *cast(const char *);
 

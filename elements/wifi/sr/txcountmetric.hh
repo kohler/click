@@ -48,7 +48,6 @@ public:
   const char *processing() const { return AGNOSTIC; }
 
   int configure(Vector<String> &, ErrorHandler *);
-  void add_handlers();
 
   void *cast(const char *);
 

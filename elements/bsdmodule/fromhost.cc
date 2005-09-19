@@ -32,7 +32,6 @@ static AnyDeviceMap fromhost_map;
 FromHost::FromHost()
 	: _inq(0)
 {
-    add_output();
 }
 
 FromHost::~FromHost()

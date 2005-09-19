@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 PaintTee::PaintTee()
-  : Element(1, 2)
 {
 }
 

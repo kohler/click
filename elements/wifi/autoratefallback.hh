@@ -35,6 +35,7 @@ class AutoRateFallback : public Element { public:
   ~AutoRateFallback();
   
   const char *class_name() const		{ return "AutoRateFallback"; }
+  const char *port_count() const		{ return "2/0-2"; }
   const char *processing() const		{ return "ah/a"; }
   const char *flow_code() const			{ return "#/#"; }
   
@@ -46,7 +47,6 @@ class AutoRateFallback : public Element { public:
 
   Packet *pull(int);
 
-  void notify_noutputs(int);
   void add_handlers();
   static String static_print_stats(Element *e, void *);
   String print_rates();
@@ -98,7 +98,7 @@ class AutoRateFallback : public Element { public:
     int pick_rate() {
       if (_rates.size() == 0) {
 	click_chatter("no rates to pick from for %s\n", 
-		      _eth.s().cc());
+		      _eth.s().c_str());
 	return 2;
       }
 
@@ -111,7 +111,7 @@ class AutoRateFallback : public Element { public:
     int pick_alt_rate() {
       if (_rates.size() == 0) {
 	click_chatter("no rates to pick from for %s\n", 
-		      _eth.s().cc());
+		      _eth.s().c_str());
 	return 2;
       }
       return _rates[max(_current_index - 1, 0)];

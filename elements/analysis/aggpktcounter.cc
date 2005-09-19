@@ -93,13 +93,6 @@ AggregatePacketCounter::~AggregatePacketCounter()
 {
 }
 
-void
-AggregatePacketCounter::notify_ninputs(int n)
-{
-    set_ninputs(n < 1 ? 1 : n);
-    set_noutputs(n < 1 ? 1 : n);
-}
-
 int
 AggregatePacketCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -116,7 +109,7 @@ AggregatePacketCounter::configure(Vector<String> &conf, ErrorHandler *errh)
     if (_packetno > 1)
 	return errh->error("'PACKETNO' cannot be bigger than 1");
     /*if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
-      return errh->error("%s is not an AggregateNotifier", e->id().cc()); */
+      return errh->error("%s is not an AggregateNotifier", e->id().c_str()); */
 
     return 0;
 }

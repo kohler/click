@@ -28,7 +28,7 @@
 CLICK_DECLS
 
 ICMPPingEncap::ICMPPingEncap()
-    : Element(1, 1), _icmp_id(0), _ip_id(1)
+    : _icmp_id(0), _ip_id(1)
 {
 }
 

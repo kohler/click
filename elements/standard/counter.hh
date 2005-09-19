@@ -92,6 +92,7 @@ class Counter : public Element { public:
     ~Counter();
 
     const char *class_name() const		{ return "Counter"; }
+    const char *port_count() const		{ return PORTS_1_1; }
     const char *processing() const		{ return AGNOSTIC; }
 
     void reset();

@@ -36,7 +36,6 @@ public:
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
-  void add_handlers();
   int read_args(const Vector<String> &conf, ErrorHandler *errh);
 
 private:

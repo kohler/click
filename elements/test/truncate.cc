@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 Truncate::Truncate()
-    : Element(1, 1)
 {
 }
 

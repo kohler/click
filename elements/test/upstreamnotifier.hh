@@ -36,6 +36,7 @@ class UpstreamNotifier : public Element { public:
   ~UpstreamNotifier();
   
   const char *class_name() const	{ return "UpstreamNotifier"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
 
   void *cast(const char *);

@@ -23,17 +23,10 @@ CLICK_DECLS
 
 Tee::Tee()
 {
-  add_input();
 }
 
 Tee::~Tee()
 {
-}
-
-void
-Tee::notify_noutputs(int n)
-{
-  set_noutputs(n < 1 ? 1 : n);
 }
 
 int
@@ -45,9 +38,8 @@ Tee::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "number of arms", &n,
 		  cpEnd) < 0)
     return -1;
-  if (n < 1)
-    return errh->error("number of arms must be at least 1");
-  set_noutputs(n);
+  if (n != noutputs())
+      return errh->error("%d outputs implies %d arms", noutputs(), noutputs());
   return 0;
 }
 
@@ -67,17 +59,10 @@ Tee::push(int, Packet *p)
 
 PullTee::PullTee()
 {
-  add_input();
 }
 
 PullTee::~PullTee()
 {
-}
-
-void
-PullTee::notify_noutputs(int n)
-{
-  set_noutputs(n < 1 ? 1 : n);
 }
 
 int
@@ -89,9 +74,8 @@ PullTee::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "number of arms", &n,
 		  cpEnd) < 0)
     return -1;
-  if (n < 1)
-    return errh->error("number of arms must be at least 1");
-  set_noutputs(n);
+  if (n != noutputs())
+      return errh->error("%d outputs implies %d arms", noutputs(), noutputs());
   return 0;
 }
 

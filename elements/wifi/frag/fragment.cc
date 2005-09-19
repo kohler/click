@@ -29,7 +29,6 @@ CLICK_DECLS
 
 
 Fragment::Fragment()
-  : Element(1, 1)
 {
 }
 
@@ -134,8 +133,6 @@ Fragment_write_param(const String &in_s, Element *e, void *vparam,
 void
 Fragment::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", Fragment_read_param, (void *) H_DEBUG);
 
   add_write_handler("debug", Fragment_write_param, (void *) H_DEBUG);

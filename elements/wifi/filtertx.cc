@@ -10,19 +10,12 @@ CLICK_DECLS
 
 
 FilterTX::FilterTX()
-  : Element(1, 1),
-    _drops(0)
+  : _drops(0)
 {
 }
 
 FilterTX::~FilterTX()
 {
-}
-
-void
-FilterTX::notify_noutputs(int n) 
-{
-  set_noutputs((n > 2 || n < 1) ? 1 : n);
 }
 
 int

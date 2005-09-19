@@ -39,6 +39,7 @@ class AvailableRates : public Element { public:
   ~AvailableRates();
   
   const char *class_name() const		{ return "AvailableRates"; }
+  const char *port_count() const		{ return PORTS_0_0; }
 
   int configure(Vector<String> &, ErrorHandler *);
   void *cast(const char *n);

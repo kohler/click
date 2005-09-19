@@ -221,7 +221,7 @@ class_href(ElementClassT *type)
 	String package_href = package_hrefs["x" + type->package()];
 	if (!package_href)
 	    package_href = package_hrefs["x"];
-	String href = percent_substitute(package_href, 's', doc_name.cc(), 0);
+	String href = percent_substitute(package_href, 's', doc_name.c_str(), 0);
 	add_class_href(type, href);
 	return href;
     } else {
@@ -542,7 +542,7 @@ output_config(String r_config, FILE *outf)
 	prepare_items(r_config.length());
 
     // loop over characters
-    const char *data = r_config.cc();
+    const char *data = r_config.c_str();
     int len = r_config.length();
     int ipos = 0, eipos = 0;
     int first_active = items.size();
@@ -552,11 +552,11 @@ output_config(String r_config, FILE *outf)
 	while (items[ipos].pos <= pos || end_items[eipos].pos <= pos)
 	    if (end_items[eipos].pos <= items[ipos].pos) {
 		if (end_items[eipos].active)
-		    fputs(end_items[eipos].text.cc(), outf);
+		    fputs(end_items[eipos].text.c_str(), outf);
 		deactivate(end_items[eipos], first_active, ipos);
 		eipos++;
 	    } else {
-		fputs(items[ipos].text.cc(), outf);
+		fputs(items[ipos].text.c_str(), outf);
 		activate(items[ipos], first_active);
 		ipos++;
 	    }
@@ -566,7 +566,7 @@ output_config(String r_config, FILE *outf)
 	  case '\n': case '\r':
 	    for (int i = ipos - 1; i >= first_active; i--)
 		if (items[i].active)
-		    fputs(items[i].other()->text.cc(), outf);
+		    fputs(items[i].other()->text.c_str(), outf);
 	    fputc('\n', outf);
 	    if (data[pos] == '\r' && pos < len - 1 && data[pos+1] == '\n')
 		pos++;
@@ -575,7 +575,7 @@ output_config(String r_config, FILE *outf)
 		    if (items[i].other()->pos <= pos + 1)
 			items[i].activate(false);
 		    else
-			fputs(items[i].text.cc(), outf);
+			fputs(items[i].text.c_str(), outf);
 		}
 	    break;
 
@@ -721,7 +721,7 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
     
     String tag;
     HashMap<String, String> attrs;
-    const char *templ = templ_str.cc();
+    const char *templ = templ_str.c_str();
 
     while (templ) {
 	templ = output_template_until_tag(templ, _sa, tag, attrs, true, &_sep);
@@ -923,7 +923,7 @@ ElementsOutput::run(ElementT *e, FILE *f)
     bool is_type = e->landmark() == type_landmark;
     String templ = _main_attrs[is_type ? "typeentry" : "entry"];
     run_template(templ, e, -1, false);
-    fputs(_sa.cc(), f);
+    fputs(_sa.c_str(), f);
     _sa.clear();
     _sep = _main_attrs["sep"];
 }

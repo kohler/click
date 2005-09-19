@@ -22,20 +22,11 @@
 CLICK_DECLS
 
 CheckLength::CheckLength()
-  : Element(1, 1)
 {
 }
 
 CheckLength::~CheckLength()
 {
-}
-
-void
-CheckLength::notify_noutputs(int n)
-{
-  // allow 2 outputs -- then packet is pushed onto 2d output instead of
-  // dropped
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int

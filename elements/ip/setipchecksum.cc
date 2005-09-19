@@ -22,7 +22,6 @@
 CLICK_DECLS
 
 SetIPChecksum::SetIPChecksum()
-  : Element(1, 1)
 {
 }
 

@@ -85,9 +85,9 @@ class LinearIPLookup : public IPRouteTable { public:
     ~LinearIPLookup();
 
     const char *class_name() const	{ return "LinearIPLookup"; }
+    const char *port_count() const	{ return "1/-"; }
     const char *processing() const	{ return PUSH; }
 
-    void notify_noutputs(int);
     int initialize(ErrorHandler *);
 
     void push(int port, Packet *p);

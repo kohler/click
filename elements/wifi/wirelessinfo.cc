@@ -25,8 +25,7 @@
 CLICK_DECLS
 
 WirelessInfo::WirelessInfo()
-  : Element(0, 0),
-    _ssid(""),
+  : _ssid(""),
     _bssid((const unsigned char *) "\000\000\000\000\000\000"),
     _channel(-1),
     _interval(100),
@@ -132,7 +131,6 @@ WirelessInfo::read_param(Element *e, void *thunk)
 void
 WirelessInfo::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("ssid", read_param, (void *) H_SSID);
   add_read_handler("bssid", read_param, (void *) H_BSSID);
   add_read_handler("channel", read_param, (void *) H_CHANNEL);

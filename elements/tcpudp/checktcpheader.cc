@@ -35,7 +35,7 @@ const char *CheckTCPHeader::reason_texts[NREASONS] = {
 };
 
 CheckTCPHeader::CheckTCPHeader()
-  : Element(1, 1), _reason_drops(0)
+  : _reason_drops(0)
 {
   _drops = 0;
 }
@@ -43,12 +43,6 @@ CheckTCPHeader::CheckTCPHeader()
 CheckTCPHeader::~CheckTCPHeader()
 {
   delete[] _reason_drops;
-}
-
-void
-CheckTCPHeader::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int

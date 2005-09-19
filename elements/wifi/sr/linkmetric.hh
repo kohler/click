@@ -9,7 +9,6 @@ CLICK_DECLS
 class LinkMetric : public Element {
 public:
   LinkMetric() { }
-  LinkMetric(int ninputs, int noutputs) : Element(ninputs, noutputs) { }
   
   virtual ~LinkMetric() { }
 

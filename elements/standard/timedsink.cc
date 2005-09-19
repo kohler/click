@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 TimedSink::TimedSink()
-  : Element(1, 0), _timer(this)
+  : _timer(this)
 {
 }
 

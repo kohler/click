@@ -56,7 +56,6 @@ ToHost::static_cleanup()
 ToHost::ToHost()
     : _sniffers(false), _allow_nonexistent(false), _drops(0)
 {
-    add_input();
 }
 
 ToHost::~ToHost()

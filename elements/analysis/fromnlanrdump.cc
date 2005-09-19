@@ -43,19 +43,13 @@ CLICK_DECLS
 	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
 FromNLANRDump::FromNLANRDump()
-    : Element(0, 1), _packet(0), _end_h(0), _task(this)
+    : _packet(0), _end_h(0), _task(this)
 {
 }
 
 FromNLANRDump::~FromNLANRDump()
 {
     delete _end_h;
-}
-
-void
-FromNLANRDump::notify_noutputs(int n)
-{
-    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int

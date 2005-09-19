@@ -30,18 +30,11 @@ CLICK_DECLS
 
 
 CheckFragment::CheckFragment()
-  : Element(1, 1)
 {
 }
 
 CheckFragment::~CheckFragment()
 {
-}
-
-void
-CheckFragment::notify_noutputs(int n)
-{
-  set_noutputs(n < 3 ? n : 1);
 }
 
 int
@@ -131,13 +124,6 @@ CheckFragment::simple_action(Packet *p)
 }
 
 
-
- 
-void
-CheckFragment::add_handlers()
-{
-  add_default_handlers(true);
-}
 
 EXPORT_ELEMENT(CheckFragment)
 CLICK_ENDDECLS

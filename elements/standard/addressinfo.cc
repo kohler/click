@@ -97,7 +97,7 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	    }
 #endif
 	    else
-		errh->error("\"%s\" '%s' is not a recognizable address", parts[0].cc(), parts[j].cc());
+		errh->error("\"%s\" '%s' is not a recognizable address", parts[0].c_str(), parts[j].c_str());
 	}
     }
     
@@ -294,7 +294,7 @@ AddressInfo::query_ip(String s, unsigned char *store, Element *e)
     // if it's a device name, return a primary IP address
 #if CLICK_LINUXMODULE
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
-    net_device *dev = dev_get_by_name(s.cc());
+    net_device *dev = dev_get_by_name(s.c_str());
     if (dev) {
 	bool found = false;
 	in_device *in_dev = in_dev_get(dev);
@@ -404,7 +404,7 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 #  define dev_put(dev) /* nada */
 # endif
-    net_device *dev = dev_get_by_name(s.cc());
+    net_device *dev = dev_get_by_name(s.c_str());
     if (dev && dev->type == ARPHRD_ETHER) {
 	memcpy(store, dev->dev_addr, 6);
 	dev_put(dev);

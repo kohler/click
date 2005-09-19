@@ -25,7 +25,7 @@
 CLICK_DECLS
 
 SetTCPChecksum::SetTCPChecksum()
-  : Element(1, 1), _fixoff(false)
+  : _fixoff(false)
 {
 }
 

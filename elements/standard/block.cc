@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 Block::Block()
-  : Element(1, 2)
 {
 }
 

@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 Discard::Discard()
-  : Element(1, 0), _task(this)
+  : _task(this)
 {
 }
 

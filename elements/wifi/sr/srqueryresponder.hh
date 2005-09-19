@@ -35,6 +35,7 @@ class SRQueryResponder : public Element {
   ~SRQueryResponder();
   
   const char *class_name() const		{ return "SRQueryResponder"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "#/#"; }
   int initialize(ErrorHandler *);

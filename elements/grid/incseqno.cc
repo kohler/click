@@ -24,8 +24,6 @@ CLICK_DECLS
 IncrementSeqNo::IncrementSeqNo() 
   : _seqno(0), _offset(0)
 {
-  add_input();
-  add_output();
 }
 
 IncrementSeqNo::~IncrementSeqNo()
@@ -37,7 +35,7 @@ IncrementSeqNo::simple_action(Packet *p)
 {
   if (p->length() < _offset + 4) {
     click_chatter("IncrementSeqNo %s: packet of %d bytes is too small to hold sequence number at offset %u",
-		  id().cc(), p->length(), _offset);
+		  id().c_str(), p->length(), _offset);
     return p;
   }
 
@@ -74,7 +72,6 @@ IncrementSeqNo::initialize(ErrorHandler *)
 
 void
 IncrementSeqNo::add_handlers() {
-  add_default_handlers(true);
   add_read_handler("seq", next_seq, 0);
   add_write_handler("seq", write_seq, 0);
 }

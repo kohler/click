@@ -116,7 +116,7 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
       return errh->error("filename too long");
 
   } else
-    return errh->error("unknown socket type '%s'", socktype.cc());
+    return errh->error("unknown socket type '%s'", socktype.c_str());
   
   return 0;
 }
@@ -172,7 +172,7 @@ ControlSocket::initialize_socket(ErrorHandler *errh)
     // bind to port
     struct sockaddr_un sa;
     sa.sun_family = AF_UNIX;
-    memcpy(sa.sun_path, _unix_pathname.cc(), _unix_pathname.length() + 1);
+    memcpy(sa.sun_path, _unix_pathname.c_str(), _unix_pathname.length() + 1);
     if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
       return initialize_socket_error(errh, "bind");
   }
@@ -694,15 +694,15 @@ ControlSocket::selected(int fd)
 
 	if (new_fd < 0) {
 	    if (errno != EAGAIN)
-		click_chatter("%s: accept: %s", declaration().cc(), strerror(errno));
+		click_chatter("%s: accept: %s", declaration().c_str(), strerror(errno));
 	    return;
 	}
 
 	if (_verbose) {
 	    if (_tcp_socket)
-		click_chatter("%s: opened connection %d from %s.%d", declaration().cc(), new_fd, IPAddress(sa.in.sin_addr).unparse().cc(), ntohs(sa.in.sin_port));
+		click_chatter("%s: opened connection %d from %s.%d", declaration().c_str(), new_fd, IPAddress(sa.in.sin_addr).unparse().c_str(), ntohs(sa.in.sin_port));
 	    else
-		click_chatter("%s: opened connection %d", declaration().cc(), new_fd);
+		click_chatter("%s: opened connection %d", declaration().c_str(), new_fd);
 	}
 
 	fcntl(new_fd, F_SETFL, O_NONBLOCK);
@@ -779,7 +779,7 @@ ControlSocket::selected(int fd)
 	remove_select(fd, SELECT_READ | SELECT_WRITE);
 	close(fd);
 	if (_verbose)
-	    click_chatter("%s: closed connection %d", declaration().cc(), fd);
+	    click_chatter("%s: closed connection %d", declaration().c_str(), fd);
 	_flags[fd] = -1;
     }
 }

@@ -39,8 +39,7 @@ CLICK_DECLS
 
 
 BeaconScanner::BeaconScanner()
-  : Element(1, 1),
-    _rtable(0),
+  : _rtable(0),
     _winfo(0)
 {
 }
@@ -329,8 +328,6 @@ BeaconScanner_write_param(const String &in_s, Element *e, void *vparam,
 void
 BeaconScanner::add_handlers()
 {
-  add_default_handlers(true);
-
   add_read_handler("debug", BeaconScanner_read_param, (void *) H_DEBUG);
   add_read_handler("scan", BeaconScanner_read_param, (void *) H_SCAN);
 

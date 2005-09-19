@@ -51,25 +51,13 @@
 CLICK_DECLS
 
 KernelTun::KernelTun()
-    : Element(1, 1), _fd(-1), _task(this),
+    : _fd(-1), _task(this),
       _ignore_q_errs(false), _printed_write_err(false), _printed_read_err(false)
 {
 }
 
 KernelTun::~KernelTun()
 {
-}
-
-void
-KernelTun::notify_ninputs(int n)
-{
-    set_ninputs(n < 1 ? 0 : 1);
-}
-
-void
-KernelTun::notify_noutputs(int n)
-{
-    set_noutputs(n < 2 ? 1 : 2);
 }
 
 int
@@ -123,7 +111,7 @@ KernelTun::try_linux_universal(ErrorHandler *errh)
 	 * setting ifr_name this allows us to select an aribitrary 
 	 * interface name. 
 	 */
-	strcpy(ifr.ifr_name, _dev_name.cc());
+	strcpy(ifr.ifr_name, _dev_name.c_str());
     }
     int err = ioctl(fd, TUNSETIFF, (void *)&ifr);
     if (err < 0) {
@@ -142,7 +130,7 @@ int
 KernelTun::try_tun(const String &dev_name, ErrorHandler *)
 {
     String filename = "/dev/" + dev_name;
-    int fd = open(filename.cc(), O_RDWR | O_NONBLOCK);
+    int fd = open(filename.c_str(), O_RDWR | O_NONBLOCK);
     if (fd < 0)
 	return -errno;
 
@@ -200,9 +188,9 @@ KernelTun::alloc_tun(ErrorHandler *errh)
     
     if (saved_error == -ENOENT) {
 	tried.pop_back(2);
-	return errh->error("could not find a tap device\n(checked %s)\nYou may need to enable tap support in your kernel.", tried.cc());
+	return errh->error("could not find a tap device\n(checked %s)\nYou may need to enable tap support in your kernel.", tried.c_str());
     } else
-	return errh->error("could not allocate device /dev/%s: %s%s", saved_device.cc(), strerror(-saved_error), saved_message.cc());
+	return errh->error("could not allocate device /dev/%s: %s%s", saved_device.c_str(), strerror(-saved_error), saved_message.c_str());
 }
 
 int
@@ -244,26 +232,26 @@ KernelTun::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
     strcpy(tmp0, inet_ntoa(near));
     strcpy(tmp1, inet_ntoa(mask));
 #if KERNELTUN_OSX
-    sprintf(tmp, "/sbin/ifconfig %s %s %s netmask %s up 2>/dev/null", _dev_name.cc(), tmp0, _gw.s().cc(), tmp1);
+    sprintf(tmp, "/sbin/ifconfig %s %s %s netmask %s up 2>/dev/null", _dev_name.c_str(), tmp0, _gw.s().c_str(), tmp1);
 #else
-    sprintf(tmp, "/sbin/ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.cc(), tmp0, tmp1);
+    sprintf(tmp, "/sbin/ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.c_str(), tmp0, tmp1);
 #endif
     if (system(tmp) != 0) {
 # if defined(__linux__)
 	// Is Ethertap available? If it is moduleified, then it might not be.
 	// beside the ethertap module, you may also need the netlink_dev
 	// module to be loaded.
-	return errh->error("%s: `%s' failed\n(Perhaps Ethertap is in a kernel module that you haven't loaded yet?)", _dev_name.cc(), tmp);
+	return errh->error("%s: `%s' failed\n(Perhaps Ethertap is in a kernel module that you haven't loaded yet?)", _dev_name.c_str(), tmp);
 # else
-	return errh->error("%s: `%s' failed", _dev_name.cc(), tmp);
+	return errh->error("%s: `%s' failed", _dev_name.c_str(), tmp);
 # endif
     }
     
     if (_gw) {
 #if defined(__linux__)
-	sprintf(tmp, "/sbin/route -n add default gw %s", _gw.s().cc());
+	sprintf(tmp, "/sbin/route -n add default gw %s", _gw.s().c_str());
 #elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
-	sprintf(tmp, "/sbin/route -n add default %s", _gw.s().cc());
+	sprintf(tmp, "/sbin/route -n add default %s", _gw.s().c_str());
 #endif
 	if (system(tmp) != 0)
 	    return errh->error("%s: %s", tmp, strerror(errno));
@@ -276,7 +264,7 @@ KernelTun::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
 	return errh->error("socket() failed: %s", strerror(errno));
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, _dev_name.cc(), sizeof(ifr.ifr_name));
+    strncpy(ifr.ifr_name, _dev_name.c_str(), sizeof(ifr.ifr_name));
     ifr.ifr_mtu = _mtu_out;
     if (ioctl(s, SIOCSIFMTU, &ifr) != 0)
 	return errh->error("SIOCSIFMTU failed: %s", strerror(errno));
@@ -301,8 +289,8 @@ void
 KernelTun::dealloc_tun()
 {
     String cmd = "/sbin/ifconfig " + _dev_name + " down";
-    if (system(cmd.cc()) != 0) 
-	click_chatter("%s: failed: %s", id().cc(), cmd.cc());
+    if (system(cmd.c_str()) != 0) 
+	click_chatter("%s: failed: %s", id().c_str(), cmd.c_str());
 }
 
 int
@@ -360,7 +348,7 @@ KernelTun::selected(int fd)
 	    int af = ntohl(*(unsigned *)p->data());
 	    p->pull(4);
 	    if (af != AF_INET && af != AF_INET6) {
-		click_chatter("KernelTun(%s): don't know AF %d", _dev_name.cc(), af);
+		click_chatter("KernelTun(%s): don't know AF %d", _dev_name.c_str(), af);
 		checked_output_push(1, p->clone());
 	    } else
 		ok = fake_pcap_force_ip(p, FAKE_DLT_RAW);
@@ -407,13 +395,13 @@ KernelTun::push(int, Packet *p)
 {
     const click_ip *iph = p->ip_header();
     if (!iph) {
-	click_chatter("KernelTun(%s): no network header", _dev_name.cc());
+	click_chatter("KernelTun(%s): no network header", _dev_name.c_str());
 	p->kill();
     } else if (p->network_length() > _mtu_out) {
-	click_chatter("KernelTun(%s): packet larger than MTU (%d)", _dev_name.cc(), _mtu_out);
+	click_chatter("KernelTun(%s): packet larger than MTU (%d)", _dev_name.c_str(), _mtu_out);
 	p->kill();
     } else if (iph->ip_v != 4 && iph->ip_v != 6) {
-	click_chatter("KernelTun(%s): unknown IP version %d", _dev_name.cc(), iph->ip_v);
+	click_chatter("KernelTun(%s): unknown IP version %d", _dev_name.c_str(), iph->ip_v);
 	p->kill();
     } else {
 	p->change_headroom_and_length(p->headroom() + p->network_header_offset(), p->network_length());
@@ -447,11 +435,11 @@ KernelTun::push(int, Packet *p)
 	    int w = write(_fd, q->data(), q->length());
 	    if (w != (int) q->length() && (errno != ENOBUFS || !_ignore_q_errs || !_printed_write_err)) {
 		_printed_write_err = true;
-		click_chatter("KernelTun(%s): write failed: %s", _dev_name.cc(), strerror(errno));
+		click_chatter("KernelTun(%s): write failed: %s", _dev_name.c_str(), strerror(errno));
 	    }
 	    q->kill();
 	} else
-	    click_chatter("KernelTun(%s): out of memory", _dev_name.cc());
+	    click_chatter("KernelTun(%s): out of memory", _dev_name.c_str());
     }
 }
 

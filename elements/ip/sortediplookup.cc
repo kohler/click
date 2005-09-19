@@ -48,7 +48,7 @@ SortedIPLookup::check() const
     // next pointers are all as late as possible
     for (int i = 0; i < _t.size(); i++)
 	if (_t[i].extra < _t.size()) {
-	    click_chatter("%s: route %s has a nontrivial next", declaration().cc(), _t[i].unparse_addr().cc());
+	    click_chatter("%s: route %s has a nontrivial next", declaration().c_str(), _t[i].unparse_addr().c_str());
 	    ok = false;
 	}
 

@@ -25,6 +25,7 @@ class ChangeUID : public Element {
   ~ChangeUID();
   
   const char *class_name() const		{ return "ChangeUID"; }
+  const char *port_count() const		{ return "0/0"; }
   const char *processing() const		{ return AGNOSTIC; }
   
   int configure(const Vector<String> &, ErrorHandler *);

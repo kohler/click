@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 TCPBuffer::TCPBuffer()
-  : Element(1, 1), _chain(0)
+  : _chain(0)
 {
 }
 

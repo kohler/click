@@ -34,7 +34,6 @@ CLICK_DECLS
 #define IP_BYTE_OFF(iph)	((ntohs((iph)->ip_off) & IP_OFFMASK) << 3)
 
 IPReassembler::IPReassembler()
-    : Element(1, 1)
 {
     for (int i = 0; i < NMAP; i++)
 	_map[i] = 0;
@@ -44,12 +43,6 @@ IPReassembler::IPReassembler()
 
 IPReassembler::~IPReassembler()
 {
-}
-
-void
-IPReassembler::notify_noutputs(int n)
-{
-    set_noutputs(n < 2 ? 1 : 2);
 }
 
 int
@@ -95,7 +88,7 @@ IPReassembler::check_error(ErrorHandler *errh, int bucket, const Packet *p, cons
     if (iph)
 	sa << iph->ip_src << " > " << iph->ip_dst << " [" << ntohs(iph->ip_id) << ':' << PACKET_DLEN(p) << ((iph->ip_off & htons(IP_MF)) ? "+]: " : "]: ");
     sa << format;
-    errh->verror(ErrorHandler::ERR_ERROR, String(), sa.cc(), val);
+    errh->verror(ErrorHandler::ERR_ERROR, String(), sa.c_str(), val);
     va_end(val);
 }
 
@@ -121,7 +114,7 @@ IPReassembler::check(ErrorHandler *errh)
 		    off = chunk->lastoff;
 		    chunk = next_chunk(q, chunk);
 		}
-		errh->message("  %s", sa.cc());
+		errh->message("  %s", sa.c_str());
 		chunk = &PACKET_CHUNK(q);
 		off = 0;
 #endif

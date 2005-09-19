@@ -27,6 +27,7 @@ class SetIPDSCP : public Element {
   ~SetIPDSCP();
   
   const char *class_name() const		{ return "SetIPDSCP"; }
+  const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
 
   unsigned char dscp() const			{ return _dscp; }

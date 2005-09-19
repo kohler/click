@@ -26,7 +26,6 @@ CLICK_DECLS
 
 
 ReadAnno::ReadAnno()
-  : Element(1, 1)
 {
 }
 

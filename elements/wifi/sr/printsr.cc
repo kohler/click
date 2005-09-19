@@ -29,8 +29,7 @@
 CLICK_DECLS
 
 PrintSR::PrintSR()
-  : Element(1, 1),
-    _print_anno(false),
+  : _print_anno(false),
     _print_checksum(false)
 {
   _label = "";
@@ -127,14 +126,14 @@ PrintSR::sr_to_string(struct srpacket *pk)
 
   sa << " [";
   for(int i = 0; i< pk->num_links(); i++) {
-    sa << " "<< pk->get_link_node(i).s().cc() << " ";
+    sa << " "<< pk->get_link_node(i).s() << " ";
     int fwd = pk->get_link_fwd(i);
     int rev = pk->get_link_rev(i);
     int seq = pk->get_link_seq(i);
     int age = pk->get_link_age(i);
     sa << "<" << fwd << " (" << seq << "," << age << ") " << rev << ">";
   }
-  sa << " "<< pk->get_link_node(pk->num_links()).s().cc() << " ";
+  sa << " "<< pk->get_link_node(pk->num_links()).s() << " ";
   sa << "]";
 
   return sa.take_string();
@@ -145,7 +144,7 @@ PrintSR::simple_action(Packet *p)
 {
   StringAccum sa;
   if (_label[0] != 0) {
-    sa << _label.cc() << ": ";
+    sa << _label << ": ";
   } else {
       sa << "PrintSR ";
   }
@@ -156,7 +155,7 @@ PrintSR::simple_action(Packet *p)
 
   sa << PrintSR::sr_to_string(pk);
   
-  click_chatter("%s", sa.take_string().cc());
+  click_chatter("%s", sa.c_str());
 
   return p;
 }

@@ -35,6 +35,7 @@ class MetricFlood : public Element {
   ~MetricFlood();
   
   const char *class_name() const		{ return "MetricFlood"; }
+  const char *port_count() const		{ return "2/2"; }
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "#/#"; }
   int initialize(ErrorHandler *);
@@ -72,6 +73,7 @@ class MetricFlood : public Element {
       _seq = seq; 
       _count = 0;
       _p = 0;
+      (void) fwd, (void) rev;
     }
     Seen() {
       _p = 0;

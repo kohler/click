@@ -22,7 +22,7 @@
 CLICK_DECLS 
 
 LIRMetric::LIRMetric()
-  : GridGenericMetric(0, 0), _rt(0)
+  : _rt(0)
 {
 }
 
@@ -83,18 +83,12 @@ LIRMetric::append_metric(const metric_t &r, const metric_t &l) const
   // be part of the network!
   if (r.val() < 1)
     click_chatter("LIRMetric %s: append_metric WARNING: metric %u%% neighbors is too low for route metric",
-		  id().cc(), r.val());
+		  id().c_str(), r.val());
   if (l.val() < 1)
     click_chatter("LIRMetric %s: append_metric WARNING: metric %u%% neighbors is too low for link metric",
-		  id().cc(), r.val());
+		  id().c_str(), r.val());
 
   return metric_t(r.val() + l.val());
-}
-
-void
-LIRMetric::add_handlers()
-{
-  add_default_handlers(true);
 }
 
 

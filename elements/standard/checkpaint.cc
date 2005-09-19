@@ -23,18 +23,11 @@
 CLICK_DECLS
 
 CheckPaint::CheckPaint()
-  : Element(1, 1)
 {
 }
 
 CheckPaint::~CheckPaint()
 {
-}
-
-void
-CheckPaint::notify_noutputs(int n)
-{
-  set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int

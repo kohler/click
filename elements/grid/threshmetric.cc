@@ -21,7 +21,7 @@
 CLICK_DECLS 
 
 ThresholdMetric::ThresholdMetric()
-  : GridGenericMetric(0, 0), _ls(0), _thresh(63), _twoway(false)
+  : _ls(0), _thresh(63), _twoway(false)
 {
 }
 
@@ -108,18 +108,12 @@ ThresholdMetric::append_metric(const metric_t &r, const metric_t &l) const
   
   if (r.val() < 1)
     click_chatter("ThresholdMetric %s: append_metric WARNING: metric %u hops is too low for route metric",
-		  id().cc(), r.val());
+		  id().c_str(), r.val());
   if (l.val() != 1)
     click_chatter("ThresholdMetric %s: append_metric WARNING: metric %u hops should be 1 for link metric",
-		  id().cc(), r.val());
+		  id().c_str(), r.val());
 
   return metric_t(r.val() + l.val());
-}
-
-void
-ThresholdMetric::add_handlers()
-{
-  add_default_handlers(true);
 }
 
 

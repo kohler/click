@@ -44,6 +44,7 @@ class OpenAuthResponder : public Element { public:
   ~OpenAuthResponder();
 
   const char *class_name() const	{ return "OpenAuthResponder"; }
+  const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
   
   int configure(Vector<String> &, ErrorHandler *);

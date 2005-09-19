@@ -23,7 +23,6 @@
 CLICK_DECLS
 
 ForceIP::ForceIP()
-  : Element(1, 1)
 {
   _count = 0;
 }

@@ -24,7 +24,6 @@
 CLICK_DECLS
 
 IPOutputCombo::IPOutputCombo()
-  : Element(1, 5)
 {
 }
 

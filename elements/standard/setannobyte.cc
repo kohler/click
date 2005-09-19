@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 SetAnnoByte::SetAnnoByte()
-  : Element(1, 1), _offset(0), _value(0)
+  : _offset(0), _value(0)
 {
 }
 
@@ -79,7 +79,6 @@ SetAnnoByte::value_read_handler(Element *e, void *)
 void
 SetAnnoByte::add_handlers()
 {
-  add_default_handlers(true);
   add_read_handler("offset", offset_read_handler, (void *)0);
   add_read_handler("value", value_read_handler, (void *)0);
 }

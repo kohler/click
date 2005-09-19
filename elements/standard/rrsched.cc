@@ -22,18 +22,12 @@
 CLICK_DECLS
 
 RRSched::RRSched()
-    : Element(0, 1), _next(0), _signals(0)
+    : _next(0), _signals(0)
 {
 }
 
 RRSched::~RRSched()
 {
-}
-
-void
-RRSched::notify_ninputs(int i)
-{
-    set_ninputs(i);
 }
 
 int 
