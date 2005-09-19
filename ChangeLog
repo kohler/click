@@ -1,3 +1,418 @@
+2005-09-19 Monday 18:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-mkelemmap (1.37), bsdmodule/clickfs_tree.cc (1.5),
+	bsdmodule/config.cc (1.11), bsdmodule/kernelerror.cc (1.4),
+	doc/Doxyfile (1.1), doc/click.texi (1.62),
+	elements/analysis/aggcounter.cc (1.34),
+	elements/analysis/aggcounter.hh (1.31),
+	elements/analysis/aggpktcounter.cc (1.7),
+	elements/analysis/aggpktcounter.hh (1.8),
+	elements/analysis/aggregatefilter.cc (1.7),
+	elements/analysis/aggregatefilter.hh (1.6),
+	elements/analysis/aggregatefirst.cc (1.7),
+	elements/analysis/aggregatefirst.hh (1.8),
+	elements/analysis/aggregateip.cc (1.20),
+	elements/analysis/aggregateip.hh (1.17),
+	elements/analysis/aggregateipaddrpair.cc (1.2),
+	elements/analysis/aggregateipaddrpair.hh (1.2),
+	elements/analysis/aggregateipflows.cc (1.31),
+	elements/analysis/aggregateipflows.hh (1.21),
+	elements/analysis/aggregatelast.cc (1.8),
+	elements/analysis/aggregatelast.hh (1.6),
+	elements/analysis/aggregatelen.cc (1.8),
+	elements/analysis/aggregatelen.hh (1.6),
+	elements/analysis/anonipaddr.cc (1.16),
+	elements/analysis/anonipaddr.hh (1.9),
+	elements/analysis/eraseippayload.cc (1.3),
+	elements/analysis/eraseippayload.hh (1.3),
+	elements/analysis/fromcapdump.cc (1.12),
+	elements/analysis/fromcapdump.hh (1.6),
+	elements/analysis/fromdagdump.cc (1.29),
+	elements/analysis/fromdagdump.hh (1.18),
+	elements/analysis/fromflandump.cc (1.8),
+	elements/analysis/fromflandump.hh (1.5),
+	elements/analysis/fromipsumdump.cc (1.75),
+	elements/analysis/fromipsumdump.hh (1.41),
+	elements/analysis/fromnetflowsumdump.cc (1.24),
+	elements/analysis/fromnetflowsumdump.hh (1.19),
+	elements/analysis/fromnlanrdump.cc (1.10),
+	elements/analysis/fromnlanrdump.hh (1.7),
+	elements/analysis/fromtcpdump.cc (1.13),
+	elements/analysis/fromtcpdump.hh (1.7),
+	elements/analysis/settimestampdelta.cc (1.4),
+	elements/analysis/settimestampdelta.hh (1.4),
+	elements/analysis/storetimestamp.cc (1.3),
+	elements/analysis/storetimestamp.hh (1.2),
+	elements/analysis/timefilter.cc (1.13),
+	elements/analysis/timefilter.hh (1.12),
+	elements/analysis/timerange.cc (1.8),
+	elements/analysis/timerange.hh (1.8),
+	elements/analysis/timesortedsched.cc (1.8),
+	elements/analysis/timesortedsched.hh (1.8),
+	elements/analysis/timestampaccum.cc (1.5),
+	elements/analysis/timestampaccum.hh (1.4),
+	elements/analysis/toipflowdumps.cc (1.39),
+	elements/analysis/toipflowdumps.hh (1.23),
+	elements/analysis/toipsumdump.cc (1.62),
+	elements/analysis/toipsumdump.hh (1.54),
+	elements/app/ftpportmapper.cc (1.27), elements/app/ftpportmapper.hh
+	(1.17), elements/aqm/pi.cc (1.12), elements/aqm/pi.hh (1.8),
+	elements/aqm/red.cc (1.46), elements/aqm/red.hh (1.37),
+	elements/bsdmodule/anydevice.cc (1.7),
+	elements/bsdmodule/fastudpsrc.cc (1.7),
+	elements/bsdmodule/fastudpsrc.hh (1.9),
+	elements/bsdmodule/fromdevice.cc (1.19),
+	elements/bsdmodule/fromdevice.hh (1.16),
+	elements/bsdmodule/fromhost.cc (1.10),
+	elements/bsdmodule/fromhost.hh (1.8),
+	elements/bsdmodule/todevice.cc (1.11),
+	elements/bsdmodule/todevice.hh (1.12), elements/bsdmodule/tohost.cc
+	(1.5), elements/bsdmodule/tohost.hh (1.6),
+	elements/ethernet/arpfaker.cc (1.26), elements/ethernet/arpfaker.hh
+	(1.19), elements/ethernet/arpquerier.cc (1.55),
+	elements/ethernet/arpquerier.hh (1.40),
+	elements/ethernet/arpresponder.cc (1.46),
+	elements/ethernet/arpresponder.hh (1.26),
+	elements/ethernet/ensureether.cc (1.6),
+	elements/ethernet/ensureether.hh (1.6),
+	elements/ethernet/etherencap.cc (1.24),
+	elements/ethernet/etherencap.hh (1.21),
+	elements/ethernet/ethermirror.cc (1.16),
+	elements/ethernet/ethermirror.hh (1.9),
+	elements/ethernet/hostetherfilter.cc (1.19),
+	elements/ethernet/hostetherfilter.hh (1.14),
+	elements/ethernet/ip6ndadvertiser.cc (1.22),
+	elements/ethernet/ip6ndadvertiser.hh (1.9),
+	elements/ethernet/ip6ndsolicitor.cc (1.22),
+	elements/ethernet/ip6ndsolicitor.hh (1.14),
+	elements/etherswitch/bridgemessage.cc (1.21),
+	elements/etherswitch/debugbridge.cc (1.19),
+	elements/etherswitch/debugbridge.hh (1.10),
+	elements/etherswitch/etherswitch.cc (1.20),
+	elements/etherswitch/etherswitch.hh (1.9),
+	elements/etherswitch/spantree.cc (1.35),
+	elements/etherswitch/spantree.hh (1.19),
+	elements/exopc/xokreader.cc (1.10), elements/exopc/xokreader.hh
+	(1.12), elements/exopc/xokwriter.cc (1.14),
+	elements/exopc/xokwriter.hh (1.13), elements/grid/ackresponder.cc
+	(1.4), elements/grid/ackresponder.hh (1.6),
+	elements/grid/ackresponder2.cc (1.3),
+	elements/grid/ackresponder2.hh (1.3),
+	elements/grid/ackretrysender.cc (1.7),
+	elements/grid/ackretrysender.hh (1.7),
+	elements/grid/ackretrysender2.cc (1.7),
+	elements/grid/ackretrysender2.hh (1.6), elements/grid/airoinfo.cc
+	(1.15), elements/grid/airoinfo.hh (1.8),
+	elements/grid/bottleneckmetric.cc (1.4),
+	elements/grid/bottleneckmetric.hh (1.3),
+	elements/grid/checkgridheader.cc (1.28),
+	elements/grid/checkgridheader.hh (1.8),
+	elements/grid/dsdvroutetable.cc (1.79),
+	elements/grid/dsdvroutetable.hh (1.55),
+	elements/grid/dsrarptable.cc (1.11), elements/grid/dsrarptable.hh
+	(1.8), elements/grid/dsrroutetable.cc (1.13),
+	elements/grid/dsrroutetable.hh (1.9),
+	elements/grid/e2elossmetric.cc (1.7),
+	elements/grid/e2elossmetric.hh (1.6), elements/grid/etx2metric.cc
+	(1.4), elements/grid/etx2metric.hh (1.3),
+	elements/grid/etxmetric.cc (1.7), elements/grid/etxmetric.hh (1.7),
+	elements/grid/filterbyhops.cc (1.19), elements/grid/filterbyhops.hh
+	(1.7), elements/grid/filterbyrange.cc (1.31),
+	elements/grid/filterbyrange.hh (1.15), elements/grid/fixdstloc.cc
+	(1.16), elements/grid/fixdstloc.hh (1.8),
+	elements/grid/fixsrcloc.cc (1.33), elements/grid/fixsrcloc.hh
+	(1.11), elements/grid/floodinglocquerier.cc (1.44),
+	elements/grid/floodinglocquerier.hh (1.20),
+	elements/grid/gridencap.cc (1.5), elements/grid/gridencap.hh (1.5),
+	elements/grid/gridgatewayinfo.cc (1.12),
+	elements/grid/gridgatewayinfo.hh (1.9),
+	elements/grid/gridgenericmetric.hh (1.7),
+	elements/grid/gridgenericrt.hh (1.10),
+	elements/grid/gridheaderinfo.cc (1.13),
+	elements/grid/gridlocationinfo.cc (1.24),
+	elements/grid/gridlocationinfo2.cc (1.5),
+	elements/grid/gridlogger.cc (1.10), elements/grid/gridlogger.hh
+	(1.24), elements/grid/gridprobehandler.cc (1.19),
+	elements/grid/gridprobehandler.hh (1.8),
+	elements/grid/gridprobereplyreceiver.cc (1.17),
+	elements/grid/gridprobereplyreceiver.hh (1.7),
+	elements/grid/gridprobesender.cc (1.14),
+	elements/grid/gridprobesender.hh (1.6), elements/grid/gridproxy.cc
+	(1.6), elements/grid/gridproxy.hh (1.7),
+	elements/grid/gridroutetable.cc (1.74),
+	elements/grid/gridroutetable.hh (1.41),
+	elements/grid/gridsrforwarder.cc (1.8),
+	elements/grid/gridsrforwarder.hh (1.4),
+	elements/grid/gridtxerror.cc (1.10), elements/grid/gridtxerror.hh
+	(1.7), elements/grid/hello.cc (1.47), elements/grid/hello.hh
+	(1.19), elements/grid/hopcountmetric.cc (1.6),
+	elements/grid/hopcountmetric.hh (1.5), elements/grid/incseqno.cc
+	(1.7), elements/grid/incseqno.hh (1.5), elements/grid/linkstat.cc
+	(1.34), elements/grid/linkstat.hh (1.21),
+	elements/grid/linktester.cc (1.5), elements/grid/linktester.hh
+	(1.4), elements/grid/linktestreceiver.cc (1.4),
+	elements/grid/linktestreceiver.hh (1.3),
+	elements/grid/linktracker.cc (1.21), elements/grid/linktracker.hh
+	(1.8), elements/grid/lirmetric.cc (1.6), elements/grid/lirmetric.hh
+	(1.6), elements/grid/locfromfile.cc (1.17),
+	elements/grid/locqueryresponder.cc (1.32),
+	elements/grid/locqueryresponder.hh (1.12),
+	elements/grid/loctable.cc (1.17),
+	elements/grid/lookupgeogridroute.cc (1.36),
+	elements/grid/lookupgeogridroute.hh (1.16),
+	elements/grid/lookuplocalgridroute.cc (1.55),
+	elements/grid/lookuplocalgridroute.hh (1.21),
+	elements/grid/lookuplocalgridroute2.cc (1.6),
+	elements/grid/lookuplocalgridroute2.hh (1.3),
+	elements/grid/lrhello.cc (1.32), elements/grid/lrhello.hh (1.10),
+	elements/grid/movesim.cc (1.20), elements/grid/movesim.hh (1.9),
+	elements/grid/packetlogger.cc (1.5), elements/grid/packetlogger.hh
+	(1.6), elements/grid/packetlogger2.cc (1.7),
+	elements/grid/packetlogger2.hh (1.9), elements/grid/pep.cc (1.29),
+	elements/grid/pep.hh (1.14), elements/grid/pingpong.cc (1.11),
+	elements/grid/pingpong.hh (1.6), elements/grid/printgrid.cc (1.37),
+	elements/grid/printgrid.hh (1.12), elements/grid/radiosim.cc
+	(1.25), elements/grid/radiosim.hh (1.14),
+	elements/grid/regionpep.cc (1.21), elements/grid/regionpep.hh
+	(1.11), elements/grid/setgridchecksum.cc (1.24),
+	elements/grid/setgridchecksum.hh (1.8),
+	elements/grid/simplelocquerier.cc (1.21),
+	elements/grid/simplelocquerier.hh (1.10),
+	elements/grid/threshmetric.cc (1.8), elements/grid/threshmetric.hh
+	(1.5), elements/grid/updateroutes.cc (1.37),
+	elements/grid/updateroutes.hh (1.16), elements/grid/yarvismetric.cc
+	(1.6), elements/grid/yarvismetric.hh (1.3),
+	elements/icmp/checkicmpheader.cc (1.19),
+	elements/icmp/checkicmpheader.hh (1.10), elements/icmp/icmperror.cc
+	(1.25), elements/icmp/icmperror.hh (1.13),
+	elements/icmp/icmppingencap.cc (1.4),
+	elements/icmp/icmppingencap.hh (1.4),
+	elements/icmp/icmppingresponder.cc (1.17),
+	elements/icmp/icmppingresponder.hh (1.7),
+	elements/icmp/icmppingrewriter.cc (1.24),
+	elements/icmp/icmppingrewriter.hh (1.13),
+	elements/icmp/icmprewriter.cc (1.17), elements/icmp/icmprewriter.hh
+	(1.10), elements/icmp/icmpsendpings.cc (1.36),
+	elements/icmp/icmpsendpings.hh (1.19), elements/ip/checkipheader.cc
+	(1.54), elements/ip/checkipheader.hh (1.40),
+	elements/ip/decipttl.cc (1.26), elements/ip/decipttl.hh (1.19),
+	elements/ip/directiplookup.cc (1.14), elements/ip/directiplookup.hh
+	(1.16), elements/ip/fixipsrc.cc (1.26), elements/ip/fixipsrc.hh
+	(1.16), elements/ip/getipaddress.cc (1.22),
+	elements/ip/getipaddress.hh (1.19),
+	elements/ip/ipaddrpairrewriter.cc (1.4),
+	elements/ip/ipaddrpairrewriter.hh (1.2),
+	elements/ip/ipaddrrewriter.cc (1.25), elements/ip/ipaddrrewriter.hh
+	(1.16), elements/ip/ipclassifier.cc (1.28), elements/ip/ipencap.cc
+	(1.39), elements/ip/ipencap.hh (1.27), elements/ip/ipfilter.cc
+	(1.63), elements/ip/ipfilter.hh (1.33), elements/ip/ipfragmenter.cc
+	(1.35), elements/ip/ipfragmenter.hh (1.27),
+	elements/ip/ipgwoptions.cc (1.39), elements/ip/ipgwoptions.hh
+	(1.23), elements/ip/ipinputcombo.cc (1.33),
+	elements/ip/ipinputcombo.hh (1.22), elements/ip/ipmirror.cc (1.21),
+	elements/ip/ipmirror.hh (1.13), elements/ip/ipoutputcombo.cc
+	(1.26), elements/ip/ipoutputcombo.hh (1.16), elements/ip/ipprint.cc
+	(1.46), elements/ip/ipprint.hh (1.26), elements/ip/ipratemon.cc
+	(1.104), elements/ip/ipratemon.hh (1.68),
+	elements/ip/ipreassembler.cc (1.23), elements/ip/ipreassembler.hh
+	(1.16), elements/ip/iproutetable.cc (1.17), elements/ip/iprw.cc
+	(1.61), elements/ip/iprwpatterns.cc (1.17),
+	elements/ip/lineariplookup.cc (1.13), elements/ip/lineariplookup.hh
+	(1.17), elements/ip/lookupiproute.cc (1.32),
+	elements/ip/lookupiproute2.cc (1.25), elements/ip/lookupiproute2.hh
+	(1.15), elements/ip/lookupiproutelinux.cc (1.32),
+	elements/ip/lookupiproutelinux.hh (1.21),
+	elements/ip/lookupiproutemp.cc (1.17),
+	elements/ip/lookupiproutemp.hh (1.8), elements/ip/markipce.cc
+	(1.10), elements/ip/markipce.hh (1.7), elements/ip/markipheader.cc
+	(1.20), elements/ip/markipheader.hh (1.14),
+	elements/ip/radixiplookup.cc (1.18), elements/ip/radixiplookup.hh
+	(1.20), elements/ip/rangeiplookup.cc (1.3),
+	elements/ip/rangeiplookup.hh (1.3), elements/ip/rfc2507c.cc (1.29),
+	elements/ip/rfc2507c.hh (1.14), elements/ip/rfc2507d.cc (1.22),
+	elements/ip/rfc2507d.hh (1.14), elements/ip/ripsend.cc (1.33),
+	elements/ip/ripsend.hh (1.22), elements/ip/rripmapper.cc (1.15),
+	elements/ip/saveipfields.cc (1.17), elements/ip/saveipfields.hh
+	(1.8), elements/ip/setipaddress.cc (1.21),
+	elements/ip/setipaddress.hh (1.18), elements/ip/setipchecksum.cc
+	(1.20), elements/ip/setipchecksum.hh (1.13),
+	elements/ip/setipdscp.cc (1.30), elements/ip/setipdscp.hh (1.17),
+	elements/ip/setrandipaddress.cc (1.10),
+	elements/ip/setrandipaddress.hh (1.5), elements/ip/siphmapper.cc
+	(1.7), elements/ip/sortediplookup.cc (1.12),
+	elements/ip/storeipaddress.cc (1.20), elements/ip/storeipaddress.hh
+	(1.15), elements/ip/stripipheader.cc (1.13),
+	elements/ip/stripipheader.hh (1.11), elements/ip/unstripipheader.cc
+	(1.12), elements/ip/unstripipheader.hh (1.10),
+	elements/ip6/addresstranslator.cc (1.20),
+	elements/ip6/addresstranslator.hh (1.13),
+	elements/ip6/checkip6header.cc (1.25),
+	elements/ip6/checkip6header.hh (1.13), elements/ip6/decip6hlim.cc
+	(1.15), elements/ip6/decip6hlim.hh (1.9),
+	elements/ip6/getip6address.cc (1.15), elements/ip6/getip6address.hh
+	(1.12), elements/ip6/icmp6error.cc (1.27),
+	elements/ip6/icmp6error.hh (1.13), elements/ip6/ip6fragmenter.cc
+	(1.15), elements/ip6/ip6fragmenter.hh (1.9),
+	elements/ip6/ip6mirror.cc (1.10), elements/ip6/ip6mirror.hh (1.7),
+	elements/ip6/ip6print.cc (1.13), elements/ip6/ip6print.hh (1.6),
+	elements/ip6/lookupip6route.cc (1.22),
+	elements/ip6/lookupip6route.hh (1.13),
+	elements/ip6/markip6header.cc (1.15), elements/ip6/markip6header.hh
+	(1.10), elements/ip6/protocoltranslator46.cc (1.10),
+	elements/ip6/protocoltranslator46.hh (1.6),
+	elements/ip6/protocoltranslator64.cc (1.12),
+	elements/ip6/protocoltranslator64.hh (1.6),
+	elements/ip6/setip6address.cc (1.13), elements/ip6/setip6address.hh
+	(1.10), elements/ip6/setip6dscp.cc (1.7),
+	elements/ip6/setip6dscp.hh (1.6), elements/ipsec/des.cc (1.21),
+	elements/ipsec/des.hh (1.14), elements/ipsec/desp.cc (1.25),
+	elements/ipsec/desp.hh (1.13), elements/ipsec/esp.cc (1.30),
+	elements/ipsec/esp.hh (1.17), elements/ipsec/sha1.cc (1.10),
+	elements/ipsec/sha1.hh (1.11), elements/linuxmodule/anydevice.cc
+	(1.31), elements/linuxmodule/cpuqueue.cc (1.18),
+	elements/linuxmodule/cpuqueue.hh (1.7),
+	elements/linuxmodule/cpuswitch.cc (1.12),
+	elements/linuxmodule/cpuswitch.hh (1.5),
+	elements/linuxmodule/cyclecountaccum.cc (1.12),
+	elements/linuxmodule/cyclecountaccum.hh (1.12),
+	elements/linuxmodule/fasttcpflows.cc (1.16),
+	elements/linuxmodule/fasttcpflows.hh (1.6),
+	elements/linuxmodule/fastudpflows.cc (1.16),
+	elements/linuxmodule/fastudpflows.hh (1.8),
+	elements/linuxmodule/fastudpsrc.cc (1.22),
+	elements/linuxmodule/fastudpsrc.hh (1.11),
+	elements/linuxmodule/fastudpsrcip6.cc (1.21),
+	elements/linuxmodule/fastudpsrcip6.hh (1.7),
+	elements/linuxmodule/fromdevice.cc (1.85),
+	elements/linuxmodule/fromdevice.hh (1.42),
+	elements/linuxmodule/fromhost.cc (1.52),
+	elements/linuxmodule/fromhost.hh (1.39),
+	elements/linuxmodule/perfcountaccum.cc (1.14),
+	elements/linuxmodule/perfcountaccum.hh (1.9),
+	elements/linuxmodule/polldevice.cc (1.141),
+	elements/linuxmodule/polldevice.hh (1.69),
+	elements/linuxmodule/rtcycles.cc (1.12),
+	elements/linuxmodule/rtcycles.hh (1.8),
+	elements/linuxmodule/setcyclecount.cc (1.10),
+	elements/linuxmodule/setcyclecount.hh (1.6),
+	elements/linuxmodule/setperfcount.cc (1.13),
+	elements/linuxmodule/setperfcount.hh (1.7),
+	elements/linuxmodule/sortedsched.cc (1.14),
+	elements/linuxmodule/todevice.cc (1.143),
+	elements/linuxmodule/todevice.hh (1.71),
+	elements/linuxmodule/tohost.cc (1.46),
+	elements/linuxmodule/tohost.hh (1.31),
+	elements/linuxmodule/tulipstats.cc (1.22),
+	elements/local/bufconv.cc (1.12), elements/local/bufconv.hh (1.8),
+	elements/local/chuckcheck.cc (1.17), elements/local/chuckcheck.hh
+	(1.10), elements/local/copyflowid.cc (1.8),
+	elements/local/copyflowid.hh (1.7), elements/local/copytcpseq.cc
+	(1.8), elements/local/copytcpseq.hh (1.8),
+	elements/local/duppath.cc (1.9), elements/local/duppath.hh (1.6),
+	elements/local/forceicmp.cc (1.14), elements/local/forceicmp.hh
+	(1.5), elements/local/forceip.cc (1.15), elements/local/forceip.hh
+	(1.8), elements/local/forcetcp.cc (1.21),
+	elements/local/forcetcp.hh (1.10), elements/local/forceudp.cc
+	(1.13), elements/local/forceudp.hh (1.5),
+	elements/local/indextreesiplookup.cc (1.5),
+	elements/local/indextreesiplookup.hh (1.5), elements/local/pad.cc
+	(1.3), elements/local/pad.hh (1.2), elements/local/print80211.cc
+	(1.5), elements/local/print80211.hh (1.3),
+	elements/local/printairo.cc (1.8), elements/local/printairo.hh
+	(1.4), elements/local/rrunqueue.hh (1.7), elements/local/tcpack.cc
+	(1.17), elements/local/tcpack.hh (1.12),
+	elements/local/tcpbuffer.cc (1.12), elements/local/tcpbuffer.hh
+	(1.11), elements/local/tcpconn.cc (1.12), elements/local/tcpconn.hh
+	(1.10), elements/local/tcpdemux.cc (1.14),
+	elements/local/tcpdemux.hh (1.9), elements/local/tcpreflector.cc
+	(1.5), elements/local/tcpreflector.hh (1.4),
+	elements/local/toytcp.cc (1.25), elements/local/toytcp.hh (1.12),
+	elements/local/webgen.cc (1.18), elements/local/webgen.hh (1.12),
+	elements/ns/fromsimdevice.cc (1.9), elements/ns/fromsimdevice.hh
+	(1.5), elements/ns/tosimdevice.cc (1.12),
+	elements/ns/tosimdevice.hh (1.5), elements/radio/b8b10.cc (1.16),
+	elements/radio/b8b10.hh (1.9), elements/radio/bim.cc (1.32),
+	elements/radio/bim.hh (1.18), elements/radio/checkpattern.cc
+	(1.16), elements/radio/checkpattern.hh (1.9),
+	elements/radio/scramble.cc (1.12), elements/radio/scramble.hh
+	(1.6), elements/radio/sendpattern.cc (1.18),
+	elements/radio/sendpattern.hh (1.10),
+	elements/simple/simplepriosched.cc (1.3),
+	elements/simple/simplepriosched.hh (1.3),
+	elements/simple/simplerrsched.cc (1.3),
+	elements/simple/simplerrsched.hh (1.3),
+	elements/standard/addressinfo.cc (1.36), elements/standard/align.cc
+	(1.20), elements/standard/align.hh (1.16),
+	elements/standard/alignmentinfo.cc (1.23),
+	elements/standard/averagecounter.cc (1.15),
+	elements/standard/averagecounter.hh (1.15),
+	elements/standard/bandwidthmeter.cc (1.16),
+	elements/standard/bandwidthmeter.hh (1.10),
+	elements/standard/block.cc (1.23), elements/standard/block.hh
+	(1.17), elements/standard/burster.cc (1.28),
+	elements/standard/burster.hh (1.18),
+	elements/standard/checkcrc32.cc (1.15),
+	elements/standard/checkcrc32.hh (1.13),
+	elements/standard/checklength.cc (1.17),
+	elements/standard/checklength.hh (1.15),
+	elements/standard/checkpaint.cc (1.22),
+	elements/standard/checkpaint.hh (1.19),
+	elements/standard/classifier.cc (1.52),
+	elements/standard/classifier.hh (1.31),
+	elements/standard/compblock.cc (1.24),
+	elements/standard/compblock.hh (1.17), elements/standard/counter.cc
+	(1.34), elements/standard/counter.hh (1.31),
+	elements/standard/delayshaper.cc (1.17),
+	elements/standard/delayshaper.hh (1.13),
+	elements/standard/delayunqueue.cc (1.23),
+	elements/standard/delayunqueue.hh (1.16),
+	elements/standard/discard.cc (1.28), elements/standard/discard.hh
+	(1.23), elements/standard/discardnofree.cc (1.23),
+	elements/standard/discardnofree.hh (1.17),
+	elements/standard/drivermanager.cc (1.40),
+	elements/standard/dropbroadcasts.cc (1.16),
+	elements/standard/dropbroadcasts.hh (1.20),
+	elements/standard/drr.cc (1.10), elements/standard/drr.hh (1.8),
+	elements/standard/errorelement.cc (1.14),
+	elements/standard/hashswitch.cc (1.14),
+	elements/standard/hashswitch.hh (1.10), elements/standard/idle.cc
+	(1.25), elements/standard/idle.hh (1.21),
+	elements/standard/infinitesource.cc (1.53),
+	elements/standard/infinitesource.hh (1.39),
+	elements/standard/linkunqueue.cc (1.9),
+	elements/standard/linkunqueue.hh (1.6),
+	elements/standard/mixedqueue.cc (1.5),
+	elements/standard/mixedqueue.hh (1.4), elements/standard/msqueue.cc
+	(1.16), elements/standard/msqueue.hh (1.14),
+	elements/standard/nullelement.cc (1.13),
+	elements/standard/nullelement.hh (1.12), elements/standard/nulls.hh
+	(1.14), elements/standard/paint.cc (1.23),
+	elements/standard/paint.hh (1.18), elements/standard/paintswitch.cc
+	(1.5), elements/standard/paintswitch.hh (1.4),
+	elements/standard/painttee.cc (1.15), elements/standard/painttee.hh
+	(1.9), elements/standard/pokehandlers.cc (1.36),
+	elements/standard/print.cc (1.30), elements/standard/print.hh
+	(1.17): Begin adding doxygen documentation comments to important
+	header files.  For now, Element and String.  Deprecate
+	String::null_string() in favor of String::empty_string(). 
+	Deprecate String::cc() in favor of String::c_str().  Add
+	Element::port_count() method.  This returns a port count
+	descriptor, such as "1/1-2" (one input port, one or two output
+	ports), sort of like a processing descriptor.  port_count() is
+	preferred to notify_ninputs(), notify_noutputs(), set_ninputs(),
+	set_noutputs(), add_input(), and add_output(), and all those
+	functions are now deprecated.  This allows Router to set up port
+	counts, processing, and connections *before* configure() runs
+	(although for compatibility configure() can still call
+	set_ninputs() for now).  Update all elements to replace cc() with
+	c_str(), and to use port_count().  Hopefully no errors but you
+	never know.
+
+2005-09-19 Monday 18:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.70): detect static_initialize and
+	static_cleanup separately
+
 2005-09-13 Tuesday 11:31  John Bicket <jbicket@mit.edu>
 
 	* elements/ethernet/etherencap.cc (1.23): read/write ethertype in
