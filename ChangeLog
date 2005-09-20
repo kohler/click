@@ -1,3 +1,26 @@
+2005-09-20 Tuesday 10:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/aqm/pi.cc (1.13), elements/aqm/red.cc (1.47),
+	elements/bsdmodule/fromdevice.hh (1.17),
+	elements/ethernet/arpquerier.cc (1.56),
+	elements/ethernet/ip6ndsolicitor.cc (1.23),
+	elements/icmp/icmppingrewriter.cc (1.25),
+	elements/linuxmodule/fromdevice.cc (1.86),
+	elements/standard/simplequeue.cc (1.13),
+	elements/standard/simplequeue.hh (1.14),
+	elements/tcpudp/iprewriter.cc (1.48),
+	elements/tcpudp/tcprewriter.cc (1.40),
+	elements/userlevel/chattersocket.cc (1.21),
+	elements/userlevel/controlsocket.cc (1.61),
+	elements/wifi/arptable.cc (1.7), elements/wifi/availablerates.cc
+	(1.10), elements/wifi/linktable.cc (1.19),
+	elements/wifi/ap/stationtable.cc (1.5), elements/wifi/sr/ettstat.cc
+	(1.23), include/click/element.hh (1.41), include/click/router.hh
+	(1.76), lib/element.cc (1.95), lib/router.cc (1.180): take_state
+	update: now Element::hotswap_element(), the default implementation,
+	checks whether the hotswapped element has the same class_name(). 
+	Not too sure about this change, may revert
+
 2005-09-19 Monday 18:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-mkelemmap (1.37), bsdmodule/clickfs_tree.cc (1.5),
