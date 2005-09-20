@@ -90,7 +90,7 @@ class Router { public:
     void* set_attachment(const String&, void*);
     const Vector<String>& requirements() const	{ return _requirements; }
 
-    Router* hotswap_router() const		{ return _hotswap_router; }
+    inline Router* hotswap_router() const;
     void set_hotswap_router(Router*);
     
     ErrorHandler* chatter_channel(const String&) const;
@@ -169,11 +169,13 @@ class Router { public:
     Vector<Hookup> _hookup_from;
     Vector<Hookup> _hookup_to;
 
+    /** @cond never */
     struct Gport {
 	Vector<int> e2g;
 	Vector<int> g2e;
 	int size() const			{ return g2e.size(); }
     };
+    /** @endcond never */
     Gport _gports[2];
   
     Vector<int> _hookup_gports[2];
@@ -383,6 +385,21 @@ inline HashMap_ArenaFactory*
 Router::arena_factory() const
 {
     return _arena_factory;
+}
+
+/** @brief Returns the currently-installed router this router will eventually
+ * replace.
+ *
+ * This function is only meaningful during a router's initialization.  If this
+ * router was installed with the hotswap option, then hotswap_router() will
+ * return the currently-installed router that this router will eventually
+ * replace (assuming error-free initialization).  Otherwise, hotswap_router()
+ * will return 0.
+ */
+inline Router*
+Router::hotswap_router() const
+{
+    return _hotswap_router;
 }
 
 inline int

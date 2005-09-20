@@ -44,6 +44,10 @@
 
 CLICK_DECLS
 
+/** @class Router
+ * @brief A router configuration.
+ */
+
 const Handler* Handler::the_blank_handler;
 static Handler* globalh;
 static int nglobalh;

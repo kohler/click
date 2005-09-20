@@ -86,8 +86,7 @@ ICMPPingRewriter::cleanup(CleanupStage)
 void
 ICMPPingRewriter::take_state(Element *e, ErrorHandler *errh)
 {
-  ICMPPingRewriter *rw = (ICMPPingRewriter *)e->cast("ICMPPingRewriter");
-  if (!rw) return;
+  ICMPPingRewriter *rw = (ICMPPingRewriter *)e;
 
   if (noutputs() != rw->noutputs()) {
     errh->warning("taking mappings from `%s', although it has\n%s output ports", rw->declaration().c_str(), (rw->noutputs() > noutputs() ? "more" : "fewer"));

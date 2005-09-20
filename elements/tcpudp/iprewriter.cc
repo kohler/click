@@ -141,8 +141,7 @@ IPRewriter::notify_pattern(Pattern *p, ErrorHandler *errh)
 void
 IPRewriter::take_state(Element *e, ErrorHandler *errh)
 {
-  IPRewriter *rw = (IPRewriter *)e->cast("IPRewriter");
-  if (!rw) return;
+  IPRewriter *rw = (IPRewriter *)e;
 
   if (noutputs() != rw->noutputs()) {
     errh->warning("taking mappings from `%s', although it has %s output ports", rw->declaration().c_str(), (rw->noutputs() > noutputs() ? "more" : "fewer"));

@@ -47,9 +47,7 @@ StationTable::configure(Vector<String> &conf, ErrorHandler *errh)
 void 
 StationTable::take_state(Element *e, ErrorHandler *)
 {
-  StationTable *q = (StationTable *)e->cast("StationTable");
-  if (!q) return;
-
+  StationTable *q = (StationTable *) e;
   _table = q->_table;
 }
 

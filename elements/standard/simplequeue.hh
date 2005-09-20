@@ -82,6 +82,7 @@ class SimpleQueue : public Element, public Storage { public:
     void cleanup(CleanupStage);
     bool can_live_reconfigure() const		{ return true; }
     int live_reconfigure(Vector<String>&, ErrorHandler*);
+    Element *hotswap_element() const;
     void take_state(Element*, ErrorHandler*);
     void add_handlers();
   

@@ -83,7 +83,7 @@ class Element { public:
   
     virtual int initialize(ErrorHandler*);
     
-    virtual void take_state(Element*, ErrorHandler*);
+    virtual void take_state(Element *old_element, ErrorHandler*);
     virtual Element *hotswap_element() const;
 
     enum CleanupStage {

@@ -103,8 +103,7 @@ AvailableRates::configure(Vector<String> &conf, ErrorHandler *errh)
 void 
 AvailableRates::take_state(Element *e, ErrorHandler *)
 {
-  AvailableRates *q = (AvailableRates *)e->cast("AvailableRates");
-  if (!q) return;
+  AvailableRates *q = (AvailableRates *) e;
   _rtable = q->_rtable;
   _default_rates = _default_rates;
 

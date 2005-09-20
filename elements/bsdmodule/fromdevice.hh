@@ -84,7 +84,6 @@ class FromDevice : public AnyDevice, public Storage { public:
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
     void add_handlers();
-    void take_state(Element *, ErrorHandler *);
 
     void change_device(struct if_net *);
     

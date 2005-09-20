@@ -62,7 +62,7 @@ int Element::nelements_allocated = 0;
 /** @class Element
  * Elements. */
 
-/** @brief Constructs an Element with zero input ports and output ports. */
+/** @brief Constructs an Element. */
 Element::Element()
     : ELEMENT_CTOR_STATS _router(0), _eindex(-1)
 {
@@ -287,7 +287,7 @@ Element::ports_frozen() const
  * The default port_count() method effectively returns @c "0/0".  (In reality,
  * it returns a special value that causes Click to call notify_ninputs() and
  * notify_noutputs(), as in previous releases.  This behavior is deprecated;
- * code should be updated to use port_count() semantics.)
+ * code should be updated to use port_count().)
  *
  * The following names are available for common port count specifiers.
  *
@@ -1033,9 +1033,12 @@ Element::initialize(ErrorHandler *errh)
  * override it unless your element has state you want preserved across
  * hotswaps.
  *
- * take_state()
- * The @a old_element argument is guaranteed to the non-null result of calling
- * this->hotswap_element().  Generally, this 
+ * The @a old_element argument is an element from the old configuration (that
+ * is, from router()->@link Router::hotswap_router() hotswap_router()@endlink)
+ * obtained by calling hotswap_element().  If hotswap_element() returns null,
+ * take_state() will not be called.  Generally, @a old_element has the same
+ * id() as this element, and can be cast() to the this element's class_name(),
+ * but that depends on hotswap_element()'s definition.
  *
  * Errors and warnings should be reported to @a errh, but the router will be
  * installed whether or not there are errors.  take_state() should always
@@ -1043,29 +1046,137 @@ Element::initialize(ErrorHandler *errh)
  * state that's safe to cleanup().
  *
  * take_state() is called after initialize().  When it runs, it is guaranteed
- * that this element's configuration (its router()) will shortly be installed.
- * Every configure() and initialize() method succeeded, all connections are
- * correct (push and pull match up correctly and there are no unused or
+ * that this element's configuration will shortly be installed.  Every
+ * configure() and initialize() method succeeded, all connections are correct
+ * (push and pull match up correctly and there are no unused or
  * badly-connected ports), and every add_handlers() method has been called.
  * It is also guaranteed that the old configuration (of which old_element is a
  * part) had been successfully installed, but that none of its tasks are
  * running at the moment.
- *
  */
 void
 Element::take_state(Element *old_element, ErrorHandler *errh)
 {
+    (void) old_element, (void) errh;
 }
 
+/** @brief Returns a compatible element in the hotswap router.
+ *
+ * hotswap_element() searches the hotswap router, router()->@link
+ * Router::hotswap_router() hotswap_router()@endlink, for an element
+ * compatible with this element.  It returns that element, if any.  If there's
+ * no compatible element, or no hotswap router, then it returns 0.
+ *
+ * The default implementation returns 0 or an element that satisfies two
+ * constraints:
+ *
+ *  -# It has the same name as this element: hotswap_element()->id() == id().
+ *  -# It can be cast to this element's class_name():
+ *     hotswap_element()->cast(class_name()) != 0.
+ *
+ * These constraints may be either too loose or too strict.  For example, @e
+ * FromDump is not compatible with an element that's reading a different file,
+ * so the default implementation is too loose.  On the other hand, different
+ * types of @e Queue, including @e SimpleQueue, @e Queue, @e FullNoteQueue,
+ * and @e FrontDropQueue, are all compatible for hotswapping purposes, so the
+ * default implementation (which would try to cast them pairwise) is too
+ * strict.  You may override hotswap_element() to implement your own
+ * constraints.
+ *
+ * For reference, the default implementation of hotswap_element() is as
+ * follows:
+ *
+ * @code
+ * if (Router *r = router()->hotswap_router())
+ *     if (Element *e = r->find(id()))
+ *         if (e->cast(class_name()))
+ *             return e;
+ * return 0;
+ * @endcode
+ *
+ * The @e SimpleQueue element's implementation looks, instead, like this:
+ *
+ * @code
+ * if (Router *r = router()->hotswap_router())
+ *     if (Element *e = r->find(id()))
+ *         if (e->cast("SimpleQueue"))
+ *             return e;
+ * return 0;
+ * @endcode
+ *
+ * Note the cast to "SimpleQueue" instead of class_name().  This allows @e
+ * SimpleQueue's subclasses to hotswap from one another.
+ *
+ * The Click base code only calls hotswap_element() in order to find an
+ * element to pass to take_state(), but you are of course welcome to use it
+ * however you'd like.
+ *
+ * @sa take_state, Router::hotswap_router
+ */
 Element *
 Element::hotswap_element() const
 {
-    if (Router *other = router()->hotswap_router())
-	return other->find(id());
-    else
-	return 0;
+    if (Router *r = router()->hotswap_router())
+	if (Element *e = r->find(id()))
+	    if (e->cast(class_name()))
+		return e;
+    return 0;
 }
 
+/** @brief Called when an element should clean up its state.
+ *
+ * @param stage this element's maximum initialization stage
+ *
+ * The cleanup() method should clean up any state allocated by the
+ * initialization process.  For example, it should close any open files, free
+ * up memory, and unhook from network devices.  Click calls cleanup() when it
+ * determines that an element's state is no longer needed, either because a
+ * router configuration is about to be removed or because the router
+ * configuration failed to initialize properly.  Click will call the cleanup()
+ * method exactly once on every element it creates.
+ *
+ * The @a stage parameter is an enumeration constant indicating how far the
+ * element made it through the initialization process.  Possible values are,
+ * in increasing order:
+ *
+ * <dl>
+ * <dt><tt>CLEANUP_NO_ROUTER</tt></dt>
+ * <dd>The element was never attached to a router.</dd>
+ *
+ * <dt><tt>CLEANUP_CONFIGURE_FAILED</tt></dt>
+ * <dd>The element's configure() method was called, but it failed.</dd>
+ *
+ * <dt><tt>CLEANUP_CONFIGURED</tt></dt> <dd>The element's configure() method
+ * was called and succeeded, but its initialize() method was not called
+ * (because some other element's configure() method failed, or there was a
+ * problem with the configuration's connections).</dd>
+ *
+ * <dt><tt>CLEANUP_INITIALIZE_FAILED</tt></dt> <dd>The element's configure()
+ * and initialize() methods were both called.  configure() succeeded, but
+ * initialize() failed.</dd>
+ *
+ * <dt><tt>CLEANUP_INITIALIZED</tt></dt> <dd>The element's configure() and
+ * initialize() methods were called and succeeded, but its router was never
+ * installed (because some other element's initialize() method failed).</dd>
+ *
+ * <dt><tt>CLEANUP_ROUTER_INITIALIZED</tt></dt> <dd>The element's configure()
+ * and initialize() methods were called and succeeded, and the router of which
+ * it is a part was successfully installed.</dd>
+ *
+ * <dt><tt>CLEANUP_MANUAL</tt></dt> <dd>Never used by Click.  Intended for use
+ * when element code calls cleanup() explicitly.</dd>
+ * </dl>
+ *
+ * A configuration's cleanup() methods are called in the reverse of the
+ * configure_phase() order used for configure() and initialize().
+ *
+ * The default cleanup() method does nothing.
+ *
+ * cleanup() serves some of the same functions as an element's destructor.
+ * However, cleanup() may be called long before an element is destroyed.
+ * Elements that are part of an erroneous router are cleaned up, but kept
+ * around for debugging purposes until another router is installed.
+ */
 void
 Element::cleanup(CleanupStage stage)
 {
@@ -1095,6 +1206,16 @@ Element::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 static int store_default_configuration;
 static int was_default_configuration;
 
+/** @brief Returns the element's current configuration arguments.
+ *
+ * @param conf vector into which the arguments are appended.  Must be empty.
+ *
+ * The default implementation breaks the element's configuration string into
+ * arguments using cp_argvec().  However, some elements override
+ * configuration(Vector<String> &) to return a configuration as updated by
+ * later events, such as handlers, by extracting the configuration from
+ * current element state.
+ */
 void
 Element::configuration(Vector<String> &conf) const
 {
@@ -1107,6 +1228,12 @@ Element::configuration(Vector<String> &conf) const
   was_default_configuration = 1;
 }
 
+/** @brief Returns the element's current configuration string.
+ *
+ * The configuration string is obtained by fetching the current configuration
+ * arguments (using configuration(Vector<String> &)) and joining them with
+ * ", " (using cp_argvec()).
+ */
 String
 Element::configuration() const
 {

@@ -77,8 +77,8 @@ IP6NDSolicitor::cleanup(CleanupStage)
 void
 IP6NDSolicitor::take_state(Element *e, ErrorHandler *)
 {
-  IP6NDSolicitor *arpq = (IP6NDSolicitor *)e->cast("IP6NDSolicitor");
-  if (!arpq || _my_ip6 != arpq->_my_ip6 || _my_en != arpq->_my_en)
+  IP6NDSolicitor *arpq = (IP6NDSolicitor *)e;
+  if (_my_ip6 != arpq->_my_ip6 || _my_en != arpq->_my_en)
     return;
 
   NDEntry *save[NMAP];

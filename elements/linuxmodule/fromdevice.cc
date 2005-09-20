@@ -175,18 +175,17 @@ FromDevice::cleanup(CleanupStage stage)
 void
 FromDevice::take_state(Element *e, ErrorHandler *errh)
 {
-    if (FromDevice *fd = (FromDevice *)e->cast("FromDevice")) {
-	if (_head != _tail) {
-	    errh->error("already have packets enqueued, can't take state");
-	    return;
-	}
-
-	memcpy(_queue, fd->_queue, sizeof(Packet *) * (QSIZE + 1));
-	_head = fd->_head;
-	_tail = fd->_tail;
-  
-	fd->_head = fd->_tail = 0;
+    FromDevice *fd = (FromDevice *)e;
+    if (_head != _tail) {
+	errh->error("already have packets enqueued, can't take state");
+	return;
     }
+
+    memcpy(_queue, fd->_queue, sizeof(Packet *) * (QSIZE + 1));
+    _head = fd->_head;
+    _tail = fd->_tail;
+  
+    fd->_head = fd->_tail = 0;
 }
 
 void

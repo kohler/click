@@ -274,8 +274,7 @@ TCPRewriter::notify_pattern(Pattern *p, ErrorHandler *errh)
 void
 TCPRewriter::take_state(Element *e, ErrorHandler *errh)
 {
-  TCPRewriter *rw = (TCPRewriter *)e->cast("TCPRewriter");
-  if (!rw) return;
+  TCPRewriter *rw = (TCPRewriter *)e;
 
   if (noutputs() != rw->noutputs()) {
     errh->warning("taking mappings from `%s', although it has %s output ports", rw->declaration().c_str(), (rw->noutputs() > noutputs() ? "more" : "fewer"));
