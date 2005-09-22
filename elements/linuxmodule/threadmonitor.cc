@@ -66,7 +66,8 @@ ThreadMonitor::run_timer()
     for (int tid = 0; tid < m->nthreads(); tid++) {
 	RouterThread *thread = m->thread(tid);
 	thread->lock_tasks();
-	for (Task *t = thread->scheduled_next(); t != thread; t = t->scheduled_next())
+	Task *end = thread->task_end();
+	for (Task *t = thread->task_begin(); t != end; t = thread->task_next(t))
 	    if (t->cycles() >= _thresh) {
 		sa << now_jiffies << ": on thread " << tid << ": " << (void *)t << " (";
 		if (Element *e = t->element())

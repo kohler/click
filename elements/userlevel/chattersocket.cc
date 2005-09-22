@@ -263,7 +263,9 @@ ChatterSocket::initialize(ErrorHandler *errh)
 void
 ChatterSocket::take_state(Element *e, ErrorHandler *errh)
 {
-  ChatterSocket *cs = (ChatterSocket *)e;
+  ChatterSocket *cs = (ChatterSocket *)e->cast("ChatterSocket");
+  if (!cs)
+    return;
 
   if (_socket_fd >= 0) {
     errh->error("already initialized, can't take state");

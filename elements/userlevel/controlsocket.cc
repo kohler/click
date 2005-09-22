@@ -228,7 +228,9 @@ ControlSocket::initialize(ErrorHandler *errh)
 void
 ControlSocket::take_state(Element *e, ErrorHandler *errh)
 {
-  ControlSocket *cs = (ControlSocket *)e;
+  ControlSocket *cs = (ControlSocket *)e->cast("ControlSocket");
+  if (!cs)
+    return;
 
   if (_socket_fd >= 0) {
     errh->error("already initialized, can't take state");

@@ -196,7 +196,8 @@ RouterThread::check_restride(struct timeval &t_before, const struct timeval &t_n
 
 	// find out the maximum amount of work any task performed
 	int click_utilization = 0;
-	for (Task *t = scheduled_next(); t != this; t = t->scheduled_next()) {
+	Task *end = task_end();
+	for (Task *t = task_begin(); t != end; t = task_next(t)) {
 	    int u = t->utilization();
 	    t->clear_runs();
 	    if (u > click_utilization)
@@ -306,7 +307,7 @@ RouterThread::run_tasks(int ntasks)
     while (_task_heap.size() > 0 && ntasks >= 0) {
 	t = _task_heap.at_u(0);
 #else
-    while ((t = scheduled_next()), t != this && ntasks >= 0) {
+    while ((t = task_begin()), t != this && ntasks >= 0) {
 #endif
 
 #if __MTCLICK__
@@ -532,13 +533,8 @@ RouterThread::driver_once()
     int s = splimp();
 #endif
     lock_tasks();
-#if HAVE_TASK_HEAP
-    if (_task_heap.size() > 0) {
-	Task* t = _task_heap.at_u(0);
-#else
-    Task *t = scheduled_next();
-    if (t != this) {
-#endif
+    Task *t = task_begin();
+    if (t != task_end()) {
 	t->fast_unschedule();
 	t->call_hook();
     }

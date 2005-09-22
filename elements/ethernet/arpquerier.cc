@@ -116,8 +116,8 @@ ARPQuerier::clear_map()
 void
 ARPQuerier::take_state(Element *e, ErrorHandler *errh)
 {
-    ARPQuerier *arpq = (ARPQuerier *)e;
-    if (_my_ip != arpq->_my_ip || _my_en != arpq->_my_en)
+    ARPQuerier *arpq = (ARPQuerier *)e->cast("ARPQuerier");
+    if (!arpq || _my_ip != arpq->_my_ip || _my_en != arpq->_my_en)
 	return;
     if (_arp_queries > 0) {
 	errh->error("late take_state");

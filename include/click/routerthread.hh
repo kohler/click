@@ -26,20 +26,23 @@ CLICK_CXX_UNPROTECT
 // dependency.
 CLICK_DECLS
 
-#ifdef HAVE_TASK_HEAP
-class RouterThread { public:
-#else
-class RouterThread : public Task { public:
+class RouterThread
+#ifndef HAVE_TASK_HEAP
+    : public Task
 #endif
+{ public:
 
-    int thread_id() const		{ return _id; }
-    Master* master() const		{ return _master; }
+    inline int thread_id() const;
+    inline Master* master() const;
 
     void driver();
     void driver_once();
 
     // Task list functions
     inline bool empty() const;
+    inline Task *task_begin() const;
+    inline Task *task_end() const;
+    inline Task *task_next(Task *) const;
     
     inline void lock_tasks();
     inline bool attempt_lock_tasks();
@@ -149,19 +152,59 @@ class RouterThread : public Task { public:
 };
 
 
+inline int
+RouterThread::thread_id() const
+{
+    return _id;
+}
+
+inline Master*
+RouterThread::master() const
+{
+    return _master;
+}
+
+inline bool
+RouterThread::empty() const
+{
 #ifdef HAVE_TASK_HEAP
-inline bool
-RouterThread::empty() const
-{
     return _task_heap.size() == 0 && !_pending;
-}
 #else
-inline bool
-RouterThread::empty() const
-{
     return ((const Task *)_next == this) && !_pending;
-}
 #endif
+}
+
+inline Task *
+RouterThread::task_begin() const
+{
+#ifdef HAVE_TASK_HEAP
+    int p = _task_heap_hole;
+    return (p < _task_heap.size() ? _task_heap[p] : 0);
+#else
+    return _next;
+#endif
+}
+
+inline Task *
+RouterThread::task_end() const
+{
+#ifdef HAVE_TASK_HEAP
+    return 0;
+#else
+    return (Task *) this;
+#endif
+}
+
+inline Task *
+RouterThread::task_next(Task *t) const
+{
+#ifdef HAVE_TASK_HEAP
+    int p = t->_schedpos + 1;
+    return (p < _task_heap.size() ? _task_heap[p] : 0);
+#else
+    return t->_next;
+#endif
+}
 
 inline void
 RouterThread::lock_tasks()

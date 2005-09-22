@@ -195,7 +195,8 @@ void PI::cleanup(CleanupStage)
 void
 PI::take_state(Element *e, ErrorHandler *)
 {
-    PI *r = (PI *)e;
+    PI *r = (PI *)e->cast("PI");
+    if (!r) return;
     _size = r->_size;
 }
 

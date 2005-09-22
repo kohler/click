@@ -45,34 +45,25 @@ class Task { public:
     inline Task(Element *);		// call element->run_task()
     ~Task();
 
-    bool initialized() const		{ return _router != 0; }
-#if HAVE_TASK_HEAP
-    bool scheduled() const		{ return _schedpos >= 0; }
-#else
-    bool scheduled() const		{ return _prev != 0; }
-#endif
+    inline bool initialized() const;
+    inline bool scheduled() const;
 
-    TaskHook hook() const		{ return _hook; }
-    void *thunk() const			{ return _thunk; }
+    inline TaskHook hook() const;
+    inline void *thunk() const;
     inline Element *element() const;
 
-#if !HAVE_TASK_HEAP
-    Task *scheduled_next() const	{ return _next; }
-    Task *scheduled_prev() const	{ return _prev; }
-#endif
-    RouterThread *scheduled_list() const { return _thread; }
+    inline RouterThread *thread() const;
     Master *master() const;
  
 #ifdef HAVE_STRIDE_SCHED
-    int tickets() const			{ return _tickets; }
-    void set_tickets(int);
-    void adj_tickets(int);
+    inline int tickets() const;
+    inline void set_tickets(int);
+    inline void adj_tickets(int);
 #endif
 
     void initialize(Router *, bool scheduled);
     void initialize(Element *, bool scheduled);
     void cleanup();
-    void uninitialize()			{ cleanup(); } // deprecated
 
     void unschedule();
     inline void reschedule();
@@ -87,20 +78,20 @@ class Task { public:
     void strong_unschedule();
     void strong_reschedule();
 
-    int thread_preference() const	{ return _thread_preference; }
+    inline int thread_preference() const;
     void change_thread(int);
 
     inline void call_hook();
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
-    unsigned runs() const		{ return _runs; }
-    unsigned work_done() const		{ return _work_done; }
+    inline unsigned runs() const;
+    inline unsigned work_done() const;
     inline unsigned utilization() const;
-    void clear_runs()			{ _runs = _work_done = 0; }
+    inline void clear_runs();
 #endif
 #if __MTCLICK__
     inline int cycles() const;
-    inline unsigned cycle_runs() const	{ return _cycle_runs; }
+    inline unsigned cycle_runs() const;
     inline void update_cycles(unsigned c);
 #endif
 
@@ -168,6 +159,8 @@ CLICK_ENDDECLS
 CLICK_DECLS
 
 
+/** @brief Construct a task that calls @a hook with @a thunk argument.
+ */
 inline
 Task::Task(TaskHook hook, void* thunk)
 #ifdef HAVE_TASK_HEAP
@@ -190,6 +183,9 @@ Task::Task(TaskHook hook, void* thunk)
 {
 }
 
+/** @brief Construct a task that calls @a e ->@link Element::run_task()
+ * run_task().@endlink
+ */
 inline
 Task::Task(Element* e)
 #ifdef HAVE_TASK_HEAP
@@ -212,10 +208,44 @@ Task::Task(Element* e)
 {
 }
 
-inline Element*
+inline bool
+Task::initialized() const
+{
+    return _router != 0;
+}
+
+inline bool
+Task::scheduled() const
+{
+#if HAVE_TASK_HEAP
+    return _schedpos >= 0;
+#else
+    return _prev != 0;
+#endif
+}
+
+inline TaskHook
+Task::hook() const
+{
+    return _hook;
+}
+
+inline void *
+Task::thunk() const
+{
+    return _thunk;
+}
+
+inline Element *
 Task::element()	const
 { 
     return _hook ? 0 : reinterpret_cast<Element*>(_thunk); 
+}
+
+inline RouterThread *
+Task::thread() const
+{
+    return _thread;
 }
 
 inline void
@@ -244,6 +274,12 @@ Task::fast_unschedule()
 }
 
 #ifdef HAVE_STRIDE_SCHED
+
+inline int
+Task::tickets() const
+{
+    return _tickets;
+}
 
 inline void 
 Task::set_tickets(int n)
@@ -388,9 +424,27 @@ Task::call_hook()
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
 inline unsigned
+Task::runs() const
+{
+    return _runs;
+}
+
+inline unsigned
+Task::work_done() const
+{
+    return _work_done;
+}
+
+inline unsigned
 Task::utilization() const
 {
     return (_runs ? (MAX_UTILIZATION * _work_done) / _runs : 0);
+}
+
+inline void
+Task::clear_runs()
+{
+    _runs = _work_done = 0;
 }
 #endif
 
@@ -401,6 +455,12 @@ Task::cycles() const
     return _cycles.average() >> _cycles.scale;
 }
 
+inline unsigned
+Task::cycle_runs() const
+{
+    return _cycle_runs;
+}
+
 inline void
 Task::update_cycles(unsigned c) 
 {
@@ -408,6 +468,12 @@ Task::update_cycles(unsigned c)
     _cycle_runs = 0;
 }
 #endif
+
+inline int
+Task::thread_preference() const
+{
+    return _thread_preference;
+}
 
 CLICK_ENDDECLS
 #endif

@@ -43,7 +43,9 @@ class Element { public:
 #if CLICK_USERLEVEL
     virtual void selected(int fd);
 #endif
-  
+
+    inline void checked_output_push(int, Packet*) const;
+    
     // ELEMENT CHARACTERISTICS
     virtual const char *class_name() const = 0;
 
@@ -106,9 +108,9 @@ class Element { public:
     String landmark() const;
   
     inline Router *router() const;
-    Master *master() const;
     inline int eindex() const;
     inline int eindex(Router *) const;
+    Master *master() const;
 
     // INPUTS AND OUTPUTS
     inline int nports(bool isoutput) const;
@@ -127,8 +129,6 @@ class Element { public:
     inline bool output_is_pull(int) const;
     void port_flow(bool isoutput, int, Bitvector*) const;
   
-    inline void checked_output_push(int, Packet*) const;
-
     // LIVE RECONFIGURATION, HOTSWAP
     virtual void configuration(Vector<String>&) const;
     String configuration() const;
@@ -165,16 +165,10 @@ class Element { public:
 #endif
   
     class Port { public:
-
-	inline Port();
-	inline Port(Element*, Element*, int);
     
-	operator bool() const		{ return _e != 0; }
-	bool active() const		{ return _port >= 0; }
-	bool initialized() const	{ return _port >= -1; }
-    
-	Element* element() const	{ return _e; }
-	int port() const		{ return _port; }
+	inline bool active() const;
+	inline Element* element() const;
+	inline int port() const;
     
 	inline void push(Packet* p) const;
 	inline Packet* pull() const;
@@ -194,6 +188,11 @@ class Element { public:
 #if CLICK_STATS >= 2
 	Element* _owner;		// Whose input or output are we?
 #endif
+
+	inline Port();
+	inline Port(Element*, Element*, int);
+	
+	friend class Element;
     
     };
 
@@ -427,7 +426,9 @@ Element::port(bool isoutput, int p) const
 /** @brief Return one of the element's input ports.
  * @param p port number
  *
- * An assertion fails if @a p is out of range.  @sa port */
+ * An assertion fails if @a p is out of range.
+ *
+ * @sa Port, port */
 inline const Element::Port&
 Element::input(int p) const
 {
@@ -437,7 +438,9 @@ Element::input(int p) const
 /** @brief Return one of the element's output ports.
  * @param p port number
  *
- * An assertion fails if @a p is out of range.  @sa port */
+ * An assertion fails if @a p is out of range.
+ *
+ * @sa Port, port */
 inline const Element::Port&
 Element::output(int p) const
 {
@@ -449,7 +452,9 @@ Element::output(int p) const
  * @param p port number
  *
  * Returns true iff @a p is in range and @a p is active.  Push outputs and
- * pull inputs are active; pull outputs and push inputs are not. */
+ * pull inputs are active; pull outputs and push inputs are not.
+ *
+ * @sa Element::Port::active */
 inline bool
 Element::port_active(bool isoutput, int p) const
 {
@@ -515,6 +520,55 @@ Element::Port::Port(Element* owner, Element* e, int p)
     (void) owner;
 }
 
+/** @brief Returns whether this port is active (a push output or a pull input).
+ *
+ * @sa Element::port_active
+ */
+inline bool
+Element::Port::active() const
+{
+    return _port >= 0;
+}
+    
+/** @brief Returns the element connected to this active port.
+ *
+ * Returns 0 if this port is not active(). */
+inline Element*
+Element::Port::element() const
+{
+    return _e;
+}
+
+/** @brief Returns the port number of the port connected to this active port.
+ *
+ * Returns < 0 if this port is not active(). */
+inline int
+Element::Port::port() const
+{
+    return _port;
+}
+
+/** @brief Push packet @a p over this port.
+ *
+ * Pushes packet @a p downstream through the router configuration by passing
+ * it to the next element's @link Element::push() push() @endlink function.
+ * Returns when the rest of the router finishes processing @a p.
+ *
+ * This port must be an active() push output port.  Usually called from
+ * element code like @link Element::output output(i) @endlink .push(p).
+ *
+ * When element code calls Element::Port::push(@a p), it relinquishes control
+ * of packet @a p.  When push() returns, @a p may have been altered or even
+ * freed by downstream elements.  Thus, you must not use @a p after pushing it
+ * downstream.  To push a copy and keep a copy, see Packet::clone().
+ *
+ * output(i).push(p) basically behaves like the following code, although it
+ * maintains additional statistics depending on how CLICK_STATS is defined:
+ *
+ * @code
+ * output(i).element()->push(output(i).port(), p);
+ * @endcode
+ */
 inline void
 Element::Port::push(Packet* p) const
 {
@@ -536,6 +590,22 @@ Element::Port::push(Packet* p) const
 #endif
 }
 
+/** @brief Pull and return a packet from this port.
+ *
+ * Pulls a packet from upstream in the router configuration by calling the
+ * previous element's @link Element::pull() pull() @endlink function.  When
+ * the router finishes processing, returns the result.
+ *
+ * This port must be an active() pull input port.  Usually called from element
+ * code like @link Element::input input(i) @endlink .pull().
+ *
+ * input(i).pull() basically behaves like the following code, although it
+ * maintains additional statistics depending on how CLICK_STATS is defined:
+ *
+ * @code
+ * input(i).element()->pull(input(i).port())
+ * @endcode
+ */
 inline Packet*
 Element::Port::pull() const
 {
@@ -559,6 +629,17 @@ Element::Port::pull() const
     return p;
 }
 
+/** @brief Push packet @a p to output @a port, or kill it if @a port is out of
+ * range.
+ *
+ * @param port output port number
+ * @param p packet to push
+ *
+ * Push packet @a p on, using output(@a port).push(@a p), if @a port is in
+ * range.  Otherwise, kill @a p with @a p->kill().
+ *
+ * @note It is invalid to call checked_output_push() on a pull output @a port.
+ */
 inline void
 Element::checked_output_push(int port, Packet* p) const
 {

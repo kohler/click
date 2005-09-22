@@ -85,7 +85,8 @@ LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
 
 void 
 LinkTable::take_state(Element *e, ErrorHandler *) {
-  LinkTable *q = (LinkTable *)e;
+  LinkTable *q = (LinkTable *)e->cast("LinkTable");
+  if (!q) return;
   
   _hosts = q->_hosts;
   _links = q->_links;

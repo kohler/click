@@ -85,7 +85,8 @@ BalancedThreadSched::run_timer()
 	RouterThread *thread = m->thread(tid);
 	thread->lock_tasks();
 	int thread_load = 0;
-	for (Task *t = thread->scheduled_next(); t != thread; t = t->scheduled_next())
+	Task *end = thread->task_end();
+	for (Task *t = thread->task_begin(); t != end; t = thread->task_next(t))
 	    thread_load += t->cycles();
 	thread->unlock_tasks();
 	total_load += thread_load;
@@ -117,7 +118,8 @@ BalancedThreadSched::run_timer()
 	total_load -= load[max_tid];
 	load[max_tid] = 0;
 	Vector<Task *> tasks;
-	for (Task *t = thread->scheduled_next(); t != thread; t = t->scheduled_next()) {
+	Task *end = thread->task_end();
+	for (Task *t = thread->task_begin(); t != end; t = thread->task_next(t)) {
 	    load[max_tid] += t->cycles();
 	    tasks.push_back(t);
 	}

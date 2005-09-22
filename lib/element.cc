@@ -5,7 +5,7 @@
  * statistics: Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
- * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2004-2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software")
@@ -60,7 +60,34 @@ int Element::nelements_allocated = 0;
 #endif
 
 /** @class Element
- * Elements. */
+ * @brief Represents a Click element class. */
+
+/** @class Element::Port
+ * @brief Represents an Element's ports.
+ *
+ * Each of an element's ports has an associated Port object, accessible via
+ * the Element::port(), Element::input(), and Element::output() functions.
+ * Each @em active port knows, and can transfer a packet with, the single
+ * complementary port to which it is connected.  Thus, each push output knows
+ * its connected input, and can push a packet there; and each pull input can
+ * pull a packet from its connected output.  Inactive ports -- push inputs and
+ * pull outputs -- can be connected multiple times.  Their corresponding Port
+ * objects have very little functionality.
+ *
+ * Element authors generally encounter Port objects only in two stylized
+ * formulations.  First, to push a packet @c p out on push output port @c i:
+ *
+ * @code
+ * output(i).push(p);
+ * @endcode
+ *
+ * And second, to pull a packet @c p from pull input port @c i:
+ *
+ * @code
+ * Packet *p = input(i).pull();
+ * @endcode
+ *
+ * @sa Element::checked_output_push() */
 
 /** @brief Constructs an Element. */
 Element::Element()
@@ -647,20 +674,43 @@ next_flow_code(const char*& p, int port, Bitvector& code, ErrorHandler* errh, co
     return 0;
 }
 
+/** @brief Analyze internal packet flow with respect to @a port.
+ *
+ * @param isoutput false for input ports, true for output ports
+ * @param port port number
+ * @param[out] travels the bitvector to initialize with internal packet flow
+ * information
+ *
+ * Analyzes the element's flow_code() and determines how packets might travel
+ * from the specified port.  The @a travels bitvector is initialized to have
+ * one entry per complementary port; thus, if @a isoutput is true, then @a
+ * travels has ninputs() entries.  The entry for port @a p is set to true iff
+ * packets can travel from @a port to @a p.  Returns all false if @a port is
+ * out of range.
+ *
+ * For example, if flow_code() is "xy/xxyx", and the element has 2 inputs and
+ * 4 outputs, then:
+ *
+ *  - port_flow(false, 0, travels) returns [true, true, false, true]
+ *  - port_flow(false, 1, travels) returns [false, false, true, false]
+ *  - port_flow(true, 0, travels) returns [true, false]
+ *
+ * @sa flow_code
+ */
 void
-Element::port_flow(bool isoutput, int port, Bitvector* bv) const
+Element::port_flow(bool isoutput, int port, Bitvector* travels) const
 {
     const char *f = flow_code();
     int nother = nports(!isoutput);
     if (port < 0 || port >= nports(isoutput)) {
-	bv->assign(nother, false);
+	travels->assign(nother, false);
 	return;
     } else if (!f || f == COMPLETE_FLOW) {
-	bv->assign(nother, true);
+	travels->assign(nother, true);
 	return;
     }
 
-    bv->assign(nother, false);
+    travels->assign(nother, false);
     ErrorHandler* errh = ErrorHandler::default_handler();
   
     const char* f_in = f;
@@ -686,7 +736,7 @@ Element::port_flow(bool isoutput, int port, Bitvector* bv) const
     for (int i = 0; i < nother; i++) {
 	next_flow_code(f_out, i, out_code, errh, this);
 	if (in_code.nonzero_intersection(out_code))
-	    (*bv)[i] = true;
+	    (*travels)[i] = true;
     }
 }
 
@@ -919,6 +969,8 @@ Element::configure_phase() const
  * current release, if any element in a configuration calls the deprecated
  * set_ninputs() or set_noutputs() function from configure(), then all push,
  * pull, and neighbor information is invalidated until initialize() time.
+ *
+ * @sa live_reconfigure
  */
 int
 Element::configure(Vector<String> &conf, ErrorHandler *errh)
@@ -1037,8 +1089,8 @@ Element::initialize(ErrorHandler *errh)
  * is, from router()->@link Router::hotswap_router() hotswap_router()@endlink)
  * obtained by calling hotswap_element().  If hotswap_element() returns null,
  * take_state() will not be called.  Generally, @a old_element has the same
- * id() as this element, and can be cast() to the this element's class_name(),
- * but that depends on hotswap_element()'s definition.
+ * id() as this element, but you can override hotswap_element() to provide
+ * different semantics.
  *
  * Errors and warnings should be reported to @a errh, but the router will be
  * installed whether or not there are errors.  take_state() should always
@@ -1067,49 +1119,16 @@ Element::take_state(Element *old_element, ErrorHandler *errh)
  * compatible with this element.  It returns that element, if any.  If there's
  * no compatible element, or no hotswap router, then it returns 0.
  *
- * The default implementation returns 0 or an element that satisfies two
- * constraints:
+ * The default implementation searches for an element with the same name as
+ * this element.  Thus, it returns 0 or an element that satisfies this
+ * constraint: hotswap_element()->id() == id().
  *
- *  -# It has the same name as this element: hotswap_element()->id() == id().
- *  -# It can be cast to this element's class_name():
- *     hotswap_element()->cast(class_name()) != 0.
- *
- * These constraints may be either too loose or too strict.  For example, @e
- * FromDump is not compatible with an element that's reading a different file,
- * so the default implementation is too loose.  On the other hand, different
- * types of @e Queue, including @e SimpleQueue, @e Queue, @e FullNoteQueue,
- * and @e FrontDropQueue, are all compatible for hotswapping purposes, so the
- * default implementation (which would try to cast them pairwise) is too
- * strict.  You may override hotswap_element() to implement your own
- * constraints.
- *
- * For reference, the default implementation of hotswap_element() is as
- * follows:
- *
- * @code
- * if (Router *r = router()->hotswap_router())
- *     if (Element *e = r->find(id()))
- *         if (e->cast(class_name()))
- *             return e;
- * return 0;
- * @endcode
- *
- * The @e SimpleQueue element's implementation looks, instead, like this:
- *
- * @code
- * if (Router *r = router()->hotswap_router())
- *     if (Element *e = r->find(id()))
- *         if (e->cast("SimpleQueue"))
- *             return e;
- * return 0;
- * @endcode
- *
- * Note the cast to "SimpleQueue" instead of class_name().  This allows @e
- * SimpleQueue's subclasses to hotswap from one another.
- *
- * The Click base code only calls hotswap_element() in order to find an
- * element to pass to take_state(), but you are of course welcome to use it
- * however you'd like.
+ * Generally, this constraint is too loose.  A @e Queue element can't hotswap
+ * state from an @e ARPResponder, even if they do have the same name.  Most
+ * elements also check that hotswap_element() has the right class, using the
+ * cast() function.  This check can go either in hotswap_element() or in
+ * take_state() itself, whichever is easier; Click doesn't use the result of
+ * hotswap_element() except as an argument to take_state().
  *
  * @sa take_state, Router::hotswap_router
  */
@@ -1118,8 +1137,7 @@ Element::hotswap_element() const
 {
     if (Router *r = router()->hotswap_router())
 	if (Element *e = r->find(id()))
-	    if (e->cast(class_name()))
-		return e;
+	    return e;
     return 0;
 }
 
@@ -1186,12 +1204,45 @@ Element::cleanup(CleanupStage stage)
 
 // LIVE CONFIGURATION
 
+/** @brief Called to check whether an element supports live reconfiguration.
+ *
+ * Returns true iff this element can be reconfigured as the router is running.
+ * Click will make the element's "config" handler writable if
+ * can_live_reconfigure() returns true; when that handler is written, Click
+ * will call the element's live_reconfigure() function.  The default
+ * implementation returns false.
+ */
 bool
 Element::can_live_reconfigure() const
 {
   return false;
 }
 
+/** @brief Called to reconfigure an element while the router is running.
+ *
+ * @param conf configuration arguments
+ * @param errh error handler
+ *
+ * This function should parse the configuration arguments in @a conf, set the
+ * element's state accordingly, and report any error messages or warnings to
+ * @a errh.  This resembles configure().  However, live_reconfigure() is
+ * called when the element's "config" handler is written, rather than at
+ * router initialization time.  Thus, the element already has a working
+ * configuration.  If @a conf has an error, live_reconfigure() should leave
+ * this previous working configuration alone.
+ *
+ * can_live_reconfigure() must return true for live_reconfigure() to work.
+ *
+ * Return >= 0 on success, < 0 on error.  On success, Click will set the
+ * element's old configuration arguments to @a conf, so that later reads of
+ * the "config" handler will return @a conf.  (A non-default configuration()
+ * method can override this.)
+ *
+ * The default implementation simply calls configure(@a conf, @a errh).  This
+ * is OK as long as configure() doesn't change the element's state on error.
+ *
+ * @sa can_live_reconfigure
+ */
 int
 Element::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -1206,12 +1257,12 @@ Element::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 static int store_default_configuration;
 static int was_default_configuration;
 
-/** @brief Returns the element's current configuration arguments.
+/** @brief Called to fetch the element's current configuration arguments.
  *
  * @param conf vector into which the arguments are appended.  Must be empty.
  *
- * The default implementation breaks the element's configuration string into
- * arguments using cp_argvec().  However, some elements override
+ * The default implementation breaks the element's stored configuration string
+ * into arguments using cp_argvec().  Some elements override
  * configuration(Vector<String> &) to return a configuration as updated by
  * later events, such as handlers, by extracting the configuration from
  * current element state.
@@ -1232,7 +1283,7 @@ Element::configuration(Vector<String> &conf) const
  *
  * The configuration string is obtained by fetching the current configuration
  * arguments (using configuration(Vector<String> &)) and joining them with
- * ", " (using cp_argvec()).
+ * ", " (using cp_argvec()).  Cannot be overridden.
  */
 String
 Element::configuration() const
@@ -1319,11 +1370,10 @@ write_config_handler(const String &str, Element *e, void *,
 {
     Vector<String> conf;
     cp_argvec(str, conf);
-    if (e->live_reconfigure(conf, errh) >= 0) {
+    int r = e->live_reconfigure(conf, errh);
+    if (r >= 0)
 	e->router()->set_default_configuration_string(e->eindex(), str);
-	return 0;
-    } else
-	return -EINVAL;
+    return r;
 }
 
 static String
@@ -1572,17 +1622,34 @@ Element::local_llrpc(unsigned command, void *data)
 
 // RUNNING
 
+/** @brief Called to push packet @a p onto push input @a port.
+ *
+ * @param port the input port number on which the packet arrives
+ * @param p the packet
+ *
+ * When an element immediately upstream of this element transfers a packet to
+ * it over a push connection, this element's push() function is called to
+ * process the packet.  The push() method knows the packet and the input port
+ * on which it arrived, but not the full path back to the packet's source.  It
+ * must account for the packet either by pushing it further downstream, by
+ * freeing it, or by storing it temporarily.
+ */
 void
-Element::push(int, Packet *p)
+Element::push(int port, Packet *p)
 {
+    (void) port;
     p = simple_action(p);
     if (p)
 	output(0).push(p);
 }
 
+/** @brief Called to pull a packet from pull output @a port.
+ *
+ */
 Packet *
-Element::pull(int)
+Element::pull(int port)
 {
+    (void) port;
     Packet *p = input(0).pull();
     if (p)
 	p = simple_action(p);

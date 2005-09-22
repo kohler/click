@@ -175,17 +175,18 @@ FromDevice::cleanup(CleanupStage stage)
 void
 FromDevice::take_state(Element *e, ErrorHandler *errh)
 {
-    FromDevice *fd = (FromDevice *)e;
-    if (_head != _tail) {
-	errh->error("already have packets enqueued, can't take state");
-	return;
-    }
+    if (FromDevice *fd = (FromDevice *)e->cast("FromDevice")) {
+	if (_head != _tail) {
+	    errh->error("already have packets enqueued, can't take state");
+	    return;
+	}
 
-    memcpy(_queue, fd->_queue, sizeof(Packet *) * (QSIZE + 1));
-    _head = fd->_head;
-    _tail = fd->_tail;
+	memcpy(_queue, fd->_queue, sizeof(Packet *) * (QSIZE + 1));
+	_head = fd->_head;
+	_tail = fd->_tail;
   
-    fd->_head = fd->_tail = 0;
+	fd->_head = fd->_tail = 0;
+    }
 }
 
 void
@@ -250,7 +251,7 @@ FromDevice::got_skb(struct sk_buff *skb)
 
 #if CLICK_DEBUG_SCHEDULING
 	click_gettimeofday(&_schinfo[_tail].enq_time);
-	RouterThread *rt = _task.scheduled_list();
+	RouterThread *rt = _task.thread();
 	_schinfo[_tail].enq_state = rt->thread_state();
 	int enq_process_asleep = rt->sleeper() && rt->sleeper()->state != TASK_RUNNING;
 	_schinfo[_tail].enq_task_scheduled = _task.scheduled();
@@ -280,7 +281,7 @@ FromDevice::emission_report(int idx)
 {
     struct timeval now;
     click_gettimeofday(&now);
-    RouterThread *rt = _task.scheduled_list();
+    RouterThread *rt = _task.thread();
     StringAccum sa;
     sa << "dt " << (now - _schinfo[idx].enq_time);
     if (_schinfo[idx].enq_state != RouterThread::S_RUNNING) {

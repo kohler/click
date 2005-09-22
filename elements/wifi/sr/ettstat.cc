@@ -229,7 +229,11 @@ ETTStat::take_state(Element *e, ErrorHandler *errh)
    * and sync them up so the rates don't get 
    * screwed up.
   */
-  ETTStat *q = (ETTStat *) e;
+  ETTStat *q = (ETTStat *)e->cast("ETTStat");
+  if (!q) {
+    errh->error("Couldn't cast old ETTStat");
+    return;
+  }
   
   _neighbors = q->_neighbors;
   _bcast_stats = q->_bcast_stats;

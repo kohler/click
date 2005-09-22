@@ -178,7 +178,8 @@ RED::initialize(ErrorHandler *errh)
 void
 RED::take_state(Element *e, ErrorHandler *)
 {
-    RED *r = (RED *)e;
+    RED *r = (RED *)e->cast("RED");
+    if (!r) return;
     _size = r->_size;
 }
 

@@ -25,6 +25,9 @@
 #include <click/master.hh>
 CLICK_DECLS
 
+/** @class Task
+ * @brief Task */
+
 // - Changes to _thread are protected by _thread->lock.
 // - Changes to _thread_preference are protected by
 //   _router->master()->task_lock.

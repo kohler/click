@@ -20,7 +20,6 @@
 #include "simplequeue.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <click/router.hh>
 CLICK_DECLS
 
 SimpleQueue::SimpleQueue()
@@ -102,21 +101,12 @@ SimpleQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
-Element *
-SimpleQueue::hotswap_element() const
-{
-    // allow different queues to take one another's state
-    if (Router *r = router()->hotswap_router())
-	if (Element *e = r->find(id()))
-	    if (e->cast("SimpleQueue"))
-		return e;
-    return 0;
-}
-
 void
 SimpleQueue::take_state(Element *e, ErrorHandler *errh)
 {
-    SimpleQueue *q = (SimpleQueue *) e;
+    SimpleQueue *q = (SimpleQueue *)e->cast("SimpleQueue");
+    if (!q)
+	return;
   
     if (_tail != _head || _head != 0) {
 	errh->error("already have packets enqueued, can't take state");
