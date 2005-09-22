@@ -1,3 +1,27 @@
+2005-09-22 Thursday 18:38  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/aqm/pi.cc (1.14), elements/aqm/red.cc (1.48),
+	elements/ethernet/arpquerier.cc (1.57),
+	elements/ethernet/ip6ndsolicitor.cc (1.24),
+	elements/icmp/icmppingrewriter.cc (1.26),
+	elements/linuxmodule/fromdevice.cc (1.87),
+	elements/linuxmodule/sortedsched.cc (1.15),
+	elements/linuxmodule/threadmonitor.cc (1.11),
+	elements/standard/simplequeue.cc (1.14),
+	elements/standard/simplequeue.hh (1.15),
+	elements/tcpudp/iprewriter.cc (1.49),
+	elements/tcpudp/tcprewriter.cc (1.41),
+	elements/userlevel/chattersocket.cc (1.22),
+	elements/userlevel/controlsocket.cc (1.62),
+	elements/wifi/arptable.cc (1.8), elements/wifi/availablerates.cc
+	(1.11), elements/wifi/linktable.cc (1.20),
+	elements/wifi/ap/stationtable.cc (1.6), elements/wifi/sr/ettstat.cc
+	(1.24), include/click/element.hh (1.42),
+	include/click/routerthread.hh (1.31), include/click/task.hh (1.37),
+	lib/element.cc (1.96), lib/routerthread.cc (1.55), lib/task.cc
+	(1.37): more documentation, and revert hotswap_element() change to
+	the original behavior
+
 2005-09-20 Tuesday 10:35  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/aqm/pi.cc (1.13), elements/aqm/red.cc (1.47),
