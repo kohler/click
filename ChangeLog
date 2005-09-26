@@ -1,3 +1,23 @@
+2005-09-26 Monday 05:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/Doxyfile (1.2), elements/analysis/aggpktcounter.cc (1.8),
+	elements/aqm/adaptivered.cc (1.12), elements/aqm/adaptivered.hh
+	(1.10), elements/linuxmodule/sortedsched.cc (1.16),
+	elements/linuxmodule/staticthreadsched.cc (1.11),
+	elements/linuxmodule/staticthreadsched.hh (1.8),
+	elements/local/webgen.cc (1.19),
+	elements/userlevel/chattersocket.cc (1.23),
+	elements/userlevel/controlsocket.cc (1.63),
+	include/click/element.hh (1.43), include/click/lexer.hh (1.18),
+	include/click/master.hh (1.14), include/click/router.hh (1.77),
+	include/click/routerthread.hh (1.32), include/click/task.hh (1.38),
+	include/click/timer.hh (1.26),
+	include/click/standard/threadsched.hh (1.2), lib/element.cc (1.97),
+	lib/master.cc (1.32), lib/router.cc (1.181), lib/routerthread.cc
+	(1.56), lib/task.cc (1.38), lib/timer.cc (1.36): add separate
+	thread for strong_unschedule; change_thread => set_home_thread_id;
+	update documentation
+
 2005-09-22 Thursday 18:38  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/aqm/pi.cc (1.14), elements/aqm/red.cc (1.48),
