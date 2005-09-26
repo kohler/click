@@ -36,7 +36,7 @@ Master::Master(int nthreads)
     _refcount = 0;
     _runcount = 0;
 
-    for (int tid = -1; tid < nthreads; tid++)
+    for (int tid = -2; tid < nthreads; tid++)
 	_threads.push_back(new RouterThread(this, tid));
     
     _task_list.make_list();
@@ -248,7 +248,7 @@ Master::kill_router(Router *router)
     _master_lock.release();
 
     // something has happened, so wake up threads
-    for (RouterThread** tp = _threads.begin(); tp < _threads.end(); tp++)
+    for (RouterThread** tp = _threads.begin() + 2; tp < _threads.end(); tp++)
 	(*tp)->unsleep();
 }
 

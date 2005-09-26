@@ -32,6 +32,9 @@ class RouterThread
 #endif
 { public:
 
+    enum { THREAD_QUIESCENT = -1, THREAD_STRONG_UNSCHEDULE = -2,
+	   THREAD_UNKNOWN = -1000 };
+    
     inline int thread_id() const;
     inline Master* master() const;
 

@@ -21,16 +21,9 @@ class NameInfo;
 
 class Router { public:
 
-    struct Hookup {
-	int idx;
-	int port;
-	Hookup()				: idx(-1) { }
-	Hookup(int i, int p)			: idx(i), port(p) { }
-    };
-  
     Router(const String &configuration, Master *);
     ~Router();
-    void use()					{ _refcount++; }
+    inline void use();
     void unuse();
 
     static void static_initialize();
@@ -40,17 +33,17 @@ class Router { public:
 	ROUTER_NEW, ROUTER_PRECONFIGURE, ROUTER_PREINITIALIZE,
 	ROUTER_LIVE, ROUTER_DEAD		// order is important
     };
-    bool initialized() const			{ return _state == ROUTER_LIVE; }
-    bool handlers_ready() const			{ return _state > ROUTER_PRECONFIGURE; }
-    bool running() const			{ return _running > 0; }
+    inline bool initialized() const;
+    inline bool handlers_ready() const;
+    inline bool running() const;
 
     // ELEMENTS
-    int nelements() const			{ return _elements.size(); }
-    const Vector<Element*>& elements() const	{ return _elements; }
+    inline int nelements() const;
+    inline const Vector<Element*>& elements() const;
     static Element* element(const Router*, int);
-    Element* element(int e) const		{ return element(this, e); }
+    inline Element* element(int e) const;
     // element() returns 0 on bad index/no router, root_element() on index -1
-    Element* root_element() const		{ return _root_element; }
+    inline Element* root_element() const;
   
     const String& ename(int) const;
     const String& elandmark(int) const;
@@ -79,8 +72,8 @@ class Router { public:
     const Handler* handler(int) const;
     static const Handler* handler(const Element*, const String&);
 
-    static void add_read_handler(const Element*, const String&, ReadHandler, void*);
-    static void add_write_handler(const Element*, const String&, WriteHandler, void*);
+    static void add_read_handler(const Element*, const String&, ReadHandlerHook, void*);
+    static void add_write_handler(const Element*, const String&, WriteHandlerHook, void*);
     static void set_handler(const Element*, const String&, int mask, HandlerHook, void* = 0, void* = 0);
     static int change_handler_flags(const Element*, const String&, uint32_t clear_flags, uint32_t set_flags);
 
@@ -88,7 +81,7 @@ class Router { public:
     void* attachment(const String&) const;
     void*& force_attachment(const String&);
     void* set_attachment(const String&, void*);
-    const Vector<String>& requirements() const	{ return _requirements; }
+    inline const Vector<String>& requirements() const;
 
     inline Router* hotswap_router() const;
     void set_hotswap_router(Router*);
@@ -96,28 +89,28 @@ class Router { public:
     ErrorHandler* chatter_channel(const String&) const;
     HashMap_ArenaFactory* arena_factory() const;
 
-    ThreadSched* thread_sched() const		{ return _thread_sched; }
-    void set_thread_sched(ThreadSched* ts)	{ _thread_sched = ts; }
-    int initial_thread_preference(Task*, bool scheduled) const;
+    inline ThreadSched* thread_sched() const;
+    inline void set_thread_sched(ThreadSched* ts);
+    inline int initial_home_thread_id(Task*, bool scheduled) const;
 
     int new_notifier_signal(NotifierSignal&);
 
-    NameInfo* name_info() const			{ return _name_info; }
+    inline NameInfo* name_info() const;
     NameInfo* force_name_info();
 
     // MASTER
-    Master* master() const			{ return _master; }
+    inline Master* master() const;
     enum { RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_PREPARING = 0, RUNNING_BACKGROUND = 1, RUNNING_ACTIVE = 2 };
 
     // RUNCOUNT AND RUNCLASS
-    void please_stop_driver()			{ adjust_runcount(-1); }
-    void reserve_driver()			{ adjust_runcount(1); }
+    inline int runcount() const;
+    inline void please_stop_driver();
+    inline void reserve_driver();
     void set_runcount(int);
     void adjust_runcount(int);
-    int runcount() const			{ return _runcount; }
 
     // UNPARSING
-    const String& configuration_string() const	{ return _configuration; }
+    inline const String& configuration_string() const;
     void unparse(StringAccum&, const String& = String()) const;
     void unparse_requirements(StringAccum&, const String& = String()) const;
     void unparse_classes(StringAccum&, const String& = String()) const;
@@ -136,8 +129,18 @@ class Router { public:
   
     int initialize(ErrorHandler*);
     void activate(bool foreground, ErrorHandler*);
-    void activate(ErrorHandler* errh)		{ activate(true, errh); }
+    inline void activate(ErrorHandler* errh);
 
+    /** @cond never */
+    // Needs to be public for Lexer, etc., but not useful outside
+    struct Hookup {
+	int idx;
+	int port;
+	Hookup()				: idx(-1) { }
+	Hookup(int i, int p)			: idx(i), port(p) { }
+    };
+    /** @endcond never */
+      
 #if CLICK_NS
     int sim_get_ifid(const char* ifname);
     int sim_listen(int ifid, int element);
@@ -184,7 +187,6 @@ class Router { public:
 
     int _state;
     bool _have_connections : 1;
-    mutable bool _allow_star_handler : 1;
     int _running;
   
     Vector<int> _ehandler_first_by_element;
@@ -246,7 +248,7 @@ class Router { public:
     // private handler methods
     void initialize_handlers(bool, bool);
     inline Handler* xhandler(int) const;
-    int find_ehandler(int, const String&) const;
+    int find_ehandler(int, const String&, bool allow_star) const;
     static inline Handler fetch_handler(const Element*, const String&);
     void store_local_handler(int, const Handler&);
     static void store_global_handler(const Handler&);
@@ -257,10 +259,12 @@ class Router { public:
     // global handlers
     static String router_read_handler(Element*, void*);
 
+    /** @cond never */
     friend class Master;
     friend class Task;
     friend bool Element::ports_frozen() const;
     friend int Element::set_nports(int, int);
+    /** @endcond never */
   
 };
 
@@ -278,7 +282,7 @@ class Handler { public:
 
     const String& name() const	{ return _name; }
     uint32_t flags() const	{ return _flags; }
-    void* thunk() const		{ return _thunk; }
+    void* thunk1() const	{ return _thunk1; }
     void* thunk2() const	{ return _thunk2; }
 
     bool readable() const	{ return _flags & OP_READ; }
@@ -304,11 +308,11 @@ class Handler { public:
     union {
 	HandlerHook h;
 	struct {
-	    ReadHandler r;
-	    WriteHandler w;
+	    ReadHandlerHook r;
+	    WriteHandlerHook w;
 	} rw;
     } _hook;
-    void* _thunk;
+    void* _thunk1;
     void* _thunk2;
     uint32_t _flags;
     int _use_count;
@@ -340,6 +344,123 @@ operator!=(const Router::Hookup& a, const Router::Hookup& b)
     return a.idx != b.idx || a.port != b.port;
 }
 
+inline void
+Router::use()
+{
+    _refcount++;
+}
+
+inline bool
+Router::initialized() const
+{
+    return _state == ROUTER_LIVE;
+}
+
+inline bool
+Router::handlers_ready() const
+{
+    return _state > ROUTER_PRECONFIGURE;
+}
+
+inline bool
+Router::running() const
+{
+    return _running > 0;
+}
+
+inline int
+Router::nelements() const
+{
+    return _elements.size();
+}
+
+inline const Vector<Element*>&
+Router::elements() const
+{
+    return _elements;
+}
+
+inline Element*
+Router::element(int e) const
+{
+    return element(this, e);
+}
+
+inline Element*
+Router::root_element() const
+{
+    return _root_element;
+}
+
+inline const Vector<String>&
+Router::requirements() const
+{
+    return _requirements;
+}
+
+inline ThreadSched*
+Router::thread_sched() const
+{
+    return _thread_sched;
+}
+
+inline void
+Router::set_thread_sched(ThreadSched* ts)
+{
+    _thread_sched = ts;
+}
+
+inline int
+Router::initial_home_thread_id(Task* t, bool scheduled) const
+{
+    if (!_thread_sched)
+	return ThreadSched::THREAD_UNKNOWN;
+    else
+	return _thread_sched->initial_home_thread_id(t, scheduled);
+}
+
+inline NameInfo*
+Router::name_info() const
+{
+    return _name_info;
+}
+
+inline Master*
+Router::master() const
+{
+    return _master;
+}
+
+inline int
+Router::runcount() const
+{
+    return _runcount;
+}
+
+inline void
+Router::please_stop_driver()
+{
+    adjust_runcount(-1);
+}
+
+inline void
+Router::reserve_driver()
+{
+    adjust_runcount(1);
+}
+
+inline const String&
+Router::configuration_string() const
+{
+    return _configuration;
+}
+
+inline void
+Router::activate(ErrorHandler* errh)
+{
+    activate(true, errh);
+}
+
 inline Element *
 Router::find(const String& name, ErrorHandler *errh) const
 {
@@ -360,7 +481,7 @@ Router::handler(int hi) const
 
 inline
 Handler::Handler(const String &name)
-    : _name(name), _thunk(0), _thunk2(0), _flags(0), _use_count(0),
+    : _name(name), _thunk1(0), _thunk2(0), _flags(0), _use_count(0),
       _next_by_name(-1)
 {
     _hook.rw.r = 0;
@@ -371,7 +492,7 @@ inline bool
 Handler::compatible(const Handler& o) const
 {
     return (_hook.rw.r == o._hook.rw.r && _hook.rw.w == o._hook.rw.w
-	    && _thunk == o._thunk && _thunk2 == o._thunk2
+	    && _thunk1 == o._thunk1 && _thunk2 == o._thunk2
 	    && _flags == o._flags);
 }
 
@@ -400,15 +521,6 @@ inline Router*
 Router::hotswap_router() const
 {
     return _hotswap_router;
-}
-
-inline int
-Router::initial_thread_preference(Task* t, bool scheduled) const
-{
-    if (!_thread_sched)
-	return ThreadSched::THREAD_PREFERENCE_UNKNOWN;
-    else
-	return _thread_sched->initial_thread_preference(t, scheduled);
 }
 
 CLICK_ENDDECLS

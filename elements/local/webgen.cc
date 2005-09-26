@@ -130,8 +130,6 @@ WebGen::cleanup (CleanupStage stage)
   int i = 0;
   CB *c = cbfree;
 
-  _timer.cleanup ();
-
   do {
     while (c) {
       CB *tc = c;

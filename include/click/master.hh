@@ -28,7 +28,7 @@ class Master { public:
     void use();
     void unuse();
 
-    int nthreads() const			{ return _threads.size() - 1; }
+    inline int nthreads() const;
     inline RouterThread* thread(int id) const;
 
     const volatile int* runcount_ptr() const	{ return &_runcount; }
@@ -134,15 +134,21 @@ class Master { public:
     
 };
 
+inline int
+Master::nthreads() const
+{
+    return _threads.size() - 2;
+}
+
 inline RouterThread*
 Master::thread(int id) const
 {
     // return the requested thread, or the quiescent thread if there's no such
     // thread
-    if ((unsigned)(id + 1) < (unsigned)_threads.size())
-	return _threads.at_u(id + 1);
+    if ((unsigned)(id + 2) < (unsigned)_threads.size())
+	return _threads.at_u(id + 2);
     else
-	return _threads.at_u(0);
+	return _threads.at_u(1);
 }
 
 CLICK_ENDDECLS

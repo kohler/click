@@ -29,10 +29,10 @@ CLICK_DECLS
  * @brief Task */
 
 // - Changes to _thread are protected by _thread->lock.
-// - Changes to _thread_preference are protected by
+// - Changes to _home_thread_id are protected by
 //   _router->master()->task_lock.
 // - If _pending is nonzero, then _pending_next is nonnull.
-// - Either _thread_preference == _thread->thread_id(), or
+// - Either _home_thread_id == _thread->thread_id(), or
 //   _thread->thread_id() == -1.
 
 bool
@@ -74,12 +74,12 @@ Task::initialize(Router *router, bool join)
 
     _router = router;
     
-    _thread_preference = router->initial_thread_preference(this, join);
-    if (_thread_preference == ThreadSched::THREAD_PREFERENCE_UNKNOWN)
-	_thread_preference = 0;
+    _home_thread_id = router->initial_home_thread_id(this, join);
+    if (_home_thread_id == ThreadSched::THREAD_UNKNOWN)
+	_home_thread_id = 0;
     // Master::thread() returns the quiescent thread if its argument is out of
     // range
-    _thread = router->master()->thread(_thread_preference);
+    _thread = router->master()->thread(_home_thread_id);
     
 #ifdef HAVE_STRIDE_SCHED
     set_tickets(DEFAULT_TICKETS);
@@ -173,7 +173,7 @@ Task::unschedule()
 #endif
 #if CLICK_BSDMODULE
     assert(!intr_nesting_level);
-    SPLCHECK
+    SPLCHECK;
 #endif
     if (_thread) {
 	lock_tasks();
@@ -195,7 +195,7 @@ Task::fast_reschedule()
 #endif
 #if CLICK_BSDMODULE
     // assert(!intr_nesting_level); it happens all the time from fromdevice!
-    SPLCHECK
+    SPLCHECK;
 #endif
 
     if (!scheduled()) {
@@ -221,11 +221,10 @@ Task::true_reschedule()
     bool done = false;
 #if CLICK_LINUXMODULE
     if (in_interrupt())
-	/* nada */;
-    else
+	goto skip_lock;
 #endif
 #if CLICK_BSDMODULE
-    SPLCHECK
+    SPLCHECK;
 #endif
     if (attempt_lock_tasks()) {
 	if (_router->_running >= Router::RUNNING_BACKGROUND) {
@@ -237,6 +236,9 @@ Task::true_reschedule()
 	}
 	_thread->unlock_tasks();
     }
+#if CLICK_LINUXMODULE
+  skip_lock:
+#endif
     if (!done)
 	add_pending(RESCHEDULE);
 }
@@ -249,7 +251,7 @@ Task::strong_unschedule()
 #endif
 #if CLICK_BSDMODULE
     assert(!intr_nesting_level);
-    SPLCHECK
+    SPLCHECK;
 #endif
     // unschedule() and move to the quiescent thread, so that subsequent
     // reschedule()s won't have any effect
@@ -258,7 +260,7 @@ Task::strong_unschedule()
 	fast_unschedule();
 	RouterThread *old_thread = _thread;
 	_pending &= ~(RESCHEDULE | CHANGE_THREAD);
-	_thread = _router->master()->thread(-1);
+	_thread = _router->master()->thread(RouterThread::THREAD_STRONG_UNSCHEDULE);
 	old_thread->unlock_tasks();
     }
 }
@@ -271,39 +273,40 @@ Task::strong_reschedule()
 #endif
 #if CLICK_BSDMODULE
     assert(!intr_nesting_level);
-    SPLCHECK
+    SPLCHECK;
 #endif
     assert(_thread);
     lock_tasks();
     fast_unschedule();
     RouterThread *old_thread = _thread;
-    _thread = _router->master()->thread(_thread_preference);
+    _thread = _router->master()->thread(_home_thread_id);
     add_pending(RESCHEDULE);
     old_thread->unlock_tasks();
 }
 
 void
-Task::change_thread(int new_preference)
+Task::set_home_thread_id(int tid)
 {
 #if CLICK_LINUXMODULE
     assert(!in_interrupt());
 #endif
 #if CLICK_BSDMODULE
     assert(!intr_nesting_level);
-    SPLCHECK
+    SPLCHECK;
 #endif
-    _thread_preference = new_preference;
-    // no need to verify _thread_preference; Master::thread() returns the
+    _home_thread_id = (tid >= RouterThread::THREAD_QUIESCENT ? tid : RouterThread::THREAD_QUIESCENT);
+    // no need to verify _home_thread_id; Master::thread() returns the
     // quiescent thread if its argument is out of range
 
     if (attempt_lock_tasks()) {
 	RouterThread *old_thread = _thread;
-	if (_thread_preference != old_thread->thread_id()) {
+	if (old_thread->thread_id() != _home_thread_id
+	    && old_thread->thread_id() != RouterThread::THREAD_STRONG_UNSCHEDULE) {
 	    if (scheduled()) {
 		fast_unschedule();
 		_pending |= RESCHEDULE;
 	    }
-	    _thread = _router->master()->thread(_thread_preference);
+	    _thread = _router->master()->thread(_home_thread_id);
 	    old_thread->unlock_tasks();
 	    add_pending(0);
 	} else
@@ -323,13 +326,16 @@ Task::process_pending(RouterThread *thread)
 
     if (_thread == thread) {
 	if (_pending & CHANGE_THREAD) {
-	    // see also change_thread() above
+	    // see also set_home_thread_id() above
 	    _pending &= ~CHANGE_THREAD;
-	    if (scheduled()) {
-		fast_unschedule();
-		_pending |= RESCHEDULE;
+	    if (_thread->thread_id() != _home_thread_id
+		&& _thread->thread_id() != RouterThread::THREAD_STRONG_UNSCHEDULE) {
+		if (scheduled()) {
+		    fast_unschedule();
+		    _pending |= RESCHEDULE;
+		}
+		_thread = _router->master()->thread(_home_thread_id);
 	    }
-	    _thread = _router->master()->thread(_thread_preference);
 	} else if (_pending & RESCHEDULE) {
 	    _pending &= ~RESCHEDULE;
 	    if (!scheduled())

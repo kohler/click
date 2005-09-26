@@ -19,7 +19,7 @@ CLICK_DECLS
 	int s = splimp();			\
 	if (s == 0)				\
 	    panic("not spl'ed: %d\n", s);	\
-	splx(s);
+	splx(s)
 #else
 # define SPLCHECK
 #endif
@@ -41,8 +41,8 @@ class Task { public:
     enum { MAX_UTILIZATION = 1000 };
 #endif
 
-    inline Task(TaskHook, void *);
-    inline Task(Element *);		// call element->run_task()
+    inline Task(TaskHook hook, void *thunk);
+    inline Task(Element *e);		// call element->run_task()
     ~Task();
 
     inline bool initialized() const;
@@ -52,18 +52,20 @@ class Task { public:
     inline void *thunk() const;
     inline Element *element() const;
 
-    inline RouterThread *thread() const;
     Master *master() const;
+    inline RouterThread *thread() const;
+
+    inline int home_thread_id() const;
+    void set_home_thread_id(int);
  
 #ifdef HAVE_STRIDE_SCHED
     inline int tickets() const;
     inline void set_tickets(int);
-    inline void adj_tickets(int);
+    inline void adjust_tickets(int);
 #endif
 
     void initialize(Router *, bool scheduled);
     void initialize(Element *, bool scheduled);
-    void cleanup();
 
     void unschedule();
     inline void reschedule();
@@ -77,9 +79,6 @@ class Task { public:
 
     void strong_unschedule();
     void strong_reschedule();
-
-    inline int thread_preference() const;
-    void change_thread(int);
 
     inline void call_hook();
 
@@ -126,7 +125,7 @@ class Task { public:
 #endif
 
     RouterThread* _thread;
-    int _thread_preference;
+    int _home_thread_id;
   
     Router* _router;
 
@@ -136,7 +135,8 @@ class Task { public:
 
     Task(const Task&);
     Task& operator=(const Task&);
-
+    void cleanup();
+    
     void add_pending(int);
     void process_pending(RouterThread*);
     inline void fast_schedule();
@@ -178,7 +178,7 @@ Task::Task(TaskHook hook, void* thunk)
 #if __MTCLICK__
       _cycle_runs(0),
 #endif
-      _thread(0), _thread_preference(-1),
+      _thread(0), _home_thread_id(-1),
       _router(0), _pending(0), _pending_next(0)
 {
 }
@@ -203,7 +203,7 @@ Task::Task(Element* e)
 #if __MTCLICK__
       _cycle_runs(0),
 #endif
-      _thread(0), _thread_preference(-1),
+      _thread(0), _home_thread_id(-1),
       _router(0), _pending(0), _pending_next(0)
 {
 }
@@ -256,7 +256,7 @@ Task::fast_unschedule()
 #endif
 #if CLICK_BSDMODULE
     // assert(!intr_nesting_level);
-    SPLCHECK
+    SPLCHECK;
 #endif
     if (scheduled()) {
 #ifdef HAVE_TASK_HEAP
@@ -294,7 +294,7 @@ Task::set_tickets(int n)
 }
 
 inline void 
-Task::adj_tickets(int delta)
+Task::adjust_tickets(int delta)
 {
     set_tickets(_tickets + delta);
 }
@@ -311,7 +311,7 @@ Task::fast_reschedule()
 #endif
 #if CLICK_BSDMODULE
     // assert(!intr_nesting_level); it happens all the time from fromdevice!
-    SPLCHECK
+    SPLCHECK;
 #endif
 
     if (!scheduled()) {
@@ -352,7 +352,7 @@ Task::fast_reschedule()
 inline void
 Task::fast_schedule()
 {
-    SPLCHECK
+    SPLCHECK;
     assert(_tickets >= 1);
 #if HAVE_TASK_HEAP
     _pass = (_thread->empty() ? 0 : _thread->_task_heap[0]->_pass);
@@ -374,7 +374,7 @@ Task::fast_reschedule()
 #endif
 #if CLICK_BSDMODULE
     // assert(!intr_nesting_level);
-    SPLCHECK
+    SPLCHECK;
 #endif
     if (!scheduled()) {
 	_prev = _thread->_prev;
@@ -395,7 +395,7 @@ Task::fast_schedule()
 inline void
 Task::reschedule()
 {
-    SPLCHECK
+    SPLCHECK;
     assert(_thread);
     if (!scheduled())
 	true_reschedule();
@@ -470,9 +470,9 @@ Task::update_cycles(unsigned c)
 #endif
 
 inline int
-Task::thread_preference() const
+Task::home_thread_id() const
 {
-    return _thread_preference;
+    return _home_thread_id;
 }
 
 CLICK_ENDDECLS

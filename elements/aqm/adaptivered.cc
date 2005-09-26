@@ -95,12 +95,6 @@ AdaptiveRED::initialize(ErrorHandler *errh)
 }
 
 void
-AdaptiveRED::cleanup(CleanupStage)
-{
-    _timer.cleanup();
-}
-
-void
 AdaptiveRED::run_timer()
 {
     uint32_t part = (_max_thresh - _min_thresh) / 2;

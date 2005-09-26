@@ -97,6 +97,10 @@ RouterThread::RouterThread(Master *m, int id)
     _driver_task_epoch = 0;
     _task_epoch_first = 0;
 #endif
+
+    static_assert(THREAD_QUIESCENT == (int) ThreadSched::THREAD_QUIESCENT
+		  && THREAD_STRONG_UNSCHEDULE == (int) ThreadSched::THREAD_STRONG_UNSCHEDULE
+		  && THREAD_UNKNOWN == (int) ThreadSched::THREAD_UNKNOWN);
 }
 
 RouterThread::~RouterThread()

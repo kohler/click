@@ -332,7 +332,6 @@ ChatterSocket::cleanup(CleanupStage)
   _live_fds = 0;
 
   if (_retry_timer) {
-    _retry_timer->cleanup();
     delete _retry_timer;
     _retry_timer = 0;
   }

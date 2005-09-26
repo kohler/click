@@ -27,7 +27,7 @@ StaticThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 			      cpEnd) < 0)
 	    return -1;
 	if (e->eindex() >= _thread_preferences.size())
-	    _thread_preferences.resize(e->eindex() + 1, THREAD_PREFERENCE_UNKNOWN);
+	    _thread_preferences.resize(e->eindex() + 1, THREAD_UNKNOWN);
 	if (preference < -1 || preference >= master()->nthreads()) {
 	    errh->warning("thread preference %d out of range", preference);
 	    preference = (preference < 0 ? -1 : 0);
@@ -40,17 +40,17 @@ StaticThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-StaticThreadSched::initial_thread_preference(Task *task, bool scheduled)
+StaticThreadSched::initial_home_thread_id(Task *task, bool scheduled)
 {
     if (Element *e = task->element()) {
 	int eidx = e->eindex();
-	if (eidx >= 0 && eidx < _thread_preferences.size() && _thread_preferences[eidx] != THREAD_PREFERENCE_UNKNOWN)
+	if (eidx >= 0 && eidx < _thread_preferences.size() && _thread_preferences[eidx] != THREAD_UNKNOWN)
 	    return _thread_preferences[eidx];
     }
     if (_next_thread_sched)
-	return _next_thread_sched->initial_thread_preference(task, scheduled);
+	return _next_thread_sched->initial_home_thread_id(task, scheduled);
     else
-	return THREAD_PREFERENCE_UNKNOWN;
+	return THREAD_UNKNOWN;
 }
 
 ELEMENT_REQUIRES(linuxmodule)

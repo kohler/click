@@ -55,7 +55,7 @@ static int globalh_cap;
 
 Router::Router(const String &configuration, Master *m)
     : _master(0), _state(ROUTER_NEW), _have_connections(false),
-      _allow_star_handler(true), _running(RUNNING_INACTIVE),
+      _running(RUNNING_INACTIVE),
       _handler_bufs(0), _nhandlers_bufs(0), _free_handler(-1),
       _root_element(0),
       _configuration(configuration),
@@ -623,7 +623,7 @@ Router::set_runcount(int x)
 	_master->_runcount = _runcount;
 	// ensure that at least one thread is awake to handle the stop event
 	if (_master->_runcount <= 0)
-	    _master->_threads[1]->unsleep();
+	    _master->_threads[2]->unsleep();
     }
     _master->_runcount_lock.release();
 }
@@ -646,7 +646,7 @@ Router::adjust_runcount(int delta)
 	_master->_runcount = _runcount;
 	// ensure that at least one thread is awake to handle the stop event
 	if (_master->_runcount <= 0)
-	    _master->_threads[1]->unsleep();
+	    _master->_threads[2]->unsleep();
     }
     
     _master->_runcount_lock.release();
@@ -782,7 +782,6 @@ Router::initialize_handlers(bool defaults, bool specifics)
     _ehandler_first_by_element.assign(nelements(), -1);
     _ehandler_to_handler.clear();
     _ehandler_next.clear();
-    _allow_star_handler = true;
 
     _handler_first_by_name.clear();
 
@@ -996,7 +995,7 @@ Handler::call_read(Element* e, const String& param, ErrorHandler* errh) const
     if (param && !(_flags & READ_PARAM))
 	errh->error("read handler '%s' does not take parameters", unparse_name(e).c_str());
     else if ((_flags & (ONE_HOOK | OP_READ)) == OP_READ)
-	return _hook.rw.r(e, _thunk);
+	return _hook.rw.r(e, _thunk1);
     else if (_flags & OP_READ) {
 	String s(param);
 	if (_hook.h(OP_READ, s, e, this, errh) >= 0)
@@ -1061,7 +1060,7 @@ Handler::unparse_name(Element *e) const
 // implement.)
 
 int
-Router::find_ehandler(int eindex, const String& name) const
+Router::find_ehandler(int eindex, const String& name, bool allow_star) const
 {
     int eh = _ehandler_first_by_element[eindex];
     int star_h = -1;
@@ -1074,12 +1073,10 @@ Router::find_ehandler(int eindex, const String& name) const
 	    star_h = h;
 	eh = _ehandler_next[eh];
     }
-    if (_allow_star_handler && star_h >= 0 && xhandler(star_h)->writable()) {
-	_allow_star_handler = false;
+    if (allow_star && star_h >= 0 && xhandler(star_h)->writable()) {
 	String name_copy(name);
 	if (xhandler(star_h)->call_write(name_copy, element(eindex), ErrorHandler::default_handler()) >= 0)
-	    eh = find_ehandler(eindex, name);
-	_allow_star_handler = true;
+	    eh = find_ehandler(eindex, name, false);
     }
     return eh;
 }
@@ -1096,10 +1093,7 @@ Router::fetch_handler(const Element* e, const String& name)
 void
 Router::store_local_handler(int eindex, const Handler& to_store)
 {
-    bool allow_star_handler = _allow_star_handler;
-    _allow_star_handler = false;
-    int old_eh = find_ehandler(eindex, to_store.name());
-    _allow_star_handler = allow_star_handler;
+    int old_eh = find_ehandler(eindex, to_store.name(), false);
     if (old_eh >= 0)
 	xhandler(_ehandler_to_handler[old_eh])->_use_count--;
   
@@ -1244,7 +1238,7 @@ Router::handler(const Element* e, const String& hname)
 {
     if (e && e != e->router()->_root_element) {
 	const Router *r = e->router();
-	int eh = r->find_ehandler(e->eindex(), hname);
+	int eh = r->find_ehandler(e->eindex(), hname, true);
 	if (eh >= 0)
 	    return r->xhandler(r->_ehandler_to_handler[eh]);
     } else {			// global handler
@@ -1260,7 +1254,7 @@ Router::hindex(const Element* e, const String& hname)
 {
     if (e && e != e->router()->_root_element) {
 	const Router *r = e->router();
-	int eh = r->find_ehandler(e->eindex(), hname);
+	int eh = r->find_ehandler(e->eindex(), hname, true);
 	if (eh >= 0)
 	    return r->_ehandler_to_handler[eh];
     } else {			// global handler
@@ -1290,7 +1284,7 @@ Router::element_hindexes(const Element* e, Vector<int>& hindexes)
 // Public functions for storing handlers
 
 void
-Router::add_read_handler(const Element* e, const String& name, ReadHandler hook, void* thunk)
+Router::add_read_handler(const Element* e, const String& name, ReadHandlerHook hook, void* thunk)
 {
     Handler to_add = fetch_handler(e, name);
     if (to_add._flags & Handler::ONE_HOOK) {
@@ -1299,18 +1293,18 @@ Router::add_read_handler(const Element* e, const String& name, ReadHandler hook,
 	to_add._flags &= ~Handler::PRIVATE_MASK;
     }
     to_add._hook.rw.r = hook;
-    to_add._thunk = thunk;
+    to_add._thunk1 = thunk;
     to_add._flags |= Handler::OP_READ;
     store_handler(e, to_add);
 }
 
 void
-Router::add_write_handler(const Element* e, const String& name, WriteHandler hook, void* thunk)
+Router::add_write_handler(const Element* e, const String& name, WriteHandlerHook hook, void* thunk)
 {
     Handler to_add = fetch_handler(e, name);
     if (to_add._flags & Handler::ONE_HOOK) {
 	to_add._hook.rw.r = 0;
-	to_add._thunk = 0;
+	to_add._thunk1 = 0;
 	to_add._flags &= ~Handler::PRIVATE_MASK;
     }
     to_add._hook.rw.w = hook;
@@ -1320,11 +1314,11 @@ Router::add_write_handler(const Element* e, const String& name, WriteHandler hoo
 }
 
 void
-Router::set_handler(const Element* e, const String& name, int flags, HandlerHook hook, void* thunk, void* thunk2)
+Router::set_handler(const Element* e, const String& name, int flags, HandlerHook hook, void* thunk1, void* thunk2)
 {
     Handler to_add(name);
     to_add._hook.h = hook;
-    to_add._thunk = thunk;
+    to_add._thunk1 = thunk1;
     to_add._thunk2 = thunk2;
     to_add._flags = flags | Handler::ONE_HOOK;
     store_handler(e, to_add);
@@ -1409,7 +1403,7 @@ Router::new_notifier_signal(NotifierSignal &signal)
 }
 
 int
-ThreadSched::initial_thread_preference(Task *, bool)
+ThreadSched::initial_home_thread_id(Task *, bool)
 {
     return 0;
 }

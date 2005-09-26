@@ -278,7 +278,6 @@ ControlSocket::cleanup(CleanupStage)
       _flags[i] = -1;
     }
   if (_retry_timer) {
-    _retry_timer->cleanup();
     delete _retry_timer;
     _retry_timer = 0;
   }

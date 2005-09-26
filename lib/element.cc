@@ -1324,22 +1324,105 @@ Element::selected(int)
 
 // HANDLERS
 
+/** @brief Register a read handler named @a name.
+ *
+ * @param name handler name
+ * @param hook function called when handler is read
+ * @param thunk user data parameter passed to @a hook
+ *
+ * Adds a read handler named @a name for this element.  Reading the handler
+ * returns the result of the @a hook function, which is called like this:
+ *
+ * @code
+ * String result = hook(e, thunk);
+ * @endcode
+ *
+ * @a e is this element pointer.
+ *
+ * add_read_handler(@a name) overrides the result of any previous
+ * add_read_handler(@a name) or set_handler(@a name), but any previous
+ * add_write_handler(@a name) remains in effect.
+ *
+ * @sa read_positional_handler, read_keyword_handler: standard read handler
+ * hook functions
+ * @sa add_write_handler, set_handler, add_task_handlers
+ */
 void
-Element::add_read_handler(const String &name, ReadHandler h, void *thunk)
+Element::add_read_handler(const String &name, ReadHandlerHook hook, void *thunk)
 {
-    Router::add_read_handler(this, name, h, thunk);
+    Router::add_read_handler(this, name, hook, thunk);
 }
 
+/** @brief Register a write handler named @a name.
+ *
+ * @param name handler name
+ * @param hook function called when handler is written
+ * @param thunk user data parameter passed to @a hook
+ *
+ * Adds a write handler named @a name for this element.  Writing the handler
+ * calls the @a hook function like this:
+ *
+ * @code
+ * int r = hook(data, e, thunk, errh);
+ * @endcode
+ *
+ * @a e is this element pointer.  The return value @a r should be negative on
+ * error, positive or zero on success.  Any messages should be reported to the
+ * @a errh ErrorHandler object.
+ *
+ * add_write_handler(@a name) overrides the result of any previous
+ * add_write_handler(@a name) or set_handler(@a name), but any previous
+ * add_read_handler(@a name) remains in effect.
+ *
+ * @sa reconfigure_positional_handler, reconfigure_keyword_handler: standard
+ * write handler hook functions
+ * @sa add_read_handler, set_handler, add_task_handlers
+ */
 void
-Element::add_write_handler(const String &name, WriteHandler h, void *thunk)
+Element::add_write_handler(const String &name, WriteHandlerHook hook, void *thunk)
 {
-    Router::add_write_handler(this, name, h, thunk);
+    Router::add_write_handler(this, name, hook, thunk);
 }
 
+/** @brief Register a comprehensive handler named @a name.
+ *
+ * @param name handler name
+ * @param flags handler flags
+ * @param hook function called when handler is written
+ * @param thunk1 user data parameter stored in the handler
+ * @param thunk2 user data parameter stored in the handler
+ *
+ * Registers a comprehensive handler named @a name for this element.  The
+ * handler handles the operations specified by @a flags, which can include
+ * Handler::OP_READ, Handler::OP_WRITE, Handler::READ_PARAM, and others.
+ * Reading the handler calls the @a hook function like this:
+ *
+ * @code
+ * String data;
+ * int r = hook(Handler::OP_READ, data, e, h, errh);
+ * @endcode
+ *
+ * Writing the handler calls it like this:
+ *
+ * @code
+ * int r = hook(Handler::OP_WRITE, data, e, h, errh);
+ * @endcode
+ *
+ * @a e is this element pointer, and @a h points to the Handler object for
+ * this handler.  The @a data string is an out parameter for reading and an in
+ * parameter for writing; when reading with parameters, @a data has the
+ * parameters on input and should be replaced with the result on output.  The
+ * return value @a r should be negative on error, positive or zero on success.
+ * Any messages should be reported to the @a errh ErrorHandler object.
+ *
+ * set_handler(@a name) overrides the result of any previous
+ * add_read_handler(@a name), add_write_handler(@a name), or set_handler(@a
+ * name).
+ */
 void
-Element::set_handler(const String& name, int mask, HandlerHook h, void* thunk, void* thunk2)
+Element::set_handler(const String& name, int flags, HandlerHook hook, void* thunk1, void* thunk2)
 {
-    Router::set_handler(this, name, mask, h, thunk, thunk2);
+    Router::set_handler(this, name, flags, hook, thunk1, thunk2);
 }
 
 static String
@@ -1496,34 +1579,79 @@ read_task_scheduled(Element *e, void *thunk)
 
 #if __MTCLICK__
 static String
-read_task_thread_preference(Element *e, void *thunk)
+read_task_home_thread(Element *e, void *thunk)
 {
   Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
-  return String(task->thread_preference())+String("\n");
+  return String(task->home_thread_id())+String("\n");
 }
 #endif
 
+/** @brief Register handlers for a task.
+ *
+ * @param task Task object
+ * @param prefix prefix for each handler
+ *
+ * Adds a standard set of handlers for the task.  They are:
+ *
+ * @li A "scheduled" read handler, which returns @c true if the task is
+ * scheduled and @c false if not.
+ * @li A "tickets" read handler, which returns the task's tickets.
+ * @li A "tickets" write handler to set the task's tickets.  
+ * @li A "home_thread" read handler, which returns the task's home thread ID.
+ *
+ * Depending on Click's configuration options, some of these handlers might
+ * not be available.
+ *
+ * Each handler name is prefixed with the @a prefix string, so an element with
+ * multiple Task objects can register handlers for each of them.
+ *
+ * @sa add_read_handler, add_write_handler, set_handler
+ */
 void
 Element::add_task_handlers(Task *task, const String &prefix)
 {
   intptr_t task_offset = (uint8_t *)task - (uint8_t *)this;
   void *thunk = (void *)task_offset;
+  add_read_handler(prefix + "scheduled", read_task_scheduled, thunk);
 #ifdef HAVE_STRIDE_SCHED
   add_read_handler(prefix + "tickets", read_task_tickets, thunk);
   add_write_handler(prefix + "tickets", write_task_tickets, thunk);
 #endif
-  add_read_handler(prefix + "scheduled", read_task_scheduled, thunk);
 #if __MTCLICK__
-  add_read_handler(prefix + "thread_preference", read_task_thread_preference, thunk);
+  add_read_handler(prefix + "home_thread", read_task_home_thread, thunk);
 #endif
 }
 
+/** @brief Standard read handler returning a positional argument.
+ *
+ * Use this function to define a handler that returns one of an element's
+ * positional configuration arguments.  The @a thunk argument is a typecast
+ * integer that specifies which one.  For instance, to add "first", "second",
+ * and "third" read handlers that return the element's first three
+ * configuration arguments:
+ *
+ * @code
+ * add_read_handler("first", read_positional_handler, (void *) 0);
+ * add_read_handler("second", read_positional_handler, (void *) 1);
+ * add_read_handler("third", read_positional_handler, (void *) 2);
+ * @endcode
+ *
+ * Returns the empty string if there aren't enough arguments.  Also adds a
+ * trailing newline to the returned string if it doesn't end in a newline
+ * already.
+ *
+ * Use read_positional_handler() only for mandatory positional arguments.
+ * Optional positional arguments might be polluted by keywords.
+ *
+ * @sa configuration: used to obtain the element's current configuration.
+ * @sa read_keyword_handler, reconfigure_positional_handler, add_read_handler
+ */
 String
 Element::read_positional_handler(Element *element, void *thunk)
 {
   Vector<String> conf;
   element->configuration(conf);
-  int no = (intptr_t)thunk;
+  uintptr_t no = (uintptr_t) thunk;
   if (no >= conf.size())
     return String();
   String s = conf[no];
@@ -1533,6 +1661,24 @@ Element::read_positional_handler(Element *element, void *thunk)
   return s;
 }
 
+/** @brief Standard read handler returning a keyword argument.
+ *
+ * Use this function to define a handler that returns one of an element's
+ * keyword configuration arguments.  The @a thunk argument is a C string that
+ * specifies which one.  For instance, to add a "data" read handler that
+ * returns the element's "DATA" keyword argument:
+ *
+ * @code
+ * add_read_handler("data", read_keyword_handler, (void *) "DATA");
+ * @endcode
+ *
+ * Returns the empty string if the configuration doesn't have the specified
+ * keyword.  Adds a trailing newline to the returned string if it doesn't end
+ * in a newline already.
+ *
+ * @sa configuration: used to obtain the element's current configuration.
+ * @sa read_positional_handler, reconfigure_keyword_handler, add_read_handler
+ */
 String
 Element::read_keyword_handler(Element *element, void *thunk)
 {
@@ -1584,6 +1730,34 @@ reconfigure_handler(const String &arg, Element *e,
   }
 }
 
+/** @brief Standard write handler for reconfiguring an element by changing one
+ * of its positional arguments.
+ *
+ * Use this function to define a handler that, when written, reconfigures an
+ * element by changing one of its positional arguments.  The @a thunk argument
+ * is a typecast integer that specifies which one.  For typecast integer that
+ * specifies which one.  For instance, to add "first", "second", and "third"
+ * write handlers that change the element's first three configuration
+ * arguments:
+ *
+ * @code
+ * add_write_handler("first", reconfigure_positional_handler, (void *) 0);
+ * add_write_handler("second", reconfigure_positional_handler, (void *) 1);
+ * add_write_handler("third", reconfigure_positional_handler, (void *) 2);
+ * @endcode
+ *
+ * When one of these handlers is written, Click will call the element's
+ * configuration() method to obtain the element's current configuration,
+ * change the relevant argument, and call live_reconfigure() to reconfigure
+ * the element.
+ *
+ * Use reconfigure_positional_handler() only for mandatory positional
+ * arguments.  Optional positional arguments might be polluted by keywords.
+ *
+ * @sa configuration: used to obtain the element's current configuration.
+ * @sa live_reconfigure: used to reconfigure the element.
+ * @sa reconfigure_keyword_handler, read_positional_handler, add_write_handler
+ */
 int
 Element::reconfigure_positional_handler(const String &arg, Element *e,
 					void *thunk, ErrorHandler *errh)
@@ -1591,6 +1765,32 @@ Element::reconfigure_positional_handler(const String &arg, Element *e,
   return reconfigure_handler(arg, e, (intptr_t)thunk, 0, errh);
 }
 
+/** @brief Standard write handler for reconfiguring an element by changing one
+ * of its keyword arguments.
+ *
+ * Use this function to define a handler that, when written, reconfigures an
+ * element by changing one of its keyword arguments.  The @a thunk argument is
+ * a C string that specifies which one.  For typecast integer that specifies
+ * which one.  For instance, to add a "data" write handler that changes the
+ * element's "DATA" configuration argument:
+ *
+ * @code
+ * add_write_handler("data", reconfigure_keyword_handler, (void *) "DATA");
+ * @endcode
+ *
+ * When this handler is written, Click will call the element's configuration()
+ * method to obtain the element's current configuration, add the keyword
+ * argument to the end (which will generally override any previous
+ * occurrences), and call live_reconfigure() to reconfigure the element.
+ *
+ * reconfigure_keyword_handler() requires the element to provide its own
+ * configuration() function, rather than relying on the default.  If you don't
+ * override it, all writes to your handler will fail.
+ *
+ * @sa configuration: used to obtain the element's current configuration.
+ * @sa live_reconfigure: used to reconfigure the element.
+ * @sa reconfigure_positional_handler, read_keyword_handler, add_write_handler
+ */
 int
 Element::reconfigure_keyword_handler(const String &arg, Element *e,
 				     void *thunk, ErrorHandler *errh)
@@ -1627,12 +1827,13 @@ Element::local_llrpc(unsigned command, void *data)
  * @param port the input port number on which the packet arrives
  * @param p the packet
  *
- * When an element immediately upstream of this element transfers a packet to
- * it over a push connection, this element's push() function is called to
- * process the packet.  The push() method knows the packet and the input port
- * on which it arrived, but not the full path back to the packet's source.  It
- * must account for the packet either by pushing it further downstream, by
- * freeing it, or by storing it temporarily.
+ * An upstream element transferred packet @a p to this element over a push
+ * connection.  This element should process the packet as necessary and
+ * return.  The packet arrived on input port @a port.  push() must account for
+ * the packet either by pushing it further downstream, by freeing it, or by
+ * storing it temporarily.
+ *
+ * The default implementation calls simple_action().
  */
 void
 Element::push(int port, Packet *p)
@@ -1645,6 +1846,15 @@ Element::push(int port, Packet *p)
 
 /** @brief Called to pull a packet from pull output @a port.
  *
+ * @param port the output port number receiving the pull request.
+ * @return a packet
+ *
+ * A downstream element initiated a packet transfer from this element over a
+ * pull connection.  This element should return a packet pointer, or null if
+ * no packet is available.  The pull request arrived on output port @a port.
+ *
+ * Often, pull() methods will request packets from upstream using
+ * input(i).pull().  The default implementation calls simple_action().
  */
 Packet *
 Element::pull(int port)
@@ -1656,12 +1866,60 @@ Element::pull(int port)
     return p;
 }
 
+/** @brief Called to implement simple packet filters.
+ *
+ * @param p the input packet
+ * @return the output packet, or null
+ *
+ * Many elements act as simple packet filters: they receive a packet from
+ * upstream using input 0, process that packet, and forward it downstream
+ * using output 0.  The simple_action() method automates this process.  The @a
+ * p argument is the input packet.  simple_action() should process the packet
+ * and return a packet pointer -- either the same packet, a different packet,
+ * or null.  If the return value isn't null, Click will forward that packet
+ * downstream.
+ *
+ * simple_action() must account for @a p, either by returning it, by freeing
+ * it, or by emitting it on some alternate push output port.  (An optional
+ * second push output port 1 is often used to emit erroneous packets.)
+ *
+ * simple_action() works equally well for push or pull port pairs.  The
+ * default push() method calls simple_action() this way:
+ *
+ * @code
+ * if ((p = simple_action(p)))
+ *     output(0).push(p);
+ * @endcode
+ *
+ * The default pull() method calls it this way instead:
+ *
+ * @code
+ * if (Packet *p = input(0).pull())
+ *     if ((p = simple_action(p)))
+ *         return p;
+ * return 0;
+ * @endcode
+ *
+ * An element that implements its processing with simple_action() should have
+ * a processing() code like #AGNOSTIC or "a/ah", and a flow_code() like
+ * COMPLETE_FLOW or "x/x" indicating that packets can flow between the first
+ * input and the first output.
+ *
+ * For technical branch prediction-related reasons, elements that use
+ * simple_action() can perform quite a bit slower than elements that use
+ * push() and pull() directly.  The devirtualizer (click-devirtualize) can
+ * mitigate this effect.
+ */
 Packet *
 Element::simple_action(Packet *p)
 {
     return p;
 }
 
+/** @brief Called to run an element's task.
+ *
+ *
+ */
 bool
 Element::run_task()
 {
@@ -1672,6 +1930,8 @@ Element::run_task()
     return true;
 }
 
+/** @brief Called to run an element's timer.
+ */
 void
 Element::run_timer()
 {

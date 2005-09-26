@@ -23,8 +23,8 @@ class Handler;
 // #define CLICK_STATS 5
 
 typedef int (*HandlerHook)(int operation, String&, Element*, const Handler*, ErrorHandler*);
-typedef String (*ReadHandler)(Element*, void*);
-typedef int (*WriteHandler)(const String&, Element*, void*, ErrorHandler*);
+typedef String (*ReadHandlerHook)(Element*, void*);
+typedef int (*WriteHandlerHook)(const String&, Element*, void*, ErrorHandler*);
 
 class Element { public:
     
@@ -129,7 +129,7 @@ class Element { public:
     inline bool output_is_pull(int) const;
     void port_flow(bool isoutput, int, Bitvector*) const;
   
-    // LIVE RECONFIGURATION, HOTSWAP
+    // LIVE RECONFIGURATION
     virtual void configuration(Vector<String>&) const;
     String configuration() const;
   
@@ -137,8 +137,8 @@ class Element { public:
     virtual int live_reconfigure(Vector<String>&, ErrorHandler*);
 
     // HANDLERS
-    void add_read_handler(const String&, ReadHandler, void*);
-    void add_write_handler(const String&, WriteHandler, void*);
+    void add_read_handler(const String&, ReadHandlerHook, void*);
+    void add_write_handler(const String&, WriteHandlerHook, void*);
     void set_handler(const String&, int flags, HandlerHook, void* = 0, void* = 0);
     void add_task_handlers(Task*, const String& prefix = String());
 
@@ -635,8 +635,9 @@ Element::Port::pull() const
  * @param port output port number
  * @param p packet to push
  *
- * Push packet @a p on, using output(@a port).push(@a p), if @a port is in
- * range.  Otherwise, kill @a p with @a p->kill().
+ * If @a port is in range (>= 0 and < noutputs()), then push packet @a p
+ * forward using output(@a port).push(@a p).  Otherwise, kill @a p with @a p
+ * ->kill().
  *
  * @note It is invalid to call checked_output_push() on a pull output @a port.
  */

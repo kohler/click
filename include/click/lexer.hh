@@ -95,9 +95,6 @@ class Lexer { public:
     void yrequire();
     bool ystatement(bool nested = false);
   
-    void find_connections(const Hookup &, bool, Vector<Hookup> &) const;
-    void expand_connection(const Hookup &, bool, Vector<Hookup> &) const;
-  
     Router *create_router(Master *);
 
   private:
@@ -179,6 +176,9 @@ class Lexer { public:
     void expand_compound_element(int, const VariableEnvironment &);
     void add_router_connections(int, const Vector<int> &, Router *);
 
+    void find_connections(const Hookup &, bool, Vector<Hookup> &) const;
+    void expand_connection(const Hookup &, bool, Vector<Hookup> &) const;
+  
     friend class Compound;
   
 };

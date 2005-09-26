@@ -136,7 +136,7 @@ BalancedThreadSched::run_timer()
 		&& load[min_tid] + 2*(*tt)->cycles() <= load[max_tid]) {
 		load[min_tid] += (*tt)->cycles();
 		load[max_tid] -= (*tt)->cycles();
-		(*tt)->change_thread(min_tid);
+		(*tt)->set_home_thread_id(min_tid);
 	    }
 
 	// done with this round!
@@ -163,8 +163,8 @@ BalancedThreadSched::run_timer()
     Task *t = task_list->all_tasks_next();
     while (t != task_list) {
 	total_load += t->cycles();
-	if (t->thread_preference() >= 0) 
-	    load[t->thread_preference()] += t->cycles();
+	if (t->home_thread_id() >= 0) 
+	    load[t->home_thread_id()] += t->cycles();
 	tasks.push_back(t);
 	t = t->all_tasks_next();
     }
@@ -222,7 +222,7 @@ BalancedThreadSched::run_timer()
 		click_chatter("%u: %s %d, was on %d", 
 			      now, e->id().c_str(), 
 			      sorted[i]->cycles(), 
-			      sorted[i]->thread_preference());
+			      sorted[i]->home_thread_id());
 	}
     }
 #endif
@@ -242,7 +242,7 @@ BalancedThreadSched::run_timer()
 	}
 	load[which] += sorted[i]->cycles();
 	schedule[which].push_back(sorted[i]);
-	sorted[i]->change_thread(which);
+	sorted[i]->set_home_thread_id(which);
 	if (_increasing) {
 	    if (i == 0) break;
 	    else i--;
@@ -261,7 +261,7 @@ BalancedThreadSched::run_timer()
 		click_chatter("%u: %s %d, now on %d (%d)", 
 			      now, e->id().c_str(), 
 			      sorted[i]->cycles(), 
-			      sorted[i]->thread_preference(), avg_load);
+			      sorted[i]->home_thread_id(), avg_load);
 	}
 	print = 0;
 	click_chatter("\n");

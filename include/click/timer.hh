@@ -18,16 +18,14 @@ class Timer { public:
     Timer(TimerHook, void*);
     Timer(Element*);			// call element->run_timer()
     Timer(Task*);			// call task->reschedule()
-    ~Timer()				{ if (scheduled()) unschedule(); }
+    inline ~Timer();
 
-    bool initialized() const		{ return _router != 0; }
-    bool scheduled() const		{ return _schedpos >= 0; }
-    const Timestamp &expiry() const	{ return _expiry; }
+    inline bool initialized() const;
+    inline bool scheduled() const;
+    inline const Timestamp &expiry() const;
   
     inline void initialize(Router*);
     inline void initialize(Element*);
-    void cleanup()			{ unschedule(); }
-    void uninitialize()			{ cleanup(); }	// deprecated
 
     void schedule_at(const Timestamp&);
     inline void reschedule_at(const Timestamp&); // synonym
@@ -56,6 +54,31 @@ class Timer { public:
     friend class Master;
   
 };
+
+inline
+Timer::~Timer()
+{
+    if (scheduled())
+	unschedule();
+}
+
+inline bool
+Timer::initialized() const
+{
+    return _router != 0;
+}
+
+inline bool
+Timer::scheduled() const
+{
+    return _schedpos >= 0;
+}
+
+inline const Timestamp &
+Timer::expiry() const
+{
+    return _expiry;
+}
 
 inline void
 Timer::initialize(Router *router)

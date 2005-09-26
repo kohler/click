@@ -5,11 +5,13 @@ CLICK_DECLS
 
 class ThreadSched { public:
 
+    enum { THREAD_QUIESCENT = -1, THREAD_STRONG_UNSCHEDULE = -2,
+	   THREAD_UNKNOWN = -1000 };
+    
     ThreadSched()			{ }
     virtual ~ThreadSched()		{ }
 
-    enum { THREAD_PREFERENCE_UNKNOWN = -1000 };
-    virtual int initial_thread_preference(Task *, bool);
+    virtual int initial_home_thread_id(Task *, bool);
 
 };
 
