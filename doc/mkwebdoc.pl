@@ -357,14 +357,14 @@ if ($PROGMAN) {
 if ($NEWS) {
     open(IN, "click-$VERSION/FAQ") || die;
     select IN;
-    undef $/;
+    local($/) = undef;
     my($faq) = <IN>;
     close IN;
     $faq =~ s/\&/&amp;/g;
     $faq =~ s/</&lt;/g;
     open(FAQ, "$WEBDIR/faq.html") || die;
     select FAQ;
-    undef $/;
+    local($/) = undef;
     my($htmlfaq) = <FAQ>;
     $htmlfaq =~ s{<!-- faq -->.*<!-- /faq -->}{<!-- faq -->$faq<!-- /faq -->}s;
     close FAQ;
@@ -407,7 +407,7 @@ if ($DOC_TAR_GZ) {
     my(@htmlfiles) = grep { /\.html$/ } readdir(DIR);
     closedir(DIR);
 
-    undef $/;
+    local($/) = undef;
     foreach $f (@htmlfiles) {
 	open(IN, "$WEBDIR/doc/$f");
 	$_ = <IN>;
