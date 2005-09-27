@@ -180,6 +180,7 @@ class Lexer { public:
     void expand_connection(const Hookup &, bool, Vector<Hookup> &) const;
   
     friend class Compound;
+    friend class TunnelEnd;
   
 };
 
