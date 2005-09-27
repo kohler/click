@@ -67,6 +67,7 @@ String *String::null_string_p = 0;
 String *String::oom_string_p = 0;
 const char String::oom_string_data = 0;
 
+/** @cond never */
 inline
 String::Memo::Memo()
   : _refcount(0), _capacity(0), _dirty(0), _real_data("")
@@ -94,6 +95,7 @@ String::Memo::~Memo()
     delete[] _real_data;
   }
 }
+/** @endcond never */
 
 
 /** @brief Create a String containing the ASCII base-10 representation of @a i.

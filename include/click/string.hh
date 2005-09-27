@@ -400,6 +400,7 @@ String::empty_string()
 
 /** @brief Return an empty String (deprecated).
  * @deprecated Use empty_string() instead.
+ *
  * Returns a global constant, so it's quicker than String::String().
  */
 inline const String &
@@ -427,7 +428,6 @@ String::stable_string(const char *begin, const char *end)
 }
 
 /** @brief Null-terminates the string (deprecated).
- *
  * @deprecated This function is a synonym for c_str().  You should call
  * c_str() instead, since the C++ standard library uses that name. */
 inline const char *
@@ -478,6 +478,7 @@ String::compare(const String &a, const String &b)
 }
 
 /** @brief Compare this string with string @a str.
+ *
  * Same as String::compare(*this, @a str).
  * @sa String::compare(const String &a, const String &b) */
 inline int
