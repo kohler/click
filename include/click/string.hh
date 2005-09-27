@@ -41,7 +41,7 @@ class String { public:
   inline ~String();
   
   static inline const String &empty_string();
-  static inline const String &null_string() __attribute__((deprecated));
+  static inline const String &null_string() CLICK_DEPRECATED;
   static String garbage_string(int len);	// len garbage characters
   static String stable_string(const char *s, int len = -1); // stable read-only mem.
   static inline String stable_string(const char *begin, const char *end);
@@ -63,7 +63,7 @@ class String { public:
   inline char back() const;
   
   const char *c_str() const;		// pointer returned is semi-transient
-  inline const char *cc() const __attribute__((deprecated));
+  inline const char *cc() const CLICK_DEPRECATED;
   
   bool equals(const char *s, int len) const;
   // bool operator==(const String &, const String &);

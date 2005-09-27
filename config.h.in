@@ -110,6 +110,13 @@
 #define CLICK_SIZE_PACKED_STRUCTURE(open, close) open close
 #endif
 
+/* Define macro for deprecated functions. */
+#if __GNUC__ == 2
+#define CLICK_DEPRECATED
+#else
+#define CLICK_DEPRECATED __attribute__((deprecated))
+#endif
+
 /* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_PROVIDES, ELEMENT_HEADER, and
    ELEMENT_MT_SAFE are noops. */
 #define EXPORT_ELEMENT(x)

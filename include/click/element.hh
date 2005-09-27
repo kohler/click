@@ -19,7 +19,7 @@ class Handler;
  * @brief Click's Element class.
  */
 
-#define CLICK_ELEMENT_PORT_COUNT_DEPRECATED __attribute__((deprecated))
+#define CLICK_ELEMENT_PORT_COUNT_DEPRECATED CLICK_DEPRECATED
 
 // #define CLICK_STATS 5
 
@@ -205,9 +205,9 @@ class Element { public:
     inline void set_noutputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
     inline void add_input() CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
     inline void add_output() CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
-    bool ports_frozen() const __attribute__((deprecated));
+    bool ports_frozen() const CLICK_DEPRECATED;
     
-    virtual void run_timer() __attribute__((deprecated));
+    virtual void run_timer() CLICK_DEPRECATED;
     
   private:
 
