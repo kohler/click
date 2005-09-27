@@ -1,3 +1,7 @@
+2005-09-26 Monday 20:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/element.cc (1.98): fix warning
+
 2005-09-26 Monday 05:02  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/Doxyfile (1.2), elements/analysis/aggpktcounter.cc (1.8),
