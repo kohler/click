@@ -1652,7 +1652,7 @@ Element::read_positional_handler(Element *element, void *thunk)
   Vector<String> conf;
   element->configuration(conf);
   uintptr_t no = (uintptr_t) thunk;
-  if (no >= conf.size())
+  if (no >= (uintptr_t) conf.size())
     return String();
   String s = conf[no];
   // add trailing "\n" if appropriate
