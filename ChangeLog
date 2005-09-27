@@ -1,3 +1,12 @@
+2005-09-27 Tuesday 17:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/Doxyfile (1.4), include/click/string.hh (1.42),
+	lib/element.cc (1.100), lib/string.cc (1.56): doc nits
+
+2005-09-27 Tuesday 16:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/mkwebdoc.pl (1.62): backslash-n nonsense
+
 2005-09-27 Tuesday 16:05  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/lexer.hh (1.19): add necessary friend
