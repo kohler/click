@@ -40,7 +40,7 @@ class MadwifiRate : public Element { public:
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   int initialize(ErrorHandler *);
-  void run_timer();
+  void run_timer(Timer *);
   void adjust_all();
   void adjust(EtherAddress);
 

@@ -77,7 +77,7 @@ public:
   int initialize(ErrorHandler *errh);
 
   bool run_task();
-  void run_timer();
+  void run_timer(Timer *);
   void push(int, Packet *);
 
   void add_handlers();

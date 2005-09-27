@@ -65,7 +65,7 @@ public:
   void add_handlers();
   const char* class_name() const { return "LinkTable"; }
   int initialize(ErrorHandler *);
-  void run_timer();
+  void run_timer(Timer *);
   int configure(Vector<String> &conf, ErrorHandler *errh);
   void take_state(Element *, ErrorHandler *);
   void *cast(const char *n);

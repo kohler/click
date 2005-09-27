@@ -373,8 +373,8 @@ FromFlanDump::read_packet(ErrorHandler *errh)
     return more;
 }
 
-void
-FromFlanDump::run_scheduled()
+bool
+FromFlanDump::run_task()
 {
     if (!_active)
 	return;

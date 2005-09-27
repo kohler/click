@@ -87,7 +87,7 @@ BeaconSource::initialize (ErrorHandler *)
 }
 
 void
-BeaconSource::run_timer() 
+BeaconSource::run_timer(Timer *) 
 {
   send_beacon(_bcast, false);
   _timer.schedule_after_ms(_winfo->_interval);

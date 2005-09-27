@@ -259,7 +259,7 @@ RawSocket::selected(int fd)
 }
 
 void
-RawSocket::run_timer()
+RawSocket::run_timer(Timer *)
 {
   if ((_wq || _signal) && !(_events & SELECT_WRITE) && _fd >= 0) {
     add_select(_fd, SELECT_WRITE);

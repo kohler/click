@@ -35,7 +35,7 @@ class WebGen : public Element {
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
   Packet *simple_action(Packet *);
-  void run_timer();
+  void run_timer(Timer *);
 
 private:
   Timer _timer;

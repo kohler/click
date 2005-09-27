@@ -231,7 +231,7 @@ PI::queue_size() const
 }
 
 void 
-PI::run_timer()
+PI::run_timer(Timer *)
 {
 	_p = _a*(queue_size() - _target_q) - _b*(_old_q - _target_q) + _p;
     _timer.reschedule_after_ms(_w*1000);

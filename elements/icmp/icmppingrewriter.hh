@@ -66,7 +66,7 @@ class ICMPPingRewriter : public Element { public:
   void add_handlers();
 
   void push(int, Packet *);
-  void run_timer();
+  void run_timer(Timer *);
 
   class Mapping;
   Mapping *get_mapping(bool is_request, const IPFlowID &flow) const;

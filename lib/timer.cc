@@ -34,10 +34,10 @@ CLICK_DECLS
  */
 
 static void
-element_hook(Timer*, void* thunk)
+element_hook(Timer *timer, void *thunk)
 {
     Element* e = (Element*)thunk;
-    e->run_timer();
+    e->run_timer(timer);
 }
 
 static void

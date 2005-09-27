@@ -49,7 +49,7 @@ MadwifiRate::MadwifiRate()
 
 
 void
-MadwifiRate::run_timer()
+MadwifiRate::run_timer(Timer *)
 {
   _timer.schedule_after_ms(_period);
   adjust_all();

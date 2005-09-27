@@ -120,6 +120,7 @@ station.click
 write_handler.pl
 
 ./doc:
+Doxyfile
 Makefile.in
 click-align.1
 click-combine.1

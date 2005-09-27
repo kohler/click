@@ -247,7 +247,7 @@ public:
 
   Timer _timer;
 
-  void run_timer();
+  void run_timer(Timer *);
   Timestamp _next;
 
   Vector <RateSize> _ads_rs;

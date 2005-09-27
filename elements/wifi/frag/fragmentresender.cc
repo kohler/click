@@ -128,7 +128,7 @@ FragmentResender::initialize (ErrorHandler *)
 
 
 void
-FragmentResender::run_timer ()
+FragmentResender::run_timer (Timer *)
 {
   if (_debug) {
     struct timeval  now;

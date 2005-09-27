@@ -160,6 +160,21 @@ CLICK_DECLS
 
 
 /** @brief Construct a task that calls @a hook with @a thunk argument.
+ *
+ * @param hook task hook
+ * @param thunk user data for task hook
+ *
+ * Constructs a task that, when fired, calls the @a hook function like so:
+ *
+ * @code
+ * bool work_done = hook(task, thunk);
+ * @endcode
+ *
+ * where @a task is a pointer to this task.  The return value, @a work_done,
+ * should be true if the task accomplished some meaningful work, and false if
+ * it did not.  For example, a task that polls a network driver for packets
+ * should return true if it emits at least one packet, and false if no packets
+ * were available.
  */
 inline
 Task::Task(TaskHook hook, void* thunk)
@@ -185,6 +200,13 @@ Task::Task(TaskHook hook, void* thunk)
 
 /** @brief Construct a task that calls @a e ->@link Element::run_task()
  * run_task().@endlink
+ *
+ * @param e element to call
+ *
+ * Constructs a task that, when fired, calls the element @a e's @link
+ * Element::run_task() run_task()@endlink method.
+ *
+ * @sa Task(TaskHook, void *)
  */
 inline
 Task::Task(Element* e)

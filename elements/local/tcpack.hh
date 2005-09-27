@@ -73,7 +73,7 @@ public:
 
   void push(int, Packet *);
   Packet *pull(int);
-  void run_timer();
+  void run_timer(Timer *);
 };
 
 CLICK_ENDDECLS

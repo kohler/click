@@ -50,7 +50,7 @@ class SetGateway : public Element {
   static int change_param(const String &in_s, Element *e, void *thunk, ErrorHandler *errh);
   static String read_param(Element *e, void *vparam);
   void push(int, Packet *);
-  void run_timer();
+  void run_timer(Timer *);
   static String static_print_flows(Element *, void *);
 private:
 

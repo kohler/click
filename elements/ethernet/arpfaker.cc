@@ -54,7 +54,7 @@ ARPFaker::initialize(ErrorHandler *)
 }
 
 void
-ARPFaker::run_timer()
+ARPFaker::run_timer(Timer *)
 {
   output(0).push(make_response(_eth1.data(),
                                _ip1.data(),

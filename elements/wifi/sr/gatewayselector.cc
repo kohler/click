@@ -101,7 +101,7 @@ GatewaySelector::initialize (ErrorHandler *)
 }
 
 void
-GatewaySelector::run_timer ()
+GatewaySelector::run_timer (Timer *)
 {
   if (_is_gw) {
     start_ad();

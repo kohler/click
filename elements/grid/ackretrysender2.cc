@@ -148,7 +148,7 @@ ACKRetrySender2::initialize(ErrorHandler *errh)
 }
 
 void
-ACKRetrySender2::run_timer()
+ACKRetrySender2::run_timer(Timer *)
 {
   assert(_waiting_packet && !_timer.scheduled());
 

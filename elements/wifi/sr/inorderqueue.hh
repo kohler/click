@@ -32,7 +32,7 @@ class InOrderQueue : public NotifierQueue { public:
     void push(int port, Packet *);
     void shove_out();
     int configure(Vector<String> &, ErrorHandler *);    
-    void run_timer();
+    void run_timer(Timer *);
 private:
     int _drops;
 

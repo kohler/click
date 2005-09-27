@@ -85,7 +85,7 @@ InOrderQueue::configure (Vector<String> &conf, ErrorHandler *errh)
   return NotifierQueue::configure(nqconf, errh);
 }
 void
-InOrderQueue::run_timer() 
+InOrderQueue::run_timer(Timer *) 
 {
     shove_out();
 

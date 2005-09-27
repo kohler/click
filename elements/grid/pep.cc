@@ -85,7 +85,7 @@ PEP::initialize(ErrorHandler *)
 }
 
 void
-PEP::run_timer()
+PEP::run_timer(Timer *)
 {
   purge_old();
   output(0).push(make_PEP());

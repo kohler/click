@@ -85,7 +85,7 @@ LocalBroadcast::initialize (ErrorHandler *)
 }
 
 void
-LocalBroadcast::run_timer ()
+LocalBroadcast::run_timer (Timer *)
 {
   _timer.schedule_after_ms(1000);
 }

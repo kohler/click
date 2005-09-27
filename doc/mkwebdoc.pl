@@ -299,7 +299,9 @@ if ($ELEMENTS) {
 }
 
 # 3. call 'man2html'
-mysystem("man2html -l -m '<b>@</b>' -t $DOCDIR/template -d $DOCDIR /tmp/%click-webdoc/man/man*/*.?");
+if ($ELEMENTS) {
+    mysystem("man2html -l -m '<b>@</b>' -t $DOCDIR/template -d $DOCDIR /tmp/%click-webdoc/man/man*/*.?");
+}
 
 # 5. call 'changelog2html'
 if ($NEWS) {
@@ -352,27 +354,48 @@ if ($PROGMAN) {
 }
 
 # 8. install FAQ
-open(IN, "click-$VERSION/FAQ") || die;
-select IN;
-undef $/;
-my($faq) = <IN>;
-close IN;
-$faq =~ s/\&/&amp;/g;
-$faq =~ s/</&lt;/g;
-open(FAQ, "$WEBDIR/faq.html") || die;
-select FAQ;
-undef $/;
-my($htmlfaq) = <FAQ>;
-$htmlfaq =~ s{<!-- faq -->.*<!-- /faq -->}{<!-- faq -->$faq<!-- /faq -->}s;
-close FAQ;
-open(FAQ, ">$WEBDIR/faq.html") || die;
-print FAQ $htmlfaq;
-close(FAQ);
+if ($NEWS) {
+    open(IN, "click-$VERSION/FAQ") || die;
+    select IN;
+    undef $/;
+    my($faq) = <IN>;
+    close IN;
+    $faq =~ s/\&/&amp;/g;
+    $faq =~ s/</&lt;/g;
+    open(FAQ, "$WEBDIR/faq.html") || die;
+    select FAQ;
+    undef $/;
+    my($htmlfaq) = <FAQ>;
+    $htmlfaq =~ s{<!-- faq -->.*<!-- /faq -->}{<!-- faq -->$faq<!-- /faq -->}s;
+    close FAQ;
+    open(FAQ, ">$WEBDIR/faq.html") || die;
+    print FAQ $htmlfaq;
+    close(FAQ);
+}
 
 # 9. install clickconfig.dtd
 mysystem("cp click-$VERSION/tools/click2xml/clickconfig.dtd $WEBDIR");
 
-# 10. create doc.tar.gz
+# 10. doxycute
+if ($PROGMAN) {
+    open(IN, "click-$VERSION/doc/Doxyfile");
+    open(OUT, "| (cd click-$VERSION; doxygen -)");
+    while (<IN>) {
+	if (/^OUTPUT_DIRECTORY/) {
+	    print OUT "OUTPUT_DIRECTORY = $WEBDIR\n";
+	} elsif (/^HTML_OUTPUT/) {
+	    print OUT "HTML_OUTPUT = doxygen\n";
+	} elsif (/^GENERATE_LATEX/) {
+	    print OUT "GENERATE_LATEX = NO\n";
+	} else {
+	    print OUT;
+	}
+    }
+    close IN;
+    close OUT;
+}
+
+# 11. create doc.tar.gz
 if ($DOC_TAR_GZ) {
     $DOCDIR = "/tmp/%click-webdoc/click-doc-$VERSION";
     mysystem("rm -rf $DOCDIR && mkdir $DOCDIR");

@@ -101,7 +101,7 @@ ProgressBar::cleanup(CleanupStage)
 {
     if (_status == ST_MIDDLE) {
 	_status = ST_DONE;
-	run_timer();
+	run_timer(&_timer);
     }
 }
 
@@ -172,7 +172,7 @@ ProgressBar::get_value(int first, int last, double *value)
 }
 
 void
-ProgressBar::run_timer()
+ProgressBar::run_timer(Timer *)
 {
     // check _active
     if (!_active || _status == ST_DEAD)
@@ -341,7 +341,7 @@ ProgressBar::complete(bool is_full)
 	}
 	_status = (_status == ST_FIRST ? ST_FIRSTDONE : ST_DONE);
 	_timer.unschedule();
-	run_timer();
+	run_timer(&_timer);
     }
 }
 

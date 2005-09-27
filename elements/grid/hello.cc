@@ -64,7 +64,7 @@ SendGridHello::initialize(ErrorHandler *)
 }
 
 void
-SendGridHello::run_timer()
+SendGridHello::run_timer(Timer *)
 {
   output(0).push(make_hello());
 

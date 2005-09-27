@@ -39,7 +39,7 @@ class TokenQueue : public NotifierQueue { public:
     void process_source(struct srpacket *);
     void process_forward(struct srpacket *);
     int configure(Vector<String> &, ErrorHandler *);    
-    void run_timer();
+    void run_timer(Timer *);
 private:
     int _drops;
     Timestamp _catchup_timeout;

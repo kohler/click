@@ -51,7 +51,7 @@ class DelayShaper : public Element, public ActiveNotifier { public:
     void add_handlers();
 
     Packet *pull(int);
-    void run_timer();
+    void run_timer(Timer *);
 
     // from ActiveNotifier
     SearchOp notifier_search_op();

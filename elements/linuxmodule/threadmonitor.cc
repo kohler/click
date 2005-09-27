@@ -56,7 +56,7 @@ ThreadMonitor::initialize(ErrorHandler *)
 }
 
 void
-ThreadMonitor::run_timer()
+ThreadMonitor::run_timer(Timer *)
 {
     Master *m = router()->master();
     StringAccum sa;

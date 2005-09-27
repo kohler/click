@@ -36,7 +36,7 @@ class Burster : public Element { public:
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
-  void run_timer();
+  void run_timer(Timer *);
   
  private:
   

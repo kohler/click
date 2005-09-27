@@ -137,7 +137,7 @@ class DriverManager : public Element { public:
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
 
-    void run_timer();
+    void run_timer(Timer *);
     virtual bool handle_stopped_driver();
 
     int stopped_count() const		{ return _stopped_count; }

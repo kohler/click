@@ -49,7 +49,7 @@ class BeaconSource : public Element { public:
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
   void add_handlers();
-  void run_timer();
+  void run_timer(Timer *);
   int initialize (ErrorHandler *);
 
   void send_beacon(EtherAddress, bool);

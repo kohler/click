@@ -38,7 +38,7 @@ class AdaptiveRED : public RED { public:
     int live_reconfigure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
 
-    void run_timer();
+    void run_timer(Timer *);
 
   protected:
 

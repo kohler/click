@@ -77,7 +77,7 @@ struct Foo {
 }
 
 void
-QueueYankTest::run_timer()
+QueueYankTest::run_timer(Timer *)
 {
     PrefixErrorHandler perrh(ErrorHandler::default_handler(), declaration() + ": ");
     ErrorHandler *errh = &perrh;

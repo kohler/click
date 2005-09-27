@@ -19,7 +19,7 @@ class FragmentResender : public Element { public:
   const char *processing() const	{ return "lh/l"; }
   
   int initialize (ErrorHandler *);
-  void run_timer ();
+  void run_timer (Timer *);
   void push(int port, Packet *);
   Packet *pull(int);
 

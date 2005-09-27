@@ -70,7 +70,7 @@ SetGateway::initialize (ErrorHandler *)
 }
 
 void
-SetGateway::run_timer ()
+SetGateway::run_timer (Timer *)
 {
   cleanup();
   _timer.schedule_after_ms(60*1000);

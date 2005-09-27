@@ -152,7 +152,7 @@ class FromFlanDump : public Element { public:
     void cleanup(CleanupStage);
     void add_handlers();
 
-    void run_scheduled();
+    bool run_task();
     Packet *pull(int);
 
     void set_active(bool);

@@ -95,7 +95,7 @@ AdaptiveRED::initialize(ErrorHandler *errh)
 }
 
 void
-AdaptiveRED::run_timer()
+AdaptiveRED::run_timer(Timer *)
 {
     uint32_t part = (_max_thresh - _min_thresh) / 2;
     uint32_t avg = (_size.average() >> QUEUE_SCALE);

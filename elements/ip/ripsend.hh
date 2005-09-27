@@ -47,7 +47,7 @@ class RIPSend : public Element {
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
-  void run_timer();
+  void run_timer(Timer *);
   
 };
 

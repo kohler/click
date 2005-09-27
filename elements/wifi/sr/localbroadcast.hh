@@ -48,7 +48,7 @@ class LocalBroadcast : public Element {
   String print_stats();
 
   void push(int, Packet *);
-  void run_timer();
+  void run_timer(Timer *);
 
   void add_handlers();
 private:

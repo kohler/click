@@ -9,6 +9,7 @@ CLICK_DECLS
 class Router;
 class Master;
 class Task;
+class Timer;
 class Element;
 class ErrorHandler;
 class Bitvector;
@@ -39,7 +40,7 @@ class Element { public:
     virtual Packet* simple_action(Packet*);
 
     virtual bool run_task();		// return true iff did useful work
-    virtual void run_timer();
+    virtual void run_timer(Timer *);
 #if CLICK_USERLEVEL
     virtual void selected(int fd);
 #endif
@@ -136,6 +137,13 @@ class Element { public:
     virtual bool can_live_reconfigure() const;
     virtual int live_reconfigure(Vector<String>&, ErrorHandler*);
 
+#if CLICK_USERLEVEL
+    // SELECT
+    enum { SELECT_READ = 1, SELECT_WRITE = 2 };
+    int add_select(int fd, int mask);
+    int remove_select(int fd, int mask);
+#endif
+
     // HANDLERS
     void add_read_handler(const String&, ReadHandlerHook, void*);
     void add_write_handler(const String&, WriteHandlerHook, void*);
@@ -149,13 +157,6 @@ class Element { public:
   
     virtual int llrpc(unsigned command, void* arg);
     int local_llrpc(unsigned command, void* arg);
-
-#if CLICK_USERLEVEL
-    // SELECT
-    enum { SELECT_READ = 1, SELECT_WRITE = 2 };
-    int add_select(int fd, int mask);
-    int remove_select(int fd, int mask);
-#endif
 
 #if CLICK_STATS >= 2
     // STATISTICS
@@ -206,7 +207,7 @@ class Element { public:
     inline void add_output() CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
     bool ports_frozen() const __attribute__((deprecated));
     
-    virtual void run_scheduled() __attribute__((deprecated));
+    virtual void run_timer() __attribute__((deprecated));
     
   private:
 
@@ -590,7 +591,7 @@ Element::Port::push(Packet* p) const
 #endif
 }
 
-/** @brief Pull and return a packet from this port.
+/** @brief Pull a packet over this port and return it.
  *
  * Pulls a packet from upstream in the router configuration by calling the
  * previous element's @link Element::pull() pull() @endlink function.  When

@@ -110,7 +110,7 @@ class IPAddrRewriter : public IPRw { public:
     void cleanup(CleanupStage);
     //void take_state(Element *, ErrorHandler *);
 
-    void run_timer();
+    void run_timer(Timer *);
 
     int notify_pattern(Pattern *, ErrorHandler *);
     IPAddrMapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int);

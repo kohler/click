@@ -69,11 +69,12 @@ xokWriter::push(int port, Packet *p)
 }
 
 
-void
-xokWriter::run_scheduled()
+bool
+xokWriter::run_task()
 {
   while (Packet *p = input(0).pull())
     push(0, p);
+  return true;
 }
 
 

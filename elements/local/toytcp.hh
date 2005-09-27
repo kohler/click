@@ -33,7 +33,7 @@ class ToyTCP : public Element {
   int initialize(ErrorHandler *);
 
   Packet *simple_action(Packet *);
-  void run_timer();
+  void run_timer(Timer *);
 
 private:
   Timer _timer;

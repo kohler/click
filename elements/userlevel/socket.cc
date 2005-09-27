@@ -342,7 +342,7 @@ Socket::selected(int fd)
 }
 
 void
-Socket::run_timer()
+Socket::run_timer(Timer *)
 {
   if ((_wq || _signal) && !(_events & SELECT_WRITE) && _active >= 0) {
     add_select(_active, SELECT_WRITE);

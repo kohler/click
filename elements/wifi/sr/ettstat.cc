@@ -206,7 +206,7 @@ void add_jitter(unsigned int max_jitter, Timestamp *t) {
 }
 
 void
-ETTStat::run_timer()
+ETTStat::run_timer(Timer *)
 {
 	int p = _period / _ads_rs.size();
 	unsigned max_jitter = p / 10;

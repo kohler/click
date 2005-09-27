@@ -123,7 +123,7 @@ IPAddrPairRewriter::notify_pattern(Pattern *p, ErrorHandler *errh)
 }
 
 void
-IPAddrPairRewriter::run_timer()
+IPAddrPairRewriter::run_timer(Timer *)
 {
     clean_map(_map, GC_INTERVAL_SEC * 1000);
     _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);

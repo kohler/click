@@ -111,7 +111,7 @@ TokenQueue::configure (Vector<String> &conf, ErrorHandler *errh)
   return NotifierQueue::configure(nqconf, errh);
 }
 void
-TokenQueue::run_timer() 
+TokenQueue::run_timer(Timer *) 
 {
   Vector<Path> to_clear;
   Vector<Path> not_active;

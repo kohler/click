@@ -113,7 +113,7 @@ DelayShaper::pull(int)
 }
 
 void
-DelayShaper::run_timer()
+DelayShaper::run_timer(Timer *)
 {
     wake_listeners();
 }

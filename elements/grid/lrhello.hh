@@ -45,7 +45,7 @@ public:
   
   Packet *make_hello();
   
-  void run_timer();
+  void run_timer(Timer *);
   
 private:
   

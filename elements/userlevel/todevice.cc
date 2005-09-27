@@ -222,7 +222,7 @@ ToDevice::selected(int)
 }
 
 void
-ToDevice::run_timer()
+ToDevice::run_timer(Timer *)
 {
   if (_debug) {
     click_chatter("%s %{element}::%s\n",

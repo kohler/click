@@ -114,12 +114,12 @@ String::String(unsigned u)
   assign(buf, -1);
 }
 
-/** @brief Create a String containing the ASCII base-10 representation of @a d.
+/** @brief Create a String containing the ASCII base-10 representation of @a i.
  */
-String::String(long d)
+String::String(long i)
 {
   char buf[128];
-  sprintf(buf, "%ld", d);
+  sprintf(buf, "%ld", i);
   assign(buf, -1);
 }
 
@@ -290,6 +290,9 @@ String::append_garbage(int len)
 
 /** @brief Append the first @a len characters of @a suffix to this string.
  *
+ * @param suffix data to append
+ * @param len length of data
+ *
  * If @a len @< 0, treats @a suffix as a null-terminated C string. */ 
 void
 String::append(const char *suffix, int len)
@@ -425,6 +428,9 @@ String::substring(int pos, int len) const
 
 /** @brief Search for a character in a string.
  *
+ * @param c character to search for
+ * @param start initial search position
+ *
  * Return the index of the leftmost occurence of @a c, starting at index @a
  * start and working up to the end of the string.  Returns -1 if @a c is not
  * found. */
@@ -441,32 +447,38 @@ String::find_left(char c, int start) const
 
 /** @brief Search for a substring in a string.
  *
- * Return the index of the leftmost occurence of the substring @a s, starting
+ * @param str substring to search for
+ * @param start initial search position
+ *
+ * Return the index of the leftmost occurence of the substring @a str, starting
  * at index @a start and working up to the end of the string.  Returns -1 if
- * @a s is not found. */
+ * @a str is not found. */
 int
-String::find_left(const String &s, int start) const
+String::find_left(const String &str, int start) const
 {
     if (start < 0)
 	start = 0;
     if (start >= length())
 	return -1;
-    if (!s.length())
+    if (!str.length())
 	return 0;
-    int first_c = (unsigned char)s[0];
-    int pos = start, max_pos = length() - s.length();
+    int first_c = (unsigned char)str[0];
+    int pos = start, max_pos = length() - str.length();
     for (pos = find_left(first_c, pos); pos >= 0 && pos <= max_pos;
 	 pos = find_left(first_c, pos + 1))
-	if (!memcmp(_data + pos, s._data, s.length()))
+	if (!memcmp(_data + pos, str._data, str.length()))
 	    return pos;
     return -1;
 }
 
 /** @brief Search for a character in a string.
  *
- * Return the index of the rightmost occurence of the substring @a s, starting
+ * @param c character to search for
+ * @param start initial search position
+ *
+ * Return the index of the rightmost occurence of the character @a c, starting
  * at index @a start and working back to the beginning of the string.  Returns
- * -1 if @a s is not found.  @a start may start beyond the end of the
+ * -1 if @a c is not found.  @a start may start beyond the end of the
  * string. */
 int
 String::find_right(char c, int start) const

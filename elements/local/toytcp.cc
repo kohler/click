@@ -84,7 +84,7 @@ ToyTCP::initialize(ErrorHandler *)
 }
 
 void
-ToyTCP::run_timer()
+ToyTCP::run_timer(Timer *)
 {
   if(_reset)
     restart();

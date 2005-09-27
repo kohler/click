@@ -146,8 +146,40 @@ Element::~Element()
  * @endcode
  */
 
-/** 
+/** @brief Called to attempt to cast the element to a named type.
  *
+ * @param name name of the type being cast to
+ *
+ * Click calls this function to see whether this element has a given type,
+ * identified by @a name.  Thus, cast() is Click's version of the C++ @c
+ * dynamic_cast operator.  (@c dynamic_cast itself is not available in the
+ * Linux kernel, so we rolled our own.)  The function should return a pointer
+ * to the named object, or a null pointer if this element doesn't have that
+ * type.  @a name can name an element class or another type of interface, such
+ * as @c "Storage" or Notifier::EMPTY_NOTIFIER.
+ *
+ * The default implementation returns this element if @a name equals
+ * class_name(), and null otherwise.
+ *
+ * You should override cast() if your element inherits from another element
+ * (and you want to expose that inheritance to Click); the resulting cast()
+ * method will check both class names.  For example, if element @a B inherited
+ * from element @a A, B::cast() might be defined like this:
+ *
+ * @code
+ * void *B::cast(const char *name) {
+ *     if (strcmp(name, "B") == 0)
+ *         return (B *) this;
+ *     else if (strcmp(name, "A") == 0)
+ *         return (A *) this;
+ *     else
+ *         return A::cast(name);
+ * }
+ * @endcode
+ *
+ * The recursive call to A::cast() is useful in case @e A itself overrides
+ * cast().  You should also override cast() if your element provides another
+ * interface, such as Storage or a Notifier.
  */
 void *
 Element::cast(const char *name)
@@ -1302,21 +1334,75 @@ Element::configuration() const
 
 #if CLICK_USERLEVEL
 
+/** @brief Called to handle a file descriptor event.
+ *
+ * @param fd the file descriptor
+ *
+ * Click's call to select() indicates that the file descriptor @a fd is
+ * readable, writable, or both.  The overriding method should read or write
+ * the file descriptor as appropriate.  The default implementation causes an
+ * assertion failure.
+ *
+ * The element must have previously registered interest in @a fd with
+ * add_select().
+ *
+ * @note Only available at user level.
+ *
+ * @sa add_select, remove_select
+ */
+void
+Element::selected(int fd)
+{
+    assert(0 /* selected not overridden */);
+    (void) fd;
+}
+
+/** @brief Register interest in @a mask events on file descriptor @a fd.
+ *
+ * @param fd the file descriptor
+ * @param mask relevant events: bitwise-or of one or more of SELECT_READ, SELECT_WRITE
+ *
+ * Click will register interest in readability and/or writability on file
+ * descriptor @a fd.  When @a fd is ready, Click will call this element's
+ * selected(@a fd) method.
+ *
+ * add_select(@a fd, @a mask) overrides any previous add_select() for the same
+ * @a fd and events in @a mask.  However, different elements may register
+ * interest in different events for the same @a fd.
+ *
+ * @note Only available at user level.
+ *
+ * @note Selecting for writability with SELECT_WRITE normally requires more
+ * care than selecting for readability with SELECT_READ.  You should
+ * add_select(@a fd, SELECT_WRITE) only when there is data to write to @a fd.
+ * Otherwise, Click will constantly poll your element's selected(@a fd)
+ * method.
+ *
+ * @sa remove_select, selected
+ */
 int
 Element::add_select(int fd, int mask)
 {
-  return router()->master()->add_select(fd, this, mask);
+    return master()->add_select(fd, this, mask);
 }
 
+/** @brief Remove interest in @a mask events on file descriptor @a fd.
+ *
+ * @param fd the file descriptor
+ * @param mask relevant events: bitwise-or of one or more of SELECT_READ, SELECT_WRITE
+ *
+ * Click will remove any existing add_select() registrations for readability
+ * and/or writability on file descriptor @a fd.  The named events on @a fd
+ * will no longer cause a selected() call.
+ *
+ * @note Only available at user level.
+ *
+ * @sa add_select, selected
+ */
 int
 Element::remove_select(int fd, int mask)
 {
-  return router()->master()->remove_select(fd, this, mask);
-}
-
-void
-Element::selected(int)
-{
+    return master()->remove_select(fd, this, mask);
 }
 
 #endif
@@ -1339,7 +1425,7 @@ Element::selected(int)
  *
  * @a e is this element pointer.
  *
- * add_read_handler(@a name) overrides the result of any previous
+ * add_read_handler(@a name) overrides any previous
  * add_read_handler(@a name) or set_handler(@a name), but any previous
  * add_write_handler(@a name) remains in effect.
  *
@@ -1370,7 +1456,7 @@ Element::add_read_handler(const String &name, ReadHandlerHook hook, void *thunk)
  * error, positive or zero on success.  Any messages should be reported to the
  * @a errh ErrorHandler object.
  *
- * add_write_handler(@a name) overrides the result of any previous
+ * add_write_handler(@a name) overrides any previous
  * add_write_handler(@a name) or set_handler(@a name), but any previous
  * add_read_handler(@a name) remains in effect.
  *
@@ -1415,7 +1501,7 @@ Element::add_write_handler(const String &name, WriteHandlerHook hook, void *thun
  * return value @a r should be negative on error, positive or zero on success.
  * Any messages should be reported to the @a errh ErrorHandler object.
  *
- * set_handler(@a name) overrides the result of any previous
+ * set_handler(@a name) overrides any previous
  * add_read_handler(@a name), add_write_handler(@a name), or set_handler(@a
  * name).
  */
@@ -1798,12 +1884,47 @@ Element::reconfigure_keyword_handler(const String &arg, Element *e,
   return reconfigure_handler(arg, e, -1, (const char *)thunk, errh);
 }
 
+/** @brief Called to handle a low-level remote procedure call.
+ *
+ * @param command command number
+ * @param[in,out] data pointer to any data for the command
+ * @return >= 0 on success, < 0 on failure
+ *
+ * Low-level RPCs are a lightweight mechanism for communicating between
+ * user-level programs and a Click kernel module, although they're also
+ * available in user-level Click.  Rather than open a file, write ASCII data
+ * to the file, and close it, as for handlers, the user-level program calls @c
+ * ioctl() on an open file; Click intercepts the @c ioctl and calls the
+ * llrpc() method, passing it the @c ioctl number and the associated @a data
+ * pointer.  The llrpc() method should read and write @a data as appropriate.
+ * @a data may be either a kernel pointer (i.e., directly accessible) or a
+ * user pointer (i.e., requires special macros to access), depending on the
+ * LLRPC number; see <click/llrpc.h> for more.
+ *
+ * The return value is returned to the user in @c errno.  Overriding
+ * implementations should handle @a commands they understand as appropriate,
+ * and call their parents' llrpc() method to handle any other commands.  The
+ * default implementation simply returns @c -EINVAL.
+ *
+ * Click elements should never call each other's llrpc() methods directly; use
+ * local_llrpc() instead.
+ */
 int
-Element::llrpc(unsigned, void *)
+Element::llrpc(unsigned command, void *data)
 {
-  return -EINVAL;
+    (void) command, (void) data;
+    return -EINVAL;
 }
 
+/** @brief Execute an LLRPC from within the configuration.
+ *
+ * @param command command number
+ * @param[in,out] data pointer to any data for the command
+ *
+ * Call this function to execute an element's LLRPC from within another
+ * element's code.  It executes any setup code necessary to initialize memory
+ * state, then calls llrpc().
+ */
 int
 Element::local_llrpc(unsigned command, void *data)
 {
@@ -1918,33 +2039,54 @@ Element::simple_action(Packet *p)
 
 /** @brief Called to run an element's task.
  *
+ * @return true if the task accomplished some meaningful work, false otherwise
  *
+ * The Task(Element *) constructor creates a Task object that calls this
+ * method when it fires.  Most elements that have tasks use this method.  The
+ * default implementation causes an assertion failure.
  */
 bool
 Element::run_task()
 {
-    static int nwarn = 0;
-    if (nwarn++ < 3)
-	click_chatter("warning: calling deprecated run_scheduled() method;\nreplace with run_task() in your code");
-    run_scheduled();
-    return true;
+    assert(0 /* run_task not overridden */);
+    return false;
 }
 
 /** @brief Called to run an element's timer.
+ *
+ * @param timer the timer object that fired
+ *
+ * The Timer(Element *) constructor creates a Timer object that calls this
+ * method when it fires.  Most elements that have timers use this method.
+ *
+ * @note The default implementation calls the deprecated run_timer() method
+ * (the one with no parameters).  In future, the default implementation will
+ * cause an assertion failure.
+ */
+void
+Element::run_timer(Timer *timer)
+{
+    static int nwarn = 0;
+    if (nwarn++ < 3)
+	click_chatter("warning: calling deprecated run_timer() method;\nreplace with run_timer(Timer *) in your code");
+    run_timer();
+    (void) timer;
+}
+
+/** @brief Called to run an element's timer (deprecated).
+ *
+ * @deprecated This method is deprecated.  Elements should override the
+ * run_timer(Timer *) function instead, which allows a single method to be
+ * used for multiple timer objects.
+ *
+ * The Timer(Element *) constructor creates a Timer object that calls this
+ * method (via Element::run_timer(Timer *)) when it fires.  The default
+ * implementation causes an assertion failure.
  */
 void
 Element::run_timer()
 {
-    static int nwarn = 0;
-    if (nwarn++ < 3)
-	click_chatter("warning: calling deprecated run_scheduled() method;\nreplace with run_timer() in your code");
-    run_scheduled();
-}
-
-void
-Element::run_scheduled()
-{
-    assert(0 && "bad run_task");
+    assert(0 /* run_timer not overridden */);
 }
 
 CLICK_ENDDECLS

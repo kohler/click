@@ -46,7 +46,7 @@ LinkTable::initialize (ErrorHandler *)
 }
 
 void
-LinkTable::run_timer() 
+LinkTable::run_timer(Timer *) 
 {
   clear_stale();
   dijkstra(true);

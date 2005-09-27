@@ -74,7 +74,7 @@ static int task_decreasing_sorter(const void *va, const void *vb) {
 }
 
 void
-BalancedThreadSched::run_timer()
+BalancedThreadSched::run_timer(Timer *)
 {
     Master *m = router()->master();
 
@@ -148,7 +148,7 @@ BalancedThreadSched::run_timer()
 
 #if 0
 void
-BalancedThreadSched::run_timer()
+BalancedThreadSched::run_timer(Timer *)
 {
     Vector<Task*> tasks;
     unsigned total_load = 0;

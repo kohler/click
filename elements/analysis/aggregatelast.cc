@@ -115,7 +115,7 @@ AggregateLast::push(int, Packet *p)
     // clean if we should clean
     if (_clear_task.scheduled()) {
 	_clear_task.unschedule();
-	run_scheduled();
+	run_task();
     }
     
     uint32_t agg = AGGREGATE_ANNO(p);

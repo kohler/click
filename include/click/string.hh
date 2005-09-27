@@ -20,31 +20,31 @@ class String { public:
   struct Initializer { Initializer(); };
 
   inline String();
-  inline String(const String &);
+  inline String(const String &str);
   inline String(const char *cstr);
   inline String(const char *s, int len);
   inline String(const char *begin, const char *end);
-  explicit inline String(bool);
-  explicit inline String(char);
-  explicit inline String(unsigned char);
-  explicit String(int);
-  explicit String(unsigned);
-  explicit String(long);
-  explicit String(unsigned long);
+  explicit inline String(bool b);
+  explicit inline String(char c);
+  explicit inline String(unsigned char c);
+  explicit String(int i);
+  explicit String(unsigned u);
+  explicit String(long i);
+  explicit String(unsigned long u);
 #if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
-  explicit String(int64_t);
-  explicit String(uint64_t);
+  explicit String(int64_t q);
+  explicit String(uint64_t q);
 #endif
 #ifdef CLICK_USERLEVEL
-  explicit String(double);
+  explicit String(double d);
 #endif
   inline ~String();
   
   static inline const String &empty_string();
   static inline const String &null_string() __attribute__((deprecated));
-  static String garbage_string(int n);	// n garbage characters
-  static String stable_string(const char *, int = -1); // stable read-only mem.
-  static inline String stable_string(const char *, const char *);
+  static String garbage_string(int len);	// len garbage characters
+  static String stable_string(const char *s, int len = -1); // stable read-only mem.
+  static inline String stable_string(const char *begin, const char *end);
   
   inline int length() const;
   inline const char *data() const;
@@ -65,7 +65,7 @@ class String { public:
   const char *c_str() const;		// pointer returned is semi-transient
   inline const char *cc() const __attribute__((deprecated));
   
-  bool equals(const char *, int) const;
+  bool equals(const char *s, int len) const;
   // bool operator==(const String &, const String &);
   // bool operator==(const String &, const char *);
   // bool operator==(const char *, const String &);
@@ -74,8 +74,8 @@ class String { public:
   // bool operator!=(const char *, const String &);
 
   static inline int compare(const String &a, const String &b);
-  inline int compare(const String &) const;
-  int compare(const char *, int) const;
+  inline int compare(const String &str) const;
+  int compare(const char *s, int len) const;
   // bool operator<(const String &, const String &);
   // bool operator<=(const String &, const String &);
   // bool operator>(const String &, const String &);
@@ -95,16 +95,16 @@ class String { public:
   String trim_space() const;		// trim space from right
   String quoted_hex() const;		// hex enclosed in '\<...>'
   
-  inline String &operator=(const String &);
-  inline String &operator=(const char *);
+  inline String &operator=(const String &str);
+  inline String &operator=(const char *cstr);
 
   void append(const char *s, int len);
   inline void append(const char *begin, const char *end);
   void append_fill(int c, int len);
   char *append_garbage(int len);
-  inline String &operator+=(const String &);
-  inline String &operator+=(const char *);
-  inline String &operator+=(char);
+  inline String &operator+=(const String &str);
+  inline String &operator+=(const char *cstr);
+  inline String &operator+=(char c);
 
   // String operator+(String, const String &);
   // String operator+(String, const char *);
@@ -174,11 +174,11 @@ String::String(const char *data, int length, Memo *memo)
 }
 
 inline void
-String::assign(const String &s) const
+String::assign(const String &str) const
 {
-  _data = s._data;
-  _length = s._length;
-  _memo = s._memo;
+  _data = str._data;
+  _length = str._length;
+  _memo = str._memo;
   _memo->_refcount++;
 }
 
@@ -211,20 +211,20 @@ String::String(const char *cstr)
   assign(cstr, -1);
 }
 
-/** @brief Create a String containing a copy of the first @a l characters of
- * string @a cc.
- * @param cc a string.
- * @param l number of characters to take from @a cc.  If @a l @< 0, then takes
- * @c strlen(@a l) characters.
- * @return A String containing @a l characters of @a cc.
+/** @brief Create a String containing a copy of the first @a len characters of
+ * string @a s.
+ * @param s a string.
+ * @param len number of characters to take from @a cc.  If @a len @< 0, then
+ * takes @c strlen(@a s) characters.
+ * @return A String containing @a len characters of @a s.
  *
- * If @a cc equals String::out_of_memory_data(), returns an
+ * If @a s equals String::out_of_memory_data(), returns an
  * out-of-memory string.
  */
 inline
-String::String(const char *cc, int l)
+String::String(const char *s, int len)
 {
-  assign(cc, l);
+  assign(s, len);
 }
 
 /** @brief Create a String containing a copy of the characters from @a begin
@@ -272,13 +272,13 @@ String::String(unsigned char c)
   assign(reinterpret_cast<char *>(&c), 1);
 }
 
-/** @brief Create a String containing a copy of the String @a s.
- * @param s a String.
+/** @brief Create a String containing a copy of the String @a str.
+ * @param str a String.
  */
 inline
-String::String(const String &s)
+String::String(const String &str)
 {
-  assign(s);
+  assign(str);
 }
 
 /** @brief Destroy a String, freeing memory if necessary. */
@@ -477,13 +477,13 @@ String::compare(const String &a, const String &b)
   return a.compare(b);
 }
 
-/** @brief Compare this string with string @a s.
- * Same as String::compare(*this, @a s).
+/** @brief Compare this string with string @a str.
+ * Same as String::compare(*this, @a str).
  * @sa String::compare(const String &a, const String &b) */
 inline int
-String::compare(const String &s) const
+String::compare(const String &str) const
 {
-  return compare(s._data, s._length);
+  return compare(str._data, str._length);
 }
 
 /** @relates String
@@ -587,13 +587,13 @@ operator>=(const String &a, const String &b)
   return a.compare(b.data(), b.length()) >= 0;
 }
 
-/** @brief Makes this string a copy of @a s. */
+/** @brief Makes this string a copy of @a str. */
 inline String &
-String::operator=(const String &s)
+String::operator=(const String &str)
 {
-  if (&s != this) {
+  if (&str != this) {
     deref();
-    assign(s);
+    assign(str);
   }
   return *this;
 }
@@ -617,13 +617,13 @@ String::append(const char *begin, const char *end)
     append(begin, end - begin);
 }
 
-/** @brief Append a copy of @a s to the end of this string.
+/** @brief Append a copy of @a str to the end of this string.
  *
  * Returns the result. */
 inline String &
-String::operator+=(const String &s)
+String::operator+=(const String &str)
 {
-  append(s._data, s._length);
+  append(str._data, str._length);
   return *this;
 }
 

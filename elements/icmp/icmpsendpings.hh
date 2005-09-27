@@ -119,7 +119,7 @@ class ICMPPingSource : public Element { public:
     void cleanup(CleanupStage);
     void add_handlers();
   
-    void run_timer();
+    void run_timer(Timer *);
     void push(int, Packet *);
     Packet* pull(int);
   

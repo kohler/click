@@ -153,7 +153,7 @@ ICMPPingSource::make_packet()
 }
 
 void
-ICMPPingSource::run_timer()
+ICMPPingSource::run_timer(Timer *)
 {
     if (Packet *q = make_packet()) {
 	output(0).push(q);

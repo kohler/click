@@ -34,7 +34,7 @@ class PI : public Element { public:
     void handle_drop(Packet *);
     void push(int port, Packet *);
     Packet *pull(int port);
-    void run_timer();
+    void run_timer(Timer *);
 
   protected:
 	

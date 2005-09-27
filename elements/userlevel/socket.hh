@@ -117,7 +117,7 @@ class Socket : public Element { public:
 
   bool run_task();
   void selected(int);
-  void run_timer();
+  void run_timer(Timer *);
 
 protected:
   Task _task;

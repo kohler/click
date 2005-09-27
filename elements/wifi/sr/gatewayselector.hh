@@ -65,7 +65,7 @@ class GatewaySelector : public Element {
   static int static_pick_new_gateway(const String &arg, Element *el,
 				     void *, ErrorHandler *errh);
   void push(int, Packet *);
-  void run_timer();
+  void run_timer(Timer *);
 
   bool update_link(IPAddress from, IPAddress to, uint32_t seq, uint32_t metric);
   void forward_ad_hook();
