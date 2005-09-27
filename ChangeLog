@@ -1,3 +1,91 @@
+2005-09-27 Tuesday 16:05  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/lexer.hh (1.19): add necessary friend
+
+2005-09-27 Tuesday 16:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config.h.in (1.33), doc/Doxyfile (1.3), include/click/element.hh
+	(1.45), include/click/straccum.hh (1.36), include/click/string.hh
+	(1.41): __attribute__((deprecated)) is not available on gcc 2.x
+
+2005-09-27 Tuesday 15:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.96), doc/mkwebdoc.pl (1.61),
+	elements/analysis/aggregatelast.cc (1.9),
+	elements/analysis/fromflandump.cc (1.9),
+	elements/analysis/fromflandump.hh (1.6),
+	elements/aqm/adaptivered.cc (1.13), elements/aqm/adaptivered.hh
+	(1.11), elements/aqm/pi.cc (1.15), elements/aqm/pi.hh (1.9),
+	elements/ethernet/arpfaker.cc (1.27), elements/ethernet/arpfaker.hh
+	(1.20), elements/exopc/xokwriter.cc (1.15),
+	elements/exopc/xokwriter.hh (1.14), elements/grid/ackretrysender.cc
+	(1.8), elements/grid/ackretrysender.hh (1.8),
+	elements/grid/ackretrysender2.cc (1.8),
+	elements/grid/ackretrysender2.hh (1.7), elements/grid/hello.cc
+	(1.48), elements/grid/hello.hh (1.20), elements/grid/lrhello.cc
+	(1.33), elements/grid/lrhello.hh (1.11), elements/grid/pep.cc
+	(1.30), elements/grid/pep.hh (1.15), elements/grid/regionpep.cc
+	(1.22), elements/grid/regionpep.hh (1.12),
+	elements/icmp/icmppingrewriter.cc (1.27),
+	elements/icmp/icmppingrewriter.hh (1.14),
+	elements/icmp/icmpsendpings.cc (1.37),
+	elements/icmp/icmpsendpings.hh (1.20),
+	elements/ip/ipaddrpairrewriter.cc (1.5),
+	elements/ip/ipaddrpairrewriter.hh (1.3),
+	elements/ip/ipaddrrewriter.cc (1.26), elements/ip/ipaddrrewriter.hh
+	(1.17), elements/ip/ripsend.cc (1.34), elements/ip/ripsend.hh
+	(1.23), elements/linuxmodule/sortedsched.cc (1.17),
+	elements/linuxmodule/sortedsched.hh (1.9),
+	elements/linuxmodule/threadmonitor.cc (1.12),
+	elements/linuxmodule/threadmonitor.hh (1.7),
+	elements/local/bufconv.cc (1.13), elements/local/bufconv.hh (1.9),
+	elements/local/tcpack.cc (1.18), elements/local/tcpack.hh (1.13),
+	elements/local/toytcp.cc (1.26), elements/local/toytcp.hh (1.13),
+	elements/local/webgen.cc (1.20), elements/local/webgen.hh (1.13),
+	elements/standard/burster.cc (1.29), elements/standard/burster.hh
+	(1.19), elements/standard/delayshaper.cc (1.18),
+	elements/standard/delayshaper.hh (1.14),
+	elements/standard/drivermanager.cc (1.41),
+	elements/standard/quitwatcher.cc (1.23),
+	elements/standard/quitwatcher.hh (1.20),
+	elements/standard/timedsink.cc (1.30),
+	elements/standard/timedsink.hh (1.20),
+	elements/standard/timedsource.cc (1.35),
+	elements/standard/timedsource.hh (1.22),
+	elements/test/queueyanktest.cc (1.5),
+	elements/test/queueyanktest.hh (1.4),
+	elements/userlevel/progressbar.cc (1.30),
+	elements/userlevel/progressbar.hh (1.20),
+	elements/userlevel/rawsocket.cc (1.3),
+	elements/userlevel/rawsocket.hh (1.3), elements/userlevel/socket.cc
+	(1.3), elements/userlevel/socket.hh (1.3),
+	elements/userlevel/todevice.cc (1.53),
+	elements/userlevel/todevice.hh (1.33), elements/wifi/linktable.cc
+	(1.21), elements/wifi/linktable.hh (1.10),
+	elements/wifi/madwifirate.cc (1.19), elements/wifi/madwifirate.hh
+	(1.11), elements/wifi/ap/beaconsource.cc (1.11),
+	elements/wifi/ap/beaconsource.hh (1.7),
+	elements/wifi/frag/fragmentresender.cc (1.4),
+	elements/wifi/frag/fragmentresender.hh (1.5),
+	elements/wifi/sr/ettstat.cc (1.25), elements/wifi/sr/ettstat.hh
+	(1.17), elements/wifi/sr/gatewayselector.cc (1.13),
+	elements/wifi/sr/gatewayselector.hh (1.9),
+	elements/wifi/sr/inorderqueue.cc (1.7),
+	elements/wifi/sr/inorderqueue.hh (1.4),
+	elements/wifi/sr/localbroadcast.cc (1.7),
+	elements/wifi/sr/localbroadcast.hh (1.5),
+	elements/wifi/sr/setgateway.cc (1.7),
+	elements/wifi/sr/setgateway.hh (1.8),
+	elements/wifi/sr/tokenqueue.cc (1.9),
+	elements/wifi/sr/tokenqueue.hh (1.4), include/click/element.hh
+	(1.44), include/click/string.hh (1.40), include/click/task.hh
+	(1.39), include/click/standard/drivermanager.hh (1.26),
+	lib/element.cc (1.99), lib/string.cc (1.55), lib/timer.cc (1.37),
+	tools/click-devirtualize/cxxclass.cc (1.14): more comments for
+	everything; remove run_scheduled (deprecated for 2 years);
+	deprecate run_timer() in favor of run_timer(Timer*); mkwebdoc
+	doxygens
+
 2005-09-26 Monday 20:03  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/element.cc (1.98): fix warning
