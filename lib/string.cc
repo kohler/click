@@ -701,9 +701,13 @@ String::Initializer::Initializer()
 
 /** @brief Initialize the String implementation.
  *
- * You must call this function at least once before using any String
- * functionality.  It is safe to call it multiple times.  @sa
- * String::Initializer */
+ * This function must be called before any String functionality is used.  It
+ * is safe to call it multiple times.
+ *
+ * @note Elements don't need to worry about static_initialize(); Click drivers
+ * have already called it for you.
+ *
+ * @sa String::Initializer */
 void
 String::static_initialize()
 {

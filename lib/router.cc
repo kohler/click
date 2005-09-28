@@ -1387,6 +1387,15 @@ Router::chatter_channel(const String &name) const
 	return ErrorHandler::silent_handler();
 }
 
+/** @brief Create a new basic signal.
+ * @param[out] signal the new signal
+ *
+ * Creates a new basic NotifierSignal and stores it in @a signal.  The signal
+ * is initially active.
+ *
+ * @return >= 0 on success, < 0 on failure
+ * @sa NotifierSignal
+ */
 int
 Router::new_notifier_signal(NotifierSignal &signal)
 {

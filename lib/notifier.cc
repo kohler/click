@@ -4,7 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
- * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2004-2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,32 +30,81 @@ atomic_uint32_t NotifierSignal::static_value;
 const char Notifier::EMPTY_NOTIFIER[] = "Notifier.EMPTY";
 const char Notifier::NONFULL_NOTIFIER[] = "Notifier.NONFULL";
 
+/** @class NotifierSignal
+ * @brief Represents an activity signal.
+ *
+ * Activity signals in Click let one element determine whether another element
+ * is active.  For example, consider an element @e X pulling from a @e Queue.
+ * If the @e Queue is empty, there's no point in @e X trying to pull from it.
+ * Thus, the @e Queue has an activity signal that's active when it contains
+ * packets and inactive when it's empty.  @e X can check the activity signal
+ * before pulling, and do something else if it's inactive.  Combined with the
+ * sleep/wakeup functionality of ActiveNotifier, this can greatly reduce CPU
+ * load due to polling.
+ *
+ * A "basic activity signal" is essentially a bit that's either on or off.
+ * When it's on, the signal is active.  NotifierSignal can represent @e
+ * derived activity signals as well.  A derived signal combines information
+ * about @e N basic signals using the following invariant: If any of the basic
+ * signals is active, then the derived signal is also active.  There are no
+ * other guarantees; in particular, the derived signal might be active even if
+ * @e none of the basic signals are active.
+ *
+ * Click elements construct NotifierSignal objects in four ways:
+ *
+ *  - idle_signal() returns a signal that's never active.
+ *  - busy_signal() returns a signal that's always active.
+ *  - Router::new_notifier_signal() creates a new basic signal.  This method
+ *    should be preferred to NotifierSignal's own constructors.
+ *  - operator+(NotifierSignal, const NotifierSignal &) creates a derived signal.
+ */
+
+/** @brief Initialize the NotifierSignal implementation.
+ *
+ * This function must be called before NotifierSignal functionality is used.
+ * It is safe to call it multiple times.
+ *
+ * @note Elements don't need to worry about static_initialize(); Click drivers
+ * have already called it for you.
+ */
 void
 NotifierSignal::static_initialize()
 {
-    static_value = TRUE_MASK | TRUE_CONFLICT_MASK;
+    static_value = TRUE_MASK | OVERDERIVED_MASK;
 }
 
+/** @brief Make this signal derived by adding information from @a a.
+ * @param a the signal to add
+ *
+ * Creates a derived signal that combines information from this signal and @a
+ * a.  Equivalent to "*this = (*this + @a a)".
+ *
+ * @sa operator+(NotifierSignal, const NotifierSignal&)
+ */
 NotifierSignal&
-NotifierSignal::operator+=(const NotifierSignal& o)
+NotifierSignal::operator+=(const NotifierSignal& a)
 {
     if (!_mask)
-	_value = o._value;
+	_value = a._value;
 
-    // preserve always_active_signal(); adding other incompatible signals
-    // leads to conflicted_signal()
-    if (*this == always_active_signal())
+    // preserve busy_signal(); adding other incompatible signals
+    // leads to overderived_signal()
+    if (*this == busy_signal())
 	/* do nothing */;
-    else if (o == always_active_signal())
-	*this = o;
-    else if (_value == o._value || !o._mask)
-	_mask |= o._mask;
+    else if (a == busy_signal())
+	*this = a;
+    else if (_value == a._value || !a._mask)
+	_mask |= a._mask;
     else
-	*this = conflicted_signal(true);
+	*this = overderived_signal();
     
     return *this;
 }
 
+/** @brief Return a human-readable representation of the signal.
+ *
+ * Only useful for signal debugging.
+ */
 String
 NotifierSignal::unparse() const
 {
@@ -65,10 +114,14 @@ NotifierSignal::unparse() const
 }
 
 
+Notifier::~Notifier()
+{
+}
+
 NotifierSignal
 Notifier::notifier_signal()
 {
-    return NotifierSignal::always_inactive_signal();
+    return NotifierSignal::idle_signal();
 }
 
 Notifier::SearchOp
@@ -108,6 +161,11 @@ PassiveNotifier::notifier_signal()
 ActiveNotifier::ActiveNotifier()
     : _listener1(0), _listeners(0)
 {
+}
+
+ActiveNotifier::~ActiveNotifier()
+{
+    delete[] _listeners;
 }
 
 int
@@ -186,7 +244,7 @@ class NotifierElementFilter : public ElementFilter { public:
 };
 
 NotifierElementFilter::NotifierElementFilter(const char* name)
-    : _signal(NotifierSignal::empty_signal()),
+    : _signal(NotifierSignal::idle_signal()),
       _pass2(false), _need_pass2(false), _name(name)
 {
 }
@@ -208,7 +266,7 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
 	Bitvector flow;
 	if (e->port_active(pt, port) // went from pull <-> push
 	    || (e->port_flow(pt, port, &flow), flow.zero())) {
-	    _signal = NotifierSignal::always_active_signal();
+	    _signal = NotifierSignal::busy_signal();
 	    return true;
 	} else
 	    return false;

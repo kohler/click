@@ -41,7 +41,7 @@ Idle::cast(const char *name)
 NotifierSignal
 Idle::notifier_signal()
 {
-  return NotifierSignal::always_inactive_signal();
+  return NotifierSignal::idle_signal();
 }
 
 void
