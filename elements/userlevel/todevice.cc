@@ -18,6 +18,8 @@
 
 #include <click/config.h>
 #if HAVE_NET_BPF_H
+# include <sys/types.h>
+# include <sys/time.h>
 # include <net/bpf.h>
 # define PCAP_DONT_INCLUDE_PCAP_BPF_H 1
 #endif
