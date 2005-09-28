@@ -1,3 +1,15 @@
+2005-09-28 Wednesday 14:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/notifier.hh (1.17): document NotifierSignal,
+	including method name changes
+
+2005-09-28 Wednesday 14:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/idle.cc (1.26), include/click/notifier.hh
+	(1.15), lib/notifier.cc (1.16), lib/router.cc (1.182),
+	lib/string.cc (1.57), include/click/notifier.hh (1.16): document
+	NotifierSignal, including method name changes
+
 2005-09-28 Wednesday 01:29  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/local/webgen.cc (1.21): warning fix
