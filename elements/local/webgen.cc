@@ -31,7 +31,7 @@ timeval_diff (struct timeval *t1, struct timeval *t2)
   return (t1->tv_sec - t2->tv_sec) * 1000000 + (t1->tv_usec - t2->tv_usec);
 }
 
-static int
+static void
 timeval_add (struct timeval *tv, int us)
 {
   int nu = tv->tv_usec + us;
