@@ -187,6 +187,9 @@ NotifierSignal::idle() const
 
 /** @brief Return whether the signal is busy.
  * @return true iff the signal is busy, i.e. it will always be active.
+ *
+ * @note An overderived_signal() is busy(), but a busy_signal() is not
+ * overderived().
  */
 inline bool
 NotifierSignal::busy() const
@@ -196,6 +199,9 @@ NotifierSignal::busy() const
 
 /** @brief Return whether the signal is overderived.
  * @return true iff the signal equals overderived_signal().
+ *
+ * @note An overderived_signal() is busy(), but a busy_signal() is not
+ * overderived().
  */
 inline bool
 NotifierSignal::overderived() const
@@ -227,8 +233,8 @@ NotifierSignal::set_active(bool active)
  * Returns true iff the two NotifierSignals are the same -- i.e., they combine
  * information about exactly the same sets of basic signals.
  *
- * All idle() signals compare equal.  busy() and overderived() signals do not
- * compare equal, however.
+ * All idle() signals compare equal.  busy_signal() and overderived_signal()
+ * do not compare equal, however.
  */
 inline bool
 operator==(const NotifierSignal& a, const NotifierSignal& b)
@@ -256,7 +262,8 @@ operator!=(const NotifierSignal& a, const NotifierSignal& b)
  * overderived signal; this trivially follows the invariant since it is always
  * active.
  *
- * The following special signal combinations are worth remembering:
+ * Signal derivation is commutative and associative.  The following special
+ * combinations are worth remembering:
  *
  *  - An idle() signal plus any other signal @a a equals @a a.  Thus,
  *    idle_signal() is the identity for signal derivation.
