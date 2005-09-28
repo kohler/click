@@ -683,10 +683,10 @@ ControlSocket::selected(int fd)
 {
     if (fd == _socket_fd) {
 	union { struct sockaddr_in in; struct sockaddr_un un; } sa;
-#ifdef __APPLE__
-	int sa_len;
-#else
+#if HAVE_ACCEPT_SOCKLEN_T
 	socklen_t sa_len;
+#else
+	int sa_len;
 #endif
 	sa_len = sizeof(sa);
 	int new_fd = accept(_socket_fd, (struct sockaddr *)&sa, &sa_len);

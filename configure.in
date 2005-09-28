@@ -348,6 +348,15 @@ if test "$enable_userlevel" = yes; then
     AC_SEARCH_LIBS(gethostbyname, nsl, , , $savelibs)
     AC_SEARCH_LIBS(connect, socket, , , $savelibs)
     SOCKET_LIBS="$LIBS"; LIBS="$savelibs"
+
+    AC_CACHE_CHECK([whether accept() uses socklen_t], [ac_cv_accept_socklen_t],
+	    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#include <sys/socket.h>
+]], [[socklen_t sl; (void) accept(0, (struct sockaddr *) 0, &sl);]])],
+	ac_cv_accept_socklen_t=yes, ac_cv_accept_socklen_t=no)])
+    if test "$ac_cv_accept_socklen_t" = yes; then
+	AC_DEFINE([HAVE_ACCEPT_SOCKLEN_T], [1], [Define if accept() uses socklen_t.])
+    fi
 fi
 AC_SUBST(SOCKET_LIBS)
 AC_LANG_CPLUSPLUS
