@@ -1,3 +1,25 @@
+2005-09-28 Wednesday 01:29  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/local/webgen.cc (1.21): warning fix
+
+2005-09-28 Wednesday 01:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/todevice.cc (1.55): little <net/bpf.h> fix
+
+2005-09-28 Wednesday 01:22  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-userlevel.h.in (1.31), configure (1.59), configure.in
+	(1.266), elements/userlevel/todevice.cc (1.54),
+	elements/userlevel/todevice.hh (1.34): check for #include
+	<net/bpf.h>
+
+2005-09-28 Wednesday 01:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-userlevel.h.in (1.30), configure (1.58), configure.in
+	(1.265), elements/userlevel/chattersocket.cc (1.24),
+	elements/userlevel/controlsocket.cc (1.64): add
+	HAVE_ACCEPT_SOCKLEN_T configuration option
+
 2005-09-27 Tuesday 17:00  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/Doxyfile (1.4), include/click/string.hh (1.42),
