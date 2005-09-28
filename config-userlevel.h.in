@@ -64,6 +64,9 @@
 /* Define if you have the mmap function. */
 #undef HAVE_MMAP
 
+/* Define if you have the <net/bpf.h> header file. */
+#undef HAVE_NET_BPF_H
+
 /* Define if you have the <net/if_tun.h> header file. */
 #undef HAVE_NET_IF_TUN_H
 

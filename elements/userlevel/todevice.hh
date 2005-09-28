@@ -56,7 +56,7 @@ CLICK_DECLS
 #if defined(__linux__)
 # define TODEVICE_LINUX 1
 # define TODEVICE_SEND 1
-#elif defined(HAVE_PCAP)
+#elif HAVE_PCAP
 extern "C" {
 # include <pcap.h>
 }
