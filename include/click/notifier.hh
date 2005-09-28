@@ -258,8 +258,10 @@ operator!=(const NotifierSignal& a, const NotifierSignal& b)
  *
  * The following special signal combinations are worth remembering:
  *
- *  - A busy() signal plus any other signal is busy().
- *  - An idle() signal plus any other signal @a a equals @a a.
+ *  - An idle() signal plus any other signal @a a equals @a a.  Thus,
+ *    idle_signal() is the identity for signal derivation.
+ *  - A busy() signal plus any other signal is busy().  Thus, busy_signal()
+ *    is the "zero element" for signal derivation.
  *
  * @sa NotifierSignal::operator+=
  */
