@@ -152,6 +152,7 @@ ElementClassT::direct_expand_element(
 	ElementT *e, RouterT *tor, const String &prefix,
 	const VariableEnvironment &env, ErrorHandler *errh)
 {
+    assert(!prefix || prefix.back() == '/');
     RouterT *fromr = e->router();
     String new_name = prefix + e->name();
     String new_configuration = env.interpolate(e->configuration());

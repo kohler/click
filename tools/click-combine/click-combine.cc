@@ -120,7 +120,7 @@ cc_read_router(String name, String &next_name, int &next_number,
     if (next_name) {
       int span = strspn(next_name.c_str(), "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_/@0123456789");
       if (span != next_name.length() || strstr(next_name.c_str(), "//") != 0
-	  || next_name[0] == '/')
+	  || next_name[0] == '/' || next_name.back() == '/')
 	errh->error("router name '%s' is not a legal Click identifier", next_name.c_str());
       router_names.push_back(next_name);
     } else
@@ -470,7 +470,7 @@ particular purpose.\n");
   RouterT *combined = new RouterT;
   VariableEnvironment empty_ve;
   for (int i = 0; i < routers.size(); i++)
-      routers[i]->expand_into(combined, router_names[i], empty_ve, errh);
+      routers[i]->expand_into(combined, router_names[i] + "/", empty_ve, errh);
 
   // exit if there have been errors (again)
   if (errh->nerrors() != 0)

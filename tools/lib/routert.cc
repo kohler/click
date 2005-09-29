@@ -921,6 +921,7 @@ void
 RouterT::expand_into(RouterT *tor, const String &prefix, const VariableEnvironment &env, ErrorHandler *errh)
 {
     assert(tor != this);
+    assert(!prefix || prefix.back() == '/');
 
     int nelements = _elements.size();
     Vector<ElementT *> new_e(nelements, 0);
