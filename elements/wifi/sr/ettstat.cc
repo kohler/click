@@ -506,7 +506,7 @@ ETTStat::simple_action(Packet *p)
     return 0;
   }
 
-  probe_t probe(now, lp->_seq, lp->_rate, lp->_size);
+  probe_t probe(now, lp->_seq, lp->_rate, lp->_size, ceh->rssi, ceh->silence);
   int new_period = lp->_period;
   probe_list_t *l = _bcast_stats.findp(ip);
   int x = 0;
@@ -686,20 +686,41 @@ ETTStat::read_bcast_stats()
       sa << " ?";
     }
 
-    for (int x = 0; x < _ads_rs.size(); x++) {
-	    int rate = _ads_rs[x]._rate;
-	    int size = _ads_rs[x]._size;
-	    int rev = pl->rev_rate(_start, rate, size);
-	    int fwd = pl->fwd_rate(rate, size);
-	    sa << " [ " << rate << " " << size << " ";
-	    sa << fwd << " " << rev << " ]";
-    }
+
     sa << " seq " << pl->_seq;
     sa << " period " << pl->_period;
     sa << " tau " << pl->_tau;
     sa << " sent " << pl->_sent;
     sa << " last_rx " << now - pl->_last_rx;
     sa << "\n";
+
+
+
+    for (int x = 0; x < _ads_rs.size(); x++) {
+	    int rate = _ads_rs[x]._rate;
+	    int size = _ads_rs[x]._size;
+	    int rev = pl->rev_rate(_start, rate, size);
+	    int fwd = pl->fwd_rate(rate, size);
+	    int rssi = pl->rev_rssi(rate, size);
+	    int noise = pl->rev_noise(rate, size);
+
+	    sa << ip;
+	    if (_arp_table) {
+		    EtherAddress eth_dest = _arp_table->lookup(ip);
+		    if (eth_dest) {
+			    sa << " " << eth_dest.s();
+		    } else {
+			    sa << " ?";
+		    }
+	    } else {
+		    sa << " ?";
+	    }
+	    sa << " [ " << rate << " " << size << " ";
+	    sa << fwd << " " << rev << " ";
+	    sa << rssi << " " << noise << " ]";
+	    sa << "\n";
+    }
+
   }
 
   return sa.take_string();

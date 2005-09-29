@@ -1,5 +1,5 @@
 /*
- * radiotapencap.{cc,hh} -- encapsultates 802.11 packets
+ * athdescencap.{cc,hh} -- encapsultates 802.11 packets
  * John Bicket
  *
  * Copyright (c) 2004 Massachusetts Institute of Technology
@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include "radiotapencap.hh"
+#include "athdescencap.hh"
 #include <click/etheraddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -24,41 +24,20 @@
 #include <clicknet/wifi.h>
 #include <click/packet_anno.hh>
 #include <clicknet/llc.h>
-#include <clicknet/radiotap.h>
+#include "athdesc.h"
 CLICK_DECLS
 
 
-
-#define CLICK_RADIOTAP_PRESENT (		\
-	(1 << IEEE80211_RADIOTAP_RATE)		| \
-	(1 << IEEE80211_RADIOTAP_DBM_TX_POWER)	| \
-	(1 << IEEE80211_RADIOTAP_RTS_RETRIES)	| \
-	(1 << IEEE80211_RADIOTAP_DATA_RETRIES)	| \
-	0)
-
-struct click_radiotap_header {
-	struct ieee80211_radiotap_header wt_ihdr;
-	u_int8_t	wt_rate;
-	u_int8_t	wt_txpower;
-	u_int8_t        wt_rts_retries;
-	u_int8_t        wt_data_retries;
-};
-
-
-
-
-
-
-RadiotapEncap::RadiotapEncap()
+AthdescEncap::AthdescEncap()
 {
 }
 
-RadiotapEncap::~RadiotapEncap()
+AthdescEncap::~AthdescEncap()
 {
 }
 
 int
-RadiotapEncap::configure(Vector<String> &conf, ErrorHandler *errh)
+AthdescEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
@@ -72,7 +51,7 @@ RadiotapEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 Packet *
-RadiotapEncap::simple_action(Packet *p)
+AthdescEncap::simple_action(Packet *p)
 {
 
   WritablePacket *p_out = p->uniqueify();
@@ -81,23 +60,18 @@ RadiotapEncap::simple_action(Packet *p)
     return 0;
   }
 
-  p_out = p_out->push(sizeof(struct click_radiotap_header));
+  p_out = p_out->push(ATHDESC_HEADER_SIZE);
 
   if (p_out) {
-	  struct click_radiotap_header *crh  = (struct click_radiotap_header *) p_out->data();
+	  struct ar5212_desc *desc  = (struct ar5212_desc *) (p->data() + 8);
 	  click_wifi_extra *ceh = (click_wifi_extra *) p->all_user_anno();
 	  
-	  memset(crh, 0, sizeof(struct click_radiotap_header));
+	  memset((void *)p->data(), 0, ATHDESC_HEADER_SIZE);
 	  
-	  crh->wt_ihdr.it_version = 0;
-	  crh->wt_ihdr.it_len = sizeof(struct click_radiotap_header);
-	  crh->wt_ihdr.it_present = CLICK_RADIOTAP_PRESENT;
-	  
-	  crh->wt_rate = ceh->rate;
-	  crh->wt_txpower = ceh->power;
-	  crh->wt_rts_retries = 0;
+	  desc->xmit_power = ceh->power;
+	  desc->xmit_rate0 = dot11_to_ratecode(ceh->rate);
 	  if (ceh->max_tries > 0) {
-		  crh->wt_data_retries = ceh->max_tries - 1;
+		  desc->xmit_tries0 = ceh->max_tries - 1;
 	  }
   }
   
@@ -108,9 +82,9 @@ RadiotapEncap::simple_action(Packet *p)
 enum {H_DEBUG};
 
 static String 
-RadiotapEncap_read_param(Element *e, void *thunk)
+AthdescEncap_read_param(Element *e, void *thunk)
 {
-  RadiotapEncap *td = (RadiotapEncap *)e;
+  AthdescEncap *td = (AthdescEncap *)e;
     switch ((uintptr_t) thunk) {
       case H_DEBUG:
 	return String(td->_debug) + "\n";
@@ -119,10 +93,10 @@ RadiotapEncap_read_param(Element *e, void *thunk)
     }
 }
 static int 
-RadiotapEncap_write_param(const String &in_s, Element *e, void *vparam,
+AthdescEncap_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
-  RadiotapEncap *f = (RadiotapEncap *)e;
+  AthdescEncap *f = (AthdescEncap *)e;
   String s = cp_uncomment(in_s);
   switch((int)vparam) {
   case H_DEBUG: {    //debug
@@ -137,11 +111,10 @@ RadiotapEncap_write_param(const String &in_s, Element *e, void *vparam,
 }
  
 void
-RadiotapEncap::add_handlers()
+AthdescEncap::add_handlers()
 {
-  add_read_handler("debug", RadiotapEncap_read_param, (void *) H_DEBUG);
-
-  add_write_handler("debug", RadiotapEncap_write_param, (void *) H_DEBUG);
+	add_read_handler("debug", AthdescEncap_read_param, (void *) H_DEBUG);
+	add_write_handler("debug", AthdescEncap_write_param, (void *) H_DEBUG);
 }
 CLICK_ENDDECLS
-EXPORT_ELEMENT(RadiotapEncap)
+EXPORT_ELEMENT(AthdescEncap)

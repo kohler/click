@@ -282,15 +282,6 @@ MetricFlood::process_flood(Packet *p_in) {
     uint32_t rev_m = pk->get_link_fwd(i);
     uint32_t seq = pk->get_link_seq(i);
     uint32_t age = pk->get_link_age(i);
-    if (!fwd_m || !rev_m ||
-	!seq) {
-      /*
-       * invalid query link...
-       *
-       */
-      p_in->kill();
-      return;
-    }
 
     if (fwd_m && !update_link(a, b, seq, age, fwd_m)) {
       click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
@@ -325,23 +316,6 @@ MetricFlood::process_flood(Packet *p_in) {
   IPAddress dst(pk->_qdst);
   u_long seq = pk->seq();
 
-  if (dst == _ip) {
-    /* don't forward queries for me */
-    /* just spit them out the output */
-    output(1).push(p_in);
-    return;
-  }
-
-  for(int i = 0; i < pk->num_links(); i++) {
-    IPAddress hop = IPAddress(pk->get_link_node(i));
-    if (hop == _ip) {
-      /* I'm already in this route! */
-      p_in->kill();
-      return;
-    }
-  }
-
-  
   int si = 0;
   
   for(si = 0; si < _seen.size(); si++){
@@ -360,6 +334,15 @@ MetricFlood::process_flood(Packet *p_in) {
   
   _seen[si]._count++;
   _seen[si]._when = Timestamp::now();
+  _seen[si]._p = 0;
+
+  if (dst == _ip) {
+    /* don't forward queries for me */
+    /* just spit them out the output */
+    output(1).push(p_in);
+    return;
+  }
+
   _seen[si]._p = p_in->clone();
   
   /* schedule timer */
@@ -395,7 +378,7 @@ MetricFlood::push(int port, Packet *p_in)
 }
 
 
-enum {H_DEBUG, H_IP, H_CLEAR};
+enum {H_DEBUG, H_IP, H_CLEAR, H_FLOODS};
 
 static String 
 MetricFlood_read_param(Element *e, void *thunk)
@@ -406,6 +389,19 @@ MetricFlood_read_param(Element *e, void *thunk)
     return String(td->_debug) + "\n";
   case H_IP:
     return td->_ip.s() + "\n";
+  case H_FLOODS: {
+	  StringAccum sa;
+	  int x;
+	  for (x = 0; x < td->_seen.size(); x++) {
+		  sa << "src " << td->_seen[x]._src;
+		  sa << " dst " << td->_seen[x]._dst;
+		  sa << " seq " << td->_seen[x]._seq;
+		  sa << " count " << td->_seen[x]._count;
+		  sa << " forwarded " << td->_seen[x]._forwarded;
+		  sa << "\n";
+	  }
+	  return sa.take_string();
+  }
   default:
     return String();
   }
@@ -435,6 +431,7 @@ MetricFlood::add_handlers()
 {
   add_read_handler("debug", MetricFlood_read_param, (void *) H_DEBUG);
   add_read_handler("ip", MetricFlood_read_param, (void *) H_IP);
+  add_read_handler("floods", MetricFlood_read_param, (void *) H_FLOODS);
 
   add_write_handler("debug", MetricFlood_write_param, (void *) H_DEBUG);
   add_write_handler("clear", MetricFlood_write_param, (void *) H_CLEAR);

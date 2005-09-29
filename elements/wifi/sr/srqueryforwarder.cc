@@ -291,15 +291,6 @@ SRQueryForwarder::push(int, Packet *p_in)
     uint32_t rev_m = pk->get_link_fwd(i);
     uint32_t seq = pk->get_link_seq(i);
     uint32_t age = pk->get_link_age(i);
-    if (!fwd_m || !rev_m ||
-	!seq) {
-      /*
-       * invalid query link...
-       *
-       */
-      p_in->kill();
-      return;
-    }
 
     if (fwd_m && !update_link(a, b, seq, age, fwd_m)) {
       click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
@@ -336,8 +327,7 @@ SRQueryForwarder::push(int, Packet *p_in)
 
 }
 
-
-enum {H_DEBUG, H_IP, H_CLEAR};
+enum {H_DEBUG, H_IP, H_CLEAR, H_QUERIES};
 
 static String 
 SRQueryForwarder_read_param(Element *e, void *thunk)
@@ -348,6 +338,20 @@ SRQueryForwarder_read_param(Element *e, void *thunk)
     return String(td->_debug) + "\n";
   case H_IP:
     return td->_ip.s() + "\n";
+  case H_QUERIES: {
+	  StringAccum sa;
+	  int x;
+	  for (x = 0; x < td->_seen.size(); x++) {
+		  sa << "src " << td->_seen[x]._src;
+		  sa << " dst " << td->_seen[x]._dst;
+		  sa << " seq " << td->_seen[x]._seq;
+		  sa << " count " << td->_seen[x]._count;
+		  sa << " forwarded " << td->_seen[x]._forwarded;
+		  sa << "\n";
+	  }
+	  return sa.take_string();
+
+  }
   default:
     return String();
   }
@@ -377,6 +381,7 @@ SRQueryForwarder::add_handlers()
 {
   add_read_handler("debug", SRQueryForwarder_read_param, (void *) H_DEBUG);
   add_read_handler("ip", SRQueryForwarder_read_param, (void *) H_IP);
+  add_read_handler("queries", SRQueryForwarder_read_param, (void *) H_QUERIES);
 
   add_write_handler("debug", SRQueryForwarder_write_param, (void *) H_DEBUG);
   add_write_handler("clear", SRQueryForwarder_write_param, (void *) H_CLEAR);

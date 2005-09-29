@@ -103,7 +103,6 @@ public:
     unsigned int _sent;        // how many probes this node has sent
     unsigned int _num_probes;
     unsigned int _num_links;   // number of wifi_link_entry entries following
-
     link_probe() { memset(this, 0x0, sizeof(this)); }
 
   };
@@ -150,10 +149,17 @@ public:
     uint32_t   _seq;
     uint8_t _rate;
     uint16_t _size;
+
+	  uint32_t _rssi;
+	  uint32_t _noise;
+
+
     probe_t(const Timestamp &t, 
 	    uint32_t s,
 	    uint8_t r,
-	    uint16_t sz) : _when(t), _seq(s), _rate(r), _size(sz) { }
+	    uint16_t sz,
+	    int rssi,
+	    int noise) : _when(t), _seq(s), _rate(r), _size(sz), _rssi(rssi), _noise(noise) { }
   };
 
 
@@ -212,6 +218,61 @@ public:
       }
 
       return MIN(100, 100 * num / num_expected);
+
+    }
+    int rev_rssi(int rate, int size) {
+      Timestamp now = Timestamp::now();
+      Timestamp earliest = now - Timestamp::make_msec(_tau);
+
+      if (_period == 0) {
+	click_chatter("period is 0\n");
+	return 0;
+      }
+      int num = 0;
+      int sum = 0;
+      for (int i = _probes.size() - 1; i >= 0; i--) {
+	if (earliest > _probes[i]._when) {
+	  break;
+	} 
+	if ( _probes[i]._size == size &&
+	    _probes[i]._rate == rate) {
+	  num++;
+	  sum += _probes[i]._rssi;
+	}
+      }
+
+      if (!num) {
+	      return -1;
+      }
+      return  (sum / num);
+
+    }
+
+    int rev_noise(int rate, int size) {
+      Timestamp now = Timestamp::now();
+      Timestamp earliest = now - Timestamp::make_msec(_tau);
+
+      if (_period == 0) {
+	click_chatter("period is 0\n");
+	return 0;
+      }
+      int num = 0;
+      int sum = 0;
+      for (int i = _probes.size() - 1; i >= 0; i--) {
+	if (earliest > _probes[i]._when) {
+	  break;
+	} 
+	if ( _probes[i]._size == size &&
+	    _probes[i]._rate == rate) {
+	  num++;
+	  sum += _probes[i]._noise;
+	}
+      }
+
+      if (!num) {
+	      return -1;
+      }
+      return  (sum / num);
 
     }
 	  int fwd_rate(int rate, int size) {

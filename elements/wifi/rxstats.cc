@@ -89,12 +89,18 @@ RXStats_read_param(Element *e, void *thunk)
     for (RXStats::NIter iter = td->_neighbors.begin(); iter; iter++) {
       RXStats::DstInfo n = iter.value();
       struct timeval age = now - n._last_received;
+      Timestamp avg_signal;
+      Timestamp avg_noise;
+      if (n._packets) {
+	      avg_signal = Timestamp::make_msec(1000*n._sum_signal / n._packets);
+	      avg_noise = Timestamp::make_msec(1000*n._sum_noise / n._packets);
+      }
       sa << n._eth.s();
       sa << " rate " << n._rate;
       sa << " signal " << n._signal;
       sa << " noise " << n._noise;
-      sa << " avg_signal " << (n._packets ? (n._sum_signal / n._packets) : 0);
-      sa << " avg_noise " << (n._packets ? (n._sum_noise / n._packets) : 0);
+      sa << " avg_signal " << avg_signal;
+      sa << " avg_noise " << avg_noise;
       sa << " total_signal " << n._sum_signal;
       sa << " total_noise " << n._sum_noise;
       sa << " packets " << n._packets;

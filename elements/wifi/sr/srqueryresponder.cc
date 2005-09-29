@@ -163,7 +163,8 @@ SRQueryResponder::forward_reply(struct srpacket *pk1)
 
 }
 
-void SRQueryResponder::start_reply(IPAddress src, IPAddress qdst, uint32_t seq)
+void 
+SRQueryResponder::start_reply(IPAddress src, IPAddress qdst, uint32_t seq)
 {
   _link_table->dijkstra(false);
   Path best = _link_table->best_route(src, false);
