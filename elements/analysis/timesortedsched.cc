@@ -25,7 +25,7 @@
 CLICK_DECLS
 
 TimeSortedSched::TimeSortedSched()
-    : _vec(0), _signals(0)
+    : _vec(0), _signals(0), _notifier(Notifier::SEARCH_CONTINUE_WAKE)
 {
 }
 
@@ -37,21 +37,15 @@ void *
 TimeSortedSched::cast(const char *n)
 {
     if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0)
-	return static_cast<Notifier *>(this);
+	return &_notifier;
     else
 	return Element::cast(n);
-}
-
-Notifier::SearchOp
-TimeSortedSched::notifier_search_op()
-{
-    return SEARCH_WAKE_CONTINUE;
 }
 
 int
 TimeSortedSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    PassiveNotifier::initialize(router());
+    _notifier.initialize(router());
     _stop = false;
     return cp_va_parse(conf, this, errh,
 		       cpKeywords,
@@ -105,7 +99,7 @@ TimeSortedSched::pull(int)
 	}
     }
 
-    set_signal_active(which >= 0 || signals_on);
+    _notifier.set_active(which >= 0 || signals_on);
     if (which >= 0) {
 	Packet *p = _vec[which];
 	_vec[which] = input(which).pull();

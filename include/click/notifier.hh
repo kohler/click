@@ -13,6 +13,7 @@ class NotifierSignal { public:
     static inline NotifierSignal idle_signal();
     static inline NotifierSignal busy_signal();
     static inline NotifierSignal overderived_signal();
+    static inline NotifierSignal uninitialized_signal();
     
     inline operator bool() const;
     inline bool active() const;
@@ -20,6 +21,7 @@ class NotifierSignal { public:
     inline bool idle() const;
     inline bool busy() const;
     inline bool overderived() const;
+    inline bool initialized() const;
 
     inline void set_active(bool active);
 
@@ -34,7 +36,8 @@ class NotifierSignal { public:
     atomic_uint32_t* _value;
     uint32_t _mask;
 
-    enum { TRUE_MASK = 1, FALSE_MASK = 2, OVERDERIVED_MASK = 4 };
+    enum { TRUE_MASK = 1, FALSE_MASK = 2, OVERDERIVED_MASK = 4,
+	   UNINITIALIZED_MASK = 8 };
     static atomic_uint32_t static_value;
     friend bool operator==(const NotifierSignal&, const NotifierSignal&);
     friend bool operator!=(const NotifierSignal&, const NotifierSignal&);
@@ -44,47 +47,39 @@ class NotifierSignal { public:
 
 class Notifier { public:
 
-    inline Notifier();
+    enum SearchOp { SEARCH_STOP = 0, SEARCH_CONTINUE, SEARCH_CONTINUE_WAKE };
+    
+    inline Notifier(SearchOp = SEARCH_STOP);
+    inline Notifier(const NotifierSignal &, SearchOp = SEARCH_STOP);
     virtual ~Notifier();
 
-    virtual NotifierSignal notifier_signal();
+    int initialize(Router *);
     
-    enum SearchOp { SEARCH_DONE = 0, SEARCH_CONTINUE, SEARCH_WAKE_CONTINUE };
-    virtual SearchOp notifier_search_op();
+    inline const NotifierSignal &signal() const;
+    inline SearchOp search_op() const;
+
+    inline bool active() const;
+    inline void set_active(bool);
     
     virtual int add_listener(Task*);
     virtual void remove_listener(Task*);
 
     static const char EMPTY_NOTIFIER[];
-    static const char NONFULL_NOTIFIER[];
+    static const char FULL_NOTIFIER[];
     
-    static NotifierSignal upstream_empty_signal(Element*, int port, Task*);
-    static NotifierSignal downstream_nonfull_signal(Element*, int port, Task*);
-    
-};
-
-class PassiveNotifier : public Notifier { public:
-
-    inline PassiveNotifier();
-
-    int initialize(Router*);
-    
-    NotifierSignal notifier_signal();
-
-    inline bool signal_active() const;
-    inline void set_signal_active(bool active);
+    static NotifierSignal upstream_empty_signal(Element* e, int port, Task* task);
+    static NotifierSignal downstream_full_signal(Element* e, int port, Task* task);
 
   private:
 
     NotifierSignal _signal;
-
-    friend class ActiveNotifier;
+    SearchOp _search_op;
     
 };
 
-class ActiveNotifier : public PassiveNotifier { public:
+class ActiveNotifier : public Notifier { public:
 
-    ActiveNotifier();
+    ActiveNotifier(SearchOp = SEARCH_STOP);
     ~ActiveNotifier();
 
     int add_listener(Task*);		// complains on out of memory
@@ -158,6 +153,17 @@ NotifierSignal::overderived_signal()
     return NotifierSignal(&static_value, OVERDERIVED_MASK | TRUE_MASK);
 }
 
+/** @brief Return an uninitialized signal.
+ *
+ * Unintialized signals may be used occasionally as placeholders for true
+ * signals to be added later.  Uninitialized signals are never active.
+ */
+inline NotifierSignal
+NotifierSignal::uninitialized_signal()
+{
+    return NotifierSignal(&static_value, UNINITIALIZED_MASK);
+}
+
 /** @brief Return whether the signal is active.
  * @return true iff the signal is currently active.
  */
@@ -207,6 +213,15 @@ inline bool
 NotifierSignal::overderived() const
 {
     return (_value == &static_value && (_mask & OVERDERIVED_MASK));
+}
+
+/** @brief Return whether the signal is initialized.
+ * @return true iff the signal doesn't equal uninitialized_signal().
+ */
+inline bool
+NotifierSignal::initialized() const
+{
+    return (_value != &static_value || !(_mask & UNINITIALIZED_MASK));
 }
 
 /** @brief Set whether the signal is active.
@@ -278,27 +293,103 @@ operator+(NotifierSignal a, const NotifierSignal& b)
     return a += b;
 }
 
+/** @brief Constructs a Notifier.
+ * @param search_op controls notifier path search
+ *
+ * This function constructs a Notifier object.  The Notifier's associated
+ * NotifierSignal is initially idle; it becomes associated with a signal after
+ * initialize() is called.
+ *
+ * The @a search_op argument controls path search.  The rest of this entry
+ * describes it further.
+ *
+ * Elements interested in notification generally search for Notifier objects
+ * along all possible packet paths upstream (or downstream) of one of their
+ * ports.  When a Notifier is found along a path, further searching along that
+ * path is cut off, so only the closest Notifiers are found.  Sometimes,
+ * however, it makes more sense to continue searching for more Notifiers.  The
+ * correct behavior is Notifier-specific, and is controlled by this method.
+ * When the search encounters a Notifier, it consults the Notifier's @a
+ * search_op variable supplied to the constructor.  It should equal one of
+ * three SearchOp constants, which correspond to the following behavior:
+ *
+ * <dl>
+ * <dt>SEARCH_STOP</dt>
+ * <dd>Stop searching along this path.  This is the default.</dd>
+ * <dt>SEARCH_CONTINUE</dt>
+ * <dd>Continue searching along this path.</dd>
+ * <dt>SEARCH_CONTINUE_WAKE</dt>
+ * <dd>Continue searching along this path, but any further Notifiers should
+ * only be used for adding and removing listeners; ignore their NotifierSignal
+ * objects.  This operation is useful, for example, for schedulers that store
+ * packets temporarily.  Such schedulers provide their own NotifierSignal,
+ * since the scheduler may still hold a packet even when all upstream sources
+ * are empty.  However, since they aren't packet sources, they don't know when
+ * new packets arrive, and can't wake up sleeping listeners.</dd>
+ * </dl>
+ */
 inline
-Notifier::Notifier()
+Notifier::Notifier(SearchOp search_op)
+    : _signal(NotifierSignal::uninitialized_signal()), _search_op(search_op)
 {
 }
 
+/** @brief Constructs a Notifier associated with a given signal.
+ * @param signal the associated NotifierSignal
+ * @param search_op controls notifier path search
+ *
+ * This function constructs a Notifier object associated with a specific
+ * NotifierSignal, such as NotifierSignal::idle_signal().  Calling
+ * initialize() on this Notifier will not change the associated
+ * NotifierSignal.  The @a search_op argument is as in
+ * Notifier::Notifier(SearchOp), above.
+ */
 inline
-PassiveNotifier::PassiveNotifier()
+Notifier::Notifier(const NotifierSignal &signal, SearchOp search_op)
+    : _signal(signal), _search_op(search_op)
 {
 }
 
+/** @brief Return this Notifier's associated NotifierSignal.
+ *
+ * Every Notifier object corresponds to one NotifierSignal; this method
+ * returns it.  The signal is @link NotifierSignal::idle idle() @endlink
+ * before initialize() is called.
+ */
+inline const NotifierSignal &
+Notifier::signal() const
+{
+    return _signal;
+}
+
+/** @brief Return this Notifier's search operation.
+ *
+ * @sa Notifier() for a detailed explanation of search operations.
+ */
+inline Notifier::SearchOp
+Notifier::search_op() const
+{
+    return _search_op;
+}
+
+/** @brief Returns whether the associated signal is active.
+ *
+ * Same as signal().active().
+ */
 inline bool
-PassiveNotifier::signal_active() const
+Notifier::active() const
 {
     return _signal.active();
 }
 
+/** @brief Sets the associated signal's activity.
+ * @param active true iff the signal should be active
+ */
 inline void
-PassiveNotifier::set_signal_active(bool active)
+Notifier::set_active(bool active)
 {
     _signal.set_active(active);
-}
+}   
 
 inline void
 ActiveNotifier::wake_listeners()
@@ -308,26 +399,26 @@ ActiveNotifier::wake_listeners()
     else if (_listeners)
 	for (Task **t = _listeners; *t; t++)
 	    (*t)->reschedule();
-    _signal.set_active(true);
+    set_active(true);
 }
 
 inline void
 ActiveNotifier::sleep_listeners()
 {
-    _signal.set_active(false);
+    set_active(false);
 }
 
 inline void
 ActiveNotifier::set_listeners(bool awake)
 {
-    if (awake && !_signal.active()) {
+    if (awake && !active()) {
 	if (_listener1)
 	    _listener1->reschedule();
 	else if (_listeners)
 	    for (Task **t = _listeners; *t; t++)
 		(*t)->reschedule();
     }
-    _signal.set_active(awake);
+    set_active(awake);
 }
 
 CLICK_ENDDECLS

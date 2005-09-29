@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 DelayShaper::DelayShaper()
-    : _p(0), _timer(this)
+    : _p(0), _timer(this), _notifier(Notifier::SEARCH_CONTINUE_WAKE)
 {
 }
 
@@ -40,21 +40,15 @@ DelayShaper::cast(const char *n)
     if (strcmp(n, "DelayShaper") == 0)
 	return (DelayShaper *)this;
     else if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0)
-	return static_cast<Notifier *>(this);
+	return &_notifier;
     else
 	return Element::cast(n);
-}
-
-Notifier::SearchOp
-DelayShaper::notifier_search_op()
-{
-    return SEARCH_WAKE_CONTINUE;
 }
 
 int
 DelayShaper::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    ActiveNotifier::initialize(router());
+    _notifier.initialize(router());
     return cp_va_parse(conf, this, errh,
 		       cpTimestamp, "delay", &_delay, cpEnd);
 }
@@ -98,15 +92,15 @@ DelayShaper::pull(int)
 	    // small delta, don't go to sleep -- but mark our Signal as active,
 	    // since we have something ready. NB: should not wake listeners --
 	    // we are in pull()!
-	    set_signal_active(true);
+	    _notifier.set_active(true);
 	} else {
 	    // large delta, go to sleep and schedule Timer
 	    _timer.schedule_at(_p->timestamp_anno());
-	    sleep_listeners();
+	    _notifier.sleep_listeners();
 	}
     } else if (!_upstream_signal) {
 	// no packet available, we go to sleep right away
-	sleep_listeners();
+	_notifier.sleep_listeners();
     }
 
     return 0;
@@ -115,7 +109,7 @@ DelayShaper::pull(int)
 void
 DelayShaper::run_timer(Timer *)
 {
-    wake_listeners();
+    _notifier.wake_listeners();
 }
 
 String

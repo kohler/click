@@ -153,7 +153,7 @@ FromHost::initialize(ErrorHandler *errh)
 	return -1;
 
     ScheduleInfo::join_scheduler(this, &_task, errh);
-    _nonfull_signal = Notifier::downstream_nonfull_signal(this, 0, &_task);
+    _nonfull_signal = Notifier::downstream_full_signal(this, 0, &_task);
     
     add_select(_fd, SELECT_READ);
     return 0;

@@ -622,7 +622,7 @@ TokenQueue::push(int port, Packet *p_in)
     bubble_up(p_out);
 
  done: 
-    if ((_normal > 0 || _tokens > 0  || _retransmits > 0) && !_empty_note.signal_active()) {
+    if ((_normal > 0 || _tokens > 0  || _retransmits > 0) && !_empty_note.active()) {
 	/* there is work to be done! */
 	_empty_note.wake_listeners();
     }
@@ -645,7 +645,7 @@ TokenQueue::print_stats()
   sa << " tokens " << _tokens;
   sa << " retransmits " << _retransmits;
   sa << " normal " << _normal;
-  sa << " signal " << _empty_note.signal_active();
+  sa << " signal " << _empty_note.active();
   sa << "\n";
 
   for (PathIter iter = _paths.begin(); iter; iter++) {

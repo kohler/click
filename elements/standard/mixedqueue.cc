@@ -67,7 +67,7 @@ MixedQueue::push(int port, Packet *p)
     int s = size();
     if (s > _highwater_length)
 	_highwater_length = s;
-    if (s == 1 && !_empty_note.signal_active())
+    if (s == 1 && !_empty_note.active())
 	_empty_note.wake_listeners();
 }
 

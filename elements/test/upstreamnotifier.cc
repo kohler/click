@@ -39,7 +39,7 @@ UpstreamNotifier::cast(const char *n)
  
   if (strcmp(n, "UpstreamNotifier") == 0) 
     return (Element *) this;
-  else if (strcmp(n, Notifier::NONFULL_NOTIFIER) == 0)
+  else if (strcmp(n, Notifier::FULL_NOTIFIER) == 0)
     return static_cast<Notifier *>(&_notifier);
   else 
     return 0;
@@ -58,7 +58,7 @@ UpstreamNotifier::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
   }
 
-  _notifier.set_signal_active(signal);
+  _notifier.set_active(signal);
   return 0;
 }
 void
@@ -74,7 +74,7 @@ read_param(Element *e, void *thunk)
 {
   UpstreamNotifier *f = (UpstreamNotifier *)e;
   switch ((uintptr_t) thunk) {
-  case H_SIGNAL: return String(f->_notifier.signal_active()) + "\n";
+  case H_SIGNAL: return String(f->_notifier.active()) + "\n";
   }
   return String();
 }
@@ -89,7 +89,7 @@ write_param(const String &in_s, Element *e, void *vparam,
     bool signal;
     if (!cp_bool(s, &signal)) 
       return errh->error("signal parameter must be boolean");
-    f->_notifier.set_signal_active(signal);
+    f->_notifier.set_active(signal);
     if (signal) {
       f->_notifier.wake_listeners();
     } else {

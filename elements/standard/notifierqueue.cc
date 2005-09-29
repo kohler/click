@@ -64,12 +64,12 @@ NotifierQueue::push(int, Packet *p)
 #if !NOTIFIERQUEUE_LOCK
 	// This can leave a single packet in the queue indefinitely in
 	// multithreaded Click, because of a race condition with pull().
-        if (!_empty_note.signal_active()) 
+        if (!_empty_note.active()) 
 	    _empty_note.wake_listeners(); 
 #else
         if (s == 1) {
             _lock.acquire();
-	    if (!_empty_note.signal_active())
+	    if (!_empty_note.active())
 	        _empty_note.wake_listeners();
 	    _lock.release();
 	}
@@ -112,7 +112,7 @@ NotifierQueue::read_handler(Element *e, void *)
 {
     StringAccum sa;
     NotifierQueue *nq = static_cast<NotifierQueue *>(e);
-    sa << "notifier " << (nq->_empty_note.signal_active() ? "on" : "off") << '\n';
+    sa << "notifier " << (nq->_empty_note.active() ? "on" : "off") << '\n';
     Vector<Task *> v;
     nq->_empty_note.listeners(v);
     for (int i = 0; i < v.size(); i++) {

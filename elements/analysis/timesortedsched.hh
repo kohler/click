@@ -60,7 +60,7 @@ stream, and stops the driver when all the files are exhausted.
 FromDump
 */
 
-class TimeSortedSched : public Element, public PassiveNotifier { public:
+class TimeSortedSched : public Element { public:
     // NB: Notifier cannot be Active, or we would have rescheduling conflicts.
     // Example:
     // 1. We are unscheduled and off.
@@ -86,14 +86,12 @@ class TimeSortedSched : public Element, public PassiveNotifier { public:
     void cleanup(CleanupStage);
 
     Packet *pull(int);
-
-    // from Notifier
-    SearchOp notifier_search_op();
     
   private:
 
     Packet **_vec;
     NotifierSignal *_signals;
+    Notifier _notifier;
     bool _stop;
     
 };

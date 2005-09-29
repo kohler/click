@@ -53,15 +53,13 @@ class DelayShaper : public Element, public ActiveNotifier { public:
     Packet *pull(int);
     void run_timer(Timer *);
 
-    // from ActiveNotifier
-    SearchOp notifier_search_op();
-    
   private:
 
     Packet *_p;
     Timestamp _delay;
     Timer _timer;
     NotifierSignal _upstream_signal;
+    ActiveNotifier _notifier;
 
     static String read_param(Element *, void *);
     static int write_param(const String &, Element *, void *, ErrorHandler *);

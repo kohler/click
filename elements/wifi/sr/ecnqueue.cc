@@ -174,7 +174,7 @@ void
 ECNQueue::push(int, Packet *p_in)
 {
     bubble_up(p_in);
-    if (!_empty_note.signal_active() && !empty()) {
+    if (!_empty_note.active() && !empty()) {
 	_empty_note.wake_listeners();
     }
     return;

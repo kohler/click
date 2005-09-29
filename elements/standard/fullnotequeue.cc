@@ -33,7 +33,7 @@ FullNoteQueue::cast(const char *n)
 {
     if (strcmp(n, "FullNoteQueue") == 0)
 	return (FullNoteQueue *)this;
-    else if (strcmp(n, Notifier::NONFULL_NOTIFIER) == 0)
+    else if (strcmp(n, Notifier::FULL_NOTIFIER) == 0)
 	return static_cast<Notifier*>(&_full_note);
     else
 	return NotifierQueue::cast(n);
@@ -43,7 +43,7 @@ int
 FullNoteQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _full_note.initialize(router());
-    _full_note.set_signal_active(true);
+    _full_note.set_active(true);
     return NotifierQueue::configure(conf, errh);
 }
 
@@ -64,12 +64,12 @@ FullNoteQueue::push(int, Packet *p)
 #if !NOTIFIERQUEUE_LOCK
 	// This can leave a single packet in the queue indefinitely in
 	// multithreaded Click, because of a race condition with pull().
-        if (!_empty_note.signal_active()) 
+        if (!_empty_note.active()) 
 	    _empty_note.wake_listeners(); 
 #else
         if (s == 1) {
             _lock.acquire();
-	    if (!_empty_note.signal_active())
+	    if (!_empty_note.active())
 	        _empty_note.wake_listeners();
 	    _lock.release();
 	}

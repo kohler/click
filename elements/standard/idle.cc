@@ -19,7 +19,8 @@
 #include "idle.hh"
 CLICK_DECLS
 
-Idle::Idle() 
+Idle::Idle()
+    : _notifier(NotifierSignal::idle_signal())
 {
 }
 
@@ -31,17 +32,9 @@ void *
 Idle::cast(const char *name)
 {
   if (strcmp(name, Notifier::EMPTY_NOTIFIER) == 0)
-    return static_cast<Notifier *>(this);
-  else if (strcmp(name, "Idle") == 0)
-    return this;
+    return &_notifier;
   else
     return Element::cast(name);
-}
-
-NotifierSignal
-Idle::notifier_signal()
-{
-  return NotifierSignal::idle_signal();
 }
 
 void

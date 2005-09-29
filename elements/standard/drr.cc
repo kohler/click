@@ -23,7 +23,8 @@
 CLICK_DECLS
 
 DRRSched::DRRSched()
-    : _quantum(500), _head(0), _deficit(0), _signals(0), _next(0)
+    : _quantum(500), _head(0), _deficit(0), _signals(0),
+      _notifier(Notifier::SEARCH_CONTINUE_WAKE), _next(0)
 {
 }
 
@@ -35,21 +36,15 @@ void *
 DRRSched::cast(const char *n)
 {
     if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0)
-	return static_cast<Notifier *>(this);
+	return &_notifier;
     else
 	return Element::cast(n);
-}
-
-Notifier::SearchOp
-DRRSched::notifier_search_op()
-{
-    return SEARCH_WAKE_CONTINUE;
 }
 
 int
 DRRSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    PassiveNotifier::initialize(router());
+    _notifier.initialize(router());
     return Element::configure(conf, errh);
 }
 
@@ -107,7 +102,7 @@ DRRSched::pull(int)
 	    _deficit[_next] = 0;
 	else if (p->length() <= _deficit[_next]) {
 	    _deficit[_next] -= p->length();
-	    set_signal_active(true);
+	    _notifier.set_active(true);
 	    return p;
 	} else
 	    _head[_next] = p;
@@ -118,7 +113,7 @@ DRRSched::pull(int)
 	_deficit[_next] += _quantum;
     }
 
-    set_signal_active(signals_on);
+    _notifier.set_active(signals_on);
     return 0;
 }
 

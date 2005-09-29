@@ -17,7 +17,7 @@ CLICK_DECLS
  * error messages.
  */
 
-class Idle : public Element, public Notifier { public:
+class Idle : public Element { public:
   
   Idle();
   ~Idle();
@@ -28,11 +28,14 @@ class Idle : public Element, public Notifier { public:
   const char *flow_code() const		{ return "x/y"; }
   void *cast(const char *);
   const char *flags() const		{ return "S0"; }
-  NotifierSignal notifier_signal();
   
   void push(int, Packet *);
   Packet *pull(int);
-  
+
+  private:
+
+    Notifier _notifier;
+    
 };
 
 CLICK_ENDDECLS

@@ -28,7 +28,7 @@ CLICK_DECLS
 // should be const, but we need to explicitly initialize it
 atomic_uint32_t NotifierSignal::static_value;
 const char Notifier::EMPTY_NOTIFIER[] = "Notifier.EMPTY";
-const char Notifier::NONFULL_NOTIFIER[] = "Notifier.NONFULL";
+const char Notifier::FULL_NOTIFIER[] = "Notifier.FULL";
 
 /** @class NotifierSignal
  * @brief Represents an activity signal.
@@ -57,6 +57,23 @@ const char Notifier::NONFULL_NOTIFIER[] = "Notifier.NONFULL";
  *  - Router::new_notifier_signal() creates a new basic signal.  This method
  *    should be preferred to NotifierSignal's own constructors.
  *  - operator+(NotifierSignal, const NotifierSignal &) creates a derived signal.
+ */
+
+/** @class Notifier
+ * @brief Class for notification providers.
+ *
+ * The Notifier class combines a basic activity signal with the optional
+ * ability to wake up clients when the activity signal becomes active.  These
+ * clients are called @e listeners.  Each listener corresponds to a Task
+ * object.  The listener generally goes to sleep -- i.e., becomes unscheduled
+ * -- when it runs out of work and the corresponding activity signal is
+ * inactive.  The notifiers pledge to wake up each listener -- i.e., by
+ * rescheduling the corresponding Task -- on becoming active.  The Notifier
+ * class itself does not wake up clients; see ActiveNotifier for that.
+ *
+ * Elements that contain Notifier objects will generally override
+ * Element::cast(), allowing other parts of the configuration to find the
+ * Notifiers.  See upstream_empty_signal() and downstream_full_signal().
  */
 
 /** @brief Initialize the NotifierSignal implementation.
@@ -114,52 +131,57 @@ NotifierSignal::unparse() const
 }
 
 
+/** @brief Destruct a Notifier. */
 Notifier::~Notifier()
 {
 }
 
-NotifierSignal
-Notifier::notifier_signal()
-{
-    return NotifierSignal::idle_signal();
-}
-
-Notifier::SearchOp
-Notifier::notifier_search_op()
-{
-    return SEARCH_DONE;
-}
-
+/** @brief Called to register a listener with this Notifier.
+ * @param task the listener's Task
+ *
+ * This notifier should register @a task as a listener, if appropriate.
+ * Later, when the signal is activated, the Notifier should reschedule @a task
+ * along with the other listeners.  Not all types of Notifier need to provide
+ * this functionality, however.  The default implementation does nothing.
+ */
 int
-Notifier::add_listener(Task*)
+Notifier::add_listener(Task* task)
 {
+    (void) task;
     return 0;
 }
 
+/** @brief Called to unregister a listener with this Notifier.
+ * @param task the listener's Task
+ *
+ * Undoes the effect of any prior add_listener(@a task).  Should do nothing if
+ * @a task was never added.  The default implementation does nothing.
+ */
 void
-Notifier::remove_listener(Task*)
+Notifier::remove_listener(Task* task)
 {
+    (void) task;
 }
 
-
+/** @brief Initialize the associated NotifierSignal, if necessary.
+ * @param r the associated router
+ *
+ * Initialize the Notifier's associated NotifierSignal by calling @a r's
+ * Router::new_notifier_signal() method, obtaining a new basic activity
+ * signal.  Does nothing if the signal is already initialized.
+ */
 int
-PassiveNotifier::initialize(Router* r)
+Notifier::initialize(Router* r)
 {
-    if (_signal == NotifierSignal())
+    if (!_signal.initialized())
 	return r->new_notifier_signal(_signal);
     else
 	return 0;
 }
 
-NotifierSignal
-PassiveNotifier::notifier_signal()
-{
-    return _signal;
-}
 
-
-ActiveNotifier::ActiveNotifier()
-    : _listener1(0), _listeners(0)
+ActiveNotifier::ActiveNotifier(SearchOp search_op)
+    : Notifier(search_op), _listener1(0), _listeners(0)
 {
 }
 
@@ -254,13 +276,15 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
 {
     if (Notifier* n = (Notifier*) (e->cast(_name))) {
 	_notifiers.push_back(n);
-	_signal += n->notifier_signal();
-	Notifier::SearchOp search_op = n->notifier_search_op();
-	if (search_op == Notifier::SEARCH_WAKE_CONTINUE) {
+	if (!n->signal().initialized())
+	    n->initialize(e->router());
+	_signal += n->signal();
+	Notifier::SearchOp search_op = n->search_op();
+	if (search_op == Notifier::SEARCH_CONTINUE_WAKE) {
 	    _need_pass2 = true;
 	    return !_pass2;
 	} else
-	    return search_op == Notifier::SEARCH_DONE;
+	    return search_op == Notifier::SEARCH_STOP;
 	
     } else if (pt != NONE) {
 	Bitvector flow;
@@ -278,8 +302,34 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
 }
 
 
+/** @brief Calculate and return the NotifierSignal derived from all empty
+ * notifiers upstream of element @a e's input @a port, and optionally register
+ * @a task as a listener.
+ * @param e an element
+ * @param port the input port of @a e at which to start the upstream search
+ * @param task Task to register as a listener, or null
+ *
+ * Searches the configuration upstream of element @a e's input @a port for @e
+ * empty @e notifiers.  These notifiers are associated with packet storage,
+ * and should be true when packets are available (or likely to be available
+ * quite soon), and false when they are not.  All notifiers found are combined
+ * into a single derived signal.  Thus, if any of the base notifiers are
+ * active, indicating that at least one packet is available upstream, the
+ * derived signal will also be active.  Element @a e's code generally uses the
+ * resulting signal to decide whether or not to reschedule itself.
+ *
+ * A nonnull @a task argument is added to each located notifier as a listener.
+ * Thus, when a notifier becomes active (when packets become available), the
+ * @a task will be rescheduled.
+ *
+ * <h3>Supporting upstream_empty_signal()</h3>
+ *
+ * Elements that have an empty notifier must override the Element::cast()
+ * method.  When passed the @a name Notifier::EMPTY_NOTIFIER, this method
+ * should return a pointer to the corresponding Notifier object.
+ */
 NotifierSignal
-Notifier::upstream_empty_signal(Element* e, int port, Task* t)
+Notifier::upstream_empty_signal(Element* e, int port, Task* task)
 {
     NotifierElementFilter filter(EMPTY_NOTIFIER);
     Vector<Element*> v;
@@ -298,17 +348,43 @@ Notifier::upstream_empty_signal(Element* e, int port, Task* t)
     if (ok < 0 || signal == NotifierSignal())
 	return NotifierSignal();
 
-    if (t)
+    if (task)
 	for (int i = 0; i < filter._notifiers.size(); i++)
-	    filter._notifiers[i]->add_listener(t);
+	    filter._notifiers[i]->add_listener(task);
 
     return signal;
 }
 
+/** @brief Calculate and return the NotifierSignal derived from all full
+ * notifiers downstream of element @a e's output @a port, and optionally
+ * register @a task as a listener.
+ * @param e an element
+ * @param port the output port of @a e at which to start the upstream search
+ * @param task Task to register as a listener, or null
+ *
+ * Searches the configuration downstream of element @a e's output @a port for
+ * @e full @e notifiers.  These notifiers are associated with packet storage,
+ * and should be true when there is space for at least one packet, and false
+ * when there is not.  All notifiers found are combined into a single derived
+ * signal.  Thus, if any of the base notifiers are active, indicating that at
+ * least one path has available space, the derived signal will also be active.
+ * Element @a e's code generally uses the resulting signal to decide whether
+ * or not to reschedule itself.
+ *
+ * A nonnull @a task argument is added to each located notifier as a listener.
+ * Thus, when a notifier becomes active (when space become available), the @a
+ * task will be rescheduled.
+ *
+ * <h3>Supporting downstream_full_signal()</h3>
+ *
+ * Elements that have a full notifier must override the Element::cast()
+ * method.  When passed the @a name Notifier::FULL_NOTIFIER, this method
+ * should return a pointer to the corresponding Notifier object.
+ */
 NotifierSignal
-Notifier::downstream_nonfull_signal(Element* e, int port, Task* t)
+Notifier::downstream_full_signal(Element* e, int port, Task* task)
 {
-    NotifierElementFilter filter(NONFULL_NOTIFIER);
+    NotifierElementFilter filter(FULL_NOTIFIER);
     Vector<Element*> v;
     int ok = e->router()->downstream_elements(e, port, &filter, v);
 
@@ -325,9 +401,9 @@ Notifier::downstream_nonfull_signal(Element* e, int port, Task* t)
     if (ok < 0 || signal == NotifierSignal())
 	return NotifierSignal();
 
-    if (t)
+    if (task)
 	for (int i = 0; i < filter._notifiers.size(); i++)
-	    filter._notifiers[i]->add_listener(t);
+	    filter._notifiers[i]->add_listener(task);
 
     return signal;
 }

@@ -28,7 +28,7 @@ CLICK_DECLS
  * =a PrioSched, StrideSched, RoundRobinSched
  */
 
-class DRRSched : public Element, public PassiveNotifier { public:
+class DRRSched : public Element { public:
   
     DRRSched();
     ~DRRSched();
@@ -43,9 +43,6 @@ class DRRSched : public Element, public PassiveNotifier { public:
     void cleanup(CleanupStage);
   
     Packet *pull(int port);
-
-    // from Notifier
-    SearchOp notifier_search_op();
     
   private:
 
@@ -54,6 +51,7 @@ class DRRSched : public Element, public PassiveNotifier { public:
     Packet **_head; // First packet from each queue.
     unsigned *_deficit;  // Each queue's deficit.
     NotifierSignal *_signals;	// upstream signals
+    Notifier _notifier;
     int _next;      // Next input to consider.
   
 };

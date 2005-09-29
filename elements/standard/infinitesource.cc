@@ -91,7 +91,7 @@ InfiniteSource::initialize(ErrorHandler *errh)
 {
   if (output_is_push(0)) {
     ScheduleInfo::initialize_task(this, &_task, errh);
-    _nonfull_signal = Notifier::downstream_nonfull_signal(this, 0, &_task);
+    _nonfull_signal = Notifier::downstream_full_signal(this, 0, &_task);
   }
   return 0;
 }
@@ -129,7 +129,7 @@ Packet *
 InfiniteSource::pull(int)
 {
   if (!_active) {
-    if (signal_active()) {
+    if (Notifier::active()) {
       sleep_listeners();
     }
     return 0;
@@ -138,7 +138,7 @@ InfiniteSource::pull(int)
     if (_stop)
       router()->please_stop_driver();
 
-    if (signal_active()) {
+    if (Notifier::active()) {
       sleep_listeners();
     }
     return 0;
@@ -249,7 +249,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
     if (is->output_is_push(0) && !is->_task.scheduled())
       is->_task.reschedule();
     
-    if (is->output_is_pull(0) && !is->signal_active())
+    if (is->output_is_pull(0) && !is->Notifier::active())
       is->wake_listeners();
   }
   return 0;
