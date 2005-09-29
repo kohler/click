@@ -60,7 +60,7 @@ const char Notifier::FULL_NOTIFIER[] = "Notifier.FULL";
  */
 
 /** @class Notifier
- * @brief Class for notification providers.
+ * @brief Notification provider base class.
  *
  * The Notifier class combines a basic activity signal with the optional
  * ability to wake up clients when the activity signal becomes active.  These
