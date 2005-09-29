@@ -1,3 +1,7 @@
+2005-09-29 Thursday 02:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/notifier.cc (1.19): x
+
 2005-09-29 Thursday 01:37  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/timesortedsched.cc (1.9),
