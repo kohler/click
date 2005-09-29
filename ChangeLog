@@ -1,3 +1,26 @@
+2005-09-29 Thursday 16:32  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/ethercount.hh (1.1): this belongs with the last
+	checkin.
+
+2005-09-29 Thursday 16:31  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: ethercount.cc (1.1), analysis/printpower.cc
+	(1.1), analysis/printpower.hh (1.1), analysis/printrate.cc (1.1),
+	analysis/printrate.hh (1.1), analysis/printseq.cc (1.1),
+	analysis/printseq.hh (1.1), analysis/wificounter.cc (1.1),
+	analysis/wificounter.hh (1.1):	a bunch of fun elements! wahoo!
+
+2005-09-29 Thursday 16:29  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: athdesc.h (1.1), athdescdecap.cc (1.1),
+	athdescdecap.hh (1.1), athdescencap.cc (1.1), athdescencap.hh
+	(1.1), radiotapencap.cc (1.4), rxstats.cc (1.15), sr/ecnqueue.cc
+	(1.8), sr/ecnqueue.hh (1.4), sr/ettstat.cc (1.26), sr/ettstat.hh
+	(1.18), sr/metricflood.cc (1.6), sr/srqueryforwarder.cc (1.10),
+	sr/srqueryresponder.cc (1.10), sr/tokenqueue.cc (1.11),
+	sr/tokenqueue.hh (1.5): add athdesc*, remove some old elements.
+
 2005-09-29 Thursday 02:15  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/notifier.cc (1.19): x
