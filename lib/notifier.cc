@@ -60,7 +60,7 @@ const char Notifier::FULL_NOTIFIER[] = "Notifier.FULL";
  */
 
 /** @class Notifier
- * @brief Notification provider base class.
+ * @brief Class for notification providers.
  *
  * The Notifier class combines a basic activity signal with the optional
  * ability to wake up clients when the activity signal becomes active.  These
@@ -301,7 +301,6 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
 
 }
 
-
 /** @brief Calculate and return the NotifierSignal derived from all empty
  * notifiers upstream of element @a e's input @a port, and optionally register
  * @a task as a listener.
@@ -359,7 +358,7 @@ Notifier::upstream_empty_signal(Element* e, int port, Task* task)
  * notifiers downstream of element @a e's output @a port, and optionally
  * register @a task as a listener.
  * @param e an element
- * @param port the output port of @a e at which to start the upstream search
+ * @param port the output port of @a e at which to start the downstream search
  * @param task Task to register as a listener, or null
  *
  * Searches the configuration downstream of element @a e's output @a port for
