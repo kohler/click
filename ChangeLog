@@ -1,3 +1,30 @@
+2005-09-29 Thursday 01:37  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/timesortedsched.cc (1.9),
+	elements/analysis/timesortedsched.hh (1.9),
+	elements/linuxmodule/fromhost.cc (1.53),
+	elements/standard/delayshaper.cc (1.19),
+	elements/standard/delayshaper.hh (1.15), elements/standard/drr.cc
+	(1.11), elements/standard/drr.hh (1.9),
+	elements/standard/frontdropqueue.cc (1.20),
+	elements/standard/fullnotequeue.cc (1.5), elements/standard/idle.cc
+	(1.27), elements/standard/idle.hh (1.22),
+	elements/standard/infinitesource.cc (1.54),
+	elements/standard/mixedqueue.cc (1.6),
+	elements/standard/notifierqueue.cc (1.15),
+	elements/test/upstreamnotifier.cc (1.4),
+	elements/userlevel/fromhost.cc (1.9), elements/wifi/sr/ecnqueue.cc
+	(1.7), elements/wifi/sr/tokenqueue.cc (1.10),
+	include/click/notifier.hh (1.18), lib/notifier.cc (1.17),
+	lib/notifier.cc (1.18): more Notifier related documentation fixes,
+	and slight redesign (less object oriented)
+
+2005-09-29 Thursday 01:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/: click-combine/click-combine.cc (1.42), lib/eclasst.cc
+	(1.33), lib/routert.cc (1.82): fix click-combine, add assertions on
+	expand_element
+
 2005-09-28 Wednesday 14:27  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/notifier.hh (1.17): document NotifierSignal,
