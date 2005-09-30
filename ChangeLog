@@ -1,3 +1,8 @@
+2005-09-30 Friday 16:45  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/: srdestcache.cc (1.1), srdestcache.hh (1.1):
+	roaming for roofnet.
+
 2005-09-29 Thursday 16:32  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/ethercount.hh (1.1): this belongs with the last
