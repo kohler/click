@@ -28,8 +28,7 @@
 CLICK_DECLS
 
 PrintSeq::PrintSeq()
-  : Element(1, 1),
-    _print_anno(false),
+  : _print_anno(false),
     _print_checksum(false)
 {
   _label = "";
@@ -73,7 +72,7 @@ PrintSeq::simple_action(Packet *p)
   
   StringAccum sa;
   if (_label[0] != 0) {
-    sa << _label.cc() << ": ";
+    sa << _label.c_str() << ": ";
   }
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();  
   sa << p->timestamp_anno();
@@ -82,7 +81,7 @@ PrintSeq::simple_action(Packet *p)
   sa << " rssi " << (int) ceh->rssi;
   sa << " noise " << (int) ceh->silence;
 
-  click_chatter("%s\n", sa.take_string().cc());
+  click_chatter("%s\n", sa.take_string().c_str());
 
     
   return p;

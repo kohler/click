@@ -71,7 +71,7 @@ class WifiCounter : public Element { public:
   typedef HashMap<EtherAddress, DstInfo> EtherTable;
   typedef EtherTable::const_iterator ETIter;
   
-  class EtherTable _dsts;
+  EtherTable _dsts;
 
 };
 
