@@ -1,3 +1,15 @@
+2005-10-02 Sunday 19:16  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/routerthread.hh (1.34): private inheritance for
+	RouterThread
+
+2005-10-02 Sunday 19:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/routerthread.hh (1.33), include/click/task.hh
+	(1.41), lib/element.cc (1.101), lib/routerthread.cc (1.57),
+	lib/string.cc (1.58), lib/task.cc (1.39), lib/task.cc (1.40):
+	Task-related documentation
+
 2005-10-02 Sunday 18:33  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/fromcapdump.cc (1.13),
