@@ -28,7 +28,7 @@ CLICK_DECLS
 
 class RouterThread
 #ifndef HAVE_TASK_HEAP
-    : public Task
+    : private Task
 #endif
 { public:
 
