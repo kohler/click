@@ -5,7 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2002 International Computer Science Institute
- * Copyright (c) 2004-2005 Regents of the University of California
+ * Copyright (c) 2004 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 /** @class Task
- * @brief A frequently-scheduled computation. */
+ * @brief Task */
 
 // - Changes to _thread are protected by _thread->lock.
 // - Changes to _home_thread_id are protected by
