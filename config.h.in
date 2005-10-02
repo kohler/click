@@ -111,7 +111,7 @@
 #endif
 
 /* Define macro for deprecated functions. */
-#if __GNUC__ == 2
+#if __GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ == 0)
 #define CLICK_DEPRECATED
 #else
 #define CLICK_DEPRECATED __attribute__((deprecated))
