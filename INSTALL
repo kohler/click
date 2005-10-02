@@ -117,6 +117,7 @@ and running Linux kernels.
     2.4.27		linux-2.4.26-patch
     2.4.28		linux-2.4.26-patch
     2.6.11.6		linux-2.6.11.6-patch
+    2.6.13.2		linux-2.6.13.2-patch
 
     The patch fixes syntax errors in several header files (the C++ compiler
     doesn't accept them), adds several new functions, and changes the

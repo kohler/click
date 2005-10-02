@@ -9,27 +9,6 @@
 #define __KERNEL__ 1
 #define MODULE 1
 
-/* Define if your Linux kernel has Click extensions. */
-#undef HAVE_CLICK_KERNEL
-
-/* Define if your Linux kernel has Click transmit notification extensions. */
-#undef HAVE_CLICK_KERNEL_TX_NOTIFY
-
-/* Define if 'int64_t' is typedefed to 'long' in linuxmodule. */
-#undef HAVE_INT64_IS_LONG_LINUXMODULE
-
-/* Define if your Linux kernel has read_net_skbcount. */
-#undef HAVE_LINUX_READ_NET_SKBCOUNT
-
-/* Define if your Linux kernel exposes strlen. */
-#undef HAVE_LINUX_STRLEN_EXPOSED
-
-/* Define if your Linux kernel has polling extensions. */
-#undef HAVE_LINUX_POLLING
-
-/* Define if your Linux kernel has tulip_interrupt_hook. */
-#undef HAVE_LINUX_TULIP_INTERRUPT_HOOK
-
 /* Define if your Linux kernel is running in SMP mode. */
 #undef __SMP__
 
@@ -41,12 +20,36 @@
    fairly with the kernel. */
 #undef HAVE_ADAPTIVE_SCHEDULER
 
+/* Define if your Linux kernel has Click extensions. */
+#undef HAVE_CLICK_KERNEL
+
+/* Define if your Linux kernel has Click transmit notification extensions. */
+#undef HAVE_CLICK_KERNEL_TX_NOTIFY
+
+/* Define if fast checksum functions available. */
+#define HAVE_FAST_CHECKSUM 1
+
+/* Define if 'int64_t' is typedefed to 'long' in linuxmodule. */
+#undef HAVE_INT64_IS_LONG_LINUXMODULE
+
 /* Define to enable assertion checking. Failed assertions will print a message
    and optionally stop the router. */
 #undef HAVE_KERNEL_ASSERT
 
-/* Define if fast checksum functions available. */
-#define HAVE_FAST_CHECKSUM 1
+/* Define if your Linux kernel has polling extensions. */
+#undef HAVE_LINUX_POLLING
+
+/* Define if your Linux kernel has read_net_skbcount. */
+#undef HAVE_LINUX_READ_NET_SKBCOUNT
+
+/* Define if 'struct sk_buff' has a 'security' member. */
+#undef HAVE_LINUX_SKBUFF_SECURITY
+
+/* Define if your Linux kernel exposes strlen. */
+#undef HAVE_LINUX_STRLEN_EXPOSED
+
+/* Define if your Linux kernel has tulip_interrupt_hook. */
+#undef HAVE_LINUX_TULIP_INTERRUPT_HOOK
 
 /* Define if fast checksum functions require correct alignment. */
 #ifndef __i386__

@@ -258,7 +258,9 @@ skb_recycled_init_fast(struct sk_buff *skb)
     skb->prev = NULL;
     skb->list = NULL;
     skb->sk = NULL;
+#if HAVE_LINUX_SKBUFF_SECURITY
     skb->security = 0;
+#endif
     skb->priority = 0;
   }
   skb->pkt_type = PACKET_HOST;
