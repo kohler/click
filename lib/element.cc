@@ -60,10 +60,10 @@ int Element::nelements_allocated = 0;
 #endif
 
 /** @class Element
- * @brief Represents a Click element class. */
+ * @brief Base class for Click elements. */
 
 /** @class Element::Port
- * @brief Represents an Element's ports.
+ * @brief An Element's ports.
  *
  * Each of an element's ports has an associated Port object, accessible via
  * the Element::port(), Element::input(), and Element::output() functions.

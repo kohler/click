@@ -684,6 +684,7 @@ String::compare(const char *s, int len) const
 
 
 /** @class String::Initializer
+ * @brief Initializes the String implementation.
  *
  * This class's constructor initializes the String implementation by calling
  * String::static_initialize().  You should declare a String::Initializer

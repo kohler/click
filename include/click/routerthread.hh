@@ -155,6 +155,11 @@ class RouterThread
 };
 
 
+/** @brief Returns this thread's ID.
+ *
+ * The result is >= 0 for true threads, and < 0 for threads that never run any
+ * of their associated Tasks.
+ */
 inline int
 RouterThread::thread_id() const
 {

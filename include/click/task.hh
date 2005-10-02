@@ -45,27 +45,11 @@ class Task { public:
     inline Task(Element *e);		// call element->run_task()
     ~Task();
 
-    inline bool initialized() const;
-    inline bool scheduled() const;
-
     inline TaskHook hook() const;
     inline void *thunk() const;
     inline Element *element() const;
 
-    Master *master() const;
-    inline RouterThread *thread() const;
-
-    inline int home_thread_id() const;
-    void set_home_thread_id(int);
- 
-#ifdef HAVE_STRIDE_SCHED
-    inline int tickets() const;
-    inline void set_tickets(int);
-    inline void adjust_tickets(int);
-#endif
-
-    void initialize(Router *, bool scheduled);
-    void initialize(Element *, bool scheduled);
+    inline bool scheduled() const;
 
     void unschedule();
     inline void reschedule();
@@ -79,6 +63,21 @@ class Task { public:
 
     void strong_unschedule();
     void strong_reschedule();
+
+    inline int home_thread_id() const;
+    void set_home_thread_id(int);
+ 
+#ifdef HAVE_STRIDE_SCHED
+    inline int tickets() const;
+    inline void set_tickets(int);
+    inline void adjust_tickets(int);
+#endif
+
+    inline bool initialized() const;
+    void initialize(Router *, bool scheduled);
+    void initialize(Element *, bool scheduled);
+    inline RouterThread *thread() const;
+    Master *master() const;
 
     inline void call_hook();
 
@@ -170,11 +169,10 @@ CLICK_DECLS
  * bool work_done = hook(task, thunk);
  * @endcode
  *
- * where @a task is a pointer to this task.  The return value, @a work_done,
- * should be true if the task accomplished some meaningful work, and false if
- * it did not.  For example, a task that polls a network driver for packets
- * should return true if it emits at least one packet, and false if no packets
- * were available.
+ * where @a task is a pointer to this task.  The @a hook should return true if
+ * the task accomplished some meaningful work, and false if it did not.  For
+ * example, a task that polls a network driver for packets should return true
+ * if it emits at least one packet, and false if no packets were available.
  */
 inline
 Task::Task(TaskHook hook, void* thunk)
@@ -199,7 +197,7 @@ Task::Task(TaskHook hook, void* thunk)
 }
 
 /** @brief Construct a task that calls @a e ->@link Element::run_task()
- * run_task().@endlink
+ * run_task()@endlink.
  *
  * @param e element to call
  *
@@ -230,12 +228,14 @@ Task::Task(Element* e)
 {
 }
 
+/** @brief Returns true iff the task has been initialize()d. */
 inline bool
 Task::initialized() const
 {
     return _router != 0;
 }
 
+/** @brief Returns true iff the task is currently scheduled to run. */
 inline bool
 Task::scheduled() const
 {
@@ -246,24 +246,60 @@ Task::scheduled() const
 #endif
 }
 
+/** @brief Returns the task's hook function.
+ *
+ * Returns null if the task was constructed with the Task(Element *)
+ * constructor.
+ */
 inline TaskHook
 Task::hook() const
 {
     return _hook;
 }
 
+/** @brief Returns the task's thunk (the user data passed to its hook).
+ */
 inline void *
 Task::thunk() const
 {
     return _thunk;
 }
 
+/** @brief Returns the task's associated element, if any.
+ *
+ * Only works if the task was constructed with the Task(Element *)
+ * constructor.
+ */
 inline Element *
 Task::element()	const
 { 
     return _hook ? 0 : reinterpret_cast<Element*>(_thunk); 
 }
 
+/** @brief Returns the task's home thread ID.
+ *
+ * This is the @link RouterThread::thread_id() thread_id()@endlink of the
+ * thread on which this Task would run if it were scheduled.  This need not
+ * equal the ID of the current thread(), since changes in home_thread_id()
+ * aren't always implemented immediately (because of locking issues).
+ */
+inline int
+Task::home_thread_id() const
+{
+    return _home_thread_id;
+}
+
+/** @brief Returns the thread on which this element is currently scheduled, or
+ * would be scheduled.
+ *
+ * Usually, task->thread()->@link RouterThread::thread_id()
+ * thread_id()@endlink == task->home_thread_id().  They can differ, however,
+ * if set_home_thread_id() was called but the task hasn't yet been moved to
+ * the new thread, or if the task was strongly unscheduled with
+ * strong_unschedule().  (In this last case, task->thread()->@link
+ * RouterThread::thread_id() thread_id()@endlink ==
+ * RouterThread::THREAD_STRONG_UNSCHEDULE.)
+ */
 inline RouterThread *
 Task::thread() const
 {
@@ -489,12 +525,6 @@ Task::update_cycles(unsigned c)
     _cycle_runs = 0;
 }
 #endif
-
-inline int
-Task::home_thread_id() const
-{
-    return _home_thread_id;
-}
 
 CLICK_ENDDECLS
 #endif

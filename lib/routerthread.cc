@@ -50,6 +50,9 @@ CLICK_DECLS
 # define DRIVER_RESTRIDE_INTERVAL 80	/* microseconds between restrides */
 #endif
 
+/** @class RouterThread
+ * @brief A set of Tasks scheduled on the same CPU.
+ */
 
 RouterThread::RouterThread(Master *m, int id)
 #ifdef HAVE_TASK_HEAP

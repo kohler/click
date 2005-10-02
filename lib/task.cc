@@ -5,7 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2002 International Computer Science Institute
- * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2004-2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 /** @class Task
- * @brief Task */
+ * @brief A frequently-scheduled computation. */
 
 // - Changes to _thread are protected by _thread->lock.
 // - Changes to _home_thread_id are protected by
@@ -60,6 +60,8 @@ Task::~Task()
 #endif
 }
 
+/** @brief Return the master where this task will be scheduled.
+ */
 Master *
 Task::master() const
 {
@@ -67,14 +69,25 @@ Task::master() const
     return _thread->master();
 }
 
+/** @brief Initialize the Task, and optionally schedule it.
+ * @param router the router containing this Task
+ * @param schedule if true, the Task will be scheduled immediately
+ *
+ * This function must be called on every Task before it is used.  The @a
+ * router's ThreadSched, if any, is used to determine the task's initial
+ * thread assignment.  The task initially has the default number of tickets,
+ * and is scheduled iff @a schedule is true.
+ *
+ * An assertion will fail if a Task is initialized twice.
+ */
 void
-Task::initialize(Router *router, bool join)
+Task::initialize(Router *router, bool schedule)
 {
     assert(!initialized() && !scheduled());
 
     _router = router;
     
-    _home_thread_id = router->initial_home_thread_id(this, join);
+    _home_thread_id = router->initial_home_thread_id(this, schedule);
     if (_home_thread_id == ThreadSched::THREAD_UNKNOWN)
 	_home_thread_id = 0;
     // Master::thread() returns the quiescent thread if its argument is out of
@@ -85,14 +98,20 @@ Task::initialize(Router *router, bool join)
     set_tickets(DEFAULT_TICKETS);
 #endif
 
-    if (join)
+    if (schedule)
 	add_pending(RESCHEDULE);
 }
 
+/** @brief Initialize the Task, and optionally schedule it.
+ * @param e specifies the router containing the Task
+ * @param schedule if true, the Task will be scheduled immediately
+ *
+ * This method is shorthand for Task::initialize(Router *, bool).
+ */
 void
-Task::initialize(Element *e, bool join)
+Task::initialize(Element *e, bool schedule)
 {
-    initialize(e->router(), join);
+    initialize(e->router(), schedule);
 }
 
 void
