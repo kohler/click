@@ -31,7 +31,7 @@ const char Notifier::EMPTY_NOTIFIER[] = "Notifier.EMPTY";
 const char Notifier::FULL_NOTIFIER[] = "Notifier.FULL";
 
 /** @class NotifierSignal
- * @brief Represents an activity signal.
+ * @brief An activity signal.
  *
  * Activity signals in Click let one element determine whether another element
  * is active.  For example, consider an element @e X pulling from a @e Queue.
@@ -60,21 +60,36 @@ const char Notifier::FULL_NOTIFIER[] = "Notifier.FULL";
  */
 
 /** @class Notifier
- * @brief Class for notification providers.
+ * @brief A basic activity signal and notification provider.
  *
- * The Notifier class combines a basic activity signal with the optional
- * ability to wake up clients when the activity signal becomes active.  These
- * clients are called @e listeners.  Each listener corresponds to a Task
- * object.  The listener generally goes to sleep -- i.e., becomes unscheduled
- * -- when it runs out of work and the corresponding activity signal is
- * inactive.  The notifiers pledge to wake up each listener -- i.e., by
- * rescheduling the corresponding Task -- on becoming active.  The Notifier
- * class itself does not wake up clients; see ActiveNotifier for that.
+ * The Notifier class represents a basic activity signal associated with an
+ * element.  Elements that contain a Notifier object will override
+ * Element::cast() to return that Notifier when given the proper name.  This
+ * lets other parts of the configuration find the Notifiers.  See
+ * upstream_empty_signal() and downstream_full_signal().
  *
- * Elements that contain Notifier objects will generally override
- * Element::cast(), allowing other parts of the configuration to find the
- * Notifiers.  See upstream_empty_signal() and downstream_full_signal().
+ * The ActiveNotifier class, which derives from Notifier, can wake up clients
+ * when its activity signal becomes active.
  */
+
+/** @class ActiveNotifier
+ * @brief A basic activity signal and notification provider that can
+ * reschedule any dependent Task objects.
+ *
+ * ActiveNotifier, whose base class is Notifier, combines a basic activity
+ * signal with the ability to wake up any dependent Task objects when that
+ * signal becomes active.  Notifier clients are called @e listeners.  Each
+ * listener corresponds to a Task object.  The listener generally goes to
+ * sleep -- i.e., becomes unscheduled -- when it runs out of work and the
+ * corresponding activity signal is inactive.  The ActiveNotifier class will
+ * wake up the listener when it becomes active by rescheduling the relevant
+ * Task.
+ *
+ * Elements that contain ActiveNotifier objects will generally override
+ * Element::cast(), allowing other parts of the configuration to find the
+ * Notifiers.
+ */
+
 
 /** @brief Initialize the NotifierSignal implementation.
  *
@@ -180,29 +195,44 @@ Notifier::initialize(Router* r)
 }
 
 
+/** @brief Construct an ActiveNotifier.
+ * @param search_op controls notifier path search
+ *
+ * Constructs an ActiveNotifier object, analogous to the
+ * Notifier::Notifier(SearchOp) constructor.  (See that constructor for more
+ * informaiton on @a search_op.)
+ */
 ActiveNotifier::ActiveNotifier(SearchOp search_op)
     : Notifier(search_op), _listener1(0), _listeners(0)
 {
 }
 
+/** @brief Destroy an ActiveNotifier. */
 ActiveNotifier::~ActiveNotifier()
 {
     delete[] _listeners;
 }
 
+/** @brief Add a listener to this notifier.
+ * @param task the listener to add
+ *
+ * Adds @a task to this element's listener list (the clients interested in
+ * notification).  Whenever the ActiveNotifier activates its signal, @a task
+ * will be rescheduled.
+ */
 int
-ActiveNotifier::add_listener(Task* new_l)
+ActiveNotifier::add_listener(Task* task)
 {
-    if (!_listeners && (!_listener1 || _listener1 == new_l)) {
-	_listener1 = new_l;
+    if (!_listeners && (!_listener1 || _listener1 == task)) {
+	_listener1 = task;
 	return 0;
-    } else if (new_l == 0)
+    } else if (task == 0)
 	return 0;
 
     int n = (_listener1 ? 1 : 0);
     if (!_listener1)
 	for (Task **t = _listeners; *t; t++) {
-	    if (*t == new_l)
+	    if (*t == task)
 		return 0;
 	    n++;
 	}
@@ -214,24 +244,31 @@ ActiveNotifier::add_listener(Task* new_l)
 	return -1;
     }
     memcpy(new_list, old_list, sizeof(Task *) * 1);
-    new_list[n] = new_l;
+    new_list[n] = task;
     new_list[n + 1] = _listener1 = 0;
     delete[] _listeners;
     _listeners = new_list;
     return 0;
 }
 
+/** @brief Remove a listener from this notifier.
+ * @param task the listener to remove
+ *
+ * Removes @a task from this element's listener list (the clients interested
+ * in notification).  @a task will not be rescheduled when the Notifier is
+ * activated.
+ */
 void
-ActiveNotifier::remove_listener(Task* bad_l)
+ActiveNotifier::remove_listener(Task* task)
 {
-    if (!bad_l)
+    if (!task)
 	/* nada */;
-    else if (_listener1 == bad_l)
+    else if (_listener1 == task)
 	_listener1 = 0;
     else if (_listeners) {
 	int n = 0, which = -1;
 	for (Task** l = _listeners; *l; l++) {
-	    if (*l == bad_l)
+	    if (*l == task)
 		which = n;
 	    n++;
 	}
@@ -242,6 +279,11 @@ ActiveNotifier::remove_listener(Task* bad_l)
     }
 }
 
+/** @brief Return the listener list.
+ * @param[out] v collects listener tasks
+ *
+ * Pushes all listener Task objects onto the end of @a v.
+ */
 void
 ActiveNotifier::listeners(Vector<Task*>& v) const
 {

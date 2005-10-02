@@ -130,7 +130,7 @@ InfiniteSource::pull(int)
 {
   if (!_active) {
     if (Notifier::active()) {
-      sleep_listeners();
+      sleep();
     }
     return 0;
   }
@@ -139,7 +139,7 @@ InfiniteSource::pull(int)
       router()->please_stop_driver();
 
     if (Notifier::active()) {
-      sleep_listeners();
+      sleep();
     }
     return 0;
   }
@@ -250,7 +250,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
       is->_task.reschedule();
     
     if (is->output_is_pull(0) && !is->Notifier::active())
-      is->wake_listeners();
+      is->wake();
   }
   return 0;
 }

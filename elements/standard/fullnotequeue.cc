@@ -43,7 +43,7 @@ int
 FullNoteQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _full_note.initialize(router());
-    _full_note.set_active(true);
+    _full_note.set_active(true, false);
     return NotifierQueue::configure(conf, errh);
 }
 
@@ -65,18 +65,18 @@ FullNoteQueue::push(int, Packet *p)
 	// This can leave a single packet in the queue indefinitely in
 	// multithreaded Click, because of a race condition with pull().
         if (!_empty_note.active()) 
-	    _empty_note.wake_listeners(); 
+	    _empty_note.wake(); 
 #else
         if (s == 1) {
             _lock.acquire();
 	    if (!_empty_note.active())
-	        _empty_note.wake_listeners();
+	        _empty_note.wake();
 	    _lock.release();
 	}
 #endif
 
 	if (s == capacity())
-	    _full_note.sleep_listeners();
+	    _full_note.sleep();
 
     } else {
 	if (_drops == 0)
@@ -94,15 +94,15 @@ FullNoteQueue::pull(int)
     if (p) {
 	_sleepiness = 0;
 	if (size() == capacity() - 1)
-	    _full_note.wake_listeners();
+	    _full_note.wake();
 	
     } else if (++_sleepiness == SLEEPINESS_TRIGGER) {
 #if !NOTIFIERQUEUE_LOCK
-        _empty_note.sleep_listeners();
+        _empty_note.sleep();
 #else
 	_lock.acquire();
 	if (_head == _tail)  // if still empty...
-	    _empty_note.sleep_listeners();
+	    _empty_note.sleep();
 	_lock.release();
 #endif
     }

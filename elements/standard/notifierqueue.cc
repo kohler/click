@@ -65,12 +65,12 @@ NotifierQueue::push(int, Packet *p)
 	// This can leave a single packet in the queue indefinitely in
 	// multithreaded Click, because of a race condition with pull().
         if (!_empty_note.active()) 
-	    _empty_note.wake_listeners(); 
+	    _empty_note.wake(); 
 #else
         if (s == 1) {
             _lock.acquire();
 	    if (!_empty_note.active())
-	        _empty_note.wake_listeners();
+	        _empty_note.wake();
 	    _lock.release();
 	}
 #endif
@@ -92,11 +92,11 @@ NotifierQueue::pull(int)
 	_sleepiness = 0;
     else if (++_sleepiness == SLEEPINESS_TRIGGER) {
 #if !NOTIFIERQUEUE_LOCK
-        _empty_note.sleep_listeners();
+        _empty_note.sleep();
 #else
 	_lock.acquire();
 	if (_head == _tail)  // if still empty...
-	    _empty_note.sleep_listeners();
+	    _empty_note.sleep();
 	_lock.release();
 #endif
     }

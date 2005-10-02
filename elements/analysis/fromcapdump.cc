@@ -402,7 +402,7 @@ FromCapDump::pull(int)
 	if (!p) {
 	    if (_stop)
 		router()->please_stop_driver();
-	    _notifier.set_listeners(false);
+	    _notifier.sleep();
 	    return 0;
 	}
 	// check sampling probability
@@ -413,7 +413,7 @@ FromCapDump::pull(int)
 	    p->kill();
     }
 
-    _notifier.set_listeners(true);
+    _notifier.wake();
     return p;
 }
 
@@ -449,7 +449,7 @@ FromCapDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
 	      if (fd->output_is_push(0) && active && !fd->_task.scheduled())
 		  fd->_task.reschedule();
 	      else if (!fd->output_is_push(0))
-		  fd->_notifier.set_listeners(active);
+		  fd->_notifier.set_active(active, true);
 	      return 0;
 	  } else
 	      return errh->error("'active' should be Boolean");

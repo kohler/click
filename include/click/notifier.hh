@@ -59,7 +59,10 @@ class Notifier { public:
     inline SearchOp search_op() const;
 
     inline bool active() const;
-    inline void set_active(bool);
+
+    inline void set_active(bool active);
+    inline void wake();
+    inline void sleep();
     
     virtual int add_listener(Task*);
     virtual void remove_listener(Task*);
@@ -86,9 +89,9 @@ class ActiveNotifier : public Notifier { public:
     void remove_listener(Task*);
     void listeners(Vector<Task*>&) const;
 
-    inline void wake_listeners();
-    inline void sleep_listeners();
-    inline void set_listeners(bool awake);
+    inline void set_active(bool active, bool schedule = true);
+    inline void wake();
+    inline void sleep();
     
   private:
     
@@ -391,34 +394,68 @@ Notifier::set_active(bool active)
     _signal.set_active(active);
 }   
 
+/** @brief Sets the associated signal to active.
+ * @sa set_active
+ */
 inline void
-ActiveNotifier::wake_listeners()
+Notifier::wake()
 {
-    if (_listener1)
-	_listener1->reschedule();
-    else if (_listeners)
-	for (Task **t = _listeners; *t; t++)
-	    (*t)->reschedule();
     set_active(true);
-}
+}   
 
+/** @brief Sets the associated signal to inactive.
+ * @sa set_active
+ */
 inline void
-ActiveNotifier::sleep_listeners()
+Notifier::sleep()
 {
     set_active(false);
-}
+}   
 
+/** @brief Sets the associated signal's activity, possibly scheduling any
+ * listener tasks.
+ * @param active true iff the signal should be active
+ * @param schedule if true, wake up listener tasks
+ *
+ * If @a active and @a schedule are both true, and the signal was previously
+ * inactive, then any listener Tasks are scheduled with Task::reschedule().
+ *
+ * @sa wake, sleep, add_listener
+ */
 inline void
-ActiveNotifier::set_listeners(bool awake)
+ActiveNotifier::set_active(bool active, bool schedule)
 {
-    if (awake && !active()) {
+    if (active && !Notifier::active() && schedule) {
 	if (_listener1)
 	    _listener1->reschedule();
 	else if (_listeners)
 	    for (Task **t = _listeners; *t; t++)
 		(*t)->reschedule();
     }
-    set_active(awake);
+    Notifier::set_active(active);
+}
+
+/** @brief Sets the associated signal to active and schedules any listener
+ * tasks.
+ *
+ * If the signal was previously inactive, then any listener Tasks are
+ * scheduled with Task::reschedule().
+ *
+ * @sa set_active, add_listener
+ */
+inline void
+ActiveNotifier::wake()
+{
+    set_active(true, true);
+}
+
+/** @brief Sets the associated signal to inactive.
+ * @sa set_active
+ */
+inline void
+ActiveNotifier::sleep()
+{
+    set_active(false, true);
 }
 
 CLICK_ENDDECLS

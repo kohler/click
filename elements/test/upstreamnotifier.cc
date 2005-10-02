@@ -58,7 +58,7 @@ UpstreamNotifier::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
   }
 
-  _notifier.set_active(signal);
+  _notifier.set_active(signal, false);
   return 0;
 }
 void
@@ -89,12 +89,7 @@ write_param(const String &in_s, Element *e, void *vparam,
     bool signal;
     if (!cp_bool(s, &signal)) 
       return errh->error("signal parameter must be boolean");
-    f->_notifier.set_active(signal);
-    if (signal) {
-      f->_notifier.wake_listeners();
-    } else {
-      f->_notifier.sleep_listeners();
-    }
+    f->_notifier.set_active(signal, true);
 
     break;
   }

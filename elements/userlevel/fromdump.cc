@@ -293,7 +293,7 @@ FromDump::set_active(bool active)
 	if (output_is_push(0) && !_task.scheduled())
 	    _task.reschedule();
 	else if (!output_is_push(0))
-	    _notifier.wake_listeners();
+	    _notifier.wake();
     }
 }
 
@@ -444,7 +444,7 @@ Packet *
 FromDump::pull(int)
 {
     if (!_active) {
-	_notifier.sleep_listeners();
+	_notifier.sleep();
 	return 0;
     }
 
@@ -456,7 +456,7 @@ FromDump::pull(int)
 	    return 0;
 
     // notify presence/absence of more packets
-    _notifier.set_listeners(more);
+    _notifier.set_active(more, true);
     if (!more && _end_h)
 	_end_h->call_write(ErrorHandler::default_handler());
     

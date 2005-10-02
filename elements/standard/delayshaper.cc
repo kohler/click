@@ -90,17 +90,16 @@ DelayShaper::pull(int)
 	    return p;
 	} else if (diff._sec == 0 && diff._subsec < Timestamp::usec_to_subsec(100000)) {
 	    // small delta, don't go to sleep -- but mark our Signal as active,
-	    // since we have something ready. NB: should not wake listeners --
-	    // we are in pull()!
-	    _notifier.set_active(true);
+	    // since we have something ready.
+	    _notifier.wake();
 	} else {
 	    // large delta, go to sleep and schedule Timer
 	    _timer.schedule_at(_p->timestamp_anno());
-	    _notifier.sleep_listeners();
+	    _notifier.sleep();
 	}
     } else if (!_upstream_signal) {
 	// no packet available, we go to sleep right away
-	_notifier.sleep_listeners();
+	_notifier.sleep();
     }
 
     return 0;
@@ -109,7 +108,7 @@ DelayShaper::pull(int)
 void
 DelayShaper::run_timer(Timer *)
 {
-    _notifier.wake_listeners();
+    _notifier.wake();
 }
 
 String

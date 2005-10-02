@@ -325,7 +325,6 @@ Task::adjust_tickets(int delta)
 inline void
 Task::fast_reschedule()
 {
-    // should not be scheduled at this point
     assert(_thread);
 #if CLICK_LINUXMODULE
     // tasks never run at interrupt time in Linux
