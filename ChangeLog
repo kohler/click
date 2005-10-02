@@ -1,3 +1,21 @@
+2005-10-02 Sunday 18:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/fromcapdump.cc (1.13),
+	elements/analysis/fromipsumdump.cc (1.76),
+	elements/analysis/fromnetflowsumdump.cc (1.25),
+	elements/analysis/fromtcpdump.cc (1.14),
+	elements/analysis/timesortedsched.hh (1.10),
+	elements/standard/delayshaper.cc (1.20),
+	elements/standard/frontdropqueue.cc (1.21),
+	elements/standard/fullnotequeue.cc (1.6),
+	elements/standard/infinitesource.cc (1.55),
+	elements/standard/mixedqueue.cc (1.7),
+	elements/standard/notifierqueue.cc (1.16),
+	elements/test/upstreamnotifier.cc (1.5),
+	elements/userlevel/fromdump.cc (1.98), include/click/notifier.hh
+	(1.19), include/click/task.hh (1.40), lib/notifier.cc (1.20):
+	Notifier documentation-inspired updates
+
 2005-10-02 Sunday 16:54  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/wifi/analysis/: printseq.cc (1.2), printseq.hh (1.2),
