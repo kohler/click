@@ -1,3 +1,13 @@
+2005-10-01 Saturday 21:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/tcpudp/tcprewriter.cc (1.42): fix apply_sack() bug:
+	process options other than NOP, EOL and SACK.  Bug report by
+	Weidoing Cui
+
+2005-10-01 Saturday 21:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config.h.in (1.34): GCC version fixup
+
 2005-09-30 Friday 16:45  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/sr/: srdestcache.cc (1.1), srdestcache.hh (1.1):
