@@ -1,3 +1,16 @@
+2005-10-02 Sunday 16:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/analysis/: printseq.cc (1.2), printseq.hh (1.2),
+	wificounter.hh (1.2): compile fixes, and use port_count()
+
+2005-10-02 Sunday 16:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.97), INSTALL (1.39), config-linuxmodule.h.in (1.13),
+	configure (1.60), configure.in (1.267), etc/README (1.12),
+	etc/linux-2.6.13.2-patch (1.1), linuxmodule/Makefile.in (1.100),
+	linuxmodule/skbmgr.cc (1.21): add patch for 2.6.13.2; requires
+	configury change as well
+
 2005-10-01 Saturday 21:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/tcpudp/tcprewriter.cc (1.42): fix apply_sack() bug:
