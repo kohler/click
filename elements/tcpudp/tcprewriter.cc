@@ -93,6 +93,11 @@ TCPRewriter::TCPMapping::apply_sack(click_tcp *tcph, int len)
 	    for (uint16_t *csum = csum_begin; reinterpret_cast<uint8_t *>(csum) < end_sack; csum++)
 		csum_delta += *csum;
 	    break;
+	  default:
+	    if (opt[1] < 2)
+		goto done;
+	    opt += opt[1];
+	    break;
 	}
 
   done:
