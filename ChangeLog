@@ -1,3 +1,10 @@
+2005-10-02 Sunday 21:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/routerthread.hh (1.35), include/click/task.hh
+	(1.42), lib/master.cc (1.33), lib/router.cc (1.183),
+	lib/routerthread.cc (1.58), lib/task.cc (1.41), lib/timer.cc
+	(1.38): RouterThread documentation and updates
+
 2005-10-02 Sunday 20:22  John Bicket <jbicket@mit.edu>
 
 	* elements/tcpudp/tcprewriter.cc (1.43): fix compile break over
