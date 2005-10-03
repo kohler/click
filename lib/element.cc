@@ -964,7 +964,7 @@ Element::configure_phase() const
  * returns.
  *
  * Any errors, warnings, or messages should be reported to @a errh.  Messages
- * should not specify the element name or type, since this information will be
+ * need not specify the element name or type, since this information will be
  * provided as context.
  *
  * configure() should return a negative number if configuration fails.
@@ -983,7 +983,7 @@ Element::configure_phase() const
  * configure() methods succeed, the add_handlers() functions will be called
  * next.
  *
- * A configure() method should not perform potentially harmful actions, such
+ * A configure() method should avoid potentially harmful actions, such
  * as truncating files or attaching to devices.  These actions should be left
  * for the initialize() method, which is called later.  This avoids harm if
  * another element cannot be configured, or if the router is incorrectly
@@ -1045,7 +1045,7 @@ Element::add_handlers()
  * The initialize() method is called just before the router is placed on
  * line. It performs any final initialization, and provides the last chance to
  * abort router installation with an error.  Any errors, warnings, or messages
- * should be reported to @a errh.  Messages should not specify the element
+ * should be reported to @a errh.  Messages need not specify the element
  * name; this information will be supplied externally.
  *
  * initialize() should return zero if initialization succeeds, or a negative
