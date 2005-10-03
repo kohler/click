@@ -1,3 +1,12 @@
+2005-10-03 Monday 19:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/fromdump.cc (1.99),
+	elements/userlevel/fromdump.hh (1.59),
+	elements/userlevel/fromfile.hh (1.6), elements/userlevel/todump.cc
+	(1.64), include/click/element.hh (1.46), lib/element.cc (1.104):
+	Vern Paxson suggested a better USE_ENCAP_FROM error message;
+	implement it.  Includes making declaration() virtual
+
 2005-10-03 Monday 14:37  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/glue.hh (1.53): byteswap.h needs to be checked for
