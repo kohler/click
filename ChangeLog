@@ -1,3 +1,12 @@
+2005-10-03 Monday 12:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/analysis/: printrate.cc (1.2), printrate.hh (1.2):
+	fix port_count()/processing() methods
+
+2005-10-03 Monday 12:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/element.cc (1.103): doc
+
 2005-10-03 Monday 12:27  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/element.cc (1.102): doc
