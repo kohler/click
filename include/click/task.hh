@@ -412,7 +412,7 @@ Task::fast_schedule()
     SPLCHECK;
     assert(_tickets >= 1);
 #if HAVE_TASK_HEAP
-    _pass = (_thread->empty() ? 0 : _thread->_task_heap[0]->_pass);
+    _pass = (_thread->active() ? _thread->_task_heap[0]->_pass : 0);
 #else
     _pass = _thread->_next->_pass;
 #endif

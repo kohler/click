@@ -249,7 +249,7 @@ Master::kill_router(Router *router)
 
     // something has happened, so wake up threads
     for (RouterThread** tp = _threads.begin() + 2; tp < _threads.end(); tp++)
-	(*tp)->unsleep();
+	(*tp)->wake();
 }
 
 void

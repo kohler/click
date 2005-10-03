@@ -83,7 +83,7 @@ Timer::schedule_at(const Timestamp& when)
 
     // if we changed the timeout, wake up the first thread
     if (_schedpos == 0)
-	master->_threads[2]->unsleep();
+	master->_threads[2]->wake();
 
     // done
     master->_timer_lock.release();

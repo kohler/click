@@ -109,7 +109,7 @@ RouterThread::RouterThread(Master *m, int id)
 RouterThread::~RouterThread()
 {
     _pending = 0;
-    assert(empty());
+    assert(!active());
 }
 
 inline void
@@ -373,10 +373,10 @@ RouterThread::run_os()
     unlock_tasks();
 
 #if CLICK_USERLEVEL
-    _master->run_selects(!empty());
+    _master->run_selects(active());
 #elif !defined(CLICK_GREEDY)
 # if CLICK_LINUXMODULE		/* Linux kernel module */
-    if (!empty()) {
+    if (active()) {
       short_pause:
 	SET_STATE(S_PAUSED);
 	current->state = TASK_RUNNING;
@@ -398,7 +398,7 @@ RouterThread::run_os()
 	goto block;
     SET_STATE(S_RUNNING);
 # elif defined(CLICK_BSDMODULE)
-    if (!empty()) {	// just schedule others for a moment
+    if (active()) {	// just schedule others for a moment
 	yield(curproc, NULL);
     } else {
 	_sleep_ident = &_sleep_ident;	// arbitrary address, != NULL

@@ -623,7 +623,7 @@ Router::set_runcount(int x)
 	_master->_runcount = _runcount;
 	// ensure that at least one thread is awake to handle the stop event
 	if (_master->_runcount <= 0)
-	    _master->_threads[2]->unsleep();
+	    _master->_threads[2]->wake();
     }
     _master->_runcount_lock.release();
 }
@@ -646,7 +646,7 @@ Router::adjust_runcount(int delta)
 	_master->_runcount = _runcount;
 	// ensure that at least one thread is awake to handle the stop event
 	if (_master->_runcount <= 0)
-	    _master->_threads[2]->unsleep();
+	    _master->_threads[2]->wake();
     }
     
     _master->_runcount_lock.release();

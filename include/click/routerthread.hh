@@ -36,20 +36,20 @@ class RouterThread
 	   THREAD_UNKNOWN = -1000 };
     
     inline int thread_id() const;
-    inline Master* master() const;
-
-    void driver();
-    void driver_once();
 
     // Task list functions
-    inline bool empty() const;
+    inline bool active() const;
     inline Task *task_begin() const;
+    inline Task *task_next(Task *task) const;
     inline Task *task_end() const;
-    inline Task *task_next(Task *) const;
     
     inline void lock_tasks();
     inline bool attempt_lock_tasks();
     inline void unlock_tasks();
+
+    inline Master* master() const;
+    void driver();
+    void driver_once();
 
     void unschedule_router_tasks(Router*);
 
@@ -62,7 +62,7 @@ class RouterThread
     void set_cpu_share(unsigned min_share, unsigned max_share);
 #endif
 
-    inline void unsleep();
+    inline void wake();
 
 #if CLICK_DEBUG_SCHEDULING
     enum { S_RUNNING, S_PAUSED, S_TIMER, S_BLOCKED };
@@ -166,22 +166,53 @@ RouterThread::thread_id() const
     return _id;
 }
 
+/** @brief Returns this thread's associated Master. */
 inline Master*
 RouterThread::master() const
 {
     return _master;
 }
 
+/** @brief Returns whether any tasks are scheduled.
+ *
+ * Returns false iff no tasks are scheduled and no events are pending.  Since
+ * not all events actually matter (for example, a Task might have been
+ * scheduled and then subsequently unscheduled), active() may temporarily
+ * return true even when no real events are outstanding.
+ */
 inline bool
-RouterThread::empty() const
+RouterThread::active() const
 {
 #ifdef HAVE_TASK_HEAP
-    return _task_heap.size() == 0 && !_pending;
+    return _task_heap.size() != 0 || _pending;
 #else
-    return ((const Task *)_next == this) && !_pending;
+    return ((const Task *)_next != this) || _pending;
 #endif
 }
 
+/** @brief Returns the beginning of the scheduled task list.
+ *
+ * Each RouterThread maintains a list of all currently-scheduled tasks.
+ * Elements may traverse this list with the task_begin(), task_next(), and
+ * task_end() functions, using iterator-like code such as:
+ *
+ * @code
+ * thread->lock_tasks();
+ * for (Task *t = thread->task_begin();
+ *      t != thread->task_end();
+ *      t = thread->task_next(t)) {
+ *     // ... do something with t...
+ * }
+ * thread->unlock_tasks();
+ * @endcode
+ *
+ * The thread's task lock must be held during the traversal, as shown above.
+ *
+ * The return value may not be a real task.  Test it against task_end() before
+ * use.
+ *
+ * @sa task_next, task_end, lock_tasks, unlock_tasks
+ */
 inline Task *
 RouterThread::task_begin() const
 {
@@ -193,6 +224,32 @@ RouterThread::task_begin() const
 #endif
 }
 
+/** @brief Returns the task following @a task in the scheduled task list.
+ * @param task the current task
+ *
+ * The return value may not be a real task.  Test it against task_end() before
+ * use.  However, the @a task argument must be a real task; do not attempt to
+ * call task_next(task_end()).
+ *
+ * @sa task_begin for usage, task_end
+ */
+inline Task *
+RouterThread::task_next(Task *task) const
+{
+#ifdef HAVE_TASK_HEAP
+    int p = task->_schedpos + 1;
+    return (p < _task_heap.size() ? _task_heap[p] : 0);
+#else
+    return task->_next;
+#endif
+}
+
+/** @brief Returns the end of the scheduled task list.
+ *
+ * The return value is not a real task
+ *
+ * @sa task_begin for usage, task_next
+ */
 inline Task *
 RouterThread::task_end() const
 {
@@ -200,17 +257,6 @@ RouterThread::task_end() const
     return 0;
 #else
     return (Task *) this;
-#endif
-}
-
-inline Task *
-RouterThread::task_next(Task *t) const
-{
-#ifdef HAVE_TASK_HEAP
-    int p = t->_schedpos + 1;
-    return (p < _task_heap.size() ? _task_heap[p] : 0);
-#else
-    return t->_next;
 #endif
 }
 
@@ -235,7 +281,7 @@ RouterThread::unlock_tasks()
 }
 
 inline void
-RouterThread::unsleep()
+RouterThread::wake()
 {
 #ifdef CLICK_LINUXMODULE
     if (_sleeper)
@@ -251,7 +297,7 @@ inline void
 RouterThread::add_pending()
 {
     _pending++;
-    unsleep();
+    wake();
 }
 
 CLICK_ENDDECLS
