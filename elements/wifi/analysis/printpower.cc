@@ -28,7 +28,6 @@
 CLICK_DECLS
 
 PrintPower::PrintPower()
-  : Element(1, 1)
 {
 }
 

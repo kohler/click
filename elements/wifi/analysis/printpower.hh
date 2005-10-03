@@ -27,6 +27,7 @@ class PrintPower : public Element {
   ~PrintPower();
   
   const char *class_name() const		{ return "PrintPower"; }
+  const char *port_count() const		{ return "1/1"; }
   const char *processing() const		{ return AGNOSTIC; }
   
   int configure(Vector<String> &, ErrorHandler *);
