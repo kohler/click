@@ -1,3 +1,28 @@
+2005-10-03 Monday 12:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/element.cc (1.102): doc
+
+2005-10-03 Monday 12:12  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/glue.hh (1.52): fix irritating appleism
+
+2005-10-03 Monday 12:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/: click-align/Makefile.in (1.20), click-check/Makefile.in
+	(1.16), click-combine/Makefile.in (1.16),
+	click-devirtualize/Makefile.in (1.16),
+	click-fastclassifier/Makefile.in (1.21), click-flatten/Makefile.in
+	(1.12), click-install/Makefile.in (1.25),
+	click-mkmindriver/Makefile.in (1.15), click-pretty/Makefile.in
+	(1.9), click-undead/Makefile.in (1.15), click-xform/Makefile.in
+	(1.24), click2xml/Makefile.in (1.7): change link order (YenJung
+	Chang)
+
+2005-10-03 Monday 11:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/analysis/: printpower.cc (1.2), printpower.hh
+	(1.2): use port_count()
+
 2005-10-03 Monday 11:17  John Bicket <jbicket@mit.edu>
 
 	* include/click/glue.hh (1.51): fix bswap bug given by YenJung
