@@ -66,33 +66,35 @@ TCPRewriter::TCPMapping::apply_sack(click_tcp *tcph, int len)
 	    opt++;
 	    break;
 	  case TCPOPT_SACK:
-	    if (opt + opt[1] > end_opt || (opt[1] % 8) != 2)
-		goto done;
-	    uint8_t *end_sack = opt + opt[1];
-
-	    // develop initial checksum value
-	    uint16_t *csum_begin = reinterpret_cast<uint16_t *>(begin_opt + ((opt + 2 - begin_opt) & ~1));
-	    for (uint16_t *csum = csum_begin; reinterpret_cast<uint8_t *>(csum) < end_sack; csum++)
-		csum_delta += ~*csum & 0xFFFF;
-	    
-	    for (opt += 2; opt < end_sack; opt += 8) {
+	      if (opt + opt[1] > end_opt || (opt[1] % 8) != 2) {
+		  goto done;
+	      } else {
+		  uint8_t *end_sack = opt + opt[1];
+		  
+		  // develop initial checksum value
+		  uint16_t *csum_begin = reinterpret_cast<uint16_t *>(begin_opt + ((opt + 2 - begin_opt) & ~1));
+		  for (uint16_t *csum = csum_begin; reinterpret_cast<uint8_t *>(csum) < end_sack; csum++)
+		      csum_delta += ~*csum & 0xFFFF;
+		  
+		  for (opt += 2; opt < end_sack; opt += 8) {
 #if HAVE_INDIFFERENT_ALIGNMENT
-		uint32_t *uopt = reinterpret_cast<uint32_t *>(opt);
-		uopt[0] = htonl(new_ack(ntohl(uopt[0])));
-		uopt[1] = htonl(new_ack(ntohl(uopt[1])));
+		      uint32_t *uopt = reinterpret_cast<uint32_t *>(opt);
+		      uopt[0] = htonl(new_ack(ntohl(uopt[0])));
+		      uopt[1] = htonl(new_ack(ntohl(uopt[1])));
 #else
-		uint32_t buf[2];
-		memcpy(&buf[0], opt, 8);
-		buf[0] = htonl(new_ack(ntohl(buf[0])));
-		buf[1] = htonl(new_ack(ntohl(buf[1])));
-		memcpy(opt, &buf[0], 8);
+		      uint32_t buf[2];
+		      memcpy(&buf[0], opt, 8);
+		      buf[0] = htonl(new_ack(ntohl(buf[0])));
+		      buf[1] = htonl(new_ack(ntohl(buf[1])));
+		      memcpy(opt, &buf[0], 8);
 #endif
-	    }
-
-	    // finish off csum_delta calculation
-	    for (uint16_t *csum = csum_begin; reinterpret_cast<uint8_t *>(csum) < end_sack; csum++)
-		csum_delta += *csum;
-	    break;
+		  }
+		  
+		  // finish off csum_delta calculation
+		  for (uint16_t *csum = csum_begin; reinterpret_cast<uint8_t *>(csum) < end_sack; csum++)
+		      csum_delta += *csum;
+		  break;
+	      }
 	  default:
 	    if (opt[1] < 2)
 		goto done;
