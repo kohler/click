@@ -345,23 +345,25 @@ CLICK_ENDDECLS
 
 // BYTE ORDER
 
-#if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN && defined(__APPLE__)
+#if CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
+# define le16_to_cpu(x) (x)
+# define cpu_to_le16(x) (x)
+# define le32_to_cpu(x) (x)
+# define cpu_to_le32(x) (x)
+#elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN && defined(__APPLE__)
 # include <machine/byte_order.h>
 # define le16_to_cpu(x) NXSwapShort((x))
 # define cpu_to_le16(x) NXSwapShort((x))
 # define le32_to_cpu(x) NXSwapInt((x))
 # define cpu_to_le32(x) NXSwapInt((x))
-#elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+#elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN && HAVE_BYTESWAP_H
 # include <byteswap.h>
 # define le16_to_cpu(x) bswap_16((x))
 # define cpu_to_le16(x) bswap_16((x))
 # define le32_to_cpu(x) bswap_32((x))
 # define cpu_to_le32(x) bswap_32((x))
 #else
-# define le16_to_cpu(x) (x)
-# define cpu_to_le16(x) (x)
-# define le32_to_cpu(x) (x)
-# define cpu_to_le32(x) (x)
+/* leave them undefined */
 #endif
 
 
