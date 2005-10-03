@@ -346,6 +346,7 @@ CLICK_ENDDECLS
 // BYTE ORDER
 
 #if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+# include <byteswap.h>
 # define le16_to_cpu(x) bswap_16((x))
 # define cpu_to_le16(x) bswap_16((x))
 # define le32_to_cpu(x) bswap_32((x))
