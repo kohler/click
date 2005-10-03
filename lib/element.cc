@@ -1120,9 +1120,13 @@ Element::initialize(ErrorHandler *errh)
  * The @a old_element argument is an element from the old configuration (that
  * is, from router()->@link Router::hotswap_router() hotswap_router()@endlink)
  * obtained by calling hotswap_element().  If hotswap_element() returns null,
- * take_state() will not be called.  Generally, @a old_element has the same
- * id() as this element, but you can override hotswap_element() to provide
- * different semantics.
+ * take_state() will not be called.  The default hotswap_element() returns an
+ * @a old_element has the same id() as this element.  This is often too loose;
+ * for instance, @a old_element might have a completely different class.
+ * Thus, most take_state() methods begin by attempting to cast() @a
+ * old_element to a compatible class, and silently returning if the result is
+ * null.  Alternatively, you can override hotswap_element() and put the check
+ * there.
  *
  * Errors and warnings should be reported to @a errh, but the router will be
  * installed whether or not there are errors.  take_state() should always
