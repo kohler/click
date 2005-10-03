@@ -1,3 +1,7 @@
+2005-10-03 Monday 14:37  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/glue.hh (1.53): byteswap.h needs to be checked for
+
 2005-10-03 Monday 12:56  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/wifi/analysis/: printrate.cc (1.2), printrate.hh (1.2):
