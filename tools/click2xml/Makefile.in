@@ -69,10 +69,10 @@ $(LIBCLICKTOOL):
 	@cd ../lib; $(MAKE) $(LIBCLICKTOOL)
 
 click2xml: Makefile $(CLICK2XML_OBJS) ../lib/$(LIBCLICKTOOL)
-	$(CXXLINK) -rdynamic $(CLICK2XML_OBJS) $(LIBS) ../lib/$(LIBCLICKTOOL)
+	$(CXXLINK) -rdynamic $(CLICK2XML_OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS)
 
 xml2click: Makefile $(XML2CLICK_OBJS) ../lib/$(LIBCLICKTOOL)
-	$(CXXLINK) -rdynamic $(XML2CLICK_OBJS) $(LIBS) ../lib/$(LIBCLICKTOOL)
+	$(CXXLINK) -rdynamic $(XML2CLICK_OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \

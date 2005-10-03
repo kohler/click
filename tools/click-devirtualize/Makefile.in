@@ -68,7 +68,7 @@ $(LIBCLICKTOOL):
 	@cd ../lib; $(MAKE) $(LIBCLICKTOOL)
 
 click-devirtualize: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
-	$(CXXLINK) -rdynamic $(OBJS) $(LIBS) ../lib/$(LIBCLICKTOOL)
+	$(CXXLINK) -rdynamic $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \

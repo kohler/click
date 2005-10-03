@@ -69,10 +69,10 @@ $(LIBCLICKTOOL):
 	@cd ../lib; $(MAKE) $(LIBCLICKTOOL)
 
 click-install: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
-	$(CXXLINK) -rdynamic $(OBJS) $(LIBS) ../lib/$(LIBCLICKTOOL)
+	$(CXXLINK) -rdynamic $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS)
 
 click-uninstall: Makefile $(UN_OBJS) ../lib/$(LIBCLICKTOOL)
-	$(CXXLINK) -rdynamic $(UN_OBJS) $(LIBS) ../lib/$(LIBCLICKTOOL)
+	$(CXXLINK) -rdynamic $(UN_OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
