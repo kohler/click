@@ -28,7 +28,6 @@
 CLICK_DECLS
 
 PrintRate::PrintRate()
-  : Element(1, 1)
 {
 }
 
