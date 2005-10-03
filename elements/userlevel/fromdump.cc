@@ -21,6 +21,7 @@
 #include "fromdump.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
+#include <click/straccum.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -63,6 +64,16 @@ FromDump::cast(const char *n)
 	return static_cast<Notifier *>(&_notifier);
     } else
 	return Element::cast(n);
+}
+
+String
+FromDump::declaration() const
+{
+    StringAccum sa;
+    sa << id() << " :: " << class_name();
+    if (_ff.initialized())
+	sa << '(' << _ff.print_filename() << ')';
+    return sa.take_string();
 }
 
 int

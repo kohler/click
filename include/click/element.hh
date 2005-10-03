@@ -105,8 +105,8 @@ class Element { public:
 
     // ELEMENT ROUTER CONNECTIONS
     String id() const;
-    String declaration() const;
     String landmark() const;
+    virtual String declaration() const;
   
     inline Router *router() const;
     inline int eindex() const;

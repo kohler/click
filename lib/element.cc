@@ -213,7 +213,11 @@ Element::id() const
 
 /** @brief Return a string giving the element's name and class name.
  *
- * The result has the form &quot;@e name :: @e class_name&quot;. */
+ * The result has the form &quot;@e name :: @e class_name&quot;.  Element
+ * classes can override this function to supply additional important
+ * information, if desired; for example, @e FromDump returns a string &quot;@e
+ * name :: @e class_name(@e filename)&quot;.
+ */
 String
 Element::declaration() const
 {

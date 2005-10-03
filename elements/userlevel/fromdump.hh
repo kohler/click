@@ -180,6 +180,7 @@ class FromDump : public Element { public:
     const char *port_count() const		{ return "0/1-2"; }
     const char *processing() const		{ return "a/ah"; }
     void *cast(const char *);
+    String declaration() const;
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

@@ -116,16 +116,25 @@ ToDump::initialize(ErrorHandler *errh)
     // check _use_encap_from
     if (_use_encap_from) {
 	_linktype = -1;
+	// collect encap types
+	Vector<String> encap_types;
 	for (int i = 0; _use_encap_from[i]; i++) {
 	    const Handler *h = Router::handler(_use_encap_from[i], "encap");
 	    if (!h || !h->readable())
 		return errh->error("'%{element}' has no 'encap' read handler", _use_encap_from[i]);
-	    int et = fake_pcap_parse_dlt(cp_uncomment(h->call_read(_use_encap_from[i])));
+	    encap_types.push_back(cp_uncomment(h->call_read(_use_encap_from[i])));
+	}
+	// parse encap types
+	for (int i = 0; i < encap_types.size(); i++) {
+	    int et = fake_pcap_parse_dlt(encap_types[i]);
 	    if (et < 0)
 		return errh->error("'%{element}.encap' did not return a valid encapsulation type", _use_encap_from[i]);
-	    else if (_linktype >= 0 && et != _linktype)
-		return errh->error("'USE_ENCAP_FROM' elements have different encapsulation types");
-	    else
+	    else if (_linktype >= 0 && et != _linktype) {
+		errh->error("source encapsulation types disagree:");
+		for (int j = 0; j < encap_types.size(); j++)
+		    errh->error("  %s has %s\n", _use_encap_from[j]->declaration().c_str(), encap_types[j].c_str());
+		return -EINVAL;
+	    } else
 		_linktype = et;
 	}
     }

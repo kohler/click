@@ -17,6 +17,7 @@ class FromFile { public:
     
     const String &filename() const	{ return _filename; }
     String &filename()			{ return _filename; }
+    bool initialized() const		{ return _fd >= 0; }
 
     void set_landmark_pattern(const String &lp) { _landmark_pattern = lp; }
     String landmark(const String &landmark_pattern) const;
