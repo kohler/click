@@ -1,3 +1,7 @@
+2005-10-04 Tuesday 11:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/element.cc (1.105): tiny nit
+
 2005-10-03 Monday 19:26  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/fromdump.cc (1.99),
