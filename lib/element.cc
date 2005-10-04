@@ -359,9 +359,8 @@ Element::ports_frozen() const
  * @arg @c PORTS_1_0 for @c "1/0"
  * @arg @c PORTS_1_1 for @c "1/1"
  *
- * Since port_count() should return a C string constant with no other
- * processing, it shouldn't matter when it's called; nevertheless, it is
- * called before configure().
+ * Since port_count() should simply return a C string constant, it shouldn't
+ * matter when it's called; nevertheless, it is called before configure().
  */
 const char *
 Element::port_count() const
@@ -598,9 +597,8 @@ Element::connect_port(bool isoutput, int port, Element* e, int e_port)
  *
  * @arg @c COMPLETE_FLOW for @c "x/x"
  *
- * Since flow_code() should return a C string constant with no other
- * processing, it shouldn't matter when it's called; nevertheless, it is
- * called before configure().
+ * Since flow_code() should simply return a C string constant, it shouldn't
+ * matter when it's called; nevertheless, it is called before configure().
  *
  * <h3>Determining an element's flow code</h3>
  *
@@ -823,9 +821,8 @@ Element::port_flow(bool isoutput, int port, Bitvector* travels) const
  * @arg @c PUSH_TO_PULL for @c "h/l"
  * @arg @c PULL_TO_PUSH for @c "l/h"
  *
- * Since processing() should return a C string constant with no other
- * processing, it shouldn't matter when it's called; nevertheless, it is
- * called before configure().
+ * Since processing() should simply return a C string constant, it shouldn't
+ * matter when it's called; nevertheless, it is called before configure().
  */
 const char*
 Element::processing() const
