@@ -2409,8 +2409,7 @@ does not end in newline, the hander appends a newline itself. Example
 result: @strcode{"18.26.7.1, 00:00:C0:4F:71:EF\n"}.
 
 If @code{can_live_reconfigure} returns true, @handler{config} is also a
-write handler, and writing to it reconfigures the element. @xref{Live
-Reconfiguration}.
+write handler, and writing to it reconfigures the element.
 
 @item @handler{ports}
 Returns a multi-line string describing the element's ports and what they
