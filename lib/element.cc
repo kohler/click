@@ -60,7 +60,90 @@ int Element::nelements_allocated = 0;
 #endif
 
 /** @class Element
- * @brief Base class for Click elements. */
+    @brief Base class for Click elements.
+ 
+    Click programmers spend most of their time writing elements, which are
+    subclasses of class Element.  Element provides functionality of its own,
+    particularly the input() and output() methods and associated Element::Port
+    objects.  More important, however, is the set of functions that derived
+    classes override to define element behavior.  Good Click programmers
+    understand how the Click system uses these functions to manipulate and
+    initialize elements.  These functions fall into several categories:
+ 
+  <dl>
+  <dt>Behavior specifications</dt>
+  <dd>These functions return static constants that describe element
+  properties, such as class names, valid numbers of ports, and port processing
+  types.  Their values are automatically extracted from element source code
+  for use by tools, so your source code should follow a specific syntax.
+  Examples: class_name(), port_count(), processing(), flow_code(), flags().
+  Honorary examples: cast(), configure_phase(), can_live_reconfigure().</dd>
+  <dt>Configuration, initialization, and cleanup</dt>
+  <dd>Configuration and initialization functions are called to set up an
+  element as a router is initialized (or when the element itself is
+  reconfigured).  Most of the functions are passed an ErrorHandler argument,
+  to which they should report any errors.  By returning negative values, they
+  can prevent the router from initializing.  Other functions clean up
+  elements when a router is removed and reconfigure an element as the router
+  runs.  Examples: configure(), add_handlers(), initialize(), take_state(),
+  cleanup(), live_reconfigure().</dd>
+  <dt>Packet and event processing</dt>
+  <dd>These functions are called as the router runs to process packets and
+  other events.  Examples: push(), pull(), simple_action(), run_task(),
+  run_timer(), selected().</dd>
+  </dl>
+ 
+  <h3>Initialization Phases</h3>
+ 
+  Interactions between Click elements' initialization functions can be
+  relatively complex.  This section describes which element functions are
+  called during router initialization and cleanup, and in what order.
+
+  Initialization takes place as follows.  Errors at any stage prevent later
+  stages from running; Click executes the cleanup code instead.
+ 
+  -# Collects element properties, specifically configure_phase(),
+     port_count(), flow_code(), processing(), and can_live_reconfigure().
+  -# Calculates how many of each element's input and output ports are used in
+     the configuration.  There is an error if port_count() doesn't allow the
+     result.     
+  -# Calculates each port's push or pull status.  This depends on processing()
+     values, and for agnostic ports, a constraint satisfaction algorithm that
+     uses flow_code().
+  -# Checks that every connection is between two push ports or two pull ports;
+     that there are no agnostic port conflicts (each port is used as push or
+     pull, never both); that no port goes unused; and that push output ports
+     and pull input ports are connected exactly once.  Violations cause an
+     error.
+  -# Sorts the elements by configure_phase() to construct a configuration
+     order.
+  -# Calls each element's configure() method in order, passing its
+     configuration arguments and an ErrorHandler.  All configure() functions
+     are called, even if a prior configure() function returns an error.
+  -# Calls every element's add_handlers() method.
+  -# Calls every element's initialize() method in configuration order.
+     Initialization is aborted as soon as any method returns an error
+     (i.e., some initialize() methods might not be called).
+  -# At this point, the router will definitely be installed.  If the router
+     was installed with a hotswap option, then Click searches the old and new
+     router for potentially compatible pairs using hotswap_element(), and
+     calls take_state() for each pair.  Any errors are ignored.
+  -# Installs the router.
+
+  Router cleanup takes place as follows.  Click:
+
+  -# Removes all element handlers.
+  -# Calls each element's cleanup() function in reverse configuration order,
+     passing a constant that specifies which configuration functions
+     returned successfully.
+  -# Deletes each element.  This step might be delayed relative to cleanup()
+     to allow the programmer to examine an erroneous router's state.
+  
+  @note For backwards compatibility, the current version will call configure()
+  even if ports or connections are incorrect, giving old code a chance to fix
+  the port counts with add_input() and add_output().  This behavior will be
+  removed in a future version.
+*/
 
 /** @class Element::Port
  * @brief An Element's ports.
@@ -163,23 +246,29 @@ Element::~Element()
  *
  * You should override cast() if your element inherits from another element
  * (and you want to expose that inheritance to Click); the resulting cast()
- * method will check both class names.  For example, if element @a B inherited
- * from element @a A, B::cast() might be defined like this:
+ * method will check both class names.  For example, if element @a Derived
+ * inherited from element @a Base, Derived::cast() might be defined like this:
  *
  * @code
- * void *B::cast(const char *name) {
- *     if (strcmp(name, "B") == 0)
- *         return (B *) this;
- *     else if (strcmp(name, "A") == 0)
- *         return (A *) this;
+ * void *Derived::cast(const char *name) {
+ *     if (strcmp(name, "Derived") == 0)
+ *         return (Derived *) this;
+ *     else if (strcmp(name, "Base") == 0)
+ *         return (Base *) this;
  *     else
- *         return A::cast(name);
+ *         return Base::cast(name);
  * }
  * @endcode
  *
- * The recursive call to A::cast() is useful in case @e A itself overrides
- * cast().  You should also override cast() if your element provides another
- * interface, such as Storage or a Notifier.
+ * The recursive call to Base::cast() is useful in case @e Base itself
+ * overrides cast().  The explicit check for the name @c "Base" is necessary
+ * in case @e Base did @e not override cast(): the default cast()
+ * implementation compares against class_name(), which in this case is @c
+ * "Derived".  Always explicitly cast @c this to the correct type before
+ * returning it.
+ *
+ * You should also override cast() if your element provides another interface,
+ * such as Storage or a Notifier.
  */
 void *
 Element::cast(const char *name)

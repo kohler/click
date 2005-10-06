@@ -2289,11 +2289,10 @@ a function that takes an element and a String and returns an error code.
 
 @deftypefn {Function Type} String {(*ReadHandler)} (@w{Element *@var{element}}, @w{void *@var{thunk}})
 Read handler functions have this type. When the user accesses a read
-handler on an element, Click calls some @code{ReadHandler} function and
-passes the element as an argument. The @var{thunk} argument contains
-callback data specified when the handler was added (@pxref{Adding
-Handlers}). The function's String return value is passed back to the
-user.
+handler on an element, Click calls some @code{ReadHandler} function
+and passes the element as an argument. The @var{thunk} argument
+contains callback data specified when the handler was added. The
+function's String return value is passed back to the user.
 @end deftypefn
 
 @deftypefn {Function Type} int {(*WriteHandler)} (@w{const String &@var{data}}, @w{Element *@var{element}}, @w{void *@var{thunk}}, @w{ErrorHandler *@var{errh}})
@@ -2301,11 +2300,10 @@ Write handler functions have this type. When the user accesses some
 element write handler by passing in a string, Click calls some
 @code{WriteHandler} function and passes the data and the relevant
 element as arguments. The @var{thunk} argument contains callback data
-specified when the handler was added (@pxref{Adding Handlers}). The
-return value is an error code: zero when there are no errors, and the
-negative of some @code{errno} value when there is an error. More
-detailed information about any errors should be reported to the
-@var{errh} argument.
+specified when the handler was added. The return value is an error
+code: zero when there are no errors, and the negative of some
+@code{errno} value when there is an error. More detailed information
+about any errors should be reported to the @var{errh} argument.
 @end deftypefn
 
 Each handler has an ASCII @dfn{name}. Handler names must be unique
@@ -2345,8 +2343,8 @@ handler or LLRPC will proceed while a write handler is active.
 Use @code{Element}'s @code{add_read_handler} and
 @code{add_write_handler} methods to add handlers for an element. You
 will generally call these methods only from within your element's
-@code{add_handlers} method (@pxref{add_handlers}), although nothing
-prevents you from adding handlers at any time.
+@code{add_handlers} method, although nothing prevents you from adding
+handlers at any time.
 
 @deftypemethod Element void add_read_handler (@w{const String &@var{name}}, @w{ReadHandler @var{func}}, @w{void *@var{thunk}})
 Adds a read handler named @var{name} for this element. When the handler
@@ -2816,7 +2814,7 @@ For example:
 @end display
 
 Since the @code{const Vector<String> &@var{conf}} arguments passed to
-elements' @code{configure} methods (@pxref{configure}) have been
+elements' @code{configure} methods have been
 processed by @code{cp_argvec}, there is no need to process them with
 @code{cp_uncomment}.
 
@@ -3448,8 +3446,7 @@ The other @code{cp_handler} variants ensure that the input string names
 an actual handler. These variants are useless until handlers are added
 to the router configuration. Therefore, they should be called in
 elements' @code{initialize} methods, not their @code{configure} methods,
-since handlers are not added until @code{initialize} time
-(@pxref{Initialization Phases}).
+since handlers are not added until @code{initialize} time.
 
 @deftypefn {Parsing Function} {bool} cp_handler (@w{const String &@var{str}}, @w{Element *@var{context}}, @w{Element **@var{result_element}}, @w{int *@var{result_hid}}, @w{ErrorHandler *@var{errh}})
 Parses @var{str} into a handler specification, storing the resulting
@@ -3794,7 +3791,7 @@ The @var{hook} argument is a function pointer with type @code{void
 The @code{Task::initialize} method places the task on a router-wide list
 of @code{Task}s, associates the task with a particular task queue, and,
 optionally, schedules it. Typically, an element's @code{initialize}
-method calls @code{Task::initialize} (@pxref{initialize}).
+method calls @code{Task::initialize}.
 
 @deftypemethod Task void initialize (Router *@var{r}, bool @var{scheduled})
 @deftypemethodx Task void initialize (Element *@var{e}, bool @var{scheduled})
@@ -4128,7 +4125,7 @@ Attaches the timer to the router object @var{r} (or
 @code{@var{e}->router()}).
 @end deftypemethod
 
-Typically, an element's @code{initialize} method (@pxref{initialize})
+Typically, an element's @code{initialize} method
 calls @code{Timer::initialize}, and possibly one of the @code{schedule}
 functions described below.
 
