@@ -1,3 +1,8 @@
+2005-10-06 Thursday 03:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click.texi (1.68), include/click/ipaddress.hh (1.29),
+	lib/ipaddress.cc (1.29): IPAddress documentation
+
 2005-10-05 Wednesday 21:29  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click.texi (1.63), lib/element.cc (1.106), doc/click.texi
