@@ -191,6 +191,16 @@ Parsing Argument Lists
 * cp_va Concepts::              
 * cp_va Initialization::        
 
+Tasks
+
+* Task Initialization::         
+* Scheduling Tasks::            
+* Tickets::                     
+* Task Thread Choice::          
+* Task Status::                 
+* Task Handlers::               
+* Task Cleanup::                
+
 Timers
 
 * Timer Initialization::        
@@ -3741,6 +3751,327 @@ future release, but for now, keep tasks short.
 
 See the Doxygen documentation on class @code{Task} for more
 information.
+
+The @code{Task} class is defined in the @code{<click/task.hh>} header
+file.
+
+@menu
+* Task Initialization::         
+* Scheduling Tasks::            
+* Tickets::                     
+* Task Thread Choice::          
+* Task Status::                 
+* Task Handlers::               
+* Task Cleanup::                
+@end menu
+
+
+@node Task Initialization, Scheduling Tasks, Tasks, Tasks
+@section Task Initialization
+
+Task initialization is a two-step process. First, when a @code{Task}
+object is constructed, you must supply information about the function
+that it should call when it is scheduled. Second, when the router is
+initialized, you must initialize the task by supplying it with the
+relevant router. (You must initialize the task even if it will not be
+scheduled right away.)
+
+@code{Task} has two constructors. One of them asks the task to call an
+element's @code{run_task} method when scheduled; the other asks it
+to call an arbitrary function pointer.
+
+@deftypeop Constructor Task {} Task (Element *@var{e})
+When this task is scheduled, call @code{@var{e}->run_task()}.
+@end deftypeop
+
+@deftypeop Constructor Task {} Task (TaskHook @var{hook}, void *@var{thunk})
+When this task is scheduled, call @code{@var{hook}(this, @var{thunk})}.
+The @var{hook} argument is a function pointer with type @code{void
+(*)(Task *, void *)}.
+@end deftypeop
+
+The @code{Task::initialize} method places the task on a router-wide list
+of @code{Task}s, associates the task with a particular task queue, and,
+optionally, schedules it. Typically, an element's @code{initialize}
+method calls @code{Task::initialize}.
+
+@deftypemethod Task void initialize (Router *@var{r}, bool @var{scheduled})
+@deftypemethodx Task void initialize (Element *@var{e}, bool @var{scheduled})
+Attaches the task to the router object @var{r} (or
+@code{@var{e}->router()}). Additionally sets the task's tickets to a
+default value, and schedules the task if @var{scheduled} is true.
+@end deftypemethod
+
+Many elements call @code{ScheduleInfo::initialize_task} instead of
+calling @code{Task::initialize} directly. This method queries any
+@click{ScheduleInfo} elements in the configuration to determine the
+task's scheduling parameters, sets those parameters, and calls
+@code{Task::initialize} to schedule the task. The
+@code{ScheduleInfo::initialize_task} method is defined in the
+@code{<click/standard/scheduleinfo.hh>} header file.
+
+@deftypeop {Static Method} ScheduleInfo void initialize_task (Element *@var{e}, @w{Task *@var{task}}, @w{bool @var{schedule}}, @w{ErrorHandler *@var{errh}})
+Sets @var{task}'s scheduling parameters as specified by any
+@click{ScheduleInfo} elements in the router configuration. The element
+@var{e} is used to find the correct router, and provides the relevant
+name for parameter lookup---the user supplies parameters to
+@click{ScheduleInfo} by element name. If @var{schedule} is true, also
+schedules @var{task} on @code{@var{e}->router()}'s task queue. Reports
+any errors to @var{errh}.
+@end deftypeop
+
+@deftypeop {Static Method} ScheduleInfo void initialize_task (Element *@var{e}, @w{Task *@var{task}}, @w{ErrorHandler *@var{errh}})
+A synonym for @code{initialize_task(@var{e}, @var{task}, true,
+@var{errh})}.
+@end deftypeop
+
+@deftypeop {Static Method} ScheduleInfo void join_scheduler (Element *@var{e}, @w{Task *@var{task}}, @w{ErrorHandler *@var{errh}})
+A synonym for @code{initialize_task(@var{e}, @var{task}, true,
+@var{errh})}.
+@end deftypeop
+
+The @code{initialize_task} method is generally called like this:
+
+@example
+int
+SomeElement::initialize(ErrorHandler *errh)
+@{
+    ScheduleInfo::initialize_task(this, &_task, errh);
+@}
+@end example
+
+@noindent
+Here, @code{_task}, a @code{Task} object, is one of @code{SomeElement}'s
+instance variables.
+
+
+@node Scheduling Tasks, Tickets, Task Initialization, Tasks
+@section Scheduling Tasks
+
+The user may take a task off its task queue with the @code{unschedule}
+method, and place it back onto its task queue with the @code{reschedule}
+method. As tasks move to the head of the task queue, they are
+unscheduled and their callbacks are called. Within these callback
+functions, the user will typically call @code{fast_reschedule}, which is
+like @code{reschedule} without the locking overhead.
+
+@deftypemethod Task void unschedule ()
+Unschedules the task by removing it from its task queue. Does nothing if
+if the task is currently unscheduled, or if it was never initialized.
+When this function returns, the task will not be scheduled.
+@end deftypemethod
+
+@deftypemethod Task void reschedule ()
+Reschedules the task by placing it on its task queue. If the task is
+already scheduled, then this method does nothing.
+@end deftypemethod
+
+All three functions lock the task queue before manipulating it. This
+avoids corruption when there are multiple processors executing
+simultaneously. If @code{reschedule} cannot immediately lock a task
+queue---perhaps because it is being used on another processor---then
+they register a task request, which will be executed in the near
+future. In contrast, the @code{unschedule} function will wait until it
+can lock the task queue.
+
+Sometimes unscheduling a task is not enough: you don't want the task
+to run, even if someone else (an upstream queue, for example) were to
+reschedule it. The @code{strong_unschedule} method both unschedules
+the task and shifts the task to the quiescent thread, which never
+runs. Thus, a @code{strong_unschedule}d task will not run until
+someone calls @code{strong_reschedule}, which reschedules the task on
+its original preferred thread.
+
+@deftypemethod Task void strong_unschedule ()
+Unschedules the task by removing it from its task queue and shifting
+it to the quiescent thread. Does nothing if if the task is currently
+unscheduled, or if it was never initialized. When this function
+returns, the task will not be scheduled.
+@end deftypemethod
+
+@deftypemethod Task void strong_reschedule ()
+Reschedules the task by placing it on the task queue corresponding to
+its thread preference. The task will not be scheduled immediately upon
+return, but it will become scheduled soon---@code{strong_reschedule}
+uses a task request to avoid locking.
+@end deftypemethod
+
+The @code{fast_reschedule} method avoids locking overhead in the common
+case that a task must be rescheduled from within its callback.
+
+@deftypemethod Task void fast_reschedule ()
+Reschedules the task by placing it on its preferred task queue. This
+method avoids locking overhead, so it is faster than @code{reschedule}.
+
+@quotation
+@strong{Caution}: You may call a @code{Task}'s @code{fast_reschedule}
+method only from within its callback function. For instance, if an
+element has a task, @w{@code{_task}}, that calls the element's
+@code{run_task} method when scheduled, and if @code{run_task}
+is called only by that task's callback, then that element's
+@code{run_task} method should call @code{_task.fast_reschedule()}
+instead of @code{_task.reschedule()}.
+@end quotation
+@end deftypemethod
+
+The @code{fast_unschedule} method is to @code{unschedule} as
+@code{fast_reschedule} is to @code{reschedule}. It is rarely used,
+since tasks are automatically unscheduled before they are run.
+
+@deftypemethod Task void fast_unschedule ()
+Unschedules the task by removing it from its task queue. Does nothing if
+if the task is currently unscheduled, or if it was never initialized.
+This method avoids locking overhead, so it is faster than
+@code{unschedule}.
+
+@quotation
+@strong{Caution}: You may call a @code{Task}'s @code{fast_unschedule}
+method only from within its callback function.
+@end quotation
+@end deftypemethod
+
+
+@node Tickets, Task Thread Choice, Scheduling Tasks, Tasks
+@section Tickets
+
+Click tasks are scheduled using the flexible, lightweight stride
+scheduling algorithm.@footnote{For more information, see MIT Laboratory
+for Computer Science Technical Memo MIT/LCS/TM-528, @cite{Stride
+scheduling: deterministic proportional-share resource management}, by
+Carl A. Waldspurger and William E. Weihl, June 1995.} This algorithm
+assigns each task a parameter called its @dfn{tickets}. A task with
+twice as many tickets as usual is scheduled twice as frequently.
+
+@code{Task}s have methods for querying, setting, and adjusting their
+tickets.
+
+@deftypemethod Task int tickets () const
+Returns this task's tickets. This number will be at least 1 and no more
+than @code{Task::MAX_TICKETS}, which equals 32768.
+@end deftypemethod
+
+@deftypemethod Task void set_tickets (int @var{t})
+Sets this task's tickets to @var{t}. The @var{t} parameter should lie
+between 1 and @code{Task::MAX_TICKETS}, inclusive; numbers outside this
+range are constrained to the nearest valid value.
+@end deftypemethod
+
+@deftypemethod Task void adj_tickets (int @var{delta})
+Equivalent to @code{set_tickets(tickets() + @var{delta})}.
+@end deftypemethod
+
+
+@node Task Thread Choice, Task Status, Tickets, Tasks
+@section Choosing a Thread
+
+Each task belongs to some task queue, which generally corresponds to a
+thread of control. Single-threaded Click has one active thread, and
+therefore one task queue, but multithreaded Click can have an
+arbitrary number of threads. Either Click has a special thread, the
+@dfn{quiescent thread}, numbered @math{-1}; tasks belonging to the
+quiescent thread never run, whether or not they are scheduled. Every
+task starts out belonging to the first thread, @w{thread 0}. The
+@code{change_thread} method moves a task to another thread.
+
+@deftypemethod Task void change_thread (int @var{thread_id})
+Move this task to thread @var{thread_id}, which should be a number
+between @math{-1} and the relevant @code{Router}'s @code{nthreads()}.
+
+The task is scheduled on the new task queue if and only if it was
+scheduled on the old task queue.
+@end deftypemethod
+
+Like @code{reschedule}, @code{change_thread} must lock the task queue
+before manipulating it. (Unlike those methods, @code{change_thread}
+must lock two task queues, the old and the new.) If
+@code{change_thread} cannot lock a task queue, then it registers a
+task request that will be executed in the near future. This implies
+that a task may remain on the same thread, or become unscheduled, for
+some time after @code{change_thread} is called.
+
+
+@node Task Status, Task Handlers, Task Thread Choice, Tasks
+@section Task Status Methods
+
+These methods let a user check various properties of a task---for
+instance, whether it is initialized or scheduled.
+
+@deftypemethod Task bool initialized () const
+Returns true iff the task has been initialized---that is, if it is
+associated with some router.
+@end deftypemethod
+
+@deftypemethod Task bool scheduled () const
+Returns true iff the task is currently scheduled on some task queue.
+@end deftypemethod
+
+@deftypemethod Task {RouterThread *} scheduled_list () const
+Returns the task queue with which this task is associated. Even
+unscheduled tasks are associated with some task queue; this is the task
+queue on which the task will be placed if @code{reschedule} is called.
+@end deftypemethod
+
+@deftypemethod Task TaskHook hook () const
+Returns the callback function that is called when the task is scheduled.
+If the task is associated with some element, this method returns a null
+pointer.
+@end deftypemethod
+
+@deftypemethod Task {void *} thunk () const
+Returns the extra data passed to the callback function when the task is
+scheduled.
+@end deftypemethod
+
+@deftypemethod Task {Element *} element () const
+If the task is associated with some element, this method returns that
+element. Otherwise, returns a null pointer.
+@end deftypemethod
+
+
+@node Task Handlers, Task Cleanup, Task Status, Tasks
+@section Task Handlers
+
+By convention, elements with tasks should provide handlers that access
+task properties. The @code{Element::add_task_handlers} method
+automatically adds these handlers for a given @code{Task} object.
+
+@deftypemethod Element void add_task_handlers (@w{Task *@var{task}}, @w{const String &@var{prefix} = String()})
+Adds task handlers for @var{task} to this element. The string
+@var{prefix} is prepended to every handler name.
+@end deftypemethod
+
+This method adds at least the following handlers:
+
+@table @asis
+@item @handler{scheduled}
+Returns a Boolean value saying whether the task is currently scheduled
+on some task queue. Example result: @strcode{"true\n"}.
+
+@item @handler{tickets}
+Returns or sets the task's currently allocated tickets. This handler
+is only available if Click was compiled to support stride scheduling.
+Example result: @strcode{"1024\n"}.
+
+@item @handler{thread_preference}
+Returns the task's thread preference. This handler is only available on
+multithreaded Click. Example result: @strcode{"2\n"}.
+@end table
+
+
+@node Task Cleanup,  , Task Handlers, Tasks
+@section Task Cleanup
+
+You generally don't need to worry about destroying @code{Task} objects:
+they are automatically unscheduled and removed when the @code{Router} is
+destroyed. This only works if the @code{Task} objects have the same
+lifetime as the @code{Router}, however. This includes the normal case,
+when @code{Task}s are element instance variables. If you create and
+destroy @code{Task} objects as the router runs, however, you will need
+to call the following method before deleting the @code{Task}.
+
+@deftypemethod Task void cleanup ()
+Cleans up the @code{Task} object.
+@end deftypemethod
 
 
 @node Timers, Notification, Tasks, Top
