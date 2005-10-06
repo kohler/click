@@ -25,6 +25,17 @@
 #include <click/integers.hh>
 CLICK_DECLS
 
+/** @class IPAddress
+    @brief An IPv4 address.
+
+    The IPAddress type represents an IPv4 address. It supports bitwise
+    operations like & and | and provides methods for unparsing IP addresses
+    into ASCII dotted-quad form. */
+
+/** @brief Constructs an IPAddress from data.
+    @param data the address data, in network byte order
+
+    The bytes data[0]...data[3] are used to construct the address. */
 IPAddress::IPAddress(const unsigned char *data)
 {
 #ifdef HAVE_INDIFFERENT_ALIGNMENT
@@ -34,22 +45,41 @@ IPAddress::IPAddress(const unsigned char *data)
 #endif
 }
 
+/** @brief Constructs an IPAddress from a human-readable dotted-quad
+    representation.
+    @param str the unparsed address
+
+    If @a str is not a valid dotted-quad address, then the IPAddress is
+    initialized to 0.0.0.0. */
 IPAddress::IPAddress(const String &str)
 {
     if (!cp_ip_address(str, this))
 	_addr = 0;
 }
 
+/** @brief Returns an IPAddress equal to the prefix mask of length @a prefix.
+    @param prefix_len prefix length; 0 <= @a prefix_len <= 32
+
+    For example, make_prefix(0) is 0.0.0.0, make_prefix(8) is 255.0.0.0, and
+    make_prefix(32) is 255.255.255.255.  Causes an assertion failure if @a
+    prefix_len is out of range.
+    @sa mask_to_prefix_len */
 IPAddress
-IPAddress::make_prefix(int prefix)
+IPAddress::make_prefix(int prefix_len)
 {
-    assert(prefix >= 0 && prefix <= 32);
+    assert(prefix_len >= 0 && prefix_len <= 32);
     uint32_t umask = 0;
-    if (prefix > 0)
-	umask = 0xFFFFFFFFU << (32 - prefix);
+    if (prefix_len > 0)
+	umask = 0xFFFFFFFFU << (32 - prefix_len);
     return IPAddress(htonl(umask));
 }
 
+/** @brief Returns the prefix length equivalent to this prefix mask, or -1 if
+    this is not a prefix mask.
+
+    Maintains the invariant that make_prefix(@a
+    prefix_len).mask_to_prefix_len() == @a prefix_len.
+    @sa make_prefix */
 int
 IPAddress::mask_to_prefix_len() const
 {
@@ -63,6 +93,10 @@ IPAddress::mask_to_prefix_len() const
 	return -1;
 }
 
+/** @brief Unparses this address into a dotted-quad format String.
+
+    Examples include "0.0.0.0" and "18.26.4.9".  Maintains the invariant that,
+    for an IPAddress @a a, IPAddress(@a a.unparse()) == @a a. */
 String
 IPAddress::unparse() const
 {
@@ -72,6 +106,12 @@ IPAddress::unparse() const
     return String(buf);
 }
 
+/** @brief Unparses this address into IP address mask format: either a prefix
+    length or unparse().
+
+    If mask_to_prefix_len() >= 0, then returns that value as a base-10 String;
+    otherwise, returns unparse().  Example results include "8" (for 255.0.0.0)
+    and "18.26.4.9". */
 String
 IPAddress::unparse_mask() const
 {
@@ -82,6 +122,11 @@ IPAddress::unparse_mask() const
 	return unparse();
 }
 
+/** @brief Unparses an address prefix, specified by address and mask, into
+    "address/mask" format.
+    @param mask the address mask
+
+    Equivalent to unparse() + "/" + @a mask.unparse_mask(). */
 String
 IPAddress::unparse_with_mask(IPAddress mask) const
 {
