@@ -1,3 +1,12 @@
+2005-10-08 Saturday 20:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/fromdagdump.cc (1.30),
+	  elements/analysis/fromflandump.cc (1.10),
+	  elements/analysis/fromnlanrdump.cc (1.11),
+	  elements/ip6/lookupip6route.cc (1.23),
+	  elements/linuxmodule/sortedsched.cc (1.18), include/click/task.hh
+	  (1.43), lib/task.cc (1.42): Task documentation
+
 2005-10-06 Thursday 03:51  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click.texi (1.68), include/click/ipaddress.hh (1.29),
