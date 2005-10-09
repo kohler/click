@@ -136,7 +136,7 @@ BalancedThreadSched::run_timer(Timer *)
 		&& load[min_tid] + 2*(*tt)->cycles() <= load[max_tid]) {
 		load[min_tid] += (*tt)->cycles();
 		load[max_tid] -= (*tt)->cycles();
-		(*tt)->set_home_thread_id(min_tid);
+		(*tt)->move_thread(min_tid);
 	    }
 
 	// done with this round!
@@ -242,7 +242,7 @@ BalancedThreadSched::run_timer(Timer *)
 	}
 	load[which] += sorted[i]->cycles();
 	schedule[which].push_back(sorted[i]);
-	sorted[i]->set_home_thread_id(which);
+	sorted[i]->move_thread(which);
 	if (_increasing) {
 	    if (i == 0) break;
 	    else i--;

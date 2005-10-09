@@ -54,23 +54,22 @@ class Task { public:
     void unschedule();
     inline void reschedule();
 
-    inline void fast_unschedule();
+    void strong_unschedule();
+    void strong_reschedule();
+
 #ifdef HAVE_TASK_HEAP
     void fast_reschedule();
 #else
     inline void fast_reschedule();
 #endif
 
-    void strong_unschedule();
-    void strong_reschedule();
-
     inline int home_thread_id() const;
-    void set_home_thread_id(int);
+    void move_thread(int thread_id);
  
 #ifdef HAVE_STRIDE_SCHED
     inline int tickets() const;
-    inline void set_tickets(int);
-    inline void adjust_tickets(int);
+    inline void set_tickets(int n);
+    inline void adjust_tickets(int delta);
 #endif
 
     inline bool initialized() const;
@@ -145,7 +144,9 @@ class Task { public:
 
     void make_list();
     static bool error_hook(Task*, void*);
-  
+
+    inline void fast_unschedule();
+    
     friend class RouterThread;
     friend class Master;
   
@@ -235,7 +236,12 @@ Task::initialized() const
     return _router != 0;
 }
 
-/** @brief Returns true iff the task is currently scheduled to run. */
+/** @brief Returns true iff the task is currently scheduled to run.
+ *
+ * This function will return false for a task in reschedule-pending state,
+ * where the task will soon be rescheduled but isn't right now due to locking
+ * issues.
+ */
 inline bool
 Task::scheduled() const
 {
@@ -294,7 +300,7 @@ Task::home_thread_id() const
  *
  * Usually, task->thread()->@link RouterThread::thread_id()
  * thread_id()@endlink == task->home_thread_id().  They can differ, however,
- * if set_home_thread_id() was called but the task hasn't yet been moved to
+ * if move_thread() was called but the task hasn't yet been moved to
  * the new thread, or if the task was strongly unscheduled with
  * strong_unschedule().  (In this last case, task->thread()->@link
  * RouterThread::thread_id() thread_id()@endlink ==
@@ -333,12 +339,26 @@ Task::fast_unschedule()
 
 #ifdef HAVE_STRIDE_SCHED
 
+/** @brief Returns the task's number of tickets.
+ *
+ * Tasks with larger numbers of tickets are scheduled more often.  Tasks are
+ * initialized with tickets() == DEFAULT_TICKETS.
+ *
+ * @sa set_tickets, adjust_tickets
+ */
 inline int
 Task::tickets() const
 {
     return _tickets;
 }
 
+/** @brief Sets the task's number of tickets.
+ * @param n the ticket count
+ *
+ * The ticket count @a n is pinned in the range [1, MAX_TICKETS].
+ *
+ * @sa tickets, adjust_tickets
+ */
 inline void 
 Task::set_tickets(int n)
 {
@@ -351,6 +371,13 @@ Task::set_tickets(int n)
     assert(_stride < MAX_STRIDE);
 }
 
+/** @brief Add @a delta to the Task's ticket count.
+ * @param delta adjustment to the ticket count
+ *
+ * The ticket count cannot be adjusted below 1 or above MAX_TICKETS.
+ *
+ * @sa set_tickets
+ */
 inline void 
 Task::adjust_tickets(int delta)
 {
@@ -358,6 +385,13 @@ Task::adjust_tickets(int delta)
 }
 
 #ifndef HAVE_TASK_HEAP
+/** @brief Reschedules the task.  The task's current thread must be currently
+ * locked.
+ *
+ * This accomplishes the same function as reschedule(), but does a faster job
+ * because it assumes the task's thread lock is held.  Generally, this can be
+ * guaranteed only from within a task's run_task() hook function.
+ */
 inline void
 Task::fast_reschedule()
 {
@@ -449,6 +483,14 @@ Task::fast_schedule()
 
 #endif /* HAVE_STRIDE_SCHED */
 
+/** @brief Reschedules the task.
+ *
+ * The task is rescheduled on its home thread.  The task will eventually run
+ * (unless the home thread is quiescent).  Due to locking issues, the task may
+ * not be scheduled right away -- scheduled() may not immediately return true.
+ *
+ * @sa unschedule, strong_reschedule
+ */
 inline void
 Task::reschedule()
 {
@@ -459,6 +501,11 @@ Task::reschedule()
 }
 
 
+/** @brief Call the task's hook.
+ *
+ * This function is generally called by the RouterThread implementation; there
+ * should be no need to call it yourself.
+ */
 inline void
 Task::call_hook()
 {

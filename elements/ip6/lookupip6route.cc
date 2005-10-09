@@ -158,7 +158,7 @@ LookupIP6Route::add_route(IP6Address addr, IP6Address mask, IP6Address gw,
 
 int
 LookupIP6Route::remove_route(IP6Address addr, IP6Address mask,
-			     ErrorHandler *errh)
+			     ErrorHandler *)
 {
   _t.del(addr, mask); 
   return 0;

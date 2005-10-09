@@ -265,10 +265,6 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	(void) _end_h->call_write(errh);
 	if (!_active)
 	    more = false;
-	// The handler might have scheduled us, in which case we might crash
-	// at fast_reschedule()! Don't want that -- make sure we are
-	// unscheduled.
-	_task.fast_unschedule();
 	// retry _last_time in case someone changed it
 	goto check_times;
     }
