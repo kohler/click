@@ -5,7 +5,7 @@
 
 unsigned calc_transmit_time(int rate, int length) {
   unsigned t_plcp_header = 96;
-  if (rate == 1) {
+  if (rate == 2) {
     t_plcp_header = 192;
   } else if (!is_b_rate(rate)) {
     t_plcp_header = 20;

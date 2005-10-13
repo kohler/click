@@ -72,6 +72,7 @@ PrintTXFeedback::simple_action(Packet *p)
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();  
   sa << " " << p->timestamp_anno();
   sa << " " << dst;
+  sa << " flags " << (int) ceh->flags;
   sa << " rate " << (int) ceh->rate;
   sa << " max_retries " << (int) ceh->max_tries;
   sa << " alt_rate " << (int) ceh->rate1;

@@ -54,25 +54,18 @@ Packet *
 AthdescEncap::simple_action(Packet *p)
 {
 
-  WritablePacket *p_out = p->uniqueify();
-  if (!p_out) {
-    p->kill();
-    return 0;
-  }
+  WritablePacket *p_out = p->push(ATHDESC_HEADER_SIZE);
+  if (!p_out) { return 0; }
 
-  p_out = p_out->push(ATHDESC_HEADER_SIZE);
-
-  if (p_out) {
-	  struct ar5212_desc *desc  = (struct ar5212_desc *) (p->data() + 8);
-	  click_wifi_extra *ceh = (click_wifi_extra *) p->all_user_anno();
-	  
-	  memset((void *)p->data(), 0, ATHDESC_HEADER_SIZE);
-	  
-	  desc->xmit_power = ceh->power;
-	  desc->xmit_rate0 = dot11_to_ratecode(ceh->rate);
-	  if (ceh->max_tries > 0) {
-		  desc->xmit_tries0 = ceh->max_tries - 1;
-	  }
+  struct ar5212_desc *desc  = (struct ar5212_desc *) (p_out->data() + 8);
+  click_wifi_extra *ceh = (click_wifi_extra *) p_out->all_user_anno();
+  
+  memset((void *)p_out->data(), 0, ATHDESC_HEADER_SIZE);
+  
+  desc->xmit_power = ceh->power;
+  desc->xmit_rate0 = dot11_to_ratecode(ceh->rate);
+  if (ceh->max_tries > 0) {
+    desc->xmit_tries0 = ceh->max_tries - 1;
   }
   
   return p_out;
