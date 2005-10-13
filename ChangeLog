@@ -1,3 +1,9 @@
+2005-10-13 Thursday 13:43  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/wifi/: athdescdecap.cc (1.2), athdescencap.cc (1.2),
+	  bitrate.cc (1.2), printtxfeedback.cc (1.6): nits in athdescencap,
+	  set tx fail flag in athdescdecap, print flags in printtxfeedback
+
 2005-10-08 Saturday 20:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/fromdagdump.cc (1.30),
