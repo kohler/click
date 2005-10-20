@@ -232,30 +232,6 @@ SRForwarder::push(int port, Packet *p_in)
   }
 
   /* update the metrics from the packet */
-  IPAddress r_from = pk->get_random_from();
-  IPAddress r_to = pk->get_random_to();
-  uint32_t r_fwd_metric = pk->get_random_fwd_metric();
-  uint32_t r_rev_metric = pk->get_random_rev_metric();
-  uint32_t r_seq = pk->get_random_seq();
-  uint32_t r_age = pk->get_random_age();
-
-  if (r_from && r_to) {
-    if (r_fwd_metric && !update_link(r_from, r_to, r_seq, r_age, r_fwd_metric)) {
-      click_chatter("%{element} couldn't update r_fwd %s > %d > %s\n",
-		    this,
-		    r_from.s().c_str(),
-		    r_fwd_metric,
-		    r_to.s().c_str());
-    }
-    if (r_rev_metric && !update_link(r_to, r_from, r_seq, r_age, r_rev_metric)) {
-      click_chatter("%{element} couldn't update r_rev %s > %d > %s\n",
-		    this,
-		    r_to.s().c_str(),
-		    r_rev_metric, 
-		    r_from.s().c_str());
-    }
-  }
-
   for(int i = 0; i < pk->num_links(); i++) {
     IPAddress a = pk->get_link_node(i);
     IPAddress b = pk->get_link_node(i+1);

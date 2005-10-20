@@ -28,7 +28,7 @@ enum SRCRPacketFlags {
   FLAG_ECN = (1<<7)
 };
 
-static const uint8_t _sr_version = 0x0b;
+static const uint8_t _sr_version = 0x0c;
 
 
 // Packet format.
@@ -60,61 +60,12 @@ struct srpacket {,
   /* uin32_t metrics[_nlinks] */
 
 
-  /* ip */
+  /* ip  */
   /* fwd */
   /* rev */
   /* seq */
-  /* ip */
-
-  uint32_t _random_from;
-  uint32_t _random_fwd_metric;
-  uint32_t _random_rev_metric;
-  uint32_t _random_seq;
-  uint16_t _random_age;
-  uint32_t _random_to;
-
-
-  void set_random_from(IPAddress ip) {
-    _random_from = ip;
-  }
-  void set_random_to(IPAddress ip) {
-    _random_to = ip;
-  }
-  void set_random_fwd_metric(uint32_t m) {
-    _random_fwd_metric = m;
-  }
-
-  void set_random_rev_metric(uint32_t m) {
-    _random_rev_metric = m;
-  }
-  void set_random_seq(uint32_t s) {
-    _random_seq = s;
-  }
-  void set_random_age(uint32_t s) {
-    _random_age = s;
-  }
-
-  IPAddress get_random_from() {
-    return _random_from;
-  }
-  IPAddress get_random_to() {
-    return _random_to;
-  }
-  uint32_t get_random_fwd_metric() {
-    return _random_fwd_metric;
-  }
-  uint32_t get_random_rev_metric() {
-    return _random_rev_metric;
-  }
-
-  uint32_t get_random_seq() {
-    return _random_seq;
-  }
-
-  uint32_t get_random_age() {
-    return _random_age;
-  }
-
+  /* age */
+  /* ip  */
 
   void set_link(int link,
 		IPAddress a, IPAddress b, 
@@ -125,48 +76,48 @@ struct srpacket {,
     uint32_t *ndx = (uint32_t *) (this+1);
     ndx += link * 5;
 
-    ndx[0] = a;
-    ndx[1] = fwd;
-    ndx[2] = rev;
-    ndx[3] = seq;
-    ndx[4] = age;
-    ndx[5] = b;
+    ndx[0] = htonl(a);
+    ndx[1] = htonl(fwd);
+    ndx[2] = htonl(rev);
+    ndx[3] = htonl(seq);
+    ndx[4] = htonl(age);
+    ndx[5] = htonl(b);
   }
 
   uint32_t get_link_fwd(int link) {
     uint32_t *ndx = (uint32_t *) (this+1);
     ndx += link * 5;
-    return ndx[1];
+    return ntohl(ndx[1]);
   }
   uint32_t get_link_rev(int link) {
     uint32_t *ndx = (uint32_t *) (this+1);
     ndx += link * 5;
-    return ndx[2];
+    return ntohl(ndx[2]);
   }
 
   uint32_t get_link_seq(int link) {
     uint32_t *ndx = (uint32_t *) (this+1);
     ndx += link * 5;
-    return ndx[3];
+    return ntohl(ndx[3]);
   }
 
   uint32_t get_link_age(int link) {
     uint32_t *ndx = (uint32_t *) (this+1);
     ndx += link * 5;
-    return ndx[4];
+    return ntohl(ndx[4]);
   }
 
   IPAddress get_link_node(int link) {
     uint32_t *ndx = (uint32_t *) (this+1);
     ndx += link * 5;
-    return ndx[0];
+    return ntohl(ndx[0]);
   }
 
 
   void set_link_node(int link, IPAddress ip) {
     uint32_t *ndx = (uint32_t *) (this+1);
     ndx += link * 5;
-    ndx[0] = ip;
+    ndx[0] = htonl(ip);
   }
 
 

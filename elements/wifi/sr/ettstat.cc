@@ -314,15 +314,15 @@ ETTStat::send_probe()
 
   link_probe *lp = (struct link_probe *) (p->data() + sizeof(click_ether));
   lp->_version = _ett_version;
-  lp->_ip = _ip.addr();
-  lp->_seq = p->timestamp_anno().sec();
-  lp->_period = _period;
-  lp->_tau = _tau;
-  lp->_sent = _sent;
+  lp->_ip = htonl(_ip);
+  lp->_seq = htonl(p->timestamp_anno().sec());
+  lp->_period = htonl(_period);
+  lp->_tau = htonl(_tau);
+  lp->_sent = htonl(_sent);
   lp->_flags = 0;
-  lp->_rate = rate;
-  lp->_size = size;
-  lp->_num_probes = _ads_rs.size();
+  lp->_rate = htonl(rate);
+  lp->_size = htonl(size);
+  lp->_num_probes = htonl(_ads_rs.size());
   
   uint8_t *ptr =  (uint8_t *) (lp + 1);
   uint8_t *end  = (uint8_t *) p->data() + p->length();
@@ -341,7 +341,7 @@ ETTStat::send_probe()
 	x++;
     }
     ptr += rates.size();
-    lp->_flags |= PROBE_AVAILABLE_RATES;
+    lp->_flags |= ntohl(PROBE_AVAILABLE_RATES);
   }
 
   int num_entries = 0;
@@ -364,12 +364,12 @@ ETTStat::send_probe()
       }
       num_entries++;
       link_entry *entry = (struct link_entry *)(ptr); 
-      entry->_ip = probe->_ip;
-      entry->_seq = probe->_seq;	
+      entry->_ip = htonl(probe->_ip);
+      entry->_seq = htonl(probe->_seq);	
       if ((uint32_t) probe->_ip > (uint32_t) _ip) {
-	entry->_seq = lp->_seq;
+	entry->_seq = htonl(lp->_seq);
       }
-      entry->_num_rates = probe->_probe_types.size();
+      entry->_num_rates = htonl(probe->_probe_types.size());
       ptr += sizeof(link_entry);
 
       Vector<RateSize> rates;
@@ -379,10 +379,10 @@ ETTStat::send_probe()
       for (int x = 0; x < probe->_probe_types.size(); x++) {
 	RateSize rs = probe->_probe_types[x];
 	link_info *lnfo = (struct link_info *) (ptr + x*sizeof(link_info));
-	lnfo->_size = rs._size;
-	lnfo->_rate = rs._rate;
-	lnfo->_fwd = probe->fwd_rate(rs._rate, rs._size);
-	lnfo->_rev = probe->rev_rate(_start, rs._rate, rs._size);
+	lnfo->_size = htons(rs._size);
+	lnfo->_rate = htons(rs._rate);
+	lnfo->_fwd = htons(probe->fwd_rate(rs._rate, rs._size));
+	lnfo->_rev = htons(probe->rev_rate(_start, rs._rate, rs._size));
 	
 	rates.push_back(rs);
 	fwd.push_back(lnfo->_fwd);
@@ -395,10 +395,10 @@ ETTStat::send_probe()
 
   }
   
-  lp->_num_links = num_entries;
-  lp->_psz = sizeof(link_probe) + lp->_num_links*sizeof(link_entry);
+  lp->_num_links = htonl(num_entries);
+  lp->_psz = htons(sizeof(link_probe) + lp->_num_links*sizeof(link_entry));
   lp->_cksum = 0;
-  lp->_cksum = click_in_cksum((unsigned char *) lp, lp->_psz);
+  lp->_cksum = click_in_cksum((unsigned char *) lp, ntohs(lp->_psz));
   
 
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
@@ -468,20 +468,20 @@ ETTStat::simple_action(Packet *p)
   }
 
 
-  if (click_in_cksum((unsigned char *) lp, lp->_psz) != 0) {
+  if (click_in_cksum((unsigned char *) lp, ntohs(lp->_psz)) != 0) {
     click_chatter("ETTStat %s: failed checksum", id().c_str());
     p->kill();
     return 0;
   }
 
 
-  if (p->length() < lp->_psz + sizeof(click_ether)) {
+  if (p->length() < ntohs(lp->_psz) + sizeof(click_ether)) {
     click_chatter("ETTStat %s: packet is smaller (%d) than it claims (%u)",
-		  id().c_str(), p->length(), lp->_psz);
+		  id().c_str(), p->length(), ntohs(lp->_psz));
   }
 
 
-  IPAddress ip = IPAddress(lp->_ip);
+  IPAddress ip = IPAddress(ntohl(lp->_ip));
 
   if (ip == _ip) {
     click_chatter("%{element} got own packet %s\n",
@@ -497,21 +497,22 @@ ETTStat::simple_action(Packet *p)
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
   uint8_t rate = ceh->rate;
 
-  if (ceh->rate != lp->_rate) {
+  if (ceh->rate != ntohl(lp->_rate)) {
     click_chatter("%{element} packet says rate %d is %d\n",
 		  this,
-		  lp->_rate,
+		  ntohl(lp->_rate),
 		  ceh->rate);
     p->kill();
     return 0;
   }
 
-  probe_t probe(now, lp->_seq, lp->_rate, lp->_size, ceh->rssi, ceh->silence);
-  int new_period = lp->_period;
+  probe_t probe(now, ntohl(lp->_seq), ntohl(lp->_rate), ntohl(lp->_size), ceh->rssi, ceh->silence);
+  int new_period = ntohl(lp->_period);
   probe_list_t *l = _bcast_stats.findp(ip);
   int x = 0;
+  uint32_t tau = ntohl(lp->_tau);
   if (!l) {
-    _bcast_stats.insert(ip, probe_list_t(ip, new_period, lp->_tau));
+    _bcast_stats.insert(ip, probe_list_t(ip, new_period, tau));
     l = _bcast_stats.findp(ip);
     l->_sent = 0;
     /* add into the neighbors vector */
@@ -520,26 +521,26 @@ ETTStat::simple_action(Packet *p)
     click_chatter("ETTStat %s: %s has changed its link probe period from %u to %u; clearing probe info",
 		  id().c_str(), ip.s().c_str(), l->_period, new_period);
     l->_probes.clear();
-  } else if (l->_tau != lp->_tau) {
+  } else if (l->_tau != tau) {
     click_chatter("ETTStat %s: %s has changed its link tau from %u to %u; clearing probe info",
-		  id().c_str(), ip.s().c_str(), l->_tau, lp->_tau);
+		  id().c_str(), ip.s().c_str(), l->_tau, tau);
     l->_probes.clear();
   }
 
-  if (lp->_sent < (unsigned)l->_sent) {
+  if (ntohl(lp->_sent) < (unsigned)l->_sent) {
     click_chatter("ETTStat %s: %s has reset; clearing probe info",
 		  id().c_str(), ip.s().c_str());
     l->_probes.clear();
   }
   
-  RateSize rs = RateSize(rate, lp->_size);
+  RateSize rs = RateSize(rate, ntohl(lp->_size));
   l->_period = new_period;
-  l->_tau = lp->_tau;
-  l->_sent = lp->_sent;
+  l->_tau = ntohl(lp->_tau);
+  l->_sent = ntohl(lp->_sent);
   l->_last_rx = now;
-  l->_num_probes = lp->_num_probes;
+  l->_num_probes = ntohl(lp->_num_probes);
   l->_probes.push_back(probe);
-  l->_seq = probe._seq;
+  l->_seq = ntohl(probe._seq);
 
   /* keep stats for at least the averaging period */
   while ((unsigned) l->_probes.size() &&
@@ -564,7 +565,7 @@ ETTStat::simple_action(Packet *p)
   uint8_t *end  = (uint8_t *) p->data() + p->length();
 
 
-  if (lp->_flags &= PROBE_AVAILABLE_RATES) {
+  if (ntohl(lp->_flags) & PROBE_AVAILABLE_RATES) {
     int num_rates = ptr[0];
     Vector<int> rates;
     ptr++;
@@ -580,16 +581,17 @@ ETTStat::simple_action(Packet *p)
     }
   }
   int link_number = 0;
-  while (ptr < end && (unsigned) link_number < lp->_num_links) {
+  int num_links = ntohl(lp->_num_links);
+  while (ptr < end && link_number < num_links) {
     link_number++;
     link_entry *entry = (struct link_entry *)(ptr); 
-    IPAddress neighbor = entry->_ip;
-    int num_rates = entry->_num_rates;
+    IPAddress neighbor = ntohl(entry->_ip);
+    int num_rates = ntohl(entry->_num_rates);
     if (0) {
       click_chatter("%{element} on link number %d / %d: neighbor %s, num_rates %d\n",
 		    this,
 		    link_number,
-		    lp->_num_links,
+		    num_links,
 		    neighbor.s().c_str(),
 		    num_rates);
     }
@@ -600,40 +602,43 @@ ETTStat::simple_action(Packet *p)
     Vector<int> rev;
     for (int x = 0; x < num_rates; x++) {
       struct link_info *nfo = (struct link_info *) (ptr + x * (sizeof(struct link_info)));
-
+      uint16_t nfo_size = ntohs(nfo->_size);
+      uint16_t nfo_rate = ntohs(nfo->_rate);
+      uint16_t nfo_fwd = ntohs(nfo->_fwd);
+      uint16_t nfo_rev = ntohs(nfo->_rev);
       if (0) {
 	click_chatter("%{element} on %s neighbor %s: size %d rate %d fwd %d rev %d\n",
 		      this,
 		      ip.s().c_str(),
 		      neighbor.s().c_str(),
-		      nfo->_size,
-		      nfo->_rate,
-		      nfo->_fwd,
-		      nfo->_rev);
+		      nfo_size,
+		      nfo_rate,
+		      nfo_fwd,
+		      nfo_rev);
       }
       
-      RateSize rs = RateSize(nfo->_rate, nfo->_size);
+      RateSize rs = RateSize(nfo_rate, nfo_size);
       /* update other link stuff */
       rates.push_back(rs);
-      fwd.push_back(nfo->_fwd);
+      fwd.push_back(nfo_fwd);
       if (neighbor == _ip) {
 	rev.push_back(l->rev_rate(_start, rates[x]._rate, rates[x]._size));
       } else {
-	rev.push_back(nfo->_rev);
+	rev.push_back(nfo_rev);
       }
 
       if (neighbor == _ip) {
 	/* set the fwd rate */
 	for (int x = 0; x < l->_probe_types.size(); x++) {
 	  if (rs == l->_probe_types[x]) {
-	    l->_fwd_rates[x] = nfo->_rev;
+	    l->_fwd_rates[x] = nfo_rev;
 	    
 	    break;
 	  }
 	}
       }
     }
-    int seq = entry->_seq;
+    int seq = ntohl(entry->_seq);
     if (neighbor == ip && 
 	((uint32_t) neighbor > (uint32_t) _ip)) {
       seq = now._sec;
