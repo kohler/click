@@ -20,12 +20,6 @@ enum SRCRPacketType { PT_QUERY = 0x01,
 enum SRCRPacketFlags {
   FLAG_ERROR = (1<<0),
   FLAG_UPDATE = (1<<1),
-  FLAG_TOP5_REQUEST_RESULT = (1<<2),
-  FLAG_TOP5_BEST_ROUTE = (1<<3),
-  FLAG_SCHEDULE = (1<<4),
-  FLAG_SCHEDULE_TOKEN = (1<<5),
-  FLAG_SCHEDULE_FAKE = (1<<6),
-  FLAG_ECN = (1<<7)
 };
 
 static const uint8_t _sr_version = 0x0c;
