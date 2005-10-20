@@ -123,7 +123,6 @@ SRQuerier::push(int, Packet *p_in)
     p_in->kill();
     return;
   }
-  sr_assert(dst);
   Path best = _link_table->best_route(dst, true);
   bool best_valid = _link_table->valid_route(best);
   int best_metric = _link_table->get_route_metric(best);
@@ -138,7 +137,6 @@ SRQuerier::push(int, Packet *p_in)
     q->_best_metric = 0;
     do_query = true;
   }
-  sr_assert(q);
 
   if (best_valid) {
     if (!q->_p.size()) {

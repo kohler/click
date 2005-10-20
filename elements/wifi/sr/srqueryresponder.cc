@@ -96,7 +96,7 @@ SRQueryResponder::send(WritablePacket *p)
   IPAddress next_ip = pk->get_link_node(next);
   EtherAddress eth_dest = _arp_table->lookup(next_ip);
 
-  sr_assert(next_ip != _ip);
+  assert(next_ip != _ip);
   eh->ether_type = htons(_et);
   memcpy(eh->ether_shost, _en.data(), 6);
   memcpy(eh->ether_dhost, eth_dest.data(), 6);
@@ -123,7 +123,7 @@ void
 SRQueryResponder::forward_reply(struct srpacket *pk1)
 {
 	u_int8_t type = pk1->_type;
-	sr_assert(type == PT_REPLY);
+	assert(type == PT_REPLY);
 	
   _link_table->dijkstra(true);
   if (_debug) {
@@ -252,15 +252,13 @@ SRQueryResponder::got_reply(struct srpacket *pk)
 {
 
 	IPAddress dst = pk->get_qdst();
-  sr_assert(dst);
-  if (_debug) {
-    click_chatter("%{element}: got_reply %s <- %s\n", 
-		  this,
-		  _ip.s().c_str(),
-		  dst.s().c_str());
-  }
-  _link_table->dijkstra(true);
-
+	if (_debug) {
+		click_chatter("%{element}: got_reply %s <- %s\n", 
+			      this,
+			      _ip.s().c_str(),
+			      dst.s().c_str());
+	}
+	_link_table->dijkstra(true);
 }
 
 
@@ -335,7 +333,10 @@ SRQueryResponder::push(int, Packet *p_in)
   
   
   IPAddress neighbor = pk->get_link_node(pk->num_links());
-  sr_assert(neighbor);
+  if (!neighbor) {
+	  p_in->kill();
+	  return;
+  }
   
   if(pk->next() == 0){
     // I'm the ultimate consumer of this reply. Add to routing tbl.

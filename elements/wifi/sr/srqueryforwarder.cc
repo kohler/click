@@ -170,7 +170,6 @@ SRQueryForwarder::process_query(struct srpacket *pk1)
   
   /* schedule timer */
   int delay_time = random() % 1750 + 1;
-  sr_assert(delay_time > 0);
   
   _seen[si]._to_send = _seen[si]._when + Timestamp::make_msec(delay_time);
   _seen[si]._forwarded = false;
@@ -310,7 +309,10 @@ SRQueryForwarder::push(int, Packet *p_in)
   
   
   IPAddress neighbor = pk->get_link_node(pk->num_links());
-  sr_assert(neighbor);
+  if (!neighbor) {
+	  p_in->kill();
+	  return;
+  }
   
   if (!_neighbors.findp(neighbor)) {
     _neighbors.insert(neighbor, true);

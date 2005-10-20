@@ -132,10 +132,6 @@ CounterFlood::forward(Broadcast *bcast) {
   pk->set_link_node(hops,_ip);
   pk->set_next(hops);
   pk->set_seq(bcast->_seq);
-  uint32_t link_seq = random();
-  pk->set_seq2(link_seq);
-
-  bcast->_sent_seq.push_back(link_seq);
 
   if (bcast->_originated) {
     memcpy(pk->data(), p_in->data(), p_in->length());
@@ -154,9 +150,6 @@ CounterFlood::forward(Broadcast *bcast) {
   
   bcast->_actually_sent = true;
   bcast->_rx_from.push_back(_ip);
-  bcast->_rx_from_seq.push_back(link_seq);
-
-  
 
 }
 
@@ -231,7 +224,6 @@ CounterFlood::push(int port, Packet *p_in)
     struct srpacket *pk = (struct srpacket *) (eh+1);
     
     uint32_t seq = pk->seq();
-    uint32_t link_seq = pk->seq2();
 
     int index = -1;
     for (int x = 0; x < _packets.size(); x++) {
@@ -255,12 +247,9 @@ CounterFlood::push(int port, Packet *p_in)
       _packets[index]._actually_sent = false;
       _packets[index].t = NULL;
       _packets[index]._rx_from.push_back(src);
-      _packets[index]._rx_from_seq.push_back(link_seq);
 
       /* schedule timer */
       int delay_time = (random() % _max_delay_ms) + 1;
-      sr_assert(delay_time > 0);
-      
       _packets[index]._to_send = now + Timestamp::make_msec(delay_time);
       _packets[index].t = new Timer(static_forward_hook, (void *) this);
       _packets[index].t->initialize(this);
@@ -286,7 +275,6 @@ CounterFlood::push(int port, Packet *p_in)
     }
     _packets[index]._num_rx++;
     _packets[index]._rx_from.push_back(src);
-    _packets[index]._rx_from_seq.push_back(link_seq);
       
 
   }

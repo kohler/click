@@ -225,8 +225,6 @@ PFlood::push(int port, Packet *p_in)
 
       /* schedule timer */
       int delay_time = (random() % _max_delay_ms) + 1;
-      sr_assert(delay_time > 0);
-      
       _packets[index].t = new Timer(static_forward_hook, (void *) this);
       _packets[index].t->initialize(this);
       _packets[index].t->schedule_at(now + Timestamp::make_msec(delay_time));

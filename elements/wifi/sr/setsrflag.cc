@@ -44,9 +44,7 @@ SetSRFlag::configure(Vector<String> &conf, ErrorHandler* errh)
   for (int i = 0; i < conf.size(); i++) {
     String text = conf[i];
     String word = cp_pop_spacevec(text);
-    if (word == "FLAG_SCHEDULE") {
-      flags |= FLAG_SCHEDULE;
-    } else if (word == "FLAG_ERROR") {
+    if (word == "FLAG_ERROR") {
       flags |= FLAG_ERROR;
     } else if (word == "FLAG_UPDATE") {
       flags |= FLAG_UPDATE;
@@ -79,9 +77,6 @@ String
 SetSRFlag::print_flags()
 {
   StringAccum sa;
-  if (_flags & FLAG_SCHEDULE) {
-    sa << "FLAG_SCHEDULE\n";
-  }
   if (_flags & FLAG_ERROR) {
     sa << "FLAG_ERROR\n";
   }

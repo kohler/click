@@ -385,7 +385,6 @@ GatewaySelector::push(int port, Packet *p_in)
 
   /* schedule timer */
   int delay_time = (random() % 2000) + 1;
-  sr_assert(delay_time > 0);
   
   _seen[si]._to_send = _seen[si]._when + Timestamp::make_msec(delay_time);
   _seen[si]._forwarded = false;

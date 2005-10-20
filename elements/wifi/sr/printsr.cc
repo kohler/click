@@ -81,19 +81,6 @@ PrintSR::sr_to_string(struct srpacket *pk)
   if (pk->flag(FLAG_UPDATE)) {
     sa << " UPDATE ";
   }
-  if (pk->flag(FLAG_SCHEDULE)) {
-    sa << " SCHEDULE ";
-  }
-  if (pk->flag(FLAG_SCHEDULE_TOKEN)) {
-    sa << " SCHEDULE_TOKEN ";
-  }
-  if (pk->flag(FLAG_SCHEDULE_FAKE)) {
-    sa << " SCHEDULE_FAKE ";
-  }
-
-  if (pk->flag(FLAG_ECN)) {
-    sa << " ECN ";
-  }
   sa << flags << ")";
 
   if (pk->_type == PT_DATA) {

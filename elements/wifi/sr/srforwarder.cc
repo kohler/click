@@ -111,7 +111,7 @@ SRForwarder::update_link(IPAddress from, IPAddress to,
 Packet *
 SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 {
-  sr_assert(r.size() > 1);
+	assert(r.size() > 1);
   int hops = r.size() - 1;
   unsigned extra = srpacket::len_wo_data(hops) + sizeof(click_ether);
   unsigned payload_len = p_in->length();
