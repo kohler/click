@@ -270,8 +270,8 @@ FlashFlood::forward(Broadcast *bcast) {
 
   pk->_version = _sr_version;
   pk->_type = PT_DATA;
-  pk->_flags = 0;
-  pk->_qdst = _bcast_ip;
+  pk->unset_flag(~0);
+  pk->set_qdst(_bcast_ip);
   pk->set_num_links(hops);
   for (int x = 0; x < hops; x++) {
     pk->set_link_node(x, pk_in->get_link_node(x));

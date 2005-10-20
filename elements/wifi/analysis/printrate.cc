@@ -36,20 +36,49 @@ PrintRate::~PrintRate()
 }
 
 int
-PrintRate::configure(Vector<String> &, ErrorHandler*)
+PrintRate::configure(Vector<String> &conf, ErrorHandler*errh)
 {
-	return 0;
+	_print = false;
+	_rate = 0;
+	int ret = cp_va_parse(conf, this, errh,
+			      cpKeywords,
+			      "PRINT", cpBool, "xxx", &_print,
+			      0);
+	return ret;
 }
 
 Packet *
 PrintRate::simple_action(Packet *p)
 {
 	struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
-	click_chatter("%d\n", ceh->rate);
-
+	if (_print) {
+		click_chatter("%d\n", ceh->rate);
+	}
+	_rate = ceh->rate;
     
-  return p;
+	return p;
 }
 
+enum {H_RATE};
+
+static String
+read_param(Element *e, void *thunk)
+{
+	PrintRate *f = (PrintRate *)e;
+	switch((int)thunk) {
+	case H_RATE: {
+		StringAccum sa;
+		sa << f->_rate << "\n";
+		return sa.take_string();
+	}
+	}
+	return String();
+}
+
+void
+PrintRate::add_handlers()
+{
+	add_read_handler("rate", read_param, (void *)H_RATE);
+}
 CLICK_ENDDECLS
 EXPORT_ELEMENT(PrintRate)

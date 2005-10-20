@@ -32,6 +32,10 @@ class PrintPower : public Element {
   
   int configure(Vector<String> &, ErrorHandler *);
   Packet *simple_action(Packet *);
+  void add_handlers();
+
+  bool _print;
+  int _power;
 };
 
 CLICK_ENDDECLS

@@ -32,6 +32,10 @@ class PrintRate : public Element {
   
   int configure(Vector<String> &, ErrorHandler *);
   Packet *simple_action(Packet *);
+  void add_handlers();
+
+  bool _print;
+  int _rate;
 };
 
 CLICK_ENDDECLS

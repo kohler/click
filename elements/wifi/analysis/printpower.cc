@@ -36,20 +36,45 @@ PrintPower::~PrintPower()
 }
 
 int
-PrintPower::configure(Vector<String> &, ErrorHandler*)
+PrintPower::configure(Vector<String> &conf, ErrorHandler*errh)
 {
-	return 0;
+	_print = false;
+	_power = 0;
+	int ret = cp_va_parse(conf, this, errh,
+			      cpKeywords,
+			      "PRINT", cpBool, "xxx", &_print,
+			      0);
+	return ret;
 }
 
 Packet *
 PrintPower::simple_action(Packet *p)
 {
 	struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
-	click_chatter("%d\n", ceh->power);
-
+	if (_print) {
+		click_chatter("%d\n", ceh->power);
+	}
+	_power = ceh->power;
     
-  return p;
+	return p;
 }
 
+enum {H_POWER};
+
+static String
+read_param(Element *e, void *thunk)
+{
+	PrintPower *f = (PrintPower *)e;
+	switch((int)thunk) {
+	case H_POWER: return String(f->_power) + "\n";
+	}
+	return String();
+}
+
+void
+PrintPower::add_handlers()
+{
+	add_read_handler("power", read_param, (void *)H_POWER);
+}
 CLICK_ENDDECLS
 EXPORT_ELEMENT(PrintPower)

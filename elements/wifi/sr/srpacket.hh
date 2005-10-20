@@ -39,7 +39,10 @@ struct srpacket {,
   uint8_t _nlinks;
   uint8_t _next;   // Index of next node who should process this packet.
 
-
+private:
+  /* these are private and have access functions below so I don't have
+   * to remember about endianness 
+   */
   uint16_t _ttl;
   uint16_t _cksum;
   uint16_t _flags; 
@@ -55,7 +58,7 @@ struct srpacket {,
   uint32_t _seq;   // seq number
   uint32_t _seq2;  // another seq number
 
-  
+public:  
   /* uin32_t ip[_nlinks] */
   /* uin32_t metrics[_nlinks] */
 
@@ -151,6 +154,13 @@ struct srpacket {,
     }
     return p;
   }
+
+  void set_qdst(IPAddress ip) {
+    _qdst = htonl(ip);
+  }
+  IPAddress get_qdst() {
+    return ntohl(_qdst);
+  }
   void set_data_seq(uint32_t n) {
     _qdst = htonl(n);
   }
@@ -214,6 +224,16 @@ struct srpacket {,
     _cksum = 0;
     _cksum = click_in_cksum((unsigned char *) this, tlen);
   }
+
+ bool check_checksum() {
+   unsigned int tlen = 0;
+   if (_type & PT_DATA) {
+	   tlen = hlen_with_data();
+   } else {
+	   tlen = hlen_wo_data();
+   }
+   return click_in_cksum((unsigned char *) this, tlen) == 0;
+ }
 });
 
 

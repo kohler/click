@@ -200,8 +200,8 @@ MetricFlood::forward_query(Seen *s)
   memset(pk, '\0', extra);
   pk->_version = _sr_version;
   pk->_type = PT_DATA;
-  pk->_flags = 0;
-  pk->_qdst = s->_dst;
+  pk->unset_flag(~0);
+  pk->set_qdst(s->_dst);
   pk->set_seq(s->_seq);
   pk->set_num_links(links);
   pk->set_data_len(dlen);
@@ -239,8 +239,8 @@ MetricFlood::start_flood(Packet *p_in) {
   memset(pk, '\0', srpacket::len_wo_data(0));
   pk->_version = _sr_version;
   pk->_type = PT_DATA;
-  pk->_flags = 0;
-  pk->_qdst = qdst;
+  pk->unset_flag(~0);
+  pk->set_qdst(qdst);
   pk->set_seq(++_seq);
   pk->set_num_links(0);
   pk->set_link_node(0,_ip);
@@ -312,8 +312,8 @@ MetricFlood::process_flood(Packet *p_in) {
     _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
   }
   
-  IPAddress src(pk->get_link_node(0));
-  IPAddress dst(pk->_qdst);
+  IPAddress src = pk->get_link_node(0);
+  IPAddress dst = pk->get_qdst();
   u_long seq = pk->seq();
 
   int si = 0;

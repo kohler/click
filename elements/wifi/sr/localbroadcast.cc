@@ -114,8 +114,8 @@ LocalBroadcast::push(int port, Packet *p_in)
     pk->_version = _sr_version;
     pk->_type = PT_DATA;
     pk->set_data_len(payload_len);
-    pk->_flags = 0;
-    pk->_qdst = _bcast_ip;
+    pk->unset_flag(~0);
+    pk->set_qdst(_bcast_ip);
     pk->set_seq(++_seq);
     pk->set_num_links(hops);
     pk->set_link_node(0,_ip);

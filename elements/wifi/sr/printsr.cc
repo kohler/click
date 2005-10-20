@@ -105,7 +105,7 @@ PrintSR::sr_to_string(struct srpacket *pk)
   if (pk->_type == PT_DATA) {
     sa << " dataseq " << pk->data_seq();
   }
-  IPAddress qdst = IPAddress(pk->_qdst);
+  IPAddress qdst = pk->get_qdst();
   if (qdst) {
     sa << " qdst " << qdst;
   }

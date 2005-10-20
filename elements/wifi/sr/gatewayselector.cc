@@ -126,9 +126,9 @@ GatewaySelector::start_ad()
   memset(pk, '\0', len);
   pk->_version = _sr_version;
   pk->_type = PT_GATEWAY;
-  pk->_flags = 0;
-  pk->_qdst = _ip;
-  pk->_seq = htonl(++_seq);
+  pk->unset_flag(~0);
+  pk->set_qdst(_ip);
+  pk->set_seq(++_seq);
   pk->set_num_links(0);
   pk->set_link_node(0,_ip);
   send(p);
@@ -202,9 +202,9 @@ GatewaySelector::forward_ad(Seen *s)
   memset(pk, '\0', len);
   pk->_version = _sr_version;
   pk->_type = PT_GATEWAY;
-  pk->_flags = 0;
-  pk->_qdst = s->_gw;
-  pk->_seq = htonl(s->_seq);
+  pk->unset_flag(~0);
+  pk->set_qdst(s->_gw);
+  pk->set_seq(s->_seq);
   pk->set_num_links(links);
 
   for(int i=0; i < links; i++) {
@@ -341,7 +341,7 @@ GatewaySelector::push(int port, Packet *p_in)
     _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
   }
   
-  IPAddress gw = pk->_qdst;
+  IPAddress gw = pk->get_qdst();
   if (!gw) {
 	  p_in->kill();
 	  return;

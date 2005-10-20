@@ -132,7 +132,7 @@ void
 SRQueryForwarder::process_query(struct srpacket *pk1)
 {
   IPAddress src(pk1->get_link_node(0));
-  IPAddress dst(pk1->_qdst);
+  IPAddress dst = pk1->get_qdst();
   u_long seq = pk1->seq();
 
   if (dst == _ip) {
@@ -235,8 +235,8 @@ SRQueryForwarder::forward_query(Seen *s)
   memset(pk, '\0', len);
   pk->_version = _sr_version;
   pk->_type = PT_QUERY;
-  pk->_flags = 0;
-  pk->_qdst = s->_dst;
+  pk->unset_flag(~0);
+  pk->set_qdst(s->_dst);
   pk->set_seq(s->_seq);
   pk->set_num_links(links);
 

@@ -122,15 +122,15 @@ SRQueryResponder::update_link(IPAddress from, IPAddress to, uint32_t seq, int me
 void
 SRQueryResponder::forward_reply(struct srpacket *pk1)
 {
-  u_char type = pk1->_type;
-  sr_assert(type == PT_REPLY);
-
+	u_int8_t type = pk1->_type;
+	sr_assert(type == PT_REPLY);
+	
   _link_table->dijkstra(true);
   if (_debug) {
     click_chatter("%{element}: forward_reply %s <- %s\n", 
 		  this,
 		  pk1->get_link_node(0).s().c_str(),
-		  IPAddress(pk1->_qdst).s().c_str());
+		  pk1->get_qdst().s().c_str());
   }
   if(pk1->next() >= pk1->num_links()) {
     click_chatter("%{element} forward_reply strange next=%d, nhops=%d", 
@@ -226,12 +226,12 @@ SRQueryResponder::start_reply(IPAddress src, IPAddress qdst, uint32_t seq)
 
   pk_out->_version = _sr_version;
   pk_out->_type = PT_REPLY;
-  pk_out->_flags = 0;
+  pk_out->unset_flag(~0);
   pk_out->set_seq(seq);
   pk_out->set_num_links(links);
   pk_out->set_next(links-1);
-  pk_out->_qdst = qdst;
-
+  pk_out->set_qdst(qdst);
+  
   
   for (int i = 0; i < links; i++) {
     pk_out->set_link(i,
@@ -251,7 +251,7 @@ void
 SRQueryResponder::got_reply(struct srpacket *pk)
 {
 
-  IPAddress dst = IPAddress(pk->_qdst);
+	IPAddress dst = pk->get_qdst();
   sr_assert(dst);
   if (_debug) {
     click_chatter("%{element}: got_reply %s <- %s\n", 
@@ -278,11 +278,11 @@ SRQueryResponder::push(int, Packet *p_in)
   }
   
   u_char type = pk->_type;
-  IPAddress dst = IPAddress(pk->_qdst);
+  IPAddress dst = pk->get_qdst();
   
   if (type != PT_REPLY) {
     if (dst == _ip) {
-      start_reply(pk->get_link_node(0), pk->_qdst, pk->seq());
+	    start_reply(pk->get_link_node(0), pk->get_qdst(), pk->seq());
     }
     p_in->kill();
     return;
