@@ -1,3 +1,9 @@
+2005-10-20 Thursday 12:29  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/: ettstat.cc (1.27), ettstat.hh (1.19),
+	  printsr.cc (1.10), srforwarder.cc (1.11), srpacket.hh (1.7): fix
+	  big-endian problems. reported by YenJung Chang.
+
 2005-10-13 Thursday 13:43  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* elements/wifi/: athdescdecap.cc (1.2), athdescencap.cc (1.2),
