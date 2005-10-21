@@ -1,3 +1,21 @@
+2005-10-20 Thursday 20:09  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/: srforwarder.cc (1.13), srforwarder.hh (1.7),
+	  srpacket.hh (1.12): even more code cleaning.
+
+2005-10-20 Thursday 19:53  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/srpacket.hh (1.11): more cleanup.
+
+2005-10-20 Thursday 19:40  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/: counterflood.cc (1.8), flashflood.cc (1.12),
+	  flashflood.hh (1.5), gatewayselector.cc (1.15), metricflood.cc
+	  (1.8), pflood.cc (1.8), printsr.cc (1.12), setsrflag.cc (1.4),
+	  srforwarder.cc (1.12), srpacket.hh (1.10), srquerier.cc (1.13),
+	  srqueryforwarder.cc (1.12), srqueryresponder.cc (1.12): code
+	  cleanup.
+
 2005-10-20 Thursday 19:14  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/sr/: inorderqueue.cc (1.8), inorderqueue.hh (1.5),
