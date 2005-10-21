@@ -109,7 +109,7 @@ class Element { public:
   
     inline Router *router() const;
     inline int eindex() const;
-    inline int eindex(Router *) const;
+    inline int eindex(Router *r) const;
     Master *master() const;
 
     // INPUTS AND OUTPUTS

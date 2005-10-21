@@ -1964,8 +1964,8 @@ Element::reconfigure_positional_handler(const String &arg, Element *e,
  * occurrences), and call live_reconfigure() to reconfigure the element.
  *
  * reconfigure_keyword_handler() requires the element to provide its own
- * configuration() function, rather than relying on the default.  If you don't
- * override it, all writes to your handler will fail.
+ * configuration() function, rather than relying on the default.  Otherwise,
+ * all writes to your handler will fail.
  *
  * @sa configuration: used to obtain the element's current configuration.
  * @sa live_reconfigure: used to reconfigure the element.
