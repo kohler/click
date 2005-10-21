@@ -1,3 +1,12 @@
+2005-10-20 Thursday 21:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/element.hh (1.49), lib/element.cc (1.108): nits
+
+2005-10-20 Thursday 21:05  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/element.hh (1.47), lib/element.cc (1.107),
+	  include/click/element.hh (1.48): nits
+
 2005-10-20 Thursday 20:09  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/sr/: srforwarder.cc (1.13), srforwarder.hh (1.7),
