@@ -1,3 +1,8 @@
+2005-10-21 Friday 17:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/element.cc (1.109): fix Element(int, int) bug; check for
+	  _router!=0.  Patch from Jacky Cheng
+
 2005-10-21 Friday 04:06  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/checkipheader.cc (1.55): incorporate version of IP
