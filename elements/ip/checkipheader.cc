@@ -180,19 +180,19 @@ CheckIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 CheckIPHeader::drop(Reason reason, Packet *p)
 {
-  if (_drops == 0 || _verbose)
-    click_chatter("IP header check failed: %s", reason_texts[reason]);
-  _drops++;
+    if (_drops == 0 || _verbose)
+	click_chatter("%s: IP header check failed: %s", id().c_str(), reason_texts[reason]);
+    _drops++;
 
-  if (_reason_drops)
-    _reason_drops[reason]++;
+    if (_reason_drops)
+	_reason_drops[reason]++;
   
-  if (noutputs() == 2)
-    output(1).push(p);
-  else
-    p->kill();
+    if (noutputs() == 2)
+	output(1).push(p);
+    else
+	p->kill();
 
-  return 0;
+    return 0;
 }
 
 Packet *
