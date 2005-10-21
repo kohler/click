@@ -5,6 +5,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2002-2003 International Computer Science Institute
+ * Copyright (c) 2005 Regents of the University of California
  *
  * This source code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -17,6 +18,7 @@
  */
 
 #undef CLICK_LINUXMODULE
+#include <linux/version.h>
 #include <linux/config.h>
 #ifndef EXPORT_SYMTAB
 # define EXPORT_SYMTAB
