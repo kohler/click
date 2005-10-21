@@ -1,3 +1,13 @@
+2005-10-21 Friday 04:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/checkipheader.cc (1.55): incorporate version of IP
+	  header check message long ago from Bart Braem
+
+2005-10-21 Friday 03:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/proclikefs.c (1.19): add #include <linux/version.h>
+	  (Bob Keyes)
+
 2005-10-20 Thursday 21:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/element.hh (1.49), lib/element.cc (1.108): nits
