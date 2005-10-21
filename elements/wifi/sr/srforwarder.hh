@@ -65,8 +65,6 @@ private:
   int _datas;
   int _databytes;
 
-  EtherAddress _bcast;
-
   class LinkTable *_link_table;
   class ARPTable *_arp_table;
   

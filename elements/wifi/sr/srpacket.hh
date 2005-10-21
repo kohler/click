@@ -74,7 +74,9 @@ public:
 	void      set_data_seq(uint32_t n)   { _qdst = htonl(n); }
 
 
-	/* remember that if you call this you must have set the number of links in this packet! */
+	/* remember that if you call this you must have set the number
+	 * of links in this packet!
+	 */
 	u_char *data() { return (((u_char *)this) + len_wo_data(num_links())); }
 
 	void set_checksum() {
