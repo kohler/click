@@ -44,7 +44,7 @@ class Element { public:
     virtual void selected(int fd);
 #endif
 
-    inline void checked_output_push(int, Packet*) const;
+    inline void checked_output_push(int port, Packet*) const;
     
     // ELEMENT CHARACTERISTICS
     virtual const char *class_name() const = 0;
@@ -118,16 +118,16 @@ class Element { public:
     inline int noutputs() const;
 
     class Port;
-    inline const Port &port(bool isoutput, int) const;
-    inline const Port &input(int) const;
-    inline const Port &output(int) const;
+    inline const Port &port(bool isoutput, int port) const;
+    inline const Port &input(int port) const;
+    inline const Port &output(int port) const;
 
-    inline bool port_active(bool isoutput, int) const;
-    inline bool input_is_push(int) const;
-    inline bool input_is_pull(int) const;
-    inline bool output_is_push(int) const;
-    inline bool output_is_pull(int) const;
-    void port_flow(bool isoutput, int, Bitvector*) const;
+    inline bool port_active(bool isoutput, int port) const;
+    inline bool input_is_push(int port) const;
+    inline bool input_is_pull(int port) const;
+    inline bool output_is_push(int port) const;
+    inline bool output_is_pull(int port) const;
+    void port_flow(bool isoutput, int port, Bitvector*) const;
   
     // LIVE RECONFIGURATION
     virtual void configuration(Vector<String>&) const;
@@ -144,9 +144,9 @@ class Element { public:
 #endif
 
     // HANDLERS
-    void add_read_handler(const String&, ReadHandlerHook, void*);
-    void add_write_handler(const String&, WriteHandlerHook, void*);
-    void set_handler(const String&, int flags, HandlerHook, void* = 0, void* = 0);
+    void add_read_handler(const String &name, ReadHandlerHook, void*);
+    void add_write_handler(const String &name, WriteHandlerHook, void*);
+    void set_handler(const String &name, int flags, HandlerHook, void* = 0, void* = 0);
     void add_task_handlers(Task*, const String& prefix = String());
 
     static String read_positional_handler(Element*, void*);
@@ -415,88 +415,91 @@ Element::add_output()
 
 /** @brief Return one of the element's ports.
  * @param isoutput false for input ports, true for output ports
- * @param p port number
+ * @param port port number
  *
  * An assertion fails if @a p is out of range. */
 inline const Element::Port&
-Element::port(bool isoutput, int p) const
+Element::port(bool isoutput, int port) const
 {
-    assert((unsigned) p < (unsigned) _nports[isoutput]);
-    return _ports[isoutput][p];
+    assert((unsigned) port < (unsigned) _nports[isoutput]);
+    return _ports[isoutput][port];
 }
 
 /** @brief Return one of the element's input ports.
- * @param p port number
+ * @param port port number
  *
- * An assertion fails if @a p is out of range.
+ * An assertion fails if @a port is out of range.
  *
  * @sa Port, port */
 inline const Element::Port&
-Element::input(int p) const
+Element::input(int port) const
 {
-    return port(false, p);
+    return Element::port(false, port);
 }
 
 /** @brief Return one of the element's output ports.
- * @param p port number
+ * @param port port number
  *
- * An assertion fails if @a p is out of range.
+ * An assertion fails if @a port is out of range.
  *
  * @sa Port, port */
 inline const Element::Port&
-Element::output(int p) const
+Element::output(int port) const
 {
-    return port(true, p);
+    return Element::port(true, port);
 }
 
 /** @brief Check whether a port is active.
  * @param isoutput false for input ports, true for output ports
- * @param p port number
+ * @param port port number
  *
- * Returns true iff @a p is in range and @a p is active.  Push outputs and
- * pull inputs are active; pull outputs and push inputs are not.
+ * Returns true iff @a port is in range and @a port is active.  Push outputs
+ * and pull inputs are active; pull outputs and push inputs are not.
  *
  * @sa Element::Port::active */
 inline bool
-Element::port_active(bool isoutput, int p) const
+Element::port_active(bool isoutput, int port) const
 {
-    return (unsigned) p < (unsigned) nports(isoutput) && _ports[isoutput][p].active();
+    return (unsigned) port < (unsigned) nports(isoutput)
+	&& _ports[isoutput][port].active();
 }
 
-/** @brief Check whether output port @a p is push.
+/** @brief Check whether output @a port is push.
  *
- * Returns true iff output port @a p exists and is push.  @sa port_active */
+ * Returns true iff output @a port exists and is push.  @sa port_active */
 inline bool
-Element::output_is_push(int p) const
+Element::output_is_push(int port) const
 {
-    return port_active(true, p);
+    return port_active(true, port);
 }
 
-/** @brief Check whether output port @a p is pull.
+/** @brief Check whether output @a port is pull.
  *
- * Returns true iff output port @a p exists and is pull. */
+ * Returns true iff output @a port exists and is pull. */
 inline bool
-Element::output_is_pull(int p) const
+Element::output_is_pull(int port) const
 {
-    return (unsigned) p < (unsigned) nports(true) && !_ports[1][p].active();
+    return (unsigned) port < (unsigned) nports(true)
+	&& !_ports[1][port].active();
 }
 
-/** @brief Check whether input port @a p is pull.
+/** @brief Check whether input @a port is pull.
  *
- * Returns true iff input port @a p exists and is pull.  @sa port_active */
+ * Returns true iff input @a port exists and is pull.  @sa port_active */
 inline bool
-Element::input_is_pull(int p) const
+Element::input_is_pull(int port) const
 {
-    return port_active(false, p);
+    return port_active(false, port);
 }
 
-/** @brief Check whether input port @a p is push.
+/** @brief Check whether input @a port is push.
  *
- * Returns true iff input port @a p exists and is push. */
+ * Returns true iff input @a port exists and is push. */
 inline bool
-Element::input_is_push(int p) const
+Element::input_is_push(int port) const
 {
-    return (unsigned) p < (unsigned) nports(false) && !_ports[0][p].active();
+    return (unsigned) port < (unsigned) nports(false)
+	&& !_ports[0][port].active();
 }
 
 #if CLICK_STATS >= 2

@@ -797,18 +797,18 @@ next_flow_code(const char*& p, int port, Bitvector& code, ErrorHandler* errh, co
     return 0;
 }
 
-/** @brief Analyze internal packet flow with respect to @a port.
+/** @brief Analyze internal packet flow with respect to port @a p.
  *
  * @param isoutput false for input ports, true for output ports
- * @param port port number
+ * @param p port number
  * @param[out] travels the bitvector to initialize with internal packet flow
  * information
  *
  * Analyzes the element's flow_code() and determines how packets might travel
  * from the specified port.  The @a travels bitvector is initialized to have
  * one entry per complementary port; thus, if @a isoutput is true, then @a
- * travels has ninputs() entries.  The entry for port @a p is set to true iff
- * packets can travel from @a port to @a p.  Returns all false if @a port is
+ * travels has ninputs() entries.  The entry for port @a x is set to true iff
+ * packets can travel from @a p to @a x.  Returns all false if @a p is
  * out of range.
  *
  * For example, if flow_code() is "xy/xxyx", and the element has 2 inputs and
@@ -821,11 +821,11 @@ next_flow_code(const char*& p, int port, Bitvector& code, ErrorHandler* errh, co
  * @sa flow_code
  */
 void
-Element::port_flow(bool isoutput, int port, Bitvector* travels) const
+Element::port_flow(bool isoutput, int p, Bitvector* travels) const
 {
     const char *f = flow_code();
     int nother = nports(!isoutput);
-    if (port < 0 || port >= nports(isoutput)) {
+    if (p < 0 || p >= nports(isoutput)) {
 	travels->assign(nother, false);
 	return;
     } else if (!f || f == COMPLETE_FLOW) {
@@ -851,9 +851,9 @@ Element::port_flow(bool isoutput, int port, Bitvector* travels) const
     }
   
     Bitvector in_code;
-    for (int i = 0; i < port; i++)
+    for (int i = 0; i < p; i++)
 	skip_flow_code(f_in);
-    next_flow_code(f_in, port, in_code, errh, this);
+    next_flow_code(f_in, p, in_code, errh, this);
 
     Bitvector out_code;
     for (int i = 0; i < nother; i++) {
