@@ -30,7 +30,6 @@ typedef int (*WriteHandlerHook)(const String&, Element*, void*, ErrorHandler*);
 class Element { public:
     
     Element();
-    Element(int ninputs, int noutputs) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
     virtual ~Element();
     static int nelements_allocated;
 
@@ -198,6 +197,8 @@ class Element { public:
     };
 
     // DEPRECATED
+    Element(int ninputs, int noutputs) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
+
     virtual void notify_ninputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
     virtual void notify_noutputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
 
