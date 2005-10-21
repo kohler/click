@@ -334,7 +334,7 @@ Element::set_nports(int new_ninputs, int new_noutputs)
     // exit on bad counts, or if already initialized
     if (new_ninputs < 0 || new_noutputs < 0)
 	return -EINVAL;
-    if (_router->_have_connections) {
+    if (_router && _router->_have_connections) {
 	if (_router->_state >= Router::ROUTER_PREINITIALIZE)
 	    return -EBUSY;
 	_router->_have_connections = false;
