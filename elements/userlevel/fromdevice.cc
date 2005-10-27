@@ -359,6 +359,7 @@ FromDevice_get_packet(u_char* clientdata,
 
     // set annotations
     p->set_timestamp_anno(Timestamp::make_usec(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec));
+    p->set_mac_header(p->data());
     SET_EXTRA_LENGTH_ANNO(p, pkthdr->len - length);
 
     if (!fd->_force_ip || fake_pcap_force_ip(p, fd->_datalink))
@@ -403,6 +404,7 @@ FromDevice::selected(int)
 		p->take(_snaplen - len);
 	    p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
 	    p->timestamp_anno().set_timeval_ioctl(_linux_fd, SIOCGSTAMP);
+	    p->set_mac_header(p->data());
 	    if (!_force_ip || fake_pcap_force_ip(p, _datalink))
 		output(0).push(p);
 	    else
