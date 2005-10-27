@@ -19,6 +19,24 @@ CLICK_DECLS
  *
  */
 
+class EtherPair {
+ public: 
+	EtherAddress _src;
+	EtherAddress _dst;
+	EtherPair () { }
+	EtherPair(EtherAddress src, EtherAddress dst) {
+		_src = src;
+		_dst = dst;
+	}
+	inline bool operator==(EtherPair other) {
+		return _src == other._src && _dst == other._dst;
+	}
+};
+
+
+inline unsigned hashcode(EtherPair p) {
+	return hashcode(p._src) + hashcode(p._dst);
+}
 
 class WifiCounter : public Element { public:
   
@@ -26,7 +44,8 @@ class WifiCounter : public Element { public:
   ~WifiCounter();
   
   const char *class_name() const		{ return "WifiCounter"; }
-  const char *processing() const		{ return PORTS_1_1; }
+  const char *port_count() const		{ return PORTS_1_1; }
+  const char *processing() const		{ return AGNOSTIC; }
   
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
@@ -35,7 +54,6 @@ class WifiCounter : public Element { public:
 
   void add_handlers();
 
-  String stats();
   class WifiPacketCount {
   public:
     int count;
@@ -68,10 +86,23 @@ class WifiCounter : public Element { public:
   WifiPacketCount types[4][16];
   WifiPacketCount totals;
 
-  typedef HashMap<EtherAddress, DstInfo> EtherTable;
+  class EtherPairCount {
+  public:
+	  EtherPair _pair;
+	  int _count;
+	  EtherPairCount() {_count = 0; }
+	  EtherPairCount(EtherPair p) {
+		  _pair = p;
+		  _count = 0;
+	  }
+	  inline bool operator==(EtherPairCount other) {
+		  return _pair == other._pair;
+	  }
+  };
+  typedef HashMap<EtherPair, EtherPairCount> EtherTable;
   typedef EtherTable::const_iterator ETIter;
   
-  EtherTable _dsts;
+  EtherTable _pairs;
 
 };
 

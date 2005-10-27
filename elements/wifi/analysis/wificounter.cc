@@ -1,8 +1,8 @@
 /*
- * WifiCounter.{cc,hh} -- sets wifi txrate annotation on a packet
+ * WifiCounter.{cc,hh} -- count source and destinations of 802.11 packets
  * John Bicket
  *
- * Copyright (c) 2003 Massachusetts Institute of Technology
+ * Copyright (c) 2005 Massachusetts Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -52,86 +52,88 @@ WifiCounter::simple_action (Packet *p_in)
   click_wifi *wh = (click_wifi *) p_in->data();
 
   EtherAddress src = EtherAddress(wh->i_addr2);
+  EtherAddress dst = EtherAddress(wh->i_addr1);
 
-  DstInfo *nfo = _dsts.findp(src);
-  if (!nfo) {
-    _dsts.insert(src, DstInfo(src));
-    nfo = _dsts.findp(src);
-  }
-
-  if (!nfo) {
-    return p_in;
-  }
-
+  
   int type = wh->i_fc[0] & WIFI_FC0_TYPE_MASK;
   int subtype = (wh->i_fc[0] & WIFI_FC0_SUBTYPE_MASK) >> 4;
+  totals.count++;
+  totals.bytes += p_in->length();
   
   int type_ndx = 3;
   switch (type) {
   case WIFI_FC0_TYPE_MGT: type_ndx = 0; break;
   case WIFI_FC0_TYPE_CTL: type_ndx = 1; break;
   case WIFI_FC0_TYPE_DATA: type_ndx = 2; break;
+	  break;
   }
-  
-  nfo->types[type_ndx][subtype].count++;
-  nfo->types[type_ndx][subtype].bytes += p_in->length();
-  
-  nfo->totals.count++;
-  nfo->totals.bytes += p_in->length();
 
   types[type_ndx][subtype].count++;
   types[type_ndx][subtype].bytes += p_in->length();
-  
+
   totals.count++;
   totals.bytes += p_in->length();
+
+  EtherPair pair = EtherPair(src, dst);
+  EtherPairCount *c = _pairs.findp(pair);
+  if (!c) {
+	  _pairs.insert(pair, EtherPairCount(pair));
+	  c = _pairs.findp(pair);
+  }
+
+  c->_count++;
+
   return p_in;
 }
 
-String
-WifiCounter::stats() {
-  StringAccum sa;
-  for (int x = 0; x < 3; x++) {
-    for (int y = 0; y < 16; y++) {
-      sa << "totals: ";
-      if (x == 0) {
-	sa << " mgt ";
-      } else if (x == 1) {
-	sa << " ctl ";
-      } else if (x == 2) {
-	sa << " data ";
-      }
-
-      sa << y << " " << types[x][y].s() << "\n";
-    }
-  }
-  for (ETIter iter = _dsts.begin(); iter; iter++) {
-    DstInfo nfo = iter.value();
-    sa << nfo.eth.s().c_str() << " ";
-    sa << nfo.totals.s();
-    sa << "\n";
-  }
-
-  return sa.take_string();
-}
-
-enum {H_STATS};
+enum {H_STATS, H_TYPES};
 
 static String
 WifiCounter_read_param(Element *e, void *thunk)
 {
   WifiCounter *td = (WifiCounter *)e;
   switch ((uintptr_t) thunk) {
-  case H_STATS: return td->stats();
+  case H_STATS: {
+	StringAccum sa;
+	for (WifiCounter::ETIter iter = td->_pairs.begin(); iter; iter++) {
+		WifiCounter::EtherPairCount c = iter.value();
+		sa << c._pair._src.s().c_str() << " ";
+		sa << c._pair._dst.s().c_str() << " ";
+		sa << c._count;
+		sa << "\n";
+	}
+	return sa.take_string();
+
+  }
+  case H_TYPES: {
+	StringAccum sa;
+
+	for (int x = 0; x < 3; x++) {
+		for (int y = 0; y < 16; y++) {
+			sa << "totals: ";
+			if (x == 0) {
+				sa << " mgt ";
+			} else if (x == 1) {
+				sa << " ctl ";
+			} else if (x == 2) {
+				sa << " data ";
+			}
+			
+			sa << y << " " << td->types[x][y].s() << "\n";
+		}
+	}
+	return sa.take_string();
+  }
   default:
     return String();
-  }
-  
+  }  
 }  
 	  
 void
 WifiCounter::add_handlers()
 {
 	add_read_handler("stats", WifiCounter_read_param, (void *) H_STATS);
+	add_read_handler("types", WifiCounter_read_param, (void *) H_TYPES);
 }
 CLICK_ENDDECLS
 EXPORT_ELEMENT(WifiCounter)

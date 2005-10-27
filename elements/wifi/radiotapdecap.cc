@@ -61,22 +61,26 @@ static int rt_check_header(struct ieee80211_radiotap_header *th, int len)
 {
 	int bytes = 0;
 	int x = 0;
-	if (th->it_version != 0) 
+	if (th->it_version != 0) {
 		return 0;
+	}
 
-	if (th->it_len < sizeof(struct ieee80211_radiotap_header))
+	if (th->it_len < sizeof(struct ieee80211_radiotap_header)) {
 		return 0;
+	}
 	
 	for (x = 0; x < NUM_RADIOTAP_ELEMENTS; x++) {
 		if (rt_el_present(th, x))
 		    bytes += radiotap_elem_to_bytes[x];
 	}
 
-	if (th->it_len < sizeof(struct ieee80211_radiotap_header) + bytes) 
+	if (th->it_len < sizeof(struct ieee80211_radiotap_header) + bytes) {
 		return 0;
+	}
 	
-	if (th->it_len > len)
+	if (th->it_len > len) {
 		return 0;
+	}
 
 	return 1;
 }
