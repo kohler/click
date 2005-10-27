@@ -45,33 +45,46 @@ ARPQuerier::~ARPQuerier()
 int
 ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (conf.size() == 1)
-    conf.push_back(conf[0]);
-  _capacity = 2048;
-  return cp_va_parse(conf, this, errh,
-		     cpIPAddress, "IP address", &_my_ip,
-		     cpEthernetAddress, "Ethernet address", &_my_en,
-		     cpKeywords,
-		     "CAPACITY", cpUnsigned, "packet capacity", &_capacity,
-		     cpEnd);
+    _capacity = 2048;
+    _bcast_addr = IPAddress();
+    IPAddress bcast_mask;
+    bool confirm_bcast = false;
+    if (cp_va_parse_remove_keywords(conf, 1, this, errh,
+				    "CAPACITY", cpUnsigned, "packet capacity", &_capacity,
+				    cpConfirmKeywords,
+				    "BROADCAST", cpIPAddress, "IP local broadcast address", &confirm_bcast, &_bcast_addr,
+				    cpEnd) < 0)
+	return -1;
+    if (conf.size() == 1)
+	conf.push_back(conf[0]);
+    if (cp_va_parse(conf, this, errh,
+		    cpIPAddressOrPrefix, "IP address", &_my_ip, &bcast_mask,
+		    cpEthernetAddress, "Ethernet address", &_my_en,
+		    cpEnd) < 0)
+	return -1;
+    if (!_bcast_addr)
+	_bcast_addr = _my_ip | ~bcast_mask;
+    if (_bcast_addr == _my_ip)
+	_bcast_addr = 0xFFFFFFFFU;
+    return 0;
 }
 
 int
 ARPQuerier::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (configure(conf, errh) < 0) {
-    // if the configuration failed do nothing and return with a
-    // failure indication
-    return -1;
-  }
+    if (configure(conf, errh) < 0) {
+	// if the configuration failed do nothing and return with a
+	// failure indication
+	return -1;
+    }
   
-  // if the new configuration succeeded then wipe out the old arp
-  // table and reset the queries and pkts_killed counters
-  clear_map();
-  _arp_queries = 0;
-  _drops = 0;
-  _arp_responses = 0;
-  return 0;
+    // if the new configuration succeeded then wipe out the old arp
+    // table and reset the queries and pkts_killed counters
+    clear_map();
+    _arp_queries = 0;
+    _drops = 0;
+    _arp_responses = 0;
+    return 0;
 }
 
 int
@@ -202,12 +215,6 @@ ARPQuerier::expire_hook(Timer *timer, void *thunk)
 void
 ARPQuerier::send_query_for(IPAddress want_ip)
 {
-  static bool zero_warned = false;  
-  if (!want_ip && !zero_warned) {
-    click_chatter("%s: querying for 0.0.0.0; missing dest IP addr annotation?", declaration().c_str());
-    zero_warned = true;
-  }
-  
   WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
   if (!q) {
     click_chatter("in arp querier: cannot make packet!");
@@ -282,6 +289,28 @@ ARPQuerier::handle_ip(Packet *p)
     }
     _lock.release_read();
 
+    // Check special IP addresses
+    if (!ipa) {
+	static bool zero_warned = false;  
+	if (!zero_warned) {
+	    click_chatter("%s: would query for 0.0.0.0; missing dest IP addr annotation?", declaration().c_str());
+	    zero_warned = true;
+	}
+	_drops++;
+	p->kill();
+	return;
+    } else if (ipa.addr() == 0xFFFFFFFFU || ipa == _bcast_addr) {
+	if (WritablePacket *q = p->push_mac_header(sizeof(click_ether))) {
+	    click_ether *e = q->ether_header();
+	    memcpy(e->ether_shost, _my_en.data(), 6);
+	    memset(e->ether_dhost, 0xFF, 6);
+	    e->ether_type = htons(ETHERTYPE_IP);
+	    output(0).push(q);
+	} else
+	    _drops++;
+	return;
+    }
+
     // Hard case: requires write lock
     // 18.May.2005 -- must expire BEFORE we grab the ae pointer!!
     // because expiring might in fact DELETE the ae pointer.
@@ -331,14 +360,14 @@ ARPQuerier::handle_ip(Packet *p)
 	return;
     }
     
-    _lock.release_write();
-
     // Send a query for any given address at most 10 times a second.
     int jiff = click_jiffies();
     if ((int) (jiff - ae->last_response_jiffies) >= CLICK_HZ / 10) {
 	ae->last_response_jiffies = jiff;
+	_lock.release_write();
 	send_query_for(ipa);
-    }
+    } else
+	_lock.release_write();
 }
 
 /*

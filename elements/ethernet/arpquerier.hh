@@ -39,6 +39,11 @@ The ARP reply packets on input 1 should include the Ethernet header.
 ARPQuerier may have one or two outputs. If it has two, then ARP queries
 are sent to the second output.
 
+ARPQuerier will not send queries for packets addressed to 0.0.0.0,
+255.255.255.255, or, if specified, any BROADCAST address.  Packets addressed
+to 0.0.0.0 are dropped; packets for broadcast addresses are forwarded with
+destination Ethernet address FF:FF:FF:FF:FF:FF.
+
 Keyword arguments are:
 
 =over 8
@@ -48,6 +53,13 @@ Keyword arguments are:
 Unsigned integer.  The maximum number of saved IP packets the element will
 hold at a time.  Default is 2048.  Note that, unlike the number of packets,
 the total number of ARP entries the element will hold is currently unlimited.
+
+=item BROADCAST
+
+IP address.  Local broadcast IP address.  Packets sent to this address will be
+forwarded to Ethernet address FF:FF:FF:FF:FF:FF.  Defaults to the local
+broadcast address that can be extracted from the IP address's corresponding
+prefix, if any.
 
 =back
 
@@ -147,6 +159,8 @@ class ARPQuerier : public Element { public:
     IPAddress _my_ip;
     Timer _expire_timer;
     uint32_t _capacity;
+    
+    IPAddress _bcast_addr;
   
     // statistics
     atomic_uint32_t _cache_size;
