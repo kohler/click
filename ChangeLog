@@ -1,3 +1,8 @@
+2005-10-27 Thursday 21:19  John Bicket <jbicket@mit.edu>
+
+	* elements/userlevel/fromhost.cc (1.10): correctly use
+	  set_mac_header
+
 2005-10-27 Thursday 19:51  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ethernet/arpquerier.cc (1.58),
