@@ -1,3 +1,10 @@
+2005-10-27 Thursday 19:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ethernet/arpquerier.cc (1.58),
+	  elements/ethernet/arpquerier.hh (1.41),
+	  test/ethernet/ARPQuerier-01.testie (1.2): add BROADCAST argument
+	  (Dagang Li)
+
 2005-10-27 Thursday 19:34  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/fromdevice.cc (1.57): set MAC header
