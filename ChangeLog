@@ -1,3 +1,25 @@
+2005-11-07 Monday 23:41  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: packetlogger.cc (1.6), packetlogger.hh (1.7):
+	  big-endian fixes from Spencer Chang.
+
+2005-11-07 Monday 23:40  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: settxrate.cc (1.23), analysis/counterrors.hh
+	  (1.5), analysis/countfecbytes.hh (1.4),
+	  analysis/countfragbytes.hh (1.6), frag/fragmentack.cc (1.5),
+	  frag/fragmentack.hh (1.6), frag/fragmentdupefilter.hh (1.5),
+	  frag/fragmentresender.cc (1.5), frag/fragmentresender.hh (1.6),
+	  sr/counterflood.cc (1.9), sr/counterflood.hh (1.5), sr/ettstat.cc
+	  (1.28), sr/gatewayselector.cc (1.16), sr/gatewayselector.hh
+	  (1.10), sr/localbroadcast.cc (1.9), sr/localbroadcast.hh (1.6),
+	  sr/metricflood.cc (1.9), sr/metricflood.hh (1.6), sr/pflood.cc
+	  (1.9), sr/pflood.hh (1.4), sr/srforwarder.cc (1.15),
+	  sr/srforwarder.hh (1.8), sr/srquerier.hh (1.9),
+	  sr/srqueryforwarder.cc (1.13), sr/srqueryforwarder.hh (1.8),
+	  sr/srqueryresponder.cc (1.13), sr/srqueryresponder.hh (1.8):
+	  bit-endian fixes from Spencer Chang.
+
 2005-10-27 Thursday 21:19  John Bicket <jbicket@mit.edu>
 
 	* elements/userlevel/fromhost.cc (1.10): correctly use
