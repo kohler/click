@@ -54,7 +54,7 @@ class PacketLogger : public Element { public:
   
  private:
   
-  unsigned int _et;
+  uint16_t _et;
   unsigned int _nb;
   
   DEQueue<log_entry> _p;
