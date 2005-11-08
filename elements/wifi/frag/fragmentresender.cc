@@ -112,7 +112,7 @@ FragmentResender::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "WINDOW", cpUnsigned, "", &_window_size,
 		  "ACK_TIMEOUT", cpUnsigned, "", &_ack_timeout_ms,
 		  "DEBUG", cpBool, "Debug", &_debug,
-		  "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
+		  "ETHTYPE", cpUnsignedShort, "Ethernet encapsulation type", &_et,
 		  cpEnd) < 0)
     return -1;
   return 0;

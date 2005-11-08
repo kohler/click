@@ -52,7 +52,7 @@ PFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   _history = 100;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
-		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
+		    "ETHTYPE", cpUnsignedShort, "Ethernet encapsulation type", &_et,
                     "IP", cpIPAddress, "IP address", &_ip,
                     "BCAST_IP", cpIPAddress, "IP address", &_bcast_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,

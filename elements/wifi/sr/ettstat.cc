@@ -148,7 +148,7 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
   String probes;
   int res = cp_va_parse(conf, this, errh,
 			cpKeywords,
-			"ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
+			"ETHTYPE", cpUnsignedShort, "Ethernet encapsulation type", &_et,
 			"IP", cpIPAddress, "IP address", &_ip,
 			"ETH", cpEtherAddress, "Source Ethernet address", &_eth,
 			"PERIOD", cpUnsigned, "Probe broadcast period (msecs)", &_period,

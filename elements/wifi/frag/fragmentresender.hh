@@ -69,7 +69,7 @@ class FragmentResender : public Element { public:
   
   PacketInfoTable _packets;
   bool _debug;
-  unsigned _et;
+  uint16_t _et;
 
   bool _wait_for_ack;
   bool _send_ack;

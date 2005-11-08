@@ -92,7 +92,7 @@ class MetricFlood : public Element {
   u_long _seq;      // Next query sequence number to use.
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
-  uint32_t _et;     // This protocol's ethertype
+  uint16_t _et;     // This protocol's ethertype
 
   IPAddress _bcast_ip;
 

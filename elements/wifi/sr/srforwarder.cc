@@ -50,7 +50,7 @@ SRForwarder::configure (Vector<String> &conf, ErrorHandler *errh)
 	int res;
 	res = cp_va_parse(conf, this, errh,
 			  cpKeywords,
-			  "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
+			  "ETHTYPE", cpUnsignedShort, "Ethernet encapsulation type", &_et,
 			  "IP", cpIPAddress, "IP address", &_ip,
 			  "ETH", cpEtherAddress, "Ethernet Address", &_eth,
 			  "ARP", cpElement, "ARPTable element", &_arp_table,

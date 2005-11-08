@@ -42,7 +42,7 @@ class FragmentDupeFilter : public Element { public:
   FragTable _frags;
 
   EtherAddress _en;
-  unsigned _et;
+  uint16_t _et;
   unsigned _window_size;
 
 

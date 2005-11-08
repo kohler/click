@@ -29,7 +29,7 @@ class CountErrors : public Element { public:
   int _packets;
 
   unsigned _length;
-  unsigned _et;
+  uint16_t _et;
   EtherAddress _src;
   int good_packet;
   bool _runs;

@@ -47,7 +47,7 @@ FragmentAck::configure(Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpKeywords,
-		  "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
+		  "ETHTYPE", cpUnsignedShort, "Ethernet encapsulation type", &_et,
 		  "ETH", cpEtherAddress, "EtherAddress", &_en,
 		  "WINDOW", cpUnsigned, "", &_window_size,
 		  "ACK_TIMEOUT", cpUnsigned, "", &_ack_timeout_ms,
