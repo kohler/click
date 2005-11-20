@@ -17,7 +17,6 @@
 input rboxes;
 prologues := 1;
 string defaultelementfont;
-defaultelementfont := defaultfont;
 defaultscale := 1;
 linejoin := mitered;
 
@@ -117,10 +116,6 @@ vardef clearelement_(suffix $) =
   generic_redeclare(numeric) _n;
 enddef;
 
-def drawelemboxed(suffix $) =
-  draw bpath.$
-enddef;
-
 vardef _elementit@#(expr label_str, ninputs, noutputs, personality, down_var, rev_var) =
   picture _label_; numeric _x_, _y_;
   
@@ -168,7 +163,8 @@ vardef _elementit@#(expr label_str, ninputs, noutputs, personality, down_var, re
   @#.borderscale = defaultelementborderscale;
   @#.portscale = defaultelementportscale;
   
-  elemdraw_@# = "drawelemboxed";
+  elemdraw_@# = "drawboxes";
+  sproc_@# := "sizeelement_";
   
   expandafter def expandafter clearboxes expandafter =
     clearboxes clearelement_(@#);
@@ -211,6 +207,32 @@ vardef killoutput(suffix $)(expr p) =
   fi
 enddef;
 
+vardef portinteriorin(suffix $)(expr i) =
+  path _p_;
+  _p_ := if $.inpers[i] >= agnostic: _agnostic_input else: _normal_input fi
+    scaled $.portscale;
+  if $.down: _p_ := _p_ rotated -90 fi;
+  if $.rev: _p_ := _p_ rotated 180 fi;
+  _p_ := _p_ shifted $.in[i];
+  if $.down and $.rev: .5[ulcorner _p_,urcorner _p_]
+  elseif $.down: .5[llcorner _p_,lrcorner _p_]
+  elseif $.rev: .5[ulcorner _p_,llcorner _p_]
+  else: .5[urcorner _p_,lrcorner _p_] fi
+enddef;
+
+vardef portinteriorout(suffix $)(expr i) =
+  path _p_;
+  _p_ := if $.outpers[i] >= agnostic: _agnostic_output else: _normal_output fi
+    scaled $.portscale;
+  if $.down: _p_ := _p_ rotated -90 fi;
+  if $.rev: _p_ := _p_ rotated 180 fi;
+  _p_ := _p_ shifted $.out[i];
+  if $.down and $.rev: .5[llcorner _p_,lrcorner _p_]
+  elseif $.down: .5[ulcorner _p_,urcorner _p_]
+  elseif $.rev: .5[urcorner _p_,lrcorner _p_]
+  else: .5[ulcorner _p_,llcorner _p_] fi
+enddef;
+
 
 %% fix
 
@@ -247,17 +269,72 @@ vardef set_element_dy(suffix $) =
   $.dy = (y'' - y.h)/2;
 enddef;
 
-vardef fixelementsize(text t) =
+def sizeelement_(suffix $) =
+  if unknown $.dx: set_element_dx($); fi
+  if unknown $.dy: set_element_dy($); fi
+enddef;
+
+vardef fixelementsizeleft(text t) =
   forsuffixes $=t:
-    if not known $.dx: set_element_dx($); fi;
-    if not known $.dy: set_element_dy($); fi;
     fixsize($);
+    if $.dx > xpart element_offset: $.off := $.off - ($.dx - xpart element_offset, 0); fi;
   endfor;
 enddef;
 
 vardef fixelement(text elements) =
-  fixelementsize(elements);
+  fixsize(elements);
   fixpos(elements);
+enddef;
+
+vardef elementleftjustify(text elements) =
+  fixsize(elements);
+  forsuffixes $=elements:
+    if $.dx > xpart element_offset: $.off := $.off - ($.dx - xpart element_offset, 0); fi;
+  endfor;
+enddef;
+
+vardef fixrelations(suffix efirst)(text elements) =
+  forsuffixes $=elements:
+    if unknown xpart(efirst.off - $.off): xpart $.off = xpart efirst.off fi;
+    if unknown ypart(efirst.off - $.off): ypart $.off = ypart efirst.off fi;
+  endfor;
+enddef;
+
+vardef elementbbox(suffix efirst)(text elements) =
+  fixsize(efirst,elements);
+  fixrelations(efirst,elements);
+  save __t,__l,__r,__b,__p; picture __p;
+  __t = ypart(efirst.n - efirst.off);
+  __l = xpart(efirst.w - efirst.off);
+  __r = xpart(efirst.e - efirst.off);
+  __b = ypart(efirst.s - efirst.off);
+  forsuffixes $=elements:
+    if ypart($.n - efirst.off) > __t: __t := ypart($.n - efirst.off) fi;
+    if xpart($.w - efirst.off) < __l: __l := xpart($.w - efirst.off) fi;
+    if xpart($.e - efirst.off) > __r: __r := xpart($.e - efirst.off) fi;
+    if ypart($.s - efirst.off) < __b: __b := ypart($.s - efirst.off) fi;
+  endfor;
+  __p = nullpicture;
+  setbounds __p to ((__l,__t) -- (__r,__t) -- (__r,__b) -- (__l,__b) -- cycle)
+     if known efirst.off: shifted efirst.off fi;
+  __p
+enddef;
+
+vardef compoundelementlink@#(suffix efirst)(text elements) =
+  fixsize(efirst,elements);
+  fixrelations(efirst,elements);
+  save __t,__l,__r,__b,__p; picture __p;
+  __t = ypart(efirst.n - efirst.off);
+  __l = xpart(efirst.w - efirst.off);
+  __r = xpart(efirst.e - efirst.off);
+  __b = ypart(efirst.s - efirst.off);
+  forsuffixes $=elements:
+    if ypart($.n - efirst.off) > __t: __t := ypart($.n - efirst.off) fi;
+    if xpart($.w - efirst.off) < __l: __l := xpart($.w - efirst.off) fi;
+    if xpart($.e - efirst.off) > __r: __r := xpart($.e - efirst.off) fi;
+    if ypart($.s - efirst.off) < __b: __b := ypart($.s - efirst.off) fi;
+  endfor;
+  @#.c = efirst.off + .5[(__l,__t), (__r,__b)]
 enddef;
 
 
@@ -293,15 +370,15 @@ vardef draw_element_outputs(suffix $) =
   endfor;
 enddef;
 
-vardef drawelement(text elements) text rest =
-  drawelementbox(elements) rest;
+vardef drawelement(text elements) =
+  drawelementbox(elements);
   drawunboxed(elements);
 enddef;
 
-vardef drawelementbox(text elements) text rest =
+vardef drawelementbox(text elements) =
   save $, oldpen; oldpen := savepen;
   interim linejoin := mitered;
-  fixelementsize(elements);
+  fixsize(elements);
   fixpos(elements);
   forsuffixes $ = elements:
     pickup elementpen.port scaled $.portscale;
@@ -310,13 +387,13 @@ vardef drawelementbox(text elements) text rest =
       if $.nout > 0: draw_element_outputs($); fi;
     fi;
     pickup elementpen.border scaled $.borderscale;
-    scantokens elemdraw_$($) rest;
+    scantokens elemdraw_$($);
   endfor;
   pickup oldpen;
 enddef;
 
 vardef fillelement(text elements)(text color) =
-  fixelementsize(elements);
+  fixsize(elements);
   fixpos(elements);
   forsuffixes $=elements:
     fill bpath.$ withcolor color;
@@ -326,25 +403,25 @@ enddef;
 
 %% queues
 
-vardef _drawqueued(expr p,delta,rot,lim,pp) text rest =
+vardef _drawqueued(expr p,delta,rot,lim,pp) =
   save i; interim linecap := squared; i := delta;
   forever:
-    draw (p) shifted ((i,0) rotated rot) withpen currentpen scaled 0.25 rest;
+    draw (p) shifted ((i,0) rotated rot) withpen currentpen scaled 0.25;
     i := i + delta; exitunless i < lim;
   endfor;
-  draw (pp) rest;
+  draw (pp);
 enddef;
-def drawqueued(suffix $) =
-  _drawqueued($.ne -- $.se, 6, 180, .9*$.width, $.nw -- $.ne -- $.se -- $.sw)
+vardef drawqueued(suffix $) =
+  _drawqueued($.ne -- $.se, 6, 180, .9*$.width, $.nw -- $.ne -- $.se -- $.sw);
 enddef;
-def drawrqueued(suffix $) =
-  _drawqueued($.nw -- $.sw, 6, 0, .9*$.width, $.ne -- $.nw -- $.sw -- $.se)
+vardef drawrqueued(suffix $) =
+  _drawqueued($.nw -- $.sw, 6, 0, .9*$.width, $.ne -- $.nw -- $.sw -- $.se);
 enddef;
-def drawvqueued(suffix $) =
-  _drawqueued($.se -- $.sw, 5, 90, .9*$.height, $.nw -- $.sw -- $.se -- $.ne)
+vardef drawvqueued(suffix $) =
+  _drawqueued($.se -- $.sw, 5, 90, .9*$.height, $.nw -- $.sw -- $.se -- $.ne);
 enddef;
-def drawrvqueued(suffix $) =
-  _drawqueued($.ne -- $.nw, 5, 270, .9*$.height, $.sw -- $.nw -- $.ne -- $.se)
+vardef drawrvqueued(suffix $) =
+  _drawqueued($.ne -- $.nw, 5, 270, .9*$.height, $.sw -- $.nw -- $.ne -- $.se);
 enddef;
 
 vardef queueit@#(expr s) =
@@ -367,8 +444,6 @@ enddef;
 
 %% connections
 
-picture _cutarrpic;
-
 vardef arrowhead expr p =
   save q,h,e,f; path q,h; pair e,f;
   e = point length p of p;
@@ -379,28 +454,9 @@ vardef arrowhead expr p =
   f = point 0 of h;
   (q rotated .5ahangle & reverse q rotated -.5ahangle -- f -- cycle)  shifted e
 enddef;
-def _cutarr(expr b,e) text t =
-  _cutarrpic := image(draw (0,0) -- (1,0) -- cycle t);
-  _cutarramt := (2ypart urcorner _cutarrpic / sind .5ahangle) - 0.75;
-  if _cutarramt > 0:
-    _apth := subpath (xpart(_apth intersectiontimes makepath(pencircle
-	  scaled (b*_cutarramt)) shifted (point 0 of _apth)),
-      xpart(_apth intersectiontimes makepath(pencircle scaled (e*_cutarramt))
-  shifted (point length _apth of _apth))) of _apth;
-  fi
-enddef;
 def _finarr text t =
-  _cutarr(0,1) t;
   draw (subpath (0, xpart(_apth intersectiontimes makepath(pencircle scaled 1.2ahlength) shifted (point length _apth of _apth))) of _apth) t;
   fill arrowhead _apth  t
-enddef;
-def _findarr text t =
-  _cutarr(1,1) t;
-  draw (subpath
-    (xpart(_apth intersectiontimes makepath(pencircle scaled 1.2ahlength) shifted (point 0 of _apth)),
-     xpart(_apth intersectiontimes makepath(pencircle scaled 1.2ahlength) shifted (point length _apth of _apth))) of _apth) t;
-  fill arrowhead _apth  t;
-  fill arrowhead reverse _apth  t
 enddef;
 
 def connectpath(suffix $,#,##,$$) =

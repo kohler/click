@@ -303,7 +303,7 @@ beginfig(8);
 
   % define compound itself, using the bounding box of the component elements
   emptyqueueit.c(elementbbox(hash,q1,q2,rr));
-  % ports & border are bigger, add a bit of space around it
+  % ports & border are bigger, add a bit of space around components
   c.portscale := c.borderscale := 1.8; c.dx = 20; c.dy = 10;
   % link to position of component elements
   compoundelementlink.c(hash,q1,q2,rr);
