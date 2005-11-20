@@ -288,36 +288,40 @@ vardef emptyqueueit@#(expr s) =
   _elementit.@#(s, 1, 1, push_to_pull, false, false);
   elemdraw_@# := "drawemptyqueued";
 enddef;
+
 beginfig(8);
+  % define components of compound
   elementit.hash(btex \elementlabel{HashSwitch(...)} etex, 1, 2, push);
   queueit.q1(emptyqueue);
   queueit.q2(emptyqueue);
   elementit.rr(btex \elementlabel{RoundRobinSched} etex, 2, 1, pull);
 
+  % arrange components relative to one another
   0.5[q1.w,q2.w] - hash.e = (15,0);
   rr.w - .5[q1.e,q2.e] = (15,0);
   q1.se - q2.ne = q1.sw - q2.nw = (0,8);
-  
+
+  % define compound itself, using the bounding box of the component elements
+  emptyqueueit.c(elementbbox(hash,q1,q2,rr));
+  % ports & border are bigger, add a bit of space around it
+  c.portscale := c.borderscale := 1.8; c.dx = 20; c.dy = 10;
+  % link to position of component elements
+  compoundelementlink.c(hash,q1,q2,rr);
+
+  % draw it all
+  drawelement(c);
   fillelement(hash,q1,q2,rr)(white);
   drawelement(hash,q1,q2,rr);
   drawconnect(hash,0,0,q1);
   drawconnect(q1,0,0,rr);
   drawconnect(hash,1,0,q2);
   drawconnect(q2,0,1,rr);
-  
-  drawarrow hash.in[0]-(12,0){right} .. {right}hash.in[0] withpen connectionpen scaled 1.5;
-  drawarrow rr.out[0]{right} .. {right}rr.out[0]+(12,0) withpen connectionpen scaled 1.5;
 
-  picture compp;
-  compp := currentpicture;
-  currentpicture := nullpicture;
-  
-  emptyqueueit.c(compp scaled 0.9);
-  c.portscale := c.borderscale := 1.5; c.dx = 6;
-  drawelement(c);
+  drawconnarrow portinteriorin(c,0) .. hash.in[0];
+  drawconnarrow rr.out[0] .. portinteriorout(c,0);
 
-  drawconnarrow c.in[0]-(20,0) .. c.in[0];
-  drawconnarrow c.out[0] .. c.out[0]+(20,0);
+  drawconnarrow c.in[0]-(20,0) .. c.in[0] withpen connectionpen scaled 1.5;
+  drawconnarrow c.out[0] .. c.out[0]+(20,0) withpen connectionpen scaled 1.5;
 endfig;
 
 
