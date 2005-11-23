@@ -40,11 +40,13 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   _rate = 0;
   _et = 0;
   _offset = 0;
+  _tries = WIFI_MAX_RETRIES+1;
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpUnsigned, "rate", &_rate, 
 		  cpKeywords, 
 		  "RATE", cpUnsigned, "rate", &_rate, 
+		  "TRIES", cpUnsigned, "tries", &_tries,
 		  "ETHTYPE", cpUnsignedShort, "Ethernet encapsulation type", &_et,
 		  "OFFSET", cpUnsigned, "offset", &_offset,
 		  cpEnd) < 0) {
@@ -52,10 +54,12 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   }
 
   if (_rate < 0) {
-    return errh->error("RATE must be >= 0");
+	  return errh->error("RATE must be >= 0");
   }
 
-  
+  if (_tries < 1) {
+	  return errh->error("TRIES must be >= 0");
+  }  
   
   
   return 0;
@@ -74,11 +78,11 @@ SetTXRate::simple_action(Packet *p_in)
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
   ceh->magic = WIFI_EXTRA_MAGIC;
   ceh->rate = _rate ? _rate : 2;
-  ceh->max_tries = WIFI_MAX_RETRIES+1;
+  ceh->max_tries = _tries;
 
   return p_in;
 }
-enum {H_RATE};
+enum {H_RATE, H_TRIES};
 
 String
 SetTXRate::read_handler(Element *e, void *thunk)
@@ -86,6 +90,7 @@ SetTXRate::read_handler(Element *e, void *thunk)
   SetTXRate *foo = (SetTXRate *)e;
   switch((uintptr_t) thunk) {
   case H_RATE: return String(foo->_rate) + "\n";
+  case H_TRIES: return String(foo->_tries) + "\n";
   default:   return "\n";
   }
   
@@ -105,6 +110,13 @@ SetTXRate::write_handler(const String &arg, Element *e,
     f->_rate = m;
     break;
   }
+  case H_TRIES: {
+    unsigned m;
+    if (!cp_unsigned(s, &m)) 
+      return errh->error("tries parameter must be unsigned");
+    f->_tries = m;
+    break;
+  }
   }
   return 0;
 }
@@ -113,7 +125,9 @@ void
 SetTXRate::add_handlers()
 {
   add_read_handler("rate", read_handler, (void *) H_RATE);
+  add_read_handler("tries", read_handler, (void *) H_TRIES);
   add_write_handler("rate", write_handler, (void *) H_RATE);
+  add_write_handler("tries", write_handler, (void *) H_TRIES);
 }
 
 CLICK_ENDDECLS

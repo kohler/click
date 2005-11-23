@@ -52,7 +52,7 @@ class SetTXRate : public Element { public:
 private:
   
   int _rate;
-
+  int _tries;
   uint16_t _et;     // This protocol's ethertype
   unsigned _offset;
 };
