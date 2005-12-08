@@ -1,6 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * truncate.{cc,hh} -- element strips bytes from back of packet
+ * truncate.{cc,hh} -- limits packet length
  * Eddie Kohler
  *
  * Copyright (c) 2004 Regents of the University of California
@@ -42,7 +42,9 @@ Truncate::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 Truncate::simple_action(Packet *p)
 {
-    p->take(_nbytes);
+    if (p->length() > _nbytes) {
+        p->take(p->length() - _nbytes);
+    }
     return p;
 }
 

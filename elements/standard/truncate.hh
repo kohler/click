@@ -8,9 +8,9 @@ CLICK_DECLS
  * =c
  * Truncate(MAX)
  * =s encapsulation
- * strips bytes from the back of packets
+ * limit packet length.
  * =d
- * Deletes the last MAX bytes from each packet.
+ * Shorten packets to at most MAX bytes.
  * =a Strip
  */
 
