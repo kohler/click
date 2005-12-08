@@ -1,3 +1,9 @@
+2005-12-07 Wednesday 23:40  John Bicket <jbicket@mit.edu>
+
+	* elements/: test/truncate.cc (1.4), standard/truncate.cc (1.1),
+	  standard/truncate.hh (1.1), test/truncate.hh (1.3): make truncate
+	  limit length of packets. move to elements/standard.
+
 2005-11-23 Wednesday 03:17  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: settxrate.cc (1.24), settxrate.hh (1.16): add
