@@ -8,10 +8,10 @@ click -e "
 FromIPSummaryDump(IN1, STOP true, ZERO true)
 	-> s :: RoundRobinSwitch
 	-> t :: ToIPSummaryDump(OUT1, BAD_PACKETS true, DATA sport dport tcp_urp tcp_opt)
-s[1] -> Truncate(3) -> t
-s[2] -> Truncate(6) -> t
-s[3] -> Truncate(21) -> t
-s[4] -> Truncate(24) -> t
+s[1] -> Truncate(41) -> t
+s[2] -> Truncate(38) -> t
+s[3] -> Truncate(23) -> t
+s[4] -> Truncate(20) -> t
 "
 
 %file IN1
