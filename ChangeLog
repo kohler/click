@@ -1,3 +1,8 @@
+2005-12-11 Sunday 14:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/analysis/IPSummaryDump-01.testie (1.2): fix test for new
+	  Truncate
+
 2005-12-07 Wednesday 23:40  John Bicket <jbicket@mit.edu>
 
 	* elements/: test/truncate.cc (1.4), standard/truncate.cc (1.1),
