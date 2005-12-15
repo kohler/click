@@ -1,3 +1,7 @@
+2005-12-15 Thursday 11:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* FAQ (1.19), INSTALL (1.40): mention kernels
+
 2005-12-11 Sunday 14:49  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/analysis/IPSummaryDump-01.testie (1.2): fix test for new
