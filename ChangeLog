@@ -1,3 +1,8 @@
+2005-12-15 Thursday 18:48  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: fromhandler.cc (1.1), fromhandler.hh (1.1),
+	  packetstore.cc (1.1), packetstore.hh (1.1): a huge hack.
+
 2005-12-15 Thursday 11:58  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* FAQ (1.19), INSTALL (1.40): mention kernels
