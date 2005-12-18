@@ -41,6 +41,12 @@ In all cases, text arguments are subject to substitutions; see below.
 
 Sets the script variable $VAR to TEXT.
 
+=item 'C<init> VAR TEXT'
+
+Initializes the script variable $VAR to TEXT.  This assignment happens exactly
+once, when the Script element is initialized; later the instruction has no
+effect.
+
 =item 'C<print> [>FILE | >>FILE] [TEXT | HANDLER]'
 
 Prints text, or the result of calling a read handler, followed by a newline.
@@ -237,8 +243,8 @@ class Script : public Element { public:
 
     enum Insn {
 	INSN_INITIAL, INSN_WAIT_STEP, INSN_WAIT_TIME, // order required
-	INSN_PRINT, INSN_READ, INSN_WRITE, INSN_SET,
-	INSN_SAVE, INSN_APPEND, INSN_IGNORE, INSN_STOP, INSN_END, INSN_EXIT,
+	INSN_PRINT, INSN_READ, INSN_WRITE, INSN_SET, INSN_INIT,
+	INSN_SAVE, INSN_APPEND, INSN_STOP, INSN_END, INSN_EXIT,
 	INSN_LABEL, INSN_GOTO, INSN_RETURN,
 	INSN_WAIT_PSEUDO, INSN_LOOP_PSEUDO
     };
@@ -279,6 +285,7 @@ class Script : public Element { public:
     void add_insn(int, int, int = 0, const String & = String());
     int step(int nsteps, int step_type, int njumps);
     int find_label(const String &) const;
+    int find_variable(const String &) const;
 
     static int step_handler(int, String&, Element*, const Handler*, ErrorHandler*);
     static int arithmetic_handler(int, String&, Element*, const Handler*, ErrorHandler*);

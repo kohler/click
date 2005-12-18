@@ -36,6 +36,7 @@ static const StaticNameDB::Entry instruction_entries[] = {
     { "end", Script::INSN_END },
     { "exit", Script::INSN_EXIT },
     { "goto", Script::INSN_GOTO },
+    { "init", Script::INSN_INIT },
     { "label", Script::INSN_LABEL },
     { "loop", Script::INSN_LOOP_PSEUDO },
     { "pause", Script::INSN_WAIT_STEP },
@@ -122,6 +123,15 @@ Script::find_label(const String &label) const
 }
 
 int
+Script::find_variable(const String &varname) const
+{
+    for (int i = 0; i < _vars.size(); i += 2)
+	if (_vars[i] == varname)
+	    return i;
+    return _vars.size();
+}
+
+int
 Script::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String type_arg;
@@ -199,17 +209,16 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	case INSN_RETURN:
 	    conf[i] = "_ " + conf[i];
 	    /* fall through */
+	case INSN_INIT:
 	case INSN_SET: {
 	    String word = cp_pop_spacevec(conf[i]);
 	    if (!word || (insn == INSN_SET && !conf[i]))
 		goto syntax_error;
-	    int x;
-	    for (x = 0; x < _vars.size(); x += 2)
-		if (_vars[x] == word)
-		    goto found_vars;
-	    _vars.push_back(word);
-	    _vars.push_back(String());
-	found_vars:
+	    int x = find_variable(word);
+	    if (x == _vars.size()) {
+		_vars.push_back(word);
+		_vars.push_back(String());
+	    }
 	    add_insn(insn, x, 0, conf[i]);
 	    break;
 	}
@@ -267,11 +276,18 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-Script::initialize(ErrorHandler *)
+Script::initialize(ErrorHandler *errh)
 {
     _insn_pos = 0;
     _step_count = 0;
     _timer.initialize(this);
+
+    Expander expander;
+    expander.script = this;
+    expander.errh = errh;
+    for (int i = 0; i < _insns.size(); i++)
+	if (_insns[i] == INSN_INIT)
+	    _vars[_args[i] + 1] = cp_expand(_args3[i], expander);
 
     int insn = _insns[_insn_pos];
     assert(insn <= INSN_WAIT_TIME);
@@ -468,11 +484,11 @@ Script::run_timer(Timer *)
 bool
 Script::Expander::expand(const String &vname, int vartype, int quote, StringAccum &sa)
 {
-    for (int i = 0; i < script->_vars.size(); i += 2)
-	if (script->_vars[i] == vname) {
-	    sa << cp_expand_in_quotes(script->_vars[i + 1], quote);
-	    return true;
-	}
+    int x = script->find_variable(vname);
+    if (x < script->_vars.size()) {
+	sa << cp_expand_in_quotes(script->_vars[x + 1], quote);
+	return true;
+    }
     
     if (vartype == '(') {
 	HandlerCall hc(vname);
@@ -497,7 +513,7 @@ Script::step_handler(int, String &str, Element *e, const Handler *h, ErrorHandle
 {
     Script *scr = (Script *) e;
     String data = cp_uncomment(str);
-    int nsteps, steptype;
+    int nsteps, steptype, x;
     int what = (uintptr_t) h->thunk1();
 
     if (what == ST_GOTO) {
@@ -539,9 +555,8 @@ Script::step_handler(int, String &str, Element *e, const Handler *h, ErrorHandle
     
     str = String();
     if (last_insn == INSN_RETURN)
-	for (int i = 0; i < scr->_vars.size(); i += 2)
-	    if (scr->_vars[i] == "_")
-		str = scr->_vars[i + 1];
+	if ((x = scr->find_variable("_")) < scr->_vars.size())
+	    str = scr->_vars[x + 1];
     
     return (last_insn == INSN_STOP);
 }
