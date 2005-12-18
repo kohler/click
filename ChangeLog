@@ -1,3 +1,8 @@
+2005-12-18 Sunday 01:08  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: script.cc (1.2), script.hh (1.2): add the
+	  "init" instruction
+
 2005-12-18 Sunday 00:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.71), config-userlevel.h.in (1.32),
