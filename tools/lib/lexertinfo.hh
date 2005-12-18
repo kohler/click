@@ -10,19 +10,19 @@ class LexerTInfo { public:
     LexerTInfo()		{ }
     virtual ~LexerTInfo()	{ }
     
-    virtual void notify_comment(int pos1, int pos2);
-    virtual void notify_error(const String &message, int pos1, int pos2);
-    virtual void notify_line_directive(int pos1, int pos2);
-    virtual void notify_keyword(const String &keyword, int pos1, int pos2);
-    virtual void notify_config_string(int pos1, int pos2);
+    virtual void notify_comment(const char *pos1, const char *pos2);
+    virtual void notify_error(const String &message, const char *pos1, const char *pos2);
+    virtual void notify_line_directive(const char *pos1, const char *pos2);
+    virtual void notify_keyword(const String &keyword, const char *pos1, const char *pos2);
+    virtual void notify_config_string(const char *pos1, const char *pos2);
     virtual void notify_class_declaration(ElementClassT *, bool anonymous,
-					  int pos1, int name_pos1, int pos2);
-    virtual void notify_class_extension(ElementClassT *, int pos1, int pos2);
-    virtual void notify_class_reference(ElementClassT *, int pos1, int pos2);
+		const char *pos1, const char *name_pos1, const char *pos2);
+    virtual void notify_class_extension(ElementClassT *, const char *pos1, const char *pos2);
+    virtual void notify_class_reference(ElementClassT *, const char *pos1, const char *pos2);
     virtual void notify_element_declaration(
-		ElementT *e, int pos1, int name_pos2, int decl_pos2);
+		ElementT *e, const char *pos1, const char *name_pos2, const char *decl_pos2);
     virtual void notify_element_reference(
-		ElementT *e, int pos1, int pos2);
+		ElementT *e, const char *pos1, const char *pos2);
   
 };
 

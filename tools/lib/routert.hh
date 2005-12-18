@@ -117,7 +117,7 @@ class RouterT : public ElementClassT { public:
     void remove_compound_elements(ErrorHandler *);
     void remove_tunnels(ErrorHandler * = 0);
 
-    void expand_into(RouterT *, const String &prefix, const VariableEnvironment &, ErrorHandler *);
+    void expand_into(RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
     void flatten(ErrorHandler *);
 
     // UNPARSING
@@ -148,7 +148,7 @@ class RouterT : public ElementClassT { public:
     int finish_type(ErrorHandler *);
     
     ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const String &landmark);
-    ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, const VariableEnvironment &, ErrorHandler *);
+    ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
 
     String unparse_signature() const;
     void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);    

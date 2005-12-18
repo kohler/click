@@ -866,7 +866,7 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
       }
       
       if (i >= len || s[i] != '/')
-	return errh->error("pattern %d: expected `/'", slot);
+	return errh->error("pattern %d: expected '/'", slot);
       i++;
 
       // scan past value

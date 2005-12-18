@@ -114,7 +114,7 @@ class Lexer::Compound : public Element { public:
   void finish(Lexer *, ErrorHandler *);
 
   int resolve(Lexer *, int etype, int ninputs, int noutputs, Vector<String> &, ErrorHandler *, const String &landmark);
-  void expand_into(Lexer *, int, const VariableEnvironment &);
+  void expand_into(Lexer *, int, VariableEnvironment &);
   
   const char *class_name() const	{ return _name.c_str(); }
   void *cast(const char *);
@@ -321,7 +321,7 @@ Lexer::Compound::signature() const
 }
 
 void
-Lexer::Compound::expand_into(Lexer *lexer, int which, const VariableEnvironment &ve)
+Lexer::Compound::expand_into(Lexer *lexer, int which, VariableEnvironment &ve)
 {
   ErrorHandler *errh = lexer->_errh;
   
@@ -348,7 +348,7 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, const VariableEnvironment 
     } else {
       if (lexer->_element_type_map[cname] >= 0)
 	errh->lerror(lexer->element_landmark(which), "'%s' is an element class", cname.c_str());
-      eidx = lexer->get_element(cname, _elements[i], ve.interpolate(_element_configurations[i]), _element_landmarks[i]);
+      eidx = lexer->get_element(cname, _elements[i], cp_expand(_element_configurations[i], ve), _element_landmarks[i]);
       eidx_map.push_back(eidx);
     }
   }
@@ -372,7 +372,7 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, const VariableEnvironment 
 //
 
 Lexer::Lexer()
-  : _data(0), _len(0), _pos(0), _lineno(1), _lextra(0),
+  : _data(0), _end(0), _pos(0), _lineno(1), _lextra(0),
     _tpos(0), _tfull(0),
     _element_type_map(-1),
     _last_element_type(ET_NULL),
@@ -404,8 +404,8 @@ Lexer::begin_parse(const String &data, const String &filename,
 		   LexerExtra *lextra, ErrorHandler *errh)
 {
   _big_string = data;
-  _data = _big_string.data();
-  _len = _big_string.length();
+  _data = _pos = _big_string.begin();
+  _end = _big_string.end();
 
   if (!filename)
     _filename = "line ";
@@ -444,7 +444,7 @@ Lexer::end_parse(int cookie)
   _big_string = "";
   // _data was freed by _big_string
   _data = 0;
-  _len = 0;
+  _end = 0;
   _pos = 0;
   _filename = "";
   _lineno = 0;
@@ -464,176 +464,177 @@ Lexer::end_parse(int cookie)
 String
 Lexer::remaining_text() const
 {
-  return _big_string.substring(_pos);
+  return _big_string.substring(_pos, _big_string.end());
 }
 
 void
 Lexer::set_remaining_text(const String &s)
 {
   _big_string = s;
-  _data = s.data();
-  _pos = 0;
-  _len = s.length();
+  _data = s.begin();
+  _pos = s.begin();
+  _end = s.end();
 }
 
-unsigned
-Lexer::skip_line(unsigned pos)
+const char *
+Lexer::skip_line(const char *s)
 {
   _lineno++;
-  for (; pos < _len; pos++)
-    if (_data[pos] == '\n')
-      return pos + 1;
-    else if (_data[pos] == '\r') {
-      if (pos < _len - 1 && _data[pos+1] == '\n')
-	return pos + 2;
+  for (; s < _end; s++)
+    if (*s == '\n')
+      return s + 1;
+    else if (*s == '\r') {
+      if (s + 1 < _end && s[1] == '\n')
+	return s + 2;
       else
-	return pos + 1;
+	return s + 1;
     }
   _lineno--;
-  return _len;
+  return s;
 }
 
-unsigned
-Lexer::skip_slash_star(unsigned pos)
+const char *
+Lexer::skip_slash_star(const char *s)
 {
-  for (; pos < _len; pos++)
-    if (_data[pos] == '\n')
+  for (; s < _end; s++)
+    if (*s == '\n')
       _lineno++;
-    else if (_data[pos] == '\r') {
-      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+    else if (*s == '\r') {
+      if (s + 1 < _end && s[1] == '\n')
+	s++;
       _lineno++;
-    } else if (_data[pos] == '*' && pos < _len - 1 && _data[pos+1] == '/')
-      return pos + 2;
-  return _len;
+    } else if (*s == '*' && s + 1 < _end && s[1] == '/')
+      return s + 2;
+  return _end;
 }
 
-unsigned
-Lexer::skip_backslash_angle(unsigned pos)
+const char *
+Lexer::skip_backslash_angle(const char *s)
 {
-  for (; pos < _len; pos++)
-    if (_data[pos] == '\n')
+  for (; s < _end; s++)
+    if (*s == '\n')
       _lineno++;
-    else if (_data[pos] == '\r') {
-      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+    else if (*s == '\r') {
+      if (s + 1 < _end && s[1] == '\n')
+	s++;
       _lineno++;
-    } else if (_data[pos] == '/' && pos < _len - 1) {
-      if (_data[pos+1] == '/')
-	pos = skip_line(pos + 2) - 1;
-      else if (_data[pos+1] == '*')
-	pos = skip_slash_star(pos + 2) - 1;
-    } else if (_data[pos] == '>')
-      return pos + 1;
-  return _len;
+    } else if (*s == '/' && s + 1 < _end) {
+      if (s[1] == '/')
+	s = skip_line(s + 2) - 1;
+      else if (s[1] == '*')
+	s = skip_slash_star(s + 2) - 1;
+    } else if (*s == '>')
+      return s + 1;
+  return _end;
 }
 
-unsigned
-Lexer::skip_quote(unsigned pos, char endc)
+const char *
+Lexer::skip_quote(const char *s, char endc)
 {
-  for (; pos < _len; pos++)
-    if (_data[pos] == '\n')
+  for (; s < _end; s++)
+    if (*s == '\n')
       _lineno++;
-    else if (_data[pos] == '\r') {
-      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+    else if (*s == '\r') {
+      if (s + 1 < _end && s[1] == '\n')
+	s++;
       _lineno++;
-    } else if (_data[pos] == '\\' && endc == '\"' && pos < _len - 1) {
-      if (_data[pos+1] == '<')
-	pos = skip_backslash_angle(pos + 2) - 1;
-      else if (_data[pos+1] == '\"')
-	pos++;
-    } else if (_data[pos] == endc)
-      return pos + 1;
-  return _len;
+    } else if (*s == '\\' && endc == '\"' && s + 1 < _end) {
+      if (s[1] == '<')
+	s = skip_backslash_angle(s + 2) - 1;
+      else if (s[1] == '\"')
+	s++;
+    } else if (*s == endc)
+      return s + 1;
+  return _end;
 }
 
-unsigned
-Lexer::process_line_directive(unsigned pos)
-{
-  const char *data = _data;
-  unsigned len = _len;
-  
-  for (pos++; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
+const char *
+Lexer::process_line_directive(const char *s)
+{  
+  for (s++; s < _end && (*s == ' ' || *s == '\t'); s++)
     /* nada */;
-  if (pos < len - 4 && data[pos] == 'l' && data[pos+1] == 'i'
-      && data[pos+2] == 'n' && data[pos+3] == 'e'
-      && (data[pos+4] == ' ' || data[pos+4] == '\t')) {
-    for (pos += 5; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
+  if (s + 4 < _end && *s == 'l' && s[1] == 'i'
+      && s[2] == 'n' && s[3] == 'e'
+      && (s[4] == ' ' || s[4] == '\t')) {
+    for (s += 5; s < _end && (*s == ' ' || *s == '\t'); s++)
       /* nada */;
   }
-  if (pos >= len || !isdigit(data[pos])) {
+  if (s >= _end || !isdigit(*s)) {
     // complain about bad directive
     lerror("unknown preprocessor directive");
-    return skip_line(pos);
+    return skip_line(s);
   }
   
   // parse line number
-  for (_lineno = 0; pos < len && isdigit(data[pos]); pos++)
-    _lineno = _lineno * 10 + data[pos] - '0';
+  for (_lineno = 0; s < _end && isdigit(*s); s++)
+    _lineno = _lineno * 10 + *s - '0';
   _lineno--;			// account for extra line
   
-  for (; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
+  for (; s < _end && (*s == ' ' || *s == '\t'); s++)
     /* nada */;
-  if (pos < len && data[pos] == '\"') {
+  if (s < _end && *s == '\"') {
     // parse filename
-    unsigned first_in_filename = pos;
-    for (pos++; pos < len && data[pos] != '\"' && data[pos] != '\n' && data[pos] != '\r'; pos++)
-      if (data[pos] == '\\' && pos < len - 1 && data[pos+1] != '\n' && data[pos+1] != '\r')
-	pos++;
-    _filename = cp_unquote(_big_string.substring(first_in_filename, pos - first_in_filename) + "\":");
+    const char *first_in_filename = s;
+    for (s++; s < _end && *s != '\"' && *s != '\n' && *s != '\r'; s++)
+      if (*s == '\\' && s + 1 < _end && s[1] != '\n' && s[1] != '\r')
+	s++;
+    _filename = cp_unquote(_big_string.substring(first_in_filename, s) + "\":");
     // an empty filename means return to the input file's name
     if (_filename == ":")
       _filename = _original_filename;
   }
 
   // reach end of line
-  for (; pos < len && data[pos] != '\n' && data[pos] != '\r'; pos++)
+  for (; s < _end && *s != '\n' && *s != '\r'; s++)
     /* nada */;
-  if (pos < len - 1 && data[pos] == '\r' && data[pos+1] == '\n')
-    pos++;
-  return pos;
+  if (s + 1 < _end && *s == '\r' && s[1] == '\n')
+    s++;
+  return s;
 }
 
 Lexeme
 Lexer::next_lexeme()
 {
-  unsigned pos = _pos;
+  const char *s = _pos;
   while (true) {
-    while (pos < _len && isspace(_data[pos])) {
-      if (_data[pos] == '\n')
+    while (s < _end && isspace(*s)) {
+      if (*s == '\n')
 	_lineno++;
-      else if (_data[pos] == '\r') {
-	if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+      else if (*s == '\r') {
+	if (s + 1 < _end && s[1] == '\n')
+	  s++;
 	_lineno++;
       }
-      pos++;
+      s++;
     }
-    if (pos >= _len) {
-      _pos = _len;
+    if (s >= _end) {
+      _pos = _end;
       return Lexeme();
-    } else if (_data[pos] == '/' && pos < _len - 1) {
-      if (_data[pos+1] == '/')
-	pos = skip_line(pos + 2);
-      else if (_data[pos+1] == '*')
-	pos = skip_slash_star(pos + 2);
+    } else if (*s == '/' && s + 1 < _end) {
+      if (s[1] == '/')
+	s = skip_line(s + 2);
+      else if (s[1] == '*')
+	s = skip_slash_star(s + 2);
       else
 	break;
-    } else if (_data[pos] == '#' && (pos == 0 || _data[pos-1] == '\n' || _data[pos-1] == '\r'))
-      pos = process_line_directive(pos);
+    } else if (*s == '#' && (s == _data || s[-1] == '\n' || s[-1] == '\r'))
+      s = process_line_directive(s);
     else
       break;
   }
   
-  unsigned word_pos = pos;
+  const char *word_pos = s;
   
   // find length of current word
-  if (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '@') {
+  if (isalnum(*s) || *s == '_' || *s == '@') {
    more_word_characters:
-    pos++;
-    while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '@'))
-      pos++;
-    if (pos < _len - 1 && _data[pos] == '/' && (isalnum(_data[pos+1]) || _data[pos+1] == '_' || _data[pos+1] == '@'))
+    s++;
+    while (s < _end && (isalnum(*s) || *s == '_' || *s == '@'))
+      s++;
+    if (s + 1 < _end && *s == '/' && (isalnum(s[1]) || s[1] == '_' || s[1] == '@'))
       goto more_word_characters;
-    _pos = pos;
-    String word = _big_string.substring(word_pos, pos - word_pos);
+    _pos = s;
+    String word = _big_string.substring(word_pos, s);
     if (word.length() == 16 && word == "connectiontunnel")
       return Lexeme(lexTunnel, word);
     else if (word.length() == 12 && word == "elementclass")
@@ -645,68 +646,70 @@ Lexer::next_lexeme()
   }
 
   // check for variable
-  if (_data[pos] == '$') {
-    pos++;
-    while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_'))
-      pos++;
-    if (pos > word_pos + 1) {
-      _pos = pos;
-      return Lexeme(lexVariable, _big_string.substring(word_pos, pos - word_pos));
+  if (*s == '$') {
+    s++;
+    while (s < _end && (isalnum(*s) || *s == '_'))
+      s++;
+    if (s + 1 > word_pos) {
+      _pos = s;
+      return Lexeme(lexVariable, _big_string.substring(word_pos + 1, s));
     } else
-      pos--;
+      s--;
   }
   
-  if (pos < _len - 1) {
-    if (_data[pos] == '-' && _data[pos+1] == '>') {
-      _pos = pos + 2;
-      return Lexeme(lexArrow, _big_string.substring(word_pos, 2));
-    } else if (_data[pos] == ':' && _data[pos+1] == ':') {
-      _pos = pos + 2;
-      return Lexeme(lex2Colon, _big_string.substring(word_pos, 2));
-    } else if (_data[pos] == '|' && _data[pos+1] == '|') {
-      _pos = pos + 2;
-      return Lexeme(lex2Bar, _big_string.substring(word_pos, 2));
+  if (s + 1 < _end) {
+    if (*s == '-' && s[1] == '>') {
+      _pos = s + 2;
+      return Lexeme(lexArrow, _big_string.substring(s, s + 2));
+    } else if (*s == ':' && s[1] == ':') {
+      _pos = s + 2;
+      return Lexeme(lex2Colon, _big_string.substring(s, s + 2));
+    } else if (*s == '|' && s[1] == '|') {
+      _pos = s + 2;
+      return Lexeme(lex2Bar, _big_string.substring(s, s + 2));
     }
   }
-  if (pos < _len - 2 && _data[pos] == '.' && _data[pos+1] == '.' && _data[pos+2] == '.') {
-    _pos = pos + 3;
-    return Lexeme(lex3Dot, _big_string.substring(word_pos, 3));
+  if (s + 2 < _end && *s == '.' && s[1] == '.' && s[2] == '.') {
+    _pos = s + 3;
+    return Lexeme(lex3Dot, _big_string.substring(s, s + 3));
   }
   
-  _pos = pos + 1;
-  return Lexeme(_data[word_pos], _big_string.substring(word_pos, 1));
+  _pos = s + 1;
+  return Lexeme(*s, _big_string.substring(s, s + 1));
 }
 
 String
 Lexer::lex_config()
 {
-  unsigned config_pos = _pos;
-  unsigned pos = _pos;
+  const char *config_pos = _pos;
+  const char *s = _pos;
   unsigned paren_depth = 1;
   
-  for (; pos < _len; pos++)
-    if (_data[pos] == '(')
+  for (; s < _end; s++)
+    if (*s == '(')
       paren_depth++;
-    else if (_data[pos] == ')') {
+    else if (*s == ')') {
       paren_depth--;
-      if (!paren_depth) break;
-    } else if (_data[pos] == '\n')
+      if (!paren_depth)
+	break;
+    } else if (*s == '\n')
       _lineno++;
-    else if (_data[pos] == '\r') {
-      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+    else if (*s == '\r') {
+      if (s + 1 < _end && s[1] == '\n')
+	s++;
       _lineno++;
-    } else if (_data[pos] == '/' && pos < _len - 1) {
-      if (_data[pos+1] == '/')
-	pos = skip_line(pos + 2) - 1;
-      else if (_data[pos+1] == '*')
-	pos = skip_slash_star(pos + 2) - 1;
-    } else if (_data[pos] == '\'' || _data[pos] == '\"')
-      pos = skip_quote(pos + 1, _data[pos]) - 1;
-    else if (_data[pos] == '\\' && pos < _len - 1 && _data[pos+1] == '<')
-      pos = skip_backslash_angle(pos + 2) - 1;
+    } else if (*s == '/' && s + 1 < _end) {
+      if (s[1] == '/')
+	s = skip_line(s + 2) - 1;
+      else if (s[1] == '*')
+	s = skip_slash_star(s + 2) - 1;
+    } else if (*s == '\'' || *s == '\"')
+      s = skip_quote(s + 1, *s) - 1;
+    else if (*s == '\\' && s + 1 < _end && s[1] == '<')
+      s = skip_backslash_angle(s + 2) - 1;
   
-  _pos = pos;
-  return _big_string.substring(config_pos, pos - config_pos);
+  _pos = s;
+  return _big_string.substring(config_pos, s);
 }
 
 String
@@ -774,7 +777,7 @@ Lexer::expect(int kind, bool report_error)
       return true;
     }
   } else {
-    unsigned old_pos = _pos;
+    const char *old_pos = _pos;
     if (next_lexeme().is(kind))
       return true;
     _pos = old_pos;
@@ -1551,7 +1554,7 @@ Lexer::add_router_connections(int c, const Vector<int> &router_id,
 }
 
 void
-Lexer::expand_compound_element(int which, const VariableEnvironment &ve)
+Lexer::expand_compound_element(int which, VariableEnvironment &ve)
 {
   String name = _element_names[which];
   int etype = _elements[which];
@@ -1566,7 +1569,7 @@ Lexer::expand_compound_element(int which, const VariableEnvironment &ve)
     return;
 
   // expand config string
-  _element_configurations[which] = ve.interpolate(_element_configurations[which]);
+  _element_configurations[which] = cp_expand(_element_configurations[which], ve);
 
   // exit if not compound
   if (_element_types[etype].factory != compound_element_factory)

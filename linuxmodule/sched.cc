@@ -405,6 +405,7 @@ click_init_sched(ErrorHandler *errh)
 int
 click_cleanup_sched()
 {
+    click_master->unuse();
   if (kill_router_threads() < 0) {
     printk("<1>click: Following threads still active, expect a crash:\n");
     SOFT_SPIN_LOCK(&click_thread_lock);

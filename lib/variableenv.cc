@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
- * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2004-2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,136 @@
 #include <click/straccum.hh>
 #include <click/confparse.hh>
 CLICK_DECLS
+
+String
+cp_expand(const String &config, VariableExpander &ve)
+{
+    if (!config || find(config, '$') == config.end())
+	return config;
+  
+    const char *s = config.begin();
+    const char *end = config.end();
+    const char *uninterpolated = s;
+    int quote = 0;
+    StringAccum output;
+    
+    for (; s < end; s++)
+	switch (*s) {
+	    
+	case '\\':
+	    if (s + 1 < end && quote == '\"')
+		s++;
+	    break;
+
+	case '\'':
+	case '\"':
+	    if (quote == 0)
+		quote = *s;
+	    else if (quote == *s)
+		quote = 0;
+	    break;
+
+	case '/':
+	    if (s + 1 < end && (s[1] == '/' || s[1] == '*') && quote == 0)
+		s = cp_skip_comment_space(s, end) - 1;
+	    break;
+
+	case '$': {
+	    if (s + 1 >= end || quote == '\'')
+		break;
+
+	    const char *beforedollar = s, *cstart;
+	    String vname;
+	    int vtype;
+
+	    if (s[1] == '{') {
+		vtype = '{';
+		s += 2;
+		for (cstart = s; s < end && *s != '}'; s++)
+		    /* nada */;
+		if (s == end)
+		    goto done;
+		vname = config.substring(cstart, s++);
+		
+	    } else if (s[1] == '(') {
+		int level = 1, nquote = 0, anydollar = 0;
+		vtype = '(';
+		s += 2;
+		for (cstart = s; s < end && level; s++)
+		    switch (*s) {
+		      case '(':
+			if (nquote != '\'')
+			    level++;
+			break;
+		      case ')':
+			if (nquote != '\'')
+			    level--;
+			break;
+		      case '\"':
+		      case '\'':
+			if (nquote == 0)
+			    nquote = *s;
+			else if (nquote == *s)
+			    nquote = 0;
+			break;
+		      case '\\':
+			if (s + 1 < end && nquote != '\'')
+			    s++;
+			break;
+		      case '$':
+			if (nquote != '\'')
+			    anydollar = 1;
+			break;
+		    }
+
+		if (s == cstart || s[-1] != ')')
+		    goto done;
+		if (anydollar)
+		    // XXX recursive call: potential stack overflow
+		    vname = cp_expand(config.substring(cstart, s - 1), ve);
+		else
+		    vname = config.substring(cstart, s - 1);
+		
+	    } else if (isalnum(s[1]) || s[1] == '_') {
+		vtype = 'a';
+		s++;
+		for (cstart = s; s < end && (isalnum(*s) || *s == '_'); s++)
+		    /* nada */;
+		vname = config.substring(cstart, s);
+		
+	    } else
+		break;
+
+	    output << config.substring(uninterpolated, beforedollar);
+	    if (ve.expand(vname, vtype, quote, output))
+		uninterpolated = s;
+	    else
+		uninterpolated = beforedollar;
+	    
+	    s--;
+	}
+	}
+
+  done:
+    if (!output.length())
+	return config;
+    else {
+	output << config.substring(uninterpolated, s);
+	return output.take_string();
+    }
+}
+
+String
+cp_expand_in_quotes(const String &s, int quote)
+{
+    if (quote == '\"') {
+	String ss = cp_quote(cp_unquote(s));
+	if (ss[0] == '\"')
+	    ss = ss.substring(1, ss.length() - 2);
+	return ss;
+    } else
+	return s;
+}
 
 void
 VariableEnvironment::enter(const VariableEnvironment &ve)
@@ -57,86 +187,24 @@ VariableEnvironment::limit_depth(int deepest)
     _depths.resize(s);
 }
 
-static const char *
-interpolate_string(StringAccum &output, const String &config,
-		   const char *uninterpolated, const char *word,
-		   const char *s, String value, int quote)
+bool
+VariableEnvironment::expand(const String &var, int vartype, int quote,
+			    StringAccum &output)
 {
-    output << config.substring(uninterpolated, word);
-    if (quote == '\"') {	// interpolate inside the quotes
-	value = cp_quote(cp_unquote(value));
-	if (value[0] == '\"')
-	    value = value.substring(1, value.length() - 2);
-    }
-    output << value;
-    return s;
-}
-
-String
-VariableEnvironment::interpolate(const String &config) const
-{
-    if (!config || (_formals.size() == 0 && find(config, '$') == config.end()))
-	return config;
-  
-    const char *s = config.begin();
-    const char *end = config.end();
-    const char *uninterpolated = s;
-    int quote = 0;
-    StringAccum output;
-    
-    for (; s < end; s++)
-	if (*s == '\\' && s + 1 < end && quote == '\"')
-	    s++;
-	else if (*s == '\'' && quote == 0)
-	    quote = '\'';
-	else if (*s == '\"' && quote == 0)
-	    quote = '\"';
-	else if (*s == quote)
-	    quote = 0;
-	else if (*s == '/' && s + 1 < end && (s[1] == '/' || s[1] == '*') && quote == 0)
-	    s = cp_skip_comment_space(s, end) - 1;
-	else if (*s == '$' && quote != '\'') {
-	    const char *word = s;
-      
-	    String name, extension;
-	    if (s + 1 < end && s[1] == '{') {
-		const char *extension_ptr = 0;
-		for (s += 2; s < end && *s != '}'; s++)
-		    if (*s == '-' && !extension_ptr)
-			extension_ptr = s;
-		if (!extension_ptr)
-		    extension_ptr = s;
-		name = "$" + config.substring(word + 2, extension_ptr);
-		extension = config.substring(extension_ptr, s);
-		if (s < end)
-		    s++;
-	    } else {
-		for (s++; s < end && (isalnum(*s) || *s == '_'); s++)
-		    /* nada */;
-		name = config.substring(word, s);
-	    }
-
-	    for (int variable = _formals.size() - 1; variable >= 0; variable--)
-		if (name == _formals[variable]) {
-		    uninterpolated = s = interpolate_string(output, config, uninterpolated, word, s, _values[variable], quote);
-		    goto found_expansion;
-		}
-
-	    // no expansion if we get here
-	    if (extension && extension[0] == '-')
-		// interpolate default value
-		uninterpolated = s = interpolate_string(output, config, uninterpolated, word, s, extension.substring(1), quote);
-      
-	  found_expansion:
-	    s--;
+    String v(var);
+    const char *minus = 0;
+    if (vartype == '{' && (minus = find(var, '-')) != var.end())
+	v = var.substring(var.begin(), minus);
+    for (int vnum = _formals.size() - 1; vnum >= 0; vnum--)
+	if (v == _formals[vnum]) {
+	    output << cp_expand_in_quotes(_values[vnum], quote);
+	    return true;
 	}
-
-    if (!output.length())
-	return config;
-    else {
-	output << config.substring(uninterpolated, s);
-	return output.take_string();
-    }
+    if (minus) {
+	output << cp_expand_in_quotes(var.substring(minus + 1, var.end()), quote);
+	return true;
+    } else
+	return false;
 }
 
 #if 0

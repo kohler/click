@@ -103,19 +103,19 @@ class Lexer { public:
     String _big_string;
   
     const char *_data;
-    unsigned _len;
-    unsigned _pos;
+    const char *_end;
+    const char *_pos;
   
     String _filename;
     String _original_filename;
     unsigned _lineno;
     LexerExtra *_lextra;
   
-    unsigned skip_line(unsigned);
-    unsigned skip_slash_star(unsigned);
-    unsigned skip_backslash_angle(unsigned);
-    unsigned skip_quote(unsigned, char);
-    unsigned process_line_directive(unsigned);
+    const char *skip_line(const char *);
+    const char *skip_slash_star(const char *);
+    const char *skip_backslash_angle(const char *);
+    const char *skip_quote(const char *, char);
+    const char *process_line_directive(const char *);
     Lexeme next_lexeme();
     static String lexeme_string(int);
   
@@ -173,7 +173,7 @@ class Lexer { public:
     void lexical_scoping_out(int);
     int remove_element_type(int, int *);
     int make_compound_element(int);
-    void expand_compound_element(int, const VariableEnvironment &);
+    void expand_compound_element(int, VariableEnvironment &);
     void add_router_connections(int, const Vector<int> &, Router *);
 
     void find_connections(const Hookup &, bool, Vector<Hookup> &) const;

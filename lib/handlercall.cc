@@ -126,30 +126,30 @@ HandlerCall::call_write(Element* e, const String& hname, const String& value, Er
 
 
 String
-HandlerCall::call_read(const String& hdesc, Router* router, ErrorHandler* errh)
+HandlerCall::call_read(const String& hdesc, Element* e, ErrorHandler* errh)
 {
     HandlerCall hcall(hdesc);
-    if (hcall.initialize(CHECK_READ, router->root_element(), errh) >= 0)
+    if (hcall.initialize(CHECK_READ, e, errh) >= 0)
 	return hcall.call_read();
     else
 	return String();
 }
 
 int
-HandlerCall::call_write(const String &hdesc, Router *router, ErrorHandler *errh)
+HandlerCall::call_write(const String &hdesc, Element *e, ErrorHandler *errh)
 {
     HandlerCall hcall(hdesc);
-    if (hcall.initialize(CHECK_WRITE, router->root_element(), errh) >= 0)
+    if (hcall.initialize(CHECK_WRITE, e, errh) >= 0)
 	return hcall.call_write(errh);
     else
 	return -EINVAL;
 }
 
 int
-HandlerCall::call_write(const String &hdesc, const String &value, Router *router, ErrorHandler *errh)
+HandlerCall::call_write(const String &hdesc, const String &value, Element *e, ErrorHandler *errh)
 {
     HandlerCall hcall(hdesc);
-    if (hcall.initialize(CHECK_WRITE, router->root_element(), errh) >= 0) {
+    if (hcall.initialize(CHECK_WRITE, e, errh) >= 0) {
 	hcall.set_value(value);
 	return hcall.call_write(errh);
     } else

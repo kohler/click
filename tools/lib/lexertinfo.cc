@@ -21,51 +21,51 @@
 #include "lexertinfo.hh"
 
 void
-LexerTInfo::notify_comment(int, int)
+LexerTInfo::notify_comment(const char *, const char *)
 {
 }
 
 void
-LexerTInfo::notify_error(const String &, int, int)
+LexerTInfo::notify_error(const String &, const char *, const char *)
 {
 }
 
 void
-LexerTInfo::notify_line_directive(int, int)
+LexerTInfo::notify_line_directive(const char *, const char *)
 {
 }
 
 void
-LexerTInfo::notify_keyword(const String &, int, int)
+LexerTInfo::notify_keyword(const String &, const char *, const char *)
 {
 }
 
 void
-LexerTInfo::notify_config_string(int, int)
+LexerTInfo::notify_config_string(const char *, const char *)
 {
 }
 
 void
-LexerTInfo::notify_class_declaration(ElementClassT *, bool, int, int, int)
+LexerTInfo::notify_class_declaration(ElementClassT *, bool, const char *, const char *, const char *)
 {
 }
 
 void
-LexerTInfo::notify_class_extension(ElementClassT *, int, int)
+LexerTInfo::notify_class_extension(ElementClassT *, const char *, const char *)
 {
 }
 
 void
-LexerTInfo::notify_class_reference(ElementClassT *, int, int)
+LexerTInfo::notify_class_reference(ElementClassT *, const char *, const char *)
 {
 }
 
 void
-LexerTInfo::notify_element_declaration(ElementT *, int, int, int)
+LexerTInfo::notify_element_declaration(ElementT *, const char *, const char *, const char *)
 {
 }
 
 void
-LexerTInfo::notify_element_reference(ElementT *, int, int)
+LexerTInfo::notify_element_reference(ElementT *, const char *, const char *)
 {
 }

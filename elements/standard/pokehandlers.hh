@@ -14,11 +14,15 @@ PokeHandlers(DIRECTIVE, ...)
 
 calls write handlers at specified times
 
+=deprecated Script
+
 =io
 
 None
 
 =d
+
+B<This element is deprecated.  Use the Script element instead.>
 
 Runs read and write handlers at specified times. Each configuration argument
 is a directive, taken from this list:

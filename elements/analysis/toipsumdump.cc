@@ -319,10 +319,13 @@ ToIPSummaryDump::add_note(const String &s)
     }
 }
 
-void
-ToIPSummaryDump::flush_buffer()
+int
+ToIPSummaryDump::flush_handler(const String &, Element *e, void *, ErrorHandler *)
 {
-    fflush(_f);
+    ToIPSummaryDump *tod = (ToIPSummaryDump *) e;
+    if (tod->_f)
+	fflush(tod->_f);
+    return 0;
 }
 
 void
@@ -330,6 +333,7 @@ ToIPSummaryDump::add_handlers()
 {
     if (input_is_pull(0))
 	add_task_handlers(&_task);
+    add_write_handler("flush", flush_handler, 0);
 }
 
 ELEMENT_REQUIRES(userlevel IPSummaryDump IPSummaryDump_Anno IPSummaryDump_IP IPSummaryDump_TCP)

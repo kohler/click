@@ -330,7 +330,7 @@ dnl
 
 AC_CHECK_HEADERS(unistd.h termio.h netdb.h sys/event.h pwd.h grp.h)
 CLICK_CHECK_POLL_H
-AC_CHECK_FUNCS(kqueue)
+AC_CHECK_FUNCS(kqueue sigaction)
 CLICK_CHECK_DYNAMIC_LINKING
 if test "$HOST_TOOLS" != host -a "$enable_tools" != no; then
     CLICK_CHECK_BUILD_DYNAMIC_LINKING

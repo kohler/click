@@ -80,7 +80,6 @@ include/click/vector.hh
 include/click/standard
 include/click/standard/addressinfo.hh
 include/click/standard/alignmentinfo.hh
-include/click/standard/drivermanager.hh
 include/click/standard/errorelement.hh
 include/click/standard/portinfo.hh
 include/click/standard/scheduleinfo.hh
@@ -149,7 +148,6 @@ lib/vectorv.cc:libsrc/vectorv.cc
 
 elements/standard/addressinfo.cc:libsrc/addressinfo.cc
 elements/standard/alignmentinfo.cc:libsrc/alignmentinfo.cc
-elements/standard/drivermanager.cc:libsrc/drivermanager.cc
 elements/standard/errorelement.cc:libsrc/errorelement.cc
 elements/standard/portinfo.cc:libsrc/portinfo.cc
 elements/standard/scheduleinfo.cc:libsrc/scheduleinfo.cc

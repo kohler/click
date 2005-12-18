@@ -172,7 +172,7 @@ EOF
 
     # add standards to provisions if necessary
     if test "x$standards" != x; then
-	provisions="$provisions AddressInfo AlignmentInfo DriverManager ErrorElement PortInfo ScheduleInfo Storage"
+	provisions="$provisions AddressInfo AlignmentInfo ErrorElement PortInfo ScheduleInfo Storage"
     fi
 
     # expand provisions and unprovisions: require one per line
@@ -693,7 +693,6 @@ END {
 	cat <<EOF >/tmp/click-buildtool-standards.$$
 -	<click/standard/addressinfo.hh>	AddressInfo-AddressInfo
 -	<click/standard/alignmentinfo.hh>	AlignmentInfo-AlignmentInfo
--	<click/standard/drivermanager.hh>	DriverManager-DriverManager
 -	<click/standard/errorelement.hh>	ErrorElement-ErrorElement
 -	<click/standard/portinfo.hh>	PortInfo-PortInfo
 -	<click/standard/scheduleinfo.hh>	ScheduleInfo-ScheduleInfo

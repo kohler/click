@@ -133,7 +133,7 @@ dnl
 
 AC_CHECK_HEADERS(unistd.h termio.h netdb.h sys/event.h pwd.h grp.h)
 CLICK_CHECK_POLL_H
-AC_CHECK_FUNCS(kqueue)
+AC_CHECK_FUNCS(kqueue sigaction)
 CLICK_CHECK_DYNAMIC_LINKING
 
 
@@ -148,6 +148,15 @@ dnl if test "$enable_userlevel" = yes; then
     AC_SEARCH_LIBS(gethostbyname, nsl, , , $savelibs)
     AC_SEARCH_LIBS(connect, socket, , , $savelibs)
     SOCKET_LIBS="$LIBS"; LIBS="$savelibs"
+
+    AC_CACHE_CHECK([whether accept() uses socklen_t], [ac_cv_accept_socklen_t],
+	    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#include <sys/socket.h>
+]], [[socklen_t sl; (void) accept(0, (struct sockaddr *) 0, &sl);]])],
+	ac_cv_accept_socklen_t=yes, ac_cv_accept_socklen_t=no)])
+    if test "$ac_cv_accept_socklen_t" = yes; then
+	AC_DEFINE([HAVE_ACCEPT_SOCKLEN_T], [1], [Define if accept() uses socklen_t.])
+    fi
 dnl fi
 AC_SUBST(SOCKET_LIBS)
 AC_LANG_CPLUSPLUS
@@ -225,6 +234,11 @@ dnl
 AC_ARG_ENABLE(stride, [  --disable-stride        disable stride scheduler], :, enable_stride=yes)
 if test $enable_stride = yes; then
     AC_DEFINE(HAVE_STRIDE_SCHED)
+fi
+
+AC_ARG_ENABLE(task-heap, [  --enable-task-heap      use heap for task list], :, enable_task_heap=no)
+if test $enable_task_heap = yes; then
+    AC_DEFINE(HAVE_TASK_HEAP)
 fi
 
 AC_ARG_ENABLE(adaptive, [  --enable-adaptive       use adaptive scheduler to flexibly arbitrate between    

@@ -4,20 +4,29 @@
 #include <click/string.hh>
 #include <click/vector.hh>
 CLICK_DECLS
+class StringAccum;
 
-class VariableEnvironment { public:
+class VariableExpander { public:
+
+    VariableExpander()			{ }
+    virtual ~VariableExpander()		{ }
+
+    virtual bool expand(const String &var, int vartype, int quote, StringAccum &) = 0;
+
+};
+
+class VariableEnvironment : public VariableExpander { public:
   
-    VariableEnvironment()		{ }
-    VariableEnvironment(const VariableEnvironment &ve) { enter(ve); }
+    VariableEnvironment()	{ }
+    inline VariableEnvironment(const VariableEnvironment &ve);
 
-    operator bool() const		{ return _formals.size() != 0; }
-    int depth() const			{ return _depths.size() ? _depths.back() : -1; }
+    int depth() const		{ return _depths.size() ? _depths.back() : -1; }
 
     void enter(const VariableEnvironment &);
     void enter(const Vector<String> &formals, const Vector<String> &values, int depth);
     void limit_depth(int);
-  
-    String interpolate(const String &) const;
+
+    bool expand(const String &var, int vartype, int quote, StringAccum &);
 
   private:
 
@@ -26,6 +35,16 @@ class VariableEnvironment { public:
     Vector<int> _depths;
 
 };
+
+String cp_expand(const String &, VariableExpander &);
+String cp_expand_in_quotes(const String &, int quote);
+
+inline
+VariableEnvironment::VariableEnvironment(const VariableEnvironment &ve)
+    : VariableExpander()
+{
+    enter(ve);
+}
 
 CLICK_ENDDECLS
 #endif

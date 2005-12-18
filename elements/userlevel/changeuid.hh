@@ -10,7 +10,7 @@ CLICK_DECLS
 
 ChangeUID()
 
-=s userlevel
+=s debugging
 
 relinquish root privilege
 

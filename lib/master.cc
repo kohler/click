@@ -20,14 +20,21 @@
 #include <click/master.hh>
 #include <click/element.hh>
 #include <click/router.hh>
-#include <click/standard/drivermanager.hh>
+#include <click/handlercall.hh>
 #if CLICK_USERLEVEL && HAVE_SYS_EVENT_H && HAVE_KQUEUE
 # include <sys/event.h>
+#endif
+#if CLICK_USERLEVEL
+# include <signal.h>
 #endif
 CLICK_DECLS
 
 #if CLICK_USERLEVEL && !HAVE_POLL_H
 enum { POLLIN = Element::SELECT_READ, POLLOUT = Element::SELECT_WRITE };
+#endif
+
+#if CLICK_USERLEVEL
+atomic_uint32_t Master::signals_pending;
 #endif
 
 Master::Master(int nthreads)
@@ -61,6 +68,10 @@ Master::Master(int nthreads)
 # endif
     _pollfds.push_back(dummy);
     _pollfds.clear();
+
+    signals_pending = 0;
+    _siginfo = 0;
+    _signal_adding = false;
 #endif
 
 #if CLICK_NS
@@ -241,6 +252,19 @@ Master::kill_router(Router *router)
 	    pi--;
     }
     _select_lock.release();
+
+    // Remove signals
+    {
+	_signal_lock.acquire();
+	SignalInfo **pprev = &_siginfo;
+	for (SignalInfo *si = *pprev; si; si = *pprev)
+	    if (si->router == router) {
+		remove_signal_handler(si->signo, si->router, si->handler);
+		pprev = &_siginfo;
+	    } else
+		pprev = &si->next;
+	_signal_lock.release();
+    }
 #endif
 
     _master_lock.acquire();
@@ -290,10 +314,13 @@ Master::check_driver()
 	for (Router* r = _routers; r; ) {
 	    Router* next_router = r->_next_router;
 	    if (r->_runcount <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
-		DriverManager *dm = (DriverManager *)(r->attachment("DriverManager"));
-		if (dm)
-		    while (dm->handle_stopped_driver() && r->_runcount <= 0)
-			/* nada */;
+		Element *dm = (Element *)(r->attachment("Script"));
+		if (dm) {
+		    int max = 1000;
+		    while (HandlerCall::call_write(dm, "step", "router") == 0
+			   && r->_runcount <= 0 && --max >= 0)
+			/* do nothing */;
+		}
 		if (r->_runcount <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
 		    kill_router(r);
 		    goto next;
@@ -676,8 +703,10 @@ Master::run_selects_kqueue(bool more_tasks)
     
     struct kevent kev[64];
     int n = kevent(_kqueue, 0, 0, &kev[0], 64, wait_ptr);
+    int was_errno = errno;
+    run_signals();
 
-    if (n < 0 && errno != EINTR)
+    if (n < 0 && was_errno != EINTR)
 	perror("kevent");
     else if (n > 0)
 	for (struct kevent *p = &kev[0]; p < &kev[n]; p++) {
@@ -726,8 +755,10 @@ Master::run_selects_poll(bool more_tasks)
 # endif /* CLICK_NS */
 
     int n = poll(_pollfds.begin(), _pollfds.size(), timeout);
+    int was_errno = errno;
+    run_signals();
 
-    if (n < 0 && errno != EINTR)
+    if (n < 0 && was_errno != EINTR)
 	perror("poll");
     else if (n > 0)
 	for (struct pollfd *p = _pollfds.begin(); p < _pollfds.end(); p++)
@@ -797,8 +828,10 @@ Master::run_selects_select(bool more_tasks)
     fd_set write_mask = _write_select_fd_set;
 
     int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set*) 0, wait_ptr);
+    int was_errno = errno;
+    run_signals();
   
-    if (n < 0 && errno != EINTR)
+    if (n < 0 && was_errno != EINTR)
 	perror("select");
     else if (n > 0)
 	for (struct pollfd *p = _pollfds.begin(); p < _pollfds.end(); p++)
@@ -865,6 +898,129 @@ Master::run_selects(bool more_tasks)
 #endif
     _select_lock.release();
     _master_lock.release();
+}
+
+#endif
+
+
+// SIGNALS
+
+#if CLICK_USERLEVEL
+
+extern "C" {
+static void
+sighandler(int signo)
+{
+    sigset_t sigset;
+    sigemptyset(&sigset);
+    sigaddset(&sigset, signo);
+    sigprocmask(SIG_BLOCK, &sigset, 0);
+#if !HAVE_SIGACTION
+    signal(signo, SIG_DFL);
+#endif
+    if (signo >= 0 && signo < 32)
+	Master::signals_pending |= (1 << signo);
+}
+}
+
+int
+Master::add_signal_handler(int signo, Router *router, const String &handler)
+{
+    if (signo < 0 || signo >= 32 || router->master() != this)
+	return -1;
+
+    SignalInfo *si = new SignalInfo;
+    if (!si)
+	return -1;
+    si->signo = signo;
+    si->router = router;
+    si->handler = handler;
+
+    _signal_lock.acquire();
+    _signal_adding = true;
+    (void) remove_signal_handler(signo, router, handler);
+    _signal_adding = false;
+
+    si->next = _siginfo;
+    _siginfo = si;
+    
+#if HAVE_SIGACTION
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(struct sigaction));
+    sa.sa_handler = sighandler;
+    sa.sa_flags = SA_RESETHAND;
+    sigaction(signo, &sa, 0);
+#else
+    signal(signo, sighandler);
+#endif
+
+    _signal_lock.release();
+    return 0;
+}
+
+int
+Master::remove_signal_handler(int signo, Router *router, const String &handler)
+{
+    _signal_lock.acquire();
+    int nhandlers = 0, status = -1;
+    SignalInfo **pprev = &_siginfo;
+    for (SignalInfo *si = *pprev; si; si = *pprev)
+	if (si->signo == signo && si->router == router
+	    && si->handler == handler) {
+	    *pprev = si->next;
+	    delete si;
+	    status = 0;
+	} else {
+	    if (si->signo == signo)
+		nhandlers = 1;
+	    pprev = &si->next;
+	}
+
+    if (!_signal_adding && status >= 0 && nhandlers == 0)
+	signal(signo, SIG_DFL);
+    _signal_lock.release();
+    return status;
+}
+
+void
+Master::process_signals()
+{
+    uint32_t had_signals = signals_pending.swap(0);
+    uint32_t unhandled_signals = had_signals;
+    _signal_lock.acquire();
+
+    SignalInfo *happened = 0;
+    SignalInfo **pprev = &_siginfo;
+    for (SignalInfo *si = *pprev; si; si = *pprev)
+	if ((had_signals & (1 << si->signo)) && si->router->running()) {
+	    *pprev = si->next;
+	    si->next = happened;
+	    happened = si;
+	} else
+	    pprev = &si->next;
+
+    while (happened) {
+	SignalInfo *next = happened->next;
+	if (HandlerCall::call_write(happened->handler, happened->router->root_element()) >= 0)
+	    unhandled_signals &= ~(1 << happened->signo);
+	delete happened;
+	happened = next;
+    }
+
+    sigset_t sigset;
+    sigemptyset(&sigset);
+    for (int signo = 0; signo < 32; signo++)
+	if (had_signals & (1 << signo))
+	    sigaddset(&sigset, signo);
+    sigprocmask(SIG_UNBLOCK, &sigset, 0);
+
+    for (int signo = 0; unhandled_signals; signo++)
+	if (unhandled_signals & (1 << signo)) {
+	    unhandled_signals &= ~(1 << signo);
+	    kill(getpid(), signo);
+	}
+
+    _signal_lock.release();
 }
 
 #endif

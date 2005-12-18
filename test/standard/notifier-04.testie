@@ -18,7 +18,7 @@ i :: InfiniteSource(LIMIT 15)
   -> c :: Counter
   -> q :: FullNoteQueue(5)
   -> Idle;
-DriverManager(wait 0.1s, save i.scheduled -, stop)
+DriverManager(wait 0.1s, print i.scheduled, stop)
 
 %file CONFIG3
 i :: InfiniteSource(LIMIT 15)
@@ -28,7 +28,7 @@ i :: InfiniteSource(LIMIT 15)
   -> Counter(COUNT_CALL 2 s.switch 1)
   -> Discard;
 Idle -> [1]s;
-DriverManager(wait 0.1s, save i.scheduled -, save c.count -, write s.switch 0, wait 0.1s, save i.scheduled -, stop)
+DriverManager(wait 0.1s, print i.scheduled, print c.count, write s.switch 0, wait 0.1s, print i.scheduled, stop)
 
 %expect OUT
 15

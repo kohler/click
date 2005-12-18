@@ -56,30 +56,30 @@ int cp_errno;
 const char *
 cp_skip_space(const char *begin, const char *end)
 {
-  while (begin < end && isspace((unsigned char) *begin))
-    begin++;
-  return begin;
+    while (begin < end && isspace((unsigned char) *begin))
+	begin++;
+    return begin;
 }
 
 bool
 cp_eat_space(String &str)
 {
-  const char *begin = str.begin(), *end = str.end();
-  const char *space = cp_skip_space(begin, end);
-  str = str.substring(space, end);
-  return space != begin;
+    const char *begin = str.begin(), *end = str.end();
+    const char *space = cp_skip_space(begin, end);
+    str = str.substring(space, end);
+    return space != begin;
 }
 
 bool
 cp_is_word(const String &str)
 {
-  const char *s = str.data();
-  int len = str.length();
-  for (int i = 0; i < len; i++)
-    if (s[i] == '\"' || s[i] == '\'' || s[i] == '\\' || s[i] == ','
-	|| s[i] <= 32 || s[i] >= 127)
-      return false;
-  return len > 0;
+    const char *s = str.data();
+    int len = str.length();
+    for (int i = 0; i < len; i++)
+	if (s[i] == '\"' || s[i] == '\'' || s[i] == '\\' || s[i] == ','
+	    || s[i] <= 32 || s[i] >= 127)
+	    return false;
+    return len > 0;
 }
 
 bool

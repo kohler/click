@@ -60,14 +60,14 @@ Counter::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (count_call) {
     if (!PARSECMD(cp_pop_spacevec(count_call), &_count_trigger))
-      return errh->error("`COUNT_CALL' first word should be unsigned (count)");
+      return errh->error("'COUNT_CALL' first word should be unsigned (count)");
     _count_trigger_h = new HandlerCall(count_call);
   } else
     _count_trigger = (counter_t)(-1);
 
   if (byte_count_call) {
     if (!PARSECMD(cp_pop_spacevec(byte_count_call), &_byte_trigger))
-      return errh->error("`BYTE_COUNT_CALL' first word should be unsigned (count)");
+      return errh->error("'BYTE_COUNT_CALL' first word should be unsigned (count)");
     _byte_trigger_h = new HandlerCall(byte_count_call);
   } else
     _byte_trigger = (counter_t)(-1);
@@ -114,58 +114,58 @@ enum { H_COUNT, H_BYTE_COUNT, H_RATE, H_RESET,
 String
 Counter::read_handler(Element *e, void *thunk)
 {
-  Counter *c = (Counter *)e;
-  switch ((intptr_t)thunk) {
-   case H_COUNT:
-    return String(c->_count) + "\n";
-   case H_BYTE_COUNT:
-    return String(c->_byte_count) + "\n";
-   case H_RATE:
-    c->_rate.update_time();	// drop rate after zero period
-    return c->_rate.unparse() + "\n";
-   default:
-    return "<error>\n";
-  }
+    Counter *c = (Counter *)e;
+    switch ((intptr_t)thunk) {
+      case H_COUNT:
+	return String(c->_count) + "\n";
+      case H_BYTE_COUNT:
+	return String(c->_byte_count) + "\n";
+      case H_RATE:
+	c->_rate.update_time();	// drop rate after zero period
+	return c->_rate.unparse() + "\n";
+      default:
+	return "<error>\n";
+    }
 }
 
 int
 Counter::write_handler(const String &in_str, Element *e, void *thunk, ErrorHandler *errh)
 {
-  Counter *c = (Counter *)e;
-  String str = cp_uncomment(in_str);
-  switch ((intptr_t)thunk) {
-   case H_COUNT_CALL:
-    if (!PARSECMD(cp_pop_spacevec(str), &c->_count_trigger))
-      return errh->error("`count_call' first word should be unsigned (count)");
-    if (HandlerCall::reset_write(c->_count_trigger_h, str, c, errh) < 0)
-      return -1;
-    c->_count_triggered = false;
-    return 0;
-   case H_BYTE_COUNT_CALL:
-    if (!PARSECMD(cp_pop_spacevec(str), &c->_byte_trigger))
-      return errh->error("`byte_count_call' first word should be unsigned (count)");
-    if (HandlerCall::reset_write(c->_byte_trigger_h, str, c, errh) < 0)
-      return -1;
-    c->_byte_triggered = false;
-    return 0;
-   case H_RESET:
-    c->reset();
-    return 0;
-   default:
-    return errh->error("<internal>");
-  }
+    Counter *c = (Counter *)e;
+    String str = cp_uncomment(in_str);
+    switch ((intptr_t)thunk) {
+      case H_COUNT_CALL:
+	if (!PARSECMD(cp_pop_spacevec(str), &c->_count_trigger))
+	    return errh->error("'count_call' first word should be unsigned (count)");
+	if (HandlerCall::reset_write(c->_count_trigger_h, str, c, errh) < 0)
+	    return -1;
+	c->_count_triggered = false;
+	return 0;
+      case H_BYTE_COUNT_CALL:
+	if (!PARSECMD(cp_pop_spacevec(str), &c->_byte_trigger))
+	    return errh->error("'byte_count_call' first word should be unsigned (count)");
+	if (HandlerCall::reset_write(c->_byte_trigger_h, str, c, errh) < 0)
+	    return -1;
+	c->_byte_triggered = false;
+	return 0;
+      case H_RESET:
+	c->reset();
+	return 0;
+      default:
+	return errh->error("<internal>");
+    }
 }
 
 void
 Counter::add_handlers()
 {
-  add_read_handler("count", read_handler, (void *)H_COUNT);
-  add_read_handler("byte_count", read_handler, (void *)H_BYTE_COUNT);
-  add_read_handler("rate", read_handler, (void *)H_RATE);
-  add_write_handler("reset", write_handler, (void *)H_RESET);
-  add_write_handler("reset_counts", write_handler, (void *)H_RESET);
-  add_write_handler("count_call", write_handler, (void *)H_COUNT_CALL);
-  add_write_handler("byte_count_call", write_handler, (void *)H_BYTE_COUNT_CALL);
+    add_read_handler("count", read_handler, (void *)H_COUNT);
+    add_read_handler("byte_count", read_handler, (void *)H_BYTE_COUNT);
+    add_read_handler("rate", read_handler, (void *)H_RATE);
+    add_write_handler("reset", write_handler, (void *)H_RESET);
+    add_write_handler("reset_counts", write_handler, (void *)H_RESET);
+    add_write_handler("count_call", write_handler, (void *)H_COUNT_CALL);
+    add_write_handler("byte_count_call", write_handler, (void *)H_BYTE_COUNT_CALL);
 }
 
 int

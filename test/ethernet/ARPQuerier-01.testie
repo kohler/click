@@ -17,7 +17,7 @@ arpq[1] -> ARPResponder(2.0/16 2:1:1:1:1:0, 2.1/16 2:1:1:1:1:1,
 	   	2.12/16 2:1:1:1:1:C, 2.13/16 2:1:1:1:1:D)
 	-> [1]arpq;
 
-DriverManager(wait_pause, save arpq.table TABLE)
+DriverManager(pause, print >TABLE arpq.table)
 
 %file CONFIG2
 FromIPSummaryDump(IN, STOP true)
@@ -33,7 +33,7 @@ arpq[1] -> SetTimestamp -> Queue -> DelayUnqueue(.1s)
 	   	2.12/16 2:1:1:1:1:C, 2.13/16 2:1:1:1:1:D)
 	-> [1]arpq;
 
-DriverManager(wait_pause, wait .2s, save arpq.table TABLE)
+DriverManager(pause, wait .2s, print >TABLE arpq.table)
 
 %file IN
 !data ip_dst

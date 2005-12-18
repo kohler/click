@@ -296,6 +296,37 @@ click_dmalloc_cleanup()
 #endif /* CLICK_LINUXMODULE || CLICK_BSDMODULE */
 
 
+// LALLOC
+
+#if CLICK_LINUXMODULE
+extern "C" {
+
+# define CLICK_LALLOC_MAX_SMALL	131072
+
+void *
+click_lalloc(uint32_t size)
+{
+    void *v;
+    if ((v = ((size > CLICK_LALLOC_MAX_SMALL) ? vmalloc(size) : kmalloc(size, GFP_ATOMIC)))) {
+	click_dmalloc_curnew++;
+	click_dmalloc_totalnew++;
+    }
+    return v;
+}
+
+void
+click_lfree(void *p, uint32_t size)
+{
+    if (p) {
+	((size > CLICK_LALLOC_MAX_SMALL) ? vfree(p) : kfree(p));
+	click_dmalloc_curnew--;
+    }
+}
+
+}
+#endif
+
+
 // RANDOMNESS
 
 void

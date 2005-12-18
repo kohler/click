@@ -26,7 +26,7 @@ enum {
 class Lexeme { public:
 
     Lexeme()				: _kind(lexEOF) { }
-    Lexeme(int k, const String &s, int p) : _kind(k), _s(s), _pos(p) { }
+    Lexeme(int k, const String &s, const char *p) : _kind(k), _s(s), _pos(p) { }
     
     int kind() const			{ return _kind; }
     bool is(int k) const		{ return _kind == k; }
@@ -35,14 +35,14 @@ class Lexeme { public:
     const String &string() const	{ return _s; }
     String &string()			{ return _s; }
 
-    int pos1() const			{ return _pos; }
-    int pos2() const			{ return _pos + _s.length(); }
+    const char *pos1() const		{ return _pos; }
+    const char *pos2() const		{ return _pos + _s.length(); }
   
   private:
   
     int _kind;
     String _s;
-    int _pos;
+    const char *_pos;
 
 };
 
@@ -64,14 +64,14 @@ class LexerT { public:
     Lexeme lex_config();
     String landmark() const;
   
-    bool yport(int &port, int &pos1, int &pos2);
+    bool yport(int &port, const char *&pos1, const char *&pos2);
     bool yelement(int &element, bool comma_ok);
     void ydeclaration(const Lexeme &first_element = Lexeme());
     bool yconnection();
     void ycompound_arguments(RouterT *);
-    void yelementclass(int pos1);
+    void yelementclass(const char *pos1);
     void ytunnel();
-    ElementClassT *ycompound(String, int decl_pos1, int name_pos1);
+    ElementClassT *ycompound(String, const char *decl_pos1, const char *name_pos1);
     void yrequire();
     bool ystatement(bool nested = false);
 
@@ -84,8 +84,8 @@ class LexerT { public:
     String _big_string;
   
     const char *_data;
-    unsigned _len;
-    unsigned _pos;
+    const char *_end;
+    const char *_pos;
   
     String _filename;
     String _original_filename;
@@ -93,11 +93,11 @@ class LexerT { public:
     bool _ignore_line_directives;
     
     bool get_data();
-    unsigned skip_line(unsigned);
-    unsigned skip_slash_star(unsigned);
-    unsigned skip_backslash_angle(unsigned);
-    unsigned skip_quote(unsigned, char);
-    unsigned process_line_directive(unsigned);
+    const char *skip_line(const char *);
+    const char *skip_slash_star(const char *);
+    const char *skip_backslash_angle(const char *);
+    const char *skip_quote(const char *, char);
+    const char *process_line_directive(const char *);
     Lexeme next_lexeme();
     static String lexeme_string(int);
   
@@ -119,21 +119,21 @@ class LexerT { public:
     LexerTInfo *_lexinfo;
     ErrorHandler *_errh;
 
-    void vlerror(int, int, const String &, const char *, va_list);
-    int lerror(int, int, const char *, ...);
+    void vlerror(const char *, const char *, const String &, const char *, va_list);
+    int lerror(const char *, const char *, const char *, ...);
     int lerror(const Lexeme &, const char *, ...);
     String anon_element_name(const String &) const;
 
     bool expect(int, bool report_error = true);
-    int next_pos() const;
+    const char *next_pos() const;
     
     ElementClassT *element_type(const Lexeme &) const;
     ElementClassT *force_element_type(const Lexeme &);
 
     LexerT(const LexerT &);
     LexerT &operator=(const LexerT &);
-    int make_element(String, const Lexeme &, int decl_pos2, ElementClassT *, const String &, const String &);
-    int make_anon_element(const Lexeme &, int decl_pos2, ElementClassT *, const String &, const String &);
+    int make_element(String, const Lexeme &, const char *decl_pos2, ElementClassT *, const String &, const String &);
+    int make_anon_element(const Lexeme &, const char *decl_pos2, ElementClassT *, const String &, const String &);
     void connect(int f1, int p1, int p2, int f2);
   
 };

@@ -295,6 +295,10 @@ The data stored in a metadata record is just an ASCII string, ending with
 newline, same as in a regular ASCII IPSummaryDump file. 'C<!bad>' records, for
 example, are stored this way.
 
+=h flush write-only
+
+Flush all internal buffers to disk.
+
 =a
 
 FromIPSummaryDump, FromDump, ToDump */
@@ -323,7 +327,6 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     uint32_t output_count() const	{ return _output_count; }
     void add_note(const String &);
     void write_line(const String &);
-    void flush_buffer();
     
   private:
 
@@ -349,6 +352,7 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
     bool summary(Packet* p, StringAccum& sa, StringAccum* bad_sa, bool force_extra_length) const;
     void write_packet(Packet* p, int multipacket);
+    static int flush_handler(const String &, Element *, void *, ErrorHandler *);
     
 };
 

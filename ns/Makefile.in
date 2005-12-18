@@ -57,7 +57,7 @@ EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 -include elements.mk
 
 LIBOBJS = $(GENERIC_OBJS) $(STD_ELEMENT_OBJS) clp.o
-STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o drivermanager.o \
+STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o \
 	errorelement.o portinfo.o scheduleinfo.o
 OBJS = $(ELEMENT_OBJS) elements.o nsclick.o
 

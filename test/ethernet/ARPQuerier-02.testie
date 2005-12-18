@@ -26,7 +26,7 @@ RatedSource(RATE 8, LIMIT 3, STOP true)
 	-> Discard;
 Idle -> [1]arpq3;
 
-DriverManager(wait_stop 3, save c.count -, save c2.count -, save c3.count -)
+DriverManager(wait_stop 3, print c.count, print c2.count, print c3.count)
 
 %expect stdout
 {{15|16}}

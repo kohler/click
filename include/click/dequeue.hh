@@ -6,9 +6,8 @@
 
 #ifndef CLICK_DEQUEUE_HH
 #define CLICK_DEQUEUE_HH
+#include <click/glue.hh>
 CLICK_DECLS
-
-#define USE_VMALLOC 1
 
 template <class T>
 class DEQueue {
@@ -101,9 +100,6 @@ private:
   friend class iterator;
   friend class const_iterator;
 
-#if defined(USE_VMALLOC) && defined(CLICK_LINUXMODULE)
-  bool _vmalloc;
-#endif
 };
 
 
@@ -111,39 +107,39 @@ private:
 template <class T> inline void
 DEQueue<T>::push_front(const T &e)
 {
-  if (_n < _cap || reserve(-1)) {
-    _head = prev_i(_head);
-    new(velt(_head)) T(e);
-    _n++;
-  }
+    if (_n < _cap || reserve(-1)) {
+	_head = prev_i(_head);
+	new(velt(_head)) T(e);
+	_n++;
+    }
 }
 
 template <class T> inline void
 DEQueue<T>::pop_front()
 {
-  assert(_n > 0);
-  --_n;
-  _l[_head].~T();
-  _head = next_i(_head);
+    assert(_n > 0);
+    --_n;
+    _l[_head].~T();
+    _head = next_i(_head);
 }
 
 template <class T> inline void
 DEQueue<T>::push_back(const T &e)
 {
-  if (_n < _cap || reserve(-1)) {
-    new(velt(_tail)) T(e);
-    _n++;
-    _tail = next_i(_tail);
-  }
+    if (_n < _cap || reserve(-1)) {
+	new(velt(_tail)) T(e);
+	_n++;
+	_tail = next_i(_tail);
+    }
 }
 
 template <class T> inline void
 DEQueue<T>::pop_back()
 {
-  assert(_n > 0);
-  --_n;
-  _tail = prev_i(_tail);
-  _l[_tail].~T();
+    assert(_n > 0);
+    --_n;
+    _tail = prev_i(_tail);
+    _l[_tail].~T();
 }
 
 CLICK_ENDDECLS

@@ -40,6 +40,10 @@ class Master { public:
     int add_select(int fd, Element*, int mask);
     int remove_select(int fd, Element*, int mask);
     void run_selects(bool more_tasks);
+
+    int add_signal_handler(int signo, Router*, const String &handler);
+    int remove_signal_handler(int signo, Router*, const String &handler);
+    inline void run_signals();
 #endif
 
     void kill_router(Router*);
@@ -57,6 +61,10 @@ class Master { public:
     String info() const;
 #endif
 
+#if CLICK_USERLEVEL
+    static atomic_uint32_t signals_pending;
+#endif
+    
   private:
 
     Spinlock _master_lock;
@@ -117,6 +125,18 @@ class Master { public:
 # else
     void run_selects_select(bool);
 # endif
+
+    // SIGNALS
+    struct SignalInfo {
+	int signo;
+	Router *router;
+	String handler;
+	SignalInfo *next;
+    };
+    SignalInfo *_siginfo;
+    bool _signal_adding;
+    Spinlock _signal_lock;
+    void process_signals();
 #endif
 
 #if CLICK_NS
@@ -150,6 +170,15 @@ Master::thread(int id) const
     else
 	return _threads.at_u(1);
 }
+
+#if CLICK_USERLEVEL
+inline void
+Master::run_signals()
+{
+    if (signals_pending)
+	process_signals();
+}
+#endif
 
 CLICK_ENDDECLS
 #endif

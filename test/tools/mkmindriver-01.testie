@@ -14,11 +14,12 @@ Build 'fooclick' with 'make -f Makefile.foo'.
 %expect elements_foo.conf
 elements/standard/addressinfo.cc	<click/standard/addressinfo.hh>	AddressInfo-AddressInfo
 elements/standard/alignmentinfo.cc	<click/standard/alignmentinfo.hh>	AlignmentInfo-AlignmentInfo
-elements/standard/drivermanager.cc	<click/standard/drivermanager.hh>	DriverManager-DriverManager
+elements/standard/drivermanager.cc	"elements/standard/drivermanager.hh"	DriverManager-DriverManager
 elements/standard/errorelement.cc	<click/standard/errorelement.hh>	ErrorElement-Error
 elements/standard/portinfo.cc	<click/standard/portinfo.hh>	PortInfo-PortInfo
 elements/standard/print.cc	"elements/standard/print.hh"	Print-Print
 elements/standard/scheduleinfo.cc	<click/standard/scheduleinfo.hh>	ScheduleInfo-ScheduleInfo
+elements/standard/script.cc	"elements/standard/script.hh"	Script-Script
 elements/userlevel/controlsocket.cc	"elements/userlevel/controlsocket.hh"	ControlSocket-ControlSocket
 elements/userlevel/fakepcap.cc	"elements/userlevel/fakepcap.hh"	
 elements/userlevel/fromdevice.cc	"elements/userlevel/fromdevice.hh"	FromDevice-FromDevice

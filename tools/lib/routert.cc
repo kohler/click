@@ -918,7 +918,7 @@ RouterT::free_dead_elements()
 
 
 void
-RouterT::expand_into(RouterT *tor, const String &prefix, const VariableEnvironment &env, ErrorHandler *errh)
+RouterT::expand_into(RouterT *tor, const String &prefix, VariableEnvironment &env, ErrorHandler *errh)
 {
     assert(tor != this);
     assert(!prefix || prefix.back() == '/');
@@ -1259,7 +1259,7 @@ ElementT *
 RouterT::complex_expand_element(
 	ElementT *compound, const String &, Vector<String> &args,
 	RouterT *tor, const String &prefix,
-	const VariableEnvironment &env, ErrorHandler *errh)
+	VariableEnvironment &env, ErrorHandler *errh)
 {
     RouterT *fromr = compound->router();
     assert(fromr != this && tor != this);

@@ -40,11 +40,11 @@ class HandlerCall { public:
 
     // Call the specified handler and return its result. Returns the empty
     // string or negative if the handler isn't valid.
-    static String call_read(Element*, const String& hname, ErrorHandler* = 0);
-    static String call_read(const String& hdesc, Router*, ErrorHandler* = 0);
-    static int call_write(Element*, const String& hname, const String& value = String(), ErrorHandler* = 0);
-    static int call_write(const String& hdesc_with_value, Router*, ErrorHandler* = 0);
-    static int call_write(const String& hdesc, const String& value, Router*, ErrorHandler* = 0);
+    static String call_read(Element *e, const String &hname, ErrorHandler* = 0);
+    static String call_read(const String &hdesc, Element *context, ErrorHandler* = 0);
+    static int call_write(Element *e, const String &hname, const String& value = String(), ErrorHandler* = 0);
+    static int call_write(const String &hdesc_with_value, Element *context, ErrorHandler* = 0);
+    static int call_write(const String &hdesc, const String &value, Element *context, ErrorHandler* = 0);
     
     // Replace 'hcall' with a handler call parsed from 'hdesc'. A new
     // HandlerCall may be allocated if 'hcall' is null. 'hcall' is not changed
@@ -64,9 +64,9 @@ class HandlerCall { public:
     enum Flags {
 	CHECK_READ = 1, CHECK_WRITE = 2, ALLOW_PREINITIALIZE = 4
     };
-    int initialize(int flags, Element*, ErrorHandler* = 0);
-    inline int initialize_read(Element*, ErrorHandler* = 0);
-    inline int initialize_write(Element*, ErrorHandler* = 0);
+    int initialize(int flags, Element *context, ErrorHandler* = 0);
+    inline int initialize_read(Element *context, ErrorHandler* = 0);
+    inline int initialize_write(Element *context, ErrorHandler* = 0);
 
     // Less-used functions.
     void clear()		{ _e = 0; _h = Handler::blank_handler(); _value = String(); }

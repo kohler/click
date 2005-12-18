@@ -421,6 +421,7 @@ EOD;
 	die if @c != 1;
 	chomp $c[0];
 	next if $c[0] =~ /^\s*$/s;
+	$c[0] =~ s,^(\s*)\./,$1../, if !$::expand_mode;
 	$t .= $c[0] . "\n";
     }
 
@@ -838,6 +839,7 @@ Options:
   -VV, --superverbose        Print %desc information for all tests.
   -s, --show TESTIEFILE      Show contents of TESTIEFILE on completion.
   --preserve-temporaries     Preserve temporary files.
+  -e, --expand               Expand test files into current directory.  
   -v, --version              Print version information and exit.
   --help                     Print this message and exit.
 
@@ -901,7 +903,7 @@ sub search_dir ($$) {
 
 # argument processing
 
-$dir = "/tmp/testie$$";
+$dir = "testie$$";
 
 my(@tests, $verbose, $arg);
 $verbose = 0;

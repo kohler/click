@@ -493,7 +493,7 @@ particular purpose.\n");
   // call exit handler
   if (exit_handler) {
     int before = errh->nerrors();
-    String exit_string = HandlerCall::call_read(exit_handler, router, errh);
+    String exit_string = HandlerCall::call_read(exit_handler, router->root_element(), errh);
     bool b;
     if (errh->nerrors() != before)
       exit_value = -1;

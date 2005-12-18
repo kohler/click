@@ -72,7 +72,7 @@ my(%section_headers) =
       'modification' => 'Modification',
       'annotations' => 'Annotations',
       'measurement' => 'Measurement and Profiling',
-      'debugging' => 'Debugging',
+      'debugging' => 'Debugging and Control',
       'profiling' => 'Measurement and Profiling',
       'analysis' => 'Trace Analysis and Manipulation',
       'information' => 'Information Elements',
@@ -588,7 +588,8 @@ EOD;
 	} elsif ($s eq 'h') {
 	    my($t) = "=over 5\n";
 	    while ($i < @section_text && $section_name[$i] eq 'h') {
-		if ($section_args[$i] =~ /\A\s*(.*?)\s*(\S+)\s*\Z/) {
+		if ($section_args[$i] =~ /\A\s*(.*?)\s*"(.*?)"\s*\Z/
+		    || $section_args[$i] =~ /\A\s*(.*?)\s*(\S+)\s*\Z/) {
 		    $t .= "=item B<$1> ($2)\n";
 		} else {
 		    print STDERR "click-elem2man: $Filename: bad handler section arguments ('=h $section_args[$i]')\n";

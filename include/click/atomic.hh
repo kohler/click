@@ -157,6 +157,7 @@ class atomic_uint32_t { public:
 
     inline uint32_t read_and_add(uint32_t delta);
     inline uint32_t compare_and_swap(uint32_t test_value, uint32_t new_value);
+    inline uint32_t swap(uint32_t value);
 
   private:
 
@@ -178,6 +179,14 @@ atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
     uint32_t old_value = _val;
     if (_val == test_value)
 	_val = new_value;
+    return old_value;
+}
+
+inline uint32_t
+atomic_uint32_t::swap(uint32_t value)
+{
+    uint32_t old_value = _val;
+    _val = value;
     return old_value;
 }
 

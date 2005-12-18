@@ -31,7 +31,7 @@
 static LexerTInfo *stub_lexinfo = 0;
 
 LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
-  : _data(0), _len(0), _pos(0), _lineno(1),
+  : _data(0), _end(0), _pos(0), _lineno(1),
     _ignore_line_directives(ignore_line_directives),
     _tpos(0), _tfull(0), _router(0), _base_type_map(0), _errh(errh)
 {
@@ -54,8 +54,8 @@ LexerT::reset(const String &data, const String &filename)
     clear();
   
     _big_string = data;
-    _data = _big_string.data();
-    _len = _big_string.length();
+    _data = _pos = _big_string.begin();
+    _end = _big_string.end();
 
     if (!filename)
 	_filename = "line ";
@@ -78,7 +78,7 @@ LexerT::clear()
     _big_string = "";
     // _data was freed by _big_string
     _data = 0;
-    _len = 0;
+    _end = 0;
     _pos = 0;
     _filename = "";
     _lineno = 0;
@@ -101,258 +101,261 @@ LexerT::set_lexinfo(LexerTInfo *li)
 String
 LexerT::remaining_text() const
 {
-  return _big_string.substring(_pos);
+    return _big_string.substring(_pos, _end);
 }
 
 void
 LexerT::set_remaining_text(const String &s)
 {
-  _big_string = s;
-  _data = s.data();
-  _pos = 0;
-  _len = s.length();
+    _big_string = s;
+    _data = _pos = s.begin();
+    _end = s.end();
 }
 
-unsigned
-LexerT::skip_line(unsigned pos)
+const char *
+LexerT::skip_line(const char *s)
 {
   _lineno++;
-  for (; pos < _len; pos++)
-    if (_data[pos] == '\n')
-      return pos + 1;
-    else if (_data[pos] == '\r') {
-      if (pos < _len - 1 && _data[pos+1] == '\n')
-	return pos + 2;
+  for (; s < _end; s++)
+    if (*s == '\n')
+      return s + 1;
+    else if (*s == '\r') {
+      if (s + 1 < _end && s[1] == '\n')
+	return s + 2;
       else
-	return pos + 1;
+	return s + 1;
     }
   _lineno--;
-  return _len;
+  return s;
 }
 
-unsigned
-LexerT::skip_slash_star(unsigned pos)
+const char *
+LexerT::skip_slash_star(const char *s)
 {
-  for (; pos < _len; pos++)
-    if (_data[pos] == '\n')
+  for (; s < _end; s++)
+    if (*s == '\n')
       _lineno++;
-    else if (_data[pos] == '\r') {
-      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+    else if (*s == '\r') {
+      if (s + 1 < _end && s[1] == '\n')
+	s++;
       _lineno++;
-    } else if (_data[pos] == '*' && pos < _len - 1 && _data[pos+1] == '/')
-      return pos + 2;
-  return _len;
+    } else if (*s == '*' && s + 1 < _end && s[1] == '/')
+      return s + 2;
+  return _end;
 }
 
-unsigned
-LexerT::skip_backslash_angle(unsigned pos)
+const char *
+LexerT::skip_backslash_angle(const char *s)
 {
-  for (; pos < _len; pos++)
-    if (_data[pos] == '\n')
+  for (; s < _end; s++)
+    if (*s == '\n')
       _lineno++;
-    else if (_data[pos] == '\r') {
-      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+    else if (*s == '\r') {
+      if (s + 1 < _end && s[1] == '\n')
+	s++;
       _lineno++;
-    } else if (_data[pos] == '/' && pos < _len - 1) {
-      if (_data[pos+1] == '/')
-	pos = skip_line(pos + 2) - 1;
-      else if (_data[pos+1] == '*')
-	pos = skip_slash_star(pos + 2) - 1;
-    } else if (_data[pos] == '>')
-      return pos + 1;
-  return _len;
+    } else if (*s == '/' && s + 1 < _end) {
+      if (s[1] == '/')
+	s = skip_line(s + 2) - 1;
+      else if (s[1] == '*')
+	s = skip_slash_star(s + 2) - 1;
+    } else if (*s == '>')
+      return s + 1;
+  return _end;
 }
 
-unsigned
-LexerT::skip_quote(unsigned pos, char endc)
+const char *
+LexerT::skip_quote(const char *s, char endc)
 {
-  for (; pos < _len; pos++)
-    if (_data[pos] == '\n')
+  for (; s < _end; s++)
+    if (*s == '\n')
       _lineno++;
-    else if (_data[pos] == '\r') {
-      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+    else if (*s == '\r') {
+      if (s + 1 < _end && s[1] == '\n')
+	s++;
       _lineno++;
-    } else if (_data[pos] == '\\' && endc == '\"' && pos < _len - 1) {
-      if (_data[pos+1] == '<')
-	pos = skip_backslash_angle(pos + 2) - 1;
-      else if (_data[pos+1] == '\"')
-	pos++;
-    } else if (_data[pos] == endc)
-      return pos + 1;
-  return _len;
+    } else if (*s == '\\' && endc == '\"' && s + 1 < _end) {
+      if (s[1] == '<')
+	s = skip_backslash_angle(s + 2) - 1;
+      else if (s[1] == '\"')
+	s++;
+    } else if (*s == endc)
+      return s + 1;
+  return _end;
 }
 
-unsigned
-LexerT::process_line_directive(unsigned pos)
+const char *
+LexerT::process_line_directive(const char *s)
 {
-  const char *data = _data;
-  unsigned len = _len;
-  unsigned first_pos = pos;
+  const char *first_pos = s;
   
-  for (pos++; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
+  for (s++; s < _end && (*s == ' ' || *s == '\t'); s++)
     /* nada */;
-  if (pos < len - 4 && data[pos] == 'l' && data[pos+1] == 'i'
-      && data[pos+2] == 'n' && data[pos+3] == 'e'
-      && (data[pos+4] == ' ' || data[pos+4] == '\t')) {
-    for (pos += 5; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
+  if (s + 4 < _end && *s == 'l' && s[1] == 'i'
+      && s[2] == 'n' && s[3] == 'e'
+      && (s[4] == ' ' || s[4] == '\t')) {
+    for (s += 5; s < _end && (*s == ' ' || *s == '\t'); s++)
       /* nada */;
   }
-  if (pos >= len || !isdigit(data[pos])) {
+  if (s >= _end || !isdigit(*s)) {
     // complain about bad directive
-    lerror(first_pos, pos, "unknown preprocessor directive");
-    return skip_line(pos);
+    lerror(first_pos, s, "unknown preprocessor directive");
+    return skip_line(s);
   } else if (_ignore_line_directives)
-    return skip_line(pos);
+    return skip_line(s);
   
   // parse line number
-  for (_lineno = 0; pos < len && isdigit(data[pos]); pos++)
-    _lineno = _lineno * 10 + data[pos] - '0';
+  for (_lineno = 0; s < _end && isdigit(*s); s++)
+    _lineno = _lineno * 10 + *s - '0';
   _lineno--;			// account for extra line
   
-  for (; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
+  for (; s < _end && (*s == ' ' || *s == '\t'); s++)
     /* nada */;
-  if (pos < len && data[pos] == '\"') {
+  if (s < _end && *s == '\"') {
     // parse filename
-    unsigned first_in_filename = pos;
-    for (pos++; pos < len && data[pos] != '\"' && data[pos] != '\n' && data[pos] != '\r'; pos++)
-      if (data[pos] == '\\' && pos < len - 1 && data[pos+1] != '\n' && data[pos+1] != '\r')
-	pos++;
-    _filename = cp_unquote(_big_string.substring(first_in_filename, pos - first_in_filename) + "\":");
+    const char *first_in_filename = s;
+    for (s++; s < _end && *s != '\"' && *s != '\n' && *s != '\r'; s++)
+      if (*s == '\\' && s + 1 < _end && s[1] != '\n' && s[1] != '\r')
+	s++;
+    _filename = cp_unquote(_big_string.substring(first_in_filename, s) + "\":");
     // an empty filename means return to the input file's name
     if (_filename == ":")
       _filename = _original_filename;
   }
 
   // reach end of line
-  for (; pos < len && data[pos] != '\n' && data[pos] != '\r'; pos++)
+  for (; s < _end && *s != '\n' && *s != '\r'; s++)
     /* nada */;
-  if (pos < len - 1 && data[pos] == '\r' && data[pos+1] == '\n')
-    pos++;
-  return pos;
+  if (s + 1 < _end && *s == '\r' && s[1] == '\n')
+    s++;
+  return s;
 }
 
 Lexeme
 LexerT::next_lexeme()
 {
-  unsigned pos = _pos;
+  const char *s = _pos;
   while (true) {
-    while (pos < _len && isspace(_data[pos])) {
-      if (_data[pos] == '\n')
+    while (s < _end && isspace(*s)) {
+      if (*s == '\n')
 	_lineno++;
-      else if (_data[pos] == '\r') {
-	if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+      else if (*s == '\r') {
+	if (s + 1 < _end && s[1] == '\n')
+	  s++;
 	_lineno++;
       }
-      pos++;
+      s++;
     }
-    unsigned opos = pos;
-    if (pos >= _len) {
-      _pos = _len;
+    const char *opos = s;
+    if (s >= _end) {
+      _pos = _end;
       return Lexeme();
-    } else if (_data[pos] == '/' && pos < _len - 1) {
-      if (_data[pos+1] == '/')
-	pos = skip_line(pos + 2);
-      else if (_data[pos+1] == '*')
-	pos = skip_slash_star(pos + 2);
+    } else if (*s == '/' && s + 1 < _end) {
+      if (s[1] == '/')
+	s = skip_line(s + 2);
+      else if (s[1] == '*')
+	s = skip_slash_star(s + 2);
       else
 	break;
-      _lexinfo->notify_comment(opos, pos);
-    } else if (_data[pos] == '#' && (pos == 0 || _data[pos-1] == '\n' || _data[pos-1] == '\r')) {
-      pos = process_line_directive(pos);
-      _lexinfo->notify_line_directive(opos, pos);
+      _lexinfo->notify_comment(opos, s);
+    } else if (*s == '#' && (s == _data || s[-1] == '\n' || s[-1] == '\r')) {
+      s = process_line_directive(s);
+      _lexinfo->notify_line_directive(opos, s);
     } else
       break;
   }
-  
-  unsigned word_pos = pos;
+
+  const char *word_pos = s;
   
   // find length of current word
-  if (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '@') {
+  if (isalnum(*s) || *s == '_' || *s == '@') {
    more_word_characters:
-    pos++;
-    while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '@'))
-      pos++;
-    if (pos < _len - 1 && _data[pos] == '/' && (isalnum(_data[pos+1]) || _data[pos+1] == '_' || _data[pos+1] == '@'))
+    s++;
+    while (s < _end && (isalnum(*s) || *s == '_' || *s == '@'))
+      s++;
+    if (s + 1 < _end && *s == '/' && (isalnum(s[1]) || s[1] == '_' || s[1] == '@'))
       goto more_word_characters;
-    _pos = pos;
-    String word = _big_string.substring(word_pos, pos - word_pos);
+    _pos = s;
+    String word = _big_string.substring(word_pos, s);
     if (word.length() == 16 && word == "connectiontunnel") {
-      _lexinfo->notify_keyword(word, word_pos, pos);
+      _lexinfo->notify_keyword(word, word_pos, s);
       return Lexeme(lexTunnel, word, word_pos);
     } else if (word.length() == 12 && word == "elementclass") {
-      _lexinfo->notify_keyword(word, word_pos, pos);
+      _lexinfo->notify_keyword(word, word_pos, s);
       return Lexeme(lexElementclass, word, word_pos);
     } else if (word.length() == 7 && word == "require") {
-      _lexinfo->notify_keyword(word, word_pos, pos);
+      _lexinfo->notify_keyword(word, word_pos, s);
       return Lexeme(lexRequire, word, word_pos);
     } else
       return Lexeme(lexIdent, word, word_pos);
   }
 
   // check for variable
-  if (_data[pos] == '$') {
-    pos++;
-    while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_'))
-      pos++;
-    if (pos > word_pos + 1) {
-      _pos = pos;
-      return Lexeme(lexVariable, _big_string.substring(word_pos, pos - word_pos), word_pos);
+  if (*s == '$') {
+    s++;
+    while (s < _end && (isalnum(*s) || *s == '_'))
+      s++;
+    if (s > word_pos + 1) {
+      _pos = s;
+      return Lexeme(lexVariable, _big_string.substring(word_pos + 1, s), word_pos);
     } else
-      pos--;
+      s--;
   }
 
-  if (pos < _len - 1) {
-    if (_data[pos] == '-' && _data[pos+1] == '>') {
-      _pos = pos + 2;
-      return Lexeme(lexArrow, _big_string.substring(word_pos, 2), word_pos);
-    } else if (_data[pos] == ':' && _data[pos+1] == ':') {
-      _pos = pos + 2;
-      return Lexeme(lex2Colon, _big_string.substring(word_pos, 2), word_pos);
-    } else if (_data[pos] == '|' && _data[pos+1] == '|') {
-      _pos = pos + 2;
-      return Lexeme(lex2Bar, _big_string.substring(word_pos, 2), word_pos);
+  if (s + 1 < _end) {
+    if (*s == '-' && s[1] == '>') {
+      _pos = s + 2;
+      return Lexeme(lexArrow, _big_string.substring(s, s + 2), word_pos);
+    } else if (*s == ':' && s[1] == ':') {
+      _pos = s + 2;
+      return Lexeme(lex2Colon, _big_string.substring(s, s + 2), word_pos);
+    } else if (*s == '|' && s[1] == '|') {
+      _pos = s + 2;
+      return Lexeme(lex2Bar, _big_string.substring(s, s + 2), word_pos);
     }
   }
-  if (pos < _len - 2 && _data[pos] == '.' && _data[pos+1] == '.' && _data[pos+2] == '.') {
-    _pos = pos + 3;
-    return Lexeme(lex3Dot, _big_string.substring(word_pos, 3), word_pos);
+  if (s + 2 < _end && *s == '.' && s[1] == '.' && s[2] == '.') {
+    _pos = s + 3;
+    return Lexeme(lex3Dot, _big_string.substring(s, s + 3), word_pos);
   }
   
-  _pos = pos + 1;
-  return Lexeme(_data[word_pos], _big_string.substring(word_pos, 1), word_pos);
+  _pos = s + 1;
+  return Lexeme(*s, _big_string.substring(s, s + 1), word_pos);
 }
 
 Lexeme
 LexerT::lex_config()
 {
-  unsigned config_pos = _pos;
-  unsigned pos = _pos;
+  const char *config_pos = _pos;
+  const char *s = _pos;
   unsigned paren_depth = 1;
   
-  for (; pos < _len; pos++)
-    if (_data[pos] == '(')
+  for (; s < _end; s++)
+    if (*s == '(')
       paren_depth++;
-    else if (_data[pos] == ')') {
+    else if (*s == ')') {
       paren_depth--;
-      if (!paren_depth) break;
-    } else if (_data[pos] == '\n')
+      if (!paren_depth)
+	break;
+    } else if (*s == '\n')
       _lineno++;
-    else if (_data[pos] == '\r') {
-      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+    else if (*s == '\r') {
+      if (s + 1 < _end && s[1] == '\n')
+	s++;
       _lineno++;
-    } else if (_data[pos] == '/' && pos < _len - 1) {
-      if (_data[pos+1] == '/')
-	pos = skip_line(pos + 2) - 1;
-      else if (_data[pos+1] == '*')
-	pos = skip_slash_star(pos + 2) - 1;
-    } else if (_data[pos] == '\'' || _data[pos] == '\"')
-      pos = skip_quote(pos + 1, _data[pos]) - 1;
-    else if (_data[pos] == '\\' && pos < _len - 1 && _data[pos+1] == '<')
-      pos = skip_backslash_angle(pos + 2) - 1;
+    } else if (*s == '/' && s + 1 < _end) {
+      if (s[1] == '/')
+	s = skip_line(s + 2) - 1;
+      else if (s[1] == '*')
+	s = skip_slash_star(s + 2) - 1;
+    } else if (*s == '\'' || *s == '\"')
+      s = skip_quote(s + 1, *s) - 1;
+    else if (*s == '\\' && s + 1 < _end && s[1] == '<')
+      s = skip_backslash_angle(s + 2) - 1;
   
-  _pos = pos;
-  _lexinfo->notify_config_string(config_pos, pos);
-  return Lexeme(lexConfig, _big_string.substring(config_pos, pos - config_pos),
+  _pos = s;
+  _lexinfo->notify_config_string(config_pos, s);
+  return Lexeme(lexConfig, _big_string.substring(config_pos, s),
 		config_pos);
 }
 
@@ -423,7 +426,7 @@ LexerT::expect(int kind, bool report_error)
 	if (report_error)
 	    lerror(_tcircle[_tpos], "expected %s", lexeme_string(kind).c_str());
     } else {
-	unsigned old_pos = _pos;
+	const char *old_pos = _pos;
 	if (next_lexeme().is(kind))
 	    return true;
 	if (report_error)
@@ -433,7 +436,7 @@ LexerT::expect(int kind, bool report_error)
     return false;
 }
 
-int
+const char *
 LexerT::next_pos() const
 {
     if (_tpos != _tfull)
@@ -452,7 +455,7 @@ LexerT::landmark() const
 }
 
 void
-LexerT::vlerror(int pos1, int pos2, const String &lm, const char *format, va_list val)
+LexerT::vlerror(const char *pos1, const char *pos2, const String &lm, const char *format, va_list val)
 {
     String text = _errh->make_text(ErrorHandler::ERR_ERROR, format, val);
     _lexinfo->notify_error(text, pos1, pos2);
@@ -461,7 +464,7 @@ LexerT::vlerror(int pos1, int pos2, const String &lm, const char *format, va_lis
 }
 
 int
-LexerT::lerror(int pos1, int pos2, const char *format, ...)
+LexerT::lerror(const char *pos1, const char *pos2, const char *format, ...)
 {
     va_list val;
     va_start(val, format);
@@ -525,7 +528,7 @@ LexerT::anon_element_name(const String &class_name) const
 }
 
 int
-LexerT::make_element(String name, const Lexeme &location, int decl_pos2,
+LexerT::make_element(String name, const Lexeme &location, const char *decl_pos2,
 		     ElementClassT *type, const String &conf, const String &lm)
 {
     // check 'name' for validity
@@ -545,7 +548,7 @@ LexerT::make_element(String name, const Lexeme &location, int decl_pos2,
 }
 
 int
-LexerT::make_anon_element(const Lexeme &what, int decl_pos2,
+LexerT::make_anon_element(const Lexeme &what, const char *decl_pos2,
 			  ElementClassT *type, const String &conf,
 			  const String &lm)
 {
@@ -568,7 +571,7 @@ LexerT::connect(int element1, int port1, int port2, int element2)
 // PARSING
 
 bool
-LexerT::yport(int &port, int &pos1, int &pos2)
+LexerT::yport(int &port, const char *&pos1, const char *&pos2)
 {
     const Lexeme &tlbrack = lex();
     if (!tlbrack.is('[')) {
@@ -608,7 +611,7 @@ LexerT::yelement(int &element, bool comma_ok)
     Lexeme tname = lex();
     String name;
     ElementClassT *etype;
-    int decl_pos2 = -1;
+    const char *decl_pos2 = 0;
 
     if (tname.is(lexIdent)) {
 	etype = element_type(tname);
@@ -709,7 +712,7 @@ LexerT::ydeclaration(const Lexeme &first_element)
     } else
 	unlex(t);
 
-    int decl_pos2 = (decls.size() == 1 ? next_pos() : -1);
+    const char *decl_pos2 = (decls.size() == 1 ? next_pos() : 0);
 
     for (int i = 0; i < decls.size(); i++) {
 	String name = decls[i].string();
@@ -725,13 +728,13 @@ LexerT::ydeclaration(const Lexeme &first_element)
 bool
 LexerT::yconnection()
 {
-    int element1 = -1;
-    int port1 = -1, port1_pos1 = -1, port1_pos2 = -1;
+    int element1 = -1, port1 = -1;
+    const char *port1_pos1 = 0, *port1_pos2 = 0;
     Lexeme t;
 
     while (true) {
-	int element2;
-	int port2 = -1, port2_pos1, port2_pos2;
+	int element2, port2 = -1;
+	const char *port2_pos1, *port2_pos2;
 
 	// get element
 	yport(port2, port2_pos1, port2_pos2);
@@ -798,7 +801,7 @@ LexerT::yconnection()
 }
 
 void
-LexerT::yelementclass(int pos1)
+LexerT::yelementclass(const char *pos1)
 {
     Lexeme tname = lex();
     String eclass_name;
@@ -916,7 +919,7 @@ LexerT::ycompound_arguments(RouterT *comptype)
 }
 
 ElementClassT *
-LexerT::ycompound(String name, int decl_pos1, int name_pos1)
+LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 {
     bool anonymous = (name.length() == 0);
 
@@ -927,7 +930,7 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
     RouterT *first = 0, *last = 0;
     ElementClassT *extension = 0;
 
-    int pos2 = name_pos1;
+    const char *pos2 = name_pos1;
     
     while (1) {
 	Lexeme dots = lex();

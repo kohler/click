@@ -395,41 +395,46 @@ link_element_decl(ElementT *e)
 
 class PrettyLexerTInfo : public LexerTInfo { public:
 
-    PrettyLexerTInfo()				{ }
+    PrettyLexerTInfo(const String &config)	: _config(config) { }
   
-    void notify_comment(int pos1, int pos2) {
+    void add_item(const char *pos1, const String &s1, const char *pos2, const String &s2) {
+	::add_item(pos1 - _config.begin(), s1, pos2 - _config.begin(), s2);
+    }
+    void notify_comment(const char *pos1, const char *pos2) {
 	add_item(pos1, "<span class='c-cmt'>", pos2, "</span>");
     }
-    void notify_error(const String &what, int pos1, int pos2) {
+    void notify_error(const String &what, const char *pos1, const char *pos2) {
 	add_item(pos1, "<span class='c-err' title='" + html_quote_attr(what) + "'>", pos2, "</span>");
     }
-    void notify_keyword(const String &, int pos1, int pos2) {
+    void notify_keyword(const String &, const char *pos1, const char *pos2) {
 	add_item(pos1, "<span class='c-kw'>", pos2, "</span>");
     }
-    void notify_config_string(int pos1, int pos2) {
+    void notify_config_string(const char *pos1, const char *pos2) {
 	add_item(pos1, "<span class='c-cfg'>", pos2, "</span>");
     }
-    void notify_class_declaration(ElementClassT *ec, bool anonymous, int decl_pos1, int name_pos1, int) {
+    void notify_class_declaration(ElementClassT *ec, bool anonymous, const char *decl_pos1, const char *name_pos1, const char *) {
 	if (!anonymous)
 	    add_item(name_pos1, "<a name='" + link_class_decl(ec) + "'><span class='c-cd'>", name_pos1 + ec->name().length(), "</span></a>");
 	else
 	    add_item(decl_pos1, "<a name='" + link_class_decl(ec) + "'>", decl_pos1 + 1, "</a>");
 	add_class_href(ec, "#" + link_class_decl(ec));
     }
-    void notify_class_extension(ElementClassT *ec, int pos1, int pos2) {
+    void notify_class_extension(ElementClassT *ec, const char *pos1, const char *pos2) {
 	add_item(pos1, "{" + String(cid(ec)), pos2, "");
     }
-    void notify_class_reference(ElementClassT *ec, int pos1, int pos2) {
+    void notify_class_reference(ElementClassT *ec, const char *pos1, const char *pos2) {
 	add_item(pos1, "{" + String(cid(ec)), pos2, "");
     }
-    void notify_element_declaration(ElementT *e, int pos1, int pos2, int decl_pos2) {
+    void notify_element_declaration(ElementT *e, const char *pos1, const char *pos2, const char *decl_pos2) {
 	add_item(pos1, "<a name='" + link_element_decl(e) + "'>", pos2, "</a>");
 	add_item(pos1, "<span class='c-ed'>", decl_pos2, "</span>");
 	notify_element_reference(e, pos1, decl_pos2);
     }
-    void notify_element_reference(ElementT *e, int pos1, int pos2) {
+    void notify_element_reference(ElementT *e, const char *pos1, const char *pos2) {
 	add_item(pos1, "<span title='" + e->name() + " :: " + e->type_name() + "'>", pos2, "</span>");
     }
+
+    String _config;
 
 };
 
@@ -489,7 +494,7 @@ pretty_read_router(const char *filename, bool file_is_expr,
     if (!config.length())
 	errh->warning("%s: empty configuration", filename);
     LexerT lexer(ErrorHandler::silent_handler());
-    PrettyLexerTInfo pinfo;
+    PrettyLexerTInfo pinfo(config);
     lexer.reset(config, filename);
     lexer.set_lexinfo(&pinfo);
 

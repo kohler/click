@@ -46,7 +46,7 @@ SpinlockInfo::add_spinlock(const Vector<String> &conf,
     Vector<String> parts;
     cp_spacevec(conf[i], parts);
     if (parts.size() != 1)
-      errh->error("expected `NAME'");
+      errh->error("expected 'NAME'");
     else {
       String name = prefix + parts[0];
       if (_map[name] < 0) {

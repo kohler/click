@@ -32,7 +32,7 @@ LINUXMODULE_CXX_OBJS = config.o sched.o module.o clickfs.o skbmgr.o
 
 LINUXMODULE_C_OBJS = kernelversion.o read-pmc.o
 
-STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o drivermanager.o \
+STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o \
 	errorelement.o portinfo.o scheduleinfo.o
 
 ifndef INSTALLOBJS

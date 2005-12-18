@@ -27,6 +27,7 @@ CLICK_CXX_PROTECT
 # include <linux/skbuff.h>
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 #  include <linux/malloc.h>
+#  include <linux/vmalloc.h>
 #  include <linux/interrupt.h>
 # else
 #  include <linux/hardirq.h>
@@ -85,6 +86,21 @@ extern uint32_t click_dmalloc_where;
 # define CLICK_DMALLOC_REG(s) do { const unsigned char *__str = reinterpret_cast<const unsigned char *>(s); click_dmalloc_where = (__str[0]<<24) | (__str[1]<<16) | (__str[2]<<8) | __str[3]; } while (0)
 #else
 # define CLICK_DMALLOC_REG(s)
+#endif
+
+
+// LALLOC
+
+#if CLICK_LINUXMODULE
+# define CLICK_LALLOC(size)	(click_lalloc((size)))
+# define CLICK_LFREE(p, size)	(click_lfree((p), (size)))
+extern "C" {
+void *click_lalloc(size_t size);
+void click_lfree(void *p, size_t size);
+}
+#else
+# define CLICK_LALLOC(size)	((void *)(new uint8_t[(size)]))
+# define CLICK_LFREE(p, size)	delete[] ((uint8_t *)(p))
 #endif
 
 

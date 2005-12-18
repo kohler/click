@@ -58,7 +58,7 @@ AlignmentInfo::configure(Vector<String> &conf, ErrorHandler *errh)
       int old_offset = _elem_offset[number];
       int old_icount = _elem_icount[number];
       if (parts.size() % 2 != 1)
-	errh->error("expected `ELEMENTNAME CHUNK OFFSET [CHUNK OFFSET...]'");
+	errh->error("expected 'ELEMENTNAME CHUNK OFFSET [CHUNK OFFSET...]'");
       _elem_offset[number] = _chunks.size();
       _elem_icount[number] = (parts.size() - 1) / 2;
       for (int j = 1; j < parts.size() - 1; j += 2) {

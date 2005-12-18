@@ -60,6 +60,8 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
     Element *e;
     String hname;
 
+    errh->warning("The PokeHandlers element is deprecated. Use Script instead.");
+
     int next_timeout = 0;
     for (int i = 0; i < conf.size(); i++) {
 	String text = conf[i];

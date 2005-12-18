@@ -448,6 +448,10 @@ RouterThread::driver()
     if (*runcount > 0) {
 	// run occasional tasks: timers, select, etc.
 	iter++;
+
+#if CLICK_USERLEVEL
+	_master->run_signals();
+#endif
 	
 #if !(HAVE_ADAPTIVE_SCHEDULER||BSD_NETISRSCHED)
 	if ((iter % _iters_per_os) == 0)

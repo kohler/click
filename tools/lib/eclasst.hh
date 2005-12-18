@@ -53,10 +53,10 @@ class ElementClassT { public:
     virtual void collect_types(HashMap<ElementClassT *, int> &) const;
     virtual void collect_overloads(Vector<ElementClassT *> &) const;
 
-    static ElementT *expand_element(ElementT *, RouterT *, const String &prefix, const VariableEnvironment &, ErrorHandler *);
+    static ElementT *expand_element(ElementT *, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
 
     virtual ElementClassT *resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *, const String &landmark);
-    virtual ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, const VariableEnvironment &, ErrorHandler *);
+    virtual ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
 
     enum UnparseKind { UNPARSE_NAMED, UNPARSE_ANONYMOUS, UNPARSE_OVERLOAD };
     virtual void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *stop);
@@ -80,7 +80,7 @@ class ElementClassT { public:
     ElementClassT(const ElementClassT &);
     ElementClassT &operator=(const ElementClassT &);
 
-    ElementT *direct_expand_element(ElementT *, RouterT *, const String &prefix, const VariableEnvironment &, ErrorHandler *);
+    ElementT *direct_expand_element(ElementT *, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
 
 };
 
@@ -91,7 +91,7 @@ class SynonymElementClassT : public ElementClassT { public:
     ElementClassT *synonym_of() const	{ return _eclass; }
 
     ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const String &);
-    ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, const VariableEnvironment &, ErrorHandler *);
+    ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
     
     void collect_types(HashMap<ElementClassT *, int> &) const;
     void collect_overloads(Vector<ElementClassT *> &) const;

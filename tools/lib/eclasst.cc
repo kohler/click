@@ -150,12 +150,12 @@ ElementClassT::resolve(int, int, Vector<String> &, ErrorHandler *, const String 
 ElementT *
 ElementClassT::direct_expand_element(
 	ElementT *e, RouterT *tor, const String &prefix,
-	const VariableEnvironment &env, ErrorHandler *errh)
+	VariableEnvironment &env, ErrorHandler *errh)
 {
     assert(!prefix || prefix.back() == '/');
     RouterT *fromr = e->router();
     String new_name = prefix + e->name();
-    String new_configuration = env.interpolate(e->configuration());
+    String new_configuration = cp_expand(e->configuration(), env);
 
     // check for tunnel
     if (e->tunnel()) {
@@ -194,7 +194,7 @@ ElementClassT::direct_expand_element(
 ElementT *
 ElementClassT::expand_element(
 	ElementT *e, RouterT *tor, const String &prefix,
-	const VariableEnvironment &env, ErrorHandler *errh)
+	VariableEnvironment &env, ErrorHandler *errh)
 {
     ElementClassT *c = e->type();
     if (c->primitive())
@@ -206,7 +206,7 @@ ElementClassT::expand_element(
     RouterT *fromr = e->router();
 
     Vector<String> args;
-    String new_configuration = env.interpolate(e->configuration());
+    String new_configuration = cp_expand(e->configuration(), env);
     cp_argvec(new_configuration, args);
 
     ElementClassT *found_c = c->resolve(inputs_used, outputs_used, args, errh, e->landmark());
@@ -225,7 +225,7 @@ ElementT *
 ElementClassT::complex_expand_element(
 	ElementT *e, const String &, Vector<String> &,
 	RouterT *tor, const String &prefix,
-	const VariableEnvironment &env, ErrorHandler *errh)
+	VariableEnvironment &env, ErrorHandler *errh)
 {
     return direct_expand_element(e, tor, prefix, env, errh);
 }
@@ -279,7 +279,7 @@ SynonymElementClassT::resolve(int ninputs, int noutputs, Vector<String> &args, E
 ElementT *
 SynonymElementClassT::complex_expand_element(
 	ElementT *, const String &, Vector<String> &,
-	RouterT *, const String &, const VariableEnvironment &, ErrorHandler *)
+	RouterT *, const String &, VariableEnvironment &, ErrorHandler *)
 {
     assert(0);
     return 0;

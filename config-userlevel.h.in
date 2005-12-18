@@ -94,6 +94,9 @@
 /* Define if you have the <pwd.h> header file. */
 #undef HAVE_PWD_H
 
+/* Define if you have the sigaction function. */
+#undef HAVE_SIGACTION
+
 /* Define if you have the snprintf function. */
 #undef HAVE_SNPRINTF
 
