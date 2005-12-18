@@ -1,3 +1,68 @@
+2005-12-18 Sunday 00:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.71), config-userlevel.h.in (1.32),
+	  configure (1.61), configure.in (1.268), doc/click-elem2man
+	  (1.33), doc/testie.1 (1.5), elements/analysis/toipsumdump.cc
+	  (1.63), elements/analysis/toipsumdump.hh (1.55),
+	  elements/standard/alignmentinfo.cc (1.24),
+	  elements/standard/classifier.cc (1.53),
+	  elements/standard/counter.cc (1.35),
+	  elements/standard/drivermanager.cc (1.42),
+	  elements/standard/drivermanager.hh (1.7),
+	  elements/standard/pokehandlers.cc (1.37),
+	  elements/standard/pokehandlers.hh (1.21),
+	  elements/standard/randomerror.cc (1.28),
+	  elements/standard/scheduleinfo.cc (1.43),
+	  elements/standard/script.cc (1.1), elements/standard/script.hh
+	  (1.1), elements/standard/setpackettype.cc (1.7),
+	  elements/standard/spinlockinfo.cc (1.9),
+	  elements/userlevel/changeuid.hh (1.2), etc/libclick/DISTFILES
+	  (1.28), etc/libclick/lc-configure.in (1.43),
+	  etc/libclick/lc-libsrc-Makefile.in (1.19),
+	  include/click/atomic.hh (1.15), include/click/dequeue.cc (1.4),
+	  include/click/dequeue.hh (1.4), include/click/glue.hh (1.54),
+	  include/click/handlercall.hh (1.15), include/click/lexer.hh
+	  (1.20), include/click/master.hh (1.15), include/click/nameinfo.hh
+	  (1.8), include/click/variableenv.hh (1.7),
+	  include/click/standard/drivermanager.hh (1.27), lib/confparse.cc
+	  (1.144), lib/glue.cc (1.52), lib/handlercall.cc (1.16),
+	  lib/lexer.cc (1.82), lib/master.cc (1.34), lib/routerthread.cc
+	  (1.59), lib/variableenv.cc (1.14), linuxmodule/Makefile.in
+	  (1.101), linuxmodule/sched.cc (1.54), ns/Makefile.in (1.18),
+	  test/testie (1.38), test/ethernet/ARPQuerier-01.testie (1.3),
+	  test/ethernet/ARPQuerier-02.testie (1.2),
+	  test/handlers/handlercall-01.testie (1.3),
+	  test/ip/iplookups-01.testie (1.6),
+	  test/standard/notifier-04.testie (1.3),
+	  test/tools/mkmindriver-01.testie (1.2),
+	  test/userlevel/iprouter-01.testie (1.3),
+	  tools/click-pretty/click-pretty.cc (1.29),
+	  tools/click-xform/click-xform.cc (1.60), tools/lib/eclasst.cc
+	  (1.34), tools/lib/eclasst.hh (1.26), tools/lib/lexert.cc (1.63),
+	  tools/lib/lexert.hh (1.31), tools/lib/lexertinfo.cc (1.5),
+	  tools/lib/lexertinfo.hh (1.7), tools/lib/routert.cc (1.83),
+	  tools/lib/routert.hh (1.67), userlevel/Makefile.in (1.87),
+	  userlevel/click.cc (1.105): Large scriptability checkin.
+
+	  Add new Script element, which implements DriverManager's old
+	  functionality, and much more, including variable substitution and
+	  setting, handler substitution, scripts that activate in response
+	  to signals, scripts that return values, a goto statement,
+	  arithmetic, and so forth.  Remove "save" and "append"
+	  instructions in favor of extended "print"; remove "write_skip"
+	  instruction in favor of "goto".
+
+	  DriverManager is no longer part of the required package; instead
+	  it plugs in to the Master through handlers.  It inherits from
+	  Script.  Some of its semantics have therefore changed.
+
+	  Add a flush handler to ToIPSummaryDump.  Change backquotes to
+	  apostrophes and other nits.  Add an allocator that can use
+	  vmalloc or kmalloc in a Linux kernel.  Lexers use iterator-style
+	  pointers rather than integer offsets.  Add cp_expand(), which
+	  makes variable expansion extensible.	Remove some HandlerCall
+	  methods.  Update tests with new semantics.
+
 2005-12-15 Thursday 18:48  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: fromhandler.cc (1.1), fromhandler.hh (1.1),
