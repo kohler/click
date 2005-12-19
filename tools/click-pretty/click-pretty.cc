@@ -237,10 +237,20 @@ struct OutputItem {
     int pos;
     String text;
     int _other;
+    union {
+	ElementT *element;
+	ElementClassT *eclass;
+    } _u;
     bool active : 1;
     bool _end_item : 1;
-    OutputItem() : pos(-1), _other(-1), active(0), _end_item(0) { }
-    OutputItem(int p, const String &t, bool ei) : pos(p), text(t), _other(-1), active(0), _end_item(ei) { }
+    int _type;
+    enum { OI_NORMAL, OI_ELEMENT_REF, OI_ECLASS_REF };
+    
+    OutputItem() : pos(-1), _other(-1), active(0), _end_item(0), _type(OI_NORMAL) { }
+    OutputItem(int p, const String &t, bool ei) : pos(p), text(t), _other(-1), active(0), _end_item(ei), _type(OI_NORMAL) { }
+    OutputItem(int p, ElementT *e, bool ei) : pos(p), _other(-1), active(0), _end_item(ei), _type(OI_ELEMENT_REF) { _u.element = e; }
+    OutputItem(int p, ElementClassT *ec, bool ei) : pos(p), _other(-1), active(0), _end_item(ei), _type(OI_ECLASS_REF) { _u.eclass = ec; }
+
     bool end_item() const		{ return _end_item; }
     OutputItem *other() const;
     int other_index() const		{ return _other; }
@@ -292,6 +302,22 @@ static void
 add_item(int p1, const String &t1, int p2, const String &t2)
 {
     items.push_back(OutputItem(p1, t1, false));
+    end_items.push_back(OutputItem(p2, t2, true));
+    items.back()._other = end_items.back()._other = items.size() - 1;
+}
+
+static void
+add_item(int p1, ElementT *e1, int p2, const String &t2)
+{
+    items.push_back(OutputItem(p1, e1, false));
+    end_items.push_back(OutputItem(p2, t2, true));
+    items.back()._other = end_items.back()._other = items.size() - 1;
+}
+
+static void
+add_item(int p1, ElementClassT *e1, int p2, const String &t2)
+{
+    items.push_back(OutputItem(p1, e1, false));
     end_items.push_back(OutputItem(p2, t2, true));
     items.back()._other = end_items.back()._other = items.size() - 1;
 }
@@ -349,14 +375,14 @@ prepare_items(int last_pos)
     // update class references
     for (int i = 0; i < items.size(); i++) {
 	OutputItem *s = &items[i], *e = s->other();
-	if (s->text[0] == '{') {
-	    int cid;
-	    cp_integer(s->text.substring(1), &cid);
-	    if (String href = class_href(cid2class[cid])) {
+	if (s->_type == OutputItem::OI_ECLASS_REF) {
+	    if (String href = class_href(s->_u.eclass)) {
 		s->text = "<a href='" + href + "'>";
 		e->text = "</a>";
 	    } else
 		s->text = "";
+	} else if (s->_type == OutputItem::OI_ELEMENT_REF) {
+	    s->text = "<span title='" + s->_u.element->name() + " :: " + s->_u.element->type_name() + "'>";
 	}
     }
     
@@ -400,6 +426,12 @@ class PrettyLexerTInfo : public LexerTInfo { public:
     void add_item(const char *pos1, const String &s1, const char *pos2, const String &s2) {
 	::add_item(pos1 - _config.begin(), s1, pos2 - _config.begin(), s2);
     }
+    void add_item(const char *pos1, ElementT *e1, const char *pos2, const String &s2) {
+	::add_item(pos1 - _config.begin(), e1, pos2 - _config.begin(), s2);
+    }
+    void add_item(const char *pos1, ElementClassT *e1, const char *pos2, const String &s2) {
+	::add_item(pos1 - _config.begin(), e1, pos2 - _config.begin(), s2);
+    }
     void notify_comment(const char *pos1, const char *pos2) {
 	add_item(pos1, "<span class='c-cmt'>", pos2, "</span>");
     }
@@ -420,10 +452,10 @@ class PrettyLexerTInfo : public LexerTInfo { public:
 	add_class_href(ec, "#" + link_class_decl(ec));
     }
     void notify_class_extension(ElementClassT *ec, const char *pos1, const char *pos2) {
-	add_item(pos1, "{" + String(cid(ec)), pos2, "");
+	add_item(pos1, ec, pos2, "");
     }
     void notify_class_reference(ElementClassT *ec, const char *pos1, const char *pos2) {
-	add_item(pos1, "{" + String(cid(ec)), pos2, "");
+	add_item(pos1, ec, pos2, "");
     }
     void notify_element_declaration(ElementT *e, const char *pos1, const char *pos2, const char *decl_pos2) {
 	add_item(pos1, "<a name='" + link_element_decl(e) + "'>", pos2, "</a>");
@@ -431,7 +463,7 @@ class PrettyLexerTInfo : public LexerTInfo { public:
 	notify_element_reference(e, pos1, decl_pos2);
     }
     void notify_element_reference(ElementT *e, const char *pos1, const char *pos2) {
-	add_item(pos1, "<span title='" + e->name() + " :: " + e->type_name() + "'>", pos2, "</span>");
+	add_item(pos1, e, pos2, "</span>");
     }
 
     String _config;
