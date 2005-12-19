@@ -1,3 +1,8 @@
+2005-12-19 Monday 11:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.62), configure.in (1.269): change the way
+	  --enable-all-elements is calculated to allow symbolic links
+
 2005-12-18 Sunday 22:55  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/sr/ettstat.hh (1.20): shrink ett data structure to
