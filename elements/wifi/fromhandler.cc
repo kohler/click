@@ -84,7 +84,8 @@ char_to_hex(char c)
 Packet *
 FromHandler::get_packet()
 {
-    String s = HandlerCall::call_read(_handler, router());
+    HandlerCall hc(_handler);
+    String s = hc.call_read();
     if (s.length() <= 1) {
 	return 0;
     }
