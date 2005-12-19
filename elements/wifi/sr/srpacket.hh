@@ -62,14 +62,14 @@ private:
 public:  
 	bool      flag(int f) { return ntohs(_flags) & f;  }
 	uint16_t  data_len()  { return ntohs(_dlen); }
-	IPAddress get_qdst()  { return ntohl(_qdst); }
+	IPAddress get_qdst()  { return _qdst; }
 	uint32_t  seq()       { return ntohl(_seq); }
 	uint32_t  data_seq()  { return ntohl(_qdst); }
 
 	void      set_flag(uint16_t f)       { _flags = htons(ntohs(_flags) | f); }
 	void      unset_flag(uint16_t f)     { _flags = htons(ntohs(_flags) & !f);  }
 	void      set_data_len(uint16_t len) { _dlen = htons(len); }
-	void      set_qdst(IPAddress ip)     { _qdst = htonl(ip); }
+	void      set_qdst(IPAddress ip)     { _qdst = ip; }
 	void      set_seq(uint32_t n)        { _seq = htonl(n); }
 	void      set_data_seq(uint32_t n)   { _qdst = htonl(n); }
 
@@ -104,12 +104,12 @@ public:
 		      uint32_t age) {
 		uint32_t *ndx = (uint32_t *) (this+1);
 		ndx += link * 5;
-		ndx[0] = htonl(a);
+		ndx[0] = a;
 		ndx[1] = htonl(fwd);
 		ndx[2] = htonl(rev);
 		ndx[3] = htonl(seq);
 		ndx[4] = htonl(age);
-		ndx[5] = htonl(b);
+		ndx[5] = b;
 	}	
 	uint32_t get_link_fwd(int link) {
 		uint32_t *ndx = (uint32_t *) (this+1);
@@ -135,12 +135,12 @@ public:
 	IPAddress get_link_node(int link) {
 		uint32_t *ndx = (uint32_t *) (this+1);
 		ndx += link * 5;
-		return ntohl(ndx[0]);
+		return ndx[0];
 	}	
 	void set_link_node(int link, IPAddress ip) {
 		uint32_t *ndx = (uint32_t *) (this+1);
 		ndx += link * 5;
-		ndx[0] = htonl(ip);
+		ndx[0] = ip;
 	}
 	Path get_path() {
 		Path p;

@@ -314,14 +314,14 @@ ETTStat::send_probe()
 
   link_probe *lp = (struct link_probe *) (p->data() + sizeof(click_ether));
   lp->_version = _ett_version;
-  lp->_ip = htonl(_ip);
-  lp->_seq = htonl(p->timestamp_anno().sec());
+  lp->_ip = _ip;
+  lp->_seq = htons(p->timestamp_anno().sec());
   lp->_period = htonl(_period);
   lp->_tau = htonl(_tau);
   lp->_sent = htonl(_sent);
   lp->_flags = 0;
-  lp->_rate = htonl(rate);
-  lp->_size = htonl(size);
+  lp->_rate = htons(rate);
+  lp->_size = htons(size);
   lp->_num_probes = htonl(_ads_rs.size());
   
   uint8_t *ptr =  (uint8_t *) (lp + 1);
@@ -364,7 +364,7 @@ ETTStat::send_probe()
       }
       num_entries++;
       link_entry *entry = (struct link_entry *)(ptr); 
-      entry->_ip = htonl(probe->_ip);
+      entry->_ip = probe->_ip;
       entry->_seq = htonl(probe->_seq);	
       if ((uint32_t) probe->_ip > (uint32_t) _ip) {
 	entry->_seq = htonl(lp->_seq);
@@ -388,7 +388,7 @@ ETTStat::send_probe()
 	fwd.push_back(lnfo->_fwd);
 	rev.push_back(lnfo->_rev);
       }
-      update_link(_ip, entry->_ip, rates, fwd, rev, entry->_seq);
+      update_link(_ip, probe->_ip, rates, fwd, rev, entry->_seq);
 
       ptr += probe->_probe_types.size()*sizeof(link_info);
     }
@@ -460,9 +460,7 @@ ETTStat::simple_action(Packet *p)
 		     this,
 		     lp->_version,
 		     EtherAddress(eh->ether_shost).s().c_str());
-    }
-
-    
+    }    
     p->kill();
     return 0;
   }
@@ -481,8 +479,7 @@ ETTStat::simple_action(Packet *p)
   }
 
 
-  IPAddress ip = IPAddress(ntohl(lp->_ip));
-
+  IPAddress ip = lp->_ip;
   if (ip == _ip) {
     click_chatter("%{element} got own packet %s\n",
 		  this,
@@ -495,9 +492,9 @@ ETTStat::simple_action(Packet *p)
     _rev_arp.insert(EtherAddress(eh->ether_shost), ip);
   }
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
-  uint8_t rate = ceh->rate;
+  uint16_t rate = ceh->rate;
 
-  if (ceh->rate != ntohl(lp->_rate)) {
+  if (ceh->rate != ntohs(lp->_rate)) {
     click_chatter("%{element} packet says rate %d is %d\n",
 		  this,
 		  ntohl(lp->_rate),
@@ -506,7 +503,7 @@ ETTStat::simple_action(Packet *p)
     return 0;
   }
 
-  probe_t probe(now, ntohl(lp->_seq), ntohl(lp->_rate), ntohl(lp->_size), ceh->rssi, ceh->silence);
+  probe_t probe(now, ntohl(lp->_seq), ntohl(lp->_rate), ntohs(lp->_size), ceh->rssi, ceh->silence);
   int new_period = ntohl(lp->_period);
   probe_list_t *l = _bcast_stats.findp(ip);
   int x = 0;
@@ -533,7 +530,7 @@ ETTStat::simple_action(Packet *p)
     l->_probes.clear();
   }
   
-  RateSize rs = RateSize(rate, ntohl(lp->_size));
+  RateSize rs = RateSize(rate, ntohs(lp->_size));
   l->_period = new_period;
   l->_tau = ntohl(lp->_tau);
   l->_sent = ntohl(lp->_sent);
@@ -585,7 +582,7 @@ ETTStat::simple_action(Packet *p)
   while (ptr < end && link_number < num_links) {
     link_number++;
     link_entry *entry = (struct link_entry *)(ptr); 
-    IPAddress neighbor = ntohl(entry->_ip);
+    IPAddress neighbor = entry->_ip;
     int num_rates = ntohl(entry->_num_rates);
     if (0) {
       click_chatter("%{element} on link number %d / %d: neighbor %s, num_rates %d\n",
