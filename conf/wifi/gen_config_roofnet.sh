@@ -11,7 +11,7 @@ if [ -f /tmp/is_gateway ]; then
     GATEWAY="true"
 fi
 WIRELESS_MAC=`/home/roofnet/scripts/dev_to_mac ath0`
-SUFFIX=`/home/roofnet/scripts/mac_to_ip $MAC`
+SUFFIX=`/home/roofnet/scripts/mac_to_ip $WIRELESS_MAC`
 SRCR_IP="5.$SUFFIX"
 SRCR_NM="255.0.0.0"
 SRCR_NET="5.0.0.0"
