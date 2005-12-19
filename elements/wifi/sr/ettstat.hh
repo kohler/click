@@ -71,7 +71,7 @@ public:
   }
 };
 
-static const uint8_t _ett_version = 0x03;
+static const uint8_t _ett_version = 0x04;
 
 class ETTStat : public Element {
 
@@ -97,8 +97,8 @@ public:
 	  uint16_t _cksum;     // internal checksum
 	  uint16_t _psz;       // total packet size, including eth hdr
 
-	  uint32_t _rate;
-	  uint32_t _size;
+	  uint16_t _rate;
+	  uint16_t _size;
 
 	  uint32_t _ip;
 	  uint32_t _flags;
