@@ -136,8 +136,8 @@ AC_DEFUN(ELEMENTS_ARG_ENABLE,
 [enable_]patsubst([$1], -, _)=$3)dnl
 test "x$enable_all_elements" = xyes -a ["x$enable_]patsubst([$1], -, _)["] = xNO && [enable_]patsubst([$1], -, _)[=yes]
 if test ["x$enable_]patsubst([$1], -, _)["] = xyes; then
-  element_groups="$element_groups $1"
-  $4
+    :
+    $4
 fi])
 
 ELEMENTS_ARG_ENABLE(analysis, [include elements for network analysis], NO)
@@ -157,6 +157,12 @@ ELEMENTS_ARG_ENABLE(standard, [include standard elements], yes)
 ELEMENTS_ARG_ENABLE(tcpudp, [include TCP and UDP elements], yes)
 ELEMENTS_ARG_ENABLE(test, [include regression test elements], NO)
 ELEMENTS_ARG_ENABLE(wifi, [include wifi support], NO)
+
+for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^exopc$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d')`; do
+    enableval=`eval 'echo $'"enable_$i"`
+    test "x$enable_all_elements" = xyes -a "x$enableval" '!=' 'no' && enableval=yes
+    test -d "$srcdir/elements/$i" -a "$enableval" = "yes" && element_groups="$element_groups $i"
+done
 
 elements_vpath="`(cd $srcdir/elements; for i in $element_groups; do find $i -follow -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' :`"
 AC_SUBST(elements_vpath)
