@@ -1,3 +1,7 @@
+2005-12-19 Monday 18:37  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/gen_config_roofnet.sh (1.2): fix typo.
+
 2005-12-19 Monday 11:06  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.62), configure.in (1.269): change the way
