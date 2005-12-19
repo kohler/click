@@ -1,3 +1,8 @@
+2005-12-18 Sunday 21:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/lexer.cc (1.83), tools/click-pretty/click-pretty.cc (1.30):
+	  click-pretty fix for anonymous element names
+
 2005-12-18 Sunday 20:02  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/fromhandler.cc (1.2): fix to compile with latest
