@@ -1,3 +1,8 @@
+2005-12-18 Sunday 22:55  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/ettstat.hh (1.20): shrink ett data structure to
+	  fit in 60 byte packets.
+
 2005-12-18 Sunday 21:11  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/lexer.cc (1.83), tools/click-pretty/click-pretty.cc (1.30):
