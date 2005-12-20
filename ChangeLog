@@ -1,3 +1,13 @@
+2005-12-20 Tuesday 10:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-bsdmodule.h.in (1.9), config-linuxmodule.h.in (1.14),
+	  configure (1.63), configure.in (1.270), doc/click-install.1
+	  (1.13), etc/libclick/lc-configure.in (1.44),
+	  include/click/routerthread.hh (1.36), lib/routerthread.cc (1.60),
+	  linuxmodule/kernelversion.c (1.10), linuxmodule/sched.cc (1.55),
+	  tools/click-install/click-install.cc (1.60): make greediness
+	  run-time configurable, rather than compile-time configurable
+
 2005-12-19 Monday 19:01  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/sr/ettstat.cc (1.30): another byte-order bug.
