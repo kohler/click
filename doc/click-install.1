@@ -128,6 +128,17 @@ option, then the current priority is left unchanged.
 '
 .Sp
 .TP 5
+.BR \-G ", " "\-\-greedy"
+The Click kernel module will claim an entire CPU, not allowing any other
+process to run.  This option only matters when
+.B click-install
+installs a Click kernel module; the greediness of an installed kernel
+module cannot be changed.  (The
+.B \-\-uninstall
+option is useful here.)
+'
+.Sp
+.TP 5
 .BR \-p ", " "\-\-private"
 Make the /proc/click directory hierarchy readable only by root. Generally,
 files under /proc/click are writable only by root, but readable by

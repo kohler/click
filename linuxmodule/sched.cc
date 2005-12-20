@@ -341,12 +341,14 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 #if __MTCLICK__
 extern "C" int click_threads();
 #endif
+extern "C" int click_greedy();
 
 void
 click_init_sched(ErrorHandler *errh)
 {
   spin_lock_init(&click_thread_lock);
   click_thread_pids = new Vector<int>;
+  bool greedy = click_greedy();
 
 #if __MTCLICK__
   click_master = new Master(click_threads());
@@ -363,8 +365,10 @@ click_init_sched(ErrorHandler *errh)
 
   for (int i = 0; i < click_master->nthreads(); i++) {
     click_master->use();
+    RouterThread *thread = click_master->thread(i);
+    thread->set_greedy(greedy);
     pid_t pid = kernel_thread 
-      (click_sched, click_master->thread(i), CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
+      (click_sched, thread, CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
     if (pid < 0) {
       errh->error("cannot create kernel thread for Click thread %i!", i); 
       click_master->unuse();

@@ -66,7 +66,7 @@ RouterThread::RouterThread(Master *m, int id)
 #endif
     _task_lock_waiting = 0;
     _pending = 0;
-#ifdef CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
     _sleeper = 0;
 #endif
 #ifdef HAVE_ADAPTIVE_SCHEDULER
@@ -88,12 +88,16 @@ RouterThread::RouterThread(Master *m, int id)
     _iters_per_timers = 32;
 #endif
 
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL
     _iters_per_os = 64;           /* iterations per select() */
 #else
     _iters_per_os = 2;          /* iterations per OS schedule() */
 #endif
 
+#if CLICK_LINUXMODULE || CLICK_BSDMODULE
+    _greedy = false;
+#endif
+    
 #if CLICK_DEBUG_SCHEDULING
     _thread_state = S_BLOCKED;
     _driver_epoch = 0;
@@ -374,9 +378,10 @@ RouterThread::run_os()
 
 #if CLICK_USERLEVEL
     _master->run_selects(active());
-#elif !defined(CLICK_GREEDY)
-# if CLICK_LINUXMODULE		/* Linux kernel module */
-    if (active()) {
+#elif CLICK_LINUXMODULE		/* Linux kernel module */
+    if (_greedy)
+	/* do nothing */;
+    else if (active()) {
       short_pause:
 	SET_STATE(S_PAUSED);
 	current->state = TASK_RUNNING;
@@ -397,17 +402,18 @@ RouterThread::run_os()
     } else
 	goto block;
     SET_STATE(S_RUNNING);
-# elif defined(CLICK_BSDMODULE)
-    if (active()) {	// just schedule others for a moment
+#elif defined(CLICK_BSDMODULE)
+    if (_greedy)
+	/* do nothing */;
+    else if (active()) {	// just schedule others for a moment
 	yield(curproc, NULL);
     } else {
 	_sleep_ident = &_sleep_ident;	// arbitrary address, != NULL
 	tsleep(&_sleep_ident, PPAUSE, "pause", 1);
 	_sleep_ident = NULL;
     }
-# else
-#  error "Compiling for unknown target."
-# endif
+#else
+# error "Compiling for unknown target."
 #endif
     
     nice_lock_tasks();

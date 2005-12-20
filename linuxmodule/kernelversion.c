@@ -1,8 +1,9 @@
 /*
  * kernelversion.c -- make sure we get a Linux module kernel version variable
- * Robert Morris
+ * Robert Morris, Eddie Kohler
  *
  * Copyright (c) 1999 Massachusetts Institute of Technology
+ * Copyright (c) 2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -39,6 +40,10 @@ MODULE_PARM_DESC(threads, "number of Click threads per router [1]");
 MODULE_LICENSE("Dual BSD/GPL");
 #endif
 
+static int greedy = 0;
+MODULE_PARM(greedy, "i");
+MODULE_PARM_DESC(greedy, "Click takes a whole CPU [0]");
+
 int
 click_accessible(void)
 {
@@ -52,3 +57,9 @@ click_threads(void)
   return threads;
 }
 #endif
+
+int
+click_greedy(void)
+{
+    return greedy;
+}

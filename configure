@@ -888,8 +888,6 @@ Optional Features:
   --enable-task-heap      use heap for task list
   --enable-adaptive       use adaptive scheduler to flexibly arbitrate between
                           Click and the kernel (EXPERIMENTAL)
-  --enable-greedy         kernel module keeps CPU forever (requires SMP;
-                          provides more predictable performance)
   --enable-dmalloc        enable debugging malloc
   --enable-kassert        enable kernel assertions
 
@@ -7999,7 +7997,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 8002 "configure"
+#line 8000 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -12103,20 +12101,6 @@ fi;
 if test "x$enable_adaptive" = xyes; then
     cat >>confdefs.h <<\_ACEOF
 #define HAVE_ADAPTIVE_SCHEDULER 1
-_ACEOF
-
-fi
-
-# Check whether --enable-greedy or --disable-greedy was given.
-if test "${enable_greedy+set}" = set; then
-  enableval="$enable_greedy"
-  :
-else
-  enable_greedy=no
-fi;
-if test "x$enable_greedy" = xyes; then
-    cat >>confdefs.h <<\_ACEOF
-#define CLICK_GREEDY 1
 _ACEOF
 
 fi

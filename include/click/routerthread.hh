@@ -62,6 +62,11 @@ class RouterThread
     void set_cpu_share(unsigned min_share, unsigned max_share);
 #endif
 
+#if CLICK_LINUXMODULE || CLICK_BSDMODULE
+    bool greedy() const			{ return _greedy; }
+    void set_greedy(bool g)		{ _greedy = g; }
+#endif
+    
     inline void wake();
 
 #if CLICK_DEBUG_SCHEDULING
@@ -71,7 +76,7 @@ class RouterThread
     uint32_t driver_epoch() const	{ return _driver_epoch; }
     uint32_t driver_task_epoch() const	{ return _driver_task_epoch; }
     timeval task_epoch_time(uint32_t epoch) const;
-# ifdef CLICK_LINUXMODULE
+# if CLICK_LINUXMODULE
     struct task_struct *sleeper() const	{ return _sleeper; }
 # endif
 #endif
@@ -94,15 +99,17 @@ class RouterThread
     atomic_uint32_t _task_lock_waiting;
     atomic_uint32_t _pending;
 
-#ifdef CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
     struct task_struct *_sleeper;
+    bool _greedy;
 #endif
     
-#ifdef CLICK_BSDMODULE
+#if CLICK_BSDMODULE
     // XXX FreeBSD
     u_int64_t _old_tsc; /* MARKO - temp. */
     void *_sleep_ident;
     int _oticks;
+    bool _greedy;
 #endif
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
@@ -283,7 +290,7 @@ RouterThread::unlock_tasks()
 inline void
 RouterThread::wake()
 {
-#ifdef CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
     if (_sleeper)
 	wake_up_process(_sleeper);
 #endif

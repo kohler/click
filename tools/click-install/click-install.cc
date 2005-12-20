@@ -56,6 +56,7 @@
 #define THREADS_OPT		309
 #define PRIVATE_OPT		310
 #define PRIORITY_OPT		311
+#define GREEDY_OPT		312
 
 static Clp_Option options[] = {
   { "cabalistic", 0, PRIVATE_OPT, 0, Clp_Negate },
@@ -70,6 +71,7 @@ static Clp_Option options[] = {
   { "map", 'm', MAP_OPT, 0, 0 },
   { "private", 'p', PRIVATE_OPT, 0, Clp_Negate },
   { "threads", 't', THREADS_OPT, Clp_ArgUnsigned, 0 },
+  { "greedy", 'G', GREEDY_OPT, 0, Clp_Negate },
 #endif
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
   { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
@@ -112,6 +114,7 @@ Options:\n\
   printf("\
   -p, --private            Make /proc/click readable only by root.\n\
   -t, --threads N          Use N threads (multithreaded Click only).\n\
+  -G, --greedy             Make Click thread take up an entire CPU.\n\
   -m, --map                Print load map to the standard output.\n");
 #endif
   printf("\
@@ -332,6 +335,7 @@ main(int argc, char **argv)
 #if FOR_LINUXMODULE
   bool accessible = true;
   int threads = 1;
+  bool greedy = false;
   output_map = false;
 #endif
   
@@ -348,7 +352,7 @@ main(int argc, char **argv)
       printf("click-install (Click) %s\n", CLICK_VERSION);
       printf("Click packages in %s, binaries in %s\n", CLICK_LIBDIR, CLICK_BINDIR);
       printf("Copyright (c) 1999-2000 Massachusetts Institute of Technology\n\
-Copyright (c) 2000 Mazu Networks, Inc.\n\
+Copyright (c) 2000-2005 Mazu Networks, Inc.\n\
 Copyright (c) 2002 International Computer Science Institute\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
@@ -391,6 +395,10 @@ particular purpose.\n");
      case MAP_OPT:
       output_map = !clp->negated;
       break;
+
+      case GREEDY_OPT:
+	greedy = !clp->negated;
+	break;
 #endif
 
      case UNINSTALL_OPT:
@@ -474,6 +482,8 @@ particular purpose.\n");
     String options;
     if (threads > 1)
       options += "threads=" + String(threads);
+    if (greedy)
+	options += " greedy=1";
     if (!accessible)
       options += " accessible=0";
     install_module(click_o, options, errh);
