@@ -497,13 +497,13 @@ ETTStat::simple_action(Packet *p)
   if (ceh->rate != ntohs(lp->_rate)) {
     click_chatter("%{element} packet says rate %d is %d\n",
 		  this,
-		  ntohl(lp->_rate),
+		  ntohs(lp->_rate),
 		  ceh->rate);
     p->kill();
     return 0;
   }
 
-  probe_t probe(now, ntohl(lp->_seq), ntohl(lp->_rate), ntohs(lp->_size), ceh->rssi, ceh->silence);
+  probe_t probe(now, ntohl(lp->_seq), ntohs(lp->_rate), ntohs(lp->_size), ceh->rssi, ceh->silence);
   int new_period = ntohl(lp->_period);
   probe_list_t *l = _bcast_stats.findp(ip);
   int x = 0;
