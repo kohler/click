@@ -1,3 +1,7 @@
+2005-12-21 Wednesday 11:57  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/athdesc.h (1.2): cleanup.
+
 2005-12-21 Wednesday 11:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/addressinfo.cc (1.37): attempt to address Bart
