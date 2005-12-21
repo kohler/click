@@ -102,14 +102,14 @@ inline int
 ratecode_to_dot11(int ratecode) {
 	switch (ratecode) {
 		/* a */
-	case 0x0b: return 12;  
-	case 0x0f: return 18;  
-	case 0x0a: return 24;  
-	case 0x0e: return 36;  
-	case 0x09: return 48;  
-	case 0x0d: return 72;  
-	case 0x08: return 96;  
-	case 0x0c: return 108; 
+	case 11: return 12;  
+	case 15: return 18;  
+	case 10: return 24;  
+	case 14: return 36;  
+	case 9: return 48;  
+	case 13: return 72;  
+	case 8: return 96;  
+	case 12: return 108; 
 		
 	case 0x1b: return 2;   
 	case 0x1a: return 4;   
@@ -125,14 +125,15 @@ ratecode_to_dot11(int ratecode) {
 inline int 
 dot11_to_ratecode(int dot11) {
 	switch (dot11) {
-	  case 12:  return 0x0b; 
-	  case 18:  return 0x0f; 
-	  case 24:  return 0x0a; 
-	  case 36:  return 0x0e; 
-	  case 48:  return 0x09; 
-	  case 72:  return 0x0d; 
-	  case 96:  return 0x08; 
-	  case 108: return 0x0c; 
+	  case 12:  return 11; 
+	  case 18:  return 15; 
+	  case 24:  return 10; 
+	  case 36:  return 14; 
+	  case 48:  return 9; 
+	  case 72:  return 13; 
+	  case 96:  return 8; 
+	  case 108: return 12;
+
 	  case 2:   return 0x1b; 
 	  case 4:   return 0x1e; 
 	  case 11:  return 0x1d; 
