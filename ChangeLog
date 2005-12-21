@@ -1,3 +1,9 @@
+2005-12-20 Tuesday 22:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/timer.hh (1.27), lib/element.cc (1.110),
+	  lib/notifier.cc (1.21), lib/task.cc (1.43), lib/timer.cc (1.39):
+	  doxygen updates
+
 2005-12-20 Tuesday 10:47  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* config-bsdmodule.h.in (1.9), config-linuxmodule.h.in (1.14),
