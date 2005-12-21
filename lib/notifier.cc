@@ -359,9 +359,9 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
  * derived signal will also be active.  Element @a e's code generally uses the
  * resulting signal to decide whether or not to reschedule itself.
  *
- * A nonnull @a task argument is added to each located notifier as a listener.
- * Thus, when a notifier becomes active (when packets become available), the
- * @a task will be rescheduled.
+ * If @a task is nonnull, then @a task becomes a listener for each located
+ * notifier.  Thus, when a notifier becomes active (when packets become
+ * available), @a task will be rescheduled.
  *
  * <h3>Supporting upstream_empty_signal()</h3>
  *
@@ -412,9 +412,9 @@ Notifier::upstream_empty_signal(Element* e, int port, Task* task)
  * Element @a e's code generally uses the resulting signal to decide whether
  * or not to reschedule itself.
  *
- * A nonnull @a task argument is added to each located notifier as a listener.
- * Thus, when a notifier becomes active (when space become available), the @a
- * task will be rescheduled.
+ * If @a task is nonnull, then @a task becomes a listener for each located
+ * notifier.  Thus, when a notifier becomes active (when space become
+ * available), @a task will be rescheduled.
  *
  * <h3>Supporting downstream_full_signal()</h3>
  *

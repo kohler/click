@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 /** @class Task
- * @brief A frequently-scheduled computation.
+ * @brief Represents a frequently-scheduled computational task.
  *
  * Click schedules a router's CPU or CPUs with one or more <em>task
  * queues</em>.  These queues are simply lists of @e tasks, which represent

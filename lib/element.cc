@@ -2170,8 +2170,8 @@ Element::run_timer(Timer *timer)
 /** @brief Called to run an element's timer (deprecated).
  *
  * @deprecated This method is deprecated.  Elements should override the
- * run_timer(Timer *) function instead, which can be used for multiple Timer
- * objects.
+ * run_timer(Timer *) function instead, which can differentiate between
+ * multiple Timer objects.
  *
  * The Timer(Element *) constructor creates a Timer object that calls this
  * method (via Element::run_timer(Timer *)) when it fires.  The default
