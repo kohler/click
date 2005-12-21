@@ -1,3 +1,8 @@
+2005-12-21 Wednesday 11:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/addressinfo.cc (1.37): attempt to address Bart
+	  Braem complaints about AddressInfo
+
 2005-12-21 Wednesday 01:28  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/timer.cc (1.40): doxygen
