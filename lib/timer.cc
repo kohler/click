@@ -27,10 +27,45 @@ CLICK_DECLS
 
 
 /** @class Timer
- * @brief Represents a computational task that should execute at a given time.
- *
- * 
- *
+ @brief Represents a computational task that should execute at a given time.
+
+ Click Timer objects represent computational tasks that should run
+ periodically, or at specific times.  Ping is the classic example, although
+ many elements also garbage-collect their internal state based on timers.  An
+ element that needs to run occasional timed tasks should include and
+ initialize a Timer instance variable.  When scheduled, many timers call their
+ associated element's @link Element::run_timer() run_timer()@endlink
+ method.
+
+ Each scheduled Timer has a single expiration time, measured as a Timestamp
+ object.  Periodic timers are implemented by having the timer's callback
+ function reschedule the timer as appropriate.
+
+ Elements desiring extremely frequent access to the CPU, up to tens of
+ thousands of times a second, should use a Task object instead.  However,
+ Tasks essentially busy-wait, taking up all available CPU.  An element that
+ has little to do should schedule itself with a Timer or similar object,
+ allowing the main Click driver to run other tasks or even to sleep.  There is
+ a tradeoff, and some elements combine a Task and a Timer to get the benefits
+ of both; for example, RatedSource uses a Task at high rates and a Timer at
+ low rates.
+
+ Timers are checked and fired relatively infrequently.  Particularly at user
+ level, there can be a significant delay between a Timer's nominal expiration
+ time and the actual time it runs.  While we may attempt to address this
+ problem in future, for now elements that desire extremely precise timings
+ should combine a Timer with a Task; the Timer is set to go off a bit before
+ the true expiration time, after which the Task polls the CPU until the actual
+ expiration time arrives.
+ 
+ Since Click is cooperatively scheduled, any timer callback should run for
+ just a short period of time.  Very long callbacks can inappropriately delay
+ other timers and periodic events.  We may address this problem in a future
+ release, but for now, keep timers short.
+
+ The Click core stores timers in a heap, so most timer operations (including
+ scheduling and unscheduling) take @e O(log @e n) time and Click can handle
+ very large numbers of timers.
  */
 
 /*
