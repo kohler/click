@@ -1,3 +1,7 @@
+2005-12-21 Wednesday 01:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/timer.cc (1.40): doxygen
+
 2005-12-20 Tuesday 22:40  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/timer.hh (1.27), lib/element.cc (1.110),
