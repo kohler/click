@@ -399,7 +399,7 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
 	return true;
 
     // if it's a device name, return its Ethernet address
-#ifdef CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
     // in the Linux kernel, just look at the device list
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 #  define dev_put(dev) /* nada */
@@ -411,14 +411,14 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
 	return true;
     } else if (dev)
 	dev_put(dev);
-#elif CLICK_USERLEVEL && (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__))
-    if (query_netdevice(s, store, 'e', 6))
-	return true;
 #elif CLICK_NS
     simclick_sim mysiminst = e->router()->master()->siminst();
     char tmp[255];
     simclick_sim_macaddr_from_name(mysiminst, s.c_str(), tmp, 255);
     if (tmp[0] && cp_ethernet_address(tmp, store))
+	return true;
+#elif CLICK_USERLEVEL && (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__))
+    if (query_netdevice(s, store, 'e', 6))
 	return true;
 #endif
     
