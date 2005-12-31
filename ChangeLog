@@ -1,3 +1,109 @@
+2005-12-31 Saturday 13:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/Doxyfile (1.5), elements/analysis/aggcounter.cc (1.35),
+	  elements/analysis/aggpktcounter.cc (1.9),
+	  elements/analysis/aggregatefirst.cc (1.8),
+	  elements/analysis/aggregatelast.cc (1.10),
+	  elements/analysis/fromdagdump.cc (1.31),
+	  elements/analysis/fromnlanrdump.cc (1.12),
+	  elements/analysis/timestampaccum.cc (1.6),
+	  elements/analysis/toipflowdumps.cc (1.40),
+	  elements/aqm/adaptivered.cc (1.14), elements/aqm/pi.cc (1.16),
+	  elements/aqm/red.cc (1.49), elements/ethernet/arpfaker.cc (1.28),
+	  elements/ethernet/arpquerier.cc (1.59),
+	  elements/ethernet/ip6ndsolicitor.cc (1.25),
+	  elements/etherswitch/spantree.cc (1.36),
+	  elements/grid/ackretrysender.cc (1.9),
+	  elements/grid/ackretrysender2.cc (1.9),
+	  elements/grid/bottleneckmetric.cc (1.5),
+	  elements/grid/checkgridheader.cc (1.29),
+	  elements/grid/dsdvroutetable.cc (1.80),
+	  elements/grid/dsrroutetable.cc (1.14),
+	  elements/grid/e2elossmetric.cc (1.8), elements/grid/etx2metric.cc
+	  (1.5), elements/grid/etxmetric.cc (1.8),
+	  elements/grid/filterbyrange.cc (1.32), elements/grid/fixdstloc.cc
+	  (1.17), elements/grid/fixsrcloc.cc (1.34),
+	  elements/grid/floodinglocquerier.cc (1.45),
+	  elements/grid/gridgatewayinfo.cc (1.13),
+	  elements/grid/gridlocationinfo.cc (1.25),
+	  elements/grid/gridlocationinfo2.cc (1.6),
+	  elements/grid/gridlogger.cc (1.11), elements/grid/gridlogger.hh
+	  (1.25), elements/grid/gridprobehandler.cc (1.20),
+	  elements/grid/gridprobereplyreceiver.cc (1.18),
+	  elements/grid/gridroutetable.cc (1.75), elements/grid/hello.cc
+	  (1.49), elements/grid/incseqno.cc (1.8),
+	  elements/grid/linkstat.cc (1.35), elements/grid/lirmetric.cc
+	  (1.7), elements/grid/locqueryresponder.cc (1.33),
+	  elements/grid/loctable.cc (1.18),
+	  elements/grid/lookupgeogridroute.cc (1.37),
+	  elements/grid/lookuplocalgridroute.cc (1.56),
+	  elements/grid/lookuplocalgridroute2.cc (1.7),
+	  elements/grid/lrhello.cc (1.34), elements/grid/movesim.cc (1.21),
+	  elements/grid/packetlogger2.cc (1.8), elements/grid/pep.cc
+	  (1.31), elements/grid/printgrid.cc (1.38),
+	  elements/grid/radiosim.cc (1.26), elements/grid/regionpep.cc
+	  (1.23), elements/grid/simplelocquerier.cc (1.22),
+	  elements/grid/threshmetric.cc (1.9),
+	  elements/grid/updateroutes.cc (1.38),
+	  elements/grid/yarvismetric.cc (1.7),
+	  elements/icmp/icmppingrewriter.cc (1.28),
+	  elements/icmp/icmpsendpings.cc (1.38),
+	  elements/ip/checkipheader.cc (1.56),
+	  elements/ip/ipaddrpairrewriter.cc (1.6),
+	  elements/ip/ipaddrrewriter.cc (1.27), elements/ip/ripsend.cc
+	  (1.35), elements/linuxmodule/anydevice.cc (1.32),
+	  elements/linuxmodule/fromdevice.cc (1.88),
+	  elements/linuxmodule/sortedsched.cc (1.19),
+	  elements/linuxmodule/threadmonitor.cc (1.13),
+	  elements/local/bufconv.cc (1.14), elements/local/printairo.cc
+	  (1.9), elements/local/tcpack.cc (1.19), elements/local/toytcp.cc
+	  (1.27), elements/local/webgen.cc (1.22),
+	  elements/simple/simplerrsched.hh (1.4),
+	  elements/standard/burster.cc (1.30),
+	  elements/standard/pokehandlers.cc (1.38),
+	  elements/standard/quitwatcher.cc (1.24),
+	  elements/standard/scheduleinfo.cc (1.44),
+	  elements/standard/script.cc (1.3),
+	  elements/standard/spinlockacquire.cc (1.9),
+	  elements/standard/spinlockinfo.cc (1.10),
+	  elements/standard/spinlockrelease.cc (1.9),
+	  elements/standard/timedsink.cc (1.31),
+	  elements/standard/timedsource.cc (1.36),
+	  elements/tcpudp/iprewriter.cc (1.50),
+	  elements/tcpudp/tcprewriter.cc (1.44),
+	  elements/userlevel/chattersocket.cc (1.25),
+	  elements/userlevel/controlsocket.cc (1.65),
+	  elements/userlevel/fromdump.cc (1.100),
+	  elements/userlevel/fromhost.cc (1.11),
+	  elements/userlevel/ipflowrawsockets.cc (1.12),
+	  elements/userlevel/kerneltap.cc (1.47),
+	  elements/userlevel/kerneltun.cc (1.54),
+	  elements/userlevel/printold.cc (1.14),
+	  elements/userlevel/progressbar.cc (1.31),
+	  elements/wifi/arptable.cc (1.9), elements/wifi/availablerates.cc
+	  (1.12), elements/wifi/linkfailuredetection.cc (1.14),
+	  elements/wifi/linktable.cc (1.22), elements/wifi/madwifirate.cc
+	  (1.20), elements/wifi/txfeedbackstats.cc (1.8),
+	  elements/wifi/ap/beaconsource.cc (1.12),
+	  elements/wifi/frag/fragmentresender.cc (1.6),
+	  elements/wifi/sr/checksrheader.cc (1.8),
+	  elements/wifi/sr/ettstat.cc (1.31),
+	  elements/wifi/sr/gatewayselector.cc (1.17),
+	  elements/wifi/sr/localbroadcast.cc (1.10),
+	  elements/wifi/sr/metricflood.cc (1.10),
+	  elements/wifi/sr/setgateway.cc (1.8),
+	  elements/wifi/sr/setsourceroute.cc (1.6),
+	  elements/wifi/sr/setsrchecksum.cc (1.5),
+	  elements/wifi/sr/srforwarder.cc (1.16),
+	  elements/wifi/sr/srqueryforwarder.cc (1.14),
+	  include/click/element.hh (1.50), include/click/router.hh (1.78),
+	  include/click/timer.hh (1.28), include/click/timestamp.hh (1.7),
+	  lib/confparse.cc (1.145), lib/element.cc (1.111), lib/nameinfo.cc
+	  (1.6), lib/router.cc (1.184), lib/timestamp.cc (1.3): document
+	  Timestamp; rename Timer methods from reschedule_after_s to
+	  reschedule_after_sec and similar; rename Element::id() to
+	  Element::name(); some more changes
+
 2005-12-21 Wednesday 11:57  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/athdesc.h (1.2): cleanup.
