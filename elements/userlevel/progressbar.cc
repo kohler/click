@@ -192,7 +192,7 @@ ProgressBar::run_timer(Timer *)
 
     // exit if not in foreground
     if (!foregroundproc(STDERR_FILENO)) {
-	_timer.reschedule_after_ms(_interval);
+	_timer.reschedule_after_msec(_interval);
 	return;
     }
 
@@ -279,7 +279,7 @@ ProgressBar::run_timer(Timer *)
     }
 
     // check elapsed time
-    double elapsed = (now - _start_time - _stall_time).to_double();
+    double elapsed = (now - _start_time - _stall_time).doubleval();
 
     // collect time
     if (_status < ST_DONE
@@ -326,7 +326,7 @@ ProgressBar::run_timer(Timer *)
     }
 
     if (_status < ST_DONE)
-	_timer.reschedule_after_ms(_interval);
+	_timer.reschedule_after_msec(_interval);
     else
 	_active = false;
 }

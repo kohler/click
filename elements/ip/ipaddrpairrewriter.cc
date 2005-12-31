@@ -95,7 +95,7 @@ int
 IPAddrPairRewriter::initialize(ErrorHandler *)
 {
     _timer.initialize(this);
-    _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);
+    _timer.schedule_after_msec(GC_INTERVAL_SEC * 1000);
 
     // release memory to system on cleanup
     _map.set_arena(router()->arena_factory());
@@ -126,7 +126,7 @@ void
 IPAddrPairRewriter::run_timer(Timer *)
 {
     clean_map(_map, GC_INTERVAL_SEC * 1000);
-    _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);
+    _timer.schedule_after_msec(GC_INTERVAL_SEC * 1000);
 }
 
 IPAddrPairRewriter::IPAddrPairMapping *

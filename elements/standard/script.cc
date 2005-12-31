@@ -305,7 +305,7 @@ Script::initialize(ErrorHandler *errh)
 #if CLICK_USERLEVEL
     if (_type == TYPE_SIGNAL)
 	for (int i = 0; i < _signos.size(); i++)
-	    master()->add_signal_handler(_signos[i], router(), id() + ".run");
+	    master()->add_signal_handler(_signos[i], router(), name() + ".run");
 #endif
     
     return 0;
@@ -449,7 +449,7 @@ Script::step(int nsteps, int step_type, int njumps)
 #if CLICK_USERLEVEL
 	    if (_type == TYPE_SIGNAL)
 		for (int i = 0; i < _signos.size(); i++)
-		    master()->add_signal_handler(_signos[i], router(), id() + ".run");
+		    master()->add_signal_handler(_signos[i], router(), name() + ".run");
 #endif
 	    /* fallthru */
 	case INSN_EXIT:

@@ -48,14 +48,14 @@ ACKRetrySender::push(int port, Packet *p)
   if (!_waiting_packet) {
     // we aren't waiting for ACK
     if (_verbose)
-      click_chatter("ACKRetrySender %s: got unexpected ACK", id().c_str());
+      click_chatter("ACKRetrySender %s: got unexpected ACK", name().c_str());
     p->kill();
     return;
   }
 
   click_ether *e_ack = (click_ether *) p->data();
   if (ntohs(e_ack->ether_type) != ETHERTYPE_GRID_ACK) {
-    click_chatter("ACKRetrySender %d: got non-ACK packet on second input", id().c_str());
+    click_chatter("ACKRetrySender %d: got non-ACK packet on second input", name().c_str());
     p->kill();
     return;
   }
@@ -66,7 +66,7 @@ ACKRetrySender::push(int port, Packet *p)
       memcmp(e_ack->ether_dhost, e_waiting->ether_shost, 6)) {
     // no, it wasn't for our packet...
     if (_verbose)
-      click_chatter("ACKRetrySender %s: got ACK for wrong packet", id().c_str());
+      click_chatter("ACKRetrySender %s: got ACK for wrong packet", name().c_str());
     p->kill();
     return;
   }
@@ -102,7 +102,7 @@ ACKRetrySender::run_task()
   if (_max_tries > 1) {
     _waiting_packet = p->clone();
     _num_tries = 1;
-    _timer.schedule_after_ms(_timeout);
+    _timer.schedule_after_msec(_timeout);
   }
 
   check();
@@ -163,7 +163,7 @@ ACKRetrySender::run_timer(Timer *)
     _num_tries = 0;
   }
   else {
-    _timer.schedule_after_ms(_timeout);
+    _timer.schedule_after_msec(_timeout);
     _waiting_packet = p->clone();
     _num_tries++;
   }

@@ -145,7 +145,7 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
       return errh->error("timeout interval is too small");
   }
   else
-    click_chatter("%s: not timing out table entries", id().c_str());
+    click_chatter("%s: not timing out table entries", name().c_str());
 
   if (_period <= 0)
     return errh->error("period must be greater than 0");
@@ -172,11 +172,11 @@ int
 GridRouteTable::initialize(ErrorHandler *)
 {
   _hello_timer.initialize(this);
-  _hello_timer.schedule_after_ms(_period); // Send periodically
+  _hello_timer.schedule_after_msec(_period); // Send periodically
 
   _expire_timer.initialize(this);
   if (_timeout > 0)
-    _expire_timer.schedule_after_ms(EXPIRE_TIMER_PERIOD);
+    _expire_timer.schedule_after_msec(EXPIRE_TIMER_PERIOD);
 
   return 0;
 }
@@ -670,14 +670,14 @@ GridRouteTable::simple_action(Packet *packet)
    */  
   click_ether *eh = (click_ether *) packet->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
-    click_chatter("GridRouteTable %s: got non-Grid packet type", id().c_str());
+    click_chatter("GridRouteTable %s: got non-Grid packet type", name().c_str());
     packet->kill();
     return 0;
   }
   grid_hdr *gh = (grid_hdr *) (eh + 1);
 
   if (gh->type != grid_hdr::GRID_LR_HELLO) {
-    click_chatter("GridRouteTable %s: received unknown Grid packet; ignoring it", id().c_str());
+    click_chatter("GridRouteTable %s: received unknown Grid packet; ignoring it", name().c_str());
     packet->kill();
     return 0;
   }
@@ -687,7 +687,7 @@ GridRouteTable::simple_action(Packet *packet)
 
   // this should be redundant (see HostEtherFilter in grid.click)
   if (ethaddr == _eth) {
-    click_chatter("GridRouteTable %s: received own Grid packet; ignoring it", id().c_str());
+    click_chatter("GridRouteTable %s: received own Grid packet; ignoring it", name().c_str());
     packet->kill();
     return 0;
   }
@@ -717,10 +717,10 @@ GridRouteTable::simple_action(Packet *packet)
 
   if (!r)
     click_chatter("GridRouteTable %s: adding new 1-hop route %s -- %s", 
-		  id().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
+		  name().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
   else if (r->num_hops() == 1 && r->next_hop_eth != ethaddr)
     click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", 
-		  id().c_str(), ipaddr.s().c_str(), r->next_hop_eth.s().c_str(), ethaddr.s().c_str());
+		  name().c_str(), ipaddr.s().c_str(), r->next_hop_eth.s().c_str(), ethaddr.s().c_str());
 
   /*
    * well, for now we'll just do the ping-pong on route ads.  ideally
@@ -1281,7 +1281,7 @@ GridRouteTable::expire_hook(Timer *, void *thunk)
 {
   GridRouteTable *n = (GridRouteTable *) thunk;
   n->expire_routes();
-  n->_expire_timer.schedule_after_ms(EXPIRE_TIMER_PERIOD);
+  n->_expire_timer.schedule_after_msec(EXPIRE_TIMER_PERIOD);
 }
 
 
@@ -1417,7 +1417,7 @@ GridRouteTable::hello_hook(Timer *, void *thunk)
   int jitter = (int) (((double) n->_jitter) * r / ((double) 0x7FffFFff));
   if (r2 & 1)
     jitter *= -1;
-  n->_hello_timer.schedule_after_ms(n->_period + (int) jitter);
+  n->_hello_timer.schedule_after_msec(n->_period + (int) jitter);
 }
 
 
@@ -1467,12 +1467,12 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   assert(psz <= 1500);
   if (num_rtes < rte_info.size())
     click_chatter("GridRouteTable %s: too many routes, truncating route advertisement",
-		  id().c_str());
+		  name().c_str());
 
   /* allocate and align the packet */
   WritablePacket *p = Packet::make(psz + 2); // for alignment
   if (p == 0) {
-    click_chatter("in %s: cannot make packet!", id().c_str());
+    click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
   } 
   ASSERT_ALIGNED(p->data());

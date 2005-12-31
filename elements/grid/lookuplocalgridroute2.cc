@@ -70,20 +70,20 @@ LookupLocalGridRoute2::initialize(ErrorHandler *errh)
 
   if (_rtes && _rtes->cast("GridGenericRouteTable") == 0) {
     return errh->error("%s: GridRouteTable argument %s has the wrong type",
-		       id().c_str(),
-		       _rtes->id().c_str());
+		       name().c_str(),
+		       _rtes->name().c_str());
   } 
 #if 0
   else if (_rtes == 0) {
     return errh->error("%s: no GridRouteTable element given",
-		       id().c_str());
+		       name().c_str());
   }
 #endif
 
   if (_log && _log->cast("GridGenericLogger") == 0) {
     return errh->error("%s: GridGenericLogger element %s has the wrong type",
-		       id().c_str(),
-		       _log->id().c_str());
+		       name().c_str(),
+		       _log->name().c_str());
   }
   return 0;
 }
@@ -96,7 +96,7 @@ LookupLocalGridRoute2::simple_action(Packet *packet)
   assert(packet);
   if (packet->length() < sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap)) {
     click_chatter("LookupLocalGridRoute2 %s: packet too small (%d), dropping",
-		  id().c_str(), packet->length());
+		  name().c_str(), packet->length());
     notify_route_cbs(packet, packet->dst_ip_anno(), GRCB::Drop, GRCB::BadPacket, 0);
     packet->kill();
     return 0;
@@ -112,7 +112,7 @@ LookupLocalGridRoute2::simple_action(Packet *packet)
       break;
   default:
     click_chatter("LookupLocalGridRoute2 %s: received unexpected Grid packet type (%s), dropping", 
-		  id().c_str(), grid_hdr::type_string(gh->type).c_str());
+		  name().c_str(), grid_hdr::type_string(gh->type).c_str());
     notify_route_cbs(packet, packet->dst_ip_anno(), GRCB::Drop, GRCB::UnknownType, 0);
     packet->kill();
     return 0;
@@ -126,7 +126,7 @@ LookupLocalGridRoute2::forward_grid_packet(Packet *xp, IPAddress dest_ip)
   WritablePacket *packet = xp->uniqueify();
 
   if (_rtes == 0) {
-    click_chatter("LookupLocalGridRoute2 %s: there is no routing table, dropping", id().c_str());
+    click_chatter("LookupLocalGridRoute2 %s: there is no routing table, dropping", name().c_str());
     notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::ConfigError, 0);
     packet->kill();
     return 0;
@@ -152,7 +152,7 @@ LookupLocalGridRoute2::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     // logging
 
     if (_verbose)
-      click_chatter("LookupLocalGridRoute2 %s: no route to %s, dropping", id().c_str(), dest_ip.s().c_str());
+      click_chatter("LookupLocalGridRoute2 %s: no route to %s, dropping", name().c_str(), dest_ip.s().c_str());
 
     notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::NoLocalRoute, 0);
 

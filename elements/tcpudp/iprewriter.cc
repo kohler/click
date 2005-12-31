@@ -107,9 +107,9 @@ IPRewriter::initialize(ErrorHandler *)
   _tcp_done_gc_timer.initialize(this);
   _udp_gc_timer.initialize(this);
 
-  _tcp_gc_timer.schedule_after_s(_tcp_gc_interval);
-  _udp_gc_timer.schedule_after_s(_udp_gc_interval);
-  _tcp_done_gc_timer.schedule_after_s(_tcp_done_gc_interval);
+  _tcp_gc_timer.schedule_after_sec(_tcp_gc_interval);
+  _udp_gc_timer.schedule_after_sec(_udp_gc_interval);
+  _tcp_done_gc_timer.schedule_after_sec(_tcp_done_gc_interval);
 
   // release memory to system on cleanup
   _tcp_map.set_arena(router()->arena_factory());
@@ -192,7 +192,7 @@ IPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
   rw->_spinlock.release();
   } else wait = 1;
 #endif
-  timer->reschedule_after_s(wait);
+  timer->reschedule_after_sec(wait);
 }
 
 void
@@ -215,7 +215,7 @@ IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
   rw->_spinlock.release();
   } else wait = 1;
 #endif
-  timer->reschedule_after_s(wait);
+  timer->reschedule_after_sec(wait);
 }
 
 void
@@ -236,7 +236,7 @@ IPRewriter::udp_gc_hook(Timer *timer, void *thunk)
   rw->_spinlock.release();
   } else wait = 1;
 #endif
-  timer->reschedule_after_s(wait);
+  timer->reschedule_after_sec(wait);
 }
 
 IPRw::Mapping *

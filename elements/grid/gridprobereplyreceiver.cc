@@ -68,7 +68,7 @@ GridProbeReplyReceiver::simple_action(Packet *p)
 
   if (gh->type != grid_hdr::GRID_ROUTE_REPLY) {
     click_chatter("GridProbeReplyReceiver %s: received unexpected Grid packet type %s; is the configuration wrong?",
-		  id().c_str(), grid_hdr::type_string(gh->type).c_str());
+		  name().c_str(), grid_hdr::type_string(gh->type).c_str());
     p->kill();
     return 0;
   }
@@ -77,7 +77,7 @@ GridProbeReplyReceiver::simple_action(Packet *p)
   tx_time.tv_sec = ntohl(tx_time.tv_sec);
   tx_time.tv_usec = ntohl(tx_time.tv_usec);
 
-  struct timeval rtt = p->timestamp_anno().to_timeval() - tx_time;
+  struct timeval rtt = p->timestamp_anno().timeval() - tx_time;
 
   char buf[200];
   snprintf(buf, sizeof(buf),

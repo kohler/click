@@ -61,7 +61,7 @@ QuitWatcher::initialize(ErrorHandler *errh)
     return -1;
 
   _timer.initialize(this);
-  _timer.schedule_after_ms(10);
+  _timer.schedule_after_msec(10);
   return 0;
 }
 
@@ -77,7 +77,7 @@ QuitWatcher::run_timer(Timer *)
     }
   }
   
-  _timer.schedule_after_ms(10);
+  _timer.schedule_after_msec(10);
 }
 
 CLICK_ENDDECLS

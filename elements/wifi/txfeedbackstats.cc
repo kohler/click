@@ -67,7 +67,7 @@ TXFeedbackStats::simple_action(Packet *p)
 
   if (p->length() < sizeof(click_ether)) {
     click_chatter("TXFeedbackStats %s: got short packet, expected at least %u, but only got %u", 
-		  id().c_str(), p->length());
+		  name().c_str(), p->length());
     return p;
   }  
 

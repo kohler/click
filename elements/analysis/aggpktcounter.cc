@@ -109,7 +109,7 @@ AggregatePacketCounter::configure(Vector<String> &conf, ErrorHandler *errh)
     if (_packetno > 1)
 	return errh->error("'PACKETNO' cannot be bigger than 1");
     /*if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
-      return errh->error("%s is not an AggregateNotifier", e->id().c_str()); */
+      return errh->error("%s is not an AggregateNotifier", e->name().c_str()); */
 
     return 0;
 }
@@ -217,7 +217,7 @@ AggregatePacketCounter::aggregate_notify(uint32_t agg, AggregateEvent event, con
 	_gc_aggs.push_back(agg);
 	_gc_aggs.push_back(click_jiffies());
 	if (!_gc_timer.scheduled())
-	    _gc_timer.schedule_after_ms(250);
+	    _gc_timer.schedule_after_msec(250);
     }
 }
 
@@ -236,7 +236,7 @@ AggregatePacketCounter::gc_hook(Timer *t, void *thunk)
 	}
     if (i < td->_gc_aggs.size()) {
 	td->_gc_aggs.erase(td->_gc_aggs.begin(), td->_gc_aggs.begin() + i);
-	t->schedule_after_ms(250);
+	t->schedule_after_msec(250);
     }
 }
 */

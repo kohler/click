@@ -64,9 +64,9 @@ SpinlockInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   // find prefix, which includes slash
   String prefix;
-  int last_slash = id().find_right('/');
+  int last_slash = name().find_right('/');
   if (last_slash >= 0)
-    prefix = id().substring(0, last_slash + 1);
+    prefix = name().substring(0, last_slash + 1);
   else
     prefix = String();
 

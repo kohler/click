@@ -51,7 +51,7 @@ int
 ThreadMonitor::initialize(ErrorHandler *)
 {
     _timer.initialize(this);
-    _timer.schedule_after_ms(10);
+    _timer.schedule_after_msec(10);
     return 0;
 }
 
@@ -82,7 +82,7 @@ ThreadMonitor::run_timer(Timer *)
     if (sa.length())
 	click_chatter("%s", sa.c_str());
 
-    _timer.schedule_after_ms(_interval);
+    _timer.schedule_after_msec(_interval);
 }
 
 ELEMENT_REQUIRES(linuxmodule smpclick)

@@ -63,7 +63,7 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
 {
 #ifdef HAVE_STRIDE_SCHED
     // check prefixes in order of increasing length
-    String id = e->id();
+    String id = e->name();
     
     Vector<String> prefixes;
     prefixes.push_back(String());

@@ -987,6 +987,25 @@ Router::set_hotswap_router(Router *r)
 
 // HANDLERS
 
+/** @class Handler
+    @brief Represents a router's handlers.
+
+    Each handler is represented by a Handler object.  Handlers are not
+    attached to specific elements, allowing a single handler object to be
+    shared among multiple elements with the same basic handler definition.
+    Handlers cannot be created directly; to create one, call methods such as
+    Router::add_read_handler(), Router::add_write_handler(),
+    Router::set_handler(), Element::add_read_handler(),
+    Element::add_write_handler(), and Element::set_handler().  */
+
+/** @brief Call a read handler, possibly with parameters.
+    @param e element on which to call the handler
+    @param param parameters, or an empty string if no parameters
+    @param errh error handler
+
+    The element must be nonnull; to call a global handler, pass the relevant
+    router's Router::root_element().  @a errh may be null, in which case
+    errors are reported to ErrorHandler::silent_handler(). */
 String
 Handler::call_read(Element* e, const String& param, ErrorHandler* errh) const
 {
@@ -1006,6 +1025,14 @@ Handler::call_read(Element* e, const String& param, ErrorHandler* errh) const
     return String();
 }
 
+/** @brief Call a write handler.
+    @param s value to write to the handler
+    @param e element on which to call the handler
+    @param errh error handler
+
+    The element must be nonnull; to call a global handler, pass the relevant
+    router's Router::root_element().  @a errh may be null, in which case
+    errors are reported to ErrorHandler::silent_handler(). */
 int
 Handler::call_write(const String& s, Element* e, ErrorHandler* errh) const
 {
@@ -1022,15 +1049,20 @@ Handler::call_write(const String& s, Element* e, ErrorHandler* errh) const
     }
 }
 
+/** @brief Unparses this handler's name, including */
 String
 Handler::unparse_name(Element *e, const String &hname)
 {
     if (e && e != e->router()->root_element())
-	return e->id() + "." + hname;
+	return e->name() + "." + hname;
     else
 	return hname;
 }
 
+/** @brief Unparses this handler's name.
+    @param e the relevant element
+
+    If @a e is an actual element, then returns "ENAME.NAME", where I@a e->name() + "." + */
 String
 Handler::unparse_name(Element *e) const
 {

@@ -86,7 +86,7 @@ PrintGrid::simple_action(Packet *p)
   click_ether *eh = (click_ether *) p->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID && ntohs(eh->ether_type) != LinkStat::ETHERTYPE_LINKSTAT) {
     click_chatter("PrintGrid %s%s%s : not a Grid packet", 
-		  id().c_str(),
+		  name().c_str(),
 		  _label.c_str()[0] ? " " : "",
 		  _label.c_str());
     return p;
@@ -104,7 +104,7 @@ PrintGrid::simple_action(Packet *p)
   StringAccum line;
   line << "PrintGrid ";
   if (_verbose)
-      line << id() << " ";
+      line << name() << " ";
   if (_label[0] != 0)
       line << _label << " ";
   if (_timestamp)
@@ -216,7 +216,7 @@ PrintGrid::print_ether_linkstat(Packet *p) const
   StringAccum line;
   line << "PrintGrid ";
   if (_verbose)
-    line << id() << " ";
+    line << name() << " ";
   if (_label[0] != 0)
     line << _label << " ";
   if (_timestamp)

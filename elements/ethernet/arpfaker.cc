@@ -49,7 +49,7 @@ int
 ARPFaker::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
-  _timer.schedule_after_ms(1 * 1000); // Send an ARP reply periodically.
+  _timer.schedule_after_msec(1 * 1000); // Send an ARP reply periodically.
   return 0;
 }
 
@@ -60,7 +60,7 @@ ARPFaker::run_timer(Timer *)
                                _ip1.data(),
                                _eth2.data(),
                                _ip2.data()));
-  _timer.schedule_after_ms(10 * 1000);
+  _timer.schedule_after_msec(10 * 1000);
 }
 
 Packet *

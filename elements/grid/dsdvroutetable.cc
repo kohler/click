@@ -284,9 +284,9 @@ int
 DSDVRouteTable::initialize(ErrorHandler *)
 {
   _hello_timer.initialize(this);
-  _hello_timer.schedule_after_ms(_period);
+  _hello_timer.schedule_after_msec(_period);
   _log_dump_timer.initialize(this);
-  _log_dump_timer.schedule_after_ms(_log_dump_period); 
+  _log_dump_timer.schedule_after_msec(_log_dump_period); 
 
   check_invariants();
 #if ENABLE_PAUSE
@@ -374,7 +374,7 @@ DSDVRouteTable::insert_route(const RTEntry &r, const GridGenericLogger::reason_t
     HookPair *hp = new HookPair(this, r.dest_ip);
     Timer *t = new Timer(static_expire_hook, (void *) hp);
     t->initialize(this);
-    t->schedule_after_ms(min(r.ttl, _timeout));
+    t->schedule_after_msec(min(r.ttl, _timeout));
     
     _expire_timers.insert(r.dest_ip, t);
     _expire_hooks.insert(r.dest_ip, hp);
@@ -521,7 +521,7 @@ DSDVRouteTable::schedule_triggered_update(const IPAddress &ip, unsigned int when
   Timer *t = new Timer(static_trigger_hook, (void *) hp);
   t->initialize(this);
   unsigned int jiff = dsdv_jiffies();
-  t->schedule_after_ms(jiff_to_msec(jiff > when ? 0 : when - jiff));
+  t->schedule_after_msec(jiff_to_msec(jiff > when ? 0 : when - jiff));
   _trigger_timers.insert(ip, t);
   _trigger_hooks.insert(ip, hp);
 
@@ -543,7 +543,7 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
   unsigned int next_trigger_jiff = _last_triggered_update + msec_to_jiff(_min_triggered_update_period);
 
 #if DBG
-  click_chatter("%s: XXX trigger_hoook(%s)\n", id().c_str(), ip.s().c_str());
+  click_chatter("%s: XXX trigger_hoook(%s)\n", name().c_str(), ip.s().c_str());
 #endif
 
   if (jiff >= next_trigger_jiff) {
@@ -555,12 +555,12 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
 
     send_triggered_update(ip);
 #if DBG
-    click_chatter("%s: XXX sent triggered update\n", id().c_str());
+    click_chatter("%s: XXX sent triggered update\n", name().c_str());
 #endif
   }
   else {
 #if DBG
-    click_chatter("%s: XXX too early to send triggered update (jiff=%d, next_trigger_jiff=%d, _min_triggered_update_period=%d)\n", id().c_str(), jiff, next_trigger_jiff, _min_triggered_update_period);
+    click_chatter("%s: XXX too early to send triggered update (jiff=%d, next_trigger_jiff=%d, _min_triggered_update_period=%d)\n", name().c_str(), jiff, next_trigger_jiff, _min_triggered_update_period);
 #endif
     // it's too early to send this update, so cancel all oustanding
     // triggered updates that would also be too early
@@ -592,7 +592,7 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
     // reschedule this timer to earliest possible time -- when it
     // fires, its update will also include updates that would have
     // fired before then but were cancelled just above.
-    (*old)->schedule_after_ms(jiff_to_msec(next_trigger_jiff - jiff));
+    (*old)->schedule_after_msec(jiff_to_msec(next_trigger_jiff - jiff));
   }
 
   check_invariants();
@@ -675,7 +675,7 @@ DSDVRouteTable::update_metric(RTEntry &r)
   RTEntry *next_hop = _rtes.findp(r.next_hop_ip);
   if (!next_hop) {
     click_chatter("DSDVRouteTable %s: ERROR updating metric for %s; no information for next hop %s; invalidating metric",
-		  id().c_str(), r.dest_ip.s().c_str(), r.next_hop_ip.s().c_str());
+		  name().c_str(), r.dest_ip.s().c_str(), r.next_hop_ip.s().c_str());
     r.metric = _bad_metric;
     return;
   }
@@ -705,7 +705,7 @@ DSDVRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
 {
   // true if r1 is preferable to r2
 #if DBG2
-  click_chatter("%s: XXX metric_preferable valid?  1:%s  2:%s   1 < 2? %s", id().c_str(),
+  click_chatter("%s: XXX metric_preferable valid?  1:%s  2:%s   1 < 2? %s", name().c_str(),
 		(r1.metric.good() ? "yes" : "no"), (r2.metric.good() ? "yes" : "no"),
 		(metric_val_lt(r1.metric.val(), r2.metric.val()) ? "yes" : "no"));
   click_chatter("\tr1.metric=%u, r2.metric=%u", r1.metric.val(), r2.metric.val());
@@ -760,7 +760,7 @@ DSDVRouteTable::send_full_update()
 {
   check_invariants();
 #if DBG
-  click_chatter("%s: XXX sending full update\n", id().c_str());
+  click_chatter("%s: XXX sending full update\n", name().c_str());
 #endif
   unsigned int jiff = dsdv_jiffies();
   Vector<RTEntry> routes;
@@ -771,7 +771,7 @@ DSDVRouteTable::send_full_update()
       routes.push_back(r);
 #if DBG
     else
-      click_chatter("%s: XXX excluding %s\n", id().c_str(), r.dest_ip.s().c_str());
+      click_chatter("%s: XXX excluding %s\n", name().c_str(), r.dest_ip.s().c_str());
 #endif
   }
 
@@ -783,7 +783,7 @@ DSDVRouteTable::send_full_update()
       ad_routes.clear();
 #if DBG
       click_chatter("%s: too many routes; sending out partial full dump (%d)\n", 
-		    id().c_str(), i);
+		    name().c_str(), i);
 #endif
     }
 
@@ -851,7 +851,7 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
       ad_routes.clear();
 #if DBG
       click_chatter("%s: too many routes; sending out partial triggered update (%d)\n", 
-		    id().c_str(), i);
+		    name().c_str(), i);
 #endif
     }
 
@@ -909,7 +909,7 @@ DSDVRouteTable::handle_update(RTEntry new_r, const bool was_sender, const unsign
 
 #if DBG
   click_chatter("%s: XXX dest=%s advertise_ok_jiffies=%u wst=%u jiff=%d\n", 
-		id().c_str(), new_r.dest_ip.s().c_str(),
+		name().c_str(), new_r.dest_ip.s().c_str(),
 		new_r.advertise_ok_jiffies, new_r.wst, jiff);
 #endif
 
@@ -919,7 +919,7 @@ DSDVRouteTable::handle_update(RTEntry new_r, const bool was_sender, const unsign
       new_r.need_metric_ad = true;
       schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
 #if DBG
-      click_chatter("%s: XXX scheduled brand-new route to %s to be advertised in %d jiffies from now\n", id().c_str(),
+      click_chatter("%s: XXX scheduled brand-new route to %s to be advertised in %d jiffies from now\n", name().c_str(),
 		    new_r.dest_ip.s().c_str(), new_r.advertise_ok_jiffies - jiff);
 #endif
     }
@@ -930,8 +930,8 @@ DSDVRouteTable::handle_update(RTEntry new_r, const bool was_sender, const unsign
     dsdv_assert(new_r.good() ? old_r->good() : old_r->broken()); // same seq ==> same broken state
 #if DBG2
     click_chatter("%s: XXX checking for better route to %s from %s with same seqno %u",
-		  id().c_str(), new_r.dest_ip.s().c_str(), new_r.next_hop_ip.s().c_str(), new_r.seq_no());
-    click_chatter("%s: XXX good=%s  preferable=%s", id().c_str(), new_r.good() ? "yes" : "no",
+		  name().c_str(), new_r.dest_ip.s().c_str(), new_r.next_hop_ip.s().c_str(), new_r.seq_no());
+    click_chatter("%s: XXX good=%s  preferable=%s", name().c_str(), new_r.good() ? "yes" : "no",
 		  metric_preferable(new_r, *old_r) ? "yes" : "no");
 #endif
     if (new_r.good() && metric_preferable(new_r, *old_r)) {
@@ -998,14 +998,14 @@ DSDVRouteTable::simple_action(Packet *packet)
    */
   click_ether *eh = (click_ether *) packet->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
-    click_chatter("DSDVRouteTable %s: got non-Grid packet type", id().c_str());
+    click_chatter("DSDVRouteTable %s: got non-Grid packet type", name().c_str());
     packet->kill();
     return 0;
   }
   grid_hdr *gh = (grid_hdr *) (eh + 1);
 
   if (gh->type != grid_hdr::GRID_LR_HELLO) {
-    click_chatter("DSDVRouteTable %s: received unknown Grid packet; ignoring it", id().c_str());
+    click_chatter("DSDVRouteTable %s: received unknown Grid packet; ignoring it", name().c_str());
     packet->kill();
     return 0;
   }
@@ -1014,7 +1014,7 @@ DSDVRouteTable::simple_action(Packet *packet)
   EtherAddress ethaddr((unsigned char *) eh->ether_shost);
 
   if (ethaddr == _eth) {
-    click_chatter("DSDVRouteTable %s: received own Grid packet; ignoring it", id().c_str());
+    click_chatter("DSDVRouteTable %s: received own Grid packet; ignoring it", name().c_str());
     packet->kill();
     return 0;
   }
@@ -1032,7 +1032,7 @@ DSDVRouteTable::simple_action(Packet *packet)
   unsigned num_entries = hlo->num_nbrs;
   if (num_entries > max_entries) {
     click_chatter("DSDVRouteTable %s: route ad from %s contains fewer routes than claimed; want %u, have no more than %u",
-		  id().c_str(), ipaddr.s().c_str(), num_entries, max_entries);
+		  name().c_str(), ipaddr.s().c_str(), num_entries, max_entries);
     num_entries = max_entries;
   }
 
@@ -1040,10 +1040,10 @@ DSDVRouteTable::simple_action(Packet *packet)
   RTEntry *r = _rtes.findp(ipaddr);
   if (!r)
     click_chatter("DSDVRouteTable %s: new 1-hop nbr %s -- %s", 
-		  id().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
+		  name().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
   else if (r->dest_eth && r->dest_eth != ethaddr)
     click_chatter("DSDVRouteTable %s: ethernet address of %s changed from %s to %s", 
-		  id().c_str(), ipaddr.s().c_str(), r->dest_eth.s().c_str(), ethaddr.s().c_str());
+		  name().c_str(), ipaddr.s().c_str(), r->dest_eth.s().c_str(), ethaddr.s().c_str());
 
 #if SEQ_METRIC
   // track last few broadcast numbers we heard directly from this node
@@ -1080,10 +1080,10 @@ DSDVRouteTable::simple_action(Packet *packet)
 #if 0
   if (old)
     click_chatter("XXX %s %s snd_saw %s  old metric %u  old last seen %u\n",
-		  id().c_str(), ipaddr.s().c_str(), sender_saw_us ? "y" : "n", old->metric.val, old->last_seen_jiffies);
+		  name().c_str(), ipaddr.s().c_str(), sender_saw_us ? "y" : "n", old->metric.val, old->last_seen_jiffies);
   else 
     click_chatter("XXX %s %s snd_saw %s\n",
-		id().c_str(), ipaddr.s().c_str(), sender_saw_us ? "y" : "n");
+		name().c_str(), ipaddr.s().c_str(), sender_saw_us ? "y" : "n");
 #endif
   if (_use_seen && !sender_saw_us &&
       (!old || old->metric.val() == _metric_seen || (jiff - old->last_seen_jiffies) > 3*msec_to_jiff(_period))) {
@@ -1324,7 +1324,7 @@ DSDVRouteTable::write_paused(const String &arg, Element *el,
     return errh->error("`paused' must be a boolean");
   
   click_chatter("DSDVRouteTable %s: %s", 
-		rt->id().c_str(), rt->_paused ? "pausing packet routes (_paused = true)" : 
+		rt->name().c_str(), rt->_paused ? "pausing packet routes (_paused = true)" : 
 		"unpausing packet routes (_paused = false)");
 
   if (!was_paused && rt->_paused) {
@@ -1390,17 +1390,17 @@ DSDVRouteTable::write_use_old_route(const String &arg, Element *el,
 #if USE_OLD_SEQ
   rt->_use_old_route = use_old;
   click_chatter("DSDVRouteTable %s: setting _use_old_route to %s", 
-		rt->id().c_str(), rt->_use_old_route ? "true" : "false");
+		rt->name().c_str(), rt->_use_old_route ? "true" : "false");
 #endif
 #if USE_GOOD_NEW_ROUTES
   rt->_use_good_new_route = use_good;
   click_chatter("DSDVRouteTable %s: setting _use_good_new_route to %s", 
-		rt->id().c_str(), rt->_use_good_new_route ? "true" : "false");
+		rt->name().c_str(), rt->_use_good_new_route ? "true" : "false");
 #endif
 #if ENABLE_SEEN
   rt->_use_seen = use_seen;
   click_chatter("DSDVRouteTable %s: setting _use_seen to %s", 
-		rt->id().c_str(), rt->_use_seen ? "true" : "false");
+		rt->name().c_str(), rt->_use_seen ? "true" : "false");
 #endif
   return 0;
 }
@@ -1470,7 +1470,7 @@ DSDVRouteTable::hello_hook()
   else 
     msecs_to_next_ad += jitter;
 
-  _hello_timer.schedule_after_ms(msecs_to_next_ad);
+  _hello_timer.schedule_after_msec(msecs_to_next_ad);
 }
 
 
@@ -1494,7 +1494,7 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
   /* allocate and align the packet */
   WritablePacket *p = Packet::make(psz + 2); // for alignment
   if (p == 0) {
-    click_chatter("DSDVRouteTable %s: cannot make packet!", id().c_str());
+    click_chatter("DSDVRouteTable %s: cannot make packet!", name().c_str());
     dsdv_assert(0);
   } 
   ASSERT_ALIGNED(p->data());
@@ -1578,7 +1578,7 @@ DSDVRouteTable::log_dump_hook(bool reschedule)
     _log->log_route_dump(vec, Timestamp::now());
   }
   if (reschedule)
-    _log_dump_timer.schedule_after_ms(_log_dump_period); 
+    _log_dump_timer.schedule_after_msec(_log_dump_period); 
 }
 
 String
@@ -1661,7 +1661,7 @@ void
 DSDVRouteTable::dsdv_assert_(const char *file, int line, const char *expr) const
 {
   click_chatter("DSDVRouteTable %s assertion \"%s\" failed: file %s, line %d",
-		id().c_str(), expr, file, line);
+		name().c_str(), expr, file, line);
   click_chatter("Routing table state:");
   for (RTIter i = _rtes.begin(); i; i++) {
     click_chatter("%s\n", i.value().dump().c_str());

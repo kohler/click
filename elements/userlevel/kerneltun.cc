@@ -290,7 +290,7 @@ KernelTun::dealloc_tun()
 {
     String cmd = "/sbin/ifconfig " + _dev_name + " down";
     if (system(cmd.c_str()) != 0) 
-	click_chatter("%s: failed: %s", id().c_str(), cmd.c_str());
+	click_chatter("%s: failed: %s", name().c_str(), cmd.c_str());
 }
 
 int

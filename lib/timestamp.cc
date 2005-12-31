@@ -3,7 +3,7 @@
  * timestamp.{cc,hh} -- timestamps
  * Eddie Kohler
  *
- * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2004-2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,7 +25,41 @@
 #endif
 CLICK_DECLS
 
+/** @class Timestamp
+ @brief Represents a moment or interval in time.
+
+ The Click Timestamp class represents both moments in time and intervals in
+ time.  For example, Timer expiry times use the Timestamp class.  In most
+ Click code, Timestamp replaces the Unix "struct timeval" and "struct
+ timespec" structures.  Timestamps may be added, subtracted, and compared
+ using the usual operators.
+
+ Timestamp measures time in seconds using a fixed-point representation, like
+ "struct timeval" and "struct timespec".  Seconds and "subseconds", or
+ fractions of a second, are stored in separate integers.  Timestamps have
+ either microsecond or nanosecond precision, depending on how Click is
+ configured.  Thus, one subsecond might equal either one microsecond or one
+ nanosecond.  The NSUBSEC enumeration constant equals the number of subseconds
+ in a second; the timestamp's subsec() value should always lie between 0 and
+ NSUBSEC - 1.  (The <tt>--enable-nanotimestamp</tt> configuration option
+ enables nanosecond-precision timestamps at user level; kernel modules always
+ use microsecond-precision timestamps.)
+
+ A Timestamp with sec() < 0 is negative.  Note that subsec() is always
+ nonnegative.  A Timestamp's value always equals (sec() + subsec() / (double)
+ NSUBSEC); thus, the Timestamp value of -0.1 is represented (with microsecond
+ precision) as sec() == -1, subsec() == +900000.
+ */
+
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+/** @brief Sets this timestamp to a timeval obtained by calling ioctl.
+    @param fd file descriptor
+    @param ioctl_selector ioctl number
+
+    Performs the same function as calling ioctl(@a fd, @a param, &tv) and
+    setting *this = Timestamp(tv), where tv is a struct timeval, although it
+    may be faster if Timestamp and struct timeval have the same
+    representation. */
 int
 Timestamp::set_timeval_ioctl(int fd, int ioctl_selector)
 {
@@ -59,6 +93,10 @@ operator<<(StringAccum &sa, const struct timeval &tv)
     return sa;
 }
 
+/** @relates Timestamp
+    @brief Appends the unparsed representation of @a ts to @a sa.
+
+    Same as @a sa @<@< @a ts.unparse(). */
 StringAccum &
 operator<<(StringAccum &sa, const Timestamp& ts)
 {
@@ -68,7 +106,7 @@ operator<<(StringAccum &sa, const Timestamp& ts)
 	    sec = ts.sec(), subsec = ts.subsec();
 	else {
 	    *x++ = '-', sa.forward(1);
-	    sec = -ts.sec() - 1, subsec = Timestamp::SUBSEC_PER_SEC - ts.subsec();
+	    sec = -ts.sec() - 1, subsec = Timestamp::NSUBSEC - ts.subsec();
 	}
 	
 	int len;
@@ -86,6 +124,11 @@ operator<<(StringAccum &sa, const Timestamp& ts)
     return sa;
 }
 
+/** @brief Unparses this timestamp into a String.
+
+    Returns a string formatted like "10.000000", with at least six subsecond
+    digits.  (Nanosecond-precision timestamps where the number of nanoseconds
+    is not evenly divisible by 1000 are given nine subsecond digits.) */
 String
 Timestamp::unparse() const
 {

@@ -181,7 +181,7 @@ Packet *
 CheckIPHeader::drop(Reason reason, Packet *p)
 {
     if (_drops == 0 || _verbose)
-	click_chatter("%s: IP header check failed: %s", id().c_str(), reason_texts[reason]);
+	click_chatter("%s: IP header check failed: %s", name().c_str(), reason_texts[reason]);
     _drops++;
 
     if (_reason_drops)

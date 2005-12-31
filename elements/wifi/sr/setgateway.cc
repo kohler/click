@@ -73,7 +73,7 @@ void
 SetGateway::run_timer (Timer *)
 {
   cleanup();
-  _timer.schedule_after_ms(60*1000);
+  _timer.schedule_after_msec(60*1000);
 }
 
 void 
@@ -154,7 +154,7 @@ SetGateway::push_rev(Packet *p_in)
 		}
 		
 		click_chatter("SetGateway %s: no match, killing SYN_ACK\n",
-			      id().c_str());
+			      name().c_str());
 		p_in->kill();
 		return;
 	}
@@ -277,7 +277,7 @@ SetGateway::read_param(Element *e, void *vparam)
     if (d->_gw) {
       return d->_gw.s() + "\n";
     }
-    return "auto:" + d->_gw_sel->id() + "\n";;
+    return "auto:" + d->_gw_sel->name() + "\n";;
   default:
     return "";
   }

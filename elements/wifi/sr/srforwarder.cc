@@ -115,7 +115,7 @@ SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 	int next = index_of(r, _ip) + 1;
 	if (next < 0 || next >= r.size()) {
 		click_chatter("SRForwarder %s: encap couldn't find %s (%d) in path %s",
-			      id().c_str(), _ip.s().c_str(),
+			      name().c_str(), _ip.s().c_str(),
 			      next, path_to_string(r).c_str());
 		p_in->kill();
 		return (0);
@@ -123,7 +123,7 @@ SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 	EtherAddress eth_dest = _arp_table->lookup(r[next]);
 	if (eth_dest.is_group()) {
 		click_chatter("SRForwarder %s: arp lookup failed for %s",
-			      id().c_str(), r[next].s().c_str());
+			      name().c_str(), r[next].s().c_str());
 	}
 	
 	click_ether *eh = (click_ether *) p->data();
@@ -198,7 +198,7 @@ SRForwarder::push(int port, Packet *p_in)
 			 * don't complain. But otherwise, something's up
 			 */
 			click_chatter("%{element} data not for me seq %d %d/%d ip %s eth %s",
-				      id().c_str(), pk->data_seq(), pk->next(), pk->num_links(),
+				      name().c_str(), pk->data_seq(), pk->next(), pk->num_links(),
 				      pk->get_link_node(pk->next()).s().c_str(),
 				      EtherAddress(eh->ether_dhost).s().c_str());
 		}

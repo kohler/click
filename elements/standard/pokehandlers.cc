@@ -110,7 +110,7 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
 	_paused = false;
 	_timer.unschedule();
 	if (_h_timeout.size() != 0)
-	    _timer.schedule_after_ms(_h_timeout[0] + 1);
+	    _timer.schedule_after_msec(_h_timeout[0] + 1);
     }
 
     return 0;
@@ -123,7 +123,7 @@ PokeHandlers::initialize(ErrorHandler *)
     _paused = false;
     _timer.initialize(this);
     if (_h_timeout.size() != 0)
-	_timer.schedule_after_ms(_h_timeout[0] + 1);
+	_timer.schedule_after_msec(_h_timeout[0] + 1);
     return 0;
 }
 
@@ -163,7 +163,7 @@ PokeHandlers::unpause() {
 	return;
     _paused = false;
     if (_pos < _h_timeout.size())
-	_timer.schedule_after_ms(_h_timeout[_pos]); // XXX +1 ms? 
+	_timer.schedule_after_msec(_h_timeout[_pos]); // XXX +1 ms? 
 }
 
 void
@@ -171,7 +171,7 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
 {
     PokeHandlers *poke = (PokeHandlers *)thunk;
     ErrorHandler *errh = ErrorHandler::default_handler();
-    PrefixErrorHandler perrh(errh, poke->id() + ": ");
+    PrefixErrorHandler perrh(errh, poke->name() + ": ");
     Router *router = poke->router();
 
     int hpos = poke->_pos;
@@ -212,7 +212,7 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
     } while (hpos < poke->_h_timeout.size() && poke->_h_timeout[hpos] == 0);
 
     if (hpos < poke->_h_timeout.size() && !poke->_paused)
-	poke->_timer.schedule_after_ms(poke->_h_timeout[hpos]);
+	poke->_timer.schedule_after_msec(poke->_h_timeout[hpos]);
     poke->_pos = hpos;
 }
 

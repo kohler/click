@@ -58,7 +58,7 @@ BufferConverter::push(int, Packet *p)
 void
 BufferConverter::run_timer(Timer *)
 {
-  _timer.schedule_after_ms(packet_tx_delay);
+  _timer.schedule_after_msec(packet_tx_delay);
 }
 
 void

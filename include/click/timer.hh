@@ -15,9 +15,9 @@ typedef void (*TimerHook)(Timer *, void *);
 
 class Timer { public:
 
-    Timer(TimerHook, void*);
-    Timer(Element*);			// call element->run_timer()
-    Timer(Task*);			// call task->reschedule()
+    Timer(TimerHook hook, void *thunk);
+    Timer(Element *element);		// call element->run_timer()
+    Timer(Task *task);			// call task->reschedule()
     inline ~Timer();
 
     inline bool initialized() const;
@@ -27,19 +27,24 @@ class Timer { public:
     inline void initialize(Router*);
     inline void initialize(Element*);
 
-    void schedule_at(const Timestamp&);
-    inline void reschedule_at(const Timestamp&); // synonym
+    void schedule_at(const Timestamp &when);
+    inline void reschedule_at(const Timestamp &when); // synonym
 
     inline void schedule_now();
-    void schedule_after(const Timestamp&);
-    inline void schedule_after_s(uint32_t);
-    inline void schedule_after_ms(uint32_t);
-    inline void reschedule_after(const Timestamp&);
-    inline void reschedule_after_s(uint32_t);
-    inline void reschedule_after_ms(uint32_t);
+    void schedule_after(const Timestamp &delta);
+    inline void schedule_after_sec(uint32_t delta_sec);
+    inline void schedule_after_msec(uint32_t delta_msec);
+    inline void reschedule_after(const Timestamp &delta);
+    inline void reschedule_after_sec(uint32_t delta_sec);
+    inline void reschedule_after_msec(uint32_t delta_msec);
 
     void unschedule();
-  
+
+    inline void schedule_after_s(uint32_t delta_sec) CLICK_DEPRECATED;
+    inline void schedule_after_ms(uint32_t delta_sec) CLICK_DEPRECATED;
+    inline void reschedule_after_s(uint32_t delta_sec) CLICK_DEPRECATED;
+    inline void reschedule_after_ms(uint32_t delta_sec) CLICK_DEPRECATED;
+    
   private:
   
     int _schedpos;
@@ -93,8 +98,7 @@ Timer::expiry() const
  * @param router the containing router
  *
  * Before a timer can be used, it must be attached to a containing router.
- * When that router is destroyed, the timer will automatically be destroyed as
- * well.
+ * When that router is destroyed, the timer is automatically unscheduled.
  */
 inline void
 Timer::initialize(Router *router)
@@ -139,26 +143,25 @@ Timer::schedule_now()
  *
  * @param delta_sec interval until expiration time, in seconds
  *
- * @sa schedule_after, reschedule_after_s */
+ * @sa schedule_after, reschedule_after_sec */
 inline void
-Timer::schedule_after_s(uint32_t delta_sec)
+Timer::schedule_after_sec(uint32_t delta_sec)
 {
     schedule_after(Timestamp(delta_sec, 0));
 }
 
-/** @brief Schedule the timer to fire after @a delta_ms milliseconds.
+/** @brief Schedule the timer to fire after @a delta_msec milliseconds.
  *
- * @param delta_ms interval until expiration time, in milliseconds
+ * @param delta_msec interval until expiration time, in milliseconds
  *
- * @sa schedule_after */
+ * @sa schedule_after, reschedule_after_msec */
 inline void
-Timer::schedule_after_ms(uint32_t delta_ms)
+Timer::schedule_after_msec(uint32_t delta_msec)
 {
-    schedule_after(Timestamp::make_msec(delta_ms));
+    schedule_after(Timestamp::make_msec(delta_msec));
 }
 
-/** @brief Schedule the timer to fire @a delta time after its previous expiry
- * time.
+/** @brief Schedule the timer to fire @a delta time after its previous expiry.
  *
  * @param delta interval until expiration time
  *
@@ -170,27 +173,65 @@ Timer::reschedule_after(const Timestamp &delta)
 }
 
 /** @brief Schedule the timer to fire @a delta_sec seconds after its previous
- * expiry time.
+ * expiry.
  *
  * @param delta_sec interval until expiration time, in seconds
  *
- * @sa schedule_after_s */
+ * @sa schedule_after_sec */
 inline void
-Timer::reschedule_after_s(uint32_t delta_sec)
+Timer::reschedule_after_sec(uint32_t delta_sec)
 {
     schedule_at(Timestamp(_expiry.sec() + delta_sec, _expiry.subsec()));
 }
 
-/** @brief Schedule the timer to fire @a delta_ms milliseconds after its
- * previous expiry time.
+/** @brief Schedule the timer to fire @a delta_msec milliseconds after its
+ * previous expiry.
  *
- * @param delta_ms interval until expiration time, in milliseconds
+ * @param delta_msec interval until expiration time, in milliseconds
  *
- * @sa schedule_after_ms */
+ * @sa schedule_after_msec */
 inline void
-Timer::reschedule_after_ms(uint32_t delta_ms)
+Timer::reschedule_after_msec(uint32_t delta_msec)
 {
-    schedule_at(_expiry + Timestamp::make_msec(delta_ms));
+    schedule_at(_expiry + Timestamp::make_msec(delta_msec));
+}
+
+/** @brief Schedule the timer to fire after @a delta_sec seconds (deprecated).
+ *
+ * @deprecated Use schedule_after_sec() instead. */
+inline void
+Timer::schedule_after_s(uint32_t delta_sec)
+{
+    schedule_after_sec(delta_sec);
+}
+
+/** @brief Schedule the timer to fire after @a delta_msec milliseconds (deprecated).
+ *
+ * @deprecated Use schedule_after_msec() instead. */
+inline void
+Timer::schedule_after_ms(uint32_t delta_msec)
+{
+    schedule_after_msec(delta_msec);
+}
+
+/** @brief Schedule the timer to fire @a delta_sec seconds after its previous
+ * expiry time (deprecated).
+ *
+ * @deprecated Use reschedule_after_sec() instead. */
+inline void
+Timer::reschedule_after_s(uint32_t delta_sec)
+{
+    reschedule_after_sec(delta_sec);
+}
+
+/** @brief Schedule the timer to fire @a delta_msec milliseconds after its
+ * previous expiry time (deprecated).
+ *
+ * @deprecated Use reschedule_after_msec() instead. */
+inline void
+Timer::reschedule_after_ms(uint32_t delta_msec)
+{
+    reschedule_after_msec(delta_msec);
 }
 
 CLICK_ENDDECLS

@@ -51,7 +51,7 @@ int
 RIPSend::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
-  _timer.schedule_after_ms(3 * 1000);
+  _timer.schedule_after_msec(3 * 1000);
   return 0;
 }
 
@@ -95,7 +95,7 @@ RIPSend::run_timer(Timer *)
   
   output(0).push(p);
 
-  _timer.schedule_after_ms(30 * 1000);
+  _timer.schedule_after_msec(30 * 1000);
 }
 
 CLICK_ENDDECLS

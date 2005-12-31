@@ -51,7 +51,7 @@ LinkTable::run_timer(Timer *)
   clear_stale();
   dijkstra(true);
   dijkstra(false);
-  _timer.schedule_after_ms(5000);
+  _timer.schedule_after_msec(5000);
 }
 void *
 LinkTable::cast(const char *n)
@@ -192,7 +192,7 @@ LinkTable::random_link()
     }
   }
   click_chatter("LinkTable %s: random_link overestimated number of elements\n",
-		id().c_str());
+		name().c_str());
   return Link();
 
 }
@@ -640,7 +640,7 @@ LinkTable::dijkstra(bool from_me)
   timersub(&finish, &start, &dijkstra_time);
   //StringAccum sa;
   //sa << "dijstra took " << finish - start;
-  //click_chatter("%s: %s\n", id().c_str(), sa.take_string().c_str());
+  //click_chatter("%s: %s\n", name().c_str(), sa.take_string().c_str());
 }
 
 

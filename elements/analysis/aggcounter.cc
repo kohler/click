@@ -88,10 +88,10 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("'AGGREGATE_FREEZE', 'AGGREGATE_STOP', and 'AGGREGATE_CALL' are mutually exclusive");
     else if (freeze_nnz != (uint32_t)(-1)) {
 	_call_nnz = freeze_nnz;
-	_call_nnz_h = new HandlerCall(id() + ".freeze true");
+	_call_nnz_h = new HandlerCall(name() + ".freeze true");
     } else if (stop_nnz != (uint32_t)(-1)) {
 	_call_nnz = stop_nnz;
-	_call_nnz_h = new HandlerCall(id() + ".stop");
+	_call_nnz_h = new HandlerCall(name() + ".stop");
     } else if (call_nnz) {
 	if (!cp_unsigned(cp_pop_spacevec(call_nnz), &_call_nnz))
 	    return errh->error("'AGGREGATE_CALL' first word should be unsigned (number of aggregates)");
@@ -102,10 +102,10 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("'COUNT_FREEZE', 'COUNT_STOP', and 'COUNT_CALL' are mutually exclusive");
     else if (freeze_count != (uint64_t)(-1)) {
 	_call_count = freeze_count;
-	_call_count_h = new HandlerCall(id() + ".freeze true");
+	_call_count_h = new HandlerCall(name() + ".freeze true");
     } else if (stop_count != (uint64_t)(-1)) {
 	_call_count = stop_count;
-	_call_count_h = new HandlerCall(id() + ".stop");
+	_call_count_h = new HandlerCall(name() + ".stop");
     } else if (call_count) {
 	if (!cp_unsigned64(cp_pop_spacevec(call_count), &_call_count))
 	    return errh->error("'COUNT_CALL' first word should be unsigned (count)");

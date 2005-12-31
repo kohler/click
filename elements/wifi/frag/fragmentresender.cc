@@ -328,7 +328,7 @@ FragmentResender::ack_request() {
   fh->num_frags_packet = 0;
   fh->set_checksum();
 
-  _timer.schedule_after_ms(_ack_timeout_ms);
+  _timer.schedule_after_msec(_ack_timeout_ms);
  done:
   _wait_for_ack = true;
   _send_ack = false;

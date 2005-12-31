@@ -112,7 +112,7 @@ PrintAiro::simple_action(Packet *p)
   struct an_rxframe *frame = (struct an_rxframe *) p->data();
 
   if (p->length() < sizeof(*frame)) {
-    click_chatter("%s: Packet too short to hold Aironet header", id().c_str());
+    click_chatter("%s: Packet too short to hold Aironet header", name().c_str());
     return 0;
   }
 
@@ -127,7 +127,7 @@ PrintAiro::simple_action(Packet *p)
   unsigned int len = frame->an_rx_payload_len + ieee80211_header_len;
   if (len > sizeof(buf)) {
     click_chatter("%s: Frame too big to copy into buffer (%d > %d)\n", 
-		  id().c_str(), len, sizeof(buf));
+		  name().c_str(), len, sizeof(buf));
     return 0;
   }
 
@@ -144,7 +144,7 @@ PrintAiro::simple_action(Packet *p)
       if (_label)
 	sa << _label;
       else
-	sa << id();
+	sa << name();
       sa << ": ";
       if (_timestamp)
 	sa << p->timestamp_anno() << ": ";

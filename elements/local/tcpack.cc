@@ -68,7 +68,7 @@ TCPAck::initialize(ErrorHandler *errh)
   _synack = false;
   _needack = false;
   _timer.initialize(this);
-  _timer.schedule_after_ms(_ackdelay_ms);
+  _timer.schedule_after_msec(_ackdelay_ms);
   return 0;
 }
 
@@ -136,7 +136,7 @@ TCPAck::iput(Packet *p)
 
   _needack = true;
   if (!_timer.scheduled()) 
-    _timer.schedule_after_ms(_ackdelay_ms);
+    _timer.schedule_after_msec(_ackdelay_ms);
   return true;
 }
 

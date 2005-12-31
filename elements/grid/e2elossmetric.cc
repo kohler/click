@@ -110,10 +110,10 @@ E2ELossMetric::append_metric(const metric_t &r, const metric_t &l) const
   
   if (r.val() > 100)
     click_chatter("E2ELossMetric %s: append_metric WARNING: metric %u%% transmissions is too large for route metric",
-		  id().c_str(), r.val());
+		  name().c_str(), r.val());
   if (l.val() > 100)
     click_chatter("E2ELossMetric %s: append_metric WARNING: metric %u%% transmissions is too large for link metric",
-		  id().c_str(), r.val());
+		  name().c_str(), r.val());
 
   return metric_t(r.val() * l.val() / 100);
 }

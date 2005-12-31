@@ -49,8 +49,8 @@ FilterByRange::initialize(ErrorHandler *errh)
 {
   if(_locinfo && _locinfo->cast("GridLocationInfo") == 0){
     errh->warning("%s: GridLocationInfo argument %s has the wrong type",
-                  id().c_str(),
-                  _locinfo->id().c_str());
+                  name().c_str(),
+                  _locinfo->name().c_str());
     _locinfo = 0;
   } else if(_locinfo == 0){
     return errh->error("no GridLocationInfo argument");

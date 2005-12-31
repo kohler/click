@@ -103,7 +103,7 @@ class Element { public:
     static inline void static_cleanup();
 
     // ELEMENT ROUTER CONNECTIONS
-    String id() const;
+    String name() const;
     String landmark() const;
     virtual String declaration() const;
   
@@ -198,6 +198,8 @@ class Element { public:
 
     // DEPRECATED
     Element(int ninputs, int noutputs) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
+
+    String id() const CLICK_DEPRECATED;
 
     virtual void notify_ninputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
     virtual void notify_noutputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;

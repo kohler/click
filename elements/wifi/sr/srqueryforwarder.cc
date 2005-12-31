@@ -175,7 +175,7 @@ SRQueryForwarder::process_query(struct srpacket *pk1)
   _seen[si]._forwarded = false;
   Timer *t = new Timer(static_forward_query_hook, (void *) this);
   t->initialize(this);
-  t->schedule_after_ms(delay_time);
+  t->schedule_after_msec(delay_time);
 
 }
 void

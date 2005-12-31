@@ -297,7 +297,7 @@ FromDevice::emission_report(int idx)
     if (_schinfo[idx].enq_task_scheduled)
 	sa << " tasksched";
     
-    click_chatter("%s packet: %s", id().c_str(), sa.c_str()); 
+    click_chatter("%s packet: %s", name().c_str(), sa.c_str()); 
 }
 #endif
 

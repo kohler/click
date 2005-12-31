@@ -42,7 +42,7 @@ AnyDevice::AnyDevice()
 AnyDevice::~AnyDevice()
 {
     if (_in_map || _dev)
-	click_chatter("%s: bad device destructor!", id().c_str());
+	click_chatter("%s: bad device destructor!", name().c_str());
 }
 
 int

@@ -292,12 +292,21 @@ Element::master() const
  * This is the name used to declare the element in the router configuration,
  * with all compound elements expanded. */
 String
-Element::id() const
+Element::name() const
 {
     String s;
     if (Router *r = router())
 	s = r->ename(_eindex);
     return (s ? s : String::stable_string("<unknown>", 9));
+}
+
+/** @brief Return the element's name (deprecated).
+ *
+ * @deprecated This function is deprecated; use name() instead. */
+String
+Element::id() const
+{
+    return name();
 }
 
 /** @brief Return a string giving the element's name and class name.
@@ -310,7 +319,7 @@ Element::id() const
 String
 Element::declaration() const
 {
-    return id() + " :: " + class_name();
+    return name() + " :: " + class_name();
 }
 
 /** @brief Return a string describing where the element was declared.
@@ -1211,9 +1220,9 @@ Element::initialize(ErrorHandler *errh)
  * is, from router()->@link Router::hotswap_router() hotswap_router()@endlink)
  * obtained by calling hotswap_element().  If hotswap_element() returns null,
  * take_state() will not be called.  The default hotswap_element() returns an
- * @a old_element has the same id() as this element.  This is often too loose;
- * for instance, @a old_element might have a completely different class.
- * Thus, most take_state() methods begin by attempting to cast() @a
+ * @a old_element has the same name() as this element.  This is often too
+ * loose; for instance, @a old_element might have a completely different
+ * class.  Thus, most take_state() methods begin by attempting to cast() @a
  * old_element to a compatible class, and silently returning if the result is
  * null.  Alternatively, you can override hotswap_element() and put the check
  * there.
@@ -1247,7 +1256,7 @@ Element::take_state(Element *old_element, ErrorHandler *errh)
  *
  * The default implementation searches for an element with the same name as
  * this element.  Thus, it returns 0 or an element that satisfies this
- * constraint: hotswap_element()->id() == id().
+ * constraint: hotswap_element()->name() == name().
  *
  * Generally, this constraint is too loose.  A @e Queue element can't hotswap
  * state from an @e ARPResponder, even if they do have the same name.  Most
@@ -1262,7 +1271,7 @@ Element *
 Element::hotswap_element() const
 {
     if (Router *r = router()->hotswap_router())
-	if (Element *e = r->find(id()))
+	if (Element *e = r->find(name()))
 	    return e;
     return 0;
 }
@@ -1614,7 +1623,7 @@ read_class_handler(Element *e, void *)
 static String
 read_name_handler(Element *e, void *)
 {
-  return e->id() + "\n";
+  return e->name() + "\n";
 }
 
 static String

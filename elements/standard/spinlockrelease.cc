@@ -21,19 +21,19 @@ CLICK_DECLS
 int
 SpinlockRelease::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String name;
-  if (cp_va_parse(conf, this, errh, cpString, "name of spinlock", &name, cpEnd)<0)
-    return -1;
-  for (int i = 0; i < router()->nelements(); i++) {
-    if (SpinlockInfo *si = 
-	(SpinlockInfo *)(router()->element(i)->cast("SpinlockInfo"))) {
-      _lock = si->query(name, id());
-      if (!_lock)
-        return errh->error("cannot locate spinlock %s",name.c_str());
-      break;
+    String name;
+    if (cp_va_parse(conf, this, errh, cpString, "name of spinlock", &name, cpEnd)<0)
+	return -1;
+    for (int i = 0; i < router()->nelements(); i++) {
+	if (SpinlockInfo *si = 
+	    (SpinlockInfo *)(router()->element(i)->cast("SpinlockInfo"))) {
+	    _lock = si->query(name, Element::name());
+	    if (!_lock)
+		return errh->error("cannot locate spinlock %s",name.c_str());
+	    break;
+	}
     }
-  }
-  return 0;
+    return 0;
 }
 
 CLICK_ENDDECLS

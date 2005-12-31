@@ -73,7 +73,7 @@ EtherSpanTree::initialize(ErrorHandler *)
   }
   _best.reset(((uint64_t)_bridge_priority << 48) | _bridge_id);
   _hello_timer.initialize(this);
-  _hello_timer.schedule_after_ms(_best._hello_time * 1000);
+  _hello_timer.schedule_after_msec(_best._hello_time * 1000);
   return 0;
 }
 
@@ -244,7 +244,7 @@ EtherSpanTree::hello_hook(Timer *, void *thunk)
     Packet* p = e->generate_packet(i);
     if (p) e->output(i).push(p);
   }
-  e->_hello_timer.schedule_after_ms(e->_best._hello_time * 1000);
+  e->_hello_timer.schedule_after_msec(e->_best._hello_time * 1000);
 }
 
 Packet*

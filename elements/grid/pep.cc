@@ -64,10 +64,10 @@ PEP::configure(Vector<String> &conf, ErrorHandler *errh)
     float lon = ((float) lon_int) / 100000.0f; 
     if (lat > 90 || lat < -90)
       return errh->error("%s: latitude must be between +/- 90 degrees",
-                         id().c_str());
+                         name().c_str());
     if (lon > 180 || lon < -180)
       return errh->error("%s: longitude must be between +/- 180 degrees",
-                         id().c_str());
+                         name().c_str());
     _lat = lat;
     _lon = lon;
     _fixed = true;
@@ -80,7 +80,7 @@ int
 PEP::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
-  _timer.schedule_after_ms(pep_update * 1000);
+  _timer.schedule_after_msec(pep_update * 1000);
   return 0;
 }
 
@@ -89,7 +89,7 @@ PEP::run_timer(Timer *)
 {
   purge_old();
   output(0).push(make_PEP());
-  _timer.schedule_after_ms(random() % (pep_update * 1000 * 2));
+  _timer.schedule_after_msec(random() % (pep_update * 1000 * 2));
 }
 
 void
@@ -107,7 +107,7 @@ PEP::purge_old()
     } else {
       if(_debug)
         click_chatter("PEP %s %s: purging old entry for %s (%d %d %d)",
-                      id().c_str(),
+                      name().c_str(),
                       _my_ip.s().c_str(),
                       IPAddress(_entries[j]._fix.fix_id).s().c_str(),
                       (int) _entries[j]._when.tv_sec,
@@ -215,7 +215,7 @@ PEP::findEntry(unsigned id, bool create)
   if(create){
     if(_debug)
       click_chatter("PEP %s %s: new entry for %s",
-                    this->id().c_str(),
+                    this->name().c_str(),
                     _my_ip.s().c_str(),
                     IPAddress(id).s().c_str());
     i = _entries.size();
@@ -270,7 +270,7 @@ PEP::simple_action(Packet *p)
       _entries[j]._when = tv;
       if(_debug && f.fix_hops != oh)
         click_chatter("PEP %s %s: updating %s, seq %d -> %d, hops %d -> %d, my pos %s",
-                      id().c_str(),
+                      name().c_str(),
                       _my_ip.s().c_str(),
                       IPAddress(f.fix_id).s().c_str(),
                       os,

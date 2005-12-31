@@ -88,7 +88,7 @@ class GridLogger : public GridGenericLogger {
     size_t avail = sizeof(_buf) - _bufptr;
     if (avail < needed) {
       click_chatter("GridLogger %s: log buffer is too small.  total buf size: %u, needed at least %u",
-		    id().c_str(), sizeof(_buf), needed + _bufptr);
+		    name().c_str(), sizeof(_buf), needed + _bufptr);
       return false;
     }
     return true;
@@ -101,10 +101,10 @@ class GridLogger : public GridGenericLogger {
     int res = write(_fd, _buf, _bufptr);
     if (res < 0)
       click_chatter("GridLogger %s: error writing log buffer: %s",
-		    id().c_str(), strerror(errno));
+		    name().c_str(), strerror(errno));
     else if (res != (int) _bufptr)
       click_chatter("GridLogger %s: bad write to log buffer, had %u bytes in buffer but wrote %d bytes",
-		    id().c_str(), (unsigned) _bufptr, res);
+		    name().c_str(), (unsigned) _bufptr, res);
     _bufptr = 0;
   }
   void clear_buf() { _bufptr = 0; }
@@ -224,7 +224,7 @@ public:
       return;
     add_one_byte(SENT_AD_CODE);
     add_long(seq_no);
-    add_timeval(when.to_timeval());
+    add_timeval(when.timeval());
     write_buf();
   }
 
@@ -235,7 +235,7 @@ public:
     add_one_byte(BEGIN_RECV_CODE);
     add_ip(ip);
     add_long(seq_no);
-    add_timeval(when.to_timeval());
+    add_timeval(when.timeval());
   }
   
   void log_added_route(reason_t why, const GridGenericRouteTable::RouteEntry &r) {
@@ -296,7 +296,7 @@ public:
       return;
     _state = EXPIRE_HANDLER;
     add_one_byte(BEGIN_EXPIRE_CODE);
-    add_timeval(when.to_timeval());
+    add_timeval(when.timeval());
   }
 
   void log_end_expire_handler() {
@@ -314,7 +314,7 @@ public:
     if (!check_state(WAITING))
       return;
     add_one_byte(ROUTE_DUMP_CODE);
-    add_timeval(when.to_timeval());
+    add_timeval(when.timeval());
     int n = rt.size();
     add_long(n);
     for (int i = 0; i < rt.size(); i++) {
@@ -335,7 +335,7 @@ public:
      if (eh->ether_type != htons(ETHERTYPE_GRID)) 
       return;
     add_one_byte(TX_ERR_CODE);
-    add_timeval(when.to_timeval());
+    add_timeval(when.timeval());
     add_long((unsigned long) err);
     log_pkt(eh);
     write_buf();
@@ -348,7 +348,7 @@ public:
     if (eh->ether_type != htons(ETHERTYPE_GRID)) 
       return;
     add_one_byte(NO_ROUTE_CODE);
-    add_timeval(when.to_timeval());
+    add_timeval(when.timeval());
     log_pkt(eh);
     write_buf();
   }

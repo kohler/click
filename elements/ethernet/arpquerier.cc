@@ -91,7 +91,7 @@ int
 ARPQuerier::initialize(ErrorHandler *)
 {
   _expire_timer.initialize(this);
-  _expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
+  _expire_timer.schedule_after_msec(EXPIRE_TIMEOUT_MS);
   _arp_queries = 0;
   _drops = 0;
   _arp_responses = 0;
@@ -208,7 +208,7 @@ ARPQuerier::expire_hook(Timer *timer, void *thunk)
     }
 
     if (timer)
-	timer->schedule_after_ms(EXPIRE_TIMEOUT_MS);
+	timer->schedule_after_msec(EXPIRE_TIMEOUT_MS);
     arpq->_lock.release_write();
 }
 

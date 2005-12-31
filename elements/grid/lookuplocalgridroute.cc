@@ -80,32 +80,32 @@ LookupLocalGridRoute::initialize(ErrorHandler *errh)
 
   if (_rtes && _rtes->cast("GridGenericRouteTable") == 0) {
     return errh->error("%s: GridRouteTable argument %s has the wrong type",
-		       id().c_str(),
-		       _rtes->id().c_str());
+		       name().c_str(),
+		       _rtes->name().c_str());
   } 
 #if 0
   else if (_rtes == 0) {
     return errh->error("%s: no GridRouteTable element given",
-		       id().c_str());
+		       name().c_str());
   }
 #endif
 
   if (_gw_info && _gw_info->cast("GridGatewayInfo") == 0) {
     return errh->error("%s: GridGatewayInfo argument %s has the wrong type",
-		       id().c_str(),
-		       _gw_info->id().c_str());
+		       name().c_str(),
+		       _gw_info->name().c_str());
   } 
 
   if (_link_tracker && _link_tracker->cast("LinkTracker") == 0) {
     return errh->error("%s: LinkTracker argument %s has the wrong type",
-		       id().c_str(),
-		       _link_tracker->id().c_str());
+		       name().c_str(),
+		       _link_tracker->name().c_str());
   } 
 
   if (_log && _log->cast("GridGenericLogger") == 0) {
     return errh->error("%s: GridGenericLogger element %s has the wrong type",
-		       id().c_str(),
-		       _log->id().c_str());
+		       name().c_str(),
+		       _log->name().c_str());
   }
 
   if (input_is_pull(0))
@@ -161,7 +161,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 	IPAddress dest_ip(encap->dst_ip);
 #if NOISY
  	click_chatter("lr %s: got %s packet for %s; I am %s; agi=%s, is_gw = %d\n",
-		      id().c_str(),
+		      name().c_str(),
 		      grid_hdr::type_string(gh->type).c_str(),
 		      dest_ip.s().c_str(), 
 		      _ipaddr.s().c_str(),
@@ -175,7 +175,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 	  if (gh->type == grid_hdr::GRID_NBR_ENCAP) {
 #if NOISY
 	    click_chatter("%s: got an IP packet for us %s",
-			  id().c_str(),
+			  name().c_str(),
 			  dest_ip.s().c_str());
 #endif
 	    packet->pull(sizeof(click_ether) + gh->hdr_len + sizeof(grid_nbr_encap));
@@ -184,7 +184,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 	  }
 	  else
 	    click_chatter("%s: got %s packet for us, but don't know how to handle it",
-			  id().c_str(), grid_hdr::type_string(gh->type).c_str());
+			  name().c_str(), grid_hdr::type_string(gh->type).c_str());
 	} 
 	else {
 	  // packet is not for us, try to forward it!
@@ -195,7 +195,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 
     default:
       click_chatter("%s: received unexpected Grid packet type: %s", 
-		    id().c_str(), grid_hdr::type_string(gh->type).c_str());
+		    name().c_str(), grid_hdr::type_string(gh->type).c_str());
       notify_route_cbs(packet, 0, GRCB::Drop, GRCB::UnknownType, 0);
       output(3).push(packet);
     }
@@ -210,7 +210,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
     IPAddress dst = packet->dst_ip_anno();
 #if NOISY
     click_chatter("lr %s: got packet for %s; I am %s; agi=%s, is_gw=%d\n",
-		  id().c_str(),
+		  name().c_str(),
 		  dst.s().c_str(), 
 		  _ipaddr.s().c_str(),
 		  _any_gateway_ip.s().c_str(),
@@ -219,7 +219,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
     if (dst == _any_gateway_ip && is_gw()) {
       packet->kill();
     } else if (dst == _ipaddr) {
-      click_chatter("%s: got IP packet from us for our address; looping it back.  Check the configuration.", id().c_str());
+      click_chatter("%s: got IP packet from us for our address; looping it back.  Check the configuration.", name().c_str());
       output(1).push(packet);
     } else {
       // encapsulate packet with grid hdr and try to send it out
@@ -309,7 +309,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 
   if (_rtes == 0) {
     // no GridRouteTable next-hop table in configuration
-    click_chatter("%s: can't forward packet for %s; there is no routing table, trying geographic forwarding", id().c_str(), dest_ip.s().c_str());
+    click_chatter("%s: can't forward packet for %s; there is no routing table, trying geographic forwarding", name().c_str(), dest_ip.s().c_str());
     notify_route_cbs(packet, dest_ip, GRCB::FallbackToGF, 0, 0);
     output(2).push(packet);
     return;
@@ -344,7 +344,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
   }
   else {
 #if NOISY
-    click_chatter("%s: unable to forward packet for %s with local routing, trying geographic routing", id().c_str(), dest_ip.s().c_str());
+    click_chatter("%s: unable to forward packet for %s with local routing, trying geographic routing", name().c_str(), dest_ip.s().c_str());
 #endif
     
     // logging

@@ -200,7 +200,7 @@ IPFlowRawSockets::configure(Vector<String> &conf, ErrorHandler *errh)
 	return -1;
 
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
-	return errh->error("%s is not an AggregateNotifier", e->id().c_str());
+	return errh->error("%s is not an AggregateNotifier", e->name().c_str());
 
     return 0;
 }
@@ -397,7 +397,7 @@ IPFlowRawSockets::aggregate_notify(uint32_t agg, AggregateEvent event, const Pac
 	_gc_aggs.push_back(agg);
 	_gc_aggs.push_back(click_jiffies());
 	if (!_gc_timer.scheduled())
-	    _gc_timer.schedule_after_ms(250);
+	    _gc_timer.schedule_after_msec(250);
     }
 }
 
@@ -416,7 +416,7 @@ IPFlowRawSockets::gc_hook(Timer *t, void *thunk)
 	}
     if (i < fs->_gc_aggs.size()) {
 	fs->_gc_aggs.erase(fs->_gc_aggs.begin(), fs->_gc_aggs.begin() + i);
-	t->schedule_after_ms(250);
+	t->schedule_after_msec(250);
     }
 }
 

@@ -58,7 +58,7 @@ int
 FloodingLocQuerier::initialize(ErrorHandler *)
 {
   _expire_timer.initialize(this);
-  _expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
+  _expire_timer.schedule_after_msec(EXPIRE_TIMEOUT_MS);
   _loc_queries = 0;
   _pkts_killed = 0;
   _timeout_jiffies = (CLICK_HZ * EXPIRE_TIMEOUT_MS) / 1000;
@@ -101,7 +101,7 @@ FloodingLocQuerier::expire_hook(Timer *, void *thunk)
   for (int i = 0; i < old_entries.size(); i++) 
     locq->_queries.remove(old_entries[i]);
     
-  locq->_expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
+  locq->_expire_timer.schedule_after_msec(EXPIRE_TIMEOUT_MS);
 }
 
 void
@@ -112,7 +112,7 @@ FloodingLocQuerier::send_query_for(const IPAddress &want_ip)
   grid_loc_query *fq;
   WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*gh) + sizeof(*fq) + 2);
   if (q == 0) {
-    click_chatter("in %s: cannot make packet!", id().c_str());
+    click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
   } 
   ASSERT_ALIGNED(q->data());
@@ -162,18 +162,18 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
   grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
 
 #if NOISY
-  click_chatter("FloodingLocQuerier %s: got packet for %s", id().c_str(), IPAddress(nb->dst_ip).s().c_str());
+  click_chatter("FloodingLocQuerier %s: got packet for %s", name().c_str(), IPAddress(nb->dst_ip).s().c_str());
 #endif
 
 #ifdef SMALL_GRID_HEADERS
-  click_chatter("FloodingLocQuerier %s: not enough info in small grid headers, dropping packet", id().c_str());
+  click_chatter("FloodingLocQuerier %s: not enough info in small grid headers, dropping packet", name().c_str());
   p->kill();  
   return;
 #else
   // see if packet has location info in it already
   if (nb->dst_loc_good) {
 #if NOISY
-    click_chatter("FloodingLocQuerier %s: packet has loc info, sending immediately", id().c_str(), IPAddress(nb->dst_ip).s().c_str());
+    click_chatter("FloodingLocQuerier %s: packet has loc info, sending immediately", name().c_str(), IPAddress(nb->dst_ip).s().c_str());
 #endif
     // memcpy(&eh->ether_shost, _my_en.data(), 6); // LookupGeographicGridRoute does this for us
     notify_route_cbs(p, nb->dst_ip, GRCB::NoLocQueryNeeded, 0, 0);
@@ -188,7 +188,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
     // we have a query entry for this destination
     if (ae->p == 0) { 
 #if NOISY
-      click_chatter("FloodingLocQuerier %s: dest %s has good cached info, sending immediately", id().c_str(), IPAddress(nb->dst_ip).s().c_str());
+      click_chatter("FloodingLocQuerier %s: dest %s has good cached info, sending immediately", name().c_str(), IPAddress(nb->dst_ip).s().c_str());
 #endif
       // ae data is cached from sending last p
       WritablePacket *q = p->uniqueify();
@@ -200,7 +200,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
       nb2->dst_loc_err = htons(ae->loc_err);
       nb2->dst_loc_good = ae->loc_good;
       if (!ae->loc_good)
-	click_chatter("FloodingLocQuerier %s: ``bad'' location information in table!  sending packet anyway...", id().c_str()); // XXX lame, should cache the packet and wait for some new info that is good.
+	click_chatter("FloodingLocQuerier %s: ``bad'' location information in table!  sending packet anyway...", name().c_str()); // XXX lame, should cache the packet and wait for some new info that is good.
       // memcpy(&eh2->ether_shost, _my_en.data(), 6);
       notify_route_cbs(p, nb->dst_ip, GRCB::CachedLocFound, 0, 0);
       output(0).push(q);
@@ -209,7 +209,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
       // there is a packet waiting for response; kill waiting packet,
       // then reissue query
 #if NOISY
-      click_chatter("FloodingLocQuerier %s: dest %s has oustanding query, killing cached packet, reissuing loc query", id().c_str(), IPAddress(nb->dst_ip).s().c_str());
+      click_chatter("FloodingLocQuerier %s: dest %s has oustanding query, killing cached packet, reissuing loc query", name().c_str(), IPAddress(nb->dst_ip).s().c_str());
 #endif
       ae->p->kill();
       _pkts_killed++;
@@ -222,7 +222,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
   else {
     // no entry, create new entry and issue query
 #if NOISY
-      click_chatter("FloodingLocQuerier %s: dest %s has NO cached info, issuing loc query", id().c_str(), IPAddress(nb->dst_ip).s().c_str());
+      click_chatter("FloodingLocQuerier %s: dest %s has NO cached info, issuing loc query", name().c_str(), IPAddress(nb->dst_ip).s().c_str());
 #endif
     LocEntry ae2;
     ae2.ip = nb->dst_ip;
@@ -253,25 +253,25 @@ FloodingLocQuerier::handle_reply(Packet *p)
   IPAddress ip_dst(nb->dst_ip); 
 
 #if NOISY
-  click_chatter("FloodingLocQuerier %s: got reply for %s from %s", id().c_str(), ip_dst.s().c_str(), ip_repl.s().c_str());
+  click_chatter("FloodingLocQuerier %s: got reply for %s from %s", name().c_str(), ip_dst.s().c_str(), ip_repl.s().c_str());
 #endif
 
   if (ip_dst != _my_ip) {
-    click_chatter("FloodingLocQuerier %s: got location query reply for %s (not for us!); check the configuration", id().c_str(), ip_repl.s().c_str());
+    click_chatter("FloodingLocQuerier %s: got location query reply for %s (not for us!); check the configuration", name().c_str(), ip_repl.s().c_str());
     p->kill();
     return;
   }
 
   LocEntry *ae = _queries.findp(ip_repl);
   if (!ae) {
-    click_chatter("FloodingLocQuerier %s: got location query reply from %s, but there is no entry; ignoring it", id().c_str(), ip_repl.s().c_str());
+    click_chatter("FloodingLocQuerier %s: got location query reply from %s, but there is no entry; ignoring it", name().c_str(), ip_repl.s().c_str());
     p->kill();
     return;
   }
   
   unsigned int loc_seq_no = ntohl(gh->loc_seq_no);
   if (loc_seq_no < ae->loc_seq_no && ae->p == 0) {
-    click_chatter("FloodingLocQuerier %s: got location query reply from %s with old information, ignoring it", id().c_str(), ip_repl.s().c_str());
+    click_chatter("FloodingLocQuerier %s: got location query reply from %s with old information, ignoring it", name().c_str(), ip_repl.s().c_str());
     p->kill();
     return;
   }
@@ -285,14 +285,14 @@ FloodingLocQuerier::handle_reply(Packet *p)
   ae->last_response_jiffies = click_jiffies();
 
   if (!ae->loc_good)
-    click_chatter("FloodingLocQuerier %s: caching bad location info from %s", id().c_str(), ip_repl.s().c_str());
+    click_chatter("FloodingLocQuerier %s: caching bad location info from %s", name().c_str(), ip_repl.s().c_str());
 
   Packet *cached_packet = ae->p;
   ae->p = 0;
 
   if (cached_packet) {
 #if NOISY
-    click_chatter("FloodingLocQuerier %s: after reply, re-sending packet for %s", id().c_str(), ip_repl.s().c_str());
+    click_chatter("FloodingLocQuerier %s: after reply, re-sending packet for %s", name().c_str(), ip_repl.s().c_str());
 #endif
     handle_nbr_encap(cached_packet);
   }
@@ -307,11 +307,11 @@ FloodingLocQuerier::handle_query(Packet *p)
   grid_loc_query *lq = (grid_loc_query *) (gh + 1);
 
 #if NOISY
-  click_chatter("FloodingLocQuerier %s: got query for %s from %s (%u)", id().c_str(), IPAddress(lq->dst_ip).s().c_str(), IPAddress(gh->ip).s().c_str(), ntohl(lq->seq_no));
+  click_chatter("FloodingLocQuerier %s: got query for %s from %s (%u)", name().c_str(), IPAddress(lq->dst_ip).s().c_str(), IPAddress(gh->ip).s().c_str(), ntohl(lq->seq_no));
 #endif
 
   if (lq->dst_ip == (unsigned int) _my_ip) {
-    click_chatter("FloodingLocQuerier %s: got location query for us, but it should go to the LocQueryResponder.  Check the configuration.", id().c_str());
+    click_chatter("FloodingLocQuerier %s: got location query for us, but it should go to the LocQueryResponder.  Check the configuration.", name().c_str());
     p->kill();
     return;
   }
@@ -321,14 +321,14 @@ FloodingLocQuerier::handle_query(Packet *p)
     unsigned int q_seq_no = ntohl(lq->seq_no);
     if (seq_rec && seq_rec->seq_no >= q_seq_no) {
 #if NOISY
-  click_chatter("FloodingLocQuerier %s: killing query for %s from %s (%u)", id().c_str(), IPAddress(lq->dst_ip).s().c_str(), IPAddress(gh->ip).s().c_str(), ntohl(lq->seq_no));
+  click_chatter("FloodingLocQuerier %s: killing query for %s from %s (%u)", name().c_str(), IPAddress(lq->dst_ip).s().c_str(), IPAddress(gh->ip).s().c_str(), ntohl(lq->seq_no));
 #endif
       // already handled this query
       p->kill();
       return;
     }
 #if NOISY
-    click_chatter("FloodingLocQuerier %s: propagating query for %s from %s (%u)", id().c_str(), IPAddress(lq->dst_ip).s().c_str(), IPAddress(gh->ip).s().c_str(), ntohl(lq->seq_no));
+    click_chatter("FloodingLocQuerier %s: propagating query for %s from %s (%u)", name().c_str(), IPAddress(lq->dst_ip).s().c_str(), IPAddress(gh->ip).s().c_str(), ntohl(lq->seq_no));
 #endif
     _query_seqs.insert(gh->ip, seq_t(q_seq_no, click_jiffies()));
     WritablePacket *wp = p->uniqueify();
@@ -354,7 +354,7 @@ FloodingLocQuerier::push(int port, Packet *p)
       handle_reply(p);
     }
     else {
-      click_chatter("FloodingLocQuerier %s: got an unexpected packet type", id().c_str());
+      click_chatter("FloodingLocQuerier %s: got an unexpected packet type", name().c_str());
       assert(0);
     }
   }

@@ -116,10 +116,10 @@ GridLogger::open_log(const String &filename)
   int new_fd = open(new_fn.c_str(), O_WRONLY | O_CREAT, 0777);
   if (new_fd == -1) {
     click_chatter("GridLogger %s: unable to open log file ``%s'': %s",
-		  id().c_str(), new_fn.c_str(), strerror(errno));
+		  name().c_str(), new_fn.c_str(), strerror(errno));
     if (log_is_open())
       click_chatter("Gridlogger %s: previous logging to ``%s'' is still enabled",
-		    id().c_str(), _fn.c_str());
+		    name().c_str(), _fn.c_str());
     return false;
   }
   
@@ -129,7 +129,7 @@ GridLogger::open_log(const String &filename)
   _fd = new_fd;
   _fn = new_fn;
   
-  click_chatter("GridLogger %s: started logging to %s", id().c_str(), _fn.c_str());
+  click_chatter("GridLogger %s: started logging to %s", name().c_str(), _fn.c_str());
   return true;
 }
 
@@ -138,7 +138,7 @@ GridLogger::close_log() {
   if (_fd != -1) {
     close(_fd);
     _fd = -1;
-    click_chatter("GridLogger %s: stopped logging on %s", id().c_str(), _fn.c_str());
+    click_chatter("GridLogger %s: stopped logging on %s", name().c_str(), _fn.c_str());
     _fn = "";
   }
 }

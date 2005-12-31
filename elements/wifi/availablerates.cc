@@ -114,7 +114,7 @@ Vector<int>
 AvailableRates::lookup(EtherAddress eth)
 {
   if (!eth) {
-    click_chatter("%s: lookup called with NULL eth!\n", id().c_str());
+    click_chatter("%s: lookup called with NULL eth!\n", name().c_str());
     return Vector<int>();
   }
 
@@ -136,7 +136,7 @@ AvailableRates::insert(EtherAddress eth, Vector<int> rates)
   if (!(eth)) {
     if (_debug) {
       click_chatter("AvailableRates %s: You fool, you tried to insert %s\n",
-		    id().c_str(),
+		    name().c_str(),
 		    eth.s().c_str());
     }
     return -1;

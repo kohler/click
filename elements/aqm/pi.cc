@@ -169,7 +169,7 @@ PI::initialize(ErrorHandler *errh)
 	if (Storage *s = (Storage *)_queue_elements[i]->cast("Storage"))
 	    _queues.push_back(s);
 	else
-	    errh->error("`%s' is not a Storage element", _queue_elements[i]->id().c_str());
+	    errh->error("`%s' is not a Storage element", _queue_elements[i]->name().c_str());
     if (_queues.size() != _queue_elements.size())
 	return -1;
     else if (_queues.size() == 1)
@@ -182,7 +182,7 @@ PI::initialize(ErrorHandler *errh)
     _last_jiffies = 0;
 
     _timer.initialize(this);
-    _timer.schedule_after_ms(_w*1000);
+    _timer.schedule_after_msec(_w*1000);
 
     return 0;
 }
@@ -211,7 +211,7 @@ PI::configuration(Vector<String> &conf) const
     StringAccum sa;
     sa << "QUEUES";
     for (int i = 0; i < _queue_elements.size(); i++)
-	sa << ' ' << _queue_elements[i]->id();
+	sa << ' ' << _queue_elements[i]->name();
     conf.push_back(sa.take_string());
 
     conf.push_back("STABILITY " + String(_size.stability_shift()));
@@ -234,7 +234,7 @@ void
 PI::run_timer(Timer *)
 {
 	_p = _a*(queue_size() - _target_q) - _b*(_old_q - _target_q) + _p;
-    _timer.reschedule_after_ms(_w*1000);
+    _timer.reschedule_after_msec(_w*1000);
 }
 
 bool
@@ -327,7 +327,7 @@ PI::read_queues(Element *e, void *)
     PI *r = (PI *)e;
     String s;
     for (int i = 0; i < r->_queue_elements.size(); i++)
-	s += r->_queue_elements[i]->id() + "\n";
+	s += r->_queue_elements[i]->name() + "\n";
     return s;
 }
 

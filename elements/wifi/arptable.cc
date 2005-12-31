@@ -68,7 +68,7 @@ EtherAddress
 ARPTable::lookup(IPAddress ip)
 {
   if (!ip) {
-    click_chatter("%s: lookup called with NULL ip!\n", id().c_str());
+    click_chatter("%s: lookup called with NULL ip!\n", name().c_str());
     return _bcast;
   }
   DstInfo *dst = _table.findp(ip);
@@ -82,7 +82,7 @@ IPAddress
 ARPTable::reverse_lookup(EtherAddress eth)
 {
   if (!eth) {
-    click_chatter("%s: lookup called with NULL eth!\n", id().c_str());
+    click_chatter("%s: lookup called with NULL eth!\n", name().c_str());
     return IPAddress();
   }
   IPAddress *ip = _rev_table.findp(eth);
@@ -98,7 +98,7 @@ ARPTable::insert(IPAddress ip, EtherAddress eth)
 {
   if (!(ip && eth)) {
     click_chatter("ARPTable %s: You fool, you tried to insert %s, %s\n",
-		  id().c_str(),
+		  name().c_str(),
 		  ip.s().c_str(),
 		  eth.s().c_str());
     return -1;

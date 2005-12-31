@@ -40,7 +40,7 @@ TimestampAccum::initialize(ErrorHandler *)
 inline Packet *
 TimestampAccum::simple_action(Packet *p)
 {
-    _usec_accum += (Timestamp::now() - p->timestamp_anno()).to_double();
+    _usec_accum += (Timestamp::now() - p->timestamp_anno()).doubleval();
     _count++;
     return p;
 }

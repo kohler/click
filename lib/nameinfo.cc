@@ -294,9 +294,10 @@ NameInfo::getdb(uint32_t type, const Element *e, int vsize, bool create)
     if (e) {
 	if (NameInfo *ni = (create ? e->router()->force_name_info() : e->router()->name_info())) {
 	    NameDB *install = (create ? ni->install_dynamic_sentinel() : 0);
-	    int last_slash = e->id().find_right('/');
+	    String ename = e->name();
+	    int last_slash = ename.find_right('/');
 	    if (last_slash >= 0)
-		return ni->namedb(type, vsize, e->id().substring(0, last_slash + 1), install);
+		return ni->namedb(type, vsize, ename.substring(0, last_slash + 1), install);
 	    else
 		return ni->namedb(type, vsize, String(), install);
 	}

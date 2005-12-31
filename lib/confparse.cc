@@ -935,8 +935,8 @@ cp_file_offset(const String &str, off_t *return_value)
 
 // PARSING REAL NUMBERS
 
-static uint32_t exp10[] = { 1, 10, 100, 1000, 10000, 100000, 1000000,
-			    10000000, 100000000, 1000000000 };
+static uint32_t exp10val[] = { 1, 10, 100, 1000, 10000, 100000, 1000000,
+			       10000000, 100000000, 1000000000 };
 
 bool
 cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
@@ -1049,7 +1049,7 @@ cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
 
   // round fraction part if required
   if (digit >= 5) {
-    if (frac_part == exp10[frac_digits] - 1) {
+    if (frac_part == exp10val[frac_digits] - 1) {
       frac_part = 0;
       if (int_part == 0xFFFFFFFFU)
 	cp_errno = CPE_OVERFLOW;
@@ -1061,7 +1061,7 @@ cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
   // done!
   if (cp_errno) {		// overflow
     int_part = 0xFFFFFFFFU;
-    frac_part = exp10[frac_digits] - 1;
+    frac_part = exp10val[frac_digits] - 1;
   }
 
   //click_chatter("%d: %u %u", frac_digits, int_part, frac_part);
@@ -1074,7 +1074,7 @@ static bool
 unsigned_real10_2to1(uint32_t int_part, uint32_t frac_part, int frac_digits,
 		     uint32_t *return_value)
 {
-  uint32_t one = exp10[frac_digits];
+  uint32_t one = exp10val[frac_digits];
   uint32_t int_max = 0xFFFFFFFFU / one;
   uint32_t frac_max = 0xFFFFFFFFU - int_max * one;
   if (int_part > int_max || (int_part == int_max && frac_part > frac_max)) {
@@ -3423,7 +3423,7 @@ String
 cp_unparse_real10(uint32_t real, int frac_digits)
 {
   assert(frac_digits >= 0 && frac_digits <= 9);
-  uint32_t one = exp10[frac_digits];
+  uint32_t one = exp10val[frac_digits];
   uint32_t int_part = real / one;
   uint32_t frac_part = real - (int_part * one);
 

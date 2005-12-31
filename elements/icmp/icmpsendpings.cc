@@ -79,7 +79,7 @@ ICMPPingSource::initialize(ErrorHandler *errh)
     _count = 0;
     _timer.initialize(this);
     if (_limit != 0 && _active && output_is_push(0))
-	_timer.schedule_after_ms(_interval);
+	_timer.schedule_after_msec(_interval);
     if (ninputs() == 1) {
 #if CLICK_LINUXMODULE
 	_receiver = (ReceiverInfo *)vmalloc(sizeof(ReceiverInfo));
@@ -159,7 +159,7 @@ ICMPPingSource::run_timer(Timer *)
 	output(0).push(q);
 	_count++;
 	if (_count < _limit || _limit < 0)
-	    _timer.reschedule_after_ms(_interval);
+	    _timer.reschedule_after_msec(_interval);
     }
 }
 
@@ -273,7 +273,7 @@ ICMPPingSource::write_handler(const String &str_in, Element *e, void *thunk, Err
 	if (!cp_integer(s, &ps->_limit))
 	    return errh->error("'limit' should be integer");
 	if ((ps->_count < ps->_limit || ps->_limit < 0) && ps->_active && !ps->_timer.scheduled() && ps->output_is_push(0))
-	    ps->_timer.schedule_after_ms(ps->_interval);
+	    ps->_timer.schedule_after_msec(ps->_interval);
 	return 0;
       case H_INTERVAL:
 	if (!cp_seconds_as_milli(s, (uint32_t *)&ps->_interval))
@@ -284,7 +284,7 @@ ICMPPingSource::write_handler(const String &str_in, Element *e, void *thunk, Err
 	if (ReceiverInfo *ri = ps->_receiver)
 	    memset(ri, 0, sizeof(ReceiverInfo));
 	if (ps->_count < ps->_limit && ps->_active && !ps->_timer.scheduled() && ps->output_is_push(0))
-	    ps->_timer.schedule_after_ms(ps->_interval);
+	    ps->_timer.schedule_after_msec(ps->_interval);
 	return 0;
       default:
 	return -1;

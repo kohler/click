@@ -46,7 +46,7 @@ PacketLogger2::simple_action(Packet *p_in)
   int s_post = _p.size();
   
   if (s_post != s_pre + 1) 
-    click_chatter("PacketLogger2 %s: ERROR: couldn't add packet to log, log size = %d", id().c_str(), s_pre);
+    click_chatter("PacketLogger2 %s: ERROR: couldn't add packet to log, log size = %d", name().c_str(), s_pre);
       
   return p_in;
 }

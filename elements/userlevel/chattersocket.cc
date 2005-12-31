@@ -238,7 +238,7 @@ ChatterSocket::retry_hook(Timer *t, void *thunk)
   else if (cs->initialize_socket(ErrorHandler::default_handler()) >= 0)
     /* nada */;
   else if (cs->_retries >= 0)
-    t->reschedule_after_s(1);
+    t->reschedule_after_sec(1);
   else
     cs->router()->please_stop_driver();
 }
@@ -254,7 +254,7 @@ ChatterSocket::initialize(ErrorHandler *errh)
   else if (_retries >= 0) {
     _retry_timer = new Timer(retry_hook, this);
     _retry_timer->initialize(this);
-    _retry_timer->schedule_after_s(1);
+    _retry_timer->schedule_after_sec(1);
     return 0;
   } else
     return -1;

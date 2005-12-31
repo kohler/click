@@ -152,14 +152,14 @@ RadioSim::rs_write_handler(const String &arg, Element *element,
      !cp_integer(words[0], 10, &xi) ||
      !cp_real10(words[1], 5, &xlat) ||
      !cp_real10(words[2], 5, &xlon))
-    return errh->error("%s: expecting node-index lat lon", l->id().c_str());
+    return errh->error("%s: expecting node-index lat lon", l->name().c_str());
   if(xi >= 0 && xi < l->nnodes()){
     double lat = ((double)xlat) / 100000.0;
     double lon = ((double)xlon) / 100000.0;
     l->set_node_loc(xi, lat, lon);
     return(0);
   } else {
-    return errh->error("%s: illegal index %d", l->id().c_str(), xi);
+    return errh->error("%s: illegal index %d", l->name().c_str(), xi);
   }
 }
 

@@ -59,7 +59,7 @@ int
 BalancedThreadSched::initialize(ErrorHandler *)
 {
     _timer.initialize(this);
-    _timer.schedule_after_ms(10);
+    _timer.schedule_after_msec(10);
     return 0;
 }
 
@@ -143,7 +143,7 @@ BalancedThreadSched::run_timer(Timer *)
 	thread->unlock_tasks();
     }
   
-    _timer.schedule_after_ms(_interval);
+    _timer.schedule_after_msec(_interval);
 }
 
 #if 0
@@ -183,7 +183,7 @@ BalancedThreadSched::run_timer(Timer *)
 	}
     }
     if (ii == n) {
-	_timer.schedule_after_ms(_interval);
+	_timer.schedule_after_msec(_interval);
 	return;
     }
 #endif
@@ -220,7 +220,7 @@ BalancedThreadSched::run_timer(Timer *)
 	    Element *e = sorted[i]->element();
 	    if (e)
 		click_chatter("%u: %s %d, was on %d", 
-			      now, e->id().c_str(), 
+			      now, e->name().c_str(), 
 			      sorted[i]->cycles(), 
 			      sorted[i]->home_thread_id());
 	}
@@ -259,7 +259,7 @@ BalancedThreadSched::run_timer(Timer *)
 	    Element *e = sorted[i]->element();
 	    if (e) 
 		click_chatter("%u: %s %d, now on %d (%d)", 
-			      now, e->id().c_str(), 
+			      now, e->name().c_str(), 
 			      sorted[i]->cycles(), 
 			      sorted[i]->home_thread_id(), avg_load);
 	}
@@ -268,7 +268,7 @@ BalancedThreadSched::run_timer(Timer *)
     }
 #endif
 
-    _timer.schedule_after_ms(_interval);
+    _timer.schedule_after_msec(_interval);
 }
 #endif
 

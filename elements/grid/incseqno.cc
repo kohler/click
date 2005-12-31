@@ -35,7 +35,7 @@ IncrementSeqNo::simple_action(Packet *p)
 {
   if (p->length() < _offset + 4) {
     click_chatter("IncrementSeqNo %s: packet of %d bytes is too small to hold sequence number at offset %u",
-		  id().c_str(), p->length(), _offset);
+		  name().c_str(), p->length(), _offset);
     return p;
   }
 

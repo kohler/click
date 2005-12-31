@@ -70,7 +70,7 @@ String
 FromDump::declaration() const
 {
     StringAccum sa;
-    sa << id() << " :: " << class_name();
+    sa << name() << " :: " << class_name();
     if (_ff.initialized())
 	sa << '(' << _ff.print_filename() << ')';
     return sa.take_string();
@@ -146,9 +146,9 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
     if (stop && _end_h)
 	return errh->error("'END_CALL' and 'STOP' are mutually exclusive");
     else if (stop)
-	_end_h = new HandlerCall(id() + ".stop");
+	_end_h = new HandlerCall(name() + ".stop");
     else if (_have_last_time && !_end_h)
-	_end_h = new HandlerCall(id() + ".active false");
+	_end_h = new HandlerCall(name() + ".active false");
 
     // set other variables
     _have_any_times = false;

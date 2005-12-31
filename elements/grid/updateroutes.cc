@@ -75,7 +75,7 @@ UpdateGridRoutes::configure(Vector<String> &conf, ErrorHandler *errh)
       return errh->error("timeout interval is too small");
   }
   else
-    click_chatter("%s: not timing out table entries", id().c_str());
+    click_chatter("%s: not timing out table entries", name().c_str());
 
   if (_period <= 0)
     return errh->error("period must be greater than 0");
@@ -96,14 +96,14 @@ UpdateGridRoutes::initialize(ErrorHandler *)
 {
   //  ScheduleInfo::join_scheduler(this, errh);
   _hello_timer.initialize(this);
-  _hello_timer.schedule_after_ms(_period); // Send periodically
+  _hello_timer.schedule_after_msec(_period); // Send periodically
 
   _expire_timer.initialize(this);
   if (_timeout > 0)
-    _expire_timer.schedule_after_ms(EXPIRE_TIMER_PERIOD);
+    _expire_timer.schedule_after_msec(EXPIRE_TIMER_PERIOD);
 
   _sanity_timer.initialize(this);
-  _sanity_timer.schedule_after_ms(SANITY_CHECK_PERIOD); // Send periodically
+  _sanity_timer.schedule_after_msec(SANITY_CHECK_PERIOD); // Send periodically
 
   return 0;
 }
@@ -125,7 +125,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
    */
   click_ether *eh = (click_ether *) packet->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
-    click_chatter("%s: got non-Grid packet type", id().c_str());
+    click_chatter("%s: got non-Grid packet type", name().c_str());
     return packet;
   }
   grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
@@ -133,7 +133,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
   EtherAddress ethaddr((unsigned char *) eh->ether_shost);
 
   if (ethaddr == _ethaddr) {
-    click_chatter("%s: received own Grid packet; ignoring it", id().c_str());
+    click_chatter("%s: received own Grid packet; ignoring it", name().c_str());
     return packet;
   }
 
@@ -142,13 +142,13 @@ UpdateGridRoutes::simple_action(Packet *packet)
     // this src addr not already in map, so add it
     NbrEntry new_nbr(ethaddr, ipaddr, jiff);
     _addresses.insert(ipaddr, new_nbr);
-    click_chatter("%s: adding %s -- %s", id().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
+    click_chatter("%s: adding %s -- %s", name().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
   }
   else {
     // update jiffies and MAC for existing entry
     nbr->last_updated_jiffies = jiff;
     if (nbr->eth != ethaddr) 
-      click_chatter("%s: updating %s -- %s", id().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
+      click_chatter("%s: updating %s -- %s", name().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
     nbr->eth = ethaddr;
   }
   
@@ -389,10 +389,10 @@ UpdateGridRoutes::sanity_hook(Timer *, void *thunk)
   
   if (n->_num_updates_sent > SANITY_CHECK_MAX_PACKETS)
     click_chatter("%s: sent more than %d routing updates in %d milliseconds!",
-		  n->id().c_str(), SANITY_CHECK_MAX_PACKETS, SANITY_CHECK_PERIOD);
+		  n->name().c_str(), SANITY_CHECK_MAX_PACKETS, SANITY_CHECK_PERIOD);
   n->_num_updates_sent = 0;
 
-  n->_expire_timer.schedule_after_ms(SANITY_CHECK_PERIOD);
+  n->_expire_timer.schedule_after_msec(SANITY_CHECK_PERIOD);
 }
 
 void
@@ -420,7 +420,7 @@ UpdateGridRoutes::expire_hook(Timer *, void *thunk)
     n->send_routing_update(expired_info, false);
   }
 
-  n->_expire_timer.schedule_after_ms(EXPIRE_TIMER_PERIOD);
+  n->_expire_timer.schedule_after_msec(EXPIRE_TIMER_PERIOD);
 }
 
 
@@ -464,13 +464,13 @@ UpdateGridRoutes::expire_routes()
   // remove expired immediate nbr entries
   for (xa_t::iterator iter = expired_addresses.begin(); iter; iter++) {
     click_chatter("%s: expiring address for %s",
-                  id().c_str(), iter.key().s().c_str());
+                  name().c_str(), iter.key().s().c_str());
     assert(_addresses.remove(iter.key()));
   }
 
   // remove expired route table entry
   for (int i = 0; i < expired_nbrs.size(); i++) {
-    click_chatter("%s: expiring route entry for %s", id().c_str(), IPAddress(expired_nbrs[i].ip).s().c_str());
+    click_chatter("%s: expiring route entry for %s", name().c_str(), IPAddress(expired_nbrs[i].ip).s().c_str());
     assert(_rtes.remove(expired_nbrs[i].ip));
   }
 
@@ -510,7 +510,7 @@ UpdateGridRoutes::hello_hook(Timer *, void *thunk)
   int jitter = (int) (((double) n->_jitter) * r / ((double) 0x7FffFFff));
   if (r2 & 1)
     jitter *= -1;
-  n->_hello_timer.schedule_after_ms(n->_period + (int) jitter);
+  n->_hello_timer.schedule_after_msec(n->_period + (int) jitter);
 }
 
 
@@ -530,7 +530,7 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
 
   WritablePacket *p = Packet::make(psz + 2); // for alignment
   if (p == 0) {
-    click_chatter("in %s: cannot make packet!", id().c_str());
+    click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
   } 
   ASSERT_ALIGNED(p->data());

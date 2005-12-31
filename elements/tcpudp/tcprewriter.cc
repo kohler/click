@@ -249,9 +249,9 @@ int
 TCPRewriter::initialize(ErrorHandler *)
 {
   _tcp_gc_timer.initialize(this);
-  _tcp_gc_timer.schedule_after_s(_tcp_gc_interval);
+  _tcp_gc_timer.schedule_after_sec(_tcp_gc_interval);
   _tcp_done_gc_timer.initialize(this);
-  _tcp_done_gc_timer.schedule_after_s(_tcp_done_gc_interval);
+  _tcp_done_gc_timer.schedule_after_sec(_tcp_done_gc_interval);
 
   // release memory to system on cleanup
   _tcp_map.set_arena(router()->arena_factory());
@@ -310,7 +310,7 @@ TCPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
 {
   TCPRewriter *rw = (TCPRewriter *)thunk;
   rw->clean_map(rw->_tcp_map, click_jiffies() - rw->_tcp_timeout_jiffies);
-  timer->reschedule_after_s(rw->_tcp_gc_interval);
+  timer->reschedule_after_sec(rw->_tcp_gc_interval);
 }
 
 void
@@ -320,7 +320,7 @@ TCPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
   rw->clean_map_free_tracked
     (rw->_tcp_map, rw->_tcp_done, rw->_tcp_done_tail,
      click_jiffies() - rw->_tcp_done_timeout_jiffies);
-  timer->reschedule_after_s(rw->_tcp_done_gc_interval);
+  timer->reschedule_after_sec(rw->_tcp_done_gc_interval);
 }
 
 TCPRewriter::TCPMapping *

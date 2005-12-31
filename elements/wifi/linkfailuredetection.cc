@@ -63,7 +63,7 @@ LinkFailureDetection::call_handler(EtherAddress dst) {
   
   const Handler *h = Router::handler(_handler_e, _handler_name);
   if (!h) {
-    errh->error("%s: no handler `%s'", id().c_str(), 
+    errh->error("%s: no handler `%s'", name().c_str(), 
 		Handler::unparse_name(_handler_e, _handler_name).c_str());
   }
   
@@ -73,7 +73,7 @@ LinkFailureDetection::call_handler(EtherAddress dst) {
     h->call_write(dst.s(), _handler_e, &cerrh);
   } else {
     errh->error("%s: no write handler `%s'", 
-		id().c_str(), 
+		name().c_str(), 
 		h->unparse_name(_handler_e).c_str());
   }
 

@@ -271,7 +271,7 @@ class Router { public:
 
 class Handler { public:
 
-    enum {
+    enum Flags {
 	OP_READ = 1, OP_WRITE = 2, READ_PARAM = 4, ONE_HOOK = 8,
 	PRIVATE_MASK = 0xF,
 	EXCLUSIVE = 16,
@@ -280,27 +280,27 @@ class Handler { public:
 	USER_FLAG_SHIFT = 9, USER_FLAG_0 = 1 << USER_FLAG_SHIFT
     };
 
-    const String& name() const	{ return _name; }
-    uint32_t flags() const	{ return _flags; }
-    void* thunk1() const	{ return _thunk1; }
-    void* thunk2() const	{ return _thunk2; }
+    inline const String &name() const;
+    inline uint32_t flags() const;
+    inline void *thunk1() const;
+    inline void *thunk2() const;
 
-    bool readable() const	{ return _flags & OP_READ; }
-    bool read_param() const	{ return _flags & READ_PARAM; }
-    bool read_visible() const	{ return _flags & OP_READ; }
-    bool writable() const	{ return _flags & OP_WRITE; }
-    bool write_visible() const	{ return _flags & OP_WRITE; }
-    bool visible() const	{ return _flags & (OP_READ | OP_WRITE); }
-    bool exclusive() const	{ return _flags & EXCLUSIVE; }
+    inline bool readable() const;
+    inline bool read_param() const;
+    inline bool read_visible() const;
+    inline bool writable() const;
+    inline bool write_visible() const;
+    inline bool visible() const;
+    inline bool exclusive() const;
 
-    inline String call_read(Element*, ErrorHandler* = 0) const;
-    String call_read(Element*, const String&, ErrorHandler* = 0) const;
-    int call_write(const String&, Element*, ErrorHandler*) const;
+    inline String call_read(Element *, ErrorHandler * = 0) const;
+    String call_read(Element *, const String &, ErrorHandler * = 0) const;
+    int call_write(const String &, Element *, ErrorHandler *) const;
   
-    String unparse_name(Element*) const;
-    static String unparse_name(Element*, const String&);
+    String unparse_name(Element *) const;
+    static String unparse_name(Element *, const String &);
 
-    static const Handler* blank_handler() { return the_blank_handler; }
+    static inline const Handler *blank_handler();
     
   private:
   
@@ -312,17 +312,17 @@ class Handler { public:
 	    WriteHandlerHook w;
 	} rw;
     } _hook;
-    void* _thunk1;
-    void* _thunk2;
+    void *_thunk1;
+    void *_thunk2;
     uint32_t _flags;
     int _use_count;
     int _next_by_name;
 
-    static const Handler* the_blank_handler;
+    static const Handler *the_blank_handler;
     
-    Handler(const String& = String());
+    Handler(const String & = String());
 
-    bool compatible(const Handler&) const;
+    bool compatible(const Handler &) const;
   
     friend class Router;
   
@@ -479,29 +479,6 @@ Router::handler(int hi) const
     return handler(this, hi);
 }
 
-inline
-Handler::Handler(const String &name)
-    : _name(name), _thunk1(0), _thunk2(0), _flags(0), _use_count(0),
-      _next_by_name(-1)
-{
-    _hook.rw.r = 0;
-    _hook.rw.w = 0;
-}
-
-inline bool
-Handler::compatible(const Handler& o) const
-{
-    return (_hook.rw.r == o._hook.rw.r && _hook.rw.w == o._hook.rw.w
-	    && _thunk1 == o._thunk1 && _thunk2 == o._thunk2
-	    && _flags == o._flags);
-}
-
-inline String
-Handler::call_read(Element* e, ErrorHandler* errh) const
-{
-    return call_read(e, String(), errh);
-}
-
 inline HashMap_ArenaFactory*
 Router::arena_factory() const
 {
@@ -521,6 +498,134 @@ inline Router*
 Router::hotswap_router() const
 {
     return _hotswap_router;
+}
+
+inline
+Handler::Handler(const String &name)
+    : _name(name), _thunk1(0), _thunk2(0), _flags(0), _use_count(0),
+      _next_by_name(-1)
+{
+    _hook.rw.r = 0;
+    _hook.rw.w = 0;
+}
+
+inline bool
+Handler::compatible(const Handler& o) const
+{
+    return (_hook.rw.r == o._hook.rw.r && _hook.rw.w == o._hook.rw.w
+	    && _thunk1 == o._thunk1 && _thunk2 == o._thunk2
+	    && _flags == o._flags);
+}
+
+/** @brief Returns this handler's name. */
+inline const String&
+Handler::name() const
+{
+    return _name;
+}
+
+/** @brief Returns this handler's flags.
+
+    The result is a bitwise-or of flags from the Flags enumeration type. */
+inline uint32_t
+Handler::flags() const
+{
+    return _flags;
+}
+
+/** @brief Returns this handler's first callback data. */
+inline void*
+Handler::thunk1() const
+{
+    return _thunk1;
+}
+
+/** @brief Returns this handler's second callback data. */
+inline void*
+Handler::thunk2() const
+{
+    return _thunk2;
+}
+
+/** @brief Returns true iff this is a valid read handler. */
+inline bool
+Handler::readable() const
+{
+    return _flags & OP_READ;
+}
+
+/** @brief Returns true iff this is a valid read handler that may accept
+    parameters. */
+inline bool
+Handler::read_param() const
+{
+    return _flags & READ_PARAM;
+}
+
+/** @brief Returns true iff this is a valid visible read handler.
+
+    Only visible handlers may be called from outside the router
+    configuration. */
+inline bool
+Handler::read_visible() const
+{
+    return _flags & OP_READ;
+}
+
+/** @brief Returns true iff this is a valid write handler. */
+inline bool
+Handler::writable() const
+{
+    return _flags & OP_WRITE;
+}
+
+/** @brief Returns true iff this is a valid visible write handler.
+
+    Only visible handlers may be called from outside the router
+    configuration. */
+inline bool
+Handler::write_visible() const
+{
+    return _flags & OP_WRITE;
+}
+
+/** @brief Returns true iff this handler is visible. */
+inline bool
+Handler::visible() const
+{
+    return _flags & (OP_READ | OP_WRITE);
+}
+
+/** @brief Returns true iff this handler is exclusive.
+
+    Exclusive means mutually exclusive with all other router processing.  In
+    the Linux kernel module driver, reading or writing an exclusive handler
+    using the Click filesystem will first lock all router threads and
+    handlers. */
+inline bool
+Handler::exclusive() const
+{
+    return _flags & EXCLUSIVE;
+}
+
+/** @brief Call a read handler without parameters.
+    @param e element on which to call the handler
+    @param errh error handler
+
+    The element must be nonnull; to call a global handler, pass the relevant
+    router's Router::root_element().  @a errh may be null, in which case
+    errors are ignored. */
+inline String
+Handler::call_read(Element* e, ErrorHandler* errh) const
+{
+    return call_read(e, String(), errh);
+}
+
+/** @brief Returns a handler incapable of doing anything. */
+inline const Handler *
+Handler::blank_handler()
+{
+    return the_blank_handler;
 }
 
 CLICK_ENDDECLS

@@ -90,7 +90,7 @@ AdaptiveRED::initialize(ErrorHandler *errh)
 	return -1;
 
     _timer.initialize(this);
-    _timer.schedule_after_ms(ADAPTIVE_INTERVAL);
+    _timer.schedule_after_msec(ADAPTIVE_INTERVAL);
     return 0;
 }
 
@@ -108,7 +108,7 @@ AdaptiveRED::run_timer(Timer *)
 	_max_p = _max_p + alpha;
     }
     set_C1_and_C2();
-    _timer.reschedule_after_ms(ADAPTIVE_INTERVAL);
+    _timer.reschedule_after_msec(ADAPTIVE_INTERVAL);
 }
 
 CLICK_ENDDECLS

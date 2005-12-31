@@ -58,7 +58,7 @@ int
 SendGridHello::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
-  _timer.schedule_after_ms(_period); // Send Grid HELLO periodically
+  _timer.schedule_after_msec(_period); // Send Grid HELLO periodically
 
   return 0;
 }
@@ -75,7 +75,7 @@ SendGridHello::run_timer(Timer *)
   int  jitter = (int) (((double) _jitter) * r / ((double) 0x7FffFFff));
   if (r2 & 1)
     jitter *= -1;
-  _timer.schedule_after_ms(_period + (int) jitter);
+  _timer.schedule_after_msec(_period + (int) jitter);
 }
 
 Packet *
@@ -85,7 +85,7 @@ SendGridHello::make_hello()
 
   WritablePacket *p = Packet::make(psz + 2); // for alignment
   if (p == 0) {
-    click_chatter("in %s: cannot make packet!", id().c_str());
+    click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
   } 
   ASSERT_ALIGNED(p->data());

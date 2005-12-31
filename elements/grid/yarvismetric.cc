@@ -104,7 +104,7 @@ YarvisMetric::append_metric(const metric_t &r, const metric_t &l) const
   
   if (l.val() > 15)
     click_chatter("YarvisMetric %s: append_metric WARNING: metric %u%% is too large (> 15!) for link metric",
-		  id().c_str(), r.val());
+		  name().c_str(), r.val());
 
   return metric_t(r.val() + l.val());
 }

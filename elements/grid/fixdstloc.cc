@@ -47,8 +47,8 @@ FixDstLoc::initialize(ErrorHandler *errh)
 {
   if(_loctab && _loctab->cast("LocationTable") == 0){
     errh->warning("%s: LocationTable argument %s has the wrong type",
-                  id().c_str(),
-                  _loctab->id().c_str());
+                  name().c_str(),
+                  _loctab->name().c_str());
     _loctab = 0;
   } else if(_loctab == 0) {
     return errh->error("no LocationTable argument");
@@ -63,7 +63,7 @@ FixDstLoc::simple_action(Packet *xp)
   assert(_loctab); 
   grid_hdr *gh = (grid_hdr *) (xp->data() + sizeof(click_ether));
   if (gh->type != grid_hdr::GRID_NBR_ENCAP) {
-    click_chatter("FixDstLoc %s: not an encapsulated data packet; not modifying it\n", id().c_str());
+    click_chatter("FixDstLoc %s: not an encapsulated data packet; not modifying it\n", name().c_str());
     return xp;
   }
 

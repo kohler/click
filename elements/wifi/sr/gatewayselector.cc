@@ -269,7 +269,7 @@ GatewaySelector::push(int port, Packet *p_in)
 {
   if (port != 0) {
     click_chatter("GatewaySelector %s: bad port %d",
-		  id().c_str(),
+		  name().c_str(),
 		  port);
     p_in->kill();
     return;
@@ -391,7 +391,7 @@ GatewaySelector::push(int port, Packet *p_in)
   Timer *t = new Timer(static_forward_ad_hook, (void *) this);
   t->initialize(this);
   
-  t->schedule_after_ms(delay_time);
+  t->schedule_after_msec(delay_time);
   
 
   p_in->kill();

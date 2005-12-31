@@ -49,7 +49,7 @@ int
 Burster::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
-  _timer.schedule_after_ms(_interval);
+  _timer.schedule_after_msec(_interval);
   return 0;
 }
 
@@ -69,7 +69,7 @@ Burster::run_timer(Timer *)
   }
 
   // reset timer
-  _timer.reschedule_after_ms(_interval);
+  _timer.reschedule_after_msec(_interval);
 }
 
 CLICK_ENDDECLS

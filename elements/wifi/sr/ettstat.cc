@@ -297,7 +297,7 @@ ETTStat::send_probe()
 
   WritablePacket *p = Packet::make(size + 2); // +2 for alignment
   if (p == 0) {
-    click_chatter("ETTStat %s: cannot make packet!", id().c_str());
+    click_chatter("ETTStat %s: cannot make packet!", name().c_str());
     return;
   }
   ASSERT_ALIGNED(p->data());
@@ -438,7 +438,7 @@ ETTStat::simple_action(Packet *p)
 
   unsigned min_sz = sizeof(click_ether) + sizeof(link_probe);
   if (p->length() < min_sz) {
-    click_chatter("ETTStat %s: packet is too small", id().c_str());
+    click_chatter("ETTStat %s: packet is too small", name().c_str());
     p->kill(); 
     return 0;
   }
@@ -446,7 +446,7 @@ ETTStat::simple_action(Packet *p)
   click_ether *eh = (click_ether *) p->data();
 
   if (ntohs(eh->ether_type) != _et) {
-    click_chatter("ETTStat %s: got non-ETTStat packet type", id().c_str());
+    click_chatter("ETTStat %s: got non-ETTStat packet type", name().c_str());
     p->kill();
     return 0;
   }
@@ -467,7 +467,7 @@ ETTStat::simple_action(Packet *p)
 
 
   if (click_in_cksum((unsigned char *) lp, ntohs(lp->_psz)) != 0) {
-    click_chatter("ETTStat %s: failed checksum", id().c_str());
+    click_chatter("ETTStat %s: failed checksum", name().c_str());
     p->kill();
     return 0;
   }
@@ -475,7 +475,7 @@ ETTStat::simple_action(Packet *p)
 
   if (p->length() < ntohs(lp->_psz) + sizeof(click_ether)) {
     click_chatter("ETTStat %s: packet is smaller (%d) than it claims (%u)",
-		  id().c_str(), p->length(), ntohs(lp->_psz));
+		  name().c_str(), p->length(), ntohs(lp->_psz));
   }
 
 
@@ -516,17 +516,17 @@ ETTStat::simple_action(Packet *p)
     _neighbors.push_back(ip);
   } else if (l->_period != new_period) {
     click_chatter("ETTStat %s: %s has changed its link probe period from %u to %u; clearing probe info",
-		  id().c_str(), ip.s().c_str(), l->_period, new_period);
+		  name().c_str(), ip.s().c_str(), l->_period, new_period);
     l->_probes.clear();
   } else if (l->_tau != tau) {
     click_chatter("ETTStat %s: %s has changed its link tau from %u to %u; clearing probe info",
-		  id().c_str(), ip.s().c_str(), l->_tau, tau);
+		  name().c_str(), ip.s().c_str(), l->_tau, tau);
     l->_probes.clear();
   }
 
   if (ntohl(lp->_sent) < (unsigned)l->_sent) {
     click_chatter("ETTStat %s: %s has reset; clearing probe info",
-		  id().c_str(), ip.s().c_str());
+		  name().c_str(), ip.s().c_str());
     l->_probes.clear();
   }
   

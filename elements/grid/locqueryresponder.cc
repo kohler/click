@@ -38,7 +38,7 @@ int
 LocQueryResponder::initialize(ErrorHandler *) 
 {
   _expire_timer.initialize(this);
-  _expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
+  _expire_timer.schedule_after_msec(EXPIRE_TIMEOUT_MS);
   _timeout_jiffies = (CLICK_HZ * EXPIRE_TIMEOUT_MS) / 1000;
   return 0;
 }
@@ -72,7 +72,7 @@ LocQueryResponder::expire_hook(Timer *, void *thunk)
   for (int i = 0; i < old_seqs.size(); i++) 
     resp->_query_seqs.remove(old_seqs[i]);
   
-  resp->_expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
+  resp->_expire_timer.schedule_after_msec(EXPIRE_TIMEOUT_MS);
 }
 
 
@@ -85,14 +85,14 @@ LocQueryResponder::simple_action(Packet *p)
   
   if (gh->type != grid_hdr::GRID_LOC_QUERY) {
     click_chatter("LocQueryResponder %s: received unexpected Grid packet type %s; is the configuration wrong?",
-		  id().c_str(), grid_hdr::type_string(gh->type).c_str());
+		  name().c_str(), grid_hdr::type_string(gh->type).c_str());
     p->kill();
     return 0;
   }
 
   if (lq->dst_ip != (unsigned int) _ip) {
     click_chatter("LocQueryResponder %s: received location query for someone else (%s); is the configuration wrong?",
-		  id().c_str(), IPAddress(lq->dst_ip).s().c_str());
+		  name().c_str(), IPAddress(lq->dst_ip).s().c_str());
     p->kill();
     return 0;
   }
@@ -102,7 +102,7 @@ LocQueryResponder::simple_action(Packet *p)
   seq_t *old_seq = _query_seqs.findp(gh->ip);
   if (old_seq && old_seq->seq_no >= seq_no) {
 #if NOISY
-    click_chatter("LocQueryResponder %s: ignoring old query from %s (%u) ", id().c_str(), IPAddress(gh->ip).s().c_str(), seq_no);
+    click_chatter("LocQueryResponder %s: ignoring old query from %s (%u) ", name().c_str(), IPAddress(gh->ip).s().c_str(), seq_no);
 #endif
     p->kill();
     return 0;
@@ -112,7 +112,7 @@ LocQueryResponder::simple_action(Packet *p)
   // construct the response
   WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap) + 2);
   if (q == 0) {
-    click_chatter("in %s: cannot make packet!", id().c_str());
+    click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
   } 
   ASSERT_ALIGNED(q->data());

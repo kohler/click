@@ -70,7 +70,7 @@ GridLocationInfo::logging_hook(Timer *, void *thunk) {
   }
 
   l->_extended_logging_errh->message(buf);
-  l->_logging_timer.schedule_after_ms (1000);
+  l->_logging_timer.schedule_after_msec (1000);
 }
 
 int
@@ -101,9 +101,9 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   double lon = ((double) lon_int) / 1e5; 
   double h = ((double) h_int) / 1e3;
   if (lat > 90 || lat < -90)
-    return errh->error("%s: latitude must be between +/- 90 degrees", id().c_str());
+    return errh->error("%s: latitude must be between +/- 90 degrees", name().c_str());
   if (lon > 180 || lon < -180)
-    return errh->error("%s: longitude must be between +/- 180 degrees", id().c_str());
+    return errh->error("%s: longitude must be between +/- 180 degrees", name().c_str());
 
   _lat0 = lat;
   _lon0 = lon;
@@ -123,7 +123,7 @@ GridLocationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
     return res;
 
   _logging_timer.initialize(this);
-  _logging_timer.schedule_after_ms(100);
+  _logging_timer.schedule_after_msec(100);
   
   return res;
 }
@@ -272,7 +272,7 @@ GridLocationInfo::set_new_dest(double v_lat, double v_lon)
 { /* velocities v_lat and v_lon in degrees per sec */
 
   if (_move != 2) {
-    click_chatter("%s: not configured to accept set_new_dest directives!", id().c_str());
+    click_chatter("%s: not configured to accept set_new_dest directives!", name().c_str());
     return;
   }
 

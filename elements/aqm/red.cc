@@ -162,7 +162,7 @@ RED::initialize(ErrorHandler *errh)
 	if (Storage *s = (Storage *)_queue_elements[i]->cast("Storage"))
 	    _queues.push_back(s);
 	else
-	    errh->error("`%s' is not a Storage element", _queue_elements[i]->id().c_str());
+	    errh->error("`%s' is not a Storage element", _queue_elements[i]->name().c_str());
     if (_queues.size() != _queue_elements.size())
 	return -1;
     else if (_queues.size() == 1)
@@ -193,7 +193,7 @@ RED::configuration(Vector<String> &conf) const
     StringAccum sa;
     sa << "QUEUES";
     for (int i = 0; i < _queue_elements.size(); i++)
-	sa << ' ' << _queue_elements[i]->id();
+	sa << ' ' << _queue_elements[i]->name();
     conf.push_back(sa.take_string());
 
     conf.push_back("STABILITY " + String(_size.stability_shift()));
@@ -356,7 +356,7 @@ RED::read_queues(Element *e, void *)
     RED *r = (RED *)e;
     String s;
     for (int i = 0; i < r->_queue_elements.size(); i++)
-	s += r->_queue_elements[i]->id() + "\n";
+	s += r->_queue_elements[i]->name() + "\n";
     return s;
 }
 

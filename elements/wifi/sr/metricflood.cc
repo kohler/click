@@ -355,7 +355,7 @@ MetricFlood::process_flood(Packet *p_in) {
   _seen[si]._forwarded = false;
   Timer *t = new Timer(static_forward_query_hook, (void *) this);
   t->initialize(this);
-  t->schedule_after_ms(delay_time);
+  t->schedule_after_msec(delay_time);
 
 
   output(1).push(p_in);

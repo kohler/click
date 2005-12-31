@@ -45,7 +45,7 @@ AggregateFirst::configure(Vector<String> &conf, ErrorHandler *errh)
 	return -1;
     
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
-	return errh->error("%s is not an AggregateNotifier", e->id().c_str());
+	return errh->error("%s is not an AggregateNotifier", e->name().c_str());
 
     return 0;
 }

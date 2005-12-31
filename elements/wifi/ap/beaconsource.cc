@@ -82,7 +82,7 @@ int
 BeaconSource::initialize (ErrorHandler *)
 {
   _timer.initialize(this);
-  _timer.schedule_after_ms(_winfo->_interval);
+  _timer.schedule_after_msec(_winfo->_interval);
   return 0;
 }
 
@@ -90,7 +90,7 @@ void
 BeaconSource::run_timer(Timer *) 
 {
   send_beacon(_bcast, false);
-  _timer.schedule_after_ms(_winfo->_interval);
+  _timer.schedule_after_msec(_winfo->_interval);
 }
 
 void

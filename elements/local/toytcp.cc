@@ -79,7 +79,7 @@ int
 ToyTCP::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
-  _timer.schedule_after_ms(1000);
+  _timer.schedule_after_msec(1000);
   return 0;
 }
 
@@ -89,7 +89,7 @@ ToyTCP::run_timer(Timer *)
   if(_reset)
     restart();
   tcp_output(0);
-  _timer.schedule_after_ms(1000);
+  _timer.schedule_after_msec(1000);
   click_chatter("ToyTCP: %d good in, %d bad in, %d out",
                 _ingood, _inbad, _out);
 }

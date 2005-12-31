@@ -43,7 +43,7 @@ void
 CheckSRHeader::drop_it(Packet *p)
 {
   if (_drops == 0)
-    click_chatter("CheckSRHeader %s: first drop", id().c_str());
+    click_chatter("CheckSRHeader %s: first drop", name().c_str());
   _drops++;
   
   if (noutputs() == 2)
@@ -63,7 +63,7 @@ CheckSRHeader::simple_action(Packet *p)
     goto bad;
 
   if (p->length() < sizeof(struct srpacket)) { 
-    click_chatter("%s: packet truncated", id().c_str());
+    click_chatter("%s: packet truncated", name().c_str());
     goto bad;
   }
 
@@ -81,7 +81,7 @@ CheckSRHeader::simple_action(Packet *p)
     if (!version_warning) {
       version_warning = true;
       click_chatter ("%s: unknown sr version %x from %s", 
-		     id().c_str(), 
+		     name().c_str(), 
 		     pk->_version,
 		     EtherAddress(eh->ether_shost).s().c_str());
     }
@@ -93,21 +93,21 @@ CheckSRHeader::simple_action(Packet *p)
   if (tlen > p->length()) { 
     /* can only check inequality, as short packets are padded to a
        minimum frame size for wavelan and ethernet */
-    click_chatter("%s: bad packet size, wanted %d, only got %d", id().c_str(),
+    click_chatter("%s: bad packet size, wanted %d, only got %d", name().c_str(),
 		  tlen + sizeof(click_ether), p->length());
     goto bad;
   }
 
   if (!pk->check_checksum()) {
-    click_chatter("%s: bad SR checksum", id().c_str());
-    click_chatter("%s: length: %d", id().c_str(), tlen);
+    click_chatter("%s: bad SR checksum", name().c_str());
+    click_chatter("%s: length: %d", name().c_str(), tlen);
     goto bad;
   }
 
 
   if (pk->next() > pk->num_links()){
     click_chatter("%s: data with bad next hop from %s\n", 
-		  id().c_str(),
+		  name().c_str(),
 		  pk->get_link_node(0).s().c_str());
     goto bad;
   }

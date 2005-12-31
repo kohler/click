@@ -156,18 +156,18 @@ DSRRouteTable::initialize(ErrorHandler *)
 {
   // expire entries on list of rreq's we have seen
   _rreq_expire_timer.initialize(this);
-  _rreq_expire_timer.schedule_after_ms(DSR_RREQ_EXPIRE_TIMER_INTERVAL);
+  _rreq_expire_timer.schedule_after_msec(DSR_RREQ_EXPIRE_TIMER_INTERVAL);
 
   // expire packets in the sendbuffer
   _sendbuffer_timer.initialize(this);
-  _sendbuffer_timer.schedule_after_ms(DSR_SENDBUFFER_TIMER_INTERVAL);
+  _sendbuffer_timer.schedule_after_msec(DSR_SENDBUFFER_TIMER_INTERVAL);
 
   // check if it's time to reissue a route request
   _rreq_issue_timer.initialize(this);
-  _rreq_issue_timer.schedule_after_ms(DSR_RREQ_ISSUE_TIMER_INTERVAL);
+  _rreq_issue_timer.schedule_after_msec(DSR_RREQ_ISSUE_TIMER_INTERVAL);
   
   _blacklist_timer.initialize(this);
-  _blacklist_timer.schedule_after_ms(DSR_BLACKLIST_TIMER_INTERVAL);
+  _blacklist_timer.schedule_after_msec(DSR_BLACKLIST_TIMER_INTERVAL);
   
   return 0;
 }
@@ -270,7 +270,7 @@ DSRRouteTable::rreq_expire_hook()
   }
 
 //   click_chatter("exiting %d\n", DSR_RREQ_EXPIRE_TIMER_INTERVAL);
-  _rreq_expire_timer.schedule_after_ms(DSR_RREQ_EXPIRE_TIMER_INTERVAL);
+  _rreq_expire_timer.schedule_after_msec(DSR_RREQ_EXPIRE_TIMER_INTERVAL);
 
   check();
 
@@ -390,7 +390,7 @@ DSRRouteTable::sendbuffer_timer_hook()
   }
 
   _sendbuffer_check_routes = check_next_time;
-  _sendbuffer_timer.schedule_after_ms(DSR_SENDBUFFER_TIMER_INTERVAL);
+  _sendbuffer_timer.schedule_after_msec(DSR_SENDBUFFER_TIMER_INTERVAL);
 
   check();
 }
@@ -440,7 +440,7 @@ DSRRouteTable::blacklist_timer_hook()
       e._status = DSR_BLACKLIST_UNI_QUESTIONABLE;
     }
   }  
-  _blacklist_timer.schedule_after_ms(DSR_BLACKLIST_TIMER_INTERVAL);
+  _blacklist_timer.schedule_after_msec(DSR_BLACKLIST_TIMER_INTERVAL);
 
   check();
 }
@@ -456,7 +456,7 @@ DSRRouteTable::push(int port, Packet *p_in)
     IPAddress dst_addr(ip->ip_dst.s_addr);
 
     DEBUG_CHATTER(" * DSR (%s): got IP packet with destination is %s\n", 
-		  this->id().c_str(),
+		  this->name().c_str(),
 		  dst_addr.s().c_str());
     
     if (dst_addr == *me) { // for simpler debugging config
@@ -507,7 +507,7 @@ DSRRouteTable::push(int port, Packet *p_in)
       IPAddress dst_addr(dsr_rreq->target.s_addr);
 
       DEBUG_CHATTER(" * DSR (%s): got route request for destination %s\n", 
-		    this->id().c_str(),
+		    this->name().c_str(),
 		    dst_addr.s().c_str());
 
       // add the info from the RREQ to the linkcache
@@ -687,7 +687,7 @@ DSRRouteTable::push(int port, Packet *p_in)
       add_route_to_link_table(reply_route);
       
       DEBUG_CHATTER(" * DSR (%s): received route reply with reply route:\n",
-		    this->id().c_str());
+		    this->name().c_str());
       for (int i=0; i<reply_route.size(); i++)
 	DEBUG_CHATTER(" - %d  %s (%d)\n",
 		      i,
@@ -730,7 +730,7 @@ DSRRouteTable::push(int port, Packet *p_in)
     } else if (dsr_option->dsr_type == DSR_TYPE_RERR) {
 
       DEBUG_CHATTER(" * DSR (%s): got route error packet\n",
-		    this->id().c_str());
+		    this->name().c_str());
  
       // get a pointer to the route error header
       const click_dsr_rerr *dsr_rerr = (click_dsr_rerr *)dsr_option;
@@ -778,7 +778,7 @@ DSRRouteTable::push(int port, Packet *p_in)
       IPAddress dst_addr(ip_dst);
 
       DEBUG_CHATTER(" * DSR (%s): incoming data pkt for %s; dsr_type is %d\n", 
-		    this->id().c_str(),
+		    this->name().c_str(),
 		    dst_addr.s().c_str(), dsr_option->dsr_type);
 
       // remove the last forwarder from the blacklist, if present
@@ -1742,7 +1742,7 @@ DSRRouteTable::rreq_issue_hook()
     _initiated_rreq_map.remove(remove_list[j]);
   }
   
-  _rreq_issue_timer.schedule_after_ms(DSR_RREQ_ISSUE_TIMER_INTERVAL);
+  _rreq_issue_timer.schedule_after_msec(DSR_RREQ_ISSUE_TIMER_INTERVAL);
 
   check();
 }

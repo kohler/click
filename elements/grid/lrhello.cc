@@ -63,16 +63,16 @@ int
 SendGridLRHello::initialize(ErrorHandler *errh)
 {
   _timer.initialize(this);
-  _timer.schedule_after_ms(_period); // Send periodically
+  _timer.schedule_after_msec(_period); // Send periodically
 
   if(_nbr && _nbr->cast("UpdateLocalGridRoutes") == 0){
     errh->warning("%s: UpdateLocalGridRoutes argument %s has the wrong type",
-                  id().c_str(),
-                  _nbr->id().c_str());
+                  name().c_str(),
+                  _nbr->name().c_str());
     _nbr = 0;
   } else if (_nbr == 0) {
     errh->warning("%s: no UpdateLocalGridRoutes element given",
-                  id().c_str());
+                  name().c_str());
   }
 
   return 0;
@@ -90,7 +90,7 @@ SendGridLRHello::run_timer(Timer *)
   int  jitter = (int) (((double) _jitter) * r / ((double) 0x7FffFFff));
   if (r2 & 1)
     jitter *= -1;
-  _timer.schedule_after_ms(_period + (int) jitter);
+  _timer.schedule_after_msec(_period + (int) jitter);
 }
 
 Packet *
@@ -110,7 +110,7 @@ SendGridLRHello::make_hello()
 
   WritablePacket *p = Packet::make(psz + 2);
   if (p == 0) {
-    click_chatter("in %s: cannot make packet!", id().c_str());
+    click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
   } 
   ASSERT_ALIGNED(p->data());

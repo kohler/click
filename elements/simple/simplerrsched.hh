@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
-#ifndef CLICK_RRSCHED_HH
-#define CLICK_RRSCHED_HH
+#ifndef CLICK_SIMPLERRSCHED_HH
+#define CLICK_SIMPLERRSCHED_HH
 #include <click/element.hh>
 CLICK_DECLS
 

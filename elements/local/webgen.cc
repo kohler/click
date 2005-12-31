@@ -223,7 +223,7 @@ WebGen::run_timer (Timer *)
   if (timeval_diff (&now, &perf_tv) > perf_dt)
     do_perf_stats ();
 
-  _timer.schedule_after_ms(1);
+  _timer.schedule_after_msec(1);
 }
 
 WebGen::CB *

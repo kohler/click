@@ -69,7 +69,7 @@ TimedSource::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
   if (_active)
-    _timer.schedule_after_ms(_interval);
+    _timer.schedule_after_msec(_interval);
   return 0;
 }
 
@@ -91,7 +91,7 @@ TimedSource::run_timer(Timer *)
 	p->timestamp_anno().set_now();
 	output(0).push(p);
 	_count++;
-	_timer.reschedule_after_ms(_interval);
+	_timer.reschedule_after_msec(_interval);
     } else if (_stop)
 	router()->please_stop_driver();
 }

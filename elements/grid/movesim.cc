@@ -96,7 +96,7 @@ MovementSimulator::initialize(ErrorHandler *)
   _event_timer.initialize(this);
   // just wait a little while before we kick things off simulated
   // motions
-  _event_timer.schedule_after_ms(300); 
+  _event_timer.schedule_after_msec(300); 
   return 0;
 }
 
@@ -117,7 +117,7 @@ MovementSimulator::event_hook(Timer *, void *thunk)
 					      next_event->nodes[i].v_lon);
   
   if (el->_events->next != el->_events) 
-    el->_event_timer.schedule_after_ms(el->_events->next->t - next_event->t);
+    el->_event_timer.schedule_after_msec(el->_events->next->t - next_event->t);
   delete next_event;
 }
 
