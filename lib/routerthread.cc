@@ -392,13 +392,13 @@ RouterThread::run_os()
 	schedule();
     } else if (Timestamp wait = _master->next_timer_expiry()) {
 	wait -= Timestamp::now();
-	if (!(wait.sec() > 0 || (wait.sec() == 0 && wait.subsec() > (Timestamp::SUBSEC_PER_SEC / CLICK_HZ))))
+	if (!(wait.sec() > 0 || (wait.sec() == 0 && wait.subsec() > (Timestamp::NSUBSEC / CLICK_HZ))))
 	    goto short_pause;
 	SET_STATE(S_TIMER);
 	if (wait.sec() >= LONG_MAX / CLICK_HZ - 1)
 	    (void) schedule_timeout(LONG_MAX - CLICK_HZ - 1);
 	else
-	    (void) schedule_timeout((wait.sec() * CLICK_HZ) + (wait.subsec() * CLICK_HZ / Timestamp::SUBSEC_PER_SEC) - 1);
+	    (void) schedule_timeout((wait.sec() * CLICK_HZ) + (wait.subsec() * CLICK_HZ / Timestamp::NSUBSEC) - 1);
     } else
 	goto block;
     SET_STATE(S_RUNNING);
