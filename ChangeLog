@@ -1,3 +1,9 @@
+2006-01-04 Wednesday 15:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/ipflowrawsockets.hh (1.7): update
+	  documentation: local host shouldnt use the IPFlowRawSockets ports
+	  (Michael Gellman)
+
 2006-01-04 Wednesday 12:50  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/routerthread.cc (1.62): more timestamp breakage fixed (Bart
