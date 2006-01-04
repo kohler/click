@@ -1,3 +1,25 @@
+2006-01-04 Wednesday 12:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/routerthread.cc (1.62): more timestamp breakage fixed (Bart
+	  Jooris)
+
+2006-01-04 Wednesday 12:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/delayshaper.cc (1.21),
+	  elements/standard/delayunqueue.cc (1.24),
+	  elements/standard/settimestamp.cc (1.12),
+	  elements/userlevel/fromdump.cc (1.101),
+	  elements/userlevel/printold.cc (1.15),
+	  elements/userlevel/progressbar.cc (1.32),
+	  elements/wifi/sr/ettstat.cc (1.32),
+	  elements/wifi/sr/gatewayselector.cc (1.18),
+	  include/click/gaprate.hh (1.10): timestamp changes
+
+2006-01-04 Wednesday 12:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/: master.cc (1.35), routerthread.cc (1.61): remaining
+	  timestamp fixes (Bart Braem)
+
 2005-12-31 Saturday 13:20  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/Doxyfile (1.5), elements/analysis/aggcounter.cc (1.35),
