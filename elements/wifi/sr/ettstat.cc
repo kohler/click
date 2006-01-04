@@ -541,7 +541,7 @@ ETTStat::simple_action(Packet *p)
 
   /* keep stats for at least the averaging period */
   while ((unsigned) l->_probes.size() &&
-	 now._sec - l->_probes[0]._when._sec > (signed) (1 + (l->_tau / 1000)))
+	 now.sec() - l->_probes[0]._when.sec() > (signed) (1 + (l->_tau / 1000)))
     l->_probes.pop_front();
   
 
@@ -638,7 +638,7 @@ ETTStat::simple_action(Packet *p)
     int seq = ntohl(entry->_seq);
     if (neighbor == ip && 
 	((uint32_t) neighbor > (uint32_t) _ip)) {
-      seq = now._sec;
+	seq = now.sec();
     }
     update_link(ip, neighbor, rates, fwd, rev, seq);
     ptr += num_rates * sizeof(struct link_info);
@@ -753,10 +753,10 @@ ETTStat::clear_stale()
     IPAddress n = _neighbors[x];
     probe_list_t *l = _bcast_stats.findp(n);
     if (!l || 
-	(unsigned) now._sec - l->_last_rx._sec > 2 * l->_tau/1000) {
+	(unsigned) now.sec() - l->_last_rx.sec() > 2 * l->_tau/1000) {
       click_chatter("%{element} clearing stale neighbor %s age %d\n ",
 		    this, n.s().c_str(),
-		    now._sec - l->_last_rx._sec);
+		    now.sec() - l->_last_rx.sec());
       _bcast_stats.remove(n);
     } else {
       new_neighbors.push_back(n);

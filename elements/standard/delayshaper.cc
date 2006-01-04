@@ -73,7 +73,7 @@ DelayShaper::pull(int)
 {
     // read a packet
     if (!_p && (_p = input(0).pull())) {
-	if (!_p->timestamp_anno()._sec) // get timestamp if not set
+	if (!_p->timestamp_anno().sec()) // get timestamp if not set
 	    _p->timestamp_anno().set_now();
 	_p->timestamp_anno() += _delay;
     }
@@ -82,13 +82,13 @@ DelayShaper::pull(int)
 	Timestamp now = Timestamp::now();
 	Timestamp diff = _p->timestamp_anno() - now;
 	
-	if (diff._sec < 0 || (diff._sec == 0 && diff._subsec == 0)) {
+	if (diff.sec() < 0 || !diff) {
 	    // packet ready for output
 	    Packet *p = _p;
 	    p->timestamp_anno() = now;
 	    _p = 0;
 	    return p;
-	} else if (diff._sec == 0 && diff._subsec < Timestamp::usec_to_subsec(100000)) {
+	} else if (diff.sec() == 0 && diff.subsec() < Timestamp::usec_to_subsec(100000)) {
 	    // small delta, don't go to sleep -- but mark our Signal as active,
 	    // since we have something ready.
 	    _notifier.wake();

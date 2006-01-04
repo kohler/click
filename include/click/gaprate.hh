@@ -40,7 +40,7 @@ GapRate::reset()
 {
     _tv_sec = -1;
 #if DEBUG_GAPRATE
-    _last._sec = 0;
+    _last.set_sec(0);
 #endif
 }
 

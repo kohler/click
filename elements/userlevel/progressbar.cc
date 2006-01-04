@@ -273,9 +273,9 @@ ProgressBar::run_timer(Timer *)
     if (pos > _last_pos) {
 	_last_time = now;
 	_last_pos = pos;
-	if (wait._sec >= STALLTIME)
+	if (wait.sec() >= STALLTIME)
 	    _stall_time += wait;
-	wait._sec = 0;
+	wait.set_sec(0);
     }
 
     // check elapsed time
@@ -285,7 +285,7 @@ ProgressBar::run_timer(Timer *)
     if (_status < ST_DONE
 	&& (!_have_size || elapsed <= 0.0 || pos > _size))
 	sa << "   --:-- ETA";
-    else if (wait._sec >= STALLTIME)
+    else if (wait.sec() >= STALLTIME)
 	sa << " - stalled -";
     else {
 	int time_remaining;

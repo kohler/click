@@ -406,7 +406,7 @@ FromDump::read_packet(ErrorHandler *errh)
     }
     
     // create packet
-    p = _ff.get_packet(caplen, ts_ptr->_sec, ts_ptr->_subsec, errh);
+    p = _ff.get_packet(caplen, ts_ptr->sec(), ts_ptr->subsec(), errh);
     if (!p)
 	return false;
     SET_EXTRA_LENGTH_ANNO(p, len - caplen);

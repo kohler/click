@@ -64,7 +64,7 @@ DelayUnqueue::run_task()
   retry:
     // read a packet
     if (!_p && (_p = input(0).pull())) {
-	if (!_p->timestamp_anno()._sec) // get timestamp if not set
+	if (!_p->timestamp_anno().sec()) // get timestamp if not set
 	    _p->timestamp_anno().set_now();
 	_p->timestamp_anno() += _delay;
     }
@@ -73,14 +73,14 @@ DelayUnqueue::run_task()
 	Timestamp now = Timestamp::now();
 	Timestamp diff = _p->timestamp_anno() - now;
 
-	if (diff._sec < 0 || (diff._sec == 0 && diff._subsec == 0)) {
+	if (diff.sec() < 0 || !diff) {
 	    // packet ready for output
 	    _p->timestamp_anno() = now;
 	    output(0).push(_p);
 	    _p = 0;
 	    worked = true;
 	    goto retry;
-	} else if (diff._sec == 0 && diff._subsec < Timestamp::usec_to_subsec(100000))
+	} else if (diff.sec() == 0 && diff.subsec() < Timestamp::usec_to_subsec(100000))
 	    // small delta, reschedule Task
 	    /* Task rescheduled below */;
 	else {

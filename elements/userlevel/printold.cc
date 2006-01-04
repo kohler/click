@@ -53,7 +53,7 @@ PrintOld::configure(Vector<String> &conf, ErrorHandler* errh)
 Packet *
 PrintOld::simple_action(Packet *p)
 {
-  if (p->timestamp_anno()._sec == 0) {
+  if (p->timestamp_anno().sec() == 0) {
     click_chatter("%s: packet timestamp not set", name().c_str());
     return p;
   }
@@ -66,7 +66,7 @@ PrintOld::simple_action(Packet *p)
 
   Timestamp now = Timestamp::now();
 
-  long age_s = tv_now._sec - p->timestamp_anno()._sec;
+  long age_s = tv_now.sec() - p->timestamp_anno().sec();
   long age_u = tv_now.usec() - p->timestamp_anno().usec();
 
   // skankyness... 

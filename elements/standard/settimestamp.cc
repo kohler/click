@@ -37,7 +37,7 @@ int
 SetTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool first = false, delta = false;
-    _tv._sec = -1;
+    _tv.set_sec(-1);
     _action = ACT_NOW;
     if (cp_va_parse(conf, this, errh,
 		    cpOptional,
@@ -47,9 +47,9 @@ SetTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "DELTA", cpBool, "set timestamp delta?", &delta,
 		    cpEnd) < 0)
 	return -1;
-    if ((first && delta) || (_tv._sec >= 0 && delta))
+    if ((first && delta) || (_tv.sec() >= 0 && delta))
 	return errh->error("must specify at most one of 'FIRST' and 'DELTA'");
-    _action = (delta ? ACT_DELTA : (_tv._sec < 0 ? ACT_NOW : ACT_TIME) + (first ? ACT_FIRST_NOW : ACT_NOW));
+    _action = (delta ? ACT_DELTA : (_tv.sec() < 0 ? ACT_NOW : ACT_TIME) + (first ? ACT_FIRST_NOW : ACT_NOW));
     return 0;
 }
 
