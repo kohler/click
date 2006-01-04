@@ -673,23 +673,23 @@ Master::run_selects_kqueue(bool more_tasks)
     struct timespec *wait_ptr = (struct timespec*) &t;
     if (!more_tasks) {
 	t = next_timer_expiry();
-	if (t._sec == 0)
+	if (t.sec() == 0)
 	    wait_ptr = 0;
-	else if ((t -= Timestamp::now(), t._sec >= 0))
-	    // fix up subseconds <-> microseconds
-	    t._subsec = Timestamp::subsec_to_nsec(t._subsec);
+	else if ((t -= Timestamp::now(), t.sec() >= 0))
+	    // fix up subseconds <-> nanoseconds
+	    t.set_subsec(Timestamp::subsec_to_nsec(t.subsec()));
 	else
-	    t._sec = t._subsec = 0;
+	    t.set(0, 0);
     }
 #  else /* SIZEOF_STRUCT_TIMESPEC != 8 */
     struct timespec wait, *wait_ptr = &wait;
     wait.tv_sec = wait.tv_nsec = 0;
     if (!more_tasks) {
 	Timestamp t = next_timer_expiry();
-	if (t._sec == 0)
+	if (t.sec() == 0)
 	    wait_ptr = 0;
-	else if ((t -= Timestamp::now(), t._sec >= 0))
-	    wait = t.to_timespec();
+	else if ((t -= Timestamp::now(), t.sec() >= 0))
+	    wait = t.timespec();
     }
 #  endif /* SIZEOF_STRUCT_TIMESPEC == 8 */
 # endif
@@ -743,10 +743,10 @@ Master::run_selects_poll(bool more_tasks)
     int timeout = 0;
     if (!more_tasks) {
 	Timestamp t = next_timer_expiry();
-	if (t._sec == 0)
+	if (t.sec() == 0)
 	    timeout = -1;
-	else if ((t -= Timestamp::now(), t._sec >= 0)) {
-	    if (t._sec >= INT_MAX / 1000)
+	else if ((t -= Timestamp::now(), t.sec() >= 0)) {
+	    if (t.sec() >= INT_MAX / 1000)
 		timeout = INT_MAX - 1000;
 	    else
 		timeout = t.msec1();
@@ -803,23 +803,23 @@ Master::run_selects_select(bool more_tasks)
     struct timeval *wait_ptr = (struct timeval*) &t;
     if (!more_tasks) {
 	t = next_timer_expiry();
-	if (t._sec == 0)
+	if (t.sec() == 0)
 	    wait_ptr = 0;
-	else if ((t -= Timestamp::now(), t._sec >= 0))
+	else if ((t -= Timestamp::now(), t.sec() >= 0))
 	    // fix up subseconds <-> microseconds
-	    t._subsec = Timestamp::subsec_to_usec(t._subsec);
+	    t.set_subsec(Timestamp::subsec_to_usec(t.subsec()));
 	else
-	    t._sec = t._subsec = 0;
+	    t.set(0, 0);
     }
 #  else /* SIZEOF_STRUCT_TIMEVAL != 8 */
     struct timeval wait, *wait_ptr = &wait;
     timerclear(&wait);
     if (!more_tasks) {
 	Timestamp t = next_timer_expiry();
-	if (t._sec == 0)
+	if (t.sec() == 0)
 	    wait_ptr = 0;
-	else if ((t -= Timestamp::now(), t._sec >= 0))
-	    wait = t.to_timeval();
+	else if ((t -= Timestamp::now(), t.sec() >= 0))
+	    wait = t.timeval();
     }
 #  endif /* SIZEOF_STRUCT_TIMEVAL == 8 */
 # endif /* CLICK_NS */

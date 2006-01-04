@@ -392,13 +392,13 @@ RouterThread::run_os()
 	schedule();
     } else if (Timestamp wait = _master->next_timer_expiry()) {
 	wait -= Timestamp::now();
-	if (!(wait._sec > 0 || (wait._sec == 0 && wait._subsec > (Timestamp::SUBSEC_PER_SEC / CLICK_HZ))))
+	if (!(wait.sec() > 0 || (wait.sec() == 0 && wait.subsec() > (Timestamp::SUBSEC_PER_SEC / CLICK_HZ))))
 	    goto short_pause;
 	SET_STATE(S_TIMER);
-	if (wait._sec >= LONG_MAX / CLICK_HZ - 1)
+	if (wait.sec() >= LONG_MAX / CLICK_HZ - 1)
 	    (void) schedule_timeout(LONG_MAX - CLICK_HZ - 1);
 	else
-	    (void) schedule_timeout((wait._sec * CLICK_HZ) + (wait._subsec * CLICK_HZ / Timestamp::SUBSEC_PER_SEC) - 1);
+	    (void) schedule_timeout((wait.sec() * CLICK_HZ) + (wait.subsec() * CLICK_HZ / Timestamp::SUBSEC_PER_SEC) - 1);
     } else
 	goto block;
     SET_STATE(S_RUNNING);
@@ -475,7 +475,7 @@ RouterThread::driver()
 	    // If there's another timer, tell the simulator to make us
 	    // run when it's due to go off.
 	    if (Timestamp next_expiry = _master->next_timer_expiry()) {
-		struct timeval nexttime = next_expiry.to_timeval();
+		struct timeval nexttime = next_expiry.timeval();
 		simclick_sim_schedule(_master->_siminst, _master->_clickinst, &nexttime);
 	    }
 #endif
