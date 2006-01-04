@@ -50,14 +50,16 @@ On PlanetLab Linux, safe raw sockets are opened
 E<lparen>http://www.planet-lab.org/raw_sockets/). Safe raw sockets bypass the
 kernel stack, so no additional firewalling is necessary.
 
-On regular Linux, you will need to firewall the source ports that you
-expect IPFlowRawSockets to use so that the kernel does not attempt to
-answer for the raw connections that may be established by upstream
-elements. For example, in a NAPT configuration, you might firewall TCP
-and UDP ports 50000-65535 with the iptables command:
+On regular Linux, you will need to firewall the source ports that you expect
+IPFlowRawSockets to use so that the kernel does not attempt to answer for the
+raw connections that may be established by upstream elements. For example, in
+a NAPT configuration like that shown below, you might firewall TCP and UDP
+ports 50000-65535 with the iptables command, and then tell the kernel not to
+use ports 50000-65535 for local connections:
 
-iptables -A INPUT -p tcp --dport 50000:65535 -j DROP
-iptables -A INPUT -p udp --dport 50000:65535 -j DROP
+  iptables -A INPUT -p tcp --dport 50000:65535 -j DROP
+  iptables -A INPUT -p udp --dport 50000:65535 -j DROP
+  echo 32768 49999 > /proc/sys/net/ipv4/ip_local_port_range
 
 Keyword arguments are:
 
