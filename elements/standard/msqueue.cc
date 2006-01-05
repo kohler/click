@@ -86,7 +86,7 @@ MSQueue::push(int, Packet *p)
 	    p->kill();
 	    return;
 	}
-    } while (_tail.compare_and_swap(t, n) != t);
+    } while (!_tail.compare_and_swap(t, n));
   
     _q[t] = p;
 }

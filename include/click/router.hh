@@ -103,6 +103,7 @@ class Router { public:
     enum { RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_PREPARING = 0, RUNNING_BACKGROUND = 1, RUNNING_ACTIVE = 2 };
 
     // RUNCOUNT AND RUNCLASS
+    enum { STOP_RUNCOUNT = -2147483647 - 1 };
     inline int32_t runcount() const;
     inline void please_stop_driver();
     inline void reserve_driver();

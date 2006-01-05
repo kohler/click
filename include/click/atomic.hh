@@ -44,7 +44,7 @@ class atomic_uint32_t { public:
     inline uint32_t swap(uint32_t new_value);
     inline uint32_t fetch_and_add(uint32_t delta);
     inline bool dec_and_test();
-    inline uint32_t compare_and_swap(uint32_t test, uint32_t new_value);
+    inline bool compare_and_swap(uint32_t test, uint32_t new_value);
   
   private:
 
@@ -242,42 +242,43 @@ atomic_uint32_t::dec_and_test()
 		  : "=m" (CLICK_ATOMIC_VAL), "=qm" (result)
 		  : "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
-    return result != 0;
+    return result;
 #else
     return (--CLICK_ATOMIC_VAL == 0);
 #endif
 }
 
-inline uint32_t
+inline bool
 atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
 {
     // Pseudocode:
     //   begin_atomic_section();
     //   uint32_t old_value = *this;
-    //   if (*this == test_value)
+    //   if (old_value == test_value)
     //       *this = new_value;
     //   end_atomic_section();
-    //   return old_value;
+    //   return old_value == test_value;
 
-    uint32_t old_value;
 #if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
-    asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%0"
-		  : "=m" (CLICK_ATOMIC_VAL), "=a" (old_value)
+    asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%0 ; sete %%al"
+		  : "=m" (CLICK_ATOMIC_VAL), "=a" (test_value)
 		  : "r" (new_value), "m" (CLICK_ATOMIC_VAL), "a" (test_value)
 		  : "cc");
+    return (uint8_t) test_value;
 #elif CLICK_LINUXMODULE
     unsigned long flags;
     __save_flags_cli(flags);
-    old_value = value();
+    uint32_t old_value = value();
     if (old_value == test_value)
 	CLICK_ATOMIC_VAL = new_value;
     __restore_flags(flags);
+    return old_value == test_value;
 #else
-    old_value = value();
+    uint32_t old_value = value();
     if (old_value == test_value)
 	CLICK_ATOMIC_VAL = new_value;
+    return old_value == test_value;
 #endif
-    return old_value;
 }
 
 inline uint32_t

@@ -629,16 +629,17 @@ void
 Router::adjust_runcount(int32_t delta)
 {
     // beware of overflow
-    // XXX not atomic on overflow/underflow
-    int32_t old_value = _runcount.fetch_and_add(delta);
-    if (delta > 0 && old_value > 0x7FFFFFFF - delta) {
-	_runcount = 0x7FFFFFFF;
-	old_value = 0;
-    } else if (delta < 0 && old_value < (int32_t) 0x80000000 - delta) {
-	_runcount = (int32_t) 0x80000000;
-	old_value = 0;
-    }
-    if (old_value + delta <= 0) {
+    int32_t old_value, new_value;
+    do {
+	old_value = _runcount;
+	if (delta > 0 && old_value > 0x7FFFFFFF - delta)
+	    new_value = 0x7FFFFFFF;
+	else if (delta < 0 && old_value < STOP_RUNCOUNT - delta)
+	    new_value = STOP_RUNCOUNT;
+	else
+	    new_value = old_value + delta;
+    } while (!_runcount.compare_and_swap(old_value, new_value));
+    if (new_value <= 0) {
 	_master->_stopper = 1;
 	// ensure that at least one thread is awake to handle the stop event
 	_master->_threads[2]->wake();

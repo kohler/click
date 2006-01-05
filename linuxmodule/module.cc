@@ -99,7 +99,7 @@ click_assert_failed(const char *file, int line, const char *problem_text)
   if (assert_stops_router) {
     if (click_router) {
       click_chatter("%s:%d: assertion failed: Asking router to stop", file, line);
-      click_router->set_runcount(-10000);
+      click_router->set_runcount(Router::STOP_RUNCOUNT);
     } else
       click_chatter("%s:%d: assertion failed: No router to stop", file, line);
   }

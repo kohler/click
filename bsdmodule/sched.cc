@@ -90,7 +90,7 @@ static int
 kill_router_threads()
 {
   if (click_router)
-    click_router->set_runcount(-10000);
+      click_router->set_runcount(Router::STOP_RUNCOUNT);
   delete placeholder_router;
   
   // wait up to 5 seconds for routers to exit
