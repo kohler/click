@@ -324,7 +324,9 @@ Master::check_driver()
     next:
 	r = next_router;
     }
-    
+
+    if (!any_active)
+	_stopper = 1;
     _master_lock.release();
     return any_active;
 }
