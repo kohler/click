@@ -1,3 +1,13 @@
+2006-01-05 Thursday 13:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* bsdmodule/module.cc (1.20), bsdmodule/sched.cc (1.8),
+	  elements/standard/msqueue.cc (1.17), include/click/atomic.hh
+	  (1.17), include/click/router.hh (1.80), lib/router.cc (1.186),
+	  linuxmodule/module.cc (1.91), linuxmodule/sched.cc (1.56),
+	  userlevel/click.cc (1.106): fix compare_and_swap to return bool
+	  (a more natural definition); use compare_and_swap to make
+	  adjust_runcount truly atomic
+
 2006-01-04 Wednesday 20:43  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/master.cc (1.37): leave stopper on if no routers exist
