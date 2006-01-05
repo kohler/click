@@ -1,3 +1,15 @@
+2006-01-04 Wednesday 20:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/grid/gridproxy.cc (1.7), elements/ip/ipencap.cc (1.40),
+	  elements/local/webgen.cc (1.23), elements/tcpudp/dynudpipencap.cc
+	  (1.20), elements/tcpudp/udpipencap.cc (1.22),
+	  include/click/atomic.hh (1.16), include/click/master.hh (1.16),
+	  include/click/router.hh (1.79), lib/master.cc (1.36),
+	  lib/router.cc (1.185), lib/routerthread.cc (1.63):
+	  atomic_uint32_t has a unified implementation, and uses atomic x86
+	  instructions even at userlevel; remove Master-wide runcount in
+	  favor of a simpler "stopper" design
+
 2006-01-04 Wednesday 15:59  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/ipflowrawsockets.hh (1.7): update
