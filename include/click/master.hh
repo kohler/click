@@ -31,7 +31,7 @@ class Master { public:
     inline int nthreads() const;
     inline RouterThread* thread(int id) const;
 
-    const volatile int* runcount_ptr() const	{ return &_runcount; }
+    const volatile int* stopper_ptr() const	{ return &_stopper; }
     
     Timestamp next_timer_expiry();
     void run_timers();
@@ -82,8 +82,7 @@ class Master { public:
     Vector<RouterThread*> _threads;
 
     // DRIVERMANAGER
-    Spinlock _runcount_lock;
-    volatile int _runcount;
+    volatile int _stopper;
     bool check_driver();
 
     // PENDING TASKS

@@ -82,7 +82,7 @@ DynamicUDPIPEncap::simple_action(Packet *p_in)
   ip->ip_v = 4;
   ip->ip_hl = sizeof(click_ip) >> 2;
   ip->ip_len = htons(p->length());
-  ip->ip_id = htons(_id.read_and_add(1));
+  ip->ip_id = htons(_id.fetch_and_add(1));
   ip->ip_p = IP_PROTO_UDP;
   ip->ip_src = _saddr;
   ip->ip_dst = _daddr;
@@ -115,7 +115,7 @@ DynamicUDPIPEncap::simple_action(Packet *p_in)
     udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
   }
  
-  unsigned old_count = _count.read_and_add(1);
+  unsigned old_count = _count.fetch_and_add(1);
   if (old_count == _interval-1 && _interval > 0) {
     _sport ++;
     _dport ++;

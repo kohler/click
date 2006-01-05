@@ -2,94 +2,250 @@
 #ifndef CLICK_ATOMIC_HH
 #define CLICK_ATOMIC_HH
 CLICK_DECLS
-
-#ifdef __KERNEL__
-# ifdef __SMP__
-#  define LOCK "lock ; "
+#if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+#  define CLICK_ATOMIC_VAL	_val.counter
 # else
-#  define LOCK ""
+#  define CLICK_ATOMIC_VAL	__atomic_fool_gcc(&_val)
 # endif
+# ifdef __SMP__
+#  define CLICK_ATOMIC_LOCK	"lock ; "
+# else
+#  define CLICK_ATOMIC_LOCK	/* nothing */
+# endif
+#else
+# define CLICK_ATOMIC_VAL	_val
+# if CLICK_USERLEVEL && defined(__i386__)
+#  define CLICK_ATOMIC_X86	1
+#  define CLICK_ATOMIC_LOCK	"lock ; "
+# else
+#  define CLICK_ATOMIC_LOCK	/* nothing */
+# endif
+#endif
 
 class atomic_uint32_t { public:
 
     // No constructors because, unfortunately, GCC generates worse code. Use
     // operator= instead.
   
-    operator uint32_t() const		{ return atomic_read(&_val); }
-    uint32_t value() const		{ return atomic_read(&_val); }
+    inline uint32_t value() const;
+    inline operator uint32_t() const;
   
-    atomic_uint32_t &operator=(uint32_t u) { atomic_set(&_val, u); return *this;}
+    inline atomic_uint32_t &operator=(uint32_t);
 
-    atomic_uint32_t &operator+=(int x)	{ atomic_add(x, &_val); return *this; }
-    atomic_uint32_t &operator-=(int x)	{ atomic_sub(x, &_val); return *this; }
+    inline atomic_uint32_t &operator+=(int32_t);
+    inline atomic_uint32_t &operator-=(int32_t);
     inline atomic_uint32_t &operator|=(uint32_t);
     inline atomic_uint32_t &operator&=(uint32_t);
 
-    void operator++(int)		{ atomic_inc(&_val); }
-    void operator--(int)		{ atomic_dec(&_val); }
+    inline void operator++(int);
+    inline void operator--(int);
 
-    // returns true if value is 0 after decrement
-    bool dec_and_test()			{ return atomic_dec_and_test(&_val); }
-
-    inline uint32_t read_and_add(uint32_t delta);
+    inline uint32_t swap(uint32_t new_value);
+    inline uint32_t fetch_and_add(uint32_t delta);
+    inline bool dec_and_test();
     inline uint32_t compare_and_swap(uint32_t test, uint32_t new_value);
   
   private:
 
+#if CLICK_LINUXMODULE
     atomic_t _val;
+#else
+    uint32_t _val;
+#endif
 
 };
+
+inline uint32_t
+atomic_uint32_t::value() const
+{
+#if CLICK_LINUXMODULE
+    return atomic_read(&_val);
+#else
+    return CLICK_ATOMIC_VAL;
+#endif
+}
+
+inline
+atomic_uint32_t::operator uint32_t() const
+{
+    return value();
+}
+
+inline atomic_uint32_t &
+atomic_uint32_t::operator=(uint32_t u)
+{
+#if CLICK_LINUXMODULE
+    atomic_set(&_val, u);
+#else
+    CLICK_ATOMIC_VAL = u;
+#endif
+    return *this;
+}
+
+inline atomic_uint32_t &
+atomic_uint32_t::operator+=(int32_t delta)
+{
+#if CLICK_LINUXMODULE
+    atomic_add(delta, &_val);
+#elif CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "addl %1,%0"
+		  : "=m" (CLICK_ATOMIC_VAL)
+		  : "r" (delta), "m" (CLICK_ATOMIC_VAL)
+		  : "cc");
+#else
+    CLICK_ATOMIC_VAL += delta;
+#endif
+    return *this;
+}
+
+inline atomic_uint32_t &
+atomic_uint32_t::operator-=(int32_t delta)
+{
+#if CLICK_LINUXMODULE
+    atomic_sub(delta, &_val);
+#elif CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "subl %1,%0"
+		  : "=m" (CLICK_ATOMIC_VAL)
+		  : "r" (delta), "m" (CLICK_ATOMIC_VAL)
+		  : "cc");
+#else
+    CLICK_ATOMIC_VAL -= delta;
+#endif
+    return *this;
+}
 
 inline atomic_uint32_t &
 atomic_uint32_t::operator|=(uint32_t u)
 {
-# ifdef __arm__
+#if CLICK_LINUXMODULE && !defined(__arm__)
+    atomic_set_mask(u, &_val);
+#elif CLICK_LINUXMODULE
     unsigned long flags;
     __save_flags_cli(flags);
-    _val.counter |= u;
+    CLICK_ATOMIC_VAL |= u;
     __restore_flags(flags);
-# else
-    atomic_set_mask(u, &_val);
-# endif
-    return *this;
+#elif CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "orl %1,%0"
+		  : "=m" (CLICK_ATOMIC_VAL)
+		  : "r" (u), "m" (CLICK_ATOMIC_VAL)
+		  : "cc");
+#else
+    CLICK_ATOMIC_VAL |= u;
+#endif
+     return *this;
 }
 
 inline atomic_uint32_t &
 atomic_uint32_t::operator&=(uint32_t u)
 {
-# ifdef __arm__
+#if CLICK_LINUXMODULE && !defined(__arm__)
+    atomic_clear_mask(~u, &_val);
+#elif CLICK_LINUXMODULE
     unsigned long flags;
     __save_flags_cli(flags);
-    _val.counter &= u;
+    CLICK_ATOMIC_VAL &= u;
     __restore_flags(flags);
-# else
-    atomic_clear_mask(~u, &_val);
-# endif
+#elif CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "andl %1,%0"
+		  : "=m" (CLICK_ATOMIC_VAL)
+		  : "r" (u), "m" (CLICK_ATOMIC_VAL)
+		  : "cc");
+#else
+    CLICK_ATOMIC_VAL &= u;
+#endif
     return *this;
 }
 
-inline uint32_t
-atomic_uint32_t::read_and_add(uint32_t delta)
+inline void
+atomic_uint32_t::operator++(int)
 {
-# if defined(__i386__) || defined(__arch_um__) || defined(__x86_64__)
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
-    asm volatile (LOCK "xaddl %0,%1"
-		  : "=r" (delta), "=m" (_val.counter) 
-		  : "0" (delta), "m" (_val.counter));
-#  else
-    asm volatile (LOCK "xaddl %0,%1"
-		  : "=r" (delta), "=m" (__atomic_fool_gcc(&_val)) 
-		  : "0" (delta), "m" (__atomic_fool_gcc(&_val)));
-#  endif
-    return delta;
-# else
+#if CLICK_LINUXMODULE
+    atomic_inc(&_val);
+#elif CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "incl %0"
+		  : "=m" (CLICK_ATOMIC_VAL)
+		  : "m" (CLICK_ATOMIC_VAL)
+		  : "cc");
+#else
+    CLICK_ATOMIC_VAL++;
+#endif
+}
+
+inline void
+atomic_uint32_t::operator--(int)
+{
+#if CLICK_LINUXMODULE
+    atomic_dec(&_val);
+#elif CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "decl %0"
+		  : "=m" (CLICK_ATOMIC_VAL)
+		  : "m" (CLICK_ATOMIC_VAL)
+		  : "cc");
+#else
+    CLICK_ATOMIC_VAL--;
+#endif
+}
+
+inline uint32_t
+atomic_uint32_t::swap(uint32_t new_value)
+{
+#if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
+    asm ("xchgl %0,%1"
+	 : "=r" (new_value), "=m" (CLICK_ATOMIC_VAL));
+    return new_value;
+#elif CLICK_LINUXMODULE
     unsigned long flags;
     __save_flags_cli(flags);
     uint32_t old_value = value();
-    *this += delta;
+    CLICK_ATOMIC_VAL = new_value;
     __restore_flags(flags);
     return old_value;
-# endif
+#else
+    uint32_t old_value = value();
+    CLICK_ATOMIC_VAL = new_value;
+    return old_value;
+#endif
+}
+
+inline uint32_t
+atomic_uint32_t::fetch_and_add(uint32_t delta)
+{
+#if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "xaddl %0,%1"
+		  : "=r" (delta), "=m" (CLICK_ATOMIC_VAL) 
+		  : "0" (delta), "m" (CLICK_ATOMIC_VAL)
+		  : "cc");
+    return delta;
+#elif CLICK_LINUXMODULE
+    unsigned long flags;
+    __save_flags_cli(flags);
+    uint32_t old_value = value();
+    CLICK_ATOMIC_VAL += delta;
+    __restore_flags(flags);
+    return old_value;
+#else
+    uint32_t old_value = value();
+    CLICK_ATOMIC_VAL += delta;
+    return old_value;
+#endif
+}
+
+inline bool
+atomic_uint32_t::dec_and_test()
+{
+#if CLICK_LINUXMODULE
+    return atomic_dec_and_test(&_val);
+#elif CLICK_ATOMIC_X86
+    uint8_t result;
+    asm volatile (CLICK_ATOMIC_LOCK "decl %0 ; sete %1"
+		  : "=m" (CLICK_ATOMIC_VAL), "=qm" (result)
+		  : "m" (CLICK_ATOMIC_VAL)
+		  : "cc");
+    return result != 0;
+#else
+    return (--CLICK_ATOMIC_VAL == 0);
+#endif
 }
 
 inline uint32_t
@@ -104,93 +260,25 @@ atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
     //   return old_value;
 
     uint32_t old_value;
-# if defined(__i386__) || defined(__arch_um__) || defined(__x86_64__)
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
-    asm (LOCK "cmpxchgl %2,%0"
-	 : "=m" (_val.counter), "=a" (old_value)
-	 : "r" (new_value), "m" (_val.counter), "a" (test_value)
-	 // : "eax", "cc", "memory");
-	 : "cc", "memory");
-#  else
-    asm (LOCK "cmpxchgl %2,%0"
-	 : "=m" (__atomic_fool_gcc(&_val)), "=a" (old_value)
-	 : "r" (new_value), "m" (__atomic_fool_gcc(&_val)), "a" (test_value)
-	 // : "eax", "cc", "memory");
-	 : "cc", "memory");
-#  endif
-# else
+#if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%0"
+		  : "=m" (CLICK_ATOMIC_VAL), "=a" (old_value)
+		  : "r" (new_value), "m" (CLICK_ATOMIC_VAL), "a" (test_value)
+		  : "cc");
+#elif CLICK_LINUXMODULE
     unsigned long flags;
     __save_flags_cli(flags);
     old_value = value();
     if (old_value == test_value)
-	*this = new_value;
+	CLICK_ATOMIC_VAL = new_value;
     __restore_flags(flags);
-# endif
+#else
+    old_value = value();
+    if (old_value == test_value)
+	CLICK_ATOMIC_VAL = new_value;
+#endif
     return old_value;
 }
-
-
-# undef LOCK
-#else /* !__KERNEL__ */
-
-
-class atomic_uint32_t { public:
-  
-    // No constructors because, unfortunately, GCC generates worse code. Use
-    // operator= instead.
-  
-    operator uint32_t() const		{ return _val; }
-    uint32_t value() const		{ return _val; }
-
-    atomic_uint32_t &operator=(uint32_t u) { _val = u; return *this; }
-  
-    atomic_uint32_t &operator+=(int x)	{ _val += x; return *this; }
-    atomic_uint32_t &operator-=(int x)	{ _val -= x; return *this; }
-    atomic_uint32_t &operator&=(uint32_t u) { _val &= u; return *this; }
-    atomic_uint32_t &operator|=(uint32_t u) { _val |= u; return *this; }
-  
-    void operator++(int)		{ _val++; }
-    void operator--(int)		{ _val--; }
-
-    // returns true if value is 0 after decrement
-    bool dec_and_test()			{ _val--; return _val == 0; }
-
-    inline uint32_t read_and_add(uint32_t delta);
-    inline uint32_t compare_and_swap(uint32_t test_value, uint32_t new_value);
-    inline uint32_t swap(uint32_t value);
-
-  private:
-
-    volatile uint32_t _val;
-  
-};
-
-inline uint32_t
-atomic_uint32_t::read_and_add(uint32_t delta)
-{
-    uint32_t old_value = _val;
-    _val += delta;
-    return old_value;
-}
-
-inline uint32_t
-atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
-{
-    uint32_t old_value = _val;
-    if (_val == test_value)
-	_val = new_value;
-    return old_value;
-}
-
-inline uint32_t
-atomic_uint32_t::swap(uint32_t value)
-{
-    uint32_t old_value = _val;
-    _val = value;
-    return old_value;
-}
-
-#endif /* __KERNEL__ */
 
 inline uint32_t
 operator+(const atomic_uint32_t &a, const atomic_uint32_t &b)

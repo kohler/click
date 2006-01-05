@@ -114,7 +114,7 @@ GridProxy::reverse_mapping(Packet *p_in) {
   click_ip *ip = reinterpret_cast<click_ip *>(p->data());
   memcpy(ip, &_iph, sizeof(click_ip));
   ip->ip_len = htons(p->length());
-  ip->ip_id = htons(_id.read_and_add(1));
+  ip->ip_id = htons(_id.fetch_and_add(1));
 
   p->set_dst_ip_anno(nfo->_gw);
   p->set_ip_header(ip, sizeof(click_ip));

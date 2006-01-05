@@ -427,7 +427,7 @@ RouterThread::run_os()
 void
 RouterThread::driver()
 {
-    const volatile int * const runcount = _master->runcount_ptr();
+    const volatile int * const stopper = _master->stopper_ptr();
     int iter = 0;
 
     nice_lock_tasks();
@@ -451,7 +451,7 @@ RouterThread::driver()
     _driver_epoch++;
 #endif
 
-    if (*runcount > 0) {
+    if (*stopper == 0) {
 	// run occasional tasks: timers, select, etc.
 	iter++;
 
@@ -512,7 +512,7 @@ RouterThread::driver()
 
 #ifndef BSD_NETISRSCHED
     // check to see if driver is stopped
-    if (*runcount <= 0) {
+    if (*stopper) {
 	unlock_tasks();
 	bool b = _master->check_driver();
 	nice_lock_tasks();

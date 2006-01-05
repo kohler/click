@@ -131,7 +131,7 @@ IPEncap::simple_action(Packet *p_in)
   click_ip *ip = reinterpret_cast<click_ip *>(p->data());
   memcpy(ip, &_iph, sizeof(click_ip));
   ip->ip_len = htons(p->length());
-  ip->ip_id = htons(_id.read_and_add(1));
+  ip->ip_id = htons(_id.fetch_and_add(1));
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   if (_aligned)

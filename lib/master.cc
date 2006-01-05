@@ -41,7 +41,7 @@ Master::Master(int nthreads)
     : _master_paused(0), _routers(0), _task_list(0, 0)
 {
     _refcount = 0;
-    _runcount = 0;
+    _stopper = 0;
 
     for (int tid = -2; tid < nthreads; tid++)
 	_threads.push_back(new RouterThread(this, tid));
@@ -184,14 +184,8 @@ Master::kill_router(Router *router)
 	return;
     }
 
-    // Fix runcount
-    _runcount_lock.acquire();
-    _runcount = -0x7FFFFFFF;
-    for (Router *r = _routers; r; r = r->_next_router)
-	if (r->_running == Router::RUNNING_ACTIVE
-	    && (_runcount == -0x7FFFFFFF || r->_runcount < _runcount))
-	    _runcount = r->_runcount;
-    _runcount_lock.release();
+    // Fix stopper
+    _stopper = 1;
     _master_lock.release();
     
     // Remove tasks
@@ -307,37 +301,32 @@ Master::check_driver()
 #endif
     
     _master_lock.acquire();
-    _runcount_lock.acquire();
-
-    if (_runcount <= 0) {
-	_runcount = -0x7FFFFFFF;
-	for (Router* r = _routers; r; ) {
-	    Router* next_router = r->_next_router;
-	    if (r->_runcount <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
-		Element *dm = (Element *)(r->attachment("Script"));
-		if (dm) {
-		    int max = 1000;
-		    while (HandlerCall::call_write(dm, "step", "router") == 0
-			   && r->_runcount <= 0 && --max >= 0)
-			/* do nothing */;
-		}
-		if (r->_runcount <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
-		    kill_router(r);
-		    goto next;
-		}
+    _stopper = 0;
+    bool any_active = false;
+    
+    for (Router *r = _routers; r; ) {
+	Router *next_router = r->_next_router;
+	if (r->runcount() <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
+	    Element *dm = (Element *)(r->attachment("Script"));
+	    if (dm) {
+		int max = 1000;
+		while (HandlerCall::call_write(dm, "step", "router") == 0
+		       && r->runcount() <= 0 && --max >= 0)
+		    /* do nothing */;
 	    }
-	    if (r->_running == Router::RUNNING_ACTIVE
-		&& (_runcount == -0x7FFFFFFF || r->_runcount < _runcount))
-		_runcount = r->_runcount;
-	  next:
-	    r = next_router;
+	    if (r->runcount() <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
+		kill_router(r);
+		goto next;
+	    }
 	}
+	if (r->_running == Router::RUNNING_ACTIVE)
+	    any_active = true;
+    next:
+	r = next_router;
     }
     
-    bool more = (_runcount > 0);
-    _runcount_lock.release();
     _master_lock.release();
-    return more;
+    return any_active;
 }
 
 
@@ -436,7 +425,7 @@ Master::run_timers()
 	if (_master_paused == 0 && _timer_lock.attempt()) {
 	    Timestamp now = Timestamp::now();
 	    Timer* t;
-	    while (_timer_heap.size() > 0 && _runcount > 0
+	    while (_timer_heap.size() > 0 && !_stopper
 		   && (t = _timer_heap.at_u(0), t->_expiry <= now)) {
 		timer_reheapify_from(0, _timer_heap.back());
 		// must reset _schedpos AFTER timer_reheapify_from
@@ -1049,7 +1038,7 @@ Master::info() const
 {
     StringAccum sa;
     sa << "paused:\t" << _master_paused << '\n';
-    sa << "runcount:\t" << _runcount << '\n';
+    sa << "stopper:\t" << _stopper << '\n';
     sa << "pending:\t" << (_task_list._pending_next != &_task_list) << '\n';
     for (int i = 0; i < _threads.size(); i++) {
 	RouterThread *t = _threads[i];

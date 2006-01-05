@@ -431,7 +431,7 @@ WebGen::tcp_output (WritablePacket *p,
   click_ip *ip = (click_ip *) p->data ();
   ip->ip_v = 4;
   ip->ip_hl = sizeof (click_ip) >> 2;
-  ip->ip_id = htons (_id.read_and_add (1));
+  ip->ip_id = htons (_id.fetch_and_add (1));
   ip->ip_p = 6;
   ip->ip_src = src;
   ip->ip_dst = dst;

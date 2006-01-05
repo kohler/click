@@ -103,11 +103,11 @@ class Router { public:
     enum { RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_PREPARING = 0, RUNNING_BACKGROUND = 1, RUNNING_ACTIVE = 2 };
 
     // RUNCOUNT AND RUNCLASS
-    inline int runcount() const;
+    inline int32_t runcount() const;
     inline void please_stop_driver();
     inline void reserve_driver();
-    void set_runcount(int);
-    void adjust_runcount(int);
+    void set_runcount(int32_t);
+    void adjust_runcount(int32_t);
 
     // UNPARSING
     inline const String& configuration_string() const;
@@ -159,7 +159,7 @@ class Router { public:
 
     Master* _master;
     
-    volatile int _runcount;
+    atomic_uint32_t _runcount;
 
     atomic_uint32_t _refcount;
   
@@ -431,10 +431,10 @@ Router::master() const
     return _master;
 }
 
-inline int
+inline int32_t
 Router::runcount() const
 {
-    return _runcount;
+    return _runcount.value();
 }
 
 inline void

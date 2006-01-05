@@ -615,41 +615,34 @@ Router::set_connections()
 // RUNCOUNT
 
 void
-Router::set_runcount(int x)
+Router::set_runcount(int32_t x)
 {
-    _master->_runcount_lock.acquire();
     _runcount = x;
-    if (_runcount < _master->_runcount) {
-	_master->_runcount = _runcount;
+    if (x <= 0) {
+	_master->_stopper = 1;
 	// ensure that at least one thread is awake to handle the stop event
-	if (_master->_runcount <= 0)
-	    _master->_threads[2]->wake();
+	_master->_threads[2]->wake();
     }
-    _master->_runcount_lock.release();
 }
 
 void
-Router::adjust_runcount(int delta)
+Router::adjust_runcount(int32_t delta)
 {
-    _master->_runcount_lock.acquire();
-    
     // beware of overflow
-    bool overflow = false;
-    if (delta > 0 && _runcount > INT_MAX - delta)
-	_runcount = INT_MAX;
-    else if (delta < 0 && _runcount < INT_MIN - delta)
-	_runcount = INT_MIN, overflow = true;
-    else
-	_runcount += delta;
-    
-    if (_runcount < _master->_runcount || overflow) {
-	_master->_runcount = _runcount;
-	// ensure that at least one thread is awake to handle the stop event
-	if (_master->_runcount <= 0)
-	    _master->_threads[2]->wake();
+    // XXX not atomic on overflow/underflow
+    int32_t old_value = _runcount.fetch_and_add(delta);
+    if (delta > 0 && old_value > 0x7FFFFFFF - delta) {
+	_runcount = 0x7FFFFFFF;
+	old_value = 0;
+    } else if (delta < 0 && old_value < (int32_t) 0x80000000 - delta) {
+	_runcount = (int32_t) 0x80000000;
+	old_value = 0;
     }
-    
-    _master->_runcount_lock.release();
+    if (old_value + delta <= 0) {
+	_master->_stopper = 1;
+	// ensure that at least one thread is awake to handle the stop event
+	_master->_threads[2]->wake();
+    }
 }
 
 
