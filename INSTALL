@@ -206,7 +206,7 @@ To compile a Click-enabled version of the NS simulator, you must first
 configure and install Click with NS support.  Change to the Click source
 directory and run
 
-	./configure [--prefix=CLICKPREFIX] [other options] --enable-ns
+	./configure --prefix=CLICKPREFIX [other options] --enable-ns
         make install
 
 Now, prepare to compile the NS simulator.  This may involve first compiling
