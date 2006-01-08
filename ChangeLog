@@ -1,3 +1,14 @@
+2006-01-08 Sunday 18:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* INSTALL (1.42): x
+
+2006-01-08 Sunday 18:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* INSTALL (1.41), README (1.51), config.h.in (1.35),
+	  elements/standard/addressinfo.cc (1.38), etc/README (1.13),
+	  etc/ns-2.29-patch (1.1): adopt and adapt nsclick patch; finally
+	  make addressinfo work
+
 2006-01-05 Thursday 13:33  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* bsdmodule/module.cc (1.20), bsdmodule/sched.cc (1.8),
