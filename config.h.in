@@ -140,14 +140,14 @@
 # include <click/config-bsdmodule.h>
 #endif
 
-/* Define stuff under tools or a user-level driver. */
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
-# include <click/config-userlevel.h>
-#endif
-
 /* Define stuff under nsclick. */
 #ifdef CLICK_NS
 # include <click/config-ns.h>
+#endif
+
+/* Define stuff under tools or a user-level driver. */
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+# include <click/config-userlevel.h>
 #endif
 
 #endif /* CLICK_CONFIG_H */

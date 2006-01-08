@@ -105,7 +105,11 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 
-#if CLICK_USERLEVEL && defined(__linux__)
+#if CLICK_USERLEVEL && !CLICK_NS && (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__))
+# define CLICK_QUERY_NETDEVICE 1
+#endif
+
+#if CLICK_QUERY_NETDEVICE
 
 static bool
 query_netdevice(const String &s, unsigned char *store, int type, int len)
@@ -123,6 +127,7 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
 	device_names.clear();
 	device_addrs.clear();
 	
+# ifdef __linux__
 	int query_fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (query_fd < 0)
 	    return false;
@@ -157,36 +162,7 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
 	}
 
 	close(query_fd);
-	read_time = time(0);
-    }
-
-    for (int i = 0; i < device_names.size(); i++)
-	if (device_names[i] == s && device_addrs[i][0] == type) {
-	    memcpy(store, device_addrs[i].data() + 1, len);
-	    return true;
-	}
-
-    return false;
-}
-
-#elif CLICK_USERLEVEL && (defined(__APPLE__) || defined(__FreeBSD__))
-
-static bool
-query_netdevice(const String &s, unsigned char *store, int type, int len)
-    // type: should be 'e' (Ethernet) or 'i' (ipv4)
-{
-    // 5 Mar 2004 - Don't call ioctl for every attempt to look up an Ethernet
-    // device name, because this causes the kernel to try to load weird kernel
-    // modules.
-    static time_t read_time = 0;
-    static Vector<String> device_names;
-    static Vector<String> device_addrs;
-
-    // XXX magic time constant
-    if (!read_time || read_time + 30 < time(0)) {
-	device_names.clear();
-	device_addrs.clear();
-
+# elif defined(__APPLE__) || defined(__FreeBSD__)
 	// get list of interfaces (this code borrowed, with changes, from
 	// FreeBSD ifconfig(8))
 	int mib[8];
@@ -219,10 +195,10 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
 	    if (ifm->ifm_type != RTM_IFINFO)
 		break;
 	    int datalen = sizeof(struct if_data);
-#if HAVE_IF_DATA_IFI_DATALEN
+#  if HAVE_IF_DATA_IFI_DATALEN
 	    if (ifm->ifm_data.ifi_datalen)
 		datalen = ifm->ifm_data.ifi_datalen;
-#endif
+#  endif
 	    
 	    // extract interface name from 'ifm'
 	    struct sockaddr_dl* sdl = reinterpret_cast<struct sockaddr_dl*>(pos + sizeof(struct if_msghdr) - sizeof(struct if_data) + datalen);
@@ -263,6 +239,7 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
 	}
 
 	delete[] buf;
+# endif /* defined(__APPLE__) || defined(__FreeBSD__) */
 	read_time = time(0);
     }
 
@@ -275,7 +252,7 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
     return false;
 }
 
-#endif /* CLICK_USERLEVEL && defined(__linux__) */
+#endif /* CLICK_QUERY_NETDEVICE */
 
 
 bool
@@ -312,14 +289,16 @@ AddressInfo::query_ip(String s, unsigned char *store, Element *e)
 	    return true;
     }
 # endif
-#elif CLICK_USERLEVEL && (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__))
-    if (query_netdevice(s, store, 'i', 4))
-	return true;
 #elif CLICK_NS
-    simclick_sim mysiminst = e->router()->master()->siminst();
-    char tmp[255];
-    simclick_sim_ipaddr_from_name(mysiminst, s.c_str(), tmp, 255);
-    if (tmp[0] && cp_ip_address(tmp, store))
+    if (e) {
+	simclick_sim mysiminst = e->router()->master()->siminst();
+	char tmp[255];
+	simclick_sim_ipaddr_from_name(mysiminst, s.c_str(), tmp, 255);
+	if (tmp[0] && cp_ip_address(tmp, store))
+	    return true;
+    }
+#elif CLICK_QUERY_NETDEVICE
+    if (query_netdevice(s, store, 'i', 4))
 	return true;
 #endif
 
@@ -412,12 +391,14 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
     } else if (dev)
 	dev_put(dev);
 #elif CLICK_NS
-    simclick_sim mysiminst = e->router()->master()->siminst();
-    char tmp[255];
-    simclick_sim_macaddr_from_name(mysiminst, s.c_str(), tmp, 255);
-    if (tmp[0] && cp_ethernet_address(tmp, store))
-	return true;
-#elif CLICK_USERLEVEL && (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__))
+    if (e) {
+	simclick_sim mysiminst = e->router()->master()->siminst();
+	char tmp[255];
+	simclick_sim_macaddr_from_name(mysiminst, s.c_str(), tmp, 255);
+	if (tmp[0] && cp_ethernet_address(tmp, store))
+	    return true;
+    }
+#elif CLICK_QUERY_NETDEVICE
     if (query_netdevice(s, store, 'e', 6))
 	return true;
 #endif

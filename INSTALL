@@ -10,15 +10,17 @@ Unix system. The pcap library may be necessary to communicate with the
 network. See the end of this document for portability notes for other
 architectures.
 
-The Linux kernel module requires a patched Linux 2.2 or 2.4 system. We
-provide patches for Linux 2.2.18 through 2.2.21, 2.4.18 through 2.4.28,
-2.6.11, and 2.6.13. The patches do not apply against Red Hat kernels; use
+The Linux kernel module requires a patched Linux 2.2, 2.4, or 2.6 system.
+We provide patches for Linux 2.2.18 through 2.2.21, 2.4.18 through 2.4.28,
+2.6.11, and 2.6.13.  The patches do not apply against Red Hat kernels; use
 vanilla kernels from kernel.org.
 
 The preliminary FreeBSD Click kernel module compiles against unpatched
 FreeBSD-STABLE versions after 440002.
 
-(Instructions for nsclick should follow.)
+The ns module requires a patched version of the NS simulator.  We provide a
+patch for ns version 2.29.  See the NS SIMULATOR section below.
+
 
 CONFIGURING
 -----------
@@ -52,6 +54,7 @@ optimizers like 'click-xform' and other tools, and manual pages for the
 Click language, the kernel module, and many of the element classes, all
 under PREFIX (which defaults to /usr/local).
 
+
 USERLEVEL
 ---------
 
@@ -76,6 +79,7 @@ set your 'PCAP_INCLUDES' and 'PCAP_LIBS' environment variables and rerun
 'pcap.h', and 'PCAP_LIBS' tells the linker where to find 'libpcap.a'. One
 example setting would be 'PCAP_INCLUDES=-I/usr/local/include/pcap' and
 'PCAP_LIBS=-L/usr/local/lib/pcap'.
+
 
 LINUX MODULE
 ------------
@@ -190,6 +194,42 @@ and running Linux kernels.
 	CLICKPREFIX/sbin/click-install ROUTERCONFIGFILE
 
     Alternatively you could use /sbin/insmod by hand; see click.o(8).
+
+
+NS MODULE
+---------
+
+Support for integrating Click with the NS simulator was originally
+developed by Michael Neufeld at the University of Colorado.
+
+To compile a Click-enabled version of the NS simulator, you must first
+configure and install Click with NS support.  Change to the Click source
+directory and run
+
+	./configure [--prefix=CLICKPREFIX] [other options] --enable-ns
+        make install
+
+Now, prepare to compile the NS simulator.  This may involve first compiling
+and installing several external packages, such as tclcl and otcl.  Then
+unpack the latest version of NS; we provide a patch for version 2.29, but
+the patch may apply to later versions.  Apply the appropriate patch from
+Click's etc/ directory, like so:
+
+	cd ns-VERSION
+	patch -p1 < CLICKDIR/etc/ns-VERSION-patch
+
+Now configure NS, supplying the prefix you installed for Click.
+
+	./configure [--prefix=PREFIX] --with-click=CLICKPREFIX
+
+Compile and install NS.  To test nsclick, run the ns simulator on one of
+the sample scripts we provide:
+
+	cd ns-VERSION/tcl/ex
+	ns nsclick-simple-lan.tcl
+
+Please note that the NS patch no longer requires libnet.
+
 
 PORTABILITY
 -----------

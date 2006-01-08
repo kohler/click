@@ -1,0 +1,5812 @@
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/Makefile.in ns-2.29/Makefile.in
+--- ns-2.29-pure/Makefile.in	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/Makefile.in	2006-01-08 13:00:05.000000000 -0800
+@@ -58,7 +58,7 @@
+ LDFLAGS	= @LDFLAGS@
+ LDOUT	= -o $(BLANK)
+ 
+-DEFINE	= -DTCP_DELAY_BIND_ALL -DNO_TK @V_DEFINE@ @V_DEFINES@ @DEFS@ -DNS_DIFFUSION -DSMAC_NO_SYNC -DCPP_NAMESPACE=@CPP_NAMESPACE@ -DUSE_SINGLE_ADDRESS_SPACE -Drng_test
++DEFINE	= -DTCP_DELAY_BIND_ALL -DNO_TK @V_DEFINE@ @V_DEFINES@ @DEFS@ -DNS_DIFFUSION -DSMAC_NO_SYNC -DCPP_NAMESPACE=@CPP_NAMESPACE@ -DUSE_SINGLE_ADDRESS_SPACE -Drng_test -DALLOW_RANDOM
+ 
+ INCLUDES = \
+ 	-I. \
+@@ -150,7 +150,7 @@
+ 
+ OBJ_CC = \
+ 	tools/random.o tools/rng.o tools/ranvar.o common/misc.o common/timer-handler.o \
+-	common/scheduler.o common/object.o common/packet.o \
++	common/scheduler.o common/object.o common/packet.o common/rawpacket.o \
+ 	common/ip.o routing/route.o common/connector.o common/ttl.o \
+ 	trace/trace.o trace/trace-ip.o \
+ 	classifier/classifier.o classifier/classifier-addr.o \
+@@ -162,6 +162,7 @@
+ 	classifier/classifier-mac.o \
+ 	classifier/classifier-qs.o \
+ 	classifier/classifier-port.o src_rtg/classifier-sr.o \
++	classifier/classifier-ext.o classifier/classifier-click.o \
+         src_rtg/sragent.o src_rtg/hdr_src.o adc/ump.o \
+ 	qs/qsagent.o qs/hdr_qs.o \
+ 	apps/app.o apps/telnet.o tcp/tcplib-telnet.o \
+@@ -194,7 +195,7 @@
+ 	sctp/sctpDebug.o \
+ 	tools/integrator.o tools/queue-monitor.o \
+ 	tools/flowmon.o tools/loss-monitor.o \
+-	queue/queue.o queue/drop-tail.o \
++	queue/queue.o queue/drop-tail.o queue/clickqueue.o \
+ 	adc/simple-intserv-sched.o queue/red.o \
+ 	queue/semantic-packetqueue.o queue/semantic-red.o \
+ 	tcp/ack-recons.o \
+@@ -222,14 +223,15 @@
+ 	common/pkt-counter.o \
+ 	common/Decapsulator.o common/Encapsulator.o \
+ 	common/encap.o \
+-	mac/channel.o mac/mac.o mac/ll.o mac/mac-802_11.o \
++	mac/channel.o mac/mac.o mac/ll.o mac/ll-ext.o mac/mac-802_11.o \
+ 	mac/mac-802_3.o mac/mac-tdma.o mac/smac.o \
+ 	mobile/mip.o mobile/mip-reg.o mobile/gridkeeper.o \
+ 	mobile/propagation.o mobile/tworayground.o \
+-	mobile/antenna.o mobile/omni-antenna.o \
++	mobile/antenna.o mobile/omni-antenna.o mobile/uni-antenna.o \
++	mobile/pattern-antenna.o \
+ 	mobile/shadowing.o mobile/shadowing-vis.o mobile/dumb-agent.o \
+ 	common/bi-connector.o common/node.o \
+-	common/mobilenode.o \
++	common/mobilenode.o common/clicknode.o \
+ 	mac/arp.o mobile/god.o mobile/dem.o \
+ 	mobile/topography.o mobile/modulation.o \
+ 	queue/priqueue.o queue/dsr-priqueue.o \
+@@ -293,6 +295,7 @@
+ 	pgm/classifier-pgm.o pgm/pgm-agent.o pgm/pgm-sender.o \
+ 	pgm/pgm-receiver.o mcast/rcvbuf.o \
+ 	mcast/classifier-lms.o mcast/lms-agent.o mcast/lms-receiver.o \
++	routing/extrouter.o routing/extclickrouter.o \
+ 	mcast/lms-sender.o \
+ 	queue/delayer.o \
+ 	xcp/xcpq.o xcp/xcp.o xcp/xcp-end-sys.o \
+@@ -456,6 +459,7 @@
+ 	tcl/lib/ns-srcrt.tcl \
+ 	tcl/mcast/ns-lms.tcl \
+ 	tcl/lib/ns-qsnode.tcl \
++	tcl/lib/ns-clicknode.tcl \
+ 	@V_NS_TCL_LIB_STL@
+ 
+ $(GEN_DIR)ns_tcl.cc: $(NS_TCL_LIB)
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/apps/udp.cc ns-2.29/apps/udp.cc
+--- ns-2.29-pure/apps/udp.cc	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/apps/udp.cc	2006-01-08 12:58:19.000000000 -0800
+@@ -104,7 +104,8 @@
+ 		if (flags && (0 ==strcmp(flags, "NEW_BURST")))
+ 			rh->flags() |= RTP_M;
+ 		p->setdata(data);
+-		target_->recv(p);
++		//target_->recv(p);
++		Agent::send(p,0);
+ 	}
+ 	n = nbytes % size_;
+ 	if (n > 0) {
+@@ -119,7 +120,8 @@
+ 		if (flags && (0 == strcmp(flags, "NEW_BURST")))
+ 			rh->flags() |= RTP_M;
+ 		p->setdata(data);
+-		target_->recv(p);
++		//target_->recv(p);
++		Agent::send(p,0);
+ 	}
+ 	idle();
+ }
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/classifier/classifier-click.cc ns-2.29/classifier/classifier-click.cc
+--- ns-2.29-pure/classifier/classifier-click.cc	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/classifier/classifier-click.cc	2006-01-08 14:01:03.000000000 -0800
+@@ -0,0 +1,604 @@
++/*
++ * classifier-click classifier file for nsclick
++ * $Header: /srl/dirkcvs/nsclick/ns/classifier/classifier-click.cc,v 1.13 2003/04/25 00:45:37 neufeldm Exp $
++ */
++
++/*****************************************************************************
++ *  Copyright 2002, Univerity of Colorado at Boulder.                        *
++ *                                                                           *
++ *                        All Rights Reserved                                *
++ *                                                                           *
++ *  Permission to use, copy, modify, and distribute this software and its    *
++ *  documentation for any purpose other than its incorporation into a        *
++ *  commercial product is hereby granted without fee, provided that the      *
++ *  above copyright notice appear in all copies and that both that           *
++ *  copyright notice and this permission notice appear in supporting         *
++ *  documentation, and that the name of the University not be used in        *
++ *  advertising or publicity pertaining to distribution of the software      *
++ *  without specific, written prior permission.                              *
++ *                                                                           *
++ *  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      *
++ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        *
++ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    *
++ *  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         *
++ *  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA       *
++ *  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER        *
++ *  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         *
++ *  PERFORMANCE OF THIS SOFTWARE.                                            *
++ *                                                                           *
++ ****************************************************************************/
++
++#include "config.h"
++#include <stdlib.h>
++#include <ctype.h>
++#include <sys/time.h>
++#include <unistd.h>
++//#include <stl.h>
++//#include <hash_map.h>
++#include <map>
++#include <string>
++
++#include "agent.h"
++#include "packet.h"
++#include "rawpacket.h"
++#include "ip.h"
++#include "extrouter.h"
++#include "classifier.h"
++#include "classifier-ext.h"
++#include "mobilenode.h"
++#include "clicknode.h"
++#include "address.h"
++#include <click/simclick.h>
++#include "scheduler.h"
++#include "classifier-click.h"
++#include "ll-ext.h"
++#include "clickqueue.h"
++
++static class ClickClassifierClass : public TclClass {
++public:
++  ClickClassifierClass() : TclClass("Classifier/Ext/Click") {}
++  TclObject* create(int, const char*const*) {
++    return (new ClickClassifier());
++  }
++} class_click_classifier;
++
++
++void
++ClickEventHandler::handle(Event* event) {
++  // XXX dangerous downcast - should use RTTI
++  ClickEvent* cevent = (ClickEvent*) event;
++  simclick_simstate esimstate;
++  esimstate.curtime = cevent->when_;
++  //fprintf(stderr,"Should be calling simclick_click_run: %lf\n",event->time_);
++
++  simclick_click_run(cevent->clickinst_,&esimstate);
++  delete cevent;
++}
++
++map<MACAddr,int> ClickClassifier::global_mactonodemap_;
++map<MACAddr,int> ClickClassifier::global_mactonsmacmap_;
++map<u_int32_t,int> ClickClassifier::global_ipmap_;
++
++ClickClassifier::ClickClassifier() {
++  extrouter_ = this;
++  clickinst_ = NULL;
++}
++
++int
++ClickClassifier::command(int argc, const char*const* argv)
++{
++  Tcl& tcl = Tcl::instance();
++  if (2 == argc) {
++    if (strcmp(argv[1], "getnodename") == 0) {
++      // getnodename
++      tcl.resultf(nodename_.c_str());
++      return TCL_OK;
++    }
++    if (strcmp(argv[1], "runclick") == 0) {
++      // runclick
++      if (clickinst_) {
++        simclick_simstate simstate;
++        simstate.curtime = GetSimTime();
++        simclick_click_run(clickinst_,&simstate);
++      }
++      return TCL_OK;
++    }
++  }
++  else if (3 == argc) {
++    if(strcmp(argv[1], "loadclick") == 0) {
++      simclick_simstate simstate;
++      simstate.curtime = GetSimTime();
++      clickinst_ = simclick_click_create((simclick_sim)this,argv[2],&simstate);
++      simclick_click_run(clickinst_,&simstate);
++
++      return TCL_OK;
++    }
++    if (strcmp(argv[1], "getip") == 0) {
++      // getip <ifname>
++      int theif = simclick_sim_ifid_from_name((simclick_sim)this,argv[2]);
++      //fprintf(stderr,"get ipaddr is %s\n",ifipaddrs_[theif].c_str());
++      tcl.resultf(ifipaddrs_[theif].c_str());
++      return TCL_OK;
++    }
++    if (strcmp(argv[1], "getmac") == 0) {
++      // getmac <ifname>
++      int theif = simclick_sim_ifid_from_name((simclick_sim)this,argv[2]);
++      //fprintf(stderr,"get macaddr is %s\n",ifmacaddrs_[theif].c_str());
++      tcl.resultf(ifmacaddrs_[theif].c_str());
++      return TCL_OK;
++    }
++    if (strcmp(argv[1], "setnodename") == 0) {
++      // setnodename <ifname>
++      nodename_ = argv[2];
++      return TCL_OK;
++    }
++    if (strcmp(argv[1], "setnodeaddr") == 0) {
++      // setnodeaddr <nodeaddress>
++      nodeaddr_ =  Address::instance().str2addr(argv[2]);
++      return TCL_OK;
++    }
++  }
++  else if (4 == argc) {
++    if(strcmp(argv[1], "setip") == 0) {
++      // setip <ifname> <ipaddr>
++      int theif = simclick_sim_ifid_from_name((simclick_sim)this,argv[2]);
++      ifipaddrs_[theif] = string(argv[3]);
++      //fprintf(stderr,"ipaddr is %s\n",ifipaddrs_[theif].c_str());
++      // Also save the binary form of this IP address in a static
++      // (i.e. simulator global) hash map of IP addresses to ns-2
++      // addresses. This lets us track map IP to ns-2 address when
++      // we might need it.
++      global_ipmap_[inet_addr(argv[3])] = nodeaddr_;
++      return TCL_OK;
++    }
++    else if(strcmp(argv[1], "setmac") == 0) {
++      // setmac <ifname> <macaddr>
++      int theif = simclick_sim_ifid_from_name((simclick_sim)this,argv[2]);
++      ifmacaddrs_[theif] = string(argv[3]);
++
++      //fprintf(stderr,"macaddr is %s\n",ifmacaddrs_[theif].c_str());
++
++      // Also save the binary form of this MAC address in a static
++      // (i.e. simulator global) hash map of MAC addresses to ns-2
++      // addresses. This lets us set the destination address in the
++      // ns-2 packet header.
++      MACAddr thismacaddr = MACAddr(string(argv[3]));
++      global_mactonodemap_[thismacaddr] = nodeaddr_;
++      LL* mylink = (LL*) slot_[theif];
++      global_mactonsmacmap_[thismacaddr] = mylink->macDA();
++      return TCL_OK;
++    }
++    else if (strcmp(argv[1], "readhandler") == 0) {
++      char* readreturn = 0;
++      readreturn = simclick_click_read_handler(clickinst_,argv[2],argv[3],0,0);
++      //fprintf(stderr, "readhandler: %s\n",clickretc);
++      if (readreturn) {
++	tcl.resultf("%s", readreturn);
++	free(readreturn);
++	readreturn = 0;
++      }
++      else {
++	tcl.resultf("");
++      }
++      return TCL_OK;
++    }
++  } else if (argc == 5) {
++    if (strcmp(argv[1], "writehandler") == 0) {
++      int clickret;
++      clickret = simclick_click_write_handler(clickinst_, argv[2], argv[3],
++					      argv[4]);
++      //fprintf(stderr, "writehandler: %i\n",clickret);
++      tcl.resultf("%i", clickret);
++      return TCL_OK;
++    }
++  }
++
++  return ExtClassifier::command(argc, argv);
++}
++
++
++ClickClassifier::~ClickClassifier() {
++}
++
++int
++ClickClassifier::route(Packet* p) {
++  int result = 0;
++  if (clickinst_) {
++    unsigned char* data = NULL;
++    int len = ((PacketData*)(p->userdata()))->size();
++    simclick_simpacketinfo simpinfo;
++    hdr_cmn* chdr = HDR_CMN(p);
++    int ifid = chdr->iface_;
++    hdr_ip* iphdr = hdr_ip::access(p);
++    simpinfo.id = chdr->uid();
++    simpinfo.fid = iphdr->flowid();
++    hdr_raw* rhdr = hdr_raw::access(p);
++    int nssubtype = rhdr->subtype;
++    int clicktype = GetClickPacketType(nssubtype);
++    simpinfo.simtype = rhdr->ns_type;
++    unsigned char* pdat = p->accessdata();
++    data = new unsigned char[len];
++    memcpy(data,pdat,len);
++    /*
++     * XXX Destroy packet for now. This may change if we wind
++     * up having to track and reuse ns packets after they've gone through
++     * click.
++     */
++    Packet::free(p);
++    p = NULL;
++
++    simclick_simstate simstate;
++    simstate.curtime = GetSimTime();
++    //fprintf(stderr,"Sending packet up to click...\n");
++    simclick_click_send(clickinst_,&simstate,ifid,clicktype,data,len,&simpinfo);
++    delete[] data;
++    data = 0;
++  }
++  else {
++    fprintf(stderr,"No click upcall set!\n");
++  }
++  return result;
++}
++
++string
++ClickClassifier::GetIPAddr(int ifid) {
++  return ifipaddrs_[ifid];
++}
++
++string
++ClickClassifier::GetMACAddr(int ifid) {
++  return ifmacaddrs_[ifid];
++}
++
++string
++ClickClassifier::GetNodeName() {
++  return nodename_;
++}
++
++/*
++ * Click service methods
++ */
++int simclick_sim_ifid_from_name(simclick_sim simid, const char* ifname) {
++  int ifid = -1;
++  char* devname = NULL;
++
++  /*
++   * Provide a mapping between a textual interface name
++   * and the id numbers used. This is mostly for the
++   * benefit of click scripts, i.e. you can still refer to
++   * an interface as, say, /dev/eth0.
++   */
++  if (strstr(ifname,"tap") || strstr(ifname,"tun")) {
++    /*
++     * A tapX or tunX interface goes to and from the kernel -
++     * always IFID_KERNELTAP
++     */
++    ifid = ExtRouter::IFID_KERNELTAP;
++  }
++  else if ((devname = strstr(ifname,"eth"))) {
++    /*
++     * Anything with an "eth" followed by a number is
++     * a regular interface. Add the number to IFID_FIRSTIF
++     * to get the handle.
++     */
++    while (*devname && !isdigit(*devname)) {
++      devname++;
++    }
++    if (*devname) {
++      ifid = atoi(devname) + ExtRouter::IFID_FIRSTIF;
++    }
++  }
++  else if ((devname = strstr(ifname,"drop"))) {
++    /*
++     * Anything with an "drop" followed by a number is
++     * a special interface on which we place packets that
++     * get dropped due to MAC layer feedback. Add the number to
++     * IFID_FIRSTIFDROP to get the handle.
++     */
++    while (*devname && !isdigit(*devname)) {
++      devname++;
++    }
++    if (*devname) {
++      ifid = atoi(devname) + ExtRouter::IFID_FIRSTIFDROP;
++    }
++  }
++  return ifid;
++}
++
++int
++simclick_sim_send_to_if(simclick_sim siminst,simclick_click clickinst,
++			int ifid,int type, const unsigned char* data,int len,
++			simclick_simpacketinfo* pinfo) {
++
++  if (NULL == siminst) {
++    return -1;
++  }
++
++  /*
++   * Bail out if we get a bad ifid
++   */
++  if (ExtRouter::IFID_LASTIF < ifid) {
++    return -1;
++  }
++  /*
++   * XXX should probably use RTTI typesafe casts if they are now
++   * reliably implemented across the compilers/platforms we want
++   * to run on.
++   */
++  ClickClassifier* theclassifier = (ClickClassifier*)siminst;
++
++  return theclassifier->send_to_if(ifid,type,data,len,pinfo);
++}
++
++int
++simclick_sim_schedule(simclick_sim siminst,simclick_click clickinst,
++		      struct timeval* when) {
++
++  int result = 0;
++  double simtime = when->tv_sec + (when->tv_usec/1.0e6);
++  double simdelay = simtime - Scheduler::instance().clock();
++  ClickClassifier* theclassifier = (ClickClassifier*)siminst;
++  ClickEvent* ev = new ClickEvent();
++  ev->clickinst_ = clickinst;
++  ev->when_ = *when;
++  Scheduler::instance().schedule(&(theclassifier->cevhandler_),ev,simdelay);
++  //fprintf(stderr,"Event scheduled in %f seconds\n",simdelay);
++
++  return result;
++}
++
++void
++simclick_sim_ipaddr_from_name(simclick_sim siminst,const char* ifname,
++			      char* buf,int len) {
++  ClickClassifier* theclassifier = (ClickClassifier*)siminst;
++  int theif = simclick_sim_ifid_from_name(siminst,ifname);
++  string ipaddr = theclassifier->GetIPAddr(theif);
++  memset(buf,0,len);
++  ipaddr.copy(buf,len-1);
++}
++
++void
++simclick_sim_macaddr_from_name(simclick_sim siminst,const char* ifname,
++			       char* buf,int len) {
++  ClickClassifier* theclassifier = (ClickClassifier*)siminst;
++  int theif = simclick_sim_ifid_from_name(siminst,ifname);
++  string macaddr = theclassifier->GetMACAddr(theif);
++  memset(buf,0,len);
++  macaddr.copy(buf,len-1);
++}
++
++void
++simclick_sim_get_node_name(simclick_sim siminst,char* buf,int len) {
++  ClickClassifier* theclassifier = (ClickClassifier*)siminst;
++  string nodename = theclassifier->GetNodeName();
++  memset(buf,0,len);
++  nodename.copy(buf,len-1);
++}
++
++int
++ClickClassifier::send_to_if(int ifid,int type,const unsigned char* data,
++			 int len,simclick_simpacketinfo* pinfo) {
++  int result = 0;
++  Tcl& tcl = Tcl::instance();
++
++  /*
++   * Package raw data into an ns-2 format raw packet, then send
++   * it on down the line.
++   */
++
++  Packet* pkt = MakeRawPacket(type,ifid,data,len,pinfo);
++  //fprintf(stderr,"simclickid == %d\n",simclickid);
++  recv(pkt,0);
++
++  return result;
++}
++
++int
++ClickClassifier::IFReady(int ifid) {
++  NsObject* target = NULL;
++  int ready = 0;
++
++  // XXX assumes direct ifid->slot mapping
++  if (ExtRouter::IFID_KERNELTAP == ifid) {
++    return 1;
++  }
++
++  target = slot_[ifid];
++  if (target) {
++    LLExt* llext = (LLExt*) target;
++    ready = llext->ready();
++  }
++  else {
++    ready = 0;
++    fprintf(stderr,"ERROR: network interface does not exist\n");
++  }
++
++  return ready;
++}
++
++int
++simclick_sim_if_ready(simclick_sim siminst,simclick_click clickinst,int ifid) {
++  int result = 0;
++  ClickClassifier* theclassifier = (ClickClassifier*)siminst;
++  result = theclassifier->IFReady(ifid);
++  return result;
++}
++
++int
++ClickClassifier::GetNSSubtype(int type) {
++  switch (type) {
++  case SIMCLICK_PTYPE_ETHER:
++    return hdr_raw::ETHERNET;
++
++  case SIMCLICK_PTYPE_IP:
++    return hdr_raw::IP;
++
++  default:
++    return hdr_raw::NONE;
++  }
++
++  return hdr_raw::NONE;
++}
++
++int
++ClickClassifier::GetClickPacketType(int nssubtype) {
++  switch (nssubtype) {
++  case hdr_raw::ETHERNET:
++    return SIMCLICK_PTYPE_ETHER;
++
++  case hdr_raw::IP:
++    return SIMCLICK_PTYPE_IP;
++
++  default:
++    return SIMCLICK_PTYPE_UNKNOWN;
++  }
++
++  return SIMCLICK_PTYPE_UNKNOWN;
++}
++
++// XXX 
++// Normally I'd bitterly complain about code like this. However,
++// I don't really want to worry about annoying differences
++// between IP header files across different platforms, and I
++// want to get this code up and running ASAP. So... I'm defining
++// a few things here to handle the minimal packet cracking I
++// need to do to create raw packets. If more complicated
++// packet munging is called for, something better should be created.
++#define NS_ETHER_OFFSET_DADDR 0
++#define NS_ETHER_OFFSET_SADDR 6
++#define NS_ETHER_HEADER_SIZE 14
++
++
++void
++ClickClassifier::LinkLayerFailedCallback(Packet* p, void* arg) {
++  // Hit the callback and then free the packet
++  ((ClickClassifier*)arg)->LinkLayerFailed(p);
++  Packet::free(p);
++}
++
++void
++ClickClassifier::LinkLayerFailed(Packet* p) {
++  //fprintf(stderr,"XXX Lost a packet!!!\n");
++  if (clickinst_) {
++    unsigned char* data = NULL;
++    int len = ((PacketData*)(p->userdata()))->size();
++    simclick_simpacketinfo simpinfo;
++    hdr_cmn* chdr = HDR_CMN(p);
++    int ifid = chdr->iface_ + IFID_LASTIF;
++    hdr_ip* iphdr = hdr_ip::access(p);
++    simpinfo.id = chdr->uid();
++    simpinfo.fid = iphdr->flowid();
++    hdr_raw* rhdr = hdr_raw::access(p);
++    int nssubtype = rhdr->subtype;
++    int clicktype = GetClickPacketType(nssubtype);
++    unsigned char* pdat = p->accessdata();
++    data = new unsigned char[len];
++    memcpy(data,pdat,len);
++    simclick_simstate simstate;
++    simstate.curtime = GetSimTime();
++    //fprintf(stderr,"Sending packet up to click...\n");
++    simclick_click_send(clickinst_,&simstate,ifid,clicktype,data,len,&simpinfo);
++    delete data;
++    data = 0;
++  }
++  else {
++    fprintf(stderr,"No click upcall set!\n");
++  }
++}
++
++Packet*
++ClickClassifier::MakeRawPacket(int type,int ifid,const unsigned char* data,
++			       int len,simclick_simpacketinfo* pinfo){
++  Packet* pkt = Packet::alloc(len);
++  /*
++   * Shovel raw data into packet
++   */
++  hdr_raw* rhdr = hdr_raw::access(pkt);
++  rhdr->subtype = GetNSSubtype(type);
++  unsigned char* pdat = pkt->accessdata();
++  memcpy(pdat,data,len);
++
++  /*
++   * Set some of the packet header stuff ns-2 wants
++   */
++  struct hdr_cmn* chdr = HDR_CMN(pkt);
++  chdr->iface() = ifid;
++  chdr->ptype() = PT_RAW;
++  chdr->size() = len;
++  if (pinfo->id >= 0) {
++    chdr->uid() = pinfo->id;
++  }
++  else {
++    chdr->uid() = Agent::getnextuid();
++  }
++  rhdr->ns_type = (-1 == pinfo->simtype) ? PT_RAW : pinfo->simtype;
++  chdr->xmit_failure_ = LinkLayerFailedCallback;
++  chdr->xmit_failure_data_ = (void*)this;
++
++  hdr_ip* iphdr = hdr_ip::access(pkt);
++  iphdr->flowid() = 0;
++  if (pinfo->fid >= 0) {
++    iphdr->flowid() = pinfo->fid;
++  }
++
++  /*
++   * A packet coming in from click on the kernel tap device is
++   * considered to be going up into the node, on any other device
++   * going down out of it.
++   */
++  if (ExtRouter::IFID_KERNELTAP == ifid) {
++    chdr->direction() = hdr_cmn::UP;
++  }
++  else {
++    chdr->direction() = hdr_cmn::DOWN;
++    // Going out to a network adapter, and we're already 
++    // ethernet encapsulated. The ns-2 interface code will
++    // tack on ethernet header overhead as well, so we subtract
++    // it out of our simulated size here to avoid actual packet
++    // size inflation
++    if (hdr_raw::ETHERNET == rhdr->subtype) {
++      chdr->size() -= NS_ETHER_HEADER_SIZE;
++    }
++  }
++
++  // If we've got ethernet encapsulation, translate mac address
++  // to ns address. Otherwise we're SOL.
++  struct hdr_mac* mhdr = HDR_MAC(pkt);
++  if (hdr_raw::ETHERNET == rhdr->subtype) {
++    MACAddr dmac(data + NS_ETHER_OFFSET_DADDR);
++    MACAddr smac(data + NS_ETHER_OFFSET_SADDR);
++    if (dmac.is_broadcast()) {
++      mhdr->macDA_ = MAC_BROADCAST;
++    }
++    else {
++      mhdr->macDA_ = global_mactonsmacmap_[dmac];
++      //fprintf(stderr,"XXX using real MAC: %s -> %d\n",dmac.to_string().c_str(),mhdr->macDA_);
++    }
++    mhdr->macSA_ = global_mactonsmacmap_[smac];
++    chdr->next_hop_ = global_mactonodemap_[dmac];
++    chdr->prev_hop_ = global_mactonodemap_[smac];
++  }
++  else {
++    //fprintf(stderr,"XXX using broadcast mac XXX\n");
++    mhdr->macDA_ = MAC_BROADCAST;
++  }
++
++  // Got an IP packet? Must have come from click, and therefore
++  // the next hop is us.
++  if ((ExtRouter::IFID_KERNELTAP == ifid) && (hdr_raw::IP == rhdr->subtype)) {
++    chdr->next_hop() = nodeaddr_;
++  }
++
++  return pkt;
++}
++
++struct timeval
++ClickClassifier::GetSimTime() {
++  struct timeval curtime;
++  double ns2time = Scheduler::instance().clock();
++  double fracp,intp;
++  fracp = modf(ns2time,&intp);
++  curtime.tv_sec = intp;
++  curtime.tv_usec = (fracp * 1.0e6 + 0.5); 
++  return curtime;
++}
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/classifier/classifier-click.h ns-2.29/classifier/classifier-click.h
+--- ns-2.29-pure/classifier/classifier-click.h	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/classifier/classifier-click.h	2006-01-08 14:04:31.000000000 -0800
+@@ -0,0 +1,161 @@
++/*
++ *
++ * This might not seem like a regular classifier, and it isn't.
++ * It essentially has a fixed interface ID which it sends along
++ * with its packet to the ClickNode it lives on, the idea being
++ * that the Click subsystem will be the thing which actually
++ * does the classifying, not the classifier.
++ *
++ * $Header: /srl/dirkcvs/nsclick/ns/classifier/classifier-click.h,v 1.6 2003/04/25 00:45:37 neufeldm Exp $
++ */
++
++/*****************************************************************************
++ *  Copyright 2002, Univerity of Colorado at Boulder.                        *
++ *                                                                           *
++ *                        All Rights Reserved                                *
++ *                                                                           *
++ *  Permission to use, copy, modify, and distribute this software and its    *
++ *  documentation for any purpose other than its incorporation into a        *
++ *  commercial product is hereby granted without fee, provided that the      *
++ *  above copyright notice appear in all copies and that both that           *
++ *  copyright notice and this permission notice appear in supporting         *
++ *  documentation, and that the name of the University not be used in        *
++ *  advertising or publicity pertaining to distribution of the software      *
++ *  without specific, written prior permission.                              *
++ *                                                                           *
++ *  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      *
++ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        *
++ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    *
++ *  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         *
++ *  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA       *
++ *  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER        *
++ *  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         *
++ *  PERFORMANCE OF THIS SOFTWARE.                                            *
++ *                                                                           *
++ ****************************************************************************/
++
++#ifndef ns_classifier_click_h
++#define ns_classifier_click_h
++
++#include "object.h"
++
++class Packet;
++
++
++class ClickEvent : public Event {
++ public:
++  simclick_click clickinst_;
++  // Store an extra copy of the call time in sec/usec format.
++  // This is to sidestep some roundoff errors which occured
++  // when going back and forth between sec/usec and doubles.
++  struct timeval when_;
++};
++
++class ClickEventHandler : public Handler {
++ public:
++  virtual void handle(Event* event);
++};
++
++class MACAddr {
++ public:
++  MACAddr() {
++    memset(macaddr_,0,6);
++  }
++  explicit MACAddr(const string straddr) {
++      unsigned crap[6];
++      sscanf(straddr.c_str(), "%02X:%02X:%02X:%02X:%02X:%02X", &crap[0],
++	     &crap[1], &crap[2], &crap[3], &crap[4], &crap[5]);
++      for (int i = 0; i < 6; i++)
++	  macaddr_[i] = crap[i];
++  }  
++  explicit MACAddr(const unsigned char* rawaddr) {
++    memcpy(macaddr_,rawaddr,6);
++  }
++  bool operator==(const MACAddr& rhs) const {
++    return(0 == memcmp(macaddr_,rhs.macaddr_,6));
++  }
++
++  bool is_broadcast() {
++    for (int i=0;i<6;i++) {
++      if (macaddr_[i] != 0xff) {
++	return false;
++      }
++    }
++    return true;
++  }
++
++  string to_string() {
++    char tmp[64];
++    sprintf(tmp, "%02X:%02X:%02X:%02X:%02X:%02X", macaddr_[0],
++	   macaddr_[1], macaddr_[2], macaddr_[3], macaddr_[4],
++	   macaddr_[5]);
++
++    return string(tmp);
++  }
++  unsigned char macaddr_[6];
++};
++
++namespace std {
++template<>
++struct less<MACAddr> {
++  bool operator()(const MACAddr& l, const MACAddr& r) const {
++    // Treat MAC as a big old integer...
++    uint32_t leftu = *((uint32_t*)(l.macaddr_));
++    uint32_t rightu = *((uint32_t*)(r.macaddr_));
++    uint16_t leftl = *((uint16_t*)(l.macaddr_+4));
++    uint16_t rightl = *((uint16_t*)(r.macaddr_+4));
++    
++    // Check the upper bytes first, if those are equal check lower
++    if (leftu < rightu) {
++      return true;
++    }
++    else if (leftu == rightu) {
++      return (leftl < rightl);
++    }
++    return false;
++  }
++};
++}
++
++class ClickClassifier : public ExtClassifier,public ExtRouter {
++ public:
++  ClickClassifier();
++  virtual ~ClickClassifier();
++  virtual int command(int argc, const char*const* argv);
++  
++  /*
++   * Stuff to handle click requests
++   */
++ public:
++  virtual int send_to_if(int ifid,int type,const unsigned char* data,
++			 int len,simclick_simpacketinfo* pinfo);
++  ClickEventHandler cevhandler_;
++
++  // ExtRouter method
++  virtual int route(Packet* p);
++
++  string GetIPAddr(int ifid);
++  string GetMACAddr(int ifid);
++  string GetNodeName();
++  int IFReady(int ifid);
++  simclick_click GetClickinst() { return clickinst_; }
++  static void LinkLayerFailedCallback(Packet* p, void* arg);
++  void LinkLayerFailed(Packet* p);
++ protected:
++  int GetNSSubtype(int clicktype);
++  int GetClickPacketType(int nssubtype);
++  struct timeval GetSimTime();
++  Packet* MakeRawPacket(int type,int ifid,const unsigned char* data,int len,
++			simclick_simpacketinfo* pinfo);
++  simclick_click clickinst_;
++  typedef map<int,string> STRmap;
++  map<int,string> ifipaddrs_;
++  map<int,string> ifmacaddrs_;
++  static map<MACAddr,int> global_mactonodemap_;
++  static map<MACAddr,int> global_mactonsmacmap_;
++  static map<u_int32_t,int> global_ipmap_;
++  string nodename_;
++  int nodeaddr_;
++};
++
++#endif
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/classifier/classifier-ext.cc ns-2.29/classifier/classifier-ext.cc
+--- ns-2.29-pure/classifier/classifier-ext.cc	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/classifier/classifier-ext.cc	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,162 @@
++/*
++ * classifier-ext.cc
++ * Base external router classifier
++ *
++ * $Header: /srl/dirkcvs/nsclick/ns/classifier/classifier-ext.cc,v 1.1 2002/06/10 19:22:59 neufeldm Exp $
++ */
++
++/*****************************************************************************
++ *  Copyright 2002, Univerity of Colorado at Boulder.                        *
++ *                                                                           *
++ *                        All Rights Reserved                                *
++ *                                                                           *
++ *  Permission to use, copy, modify, and distribute this software and its    *
++ *  documentation for any purpose other than its incorporation into a        *
++ *  commercial product is hereby granted without fee, provided that the      *
++ *  above copyright notice appear in all copies and that both that           *
++ *  copyright notice and this permission notice appear in supporting         *
++ *  documentation, and that the name of the University not be used in        *
++ *  advertising or publicity pertaining to distribution of the software      *
++ *  without specific, written prior permission.                              *
++ *                                                                           *
++ *  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      *
++ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        *
++ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    *
++ *  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         *
++ *  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA       *
++ *  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER        *
++ *  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         *
++ *  PERFORMANCE OF THIS SOFTWARE.                                            *
++ *                                                                           *
++ ****************************************************************************/
++
++#include <stdlib.h>
++#include "config.h"
++#include "packet.h"
++#include "ip.h"
++#include "extrouter.h"
++#include "classifier.h"
++#include "classifier-hash.h"
++#include "classifier-ext.h"
++
++
++static class ExtClassifierClass : public TclClass {
++public:
++  ExtClassifierClass() : TclClass("Classifier/Ext") {}
++  TclObject* create(int, const char*const*) {
++    return (new ExtClassifier());
++  }
++} class_ext_classifier;
++
++
++ExtClassifier::ExtClassifier() {
++  extrouter_ = NULL;
++}
++
++ExtClassifier::~ExtClassifier() {
++}
++
++int ExtClassifier::command(int argc, const char*const* argv) {
++  int result = TCL_OK;
++  Tcl& tcl = Tcl::instance();
++
++  result = Classifier::command(argc,argv);
++  return result;
++}
++
++void ExtClassifier::recv(Packet* p, Handler* h) {
++  /*
++   * Use the interface and direction to decide what to do. If the
++   * packet is going down and came from an agent, it needs to
++   * go to the external router for processing. If coming up
++   * from the external router it needs to be sent to the appropriate
++   * local agent for processing. Otherwise, it just goes either down
++   * to the ns network interface or up to the external router.
++   */
++  struct hdr_cmn* hdr = HDR_CMN(p);
++  int extid = hdr->iface();
++  if (hdr_cmn::DOWN == hdr->direction()) {
++    if (ExtRouter::IFID_KERNELTAP == extid) {
++      /*
++       * Packet came from an agent - needs to go to the external router
++       */
++      //fprintf(stderr,"To external router\n");
++      if (NULL != extrouter_) {
++	extrouter_->route(p);
++      }
++      else {
++	fprintf(stderr,"No external router set!\n");
++      }
++    }
++    else {
++      /*
++       * Packet came from the external router - needs to go to the net
++       */
++      int cl = classify(p);
++      if ((cl >= 0) && (cl <= maxslot_)) {
++	NsObject* target = NULL;
++	target = slot_[cl];
++	if (NULL == target) {
++	  /*
++	   * "Drop" the packet
++	   */
++	  //puts("Dropping the packet");
++	  Packet::free(p);
++	}
++	else {
++	  //puts("Sending packet out!!!");
++	  target->recv(p,h);
++	}
++      }
++      else {
++	fprintf(stderr,"Invalid slot: %d maxslot is %d\n",cl,maxslot_);
++      }
++    }
++  }
++  else if (hdr_cmn::UP == hdr->direction()) {
++    if (ExtRouter::IFID_KERNELTAP == extid) {
++      /*
++       * Packet came from the external router - needs to go to an agent.
++       */
++      NsObject* target = NULL;
++      target = slot_[0];
++      if (NULL == target) {
++	/*
++	 * "Drop" the packet
++	 */
++	//fprintf(stderr,"Dropping the packet\n");
++	Packet::free(p);
++      }
++      else {
++	//fprintf(stderr,"Packet going to agent\n");
++	target->recv(p,h);
++      }
++
++      //fprintf(stderr,"Hey! Send packets to agents!\n");
++    }
++    else {
++      /*
++       * Packet came from the net - needs to go to the external router
++       */
++      if (NULL != extrouter_) {
++	extrouter_->route(p);
++      }
++    }
++  }
++  else {
++    fprintf(stderr,"No packet direction set...");
++  }
++}
++
++int
++ExtClassifier::classify(Packet* p) {
++  struct hdr_cmn* hdr = HDR_CMN(p);
++  int extid = hdr->iface();
++
++  /*
++   * Simple  mapping between extid and slot number.
++   * No real reason to make things more complicated right now.
++   */
++  int slot = extid;
++  return slot;
++}
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/classifier/classifier-ext.h ns-2.29/classifier/classifier-ext.h
+--- ns-2.29-pure/classifier/classifier-ext.h	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/classifier/classifier-ext.h	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,59 @@
++/*
++ *
++ * This classifier is intended for use with external routers bolted
++ * on to ns-2, e.g. Click. It uses a combination of the packet direction
++ * and interface ID to decide where to send stuff.
++ *
++ * $Header: /srl/dirkcvs/nsclick/ns/classifier/classifier-ext.h,v 1.1 2002/06/10 19:22:59 neufeldm Exp $
++ */
++
++/*****************************************************************************
++ *  Copyright 2002, Univerity of Colorado at Boulder.                        *
++ *                                                                           *
++ *                        All Rights Reserved                                *
++ *                                                                           *
++ *  Permission to use, copy, modify, and distribute this software and its    *
++ *  documentation for any purpose other than its incorporation into a        *
++ *  commercial product is hereby granted without fee, provided that the      *
++ *  above copyright notice appear in all copies and that both that           *
++ *  copyright notice and this permission notice appear in supporting         *
++ *  documentation, and that the name of the University not be used in        *
++ *  advertising or publicity pertaining to distribution of the software      *
++ *  without specific, written prior permission.                              *
++ *                                                                           *
++ *  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      *
++ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        *
++ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    *
++ *  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         *
++ *  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA       *
++ *  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER        *
++ *  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         *
++ *  PERFORMANCE OF THIS SOFTWARE.                                            *
++ *                                                                           *
++ ****************************************************************************/
++
++#ifndef ns_classifier_ext_h
++#define ns_classifier_ext_h
++
++#include "object.h"
++
++class Packet;
++
++class ExtClassifier : public Classifier {
++ public:
++	ExtClassifier();
++	virtual ~ExtClassifier();
++	
++	virtual void recv(Packet* p, Handler* h);
++
++	void setExtRouter(ExtRouter* ext) {extrouter_ = ext;}
++	ExtRouter* getExtRouter() {return extrouter_;}
++
++	virtual int classify(Packet*);
++
++ protected:
++	virtual int command(int argc, const char*const* argv);
++	ExtRouter* extrouter_;
++};
++
++#endif
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/common/agent.cc ns-2.29/common/agent.cc
+--- ns-2.29-pure/common/agent.cc	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/common/agent.cc	2006-01-08 14:19:40.000000000 -0800
+@@ -43,6 +43,7 @@
+ #include "config.h"
+ #include "agent.h"
+ #include "ip.h"
++#include "tcp.h"
+ #include "flags.h"
+ #include "address.h"
+ #include "app.h"
+@@ -51,7 +52,14 @@
+ #include "nix/nixnode.h"
+ #endif //HAVE_STL
+ 
++#include "rawpacket.h"
++#include "extrouter.h"
+ 
++#include <click/config.h>
++#include <click/confparse.hh>
++#include <clicknet/ip.h>
++#include <clicknet/tcp.h>
++#include <clicknet/udp.h>
+ 
+ #ifndef min
+ #define min(a, b) (((a) < (b)) ? (a) : (b))
+@@ -70,7 +78,7 @@
+ Agent::Agent(packet_t pkttype) : 
+ 	size_(0), type_(pkttype), 
+ 	channel_(0), traceName_(NULL),
+-	oldValueList_(NULL), app_(0), et_(0)
++	oldValueList_(NULL), app_(0), rawcvt_(false), et_(0)
+ {
+ }
+ 
+@@ -170,6 +178,24 @@
+ 		} else if (strcmp(argv[1], "set_pkttype") == 0) {
+ 			set_pkttype(packet_t(atoi(argv[2])));
+ 			return (TCL_OK);
++		} else if (strcmp(argv[1], "set-srcip") == 0) {
++			if (!Click::cp_ip_address(Click::String(argv[2]), (unsigned char *) &srcip_))
++				return TCL_ERROR;
++			return (TCL_OK);
++		} else if (strcmp(argv[1], "set-srcport") == 0) {
++			srcport_ = atoi(argv[2]);
++			return (TCL_OK);
++		}
++		else if (strcmp(argv[1], "set-destip") == 0) {
++			if (!Click::cp_ip_address(Click::String(argv[2]), (unsigned char *) &destip_))
++				return TCL_ERROR;
++			return (TCL_OK);
++		} else if (strcmp(argv[1], "set-destport") == 0) {
++			destport_ = atoi(argv[2]);
++			return (TCL_OK);
++		} else if (strcmp(argv[1],"rawconvert") == 0) {
++			rawcvt_ = atoi(argv[2]);
++			return(TCL_OK);
+ 		}
+ 	}
+ 	else if (argc == 4) {	
+@@ -438,10 +464,140 @@
+ {
+ }
+ 
++bool
++Agent::toraw(Packet* p) {
++	// XXX What about AppData and other such junk? Need to
++	// figure out if anyone actually sends payloads.
++	// XXX What about TCP option headers? Won't work with SACK right now
++	bool result = false;
++	struct hdr_tcp* htcp = HDR_TCP(p);
++	struct hdr_ip* hip = HDR_IP(p);
++	struct hdr_cmn* hcmn = HDR_CMN(p);
++	struct hdr_raw* hraw = hdr_raw::access(p);
++	int packetlen = sizeof(click_ip) + hcmn->size_;
++	int paylen = hcmn->size_;
++	unsigned char* pdat = 0;
++
++	// build packet length
++	if (hcmn->ptype_ == PT_ACK || hcmn->ptype_ == PT_TCP)
++		packetlen += sizeof(click_tcp);
++	else if (hcmn->ptype_ == PT_CBR)
++		packetlen += sizeof(click_udp);
++	else
++		return false;
++
++	// build packet
++	p->allocdata(packetlen);
++	pdat = p->accessdata();
++	memset(pdat, 0, packetlen);
++
++	// build IP header
++	click_ip *ip = (click_ip *) pdat;
++	ip->ip_v = 4;
++	ip->ip_hl = sizeof(click_ip) >> 2;
++	ip->ip_len = htons(packetlen);
++	ip->ip_id = htons(ipseq_);
++	ip->ip_p = (hcmn->ptype_ == PT_CBR ? IP_PROTO_UDP : IP_PROTO_TCP);
++	ip->ip_src.s_addr = srcip_;
++	ip->ip_dst.s_addr = destip_;
++	ip->ip_tos = 0;
++	ip->ip_off = 0;
++	ip->ip_ttl = hip->ttl_;
++	ip->ip_sum = 0;
++#if HAVE_FAST_CHECKSUM
++	ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
++#else
++	ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
++#endif
++
++	// build TCP/UDP header and payload
++	if (paylen > 0)
++		memset(pdat + (packetlen - paylen), 'A', paylen);
++	
++	if (hcmn->ptype_ == PT_CBR) {
++		click_udp *udp = (click_udp *) (ip + 1);
++		udp->uh_sport = htons(srcport_);
++		udp->uh_dport = htons(destport_);
++		uint16_t len = packetlen - sizeof(click_ip);
++		udp->uh_ulen = htons(len); 
++		udp->uh_sum = 0;
++		unsigned csum = click_in_cksum((unsigned char *)udp, len);
++		udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
++	} else {
++		click_tcp *tcp = (click_tcp *) (ip + 1);
++		tcp->th_sport = htons(srcport_);
++		tcp->th_dport = htons(destport_);
++		tcp->th_seq = htonl(htcp->seqno_);
++		tcp->th_ack = htonl(htcp->ackno_);
++		tcp->th_flags2 = 0;
++		tcp->th_off = sizeof(click_tcp) >> 2;
++		tcp->th_flags = htcp->tcp_flags_;
++		if (hcmn->ptype_ == PT_ACK)
++			tcp->th_flags |= TH_ACK;
++		tcp->th_win = 0; /* XXX */
++		tcp->th_urp = 0;
++		tcp->th_sum = 0;
++		uint16_t len = packetlen - sizeof(click_ip);
++		unsigned csum = click_in_cksum((unsigned char *)tcp, len);
++		tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
++	}
++
++	hcmn->direction() = hdr_cmn::DOWN;
++	hcmn->iface() = ExtRouter::IFID_KERNELTAP;
++	hraw->subtype = hdr_raw::IP;
++	hraw->ns_type = hcmn->ptype();
++	hcmn->ptype() = PT_RAW;
++	hcmn->size() = packetlen;
++	ipseq_++;
++
++	return result;
++}
++
++bool
++Agent::fromraw(Packet* p) {
++	struct hdr_tcp* htcp = HDR_TCP(p);
++	struct hdr_ip* hip = HDR_IP(p);
++	struct hdr_cmn* hcmn = HDR_CMN(p);
++	struct hdr_flags* hflg = hdr_flags::access(p);
++	struct click_ip* ip = 0;
++	struct click_tcp* tcp = 0;
++	struct click_udp* udp = 0;
++	unsigned char* pdat = 0;
++	bool result = false;
++
++	if (PT_RAW != hcmn->ptype()) return false;
++
++	pdat = p->accessdata();
++	ip = (click_ip*)pdat;
++
++	switch (ip->ip_p) {
++	case IPPROTO_TCP:
++		tcp = (click_tcp*)(pdat + (ip->ip_hl << 2));
++		htcp->seqno_ = ntohl(tcp->th_seq);
++		htcp->ackno_ = ntohl(tcp->th_ack);
++		htcp->tcp_flags_ = tcp->th_flags;
++		htcp->hlen_ = (ip->ip_hl << 2) + (tcp->th_off << 2);
++		hcmn->ptype_ = (tcp->th_flags & TH_ACK) ? PT_ACK : PT_TCP;
++		result = true;
++		break;
++	case IPPROTO_UDP:
++		hcmn->ptype_ = PT_CBR;
++		result = true;
++		break;
++	default:
++		result = false;
++		break;
++	}
++
++	return result;
++}
++
+ void Agent::recv(Packet* p, Handler*)
+ {
+-	if (app_)
++	if (app_) {
++		if (rawcvt_) fromraw(p);
+ 		app_->recv(hdr_cmn::access(p)->size());
++	}
+ 	/*
+ 	 * didn't expect packet (or we're a null agent?)
+ 	 */
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/common/agent.h ns-2.29/common/agent.h
+--- ns-2.29-pure/common/agent.h	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/common/agent.h	2006-01-08 14:00:06.000000000 -0800
+@@ -43,6 +43,7 @@
+ #include "ns-process.h"
+ #include "app.h"
+ //#include "basetrace.h"
++
+ #define TIME_FORMAT "%.15g"
+ // TIME_FORMAT is in basetrace.h, but including that header leads to problems
+ 
+@@ -77,7 +78,14 @@
+ 	//added for edrop tracing - ratul
+ 	void recvOnly(Packet *) {};
+ 
+-	void send(Packet* p, Handler* h) { target_->recv(p, h); }
++	void send(Packet* p, Handler* h) { 
++	  if (rawcvt_) toraw(p);
++	  target_->recv(p, h);
++	}
++
++        bool toraw(Packet* p);
++	bool fromraw(Packet* p);
++
+ 	virtual void timeout(int tno);
+ 
+ 	virtual void sendmsg(int sz, AppData*, const char* flags = 0);
+@@ -102,6 +110,7 @@
+ 	inline nsaddr_t& dport() { return dst_.port_; }
+ 	void set_pkttype(packet_t pkttype) { type_ = pkttype; }
+ 	inline packet_t get_pkttype() { return type_; }
++	static int getnextuid() { return uidcnt_++; }
+ 
+  protected:
+ 	int command(int argc, const char*const* argv);
+@@ -135,6 +144,18 @@
+ 	OldValue *oldValueList_; 
+ 
+ 	Application *app_;		// ptr to application for callback
++	
++	// If this is set to "true" convert packets to and from
++	// raw format as they go to and from attached applications.
++	bool rawcvt_;
++	
++	// We also need to keep src and dest ip and port addresses
++	// around if we're going to use raw packets.
++	u_int16_t ipseq_;
++	u_long srcip_;
++	u_short srcport_;
++	u_long destip_;
++	u_short destport_;
+ 
+ 	virtual void trace(TracedVar *v);
+ 	void deleteAgentTrace();
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/common/clicknode.cc ns-2.29/common/clicknode.cc
+--- ns-2.29-pure/common/clicknode.cc	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/common/clicknode.cc	2006-01-08 14:21:24.000000000 -0800
+@@ -0,0 +1,134 @@
++/*
++ * clicknode.cc 
++ * Base class for nsclick nodes.
++ *
++ * XXX Should probably move a bunch of the functionality in this
++ * class to a superclass, i.e. something called ExtNode, since a lot
++ * of this should work with most Ext routing stuff, not just click.
++ * 
++ * $Header: /srl/dirkcvs/nsclick/ns/common/clicknode.cc,v 1.1 2002/06/10 19:23:01 neufeldm Exp $
++ *
++ */
++
++/*****************************************************************************
++ *  Copyright 2002, Univerity of Colorado at Boulder.                        *
++ *                                                                           *
++ *                        All Rights Reserved                                *
++ *                                                                           *
++ *  Permission to use, copy, modify, and distribute this software and its    *
++ *  documentation for any purpose other than its incorporation into a        *
++ *  commercial product is hereby granted without fee, provided that the      *
++ *  above copyright notice appear in all copies and that both that           *
++ *  copyright notice and this permission notice appear in supporting         *
++ *  documentation, and that the name of the University not be used in        *
++ *  advertising or publicity pertaining to distribution of the software      *
++ *  without specific, written prior permission.                              *
++ *                                                                           *
++ *  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      *
++ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        *
++ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    *
++ *  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         *
++ *  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA       *
++ *  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER        *
++ *  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         *
++ *  PERFORMANCE OF THIS SOFTWARE.                                            *
++ *                                                                           *
++ ****************************************************************************/
++
++#include <math.h>
++#include <stdlib.h>
++#include <string.h>
++#include <ctype.h>
++
++#include "connector.h"
++#include "delay.h"
++#include "packet.h"
++#include "agent.h"
++#include "rawpacket.h"
++#include "random.h"
++#include "trace.h"
++#include "address.h"
++
++#include "arp.h"
++#include "topography.h"
++#include "ll.h"
++#include "mac.h"
++#include "propagation.h"
++#include "mobilenode.h"
++#include "phy.h"
++#include "wired-phy.h"
++#include "god.h"
++#include "extrouter.h"
++#include "extclickrouter.h"
++#include <sys/time.h>
++#include <click/simclick.h>
++#include "clicknode.h"
++
++
++static class ClickNodeClass : public TclClass {
++public:
++  ClickNodeClass() : TclClass("Node/MobileNode/ClickNode") {}
++  TclObject* create(int, const char*const*) {
++    ClickNode* thenode = new ClickNode;
++    if (!thenode) {
++      return NULL;
++    }
++
++    /*
++     * Do post-constructor initialization.
++     */
++    int result = thenode->cinit();
++    if (0 > result) {
++      delete thenode;
++      thenode = NULL;
++    }
++
++    return thenode;
++  }
++} class_clicknode;
++
++
++ClickNode::ClickNode(void) {
++}
++
++int
++ClickNode::cinit() {
++  int result = 0;
++  return result;
++}
++
++int
++ClickNode::command(int argc, const char*const* argv)
++{
++  Tcl& tcl = Tcl::instance();
++  if (2 == argc) {
++  }
++  else if (3 == argc) {
++    if(strcmp(argv[1], "addif") == 0) {
++      Phy* phyp = (Phy*)TclObject::lookup(argv[2]);
++      if(phyp == 0) {
++	return TCL_ERROR;
++      }
++      phyp->insertnode(&ifhead_);
++      phyp->setnode(this);
++      return TCL_OK;
++    }
++  }
++  else if (4 == argc) {
++  }
++  else if (5 == argc) {
++  }
++
++  return MobileNode::command(argc, argv);
++}
++
++
++/* ======================================================================
++   Other class functions
++   ====================================================================== */
++void
++ClickNode::dump(void) {
++  printf("Dumping a clicknode...\n");
++}
++
++
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/common/clicknode.h ns-2.29/common/clicknode.h
+--- ns-2.29-pure/common/clicknode.h	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/common/clicknode.h	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,66 @@
++/*
++ * clicknode.h
++ *
++ * $Header: /srl/dirkcvs/nsclick/ns/common/clicknode.h,v 1.1 2002/06/10 19:23:01 neufeldm Exp $
++ *
++ */
++
++/*****************************************************************************
++ *  Copyright 2002, Univerity of Colorado at Boulder.                        *
++ *                                                                           *
++ *                        All Rights Reserved                                *
++ *                                                                           *
++ *  Permission to use, copy, modify, and distribute this software and its    *
++ *  documentation for any purpose other than its incorporation into a        *
++ *  commercial product is hereby granted without fee, provided that the      *
++ *  above copyright notice appear in all copies and that both that           *
++ *  copyright notice and this permission notice appear in supporting         *
++ *  documentation, and that the name of the University not be used in        *
++ *  advertising or publicity pertaining to distribution of the software      *
++ *  without specific, written prior permission.                              *
++ *                                                                           *
++ *  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      *
++ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        *
++ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    *
++ *  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         *
++ *  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA       *
++ *  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER        *
++ *  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         *
++ *  PERFORMANCE OF THIS SOFTWARE.                                            *
++ *                                                                           *
++ ****************************************************************************/
++
++#ifndef __ns_clicknode_h__
++#define __ns_clicknode_h__
++
++#include "object.h"
++#include "trace.h"
++#include "lib/bsd-list.h"
++#include "node.h"
++
++class ClickNode : public MobileNode
++{
++
++public:
++  ClickNode();
++  virtual int cinit();
++  virtual int command(int argc, const char*const* argv);
++  inline ClickNode* nextnode() { return link_.le_next; }
++  
++  void dump(void);
++  
++private:
++
++  /*
++   * A global list of click nodes
++   */
++  LIST_ENTRY(ClickNode) link_;
++  
++  /*
++   * Trace Target
++   */
++  Trace* log_target_;
++
++};
++
++#endif
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/common/packet-stamp.h ns-2.29/common/packet-stamp.h
+--- ns-2.29-pure/common/packet-stamp.h	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/common/packet-stamp.h	2006-01-08 12:58:19.000000000 -0800
+@@ -23,6 +23,7 @@
+ public:
+ 
+   PacketStamp() : ant(0), node(0), Pr(-1), lambda(-1) { }
++  void clear() { ant = 0; node = 0; Pr = -1; lambda = -1; }
+ 
+   void init(const PacketStamp *s) {
+ 	  Antenna* ant;
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/common/packet.h ns-2.29/common/packet.h
+--- ns-2.29-pure/common/packet.h	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/common/packet.h	2006-01-08 13:01:26.000000000 -0800
+@@ -167,6 +167,9 @@
+ 	// HDLC packet
+ 	PT_HDLC,
+ 
++	// nsclick RAW packet
++	PT_RAW,
++
+ 	// insert new packet types here
+ 	PT_NTYPE // This MUST be the LAST one
+ };
+@@ -174,6 +177,7 @@
+ class p_info {
+ public:
+ 	p_info() {
++		name_[PT_RAW] = "raw";
+ 		name_[PT_TCP]= "tcp";
+ 		name_[PT_UDP]= "udp";
+ 		name_[PT_CBR]= "cbr";
+@@ -532,6 +542,7 @@
+ inline void Packet::init(Packet* p)
+ {
+ 	bzero(p->bits_, hdrlen_);
++	p->txinfo_.clear();
+ }
+ 
+ inline Packet* Packet::alloc()
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/common/rawpacket.cc ns-2.29/common/rawpacket.cc
+--- ns-2.29-pure/common/rawpacket.cc	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/common/rawpacket.cc	2006-01-08 14:00:41.000000000 -0800
+@@ -0,0 +1,207 @@
++/*
++ * rawpacket.cc
++ * Main file for the raw packet type
++ *
++ * $Header: /srl/dirkcvs/nsclick/ns/common/rawpacket.cc,v 1.2 2003/03/18 06:29:46 neufeldm Exp $
++ *
++ */
++
++/*****************************************************************************
++ *  Copyright 2002, Univerity of Colorado at Boulder.                        *
++ *                                                                           *
++ *                        All Rights Reserved                                *
++ *                                                                           *
++ *  Permission to use, copy, modify, and distribute this software and its    *
++ *  documentation for any purpose other than its incorporation into a        *
++ *  commercial product is hereby granted without fee, provided that the      *
++ *  above copyright notice appear in all copies and that both that           *
++ *  copyright notice and this permission notice appear in supporting         *
++ *  documentation, and that the name of the University not be used in        *
++ *  advertising or publicity pertaining to distribution of the software      *
++ *  without specific, written prior permission.                              *
++ *                                                                           *
++ *  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      *
++ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        *
++ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    *
++ *  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         *
++ *  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA       *
++ *  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER        *
++ *  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         *
++ *  PERFORMANCE OF THIS SOFTWARE.                                            *
++ *                                                                           *
++ ****************************************************************************/
++
++#include <stdio.h>
++#include "agent.h"
++#include "packet.h"
++#include "rawpacket.h"
++#include "extrouter.h"
++
++#include <click/config.h>
++#include <click/confparse.hh>
++#include <clicknet/ip.h>
++#include <clicknet/udp.h>
++
++int hdr_raw::offset_;
++
++/*
++ * RawHeaderClass based on the ping example in the ns-2 tutorial.
++ */
++static class RawHeaderClass : public PacketHeaderClass {
++public:
++  RawHeaderClass() : PacketHeaderClass("PacketHeader/Raw",sizeof(hdr_raw)){
++    bind_offset(&hdr_raw::offset_);
++  }
++} class_rawhdr;
++
++static class RawClass : public TclClass {
++public:
++  RawClass() : TclClass("Agent/Raw") {}
++  TclObject* create(int,const char*const*) {
++    return (new RawAgent());
++  }
++} class_raw;
++  
++
++RawAgent::RawAgent() : Agent(PT_RAW) {
++  ipseq_ = 0;
++}
++
++int RawAgent::command(int argc,const char*const* argv) {
++  if (argc == 2) {
++    if (strcmp(argv[1], "send") == 0) {
++      char* testmsg = "Howdy Howdy Howdy\n";
++      send_udp_str(srcip_,srcport_,destip_,destport_,testmsg);
++      return (TCL_OK);
++    }
++  }
++  else if (argc == 3) {
++    if (strcmp(argv[1], "send") == 0) {
++      const char* testmsg = argv[2];
++      send_udp_str(srcip_,srcport_,destip_,destport_,testmsg);
++      return (TCL_OK);
++    }
++    if (strcmp(argv[1], "set-srcip") == 0) {
++	if (!Click::cp_ip_address(Click::String(argv[2]), (unsigned char *) &srcip_))
++	    return TCL_ERROR;
++	return (TCL_OK);
++    }
++    if (strcmp(argv[1], "set-srcport") == 0) {
++      srcport_ = atoi(argv[2]);
++      return (TCL_OK);
++    }
++    if (strcmp(argv[1], "set-destip") == 0) {
++	if (!Click::cp_ip_address(Click::String(argv[2]), (unsigned char *) &destip_))
++	    return TCL_ERROR;
++	return (TCL_OK);
++    }
++    if (strcmp(argv[1], "set-destport") == 0) {
++      destport_ = atoi(argv[2]);
++      return (TCL_OK);
++    }
++  }
++  else if (argc == 7) {
++    if (strcmp(argv[1],"send-udp") == 0) {
++      // saddr,sport,daddr,dport,payload
++      // For right now only text strings can be sent
++      // as payload.
++	u_long saddr, daddr;
++	if (!Click::cp_ip_address(Click::String(argv[2]), (unsigned char *) &saddr)
++	    || !Click::cp_ip_address(Click::String(argv[4]), (unsigned char *) &daddr))
++	    return TCL_ERROR;
++      u_short sport = atoi(argv[3]);
++      u_short dport = atoi(argv[5]);
++      send_udp_str(saddr,sport,daddr,dport,argv[6]);
++      // return TCL_OK, so the calling function knows that the
++      // command has been processed
++      return (TCL_OK);
++    }
++  }
++
++  // If the command hasn't been processed by RawAgent()::command,
++  // call the command() function for the base class
++  return (Agent::command(argc, argv));
++}
++
++void
++RawAgent::sendmsg(int nbytes, const char *flags) {
++  // Make a string full of 'A's and use it for the payload
++  char* stuff = new char[nbytes];
++  memset(stuff,'A',nbytes);
++  send_udp(srcip_,srcport_,destip_,destport_,stuff,nbytes);
++  delete[] stuff;
++  stuff = 0;
++}
++
++void
++RawAgent::send_udp_str(u_long saddr,u_short sport,u_long daddr,u_short dport,
++		       const char* payload) {
++  send_udp(saddr,sport,daddr,dport,payload,strlen(payload));
++}
++
++void
++RawAgent::send_udp(u_long saddr,u_short sport,u_long daddr,u_short dport,
++		   const char* payload,int paylen) {
++    int packetlen = paylen + sizeof(click_ip) + sizeof(click_udp);
++    Packet* pkt = allocpkt(packetlen);
++    hdr_cmn* hcmn = HDR_CMN(pkt);
++    hcmn->direction() = hdr_cmn::DOWN;
++    hcmn->iface() = ExtRouter::IFID_KERNELTAP;
++    hcmn->ptype() = PT_RAW;
++    hcmn->size() = packetlen;
++    // Access the raw header for the new packet:
++    hdr_raw* hdr = hdr_raw::access(pkt);
++    hdr->subtype = hdr_raw::IP;
++    hdr->ns_type = PT_RAW;
++    unsigned char* pdat = pkt->accessdata();
++    memset(pdat,0,packetlen);
++
++    click_ip *ip = reinterpret_cast<click_ip *>(pdat);
++    click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
++
++    // set up IP header
++    ip->ip_v = 4;
++    ip->ip_hl = sizeof(click_ip) >> 2;
++    ip->ip_len = htons(packetlen);
++    ip->ip_id = htons(ipseq_);
++    ip->ip_p = IP_PROTO_UDP;
++    ip->ip_src.s_addr = saddr;
++    ip->ip_dst.s_addr = daddr;
++    ip->ip_tos = 0;
++    ip->ip_off = 0;
++    ip->ip_ttl = 255;
++
++    ip->ip_sum = 0;
++#if HAVE_FAST_CHECKSUM
++    ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
++#else
++    ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
++#endif
++    
++    // set up UDP header
++    udp->uh_sport = htons(sport);
++    udp->uh_dport = htons(dport);
++    uint16_t len = packetlen - sizeof(click_ip);
++    udp->uh_ulen = htons(len);
++    udp->uh_sum = 0;
++    unsigned csum = click_in_cksum((unsigned char *)udp, len);
++    udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
++  
++    // Send the packet
++    send(pkt, 0);
++    ipseq_++;
++}
++
++void RawAgent::recv(Packet* pkt, Handler*)
++{
++  // Access the raw header for the received packet
++  hdr_raw* hdr = hdr_raw::access(pkt);
++
++  if (hdr_raw::PSTRING == hdr->subtype) {
++    unsigned char* pdat = pkt->accessdata();
++    unsigned int len = pdat[0];
++
++    // Shovel the string to the screen...
++    fwrite(pdat+1,sizeof(char),len,stdout);
++  }
++}
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/common/rawpacket.h ns-2.29/common/rawpacket.h
+--- ns-2.29-pure/common/rawpacket.h	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/common/rawpacket.h	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,92 @@
++/*
++ * rawpacket.h
++ *
++ * $Header: /srl/dirkcvs/nsclick/ns/common/rawpacket.h,v 1.2 2003/01/29 15:44:13 neufeldm Exp $
++ *
++ */
++
++/*****************************************************************************
++ *  Copyright 2002, Univerity of Colorado at Boulder.                        *
++ *                                                                           *
++ *                        All Rights Reserved                                *
++ *                                                                           *
++ *  Permission to use, copy, modify, and distribute this software and its    *
++ *  documentation for any purpose other than its incorporation into a        *
++ *  commercial product is hereby granted without fee, provided that the      *
++ *  above copyright notice appear in all copies and that both that           *
++ *  copyright notice and this permission notice appear in supporting         *
++ *  documentation, and that the name of the University not be used in        *
++ *  advertising or publicity pertaining to distribution of the software      *
++ *  without specific, written prior permission.                              *
++ *                                                                           *
++ *  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      *
++ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        *
++ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    *
++ *  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         *
++ *  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA       *
++ *  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER        *
++ *  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         *
++ *  PERFORMANCE OF THIS SOFTWARE.                                            *
++ *                                                                           *
++ ****************************************************************************/
++
++/*
++ * Raw packet type. 
++ */
++struct hdr_raw {
++  /*
++   * This indicates the actual type of the stuff in the
++   * packet. The actual packet stuff is pointed to by 
++   * the data thing.
++   */
++  int subtype;
++
++  /*
++   * Not many raw subtypes defined so far.
++   */
++  enum {
++    NONE,
++    PSTRING,
++    IP,
++    ETHERNET,
++  };
++
++  /*
++   * This is the equivalent packet type in ns-2. Sometimes we
++   * want to maintain the raw packet data _and_ the ns-2 headers
++   * for that particular type in parallel, e.g. so we can use
++   * the existing ns-2 trace printing routines. However, we
++   * still want to keep the packet type as PT_RAW, so we store
++   * the ns-2 type in this field.
++   */
++  int ns_type;
++ 
++  /* Packet header access functions */
++  static int offset_;
++  inline static int& offset() { return offset_; }
++  inline static hdr_raw* access(const Packet* p) {
++    return (hdr_raw*) p->access(offset_);
++  }
++};
++
++/*
++ * The base RawAgent class
++ */
++class RawAgent : public Agent {
++ public:
++  RawAgent();
++  int command(int argc,const char*const* argv);
++  void recv(Packet*, Handler*);
++  virtual void sendmsg(int nbytes, const char *flags = 0);
++ protected:
++  void send_udp_str(u_long saddr,u_short sport,u_long daddr,u_short dport,
++		    const char* payload);
++  void send_udp(u_long saddr,u_short sport,u_long daddr,u_short dport,
++		const char* payload,int paylen);
++
++  u_int16_t ipseq_;
++  u_long srcip_;
++  u_short srcport_;
++  u_long destip_;
++  u_short destport_;
++};
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/conf/configure.in.click ns-2.29/conf/configure.in.click
+--- ns-2.29-pure/conf/configure.in.click	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/conf/configure.in.click	2006-01-08 13:54:07.000000000 -0800
+@@ -0,0 +1,30 @@
++dnl autoconf rules to find click - copied from dmalloc example
++dnl $Header: /srl/dirkcvs/nsclick/ns/conf/configure.in.click,v 1.2 2003/03/23 03:50:11 neufeldm Exp $
++
++AC_ARG_WITH(click,	--with-click=path specify a pathname for the click modular router, d="$withval", d="")
++
++CLICK_VERS=1.3
++
++CLICK_PATH="$PWD/../click \
++	$PWD/../../click \
++	$PWD/../click-$CLICK_VERS \
++	$PWD/../../click-$CLICK_VERS \
++	$PWD/../click/include \
++	$PWD/../../click/include \
++	$PWD/../click-$CLICK_VERS/include \
++	$PWD/../../click-$CLICK_VERS/include \
++	$PWD/../click/ns \
++	$PWD/../../click/ns \
++	$PWD/../click-$CLICK_VERS/ns \
++	$PWD/../../click-$CLICK_VERS/ns \
++	"
++CLICK_PATH_D="$d \
++	$d/lib \
++	$d/include \
++	"
++
++NS_BEGIN_PACKAGE(click)
++NS_CHECK_HEADER_PATH(click/simclick.h,$CLICK_PATH,$d,$CLICK_PATH_D,V_HEADER_CLICK,click)
++NS_CHECK_LIB_PATH(nsclick,$CLICK_PATH,$d,$CLICK_PATH_D,V_LIB_CLICK,click)
++V_DEFINES="-DCLICK_NS $V_DEFINES"
++NS_END_PACKAGE(click,yes)
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/configure ns-2.29/configure
+--- ns-2.29-pure/configure	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/configure	2006-01-08 14:02:32.000000000 -0800
+@@ -873,6 +873,7 @@
+ --with-tclcl=path	specify a pathname for TclCL (the ex-libTcl)
+ --with-tcldebug=path specify a pathname for the tcl debugger (path=no disables the debugger)
+ --with-dmalloc=path specify a pathname for the dmalloc debugger (path=no disables the dmalloc)
++--with-click=path specify a pathname for the click modular router
+ --with-perl=path specify a pathname for perl
+ 
+ Some influential environment variables:
+@@ -977,7 +978,7 @@
+     else
+       echo "$as_me: WARNING: no configuration information is in $ac_dir" >&2
+     fi
+-    cd "$ac_popdir"
++    cd $ac_popdir
+   done
+ fi
+ 
+@@ -2085,7 +2086,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -2143,7 +2145,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -2259,7 +2262,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -2313,7 +2317,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -2358,7 +2363,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -2402,7 +2408,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -2586,7 +2593,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -2644,7 +2652,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -2715,7 +2724,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -2759,7 +2769,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -3076,7 +3087,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -3246,7 +3258,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -3313,7 +3326,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -3470,7 +3484,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -3537,7 +3552,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -3604,7 +3620,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -3671,7 +3688,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -3738,7 +3756,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -3841,7 +3860,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -4008,7 +4028,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -4065,7 +4086,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -4122,7 +4144,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -4179,7 +4202,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -4236,7 +4260,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -6239,6 +6264,207 @@
+ 
+ 
+ 
++
++
++# Check whether --with-click or --without-click was given.
++if test "${with_click+set}" = set; then
++  withval="$with_click"
++  d="$withval"
++else
++  d=""
++fi;
++
++CLICK_VERS=1.3
++
++CLICK_PATH="$PWD/../click \
++	$PWD/../../click \
++	$PWD/../click-$CLICK_VERS \
++	$PWD/../../click-$CLICK_VERS \
++	$PWD/../click/include \
++	$PWD/../../click/include \
++	$PWD/../click-$CLICK_VERS/include \
++	$PWD/../../click-$CLICK_VERS/include \
++	$PWD/../click/ns \
++	$PWD/../../click/ns \
++	$PWD/../click-$CLICK_VERS/ns \
++	$PWD/../../click-$CLICK_VERS/ns \
++	"
++CLICK_PATH_D="$d \
++	$d/lib \
++	$d/include \
++	"
++
++
++NS_PACKAGE_click_UNDERWAY=false
++NS_PACKAGE_click_COMPLETE=true
++
++
++echo "$as_me:$LINENO: checking for click/simclick.h" >&5
++echo $ECHO_N "checking for click/simclick.h... $ECHO_C" >&6
++if test "x$d" = "xno"; then
++	: disable header
++	V_HEADER_CLICK=FAIL
++
++NS_PACKAGE_click_COMPLETE=false
++
++	echo "$as_me:$LINENO: result: no" >&5
++echo "${ECHO_T}no" >&6
++
++else
++	places="$CLICK_PATH"
++	if test "x$d" != "x" -a "x$d" != xyes; then
++		if test ! -d $d; then
++			{ { echo "$as_me:$LINENO: error: $d is not a directory" >&5
++echo "$as_me: error: $d is not a directory" >&2;}
++   { (exit 1); exit 1; }; }
++		fi
++		places="$CLICK_PATH_D"
++	fi
++
++	V_HEADER_CLICK=""
++	found=""
++	for dir in $places; do
++		if test -r $dir/click/simclick.h; then
++                        found="$dir"
++                        if test "$CC" != "icc" ||
++                                test "$dir" != "/usr/include"; then
++                                V_HEADER_CLICK="-I$dir"
++                        fi
++			break
++		fi
++	done
++	if test "FAIL$found" = "FAIL" ; then
++
++NS_PACKAGE_click_COMPLETE=false
++
++		echo "$as_me:$LINENO: result: no" >&5
++echo "${ECHO_T}no" >&6
++	else
++
++				  ac_tr_hdr=HAVE_`echo click/simclick.h | sed 'y%abcdefghijklmnopqrstuvwxyz./-%ABCDEFGHIJKLMNOPQRSTUVWXYZ___%'`
++		                cat >>confdefs.h <<_ACEOF
++#define $ac_tr_hdr 1
++_ACEOF
++
++
++		V_INCLUDES="$V_HEADER_CLICK $V_INCLUDES"
++		V_DEFINES="-D$ac_tr_hdr $V_DEFINES"
++
++		NS_PACKAGE_click_UNDERWAY=true
++
++		echo "$as_me:$LINENO: result: $V_HEADER_CLICK" >&5
++echo "${ECHO_T}$V_HEADER_CLICK" >&6
++	fi
++fi
++
++
++echo "$as_me:$LINENO: checking for libnsclick" >&5
++echo $ECHO_N "checking for libnsclick... $ECHO_C" >&6
++if test "x$d" = "xno"; then
++	: disable library
++	V_LIB_CLICK=FAIL
++
++NS_PACKAGE_click_COMPLETE=false
++
++	echo "$as_me:$LINENO: result: no" >&5
++echo "${ECHO_T}no" >&6
++
++else
++	places="$CLICK_PATH"
++	if test "x$d" != "x" -a "x$d" != xyes; then
++		if test ! -d $d; then
++			{ { echo "$as_me:$LINENO: error: $d is not a directory" >&5
++echo "$as_me: error: $d is not a directory" >&2;}
++   { (exit 1); exit 1; }; }
++		fi
++		places="$CLICK_PATH_D"
++	fi
++
++	V_LIB_CLICK=""
++		full_lib_name="nsclick"
++		simple_lib_name=`echo $full_lib_name | sed -e 's/\.//'`
++		other_simple_lib_name=`echo $full_lib_name | sed -e 's/\./_/'`
++		simpler_lib_name=`echo $simple_lib_name | sed -e 'y/0123456789/          /'`
++	double_break=false
++	for dir in $places; do
++		for file in $full_lib_name $simple_lib_name $other_simple_lib_name $simpler_lib_name
++		do
++			if test -r $dir/lib$file.so -o -r $dir/lib$file.a -o -r $dir/lib$file.dylib; then
++				V_LIB_CLICK="-L$dir -l$file"
++				double_break=true
++				break
++			fi
++		done
++		if $double_break; then
++			break
++		fi
++	done
++	if test "FAIL$V_LIB_CLICK" = "FAIL" ; then
++
++NS_PACKAGE_click_COMPLETE=false
++
++		echo "$as_me:$LINENO: result: no" >&5
++echo "${ECHO_T}no" >&6
++	else
++		if test "$solaris"; then
++			V_LIB_CLICK="-R$dir $V_LIB_CLICK"
++		fi
++
++				ac_tr_lib=HAVE_LIB`echo nsclick | sed -e 's/[^a-zA-Z0-9_]/_/g' \
++		    -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
++				cat >>confdefs.h <<_ACEOF
++#define $ac_tr_lib 1
++_ACEOF
++
++
++				V_LIBS="$V_LIB_CLICK $V_LIBS"
++		V_DEFINES="-D$ac_tr_lib $V_DEFINES"
++
++		NS_PACKAGE_click_UNDERWAY=true
++
++		echo "$as_me:$LINENO: result: $V_LIB_CLICK" >&5
++echo "${ECHO_T}$V_LIB_CLICK" >&6
++	fi
++fi
++
++V_DEFINES="-DCLICK_NS $V_DEFINES"
++
++NS_PACKAGE_click_VALID=false
++if $NS_PACKAGE_click_UNDERWAY; then
++	if $NS_PACKAGE_click_COMPLETE; then
++		: All components of click found.
++		NS_PACKAGE_click_VALID=true
++	else
++		{ { echo "$as_me:$LINENO: error: Installation of click seems incomplete or can't be found automatically.
++Please correct the problem by telling configure where click is
++using the argument --with-click=/path/to/package
++(perhaps after installing it),
++or the package is not required, disable it with --with-click=no." >&5
++echo "$as_me: error: Installation of click seems incomplete or can't be found automatically.
++Please correct the problem by telling configure where click is
++using the argument --with-click=/path/to/package
++(perhaps after installing it),
++or the package is not required, disable it with --with-click=no." >&2;}
++   { (exit 1); exit 1; }; }
++	fi
++fi
++if test "xyes" = xyes; then
++	if $NS_PACKAGE_click_VALID; then
++		:
++	else
++		{ { echo "$as_me:$LINENO: error: click is required but could not be completely found.
++Please correct the problem by telling configure where click is
++using the argument --with-click=/path/to/package,
++or the package is not required, disable it with --with-click=no." >&5
++echo "$as_me: error: click is required but could not be completely found.
++Please correct the problem by telling configure where click is
++using the argument --with-click=/path/to/package,
++or the package is not required, disable it with --with-click=no." >&2;}
++   { (exit 1); exit 1; }; }
++	fi
++fi
++
++
+ default_classinstvar=yes
+ 
+ 
+@@ -6466,7 +6692,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -6640,7 +6867,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -6788,7 +7016,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -6901,7 +7130,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7025,7 +7255,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7090,7 +7321,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7155,7 +7387,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7220,7 +7453,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7285,7 +7519,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7350,7 +7585,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7415,7 +7651,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7480,7 +7717,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7585,7 +7823,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7654,7 +7893,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7716,7 +7956,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7756,7 +7997,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7812,7 +8054,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7852,7 +8095,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7916,7 +8160,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -7947,8 +8192,10 @@
+ esac
+ else
+   if test "$cross_compiling" = yes; then
+-  { { echo "$as_me:$LINENO: error: internal error: not reached in cross-compile" >&5
+-echo "$as_me: error: internal error: not reached in cross-compile" >&2;}
++  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
++See \`config.log' for more details." >&5
++echo "$as_me: error: cannot run test program while cross compiling
++See \`config.log' for more details." >&2;}
+    { (exit 1); exit 1; }; }
+ else
+   cat >conftest.$ac_ext <<_ACEOF
+@@ -8096,7 +8343,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -8326,7 +8574,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -8394,7 +8643,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -8495,7 +8745,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -8611,7 +8862,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -8677,7 +8929,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -8736,7 +8989,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -8803,7 +9057,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -8929,7 +9184,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -9001,7 +9257,8 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"
++			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -10059,6 +10316,11 @@
+   *) ac_INSTALL=$ac_top_builddir$INSTALL ;;
+   esac
+ 
++  if test x"$ac_file" != x-; then
++    { echo "$as_me:$LINENO: creating $ac_file" >&5
++echo "$as_me: creating $ac_file" >&6;}
++    rm -f "$ac_file"
++  fi
+   # Let's still pretend it is `configure' which instantiates (i.e., don't
+   # use $as_me), people would be surprised to read:
+   #    /* config.h.  Generated by config.status.  */
+@@ -10097,12 +10359,6 @@
+ 	 fi;;
+       esac
+     done` || { (exit 1); exit 1; }
+-
+-  if test x"$ac_file" != x-; then
+-    { echo "$as_me:$LINENO: creating $ac_file" >&5
+-echo "$as_me: creating $ac_file" >&6;}
+-    rm -f "$ac_file"
+-  fi
+ _ACEOF
+ cat >>$CONFIG_STATUS <<_ACEOF
+   sed "$ac_vpsub
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/configure.in ns-2.29/configure.in
+--- ns-2.29-pure/configure.in	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/configure.in	2006-01-08 14:02:21.000000000 -0800
+@@ -25,6 +25,7 @@
+ builtin(include, ./conf/configure.in.misc)
+ builtin(include, ./conf/configure.in.tcldebug)
+ builtin(include, ./conf/configure.in.dmalloc)
++builtin(include, ./conf/configure.in.click)
+ default_classinstvar=yes
+ builtin(include, ./conf/configure.in.debugopts)
+ 
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mac/channel.cc ns-2.29/mac/channel.cc
+--- ns-2.29-pure/mac/channel.cc	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/mac/channel.cc	2006-01-08 13:02:20.000000000 -0800
+@@ -120,6 +120,12 @@
+ 			((Phy*) obj)->setchnl(this);
+ 			return TCL_OK;
+ 		}
++		else if(strcmp(argv[1], "delif") == 0) {
++			// Remove phy from channel
++			((Phy*) obj)->setchnl(0);
++			((Phy*) obj)->removechnl();
++			return TCL_OK;
++		}
+ 
+ 		// add interface for grid_keeper_
+ 		/*else if(strncasecmp(argv[1], "grid_keeper", 5) == 0) {
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mac/ll-ext.cc ns-2.29/mac/ll-ext.cc
+--- ns-2.29-pure/mac/ll-ext.cc	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/mac/ll-ext.cc	2006-01-08 14:21:04.000000000 -0800
+@@ -0,0 +1,175 @@
++/*
++ * ll-ext.cc
++ * This is a special link layer which explicitly notifies the attached
++ * queue when it becomes free.
++ *
++ * $Header: /srl/dirkcvs/nsclick/ns/mac/ll-ext.cc,v 1.4 2003/04/27 06:55:22 neufeldm Exp $
++ */
++
++/*****************************************************************************
++ *  Copyright 2002, Univerity of Colorado at Boulder.                        *
++ *                                                                           *
++ *                        All Rights Reserved                                *
++ *                                                                           *
++ *  Permission to use, copy, modify, and distribute this software and its    *
++ *  documentation for any purpose other than its incorporation into a        *
++ *  commercial product is hereby granted without fee, provided that the      *
++ *  above copyright notice appear in all copies and that both that           *
++ *  copyright notice and this permission notice appear in supporting         *
++ *  documentation, and that the name of the University not be used in        *
++ *  advertising or publicity pertaining to distribution of the software      *
++ *  without specific, written prior permission.                              *
++ *                                                                           *
++ *  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      *
++ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        *
++ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    *
++ *  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         *
++ *  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA       *
++ *  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER        *
++ *  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         *
++ *  PERFORMANCE OF THIS SOFTWARE.                                            *
++ *                                                                           *
++ ****************************************************************************/
++
++// XXX This is really a click link layer now - not just ext...
++
++#include "config.h"
++#include <stdlib.h>
++#include <ctype.h>
++#include <sys/time.h>
++#include <unistd.h>
++//#include <stl.h>
++//#include <hash_map.h>
++#include <map>
++#include <math.h>
++#include <string>
++#include "packet.h"
++#include "ip.h"
++#include "mac.h"
++#include "classifier.h"
++//#include "classifier-hash.h"
++#include "scheduler.h"
++#include "ll.h"
++#include <click/simclick.h>
++#include "ll-ext.h"
++#include "packet.h"
++#include "extrouter.h"
++#include "classifier.h"
++#include "classifier-ext.h"
++#include "classifier-click.h"
++#include "clickqueue.h"
++
++static class LLExtClass : public TclClass {
++public:
++  LLExtClass() : TclClass("LL/Ext") {}
++  TclObject* create(int, const char*const*) {
++    return (new LLExt());
++  }
++} class_ll_ext;
++
++void
++LLExtEventHandler::handle(Event* event) {
++  // XXX dangerous downcast - should use RTTI
++  LLExtEvent* myevent = (LLExtEvent*) event;
++  myevent->llext->setpending(0);
++  delete myevent;
++}
++
++
++LLExt::LLExt() {
++  extid_ = -1;
++  macDA_ = -1;
++  packetpending_ = 0;
++}
++
++LLExt::~LLExt() {
++}
++
++int LLExt::command(int argc, const char*const* argv) {
++  Tcl& tcl = Tcl::instance();
++  if(argc == 2) {
++  }
++  else if (argc == 3) {
++    if (strcmp("setid",argv[1]) == 0) {
++      extid_ = atoi(argv[2]);
++      return TCL_OK;
++    }
++    else if (strcmp("setpromiscuous",argv[1]) == 0) {
++      bool promisc = (atoi(argv[2]) != 0);
++      setpromiscuous(promisc);
++      return TCL_OK;
++    }
++  }
++  else if (argc == 4) {
++  }
++
++  return LL::command(argc,argv);
++}
++
++void LLExt::recv(Packet* p, Handler* h) {
++  /*
++   * Tag the packet and then defer to standard link layer handling.
++   */
++  struct hdr_cmn* hdr = HDR_CMN(p);
++  hdr->iface() = extid_;
++  // printf("ll = %d, ifid = %d\n",(int)this,hdr->iface());
++  LL::recv(p,h);
++}
++
++void LLExt::sendDown(Packet* p) {
++  // Someone decided that it would be A Good Thing to overlay
++  // the 802.11 MAC packet info on top of the regular MAC packet info.
++  // We need to fix the source and destination addresses here by accessing the
++  // MAC object itself.
++  struct hdr_mac* mhdr = HDR_MAC(p);
++  int macdst = mhdr->macDA();
++  int macsrc = mhdr->macSA();
++  memset(mhdr,0,sizeof(struct hdr_mac));
++  mac_->hdr_dst((char*)mhdr,macdst);
++  mac_->hdr_src((char*)mhdr,macsrc);
++
++  // Bleah. Send the packet down, mark ourself as being busy, and then
++  // schedule an event to mark ourselves unbusy.
++  packetpending_ = 1;
++  LL::sendDown(p);
++  LLExtEvent* llev = new LLExtEvent();
++  llev->llext = this;
++  Scheduler& s = Scheduler::instance();
++  s.schedule(&evhandle_,llev,delay_);
++}
++
++int LLExt::ready() {
++  ClickQueue* pcq = (ClickQueue*) ifq_;
++  if (pcq) {
++    return (!packetpending_ && pcq->ready());
++  }
++
++  // No ClickQueue? Then we're always ready.
++  return 1;
++}
++
++void
++LLExt::setpromiscuous(bool promisc) {
++  if (!mac_) {
++    return;
++  }
++
++  if (promisc) {
++    mac_->installTap(this,true);
++  }
++  else {
++    mac_->installTap(0,true);
++  }
++}
++
++void 
++LLExt::tap(const Packet *packet)
++  /* process packets that are promiscously listened to from the MAC layer tap
++  *** do not change or free packet *** */
++{
++  // XXX send a copy of packets received here up to the next layer.
++  // This code assumes that the tap is being used with the "filterown"
++  // option set, otherwise duplicate packets will get sent up the pipe.
++  Packet* newp = packet->copy();
++  recv(newp,0);
++}
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mac/ll-ext.h ns-2.29/mac/ll-ext.h
+--- ns-2.29-pure/mac/ll-ext.h	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/mac/ll-ext.h	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,80 @@
++/*
++ * ll-ext.h
++ *
++ * Much like the multicast routing system, ext routers needs to know what
++ * interface packets come in from. However, the multicast interface
++ * thing doesn't quite do what we need it to, so you get what
++ * we've got here. 
++ *
++ * $Header: /srl/dirkcvs/nsclick/ns/mac/ll-ext.h,v 1.2 2003/04/27 06:55:22 neufeldm Exp $
++ */
++
++/*****************************************************************************
++ *  Copyright 2002, Univerity of Colorado at Boulder.                        *
++ *                                                                           *
++ *                        All Rights Reserved                                *
++ *                                                                           *
++ *  Permission to use, copy, modify, and distribute this software and its    *
++ *  documentation for any purpose other than its incorporation into a        *
++ *  commercial product is hereby granted without fee, provided that the      *
++ *  above copyright notice appear in all copies and that both that           *
++ *  copyright notice and this permission notice appear in supporting         *
++ *  documentation, and that the name of the University not be used in        *
++ *  advertising or publicity pertaining to distribution of the software      *
++ *  without specific, written prior permission.                              *
++ *                                                                           *
++ *  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      *
++ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        *
++ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    *
++ *  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         *
++ *  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA       *
++ *  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER        *
++ *  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         *
++ *  PERFORMANCE OF THIS SOFTWARE.                                            *
++ *                                                                           *
++ ****************************************************************************/
++
++#ifndef ns_ll_ext_h
++#define ns_ll_ext_h
++
++#include "object.h"
++
++class Packet;
++class LLExt;
++
++class LLExtEvent : public Event {
++ public:
++  LLExt* llext;
++};
++
++class LLExtEventHandler : public Handler {
++ public:
++  virtual void handle(Event* event);
++};
++
++class LLExt : public LL, public Tap {
++ public:
++  LLExt();
++  virtual ~LLExt();
++	
++  virtual void recv(Packet* p, Handler* h);
++  virtual void sendDown(Packet* p);
++
++  // Allow us to do promiscuous mode by acting as a tap.
++  void tap(const Packet *p);
++
++  void setExtID(int newid) {extid_ = newid;}
++  int getExtID() {return extid_;}
++  int ready();
++  int getpending() { return packetpending_; }
++  void setpending(int newpend) { packetpending_ = newpend; };
++  void setpromiscuous(bool promisc);
++  
++ protected:
++  virtual int command(int argc, const char*const* argv);
++  int extid_;
++  int packetpending_;
++  LLExtEventHandler evhandle_;
++};
++
++#endif
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mac/ll.cc ns-2.29/mac/ll.cc
+--- ns-2.29-pure/mac/ll.cc	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/mac/ll.cc	2006-01-08 13:39:39.000000000 -0800
+@@ -203,6 +203,9 @@
+ 			tx = arptable_->arpresolve(dst, p, this);
+ 			break;
+ 		}
++		if (PT_RAW == ch->ptype()) {
++			break;
++		}
+ 		//if (varp_) {
+ 		//tx = varp_->arpresolve(dst, p);
+ 		//break;
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mac/mac-802_11.cc ns-2.29/mac/mac-802_11.cc
+--- ns-2.29-pure/mac/mac-802_11.cc	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/mac/mac-802_11.cc	2006-01-08 12:58:19.000000000 -0800
+@@ -1275,8 +1275,12 @@
+ 
+         /* tap out - */
+         if (tap_ && type == MAC_Type_Data &&
+-            MAC_Subtype_Data == subtype ) 
+-		tap_->tap(pktRx_);
++            MAC_Subtype_Data == subtype ) {
++		if (!tap_filterown_ ||
++		    ((dst != (u_int32_t)index_) && (dst != MAC_BROADCAST))) {
++			tap_->tap(pktRx_);
++		}
++	}
+ 	/*
+ 	 * Adaptive Fidelity Algorithm Support - neighborhood infomation 
+ 	 * collection
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mac/mac.h ns-2.29/mac/mac.h
+--- ns-2.29-pure/mac/mac.h	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/mac/mac.h	2006-01-08 12:58:19.000000000 -0800
+@@ -177,7 +177,10 @@
+ 	virtual void sendUp(Packet *p);
+ 
+ 	virtual void resume(Packet* p = 0);
+-	virtual void installTap(Tap *t) { tap_ = t; }
++	virtual void installTap(Tap *t,bool filterown = false) {
++		tap_ = t;
++		tap_filterown_ = filterown;
++	}
+ 	
+ 	inline double txtime(int bytes) {
+ 		return (8. * bytes / bandwidth_);
+@@ -231,6 +234,7 @@
+         
+ 	Phy *netif_;            // network interface
+         Tap *tap_;              // tap agent
++	bool tap_filterown_;    // filter tap packets destined for use anyhow
+ 	LL *ll_;             	// LL this MAC is connected to
+ 	Channel *channel_;	// channel this MAC is connected to
+ 
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mac/phy.cc ns-2.29/mac/phy.cc
+--- ns-2.29-pure/mac/phy.cc	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/mac/phy.cc	2006-01-08 12:58:19.000000000 -0800
+@@ -68,6 +68,16 @@
+ 			tcl.resultf("%d", index_);
+ 			return TCL_OK;
+ 		}
++		
++		if (strcmp(argv[1],"getchannel") == 0) {
++			if (channel_) {
++				tcl.resultf("%s",channel_->name());
++			}
++			else {
++				tcl.resultf("%s","");
++			}
++			return TCL_OK;
++		}
+ 	}
+ 
+ 	else if(argc == 3) {
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mac/wireless-phy.cc ns-2.29/mac/wireless-phy.cc
+--- ns-2.29-pure/mac/wireless-phy.cc	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/mac/wireless-phy.cc	2006-01-08 12:58:19.000000000 -0800
+@@ -134,6 +134,7 @@
+ WirelessPhy::command(int argc, const char*const* argv)
+ {
+ 	TclObject *obj; 
++	Tcl& tcl = Tcl::instance();
+ 
+ 	if (argc==2) {
+ 		if (strcasecmp(argv[1], "NodeOn") == 0) {
+@@ -156,7 +157,11 @@
+ 				update_energy_time_ = NOW;
+ 			}
+ 			return TCL_OK;
++		} else if (strcasecmp(argv[1], "getantenna") == 0) {
++			tcl.result(ant_->name());
++			return TCL_OK;
+ 		}
++
+ 	} else if(argc == 3) {
+ 		if (strcasecmp(argv[1], "setTxPower") == 0) {
+ 			Pt_consume_ = atof(argv[2]);
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mobile/pattern-antenna.cc ns-2.29/mobile/pattern-antenna.cc
+--- ns-2.29-pure/mobile/pattern-antenna.cc	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/mobile/pattern-antenna.cc	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,238 @@
++
++/*
++ * Copyright (c) 2003 University of Colorado, Boulder
++ * All rights reserved.
++ *
++ */
++
++#include <antenna.h>
++#include <pattern-antenna.h> 
++#include <math.h>
++#include <iostream>
++#include <fstream>
++#include <string>
++
++static class PatternAntennaClass : public TclClass {
++public:
++  PatternAntennaClass() : TclClass("Antenna/PatternAntenna") {}
++  TclObject* create(int, const char*const*) {
++    return (new PatternAntenna);
++  }
++} class_PatternAntenna;
++
++PatternAntenna::PatternAntenna() {
++  Dir_ = 0.0;
++  bind("Dir_", &Dir_);
++}
++
++double
++PatternAntenna::normalize(double deg) {
++  while (360.0 <= deg) {
++    deg -= 360.0;
++  }
++
++  while (0.0 > deg) {
++    deg += 360.0;
++  }
++
++  return deg;
++}
++
++double
++PatternAntenna::get_angle(double dX, double dY) {
++  double angle;
++
++  // First take care of dX or both == 0
++  if ((0.0 == dY) && (0.0 == dX)) {
++    angle = 0.0;
++  }
++  else if (0.0 == dX) {
++    angle = M_PI/2.0;
++  }
++  else {
++    angle = atan2(dY,dX);
++    if (0.0 > angle) {
++      angle += 2*M_PI;
++    }
++  }
++
++  angle = (180.0/M_PI) * angle;
++
++  return angle;
++}
++
++PatternAntenna::gain_pattern::gain_pattern() {
++  samplecount_ = 0;
++  samples_ = 0;
++}
++
++PatternAntenna::gain_pattern::~gain_pattern() {
++  if (samples_) {
++    free(samples_);
++    samples_ = 0;
++  }
++}
++
++void
++PatternAntenna::gain_pattern::set_gain_pattern(int samplecount,double* samples)
++{
++  if (samples_) {
++    free(samples_);
++    samples_ = 0;
++    samplecount = 0;
++  }
++  samples_ = (double*)malloc(samplecount*sizeof(double));
++  samplecount_ = samplecount;
++  sample_quantum_ = 360.0/samplecount_;
++  memcpy(samples_,samples,samplecount*sizeof(double));
++}
++
++double
++PatternAntenna::gain_pattern::get_gain(double angle) {
++  // Find closest sample to angle.
++  // XXX Maybe interpolate between samples at some point?
++  int whichsamp = ( (int)((angle/sample_quantum_) + 0.5) ) % samplecount_;
++  return samples_[whichsamp];
++}
++
++void
++PatternAntenna::gain_pattern::copy_pattern(gain_pattern& pat) {
++  set_gain_pattern(pat.samplecount_,pat.samples_);
++}
++
++// return the gain for a signal to a node at vector dX, dY, dZ
++// from the transmitter at wavelength lambda  
++double
++PatternAntenna::getTxGain(double dX, double dY, double dZ, double l) {
++  double angle = get_angle(dX,dY);
++  return horiz_tx_gain_.get_gain(angle);
++}
++
++// return the gain for a signal from a node at vector dX, dY, dZ
++// from the receiver at wavelength lambda
++double
++PatternAntenna::getRxGain(double dX, double dY, double dZ, double l) {
++  double angle = get_angle(dX,dY);
++  return horiz_rx_gain_.get_gain(angle);
++}
++
++void
++PatternAntenna::setHorizRxGainPattern(int samplecount, double* samples) {
++  horiz_rx_gain_.set_gain_pattern(samplecount,samples);
++}
++
++
++void
++PatternAntenna::setHorizTxGainPattern(int samplecount, double* samples) {
++  horiz_tx_gain_.set_gain_pattern(samplecount,samples);
++}
++
++
++// return a pointer to a copy of this antenna that will return the 
++// same thing for get{Rx,Tx}Gain that this one would at this point
++// in time.  This is needed b/c if a pkt is sent with a directable
++// antenna, this antenna may be have been redirected by the time we
++// call getTxGain on the copy to determine if the pkt is received.  
++Antenna*
++PatternAntenna::copy() {
++  PatternAntenna* antcopy =
++    (PatternAntenna*)TclObject::New("Antenna/PatternAntenna");
++  antcopy->horiz_rx_gain_.copy_pattern(horiz_rx_gain_);
++  antcopy->horiz_tx_gain_.copy_pattern(horiz_tx_gain_);
++  return antcopy;
++}
++
++void
++PatternAntenna::release() {
++  TclObject::Delete((TclObject*)this);
++}
++
++int
++PatternAntenna::read_pattern_from_msi(const char* msifile) {
++  // XXX This code is by no means great. It is simplistic
++  // and fragile, but I think it'll work well enough for the
++  // simplistic kinds of tasks we'll give it.
++  double gain;
++  double* hpoints = 0;
++  int hpointcount = 0;
++  string units;
++  string nxttok;
++  int i = 0;
++  int result = 0;
++  int finalresult = 0;
++  ifstream msistrm(msifile);
++  // MSI uses 0 deg as due north, we have 0 deg as due east (and 90 as N).
++  // Add 90 deg to MSI numbers to fix this.
++  int hoffset = 90;
++  // MSI can use either dBd or dBi. I believe that ns-2 uses dBi.
++  // We'll set this appropriately when we get the units.
++  double gainoffset = 0.0;
++
++  if (!msistrm) {
++    return -1;
++  }
++
++  while (!msistrm.eof()) {
++    msistrm >> nxttok;
++
++    if (msistrm.eof()) {
++      continue;
++    }
++    else if ("GAIN" == nxttok) {
++      msistrm >> gain;
++      msistrm >> units;
++      //cout << "GAIN " << gain  << " " << units << endl;
++      gainoffset = 0.0;
++      if ("dBd" == units) {
++	gainoffset = 2.15;
++      }
++    }
++    else if ("HORIZONTAL" == nxttok) {
++      msistrm >> hpointcount;
++      //cout << "Horizontal pointcount: " << hpointcount << endl;
++      hpoints = (double*) malloc(hpointcount*sizeof(double));
++      for (i=0;i<hpointcount;i++) {
++	double index = 0;
++	double curpoint = 0;
++	msistrm >> index;
++	msistrm >> curpoint;
++	//cout << "POINTS: " << index << " " << curpoint << endl;
++	int hindx = (i + hoffset) % 360;
++	if (0 > hindx) hindx += 360;
++	hpoints[hindx] = gain - curpoint + gainoffset;
++      }
++    }
++  }
++
++  if (hpoints) {
++    if (hpointcount) {
++      // Assume same gain for Tx and Rx
++      setHorizRxGainPattern(hpointcount,hpoints);
++      setHorizTxGainPattern(hpointcount,hpoints);
++    }
++    free(hpoints);
++    hpoints = 0;
++    hpointcount = 0;
++  }
++  return finalresult;
++}
++
++int
++PatternAntenna::command(int argc, const char*const* argv)
++{
++  Tcl& tcl = Tcl::instance();
++  if (2 == argc) {
++  }
++  else if (3 == argc) {
++    if(strcmp(argv[1], "loadmsi") == 0) {
++      int result = read_pattern_from_msi(argv[2]);
++      tcl.resultf("%d",result);
++      return TCL_OK;
++    }
++  }
++  else if (4 == argc) {
++  } else if (argc == 5) {
++  }
++
++  return Antenna::command(argc, argv);
++}
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mobile/pattern-antenna.h ns-2.29/mobile/pattern-antenna.h
+--- ns-2.29-pure/mobile/pattern-antenna.h	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/mobile/pattern-antenna.h	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,65 @@
++/*
++ * Copyright (c) 2003 University of Colorado, Boulder
++ * All rights reserved.
++ *
++ */
++
++#ifndef ns_patternantenna_h
++#define ns_patternantenna_h
++
++#include <antenna.h>
++
++class PatternAntenna : public Antenna {
++
++public:
++  PatternAntenna();
++  virtual int command(int argc, const char*const* argv);
++  // return the gain for a signal to a node at vector dX, dY, dZ
++  // from the transmitter at wavelength lambda  
++  virtual double getTxGain(double, double, double, double);
++
++  // return the gain for a signal from a node at vector dX, dY, dZ
++  // from the receiver at wavelength lambda
++  virtual double getRxGain(double, double, double, double);
++
++  // return a pointer to a copy of this antenna that will return the 
++  // same thing for get{Rx,Tx}Gain that this one would at this point
++  // in time.  This is needed b/c if a pkt is sent with a directable
++  // antenna, this antenna may be have been redirected by the time we
++  // call getTxGain on the copy to determine if the pkt is received.  
++  virtual Antenna* copy();
++  virtual void release();
++
++  void setDir(double newdir) { Dir_ = newdir; }
++  double getDir() { return Dir_; }
++
++  void setHorizRxGainPattern(int samplecount, double* samples);
++  void setHorizTxGainPattern(int samplecount, double* samples);
++
++  static double get_angle(double dX, double dY);
++  static double normalize(double deg);
++
++  int read_pattern_from_msi(const char* msifile);
++
++protected:
++  double Dir_;
++  typedef class gain_pattern {
++  public:
++    gain_pattern();
++    ~gain_pattern();
++    void set_gain_pattern(int samplecount, double* samples);
++    double get_gain(double angle);
++    void copy_pattern(gain_pattern& pat);
++
++  protected:
++    int samplecount_;
++    double* samples_;
++    double sample_quantum_;
++  };
++
++  gain_pattern horiz_tx_gain_;
++  gain_pattern horiz_rx_gain_;
++};
++
++
++#endif // ns_uniantenna_h
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mobile/uni-antenna.cc ns-2.29/mobile/uni-antenna.cc
+--- ns-2.29-pure/mobile/uni-antenna.cc	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/mobile/uni-antenna.cc	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,198 @@
++
++/* -*-	Mode:C++; c-basic-offset:8; tab-width:8; indent-tabs-mode:t -*- */
++/*
++ * Copyright (c) 1997 Regents of the University of California.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the Daedalus Research
++ *	Group at the University of California Berkeley.
++ * 4. Neither the name of the University nor of the Laboratory may be used
++ *    to endorse or promote products derived from this software without
++ *    specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++
++ * Ported from CMU/Monarch's code, nov'98 -Padma.
++   omni-antenna.cc
++   $Id: uni-antenna.cc,v 1.6 2003/04/16 05:43:36 neufeldm Exp $
++   */
++
++#include <antenna.h>
++#include <uni-antenna.h> 
++#include <math.h>
++
++static class UniAntennaClass : public TclClass {
++public:
++  UniAntennaClass() : TclClass("Antenna/UniAntenna") {}
++  TclObject* create(int, const char*const*) {
++    return (new UniAntenna);
++  }
++} class_UniAntenna;
++
++UniAntenna::UniAntenna() : is_copy_(false) {
++  Gt_ = 1.0;
++  Gr_ = 1.0;
++  GtOmni_ = 0.0;
++  GrOmni_ = 0.0;
++  Dir_ = 0.0;
++  Width_ = 360.0;
++  bind("Gt_", &Gt_);
++  bind("Gr_", &Gr_);
++  bind("GtOmni_", &GtOmni_);
++  bind("GrOmni_", &GrOmni_);
++  bind("Dir_", &Dir_);
++  bind("Width_", &Width_);
++}
++
++double
++UniAntenna::normalize(double deg) {
++  while (360.0 <= deg) {
++    deg -= 360.0;
++  }
++
++  while (0.0 > deg) {
++    deg += 360.0;
++  }
++
++  return deg;
++}
++
++double
++UniAntenna::get_angle(double dX, double dY) {
++  double angle;
++
++  // First take care of dX or both == 0
++  if ((0.0 == dY) && (0.0 == dX)) {
++    angle = 0.0;
++  }
++  else if (0.0 == dX) {
++    angle = M_PI/2.0;
++  }
++  else {
++    angle = atan2(dY,dX);
++    if (0.0 > angle) {
++      angle += 2*M_PI;
++    }
++  }
++
++  angle = (180.0/M_PI) * angle;
++
++  return angle;
++}
++
++void
++UniAntenna::get_cone(double& lb, double& ub) {
++  lb = Dir_ - (Width_/2.0);
++  ub = Dir_ + (Width_/2.0);
++  lb = normalize(lb);
++  ub = normalize(ub);
++}
++
++bool
++UniAntenna::is_in_cone(double dX, double dY) {
++  bool result = false;
++  double angle = get_angle(dX,dY);
++  double lb, ub;
++  get_cone(lb,ub);
++
++  // If lb and ub are swapped, we had a wraparound. In this
++  // case, the specified range is the inverse of the cone
++  // we want to check for.
++  if (lb > ub) {
++    result = ! ((ub <= angle) && (angle <= lb));
++  }
++  else if (lb == ub) {
++    result = true;
++  }
++  else {
++    result = (lb <= angle) && (angle <= ub);
++  }
++
++  return result;
++}
++
++// return the gain for a signal to a node at vector dX, dY, dZ
++// from the transmitter at wavelength lambda  
++double
++UniAntenna::getTxGain(double dX, double dY, double dZ, double l) {
++  // XXX for now ignore dZ, just do 2 dimensions, and ignore lambda, too
++  double gain = Gt_;
++
++  // XXX very stupid model. Gt_ gain within cone, GtOmni_ outside.
++  // Hopefully good enough for what we need initially...
++  if (is_in_cone(dX,dY)) {
++    gain = Gt_;
++  }
++  else {
++    gain = GtOmni_;
++  }
++  
++  return gain;
++}
++
++// return the gain for a signal from a node at vector dX, dY, dZ
++// from the receiver at wavelength lambda
++double
++UniAntenna::getRxGain(double dX, double dY, double dZ, double l) {
++  // XXX for now ignore dZ, just do 2 dimensions, and ignore lambda, too.
++  double gain = Gr_;
++
++  // XXX very stupid model. Gr_ gain within cone, GrOmni_ outside.
++  // Hopefully good enough for what we need initially...
++  if (is_in_cone(dX,dY)) {
++    gain = Gr_;
++  }
++  else {
++    gain = GrOmni_;
++  }
++
++  return gain;
++}
++
++// return a pointer to a copy of this antenna that will return the 
++// same thing for get{Rx,Tx}Gain that this one would at this point
++// in time.  This is needed b/c if a pkt is sent with a directable
++// antenna, this antenna may be have been redirected by the time we
++// call getTxGain on the copy to determine if the pkt is received.  
++Antenna*
++UniAntenna::copy() {
++  UniAntenna* antcopy = (UniAntenna*)TclObject::New("Antenna/UniAntenna");
++  antcopy->X_ = X_;
++  antcopy->Y_ = Y_;
++  antcopy->Z_ = Z_;
++  antcopy->Gt_ = Gt_;
++  antcopy->Gr_ = Gr_;
++  antcopy->Dir_ = Dir_;
++  antcopy->Width_ = Width_;
++  antcopy->is_copy_ = true;
++  return antcopy;
++}
++
++void
++UniAntenna::release() {
++  if (is_copy_) {
++    TclObject::Delete((TclObject*)this);
++  }
++}
++
++
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mobile/uni-antenna.h ns-2.29/mobile/uni-antenna.h
+--- ns-2.29-pure/mobile/uni-antenna.h	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/mobile/uni-antenna.h	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,82 @@
++/* -*-	Mode:C++; c-basic-offset:8; tab-width:8; indent-tabs-mode:t -*- */
++/*
++ * Copyright (c) 1997 Regents of the University of California.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the Computer Systems
++ *	Engineering Group at Lawrence Berkeley Laboratory.
++ * 4. Neither the name of the University nor of the Laboratory may be used
++ *    to endorse or promote products derived from this software without
++ *    specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++/* Ported from CMU/Monarch's code, nov'98 -Padma.
++   omni-antenna.h
++   omni-directional antenna
++
++*/
++
++#ifndef ns_uniantenna_h
++#define ns_uniantenna_h
++
++#include <antenna.h>
++
++class UniAntenna : public Antenna {
++
++public:
++  UniAntenna();
++
++  // return the gain for a signal to a node at vector dX, dY, dZ
++  // from the transmitter at wavelength lambda  
++  virtual double getTxGain(double, double, double, double);
++
++  // return the gain for a signal from a node at vector dX, dY, dZ
++  // from the receiver at wavelength lambda
++  virtual double getRxGain(double, double, double, double);
++
++  // return a pointer to a copy of this antenna that will return the 
++  // same thing for get{Rx,Tx}Gain that this one would at this point
++  // in time.  This is needed b/c if a pkt is sent with a directable
++  // antenna, this antenna may be have been redirected by the time we
++  // call getTxGain on the copy to determine if the pkt is received.  
++  virtual Antenna* copy();
++  virtual void release();
++
++  static double get_angle(double dX, double dY);
++  static double normalize(double deg);
++  bool is_in_cone(double dX, double dY);
++  void get_cone(double& lb,double& ub);
++
++protected:
++  double Gt_;			// gain of transmitter (db)
++  double Gr_;			// gain of receiver (db)
++  double GtOmni_;               // Tx gain outside of cone
++  double GrOmni_;               // Rx gain outside of cone
++  double Dir_;
++  double Width_;
++  bool is_copy_;
++};
++
++
++#endif // ns_uniantenna_h
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/queue/clickqueue.cc ns-2.29/queue/clickqueue.cc
+--- ns-2.29-pure/queue/clickqueue.cc	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/queue/clickqueue.cc	2006-01-08 14:20:12.000000000 -0800
+@@ -0,0 +1,152 @@
++/*
++ * clickqueue.cc
++ * Special queue which runs the external Click router when it unblocks
++ *
++ */
++
++/*****************************************************************************
++ *  Copyright 2002, Univerity of Colorado at Boulder.                        *
++ *                                                                           *
++ *                        All Rights Reserved                                *
++ *                                                                           *
++ *  Permission to use, copy, modify, and distribute this software and its    *
++ *  documentation for any purpose other than its incorporation into a        *
++ *  commercial product is hereby granted without fee, provided that the      *
++ *  above copyright notice appear in all copies and that both that           *
++ *  copyright notice and this permission notice appear in supporting         *
++ *  documentation, and that the name of the University not be used in        *
++ *  advertising or publicity pertaining to distribution of the software      *
++ *  without specific, written prior permission.                              *
++ *                                                                           *
++ *  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      *
++ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        *
++ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    *
++ *  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         *
++ *  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA       *
++ *  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER        *
++ *  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         *
++ *  PERFORMANCE OF THIS SOFTWARE.                                            *
++ *                                                                           *
++ ****************************************************************************/
++
++#ifndef lint
++static const char rcsid[] =
++    "$Header: /srl/dirkcvs/nsclick/ns/queue/clickqueue.cc,v 1.2 2003/04/10 16:52:46 neufeldm Exp $";
++#endif
++
++#include <stdlib.h>
++#include <ctype.h>
++#include <sys/time.h>
++#include <unistd.h>
++//#include <stl.h>
++//#include <hash_map.h>
++#include <map>
++#include <math.h>
++#include <string>
++#include <click/simclick.h>
++#include "packet.h"
++#include "extrouter.h"
++#include "classifier.h"
++#include "classifier-ext.h"
++#include "classifier-click.h"
++#include "clickqueue.h"
++
++static class ClickQueueClass : public TclClass {
++public:
++	ClickQueueClass() : TclClass("Queue/ClickQueue") {}
++	TclObject* create(int, const char*const*) {
++		return (new ClickQueue);
++	}
++} class_click_queue;
++
++int 
++ClickQueue::command(int argc, const char*const* argv) {
++	if (3 == argc) {
++		if (!strcmp(argv[1],"setclickclassifier")) {
++			cc_ = (ClickClassifier*)TclObject::lookup(argv[2]);
++			return TCL_OK;
++		}
++	}
++	return Queue::command(argc, argv);
++}
++/*
++ * drop-tail
++ */
++ClickQueue::ClickQueue() { 
++	pq_ = new PacketQueue; 
++	qlim_ = 1;
++	cc_ = 0;
++}
++
++ClickQueue::~ClickQueue() {
++	delete pq_;
++}
++
++int
++ClickQueue::is_full() {
++	return (pq_->length() >= qlim_);
++}
++
++int
++ClickQueue::ready() {
++	return (!is_full() && !blocked());
++}
++
++void ClickQueue::enque(Packet* p)
++{
++	pq_->enque(p);
++	if (pq_->length() > qlim_) {
++		fprintf(stderr,"Hey!!! IFQ Overflow!!!\n");
++		Packet *pp = pq_->deque();
++		drop(pp);
++	}
++}
++
++Packet* ClickQueue::deque()
++{
++	Packet* retval = pq_->deque();
++	return retval;
++}
++
++void ClickQueue::on_unblock() {
++	//
++	// Queue has space - run the external router 
++	// and give it a chance to fill things up.
++	//
++	if (cc_) {
++		simclick_click clickinst = cc_->GetClickinst();
++		Scheduler& s = Scheduler::instance();
++		double dcurtime = s.clock();
++		simclick_simstate curstate;
++		memset(&curstate,0,sizeof(curstate));
++		double fracp, intp;
++		fracp = modf(dcurtime,&intp);
++		curstate.curtime.tv_sec = intp;
++		curstate.curtime.tv_usec = (fracp*1.0e6+0.5);
++		simclick_click_run(clickinst,&curstate);
++	}
++}
++
++#if 0
++void ClickQueue::runclick() {
++	if (is_full()) {
++		return;
++	}
++	//
++	// Queue has space - run the external router 
++	// and give it a chance to fill things up.
++	//
++	if (cc_) {
++		simclick_click clickinst = cc_->GetClickinst();
++		Scheduler& s = Scheduler::instance();
++		double dcurtime = s.clock();
++		simclick_simstate curstate;
++		memset(&curstate,0,sizeof(curstate));
++		double fracp, intp;
++		fracp = modf(dcurtime,&intp);
++		curstate.curtime.tv_sec = intp;
++		curstate.curtime.tv_usec = (fracp*1.0e6+0.5);
++		simclick_click_run(clickinst,&curstate);
++	}
++}
++#endif
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/queue/clickqueue.h ns-2.29/queue/clickqueue.h
+--- ns-2.29-pure/queue/clickqueue.h	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/queue/clickqueue.h	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,61 @@
++/*
++ * clickqueue.h
++ * Special queue which runs the external Click router when it unblocks
++ *
++ */
++
++/*****************************************************************************
++ *  Copyright 2002, Univerity of Colorado at Boulder.                        *
++ *                                                                           *
++ *                        All Rights Reserved                                *
++ *                                                                           *
++ *  Permission to use, copy, modify, and distribute this software and its    *
++ *  documentation for any purpose other than its incorporation into a        *
++ *  commercial product is hereby granted without fee, provided that the      *
++ *  above copyright notice appear in all copies and that both that           *
++ *  copyright notice and this permission notice appear in supporting         *
++ *  documentation, and that the name of the University not be used in        *
++ *  advertising or publicity pertaining to distribution of the software      *
++ *  without specific, written prior permission.                              *
++ *                                                                           *
++ *  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      *
++ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        *
++ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    *
++ *  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         *
++ *  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA       *
++ *  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER        *
++ *  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         *
++ *  PERFORMANCE OF THIS SOFTWARE.                                            *
++ *                                                                           *
++ ****************************************************************************/
++
++#ifndef ns_clickqueue_h
++#define ns_clickqueue_h
++
++#include <string.h>
++#include "queue.h"
++#include "config.h"
++
++/*
++ * A degenerate queue designed to work with Click routers. Should only
++ * have 1 packet ever sitting in it since the queueing should be handled
++ * by Click. Also makes sure that simclick gets run whenever the queue
++ * empties and unblocks so that the polling simulated network driver
++ * will insert packets when it has them.
++ */
++class ClickQueue : public Queue {
++  public:
++	ClickQueue();
++	~ClickQueue();
++	void enque(Packet*);
++	Packet* deque();
++
++	int is_full();
++	int ready();
++  protected:
++	int command(int argc, const char*const* argv); 
++	ClickClassifier* cc_;
++	virtual void on_unblock();
++};
++
++#endif
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/queue/queue.cc ns-2.29/queue/queue.cc
+--- ns-2.29-pure/queue/queue.cc	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/queue/queue.cc	2006-01-08 12:58:19.000000000 -0800
+@@ -218,6 +218,7 @@
+ 			utilUpdate(last_change_, now, blocked_);
+ 			last_change_ = now;
+ 			blocked_ = 0;
++			on_unblock();
+ 		}
+ 		else {
+ 			utilUpdate(last_change_, now, blocked_);
+@@ -227,6 +228,10 @@
+ 	}
+ }
+ 
++void Queue::on_unblock() {
++	// Do nothing in base class
++}
++
+ void Queue::reset()
+ {
+ 	Packet* p;
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/queue/queue.h ns-2.29/queue/queue.h
+--- ns-2.29-pure/queue/queue.h	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/queue/queue.h	2006-01-08 13:03:32.000000000 -0800
+@@ -145,6 +145,7 @@
+ protected:
+ 	Queue();
+ 	void reset();
++	virtual void on_unblock();
+ 	int qlim_;		/* maximum allowed pkts in queue */
+ 	int blocked_;		/* blocked now? */
+ 	int unblock_on_resume_;	/* unblock q on idle? */
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/routing/extclickrouter.cc ns-2.29/routing/extclickrouter.cc
+--- ns-2.29-pure/routing/extclickrouter.cc	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/routing/extclickrouter.cc	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,22 @@
++/*
++ * XXX Insert CU copyright stuff here...
++ *
++ * $Header: /srl/dirkcvs/nsclick/ns/routing/extclickrouter.cc,v 1.1 2002/06/10 19:23:06 neufeldm Exp $
++ *
++ */
++
++#include "packet.h"
++#include "extrouter.h"
++#include "extclickrouter.h"
++
++ExtClickRouter::ExtClickRouter() {
++}
++
++ExtClickRouter::~ExtClickRouter() {
++}
++
++int ExtClickRouter::recv(Packet* p) {
++  int result = 0;
++
++  return result;
++}
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/routing/extclickrouter.h ns-2.29/routing/extclickrouter.h
+--- ns-2.29-pure/routing/extclickrouter.h	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/routing/extclickrouter.h	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,29 @@
++/*
++ * XXX Insert CU copyright stuff here...
++ * 
++ * $Header: /srl/dirkcvs/nsclick/ns/routing/extclickrouter.h,v 1.1 2002/06/10 19:23:06 neufeldm Exp $
++ *
++ * This defines the interface used by all external raw packet routing
++ * modules bolted on to ns.
++ *
++ */
++
++#ifndef __ns_extclickrouter_h__
++#define __ns_extclickrouter_h__
++
++class ExtClickRouter
++{
++
++ public:
++  ExtClickRouter();
++  virtual ~ExtClickRouter();
++  virtual int recv(Packet* p);
++
++  void* SetClickRouterPtr(void* crtptr);
++
++ private:
++  void* clickrouter_;
++  
++};
++
++#endif
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/routing/extrouter.cc ns-2.29/routing/extrouter.cc
+--- ns-2.29-pure/routing/extrouter.cc	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/routing/extrouter.cc	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,17 @@
++/*
++ * XXX Insert CU copyright stuff here...
++ * 
++ * $Header: /srl/dirkcvs/nsclick/ns/routing/extrouter.cc,v 1.1 2002/06/10 19:23:07 neufeldm Exp $
++ *
++ * This defines the interface used by all external raw packet routing
++ * modules bolted on to ns.
++ *
++ */
++
++#include "packet.h"
++#include "extrouter.h"
++
++// Just here so we get virtual destructors
++ExtRouter::~ExtRouter() {
++}
++
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/routing/extrouter.h ns-2.29/routing/extrouter.h
+--- ns-2.29-pure/routing/extrouter.h	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/routing/extrouter.h	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,31 @@
++/*
++ * XXX Insert CU copyright stuff here...
++ * 
++ * $Header: /srl/dirkcvs/nsclick/ns/routing/extrouter.h,v 1.2 2002/09/07 07:34:19 neufeldm Exp $
++ *
++ * This defines the interface used by all external raw packet routing
++ * modules bolted on to ns.
++ *
++ */
++
++#ifndef __ns_extrouter_h__
++#define __ns_extrouter_h__
++
++class ExtRouter
++{
++
++public:
++  enum {
++    IFID_NONE = -1,
++    IFID_KERNELTAP = 0,
++    IFID_FIRSTIF = 1,
++    IFID_LASTIF = 32,
++    IFID_FIRSTIFDROP = 33,
++    IFID_LASTIFDROP = 64
++  };
++  virtual ~ExtRouter();
++  virtual int route(Packet* p) = 0;
++  
++};
++
++#endif
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/routing/rtmodule.cc ns-2.29/routing/rtmodule.cc
+--- ns-2.29-pure/routing/rtmodule.cc	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/routing/rtmodule.cc	2006-01-08 12:58:19.000000000 -0800
+@@ -137,6 +137,14 @@
+         }
+ } class_lms_routing_module;
+ 
++static class ClickRoutingModuleClass : public TclClass {
++public:
++        ClickRoutingModuleClass() : TclClass("RtModule/Click") {}
++        TclObject* create(int, const char*const*) {
++                return (new ClickRoutingModule);
++        }
++} class_click_routing_module;
++
+ RoutingModule::RoutingModule() : 
+ 	next_rtm_(NULL), n_(NULL), classifier_(NULL) {
+ 	bind("classifier_", (TclObject**)&classifier_);
+@@ -508,4 +516,3 @@
+ 	if (next_rtm_ != NULL)
+ 		next_rtm_->add_route(dst, target); 
+ }
+-
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/routing/rtmodule.h ns-2.29/routing/rtmodule.h
+--- ns-2.29-pure/routing/rtmodule.h	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/routing/rtmodule.h	2006-01-08 12:58:19.000000000 -0800
+@@ -178,4 +178,10 @@
+ 	virtual void add_route(char *dst, NsObject *target){}
+ };
+ 
++class ClickRoutingModule : public RoutingModule {
++public:
++        ClickRoutingModule() : RoutingModule() {}
++        virtual const char* module_name() const { return "Click"; }
++};
++
+ #endif //  ns_rtmodule_h
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple-bridge.click ns-2.29/tcl/ex/nsclick-simple-bridge.click
+--- ns-2.29-pure/tcl/ex/nsclick-simple-bridge.click	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/tcl/ex/nsclick-simple-bridge.click	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,40 @@
++//
++//  Copyright 2002, Univerity of Colorado at Boulder.                        
++//                                                                            
++//                         All Rights Reserved                                
++//                                                                            
++//  Permission to use, copy, modify, and distribute this software and its    
++//  documentation for any purpose other than its incorporation into a        
++//  commercial product is hereby granted without fee, provided that the      
++//  above copyright notice appear in all copies and that both that           
++//  copyright notice and this permission notice appear in supporting         
++//  documentation, and that the name of the University not be used in        
++//  advertising or publicity pertaining to distribution of the software      
++//  without specific, written prior permission.                              
++//                                                                            
++//  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      
++//  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        
++//  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    
++//  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         
++//  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA      
++//  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER       
++//  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         
++//  PERFORMANCE OF THIS SOFTWARE.                                            
++//
++
++// nsclick-simple-bridge.click
++//
++// This is a simple and stupid network "bridge." Packets coming
++// in off of eth0 are pumped out on eth1, and packets coming
++// in off of eth1 are pumped out on eth0.
++//
++
++FromSimDevice(eth0,4096)
++	-> Queue
++	-> ToSimDevice(eth1);
++	
++FromSimDevice(eth1,4096)
++	-> Queue
++	-> ToSimDevice(eth0);
++
++
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple-hybrid.tcl ns-2.29/tcl/ex/nsclick-simple-hybrid.tcl
+--- ns-2.29-pure/tcl/ex/nsclick-simple-hybrid.tcl	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/tcl/ex/nsclick-simple-hybrid.tcl	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,389 @@
++#
++#  Copyright 2002, Univerity of Colorado at Boulder.                        
++#                                                                            
++#                         All Rights Reserved                                
++#                                                                            
++#  Permission to use, copy, modify, and distribute this software and its    
++#  documentation for any purpose other than its incorporation into a        
++#  commercial product is hereby granted without fee, provided that the      
++#  above copyright notice appear in all copies and that both that           
++#  copyright notice and this permission notice appear in supporting         
++#  documentation, and that the name of the University not be used in        
++#  advertising or publicity pertaining to distribution of the software      
++#  without specific, written prior permission.                              
++#                                                                            
++#  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      
++#  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        
++#  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    
++#  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         
++#  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA      
++#  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER       
++#  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         
++#  PERFORMANCE OF THIS SOFTWARE.                                            
++#
++# nsclick-simple-hybrid.tcl
++# @(#) $Header: /srl/dirkcvs/nsclick/ns/tcl/ex/nsclick-simple-hybrid.tcl,v 1.2 2002/06/13 02:34:34 neufeldm Exp $
++#
++# A sample nsclick script simulating a small hybrid wired/wireless
++#
++
++#
++# Set some general simulation parameters
++#
++
++#
++# Unity gain, omnidirectional antennas, centered 1.5m above each node.
++# These values are lifted from the ns-2 sample files.
++#
++Antenna/OmniAntenna set X_ 0
++Antenna/OmniAntenna set Y_ 0
++Antenna/OmniAntenna set Z_ 1.5
++Antenna/OmniAntenna set Gt_ 1.0
++Antenna/OmniAntenna set Gr_ 1.0
++
++#
++# Initialize the SharedMedia interface with parameters to make
++# it work like the 914MHz Lucent WaveLAN DSSS radio interface
++# These are taken directly from the ns-2 sample files.
++#
++Phy/WirelessPhy set CPThresh_ 10.0
++Phy/WirelessPhy set CSThresh_ 1.559e-11
++Phy/WirelessPhy set RXThresh_ 3.652e-10
++Phy/WirelessPhy set Rb_ 2*1e6
++Phy/WirelessPhy set Pt_ 0.2818
++Phy/WirelessPhy set freq_ 914e+6 
++Phy/WirelessPhy set L_ 1.0
++
++# 
++# Set the size of the playing field and the topography.
++#
++set xsize 100
++set ysize 100
++set wtopo	[new Topography]
++$wtopo load_flatgrid $xsize $ysize
++
++#
++# The network channel, physical layer, MAC, propagation model,
++# and antenna model are all standard ns-2.
++#  
++set wirelesschan Channel/WirelessChannel
++set wiredchan Channel
++
++set wirelessphy Phy/WirelessPhy
++set wiredphy Phy/WiredPhy
++
++set wirelessmac Mac/802_11
++set wiredmac Mac/802_3
++
++set netprop Propagation/TwoRayGround
++set antenna Antenna/OmniAntenna
++
++#
++# We have to use a special queue and link layer. This is so that
++# Click can have control over the network interface packet queue,
++# which is vital if we want to play with, e.g. QoS algorithms.
++#
++set netifq	Queue/ClickQueue
++set netll	LL/Ext
++LL set delay_			1ms
++
++#
++# These are pretty self-explanatory, just the number of nodes
++# and when we'll stop.
++#
++set wirednodecount 3
++set wirelessnodecount 3
++set bridgenodecount 1
++set nodecount   7
++set stoptime	10.0
++
++#
++# With nsclick, we have to worry about details like which network
++# port to use for communication. This sets the default ports to 5000.
++#
++Agent/Null set sport_		5000
++Agent/Null set dport_		5000
++
++Agent/CBR set sport_		5000
++Agent/CBR set dport_		5000
++
++#
++# Standard ns-2 stuff here - create the simulator object.
++#
++set ns_		[new Simulator]
++
++#
++# Create and activate trace files.
++#
++set tracefd	[open "nsclick-simple-hybrid.tr" w]
++set namtrace    [open "nsclick-simple-hybrid.nam" w]
++$ns_ trace-all $tracefd
++$ns_ namtrace-all-wireless $namtrace $xsize $ysize
++$ns_ use-newtrace
++
++
++#
++# Create the "god" object. This is another artifact of using
++# the mobile node type. We have to have this even though
++# we never use it.
++#
++set god_ [create-god $nodecount]
++
++#
++# Tell the simulator to create Click nodes.
++#
++Simulator set node_factory_ Node/MobileNode/ClickNode
++
++#
++# Create a network Channel for the nodes to use. One channel
++# per LAN. Also set the propagation model to be used.
++#
++set wired_chan_ [new $wiredchan]
++set wireless_chan_ [new $wirelesschan]
++set prop_ [new $netprop]
++
++#
++# In nsclick we have to worry about assigning IP and MAC addresses
++# to out network interfaces. Here we generate a list of IP and MAC
++# addresses, one per node since we've only got one network interface
++# per node in this case. Also note that this scheme only works for
++# fewer than 255 nodes, and we aren't worrying about subnet masks.
++#
++set iptemplate "192.168.1.%d"
++set mactemplate "00:03:47:70:89:%0x"
++for {set i 0} {$i < $wirednodecount} {incr i} {
++    set wired_node_ip($i) [format $iptemplate [expr $i+1]]
++    set wired_node_mac($i) [format $mactemplate [expr $i+1]]
++}
++
++set iptemplate "192.168.2.%d"
++set mactemplate "00:03:47:70:8A:%0x"
++for {set i 0} {$i < $wirelessnodecount} {incr i} {
++    set wireless_node_ip($i) [format $iptemplate [expr $i+1]]
++    set wireless_node_mac($i) [format $mactemplate [expr $i+1]]
++}
++
++
++#
++# We set the routing protocol to "Empty" so that ns-2 doesn't do
++# any packet routing. All of the routing will be done by the
++# Click script.
++#
++$ns_ rtproto Empty
++
++#
++# Here is where we actually create all of the nodes.
++# We'll create the wired, wireless, and the bridge node
++# separately.
++#
++
++#
++# Start with the wireless nodes
++#
++for {set i 0} {$i < $wirelessnodecount } {incr i} {
++    set wireless_node_($i) [$ns_ node]
++
++    #
++    # After creating the node, we add one wireless network interface to
++    # it. By default, this interface will be named "eth0". If we
++    # added a second interface it would be named "eth1", a third
++    # "eth2" and so on.
++    #
++    $wireless_node_($i) add-interface $wireless_chan_ $prop_ $netll \
++	    $wirelessmac $netifq 1 $wirelessphy $antenna
++
++    #
++    # Now configure the interface eth0
++    #
++    $wireless_node_($i) setip "eth0" $wireless_node_ip($i)
++    $wireless_node_($i) setmac "eth0" $wireless_node_mac($i)
++
++    #
++    # Set some node properties
++    #
++    $wireless_node_($i) random-motion 0
++    $wireless_node_($i) topography $wtopo
++    $wireless_node_($i) nodetrace $tracefd
++
++    #
++    # The node name is used by Click to distinguish information
++    # coming from different nodes. For example, a "Print" element
++    # prepends this to the printed string so it's clear exactly
++    # which node is doing the printing.
++    #
++    [$wireless_node_($i) set classifier_] setnodename "wirelessnode$i-hybrid"
++    
++    #
++    # Load the appropriate Click router script for the node.
++    #
++    [$wireless_node_($i) entry] loadclick "nsclick-simple-lan.click"
++}
++
++#
++# Now create the wired nodes
++#
++for {set i 0} {$i < $wirednodecount } {incr i} {
++    set wired_node_($i) [$ns_ node]
++
++    #
++    # After creating the node, we add one wired network interface to
++    # it. By default, this interface will be named "eth0". If we
++    # added a second interface it would be named "eth1", a third
++    # "eth2" and so on.
++    #
++    $wired_node_($i) add-wired-interface $wired_chan_ $netll $wiredmac \
++	$netifq 1 $wiredphy
++
++    #
++    # Now configure the interface eth0
++    #
++    $wired_node_($i) setip "eth0" $wired_node_ip($i)
++    $wired_node_($i) setmac "eth0" $wired_node_mac($i)
++
++    #
++    # Set some node properties
++    #
++    $wired_node_($i) random-motion 0
++    $wired_node_($i) topography $wtopo
++    $wired_node_($i) nodetrace $tracefd
++
++    #
++    # The node name is used by Click to distinguish information
++    # coming from different nodes. For example, a "Print" element
++    # prepends this to the printed string so it's clear exactly
++    # which node is doing the printing.
++    #
++    [$wired_node_($i) set classifier_] setnodename "wirednode$i-hybrid"
++    
++    #
++    # Load the appropriate Click router script for the node.
++    # All nodes in this simulation are using the same script,
++    # but there's no reason why each node couldn't use a different
++    # script.
++    #
++    [$wired_node_($i) entry] loadclick "nsclick-simple-lan.click"
++}
++
++#
++# Finally make the bridge node
++#
++set bridge_node_ [$ns_ node]
++$bridge_node_ add-wired-interface $wired_chan_ $netll $wiredmac \
++	$netifq 1 $wiredphy
++$bridge_node_ add-interface $wireless_chan_ $prop_ $netll \
++	    $wirelessmac $netifq 1 $wirelessphy $antenna
++
++$bridge_node_ random-motion 0
++$bridge_node_ topography $wtopo
++$bridge_node_ nodetrace $tracefd
++
++[$bridge_node_ entry] loadclick "nsclick-simple-bridge.click"
++[$bridge_node_ set classifier_] setnodename "bridgenode-hybrid"
++
++# 
++# Define node network traffic. There isn't a whole lot going on
++# in this simple test case, we're just going to have the first wireless node
++# send packets to the first wired node, starting at 1 second, and ending at 10.
++# There are Perl scripts available to automatically generate network
++# traffic.
++#
++
++
++#
++# Start transmitting at $startxmittime, $xmitrate packets per second.
++#
++set startxmittime 1
++set xmitrate 4
++set xmitinterval 0.25
++set packetsize 64
++
++#
++# We use the "raw" packet type, which sends real packet data
++# down the pipe.
++#
++set raw_(0) [new Agent/Raw]
++$ns_ attach-agent $wireless_node_(0) $raw_(0)
++
++set null_(0) [new Agent/Null]
++$ns_ attach-agent $wired_node_(0) $null_(0)
++
++#
++# The CBR object is just the default ns-2 CBR object, so
++# no change in the meaning of the parameters.
++#
++set cbr_(0) [new Application/Traffic/CBR]
++$cbr_(0) set packetSize_ $packetsize
++$cbr_(0) set interval_ $xmitinterval
++$cbr_(0) set random_ 0
++$cbr_(0) set maxpkts_ [expr ($stoptime - $startxmittime)*$xmitrate]
++$cbr_(0) attach-agent $raw_(0)
++
++#
++# The Raw agent creates real UDP packets, so it has to know
++# the source and destination IP addresses and port numberes.
++#
++$raw_(0) set-srcip [$wireless_node_(0) getip eth0]
++$raw_(0) set-srcport 5000
++$raw_(0) set-destport 5000
++$raw_(0) set-destip [$wired_node_(0) getip eth0]
++
++$ns_ at $startxmittime "$cbr_(0) start"
++
++
++$wireless_node_(0) set X_ 10
++$wireless_node_(0) set Y_ 50
++$wireless_node_(0) set Z_ 0
++
++$wireless_node_(1) set X_ 50
++$wireless_node_(1) set Y_ 50
++$wireless_node_(1) set Z_ 0
++
++$wireless_node_(2) set X_ 90
++$wireless_node_(2) set Y_ 50
++$wireless_node_(2) set Z_ 0
++
++$bridge_node_ set X_ 50
++$bridge_node_ set Y_ 10
++$bridge_node_ set Z_ 0
++
++$wired_node_(0) set X_ 10
++$wired_node_(0) set Y_ 0
++$wired_node_(0) set Z_ 0
++
++$wired_node_(1) set X_ 50
++$wired_node_(1) set Y_ 0
++$wired_node_(1) set Z_ 0
++
++$wired_node_(2) set X_ 90
++$wired_node_(2) set Y_ 0
++$wired_node_(2) set Z_ 0
++#
++# This sizes the nodes for use in nam.
++#
++for {set i 0} {$i < $wirelessnodecount} {incr i} {
++    $ns_ initial_node_pos $wireless_node_($i) 10
++}
++
++for {set i 0} {$i < $wirednodecount} {incr i} {
++    $ns_ initial_node_pos $wired_node_($i) 10
++}
++
++$ns_ initial_node_pos $bridge_node_ 10
++
++#
++# Stop the simulation
++#
++$ns_ at  $stoptime.000000001 "puts \"NS EXITING...\" ; $ns_ halt"
++
++#
++# Let nam know that the simulation is done.
++#
++$ns_ at  $stoptime	"$ns_ nam-end-wireless $stoptime"
++
++
++puts "Starting Simulation..."
++$ns_ run
++
++
++
++
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple-lan.click ns-2.29/tcl/ex/nsclick-simple-lan.click
+--- ns-2.29-pure/tcl/ex/nsclick-simple-lan.click	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/tcl/ex/nsclick-simple-lan.click	2006-01-08 14:33:44.000000000 -0800
+@@ -0,0 +1,97 @@
++//
++//  Copyright 2002, Univerity of Colorado at Boulder.                        
++//                                                                            
++//                         All Rights Reserved                                
++//                                                                            
++//  Permission to use, copy, modify, and distribute this software and its    
++//  documentation for any purpose other than its incorporation into a        
++//  commercial product is hereby granted without fee, provided that the      
++//  above copyright notice appear in all copies and that both that           
++//  copyright notice and this permission notice appear in supporting         
++//  documentation, and that the name of the University not be used in        
++//  advertising or publicity pertaining to distribution of the software      
++//  without specific, written prior permission.                              
++//                                                                            
++//  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      
++//  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        
++//  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    
++//  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         
++//  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA      
++//  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER       
++//  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         
++//  PERFORMANCE OF THIS SOFTWARE.                                            
++//
++
++// nsclick-simple-lan.click
++//
++// This is a simple and stupid flat routing mechanism.
++// It broadcasts ARP requests if it wants to find a destination
++// address, and it responds to ARP requests made for it.
++
++elementclass DumbRouter {
++  $myaddr, $myaddr_ethernet |
++
++  class :: Classifier(12/0806 20/0001,12/0806 20/0002, -);
++  mypackets :: IPClassifier(dst host $myaddr,-);
++  myarpquerier :: ARPQuerier($myaddr,$myaddr_ethernet);
++  myarpresponder :: ARPResponder($myaddr $myaddr_ethernet);
++  ethout :: Queue -> ToSimDevice(eth0);
++
++  FromSimDevice(eth0,4096)
++	-> Print(eth0,64)
++	-> ToDump(in_eth0,PER_NODE 1)
++	-> HostEtherFilter($myaddr_ethernet)
++	-> class;
++	
++  // ARP queries from other nodes go to the ARP responder module
++  class[0] -> myarpresponder;
++
++  // ARP responses go to our query module
++  class[1] -> [1]myarpquerier;
++
++  // All other packets get checked to see if they're meant for us
++  class[2]				
++	-> Strip(14)
++	-> CheckIPHeader
++	-> MarkIPHeader
++	-> GetIPAddress(16)
++	-> mypackets; 
++
++  // Packets for us go to "tap0" which sends them to the kernel
++  mypackets[0]
++	-> IPPrint(tokernel) 
++	-> ToDump(tokernel,2000,IP,PER_NODE 1) 
++	-> ToSimDevice(tap0,IP);
++
++  // Packets for other folks or broadcast packets get discarded
++  mypackets[1]
++	-> Print(discard,64)
++	-> ToDump(discard,2000,PER_NODE 1)
++	-> Discard;
++
++  // Packets sent out by the "kernel" get pushed into the ARP query module
++  FromSimDevice(tap0,4096)
++	-> CheckIPHeader 
++	-> IPPrint(fromkernel) 
++	-> ToDump(fromkernel,2000,IP,PER_NODE 1)
++	-> GetIPAddress(16)
++	-> myarpquerier;
++
++  // Both the ARP query and response modules send data out to
++  // the simulated network device, eth0.
++  myarpquerier
++	-> Print(fromarpquery,64)
++	-> ToDump(out_arpquery,PER_NODE 1)
++	-> ethout;
++
++  myarpresponder
++	-> Print(arpresponse,64)
++	-> ToDump(out_arprespond,PER_NODE 1)
++	-> ethout;
++}
++
++
++u :: DumbRouter(eth0,eth0);
++
++
++
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple-lan.tcl ns-2.29/tcl/ex/nsclick-simple-lan.tcl
+--- ns-2.29-pure/tcl/ex/nsclick-simple-lan.tcl	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/tcl/ex/nsclick-simple-lan.tcl	2006-01-08 14:42:09.000000000 -0800
+@@ -0,0 +1,271 @@
++#
++#  Copyright 2002, Univerity of Colorado at Boulder.                        
++#                                                                            
++#                         All Rights Reserved                                
++#                                                                            
++#  Permission to use, copy, modify, and distribute this software and its    
++#  documentation for any purpose other than its incorporation into a        
++#  commercial product is hereby granted without fee, provided that the      
++#  above copyright notice appear in all copies and that both that           
++#  copyright notice and this permission notice appear in supporting         
++#  documentation, and that the name of the University not be used in        
++#  advertising or publicity pertaining to distribution of the software      
++#  without specific, written prior permission.                              
++#                                                                            
++#  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      
++#  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        
++#  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    
++#  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         
++#  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA      
++#  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER       
++#  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         
++#  PERFORMANCE OF THIS SOFTWARE.                                            
++#
++# nsclick-simple-lan.tcl
++# @(#) $Header: /srl/dirkcvs/nsclick/ns/tcl/ex/nsclick-simple-lan.tcl,v 1.2 2002/06/13 02:34:34 neufeldm Exp $
++#
++# A sample nsclick script simulating a small LAN
++#
++
++#
++# Set some general simulation parameters
++#
++
++# 
++# Even though this is a wired simulation with non-moving nodes, nsclick
++# uses the mobile node type. This means we have to set the size of the
++# playing field and the topography even though it won't matter.
++#
++set xsize 100
++set ysize 100
++set wtopo	[new Topography]
++$wtopo load_flatgrid $xsize $ysize
++
++#
++# The network channel, physical layer, and MAC are all standard ns-2.
++#  
++set netchan	Channel
++set netphy	Phy/WiredPhy
++set netmac	Mac/802_3
++
++#
++# We have to use a special queue and link layer. This is so that
++# Click can have control over the network interface packet queue,
++# which is vital if we want to play with, e.g. QoS algorithms.
++#
++set netifq	Queue/ClickQueue
++set netll	LL/Ext
++LL set delay_			1ms
++
++#
++# These are pretty self-explanatory, just the number of nodes
++# and when we'll stop.
++#
++set nodecount   4
++set stoptime	10.0
++
++#
++# With nsclick, we have to worry about details like which network
++# port to use for communication. This sets the default ports to 5000.
++#
++Agent/Null set sport_		5000
++Agent/Null set dport_		5001
++
++Agent/CBR set sport_		5002
++Agent/CBR set dport_		5003
++
++#
++# Standard ns-2 stuff here - create the simulator object.
++#
++Simulator set MacTrace_ ON
++set ns_		[new Simulator]
++
++#
++# Create and activate trace files.
++#
++set tracefd	[open "nsclick-simple-lan.tr" w]
++set namtrace    [open "nsclick-simple-lan.nam" w]
++$ns_ trace-all $tracefd
++$ns_ namtrace-all-wireless $namtrace $xsize $ysize
++$ns_ use-newtrace
++
++
++#
++# Create the "god" object. This is another artifact of using
++# the mobile node type. We have to have this even though
++# we never use it.
++#
++set god_ [create-god $nodecount]
++
++#
++# Tell the simulator to create Click nodes.
++#
++Simulator set node_factory_ Node/MobileNode/ClickNode
++
++#
++# Create a network Channel for the nodes to use. One channel
++# per LAN.
++#
++set chan_1_ [new $netchan]
++
++#
++# In nsclick we have to worry about assigning IP and MAC addresses
++# to out network interfaces. Here we generate a list of IP and MAC
++# addresses, one per node since we've only got one network interface
++# per node in this case. Also note that this scheme only works for
++# fewer than 255 nodes, and we aren't worrying about subnet masks.
++#
++set iptemplate "192.168.1.%d"
++set mactemplate "00:03:47:70:89:%0x"
++for {set i 0} {$i < $nodecount} {incr i} {
++    set node_ip($i) [format $iptemplate [expr $i+1]]
++    set node_mac($i) [format $mactemplate [expr $i+1]]
++}
++
++#
++# We set the routing protocol to "Empty" so that ns-2 doesn't do
++# any packet routing. All of the routing will be done by the
++# Click script.
++#
++$ns_ rtproto Empty
++
++#
++# Here is where we actually create all of the nodes.
++#
++for {set i 0} {$i < $nodecount } {incr i} {
++    set node_($i) [$ns_ node]
++
++    #
++    # After creating the node, we add one wired network interface to
++    # it. By default, this interface will be named "eth0". If we
++    # added a second interface it would be named "eth1", a third
++    # "eth2" and so on.
++    #
++    $node_($i) add-wired-interface $chan_1_ $netll $netmac \
++	$netifq 1 $netphy
++
++    #
++    # Now configure the interface eth0
++    #
++    $node_($i) setip "eth0" $node_ip($i)
++    $node_($i) setmac "eth0" $node_mac($i)
++
++    #
++    # Set some node properties
++    #
++    $node_($i) random-motion 0
++    $node_($i) topography $wtopo
++    $node_($i) nodetrace $tracefd
++
++    #
++    # The node name is used by Click to distinguish information
++    # coming from different nodes. For example, a "Print" element
++    # prepends this to the printed string so it's clear exactly
++    # which node is doing the printing.
++    #
++    [$node_($i) set classifier_] setnodename "node$i-simplelan"
++    
++    #
++    # Load the appropriate Click router script for the node.
++    # All nodes in this simulation are using the same script,
++    # but there's no reason why each node couldn't use a different
++    # script.
++    #
++    [$node_($i) entry] loadclick "nsclick-simple-lan.click"
++}
++
++
++# 
++# Define node network traffic. There isn't a whole lot going on
++# in this simple test case, we're just going to have the first node
++# send packets to the last node, starting at 1 second, and ending at 10.
++# There are Perl scripts available to automatically generate network
++# traffic.
++#
++
++
++#
++# Start transmitting at $startxmittime, $xmitrate packets per second.
++#
++set startxmittime 1
++set xmitrate 4
++set xmitinterval 0.25
++set packetsize 64
++
++#
++# We use the "raw" packet type, which sends real packet data
++# down the pipe.
++#
++set raw_(0) [new Agent/Raw]
++$ns_ attach-agent $node_(0) $raw_(0)
++
++set lastnode [expr $nodecount-1]
++set null_(0) [new Agent/Null]
++$ns_ attach-agent $node_($lastnode) $null_(0)
++
++#
++# The CBR object is just the default ns-2 CBR object, so
++# no change in the meaning of the parameters.
++#
++set cbr_(0) [new Application/Traffic/CBR]
++$cbr_(0) set packetSize_ $packetsize
++$cbr_(0) set interval_ $xmitinterval
++$cbr_(0) set random_ 0
++$cbr_(0) set maxpkts_ [expr ($stoptime - $startxmittime)*$xmitrate]
++$cbr_(0) attach-agent $raw_(0)
++
++#
++# The Raw agent creates real UDP packets, so it has to know
++# the source and destination IP addresses and port numberes.
++#
++$raw_(0) set-srcip [$node_(0) getip eth0]
++$raw_(0) set-srcport 5000
++$raw_(0) set-destport 5001
++$raw_(0) set-destip [$node_($lastnode) getip eth0]
++
++$ns_ at $startxmittime "$cbr_(0) start"
++
++#
++# Set node positions. For wired networks, these are only used
++# when looking at nam traces.
++#
++$node_(0) set X_ 10
++$node_(0) set Y_ 50
++$node_(0) set Z_ 0
++
++$node_(1) set X_ 50
++$node_(1) set Y_ 50
++$node_(1) set Z_ 0
++
++$node_(2) set X_ 90
++$node_(2) set Y_ 50
++$node_(2) set Z_ 0
++
++$node_(3) set X_ 50
++$node_(3) set Y_ 10
++$node_(3) set Z_ 0
++
++#
++# This sizes the nodes for use in nam.
++#
++for {set i 0} {$i < $nodecount} {incr i} {
++    $ns_ initial_node_pos $node_($i) 20
++}
++
++#
++# Stop the simulation
++#
++$ns_ at  $stoptime.000000001 "puts \"NS EXITING...\" ; $ns_ halt"
++
++#
++# Let nam know that the simulation is done.
++#
++$ns_ at  $stoptime	"$ns_ nam-end-wireless $stoptime"
++
++
++puts "Starting Simulation..."
++$ns_ run
++
++
++
++
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple-wlan.tcl ns-2.29/tcl/ex/nsclick-simple-wlan.tcl
+--- ns-2.29-pure/tcl/ex/nsclick-simple-wlan.tcl	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/tcl/ex/nsclick-simple-wlan.tcl	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,295 @@
++#
++#  Copyright 2002, Univerity of Colorado at Boulder.                        
++#                                                                            
++#                         All Rights Reserved                                
++#                                                                            
++#  Permission to use, copy, modify, and distribute this software and its    
++#  documentation for any purpose other than its incorporation into a        
++#  commercial product is hereby granted without fee, provided that the      
++#  above copyright notice appear in all copies and that both that           
++#  copyright notice and this permission notice appear in supporting         
++#  documentation, and that the name of the University not be used in        
++#  advertising or publicity pertaining to distribution of the software      
++#  without specific, written prior permission.                              
++#                                                                            
++#  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      
++#  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        
++#  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    
++#  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         
++#  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA      
++#  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER       
++#  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         
++#  PERFORMANCE OF THIS SOFTWARE.                                            
++#
++# nsclick-simple-lan.tcl
++# @(#) $Header: /srl/dirkcvs/nsclick/ns/tcl/ex/nsclick-simple-wlan.tcl,v 1.2 2002/06/13 02:34:34 neufeldm Exp $
++#
++# A sample nsclick script simulating a small LAN
++#
++
++#
++# Set some general simulation parameters
++#
++
++#
++# Unity gain, omnidirectional antennas, centered 1.5m above each node.
++# These values are lifted from the ns-2 sample files.
++#
++Antenna/OmniAntenna set X_ 0
++Antenna/OmniAntenna set Y_ 0
++Antenna/OmniAntenna set Z_ 1.5
++Antenna/OmniAntenna set Gt_ 1.0
++Antenna/OmniAntenna set Gr_ 1.0
++
++#
++# Initialize the SharedMedia interface with parameters to make
++# it work like the 914MHz Lucent WaveLAN DSSS radio interface
++# These are taken directly from the ns-2 sample files.
++#
++Phy/WirelessPhy set CPThresh_ 10.0
++Phy/WirelessPhy set CSThresh_ 1.559e-11
++Phy/WirelessPhy set RXThresh_ 3.652e-10
++Phy/WirelessPhy set Rb_ 2*1e6
++Phy/WirelessPhy set Pt_ 0.2818
++Phy/WirelessPhy set freq_ 914e+6 
++Phy/WirelessPhy set L_ 1.0
++
++# 
++# Set the size of the playing field and the topography.
++#
++set xsize 100
++set ysize 100
++set wtopo	[new Topography]
++$wtopo load_flatgrid $xsize $ysize
++
++#
++# The network channel, physical layer, MAC, propagation model,
++# and antenna model are all standard ns-2.
++#  
++set netchan	Channel/WirelessChannel
++set netphy	Phy/WirelessPhy
++set netmac	Mac/802_11
++set netprop     Propagation/TwoRayGround
++set antenna     Antenna/OmniAntenna
++
++#
++# We have to use a special queue and link layer. This is so that
++# Click can have control over the network interface packet queue,
++# which is vital if we want to play with, e.g. QoS algorithms.
++#
++set netifq	Queue/ClickQueue
++set netll	LL/Ext
++LL set delay_			1ms
++
++#
++# These are pretty self-explanatory, just the number of nodes
++# and when we'll stop.
++#
++set nodecount   4
++set stoptime	10.0
++
++#
++# With nsclick, we have to worry about details like which network
++# port to use for communication. This sets the default ports to 5000.
++#
++Agent/Null set sport_		5000
++Agent/Null set dport_		5000
++
++Agent/CBR set sport_		5000
++Agent/CBR set dport_		5000
++
++#
++# Standard ns-2 stuff here - create the simulator object.
++#
++Simulator set MacTrace_ ON
++set ns_		[new Simulator]
++
++#
++# Create and activate trace files.
++#
++set tracefd	[open "nsclick-simple-wlan.tr" w]
++set namtrace    [open "nsclick-simple-wlan.nam" w]
++$ns_ trace-all $tracefd
++$ns_ namtrace-all-wireless $namtrace $xsize $ysize
++$ns_ use-newtrace
++
++
++#
++# Create the "god" object. This is another artifact of using
++# the mobile node type. We have to have this even though
++# we never use it.
++#
++set god_ [create-god $nodecount]
++
++#
++# Tell the simulator to create Click nodes.
++#
++Simulator set node_factory_ Node/MobileNode/ClickNode
++
++#
++# Create a network Channel for the nodes to use. One channel
++# per LAN. Also set the propagation model to be used.
++#
++set chan_1_ [new $netchan]
++set prop_ [new $netprop]
++
++#
++# In nsclick we have to worry about assigning IP and MAC addresses
++# to out network interfaces. Here we generate a list of IP and MAC
++# addresses, one per node since we've only got one network interface
++# per node in this case. Also note that this scheme only works for
++# fewer than 255 nodes, and we aren't worrying about subnet masks.
++#
++set iptemplate "192.168.1.%d"
++set mactemplate "00:03:47:70:89:%0x"
++for {set i 0} {$i < $nodecount} {incr i} {
++    set node_ip($i) [format $iptemplate [expr $i+1]]
++    set node_mac($i) [format $mactemplate [expr $i+1]]
++}
++
++#
++# We set the routing protocol to "Empty" so that ns-2 doesn't do
++# any packet routing. All of the routing will be done by the
++# Click script.
++#
++$ns_ rtproto Empty
++
++#
++# Here is where we actually create all of the nodes.
++#
++for {set i 0} {$i < $nodecount } {incr i} {
++    set node_($i) [$ns_ node]
++
++    #
++    # After creating the node, we add one wireless network interface to
++    # it. By default, this interface will be named "eth0". If we
++    # added a second interface it would be named "eth1", a third
++    # "eth2" and so on.
++    #
++    $node_($i) add-interface $chan_1_ $prop_ $netll $netmac \
++	$netifq 1 $netphy $antenna
++
++    #
++    # Now configure the interface eth0
++    #
++    $node_($i) setip "eth0" $node_ip($i)
++    $node_($i) setmac "eth0" $node_mac($i)
++
++    #
++    # Set some node properties
++    #
++    $node_($i) random-motion 0
++    $node_($i) topography $wtopo
++    $node_($i) nodetrace $tracefd
++
++    #
++    # The node name is used by Click to distinguish information
++    # coming from different nodes. For example, a "Print" element
++    # prepends this to the printed string so it's clear exactly
++    # which node is doing the printing.
++    #
++    [$node_($i) set classifier_] setnodename "node$i-simplelan"
++    
++    #
++    # Load the appropriate Click router script for the node.
++    # All nodes in this simulation are using the same script,
++    # but there's no reason why each node couldn't use a different
++    # script.
++    #
++    [$node_($i) entry] loadclick "nsclick-simple-lan.click"
++}
++
++
++# 
++# Define node network traffic. There isn't a whole lot going on
++# in this simple test case, we're just going to have the first node
++# send packets to the last node, starting at 1 second, and ending at 10.
++# There are Perl scripts available to automatically generate network
++# traffic.
++#
++
++
++#
++# Start transmitting at $startxmittime, $xmitrate packets per second.
++#
++set startxmittime 1
++set xmitrate 4
++set xmitinterval 0.25
++set packetsize 64
++
++#
++# We use the "raw" packet type, which sends real packet data
++# down the pipe.
++#
++set raw_(0) [new Agent/Raw]
++$ns_ attach-agent $node_(0) $raw_(0)
++
++set lastnode [expr $nodecount-1]
++set null_(0) [new Agent/Null]
++$ns_ attach-agent $node_($lastnode) $null_(0)
++
++#
++# The CBR object is just the default ns-2 CBR object, so
++# no change in the meaning of the parameters.
++#
++set cbr_(0) [new Application/Traffic/CBR]
++$cbr_(0) set packetSize_ $packetsize
++$cbr_(0) set interval_ $xmitinterval
++$cbr_(0) set random_ 0
++$cbr_(0) set maxpkts_ [expr ($stoptime - $startxmittime)*$xmitrate]
++$cbr_(0) attach-agent $raw_(0)
++
++#
++# The Raw agent creates real UDP packets, so it has to know
++# the source and destination IP addresses and port numberes.
++#
++$raw_(0) set-srcip [$node_(0) getip eth0]
++$raw_(0) set-srcport 5000
++$raw_(0) set-destport 5000
++$raw_(0) set-destip [$node_($lastnode) getip eth0]
++
++$ns_ at $startxmittime "$cbr_(0) start"
++
++
++$node_(0) set X_ 10
++$node_(0) set Y_ 50
++$node_(0) set Z_ 0
++
++$node_(1) set X_ 50
++$node_(1) set Y_ 50
++$node_(1) set Z_ 0
++
++$node_(2) set X_ 90
++$node_(2) set Y_ 50
++$node_(2) set Z_ 0
++
++$node_(3) set X_ 50
++$node_(3) set Y_ 10
++$node_(3) set Z_ 0
++
++
++#
++# This sizes the nodes for use in nam. Currently, the trace files
++# produced by nsclick don't really work in nam.
++#
++for {set i 0} {$i < $nodecount} {incr i} {
++    $ns_ initial_node_pos $node_($i) 20
++}
++
++#
++# Stop the simulation
++#
++$ns_ at  $stoptime.000000001 "puts \"NS EXITING...\" ; $ns_ halt"
++
++#
++# Let nam know that the simulation is done.
++#
++$ns_ at  $stoptime	"$ns_ nam-end-wireless $stoptime"
++
++
++puts "Starting Simulation..."
++$ns_ run
++
++
++
++
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/lib/ns-clicknode.tcl ns-2.29/tcl/lib/ns-clicknode.tcl
+--- ns-2.29-pure/tcl/lib/ns-clicknode.tcl	1969-12-31 16:00:00.000000000 -0800
++++ ns-2.29/tcl/lib/ns-clicknode.tcl	2006-01-08 12:58:19.000000000 -0800
+@@ -0,0 +1,345 @@
++#
++#  Copyright 2002, Univerity of Colorado at Boulder.                        
++#                                                                            
++#                         All Rights Reserved                                
++#                                                                            
++#  Permission to use, copy, modify, and distribute this software and its    
++#  documentation for any purpose other than its incorporation into a        
++#  commercial product is hereby granted without fee, provided that the      
++#  above copyright notice appear in all copies and that both that           
++#  copyright notice and this permission notice appear in supporting         
++#  documentation, and that the name of the University not be used in        
++#  advertising or publicity pertaining to distribution of the software      
++#  without specific, written prior permission.                              
++#                                                                            
++#  UNIVERSITY OF COLORADO DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS      
++#  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND        
++#  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL THE UNIVERSITY    
++#  OF COLORADO BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL         
++#  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA      
++#  OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER       
++#  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR         
++#  PERFORMANCE OF THIS SOFTWARE.                                            
++#
++#
++# @(#) $Header: /srl/dirkcvs/nsclick/ns/tcl/lib/ns-clicknode.tcl,v 1.4 2003/04/28 06:14:30 neufeldm Exp $
++#
++
++Class ClickNode -superclass Node/MobileNode
++
++Node/MobileNode/ClickNode instproc init args {
++    $self instvar nifs_ netif_ mac_ ifq_ ll_ dmux_
++    set ns [Simulator instance]
++    eval $self next $args
++    set nifs_ 0
++    $self register-module [new RtModule/Click]
++
++    #
++    # This Trace Target is used to log changes in direction
++    # and velocity for the mobile node.
++    #
++    set tracefd [$ns get-ns-traceall]
++    if {$tracefd != "" } {
++	$self nodetrace $tracefd
++	#$self agenttrace $tracefd
++    }
++
++    set namtracefd [$ns get-nam-traceall]
++    if {$namtracefd != "" } {
++	$self namattach $namtracefd
++    }
++
++}
++
++Node/MobileNode/ClickNode instproc getip { ifname } {
++    [$self entry] getip $ifname
++}
++
++Node/MobileNode/ClickNode instproc getmac { ifname } {
++    [$self entry] getmac $ifname
++}
++
++Node/MobileNode/ClickNode instproc setip { ifname ipaddr } {
++    [$self entry] setip $ifname $ipaddr
++}
++
++Node/MobileNode/ClickNode instproc setmac { ifname macaddr } {
++    [$self entry] setmac $ifname $macaddr
++}
++
++Node/MobileNode/ClickNode instproc add-route { dst target } {
++    #puts "ClickNode does routing via Click - not ns."
++}
++
++Node/MobileNode/ClickNode instproc delete-route args {
++    #puts "ClickNode does routing via Click - not ns."
++}
++
++Node/MobileNode/ClickNode instproc route-notify { module } {
++    #puts "ClickNode does routing via Click - not ns."
++}
++
++#
++# The following setups up link layer, mac layer, network interface
++# and physical layer structures for the click node. Stolen from
++# the MobileNode code, and then modified a bit, e.g. the ARP
++# stuff got removed.
++#
++Node/MobileNode/ClickNode instproc add-interface { channel pmodel lltype mactype \
++					    qtype qlen iftype anttype} {
++
++    $self instvar nifs_ netif_ mac_ ifq_ ll_
++    set ns [Simulator instance]
++    set t $nifs_
++    incr nifs_
++
++    set netif_($t)	[new $iftype]		;# interface
++    set mac_($t)	[new $mactype]		;# mac layer
++    set ifq_($t)	[new $qtype]		;# interface queue
++    set ll_($t)	[new $lltype]		;# link layer
++    set ant_($t)    [new $anttype]
++
++    set namfp [$ns get-nam-traceall]
++
++    #
++    # Local Variables
++    #
++    set nullAgent_ [$ns set nullAgent_]
++    set netif $netif_($t)
++    set mac $mac_($t)
++    set ifq $ifq_($t)
++    set ll $ll_($t)
++
++    #
++    # Link Layer
++    #
++    $ll mac $mac
++    $ll down-target $ifq
++    $ll up-target [$self entry]
++    # Stuff the link layer into the next available classifier slot, and
++    # use that slot number as the network id
++    $ll setid [[$self entry] installNext $ll]
++    # Set the associated MAC layer address
++    $ll set macDA_ [$mac id]
++
++    #
++    # Interface Queue
++    #
++    $ifq target $mac
++    $ifq set limit_ $qlen
++    set drpT [cmu-trace Drop "IFQ" $self]
++    $ifq drop-target $drpT
++    if { $namfp != "" } {
++	$drpT namattach $namfp
++    }
++    if {$qtype == "Queue/ClickQueue"} {
++	$ifq setclickclassifier [$self entry]
++	$ll ifq $ifq
++    }
++
++    #
++    # Mac Layer
++    #
++    $mac netif $netif
++    $mac up-target $ll
++    $mac down-target $netif
++    set god_ [God instance]
++    if {$mactype == "Mac/802_11"} {
++	# XXX this is a hack to handle multiple interfaces per node.
++	$mac nodes [expr 4*[$god_ num_nodes]]
++    }
++    #
++    # Network Interface
++    #
++    $netif channel $channel
++    $netif up-target $mac
++    $netif propagation $pmodel	;# Propagation Model
++    $netif node $self		;# Bind node <---> interface
++    $netif antenna $ant_($t)
++    #
++    # Physical Channel
++    #
++    $channel addif $netif
++    
++    # ============================================================
++    
++    if { [Simulator set MacTrace_] == "ON" } {
++	#
++	# Trace RTS/CTS/ACK Packets
++	#
++	set rcvT [cmu-trace Recv "MAC" $self]
++	$mac log-target $rcvT
++	if { $namfp != "" } {
++	    $rcvT namattach $namfp
++	}
++	#
++	# Trace Sent Packets
++	#
++	set sndT [cmu-trace Send "MAC" $self]
++	$sndT target [$mac down-target]
++	$mac down-target $sndT
++	if { $namfp != "" } {
++	    $sndT namattach $namfp
++	}
++	#
++	# Trace Received Packets
++	#
++	set rcvT [cmu-trace Recv "MAC" $self]
++	$rcvT target [$mac up-target]
++	$mac up-target $rcvT
++	if { $namfp != "" } {
++	    $rcvT namattach $namfp
++	}
++	#
++	# Trace Dropped Packets
++	#
++	set drpT [cmu-trace Drop "MAC" $self]
++	$mac drop-target $drpT
++	if { $namfp != "" } {
++	    $drpT namattach $namfp
++	}
++    } else {
++	$mac log-target [$ns set nullAgent_]
++	$mac drop-target [$ns set nullAgent_]
++    }
++    
++    # ============================================================
++    
++    $self addif $netif
++}
++
++
++#
++# The following setups up link layer, mac layer, network interface
++# and physical layer structures for the click node. Stolen from
++# the MobileNode code, and then modified a bit, e.g. the ARP
++# stuff got removed.
++#
++Node/MobileNode/ClickNode instproc add-wired-interface { channel lltype mactype qtype qlen iftype} {
++
++    $self instvar nifs_ netif_ mac_ ifq_ ll_
++    set ns [Simulator instance]
++    set t $nifs_
++    incr nifs_
++
++    set netif_($t)	[new $iftype]		;# interface
++    set mac_($t)	[new $mactype]		;# mac layer
++    set ifq_($t)	[new $qtype]		;# interface queue
++    set ll_($t)	[new $lltype]		;# link layer
++
++
++    set namfp [$ns get-nam-traceall]
++
++    #
++    # Local Variables
++    #
++    set nullAgent_ [$ns set nullAgent_]
++    set netif $netif_($t)
++    set mac $mac_($t)
++    set ifq $ifq_($t)
++    set ll $ll_($t)
++
++    #
++    # Link Layer
++    #
++    $ll mac $mac
++    $ll down-target $ifq
++     $ll up-target [$self entry]
++    # Stuff the link layer into the next available classifier slot, and
++    # use that slot number as the network id
++    $ll setid [[$self entry] installNext $ll]
++    # Set the associated MAC layer address
++    $ll set macDA_ [$mac id]
++
++    #
++    # Interface Queue
++    #
++    $ifq target $mac
++    $ifq set limit_ $qlen
++    set drpT [cmu-trace Drop "IFQ" $self]
++    $ifq drop-target $drpT
++    if { $namfp != "" } {
++	$drpT namattach $namfp
++    }
++    if {$qtype == "Queue/ClickQueue"} {
++	$ifq setclickclassifier [$self entry]
++	$ll ifq $ifq
++    }
++
++    #
++    # Mac Layer
++    #
++    $mac netif $netif
++    $mac up-target $ll
++    $mac down-target $netif
++    set god_ [God instance]
++    if {$mactype == "Mac/802_11"} {
++	$mac nodes [$god_ num_nodes]
++    }
++    #
++    # Network Interface
++    #
++    $netif channel $channel
++    $netif up-target $mac
++    $netif node $self		;# Bind node <---> interface
++    #
++    # Physical Channel
++    #
++    $channel addif $netif
++    
++    # ============================================================
++    
++    if { [Simulator set MacTrace_] == "ON" } {
++	#
++	# Trace RTS/CTS/ACK Packets
++	#
++	set rcvT [cmu-trace Recv "MAC" $self]
++	$mac log-target $rcvT
++	if { $namfp != "" } {
++	    $rcvT namattach $namfp
++	}
++	#
++	# Trace Sent Packets
++	#
++	set sndT [cmu-trace Send "MAC" $self]
++	$sndT target [$mac down-target]
++	$mac down-target $sndT
++	if { $namfp != "" } {
++	    $sndT namattach $namfp
++	}
++	#
++	# Trace Received Packets
++	#
++	set rcvT [cmu-trace Recv "MAC" $self]
++	$rcvT target [$mac up-target]
++	$mac up-target $rcvT
++	if { $namfp != "" } {
++	    $rcvT namattach $namfp
++	}
++	#
++	# Trace Dropped Packets
++	#
++	set drpT [cmu-trace Drop "MAC" $self]
++	$mac drop-target $drpT
++	if { $namfp != "" } {
++	    $drpT namattach $namfp
++	}
++    } else {
++	$mac log-target [$ns set nullAgent_]
++	$mac drop-target [$ns set nullAgent_]
++    }
++    
++    # ============================================================
++    
++    $self addif $netif
++}
++
++Node/MobileNode/ClickNode instproc setpromiscuous { whichif ispromisc } {
++    $self instvar ll_
++    set thell $ll_($whichif)
++    $thell setpromiscuous $ispromisc
++}
++
++Node/MobileNode/ClickNode instproc dump-namconfig {} {
++# Do nothing
++}
+\ No newline at end of file
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/lib/ns-lib.tcl ns-2.29/tcl/lib/ns-lib.tcl
+--- ns-2.29-pure/tcl/lib/ns-lib.tcl	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/tcl/lib/ns-lib.tcl	2006-01-08 12:58:19.000000000 -0800
+@@ -208,6 +208,8 @@
+ source ns-default.tcl
+ source ../emulate/ns-emulate.tcl
+ 
++source ns-clicknode.tcl
++
+ #pushback
+ source ns-pushback.tcl
+ 
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/lib/ns-mobilenode.tcl ns-2.29/tcl/lib/ns-mobilenode.tcl
+--- ns-2.29-pure/tcl/lib/ns-mobilenode.tcl	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/tcl/lib/ns-mobilenode.tcl	2006-01-08 13:04:37.000000000 -0800
+@@ -660,6 +660,7 @@
+ 
+ 
+ 
++
+ Node/MobileNode instproc mobility-trace { ttype atype } {
+ 	set ns [Simulator instance]
+         set tracefd [$ns get-ns-traceall]
+@@ -788,6 +789,21 @@
+ }
+ # </zheng: add>
+ 
++# change interface channel
++Node/MobileNode instproc changechannel { whichif newchan } {
++	$self instvar netif_
++	[$netif_($whichif) getchannel] delif $netif_(0)
++	$netif_($whichif) channel $newchan
++	$newchan addif $netif_($whichif)
++}
++
++# aim a steerable antenna
++Node/MobileNode instproc aimantenna { whichif newdir } {
++	$self instvar netif_
++	set theant [$netif_($whichif) getantenna]
++	$theant set Dir_ $newdir
++}
++
+ Class SRNodeNew -superclass Node/MobileNode
+ 
+ SRNodeNew instproc init args {
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/lib/ns-packet.tcl ns-2.29/tcl/lib/ns-packet.tcl
+--- ns-2.29-pure/tcl/lib/ns-packet.tcl	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/tcl/lib/ns-packet.tcl	2006-01-08 13:05:26.000000000 -0800
+@@ -115,6 +115,7 @@
+ 	Common 
+ 	Flags
+ 	IP 	# IP
++	Raw	# nsclick: raw packet type
+ # Routing Protocols:
+ 	NV 	# NixVector classifier for stateless routing 
+ 	rtProtoDV 	# distance vector routing protocol
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/lib/ns-rtmodule.tcl ns-2.29/tcl/lib/ns-rtmodule.tcl
+--- ns-2.29-pure/tcl/lib/ns-rtmodule.tcl	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/tcl/lib/ns-rtmodule.tcl	2006-01-08 12:58:20.000000000 -0800
+@@ -340,6 +340,43 @@
+ RtModule/VC instproc add-route { dst target } {
+ }
+ 
++
++#
++# Click routing module. Intended to subvert the normal routing process
++# and defer to Click.
++#
++RtModule/Click instproc init {} {
++        $self next
++}
++
++RtModule/Click instproc register { node } {
++        $self next $node
++        $self make-classifier
++}
++
++RtModule/Click instproc make-classifier {} {
++        $self instvar classifier_
++        set classifier_ [new Classifier/Ext/Click]
++        [$self node] install-entry $self $classifier_
++        $classifier_ setnodename [format "node%d" [[$self node] set id_]]
++        $classifier_ setnodeaddr [[$self node] set address_]
++        [$self node] set dmux_ [new Classifier/Port]
++
++        # Always stick the kernel tap interface into slot 0
++        $classifier_ install 0 [[$self node] set dmux_]
++}
++
++RtModule/Click instproc attach { agent port } {
++        # Send target
++        $agent target [[$self node] entry]
++        # Recv target
++        [[$self node] demux] install $port $agent
++}
++
++RtModule/Click instproc detach { agent nullagent } {
++        # Empty method
++}
++
+ Classifier/Virtual instproc find dst {
+ 	$self instvar node_
+ 	if {[$node_ id] == $dst} {
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/rtglib/route-proto.tcl ns-2.29/tcl/rtglib/route-proto.tcl
+--- ns-2.29-pure/tcl/rtglib/route-proto.tcl	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/tcl/rtglib/route-proto.tcl	2006-01-08 12:58:20.000000000 -0800
+@@ -739,6 +739,15 @@
+ Agent/rtProto/Manual proc init-all args {
+     # The user will do all routing.
+ }
++#
++# Empty. Does NOTHING - even less than the Manual routing.
++#
++Class Agent/rtProto/Empty -superclass Agent/rtProto
++
++Agent/rtProto/Empty proc init-all args {
++    # Do nothing
++}
++
+ 
+ ### Local Variables:
+ ### mode: tcl
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tools/random.cc ns-2.29/tools/random.cc
+--- ns-2.29-pure/tools/random.cc	2005-10-19 21:45:25.000000000 -0700
++++ ns-2.29/tools/random.cc	2006-01-08 13:06:28.000000000 -0800
+@@ -34,7 +34,7 @@
+  * "@(#) $Header: /nfs/jade/vint/CVSROOT/ns-2/tools/random.cc,v 1.20 2003/12/10 17:19:56 johnh Exp $ (LBL)";
+  */
+ 
+-#ifndef WIN32
++#if !defined(WIN32) && !defined(ALLOW_RANDOM)
+ 
+ #include <sys/time.h>
+ #include "config.h"
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/trace/cmu-trace.cc ns-2.29/trace/cmu-trace.cc
+--- ns-2.29-pure/trace/cmu-trace.cc	2005-10-19 21:45:25.000000000 -0700
++++ ns-2.29/trace/cmu-trace.cc	2006-01-08 13:07:53.000000000 -0800
+@@ -53,6 +53,7 @@
+ #include <aodv/aodv_packet.h> //AODV
+ #include <cmu-trace.h>
+ #include <mobilenode.h>
++#include <rawpacket.h>
+ #include <simulator.h>
+ //<zheng: add for 802.15.4>
+ #include "wpan/p802_15_4pkt.h"
+@@ -880,6 +881,20 @@
+         }
+ }
+ 
++// XXX Fix this
++void
++CMUTrace::format_raw(Packet *p, int offset)
++{
++        struct hdr_cmn *ch = HDR_CMN(p);
++        struct hdr_tcp *th = HDR_TCP(p);
++        
++        if( newtrace_ ) {
++                sprintf(pt_->buffer() + offset,"raw ");
++        } else {
++                sprintf(pt_->buffer() + offset,"raw ");
++        }
++}
++
+ void
+ CMUTrace::nam_format(Packet *p, int offset)
+ {
+@@ -1122,6 +1137,12 @@
+ 	hdr_cmn *ch = HDR_CMN(p);
+ 	int offset = 0;
+ 
++	int israw = (PT_RAW == ch->ptype());
++ 	hdr_raw* rhdr = hdr_raw::access(p);	
++	if (israw) {
++	    ch->ptype() = (packet_t) rhdr->ns_type;
++	}
++
+ 	/*
+ 	 * Log the MAC Header
+ 	 */
+@@ -1130,6 +1151,8 @@
+ 	if (pt_->namchannel()) 
+ 		nam_format(p, offset);
+ 	offset = strlen(pt_->buffer());
++
++
+ 	switch(ch->ptype()) {
+ 	case PT_MAC:
+ 	case PT_SMAC:
+@@ -1141,6 +1164,9 @@
+ 		format_ip(p, offset);
+ 		offset = strlen(pt_->buffer());
+ 		switch(ch->ptype()) {
++		case PT_RAW:
++			format_raw(p, offset);
++			break;
+ 		case PT_AODV:
+ 			format_aodv(p, offset);
+ 			break;
+@@ -1183,6 +1209,9 @@
+ 			break;		//zheng: add
+ 		}
+ 	}
++	if (israw) {
++	    ch->ptype() = PT_RAW;
++	}
+ }
+ 
+ int
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/trace/cmu-trace.h ns-2.29/trace/cmu-trace.h
+--- ns-2.29-pure/trace/cmu-trace.h	2005-10-19 21:45:25.000000000 -0700
++++ ns-2.29/trace/cmu-trace.h	2006-01-08 12:58:20.000000000 -0800
+@@ -133,6 +133,7 @@
+ 	void	format_tora(Packet *p, int offset);
+         void    format_imep(Packet *p, int offset);
+         void    format_aodv(Packet *p, int offset);
++	void    format_raw(Packet *p, int offset);
+ };
+ 
+ #endif /* __cmu_trace__ */

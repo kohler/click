@@ -44,7 +44,7 @@ CLICKDIR/elements/tcpudp	... for TCP and UDP elements
 CLICKDIR/elements/test		... for regression test elements
 CLICKDIR/elements/userlevel	... for user-level-specific elements
 CLICKDIR/elements/wifi	        ... for 802.11-specific 'WiFi' elements
-CLICKDIR/etc			Linux patches and other files
+CLICKDIR/etc			Linux and NS patches and other files
 CLICKDIR/etc/samplepackage	sample source code for Click element package
 CLICKDIR/etc/samplellrpc	sample source code for reading Click LLRPCs
 CLICKDIR/etc/diagrams		files for drawing Click diagrams
@@ -70,6 +70,7 @@ CLICKDIR/tools/click-xform	... pattern-based configuration optimizer
 CLICKDIR/tools/click2xml	... convert Click language <-> XML
 CLICKDIR/userlevel		user-level 'click' driver
 
+
 DOCUMENTATION
 -------------
 
@@ -80,6 +81,7 @@ module, and several tools; it also has a script that generates manual pages
 for many of the elements distributed in this package. To install these
 manual pages so you can read them, follow the 'INSTALL' instructions, but
 'make install-man' instead of 'make install'.
+
 
 RUNNING A CLICK ROUTER
 ----------------------
@@ -116,7 +118,9 @@ work.)
 NS Simulator
 ............
 
-    Give './configure' the '--enable-ns' option. XXXX.
+    See 'INSTALL' for more information.  Once a Click-enabled version of NS
+is installed, the 'ns' command is able to run Click scripts as part of a
+normal NS simulation.
 
 Configurations
 ..............
@@ -127,11 +131,13 @@ paper ('conf/make-ip-conf.pl') and a set of patterns for the Click pattern
 optimizer, click-xform ('conf/ip.clickpat'). Please check back to our Web
 site for more up-to-date configurations.
 
+
 ADDING YOUR OWN ELEMENTS
 ------------------------
 
     Please see the FAQ in this directory to learn how to add elements to
 Click.
+
 
 COPYRIGHT AND LICENSE
 ---------------------
@@ -151,6 +157,7 @@ the files in elements/linuxmodule.
     Typically, element code that uses only Click's interfaces will *not* be
 derived from the Linux kernel, so the BSD-like 'LICENSE' will apply, not
 the GPL.
+
 
 BUGS, QUESTIONS, ETC.
 ---------------------

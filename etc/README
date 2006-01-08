@@ -1,4 +1,4 @@
-Use the patches in this directory as follows:
+Use the Linux patches in this directory as follows:
 
 For this version of Linux	Use this patch
 2.2.18				linux-2.2.18-patch
@@ -21,3 +21,11 @@ Patch Linux using a command like this:
 % patch -p0 < CLICKDIR/etc/linux-VERSION-patch
 
 
+Use the NS patches in this directory as follows:
+
+For this version of NS		Use this patch
+2.29				ns-2.29-patch
+
+Patch NS using a command like this:
+% cd NSDIR
+% patch -p1 < CLICKDIR/etc/ns-VERSION-patch
