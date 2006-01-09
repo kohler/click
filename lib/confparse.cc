@@ -6,7 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000-2001 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
- * Copyright (c) 2004-2005 Regents of the University of California
+ * Copyright (c) 2004-2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1234,28 +1234,31 @@ read_unit(const char *s, const char *end,
   if (unit > unit_begin && unit[-1] == 0)
     unit--;
   while (unit > unit_begin) {
-    if (unit[-1] < 2) {
-      assert(unit - 3 >= unit_begin);
-      *power = (unit[-1] ? -(int) unit[-3] : unit[-3]);
-      *factor = unit[-2];
+    if (unit[-1] < 4) {
+	int type = unit[-1];
+	assert(unit - 3 - (type >= 2) >= unit_begin);
+	*factor = unit[-2];
+	if (type >= 2)
+	    unit--, *factor += 256 * unit[-2];
+	*power = (type & 1 ? -(int) unit[-3] : unit[-3]);
 
-      // check for SI prefix
-      if (prefix && work > s) {
-	for (; *prefix; prefix += 2)
-	  if (*prefix == work[-1]) {
-	    *power += (int) prefix[1] - 64;
-	    work--;
-	    break;
-	  }
-      }
+	// check for SI prefix
+	if (prefix && work > s) {
+	    for (; *prefix; prefix += 2)
+		if (*prefix == work[-1]) {
+		    *power += (int) prefix[1] - 64;
+		    work--;
+		    break;
+		}
+	}
       
-      while (work > s && isspace((unsigned char) work[-1]))
-	work--;
-      return work;
+	while (work > s && isspace((unsigned char) work[-1]))
+	    work--;
+	return work;
     } else if (unit[-1] != (unsigned char) work[-1]) {
-      while (unit > unit_begin && unit[-1] >= 2)
+      while (unit > unit_begin && unit[-1] >= 4)
 	unit--;
-      unit -= 3;
+      unit -= 3 + (unit[-1] >= 2);
       work = end;
     } else {
       unit--;
@@ -1266,7 +1269,14 @@ read_unit(const char *s, const char *end,
 }
 
 static const char seconds_units[] = "\
-\0\1\0s\0\1\0sec\1\6\0m\1\6\0min\2\044\0h\2\044\0hr";
+\0\1\0s\
+\0\1\0sec\
+\1\6\0m\
+\1\6\0min\
+\2\044\0h\
+\2\044\0hr\
+\2\003\140\2d\
+\2\003\140\2day";
 static const char seconds_prefixes[] = "m\075u\072n\067";
 
 bool cp_seconds_as(int want_power, const String &str, uint32_t *return_value)
@@ -1823,9 +1833,9 @@ cp_handler_name(const String& str,
   }
 
   const char *leftmost_dot = find(text, '.');
-  if (leftmost_dot == text.end()) {
+  if (leftmost_dot == text.end() || leftmost_dot == text.begin()) {
     *result_element = context->router()->root_element();
-    *result_hname = text;
+    *result_hname = (leftmost_dot == text.begin() ? text.substring(text.begin() + 1, text.end()) : text);
     return true;
   } else if (leftmost_dot == text.end() - 1) {
     errh->error("empty handler name");
@@ -3257,7 +3267,10 @@ cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vect
 String
 cp_unparse_bool(bool b)
 {
-  return String(b ? "true" : "false");
+    if (b)
+	return String::stable_string("true", 4);
+    else
+	return String::stable_string("false", 5);
 }
 
 #ifdef HAVE_INT64_TYPES
