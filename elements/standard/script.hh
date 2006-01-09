@@ -155,7 +155,8 @@ example, here's a passive script whose C<s.run> read handler returns the sum
 of two Counter handlers.
 
    ... c1 :: Counter ... c2 :: Counter ...
-   s :: Script(TYPE PASSIVE, return $(s.add $(c1.count) $(c2.count)))
+   s :: Script(TYPE PASSIVE,
+          return $(add $(c1.count) $(c2.count)))
 
 =item C<DRIVER>
 
@@ -192,6 +193,16 @@ handlers.
 	       goto begin_loop $(s.lt $x 5),
 	       stop);
 
+This can be further shortened since local handler references do not require
+the element name.  Thus, "$(s.add ...)" can be written "$(add ...)", as below.
+
+   Script(set x 0,
+          label begin_loop,
+	  print $x,
+	  set x $(add $x 1),
+	  goto begin_loop $(lt $x 5),
+	  stop);
+
 =h step write-only
 
 Advance the instruction pointer past the current blocking instruction (C<pause> or C<wait>).  A numeric argument will step past that many blocking instructions.
@@ -221,6 +232,17 @@ integers and returns their difference; for example, 'C<sub 10 5 2>' returns
 Useful for comparisons.  Compare two integer parameters and return the result.
 For example, 'C<eq 10 0xA>' returns "C<true>", but 'C<le 9 8>' returns
 "C<false>".
+
+=h not "read with parameters"
+
+Useful for true/false operations.  Parses its parameter as a Boolean and
+returns its negation.
+
+=h sprintf "read with parameters"
+
+Parses its parameters as a space-separated list of arguments.  The first
+argument is a format string; the remaining arguments are formatted
+accordingly.  For example, 'C<sprintf "%05x" 127>' returns "C<0007F>".
 
 =a DriverManager
 
@@ -269,6 +291,7 @@ class Script : public Element { public:
     int _insn_pos;
     int _step_count;
     int _type;
+    int _write_status;
 #if CLICK_USERLEVEL
     Vector<int> _signos;
 #endif

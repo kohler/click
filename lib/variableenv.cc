@@ -25,7 +25,7 @@
 CLICK_DECLS
 
 String
-cp_expand(const String &config, VariableExpander &ve)
+cp_expand(const String &config, VariableExpander &ve, bool expand_quote)
 {
     if (!config || find(config, '$') == config.end())
 	return config;
@@ -81,11 +81,11 @@ cp_expand(const String &config, VariableExpander &ve)
 		for (cstart = s; s < end && level; s++)
 		    switch (*s) {
 		      case '(':
-			if (nquote != '\'')
+			if (nquote == 0)
 			    level++;
 			break;
 		      case ')':
-			if (nquote != '\'')
+			if (nquote == 0)
 			    level--;
 			break;
 		      case '\"':
@@ -119,16 +119,27 @@ cp_expand(const String &config, VariableExpander &ve)
 		for (cstart = s; s < end && (isalnum(*s) || *s == '_'); s++)
 		    /* nada */;
 		vname = config.substring(cstart, s);
+
+	    } else if (s[1] == '?') {
+		vtype = 'a';
+		s++;
+		vname = config.substring(s, s + 1);
+		s++;
 		
 	    } else
 		break;
 
 	    output << config.substring(uninterpolated, beforedollar);
-	    if (ve.expand(vname, vtype, quote, output))
-		uninterpolated = s;
-	    else
-		uninterpolated = beforedollar;
-	    
+
+	    bool result;
+	    if (expand_quote && quote == 0) {
+		output << '\"';
+		result = ve.expand(vname, vtype, '\"', output);
+		output << '\"';
+	    } else
+		result = ve.expand(vname, vtype, quote, output);
+
+	    uninterpolated = (result ? s : beforedollar);
 	    s--;
 	}
 	}
@@ -146,7 +157,7 @@ String
 cp_expand_in_quotes(const String &s, int quote)
 {
     if (quote == '\"') {
-	String ss = cp_quote(cp_unquote(s));
+	String ss = cp_quote(s);
 	if (ss[0] == '\"')
 	    ss = ss.substring(1, ss.length() - 2);
 	return ss;

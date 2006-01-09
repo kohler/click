@@ -284,8 +284,7 @@ IPRw::Pattern::parse(const String &conf, Pattern **pstore,
 
     // check for IPRewriterPatterns reference
     if (words.size() == 1) {
-	String name = cp_unquote(words[0]);
-	if (Pattern *p = IPRewriterPatterns::find(e, name, errh)) {
+	if (Pattern *p = IPRewriterPatterns::find(e, words[0], errh)) {
 	    *pstore = p;
 	    return 0;
 	} else

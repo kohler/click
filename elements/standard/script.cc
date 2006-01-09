@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2001 Mazu Networks, Inc.
- * Copyright (c) 2005 Regents of the University of California
+ * Copyright (c) 2005-2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -92,7 +92,7 @@ Script::static_cleanup()
 }
 
 Script::Script()
-    : _type(TYPE_ACTIVE), _timer(this), _cur_steps(0)
+    : _type(TYPE_ACTIVE), _write_status(0), _timer(this), _cur_steps(0)
 {
 }
 
@@ -385,11 +385,12 @@ Script::step(int nsteps, int step_type, int njumps)
 #endif
 
 	    int before = cerrh.nerrors();
-	    String result = cp_expand(text, expander);
-	    if (text && (isalpha(text[0]) || text[0] == '@' || text[0] == '_'))
+	    String result;
+	    if (text && (isalpha(text[0]) || text[0] == '@' || text[0] == '_')) {
+		result = cp_expand(text, expander);
 		result = HandlerCall::call_read(result, this, &cerrh);
-	    else
-		result = cp_unquote(result);
+	    } else
+		result = cp_unquote(cp_expand(text, expander, true));
 	    if (cerrh.nerrors() == before && (!result || result.back() != '\n'))
 		result += "\n";
 	    
@@ -406,7 +407,7 @@ Script::step(int nsteps, int step_type, int njumps)
 	case INSN_READ: {
 	    HandlerCall hc(cp_expand(_args3[ipos], expander));
 	    if (hc.initialize_read(this, &cerrh) >= 0) {
-		String result = hc.call_read();
+		String result = hc.call_read(errh);
 		errh->message("%s:\n%s\n", hc.handler()->unparse_name(hc.element()).c_str(), result.c_str());
 	    }
 	    break;
@@ -415,7 +416,7 @@ Script::step(int nsteps, int step_type, int njumps)
 	case INSN_WRITE: {
 	    HandlerCall hc(cp_expand(_args3[ipos], expander));
 	    if (hc.initialize_write(this, &cerrh) >= 0)
-		(void) hc.call_write(&cerrh);
+		_write_status = hc.call_write(&cerrh);
 	    break;
 	}
 
@@ -435,7 +436,7 @@ Script::step(int nsteps, int step_type, int njumps)
 	    String cond_text = cp_expand(_args3[ipos], expander);
 	    bool cond;
 	    if (cond_text && !cp_bool(cond_text, &cond))
-		cerrh.error("bad condition");
+		cerrh.error("bad condition '%s'", cond_text.c_str());
 	    else if (!cond_text || cond) {
 		for (int i = _args[ipos]; i < ipos; i++)
 		    if (_insns[i] == INSN_WAIT_STEP)
@@ -489,11 +490,16 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
 	sa << cp_expand_in_quotes(script->_vars[x + 1], quote);
 	return true;
     }
+
+    if (vname.length() == 1 && vname[0] == '?') {
+	sa << script->_write_status;
+	return true;
+    }
     
     if (vartype == '(') {
 	HandlerCall hc(vname);
 	if (hc.initialize_read(script, errh) >= 0) {
-	    sa << cp_expand_in_quotes(hc.call_read(), quote);
+	    sa << cp_expand_in_quotes(hc.call_read(errh), quote);
 	    return true;
 	}
     }
@@ -505,7 +511,7 @@ enum {
     ST_STEP = 0, ST_RUN, ST_GOTO,
     AR_ADD = 0, AR_SUB,
     AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
-    AR_FIRST
+    AR_FIRST, AR_NOT, AR_SPRINTF
 };
 
 int
@@ -561,21 +567,27 @@ Script::step_handler(int, String &str, Element *e, const Handler *h, ErrorHandle
     return (last_insn == INSN_STOP);
 }
 
+#if HAVE_INT64_TYPES
+# define click_intmax_t int64_t
+# define click_uintmax_t uint64_t
+# define CLICK_INTMAX_CVT "ll"
+#else
+# define click_intmax_t int32_t
+# define click_uintmax_t uint32_t
+# define CLICK_INTMAX_CVT 'l'
+#endif
+
 int
 Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorHandler *errh)
 {
-#if HAVE_INT64_TYPES
-    int64_t accum = 0, arg;
-#else
-    int32_t accum = 0, arg;
-#endif
-    bool first = true;
     int what = (uintptr_t) h->thunk1();
 
     switch (what) {
 
     case AR_ADD:
-    case AR_SUB:
+    case AR_SUB: {
+	click_intmax_t accum = 0, arg;
+	bool first = true;
 	while (1) {
 	    String word = cp_pop_spacevec(str);
 	    if (!word && cp_is_space(str))
@@ -587,6 +599,7 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
 	}
 	str = String(accum);
 	return 0;
+    }
 
     case AR_FIRST:
 	str = cp_pop_spacevec(str);
@@ -598,15 +611,109 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
     case AR_LE:
     case AR_NE:
     case AR_GE: {
-	String a = cp_pop_spacevec(str);
-	String b = cp_pop_spacevec(str);
-	if (str || !cp_integer(a, &accum) || !cp_integer(b, &arg))
+	String astr = cp_pop_spacevec(str), bstr = cp_pop_spacevec(str);
+	click_intmax_t a, b;
+	if (str || !cp_integer(astr, &a) || !cp_integer(bstr, &b))
+	    return errh->error("syntax error '%s' '%s'", astr.c_str(), bstr.c_str());
+	int x = (a < b ? AR_LT : (a == b ? AR_EQ : AR_GT));
+	str = cp_unparse_bool(what == x || (what >= AR_GE && what != x + 3));
+	return 0;
+    }
+
+    case AR_NOT: {
+	bool x;
+	if (!cp_bool(cp_uncomment(str), &x))
 	    return errh->error("syntax error");
-	int x = (accum < arg ? AR_LT : (accum == arg ? AR_EQ : AR_GT));
-	if (what == x || (what >= AR_GE && what != x + 3))
-	    str = String::stable_string("true", 4);
-	else
-	    str = String::stable_string("false", 5);
+	str = cp_unparse_bool(!x);
+	return 0;
+    }
+
+    case AR_SPRINTF: {
+	String format = cp_unquote(cp_pop_spacevec(str));
+	const char *s = format.begin(), *pct, *end = format.end();
+	StringAccum result;
+	while ((pct = find(s, end, '%')) < end) {
+	    result << format.substring(s, pct);
+	    StringAccum pf;
+	    // flags
+	    do {
+		pf << *pct++;
+	    } while (pct < end && (*pct == '0' || *pct == '#'
+				|| *pct == '-' || *pct == ' ' || *pct == '+'));
+	    // field width
+	    int fw;
+	    if (pct < end && *pct == '*') {
+		if (!cp_integer(cp_pop_spacevec(str), &fw))
+		    return errh->error("syntax error");
+		pf << fw;
+	    } else
+		while (pct < end && *pct >= '0' && *pct <= '9')
+		    pf << *pct++;
+	    // precision
+	    if (pct < end && *pct == '.') {
+		pct++;
+		if (pct < end && *pct == '*') {
+		    if (!cp_integer(cp_pop_spacevec(str), &fw) || fw < 0)
+			return errh->error("syntax error");
+		    pf << '.' << fw;
+		} else if (pct < end && *pct >= '0' && *pct <= '9') {
+		    pf << '.';
+		    while (pct < end && *pct >= '0' && *pct <= '9')
+			pf << *pct++;
+		}
+	    }
+	    // width
+	    int width_flag = 0;
+	    while (1) {
+		if (pct < end && *pct == 'h')
+		    width_flag = 'h', pct++;
+		else if (pct < end && *pct == 'l')
+		    width_flag = (width_flag == 'l' ? 'q' : 'l'), pct++;
+		else if (pct < end && (*pct == 'L' || *pct == 'q'))
+		    width_flag = 'q', pct++;
+		else
+		    break;
+	    }
+	    // conversion
+	    ErrorHandler *xerrh = ErrorHandler::silent_handler();
+	    if (pct < end && (*pct == 'o' || *pct == 'x' || *pct == 'X' || *pct == 'u')) {
+		click_uintmax_t ival;
+		String x = cp_pop_spacevec(str);
+		if (!cp_unsigned(x, &ival))
+		    return errh->error("syntax error");
+		if (width_flag == 'h')
+		    ival = (unsigned short) ival;
+		else if (width_flag == 0 || width_flag == 'l')
+		    ival = (unsigned long) ival;
+		pf << CLICK_INTMAX_CVT << *pct;
+		result << xerrh->make_text(ErrorHandler::ERR_MESSAGE, pf.c_str(), ival);
+	    } else if (pct < end && (*pct == 'd' || *pct == 'i')) {
+		click_intmax_t ival;
+		if (!cp_integer(cp_pop_spacevec(str), &ival))
+		    return errh->error("syntax error");
+		if (width_flag == 'h')
+		    ival = (short) ival;
+		else if (width_flag == 0 || width_flag == 'l')
+		    ival = (long) ival;
+		pf << CLICK_INTMAX_CVT << *pct;
+		result << xerrh->make_text(ErrorHandler::ERR_MESSAGE, pf.c_str(), ival);
+	    } else if (pct < end && *pct == '%') {
+		pf << '%';
+		result << xerrh->make_text(ErrorHandler::ERR_MESSAGE, pf.c_str());
+	    } else if (pct < end && *pct == 's') {
+		String s;
+		if (!cp_string(cp_pop_spacevec(str), &s))
+		    return errh->error("syntax error");
+		pf << *pct;
+		result << xerrh->make_text(ErrorHandler::ERR_MESSAGE, pf.c_str(), s.c_str());
+	    } else
+		return errh->error("syntax error");
+	    s = pct + 1;
+	}
+	if (str)
+	    return errh->error("syntax error");
+	result << format.substring(s, pct);
+	str = result.take_string();
 	return 0;
     }
 	
@@ -629,6 +736,8 @@ Script::add_handlers()
     set_handler("ge", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_GE, 0);
     set_handler("lt", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_LT, 0);
     set_handler("le", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_LE, 0);
+    set_handler("not", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_NOT, 0);
+    set_handler("sprintf", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_SPRINTF, 0);
     set_handler("first", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_FIRST, 0);
 }
 

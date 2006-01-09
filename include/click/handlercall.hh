@@ -35,7 +35,7 @@ class HandlerCall { public:
 
     // Call this handler and return its result. Returns the empty string or
     // negative if the HandlerCall isn't ok().
-    inline String call_read() const;
+    inline String call_read(ErrorHandler* = 0) const;
     inline int call_write(ErrorHandler* = 0) const;
 
     // Call the specified handler and return its result. Returns the empty
@@ -121,9 +121,9 @@ HandlerCall::initialize_write(Element* context, ErrorHandler* errh)
 }
 
 inline String
-HandlerCall::call_read() const
+HandlerCall::call_read(ErrorHandler *errh) const
 {
-    return _h->call_read(_e, _value);
+    return _h->call_read(_e, _value, errh);
 }
 
 inline int

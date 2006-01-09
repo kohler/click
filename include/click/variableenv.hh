@@ -36,7 +36,7 @@ class VariableEnvironment : public VariableExpander { public:
 
 };
 
-String cp_expand(const String &, VariableExpander &);
+String cp_expand(const String &, VariableExpander &, bool expand_quote = false);
 String cp_expand_in_quotes(const String &, int quote);
 
 inline
