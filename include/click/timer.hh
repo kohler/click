@@ -136,7 +136,7 @@ Timer::reschedule_at(const Timestamp &when)
 inline void
 Timer::schedule_now()
 {
-    schedule_after(Timestamp::now());
+    schedule_at(Timestamp::now());
 }
 
 /** @brief Schedule the timer to fire after @a delta_sec seconds.
