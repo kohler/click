@@ -27,6 +27,14 @@
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <fcntl.h>
+#elif CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#  include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+#  include <linux/vmalloc.h>
+CLICK_CXX_UNPROTECT
+#  include <click/cxxunprotect.h>
+# endif
 #endif
 
 // Include header structures so we can check their sizes with static_assert.
