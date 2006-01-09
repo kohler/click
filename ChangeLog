@@ -1,3 +1,7 @@
+2006-01-09 Monday 14:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/glue.cc (1.53): vmalloc whoopsy
+
 2006-01-09 Monday 14:03  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* bsdmodule/clickfs_vnops.cc (1.15), bsdmodule/config.cc (1.12),
