@@ -111,14 +111,14 @@ static String
 IP6Fragmenter_read_drops(Element *xf, void *)
 {
   IP6Fragmenter *f = (IP6Fragmenter *)xf;
-  return String(f->drops()) + "\n";
+  return String(f->drops());
 }
 
 static String
 IP6Fragmenter_read_fragments(Element *xf, void *)
 {
   IP6Fragmenter *f = (IP6Fragmenter *)xf;
-  return String(f->fragments()) + "\n";
+  return String(f->fragments());
 }
 
 void

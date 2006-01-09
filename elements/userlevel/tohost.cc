@@ -115,9 +115,9 @@ ToHost_read_param(Element *e, void *thunk)
   ToHost *td = (ToHost *)e;
     switch ((uintptr_t) thunk) {
     case H_DEV_NAME:
-    return td->dev_name() + "\n";
+	return td->dev_name();
     default:
-	return "\n";
+	return "";
     }
 }
 

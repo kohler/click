@@ -38,7 +38,7 @@ static String
 dropbroadcasts_read_drops(Element *f, void *)
 {
   DropBroadcasts *q = (DropBroadcasts *)f;
-  return String(q->drops()) + "\n";
+  return String(q->drops());
 }
 
 void

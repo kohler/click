@@ -362,11 +362,11 @@ FromNetFlowSummaryDump::read_handler(Element *e, void *thunk)
     FromNetFlowSummaryDump *fd = static_cast<FromNetFlowSummaryDump *>(e);
     switch ((intptr_t)thunk) {
       case H_ACTIVE:
-	return cp_unparse_bool(fd->_active) + "\n";
+	return cp_unparse_bool(fd->_active);
       case H_ENCAP:
-	return "IP\n";
+	return "IP";
       default:
-	return "<error>\n";
+	return "<error>";
     }
 }
 

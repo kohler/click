@@ -286,7 +286,7 @@ static String
 pi_read_drops(Element *f, void *)
 {
     PI *r = (PI *)f;
-    return String(r->drops()) + "\n";
+    return String(r->drops());
 }
 
 String
@@ -295,13 +295,13 @@ PI::read_parameter(Element *f, void *vparam)
     PI *pi = (PI *)f;
     switch ((int)vparam) {
       case 0:			// w 
-	return String(pi->_w) + "\n";
+	return String(pi->_w);
       case 1:			// a 
-	return String(pi->_a) + "\n";
+	return String(pi->_a);
       case 2:			// b 
-	return String(pi->_b) + "\n";
+	return String(pi->_b);
       case 3:			// _target_q 
-	return String(pi->_target_q) + "\n";
+	return String(pi->_target_q);
       default:
 	return "";
     }

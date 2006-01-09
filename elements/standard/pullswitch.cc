@@ -63,7 +63,7 @@ String
 PullSwitch::read_param(Element *e, void *)
 {
   PullSwitch *sw = (PullSwitch *)e;
-  return String(sw->_input) + "\n";
+  return String(sw->_input);
 }
 
 int

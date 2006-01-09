@@ -995,13 +995,14 @@ Router::set_hotswap_router(Router *r)
 /** @brief Call a read handler, possibly with parameters.
     @param e element on which to call the handler
     @param param parameters, or an empty string if no parameters
+    @param raw true iff value is raw text (see raw())
     @param errh error handler
 
     The element must be nonnull; to call a global handler, pass the relevant
     router's Router::root_element().  @a errh may be null, in which case
     errors are reported to ErrorHandler::silent_handler(). */
 String
-Handler::call_read(Element* e, const String& param, ErrorHandler* errh) const
+Handler::call_read(Element* e, const String& param, bool raw, ErrorHandler* errh) const
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
@@ -1011,6 +1012,8 @@ Handler::call_read(Element* e, const String& param, ErrorHandler* errh) const
 	return _hook.rw.r(e, _thunk1);
     else if (_flags & OP_READ) {
 	String s(param);
+	if ((_flags & RAW) && !raw)
+	    s = cp_unquote(s);
 	if (_hook.h(OP_READ, s, e, this, errh) >= 0)
 	    return s;
     } else
@@ -1022,22 +1025,25 @@ Handler::call_read(Element* e, const String& param, ErrorHandler* errh) const
 /** @brief Call a write handler.
     @param s value to write to the handler
     @param e element on which to call the handler
+    @param raw true iff value is raw text (see raw())
     @param errh error handler
 
     The element must be nonnull; to call a global handler, pass the relevant
     router's Router::root_element().  @a errh may be null, in which case
     errors are reported to ErrorHandler::silent_handler(). */
 int
-Handler::call_write(const String& s, Element* e, ErrorHandler* errh) const
+Handler::call_write(const String& s, Element* e, bool raw, ErrorHandler* errh) const
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
+    String s_copy(s);
+    if ((_flags & RAW) && !raw)
+	s_copy = cp_unquote(s_copy);
     if ((_flags & (ONE_HOOK | OP_WRITE)) == OP_WRITE)
-	return _hook.rw.w(s, e, _thunk2, errh);
-    else if (_flags & OP_WRITE) {
-	String s_copy(s);
+	return _hook.rw.w(s_copy, e, _thunk2, errh);
+    else if (_flags & OP_WRITE)
 	return _hook.h(OP_WRITE, s_copy, e, this, errh);
-    } else {
+    else {
 	errh->error("'%s' not a write handler", unparse_name(e).c_str());
 	return -EACCES;
     }
@@ -1100,8 +1106,7 @@ Router::find_ehandler(int eindex, const String& name, bool allow_star) const
 	eh = _ehandler_next[eh];
     }
     if (allow_star && star_h >= 0 && xhandler(star_h)->writable()) {
-	String name_copy(name);
-	if (xhandler(star_h)->call_write(name_copy, element(eindex), ErrorHandler::default_handler()) >= 0)
+	if (xhandler(star_h)->call_write(name, element(eindex), true, ErrorHandler::default_handler()) >= 0)
 	    eh = find_ehandler(eindex, name, false);
     }
     return eh;

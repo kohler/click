@@ -104,13 +104,13 @@ TimedSource::read_param(Element *e, void *vparam)
    case 0:			// data
     return ts->_data;
    case 1:			// limit
-    return String(ts->_limit) + "\n";
+    return String(ts->_limit);
    case 2:			// interval
-    return cp_unparse_milliseconds(ts->_interval) + "\n";
+    return cp_unparse_milliseconds(ts->_interval);
    case 3:			// active
-    return cp_unparse_bool(ts->_active) + "\n";
+    return cp_unparse_bool(ts->_active);
    case 4:			// count
-    return String(ts->_count) + "\n";
+    return String(ts->_count);
    default:
     return "";
   }
@@ -124,15 +124,12 @@ TimedSource::change_param(const String &in_s, Element *e, void *vparam,
   String s = cp_uncomment(in_s);
   switch ((int)vparam) {
 
-   case 0: {			// data
-     String data;
-     if (!cp_string(s, &data))
-       return errh->error("data parameter must be string");
-     ts->_data = data;
-     if (ts->_packet) ts->_packet->kill();
-     ts->_packet = Packet::make(data.data(), data.length());
-     break;
-   }
+  case 0:			// data
+      ts->_data = in_s;
+      if (ts->_packet)
+	  ts->_packet->kill();
+      ts->_packet = Packet::make(ts->_data.data(), ts->_data.length());
+      break;
    
    case 1: {			// limit
      int limit;
@@ -176,6 +173,7 @@ TimedSource::add_handlers()
 {
   add_read_handler("data", read_param, (void *)0);
   add_write_handler("data", change_param, (void *)0);
+  set_handler_flags("data", Handler::RAW);
   add_read_handler("limit", read_param, (void *)1);
   add_write_handler("limit", change_param, (void *)1);
   add_read_handler("interval", read_param, (void *)2);

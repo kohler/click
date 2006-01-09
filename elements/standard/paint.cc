@@ -51,7 +51,7 @@ String
 Paint::color_read_handler(Element *e, void *)
 {
   Paint *the_paint = (Paint *)e;
-  return String(the_paint->color()) + "\n";
+  return String(the_paint->color());
 }
 
 void

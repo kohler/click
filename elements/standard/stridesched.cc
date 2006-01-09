@@ -162,7 +162,7 @@ read_tickets_handler(Element *e, void *thunk)
 {
     StrideSched *ss = (StrideSched *)e;
     int port = (intptr_t)thunk;
-    return String(ss->tickets(port)) + "\n";
+    return String(ss->tickets(port));
 }
 
 static int

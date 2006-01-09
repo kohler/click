@@ -72,7 +72,7 @@ String
 Block::thresh_read_handler(Element *e, void *)
 {
   Block *me = (Block *) e;
-  return String(me->_thresh) + "\n";
+  return String(me->_thresh);
 }
 
 void

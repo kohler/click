@@ -97,9 +97,9 @@ CPUQueue::read_handler(Element *e, void *thunk)
   CPUQueue *q = static_cast<CPUQueue *>(e);
   switch (reinterpret_cast<intptr_t>(thunk)) {
    case 0:
-    return String(q->capacity()) + "\n";
+    return String(q->capacity());
    case 1:
-    return String(q->drops()) + "\n";
+    return String(q->drops());
    default:
     return "";
   }

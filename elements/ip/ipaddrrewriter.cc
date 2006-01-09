@@ -234,7 +234,7 @@ String
 IPAddrRewriter::dump_nmappings_handler(Element *e, void *)
 {
     IPAddrRewriter *rw = (IPAddrRewriter *)e;
-    return String(rw->_map.size()) + "\n";
+    return String(rw->_map.size());
 }
 
 String

@@ -386,19 +386,19 @@ PollDevice_read_stats(Element *e, void *thunk)
   PollDevice *pd = (PollDevice *)e;
   switch (reinterpret_cast<intptr_t>(thunk)) {
    case 0:
-    return String(pd->_npackets) + "\n";
+    return String(pd->_npackets);
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
    case 1:
-    return String(pd->_push_cycles) + "\n";
+    return String(pd->_push_cycles);
 #endif
 #if CLICK_DEVICE_STATS
    case 2:
-    return String(pd->_time_poll) + "\n";
+    return String(pd->_time_poll);
    case 3:
-    return String(pd->_time_refill) + "\n";
+    return String(pd->_time_refill);
 #endif
    case 4:
-    return String(pd->_buffers_reused) + "\n";
+    return String(pd->_buffers_reused);
    default:
     return String();
   }

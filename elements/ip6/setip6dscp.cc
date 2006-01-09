@@ -80,7 +80,7 @@ static String
 SetIP6DSCP_read_dscp(Element *xf, void *)
 {
   SetIP6DSCP *f = (SetIP6DSCP *)xf;
-  return String((int)f->dscp()) + "\n";
+  return String((int)f->dscp());
 }
 
 void

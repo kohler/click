@@ -136,7 +136,7 @@ ComparePackets::read_handler(Element *e, void *thunk)
     ComparePackets *cp = static_cast<ComparePackets *>(e);
     switch ((uintptr_t) thunk) {
       case H_DIFFS:
-	return String(cp->_ndiff) + "\n";
+	return String(cp->_ndiff);
       case H_DIFF_DETAILS: {
 	  StringAccum sa;
 	  for (int i = 0; i < D_LAST; i++)
@@ -144,9 +144,9 @@ ComparePackets::read_handler(Element *e, void *thunk)
 	  return sa.take_string();
       }
       case H_ALL_SAME:
-	return (cp->_ndiff == 0 ? "true\n" : "false\n");
+	return cp_unparse_bool(cp->_ndiff == 0);
       default:
-	return "<error>\n";
+	return "<error>";
     }
 }
 

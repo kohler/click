@@ -268,15 +268,15 @@ ToDevice::read_param(Element *e, void *thunk)
   ToDevice *td = (ToDevice *)e;
   switch((uintptr_t) thunk) {
   case H_DEBUG:
-    return String(td->_debug) + "\n";
+      return String(td->_debug);
   case H_SIGNAL:
-    return String(td->_signal) + "\n";
+      return String(td->_signal);
   case H_PULLS:
-    return String(td->_pulls) + "\n";
+      return String(td->_pulls);
   case H_Q:
-    return String((bool) td->_q) + "\n";
+      return String((bool) td->_q);
   default:
-    return String();
+      return String();
   }
 }
 

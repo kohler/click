@@ -72,7 +72,7 @@ static String
 DecIPTTL_read_drops(Element *xf, void *)
 {
   DecIPTTL *f = (DecIPTTL *)xf;
-  return String(f->drops()) + "\n";
+  return String(f->drops());
 }
 
 void

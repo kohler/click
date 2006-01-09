@@ -225,9 +225,9 @@ ICMPPingSource::read_handler(Element *e, void *thunk)
     ReceiverInfo *ri = ps->_receiver;
     switch ((uintptr_t)thunk) {
       case H_ACTIVE:
-	return String(ps->_active) + "\n";
+	return String(ps->_active);
       case H_COUNT:
-	return String(ps->_count) + "\n";
+	return String(ps->_count);
       case H_SUMMARY: {
 	  StringAccum sa;
 	  sa << ps->_count << " packets transmitted"
@@ -245,11 +245,11 @@ ICMPPingSource::read_handler(Element *e, void *thunk)
 	  return sa.take_string();
 	}
       case H_RTT_MIN:
-	return cp_unparse_microseconds(ri->time_min) + "\n";
+	return cp_unparse_microseconds(ri->time_min);
       case H_RTT_AVG:
-	return cp_unparse_microseconds(ri->time_sum / (ri->nreceived ? ri->nreceived : 1)) + "\n";
+	return cp_unparse_microseconds(ri->time_sum / (ri->nreceived ? ri->nreceived : 1));
       case H_RTT_MAX:
-	return cp_unparse_microseconds(ri->time_max) + "\n";
+	return cp_unparse_microseconds(ri->time_max);
       default:
 	return "";
     }

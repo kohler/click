@@ -457,18 +457,18 @@ FromDevice::read_kernel_drops(Element* e, void*)
     bool known;
     fd->kernel_drops(known, max_drops);
     if (known)
-	return String(max_drops) + "\n";
+	return String(max_drops);
     else if (max_drops >= 0)
-	return "<" + String(max_drops) + "\n";
+	return "<" + String(max_drops);
     else
-	return "??\n";
+	return "??";
 }
 
 String
 FromDevice::read_encap(Element* e, void*)
 {
     FromDevice* fd = static_cast<FromDevice*>(e);
-    return String(fake_pcap_unparse_dlt(fd->_datalink)) + "\n";
+    return String(fake_pcap_unparse_dlt(fd->_datalink));
 }
 
 void

@@ -622,13 +622,13 @@ FromTcpdump::read_handler(Element *e, void *thunk)
     FromTcpdump *fd = static_cast<FromTcpdump *>(e);
     switch ((intptr_t)thunk) {
       case H_SAMPLING_PROB:
-	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
+	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT);
       case H_ACTIVE:
-	return cp_unparse_bool(fd->_active) + "\n";
+	return cp_unparse_bool(fd->_active);
       case H_ENCAP:
-	return "IP\n";
+	return "IP";
       default:
-	return "<error>\n";
+	return "<error>";
     }
 }
 

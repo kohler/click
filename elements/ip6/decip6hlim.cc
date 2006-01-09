@@ -62,7 +62,7 @@ static String
 DecIP6HLIM_read_drops(Element *xf, void *)
 {
   DecIP6HLIM *f = (DecIP6HLIM *)xf;
-  return String(f->drops()) + "\n";
+  return String(f->drops());
 }
 
 void

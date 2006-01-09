@@ -1614,26 +1614,36 @@ Element::set_handler(const String& name, int flags, HandlerHook hook, void* thun
     Router::set_handler(this, name, flags, hook, thunk1, thunk2);
 }
 
+/** @brief Sets flags for the handler named @a name.
+ *
+ * @param name handler name
+ * @param flags handler flags to set
+ *
+ * Sets flags for any handlers named @a name for this element.  Fails if no @a
+ * name handler exists.
+ */
+int
+Element::set_handler_flags(const String& name, int flags)
+{
+    return Router::change_handler_flags(this, name, 0, flags);
+}
+
 static String
 read_class_handler(Element *e, void *)
 {
-    return String(e->class_name()) + "\n";
+    return String(e->class_name());
 }
 
 static String
 read_name_handler(Element *e, void *)
 {
-  return e->name() + "\n";
+    return e->name();
 }
 
 static String
 read_config_handler(Element *e, void *)
 {
-    String s = e->configuration();
-    if (s.length() && s.back() != '\n')
-	return s + "\n";
-    else
-	return s;
+    return e->configuration();
 }
 
 static int
@@ -1709,7 +1719,7 @@ read_cycles_handler(Element *f, void *)
 {
   return(String(f->_calls) + "\n" +
          String(f->_self_cycles) + "\n" +
-         String(f->_child_cycles) + "\n");
+         String(f->_child_cycles));
 }
 #endif
 
@@ -1737,7 +1747,7 @@ static String
 read_task_tickets(Element *e, void *thunk)
 {
   Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
-  return String(task->tickets()) + "\n";
+  return String(task->tickets());
 }
 
 static int
@@ -1763,7 +1773,7 @@ static String
 read_task_scheduled(Element *e, void *thunk)
 {
   Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
-  return String(task->scheduled()) + "\n";
+  return String(task->scheduled());
 }
 
 #if __MTCLICK__
@@ -1771,7 +1781,7 @@ static String
 read_task_home_thread(Element *e, void *thunk)
 {
   Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
-  return String(task->home_thread_id())+String("\n");
+  return String(task->home_thread_id());
 }
 #endif
 
@@ -1843,11 +1853,7 @@ Element::read_positional_handler(Element *element, void *thunk)
   uintptr_t no = (uintptr_t) thunk;
   if (no >= (uintptr_t) conf.size())
     return String();
-  String s = conf[no];
-  // add trailing "\n" if appropriate
-  if (s && s.back() != '\n')
-    s += "\n";
-  return s;
+  return conf[no];
 }
 
 /** @brief Standard read handler returning a keyword argument.
@@ -1879,9 +1885,6 @@ Element::read_keyword_handler(Element *element, void *thunk)
     if (cp_va_parse_keyword(conf[i], element, ErrorHandler::silent_handler(),
 			    kw, cpArgument, &s, cpEnd) > 0)
       break;
-  // add trailing "\n" if appropriate
-  if (s && s.back() != '\n')
-    s += "\n";
   return s;
 }
 

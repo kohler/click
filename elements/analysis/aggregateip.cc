@@ -158,13 +158,13 @@ AggregateIP::read_handler(Element *e, void *thunk)
       case 0:
 	return NameInfo::revquery_int(NameInfo::T_IP_PROTO, e, aip->_f.proto());
       case 1:
-	return String(aip->_f.bit_offset()) + "\n";
+	return String(aip->_f.bit_offset());
       case 2:
-	return String(aip->_f.bit_length()) + "\n";
+	return String(aip->_f.bit_length());
       case 3:
-	return aip->_f.unparse(e, false) + "\n";
+	return aip->_f.unparse(e, false);
       default:
-	return "<error>\n";
+	return "<error>";
     }
 }
 

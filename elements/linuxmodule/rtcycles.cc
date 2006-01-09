@@ -54,9 +54,9 @@ RTCycles_read_cycles(Element *e, void *thunk)
   RTCycles *s = static_cast<RTCycles *>(e);
   switch (reinterpret_cast<intptr_t>(thunk)) {
    case 0:
-    return String(s->_npackets) + "\n";
+    return String(s->_npackets);
    case 1:
-    return String(s->_accum) + "\n";
+    return String(s->_accum);
    default:
     return String();
   }

@@ -186,7 +186,7 @@ static String
 IPGWOptions_read_drops(Element *xf, void *)
 {
   IPGWOptions *f = (IPGWOptions *)xf;
-  return String(f->drops()) + "\n";
+  return String(f->drops());
 }
 
 void

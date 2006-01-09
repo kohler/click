@@ -435,18 +435,18 @@ FromFlanDump::read_handler(Element *e, void *thunk)
     FromFlanDump *fd = static_cast<FromFlanDump *>(e);
     switch ((intptr_t)thunk) {
       case ACTIVE_THUNK:
-	return cp_unparse_bool(fd->_active) + "\n";
+	return cp_unparse_bool(fd->_active);
       case FILESIZE_THUNK: {
 	  struct stat s;
 	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))
-	      return String(s.st_size) + "\n";
+	      return String(s.st_size);
 	  else
-	      return "-\n";
+	      return "-";
       }
       case FILEPOS_THUNK:
-	return String(fd->_file_offset + fd->_pos) + "\n";
+	return String(fd->_file_offset + fd->_pos);
       default:
-	return "<error>\n";
+	return "<error>";
     }
 }
 

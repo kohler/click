@@ -166,15 +166,15 @@ RatedSource::read_param(Element *e, void *vparam)
    case 0:			// data
     return rs->_data;
    case 1:			// rate
-    return String(rs->_rate.rate()) + "\n";
+    return String(rs->_rate.rate());
    case 2:			// limit
-    return (rs->_limit != NO_LIMIT ? String(rs->_limit) + "\n" : String("-1\n"));
+    return (rs->_limit != NO_LIMIT ? String(rs->_limit) : String("-1"));
    case 3:			// active
-    return cp_unparse_bool(rs->_active) + "\n";
+    return cp_unparse_bool(rs->_active);
    case 4:			// count
-    return String(rs->_count) + "\n";
+    return String(rs->_count);
   case 6:			// datasize
-    return String(rs->_datasize) + "\n";
+    return String(rs->_datasize);
    default:
     return "";
   }
@@ -188,15 +188,12 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
   String s = cp_uncomment(in_s);
   switch ((int)vparam) {
 
-   case 0: {			// data
-     String data;
-     if (!cp_string(s, &data))
-       return errh->error("data parameter must be string");
-     rs->_data = data;
-     if (rs->_packet) rs->_packet->kill();
-     rs->_packet = Packet::make(data.data(), data.length());
-     break;
-   }
+  case 0:			// data
+      rs->_data = in_s;
+      if (rs->_packet)
+	  rs->_packet->kill();
+      rs->_packet = Packet::make(rs->_data.data(), rs->_data.length());
+      break;
    
    case 1: {			// rate
      unsigned rate;
@@ -254,6 +251,7 @@ RatedSource::add_handlers()
 {
   add_read_handler("data", read_param, (void *)0);
   add_write_handler("data", change_param, (void *)0);
+  set_handler_flags("data", Handler::RAW);
   add_read_handler("rate", read_param, (void *)1);
   add_write_handler("rate", change_param, (void *)1);
   add_read_handler("limit", read_param, (void *)2);

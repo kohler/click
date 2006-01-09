@@ -273,9 +273,9 @@ IPRouteTable::lookup_handler(int, String& s, Element* e, const Handler*, ErrorHa
 	IPAddress gw;
 	int port = table->lookup_route(a, gw);
 	if (gw)
-	    s = String(port) + " " + gw.unparse() + "\n";
+	    s = String(port) + " " + gw.unparse();
 	else
-	    s = String(port) + "\n";
+	    s = String(port);
 	return 0;
     } else
 	return errh->error("expected IP address, not '%s'", s.c_str());

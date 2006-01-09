@@ -144,7 +144,7 @@ static String
 CheckIP6Header_read_drops(Element *xf, void *)
 {
   CheckIP6Header *f = (CheckIP6Header *)xf;
-  return String(f->drops()) + "\n";
+  return String(f->drops());
 }
 
 void

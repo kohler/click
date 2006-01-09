@@ -91,7 +91,7 @@ String
 MarkIPCE::read_handler(Element *e, void *)
 {
   MarkIPCE *m = (MarkIPCE *)e;
-  return String(m->_drops) + "\n";
+  return String(m->_drops);
 }
 
 void

@@ -275,10 +275,10 @@ class Handler { public:
     enum Flags {
 	OP_READ = 1, OP_WRITE = 2, READ_PARAM = 4, ONE_HOOK = 8,
 	PRIVATE_MASK = 0xF,
-	EXCLUSIVE = 16,
-	DRIVER_FLAG_0 = 32, DRIVER_FLAG_1 = 64,
-	DRIVER_FLAG_2 = 128, DRIVER_FLAG_3 = 256,
-	USER_FLAG_SHIFT = 9, USER_FLAG_0 = 1 << USER_FLAG_SHIFT
+	EXCLUSIVE = 16, RAW = 32,
+	DRIVER_FLAG_0 = 64, DRIVER_FLAG_1 = 128,
+	DRIVER_FLAG_2 = 256, DRIVER_FLAG_3 = 512,
+	USER_FLAG_SHIFT = 10, USER_FLAG_0 = 1 << USER_FLAG_SHIFT
     };
 
     inline const String &name() const;
@@ -293,10 +293,11 @@ class Handler { public:
     inline bool write_visible() const;
     inline bool visible() const;
     inline bool exclusive() const;
+    inline bool raw() const;
 
     inline String call_read(Element *, ErrorHandler * = 0) const;
-    String call_read(Element *, const String &, ErrorHandler * = 0) const;
-    int call_write(const String &, Element *, ErrorHandler *) const;
+    String call_read(Element *, const String &, bool, ErrorHandler *) const;
+    int call_write(const String &, Element *, bool, ErrorHandler *) const;
   
     String unparse_name(Element *) const;
     static String unparse_name(Element *, const String &);
@@ -609,6 +610,18 @@ Handler::exclusive() const
     return _flags & EXCLUSIVE;
 }
 
+/** @brief Returns true iff quotes should be removed when calling this
+    handler.
+
+    A raw handler expects and returns raw text.  Click will unquote quoted
+    text before passing it to a raw handler, and (in the Linux kernel module)
+    will not add a courtesy newline to the end of a raw handler's value. */
+inline bool
+Handler::raw() const
+{
+    return _flags & RAW;
+}
+
 /** @brief Call a read handler without parameters.
     @param e element on which to call the handler
     @param errh error handler
@@ -619,7 +632,7 @@ Handler::exclusive() const
 inline String
 Handler::call_read(Element* e, ErrorHandler* errh) const
 {
-    return call_read(e, String(), errh);
+    return call_read(e, String(), false, errh);
 }
 
 /** @brief Returns a handler incapable of doing anything. */

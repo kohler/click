@@ -74,7 +74,7 @@ static String
 averagecounter_read_count_handler(Element *e, void *)
 {
   AverageCounter *c = (AverageCounter *)e;
-  return String(c->count()) + "\n";
+  return String(c->count());
 }
 
 static String
@@ -85,7 +85,7 @@ averagecounter_read_rate_handler(Element *e, void *)
   d -= c->ignore();
   if (d < 1) d = 1;
   int rate = c->count() * CLICK_HZ / d;
-  return String(rate) + "\n";
+  return String(rate);
 }
 
 static int

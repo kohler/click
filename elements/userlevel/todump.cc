@@ -263,10 +263,10 @@ ToDump::read_handler(Element *e, void *thunk)
 {
     ToDump *td = static_cast<ToDump *>(e);
     switch ((uintptr_t) thunk) {
-      case H_FILENAME:
-	return td->_filename + "\n";
-      default:
-	return "<error>\n";
+    case H_FILENAME:
+	return td->_filename;
+    default:
+	return "<error>";
     }
 }
 

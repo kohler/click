@@ -538,7 +538,7 @@ String
 FromFile::filename_handler(Element *e, void *thunk)
 {
     FromFile *fd = reinterpret_cast<FromFile *>((uint8_t *)e + (intptr_t)thunk);
-    return fd->print_filename() + "\n";
+    return fd->print_filename();
 }
 
 String
@@ -547,16 +547,16 @@ FromFile::filesize_handler(Element *e, void *thunk)
     FromFile *fd = reinterpret_cast<FromFile *>((uint8_t *)e + (intptr_t)thunk);
     struct stat s;
     if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))
-	return String(s.st_size) + "\n";
+	return String(s.st_size);
     else
-	return "-\n";
+	return "-";
 }
 
 String
 FromFile::filepos_handler(Element* e, void* thunk)
 {
     FromFile* fd = reinterpret_cast<FromFile*>((uint8_t*)e + (intptr_t)thunk);
-    return String(fd->_file_offset + fd->_pos) + "\n";
+    return String(fd->_file_offset + fd->_pos);
 }
 
 int

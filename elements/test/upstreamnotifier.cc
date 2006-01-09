@@ -74,7 +74,7 @@ read_param(Element *e, void *thunk)
 {
   UpstreamNotifier *f = (UpstreamNotifier *)e;
   switch ((uintptr_t) thunk) {
-  case H_SIGNAL: return String(f->_notifier.active()) + "\n";
+  case H_SIGNAL: return String(f->_notifier.active());
   }
   return String();
 }

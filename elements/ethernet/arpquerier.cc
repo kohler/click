@@ -465,11 +465,11 @@ ARPQuerier::read_stats(Element *e, void *thunk)
         String(q->_drops.value()) + " packets killed\n" +
         String(q->_arp_queries.value()) + " ARP queries sent\n";
     case 1:
-      return String(q->_arp_queries.value()) + "\n";
+      return String(q->_arp_queries.value());
     case 2:
-      return String(q->_arp_responses.value()) + "\n";
+      return String(q->_arp_responses.value());
     case 3:
-      return String(q->_drops.value()) + "\n";
+      return String(q->_drops.value());
     default:
       return String();
   }

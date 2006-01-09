@@ -315,7 +315,7 @@ static String
 red_read_drops(Element *f, void *)
 {
     RED *r = (RED *)f;
-    return String(r->drops()) + "\n";
+    return String(r->drops());
 }
 
 String
@@ -324,13 +324,13 @@ RED::read_parameter(Element *f, void *vparam)
     RED *red = (RED *)f;
     switch ((int)vparam) {
       case 0:			// min_thresh
-	return String(red->_min_thresh) + "\n";
+	return String(red->_min_thresh);
       case 1:			// max_thresh
-	return String(red->_max_thresh) + "\n";
+	return String(red->_max_thresh);
       case 2:			// max_p
-	return cp_unparse_real2(red->_max_p, 16) + "\n";
+	return cp_unparse_real2(red->_max_p, 16);
       case 3:			// avg_queue_size
-	return cp_unparse_real2(red->_size.average(), QUEUE_SCALE) + "\n";
+	return cp_unparse_real2(red->_size.average(), QUEUE_SCALE);
       default:
 	return "";
     }

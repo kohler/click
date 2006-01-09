@@ -121,21 +121,21 @@ String
 CompareBlock::fwd_weight_read_handler(Element *e, void *)
 {
   CompareBlock *me = (CompareBlock *) e;
-  return String(me->_fwd_weight) + "\n";
+  return String(me->_fwd_weight);
 }
 
 String
 CompareBlock::rev_weight_read_handler(Element *e, void *)
 {
   CompareBlock *me = (CompareBlock *) e;
-  return String(me->_rev_weight) + "\n";
+  return String(me->_rev_weight);
 }
 
 String
 CompareBlock::thresh_read_handler(Element *e, void *)
 {
   CompareBlock *me = (CompareBlock *) e;
-  return String(me->_thresh) + "\n";
+  return String(me->_thresh);
 }
 
 void

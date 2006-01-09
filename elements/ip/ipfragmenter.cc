@@ -172,14 +172,14 @@ static String
 IPFragmenter_read_drops(Element *xf, void *)
 {
     IPFragmenter *f = (IPFragmenter *)xf;
-    return String(f->drops()) + "\n";
+    return String(f->drops());
 }
 
 static String
 IPFragmenter_read_fragments(Element *xf, void *)
 {
     IPFragmenter *f = (IPFragmenter *)xf;
-    return String(f->fragments()) + "\n";
+    return String(f->fragments());
 }
 
 void

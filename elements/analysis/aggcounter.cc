@@ -437,9 +437,9 @@ AggregateCounter::read_handler(Element *e, void *thunk)
     AggregateCounter *ac = static_cast<AggregateCounter *>(e);
     switch ((int)thunk) {
       case AC_FROZEN:
-	return cp_unparse_bool(ac->_frozen) + "\n";
+	return cp_unparse_bool(ac->_frozen);
       case AC_ACTIVE:
-	return cp_unparse_bool(ac->_active) + "\n";
+	return cp_unparse_bool(ac->_active);
       case AC_BANNER:
 	return ac->_output_banner;
       case AC_AGGREGATE_CALL:
@@ -453,9 +453,9 @@ AggregateCounter::read_handler(Element *e, void *thunk)
 	else
 	    return String(ac->_call_count) + " " + ac->_call_count_h->unparse();
       case AC_COUNT:
-	return String(ac->_count) + "\n";
+	return String(ac->_count);
       case AC_NAGG:
-	return String(ac->_num_nonzero) + "\n";
+	return String(ac->_num_nonzero);
       default:
 	return "<error>";
     }
@@ -541,6 +541,7 @@ AggregateCounter::add_handlers()
     add_write_handler("counts_pdf", write_handler, (void *)AC_REAGGREGATE);
     add_read_handler("banner", read_handler, (void *)AC_BANNER);
     add_write_handler("banner", write_handler, (void *)AC_BANNER);
+    set_handler_flags("banner", Handler::RAW);
     add_write_handler("clear", write_handler, (void *)AC_CLEAR);
     add_read_handler("aggregate_call", read_handler, (void *)AC_AGGREGATE_CALL);
     add_write_handler("aggregate_call", write_handler, (void *)AC_AGGREGATE_CALL);

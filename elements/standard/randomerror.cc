@@ -184,16 +184,16 @@ random_bit_errors_read(Element *f, void *vwhich)
   int which = (int)vwhich;
   RandomBitErrors *lossage = (RandomBitErrors *)f;
   if (which == 0)
-    return cp_unparse_real2(lossage->p_bit_error(), 16) + "\n";
+    return cp_unparse_real2(lossage->p_bit_error(), 16);
   else if (which == 1) {
     switch (lossage->kind()) {
-     case 0: return "clear\n";
-     case 1: return "set\n";
-     case 2: return "flip\n";
-     default: return "??\n";
+     case 0: return "clear";
+     case 1: return "set";
+     case 2: return "flip";
+     default: return "??";
     }
   } else
-    return (lossage->on() ? "true\n" : "false\n");
+      return cp_unparse_bool(lossage->on());
 }
 
 void

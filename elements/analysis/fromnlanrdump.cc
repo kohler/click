@@ -351,15 +351,15 @@ FromNLANRDump::read_handler(Element *e, void *thunk)
     FromNLANRDump *fd = static_cast<FromNLANRDump *>(e);
     switch ((intptr_t)thunk) {
       case H_SAMPLING_PROB:
-	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
+	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT);
       case H_ACTIVE:
-	return cp_unparse_bool(fd->_active) + "\n";
+	return cp_unparse_bool(fd->_active);
       case H_ENCAP:
-	return "IP\n";
+	return "IP";
       case H_PACKET_FILEPOS:
-	return String(fd->_packet_filepos) + "\n";
+	return String(fd->_packet_filepos);
       default:
-	return "<error>\n";
+	return "<error>";
     }
 }
 

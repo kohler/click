@@ -70,7 +70,7 @@ LinkFailureDetection::call_handler(EtherAddress dst) {
   if (h->writable()) {
     ContextErrorHandler cerrh
       (errh, "In write handler `" + h->unparse_name(_handler_e) + "':");
-    h->call_write(dst.s(), _handler_e, &cerrh);
+    h->call_write(dst.s(), _handler_e, false, &cerrh);
   } else {
     errh->error("%s: no write handler `%s'", 
 		name().c_str(), 

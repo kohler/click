@@ -117,14 +117,14 @@ Counter::read_handler(Element *e, void *thunk)
     Counter *c = (Counter *)e;
     switch ((intptr_t)thunk) {
       case H_COUNT:
-	return String(c->_count) + "\n";
+	return String(c->_count);
       case H_BYTE_COUNT:
-	return String(c->_byte_count) + "\n";
+	return String(c->_byte_count);
       case H_RATE:
 	c->_rate.update_time();	// drop rate after zero period
-	return c->_rate.unparse() + "\n";
+	return c->_rate.unparse();
       default:
-	return "<error>\n";
+	return "<error>";
     }
 }
 

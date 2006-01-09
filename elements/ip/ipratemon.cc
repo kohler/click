@@ -348,14 +348,14 @@ String
 IPRateMonitor::mem_read_handler(Element *e, void *)
 {
   IPRateMonitor *me = (IPRateMonitor *) e;
-  return String(me->_alloced_mem) + "\n";
+  return String(me->_alloced_mem);
 }
 
 String
 IPRateMonitor::memmax_read_handler(Element *e, void *)
 {
   IPRateMonitor *me = (IPRateMonitor *) e;
-  return String(me->_memmax) + "\n";
+  return String(me->_memmax);
 }
 
 int

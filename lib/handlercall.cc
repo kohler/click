@@ -114,10 +114,11 @@ String
 HandlerCall::call_read(Element* e, const String& hname, ErrorHandler* errh)
 {
     HandlerCall hc;
-    if (hc.assign(e, hname, "", CHECK_READ, errh) >= 0)
-	return hc._h->call_read(hc._e);
+    String empty;
+    if (hc.assign(e, hname, empty, CHECK_READ, errh) >= 0)
+	return hc._h->call_read(hc._e, empty, true, errh);
     else
-	return "";
+	return empty;
 }
 
 int
@@ -159,7 +160,6 @@ HandlerCall::call_write(const String &hdesc, const String &value, Element *e, Er
     } else
 	return -EINVAL;
 }
-
 
 String
 HandlerCall::unparse() const

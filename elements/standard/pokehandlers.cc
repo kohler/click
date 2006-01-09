@@ -138,7 +138,7 @@ String
 PokeHandlers::read_param(Element *e, void *)
 {
     PokeHandlers *p = (PokeHandlers *)e;
-    return cp_unparse_bool(p->_paused) + "\n";
+    return cp_unparse_bool(p->_paused);
 }
 
 int
@@ -204,7 +204,7 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
 	    if (h->writable()) {
 		ContextErrorHandler cerrh
 		    (errh, "In write handler '" + h->unparse_name(he) + "':");
-		h->call_write(poke->_h_value[hpos], he, &cerrh);
+		h->call_write(poke->_h_value[hpos], he, false, &cerrh);
 	    } else
 		perrh.error("no write handler '%s'", h->unparse_name(he).c_str());
 	}

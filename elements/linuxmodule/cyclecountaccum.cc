@@ -64,11 +64,11 @@ CycleCountAccum::read_handler(Element *e, void *thunk)
     CycleCountAccum *cca = static_cast<CycleCountAccum *>(e);
     switch ((uintptr_t)thunk) {
       case 0:
-	return String(cca->_count) + "\n";
+	return String(cca->_count);
       case 1:
-	return String(cca->_accum) + "\n";
+	return String(cca->_accum);
       case 2:
-	return String(cca->_zero_count) + "\n";
+	return String(cca->_zero_count);
       default:
 	return String();
     }

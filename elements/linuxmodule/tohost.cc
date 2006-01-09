@@ -206,7 +206,7 @@ String
 ToHost::read_handler(Element *e, void *)
 {
     ToHost *th = static_cast<ToHost *>(e);
-    return String(th->_drops) + "\n";
+    return String(th->_drops);
 }
 
 void

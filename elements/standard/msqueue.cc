@@ -132,11 +132,11 @@ MSQueue::read_handler(Element *e, void *thunk)
   int which = reinterpret_cast<intptr_t>(thunk);
   switch (which) {
    case 0:
-    return String(q->size()) + "\n";
+    return String(q->size());
    case 1:
-    return String(q->capacity()) + "\n";
+    return String(q->capacity());
    case 2:
-    return String(q->drops()) + "\n";
+    return String(q->drops());
    default:
     return "";
   }

@@ -175,15 +175,15 @@ InfiniteSource::read_param(Element *e, void *vparam)
    case 0:			// data
     return is->_data;
    case 1:			// limit
-    return String(is->_limit) + "\n";
+    return String(is->_limit);
    case 2:			// burstsize
-    return String(is->_burstsize) + "\n";
+    return String(is->_burstsize);
    case 3:			// active
-    return cp_unparse_bool(is->_active) + "\n";
+    return cp_unparse_bool(is->_active);
    case 4:			// count
-    return String(is->_count) + "\n";
+    return String(is->_count);
    case 6:			// datasize
-    return String(is->_datasize) + "\n";
+    return String(is->_datasize);
    default:
     return "";
   }
@@ -260,6 +260,7 @@ InfiniteSource::add_handlers()
 {
   add_read_handler("data", read_param, (void *)0);
   add_write_handler("data", change_param, (void *)0);
+  set_handler_flags("data", Handler::RAW);
   add_read_handler("limit", read_param, (void *)1);
   add_write_handler("limit", change_param, (void *)1);
   add_read_handler("burstsize", read_param, (void *)2);

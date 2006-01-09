@@ -333,7 +333,7 @@ static String
 FastTCPFlows_read_count_handler(Element *e, void *)
 {
   FastTCPFlows *c = (FastTCPFlows *)e;
-  return String(c->count()) + "\n";
+  return String(c->count());
 }
 
 static String
@@ -344,9 +344,9 @@ FastTCPFlows_read_rate_handler(Element *e, void *)
     int d = c->last() - c->first();
     if (d < 1) d = 1;
     int rate = c->count() * CLICK_HZ / d;
-    return String(rate) + "\n";
+    return String(rate);
   } else {
-    return String("0\n");
+    return String("0");
   }
 }
 

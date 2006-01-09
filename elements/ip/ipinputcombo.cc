@@ -161,7 +161,7 @@ static String
 IPInputCombo_read_drops(Element *xf, void *)
 {
   IPInputCombo *f = (IPInputCombo *)xf;
-  return String(f->drops()) + "\n";
+  return String(f->drops());
 }
 
 void

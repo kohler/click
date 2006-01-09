@@ -269,7 +269,7 @@ CheckIPHeader::read_handler(Element *e, void *thunk)
   switch ((intptr_t)thunk) {
 
    case 0:			// drops
-    return String(c->_drops) + "\n";
+    return String(c->_drops);
 
    case 1: {			// drop_details
      StringAccum sa;
@@ -279,7 +279,7 @@ CheckIPHeader::read_handler(Element *e, void *thunk)
    }
 
    default:
-    return String("<error>\n");
+    return String("<error>");
 
   }
 }

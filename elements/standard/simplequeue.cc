@@ -205,13 +205,13 @@ SimpleQueue::read_handler(Element *e, void *thunk)
     int which = reinterpret_cast<intptr_t>(thunk);
     switch (which) {
       case 0:
-	return String(q->size()) + "\n";
+	return String(q->size());
       case 1:
-	return String(q->highwater_length()) + "\n";
+	return String(q->highwater_length());
       case 2:
-	return String(q->capacity()) + "\n";
+	return String(q->capacity());
       case 3:
-	return String(q->_drops) + "\n";
+	return String(q->_drops);
       default:
 	return "";
     }

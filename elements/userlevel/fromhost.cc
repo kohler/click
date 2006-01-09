@@ -222,10 +222,10 @@ FromHost::read_param(Element *e, void *thunk)
 {
   FromHost *td = (FromHost *)e;
     switch ((uintptr_t) thunk) {
-    case H_DEV_NAME: return td->dev_name() + "\n";
-    case H_SIGNAL: return String(td->_nonfull_signal.active()) + "\n";
+    case H_DEV_NAME: return td->dev_name();
+    case H_SIGNAL: return String(td->_nonfull_signal.active());
     default:
-	return "\n";
+	return "";
     }
 }
 

@@ -590,6 +590,8 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 		unlock_threads();
 	    } else
 		handler_strings[stringno] = h->call_read(e);
+	    if (!h->raw() && handler_strings[stringno] && handler_strings[stringno].back() != '\n')
+		handler_strings[stringno] += '\n';
 	    retval = (handler_strings[stringno].out_of_memory() ? -ENOMEM : 0);
 	}
 	UNLOCK_CONFIG_READ();
@@ -681,10 +683,10 @@ handler_flush(struct file *filp)
 	    ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
 	    if (h->exclusive()) {
 		lock_threads();
-		retval = h->call_write(handler_strings[stringno], e, &cerrh);
+		retval = h->call_write(handler_strings[stringno], e, true, &cerrh);
 		unlock_threads();
 	    } else
-		retval = h->call_write(handler_strings[stringno], e, &cerrh);
+		retval = h->call_write(handler_strings[stringno], e, true, &cerrh);
 	}
 	
 	UNLOCK_CONFIG_WRITE();

@@ -52,11 +52,11 @@ TimestampAccum::read_handler(Element *e, void *thunk)
     int which = reinterpret_cast<int>(thunk);
     switch (which) {
       case 0:
-	return String(ta->_count) + "\n";
+	return String(ta->_count);
       case 1:
-	return String(ta->_usec_accum) + "\n";
+	return String(ta->_usec_accum);
       case 2:
-	return String(ta->_usec_accum / ta->_count) + "\n";
+	return String(ta->_usec_accum / ta->_count);
       default:
 	return String();
     }

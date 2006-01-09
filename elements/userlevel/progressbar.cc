@@ -354,14 +354,14 @@ ProgressBar::read_handler(Element *e, void *thunk)
 {
     ProgressBar *pb = static_cast<ProgressBar *>(e);
     switch ((intptr_t)thunk) {
-      case H_BANNER:
-	return pb->_banner + "\n";
+    case H_BANNER:
+	return pb->_banner;
       case H_ACTIVE:
-	return cp_unparse_bool(pb->_active) + "\n";
+	return cp_unparse_bool(pb->_active);
       case H_POS:
-	return String(pb->_last_pos) + "\n";
+	return String(pb->_last_pos);
       case H_SIZE:
-	return String(pb->_size) + "\n";
+	return String(pb->_size);
       case H_POSHANDLER:
       case H_SIZEHANDLER: {
 	  bool is_pos = ((intptr_t)thunk == H_POSHANDLER);
@@ -370,7 +370,6 @@ ProgressBar::read_handler(Element *e, void *thunk)
 	      if (sa.length()) sa << ' ';
 	      sa << pb->_hs[i]->unparse_name(pb->_es[i]);
 	  }
-	  sa << '\n';
 	  return sa.take_string();
       }
       default:
@@ -391,7 +390,7 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 	pb->complete(true);
 	return 0;
       case H_BANNER:
-	pb->_banner = str;
+	pb->_banner = in_str;
 	return 0;
       case H_SIZE:
 	if (cp_double(str, &pb->_size))
@@ -452,6 +451,7 @@ ProgressBar::add_handlers()
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
     add_read_handler("banner", read_handler, (void *)H_BANNER);
     add_write_handler("banner", write_handler, (void *)H_BANNER);
+    set_handler_flags("banner", Handler::RAW);
     add_read_handler("poshandler", read_handler, (void *)H_POSHANDLER);
     add_write_handler("poshandler", write_handler, (void *)H_POSHANDLER);
     add_read_handler("sizehandler", read_handler, (void *)H_SIZEHANDLER);

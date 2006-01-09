@@ -155,9 +155,9 @@ IPEncap::read_handler(Element *e, void *thunk)
 {
   IPEncap *ipe = static_cast<IPEncap *>(e);
   switch ((intptr_t)thunk) {
-   case 0:	return IPAddress(ipe->_iph.ip_src).s() + "\n";
-   case 1:	return IPAddress(ipe->_iph.ip_dst).s() + "\n";
-   default:	return "<error>\n";
+   case 0:	return IPAddress(ipe->_iph.ip_src).s();
+   case 1:	return IPAddress(ipe->_iph.ip_dst).s();
+   default:	return "<error>";
   }
 }
 

@@ -486,16 +486,16 @@ FromDump::read_handler(Element *e, void *thunk)
 {
     FromDump *fd = static_cast<FromDump *>(e);
     switch ((intptr_t)thunk) {
-      case H_SAMPLING_PROB:
-	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
-      case H_ACTIVE:
-	return cp_unparse_bool(fd->_active) + "\n";
-      case H_ENCAP:
-	return String(fake_pcap_unparse_dlt(fd->_linktype)) + "\n";
-      case H_PACKET_FILEPOS:
-	return String(fd->_packet_filepos) + "\n";
-      default:
-	return "<error>\n";
+    case H_SAMPLING_PROB:
+	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT);
+    case H_ACTIVE:
+	return cp_unparse_bool(fd->_active);
+    case H_ENCAP:
+	return String(fake_pcap_unparse_dlt(fd->_linktype));
+    case H_PACKET_FILEPOS:
+	return String(fd->_packet_filepos);
+    default:
+	return "<error>";
     }
 }
 

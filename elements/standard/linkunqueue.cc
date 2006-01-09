@@ -203,13 +203,13 @@ LinkUnqueue::read_param(Element *e, void *thunk)
     LinkUnqueue *u = (LinkUnqueue *)e;
     switch ((intptr_t) thunk) {
       case H_LATENCY:
-	return cp_unparse_interval(u->_latency) + "\n";
+	return cp_unparse_interval(u->_latency);
       case H_BANDWIDTH:
-	return String(u->_bandwidth * 100) + "\n";
+	return String(u->_bandwidth * 100);
       case H_SIZE:
-	return String(u->Storage::size()) + "\n";
+	return String(u->Storage::size());
       default:
-	return "<error>\n";
+	return "<error>";
     }
 }
 

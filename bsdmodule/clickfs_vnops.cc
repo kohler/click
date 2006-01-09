@@ -402,7 +402,7 @@ clickfs_fsync_body(struct clickfs_dirent *cde)
 		context_string += String(" for `") + e->declaration() + "'";
 	    ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
 
-	    retval = h->call_write(*cde->data.handle.wbuf, e, &cerrh);
+	    retval = h->call_write(*cde->data.handle.wbuf, e, true, &cerrh);
 	    retval = (retval >= 0 ? 0 : -retval);
 	}
 	/*

@@ -100,9 +100,9 @@ PerfCountAccum::read_handler(Element *e, void *thunk)
   int which = reinterpret_cast<int>(thunk);
   switch (which) {
    case 0:
-    return String(pca->_count) + "\n";
+    return String(pca->_count);
    case 1:
-    return String(pca->_accum) + "\n";
+    return String(pca->_accum);
    default:
     return String();
   }

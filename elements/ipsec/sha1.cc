@@ -98,7 +98,7 @@ String
 IPsecAuthSHA1::drop_handler(Element *e, void *)
 {
   IPsecAuthSHA1 *a = (IPsecAuthSHA1 *)e;
-  return String(a->_drops) + "\n";
+  return String(a->_drops);
 }
 
 void

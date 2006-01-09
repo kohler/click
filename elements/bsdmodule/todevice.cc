@@ -172,7 +172,7 @@ ToDevice_read_stats(Element *e, void *thunk)
   int which = reinterpret_cast<int>(thunk);
   switch (which) {
    case 0:
-    return String(td->_npackets) + "\n";
+    return String(td->_npackets);
    default:
     return String();
   }

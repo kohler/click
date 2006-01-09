@@ -432,9 +432,9 @@ IPRewriter::dump_nmappings_handler(Element *e, void *thunk)
 {
   IPRewriter *rw = (IPRewriter *)e;
   if (!thunk)
-    return String(rw->_tcp_map.size()) + " " + String(rw->_udp_map.size()) + "\n";
+      return String(rw->_tcp_map.size()) + " " + String(rw->_udp_map.size());
   else
-    return String(rw->_nmapping_failures) + "\n";
+      return String(rw->_nmapping_failures);
 }
 
 String

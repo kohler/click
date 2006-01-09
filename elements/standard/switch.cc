@@ -60,7 +60,7 @@ String
 Switch::read_param(Element *e, void *)
 {
   Switch *sw = (Switch *)e;
-  return String(sw->_output) + "\n";
+  return String(sw->_output);
 }
 
 int

@@ -147,6 +147,7 @@ class Element { public:
     void add_read_handler(const String &name, ReadHandlerHook, void*);
     void add_write_handler(const String &name, WriteHandlerHook, void*);
     void set_handler(const String &name, int flags, HandlerHook, void* = 0, void* = 0);
+    int set_handler_flags(const String &name, int flags);
     void add_task_handlers(Task*, const String& prefix = String());
 
     static String read_positional_handler(Element*, void*);

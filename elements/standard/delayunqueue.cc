@@ -102,7 +102,7 @@ String
 DelayUnqueue::read_param(Element *e, void *)
 {
     DelayUnqueue *u = (DelayUnqueue *)e;
-    return cp_unparse_interval(u->_delay) + "\n";
+    return cp_unparse_interval(u->_delay);
 }
 
 void

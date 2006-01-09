@@ -254,10 +254,10 @@ AggregatePacketCounter::read_handler(Element *e, void *thunk)
 	      for (const Flow *f = ac->_flowmap[i]; f; f = f->next())
 		  for (int col = 0; col < ac->ninputs(); col++)
 		      count += f->column_count(col);
-	  return String(count) + "\n";
+	  return String(count);
       }
       default:
-	return "<error>\n";
+	return "<error>";
     }
 }
 

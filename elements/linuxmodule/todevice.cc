@@ -472,18 +472,18 @@ ToDevice_read_stats(Element *e, void *thunk)
     ToDevice *td = (ToDevice *)e;
     switch ((uintptr_t) thunk) {
       case H_COUNT:
-	return String(td->_npackets) + "\n";
+	return String(td->_npackets);
       case H_DROPS:
-	return String(td->_rejected + td->_too_short) + "\n";
+	return String(td->_rejected + td->_too_short);
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
       case H_PULL_CYCLES:
-	return String(td->_pull_cycles) + "\n";
+	return String(td->_pull_cycles);
 #endif
 #if CLICK_DEVICE_STATS
       case H_TIME_QUEUE:
-	return String(td->_time_queue) + "\n";
+	return String(td->_time_queue);
       case H_TIME_CLEAN:
-	return String(td->_time_clean) + "\n";
+	return String(td->_time_clean);
 #endif
       default:
 	return String();

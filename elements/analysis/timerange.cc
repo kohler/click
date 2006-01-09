@@ -79,7 +79,6 @@ TimeRange::read_handler(Element *e, void *thunk)
       default:
 	sa << "<error>";
     }
-    sa << '\n';
     return sa.take_string();
 }
 

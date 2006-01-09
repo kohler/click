@@ -62,7 +62,7 @@ SetAnnoByte::offset_read_handler(Element *e, void *)
 {
   SetAnnoByte *anno = (SetAnnoByte *)e;
   StringAccum sa;
-  sa << anno->_offset << "\n";
+  sa << anno->_offset;
   return sa.take_string();
 }
 
@@ -72,7 +72,7 @@ SetAnnoByte::value_read_handler(Element *e, void *)
 {
   SetAnnoByte *anno = (SetAnnoByte *)e;
   StringAccum sa;
-  sa << (int)anno->_value << "\n";
+  sa << (int)anno->_value;
   return sa.take_string();
 }
 

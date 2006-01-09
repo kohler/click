@@ -408,7 +408,7 @@ int simclick_click_write_handler(simclick_click clickinst,
     if (Element* e = r->find(elementname)) {
 	if (const Handler* h = r->handler(e, handlername))
 	    if (h->write_visible())
-		return h->call_write(writestring, e, ErrorHandler::default_handler());
+		return h->call_write(writestring, e, true, ErrorHandler::default_handler());
 	return -2;		// no such handler
     } else
 	return -1;		// no such element

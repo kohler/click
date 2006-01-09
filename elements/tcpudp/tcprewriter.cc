@@ -442,9 +442,9 @@ TCPRewriter::dump_nmappings_handler(Element *e, void *thunk)
 {
   TCPRewriter *rw = (TCPRewriter *)e;
   if (!thunk)
-    return String(rw->_tcp_map.size()) + "\n";
+      return String(rw->_tcp_map.size());
   else
-    return String(rw->_nmapping_failures) + "\n";
+      return String(rw->_nmapping_failures);
 }
 
 void

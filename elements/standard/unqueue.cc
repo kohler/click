@@ -104,11 +104,11 @@ Unqueue::read_param(Element *e, void *thunk)
     Unqueue *u = (Unqueue *)e;
     switch ((uintptr_t) thunk) {
       case H_COUNT:
-	return String(u->_count) + "\n";
+	return String(u->_count);
       case H_ACTIVE:
-	return String(u->_active) + "\n";
+	return String(u->_active);
       default:
-	return "<error>\n";
+	return "<error>";
     }
 }
 
