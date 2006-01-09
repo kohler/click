@@ -385,6 +385,7 @@ AggregateCounter::write_file(String where, WriteFormat format,
     if (!f)
 	return errh->error("%s: %s", where.c_str(), strerror(errno));
 
+    fprintf(f, "!IPAggregate 1.0\n");
     fwrite(_output_banner.data(), 1, _output_banner.length(), f);
     if (_output_banner.length() && _output_banner.back() != '\n')
 	fputc('\n', f);
