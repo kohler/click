@@ -79,7 +79,8 @@ Contrast the 'C<print>' instruction.
 
 =item 'C<write> HANDLER [ARG...]'
 
-Call a write handler.
+Call a write handler.  The handler's return status is available in following
+instructions as the '$?' variable.
 
 =back
 
