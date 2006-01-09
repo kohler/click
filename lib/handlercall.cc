@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2004-2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -41,6 +42,9 @@ HandlerCall::initialize(int flags, Element* context, ErrorHandler* errh)
 	// parse handler name
 	if (!cp_handler_name(cp_pop_spacevec(value), &e, &hname, context, errh))
 	    return -EINVAL;
+	// local handler reference
+	if (e->eindex() == -1 && _value[0] != '.' && Router::handler(context, hname))
+	    e = context;
     }
 
     // exit early if handlers not yet defined
