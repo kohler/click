@@ -1,3 +1,98 @@
+2006-01-09 Monday 14:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* bsdmodule/clickfs_vnops.cc (1.15), bsdmodule/config.cc (1.12),
+	  elements/analysis/aggcounter.cc (1.36),
+	  elements/analysis/aggpktcounter.cc (1.10),
+	  elements/analysis/aggregateip.cc (1.21),
+	  elements/analysis/fromcapdump.cc (1.14),
+	  elements/analysis/fromdagdump.cc (1.32),
+	  elements/analysis/fromflandump.cc (1.11),
+	  elements/analysis/fromipsumdump.cc (1.77),
+	  elements/analysis/fromnetflowsumdump.cc (1.26),
+	  elements/analysis/fromnlanrdump.cc (1.13),
+	  elements/analysis/fromtcpdump.cc (1.15),
+	  elements/analysis/timerange.cc (1.9),
+	  elements/analysis/timestampaccum.cc (1.7), elements/aqm/pi.cc
+	  (1.17), elements/aqm/red.cc (1.50),
+	  elements/bsdmodule/fastudpsrc.cc (1.8),
+	  elements/bsdmodule/todevice.cc (1.12),
+	  elements/bsdmodule/tohost.cc (1.6),
+	  elements/ethernet/arpquerier.cc (1.60),
+	  elements/ethernet/etherencap.cc (1.25),
+	  elements/icmp/checkicmpheader.cc (1.20),
+	  elements/icmp/icmpsendpings.cc (1.39),
+	  elements/ip/checkipheader.cc (1.57), elements/ip/decipttl.cc
+	  (1.27), elements/ip/ipaddrpairrewriter.cc (1.7),
+	  elements/ip/ipaddrrewriter.cc (1.28), elements/ip/ipencap.cc
+	  (1.41), elements/ip/ipfragmenter.cc (1.36),
+	  elements/ip/ipgwoptions.cc (1.40), elements/ip/ipinputcombo.cc
+	  (1.34), elements/ip/ipratemon.cc (1.105),
+	  elements/ip/iproutetable.cc (1.18), elements/ip/markipce.cc
+	  (1.11), elements/ip/setipdscp.cc (1.31),
+	  elements/ip6/checkip6header.cc (1.26), elements/ip6/decip6hlim.cc
+	  (1.16), elements/ip6/ip6fragmenter.cc (1.16),
+	  elements/ip6/setip6dscp.cc (1.8), elements/ipsec/sha1.cc (1.11),
+	  elements/linuxmodule/cpuqueue.cc (1.19),
+	  elements/linuxmodule/cyclecountaccum.cc (1.13),
+	  elements/linuxmodule/fasttcpflows.cc (1.17),
+	  elements/linuxmodule/fastudpflows.cc (1.17),
+	  elements/linuxmodule/fastudpsrc.cc (1.23),
+	  elements/linuxmodule/fastudpsrcip6.cc (1.22),
+	  elements/linuxmodule/fromdevice.cc (1.89),
+	  elements/linuxmodule/perfcountaccum.cc (1.15),
+	  elements/linuxmodule/polldevice.cc (1.142),
+	  elements/linuxmodule/rtcycles.cc (1.13),
+	  elements/linuxmodule/todevice.cc (1.144),
+	  elements/linuxmodule/tohost.cc (1.47),
+	  elements/standard/averagecounter.cc (1.16),
+	  elements/standard/bandwidthmeter.cc (1.17),
+	  elements/standard/block.cc (1.24), elements/standard/compblock.cc
+	  (1.25), elements/standard/counter.cc (1.36),
+	  elements/standard/delayshaper.cc (1.22),
+	  elements/standard/delayunqueue.cc (1.25),
+	  elements/standard/dropbroadcasts.cc (1.17),
+	  elements/standard/infinitesource.cc (1.56),
+	  elements/standard/linkunqueue.cc (1.10),
+	  elements/standard/msqueue.cc (1.18), elements/standard/paint.cc
+	  (1.24), elements/standard/pokehandlers.cc (1.39),
+	  elements/standard/pullswitch.cc (1.25),
+	  elements/standard/quitwatcher.cc (1.25),
+	  elements/standard/randomerror.cc (1.29),
+	  elements/standard/randomsample.cc (1.9),
+	  elements/standard/ratedsource.cc (1.55),
+	  elements/standard/setannobyte.cc (1.7),
+	  elements/standard/simplequeue.cc (1.15),
+	  elements/standard/stridesched.cc (1.24),
+	  elements/standard/switch.cc (1.26),
+	  elements/standard/timedsource.cc (1.37),
+	  elements/standard/unqueue.cc (1.31),
+	  elements/tcpudp/checktcpheader.cc (1.21),
+	  elements/tcpudp/checkudpheader.cc (1.21),
+	  elements/tcpudp/iprewriter.cc (1.51),
+	  elements/tcpudp/tcprewriter.cc (1.45),
+	  elements/test/comparepackets.cc (1.6),
+	  elements/test/upstreamnotifier.cc (1.6),
+	  elements/userlevel/controlsocket.cc (1.66),
+	  elements/userlevel/controlsocket.hh (1.40),
+	  elements/userlevel/fromdevice.cc (1.58),
+	  elements/userlevel/fromdump.cc (1.102),
+	  elements/userlevel/fromfile.cc (1.11),
+	  elements/userlevel/fromhost.cc (1.12),
+	  elements/userlevel/progressbar.cc (1.33),
+	  elements/userlevel/todevice.cc (1.56),
+	  elements/userlevel/todump.cc (1.65), elements/userlevel/tohost.cc
+	  (1.5), elements/wifi/linkfailuredetection.cc (1.15),
+	  include/click/element.hh (1.51), include/click/handlercall.hh
+	  (1.17), include/click/router.hh (1.81), lib/element.cc (1.112),
+	  lib/handlercall.cc (1.18), lib/router.cc (1.187),
+	  linuxmodule/clickfs.cc (1.49), linuxmodule/config.cc (1.24),
+	  ns/nsclick.cc (1.25), userlevel/click.cc (1.107): Handler return
+	  values now should NOT end with a courtesy newline; drivers will
+	  add courtesy newlines when appropriate.  Some handlers ask their
+	  driver not to add a courtesy newline by declaring themselves RAW.
+	  Additionally, RAW write handlers have their parameters unquoted
+	  when called from a Script.
+
 2006-01-09 Monday 04:43  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/script.hh (1.4): document $?
