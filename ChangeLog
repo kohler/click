@@ -1,3 +1,7 @@
+2006-01-09 Monday 18:42  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/aggcounter.cc (1.37): include a file type
+
 2006-01-09 Monday 18:29  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/timer.hh (1.29): remove the fact that i am an idiot
