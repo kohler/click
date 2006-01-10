@@ -320,8 +320,8 @@ $bad_files"
   next
 }
 /:EXPORT_ELEMENT/ {
-  sub(/.*EXPORT_ELEMENT[ 	]*\(/, "", $2);
-  sub(/\).*/, "", $2);
+  sub(/.*EXPORT_ELEMENT[ 	]*\([ 	]*/, "", $2);
+  sub(/[ 	]*\).*/, "", $2);
   if (exports[$1] != "") {
     exports[$1] = exports[$1] " " $2
   } else {
