@@ -1,3 +1,7 @@
+2006-01-09 Monday 23:05  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.99): distfiles nit
+
 2006-01-09 Monday 21:10  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: aggregateip.cc (1.22), aggregateip.hh (1.18),
