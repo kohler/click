@@ -141,7 +141,7 @@ remaining fragments.
    
 =a
 
-AggregateIP, AggregateCounter, DriverManager */
+AggregateIP, AggregateIPAddrPair, AggregateCounter, DriverManager */
 
 class AggregateIPFlows : public Element, public AggregateNotifier { public:
 

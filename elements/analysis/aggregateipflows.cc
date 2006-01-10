@@ -477,7 +477,7 @@ AggregateIPFlows::handle_packet(Packet *p)
 	}
 	p->timestamp_anno().set_now();
     }
-	
+    
     // extract encapsulated ICMP header if appropriate
     if (iph && iph->ip_p == IP_PROTO_ICMP && IP_FIRSTFRAG(iph)
 	&& _handle_icmp_errors) {

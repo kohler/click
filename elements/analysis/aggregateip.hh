@@ -127,7 +127,7 @@ Returns the length of the aggregated field, in bits.
 
 =a
 
-AggregateLength, AggregateFlows, AggregateCounter
+AggregateLength, AggregateIPFlows, AggregateCounter, AggregatePaint
 
 */
 

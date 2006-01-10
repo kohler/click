@@ -3,7 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2001-2003 International Computer Science Institute
- * Copyright (c) 2005 Regents of the University of California
+ * Copyright (c) 2005-2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -59,7 +59,7 @@ AggregateIP::configure(Vector<String> &conf, ErrorHandler *errh)
     if (_f.bit_length() > 32)
 	return errh->error("too many aggregates: field length too large, max 32");
     else if (_f.bit_length() == 32 && _incremental)
-	return errh->error("`INCREMENTAL' is incompatible with field length 32");
+	return errh->error("'INCREMENTAL' is incompatible with field length 32");
     if (_f.bit_length() == 32)
 	_mask = 0xFFFFFFFFU;
     else
@@ -127,7 +127,7 @@ AggregateIP::handle_packet(Packet *p)
     uint32_t agg = (ntohl(udata) >> _shift) & _mask;
 
     if (_incremental)
-	SET_AGGREGATE_ANNO(p, AGGREGATE_ANNO(p)*(_mask + 1) + agg);
+	SET_AGGREGATE_ANNO(p, (AGGREGATE_ANNO(p) << _f.bit_length()) + agg);
     else
 	SET_AGGREGATE_ANNO(p, agg);
 
