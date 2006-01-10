@@ -1,3 +1,8 @@
+2006-01-10 Tuesday 12:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.72): allow spaces inside EXPORT_ELEMENT()
+	  (Bart Braem, Michael)
+
 2006-01-09 Monday 23:05  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.99): distfiles nit
