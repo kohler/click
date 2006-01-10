@@ -345,7 +345,6 @@ vector.hh
 ./include/click/standard:
 addressinfo.hh
 alignmentinfo.hh
-drivermanager.hh
 errorelement.hh
 portinfo.hh
 scheduleinfo.hh
