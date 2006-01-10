@@ -1,3 +1,11 @@
+2006-01-09 Monday 21:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: aggregateip.cc (1.22), aggregateip.hh (1.18),
+	  aggregateipaddrpair.cc (1.3), aggregateipaddrpair.hh (1.3),
+	  aggregateipflows.cc (1.32), aggregateipflows.hh (1.22),
+	  aggregatepaint.cc (1.1), aggregatepaint.hh (1.1): aggregate
+	  element fixes (fixing up ipaggcreate)
+
 2006-01-09 Monday 18:42  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/aggcounter.cc (1.37): include a file type
