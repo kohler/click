@@ -4,7 +4,8 @@
  */
 
 /*****************************************************************************
- *  Copyright 2002, Univerity of Colorado at Boulder.                        *
+ *  Copyright 2002, Univerity of Colorado at Boulder                         *
+ *  Copyright (c) 2006 Regents of the University of California               *
  *                                                                           *
  *                        All Rights Reserved                                *
  *                                                                           *
@@ -59,7 +60,9 @@ ToSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_ifname,
 		  cpOptional,
-		  cpWord, "encapsulation type",&encap_type,
+		  cpWord, "encapsulation type", &encap_type,
+		  cpKeywords,
+		  "ENCAP", cpWord, "encapsulation type", &encap_type,
 		  cpEnd) < 0)
     return -1;
   if (!_ifname)
@@ -68,8 +71,10 @@ ToSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _encap_type = SIMCLICK_PTYPE_ETHER;
   else if (encap_type == "IP")
     _encap_type = SIMCLICK_PTYPE_IP;
+  else if (encap_type == "UNKNOWN")
+      _encap_type = SIMCLICK_PTYPE_UNKNOWN;
   else
-    return errh->error("bad encapsulation type, expected `ETHER' or `IP'");
+    return errh->error("bad encapsulation type");
 
   return 0;
 }

@@ -33,7 +33,7 @@ CLICK_DECLS
 /*
  * =title ToSimDevice.u
  * =c
- * ToSimDevice(DEVNAME)
+ * ToSimDevice(DEVNAME [, ENCAP])
  * =s devices
  * sends packets to simulated network device
  * =d
@@ -41,6 +41,17 @@ CLICK_DECLS
  * This manual page describes the ToSimDevice element.
  *
  * This element will only work with the click simulator interface.
+ *
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item ENCAP
+ *
+ * Word.  The interface's encapsulation type.  Options are ETHER, IP, and
+ * UNKNOWN; default is ETHER.
+ *
+ * =back
  * 
  * =a
  * FromSimDevice.u */
