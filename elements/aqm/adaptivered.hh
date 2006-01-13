@@ -12,7 +12,7 @@ AdaptiveRED(TARGET_Q, MAX_P [, I<KEYWORDS>])
 
 =s dropping
 
-drops packets according to Adaptive R<RED>
+drops packets according to Adaptive P<RED>
 
 =d
 

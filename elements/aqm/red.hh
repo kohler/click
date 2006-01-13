@@ -13,7 +13,7 @@ RED(MIN_THRESH, MAX_THRESH, MAX_P [, I<KEYWORDS>])
 
 =s dropping
 
-drops packets according to R<RED>
+drops packets according to P<RED>
 
 =d
 
@@ -58,7 +58,7 @@ setting for w_q is 0.002, corresponding to a STABILITY of roughly 9.
 
 =back
 
-The RED element implements the Gentle R<RED> variant first proposed by Sally
+The RED element implements the Gentle P<RED> variant first proposed by Sally
 Floyd in October 1997.
 
 =e

@@ -191,7 +191,8 @@ sub nroffize_text ($) {
     while ($maxnest-- && $t =~ /[A-Z]</) {
     
 	# can't do C font here
-	$t =~ s/([BIR])<($nonest)>/"\\f$1" . nroff_fixfP($2, $1) . "\\fP"/eg;
+	$t =~ s/([BI])<($nonest)>/"\\f$1" . nroff_fixfP($2, $1) . "\\fP"/eg;
+	$t =~ s/P<($nonest)>/$1/g;
     
 	# files and filelike refs in italics
 	$t =~ s/F<($nonest)>/I<$1>/g;
@@ -380,6 +381,13 @@ sub dokuwiki_quotedbl ($) {
     $x;
 }
 
+sub dokuwiki_surround ($$) {
+    my($text, $chr) = @_;
+    my($re) = "\\$chr\\$chr";
+    $text =~ s{$re}{}g;
+    "$chr$chr$text$chr$chr";
+}
+
 sub dokuwikiize_text ($) {
     my($t) = @_;
     my($i, $pos, $s);
@@ -398,22 +406,23 @@ sub dokuwikiize_text ($) {
   
     # get rid of entities
     $t =~ s{(E<[^>]*>)}{dokuwiki_unentity($1)}ge;
-    $t =~ s{(\*\*|//|__|''|\\\\|\[\[|\]\]|\{\{|\}\}|\(\(|\)\)|%%)}{dokuwiki_quotedbl($1)}ge;
-  
+    $t =~ s{([\*/_'\\\[\]\{\}\(\)%])}{^$1^}g;
+
     my $maxnest = 10;
     while ($maxnest-- && $t =~ /[A-Z]</) {
     
 	# can't do C font here
-	$t =~ s/B<($nonest)>/**$1**/g;
-	$t =~ s.I<($nonest)>.//$1//.g;
-	$t =~ s/R<($nonest)>/$1/g;
-	$t =~ s/C<($nonest)>/''$1''/g;
+	$t =~ s/B<($nonest)>/dokuwiki_surround($1, "*")/eg;
+	$t =~ s.I<($nonest)>.dokuwiki_surround($1, "/").eg;
+	$t =~ s/P<($nonest)>/$1/g;
+	$t =~ s/C<($nonest)>/dokuwiki_surround($1, "'")/eg;
     
 	# files and filelike refs in italics
 	$t =~ s/F<($nonest)>/I<$1>/g;
     
 	# LREF: man page references
-	$t =~ s{L<($nonest)\(([\dln])\)>}{[[$1]]}g;
+	$t =~ s{L<($nonest)\^\(\^[\dln]\^\)\^>}{[[$1]]}g;
+	$t =~ s{L<($nonest)>\^\(\^[\dln]\^\)\^}{[[$1]]}g;
     
 	# LREF: a la HREF L<show this text|man/section>
 	$t =~ s{L<($nonest)\|($nonest)>}{[[$2|$1]]}g;
@@ -427,6 +436,10 @@ sub dokuwikiize_text ($) {
     $t =~ s/\n+/\n/sg;
     $t =~ s/^\n+//;
     $t =~ s/\n+$//;
+
+    $t =~ s{([\*/_'\\\[\]\{\}\(\)%])\^\1\^}{$1 . dokuwiki_quotedbl($1)}eg;
+    $t =~ s{\^([\*/_'\\\[\]\{\}\(\)%])\^\1}{dokuwiki_quotedbl($1) . $1}eg;
+    $t =~ s{\^([\*/_'\\\[\]\{\}\(\)%])\^}{$1}g;
 
     $t;
 }
@@ -475,9 +488,9 @@ sub dokuwiki_do_section ($$$) {
     }
   
     if ($name eq 'head1') {
-	print OUT "===== ", dokuwikiize($args), " =====\n\n";
+	print OUT "\n===== ", dokuwikiize($args), " =====\n\n";
     } elsif ($name eq 'head2') {
-	print OUT "==== ", dokuwikiize($args), " ====\n\n";
+	print OUT "\n==== ", dokuwikiize($args), " ====\n\n";
     } elsif ($name eq 'over') {
 	if ($args =~ /^\s*(\d+)\s*$/s) {
 	    push @Over, $1;
@@ -488,7 +501,7 @@ sub dokuwiki_do_section ($$$) {
 	if (@Over == 0) {
 	    print STDERR "click-elem2man: $Filename: '=item' outside any '=over' section\n";
 	} else {
-	    print OUT "**", dokuwikiize($args), "**\n";
+	    print OUT "\n", dokuwikiize("B<$args>"), "\n\n";
 	}
     } elsif ($name eq 'back') {
 	my($overarg);
@@ -784,6 +797,7 @@ sub process_comment ($$) {
 	my($x) = $section_text[$i];
 	if ($s eq 'c') {
 	    $x =~ s{(\S\s*)\n}{$1N<>\n}g;
+	    $x =~ s{N<>\n*\Z}{};
 	    do_section('head1', 'SYNOPSIS', $x);
 	} elsif ($s eq 'package') {
 	    do_section('head1', 'PACKAGE', $x);
