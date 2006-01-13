@@ -1,3 +1,9 @@
+2006-01-13 Friday 13:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.36), doc/elementdoc.7 (1.13),
+	  elements/aqm/adaptivered.hh (1.12), elements/aqm/red.hh (1.38):
+	  more dokuwikization
+
 2006-01-13 Friday 02:35  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click-elem2man (1.35): add --dokuwiki option to
