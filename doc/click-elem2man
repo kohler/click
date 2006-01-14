@@ -110,7 +110,30 @@ my $nonest = '(?:[^A-Z>]*(?:[A-Z](?!<)[^A-Z>]*)*)';
 
 # XXX one paragraph at a time
 
-my($Filename, @Related, %RelatedSource, @Over, $Begun);
+my($Filename, $PrimaryElement, @Related, %RelatedSource, @Over, $Begun);
+
+
+############
+## shared ##
+
+sub textize_add_links ($) {
+    my($t) = @_;
+    my($pos);
+
+    # embolden & manpageize
+    foreach my $r (@Related) {
+	my $l = length($r);
+	my $result = ($r eq $PrimaryElement ? "B<$r>" : "L<$r>");
+	for ($pos = index($t, $r); $pos >= 0; $pos = index($t, $r, $pos + 1)) {
+	    if (($pos == 0 || substr($t, $pos - 1, 1) =~ /^[^\w@\/<]$/s)
+		&& (substr($t, $pos + $l, 1) =~ /^[^\w@\/]$/s)) {
+		substr($t, $pos, $l) = $result;
+		$pos += 2 + $l;
+	    }
+	}
+    }
+    $t;
+}
 
 
 ###########
@@ -159,19 +182,10 @@ sub nroff_fixfP ($$) {
 
 sub nroffize_text ($) {
     my($t) = @_;
-    my($i, $pos, $s);
+    my($s);
 
     # embolden & manpageize
-    foreach my $r (@Related) {
-	my $l = length($r);
-	for ($pos = index($t, $r); $pos >= 0; $pos = index($t, $r, $pos + 1)) {
-	    if (($pos == 0 || substr($t, $pos - 1, 1) =~ /^[^\w@\/<]$/s)
-		&& (substr($t, $pos + $l, 1) =~ /^[^\w@\/]$/s)) {
-		substr($t, $pos, $l) = "L<" . $r . ">";
-		$pos += 2 + $l;
-	    }
-	}
-    }
+    $t = textize_add_links($t);
   
     $t =~ s/\\/\\\\/g;
     $t =~ s/^\./\\&./gm;
@@ -207,7 +221,7 @@ sub nroffize_text ($) {
 	    if (($s = $RelatedSource{$1})) {
 		"\n.M $1 \"$s\" $2\n";
 	    } else {
-		$i = index($1, "|");
+		my $i = index($1, "|");
 		($i >= 0 ? substr($1, 0, $i) . $2 . $3 : "\\fB$1\\fP$2$3");
 	    }
 	}eg;
@@ -348,6 +362,8 @@ EOD;
 $args \\- $text
 EOD;
 	return;
+    } elsif ($name eq 'end!') {
+	return;
     }
 
     print OUT nroffize($text), "\n";
@@ -390,20 +406,10 @@ sub dokuwiki_surround ($$) {
 
 sub dokuwikiize_text ($) {
     my($t) = @_;
-    my($i, $pos, $s);
 
     # embolden & manpageize
-    foreach my $r (@Related) {
-	my $l = length($r);
-	for ($pos = index($t, $r); $pos >= 0; $pos = index($t, $r, $pos + 1)) {
-	    if (($pos == 0 || substr($t, $pos - 1, 1) =~ /^[^\w@\/<]$/s)
-		&& (substr($t, $pos + $l, 1) =~ /^[^\w@\/]$/s)) {
-		substr($t, $pos, $l) = "L<" . $r . ">";
-		$pos += 2 + $l;
-	    }
-	}
-    }
-  
+    $t = textize_add_links($t);
+    
     # get rid of entities
     $t =~ s{(E<[^>]*>)}{dokuwiki_unentity($1)}ge;
     $t =~ s{([\*/_'\\\[\]\{\}\(\)%])}{^$1^}g;
@@ -440,6 +446,9 @@ sub dokuwikiize_text ($) {
     $t =~ s{([\*/_'\\\[\]\{\}\(\)%])\^\1\^}{$1 . dokuwiki_quotedbl($1)}eg;
     $t =~ s{\^([\*/_'\\\[\]\{\}\(\)%])\^\1}{dokuwiki_quotedbl($1) . $1}eg;
     $t =~ s{\^([\*/_'\\\[\]\{\}\(\)%])\^}{$1}g;
+
+    # remove self references
+    $t =~ s{\[\[$PrimaryElement\]\]}{$PrimaryElement}g;
 
     $t;
 }
@@ -486,7 +495,7 @@ sub dokuwiki_do_section ($$$) {
     } elsif ($Begun) {
 	return;
     }
-  
+    
     if ($name eq 'head1') {
 	print OUT "\n===== ", dokuwikiize($args), " =====\n\n";
     } elsif ($name eq 'head2') {
@@ -710,6 +719,7 @@ sub process_comment ($$) {
     }
     push @all_outfiles, $outfiles[0];
     $all_outsections{$outfiles[0]} = $outsections[0];
+    $PrimaryElement = $outfiles[0];
 
     # prepare related
     %RelatedSource = ();
