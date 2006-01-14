@@ -1,3 +1,7 @@
+2006-01-14 Saturday 12:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.40): fix quote_unquoted_gt
+
 2006-01-14 Saturday 11:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click-elem2man (1.39): different filenames for dokuwiki
