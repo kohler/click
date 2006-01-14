@@ -136,11 +136,13 @@ sub textize_add_links ($$) {
 
 sub quote_unquoted_gt ($) {
     my($t) = @_;
-    my($tt, $pos) = ('');
+    my($tt, $nest, $pos) = ('', 0);
     for ($pos = index($t, ">"); $pos >= 0; $pos = index($t, ">")) {
 	my($w) = substr($t, 0, $pos);
-	if ($w =~ m|[A-Z]<$nonest\Z|) {
+	$nest++ while $w =~ m|[A-Z]<|g;
+	if ($nest) {
 	    $tt .= $w . ">";
+	    $nest--;
 	} else {
 	    $tt .= $w . "E<gt>";
 	}
