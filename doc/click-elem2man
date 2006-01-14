@@ -116,14 +116,14 @@ my($Filename, $PrimaryElement, @Related, %RelatedSource, @Over, $Begun);
 ############
 ## shared ##
 
-sub textize_add_links ($) {
-    my($t) = @_;
+sub textize_add_links ($$) {
+    my($t, $selfref) = @_;
     my($pos);
 
     # embolden & manpageize
     foreach my $r (@Related) {
 	my $l = length($r);
-	my $result = ($r eq $PrimaryElement ? "B<$r>" : "L<$r>");
+	my $result = ($r eq $PrimaryElement ? "$selfref<$r>" : "L<$r>");
 	for ($pos = index($t, $r); $pos >= 0; $pos = index($t, $r, $pos + 1)) {
 	    if (($pos == 0 || substr($t, $pos - 1, 1) =~ /^[^\w@\/<]$/s)
 		&& (substr($t, $pos + $l, 1) =~ /^[^\w@\/]$/s)) {
@@ -133,6 +133,21 @@ sub textize_add_links ($) {
 	}
     }
     $t;
+}
+
+sub quote_unquoted_gt ($) {
+    my($t) = @_;
+    my($tt, $pos) = ('');
+    for ($pos = index($t, ">"); $pos >= 0; $pos = index($t, ">")) {
+	my($w) = substr($t, 0, $pos);
+	if ($w =~ m|[A-Z]<$nonest\Z|) {
+	    $tt .= $w . ">";
+	} else {
+	    $tt .= $w . "E<gt>";
+	}
+	$t = substr($t, $pos + 1);
+    }
+    $tt . $t;
 }
 
 
@@ -185,7 +200,7 @@ sub nroffize_text ($) {
     my($s);
 
     # embolden & manpageize
-    $t = textize_add_links($t);
+    $t = textize_add_links($t, 'L');
   
     $t =~ s/\\/\\\\/g;
     $t =~ s/^\./\\&./gm;
@@ -206,7 +221,7 @@ sub nroffize_text ($) {
     
 	# can't do C font here
 	$t =~ s/([BI])<($nonest)>/"\\f$1" . nroff_fixfP($2, $1) . "\\fP"/eg;
-	$t =~ s/P<($nonest)>/$1/g;
+	$t =~ s/[PU]<($nonest)>/$1/g;
     
 	# files and filelike refs in italics
 	$t =~ s/F<($nonest)>/I<$1>/g;
@@ -408,10 +423,10 @@ sub dokuwikiize_text ($) {
     my($t) = @_;
 
     # embolden & manpageize
-    $t = textize_add_links($t);
+    $t = textize_add_links($t, 'P');
     
     # get rid of entities
-    $t =~ s{(E<[^>]*>)}{dokuwiki_unentity($1)}ge;
+    $t =~ s{E<([^>]*)>}{dokuwiki_unentity($1)}ge;
     $t =~ s{([\*/_'\\\[\]\{\}\(\)%])}{^$1^}g;
 
     my $maxnest = 10;
@@ -420,6 +435,7 @@ sub dokuwikiize_text ($) {
 	# can't do C font here
 	$t =~ s/B<($nonest)>/dokuwiki_surround($1, "*")/eg;
 	$t =~ s.I<($nonest)>.dokuwiki_surround($1, "/").eg;
+	$t =~ s.U<($nonest)>.dokuwiki_surround($1, "_").eg;
 	$t =~ s/P<($nonest)>/$1/g;
 	$t =~ s/C<($nonest)>/dokuwiki_surround($1, "'")/eg;
     
@@ -510,7 +526,7 @@ sub dokuwiki_do_section ($$$) {
 	if (@Over == 0) {
 	    print STDERR "click-elem2man: $Filename: '=item' outside any '=over' section\n";
 	} else {
-	    print OUT "\n", dokuwikiize("B<$args>"), "\n\n";
+	    print OUT "\n", dokuwikiize("B<" . quote_unquoted_gt($args) . ">"), "\n\n";
 	}
     } elsif ($name eq 'back') {
 	my($overarg);
