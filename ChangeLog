@@ -1,3 +1,13 @@
+2006-01-14 Saturday 11:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.39): different filenames for dokuwiki
+	  conversion
+
+2006-01-14 Saturday 11:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/: click-elem2man (1.38), elementdoc.7 (1.14): more
+	  dokuwikification
+
 2006-01-13 Friday 21:34  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click-elem2man (1.37): yet more dokuwiki fixes
