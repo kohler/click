@@ -39,7 +39,6 @@ my(%xsection_takes_args) =
       'for' => 1, 'begin' => 1, 'end' => 1, 'start!' => 1, 'name!' => 1,
       'end!' => 0 );
 
-my $directory;
 my $section = 'n';
 my $package;
 my $uninstall = 0;
@@ -583,6 +582,7 @@ EOD;
 ## main  ##
 
 my $do_section_func = \&nroff_do_section;
+my $filename_func;
 
 sub do_section ($$$) {
     my($name, $args, $text) = @_;
@@ -723,8 +723,8 @@ sub process_comment ($$) {
 
     # open new output file if necessary
     my($main_outname);
-    if ($directory) {
-	$main_outname = "$directory/$outfiles[0].$outsections[0]";
+    if ($filename_func) {
+	$main_outname = &$filename_func($outfiles[0], $outsections[0]);
 	if ($uninstall) {
 	    unlink($main_outname);
 	    open(OUT, ">/dev/null");
@@ -862,10 +862,10 @@ sub process_comment ($$) {
     }
 
     # close output file & make links if appropriate
-    if ($directory) {
+    if ($filename_func) {
 	close OUT;
 	for ($i = 1; $i < @outfiles; $i++) {
-	    my($outname) = "$directory/$outfiles[$i].$outsections[$i]";
+	    my($outname) = &$filename_func($outfiles[$i], $outsections[$i]);
 	    unlink($outname);
 	    if ($uninstall) {
 		# do nothing
@@ -1011,7 +1011,9 @@ EOD;
 }
 
 undef $/;
-my(@files, $fn, $elementlist, $any_files);
+my(@files, $fn, $elementlist, $any_files, $directory, $output_type);
+$output_type = 'nroff';
+
 while (@ARGV) {
     $_ = shift @ARGV;
     if (/^-d$/ || /^--directory$/) {
@@ -1051,6 +1053,7 @@ while (@ARGV) {
 	help();
     } elsif (/^--dokuwiki$/ || /^--doku$/) {
 	$do_section_func = \&dokuwiki_do_section;
+	$output_type = 'dokuwiki';
     } elsif (/^-./) {
 	usage();
     } elsif (/^-$/) {
@@ -1062,6 +1065,24 @@ while (@ARGV) {
     }
 }
 push @files, "-" if !$any_files;
+
+sub nroff_filename_func ($$) {
+    my($name, $sec) = @_;
+    "$directory/$name.$sec";
+}
+
+sub dokuwiki_filename_func ($$) {
+    my($name, $sec) = @_;
+    if ($sec eq 'n') {
+	"$directory/" . lc($name) . ".txt";
+    } else {
+	"$directory/" . lc($name) . "-$sec.txt";
+    }
+}
+
+if ($directory) {
+    $filename_func = ($output_type eq 'dokuwiki' ? \&dokuwiki_filename_func : \&nroff_filename_func);
+}
 
 umask(022);
 if ($uninstall) {
@@ -1153,8 +1174,8 @@ sub one_summary ($@) {
 }
 
 sub make_elementlist () {
-    if ($directory) {
-	my($fn) = "$directory/elements.$section";
+    if ($filename_func) {
+	my($fn) = &$filename_func('elements', $section);
 	if ($uninstall) {
 	    if ($elementlist > 1) {
 		# erase record of elements added
