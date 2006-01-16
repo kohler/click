@@ -51,7 +51,7 @@ install-man: $(srcdir)/testie.1 Makefile
 	$(INSTALL_DATA) $(srcdir)/click-xform.1 $(DESTDIR)$(mandir)/man1/click-xform.1
 	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(DESTDIR)$(mandir)/man7/elementdoc.7
 	$(INSTALL_DATA) $(srcdir)/testie.1 $(DESTDIR)$(mandir)/man1/testie.1
-	echo @DRIVERS@ @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "@DRIVERS@ $(EXTRA_PROVIDES)" -p $(top_srcdir) | $(PERL) $(srcdir)/click-elem2man -l -d $(DESTDIR)$(mandir)/mann -P DEFAULT -p $(top_srcdir) -f -
+	echo @DRIVERS@ @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "@DRIVERS@ $(EXTRA_PROVIDES)" -p $(top_srcdir) | $(PERL) $(srcdir)/click-elem2man -l -d $(DESTDIR)$(mandir)/mann -P DEFAULT -p $(top_srcdir)
 install-info: Makefile $(srcdir)/click.info
 	$(mkinstalldirs) $(DESTDIR)$(infodir)
 	@for f in `cd $(srcdir) && echo click.info click.info-[0-9] click.info-[0-9][0-9]`; do \

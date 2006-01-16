@@ -389,11 +389,14 @@ EOD;
 ##############
 ## dokuwiki ##
 
+my($dokuwiki_dl);
+
 my(%dokuwiki_podentities) =
     ( 'lt' => '&lt;', 'gt' => '&gt;', 'amp' => '&amp;', 'solid' => '/',
       'verbar' => '|', 'eq' => '=', 'star' => '*', 'lparen' => '(',
       'rparen' => ')', 'lbrack' => '[', 'rbrack' => ']', 'lbrace' => '{',
       'rbrace' => '}' );
+my($dokuwiki_sensitive_char) = "[\\*/_'\\\\\\[\\]\\{\\}\\(\\)%?!]";
 
 sub dokuwiki_unentity ($) {
     my($x) = @_;
@@ -428,7 +431,7 @@ sub dokuwikiize_text ($) {
     
     # get rid of entities
     $t =~ s{E<([^>]*)>}{dokuwiki_unentity($1)}ge;
-    $t =~ s{([\*/_'\\\[\]\{\}\(\)%])}{^$1^}g;
+    $t =~ s{($dokuwiki_sensitive_char)}{^$1^}g;
 
     my $maxnest = 10;
     while ($maxnest-- && $t =~ /[A-Z]</) {
@@ -460,9 +463,10 @@ sub dokuwikiize_text ($) {
     $t =~ s/^\n+//;
     $t =~ s/\n+$//;
 
-    $t =~ s{([\*/_'\\\[\]\{\}\(\)%])\^\1\^}{$1 . dokuwiki_quotedbl($1)}eg;
-    $t =~ s{\^([\*/_'\\\[\]\{\}\(\)%])\^\1}{dokuwiki_quotedbl($1) . $1}eg;
-    $t =~ s{\^([\*/_'\\\[\]\{\}\(\)%])\^}{$1}g;
+    $t =~ s{^(\s*)\^([?!])\^}{$1 . dokuwiki_quotedbl($2)}egm;
+    $t =~ s{($dokuwiki_sensitive_char)\^\1\^}{$1 . dokuwiki_quotedbl($1)}eg;
+    $t =~ s{\^($dokuwiki_sensitive_char)\^\1}{dokuwiki_quotedbl($1) . $1}eg;
+    $t =~ s{\^($dokuwiki_sensitive_char)\^}{$1}g;
 
     # remove self references
     $t =~ s{\[\[$PrimaryElement\]\]}{$PrimaryElement}g;
@@ -527,7 +531,9 @@ sub dokuwiki_do_section ($$$) {
 	if (@Over == 0) {
 	    print STDERR "click-elem2man: $Filename: '=item' outside any '=over' section\n";
 	} else {
-	    print OUT "\n", dokuwikiize("B<" . quote_unquoted_gt($args) . ">"), "\n\n";
+	    print OUT "\n", ' ' x @Over, "? " if $dokuwiki_dl;
+	    print OUT dokuwikiize("B<" . quote_unquoted_gt($args) . ">");
+	    print OUT ($dokuwiki_dl ? "\n" : "\n\n");
 	}
     } elsif ($name eq 'back') {
 	my($overarg);
@@ -576,6 +582,7 @@ EOD;
 	return;
     }
 
+    print OUT ' ' x @Over, "! " if $text =~ /\S/ && @Over && $dokuwiki_dl;
     print OUT dokuwikiize($text), "\n";
 }
 
@@ -883,8 +890,8 @@ sub process_comment ($$) {
     }
 }
 
-sub process_file ($) {
-    my($filename) = @_;
+sub process_file ($;$) {
+    my($filename, $text) = @_;
 
     # extract header filename
     if ($filename =~ /^.*:"(.*)"$/) {
@@ -897,12 +904,14 @@ sub process_file ($) {
 
     $filename = "$PREFIX/$filename" if !-e $filename && defined($PREFIX);
     return if !-e $filename;
-    if (!open(IN, $filename)) {
-	print STDERR "click-elem2man: $filename: $!\n";
-	return;
+    if (!defined($text)) {
+	if (!open(IN, $filename)) {
+	    print STDERR "click-elem2man: $filename: $!\n";
+	    return;
+	}
+	$text = <IN>;
+	close IN;
     }
-    my $text = <IN>;
-    close IN;
 
     foreach $_ (split(m{^class}m, $text)) {
 	my($cxx_class) = (/^\s*(\w*)/);
@@ -926,7 +935,7 @@ sub process_file ($) {
     }
 }
 
-sub read_files_from ($) {
+sub process_file_set ($) {
     my($fn) = @_;
     if (open(IN, ($fn eq '-' ? "<&STDIN" : $fn))) {
 	my(@a, @b, $t);
@@ -943,8 +952,8 @@ sub read_files_from ($) {
 		    $_;
 		}
 	    } split(/\n+/, $t);
-	} elsif ($t =~ /[\(\)]/ && $fn ne '-') {
-	    @a = ($fn);
+	} elsif ($t =~ /[\(\)]/) {
+	    process_file($fn, $t);
 	} else {
 	    $t =~ s/^#.*//mg;
 	    @a = split(/\s+/, $t);
@@ -958,11 +967,12 @@ sub read_files_from ($) {
 		push @b, $t;
 	    }
 	}
-	
-	@b;
+
+	foreach $t (@b) {
+	    process_file($t);
+	}
     } else {
 	print STDERR "click-elem2man: $fn: $!\n";
-	();
     }
 }
 
@@ -991,9 +1001,10 @@ sub help () {
     print STDERR <<"EOD;";
 'Click-elem2man' translates Click element documentation into manual pages.
 
-Usage: click-elem2man [-l | -L] [-d DIRECTORY] [-f FILE | FILE]...
+Usage: click-elem2man [-l | -L] [-d DIRECTORY] FILE...
 
-Each FILE is a Click header file. '-' means standard input.
+Each FILE is a Click header file, a list of Click header files, or the
+output of click-mkelemmap.  '-' means standard input.
 
 Options:
   -f, --files FILE        Read header filenames from FILE.
@@ -1004,6 +1015,7 @@ Options:
   -L, --extend-list       Extend an existing elements(n) manual page.
   -p, --prefix PFX        Look for header files in PFX after looking in '.'.
       --dokuwiki          Generate dokuwiki source instead of manual pages.
+      --dokuwiki-dl       Generate dokuwiki source using dl plugin.
   -u, --uninstall         Remove existing manual pages.
   -h, --help              Print this message and exit.
 
@@ -1030,10 +1042,10 @@ while (@ARGV) {
 	$package = $1;
     } elsif (/^-f$/ || /^--files$/) {
 	usage() if !@ARGV;
-	push @files, read_files_from(shift @ARGV);
+	push @files, shift @ARGV;
 	$any_files = 1;
     } elsif (/^--files=(.*)$/) {
-	push @files, read_files_from($1);
+	push @files, $1;
 	$any_files = 1;
     } elsif (/^-l$/ || /^--list$/) {
 	$elementlist = 1;
@@ -1056,6 +1068,10 @@ while (@ARGV) {
     } elsif (/^--dokuwiki$/ || /^--doku$/) {
 	$do_section_func = \&dokuwiki_do_section;
 	$output_type = 'dokuwiki';
+    } elsif (/^--dokuwiki-dl$/) {
+	$do_section_func = \&dokuwiki_do_section;
+	$output_type = 'dokuwiki';
+	$dokuwiki_dl = 1;
     } elsif (/^-./) {
 	usage();
     } elsif (/^-$/) {
@@ -1093,7 +1109,7 @@ if ($uninstall) {
     open(OUT, ">&STDOUT");
 }
 foreach $fn (@files) {
-    process_file($fn);
+    process_file_set($fn);
 }
 if ($uninstall || !$directory) {
     close OUT;
