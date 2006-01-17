@@ -183,7 +183,7 @@ extern const CpVaParseCmd
     cpMandatoryKeywords,
     cpIgnore,
     cpIgnoreRest,
-			// HELPER		RESULT
+			// Helpers		Results
     cpArgument,		//			String*
     cpArguments,	//			Vector<String>*
     cpString,		//			String*
@@ -244,13 +244,20 @@ int cp_va_parse(const String& arg, CP_VA_PARSE_ARGS_REST);
 int cp_va_space_parse(const String& arg, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse_keyword(const String& arg, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse_remove_keywords(Vector<String>& argv, int, CP_VA_PARSE_ARGS_REST);
-// Takes: cpEnd					end of argument list
-//        cpOptional, cpKeywords, cpIgnore...	manipulators
-//        CpVaParseCmd type_id,			actual argument
-//		const char* description,
-//		[[any HELPER arguments from table; usually none]],
-//		[[if cpConfirmKeywords, bool* confirm_keyword_given]],
-//		[[RESULT arguments from table; usually T*]]
+// Argument syntax:
+// cp_va_arg ::= cpEnd		// terminates argument list (not 0!)
+//    |   cpOptional | cpKeywords | cpIgnore...		// manipulators
+//    |   CpVaParseCmd cmd, const char *description,
+//	  [Optional Helpers], Results
+//				// Helpers and Results depend on 'cmd';
+//				// see table above
+//    |   const char *keyword, CpVaParseCmd cmd, const char *description,
+//	  [Optional Helpers], Results
+//				// keyword argument, within cpKeywords or
+//				// cpMandatoryKeywords
+//    |   const char *keyword, CpVaParseCmd cmd, const char *description,
+//	  bool *keyword_given, [Optional Helpers], Results
+//				// keyword argument, within cpConfirmKeywords
 // Returns the number of result arguments set, or negative on error.
 // Stores no values in the result arguments on error.
 
