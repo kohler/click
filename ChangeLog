@@ -1,3 +1,8 @@
+2006-01-17 Tuesday 02:22  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/confparse.hh (1.57): minor documentation
+	  improvement, major recompile
+
 2006-01-16 Monday 14:06  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/Makefile.in (1.58), doc/click-elem2man (1.41),
