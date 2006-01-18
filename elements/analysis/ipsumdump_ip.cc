@@ -242,14 +242,17 @@ static bool transport_extract(PacketDesc& d, int thunk)
 
       case T_PAYLOAD_LEN:
 	if (d.iph) {
+	    d.v = ntohs(d.iph->ip_len);
 	    int32_t off = p->network_header_length();
-	    if (d.tcph && p->transport_length() >= 13)
+	    if (d.tcph && p->transport_length() >= 13
+		&& off + (d.tcph->th_off << 2) <= d.v)
 		off += (d.tcph->th_off << 2);
 	    else if (d.udph)
 		off += sizeof(click_udp);
 	    else if (IP_FIRSTFRAG(d.iph) && (d.iph->ip_p == IP_PROTO_TCP || d.iph->ip_p == IP_PROTO_UDP))
-		off = ntohs(d.iph->ip_len);
-	    d.v = ntohs(d.iph->ip_len) - off + (d.force_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
+		off = d.v;
+	    d.v -= off;
+	    d.v += (d.force_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
 	} else
 	    d.v = p->length() + EXTRA_LENGTH_ANNO(p);
 	return true;
