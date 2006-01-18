@@ -271,12 +271,14 @@ static void transport_outa(const PacketDesc& d, int thunk)
 	  int32_t off;
 	  uint32_t len;
 	  if (d.iph) {
+	      len = ntohs(d.iph->ip_len);
 	      off = d.p->transport_header_offset();
-	      if (d.tcph && d.p->transport_length() >= 13)
+	      if (d.tcph && d.p->transport_length() >= 13
+		  && off + (d.tcph->th_off << 2) <= len)
 		  off += (d.tcph->th_off << 2);
 	      else if (d.udph)
 		  off += sizeof(click_udp);
-	      len = ntohs(d.iph->ip_len) - off + d.p->network_header_offset();
+	      len = len - off + d.p->network_header_offset();
 	      if (len + off > d.p->length()) // EXTRA_LENGTH?
 		  len = d.p->length() - off;
 	  } else {
