@@ -1,3 +1,13 @@
+2006-01-18 Wednesday 01:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/ipsumdump_ip.cc (1.8): whoopslet: got
+	  payload_len, forgot payload
+
+2006-01-18 Wednesday 01:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/ipsumdump_ip.cc (1.7): Beware of improper TCP
+	  headers; they led to insane reported payload length (Vern Paxson)
+
 2006-01-17 Tuesday 11:43  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* ns/.cvsignore (1.2): patch from Bart Braem
