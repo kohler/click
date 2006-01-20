@@ -1,3 +1,8 @@
+2006-01-20 Friday 17:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/ns-2.29-patch (1.2), ns/nsclick.cc (1.26): patches from Bart
+	  Braem
+
 2006-01-18 Wednesday 01:54  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/ipsumdump_ip.cc (1.8): whoopslet: got
