@@ -45,6 +45,7 @@
 #include <click/confparse.hh>
 #include <click/master.hh>
 #include <click/simclick.h>
+#include <click/handlercall.hh>
 #include "elements/standard/quitwatcher.hh"
 #include "elements/userlevel/controlsocket.hh"
 
@@ -380,20 +381,22 @@ char* simclick_click_read_handler(simclick_click clickinst,
       click_chatter("simclick_click_read_handler: call with null router");
       return 0;
     }
-    if (Element *e = r->find(elementname))
-	if (const Handler* h = r->handler(e, handlername))
-	    if (h->read_visible()) {
-		String readresult = h->call_read(e);
-		char* result = 0;
-		if (memalloc)
-		    result = (char*) memalloc(readresult.length() + 1, memparam);
-		else
-		    result = (char*) malloc(readresult.length() + 1);
-		strcpy(result, readresult.c_str());
-		return result;
-	    }
-    click_chatter("readhandler: Handler %s.%s not found", elementname, handlername);
-    return 0;
+    String hdesc = String(elementname) + "." + String(handlername);
+    ErrorHandler *errh = ErrorHandler::default_handler();
+    int before = errh->nerrors();
+    String result = HandlerCall::call_read(hdesc, r->root_element(), errh);
+    if (!result && errh->nerrors() != before)
+	return 0;
+    char *rstr;
+    if (memalloc)
+	rstr = (char *) memalloc(result.length() + 1, memparam);
+    else
+	rstr = (char *) malloc(result.length() + 1);
+    if (rstr) {
+	memcpy(rstr, result.data(), result.length());
+	rstr[result.length()] = 0;
+    }
+    return rstr;
 }
 
 int simclick_click_write_handler(simclick_click clickinst,
@@ -405,11 +408,6 @@ int simclick_click_write_handler(simclick_click clickinst,
       click_chatter("simclick_click_write_handler: call with null router");
       return -3;
     }
-    if (Element* e = r->find(elementname)) {
-	if (const Handler* h = r->handler(e, handlername))
-	    if (h->write_visible())
-		return h->call_write(writestring, e, true, ErrorHandler::default_handler());
-	return -2;		// no such handler
-    } else
-	return -1;		// no such element
+    String hdesc = String(elementname) + "." + String(handlername);
+    return HandlerCall::call_write(hdesc, String(writestring), r->root_element(), ErrorHandler::default_handler());
 }

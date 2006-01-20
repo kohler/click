@@ -100,7 +100,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/classifier/classifier
 @@ -0,0 +1,604 @@
 +/*
 + * classifier-click classifier file for nsclick
-+ * $Header: /srl/dirkcvs/nsclick/ns/classifier/classifier-click.cc,v 1.13 2003/04/25 00:45:37 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + */
 +
 +/*****************************************************************************
@@ -698,8 +698,8 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/classifier/classifier
 +  double ns2time = Scheduler::instance().clock();
 +  double fracp,intp;
 +  fracp = modf(ns2time,&intp);
-+  curtime.tv_sec = intp;
-+  curtime.tv_usec = (fracp * 1.0e6 + 0.5); 
++  curtime.tv_sec = (long) intp;
++  curtime.tv_usec = (long) (fracp * 1.0e6 + 0.5); 
 +  return curtime;
 +}
 diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/classifier/classifier-click.h ns-2.29/classifier/classifier-click.h
@@ -714,7 +714,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/classifier/classifier
 + * that the Click subsystem will be the thing which actually
 + * does the classifying, not the classifier.
 + *
-+ * $Header: /srl/dirkcvs/nsclick/ns/classifier/classifier-click.h,v 1.6 2003/04/25 00:45:37 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + */
 +
 +/*****************************************************************************
@@ -875,7 +875,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/classifier/classifier
 + * classifier-ext.cc
 + * Base external router classifier
 + *
-+ * $Header: /srl/dirkcvs/nsclick/ns/classifier/classifier-ext.cc,v 1.1 2002/06/10 19:22:59 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + */
 +
 +/*****************************************************************************
@@ -1043,7 +1043,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/classifier/classifier
 + * on to ns-2, e.g. Click. It uses a combination of the packet direction
 + * and interface ID to decide where to send stuff.
 + *
-+ * $Header: /srl/dirkcvs/nsclick/ns/classifier/classifier-ext.h,v 1.1 2002/06/10 19:22:59 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + */
 +
 +/*****************************************************************************
@@ -1364,7 +1364,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/common/clicknode.cc n
 + * class to a superclass, i.e. something called ExtNode, since a lot
 + * of this should work with most Ext routing stuff, not just click.
 + * 
-+ * $Header: /srl/dirkcvs/nsclick/ns/common/clicknode.cc,v 1.1 2002/06/10 19:23:01 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + *
 + */
 +
@@ -1497,7 +1497,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/common/clicknode.h ns
 +/*
 + * clicknode.h
 + *
-+ * $Header: /srl/dirkcvs/nsclick/ns/common/clicknode.h,v 1.1 2002/06/10 19:23:01 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + *
 + */
 +
@@ -1608,7 +1608,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/common/rawpacket.cc n
 + * rawpacket.cc
 + * Main file for the raw packet type
 + *
-+ * $Header: /srl/dirkcvs/nsclick/ns/common/rawpacket.cc,v 1.2 2003/03/18 06:29:46 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + *
 + */
 +
@@ -1818,7 +1818,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/common/rawpacket.h ns
 +/*
 + * rawpacket.h
 + *
-+ * $Header: /srl/dirkcvs/nsclick/ns/common/rawpacket.h,v 1.2 2003/01/29 15:44:13 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + *
 + */
 +
@@ -1912,7 +1912,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/conf/configure.in.cli
 +++ ns-2.29/conf/configure.in.click	2006-01-08 13:54:07.000000000 -0800
 @@ -0,0 +1,30 @@
 +dnl autoconf rules to find click - copied from dmalloc example
-+dnl $Header: /srl/dirkcvs/nsclick/ns/conf/configure.in.click,v 1.2 2003/03/23 03:50:11 neufeldm Exp $
++dnl $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 +
 +AC_ARG_WITH(click,	--with-click=path specify a pathname for the click modular router, d="$withval", d="")
 +
@@ -2773,7 +2773,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mac/ll-ext.cc ns-2.29
 + * This is a special link layer which explicitly notifies the attached
 + * queue when it becomes free.
 + *
-+ * $Header: /srl/dirkcvs/nsclick/ns/mac/ll-ext.cc,v 1.4 2003/04/27 06:55:22 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + */
 +
 +/*****************************************************************************
@@ -2955,7 +2955,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mac/ll-ext.h ns-2.29/
 + * thing doesn't quite do what we need it to, so you get what
 + * we've got here. 
 + *
-+ * $Header: /srl/dirkcvs/nsclick/ns/mac/ll-ext.h,v 1.2 2003/04/27 06:55:22 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + */
 +
 +/*****************************************************************************
@@ -3475,7 +3475,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mobile/uni-antenna.cc
 +
 + * Ported from CMU/Monarch's code, nov'98 -Padma.
 +   omni-antenna.cc
-+   $Id: uni-antenna.cc,v 1.6 2003/04/16 05:43:36 neufeldm Exp $
++   $Id: ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 +   */
 +
 +#include <antenna.h>
@@ -3760,7 +3760,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/queue/clickqueue.cc n
 +
 +#ifndef lint
 +static const char rcsid[] =
-+    "$Header: /srl/dirkcvs/nsclick/ns/queue/clickqueue.cc,v 1.2 2003/04/10 16:52:46 neufeldm Exp $";
++    "$Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $";
 +#endif
 +
 +#include <stdlib.h>
@@ -3984,7 +3984,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/routing/extclickroute
 +/*
 + * XXX Insert CU copyright stuff here...
 + *
-+ * $Header: /srl/dirkcvs/nsclick/ns/routing/extclickrouter.cc,v 1.1 2002/06/10 19:23:06 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + *
 + */
 +
@@ -4010,7 +4010,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/routing/extclickroute
 +/*
 + * XXX Insert CU copyright stuff here...
 + * 
-+ * $Header: /srl/dirkcvs/nsclick/ns/routing/extclickrouter.h,v 1.1 2002/06/10 19:23:06 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + *
 + * This defines the interface used by all external raw packet routing
 + * modules bolted on to ns.
@@ -4043,7 +4043,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/routing/extrouter.cc 
 +/*
 + * XXX Insert CU copyright stuff here...
 + * 
-+ * $Header: /srl/dirkcvs/nsclick/ns/routing/extrouter.cc,v 1.1 2002/06/10 19:23:07 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + *
 + * This defines the interface used by all external raw packet routing
 + * modules bolted on to ns.
@@ -4064,7 +4064,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/routing/extrouter.h n
 +/*
 + * XXX Insert CU copyright stuff here...
 + * 
-+ * $Header: /srl/dirkcvs/nsclick/ns/routing/extrouter.h,v 1.2 2002/09/07 07:34:19 neufeldm Exp $
++ * $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 + *
 + * This defines the interface used by all external raw packet routing
 + * modules bolted on to ns.
@@ -4201,7 +4201,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple
 +#  PERFORMANCE OF THIS SOFTWARE.                                            
 +#
 +# nsclick-simple-hybrid.tcl
-+# @(#) $Header: /srl/dirkcvs/nsclick/ns/tcl/ex/nsclick-simple-hybrid.tcl,v 1.2 2002/06/13 02:34:34 neufeldm Exp $
++# @(#) $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 +#
 +# A sample nsclick script simulating a small hybrid wired/wireless
 +#
@@ -4695,7 +4695,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple
 +#  PERFORMANCE OF THIS SOFTWARE.                                            
 +#
 +# nsclick-simple-lan.tcl
-+# @(#) $Header: /srl/dirkcvs/nsclick/ns/tcl/ex/nsclick-simple-lan.tcl,v 1.2 2002/06/13 02:34:34 neufeldm Exp $
++# @(#) $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 +#
 +# A sample nsclick script simulating a small LAN
 +#
@@ -4970,7 +4970,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple
 +#  PERFORMANCE OF THIS SOFTWARE.                                            
 +#
 +# nsclick-simple-lan.tcl
-+# @(#) $Header: /srl/dirkcvs/nsclick/ns/tcl/ex/nsclick-simple-wlan.tcl,v 1.2 2002/06/13 02:34:34 neufeldm Exp $
++# @(#) $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 +#
 +# A sample nsclick script simulating a small LAN
 +#
@@ -5269,7 +5269,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/lib/ns-clicknode.
 +#  PERFORMANCE OF THIS SOFTWARE.                                            
 +#
 +#
-+# @(#) $Header: /srl/dirkcvs/nsclick/ns/tcl/lib/ns-clicknode.tcl,v 1.4 2003/04/28 06:14:30 neufeldm Exp $
++# @(#) $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $
 +#
 +
 +Class ClickNode -superclass Node/MobileNode
@@ -5717,7 +5717,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tools/random.cc ns-2.
 --- ns-2.29-pure/tools/random.cc	2005-10-19 21:45:25.000000000 -0700
 +++ ns-2.29/tools/random.cc	2006-01-08 13:06:28.000000000 -0800
 @@ -34,7 +34,7 @@
-  * "@(#) $Header: /nfs/jade/vint/CVSROOT/ns-2/tools/random.cc,v 1.20 2003/12/10 17:19:56 johnh Exp $ (LBL)";
+  * "@(#) $Header: /home/am0/click/cvsroot/release/one/etc/ns-2.29-patch,v 1.1 2006/01/08 23:04:08 eddietwo Exp $ (LBL)";
   */
  
 -#ifndef WIN32
