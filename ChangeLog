@@ -1,3 +1,8 @@
+2006-01-23 Monday 00:59  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/ettstat.cc (1.33): endianness bug reported by
+	  Szymon Jakubczak
+
 2006-01-20 Friday 17:02  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/ns-2.29-patch (1.2), ns/nsclick.cc (1.26): patches from Bart
