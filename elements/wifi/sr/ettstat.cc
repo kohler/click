@@ -385,8 +385,8 @@ ETTStat::send_probe()
 	lnfo->_rev = htons(probe->rev_rate(_start, rs._rate, rs._size));
 	
 	rates.push_back(rs);
-	fwd.push_back(lnfo->_fwd);
-	rev.push_back(lnfo->_rev);
+	fwd.push_back(htons(lnfo->_fwd));
+	rev.push_back(htons(lnfo->_rev));
       }
       update_link(_ip, probe->_ip, rates, fwd, rev, entry->_seq);
 
