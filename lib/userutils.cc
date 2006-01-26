@@ -243,6 +243,37 @@ filename_landmark(const char *filename, bool file_is_expr)
 }
 
 String
+shell_quote(const String &str, bool quote_tilde)
+{
+    StringAccum sa;
+    const char *s, *last = str.begin();
+    if (quote_tilde && str && str[0] == '~')
+	sa << '\'';
+    for (s = str.begin(); s < str.end(); s++) {
+	if (isalnum(*s) || *s == '.' || *s == '/' || *s == '-' || *s == '_'
+	    || *s == ',' || *s == '~')
+	    /* do nothing */;
+	else {
+	    if (!sa)
+		sa << str.substring(last, s) << '\'';
+	    else
+		sa << str.substring(last, s);
+	    if (*s == '\'')
+		sa << "\'\"\'\"\'";
+	    else
+		sa << *s;
+	    last = s + 1;
+	}
+    }
+    if (!sa)
+	return str;
+    else {
+	sa << str.substring(last, s) << '\'';
+	return sa.take_string();
+    }
+}
+
+String
 file_string(FILE *f, ErrorHandler *errh)
 {
   StringAccum sa;
@@ -623,58 +654,64 @@ compressed_data(const unsigned char *buf, int len)
 FILE *
 open_uncompress_pipe(const String &filename, const unsigned char *buf, int, ErrorHandler *errh)
 {
-    String command;
+    StringAccum cmd;
     if (buf[0] == 'B')
-	command = "bzcat " + filename;
+	cmd << "bzcat";
     else if (access("/usr/bin/gzcat", X_OK) >= 0)
-	command = "/usr/bin/gzcat " + filename;
-    else 
-	command = "zcat " + filename;
-    if (FILE *p = popen(command.c_str(), "r"))
+	cmd << "/usr/bin/gzcat";
+    else
+	cmd << "zcat";
+    cmd << ' ' << shell_quote(filename);
+    if (FILE *p = popen(cmd.c_str(), "r"))
 	return p;
     else {
-	errh->error("'%s': %s", command.c_str(), strerror(errno));
+	errh->error("'%s': %s", cmd.c_str(), strerror(errno));
 	return 0;
     }
 }
 
 enum {
-    COMP_GZIP = 1,
-    COMP_BZ2 = 2,
+    COMP_COMPRESS = 1, COMP_GZIP = 2, COMP_BZ2 = 3
 };
+
 int
-check_suffix_compressed(const String &filename)
+compressed_filename(const String &filename)
 {
-    String suffix3 = filename.substring(filename.length() - 3, 3);
-    String suffix4 = filename.substring(filename.length() - 4, 4);
-    if (suffix3 == ".gz") {
+    if (filename.length() >= 2 && memcmp(filename.end() - 2, ".Z", 2) == 0)
+	return COMP_COMPRESS;
+    if (filename.length() >= 3 && memcmp(filename.end() - 3, ".gz", 3) == 0)
 	return COMP_GZIP;
-    } else if (suffix4 == ".bz2") {
+    else if (filename.length() >= 4 && memcmp(filename.end() - 4, ".bz2", 4) == 0)
 	return COMP_BZ2;
-    } else {
+    else
 	return 0;
-    }
 }
+
 FILE *
 open_compress_pipe(const String &filename, ErrorHandler *errh)
 {
-    String command;
-    int c = check_suffix_compressed(filename);
-    if (!c) {
+    StringAccum cmd;
+    int c = compressed_filename(filename);
+    switch (c) {
+      case COMP_COMPRESS:
+	cmd << "compress";
+	break;
+      case COMP_GZIP:
+	cmd << "gzip";
+	break;
+      case COMP_BZ2:
+	cmd << "bzip2";
+	break;
+      default:
+	errh->error("%s: unknown compression extension", filename.c_str());
+	errno = EINVAL;
 	return 0;
     }
-    if (c == COMP_GZIP) {
-	command = "/bin/gzip > " + filename;
-    } else if (c == COMP_BZ2) {
-	command = "/usr/bin/bzip2 > " + filename;
-    } else {
-	errh->error("unknown file extension: %s (%d)", filename.c_str(), c);
-	return 0;
-    }
-    if (FILE *p = popen(command.c_str(), "w"))
+    cmd << " > " << shell_quote(filename);
+    if (FILE *p = popen(cmd.c_str(), "w"))
 	return p;
     else {
-	errh->error("'%s': %s", command.c_str(), strerror(errno));
+	errh->error("'%s': %s", cmd.c_str(), strerror(errno));
 	return 0;
     }
 }

@@ -33,10 +33,12 @@ void parse_tabbed_lines(const String &, Vector<String> *, ...);
 
 ArchiveElement init_archive_element(const String &, int);
 
+String shell_quote(const String &, bool quote_tilde = false);
+
 bool compressed_data(const unsigned char *, int);
 FILE *open_uncompress_pipe(const String &filename, const unsigned char *, int, ErrorHandler *);
 
-int check_suffix_compressed(const String &filename);
+int compressed_filename(const String &filename);
 FILE *open_compress_pipe(const String &filename, ErrorHandler *);
 
 #if HAVE_DYNAMIC_LINKING

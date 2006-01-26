@@ -146,11 +146,10 @@ ToDump::initialize(ErrorHandler *errh)
 	// prepare files
 	assert(!_fp);
 	if (_filename != "-") {
-	    if (check_suffix_compressed(_filename) > 0) {
+	    if (compressed_filename(_filename) > 0)
 		_fp = open_compress_pipe(_filename, errh);
-	    } else {
+	    else
 		_fp = fopen(_filename.c_str(), "wb");
-	    }
 	    if (!_fp)
 		return errh->error("%s: %s", _filename.c_str(), strerror(errno));
 	} else {
