@@ -638,6 +638,46 @@ open_uncompress_pipe(const String &filename, const unsigned char *buf, int, Erro
     }
 }
 
+enum {
+    COMP_GZIP = 1,
+    COMP_BZ2 = 2,
+};
+int
+check_suffix_compressed(const String &filename)
+{
+    String suffix3 = filename.substring(filename.length() - 3, 3);
+    String suffix4 = filename.substring(filename.length() - 4, 4);
+    if (suffix3 == ".gz") {
+	return COMP_GZIP;
+    } else if (suffix4 == ".bz2") {
+	return COMP_BZ2;
+    } else {
+	return 0;
+    }
+}
+FILE *
+open_compress_pipe(const String &filename, ErrorHandler *errh)
+{
+    String command;
+    int c = check_suffix_compressed(filename);
+    if (!c) {
+	return 0;
+    }
+    if (c == COMP_GZIP) {
+	command = "/bin/gzip > " + filename;
+    } else if (c == COMP_BZ2) {
+	command = "/usr/bin/bzip2 > " + filename;
+    } else {
+	errh->error("unknown file extension: %s (%d)", filename.c_str(), c);
+	return 0;
+    }
+    if (FILE *p = popen(command.c_str(), "w"))
+	return p;
+    else {
+	errh->error("'%s': %s", command.c_str(), strerror(errno));
+	return 0;
+    }
+}
 
 #if HAVE_DYNAMIC_LINKING
 

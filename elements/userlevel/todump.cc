@@ -29,6 +29,7 @@
 #include <click/standard/scheduleinfo.hh>
 #include <click/packet_anno.hh>
 #include "fakepcap.hh"
+#include <click/userutils.hh>
 CLICK_DECLS
 
 ToDump::ToDump()
@@ -145,7 +146,11 @@ ToDump::initialize(ErrorHandler *errh)
 	// prepare files
 	assert(!_fp);
 	if (_filename != "-") {
-	    _fp = fopen(_filename.c_str(), "wb");
+	    if (check_suffix_compressed(_filename) > 0) {
+		_fp = open_compress_pipe(_filename, errh);
+	    } else {
+		_fp = fopen(_filename.c_str(), "wb");
+	    }
 	    if (!_fp)
 		return errh->error("%s: %s", _filename.c_str(), strerror(errno));
 	} else {

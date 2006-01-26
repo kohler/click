@@ -36,6 +36,9 @@ ArchiveElement init_archive_element(const String &, int);
 bool compressed_data(const unsigned char *, int);
 FILE *open_uncompress_pipe(const String &filename, const unsigned char *, int, ErrorHandler *);
 
+int check_suffix_compressed(const String &filename);
+FILE *open_compress_pipe(const String &filename, ErrorHandler *);
+
 #if HAVE_DYNAMIC_LINKING
 int clickdl_load_package(String, ErrorHandler *);
 void clickdl_load_requirement(String, const Vector<ArchiveElement> *archive, ErrorHandler *);
