@@ -1,3 +1,9 @@
+2006-01-26 Thursday 17:00  John Bicket <jbicket@mit.edu>
+
+	* lib/userutils.cc (1.41), elements/userlevel/todump.cc (1.66),
+	  include/click/userutils.hh (1.16): make todump support compressed
+	  files.
+
 2006-01-23 Monday 00:59  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/sr/ettstat.cc (1.33): endianness bug reported by
