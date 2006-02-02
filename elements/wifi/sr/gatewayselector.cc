@@ -232,8 +232,6 @@ GatewaySelector::best_gateway()
   int best_metric = 0;
   Timestamp now = Timestamp::now();
   
-  _link_table->dijkstra(false);
-  
   for(GWIter iter = _gateways.begin(); iter; iter++) {
     GWInfo nfo = iter.value();
     Timestamp expire = nfo._last_update + _gw_expire;
