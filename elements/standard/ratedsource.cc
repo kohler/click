@@ -162,7 +162,7 @@ String
 RatedSource::read_param(Element *e, void *vparam)
 {
   RatedSource *rs = (RatedSource *)e;
-  switch ((int)vparam) {
+  switch ((intptr_t)vparam) {
    case 0:			// data
     return rs->_data;
    case 1:			// rate
@@ -186,7 +186,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
 {
   RatedSource *rs = (RatedSource *)e;
   String s = cp_uncomment(in_s);
-  switch ((int)vparam) {
+  switch ((intptr_t)vparam) {
 
   case 0:			// data
       rs->_data = in_s;

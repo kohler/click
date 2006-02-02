@@ -322,7 +322,7 @@ String
 RED::read_parameter(Element *f, void *vparam)
 {
     RED *red = (RED *)f;
-    switch ((int)vparam) {
+    switch ((intptr_t)vparam) {
       case 0:			// min_thresh
 	return String(red->_min_thresh);
       case 1:			// max_thresh

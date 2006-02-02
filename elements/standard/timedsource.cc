@@ -100,7 +100,7 @@ String
 TimedSource::read_param(Element *e, void *vparam)
 {
   TimedSource *ts = (TimedSource *)e;
-  switch ((int)vparam) {
+  switch ((intptr_t)vparam) {
    case 0:			// data
     return ts->_data;
    case 1:			// limit
@@ -122,7 +122,7 @@ TimedSource::change_param(const String &in_s, Element *e, void *vparam,
 {
   TimedSource *ts = (TimedSource *)e;
   String s = cp_uncomment(in_s);
-  switch ((int)vparam) {
+  switch ((intptr_t)vparam) {
 
   case 0:			// data
       ts->_data = in_s;

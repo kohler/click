@@ -181,7 +181,7 @@ RandomBitErrors::simple_action(Packet *p_in)
 static String
 random_bit_errors_read(Element *f, void *vwhich)
 {
-  int which = (int)vwhich;
+  int which = (intptr_t)vwhich;
   RandomBitErrors *lossage = (RandomBitErrors *)f;
   if (which == 0)
     return cp_unparse_real2(lossage->p_bit_error(), 16);

@@ -147,7 +147,7 @@ PokeHandlers::write_param(const String &in_s, Element *e, void *v,
 {
     PokeHandlers *p = (PokeHandlers *)e;
     String s = cp_uncomment(in_s);
-    switch ((int) v) {
+    switch ((intptr_t) v) {
     case 0: 
 	p->unpause();
 	break;
