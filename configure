@@ -4054,7 +4054,7 @@ if test "${enable_linuxmodule+set}" = set; then
   enableval="$enable_linuxmodule"
   :
 else
-  enable_linuxmodule=yes
+  enable_linuxmodule=yes; enable_linuxmodule_default=yes
 fi;
 # Check whether --enable-bsdmodule or --disable-bsdmodule was given.
 if test "${enable_bsdmodule+set}" = set; then
@@ -4092,28 +4092,35 @@ else
   linux_system_map=NONE
 fi;
 
+linux_system_map_boot=no
+
 if test "x$linuxdir" = xNONE -o "x$linuxdir" = xyes; then
     if uname -r 2>/dev/null | grep '^2\.6' >/dev/null 2>&1; then
 	linuxdir=/lib/modules/"`uname -r`"/build
+	linux_system_map_boot="`uname -r`"
     else
 	linuxdir=/usr/src/linux
     fi
     if test ! -d "$linuxdir" -a "x$enable_linuxmodule" = xyes; then
-	{ echo "$as_me:$LINENO: WARNING:
+	if test "x$enable_linuxmodule_default" = xyes; then
+	    linuxdir=NONE; enable_linuxmodule=no
+	else
+	    { { echo "$as_me:$LINENO: error:
 =========================================
 
-Can't find $linuxdir, so I'm not compiling the linuxmodule driver.
+Can't find $linuxdir, so I can't compile the linuxmodule driver!
 (You may need the --with-linux=DIR option.)
 
 =========================================" >&5
-echo "$as_me: WARNING:
+echo "$as_me: error:
 =========================================
 
-Can't find $linuxdir, so I'm not compiling the linuxmodule driver.
+Can't find $linuxdir, so I can't compile the linuxmodule driver!
 (You may need the --with-linux=DIR option.)
 
 =========================================" >&2;}
-	linuxdir=NONE
+   { (exit 1); exit 1; }; }
+	fi
     fi
 fi
 
@@ -7997,7 +8004,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 8000 "configure"
+#line 8007 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -11797,24 +11804,53 @@ if test $ac_have_linux_kernel = y; then
 
 if test "$linux_system_map" = NONE; then
     linux_system_map=$linuxdir/System.map
+    if test "x$linux_system_map_boot" != xno -a ! -f "$linux_system_map"; then
+	linux_system_map=/boot/System.map-"$linux_system_map_boot"
+    fi
 fi
 
-if test ! -f $linux_system_map; then
-    { { echo "$as_me:$LINENO: error:
+if test ! -f "$linux_system_map"; then
+    if test "x$enable_linuxmodule_default" = xyes; then
+	{ echo "$as_me:$LINENO: WARNING:
+=========================================
+
+Can't find Linux System.map file '$linux_system_map',
+so I won't compile the linuxmodule driver.
+(You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
+
+=========================================" >&5
+echo "$as_me: WARNING:
+=========================================
+
+Can't find Linux System.map file '$linux_system_map',
+so I won't compile the linuxmodule driver.
+(You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
+
+=========================================" >&2;}
+	ac_have_linux_kernel=no
+    else
+	{ { echo "$as_me:$LINENO: error:
 =========================================
 
 Can't find Linux System.map file '$linux_system_map'.
+(You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================" >&5
 echo "$as_me: error:
 =========================================
 
 Can't find Linux System.map file '$linux_system_map'.
+(You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================" >&2;}
    { (exit 1); exit 1; }; }
+    fi
 fi
 
+fi
+
+
+if test $ac_have_linux_kernel = y; then
 
 echo "$as_me:$LINENO: checking for Linux 2.6" >&5
 echo $ECHO_N "checking for Linux 2.6... $ECHO_C" >&6
@@ -13646,7 +13682,7 @@ _ACEOF
 #define HAVE_LINUXMODULE_DRIVER 1
 _ACEOF
 
-    else
+    elif test x$enable_linuxmodule_default = xyes; then
 	{ echo "$as_me:$LINENO: WARNING:
 =========================================
 
@@ -13679,6 +13715,38 @@ There are two common reasons for this error:
    for more detailed information on the error.
 
 =========================================" >&2;}
+    else
+	{ { echo "$as_me:$LINENO: error:
+=========================================
+
+Your Linux kernel header files cause errors when included by a C++ program.
+
+There are two common reasons for this error:
+1. You have not applied the Linux kernel patch that comes with this
+   distribution.  Apply the right patch and try again.  See the INSTALL
+   file for more information.
+2. Your Linux configuration enables some functionality that is not yet
+   covered by our patches.  Turn off this functionality and try again,
+   or fix the error and tell us how you did it.  See the config.log file
+   for more detailed information on the error.
+
+=========================================" >&5
+echo "$as_me: error:
+=========================================
+
+Your Linux kernel header files cause errors when included by a C++ program.
+
+There are two common reasons for this error:
+1. You have not applied the Linux kernel patch that comes with this
+   distribution.  Apply the right patch and try again.  See the INSTALL
+   file for more information.
+2. Your Linux configuration enables some functionality that is not yet
+   covered by our patches.  Turn off this functionality and try again,
+   or fix the error and tell us how you did it.  See the config.log file
+   for more detailed information on the error.
+
+=========================================" >&2;}
+   { (exit 1); exit 1; }; }
     fi
 fi
 

@@ -60,7 +60,7 @@ dnl check drivers to enable
 dnl
 
 AC_ARG_ENABLE(userlevel, [  --disable-userlevel     disable user-level driver], :, enable_userlevel=yes)
-AC_ARG_ENABLE(linuxmodule, [  --disable-linuxmodule   disable Linux kernel driver], :, enable_linuxmodule=yes)
+AC_ARG_ENABLE(linuxmodule, [  --disable-linuxmodule   disable Linux kernel driver], :, [enable_linuxmodule=yes; enable_linuxmodule_default=yes])
 AC_ARG_ENABLE(bsdmodule, [  --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)], :, enable_bsdmodule=no)
 AC_ARG_ENABLE(nsclick, [  --enable-nsclick        enable NS simulator driver (EXPERIMENTAL)], :, enable_nsclick=no)
 
@@ -77,21 +77,27 @@ AC_ARG_WITH(linux-map, [[  --with-linux-map[=FILE] filename for Linux System.map
   [linux_system_map=$withval; if test -z "$withval" -o "$withval" = yes; then linux_system_map=NONE; fi],
   linux_system_map=NONE)
 
+linux_system_map_boot=no
+
 if test "x$linuxdir" = xNONE -o "x$linuxdir" = xyes; then
     if uname -r 2>/dev/null | grep '^2\.6' >/dev/null 2>&1; then
 	linuxdir=/lib/modules/"`uname -r`"/build
+	linux_system_map_boot="`uname -r`"
     else
 	linuxdir=/usr/src/linux
     fi
     if test ! -d "$linuxdir" -a "x$enable_linuxmodule" = xyes; then
-	AC_MSG_WARN([
+	if test "x$enable_linuxmodule_default" = xyes; then
+	    linuxdir=NONE; enable_linuxmodule=no
+	else
+	    AC_MSG_ERROR([
 =========================================
 
-Can't find $linuxdir, so I'm not compiling the linuxmodule driver.
+Can't find $linuxdir, so I can't compile the linuxmodule driver!
 (You may need the --with-linux=DIR option.)
 
 =========================================])
-	linuxdir=NONE
+	fi
     fi
 fi
 
@@ -426,18 +432,38 @@ dnl Look for System.map
 
 if test "$linux_system_map" = NONE; then
     linux_system_map=$linuxdir/System.map
+    if test "x$linux_system_map_boot" != xno -a ! -f "$linux_system_map"; then
+	linux_system_map=/boot/System.map-"$linux_system_map_boot"
+    fi
 fi
 
-if test ! -f $linux_system_map; then
-    AC_MSG_ERROR([
+if test ! -f "$linux_system_map"; then
+    if test "x$enable_linuxmodule_default" = xyes; then
+	AC_MSG_WARN([
+=========================================
+
+Can't find Linux System.map file '$linux_system_map',
+so I won't compile the linuxmodule driver.
+(You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
+
+=========================================])
+	ac_have_linux_kernel=no
+    else
+	AC_MSG_ERROR([
 =========================================
 
 Can't find Linux System.map file '$linux_system_map'.
+(You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================])
+    fi
+fi
+
 fi
 
 dnl Check for Linux 2.6
+
+if test $ac_have_linux_kernel = y; then
 
 AC_CACHE_CHECK([for Linux 2.6], [ac_cv_linux26],
     [if grep '^PATCHLEVEL[ 	]*=[ 	]*6' $linuxdir/Makefile >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi])
@@ -810,12 +836,28 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 	DRIVERS="$DRIVERS linuxmodule"
 	TOOL_TARGETS="$TOOL_TARGETS click-install"
 	AC_DEFINE(HAVE_LINUXMODULE_DRIVER)
-    else
+    elif test x$enable_linuxmodule_default = xyes; then
 	AC_MSG_WARN([
 =========================================
 
 Your Linux kernel header files cause errors when included by a C++ program,
 so I won't try to compile the linuxmodule driver.
+
+There are two common reasons for this error:
+1. You have not applied the Linux kernel patch that comes with this
+   distribution.  Apply the right patch and try again.  See the INSTALL
+   file for more information.
+2. Your Linux configuration enables some functionality that is not yet
+   covered by our patches.  Turn off this functionality and try again,
+   or fix the error and tell us how you did it.  See the config.log file
+   for more detailed information on the error.
+
+=========================================])
+    else
+	AC_MSG_ERROR([
+=========================================
+
+Your Linux kernel header files cause errors when included by a C++ program.
 
 There are two common reasons for this error:
 1. You have not applied the Linux kernel patch that comes with this
