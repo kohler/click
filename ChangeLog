@@ -1,3 +1,8 @@
+2006-02-02 Thursday 18:07  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/gatewayselector.cc (1.19): don't run dijstra for
+	  every packet.
+
 2006-02-02 Thursday 15:27  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/: aqm/red.cc (1.51), standard/pokehandlers.cc (1.40),
