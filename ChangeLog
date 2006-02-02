@@ -1,3 +1,9 @@
+2006-02-02 Thursday 12:44  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.64), configure.in (1.271): configury update: be
+	  kinder about Linux errors when people didnt enable-linuxmodule
+	  explicitly
+
 2006-01-26 Thursday 18:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/todump.cc (1.67), include/click/userutils.hh
