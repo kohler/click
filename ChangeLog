@@ -1,3 +1,10 @@
+2006-02-02 Thursday 15:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: aqm/red.cc (1.51), standard/pokehandlers.cc (1.40),
+	  standard/randomerror.cc (1.30), standard/ratedsource.cc (1.56),
+	  standard/timedsource.cc (1.38), userlevel/todevice.cc (1.57): fix
+	  for x86_64 (Mark Huang)
+
 2006-02-02 Thursday 12:44  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.64), configure.in (1.271): configury update: be
