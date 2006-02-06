@@ -131,9 +131,11 @@ PacketStore::add_handlers()
 	add_write_handler("active", write_param, (void *) H_ACTIVE);
 	add_read_handler("active", read_param, (void *) H_ACTIVE);
 }
-#include <click/dequeue.cc>
-template class DEQueue<struct click_wifi_extra>;
 
+#include <click/dequeue.cc>
+#if EXPLICIT_TEMPLATE_INSTANCES
+template class DEQueue<struct click_wifi_extra>;
+#endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(PacketStore)
 

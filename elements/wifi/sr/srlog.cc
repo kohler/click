@@ -140,7 +140,9 @@ SRLog::add_handlers()
 
 }
 #include <click/dequeue.cc>
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class DEQueue<struct click_wifi_extra>;
+#endif
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(SRLog)

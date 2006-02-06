@@ -205,6 +205,8 @@ EXPORT_ELEMENT(WifiDupeFilter)
 
 #include <click/hashmap.cc>
 #include <click/dequeue.cc>
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class DEQueue<int>;
+#endif
 CLICK_ENDDECLS
 

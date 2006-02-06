@@ -810,7 +810,9 @@ EXPORT_ELEMENT(ETTStat)
 #include <click/bighashmap.cc>
 #include <click/dequeue.cc>
 #include <click/vector.cc>
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class DEQueue<ETTStat::probe_t>;
 template class HashMap<IPAddress, ETTStat::probe_list_t>;
 template class HashMap<EtherAddress, uint8_t>;
+#endif
 CLICK_ENDDECLS
