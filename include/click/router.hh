@@ -68,8 +68,6 @@ class Router { public:
 
     // 'const Handler*' results last until that element/handlername modified
     static const Handler* handler(const Router*, int);
-    static const Handler* handler(const Element*, int);
-    const Handler* handler(int) const;
     static const Handler* handler(const Element*, const String&);
 
     static void add_read_handler(const Element*, const String&, ReadHandlerHook, void*);
@@ -467,18 +465,6 @@ inline Element *
 Router::find(const String& name, ErrorHandler *errh) const
 {
     return find(name, "", errh);
-}
-
-inline const Handler*
-Router::handler(const Element* e, int hi)
-{
-    return handler(e ? e->router() : 0, hi);
-}
-
-inline const Handler*
-Router::handler(int hi) const
-{
-    return handler(this, hi);
 }
 
 inline HashMap_ArenaFactory*

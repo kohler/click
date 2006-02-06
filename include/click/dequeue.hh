@@ -19,7 +19,7 @@ public:
   DEQueue(const DEQueue<T> &);
   ~DEQueue();
 
-  void check_rep();
+    inline void check_rep();
 
   int size() const { return _n; }
 
@@ -67,11 +67,11 @@ public:
     iterator end()			{ return iterator(*this, _n); }
     const_iterator end() const		{ return const_iterator((DEQueue<T> &) *this, _n); }
 
-  void push_back(const T &);
-  void pop_back();
+    inline void push_back(const T &);
+    inline void pop_back();
   
-  void push_front(const T &);
-  void pop_front();
+    inline void push_front(const T &);
+    inline void pop_front();
 
   void clear()                          { shrink(0); }
   bool reserve(int);
