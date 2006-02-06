@@ -1,3 +1,16 @@
+2006-02-05 Sunday 20:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/dequeue.hh (1.5), include/click/router.hh (1.82),
+	  lib/element.cc (1.113): remove little-used handler functions;
+	  inline nits in Deque
+
+2006-02-05 Sunday 20:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/: packetstore.cc (1.2), txfeedbackstats.cc (1.9),
+	  txflog.cc (1.5), wifidupefilter.cc (1.8), sr/dupefilter.cc (1.4),
+	  sr/ettstat.cc (1.34), sr/srlog.cc (1.4): protect template
+	  instantiations appropriately
+
 2006-02-02 Thursday 18:07  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/sr/gatewayselector.cc (1.19): don't run dijstra for
