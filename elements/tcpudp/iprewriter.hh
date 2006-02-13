@@ -44,7 +44,7 @@ INPUTSPEC handle input packets as follows:
 
 =over 5
 
-=item 'drop'
+=item 'drop' or 'discard'
 
 Discards input packets.
 

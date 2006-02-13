@@ -504,9 +504,9 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
 	is.kind = INPUT_SPEC_KEEP;
 	is.u.pattern.p = 0;
     
-    } else if (word == "drop") {
+    } else if (word == "drop" || word == "discard") {
 	if (rest)
-	    return cerrh.error("syntax error, expected 'drop'");
+	    return cerrh.error("syntax error, expected '%s'", word.c_str());
     
     } else if (word == "pattern") {
 	if (Pattern::parse_with_ports(rest, &is.u.pattern.p, &is.u.pattern.fport, &is.u.pattern.rport, this, &cerrh) < 0)
