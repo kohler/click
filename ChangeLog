@@ -1,3 +1,14 @@
+2006-02-13 Monday 12:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: analysis/aggcounter.cc (1.38),
+	  analysis/timestampaccum.cc (1.8), userlevel/ipflowrawsockets.cc
+	  (1.13): x86_64 fixes (Mark Huang): move (int)ptr => (intptr_t)ptr
+
+2006-02-13 Monday 12:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: ip/iprw.cc (1.63), tcpudp/iprewriter.hh (1.28): allow
+	  "discard" as synonym for "drop"
+
 2006-02-05 Sunday 20:35  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/dequeue.hh (1.5), include/click/router.hh (1.82),
