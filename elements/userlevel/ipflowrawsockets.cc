@@ -331,7 +331,7 @@ IPFlowRawSockets::selected(int fd)
 	pcap_dispatch(f->pcap(), 1, IPFlowRawSockets_get_packet, (u_char *) p);
 	if (p->length() && fake_pcap_force_ip(p, f->datalink())) {
 	    // Pull off the link header
-	    p->pull((unsigned)p->ip_header() - (unsigned)p->data());
+	    p->pull((uintptr_t)p->ip_header() - (uintptr_t)p->data());
 	    output(0).push(p);
 	} else
 	    p->kill();

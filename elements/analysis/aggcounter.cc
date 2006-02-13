@@ -423,7 +423,7 @@ AggregateCounter::write_file_handler(const String &data, Element *e, void *thunk
     String fn;
     if (!cp_filename(cp_uncomment(data), &fn))
 	return errh->error("argument should be filename");
-    int int_thunk = (int)thunk;
+    int int_thunk = (intptr_t)thunk;
     return ac->write_file(fn, (WriteFormat)int_thunk, errh);
 }
 
@@ -436,7 +436,7 @@ String
 AggregateCounter::read_handler(Element *e, void *thunk)
 {
     AggregateCounter *ac = static_cast<AggregateCounter *>(e);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case AC_FROZEN:
 	return cp_unparse_bool(ac->_frozen);
       case AC_ACTIVE:
@@ -467,7 +467,7 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
 {
     AggregateCounter *ac = static_cast<AggregateCounter *>(e);
     String s = cp_uncomment(data);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case AC_FROZEN: {
 	  bool val;
 	  if (!cp_bool(s, &val))

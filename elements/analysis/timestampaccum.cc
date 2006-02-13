@@ -49,7 +49,7 @@ String
 TimestampAccum::read_handler(Element *e, void *thunk)
 {
     TimestampAccum *ta = static_cast<TimestampAccum *>(e);
-    int which = reinterpret_cast<int>(thunk);
+    int which = reinterpret_cast<intptr_t>(thunk);
     switch (which) {
       case 0:
 	return String(ta->_count);
