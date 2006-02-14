@@ -1,3 +1,8 @@
+2006-02-14 Tuesday 02:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* FAQ (1.20), click-buildtool.in (1.73), config.h.in (1.36),
+	  userlevel/Makefile.in (1.88): add ELEMENT_LIBS
+
 2006-02-13 Monday 12:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/: analysis/aggcounter.cc (1.38),
