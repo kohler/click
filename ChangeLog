@@ -1,3 +1,7 @@
+2006-02-14 Tuesday 12:16  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* .cvsignore (1.11): click-buildtool (Bart Braem)
+
 2006-02-14 Tuesday 02:28  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* FAQ (1.20), click-buildtool.in (1.73), config.h.in (1.36),
