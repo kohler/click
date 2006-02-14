@@ -117,12 +117,13 @@
 #define CLICK_DEPRECATED __attribute__((deprecated))
 #endif
 
-/* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_PROVIDES, ELEMENT_HEADER, and
-   ELEMENT_MT_SAFE are noops. */
+/* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_PROVIDES, ELEMENT_HEADER,
+   ELEMENT_LIBS, and ELEMENT_MT_SAFE are noops. */
 #define EXPORT_ELEMENT(x)
 #define ELEMENT_REQUIRES(x)
 #define ELEMENT_PROVIDES(x)
 #define ELEMENT_HEADER(x)
+#define ELEMENT_LIBS(x)
 #define ELEMENT_MT_SAFE(x)
 
 /* Assume CLICK_USERLEVEL unless otherwise defined. */

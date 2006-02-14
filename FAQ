@@ -176,3 +176,18 @@ A. Add an ELEMENT_PROVIDES statement to your .cc file.  The Click build
    Elements that use the 'FakePcap' functionality explicitly require it
    with ELEMENT_REQUIRES; see 'elements/userlevel/fromdump.cc' for an
    example.
+
+
+Q. One of my elements must be linked against another library.  How can I
+   make userlevel Click link with that library?
+
+A. Add the required linker flags to an 'ELEMENT_LIBS' statement in your
+   element's .cc file.  For example:
+
+	...
+	CLICK_ENDDECLS
+	EXPORT_ELEMENT(MyElement)
+	ELEMENT_LIBS(-L/usr/local/lib -lmy_library)
+
+   Every element that needs a library should contain the relevant
+   ELEMENT_LIBS.
