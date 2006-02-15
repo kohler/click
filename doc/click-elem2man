@@ -412,7 +412,7 @@ sub dokuwiki_unentity ($) {
 
 sub dokuwiki_quotedbl ($) {
     my($x) = @_;
-    $x =~ s/^(.)/\%\%$1\%\%/e;
+    $x =~ s/^(.)/\%\%$1\%\%/;
     $x;
 }
 
