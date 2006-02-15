@@ -1,7 +1,62 @@
 Click NEWS
 
+Version 1.5
 
-* Thanks to Beyers Cronje
+* IP routing element improvements, including new, gloriously fast
+  DirectIPLookup element (Marko Zec with kohler).
+
+* Add new Script element, basically replacing PokeHandlers and
+  DriverManager; check it out.
+
+* New elements: ChangeUID, RawSocket, Socket, Truncate.
+
+* Deprecated elements: FromRawSocket, FromSocket, PokeHandlers, ToRawSocket,
+  ToSocket.
+
+* Polling version of Intel's e1000-5.7.6 driver.
+
+* Bug fixes to many elements, including ToIPSummaryDump, IPAddrRewriter,
+  IPPrint, ToDevice (kernel and userlevel), ICMPPingSource,
+  IPFilter/IPClassifier, RatedUnqueue, FromDAGDump, ARPQuerier, FromDevice
+  (userlevel).
+
+* Diagram library improvements.
+
+* x86_64 support.
+
+* Integrated nsclick patch, and improved nsclick.
+
+* Internals
+
+** Initiate Doxygen documentation for important base types, such as
+   Element, String, Notifier, and so forth.  This project is not yet
+   complete; as each class gets Doxygenated its interface tends to change a
+   lot, so be prepared.
+
+** Add new port_count() method, allowing elements to declare how many ports
+   they support.  Deprecate Element::set_ninputs(), set_noutputs(),
+   add_input(), add_output(), notify_ninputs(), and notify_noutputs().
+
+** Add RAW handler flag, for handlers whose output should not be modified
+   (for example, no adding a courtesy newline).
+
+** Element::run_timer takes a Timer * argument.  The old version is
+   deprecated.
+
+** Add a new, general mechanism for named enumerations (such as IP
+   protocols, TCP/UDP ports, addresses, and so forth), NameInfo/NameDB.
+
+** Add ELEMENT_LIBS support, so an element can pull in a static library.
+
+** Many bug fixes.
+
+* Thanks to Dan Aguayo, Mark Allman, Bart Braem, Kristof Cauwel, Spencer
+  Chang, YenJung Chang, Jacky Cheng, Beyers Cronje, Weidong Cui, Anne
+  Dudfield, Brian Gallaway, Michael Gellman, Chema Gonzalez, Adam
+  Greenhalgh, Felipe Huici, Bart Jooris, Bob Keyes, Kevin Lahey, Dagang Li,
+  Nikitas Liogkas, Yun Mao, Ross Mcilroy, Alastair McKinley, Indian Mogul,
+  Thomas Paine, Ruoming Pang, Juncheol Park, Vern Paxson, Michael Walfish,
+  Nick Weaver, Qinghua Ye, Marko Zec.
 
 
 Version 1.4.3   5.Jan.2005
@@ -1500,5 +1555,3 @@ Version 0.51   12.Nov.1999
 Version 0.5   20.Oct.1999
 
 * First public release.
-
- LocalWords:  FromSocket
