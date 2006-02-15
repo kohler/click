@@ -1,3 +1,7 @@
+2006-02-14 Tuesday 19:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* NEWS (1.160): update NEWS to prepare for 1.5
+
 2006-02-14 Tuesday 12:16  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* .cvsignore (1.11): click-buildtool (Bart Braem)
