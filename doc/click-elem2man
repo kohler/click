@@ -401,7 +401,12 @@ my($dokuwiki_sensitive_char) = "[!%'\\(\\)\\*/?\\[\\\\\\]_\\{\\}]";
 sub dokuwiki_unentity ($) {
     my($x) = @_;
     if ($x =~ /^\d+$/) {
-	"&#$x;";
+	$x = pack 'U', $x;
+	if ($x =~ /\B$dokuwiki_sensitive_char\E) {
+	    "%%$x%%";
+	} else {
+	    $x;
+	}
     } elsif ($dokuwiki_podentities{$x}) {
 	$dokuwiki_podentities{$x};
     } else {
