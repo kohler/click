@@ -396,7 +396,7 @@ my(%dokuwiki_podentities) =
       'verbar' => '|', 'eq' => '=', 'star' => '*', 'lparen' => '(',
       'rparen' => ')', 'lbrack' => '[', 'rbrack' => ']', 'lbrace' => '{',
       'rbrace' => '}' );
-my($dokuwiki_sensitive_char) = "[\\*/_'\\\\\\[\\]\\{\\}\\(\\)%?!]";
+my($dokuwiki_sensitive_char) = "[!%'\\(\\)\\*/?\\[\\\\\\]_\\{\\}]";
 
 sub dokuwiki_unentity ($) {
     my($x) = @_;
@@ -412,7 +412,7 @@ sub dokuwiki_unentity ($) {
 
 sub dokuwiki_quotedbl ($) {
     my($x) = @_;
-    $x =~ s/^(.)/"&#" . ord($1) . ";"/e;
+    $x =~ s/^(.)/%%$1%%/e;
     $x;
 }
 
