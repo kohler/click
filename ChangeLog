@@ -1,3 +1,16 @@
+2006-02-15 Wednesday 14:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.45): more dokuwiki entity stuff
+
+2006-02-15 Wednesday 14:29  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/: click-elem2man (1.43), click-elem2man (1.44): another
+	  quoting mechanism?
+
+2006-02-15 Wednesday 14:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.42): another quoting mechanism?
+
 2006-02-14 Tuesday 19:50  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* NEWS (1.160): update NEWS to prepare for 1.5
