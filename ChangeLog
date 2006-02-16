@@ -1,3 +1,13 @@
+2006-02-16 Thursday 02:09  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/wifiencap.cc (1.15),
+	  elements/wifi/sr2/sr2forwarder.cc (1.2),
+	  tools/click-align/click-align.cc (1.54): some alignment fixes.
+
+2006-02-16 Thursday 01:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.50): more entities
+
 2006-02-16 Thursday 01:33  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/: click-elem2man (1.49), testie.1 (1.6): elem2man nit
