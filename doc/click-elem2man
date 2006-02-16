@@ -392,7 +392,7 @@ EOD;
 my($dokuwiki_dl);
 
 my(%dokuwiki_podentities) =
-    ( 'lt' => '%%<%%', 'gt' => '%%>%%', 'amp' => '%%&%%', 'solid' => '/',
+    ( 'lt' => '<', 'gt' => '>', 'amp' => '&', 'solid' => '/',
       'verbar' => '|', 'eq' => '=', 'star' => '*', 'lparen' => '(',
       'rparen' => ')', 'lbrack' => '[', 'rbrack' => ']', 'lbrace' => '{',
       'rbrace' => '}' );
