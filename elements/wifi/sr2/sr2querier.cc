@@ -77,8 +77,8 @@ SR2Querier::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("SR not specified");
 
 
-  if (_sr_forwarder->cast("SRForwarder") == 0) 
-    return errh->error("SR2Querier element is not a SR2Querier");
+  if (_sr_forwarder->cast("SR2Forwarder") == 0) 
+    return errh->error("SR2Forwarder element is not a SR2Forwarder");
   if (_link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
 
