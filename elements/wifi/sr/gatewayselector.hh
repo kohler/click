@@ -118,7 +118,7 @@ private:
   u_long _seq;      // Next query sequence number to use.
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
-  uint16_t _et;     // This protocol's ethertype
+  uint32_t _et;     // This protocol's ethertype
   unsigned int _period; // msecs
 
   EtherAddress _bcast;

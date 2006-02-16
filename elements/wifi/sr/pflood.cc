@@ -52,7 +52,7 @@ PFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   _history = 100;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
-		    "ETHTYPE", cpUnsignedShort, "Ethernet encapsulation type", &_et,
+		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
                     "IP", cpIPAddress, "IP address", &_ip,
                     "BCAST_IP", cpIPAddress, "IP address", &_bcast_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
@@ -111,8 +111,8 @@ PFlood::forward(Broadcast *bcast) {
 
   pk->_version = _sr_version;
   pk->_type = PT_DATA;
-  pk->unset_flag(~0);
-  pk->set_qdst(_bcast_ip);
+  pk->_flags = 0;
+  pk->_qdst = _bcast_ip;
   pk->set_num_links(hops);
   for (int x = 0; x < hops - 1; x++) {
     pk->set_link_node(x, pk_in->get_link_node(x));
@@ -225,6 +225,8 @@ PFlood::push(int port, Packet *p_in)
 
       /* schedule timer */
       int delay_time = (random() % _max_delay_ms) + 1;
+      sr_assert(delay_time > 0);
+      
       _packets[index].t = new Timer(static_forward_hook, (void *) this);
       _packets[index].t->initialize(this);
       _packets[index].t->schedule_at(now + Timestamp::make_msec(delay_time));

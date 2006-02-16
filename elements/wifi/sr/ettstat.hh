@@ -71,7 +71,7 @@ public:
   }
 };
 
-static const uint8_t _ett_version = 0x04;
+static const uint8_t _ett_version = 0x02;
 
 class ETTStat : public Element {
 
@@ -88,43 +88,39 @@ public:
   };
 
   
-  CLICK_SIZE_PACKED_STRUCTURE(struct link_probe {,
-	  uint8_t _version;
-	  uint8_t _pad0;
-	  uint8_t _pad1;
-	  uint8_t _pad2;
+  struct link_probe {
+    uint8_t _version;
+    unsigned short _cksum;     // internet checksum
+    unsigned short _psz;       // total packet size, including eth hdr
 
-	  uint16_t _cksum;     // internal checksum
-	  uint16_t _psz;       // total packet size, including eth hdr
-
-	  uint16_t _rate;
-	  uint16_t _size;
-
-	  uint32_t _ip;
-	  uint32_t _flags;
-	  uint32_t _seq;
-	  uint32_t _period;      // period of this node's probe broadcasts, in msecs
-	  uint32_t _tau;         // this node's loss-rate averaging period, in msecs
-	  uint32_t _sent;        // how many probes this node has sent
-	  uint32_t _num_probes;
-	  uint32_t _num_links;   // number of wifi_link_entry entries following
-	  link_probe() { memset(this, 0x0, sizeof(this)); }
-  });
-  
-  CLICK_SIZE_PACKED_STRUCTURE(struct link_info {,
-    uint16_t _size;
     uint16_t _rate;
-    uint16_t _fwd;
-    uint16_t _rev;
-  });
-  CLICK_SIZE_PACKED_STRUCTURE(struct link_entry {,
+    uint16_t _size;
     uint32_t _ip;
-    uint32_t _num_rates;
+    uint32_t _flags;
+    unsigned int _seq;
+    unsigned int _period;      // period of this node's probe broadcasts, in msecs
+    uint32_t _tau;         // this node's loss-rate averaging period, in msecs
+    unsigned int _sent;        // how many probes this node has sent
+    unsigned int _num_probes;
+    unsigned int _num_links;   // number of wifi_link_entry entries following
+    link_probe() { memset(this, 0x0, sizeof(this)); }
+
+  };
+  
+  struct link_info {
+    uint16_t _size;
+    uint8_t _rate;
+    uint8_t _fwd;
+    uint8_t _rev;
+  };
+  struct link_entry {
+    uint32_t _ip;
+    uint8_t _num_rates;
     uint32_t _seq;
     uint32_t _age;
     link_entry() { }
     link_entry(IPAddress ip) : _ip(ip.addr()) { }
-  });
+  };
 
 public:
   uint32_t _tau;    // msecs

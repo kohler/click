@@ -58,13 +58,13 @@ SetSRChecksum::simple_action(Packet *xp)
     goto bad;
 
   pk->_version = _sr_version;
-  //pk->set_checksum();
+  pk->set_checksum();
 
   return xp;
 
  bad:
-  click_chatter("%s: bad lengths plen %d, tlen %d", 
-		name().c_str(),
+  click_chatter("%{element}: bad lengths plen %d, tlen %d", 
+		this,
 		plen,
 		tlen);
   xp->kill();

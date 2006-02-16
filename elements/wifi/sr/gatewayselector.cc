@@ -60,7 +60,7 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
   _period = 15;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
-		    "ETHTYPE", cpUnsignedShort, "Ethernet encapsulation type", &_et,
+		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
                     "IP", cpIPAddress, "IP address", &_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
 		    "LT", cpElement, "LinkTable element", &_link_table,
@@ -85,7 +85,8 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not an ARPtable");
 
-  _gw_expire.set(_period*4, 0);
+  _gw_expire._subsec = 0;
+  _gw_expire._sec = _period*4;
 
   return ret;
 }
@@ -125,9 +126,9 @@ GatewaySelector::start_ad()
   memset(pk, '\0', len);
   pk->_version = _sr_version;
   pk->_type = PT_GATEWAY;
-  pk->unset_flag(~0);
-  pk->set_qdst(_ip);
-  pk->set_seq(++_seq);
+  pk->_flags = 0;
+  pk->_qdst = _ip;
+  pk->_seq = htonl(++_seq);
   pk->set_num_links(0);
   pk->set_link_node(0,_ip);
   send(p);
@@ -201,9 +202,9 @@ GatewaySelector::forward_ad(Seen *s)
   memset(pk, '\0', len);
   pk->_version = _sr_version;
   pk->_type = PT_GATEWAY;
-  pk->unset_flag(~0);
-  pk->set_qdst(s->_gw);
-  pk->set_seq(s->_seq);
+  pk->_flags = 0;
+  pk->_qdst = s->_gw;
+  pk->_seq = htonl(s->_seq);
   pk->set_num_links(links);
 
   for(int i=0; i < links; i++) {
@@ -231,6 +232,8 @@ GatewaySelector::best_gateway()
   IPAddress best_gw = IPAddress();
   int best_metric = 0;
   Timestamp now = Timestamp::now();
+  
+//  _link_table->dijkstra(false);
   
   for(GWIter iter = _gateways.begin(); iter; iter++) {
     GWInfo nfo = iter.value();
@@ -265,8 +268,8 @@ void
 GatewaySelector::push(int port, Packet *p_in)
 {
   if (port != 0) {
-    click_chatter("GatewaySelector %s: bad port %d",
-		  name().c_str(),
+    click_chatter("%{element}: bad port %d",
+		  this,
 		  port);
     p_in->kill();
     return;
@@ -274,8 +277,8 @@ GatewaySelector::push(int port, Packet *p_in)
   click_ether *eh = (click_ether *) p_in->data();
   struct srpacket *pk = (struct srpacket *) (eh+1);
   if(eh->ether_type != htons(_et)) {
-    click_chatter("GatewaySelector %s: bad ether_type %04x",
-		  _ip.s().c_str(),
+    click_chatter("%{element}: bad ether_type %04x",
+		  this,
 		  ntohs(eh->ether_type));
     p_in->kill();
     return;
@@ -338,7 +341,7 @@ GatewaySelector::push(int port, Packet *p_in)
     _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
   }
   
-  IPAddress gw = pk->get_qdst();
+  IPAddress gw = pk->_qdst;
   if (!gw) {
 	  p_in->kill();
 	  return;
@@ -382,6 +385,7 @@ GatewaySelector::push(int port, Packet *p_in)
 
   /* schedule timer */
   int delay_time = (random() % 2000) + 1;
+  sr_assert(delay_time > 0);
   
   _seen[si]._to_send = _seen[si]._when + Timestamp::make_msec(delay_time);
   _seen[si]._forwarded = false;

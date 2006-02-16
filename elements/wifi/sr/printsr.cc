@@ -81,6 +81,19 @@ PrintSR::sr_to_string(struct srpacket *pk)
   if (pk->flag(FLAG_UPDATE)) {
     sa << " UPDATE ";
   }
+  if (pk->flag(FLAG_SCHEDULE)) {
+    sa << " SCHEDULE ";
+  }
+  if (pk->flag(FLAG_SCHEDULE_TOKEN)) {
+    sa << " SCHEDULE_TOKEN ";
+  }
+  if (pk->flag(FLAG_SCHEDULE_FAKE)) {
+    sa << " SCHEDULE_FAKE ";
+  }
+
+  if (pk->flag(FLAG_ECN)) {
+    sa << " ECN ";
+  }
   sa << flags << ")";
 
   if (pk->_type == PT_DATA) {
@@ -92,7 +105,7 @@ PrintSR::sr_to_string(struct srpacket *pk)
   if (pk->_type == PT_DATA) {
     sa << " dataseq " << pk->data_seq();
   }
-  IPAddress qdst = pk->get_qdst();
+  IPAddress qdst = IPAddress(pk->_qdst);
   if (qdst) {
     sa << " qdst " << qdst;
   }
@@ -104,6 +117,12 @@ PrintSR::sr_to_string(struct srpacket *pk)
   sa << " seq " << pk->seq();
   sa << " nhops " << pk->num_links();
   sa << " next " << pk->next();
+
+  if (pk->get_random_from() || pk->get_random_to()) {
+    sa << " [r " << pk->get_random_from();
+    sa << " <" << pk->get_random_fwd_metric() << "," << pk->get_random_rev_metric() << ">";
+    sa << " " << pk->get_random_to() << " r]";
+  }
 
   sa << " [";
   for(int i = 0; i< pk->num_links(); i++) {

@@ -63,7 +63,7 @@ MetricFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   _debug = false;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
-		    "ETHTYPE", cpUnsignedShort, "Ethernet encapsulation type", &_et,
+		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
                     "IP", cpIPAddress, "IP address", &_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
 		    "LT", cpElement, "LinkTable element", &_link_table,
@@ -200,8 +200,8 @@ MetricFlood::forward_query(Seen *s)
   memset(pk, '\0', extra);
   pk->_version = _sr_version;
   pk->_type = PT_DATA;
-  pk->unset_flag(~0);
-  pk->set_qdst(s->_dst);
+  pk->_flags = 0;
+  pk->_qdst = s->_dst;
   pk->set_seq(s->_seq);
   pk->set_num_links(links);
   pk->set_data_len(dlen);
@@ -239,8 +239,8 @@ MetricFlood::start_flood(Packet *p_in) {
   memset(pk, '\0', srpacket::len_wo_data(0));
   pk->_version = _sr_version;
   pk->_type = PT_DATA;
-  pk->unset_flag(~0);
-  pk->set_qdst(qdst);
+  pk->_flags = 0;
+  pk->_qdst = qdst;
   pk->set_seq(++_seq);
   pk->set_num_links(0);
   pk->set_link_node(0,_ip);
@@ -301,10 +301,7 @@ MetricFlood::process_flood(Packet *p_in) {
   
   
   IPAddress neighbor = pk->get_link_node(pk->num_links());
-  if (!neighbor) {
-	  p_in->kill();
-	  return;
-  }
+  sr_assert(neighbor);
   
   if (!_neighbors.findp(neighbor)) {
     _neighbors.insert(neighbor, true);
@@ -315,8 +312,8 @@ MetricFlood::process_flood(Packet *p_in) {
     _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
   }
   
-  IPAddress src = pk->get_link_node(0);
-  IPAddress dst = pk->get_qdst();
+  IPAddress src(pk->get_link_node(0));
+  IPAddress dst(pk->_qdst);
   u_long seq = pk->seq();
 
   int si = 0;
@@ -350,6 +347,7 @@ MetricFlood::process_flood(Packet *p_in) {
   
   /* schedule timer */
   int delay_time = random() % 1750 + 1;
+  sr_assert(delay_time > 0);
   
   _seen[si]._to_send = _seen[si]._when + Timestamp::make_msec(delay_time);
   _seen[si]._forwarded = false;

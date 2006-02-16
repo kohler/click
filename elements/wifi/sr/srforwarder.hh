@@ -61,10 +61,11 @@ private:
   IPAddress _ip;    // My IP address.
   EtherAddress _eth; // My ethernet address.
   uint16_t _et;     // This protocol's ethertype
-//  uint32_t _et;     // This protocol's ethertype
   // Statistics for handlers.
   int _datas;
   int _databytes;
+
+  EtherAddress _bcast;
 
   class LinkTable *_link_table;
   class ARPTable *_arp_table;

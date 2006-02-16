@@ -78,7 +78,11 @@ SetGateway::run_timer (Timer *)
 
 void 
 SetGateway::push_fwd(Packet *p_in, IPAddress best_gw) 
-{
+{				// szb hack to stop doing a lookup
+	p_in->set_dst_ip_anno(best_gw);
+	output(0).push(p_in);
+	return;
+
 	const click_tcp *tcph = p_in->tcp_header();
 	IPFlowID flowid = IPFlowID(p_in);
 	FlowTableEntry *match = _flow_table.findp(flowid);
@@ -127,6 +131,10 @@ SetGateway::push_fwd(Packet *p_in, IPAddress best_gw)
 void 
 SetGateway::push_rev(Packet *p_in) 
 {
+        // szb: hack to avoid lookups
+        output(1).push(p_in);
+        return;
+
 	const click_tcp *tcph = p_in->tcp_header();
 	IPFlowID flowid = IPFlowID(p_in).rev();
 	FlowTableEntry *match = _flow_table.findp(flowid);
@@ -153,8 +161,7 @@ SetGateway::push_rev(Packet *p_in)
 			return;
 		}
 		
-		click_chatter("SetGateway %s: no match, killing SYN_ACK\n",
-			      name().c_str());
+		click_chatter("%{element}: no match, killing SYN_ACK\n", this);
 		p_in->kill();
 		return;
 	}
@@ -277,7 +284,7 @@ SetGateway::read_param(Element *e, void *vparam)
     if (d->_gw) {
       return d->_gw.s() + "\n";
     }
-    return "auto:" + d->_gw_sel->name() + "\n";;
+    return "auto\n";
   default:
     return "";
   }

@@ -72,8 +72,8 @@ SetSourceRoute::simple_action(Packet *p_in)
   IPAddress dst = p_in->dst_ip_anno();
 
   if (!dst) {
-	  click_chatter("SetSourceRoute %s: got invalid dst %s\n",
-			name().c_str(),
+	  click_chatter("%{element}: got invalid dst %s\n",
+			this,
 			dst.s().c_str());
 	  p_in->kill();
 	  return 0;
@@ -122,12 +122,12 @@ void
 SetSourceRoute::set_route(Path p) 
 {
   if (p.size() < 1) {
-    click_chatter("SetSourceRoute %s: Path must be longer than 0\n",
-		  name().c_str());
+    click_chatter("%{element}: Path must be longer than 0\n",
+		  this);
   }
   if (p[0] != _ip) {
-    click_chatter("SetSourceRoute %s: First node must be me (%s) not %s!\n",
-		  name().c_str(),
+    click_chatter("%{element}: First node must be me (%s) not %s!\n",
+		  this,
 		  _ip.s().c_str(),
 		  p[0].s().c_str());
   }

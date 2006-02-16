@@ -52,7 +52,7 @@ CounterFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   _history = 100;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
-		    "ETHTYPE", cpUnsignedShort, "Ethernet encapsulation type", &_et,
+		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
                     "IP", cpIPAddress, "IP address", &_ip,
                     "BCAST_IP", cpIPAddress, "IP address", &_bcast_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
@@ -123,8 +123,8 @@ CounterFlood::forward(Broadcast *bcast) {
 
   pk->_version = _sr_version;
   pk->_type = PT_DATA;
-  pk->unset_flag(~0);
-  pk->set_qdst(_bcast_ip);
+  pk->_flags = 0;
+  pk->_qdst = _bcast_ip;
   pk->set_num_links(hops);
   for (int x = 0; x < hops; x++) {
     pk->set_link_node(x, pk_in->get_link_node(x));
@@ -132,6 +132,10 @@ CounterFlood::forward(Broadcast *bcast) {
   pk->set_link_node(hops,_ip);
   pk->set_next(hops);
   pk->set_seq(bcast->_seq);
+  uint32_t link_seq = random();
+  pk->set_seq2(link_seq);
+
+  bcast->_sent_seq.push_back(link_seq);
 
   if (bcast->_originated) {
     memcpy(pk->data(), p_in->data(), p_in->length());
@@ -150,6 +154,9 @@ CounterFlood::forward(Broadcast *bcast) {
   
   bcast->_actually_sent = true;
   bcast->_rx_from.push_back(_ip);
+  bcast->_rx_from_seq.push_back(link_seq);
+
+  
 
 }
 
@@ -224,6 +231,7 @@ CounterFlood::push(int port, Packet *p_in)
     struct srpacket *pk = (struct srpacket *) (eh+1);
     
     uint32_t seq = pk->seq();
+    uint32_t link_seq = pk->seq2();
 
     int index = -1;
     for (int x = 0; x < _packets.size(); x++) {
@@ -247,9 +255,12 @@ CounterFlood::push(int port, Packet *p_in)
       _packets[index]._actually_sent = false;
       _packets[index].t = NULL;
       _packets[index]._rx_from.push_back(src);
+      _packets[index]._rx_from_seq.push_back(link_seq);
 
       /* schedule timer */
       int delay_time = (random() % _max_delay_ms) + 1;
+      sr_assert(delay_time > 0);
+      
       _packets[index]._to_send = now + Timestamp::make_msec(delay_time);
       _packets[index].t = new Timer(static_forward_hook, (void *) this);
       _packets[index].t->initialize(this);
@@ -275,6 +286,7 @@ CounterFlood::push(int port, Packet *p_in)
     }
     _packets[index]._num_rx++;
     _packets[index]._rx_from.push_back(src);
+    _packets[index]._rx_from_seq.push_back(link_seq);
       
 
   }

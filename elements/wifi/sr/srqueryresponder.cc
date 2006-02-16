@@ -48,7 +48,7 @@ SRQueryResponder::configure (Vector<String> &conf, ErrorHandler *errh)
   _debug = false;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
-		    "ETHTYPE", cpUnsignedShort, "Ethernet encapsulation type", &_et,
+		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
                     "IP", cpIPAddress, "IP address", &_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
 		    "LT", cpElement, "LinkTable element", &_link_table,
@@ -96,7 +96,7 @@ SRQueryResponder::send(WritablePacket *p)
   IPAddress next_ip = pk->get_link_node(next);
   EtherAddress eth_dest = _arp_table->lookup(next_ip);
 
-  assert(next_ip != _ip);
+  sr_assert(next_ip != _ip);
   eh->ether_type = htons(_et);
   memcpy(eh->ether_shost, _en.data(), 6);
   memcpy(eh->ether_dhost, eth_dest.data(), 6);
@@ -122,15 +122,15 @@ SRQueryResponder::update_link(IPAddress from, IPAddress to, uint32_t seq, int me
 void
 SRQueryResponder::forward_reply(struct srpacket *pk1)
 {
-	u_int8_t type = pk1->_type;
-	assert(type == PT_REPLY);
-	
+  u_char type = pk1->_type;
+  sr_assert(type == PT_REPLY);
+
   _link_table->dijkstra(true);
   if (_debug) {
     click_chatter("%{element}: forward_reply %s <- %s\n", 
 		  this,
 		  pk1->get_link_node(0).s().c_str(),
-		  pk1->get_qdst().s().c_str());
+		  IPAddress(pk1->_qdst).s().c_str());
   }
   if(pk1->next() >= pk1->num_links()) {
     click_chatter("%{element} forward_reply strange next=%d, nhops=%d", 
@@ -226,12 +226,12 @@ SRQueryResponder::start_reply(IPAddress src, IPAddress qdst, uint32_t seq)
 
   pk_out->_version = _sr_version;
   pk_out->_type = PT_REPLY;
-  pk_out->unset_flag(~0);
+  pk_out->_flags = 0;
   pk_out->set_seq(seq);
   pk_out->set_num_links(links);
   pk_out->set_next(links-1);
-  pk_out->set_qdst(qdst);
-  
+  pk_out->_qdst = qdst;
+
   
   for (int i = 0; i < links; i++) {
     pk_out->set_link(i,
@@ -251,14 +251,16 @@ void
 SRQueryResponder::got_reply(struct srpacket *pk)
 {
 
-	IPAddress dst = pk->get_qdst();
-	if (_debug) {
-		click_chatter("%{element}: got_reply %s <- %s\n", 
-			      this,
-			      _ip.s().c_str(),
-			      dst.s().c_str());
-	}
-	_link_table->dijkstra(true);
+  IPAddress dst = IPAddress(pk->_qdst);
+  sr_assert(dst);
+  if (_debug) {
+    click_chatter("%{element}: got_reply %s <- %s\n", 
+		  this,
+		  _ip.s().c_str(),
+		  dst.s().c_str());
+  }
+  _link_table->dijkstra(true);
+
 }
 
 
@@ -276,11 +278,11 @@ SRQueryResponder::push(int, Packet *p_in)
   }
   
   u_char type = pk->_type;
-  IPAddress dst = pk->get_qdst();
+  IPAddress dst = IPAddress(pk->_qdst);
   
   if (type != PT_REPLY) {
     if (dst == _ip) {
-	    start_reply(pk->get_link_node(0), pk->get_qdst(), pk->seq());
+      start_reply(pk->get_link_node(0), pk->_qdst, pk->seq());
     }
     p_in->kill();
     return;
@@ -333,10 +335,7 @@ SRQueryResponder::push(int, Packet *p_in)
   
   
   IPAddress neighbor = pk->get_link_node(pk->num_links());
-  if (!neighbor) {
-	  p_in->kill();
-	  return;
-  }
+  sr_assert(neighbor);
   
   if(pk->next() == 0){
     // I'm the ultimate consumer of this reply. Add to routing tbl.
