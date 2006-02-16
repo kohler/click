@@ -1,3 +1,23 @@
+2006-02-15 Wednesday 20:05  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr2/sr2querier.cc (1.2): [no log message]
+
+2006-02-15 Wednesday 19:57  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/: checksrheader.cc (1.10), counterflood.cc
+	  (1.10), counterflood.hh (1.7), dupefilter.cc (1.5), ettstat.cc
+	  (1.35), ettstat.hh (1.21), gatewayselector.cc (1.20),
+	  gatewayselector.hh (1.12), localbroadcast.cc (1.11),
+	  localbroadcast.hh (1.8), metricflood.cc (1.11), metricflood.hh
+	  (1.8), pflood.cc (1.10), pflood.hh (1.6), printsr.cc (1.13),
+	  setgateway.cc (1.9), setsourceroute.cc (1.8), setsrchecksum.cc
+	  (1.7), setsrflag.cc (1.5), srforwarder.cc (1.18), srforwarder.hh
+	  (1.10), srlog.cc (1.5), srpacket.hh (1.15), srquerier.cc (1.14),
+	  srquerier.hh (1.11), srqueryforwarder.cc (1.15),
+	  srqueryforwarder.hh (1.10), srqueryresponder.cc (1.14),
+	  srqueryresponder.hh (1.10): sr directory now contains version 1
+	  of the srcr protocol. to be depreciated.
+
 2006-02-15 Wednesday 19:39  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: athdescdecap.cc (1.4), bitrate.cc (1.3),
