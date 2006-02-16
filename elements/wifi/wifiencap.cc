@@ -82,8 +82,7 @@ WifiEncap::simple_action(Packet *p)
   click_ether *eh = (click_ether *) p->data();
   src = EtherAddress(eh->ether_shost);
   dst = EtherAddress(eh->ether_dhost);
-  ethtype = eh->ether_type;
-
+  memcpy(&ethtype, p->data() + 12, 2);
 
   p_out = p->uniqueify();
   if (!p_out) {

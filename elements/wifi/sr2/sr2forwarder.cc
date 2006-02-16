@@ -129,7 +129,8 @@ SR2Forwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 	click_ether *eh = (click_ether *) p->data();
 	memcpy(eh->ether_shost, _eth.data(), 6);
 	memcpy(eh->ether_dhost, eth_dest.data(), 6);
-	eh->ether_type = htons(_et);
+	u_int16_t t = htons(_et);
+	memcpy(p->data() + 12, &t, sizeof(u_int16_t));
 	
 	
 	struct sr2packet *pk = (struct sr2packet *) (eh+1);
@@ -179,11 +180,7 @@ SR2Forwarder::push(int port, Packet *p_in)
 	eh = (click_ether *) p->data();
 	pk = (struct sr2packet *) (eh+1);
 	
-	if (eh->ether_type != htons(_et)){
-		click_chatter("SR2Forwarder %s: bad ether_type %04x",
-			      _ip.s().c_str(), ntohs(eh->ether_type));
-		goto bad;
-	} else if (pk->_type != SR2_PT_DATA) {
+	if (pk->_type != SR2_PT_DATA) {
 		click_chatter("SR2Forwarder %s: bad packet_type %04x",
 			      _ip.s().c_str(), pk->_type);
 		goto bad;

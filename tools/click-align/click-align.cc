@@ -241,6 +241,12 @@ prepare_classes()
   ElementClassT::set_base_type(new AlignClass("Classifier", new ClassifierAligner));
   ElementClassT::set_base_type(new AlignClass("EtherEncap", new ShifterAligner(-14)));
 
+  Aligner *a2 = new GeneratorAligner(Alignment(4, 2));
+  ElementClassT::set_base_type(new AlignClass("SR2SetChecksum", a2));
+  ElementClassT::set_base_type(new AlignClass("SR2CheckHeader", a2));
+  ElementClassT::set_base_type(new AlignClass("SetSRChecksum", a2));
+  ElementClassT::set_base_type(new AlignClass("CheckSRHeader", a2));
+
   ElementClassT::set_base_type(new AlignClass("IPInputCombo",
 	new CombinedAligner(new ShifterAligner(14),
 			    new WantAligner(Alignment(4, 2)))));
