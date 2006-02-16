@@ -402,7 +402,7 @@ sub dokuwiki_unentity ($) {
     my($x) = @_;
     if ($x =~ /^\d+$/) {
 	$x = pack 'U', $x;
-	if ($x =~ /\B$dokuwiki_sensitive_char\E/) {
+	if ($x =~ /\A$dokuwiki_sensitive_char\Z/) {
 	    "%%$x%%";
 	} else {
 	    $x;

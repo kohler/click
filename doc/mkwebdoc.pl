@@ -12,7 +12,7 @@ my($ELEMENTS) = 1;
 my($PROGMAN) = 1;
 my($DOC_TAR_GZ) = 1;
 my($NEWS) = 1;
-while ($ARGV[0] =~ /^-/) {
+while (@ARGV && $ARGV[0] =~ /^-/) {
     $_ = shift @ARGV;
     if (/^-x$/ || /^--no-install$/) {
 	$INSTALL = 0;
