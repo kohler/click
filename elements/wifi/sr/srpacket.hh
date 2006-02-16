@@ -1,7 +1,7 @@
 #ifndef CLICK_SRPAKCET_HH
 #define CLICK_SRPAKCET_HH
 #include <click/ipaddress.hh>
-#include <elements/wifi/sr/path.hh>
+#include <elements/wifi/path.hh>
 CLICK_DECLS
 
 #define max(a, b) ((a) > (b) ? (a) : (b))

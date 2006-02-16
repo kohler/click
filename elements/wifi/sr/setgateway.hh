@@ -10,7 +10,7 @@
 #include <click/dequeue.hh>
 #include <elements/wifi/linktable.hh>
 #include <elements/wifi/arptable.hh>
-#include <elements/wifi/sr/path.hh>
+#include <elements/wifi/path.hh>
 #include <click/ipflowid.hh>
 #include <clicknet/tcp.h>
 #include "srpacket.hh"

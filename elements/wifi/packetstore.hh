@@ -38,23 +38,30 @@ class PacketStore : public Element { public:
   
   const char *class_name() const		{ return "PacketStore"; }
   const char *port_count() const		{ return PORTS_1_1; }
-    const char* processing() const		{ return PUSH_TO_PULL; }
+  const char* processing() const		{ return AGNOSTIC; }
+  int initialize(ErrorHandler *);
   const char *flow_code() const			{ return "#/#"; }
   void *cast(const char *);
 
-  void push(int port, Packet *);
-  Packet *pull(int);
+  Packet *simple_action(Packet *);
 
   int configure(Vector<String> &, ErrorHandler *);
-  bool can_live_reconfigure() const		{ return true; }
+  bool can_live_reconfigure() const		{ return false; }
 
   void add_handlers();
 
-  
-  DEQueue <Packet *> _packets;
+  class store {
+  public:
+	  Timestamp timestamp;
+	  char data[80];
+	  int len;
+  };
+  DEQueue <store> _packets;
 
-  bool _active;
-  ActiveNotifier _empty_note;
+  int _dirty;
+  bool run_task();
+
+  Task _task;
 };
 
 CLICK_ENDDECLS

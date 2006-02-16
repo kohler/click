@@ -58,7 +58,7 @@ SetSRChecksum::simple_action(Packet *xp)
     goto bad;
 
   pk->_version = _sr_version;
-  pk->set_checksum();
+  //pk->set_checksum();
 
   return xp;
 

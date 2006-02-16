@@ -173,7 +173,6 @@ SRForwarder::push(int port, Packet *p_in)
 	click_ether *eh = 0;
 	struct srpacket *pk = 0;
 	EtherAddress eth_dest;
-	IPAddress prev;
 	if (!p) {
 		return;
 	}
@@ -204,23 +203,25 @@ SRForwarder::push(int port, Packet *p_in)
 		}
 		goto bad;
 	}
-	
-	/* update the metrics from the packet */
-	for (int i = 0; i < pk->num_links(); i++) {
-		IPAddress a = pk->get_link_node(i);
-		IPAddress b = pk->get_link_node(i+1);
-		uint32_t fwd_m = pk->get_link_fwd(i);
-		uint32_t rev_m = pk->get_link_rev(i);
-		uint32_t seq = pk->get_link_seq(i);
-		uint32_t age = pk->get_link_age(i);
-		
-		if (fwd_m && !update_link(a,b,seq,age,fwd_m)) {
-			click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
-				      this, a.s().c_str(), fwd_m, b.s().c_str());
-		}
-		if (rev_m && !update_link(b,a,seq,age,rev_m)) {
-			click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
-				      this, b.s().c_str(), rev_m, a.s().c_str());
+
+	if (0) {
+		/* update the metrics from the packet */
+		for (int i = 0; i < pk->num_links(); i++) {
+			IPAddress a = pk->get_link_node(i);
+			IPAddress b = pk->get_link_node(i+1);
+			uint32_t fwd_m = pk->get_link_fwd(i);
+			uint32_t rev_m = pk->get_link_rev(i);
+			uint32_t seq = pk->get_link_seq(i);
+			uint32_t age = pk->get_link_age(i);
+			
+			if (fwd_m && !update_link(a,b,seq,age,fwd_m)) {
+				click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
+					      this, a.s().c_str(), fwd_m, b.s().c_str());
+			}
+			if (rev_m && !update_link(b,a,seq,age,rev_m)) {
+				click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
+					      this, b.s().c_str(), rev_m, a.s().c_str());
+			}
 		}
 	}
 
@@ -230,17 +231,19 @@ SRForwarder::push(int port, Packet *p_in)
 		p->set_ip_header(ip, sizeof(click_ip));
 	}
 	
-	prev = pk->get_link_node(pk->next()-1);
-	_arp_table->insert(prev, EtherAddress(eh->ether_shost));
-	if (_link_table) {
-		uint32_t prev_fwd_metric = _link_table->get_link_metric(prev, _ip);
-		uint32_t prev_rev_metric = _link_table->get_link_metric(_ip, prev);
-		uint32_t seq = _link_table->get_link_seq(_ip, prev);
-		uint32_t age = _link_table->get_link_age(_ip, prev);
-		pk->set_link(pk->next()-1,
-			     pk->get_link_node(pk->next()-1), _ip,
-			     prev_fwd_metric, prev_rev_metric,
-			     seq,age);
+	if (0) {
+		IPAddress prev = pk->get_link_node(pk->next()-1);
+		_arp_table->insert(prev, EtherAddress(eh->ether_shost));
+		if (_link_table) {
+			uint32_t prev_fwd_metric = _link_table->get_link_metric(prev, _ip);
+			uint32_t prev_rev_metric = _link_table->get_link_metric(_ip, prev);
+			uint32_t seq = _link_table->get_link_seq(_ip, prev);
+			uint32_t age = _link_table->get_link_age(_ip, prev);
+			pk->set_link(pk->next()-1,
+				     pk->get_link_node(pk->next()-1), _ip,
+				     prev_fwd_metric, prev_rev_metric,
+				     seq,age);
+		}
 	}
 	
 	

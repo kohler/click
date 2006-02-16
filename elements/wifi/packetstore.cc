@@ -6,18 +6,18 @@
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
 #include <clicknet/wifi.h>
+#include <click/standard/scheduleinfo.hh>
 #include "packetstore.hh"
+#include <click/router.hh>
 CLICK_DECLS
 
-PacketStore::PacketStore()
+PacketStore::PacketStore() : _dirty(0), _task(this)
 {
-	_active = false;
 }
 
 PacketStore::~PacketStore()
 {
 	while (_packets.size()) {
-		_packets[0]->kill();
 		_packets.pop_front();
 	}
 }
@@ -27,8 +27,6 @@ PacketStore::cast(const char *n)
 {
     if (strcmp(n, "PacketStore") == 0)
 	    return (PacketStore *)this;
-    else if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0)
-	return static_cast<Notifier *>(&_empty_note);
     else
 	return 0;
 }
@@ -36,64 +34,58 @@ PacketStore::cast(const char *n)
 int
 PacketStore::configure(Vector<String> &, ErrorHandler *)
 {
-	_empty_note.initialize(router());
 	return 0;
 }
 
-void
-PacketStore::push(int, Packet *p_in)
+int 
+PacketStore::initialize(ErrorHandler *errh)
 {
-
-	WritablePacket *p = Packet::make(p_in->length());
-	if (p) {
-		memcpy(p->data(), p_in->data(), p_in->length());
-		_packets.push_back(p);
-
-		if (!_empty_note.active() && _active)
-			_empty_note.wake();
-	}
-	p_in->kill();
-	return;
+	ScheduleInfo::initialize_task(this, &_task, errh);
+	return 0;
 }
-
 
 Packet *
-PacketStore::pull(int)
+PacketStore::simple_action(Packet *p_in)
 {
-	if (!_packets.size() || !_active) {
-		_empty_note.sleep();
-		return 0;
-	}
-
-	Packet *p =_packets[_packets.size()-1];
-	_packets.pop_back();
-	return p;
+	store s;
+	s.timestamp = p_in->timestamp_anno();
+	s.len = MIN(p_in->length(), 80);
+	memcpy(s.data, p_in->data(), s.len);
+	_packets.push_back(s);
+	return p_in;
 }
 
-enum {H_ACTIVE, H_LEN, H_POP};
+bool
+PacketStore::run_task()
+{
+	return false;
+}
+enum {H_RESET, H_LEN, H_POP, H_DIRTY};
 
 static String
 read_param(Element *e, void *thunk)
 {
 	PacketStore *td = (PacketStore *)e;
 	switch ((uintptr_t) thunk) {
-	case H_LEN: return String(td->_packets.size()) + "\n";
-	case H_ACTIVE: return String(td->_active) + "\n";
+	case H_LEN: return String(td->_packets.size());
+	case H_DIRTY: return String(td->_dirty);
 	case H_POP: {
-		if (!td->_packets.size()) {
-			return String("\n");
+		if( !td->_packets.size()) {
+			return String();
 		}
-		Packet *p = td->_packets[0];
+		PacketStore::store s = td->_packets[0];
+		StringAccum sap(s.len*2 + 20);
+
+		sap << s.timestamp << " | ";
+
+		char *buf = sap.data() + sap.length();
+		for (int x = 0; x < s.len; x++) {
+			sprintf(buf + 2*x, "%02x", s.data[x] & 0xff);
+		}
+		sap.forward(s.len *2);
+		sap << "\n";
 		td->_packets.pop_front();
-		StringAccum sa(p->length() * 2);
-		char *buf = sa.data();
-		for (unsigned x = 0; x < p->length(); x++) {
-			sprintf(buf + 2*x, "%02x", p->data()[x] & 0xff);
-		}
-		sa.forward(p->length() * 2);
-		sa << "\n";
-		p->kill();
-		return sa.take_string();
+		return sap.take_string();
 	}
 	default:
 		return String();
@@ -104,21 +96,20 @@ static int
 write_param(const String &in_s, Element *e, void *vparam,
 	    ErrorHandler *errh)
 {
-	PacketStore *f = (PacketStore *)e;
+	PacketStore *td = (PacketStore *)e;
 	String s = cp_uncomment(in_s);
 	switch((int)vparam) {
-	case H_ACTIVE: {
+	case H_RESET: {
 		bool active;
 		if (!cp_bool(s, &active))
-			return errh->error("active parameter must be boolean");
-		f->_active = active;
+			return errh->error("reset parameter must be boolean");
 		if (active) {
-			f->_empty_note.wake();
-		} else {
-			f->_empty_note.sleep();
+			while (td->_packets.size()) {
+				td->_packets.pop_front();
+			}
 		}
-		break;
 	}
+
 	}
 	return 0;
 }
@@ -128,8 +119,10 @@ PacketStore::add_handlers()
 {
 	add_read_handler("length", read_param, (void *) H_LEN);
 	add_read_handler("pop", read_param, (void *) H_POP);
-	add_write_handler("active", write_param, (void *) H_ACTIVE);
-	add_read_handler("active", read_param, (void *) H_ACTIVE);
+	set_handler_flags("pop", Handler::RAW);
+	add_read_handler("dirty", read_param, (void *) H_DIRTY);
+	add_write_handler("reset", write_param, (void *) H_RESET);
+	add_task_handlers(&_task);
 }
 
 #include <click/dequeue.cc>

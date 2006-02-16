@@ -81,41 +81,51 @@ char_to_hex(char c)
     }
     return 0;
 }
-Packet *
+bool
 FromHandler::get_packet()
 {
-    HandlerCall hc(_handler);
-    String s = hc.call_read();
+    String s = HandlerCall::call_read(_handler, this, ErrorHandler::default_handler());
     if (s.length() <= 1) {
-	return 0;
+	return false;
+    }
+    Timestamp t = Timestamp::now();
+    int n = s.find_left('|', 0);
+    if (n > 0) {
+	String ts = s.substring(0, n-1);
+	if (!cp_time(ts, &t)) {
+	    click_chatter("parsing time failed\n");
+	}
+	s = s.substring(n+2, s.length() - n - 1);
     }
     WritablePacket *p = Packet::make(s.length()/2);
     if (!p) {
-	return 0;
+	return false;
     }
+    p->set_timestamp_anno(t);
     memset(p->data(), 0, p->length());
     for (int x = 0; x + 1 < s.length(); x += 2) {
 	p->data()[x/2] = (char_to_hex(s[x]) << 4) | char_to_hex(s[x + 1]);
     }
-    return p;
+    output(0).push(p);
+    return true;
 }
+
 bool
 FromHandler::run_task()
 {
     if (!_active) {
 	return false;
     }
-    Packet *p = get_packet();
-    if (!p) {
-	if (_active) {
-	    _end = Timestamp::now();
-	}
-	_active = false;
-	return false;
+    bool a = get_packet();
+    if (a) {
+	_task.fast_reschedule();
+	return true;
     }
-    output(0).push(p);
-    _task.fast_reschedule();
-    return true;
+    if (_active) {
+	_end = Timestamp::now();
+    }
+    _active = false;
+    return false;
 }
 
 

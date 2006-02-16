@@ -210,18 +210,15 @@ ProbeTXRate::process_feedback(Packet *p_in) {
 
 
   int tries = retries+1;
-  bool s = (tries <= ceh->max_tries);
   int time = calc_usecs_wifi_packet(1500, ceh->rate, 
-				    MIN(tries,ceh->max_tries)-1);
+				    retries);
 
   if (_debug) {
-    click_chatter("%{element}::%s() rate %d tries %d time %d\n",
-		  this, __func__,
-		  ceh->rate,
-		  tries, time);
+	  click_chatter("%{element}::%s() rate %d tries %d (retries %d) time %d\n",
+			this, __func__, ceh->rate, tries, retries, time);
   }
-  nfo->add_result(now, ceh->rate, MIN(tries,ceh->max_tries), 
-		  s, time);
+  nfo->add_result(now, ceh->rate, tries, 
+		  success, time);
   //nfo->check();
   return ;
 }
@@ -265,6 +262,7 @@ ProbeTXRate::print_rates()
 	sa << " " << nfo._rates[x];
 	sa << " success " << nfo._total_success[x];
 	sa << " fail " << nfo._total_fail[x];
+	sa << " tries " << nfo._total_tries[x];
 	sa << " perfect_usecs " << nfo._perfect_time[x];
 	sa << " total_usecs " << nfo._total_time[x];
 	sa << " average_usecs " << nfo.average(x);

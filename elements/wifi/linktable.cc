@@ -21,7 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <elements/wifi/sr/path.hh>
+#include <elements/wifi/path.hh>
 #include <click/straccum.hh>
 CLICK_DECLS
 

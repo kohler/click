@@ -52,31 +52,34 @@ AthdescDecap::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 AthdescDecap::simple_action(Packet *p)
 {
-	struct ar5212_desc *desc = (struct ar5212_desc *) (p->data() + 8);
-	click_wifi_extra *eh = (click_wifi_extra *) p->all_user_anno();
-	memset(eh, 0, sizeof(click_wifi_extra));
-	eh->magic = WIFI_EXTRA_MAGIC;
-	if (desc->frame_len == 0) {
-		struct ar5212_rx_status *rx_desc = (struct ar5212_rx_status *) (p->data() + 16);
-		/* rx */
-		eh->rate = ratecode_to_dot11(rx_desc->rx_rate);
-		eh->rssi = rx_desc->rx_rssi;
-		if (!rx_desc->rx_ok) {
-			eh->flags |= WIFI_EXTRA_RX_ERR;
+	WritablePacket *q = p->uniqueify();
+	if (q) {
+		struct ar5212_desc *desc = (struct ar5212_desc *) (q->data() + 8);
+		click_wifi_extra *eh = (click_wifi_extra *) q->all_user_anno();
+		memset(eh, 0, sizeof(click_wifi_extra));
+		eh->magic = WIFI_EXTRA_MAGIC;
+		if (desc->frame_len == 0) {
+			struct ar5212_rx_status *rx_desc = (struct ar5212_rx_status *) (q->data() + 16);
+			/* rx */
+			eh->rate = ratecode_to_dot11(rx_desc->rx_rate);
+			eh->rssi = rx_desc->rx_rssi;
+			if (!rx_desc->rx_ok) {
+				eh->flags |= WIFI_EXTRA_RX_ERR;
+			}
+		} else {
+			eh->flags |= WIFI_EXTRA_TX;
+			/* tx */
+			eh->power = desc->xmit_power;
+			eh->rssi = desc->ack_sig_strength;
+			eh->rate = ratecode_to_dot11(desc->xmit_rate0);
+			eh->retries = desc->data_fail_count;
+			if (desc->excessive_retries)
+				eh->flags |= WIFI_EXTRA_TX_FAIL;
 		}
-	} else {
-		eh->flags |= WIFI_EXTRA_TX;
-		/* tx */
-		eh->power = desc->xmit_power;
-		eh->rssi = desc->ack_sig_strength;
-		eh->rate = ratecode_to_dot11(desc->xmit_rate0);
-		eh->retries = desc->data_fail_count;
-		if (desc->excessive_retries)
-		  eh->flags |= WIFI_EXTRA_TX_FAIL;
+		q->pull(ATHDESC_HEADER_SIZE);
 	}
-	p->pull(ATHDESC_HEADER_SIZE);
 
-  return p;
+  return q;
 }
 
 

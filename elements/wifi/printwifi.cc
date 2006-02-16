@@ -524,27 +524,31 @@ PrintWifi::simple_action(Packet *p)
 
   sa << "[";
   if (ceh->flags & WIFI_EXTRA_TX) {
-    sa << " TX ";
+    sa << " tx";
   }
   if (ceh->flags & WIFI_EXTRA_TX_FAIL) {
-    sa << " TX_FAIL ";
+    sa << " fail";
   }
   if (ceh->flags & WIFI_EXTRA_TX_USED_ALT_RATE) {
-    sa << " TX_ALT_RATE ";
+    sa << " alt_rate";
   }
   if (ceh->flags & WIFI_EXTRA_RX_ERR) {
-    sa << " RX_ERR ";
+    sa << " err";
   }
   if (ceh->flags & WIFI_EXTRA_RX_MORE) {
-    sa << " RX_MORE ";
+    sa << " more";
   }
   if (wh->i_fc[1] & WIFI_FC1_RETRY) {
-    sa << " RETRY ";
+    sa << " retry";
   }
   if (wh->i_fc[1] & WIFI_FC1_WEP) {
-    sa << " WEP ";
+    sa << " wep";
   }
-  sa << "] ";
+  sa << " ] ";
+
+  if (ceh->flags & WIFI_EXTRA_TX) {
+	  sa << " retries " << (int) ceh->retries;
+  }
 
  done:
   click_chatter("%s\n", sa.c_str());

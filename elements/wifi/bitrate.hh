@@ -12,6 +12,6 @@ extern unsigned calc_usecs_wifi_packet(int length,
 				       int rate, int retries);
 
 
-
+extern unsigned calc_transmit_time(int rate, int length);
 
 #endif /* _BITRATE_H_ */

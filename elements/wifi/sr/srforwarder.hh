@@ -7,7 +7,7 @@
 #include <click/etheraddress.hh>
 #include <elements/wifi/linktable.hh>
 #include <click/vector.hh>
-#include <elements/wifi/sr/path.hh>
+#include <elements/wifi/path.hh>
 CLICK_DECLS
 
 /*

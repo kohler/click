@@ -22,12 +22,11 @@ class FromHandler : public Element { public:
 
     void set_active(bool);
     bool run_task();
-
     static int write_handler(const String &s_in, Element *e, void *thunk, ErrorHandler *errh);
     static String read_handler(Element *e, void *thunk);
 
   private:
-    Packet *get_packet();
+    bool get_packet();
     bool _active;    
     Task _task;
     String _handler;

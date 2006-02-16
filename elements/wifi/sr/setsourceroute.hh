@@ -8,7 +8,7 @@
 #include <click/vector.hh>
 #include <click/hashmap.hh>
 #include <click/dequeue.hh>
-#include "path.hh"
+#include <elements/wifi/path.hh>
 CLICK_DECLS
 
 /*
