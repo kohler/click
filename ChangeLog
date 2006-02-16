@@ -1,3 +1,39 @@
+2006-02-15 Wednesday 19:39  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: athdescdecap.cc (1.4), bitrate.cc (1.3),
+	  bitrate.hh (1.2), fromhandler.cc (1.3), fromhandler.hh (1.2),
+	  linktable.cc (1.23), packetstore.cc (1.3), packetstore.hh (1.2),
+	  path.hh (1.1), printwifi.cc (1.15), probetxrate.cc (1.22),
+	  sr/checksrheader.cc (1.9), sr/counterflood.hh (1.6),
+	  sr/floodtracker.hh (1.4), sr/gatewayselector.hh (1.11),
+	  sr/localbroadcast.hh (1.7), sr/metricflood.hh (1.7), sr/path.hh
+	  (1.3), sr/pflood.hh (1.5), sr/setgateway.hh (1.9),
+	  sr/setsourceroute.cc (1.7), sr/setsourceroute.hh (1.5),
+	  sr/setsrchecksum.cc (1.6), sr/srdestcache.hh (1.2),
+	  sr/srforwarder.cc (1.17), sr/srforwarder.hh (1.9), sr/srpacket.hh
+	  (1.14), sr/srquerier.hh (1.10), sr/srqueryforwarder.hh (1.9),
+	  sr/srqueryresponder.hh (1.9), sr2/sr2checkheader.cc (1.1),
+	  sr2/sr2checkheader.hh (1.1), sr2/sr2destcache.cc (1.1),
+	  sr2/sr2destcache.hh (1.1), sr2/sr2ettmetric.cc (1.1),
+	  sr2/sr2ettmetric.hh (1.1), sr2/sr2ettstat.cc (1.1),
+	  sr2/sr2ettstat.hh (1.1), sr2/sr2forwarder.cc (1.1),
+	  sr2/sr2forwarder.hh (1.1), sr2/sr2gatewayselector.cc (1.1),
+	  sr2/sr2gatewayselector.hh (1.1), sr2/sr2linkmetric.hh (1.1),
+	  sr2/sr2localbroadcast.cc (1.1), sr2/sr2localbroadcast.hh (1.1),
+	  sr2/sr2metricflood.cc (1.1), sr2/sr2metricflood.hh (1.1),
+	  sr2/sr2packet.hh (1.1), sr2/sr2print.cc (1.1), sr2/sr2print.hh
+	  (1.1), sr2/sr2querier.cc (1.1), sr2/sr2querier.hh (1.1),
+	  sr2/sr2queryforwarder.cc (1.1), sr2/sr2queryforwarder.hh (1.1),
+	  sr2/sr2queryresponder.cc (1.1), sr2/sr2queryresponder.hh (1.1),
+	  sr2/sr2setchecksum.cc (1.1), sr2/sr2setchecksum.hh (1.1),
+	  sr2/sr2setgateway.cc (1.1), sr2/sr2setgateway.hh (1.1),
+	  sr2/sr2setsourceroute.cc (1.1), sr2/sr2setsourceroute.hh (1.1),
+	  sr2/sr2stripheader.cc (1.1), sr2/sr2stripheader.hh (1.1),
+	  sr2/sr2txcountmetric.cc (1.1), sr2/sr2txcountmetric.hh (1.1):
+	  version 2 of the srcr protocol; version 2 is byte-order
+	  independent. this file layout structure allows multiple versions
+	  of the protocol to run in parallel.
+
 2006-02-15 Wednesday 14:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/: click-elem2man (1.45), click-elem2man (1.46): more dokuwiki
