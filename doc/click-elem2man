@@ -396,7 +396,7 @@ my(%dokuwiki_podentities) =
       'verbar' => '|', 'eq' => '=', 'star' => '*', 'lparen' => '(',
       'rparen' => ')', 'lbrack' => '[', 'rbrack' => ']', 'lbrace' => '{',
       'rbrace' => '}' );
-my($dokuwiki_sensitive_char) = "[!%'\\(\\)\\*/?\\[\\\\\\]_\\{\\}]";
+my($dokuwiki_sensitive_char) = "[!%'\\(\\)\\*\\+/?\\[\\\\\\]_\\{\\}]";
 
 sub dokuwiki_unentity ($) {
     my($x) = @_;
