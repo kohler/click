@@ -1,3 +1,7 @@
+2006-02-17 Friday 17:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/etheraddress.hh (1.8): fix ethernet address hash
+
 2006-02-17 Friday 16:38  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click-elem2man (1.52), doc/elementdoc.7 (1.15),
