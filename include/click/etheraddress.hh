@@ -70,7 +70,7 @@ StringAccum &operator<<(StringAccum &, const EtherAddress &);
 inline int
 hashcode(const EtherAddress &ea)
 {
-  const unsigned char *d = ea.data();
+  const uint16_t *d = ea.sdata();
   return (d[2] | (d[1] << 16)) ^ (d[0] << 9);
 }
 
