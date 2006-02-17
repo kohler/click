@@ -38,18 +38,13 @@ SRCR2_BCAST="5.255.255.255"
 /usr/sbin/wlanconfig ath1 create wlandev wifi0 wlanmode monitor > /dev/null
 
 /sbin/ifconfig $DEV txqueuelen 5
-ifconfig $DEV up
+/sbin/ifconfig $DEV up
 echo '804' >  /proc/sys/net/$DEV/dev_type
 /sbin/modprobe tun > /dev/null 2>&1
 
 MODE="g"
 PROBES="2 60 2 1500 4 1500 11 1500 22 1500"
 #    $probes = "2 60 12 60 2 1500 4 1500 11 1500 22 1500 12 1500 18 1500 24 1500 36 1500 48 1500 72 1500 96 1500";
-srcr_es_ethtype="0941";        # broadcast probes
-srcr_forwarder_ethtype="0943"; # data
-srcr_ethtype="0944";           # queries and replies
-srcr_gw_ethtype="092c";        # gateway ads
-
 
 echo "rates :: AvailableRates(DEFAULT 2 4 11 12 18 22 24 36 48 72 96 108,
 $WIRELESS_MAC 2 4 11 12 18 22 24 36 48 72 96 108);
@@ -59,12 +54,14 @@ $WIRELESS_MAC 2 4 11 12 18 22 24 36 48 72 96 108);
 
 SRCR_FILE="srcr.click"
 if [ ! -f $SRCR_FILE ]; then
-    # ok, try srcr.click
     SRCR_FILE="/home/roofnet/click/conf/wifi/srcr.click"
+    if [ ! -f $SRCR_FILE ]; then
+	SRCR_FILE="/tmp/srcr.click"
+    fi
 fi
 
 if [ ! -f $SRCR_FILE ]; then
-    echo "couldn't find srcr.click: tried srcr.click, $SRCR_FILE";
+    echo "couldn't find srcr.click";
     exit 1;
 fi
 
