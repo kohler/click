@@ -112,99 +112,70 @@ SR2Querier::send_query(IPAddress dst)
 void
 SR2Querier::push(int, Packet *p_in)
 {
-
-  bool sent_packet = false;
-  IPAddress dst = p_in->dst_ip_anno();
-  
-  if (!dst) {
-    click_chatter("%{element}: got invalid dst %s\n",
-		  this,
-		  dst.s().c_str());
-    p_in->kill();
-    return;
-  }
-  Path best = _link_table->best_route(dst, true);
-  bool best_valid = _link_table->valid_route(best);
-  int best_metric = _link_table->get_route_metric(best);
-  
-  bool do_query = false;
-
-  DstInfo *q = _queries.findp(dst);
-  if (!q) {
-    DstInfo foo = DstInfo(dst);
-    _queries.insert(dst, foo);
-    q = _queries.findp(dst);
-    q->_best_metric = 0;
-    do_query = true;
-  }
-
-  if (best_valid) {
-    if (!q->_p.size()) {
-      q->_p = best;
-      q->_last_switch = q->_first_selected = Timestamp::now();
-    }
-    bool current_path_valid = _link_table->valid_route(q->_p);
-    int current_path_metric = _link_table->get_route_metric(q->_p);
-    
-    Timestamp now = Timestamp::now();
-    Timestamp expire = q->_last_switch + Timestamp(_time_before_switch_sec, 0);
-    
-    if (!_route_dampening ||
-	!current_path_valid || 
-	current_path_metric > 100 + best_metric ||
-	expire < now) {
-      if (q->_p != best) {
-	q->_first_selected = now;
-      }
-      q->_p = best;
-      q->_last_switch = now;
-    }
-    p_in = _sr_forwarder->encap(p_in, q->_p, 0);
-    if (p_in) {
-      output(0).push(p_in);
-    }
-    sent_packet = true;
-  } else {
-    /* no valid route, don't send. */
-    click_chatter("%{element} :: %s no valid route to %s\n",
-		  this,
-		  __func__,
-		  dst.s().c_str());
-    p_in->kill();
-  }
-
-
-  
-  if (!best_valid) {
-    do_query = true;
-  } else {  
-    if (!q->_best_metric) {
-      q->_best_metric = best_metric;
-    }
-    
-    if (q->_best_metric < best_metric) {
-      q->_best_metric = best_metric;
-    }
-    
-    if (sent_packet && 
-	q->_best_metric * 2 < best_metric) {
-      /* 
-       * send another query if the route got crappy
-       */
-      q->_best_metric = best_metric;
-      do_query = true;
-    }
-  }
-  
-  if (do_query) {
-    Timestamp expire = q->_last_query + _query_wait;
-    if (expire < Timestamp::now()) {
-      send_query(dst);
-    }
-  }
-  return;
-  
-  
+	bool sent_packet = false;
+	bool do_query = false;
+	IPAddress dst = p_in->dst_ip_anno();
+	
+	if (!dst) {
+		click_chatter("%{element}: got invalid dst %s\n",
+			      this,
+			      dst.s().c_str());
+		p_in->kill();
+		return;
+	}
+	
+	DstInfo *q = _queries.findp(dst);
+	if (!q) {
+		DstInfo foo = DstInfo(dst);
+		_queries.insert(dst, foo);
+		q = _queries.findp(dst);
+		q->_best_metric = 0;
+		do_query = true;
+	}
+	
+	Timestamp now = Timestamp::now();
+	Timestamp expire = q->_last_switch + Timestamp(_time_before_switch_sec, 0);
+	
+	
+	if (!q->_best_metric || !q->_p.size() || expire < now) {
+		Path best = _link_table->best_route(dst, true);
+		bool valid = _link_table->valid_route(best);
+		q->_last_switch = now;
+		if (valid) {
+			if (q->_p != best) {
+				q->_first_selected = now;
+			}
+			q->_p = best;
+			q->_best_metric = _link_table->get_route_metric(best);
+		} else {
+			do_query = true;
+			q->_p = Path();
+			q->_best_metric = 0;
+		}
+	}
+	
+	if (q->_best_metric) {
+		p_in = _sr_forwarder->encap(p_in, q->_p, 0);
+		if (p_in) {
+			output(0).push(p_in);
+		}
+		sent_packet = true;
+	} else {
+		/* no valid route, don't send. */
+		click_chatter("%{element} :: %s no valid route to %s\n",
+			      this,
+			      __func__,
+			      dst.s().c_str());
+		p_in->kill();
+	}
+	
+	if (do_query) {
+		Timestamp expire = q->_last_query + _query_wait;
+		if (expire < Timestamp::now()) {
+			send_query(dst);
+		}
+	}
+	return;
 }
 
 enum {H_DEBUG, H_PATH_CACHE, H_RESET, H_QUERIES, H_QUERY};

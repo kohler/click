@@ -115,6 +115,8 @@ SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
   int hops = r.size() - 1;
   unsigned extra = srpacket::len_wo_data(hops) + sizeof(click_ether);
   unsigned payload_len = p_in->length();
+  u_int16_t ether_type = htons(_et);
+
   WritablePacket *p = p_in->push(extra);
 
   assert(extra + payload_len == p_in->length());
@@ -136,14 +138,13 @@ SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 		  this,
 		  r[next].s().c_str());
   }
-  
-  click_ether *eh = (click_ether *) p->data();
-  memcpy(eh->ether_shost, _eth.data(), 6);
-  memcpy(eh->ether_dhost, eth_dest.data(), 6);
-  eh->ether_type = htons(_et);
+
+  memcpy(p->data(), eth_dest.data(), 6);
+  memcpy(p->data() + 6, _eth.data(), 6);
+  memcpy(p->data() + 12, &ether_type, 2);
     
 
-  struct srpacket *pk = (struct srpacket *) (eh+1);
+  struct srpacket *pk = (struct srpacket *) (p->data() + sizeof(click_ether));
   memset(pk, '\0', srpacket::len_wo_data(hops));
 
   pk->_version = _sr_version;
@@ -153,23 +154,13 @@ SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
   pk->set_num_links(hops);
   pk->set_next(next);
   pk->set_flag(flags);
-  int i;
-  for(i = 0; i < hops; i++) {
+  for(int i = 0; i < hops; i++) {
     pk->set_link_node(i, r[i]);
   }
 
   pk->set_link_node(hops, r[r.size()-1]);
-
-  PathInfo *nfo = _paths.findp(r);
-  if (!nfo) {
-    _paths.insert(r, PathInfo(r));
-    nfo = _paths.findp(r);
-  }
-  pk->set_data_seq(nfo->_seq);
+  pk->set_data_seq(0);
   
-  click_gettimeofday(&nfo->_last_tx);
-  nfo->_seq++;
-
   /* set the ip header anno */
   const click_ip *ip = reinterpret_cast<const click_ip *>
     (p->data() + pk->hlen_wo_data() + sizeof(click_ether));
@@ -192,15 +183,9 @@ SRForwarder::push(int port, Packet *p_in)
     return;
   }
   click_ether *eh = (click_ether *) p->data();
+  EtherAddress edst = EtherAddress(eh->ether_dhost);
   struct srpacket *pk = (struct srpacket *) (eh+1);
 
-  if(eh->ether_type != htons(_et)){
-    click_chatter("SRForwarder %s: bad ether_type %04x",
-                  _ip.s().c_str(),
-                  ntohs(eh->ether_type));
-    p->kill();
-    return;
-  }
 
   if (pk->_type != PT_DATA) {
     click_chatter("SRForwarder %s: bad packet_type %04x",
@@ -213,92 +198,94 @@ SRForwarder::push(int port, Packet *p_in)
 
 
   if(port == 0 && pk->get_link_node(pk->next()) != _ip){
-    if (EtherAddress(eh->ether_dhost) != _bcast) {
-      /* 
-       * if the arp doesn't have a ethernet address, it
-       * will broadcast the packet. in this case,
-       * don't complain. But otherwise, something's up
-       */
-      click_chatter("%{element}: data not for me seq %d %d/%d ip %s eth %s",
-		    pk->data_seq(),
-		    pk->next(),
-		    pk->num_links(),
-		    pk->get_link_node(pk->next()).s().c_str(),
-		    EtherAddress(eh->ether_dhost).s().c_str());
-    }
+	  if (edst != _bcast) {
+		  /* 
+		   * if the arp doesn't have a ethernet address, it
+		   * will broadcast the packet. in this case,
+		   * don't complain. But otherwise, something's up
+		   */
+		  click_chatter("%{element}: data not for me seq %d %d/%d ip %s eth %s",
+				pk->data_seq(),
+				pk->next(),
+				pk->num_links(),
+				pk->get_link_node(pk->next()).s().c_str(),
+				edst.s().c_str());
+	  }
     p->kill();
     return;
   }
 
-  /* update the metrics from the packet */
-  IPAddress r_from = pk->get_random_from();
-  IPAddress r_to = pk->get_random_to();
-  uint32_t r_fwd_metric = pk->get_random_fwd_metric();
-  uint32_t r_rev_metric = pk->get_random_rev_metric();
-  uint32_t r_seq = pk->get_random_seq();
-  uint32_t r_age = pk->get_random_age();
+  if (0) {
+	  /* update the metrics from the packet */
+	  IPAddress r_from = pk->get_random_from();
+	  IPAddress r_to = pk->get_random_to();
+	  uint32_t r_fwd_metric = pk->get_random_fwd_metric();
+	  uint32_t r_rev_metric = pk->get_random_rev_metric();
+	  uint32_t r_seq = pk->get_random_seq();
+	  uint32_t r_age = pk->get_random_age();
+	  
+	  if (r_from && r_to) {
+		  if (r_fwd_metric && !update_link(r_from, r_to, r_seq, r_age, r_fwd_metric)) {
+			  click_chatter("%{element} couldn't update r_fwd %s > %d > %s\n",
+					this,
+					r_from.s().c_str(),
+					r_fwd_metric,
+					r_to.s().c_str());
+		  }
+		  if (r_rev_metric && !update_link(r_to, r_from, r_seq, r_age, r_rev_metric)) {
+			  click_chatter("%{element} couldn't update r_rev %s > %d > %s\n",
+					this,
+					r_to.s().c_str(),
+					r_rev_metric, 
+					r_from.s().c_str());
+		  }
+	  }
 
-  if (r_from && r_to) {
-    if (r_fwd_metric && !update_link(r_from, r_to, r_seq, r_age, r_fwd_metric)) {
-      click_chatter("%{element} couldn't update r_fwd %s > %d > %s\n",
-		    this,
-		    r_from.s().c_str(),
-		    r_fwd_metric,
-		    r_to.s().c_str());
-    }
-    if (r_rev_metric && !update_link(r_to, r_from, r_seq, r_age, r_rev_metric)) {
-      click_chatter("%{element} couldn't update r_rev %s > %d > %s\n",
-		    this,
-		    r_to.s().c_str(),
-		    r_rev_metric, 
-		    r_from.s().c_str());
-    }
-  }
-
-  for(int i = 0; i < pk->num_links(); i++) {
-    IPAddress a = pk->get_link_node(i);
-    IPAddress b = pk->get_link_node(i+1);
-    uint32_t fwd_m = pk->get_link_fwd(i);
-    uint32_t rev_m = pk->get_link_rev(i);
-    uint32_t seq = pk->get_link_seq(i);
-    uint32_t age = pk->get_link_age(i);
-
-    if (fwd_m && !update_link(a,b,seq,age,fwd_m)) {
-      click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
-		    this,
-		    a.s().c_str(),
-		    fwd_m,
-		    b.s().c_str());
-    }
-    if (rev_m && !update_link(b,a,seq,age,rev_m)) {
-      click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
-		    this,
-		    b.s().c_str(),
-		    rev_m,
-		    a.s().c_str());
-    }
+	  for(int i = 0; i < pk->num_links(); i++) {
+		  IPAddress a = pk->get_link_node(i);
+		  IPAddress b = pk->get_link_node(i+1);
+		  uint32_t fwd_m = pk->get_link_fwd(i);
+		  uint32_t rev_m = pk->get_link_rev(i);
+		  uint32_t seq = pk->get_link_seq(i);
+		  uint32_t age = pk->get_link_age(i);
+		  
+		  if (fwd_m && !update_link(a,b,seq,age,fwd_m)) {
+			  click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
+					this,
+					a.s().c_str(),
+					fwd_m,
+					b.s().c_str());
+		  }
+		  if (rev_m && !update_link(b,a,seq,age,rev_m)) {
+			  click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
+					this,
+					b.s().c_str(),
+					rev_m,
+					a.s().c_str());
+		  }
+	  }
   }
   
-
-  IPAddress prev = pk->get_link_node(pk->next()-1);
-  _arp_table->insert(prev, EtherAddress(eh->ether_shost));
-
 
   /* set the ip header anno */
   const click_ip *ip = reinterpret_cast<const click_ip *>
     (pk->data());
   p->set_ip_header(ip, sizeof(click_ip));
   
-  uint32_t prev_fwd_metric = (_link_table) ? _link_table->get_link_metric(prev, _ip) : 0;
-  uint32_t prev_rev_metric = (_link_table) ? _link_table->get_link_metric(_ip, prev) : 0;
-
-  uint32_t seq = (_link_table) ? _link_table->get_link_seq(_ip, prev) : 0;
-  uint32_t age = (_link_table) ? _link_table->get_link_age(_ip, prev) : 0;
-
-  pk->set_link(pk->next()-1,
-	       pk->get_link_node(pk->next()-1), _ip,
-	       prev_fwd_metric, prev_rev_metric,
-	       seq,age);
+  if (0) {
+	  IPAddress prev = pk->get_link_node(pk->next()-1);
+	  _arp_table->insert(prev, EtherAddress(eh->ether_shost));
+	  uint32_t prev_fwd_metric = (_link_table) ? _link_table->get_link_metric(prev, _ip) : 0;
+	  uint32_t prev_rev_metric = (_link_table) ? _link_table->get_link_metric(_ip, prev) : 0;
+	  
+	  uint32_t seq = (_link_table) ? _link_table->get_link_seq(_ip, prev) : 0;
+	  uint32_t age = (_link_table) ? _link_table->get_link_age(_ip, prev) : 0;
+	  
+	  pk->set_link(pk->next()-1,
+		       pk->get_link_node(pk->next()-1), _ip,
+		       prev_fwd_metric, prev_rev_metric,
+		       seq,age);
+  }
 
 
   if(pk->next() == pk->num_links()){
@@ -315,14 +302,14 @@ SRForwarder::push(int port, Packet *p_in)
   pk->set_next(pk->next() + 1);
   IPAddress nxt = pk->get_link_node(pk->next());
   
-  EtherAddress eth_dest = _arp_table->lookup(nxt);
-  if (eth_dest == _arp_table->_bcast) {
+  edst = _arp_table->lookup(nxt);
+  if (edst == _arp_table->_bcast) {
     click_chatter("%{element}::%s arp lookup failed for %s",
 		  this,
 		  __func__,
 		  nxt.s().c_str());
   }
-  memcpy(eh->ether_dhost, eth_dest.data(), 6);
+  memcpy(eh->ether_dhost, edst.data(), 6);
   memcpy(eh->ether_shost, _eth.data(), 6);
 
   output(0).push(p);

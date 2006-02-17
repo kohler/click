@@ -350,9 +350,8 @@ Vector<IPAddress>
 LinkTable::best_route(IPAddress dst, bool from_me)
 {
   Vector<IPAddress> reverse_route;
-  Vector<IPAddress> route;
   if (!dst) {
-    return route;
+    return reverse_route;
   }
   HostInfo *nfo = _hosts.findp(dst);
   
@@ -376,11 +375,12 @@ LinkTable::best_route(IPAddress dst, bool from_me)
   
 
   if (from_me) {
-    /* why isn't there just push? */
-    for (int i=reverse_route.size() - 1; i >= 0; i--) {
-      route.push_back(reverse_route[i]);
-    }
-    return route;
+	  Vector<IPAddress> route;
+	  /* why isn't there just push? */
+	  for (int i=reverse_route.size() - 1; i >= 0; i--) {
+		  route.push_back(reverse_route[i]);
+	  }
+	  return route;
   }
 
   return reverse_route;

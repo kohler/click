@@ -107,6 +107,8 @@ SR2Forwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 	int hops = r.size() - 1;
 	unsigned extra = sr2packet::len_wo_data(hops) + sizeof(click_ether);
 	unsigned payload_len = p_in->length();
+	u_int16_t ether_type = htons(_et);
+
 	WritablePacket *p = p_in->push(extra);
 	
 	assert(extra + payload_len == p_in->length());
@@ -126,14 +128,11 @@ SR2Forwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 			      name().c_str(), r[next].s().c_str());
 	}
 	
-	click_ether *eh = (click_ether *) p->data();
-	memcpy(eh->ether_shost, _eth.data(), 6);
-	memcpy(eh->ether_dhost, eth_dest.data(), 6);
-	u_int16_t t = htons(_et);
-	memcpy(p->data() + 12, &t, sizeof(u_int16_t));
+	memcpy(p->data(), eth_dest.data(), 6);
+	memcpy(p->data() + 6, _eth.data(), 6);
+	memcpy(p->data() + 12, &ether_type, 2);	
 	
-	
-	struct sr2packet *pk = (struct sr2packet *) (eh+1);
+	struct sr2packet *pk = (struct sr2packet *) (p->data() + sizeof(click_ether));
 	memset(pk, '\0', sr2packet::len_wo_data(hops));
 	
 	pk->_version = _sr2_version;
@@ -149,17 +148,8 @@ SR2Forwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 	}
 	
 	pk->set_link_node(hops, r[r.size()-1]);
-	
-	PathInfo *nfo = _paths.findp(r);
-	if (!nfo) {
-		_paths.insert(r, PathInfo(r));
-		nfo = _paths.findp(r);
-	}
-	pk->set_data_seq(nfo->_seq);
-	
-	click_gettimeofday(&nfo->_last_tx);
-	nfo->_seq++;
-	
+	pk->set_data_seq(0);
+
 	/* set the ip header anno */
 	const click_ip *ip = reinterpret_cast<const click_ip *>
 		(p->data() + pk->hlen_wo_data() + sizeof(click_ether));
@@ -201,48 +191,11 @@ SR2Forwarder::push(int port, Packet *p_in)
 		goto bad;
 	}
 
-	if (0) {
-		/* update the metrics from the packet */
-		for (int i = 0; i < pk->num_links(); i++) {
-			IPAddress a = pk->get_link_node(i);
-			IPAddress b = pk->get_link_node(i+1);
-			uint32_t fwd_m = pk->get_link_fwd(i);
-			uint32_t rev_m = pk->get_link_rev(i);
-			uint32_t seq = pk->get_link_seq(i);
-			uint32_t age = pk->get_link_age(i);
-			
-			if (fwd_m && !update_link(a,b,seq,age,fwd_m)) {
-				click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
-					      this, a.s().c_str(), fwd_m, b.s().c_str());
-			}
-			if (rev_m && !update_link(b,a,seq,age,rev_m)) {
-				click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
-					      this, b.s().c_str(), rev_m, a.s().c_str());
-			}
-		}
-	}
-
 	{
 		/* set the ip header anno */
 		const click_ip *ip = reinterpret_cast<const click_ip *>(pk->data());
 		p->set_ip_header(ip, sizeof(click_ip));
 	}
-	
-	if (0) {
-		IPAddress prev = pk->get_link_node(pk->next()-1);
-		_arp_table->insert(prev, EtherAddress(eh->ether_shost));
-		if (_link_table) {
-			uint32_t prev_fwd_metric = _link_table->get_link_metric(prev, _ip);
-			uint32_t prev_rev_metric = _link_table->get_link_metric(_ip, prev);
-			uint32_t seq = _link_table->get_link_seq(_ip, prev);
-			uint32_t age = _link_table->get_link_age(_ip, prev);
-			pk->set_link(pk->next()-1,
-				     pk->get_link_node(pk->next()-1), _ip,
-				     prev_fwd_metric, prev_rev_metric,
-				     seq,age);
-		}
-	}
-	
 	
 	if (pk->next() == pk->num_links()){
 		/*
