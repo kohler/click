@@ -9,7 +9,7 @@ class HandlerCall;
 
 AggregateCounter([I<KEYWORDS>])
 
-=s analysis
+=s aggregates
 
 counts packets per aggregate annotation
 

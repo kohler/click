@@ -6,23 +6,16 @@ CLICK_DECLS
 /*
 =c
 
-Null1()
-Null2()
-Null3()
-Null4()
-Null5()
-Null6()
-Null7()
-Null8()
+Null1() ... Null8()
 
-=s
+=s basictransfer
 
 copy of Null
 
 =d
 
-Each of these elements is a reimplementation of Null. However, each has
-independent code, so the i-cache cost of using all eight elements (Null1
+The elements Null1 through Null8 are reimplementations of Null. However, each
+has independent code, so the i-cache cost of using all eight elements (Null1
 through Null8) is eight times the cost of eight Null elements.
 
 =a Null */

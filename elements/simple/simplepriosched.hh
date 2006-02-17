@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * SimplePrioSched
- * =s packet scheduling
+ * =s scheduling
  * pulls from priority-scheduled inputs
  * =d
  * Each time a pull comes in the output, SimplePrioSched pulls from

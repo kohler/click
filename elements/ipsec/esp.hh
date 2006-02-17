@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * IPsecESPEncap(SPI)
- * =s encapsulation
+ * =s ipsec
  * apply IPSec encapsulation
  * =d
  * 

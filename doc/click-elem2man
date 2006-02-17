@@ -53,49 +53,64 @@ my(%processing_text) =
       'l/h' => 'Pull inputs, push outputs',
       'a/ah' => 'Agnostic, but output 1 is push' );
 
-my(%section_headers) =
-    ( 'devices' => 'Network Devices',
-      'sources' => 'Other Sources and Sinks',
-      'sinks' => 'Other Sources and Sinks',
-      'classification' => 'Classification',
-      'checking' => 'Checking Validity',
-      'duplication' => 'Duplication',
-      'storage' => 'Storage',
-      'dropping' => 'Dropping',
-      'packet scheduling' => 'Packet Scheduling',
-      'encapsulation' => 'Encapsulation',
-      'modification' => 'Modification',
-      'annotations' => 'Annotations',
-      'measurement' => 'Measurement and Profiling',
-      'debugging' => 'Debugging and Control',
-      'profiling' => 'Measurement and Profiling',
-      'analysis' => 'Trace Analysis and Manipulation',
-      'information' => 'Information Elements',
-      'Ethernet' => 'Ethernet',
-      'IP' => 'IP, ICMP, and IGMP',
-      'ICMP' => 'IP, ICMP, and IGMP',
-      'IGMP' => 'IP, ICMP, and IGMP',
-      'UDP' => 'UDP and TCP',
-      'TCP' => 'UDP and TCP',
-      'test' => 'Regression Tests' );
+my(@section_headers) =
+    ( 'basicsources'		=> 'Basic Sources and Sinks',
+      'classification'		=> 'Basic Classification and Selection',
+      'basictransfer'		=> 'Basic Packet Transfer',
+      'counters'		=> 'Counters',
+      'timestamps'		=> 'Timestamps',
+      'basicmod'		=> 'Basic Packet Modification',
+      'storage'			=> 'Packet Storage',
+      'aqm'			=> 'Active Queue Management',
+      'scheduling'		=> 'Packet Scheduling',
+      'shaping'			=> 'Traffic Shaping',
+      'information'		=> 'Information Elements',
+      'netdevices'		=> 'Network Devices',
+      'comm'			=> 'Host and Socket Communication',
+      'ethernet'		=> 'Ethernet',
+      'arp'			=> 'ARP',
+      'ip'			=> 'IPv4',
+      'iproute'			=> 'IPv4 Routing',
+      'icmp'			=> 'ICMP',
+      'nat'			=> 'Network Address Translation',
+      'tcp'			=> 'TCP',
+      'udp'			=> 'UDP',
+      'app'			=> 'Applications',
+      'traces'			=> 'Trace Manipulation',
+      'ipmeasure'		=> 'TCP/IP Measurement',
+      'aggregates'		=> 'Aggregates',
+      'ip6'			=> 'IPv6',
+      'ipsec'			=> 'IPsec',
+      'crc'			=> 'CRCs',
+      'paint'			=> 'Paint Annotations',
+      'annotations'		=> 'Annotations',
+      'debugging'		=> 'Debugging',
+      'control'			=> 'Control',
+      'smpclick'		=> 'Multithreaded Click',
+      'test'			=> 'Regression Tests'
+      );
+my(%section_headers);
+for (my $i = 0; $i < @section_headers; $i += 2) {
+    $section_headers{$section_headers[$i]} = $section_headers[$i+1];
+}
 
 my(%default_packages) =
-    ( 'standard' => 'standard (standard package)',
-      'ethernet' => 'ethernet (standard package)',
-      'aqm' => 'aqm (standard package)',
-      'ip' => 'ip (standard package)',
-      'icmp' => 'icmp (standard package)',
-      'tcpudp' => 'tcpudp (standard package)',
-      'snmp' => 'snmp (non-default standard package)',
-      'app' => 'app (standard package)',
-      'analysis' => 'analysis (non-default standard package)',
-      'ipsec' => 'ipsec (non-default standard package)',
-      'ip6' => 'ip6 (non-default standard package)',
-      'etherswitch' => 'etherswitch (non-default standard package)',
-      'radio' => 'radio (non-default standard package)',
-      'local' => 'local (non-default standard package)',
-      'grid' => 'grid (non-default standard package)',
-      'test' => 'test (non-default standard package)' );
+    ( 'standard'		=> 'standard (standard package)',
+      'ethernet'		=> 'ethernet (standard package)',
+      'aqm'			=> 'aqm (standard package)',
+      'ip'			=> 'ip (standard package)',
+      'icmp'			=> 'icmp (standard package)',
+      'tcpudp'			=> 'tcpudp (standard package)',
+      'snmp'			=> 'snmp (non-default standard package)',
+      'app'			=> 'app (standard package)',
+      'analysis'		=> 'analysis (non-default standard package)',
+      'ipsec'			=> 'ipsec (non-default standard package)',
+      'ip6'			=> 'ip6 (non-default standard package)',
+      'etherswitch'		=> 'etherswitch (non-default standard package)',
+      'radio'			=> 'radio (non-default standard package)',
+      'local'			=> 'local (non-default standard package)',
+      'grid'			=> 'grid (non-default standard package)',
+      'test'			=> 'test (non-default standard package)' );
 
 # find date
 my($today) = '';
@@ -1233,15 +1248,9 @@ EOD;
     my(%did_section, $sec);
     # erase 'Miscellaneous' section, if any
     delete $summaries_by_section{'Miscellaneous'};
-    foreach $sec ( 'Network Devices', 'Other Sources and Sinks',
-		   'Classification', 'Checking Validity',
-		   'Duplication', 'Storage', 'Dropping',
-		   'Packet Scheduling', 'Encapsulation',
-		   'Modification', 'Annotations', 'Measurement and Profiling',
-		   'Trace Analysis and Manipulation',
-		   'Debugging', 'Informational Elements',
-		   'Ethernet', 'IP, ICMP, and IGMP', 'UDP and TCP',
-		   sort { lc($a) cmp lc($b) } keys(%summaries_by_section) ) {
+    my($i) = 0;
+    foreach $sec ((map { $i++ % 2 ? ($_) : () } @section_headers),
+		  (sort { lc($a) cmp lc($b) } keys(%summaries_by_section))) {
 	next if $did_section{$sec};
 	one_summary($sec, @{$summaries_by_section{$sec}});
 	$did_section{$sec} = 1;

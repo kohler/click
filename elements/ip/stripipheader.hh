@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * StripIPHeader()
- * =s encapsulation, IP
+ * =s ip
  * strips outermost IP header
  * =d
  * Removes the outermost IP header from IP packets based on the IP Header annotation.

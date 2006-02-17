@@ -13,7 +13,7 @@ CLICK_DECLS
 ARPQuerier(I, E, I<keywords>)
 ARPQuerier(NAME, I<keywords>)
 
-=s Ethernet, encapsulation
+=s arp
 
 encapsulates IP packets in Ethernet headers found via ARP
 

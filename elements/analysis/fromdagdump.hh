@@ -12,7 +12,7 @@ class HandlerCall;
 
 FromDAGDump(FILENAME [, I<KEYWORDS>])
 
-=s analysis
+=s traces
 
 reads packets from a DAG/ERF file
 

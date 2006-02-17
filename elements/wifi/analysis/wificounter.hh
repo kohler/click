@@ -11,7 +11,7 @@ CLICK_DECLS
  * 
  * WifiCounter()
  * 
- * =s wifi
+ * =s Wifi
  * 
  * Accumulate wificounter for each ethernet src you hear a packet from.
  * =over 8

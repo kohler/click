@@ -11,7 +11,7 @@ CLICK_DECLS
 
 DelayShaper(DELAY)
 
-=s packet scheduling
+=s shaping
 
 shapes traffic to meet delay requirements
 

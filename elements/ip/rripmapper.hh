@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * RoundRobinIPMapper(PATTERN1, ..., PATTERNn)
- * =s TCP
+ * =s nat
  * round-robin mapper for IPRewriter(n)
  * =io
  * None

@@ -9,7 +9,7 @@ CLICK_DECLS
 
 AnonymizeIPAddr
 
-=s IP, analysis
+=s ip
 
 anonymizes top-level IP addresses in passing packets
 

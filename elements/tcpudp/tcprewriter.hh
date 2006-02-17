@@ -9,7 +9,7 @@ CLICK_DECLS
 
 TCPRewriter(INPUTSPEC1, ..., INPUTSPECn [, KEYWORDS])
 
-=s TCP
+=s nat
 
 rewrites TCP packets' addresses, ports, and sequence numbers
 

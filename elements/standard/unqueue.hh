@@ -10,7 +10,7 @@ CLICK_DECLS
 
 Unqueue([BURSTSIZE] [, I<KEYWORDS>])
 
-=s packet scheduling
+=s shaping
 
 pull-to-push converter
 

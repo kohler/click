@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * FTPPortMapper(CONTROL_REWRITER, DATA_REWRITER, PATTERN FOUTPUT ROUTPUT)
- * =s TCP
+ * =s nat
  * manipulates IPRewriter for FTP
  * =d
  *

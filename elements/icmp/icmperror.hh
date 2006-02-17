@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * ICMPError(IPADDR, TYPE [, CODE, I<keywords> BADADDRS, MTU])
- * =s ICMP, encapsulation
+ * =s icmp
  * generates ICMP error packets
  * =d
  * Generate an ICMP error packet, with specified TYPE and CODE,

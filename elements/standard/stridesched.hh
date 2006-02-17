@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
  * =c
  * StrideSched(TICKETS0, ..., TICKETSI<N-1>)
- * =s packet scheduling
+ * =s scheduling
  * pulls from stride-scheduled inputs
  * =d
  * Has one output and N inputs.  Performs simple packet-based stride

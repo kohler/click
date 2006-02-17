@@ -4,7 +4,7 @@
 /*
  * =c
  * PerfCountAccum(TYPE)
- * =s profiling
+ * =s counters
  * collects differences in Pentium Pro performance metrics
  * =d
  *

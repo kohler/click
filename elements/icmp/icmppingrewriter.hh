@@ -13,7 +13,7 @@ CLICK_DECLS
 
 ICMPPingRewriter(NEWSRC, NEWDST)
 
-=s ICMP
+=s nat
 
 rewrites ICMP echo requests and replies
 

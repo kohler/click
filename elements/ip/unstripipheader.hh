@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * UnstripIPHeader()
- * =s encapsulation, IP
+ * =s ip
  * restores outermost IP header
  * =d
  *

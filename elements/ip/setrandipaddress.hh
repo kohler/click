@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * SetRandIPAddress(ADDR/LEN, [MAX])
- * =s IP, annotations
+ * =s ip
  * sets destination IP address annotations randomly
  * =d
  * Set the destination IP address annotation to a random number whose

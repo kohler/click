@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * PaintTee(X)
- * =s duplication
+ * =s paint
  * duplicates packets with given paint annotation
  * =d
  * PaintTee sends every packet through output 0. If the packet's

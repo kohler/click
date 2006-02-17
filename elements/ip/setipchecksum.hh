@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * SetIPChecksum()
- * =s IP
+ * =s ip
  * sets IP packets' checksums
  * =d
  * Expects an IP packet as input.

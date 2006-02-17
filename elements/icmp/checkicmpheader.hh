@@ -8,7 +8,8 @@ CLICK_DECLS
 =c
 CheckICMPHeader([I<KEYWORDS>])
 
-=s ICMP, checking
+=s icmp
+
 checks ICMP header on ICMP packets
 
 =d

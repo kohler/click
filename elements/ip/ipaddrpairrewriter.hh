@@ -9,7 +9,7 @@ CLICK_DECLS
 
 IPAddrPairRewriter(INPUTSPEC1, ..., INPUTSPECn)
 
-=s TCP
+=s nat
 
 rewrites IP packets' addresses by address pair
 

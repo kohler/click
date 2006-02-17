@@ -12,7 +12,7 @@ class HandlerCall;
 
 Counter([I<keywords COUNT_CALL, BYTE_COUNT_CALL>])
 
-=s measurement
+=s counters
 
 measures packet count and rate
 

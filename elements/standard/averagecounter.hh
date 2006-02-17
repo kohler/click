@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
  * =c
  * AverageCounter([IGNORE])
- * =s measurement
+ * =s counters
  * measures historical packet count and rate
  * =d
  *

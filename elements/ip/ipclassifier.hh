@@ -7,7 +7,7 @@ CLICK_DECLS
 =c
 IPClassifier(PATTERN_1, ..., PATTERN_N)
 
-=s IP, classification
+=s ip
 classifies IP packets by contents
 
 =d

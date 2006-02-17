@@ -12,7 +12,7 @@ CLICK_DECLS
 
 IPReassembler([I<KEYWORDS>])
 
-=s IP
+=s ip
 
 Reassembles fragmented IP packets
 

@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
  * =c
  * IP6NDSolicitor(I, E)
- * =s IPv6, encapsulation
+ * =s ip6
  * 
  * =d
  * Handles most of the Neighbor Discovery(ND) protocol. 

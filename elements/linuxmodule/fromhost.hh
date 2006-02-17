@@ -11,7 +11,7 @@
 
 FromHost(DEVNAME, ADDR/MASK [, I<KEYWORDS>])
 
-=s sources
+=s comm
 
 reads packets from Linux
 

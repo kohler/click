@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * Meter(RATE1, RATE2, ..., RATEI<n>)
- * =s classification
+ * =s shaping
  * classifies packet stream by rate (pkt/s)
  * =d
  *

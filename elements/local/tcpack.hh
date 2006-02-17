@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * TCPAck([ACK_DELAY])
- * =s TCP
+ * =s tcp
  * acknowledge TCP packets
  * =d
  *

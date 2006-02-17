@@ -8,7 +8,7 @@ CLICK_DECLS
 =c
 UpstreamNotifier([SIGNAL])
 
-=s
+=s test
 passes packets unchanged. Has an upstream notifier. Genereally used
 for testing upstream notification.
 

@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * CompareBlock(FWD_WEIGHT, REV_WEIGHT, THRESH)
- * =s
+ * =s shaping
  * drops packets out of rate range
  * =d
  * FWD_WEIGHT, REV_WEIGHT, and THRESH are integers

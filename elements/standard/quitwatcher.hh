@@ -10,7 +10,7 @@ class Handler;
 
 QuitWatcher(ELEMENT, ...)
 
-=s debugging
+=s control
 
 stops router processing
 

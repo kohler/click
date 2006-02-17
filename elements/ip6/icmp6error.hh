@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * ICMP6Error(IP6ADDR, TYPE, CODE)
- * =s IPv6
+ * =s ip6
  * 
  * =d
  * need to rewrite the following comments.

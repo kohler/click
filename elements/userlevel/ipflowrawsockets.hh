@@ -33,7 +33,7 @@ CLICK_DECLS
 
 IPFlowRawSockets([I<KEYWORDS>])
 
-=s analysis
+=s comm
 
 creates separate sockets for each TCP/UDP flow
 

@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * DRRSched
- * =s packet scheduling
+ * =s scheduling
  * pulls from inputs with deficit round robin scheduling
  * =io
  * One output, zero or more inputs

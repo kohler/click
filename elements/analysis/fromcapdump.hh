@@ -13,7 +13,7 @@ CLICK_DECLS
 
 FromCapDump(FILENAME [, I<KEYWORDS>])
 
-=s analysis
+=s traces
 
 reads packets from a 'cap' output file
 

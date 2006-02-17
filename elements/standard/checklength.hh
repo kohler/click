@@ -8,7 +8,7 @@ CLICK_DECLS
 
 CheckLength(MAX)
 
-=s checking
+=s classification
 
 drops large packets
 

@@ -10,7 +10,7 @@ CLICK_DECLS
 /*
  * =c
  * TCPDemux()
- * =s TCP
+ * =s tcp
  * demultiplexes TCP flows
  * =d
  *

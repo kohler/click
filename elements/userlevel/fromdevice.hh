@@ -25,7 +25,7 @@ CLICK_DECLS
 
 FromDevice(DEVNAME [, I<keywords> SNIFFER, PROMISC, SNAPLEN, FORCE_IP, CAPTURE, BPF_FILTER, OUTBOUND])
 
-=s devices
+=s netdevices
 
 reads packets from network device (user-level)
 

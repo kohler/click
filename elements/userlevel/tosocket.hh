@@ -13,7 +13,7 @@ ToSocket("UDP", IP, PORTNUMBER [, I<KEYWORDS>])
 ToSocket("UNIX", FILENAME [, I<KEYWORDS>])
 ToSocket("UNIX_DGRAM", FILENAME [, I<KEYWORDS>])
 
-=s devices
+=s comm
 
 sends data to socket (user-level)
 

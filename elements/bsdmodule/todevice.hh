@@ -8,7 +8,7 @@
 
 ToDevice(DEVNAME [, BURST, I<KEYWORDS>])
 
-=s devices
+=s netdevices
 
 sends packets to network device (BSD kernel)
 

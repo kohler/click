@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * Strip(N)
- * =s encapsulation
+ * =s basicmod
  * strips bytes from front of packets
  * =d
  * Deletes the first N bytes from each packet.

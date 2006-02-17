@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * IPsecESPUnencap()
- * =s encapsulation
+ * =s ipsec
  * removes IPSec encapsulation
  * =d
  * 

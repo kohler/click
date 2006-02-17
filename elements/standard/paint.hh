@@ -8,7 +8,7 @@ CLICK_DECLS
 
 Paint(X)
 
-=s annotations
+=s paint
 
 sets packet paint annotations
 

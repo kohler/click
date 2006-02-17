@@ -6,7 +6,7 @@
 
 PollDevice(DEVNAME [, PROMISC, BURST, I<KEYWORDS>])
 
-=s devices
+=s netdevices
 
 polls packets from network device (kernel)
 

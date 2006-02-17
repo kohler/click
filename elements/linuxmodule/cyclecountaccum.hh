@@ -6,7 +6,7 @@
 =c
 CycleCountAccum()
 
-=s measurement
+=s counters
 
 collects differences in cycle counters
 

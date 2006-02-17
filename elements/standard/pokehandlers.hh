@@ -10,7 +10,7 @@ CLICK_DECLS
 
 PokeHandlers(DIRECTIVE, ...)
 
-=s debugging
+=s control
 
 calls write handlers at specified times
 

@@ -9,7 +9,7 @@ CLICK_DECLS
 
 StaticIPLookup(ADDR1/MASK1 [GW1] OUT1, ADDR2/MASK2 [GW2] OUT2, ...)
 
-=s IP, classification
+=s iproute
 
 simple static IP routing table
 

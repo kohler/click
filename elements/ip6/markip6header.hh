@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * MarkIP6Header([OFFSET])
- * =s IPv6
+ * =s ip6
  * 
  * =d
  *

@@ -8,7 +8,7 @@ CLICK_DECLS
 
 IPPrint([TAG, I<KEYWORDS>])
 
-=s IP, debugging
+=s ip
 
 pretty-prints IP packets
 

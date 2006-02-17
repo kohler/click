@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * TCPBuffer([SKIP])
- * =s TCP
+ * =s tcp
  * buffer TCP packets
  * =d
  * provides in order TCP buffer. expects TCP packets on input.

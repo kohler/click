@@ -10,7 +10,7 @@ class HandlerCall;
 
 FromFlanDump(FILENAME [, I<KEYWORDS>])
 
-=s analysis
+=s traces
 
 reads packets from a DAG file
 

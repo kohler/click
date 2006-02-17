@@ -13,7 +13,7 @@ class HandlerCall;
 
 FromNLANRDump(FILENAME [, I<KEYWORDS>])
 
-=s analysis
+=s traces
 
 reads packets from an NLANR file
 

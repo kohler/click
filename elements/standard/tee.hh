@@ -8,7 +8,7 @@ CLICK_DECLS
  * Tee([N])
  *
  * PullTee([N])
- * =s duplication
+ * =s basictransfer
  * duplicates packets
  * =d
  * Tee sends a copy of each incoming packet out each output.

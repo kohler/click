@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * BandwidthShaper(RATE)
- * =s packet scheduling
+ * =s shaping
  * shapes traffic to maximum rate (bytes/s) 
  * =processing
  * Pull

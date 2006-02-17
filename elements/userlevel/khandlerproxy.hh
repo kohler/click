@@ -8,7 +8,7 @@ CLICK_DECLS
 
 KernelHandlerProxy([I<KEYWORDS>])
 
-=s debugging
+=s control
 
 proxies kernel module handlers at user level
 

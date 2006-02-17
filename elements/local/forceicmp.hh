@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * ForceICMP([TYPE, CODE])
- * =s UDP
+ * =s icmp
  * sets ICMP checksum
  * =d
  * Sets the ICMP checksum of an ICMP-in-IP packet. Optionally

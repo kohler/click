@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * CheckCRC32()
- * =s checking
+ * =s crc
  * checks packet CRC32s
  * =d
  * Check that the CRC32 appended by SetCRC32 is OK.

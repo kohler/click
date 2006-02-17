@@ -8,7 +8,7 @@ CLICK_DECLS
 
 IPMirror
 
-=s IP, modification
+=s ip
 
 swaps IP source and destination
 

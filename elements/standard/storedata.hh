@@ -6,7 +6,7 @@ CLICK_DECLS
 
 /* =c
  * StoreData(OFFSET, DATA)
- * =s modification
+ * =s basicmod
  * changes packet data
  * =d
  *

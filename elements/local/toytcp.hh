@@ -9,6 +9,7 @@ CLICK_DECLS
 /*
  * =c
  * ToyTCP(dport)
+ * =s tcp
  * =d
  * =e
  * FromDevice(...)

@@ -9,7 +9,7 @@ CLICK_DECLS
 
 CheckTCPHeader([I<KEYWORDS>])
 
-=s TCP, checking
+=s tcp
 
 checks TCP header on TCP/IP packets
 

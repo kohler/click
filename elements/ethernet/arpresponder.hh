@@ -11,7 +11,7 @@ CLICK_DECLS
  *
  * ARPResponder(IP/MASK1 [IP/MASK...] ETH1, IP/MASK2 ETH2, ...)
  *
- * =s Ethernet
+ * =s arp
  *
  * generates responses to ARP queries
  *

@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
  * =c
  * IPGWOptions(MYADDR [, OTHERADDRS])
- * =s IP
+ * =s ip
  * processes router IP options
  * =d
  * Process the IP options that should be processed by every router,

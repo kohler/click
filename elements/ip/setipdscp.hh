@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * SetIPDSCP(VAL)
- * =s IP
+ * =s ip
  * sets IP packets' DSCP fields
  * =d
  * Expects IP packets as input and

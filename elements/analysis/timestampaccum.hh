@@ -9,7 +9,7 @@ CLICK_DECLS
 
 TimestampAccum()
 
-=s measurement
+=s timestamps
 
 collects differences in timestamps
 

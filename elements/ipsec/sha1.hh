@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * IPsecAuthSHA1(COMPUTE/VERIFY)
- * =s Authentication
+ * =s ipsec
  * verify SHA1 authentication digest.
  * =d
  * 

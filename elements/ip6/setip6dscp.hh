@@ -4,7 +4,7 @@
 /*
  * =c
  * SetIP6DSCP(VAL)
- * =s IPv6
+ * =s ip6
  * sets IP6 packets' DSCP fields
  * =d
  * Expects IP6 packets as input and

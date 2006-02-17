@@ -10,7 +10,7 @@ CLICK_DECLS
 /*
  * =c
  * RatedUnqueue(RATE)
- * =s packet scheduling
+ * =s shaping
  * pull-to-push converter
  * =d
  * 

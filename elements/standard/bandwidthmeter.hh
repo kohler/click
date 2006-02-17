@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * BandwidthMeter(RATE1, RATE2, ..., RATEI<n>)
- * =s classification
+ * =s shaping
  * classifies packet stream by arrival rate
  * =d
  *

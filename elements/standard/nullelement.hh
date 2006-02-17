@@ -7,7 +7,7 @@ CLICK_DECLS
 =c
 Null
 
-=s
+=s basictransfer
 passes packets unchanged
 
 =d
@@ -34,7 +34,7 @@ class NullElement : public Element { public:
 =c
 PushNull
 
-=s
+=s basictransfer
 passes packets unchanged
 
 =d
@@ -61,7 +61,7 @@ class PushNullElement : public Element { public:
 =c
 PullNull
 
-=s
+=s basictransfer
 passes packets unchanged
 
 =d

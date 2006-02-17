@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * Suppressor
- * =s dropping
+ * =s classification
  * passes packets unchanged, optionally dropping some input ports
  * =d
  *

@@ -13,7 +13,7 @@ class HandlerCall;
 
 AggregateIPFlows([I<KEYWORDS>])
 
-=s analysis, IP
+=s ipmeasure
 
 sets aggregate annotation based on flow
 

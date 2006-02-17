@@ -9,7 +9,7 @@ CLICK_DECLS
 
 MarkIPCE()
 
-=s IP
+=s ip
 
 sets IP packets' ECN field to Congestion Experienced
 

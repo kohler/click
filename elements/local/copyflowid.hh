@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * CopyFlowID()
- * =s UDP/TCP
+ * =s udp
  * sets UDP/TCP flow ID
  * =d
  * remembers flow id from packets between input/output 0, tag the flow id onto

@@ -10,7 +10,7 @@ CLICK_DECLS
 ChatterSocket("TCP", PORTNUMBER [, I<KEYWORDS>])
 ChatterSocket("UNIX", FILENAME [, I<KEYWORDS>])
 
-=s debugging
+=s control
 
 reports chatter messages to connected sockets
 

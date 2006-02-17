@@ -10,7 +10,7 @@ CLICK_DECLS
 
 InfiniteSource([DATA, LIMIT, BURST, ACTIVE?, I<KEYWORDS>])
 
-=s sources
+=s basicsources
 
 generates packets whenever scheduled
 

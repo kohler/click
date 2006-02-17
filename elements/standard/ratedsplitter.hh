@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * RatedSplitter(R)
- * =s classification
+ * =s shaping
  * splits flow of packets at specified rate
  * =d
  * 

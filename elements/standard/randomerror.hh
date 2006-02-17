@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * RandomBitErrors(P [, KIND, ACTIVE])
- * =s modification
+ * =s basicmod
  * changes packet data with some probability
  * =d
  *

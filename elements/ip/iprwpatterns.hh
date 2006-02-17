@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * IPRewriterPatterns(NAME PATTERN, ...)
- * =s TCP
+ * =s nat
  * specifies shared IPRewriter(n) patterns
  * =io
  * None

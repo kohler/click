@@ -10,7 +10,7 @@ CLICK_DECLS
  *
  * RandomSample([P, I<KEYWORDS>])
  *
- * =s dropping
+ * =s classification
  *
  * samples packets with some probability
  *

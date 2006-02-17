@@ -8,7 +8,7 @@ CLICK_DECLS
 
 CheckIPHeader2([OFFSET, I<keywords>])
 
-=s IP, checking
+=s ip
 
 checks IP header, no checksum
 

@@ -17,7 +17,7 @@ Socket("UDP", IP, PORTNUMBER [, I<KEYWORDS>])
 Socket("UNIX", FILENAME [, I<KEYWORDS>])
 Socket("UNIX_DGRAM", FILENAME [, I<KEYWORDS>])
 
-=s devices
+=s comm
 
 a socket transport (user-level)
 

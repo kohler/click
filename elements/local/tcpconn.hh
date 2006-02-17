@@ -10,7 +10,7 @@ CLICK_DECLS
 /*
  * =c
  * TCPConn()
- * =s TCP
+ * =s tcp
  * manage tcp connections
  * =d
  * can either start a tcp connection or listen for connections.

@@ -10,7 +10,7 @@ CLICK_DECLS
 
 ICMPPingEncap(SADDR, DADDR [, I<keyword> IDENTIFIER])
 
-=s ICMP, encapsulation
+=s icmp
 
 encapsulates packets in ICMP ping headers
 

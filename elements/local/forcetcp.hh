@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * ForceTCP([DPORT [,RANDOM [, FLAGS]]])
- * =s TCP
+ * =s tcp
  * sets TCP packet fields
  * =d
  * Set the checksum and some other fields to try to make a packet look like

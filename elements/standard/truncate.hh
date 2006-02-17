@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * Truncate(MAX)
- * =s encapsulation
+ * =s basicmod
  * limit packet length.
  * =d
  * Shorten packets to at most MAX bytes.

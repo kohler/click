@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * IPOutputCombo(COLOR, IPADDR, MTU)
- * =s IP
+ * =s ip
  * output combo for IP routing
  * =d
  * A single element encapsulating common tasks on an IP router's output path.

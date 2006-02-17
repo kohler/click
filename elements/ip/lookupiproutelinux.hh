@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * LinuxIPLookup(if0, if1, ..., ifN)
- * =s IP, classification
+ * =s iproute
  * interface to Linux's routing table
  * =d
  * Looks up each packet's destination annotation address in the

@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * Unqueue2([BURSTSIZE])
- * =s packet scheduling
+ * =s shaping
  * pull-to-push converter
  * =d
  * Pulls packets whenever they are available, then pushes them out its single

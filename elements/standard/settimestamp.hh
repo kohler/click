@@ -9,7 +9,7 @@ CLICK_DECLS
 
 SetTimestamp([TIMESTAMP, I<keyword> FIRST, DELTA])
 
-=s annotations
+=s timestamps
 
 store the time in the packet's timestamp annotation
 

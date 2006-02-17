@@ -12,7 +12,7 @@ class Handler;
 ControlSocket("TCP", PORTNUMBER [, I<KEYWORDS>])
 ControlSocket("UNIX", FILENAME [, I<KEYWORDS>])
 
-=s debugging
+=s control
 
 opens control sockets for other programs
 

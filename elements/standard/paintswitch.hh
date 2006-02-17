@@ -8,7 +8,7 @@ CLICK_DECLS
 
 PaintSwitch
 
-=s classification
+=s paint
 
 sends packet stream to output chosen per-packet
 

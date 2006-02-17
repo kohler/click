@@ -7,7 +7,7 @@
 
 FromDevice(DEVNAME [, PROMISC, BURST, I<KEYWORDS>])
 
-=s devices
+=s netdevices
 
 reads packets from network device (Linux kernel)
 

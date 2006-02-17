@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * SetIPAddress(IP)
- * =s IP, annotations
+ * =s ip
  * sets destination IP address annotations
  * =d
  * Set the destination IP address annotation of incoming packets to the

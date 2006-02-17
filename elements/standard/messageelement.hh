@@ -9,7 +9,7 @@ CLICK_DECLS
 
 Message(MESSAGE [, TYPE])
 
-=s debugging
+=s control
 
 prints a message on configuration
 

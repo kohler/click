@@ -4,7 +4,7 @@
 /*
  * =c
  * FastUDPSourceIP6(RATE, LIMIT, LEN, SETHADDR, SIP6ADDR, SPORT, DETHADDR, DIP6ADDR, DPORT [, CHECKSUM?, INTERVAL, ACTIVE])
- * =s sources
+ * =s udp
  * creates packets with static UDP/IP6/Ethernet headers
  * =d
  * FastUDPSourceIP6 is a benchmark tool. At initialization

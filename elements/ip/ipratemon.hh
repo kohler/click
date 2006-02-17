@@ -11,7 +11,7 @@ CLICK_DECLS
 /*
  * =c
  * IPRateMonitor(PB, RATIO, THRESH [, MEMORY, ANNO])
- * =s IP, measurement
+ * =s ipmeasure
  * measures coming and going IP traffic rates
  *
  * =d

@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * BandwidthRatedSplitter(RATE)
- * =s classification
+ * =s shaping
  * splits flow of packets at specified bandwidth rate
  * =processing
  * Push

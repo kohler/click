@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * SetCRC32()
- * =s modification
+ * =s crc
  * calculates CRC32 and prepends to packet
  * =d
  * Computes a CRC32 over each packet and appends the 4 CRC

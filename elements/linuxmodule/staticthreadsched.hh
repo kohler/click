@@ -5,7 +5,7 @@
 /*
  * =c
  * StaticThreadSched(ELEMENT THREAD, ...)
- * =s information
+ * =s smpclick
  * specifies element and thread scheduling parameters
  * =io
  * None

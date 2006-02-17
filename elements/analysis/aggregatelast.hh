@@ -10,7 +10,7 @@ CLICK_DECLS
 
 AggregateLast([I<KEYWORDS>])
 
-=s analysis
+=s aggregates
 
 lets through last packet per aggregate annotation
 

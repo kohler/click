@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * DecIP6HLIM()
- * =s IPv6
+ * =s ip6
  * 
  * =d
  * Expects IP6 packet as input.

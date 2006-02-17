@@ -13,7 +13,7 @@ CLICK_DECLS
 
 ToDump(FILENAME [, I<keywords> SNAPLEN, ENCAP, USE_ENCAP_FROM, EXTRA_LENGTH])
 
-=s analysis
+=s traces
 
 writes packets to a tcpdump(1) file
 

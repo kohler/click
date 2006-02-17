@@ -14,7 +14,7 @@ CLICK_DECLS
 
 FromIPSummaryDump(FILENAME [, I<KEYWORDS>])
 
-=s analysis
+=s traces
 
 reads packets from an IP summary dump file
 

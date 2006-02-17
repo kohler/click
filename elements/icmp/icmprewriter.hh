@@ -13,7 +13,7 @@ CLICK_DECLS
 
 ICMPRewriter(MAPS)
 
-=s ICMP
+=s nat
 
 rewrites ICMP packets based on IP rewriter mappings
 

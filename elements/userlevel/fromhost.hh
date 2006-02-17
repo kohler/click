@@ -16,9 +16,9 @@ CLICK_DECLS
  * 
  * FromHost(DEVNAME, ADDR/MASK [, GATEWAY, HEADROOM] [, I<KEYWORDS>])
  * 
- * =s devices
+ * =s comm
  *
- * user-level interface to /dev/tap or ethertap
+ * interface to /dev/tap or ethertap (user-level)
  *
  * =d
  *
@@ -79,7 +79,7 @@ CLICK_DECLS
  *
  * =a 
  * 
- * ToHost.u, ToHost ifconfig(8) 
+ * ToHost.u, ifconfig(8) 
  * 
  */
 

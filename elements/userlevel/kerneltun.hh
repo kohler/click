@@ -12,9 +12,9 @@ CLICK_DECLS
 
 KernelTun(ADDR/MASK [, GATEWAY, I<keywords> HEADROOM, MTU, IGNORE_QUEUE_OVERFLOWS])
 
-=s devices
+=s comm
 
-user-level interface to /dev/tun or ethertap
+interface to /dev/tun or ethertap (user-level)
 
 =d
 

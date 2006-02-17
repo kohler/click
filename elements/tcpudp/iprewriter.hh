@@ -9,7 +9,7 @@ CLICK_DECLS
 
 IPRewriter(INPUTSPEC1, ..., INPUTSPECn [, I<keywords>])
 
-=s TCP
+=s nat
 
 rewrites TCP/UDP packets' addresses and ports
 

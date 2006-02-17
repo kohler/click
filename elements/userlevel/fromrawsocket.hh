@@ -13,7 +13,7 @@ FromRawSocket("UDP", <UDP source port number> [, I<KEYWORDS>])
 FromRawSocket("GRE", <GRE key or PPTP call ID> [, I<KEYWORDS>])
 FromRawSocket("ICMP", <ICMP identifier> [, I<KEYWORDS>])
 
-=s devices
+=s comm
 
 reads raw IP packets from safe raw socket (user-level)
 

@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * GetIPAddress(OFFSET)
- * =s IP, annotations
+ * =s ip
  * sets destination IP address annotation from packet data
  * =d
  *

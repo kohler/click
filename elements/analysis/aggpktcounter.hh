@@ -12,7 +12,7 @@ CLICK_DECLS
 
 AggregatePacketCounter([I<keywords> PACKETNO])
 
-=s analysis
+=s aggregates
 
 counts packets per packet number and aggregate annotation
 

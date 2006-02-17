@@ -9,7 +9,7 @@ CLICK_DECLS
 
 TimeRange(I<keyword SIMPLE>)
 
-=s measurement, analysis
+=s timestamps
 
 monitor range of packet timestamps
 

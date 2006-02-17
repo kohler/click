@@ -10,7 +10,7 @@ CLICK_DECLS
 
 Discard
 
-=s dropping
+=s basicsources
 
 drops all packets
 

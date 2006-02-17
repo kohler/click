@@ -9,7 +9,7 @@ CLICK_DECLS
 
 DriverManager(INSTRUCTIONS...)
 
-=s debugging
+=s control
 
 a Script that manages driver stop events
 

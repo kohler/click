@@ -18,6 +18,8 @@ SR2SetSourceRoute(IP, SRForwarder element)
 
 =s Wifi, Wireless Routing
 
+=d
+
 Set the Source Route for packet's destination inside the source route
 header based on the destination ip annotation. If no source route is
 found for a given packet, the unmodified packet is sent to output 1 if

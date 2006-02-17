@@ -16,7 +16,7 @@ CLICK_DECLS
 
 ToIPFlowDumps(OUTPUT_PATTERN [, I<KEYWORDS>])
 
-=s analysis
+=s traces
 
 creates separate trace files for each TCP/UDP flow
 

@@ -10,7 +10,7 @@ CLICK_DECLS
 
 RatedSource([DATA, RATE, LIMIT, ACTIVE, I<KEYWORDS>])
 
-=s sources
+=s basicsources
 
 generates packets at specified rate
 

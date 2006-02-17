@@ -12,7 +12,7 @@ CLICK_DECLS
  * =title ToDevice.u
  * =c
  * ToDevice(DEVNAME [, I<KEYWORDS>])
- * =s devices
+ * =s netdevices
  * sends packets to network device (user-level)
  * =d
  *

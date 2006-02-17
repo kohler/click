@@ -9,7 +9,7 @@ CLICK_DECLS
 
 SetTimestampDelta()
 
-=s measurement, analysis
+=s timestamps
 
 replace packet timestamps with deltas
 

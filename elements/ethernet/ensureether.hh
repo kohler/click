@@ -9,7 +9,7 @@ CLICK_DECLS
 
 EnsureEther([ETHERTYPE, SRC, DST])
 
-=s encapsulation, Ethernet
+=s ethernet
 
 ensures that IP packets are Ethernet encapsulated
 

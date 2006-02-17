@@ -13,7 +13,7 @@ CLICK_DECLS
 
 ToIPSummaryDump(FILENAME [, I<keywords>])
 
-=s analysis
+=s traces
 
 writes packet summary information to an ASCII file
 

@@ -23,7 +23,7 @@ CLICK_DECLS
  *                   Mapped_IP6Address Port_start Port_end)   
  *
  *
- * =s IPv6
+ * =s ip6
  * translates IPv6/ICMPv6, TCP, and UDP packets' addresses and ports
  *
  * =d

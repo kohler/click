@@ -11,7 +11,7 @@ class Handler;
 
 ProgressBar(POSHANDLER [, SIZEHANDLER, I<KEYWORDS>])
 
-=s debugging
+=s control
 
 prints a progress bar to standard error
 

@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * CheckIP6Header([BADADDRS])
- * =s IPv6, checking
+ * =s ip6
  * 
  * =d
  *

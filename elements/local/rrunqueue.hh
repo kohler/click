@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * RoundRobinUnqueue([BURSTSIZE])
- * =s packet scheduling
+ * =s scheduling
  * pull-to-push converter
  * =d
  * Pulls packets from input ports in a round robin fashion, then pushes them

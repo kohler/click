@@ -11,7 +11,7 @@ CLICK_DECLS
 CheckIPHeader([OFFSET, I<keywords> OFFSET, INTERFACES, BADSRC,
                        GOODDST, CHECKSUM, VERBOSE, DETAILS])
 
-=s IP, checking
+=s ip
 
 checks IP header
 

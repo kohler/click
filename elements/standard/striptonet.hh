@@ -9,7 +9,7 @@ CLICK_DECLS
  *
  * StripToNetworkHeader()
  *
- * =s encapsulation
+ * =s basicmod
  *
  * strips everything preceding network header
  *

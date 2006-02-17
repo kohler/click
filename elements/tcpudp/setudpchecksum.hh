@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * SetUDPChecksum()
- * =s UDP
+ * =s udp
  * sets UDP packets' checksums
  * =d
  * Input packets should be UDP in IP.

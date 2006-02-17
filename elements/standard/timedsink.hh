@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * TimedSink(I)
- * =s sinks
+ * =s basicsources
  * periodically pulls and drops a packet
  * =d
  * Pulls one packet every I seconds from its input.

@@ -12,9 +12,9 @@ CLICK_DECLS
 
 KernelTap(ADDR/MASK [, GATEWAY, I<keywords> ETHER, MTU, HEADROOM, IGNORE_QUEUE_OVERFLOWS])
 
-=s devices
+=s comm
 
-user-level interface to /dev/tap or ethertap
+interface to /dev/tap or ethertap (user-level)
 
 =d
 

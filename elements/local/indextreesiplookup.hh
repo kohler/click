@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * IndexTreesIPLookup()
- * =s IP, classification
+ * =s iproute
  * IP lookup using an index tree
  * =d
  *

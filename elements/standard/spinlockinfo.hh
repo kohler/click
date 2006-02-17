@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
  * =c
  * SpinlockInfo(NAME, ...)
- * =s
+ * =s smpclick
  * specifies names of spinlocks
  * =io
  * None

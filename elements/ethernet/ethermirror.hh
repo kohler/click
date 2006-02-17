@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * EtherMirror()
- * =s Ethernet, modification
+ * =s ethernet
  * swaps Ethernet source and destination
  * =d
  *

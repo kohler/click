@@ -10,7 +10,7 @@ CLICK_DECLS
 
 TimeSortedSched(I<KEYWORDS>)
 
-=s analysis
+=s timestamps
 
 merge sorted packet streams by timestamp
 

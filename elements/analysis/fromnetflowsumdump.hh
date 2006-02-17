@@ -12,7 +12,7 @@ CLICK_DECLS
 
 FromNetFlowSummaryDump(FILE [, I<KEYWORDS>])
 
-=s analysis
+=s traces
 
 reads packets from a NetFlow summary file
 

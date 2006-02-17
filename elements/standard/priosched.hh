@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * PrioSched
- * =s packet scheduling
+ * =s scheduling
  * pulls from priority-scheduled inputs
  * =d
  * Each time a pull comes in the output, PrioSched pulls from

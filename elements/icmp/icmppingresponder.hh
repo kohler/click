@@ -8,7 +8,7 @@ CLICK_DECLS
 
 ICMPPingResponder()
 
-=s ICMP
+=s icmp
 
 responds to ICMP echo requests
 

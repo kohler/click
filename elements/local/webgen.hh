@@ -9,6 +9,7 @@ CLICK_DECLS
 /*
  * =c
  * WebGen(PREFIX/LEN, DST)
+ * =s app
  * =d
  * Ask for a random web pages over and over with repeated HTTP
  * connections. Generate them with random source IP addresses

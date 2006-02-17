@@ -11,7 +11,7 @@ CLICK_DECLS
 
 Script(INSTRUCTIONS...)
 
-=s debugging
+=s control
 
 script a Click router configuration
 

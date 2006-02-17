@@ -6,7 +6,7 @@
 /*
  * =c
  * ScheduleLinux
- * =s
+ * =s information
  * returns to Linux scheduler
  * =io
  * None

@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
  * =c
  * IP6NDAdvertiser(IP61 MASK1 ETH1, IP62 MASK2 ETH2, ...)
- * =s IPv6
+ * =s ip6
  * 
  * =d
  * Input should be Neighbor Solitation Message, which includes

@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * CopyTCPSeq()
- * =s TCP
+ * =s tcp
  * sets TCP sequence number
  * =d
  *

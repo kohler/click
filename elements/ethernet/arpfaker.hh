@@ -10,7 +10,7 @@ CLICK_DECLS
 /*
  * =c
  * ARPFaker(IP1, ETH1, IP2, ETH2)
- * =s Ethernet, sources
+ * =s arp
  * periodically generates an ARP reply
  * =d
  * Every 10 seconds,

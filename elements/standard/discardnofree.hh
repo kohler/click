@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * DiscardNoFree
- * =s dropping
+ * =s basicsources
  * drops all packets, but does not free any of them.
  * =d
  * Discards all packets received on its single input, but does not free any of

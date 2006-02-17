@@ -9,6 +9,8 @@ CLICK_DECLS
 /*
  * =c
  * TCPReflector()
+ * =s tcp
+ * pretend to be a TCP server
  * =d
  * Pretend to be a TCP server; emit a plausible reply packet
  * to each incoming TCP/IP packet. Maintains no state, so

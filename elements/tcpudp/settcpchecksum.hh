@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * SetTCPChecksum([FIX-OFF?])
- * =s TCP
+ * =s tcp
  * sets TCP packets' checksums
  * =d
  * Input packets should be TCP in IP.

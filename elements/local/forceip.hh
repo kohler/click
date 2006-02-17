@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * ForceIP()
- * =s IP
+ * =s ip
  * Fixes fields to make packets into legal IP packets.
  * =d
  *

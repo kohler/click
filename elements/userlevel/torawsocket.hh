@@ -13,7 +13,7 @@ ToRawSocket("UDP", <UDP source port number>)
 ToRawSocket("GRE", <GRE key or PPTP call ID>)
 ToRawSocket("ICMP", <ICMP identifier>)
 
-=s devices
+=s comm
 
 sends IP packets through a safe raw socket (user-level)
 

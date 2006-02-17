@@ -13,7 +13,7 @@ FromSocket("UDP", IP, PORTNUMBER [, I<KEYWORDS>])
 FromSocket("UNIX", FILENAME [, I<KEYWORDS>])
 FromSocket("UNIX_DGRAM", FILENAME [, I<KEYWORDS>])
 
-=s devices
+=s comm
 
 reads data from socket (user-level)
 

@@ -11,7 +11,7 @@ CLICK_DECLS
 
 IPEncap(PROTOCOL, SRC, DST, I<KEYWORDS>)
 
-=s IP, encapsulation
+=s ip
 
 encapsulates packets in static IP header
 

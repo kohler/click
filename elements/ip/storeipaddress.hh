@@ -8,7 +8,7 @@ CLICK_DECLS
 =c
 StoreIPAddress(OFFSET)
 StoreIPAddress(ADDRESS, OFFSET)
-=s IP, annotations
+=s ip
 stores IP address in packet
 =d
 The one-argument form writes the destination IP address annotation into the

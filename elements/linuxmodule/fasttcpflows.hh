@@ -7,7 +7,7 @@
  *              SETHADDR, SIPADDR,
  *              DETHADDR, DIPADDR,
  *              FLOWS, FLOWSIZE [, ACTIVE])
- * =s sources
+ * =s tcp
  * creates packets flows with static TCP/IP/Ethernet headers
  * =d
  * FastTCPFlows is a benchmark tool. At initialization time, FastTCPFlows

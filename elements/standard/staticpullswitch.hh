@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * StaticPullSwitch(K)
- * =s packet scheduling
+ * =s scheduling
  * forwards pull requests to fixed input
  * =d
  *

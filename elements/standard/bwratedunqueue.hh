@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * BandwidthRatedUnqueue(RATE)
- * =s packet scheduling
+ * =s shaping
  * pull-to-push converter
  * =processing
  * Pull inputs, push outputs

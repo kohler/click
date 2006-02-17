@@ -8,7 +8,7 @@ CLICK_DECLS
 
 IPNameInfo()
 
-=s IP
+=s ip
 
 stores name information about IP packets
 

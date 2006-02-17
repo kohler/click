@@ -11,7 +11,7 @@ CLICK_DECLS
 
 DelayUnqueue(DELAY)
 
-=s packet scheduling
+=s shaping
 
 delay inducing pull-to-push converter
 

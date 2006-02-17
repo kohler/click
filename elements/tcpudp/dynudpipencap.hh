@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
  * =c
  * DynamicUDPIPEncap(SADDR, SPORT, DADDR, DPORT [, CHECKSUM? [, INTERVAL]])
- * =s encapsulation, UDP
+ * =s udp
  * encapsulates packets in dynamic UDP/IP headers
  * =d
  * Encapsulates each incoming packet in a UDP/IP packet

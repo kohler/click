@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * DropBroadcasts
- * =s dropping
+ * =s annotations
  * drops link-level broadcast and multicast packets
  * =d
  * Drop packets that arrived as link-level broadcast or multicast.

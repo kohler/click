@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * Shaper(RATE)
- * =s packet scheduling
+ * =s shaping
  * shapes traffic to maximum rate (pkt/s) 
  * =d
  *

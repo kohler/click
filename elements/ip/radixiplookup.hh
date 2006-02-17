@@ -11,7 +11,7 @@ CLICK_DECLS
 
 RadixIPLookup(ADDR1/MASK1 [GW1] OUT1, ADDR2/MASK2 [GW2] OUT2, ...)
 
-=s IP, classification
+=s iproute
 
 IP lookup using a radix trie
 

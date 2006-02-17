@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * IPFragmenter(MTU, [I<keywords> HONOR_DF, VERBOSE])
- * =s IP
+ * =s ip
  * fragments large IP packets
  * =d
  *

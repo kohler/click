@@ -11,7 +11,7 @@ CLICK_DECLS
  * =c
  * MSQueue
  * MSQueue(CAPACITY)
- * =s storage
+ * =s smpclick
  * stores packets in a FIFO queue
  * =d
  * Stores incoming packets in a multiple producer single consumer

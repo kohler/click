@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * BufferConverter(MTU)
- * =s TCP
+ * =s tcp
  * converts TCP packets to/from buffers through handlers
  * =d
  *

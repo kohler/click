@@ -10,7 +10,7 @@ CLICK_DECLS
 
 AdaptiveRED(TARGET_Q, MAX_P [, I<KEYWORDS>])
 
-=s dropping
+=s aqm
 
 drops packets according to Adaptive P<RED>
 

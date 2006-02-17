@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * GetIP6Address(offset)
- * =s IPv6
+ * =s ip6
  * 
  * =d
  * Copies 16 bytes from the packet , starting at OFFSET, to the destination IP6 

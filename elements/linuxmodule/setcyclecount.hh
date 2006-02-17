@@ -4,7 +4,7 @@
 /*
  * =c
  * SetCycleCount()
- * =s profiling
+ * =s counters
  * stores cycle count in annotation
  * =d
  *

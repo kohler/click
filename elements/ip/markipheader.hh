@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * MarkIPHeader([OFFSET])
- * =s IP, annotations
+ * =s ip
  * sets IP header annotation
  * =d
  *

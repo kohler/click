@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * SetIP6Address(IP6)
- * =s IPv6
+ * =s ip6
  *
  * =d
  * Set the destination IP6 address annotation of incoming packets to the

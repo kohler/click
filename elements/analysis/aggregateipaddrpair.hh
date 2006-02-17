@@ -11,7 +11,7 @@ CLICK_DECLS
 
 AggregateIPAddrPair(I<KEYWORDS>)
 
-=s analysis, IP
+=s ipmeasure
 
 sets aggregate annotation based on IP source/destination address pair
 

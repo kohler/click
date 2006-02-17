@@ -9,7 +9,7 @@ CLICK_DECLS
 
 CheckUDPHeader([I<KEYWORDS>])
 
-=s UDP, checking
+=s udp
 
 checks UDP header on UDP/IP packets
 

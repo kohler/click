@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * RIPSend(SRC, DST, WHAT/MASK, METRIC)
- * =s IP, sources
+ * =s iproute
  * periodically generates specified RIP II packet
  * =d
  * Sends periodic RIP II packets with specified contents,

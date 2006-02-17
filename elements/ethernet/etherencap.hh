@@ -9,7 +9,7 @@ CLICK_DECLS
 
 EtherEncap(ETHERTYPE, SRC, DST)
 
-=s encapsulation, Ethernet
+=s ethernet
 
 encapsulates packets in Ethernet header
 

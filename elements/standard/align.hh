@@ -5,7 +5,7 @@ CLICK_DECLS
 
 /* =c
  * Align(MODULUS, OFFSET)
- * =s modification
+ * =s basicmod
  * aligns packet data
  * =d
  *

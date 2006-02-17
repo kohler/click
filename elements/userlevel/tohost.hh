@@ -14,7 +14,7 @@ CLICK_DECLS
  *
  * ToHost([DEVNAME])
  *
- * =s sinks
+ * =s comm
  *
  * sends packets to Linux via Universal TUN/TAP device.
  *

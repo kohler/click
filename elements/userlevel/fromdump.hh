@@ -13,7 +13,7 @@ class HandlerCall;
 
 FromDump(FILENAME [, I<keywords> TIMING, STOP, SAMPLE, FORCE_IP, START, START_AFTER, END, END_AFTER, INTERVAL, END_CALL, FILEPOS])
 
-=s analysis
+=s traces
 
 reads packets from a tcpdump(1) file
 

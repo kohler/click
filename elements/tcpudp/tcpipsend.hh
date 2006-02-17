@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * TCPIPSend()
- * =s TCP, sources
+ * =s tcp
  * generates TCP/IP packets when requested
  * =d
  *

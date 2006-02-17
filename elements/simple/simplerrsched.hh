@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * SimpleRoundRobinSched
- * =s packet scheduling
+ * =s scheduling
  * pulls from round-robin inputs
  * =io
  * One output, zero or more inputs

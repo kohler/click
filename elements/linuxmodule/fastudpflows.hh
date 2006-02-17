@@ -7,7 +7,7 @@
  *              SETHADDR, SIPADDR,
  *              DETHADDR, DIPADDR,
  *              FLOWS, FLOWSIZE [, CHECKSUM?, ACTIVE])
- * =s sources
+ * =s udp
  * creates packets flows with static UDP/IP/Ethernet headers
  * =d
  * FastUDPFlows is a benchmark tool. At initialization time, FastUDPFlows

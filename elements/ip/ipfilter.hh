@@ -9,7 +9,7 @@ CLICK_DECLS
 
 IPFilter(ACTION_1 PATTERN_1, ..., ACTION_N PATTERN_N)
 
-=s IP, classification
+=s ip
 
 filters IP packets by contents
 

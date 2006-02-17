@@ -10,7 +10,7 @@ CLICK_DECLS
 
 IPInputCombo(COLOR [, BADSRC, I<keywords> INTERFACES, BADSRC, GOODDST])
 
-=s IP
+=s ip
 
 input combo for IP routing
 

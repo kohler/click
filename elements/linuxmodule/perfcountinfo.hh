@@ -6,7 +6,7 @@
  * =c
  * PerfCountInfo([TYPE0, TYPE1])
  *
- * =s profiling
+ * =s counters
  * turn on Pentium Pro performance metrics
  *
  * =io

@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
  * =c
  * UDPIPEncap(SADDR, SPORT, DADDR, DPORT [, CHECKSUM?])
- * =s encapsulation, UDP
+ * =s udp
  * encapsulates packets in static UDP/IP headers
  * =d
  * Encapsulates each incoming packet in a UDP/IP packet with source address

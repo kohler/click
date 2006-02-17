@@ -15,7 +15,7 @@ RawSocket("UDP", <UDP source port number> [, I<KEYWORDS>])
 RawSocket("GRE", <GRE key or PPTP call ID> [, I<KEYWORDS>])
 RawSocket("ICMP", <ICMP identifier> [, I<KEYWORDS>])
 
-=s devices
+=s comm
 
 transports raw IP packets via safe raw sockets (user-level)
 

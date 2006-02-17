@@ -5,7 +5,7 @@
  * =c
  * CPUQueue
  * CPUQueue(CAPACITY)
- * =s storage
+ * =s smpclick
  * stores packets in FIFO queues.
  * =d
  *

@@ -8,8 +8,13 @@
 #include <clicknet/tcp.h>
 CLICK_DECLS
 
-/*
+/* =c
+ * RFC2507Comp
+ *
+ * =s tcp
  * RFC2507 IPv4/TCP header compressor.
+ *
+ * =d
  * Input packets need to be IPv4 (no ether header &c).
  * It's OK if they're not TCP.
  * 
@@ -17,6 +22,9 @@ CLICK_DECLS
  * a useful general standard. Perhaps emit each different format
  * of output on a different output() and let further modules
  * sort it out. Then we wouldn't be AGNOSTIC...
+ *
+ * =a
+ * RFC2507Decomp
  */
 
 class RFC2507c : public Element {

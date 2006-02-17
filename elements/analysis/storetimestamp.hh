@@ -9,7 +9,7 @@ CLICK_DECLS
 
 StoreTimestamp([I<keywords> OFFSET, TAIL])
 
-=s measurement, analysis
+=s timestamps
 
 store packet timestamps in packet data
 

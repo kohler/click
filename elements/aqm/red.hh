@@ -11,7 +11,7 @@ class Storage;
 
 RED(MIN_THRESH, MAX_THRESH, MAX_P [, I<KEYWORDS>])
 
-=s dropping
+=s aqm
 
 drops packets according to P<RED>
 

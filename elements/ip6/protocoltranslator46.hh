@@ -11,7 +11,7 @@ CLICK_DECLS
  * ProtocolTranslator46()
  *
  *
- * =s IPv6
+ * =s ip6
  * translate IP/ICMP, TCP, and UDP packets between IPv4 and IPv6 protocols
  *
  * =d

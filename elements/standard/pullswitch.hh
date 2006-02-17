@@ -8,7 +8,7 @@ CLICK_DECLS
 
 PullSwitch([K])
 
-=s packet scheduling
+=s scheduling
 
 forwards pull requests to settable input
 

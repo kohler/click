@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * SpinlockAcquire(S)
- * =s
+ * =s smpclick
  * acquires spinlock
  * =d
  * Acquires the spinlock named S. S must be defined in a SpinlockInfo element.

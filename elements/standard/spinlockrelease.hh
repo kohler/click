@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * SpinlockRelease(S)
- * =s
+ * =s smpclick
  * releases spinlock
  * =d
  * Releases the spinlock named S. S must be defined in a SpinlockInfo element.

@@ -9,7 +9,7 @@ CLICK_DECLS
 
 TimedSource([INTERVAL, DATA, I<KEYWORDS>])
 
-=s sources
+=s basicsources
 
 periodically generates a packet
 

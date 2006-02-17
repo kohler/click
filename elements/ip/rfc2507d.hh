@@ -7,10 +7,18 @@
 #include <clicknet/tcp.h>
 CLICK_DECLS
 
-/*
- * RFC2507 IPv4/TCP header de-compressor.
+/* =c
+ * RFC2507Decomp
+ *
+ * =s tcp
+ * RFC2507 IPv4/TCP header decompressor.
+ *
+ * =d
  * Input packets should be as produced by RFC2507c.
  * Spits out IP packets.
+ *
+ * =a
+ * RFC2507Comp
  */
 
 class RFC2507d : public Element {

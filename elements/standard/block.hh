@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * Block(THRESH)
- * =s dropping
+ * =s shaping
  * drops packets with high rate
  * =d
  * THRESH is an integer.

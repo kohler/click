@@ -9,7 +9,7 @@ CLICK_DECLS
 
 IP6Print([TAG, NBYTES, CONTENTS])
 
-=s IP, debugging
+=s ip6
 
 pretty-prints IP6 packets
 

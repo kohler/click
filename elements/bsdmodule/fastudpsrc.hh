@@ -5,7 +5,7 @@
  * =title FastUDPSource.b
  * =c
  * FastUDPSource(RATE, LIMIT, LEN, SETHADDR, SIPADDR, SPORT, DETHADDR, DIPADDR, DPORT [, CHECKSUM?, INTERVAL, ACTIVE])
- * =s sources
+ * =s udp
  * creates packets with static UDP/IP/Ethernet headers
  * =d
  * FastUDPSource is a benchmark tool. At initialization

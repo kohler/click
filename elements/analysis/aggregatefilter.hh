@@ -8,7 +8,7 @@ CLICK_DECLS
 
 AggregateFilter(ACTION_1 AGGREGATES, ..., ACTION_N AGGREGATES)
 
-=s classification, analysis
+=s aggregates
 
 filters packets based on aggregate annotation
 

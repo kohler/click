@@ -10,7 +10,7 @@ CLICK_DECLS
 
 IPRouteTable
 
-=s IP, classification
+=s iproute
 
 IP routing table superclass
 

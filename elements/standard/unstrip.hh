@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * Unstrip(N)
- * =s encapsulation
+ * =s basicmod
  * unstrips bytes from front of packets
  * =d
  * Put N bytes at the front of the packet. These N bytes may be bytes

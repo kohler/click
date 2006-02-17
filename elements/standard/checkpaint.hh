@@ -8,7 +8,7 @@ CLICK_DECLS
 
 CheckPaint(COLOR)
 
-=s checking
+=s paint
 
 checks packets' paint annotation
 

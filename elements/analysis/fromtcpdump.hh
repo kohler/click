@@ -16,7 +16,7 @@ CLICK_DECLS
 
 FromTcpdump(FILENAME [, I<KEYWORDS>])
 
-=s analysis
+=s traces
 
 reads packets from an ASCII tcpdump output file
 

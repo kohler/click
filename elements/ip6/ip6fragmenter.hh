@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * IP6Fragmenter(MTU)
- * =s IPv6
+ * =s ip6
  * 
  * =d
  * Expects IP6 packets as input.

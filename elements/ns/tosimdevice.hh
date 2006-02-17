@@ -34,7 +34,7 @@ CLICK_DECLS
  * =title ToSimDevice.u
  * =c
  * ToSimDevice(DEVNAME [, ENCAP])
- * =s devices
+ * =s netdevices
  * sends packets to simulated network device
  * =d
  *

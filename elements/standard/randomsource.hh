@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * RandomSource(LENGTH)
- * =s sources
+ * =s basicsources
  * generates random packets whenever scheduled
  * =d
  *

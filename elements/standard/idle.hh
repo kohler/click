@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * Idle
- * =s dropping
+ * =s basicsources
  * discards packets
  * =d
  *

@@ -12,7 +12,7 @@ CLICK_DECLS
 
 EraseIPPayload()
 
-=s IP, analysis
+=s ip
 
 erases IP packet payload
 

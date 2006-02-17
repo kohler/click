@@ -9,7 +9,7 @@ CLICK_DECLS
 
 RandomSeed([SEED])
 
-=s test
+=s control
 
 sets random seed
 

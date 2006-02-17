@@ -13,7 +13,7 @@ CLICK_DECLS
 
 LinkUnqueue(LATENCY, BANDWIDTH)
 
-=s packet scheduling
+=s shaping
 
 link emulator
 

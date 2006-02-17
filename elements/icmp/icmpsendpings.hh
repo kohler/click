@@ -12,7 +12,7 @@ CLICK_DECLS
 ICMPPingSource(SADDR, DADDR [, I<keywords> INTERVAL, IDENTIFIER, LIMIT, DATA,
 ACTIVE])
 
-=s ICMP, sources
+=s icmp
 
 periodically sends ICMP echo requests
 

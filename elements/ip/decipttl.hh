@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * DecIPTTL
- * =s IP
+ * =s ip
  * decrements IP time-to-live, drops dead packets
  * =d
  * Expects IP packet as input.

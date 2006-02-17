@@ -8,7 +8,7 @@ CLICK_DECLS
 
 HostEtherFilter(ETHER [, DROP_OWN, DROP_OTHER, I<KEYWORDS>])
 
-=s dropping, Ethernet
+=s ethernet
 
 drops Ethernet packets sent to other machines
 

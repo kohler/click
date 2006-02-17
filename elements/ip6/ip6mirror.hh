@@ -8,7 +8,7 @@ CLICK_DECLS
 
 IP6Mirror
 
-=s IPv6
+=s ip6
 
 swaps IP6 source and destination
 

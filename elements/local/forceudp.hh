@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * ForceUDP([DPORT])
- * =s UDP
+ * =s udp
  * sets UDP packet fields
  * =d
  * Set the checksum and some other fields to try to make a

@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * Burster(I, N)
- * =s packet scheduling
+ * =s shaping
  * pull-to-push converter
  * =d
  * Pulls N packets each interval I (seconds) from its input.
