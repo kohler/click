@@ -1,3 +1,10 @@
+2006-02-17 Friday 13:26  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: linktable.cc (1.24), sr/srforwarder.cc (1.19),
+	  sr/srquerier.cc (1.15), sr2/sr2forwarder.cc (1.3),
+	  sr2/sr2querier.cc (1.3): fix some performance issues when running
+	  on very slow nodes.
+
 2006-02-16 Thursday 16:15  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/sr2.click (1.1): srcr version 2
