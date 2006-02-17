@@ -10,12 +10,32 @@ GATEWAY="false"
 if [ -f /tmp/is_gateway ]; then
     GATEWAY="true"
 fi
-WIRELESS_MAC=`/home/roofnet/scripts/dev_to_mac ath0`
-SUFFIX=`/home/roofnet/scripts/mac_to_ip $WIRELESS_MAC`
+
+
+mac=$(/sbin/ifconfig ath0 | sed -n 's/^.*HWaddr \([0-9A-Za-z:]*\).*/\1/p')
+# extract the bottom three octects to use as IP
+                            
+hi_hex=$(echo $mac | sed -n 's/.*:.*:.*:\([0-9A-Za-z:]*\):.*:.*.*/\1/p')
+mid_hex=$(echo $mac | sed -n 's/.*:.*:.*:.*:\([0-9A-Za-z:]*\):.*.*/\1/p')
+lo_hex=$(echo $mac | sed -n 's/.*:.*:.*:.*:.*:\([0-9A-Za-z:]*\).*/\1/p')
+                                                        
+hi="0x$hi_hex";             
+mid="0x$mid_hex";           
+lo="0x$lo_hex";             
+
+SUFFIX=$(printf "%d.%d.%d" $hi $mid $lo)
+WIRELESS_MAC=$mac
 SRCR_IP="5.$SUFFIX"
 SRCR_NM="255.0.0.0"
 SRCR_NET="5.0.0.0"
 SRCR_BCAST="5.255.255.255"
+SRCR2_IP="6.$SUFFIX"
+SRCR2_NM="255.0.0.0"
+SRCR2_NET="6.0.0.0"
+SRCR2_BCAST="5.255.255.255"
+
+/usr/sbin/wlanconfig ath1 destroy > /dev/null
+/usr/sbin/wlanconfig ath1 create wlandev wifi0 wlanmode monitor > /dev/null
 
 /sbin/ifconfig $DEV txqueuelen 5
 ifconfig $DEV up
@@ -106,34 +126,12 @@ data_q :: FullNoteQueue(10)
 			       ALT_RATE true,
 			       RT rates,
 			       ACTIVE true)
--> data_arf_rate :: AutoRateFallback(OFFSET 4,
-				STEPUP 25,
-				RT rates,
-				ACTIVE false)
--> data_probe_rate :: ProbeTXRate(OFFSET 4,
-			     WINDOW 5000,
-			     RT rates,
-			     ACTIVE false)
 
 -> [1] sched;
 
-Idle -> [1] data_probe_rate;
 Idle -> [1] data_madwifi_rate;
-Idle -> [1] data_arf_rate;
 
 
-
-srcr :: srcr_ett($SRCR_IP, $SRCR_NM, $WIRELESS_MAC, $GATEWAY, 
-		 \"$PROBES\");
-
-// make sure this is listed first so it gets tap0
-srcr_host :: LinuxIPHost(srcr, $SRCR_IP, $SRCR_NM)
-->  srcr_cl :: IPClassifier(dst net 10.0.0.0/8, -);
-
-ap_to_srcr :: SRDestCache();
-
-srcr_cl [0] -> [0] ap_to_srcr [0] -> [1] srcr;
-srcr_cl [1] -> [1] srcr;
 
 route_encap :: WifiEncap(0x0, 00:00:00:00:00:00)
 ->  route_q;
@@ -142,46 +140,72 @@ data_encap :: WifiEncap(0x0, 00:00:00:00:00:00)
 
 
 
-srcr [0] -> route_encap;   // queries, replies
-srcr [1] -> route_encap;   // bcast_stats
-srcr [2] -> data_encap;    // data
-srcr [3] -> srcr_cl2 :: IPClassifier(src net 10.0.0.0/8, -); //data to me
 
-srcr_cl2 [0] -> [1] ap_to_srcr [1] -> srcr_host; 
-srcr_cl2 [1] -> srcr_host; // data to me
+srcr1 :: srcr_ett($SRCR_IP, $SRCR_NM, $WIRELESS_MAC, $GATEWAY, 
+		 \"$PROBES\");
+
+srcr1_host :: LinuxIPHost(srcr1, $SRCR_IP, $SRCR_NM)
+->  srcr1_cl :: IPClassifier(dst net 10.0.0.0/8, -);
+
+ap_to_srcr1 :: SRDestCache();
+
+srcr1_cl [0] -> [0] ap_to_srcr1 [0] -> [1] srcr1;
+srcr1_cl [1] -> [1] srcr1;
+
+
+srcr1 [0] -> route_encap;   // queries, replies
+srcr1 [1] -> route_encap;   // bcast_stats
+srcr1 [2] -> data_encap;    // data
+srcr1 [3] -> srcr1_cl2 :: IPClassifier(src net 10.0.0.0/8, -); //data to me
+
+srcr1_cl2 [0] -> [1] ap_to_srcr1 [1] -> srcr1_host; 
+srcr1_cl2 [1] -> srcr1_host; // data to me
+
+
+
+
+
+srcr2 :: sr2($SRCR2_IP, $SRCR2_NM, $WIRELESS_MAC, $GATEWAY, 
+		 \"$PROBES\");
+
+srcr2_host :: LinuxIPHost(srcr2, $SRCR2_IP, $SRCR2_NM)
+->  srcr2_cl :: IPClassifier(dst net 10.0.0.0/8, -);
+
+ap_to_srcr2 :: SRDestCache();
+
+srcr2_cl [0] -> [0] ap_to_srcr2 [0] -> [1] srcr2;
+srcr2_cl [1] -> [1] srcr2;
+
+
+srcr2 [0] -> route_encap;   // queries, replies
+srcr2 [1] -> route_encap;   // bcast_stats
+srcr2 [2] -> data_encap;    // data
+srcr2 [3] -> srcr2_cl2 :: IPClassifier(src net 10.0.0.0/8, -); //data to me
+
+srcr2_cl2 [0] -> [1] ap_to_srcr2 [1] -> srcr2_host; 
+srcr2_cl2 [1] -> srcr2_host; // data to me
+
+
+
+
 
 
 sniff_dev 
 -> athdesc_decap :: AthdescDecap()
 -> phyerr_filter :: FilterPhyErr()
-//-> PrintWifi(fromdev)
--> beacon_cl :: Classifier(0/80, //beacons
-			    -)
--> bs :: BeaconScanner(RT rates)
--> Discard;
-
-beacon_cl [1]
 -> Classifier(0/08%0c) //data
 -> tx_filter :: FilterTX()
 -> dupe :: WifiDupeFilter() 
 -> WifiDecap()
 -> HostEtherFilter($WIRELESS_MAC, DROP_OTHER true, DROP_OWN true) 
 -> rxstats :: RXStats()
--> ncl :: Classifier(12/09??, -);
+-> ncl :: Classifier(12/09??, 12/06??);
 
 
-ncl [0] -> srcr;
+ncl[0] -> srcr1;
+ncl[1] -> srcr2;
 
-ncl[1]  -> Discard;
-
-tx_filter [1] 
-//-> PrintWifi(txf)
--> txf_t2 :: Tee(3);
-
-txf_t2 [0] -> [1] data_arf_rate;
-txf_t2 [1] -> [1] data_madwifi_rate;
-txf_t2 [2] -> [1] data_probe_rate;
-
+tx_filter [1]  -> [1] data_madwifi_rate;
 
 ";
 
