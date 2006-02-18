@@ -13,8 +13,6 @@ CLICK_DECLS
  * SourceIPHashMapper(NNODES SEED, PATTERN1, ..., PATTERNn)
  * =s nat
  * Source IP Hash mapper for IPRewriter(n)
- * =io
- * None
  * =d
  *
  * Works in tandem with IPRewriter to provide source IP-based rewriting. 
@@ -30,7 +28,7 @@ CLICK_DECLS
  */
 
 //
-// $Id: siphmapper.hh,v 1.5 2006/02/17 21:38:59 eddietwo Exp $
+// $Id: siphmapper.hh,v 1.6 2006/02/18 08:51:12 eddietwo Exp $
 //
 
 //

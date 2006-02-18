@@ -16,10 +16,6 @@ calls write handlers at specified times
 
 =deprecated Script
 
-=io
-
-None
-
 =d
 
 B<This element is deprecated.  Use the Script element instead.>

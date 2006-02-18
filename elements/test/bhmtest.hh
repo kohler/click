@@ -13,10 +13,6 @@ BigHashMapTest()
 
 runs regression tests for BigHashMap
 
-=io
-
-None
-
 =d
 
 BigHashMapTest runs BigHashMap regression tests at initialization time. It

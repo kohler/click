@@ -9,9 +9,6 @@
  * =s counters
  * turn on Pentium Pro performance metrics
  *
- * =io
- * None
- *
  * =d
  *
  * The Pentium Pro CPU can maintain up to two performance counters.

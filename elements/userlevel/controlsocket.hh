@@ -16,10 +16,6 @@ ControlSocket("UNIX", FILENAME [, I<KEYWORDS>])
 
 opens control sockets for other programs
 
-=io
-
-None
-
 =d
 
 Opens a control socket that allows other user-level programs to call read or

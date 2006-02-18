@@ -8,8 +8,6 @@ CLICK_DECLS
  * RoundRobinIPMapper(PATTERN1, ..., PATTERNn)
  * =s nat
  * round-robin mapper for IPRewriter(n)
- * =io
- * None
  * =d
  *
  * Works in tandem with IPRewriter to provide round-robin rewriting. This is

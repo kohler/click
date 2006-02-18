@@ -12,10 +12,6 @@ KernelHandlerProxy([I<KEYWORDS>])
 
 proxies kernel module handlers at user level
 
-=io
-
-None
-
 =d
 
 Provides one proxy handler for each handler in a Linux kernel module Click

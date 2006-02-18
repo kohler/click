@@ -6,8 +6,6 @@
  * TulipStats(DEVNAME)
  * =s profiling
  * reports statistics gathered from Tulip device
- * =io
- * None
  *
  * =d
  *

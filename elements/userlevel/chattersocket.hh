@@ -14,10 +14,6 @@ ChatterSocket("UNIX", FILENAME [, I<KEYWORDS>])
 
 reports chatter messages to connected sockets
 
-=io
-
-None
-
 =d
 
 Opens a chatter socket that allows other user-level programs to receive copies

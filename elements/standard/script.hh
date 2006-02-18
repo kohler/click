@@ -15,10 +15,6 @@ Script(INSTRUCTIONS...)
 
 script a Click router configuration
 
-=io
-
-None
-
 =d
 
 The Script element implements a simple scripting language useful for

@@ -15,10 +15,6 @@ SchedOrderTest(ID, [<keyword> SIZE, LIMIT, STOP])
 
 remembers scheduling order
 
-=io
-
-None
-
 =d
 
 SchedOrderTest elements repeatedly schedule themselves, and keep track of the

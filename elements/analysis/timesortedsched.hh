@@ -16,7 +16,7 @@ merge sorted packet streams by timestamp
 
 =io
 
-One output, zero or more inputs
+one output, zero or more inputs
 
 =d
 

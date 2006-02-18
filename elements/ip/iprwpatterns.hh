@@ -9,8 +9,6 @@ CLICK_DECLS
  * IPRewriterPatterns(NAME PATTERN, ...)
  * =s nat
  * specifies shared IPRewriter(n) patterns
- * =io
- * None
  * =d
  *
  * This element stores information about shared patterns that IPRewriter and

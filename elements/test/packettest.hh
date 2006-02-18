@@ -13,10 +13,6 @@ PacketTest()
 
 runs regression tests for Packet
 
-=io
-
-None
-
 =d
 
 PacketTest runs Packet regression tests at initialization time. It does not

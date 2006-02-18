@@ -11,7 +11,7 @@ CLICK_DECLS
  * =s scheduling
  * pulls from inputs with deficit round robin scheduling
  * =io
- * One output, zero or more inputs
+ * one output, zero or more inputs
  * =d
  * Schedules packets with deficit round robin scheduling, from
  * Shreedhar and Varghese's SIGCOMM 1995 paper "Efficient Fair

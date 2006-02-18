@@ -14,10 +14,6 @@ QuitWatcher(ELEMENT, ...)
 
 stops router processing
 
-=io
-
-None
-
 =d
 
 Stops router processing when at least one of the ELEMENTs is no longer

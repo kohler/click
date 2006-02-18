@@ -11,8 +11,6 @@ CLICK_DECLS
  * SpinlockInfo(NAME, ...)
  * =s smpclick
  * specifies names of spinlocks
- * =io
- * None
  * =d
  *
  * Lets you use mnemonic names for spinlocks. Each name names a spinlock that

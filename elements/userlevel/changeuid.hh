@@ -14,10 +14,6 @@ ChangeUID()
 
 relinquish root privilege
 
-=io
-
-None
-
 =d
 
 Sets the current process's effective user and group IDs to its real user and

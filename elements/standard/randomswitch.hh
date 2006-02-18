@@ -11,7 +11,7 @@ CLICK_DECLS
  * =s classification
  * sends packets to random outputs
  * =io
- * One input, one or more outputs
+ * one input, one or more outputs
  * =d
  * Pushes each arriving packet to one of the N outputs, choosing outputs randomly.
  *

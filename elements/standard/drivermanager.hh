@@ -13,10 +13,6 @@ DriverManager(INSTRUCTIONS...)
 
 a Script that manages driver stop events
 
-=io
-
-None
-
 =d
 
 DriverManager is simply a Script element whose default TYPE is "C<DRIVER>".

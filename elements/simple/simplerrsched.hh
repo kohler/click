@@ -10,7 +10,7 @@ CLICK_DECLS
  * =s scheduling
  * pulls from round-robin inputs
  * =io
- * One output, zero or more inputs
+ * one output, zero or more inputs
  * =d
  * Each time a pull comes in the output, pulls from its inputs
  * in turn until one produces a packet. When the next pull

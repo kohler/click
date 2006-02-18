@@ -15,10 +15,6 @@ ProgressBar(POSHANDLER [, SIZEHANDLER, I<KEYWORDS>])
 
 prints a progress bar to standard error
 
-=io
-
-None
-
 =d
 
 Reads progress information from handlers, and displays an ASCII-art progress

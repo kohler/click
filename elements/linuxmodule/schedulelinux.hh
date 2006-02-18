@@ -8,8 +8,6 @@
  * ScheduleLinux
  * =s information
  * returns to Linux scheduler
- * =io
- * None
  * =d
  *
  * Returns to Linux's scheduler every time it is scheduled by Click. Use

@@ -13,10 +13,6 @@ VectorTest()
 
 runs regression tests for Vector
 
-=io
-
-None
-
 =d
 
 VectorTest runs Vector regression tests at initialization time. It

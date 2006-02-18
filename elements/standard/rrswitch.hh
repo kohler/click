@@ -10,7 +10,7 @@ CLICK_DECLS
  * =s classification
  * sends packets to round-robin outputs
  * =io
- * One input, one or more outputs
+ * one input, one or more outputs
  * =d
  * Pushes each arriving packet to one of the N outputs. The next packet
  * will be pushed to the following output in round-robin order.
