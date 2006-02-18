@@ -20,21 +20,21 @@
 # legally binding.
 
 # information stored about each Click element, indexed by C++ class name
-my(%processing, %deprecated, %portcount, $PREFIX);
+my(%processing, %deprecated, %portcount, %requires, $PREFIX);
 
 my(%section_break) =
-    ( 'head1' => 1, 'c' => 1, 's' => 1, 'info' => 0,
-      'io' => 1, 'processing' => 1,
+    ( 'head1' => 1, 'c' => 1, 's' => 1,
+      'io' => 1, 'processing' => 1, 'drivers' => 1,
       'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 1, 'title' => 1,
       'deprecated' => 1, 'package' => 1 );
 my(%section_takes_args) =
-    ( 'head1' => 1, 'c' => 0, 's' => 2, 'info' => 0,
-      'io' => 0, 'processing' => 0,
+    ( 'head1' => 1, 'c' => 0, 's' => 2,
+      'io' => 2, 'processing' => 2, 'drivers' => 2,
       'd' => 0, 'n' => 0, 'e' => 0, 'h' => 1, 'a' => 2, 'title' => 1,
       'deprecated' => 1, 'package' => 2 );
 my(%section_takes_text) =
-    ( 'head1' => 2, 'c' => 1, 's' => 1, 'info' => 1,
-      'io' => 1, 'processing' => 1,
+    ( 'head1' => 2, 'c' => 1, 's' => 1,
+      'io' => 2, 'processing' => 2, 'drivers' => 2,
       'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 2, 'title' => 0,
       'deprecated' => 0, 'package' => 1 );
 my(%xsection_takes_args) =
@@ -42,7 +42,8 @@ my(%xsection_takes_args) =
       'for' => 1, 'begin' => 1, 'end' => 1, 'start!' => 1, 'name!' => 1,
       'end!' => 0, 'text' => 0 );
 my(%infosection_name) =
-    ( 'package' => 'Package', 'io' => 'Ports', 'processing' => 'Processing' );
+    ( 'package' => 'Package', 'io' => 'Ports', 'processing' => 'Processing',
+      'drivers' => 'Drivers' );
 
 my $section = 'n';
 my $package;
@@ -53,10 +54,10 @@ my(%processing_constants) =
     ( 'AGNOSTIC' => 'a/a', 'PUSH' => 'h/h', 'PULL' => 'l/l',
       'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h' );
 my(%processing_text) =
-    ( 'a/a' => 'Agnostic', 'h/h' => 'Push', 'l/l' => 'Pull',
-      'h/l' => 'Push inputs, pull outputs',
-      'l/h' => 'Pull inputs, push outputs',
-      'a/ah' => 'Agnostic, but output 1 is push' );
+    ( 'a/a' => 'agnostic', 'h/h' => 'push', 'l/l' => 'pull',
+      'h/l' => 'push inputs, pull outputs',
+      'l/h' => 'pull inputs, push outputs',
+      'a/ah' => 'agnostic, but output 1 is push' );
 
 my(@section_headers) =
     ( 'basicsources'		=> 'Basic Sources and Sinks',
@@ -100,22 +101,28 @@ for (my $i = 0; $i < @section_headers; $i += 2) {
 }
 
 my(%default_packages) =
-    ( 'standard'		=> 'standard (standard package)',
-      'ethernet'		=> 'ethernet (standard package)',
-      'aqm'			=> 'aqm (standard package)',
-      'ip'			=> 'ip (standard package)',
-      'icmp'			=> 'icmp (standard package)',
-      'tcpudp'			=> 'tcpudp (standard package)',
-      'snmp'			=> 'snmp (non-default standard package)',
-      'app'			=> 'app (standard package)',
-      'analysis'		=> 'analysis (non-default standard package)',
-      'ipsec'			=> 'ipsec (non-default standard package)',
-      'ip6'			=> 'ip6 (non-default standard package)',
-      'etherswitch'		=> 'etherswitch (non-default standard package)',
-      'radio'			=> 'radio (non-default standard package)',
-      'local'			=> 'local (non-default standard package)',
-      'grid'			=> 'grid (non-default standard package)',
-      'test'			=> 'test (non-default standard package)' );
+    ( 'analysis'		=> 'core (analysis)',
+      'app'			=> 'core (app)',
+      'aqm'			=> 'core (aqm)',
+      'bsdmodule'		=> 'core (bsdmodule)',
+      'ethernet'		=> 'core (ethernet)',
+      'etherswitch'		=> 'core (etherswitch)',
+      'grid'			=> 'core (grid)',
+      'icmp'			=> 'core (icmp)',
+      'ip'			=> 'core (ip)',
+      'ip6'			=> 'core (ip6)',
+      'ipsec'			=> 'core (ipsec)',
+      'linuxmodule'		=> 'core (linuxmodule)',
+      'local'			=> 'core (local)',
+      'ns'			=> 'core (ns)',
+      'radio'			=> 'core (radio)',
+      'simple'			=> 'core (simple)',
+      'standard'		=> 'core (standard)',
+      'tcpudp'			=> 'core (tcpudp)',
+      'test'			=> 'core (test)',
+      'userlevel'		=> 'core (userlevel)',
+      'wifi'			=> 'core (wifi)'
+      );
 
 # find date
 my($today) = '';
@@ -402,6 +409,7 @@ EOD;
 	return;
     }
 
+    $text .= "\n" if $name eq 'head1';
     print OUT nroffize($text), "\n";
 }
 
@@ -610,6 +618,7 @@ EOD;
 
     print OUT ' ' x @Over, "! " if $text =~ /\S/ && @Over && $dokuwiki_dl;
     print OUT dokuwikiize($text), "\n";
+    print OUT "\n" if $name eq 'head1';
 }
 
 
@@ -617,6 +626,7 @@ EOD;
 ## main  ##
 
 my $do_section_func = \&nroff_do_section;
+my $do_text_func = \&nroffize;
 my $filename_func;
 
 sub do_section ($$$) {
@@ -691,11 +701,32 @@ sub process_summary_section ($$) {
     }
 }
 
+sub process_drivers ($) {
+    my($driv) = @_;
+    my(@d, $d);
+    foreach $d ('userlevel', 'linuxmodule', 'bsdmodule', 'ns') {
+	push @d, $d if $driv =~ /\b$d\b/;
+    }
+    join(', ', @d);
+}
+
 sub insert_section (\@\@\@$$$$) {
     my($sn, $sa, $st, $i, $n, $a, $t) = @_;
     splice @$sn, $i, 0, $n;
     splice @$sa, $i, 0, $a;
     splice @$st, $i, 0, $t;
+}
+
+sub insert_section2 (\@\@\@$$$\%@) {
+    my($sn, $sa, $st, $n, $a, $t, $fis, @x) = @_;
+    my($pos);
+    foreach $pos (@x) {
+	if (exists $fis->{$pos}) {
+	    insert_section(@$sn, @$sa, @$st, $fis->{$pos} + 1, $n, $a, $t);
+	    $fis->{$n} = $fis->{$pos} + 1;
+	    return;
+	}
+    }
 }
 
 sub process_comment ($$) {
@@ -733,7 +764,7 @@ sub process_comment ($$) {
 	$num_sections{$n}++;
 	$first_in_section{$n} = $i if $num_sections{$n} == 1;
     }
-    foreach $i ('a', 'c', 'd', 'n', 'e', 'title', 'io', 'processing') {
+    foreach $i ('a', 'c', 'd', 'n', 'e', 'title', 'io', 'processing', 'drivers') {
 	print STDERR "click-elem2man: $Filename: warning: multiple '=$i' sections; some may be ignored\n"
 	    if $num_sections{$i} && $num_sections{$i} > 1;
     }
@@ -831,7 +862,7 @@ sub process_comment ($$) {
 	$summary_section = $section_args[$i];
 	process_summary_section($summary_section, $outfiles[0]);
 	$section_text[$i] =~ s/\n\s*\n/\n/g;
-	my($t) = nroffize($section_text[$i]);
+	my($t) = &$do_text_func($section_text[$i]);
 	$oneliner .= ";\n" . $t;
 	$oneliner =~ s/\n(^\.)/ /g;
 	$all_roff_summaries{$outfiles[0]} = $t . "\n";
@@ -845,14 +876,28 @@ sub process_comment ($$) {
 	$deprecated{$outfiles[0]} = $section_text[$first_in_section{'deprecated'}];
     }
 
-    # input/output
-    if (!defined($first_in_section{'io'})) { PORTCOUNT: {
-	last PORTCOUNT if !defined($portcount{$Class});
-	my($after) = $first_in_section{'c'};
-	insert_section(@section_name, @section_args, @section_text, $after + 1,
-		       'io', '', process_portcount($portcount{$Class}));
-	$first_in_section{'io'} = $after + 1;
+    # package
+    if (!defined($first_in_section{'package'}) && defined($package)) { PACKAGE: {
+	my($pkg) = $package;
+	if ($pkg eq 'DEFAULT') {
+	    $pkg = $1 if $Filename =~ m|\belements/(\w+)/|;
+	    $pkg = 'standard' if $Filename =~ m|\binclude/click/standard/|;
+	    last PACKAGE if $pkg eq 'DEFAULT';
+	    $pkg = exists($default_packages{$1}) ? $default_packages{$1} : $1;
+	}
+	insert_section2(@section_name, @section_args, @section_text,
+			'package', '', $pkg,
+			%first_in_section, 'drivers', 'processing', 'io', 'c');
     }}
+
+    # drivers
+    my($drivers);
+    if ($requires{$Class} && ($drivers = process_drivers($requires{$Class}))
+	&& !defined($first_in_section{'drivers'})) {
+	insert_section2(@section_name, @section_args, @section_text,
+			'drivers', '', $drivers,
+			%first_in_section, 'processing', 'io', 'c');
+    }
 	
     # processing
     if (!defined($first_in_section{'processing'})) { PROCESSING: {
@@ -866,22 +911,17 @@ sub process_comment ($$) {
 	    $ptype = $t;
 	}
 	$ptype = process_processing($ptype);
-	my($after) = $first_in_section{'io'};
-	$after = $first_in_section{'c'} if !defined($after);
-	insert_section(@section_name, @section_args, @section_text, $after + 1,
-		       'processing', '', $ptype) if $ptype;
+	insert_section2(@section_name, @section_args, @section_text,
+			'processing', '', $ptype,
+			%first_in_section, 'io', 'c') if $ptype;
     }}
 
-    # package
-    if (!defined($first_in_section{'package'}) && defined($package)) { PACKAGE: {
-	my($pkg) = $package;
-	if ($pkg eq 'DEFAULT') {
-	    last PACKAGE if $Filename !~ m|elements/(\w+)/[^/]+\.[Hh]+$|;
-	    $pkg = exists($default_packages{$1}) ? $default_packages{$1} : $1;
-	}
-	my($after) = $first_in_section{'c'};
-	insert_section(@section_name, @section_args, @section_text, $after + 1,
-		       'package', '', $pkg);
+    # input/output
+    if (!defined($first_in_section{'io'})) { PORTCOUNT: {
+	last PORTCOUNT if !defined($portcount{$Class});
+	insert_section2(@section_name, @section_args, @section_text,
+			'io', '', process_portcount($portcount{$Class}),
+			%first_in_section, 'c');
     }}
 
     # initial sections
@@ -903,8 +943,9 @@ sub process_comment ($$) {
 	if ($s eq 'c') {
 	    $x =~ s{(\S\s*)\n}{$1N<>\n}g;
 	    $x =~ s{N<>\n*\z}{};
-	    do_section('head1', 'SYNOPSIS', $x . "\n\n");
-	} elsif ($s eq 'package' || $s eq 'io' || $s eq 'processing') {
+	    do_section('head1', 'SYNOPSIS', $x);
+	} elsif ($s eq 'package' || $s eq 'io' || $s eq 'processing'
+		 || $s eq 'drivers') {
 	    $x =~ s/\A\s+//;
 	    $x =~ s/\s+\Z//;
 	    do_section('text', '', 'B<' . $infosection_name{$s} . '>: ' . $x . 'N<>');
@@ -976,6 +1017,7 @@ sub process_file ($;$) {
 	close IN;
     }
 
+    print "$filename??\n" if !defined $text;
     foreach $_ (split(m{(/\*.*?\*/)}s, $text)) {
 	if (/^\/\*/ && /^[\/*\s]+=/) {
 	    s/^(.*?)\t/$1 . (' ' x (8 - (length($1) % 8)))/egm while /\t/;
@@ -1002,18 +1044,19 @@ sub xmlunquote ($) {
 sub read_elementmap_text ($;$) {
     my($text, $headerhash) = @_;
     $headerhash = {} if !defined($headerhash);
-    my($n, $p, $hf, $pc);
     local($_);
     foreach $_ (split(/\n+/, $text)) {
 	next if !/^<entry\b/;
-	($n, $p, $hf, $pc) = (/\bname="(.*?)"/,
-			      /\bprocessing="(.*?)"/,
-			      /\bheaderfile="(.*?)"/,
-			      /\bportcount="(.*?)"/);
+	my($n) = (/\bname="(.*?)"/);
+	my($p) = (/\bprocessing="(.*?)"/);
+	my($hf) = (/\bheaderfile="(.*?)"/);
+	my($pc) = (/\bportcount="(.*?)"/);
+	my($req) = (/\brequires="(.*?)"/);
 	if (defined($n)) {
 	    $n = xmlunquote($n);
 	    $processing{$n} = xmlunquote($p) if defined($p);
 	    $portcount{$n} = xmlunquote($pc) if defined($pc);
+	    $requires{$n} = xmlunquote($req) if defined($req);
 	    $headerhash->{xmlunquote($hf)} = 1 if defined($hf);
 	}
     }
@@ -1068,6 +1111,39 @@ sub process_file_set ($$) {
 	print STDERR "click-elem2man: $fn: $!\n";
     }
 }
+
+sub uniq (@) {
+    my(@a, $x);
+    foreach $x (@_) {
+	push @a, $x if !@a || $a[-1] ne $x;
+    }
+    @a;
+}
+
+sub fix_one_requires ($$) {
+    my($n, $done) = @_;
+    return if !defined($requires{$n}) || $done->{$n};
+    $done->{$n} = 1;
+    my($t, $changed);
+    foreach $t (split(/\s+/, $requires{$n})) {
+	if (defined($requires{$t})) {
+	    &fix_one_requires($t, $done);
+	    $requires{$n} .= " " . $requires{$t};
+	    $changed = 1;
+	}
+    }
+    if ($changed) {
+	$requires{$n} = join(' ', uniq(sort { $a cmp $b } split(/\s+/, $requires{$n})));
+    }
+}
+
+sub fix_requires () {
+    my(%done, $k);
+    foreach $k (keys %requires) {
+	fix_one_requires($k, \%done);
+    }
+}
+
 
 # main program: parse options
 
@@ -1147,9 +1223,11 @@ while (@ARGV) {
 	help();
     } elsif (/^--dokuwiki$/ || /^--doku$/) {
 	$do_section_func = \&dokuwiki_do_section;
+	$do_text_func = \&dokuwikiize;
 	$output_type = 'dokuwiki';
     } elsif (/^--dokuwiki-dl$/) {
 	$do_section_func = \&dokuwiki_do_section;
+	$do_text_func = \&dokuwikiize;
 	$output_type = 'dokuwiki';
 	$dokuwiki_dl = 1;
     } elsif (/^-./) {
@@ -1188,13 +1266,19 @@ if ($uninstall) {
 } elsif (!$directory) {
     open(OUT, ">&STDOUT");
 }
+
+# read file sets
 my(%fnhash);
 foreach $fn (@files) {
     process_file_set($fn, \%fnhash);
 }
+fix_requires();
+
+# process files
 foreach $fn (keys(%fnhash)) {
     process_file($fn);
-}    
+}
+
 if ($uninstall || !$directory) {
     close OUT;
 }
