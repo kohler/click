@@ -1,3 +1,10 @@
+2006-02-17 Friday 21:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* bsdmodule/Makefile.in (1.36), doc/click-elem2man (1.54),
+	  linuxmodule/Makefile.in (1.102), tools/Makefile.in (1.55),
+	  userlevel/Makefile.in (1.89): more elem2man fixes: report port
+	  counts
+
 2006-02-17 Friday 20:54  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.129), doc/Makefile.in (1.59), doc/click-elem2man
