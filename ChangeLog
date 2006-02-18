@@ -1,3 +1,26 @@
+2006-02-18 Saturday 03:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: analysis/timesortedsched.hh (1.12), ip/iprwpatterns.hh
+	  (1.16), ip/rripmapper.hh (1.12), ip/siphmapper.hh (1.6),
+	  linuxmodule/perfcountinfo.hh (1.5), linuxmodule/schedulelinux.hh
+	  (1.15), linuxmodule/staticthreadsched.hh (1.10),
+	  linuxmodule/tulipstats.hh (1.12), simple/simplerrsched.hh (1.6),
+	  standard/drivermanager.hh (1.9), standard/drr.hh (1.11),
+	  standard/pokehandlers.hh (1.23), standard/quitwatcher.hh (1.22),
+	  standard/randomswitch.hh (1.5), standard/rrsched.hh (1.18),
+	  standard/rrswitch.hh (1.16), standard/script.hh (1.6),
+	  standard/spinlockinfo.hh (1.10), test/bhmtest.hh (1.3),
+	  test/packettest.hh (1.4), test/schedordertest.hh (1.4),
+	  test/vectortest.hh (1.2), userlevel/changeuid.hh (1.4),
+	  userlevel/chattersocket.hh (1.14), userlevel/controlsocket.hh
+	  (1.42), userlevel/khandlerproxy.hh (1.12),
+	  userlevel/progressbar.hh (1.22): remove =io None sections
+	  (generated automatically)
+
+2006-02-18 Saturday 03:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.55): bug fixes, and print number of ports
+
 2006-02-17 Friday 21:49  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* bsdmodule/Makefile.in (1.36), doc/click-elem2man (1.54),
