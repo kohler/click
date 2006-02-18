@@ -68,11 +68,11 @@ install-local: elementmap.xml click-buildtool click-compile
 	(cd $(top_srcdir); pwd) > $(DESTDIR)$(clickdatadir)/srcdir
 	/bin/rm -rf $(DESTDIR)$(clickdatadir)/src
 	/bin/ln -s "`cd $(top_srcdir); pwd`" $(DESTDIR)$(clickdatadir)/src
-install-doc:
+install-doc: elementmap.xml
 	@cd doc && $(MAKE) install
 install-info:
 	@cd doc && $(MAKE) install-info
-install-man:
+install-man: elementmap.xml
 	@-for d in $(ALL_TARGETS) doc; do (cd $$d && $(MAKE) install-man); done
 install-local-include: stamp-h
 	$(mkinstalldirs) $(DESTDIR)$(clickincludedir)
@@ -90,7 +90,7 @@ install-lib:
 	@if echo $(ALL_TARGETS) | grep userlevel >/dev/null 2>&1; then cd userlevel && $(MAKE) install-lib; fi
 	@if echo $(ALL_TARGETS) | grep tools >/dev/null 2>&1; then cd tools && $(MAKE) install-lib; fi
 
-uninstall:
+uninstall: elementmap.xml
 	@for d in $(ALL_TARGETS) doc; do (cd $$d && $(MAKE) uninstall) || exit 1; done
 	@$(MAKE) uninstall-local uninstall-local-include
 uninstall-local:

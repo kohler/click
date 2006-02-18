@@ -20,7 +20,7 @@
 # legally binding.
 
 # information stored about each Click element, indexed by C++ class name
-my(%class_name, %processing, %deprecated, $PREFIX);
+my(%processing, %deprecated, $PREFIX);
 
 my(%section_break) =
     ( 'head1' => 1, 'c' => 1, 's' => 1, 'io' => 1, 'processing' => 1,
@@ -914,15 +914,6 @@ sub process_comment ($$) {
 sub process_file ($;$) {
     my($filename, $text) = @_;
 
-    # extract header filename
-    if ($filename =~ /^.*:"(.*)"$/) {
-	$filename = $1;
-    } elsif ($filename =~ /^.*:<(.*)>$/) {
-	$filename = "include/$1";
-    } else {
-	$filename =~ s/\.cc$/\.hh/;
-    }
-
     $filename = "$PREFIX/$filename" if !-e $filename && defined($PREFIX);
     return if !-e $filename;
     if (!defined($text)) {
@@ -932,17 +923,6 @@ sub process_file ($;$) {
 	}
 	$text = <IN>;
 	close IN;
-    }
-
-    foreach $_ (split(m{^class}m, $text)) {
-	my($cxx_class) = (/^\s*(\w*)/);
-	if (/class_name.*return\s*\"([^\"]+)\"/) {
-	    $class_name{$cxx_class} = $1;
-	    $cxx_class = $1;
-	}
-	if (/processing.*return\s+(.*?);/) {
-	    $processing{$cxx_class} = $1;
-	}
     }
 
     foreach $_ (split(m{(/\*.*?\*/)}s, $text)) {
@@ -956,58 +936,83 @@ sub process_file ($;$) {
     }
 }
 
-sub process_file_set ($) {
-    my($fn) = @_;
+sub xmlunquote ($) {
+    my($x) = @_;
+    if ($x =~ /&/) {
+	$x =~ s/&lt;/</g;
+	$x =~ s/&gt;/>/g;
+	$x =~ s/&amp;/&/g;
+	$x =~ s/&#([0-9]+);/chr($1)/eg;
+	$x =~ s/&#x([0-9a-zA-Z]+);/chr(oct("0x$1"))/eg;
+    }
+    $x;
+}
+
+sub read_elementmap_text ($;$) {
+    my($text, $headerhash) = @_;
+    $headerhash = {} if !defined($headerhash);
+    my($l, $n, $p, $hf);
+    foreach $l (split(/\n+/, $text)) {
+	next if !/^<entry\b/;
+	($n, $p, $hf) = (/\bname="(.*?)"/,
+			 /\bprocessing="(.*?)"/,
+			 /\bheaderfile="(.*?)"/);
+	if (defined($n)) {
+	    $n = xmlunquote($n);
+	    $processing{$n} = xmlunquote($p) if defined($p);
+	    $headerhash->{xmlunquote($hf)} = 1 if defined($hf);
+	}
+    }
+}
+
+sub read_elementmap ($;$) {
+    my($fn, $headerhash) = @_;
+    open(E, $fn) || die "$fn: $!\n";
+    local($/) = undef;
+    read_elementmap_text(<E>, $headerhash);
+    close E;
+}
+
+sub process_file_set ($$) {
+    my($fn, $fnhash) = @_;
     if (open(IN, ($fn eq '-' ? "<&STDIN" : $fn))) {
-	my(@a, @b, $t);
+	my(@a, @b, $t, $x);
 	$t = <IN>;
 	close IN;
 	
 	# Parse file; click-buildtool gets special treatment
 	if ($t =~ /\A#.*click-buildtool findelem/) {
 	    $t =~ s/^#.*//mg;
-	    @a = map {
-		if (/^(\S+)\s+(\S+)/) {
-		    "$1:$2";
+	    foreach $_ (split(/\n+/, $t)) {
+		if (/^\S+\s+<(\S+?)>/) {
+		    $fnhash->{"include/$1"} = 1;
+		} elsif (/^\S+\s+"(\S+?)"/) {
+		    $fnhash->{$1} = 1;
 		} else {
-		    $_;
+		    s/.cc$/.hh/;
+		    $fnhash->{$_} = 1;
 		}
-	    } split(/\n+/, $t);
+	    }
+	} elsif ($t =~ /\A<\?xml/) {
+	    read_elementmap_text($t, $fnhash);
 	} elsif ($t =~ /[\(\)]/) {
-	    process_file($fn, $t);
+	    die if $fn eq '-';
+	    $fnhash->{$fn} = 1;
 	} else {
 	    $t =~ s/^#.*//mg;
-	    @a = split(/\s+/, $t);
-	}
-	
-	foreach $t (@a) {
-	    next if $t eq '';
-	    if ($t =~ /[*?\[]/) {
-		push @b, glob($t);
-	    } else {
-		push @b, $t;
+	    foreach $_ (split(/\s+/, $t)) {
+		if ($t =~ /[*?\[]/) {
+		    foreach my $x (glob($t)) {
+			$fnhash->{$x} = 1;
+		    }
+		} else {
+		    $fnhash->{$_} = 1;
+		}
 	    }
-	}
-
-	foreach $t (@b) {
-	    process_file($t);
 	}
     } else {
 	print STDERR "click-elem2man: $fn: $!\n";
     }
-}
-
-sub read_elementmap ($) {
-    my($fn) = @_;
-    open(E, $fn) || die "$fn: $!\n";
-    my($cxxc, $n, $p);
-    while (<E>) {
-	next if !/^<entry\b/;
-	($cxxc, $n, $p) = (/\bcxxclass="(.*?)"/, /\bname="(.*?)"/, /\bprocessing="(.*?)"/);
-	$class_name{$cxxc} = $n if defined($cxxc) && defined($n);
-	$processing{$cxxc} = $p if defined($cxxc) && defined($p);
-    }
-    close E;
 }
 
 # main program: parse options
@@ -1129,9 +1134,13 @@ if ($uninstall) {
 } elsif (!$directory) {
     open(OUT, ">&STDOUT");
 }
+my(%fnhash);
 foreach $fn (@files) {
-    process_file_set($fn);
+    process_file_set($fn, \%fnhash);
 }
+foreach $fn (keys(%fnhash)) {
+    process_file($fn);
+}    
 if ($uninstall || !$directory) {
     close OUT;
 }
