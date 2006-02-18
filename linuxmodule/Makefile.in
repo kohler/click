@@ -143,6 +143,8 @@ $(obj)/proclikefs_.o : $(srcdir)/proclikefs.c
 install: Makefile elements.mk elements.cc all
 	$(CLICKmkinstalldirs) $(DESTDIR)$(libdir)
 	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do $(CLICKINSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
+install-man:
+	:
 uninstall:
 	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
 
@@ -227,6 +229,8 @@ proclikefs.o: proclikefs.c Makefile
 install: $(INSTALLOBJS)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
 	for i in $(INSTALLOBJS); do $(INSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
+install-man:
+	:
 uninstall:
 	for i in $(INSTALLOBJS); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
 

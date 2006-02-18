@@ -20,24 +20,29 @@
 # legally binding.
 
 # information stored about each Click element, indexed by C++ class name
-my(%processing, %deprecated, $PREFIX);
+my(%processing, %deprecated, %portcount, $PREFIX);
 
 my(%section_break) =
-    ( 'head1' => 1, 'c' => 1, 's' => 1, 'io' => 1, 'processing' => 1,
+    ( 'head1' => 1, 'c' => 1, 's' => 1, 'info' => 0,
+      'io' => 1, 'processing' => 1,
       'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 1, 'title' => 1,
       'deprecated' => 1, 'package' => 1 );
 my(%section_takes_args) =
-    ( 'head1' => 1, 'c' => 0, 's' => 2, 'io' => 0, 'processing' => 0,
+    ( 'head1' => 1, 'c' => 0, 's' => 2, 'info' => 0,
+      'io' => 0, 'processing' => 0,
       'd' => 0, 'n' => 0, 'e' => 0, 'h' => 1, 'a' => 2, 'title' => 1,
       'deprecated' => 1, 'package' => 2 );
 my(%section_takes_text) =
-    ( 'head1' => 2, 'c' => 1, 's' => 1, 'io' => 1, 'processing' => 1,
+    ( 'head1' => 2, 'c' => 1, 's' => 1, 'info' => 1,
+      'io' => 1, 'processing' => 1,
       'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 2, 'title' => 0,
       'deprecated' => 0, 'package' => 1 );
 my(%xsection_takes_args) =
     ( 'head1' => 1, 'head2' => 1, 'item' => 1, 'over' => 1, 'back' => 0,
       'for' => 1, 'begin' => 1, 'end' => 1, 'start!' => 1, 'name!' => 1,
-      'end!' => 0 );
+      'end!' => 0, 'text' => 0 );
+my(%infosection_name) =
+    ( 'package' => 'Package', 'io' => 'Ports', 'processing' => 'Processing' );
 
 my $section = 'n';
 my $package;
@@ -645,6 +650,35 @@ sub process_processing ($) {
     return undef;
 }
 
+sub process_one_portcount ($$) {
+    my($t, $type) = @_;
+    if ($t eq '0') {
+	"no ${type}s";
+    } elsif ($t eq '-') {
+	"any number of ${type}s";
+    } elsif ($t eq '1') {
+	"1 $type";
+    } elsif ($t eq '=') {
+	"the same number of ${type}s";
+    } elsif ($t =~ /^0?-1$/) {
+	"at most 1 $type";
+    } elsif ($t =~ /^0?-(.*)/) {
+	"at most $1 ${type}s";
+    } elsif ($t =~ /^(\d+)-$/) {
+	"$1 or more ${type}s";
+    } else {
+	"$t ${type}s";
+    }
+}
+
+sub process_portcount ($) {
+    my($t) = @_;
+    $t = "$t/$t" if $t !~ /\//;
+    return 'none' if $t eq '0/0';
+    my($i, $o) = split(/\//, $t);
+    process_one_portcount($i, "input") . ", " . process_one_portcount($o, "output");
+}
+
 sub process_summary_section ($$) {
     my($summary, $file) = @_;
     my($i);
@@ -723,6 +757,7 @@ sub process_comment ($$) {
 	print STDERR "click-elem2man: $Filename: no class definitions\n    (did you forget '()' in the =c section?)\n";
 	return;
     }
+    my($Class) = $classes[0];
 
     # output filenames might be specified in 'title' section
     my(@outfiles, @outsections, $title);
@@ -804,16 +839,26 @@ sub process_comment ($$) {
 	# avoid uninitialized value warns
 	$all_roff_summaries{$outfiles[0]} = '';
     }
-    
+
     # deprecation
     if (defined($first_in_section{'deprecated'})) {
 	$deprecated{$outfiles[0]} = $section_text[$first_in_section{'deprecated'}];
     }
-    
+
+    # input/output
+    if (!defined($first_in_section{'io'})) { PORTCOUNT: {
+	last PORTCOUNT if !defined($portcount{$Class});
+	my($after) = $first_in_section{'c'};
+	insert_section(@section_name, @section_args, @section_text, $after + 1,
+		       'io', '', process_portcount($portcount{$Class}));
+	$first_in_section{'io'} = $after + 1;
+    }}
+	
     # processing
     if (!defined($first_in_section{'processing'})) { PROCESSING: {
 	# can we figure out the processing type?
-	last PROCESSING if defined($first_in_section{'io'}) && $section_text[$first_in_section{'io'}] =~ /None/i;
+	last PROCESSING
+	    if (defined($first_in_section{'io'}) && $section_text[$first_in_section{'io'}] =~ /None/i) || (defined($portcount{$Class}) && ($portcount{$Class} eq '0' || $portcount{$Class} eq '0/0'));
 	my($ptype, $j);
 	foreach $j (@classes) {
 	    my($t) = $processing{$j};
@@ -848,15 +893,21 @@ sub process_comment ($$) {
 		   @section_name, 'end!', $outsections[0], $title);    
 
     # output
+    my($special_section) = 0;
     for ($i = 0; $i < @section_text; $i++) {
 	my($s) = $section_name[$i];
 	my($x) = $section_text[$i];
+	my($was_special_section) = $special_section;
+	$special_section = 0;
+	
 	if ($s eq 'c') {
 	    $x =~ s{(\S\s*)\n}{$1N<>\n}g;
-	    $x =~ s{N<>\n*\Z}{};
-	    do_section('head1', 'SYNOPSIS', $x);
-	} elsif ($s eq 'package') {
-	    do_section('head1', 'PACKAGE', $x);
+	    $x =~ s{N<>\n*\z}{};
+	    do_section('head1', 'SYNOPSIS', $x . "\n\n");
+	} elsif ($s eq 'package' || $s eq 'io' || $s eq 'processing') {
+	    $x =~ s/\A\s+//;
+	    $x =~ s/\s+\Z//;
+	    do_section('text', '', 'B<' . $infosection_name{$s} . '>: ' . $x . 'N<>');
 	} elsif ($s eq 'io') {
 	    do_section('head1', 'INPUTS AND OUTPUTS', $x);
 	} elsif ($s eq 'processing') {
@@ -951,15 +1002,18 @@ sub xmlunquote ($) {
 sub read_elementmap_text ($;$) {
     my($text, $headerhash) = @_;
     $headerhash = {} if !defined($headerhash);
-    my($l, $n, $p, $hf);
-    foreach $l (split(/\n+/, $text)) {
+    my($n, $p, $hf, $pc);
+    local($_);
+    foreach $_ (split(/\n+/, $text)) {
 	next if !/^<entry\b/;
-	($n, $p, $hf) = (/\bname="(.*?)"/,
-			 /\bprocessing="(.*?)"/,
-			 /\bheaderfile="(.*?)"/);
+	($n, $p, $hf, $pc) = (/\bname="(.*?)"/,
+			      /\bprocessing="(.*?)"/,
+			      /\bheaderfile="(.*?)"/,
+			      /\bportcount="(.*?)"/);
 	if (defined($n)) {
 	    $n = xmlunquote($n);
 	    $processing{$n} = xmlunquote($p) if defined($p);
+	    $portcount{$n} = xmlunquote($pc) if defined($pc);
 	    $headerhash->{xmlunquote($hf)} = 1 if defined($hf);
 	}
     }

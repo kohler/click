@@ -73,6 +73,8 @@ install-include:
 	@cd lib && $(MAKE) install-include
 install-lib:
 	@cd lib && $(MAKE) install-lib
+install-man:
+	:
 uninstall:
 	@for d in lib $(TARGETS); do (cd $$d && $(MAKE) uninstall) || exit 1; done
 

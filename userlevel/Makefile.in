@@ -123,6 +123,8 @@ install: $(INSTALLPROGS) install-lib
 install-lib: $(INSTALLLIBS)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
 	for i in $(INSTALLLIBS); do $(INSTALL) $$i $(DESTDIR)$(libdir)/$$i; done
+install-man:
+	:
 uninstall:
 	for i in $(INSTALLLIBS); do rm -f $(DESTDIR)$(libdir)/$$i; done
 	for i in $(INSTALLPROGS); do rm -f $(DESTDIR)$(bindir)/$$i; done
