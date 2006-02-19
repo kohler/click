@@ -11,7 +11,7 @@ CLICK_DECLS
 
 WifiDupeFilter([TAG] [, KEYWORDS])
 
-=s Wifi, Checking Validity
+=s Wifi
 
 Filters out duplicate 802.11 packets based on their sequence number.
 

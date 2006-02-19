@@ -10,7 +10,7 @@ CLICK_DECLS
 
 WifiEncap(MODE, BSSID)
 
-=s Wifi, Encapsulation
+=s Wifi
 
 Converts ethernet packets to 802.11 packets with a LLC header.
 
