@@ -148,6 +148,11 @@ sub process_file ($) {
 	push @doc_name, $doc_titles{$click_name[$i]};
     }
 
+    # check titles
+    if (@processing == 0 && keys(%doc_titles) > 1) {
+	print STDERR "$filename: more than 1 documentation class for requirement\n";
+    }
+
     # process ELEMENT_REQUIRES, ELEMENT_PROVIDES, and EXPORT_ELEMENT
     if (!open(IN, $filename)) {
 	print STDERR "$filename: $!\n";
@@ -189,7 +194,7 @@ sub process_file ($) {
     if (@cxx_name == $first && $prov) {
 	push @click_name, "";
 	push @cxx_name, "";
-	push @doc_name, "";
+	push @doc_name, (%doc_titles ? keys(%doc_titles) : (""));
 	push @source_file, $filename;
 	push @header_file, $headername;
 	push @parents, [];

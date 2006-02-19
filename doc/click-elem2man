@@ -20,7 +20,7 @@
 # legally binding.
 
 # information stored about each Click element, indexed by C++ class name
-my(%processing, %deprecated, %portcount, %requires, $PREFIX);
+my(%processing, %deprecated, %portcount, %docrequires, %requires, $PREFIX);
 
 my(%section_break) =
     ( 'head1' => 1, 'c' => 1, 's' => 1,
@@ -101,27 +101,27 @@ for (my $i = 0; $i < @section_headers; $i += 2) {
 }
 
 my(%default_packages) =
-    ( 'analysis'		=> 'core (analysis)',
-      'app'			=> 'core (app)',
-      'aqm'			=> 'core (aqm)',
-      'bsdmodule'		=> 'core (bsdmodule)',
-      'ethernet'		=> 'core (ethernet)',
-      'etherswitch'		=> 'core (etherswitch)',
-      'grid'			=> 'core (grid)',
-      'icmp'			=> 'core (icmp)',
-      'ip'			=> 'core (ip)',
-      'ip6'			=> 'core (ip6)',
-      'ipsec'			=> 'core (ipsec)',
-      'linuxmodule'		=> 'core (linuxmodule)',
-      'local'			=> 'core (local)',
-      'ns'			=> 'core (ns)',
-      'radio'			=> 'core (radio)',
-      'simple'			=> 'core (simple)',
-      'standard'		=> 'core (standard)',
-      'tcpudp'			=> 'core (tcpudp)',
-      'test'			=> 'core (test)',
-      'userlevel'		=> 'core (userlevel)',
-      'wifi'			=> 'core (wifi)'
+    ( 'analysis'		=> 'analysis (core)',
+      'app'			=> 'app (core)',
+      'aqm'			=> 'aqm (core)',
+      'bsdmodule'		=> 'bsdmodule (core)',
+      'ethernet'		=> 'ethernet (core)',
+      'etherswitch'		=> 'etherswitch (core)',
+      'grid'			=> 'grid (core)',
+      'icmp'			=> 'icmp (core)',
+      'ip'			=> 'ip (core)',
+      'ip6'			=> 'ip6 (core)',
+      'ipsec'			=> 'ipsec (core)',
+      'linuxmodule'		=> 'linuxmodule (core)',
+      'local'			=> 'local (core)',
+      'ns'			=> 'ns (core)',
+      'radio'			=> 'radio (core)',
+      'simple'			=> 'simple (core)',
+      'standard'		=> 'standard (core)',
+      'tcpudp'			=> 'tcpudp (core)',
+      'test'			=> 'test (core)',
+      'userlevel'		=> 'userlevel (core)',
+      'wifi'			=> 'wifi (core)'
       );
 
 # find date
@@ -649,15 +649,13 @@ sub do_section ($$$) {
 
 sub process_processing ($) {
     my($t) = @_;
+    return undef if !defined($t);
     if (exists($processing_constants{$t})) {
 	$t = $processing_constants{$t};
     }
     $t =~ tr/\" \t//d;
     $t =~ s{\A([^/]*)\Z}{$1/$1};
-    if (exists($processing_text{$t})) {
-	return $processing_text{$t};
-    }
-    return undef;
+    $processing_text{$t};
 }
 
 sub process_one_portcount ($$) {
@@ -788,7 +786,7 @@ sub process_comment ($$) {
 	print STDERR "click-elem2man: $Filename: no class definitions\n    (did you forget '()' in the =c section?)\n";
 	return;
     }
-    my($Class) = $classes[0];
+    my($Title) = $classes[0];
 
     # output filenames might be specified in 'title' section
     my(@outfiles, @outsections, $title);
@@ -806,9 +804,11 @@ sub process_comment ($$) {
 	    if ($i =~ /^(.*)\((.*)\)$/) {
 		push @outfiles, $1;
 		push @outsections, $2;
+		$Title = $1;
 	    } else {
 		push @outfiles, $i;
 		push @outsections, $section;
+		$Title = $i;
 	    }
 	}
     } else {
@@ -883,7 +883,7 @@ sub process_comment ($$) {
 	    $pkg = $1 if $Filename =~ m|\belements/(\w+)/|;
 	    $pkg = 'standard' if $Filename =~ m|\binclude/click/standard/|;
 	    last PACKAGE if $pkg eq 'DEFAULT';
-	    $pkg = exists($default_packages{$1}) ? $default_packages{$1} : $1;
+	    $pkg = exists($default_packages{$pkg}) ? $default_packages{$pkg} : $pkg;
 	}
 	insert_section2(@section_name, @section_args, @section_text,
 			'package', '', $pkg,
@@ -892,7 +892,8 @@ sub process_comment ($$) {
 
     # drivers
     my($drivers);
-    if ($requires{$Class} && ($drivers = process_drivers($requires{$Class}))
+    if ($docrequires{$Title}
+	&& ($drivers = process_drivers($docrequires{$Title}))
 	&& !defined($first_in_section{'drivers'})) {
 	insert_section2(@section_name, @section_args, @section_text,
 			'drivers', '', $drivers,
@@ -903,14 +904,8 @@ sub process_comment ($$) {
     if (!defined($first_in_section{'processing'})) { PROCESSING: {
 	# can we figure out the processing type?
 	last PROCESSING
-	    if (defined($first_in_section{'io'}) && $section_text[$first_in_section{'io'}] =~ /None/i) || (defined($portcount{$Class}) && ($portcount{$Class} eq '0' || $portcount{$Class} eq '0/0'));
-	my($ptype, $j);
-	foreach $j (@classes) {
-	    my($t) = $processing{$j};
-	    last PROCESSING if !$t || (defined($ptype) && $t ne $ptype);
-	    $ptype = $t;
-	}
-	$ptype = process_processing($ptype);
+	    if (defined($first_in_section{'io'}) && $section_text[$first_in_section{'io'}] =~ /None/i) || (defined($portcount{$Title}) && ($portcount{$Title} eq '0' || $portcount{$Title} eq '0/0'));
+	my($ptype) = process_processing($processing{$Title});
 	insert_section2(@section_name, @section_args, @section_text,
 			'processing', '', $ptype,
 			%first_in_section, 'io', 'c') if $ptype;
@@ -918,9 +913,9 @@ sub process_comment ($$) {
 
     # input/output
     if (!defined($first_in_section{'io'})) { PORTCOUNT: {
-	last PORTCOUNT if !defined($portcount{$Class});
+	last PORTCOUNT if !defined($portcount{$Title});
 	insert_section2(@section_name, @section_args, @section_text,
-			'io', '', process_portcount($portcount{$Class}),
+			'io', '', process_portcount($portcount{$Title}),
 			%first_in_section, 'c');
     }}
 
@@ -1006,6 +1001,7 @@ sub process_comment ($$) {
 sub process_file ($;$) {
     my($filename, $text) = @_;
 
+    $filename = "include/$1" if !-e $filename && $filename =~ /^<(.*)>$/s;
     $filename = "$PREFIX/$filename" if !-e $filename && defined($PREFIX);
     return if !-e $filename;
     if (!defined($text)) {
@@ -1048,15 +1044,25 @@ sub read_elementmap_text ($;$) {
     foreach $_ (split(/\n+/, $text)) {
 	next if !/^<entry\b/;
 	my($n) = (/\bname="(.*?)"/);
+	my($dn) = (/\bdocname="(.*?)"/);
 	my($p) = (/\bprocessing="(.*?)"/);
 	my($hf) = (/\bheaderfile="(.*?)"/);
 	my($pc) = (/\bportcount="(.*?)"/);
 	my($req) = (/\brequires="(.*?)"/);
-	if (defined($n)) {
-	    $n = xmlunquote($n);
-	    $processing{$n} = xmlunquote($p) if defined($p);
-	    $portcount{$n} = xmlunquote($pc) if defined($pc);
-	    $requires{$n} = xmlunquote($req) if defined($req);
+	if (defined($n) || defined($dn)) {
+	    $dn = xmlunquote(defined($dn) ? $dn : $n);
+	    $processing{$dn} = xmlunquote($p) if defined($p);
+	    $portcount{$dn} = xmlunquote($pc) if defined($pc);
+	    $req = defined($req) ? xmlunquote($req) : undef;
+	    $docrequires{$dn} = $req if defined($req);
+
+	    $n = $1 if defined($req) && !defined($n) && /\bprovides="(.*?)"/;
+	    if (defined($n) && defined($req)) {
+		$n = xmlunquote($n);
+		$requires{$n} = [] if !defined $requires{$n};
+		push @{$requires{$n}}, $req;
+	    }
+	    
 	    $headerhash->{xmlunquote($hf)} = 1 if defined($hf);
 	}
     }
@@ -1120,27 +1126,52 @@ sub uniq (@) {
     @a;
 }
 
-sub fix_one_requires ($$) {
-    my($n, $done) = @_;
-    return if !defined($requires{$n}) || $done->{$n};
-    $done->{$n} = 1;
-    my($t, $changed);
-    foreach $t (split(/\s+/, $requires{$n})) {
+
+sub driver_requirement ($) {
+    my($req) = @_;
+    my($d) = 0;
+    $d |= 1 if $req =~ /\buserlevel\b/;
+    $d |= 2 if $req =~ /\blinuxmodule\b/;
+    $d |= 4 if $req =~ /\bbsdmodule\b/;
+    $d |= 8 if $req =~ /\bns\b/;
+    $d ? $d : 15;
+}
+
+my(%requires_fixed);
+sub fix_one_requires ($) {
+    my($req) = @_;
+    my($driver) = driver_requirement($req);
+    
+    my($t, $i);
+    my($changes) = '';
+    foreach $t (split(/\s+/, $req)) {
 	if (defined($requires{$t})) {
-	    &fix_one_requires($t, $done);
-	    $requires{$n} .= " " . $requires{$t};
-	    $changed = 1;
+	    my($treq) = $requires{$t};
+	    if (!$requires_fixed{$t}) {
+		$requires_fixed{$t} = 1;
+		for ($i = 0; $i < @$treq; $i++) {
+		    $treq->[$i] = &fix_one_requires($treq->[$i]);
+		}
+	    }
+	    for ($i = 0; $i < @$treq; $i++) {
+		if ($driver & driver_requirement($treq->[$i])) {
+		    $changes .= " " . $treq->[$i];
+		}
+	    }
 	}
     }
-    if ($changed) {
-	$requires{$n} = join(' ', uniq(sort { $a cmp $b } split(/\s+/, $requires{$n})));
+    
+    if ($changes) {
+	join(' ', uniq(sort {$a cmp $b} split(/\s+/, $req . $changes)));
+    } else {
+	$req;
     }
 }
 
 sub fix_requires () {
-    my(%done, $k);
-    foreach $k (keys %requires) {
-	fix_one_requires($k, \%done);
+    my($k);
+    foreach $k (keys %docrequires) {
+	$docrequires{$k} = fix_one_requires($docrequires{$k});
     }
 }
 
