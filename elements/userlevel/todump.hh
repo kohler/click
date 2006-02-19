@@ -15,7 +15,7 @@ ToDump(FILENAME [, I<keywords> SNAPLEN, ENCAP, USE_ENCAP_FROM, EXTRA_LENGTH])
 
 =s traces
 
-writes packets to a tcpdump(1) file
+writes packets to a tcpdump file
 
 =d
 

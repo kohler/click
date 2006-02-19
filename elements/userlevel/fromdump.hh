@@ -15,7 +15,7 @@ FromDump(FILENAME [, I<keywords> TIMING, STOP, SAMPLE, FORCE_IP, START, START_AF
 
 =s traces
 
-reads packets from a tcpdump(1) file
+reads packets from a tcpdump file
 
 =d
 
