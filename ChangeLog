@@ -1,3 +1,18 @@
+2006-02-19 Sunday 18:08  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/: wifidupefilter.hh (1.4), wifiencap.hh (1.8): fix
+	  categorization
+
+2006-02-19 Sunday 18:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-mkelemmap (1.38), doc/click-elem2man (1.56): include
+	  docname for documented provisions; driver and other fixes
+
+2006-02-19 Sunday 18:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: fromdump.hh (1.61), todump.hh (1.40): remove
+	  confusing references
+
 2006-02-18 Saturday 03:51  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/: analysis/timesortedsched.hh (1.12), ip/iprwpatterns.hh
