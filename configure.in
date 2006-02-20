@@ -158,6 +158,7 @@ ELEMENTS_ARG_ENABLE(ip6, [include IPv6 elements (EXPERIMENTAL)], NO, AC_DEFINE(H
 ELEMENTS_ARG_ENABLE(ipsec, [include IP security elements], NO, AC_DEFINE(HAVE_IPSEC))
 ELEMENTS_ARG_ENABLE(local, [include local elements], NO)
 ELEMENTS_ARG_ENABLE(radio, [include radio elements (EXPERIMENTAL)], NO)
+ELEMENTS_ARG_ENABLE(simple, [include simple versions of other elements], NO)
 dnl ELEMENTS_ARG_ENABLE(snmp, [include SNMP elements], NO)
 ELEMENTS_ARG_ENABLE(standard, [include standard elements], yes)
 ELEMENTS_ARG_ENABLE(tcpudp, [include TCP and UDP elements], yes)
