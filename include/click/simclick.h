@@ -92,11 +92,13 @@ char* simclick_click_read_handler(simclick_click clickinst,
 				  const char* elementname,
 				  const char* handlername,
 				  SIMCLICK_MEM_ALLOC memalloc,
-				  void* memparam);
+				  void* memparam,
+				  simclick_simstate *state);
 
 int simclick_click_write_handler(simclick_click clickinst,
 				 const char* elemname, const char* handlername,
-				 const char* writestring);
+				 const char* writestring,
+				 simclick_simstate *state);
 
 /*
  * The simulated system also has to provide a few services to click,

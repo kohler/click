@@ -375,12 +375,14 @@ char* simclick_click_read_handler(simclick_click clickinst,
 				  const char* elementname,
 				  const char* handlername,
 				  SIMCLICK_MEM_ALLOC memalloc,
-				  void* memparam) {
+				  void* memparam,
+				  simclick_simstate *state) {
     Router *r = ((SimState*)clickinst)->router;
     if (!r) {
       click_chatter("simclick_click_read_handler: call with null router");
       return 0;
     }
+    setsimstate(state);
     String hdesc = String(elementname) + "." + String(handlername);
     ErrorHandler *errh = ErrorHandler::default_handler();
     int before = errh->nerrors();
@@ -402,12 +404,14 @@ char* simclick_click_read_handler(simclick_click clickinst,
 int simclick_click_write_handler(simclick_click clickinst,
 				 const char* elementname,
 				 const char* handlername,
-				 const char* writestring) {
+				 const char* writestring,
+				 simclick_simstate *state) {
     Router *r = ((SimState*)clickinst)->router;
     if (!r) {
       click_chatter("simclick_click_write_handler: call with null router");
       return -3;
     }
+    setsimstate(state);
     String hdesc = String(elementname) + "." + String(handlername);
     return HandlerCall::call_write(hdesc, String(writestring), r->root_element(), ErrorHandler::default_handler());
 }
