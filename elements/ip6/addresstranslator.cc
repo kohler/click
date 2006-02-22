@@ -789,10 +789,10 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
 EXPORT_ELEMENT(AddressTranslator)
 
 // generate Vector template instance
-#include <click/bighashmap.cc>
+#include <click/hashmap.cc>
 #include <click/vector.cc>
-template class Vector<AddressTranslator::EntryMap>;
 #if EXPLICIT_TEMPLATE_INSTANCES
+template class Vector<AddressTranslator::EntryMap>;
 template class HashMap<IP6FlowID, AddressTranslator::Mapping *>
 template class HashMapIterator<IP6FlowID, AddressTranslator::Mapping *>;
 #endif

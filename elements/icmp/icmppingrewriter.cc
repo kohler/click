@@ -319,5 +319,5 @@ ICMPPingRewriter::add_handlers()
 }
 
 EXPORT_ELEMENT(ICMPPingRewriter)
-#include <click/bighashmap.cc>
+#include <click/hashmap.cc>
 CLICK_ENDDECLS

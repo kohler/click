@@ -454,5 +454,5 @@ BigHashMapTest::initialize(ErrorHandler *errh)
 
 EXPORT_ELEMENT(BigHashMapTest)
 
-#include <click/bighashmap.cc>
+#include <click/hashmap.cc>
 CLICK_ENDDECLS

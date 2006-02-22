@@ -704,7 +704,7 @@ IPRw::clear_map(Map &table)
 
 ELEMENT_PROVIDES(IPRw)
 
-#include <click/bighashmap.cc>
+#include <click/hashmap.cc>
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class HashMap<IPFlowID, IPRw::Mapping *>;

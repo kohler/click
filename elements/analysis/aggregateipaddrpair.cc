@@ -194,5 +194,5 @@ AggregateIPAddrPair::add_handlers()
 
 ELEMENT_REQUIRES(userlevel AggregateNotifier)
 EXPORT_ELEMENT(AggregateIPAddrPair)
-#include <click/bighashmap.cc>
+#include <click/hashmap.cc>
 CLICK_ENDDECLS

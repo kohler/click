@@ -258,6 +258,6 @@ IPAddrRewriter::add_handlers()
 
 ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
 EXPORT_ELEMENT(IPAddrRewriter)
-#include <click/bighashmap.cc>
+#include <click/hashmap.cc>
 #include <click/vector.cc>
 CLICK_ENDDECLS
