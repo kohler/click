@@ -20,22 +20,18 @@ write stop true
 %expect CSOUT
 Click::ControlSocket/1.{{\d+}}
 200 Read handler{{.*}}
-DATA 2
-0
-200 Write handler{{.*}}
+DATA 1
+0200 Write handler{{.*}}
 200 Read handler{{.*}}
-DATA 2
-1
-520-Write handler{{.*}}error:
+DATA 1
+1520-Write handler{{.*}}error:
 520-{{.*}}Print' input 0 unused
 520-{{.*}}Print' output 0 unused
 520 Router could not be initialized!
 200 Read handler{{.*}}
-DATA 2
-1
-520-Write handler{{.*}}error:
+DATA 1
+1520-Write handler{{.*}}error:
 520 {{.*}}undeclared element{{.*}}
 200 Read handler{{.*}}
-DATA 2
-1
-200 Write handler{{.*}}
+DATA 1
+1200 Write handler{{.*}}
