@@ -30,7 +30,7 @@ driver_provisions="@DRIVERS@"
 
 # find a good version of awk
 if test -x /usr/bin/gawk; then
-    awk="gawk --traditional"
+    awk=gawk
 elif test -x /usr/bin/nawk; then
     awk=nawk
 else

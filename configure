@@ -874,6 +874,7 @@ Optional Features:
   --enable-ipsec          include IP security elements
   --enable-local          include local elements
   --enable-radio          include radio elements (EXPERIMENTAL)
+  --enable-simple         include simple versions of other elements
   --disable-standard      do not include standard elements
   --disable-tcpudp        do not include TCP and UDP elements
   --enable-test           include regression test elements
@@ -3459,7 +3460,7 @@ _ACEOF
 
     ac_base_cxx="$CXX"
     test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX="$CXX $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS"
+	CXX="$CXX $CXX_WARNINGS $VTABLE_THUNKS"
 
     CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
 
@@ -4319,6 +4320,17 @@ if test "x$enable_radio" = xyes; then
     :
 
 fi
+# Check whether --enable-simple or --disable-simple was given.
+if test "${enable_simple+set}" = set; then
+  enableval="$enable_simple"
+
+else
+  enable_simple=NO
+fi; test "x$enable_all_elements" = xyes -a "x$enable_simple" = xNO && enable_simple=yes
+if test "x$enable_simple" = xyes; then
+    :
+
+fi
 # Check whether --enable-standard or --disable-standard was given.
 if test "${enable_standard+set}" = set; then
   enableval="$enable_standard"
@@ -4628,7 +4640,7 @@ done
 
         ac_base_build_cxx="$CXX"
     test -z "$ac_user_build_cxx" -a -n "$ac_compile_with_warnings" && \
-	BUILD_CXX="$BUILD_CXX $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS"
+	BUILD_CXX="$BUILD_CXX $CXX_WARNINGS $VTABLE_THUNKS"
 
   for ac_prog in ar
 do
@@ -8004,7 +8016,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 8007 "configure"
+#line 8019 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
