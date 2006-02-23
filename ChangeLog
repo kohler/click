@@ -1,3 +1,10 @@
+2006-02-22 Wednesday 20:23  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* aclocal.m4 (1.50), config.h.in (1.37), configure (1.66),
+	  elements/standard/counter.cc (1.37), lib/confparse.cc (1.147),
+	  lib/error.cc (1.56), lib/ino.cc (1.11), m4/click.m4 (1.51):
+	  support for 64-bit constants
+
 2006-02-22 Wednesday 03:10  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/ns-2.29-patch (1.3), include/click/simclick.h (1.4),
