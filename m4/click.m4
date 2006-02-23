@@ -524,6 +524,7 @@ AC_DEFUN([CLICK_CHECK_INT64_TYPES], [
 	inttypes_hdr='sys/types.h'
     fi
 
+    AC_CHECK_TYPES(long long)
     AC_CACHE_CHECK(for int64_t typedef, ac_cv_int64_t,
 	[AC_EGREP_HEADER(dnl
 changequote(<<,>>)<<(^|[^a-zA-Z_0-9])int64_t[^a-zA-Z_0-9]>>changequote([,]),

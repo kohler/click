@@ -61,6 +61,8 @@ Counter::configure(Vector<String> &conf, ErrorHandler *errh)
   if (count_call) {
     if (!PARSECMD(cp_pop_spacevec(count_call), &_count_trigger))
       return errh->error("'COUNT_CALL' first word should be unsigned (count)");
+    else if (cp_errno == CPE_OVERFLOW)
+      errh->error("COUNT_CALL too large; max %s", String(_count_trigger).c_str());
     _count_trigger_h = new HandlerCall(count_call);
   } else
     _count_trigger = (counter_t)(-1);
@@ -68,6 +70,8 @@ Counter::configure(Vector<String> &conf, ErrorHandler *errh)
   if (byte_count_call) {
     if (!PARSECMD(cp_pop_spacevec(byte_count_call), &_byte_trigger))
       return errh->error("'BYTE_COUNT_CALL' first word should be unsigned (count)");
+    else if (cp_errno == CPE_OVERFLOW)
+      errh->error("BYTE_COUNT_CALL too large; max %s", String(_count_trigger).c_str());
     _byte_trigger_h = new HandlerCall(byte_count_call);
   } else
     _byte_trigger = (counter_t)(-1);
@@ -123,6 +127,8 @@ Counter::read_handler(Element *e, void *thunk)
       case H_RATE:
 	c->_rate.update_time();	// drop rate after zero period
 	return c->_rate.unparse();
+    case H_COUNT_CALL:
+	return String(c->_count_trigger);
       default:
 	return "<error>";
     }
@@ -162,6 +168,7 @@ Counter::add_handlers()
     add_read_handler("count", read_handler, (void *)H_COUNT);
     add_read_handler("byte_count", read_handler, (void *)H_BYTE_COUNT);
     add_read_handler("rate", read_handler, (void *)H_RATE);
+    add_read_handler("count_call", read_handler, (void *)H_COUNT_CALL);
     add_write_handler("reset", write_handler, (void *)H_RESET);
     add_write_handler("reset_counts", write_handler, (void *)H_RESET);
     add_write_handler("count_call", write_handler, (void *)H_COUNT_CALL);

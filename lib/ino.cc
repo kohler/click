@@ -304,7 +304,7 @@ ClickIno::lookup(ino_t ino, const String &component)
 	Element *element = Router::element(_router, elementno);
 	int hi = Router::hindex(element, component);
 	if (hi >= 0)
-	    if (Router::handler(element, hi)->visible())
+	    if (Router::handler(_router, hi)->visible())
 		return INO_MKHANDLER(elementno, hi);
     }
 

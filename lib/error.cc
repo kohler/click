@@ -297,12 +297,27 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
     width_flag = 0;
    width_flags:
     switch (*s) {
-     case 'h':
-      width_flag = 'h'; s++; goto width_flags;
-     case 'l':
-      width_flag = (width_flag == 'l' ? 'q' : 'l'); s++; goto width_flags;
-     case 'L': case 'q':
-      width_flag = 'q'; s++; goto width_flags;
+    case 'h': case 'l':
+      if (width_flag == *s)
+	width_flag = *s + 'A' - 'a';
+      else if (width_flag)
+	break;
+      else
+	width_flag = *s;
+      s++;
+      goto width_flags;
+    case 'z':
+      if (width_flag)
+	break;
+      width_flag = *s++;
+      break;
+    case '^':
+      if (!isdigit((unsigned char) s[1]) || width_flag)
+	break;
+      for (s++; isdigit((unsigned char) *s); s++)
+	width_flag = width_flag * 10 + *s - '0';
+      width_flag = -width_flag;
+      break;
     }
     
     // conversion character
@@ -365,35 +380,53 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
        // protect numbuf from overflow
        if (field_width > NUMBUF_SIZE)
 	 field_width = NUMBUF_SIZE;
-       if (precision > NUMBUF_SIZE-4)
-	 precision = NUMBUF_SIZE-4;
+       if (precision > NUMBUF_SIZE - 4)
+	 precision = NUMBUF_SIZE - 4;
        
        s2 = numbuf + NUMBUF_SIZE;
        
        unsigned long num;
+       switch (width_flag) {
+       case 'H':
+       case -8:
+	 num = (unsigned char) va_arg(val, int);
+	 if ((flags & SIGNED) && (signed char) num < 0)
+	   num = -(signed char) num, flags |= NEGATIVE;
+	 break;
+       case 'h':
+       case -16:
+	 num = (unsigned short) va_arg(val, int);
+	 if ((flags & SIGNED) && (short) num < 0)
+	   num = -(short) num, flags |= NEGATIVE;
+	 break;
+       case 0:
+       case -32:
+#if SIZEOF_LONG == 4
+       case 'l':
+#endif
+	 num = va_arg(val, unsigned);
+	 if ((flags & SIGNED) && (int) num < 0)
+	   num = -(int) num, flags |= NEGATIVE;
+	 break;
 #ifdef HAVE_INT64_TYPES
-       if (width_flag == 'q') {
+#if SIZEOF_LONG == 8
+       case 'l':
+#endif
+#if SIZEOF_LONG_LONG == 8
+       case 'L':
+#endif
+       case -64: {
 	 uint64_t qnum = va_arg(val, uint64_t);
 	 if ((flags & SIGNED) && (int64_t)qnum < 0)
-	   qnum = -(int64_t)qnum, flags |= NEGATIVE;
+	   qnum = -(int64_t) qnum, flags |= NEGATIVE;
 	 String q = cp_unparse_unsigned64(qnum, base, flags & UPPERCASE);
 	 s1 = s2 - q.length();
 	 memcpy((char *)s1, q.data(), q.length());
 	 goto got_number;
        }
 #endif
-       if (width_flag == 'h') {
-	 num = (unsigned short)va_arg(val, int);
-	 if ((flags & SIGNED) && (short)num < 0)
-	   num = -(short)num, flags |= NEGATIVE;
-       } else if (width_flag == 'l') {
-	 num = va_arg(val, unsigned long);
-	 if ((flags & SIGNED) && (long)num < 0)
-	   num = -(long)num, flags |= NEGATIVE;
-       } else {
-	 num = va_arg(val, unsigned int);
-	 if ((flags & SIGNED) && (int)num < 0)
-	   num = -(int)num, flags |= NEGATIVE;
+       default:
+	 goto error;
        }
        s1 = do_number(num, (char *)s2, base, flags);
 
@@ -459,10 +492,10 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 	   s2 = s1 + placeholder.length();
 	   goto got_result;
 	 }
-       assert(0 /* Bad %{ in error */);
-       break;
+       goto error;
      }
-     
+
+     error:
      default:
       assert(0 /* Bad % in error */);
       break;

@@ -53,6 +53,9 @@
 /* Define if IPsec support is enabled. */
 #undef HAVE_IPSEC
 
+/* Define to 1 if the system has the type `long long'. */
+#undef HAVE_LONG_LONG
+
 /* Define if nanosecond-granularity timestamps are enabled. */
 #undef HAVE_NANOTIMESTAMP_ENABLED
 

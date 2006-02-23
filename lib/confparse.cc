@@ -2202,14 +2202,14 @@ default_parsefunc(cp_value *v, const String &arg,
     if (!cp_integer(arg, &v->v.i64))
       errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s (%s) too large; max %lld", argname, desc, v->v.i64);
+      errh->error("%s (%s) too large; max %^64d", argname, desc, v->v.i64);
     break;
 
    case cpiUnsigned64:
     if (!cp_unsigned(arg, &v->v.u64))
       errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s (%s) too large; max %llu", argname, desc, v->v.u64);
+      errh->error("%s (%s) too large; max %^64u", argname, desc, v->v.u64);
     break;
 #endif
 
