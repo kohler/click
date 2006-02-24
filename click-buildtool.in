@@ -189,7 +189,9 @@ EOF
 
     # expand list of files
     if test -n "$all"; then
-	first_files=`cd ${pfx}elements >/dev/null && ls`
+	fdir=${pfx}
+	test -d ${pfx}elements && fdir=${pfx}elements
+	first_files=`cd $fdir >/dev/null && ls`
 	bad_first_files=`echo "$first_files
 $unprovisions" | sort | uniq -d`
 	first_files=`echo "$first_files
@@ -969,11 +971,11 @@ while [ x"$1" != x ]; do
 case $1 in
   --vers|--versi|--versio|--version)
      cat <<'EOF'
-click-buildtool (Click) 1.2.3
+click-buildtool (Click) @CLICK_VERSION@
 Copyright (c) 2000-2001 Massachusetts Institute of Technology
 Copyright (c) 2000-2004 Mazu Networks, Inc.
 Copyright (c) 2001-2003 International Computer Science Institute
-Copyright (c) 2004 Regents of the University of California
+Copyright (c) 2004-2006 Regents of the University of California
 This is free software; see the source for copying conditions.
 There is NO warranty, not even for merchantability or fitness for a
 particular purpose.
