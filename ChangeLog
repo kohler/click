@@ -1,3 +1,8 @@
+2006-02-24 Friday 01:44  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.75), doc/elementdoc.7 (1.16): buildtool
+	  nits: allow -a even in a package
+
 2006-02-22 Wednesday 20:23  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* aclocal.m4 (1.50), config.h.in (1.37), configure (1.66),
