@@ -1,3 +1,7 @@
+2006-02-25 Saturday 00:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure.in (1.273): configury fix from bicket
+
 2006-02-24 Friday 01:44  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.75), doc/elementdoc.7 (1.16): buildtool
