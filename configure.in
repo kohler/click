@@ -49,9 +49,7 @@ AC_CHECK_TOOL(STRIP, strip, :)
 conf_auxdir='$(top_srcdir)'
 AC_SUBST(conf_auxdir)
 
-if test -z "$ac_preset_ar" -a -z "$AR_CREATEFLAGS"; then
-    AR_CREATEFLAGS=cru
-fi
+test -z "$AR_CREATEFLAGS" && AR_CREATEFLAGS=cru
 AC_SUBST(AR_CREATEFLAGS)
 
 
