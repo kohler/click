@@ -1,0 +1,7 @@
+#!/bin/sh
+if [ $# != 1 ]; then
+    echo "usage: $0 handler"
+    exit 1
+fi
+
+printf "read $@\nquit\n" | nc 127.0.0.1 7777|grep -v ^Click::ControlSocket |grep -v ^DATA | grep -v "200 Goodbye!"|grep -v "200 Read handler"

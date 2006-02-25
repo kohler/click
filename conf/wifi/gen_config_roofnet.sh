@@ -57,6 +57,9 @@ if [ ! -f $SRCR_FILE ]; then
     SRCR_FILE="/home/roofnet/click/conf/wifi/srcr.click"
     if [ ! -f $SRCR_FILE ]; then
 	SRCR_FILE="/tmp/srcr.click"
+	if [ ! -f $SRCR_FILE ]; then
+	    SRCR_FILE="/tmp/srcr.click"
+	fi
     fi
 fi
 
@@ -89,7 +92,7 @@ elementclass LinuxIPHost {
 
   input -> KernelTun(\$ip/\$nm, MTU 1500, DEV_NAME \$dev) 
   -> MarkIPHeader(0)
-  -> CheckIPHeader()
+  -> CheckIPHeader(CHECKSUM false)
   -> output;
 
 }
@@ -195,7 +198,6 @@ sniff_dev
 -> dupe :: WifiDupeFilter() 
 -> WifiDecap()
 -> HostEtherFilter($WIRELESS_MAC, DROP_OTHER true, DROP_OWN true) 
--> rxstats :: RXStats()
 -> ncl :: Classifier(12/09??, 12/06??);
 
 

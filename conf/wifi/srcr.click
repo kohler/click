@@ -99,7 +99,7 @@ es -> [1] output;
 
 forwarder[1] //ip packets to me
   -> StripSRHeader()
-  -> CheckIPHeader()
+  -> CheckIPHeader(CHECKSUM false)
   -> from_gw_cl :: IPClassifier(src net $srcr_ip mask $srcr_nm,
 				-)
   -> [3] output;
@@ -225,7 +225,7 @@ es -> SetTimestamp() -> [1] output;
 
 forwarder[1] //ip packets to me
   -> SR2StripHeader()
-  -> CheckIPHeader()
+  -> CheckIPHeader(CHECKSUM false)
   -> from_gw_cl :: IPClassifier(src net $sr2_ip mask $sr2_nm,
 				-)
   -> [3] output;
