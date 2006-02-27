@@ -178,8 +178,8 @@ case $driver in
     idefs="@DEFS@ -DCLICK_USERLEVEL"
     iincludes="${include_source} -I${includedir}"
     icppflags="@CPPFLAGS@"
-    icxxflags="@CXXFLAGS@ @DEPCFLAGS@"
-    icflags="@CFLAGS@ @DEPCFLAGS@"
+    icxxflags="-fPIC @CXXFLAGS@ @DEPCFLAGS@"
+    icflags="-fPIC @CFLAGS@ @DEPCFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CFLAGS-$icflags} $cflags $compileflag"
     driver=userlevel;;
@@ -205,8 +205,8 @@ case $driver in
     idefs="@DEFS@ -DCLICK_NS"
     iincludes="${include_source} -I${includedir}"
     icppflags="@CPPFLAGS@"
-    icxxflags="@CXXFLAGS@ @DEPCFLAGS@"
-    icflags="@CFLAGS@ @DEPCFLAGS@"
+    icxxflags="-fPIC @CXXFLAGS@ @DEPCFLAGS@"
+    icflags="-fPIC @CFLAGS@ @DEPCFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CFLAGS-$icflags} $cflags $compileflag"
     driver=ns;;
@@ -214,8 +214,8 @@ case $driver in
     idefs="@DEFS@ -DCLICK_TOOL"
     iincludes="${include_source} -I${includedir}"
     icppflags="@CPPFLAGS@"
-    icxxflags="@CXXFLAGS@ @DEPCFLAGS@"
-    icflags="@CFLAGS@ @DEPCFLAGS@"
+    icxxflags="-fPIC @CXXFLAGS@ @DEPCFLAGS@"
+    icflags="-fPIC @CFLAGS@ @DEPCFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CFLAGS-$icflags} $cflags $compileflag"
     driver=tool;;
