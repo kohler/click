@@ -20,6 +20,19 @@ gw -> SetSRChecksum -> [0] output;
 
 set_gw :: SetGateway(SEL gw);
 
+gw_reply ::  SR1GatewayResponder(SEL gw, 
+				 ETHTYPE 0x0945,
+				 IP $srcr_ip,
+				 ETH $wireless_mac,
+				 ARP arp,
+				 DEBUG false,
+				 LT lt,
+				 PERIOD 15);
+
+
+gw_reply -> [1] output;
+
+
 
 es :: ETTStat(ETHTYPE 0x0941, 
 	      ETH $wireless_mac, 
@@ -190,6 +203,18 @@ query_responder :: SR2QueryResponder(ETHTYPE 0x0645,
 				    ARP arp,
 				    DEBUG true);
 
+
+gw_reply ::  SR2GatewayResponder(SEL gw, 
+				 ETHTYPE 0x0945,
+				 IP $srcr_ip,
+				 ETH $wireless_mac,
+				 ARP arp,
+				 DEBUG false,
+				 LT lt,
+				 PERIOD 15);
+
+
+gw_reply -> [1] output;
 
 query_responder -> SR2SetChecksum -> [0] output;
 query_forwarder -> SR2SetChecksum -> SR2Print(forwarding) -> [0] output;
