@@ -1,3 +1,68 @@
+2006-02-27 Monday 09:55  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-compile.in (1.35): add -fPIC, since it is required on
+	  x86_64 (Andrew Gorelik)
+
+2006-02-27 Monday 09:48  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.67), elements/wifi/athdescdecap.cc (1.5),
+	  elements/wifi/autoratefallback.cc (1.20),
+	  elements/wifi/availablerates.cc (1.13),
+	  elements/wifi/ethercount.cc (1.2), elements/wifi/extradecap.cc
+	  (1.5), elements/wifi/extraencap.cc (1.6),
+	  elements/wifi/linktable.cc (1.25), elements/wifi/madwifirate.cc
+	  (1.21), elements/wifi/packetstore.cc (1.4),
+	  elements/wifi/prism2decap.cc (1.5), elements/wifi/prism2encap.cc
+	  (1.6), elements/wifi/probetxrate.cc (1.23),
+	  elements/wifi/radiotapdecap.cc (1.5),
+	  elements/wifi/radiotapencap.cc (1.5), elements/wifi/rxstats.cc
+	  (1.16), elements/wifi/setrts.cc (1.4),
+	  elements/wifi/settxpower.cc (1.10), elements/wifi/settxrate.cc
+	  (1.25), elements/wifi/setwifiextraflag.cc (1.5),
+	  elements/wifi/txflog.cc (1.6), elements/wifi/wepdecap.cc (1.8),
+	  elements/wifi/wepencap.cc (1.7), elements/wifi/wifidecap.cc
+	  (1.15), elements/wifi/wifidefrag.cc (1.4),
+	  elements/wifi/wifidupefilter.cc (1.9), elements/wifi/wifiencap.cc
+	  (1.16), elements/wifi/wififragment.cc (1.4),
+	  elements/wifi/wifiseq.cc (1.5), elements/wifi/wirelessinfo.cc
+	  (1.7), elements/wifi/analysis/printpower.cc (1.4),
+	  elements/wifi/analysis/printrate.cc (1.4),
+	  elements/wifi/ap/associationresponder.cc (1.11),
+	  elements/wifi/ap/beaconsource.cc (1.13),
+	  elements/wifi/ap/openauthresponder.cc (1.10),
+	  elements/wifi/ap/proberesponder.cc (1.10),
+	  elements/wifi/ap/stationtable.cc (1.7),
+	  elements/wifi/frag/defragment.cc (1.4),
+	  elements/wifi/frag/fragment.cc (1.4),
+	  elements/wifi/frag/fragmentdecap.cc (1.4),
+	  elements/wifi/frag/fragmentencap.cc (1.4),
+	  elements/wifi/frag/fragmentresender.cc (1.7),
+	  elements/wifi/sr/counterflood.cc (1.11),
+	  elements/wifi/sr/ettstat.cc (1.36),
+	  elements/wifi/sr/floodtracker.cc (1.4),
+	  elements/wifi/sr/gatewayselector.cc (1.21),
+	  elements/wifi/sr/ipaddresscounter.cc (1.5),
+	  elements/wifi/sr/metricflood.cc (1.12),
+	  elements/wifi/sr/setgateway.cc (1.10),
+	  elements/wifi/sr/srdestcache.cc (1.2), elements/wifi/sr/srlog.cc
+	  (1.6), elements/wifi/sr/srquerier.cc (1.16),
+	  elements/wifi/sr/srqueryforwarder.cc (1.16),
+	  elements/wifi/sr/srqueryresponder.cc (1.15),
+	  elements/wifi/sr2/sr2destcache.cc (1.2),
+	  elements/wifi/sr2/sr2ettstat.cc (1.2),
+	  elements/wifi/sr2/sr2gatewayselector.cc (1.2),
+	  elements/wifi/sr2/sr2metricflood.cc (1.2),
+	  elements/wifi/sr2/sr2querier.cc (1.4),
+	  elements/wifi/sr2/sr2queryforwarder.cc (1.2),
+	  elements/wifi/sr2/sr2queryresponder.cc (1.2),
+	  elements/wifi/sr2/sr2setgateway.cc (1.2),
+	  elements/wifi/station/associationrequester.cc (1.16),
+	  elements/wifi/station/beaconscanner.cc (1.13),
+	  elements/wifi/station/beacontracker.cc (1.5),
+	  elements/wifi/station/openauthrequester.cc (1.9),
+	  elements/wifi/station/proberequester.cc (1.11): (intptr_t) casts
+	  where needed for 64-bit machines, thanks Guanling Chen
+
 2006-02-25 Saturday 11:25  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/: gen_config_roofnet.sh (1.5), read_handler (1.1),
