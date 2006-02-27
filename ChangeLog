@@ -1,3 +1,30 @@
+2006-02-27 Monday 14:23  John Bicket <jbicket@mit.edu>
+
+	* lib/element.cc (1.114): better hint for warning.
+
+2006-02-27 Monday 14:19  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/srcr.click (1.7): add gatewayresponder elements
+
+2006-02-27 Monday 14:18  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: wifidecap.cc (1.16), wifidupefilter.cc (1.10),
+	  wifidupefilter.hh (1.5), sr/gatewayselector.cc (1.22),
+	  sr/gatewayselector.hh (1.13), sr2/sr2gatewayresponder.cc (1.1),
+	  sr2/sr2gatewayresponder.hh (1.1), sr2/sr2gatewayselector.hh
+	  (1.2): add gatewayresponder to propogate routes to gateways, make
+	  wifidupefilter less expensive.
+
+2006-02-27 Monday 14:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/randomerror.cc (1.32): three more bits of
+	  fraction to help with rounding
+
+2006-02-27 Monday 14:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/randomerror.cc (1.31): RandomBitErrors gets 28
+	  bits of fraction, based on a patch from Alastair McKinley
+
 2006-02-27 Monday 09:55  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-compile.in (1.35): add -fPIC, since it is required on
