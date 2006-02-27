@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -83,26 +84,33 @@ RandomBitErrors::~RandomBitErrors()
 void
 RandomBitErrors::set_bit_error(unsigned bit_error)
 {
-  assert(bit_error <= 0x10000);
-  _p_bit_error = bit_error;
-  unsigned non_bit_error = (0xFFFF - bit_error) + 1;
-  // _p_error[i] is the probability that i bits are flipped.
-  // _p_error[i] = bit_error^i * (1-bit_error)^(8-i) * #combinations
+    assert(bit_error <= 0x10000000);
+    _p_bit_error = bit_error;
+    unsigned non_bit_error = (0xFFFFFFF - bit_error) + 1;
+    // _p_error[i] is the probability that <= i bits are flipped
   
-  uint64_t accum = 0;
-  for (int i = 0; i < 9; i++) {
-    uint64_t p = 0x100000000LL;
-    for (int j = 0; j < i; j++)
-      p = (p * bit_error) >> 16;
-    for (int j = i; j < 8; j++)
-      p = (p * non_bit_error) >> 16;
-    // account for # of combinations
-    p *= bit_flip_array_idx[i+1] - bit_flip_array_idx[i];
-    accum += p;
-    _p_error[i] = (accum >> 16) & 0x1FFFF;
-    if ((accum & 0xFFFFFFFF) >= 0x80000000)
-      _p_error[i]++;
-  }
+    uint64_t accum = 0;
+    for (int i = 0; i < 8; i++) {
+	// Calculate the probability of exactly i bit errors,
+	// 'bit_error^i * (1-bit_error)^(8-i) * n_combinations',
+	// with 32 bits of fraction
+	uint64_t p = 0x100000000LL;
+	for (int j = 0; j < i; j++)
+	    p = (p * bit_error) >> 28;
+	for (int j = i; j < 8; j++)
+	    p = (p * non_bit_error) >> 28;
+	p *= bit_flip_array_idx[i+1] - bit_flip_array_idx[i];
+	// accumulated probability of <= i bit errors
+	accum += p;
+	// shift down to 28 bits of fraction, with rounding
+	_p_error[i] = (accum >> 4) & 0x1FFFFFFF;
+	if ((accum & 0xF) >= 0x8)
+	    _p_error[i]++;
+    }
+
+    // even with that careful rounding, make sure that the last entry is
+    // larger than any possible output
+    _p_error[8] = 0x10000000;
 }
 
 int
@@ -112,7 +120,7 @@ RandomBitErrors::configure(Vector<String> &conf, ErrorHandler *errh)
   String kind_str = "flip";
   bool on = true;
   if (cp_va_parse(conf, this, errh,
-		  cpUnsignedReal2, "bit error probability", 16, &bit_error,
+		  cpUnsignedReal2, "bit error probability", 28, &bit_error,
 		  cpOptional,
 		  cpString, "action (set/clear/flip)", &kind_str,
 		  cpBool, "active?", &on,
@@ -130,7 +138,7 @@ RandomBitErrors::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("bad action '%s' (must be 'set', 'clear', or 'flip')",
 		       kind_str.c_str());
   
-  if (bit_error > 0x10000)
+  if (bit_error > 0x10000000)
     return errh->error("drop probability must be between 0 and 1");
   if (bit_error == 0)
     errh->warning("zero bit error probability (underflow?)");
@@ -147,7 +155,7 @@ Packet *
 RandomBitErrors::simple_action(Packet *p_in)
 {
   // if no chance we'll flip a bit, return now
-  if (!_on || _p_error[0] >= 0x10000)
+  if (!_on || _p_error[0] >= 0x10000000)
     return p_in;
   
   WritablePacket *p = p_in->uniqueify();
@@ -157,12 +165,14 @@ RandomBitErrors::simple_action(Packet *p_in)
   int kind = _kind;
   
   for (unsigned i = 0; i < len; i++) {
-    int v = (random()>>5) & 0xFFFF;
-    if (v <= p_error[0]) continue;
+    int v = (random() >> 3) & 0xFFFFFFF;
+    if (v <= p_error[0])
+	continue;
     
     int nb = 1;
-    while (v > p_error[nb]) nb++;
-    
+    while (v > p_error[nb])
+	nb++;
+
     int idx = bit_flip_array_idx[nb];
     int n = bit_flip_array_idx[nb+1] - idx;
     unsigned char errors = bit_flip_array[ ((random() >> 5) % n) + idx ];
@@ -184,7 +194,7 @@ random_bit_errors_read(Element *f, void *vwhich)
   int which = (intptr_t)vwhich;
   RandomBitErrors *lossage = (RandomBitErrors *)f;
   if (which == 0)
-    return cp_unparse_real2(lossage->p_bit_error(), 16);
+    return cp_unparse_real2(lossage->p_bit_error(), 28);
   else if (which == 1) {
     switch (lossage->kind()) {
      case 0: return "clear";
@@ -210,3 +220,4 @@ RandomBitErrors::add_handlers()
 CLICK_ENDDECLS
 EXPORT_ELEMENT(RandomBitErrors)
 ELEMENT_MT_SAFE(RandomBitErrors)
+ELEMENT_REQUIRES(int64)
