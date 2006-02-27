@@ -28,7 +28,7 @@
 #include <elements/wifi/availablerates.hh>
 CLICK_DECLS
 // packet data should be 4 byte aligned                                         
-#define ASSERT_ALIGNED(p) assert(((unsigned int)(p) % 4) == 0)
+#define ASSERT_ALIGNED(p) assert(((uintptr_t)(p) % 4) == 0)
 
 #define min(x,y)      ((x)<(y) ? (x) : (y))
 #define max(x,y)      ((x)>(y) ? (x) : (y))
@@ -70,7 +70,7 @@ SR2ETTStat_write_param(const String &in_s, Element *e, void *vparam,
 {
   SR2ETTStat *f = (SR2ETTStat *)e;
   String s = cp_uncomment(in_s);
-  switch((int)vparam) {
+  switch((intptr_t)vparam) {
   case H_RESET: {    //reset
     f->reset();
     break;

@@ -77,7 +77,7 @@ String
 SR2DestCache::read_param(Element *e, void *vparam)
 {
   SR2DestCache *d = (SR2DestCache *) e;
-  switch ((int)vparam) {
+  switch ((intptr_t)vparam) {
   case H_CACHE: {
 	  StringAccum sa;
 	  struct timeval now;

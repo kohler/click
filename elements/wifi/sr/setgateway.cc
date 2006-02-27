@@ -279,7 +279,7 @@ String
 SetGateway::read_param(Element *e, void *vparam)
 {
   SetGateway *d = (SetGateway *) e;
-  switch ((int)vparam) {
+  switch ((intptr_t)vparam) {
   case 0:
     if (d->_gw) {
       return d->_gw.s() + "\n";
@@ -293,7 +293,7 @@ int
 SetGateway::change_param(const String &in_s, Element *e, void *thunk, ErrorHandler *errh)
 {
   SetGateway *d = static_cast<SetGateway *>(e);
-  int which = reinterpret_cast<int>(thunk);
+  int which = reinterpret_cast<intptr_t>(thunk);
   String s = cp_uncomment(in_s);
   switch (which) {
   case 0:

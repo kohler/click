@@ -272,7 +272,7 @@ String
 SR2SetGateway::read_param(Element *e, void *vparam)
 {
   SR2SetGateway *d = (SR2SetGateway *) e;
-  switch ((int)vparam) {
+  switch ((intptr_t)vparam) {
   case 0:
     if (d->_gw) {
       return d->_gw.s() + "\n";
@@ -286,7 +286,7 @@ int
 SR2SetGateway::change_param(const String &in_s, Element *e, void *thunk, ErrorHandler *errh)
 {
   SR2SetGateway *d = static_cast<SR2SetGateway *>(e);
-  int which = reinterpret_cast<int>(thunk);
+  int which = reinterpret_cast<intptr_t>(thunk);
   String s = cp_uncomment(in_s);
   switch (which) {
   case 0:

@@ -326,7 +326,7 @@ String
 CounterFlood::read_param(Element *e, void *vparam)
 {
   CounterFlood *f = (CounterFlood *) e;
-  switch ((int)vparam) {
+  switch ((intptr_t)vparam) {
   case 0:			
     return cp_unparse_bool(f->_debug) + "\n";
   case 1:			
@@ -347,7 +347,7 @@ CounterFlood::write_param(const String &in_s, Element *e, void *vparam,
 {
   CounterFlood *f = (CounterFlood *)e;
   String s = cp_uncomment(in_s);
-  switch((int)vparam) {
+  switch((intptr_t)vparam) {
   case 0: {    //debug
     bool debug;
     if (!cp_bool(s, &debug)) 

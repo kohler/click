@@ -65,7 +65,7 @@ static String
 read_param(Element *e, void *thunk)
 {
 	PrintPower *f = (PrintPower *)e;
-	switch((int)thunk) {
+	switch((intptr_t)thunk) {
 	case H_POWER: return String(f->_power) + "\n";
 	}
 	return String();

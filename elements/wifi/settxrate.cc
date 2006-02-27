@@ -102,7 +102,7 @@ SetTXRate::write_handler(const String &arg, Element *e,
 {
   SetTXRate *f = (SetTXRate *) e;
   String s = cp_uncomment(arg);
-  switch((int)vparam) {
+  switch((intptr_t)vparam) {
   case H_RATE: {
     unsigned m;
     if (!cp_unsigned(s, &m)) 

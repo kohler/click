@@ -110,7 +110,7 @@ String
 FloodTracker::read_param(Element *e, void *vparam)
 {
 	FloodTracker *f = (FloodTracker *) e;
-	switch ((int)vparam) {
+	switch ((intptr_t)vparam) {
 	case H_STATS: return f->print_gateway_stats();
 	default:
 		return "";

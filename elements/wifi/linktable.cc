@@ -691,7 +691,7 @@ LinkTable_write_param(const String &in_s, Element *e, void *vparam,
 {
   LinkTable *f = (LinkTable *)e;
   String s = cp_uncomment(in_s);
-  switch((int)vparam) {
+  switch((intptr_t)vparam) {
   case H_BLACKLIST_CLEAR: {
     f->_blacklist.clear();
     break;

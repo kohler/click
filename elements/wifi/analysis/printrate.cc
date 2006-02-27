@@ -65,7 +65,7 @@ static String
 read_param(Element *e, void *thunk)
 {
 	PrintRate *f = (PrintRate *)e;
-	switch((int)thunk) {
+	switch((intptr_t)thunk) {
 	case H_RATE: {
 		StringAccum sa;
 		sa << f->_rate << "\n";

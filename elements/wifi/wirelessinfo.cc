@@ -74,7 +74,7 @@ WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
 {
   WirelessInfo *f = (WirelessInfo *)e;
   String s = cp_uncomment(in_s);
-  switch((int)vparam) {
+  switch((intptr_t)vparam) {
  case H_SSID: {
     f->_ssid = s;
     break;

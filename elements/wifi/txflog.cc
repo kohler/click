@@ -107,7 +107,7 @@ TXFLog_write_param(const String &in_s, Element *e, void *vparam,
 {
   TXFLog *f = (TXFLog *)e;
   String s = cp_uncomment(in_s);
-  switch((int)vparam) {
+  switch((intptr_t)vparam) {
   case H_RESET: f->_p.clear(); f->_t.clear(); break;
   }
     return 0;

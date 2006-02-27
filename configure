@@ -4036,9 +4036,7 @@ fi
 conf_auxdir='$(top_srcdir)'
 
 
-if test -z "$ac_preset_ar" -a -z "$AR_CREATEFLAGS"; then
-    AR_CREATEFLAGS=cru
-fi
+test -z "$AR_CREATEFLAGS" && AR_CREATEFLAGS=cru
 
 
 
@@ -8081,7 +8079,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 8084 "configure"
+#line 8082 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER

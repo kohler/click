@@ -421,7 +421,7 @@ String
 SR2GatewaySelector::read_param(Element *e, void *vparam)
 {
   SR2GatewaySelector *f = (SR2GatewaySelector *) e;
-  switch ((int)vparam) {
+  switch ((intptr_t)vparam) {
   case 0:			
     return String(f->_is_gw) + "\n";
   case 1:			
@@ -456,7 +456,7 @@ SR2GatewaySelector::write_param(const String &in_s, Element *e, void *vparam,
 {
   SR2GatewaySelector *f = (SR2GatewaySelector *)e;
   String s = cp_uncomment(in_s);
-  switch((int)vparam) {
+  switch((intptr_t)vparam) {
   case 0: {    //is_gateway
     bool b;
     if (!cp_bool(s, &b)) 

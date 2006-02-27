@@ -364,7 +364,7 @@ MadwifiRate_write_param(const String &in_s, Element *e, void *vparam,
 {
   MadwifiRate *f = (MadwifiRate *)e;
   String s = cp_uncomment(in_s);
-  switch((int)vparam) {
+  switch((intptr_t)vparam) {
   case H_DEBUG: {
     bool debug;
     if (!cp_bool(s, &debug)) 

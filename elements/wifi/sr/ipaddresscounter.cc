@@ -102,7 +102,7 @@ String
 IPAddressCounter::read_param(Element *e, void *vparam)
 {
   IPAddressCounter *f = (IPAddressCounter *) e;
-  switch ((int)vparam) {
+  switch ((intptr_t)vparam) {
   case 0:		//stats	
     return f->stats();
   default:
@@ -116,7 +116,7 @@ IPAddressCounter::write_param(const String &in_s, Element *e, void *vparam,
 {
   IPAddressCounter *f = (IPAddressCounter *) e;
   String s = cp_uncomment(in_s);
-  switch((int)vparam) {
+  switch((intptr_t)vparam) {
   case 0: {    // stats
     return errh->error("stats not implemented");
     break;

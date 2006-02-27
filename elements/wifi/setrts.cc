@@ -81,7 +81,7 @@ SetRTS_write_param(const String &in_s, Element *e, void *vparam,
 {
   SetRTS *f = (SetRTS *)e;
   String s = cp_uncomment(in_s);
-  switch((int)vparam) {
+  switch((intptr_t)vparam) {
   case H_RTS: {
     unsigned m;
     if (!cp_unsigned(s, &m)) 
