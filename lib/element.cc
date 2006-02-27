@@ -2174,7 +2174,7 @@ Element::run_timer(Timer *timer)
 {
     static int nwarn = 0;
     if (nwarn++ < 3)
-	click_chatter("warning: calling deprecated run_timer() method;\nreplace with run_timer(Timer *) in your code");
+	click_chatter("warning: calling deprecated run_timer() method for %{element};\nreplace with run_timer(Timer *) in your code", this);
     run_timer();
     (void) timer;
 }
