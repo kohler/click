@@ -206,7 +206,7 @@ query_responder :: SR2QueryResponder(ETHTYPE 0x0645,
 
 gw_reply ::  SR2GatewayResponder(SEL gw, 
 				 ETHTYPE 0x0945,
-				 IP $srcr_ip,
+				 IP $sr2_ip,
 				 ETH $wireless_mac,
 				 ARP arp,
 				 DEBUG false,
