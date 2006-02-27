@@ -1,3 +1,12 @@
+2006-02-27 Monday 15:39  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/srcr.click (1.8): fix typo.
+
+2006-02-27 Monday 15:24  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/: sr1gatewayresponder.cc (1.1),
+	  sr1gatewayresponder.hh (1.1): add gatewayresponder element.
+
 2006-02-27 Monday 14:23  John Bicket <jbicket@mit.edu>
 
 	* lib/element.cc (1.114): better hint for warning.
