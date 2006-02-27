@@ -44,8 +44,6 @@ class WifiDupeFilter : public Element {
   class DstInfo {
   public:
     EtherAddress _eth;
-
-    struct timeval _last;
     int _dupes;
     int _packets;
 
@@ -59,8 +57,6 @@ class WifiDupeFilter : public Element {
     void clear() {
       _dupes = 0;
       _packets = 0;
-      click_gettimeofday(&_last);
-
       seq = 0;
       frag = 0;
 
@@ -74,7 +70,6 @@ class WifiDupeFilter : public Element {
   bool _debug;
 
   int _dupes;
-  int _packets;
 };
 
 CLICK_ENDDECLS

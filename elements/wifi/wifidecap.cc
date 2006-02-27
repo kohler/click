@@ -120,11 +120,11 @@ WifiDecap::simple_action(Packet *p)
       (llc->llc_dsap == LLC_SNAP_LSAP && llc->llc_ssap == LLC_SNAP_LSAP &&
        llc->llc_un.type_u.control == LLC_UI && llc->llc_un.type_snap.org_code[0] == 0 &&
        llc->llc_un.type_snap.org_code[1] == 0 && llc->llc_un.type_snap.org_code[2] == 0)) {
-    ether_type = llc->llc_un.type_snap.ether_type;
-    p_out->pull(sizeof(struct click_llc));
+	  memcpy(&ether_type, &llc->llc_un.type_snap.ether_type, 2);
+	  p_out->pull(sizeof(struct click_llc));
   } else {
-    p_out->kill();
-    return 0;
+	  p_out->kill();
+	  return 0;
   }
 
   p_out = p_out->push_mac_header(14);
@@ -137,14 +137,14 @@ WifiDecap::simple_action(Packet *p)
   memcpy(p_out->data() + 12, &ether_type, 2);
 
   if (_debug) {
-    click_chatter("%{element}: dir %d src %s dst %s bssid %s\n",
-		  this,
-		  dir,
-		  src.s().c_str(),
-		  dst.s().c_str(),
-		  bssid.s().c_str());
+	  click_chatter("%{element}: dir %d src %s dst %s bssid %s\n",
+			this,
+			dir,
+			src.s().c_str(),
+			dst.s().c_str(),
+			bssid.s().c_str());
   }
-
+  
   return p_out;
 }
 

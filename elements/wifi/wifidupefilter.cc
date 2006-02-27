@@ -31,8 +31,7 @@ CLICK_DECLS
 
 WifiDupeFilter::WifiDupeFilter()
   : _debug(false),
-    _dupes(0),
-    _packets(0)
+    _dupes(0)
 {
 }
 
@@ -54,7 +53,6 @@ WifiDupeFilter::configure(Vector<String> &conf, ErrorHandler* errh)
 Packet *
 WifiDupeFilter::simple_action(Packet *p_in)
 {
-  struct timeval now;
   click_wifi *w = (click_wifi *) p_in->data();
 
   if (p_in->length() < sizeof(click_wifi)) {
@@ -71,54 +69,31 @@ WifiDupeFilter::simple_action(Packet *p_in)
 
   DstInfo *nfo = _table.findp(src);
 
-  if (w->i_fc[0] & WIFI_FC0_TYPE_CTL) {
+  if (w->i_fc[0] & WIFI_FC0_TYPE_CTL || dst.is_group()) {
     return p_in;
   }
-
-  click_gettimeofday(&now);
-  _packets++;
   if (!nfo) {
     _table.insert(src, DstInfo(src));
     nfo = _table.findp(src);
     nfo->clear();
   }
 
-  if (0 == seq || (now.tv_sec - nfo->_last.tv_sec > 30)) {
-    /* reset */
-    if (_debug) {
-      click_chatter("%{element}: reset seq %d src %s\n",
-		    this,
-		    seq,
-		    src.s().c_str());
-    }
-    nfo->clear();
+  if (w->i_fc[1] & WIFI_FC1_RETRY && seq == nfo->seq && 
+      (!is_frag || frag <= nfo->frag)) {
+	  /* duplicate dectected */
+	  if (_debug) {
+		  click_chatter("%{element}: dup seq %d frag %d src %s\n",
+				this,
+				seq,
+				frag,
+				src.s().c_str());
+	  }
+	  nfo->_dupes++;
+	  _dupes++;
+	  p_in->kill();
+	  return 0;
   }
 
-  if (w->i_fc[1] & WIFI_FC1_RETRY) {
-    /* must be a retry to be a dupe */
-    if (seq == nfo->seq) {
-      if (!is_frag || frag <= nfo->frag) {
-	/* duplicate dectected */
-	if (_debug) {
-	  click_chatter("%{element}: dup seq %d frag %d src %s\n",
-			this,
-			seq,
-			frag,
-			src.s().c_str());
-	}
-	nfo->_dupes++;
-	_dupes++;
-	p_in->kill();
-	return 0;
-      }
-    }
-  }
-
-  if (!dst.is_group()) {
-    /* don't count bcast */
-    nfo->_packets++;
-  }
-  nfo->_last = now;
   nfo->seq = seq;
   nfo->frag = frag;
   return p_in;
@@ -137,7 +112,6 @@ WifiDupeFilter::static_read_stats(Element *xf, void *)
   for(DstTable::const_iterator i = e->_table.begin(); i; i++) {
     DstInfo nfo = i.value();
     sa << nfo._eth;
-    sa << " age " << now - nfo._last;
     sa << " packets " << nfo._packets;
     sa << " dupes " << nfo._dupes;
     sa << " seq " << nfo.seq;
@@ -148,7 +122,7 @@ WifiDupeFilter::static_read_stats(Element *xf, void *)
   return sa.take_string();
 }
 
-enum {H_DEBUG, H_DUPES, H_PACKETS, H_RESET};
+enum {H_DEBUG, H_DUPES, H_RESET};
 
 static String 
 WifiDupeFilter_read_param(Element *e, void *thunk)
@@ -159,8 +133,6 @@ WifiDupeFilter_read_param(Element *e, void *thunk)
 	return String(td->_debug) + "\n";
       case H_DUPES:
 	return String(td->_dupes) + "\n";
-      case H_PACKETS:
-	return String(td->_packets) + "\n";
     default:
       return String();
     }
@@ -181,7 +153,6 @@ WifiDupeFilter_write_param(const String &in_s, Element *e, void *vparam,
   }
   case H_RESET: {
     f->_table.clear();
-    f->_packets = 0;
     f->_dupes = 0;
   }
   }
@@ -193,7 +164,6 @@ WifiDupeFilter::add_handlers()
   add_read_handler("debug", WifiDupeFilter_read_param, (void *) H_DEBUG);
   add_read_handler("dupes", WifiDupeFilter_read_param, (void *) H_DUPES);
   add_read_handler("drops", WifiDupeFilter_read_param, (void *) H_DUPES);
-  add_read_handler("packets", WifiDupeFilter_read_param, (void *) H_PACKETS);
 
   add_write_handler("debug", WifiDupeFilter_write_param, (void *) H_DEBUG);
   add_write_handler("reset", WifiDupeFilter_write_param, (void *) H_RESET);

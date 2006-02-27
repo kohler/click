@@ -70,6 +70,8 @@ class GatewaySelector : public Element {
   bool update_link(IPAddress from, IPAddress to, uint32_t seq, uint32_t metric);
   void forward_ad_hook();
   IPAddress best_gateway();
+
+  bool is_gateway() {  return _is_gw; }
 private:
     // List of query sequence #s that we've already seen.
   class Seen {
@@ -129,7 +131,7 @@ private:
   Timer _timer;
 
 
-
+  
 
 
   int find_dst(IPAddress ip, bool create);
