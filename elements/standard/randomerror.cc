@@ -93,8 +93,8 @@ RandomBitErrors::set_bit_error(unsigned bit_error)
     for (int i = 0; i < 8; i++) {
 	// Calculate the probability of exactly i bit errors,
 	// 'bit_error^i * (1-bit_error)^(8-i) * n_combinations',
-	// with 32 bits of fraction
-	uint64_t p = 0x100000000LL;
+	// with 35 bits of fraction
+	uint64_t p = 0x800000000LL;
 	for (int j = 0; j < i; j++)
 	    p = (p * bit_error) >> 28;
 	for (int j = i; j < 8; j++)
@@ -103,13 +103,13 @@ RandomBitErrors::set_bit_error(unsigned bit_error)
 	// accumulated probability of <= i bit errors
 	accum += p;
 	// shift down to 28 bits of fraction, with rounding
-	_p_error[i] = (accum >> 4) & 0x1FFFFFFF;
-	if ((accum & 0xF) >= 0x8)
+	_p_error[i] = (accum >> 7) & 0x1FFFFFFF;
+	if ((accum & 0x7F) >= 0x40)
 	    _p_error[i]++;
     }
 
     // even with that careful rounding, make sure that the last entry is
-    // larger than any possible output
+    // larger than any possible 28-bit random number
     _p_error[8] = 0x10000000;
 }
 
