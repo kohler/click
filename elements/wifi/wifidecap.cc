@@ -60,6 +60,13 @@ WifiDecap::simple_action(Packet *p)
   EtherAddress src;
   EtherAddress dst;
 
+
+  int size = sizeof(struct click_wifi);
+  if ((w->i_fc[1] & WIFI_FC1_DIR_MASK) == WIFI_FC1_DIR_DSTODS)
+	  size += WIFI_ADDR_LEN;
+  if (WIFI_QOS_HAS_SEQ(w)) 
+	  size += sizeof(u_int16_t);
+  
   if (p->length() < sizeof(struct click_wifi) + sizeof(struct click_llc)) {
     p->kill();
     return 0;
@@ -111,16 +118,11 @@ WifiDecap::simple_action(Packet *p)
     return 0;
   }
 
-  p_out->pull(sizeof(click_wifi));
+  p_out->pull(size);
   
-  struct click_llc *llc = (struct click_llc *) p_out->data();
-
   uint16_t ether_type;
-  if (!_strict || 
-      (llc->llc_dsap == LLC_SNAP_LSAP && llc->llc_ssap == LLC_SNAP_LSAP &&
-       llc->llc_un.type_u.control == LLC_UI && llc->llc_un.type_snap.org_code[0] == 0 &&
-       llc->llc_un.type_snap.org_code[1] == 0 && llc->llc_un.type_snap.org_code[2] == 0)) {
-	  memcpy(&ether_type, &llc->llc_un.type_snap.ether_type, 2);
+  if (!_strict || memcmp(wifi_llc_header, p_out->data(), sizeof(wifi_llc_header))) {
+	  memcpy(&ether_type, p_out->data() + sizeof(wifi_llc_header), 2);
 	  p_out->pull(sizeof(struct click_llc));
   } else {
 	  p_out->kill();

@@ -58,13 +58,15 @@ struct click_wifi_extra {,
 /*
  * generic definitions for IEEE 802.11 frames
  */
+#define WIFI_ADDR_LEN 6
+
 CLICK_SIZE_PACKED_STRUCTURE(
 struct click_wifi {,
 	uint8_t		i_fc[2];
 	uint8_t		i_dur[2];
-	uint8_t		i_addr1[6];
-	uint8_t		i_addr2[6];
-	uint8_t		i_addr3[6];
+	uint8_t		i_addr1[WIFI_ADDR_LEN];
+	uint8_t		i_addr2[WIFI_ADDR_LEN];
+	uint8_t		i_addr3[WIFI_ADDR_LEN];
 	uint8_t		i_seq[2];
 });
 
@@ -104,6 +106,9 @@ struct click_wifi {,
 #define	WIFI_FC0_SUBTYPE_CFACK		0x50
 #define	WIFI_FC0_SUBTYPE_CFPOLL		0x60
 #define	WIFI_FC0_SUBTYPE_CF_ACK_CF_ACK	0x70
+#define WIFI_FC0_SUBTYPE_QOS               0x80
+#define WIFI_FC0_SUBTYPE_QOS_NULL          0xc0
+
 
 #define	WIFI_FC1_DIR_MASK		0x03
 #define	WIFI_FC1_DIR_NODS		0x00	/* STA->STA */
@@ -148,6 +153,10 @@ typedef uint8_t *	wifi_mgt_beacon_t;
 
 #define WIFI_MAX_RETRIES 11
 
+#define WIFI_QOS_HAS_SEQ(wh) \
+        (((wh)->i_fc[0] & \
+          (WIFI_FC0_TYPE_MASK | WIFI_FC0_SUBTYPE_QOS)) == \
+          (WIFI_FC0_TYPE_DATA | WIFI_FC0_SUBTYPE_QOS))
 
 
 /*
@@ -395,6 +404,8 @@ typedef struct {
 
 #define WIFI_CW_MIN 31
 #define WIFI_CW_MAX 1023
+
+static const u_int8_t wifi_llc_header[] = {0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00};
 
 
 #endif /* !_CLICKNET_WIFI_H_ */

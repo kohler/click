@@ -27,7 +27,6 @@
 #include <elements/wifi/wirelessinfo.hh>
 CLICK_DECLS
 
-
 WifiEncap::WifiEncap()
   : _winfo(0)
 {
@@ -97,13 +96,8 @@ WifiEncap::simple_action(Packet *p)
     return 0;
   }
 
-  struct click_llc *llc = (struct click_llc *) p_out->data();
-  llc->llc_dsap = llc->llc_ssap = LLC_SNAP_LSAP;
-  llc->llc_control = LLC_UI;
-  llc->llc_un.type_snap.org_code[0] = 0;
-  llc->llc_un.type_snap.org_code[1] = 0;
-  llc->llc_un.type_snap.org_code[2] = 0;
-  llc->llc_un.type_snap.ether_type = ethtype;
+  memcpy(p_out->data(), wifi_llc_header, sizeof(wifi_llc_header));
+  memcpy(p_out->data() + 6, &ethtype, 2);
 
   p_out->push(sizeof(struct click_wifi));
   struct click_wifi *w = (struct click_wifi *) p_out->data();
