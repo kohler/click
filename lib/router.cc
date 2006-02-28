@@ -1770,6 +1770,22 @@ Router::sim_incoming_packet(int ifid, int ptype, const unsigned char* data,
 							     len, pinfo);
   return 0;
 }
+
+void
+Router::sim_trace(const char* event) {
+	simclick_sim_trace(_master->siminst(), _master->clickinst(), event);
+}
+
+int
+Router::sim_get_node_id() {
+	return simclick_sim_get_node_id(_master->siminst(), _master->clickinst());
+}
+
+int
+Router::sim_get_next_pkt_id() {
+	return simclick_sim_get_next_pkt_id(_master->siminst(), _master->clickinst());
+}
+
 #endif // CLICK_NS
 
 #if CLICK_USERLEVEL

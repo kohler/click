@@ -148,6 +148,9 @@ class Router { public:
 		  simclick_simpacketinfo *pinfo);
     int sim_incoming_packet(int ifid, int ptype, const unsigned char *,
 			    int len, simclick_simpacketinfo* pinfo);
+    void sim_trace(const char* event);
+    int sim_get_node_id();
+    int sim_get_next_pkt_id();
 
   protected:
     Vector<Vector<int> *> _listenvecs;

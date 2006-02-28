@@ -121,6 +121,13 @@ void simclick_sim_get_node_name(simclick_sim siminst,char* buf,int len);
 int simclick_sim_if_ready(simclick_sim siminst,simclick_click clickinst,
 			  int ifid);
 
+int simclick_sim_trace(simclick_sim simins, simclick_click clickinst, const char* event);
+
+int simclick_sim_get_node_id(simclick_sim siminst, simclick_click clickinst);
+
+int simclick_sim_get_next_pkt_id(simclick_sim siminst, simclick_click clickinst);
+
+
 /*
  * We also provide a gettimeofday substitute which utilizes the 
  * state info passed to us by the simulator.
