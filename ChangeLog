@@ -1,3 +1,20 @@
+2006-02-28 Tuesday 11:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ns/simpacketanalyzer.hh (1.3): nit
+
+2006-02-28 Tuesday 11:16  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ns/: simpacketanalyzer.hh (1.2), tosimtrace.hh (1.2):
+	  nits
+
+2006-02-28 Tuesday 11:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ns/simpacketanalyzer.cc (1.1),
+	  elements/ns/simpacketanalyzer.hh (1.1), elements/ns/tosimtrace.cc
+	  (1.1), elements/ns/tosimtrace.hh (1.1), etc/ns-2.29-patch (1.4),
+	  include/click/router.hh (1.83), include/click/simclick.h (1.5),
+	  lib/router.cc (1.188): ToSimTrace patch from Michael Voorhaen
+
 2006-02-27 Monday 15:39  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/srcr.click (1.8): fix typo.
