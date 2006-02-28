@@ -8,7 +8,7 @@ CLICK_DECLS
  *
  * SimPacketAnalyzer()
  *
- * =s
+ * =s ns
  *
  * superclass for entering packet analyses in an ns2 trace
  *

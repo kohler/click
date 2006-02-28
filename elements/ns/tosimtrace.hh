@@ -10,7 +10,7 @@ CLICK_DECLS
 =c
 ToSimTrace()
 
-=s
+=s traces
 
 adds trace entries to an ns2 trace file
 
