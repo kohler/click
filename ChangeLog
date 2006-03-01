@@ -1,3 +1,8 @@
+2006-03-01 Wednesday 17:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.76), configure (1.68): allow absolute paths
+	  in linux 2.6 compiles
+
 2006-03-01 Wednesday 12:09  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-compile.in (1.36), configure.in (1.274): rearrange
