@@ -10,7 +10,7 @@ CLICK_DECLS
  * restores outermost IP header
  * =d
  *
- * Put outermost IP header back onto a striped packet, based on the IP Header
+ * Put outermost IP header back onto a stripped packet, based on the IP Header
  * annotation from MarkIPHeader or CheckIPHeader. If IP header already on,
  * forwards packet unmodified.
  *
