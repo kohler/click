@@ -20,26 +20,29 @@
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/glue.hh>
-#include <click/bitvector.hh>
+#include <click/confparse.hh>
+#include <click/straccum.hh>
+#include <click/error.hh>
 CLICK_DECLS
 
 EtherSwitch::EtherSwitch()
-  : _table(0), _timeout(300)
+    : _table(AddrInfo(-1, Timestamp())), _timeout(300)
 {
 }
 
 EtherSwitch::~EtherSwitch()
 {
-  for (Table::iterator iter = _table.begin(); iter; iter++)
-    delete iter.value();
-  _table.clear();
+    _table.clear();
 }
 
-EtherSwitch::AddrInfo::AddrInfo(int p, const timeval& s)
-  : port(p), stamp(s)
+int
+EtherSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    return cp_va_parse(conf, this, errh,
+		       cpKeywords,
+		       "TIMEOUT", cpSeconds, "timeout (s)", &_timeout,
+		       cpEnd);
 }
-
 
 void
 EtherSwitch::broadcast(int source, Packet *p)
@@ -57,42 +60,25 @@ EtherSwitch::broadcast(int source, Packet *p)
 void
 EtherSwitch::push(int source, Packet *p)
 {
-  click_ether* e = (click_ether*) p->data();
+    click_ether* e = (click_ether*) p->data();
+    int outport = -1;		// Broadcast
 
-  timeval t;
-  click_gettimeofday(&t);
-
-  EtherAddress src = EtherAddress(e->ether_shost);
-  EtherAddress dst = EtherAddress(e->ether_dhost);
-
-#if 0
-  click_chatter("Got a packet %p on %d at %d.%06d with src %s and dst %s",
-	      p, source, t.tv_sec, t.tv_usec,
-              src.s().c_str(),
-              dst.s().c_str());
-#endif
-
-  if (AddrInfo* src_info = _table[src]) {
-    src_info->port = source;	// It's possible that it has changed.
-    src_info->stamp = t;
-  } else {
-    _table.insert(src, new AddrInfo(source, t));
-  }
+    // 0 timeout means dumb switch
+    if (_timeout != 0) {
+	_table.insert(EtherAddress(e->ether_shost), AddrInfo(source, p->timestamp_anno()));
   
-  int outport = -1;		// Broadcast
-  
-  // Set outport if dst is unicast, we have info about it, and the
-  // info is still valid.
-  if (!dst.is_group()) {
-    if (AddrInfo* dst_info = _table[dst]) {
-      //      click_chatter("Got a packet for a known dst on %d to %d\n",
-      //		  source, dst_info->port);
-      t.tv_sec -= _timeout;
-      if (timercmp(&dst_info->stamp, &t, >)) {
-	outport = dst_info->port;
-      }
+	// Set outport if dst is unicast, we have info about it, and the
+	// info is still valid.
+	EtherAddress dst(e->ether_dhost);
+	if (!dst.is_group()) {
+	    if (AddrInfo *dst_info = _table.findp(dst)) {
+		if (p->timestamp_anno() < dst_info->stamp + Timestamp(_timeout, 0))
+		    outport = dst_info->port;
+		else
+		    _table.remove(dst);
+	    }
+	}
     }
-  }
 
   if (outport < 0)
     broadcast(source, p);
@@ -103,18 +89,38 @@ EtherSwitch::push(int source, Packet *p)
 }
 
 String
-EtherSwitch::read_table(Element* f, void *) {
-  EtherSwitch* sw = (EtherSwitch*)f;
-  String s;
-  for (Table::iterator iter = sw->_table.begin(); iter; iter++)
-    s += iter.key().s() + " " + String(iter.value()->port) + "\n";
-  return s;
+EtherSwitch::reader(Element* f, void *thunk)
+{
+    EtherSwitch* sw = (EtherSwitch*)f;
+    switch ((intptr_t) thunk) {
+    case 0: {
+	StringAccum sa;
+	for (Table::iterator iter = sw->_table.begin(); iter; iter++)
+	    sa << iter.key() << ' ' << iter.value().port << '\n';
+	return sa.take_string();
+    }
+    case 1:
+	return String(sw->_timeout);
+    default:
+	return String();
+    }
+}
+
+int
+EtherSwitch::writer(const String &s, Element *e, void *, ErrorHandler *errh)
+{
+    EtherSwitch *sw = (EtherSwitch *) e;
+    if (!cp_seconds_as(0, cp_uncomment(s), &sw->_timeout))
+	return errh->error("expected timeout (integer)");
+    return 0;
 }
 
 void
 EtherSwitch::add_handlers()
 {
-  add_read_handler("table", read_table, 0);
+    add_read_handler("table", reader, 0);
+    add_read_handler("timeout", reader, (void *) 1);
+    add_write_handler("timeout", writer, 0);
 }
 
 EXPORT_ELEMENT(EtherSwitch)
