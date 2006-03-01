@@ -1,3 +1,8 @@
+2006-03-01 Wednesday 12:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-compile.in (1.36), configure.in (1.274): rearrange
+	  configury, include $CXXFLAGS when linking in click-compile
+
 2006-03-01 Wednesday 01:31  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: stripipheader.hh (1.13), unstripipheader.hh (1.12):
