@@ -1,3 +1,26 @@
+2006-03-01 Wednesday 01:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: stripipheader.hh (1.13), unstripipheader.hh (1.12):
+	  improve StripIPHeader documentation (John Austen)
+
+2006-03-01 Wednesday 00:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* NEWS (1.161), doc/click-elem2man (1.57),
+	  elements/linuxmodule/todevice.hh (1.73),
+	  elements/ns/simpacketanalyzer.hh (1.4): nits
+
+2006-03-01 Wednesday 00:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/element.cc (1.115): add support for ".../=+" port_count()
+	  specifiers, when output count is N more than input count
+
+2006-03-01 Wednesday 00:45  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/etherswitch/: etherswitch.cc (1.21), etherswitch.hh
+	  (1.10), listenetherswitch.cc (1.1), listenetherswitch.hh (1.1):
+	  document, add TIMEOUT argument, improve implementation, add
+	  ListenEtherSwitch
+
 2006-02-28 Tuesday 12:34  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/wifidecap.cc (1.17), include/clicknet/wifi.h
