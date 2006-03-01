@@ -1,3 +1,8 @@
+2006-03-01 Wednesday 18:26  John Bicket <jbicket@mit.edu>
+
+	* configure.in (1.275), lib/driver.cc (1.31): add
+	  --disable-dynamic-linking option to configure.
+
 2006-03-01 Wednesday 17:06  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.76), configure (1.68): allow absolute paths
