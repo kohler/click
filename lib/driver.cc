@@ -390,9 +390,13 @@ click_static_cleanup()
     cp_va_static_cleanup();
     NameInfo::static_cleanup();
     HashMap_ArenaFactory::static_cleanup();
+
+# ifdef HAVE_DYNAMIC_LINKING    
     delete tmpdir;
     delete click_compile_prog;
     tmpdir = click_compile_prog = 0;
+# endif /* HAVE_DYNAMIC_LINKING */
+
     String::static_cleanup();
 }
 

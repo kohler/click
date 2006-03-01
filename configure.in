@@ -322,9 +322,14 @@ dnl
 AC_CHECK_HEADERS(unistd.h termio.h netdb.h sys/event.h pwd.h grp.h)
 CLICK_CHECK_POLL_H
 AC_CHECK_FUNCS(kqueue sigaction)
-CLICK_CHECK_DYNAMIC_LINKING
-if test "$HOST_TOOLS" != host -a "$enable_tools" != no; then
-    CLICK_CHECK_BUILD_DYNAMIC_LINKING
+
+AC_ARG_ENABLE(dynamic-linking, [  --disable-dynamic-linking     disable dynamic-linking], :, enable_dynamic_linking=yes)
+
+if test "x$enable_dynamic_linking" = xyes; then
+    CLICK_CHECK_DYNAMIC_LINKING
+    if test "$HOST_TOOLS" != host -a "$enable_tools" != no; then
+	CLICK_CHECK_BUILD_DYNAMIC_LINKING
+    fi
 fi
 
 
