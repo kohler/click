@@ -281,7 +281,7 @@ EOF
 	exec_command "ld -r -o $package $cflags $files"
 	exit 0
     elif test $driver = userlevel -o $driver = tool -o $driver = ns; then
-	exec_command "${CXX-@CXX@} @LDMODULEFLAGS@ -o $package $cflags $files"
+	exec_command "${CXX-@CXX@} ${CXXFLAGS-$icxxflags} @LDMODULEFLAGS@ -o $package $cflags $files"
 	exit 0
     elif test $driver = bsdmodule; then
 	exec_command "ld -Bshareable -o $package $cflags $files"
