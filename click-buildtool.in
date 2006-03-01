@@ -538,7 +538,10 @@ BEGIN { nsubdirs = 1; OFS = ""; subdirs[0] = "" }
 	else {
 	    dirid = nsubdirs++;
 	    subdirid[dir] = dirid;
-	    subdirs[dirid] = dir;
+	    if (substr(dir, 1, 1) == "/")
+		subdirs[dirid] = dir;
+	    else
+		subdirs[dirid] = "$(obj)/" dir;
 	}
 	elements[dirid] = elements[dirid] file " \\\n";
     }
@@ -550,7 +553,7 @@ END {
     }
     print "'"$makevar"' = \\\n", allsubdirs;
     for (i = 0; i < nsubdirs; i++) {
-	print "$(addprefix $(obj)/,$(ELEMENT_OBJS__", i, ")): $(obj)/%.o : $(obj)/", subdirs[i], "%.cc";
+	print "$(addprefix $(obj)/,$(ELEMENT_OBJS__", i, ")): $(obj)/%.o : ", subdirs[i], "%.cc";
 	print "	$(call if_changed_dep,cxxcompile)";
     }
 }' | sed "$excludes"

@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS LINUXMODULE_2_6 POSSIBLE_DRIVERS DRIVERS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS LINUX_CFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath freebsd_srcdir freebsd_includedir LIBOBJS EGREP BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS LINUXMODULE_2_6 POSSIBLE_DRIVERS DRIVERS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS LINUX_CFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -878,19 +878,19 @@ Optional Features:
   --disable-standard      do not include standard elements
   --disable-tcpudp        do not include TCP and UDP elements
   --enable-test           include regression test elements
-  --enable-wifi           include wifi support
-  --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
-  --enable-multithread[=NUM] support kernel multithreading, NUM threads max
+  --enable-wifi           include wifi elements and support
   --disable-int64         disable 64-bit integer support
   --enable-nanotimestamp  enable nanosecond timestamps
+  --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
+  --enable-multithread[=NUM] support kernel multithreading, NUM threads max
   --enable-warp9          reduce PollDevice functionality for speed
-  --enable-intel-cpu      enable Intel-specific machine instructions
   --disable-stride        disable stride scheduler
   --enable-task-heap      use heap for task list
   --enable-adaptive       use adaptive scheduler to flexibly arbitrate between
                           Click and the kernel (EXPERIMENTAL)
   --enable-dmalloc        enable debugging malloc
   --enable-kassert        enable kernel assertions
+  --enable-intel-cpu      enable Intel-specific machine instructions
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -4528,235 +4528,6 @@ echo "${ECHO_T}$ac_cv_under_linux" >&6
 
 
 
-# Check whether --enable-tools or --disable-tools was given.
-if test "${enable_tools+set}" = set; then
-  enableval="$enable_tools"
-  :
-else
-  enable_tools=mixed
-fi;
-
-if test "$enable_tools" != mixed -a "$enable_tools" != host -a "$enable_tools" != build -a "$enable_tools" != no; then
-  { { echo "$as_me:$LINENO: error:
-=========================================
-
-Bad value for --enable-tools.  Try 'host', 'build', 'mixed', or 'no'.
-
-=========================================" >&5
-echo "$as_me: error:
-=========================================
-
-Bad value for --enable-tools.  Try 'host', 'build', 'mixed', or 'no'.
-
-=========================================" >&2;}
-   { (exit 1); exit 1; }; }
-elif test "$enable_tools" = no; then
-  HOST_TOOLS=host
-elif test "$cross_compiling" = no -o "$enable_tools" = host; then
-  HOST_TOOLS=host
-else
-    for ac_prog in gcc
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_BUILD_CC+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$BUILD_CC"; then
-  ac_cv_prog_BUILD_CC="$BUILD_CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_BUILD_CC="$ac_prog"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-fi
-fi
-BUILD_CC=$ac_cv_prog_BUILD_CC
-if test -n "$BUILD_CC"; then
-  echo "$as_me:$LINENO: result: $BUILD_CC" >&5
-echo "${ECHO_T}$BUILD_CC" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-  test -n "$BUILD_CC" && break
-done
-
-  for ac_prog in g++
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_BUILD_CXX+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$BUILD_CXX"; then
-  ac_cv_prog_BUILD_CXX="$BUILD_CXX" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_BUILD_CXX="$ac_prog"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-fi
-fi
-BUILD_CXX=$ac_cv_prog_BUILD_CXX
-if test -n "$BUILD_CXX"; then
-  echo "$as_me:$LINENO: result: $BUILD_CXX" >&5
-echo "${ECHO_T}$BUILD_CXX" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-  test -n "$BUILD_CXX" && break
-done
-
-
-        ac_base_build_cxx="$CXX"
-    test -z "$ac_user_build_cxx" -a -n "$ac_compile_with_warnings" && \
-	BUILD_CXX="$BUILD_CXX $CXX_WARNINGS $VTABLE_THUNKS"
-
-  for ac_prog in ar
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_BUILD_AR+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$BUILD_AR"; then
-  ac_cv_prog_BUILD_AR="$BUILD_AR" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_BUILD_AR="$ac_prog"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-fi
-fi
-BUILD_AR=$ac_cv_prog_BUILD_AR
-if test -n "$BUILD_AR"; then
-  echo "$as_me:$LINENO: result: $BUILD_AR" >&5
-echo "${ECHO_T}$BUILD_AR" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-  test -n "$BUILD_AR" && break
-done
-
-  for ac_prog in ranlib
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_BUILD_RANLIB+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$BUILD_RANLIB"; then
-  ac_cv_prog_BUILD_RANLIB="$BUILD_RANLIB" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_BUILD_RANLIB="$ac_prog"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-fi
-fi
-BUILD_RANLIB=$ac_cv_prog_BUILD_RANLIB
-if test -n "$BUILD_RANLIB"; then
-  echo "$as_me:$LINENO: result: $BUILD_RANLIB" >&5
-echo "${ECHO_T}$BUILD_RANLIB" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-  test -n "$BUILD_RANLIB" && break
-done
-test -n "$BUILD_RANLIB" || BUILD_RANLIB=":"
-
-  HOST_TOOLS=$enable_tools
-fi
-
-
-
-
-# Check whether --enable-multithread or --disable-multithread was given.
-if test "${enable_multithread+set}" = set; then
-  enableval="$enable_multithread"
-  :
-else
-  enable_multithread=no
-fi;
-
-test "$enable_multithread" = yes && enable_multithread=4
-test "$enable_multithread" = no && enable_multithread=1
-if test "$enable_multithread" -gt 1; then
-    cat >>confdefs.h <<_ACEOF
-#define NUM_CLICK_CPUS $enable_multithread
-_ACEOF
-
-    cat >>confdefs.h <<_ACEOF
-#define __MTCLICK__ 1
-_ACEOF
-
-    saveflags="$CPPFLAGS"
-    CPPFLAGS="$saveflags -D__MTCLICK__"
-else
-    cat >>confdefs.h <<_ACEOF
-#define NUM_CLICK_CPUS 1
-_ACEOF
-
-fi
-
-
-
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -8079,7 +7850,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 8082 "configure"
+#line 7853 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -9035,6 +8806,205 @@ if test "x$enable_nanotimestamp" = xyes; then
 _ACEOF
 
 fi
+
+
+
+# Check whether --enable-tools or --disable-tools was given.
+if test "${enable_tools+set}" = set; then
+  enableval="$enable_tools"
+  :
+else
+  enable_tools=mixed
+fi;
+
+if test "$enable_tools" != mixed -a "$enable_tools" != host -a "$enable_tools" != build -a "$enable_tools" != no; then
+  { { echo "$as_me:$LINENO: error:
+=========================================
+
+Bad value for --enable-tools.  Try 'host', 'build', 'mixed', or 'no'.
+
+=========================================" >&5
+echo "$as_me: error:
+=========================================
+
+Bad value for --enable-tools.  Try 'host', 'build', 'mixed', or 'no'.
+
+=========================================" >&2;}
+   { (exit 1); exit 1; }; }
+elif test "$enable_tools" = no; then
+  HOST_TOOLS=host
+elif test "$cross_compiling" = no -o "$enable_tools" = host; then
+  HOST_TOOLS=host
+else
+    for ac_prog in gcc
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_BUILD_CC+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$BUILD_CC"; then
+  ac_cv_prog_BUILD_CC="$BUILD_CC" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_BUILD_CC="$ac_prog"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+fi
+fi
+BUILD_CC=$ac_cv_prog_BUILD_CC
+if test -n "$BUILD_CC"; then
+  echo "$as_me:$LINENO: result: $BUILD_CC" >&5
+echo "${ECHO_T}$BUILD_CC" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  test -n "$BUILD_CC" && break
+done
+
+  for ac_prog in g++
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_BUILD_CXX+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$BUILD_CXX"; then
+  ac_cv_prog_BUILD_CXX="$BUILD_CXX" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_BUILD_CXX="$ac_prog"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+fi
+fi
+BUILD_CXX=$ac_cv_prog_BUILD_CXX
+if test -n "$BUILD_CXX"; then
+  echo "$as_me:$LINENO: result: $BUILD_CXX" >&5
+echo "${ECHO_T}$BUILD_CXX" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  test -n "$BUILD_CXX" && break
+done
+
+
+        ac_base_build_cxx="$CXX"
+    test -z "$ac_user_build_cxx" -a -n "$ac_compile_with_warnings" && \
+	BUILD_CXX="$BUILD_CXX $CXX_WARNINGS $VTABLE_THUNKS"
+
+  for ac_prog in ar
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_BUILD_AR+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$BUILD_AR"; then
+  ac_cv_prog_BUILD_AR="$BUILD_AR" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_BUILD_AR="$ac_prog"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+fi
+fi
+BUILD_AR=$ac_cv_prog_BUILD_AR
+if test -n "$BUILD_AR"; then
+  echo "$as_me:$LINENO: result: $BUILD_AR" >&5
+echo "${ECHO_T}$BUILD_AR" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  test -n "$BUILD_AR" && break
+done
+
+  for ac_prog in ranlib
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_BUILD_RANLIB+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$BUILD_RANLIB"; then
+  ac_cv_prog_BUILD_RANLIB="$BUILD_RANLIB" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_BUILD_RANLIB="$ac_prog"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+fi
+fi
+BUILD_RANLIB=$ac_cv_prog_BUILD_RANLIB
+if test -n "$BUILD_RANLIB"; then
+  echo "$as_me:$LINENO: result: $BUILD_RANLIB" >&5
+echo "${ECHO_T}$BUILD_RANLIB" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  test -n "$BUILD_RANLIB" && break
+done
+test -n "$BUILD_RANLIB" || BUILD_RANLIB=":"
+
+  HOST_TOOLS=$enable_tools
+fi
+
 
 
 
@@ -11842,6 +11812,34 @@ fi
 
 
 
+# Check whether --enable-multithread or --disable-multithread was given.
+if test "${enable_multithread+set}" = set; then
+  enableval="$enable_multithread"
+  :
+else
+  enable_multithread=no
+fi;
+
+test "$enable_multithread" = yes && enable_multithread=4
+test "$enable_multithread" = no && enable_multithread=1
+if test "$enable_multithread" -gt 1; then
+    cat >>confdefs.h <<_ACEOF
+#define NUM_CLICK_CPUS $enable_multithread
+_ACEOF
+
+    cat >>confdefs.h <<_ACEOF
+#define __MTCLICK__ 1
+_ACEOF
+
+    saveflags="$CPPFLAGS"
+    CPPFLAGS="$saveflags -D__MTCLICK__"
+else
+    cat >>confdefs.h <<_ACEOF
+#define NUM_CLICK_CPUS 1
+_ACEOF
+
+fi
+
 # Check whether --enable-warp9 or --disable-warp9 was given.
 if test "${enable_warp9+set}" = set; then
   enableval="$enable_warp9"
@@ -12158,22 +12156,6 @@ fi
 
 
 
-# Check whether --enable-intel-cpu or --disable-intel-cpu was given.
-if test "${enable_intel_cpu+set}" = set; then
-  enableval="$enable_intel_cpu"
-  :
-else
-  enable_intel_cpu=no
-fi;
-if test $enable_intel_cpu = yes; then
-    cat >>confdefs.h <<\_ACEOF
-#define HAVE_INTEL_CPU 1
-_ACEOF
-
-fi
-
-
-
 # Check whether --enable-stride or --disable-stride was given.
 if test "${enable_stride+set}" = set; then
   enableval="$enable_stride"
@@ -12244,6 +12226,22 @@ fi;
 if test $enable_kassert = yes; then
     cat >>confdefs.h <<\_ACEOF
 #define HAVE_KERNEL_ASSERT 1
+_ACEOF
+
+fi
+
+
+
+# Check whether --enable-intel-cpu or --disable-intel-cpu was given.
+if test "${enable_intel_cpu+set}" = set; then
+  enableval="$enable_intel_cpu"
+  :
+else
+  enable_intel_cpu=no
+fi;
+if test $enable_intel_cpu = yes; then
+    cat >>confdefs.h <<\_ACEOF
+#define HAVE_INTEL_CPU 1
 _ACEOF
 
 fi
@@ -14987,13 +14985,13 @@ s,@element_groups@,$element_groups,;t t
 s,@elements_vpath@,$elements_vpath,;t t
 s,@freebsd_srcdir@,$freebsd_srcdir,;t t
 s,@freebsd_includedir@,$freebsd_includedir,;t t
+s,@LIBOBJS@,$LIBOBJS,;t t
+s,@EGREP@,$EGREP,;t t
 s,@BUILD_CC@,$BUILD_CC,;t t
 s,@BUILD_CXX@,$BUILD_CXX,;t t
 s,@BUILD_AR@,$BUILD_AR,;t t
 s,@BUILD_RANLIB@,$BUILD_RANLIB,;t t
 s,@HOST_TOOLS@,$HOST_TOOLS,;t t
-s,@LIBOBJS@,$LIBOBJS,;t t
-s,@EGREP@,$EGREP,;t t
 s,@DL_LIBS@,$DL_LIBS,;t t
 s,@LDMODULEFLAGS@,$LDMODULEFLAGS,;t t
 s,@BUILD_DL_LIBS@,$BUILD_DL_LIBS,;t t
