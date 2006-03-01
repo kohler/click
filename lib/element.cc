@@ -429,6 +429,8 @@ Element::ports_frozen() const
  * slash appears, the text is used for both input and output ranges.)</dd>
  * <dt><tt>"1-/="</tt></dt> <dd>At least one input port and @e the @e same
  * number of output ports.</dd>
+ * <dt><tt>"1-/=+"</tt></dt> <dd>At least one input port and @e one @e more
+ * output port than there are input ports.</dd>
  * </dl>
  *
  * These ranges help Click determine whether a configuration uses too few or
@@ -497,8 +499,7 @@ Element::notify_nports(int ninputs, int noutputs, ErrorHandler *errh)
     }
 
     const char *s = s_in, *ends = s + strlen(s);
-    int ninlo, ninhi, noutlo, nouthi;
-    bool equal = false;
+    int ninlo, ninhi, noutlo, nouthi, equal = 0;
 
     if (notify_nports_pair(s, ends, ninlo, ninhi) < 0)
 	goto parse_error;
@@ -510,10 +511,17 @@ Element::notify_nports(int ninputs, int noutputs, ErrorHandler *errh)
     else
 	goto parse_error;
 
-    if (*s == '=' && s + 1 == ends)
-	equal = true;
-    else if (notify_nports_pair(s, ends, noutlo, nouthi) < 0 || s != ends)
-	goto parse_error;
+    if (*s == '=') {
+	const char *plus = s + 1;
+	do {
+	    equal++;
+	} while (plus != ends && *plus++ == '+');
+	if (plus != ends)
+	    equal = 0;
+    }
+    if (!equal)
+	if (notify_nports_pair(s, ends, noutlo, nouthi) < 0 || s != ends)
+	    goto parse_error;
 
     if (ninputs < ninlo)
 	ninputs = ninlo;
@@ -521,7 +529,7 @@ Element::notify_nports(int ninputs, int noutputs, ErrorHandler *errh)
 	ninputs = ninhi;
 
     if (equal)
-	noutputs = ninputs;
+	noutputs = ninputs + equal - 1;
     else if (noutputs < noutlo)
 	noutputs = noutlo;
     else if (noutputs > nouthi)
