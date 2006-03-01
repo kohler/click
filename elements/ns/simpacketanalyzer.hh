@@ -1,4 +1,3 @@
-//TED 300304: Created
 #ifndef CLICK_SIMPACKETANALYZER_HH
 #define CLICK_SIMPACKETANALYZER_HH
 #include <click/element.hh>

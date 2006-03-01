@@ -409,8 +409,8 @@ EOD;
 	return;
     }
 
-    $text .= "\n" if $name eq 'head1';
     print OUT nroffize($text), "\n";
+    print OUT "\n" if $name eq 'head1';
 }
 
 
@@ -668,6 +668,8 @@ sub process_one_portcount ($$) {
 	"1 $type";
     } elsif ($t eq '=') {
 	"the same number of ${type}s";
+    } elsif ($t =~ /^=(\++)$/) {
+	length($1) . " more $type";
     } elsif ($t =~ /^0?-1$/) {
 	"at most 1 $type";
     } elsif ($t =~ /^0?-(.*)/) {

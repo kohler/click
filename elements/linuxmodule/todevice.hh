@@ -24,7 +24,7 @@ For good performance, you should set BURST to be 8 times the number of
 elements that could generate packets for this device.
 
 Packets must have a link header. For Ethernet, ToDevice makes sure every
-packet is at least 60 bytes long.
+packet is at least 60 bytes long (but see NO_PAD).
 
 Keyword arguments are:
 

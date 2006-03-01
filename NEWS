@@ -6,32 +6,42 @@ Version 1.5
   DirectIPLookup element (Marko Zec with kohler).
 
 * Add new Script element, basically replacing PokeHandlers and
-  DriverManager; check it out.
+  DriverManager, with support for programmability and signal handling;
+  check it out.
 
-* New elements: ChangeUID, RawSocket, Socket, Truncate.
+* New elements: ChangeUID, ListenEtherSwitch, RawSocket, Socket, Truncate,
+  many wifi elements.
 
 * Deprecated elements: FromRawSocket, FromSocket, PokeHandlers, ToRawSocket,
   ToSocket.
 
 * Polling version of Intel's e1000-5.7.6 driver.
 
-* Bug fixes to many elements, including ToIPSummaryDump, IPAddrRewriter,
-  IPPrint, ToDevice (kernel and userlevel), ICMPPingSource,
-  IPFilter/IPClassifier, RatedUnqueue, FromDAGDump, ARPQuerier, FromDevice
-  (userlevel).
+* Bug fixes and extensions to many elements, including ARPQuerier,
+  EtherSwitch, FromDAGDump, FromDevice (userlevel), ICMPPingSource,
+  IPAddrRewriter, IPFilter/IPClassifier, IPPrint, RandomBitErrors,
+  RatedUnqueue, ToDevice (kernel and userlevel), ToIPSummaryDump.
 
-* Diagram library improvements.
+* Integrated nsclick patch, and improved nsclick (Michael Voorhaen, Bart
+  Braem, kohler).
 
 * x86_64 support.
 
-* Integrated nsclick patch, and improved nsclick.
+* Wifi (bicket)
+
+** Add srcr version 2 ("sr2") elements which are endian-friendly, but not
+   backward compatible.  Keep sr1 elements for backward compatibility, but
+   eventually these will be deprecated.
+
+** Fix a bunch of wifi performance bugs that came out from porting roofnet
+   to really slow cheap wireless routers.
 
 * Internals
 
 ** Initiate Doxygen documentation for important base types, such as
-   Element, String, Notifier, and so forth.  This project is not yet
-   complete; as each class gets Doxygenated its interface tends to change a
-   lot, so be prepared.
+   Element, String, Notifier, and so forth.  This project is not complete;
+   as each class gets Doxygenated its interface tends to change, so be
+   prepared.
 
 ** Add new port_count() method, allowing elements to declare how many ports
    they support.  Deprecate Element::set_ninputs(), set_noutputs(),
@@ -50,13 +60,16 @@ Version 1.5
 
 ** Many bug fixes.
 
+** Diagram library improvements.
+
 * Thanks to Dan Aguayo, Mark Allman, Bart Braem, Kristof Cauwel, Spencer
   Chang, YenJung Chang, Jacky Cheng, Beyers Cronje, Weidong Cui, Anne
-  Dudfield, Brian Gallaway, Michael Gellman, Chema Gonzalez, Adam
-  Greenhalgh, Felipe Huici, Bart Jooris, Bob Keyes, Kevin Lahey, Dagang Li,
-  Nikitas Liogkas, Yun Mao, Ross Mcilroy, Alastair McKinley, Indian Mogul,
-  Thomas Paine, Ruoming Pang, Juncheol Park, Vern Paxson, Michael Walfish,
-  Nick Weaver, Qinghua Ye, Marko Zec.
+  Dudfield, Brian Gallaway, Michael Gellman, Chema Gonzalez, Andrew
+  Gorelik, Adam Greenhalgh, Felipe Huici, Bart Jooris, Bob Keyes, Kevin
+  Lahey, Dagang Li, Nikitas Liogkas, Yun Mao, Ross Mcilroy, Alastair
+  McKinley, Indian Mogul, Thomas Paine, Ruoming Pang, Juncheol Park, Vern
+  Paxson, Michael Voorhaen, Michael Walfish, Nick Weaver, Qinghua Ye, Marko
+  Zec, and anyone else whose name was forgotten.
 
 
 Version 1.4.3   5.Jan.2005
