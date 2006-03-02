@@ -76,7 +76,7 @@ and Linux header files are GCC-specific.)
 
     AC_LANG_CPLUSPLUS
     if test -n "$GXX"; then
-	changequote(<<,>>)GXX_VERSION=`$CXX --version | head -1 | sed 's/^[^0-9]*\([0-9.]*\).*/\1/'`
+	changequote(<<,>>)GXX_VERSION=`$CXX --version | head -n 1 | sed 's/^[^0-9]*\([0-9.]*\).*/\1/'`
 	GXX_MAJOR=`echo $GXX_VERSION | sed 's/\..*//'`
 	GXX_MINOR=`echo $GXX_VERSION | sed 's/^[^.]*\.\([^.]*\).*/\1/'`changequote([,])
 
@@ -127,7 +127,7 @@ by setting the 'CXX' environment variable and rerunning me.
 
     ac_base_cxx="$CXX"
     test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX="$CXX $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS"
+	CXX="$CXX $CXX_WARNINGS $VTABLE_THUNKS"
 
     CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
     AC_SUBST(CXXFLAGS_NDEBUG)
@@ -143,7 +143,7 @@ AC_DEFUN([CLICK_PROG_BUILD_CXX], [
     dnl This doesn't really work, but it's close.
     ac_base_build_cxx="$CXX"
     test -z "$ac_user_build_cxx" -a -n "$ac_compile_with_warnings" && \
-	BUILD_CXX="$BUILD_CXX $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS"
+	BUILD_CXX="$BUILD_CXX $CXX_WARNINGS $VTABLE_THUNKS"
 ])
 
 
@@ -367,7 +367,7 @@ AC_DEFUN([CLICK_PROG_AUTOCONF], [
     AC_MSG_CHECKING(for working autoconf)
     AUTOCONF="${AUTOCONF-autoconf}"
     if ($AUTOCONF --version) < /dev/null > conftest.out 2>&1; then
-	if test `head -1 conftest.out | sed 's/.*2\.\([[0-9]]*\).*/\1/'` -ge 13 2>/dev/null; then
+	if test `head -n 1 conftest.out | sed 's/.*2\.\([[0-9]]*\).*/\1/'` -ge 13 2>/dev/null; then
 	    AC_MSG_RESULT(found)
 	else
 	    AUTOCONF='$(conf_auxdir)/missing autoconf'
@@ -524,6 +524,7 @@ AC_DEFUN([CLICK_CHECK_INT64_TYPES], [
 	inttypes_hdr='sys/types.h'
     fi
 
+    AC_CHECK_TYPES(long long)
     AC_CACHE_CHECK(for int64_t typedef, ac_cv_int64_t,
 	[AC_EGREP_HEADER(dnl
 changequote(<<,>>)<<(^|[^a-zA-Z_0-9])int64_t[^a-zA-Z_0-9]>>changequote([,]),

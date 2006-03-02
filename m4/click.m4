@@ -76,7 +76,7 @@ and Linux header files are GCC-specific.)
 
     AC_LANG_CPLUSPLUS
     if test -n "$GXX"; then
-	changequote(<<,>>)GXX_VERSION=`$CXX --version | head -1 | sed 's/^[^0-9]*\([0-9.]*\).*/\1/'`
+	changequote(<<,>>)GXX_VERSION=`$CXX --version | head -n 1 | sed 's/^[^0-9]*\([0-9.]*\).*/\1/'`
 	GXX_MAJOR=`echo $GXX_VERSION | sed 's/\..*//'`
 	GXX_MINOR=`echo $GXX_VERSION | sed 's/^[^.]*\.\([^.]*\).*/\1/'`changequote([,])
 
@@ -367,7 +367,7 @@ AC_DEFUN([CLICK_PROG_AUTOCONF], [
     AC_MSG_CHECKING(for working autoconf)
     AUTOCONF="${AUTOCONF-autoconf}"
     if ($AUTOCONF --version) < /dev/null > conftest.out 2>&1; then
-	if test `head -1 conftest.out | sed 's/.*2\.\([[0-9]]*\).*/\1/'` -ge 13 2>/dev/null; then
+	if test `head -n 1 conftest.out | sed 's/.*2\.\([[0-9]]*\).*/\1/'` -ge 13 2>/dev/null; then
 	    AC_MSG_RESULT(found)
 	else
 	    AUTOCONF='$(conf_auxdir)/missing autoconf'

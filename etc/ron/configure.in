@@ -152,7 +152,7 @@ missing_dir=`cd $srcdir && pwd`
 AC_MSG_CHECKING(for working autoconf)
 AUTOCONF=${AUTOCONF-autoconf}
 if ($AUTOCONF --version) < /dev/null > conftest.out 2>&1; then
-  if test `head -1 conftest.out | sed 's/.*2\.\([[0-9]]*\).*/\1/'` -ge 13 2>/dev/null; then
+  if test `head -n 1 conftest.out | sed 's/.*2\.\([[0-9]]*\).*/\1/'` -ge 13 2>/dev/null; then
     AC_MSG_RESULT(found)
   else
     AUTOCONF="$missing_dir/missing autoconf"

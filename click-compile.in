@@ -237,7 +237,7 @@ compile_file () {
     option=
     source="$1"; shift
     if test -r "$source"; then
-	option=`head -5 $source | grep '^/\*\* click-compile:' | sed -e 's/\/\*\* click-compile://g' -e 's/\*\///g'`
+	option=`head -n 5 $source | grep '^/\*\* click-compile:' | sed -e 's/\/\*\* click-compile://g' -e 's/\*\///g'`
     fi
     exec_command $command $option $source "$@"
 }
