@@ -1,3 +1,8 @@
+2006-03-02 Thursday 12:53  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/gen_config_roofnet.sh (1.6): use 11mbit for rate
+	  control for now
+
 2006-03-02 Thursday 11:59  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* ns/Makefile.in (1.19): make libnsclick as a shared library (Bart
