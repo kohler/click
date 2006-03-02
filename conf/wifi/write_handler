@@ -5,5 +5,6 @@ if [ $# -lt 2 ]; then
     exit 1
 fi
 
-printf "write $@\nquit\n" | nc 127.0.0.1 7777|grep "Click::ControlSocket"|grep "200 Write handler"|grep "200 Goodbye"
+ARGS=$@
+printf "write $ARGS\nquit\n" | nc 127.0.0.1 7777|grep "Click::ControlSocket"|grep "200 Write handler"|grep "200 Goodbye"
 
