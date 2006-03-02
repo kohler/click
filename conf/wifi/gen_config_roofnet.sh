@@ -46,11 +46,9 @@ MODE="g"
 PROBES="2 60 2 1500 4 1500 11 1500 22 1500"
 #    $probes = "2 60 12 60 2 1500 4 1500 11 1500 22 1500 12 1500 18 1500 24 1500 36 1500 48 1500 72 1500 96 1500";
 
-echo "rates :: AvailableRates(DEFAULT 2 4 11 12 18 22 24 36 48 72 96 108,
-$WIRELESS_MAC 2 4 11 12 18 22 24 36 48 72 96 108);
+echo "rates :: AvailableRates(DEFAULT 11 22,
+$WIRELESS_MAC 11, 22);
 ";
-
-#    print "rates :: AvailableRates(DEFAULT 2 4 11 22);\n\n";
 
 SRCR_FILE="srcr.click"
 if [ ! -f $SRCR_FILE ]; then
@@ -121,15 +119,15 @@ route_q :: FullNoteQueue(10)
 -> [0] sched;
 
 data_q :: FullNoteQueue(10)
--> data_static_rate :: SetTXRate(RATE 2)
--> data_madwifi_rate :: MadwifiRate(OFFSET 4,
-			       ALT_RATE true,
-			       RT rates,
-			       ACTIVE true)
+-> data_static_rate :: SetTXRate(RATE 22)
+//-> data_madwifi_rate :: MadwifiRate(OFFSET 4,
+//			       ALT_RATE true,
+//			       RT rates,
+//			       ACTIVE true)
 
 -> [1] sched;
 
-Idle -> [1] data_madwifi_rate;
+//Idle -> [1] data_madwifi_rate;
 
 
 
@@ -204,7 +202,8 @@ sniff_dev
 ncl[0] -> srcr1;
 ncl[1] -> srcr2;
 
-tx_filter [1]  -> [1] data_madwifi_rate;
+tx_filter[1] -> Discard;
+//tx_filter [1]  -> [1] data_madwifi_rate;
 
 ";
 
