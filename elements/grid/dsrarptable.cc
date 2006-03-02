@@ -20,12 +20,12 @@
 #include <click/config.h>
 #include <click/package.hh>
 #include <clicknet/ether.h>
+#include <click/glue.hh>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/bitvector.hh>
 #include <click/error.hh>
-#include <click/glue.hh>
 #include <clicknet/ip.h>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>

@@ -2,9 +2,10 @@
 /*
  * etheraddress.{cc,hh} -- an Ethernet address class. Useful for its
  * hashcode() method
- * Robert Morris / John Jannotti
+ * Robert Morris / John Jannotti, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -18,22 +19,27 @@
  */
 
 #include <click/config.h>
-#include <click/etheraddress.hh>
 #include <click/glue.hh>
+#include <click/etheraddress.hh>
 #include <click/straccum.hh>
 CLICK_DECLS
 
-EtherAddress::EtherAddress(const unsigned char *addr)
-{
-  memcpy(data(), addr, 6);
-}
+/** @class EtherAddress
+    @brief An Ethernet address.
 
+    The EtherAddress type represents an Ethernet address. It supports equality
+    operations and provides methods for unparsing addresses into ASCII
+    colon-separated hex form. */
+
+/** @brief Unparses this address into a colon-separated hex String.
+
+    Examples include "00:00:00:00:00:00" and "00:05:4E:50:3C:1A". */
 String
 EtherAddress::unparse() const
 {
   char buf[24];
   const unsigned char *p = this->data();
-  sprintf(buf, "%02x:%02x:%02x:%02x:%02x:%02x",
+  sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
 	  p[0], p[1], p[2], p[3], p[4], p[5]);
   return String(buf, 17);
 }
@@ -43,7 +49,7 @@ operator<<(StringAccum &sa, const EtherAddress &ea)
 {
   char buf[24];
   const unsigned char *p = ea.data();
-  sprintf(buf, "%02x:%02x:%02x:%02x:%02x:%02x",
+  sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
 	  p[0], p[1], p[2], p[3], p[4], p[5]);
   sa.append(buf, 17);
   return sa;

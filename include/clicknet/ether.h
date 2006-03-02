@@ -23,19 +23,29 @@ struct click_ether {,
 
 #define ETHERTYPE_IP		0x0800
 #define ETHERTYPE_ARP		0x0806
+#define ETHERTYPE_TRAIL		0x1000
 #define ETHERTYPE_8021Q		0x8100
 #define ETHERTYPE_IP6		0x86DD
 #define ETHERTYPE_GRID		0x7fff	/* wvlan_cs driver won't transmit frames with high bit of protocol number set */
 
 struct click_arp {		/* Offsets relative to ARP (Ethernet) header */
     uint16_t	ar_hrd;		/* 0-1 (14-15)  hardware address format      */
-#define ARPHRD_ETHER    1       /*		  Ethernet 10Mbps	     */
+#define ARPHRD_ETHER    1	/*		  Ethernet 10Mbps	     */
+#define ARPHRD_IEEE802	6	/*		  token ring     	     */
+#define ARPHRD_ARCNET	7	/*		  Arcnet         	     */
+#define ARPHRD_FRELAY	15	/*		  frame relay    	     */
+#define ARPHRD_STRIP	23	/*		  Ricochet Starmode Radio    */
+#define ARPHRD_IEEE1394	24	/*		  IEEE 1394 (FireWire)	     */
     uint16_t	ar_pro;		/* 2-3 (16-17)  protocol address format      */
     uint8_t	ar_hln;		/* 4   (18)     hardware address length      */
     uint8_t	ar_pln;		/* 5   (19)     protocol address length      */
     uint16_t	ar_op;		/* 6-7 (20-21)  opcode (command)	     */
-#define ARPOP_REQUEST   1       /*		  ARP request		     */
-#define ARPOP_REPLY	2       /*		  ARP reply		     */
+#define ARPOP_REQUEST   1	/*		  ARP request		     */
+#define ARPOP_REPLY	2	/*		  ARP reply		     */
+#define ARPOP_REVREQUEST 3	/*		  reverse request: hw->proto */
+#define ARPOP_REVREPLY	4	/*		  reverse reply		     */
+#define ARPOP_INVREQUEST 8	/*		  peer identification req    */
+#define ARPOP_INVREPLY	9	/*		  peer identification reply  */
 };
 
 struct click_ether_arp {

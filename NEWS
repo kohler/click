@@ -10,7 +10,7 @@ Version 1.5
   check it out.
 
 * New elements: ChangeUID, ListenEtherSwitch, RawSocket, Socket, Truncate,
-  many wifi elements.
+  ARPPrint and CheckARPHeader (Jose Maria Gonzalez), many wifi elements.
 
 * Deprecated elements: FromRawSocket, FromSocket, PokeHandlers, ToRawSocket,
   ToSocket.

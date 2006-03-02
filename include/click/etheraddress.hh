@@ -1,67 +1,123 @@
-// -*- c-basic-offset: 2; related-file-name: "../../lib/etheraddress.cc" -*-
+// -*- related-file-name: "../../lib/etheraddress.cc" -*-
 #ifndef CLICK_ETHERADDRESS_HH
 #define CLICK_ETHERADDRESS_HH
 #include <click/string.hh>
+#include <click/glue.hh>
 CLICK_DECLS
 
 class EtherAddress { public:
   
-  EtherAddress()			{ _data[0] = _data[1] = _data[2] = 0; }
-  explicit EtherAddress(const unsigned char *);
+    inline EtherAddress();
+    explicit EtherAddress(const unsigned char *data);
   
-  operator bool() const;
-  bool is_group() const;
+    inline operator bool() const;
+    inline bool is_group() const;
     
-  unsigned char *data();
-  const unsigned char *data() const;
-  const uint16_t *sdata() const		{ return _data; }
+    inline unsigned char *data();
+    inline const unsigned char *data() const;
+    inline const uint16_t *sdata() const;
 
-  String unparse() const;
+    // bool operator==(EtherAddress, EtherAddress);
+    // bool operator!=(EtherAddress, EtherAddress);
 
-  operator String() const		{ return unparse(); }
-  String s() const			{ return unparse(); }
+    String unparse() const;
+
+    inline operator String() const;
+    inline String s() const;
   
  private:
   
-  uint16_t _data[3];
+    uint16_t _data[3];
   
 };
 
+/** @brief Constructs an EtherAddress equal to 00:00:00:00:00:00. */
+inline
+EtherAddress::EtherAddress()
+{
+    _data[0] = _data[1] = _data[2] = 0;
+}
+
+/** @brief Constructs an EtherAddress from data.
+    @param data the address data, in network byte order
+
+    The bytes data[0]...data[5] are used to construct the address. */
+inline
+EtherAddress::EtherAddress(const unsigned char *data)
+{
+    memcpy(_data, data, 6);
+}
+
+/** @brief Returns true iff the address is not 00:00:00:00:00:00. */
 inline
 EtherAddress::operator bool() const
 {
-  return _data[0] || _data[1] || _data[2];
+    return _data[0] || _data[1] || _data[2];
 }
 
-inline const unsigned char *
-EtherAddress::data() const
-{
-  return reinterpret_cast<const unsigned char *>(_data);
-}
+/** @brief Returns true iff this address is a group address.
 
-inline unsigned char *
-EtherAddress::data()
-{
-  return reinterpret_cast<unsigned char *>(_data);
-}
-
+    Group addresses have the low-order bit of the first byte set to 1, as in
+    01:00:00:00:00:00. */
 inline bool
 EtherAddress::is_group() const
 {
-  return data()[0] & 1;
+    return data()[0] & 1;
 }
 
+/** @brief Returns a pointer to the address data. */
+inline const unsigned char *
+EtherAddress::data() const
+{
+    return reinterpret_cast<const unsigned char *>(_data);
+}
+
+/** @brief Returns a pointer to the address data. */
+inline unsigned char *
+EtherAddress::data()
+{
+    return reinterpret_cast<unsigned char *>(_data);
+}
+
+/** @brief Returns a pointer to the address data, as an array of uint16_ts. */
+inline const uint16_t *
+EtherAddress::sdata() const
+{
+    return _data;
+}
+
+/** @brief Unparses this address into a colon-separated hex String.
+    @sa unparse */
+inline
+EtherAddress::operator String() const
+{
+    return unparse();
+}
+
+/** @brief Unparses this address into a colon-separated hex String.
+    @sa unparse */
+inline String
+EtherAddress::s() const
+{
+    return unparse();
+}
+
+/** @relates EtherAddress
+    @brief Compares two EtherAddress objects for equality. */
 inline bool
 operator==(const EtherAddress &a, const EtherAddress &b)
 {
-  return (a.sdata()[0] == b.sdata()[0] && a.sdata()[1] == b.sdata()[1]
-	  && a.sdata()[2] == b.sdata()[2]);
+    return (a.sdata()[0] == b.sdata()[0]
+	    && a.sdata()[1] == b.sdata()[1]
+	    && a.sdata()[2] == b.sdata()[2]);
 }
 
+/** @relates EtherAddress
+    @brief Compares two EtherAddress objects for inequality. */
 inline bool
 operator!=(const EtherAddress &a, const EtherAddress &b)
 {
-  return !(a == b);
+    return !(a == b);
 }
 
 class StringAccum;
@@ -70,8 +126,8 @@ StringAccum &operator<<(StringAccum &, const EtherAddress &);
 inline int
 hashcode(const EtherAddress &ea)
 {
-  const uint16_t *d = ea.sdata();
-  return (d[2] | (d[1] << 16)) ^ (d[0] << 9);
+    const uint16_t *d = ea.sdata();
+    return (d[2] | (d[1] << 16)) ^ (d[0] << 9);
 }
 
 CLICK_ENDDECLS
