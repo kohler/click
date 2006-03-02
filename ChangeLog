@@ -1,3 +1,20 @@
+2006-03-02 Thursday 01:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* NEWS (1.164), elements/ethernet/arpprint.cc (1.1),
+	  elements/ethernet/arpprint.hh (1.1),
+	  elements/ethernet/checkarpheader.cc (1.1),
+	  elements/ethernet/checkarpheader.hh (1.1),
+	  elements/grid/dsrarptable.cc (1.12),
+	  include/click/etheraddress.hh (1.9), include/clicknet/ether.h
+	  (1.7), lib/etheraddress.cc (1.16): document EtherAddress, add
+	  Chema s CheckARPHeader and ARPPrint elements (after extending
+	  CheckARPHeader)
+
+2006-03-02 Thursday 01:45  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/write_handler (1.3): some really lame shells have
+	  trouble with $@
+
 2006-03-02 Thursday 01:36  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/write_handler (1.2): -lt rather than <
