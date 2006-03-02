@@ -1,3 +1,16 @@
+2006-03-02 Thursday 11:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* ns/Makefile.in (1.19): make libnsclick as a shared library (Bart
+	  Braem)
+
+2006-03-02 Thursday 11:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* aclocal.m4 (1.51), click-compile.in (1.37), configure (1.70),
+	  configure.in (1.276), etc/libclick/lc-configure.in (1.45),
+	  etc/ron/configure.in (1.2), etc/samplepackage/aclocal.m4 (1.18),
+	  etc/samplepackage/m4/click.m4 (1.8), m4/click.m4 (1.52): head -1
+	  is nonstandard, use head -n 1 (Bart Braem)
+
 2006-03-02 Thursday 01:52  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* NEWS (1.164), elements/ethernet/arpprint.cc (1.1),
