@@ -187,5 +187,6 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
 
 
 ELEMENT_PROVIDES(GridGenericMetric)
+ELEMENT_REQUIRES(bitrate)
 EXPORT_ELEMENT(ETTMetric)
 CLICK_ENDDECLS

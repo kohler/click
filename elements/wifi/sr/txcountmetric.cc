@@ -102,4 +102,5 @@ TXCountMetric::update_link(IPAddress from, IPAddress to,
 
 
 EXPORT_ELEMENT(TXCountMetric)
+ELEMENT_REQUIRES(bitrate)
 CLICK_ENDDECLS

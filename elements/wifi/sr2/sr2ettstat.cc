@@ -806,7 +806,8 @@ SR2ETTStat::reverse_arp(EtherAddress eth)
 
 
 EXPORT_ELEMENT(SR2ETTStat)
-
+ELEMENT_REQUIRES(SR2TXCountMetric)
+ELEMENT_REQUIRES(SR2ETTMetric)
 #include <click/bighashmap.cc>
 #include <click/dequeue.cc>
 #include <click/vector.cc>

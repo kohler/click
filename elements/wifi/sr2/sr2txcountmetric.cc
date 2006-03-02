@@ -102,4 +102,5 @@ SR2TXCountMetric::update_link(IPAddress from, IPAddress to,
 
 
 EXPORT_ELEMENT(SR2TXCountMetric)
+ELEMENT_REQUIRES(bitrate)
 CLICK_ENDDECLS

@@ -804,7 +804,8 @@ ETTStat::reverse_arp(EtherAddress eth)
 
 
 EXPORT_ELEMENT(ETTStat)
-
+ELEMENT_REQUIRES(TXCountMetric)
+ELEMENT_REQUIRES(ETTMetric)
 #include <click/bighashmap.cc>
 #include <click/dequeue.cc>
 #include <click/vector.cc>
