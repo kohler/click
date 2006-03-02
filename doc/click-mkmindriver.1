@@ -64,6 +64,21 @@ Run
 from the respective Click build directory, or supply a relevant
 .B \-\-directory
 option.
+.PP
+Sometimes one element depends weakly on another, especially for parsing.
+For instance, the
+.M IPEncap n
+element can take advantage of protocol names supplied by the
+.M IPNameInfo n
+class; if IPNameInfo is not available, IPEncap will still work, it just
+won't be able to parse protocol names.
+.B Click-mkmindriver
+does not include weakly dependent elements automatically, so you must
+supply them explicitly with
+.B \-E
+options if you want them.  Common examples include IPNameInfo and
+IPFieldInfo.  If a configuration fails to parse, try including these
+elements.
 '
 .SH "OPTIONS"
 '
@@ -193,7 +208,7 @@ Print the version number and some quickie warranty information and exit.
 '
 .SH AUTHOR
 .na
-Eddie Kohler, eddietwo@lcs.mit.edu
+Eddie Kohler, kohler@cs.ucla.edu
 .br
 http://www.pdos.lcs.mit.edu/click/
 '

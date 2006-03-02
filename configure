@@ -882,6 +882,7 @@ Optional Features:
   --disable-int64         disable 64-bit integer support
   --enable-nanotimestamp  enable nanosecond timestamps
   --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
+  --disable-dynamic-linking     disable dynamic-linking
   --enable-multithread[=NUM] support kernel multithreading, NUM threads max
   --enable-warp9          reduce PollDevice functionality for speed
   --disable-stride        disable stride scheduler
@@ -7850,7 +7851,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7853 "configure"
+#line 7854 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -9479,6 +9480,16 @@ fi
 done
 
 
+# Check whether --enable-dynamic-linking or --disable-dynamic-linking was given.
+if test "${enable_dynamic_linking+set}" = set; then
+  enableval="$enable_dynamic_linking"
+  :
+else
+  enable_dynamic_linking=yes
+fi;
+
+if test "x$enable_dynamic_linking" = xyes; then
+
     DL_LIBS=
 
 for ac_header in dlfcn.h
@@ -9819,7 +9830,7 @@ echo $ECHO_N "checking compiler flags for building loadable modules... $ECHO_C" 
 echo "${ECHO_T}$LDMODULEFLAGS" >&6
 
 
-if test "$HOST_TOOLS" != host -a "$enable_tools" != no; then
+    if test "$HOST_TOOLS" != host -a "$enable_tools" != no; then
 
     saver="CXX='$CXX' CXXCPP='$CXXCPP' ac_cv_header_dlfcn_h='$ac_cv_header_dlfcn_h' ac_cv_func_dlopen='$ac_cv_func_dlopen' ac_cv_lib_dl_dlopen='$ac_cv_lib_dl_dlopen'"
     CXX="$BUILD_CXX"; CXXCPP="$BUILD_CXX -E"
@@ -10163,6 +10174,7 @@ Build system and host system don't have the same dynamic linking state!
 
     eval "$saver"
 
+    fi
 fi
 
 

@@ -300,15 +300,48 @@ Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap)
 
     Vector<String> headervec(sourcevec.size(), String());
     Vector<String> classvec(sourcevec.size(), String());
+    HashMap<String, int> statichash(0);
 
     // collect header file and C++ element class definitions from emap
     for (int i = 1; i < emap.size(); i++) {
 	const Traits &elt = emap.traits_at(i);
 	int sourcei = _source_files[elt.source_file];
 	if (sourcei >= 0) {
+	    // track ELEMENT_LIBS
+	    // ah, if only I had regular expressions
+	    if (!headervec[sourcei] && elt.libs) {
+		StringAccum sa;
+		sa << " -!lib";
+		for (const char *x = elt.libs.begin(); x != elt.libs.end(); x++)
+		    if (isspace(*x)) {
+			sa << ';';
+		    skipspace:
+			while (x + 1 != elt.libs.end() && isspace(x[1]))
+			    x++;
+		    } else if (x + 1 != elt.libs.end() && *x == '-' && x[1] == 'L') {
+			sa << '-' << 'L';
+			x++;
+			goto skipspace;
+		    } else
+			sa << *x;
+		classvec[sourcei] += sa.take_string();
+	    }
+	    // remember header file
 	    headervec[sourcei] = elt.header_file;
+	    // remember name
 	    if (elt.name)
 		classvec[sourcei] += " " + elt.cxx + "-" + elt.name;
+	    // remember static methods
+	    if (elt.methods && !statichash[elt.cxx]) {
+		statichash.insert(elt.cxx, 1);
+		Vector<String> ms;
+		cp_spacevec(elt.methods, ms);
+		for (String *m = ms.begin(); m != ms.end(); m++)
+		    if (*m == "static_initialize")
+			classvec[sourcei] += " " + elt.cxx + "-!si";
+		    else if (*m == "static_cleanup")
+			classvec[sourcei] += " " + elt.cxx + "-!sc";
+	    }
 	}
     }
 

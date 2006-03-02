@@ -4,7 +4,7 @@
 # Eddie Kohler
 #
 # Copyright (c) 1999-2001 Massachusetts Institute of Technology
-# Copyright (c) 2004-2005 Regents of the University of California
+# Copyright (c) 2004-2006 Regents of the University of California
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,8 @@ my(%flow_code_constants) =
     ('COMPLETE_FLOW' => 'x/x');
 my(@source_file, @header_file, @click_name, @cxx_name, @doc_name,
    @parents, @port_count, @processing, @flow_code, @flags, @requirements,
-   @provisions, %click_name_to_id, %cxx_name_to_id);
+   @element_methods, @element_libs, @provisions,
+   %click_name_to_id, %cxx_name_to_id);
 my(@includes) = ( '.' );
 
 sub driver_mask ($) {
@@ -116,6 +117,11 @@ sub process_file ($) {
 	} else {
 	    push @flags, undef;
 	}
+	my($methods) = '';
+	$methods .= "static_initialize " if /\n\s*static\s+void\s+static_initialize/;
+	$methods .= "static_cleanup " if /\n\s*static\s+void\s+static_cleanup/;
+	$methods =~ s/\s+\Z//;
+	push @element_methods, $methods;
     }
 
     # process element documentation
@@ -161,14 +167,14 @@ sub process_file ($) {
     $text = <IN>;
     close IN;
 
-    my($req, $prov, $exp) = ('', '', '');
+    my($req, $prov, $exp, $libs) = ('', '', '', '');
     $req .= " " . $1 while $text =~ /^ELEMENT_REQUIRES\s*\((.*)\)/mg;
     $prov .= " " . $1 while $text =~ /^ELEMENT_PROVIDES\s*\((.*)\)/mg;
     $exp .= " " . $1 while $text =~ /^EXPORT_ELEMENT\s*\((.*)\)/mg;
+    $libs .= " " . $1 while $text =~ /^ELEMENT_LIBS\s*\((.*)\)/mg;
     $req =~ s/^\s+//;
-    $req =~ s/"/\\"/g;
     $prov =~ s/^\s+//;
-    $prov =~ s/"/\\"/g;
+    $libs =~ s/^\s+//;
 
     # make copies of classes as required
     while ($exp =~ /(\S+)-(\S+)/g) {
@@ -185,6 +191,7 @@ sub process_file ($) {
 		push @processing, $processing[$i];
 		push @flow_code, $flow_code[$i];
 		push @flags, $flags[$i];
+		push @element_methods, $element_methods[$i];
 		last;
 	    }
 	}
@@ -202,12 +209,14 @@ sub process_file ($) {
 	push @processing, "";
 	push @flow_code, "";
 	push @flags, undef;
+	push @element_methods, "";
     }
 
     # apply requirements and provisions
     for ($i = $first; $i < @processing; $i++) {
 	push @requirements, $req;
 	push @provisions, $prov;
+	push @element_libs, $libs;
     
 	# check to see if overloading is valid
 	if ($click_name[$i] && exists($click_name_to_id{$click_name[$i]})) {
@@ -314,7 +323,7 @@ sub read_files_from ($) {
 	close IN;
 
 	# Parse file; click-buildtool gets special treatment
-	if ($t =~ /\A#.*click-buildtool findelem/) {
+	if ($t =~ /\A#.*click-(buildtool findelem|mkmindriver)/) {
 	    $t =~ s/^#.*//mg;
 	    @a = map {
 		if (/^(\S+)\s+(\S+)/) {
@@ -502,9 +511,12 @@ foreach $id (sort sorter 0..$#click_name) {
     my($flags) = $flags[$id];
     $flags = parents_flags($id) if !defined($flags);
     print OUT " flags=\"", $flags, "\"" if defined($flags);
+
+    print OUT " methods=\"", $element_methods[$id], "\"" if $element_methods[$id];
   
     print OUT " requires=\"", $requirements[$id], "\"" if $requirements[$id];
     print OUT " provides=\"", $provisions[$id], "\"" if $provisions[$id];
+    print OUT " libs=\"", xml_quote($element_libs[$id]), "\"" if $element_libs[$id];
 
     print OUT " />\n";
 }

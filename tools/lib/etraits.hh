@@ -26,8 +26,10 @@ struct ElementTraits {
     String processing_code;
     String flow_code;
     String flags;
+    String methods;
     String requirements;
     String provisions;
+    String libs;
     int def_index;
     int driver_mask;
     int name_next;
@@ -50,9 +52,9 @@ struct ElementTraits {
     enum {
 	D_NONE,
 	D_CLASS, D_CXX_CLASS, D_HEADER_FILE, D_PORT_COUNT, D_PROCESSING,
-	D_FLOW_CODE, D_FLAGS, D_REQUIREMENTS, D_PROVISIONS,
+	D_FLOW_CODE, D_FLAGS, D_METHODS, D_REQUIREMENTS, D_PROVISIONS, D_LIBS,
 	D_SOURCE_FILE, D_DOC_NAME,
-	D_FIRST_DEFAULT = D_CLASS, D_LAST_DEFAULT = D_PROVISIONS
+	D_FIRST_DEFAULT = D_CLASS, D_LAST_DEFAULT = D_LIBS
     };
     static int parse_component(const String &);
     static ElementTraits make(int, ...);

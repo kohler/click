@@ -60,7 +60,7 @@ Options:
   -f, --force             Ignore file errors.
   -h, --help              Print this message and exit.
 
-Report bugs to <eddietwo@lcs.mit.edu>.
+Report bugs to <kohler@cs.ucla.edu>.
 EOD;
   exit 0;
 }

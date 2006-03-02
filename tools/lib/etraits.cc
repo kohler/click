@@ -166,8 +166,10 @@ ElementTraits::component(int what)
       case D_PROCESSING:	return &processing_code;
       case D_FLOW_CODE:		return &flow_code;
       case D_FLAGS:		return &flags;
+      case D_METHODS:		return &methods;
       case D_REQUIREMENTS:	return &requirements;
       case D_PROVISIONS:	return &provisions;
+      case D_LIBS:		return &libs;
       case D_DOC_NAME:		return &documentation_name;
       default:			return 0;
     }
@@ -187,8 +189,10 @@ ElementTraits::parse_component(const String &s)
 	components.insert("portcount", D_PORT_COUNT);
 	components.insert("processing", D_PROCESSING);
 	components.insert("flowcode", D_FLOW_CODE);
+	components.insert("methods", D_METHODS);
 	components.insert("requires", D_REQUIREMENTS);
 	components.insert("provides", D_PROVISIONS);
+	components.insert("libs", D_LIBS);
 	components.insert("docname", D_DOC_NAME);
 	// for compatibility
 	components.insert("class", D_CLASS);
