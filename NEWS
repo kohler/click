@@ -19,8 +19,9 @@ Version 1.5
 
 * Bug fixes and extensions to many elements, including ARPQuerier,
   EtherSwitch, FromDAGDump, FromDevice (userlevel), ICMPPingSource,
-  IPAddrRewriter, IPFilter/IPClassifier, IPPrint, RandomBitErrors,
-  RatedUnqueue, ToDevice (kernel and userlevel), ToIPSummaryDump.
+  IPAddrRewriter, IPFilter/IPClassifier, IPPrint, LinkUnqueue,
+  RandomBitErrors, RatedUnqueue, ToDevice (kernel and userlevel),
+  ToIPSummaryDump.
 
 * Integrated nsclick patch, and improved nsclick (Michael Voorhaen, Bart
   Braem, kohler).
@@ -65,11 +66,11 @@ Version 1.5
 * Thanks to Dan Aguayo, Mark Allman, Bart Braem, Kristof Cauwel, Spencer
   Chang, YenJung Chang, Jacky Cheng, Beyers Cronje, Weidong Cui, Anne
   Dudfield, Brian Gallaway, Michael Gellman, Chema Gonzalez, Andrew
-  Gorelik, Adam Greenhalgh, Felipe Huici, Bart Jooris, Bob Keyes, Kevin
-  Lahey, Dagang Li, Nikitas Liogkas, Yun Mao, Ross Mcilroy, Alastair
-  McKinley, Indian Mogul, Thomas Paine, Ruoming Pang, Juncheol Park, Vern
-  Paxson, Michael Voorhaen, Michael Walfish, Nick Weaver, Qinghua Ye, Marko
-  Zec, and anyone else whose name was forgotten.
+  Gorelik, Adam Greenhalgh, Trevor Harrison, Felipe Huici, Bart Jooris, Bob
+  Keyes, Kevin Lahey, Dagang Li, Nikitas Liogkas, Yun Mao, Ross Mcilroy,
+  Alastair McKinley, Indian Mogul, Thomas Paine, Ruoming Pang, Juncheol
+  Park, Vern Paxson, Michael Voorhaen, Michael Walfish, Nick Weaver,
+  Qinghua Ye, Marko Zec, and anyone else whose name was forgotten.
 
 
 Version 1.4.3   5.Jan.2005
