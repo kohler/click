@@ -62,8 +62,8 @@ STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o \
 OBJS = $(ELEMENT_OBJS) elements.o nsclick.o
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_NS
-CFLAGS = @CFLAGS@
-CXXFLAGS = @CXXFLAGS@
+CFLAGS = @CFLAGS@ -fpic
+CXXFLAGS = @CXXFLAGS@ -fpic
 DEPCFLAGS = @DEPCFLAGS@
 
 DEFS = @DEFS@
@@ -79,8 +79,10 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: libnsclick.a
+all: libnsclick.so
 
+libnsclick.so: Makefile $(LIBOBJS) $(OBJS)
+	$(CXX) -shared -o libnsclick.so $(LIBOBJS) $(OBJS)
 libnsclick.a: Makefile $(LIBOBJS) $(OBJS)
 	$(AR_CREATE) libnsclick.a $(LIBOBJS) $(OBJS)
 	$(RANLIB) libnsclick.a
@@ -105,14 +107,15 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: libnsclick.a
+install: libnsclick.so
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
-	$(INSTALL) libnsclick.a $(DESTDIR)$(libdir)/libnsclick.a
+	$(INSTALL) libnsclick.so $(DESTDIR)$(libdir)/libnsclick.so
 uninstall:
-	/bin/rm -f $(DESTDIR)$(libdir)/libnsclick.a
+	/bin/rm -f $(DESTDIR)$(libdir)/libnsclick.so
 
 clean:
-	rm -f *.d *.o elements.mk elements.cc elements.conf libnsclick.a
+	rm -f *.d *.o elements.mk elements.cc elements.conf libnsclick.a \
+	libnsclick.so
 distclean: clean
 	-rm -f Makefile
 
