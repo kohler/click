@@ -21,6 +21,7 @@
 #include "settimestampdelta.hh"
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+#include <click/packet_anno.hh>
 CLICK_DECLS
 
 SetTimestampDelta::SetTimestampDelta()
@@ -31,15 +32,44 @@ SetTimestampDelta::~SetTimestampDelta()
 {
 }
 
+int
+SetTimestampDelta::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+    String typ = "RANGE";
+    if (cp_va_parse(conf, this, errh,
+		    cpKeywords,
+		    "TYPE", cpWord, "type", &typ,
+		    cpEnd) < 0)
+	return -1;
+    if (typ == "RANGE")
+	_type = 0;
+    else if (typ == "NOW")
+	_type = 1;
+    else if (typ == "FIRST")
+	_type = 2;
+    else
+	return errh->error("bad TYPE");
+    return 0;
+}
+
 Packet *
 SetTimestampDelta::simple_action(Packet *p)
 {
     Timestamp& tv = p->timestamp_anno();
-    if (tv) {
-	if (!_first)
-	    _first = tv;
-	tv -= _first;
-    }
+    if (tv)
+	switch (_type) {
+	case 0:
+	    if (!_first)
+		_first = tv;
+	    tv -= _first;
+	    break;
+	case 1:
+	    tv = Timestamp::now() - tv;
+	    break;
+	case 2:
+	    tv -= FIRST_TIMESTAMP_ANNO(p);
+	    break;
+	}
     return p;
 }
 

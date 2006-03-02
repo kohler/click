@@ -20,8 +20,8 @@ Version 1.5
 * Bug fixes and extensions to many elements, including ARPQuerier,
   EtherSwitch, FromDAGDump, FromDevice (userlevel), ICMPPingSource,
   IPAddrRewriter, IPFilter/IPClassifier, IPPrint, LinkUnqueue,
-  RandomBitErrors, RatedUnqueue, ToDevice (kernel and userlevel),
-  ToIPSummaryDump.
+  RandomBitErrors, RatedUnqueue, SetTimestamp, ToDevice (kernel and
+  userlevel), ToIPSummaryDump.
 
 * Integrated nsclick patch, and improved nsclick (Michael Voorhaen, Bart
   Braem, kohler).

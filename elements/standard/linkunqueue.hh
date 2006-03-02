@@ -22,7 +22,7 @@ link emulator
 Pulls packets from the single input port, then delays them so as to emulate a
 serial link with latency LATENCY (microsecond precision) and bandwidth
 BANDWIDTH (such as "384kbps"). Thus, every packet is delayed at least
-by LATENCY, and additionally delayed by their packet size and BANDWIDTH, and
+by LATENCY, and additionally delayed by its packet size and BANDWIDTH, and
 by any packets ahead of it in the virtual link. Packets are pushed out the
 single output port when their time comes.
 
@@ -34,8 +34,8 @@ doesn't store any other packets, however; it doesn't pull from its input
 unless there is room on the link. To emulate a link fed by a packet queue, use
 a "Queue -> LinkUnqueue" combination.
 
-LinkUnqueue uses its input packets' "extra length" annotations, and destroys
-their "next packet" annotations.
+LinkUnqueue uses its input packets' "extra length" annotations, destroys their
+"next packet" annotations, and updates their timestamp annotations.
 
 =h latency read-only
 
@@ -78,7 +78,8 @@ class LinkUnqueue : public Element, public Storage { public:
     Packet *_qhead;
     Packet *_qtail;
     Timestamp _latency;
-    enum { S_TASK, S_TIMER, S_ASLEEP } _state;
+    // enum { S_TASK, S_TIMER, S_ASLEEP } _state;
+    bool _back_to_back;
     uint32_t _bandwidth;
     Task _task;
     Timer _timer;

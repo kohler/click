@@ -7,7 +7,7 @@
  * from NYU)
  *
  * Copyright (c) 2003 International Computer Science Institute
- * Copyright (c) 2005 Regents of the University of California
+ * Copyright (c) 2005-2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -68,7 +68,8 @@ LinkUnqueue::initialize(ErrorHandler *errh)
     _timer.initialize(this);
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
     Storage::_capacity = 0x7FFFFFFF;
-    _state = S_ASLEEP;
+    //_state = S_ASLEEP;
+    _back_to_back = false;
     return 0;
 }
 
@@ -120,36 +121,39 @@ LinkUnqueue::run_task()
 {
     bool worked = false;
     Timestamp now = Timestamp::now();
+    Timestamp now_delayed = now + _latency;
 
-    // Read a new packet if there's room
+    // Read a new packet if there's room.  Room is measured by the latency
     if (_signal) {
-	Timestamp now_delayed = now + _latency;
-	
-	// check for timer problems
-	if (_state == S_TIMER && _qtail
-	    && now_delayed >= _qtail->timestamp_anno())
-	    _state = S_TASK;
-	
 	Packet *p;
-	while ((!_qtail || now_delayed >= _qtail->timestamp_anno())
-	       && (p = input(0).pull())) {
+	while (!_qtail || now_delayed >= _qtail->timestamp_anno()) {
+	    // try to pull a packet
+	    if (!(p = input(0).pull()))
+		goto not_back_to_back;
+
+	    // set new timestamp to delayed timestamp
 	    if (_qtail) {
 		_qtail->set_next(p);
-		if ((worked || _state == S_TASK) && _qtail)
+		if (_back_to_back && _qtail)
 		    delay_by_bandwidth(p, _qtail->timestamp_anno());
 		else
 		    delay_by_bandwidth(p, now_delayed);
-		//click_chatter("%{timestamp}: %d GOT NEW %{timestamp}", &now, _state, &_qtail->timestamp_anno());
 	    } else {
 		_qhead = p;
 		delay_by_bandwidth(p, now_delayed);
 	    }
+
+	    // hook up, and remember we were doing this back to back
 	    _qtail = p;
 	    p->set_next(0);
 	    Storage::_tail++;
-	    worked = true;
+	    worked = _back_to_back = true;
 	}
+    } else if (!_qtail || now_delayed > _qtail->timestamp_anno()) {
+    not_back_to_back:
+	_back_to_back = false;
     }
+	    
 
     // Emit packets if it's time
     while (_qhead && now >= _qhead->timestamp_anno()) {
@@ -178,20 +182,19 @@ LinkUnqueue::run_task()
 	expiry -= Timestamp(0, 5000);
 	if (expiry <= now) {
 	    // small delay, reschedule Task
-	    _state = S_TASK;
+	    //_state = S_TASK;
 	    _task.fast_reschedule();
 	} else {
 	    // large delay, schedule Timer instead
-	    _state = S_TIMER;
+	    //_state = S_TIMER;
 	    _timer.schedule_at(expiry);
 	}
     } else if (_signal) {
-	_state = S_TASK;
+	//_state = S_TASK;
 	_task.fast_reschedule();
     } else
-	_state = S_ASLEEP;
+	/*_state = S_ASLEEP*/;
 
-    //click_chatter("\n-> %d", _state);
     return worked;
 }
 

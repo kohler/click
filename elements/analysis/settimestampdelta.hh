@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-SetTimestampDelta()
+SetTimestampDelta([I<keywords> TYPE])
 
 =s timestamps
 
@@ -16,9 +16,21 @@ replace packet timestamps with deltas
 =d
 
 SetTimestampDelta passes packets through, but nonzero packet timestamps are
-replaced with deltas relative to the first nonzero timestamp encountered.
+replaced with deltas.
 
 Keyword arguments are:
+
+=over 8
+
+=item TYPE
+
+Sets the type of delta.  The default is C<RANGE>, which means the delta
+relative to the first nonzero packet timestamp encountered.  Other
+possibilities are C<NOW>, which means the delta between its current timestamp
+and now, and C<FIRST>, which means the delta between its first timestamp
+annotation and its current timestamp.
+
+=back
 
 =h first read-only
 
@@ -42,12 +54,14 @@ class SetTimestampDelta : public Element { public:
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return AGNOSTIC; }
 
+    int configure(Vector<String> &, ErrorHandler *);
     void add_handlers();
 
     Packet *simple_action(Packet *);
     
   private:
 
+    int _type;
     Timestamp _first;
 
     static String read_handler(Element *, void *);
