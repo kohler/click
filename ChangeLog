@@ -1,3 +1,8 @@
+2006-03-03 Friday 11:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/: click-flatten.1 (1.8), click-pretty.1 (1.10), click.1
+	  (1.16), click.o.8 (1.16): nits
+
 2006-03-03 Friday 02:36  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: sr/gatewayselector.cc (1.23),
