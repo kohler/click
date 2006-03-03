@@ -79,7 +79,7 @@ query_responder :: SRQueryResponder(ETHTYPE 0x0945,
 
 
 query_responder -> SetSRChecksum -> [0] output;
-query_forwarder -> SetSRChecksum -> PrintSR(forwarding) -> [0] output;
+query_forwarder -> SetSRChecksum -> [0] output;
 query_forwarder [1] -> query_responder;
 
 data_ck :: SetSRChecksum() 
@@ -100,7 +100,6 @@ forwarder[0]
 
 
 dt[1] 
--> Print(ttl-error) 
 -> ICMPError($srcr_ip, timeexceeded, 0) 
 -> querier;
 
@@ -130,7 +129,7 @@ from_gw_cl [1] -> [1] set_gw [1] -> [3] output;
  
  
  ncl[0] -> CheckSRHeader() -> [0] forwarder;
- ncl[1] -> CheckSRHeader() -> PrintSR(query) -> query_forwarder
+ ncl[1] -> CheckSRHeader() -> query_forwarder
  ncl[2] -> CheckSRHeader() -> query_responder;
  ncl[3] -> es;
  ncl[4] -> CheckSRHeader() -> gw;
@@ -217,7 +216,7 @@ gw_reply ::  SR2GatewayResponder(SEL gw,
 gw_reply -> [1] output;
 
 query_responder -> SR2SetChecksum -> [0] output;
-query_forwarder -> SR2SetChecksum -> SR2Print(forwarding) -> [0] output;
+query_forwarder -> SR2SetChecksum -> [0] output;
 query_forwarder [1] -> query_responder;
 
 data_ck :: SR2SetChecksum() 
@@ -238,7 +237,6 @@ forwarder[0]
 
 
 dt[1] 
--> Print(ttl-error) 
 -> ICMPError($sr2_ip, timeexceeded, 0) 
 -> querier;
 
@@ -268,7 +266,7 @@ from_gw_cl [1] -> [1] set_gw [1] -> [3] output;
  
  
  ncl[0] -> SR2CheckHeader() -> [0] forwarder;
- ncl[1] -> SR2CheckHeader() -> PrintSR(query) -> query_forwarder
+ ncl[1] -> SR2CheckHeader() -> query_forwarder
  ncl[2] -> SR2CheckHeader() -> query_responder;
  ncl[3] -> es;
  ncl[4] -> SR2CheckHeader() -> gw;
