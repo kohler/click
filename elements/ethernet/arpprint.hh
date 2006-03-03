@@ -8,7 +8,7 @@ CLICK_DECLS
 
 ARPPrint([TAG, I<KEYWORDS>])
 
-=s ARP, debugging
+=s arp
 
 pretty-prints ARP packets a la tcpdump
 

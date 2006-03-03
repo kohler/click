@@ -174,70 +174,14 @@ double-quoted strings, commas, spaces, and comment-starting sequences lose
 their regular meaning and are treated as normal characters.
 .PP
 The most common object types are:
-.TP 4
+.TP 3
 \(bu
 .B Strings.
-Any sequence of characters. Single- or double-quoted strings are allowed
-(and required, if the string contains a space or comma). Inside
-double-quoted strings, the following backslash substitutions are performed.
-.RS
-.TP 4
-1.
-C-like substitutions. Specifically:
-.RS
-.TP 3
-\(bu
-`\ea' -> ASCII BEL (hex 07)
-.TP 3
-\(bu
-`\eb' -> ASCII BS (hex 08)
-.TP 3
-\(bu
-`\et' -> ASCII HT (hex 09)
-.TP 3
-\(bu
-`\en' -> ASCII LF (hex 0A)
-.TP 3
-\(bu
-`\ev' -> ASCII VT (hex 0B)
-.TP 3
-\(bu
-`\ef' -> ASCII FF (hex 0C)
-.TP 3
-\(bu
-`\er' -> ASCII CR (hex 0D)
-.TP 3
-\(bu
-`\e\e' -> `\e'
-.TP 3
-\(bu
-`\e[1, 2, or 3 octal digits]' -> that byte
-.TP 3
-\(bu
-`\ex[any number of hex digits]' -> the byte defined by the last
-2 hex digits
-.RE
-.TP 4
-2.
-Data substitutions. An escape sequence `\e< ... hex digits and spaces ...
->' is replaced with the data represented by the hex digits. For example,
-the sequence `\e< 48 45 4c 4C 4f >' is replaced with `HELLO'.
-.TP
-3.
-Backlash-newline sequences (`\e[LF]', `\e[CR]', or `\e[CR][LF]') are removed.
-.TP
-4.
-Any other `\e[CHAR]' sequence is replaced with `[CHAR]'.
-.RE
-.RS
-.Sp
-As a special case, a data substitution sequence `\e< ... >' encountered
-outside of any quoted string acts as if it were enclosed in double quotes.
-(Inside single quotes, `\e< ... >' is not special.)
-.PP
-You can concatenate strings by juxtaposing them. For example, `a"b"c' is
+Any sequence of characters.  Single- or double-quoted strings are allowed
+(and required, if the string contains a space or comma).  Inside
+double-quoted strings, backslash substitutions are performed; see below.
+You can concatenate strings by juxtaposing them.  For example, `a"b"c' is
 equivalent to `abc'.
-.RE
 .TP
 \(bu
 .B Booleans.
@@ -292,6 +236,31 @@ documentation for details.
 If the last argument in a configuration string is empty (containing only
 whitespace and comments), then it is ignored.  Thus, `Element(1, )',
 `Element(1, /* comment */)', and `Element(1)' behave exactly alike.
+'
+.SS "Backslash Substitutions"
+.PP
+The following backslash substitutions are performed inside double quotes.
+Additionally, as a special case, a bare data substitution sequence `\e<
+\&... >' acts as if it were enclosed in double quotes.  (Inside single
+quotes, `\e< ... >' is not special.)
+.TP 4
+1.
+'
+C-like substitutions. Specifically, `\ea', `\eb', `\et', `\en', `\ev',
+`\ef', `\er', `\e\e', and `\e[1, 2, or 3 octal digits]' have their C
+meanings.  `\ex[any number of hex digits]' is replaced with the byte
+defined by the last 2 hex digits.
+.TP 4
+2.
+Data substitutions. An escape sequence `\e< ... hex digits and spaces ...
+>' is replaced with the data represented by the hex digits. For example,
+the sequence `\e< 48 45 4c 4C 4f >' is replaced with `HELLO'.
+.TP
+3.
+Backlash-newline sequences (`\e[LF]', `\e[CR]', or `\e[CR][LF]') are removed.
+.TP
+4.
+Any other `\e[CHAR]' sequence is replaced with `[CHAR]'.
 '
 .SH "COMPOUND ELEMENTS"
 '
@@ -652,12 +621,9 @@ special meaning inside compound element definitions.
 .PP
 The following characters and multi-character sequences are single Click
 tokens:
-.TS
-l l l l l l l l l l l l l.
-	->	::	;	,	(	)	[	]	{	}	|
-	||	...
-.\" ^
-.TE
+.RS
+->\~\~::\~\~;\~\~,\~\~(\~\~)\~\~[\~\~]\~\~{\~\~}\~\~|\~\~||\~\~...
+.RE
 .PP
 Whitespace (using the C definition) and comments separate Click tokens.
 Click uses C++-style comments: from `//' to the end of the line, or from

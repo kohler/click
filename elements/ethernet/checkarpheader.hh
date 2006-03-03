@@ -10,7 +10,7 @@ CLICK_DECLS
 
 CheckARPHeader([OFFSET, I<keywords> OFFSET, VERBOSE, DETAILS])
 
-=s ARP, checking
+=s arp
 
 checks ARP header
 
