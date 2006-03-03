@@ -1,3 +1,7 @@
+2006-03-03 Friday 16:02  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/srcr.click (1.9): remove query messages
+
 2006-03-03 Friday 15:19  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/: gen_config_roofnet.pl (1.11), read_handler.pl (1.2),
