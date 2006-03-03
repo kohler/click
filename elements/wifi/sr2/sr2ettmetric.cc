@@ -146,6 +146,8 @@ SR2ETTMetric::update_link(IPAddress from, IPAddress to,
       int metric = sr2_ett_metric(ack_rev,               
 			      fwd[x],
 			      rs[x]._rate);
+      if (ack_rev < 30 || fwd[x] < 30)
+	      metric = 999999;
 
       if (!fwd_metric || (metric && metric < fwd_metric)) {
 	best_fwd_rate = rs[x]._rate;
@@ -155,7 +157,9 @@ SR2ETTMetric::update_link(IPAddress from, IPAddress to,
       metric = sr2_ett_metric(ack_fwd,               
 			  rev[x],
 			  rs[x]._rate);
-      
+      if (ack_rev < 30 || fwd[x] < 30)
+	      metric = 999999;
+
       if (!rev_metric || (metric && metric < rev_metric)) {
 	rev_metric = metric;
 	best_rev_rate= rs[x]._rate;
