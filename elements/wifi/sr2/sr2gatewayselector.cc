@@ -85,7 +85,7 @@ SR2GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not an ARPtable");
 
-  _gw_expire.set(_period*4, 0);
+  _gw_expire.set(_period*10, 0);
 
   return ret;
 }

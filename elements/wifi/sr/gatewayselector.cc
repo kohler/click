@@ -86,7 +86,7 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("ARPTable element is not an ARPtable");
 
   _gw_expire._subsec = 0;
-  _gw_expire._sec = _period*4;
+  _gw_expire._sec = _period*10;
 
   return ret;
 }
