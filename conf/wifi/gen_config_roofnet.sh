@@ -36,7 +36,7 @@ SRCR2_BCAST="5.255.255.255"
 
 /usr/sbin/wlanconfig ath1 destroy > /dev/null
 /usr/sbin/wlanconfig ath1 create wlandev wifi0 wlanmode monitor > /dev/null
-
+/sbin/ifconfig $DEV mtu 1900
 /sbin/ifconfig $DEV txqueuelen 5
 /sbin/ifconfig $DEV up
 echo '804' >  /proc/sys/net/$DEV/dev_type
