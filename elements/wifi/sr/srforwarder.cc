@@ -215,7 +215,7 @@ SRForwarder::push(int port, Packet *p_in)
     return;
   }
 
-  if (0) {
+  if (1) {
 	  /* update the metrics from the packet */
 	  IPAddress r_from = pk->get_random_from();
 	  IPAddress r_to = pk->get_random_to();
@@ -272,7 +272,18 @@ SRForwarder::push(int port, Packet *p_in)
     (pk->data());
   p->set_ip_header(ip, sizeof(click_ip));
   
-  if (0) {
+  if(pk->next() == pk->num_links()){
+    // I'm the ultimate consumer of this data.
+    /*
+     * set the dst to the gateway it came from 
+     * this is kinda weird.
+     */
+    SET_MISC_IP_ANNO(p, pk->get_link_node(0));
+    output(1).push(p);
+    return;
+  } 
+
+  if (1) {
 	  IPAddress prev = pk->get_link_node(pk->next()-1);
 	  _arp_table->insert(prev, EtherAddress(eh->ether_shost));
 	  uint32_t prev_fwd_metric = (_link_table) ? _link_table->get_link_metric(prev, _ip) : 0;
@@ -286,18 +297,6 @@ SRForwarder::push(int port, Packet *p_in)
 		       prev_fwd_metric, prev_rev_metric,
 		       seq,age);
   }
-
-
-  if(pk->next() == pk->num_links()){
-    // I'm the ultimate consumer of this data.
-    /*
-     * set the dst to the gateway it came from 
-     * this is kinda weird.
-     */
-    SET_MISC_IP_ANNO(p, pk->get_link_node(0));
-    output(1).push(p);
-    return;
-  } 
 
   pk->set_next(pk->next() + 1);
   IPAddress nxt = pk->get_link_node(pk->next());
