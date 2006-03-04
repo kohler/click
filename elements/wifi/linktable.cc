@@ -302,25 +302,21 @@ LinkTable::get_route_metric(Vector<IPAddress> route)
 }
 
 String 
-LinkTable::routes_to_string(Vector< Vector<IPAddress> > routes) {
-  StringAccum sa;
-  for (int x = 0; x < routes.size(); x++) {
-    Vector <IPAddress> r = routes[x];
-    for (int i = 0; i < r.size(); i++) {
-      if (i != 0) {
-	sa << " ";
-      }      
-      sa << r[i] << " ";
-      if (i != r.size()-1) {
-	sa << get_link_metric(r[i], r[i+1]);
-      }
-      
-    }
-    if (r.size() > 0) {
-      sa << "\n";
-    }
-  }
-  return sa.take_string();
+LinkTable::route_to_string(Path p) {
+	StringAccum sa;
+	int hops = p.size()-1;
+	int metric = 0;
+	StringAccum sa2;
+	for (int i = 0; i < p.size(); i++) {
+		sa2 << p[i]; 
+		if (i != p.size()-1) {
+			int m = get_link_metric(p[i], p[i+1]);
+			sa2 << " (" << m << ") ";
+			metric += m;
+		}		
+	}
+	sa << p[0] << " hops " << hops << " metric " << metric << sa2;
+	return sa.take_string();
 }
 bool
 LinkTable::valid_route(Vector<IPAddress> route) 
@@ -386,15 +382,6 @@ LinkTable::best_route(IPAddress dst, bool from_me)
   return reverse_route;
 }
 
-String routes_to_string(Vector<Path> routes) {
-  StringAccum sa;
-  for (int x = 1; x < routes.size(); x++) {
-    sa << path_to_string(routes[x]) << "\n";
-  }
-  return sa.take_string();
-}
-
-
 String 
 LinkTable::print_links() 
 {
@@ -435,18 +422,7 @@ LinkTable::print_routes(bool from_me)
     IPAddress ip = ip_addrs[x];
     Vector <IPAddress> r = best_route(ip, from_me);
     if (valid_route(r)) {
-      sa << ip.s() << " ";
-      for (int i = 0; i < r.size(); i++) {
-	sa << " " << r[i] << " ";
-	if (i != r.size()-1) {
-	  IPPair pair = IPPair(r[i], r[i+1]);
-	  LinkInfo *l = _links.findp(pair);
-	  assert(l);
-	  sa << l->_metric;
-	  sa << " (" << l->_seq << "," << l->age() << ")";
-	}
-      }
-      sa << "\n";
+	    sa << route_to_string(r) << "\n";
     }
   }
   return sa.take_string();

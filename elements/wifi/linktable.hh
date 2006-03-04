@@ -6,6 +6,7 @@
 #include <click/element.hh>
 #include <click/bighashmap.hh>
 #include <click/hashmap.hh>
+#include "path.hh"
 CLICK_DECLS
 
 /*
@@ -78,8 +79,8 @@ public:
 				void *, ErrorHandler *errh);
   void clear();
 
-  String routes_to_string(Vector< Vector<IPAddress> > routes);
   /* other public functions */
+  String route_to_string(Path p);
   bool update_link(IPAddress from, IPAddress to, 
 		   uint32_t seq, uint32_t age, uint32_t metric);
   bool update_both_links(IPAddress a, IPAddress b, 
