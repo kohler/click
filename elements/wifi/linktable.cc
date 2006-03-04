@@ -315,7 +315,7 @@ LinkTable::route_to_string(Path p) {
 			metric += m;
 		}		
 	}
-	sa << p[0] << " hops " << hops << " metric " << metric << sa2;
+	sa << p[0] << " hops " << hops << " metric " << metric << " " << sa2;
 	return sa.take_string();
 }
 bool
