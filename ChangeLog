@@ -1,3 +1,8 @@
+2006-03-04 Saturday 19:03  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/: ettstat.cc (1.38), ettstat.hh (1.22): [no log
+	  message]
+
 2006-03-04 Saturday 18:28  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/linktable.cc (1.28): print correct node in
