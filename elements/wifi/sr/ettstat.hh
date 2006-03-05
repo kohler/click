@@ -325,7 +325,7 @@ public:
 
  public:
   String bad_nodes();
-  String read_bcast_stats();
+  String read_bcast_stats(bool pretty);
 
 
   int get_etx(IPAddress);

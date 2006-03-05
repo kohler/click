@@ -36,6 +36,7 @@ CLICK_DECLS
 enum {
   H_RESET,
   H_BCAST_STATS,
+  H_BCAST_STATS_PRETTY,
   H_BAD_VERSION,
   H_IP,
   H_TAU,
@@ -48,7 +49,8 @@ ETTStat_read_param(Element *e, void *thunk)
 {
   ETTStat *td = (ETTStat *)e;
     switch ((uintptr_t) thunk) {
-    case H_BCAST_STATS: return td->read_bcast_stats();
+    case H_BCAST_STATS: return td->read_bcast_stats(false);
+    case H_BCAST_STATS_PRETTY: return td->read_bcast_stats(true);
     case H_BAD_VERSION: return td->bad_nodes();
     case H_IP: return td->_ip.s() + "\n";
     case H_TAU: return String(td->_tau) + "\n";
@@ -657,7 +659,7 @@ static int ipaddr_sorter(const void *va, const void *vb) {
 }
 
 String
-ETTStat::read_bcast_stats()
+ETTStat::read_bcast_stats(bool pretty)
 {
   Vector<IPAddress> ip_addrs;
   
@@ -676,26 +678,31 @@ ETTStat::read_bcast_stats()
     //sa << _ip << " " << _eth << " ";
     sa << ip;
     if (_arp_table) {
-      EtherAddress eth_dest = _arp_table->lookup(ip);
-      if (eth_dest) {
-	sa << " " << eth_dest.s().c_str();
-      } else {
-	sa << " ?";
-      }
+	    EtherAddress eth_dest = _arp_table->lookup(ip);
+	    if (!pretty) {
+		    if (eth_dest) {
+			    sa << " " << eth_dest.s().c_str();
+		    } else {
+			    sa << " ?";
+		    }
+	    }
     } else {
-      sa << " ?";
+	    if (!pretty) {
+		    sa << " ?";
+	    }
     }
 
+    if (!pretty) {
+	    sa << " seq " << pl->_seq;
+	    sa << " period " << pl->_period;
+	    sa << " tau " << pl->_tau;
+	    sa << " sent " << pl->_sent;
+	    sa << " last_rx " << now - pl->_last_rx;
+	    sa << "\n";
+    }
 
-    sa << " seq " << pl->_seq;
-    sa << " period " << pl->_period;
-    sa << " tau " << pl->_tau;
-    sa << " sent " << pl->_sent;
-    sa << " last_rx " << now - pl->_last_rx;
-    sa << "\n";
-
-
-
+    StringAccum s_forward;
+    StringAccum s_rev;
     for (int x = 0; x < _ads_rs.size(); x++) {
 	    int rate = _ads_rs[x]._rate;
 	    int size = _ads_rs[x]._size;
@@ -704,21 +711,33 @@ ETTStat::read_bcast_stats()
 	    int rssi = pl->rev_rssi(rate, size);
 	    int noise = pl->rev_noise(rate, size);
 
-	    sa << ip;
-	    if (_arp_table) {
-		    EtherAddress eth_dest = _arp_table->lookup(ip);
-		    if (eth_dest) {
-			    sa << " " << eth_dest.s();
+	    if (pretty) {
+		    if (x == 0) {
+			    sa << " " << rssi << " " << noise;
+		    }
+		    s_forward << " " << fwd;
+		    s_rev << " " << rev;
+	    } else {
+		    sa << ip;
+		    if (_arp_table) {
+			    EtherAddress eth_dest = _arp_table->lookup(ip);
+			    if (eth_dest) {
+				    sa << " " << eth_dest.s();
+			    } else {
+				    sa << " ?";
+			    }
 		    } else {
 			    sa << " ?";
 		    }
-	    } else {
-		    sa << " ?";
+		    sa << " [ " << rate << " " << size << " ";
+		    sa << fwd << " " << rev << " ";
+		    sa << rssi << " " << noise << " ]";
+		    sa << "\n";
 	    }
-	    sa << " [ " << rate << " " << size << " ";
-	    sa << fwd << " " << rev << " ";
-	    sa << rssi << " " << noise << " ]";
-	    sa << "\n";
+	    
+    }
+    if (pretty) {
+	    sa << s_forward << s_rev << "\n";
     }
 
   }
@@ -783,6 +802,7 @@ void
 ETTStat::add_handlers()
 {
   add_read_handler("bcast_stats", ETTStat_read_param, (void *) H_BCAST_STATS);
+  add_read_handler("bcast_stats_pretty", ETTStat_read_param, (void *) H_BCAST_STATS_PRETTY);
   add_read_handler("bad_version", ETTStat_read_param, (void *) H_BAD_VERSION);
   add_read_handler("ip", ETTStat_read_param, (void *) H_IP);
   add_read_handler("tau", ETTStat_read_param, (void *) H_TAU);
