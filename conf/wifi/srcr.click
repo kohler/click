@@ -60,7 +60,7 @@ querier :: SRQuerier(ETH $wireless_mac,
 		     LT lt, 
 		     ROUTE_DAMPENING true,
 		     TIME_BEFORE_SWITCH 5,
-		     DEBUG true);
+		     DEBUG false);
 
 
 query_forwarder :: MetricFlood(ETHTYPE 0x0944,
@@ -75,7 +75,7 @@ query_responder :: SRQueryResponder(ETHTYPE 0x0945,
 				    ETH $wireless_mac, 
 				    LT lt, 
 				    ARP arp,
-				    DEBUG true);
+				    DEBUG false);
 
 
 query_responder -> SetSRChecksum -> [0] output;
@@ -185,7 +185,7 @@ querier :: SR2Querier(ETH $wireless_mac,
 		     LT lt, 
 		     ROUTE_DAMPENING true,
 		     TIME_BEFORE_SWITCH 5,
-		     DEBUG true);
+		     DEBUG false);
 
 
 query_forwarder :: SR2MetricFlood(ETHTYPE 0x0644,
@@ -200,7 +200,7 @@ query_responder :: SR2QueryResponder(ETHTYPE 0x0645,
 				    ETH $wireless_mac, 
 				    LT lt, 
 				    ARP arp,
-				    DEBUG true);
+				    DEBUG false);
 
 
 gw_reply ::  SR2GatewayResponder(SEL gw, 
