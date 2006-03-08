@@ -407,7 +407,7 @@ static int ipaddr_sorter(const void *va, const void *vb) {
 
 
 String 
-LinkTable::print_routes(bool from_me) 
+LinkTable::print_routes(bool from_me, bool pretty) 
 {
   StringAccum sa;
 
@@ -422,7 +422,21 @@ LinkTable::print_routes(bool from_me)
     IPAddress ip = ip_addrs[x];
     Vector <IPAddress> r = best_route(ip, from_me);
     if (valid_route(r)) {
-	    sa << route_to_string(r) << "\n";
+	    if (pretty) {
+		    sa << route_to_string(r) << "\n";		    
+	    } else {
+		    sa << r[r.size()-1] << "  ";
+		    for (int a = 0; a < r.size(); a++) {
+			    sa << r[a];
+			    if (a < r.size() - 1) {
+				    sa << " " << get_link_metric(r[a],r[a+1]);
+				    sa << " (" << get_link_seq(r[a],r[a+1])
+				       << "," << get_link_age(r[a],r[a+1])
+				       << ") ";
+			    }
+		    }
+		    sa << "\n";
+	    }
     }
   }
   return sa.take_string();
@@ -625,6 +639,7 @@ enum {H_BLACKLIST,
       H_BLACKLIST_ADD, 
       H_BLACKLIST_REMOVE,
       H_LINKS,
+      H_ROUTES_OLD,
       H_ROUTES_FROM,
       H_ROUTES_TO,
       H_HOSTS,
@@ -649,8 +664,9 @@ LinkTable_read_param(Element *e, void *thunk)
       return sa.take_string() + "\n";
     }
     case H_LINKS:  return td->print_links();
-    case H_ROUTES_TO: return td->print_routes(false);
-    case H_ROUTES_FROM: return td->print_routes(true);
+    case H_ROUTES_TO: return td->print_routes(false, true);
+    case H_ROUTES_FROM: return td->print_routes(true, true);
+    case H_ROUTES_OLD: return td->print_routes(true, false);
     case H_HOSTS:  return td->print_hosts();
     case H_DIJKSTRA_TIME: {
       StringAccum sa;
@@ -696,6 +712,7 @@ LinkTable_write_param(const String &in_s, Element *e, void *vparam,
 void
 LinkTable::add_handlers() {
   add_read_handler("routes", LinkTable_read_param, (void *)H_ROUTES_FROM);
+  add_read_handler("routes_old", LinkTable_read_param, (void *)H_ROUTES_OLD);
   add_read_handler("routes_from", LinkTable_read_param, (void *)H_ROUTES_FROM);
   add_read_handler("routes_to", LinkTable_read_param, (void *)H_ROUTES_TO);
   add_read_handler("links", LinkTable_read_param, (void *)H_LINKS);

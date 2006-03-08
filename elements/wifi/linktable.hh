@@ -71,7 +71,7 @@ public:
   void take_state(Element *, ErrorHandler *);
   void *cast(const char *n);
   /* read/write handlers */
-  String print_routes(bool);
+  String print_routes(bool, bool);
   String print_links();
   String print_hosts();
 
