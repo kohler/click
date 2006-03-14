@@ -30,7 +30,7 @@ gw_reply ::  SR1GatewayResponder(SEL gw,
 				 PERIOD 15);
 
 
-gw_reply -> [1] output;
+gw_reply -> SetSRChecksum -> [1] output;
 
 
 
@@ -204,7 +204,7 @@ query_responder :: SR2QueryResponder(ETHTYPE 0x0645,
 
 
 gw_reply ::  SR2GatewayResponder(SEL gw, 
-				 ETHTYPE 0x0945,
+				 ETHTYPE 0x0645,
 				 IP $sr2_ip,
 				 ETH $wireless_mac,
 				 ARP arp,
@@ -213,7 +213,7 @@ gw_reply ::  SR2GatewayResponder(SEL gw,
 				 PERIOD 15);
 
 
-gw_reply -> [1] output;
+gw_reply -> SR2SetChecksum -> [1] output;
 
 query_responder -> SR2SetChecksum -> [0] output;
 query_forwarder -> SR2SetChecksum -> [0] output;
