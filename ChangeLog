@@ -1,3 +1,7 @@
+2006-03-13 Monday 19:01  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/gen_config_roofnet.sh (1.9): find correct wlanconfig
+
 2006-03-08 Wednesday 16:13  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: linktable.cc (1.29), linktable.hh (1.12): add
