@@ -33,9 +33,14 @@ SRCR2_IP="6.$SUFFIX"
 SRCR2_NM="255.0.0.0"
 SRCR2_NET="6.0.0.0"
 SRCR2_BCAST="5.255.255.255"
+WLANCONFIG=/usr/sbin/wlanconfig
+if [ -f /home/roofnet/bin/wlanconfig ]; then
+	WLANCONFIG=/home/roofnet/bin/wlanconfig
+fi
 
-/usr/sbin/wlanconfig ath1 destroy > /dev/null
-/usr/sbin/wlanconfig ath1 create wlandev wifi0 wlanmode monitor > /dev/null
+
+$WLANCONFIG ath1 destroy > /dev/null
+$WLANCONFIG ath1 create wlandev wifi0 wlanmode monitor > /dev/null
 /sbin/ifconfig $DEV mtu 1900
 /sbin/ifconfig $DEV txqueuelen 5
 /sbin/ifconfig $DEV up
