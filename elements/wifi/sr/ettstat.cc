@@ -529,8 +529,10 @@ ETTStat::simple_action(Packet *p)
   }
 
   if (lp->_sent < (unsigned)l->_sent) {
-    click_chatter("%{element}: %s has reset; clearing probe info",
-		  this, ip.s().c_str());
+	  if (0) {
+		  click_chatter("%{element}: %s has reset; clearing probe info",
+				this, ip.s().c_str());
+	  }
     l->_probes.clear();
   }
   

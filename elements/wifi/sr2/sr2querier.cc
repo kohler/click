@@ -162,10 +162,12 @@ SR2Querier::push(int, Packet *p_in)
 		sent_packet = true;
 	} else {
 		/* no valid route, don't send. */
-		click_chatter("%{element} :: %s no valid route to %s\n",
-			      this,
-			      __func__,
-			      dst.s().c_str());
+		if (_debug) {
+			click_chatter("%{element} :: %s no valid route to %s\n",
+				      this,
+				      __func__,
+				      dst.s().c_str());
+		}
 		p_in->kill();
 	}
 	

@@ -183,10 +183,12 @@ SR2GatewaySelector::forward_ad(Seen *s)
   bool best_valid = _link_table->valid_route(best);
   
   if (!best_valid) {
-    click_chatter("%{element} :: %s :: invalid route from src %s\n",
-		  this,
-		  __func__,
-		  src.s().c_str());
+	  if (0) {
+		  click_chatter("%{element} :: %s :: invalid route from src %s\n",
+				this,
+				__func__,
+				src.s().c_str());
+	  }
     return;
   }
 

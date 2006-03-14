@@ -525,8 +525,10 @@ SR2ETTStat::simple_action(Packet *p)
   }
 
   if (ntohl(lp->_sent) < (unsigned)l->_sent) {
-    click_chatter("SR2ETTStat %s: %s has reset; clearing probe info",
-		  name().c_str(), ip.s().c_str());
+	  if (0) {
+		  click_chatter("SR2ETTStat %s: %s has reset; clearing probe info",
+				name().c_str(), ip.s().c_str());
+	  }
     l->_probes.clear();
   }
   

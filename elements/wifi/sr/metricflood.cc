@@ -165,10 +165,12 @@ MetricFlood::forward_query(Seen *s)
   bool best_valid = _link_table->valid_route(best);
 
   if (!best_valid) {
-    click_chatter("%{element} :: %s :: invalid route from src %s\n",
-		  this,
-		  __func__,
-		  src.s().c_str());
+	  if (_debug) {
+		  click_chatter("%{element} :: %s :: invalid route from src %s\n",
+				this,
+				__func__,
+				src.s().c_str());
+	  }
     p_in->kill();
     return;
   }
