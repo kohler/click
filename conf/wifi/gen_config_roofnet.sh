@@ -5,7 +5,7 @@
 # 
 #
 
-DEV="wifi0raw"
+DEV="ath2"
 GATEWAY="false"
 if [ -f /tmp/is_gateway ]; then
     GATEWAY="true"
