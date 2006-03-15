@@ -1,3 +1,7 @@
+2006-03-15 Wednesday 15:37  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/gen_config_roofnet.sh (1.10): use wifi0raw
+
 2006-03-14 Tuesday 13:18  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: sr/ettstat.cc (1.39), sr/gatewayselector.cc
