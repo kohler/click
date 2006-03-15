@@ -5,14 +5,14 @@
 # 
 #
 
-DEV="ath1"
+DEV="wifi0raw"
 GATEWAY="false"
 if [ -f /tmp/is_gateway ]; then
     GATEWAY="true"
 fi
 
 
-mac=$(/sbin/ifconfig ath0 | sed -n 's/^.*HWaddr \([0-9A-Za-z:]*\).*/\1/p')
+mac=$(/sbin/ifconfig wifi0 | sed -n 's/^.*HWaddr \([0-9A-Za-z:]*\).*/\1/p')
 # extract the bottom three octects to use as IP
                             
 hi_hex=$(echo $mac | sed -n 's/.*:.*:.*:\([0-9A-Za-z:]*\):.*:.*.*/\1/p')
@@ -39,8 +39,9 @@ if [ -f /home/roofnet/bin/wlanconfig ]; then
 fi
 
 
-$WLANCONFIG ath1 destroy > /dev/null
-$WLANCONFIG ath1 create wlandev wifi0 wlanmode monitor > /dev/null
+
+$WLANCONFIG $DEV destroy > /dev/null 2>&1
+$WLANCONFIG $DEV create wlandev wifi0 wlanmode monitor > /dev/null
 /sbin/ifconfig $DEV mtu 1900
 /sbin/ifconfig $DEV txqueuelen 5
 /sbin/ifconfig $DEV up
