@@ -1,3 +1,8 @@
+2006-03-16 Thursday 16:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/script.cc (1.5): fix bug reported by Dan
+	  Aguayo: plain Script(..., pause) will now work
+
 2006-03-15 Wednesday 15:58  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/gen_config_roofnet.sh (1.11): wifi0raw -> ath2
