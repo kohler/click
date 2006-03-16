@@ -295,12 +295,14 @@ Script::initialize(ErrorHandler *errh)
 	/* passive, do nothing */;
     else if (insn == INSN_WAIT_TIME)
 	_timer.schedule_after(Timestamp(_args[_insn_pos], _args2[_insn_pos]));
-    else if (insn == INSN_INITIAL && _type == TYPE_DRIVER) {
+    else if (insn == INSN_INITIAL) {
 	// get rid of the initial runcount so we get called right away
-	router()->adjust_runcount(-1);
+	if (_type == TYPE_DRIVER)
+	    router()->adjust_runcount(-1);
+	else
+	    _timer.schedule_now();
 	_args[0] = 1;
-    } else if (insn == INSN_INITIAL)
-	_timer.schedule_now();
+    }
 
 #if CLICK_USERLEVEL
     if (_type == TYPE_SIGNAL)
