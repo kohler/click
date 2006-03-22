@@ -22,6 +22,8 @@ CXXCOMPILE = $(CLICKCXX) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
 COMPILE = $(CLICKCC) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
 	$(CLICKDEFS) $(CLICKINCLUDES) $(CLICKDEPCFLAGS)
 
+PACKAGE_OBJS ?= kpackage.ko
+
 CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
 CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
 
@@ -45,13 +47,13 @@ endif
 endif
 
 -include $(obj)/kelements.mk
+
+$(package)-objs := $(ELEMENT_OBJS) $(PACKAGE_OBJS) kversion.ko
 endif
 
 obj-m += $(package).o
 
-$(package)-objs := $(ELEMENT_OBJS) kpackage.ko kversion.ko
-
-elemlist $(obj)/kelements.conf: $(CLICK_BUILDTOOL)
+$(obj)/kelements.conf: $(CLICK_BUILDTOOL)
 	echo $(srcdir) | $(CLICK_BUILDTOOL) findelem -r linuxmodule -r $(package) -P > $(obj)/kelements.conf
 $(obj)/kelements.mk: $(obj)/kelements.conf $(CLICK_BUILDTOOL)
 	$(CLICK_BUILDTOOL) elem2make -t linuxmodule < $(obj)/kelements.conf > $(obj)/kelements.mk

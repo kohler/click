@@ -30,8 +30,12 @@ DEFS ?= $(CLICKDEFS)
 INCLUDES ?= $(CLICKINCLUDES)
 LDFLAGS ?= $(CLICKLDFLAGS)
 
+PACKAGE_OBJS ?= kpackage.ko
+
 CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
 CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
+
+ifneq ($(CLICK_LINUXMODULE_2_6),1)
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
 CXXLD = $(CXX)
@@ -56,11 +60,21 @@ ifneq ($(MAKECMDGOALS),clean)
 -include kelements.mk
 endif
 
-OBJS = $(ELEMENT_OBJS) kpackage.ko kversion.ko
+OBJS = $(ELEMENT_OBJS) $(PACKAGE_OBJS) kversion.ko
 
+endif
+
+ifeq ($(CLICK_LINUXMODULE_2_6),1)
+$(package).ko: Makefile Kbuild always
+	$(MAKE) -C $(clicklinuxdir) M=$(shell pwd) CLICK_PACKAGE_MAKING=linuxmodule-26 modules
+Kbuild: $(CLICK_BUILDTOOL)
+	echo 'include $$(obj)/Makefile' >> Kbuild
+	$(CLICK_BUILDTOOL) kbuild >> Kbuild
+else
 $(package).ko: $(clickdatadir)/pkg-linuxmodule.mk $(OBJS)
 	$(LD) -r -o $(package).ko $(OBJS)
 	$(STRIP) -g $(package).ko
+endif
 
 elemlist kelements.conf: $(CLICK_BUILDTOOL)
 	echo $(srcdir) | $(CLICK_BUILDTOOL) findelem -r linuxmodule -r $(package) -P > kelements.conf
@@ -77,10 +91,12 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
+always:
+	@:
 clean:
 	-rm -f $(package).ko
-	-rm -f *.kd *.ko kelements.conf kelements.mk kpackage.cc kversion.c
+	-rm -f *.kd *.ko kelements.conf kelements.mk kpackage.cc kversion.c Kbuild
 	-rm -f .*.o.cmd .*.ko.cmd $(package).mod.c $(package).mod.o $(package).o
 	-rm -rf .tmp_versions
 
-.PHONY: clean elemlist
+.PHONY: clean elemlist always

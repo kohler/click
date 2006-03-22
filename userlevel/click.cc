@@ -6,7 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
- * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2004-2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -399,7 +399,7 @@ main(int argc, char **argv)
       printf("click (Click) %s\n", CLICK_VERSION);
       printf("Copyright (C) 1999-2001 Massachusetts Institute of Technology\n\
 Copyright (C) 2001-2003 International Computer Science Institute\n\
-Copyright (C) 2004 Regents of the University of California\n\
+Copyright (C) 2004-2006 Regents of the University of California\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");

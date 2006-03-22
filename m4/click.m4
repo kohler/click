@@ -436,6 +436,7 @@ AC_DEFUN([CLICK_PROG_GMAKE], [
     SUBMAKE=''
     test -n "$GMAKE" -a "$GMAKE" != make && SUBMAKE="MAKE = $GMAKE"
     AC_SUBST(SUBMAKE)
+    AC_SUBST(GMAKE)
 ])
 
 

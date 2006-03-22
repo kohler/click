@@ -5,6 +5,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,6 +26,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/clp.h>
+#include <click/straccum.hh>
 #include <click/driver.hh>
 #include "toolutils.hh"
 #include <stdio.h>
@@ -85,7 +87,7 @@ static bool output_map;
 
 static String::Initializer string_initializer;
 static String tmpdir;
-static String click_compile_prog;
+static String click_buildtool_prog;
 
 void
 short_usage()
@@ -139,8 +141,8 @@ prepare_tmpdir(RouterT *r, ErrorHandler *errh)
     berrh.fatal("cannot chdir to %s: %s", tmpdir.c_str(), strerror(errno));
 
   // find compile program
-  click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, &cerrh);
-  assert(click_compile_prog);
+  click_buildtool_prog = clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, &cerrh);
+  assert(click_buildtool_prog);
 
   // look for .hh files
   if (r) {
@@ -188,7 +190,7 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
       (errh, "While compiling package '" + req + OBJSUFFIX "':");
 
     // write .cc file
-    String filename = req + ".cc";
+    String filename = req + "_.cc";
     String source_text = ae.data;
     FILE *f = fopen(filename.c_str(), "w");
     if (!f)
@@ -197,7 +199,10 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
     fclose(f);
     
     // run click-compile
-    String compile_command = click_compile_prog + " --driver=" COMPILETARGET " --package=" + req + OBJSUFFIX " " + filename;
+    StringAccum compile_command;
+    compile_command << click_buildtool_prog << " makepackage -C "
+		    << tmpdir << " -t " COMPILETARGET " "
+		    << req << " " << req << "_.cc 1>&2";
     int compile_retval = system(compile_command.c_str());
     if (compile_retval == 127)
       cerrh.fatal("could not run '%s'", compile_command.c_str());

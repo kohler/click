@@ -434,8 +434,8 @@ particular purpose.\n");
   // output
   StringAccum header, source;
   source << "/** click-compile: -w -fno-access-control */\n";
-  header << "#ifndef CLICK_" << package_name << suffix << "_HH\n"
-	 << "#define CLICK_" << package_name << suffix << "_HH\n"
+  header << "#ifndef CLICK_" << package_name << "_HH\n"
+	 << "#define CLICK_" << package_name << "_HH\n"
 	 << "#include <click/package.hh>\n#include <click/element.hh>\n";
   
   specializer.output_package(package_name, source, errh);
@@ -459,7 +459,7 @@ particular purpose.\n");
       exit(1);
     
     // find Click binaries
-    String click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
+    String click_buildtool_prog = clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, errh);
 
     // write header file
     String hh_filename = package_name + suffix + ".hh";
@@ -470,7 +470,7 @@ particular purpose.\n");
     fclose(f);
     
     // write C++ file
-    String cxx_filename = package_name + suffix + ".cc";
+    String cxx_filename = package_name + suffix + "_.cc";
     f = fopen((tmpdir + cxx_filename).c_str(), "w");
     if (!f)
       errh->fatal("%s: %s", (tmpdir + cxx_filename).c_str(), strerror(errno));
@@ -493,7 +493,10 @@ particular purpose.\n");
     
     // compile kernel module
     if (compile_kernel > 0) {
-      String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=kernel --package=" + package_name + ".ko " + cxx_filename;
+      StringAccum compile_command;
+      compile_command << click_buildtool_prog << " makepackage -C "
+		      << tmpdir << " -t linuxmodule "
+		      << package_name << " " << cxx_filename << " 1>&2";
       int compile_retval = system(compile_command.c_str());
       if (compile_retval == 127)
 	errh->fatal("could not run '%s'", compile_command.c_str());
@@ -505,7 +508,10 @@ particular purpose.\n");
     
     // compile userlevel
     if (compile_user > 0) {
-      String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=user --package=" + package_name + ".uo " + cxx_filename;
+      StringAccum compile_command;
+      compile_command << click_buildtool_prog << " makepackage -C "
+		      << tmpdir << " -t userlevel "
+		      << package_name << " " << cxx_filename << " 1>&2";
       int compile_retval = system(compile_command.c_str());
       if (compile_retval == 127)
 	errh->fatal("could not run '%s'", compile_command.c_str());

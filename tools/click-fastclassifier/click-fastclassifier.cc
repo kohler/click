@@ -78,7 +78,7 @@ static const char *program_name;
 static String::Initializer string_initializer;
 static String runclick_prog;
 static String click_buildtool_prog;
-static String click_compile_prog;
+static String quiet_arg;
 static bool verbose;
 
 void
@@ -666,7 +666,7 @@ compile_classifiers(RouterT *r, const String &package_name,
 	fwrite(header.data(), 1, header.length(), f);
 	fclose(f);
 
-	String cxx_filename = package_name + ".cc";
+	String cxx_filename = package_name + "_.cc";
 	f = fopen((tmpdir + cxx_filename).c_str(), "w");
 	if (!f)
 	    errh->fatal("%s%s: %s", tmpdir.c_str(), cxx_filename.c_str(), strerror(errno));
@@ -675,7 +675,10 @@ compile_classifiers(RouterT *r, const String &package_name,
     
 	// compile kernel module
 	if (compile_kernel) {
-	    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=kernel --package=" + package_name + ".ko " + cxx_filename;
+	    StringAccum compile_command;
+	    compile_command << click_buildtool_prog << " makepackage -C "
+			    << tmpdir << " -t linuxmodule " << quiet_arg
+			    << package_name << " " << package_name << "_.cc 1>&2";
 	    int compile_retval = system(compile_command.c_str());
 	    if (compile_retval == 127)
 		errh->fatal("could not run '%s'", compile_command.c_str());
@@ -687,7 +690,10 @@ compile_classifiers(RouterT *r, const String &package_name,
 
 	// compile userlevel
 	if (compile_user) {
-	    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=user --package=" + package_name + ".uo " + cxx_filename;
+	    StringAccum compile_command;
+	    compile_command << click_buildtool_prog << " makepackage -C "
+			    << tmpdir << " -t userlevel " << quiet_arg
+			    << package_name << " " << package_name << "_.cc 1>&2";
 	    int compile_retval = system(compile_command.c_str());
 	    if (compile_retval == 127)
 		errh->fatal("could not run '%s'", compile_command.c_str());
@@ -827,7 +833,6 @@ main(int argc, char **argv)
   bool source_only = false;
   bool config_only = false;
   bool reverse = false;
-  bool quiet = false;
   bool file_is_expr = false;
   
   while (1) {
@@ -902,7 +907,7 @@ particular purpose.\n");
       break;
 
      case QUIET_OPT:
-      quiet = !clp->negated;
+      quiet_arg = (clp->negated ? "" : "-q ");
       break;
 
      case VERBOSE_OPT:
@@ -953,9 +958,6 @@ particular purpose.\n");
   // find Click binaries
   runclick_prog = clickpath_find_file("click", "bin", CLICK_BINDIR, errh);
   click_buildtool_prog = clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, errh);
-  click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
-  if (quiet)
-    click_compile_prog += " -q";
 
   // find Classifiers
   Vector<ElementT *> classifiers;

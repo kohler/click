@@ -20,9 +20,11 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
+bindir=@bindir@
 datadir=@datadir@
 clickdatadir=@clickdatadir@
 LINUXMODULE_2_6=@LINUXMODULE_2_6@
+gmake=@GMAKE@
 
 verbose=""
 elem2=""
@@ -44,6 +46,10 @@ echo_n () {
 '
 }
 
+
+############
+# FINDELEM #
+############
 
 findelem_usage () {
     echo "Usage: click-buildtool findelem [-a] [-V] [-p PREFIX] < [FILES AND DIRECTORIES]
@@ -417,6 +423,9 @@ END {
 
 
 
+##########################
+# ELEM2MAKE/ELEM2PACKAGE #
+##########################
 
 elem2xxx_usage () {
     echo_n "Usage: click-buildtool elem2$elem2 [-p PREFIX] [-V]" 1>&2
@@ -425,7 +434,6 @@ elem2xxx_usage () {
 Try 'click-buildtool elem2$elem2 --help' for more information." 1>&2
     exit 1
 }
-
 
 elem2make () {
     driver=""
@@ -545,7 +553,7 @@ BEGIN { OFS = "" }
     else {
 	dirid = nsubdirs++;
 	subdirid[dir] = dirid;
-	if (dir == "" || substr(dir, 1, 1) == "/")
+	if (dir != "" && substr(dir, 1, 1) == "/")
 	    subdirs[dirid] = dir;
 	else
 	    subdirs[dirid] = "$(obj)/" dir;
@@ -574,7 +582,6 @@ END {
 	echo $libvar = $libs
     fi
 }
-
 
 elem2xxx () {
     package=""
@@ -734,6 +741,11 @@ EOF
 }
 
 
+
+############
+# PROVIDES #
+############
+
 provides_usage () {
     echo "Usage: click-buildtool provides [REQS]" 1>&2
     echo "Try 'click-buildtool provides --help' for more information." 1>&2
@@ -816,6 +828,10 @@ $requirements"; shift 1;;
 }
 
 
+###############
+# FINDPACKAGE #
+###############
+
 findpackage_usage () {
     echo "Usage: click-buildtool findpackage [REQS]" 1>&2
     echo "Try 'click-buildtool findpackage --help' for more information." 1>&2
@@ -889,6 +905,10 @@ s/ /\\\\|/g'`
 }
 
 
+#############
+# QUIETLINK #
+#############
+
 quietlink_usage () {
     echo "Usage: click-buildtool quietlink" 1>&2
     echo "Try 'click-buildtool quietlink --help' for more information." 1>&2
@@ -938,6 +958,11 @@ EOF
 }' 1>&2
 }
 
+
+
+##########
+# PREFIX #
+##########
 
 prefix_usage () {
     echo "Usage: click-buildtool prefix" 1>&2
@@ -1021,9 +1046,9 @@ EOF
 
 
 
-############
-# KVERSION #
-############
+##########
+# KBUILD #
+##########
 
 kbuild_usage () {
     echo_n "Usage: click-buildtool kbuild > Kbuild" 1>&2
@@ -1053,6 +1078,112 @@ EOF
     done
 
     echo "include ${clickdatadir}/pkg-linuxmodule-26.mk"
+}
+
+
+
+###############
+# MAKEPACKAGE #
+###############
+
+makepackage_usage () {
+    echo "Usage: click-buildtool makepackage [-t DRIVER] PACKAGENAME SRCFILES..." 1>&2
+    echo "Try 'click-buildtool makepackage for more information." 1>&2
+    exit 1
+}
+
+makepackage () {
+    driver=""
+    date=`date`
+    dir=
+    pkg=
+    srcs=
+    quiet=
+    while [ x"$1" != x ]; do
+    case $1 in
+    -t|--d|--dr|--dri|--driv|--drive|--driver)
+	test $# -lt 2 && makepackage_usage
+	shift 1; driver="$1"; shift 1;;
+    -t*)
+	driver=`echo "$1" | sed 's/^-D//'`; shift 1;;
+    --dr=*|--dri=*|--driv=*|--drive=*|--driver=*)
+	driver=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
+    --t|--ta|--tar|--targ|--targe|--target)
+        test $# -lt 2 && makepackage_usage
+	shift 1; driver="$1"; shift 1;;
+    --t=*|--ta=*|--tar=*|--targ=*|--targe=*|--target=*)
+	driver=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
+    -C|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
+        test $# -lt 2 && makepackage_usage
+	shift 1; dir="$1"; shift 1;;
+    -C*)
+	dir="`echo "$1" | sed 's/^-C//'`"/; shift 1;;
+    --di=*|--dir=*|--dire=*|--direc=*|--direct=*|--directo=*|--director=*|--directory=*)
+	dir="`echo "$1" | sed 's/^[^=]*=//'`"/; shift 1;;
+    -q|--q|--qu|--qui|--quie|--quiet)
+	quiet="-s"; shift 1;;
+    -h|--h|--he|--hel|--help)
+	cat <<'EOF' 1>&2
+'Click-buildtool makepackage' builds a Click package for the specified
+driver from sources listed on the command line.
+
+Usage: click-buildtool makepackage [-t DRIVER] PACKAGENAME SRCFILES...
+
+Options:
+  -t, --driver DRIVER      Set target driver to DRIVER ('userlevel',
+                           'linuxmodule', 'bsdmodule', or 'ns').
+  -q, --quiet              Build quietly (may be ignored).
+  -C, --directory DIR      Switch to DIR directory before building.
+  -h, --help               Print this message and exit.
+
+Report bugs to <click@pdos.lcs.mit.edu>.
+EOF
+	exit 0;;
+    *)
+	if test -z "$pkg"; then
+	    pkg="$1"; shift 1
+	else
+	    srcs="$srcs
+$1"; shift 1
+	fi;;
+    esac
+    done
+
+    test -z "$srcs" && makepackage_usage
+
+    objs=
+    objsvar=OBJS
+    if test -z "$driver" -o "$driver" = 'user' -o "$driver" = 'userlevel'; then
+	L=u
+    elif test "$driver" = 'kernel' -o "$driver" = 'linuxmodule'; then
+	L=k
+    elif test "$driver" = 'bsdmodule'; then
+	L=b
+    elif test "$driver" = 'ns' -o "$driver" = 'nsmodule'; then
+	L=n
+    else
+	echo "Unknown driver $driver" 1>&2
+	exit 1
+    fi
+    osuffix=".${L}o"
+
+    if test -n "$dir"; then cd "$dir"; fi
+    echo > ${L}elements.conf
+    echo "$srcs" | grep . | elem2make -t $driver > ${L}elements.mk
+    echo "PACKAGE_OBJS :=" >> ${L}elements.mk
+
+    echo "package = $pkg
+
+srcdir = .
+top_srcdir = .
+builddir = .
+top_builddir = .
+
+include ${clickdatadir}/config.mk
+include ${clickdatadir}/pkg-Makefile" > Makefile
+    
+    test -z "$quiet" && echo "+" $gmake $pkg$osuffix
+    $gmake $quiet $pkg$osuffix
 }
 
 
@@ -1096,6 +1227,7 @@ Usage: click-buildtool elem2make [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool quietlink
    or: click-buildtool kversion [--gpl]
    or: click-buildtool kbuild
+   or: click-buildtool makepackage [-t DRIVER] PACKAGENAME SRCFILES...
 
 Options:
   -V, --verbose            Print more information.
@@ -1125,6 +1257,8 @@ EOF
      shift 1; kversion "$@"; exit 0;;
   kbuild)
      shift 1; kbuild "$@"; exit 0;;
+  makepackage)
+     shift 1; makepackage "$@"; exit 0;;
   *)
      echo "Usage: click-buildtool TOOLNAME [ARGUMENTS]
 Try 'click-buildtool --help' for more information." 1>&2

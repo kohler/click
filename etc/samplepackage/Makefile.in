@@ -24,7 +24,6 @@ MAKE_BPACKAGE = @BUILD_BSDMODULE@
 
 # Set 'STRIP_UPACKAGE' to 'strip -g' to strip debugging symbols from the
 # userlevel package before installing.
-STRIP_UPACKAGE = true
 #STRIP_UPACKAGE = $(STRIP) -g
 
 # Set these variables as required.
@@ -33,7 +32,6 @@ INCLUDES = $(CLICKINCLUDES) -I. -I$(top_builddir) -I$(srcdir)
 
 # Set this variable to force 'click-elem2package' to include a header,
 # such as your package's '<config.h>', if necessary.
-ELEM2PACKAGE_INCLUDES =
 #ELEM2PACKAGE_INCLUDES = -i'<config.h>'
 
 # END OF VARIABLES THAT MAY CHANGE BETWEEN PACKAGES

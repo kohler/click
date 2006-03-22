@@ -31,6 +31,7 @@
 
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
 # include <click/userutils.hh>
+# include <click/straccum.hh>
 # include <unistd.h>
 # include <errno.h>
 # include <string.h>
@@ -155,7 +156,7 @@ CLICK_ENDDECLS
 #if HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE)
 CLICK_DECLS
 
-static String *click_compile_prog, *tmpdir;
+static String *click_buildtool_prog, *tmpdir;
 
 static bool
 check_tmpdir(const Vector<ArchiveElement> *archive, ErrorHandler *errh)
@@ -167,10 +168,10 @@ check_tmpdir(const Vector<ArchiveElement> *archive, ErrorHandler *errh)
 	return *tmpdir;
 
     // find compile program
-    if (!click_compile_prog)
-	click_compile_prog = new String(clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh));
-    if (!*click_compile_prog)
-	return *click_compile_prog;
+    if (!click_buildtool_prog)
+	click_buildtool_prog = new String(clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, errh));
+    if (!*click_buildtool_prog)
+	return *click_buildtool_prog;
 
     // store .hh files in temporary directory
     if (archive)
@@ -200,7 +201,7 @@ compile_archive_file(String package, const Vector<ArchiveElement> *archive, int 
     String target = "tool";
 #else
     String package_file = package + ".uo";
-    String target = "user";
+    String target = "userlevel";
 #endif
   
     ContextErrorHandler cerrh
@@ -208,17 +209,24 @@ compile_archive_file(String package, const Vector<ArchiveElement> *archive, int 
 
     // write .cc file
     const ArchiveElement &ae = archive->at(ai);
-    String filename = *tmpdir + ae.name;
-    FILE *f = fopen(filename.c_str(), "w");
+    String filename = ae.name;
+    int rightdot = filename.find_right('.');
+    if (rightdot >= 0 && filename.substring(0, rightdot) == package)
+	filename = package + "_" + filename.substring(rightdot);
+    String filepath = *tmpdir + filename;
+    FILE *f = fopen(filepath.c_str(), "w");
     if (!f) {
-	cerrh.error("%s: %s", filename.c_str(), strerror(errno));
+	cerrh.error("%s: %s", filepath.c_str(), strerror(errno));
 	return String();
     }
     fwrite(ae.data.data(), 1, ae.data.length(), f);
     fclose(f);
   
     // run click-compile
-    String compile_command = *click_compile_prog + " --directory=" + *tmpdir + " --driver=" + target + " --package=" + package_file + " " + filename;
+    StringAccum compile_command;
+    compile_command << *click_buildtool_prog << " makepackage -q -C "
+		    << *tmpdir << " -t " << target << " "
+		    << package << " " << filename << " 1>&2";
     errh->message("%s", compile_command.c_str());
     int compile_retval = system(compile_command.c_str());
     if (compile_retval == 127)
@@ -393,8 +401,8 @@ click_static_cleanup()
 
 # ifdef HAVE_DYNAMIC_LINKING    
     delete tmpdir;
-    delete click_compile_prog;
-    tmpdir = click_compile_prog = 0;
+    delete click_buildtool_prog;
+    tmpdir = click_buildtool_prog = 0;
 # endif /* HAVE_DYNAMIC_LINKING */
 
     String::static_cleanup();
