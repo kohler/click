@@ -214,16 +214,16 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: $(INSTALLOBJS)
 
+ifneq ($(MAKECMDGOALS),clean)
+-include elements.mk
+endif
+
 click.o: Makefile $(OBJS)
 	$(LD) -r -o click.o $(OBJS)
 	$(STRIP) -g click.o
 
 proclikefs.o: proclikefs.c Makefile
 	$(COMPILE) -D__KERNEL__ -DMODULE -c $<
-
-ifneq ($(MAKECMDGOALS),clean)
--include elements.mk
-endif
 
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)
