@@ -163,6 +163,7 @@ distclean:
 	-rm -f Makefile config.status etc/libclick/Makefile
 	-rm -f include/click/config.h include/click/config-*.h include/click/pathvars.h
 	-rm -f config.cache config.log click-buildtool click-compile config.mk stamp-h
+	-rm -f etc/pkg-userlevel.mk etc/pkg-linuxmodule.mk etc/pkg-linuxmodule-26.mk
 	-rm -f elementmap.xml conftest.*
 
 
