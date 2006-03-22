@@ -169,9 +169,6 @@ for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^exopc$/d;/^l
     test -d "$srcdir/elements/$i" -a "$enableval" = "yes" && element_groups="$element_groups $i"
 done
 
-elements_vpath="`(cd $srcdir/elements; for i in $element_groups; do find $i -follow -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' :`"
-AC_SUBST(elements_vpath)
-
 
 
 dnl

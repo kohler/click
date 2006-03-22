@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath freebsd_srcdir freebsd_includedir LIBOBJS EGREP BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS LINUXMODULE_2_6 POSSIBLE_DRIVERS DRIVERS HAVE_USERLEVEL_DRIVER HAVE_LINUXMODULE_DRIVER HAVE_BSDMODULE_DRIVER OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS LINUX_CFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE GMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI clickdatadir provisions LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups freebsd_srcdir freebsd_includedir LIBOBJS EGREP BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS LINUXMODULE_2_6 POSSIBLE_DRIVERS DRIVERS HAVE_USERLEVEL_DRIVER HAVE_LINUXMODULE_DRIVER HAVE_BSDMODULE_DRIVER OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS LINUX_CFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE GMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI clickdatadir provisions LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -4381,9 +4381,6 @@ for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^exopc$/d;/^l
     test -d "$srcdir/elements/$i" -a "$enableval" = "yes" && element_groups="$element_groups $i"
 done
 
-elements_vpath="`(cd $srcdir/elements; for i in $element_groups; do find $i -follow -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' :`"
-
-
 
 
 
@@ -7851,7 +7848,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7854 "configure"
+#line 7851 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -15011,7 +15008,6 @@ s,@ac_ct_STRIP@,$ac_ct_STRIP,;t t
 s,@AR_CREATEFLAGS@,$AR_CREATEFLAGS,;t t
 s,@linuxdir@,$linuxdir,;t t
 s,@element_groups@,$element_groups,;t t
-s,@elements_vpath@,$elements_vpath,;t t
 s,@freebsd_srcdir@,$freebsd_srcdir,;t t
 s,@freebsd_includedir@,$freebsd_includedir,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t

@@ -14,7 +14,7 @@ bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
 
-VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):@elements_vpath@$(top_srcdir)/elements/ns:$(top_srcdir)/elements/userlevel
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/standard
 
 CC = @CC@
 CPP = @CPP@
@@ -54,8 +54,6 @@ GENERIC_OBJS = string.o straccum.o nameinfo.o \
 
 EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 
--include elements.mk
-
 LIBOBJS = $(GENERIC_OBJS) $(STD_ELEMENT_OBJS) clp.o
 STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o \
 	errorelement.o portinfo.o scheduleinfo.o
@@ -80,6 +78,10 @@ CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: libnsclick.so
+
+ifneq ($(MAKECMDGOALS),clean)
+-include elements.mk
+endif
 
 libnsclick.so: Makefile $(LIBOBJS) $(OBJS)
 	$(CXX) -shared -o libnsclick.so $(LIBOBJS) $(OBJS)

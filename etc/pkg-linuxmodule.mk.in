@@ -30,6 +30,7 @@ DEFS ?= $(CLICKDEFS)
 INCLUDES ?= $(CLICKINCLUDES)
 LDFLAGS ?= $(CLICKLDFLAGS)
 
+packagesrcdir ?= $(srcdir)
 PACKAGE_OBJS ?= kpackage.ko
 
 CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
@@ -43,16 +44,17 @@ CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+FIXDEP = @-sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
 
 .SUFFIXES:
 .SUFFIXES: .c .cc .ko .kii
 
 .c.ko:
 	$(COMPILE) -c $< -o $@
-	@-sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
+	$(FIXDEP)
 .cc.ko:
 	$(CXXCOMPILE) -c $< -o $@
-	@-sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
+	$(FIXDEP)
 .cc.kii:
 	$(CXXCOMPILE) -E $< > $@
 
@@ -77,7 +79,7 @@ $(package).ko: $(clickdatadir)/pkg-linuxmodule.mk $(OBJS)
 endif
 
 elemlist kelements.conf: $(CLICK_BUILDTOOL)
-	echo $(srcdir) | $(CLICK_BUILDTOOL) findelem -r linuxmodule -r $(package) -P > kelements.conf
+	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) findelem -r linuxmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > kelements.conf
 kelements.mk: kelements.conf $(CLICK_BUILDTOOL)
 	$(CLICK_BUILDTOOL) elem2make -t linuxmodule < kelements.conf > kelements.mk
 kpackage.cc: kelements.conf $(CLICK_BUILDTOOL)

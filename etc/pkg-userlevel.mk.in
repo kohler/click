@@ -34,6 +34,7 @@ DEFS ?= $(CLICKDEFS)
 INCLUDES ?= $(CLICKINCLUDES)
 LDFLAGS ?= $(CLICKLDFLAGS)
 
+packagesrcdir ?= $(srcdir)
 PACKAGE_OBJS ?= upackage.uo
 
 CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
@@ -46,16 +47,17 @@ CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+FIXDEP = @-sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
 
 .SUFFIXES:
 .SUFFIXES: .c .cc .uo .uii
 
 .c.uo:
 	$(COMPILE) -c $< -o $@
-	@-sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
+	$(FIXDEP)
 .cc.uo:
 	$(CXXCOMPILE) -c $< -o $@
-	@-sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
+	$(FIXDEP)
 .cc.uii:
 	$(CXXCOMPILE) -E $< > $@
 
@@ -70,7 +72,7 @@ $(package).uo: $(clickdatadir)/pkg-userlevel.mk $(OBJS)
 	$(STRIP_UPACKAGE) $(package).uo
 
 elemlist uelements.conf: $(CLICK_BUILDTOOL)
-	echo $(srcdir) | $(CLICK_BUILDTOOL) findelem -r userlevel -r $(package) -P > uelements.conf
+	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) findelem -r userlevel -r $(package) -P $(CLICKFINDELEMFLAGS) > uelements.conf
 uelements.mk: uelements.conf $(CLICK_BUILDTOOL)
 	$(CLICK_BUILDTOOL) elem2make -t userlevel < uelements.conf > uelements.mk
 upackage.cc: uelements.conf $(CLICK_BUILDTOOL)

@@ -14,7 +14,7 @@ libdir = @libdir@
 freebsd_includedir = @freebsd_includedir@
 freebsd_srcdir = @freebsd_srcdir@
 
-VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):@elements_vpath@$(top_srcdir)/elements/bsdmodule
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir)
 
 CC = @CC@
 CPP = @CPP@
@@ -65,8 +65,6 @@ BSDMODULE_OBJS = config.o sched.o module.o \
 
 EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 
--include elements.mk
-
 OBJS = setdef0.o $(GENERIC_OBJS) $(ELEMENT_OBJS) $(BSDMODULE_OBJS) elements.o setdef1.o
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_BSDMODULE -DBSD_NETISRSCHED
@@ -87,6 +85,10 @@ CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: $(INSTALLOBJS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include elements.mk
+endif
 
 click.ko: Makefile vnode_if.h $(OBJS)
 	$(LD) -Bshareable -o click.ko $(OBJS)

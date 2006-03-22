@@ -73,10 +73,6 @@ CLICKmkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make --linux26
 
-ifneq ($(MAKECMDGOALS),clean)
--include $(obj)/elements.mk
-endif
-
 CLICKCC = @KERNEL_CC@
 CLICKCXX = @KERNEL_CXX@
 
@@ -140,6 +136,10 @@ $(obj)/elements.o : $(obj)/elements.cc
 $(obj)/proclikefs_.o : $(srcdir)/proclikefs.c
 	$(call if_changed_dep,xcompile)
 
+ifneq ($(MAKECMDGOALS),clean)
+-include $(obj)/elements.mk
+endif
+
 # Don't install in Linux directories for now
 # $(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules_install
 install: Makefile elements.mk elements.cc all
@@ -159,7 +159,7 @@ top_srcdir := @top_srcdir@
 srcdir := @srcdir@
 top_builddir := ..
 
-VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):@elements_vpath@$(top_srcdir)/elements/linuxmodule
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/standard
 
 CC = @KERNEL_CC@
 CPP = @CPP@
@@ -191,10 +191,6 @@ CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make
 	$(CXXCOMPILE) -E $< > $@
 
 
-ifneq ($(MAKECMDGOALS),clean)
--include elements.mk
-endif
-
 OBJS = $(LIB_CXX_OBJS) $(LIB_C_OBJS) $(STD_ELEMENT_OBJS) $(ELEMENT_OBJS) \
 	$(LINUXMODULE_CXX_OBJS) $(LINUXMODULE_C_OBJS) elements.o
 
@@ -218,17 +214,21 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: $(INSTALLOBJS)
 
-DEPFILES := $(wildcard *.d)
-ifneq ($(DEPFILES),)
-include $(DEPFILES)
-endif
-
 click.o: Makefile $(OBJS)
 	$(LD) -r -o click.o $(OBJS)
 	$(STRIP) -g click.o
 
 proclikefs.o: proclikefs.c Makefile
 	$(COMPILE) -D__KERNEL__ -DMODULE -c $<
+
+ifneq ($(MAKECMDGOALS),clean)
+-include elements.mk
+endif
+
+DEPFILES := $(wildcard *.d)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
 
 install: $(INSTALLOBJS)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
