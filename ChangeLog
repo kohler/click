@@ -1,3 +1,17 @@
+2006-03-22 Wednesday 04:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* aclocal.m4 (1.52), click-buildtool.in (1.79), configure (1.72),
+	  etc/pkg-Makefile (1.2), etc/pkg-linuxmodule-26.mk.in (1.2),
+	  etc/pkg-linuxmodule.mk.in (1.2), etc/pkg-userlevel.mk.in (1.2),
+	  etc/samplepackage/Makefile.in (1.51), lib/driver.cc (1.32),
+	  m4/click.m4 (1.53),
+	  tools/click-devirtualize/click-devirtualize.cc (1.50),
+	  tools/click-fastclassifier/click-fastclassifier.cc (1.71),
+	  tools/click-install/click-install.cc (1.61), userlevel/click.cc
+	  (1.108): click-fastclassifier can automatically compile packages
+	  (without the use of click-compile); update build system to
+	  compensate
+
 2006-03-22 Wednesday 02:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.130), click-buildtool.in (1.78), config.mk.in
