@@ -57,7 +57,8 @@ tools: Makefile
 install: Makefile click-buildtool click-compile stamp-h
 	@for d in $(ALL_TARGETS); do (cd $$d && $(MAKE) install) || exit 1; done
 	@$(MAKE) install-local install-doc install-local-include
-install-local: elementmap.xml click-buildtool click-compile
+install-local: elementmap.xml click-buildtool click-compile config.mk \
+	etc/pkg-userlevel.mk etc/pkg-linuxmodule.mk etc/pkg-linuxmodule-26.mk
 	$(mkinstalldirs) $(DESTDIR)$(bindir)
 	$(INSTALL_IF_CHANGED) click-buildtool $(DESTDIR)$(bindir)/click-buildtool
 	$(INSTALL_IF_CHANGED) click-compile $(DESTDIR)$(bindir)/click-compile
@@ -65,6 +66,11 @@ install-local: elementmap.xml click-buildtool click-compile
 	$(INSTALL_IF_CHANGED) $(top_srcdir)/test/testie $(DESTDIR)$(bindir)/testie
 	$(mkinstalldirs) $(DESTDIR)$(clickdatadir)
 	$(INSTALL_DATA) elementmap.xml $(DESTDIR)$(clickdatadir)/elementmap.xml
+	$(INSTALL_DATA_IF_CHANGED) config.mk $(DESTDIR)$(clickdatadir)/config.mk
+	$(INSTALL_DATA_IF_CHANGED) etc/pkg-userlevel.mk $(DESTDIR)$(clickdatadir)/pkg-userlevel.mk
+	$(INSTALL_DATA_IF_CHANGED) etc/pkg-linuxmodule.mk $(DESTDIR)$(clickdatadir)/pkg-linuxmodule.mk
+	$(INSTALL_DATA_IF_CHANGED) etc/pkg-linuxmodule-26.mk $(DESTDIR)$(clickdatadir)/pkg-linuxmodule-26.mk
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/etc/pkg-Makefile $(DESTDIR)$(clickdatadir)/pkg-Makefile
 	(cd $(top_srcdir); pwd) > $(DESTDIR)$(clickdatadir)/srcdir
 	/bin/rm -rf $(DESTDIR)$(clickdatadir)/src
 	/bin/ln -s "`cd $(top_srcdir); pwd`" $(DESTDIR)$(clickdatadir)/src
@@ -94,7 +100,8 @@ uninstall: elementmap.xml
 	@for d in $(ALL_TARGETS) doc; do (cd $$d && $(MAKE) uninstall) || exit 1; done
 	@$(MAKE) uninstall-local uninstall-local-include
 uninstall-local:
-	/bin/rm -f $(DESTDIR)$(bindir)/click-buildtool $(DESTDIR)$(bindir)/click-compile $(DESTDIR)$(bindir)/click-mkelemmap $(DESTDIR)$(clickdatadir)/elementmap.xml $(DESTDIR)$(clickdatadir)/srcdir $(DESTDIR)$(clickdatadir)/src
+	/bin/rm -f $(DESTDIR)$(bindir)/click-buildtool $(DESTDIR)$(bindir)/click-compile $(DESTDIR)$(bindir)/click-mkelemmap $(DESTDIR)$(clickdatadir)/elementmap.xml $(DESTDIR)$(clickdatadir)/srcdir $(DESTDIR)$(clickdatadir)/src $(DESTDIR)$(clickdatadir)/config.mk
+	/bin/rm -f $(DESTDIR)$(clickdatadir)/pkg-userlevel.mk $(DESTDIR)$(clickdatadir)/pkg-linuxmodule.mk $(DESTDIR)$(clickdatadir)/pkg-linuxmodule-26.mk $(DESTDIR)$(clickdatadir)/pkg-Makefile
 uninstall-local-include:
 	cd $(srcdir)/include/click; for i in *.h *.hh *.cc; do /bin/rm -f $(DESTDIR)$(clickincludedir)/$$i; done
 	cd $(top_builddir); for i in *.h; do /bin/rm -f $(DESTDIR)$(clickincludedir)/$$i; done
@@ -118,6 +125,18 @@ click-compile: $(srcdir)/click-compile.in config.status
 	cd $(top_builddir) && \
 	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 	@chmod +x click-compile; touch click-compile
+config.mk: $(srcdir)/config.mk.in config.status
+	cd $(top_builddir) && \
+	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+etc/pkg-userlevel.mk: $(srcdir)/etc/pkg-userlevel.mk.in config.status
+	cd $(top_builddir) && \
+	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+etc/pkg-linuxmodule.mk: $(srcdir)/etc/pkg-linuxmodule.mk.in config.status
+	cd $(top_builddir) && \
+	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+etc/pkg-linuxmodule-26.mk: $(srcdir)/etc/pkg-linuxmodule-26.mk.in config.status
+	cd $(top_builddir) && \
+	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/m4/click.m4
 	cd $(srcdir) && $(ACLOCAL) && $(AUTOCONF)
@@ -143,7 +162,7 @@ distclean:
 	@-for d in @POSSIBLE_DRIVERS@ tools doc; do (cd $$d && $(MAKE) distclean); done
 	-rm -f Makefile config.status etc/libclick/Makefile
 	-rm -f include/click/config.h include/click/config-*.h include/click/pathvars.h
-	-rm -f config.cache config.log click-buildtool click-compile stamp-h
+	-rm -f config.cache config.log click-buildtool click-compile config.mk stamp-h
 	-rm -f elementmap.xml conftest.*
 
 

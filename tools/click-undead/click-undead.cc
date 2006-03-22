@@ -632,7 +632,7 @@ particular purpose.\n");
 
   // find and parse 'elementmap'
   ElementMap *emap = ElementMap::default_map();
-  emap->parse_all_files(r, CLICK_SHAREDIR, p_errh);
+  emap->parse_all_files(r, CLICK_DATADIR, p_errh);
 
   // check configuration for driver indifference
   bool indifferent = emap->driver_indifferent(r, Driver::ALLMASK, default_errh);

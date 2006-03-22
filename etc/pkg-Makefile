@@ -1,0 +1,90 @@
+VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)
+
+ifeq ($(CLICK_PACKAGE_MAKING),userlevel)
+include $(clickdatadir)/pkg-userlevel.mk
+endif
+
+ifeq ($(CLICK_PACKAGE_MAKING),linuxmodule)
+include $(clickdatadir)/pkg-linuxmodule.mk
+endif
+
+ifeq ($(CLICK_PACKAGE_MAKING),bsdmodule)
+include $(clickdatadir)/pkg-bsdmodule.mk
+endif
+
+ifeq ($(CLICK_PACKAGE_MAKING),)
+
+CLICK_BUILDTOOL = $(clickbindir)/click-buildtool
+CLICK_ELEM2PACKAGE = $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
+
+# set TARGETS, etc. based on MAKE_UPACKAGE, MAKE_KPACKAGE, and MAKE_BPACKAGE
+ifeq ($(MAKE_UPACKAGE),1)
+TARGETS += $(package).uo
+DRIVERS += userlevel
+endif
+ifeq ($(MAKE_KPACKAGE),1)
+TARGETS += $(package).ko
+DRIVERS += linuxmodule
+endif
+ifeq ($(MAKE_BPACKAGE),1)
+TARGETS += $(package).bo
+DRIVERS += bsdmodule
+endif
+
+all: $(TARGETS)
+
+$(package).uo: Makefile always
+	$(MAKE) CLICK_PACKAGE_MAKING=userlevel $(package).uo
+
+ifeq ($(CLICK_LINUXMODULE_2_6),1)
+$(package).ko: Makefile Kbuild always
+	$(MAKE) -C $(clicklinuxdir) M=$(shell pwd) modules
+Kbuild: $(CLICK_BUILDTOOL)
+	echo 'CLICK_PACKAGE_MAKING=linuxmodule-26' > Kbuild
+	echo 'include $$(obj)/Makefile' >> Kbuild
+	$(CLICK_BUILDTOOL) kbuild >> Kbuild
+else
+$(package).ko: Makefile always
+	$(MAKE) CLICK_PACKAGE_MAKING=linuxmodule $(package).ko
+endif
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+elemlist:
+	for i in $(DRIVERS); do $(MAKE) CLICK_PACKAGE_MAKING=$$i elemlist; done
+
+elementmap-$(package).xml: $(clickbindir)/click-mkelemmap always
+	r="$(DRIVERS) $(package)"; echo $(srcdir) | $(CLICK_BUILDTOOL) findelem -r "$$r" -P | $(clickbindir)/click-mkelemmap -r "$(package)" -t "$(DRIVERS)" -s `cd $(srcdir) && pwd` > elementmap-$(package).xml
+always:
+	@:
+
+install: install-obj install-man elementmap-$(package).xml always
+	$(mkinstalldirs) $(DESTDIR)$(clickdatadir)
+	$(INSTALL_DATA) elementmap-$(package).xml $(DESTDIR)$(clickdatadir)/elementmap-$(package).xml
+install-obj: $(TARGETS) always
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	for i in $(TARGETS); do $(INSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
+install-man: always elementmap-$(package).xml
+	$(mkinstalldirs) $(DESTDIR)$(mandir)
+	$(mkinstalldirs) $(DESTDIR)$(mandir)/mann
+	$(clickbindir)/click-elem2man -L -d $(DESTDIR)$(mandir)/mann -P $(package) -e $(DESTDIR)$(clickdatadir)/elementmap.xml elementmap-$(package).xml
+
+uninstall: uninstall-obj uninstall-man always
+	/bin/rm -f $(DESTDIR)$(clickdatadir)/elementmap-$(package).xml
+uninstall-obj: always
+	for i in $(TARGETS); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
+uninstall-man: always elementmap-$(package).xml
+	$(clickbindir)/click-elem2man -L -d $(DESTDIR)$(mandir)/mann -P $(package) -e $(DESTDIR)$(clickdatadir)/elementmap.xml -u elementmap-$(package).xml
+
+clean:
+	@for i in $(DRIVERS); do make CLICK_PACKAGE_MAKING=$$i clean; done
+	-rm -f elementmap-$(package).xml conftest.*
+distclean: clean
+	-rm -f Makefile config.h config.status config.cache config.log
+
+.PHONY: all always clean distclean elemlist \
+	install install-obj install-man uninstall uninstall-obj uninstall-man
+
+endif

@@ -1,5 +1,6 @@
-Makefile *.d *.kd *.ud *.ko *.uo
-kelements.conf uelements.conf elements.mk
-kpackage.cc upackage.cc
-config.h configure
+Makefile Kbuild *.d *.kd *.ud *.ko *.uo
+kelements.conf kelements.mk kpackage.cc kversion.c
+uelements.conf uelements.mk upackage.cc
+config.h configure config.log config.status
 autom4te*
+*.o.cmd *.ko.cmd sample.mod.c .tmp_versions

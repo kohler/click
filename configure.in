@@ -635,6 +635,13 @@ dnl
 DRIVERS=
 AC_SUBST(DRIVERS)
 
+HAVE_USERLEVEL_DRIVER=0
+AC_SUBST(HAVE_USERLEVEL_DRIVER)
+HAVE_LINUXMODULE_DRIVER=0
+AC_SUBST(HAVE_LINUXMODULE_DRIVER)
+HAVE_BSDMODULE_DRIVER=0
+AC_SUBST(HAVE_BSDMODULE_DRIVER)
+
 OTHER_TARGETS=
 AC_SUBST(OTHER_TARGETS)
 
@@ -664,6 +671,7 @@ pcap.h and/or -lpcap not found; user-level driver can't steal packets.
     fi
     DRIVERS="$DRIVERS userlevel"
     AC_DEFINE(HAVE_USERLEVEL_DRIVER)
+    HAVE_USERLEVEL_DRIVER=1
 fi
 
 
@@ -835,6 +843,7 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 	DRIVERS="$DRIVERS linuxmodule"
 	TOOL_TARGETS="$TOOL_TARGETS click-install"
 	AC_DEFINE(HAVE_LINUXMODULE_DRIVER)
+	HAVE_LINUXMODULE_DRIVER=1
     elif test x$enable_linuxmodule_default = xyes; then
 	AC_MSG_WARN([
 =========================================
@@ -880,6 +889,7 @@ if test $ac_have_bsd_kernel = y; then
 	TOOL_TARGETS="$TOOL_TARGETS click-install"
     fi
     AC_DEFINE(HAVE_BSDMODULE_DRIVER)
+    HAVE_BSDMODULE_DRIVER=1
 fi
 
 
@@ -990,12 +1000,18 @@ if test x$infodir = 'x${prefix}/info'; then
 fi
 
 shell_expand bindir
+shell_expand sbindir
 shell_expand libdir
 shell_expand datadir
+shell_expand includedir
+shell_expand datadir
+
+clickdatadir="$datadir/click"
+AC_SUBST(clickdatadir)
 
 AC_DEFINE_UNQUOTED(CLICK_BINDIR, "$bindir")
 AC_DEFINE_UNQUOTED(CLICK_LIBDIR, "$libdir")
-AC_DEFINE_UNQUOTED(CLICK_SHAREDIR, "$datadir/click")
+AC_DEFINE_UNQUOTED(CLICK_DATADIR, "$clickdatadir")
 
 
 dnl
@@ -1063,7 +1079,7 @@ dnl
 dnl Output
 dnl
 
-config_files="Makefile click-buildtool click-compile tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile"
+config_files="Makefile click-buildtool click-compile config.mk tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-userlevel.mk etc/pkg-linuxmodule.mk etc/pkg-linuxmodule-26.mk"
 for ac_dir in $POSSIBLE_DRIVERS; do
     config_files="$config_files $ac_dir/Makefile"
 done

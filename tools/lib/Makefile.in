@@ -8,7 +8,6 @@ subdir = tools/lib
 conf_auxdir = @conf_auxdir@
 
 prefix = @prefix@
-exec_prefix = @exec_prefix@
 bindir = @bindir@
 libdir = @libdir@
 includedir = @includedir@

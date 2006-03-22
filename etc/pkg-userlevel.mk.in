@@ -1,0 +1,83 @@
+CLICKBUILD = userlevel
+
+CLICKCC = @CC@
+CLICKCPP = @CPP@
+CLICKCXX = @CXX@
+CLICKCXXCPP = @CXXCPP@
+CLICKAR_CREATE = @AR@ @AR_CREATEFLAGS@
+CLICKRANLIB = @RANLIB@
+
+CLICKCPPFLAGS = @CPPFLAGS@ -DCLICK_USERLEVEL
+CLICKCFLAGS = -fPIC @CFLAGS@
+CLICKCXXFLAGS = -fPIC @CXXFLAGS@
+CLICKDEPCFLAGS = @DEPCFLAGS@
+
+CLICKDEFS = @DEFS@
+CLICKINCLUDES = -I$(clickincludedir) -I$(clicksrcdir) @PCAP_INCLUDES@
+CLICKLDFLAGS = @LDMODULEFLAGS@
+
+CC ?= $(CLICKCC)
+CPP ?= $(CLICKCPP)
+CXX ?= $(CLICKCXX)
+CXXCPP ?= $(CLICKCXXCPP)
+AR_CREATE ?= $(CLICKAR_CREATE)
+RANLIB ?= $(CLICKRANLIB)
+
+CPPFLAGS ?= $(CLICKCPPFLAGS)
+CFLAGS ?= $(CLICKCFLAGS)
+CXXFLAGS ?= $(CLICKCXXFLAGS)
+DEPCFLAGS ?= $(CLICKDEPCFLAGS)
+
+DEFS ?= $(CLICKDEFS)
+INCLUDES ?= $(CLICKINCLUDES)
+LDFLAGS ?= $(CLICKLDFLAGS)
+
+CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
+CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
+
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+
+.SUFFIXES:
+.SUFFIXES: .c .cc .uo .uii
+
+.c.uo:
+	$(COMPILE) -c $< -o $@
+	@-sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
+.cc.uo:
+	$(CXXCOMPILE) -c $< -o $@
+	@-sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
+.cc.uii:
+	$(CXXCOMPILE) -E $< > $@
+
+ifneq ($(MAKECMDGOALS),clean)
+-include uelements.mk
+endif
+
+OBJS = $(ELEMENT_OBJS) upackage.uo
+
+$(package).uo: $(clickdatadir)/pkg-userlevel.mk $(OBJS)
+	$(CXXLINK) -o $(package).uo $(OBJS)
+	$(STRIP_UPACKAGE) $(package).uo
+
+elemlist uelements.conf: $(CLICK_BUILDTOOL)
+	echo $(srcdir) | $(CLICK_BUILDTOOL) findelem -r userlevel -r $(package) -P > uelements.conf
+uelements.mk: uelements.conf $(CLICK_BUILDTOOL)
+	$(CLICK_BUILDTOOL) elem2make -t userlevel < uelements.conf > uelements.mk
+upackage.cc: uelements.conf $(CLICK_BUILDTOOL)
+	$(CLICK_ELEM2PACKAGE) $(package) < uelements.conf > upackage.cc
+	@rm -f upackage.ud
+
+DEPFILES := $(wildcard *.ud)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
+
+clean:
+	-rm -f *.ud *.uo uelements.conf uelements.mk upackage.cc $(package).uo
+
+.PHONY: clean elemlist

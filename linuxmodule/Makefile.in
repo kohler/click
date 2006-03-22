@@ -73,7 +73,9 @@ CLICKmkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make --linux26
 
+ifneq ($(MAKECMDGOALS),clean)
 -include $(obj)/elements.mk
+endif
 
 CLICKCC = @KERNEL_CC@
 CLICKCXX = @KERNEL_CXX@
@@ -189,7 +191,9 @@ CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make
 	$(CXXCOMPILE) -E $< > $@
 
 
+ifneq ($(MAKECMDGOALS),clean)
 -include elements.mk
+endif
 
 OBJS = $(LIB_CXX_OBJS) $(LIB_C_OBJS) $(STD_ELEMENT_OBJS) $(ELEMENT_OBJS) \
 	$(LINUXMODULE_CXX_OBJS) $(LINUXMODULE_C_OBJS) elements.o

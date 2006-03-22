@@ -1,0 +1,12 @@
+clickprefix=@prefix@
+clickbindir=@bindir@
+clicksbindir=@sbindir@
+clicklibdir=@libdir@
+clickincludedir=@includedir@
+clickdatadir=@clickdatadir@
+clicklinuxdir=@linuxdir@
+clicksrcdir=@clickdatadir@/src
+CLICK_HAVE_USERLEVEL_DRIVER=@HAVE_USERLEVEL_DRIVER@
+CLICK_HAVE_LINUXMODULE_DRIVER=@HAVE_LINUXMODULE_DRIVER@
+CLICK_HAVE_BSDMODULE_DRIVER=@HAVE_BSDMODULE_DRIVER@
+CLICK_LINUXMODULE_2_6=@LINUXMODULE_2_6@

@@ -9,7 +9,6 @@ subdir = userlevel
 conf_auxdir = @conf_auxdir@
 
 prefix = @prefix@
-exec_prefix = @exec_prefix@
 bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
@@ -63,7 +62,9 @@ GENERIC_OBJS = string.o straccum.o nameinfo.o \
 
 EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 
+ifneq ($(MAKECMDGOALS),clean)
 -include elements.mk
+endif
 
 LIBOBJS = $(GENERIC_OBJS) $(STD_ELEMENT_OBJS) clp.o exportstub.o
 STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o \

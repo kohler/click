@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath freebsd_srcdir freebsd_includedir LIBOBJS EGREP BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS LINUXMODULE_2_6 POSSIBLE_DRIVERS DRIVERS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS LINUX_CFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath freebsd_srcdir freebsd_includedir LIBOBJS EGREP BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS LINUXMODULE_2_6 POSSIBLE_DRIVERS DRIVERS HAVE_USERLEVEL_DRIVER HAVE_LINUXMODULE_DRIVER HAVE_BSDMODULE_DRIVER OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS LINUX_CFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI clickdatadir provisions LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -12426,6 +12426,13 @@ done
 DRIVERS=
 
 
+HAVE_USERLEVEL_DRIVER=0
+
+HAVE_LINUXMODULE_DRIVER=0
+
+HAVE_BSDMODULE_DRIVER=0
+
+
 OTHER_TARGETS=
 
 
@@ -13016,6 +13023,7 @@ pcap.h and/or -lpcap not found; user-level driver can't steal packets.
 #define HAVE_USERLEVEL_DRIVER 1
 _ACEOF
 
+    HAVE_USERLEVEL_DRIVER=1
 fi
 
 
@@ -13767,6 +13775,7 @@ _ACEOF
 #define HAVE_LINUXMODULE_DRIVER 1
 _ACEOF
 
+	HAVE_LINUXMODULE_DRIVER=1
     elif test x$enable_linuxmodule_default = xyes; then
 	{ echo "$as_me:$LINENO: WARNING:
 =========================================
@@ -13846,6 +13855,7 @@ if test $ac_have_bsd_kernel = y; then
 #define HAVE_BSDMODULE_DRIVER 1
 _ACEOF
 
+    HAVE_BSDMODULE_DRIVER=1
 fi
 
 
@@ -14242,8 +14252,14 @@ if test x$infodir = 'x${prefix}/info'; then
 fi
 
 shell_expand bindir
+shell_expand sbindir
 shell_expand libdir
 shell_expand datadir
+shell_expand includedir
+shell_expand datadir
+
+clickdatadir="$datadir/click"
+
 
 cat >>confdefs.h <<_ACEOF
 #define CLICK_BINDIR "$bindir"
@@ -14254,7 +14270,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 cat >>confdefs.h <<_ACEOF
-#define CLICK_SHAREDIR "$datadir/click"
+#define CLICK_DATADIR "$clickdatadir"
 _ACEOF
 
 
@@ -14309,7 +14325,7 @@ fi
 
 
 
-config_files="Makefile click-buildtool click-compile tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile"
+config_files="Makefile click-buildtool click-compile config.mk tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-userlevel.mk etc/pkg-linuxmodule.mk etc/pkg-linuxmodule-26.mk"
 for ac_dir in $POSSIBLE_DRIVERS; do
     config_files="$config_files $ac_dir/Makefile"
 done
@@ -15013,6 +15029,9 @@ s,@EXTRA_TOOL_OBJS@,$EXTRA_TOOL_OBJS,;t t
 s,@LINUXMODULE_2_6@,$LINUXMODULE_2_6,;t t
 s,@POSSIBLE_DRIVERS@,$POSSIBLE_DRIVERS,;t t
 s,@DRIVERS@,$DRIVERS,;t t
+s,@HAVE_USERLEVEL_DRIVER@,$HAVE_USERLEVEL_DRIVER,;t t
+s,@HAVE_LINUXMODULE_DRIVER@,$HAVE_LINUXMODULE_DRIVER,;t t
+s,@HAVE_BSDMODULE_DRIVER@,$HAVE_BSDMODULE_DRIVER,;t t
 s,@OTHER_TARGETS@,$OTHER_TARGETS,;t t
 s,@TOOLDIRS@,$TOOLDIRS,;t t
 s,@TOOL_TARGETS@,$TOOL_TARGETS,;t t
@@ -15034,6 +15053,7 @@ s,@PERL@,$PERL,;t t
 s,@INSTALL_INFO@,$INSTALL_INFO,;t t
 s,@MAKEINFO@,$MAKEINFO,;t t
 s,@TEXI2DVI@,$TEXI2DVI,;t t
+s,@clickdatadir@,$clickdatadir,;t t
 s,@provisions@,$provisions,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF

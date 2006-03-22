@@ -8,7 +8,6 @@ subdir = tools/click-mkmindriver
 conf_auxdir = @conf_auxdir@
 
 prefix = @prefix@
-exec_prefix = @exec_prefix@
 bindir = @bindir@
 HOST_TOOLS = @HOST_TOOLS@
 

@@ -255,7 +255,7 @@ particular purpose.\n");
 
   // parse 'elementmap's
   ElementMap elementmap;
-  elementmap.parse_all_files(r, CLICK_SHAREDIR, p_errh);
+  elementmap.parse_all_files(r, CLICK_DATADIR, p_errh);
 
   // check configuration for driver indifference
   bool indifferent = elementmap.driver_indifferent(r, driver_indifferent_mask, errh);

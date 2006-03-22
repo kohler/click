@@ -237,7 +237,7 @@ process(const char *infile, bool file_is_expr, bool flatten,
 
     // get element map and processing
     ElementMap emap;
-    emap.parse_all_files(r, CLICK_SHAREDIR, errh);
+    emap.parse_all_files(r, CLICK_DATADIR, errh);
 
     int driver = specified_driver;
     if (driver < 0) {

@@ -172,7 +172,7 @@ Mindriver::add_router_requirements(RouterT* router, const ElementMap& default_ma
 {
     // find and parse elementmap
     ElementMap emap(default_map);
-    emap.parse_requirement_files(router, CLICK_SHAREDIR, errh);
+    emap.parse_requirement_files(router, CLICK_DATADIR, errh);
 
     // check whether suitable for driver
     if (!emap.driver_compatible(router, driver)) {
@@ -559,8 +559,8 @@ particular purpose.\n");
 	errh->fatal("fatal error: no package name specified\nPlease supply the '-p PKG' option.");
 
     ElementMap default_emap;
-    if (!default_emap.parse_default_file(CLICK_SHAREDIR, errh))
-	default_emap.report_file_not_found(CLICK_SHAREDIR, false, errh);
+    if (!default_emap.parse_default_file(CLICK_DATADIR, errh))
+	default_emap.report_file_not_found(CLICK_DATADIR, false, errh);
   
     for (int i = 0; i < router_filenames.size(); i++)
 	handle_router(md, router_filenames[i], default_emap, errh);

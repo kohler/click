@@ -9,7 +9,7 @@
 #undef CLICK_LIBDIR
 
 /* Directory for shared files. */
-#undef CLICK_SHAREDIR
+#undef CLICK_DATADIR
 
 /* FreeBSD kernel include directory. */
 #undef FREEBSD_INCLUDEDIR

@@ -1,0 +1,86 @@
+CLICKBUILD = linuxmodule
+
+CLICKCC = @KERNEL_CC@
+CLICKCPP = @CPP@
+CLICKCXX = @KERNEL_CXX@
+CLICKCXXCPP = @CXXCPP@
+
+CLICKCPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE
+CLICKCFLAGS = @CFLAGS_NDEBUG@
+CLICKCXXFLAGS = @CXXFLAGS_NDEBUG@
+CLICKDEPCFLAGS = @DEPCFLAGS@
+
+CLICKDEFS = @DEFS@
+CLICKINCLUDES = -I$(clickincludedir) -I$(clicksrcdir) -I$(clicklinuxdir)/include
+CLICKLDFLAGS = @LDFLAGS@
+
+CC ?= $(CLICKCC)
+CPP ?= $(CLICKCPP)
+CXX ?= $(CLICKCXX)
+CXXCPP ?= $(CLICKCXXCPP)
+AR_CREATE ?= $(CLICKAR_CREATE)
+RANLIB ?= $(CLICKRANLIB)
+
+CPPFLAGS ?= $(CLICKCPPFLAGS)
+CFLAGS ?= $(CLICKCFLAGS)
+CXXFLAGS ?= $(CLICKCXXFLAGS)
+DEPCFLAGS ?= $(CLICKDEPCFLAGS)
+
+DEFS ?= $(CLICKDEFS)
+INCLUDES ?= $(CLICKINCLUDES)
+LDFLAGS ?= $(CLICKLDFLAGS)
+
+CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
+CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
+
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+
+.SUFFIXES:
+.SUFFIXES: .c .cc .ko .kii
+
+.c.ko:
+	$(COMPILE) -c $< -o $@
+	@-sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
+.cc.ko:
+	$(CXXCOMPILE) -c $< -o $@
+	@-sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
+.cc.kii:
+	$(CXXCOMPILE) -E $< > $@
+
+ifneq ($(MAKECMDGOALS),clean)
+-include kelements.mk
+endif
+
+OBJS = $(ELEMENT_OBJS) kpackage.ko kversion.ko
+
+$(package).ko: $(clickdatadir)/pkg-linuxmodule.mk $(OBJS)
+	$(LD) -r -o $(package).ko $(OBJS)
+	$(STRIP) -g $(package).ko
+
+elemlist kelements.conf: $(CLICK_BUILDTOOL)
+	echo $(srcdir) | $(CLICK_BUILDTOOL) findelem -r linuxmodule -r $(package) -P > kelements.conf
+kelements.mk: kelements.conf $(CLICK_BUILDTOOL)
+	$(CLICK_BUILDTOOL) elem2make -t linuxmodule < kelements.conf > kelements.mk
+kpackage.cc: kelements.conf $(CLICK_BUILDTOOL)
+	$(CLICK_ELEM2PACKAGE) $(package) < kelements.conf > kpackage.cc
+	@rm -f kpackage.kd
+kversion.c: $(CLICK_BUILDTOOL)
+	$(CLICK_BUILDTOOL) kversion $(KVERSIONFLAGS) > kversion.c
+
+DEPFILES := $(wildcard *.kd)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
+
+clean:
+	-rm -f $(package).ko
+	-rm -f *.kd *.ko kelements.conf kelements.mk kpackage.cc kversion.c
+	-rm -f .*.o.cmd .*.ko.cmd $(package).mod.c $(package).mod.o $(package).o
+	-rm -rf .tmp_versions
+
+.PHONY: clean elemlist
