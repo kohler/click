@@ -1,3 +1,33 @@
+2006-03-22 Wednesday 02:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* Makefile.in (1.130), click-buildtool.in (1.78), config.mk.in
+	  (1.1), configure (1.71), configure.in (1.277), pathvars.h.in
+	  (1.8), etc/pkg-Makefile (1.1), etc/pkg-linuxmodule-26.mk.in
+	  (1.1), etc/pkg-linuxmodule.mk.in (1.1), etc/pkg-userlevel.mk.in
+	  (1.1), etc/samplepackage/.cvsignore (1.7),
+	  etc/samplepackage/Makefile.in (1.50), etc/samplepackage/config.h
+	  (1.2), linuxmodule/Makefile.in (1.103), tools/Makefile.in (1.56),
+	  tools/click-align/Makefile.in (1.21),
+	  tools/click-check/Makefile.in (1.17),
+	  tools/click-check/click-check.cc (1.28),
+	  tools/click-combine/Makefile.in (1.17),
+	  tools/click-devirtualize/Makefile.in (1.17),
+	  tools/click-devirtualize/click-devirtualize.cc (1.49),
+	  tools/click-fastclassifier/Makefile.in (1.22),
+	  tools/click-flatten/Makefile.in (1.13),
+	  tools/click-install/Makefile.in (1.26),
+	  tools/click-mkmindriver/Makefile.in (1.16),
+	  tools/click-mkmindriver/click-mkmindriver.cc (1.35),
+	  tools/click-pretty/Makefile.in (1.10),
+	  tools/click-pretty/click-pretty.cc (1.31),
+	  tools/click-undead/Makefile.in (1.16),
+	  tools/click-undead/click-undead.cc (1.39),
+	  tools/click-xform/Makefile.in (1.25), tools/click2xml/Makefile.in
+	  (1.8), tools/click2xml/click2xml.cc (1.20), tools/lib/Makefile.in
+	  (1.39), userlevel/Makefile.in (1.90): new package build system
+	  allows one to build a package on Linux 2.6 (but
+	  click-fastclassifier still doesnt work)
+
 2006-03-16 Thursday 16:11  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/script.cc (1.5): fix bug reported by Dan
