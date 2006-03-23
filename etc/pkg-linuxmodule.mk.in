@@ -72,7 +72,7 @@ ifeq ($(CLICK_LINUXMODULE_2_6),1)
 $(package).ko: Makefile Kbuild always
 	$(MAKE) -C $(clicklinuxdir) M=$(shell pwd) CLICK_PACKAGE_MAKING=linuxmodule-26 modules
 Kbuild: $(CLICK_BUILDTOOL)
-	echo 'include $$(obj)/Makefile' >> Kbuild
+	echo 'include $$(obj)/Makefile' > Kbuild
 	$(CLICK_BUILDTOOL) kbuild >> Kbuild
 else
 $(package).ko: $(clickdatadir)/pkg-linuxmodule.mk $(OBJS)

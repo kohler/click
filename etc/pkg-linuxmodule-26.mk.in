@@ -17,10 +17,16 @@ LINUXCFLAGS = $(shell echo "$(CFLAGS)" | sed -e s,-fno-unit-at-a-time,, \
 	-e s,-Wstrict-prototypes,, -e s,-Wdeclaration-after-statement,, \
 	-e s,-Wno-pointer-sign,, -e s,-fno-common,,)
 
+CXXFLAGS ?= $(CLICKCXXFLAGS)
+DEPCFLAGS ?= $(CLICKDEPCFLAGS)
+
+DEFS ?= $(CLICKDEFS)
+INCLUDES ?= $(CLICKINCLUDES)
+
 CXXCOMPILE = $(CLICKCXX) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
-	$(CLICKCXXFLAGS) $(CLICKDEFS) $(CLICKINCLUDES) $(CLICKDEPCFLAGS)
+	$(CXXFLAGS) $(DEFS) $(INCLUDES) $(DEPCFLAGS)
 COMPILE = $(CLICKCC) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
-	$(CLICKDEFS) $(CLICKINCLUDES) $(CLICKDEPCFLAGS)
+	$(DEFS) $(INCLUDES) $(DEPCFLAGS)
 
 packagesrcdir ?= $(srcdir)
 PACKAGE_OBJS ?= kpackage.ko
@@ -45,6 +51,8 @@ ifneq ($(patsubst /%,/,$(srcdir)),/)
 top_srcdir := $(obj)/$(top_srcdir)
 srcdir := $(obj)/$(srcdir)
 endif
+top_builddir := $(obj)/$(top_builddir)
+builddir := $(obj)
 endif
 
 -include $(obj)/kelements.mk

@@ -158,6 +158,8 @@ call_read_handler(Element *e, String handler_name,
   if (print_name)
     fprintf(stdout, "%s:\n", full_name.c_str());
   String result = rh->call_read(e);
+  if (!rh->raw() && result && result.back() != '\n')
+      result += '\n';
   fputs(result.c_str(), stdout);
   if (print_name)
     fputs("\n", stdout);
