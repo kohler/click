@@ -1,3 +1,11 @@
+2006-03-22 Wednesday 19:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/pkg-linuxmodule-26.mk.in (1.4), etc/pkg-linuxmodule.mk.in
+	  (1.5), etc/samplepackage/Makefile.in (1.52), userlevel/click.cc
+	  (1.109): package make system fixes; and click userlevel driver -h
+	  HANDLER option correctly terminates handler output with a newline
+	  when required
+
 2006-03-22 Wednesday 15:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.131): distclean nit
