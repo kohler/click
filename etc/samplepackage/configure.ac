@@ -16,11 +16,15 @@ dnl
 dnl the usual 'configure.in' boilerplate
 dnl
 
-AC_INIT(sampleelt.cc)
+AC_INIT(samplepackage, 2.0)
 AC_CONFIG_HEADER(config.h)
 AC_SUBST(ac_configure_args)
 
 CLICK_INIT('$(top_srcdir)')
+
+AH_TOP([#ifndef CLICK_]AC_PACKAGE_TARNAME[_CONFIG_H
+#define CLICK_]AC_PACKAGE_TARNAME[_CONFIG_H 1])
+AH_BOTTOM([#endif /* CLICK_]AC_PACKAGE_TARNAME[_CONFIG_H */])
 
 
 dnl

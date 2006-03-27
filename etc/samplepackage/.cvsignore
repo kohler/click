@@ -1,4 +1,4 @@
-Makefile Kbuild *.d *.kd *.ud *.ko *.uo
+Makefile *.d *.kd *.ud *.ko *.uo
 kelements.conf kelements.mk kpackage.cc kversion.c
 uelements.conf uelements.mk upackage.cc
 config.h configure config.log config.status
