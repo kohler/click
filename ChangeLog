@@ -1,3 +1,14 @@
+2006-03-27 Monday 17:27  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/dhcp/: dhcpserver.cc (1.2), dhcpserver.hh (1.2):
+	  fix packet mix-ups
+
+2006-03-27 Monday 17:18  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/dhcp/dhcpserver.cc (1.1),
+	  elements/wifi/dhcp/dhcpserver.hh (1.1), include/clicknet/dhcp.h
+	  (1.2): add a dhcp server
+
 2006-03-27 Monday 14:29  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.74), configure.in (1.279),
