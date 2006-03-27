@@ -109,9 +109,12 @@ ProtocolTranslator64::make_translate64(IPAddress src,
       ip->ip_p = ip6->ip6_nxt;
       
       //set the ip header checksum
-      ip->ip_sum=0; 
+      ip->ip_sum = 0;
       tcp->th_sum = 0;
-      tcp->th_sum = htons(in_ip4_cksum(src.addr(), dst.addr(), ip6->ip6_plen, ip->ip_p, 0, (unsigned char *)tcp, ip6->ip6_plen));
+
+      uint16_t tlen = ntohs(ip6->ip6_plen);
+      uint16_t csum = click_in_cksum((unsigned char *) tcp, tlen);
+      tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, tlen);
       ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 
     }
@@ -123,7 +126,10 @@ ProtocolTranslator64::make_translate64(IPAddress src,
       //set the ip header checksum
       ip->ip_sum=0; 
       udp->uh_sum = 0;
-      udp->uh_sum = htons(in_ip4_cksum(src.addr(), dst.addr(), ip6->ip6_plen, ip->ip_p, 0, (unsigned char *)udp, ip6->ip6_plen));
+
+      uint16_t tlen = ntohs(ip6->ip6_plen);
+      uint16_t csum = click_in_cksum((unsigned char *) udp, tlen);
+      udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, tlen);
       ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 
     }

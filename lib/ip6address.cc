@@ -178,64 +178,6 @@ operator<<(StringAccum &sa, const IP6Address &a)
 }
 
 
-//the method calculate checksums that requires a pseudoheader (e.g., tcp, udp for ipv4)
-unsigned short 
-in_ip4_cksum(const unsigned  saddr,
-	     const unsigned  daddr,
-	     unsigned short len,
-	     unsigned char proto,
-	     unsigned short ori_csum,
-	     const unsigned char *addr,
-	     unsigned short len2)
-{ 
-	unsigned short answer = 0;
-	unsigned int csum =0;
-	unsigned int carry;
-	
-	
-	//get the sum of source and destination address
-	const unsigned sa = saddr;
-	csum += ntohl(sa);
- 	carry = (csum < ntohl(sa));
-  	csum += carry;
-	
-	const unsigned da = daddr;
-	csum += ntohl(da);
-	carry = (csum < ntohl(da));
-	csum += carry;
-      
-	//get the sum of other fields:  packet length, protocal
-	//  csum += len;
-	csum += ntohs(len);
-	csum += proto;
-	
-	//get the sum of the upper layer package
-	//unsigned short nleft = len2;
-	unsigned short nleft = ntohs(len2);
-	const unsigned short *w = (const unsigned short *)addr;
-	while (nleft > 1)  { 
-	    unsigned short w2=*w++;
-	    csum += ntohs(w2); 
-	    nleft -=2;
-	 }
-  
-	//mop up an odd byte, if necessary 
-	if (nleft == 1) { 
-	  *(unsigned char *)(&answer) = *(const unsigned char *)w ;
-	  csum += ntohs(answer); 	 
-	}  
-	//csum -= ori_csum; //get rid of the effect of ori_csum in the calculation
-	csum -= ntohs(ori_csum);
-        
-	// fold >=32-bit csum to 16-bits 
-	while (csum>>16) {
-	  csum = (csum & 0xffff) + (csum >> 16); 
-	}
-	  
-	answer = ~csum;          // truncate to 16 bits 
-	return answer;
-}
-
 // those two  methods will calculate the checksum field of ICMP6 Message.  
 
 // The checksum is the 16-bit one's complement 
@@ -254,20 +196,20 @@ in_ip4_cksum(const unsigned  saddr,
 // a time or 16 bits a time.
 
 
-unsigned short 
+uint16_t
 in6_fast_cksum(const struct click_in6_addr *saddr,
                const struct click_in6_addr *daddr,
-               unsigned short len,
-               unsigned char  proto,
-               unsigned short ori_csum,
+               uint16_t len,
+               uint8_t proto,
+               uint16_t ori_csum,
                const unsigned char *addr,
-               unsigned short len2)
+               uint16_t len2)
 { 
-	unsigned short int ulen;
-	unsigned short int uproto;
-	unsigned short answer = 0;
-	unsigned int csum =0;
-	unsigned int carry;
+	uint16_t ulen;
+	uint16_t uproto;
+	uint16_t answer = 0;
+	uint32_t csum =0;
+	uint32_t carry;
 	
 	
 	//get the sum of source and destination address
@@ -293,10 +235,10 @@ in6_fast_cksum(const struct click_in6_addr *saddr,
 	csum += uproto;
 	
 	//get the sum of the ICMP6 package
-	unsigned short nleft = ntohs(len2);
-	const unsigned short *w = (const unsigned short *)addr;
+	uint16_t nleft = ntohs(len2);
+	const uint16_t *w = (const uint16_t *)addr;
 	while (nleft > 1)  { 
-	    unsigned short w2=*w++;
+	    uint16_t w2=*w++;
 	    csum += ntohs(w2); 
 	    nleft -=2;
 	 }
@@ -322,16 +264,16 @@ in6_fast_cksum(const struct click_in6_addr *saddr,
 unsigned short 
 in6_cksum(const struct click_in6_addr *saddr,
 	  const struct click_in6_addr *daddr,
-	  unsigned short len, 
-	  unsigned char proto,
-	  unsigned short ori_csum,
+	  uint16_t len, 
+	  uint8_t proto,
+	  uint16_t ori_csum,
 	  unsigned char *addr,
-	  unsigned short len2)
+	  uint16_t len2)
 { 
-	unsigned short int ulen;
-	unsigned short int uproto;
-	unsigned short answer = 0;
-	unsigned int csum =0;
+	uint16_t ulen;
+	uint16_t uproto;
+	uint16_t answer = 0;
+	uint32_t csum =0;
 	
 	
 	//get the sum of source and destination address
@@ -351,10 +293,10 @@ in6_cksum(const struct click_in6_addr *saddr,
 	csum += uproto;
 	
 	//get the sum of the ICMP6 package
-	unsigned short nleft = ntohs(len2);
-	const unsigned short *w = (const unsigned short *)addr;
+	uint16_t nleft = ntohs(len2);
+	const uint16_t *w = (const uint16_t *)addr;
 	while (nleft > 1)  { 
-	    unsigned short w2=*w++;
+	    uint16_t w2=*w++;
 	    csum += ntohs(w2); 
 	    nleft -=2;
 	 }

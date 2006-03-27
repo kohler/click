@@ -124,19 +124,20 @@ uint16_t click_in_cksum_pseudohdr_raw(uint32_t csum, uint32_t src, uint32_t dst,
 #else
 # define click_in_cksum(addr, len) \
 		ip_compute_csum((unsigned char *)(addr), (len))
-# define click_in_cksum_pseudohdr_raw(csum, src, dst, proto, packet_len) \
-		csum_tcpudp_magic((src), (dst), (packet_len), (proto), ~(csum) & 0xFFFF)
+# define click_in_cksum_pseudohdr_raw(csum, src, dst, proto, transport_len) \
+		csum_tcpudp_magic((src), (dst), (transport_len), (proto), ~(csum) & 0xFFFF)
 #endif
 uint16_t click_in_cksum_pseudohdr_hard(uint32_t csum, const struct click_ip *iph, int packet_len);
 
 /* use if you're not sure whether there are source routing options */
 static inline uint16_t
-click_in_cksum_pseudohdr(uint32_t csum, const struct click_ip *iph, int packet_len)
+click_in_cksum_pseudohdr(uint32_t csum, const struct click_ip *iph,
+			 int transport_len)
 {
     if (iph->ip_hl == 5)
-	return click_in_cksum_pseudohdr_raw(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, iph->ip_p, packet_len);
+	return click_in_cksum_pseudohdr_raw(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, iph->ip_p, transport_len);
     else
-	return click_in_cksum_pseudohdr_hard(csum, iph, packet_len);
+	return click_in_cksum_pseudohdr_hard(csum, iph, transport_len);
 }
 
 static inline void

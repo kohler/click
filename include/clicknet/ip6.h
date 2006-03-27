@@ -65,31 +65,21 @@ struct click_ip6 {
 
 CLICK_DECLS
 
-unsigned short 
-in_ip4_cksum(const unsigned  saddr,
-	     const unsigned  daddr,
-	     unsigned short len,
-	     unsigned char proto,
-	     unsigned short ori_csum,
-	     const unsigned char *addr,
-	     unsigned short len2);
+uint16_t in6_fast_cksum(const struct click_in6_addr *saddr,
+			const struct click_in6_addr *daddr,
+			uint16_t len,
+			uint8_t proto,
+			uint16_t ori_csum,
+			const unsigned char *addr,
+			uint16_t len2);
 
-
-unsigned short in6_fast_cksum(const struct click_in6_addr *saddr,
-			      const struct click_in6_addr *daddr,
-			      unsigned short len,
-			      unsigned char  proto,
-			      unsigned short ori_csum,
-			      const unsigned char *addr,
-			      unsigned short len2);
-
-unsigned short in6_cksum(struct click_in6_addr *saddr,
-			 struct click_in6_addr *daddr,
-			 unsigned short len,
-			 unsigned char  proto,
-			 unsigned short ori_csum,
-			 unsigned char *addr,
-			 unsigned short len2);
+uint16_t in6_cksum(const struct click_in6_addr *saddr,
+		   const struct click_in6_addr *daddr,
+		   uint16_t len,
+		   uint8_t proto,
+		   uint16_t ori_csum,
+		   unsigned char *addr,
+		   uint16_t len2);
 
 CLICK_ENDDECLS
 #endif
