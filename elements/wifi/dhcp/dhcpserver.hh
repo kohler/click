@@ -57,13 +57,13 @@ public:
   DHCPServer();
   ~DHCPServer();
   const char* class_name() const { return "DHCPServer"; }
-  const char* processing() const { return AGNOSTIC; }
+  const char* processing() const { return PUSH; }
   const char* port_count() const { return PORTS_1_1; }
   const char* flow_code()  const { return "x/y"; }
   void* cast(const char*);
   int configure( Vector<String> &conf, ErrorHandler *errh );
   void add_handlers();
-  virtual Packet *simple_action(Packet *);
+  void push(int, Packet *);
   
   void remove(IPAddress ip);
   void remove(EtherAddress eth);

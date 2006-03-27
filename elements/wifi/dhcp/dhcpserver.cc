@@ -150,10 +150,10 @@ DHCPServer::remove(EtherAddress eth)
 		_ips.remove(l->_eth);
 	}
 }
-Packet *
-DHCPServer::simple_action(Packet *p)
+void
+DHCPServer::push(int port, Packet *p_in)
 {
-	click_dhcp *msg = (click_dhcp *) (p->data() + sizeof(click_ip) + sizeof(click_udp));
+	click_dhcp *msg = (click_dhcp *) (p_in->data() + sizeof(click_ip) + sizeof(click_udp));
 	unsigned char *buf = NULL;
 	int size = 0;
 	IPAddress ciaddr = IPAddress(msg->ciaddr);
@@ -192,26 +192,26 @@ DHCPServer::simple_action(Packet *p)
 				lease = new_lease_any(eth);
 			}
 			if (lease) {
-				out = make_ack_packet(p, lease);
+				out = make_ack_packet(p_in, lease);
 			}
 		} else if (server && !ciaddr && requested_ip) {
 			/* SELECTING */
 			if(lease && lease->_ip == requested_ip) {
-				out = make_ack_packet(p, lease);
+				out = make_ack_packet(p_in, lease);
 				lease->_valid = true;
 			}
 		} else if (!server && requested_ip && !ciaddr) {
 			/* INIT-REBOOT */
 			bool network_is_correct = true;
 			if (!network_is_correct) {
-				out = make_nak_packet(p, lease);
+				out = make_nak_packet(p_in, lease);
 			} else {	  
 				if (lease && lease->_ip == requested_ip) {
 					if (lease->_end <  Timestamp::now() ) {
-						out = make_nak_packet(p, lease);
+						out = make_nak_packet(p_in, lease);
 					} else {
 						lease->_valid = true;
-						out = make_ack_packet(p, lease);
+						out = make_ack_packet(p_in, lease);
 					}
 				}
 			}
@@ -220,7 +220,7 @@ DHCPServer::simple_action(Packet *p)
 			if (lease) {
 				lease->_valid = true;
 				lease->extend();
-				out = make_ack_packet(p, lease);
+				out = make_ack_packet(p_in, lease);
 			}
 		} else {
 			click_chatter("%s:%d\n", __FILE__, __LINE__);
@@ -247,7 +247,7 @@ DHCPServer::simple_action(Packet *p)
 			l = new_lease_any(eth);
 		}
 		if (l) {
-			out = make_offer_packet(p, l);
+			out = make_offer_packet(p_in, l);
 			goto done;
 		}
 		break;
@@ -270,7 +270,6 @@ DHCPServer::simple_action(Packet *p)
 	}
 
  done:
-	p->kill();
 	if (out) {
 		/* push the ip and udp headers */
 		WritablePacket *p_out = out->push(sizeof(click_udp) + sizeof(click_ip));
@@ -293,8 +292,8 @@ DHCPServer::simple_action(Packet *p)
 			
 			ip->ip_sum = 0;
 			ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
-			p->set_dst_ip_anno(_bcast);
-			p->set_ip_header(ip, sizeof(click_ip));
+			p_out->set_dst_ip_anno(_bcast);
+			p_out->set_ip_header(ip, sizeof(click_ip));
 			
 			// set up UDP header
 			udp->uh_sport = htons(67);
@@ -304,11 +303,11 @@ DHCPServer::simple_action(Packet *p)
 			udp->uh_sum = 0;
 			unsigned csum = click_in_cksum((unsigned char *)udp, len);
 			udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
+			output(port).push(p_out);
 		}
-		return p_out;
-
 	}
-	return out;
+	p_in->kill();
+	return;
 }
 
 Packet*
