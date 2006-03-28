@@ -2,7 +2,7 @@
  * dhcpserver.{cc,hh} -- track dhcp leases from a free pool
  * John Bicket
  *
- * Copyright (c) 2005 Massachusetts Institute of Technology
+ * Copyright (c) 2006 Massachusetts Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,6 +25,7 @@
 #include <click/vector.cc>
 #include <click/straccum.hh>
 #include <click/atomic.hh>
+#include <click/packet_anno.hh>
 #include <clicknet/dhcp.h>
 #include <clicknet/ether.h>
 #include "dhcpserver.hh"
@@ -303,6 +304,11 @@ DHCPServer::push(int port, Packet *p_in)
 			udp->uh_sum = 0;
 			unsigned csum = click_in_cksum((unsigned char *)udp, len);
 			udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
+
+			/* XXX node the query came from */
+			IPAddress node = MISC_IP_ANNO(p_in);				
+			p_out->set_dst_ip_anno(node);
+			
 			output(port).push(p_out);
 		}
 	}
