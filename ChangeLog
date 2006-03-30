@@ -1,19 +1,6 @@
-2006-03-27 Monday 21:52  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/dhcp/: dhcpserver.cc (1.3), snoopdhcpreplies.cc
-	  (1.1), snoopdhcpreplies.hh (1.1): add element to add routes from
-	  dhcp replies.
-
-2006-03-27 Monday 17:27  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/dhcp/: dhcpserver.cc (1.2), dhcpserver.hh (1.2):
-	  fix packet mix-ups
-
 2006-03-27 Monday 17:18  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/dhcp/dhcpserver.cc (1.1),
-	  elements/wifi/dhcp/dhcpserver.hh (1.1), include/clicknet/dhcp.h
-	  (1.2): add a dhcp server
+	* include/clicknet/dhcp.h (1.2): add a dhcp server
 
 2006-03-27 Monday 14:29  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -132,11 +119,8 @@
 
 2006-03-14 Tuesday 13:18  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: sr/ettstat.cc (1.39), sr/gatewayselector.cc
-	  (1.24), sr/metricflood.cc (1.13), sr/srquerier.cc (1.17),
-	  sr2/sr2ettstat.cc (1.4), sr2/sr2gatewayselector.cc (1.4),
-	  sr2/sr2metricflood.cc (1.3), sr2/sr2querier.cc (1.5): less
-	  debugging.
+	* elements/wifi/sr/: ettstat.cc (1.39), gatewayselector.cc (1.24),
+	  metricflood.cc (1.13), srquerier.cc (1.17): less debugging.
 
 2006-03-14 Tuesday 03:21  John Bicket <jbicket@mit.edu>
 
@@ -194,8 +178,8 @@
 
 2006-03-03 Friday 02:36  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: sr/gatewayselector.cc (1.23),
-	  sr2/sr2gatewayselector.cc (1.3): make expire timer longer.
+	* elements/wifi/sr/gatewayselector.cc (1.23): make expire timer
+	  longer.
 
 2006-03-03 Friday 02:34  John Bicket <jbicket@mit.edu>
 
@@ -204,8 +188,8 @@
 
 2006-03-03 Friday 02:29  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: sr/ettmetric.cc (1.12), sr2/sr2ettmetric.cc
-	  (1.3): threshold _really_ crappy links.
+	* elements/wifi/sr/ettmetric.cc (1.12): threshold _really_ crappy
+	  links.
 
 2006-03-03 Friday 02:08  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -270,10 +254,8 @@
 
 2006-03-02 Thursday 00:35  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: sr/ettmetric.cc (1.11), sr/ettstat.cc (1.37),
-	  sr/txcountmetric.cc (1.6), sr2/sr2ettmetric.cc (1.2),
-	  sr2/sr2ettstat.cc (1.3), sr2/sr2txcountmetric.cc (1.2): add
-	  forgotten ELEMENT_REQUIRES
+	* elements/wifi/sr/: ettmetric.cc (1.11), ettstat.cc (1.37),
+	  txcountmetric.cc (1.6): add forgotten ELEMENT_REQUIRES
 
 2006-03-02 Thursday 00:22  John Bicket <jbicket@mit.edu>
 
@@ -376,10 +358,8 @@
 
 	* elements/wifi/: wifidecap.cc (1.16), wifidupefilter.cc (1.10),
 	  wifidupefilter.hh (1.5), sr/gatewayselector.cc (1.22),
-	  sr/gatewayselector.hh (1.13), sr2/sr2gatewayresponder.cc (1.1),
-	  sr2/sr2gatewayresponder.hh (1.1), sr2/sr2gatewayselector.hh
-	  (1.2): add gatewayresponder to propogate routes to gateways, make
-	  wifidupefilter less expensive.
+	  sr/gatewayselector.hh (1.13): add gatewayresponder to propogate
+	  routes to gateways, make wifidupefilter less expensive.
 
 2006-02-27 Monday 14:06  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -425,11 +405,6 @@
 	  elements/wifi/ap/openauthresponder.cc (1.10),
 	  elements/wifi/ap/proberesponder.cc (1.10),
 	  elements/wifi/ap/stationtable.cc (1.7),
-	  elements/wifi/frag/defragment.cc (1.4),
-	  elements/wifi/frag/fragment.cc (1.4),
-	  elements/wifi/frag/fragmentdecap.cc (1.4),
-	  elements/wifi/frag/fragmentencap.cc (1.4),
-	  elements/wifi/frag/fragmentresender.cc (1.7),
 	  elements/wifi/sr/counterflood.cc (1.11),
 	  elements/wifi/sr/ettstat.cc (1.36),
 	  elements/wifi/sr/floodtracker.cc (1.4),
@@ -441,14 +416,6 @@
 	  (1.6), elements/wifi/sr/srquerier.cc (1.16),
 	  elements/wifi/sr/srqueryforwarder.cc (1.16),
 	  elements/wifi/sr/srqueryresponder.cc (1.15),
-	  elements/wifi/sr2/sr2destcache.cc (1.2),
-	  elements/wifi/sr2/sr2ettstat.cc (1.2),
-	  elements/wifi/sr2/sr2gatewayselector.cc (1.2),
-	  elements/wifi/sr2/sr2metricflood.cc (1.2),
-	  elements/wifi/sr2/sr2querier.cc (1.4),
-	  elements/wifi/sr2/sr2queryforwarder.cc (1.2),
-	  elements/wifi/sr2/sr2queryresponder.cc (1.2),
-	  elements/wifi/sr2/sr2setgateway.cc (1.2),
 	  elements/wifi/station/associationrequester.cc (1.16),
 	  elements/wifi/station/beaconscanner.cc (1.13),
 	  elements/wifi/station/beacontracker.cc (1.5),
@@ -784,8 +751,7 @@
 	  (1.4), elements/userlevel/torawsocket.hh (1.3),
 	  elements/userlevel/tosocket.hh (1.6),
 	  elements/wifi/analysis/wificounter.hh (1.4),
-	  elements/wifi/sr/setsourceroute.hh (1.6),
-	  elements/wifi/sr2/sr2setsourceroute.hh (1.2): redo element
+	  elements/wifi/sr/setsourceroute.hh (1.6): redo element
 	  categorization, hopefully this iteration may actually be useful
 	  for people
 
@@ -805,8 +771,7 @@
 2006-02-17 Friday 13:26  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: linktable.cc (1.24), sr/srforwarder.cc (1.19),
-	  sr/srquerier.cc (1.15), sr2/sr2forwarder.cc (1.3),
-	  sr2/sr2querier.cc (1.3): fix some performance issues when running
+	  sr/srquerier.cc (1.15): fix some performance issues when running
 	  on very slow nodes.
 
 2006-02-16 Thursday 16:15  John Bicket <jbicket@mit.edu>
@@ -820,7 +785,6 @@
 2006-02-16 Thursday 02:09  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/wifiencap.cc (1.15),
-	  elements/wifi/sr2/sr2forwarder.cc (1.2),
 	  tools/click-align/click-align.cc (1.54): some alignment fixes.
 
 2006-02-16 Thursday 01:58  Eddie Kohler <kohler@cs.ucla.edu>
@@ -834,10 +798,6 @@
 2006-02-16 Thursday 00:46  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/: click-elem2man (1.47), click-elem2man (1.48): more entities
-
-2006-02-15 Wednesday 20:05  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr2/sr2querier.cc (1.2): [no log message]
 
 2006-02-15 Wednesday 19:57  John Bicket <jbicket@mit.edu>
 
@@ -869,27 +829,9 @@
 	  sr/setsrchecksum.cc (1.6), sr/srdestcache.hh (1.2),
 	  sr/srforwarder.cc (1.17), sr/srforwarder.hh (1.9), sr/srpacket.hh
 	  (1.14), sr/srquerier.hh (1.10), sr/srqueryforwarder.hh (1.9),
-	  sr/srqueryresponder.hh (1.9), sr2/sr2checkheader.cc (1.1),
-	  sr2/sr2checkheader.hh (1.1), sr2/sr2destcache.cc (1.1),
-	  sr2/sr2destcache.hh (1.1), sr2/sr2ettmetric.cc (1.1),
-	  sr2/sr2ettmetric.hh (1.1), sr2/sr2ettstat.cc (1.1),
-	  sr2/sr2ettstat.hh (1.1), sr2/sr2forwarder.cc (1.1),
-	  sr2/sr2forwarder.hh (1.1), sr2/sr2gatewayselector.cc (1.1),
-	  sr2/sr2gatewayselector.hh (1.1), sr2/sr2linkmetric.hh (1.1),
-	  sr2/sr2localbroadcast.cc (1.1), sr2/sr2localbroadcast.hh (1.1),
-	  sr2/sr2metricflood.cc (1.1), sr2/sr2metricflood.hh (1.1),
-	  sr2/sr2packet.hh (1.1), sr2/sr2print.cc (1.1), sr2/sr2print.hh
-	  (1.1), sr2/sr2querier.cc (1.1), sr2/sr2querier.hh (1.1),
-	  sr2/sr2queryforwarder.cc (1.1), sr2/sr2queryforwarder.hh (1.1),
-	  sr2/sr2queryresponder.cc (1.1), sr2/sr2queryresponder.hh (1.1),
-	  sr2/sr2setchecksum.cc (1.1), sr2/sr2setchecksum.hh (1.1),
-	  sr2/sr2setgateway.cc (1.1), sr2/sr2setgateway.hh (1.1),
-	  sr2/sr2setsourceroute.cc (1.1), sr2/sr2setsourceroute.hh (1.1),
-	  sr2/sr2stripheader.cc (1.1), sr2/sr2stripheader.hh (1.1),
-	  sr2/sr2txcountmetric.cc (1.1), sr2/sr2txcountmetric.hh (1.1):
-	  version 2 of the srcr protocol; version 2 is byte-order
-	  independent. this file layout structure allows multiple versions
-	  of the protocol to run in parallel.
+	  sr/srqueryresponder.hh (1.9): version 2 of the srcr protocol;
+	  version 2 is byte-order independent. this file layout structure
+	  allows multiple versions of the protocol to run in parallel.
 
 2006-02-15 Wednesday 14:39  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -1341,7 +1283,6 @@
 	  elements/wifi/linktable.cc (1.22), elements/wifi/madwifirate.cc
 	  (1.20), elements/wifi/txfeedbackstats.cc (1.8),
 	  elements/wifi/ap/beaconsource.cc (1.12),
-	  elements/wifi/frag/fragmentresender.cc (1.6),
 	  elements/wifi/sr/checksrheader.cc (1.8),
 	  elements/wifi/sr/ettstat.cc (1.31),
 	  elements/wifi/sr/gatewayselector.cc (1.17),
@@ -1537,12 +1478,10 @@
 
 	* elements/wifi/: settxrate.cc (1.23), analysis/counterrors.hh
 	  (1.5), analysis/countfecbytes.hh (1.4),
-	  analysis/countfragbytes.hh (1.6), frag/fragmentack.cc (1.5),
-	  frag/fragmentack.hh (1.6), frag/fragmentdupefilter.hh (1.5),
-	  frag/fragmentresender.cc (1.5), frag/fragmentresender.hh (1.6),
-	  sr/counterflood.cc (1.9), sr/counterflood.hh (1.5), sr/ettstat.cc
-	  (1.28), sr/gatewayselector.cc (1.16), sr/gatewayselector.hh
-	  (1.10), sr/localbroadcast.cc (1.9), sr/localbroadcast.hh (1.6),
+	  analysis/countfragbytes.hh (1.6), sr/counterflood.cc (1.9),
+	  sr/counterflood.hh (1.5), sr/ettstat.cc (1.28),
+	  sr/gatewayselector.cc (1.16), sr/gatewayselector.hh (1.10),
+	  sr/localbroadcast.cc (1.9), sr/localbroadcast.hh (1.6),
 	  sr/metricflood.cc (1.9), sr/metricflood.hh (1.6), sr/pflood.cc
 	  (1.9), sr/pflood.hh (1.4), sr/srforwarder.cc (1.15),
 	  sr/srforwarder.hh (1.8), sr/srquerier.hh (1.9),
@@ -1959,8 +1898,6 @@
 	  elements/wifi/madwifirate.cc (1.19), elements/wifi/madwifirate.hh
 	  (1.11), elements/wifi/ap/beaconsource.cc (1.11),
 	  elements/wifi/ap/beaconsource.hh (1.7),
-	  elements/wifi/frag/fragmentresender.cc (1.4),
-	  elements/wifi/frag/fragmentresender.hh (1.5),
 	  elements/wifi/sr/ettstat.cc (1.25), elements/wifi/sr/ettstat.hh
 	  (1.17), elements/wifi/sr/gatewayselector.cc (1.13),
 	  elements/wifi/sr/gatewayselector.hh (1.9),
@@ -2658,24 +2595,6 @@
 	  elements/wifi/ap/proberesponder.hh (1.4),
 	  elements/wifi/ap/stationtable.cc (1.4),
 	  elements/wifi/ap/stationtable.hh (1.3),
-	  elements/wifi/frag/checkfragment.cc (1.3),
-	  elements/wifi/frag/checkfragment.hh (1.3),
-	  elements/wifi/frag/defragment.cc (1.3),
-	  elements/wifi/frag/defragment.hh (1.5),
-	  elements/wifi/frag/fragment.cc (1.3),
-	  elements/wifi/frag/fragment.hh (1.3),
-	  elements/wifi/frag/fragmentack.cc (1.4),
-	  elements/wifi/frag/fragmentack.hh (1.5),
-	  elements/wifi/frag/fragmentdecap.cc (1.3),
-	  elements/wifi/frag/fragmentdecap.hh (1.3),
-	  elements/wifi/frag/fragmentdupefilter.cc (1.3),
-	  elements/wifi/frag/fragmentdupefilter.hh (1.4),
-	  elements/wifi/frag/fragmentencap.cc (1.3),
-	  elements/wifi/frag/fragmentencap.hh (1.3),
-	  elements/wifi/frag/fragmentresender.cc (1.3),
-	  elements/wifi/frag/fragmentresender.hh (1.4),
-	  elements/wifi/frag/printfragment.cc (1.3),
-	  elements/wifi/frag/printfragment.hh (1.3),
 	  elements/wifi/sr/checksrheader.cc (1.6),
 	  elements/wifi/sr/checksrheader.hh (1.5),
 	  elements/wifi/sr/counterflood.cc (1.6),
@@ -4578,15 +4497,6 @@
 	  elements/wifi/ap/openauthresponder.cc (1.8),
 	  elements/wifi/ap/proberesponder.cc (1.8),
 	  elements/wifi/ap/stationtable.cc (1.3),
-	  elements/wifi/frag/checkfragment.cc (1.2),
-	  elements/wifi/frag/defragment.cc (1.2),
-	  elements/wifi/frag/fragment.cc (1.2),
-	  elements/wifi/frag/fragmentack.cc (1.3),
-	  elements/wifi/frag/fragmentdecap.cc (1.2),
-	  elements/wifi/frag/fragmentdupefilter.cc (1.2),
-	  elements/wifi/frag/fragmentencap.cc (1.2),
-	  elements/wifi/frag/fragmentresender.cc (1.2),
-	  elements/wifi/frag/printfragment.cc (1.2),
 	  elements/wifi/sr/checksrheader.cc (1.4),
 	  elements/wifi/sr/counterflood.cc (1.5),
 	  elements/wifi/sr/dupefilter.cc (1.2),
@@ -5201,13 +5111,10 @@
 	  wifi/linkfailuredetection.hh (1.6), wifi/linktable.cc (1.14),
 	  wifi/linktable.hh (1.9), wifi/madwifirate.hh (1.7),
 	  wifi/probetxrate.hh (1.15), wifi/rxstats.hh (1.11),
-	  wifi/txstat.hh (1.4), wifi/frag/defragment.hh (1.4),
-	  wifi/frag/fragmentack.hh (1.4), wifi/frag/fragmentdupefilter.hh
-	  (1.3), wifi/frag/fragmentresender.hh (1.3),
-	  wifi/sr/checksrheader.hh (1.4), wifi/sr/ettstat.hh (1.12),
-	  wifi/sr/ipaddresscounter.hh (1.3), wifi/sr/setgateway.hh (1.3),
-	  wifi/station/beaconscanner.hh (1.6): fixes for newer GCCs: remove
-	  redundant "class"es
+	  wifi/txstat.hh (1.4), wifi/sr/checksrheader.hh (1.4),
+	  wifi/sr/ettstat.hh (1.12), wifi/sr/ipaddresscounter.hh (1.3),
+	  wifi/sr/setgateway.hh (1.3), wifi/station/beaconscanner.hh (1.6):
+	  fixes for newer GCCs: remove redundant "class"es
 
 2004-12-30 Thursday 01:13  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -5412,13 +5319,8 @@
 	  wifi/ap/associationresponder.hh (1.3), wifi/ap/beaconsource.hh
 	  (1.4), wifi/ap/openauthresponder.hh (1.3),
 	  wifi/ap/proberesponder.hh (1.3), wifi/ap/stationtable.hh (1.2),
-	  wifi/frag/checkfragment.hh (1.2), wifi/frag/defragment.hh (1.3),
-	  wifi/frag/fragment.hh (1.2), wifi/frag/fragmentack.hh (1.3),
-	  wifi/frag/fragmentdecap.hh (1.2), wifi/frag/fragmentdupefilter.hh
-	  (1.2), wifi/frag/fragmentencap.hh (1.2),
-	  wifi/frag/fragmentresender.hh (1.2), wifi/frag/printfragment.hh
-	  (1.2), wifi/sr/checksrheader.hh (1.3), wifi/sr/counterflood.hh
-	  (1.2), wifi/sr/ettstat.hh (1.11), wifi/sr/flashflood.hh (1.2),
+	  wifi/sr/checksrheader.hh (1.3), wifi/sr/counterflood.hh (1.2),
+	  wifi/sr/ettstat.hh (1.11), wifi/sr/flashflood.hh (1.2),
 	  wifi/sr/gatewayselector.hh (1.5), wifi/sr/ipaddresscounter.hh
 	  (1.2), wifi/sr/localbroadcast.hh (1.2), wifi/sr/metricflood.hh
 	  (1.2), wifi/sr/setsourceroute.hh (1.2), wifi/sr/setsrchecksum.hh
@@ -6185,10 +6087,6 @@
 	* elements/standard/: randomsource.cc (1.21), randomsource.hh
 	  (1.14): RandomSource sets the time
 
-2004-09-15 Wednesday 19:27  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/frag/defragment.hh (1.2): make gcc warning stop
-
 2004-09-15 Wednesday 19:06  John Bicket <jbicket@mit.edu>
 
 	* include/clicknet/wifi.h (1.8): more stuff that's not in the
@@ -6265,9 +6163,8 @@
 
 2004-09-02 Thursday 00:03  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: analysis/countfragbytes.cc (1.2),
-	  analysis/countfragbytes.hh (1.2), frag/fragmentack.cc (1.2),
-	  frag/fragmentack.hh (1.2): more byte-error analysis stuff.
+	* elements/wifi/analysis/: countfragbytes.cc (1.2),
+	  countfragbytes.hh (1.2): more byte-error analysis stuff.
 
 2004-08-29 Sunday 13:31  John Bicket <jbicket@mit.edu>
 
@@ -6278,15 +6175,6 @@
 
 	* elements/wifi/: wifidecap.cc (1.7), wifiencap.cc (1.8),
 	  analysis/counterrors.cc (1.2), analysis/counterrors.hh (1.2),
-	  frag/checkfragment.cc (1.1), frag/checkfragment.hh (1.1),
-	  frag/defragment.cc (1.1), frag/defragment.hh (1.1), frag/frag.hh
-	  (1.1), frag/fragment.cc (1.1), frag/fragment.hh (1.1),
-	  frag/fragmentack.cc (1.1), frag/fragmentack.hh (1.1),
-	  frag/fragmentdecap.cc (1.1), frag/fragmentdecap.hh (1.1),
-	  frag/fragmentdupefilter.cc (1.1), frag/fragmentdupefilter.hh
-	  (1.1), frag/fragmentencap.cc (1.1), frag/fragmentencap.hh (1.1),
-	  frag/fragmentresender.cc (1.1), frag/fragmentresender.hh (1.1),
-	  frag/printfragment.cc (1.1), frag/printfragment.hh (1.1),
 	  station/beaconscanner.hh (1.3): first fragment elements.
 
 2004-08-27 Friday 03:09  Eddie Kohler <kohler@cs.ucla.edu>
