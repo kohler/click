@@ -1,3 +1,10 @@
+2006-03-31 Friday 18:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/grid/dsrroutetable.hh (1.10),
+	  elements/grid/gridroutetable.hh (1.42),
+	  elements/local/tcpreflector.hh (1.6), lib/routerthread.cc (1.64):
+	  gcc-4.1
+
 2006-03-27 Monday 17:18  John Bicket <jbicket@mit.edu>
 
 	* include/clicknet/dhcp.h (1.2): add a dhcp server
