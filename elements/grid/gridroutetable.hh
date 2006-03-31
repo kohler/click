@@ -238,7 +238,7 @@ private:
 
   /* extended logging */
   ErrorHandler *_extended_logging_errh;
-  void GridRouteTable::log_route_table(); // print route table on 'routelog' chatter channel
+  void log_route_table(); // print route table on 'routelog' chatter channel
 
   /* binary logging */
   GridLogger *_log;

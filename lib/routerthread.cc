@@ -23,14 +23,14 @@
 #include <click/router.hh>
 #include <click/routerthread.hh>
 #include <click/master.hh>
-#ifdef CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 # include <linux/sched.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #endif
-#ifdef CLICK_BSDMODULE
+#if CLICK_BSDMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 # include <sys/kthread.h>

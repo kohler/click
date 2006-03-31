@@ -38,7 +38,7 @@ class TCPReflector : public Element {
   const char *processing() const		{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *);
-  Packet *TCPReflector::tcp_input(Packet *xp);
+  Packet *tcp_input(Packet *xp);
 };
 
 CLICK_ENDDECLS

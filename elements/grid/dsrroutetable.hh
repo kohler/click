@@ -429,7 +429,7 @@ private:
 
   static unsigned long diff_in_ms(timeval, timeval);
 
-  static IPAddress DSRRouteTable::next_hop(Packet *p);
+  static IPAddress next_hop(Packet *p);
 
   unsigned char get_metric(EtherAddress);
   unsigned short route_metric(DSRRoute r);
