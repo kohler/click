@@ -134,7 +134,7 @@ struct click_wifi {,
  *	information element
  *		octect elemid
  *		octect length
- *		octect information[length[
+ *		octect information[length]
  */
 typedef uint8_t *	wifi_mgt_beacon_t;
 
@@ -405,7 +405,7 @@ typedef struct {
 #define WIFI_CW_MIN 31
 #define WIFI_CW_MAX 1023
 
-static const u_int8_t wifi_llc_header[] = {0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00};
-
+// 6-byte LLC header (last byte is terminating NUL)
+#define wifi_llc_header ((const uint8_t *) "\xAA\xAA\x03\x00\x00")
 
 #endif /* !_CLICKNET_WIFI_H_ */
