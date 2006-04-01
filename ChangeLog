@@ -1,3 +1,12 @@
+2006-04-01 Saturday 01:04  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: copyrxstats.cc (1.8), copyrxstats.hh (1.5),
+	  linkfailuredetection.cc (1.16), linkfailuredetection.hh (1.8),
+	  setwifiextraflag.cc (1.6), setwifiextraflag.hh (1.5),
+	  txfeedbackstats.cc (1.10), txfeedbackstats.hh (1.5), txflog.cc
+	  (1.7), txflog.hh (1.4), txstat.cc (1.9), txstat.hh (1.6): remove
+	  depreciated elements.
+
 2006-03-31 Friday 23:24  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.81), doc/click-mkmindriver.1 (1.8),
@@ -149,11 +158,6 @@
 
 	* conf/wifi/gen_config_roofnet.sh (1.10): use wifi0raw
 
-2006-03-14 Tuesday 13:18  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: ettstat.cc (1.39), gatewayselector.cc (1.24),
-	  metricflood.cc (1.13), srquerier.cc (1.17): less debugging.
-
 2006-03-14 Tuesday 03:21  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/srcr.click (1.11): set checksum on replies.
@@ -170,11 +174,6 @@
 2006-03-05 Sunday 01:24  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/srcr.click (1.10): set debug to false
-
-2006-03-04 Saturday 19:03  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: ettstat.cc (1.38), ettstat.hh (1.22): [no log
-	  message]
 
 2006-03-04 Saturday 18:28  John Bicket <jbicket@mit.edu>
 
@@ -207,21 +206,6 @@
 
 	* doc/: click-flatten.1 (1.8), click-pretty.1 (1.10), click.1
 	  (1.16), click.o.8 (1.16): nits
-
-2006-03-03 Friday 02:36  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/gatewayselector.cc (1.23): make expire timer
-	  longer.
-
-2006-03-03 Friday 02:34  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/srforwarder.cc (1.20): do link lookups in data
-	  packets
-
-2006-03-03 Friday 02:29  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/ettmetric.cc (1.12): threshold _really_ crappy
-	  links.
 
 2006-03-03 Friday 02:08  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -283,11 +267,6 @@
 	  elements/standard/linkunqueue.cc (1.11),
 	  elements/standard/linkunqueue.hh (1.8), NEWS (1.163): fix
 	  LinkUnqueue (Trevor Harrison reported the bug)
-
-2006-03-02 Thursday 00:35  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: ettmetric.cc (1.11), ettstat.cc (1.37),
-	  txcountmetric.cc (1.6): add forgotten ELEMENT_REQUIRES
 
 2006-03-02 Thursday 00:22  John Bicket <jbicket@mit.edu>
 
@@ -373,11 +352,6 @@
 
 	* conf/wifi/srcr.click (1.8): fix typo.
 
-2006-02-27 Monday 15:24  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: sr1gatewayresponder.cc (1.1),
-	  sr1gatewayresponder.hh (1.1): add gatewayresponder element.
-
 2006-02-27 Monday 14:23  John Bicket <jbicket@mit.edu>
 
 	* lib/element.cc (1.114): better hint for warning.
@@ -389,9 +363,8 @@
 2006-02-27 Monday 14:18  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: wifidecap.cc (1.16), wifidupefilter.cc (1.10),
-	  wifidupefilter.hh (1.5), sr/gatewayselector.cc (1.22),
-	  sr/gatewayselector.hh (1.13): add gatewayresponder to propogate
-	  routes to gateways, make wifidupefilter less expensive.
+	  wifidupefilter.hh (1.5): add gatewayresponder to propogate routes
+	  to gateways, make wifidupefilter less expensive.
 
 2006-02-27 Monday 14:06  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -430,24 +403,11 @@
 	  elements/wifi/wifidupefilter.cc (1.9), elements/wifi/wifiencap.cc
 	  (1.16), elements/wifi/wififragment.cc (1.4),
 	  elements/wifi/wifiseq.cc (1.5), elements/wifi/wirelessinfo.cc
-	  (1.7), elements/wifi/analysis/printpower.cc (1.4),
-	  elements/wifi/analysis/printrate.cc (1.4),
-	  elements/wifi/ap/associationresponder.cc (1.11),
+	  (1.7), elements/wifi/ap/associationresponder.cc (1.11),
 	  elements/wifi/ap/beaconsource.cc (1.13),
 	  elements/wifi/ap/openauthresponder.cc (1.10),
 	  elements/wifi/ap/proberesponder.cc (1.10),
 	  elements/wifi/ap/stationtable.cc (1.7),
-	  elements/wifi/sr/counterflood.cc (1.11),
-	  elements/wifi/sr/ettstat.cc (1.36),
-	  elements/wifi/sr/floodtracker.cc (1.4),
-	  elements/wifi/sr/gatewayselector.cc (1.21),
-	  elements/wifi/sr/ipaddresscounter.cc (1.5),
-	  elements/wifi/sr/metricflood.cc (1.12),
-	  elements/wifi/sr/setgateway.cc (1.10),
-	  elements/wifi/sr/srdestcache.cc (1.2), elements/wifi/sr/srlog.cc
-	  (1.6), elements/wifi/sr/srquerier.cc (1.16),
-	  elements/wifi/sr/srqueryforwarder.cc (1.16),
-	  elements/wifi/sr/srqueryresponder.cc (1.15),
 	  elements/wifi/station/associationrequester.cc (1.16),
 	  elements/wifi/station/beaconscanner.cc (1.13),
 	  elements/wifi/station/beacontracker.cc (1.5),
@@ -781,9 +741,7 @@
 	  elements/userlevel/todevice.hh (1.35),
 	  elements/userlevel/todump.hh (1.39), elements/userlevel/tohost.hh
 	  (1.4), elements/userlevel/torawsocket.hh (1.3),
-	  elements/userlevel/tosocket.hh (1.6),
-	  elements/wifi/analysis/wificounter.hh (1.4),
-	  elements/wifi/sr/setsourceroute.hh (1.6): redo element
+	  elements/userlevel/tosocket.hh (1.6): redo element
 	  categorization, hopefully this iteration may actually be useful
 	  for people
 
@@ -802,9 +760,8 @@
 
 2006-02-17 Friday 13:26  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: linktable.cc (1.24), sr/srforwarder.cc (1.19),
-	  sr/srquerier.cc (1.15): fix some performance issues when running
-	  on very slow nodes.
+	* elements/wifi/linktable.cc (1.24): fix some performance issues
+	  when running on very slow nodes.
 
 2006-02-16 Thursday 16:15  John Bicket <jbicket@mit.edu>
 
@@ -831,39 +788,15 @@
 
 	* doc/: click-elem2man (1.47), click-elem2man (1.48): more entities
 
-2006-02-15 Wednesday 19:57  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: checksrheader.cc (1.10), counterflood.cc
-	  (1.10), counterflood.hh (1.7), dupefilter.cc (1.5), ettstat.cc
-	  (1.35), ettstat.hh (1.21), gatewayselector.cc (1.20),
-	  gatewayselector.hh (1.12), localbroadcast.cc (1.11),
-	  localbroadcast.hh (1.8), metricflood.cc (1.11), metricflood.hh
-	  (1.8), pflood.cc (1.10), pflood.hh (1.6), printsr.cc (1.13),
-	  setgateway.cc (1.9), setsourceroute.cc (1.8), setsrchecksum.cc
-	  (1.7), setsrflag.cc (1.5), srforwarder.cc (1.18), srforwarder.hh
-	  (1.10), srlog.cc (1.5), srpacket.hh (1.15), srquerier.cc (1.14),
-	  srquerier.hh (1.11), srqueryforwarder.cc (1.15),
-	  srqueryforwarder.hh (1.10), srqueryresponder.cc (1.14),
-	  srqueryresponder.hh (1.10): sr directory now contains version 1
-	  of the srcr protocol. to be depreciated.
-
 2006-02-15 Wednesday 19:39  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: athdescdecap.cc (1.4), bitrate.cc (1.3),
 	  bitrate.hh (1.2), fromhandler.cc (1.3), fromhandler.hh (1.2),
 	  linktable.cc (1.23), packetstore.cc (1.3), packetstore.hh (1.2),
-	  path.hh (1.1), printwifi.cc (1.15), probetxrate.cc (1.22),
-	  sr/checksrheader.cc (1.9), sr/counterflood.hh (1.6),
-	  sr/floodtracker.hh (1.4), sr/gatewayselector.hh (1.11),
-	  sr/localbroadcast.hh (1.7), sr/metricflood.hh (1.7), sr/path.hh
-	  (1.3), sr/pflood.hh (1.5), sr/setgateway.hh (1.9),
-	  sr/setsourceroute.cc (1.7), sr/setsourceroute.hh (1.5),
-	  sr/setsrchecksum.cc (1.6), sr/srdestcache.hh (1.2),
-	  sr/srforwarder.cc (1.17), sr/srforwarder.hh (1.9), sr/srpacket.hh
-	  (1.14), sr/srquerier.hh (1.10), sr/srqueryforwarder.hh (1.9),
-	  sr/srqueryresponder.hh (1.9): version 2 of the srcr protocol;
-	  version 2 is byte-order independent. this file layout structure
-	  allows multiple versions of the protocol to run in parallel.
+	  path.hh (1.1), printwifi.cc (1.15), probetxrate.cc (1.22):
+	  version 2 of the srcr protocol; version 2 is byte-order
+	  independent. this file layout structure allows multiple versions
+	  of the protocol to run in parallel.
 
 2006-02-15 Wednesday 14:39  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -912,14 +845,8 @@
 2006-02-05 Sunday 20:35  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/wifi/: packetstore.cc (1.2), txfeedbackstats.cc (1.9),
-	  txflog.cc (1.5), wifidupefilter.cc (1.8), sr/dupefilter.cc (1.4),
-	  sr/ettstat.cc (1.34), sr/srlog.cc (1.4): protect template
+	  txflog.cc (1.5), wifidupefilter.cc (1.8): protect template
 	  instantiations appropriately
-
-2006-02-02 Thursday 18:07  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/gatewayselector.cc (1.19): don't run dijstra for
-	  every packet.
 
 2006-02-02 Thursday 15:27  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -944,11 +871,6 @@
 	* lib/userutils.cc (1.41), elements/userlevel/todump.cc (1.66),
 	  include/click/userutils.hh (1.16): make todump support compressed
 	  files.
-
-2006-01-23 Monday 00:59  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/ettstat.cc (1.33): endianness bug reported by
-	  Szymon Jakubczak
 
 2006-01-20 Friday 17:02  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -1219,8 +1141,6 @@
 	  elements/userlevel/fromdump.cc (1.101),
 	  elements/userlevel/printold.cc (1.15),
 	  elements/userlevel/progressbar.cc (1.32),
-	  elements/wifi/sr/ettstat.cc (1.32),
-	  elements/wifi/sr/gatewayselector.cc (1.18),
 	  include/click/gaprate.hh (1.10): timestamp changes
 
 2006-01-04 Wednesday 12:41  Eddie Kohler <kohler@cs.ucla.edu>
@@ -1314,21 +1234,11 @@
 	  (1.12), elements/wifi/linkfailuredetection.cc (1.14),
 	  elements/wifi/linktable.cc (1.22), elements/wifi/madwifirate.cc
 	  (1.20), elements/wifi/txfeedbackstats.cc (1.8),
-	  elements/wifi/ap/beaconsource.cc (1.12),
-	  elements/wifi/sr/checksrheader.cc (1.8),
-	  elements/wifi/sr/ettstat.cc (1.31),
-	  elements/wifi/sr/gatewayselector.cc (1.17),
-	  elements/wifi/sr/localbroadcast.cc (1.10),
-	  elements/wifi/sr/metricflood.cc (1.10),
-	  elements/wifi/sr/setgateway.cc (1.8),
-	  elements/wifi/sr/setsourceroute.cc (1.6),
-	  elements/wifi/sr/setsrchecksum.cc (1.5),
-	  elements/wifi/sr/srforwarder.cc (1.16),
-	  elements/wifi/sr/srqueryforwarder.cc (1.14),
-	  include/click/element.hh (1.50), include/click/router.hh (1.78),
-	  include/click/timer.hh (1.28), include/click/timestamp.hh (1.7),
-	  lib/confparse.cc (1.145), lib/element.cc (1.111), lib/nameinfo.cc
-	  (1.6), lib/router.cc (1.184), lib/timestamp.cc (1.3): document
+	  elements/wifi/ap/beaconsource.cc (1.12), include/click/element.hh
+	  (1.50), include/click/router.hh (1.78), include/click/timer.hh
+	  (1.28), include/click/timestamp.hh (1.7), lib/confparse.cc
+	  (1.145), lib/element.cc (1.111), lib/nameinfo.cc (1.6),
+	  lib/router.cc (1.184), lib/timestamp.cc (1.3): document
 	  Timestamp; rename Timer methods from reschedule_after_s to
 	  reschedule_after_sec and similar; rename Element::id() to
 	  Element::name(); some more changes
@@ -1362,15 +1272,6 @@
 	  tools/click-install/click-install.cc (1.60): make greediness
 	  run-time configurable, rather than compile-time configurable
 
-2005-12-19 Monday 19:01  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/ettstat.cc (1.30): another byte-order bug.
-
-2005-12-19 Monday 18:58  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: ettstat.cc (1.29), srpacket.hh (1.13): byte
-	  order fixes.
-
 2005-12-19 Monday 18:37  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/gen_config_roofnet.sh (1.2): fix typo.
@@ -1379,11 +1280,6 @@
 
 	* configure (1.62), configure.in (1.269): change the way
 	  --enable-all-elements is calculated to allow symbolic links
-
-2005-12-18 Sunday 22:55  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/ettstat.hh (1.20): shrink ett data structure to
-	  fit in 60 byte packets.
 
 2005-12-18 Sunday 21:11  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -1508,18 +1404,8 @@
 
 2005-11-07 Monday 23:40  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: settxrate.cc (1.23), analysis/counterrors.hh
-	  (1.5), analysis/countfecbytes.hh (1.4),
-	  analysis/countfragbytes.hh (1.6), sr/counterflood.cc (1.9),
-	  sr/counterflood.hh (1.5), sr/ettstat.cc (1.28),
-	  sr/gatewayselector.cc (1.16), sr/gatewayselector.hh (1.10),
-	  sr/localbroadcast.cc (1.9), sr/localbroadcast.hh (1.6),
-	  sr/metricflood.cc (1.9), sr/metricflood.hh (1.6), sr/pflood.cc
-	  (1.9), sr/pflood.hh (1.4), sr/srforwarder.cc (1.15),
-	  sr/srforwarder.hh (1.8), sr/srquerier.hh (1.9),
-	  sr/srqueryforwarder.cc (1.13), sr/srqueryforwarder.hh (1.8),
-	  sr/srqueryresponder.cc (1.13), sr/srqueryresponder.hh (1.8):
-	  bit-endian fixes from Spencer Chang.
+	* elements/wifi/settxrate.cc (1.23): bit-endian fixes from Spencer
+	  Chang.
 
 2005-10-27 Thursday 21:19  John Bicket <jbicket@mit.edu>
 
@@ -1540,9 +1426,8 @@
 
 2005-10-27 Thursday 12:09  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: athdescdecap.cc (1.3), radiotapdecap.cc (1.4),
-	  analysis/wificounter.cc (1.2), analysis/wificounter.hh (1.3),
-	  sr/srforwarder.cc (1.14): slight cleanups.
+	* elements/wifi/: athdescdecap.cc (1.3), radiotapdecap.cc (1.4):
+	  slight cleanups.
 
 2005-10-21 Friday 17:13  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -1567,47 +1452,6 @@
 
 	* include/click/element.hh (1.47), lib/element.cc (1.107),
 	  include/click/element.hh (1.48): nits
-
-2005-10-20 Thursday 20:09  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: srforwarder.cc (1.13), srforwarder.hh (1.7),
-	  srpacket.hh (1.12): even more code cleaning.
-
-2005-10-20 Thursday 19:53  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/srpacket.hh (1.11): more cleanup.
-
-2005-10-20 Thursday 19:40  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: counterflood.cc (1.8), flashflood.cc (1.12),
-	  flashflood.hh (1.5), gatewayselector.cc (1.15), metricflood.cc
-	  (1.8), pflood.cc (1.8), printsr.cc (1.12), setsrflag.cc (1.4),
-	  srforwarder.cc (1.12), srpacket.hh (1.10), srquerier.cc (1.13),
-	  srqueryforwarder.cc (1.12), srqueryresponder.cc (1.12): code
-	  cleanup.
-
-2005-10-20 Thursday 19:14  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: inorderqueue.cc (1.8), inorderqueue.hh (1.5),
-	  srpacket.hh (1.9): remove outdated elements.
-
-2005-10-20 Thursday 19:13  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/: analysis/printpower.cc (1.3),
-	  analysis/printpower.hh (1.3), analysis/printrate.cc (1.3),
-	  analysis/printrate.hh (1.3), sr/checksrheader.cc (1.7),
-	  sr/counterflood.cc (1.7), sr/flashflood.cc (1.11),
-	  sr/gatewayselector.cc (1.14), sr/localbroadcast.cc (1.8),
-	  sr/metricflood.cc (1.7), sr/pflood.cc (1.7), sr/printsr.cc
-	  (1.11), sr/srpacket.hh (1.8), sr/srqueryforwarder.cc (1.11),
-	  sr/srqueryresponder.cc (1.11): fixes to ensure endianness works
-	  correctly.
-
-2005-10-20 Thursday 12:29  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: ettstat.cc (1.27), ettstat.hh (1.19),
-	  printsr.cc (1.10), srforwarder.cc (1.11), srpacket.hh (1.7): fix
-	  big-endian problems. reported by YenJung Chang.
 
 2005-10-13 Thursday 13:43  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
@@ -1653,11 +1497,6 @@
 
 	* include/click/glue.hh (1.53): byteswap.h needs to be checked for
 
-2005-10-03 Monday 12:56  Eddie Kohler <kohler@cs.ucla.edu>
-
-	* elements/wifi/analysis/: printrate.cc (1.2), printrate.hh (1.2):
-	  fix port_count()/processing() methods
-
 2005-10-03 Monday 12:41  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/element.cc (1.103): doc
@@ -1681,11 +1520,6 @@
 	  click-pretty/Makefile.in (1.9), click-undead/Makefile.in (1.15),
 	  click-xform/Makefile.in (1.24), click2xml/Makefile.in (1.7):
 	  change link order (YenJung Chang)
-
-2005-10-03 Monday 11:53  Eddie Kohler <kohler@cs.ucla.edu>
-
-	* elements/wifi/analysis/: printpower.cc (1.2), printpower.hh
-	  (1.2): use port_count()
 
 2005-10-03 Monday 11:17  John Bicket <jbicket@mit.edu>
 
@@ -1734,11 +1568,6 @@
 	  (1.19), include/click/task.hh (1.40), lib/notifier.cc (1.20):
 	  Notifier documentation-inspired updates
 
-2005-10-02 Sunday 16:54  Eddie Kohler <kohler@cs.ucla.edu>
-
-	* elements/wifi/analysis/: printseq.cc (1.2), printseq.hh (1.2),
-	  wificounter.hh (1.2): compile fixes, and use port_count()
-
 2005-10-02 Sunday 16:53  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.97), INSTALL (1.39), config-linuxmodule.h.in (1.13),
@@ -1757,11 +1586,6 @@
 
 	* config.h.in (1.34): GCC version fixup
 
-2005-09-30 Friday 16:45  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: srdestcache.cc (1.1), srdestcache.hh (1.1):
-	  roaming for roofnet.
-
 2005-09-29 Thursday 16:32  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/ethercount.hh (1.1): this belongs with the last
@@ -1769,21 +1593,15 @@
 
 2005-09-29 Thursday 16:31  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: ethercount.cc (1.1), analysis/printpower.cc
-	  (1.1), analysis/printpower.hh (1.1), analysis/printrate.cc (1.1),
-	  analysis/printrate.hh (1.1), analysis/printseq.cc (1.1),
-	  analysis/printseq.hh (1.1), analysis/wificounter.cc (1.1),
-	  analysis/wificounter.hh (1.1):  a bunch of fun elements! wahoo!
+	* elements/wifi/ethercount.cc (1.1):  a bunch of fun elements!
+	  wahoo!
 
 2005-09-29 Thursday 16:29  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: athdesc.h (1.1), athdescdecap.cc (1.1),
 	  athdescdecap.hh (1.1), athdescencap.cc (1.1), athdescencap.hh
-	  (1.1), radiotapencap.cc (1.4), rxstats.cc (1.15), sr/ecnqueue.cc
-	  (1.8), sr/ecnqueue.hh (1.4), sr/ettstat.cc (1.26), sr/ettstat.hh
-	  (1.18), sr/metricflood.cc (1.6), sr/srqueryforwarder.cc (1.10),
-	  sr/srqueryresponder.cc (1.10), sr/tokenqueue.cc (1.11),
-	  sr/tokenqueue.hh (1.5): add athdesc*, remove some old elements.
+	  (1.1), radiotapencap.cc (1.4), rxstats.cc (1.15): add athdesc*,
+	  remove some old elements.
 
 2005-09-29 Thursday 02:15  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -1804,9 +1622,7 @@
 	  elements/standard/mixedqueue.cc (1.6),
 	  elements/standard/notifierqueue.cc (1.15),
 	  elements/test/upstreamnotifier.cc (1.4),
-	  elements/userlevel/fromhost.cc (1.9),
-	  elements/wifi/sr/ecnqueue.cc (1.7),
-	  elements/wifi/sr/tokenqueue.cc (1.10), include/click/notifier.hh
+	  elements/userlevel/fromhost.cc (1.9), include/click/notifier.hh
 	  (1.18), lib/notifier.cc (1.17), lib/notifier.cc (1.18): more
 	  Notifier related documentation fixes, and slight redesign (less
 	  object oriented)
@@ -1929,18 +1745,7 @@
 	  (1.21), elements/wifi/linktable.hh (1.10),
 	  elements/wifi/madwifirate.cc (1.19), elements/wifi/madwifirate.hh
 	  (1.11), elements/wifi/ap/beaconsource.cc (1.11),
-	  elements/wifi/ap/beaconsource.hh (1.7),
-	  elements/wifi/sr/ettstat.cc (1.25), elements/wifi/sr/ettstat.hh
-	  (1.17), elements/wifi/sr/gatewayselector.cc (1.13),
-	  elements/wifi/sr/gatewayselector.hh (1.9),
-	  elements/wifi/sr/inorderqueue.cc (1.7),
-	  elements/wifi/sr/inorderqueue.hh (1.4),
-	  elements/wifi/sr/localbroadcast.cc (1.7),
-	  elements/wifi/sr/localbroadcast.hh (1.5),
-	  elements/wifi/sr/setgateway.cc (1.7),
-	  elements/wifi/sr/setgateway.hh (1.8),
-	  elements/wifi/sr/tokenqueue.cc (1.9),
-	  elements/wifi/sr/tokenqueue.hh (1.4), include/click/element.hh
+	  elements/wifi/ap/beaconsource.hh (1.7), include/click/element.hh
 	  (1.44), include/click/string.hh (1.40), include/click/task.hh
 	  (1.39), include/click/standard/drivermanager.hh (1.26),
 	  lib/element.cc (1.99), lib/string.cc (1.55), lib/timer.cc (1.37),
@@ -1990,8 +1795,7 @@
 	  elements/userlevel/controlsocket.cc (1.62),
 	  elements/wifi/arptable.cc (1.8), elements/wifi/availablerates.cc
 	  (1.11), elements/wifi/linktable.cc (1.20),
-	  elements/wifi/ap/stationtable.cc (1.6),
-	  elements/wifi/sr/ettstat.cc (1.24), include/click/element.hh
+	  elements/wifi/ap/stationtable.cc (1.6), include/click/element.hh
 	  (1.42), include/click/routerthread.hh (1.31),
 	  include/click/task.hh (1.37), lib/element.cc (1.96),
 	  lib/routerthread.cc (1.55), lib/task.cc (1.37): more
@@ -2014,8 +1818,7 @@
 	  elements/userlevel/controlsocket.cc (1.61),
 	  elements/wifi/arptable.cc (1.7), elements/wifi/availablerates.cc
 	  (1.10), elements/wifi/linktable.cc (1.19),
-	  elements/wifi/ap/stationtable.cc (1.5),
-	  elements/wifi/sr/ettstat.cc (1.23), include/click/element.hh
+	  elements/wifi/ap/stationtable.cc (1.5), include/click/element.hh
 	  (1.41), include/click/router.hh (1.76), lib/element.cc (1.95),
 	  lib/router.cc (1.180): take_state update: now
 	  Element::hotswap_element(), the default implementation, checks
@@ -2607,16 +2410,6 @@
 	  (1.4), elements/wifi/wifiseq.hh (1.3),
 	  elements/wifi/wirelessinfo.cc (1.6),
 	  elements/wifi/wirelessinfo.hh (1.4),
-	  elements/wifi/analysis/counterrors.cc (1.6),
-	  elements/wifi/analysis/counterrors.hh (1.4),
-	  elements/wifi/analysis/countfecbytes.cc (1.3),
-	  elements/wifi/analysis/countfecbytes.hh (1.3),
-	  elements/wifi/analysis/countfragbytes.cc (1.6),
-	  elements/wifi/analysis/countfragbytes.hh (1.5),
-	  elements/wifi/analysis/errorthreshold.cc (1.3),
-	  elements/wifi/analysis/errorthreshold.hh (1.3),
-	  elements/wifi/analysis/locationhistogram.cc (1.4),
-	  elements/wifi/analysis/locationhistogram.hh (1.3),
 	  elements/wifi/ap/associationresponder.cc (1.10),
 	  elements/wifi/ap/associationresponder.hh (1.5),
 	  elements/wifi/ap/beaconsource.cc (1.10),
@@ -2627,57 +2420,6 @@
 	  elements/wifi/ap/proberesponder.hh (1.4),
 	  elements/wifi/ap/stationtable.cc (1.4),
 	  elements/wifi/ap/stationtable.hh (1.3),
-	  elements/wifi/sr/checksrheader.cc (1.6),
-	  elements/wifi/sr/checksrheader.hh (1.5),
-	  elements/wifi/sr/counterflood.cc (1.6),
-	  elements/wifi/sr/counterflood.hh (1.4),
-	  elements/wifi/sr/dupefilter.cc (1.3),
-	  elements/wifi/sr/dupefilter.hh (1.2),
-	  elements/wifi/sr/ecnqueue.cc (1.6), elements/wifi/sr/ecnqueue.hh
-	  (1.3), elements/wifi/sr/ettmetric.cc (1.10),
-	  elements/wifi/sr/ettmetric.hh (1.12), elements/wifi/sr/ettstat.cc
-	  (1.22), elements/wifi/sr/ettstat.hh (1.16),
-	  elements/wifi/sr/flashflood.cc (1.10),
-	  elements/wifi/sr/flashflood.hh (1.4),
-	  elements/wifi/sr/floodtracker.cc (1.3),
-	  elements/wifi/sr/floodtracker.hh (1.3),
-	  elements/wifi/sr/gatewayselector.cc (1.12),
-	  elements/wifi/sr/gatewayselector.hh (1.8),
-	  elements/wifi/sr/inorderqueue.cc (1.6),
-	  elements/wifi/sr/inorderqueue.hh (1.3),
-	  elements/wifi/sr/ipaddresscounter.cc (1.4),
-	  elements/wifi/sr/ipaddresscounter.hh (1.4),
-	  elements/wifi/sr/linkmetric.hh (1.6),
-	  elements/wifi/sr/localbroadcast.cc (1.6),
-	  elements/wifi/sr/localbroadcast.hh (1.4),
-	  elements/wifi/sr/metricflood.cc (1.5),
-	  elements/wifi/sr/metricflood.hh (1.5), elements/wifi/sr/path.hh
-	  (1.2), elements/wifi/sr/pflood.cc (1.6),
-	  elements/wifi/sr/pflood.hh (1.3), elements/wifi/sr/printsr.cc
-	  (1.9), elements/wifi/sr/printsr.hh (1.3),
-	  elements/wifi/sr/setgateway.cc (1.6),
-	  elements/wifi/sr/setgateway.hh (1.7),
-	  elements/wifi/sr/setsourceroute.cc (1.5),
-	  elements/wifi/sr/setsourceroute.hh (1.4),
-	  elements/wifi/sr/setsrchecksum.cc (1.4),
-	  elements/wifi/sr/setsrchecksum.hh (1.3),
-	  elements/wifi/sr/setsrflag.cc (1.3),
-	  elements/wifi/sr/setsrflag.hh (1.2),
-	  elements/wifi/sr/srforwarder.cc (1.10),
-	  elements/wifi/sr/srforwarder.hh (1.6), elements/wifi/sr/srlog.cc
-	  (1.3), elements/wifi/sr/srlog.hh (1.2),
-	  elements/wifi/sr/srquerier.cc (1.12),
-	  elements/wifi/sr/srquerier.hh (1.8),
-	  elements/wifi/sr/srqueryforwarder.cc (1.9),
-	  elements/wifi/sr/srqueryforwarder.hh (1.7),
-	  elements/wifi/sr/srqueryresponder.cc (1.9),
-	  elements/wifi/sr/srqueryresponder.hh (1.7),
-	  elements/wifi/sr/stripsrheader.cc (1.3),
-	  elements/wifi/sr/stripsrheader.hh (1.3),
-	  elements/wifi/sr/tokenqueue.cc (1.8),
-	  elements/wifi/sr/tokenqueue.hh (1.3),
-	  elements/wifi/sr/txcountmetric.cc (1.5),
-	  elements/wifi/sr/txcountmetric.hh (1.4),
 	  elements/wifi/station/associationrequester.cc (1.15),
 	  elements/wifi/station/associationrequester.hh (1.7),
 	  elements/wifi/station/beaconscanner.cc (1.12),
@@ -2899,19 +2641,9 @@
 	* elements/: ip/ipfilter.cc (1.62), standard/classifier.cc (1.51):
 	  nits
 
-2005-07-14 Thursday 21:22  Eddie Kohler <kohler@cs.ucla.edu>
-
-	* elements/wifi/sr/: ecnqueue.cc (1.5), inorderqueue.cc (1.5),
-	  tokenqueue.cc (1.7): more fixes for NotifierQueue change
-
 2005-07-14 Thursday 21:11  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* linuxmodule/Makefile.in (1.99): combine clean
-
-2005-07-14 Thursday 20:40  Eddie Kohler <kohler@cs.ucla.edu>
-
-	* elements/wifi/sr/: ecnqueue.cc (1.4), tokenqueue.cc (1.6): adapt
-	  to NotifierQueue changes
 
 2005-07-14 Thursday 18:08  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -3189,42 +2921,13 @@
 
 	* conf/wifi/gen_config_roofnet.pl (1.9): fix for prism cards.
 
-2005-05-05 Thursday 10:52  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: ettstat.cc (1.21), ettstat.hh (1.15),
-	  setgateway.cc (1.5), setgateway.hh (1.6): don't remove stale
-	  entries in ettstat.  fix idle timeout bug in setgateway.
-
-2005-05-04 Wednesday 23:21  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: ettstat.cc (1.20), ettstat.hh (1.14): ettstat:
-	  print all probes, including zeros.
-
 2005-05-04 Wednesday 14:39  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/srcr.click (1.4): remove debugging stuff.
 
-2005-05-04 Wednesday 13:31  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: floodtracker.cc (1.2), floodtracker.hh (1.2):
-	  floodtracker should be agnostic, not push.
-
 2005-05-04 Wednesday 13:09  John Bicket <jbicket@mit.edu>
 
-	* conf/wifi/srcr.click (1.3), elements/wifi/sr/floodtracker.cc
-	  (1.1), elements/wifi/sr/floodtracker.hh (1.1): add tracker
-	  element.
-
-2005-05-03 Tuesday 16:36  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/gatewayselector.cc (1.11): record only one hit
-	  for each sequence number.
-
-2005-05-03 Tuesday 15:50  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: gatewayselector.cc (1.10), gatewayselector.hh
-	  (1.7): add more informative handlers for gatewayselector. keep
-	  track of number of floods seen.
+	* conf/wifi/srcr.click (1.3): add tracker element.
 
 2005-05-03 Tuesday 15:26  John Bicket <jbicket@mit.edu>
 
@@ -3296,18 +2999,6 @@
 	* elements/wifi/: radiotapdecap.cc (1.1), radiotapdecap.hh (1.1),
 	  radiotapencap.cc (1.1), radiotapencap.hh (1.1): add radiotap
 	  decap/encap.
-
-2005-05-01 Sunday 17:19  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: localbroadcast.hh (1.3), metricflood.hh (1.4),
-	  setsourceroute.cc (1.4), setsourceroute.hh (1.3), srquerier.hh
-	  (1.7), srqueryforwarder.hh (1.6), srqueryresponder.hh (1.6):
-	  documentation fixes.
-
-2005-05-01 Sunday 17:18  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/checksrheader.cc (1.5): fix print bug caught by
-	  Wenjun Hu.
 
 2005-05-01 Sunday 17:16  John Bicket <jbicket@mit.edu>
 
@@ -4029,10 +3720,9 @@
 
 	* elements/linuxmodule/sortedsched.cc (1.13), include/click/glue.hh
 	  (1.46), lib/glue.cc (1.45), lib/ino.cc (1.10),
-	  lib/ipaddresslist.cc (1.2), elements/wifi/linktable.cc (1.17),
-	  elements/wifi/sr/ettstat.cc (1.19): click_qsort has C++ linkage,
-	  and provides an extra callback argument to the comparison
-	  function
+	  lib/ipaddresslist.cc (1.2), elements/wifi/linktable.cc (1.17):
+	  click_qsort has C++ linkage, and provides an extra callback
+	  argument to the comparison function
 
 2005-02-14 Monday 05:43  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -4157,12 +3847,10 @@
 	  elements/wifi/probetxrate.hh (1.18),
 	  elements/wifi/setwifiextraflag.cc (1.3),
 	  elements/wifi/setwifiextraflag.hh (1.2),
-	  elements/wifi/wifidupefilter.cc (1.6),
-	  elements/wifi/sr/ettmetric.hh (1.11), include/clicknet/wifi.h
-	  (1.19), elements/wifi/sr/txcountmetric.hh (1.3): move transmit
-	  time calculation out of clicknet dir - it is in bitrate.cc, and
-	  elements can include wifi/bitrate.cc and use
-	  ELEMENT_REQUIRES(bitrate).
+	  elements/wifi/wifidupefilter.cc (1.6), include/clicknet/wifi.h
+	  (1.19): move transmit time calculation out of clicknet dir - it
+	  is in bitrate.cc, and elements can include wifi/bitrate.cc and
+	  use ELEMENT_REQUIRES(bitrate).
 
 2005-02-09 Wednesday 17:04  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -4519,39 +4207,11 @@
 	  elements/wifi/wifiencap.cc (1.13), elements/wifi/wififragment.cc
 	  (1.2), elements/wifi/wifiseq.cc (1.3),
 	  elements/wifi/wirelessinfo.cc (1.4),
-	  elements/wifi/analysis/counterrors.cc (1.5),
-	  elements/wifi/analysis/countfecbytes.cc (1.2),
-	  elements/wifi/analysis/countfragbytes.cc (1.5),
-	  elements/wifi/analysis/errorthreshold.cc (1.2),
-	  elements/wifi/analysis/locationhistogram.cc (1.3),
 	  elements/wifi/ap/associationresponder.cc (1.9),
 	  elements/wifi/ap/beaconsource.cc (1.9),
 	  elements/wifi/ap/openauthresponder.cc (1.8),
 	  elements/wifi/ap/proberesponder.cc (1.8),
 	  elements/wifi/ap/stationtable.cc (1.3),
-	  elements/wifi/sr/checksrheader.cc (1.4),
-	  elements/wifi/sr/counterflood.cc (1.5),
-	  elements/wifi/sr/dupefilter.cc (1.2),
-	  elements/wifi/sr/ecnqueue.cc (1.3), elements/wifi/sr/ettmetric.cc
-	  (1.9), elements/wifi/sr/ettstat.cc (1.18),
-	  elements/wifi/sr/flashflood.cc (1.9),
-	  elements/wifi/sr/gatewayselector.cc (1.9),
-	  elements/wifi/sr/inorderqueue.cc (1.4),
-	  elements/wifi/sr/ipaddresscounter.cc (1.3),
-	  elements/wifi/sr/localbroadcast.cc (1.5),
-	  elements/wifi/sr/metricflood.cc (1.4), elements/wifi/sr/pflood.cc
-	  (1.5), elements/wifi/sr/printsr.cc (1.8),
-	  elements/wifi/sr/setgateway.cc (1.4),
-	  elements/wifi/sr/setsourceroute.cc (1.3),
-	  elements/wifi/sr/setsrchecksum.cc (1.3),
-	  elements/wifi/sr/setsrflag.cc (1.2),
-	  elements/wifi/sr/srforwarder.cc (1.9), elements/wifi/sr/srlog.cc
-	  (1.2), elements/wifi/sr/srquerier.cc (1.11),
-	  elements/wifi/sr/srqueryforwarder.cc (1.8),
-	  elements/wifi/sr/srqueryresponder.cc (1.8),
-	  elements/wifi/sr/stripsrheader.cc (1.2),
-	  elements/wifi/sr/tokenqueue.cc (1.5),
-	  elements/wifi/sr/txcountmetric.cc (1.4),
 	  elements/wifi/station/associationrequester.cc (1.13),
 	  elements/wifi/station/beaconscanner.cc (1.11),
 	  elements/wifi/station/beacontracker.cc (1.3),
@@ -4950,10 +4610,9 @@
 
 	* elements/ip/radixiplookup.cc (1.10), elements/ip/radixiplookup.hh
 	  (1.10), elements/ip/trieiplookup.cc (1.7),
-	  elements/ip/trieiplookup.hh (1.5), elements/wifi/sr/srquerier.cc
-	  (1.10), include/click/confparse.hh (1.54), lib/routerthread.cc
-	  (1.50), linuxmodule/Makefile.in (1.94): changes to support
-	  linuxmodule Timestamp
+	  elements/ip/trieiplookup.hh (1.5), include/click/confparse.hh
+	  (1.54), lib/routerthread.cc (1.50), linuxmodule/Makefile.in
+	  (1.94): changes to support linuxmodule Timestamp
 
 2004-12-30 Thursday 18:51  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -5058,26 +4717,7 @@
 	  elements/userlevel/todevice.cc (1.45),
 	  elements/userlevel/todump.cc (1.61), elements/wifi/probetxrate.cc
 	  (1.18), elements/wifi/probetxrate.hh (1.17),
-	  elements/wifi/txflog.hh (1.2), elements/wifi/sr/counterflood.cc
-	  (1.4), elements/wifi/sr/counterflood.hh (1.3),
-	  elements/wifi/sr/ettstat.cc (1.17), elements/wifi/sr/ettstat.hh
-	  (1.13), elements/wifi/sr/flashflood.cc (1.8),
-	  elements/wifi/sr/flashflood.hh (1.3),
-	  elements/wifi/sr/gatewayselector.cc (1.8),
-	  elements/wifi/sr/gatewayselector.hh (1.6),
-	  elements/wifi/sr/inorderqueue.cc (1.3),
-	  elements/wifi/sr/inorderqueue.hh (1.2),
-	  elements/wifi/sr/metricflood.cc (1.3),
-	  elements/wifi/sr/metricflood.hh (1.3), elements/wifi/sr/pflood.cc
-	  (1.4), elements/wifi/sr/pflood.hh (1.2),
-	  elements/wifi/sr/setgateway.cc (1.3),
-	  elements/wifi/sr/setgateway.hh (1.5),
-	  elements/wifi/sr/srquerier.cc (1.9),
-	  elements/wifi/sr/srquerier.hh (1.6),
-	  elements/wifi/sr/srqueryforwarder.cc (1.7),
-	  elements/wifi/sr/srqueryforwarder.hh (1.5),
-	  elements/wifi/sr/tokenqueue.cc (1.4),
-	  elements/wifi/sr/tokenqueue.hh (1.2),
+	  elements/wifi/txflog.hh (1.2),
 	  elements/wifi/station/beacontracker.cc (1.2),
 	  elements/wifi/station/beacontracker.hh (1.2),
 	  include/click/confparse.hh (1.53), include/click/gaprate.hh
@@ -5107,14 +4747,11 @@
 	  linktable.cc (1.15), madwifirate.cc (1.15), madwifirate.hh (1.9),
 	  probetxrate.cc (1.17), probetxrate.hh (1.16), setwifiextraflag.cc
 	  (1.1), setwifiextraflag.hh (1.1), wifiencap.hh (1.5),
-	  sr/metricflood.cc (1.2), sr/printsr.cc (1.7), sr/printsr.hh
-	  (1.2), sr/setgateway.hh (1.4), sr/srforwarder.cc (1.8),
-	  sr/srlog.cc (1.1), sr/srlog.hh (1.1), sr/srquerier.cc (1.8),
-	  sr/srquerier.hh (1.5), station/beaconscanner.hh (1.7): adaptive
-	  stepup for arf. sort linktable entries in handlers. fix length
-	  issue with wifiencap. make beaconscanner compile.  srlog logs
-	  source routed packet headers. setwifiextra flags lets you
-	  indicate where or not you want txfeedback on a packet.
+	  station/beaconscanner.hh (1.7): adaptive stepup for arf. sort
+	  linktable entries in handlers. fix length issue with wifiencap.
+	  make beaconscanner compile.  srlog logs source routed packet
+	  headers. setwifiextra flags lets you indicate where or not you
+	  want txfeedback on a packet.
 
 2004-12-30 Thursday 11:34  John Bicket <jbicket@mit.edu>
 
@@ -5143,10 +4780,8 @@
 	  wifi/linkfailuredetection.hh (1.6), wifi/linktable.cc (1.14),
 	  wifi/linktable.hh (1.9), wifi/madwifirate.hh (1.7),
 	  wifi/probetxrate.hh (1.15), wifi/rxstats.hh (1.11),
-	  wifi/txstat.hh (1.4), wifi/sr/checksrheader.hh (1.4),
-	  wifi/sr/ettstat.hh (1.12), wifi/sr/ipaddresscounter.hh (1.3),
-	  wifi/sr/setgateway.hh (1.3), wifi/station/beaconscanner.hh (1.6):
-	  fixes for newer GCCs: remove redundant "class"es
+	  wifi/txstat.hh (1.4), wifi/station/beaconscanner.hh (1.6): fixes
+	  for newer GCCs: remove redundant "class"es
 
 2004-12-30 Thursday 01:13  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -5287,9 +4922,8 @@
 	  elements/wifi/printtxfeedback.cc (1.2),
 	  elements/wifi/probetxrate.cc (1.16), elements/wifi/probetxrate.hh
 	  (1.14), elements/wifi/txflog.cc (1.1), elements/wifi/txflog.hh
-	  (1.1), include/clicknet/wifi.h (1.17),
-	  elements/wifi/sr/ettstat.cc (1.16): more fixes for rate control
-	  so I can write my thesis.
+	  (1.1), include/clicknet/wifi.h (1.17): more fixes for rate
+	  control so I can write my thesis.
 
 2004-12-07 Tuesday 01:13  John Bicket <jbicket@mit.edu>
 
@@ -5305,9 +4939,9 @@
 	  elements/userlevel/fromhost.cc (1.2),
 	  elements/userlevel/fromhost.hh (1.2),
 	  elements/userlevel/tohost.cc (1.2), elements/wifi/probetxrate.hh
-	  (1.13), elements/wifi/sr/ettstat.cc (1.15): additions to wifi
-	  extra header remove some extra debugging from from/tohost
-	  features involving multi-bitrate retries.
+	  (1.13): additions to wifi extra header remove some extra
+	  debugging from from/tohost features involving multi-bitrate
+	  retries.
 
 2004-12-05 Sunday 23:07  John Bicket <jbicket@mit.edu>
 
@@ -5343,22 +4977,9 @@
 
 	* elements/: grid/packetlogger.hh (1.4), wifi/availablerates.hh
 	  (1.3), wifi/linkfailuredetection.hh (1.5),
-	  wifi/analysis/counterrors.hh (1.3),
-	  wifi/analysis/countfecbytes.hh (1.2),
-	  wifi/analysis/countfragbytes.hh (1.4),
-	  wifi/analysis/errorthreshold.hh (1.2),
-	  wifi/analysis/locationhistogram.hh (1.2),
 	  wifi/ap/associationresponder.hh (1.3), wifi/ap/beaconsource.hh
 	  (1.4), wifi/ap/openauthresponder.hh (1.3),
 	  wifi/ap/proberesponder.hh (1.3), wifi/ap/stationtable.hh (1.2),
-	  wifi/sr/checksrheader.hh (1.3), wifi/sr/counterflood.hh (1.2),
-	  wifi/sr/ettstat.hh (1.11), wifi/sr/flashflood.hh (1.2),
-	  wifi/sr/gatewayselector.hh (1.5), wifi/sr/ipaddresscounter.hh
-	  (1.2), wifi/sr/localbroadcast.hh (1.2), wifi/sr/metricflood.hh
-	  (1.2), wifi/sr/setsourceroute.hh (1.2), wifi/sr/setsrchecksum.hh
-	  (1.2), wifi/sr/srforwarder.hh (1.5), wifi/sr/srquerier.hh (1.4),
-	  wifi/sr/srqueryforwarder.hh (1.4), wifi/sr/srqueryresponder.hh
-	  (1.5), wifi/sr/stripsrheader.hh (1.2),
 	  wifi/station/associationrequester.hh (1.4),
 	  wifi/station/beaconscanner.hh (1.4),
 	  wifi/station/openauthrequester.hh (1.2),
@@ -5376,8 +4997,7 @@
 	  wifi/pushanno.hh (1.3), wifi/readanno.hh (1.3), wifi/rxstats.hh
 	  (1.10), wifi/setrts.hh (1.3), wifi/settxpower.hh (1.6),
 	  wifi/settxrate.hh (1.13), wifi/wifidecap.hh (1.4),
-	  wifi/wifiencap.hh (1.3), wifi/sr/ettmetric.hh (1.10),
-	  wifi/sr/txcountmetric.hh (1.2): documentation fixes.
+	  wifi/wifiencap.hh (1.3): documentation fixes.
 
 2004-12-02 Thursday 16:21  John Bicket <jbicket@mit.edu>
 
@@ -5432,8 +5052,8 @@
 
 2004-12-01 Wednesday 11:31  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: madwifirate.cc (1.11), sr/ettstat.cc (1.14):
-	  ettstat stale link fix, and less debug messages
+	* elements/wifi/madwifirate.cc (1.11): ettstat stale link fix, and
+	  less debug messages
 
 2004-11-28 Sunday 03:15  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -5495,9 +5115,8 @@
 2004-11-11 Thursday 11:17  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: autoratefallback.cc (1.11), madwifirate.cc
-	  (1.10), probetxrate.cc (1.14), settxrate.cc (1.18), sr/ettstat.cc
-	  (1.13), sr/ettstat.hh (1.10): fix ettstat to work with 802.11a
-	  rates.  other bitrate algorithm changes.
+	  (1.10), probetxrate.cc (1.14), settxrate.cc (1.18): fix ettstat
+	  to work with 802.11a rates.  other bitrate algorithm changes.
 
 2004-11-09 Tuesday 15:24  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -5648,10 +5267,8 @@
 	* elements/wifi/extradecap.cc (1.2), elements/wifi/extraencap.cc
 	  (1.2), elements/wifi/linktable.cc (1.12),
 	  elements/wifi/phyerrfilter.cc (1.5), elements/wifi/printwifi.cc
-	  (1.7), elements/wifi/sr/ettstat.cc (1.12),
-	  include/clicknet/wifi.h (1.13), elements/wifi/sr/ettstat.hh
-	  (1.9), elements/wifi/sr/txcountmetric.cc (1.3): fix wifi_extra
-	  flags and phyerr annotations, as well as error in phyerrfilter.
+	  (1.7), include/clicknet/wifi.h (1.13): fix wifi_extra flags and
+	  phyerr annotations, as well as error in phyerrfilter.
 
 2004-10-19 Tuesday 22:35  John Bicket <jbicket@mit.edu>
 
@@ -5676,8 +5293,7 @@
 	  elements/wifi/ap/beaconsource.cc (1.7),
 	  elements/wifi/ap/openauthresponder.cc (1.6),
 	  elements/wifi/ap/proberesponder.cc (1.7),
-	  elements/wifi/sr/ettstat.cc (1.11), elements/wifi/sr/printsr.cc
-	  (1.6), elements/wifi/station/associationrequester.cc (1.8),
+	  elements/wifi/station/associationrequester.cc (1.8),
 	  elements/wifi/station/beaconscanner.cc (1.8),
 	  elements/wifi/station/openauthrequester.cc (1.4),
 	  elements/wifi/station/proberequester.cc (1.6):
@@ -5698,24 +5314,17 @@
 2004-10-18 Monday 15:31  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: probetxrate.cc (1.12), probetxrate.hh (1.10),
-	  wifitxfeedback.cc (1.16), wifitxfeedback.hh (1.11), sr/printsr.cc
-	  (1.5): - rate control fixes from nsdi paper.	- remove
-	  wifitxfeedback element, since it comes from fromdevice.
+	  wifitxfeedback.cc (1.16), wifitxfeedback.hh (1.11): - rate
+	  control fixes from nsdi paper.  - remove wifitxfeedback element,
+	  since it comes from fromdevice.
 
 2004-10-14 Thursday 16:19  John Bicket <jbicket@mit.edu>
 
 	* include/clicknet/wifi.h (1.11): correct ett calculation
 
-2004-10-14 Thursday 11:55  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: metricflood.cc (1.1), metricflood.hh (1.1):
-	  the actual flooding elements
-
 2004-10-14 Thursday 11:54  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: linktable.cc (1.11), phyerrfilter.cc (1.3),
-	  sr/srquerier.cc (1.7), sr/srquerier.hh (1.3),
-	  sr/srqueryresponder.cc (1.7), sr/txcountmetric.cc (1.2): chage
+	* elements/wifi/: linktable.cc (1.11), phyerrfilter.cc (1.3): chage
 	  the way flooding queries work.
 
 2004-10-14 Thursday 11:54  John Bicket <jbicket@mit.edu>
@@ -5751,13 +5360,9 @@
 
 2004-10-07 Thursday 20:42  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: settxpower.hh (1.5), sr/ettmetric.cc (1.8),
-	  sr/ettmetric.hh (1.9), sr/ettstat.cc (1.10), sr/ettstat.hh (1.8),
-	  sr/flashflood.cc (1.7), sr/linkmetric.hh (1.5),
-	  sr/txcountmetric.cc (1.1), sr/txcountmetric.hh (1.1): make
-	  ettstat interact better with other metrics than ett (ie etx).
-	  add etx metric (TXCountMetric) to work with ettstat.	other .hh
-	  fixes.
+	* elements/wifi/settxpower.hh (1.5): make ettstat interact better
+	  with other metrics than ett (ie etx).  add etx metric
+	  (TXCountMetric) to work with ettstat.  other .hh fixes.
 
 2004-10-07 Thursday 20:01  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -5772,15 +5377,13 @@
 2004-10-05 Tuesday 14:55  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: autoratefallback.cc (1.9), linktable.cc (1.10),
-	  madwifirate.cc (1.7), sr/gatewayselector.cc (1.7),
-	  sr/gatewayselector.hh (1.4), sr/srqueryforwarder.cc (1.6),
-	  sr/srqueryresponder.cc (1.6), sr/srqueryresponder.hh (1.4):
-	  routing fixes: - queries and gateway ads now forward the best
-	  route from the gateway instead of the route that the query/ad
-	  traversed.  This results in a bunch of subtle changes to the
-	  querying protocol, all of which I think are for the better - in
-	  practice, this means you should not see queries that have more
-	  hosts in them than the ett-optimal diameter of the network.
+	  madwifirate.cc (1.7): routing fixes: - queries and gateway ads
+	  now forward the best route from the gateway instead of the route
+	  that the query/ad traversed.	This results in a bunch of subtle
+	  changes to the querying protocol, all of which I think are for
+	  the better - in practice, this means you should not see queries
+	  that have more hosts in them than the ett-optimal diameter of the
+	  network.
 
 	  - when you send a route reply or forward a query, you run
 	  dijkstra to find the best reverse path, which is not necessarily
@@ -5821,23 +5424,12 @@
 	* elements/: grid/dsrroutetable.cc (1.11), wifi/autoratefallback.cc
 	  (1.8), wifi/linktable.cc (1.9), wifi/linktable.hh (1.7),
 	  wifi/madwifirate.cc (1.6), wifi/probetxrate.cc (1.11),
-	  wifi/probetxrate.hh (1.9), wifi/txfeedbackstats.cc (1.5),
-	  wifi/sr/checksrheader.cc (1.3), wifi/sr/checksrheader.hh (1.2),
-	  wifi/sr/ettmetric.cc (1.7), wifi/sr/ettmetric.hh (1.8),
-	  wifi/sr/ettstat.cc (1.9), wifi/sr/ettstat.hh (1.7),
-	  wifi/sr/flashflood.cc (1.6), wifi/sr/gatewayselector.cc (1.6),
-	  wifi/sr/gatewayselector.hh (1.3), wifi/sr/linkmetric.hh (1.4),
-	  wifi/sr/localbroadcast.cc (1.4), wifi/sr/printsr.cc (1.4),
-	  wifi/sr/srforwarder.cc (1.7), wifi/sr/srforwarder.hh (1.4),
-	  wifi/sr/srpacket.hh (1.6), wifi/sr/srquerier.cc (1.6),
-	  wifi/sr/srqueryforwarder.cc (1.5), wifi/sr/srqueryforwarder.hh
-	  (1.3), wifi/sr/srqueryresponder.cc (1.5),
-	  wifi/sr/srqueryresponder.hh (1.3): - link table stores both
-	  forward/reverse routes - don't use asserts for stupid fialures,
-	  only for real emergencies - additional header stuffing - link
-	  sequence numbers and timestamps - general code maintenance -
-	  queries, forwards store most "optimal" route, not route that
-	  queries follow
+	  wifi/probetxrate.hh (1.9), wifi/txfeedbackstats.cc (1.5): - link
+	  table stores both forward/reverse routes - don't use asserts for
+	  stupid fialures, only for real emergencies - additional header
+	  stuffing - link sequence numbers and timestamps - general code
+	  maintenance - queries, forwards store most "optimal" route, not
+	  route that queries follow
 
 2004-10-04 Monday 10:08  John Bicket <jbicket@mit.edu>
 
@@ -5847,11 +5439,8 @@
 2004-09-30 Thursday 11:27  John Bicket <jbicket@mit.edu>
 
 	* elements/: wifi/linktable.cc (1.8), wifi/linktable.hh (1.6),
-	  wifi/wifidecap.cc (1.9), wifi/sr/ettstat.hh (1.6),
-	  wifi/sr/gatewayselector.cc (1.5), wifi/sr/srforwarder.cc (1.6),
-	  wifi/sr/srpacket.hh (1.5), wifi/sr/srqueryforwarder.cc (1.4),
-	  wifi/sr/srqueryresponder.cc (1.4), grid/dsrroutetable.cc (1.10):
-	  make it compile.
+	  wifi/wifidecap.cc (1.9), grid/dsrroutetable.cc (1.10): make it
+	  compile.
 
 2004-09-29 Wednesday 21:04  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -5937,27 +5526,8 @@
 	  elements/wifi/madwifirate.hh (1.3), elements/wifi/phyerrfilter.cc
 	  (1.2), elements/wifi/probetxrate.cc (1.10),
 	  elements/wifi/probetxrate.hh (1.8), elements/wifi/settxrate.cc
-	  (1.16), elements/wifi/settxrate.hh (1.11),
-	  elements/wifi/sr/checksrheader.cc (1.2),
-	  elements/wifi/sr/counterflood.cc (1.3),
-	  elements/wifi/sr/ettmetric.cc (1.6),
-	  elements/wifi/sr/ettmetric.hh (1.7), elements/wifi/sr/ettstat.cc
-	  (1.8), elements/wifi/sr/ettstat.hh (1.5),
-	  elements/wifi/sr/flashflood.cc (1.5),
-	  elements/wifi/sr/gatewayselector.cc (1.4),
-	  elements/wifi/sr/gatewayselector.hh (1.2),
-	  elements/wifi/sr/linkmetric.hh (1.3),
-	  elements/wifi/sr/localbroadcast.cc (1.3),
-	  elements/wifi/sr/pflood.cc (1.3), elements/wifi/sr/printsr.cc
-	  (1.3), elements/wifi/sr/srforwarder.cc (1.5),
-	  elements/wifi/sr/srforwarder.hh (1.3),
-	  elements/wifi/sr/srpacket.hh (1.4), elements/wifi/sr/srquerier.cc
-	  (1.5), elements/wifi/sr/srqueryforwarder.cc (1.3),
-	  elements/wifi/sr/srqueryforwarder.hh (1.2),
-	  elements/wifi/sr/srqueryresponder.cc (1.3),
-	  elements/wifi/sr/srqueryresponder.hh (1.2),
-	  elements/wifi/sr/tokenqueue.cc (1.3): add a sequence number to
-	  each link metric in srpacket
+	  (1.16), elements/wifi/settxrate.hh (1.11): add a sequence number
+	  to each link metric in srpacket
 
 2004-09-27 Monday 03:07  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -6056,15 +5626,8 @@
 
 2004-09-16 Thursday 18:08  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/analysis/: countfecbytes.cc (1.1), countfecbytes.hh
-	  (1.1): analyze fec throughput
-
-2004-09-16 Thursday 18:08  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/: analysis/counterrors.cc (1.4),
-	  analysis/countfragbytes.cc (1.4), analysis/locationhistogram.cc
-	  (1.2), sr/ettstat.cc (1.7), sr/ettstat.hh (1.4),
-	  station/beaconscanner.cc (1.7): more analysis elements
+	* elements/wifi/station/beaconscanner.cc (1.7): more analysis
+	  elements
 
 2004-09-16 Thursday 03:10  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -6155,14 +5718,12 @@
 2004-09-07 Tuesday 21:53  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: printwifi.cc (1.5), wifidecap.cc (1.8),
-	  wifidecap.hh (1.2), wifiencap.cc (1.9), analysis/counterrors.cc
-	  (1.3), analysis/countfragbytes.cc (1.3),
-	  analysis/countfragbytes.hh (1.3), ap/associationresponder.cc
-	  (1.6), ap/beaconsource.cc (1.6), ap/beaconsource.hh (1.3),
-	  ap/openauthresponder.cc (1.5), station/associationrequester.cc
-	  (1.7), station/associationrequester.hh (1.3),
-	  station/beaconscanner.cc (1.6), station/proberequester.cc (1.5):
-	  Fix random bugs.
+	  wifidecap.hh (1.2), wifiencap.cc (1.9),
+	  ap/associationresponder.cc (1.6), ap/beaconsource.cc (1.6),
+	  ap/beaconsource.hh (1.3), ap/openauthresponder.cc (1.5),
+	  station/associationrequester.cc (1.7),
+	  station/associationrequester.hh (1.3), station/beaconscanner.cc
+	  (1.6), station/proberequester.cc (1.5): Fix random bugs.
 
 	  --john
 
@@ -6193,20 +5754,9 @@
 
 	* include/clicknet/ppp.h (1.1): add PPP header
 
-2004-09-02 Thursday 00:03  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/analysis/: countfragbytes.cc (1.2),
-	  countfragbytes.hh (1.2): more byte-error analysis stuff.
-
-2004-08-29 Sunday 13:31  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/analysis/: errorthreshold.cc (1.1),
-	  errorthreshold.hh (1.1): more byte-error analysis elements
-
 2004-08-29 Sunday 13:31  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: wifidecap.cc (1.7), wifiencap.cc (1.8),
-	  analysis/counterrors.cc (1.2), analysis/counterrors.hh (1.2),
 	  station/beaconscanner.hh (1.3): first fragment elements.
 
 2004-08-27 Friday 03:09  Eddie Kohler <kohler@cs.ucla.edu>
@@ -6346,12 +5896,8 @@
 2004-08-17 Tuesday 14:44  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: availablerates.cc (1.5), wifitxfeedback.cc
-	  (1.15), analysis/counterrors.cc (1.1), analysis/counterrors.hh
-	  (1.1), analysis/countfragbytes.cc (1.1),
-	  analysis/countfragbytes.hh (1.1), analysis/locationhistogram.cc
-	  (1.1), analysis/locationhistogram.hh (1.1),
-	  ap/openauthresponder.cc (1.4): fixes, as well an phyerr analysis
-	  elements.
+	  (1.15), ap/openauthresponder.cc (1.4): fixes, as well an phyerr
+	  analysis elements.
 
 2004-08-17 Tuesday 13:58  John Bicket <jbicket@mit.edu>
 
@@ -6383,17 +5929,15 @@
 	* elements/wifi/: availablerates.cc (1.4), linktable.cc (1.6),
 	  rxstats.cc (1.10), rxstats.hh (1.8), wifidecap.cc (1.6),
 	  wifidupefilter.cc (1.2), ap/associationresponder.cc (1.5),
-	  sr/flashflood.cc (1.4), sr/srquerier.cc (1.4),
-	  sr/srqueryforwarder.cc (1.2), station/associationrequester.cc
-	  (1.6): fix wifiencap/decap for station mode.	fix
-	  associationrequester to use correct request packet format.
+	  station/associationrequester.cc (1.6): fix wifiencap/decap for
+	  station mode.  fix associationrequester to use correct request
+	  packet format.
 
 2004-08-12 Thursday 14:39  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: madwifirate.cc (1.4), wifidecap.cc (1.5),
-	  ap/openauthresponder.hh (1.2), sr/srquerier.cc (1.3),
-	  sr/srqueryresponder.cc (1.2): make it compile, reported by Romain
-	  Groleau.
+	  ap/openauthresponder.hh (1.2): make it compile, reported by
+	  Romain Groleau.
 
 2004-08-12 Thursday 13:39  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -6710,26 +6254,12 @@
 	* conf/click-mkclgw.pl (1.7): Comments output generator script
 	  name, and not generator process ID.
 
-2004-07-17 Saturday 18:53  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/: srquerier.cc (1.2), srquerier.hh (1.2): merge
-	  some data structures.
-
 2004-07-17 Saturday 18:32  John Bicket <jbicket@mit.edu>
 
 	* conf/gen_config_roofnet.pl (1.5),
 	  elements/wifi/linkfailuredetection.hh (1.4),
-	  elements/wifi/madwifirate.cc (1.3), elements/wifi/sr/ettmetric.hh
-	  (1.6), elements/wifi/sr/setgateway.hh (1.2),
-	  elements/wifi/sr/srcr.cc (1.4), elements/wifi/sr/srcr.hh (1.4),
-	  elements/wifi/sr/srforwarder.cc (1.4),
-	  elements/wifi/sr/srquerier.cc (1.1),
-	  elements/wifi/sr/srquerier.hh (1.1),
-	  elements/wifi/sr/srqueryforwarder.cc (1.1),
-	  elements/wifi/sr/srqueryforwarder.hh (1.1),
-	  elements/wifi/sr/srqueryresponder.cc (1.1),
-	  elements/wifi/sr/srqueryresponder.hh (1.1): reorganize source
-	  routing query/reply elements so they are comprehensible.
+	  elements/wifi/madwifirate.cc (1.3): reorganize source routing
+	  query/reply elements so they are comprehensible.
 
 2004-07-17 Saturday 17:44  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -6769,14 +6299,7 @@
 	  (1.3), elements/wifi/autoratefallback.cc (1.6),
 	  elements/wifi/linktable.cc (1.5), elements/wifi/linktable.hh
 	  (1.4), elements/wifi/madwifirate.cc (1.2),
-	  elements/wifi/probetxrate.cc (1.9), elements/wifi/sr/ettmetric.cc
-	  (1.5), elements/wifi/sr/ettmetric.hh (1.5),
-	  elements/wifi/sr/ettstat.cc (1.6), elements/wifi/sr/flashflood.cc
-	  (1.3), elements/wifi/sr/gatewayselector.cc (1.3),
-	  elements/wifi/sr/linkmetric.hh (1.2), elements/wifi/sr/srcr.hh
-	  (1.3), elements/wifi/sr/srforwarder.cc (1.3),
-	  elements/wifi/sr/srforwarder.hh (1.2),
-	  elements/wifi/sr/srpacket.hh (1.3): fix gen_config_roofnet.pl and
+	  elements/wifi/probetxrate.cc (1.9): fix gen_config_roofnet.pl and
 	  make metrics 32 bits, not 16.
 
 2004-07-16 Friday 21:54  Eddie Kohler <kohler@cs.ucla.edu>
@@ -6976,13 +6499,7 @@
 	  elements/wifi/probetxrate.cc (1.8), elements/wifi/probetxrate.hh
 	  (1.7), elements/wifi/settxpower.cc (1.5),
 	  elements/wifi/wifitxfeedback.cc (1.14),
-	  elements/wifi/wifitxfeedback.hh (1.10),
-	  elements/wifi/sr/ettmetric.cc (1.4),
-	  elements/wifi/sr/ettmetric.hh (1.4), elements/wifi/sr/ettstat.cc
-	  (1.5), elements/wifi/sr/ettstat.hh (1.3),
-	  elements/wifi/sr/setsrchecksum.cc (1.2), elements/wifi/sr/srcr.cc
-	  (1.3), elements/wifi/sr/srcr.hh (1.2),
-	  elements/wifi/sr/srpacket.hh (1.2), include/clicknet/wifi.h
+	  elements/wifi/wifitxfeedback.hh (1.10), include/clicknet/wifi.h
 	  (1.6): make elements work with 802.11g.
 
 2004-07-07 Wednesday 14:47  Eddie Kohler <kohler@cs.ucla.edu>
@@ -7543,18 +7060,6 @@
 	  elements/wifi/ap/openauthresponder.cc (1.3),
 	  elements/wifi/ap/proberesponder.cc (1.5),
 	  elements/wifi/ap/stationtable.cc (1.2),
-	  elements/wifi/sr/counterflood.cc (1.2),
-	  elements/wifi/sr/ecnqueue.cc (1.2), elements/wifi/sr/ettmetric.cc
-	  (1.3), elements/wifi/sr/ettstat.cc (1.4),
-	  elements/wifi/sr/flashflood.cc (1.2),
-	  elements/wifi/sr/gatewayselector.cc (1.2),
-	  elements/wifi/sr/inorderqueue.cc (1.2),
-	  elements/wifi/sr/ipaddresscounter.cc (1.2),
-	  elements/wifi/sr/localbroadcast.cc (1.2),
-	  elements/wifi/sr/pflood.cc (1.2), elements/wifi/sr/setgateway.cc
-	  (1.2), elements/wifi/sr/setsourceroute.cc (1.2),
-	  elements/wifi/sr/srcr.cc (1.2), elements/wifi/sr/srforwarder.cc
-	  (1.2), elements/wifi/sr/tokenqueue.cc (1.2),
 	  elements/wifi/station/associationrequester.cc (1.4),
 	  elements/wifi/station/beaconscanner.cc (1.4),
 	  elements/wifi/station/openauthrequester.cc (1.3),
@@ -7585,17 +7090,12 @@
 	  ap/openauthresponder.cc (1.2), station/openauthrequester.cc
 	  (1.2): more rate control fixes, fix more gcc warnings.
 
-2004-06-23 Wednesday 13:34  John Bicket <jbicket@mit.edu>
-
-	* elements/wifi/sr/ettmetric.hh (1.3): another gcc compile error.
-
 2004-06-23 Wednesday 11:56  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/wifiencap.cc (1.4),
 	  elements/wifi/ap/associationresponder.cc (1.3),
 	  elements/wifi/ap/beaconsource.cc (1.4),
 	  elements/wifi/ap/proberesponder.cc (1.4),
-	  elements/wifi/sr/ettstat.cc (1.3),
 	  elements/wifi/station/associationrequester.cc (1.3),
 	  elements/wifi/station/beaconscanner.cc (1.3),
 	  elements/wifi/station/proberequester.cc (1.3),
@@ -7747,8 +7247,7 @@
 	  elements/wifi/ap/beaconsource.hh (1.2),
 	  elements/wifi/ap/proberesponder.cc (1.3),
 	  elements/wifi/ap/proberesponder.hh (1.2),
-	  elements/wifi/sr/ecnqueue.hh (1.2), elements/wifi/sr/printsr.cc
-	  (1.2), elements/wifi/station/associationrequester.cc (1.2),
+	  elements/wifi/station/associationrequester.cc (1.2),
 	  elements/wifi/station/associationrequester.hh (1.2),
 	  elements/wifi/station/beaconscanner.cc (1.2),
 	  elements/wifi/station/proberequester.cc (1.2),
@@ -7858,11 +7357,9 @@
 	  wifiencap.cc (1.3), wifistation.cc (1.2), wifistation.hh (1.2),
 	  ap/openauthresponder.cc (1.1), ap/openauthresponder.hh (1.1),
 	  ap/proberesponder.cc (1.2), ap/simpleauthenticator.cc (1.2),
-	  ap/simpleauthenticator.hh (1.2), sr/ettmetric.cc (1.2),
-	  sr/ettmetric.hh (1.2), sr/ettstat.cc (1.2), sr/ettstat.hh (1.2),
-	  station/associationrequester.cc (1.1),
-	  station/associationrequester.hh (1.1), station/beaconscanner.cc
-	  (1.1), station/beaconscanner.hh (1.1),
+	  ap/simpleauthenticator.hh (1.2), station/associationrequester.cc
+	  (1.1), station/associationrequester.hh (1.1),
+	  station/beaconscanner.cc (1.1), station/beaconscanner.hh (1.1),
 	  station/openauthrequester.cc (1.1), station/openauthrequester.hh
 	  (1.1), station/proberequester.cc (1.1), station/proberequester.hh
 	  (1.1): add elements for association with and ap.
@@ -7985,9 +7482,8 @@
 
 2004-06-10 Thursday 16:14  John Bicket <jbicket@mit.edu>
 
-	* elements/wifi/: settxrate.cc (1.12), settxrate.hh (1.9),
-	  sr/settxrate.cc (1.2), sr/settxrate.hh (1.2): move to the right
-	  spot (?)
+	* elements/wifi/: settxrate.cc (1.12), settxrate.hh (1.9): move to
+	  the right spot (?)
 
 2004-06-10 Thursday 11:55  John Bicket <jbicket@mit.edu>
 
@@ -8078,30 +7574,7 @@
 
 	* elements/: wifi/arptable.cc (1.1), wifi/arptable.hh (1.1),
 	  wifi/linktable.cc (1.1), wifi/linktable.hh (1.1),
-	  wifi/txfeedbackstats.cc (1.3), wifi/sr/checksrheader.cc (1.1),
-	  wifi/sr/checksrheader.hh (1.1), wifi/sr/counterflood.cc (1.1),
-	  wifi/sr/counterflood.hh (1.1), wifi/sr/dupefilter.cc (1.1),
-	  wifi/sr/dupefilter.hh (1.1), wifi/sr/ecnqueue.cc (1.1),
-	  wifi/sr/ecnqueue.hh (1.1), wifi/sr/ettmetric.cc (1.1),
-	  wifi/sr/ettmetric.hh (1.1), wifi/sr/ettstat.cc (1.1),
-	  wifi/sr/ettstat.hh (1.1), wifi/sr/flashflood.cc (1.1),
-	  wifi/sr/flashflood.hh (1.1), wifi/sr/gatewayselector.cc (1.1),
-	  wifi/sr/gatewayselector.hh (1.1), wifi/sr/inorderqueue.cc (1.1),
-	  wifi/sr/inorderqueue.hh (1.1), wifi/sr/ipaddresscounter.cc (1.1),
-	  wifi/sr/ipaddresscounter.hh (1.1), wifi/sr/linkmetric.hh (1.1),
-	  wifi/sr/localbroadcast.cc (1.1), wifi/sr/localbroadcast.hh (1.1),
-	  wifi/sr/path.hh (1.1), wifi/sr/pflood.cc (1.1), wifi/sr/pflood.hh
-	  (1.1), wifi/sr/printsr.cc (1.1), wifi/sr/printsr.hh (1.1),
-	  wifi/sr/setgateway.cc (1.1), wifi/sr/setgateway.hh (1.1),
-	  wifi/sr/setsourceroute.cc (1.1), wifi/sr/setsourceroute.hh (1.1),
-	  wifi/sr/setsrchecksum.cc (1.1), wifi/sr/setsrchecksum.hh (1.1),
-	  wifi/sr/setsrflag.cc (1.1), wifi/sr/setsrflag.hh (1.1),
-	  wifi/sr/settxrate.cc (1.1), wifi/sr/settxrate.hh (1.1),
-	  wifi/sr/srcr.cc (1.1), wifi/sr/srcr.hh (1.1),
-	  wifi/sr/srforwarder.cc (1.1), wifi/sr/srforwarder.hh (1.1),
-	  wifi/sr/srpacket.hh (1.1), wifi/sr/stripsrheader.cc (1.1),
-	  wifi/sr/stripsrheader.hh (1.1), wifi/sr/tokenqueue.cc (1.1),
-	  wifi/sr/tokenqueue.hh (1.1), grid/arptable.cc (1.11),
+	  wifi/txfeedbackstats.cc (1.3), grid/arptable.cc (1.11),
 	  grid/arptable.hh (1.10), grid/dsrroutetable.hh (1.7),
 	  grid/linktable.cc (1.24), grid/linktable.hh (1.22): move sr
 	  elements
