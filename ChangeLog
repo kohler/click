@@ -1,3 +1,11 @@
+2006-03-31 Friday 23:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.81), doc/click-mkmindriver.1 (1.8),
+	  linuxmodule/Makefile.in (1.106), test/tools/mkmindriver-01.testie
+	  (1.3), test/tools/mkmindriver-02.testie (1.3),
+	  tools/click-mkmindriver/click-mkmindriver.cc (1.36),
+	  userlevel/Makefile.in (1.92): mindriver fixes for m. bicket
+
 2006-03-31 Friday 21:46  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/: analysis/fromtcpdump.cc (1.17), grid/amoeba.cc (1.10),
