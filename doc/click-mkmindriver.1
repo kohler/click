@@ -50,11 +50,8 @@ the
 .IR router\-files .
 You must supply a name for the driver,
 .IR packagename .
-.B Click-mkmindriver
-will create a Makefile named
-.RI "`Makefile." packagename "'."
 Running
-.RI "`make -f Makefile." packagename "'"
+.RI "`make MINDRIVER=" packagename "'"
 will create either a user-level driver named
 .RI "`" packagename "click',"
 or a Linux kernel module named
@@ -100,13 +97,6 @@ Specifies the package name.
 .BI \-\-file " file"
 Read a router configuration from
 .IR file .
-.B Click-mkmindriver
-reads a configuration from the standard input unless you give a
-.BR \-\-file ,
-.BR \-\-expression ,
-or
-.B \-\-no\-file
-option.
 '
 .Sp
 .TP
@@ -129,20 +119,19 @@ for example.
 .Sp
 .TP
 .BR \-k ", " \-\-linuxmodule
-Output a Makefile for a Linux kernel module driver.
+Output a build environment for a Linux kernel module driver.
 '
 .Sp
 .TP
 .BR \-u ", " \-\-userlevel
-Output a Makefile for a user-level driver. This is the default.
+Output a build environment for a user-level driver. This is the default.
 '
 .Sp
 .TP
 .BI \-d " dir"
 .TP
 .BI \-\-directory " dir"
-Write output files (`Makefile.\fIpackagename\fR' and
-`elements_\fIpackagename\fR.conf') to the directory
+Write output file `elements_\fIpackagename\fR.conf' to the directory
 .IR dir .
 This directory must already contain a normal build environment for the
 Click Linux module or user-level driver. (The driver required depends on
@@ -177,16 +166,6 @@ class.
 '
 .Sp
 .TP
-.BI \-\-no\-file
-Don't read a router configuration from the standard input.
-'
-.Sp
-.TP
-.BI \-\-no\-check
-Don't check for a driver Makefile in the current directory.
-'
-.Sp
-.TP
 .BR \-V ", " \-\-verbose
 Print verbose progress information to standard error.
 '
@@ -210,5 +189,5 @@ Print the version number and some quickie warranty information and exit.
 .na
 Eddie Kohler, kohler@cs.ucla.edu
 .br
-http://www.pdos.lcs.mit.edu/click/
+http://www.read.cs.ucla.edu/click/
 '

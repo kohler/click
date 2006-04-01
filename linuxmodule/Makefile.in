@@ -35,8 +35,14 @@ LINUXMODULE_C_OBJS = kernelversion.o read-pmc.o
 STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o \
 	errorelement.o portinfo.o scheduleinfo.o
 
-ifndef INSTALLOBJS
-INSTALLOBJS = click.o proclikefs.o
+ifndef MINDRIVER
+DRIVER = click
+ELEMENTSCONF = elements
+INSTALLOBJS = $(DRIVER).o proclikefs.o
+else
+DRIVER = $(MINDRIVER)click
+ELEMENTSCONF = elements_$(MINDRIVER)
+INSTALLOBJS = $(DRIVER).o
 endif
 
 
@@ -106,12 +112,12 @@ EXTRA_CFLAGS = $(CLICKCPPFLAGS) $(CLICKCFLAGS) $(CLICKDEFS) $(CLICKINCLUDES)
 
 obj-m += $(INSTALLOBJS)
 
-click-objs := $(LIB_C_OBJS) $(LIB_CXX_OBJS) $(STD_ELEMENT_OBJS) \
+$(DRIVER)-objs = $(LIB_C_OBJS) $(LIB_CXX_OBJS) $(STD_ELEMENT_OBJS) \
 	$(ELEMENT_OBJS) $(LINUXMODULE_C_OBJS) $(LINUXMODULE_CXX_OBJS) \
-	elements.o
-proclikefs-objs := proclikefs_.o
+	$(ELEMENTSCONF).o
+proclikefs-objs = proclikefs_.o
 
-all: Makefile elements.mk elements.cc always
+all: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc always
 	$(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules
 
 
@@ -130,19 +136,19 @@ $(addprefix $(obj)/,$(LINUXMODULE_C_OBJS)): $(obj)/%.o : $(srcdir)/%.c
 $(addprefix $(obj)/,$(STD_ELEMENT_OBJS)): $(obj)/%.o : $(top_srcdir)/elements/standard/%.cc
 	$(call if_changed_dep,cxxcompile)
 
-$(obj)/elements.o : $(obj)/elements.cc
+$(obj)/$(ELEMENTSCONF).o : $(obj)/$(ELEMENTSCONF).cc
 	$(call if_changed_dep,cxxcompile)
 
 $(obj)/proclikefs_.o : $(srcdir)/proclikefs.c
 	$(call if_changed_dep,xcompile)
 
 ifneq ($(MAKECMDGOALS),clean)
--include $(obj)/elements.mk
+-include $(obj)/$(ELEMENTSCONF).mk
 endif
 
 # Don't install in Linux directories for now
 # $(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules_install
-install: Makefile elements.mk elements.cc all
+install: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc all
 	$(CLICKmkinstalldirs) $(DESTDIR)$(libdir)
 	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do $(CLICKINSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
 install-man:
@@ -192,7 +198,7 @@ CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make
 
 
 OBJS = $(LIB_CXX_OBJS) $(LIB_C_OBJS) $(STD_ELEMENT_OBJS) $(ELEMENT_OBJS) \
-	$(LINUXMODULE_CXX_OBJS) $(LINUXMODULE_C_OBJS) elements.o
+	$(LINUXMODULE_CXX_OBJS) $(LINUXMODULE_C_OBJS) $(ELEMENTSCONF).o
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE
 CFLAGS = @CFLAGS_NDEBUG@
@@ -215,12 +221,12 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 all: $(INSTALLOBJS)
 
 ifneq ($(MAKECMDGOALS),clean)
--include elements.mk
+-include $(ELEMENTSCONF).mk
 endif
 
-click.o: Makefile $(OBJS)
-	$(LD) -r -o click.o $(OBJS)
-	$(STRIP) -g click.o
+$(DRIVER).o: Makefile $(OBJS)
+	$(LD) -r -o $(DRIVER).o $(OBJS)
+	$(STRIP) -g $(DRIVER).o
 
 proclikefs.o: proclikefs.c Makefile
 	$(COMPILE) -D__KERNEL__ -DMODULE -c $<
@@ -249,11 +255,11 @@ elemlist:
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
 	echo "linuxmodule @element_groups@" | $(top_builddir)/click-buildtool findelem -r linuxmodule -p $(top_srcdir) > elements.conf
-elements.mk: elements.conf $(top_builddir)/click-buildtool
-	$(CLICK_ELEM2MAKE) -x "$(STD_ELEMENT_OBJS)" < elements.conf > elements.mk
-elements.cc: elements.conf $(top_builddir)/click-buildtool
-	$(top_builddir)/click-buildtool elem2export < elements.conf > elements.cc
-	@rm -f elements.d
+$(ELEMENTSCONF).mk: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
+	$(CLICK_ELEM2MAKE) -x "$(STD_ELEMENT_OBJS)" < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).mk
+$(ELEMENTSCONF).cc: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
+	$(top_builddir)/click-buildtool elem2export < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).cc
+	@rm -f $(ELEMENTSCONF).d
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -263,9 +269,9 @@ always:
 	@:
 
 clean:
-	-rm -f *~ *.d *.o *.mod.c
+	-rm -f *~ *.d *.o *.mod.c *.ko
 	-rm -f .version .*.o.flags .*.o.d .*.o.cmd .*.ko.cmd
-	-rm -f elements.mk elements.cc elements.conf
+	-rm -f $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc elements.conf
 distclean: clean
 	-rm -f Makefile
 

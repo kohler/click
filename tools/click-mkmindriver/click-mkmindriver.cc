@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2001 Massachusetts Institute of Technology
  * Copyright (c) 2001 International Computer Science Institute
- * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2004-2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -57,7 +57,7 @@ static Clp_Option options[] = {
   { "directory", 'd', DIRECTORY_OPT, Clp_ArgString, 0 },
   { "elements", 'E', ELEMENT_OPT, Clp_ArgString, 0 },
   { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
-  { "file", 'f', ROUTER_OPT, Clp_ArgString, Clp_Negate },
+  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, 0 },
   { "linuxmodule", 0, KERNEL_OPT, 0, 0 },
@@ -85,14 +85,14 @@ void
 usage()
 {
   printf("\
-'Click-mkmindriver' produces a Makefile that builds a minimum Click driver\n\
-for a set of router configurations. This driver contains just the elements\n\
-those configurations require. Run 'click-mkmindriver' in the relevant driver's\n\
-build directory and supply a package name with the '-p PKG' option. The\n\
-resulting Makefile is called 'Makefile.PKG'; it will build either a 'PKGclick'\n\
-user-level driver or a 'PKGclick.o' kernel module.\n\
+'Click-mkmindriver' generates a build environment for a minimal Click driver,\n\
+which contains just the elements required to support one or more\n\
+configurations. Run 'click-mkmindriver' in the relevant driver's build\n\
+directory and supply a package name with the '-p PKG' option. Running\n\
+'make MINDRIVER=PKG' will build a 'PKGclick' user-level driver or 'PKGclick.o'\n\
+kernel module.\n\
 \n\
-Usage: %s -p PKG [OPTION]... [ROUTERFILE]...\n\
+Usage: %s -p PKG [-ku] [OPTION]... [ROUTERFILE]...\n\
 \n\
 Options:\n\
   -p, --package PKG        Name of package is PKG.\n\
@@ -106,8 +106,6 @@ Options:\n\
                            for the relevant driver. Default is '.'.\n\
   -E, --elements ELTS      Include element classes ELTS.\n\
   -A, --align              Include element classes required by click-align.\n\
-      --no-file            Don't read a configuration from standard input.\n\
-      --no-check           Don't check the directory for a driver Makefile.\n\
   -V, --verbose            Print progress information.\n\
   -C, --clickpath PATH     Use PATH for CLICKPATH.\n\
       --help               Print this message and exit.\n\
@@ -128,16 +126,17 @@ class Mindriver { public:
     void add_router_requirements(RouterT*, const ElementMap&, ErrorHandler*);
     bool add_traits(const Traits&, const ElementMap&, ErrorHandler*);
     bool resolve_requirement(const String& requirement, const ElementMap& emap, ErrorHandler* errh, bool complain = true);
-    void print_elements_conf(FILE*, String package, const ElementMap&);
+    void print_elements_conf(FILE*, String package, const ElementMap&, const String &top_srcdir);
     
     HashMap<String, int> _provisions;
     HashMap<String, int> _requirements;
     HashMap<String, int> _source_files;
+    int _nrequirements;
     
 };
 
 Mindriver::Mindriver()
-    : _provisions(-1), _requirements(-1), _source_files(-1)
+    : _provisions(-1), _requirements(-1), _source_files(-1), _nrequirements(0)
 {
 }
 
@@ -156,6 +155,7 @@ Mindriver::require(const String& req, ErrorHandler* errh)
 	if (verbose && _requirements[req] < 0)
 	    errh->message("requiring '%s'", req.c_str());
 	_requirements.insert(req, 1);
+	_nrequirements++;
     }
 }
 
@@ -288,7 +288,7 @@ Mindriver::resolve_requirement(const String& requirement, const ElementMap& emap
 }
 
 void
-Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap)
+Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, const String &top_srcdir)
 {
     Vector<String> sourcevec;
     for (HashMap<String, int>::iterator iter = _source_files.begin();
@@ -353,90 +353,38 @@ Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap)
 	if (headervec[i]) {
 	    String classstr(classvec[i].begin() + 1, classvec[i].end());
 	    if (headervec[i][0] != '\"' && headervec[i][0] != '<')
-		fprintf(f, "%s\t\"%s\"\t%s\n", sourcevec[i].c_str(), headervec[i].c_str(), classstr.c_str());
+		fprintf(f, "%s%s\t\"%s%s\"\t%s\n", top_srcdir.c_str(), sourcevec[i].c_str(), top_srcdir.c_str(), headervec[i].c_str(), classstr.c_str());
 	    else
-		fprintf(f, "%s\t%s\t%s\n", sourcevec[i].c_str(), headervec[i].c_str(), classstr.c_str());
+		fprintf(f, "%s%s\t%s\t%s\n", top_srcdir.c_str(), sourcevec[i].c_str(), headervec[i].c_str(), classstr.c_str());
 	}
 }
 
-static int
-print_makefile(const String &directory, const String &pkg, const StringAccum &sa, ErrorHandler *errh)
-{
-    String fn = directory + "Makefile." + pkg;
-    errh->message("Creating %s...", fn.c_str());
-    FILE *f = fopen(fn.c_str(), "w");
-    if (!f)
-	return errh->error("%s: %s", fn.c_str(), strerror(errno));
-  
-    fwrite(sa.data(), 1, sa.length(), f);
-  
-    fclose(f);
-    return 0;
-}
-
-static int
-print_u_makefile(const String &directory, const String &pkg, bool check, ErrorHandler *errh)
+static String
+analyze_makefile(const String &directory, ErrorHandler *errh)
 {
     int before = errh->nerrors();
 
-    if (check) {
-	String fn = directory + "Makefile";
-	String text = file_string(fn, errh);
-	if (before != errh->nerrors())
-	    return -1;
+    String fn = directory + "Makefile";
+    String text = file_string(fn, errh);
+    if (before != errh->nerrors())
+	return String();
 
-	String expectation = String("\n## Click ") + Driver::requirement(driver) + " driver Makefile ##\n";
-	if (text.find_left(expectation) < 0)
-	    return errh->error("%s does not contain magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.c_str(), Driver::name(driver));
+    String expectation = String("\n## Click ") + Driver::requirement(driver) + " driver Makefile ##\n";
+    if (text.find_left(expectation) < 0) {
+	errh->error("%s lacks magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.c_str(), Driver::name(driver));
+	return String();
     }
-  
-    StringAccum sa;
-    sa << "INSTALLPROGS = " << pkg << "click\n\
-include Makefile\n\n";
-    sa << "elements_" << pkg << ".mk: elements_" << pkg << ".conf $(top_builddir)/click-buildtool\n\
-	$(top_builddir)/click-buildtool elem2make -x \"$(STD_ELEMENT_OBJS)\" -v ELEMENT_OBJS_" << pkg << " < elements_" << pkg << ".conf > elements_" << pkg << ".mk\n\
-elements_" << pkg << ".cc: elements_" << pkg << ".conf $(top_builddir)/click-buildtool\n\
-	$(top_builddir)/click-buildtool elem2export < elements_" << pkg << ".conf > elements_" << pkg << ".cc\n\
-	@rm -f elements_" << pkg << ".d\n";
-    sa << "-include elements_" << pkg << ".mk\n";
-    sa << "OBJS_" << pkg << " = $(ELEMENT_OBJS_" << pkg << ") elements_" << pkg << ".o click.o\n";
-    sa << pkg << "click: Makefile Makefile." << pkg << " libclick.a $(OBJS_" << pkg << ")\n\
-	$(CXXLINK) -rdynamic $(OBJS_" << pkg << ") $(LIBS) libclick.a\n";
-
-    return print_makefile(directory, pkg, sa, errh);
-}
-
-static int
-print_k_makefile(const String &directory, const String &pkg, bool check, ErrorHandler *errh)
-{
-    int before = errh->nerrors();
-
-    if (check) {
-	String fn = directory + "Makefile";
-	String text = file_string(fn, errh);
-	if (before != errh->nerrors())
-	    return -1;
-
-	String expectation = String("\n## Click ") + Driver::requirement(driver) + " driver Makefile ##\n";
-	if (text.find_left(expectation) < 0)
-	    return errh->error("%s does not contain magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.c_str(), Driver::name(driver));
+    
+    int top_srcdir_pos = text.find_left("\ntop_srcdir := ");
+    if (top_srcdir_pos < 0) {
+	errh->error("%s lacks top_srcdir variable", fn.c_str());
+	return String();
     }
-  
-    StringAccum sa;
-    sa << "INSTALLOBJS = " << pkg << "click.o\n\
-include Makefile\n\n";
-    sa << "elements_" << pkg << ".mk: elements_" << pkg << ".conf $(top_builddir)/click-buildtool\n\
-	$(top_builddir)/click-buildtool elem2make -x \"$(STD_ELEMENT_OBJS)\" -v ELEMENT_OBJS_" << pkg << " < elements_" << pkg << ".conf > elements_" << pkg << ".mk\n\
-elements_" << pkg << ".cc: elements_" << pkg << ".conf $(top_builddir)/click-buildtool\n\
-	$(top_builddir)/click-buildtool elem2export < elements_" << pkg << ".conf > elements_" << pkg << ".cc\n\
-	@rm -f elements_" << pkg << ".d\n";
-    sa << "-include elements_" << pkg << ".mk\n";
-    sa << "OBJS_" << pkg << " = $(GENERIC_OBJS) $(ELEMENT_OBJS_" << pkg << ") $(LINUXMODULE_OBJS) elements_" << pkg << ".o\n";
-    sa << pkg << "click.o: Makefile Makefile." << pkg << " $(OBJS_" << pkg << ")\n\
-	$(LD) -r -o " << pkg << "click.o $(OBJS_" << pkg << ")\n\
-	$(STRIP) -g " << pkg << "click.o\n";
-
-    return print_makefile(directory, pkg, sa, errh);
+    int top_srcdir_end = text.find_left('\n', top_srcdir_pos + 1);
+    String top_srcdir = text.substring(top_srcdir_pos + 15, top_srcdir_end - (top_srcdir_pos + 15));
+    if (top_srcdir.back() != '/')
+	top_srcdir += '/';
+    return top_srcdir;
 }
 
 int
@@ -457,7 +405,6 @@ main(int argc, char **argv)
     String specifier = "x";
     const char *package_name = 0;
     String directory;
-    bool need_file = true;
     bool check = true;
 
     Mindriver md;
@@ -475,6 +422,7 @@ main(int argc, char **argv)
 	    printf("click-mkmindriver (Click) %s\n", CLICK_VERSION);
 	    printf("Copyright (c) 2001 Massachusetts Institute of Technology\n\
 Copyright (c) 2001 International Computer Science Institute\n\
+Copyright (c) 2004-2006 Regents of the University of California\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -507,6 +455,10 @@ particular purpose.\n");
 	    specifier = (clp->negated ? "x" : "a");
 	    break;
 
+	case CHECK_OPT:
+	    check = !clp->negated;
+	    break;
+	    
 	  case ELEMENT_OPT: {
 	      Vector<String> elements;
 	      cp_spacevec(clp->arg, elements);
@@ -519,20 +471,13 @@ particular purpose.\n");
 	    md.require("Align", &arg_lerrh);
 	    break; 
 
-	  case CHECK_OPT:
-	    check = !clp->negated;
-	    break;
-
 	  case VERBOSE_OPT:
 	    verbose = !clp->negated;
 	    break;
 
 	  case ROUTER_OPT:
 	  case Clp_NotOption:
-	    if (clp->negated)
-		need_file = false;
-	    else
-		router_filenames.push_back(specifier + String("f") + clp->arg);
+	    router_filenames.push_back(specifier + String("f") + clp->arg);
 	    break;
 
 	  case EXPRESSION_OPT:
@@ -553,8 +498,6 @@ particular purpose.\n");
   done:
     if (driver < 0)
 	driver = Driver::USERLEVEL;
-    if (!router_filenames.size() && need_file)
-	router_filenames.push_back(specifier + "f-");
     if (!package_name)
 	errh->fatal("fatal error: no package name specified\nPlease supply the '-p PKG' option.");
 
@@ -565,12 +508,14 @@ particular purpose.\n");
     for (int i = 0; i < router_filenames.size(); i++)
 	handle_router(md, router_filenames[i], default_emap, errh);
 
+    if (md._nrequirements == 0)
+	errh->fatal("no elements required");
+
     // add types that are always required
     {
 	LandmarkErrorHandler lerrh(errh, "default requirements");
 	md.require("AddressInfo", &lerrh);
 	md.require("AlignmentInfo", &lerrh);
-	md.require("DriverManager", &lerrh);
 	md.require("Error", &lerrh);
 	md.require("PortInfo", &lerrh);
 	md.require("ScheduleInfo", &lerrh);
@@ -597,35 +542,28 @@ particular purpose.\n");
 	    break;
     }
 
-    // print files
     if (errh->nerrors() > 0)
 	exit(1);
 
-    // first, print Makefile.PKG
-    if (driver == Driver::USERLEVEL)
-	print_u_makefile(directory, package_name, check, errh);
-    else if (driver == Driver::LINUXMODULE)
-	print_k_makefile(directory, package_name, check, errh);
-    else
-	errh->fatal("%s driver support unimplemented", Driver::name(driver));
+    // Print elements_PKG.conf
+    String top_srcdir = analyze_makefile(directory, (check ? errh : ErrorHandler::silent_handler()));
 
-    // Then, print elements_PKG.conf
     if (errh->nerrors() == 0) {
 	String fn = directory + String("elements_") + package_name + ".conf";
 	errh->message("Creating %s...", fn.c_str());
 	FILE *f = fopen(fn.c_str(), "w");
 	if (!f)
 	    errh->fatal("%s: %s", fn.c_str(), strerror(errno));
-	md.print_elements_conf(f, package_name, default_emap);
+	md.print_elements_conf(f, package_name, default_emap, top_srcdir);
 	fclose(f);
     }
 
     // Final message
     if (errh->nerrors() == 0) {
 	if (driver == Driver::USERLEVEL)
-	    errh->message("Build '%sclick' with 'make -f Makefile.%s'.", package_name, package_name);
+	    errh->message("Build '%sclick' with 'make MINDRIVER=%s'.", package_name, package_name);
 	else
-	    errh->message("Build '%sclick.o' with 'make -f Makefile.%s'.", package_name, package_name);
+	    errh->message("Build '%sclick.o' with 'make MINDRIVER=%s'.", package_name, package_name);
 	return 0;
     } else
 	exit(1);

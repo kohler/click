@@ -542,12 +542,12 @@ EOF
 	    else
 		subdirs[dirid] = "$(obj)/" dir;
         '
-	pattern_scriptlet='$(addprefix $(obj)/,$(ELEMENT_OBJS__", i, ")): $(obj)/%'"$osuffix"
+	pattern_scriptlet='$(addprefix $(obj)/,$('"$makevar"'__", i, ")): $(obj)/%'"$osuffix"
 	ccaction='	$(call if_changed_dep,cxxcompile)'
 	caction='	$(call if_changed_dep,ccompile)'
     else
 	set_subdir_scriptlet='subdirs[dirid] = dir;'
-	pattern_scriptlet='$(ELEMENT_OBJS__", i, "): %'"$osuffix"
+	pattern_scriptlet='$('"$makevar"'__", i, "): %'"$osuffix"
 	ccaction='	$(CXXCOMPILE) -c $< -o $@'
 	caction='	$(COMPILE) -c $< -o $@'
 	if test -n "$L"; then
@@ -587,7 +587,7 @@ BEGIN { OFS = ""
 END {
     for (i = 0; i < nsubdirs; i++) {
 	print "'"$makevar"'__", i, " = \\\n", elements[i];
-	allsubdirs = allsubdirs "$(ELEMENT_OBJS__" i ") \\\n";
+	allsubdirs = allsubdirs "$('"$makevar"'__" i ") \\\n";
     }
     print "'"$makevar"' = \\\n", allsubdirs;
     for (i = 0; i < nsubdirs; i++) {

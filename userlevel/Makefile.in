@@ -2,11 +2,11 @@
 ## Click userlevel driver Makefile ##
 SHELL = @SHELL@
 
-top_srcdir = @top_srcdir@
-srcdir = @srcdir@
-top_builddir = ..
-subdir = userlevel
-conf_auxdir = @conf_auxdir@
+top_srcdir := @top_srcdir@
+srcdir := @srcdir@
+top_builddir := ..
+subdir := userlevel
+conf_auxdir := @conf_auxdir@
 
 prefix = @prefix@
 bindir = @bindir@
@@ -41,13 +41,6 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 	$(CXXCOMPILE) -E $< > $@
 
 
-ifndef INSTALLPROGS
-INSTALLPROGS = click
-endif
-ifndef INSTALLLIBS
-INSTALLLIBS = libclick.a
-endif
-
 GENERIC_OBJS = string.o straccum.o nameinfo.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
 	ipaddress.o ipaddresslist.o ipflowid.o etheraddress.o \
@@ -65,7 +58,7 @@ EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 LIBOBJS = $(GENERIC_OBJS) $(STD_ELEMENT_OBJS) clp.o exportstub.o
 STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o \
 	errorelement.o portinfo.o scheduleinfo.o
-OBJS = $(ELEMENT_OBJS) elements.o click.o
+OBJS = $(ELEMENT_OBJS) $(ELEMENTSCONF).o click.o
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS@
@@ -85,13 +78,23 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
+ifndef MINDRIVER
+DRIVER = click
+ELEMENTSCONF = elements
+INSTALLLIBS = libclick.a
+else
+DRIVER = $(MINDRIVER)click
+ELEMENTSCONF = elements_$(MINDRIVER)
+endif
+INSTALLPROGS = $(DRIVER)
+
 all: $(INSTALLPROGS) $(INSTALLLIBS)
 
 ifneq ($(MAKECMDGOALS),clean)
--include elements.mk
+-include $(ELEMENTSCONF).mk
 endif
 
-click: Makefile libclick.a $(OBJS)
+$(DRIVER): Makefile libclick.a $(OBJS)
 	$(CXXLINK) -rdynamic $(OBJS) libclick.a $(LIBS)
 
 libclick.a: Makefile $(LIBOBJS)
@@ -107,11 +110,11 @@ elemlist:
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
 	echo "userlevel @element_groups@" | $(top_builddir)/click-buildtool findelem -r userlevel -p $(top_srcdir) > elements.conf
-elements.mk: elements.conf $(top_builddir)/click-buildtool
-	$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < elements.conf > elements.mk
-elements.cc: elements.conf $(top_builddir)/click-buildtool
-	$(top_builddir)/click-buildtool elem2export < elements.conf > elements.cc
-	@rm -f elements.d
+$(ELEMENTSCONF).mk: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
+	$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).mk
+$(ELEMENTSCONF).cc: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
+	$(top_builddir)/click-buildtool elem2export < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).cc
+	@rm -f $(ELEMENTSCONF).d
 
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)
@@ -131,7 +134,7 @@ uninstall:
 	for i in $(INSTALLPROGS); do rm -f $(DESTDIR)$(bindir)/$$i; done
 
 clean:
-	rm -f *.d *.o $(INSTALLPROGS) elements.mk elements.cc elements.conf libclick.a
+	rm -f *.d *.o $(INSTALLPROGS) $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc elements.conf libclick.a
 clean-lib:
 	rm -f $(LIBOBJS) libclick.a
 distclean: clean
