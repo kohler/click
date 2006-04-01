@@ -97,7 +97,7 @@ CheckTCPHeader::simple_action(Packet *p)
   len = ntohs(iph->ip_len) - iph_len;
   tcph_len = tcph->th_off << 2;
   if (tcph_len < sizeof(click_tcp) || len < tcph_len
-      || p->length() < len + iph_len + p->ip_header_offset())
+      || p->length() < len + iph_len + p->network_header_offset())
     return drop(BAD_LENGTH, p);
 
   csum = click_in_cksum((unsigned char *)tcph, len);

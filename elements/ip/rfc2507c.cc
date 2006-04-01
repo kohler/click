@@ -208,7 +208,7 @@ Packet *
 RFC2507c::simple_action(Packet *p)
 {
   const click_ip *ipp = p->ip_header();
-  assert(ipp && p->ip_header_offset() == 0);
+  assert(ipp && p->network_header_offset() == 0);
   const click_tcp *tcpp = p->tcp_header();
   int cid;
   Packet *q = 0;

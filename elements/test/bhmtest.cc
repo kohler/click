@@ -55,6 +55,20 @@ check1(HashMap<String, int> &h, ErrorHandler *errh)
     }
     CHECK(n == 4);
 
+    memset(x, 0, 4);
+    n = 0;
+    for (HashMap<String, int>::iterator i = h.begin(); i; i++) {
+	int oldv = i.value();
+	CHECK(i.value() >= 1 && i.value() <= 4);
+	i.value() = 5;
+	CHECK(i.value() == 5);
+	i.value() = oldv;
+	CHECK(x[i.value() - 1] == 0);
+	x[i.value() - 1] = 1;
+	n++;
+    }
+    CHECK(n == 4);
+
     return 0;
 }
 

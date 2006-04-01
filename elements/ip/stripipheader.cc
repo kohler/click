@@ -31,8 +31,8 @@ StripIPHeader::~StripIPHeader()
 Packet *
 StripIPHeader::simple_action(Packet *p)
 {
-  p->pull((int)p->ip_header_offset() + p->ip_header_length());
-  return p;
+    p->pull(p->transport_header_offset());
+    return p;
 }
 
 CLICK_ENDDECLS

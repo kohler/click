@@ -419,12 +419,12 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 	    const char *sm = s2 - 1;
 	    while (sm > s && *sm != '.' && *sm != ':')
 		sm--;
-	    if (!cp_ip_address(line.substring(s, sm), (IPAddress *) &iph->ip_src)
+	    if (!cp_ip_address(line.substring(s, sm), &iph->ip_src)
 		|| !cp_tcpudp_port(line.substring(sm + 1, s2), iph->ip_p, &udph->uh_sport))
 		break;
 	    else
 		udph->uh_sport = htons(udph->uh_sport);
-	} else if (!cp_ip_address(line.substring(s, s2), (IPAddress *) &iph->ip_src))
+	} else if (!cp_ip_address(line.substring(s, s2), &iph->ip_src))
 	    break;
 	s = s2 + 3;
 
@@ -434,12 +434,12 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 	    const char *sm = s2 - 1;
 	    while (sm > s && *sm != '.' && *sm != ':')
 		sm--;
-	    if (!cp_ip_address(line.substring(s, sm), (IPAddress *) &iph->ip_dst)
+	    if (!cp_ip_address(line.substring(s, sm), &iph->ip_dst)
 		|| !cp_tcpudp_port(line.substring(sm + 1, s2), iph->ip_p, &udph->uh_dport))
 		break;
 	    else
 		udph->uh_dport = htons(udph->uh_dport);
-	} else if (!cp_ip_address(line.substring(s, s2), (IPAddress *) &iph->ip_dst))
+	} else if (!cp_ip_address(line.substring(s, s2), &iph->ip_dst))
 	    break;
 
 	// then, read protocol data

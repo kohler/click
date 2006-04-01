@@ -95,7 +95,7 @@ CheckUDPHeader::simple_action(Packet *p)
   iph_len = iph->ip_hl << 2;
   len = ntohs(udph->uh_ulen);
   if (len < sizeof(click_udp)
-      || p->length() < len + iph_len + p->ip_header_offset())
+      || p->length() < len + iph_len + p->network_header_offset())
     return drop(BAD_LENGTH, p);
 
   if (udph->uh_sum != 0) {

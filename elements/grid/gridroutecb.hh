@@ -22,6 +22,9 @@ CLICK_DECLS
 
 class GridRouteActionCallback {
 public:
+
+    virtual ~GridRouteActionCallback() { }
+    
   enum Action {
     UnknownAction      = 0,
     SendToIP           = 1,

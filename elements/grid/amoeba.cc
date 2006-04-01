@@ -21,6 +21,10 @@ Amoeba::Amoeba(int dimensions)
   _dimensions = dimensions;
 }
 
+Amoeba::~Amoeba()
+{
+}
+
 #define TINY 1.0e-10
 #define NMAX 5000
 #define GET_PSUM \

@@ -144,7 +144,7 @@ GridProxy::forward_mapping(Packet *p_in) {
   gateway = IPAddress(p_in->ip_header()->ip_src);
 
   /* strip the ip header to get the actual ip packet */
-  p_in->pull((int)p_in->ip_header_offset() + p_in->ip_header_length());
+  p_in->pull((int)p_in->transport_header_offset());
 
   /* set the new ip header*/ 
   const click_ip *ip = reinterpret_cast<const click_ip *>(p_in->data());

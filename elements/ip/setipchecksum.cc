@@ -34,7 +34,7 @@ SetIPChecksum::simple_action(Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
   click_ip *ip = p->ip_header();
-  unsigned plen = p->length() - p->ip_header_offset();
+  unsigned plen = p->network_length();
   unsigned hlen;
   
   if (!ip || plen < sizeof(click_ip))

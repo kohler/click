@@ -17,6 +17,7 @@ CLICK_DECLS
 class Amoeba {
 public:
   Amoeba(int dimensions);
+    virtual ~Amoeba();
 
   virtual double fn(double a[]) = 0; // Override this. a[] is 0-origin.
 
