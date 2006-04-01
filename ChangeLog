@@ -1,3 +1,14 @@
+2006-04-01 Saturday 13:22  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.82), elements/grid/dsdvroutetable.cc
+	  (1.82), elements/wifi/setrts.cc (1.5), etc/pkg-Makefile (1.4),
+	  etc/pkg-linuxmodule-26.mk.in (1.5), etc/pkg-linuxmodule.mk.in
+	  (1.6), etc/pkg-userlevel.mk.in (1.4), etc/samplepackage/config.h
+	  (1.3), linuxmodule/Makefile.in (1.107), userlevel/Makefile.in
+	  (1.93): quiet compilation: print CC/CXX instead of the full
+	  compilation line, unless someone says V=1 on the make command
+	  line
+
 2006-04-01 Saturday 12:07  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/clicknet/wifi.h (1.24): avoid defining static array when
