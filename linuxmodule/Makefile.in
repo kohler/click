@@ -178,23 +178,31 @@ INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make
 
+ifeq ($(V),1)
+ccompile = $(COMPILE) $(1)
+cxxcompile = $(CXXCOMPILE) $(1)
+else
+ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
+cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
+endif
+
 .SUFFIXES:
 .SUFFIXES: .c .cc .o .S .s .i .ii
 
 .c.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,CC)
 .c.i:
-	$(COMPILE) -E $< > $@
+	$(call ccompile,-E $< > $@,CPP)
 .s.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,ASM)
 .S.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,ASM)
 .cc.o:
-	$(CXXCOMPILE) -c $<
+	$(call cxxcompile,-c $< -o $@,CXX)
 .cc.s:
-	$(CXXCOMPILE) -S $<
+	$(call cxxcompile,-S $< -o $@,CXX -S)
 .cc.ii:
-	$(CXXCOMPILE) -E $< > $@
+	$(call cxxcompile,-E $< > $@,CXXCPP)
 
 
 OBJS = $(LIB_CXX_OBJS) $(LIB_C_OBJS) $(STD_ELEMENT_OBJS) $(ELEMENT_OBJS) \

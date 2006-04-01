@@ -548,8 +548,8 @@ EOF
     else
 	set_subdir_scriptlet='subdirs[dirid] = dir;'
 	pattern_scriptlet='$('"$makevar"'__", i, "): %'"$osuffix"
-	ccaction='	$(CXXCOMPILE) -c $< -o $@'
-	caction='	$(COMPILE) -c $< -o $@'
+	ccaction='	$(call cxxcompile,-c $< -o $@,CXX)'
+	caction='	$(call ccompile,-c $< -o $@,CC)'
 	if test -n "$L"; then
 	    ccaction="$ccaction"'\n	$(FIXDEP)'
 	    caction="$caction"'\n	$(FIXDEP)'

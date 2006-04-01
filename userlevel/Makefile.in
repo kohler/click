@@ -24,21 +24,29 @@ RANLIB = @RANLIB@
 INSTALL = @INSTALL@
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
+ifeq ($(V),1)
+ccompile = $(COMPILE) $(1)
+cxxcompile = $(CXXCOMPILE) $(1)
+else
+ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
+cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
+endif
+
 .SUFFIXES:
 .SUFFIXES: .S .c .cc .o .s .ii
 
 .c.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,CC)
 .s.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,ASM)
 .S.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,ASM)
 .cc.o:
-	$(CXXCOMPILE) -c $<
+	$(call cxxcompile,-c $< -o $@,CXX)
 .cc.s:
-	$(CXXCOMPILE) -S $<
+	$(call cxxcompile,-S $< -o $@,CXX -S)
 .cc.ii:
-	$(CXXCOMPILE) -E $< > $@
+	$(call cxxcompile,-E $< > $@,CXXCPP)
 
 
 GENERIC_OBJS = string.o straccum.o nameinfo.o \
