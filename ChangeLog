@@ -1,3 +1,8 @@
+2006-04-01 Saturday 12:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/clicknet/wifi.h (1.24): avoid defining static array when
+	  it will go unused
+
 2006-04-01 Saturday 01:04  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: copyrxstats.cc (1.8), copyrxstats.hh (1.5),
