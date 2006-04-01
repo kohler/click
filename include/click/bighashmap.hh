@@ -109,10 +109,11 @@ class _HashMap_const_iterator { public:
   void operator++(int);
   void operator++()			{ (*this)++; }
   
-  const K &key() const			{ return _elt->key; }
-  const V &value() const		{ return _elt->value; }
   typedef typename HashMap<K, V>::Pair Pair;
   const Pair *pair() const		{ return _elt; }
+
+  const K &key() const			{ return _elt->key; }
+  const V &value() const		{ return _elt->value; }
 
  private:
 
@@ -130,8 +131,10 @@ template <class K, class V>
 class _HashMap_iterator : public _HashMap_const_iterator<K, V> { public:
 
   typedef _HashMap_const_iterator<K, V> inherited;
-  
-  V &value() const		{ return const_cast<V &>(inherited::value()); }
+
+  typedef typename HashMap<K, V>::Pair Pair;
+  Pair *pair() const	{ return const_cast<Pair *>(inherited::pair()); }
+  V &value() const	{ return const_cast<V &>(inherited::value()); }
 
  private:
   
@@ -291,10 +294,11 @@ class _HashMap_const_iterator<K, void *> { public:
   void operator++(int);
   void operator++()			{ (*this)++; }
   
-  const K &key() const			{ return _elt->key; }
-  void *value() const			{ return _elt->value; }
   typedef typename HashMap<K, void *>::Pair Pair;
   const Pair *pair() const		{ return _elt; }
+  
+  const K &key() const			{ return _elt->key; }
+  void *value() const			{ return _elt->value; }
   
  private:
 
@@ -313,8 +317,10 @@ template <class K>
 class _HashMap_iterator<K, void *> : public _HashMap_const_iterator<K, void *> { public:
 
   typedef _HashMap_const_iterator<K, void *> inherited;
-  
-  void *&value() const			{ return this->_elt->value; }
+
+  typedef typename HashMap<K, void *>::Pair Pair;
+  Pair *pair() const	{ return const_cast<Pair *>(inherited::pair()); }
+  void *&value() const	{ return this->_elt->value; }
 
  private:
 
@@ -447,10 +453,11 @@ class _HashMap_const_iterator<K, T *> : private _HashMap_const_iterator<K, void 
   void operator++(int)	{ inherited::operator++(0); }
   void operator++()	{ inherited::operator++(); }
   
-  const K &key() const	{ return inherited::key(); }
-  T *value() const	{ return reinterpret_cast<T *>(inherited::value()); }
   typedef typename HashMap<K, T *>::Pair Pair;
   const Pair *pair() const { return reinterpret_cast<const Pair *>(inherited::pair()); }
+  
+  const K &key() const	{ return inherited::key(); }
+  T *value() const	{ return reinterpret_cast<T *>(inherited::value()); }
 
  private:
 
@@ -465,7 +472,9 @@ class _HashMap_iterator<K, T *> : public _HashMap_const_iterator<K, T *> { publi
 
   typedef _HashMap_const_iterator<K, T *> inherited;
 
-  T *&value() const	{ return reinterpret_cast<T *&>(this->_elt->value); }
+  typedef typename HashMap<K, T *>::Pair Pair;
+  Pair *pair() const	{ return const_cast<Pair *>(inherited::pair()); }
+  T *&value() const	{ return pair()->value; }
 
  private:
   

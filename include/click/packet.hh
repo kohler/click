@@ -1,10 +1,11 @@
-// -*- c-basic-offset: 2; related-file-name: "../../lib/packet.cc" -*-
+// -*- related-file-name: "../../lib/packet.cc" -*-
 #ifndef CLICK_PACKET_HH
 #define CLICK_PACKET_HH
 #include <click/ipaddress.hh>
+#include <click/ip6address.hh>
 #include <click/glue.hh>
 #include <click/timestamp.hh>
-#ifdef CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
 # include <click/skbmgr.hh>
 #endif
 struct click_ether;
@@ -14,7 +15,7 @@ struct click_ip6;
 struct click_tcp;
 struct click_udp;
 
-#ifdef CLICK_NS
+#if CLICK_NS
 # include <click/simclick.h>
 #endif
 
@@ -34,7 +35,7 @@ class Packet { public:
   static WritablePacket *make(const unsigned char *, uint32_t);
   static WritablePacket *make(uint32_t, const unsigned char *, uint32_t, uint32_t);
   
-#ifdef CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
   // Packet::make(sk_buff *) wraps a Packet around an existing sk_buff.
   // Packet now owns the sk_buff (ie we don't increment skb->users).
   static Packet *make(struct sk_buff *);
@@ -54,146 +55,113 @@ class Packet { public:
   void kill()				{ if (--_use_count <= 0) delete this; }
 #endif
 
-  bool shared() const;
-  Packet *clone();
-  WritablePacket *uniqueify();
+    inline bool shared() const;
+    Packet *clone();
+    WritablePacket *uniqueify();
   
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
-  const unsigned char *data() const	{ return skb()->data; }
-  const unsigned char *end_data() const	{ return skb()->tail; }
-  uint32_t length() const		{ return skb()->len; }
-  uint32_t headroom() const		{ return skb()->data - skb()->head; }
-  uint32_t tailroom() const		{ return skb()->end - skb()->tail; }
-  const unsigned char *buffer_data() const { return skb()->head; }
-  uint32_t buffer_length() const	{ return skb()->end - skb()->head; }
-#else				/* User-level driver and BSD kernel module */
-  const unsigned char *data() const	{ return _data; }
-  const unsigned char *end_data() const	{ return _tail; }
-  uint32_t length() const		{ return _tail - _data; }
-  uint32_t headroom() const		{ return _data - _head; }
-  uint32_t tailroom() const		{ return _end - _tail; }
-  const unsigned char *buffer_data() const { return _head; }
-  uint32_t buffer_length() const	{ return _end - _head; }
-#endif
+    inline const unsigned char *data() const;
+    inline const unsigned char *end_data() const;
+    inline uint32_t length() const;
+    inline uint32_t headroom() const;
+    inline uint32_t tailroom() const;
+    inline const unsigned char *buffer_data() const;
+    inline uint32_t buffer_length() const;
   
-  WritablePacket *push(uint32_t nb);	// Add more space before packet.
-  WritablePacket *push_mac_header(uint32_t nb);
-  Packet *nonunique_push(uint32_t nb);
-  void pull(uint32_t nb);		// Get rid of initial bytes.
-  WritablePacket *put(uint32_t nb);	// Add bytes to end of pkt.
-  Packet *nonunique_put(uint32_t nb);
-  void take(uint32_t nb);		// Delete bytes from end of pkt.
+    WritablePacket *push(uint32_t nb);	// Add more space before packet.
+    WritablePacket *push_mac_header(uint32_t nb);
+    Packet *nonunique_push(uint32_t nb);
+    void pull(uint32_t nb);		// Get rid of initial bytes.
+    WritablePacket *put(uint32_t nb);	// Add bytes to end of pkt.
+    Packet *nonunique_put(uint32_t nb);
+    void take(uint32_t nb);		// Delete bytes from end of pkt.
 
-  Packet *shift_data(int offset, bool free_on_failure = true);
-#ifdef CLICK_USERLEVEL
-  inline void shrink_data(const unsigned char *, uint32_t length);
-  inline void change_headroom_and_length(uint32_t headroom, uint32_t length);
+    Packet *shift_data(int offset, bool free_on_failure = true);
+#if CLICK_USERLEVEL
+    inline void shrink_data(const unsigned char *, uint32_t length);
+    inline void change_headroom_and_length(uint32_t headroom, uint32_t length);
 #endif
 
-  // HEADER ANNOTATIONS
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
-  const unsigned char *mac_header() const	{ return skb()->mac.raw; }
-  const click_ether *ether_header() const	{ return (click_ether *)skb()->mac.raw; }
+    // HEADER ANNOTATIONS
+    inline const unsigned char *mac_header() const;
+    inline void set_mac_header(const unsigned char *);
+    inline void set_mac_header(const unsigned char *, uint32_t);
+    inline int mac_header_offset() const;
+    inline uint32_t mac_header_length() const;
+    inline int mac_length() const;
+
+    inline const unsigned char *network_header() const;
+    inline void set_network_header(const unsigned char *, uint32_t);
+    inline void set_network_header_length(uint32_t);
+    inline int network_header_offset() const;
+    inline uint32_t network_header_length() const;
+    inline int network_length() const;
+
+    inline const unsigned char *transport_header() const;
+    inline int transport_header_offset() const;
+    inline int transport_length() const;
+
+    // CONVENIENCE HEADER ANNOTATIONS
+    inline const click_ether *ether_header() const;
+    inline void set_ether_header(const click_ether *);
   
-  const unsigned char *network_header() const	{ return skb()->nh.raw; }
-  const click_ip *ip_header() const	{ return (click_ip *)skb()->nh.iph; }
-  const click_ip6 *ip6_header() const	{ return (click_ip6 *)skb()->nh.ipv6h; }
+    inline const click_ip *ip_header() const;
+    inline void set_ip_header(const click_ip *, uint32_t);
+    inline int ip_header_offset() const;
+    inline uint32_t ip_header_length() const;
 
-  const unsigned char *transport_header() const	{ return skb()->h.raw; }
-  const click_icmp *icmp_header() const	{ return (click_icmp*)skb()->h.icmph; }
-  const click_tcp *tcp_header() const	{ return (click_tcp *)skb()->h.th; }
-  const click_udp *udp_header() const	{ return (click_udp *)skb()->h.uh; }
-#else			/* User space and BSD kernel module */
-  const unsigned char *mac_header() const	{ return _mac.raw; }
-  const click_ether *ether_header() const	{ return _mac.ethernet; }
+    inline const click_ip6 *ip6_header() const;
+    inline void set_ip6_header(const click_ip6 *);
+    inline void set_ip6_header(const click_ip6 *, uint32_t);
+    inline int ip6_header_offset() const;
+    inline uint32_t ip6_header_length() const;
 
-  const unsigned char *network_header() const	{ return _nh.raw; }
-  const click_ip *ip_header() const		{ return _nh.iph; }
-  const click_ip6 *ip6_header() const           { return _nh.ip6h; }
+    inline const click_icmp *icmp_header() const;
+    inline const click_tcp *tcp_header() const;
+    inline const click_udp *udp_header() const;
 
-  const unsigned char *transport_header() const	{ return _h.raw; }
-  const click_icmp *icmp_header() const	{ return _h.icmph; }
-  const click_tcp *tcp_header() const	{ return _h.th; }
-  const click_udp *udp_header() const	{ return _h.uh; }
-#endif
-
-  void set_mac_header(const unsigned char *);
-  void set_mac_header(const unsigned char *, uint32_t);
-  void set_ether_header(const click_ether *);
-  void set_network_header(const unsigned char *, uint32_t);
-  void set_network_header_length(uint32_t);
-  void set_ip_header(const click_ip *, uint32_t);
-  void set_ip6_header(const click_ip6 *);
-  void set_ip6_header(const click_ip6 *, uint32_t);
-
-  int mac_header_offset() const;
-  uint32_t mac_header_length() const;
-
-  int network_header_offset() const;
-  uint32_t network_header_length() const;
-  int ip_header_offset() const;
-  uint32_t ip_header_length() const;
-  int ip6_header_offset() const;
-  uint32_t ip6_header_length() const;
-
-  int transport_header_offset() const;
-
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
-  int mac_length() const		{ return skb()->tail - skb()->mac.raw;}
-  int network_length() const		{ return skb()->tail - skb()->nh.raw; }
-  int transport_length() const		{ return skb()->tail - skb()->h.raw; }
-#else				/* User space and BSD kernel module */
-  int mac_length() const		{ return _tail - _mac.raw; }
-  int network_length() const		{ return _tail - _nh.raw; }
-  int transport_length() const		{ return _tail - _h.raw; }
-#endif
-
-  // LINKS
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
-  Packet *next() const			{ return (Packet *)(skb()->next); }
-  Packet *&next()			{ return (Packet *&)(skb()->next); }
-  void set_next(Packet *p)		{ skb()->next = p->skb(); }
-#else				/* User space and BSD kernel module */ 
-  Packet *next() const			{ return _next; }
-  Packet *&next()			{ return _next; }
-  void set_next(Packet *p)		{ _next = p; }
-#endif
+    // LINKS
+    inline Packet *next() const;
+    inline Packet *&next();
+    inline void set_next(Packet *p);
   
-  // ANNOTATIONS
+    // ANNOTATIONS
 
  private:
   struct Anno;
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+#if CLICK_LINUXMODULE	/* Linux kernel module */
   const Anno *anno() const		{ return (const Anno *)skb()->cb; }
   Anno *anno()				{ return (Anno *)skb()->cb; }
 #else				/* User-space and BSD kernel module */
   const Anno *anno() const		{ return (const Anno *)_cb; }
   Anno *anno()				{ return (Anno *)_cb; }
 #endif
- public:
+  public:
 
-  enum PacketType {		// must agree with if_packet.h
-    HOST = 0, BROADCAST = 1, MULTICAST = 2, OTHERHOST = 3, OUTGOING = 4,
-    LOOPBACK = 5, FASTROUTE = 6
-  };
+    enum PacketType {		// must agree with if_packet.h
+	HOST = 0, BROADCAST = 1, MULTICAST = 2, OTHERHOST = 3, OUTGOING = 4,
+	LOOPBACK = 5, FASTROUTE = 6
+    };
 
-  enum { ADDR_ANNO_SIZE = 16 };
+    enum { ADDR_ANNO_SIZE = 16 };
 
-  uint8_t *addr_anno()			{ return anno()->addr.c; }
-  const uint8_t *addr_anno() const	{ return anno()->addr.c; }
-  IPAddress dst_ip_anno() const;
-  void set_dst_ip_anno(IPAddress);
-  const IP6Address &dst_ip6_anno() const;
-  void set_dst_ip6_anno(const IP6Address &);
+    uint8_t *addr_anno()			{ return anno()->addr.c; }
+    const uint8_t *addr_anno() const	{ return anno()->addr.c; }
+    IPAddress dst_ip_anno() const;
+    void set_dst_ip_anno(IPAddress);
+    const IP6Address &dst_ip6_anno() const;
+    void set_dst_ip6_anno(const IP6Address &);
 
-#ifdef CLICK_LINUXMODULE
-  const Timestamp &timestamp_anno() const { return *(const Timestamp*) &skb()->stamp; }
-  Timestamp &timestamp_anno()		{ return *(Timestamp*) &skb()->stamp; }
-  void set_timestamp_anno(const Timestamp &tv) { memcpy(&skb()->stamp, &tv, 8); }
-  net_device *device_anno() const	{ return skb()->dev; }
-  void set_device_anno(net_device *dev)	{ skb()->dev = dev; }
-  PacketType packet_type_anno() const	{ return (PacketType)(skb()->pkt_type & PACKET_TYPE_MASK); }
-  void set_packet_type_anno(PacketType p) { skb()->pkt_type = (skb()->pkt_type & PACKET_CLEAN) | p; }
+    inline const Timestamp &timestamp_anno() const;
+    inline Timestamp &timestamp_anno();
+    inline void set_timestamp_anno(const Timestamp &);
+
+    inline net_device *device_anno() const;
+    inline void set_device_anno(net_device *);
+
+    inline PacketType packet_type_anno() const;
+    inline void set_packet_type_anno(PacketType);
+    
+#if CLICK_LINUXMODULE
 # ifdef HAVE_INT64_TYPES
   uint64_t perfctr_anno() const		{ return anno()->perfctr; }
   void set_perfctr_anno(uint64_t pc)	{ anno()->perfctr = pc; }
@@ -201,10 +169,7 @@ class Packet { public:
 
 #else			/* User-space and BSD kernel module */
 
-  const Timestamp &timestamp_anno() const { return _timestamp; }
-  Timestamp &timestamp_anno()		{ return _timestamp; }
-  void set_timestamp_anno(const Timestamp &tv) { _timestamp = tv; }
-#ifdef CLICK_NS
+#if CLICK_NS
   class SimPacketinfoWrapper {
   public:
     simclick_simpacketinfo _pinfo;
@@ -225,16 +190,6 @@ class Packet { public:
     _sim_packetinfo._pinfo = *pinfo;
   }
 #endif
-# ifdef CLICK_BSDMODULE	/* BSD kernel module */
-  net_device *device_anno() const	{ if (m()) return m()->m_pkthdr.rcvif;
-					  else return NULL; }
-  void set_device_anno(net_device *dev)	{ if (m()) m()->m_pkthdr.rcvif = dev; }
-# else
-  net_device *device_anno() const	{ return 0; }
-  void set_device_anno(net_device *)	{ }
-# endif
-  PacketType packet_type_anno() const	{ return _pkt_type; }
-  void set_packet_type_anno(PacketType p) { _pkt_type = p; }
 #endif
 
   enum { USER_ANNO_SIZE = 24,
@@ -262,30 +217,31 @@ class Packet { public:
   void clear_annotations();
   void copy_annotations(const Packet *);
   
- private:
+  private:
 
-  // Anno must fit in sk_buff's char cb[48].
-  struct Anno {
-    union {
-      uint8_t c[ADDR_ANNO_SIZE];
-      uint32_t ip4;
-    } addr;
+    // Anno must fit in sk_buff's char cb[48].
+    struct Anno {
+	union {
+	    char ch[ADDR_ANNO_SIZE];
+	    uint8_t c[ADDR_ANNO_SIZE];
+	    uint32_t ip4;
+	} addr;
     
-    union {
-      uint8_t c[USER_ANNO_SIZE];
-      uint16_t us[USER_ANNO_US_SIZE];
-      int16_t s[USER_ANNO_S_SIZE];
-      uint32_t u[USER_ANNO_U_SIZE];
-      int32_t i[USER_ANNO_I_SIZE];
-    } user;
-    // flag allocations: see packet_anno.hh
+	union {
+	    uint8_t c[USER_ANNO_SIZE];
+	    uint16_t us[USER_ANNO_US_SIZE];
+	    int16_t s[USER_ANNO_S_SIZE];
+	    uint32_t u[USER_ANNO_U_SIZE];
+	    int32_t i[USER_ANNO_I_SIZE];
+	} user;
+	// flag allocations: see packet_anno.hh
     
-#if (defined(CLICK_LINUXMODULE) || defined(CLICK_BSDMODULE)) && defined(HAVE_INT64_TYPES)
-    uint64_t perfctr;
+#if (CLICK_LINUXMODULE || CLICK_BSDMODULE) && defined(HAVE_INT64_TYPES)
+	uint64_t perfctr;
 #endif
-  };
+    };
 
-#ifndef CLICK_LINUXMODULE
+#if !CLICK_LINUXMODULE
   /*
    * User-space and BSD kernel module implementations.
    */
@@ -296,34 +252,22 @@ class Packet { public:
   unsigned char *_data; /* where the packet starts */
   unsigned char *_tail; /* one beyond end of packet */
   unsigned char *_end;  /* one beyond end of allocated buffer */
-#ifdef CLICK_USERLEVEL
+# if CLICK_USERLEVEL
   void (*_destructor)(unsigned char *, size_t);
-#endif
-  unsigned char _cb[48];
-  union {
-    unsigned char *raw;
-    click_ether *ethernet;
-  } _mac;
-  union {
-    unsigned char *raw;
-    click_ip *iph;
-    click_ip6 *ip6h;
-  } _nh;
-  union {
-    unsigned char *raw;
-    click_tcp *th;
-    click_udp *uh;
-    click_icmp *icmph;
-  } _h;
-  PacketType _pkt_type;
-  Timestamp _timestamp;
-#ifdef CLICK_BSDMODULE
+# endif
+    unsigned char _cb[48];
+    unsigned char *_mac;
+    unsigned char *_nh;
+    unsigned char *_h;
+    PacketType _pkt_type;
+    Timestamp _timestamp;
+# if CLICK_BSDMODULE
   struct mbuf *_m;
-#endif
+# endif
   Packet *_next;
-#ifdef CLICK_NS
+# if CLICK_NS
   SimPacketinfoWrapper _sim_packetinfo;
-#endif
+# endif
 #endif
   
   Packet();
@@ -331,12 +275,12 @@ class Packet { public:
   ~Packet();
   Packet &operator=(const Packet &);
 
-#ifndef CLICK_LINUXMODULE
+#if !CLICK_LINUXMODULE
   Packet(int, int, int)			{ }
   static WritablePacket *make(int, int, int);
   bool alloc_data(uint32_t, uint32_t, uint32_t);
 #endif
-#ifdef CLICK_BSDMODULE
+#if CLICK_BSDMODULE
   static void assimilate_mbuf(Packet *p);
   void assimilate_mbuf();
 #endif
@@ -353,44 +297,293 @@ class Packet { public:
 
 class WritablePacket : public Packet { public:
   
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
-  unsigned char *data() const			{ return skb()->data; }
-  unsigned char *end_data() const		{ return skb()->tail; }
-  unsigned char *buffer_data() const		{ return skb()->head; }
-  unsigned char *mac_header() const		{ return skb()->mac.raw; }
-  click_ether *ether_header() const	{ return (click_ether*)skb()->mac.raw;}
-  unsigned char *network_header() const		{ return skb()->nh.raw; }
-  click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
-  click_ip6 *ip6_header() const         { return (click_ip6*)skb()->nh.ipv6h; }
-  unsigned char *transport_header() const	{ return skb()->h.raw; }
-  click_icmp *icmp_header() const	{ return (click_icmp*)skb()->h.icmph; }
-  click_tcp *tcp_header() const		{ return (click_tcp*)skb()->h.th; }
-  click_udp *udp_header() const		{ return (click_udp*)skb()->h.uh; }
-#else				/* User-space or BSD kernel module */
-  unsigned char *data() const			{ return _data; }
-  unsigned char *end_data() const		{ return _tail; }
-  unsigned char *buffer_data() const		{ return _head; }
-  unsigned char *mac_header() const		{ return _mac.raw; }
-  click_ether *ether_header() const		{ return _mac.ethernet; }
-  unsigned char *network_header() const		{ return _nh.raw; }
-  click_ip *ip_header() const			{ return _nh.iph; }
-  click_ip6 *ip6_header() const                 { return _nh.ip6h; }
-  unsigned char *transport_header() const	{ return _h.raw; }
-  click_icmp *icmp_header() const		{ return _h.icmph; }
-  click_tcp *tcp_header() const			{ return _h.th; }
-  click_udp *udp_header() const			{ return _h.uh; }
-#endif
-
+    inline unsigned char *data() const;
+    inline unsigned char *end_data() const;
+    inline unsigned char *buffer_data() const;
+    inline unsigned char *mac_header() const;
+    inline click_ether *ether_header() const;
+    inline unsigned char *network_header() const;
+    inline click_ip *ip_header() const;
+    inline click_ip6 *ip6_header() const;
+    inline unsigned char *transport_header() const;
+    inline click_icmp *icmp_header() const;
+    inline click_tcp *tcp_header() const;
+    inline click_udp *udp_header() const;
+    
  private:
 
-  WritablePacket()				{ }
-  WritablePacket(const Packet &)		{ }
-  ~WritablePacket()				{ }
+    WritablePacket()				{ }
+    WritablePacket(const Packet &)		{ }
+    ~WritablePacket()				{ }
 
-  friend class Packet;
+    friend class Packet;
   
 };
 
+
+
+inline const unsigned char *
+Packet::data() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->data;
+#else
+    return _data;
+#endif
+}
+
+inline const unsigned char *
+Packet::end_data() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->tail;
+#else
+    return _tail;
+#endif
+}
+
+inline uint32_t
+Packet::length() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->len;
+#else
+    return _tail - _data;
+#endif
+}
+
+inline uint32_t
+Packet::headroom() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->data - skb()->head;
+#else
+    return _data - _head;
+#endif
+}
+
+inline uint32_t
+Packet::tailroom() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->end - skb()->tail;
+#else
+    return _end - _tail;
+#endif
+}
+
+inline const unsigned char *
+Packet::buffer_data() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->head;
+#else
+    return _head;
+#endif
+}
+
+inline uint32_t
+Packet::buffer_length() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->end - skb()->head;
+#else
+    return _end - _head;
+#endif
+}
+
+
+inline Packet *
+Packet::next() const
+{
+#if CLICK_LINUXMODULE
+    return (Packet *)(skb()->next);
+#else
+    return _next;
+#endif
+}
+
+inline Packet *&
+Packet::next()
+{
+#if CLICK_LINUXMODULE
+    return (Packet *&)(skb()->next);
+#else
+    return _next;
+#endif
+}
+
+inline void
+Packet::set_next(Packet *p)
+{
+#if CLICK_LINUXMODULE
+    skb()->next = p->skb();
+#else
+    _next = p;
+#endif
+}
+
+inline const unsigned char *
+Packet::mac_header() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->mac.raw;
+#else
+    return _mac;
+#endif
+}
+
+inline const unsigned char *
+Packet::network_header() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->nh.raw;
+#else
+    return _nh;
+#endif
+}
+
+inline const unsigned char *
+Packet::transport_header() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->h.raw;
+#else
+    return _h;
+#endif
+}
+
+inline const click_ether *
+Packet::ether_header() const
+{
+    return reinterpret_cast<const click_ether *>(mac_header());
+}
+
+inline const click_ip *
+Packet::ip_header() const
+{
+    return reinterpret_cast<const click_ip *>(network_header());
+}
+
+inline const click_ip6 *
+Packet::ip6_header() const
+{
+    return reinterpret_cast<const click_ip6 *>(network_header());
+}
+
+inline const click_icmp *
+Packet::icmp_header() const
+{
+    return reinterpret_cast<const click_icmp *>(transport_header());
+}
+
+inline const click_tcp *
+Packet::tcp_header() const
+{
+    return reinterpret_cast<const click_tcp *>(transport_header());
+}
+
+inline const click_udp *
+Packet::udp_header() const
+{
+    return reinterpret_cast<const click_udp *>(transport_header());
+}
+
+inline int
+Packet::mac_length() const
+{
+    return end_data() - mac_header();
+}
+
+inline int
+Packet::network_length() const
+{
+    return end_data() - network_header();
+}
+
+inline int
+Packet::transport_length() const
+{
+    return end_data() - transport_header();
+}
+
+inline const Timestamp &
+Packet::timestamp_anno() const
+{
+#if CLICK_LINUXMODULE
+    return *(const Timestamp *) &skb()->stamp;
+#else
+    return _timestamp;
+#endif
+}
+
+inline Timestamp &
+Packet::timestamp_anno()
+{
+#if CLICK_LINUXMODULE
+    return *(Timestamp *) &skb()->stamp;
+#else
+    return _timestamp;
+#endif
+}
+
+inline void
+Packet::set_timestamp_anno(const Timestamp &timestamp)
+{
+#if CLICK_LINUXMODULE
+    memcpy(&skb()->stamp, &timestamp, 8);
+#else
+    _timestamp = timestamp;
+#endif
+}
+
+inline net_device *
+Packet::device_anno() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->dev;
+#elif CLICK_BSDMODULE
+    if (m())
+	return m()->m_pkthdr.rcvif;
+    else
+	return 0;
+#else
+    return 0;
+#endif
+}
+
+inline void
+Packet::set_device_anno(net_device *dev)
+{
+#if CLICK_LINUXMODULE
+    skb()->dev = dev;
+#elif CLICK_BSDMODULE
+    if (m())
+	m()->m_pkthdr.rcvif = dev;
+#else
+    (void) dev;
+#endif
+}
+
+inline Packet::PacketType
+Packet::packet_type_anno() const
+{
+#if CLICK_LINUXMODULE
+    return (PacketType)(skb()->pkt_type & PACKET_TYPE_MASK);
+#else
+    return _pkt_type;
+#endif
+}
+
+inline void
+Packet::set_packet_type_anno(PacketType p)
+{
+#if CLICK_LINUXMODULE
+    skb()->pkt_type = (skb()->pkt_type & PACKET_CLEAN) | p;
+#else
+    _pkt_type = p;
+#endif
+}
 
 inline WritablePacket *
 Packet::make(uint32_t len)
@@ -410,7 +603,7 @@ Packet::make(const unsigned char *s, uint32_t len)
   return make(DEFAULT_HEADROOM, (const unsigned char *)s, len, 0);
 }
 
-#ifdef CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
 inline Packet *
 Packet::make(struct sk_buff *skb)
 {
@@ -434,7 +627,7 @@ Packet::kill()
 }
 #endif
 
-#ifdef CLICK_BSDMODULE		/* BSD kernel module */
+#if CLICK_BSDMODULE		/* BSD kernel module */
 inline void
 Packet::assimilate_mbuf(Packet *p)
 {
@@ -484,10 +677,10 @@ Packet::make(struct mbuf *m)
 inline bool
 Packet::shared() const
 {
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
-  return skb_cloned(const_cast<struct sk_buff *>(skb()));
-#else				/* User-space or BSD kernel module */
-  return (_data_packet || _use_count > 1);
+#if CLICK_LINUXMODULE
+    return skb_cloned(const_cast<struct sk_buff *>(skb()));
+#else
+    return (_data_packet || _use_count > 1);
 #endif
 }
 
@@ -505,11 +698,11 @@ Packet::push(uint32_t nbytes)
 {
   if (headroom() >= nbytes && !shared()) {
     WritablePacket *q = (WritablePacket *)this;
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+#if CLICK_LINUXMODULE	/* Linux kernel module */
     __skb_push(q->skb(), nbytes);
 #else				/* User-space and BSD kernel module */
     q->_data -= nbytes;
-# ifdef CLICK_BSDMODULE
+# if CLICK_BSDMODULE
     q->m()->m_data -= nbytes;
     q->m()->m_len += nbytes;
     q->m()->m_pkthdr.len += nbytes;
@@ -524,11 +717,11 @@ inline Packet *
 Packet::nonunique_push(uint32_t nbytes)
 {
   if (headroom() >= nbytes) {
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+#if CLICK_LINUXMODULE	/* Linux kernel module */
     __skb_push(skb(), nbytes);
 #else				/* User-space and BSD kernel module */
     _data -= nbytes;
-# ifdef CLICK_BSDMODULE
+# if CLICK_BSDMODULE
     m()->m_data -= nbytes;
     m()->m_len += nbytes;
     m()->m_pkthdr.len += nbytes;
@@ -547,11 +740,11 @@ Packet::pull(uint32_t nbytes)
     click_chatter("Packet::pull %d > length %d\n", nbytes, length());
     nbytes = length();
   }
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+#if CLICK_LINUXMODULE	/* Linux kernel module */
   __skb_pull(skb(), nbytes);
 #else				/* User-space and BSD kernel module */
   _data += nbytes;
-# ifdef CLICK_BSDMODULE
+# if CLICK_BSDMODULE
   m()->m_data += nbytes;
   m()->m_len -= nbytes;
   m()->m_pkthdr.len -= nbytes;
@@ -564,11 +757,11 @@ Packet::put(uint32_t nbytes)
 {
   if (tailroom() >= nbytes && !shared()) {
     WritablePacket *q = (WritablePacket *)this;
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+#if CLICK_LINUXMODULE	/* Linux kernel module */
     __skb_put(q->skb(), nbytes);
 #else				/* User-space and BSD kernel module */
     q->_tail += nbytes;
-# ifdef CLICK_BSDMODULE
+# if CLICK_BSDMODULE
     q->m()->m_len += nbytes;
     q->m()->m_pkthdr.len += nbytes;
 # endif
@@ -582,11 +775,11 @@ inline Packet *
 Packet::nonunique_put(uint32_t nbytes)
 {
   if (tailroom() >= nbytes) {
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+#if CLICK_LINUXMODULE	/* Linux kernel module */
     __skb_put(skb(), nbytes);
 #else				/* User-space and BSD kernel module */
     _tail += nbytes;
-# ifdef CLICK_BSDMODULE
+# if CLICK_BSDMODULE
     m()->m_len += nbytes;
     m()->m_pkthdr.len += nbytes;
 # endif
@@ -604,19 +797,19 @@ Packet::take(uint32_t nbytes)
     click_chatter("Packet::take %d > length %d\n", nbytes, length());
     nbytes = length();
   }
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+#if CLICK_LINUXMODULE	/* Linux kernel module */
   skb()->tail -= nbytes;
   skb()->len -= nbytes;
 #else				/* User-space and BSD kernel module */
   _tail -= nbytes;
-# ifdef CLICK_BSDMODULE
+# if CLICK_BSDMODULE
   m()->m_len -= nbytes;
   m()->m_pkthdr.len -= nbytes;
 # endif
 #endif
 }
 
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL
 inline void
 Packet::shrink_data(const unsigned char *d, uint32_t length)
 {
@@ -640,171 +833,171 @@ Packet::change_headroom_and_length(uint32_t headroom, uint32_t length)
 inline const IP6Address &
 Packet::dst_ip6_anno() const
 {
-  return reinterpret_cast<const IP6Address &>(anno()->addr.c);
+    return *reinterpret_cast<const IP6Address *>(anno()->addr.ch);
 }
 
 inline void
 Packet::set_dst_ip6_anno(const IP6Address &a)
 {
-  memcpy(anno()->addr.c, &a, 16);
+    memcpy(anno()->addr.ch, &a, 16);
 }
 
 inline IPAddress 
 Packet::dst_ip_anno() const
 {
-  return IPAddress(anno()->addr.ip4);
+    return IPAddress(anno()->addr.ip4);
 }
 
 inline void 
 Packet::set_dst_ip_anno(IPAddress a)
 { 
-  anno()->addr.ip4 = a.addr(); 
+    anno()->addr.ip4 = a.addr(); 
 }
 
 inline void
 Packet::set_mac_header(const unsigned char *h)
 {
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
-  skb()->mac.raw = const_cast<unsigned char *>(h);
+#if CLICK_LINUXMODULE	/* Linux kernel module */
+    skb()->mac.raw = const_cast<unsigned char *>(h);
 #else				/* User-space and BSD kernel module */
-  _mac.raw = const_cast<unsigned char *>(h);
+    _mac = const_cast<unsigned char *>(h);
 #endif
 }
 
 inline void
 Packet::set_mac_header(const unsigned char *h, uint32_t len)
 {
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
-  skb()->mac.raw = const_cast<unsigned char *>(h);
-  skb()->nh.raw = const_cast<unsigned char *>(h) + len;
+#if CLICK_LINUXMODULE	/* Linux kernel module */
+    skb()->mac.raw = const_cast<unsigned char *>(h);
+    skb()->nh.raw = const_cast<unsigned char *>(h) + len;
 #else				/* User-space and BSD kernel module */
-  _mac.raw = const_cast<unsigned char *>(h);
-  _nh.raw = const_cast<unsigned char *>(h) + len;
+    _mac = const_cast<unsigned char *>(h);
+    _nh = const_cast<unsigned char *>(h) + len;
 #endif
 }
 
 inline void
 Packet::set_ether_header(const click_ether *h)
 {
-  set_mac_header(reinterpret_cast<const unsigned char *>(h), 14);
+    set_mac_header(reinterpret_cast<const unsigned char *>(h), 14);
 }
 
 inline WritablePacket *
 Packet::push_mac_header(uint32_t nbytes)
 {
-  WritablePacket *q;
-  if (headroom() >= nbytes && !shared()) {
-    q = (WritablePacket *)this;
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
-    __skb_push(q->skb(), nbytes);
+    WritablePacket *q;
+    if (headroom() >= nbytes && !shared()) {
+	q = (WritablePacket *)this;
+#if CLICK_LINUXMODULE	/* Linux kernel module */
+	__skb_push(q->skb(), nbytes);
 #else				/* User-space and BSD kernel module */
-    q->_data -= nbytes;
-# ifdef CLICK_BSDMODULE
-    q->m()->m_data -= nbytes;
-    q->m()->m_len += nbytes;
-    q->m()->m_pkthdr.len += nbytes;
+	q->_data -= nbytes;
+# if CLICK_BSDMODULE
+	q->m()->m_data -= nbytes;
+	q->m()->m_len += nbytes;
+	q->m()->m_pkthdr.len += nbytes;
 # endif
 #endif
-  } else if ((q = expensive_push(nbytes)))
-    /* nada */;
-  else
-    return 0;
-  q->set_mac_header(q->data(), nbytes);
-  return q;
+    } else if ((q = expensive_push(nbytes)))
+	/* nada */;
+    else
+	return 0;
+    q->set_mac_header(q->data(), nbytes);
+    return q;
 }
 
 inline void
 Packet::set_network_header(const unsigned char *h, uint32_t len)
 {
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
-  skb()->nh.raw = const_cast<unsigned char *>(h);
-  skb()->h.raw = const_cast<unsigned char *>(h) + len;
+#if CLICK_LINUXMODULE	/* Linux kernel module */
+    skb()->nh.raw = const_cast<unsigned char *>(h);
+    skb()->h.raw = const_cast<unsigned char *>(h) + len;
 #else				/* User-space and BSD kernel module */
-  _nh.raw = const_cast<unsigned char *>(h);
-  _h.raw = const_cast<unsigned char *>(h) + len;
+    _nh = const_cast<unsigned char *>(h);
+    _h = const_cast<unsigned char *>(h) + len;
 #endif
 }
 
 inline void
 Packet::set_network_header_length(uint32_t len)
 {
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
-  skb()->h.raw = skb()->nh.raw + len;
+#if CLICK_LINUXMODULE	/* Linux kernel module */
+    skb()->h.raw = skb()->nh.raw + len;
 #else				/* User-space and BSD kernel module */
-  _h.raw = _nh.raw + len;
+    _h = _nh + len;
 #endif
 }
 
 inline void
 Packet::set_ip_header(const click_ip *iph, uint32_t len)
 {
-  set_network_header(reinterpret_cast<const unsigned char *>(iph), len);
+    set_network_header(reinterpret_cast<const unsigned char *>(iph), len);
 }
 
 inline void
 Packet::set_ip6_header(const click_ip6 *ip6h, uint32_t len)
 {
-  set_network_header(reinterpret_cast<const unsigned char *>(ip6h), len);
+    set_network_header(reinterpret_cast<const unsigned char *>(ip6h), len);
 }
 
 inline void
 Packet::set_ip6_header(const click_ip6 *ip6h)
 {
-  set_ip6_header(ip6h, 40);
+    set_ip6_header(ip6h, 40);
 }
 
 inline int
 Packet::mac_header_offset() const
 {
-  return mac_header() - data();
+    return mac_header() - data();
 }
 
 inline uint32_t
 Packet::mac_header_length() const
 {
-  return network_header() - mac_header();
+    return network_header() - mac_header();
 }
 
 inline int
 Packet::network_header_offset() const
 {
-  return network_header() - data();
+    return network_header() - data();
 }
 
 inline uint32_t
 Packet::network_header_length() const
 {
-  return transport_header() - network_header();
+    return transport_header() - network_header();
 }
 
 inline int
 Packet::ip_header_offset() const
 {
-  return network_header_offset();
+    return network_header_offset();
 }
 
 inline uint32_t
 Packet::ip_header_length() const
 {
-  return network_header_length();
+    return network_header_length();
 }
 
 inline int
 Packet::ip6_header_offset() const
 {
-  return network_header_offset();
+    return network_header_offset();
 }
 
 inline uint32_t
 Packet::ip6_header_length() const
 {
-  return network_header_length();
+    return network_header_length();
 }
 
 inline int
 Packet::transport_header_offset() const
 {
-  return transport_header() - data();
+    return transport_header() - data();
 }
 
 inline void
@@ -832,15 +1025,88 @@ inline void
 Packet::shift_header_annotations(int32_t shift)
 {
 #if CLICK_USERLEVEL || CLICK_BSDMODULE
-  _mac.raw += (_mac.raw ? shift : 0);
-  _nh.raw += (_nh.raw ? shift : 0);
-  _h.raw += (_h.raw ? shift : 0);
+  _mac += (_mac ? shift : 0);
+  _nh += (_nh ? shift : 0);
+  _h += (_h ? shift : 0);
 #else
   struct sk_buff *mskb = skb();
   mskb->mac.raw += (mskb->mac.raw ? shift : 0);
   mskb->nh.raw += (mskb->nh.raw ? shift : 0);
   mskb->h.raw += (mskb->h.raw ? shift : 0);
 #endif
+}
+
+
+inline unsigned char *
+WritablePacket::data() const
+{
+    return const_cast<unsigned char *>(Packet::data());
+}
+
+inline unsigned char *
+WritablePacket::end_data() const
+{
+    return const_cast<unsigned char *>(Packet::end_data());
+}
+
+inline unsigned char *
+WritablePacket::buffer_data() const
+{
+    return const_cast<unsigned char *>(Packet::buffer_data());
+}
+
+inline unsigned char *
+WritablePacket::mac_header() const
+{
+    return const_cast<unsigned char *>(Packet::mac_header());
+}
+
+inline unsigned char *
+WritablePacket::network_header() const
+{
+    return const_cast<unsigned char *>(Packet::network_header());
+}
+
+inline unsigned char *
+WritablePacket::transport_header() const
+{
+    return const_cast<unsigned char *>(Packet::transport_header());
+}
+
+inline click_ether *
+WritablePacket::ether_header() const
+{
+    return const_cast<click_ether *>(Packet::ether_header());
+}
+
+inline click_ip *
+WritablePacket::ip_header() const
+{
+    return const_cast<click_ip *>(Packet::ip_header());
+}
+
+inline click_ip6 *
+WritablePacket::ip6_header() const
+{
+    return const_cast<click_ip6 *>(Packet::ip6_header());
+}
+
+inline click_icmp *
+WritablePacket::icmp_header() const
+{
+    return const_cast<click_icmp *>(Packet::icmp_header());
+}
+
+inline click_tcp *
+WritablePacket::tcp_header() const
+{
+    return const_cast<click_tcp *>(Packet::tcp_header());
+}
+
+inline click_udp *
+WritablePacket::udp_header() const
+{
+    return const_cast<click_udp *>(Packet::udp_header());
 }
 
 CLICK_ENDDECLS

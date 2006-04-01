@@ -15,10 +15,12 @@ class HandlerCall;
 # define CP_VA_PARSE_ARGS_REST	Element*, ErrorHandler*, ...
 # define CP_OPT_CONTEXT		, Element* context = 0
 # define CP_CONTEXT		, Element* context
+# define CP_PASS_CONTEXT	, context
 #else
 # define CP_VA_PARSE_ARGS_REST	ErrorHandler*, ...
 # define CP_OPT_CONTEXT
 # define CP_CONTEXT
+# define CP_PASS_CONTEXT
 #endif
 
 const char* cp_skip_space(const char* begin, const char* end);
@@ -137,6 +139,7 @@ class IPAddress;
 class IPAddressList;
 bool cp_ip_address(const String&, unsigned char*  CP_OPT_CONTEXT);
 bool cp_ip_address(const String&, IPAddress*  CP_OPT_CONTEXT);
+inline bool cp_ip_address(const String&, struct in_addr*  CP_OPT_CONTEXT);
 bool cp_ip_prefix(const String&, unsigned char*, unsigned char*, bool allow_bare_address  CP_OPT_CONTEXT);
 bool cp_ip_prefix(const String&, IPAddress*, IPAddress*, bool allow_bare_address  CP_OPT_CONTEXT);
 bool cp_ip_prefix(const String&, unsigned char*, unsigned char*  CP_OPT_CONTEXT);
@@ -327,10 +330,6 @@ struct cp_value {
     String v2_string;
 };
 
-#undef CP_VA_ARGS_REST
-#undef CP_OPT_CONTEXT
-#undef CP_CONTEXT
-
 inline String cp_unspacevec(const Vector<String>& conf)
 {
     return cp_unspacevec(conf.begin(), conf.end());
@@ -405,5 +404,14 @@ inline bool cp_unsigned(const String& str, unsigned long* return_value)
 }
 #endif
 
+inline bool cp_ip_address(const String& str, struct in_addr* ina  CP_CONTEXT)
+{
+    return cp_ip_address(str, reinterpret_cast<IPAddress*>(ina)  CP_PASS_CONTEXT);
+}
+
+#undef CP_VA_ARGS_REST
+#undef CP_OPT_CONTEXT
+#undef CP_CONTEXT
+#undef CP_PASS_CONTEXT
 CLICK_ENDDECLS
 #endif
