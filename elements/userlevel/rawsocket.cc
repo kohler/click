@@ -238,8 +238,9 @@ RawSocket::selected(int fd)
 	      // interrupted by signal, try again immediately
 	      continue;
 	    } else {
-	      // unexpected error
+	      // unexpected error: drop packet
 	      errh->error("sendto: %s", strerror(errno));
+	      break;
 	    }
 	  } else {
 	    p->pull(len);
