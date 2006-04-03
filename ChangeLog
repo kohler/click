@@ -1,3 +1,8 @@
+2006-04-03 Monday 03:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.83): detect and error about class_name
+	  methods that do not appear on a single line
+
 2006-04-01 Saturday 13:22  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.82), elements/grid/dsdvroutetable.cc
