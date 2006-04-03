@@ -3,7 +3,7 @@
  * master.{cc,hh} -- Click event master
  * Eddie Kohler
  *
- * Copyright (c) 2003-4 The Regents of the University of California
+ * Copyright (c) 2003-6 The Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,11 @@
 #include <click/handlercall.hh>
 #if CLICK_USERLEVEL && HAVE_SYS_EVENT_H && HAVE_KQUEUE
 # include <sys/event.h>
+# if HAVE_EV_SET_UDATA_POINTER
+#  define EV_SET_UDATA_CAST	(void *)
+# else
+#  define EV_SET_UDATA_CAST	/* nothing */
+# endif
 #endif
 #if CLICK_USERLEVEL
 # include <signal.h>
@@ -502,11 +507,11 @@ Master::add_select(int fd, Element *element, int mask)
 	struct kevent kev[2];
 	int nkev = 0;
 	if (mask & SELECT_READ) {
-	    EV_SET(&kev[nkev], fd, EVFILT_READ, EV_ADD, 0, 0, (void*) ((intptr_t) pi));
+	    EV_SET(&kev[nkev], fd, EVFILT_READ, EV_ADD, 0, 0, EV_SET_UDATA_CAST ((intptr_t) pi));
 	    nkev++;
 	}
 	if (mask & SELECT_WRITE) {
-	    EV_SET(&kev[nkev], fd, EVFILT_WRITE, EV_ADD, 0, 0, (void*) ((intptr_t) pi));
+	    EV_SET(&kev[nkev], fd, EVFILT_WRITE, EV_ADD, 0, 0, EV_SET_UDATA_CAST ((intptr_t) pi));
 	    nkev++;
 	}
 	int r = kevent(_kqueue, &kev[0], nkev, 0, 0, 0);
@@ -568,7 +573,7 @@ Master::remove_pollfd(int pi, int event)
     // remove event from kqueue
     if (_kqueue >= 0) {
 	struct kevent kev;
-	EV_SET(&kev, _pollfds[pi].fd, (event == POLLIN ? EVFILT_READ : EVFILT_WRITE), EV_DELETE, 0, 0, (void*) ((intptr_t) pi));
+	EV_SET(&kev, _pollfds[pi].fd, (event == POLLIN ? EVFILT_READ : EVFILT_WRITE), EV_DELETE, 0, 0, EV_SET_UDATA_CAST ((intptr_t) pi));
 	int r = kevent(_kqueue, &kev, 1, 0, 0, 0);
 	if (r < 0)
 	    click_chatter("Master::remove_pollfd(fd %d): kevent: %s", _pollfds[pi].fd, strerror(errno));

@@ -318,7 +318,18 @@ dnl
 
 AC_CHECK_HEADERS(unistd.h termio.h netdb.h sys/event.h pwd.h grp.h)
 CLICK_CHECK_POLL_H
-AC_CHECK_FUNCS(kqueue sigaction)
+AC_CHECK_FUNCS(sigaction)
+
+AC_CHECK_FUNCS(kqueue, have_kqueue=yes)
+if test "x$have_kqueue" = xyes; then
+    AC_CACHE_CHECK([whether EV_SET last argument is void *], [ac_cv_ev_set_udata_pointer],
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#include <sys/event.h>
+#include <sys/time.h>]], [[struct kevent kev; EV_SET(&kev, 1, EVFILT_WRITE, EV_ADD, 0, 0, (void *) &kev);]])], [ac_cv_ev_set_udata_pointer=yes], [ac_cv_ev_set_udata_pointer=no])])
+    if test $ac_cv_ev_set_udata_pointer = yes; then
+	AC_DEFINE([HAVE_EV_SET_UDATA_POINTER], [1], [Define if the last argument to EV_SET has pointer type.])
+    fi
+fi
 
 AC_ARG_ENABLE(dynamic-linking, [  --disable-dynamic-linking     disable dynamic-linking], :, enable_dynamic_linking=yes)
 
