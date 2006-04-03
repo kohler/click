@@ -1,3 +1,23 @@
+2006-04-03 Monday 12:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.85): don't rely on nonstandard asort()
+	  function in awk
+
+2006-04-03 Monday 12:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.84): check in so history will include awk
+	  version of sort
+
+2006-04-03 Monday 11:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/ipflowrawsockets.hh (1.9): documentation bug
+	  report from Michael Gellman
+
+2006-04-03 Monday 11:44  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/rawsocket.cc (1.4): another fix from Michael
+	  Gellman
+
 2006-04-03 Monday 11:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/bighashmap.hh (1.27): attempt to fix error from
