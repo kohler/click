@@ -98,29 +98,29 @@ The following snippet is the heart of a basic user-level NAPT
 configuration with an external address of 10.0.0.1 and an internal IP path
 represented by ip_from_intern and ip_to_intern.
 
-af :: AggregateIPFlows(TRACEINFO -)
+  af :: AggregateIPFlows(TRACEINFO -)
 
-cp :: CheckPaint(0)
+  cp :: CheckPaint(0)
 
-IPRewriterPatterns(to_world_pat 10.0.0.1 50000-65535 - -)
+  IPRewriterPatterns(to_world_pat 10.0.0.1 50000-65535 - -)
 
-rw :: IPRewriter(
+  rw :: IPRewriter(
 	pattern to_world_pat 0 1,
 	drop
-)
+  )
 
-socket :: IPFlowRawSockets(NOTIFIER af)
+  socket :: IPFlowRawSockets(NOTIFIER af)
 
-// Forward direction
-ip_from_intern -> af
-af -> cp
-cp[0] -> [0]rw
-rw[0] -> GetIPAddress -> CheckIPHeader -> socket
+  // Forward direction
+  ip_from_intern -> af
+  af -> cp
+  cp[0] -> [0]rw
+  rw[0] -> GetIPAddress -> CheckIPHeader -> socket
 
-// Reverse direction
-socket -> CheckIPHeader -> IPClassifier(tcp or udp) -> [1]rw
-rw[1] -> af
-cp[1] -> ip_to_intern
+  // Reverse direction
+  socket -> CheckIPHeader -> IPClassifier(tcp or udp) -> [1]rw
+  rw[1] -> af
+  cp[1] -> ip_to_intern
 
 =a
 
