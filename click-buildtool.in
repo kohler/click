@@ -31,7 +31,34 @@ elem2=""
 default_provisions="@provisions@"
 driver_provisions="@DRIVERS@"
 
+trap "exit 1" HUP
+
 # find a good version of awk
+sortfunc='
+function xsort(a, n) {
+    qsort1(a, 1, n)
+}
+function qsortp(a, l, r,  pivot, cmp, swap, tmp) {
+    pivot = a[int((l + r) / 2)]
+    while (l < r) {
+	while (l < r && a[l] <= pivot)
+	    l++
+	while (l < r && a[r] > pivot)
+	    r--
+	if (l < r) {
+	    tmp = a[l]; a[l] = a[r]; a[r] = tmp; l++
+	}
+    }
+    qsort_split = l - 1
+}
+function qsort1(a, l, r) {
+    if (l < r) {
+	qsortp(a, l, r)
+	qsort1(a, l, qsort_split)
+	qsort1(a, qsort_split + 1, r)
+    }
+}'
+
 if test -x /usr/bin/gawk; then
     awk=gawk
 elif test -x /usr/bin/nawk; then
@@ -421,11 +448,11 @@ END {
   if (n == 0)
     print "click-buildtool: warning: No elements found" | "cat 1>&2"
   if (line_warned || n == 0)
-    exit 1
-  asort(out)
+    system("kill -HUP '$$'")
   for (i = 1; i < n; i++)
     print out[i]
-}'
+}
+' | sort
 
   exit $?
 }
