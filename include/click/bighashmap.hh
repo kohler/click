@@ -79,9 +79,13 @@ class HashMap { public:
   
  private:
   
-  struct Elt : public Pair {
-    Elt *next;
-  };
+    struct Elt : public Pair {
+	Elt *next;
+#if defined(__GNUC__) && __GNUC__ < 4
+	/* Shut up compiler about Pair lacking default constructor */
+	Elt(const Pair &p)		: Pair(p) { }
+#endif
+    };
 
   Elt **_buckets;
   int _nbuckets;
@@ -262,11 +266,15 @@ class HashMap<K, void *> { public:
 	 DEFAULT_INITIAL_NBUCKETS = 127,
 	 DEFAULT_RESIZE_THRESHOLD = 2 };
   
- private:
+  private:
   
-  struct Elt : public Pair {
-    Elt *next;
-  };
+    struct Elt : public Pair {
+	Elt *next;
+#if defined(__GNUC__) && __GNUC__ < 4
+	/* Shut up compiler about Pair lacking default constructor */
+	Elt(const Pair &p)		: Pair(p) { }
+#endif
+    };
 
   Elt **_buckets;
   int _nbuckets;
