@@ -1,3 +1,9 @@
+2006-04-03 Monday 11:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/bighashmap.hh (1.27): attempt to fix error from
+	  Michael Gellman: old gccs get confused by struct Elt when K or V
+	  have no default constructor
+
 2006-04-03 Monday 03:46  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.83): detect and error about class_name
