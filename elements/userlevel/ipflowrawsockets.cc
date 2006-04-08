@@ -174,7 +174,7 @@ IPFlowRawSockets::Flow::send_pkt(Packet *p, ErrorHandler *errh)
 
 IPFlowRawSockets::IPFlowRawSockets()
     : _nnoagg(0), _nagg(0), _agg_notifier(0), _task(this),
-      _gc_timer(gc_hook, this)
+      _gc_timer(gc_hook, this), _headroom(Packet::DEFAULT_HEADROOM)
 {
     for (int i = 0; i < NFLOWMAP; i++)
 	_flowmap[i] = 0;
@@ -196,6 +196,7 @@ IPFlowRawSockets::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "NOTIFIER", cpElement, "aggregate deletion notifier", &e,
 		    "SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
 		    "PCAP", cpBool, "use libpcap", &_usepcap,
+		    "HEADROOM", cpUnsigned, "headroom to add to packet", &_headroom,
 		    cpEnd) < 0)
 	return -1;
 
@@ -322,7 +323,7 @@ IPFlowRawSockets::selected(int fd)
     assert(f);
 
     // Read and push() at most one packet.
-    p = Packet::make(_snaplen);
+    p = Packet::make(_headroom, (unsigned char *)0, _snaplen, 0);
     if (!p)
 	return;
     p->take(p->length());

@@ -44,7 +44,7 @@ CLICK_DECLS
 RawSocket::RawSocket()
   : _task(this), _timer(this),
     _fd(-1), _port(0), _snaplen(2048),
-    _rq(0), _wq(0)
+    _headroom(Packet::DEFAULT_HEADROOM), _rq(0), _wq(0)
 {
 }
 
@@ -58,6 +58,7 @@ RawSocket::configure(Vector<String> &conf, ErrorHandler *errh)
   // remove keyword arguments
   if (cp_va_parse_remove_keywords(conf, 1, this, errh,
 		"SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
+                "HEADROOM", cpUnsigned, "how much header to allocate for the packet", &_headroom,
 		cpEnd) < 0)
     return -1;
 
@@ -172,7 +173,7 @@ RawSocket::selected(int fd)
   if (noutputs()) {
     // read data from socket
     if (!_rq)
-      _rq = Packet::make(_snaplen);
+      _rq = Packet::make(_headroom, (const unsigned char *)0, _snaplen, 0);
     if (_rq) {
       len = recv(_fd, _rq->data(), _rq->length(), MSG_TRUNC);
       if (len > 0) {

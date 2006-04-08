@@ -39,12 +39,19 @@ represents the MRU of the RawSocket if it is used as a
 packet source. If the MRU is violated by the peer, i.e. if a packet
 longer than SNAPLEN is sent, the connection may be terminated.
 
+=item HEADROOM
+
+Unsigned Integer. Amount of headroom to reserve in packets created
+by this element. This could be useful for encapsulation protocols 
+which add headers to the packet, and can avoid expensive push 
+operations later in the packet's life.
+
 =back
 
 =e
 
   RawSocket(UDP, 53) -> ...
-
+ 
 =a Socket */
 
 class RawSocket : public Element { public:
@@ -75,6 +82,7 @@ private:
   int _protocol;		// IP protocol to bind
   uint16_t _port;		// (PlanetLab only) port to bind
   int _snaplen;			// maximum received packet length
+  unsigned _headroom;           // header length to set aside in the packet 
 
   NotifierSignal _signal;	// packet is available to pull()
   WritablePacket *_rq;		// queue to receive pulled packets

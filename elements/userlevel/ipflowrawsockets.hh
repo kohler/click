@@ -86,6 +86,13 @@ truncated.
 Boolean. Whether to use libpcap for packet capture. Libpcap is
 unnecessary for capturing packets on PlanetLab Linux. Default is true.
 
+=item HEADROOM
+
+Unsigned Integer. Amount of headroom to reserve in packets created
+by this element. This could be useful for encapsulation protocols 
+which add headers to the packet, and can avoid expensive push 
+operations later in the packet's life.
+
 =back
 
 =n
@@ -195,6 +202,7 @@ class IPFlowRawSockets : public Element, public AggregateListener { public:
 
     int _snaplen;
     bool _usepcap;
+    unsigned _headroom;
 
     Flow *find_aggregate(uint32_t, const Packet * = 0);
     void end_flow(Flow *, ErrorHandler *);
