@@ -1,3 +1,13 @@
+2006-04-08 Saturday 12:29  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: ipflowrawsockets.cc (1.14),
+	  ipflowrawsockets.hh (1.10), rawsocket.cc (1.5), rawsocket.hh
+	  (1.5): add HEADROOM arguments (Michael Gellman)
+
+2006-04-08 Saturday 12:22  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/socket.cc (1.4): fix from Beyers Cronje
+
 2006-04-03 Monday 14:56  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* config-userlevel.h.in (1.33), configure (1.75), configure.in
