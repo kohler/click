@@ -1,6 +1,13 @@
 CLICK FAQ
 =========
 
+*******************************************************************************
+*            The most up-to-date version of this FAQ is on line at            *
+*                                                                             *
+*                    http://www.read.cs.ucla.edu/click/faq                    *
+*                                                                             *
+*******************************************************************************
+
 SECTION 1: GENERAL QUESTIONS
 ----------------------------
 
@@ -150,16 +157,33 @@ A. There are two ways to add an element class to Click: in the main Click
 
 Q. My element wasn't compiled! Click reports 'unknown element class'.
 
-A. Check these things:
+A. First, check whether Click's build process found your element, by
+   running "grep ELEMENTNAME CLICKDIR/userlevel/elements.conf".  (If you
+   are having trouble with the Linux kernel module, search
+   CLICKDIR/linuxmodule/elements.conf instead.)  The elements.conf file is
+   generated automatically, and contains information about every element
+   Click plans to compile. If the grep command has no output, then Click
+   didn't find your element. Check these things:
 
-	Do you have an EXPORT_ELEMENT statement?
-	Does your element require something with ELEMENT_REQUIRES that is
-     not available?
-	Did you run 'make elemlist'?
-	Is the relevant elements/ directory enabled? (For instance, for
+   * Do you have an EXPORT_ELEMENT statement?
+   * Does your element require something with ELEMENT_REQUIRES that is not
+     available?
+   * Did you run 'make elemlist'?
+   * Is the relevant elements/ directory enabled? (For instance, for
      elements/local, did you run './configure ... --enable-local'?)
-	Is your element's .cc file present in 'userlevel/elements.conf' or
-     'linuxmodule/elements.conf'?
+
+   If the elements.conf file does list your element, then Click attempted
+   to compile your element and everything should work.  If you still get
+   'unknown element class', check these things:
+
+   * Userlevel only: Are you running an installed version of Click? (For
+     instance, are you typing "click FILE.click" instead of
+     "CLICKDIR/userlevel/click FILE.click"?) If so, then you will not be
+     able to use your new element until you run 'make install'.
+   * Linuxmodule only: Did you unload the old version of the kernel module
+     and load the new one that contains your element?  The easiest way to
+     do this is with 'make install; click-install -u FILE.click'; the -u
+     option unloads & reloads the kernel module.
 
 
 Q. How can I make Click compile a C++ file that doesn't contain an element?
