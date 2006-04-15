@@ -91,15 +91,17 @@ A. There are two ways to add an element class to Click: in the main Click
 
      Other common functions to override include:
 
-	const char *processing() const; // return processing code
-	int configure(const Vector<String> &, ErrorHandler *);
-					// process configuration string
-	int initialize(ErrorHandler *);	// initialize element
-	void uninitialize();		// uninitialize element
-
 	void push(int i, Packet *);	// process push request on input i
 	Packet *pull(int i);		// process pull request on output i
 	Packet *simple_action(Packet *); // for agnostic elements
+
+	const char *port_count() const; // return port count code
+	const char *processing() const; // return processing code
+	int configure(Vector<String> &, ErrorHandler *);
+					// process configuration string
+	void add_handlers();		// set up element handlers
+	int initialize(ErrorHandler *);	// initialize element
+	void cleanup(CleanupStage);	// clean up element state
 
      All these functions are described in the Click programming manual,
      doc/click.texi.
