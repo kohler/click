@@ -1,3 +1,7 @@
+2006-04-21 Friday 16:36  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/wifidecap.cc (1.18): fix an alignment bug. ermph.
+
 2006-04-15 Saturday 11:48  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* FAQ (1.21), FAQ (1.22): update FAQ for current Click headers
