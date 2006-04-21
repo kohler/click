@@ -60,14 +60,13 @@ WifiDecap::simple_action(Packet *p)
   EtherAddress src;
   EtherAddress dst;
 
-
-  int size = sizeof(struct click_wifi);
+  int wifi_header_size = sizeof(struct click_wifi);
   if ((w->i_fc[1] & WIFI_FC1_DIR_MASK) == WIFI_FC1_DIR_DSTODS)
-	  size += WIFI_ADDR_LEN;
+	  wifi_header_size += WIFI_ADDR_LEN;
   if (WIFI_QOS_HAS_SEQ(w)) 
-	  size += sizeof(u_int16_t);
+	  wifi_header_size += sizeof(u_int16_t);
   
-  if (p->length() < sizeof(struct click_wifi) + sizeof(struct click_llc)) {
+  if (p->length() < wifi_header_size + sizeof(struct click_llc)) {
     p->kill();
     return 0;
   }
@@ -118,17 +117,16 @@ WifiDecap::simple_action(Packet *p)
     return 0;
   }
 
-  p_out->pull(size);
-  
   uint16_t ether_type;
-  if (!_strict || memcmp(wifi_llc_header, p_out->data(), sizeof(wifi_llc_header))) {
-	  memcpy(&ether_type, p_out->data() + sizeof(wifi_llc_header), 2);
-	  p_out->pull(sizeof(struct click_llc));
+  if (!_strict || memcmp(wifi_llc_header, p_out->data() + wifi_header_size, 
+			 sizeof(wifi_llc_header))) {
+	  memcpy(&ether_type, p_out->data() + wifi_header_size + sizeof(click_llc) - 2, 2);
   } else {
 	  p_out->kill();
 	  return 0;
   }
 
+  p_out->pull(wifi_header_size + sizeof(struct click_llc));
   p_out = p_out->push_mac_header(14);
   if (!p_out) {
     return 0;
@@ -139,12 +137,13 @@ WifiDecap::simple_action(Packet *p)
   memcpy(p_out->data() + 12, &ether_type, 2);
 
   if (_debug) {
-	  click_chatter("%{element}: dir %d src %s dst %s bssid %s\n",
+	  click_chatter("%{element}: dir %d src %s dst %s bssid %s eth 0x%02x\n",
 			this,
 			dir,
 			src.s().c_str(),
 			dst.s().c_str(),
-			bssid.s().c_str());
+			bssid.s().c_str(),
+			ether_type);
   }
   
   return p_out;
