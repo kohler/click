@@ -386,8 +386,10 @@ vardef drawelementbox(text elements) =
       if $.nin > 0: draw_element_inputs($); fi;
       if $.nout > 0: draw_element_outputs($); fi;
     fi;
-    pickup elementpen.border scaled $.borderscale;
-    scantokens elemdraw_$($);
+    if $.borderscale > 0:
+      pickup elementpen.border scaled $.borderscale;
+      scantokens elemdraw_$($);
+    fi;
   endfor;
   pickup oldpen;
 enddef;
