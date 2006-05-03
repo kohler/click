@@ -24,15 +24,22 @@
  */
 
 #include <click/config.h>
+#include <linux/version.h>
 #include <linux/module.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 52)
+# define CLICK_INT_MODULE_PARAM(param)	MODULE_PARM(param, "i")
+#else
+# define CLICK_INT_MODULE_PARAM(param)	module_param(param, int, 0)
+#endif
+
 static int accessible = 1;
-MODULE_PARM(accessible, "i");
+CLICK_INT_MODULE_PARAM(accessible);
 MODULE_PARM_DESC(accessible, "make /proc/click world-readable [1]");
 
 #if __MTCLICK__
 static int threads = 1;
-MODULE_PARM(threads, "i");
+CLICK_INT_MODULE_PARAM(threads);
 MODULE_PARM_DESC(threads, "number of Click threads per router [1]");
 #endif
 
@@ -41,7 +48,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 #endif
 
 static int greedy = 0;
-MODULE_PARM(greedy, "i");
+CLICK_INT_MODULE_PARAM(greedy);
 MODULE_PARM_DESC(greedy, "Click takes a whole CPU [0]");
 
 int

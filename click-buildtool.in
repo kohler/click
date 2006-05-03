@@ -497,7 +497,7 @@ Usage: click-buildtool elem2make [-t DRIVER] [-V] < elements.conf
 
 Options:
   -t, --driver DRIVER      Set target driver to DRIVER ('userlevel',
-                           'linuxmodule', 'bsdmodule', or 'ns').
+                           'linuxmodule', 'bsdmodule', 'ns', or 'tool').
   -v, --make-variable N    Use make variable N.
       --linux26            Generate Linux 2.6-style makefile fragment.
   -x, --exclude FILE       Do not include FILE.
@@ -512,23 +512,26 @@ EOF
     esac
     done
 
-    osuffix=".o"; L=
+    L=
     defmakevar="ELEMENT_OBJS"
     if test -n "$driver"; then
 	if test "$driver" = 'user' -o "$driver" = 'userlevel'; then
-	    osuffix=".uo"; L=u
+	    L=u
 	elif test "$driver" = 'kernel' -o "$driver" = 'linuxmodule'; then
-	    osuffix=".ko"; L=d
+	    L=k
 	    test "$linux26" = x && linux26="$LINUXMODULE_2_6"
 	elif test "$driver" = 'bsdmodule'; then
-	    osuffix=".bo"; L=b
+	    L=b
 	elif test "$driver" = 'ns' -o "$driver" = 'nsmodule'; then
-	    osuffix=".no"; L=n
+	    L=n
+	elif test "$driver" = 'tool'; then
+	    L=t
 	else
 	    echo "Unknown driver $driver" 1>&2
 	    exit 1
 	fi
     fi
+    osuffix=".${L}o"
     if test -z "$makevar"; then
 	makevar=$defmakevar
     fi
@@ -1158,7 +1161,7 @@ Usage: click-buildtool makepackage [-t DRIVER] PACKAGENAME SRCFILES...
 
 Options:
   -t, --driver DRIVER      Set target driver to DRIVER ('userlevel',
-                           'linuxmodule', 'bsdmodule', or 'ns').
+                           'linuxmodule', 'bsdmodule', 'ns', or 'tool').
   -q, --quiet              Build quietly (may be ignored).
   -C, --directory DIR      Switch to DIR directory before building.
   -h, --help               Print this message and exit.
@@ -1188,6 +1191,8 @@ $1"; shift 1
 	L=b
     elif test "$driver" = 'ns' -o "$driver" = 'nsmodule'; then
 	L=n
+    elif test "$driver" = 'tool'; then
+	L=t
     else
 	echo "Unknown driver $driver" 1>&2
 	exit 1

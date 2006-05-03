@@ -256,7 +256,9 @@ skb_recycled_init_fast(struct sk_buff *skb)
     skb->pkt_bridged = 0;
 #endif
     skb->prev = NULL;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
     skb->list = NULL;
+#endif
     skb->sk = NULL;
 #if HAVE_LINUX_SKBUFF_SECURITY
     skb->security = 0;

@@ -13570,6 +13570,8 @@ Can't find Linux 2.6 compilation flags.
 	    -e 's,-W^ *,,g' \
 	    -e 's,-Wno-pointer-sign,,g' \
 	    -e s,-fno-unit-at-a-time,,g \
+	    -e s,-Wstrict-prototypes,,g \
+	    -e s,-Wdeclaration-after-statement,,g \
 	    -e s,-fno-common,,g <conftest.dat`"
 	echo "$as_me:$LINENO: result: $LINUX_CFLAGS" >&5
 echo "${ECHO_T}$LINUX_CFLAGS" >&6
@@ -13666,6 +13668,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #define MODULE
+#define KBUILD_BASENAME "whatever"
 #define _FEATURES_H
 #define new xxx_new
 #define this xxx_this

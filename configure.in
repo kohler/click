@@ -758,6 +758,8 @@ Can't find Linux 2.6 compilation flags.
 	    -e 's,-W[^ ]*,,g' \
 	    -e 's,-Wno-pointer-sign,,g' \
 	    -e s,-fno-unit-at-a-time,,g \
+	    -e s,-Wstrict-prototypes,,g \
+	    -e s,-Wdeclaration-after-statement,,g \
 	    -e s,-fno-common,,g <conftest.dat`"
 	AC_MSG_RESULT($LINUX_CFLAGS)
     else
@@ -783,6 +785,7 @@ Can't find Linux 2.6 compilation flags.
 	AC_CACHE_CHECK([whether -fpermissive is required], [ac_cv_f_permissive],
 	    [AC_LANG_CPLUSPLUS
 	    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define MODULE
+#define KBUILD_BASENAME "whatever"
 #define _FEATURES_H
 #define new xxx_new
 #define this xxx_this

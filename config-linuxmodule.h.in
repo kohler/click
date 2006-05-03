@@ -62,6 +62,13 @@ typedef unsigned long uintptr_t; /* XXX? */
 # define HAVE_INT64_IS_LONG HAVE_INT64_IS_LONG_LINUXMODULE
 #endif
 
+/* Define KBUILD symbols. */
+#ifndef KBUILD_STR
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+
 #ifdef __cplusplus
 
 /* Declare operator new. */

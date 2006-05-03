@@ -105,9 +105,6 @@ cmd_cxxcompile = $(CXXCOMPILE) -c -o $@ $<
 quiet_cmd_ccompile = CC $(quiet_modtag) $(subst $(obj)/,,$@)
 cmd_ccompile = $(COMPILE) -c -o $@ $<
 
-quiet_cmd_xcompile = CC $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_xcompile = $(COMPILE) -D__KERNEL__ -DMODULE -c -o $@ $<
-
 EXTRA_CFLAGS = $(CLICKCPPFLAGS) $(CLICKCFLAGS) $(CLICKDEFS) $(CLICKINCLUDES) 
 
 obj-m += $(INSTALLOBJS)
@@ -115,7 +112,7 @@ obj-m += $(INSTALLOBJS)
 $(DRIVER)-objs = $(LIB_C_OBJS) $(LIB_CXX_OBJS) $(STD_ELEMENT_OBJS) \
 	$(ELEMENT_OBJS) $(LINUXMODULE_C_OBJS) $(LINUXMODULE_CXX_OBJS) \
 	$(ELEMENTSCONF).o
-proclikefs-objs = proclikefs_.o
+proclikefs-objs = proclikefsmod.o
 
 all: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc always
 	$(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules
@@ -139,8 +136,8 @@ $(addprefix $(obj)/,$(STD_ELEMENT_OBJS)): $(obj)/%.o : $(top_srcdir)/elements/st
 $(obj)/$(ELEMENTSCONF).o : $(obj)/$(ELEMENTSCONF).cc
 	$(call if_changed_dep,cxxcompile)
 
-$(obj)/proclikefs_.o : $(srcdir)/proclikefs.c
-	$(call if_changed_dep,xcompile)
+$(obj)/proclikefsmod.o : $(srcdir)/proclikefs.c
+	$(call if_changed_rule,cc_o_c)
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(obj)/$(ELEMENTSCONF).mk
@@ -237,7 +234,7 @@ $(DRIVER).o: Makefile $(OBJS)
 	$(STRIP) -g $(DRIVER).o
 
 proclikefs.o: proclikefs.c Makefile
-	$(COMPILE) -D__KERNEL__ -DMODULE -c $<
+	$(COMPILE) -D__KERNEL__ -DMODULE -c $< -o $@
 
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)

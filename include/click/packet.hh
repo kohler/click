@@ -511,7 +511,11 @@ inline const Timestamp &
 Packet::timestamp_anno() const
 {
 #if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 13)
     return *(const Timestamp *) &skb()->stamp;
+# else
+    return *(const Timestamp *) &skb()->tstamp;
+# endif
 #else
     return _timestamp;
 #endif
@@ -521,7 +525,11 @@ inline Timestamp &
 Packet::timestamp_anno()
 {
 #if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 13)
     return *(Timestamp *) &skb()->stamp;
+# else
+    return *(Timestamp *) &skb()->tstamp;
+# endif
 #else
     return _timestamp;
 #endif
@@ -531,7 +539,11 @@ inline void
 Packet::set_timestamp_anno(const Timestamp &timestamp)
 {
 #if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 13)
     memcpy(&skb()->stamp, &timestamp, 8);
+# else
+    skb_set_timestamp(skb(), &timestamp.timeval());
+# endif
 #else
     _timestamp = timestamp;
 #endif
@@ -620,10 +632,12 @@ Packet::make(struct sk_buff *skb)
 inline void
 Packet::kill()
 {
-  struct sk_buff *b = skb();
-  b->next = b->prev = 0;
-  b->list = 0;
-  skbmgr_recycle_skbs(b);
+    struct sk_buff *b = skb();
+    b->next = b->prev = 0;
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 15)
+    b->list = 0;
+#endif
+    skbmgr_recycle_skbs(b);
 }
 #endif
 

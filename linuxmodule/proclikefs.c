@@ -89,6 +89,7 @@ EXPORT_SYMBOL(proclikefs_put_super);
 EXPORT_SYMBOL(proclikefs_new_file_operations);
 EXPORT_SYMBOL(proclikefs_new_inode_operations);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 static struct super_block *
 proclikefs_null_read_super(struct super_block *sb, void *data, int silent)
 {
@@ -96,6 +97,7 @@ proclikefs_null_read_super(struct super_block *sb, void *data, int silent)
     sb->s_dev = 0;
     return 0;
 }
+#endif
 
 static struct dentry *
 proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry)
@@ -222,7 +224,14 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
     struct list_head *p;
 
     DEBUG("killing files");
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
+    file_list_lock();
+    list_for_each(p, &sb->s_files) {
+	struct file *filp = list_entry(p, struct file, f_u.fu_list);
+	filp->f_op = dummy;
+    }
+    file_list_unlock();
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     file_list_lock();
     for (p = sb->s_files.next; p != &sb->s_files; p = p->next) {
 	struct file *filp = list_entry(p, struct file, f_list);
@@ -259,7 +268,11 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
 	/* Prepend children to dentry_tree */
 	next = active->d_subdirs.next;
 	while (next != &active->d_subdirs) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
+	    struct dentry *child = list_entry(next, struct dentry, d_u.d_child);
+#else
 	    struct dentry *child = list_entry(next, struct dentry, d_child);
+#endif
 	    next = next->next;
 	    d_drop(child);
 	    child->d_fsdata = (void *)dentry_tree;
@@ -274,15 +287,17 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
     DEBUG("done killing super");
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
 static int bad_follow_link(struct dentry *dent, struct nameidata *nd)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	nd_set_link(nd, ERR_PTR(-EIO));
 	return 0;
-#else
+# else
 	return vfs_follow_link(nd, ERR_PTR(-EIO));
-#endif
+# endif
 }
+#endif
 
 static int return_EIO(void)
 {
@@ -348,7 +363,11 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	io->mknod = (void *) return_EIO;
 	io->rename = (void *) return_EIO;
 	io->readlink = (void *) return_EIO;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
+	io->follow_link = 0;
+#else
 	io->follow_link = bad_follow_link;
+#endif
 	io->truncate = (void *) return_EIO;
 	io->permission = (void *) return_EIO;
 	io->setattr = (void *) return_EIO;

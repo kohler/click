@@ -1,0 +1,3697 @@
+diff -ru ../linux-2.6.16.13/drivers/input/serio/i8042-ppcio.h ./drivers/input/serio/i8042-ppcio.h
+--- ../linux-2.6.16.13/drivers/input/serio/i8042-ppcio.h	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/input/serio/i8042-ppcio.h	2006-05-02 22:59:17.000000000 -0700
+@@ -77,7 +77,7 @@
+ 	asm volatile("lis     7,0xff88        \n\
+ 		      lswi    6,7,0x8         \n\
+ 		      mr      %0,6"
+-	              : "=r" (kbd_data) :: "6", "7");
++	              : "=r" (kbd_data) : : "6", "7");
+ 
+ 	__raw_writel(0x00000000, 0xff50000c);
+ 	eieio();
+@@ -99,7 +99,7 @@
+ 		      ori     7,7,0x8         \n\
+ 		      lswi    6,7,0x8         \n\
+ 		      mr      %0,6"
+-		      : "=r" (kbd_status) :: "6", "7");
++		      : "=r" (kbd_status) : : "6", "7");
+ 
+ 	__raw_writel(0x00000000, 0xff50000c);
+ 	eieio();
+diff -ru ../linux-2.6.16.13/drivers/media/dvb/bt8xx/bt878.h ./drivers/media/dvb/bt8xx/bt878.h
+--- ../linux-2.6.16.13/drivers/media/dvb/bt8xx/bt878.h	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/media/dvb/bt8xx/bt878.h	2006-05-02 22:59:17.000000000 -0700
+@@ -151,7 +151,7 @@
+ {
+ 	__asm__ __volatile__("stwbrx %1,0,%2":"=m"(*addr):"r"(val),
+ 			     "r"(addr));
+-	__asm__ __volatile__("eieio":::"memory");
++	__asm__ __volatile__("eieio": : :"memory");
+ }
+ 
+ #define bmtwrite(dat,adr)  io_st_le32((adr),(dat))
+diff -ru ../linux-2.6.16.13/drivers/net/8139cp.c ./drivers/net/8139cp.c
+--- ../linux-2.6.16.13/drivers/net/8139cp.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/8139cp.c	2006-05-02 22:59:17.000000000 -0700
+@@ -484,7 +484,7 @@
+ 					 be16_to_cpu(desc->opts2 & 0xffff));
+ 	} else
+ #endif
+-		netif_receive_skb(skb);
++		netif_receive_skb(skb, skb->protocol, 0);
+ }
+ 
+ static void cp_rx_err_acct (struct cp_private *cp, unsigned rx_tail,
+diff -ru ../linux-2.6.16.13/drivers/net/8139too.c ./drivers/net/8139too.c
+--- ../linux-2.6.16.13/drivers/net/8139too.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/8139too.c	2006-05-02 22:59:17.000000000 -0700
+@@ -2029,7 +2029,7 @@
+ 			tp->stats.rx_bytes += pkt_size;
+ 			tp->stats.rx_packets++;
+ 
+-			netif_receive_skb (skb);
++			netif_receive_skb(skb, skb->protocol, 0);
+ 		} else {
+ 			if (net_ratelimit()) 
+ 				printk (KERN_WARNING
+diff -ru ../linux-2.6.16.13/drivers/net/amd8111e.c ./drivers/net/amd8111e.c
+--- ../linux-2.6.16.13/drivers/net/amd8111e.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/amd8111e.c	2006-05-02 22:59:17.000000000 -0700
+@@ -815,7 +815,7 @@
+ 					 le16_to_cpu(lp->rx_ring[rx_index].tag_ctrl_info));
+ 			} else
+ #endif
+-				netif_receive_skb(skb);
++				netif_receive_skb(skb, skb->protocol, 0);
+ 			/*COAL update rx coalescing parameters*/
+ 			lp->coal_conf.rx_packets++;
+ 			lp->coal_conf.rx_bytes += pkt_len;	
+diff -ru ../linux-2.6.16.13/drivers/net/b44.c ./drivers/net/b44.c
+--- ../linux-2.6.16.13/drivers/net/b44.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/b44.c	2006-05-02 22:59:17.000000000 -0700
+@@ -825,7 +825,7 @@
+ 		}
+ 		skb->ip_summed = CHECKSUM_NONE;
+ 		skb->protocol = eth_type_trans(skb, bp->dev);
+-		netif_receive_skb(skb);
++		netif_receive_skb(skb, skb->protocol, 0);
+ 		bp->dev->last_rx = jiffies;
+ 		received++;
+ 		budget--;
+diff -ru ../linux-2.6.16.13/drivers/net/bnx2.c ./drivers/net/bnx2.c
+--- ../linux-2.6.16.13/drivers/net/bnx2.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/bnx2.c	2006-05-02 22:59:17.000000000 -0700
+@@ -1788,7 +1788,7 @@
+ 		}
+ 		else
+ #endif
+-			netif_receive_skb(skb);
++			netif_receive_skb(skb, skb->protocol, 0);
+ 
+ 		bp->dev->last_rx = jiffies;
+ 		rx_pkt++;
+diff -ru ../linux-2.6.16.13/drivers/net/cassini.c ./drivers/net/cassini.c
+--- ../linux-2.6.16.13/drivers/net/cassini.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/cassini.c	2006-05-02 23:22:33.000000000 -0700
+@@ -106,7 +106,7 @@
+ 
+ #if defined(CONFIG_CASSINI_NAPI) && defined(HAVE_NETDEV_POLL)
+ #define USE_NAPI
+-#define cas_skb_release(x)  netif_receive_skb(x)
++#define cas_skb_release(x)  netif_receive_skb((x), (x)->protocol, 0)
+ #else
+ #define cas_skb_release(x)  netif_rx(x)
+ #endif
+diff -ru ../linux-2.6.16.13/drivers/net/chelsio/sge.c ./drivers/net/chelsio/sge.c
+--- ../linux-2.6.16.13/drivers/net/chelsio/sge.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/chelsio/sge.c	2006-05-02 23:22:51.000000000 -0700
+@@ -987,7 +987,7 @@
+ 			vlan_hwaccel_rx(skb, adapter->vlan_grp,
+ 					ntohs(p->vlan));
+ 	} else if (adapter->params.sge.polling)
+-		netif_receive_skb(skb);
++		netif_receive_skb(skb, skb->protocol, 0);
+ 	else
+ 		netif_rx(skb);
+ 	return 0;
+diff -ru ../linux-2.6.16.13/drivers/net/e100.c ./drivers/net/e100.c
+--- ../linux-2.6.16.13/drivers/net/e100.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/e100.c	2006-05-02 22:59:17.000000000 -0700
+@@ -1846,7 +1846,7 @@
+ 		nic->net_stats.rx_packets++;
+ 		nic->net_stats.rx_bytes += actual_size;
+ 		nic->netdev->last_rx = jiffies;
+-		netif_receive_skb(skb);
++		netif_receive_skb(skb, skb->protocol, 0);
+ 		if(work_done)
+ 			(*work_done)++;
+ 	}
+diff -ru ../linux-2.6.16.13/drivers/net/e1000/e1000_main.c ./drivers/net/e1000/e1000_main.c
+--- ../linux-2.6.16.13/drivers/net/e1000/e1000_main.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/e1000/e1000_main.c	2006-05-02 22:59:17.000000000 -0700
+@@ -3720,7 +3720,7 @@
+ 						 le16_to_cpu(rx_desc->special) &
+ 						 E1000_RXD_SPC_VLAN_MASK);
+ 		} else {
+-			netif_receive_skb(skb);
++			netif_receive_skb(skb,skb->protocol,0);
+ 		}
+ #else /* CONFIG_E1000_NAPI */
+ 		if (unlikely(adapter->vlgrp &&
+@@ -3867,7 +3867,7 @@
+ 				le16_to_cpu(rx_desc->wb.middle.vlan) &
+ 				E1000_RXD_SPC_VLAN_MASK);
+ 		} else {
+-			netif_receive_skb(skb);
++			netif_receive_skb(skb, skb->protocol, 0);
+ 		}
+ #else /* CONFIG_E1000_NAPI */
+ 		if (unlikely(adapter->vlgrp && (staterr & E1000_RXD_STAT_VP))) {
+diff -ru ../linux-2.6.16.13/drivers/net/epic100.c ./drivers/net/epic100.c
+--- ../linux-2.6.16.13/drivers/net/epic100.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/epic100.c	2006-05-02 22:59:17.000000000 -0700
+@@ -1288,7 +1288,7 @@
+ 				ep->rx_skbuff[entry] = NULL;
+ 			}
+ 			skb->protocol = eth_type_trans(skb, dev);
+-			netif_receive_skb(skb);
++			netif_receive_skb(skb, skb->protocol, 0);
+ 			dev->last_rx = jiffies;
+ 			ep->stats.rx_packets++;
+ 			ep->stats.rx_bytes += pkt_len;
+diff -ru ../linux-2.6.16.13/drivers/net/fec_8xx/fec_main.c ./drivers/net/fec_8xx/fec_main.c
+--- ../linux-2.6.16.13/drivers/net/fec_8xx/fec_main.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/fec_8xx/fec_main.c	2006-05-02 22:59:17.000000000 -0700
+@@ -570,7 +570,7 @@
+ 				if (!fpi->use_napi)
+ 					netif_rx(skb);
+ 				else
+-					netif_receive_skb(skb);
++					netif_receive_skb(skb,skb->protocol,0);
+ 			} else {
+ 				printk(KERN_WARNING DRV_MODULE_NAME
+ 				       ": %s Memory squeeze, dropping packet.\n",
+diff -ru ../linux-2.6.16.13/drivers/net/fs_enet/fs_enet-main.c ./drivers/net/fs_enet/fs_enet-main.c
+--- ../linux-2.6.16.13/drivers/net/fs_enet/fs_enet-main.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/fs_enet/fs_enet-main.c	2006-05-02 23:22:14.000000000 -0700
+@@ -175,7 +175,7 @@
+ 				skb_put(skb, pkt_len);	/* Make room */
+ 				skb->protocol = eth_type_trans(skb, dev);
+ 				received++;
+-				netif_receive_skb(skb);
++				netif_receive_skb(skb, skb->protocol, 0);
+ 			} else {
+ 				printk(KERN_WARNING DRV_MODULE_NAME
+ 				       ": %s Memory squeeze, dropping packet.\n",
+diff -ru ../linux-2.6.16.13/drivers/net/gianfar.c ./drivers/net/gianfar.c
+--- ../linux-2.6.16.13/drivers/net/gianfar.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/gianfar.c	2006-05-02 22:59:17.000000000 -0700
+@@ -104,7 +104,7 @@
+ #undef VERBOSE_GFAR_ERRORS
+ 
+ #ifdef CONFIG_GFAR_NAPI
+-#define RECEIVE(x) netif_receive_skb(x)
++#define RECEIVE(x) netif_receive_skb(x, (x)->protocol, 0)
+ #else
+ #define RECEIVE(x) netif_rx(x)
+ #endif
+diff -ru ../linux-2.6.16.13/drivers/net/ibm_emac/ibm_emac_core.c ./drivers/net/ibm_emac/ibm_emac_core.c
+--- ../linux-2.6.16.13/drivers/net/ibm_emac/ibm_emac_core.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/ibm_emac/ibm_emac_core.c	2006-05-02 23:23:27.000000000 -0700
+@@ -1404,7 +1404,7 @@
+ 		skb->protocol = eth_type_trans(skb, dev->ndev);
+ 		emac_rx_csum(dev, skb, ctrl);
+ 
+-		if (unlikely(netif_receive_skb(skb) == NET_RX_DROP))
++		if (unlikely(netif_receive_skb(skb, skb->protocol, 0) == NET_RX_DROP))
+ 			++dev->estats.rx_dropped_stack;
+ 	      next:
+ 		++dev->stats.rx_packets;
+diff -ru ../linux-2.6.16.13/drivers/net/ibmveth.c ./drivers/net/ibmveth.c
+--- ../linux-2.6.16.13/drivers/net/ibmveth.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/ibmveth.c	2006-05-02 22:59:17.000000000 -0700
+@@ -762,7 +762,7 @@
+ 				skb->dev = netdev;
+ 				skb->protocol = eth_type_trans(skb, netdev);
+ 
+-				netif_receive_skb(skb);	/* send it up */
++				netif_receive_skb(skb, skb->protocol, 0);
+ 
+ 				adapter->stats.rx_packets++;
+ 				adapter->stats.rx_bytes += length;
+diff -ru ../linux-2.6.16.13/drivers/net/ixgb/ixgb_main.c ./drivers/net/ixgb/ixgb_main.c
+--- ../linux-2.6.16.13/drivers/net/ixgb/ixgb_main.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/ixgb/ixgb_main.c	2006-05-02 22:59:17.000000000 -0700
+@@ -1910,7 +1910,7 @@
+ 				le16_to_cpu(rx_desc->special) &
+ 					IXGB_RX_DESC_SPECIAL_VLAN_MASK);
+ 		} else {
+-			netif_receive_skb(skb);
++			netif_receive_skb(skb,skb->protocol,0);
+ 		}
+ #else /* CONFIG_IXGB_NAPI */
+ 		if(adapter->vlgrp && (status & IXGB_RX_DESC_STATUS_VP)) {
+diff -ru ../linux-2.6.16.13/drivers/net/ixp2000/ixpdev.c ./drivers/net/ixp2000/ixpdev.c
+--- ../linux-2.6.16.13/drivers/net/ixp2000/ixpdev.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/ixp2000/ixpdev.c	2006-05-02 23:23:14.000000000 -0700
+@@ -119,7 +119,7 @@
+ 
+ 			skb->dev->last_rx = jiffies;
+ 
+-			netif_receive_skb(skb);
++			netif_receive_skb(skb, skb->protocol, 0);
+ 		}
+ 
+ err:
+diff -ru ../linux-2.6.16.13/drivers/net/mv643xx_eth.c ./drivers/net/mv643xx_eth.c
+--- ../linux-2.6.16.13/drivers/net/mv643xx_eth.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/mv643xx_eth.c	2006-05-02 22:59:17.000000000 -0700
+@@ -441,7 +441,7 @@
+ 			}
+ 			skb->protocol = eth_type_trans(skb, dev);
+ #ifdef MV643XX_NAPI
+-			netif_receive_skb(skb);
++			netif_receive_skb(skb, skb->protocol, 0);
+ #else
+ 			netif_rx(skb);
+ #endif
+diff -ru ../linux-2.6.16.13/drivers/net/r8169.c ./drivers/net/r8169.c
+--- ../linux-2.6.16.13/drivers/net/r8169.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/r8169.c	2006-05-02 23:03:59.000000000 -0700
+@@ -102,7 +102,7 @@
+ #define rtl8169_rx_hwaccel_skb		vlan_hwaccel_receive_skb
+ #define rtl8169_rx_quota(count, quota)	min(count, quota)
+ #else
+-#define rtl8169_rx_skb			netif_rx
++#define rtl8169_rx_skb(x, y, z)		netif_rx((x))
+ #define rtl8169_rx_hwaccel_skb		vlan_hwaccel_rx
+ #define rtl8169_rx_quota(count, quota)	count
+ #endif
+@@ -2474,7 +2474,7 @@
+ 			skb->protocol = eth_type_trans(skb, dev);
+ 
+ 			if (rtl8169_rx_vlan_skb(tp, desc, skb) < 0)
+-				rtl8169_rx_skb(skb);
++				rtl8169_rx_skb(skb, skb->protocol, 0);
+ 
+ 			dev->last_rx = jiffies;
+ 			tp->stats.rx_bytes += pkt_size;
+diff -ru ../linux-2.6.16.13/drivers/net/s2io.c ./drivers/net/s2io.c
+--- ../linux-2.6.16.13/drivers/net/s2io.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/s2io.c	2006-05-02 23:04:25.000000000 -0700
+@@ -5685,7 +5685,7 @@
+ 		vlan_hwaccel_receive_skb(skb, sp->vlgrp,
+ 			RXD_GET_VLAN_TAG(rxdp->Control_2));
+ 	} else {
+-		netif_receive_skb(skb);
++		netif_receive_skb(skb, skb->protocol, 0);
+ 	}
+ #else
+ 	if (sp->vlgrp && RXD_GET_VLAN_TAG(rxdp->Control_2)) {
+diff -ru ../linux-2.6.16.13/drivers/net/skge.c ./drivers/net/skge.c
+--- ../linux-2.6.16.13/drivers/net/skge.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/skge.c	2006-05-02 22:59:18.000000000 -0700
+@@ -2687,7 +2687,7 @@
+  				  le16_to_cpu(rd->csum2));
+ 		if (likely(skb)) {
+ 			dev->last_rx = jiffies;
+-			netif_receive_skb(skb);
++			netif_receive_skb(skb, skb->protocol, 0);
+ 
+ 			++work_done;
+ 		} else
+diff -ru ../linux-2.6.16.13/drivers/net/sky2.c ./drivers/net/sky2.c
+--- ../linux-2.6.16.13/drivers/net/sky2.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/sky2.c	2006-05-02 23:23:00.000000000 -0700
+@@ -1957,7 +1957,7 @@
+ 							 be16_to_cpu(sky2->rx_tag));
+ 			} else
+ #endif
+-				netif_receive_skb(skb);
++				netif_receive_skb(skb, skb->protocol, 0);
+ 
+ 			if (++work_done >= to_do)
+ 				goto exit_loop;
+diff -ru ../linux-2.6.16.13/drivers/net/spider_net.c ./drivers/net/spider_net.c
+--- ../linux-2.6.16.13/drivers/net/spider_net.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/spider_net.c	2006-05-02 23:23:37.000000000 -0700
+@@ -1043,7 +1043,7 @@
+ 
+ 	/* pass skb up to stack */
+ 	if (napi)
+-		netif_receive_skb(skb);
++		netif_receive_skb(skb, skb->protocol, 0);
+ 	else
+ 		netif_rx_ni(skb);
+ 
+diff -ru ../linux-2.6.16.13/drivers/net/starfire.c ./drivers/net/starfire.c
+--- ../linux-2.6.16.13/drivers/net/starfire.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/starfire.c	2006-05-02 22:59:18.000000000 -0700
+@@ -318,12 +318,12 @@
+ 		} \
+ 	} \
+ } while (0)
+-#define netdev_receive_skb(skb) netif_receive_skb(skb)
++#define netdev_receive_skb(skb,type,notifier_data) netif_receive_skb(skb,type,notifier_data)
+ #define vlan_netdev_receive_skb(skb, vlgrp, vlid) vlan_hwaccel_receive_skb(skb, vlgrp, vlid)
+ static int	netdev_poll(struct net_device *dev, int *budget);
+ #else  /* not HAVE_NETDEV_POLL */
+ #define init_poll(dev)
+-#define netdev_receive_skb(skb) netif_rx(skb)
++#define netdev_receive_skb(skb,type,notifier_data) netif_rx(skb)
+ #define vlan_netdev_receive_skb(skb, vlgrp, vlid) vlan_hwaccel_rx(skb, vlgrp, vlid)
+ #define netdev_rx(dev, ioaddr) \
+ do { \
+@@ -1630,7 +1630,7 @@
+ 			vlan_netdev_receive_skb(skb, np->vlgrp, le16_to_cpu(desc->vlanid) & VLAN_VID_MASK);
+ 		} else
+ #endif /* VLAN_SUPPORT */
+-			netdev_receive_skb(skb);
++			netdev_receive_skb(skb, skb->protocol, 0);
+ 		dev->last_rx = jiffies;
+ 		np->stats.rx_packets++;
+ 
+diff -ru ../linux-2.6.16.13/drivers/net/sungem.c ./drivers/net/sungem.c
+--- ../linux-2.6.16.13/drivers/net/sungem.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/sungem.c	2006-05-02 22:59:18.000000000 -0700
+@@ -857,7 +857,7 @@
+ 		skb->ip_summed = CHECKSUM_HW;
+ 		skb->protocol = eth_type_trans(skb, gp->dev);
+ 
+-		netif_receive_skb(skb);
++		netif_receive_skb(skb,skb->protocol,0);
+ 
+ 		gp->net_stats.rx_packets++;
+ 		gp->net_stats.rx_bytes += len;
+diff -ru ../linux-2.6.16.13/drivers/net/tg3.c ./drivers/net/tg3.c
+--- ../linux-2.6.16.13/drivers/net/tg3.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/tg3.c	2006-05-02 22:59:18.000000000 -0700
+@@ -3208,7 +3208,7 @@
+ 				    desc->err_vlan & RXD_VLAN_MASK);
+ 		} else
+ #endif
+-			netif_receive_skb(skb);
++			netif_receive_skb(skb, skb->protocol, 0);
+ 
+ 		tp->dev->last_rx = jiffies;
+ 		received++;
+diff -ru ../linux-2.6.16.13/drivers/net/tulip/interrupt.c ./drivers/net/tulip/interrupt.c
+--- ../linux-2.6.16.13/drivers/net/tulip/interrupt.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/tulip/interrupt.c	2006-05-02 22:59:18.000000000 -0700
+@@ -234,7 +234,7 @@
+                                }
+                                skb->protocol = eth_type_trans(skb, dev);
+   
+-                               netif_receive_skb(skb);
++                               netif_receive_skb(skb,skb->protocol,0);
+  
+                                dev->last_rx = jiffies;
+                                tp->stats.rx_packets++;
+diff -ru ../linux-2.6.16.13/drivers/net/typhoon.c ./drivers/net/typhoon.c
+--- ../linux-2.6.16.13/drivers/net/typhoon.c	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/typhoon.c	2006-05-02 22:59:18.000000000 -0700
+@@ -1749,7 +1749,7 @@
+ 			vlan_hwaccel_receive_skb(new_skb, tp->vlgrp,
+ 						 ntohl(rx->vlanTag) & 0xffff);
+ 		else
+-			netif_receive_skb(new_skb);
++			netif_receive_skb(new_skb,new_skb->protocol,0);
+ 		spin_unlock(&tp->state_lock);
+ 
+ 		tp->dev->last_rx = jiffies;
+diff -ru ../linux-2.6.16.13/drivers/net/wireless/rayctl.h ./drivers/net/wireless/rayctl.h
+--- ../linux-2.6.16.13/drivers/net/wireless/rayctl.h	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/net/wireless/rayctl.h	2006-05-02 22:59:18.000000000 -0700
+@@ -418,9 +418,7 @@
+ };
+ 
+ /****** Host-to-ECF Data Area at Shared RAM offset 0x200 *********************/
+-struct host_to_ecf_area {
+-    
+-};
++EMPTY_STRUCT_DECL(host_to_ecf_area);
+ 
+ /****** ECF-to-Host Data Area at Shared RAM offset 0x0300 ********************/
+ struct startup_res_518 {
+diff -ru ../linux-2.6.16.13/drivers/video/i810/i810_main.h ./drivers/video/i810/i810_main.h
+--- ../linux-2.6.16.13/drivers/video/i810/i810_main.h	2006-05-02 14:38:44.000000000 -0700
++++ ./drivers/video/i810/i810_main.h	2006-05-02 22:59:18.000000000 -0700
+@@ -54,7 +54,7 @@
+ #ifdef CONFIG_X86
+ static inline void flush_cache(void)
+ {
+-	asm volatile ("wbinvd":::"memory");
++	asm volatile ("wbinvd": : :"memory");
+ }
+ #else
+ #define flush_cache() do { } while(0)
+diff -ru ../linux-2.6.16.13/fs/file_table.c ./fs/file_table.c
+--- ../linux-2.6.16.13/fs/file_table.c	2006-05-02 14:38:44.000000000 -0700
++++ ./fs/file_table.c	2006-05-02 23:05:25.000000000 -0700
+@@ -33,6 +33,8 @@
+ /* public. Not pretty! */
+ __cacheline_aligned_in_smp DEFINE_SPINLOCK(files_lock);
+ 
++EXPORT_SYMBOL(files_lock);
++
+ static struct percpu_counter nr_files __cacheline_aligned_in_smp;
+ 
+ static inline void file_free_rcu(struct rcu_head *head)
+diff -ru ../linux-2.6.16.13/fs/proc/inode.c ./fs/proc/inode.c
+--- ../linux-2.6.16.13/fs/proc/inode.c	2006-05-02 14:38:44.000000000 -0700
++++ ./fs/proc/inode.c	2006-05-02 23:07:13.000000000 -0700
+@@ -163,6 +163,11 @@
+ 	if (!inode)
+ 		goto out_ino;
+ 
++	/* Click change: don't double-increment de's use count if the inode
++ 	 * existed already */
++ 	if (inode->u.generic_ip == (void *) de)
++ 		de_put(de);
++
+ 	PROC_I(inode)->pde = de;
+ 	if (de) {
+ 		if (de->mode) {
+diff -ru ../linux-2.6.16.13/fs/super.c ./fs/super.c
+--- ../linux-2.6.16.13/fs/super.c	2006-05-02 14:38:44.000000000 -0700
++++ ./fs/super.c	2006-05-02 22:59:18.000000000 -0700
+@@ -47,6 +47,8 @@
+ LIST_HEAD(super_blocks);
+ DEFINE_SPINLOCK(sb_lock);
+ 
++EXPORT_SYMBOL(sb_lock);
++
+ /**
+  *	alloc_super	-	create new superblock
+  *
+diff -ru ../linux-2.6.16.13/include/asm-alpha/core_tsunami.h ./include/asm-alpha/core_tsunami.h
+--- ../linux-2.6.16.13/include/asm-alpha/core_tsunami.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-alpha/core_tsunami.h	2006-05-02 22:59:18.000000000 -0700
+@@ -281,8 +281,7 @@
+ /*
+  * Data structure for handling TSUNAMI machine checks:
+  */
+-struct el_TSUNAMI_sysdata_mcheck {
+-};
++EMPTY_STRUCT_DECL(el_TSUNAMI_sysdata_mcheck);
+ 
+ 
+ #ifdef __KERNEL__
+diff -ru ../linux-2.6.16.13/include/asm-alpha/processor.h ./include/asm-alpha/processor.h
+--- ../linux-2.6.16.13/include/asm-alpha/processor.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-alpha/processor.h	2006-05-02 22:59:18.000000000 -0700
+@@ -31,8 +31,8 @@
+ } mm_segment_t;
+ 
+ /* This is dead.  Everything has been moved to thread_info.  */
+-struct thread_struct { };
+-#define INIT_THREAD  { }
++EMPTY_STRUCT_DECL(thread_struct);
++#define INIT_THREAD  EMPTY_STRUCT_INIT(thread_struct)
+ 
+ /* Return saved PC of a blocked thread.  */
+ struct task_struct;
+diff -ru ../linux-2.6.16.13/include/asm-alpha/system.h ./include/asm-alpha/system.h
+--- ../linux-2.6.16.13/include/asm-alpha/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-alpha/system.h	2006-05-02 23:07:46.000000000 -0700
+@@ -461,7 +461,7 @@
+ #define __HAVE_ARCH_CMPXCHG 1
+ 
+ static inline unsigned long
+-__cmpxchg_u8(volatile char *m, long old, long new)
++__cmpxchg_u8(volatile char *m, long old, long n)
+ {
+ 	unsigned long prev, tmp, cmp, addr64;
+ 
+@@ -483,14 +483,14 @@
+ 	".subsection 2\n"
+ 	"3:	br	1b\n"
+ 	".previous"
+-	: "=&r" (prev), "=&r" (new), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
+-	: "r" ((long)m), "Ir" (old), "1" (new) : "memory");
++	: "=&r" (prev), "=&r" (n), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
++	: "r" ((long)m), "Ir" (old), "1" (n) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static inline unsigned long
+-__cmpxchg_u16(volatile short *m, long old, long new)
++__cmpxchg_u16(volatile short *m, long old, long n)
+ {
+ 	unsigned long prev, tmp, cmp, addr64;
+ 
+@@ -512,14 +512,14 @@
+ 	".subsection 2\n"
+ 	"3:	br	1b\n"
+ 	".previous"
+-	: "=&r" (prev), "=&r" (new), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
+-	: "r" ((long)m), "Ir" (old), "1" (new) : "memory");
++	: "=&r" (prev), "=&r" (n), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
++	: "r" ((long)m), "Ir" (old), "1" (n) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static inline unsigned long
+-__cmpxchg_u32(volatile int *m, int old, int new)
++__cmpxchg_u32(volatile int *m, int old, int n)
+ {
+ 	unsigned long prev, cmp;
+ 
+@@ -538,13 +538,13 @@
+ 	"3:	br 1b\n"
+ 	".previous"
+ 	: "=&r"(prev), "=&r"(cmp), "=m"(*m)
+-	: "r"((long) old), "r"(new), "m"(*m) : "memory");
++	: "r"((long) old), "r"(n), "m"(*m) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static inline unsigned long
+-__cmpxchg_u64(volatile long *m, unsigned long old, unsigned long new)
++__cmpxchg_u64(volatile long *m, unsigned long old, unsigned long n)
+ {
+ 	unsigned long prev, cmp;
+ 
+@@ -563,7 +563,7 @@
+ 	"3:	br 1b\n"
+ 	".previous"
+ 	: "=&r"(prev), "=&r"(cmp), "=m"(*m)
+-	: "r"((long) old), "r"(new), "m"(*m) : "memory");
++	: "r"((long) old), "r"(n), "m"(*m) : "memory");
+ 
+ 	return prev;
+ }
+@@ -573,17 +573,17 @@
+ extern void __cmpxchg_called_with_bad_pointer(void);
+ 
+ static __always_inline unsigned long
+-__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
++__cmpxchg(volatile void *ptr, unsigned long old, unsigned long n, int size)
+ {
+ 	switch (size) {
+ 		case 1:
+-			return __cmpxchg_u8(ptr, old, new);
++			return __cmpxchg_u8(ptr, old, n);
+ 		case 2:
+-			return __cmpxchg_u16(ptr, old, new);
++			return __cmpxchg_u16(ptr, old, n);
+ 		case 4:
+-			return __cmpxchg_u32(ptr, old, new);
++			return __cmpxchg_u32(ptr, old, n);
+ 		case 8:
+-			return __cmpxchg_u64(ptr, old, new);
++			return __cmpxchg_u64(ptr, old, n);
+ 	}
+ 	__cmpxchg_called_with_bad_pointer();
+ 	return old;
+diff -ru ../linux-2.6.16.13/include/asm-arm/arch-pxa/mtd-xip.h ./include/asm-arm/arch-pxa/mtd-xip.h
+--- ../linux-2.6.16.13/include/asm-arm/arch-pxa/mtd-xip.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-arm/arch-pxa/mtd-xip.h	2006-05-02 22:59:18.000000000 -0700
+@@ -32,6 +32,6 @@
+  * As above, this should not rely upon standard kernel code.
+  */
+ 
+-#define xip_cpu_idle()  asm volatile ("mcr p14, 0, %0, c7, c0, 0" :: "r" (1))
++#define xip_cpu_idle()  asm volatile ("mcr p14, 0, %0, c7, c0, 0" : : "r" (1))
+ 
+ #endif /* __ARCH_PXA_MTD_XIP_H__ */
+diff -ru ../linux-2.6.16.13/include/asm-arm/system.h ./include/asm-arm/system.h
+--- ../linux-2.6.16.13/include/asm-arm/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-arm/system.h	2006-05-02 23:08:03.000000000 -0700
+@@ -98,8 +98,8 @@
+ 
+ #define tas(ptr) (xchg((ptr),1))
+ 
+-extern asmlinkage void __backtrace(void);
+-extern asmlinkage void c_backtrace(unsigned long fp, int pmode);
++asmlinkage void __backtrace(void);
++asmlinkage void c_backtrace(unsigned long fp, int pmode);
+ 
+ struct mm_struct;
+ extern void show_pte(struct mm_struct *mm, unsigned long addr);
+diff -ru ../linux-2.6.16.13/include/asm-arm26/hardirq.h ./include/asm-arm26/hardirq.h
+--- ../linux-2.6.16.13/include/asm-arm26/hardirq.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-arm26/hardirq.h	2006-05-02 22:59:18.000000000 -0700
+@@ -25,7 +25,7 @@
+ 
+ #ifndef CONFIG_SMP
+ 
+-extern asmlinkage void __do_softirq(void);
++asmlinkage void __do_softirq(void);
+ 
+ #endif
+ 
+diff -ru ../linux-2.6.16.13/include/asm-arm26/mmu.h ./include/asm-arm26/mmu.h
+--- ../linux-2.6.16.13/include/asm-arm26/mmu.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-arm26/mmu.h	2006-05-02 22:59:18.000000000 -0700
+@@ -4,6 +4,6 @@
+ /*
+  * The ARM doesn't have a mmu context
+  */
+-typedef struct { } mm_context_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) mm_context_t;
+ 
+ #endif
+diff -ru ../linux-2.6.16.13/include/asm-arm26/system.h ./include/asm-arm26/system.h
+--- ../linux-2.6.16.13/include/asm-arm26/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-arm26/system.h	2006-05-02 22:59:18.000000000 -0700
+@@ -55,7 +55,7 @@
+ 
+ #define tas(ptr) (xchg((ptr),1))
+ 
+-extern asmlinkage void __backtrace(void);
++asmlinkage void __backtrace(void);
+ 
+ #define set_cr(x)					\
+ 	__asm__ __volatile__(				\
+diff -ru ../linux-2.6.16.13/include/asm-cris/arch-v10/io.h ./include/asm-cris/arch-v10/io.h
+--- ../linux-2.6.16.13/include/asm-cris/arch-v10/io.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-cris/arch-v10/io.h	2006-05-02 22:59:18.000000000 -0700
+@@ -185,8 +185,8 @@
+  ({ int _Foofoo; __asm__ volatile ("bmod [%0],%0" : "=r" (_Foofoo) : "0" \
+ 			       (255)); _Foofoo; })
+ 
+-#define TRACE_OFF() do { __asm__ volatile ("bmod [%0],%0" :: "r" (254)); } while (0)
+-#define SIM_END() do { __asm__ volatile ("bmod [%0],%0" :: "r" (28)); } while (0)
++#define TRACE_OFF() do { __asm__ volatile ("bmod [%0],%0" : : "r" (254)); } while (0)
++#define SIM_END() do { __asm__ volatile ("bmod [%0],%0" : : "r" (28)); } while (0)
+ #define CRIS_CYCLES() __extension__ \
+  ({ unsigned long c; asm ("bmod [%1],%0" : "=r" (c) : "r" (27)); c;})
+ #endif /* ! defined CONFIG_SVINTO_SIM */
+diff -ru ../linux-2.6.16.13/include/asm-cris/module.h ./include/asm-cris/module.h
+--- ../linux-2.6.16.13/include/asm-cris/module.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-cris/module.h	2006-05-02 22:59:18.000000000 -0700
+@@ -1,7 +1,7 @@
+ #ifndef _ASM_CRIS_MODULE_H
+ #define _ASM_CRIS_MODULE_H
+ /* cris is simple */
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+diff -ru ../linux-2.6.16.13/include/asm-frv/bug.h ./include/asm-frv/bug.h
+--- ../linux-2.6.16.13/include/asm-frv/bug.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-frv/bug.h	2006-05-02 22:59:18.000000000 -0700
+@@ -18,7 +18,7 @@
+ /*
+  * Tell the user there is some problem.
+  */
+-extern asmlinkage void __debug_bug_trap(int signr);
++asmlinkage void __debug_bug_trap(int signr);
+ 
+ #ifdef CONFIG_NO_KERNEL_MSG
+ #define	_debug_bug_printk()
+diff -ru ../linux-2.6.16.13/include/asm-frv/fpu.h ./include/asm-frv/fpu.h
+--- ../linux-2.6.16.13/include/asm-frv/fpu.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-frv/fpu.h	2006-05-02 22:59:18.000000000 -0700
+@@ -7,6 +7,6 @@
+  * MAX floating point unit state size (FSAVE/FRESTORE)
+  */
+ 
+-#define kernel_fpu_end() do { asm volatile("bar":::"memory"); preempt_enable(); } while(0)
++#define kernel_fpu_end() do { asm volatile("bar": : :"memory"); preempt_enable(); } while(0)
+ 
+ #endif /* __ASM_FPU_H */
+diff -ru ../linux-2.6.16.13/include/asm-frv/gdb-stub.h ./include/asm-frv/gdb-stub.h
+--- ../linux-2.6.16.13/include/asm-frv/gdb-stub.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-frv/gdb-stub.h	2006-05-02 22:59:18.000000000 -0700
+@@ -87,13 +87,13 @@
+ extern void gdbstub_tx_flush(void);
+ extern void gdbstub_do_rx(void);
+ 
+-extern asmlinkage void __debug_stub_init_break(void);
+-extern asmlinkage void __break_hijack_kernel_event(void);
+-extern asmlinkage void start_kernel(void);
+-
+-extern asmlinkage void gdbstub_rx_handler(void);
+-extern asmlinkage void gdbstub_rx_irq(void);
+-extern asmlinkage void gdbstub_intercept(void);
++asmlinkage void __debug_stub_init_break(void);
++asmlinkage void __break_hijack_kernel_event(void);
++asmlinkage void start_kernel(void);
++
++asmlinkage void gdbstub_rx_handler(void);
++asmlinkage void gdbstub_rx_irq(void);
++asmlinkage void gdbstub_intercept(void);
+ 
+ extern uint32_t __entry_usertrap_table[];
+ extern uint32_t __entry_kerneltrap_table[];
+diff -ru ../linux-2.6.16.13/include/asm-frv/highmem.h ./include/asm-frv/highmem.h
+--- ../linux-2.6.16.13/include/asm-frv/highmem.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-frv/highmem.h	2006-05-02 22:59:18.000000000 -0700
+@@ -83,11 +83,11 @@
+ 	dampr = paddr | xAMPRx_L | xAMPRx_M | xAMPRx_S | xAMPRx_SS_16Kb | xAMPRx_V;		\
+ 												\
+ 	if (type != __KM_CACHE)									\
+-		asm volatile("movgs %0,dampr"#ampr :: "r"(dampr));				\
++		asm volatile("movgs %0,dampr"#ampr : : "r"(dampr));				\
+ 	else											\
+ 		asm volatile("movgs %0,iampr"#ampr"\n"						\
+ 			     "movgs %0,dampr"#ampr"\n"						\
+-			     :: "r"(dampr)							\
++			     : : "r"(dampr)							\
+ 			     );									\
+ 												\
+ 	asm("movsg damlr"#ampr",%0" : "=r"(damlr));						\
+diff -ru ../linux-2.6.16.13/include/asm-frv/pgtable.h ./include/asm-frv/pgtable.h
+--- ../linux-2.6.16.13/include/asm-frv/pgtable.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-frv/pgtable.h	2006-05-02 22:59:18.000000000 -0700
+@@ -173,7 +173,7 @@
+ #define set_pte(pteptr, pteval)				\
+ do {							\
+ 	*(pteptr) = (pteval);				\
+-	asm volatile("dcf %M0" :: "U"(*pteptr));	\
++	asm volatile("dcf %M0" : : "U"(*pteptr));	\
+ } while(0)
+ #define set_pte_at(mm,addr,ptep,pteval) set_pte(ptep,pteval)
+ 
+@@ -209,7 +209,7 @@
+ #define set_pgd(pgdptr, pgdval)				\
+ do {							\
+ 	memcpy((pgdptr), &(pgdval), sizeof(pgd_t));	\
+-	asm volatile("dcf %M0" :: "U"(*(pgdptr)));	\
++	asm volatile("dcf %M0" : : "U"(*(pgdptr)));	\
+ } while(0)
+ 
+ static inline pud_t *pud_offset(pgd_t *pgd, unsigned long address)
+@@ -396,28 +396,28 @@
+ static inline int ptep_test_and_clear_dirty(struct vm_area_struct *vma, unsigned long addr, pte_t *ptep)
+ {
+ 	int i = test_and_clear_bit(_PAGE_BIT_DIRTY, ptep);
+-	asm volatile("dcf %M0" :: "U"(*ptep));
++	asm volatile("dcf %M0" : : "U"(*ptep));
+ 	return i;
+ }
+ 
+ static inline int ptep_test_and_clear_young(struct vm_area_struct *vma, unsigned long addr, pte_t *ptep)
+ {
+ 	int i = test_and_clear_bit(_PAGE_BIT_ACCESSED, ptep);
+-	asm volatile("dcf %M0" :: "U"(*ptep));
++	asm volatile("dcf %M0" : : "U"(*ptep));
+ 	return i;
+ }
+ 
+ static inline pte_t ptep_get_and_clear(struct mm_struct *mm, unsigned long addr, pte_t *ptep)
+ {
+ 	unsigned long x = xchg(&ptep->pte, 0);
+-	asm volatile("dcf %M0" :: "U"(*ptep));
++	asm volatile("dcf %M0" : : "U"(*ptep));
+ 	return __pte(x);
+ }
+ 
+ static inline void ptep_set_wrprotect(struct mm_struct *mm, unsigned long addr, pte_t *ptep)
+ {
+ 	set_bit(_PAGE_BIT_WP, ptep);
+-	asm volatile("dcf %M0" :: "U"(*ptep));
++	asm volatile("dcf %M0" : : "U"(*ptep));
+ }
+ 
+ /*
+diff -ru ../linux-2.6.16.13/include/asm-frv/processor.h ./include/asm-frv/processor.h
+--- ../linux-2.6.16.13/include/asm-frv/processor.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-frv/processor.h	2006-05-02 22:59:18.000000000 -0700
+@@ -111,9 +111,9 @@
+ {
+ }
+ 
+-extern asmlinkage int kernel_thread(int (*fn)(void *), void * arg, unsigned long flags);
+-extern asmlinkage void save_user_regs(struct user_context *target);
+-extern asmlinkage void *restore_user_regs(const struct user_context *target, ...);
++asmlinkage int kernel_thread(int (*fn)(void *), void * arg, unsigned long flags);
++asmlinkage void save_user_regs(struct user_context *target);
++asmlinkage void *restore_user_regs(const struct user_context *target, ...);
+ 
+ #define copy_segments(tsk, mm)		do { } while (0)
+ #define release_segments(mm)		do { } while (0)
+diff -ru ../linux-2.6.16.13/include/asm-frv/spr-regs.h ./include/asm-frv/spr-regs.h
+--- ../linux-2.6.16.13/include/asm-frv/spr-regs.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-frv/spr-regs.h	2006-05-02 22:59:18.000000000 -0700
+@@ -329,7 +329,7 @@
+ 
+ #define restore_dampr(R, _dampr)			\
+ do {							\
+-	asm volatile("movgs %0,dampr"R :: "r"(_dampr));	\
++	asm volatile("movgs %0,dampr"R : : "r"(_dampr));	\
+ } while(0)
+ 
+ /*
+diff -ru ../linux-2.6.16.13/include/asm-frv/system.h ./include/asm-frv/system.h
+--- ../linux-2.6.16.13/include/asm-frv/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-frv/system.h	2006-05-02 22:59:18.000000000 -0700
+@@ -25,7 +25,7 @@
+  * `prev' will never be the same as `next'.
+  * The `mb' is to tell GCC not to cache `current' across this call.
+  */
+-extern asmlinkage
++asmlinkage
+ struct task_struct *__switch_to(struct thread_struct *prev_thread,
+ 				struct thread_struct *next_thread,
+ 				struct task_struct *prev);
+@@ -177,7 +177,7 @@
+ /*
+  * Force strict CPU ordering.
+  */
+-#define nop()			asm volatile ("nop"::)
++#define nop()			asm volatile ("nop": :)
+ #define mb()			asm volatile ("membar" : : :"memory")
+ #define rmb()			asm volatile ("membar" : : :"memory")
+ #define wmb()			asm volatile ("membar" : : :"memory")
+diff -ru ../linux-2.6.16.13/include/asm-frv/tlbflush.h ./include/asm-frv/tlbflush.h
+--- ../linux-2.6.16.13/include/asm-frv/tlbflush.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-frv/tlbflush.h	2006-05-02 22:59:18.000000000 -0700
+@@ -59,7 +59,7 @@
+ #define flush_tlb()				flush_tlb_all()
+ #define flush_tlb_kernel_range(start, end)	flush_tlb_all()
+ #define flush_tlb_pgtables(mm,start,end) \
+-	asm volatile("movgs %0,scr0 ! movgs %0,scr1" :: "r"(ULONG_MAX) : "memory");
++	asm volatile("movgs %0,scr0 ! movgs %0,scr1" : : "r"(ULONG_MAX) : "memory");
+ 
+ #else
+ 
+diff -ru ../linux-2.6.16.13/include/asm-h8300/bitops.h ./include/asm-h8300/bitops.h
+--- ../linux-2.6.16.13/include/asm-h8300/bitops.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-h8300/bitops.h	2006-05-02 22:59:18.000000000 -0700
+@@ -36,7 +36,7 @@
+ 
+ #define H8300_GEN_BITOP_CONST(OP,BIT)			    \
+ 	case BIT:					    \
+-	__asm__(OP " #" #BIT ",@%0"::"r"(b_addr):"memory"); \
++	__asm__(OP " #" #BIT ",@%0": :"r"(b_addr):"memory"); \
+ 	break;
+ 
+ #define H8300_GEN_BITOP(FNAME,OP)				      \
+@@ -56,7 +56,7 @@
+ 			H8300_GEN_BITOP_CONST(OP,7)		      \
+ 		}						      \
+ 	} else {						      \
+-		__asm__(OP " %w0,@%1"::"r"(nr),"r"(b_addr):"memory"); \
++		__asm__(OP " %w0,@%1": :"r"(nr),"r"(b_addr):"memory"); \
+ 	}							      \
+ }
+ 
+diff -ru ../linux-2.6.16.13/include/asm-h8300/module.h ./include/asm-h8300/module.h
+--- ../linux-2.6.16.13/include/asm-h8300/module.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-h8300/module.h	2006-05-02 22:59:18.000000000 -0700
+@@ -3,7 +3,7 @@
+ /*
+  * This file contains the H8/300 architecture specific module code.
+  */
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+ #define Elf_Ehdr Elf32_Ehdr
+diff -ru ../linux-2.6.16.13/include/asm-h8300/system.h ./include/asm-h8300/system.h
+--- ../linux-2.6.16.13/include/asm-h8300/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-h8300/system.h	2006-05-02 22:59:18.000000000 -0700
+@@ -81,7 +81,7 @@
+  * Force strict CPU ordering.
+  * Not really required on H8...
+  */
+-#define nop()  asm volatile ("nop"::)
++#define nop()  asm volatile ("nop": :)
+ #define mb()   asm volatile (""   : : :"memory")
+ #define rmb()  asm volatile (""   : : :"memory")
+ #define wmb()  asm volatile (""   : : :"memory")
+diff -ru ../linux-2.6.16.13/include/asm-i386/desc.h ./include/asm-i386/desc.h
+--- ../linux-2.6.16.13/include/asm-i386/desc.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-i386/desc.h	2006-05-02 23:08:50.000000000 -0700
+@@ -33,13 +33,13 @@
+ 	return (struct desc_struct *)per_cpu(cpu_gdt_descr, cpu).address;
+ }
+ 
+-#define load_TR_desc() __asm__ __volatile__("ltr %w0"::"q" (GDT_ENTRY_TSS*8))
+-#define load_LDT_desc() __asm__ __volatile__("lldt %w0"::"q" (GDT_ENTRY_LDT*8))
++#define load_TR_desc() __asm__ __volatile__("ltr %w0": :"q" (GDT_ENTRY_TSS*8))
++#define load_LDT_desc() __asm__ __volatile__("lldt %w0": :"q" (GDT_ENTRY_LDT*8))
+ 
+-#define load_gdt(dtr) __asm__ __volatile("lgdt %0"::"m" (*dtr))
+-#define load_idt(dtr) __asm__ __volatile("lidt %0"::"m" (*dtr))
+-#define load_tr(tr) __asm__ __volatile("ltr %0"::"mr" (tr))
+-#define load_ldt(ldt) __asm__ __volatile("lldt %0"::"mr" (ldt))
++#define load_gdt(dtr) __asm__ __volatile("lgdt %0": :"m" (*dtr))
++#define load_idt(dtr) __asm__ __volatile("lidt %0": :"m" (*dtr))
++#define load_tr(tr) __asm__ __volatile("ltr %0": :"mr" (tr))
++#define load_ldt(ldt) __asm__ __volatile("lldt %0": :"mr" (ldt))
+ 
+ #define store_gdt(dtr) __asm__ ("sgdt %0":"=m" (*dtr))
+ #define store_idt(dtr) __asm__ ("sidt %0":"=m" (*dtr))
+diff -ru ../linux-2.6.16.13/include/asm-i386/elf.h ./include/asm-i386/elf.h
+--- ../linux-2.6.16.13/include/asm-i386/elf.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-i386/elf.h	2006-05-02 22:59:18.000000000 -0700
+@@ -132,7 +132,7 @@
+ #define VSYSCALL_BASE	(__fix_to_virt(FIX_VSYSCALL))
+ #define VSYSCALL_EHDR	((const struct elfhdr *) VSYSCALL_BASE)
+ #define VSYSCALL_ENTRY	((unsigned long) &__kernel_vsyscall)
+-extern void __kernel_vsyscall;
++extern void* __kernel_vsyscall;
+ 
+ #define ARCH_DLINFO						\
+ do {								\
+diff -ru ../linux-2.6.16.13/include/asm-i386/mach-voyager/irq_vectors.h ./include/asm-i386/mach-voyager/irq_vectors.h
+--- ../linux-2.6.16.13/include/asm-i386/mach-voyager/irq_vectors.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-i386/mach-voyager/irq_vectors.h	2006-05-02 22:59:18.000000000 -0700
+@@ -66,14 +66,14 @@
+ #define invalid_vm86_irq(irq)	((irq) < 3 || (irq) > 15)
+ 
+ #ifndef __ASSEMBLY__
+-extern asmlinkage void vic_cpi_interrupt(void);
+-extern asmlinkage void vic_sys_interrupt(void);
+-extern asmlinkage void vic_cmn_interrupt(void);
+-extern asmlinkage void qic_timer_interrupt(void);
+-extern asmlinkage void qic_invalidate_interrupt(void);
+-extern asmlinkage void qic_reschedule_interrupt(void);
+-extern asmlinkage void qic_enable_irq_interrupt(void);
+-extern asmlinkage void qic_call_function_interrupt(void);
++asmlinkage void vic_cpi_interrupt(void);
++asmlinkage void vic_sys_interrupt(void);
++asmlinkage void vic_cmn_interrupt(void);
++asmlinkage void qic_timer_interrupt(void);
++asmlinkage void qic_invalidate_interrupt(void);
++asmlinkage void qic_reschedule_interrupt(void);
++asmlinkage void qic_enable_irq_interrupt(void);
++asmlinkage void qic_call_function_interrupt(void);
+ #endif /* !__ASSEMBLY__ */
+ 
+ #endif /* _ASM_IRQ_VECTORS_H */
+diff -ru ../linux-2.6.16.13/include/asm-i386/module.h ./include/asm-i386/module.h
+--- ../linux-2.6.16.13/include/asm-i386/module.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-i386/module.h	2006-05-02 22:59:18.000000000 -0700
+@@ -2,9 +2,7 @@
+ #define _ASM_I386_MODULE_H
+ 
+ /* x86 is simple */
+-struct mod_arch_specific
+-{
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+diff -ru ../linux-2.6.16.13/include/asm-i386/rwlock.h ./include/asm-i386/rwlock.h
+--- ../linux-2.6.16.13/include/asm-i386/rwlock.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-i386/rwlock.h	2006-05-02 22:59:18.000000000 -0700
+@@ -25,7 +25,7 @@
+ 		     "jns 1f\n" \
+ 		     "call " helper "\n\t" \
+ 		     "1:\n" \
+-		     ::"a" (rw) : "memory")
++		     : :"a" (rw) : "memory")
+ 
+ #define __build_read_lock_const(rw, helper)   \
+ 	asm volatile(LOCK "subl $1,%0\n\t" \
+@@ -49,7 +49,7 @@
+ 		     "jz 1f\n" \
+ 		     "call " helper "\n\t" \
+ 		     "1:\n" \
+-		     ::"a" (rw) : "memory")
++		     : :"a" (rw) : "memory")
+ 
+ #define __build_write_lock_const(rw, helper) \
+ 	asm volatile(LOCK "subl $" RW_LOCK_BIAS_STR ",%0\n\t" \
+diff -ru ../linux-2.6.16.13/include/asm-i386/system.h ./include/asm-i386/system.h
+--- ../linux-2.6.16.13/include/asm-i386/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-i386/system.h	2006-05-02 23:09:38.000000000 -0700
+@@ -266,26 +266,26 @@
+ #endif
+ 
+ static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
+-				      unsigned long new, int size)
++				      unsigned long n, int size)
+ {
+ 	unsigned long prev;
+ 	switch (size) {
+ 	case 1:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgb %b1,%2"
+ 				     : "=a"(prev)
+-				     : "q"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "q"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	case 2:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgw %w1,%2"
+ 				     : "=a"(prev)
+-				     : "r"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "r"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	case 4:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgl %1,%2"
+ 				     : "=a"(prev)
+-				     : "r"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "r"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	}
+@@ -304,15 +304,15 @@
+ extern unsigned long cmpxchg_386_u32(volatile void *, u32, u32);
+ 
+ static inline unsigned long cmpxchg_386(volatile void *ptr, unsigned long old,
+-				      unsigned long new, int size)
++				      unsigned long n, int size)
+ {
+ 	switch (size) {
+ 	case 1:
+-		return cmpxchg_386_u8(ptr, old, new);
++		return cmpxchg_386_u8(ptr, old, n);
+ 	case 2:
+-		return cmpxchg_386_u16(ptr, old, new);
++		return cmpxchg_386_u16(ptr, old, n);
+ 	case 4:
+-		return cmpxchg_386_u32(ptr, old, new);
++		return cmpxchg_386_u32(ptr, old, n);
+ 	}
+ 	return old;
+ }
+@@ -333,13 +333,13 @@
+ #ifdef CONFIG_X86_CMPXCHG64
+ 
+ static inline unsigned long long __cmpxchg64(volatile void *ptr, unsigned long long old,
+-				      unsigned long long new)
++				      unsigned long long n)
+ {
+ 	unsigned long long prev;
+ 	__asm__ __volatile__(LOCK_PREFIX "cmpxchg8b %3"
+ 			     : "=A"(prev)
+-			     : "b"((unsigned long)new),
+-			       "c"((unsigned long)(new >> 32)),
++			     : "b"((unsigned long)n),
++			       "c"((unsigned long)(n >> 32)),
+ 			       "m"(*__xg(ptr)),
+ 			       "0"(old)
+ 			     : "memory");
+@@ -387,7 +387,7 @@
+ 		      ".previous\n"						\
+ 		      ".section .altinstr_replacement,\"ax\"\n"			\
+ 		      "663:\n\t" newinstr "\n664:\n"   /* replacement */    \
+-		      ".previous" :: "i" (feature) : "memory")  
++		      ".previous" : : "i" (feature) : "memory")  
+ 
+ /*
+  * Alternative inline assembly with input.
+@@ -411,7 +411,7 @@
+ 		      ".previous\n"						\
+ 		      ".section .altinstr_replacement,\"ax\"\n"			\
+ 		      "663:\n\t" newinstr "\n664:\n"   /* replacement */ 	\
+-		      ".previous" :: "i" (feature), ##input)
++		      ".previous" : : "i" (feature), ##input)
+ 
+ /*
+  * Force strict CPU ordering.
+diff -ru ../linux-2.6.16.13/include/asm-i386/tlbflush.h ./include/asm-i386/tlbflush.h
+--- ../linux-2.6.16.13/include/asm-i386/tlbflush.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-i386/tlbflush.h	2006-05-02 22:59:18.000000000 -0700
+@@ -13,7 +13,7 @@
+ 			"movl %%cr3, %0;              \n"		\
+ 			"movl %0, %%cr3;  # flush TLB \n"		\
+ 			: "=r" (tmpreg)					\
+-			:: "memory");					\
++			: : "memory");					\
+ 	} while (0)
+ 
+ /*
+diff -ru ../linux-2.6.16.13/include/asm-ia64/gcc_intrin.h ./include/asm-ia64/gcc_intrin.h
+--- ../linux-2.6.16.13/include/asm-ia64/gcc_intrin.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-ia64/gcc_intrin.h	2006-05-02 22:59:18.000000000 -0700
+@@ -13,13 +13,13 @@
+ 
+ /* Optimization barrier */
+ /* The "volatile" is due to gcc bugs */
+-#define ia64_barrier()	asm volatile ("":::"memory")
++#define ia64_barrier()	asm volatile ("": : :"memory")
+ 
+-#define ia64_stop()	asm volatile (";;"::)
++#define ia64_stop()	asm volatile (";;": :)
+ 
+-#define ia64_invala_gr(regnum)	asm volatile ("invala.e r%0" :: "i"(regnum))
++#define ia64_invala_gr(regnum)	asm volatile ("invala.e r%0" : : "i"(regnum))
+ 
+-#define ia64_invala_fr(regnum)	asm volatile ("invala.e f%0" :: "i"(regnum))
++#define ia64_invala_fr(regnum)	asm volatile ("invala.e f%0" : : "i"(regnum))
+ 
+ extern void ia64_bad_param_for_setreg (void);
+ extern void ia64_bad_param_for_getreg (void);
+@@ -30,24 +30,24 @@
+ ({										\
+ 	switch (regnum) {							\
+ 	    case _IA64_REG_PSR_L:						\
+-		    asm volatile ("mov psr.l=%0" :: "r"(val) : "memory");	\
++		    asm volatile ("mov psr.l=%0" : : "r"(val) : "memory");	\
+ 		    break;							\
+ 	    case _IA64_REG_AR_KR0 ... _IA64_REG_AR_EC:				\
+-		    asm volatile ("mov ar%0=%1" ::				\
++		    asm volatile ("mov ar%0=%1" : :				\
+ 		    			  "i" (regnum - _IA64_REG_AR_KR0),	\
+ 					  "r"(val): "memory");			\
+ 		    break;							\
+ 	    case _IA64_REG_CR_DCR ... _IA64_REG_CR_LRR1:			\
+-		    asm volatile ("mov cr%0=%1" ::				\
++		    asm volatile ("mov cr%0=%1" : :				\
+ 				          "i" (regnum - _IA64_REG_CR_DCR),	\
+ 					  "r"(val): "memory" );			\
+ 		    break;							\
+ 	    case _IA64_REG_SP:							\
+-		    asm volatile ("mov r12=%0" ::				\
++		    asm volatile ("mov r12=%0" : :				\
+ 			    		  "r"(val): "memory");			\
+ 		    break;							\
+ 	    case _IA64_REG_GP:							\
+-		    asm volatile ("mov gp=%0" :: "r"(val) : "memory");		\
++		    asm volatile ("mov gp=%0" : : "r"(val) : "memory");		\
+ 		break;								\
+ 	    default:								\
+ 		    ia64_bad_param_for_setreg();				\
+@@ -96,7 +96,7 @@
+ ({								\
+ 	switch (mode) {						\
+ 	case ia64_hint_pause:					\
+-		asm volatile ("hint @pause" ::: "memory");	\
++		asm volatile ("hint @pause" : : : "memory");	\
+ 		break;						\
+ 	}							\
+ })
+@@ -194,31 +194,31 @@
+ #define ia64_stfs(x, regnum)						\
+ ({									\
+ 	register double __f__ asm ("f"#regnum);				\
+-	asm volatile ("stfs [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stfs [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_stfd(x, regnum)						\
+ ({									\
+ 	register double __f__ asm ("f"#regnum);				\
+-	asm volatile ("stfd [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stfd [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_stfe(x, regnum)						\
+ ({									\
+ 	register double __f__ asm ("f"#regnum);				\
+-	asm volatile ("stfe [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stfe [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_stf8(x, regnum)						\
+ ({									\
+ 	register double __f__ asm ("f"#regnum);				\
+-	asm volatile ("stf8 [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stf8 [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_stf_spill(x, regnum)						\
+ ({										\
+ 	register double __f__ asm ("f"#regnum);					\
+-	asm volatile ("stf.spill [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stf.spill [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_fetchadd4_acq(p, inc)						\
+@@ -298,7 +298,7 @@
+ #define ia64_cmpxchg1_acq(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg1.acq %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -307,7 +307,7 @@
+ #define ia64_cmpxchg1_rel(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg1.rel %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -316,7 +316,7 @@
+ #define ia64_cmpxchg2_acq(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg2.acq %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -325,7 +325,7 @@
+ #define ia64_cmpxchg2_rel(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 											\
+ 	asm volatile ("cmpxchg2.rel %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+@@ -335,7 +335,7 @@
+ #define ia64_cmpxchg4_acq(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg4.acq %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -344,7 +344,7 @@
+ #define ia64_cmpxchg4_rel(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg4.rel %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -353,7 +353,7 @@
+ #define ia64_cmpxchg8_acq(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg8.acq %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -362,17 +362,17 @@
+ #define ia64_cmpxchg8_rel(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 											\
+ 	asm volatile ("cmpxchg8.rel %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+ })
+ 
+-#define ia64_mf()	asm volatile ("mf" ::: "memory")
+-#define ia64_mfa()	asm volatile ("mf.a" ::: "memory")
++#define ia64_mf()	asm volatile ("mf" : : : "memory")
++#define ia64_mfa()	asm volatile ("mf.a" : : : "memory")
+ 
+-#define ia64_invala() asm volatile ("invala" ::: "memory")
++#define ia64_invala() asm volatile ("invala" : : : "memory")
+ 
+ #define ia64_thash(addr)							\
+ ({										\
+@@ -381,8 +381,8 @@
+ 	ia64_intri_res;								\
+ })
+ 
+-#define ia64_srlz_i()	asm volatile (";; srlz.i ;;" ::: "memory")
+-#define ia64_srlz_d()	asm volatile (";; srlz.d" ::: "memory");
++#define ia64_srlz_i()	asm volatile (";; srlz.i ;;" : : : "memory")
++#define ia64_srlz_d()	asm volatile (";; srlz.d" : : : "memory");
+ 
+ #ifdef HAVE_SERIALIZE_DIRECTIVE
+ # define ia64_dv_serialize_data()		asm volatile (".serialize.data");
+@@ -392,18 +392,18 @@
+ # define ia64_dv_serialize_instruction()
+ #endif
+ 
+-#define ia64_nop(x)	asm volatile ("nop %0"::"i"(x));
++#define ia64_nop(x)	asm volatile ("nop %0": :"i"(x));
+ 
+-#define ia64_itci(addr)	asm volatile ("itc.i %0;;" :: "r"(addr) : "memory")
++#define ia64_itci(addr)	asm volatile ("itc.i %0;;" : : "r"(addr) : "memory")
+ 
+-#define ia64_itcd(addr)	asm volatile ("itc.d %0;;" :: "r"(addr) : "memory")
++#define ia64_itcd(addr)	asm volatile ("itc.d %0;;" : : "r"(addr) : "memory")
+ 
+ 
+ #define ia64_itri(trnum, addr) asm volatile ("itr.i itr[%0]=%1"				\
+-					     :: "r"(trnum), "r"(addr) : "memory")
++					     : : "r"(trnum), "r"(addr) : "memory")
+ 
+ #define ia64_itrd(trnum, addr) asm volatile ("itr.d dtr[%0]=%1"				\
+-					     :: "r"(trnum), "r"(addr) : "memory")
++					     : : "r"(trnum), "r"(addr) : "memory")
+ 
+ #define ia64_tpa(addr)								\
+ ({										\
+@@ -413,22 +413,22 @@
+ })
+ 
+ #define __ia64_set_dbr(index, val)						\
+-	asm volatile ("mov dbr[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov dbr[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_ibr(index, val)						\
+-	asm volatile ("mov ibr[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov ibr[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_pkr(index, val)						\
+-	asm volatile ("mov pkr[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov pkr[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_pmc(index, val)						\
+-	asm volatile ("mov pmc[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov pmc[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_pmd(index, val)						\
+-	asm volatile ("mov pmd[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov pmd[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_rr(index, val)							\
+-	asm volatile ("mov rr[%0]=%1" :: "r"(index), "r"(val) : "memory");
++	asm volatile ("mov rr[%0]=%1" : : "r"(index), "r"(val) : "memory");
+ 
+ #define ia64_get_cpuid(index)								\
+ ({											\
+@@ -480,35 +480,35 @@
+ 	ia64_intri_res;								\
+ })
+ 
+-#define ia64_fc(addr)	asm volatile ("fc %0" :: "r"(addr) : "memory")
++#define ia64_fc(addr)	asm volatile ("fc %0" : : "r"(addr) : "memory")
+ 
+ 
+-#define ia64_sync_i()	asm volatile (";; sync.i" ::: "memory")
++#define ia64_sync_i()	asm volatile (";; sync.i" : : : "memory")
+ 
+-#define ia64_ssm(mask)	asm volatile ("ssm %0":: "i"((mask)) : "memory")
+-#define ia64_rsm(mask)	asm volatile ("rsm %0":: "i"((mask)) : "memory")
+-#define ia64_sum(mask)	asm volatile ("sum %0":: "i"((mask)) : "memory")
+-#define ia64_rum(mask)	asm volatile ("rum %0":: "i"((mask)) : "memory")
++#define ia64_ssm(mask)	asm volatile ("ssm %0": : "i"((mask)) : "memory")
++#define ia64_rsm(mask)	asm volatile ("rsm %0": : "i"((mask)) : "memory")
++#define ia64_sum(mask)	asm volatile ("sum %0": : "i"((mask)) : "memory")
++#define ia64_rum(mask)	asm volatile ("rum %0": : "i"((mask)) : "memory")
+ 
+-#define ia64_ptce(addr)	asm volatile ("ptc.e %0" :: "r"(addr))
++#define ia64_ptce(addr)	asm volatile ("ptc.e %0" : : "r"(addr))
+ 
+ #define ia64_ptcga(addr, size)							\
+ do {										\
+-	asm volatile ("ptc.ga %0,%1" :: "r"(addr), "r"(size) : "memory");	\
++	asm volatile ("ptc.ga %0,%1" : : "r"(addr), "r"(size) : "memory");	\
+ 	ia64_dv_serialize_data();						\
+ } while (0)
+ 
+ #define ia64_ptcl(addr, size)							\
+ do {										\
+-	asm volatile ("ptc.l %0,%1" :: "r"(addr), "r"(size) : "memory");	\
++	asm volatile ("ptc.l %0,%1" : : "r"(addr), "r"(size) : "memory");	\
+ 	ia64_dv_serialize_data();						\
+ } while (0)
+ 
+ #define ia64_ptri(addr, size)						\
+-	asm volatile ("ptr.i %0,%1" :: "r"(addr), "r"(size) : "memory")
++	asm volatile ("ptr.i %0,%1" : : "r"(addr), "r"(size) : "memory")
+ 
+ #define ia64_ptrd(addr, size)						\
+-	asm volatile ("ptr.d %0,%1" :: "r"(addr), "r"(size) : "memory")
++	asm volatile ("ptr.d %0,%1" : : "r"(addr), "r"(size) : "memory")
+ 
+ /* Values for lfhint in ia64_lfetch and ia64_lfetch_fault */
+ 
+@@ -539,16 +539,16 @@
+ ({									\
+         switch (lfhint) {						\
+         case ia64_lfhint_none:						\
+-                asm volatile ("lfetch.excl [%0]" :: "r"(y));		\
++                asm volatile ("lfetch.excl [%0]" : : "r"(y));		\
+                 break;							\
+         case ia64_lfhint_nt1:						\
+-                asm volatile ("lfetch.excl.nt1 [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.excl.nt1 [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nt2:						\
+-                asm volatile ("lfetch.excl.nt2 [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.excl.nt2 [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nta:						\
+-                asm volatile ("lfetch.excl.nta [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.excl.nta [%0]" : : "r"(y));	\
+                 break;							\
+         }								\
+ })
+@@ -575,16 +575,16 @@
+ ({									\
+         switch (lfhint) {						\
+         case ia64_lfhint_none:						\
+-                asm volatile ("lfetch.fault.excl [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.fault.excl [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nt1:						\
+-                asm volatile ("lfetch.fault.excl.nt1 [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.fault.excl.nt1 [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nt2:						\
+-                asm volatile ("lfetch.fault.excl.nt2 [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.fault.excl.nt2 [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nta:						\
+-                asm volatile ("lfetch.fault.excl.nta [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.fault.excl.nta [%0]" : : "r"(y));	\
+                 break;							\
+         }								\
+ })
+@@ -595,7 +595,7 @@
+ 		      "(p6) ssm psr.i;"				\
+ 		      "(p7) rsm psr.i;;"			\
+ 		      "(p6) srlz.d"				\
+-		      :: "r"((x)) : "p6", "p7", "memory");	\
++		      : : "r"((x)) : "p6", "p7", "memory");	\
+ } while (0)
+ 
+ #endif /* _ASM_IA64_GCC_INTRIN_H */
+diff -ru ../linux-2.6.16.13/include/asm-ia64/sn/rw_mmr.h ./include/asm-ia64/sn/rw_mmr.h
+--- ../linux-2.6.16.13/include/asm-ia64/sn/rw_mmr.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-ia64/sn/rw_mmr.h	2006-05-02 22:59:18.000000000 -0700
+@@ -51,7 +51,7 @@
+              "st8.rel [%0]=%1;;"
+              "mov psr.l=r2;;"
+              "srlz.i;;"
+-	     :: "r"(mmr), "r"(val)
++	     : : "r"(mmr), "r"(val)
+              : "r2", "memory");
+ }            
+ 
+@@ -67,7 +67,7 @@
+              "(p9) st8.rel [%2]=%3;;"
+              "mov psr.l=r2;;"
+              "srlz.i;;"
+-	     :: "r"(mmr1), "r"(val1), "r"(mmr2), "r"(val2)
++	     : : "r"(mmr1), "r"(val1), "r"(mmr2), "r"(val2)
+              : "p9", "r2", "memory");
+ }            
+ 
+diff -ru ../linux-2.6.16.13/include/asm-ia64/spinlock.h ./include/asm-ia64/spinlock.h
+--- ../linux-2.6.16.13/include/asm-ia64/spinlock.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-ia64/spinlock.h	2006-05-02 22:59:18.000000000 -0700
+@@ -150,7 +150,7 @@
+ 		"cmpxchg4.acq r2 = [%0], r29, ar.ccv;;\n"			\
+ 		"cmp4.eq p0,p7 = r0, r2\n"					\
+ 		"(p7) br.cond.spnt.few 1b;;\n"					\
+-		:: "r"(rw) : "ar.ccv", "p7", "r2", "r29", "memory");		\
++		: : "r"(rw) : "ar.ccv", "p7", "r2", "r29", "memory");		\
+ } while(0)
+ 
+ #define __raw_write_trylock(rw)							\
+diff -ru ../linux-2.6.16.13/include/asm-m32r/module.h ./include/asm-m32r/module.h
+--- ../linux-2.6.16.13/include/asm-m32r/module.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-m32r/module.h	2006-05-02 22:59:18.000000000 -0700
+@@ -3,7 +3,7 @@
+ 
+ /* $Id$ */
+ 
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr	Elf32_Shdr
+ #define Elf_Sym		Elf32_Sym
+diff -ru ../linux-2.6.16.13/include/asm-m68k/module.h ./include/asm-m68k/module.h
+--- ../linux-2.6.16.13/include/asm-m68k/module.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-m68k/module.h	2006-05-02 22:59:18.000000000 -0700
+@@ -1,6 +1,6 @@
+ #ifndef _ASM_M68K_MODULE_H
+ #define _ASM_M68K_MODULE_H
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+ #define Elf_Ehdr Elf32_Ehdr
+diff -ru ../linux-2.6.16.13/include/asm-m68k/system.h ./include/asm-m68k/system.h
+--- ../linux-2.6.16.13/include/asm-m68k/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-m68k/system.h	2006-05-02 22:59:18.000000000 -0700
+@@ -167,23 +167,23 @@
+ #define __HAVE_ARCH_CMPXCHG	1
+ 
+ static inline unsigned long __cmpxchg(volatile void *p, unsigned long old,
+-				      unsigned long new, int size)
++				      unsigned long n, int size)
+ {
+ 	switch (size) {
+ 	case 1:
+ 		__asm__ __volatile__ ("casb %0,%2,%1"
+ 				      : "=d" (old), "=m" (*(char *)p)
+-				      : "d" (new), "0" (old), "m" (*(char *)p));
++				      : "d" (n), "0" (old), "m" (*(char *)p));
+ 		break;
+ 	case 2:
+ 		__asm__ __volatile__ ("casw %0,%2,%1"
+ 				      : "=d" (old), "=m" (*(short *)p)
+-				      : "d" (new), "0" (old), "m" (*(short *)p));
++				      : "d" (n), "0" (old), "m" (*(short *)p));
+ 		break;
+ 	case 4:
+ 		__asm__ __volatile__ ("casl %0,%2,%1"
+ 				      : "=d" (old), "=m" (*(int *)p)
+-				      : "d" (new), "0" (old), "m" (*(int *)p));
++				      : "d" (n), "0" (old), "m" (*(int *)p));
+ 		break;
+ 	}
+ 	return old;
+diff -ru ../linux-2.6.16.13/include/asm-m68knommu/mcfwdebug.h ./include/asm-m68knommu/mcfwdebug.h
+--- ../linux-2.6.16.13/include/asm-m68knommu/mcfwdebug.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-m68knommu/mcfwdebug.h	2006-05-02 22:59:19.000000000 -0700
+@@ -109,10 +109,10 @@
+ 	asm(	"move.l	%0, %%a0\n\t"
+ 		".word	0xfbd0\n\t"
+ 		".word	0x0003\n\t"
+-	    :: "g" (dbg) : "a0");
++	    : : "g" (dbg) : "a0");
+ #else
+ 	// And this is for when it does
+-	asm(	"wdebug	(%0)" :: "a" (dbg));
++	asm(	"wdebug	(%0)" : : "a" (dbg));
+ #endif
+ }
+ 
+diff -ru ../linux-2.6.16.13/include/asm-m68knommu/system.h ./include/asm-m68knommu/system.h
+--- ../linux-2.6.16.13/include/asm-m68knommu/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-m68knommu/system.h	2006-05-02 22:59:19.000000000 -0700
+@@ -101,7 +101,7 @@
+  * Force strict CPU ordering.
+  * Not really required on m68k...
+  */
+-#define nop()  asm volatile ("nop"::)
++#define nop()  asm volatile ("nop": :)
+ #define mb()   asm volatile (""   : : :"memory")
+ #define rmb()  asm volatile (""   : : :"memory")
+ #define wmb()  asm volatile (""   : : :"memory")
+@@ -198,14 +198,14 @@
+ #define __HAVE_ARCH_CMPXCHG	1
+ 
+ static __inline__ unsigned long
+-cmpxchg(volatile int *p, int old, int new)
++cmpxchg(volatile int *p, int old, int n)
+ {
+ 	unsigned long flags;
+ 	int prev;
+ 
+ 	local_irq_save(flags);
+ 	if ((prev = *p) == old)
+-		*p = new;
++		*p = n;
+ 	local_irq_restore(flags);
+ 	return(prev);
+ }
+diff -ru ../linux-2.6.16.13/include/asm-mips/fpu.h ./include/asm-mips/fpu.h
+--- ../linux-2.6.16.13/include/asm-mips/fpu.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-mips/fpu.h	2006-05-02 22:59:19.000000000 -0700
+@@ -24,11 +24,11 @@
+ struct sigcontext;
+ struct sigcontext32;
+ 
+-extern asmlinkage int (*save_fp_context)(struct sigcontext *sc);
+-extern asmlinkage int (*restore_fp_context)(struct sigcontext *sc);
++asmlinkage int (*save_fp_context)(struct sigcontext *sc);
++asmlinkage int (*restore_fp_context)(struct sigcontext *sc);
+ 
+-extern asmlinkage int (*save_fp_context32)(struct sigcontext32 *sc);
+-extern asmlinkage int (*restore_fp_context32)(struct sigcontext32 *sc);
++asmlinkage int (*save_fp_context32)(struct sigcontext32 *sc);
++asmlinkage int (*restore_fp_context32)(struct sigcontext32 *sc);
+ 
+ extern void fpu_emulator_init_fpu(void);
+ extern void _init_fpu(void);
+diff -ru ../linux-2.6.16.13/include/asm-mips/io.h ./include/asm-mips/io.h
+--- ../linux-2.6.16.13/include/asm-mips/io.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-mips/io.h	2006-05-02 22:59:19.000000000 -0700
+@@ -548,7 +548,7 @@
+ 
+ 
+ /* Depends on MIPS II instruction set */
+-#define mmiowb() asm volatile ("sync" ::: "memory")
++#define mmiowb() asm volatile ("sync" : : : "memory")
+ 
+ static inline void memset_io(volatile void __iomem *addr, unsigned char val, int count)
+ {
+diff -ru ../linux-2.6.16.13/include/asm-mips/ip32/mace.h ./include/asm-mips/ip32/mace.h
+--- ../linux-2.6.16.13/include/asm-mips/ip32/mace.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-mips/ip32/mace.h	2006-05-02 23:10:30.000000000 -0700
+@@ -311,11 +311,9 @@
+  */
+ 
+ /* Parallel port */
+-struct mace_parallel {
+-};
++EMPTY_STRUCT_DECL(mace_parallel);
+ 
+-struct mace_ecp1284 {	/* later... */
+-};
++EMPTY_STRUCT_DECL(mace_ecp1284);	/* later... */
+ 
+ /* Serial port */
+ struct mace_serial {
+diff -ru ../linux-2.6.16.13/include/asm-mips/irq.h ./include/asm-mips/irq.h
+--- ../linux-2.6.16.13/include/asm-mips/irq.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-mips/irq.h	2006-05-02 22:59:19.000000000 -0700
+@@ -24,7 +24,7 @@
+ 
+ struct pt_regs;
+ 
+-extern asmlinkage unsigned int do_IRQ(unsigned int irq, struct pt_regs *regs);
++asmlinkage unsigned int do_IRQ(unsigned int irq, struct pt_regs *regs);
+ 
+ #ifdef CONFIG_PREEMPT
+ 
+diff -ru ../linux-2.6.16.13/include/asm-mips/paccess.h ./include/asm-mips/paccess.h
+--- ../linux-2.6.16.13/include/asm-mips/paccess.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-mips/paccess.h	2006-05-02 22:59:19.000000000 -0700
+@@ -23,8 +23,8 @@
+ #define __PA_ADDR	".dword"
+ #endif
+ 
+-extern asmlinkage void handle_ibe(void);
+-extern asmlinkage void handle_dbe(void);
++asmlinkage void handle_ibe(void);
++asmlinkage void handle_dbe(void);
+ 
+ #define put_dbe(x,ptr) __put_dbe((x),(ptr),sizeof(*(ptr)))
+ #define get_dbe(x,ptr) __get_dbe((x),(ptr),sizeof(*(ptr)))
+diff -ru ../linux-2.6.16.13/include/asm-mips/processor.h ./include/asm-mips/processor.h
+--- ../linux-2.6.16.13/include/asm-mips/processor.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-mips/processor.h	2006-05-02 22:59:19.000000000 -0700
+@@ -220,7 +220,7 @@
+  * overhead of a function call by forcing the compiler to save the return
+  * address register on the stack.
+  */
+-#define return_address() ({__asm__ __volatile__("":::"$31");__builtin_return_address(0);})
++#define return_address() ({__asm__ __volatile__("": : :"$31");__builtin_return_address(0);})
+ 
+ #ifdef CONFIG_CPU_HAS_PREFETCH
+ 
+diff -ru ../linux-2.6.16.13/include/asm-mips/ptrace.h ./include/asm-mips/ptrace.h
+--- ../linux-2.6.16.13/include/asm-mips/ptrace.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-mips/ptrace.h	2006-05-02 22:59:19.000000000 -0700
+@@ -81,7 +81,7 @@
+ 
+ extern void show_regs(struct pt_regs *);
+ 
+-extern asmlinkage void do_syscall_trace(struct pt_regs *regs, int entryexit);
++asmlinkage void do_syscall_trace(struct pt_regs *regs, int entryexit);
+ 
+ #endif
+ 
+diff -ru ../linux-2.6.16.13/include/asm-mips/smp.h ./include/asm-mips/smp.h
+--- ../linux-2.6.16.13/include/asm-mips/smp.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-mips/smp.h	2006-05-02 22:59:19.000000000 -0700
+@@ -111,7 +111,7 @@
+ 	core_send_ipi(cpu, SMP_RESCHEDULE_YOURSELF);
+ }
+ 
+-extern asmlinkage void smp_call_function_interrupt(void);
++asmlinkage void smp_call_function_interrupt(void);
+ 
+ #endif /* CONFIG_SMP */
+ 
+diff -ru ../linux-2.6.16.13/include/asm-mips/system.h ./include/asm-mips/system.h
+--- ../linux-2.6.16.13/include/asm-mips/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-mips/system.h	2006-05-02 23:11:02.000000000 -0700
+@@ -151,7 +151,7 @@
+  * switch_to(n) should switch tasks to task nr n, first
+  * checking that n isn't the current task, in which case it does nothing.
+  */
+-extern asmlinkage void *resume(void *last, void *next, void *next_ti);
++asmlinkage void *resume(void *last, void *next, void *next_ti);
+ 
+ struct task_struct;
+ 
+@@ -301,7 +301,7 @@
+ #define __HAVE_ARCH_CMPXCHG 1
+ 
+ static inline unsigned long __cmpxchg_u32(volatile int * m, unsigned long old,
+-	unsigned long new)
++	unsigned long n)
+ {
+ 	__u32 retval;
+ 
+@@ -323,7 +323,7 @@
+ 		"2:							\n"
+ 		"	.set	pop					\n"
+ 		: "=&r" (retval), "=R" (*m)
+-		: "R" (*m), "Jr" (old), "Jr" (new)
++		: "R" (*m), "Jr" (old), "Jr" (n)
+ 		: "memory");
+ 	} else if (cpu_has_llsc) {
+ 		__asm__ __volatile__(
+@@ -343,7 +343,7 @@
+ 		"2:							\n"
+ 		"	.set	pop					\n"
+ 		: "=&r" (retval), "=R" (*m)
+-		: "R" (*m), "Jr" (old), "Jr" (new)
++		: "R" (*m), "Jr" (old), "Jr" (n)
+ 		: "memory");
+ 	} else {
+ 		unsigned long flags;
+@@ -351,7 +351,7 @@
+ 		local_irq_save(flags);
+ 		retval = *m;
+ 		if (retval == old)
+-			*m = new;
++			*m = n;
+ 		local_irq_restore(flags);	/* implies memory barrier  */
+ 	}
+ 
+@@ -360,7 +360,7 @@
+ 
+ #ifdef CONFIG_64BIT
+ static inline unsigned long __cmpxchg_u64(volatile int * m, unsigned long old,
+-	unsigned long new)
++	unsigned long n)
+ {
+ 	__u64 retval;
+ 
+@@ -380,7 +380,7 @@
+ 		"2:							\n"
+ 		"	.set	pop					\n"
+ 		: "=&r" (retval), "=R" (*m)
+-		: "R" (*m), "Jr" (old), "Jr" (new)
++		: "R" (*m), "Jr" (old), "Jr" (n)
+ 		: "memory");
+ 	} else if (cpu_has_llsc) {
+ 		__asm__ __volatile__(
+@@ -398,7 +398,7 @@
+ 		"2:							\n"
+ 		"	.set	pop					\n"
+ 		: "=&r" (retval), "=R" (*m)
+-		: "R" (*m), "Jr" (old), "Jr" (new)
++		: "R" (*m), "Jr" (old), "Jr" (n)
+ 		: "memory");
+ 	} else {
+ 		unsigned long flags;
+@@ -406,7 +406,7 @@
+ 		local_irq_save(flags);
+ 		retval = *m;
+ 		if (retval == old)
+-			*m = new;
++			*m = n;
+ 		local_irq_restore(flags);	/* implies memory barrier  */
+ 	}
+ 
+@@ -414,7 +414,7 @@
+ }
+ #else
+ extern unsigned long __cmpxchg_u64_unsupported_on_32bit_kernels(
+-	volatile int * m, unsigned long old, unsigned long new);
++	volatile int * m, unsigned long old, unsigned long n);
+ #define __cmpxchg_u64 __cmpxchg_u64_unsupported_on_32bit_kernels
+ #endif
+ 
+@@ -423,19 +423,19 @@
+ extern void __cmpxchg_called_with_bad_pointer(void);
+ 
+ static inline unsigned long __cmpxchg(volatile void * ptr, unsigned long old,
+-	unsigned long new, int size)
++	unsigned long n, int size)
+ {
+ 	switch (size) {
+ 	case 4:
+-		return __cmpxchg_u32(ptr, old, new);
++		return __cmpxchg_u32(ptr, old, n);
+ 	case 8:
+-		return __cmpxchg_u64(ptr, old, new);
++		return __cmpxchg_u64(ptr, old, n);
+ 	}
+ 	__cmpxchg_called_with_bad_pointer();
+ 	return old;
+ }
+ 
+-#define cmpxchg(ptr,old,new) ((__typeof__(*(ptr)))__cmpxchg((ptr), (unsigned long)(old), (unsigned long)(new),sizeof(*(ptr))))
++#define cmpxchg(ptr,old,n) ((__typeof__(*(ptr)))__cmpxchg((ptr), (unsigned long)(old), (unsigned long)(n),sizeof(*(ptr))))
+ 
+ extern void set_handler (unsigned long offset, void *addr, unsigned long len);
+ extern void set_uncached_handler (unsigned long offset, void *addr, unsigned long len);
+diff -ru ../linux-2.6.16.13/include/asm-mips/time.h ./include/asm-mips/time.h
+--- ../linux-2.6.16.13/include/asm-mips/time.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-mips/time.h	2006-05-02 22:59:19.000000000 -0700
+@@ -72,13 +72,13 @@
+ /*
+  * the corresponding low-level timer interrupt routine.
+  */
+-extern asmlinkage void ll_timer_interrupt(int irq, struct pt_regs *regs);
++asmlinkage void ll_timer_interrupt(int irq, struct pt_regs *regs);
+ 
+ /*
+  * profiling and process accouting is done separately in local_timer_interrupt
+  */
+ extern void local_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs);
+-extern asmlinkage void ll_local_timer_interrupt(int irq, struct pt_regs *regs);
++asmlinkage void ll_local_timer_interrupt(int irq, struct pt_regs *regs);
+ 
+ /*
+  * board specific routines required by time_init().
+diff -ru ../linux-2.6.16.13/include/asm-mips/watch.h ./include/asm-mips/watch.h
+--- ../linux-2.6.16.13/include/asm-mips/watch.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-mips/watch.h	2006-05-02 22:59:19.000000000 -0700
+@@ -18,9 +18,9 @@
+ 	wr_load = 2
+ };
+ 
+-extern asmlinkage void __watch_set(unsigned long addr, enum wref_type ref);
+-extern asmlinkage void __watch_clear(void);
+-extern asmlinkage void __watch_reenable(void);
++asmlinkage void __watch_set(unsigned long addr, enum wref_type ref);
++asmlinkage void __watch_clear(void);
++asmlinkage void __watch_reenable(void);
+ 
+ #define watch_set(addr, ref)					\
+ 	if (cpu_has_watch)					\
+diff -ru ../linux-2.6.16.13/include/asm-parisc/system.h ./include/asm-parisc/system.h
+--- ../linux-2.6.16.13/include/asm-parisc/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-parisc/system.h	2006-05-02 22:59:19.000000000 -0700
+@@ -134,7 +134,7 @@
+ ** The __asm__ op below simple prevents gcc/ld from reordering
+ ** instructions across the mb() "call".
+ */
+-#define mb()		__asm__ __volatile__("":::"memory")	/* barrier() */
++#define mb()		__asm__ __volatile__("": : :"memory")	/* barrier() */
+ #define rmb()		mb()
+ #define wmb()		mb()
+ #define smp_mb()	mb()
+diff -ru ../linux-2.6.16.13/include/asm-ppc/system.h ./include/asm-ppc/system.h
+--- ../linux-2.6.16.13/include/asm-ppc/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-ppc/system.h	2006-05-02 22:59:19.000000000 -0700
+@@ -198,7 +198,7 @@
+ #define __HAVE_ARCH_CMPXCHG	1
+ 
+ static __inline__ unsigned long
+-__cmpxchg_u32(volatile unsigned int *p, unsigned int old, unsigned int new)
++__cmpxchg_u32(volatile unsigned int *p, unsigned int old, unsigned int n)
+ {
+ 	unsigned int prev;
+ 
+@@ -214,7 +214,7 @@
+ #endif /* CONFIG_SMP */
+ "2:"
+ 	: "=&r" (prev), "=m" (*p)
+-	: "r" (p), "r" (old), "r" (new), "m" (*p)
++	: "r" (p), "r" (old), "r" (n), "m" (*p)
+ 	: "cc", "memory");
+ 
+ 	return prev;
+@@ -225,14 +225,14 @@
+ extern void __cmpxchg_called_with_bad_pointer(void);
+ 
+ static __inline__ unsigned long
+-__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
++__cmpxchg(volatile void *ptr, unsigned long old, unsigned long n, int size)
+ {
+ 	switch (size) {
+ 	case 4:
+-		return __cmpxchg_u32(ptr, old, new);
++		return __cmpxchg_u32(ptr, old, n);
+ #if 0	/* we don't have __cmpxchg_u64 on 32-bit PPC */
+ 	case 8:
+-		return __cmpxchg_u64(ptr, old, new);
++		return __cmpxchg_u64(ptr, old, n);
+ #endif /* 0 */
+ 	}
+ 	__cmpxchg_called_with_bad_pointer();
+diff -ru ../linux-2.6.16.13/include/asm-s390/system.h ./include/asm-s390/system.h
+--- ../linux-2.6.16.13/include/asm-s390/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-s390/system.h	2006-05-02 22:59:31.000000000 -0700
+@@ -209,7 +209,7 @@
+ 					(unsigned long)(n),sizeof(*(ptr))))
+ 
+ static inline unsigned long
+-__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
++__cmpxchg(volatile void *ptr, unsigned long old, unsigned long n, int size)
+ {
+ 	unsigned long addr, prev, tmp;
+ 	int shift;
+@@ -232,7 +232,7 @@
+ 			"    jnz 0b\n"
+ 			"1:"
+ 			: "=&d" (prev), "=&d" (tmp)
+-			: "d" (old << shift), "d" (new << shift), "a" (ptr),
++			: "d" (old << shift), "d" (n << shift), "a" (ptr),
+ 			  "d" (~(255 << shift))
+ 			: "memory", "cc" );
+ 		return prev >> shift;
+@@ -253,21 +253,21 @@
+ 			"    jnz 0b\n"
+ 			"1:"
+ 			: "=&d" (prev), "=&d" (tmp)
+-			: "d" (old << shift), "d" (new << shift), "a" (ptr),
++			: "d" (old << shift), "d" (n << shift), "a" (ptr),
+ 			  "d" (~(65535 << shift))
+ 			: "memory", "cc" );
+ 		return prev >> shift;
+ 	case 4:
+ 		asm volatile (
+ 			"    cs  %0,%2,0(%3)\n"
+-			: "=&d" (prev) : "0" (old), "d" (new), "a" (ptr)
++			: "=&d" (prev) : "0" (old), "d" (n), "a" (ptr)
+ 			: "memory", "cc" );
+ 		return prev;
+ #ifdef __s390x__
+ 	case 8:
+ 		asm volatile (
+ 			"    csg %0,%2,0(%3)\n"
+-			: "=&d" (prev) : "0" (old), "d" (new), "a" (ptr)
++			: "=&d" (prev) : "0" (old), "d" (n), "a" (ptr)
+ 			: "memory", "cc" );
+ 		return prev;
+ #endif /* __s390x__ */
+diff -ru ../linux-2.6.16.13/include/asm-sh/module.h ./include/asm-sh/module.h
+--- ../linux-2.6.16.13/include/asm-sh/module.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-sh/module.h	2006-05-02 22:59:31.000000000 -0700
+@@ -5,9 +5,7 @@
+  * This file contains the SH architecture specific module code.
+  */
+ 
+-struct mod_arch_specific {
+-	/* Nothing to see here .. */
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific); /* Nothing to see here .. */
+ 
+ #define Elf_Shdr		Elf32_Shdr
+ #define Elf_Sym			Elf32_Sym
+diff -ru ../linux-2.6.16.13/include/asm-sh64/module.h ./include/asm-sh64/module.h
+--- ../linux-2.6.16.13/include/asm-sh64/module.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-sh64/module.h	2006-05-02 22:59:31.000000000 -0700
+@@ -4,9 +4,7 @@
+  * This file contains the SH architecture specific module code.
+  */
+ 
+-struct mod_arch_specific {
+-	/* empty */
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr		Elf32_Shdr
+ #define Elf_Sym			Elf32_Sym
+diff -ru ../linux-2.6.16.13/include/asm-sparc/module.h ./include/asm-sparc/module.h
+--- ../linux-2.6.16.13/include/asm-sparc/module.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-sparc/module.h	2006-05-02 22:59:31.000000000 -0700
+@@ -1,6 +1,6 @@
+ #ifndef _ASM_SPARC_MODULE_H
+ #define _ASM_SPARC_MODULE_H
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+ #define Elf_Ehdr Elf32_Ehdr
+diff -ru ../linux-2.6.16.13/include/asm-sparc/system.h ./include/asm-sparc/system.h
+--- ../linux-2.6.16.13/include/asm-sparc/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-sparc/system.h	2006-05-02 22:59:31.000000000 -0700
+@@ -202,9 +202,9 @@
+ #define read_barrier_depends()	do { } while(0)
+ #define set_mb(__var, __value)  do { __var = __value; mb(); } while(0)
+ #define set_wmb(__var, __value) set_mb(__var, __value)
+-#define smp_mb()	__asm__ __volatile__("":::"memory")
+-#define smp_rmb()	__asm__ __volatile__("":::"memory")
+-#define smp_wmb()	__asm__ __volatile__("":::"memory")
++#define smp_mb()	__asm__ __volatile__("": : :"memory")
++#define smp_rmb()	__asm__ __volatile__("": : :"memory")
++#define smp_wmb()	__asm__ __volatile__("": : :"memory")
+ #define smp_read_barrier_depends()	do { } while(0)
+ 
+ #define nop() __asm__ __volatile__ ("nop")
+diff -ru ../linux-2.6.16.13/include/asm-sparc64/module.h ./include/asm-sparc64/module.h
+--- ../linux-2.6.16.13/include/asm-sparc64/module.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-sparc64/module.h	2006-05-02 22:59:31.000000000 -0700
+@@ -1,6 +1,6 @@
+ #ifndef _ASM_SPARC64_MODULE_H
+ #define _ASM_SPARC64_MODULE_H
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ #define Elf_Shdr Elf64_Shdr
+ #define Elf_Sym Elf64_Sym
+ #define Elf_Ehdr Elf64_Ehdr
+diff -ru ../linux-2.6.16.13/include/asm-sparc64/system.h ./include/asm-sparc64/system.h
+--- ../linux-2.6.16.13/include/asm-sparc64/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-sparc64/system.h	2006-05-02 22:59:31.000000000 -0700
+@@ -133,9 +133,9 @@
+ #define smp_wmb()	wmb()
+ #define smp_read_barrier_depends()	read_barrier_depends()
+ #else
+-#define smp_mb()	__asm__ __volatile__("":::"memory")
+-#define smp_rmb()	__asm__ __volatile__("":::"memory")
+-#define smp_wmb()	__asm__ __volatile__("":::"memory")
++#define smp_mb()	__asm__ __volatile__("": : :"memory")
++#define smp_rmb()	__asm__ __volatile__("": : :"memory")
++#define smp_wmb()	__asm__ __volatile__("": : :"memory")
+ #define smp_read_barrier_depends()	do { } while(0)
+ #endif
+ 
+@@ -330,29 +330,29 @@
+ #define __HAVE_ARCH_CMPXCHG 1
+ 
+ static __inline__ unsigned long
+-__cmpxchg_u32(volatile int *m, int old, int new)
++__cmpxchg_u32(volatile int *m, int old, int n)
+ {
+ 	__asm__ __volatile__("membar #StoreLoad | #LoadLoad\n"
+ 			     "cas [%2], %3, %0\n\t"
+ 			     "membar #StoreLoad | #StoreStore"
+-			     : "=&r" (new)
+-			     : "0" (new), "r" (m), "r" (old)
++			     : "=&r" (n)
++			     : "0" (n), "r" (m), "r" (old)
+ 			     : "memory");
+ 
+-	return new;
++	return n;
+ }
+ 
+ static __inline__ unsigned long
+-__cmpxchg_u64(volatile long *m, unsigned long old, unsigned long new)
++__cmpxchg_u64(volatile long *m, unsigned long old, unsigned long n)
+ {
+ 	__asm__ __volatile__("membar #StoreLoad | #LoadLoad\n"
+ 			     "casx [%2], %3, %0\n\t"
+ 			     "membar #StoreLoad | #StoreStore"
+-			     : "=&r" (new)
+-			     : "0" (new), "r" (m), "r" (old)
++			     : "=&r" (n)
++			     : "0" (n), "r" (m), "r" (old)
+ 			     : "memory");
+ 
+-	return new;
++	return n;
+ }
+ 
+ /* This function doesn't exist, so you'll get a linker error
+@@ -360,13 +360,13 @@
+ extern void __cmpxchg_called_with_bad_pointer(void);
+ 
+ static __inline__ unsigned long
+-__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
++__cmpxchg(volatile void *ptr, unsigned long old, unsigned long n, int size)
+ {
+ 	switch (size) {
+ 		case 4:
+-			return __cmpxchg_u32(ptr, old, new);
++			return __cmpxchg_u32(ptr, old, n);
+ 		case 8:
+-			return __cmpxchg_u64(ptr, old, new);
++			return __cmpxchg_u64(ptr, old, n);
+ 	}
+ 	__cmpxchg_called_with_bad_pointer();
+ 	return old;
+diff -ru ../linux-2.6.16.13/include/asm-um/elf-x86_64.h ./include/asm-um/elf-x86_64.h
+--- ../linux-2.6.16.13/include/asm-um/elf-x86_64.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-um/elf-x86_64.h	2006-05-02 22:59:31.000000000 -0700
+@@ -34,7 +34,7 @@
+ #define ELF_NGREG (sizeof (struct user_regs_struct) / sizeof(elf_greg_t))
+ typedef elf_greg_t elf_gregset_t[ELF_NGREG];
+ 
+-typedef struct { } elf_fpregset_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) elf_fpregset_t;
+ 
+ /*
+  * This is used to ensure we don't load something for the wrong architecture.
+diff -ru ../linux-2.6.16.13/include/asm-um/module-i386.h ./include/asm-um/module-i386.h
+--- ../linux-2.6.16.13/include/asm-um/module-i386.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-um/module-i386.h	2006-05-02 22:59:31.000000000 -0700
+@@ -2,9 +2,7 @@
+ #define __UM_MODULE_I386_H
+ 
+ /* UML is simple */
+-struct mod_arch_specific
+-{
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+diff -ru ../linux-2.6.16.13/include/asm-um/module-x86_64.h ./include/asm-um/module-x86_64.h
+--- ../linux-2.6.16.13/include/asm-um/module-x86_64.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-um/module-x86_64.h	2006-05-02 22:59:31.000000000 -0700
+@@ -8,9 +8,7 @@
+ #define __UM_MODULE_X86_64_H
+ 
+ /* UML is simple */
+-struct mod_arch_specific
+-{
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf64_Shdr
+ #define Elf_Sym Elf64_Sym
+diff -ru ../linux-2.6.16.13/include/asm-v850/bitops.h ./include/asm-v850/bitops.h
+--- ../linux-2.6.16.13/include/asm-v850/bitops.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-v850/bitops.h	2006-05-02 22:59:31.000000000 -0700
+@@ -60,13 +60,13 @@
+ 
+ #define __const_bit_op(op, nr, addr)					\
+   ({ __asm__ (op " (%0 - 0x123), %1"					\
+-	      :: "g" (((nr) & 0x7) + 0x123),				\
++	      : : "g" (((nr) & 0x7) + 0x123),				\
+ 		 "m" (*((char *)(addr) + ((nr) >> 3)))			\
+ 	      : "memory"); })
+ #define __var_bit_op(op, nr, addr)					\
+   ({ int __nr = (nr);							\
+      __asm__ (op " %0, [%1]"						\
+-	      :: "r" (__nr & 0x7),					\
++	      : : "r" (__nr & 0x7),					\
+ 		 "r" ((char *)(addr) + (__nr >> 3))			\
+ 	      : "memory"); })
+ #define __bit_op(op, nr, addr)						\
+diff -ru ../linux-2.6.16.13/include/asm-v850/system.h ./include/asm-v850/system.h
+--- ../linux-2.6.16.13/include/asm-v850/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-v850/system.h	2006-05-02 22:59:31.000000000 -0700
+@@ -42,7 +42,7 @@
+ #define local_save_flags(flags) \
+   __asm__ __volatile__ ("stsr %1, %0" : "=r" (flags) : "i" (SR_PSW))
+ #define local_restore_flags(flags) \
+-  __asm__ __volatile__ ("ldsr %0, %1" :: "r" (flags), "i" (SR_PSW))
++  __asm__ __volatile__ ("ldsr %0, %1" : : "r" (flags), "i" (SR_PSW))
+ 
+ /* For spinlocks etc */
+ #define	local_irq_save(flags) \
+@@ -64,7 +64,7 @@
+  * Not really required on v850...
+  */
+ #define nop()			__asm__ __volatile__ ("nop")
+-#define mb()			__asm__ __volatile__ ("" ::: "memory")
++#define mb()			__asm__ __volatile__ ("" : : : "memory")
+ #define rmb()			mb ()
+ #define wmb()			mb ()
+ #define read_barrier_depends()	((void)0)
+diff -ru ../linux-2.6.16.13/include/asm-v850/v850e_intc.h ./include/asm-v850/v850e_intc.h
+--- ../linux-2.6.16.13/include/asm-v850/v850e_intc.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-v850/v850e_intc.h	2006-05-02 22:59:31.000000000 -0700
+@@ -49,7 +49,7 @@
+ static inline void v850e_intc_enable_irq (unsigned irq)
+ {
+ 	__asm__ __volatile__ ("clr1 %0, [%1]"
+-			      :: "r" (V850E_INTC_IMR_BIT (irq)),
++			      : : "r" (V850E_INTC_IMR_BIT (irq)),
+ 			         "r" (V850E_INTC_IMR_ADDR (irq))
+ 			      : "memory");
+ }
+@@ -61,7 +61,7 @@
+ static inline void v850e_intc_disable_irq (unsigned irq)
+ {
+ 	__asm__ __volatile__ ("set1 %0, [%1]"
+-			      :: "r" (V850E_INTC_IMR_BIT (irq)),
++			      : : "r" (V850E_INTC_IMR_BIT (irq)),
+ 			         "r" (V850E_INTC_IMR_ADDR (irq))
+ 			      : "memory");
+ }
+@@ -93,7 +93,7 @@
+ static inline void v850e_intc_clear_pending_irq (unsigned irq)
+ {
+ 	__asm__ __volatile__ ("clr1 %0, 0[%1]"
+-			      :: "i" (V850E_INTC_IC_IF_BIT),
++			      : : "i" (V850E_INTC_IC_IF_BIT),
+ 			         "r" (V850E_INTC_IC_ADDR (irq))
+ 			      : "memory");
+ }
+diff -ru ../linux-2.6.16.13/include/asm-x86_64/agp.h ./include/asm-x86_64/agp.h
+--- ../linux-2.6.16.13/include/asm-x86_64/agp.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-x86_64/agp.h	2006-05-02 22:59:31.000000000 -0700
+@@ -17,7 +17,7 @@
+ /* Could use CLFLUSH here if the cpu supports it. But then it would
+    need to be called for each cacheline of the whole page so it may not be 
+    worth it. Would need a page for it. */
+-#define flush_agp_cache() asm volatile("wbinvd":::"memory")
++#define flush_agp_cache() asm volatile("wbinvd": : :"memory")
+ 
+ /* Convert a physical address to an address suitable for the GART. */
+ #define phys_to_gart(x) (x)
+diff -ru ../linux-2.6.16.13/include/asm-x86_64/bug.h ./include/asm-x86_64/bug.h
+--- ../linux-2.6.16.13/include/asm-x86_64/bug.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-x86_64/bug.h	2006-05-02 23:12:04.000000000 -0700
+@@ -23,7 +23,7 @@
+    The magic numbers generate mov $64bitimm,%eax ; ret $offset. */
+ #define BUG() 								\
+ 	asm volatile(							\
+-	"ud2 ; pushq $%c1 ; ret $%c0" :: 				\
++	"ud2 ; pushq $%c1 ; ret $%c0" : : 				\
+ 		     "i"(__LINE__), "i" (__FILE__))
+ void out_of_line_bug(void);
+ #else
+diff -ru ../linux-2.6.16.13/include/asm-x86_64/desc.h ./include/asm-x86_64/desc.h
+--- ../linux-2.6.16.13/include/asm-x86_64/desc.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-x86_64/desc.h	2006-05-02 22:59:31.000000000 -0700
+@@ -67,9 +67,9 @@
+ 	unsigned long address;
+ } __attribute__((packed)) ;
+ 
+-#define load_TR_desc() asm volatile("ltr %w0"::"r" (GDT_ENTRY_TSS*8))
+-#define load_LDT_desc() asm volatile("lldt %w0"::"r" (GDT_ENTRY_LDT*8))
+-#define clear_LDT()  asm volatile("lldt %w0"::"r" (0))
++#define load_TR_desc() asm volatile("ltr %w0": :"r" (GDT_ENTRY_TSS*8))
++#define load_LDT_desc() asm volatile("lldt %w0": :"r" (GDT_ENTRY_LDT*8))
++#define clear_LDT()  asm volatile("lldt %w0": :"r" (0))
+ 
+ /*
+  * This is the ldt that every process will get unless we need
+diff -ru ../linux-2.6.16.13/include/asm-x86_64/mmu_context.h ./include/asm-x86_64/mmu_context.h
+--- ../linux-2.6.16.13/include/asm-x86_64/mmu_context.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-x86_64/mmu_context.h	2006-05-02 22:59:31.000000000 -0700
+@@ -25,7 +25,7 @@
+ 
+ static inline void load_cr3(pgd_t *pgd)
+ {
+-	asm volatile("movq %0,%%cr3" :: "r" (__pa(pgd)) : "memory");
++	asm volatile("movq %0,%%cr3" : : "r" (__pa(pgd)) : "memory");
+ }
+ 
+ static inline void switch_mm(struct mm_struct *prev, struct mm_struct *next, 
+@@ -64,7 +64,7 @@
+ 
+ #define deactivate_mm(tsk,mm)	do { \
+ 	load_gs_index(0); \
+-	asm volatile("movl %0,%%fs"::"r"(0));  \
++	asm volatile("movl %0,%%fs": :"r"(0));  \
+ } while(0)
+ 
+ #define activate_mm(prev, next) \
+diff -ru ../linux-2.6.16.13/include/asm-x86_64/module.h ./include/asm-x86_64/module.h
+--- ../linux-2.6.16.13/include/asm-x86_64/module.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-x86_64/module.h	2006-05-02 22:59:31.000000000 -0700
+@@ -1,7 +1,7 @@
+ #ifndef _ASM_X8664_MODULE_H
+ #define _ASM_X8664_MODULE_H
+ 
+-struct mod_arch_specific {}; 
++EMPTY_STRUCT_DECL(mod_arch_specific); 
+ 
+ #define Elf_Shdr Elf64_Shdr
+ #define Elf_Sym Elf64_Sym
+diff -ru ../linux-2.6.16.13/include/asm-x86_64/pda.h ./include/asm-x86_64/pda.h
+--- ../linux-2.6.16.13/include/asm-x86_64/pda.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-x86_64/pda.h	2006-05-02 23:12:23.000000000 -0700
+@@ -47,11 +47,11 @@
+ 	typedef typeof_field(struct x8664_pda, field) T__; \
+        switch (sizeof_field(struct x8664_pda, field)) { 		\
+ case 2: \
+-asm volatile(op "w %0,%%gs:%P1"::"ri" ((T__)val),"i"(pda_offset(field)):"memory"); break; \
++asm volatile(op "w %0,%%gs:%P1": :"ri" ((T__)val),"i"(pda_offset(field)):"memory"); break; \
+ case 4: \
+-asm volatile(op "l %0,%%gs:%P1"::"ri" ((T__)val),"i"(pda_offset(field)):"memory"); break; \
++asm volatile(op "l %0,%%gs:%P1": :"ri" ((T__)val),"i"(pda_offset(field)):"memory"); break; \
+ case 8: \
+-asm volatile(op "q %0,%%gs:%P1"::"ri" ((T__)val),"i"(pda_offset(field)):"memory"); break; \
++asm volatile(op "q %0,%%gs:%P1": :"ri" ((T__)val),"i"(pda_offset(field)):"memory"); break; \
+        default: __bad_pda_field(); 					\
+        } \
+        } while (0)
+diff -ru ../linux-2.6.16.13/include/asm-x86_64/processor.h ./include/asm-x86_64/processor.h
+--- ../linux-2.6.16.13/include/asm-x86_64/processor.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-x86_64/processor.h	2006-05-02 22:59:31.000000000 -0700
+@@ -397,7 +397,7 @@
+ #define ARCH_HAS_PREFETCH
+ static inline void prefetch(void *x) 
+ { 
+-	asm volatile("prefetcht0 %0" :: "m" (*(unsigned long *)x));
++	asm volatile("prefetcht0 %0" : : "m" (*(unsigned long *)x));
+ } 
+ 
+ #define ARCH_HAS_PREFETCHW 1
+diff -ru ../linux-2.6.16.13/include/asm-x86_64/rwlock.h ./include/asm-x86_64/rwlock.h
+--- ../linux-2.6.16.13/include/asm-x86_64/rwlock.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-x86_64/rwlock.h	2006-05-02 22:59:31.000000000 -0700
+@@ -31,7 +31,7 @@
+ 		     "2:\tcall " helper "\n\t" \
+ 		     "jmp 1b\n" \
+ 		    LOCK_SECTION_END \
+-		     ::"a" (rw) : "memory")
++		     : :"a" (rw) : "memory")
+ 
+ #define __build_read_lock_const(rw, helper)   \
+ 	asm volatile(LOCK "subl $1,%0\n\t" \
+@@ -44,7 +44,7 @@
+ 		     "popq %%rax\n\t" \
+ 		     "jmp 1b\n" \
+ 		    LOCK_SECTION_END \
+-		     :"=m" (*((volatile int *)rw))::"memory")
++		     :"=m" (*((volatile int *)rw)): :"memory")
+ 
+ #define __build_read_lock(rw, helper)	do { \
+ 						if (__builtin_constant_p(rw)) \
+@@ -61,7 +61,7 @@
+ 		     "2:\tcall " helper "\n\t" \
+ 		     "jmp 1b\n" \
+ 		     LOCK_SECTION_END \
+-		     ::"a" (rw) : "memory")
++		     : :"a" (rw) : "memory")
+ 
+ #define __build_write_lock_const(rw, helper) \
+ 	asm volatile(LOCK "subl $" RW_LOCK_BIAS_STR ",%0\n\t" \
+@@ -74,7 +74,7 @@
+ 		     "popq %%rax\n\t" \
+ 		     "jmp 1b\n" \
+ 		    LOCK_SECTION_END \
+-		     :"=m" (*((volatile long *)rw))::"memory")
++		     :"=m" (*((volatile long *)rw)): :"memory")
+ 
+ #define __build_write_lock(rw, helper)	do { \
+ 						if (__builtin_constant_p(rw)) \
+diff -ru ../linux-2.6.16.13/include/asm-x86_64/system.h ./include/asm-x86_64/system.h
+--- ../linux-2.6.16.13/include/asm-x86_64/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-x86_64/system.h	2006-05-02 23:12:54.000000000 -0700
+@@ -111,7 +111,7 @@
+ 		      ".previous\n"					\
+ 		      ".section .altinstr_replacement,\"ax\"\n"		\
+ 		      "663:\n\t" newinstr "\n664:\n"   /* replacement */ \
+-		      ".previous" :: "i" (feature) : "memory")  
++		      ".previous" : : "i" (feature) : "memory")  
+ 
+ /*
+  * Alternative inline assembly with input.
+@@ -135,7 +135,7 @@
+ 		      ".previous\n"					\
+ 		      ".section .altinstr_replacement,\"ax\"\n"		\
+ 		      "663:\n\t" newinstr "\n664:\n"   /* replacement */ \
+-		      ".previous" :: "i" (feature), ##input)
++		      ".previous" : : "i" (feature), ##input)
+ 
+ /* Like alternative_input, but with a single output argument */
+ #define alternative_io(oldinstr, newinstr, feature, output, input...) \
+@@ -166,7 +166,7 @@
+ 
+ static inline void write_cr0(unsigned long val) 
+ { 
+-	asm volatile("movq %0,%%cr0" :: "r" (val));
++	asm volatile("movq %0,%%cr0" : : "r" (val));
+ } 
+ 
+ static inline unsigned long read_cr3(void)
+@@ -185,7 +185,7 @@
+ 
+ static inline void write_cr4(unsigned long val)
+ { 
+-	asm volatile("movq %0,%%cr4" :: "r" (val));
++	asm volatile("movq %0,%%cr4" : : "r" (val));
+ } 
+ 
+ #define stts() write_cr0(8 | read_cr0())
+@@ -264,32 +264,32 @@
+ #define __HAVE_ARCH_CMPXCHG 1
+ 
+ static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
+-				      unsigned long new, int size)
++				      unsigned long n, int size)
+ {
+ 	unsigned long prev;
+ 	switch (size) {
+ 	case 1:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgb %b1,%2"
+ 				     : "=a"(prev)
+-				     : "q"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "q"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	case 2:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgw %w1,%2"
+ 				     : "=a"(prev)
+-				     : "r"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "r"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	case 4:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgl %k1,%2"
+ 				     : "=a"(prev)
+-				     : "r"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "r"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	case 8:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgq %1,%2"
+ 				     : "=a"(prev)
+-				     : "r"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "r"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	}
+@@ -318,13 +318,13 @@
+  * And yes, this is required on UP too when we're talking
+  * to devices.
+  */
+-#define mb() 	asm volatile("mfence":::"memory")
+-#define rmb()	asm volatile("lfence":::"memory")
++#define mb() 	asm volatile("mfence": : :"memory")
++#define rmb()	asm volatile("lfence": : :"memory")
+ 
+ #ifdef CONFIG_UNORDERED_IO
+-#define wmb()	asm volatile("sfence" ::: "memory")
++#define wmb()	asm volatile("sfence" : : : "memory")
+ #else
+-#define wmb()	asm volatile("" ::: "memory")
++#define wmb()	asm volatile("" : : : "memory")
+ #endif
+ #define read_barrier_depends()	do {} while(0)
+ #define set_mb(var, value) do { (void) xchg(&var, value); } while (0)
+diff -ru ../linux-2.6.16.13/include/asm-x86_64/thread_info.h ./include/asm-x86_64/thread_info.h
+--- ../linux-2.6.16.13/include/asm-x86_64/thread_info.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-x86_64/thread_info.h	2006-05-02 22:59:31.000000000 -0700
+@@ -60,7 +60,7 @@
+ static inline struct thread_info *current_thread_info(void)
+ { 
+ 	struct thread_info *ti;
+-	ti = (void *)(read_pda(kernelstack) + PDA_STACKOFFSET - THREAD_SIZE);
++	ti = (struct thread_info *)(read_pda(kernelstack) + PDA_STACKOFFSET - THREAD_SIZE);
+ 	return ti; 
+ }
+ 
+diff -ru ../linux-2.6.16.13/include/asm-x86_64/tlbflush.h ./include/asm-x86_64/tlbflush.h
+--- ../linux-2.6.16.13/include/asm-x86_64/tlbflush.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-x86_64/tlbflush.h	2006-05-02 22:59:31.000000000 -0700
+@@ -13,7 +13,7 @@
+ 			"movq %%cr3, %0;  # flush TLB \n"		\
+ 			"movq %0, %%cr3;              \n"		\
+ 			: "=r" (tmpreg)					\
+-			:: "memory");					\
++			: : "memory");					\
+ 	} while (0)
+ 
+ /*
+diff -ru ../linux-2.6.16.13/include/asm-x86_64/uaccess.h ./include/asm-x86_64/uaccess.h
+--- ../linux-2.6.16.13/include/asm-x86_64/uaccess.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-x86_64/uaccess.h	2006-05-02 22:59:31.000000000 -0700
+@@ -290,13 +290,13 @@
+ 	case 10:
+ 		__put_user_asm(*(u64*)src,(u64 __user *)dst,ret,"q","","ir",10);
+ 		if (unlikely(ret)) return ret;
+-		asm("":::"memory");
++		asm("": : :"memory");
+ 		__put_user_asm(4[(u16*)src],4+(u16 __user *)dst,ret,"w","w","ir",2);
+ 		return ret; 
+ 	case 16:
+ 		__put_user_asm(*(u64*)src,(u64 __user *)dst,ret,"q","","ir",16);
+ 		if (unlikely(ret)) return ret;
+-		asm("":::"memory");
++		asm("": : :"memory");
+ 		__put_user_asm(1[(u64*)src],1+(u64 __user *)dst,ret,"q","","ir",8);
+ 		return ret; 
+ 	default:
+diff -ru ../linux-2.6.16.13/include/asm-xtensa/module.h ./include/asm-xtensa/module.h
+--- ../linux-2.6.16.13/include/asm-xtensa/module.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-xtensa/module.h	2006-05-02 22:59:31.000000000 -0700
+@@ -13,10 +13,8 @@
+ #ifndef _XTENSA_MODULE_H
+ #define _XTENSA_MODULE_H
+ 
+-struct mod_arch_specific
+-{
+-	/* Module support is not completely implemented. */
+-};
++/* Module support is not completely implemented. */
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+diff -ru ../linux-2.6.16.13/include/asm-xtensa/pgalloc.h ./include/asm-xtensa/pgalloc.h
+--- ../linux-2.6.16.13/include/asm-xtensa/pgalloc.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-xtensa/pgalloc.h	2006-05-02 22:59:31.000000000 -0700
+@@ -72,14 +72,14 @@
+ pmd_populate_kernel(struct mm_struct *mm, pmd_t *pmdp, pte_t *pte)
+ {
+ 	pmd_val(*(pmdp)) = (unsigned long)(pte);
+-	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" :: "a" (pmdp));
++	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" : : "a" (pmdp));
+ }
+ 
+ static inline void
+ pmd_populate(struct mm_struct *mm, pmd_t *pmdp, struct page *page)
+ {
+ 	pmd_val(*(pmdp)) = (unsigned long)page_to_virt(page);
+-	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" :: "a" (pmdp));
++	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" : : "a" (pmdp));
+ }
+ 
+ 
+diff -ru ../linux-2.6.16.13/include/asm-xtensa/pgtable.h ./include/asm-xtensa/pgtable.h
+--- ../linux-2.6.16.13/include/asm-xtensa/pgtable.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-xtensa/pgtable.h	2006-05-02 22:59:31.000000000 -0700
+@@ -274,7 +274,7 @@
+ {
+ 	*ptep = pteval;
+ #if (DCACHE_WAY_SIZE > PAGE_SIZE) && XCHAL_DCACHE_IS_WRITEBACK
+-	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" :: "a" (ptep));
++	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" : : "a" (ptep));
+ #endif
+ }
+ 
+@@ -292,7 +292,7 @@
+ {
+ 	*pmdp = pmdval;
+ #if (DCACHE_WAY_SIZE > PAGE_SIZE) && XCHAL_DCACHE_IS_WRITEBACK
+-	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" :: "a" (pmdp));
++	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" : : "a" (pmdp));
+ #endif
+ }
+ 
+diff -ru ../linux-2.6.16.13/include/asm-xtensa/processor.h ./include/asm-xtensa/processor.h
+--- ../linux-2.6.16.13/include/asm-xtensa/processor.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-xtensa/processor.h	2006-05-02 22:59:31.000000000 -0700
+@@ -195,7 +195,7 @@
+ 
+ /* Special register access. */
+ 
+-#define WSR(v,sr) __asm__ __volatile__ ("wsr %0,"__stringify(sr) :: "a"(v));
++#define WSR(v,sr) __asm__ __volatile__ ("wsr %0,"__stringify(sr) : : "a"(v));
+ #define RSR(v,sr) __asm__ __volatile__ ("rsr %0,"__stringify(sr) : "=a"(v));
+ 
+ #define set_sr(x,sr) ({unsigned int v=(unsigned int)x; WSR(v,sr);})
+diff -ru ../linux-2.6.16.13/include/asm-xtensa/system.h ./include/asm-xtensa/system.h
+--- ../linux-2.6.16.13/include/asm-xtensa/system.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-xtensa/system.h	2006-05-02 22:59:31.000000000 -0700
+@@ -22,21 +22,21 @@
+ 	__asm__ __volatile__ ("rsr %0,"__stringify(PS) : "=a" (x));
+ #define local_irq_restore(x)	do {					\
+ 	__asm__ __volatile__ ("wsr %0, "__stringify(PS)" ; rsync" 	\
+-	    		      :: "a" (x) : "memory"); } while(0);
++	    		      : : "a" (x) : "memory"); } while(0);
+ #define local_irq_save(x)	do {					\
+ 	__asm__ __volatile__ ("rsil %0, "__stringify(LOCKLEVEL) 	\
+-	    		      : "=a" (x) :: "memory");} while(0);
++	    		      : "=a" (x) : : "memory");} while(0);
+ 
+ static inline void local_irq_disable(void)
+ {
+ 	unsigned long flags;
+ 	__asm__ __volatile__ ("rsil %0, "__stringify(LOCKLEVEL)
+-	    		      : "=a" (flags) :: "memory");
++	    		      : "=a" (flags) : : "memory");
+ }
+ static inline void local_irq_enable(void)
+ {
+ 	unsigned long flags;
+-	__asm__ __volatile__ ("rsil %0, 0" : "=a" (flags) :: "memory");
++	__asm__ __volatile__ ("rsil %0, 0" : "=a" (flags) : : "memory");
+ 
+ }
+ 
+@@ -52,7 +52,7 @@
+ 	} while(0);
+ #define WSR_CPENABLE(x)	do {						  \
+   	__asm__ __volatile__("wsr %0," __stringify(CPENABLE)";rsync" 	  \
+-	    		     :: "a" (x));} while(0);
++	    		     : : "a" (x));} while(0);
+ 
+ #define clear_cpenable() __clear_cpenable()
+ 
+@@ -227,7 +227,7 @@
+ 		"mov	a0, a12\n\t"
+ 		"wsr	a13," __stringify(SAR) "\n\t"
+ 		"wsr	a14," __stringify(PS) "\n\t"
+-		:: "a" (&a0), "a" (&ps)
++		: : "a" (&a0), "a" (&ps)
+ 		: "a2", "a3", "a12", "a13", "a14", "a15", "memory");
+ }
+ 
+diff -ru ../linux-2.6.16.13/include/asm-xtensa/timex.h ./include/asm-xtensa/timex.h
+--- ../linux-2.6.16.13/include/asm-xtensa/timex.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-xtensa/timex.h	2006-05-02 22:59:31.000000000 -0700
+@@ -61,9 +61,9 @@
+  * Register access.
+  */
+ 
+-#define WSR_CCOUNT(r)	  __asm__("wsr %0,"__stringify(CCOUNT) :: "a" (r))
++#define WSR_CCOUNT(r)	  __asm__("wsr %0,"__stringify(CCOUNT) : : "a" (r))
+ #define RSR_CCOUNT(r)	  __asm__("rsr %0,"__stringify(CCOUNT) : "=a" (r))
+-#define WSR_CCOMPARE(x,r) __asm__("wsr %0,"__stringify(CCOMPARE_0)"+"__stringify(x) :: "a"(r))
++#define WSR_CCOMPARE(x,r) __asm__("wsr %0,"__stringify(CCOMPARE_0)"+"__stringify(x) : : "a"(r))
+ #define RSR_CCOMPARE(x,r) __asm__("rsr %0,"__stringify(CCOMPARE_0)"+"__stringify(x) : "=a"(r))
+ 
+ static inline unsigned long get_ccount (void)
+diff -ru ../linux-2.6.16.13/include/linux/compat.h ./include/linux/compat.h
+--- ../linux-2.6.16.13/include/linux/compat.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/compat.h	2006-05-02 22:59:31.000000000 -0700
+@@ -88,7 +88,7 @@
+ 
+ struct compat_siginfo;
+ 
+-extern asmlinkage long compat_sys_waitid(int, compat_pid_t,
++asmlinkage long compat_sys_waitid(int, compat_pid_t,
+ 		struct compat_siginfo __user *, int,
+ 		struct compat_rusage __user *);
+ 
+diff -ru ../linux-2.6.16.13/include/linux/dqblk_v1.h ./include/linux/dqblk_v1.h
+--- ../linux-2.6.16.13/include/linux/dqblk_v1.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/dqblk_v1.h	2006-05-02 22:59:31.000000000 -0700
+@@ -18,7 +18,6 @@
+ #define V1_DEL_REWRITE 2
+ 
+ /* Special information about quotafile */
+-struct v1_mem_dqinfo {
+-};
++EMPTY_STRUCT_DECL(v1_mem_dqinfo);
+ 
+ #endif	/* _LINUX_DQBLK_V1_H */
+diff -ru ../linux-2.6.16.13/include/linux/fs.h ./include/linux/fs.h
+--- ../linux-2.6.16.13/include/linux/fs.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/fs.h	2006-05-03 11:34:05.000000000 -0700
+@@ -1759,7 +1759,7 @@
+ 
+ static inline void simple_transaction_set(struct file *file, size_t n)
+ {
+-	struct simple_transaction_argresp *ar = file->private_data;
++	struct simple_transaction_argresp *ar = (struct simple_transaction_argresp *) file->private_data;
+ 
+ 	BUG_ON(n > SIMPLE_TRANSACTION_LIMIT);
+ 
+diff -ru ../linux-2.6.16.13/include/linux/highmem.h ./include/linux/highmem.h
+--- ../linux-2.6.16.13/include/linux/highmem.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/highmem.h	2006-05-02 22:59:31.000000000 -0700
+@@ -82,8 +82,8 @@
+ {
+ 	char *vfrom, *vto;
+ 
+-	vfrom = kmap_atomic(from, KM_USER0);
+-	vto = kmap_atomic(to, KM_USER1);
++	vfrom = (char*)kmap_atomic(from, KM_USER0);
++	vto = (char*)kmap_atomic(to, KM_USER1);
+ 	copy_user_page(vto, vfrom, vaddr, to);
+ 	kunmap_atomic(vfrom, KM_USER0);
+ 	kunmap_atomic(vto, KM_USER1);
+@@ -95,8 +95,8 @@
+ {
+ 	char *vfrom, *vto;
+ 
+-	vfrom = kmap_atomic(from, KM_USER0);
+-	vto = kmap_atomic(to, KM_USER1);
++	vfrom = (char*)kmap_atomic(from, KM_USER0);
++	vto = (char*)kmap_atomic(to, KM_USER1);
+ 	copy_page(vto, vfrom);
+ 	kunmap_atomic(vfrom, KM_USER0);
+ 	kunmap_atomic(vto, KM_USER1);
+diff -ru ../linux-2.6.16.13/include/linux/if_vlan.h ./include/linux/if_vlan.h
+--- ../linux-2.6.16.13/include/linux/if_vlan.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/if_vlan.h	2006-05-02 22:59:31.000000000 -0700
+@@ -190,7 +190,7 @@
+ 		break;
+ 	};
+ 
+-	return (polling ? netif_receive_skb(skb) : netif_rx(skb));
++	return (polling ? netif_receive_skb(skb, skb->protocol, 0) : netif_rx(skb));
+ }
+ 
+ static inline int vlan_hwaccel_rx(struct sk_buff *skb,
+diff -ru ../linux-2.6.16.13/include/linux/inetdevice.h ./include/linux/inetdevice.h
+--- ../linux-2.6.16.13/include/linux/inetdevice.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/inetdevice.h	2006-05-02 23:13:39.000000000 -0700
+@@ -144,7 +144,7 @@
+ 
+ static inline struct in_device *__in_dev_get_rcu(const struct net_device *dev)
+ {
+-	struct in_device *in_dev = dev->ip_ptr;
++	struct in_device *in_dev = (struct in_device *) dev->ip_ptr;
+ 	if (in_dev)
+ 		in_dev = rcu_dereference(in_dev);
+ 	return in_dev;
+diff -ru ../linux-2.6.16.13/include/linux/kexec.h ./include/linux/kexec.h
+--- ../linux-2.6.16.13/include/linux/kexec.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/kexec.h	2006-05-02 22:59:31.000000000 -0700
+@@ -91,12 +91,12 @@
+ extern NORET_TYPE void machine_kexec(struct kimage *image) ATTRIB_NORET;
+ extern int machine_kexec_prepare(struct kimage *image);
+ extern void machine_kexec_cleanup(struct kimage *image);
+-extern asmlinkage long sys_kexec_load(unsigned long entry,
++asmlinkage long sys_kexec_load(unsigned long entry,
+ 					unsigned long nr_segments,
+ 					struct kexec_segment __user *segments,
+ 					unsigned long flags);
+ #ifdef CONFIG_COMPAT
+-extern asmlinkage long compat_sys_kexec_load(unsigned long entry,
++asmlinkage long compat_sys_kexec_load(unsigned long entry,
+ 				unsigned long nr_segments,
+ 				struct compat_kexec_segment __user *segments,
+ 				unsigned long flags);
+diff -ru ../linux-2.6.16.13/include/linux/ktime.h ./include/linux/ktime.h
+--- ../linux-2.6.16.13/include/linux/ktime.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/ktime.h	2006-05-03 11:32:54.000000000 -0700
+@@ -64,8 +64,10 @@
+ 
+ #if (BITS_PER_LONG == 64) || defined(CONFIG_KTIME_SCALAR)
+ 
++#define KTIME_TV64(__s)			({ ktime_t __kt; __kt.tv64 = (__s); __kt; })
++
+ /* Define a ktime_t variable and initialize it to zero: */
+-#define DEFINE_KTIME(kt)		ktime_t kt = { .tv64 = 0 }
++#define DEFINE_KTIME(kt)		ktime_t kt = KTIME_TV64(0)
+ 
+ /**
+  * ktime_set - Set a ktime_t variable from a seconds/nanoseconds value
+@@ -77,23 +79,23 @@
+  */
+ static inline ktime_t ktime_set(const long secs, const unsigned long nsecs)
+ {
+-	return (ktime_t) { .tv64 = (s64)secs * NSEC_PER_SEC + (s64)nsecs };
++	return KTIME_TV64( (s64)secs * NSEC_PER_SEC + (s64)nsecs );
+ }
+ 
+ /* Subtract two ktime_t variables. rem = lhs -rhs: */
+ #define ktime_sub(lhs, rhs) \
+-		({ (ktime_t){ .tv64 = (lhs).tv64 - (rhs).tv64 }; })
++		KTIME_TV64( (lhs).tv64 - (rhs).tv64 )
+ 
+ /* Add two ktime_t variables. res = lhs + rhs: */
+ #define ktime_add(lhs, rhs) \
+-		({ (ktime_t){ .tv64 = (lhs).tv64 + (rhs).tv64 }; })
++		KTIME_TV64( (lhs).tv64 + (rhs).tv64 )
+ 
+ /*
+  * Add a ktime_t variable and a scalar nanosecond value.
+  * res = kt + nsval:
+  */
+ #define ktime_add_ns(kt, nsval) \
+-		({ (ktime_t){ .tv64 = (kt).tv64 + (nsval) }; })
++		KTIME_TV64( (kt).tv64 + (nsval) )
+ 
+ /* convert a timespec to ktime_t format: */
+ static inline ktime_t timespec_to_ktime(struct timespec ts)
+diff -ru ../linux-2.6.16.13/include/linux/list.h ./include/linux/list.h
+--- ../linux-2.6.16.13/include/linux/list.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/list.h	2006-05-03 11:07:22.000000000 -0700
+@@ -46,40 +46,40 @@
+  * This is only for internal list manipulation where we know
+  * the prev/next entries already!
+  */
+-static inline void __list_add(struct list_head *new,
++static inline void __list_add(struct list_head *entry,
+ 			      struct list_head *prev,
+ 			      struct list_head *next)
+ {
+-	next->prev = new;
+-	new->next = next;
+-	new->prev = prev;
+-	prev->next = new;
++	next->prev = entry;
++	entry->next = next;
++	entry->prev = prev;
++	prev->next = entry;
+ }
+ 
+ /**
+  * list_add - add a new entry
+- * @new: new entry to be added
++ * @entry: new entry to be added
+  * @head: list head to add it after
+  *
+  * Insert a new entry after the specified head.
+  * This is good for implementing stacks.
+  */
+-static inline void list_add(struct list_head *new, struct list_head *head)
++static inline void list_add(struct list_head *entry, struct list_head *head)
+ {
+-	__list_add(new, head, head->next);
++	__list_add(entry, head, head->next);
+ }
+ 
+ /**
+  * list_add_tail - add a new entry
+- * @new: new entry to be added
++ * @entry: new entry to be added
+  * @head: list head to add it before
+  *
+  * Insert a new entry before the specified head.
+  * This is useful for implementing queues.
+  */
+-static inline void list_add_tail(struct list_head *new, struct list_head *head)
++static inline void list_add_tail(struct list_head *entry, struct list_head *head)
+ {
+-	__list_add(new, head->prev, head);
++	__list_add(entry, head->prev, head);
+ }
+ 
+ /*
+@@ -88,19 +88,19 @@
+  * This is only for internal list manipulation where we know
+  * the prev/next entries already!
+  */
+-static inline void __list_add_rcu(struct list_head * new,
++static inline void __list_add_rcu(struct list_head * entry,
+ 		struct list_head * prev, struct list_head * next)
+ {
+-	new->next = next;
+-	new->prev = prev;
++	entry->next = next;
++	entry->prev = prev;
+ 	smp_wmb();
+-	next->prev = new;
+-	prev->next = new;
++	next->prev = entry;
++	prev->next = entry;
+ }
+ 
+ /**
+  * list_add_rcu - add a new entry to rcu-protected list
+- * @new: new entry to be added
++ * @entry: new entry to be added
+  * @head: list head to add it after
+  *
+  * Insert a new entry after the specified head.
+@@ -114,14 +114,14 @@
+  * the _rcu list-traversal primitives, such as
+  * list_for_each_entry_rcu().
+  */
+-static inline void list_add_rcu(struct list_head *new, struct list_head *head)
++static inline void list_add_rcu(struct list_head *entry, struct list_head *head)
+ {
+-	__list_add_rcu(new, head, head->next);
++	__list_add_rcu(entry, head, head->next);
+ }
+ 
+ /**
+  * list_add_tail_rcu - add a new entry to rcu-protected list
+- * @new: new entry to be added
++ * @entry: new entry to be added
+  * @head: list head to add it before
+  *
+  * Insert a new entry before the specified head.
+@@ -135,10 +135,10 @@
+  * the _rcu list-traversal primitives, such as
+  * list_for_each_entry_rcu().
+  */
+-static inline void list_add_tail_rcu(struct list_head *new,
++static inline void list_add_tail_rcu(struct list_head *entry,
+ 					struct list_head *head)
+ {
+-	__list_add_rcu(new, head->prev, head);
++	__list_add_rcu(entry, head->prev, head);
+ }
+ 
+ /*
+@@ -163,8 +163,8 @@
+ static inline void list_del(struct list_head *entry)
+ {
+ 	__list_del(entry->prev, entry->next);
+-	entry->next = LIST_POISON1;
+-	entry->prev = LIST_POISON2;
++	entry->next = (struct list_head*)(LIST_POISON1);
++	entry->prev = (struct list_head*)(LIST_POISON2);
+ }
+ 
+ /**
+@@ -194,25 +194,25 @@
+ static inline void list_del_rcu(struct list_head *entry)
+ {
+ 	__list_del(entry->prev, entry->next);
+-	entry->prev = LIST_POISON2;
++	entry->prev = (struct list_head*)(LIST_POISON2);
+ }
+ 
+ /*
+  * list_replace_rcu - replace old entry by new one
+  * @old : the element to be replaced
+- * @new : the new element to insert
++ * @newentry : the new element to insert
+  *
+  * The old entry will be replaced with the new entry atomically.
+  */
+ static inline void list_replace_rcu(struct list_head *old,
+-				struct list_head *new)
++				struct list_head *newentry)
+ {
+-	new->next = old->next;
+-	new->prev = old->prev;
++	newentry->next = old->next;
++	newentry->prev = old->prev;
+ 	smp_wmb();
+-	new->next->prev = new;
+-	new->prev->next = new;
+-	old->prev = LIST_POISON2;
++	newentry->next->prev = newentry;
++	newentry->prev->next = newentry;
++	old->prev = (struct list_head *) LIST_POISON2;
+ }
+ 
+ /**
+@@ -564,8 +564,8 @@
+ static inline void hlist_del(struct hlist_node *n)
+ {
+ 	__hlist_del(n);
+-	n->next = LIST_POISON1;
+-	n->pprev = LIST_POISON2;
++	n->next = (struct hlist_node*)(LIST_POISON1);
++	n->pprev = (struct hlist_node**)(LIST_POISON2);
+ }
+ 
+ /**
+@@ -590,7 +590,7 @@
+ static inline void hlist_del_rcu(struct hlist_node *n)
+ {
+ 	__hlist_del(n);
+-	n->pprev = LIST_POISON2;
++	n->pprev = (struct hlist_node**)(LIST_POISON2);
+ }
+ 
+ static inline void hlist_del_init(struct hlist_node *n)
+@@ -604,22 +604,22 @@
+ /*
+  * hlist_replace_rcu - replace old entry by new one
+  * @old : the element to be replaced
+- * @new : the new element to insert
++ * @newentry : the new element to insert
+  *
+  * The old entry will be replaced with the new entry atomically.
+  */
+ static inline void hlist_replace_rcu(struct hlist_node *old,
+-					struct hlist_node *new)
++					struct hlist_node *newentry)
+ {
+ 	struct hlist_node *next = old->next;
+ 
+-	new->next = next;
+-	new->pprev = old->pprev;
++	newentry->next = next;
++	newentry->pprev = old->pprev;
+ 	smp_wmb();
+ 	if (next)
+-		new->next->pprev = &new->next;
+-	*new->pprev = new;
+-	old->pprev = LIST_POISON2;
++		newentry->next->pprev = &newentry->next;
++	*newentry->pprev = newentry;
++	old->pprev = (struct hlist_node **) LIST_POISON2;
+ }
+ 
+ static inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
+diff -ru ../linux-2.6.16.13/include/linux/mempolicy.h ./include/linux/mempolicy.h
+--- ../linux-2.6.16.13/include/linux/mempolicy.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/mempolicy.h	2006-05-02 22:59:31.000000000 -0700
+@@ -176,7 +176,7 @@
+ 
+ #else
+ 
+-struct mempolicy {};
++EMPTY_STRUCT_DECL(mempolicy);
+ 
+ static inline int mpol_equal(struct mempolicy *a, struct mempolicy *b)
+ {
+@@ -199,7 +199,7 @@
+ 	return NULL;
+ }
+ 
+-struct shared_policy {};
++EMPTY_STRUCT_DECL(shared_policy);
+ 
+ static inline int mpol_set_shared_policy(struct shared_policy *info,
+ 					struct vm_area_struct *vma,
+diff -ru ../linux-2.6.16.13/include/linux/netdevice.h ./include/linux/netdevice.h
+--- ../linux-2.6.16.13/include/linux/netdevice.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/netdevice.h	2006-05-02 23:15:55.000000000 -0700
+@@ -500,6 +500,46 @@
+ 	struct divert_blk	*divert;
+ #endif /* CONFIG_NET_DIVERT */
+ 
++	/* Click polling support */
++	/*
++	 * polling is < 0 if the device does not support polling, == 0 if the
++	 * device supports polling but interrupts are on, and > 0 if polling
++	 * is on.
++	 */
++	int			polling;
++	int			(*poll_on)(struct net_device *);
++	int			(*poll_off)(struct net_device *);
++	/*
++	 * rx_poll returns to caller a linked list of sk_buff objects received
++	 * by the device. on call, the want argument specifies the number of
++	 * packets wanted. on return, the want argument specifies the number
++	 * of packets actually returned.
++	 */
++	struct sk_buff *	(*rx_poll)(struct net_device*, int *want);
++	/* refill rx dma ring using the given sk_buff list. returns 0 if
++	 * successful, or if there are more entries need to be cleaned,
++	 * returns the number of dirty entries. the ptr to the sk_buff list is
++	 * updated by the driver to point to any unused skbs.
++	 */
++	int			(*rx_refill)(struct net_device*, struct sk_buff**);
++	/*
++	 * place sk_buff on the transmit ring. returns 0 if successful, 1
++	 * otherwise
++	 */
++	int			(*tx_queue)(struct net_device *, struct sk_buff *);
++	/*
++	 * clean tx dma ring. returns the list of skb objects cleaned
++	 */
++	struct sk_buff*		(*tx_clean)(struct net_device *);
++	/*
++	 * start transmission. returns 0 if successful, 1 otherwise
++	 */
++	int			(*tx_start)(struct net_device *);
++	/*
++	 * tell device the end of a batch of packets
++	 */
++	int			(*tx_eob)(struct net_device *);
++
+ 	/* class/net/name entry */
+ 	struct class_device	class_dev;
+ };
+@@ -560,6 +600,9 @@
+ extern void		synchronize_net(void);
+ extern int 		register_netdevice_notifier(struct notifier_block *nb);
+ extern int		unregister_netdevice_notifier(struct notifier_block *nb);
++extern int		register_net_in(struct notifier_block *nb); /* Click */
++extern int		unregister_net_in(struct notifier_block *nb); /* Click */
++extern int		ptype_dispatch(struct sk_buff *skb, unsigned short type); /* Click */
+ extern int		call_netdevice_notifiers(unsigned long val, void *v);
+ extern struct net_device	*dev_get_by_index(int ifindex);
+ extern struct net_device	*__dev_get_by_index(int ifindex);
+@@ -683,7 +726,7 @@
+ extern int		netif_rx(struct sk_buff *skb);
+ extern int		netif_rx_ni(struct sk_buff *skb);
+ #define HAVE_NETIF_RECEIVE_SKB 1
+-extern int		netif_receive_skb(struct sk_buff *skb);
++extern int		netif_receive_skb(struct sk_buff *skb, unsigned short, int ignore_notifiers);
+ extern int		dev_valid_name(const char *name);
+ extern int		dev_ioctl(unsigned int cmd, void __user *);
+ extern int		dev_ethtool(struct ifreq *);
+diff -ru ../linux-2.6.16.13/include/linux/netfilter_ipv4/ip_conntrack_irc.h ./include/linux/netfilter_ipv4/ip_conntrack_irc.h
+--- ../linux-2.6.16.13/include/linux/netfilter_ipv4/ip_conntrack_irc.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/netfilter_ipv4/ip_conntrack_irc.h	2006-05-02 22:59:31.000000000 -0700
+@@ -15,8 +15,7 @@
+ #define _IP_CONNTRACK_IRC_H
+ 
+ /* This structure exists only once per master */
+-struct ip_ct_irc_master {
+-};
++EMPTY_STRUCT_DECL(ip_ct_irc_master);
+ 
+ #ifdef __KERNEL__
+ extern unsigned int (*ip_nat_irc_hook)(struct sk_buff **pskb,
+diff -ru ../linux-2.6.16.13/include/linux/netlink.h ./include/linux/netlink.h
+--- ../linux-2.6.16.13/include/linux/netlink.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/netlink.h	2006-05-03 12:35:21.000000000 -0700
+@@ -200,7 +200,7 @@
+ 	nlh->nlmsg_flags = flags;
+ 	nlh->nlmsg_pid = pid;
+ 	nlh->nlmsg_seq = seq;
+-	memset(NLMSG_DATA(nlh) + len, 0, NLMSG_ALIGN(size) - size);
++	memset((char*) NLMSG_DATA(nlh) + len, 0, NLMSG_ALIGN(size) - size);
+ 	return nlh;
+ }
+ 
+diff -ru ../linux-2.6.16.13/include/linux/prefetch.h ./include/linux/prefetch.h
+--- ../linux-2.6.16.13/include/linux/prefetch.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/prefetch.h	2006-05-02 22:59:31.000000000 -0700
+@@ -59,9 +59,9 @@
+ {
+ #ifdef ARCH_HAS_PREFETCH
+ 	char *cp;
+-	char *end = addr + len;
++	char *end = (char*)(addr) + len;
+ 
+-	for (cp = addr; cp < end; cp += PREFETCH_STRIDE)
++	for (cp = (char*)(addr); cp < end; cp += PREFETCH_STRIDE)
+ 		prefetch(cp);
+ #endif
+ }
+diff -ru ../linux-2.6.16.13/include/linux/reiserfs_fs_sb.h ./include/linux/reiserfs_fs_sb.h
+--- ../linux-2.6.16.13/include/linux/reiserfs_fs_sb.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/reiserfs_fs_sb.h	2006-05-02 22:59:31.000000000 -0700
+@@ -340,8 +340,7 @@
+ 	} journal;
+ } reiserfs_proc_info_data_t;
+ #else
+-typedef struct reiserfs_proc_info_data {
+-} reiserfs_proc_info_data_t;
++typedef EMPTY_STRUCT_DECL(reiserfs_proc_info_data) reiserfs_proc_info_data_t;
+ #endif
+ 
+ /* reiserfs union of in-core super block data */
+diff -ru ../linux-2.6.16.13/include/linux/rtnetlink.h ./include/linux/rtnetlink.h
+--- ../linux-2.6.16.13/include/linux/rtnetlink.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/rtnetlink.h	2006-05-03 12:35:38.000000000 -0700
+@@ -1025,7 +1025,7 @@
+ 	rta = (struct rtattr*)skb_put(skb, RTA_ALIGN(size));
+ 	rta->rta_type = attrtype;
+ 	rta->rta_len = size;
+-	memset(RTA_DATA(rta) + attrlen, 0, RTA_ALIGN(size) - size);
++	memset((char*) RTA_DATA(rta) + attrlen, 0, RTA_ALIGN(size) - size);
+ 	return rta;
+ }
+ 
+diff -ru ../linux-2.6.16.13/include/linux/seccomp.h ./include/linux/seccomp.h
+--- ../linux-2.6.16.13/include/linux/seccomp.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/seccomp.h	2006-05-02 23:17:01.000000000 -0700
+@@ -26,7 +26,7 @@
+ 
+ #else /* CONFIG_SECCOMP */
+ 
+-typedef struct { } seccomp_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) seccomp_t;
+ 
+ #define secure_computing(x) do { } while (0)
+ /* static inline to preserve typechecking */
+diff -ru ../linux-2.6.16.13/include/linux/skbuff.h ./include/linux/skbuff.h
+--- ../linux-2.6.16.13/include/linux/skbuff.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/skbuff.h	2006-05-03 11:34:53.000000000 -0700
+@@ -168,6 +168,12 @@
+ 	SKB_FCLONE_CLONE,
+ };
+ 
++/* Click: overload sk_buff.pkt_type to contain information about whether
++   a packet is clean. Clean packets have the following fields zero:
++   dst, destructor, pkt_bridged, prev, list, sk, security, priority. */
++#define PACKET_CLEAN           128             /* Is packet clean? */
++#define PACKET_TYPE_MASK       127             /* Actual packet type */
++
+ /** 
+  *	struct sk_buff - socket buffer
+  *	@next: Next buffer in list
+@@ -329,6 +335,7 @@
+ 				gfp_t priority);
+ extern struct sk_buff *pskb_copy(struct sk_buff *skb,
+ 				 gfp_t gfp_mask);
++extern struct sk_buff *skb_recycle(struct sk_buff *skb);
+ extern int	       pskb_expand_head(struct sk_buff *skb,
+ 					int nhead, int ntail,
+ 					gfp_t gfp_mask);
+@@ -1116,7 +1123,7 @@
+ }
+ 
+ static inline int skb_add_data(struct sk_buff *skb,
+-			       char __user *from, int copy)
++			       unsigned char __user *from, int copy)
+ {
+ 	const int off = skb->len;
+ 
+@@ -1177,7 +1184,7 @@
+ 					 const void *start, int len)
+ {
+ 	if (skb->ip_summed == CHECKSUM_HW)
+-		skb->csum = csum_sub(skb->csum, csum_partial(start, len, 0));
++		skb->csum = csum_sub(skb->csum, csum_partial((const unsigned char *) start, len, 0));
+ }
+ 
+ /**
+diff -ru ../linux-2.6.16.13/include/linux/spinlock.h ./include/linux/spinlock.h
+--- ../linux-2.6.16.13/include/linux/spinlock.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/spinlock.h	2006-05-02 22:59:31.000000000 -0700
+@@ -53,6 +53,7 @@
+ #include <linux/thread_info.h>
+ #include <linux/kernel.h>
+ #include <linux/stringify.h>
++#include <linux/types.h>
+ 
+ #include <asm/system.h>
+ 
+diff -ru ../linux-2.6.16.13/include/linux/spinlock_types.h ./include/linux/spinlock_types.h
+--- ../linux-2.6.16.13/include/linux/spinlock_types.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/spinlock_types.h	2006-05-03 11:23:05.000000000 -0700
+@@ -43,22 +43,30 @@
+ 
+ #define SPINLOCK_OWNER_INIT	((void *)-1L)
+ 
++#if defined(CONFIG_PREEMPT) && defined(CONFIG_SMP)
++# define SPINLOCK_BREAK_LOCK_INIT 0,
++#else
++# define SPINLOCK_BREAK_LOCK_INIT
++#endif
++
+ #ifdef CONFIG_DEBUG_SPINLOCK
+ # define SPIN_LOCK_UNLOCKED						\
+-	(spinlock_t)	{	.raw_lock = __RAW_SPIN_LOCK_UNLOCKED,	\
+-				.magic = SPINLOCK_MAGIC,		\
+-				.owner = SPINLOCK_OWNER_INIT,		\
+-				.owner_cpu = -1 }
++	(spinlock_t)	{ /*raw_lock*/	__RAW_SPIN_LOCK_UNLOCKED,	\
++			  /*break_lock*/ SPINLOCK_BREAK_LOCK_INIT	\
++			  /*magic*/	SPINLOCK_MAGIC,			\
++			  /*owner_cpu*/	-1,				\
++			  /*owner*/	SPINLOCK_OWNER_INIT }
+ #define RW_LOCK_UNLOCKED						\
+-	(rwlock_t)	{	.raw_lock = __RAW_RW_LOCK_UNLOCKED,	\
+-				.magic = RWLOCK_MAGIC,			\
+-				.owner = SPINLOCK_OWNER_INIT,		\
+-				.owner_cpu = -1 }
++	(rwlock_t)	{ /*raw_lock*/	__RAW_RW_LOCK_UNLOCKED,		\
++			  /*break_lock*/ SPINLOCK_BREAK_LOCK_INIT	\
++			  /*magic*/	RWLOCK_MAGIC,			\
++			  /*owner_cpu*/	-1,				\
++			  /*owner*/	SPINLOCK_OWNER_INIT }
+ #else
+ # define SPIN_LOCK_UNLOCKED \
+-	(spinlock_t)	{	.raw_lock = __RAW_SPIN_LOCK_UNLOCKED }
+-#define RW_LOCK_UNLOCKED \
+-	(rwlock_t)	{	.raw_lock = __RAW_RW_LOCK_UNLOCKED }
++	(spinlock_t)	{ /*raw_lock*/	__RAW_SPIN_LOCK_UNLOCKED }
++# define RW_LOCK_UNLOCKED \
++	(rwlock_t)	{ /*raw_lock*/	__RAW_RW_LOCK_UNLOCKED }
+ #endif
+ 
+ #define DEFINE_SPINLOCK(x)	spinlock_t x = SPIN_LOCK_UNLOCKED
+diff -ru ../linux-2.6.16.13/include/linux/spinlock_types_up.h ./include/linux/spinlock_types_up.h
+--- ../linux-2.6.16.13/include/linux/spinlock_types_up.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/spinlock_types_up.h	2006-05-02 23:19:37.000000000 -0700
+@@ -22,15 +22,14 @@
+ 
+ #else
+ 
+-typedef struct { } raw_spinlock_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) raw_spinlock_t;
+ 
+ #define __RAW_SPIN_LOCK_UNLOCKED { }
+ 
+ #endif
+ 
+-typedef struct {
+-	/* no debug version on UP */
+-} raw_rwlock_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) raw_rwlock_t;
++/* no debug version on UP */
+ 
+ #define __RAW_RW_LOCK_UNLOCKED { }
+ 
+diff -ru ../linux-2.6.16.13/include/linux/sysctl.h ./include/linux/sysctl.h
+--- ../linux-2.6.16.13/include/linux/sysctl.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/sysctl.h	2006-05-02 22:59:31.000000000 -0700
+@@ -879,7 +879,7 @@
+ 			 void __user *newval, size_t newlen, 
+ 			 void **context);
+ 
+-typedef int proc_handler (ctl_table *ctl, int write, struct file * filp,
++typedef int proc_handler_t (ctl_table *ctl, int write, struct file * filp,
+ 			  void __user *buffer, size_t *lenp, loff_t *ppos);
+ 
+ extern int proc_dostring(ctl_table *, int, struct file *,
+@@ -954,7 +954,7 @@
+  */
+ 
+ /* A sysctl table is an array of struct ctl_table: */
+-struct ctl_table 
++struct ctl_table
+ {
+ 	int ctl_name;			/* Binary ID */
+ 	const char *procname;		/* Text ID for /proc/sys, or zero */
+@@ -962,7 +962,7 @@
+ 	int maxlen;
+ 	mode_t mode;
+ 	ctl_table *child;
+-	proc_handler *proc_handler;	/* Callback for text formatting */
++	proc_handler_t *proc_handler;	/* Callback for text formatting */
+ 	ctl_handler *strategy;		/* Callback function for all r/w */
+ 	struct proc_dir_entry *de;	/* /proc control block */
+ 	void *extra1;
+@@ -973,7 +973,7 @@
+    ctl_table trees. */
+ struct ctl_table_header
+ {
+-	ctl_table *ctl_table;
++	struct ctl_table *ctl_table;
+ 	struct list_head ctl_entry;
+ 	int used;
+ 	struct completion *unregistering;
+diff -ru ../linux-2.6.16.13/include/linux/textsearch.h ./include/linux/textsearch.h
+--- ../linux-2.6.16.13/include/linux/textsearch.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/textsearch.h	2006-05-03 11:34:34.000000000 -0700
+@@ -164,9 +164,9 @@
+ {
+ 	struct ts_config *conf;
+ 
+-	conf = kmalloc(TS_PRIV_ALIGN(sizeof(*conf)) + payload, gfp_mask);
++	conf = (struct ts_config *) kmalloc(TS_PRIV_ALIGN(sizeof(*conf)) + payload, gfp_mask);
+ 	if (conf == NULL)
+-		return ERR_PTR(-ENOMEM);
++		return (struct ts_config *) ERR_PTR(-ENOMEM);
+ 
+ 	memset(conf, 0, TS_PRIV_ALIGN(sizeof(*conf)) + payload);
+ 	return conf;
+diff -ru ../linux-2.6.16.13/include/linux/types.h ./include/linux/types.h
+--- ../linux-2.6.16.13/include/linux/types.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/types.h	2006-05-02 22:59:31.000000000 -0700
+@@ -183,4 +183,12 @@
+ 	char			f_fpack[6];
+ };
+ 
++/*
++ * Click: Macros for defining empty structures. Needed because GCC's C and C++
++ * compilers have different ABIs for empty structures.
++ */
++
++#define EMPTY_STRUCT_DECL(s) struct s { int gcc_is_buggy; }
++#define EMPTY_STRUCT_INIT(s) (s) { 0 }
++
+ #endif /* _LINUX_TYPES_H */
+diff -ru ../linux-2.6.16.13/include/linux/wait.h ./include/linux/wait.h
+--- ../linux-2.6.16.13/include/linux/wait.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/wait.h	2006-05-03 11:25:08.000000000 -0700
+@@ -425,7 +425,7 @@
+ static inline int wait_on_bit(void *word, int bit,
+ 				int (*action)(void *), unsigned mode)
+ {
+-	if (!test_bit(bit, word))
++	if (!test_bit(bit, (volatile unsigned long *) word))
+ 		return 0;
+ 	return out_of_line_wait_on_bit(word, bit, action, mode);
+ }
+@@ -449,7 +449,7 @@
+ static inline int wait_on_bit_lock(void *word, int bit,
+ 				int (*action)(void *), unsigned mode)
+ {
+-	if (!test_and_set_bit(bit, word))
++	if (!test_and_set_bit(bit, (volatile unsigned long *) word))
+ 		return 0;
+ 	return out_of_line_wait_on_bit_lock(word, bit, action, mode);
+ }
+diff -ru ../linux-2.6.16.13/include/net/compat.h ./include/net/compat.h
+--- ../linux-2.6.16.13/include/net/compat.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/net/compat.h	2006-05-02 22:59:31.000000000 -0700
+@@ -29,9 +29,9 @@
+ 
+ extern int get_compat_msghdr(struct msghdr *, struct compat_msghdr __user *);
+ extern int verify_compat_iovec(struct msghdr *, struct iovec *, char *, int);
+-extern asmlinkage long compat_sys_sendmsg(int,struct compat_msghdr __user *,unsigned);
+-extern asmlinkage long compat_sys_recvmsg(int,struct compat_msghdr __user *,unsigned);
+-extern asmlinkage long compat_sys_getsockopt(int, int, int, char __user *, int __user *);
++asmlinkage long compat_sys_sendmsg(int,struct compat_msghdr __user *,unsigned);
++asmlinkage long compat_sys_recvmsg(int,struct compat_msghdr __user *,unsigned);
++asmlinkage long compat_sys_getsockopt(int, int, int, char __user *, int __user *);
+ extern int put_cmsg_compat(struct msghdr*, int, int, int, void *);
+ 
+ struct sock;
+diff -ru ../linux-2.6.16.13/include/net/neighbour.h ./include/net/neighbour.h
+--- ../linux-2.6.16.13/include/net/neighbour.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/net/neighbour.h	2006-05-02 22:59:31.000000000 -0700
+@@ -275,7 +275,7 @@
+ 						      struct neigh_parms *p,
+ 						      int p_id, int pdev_id,
+ 						      char *p_name,
+-						      proc_handler *proc_handler,
++						      proc_handler_t *proc_handler,
+ 						      ctl_handler *strategy);
+ extern void			neigh_sysctl_unregister(struct neigh_parms *p);
+ 
+diff -ru ../linux-2.6.16.13/include/net/pkt_cls.h ./include/net/pkt_cls.h
+--- ../linux-2.6.16.13/include/net/pkt_cls.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/net/pkt_cls.h	2006-05-02 22:59:31.000000000 -0700
+@@ -308,9 +308,7 @@
+ 
+ #else /* CONFIG_NET_EMATCH */
+ 
+-struct tcf_ematch_tree
+-{
+-};
++EMPTY_STRUCT_DECL(tcf_ematch_tree);
+ 
+ #define tcf_em_tree_validate(tp, tb, t) ((void)(t), 0)
+ #define tcf_em_tree_destroy(tp, t) do { (void)(t); } while(0)
+diff -ru ../linux-2.6.16.13/include/net/route.h ./include/net/route.h
+--- ../linux-2.6.16.13/include/net/route.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/net/route.h	2006-05-02 22:59:31.000000000 -0700
+@@ -148,6 +148,16 @@
+ 				   u32 src, u32 tos, int oif, u8 protocol,
+ 				   u16 sport, u16 dport, struct sock *sk)
+ {
++#ifdef __cplusplus
++	struct flowi fl;
++	fl.oif = oif;
++	fl.nl_u.ip4_u.daddr = dst;
++	fl.nl_u.ip4_u.saddr = src;
++	fl.nl_u.ip4_u.tos = tos;
++	fl.proto = protocol;
++	fl.uli_u.ports.sport = sport;
++	fl.uli_u.ports.dport = dport;
++#else
+ 	struct flowi fl = { .oif = oif,
+ 			    .nl_u = { .ip4_u = { .daddr = dst,
+ 						 .saddr = src,
+@@ -156,6 +166,7 @@
+ 			    .uli_u = { .ports =
+ 				       { .sport = sport,
+ 					 .dport = dport } } };
++#endif
+ 
+ 	int err;
+ 	if (!dst || !src) {
+diff -ru ../linux-2.6.16.13/include/net/sock.h ./include/net/sock.h
+--- ../linux-2.6.16.13/include/net/sock.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/net/sock.h	2006-05-03 12:38:55.000000000 -0700
+@@ -1082,13 +1082,13 @@
+ {
+ 	if (skb->ip_summed == CHECKSUM_NONE) {
+ 		int err = 0;
+-		unsigned int csum = csum_and_copy_from_user(from,
+-						     page_address(page) + off,
++		unsigned int csum = csum_and_copy_from_user((unsigned char *) from,
++							    (unsigned char *) page_address(page) + off,
+ 							    copy, 0, &err);
+ 		if (err)
+ 			return err;
+ 		skb->csum = csum_block_add(skb->csum, csum, skb->len);
+-	} else if (copy_from_user(page_address(page) + off, from, copy))
++	} else if (copy_from_user((char*) page_address(page) + off, from, copy))
+ 		return -EFAULT;
+ 
+ 	skb->len	     += copy;
+@@ -1389,9 +1389,9 @@
+ static inline void sock_valbool_flag(struct sock *sk, int bit, int valbool)
+ {
+ 	if (valbool)
+-		sock_set_flag(sk, bit);
++		sock_set_flag(sk, (enum sock_flags)bit);
+ 	else
+-		sock_reset_flag(sk, bit);
++		sock_reset_flag(sk, (enum sock_flags)bit);
+ }
+ 
+ extern __u32 sysctl_wmem_max;
+diff -ru ../linux-2.6.16.13/net/bridge/br_input.c ./net/bridge/br_input.c
+--- ../linux-2.6.16.13/net/bridge/br_input.c	2006-05-02 14:38:44.000000000 -0700
++++ ./net/bridge/br_input.c	2006-05-02 22:59:31.000000000 -0700
+@@ -23,7 +23,7 @@
+ 
+ static int br_pass_frame_up_finish(struct sk_buff *skb)
+ {
+-	netif_receive_skb(skb);
++	netif_receive_skb(skb, skb->protocol, 0);
+ 	return 0;
+ }
+ 
+diff -ru ../linux-2.6.16.13/net/core/dev.c ./net/core/dev.c
+--- ../linux-2.6.16.13/net/core/dev.c	2006-05-02 14:38:44.000000000 -0700
++++ ./net/core/dev.c	2006-05-03 14:22:04.000000000 -0700
+@@ -195,6 +195,9 @@
+ 
+ static struct notifier_block *netdev_chain;
+ 
++/* Click: input packet handlers, might steal packets from net_rx_action. */
++static struct notifier_block *net_in_chain = 0;
++
+ /*
+  *	Device drivers call our routines to queue packets here. We empty the
+  *	queue in the local softnet handler.
+@@ -1508,6 +1511,23 @@
+ 	return pt_prev->func(skb, skb->dev, pt_prev, orig_dev);
+ }
+ 
++
++/*
++ * Click: Allow Click to ask to intercept input packets.
++ */
++int
++register_net_in(struct notifier_block *nb)
++{
++  return notifier_chain_register(&net_in_chain, nb);
++}
++
++int
++unregister_net_in(struct notifier_block *nb)
++{
++  return notifier_chain_unregister(&net_in_chain, nb);
++}
++
++
+ #if defined(CONFIG_BRIDGE) || defined (CONFIG_BRIDGE_MODULE)
+ int (*br_handle_frame_hook)(struct net_bridge_port *p, struct sk_buff **pskb);
+ struct net_bridge;
+@@ -1574,12 +1594,11 @@
+ }
+ #endif
+ 
+-int netif_receive_skb(struct sk_buff *skb)
++int netif_receive_skb(struct sk_buff *skb, unsigned short type, int notifier_data)
+ {
+ 	struct packet_type *ptype, *pt_prev;
+ 	struct net_device *orig_dev;
+ 	int ret = NET_RX_DROP;
+-	unsigned short type;
+ 
+ 	/* if we've gotten here through NAPI, check netpoll */
+ 	if (skb->dev->poll && netpoll_rx(skb))
+@@ -1598,6 +1617,14 @@
+ 	skb->h.raw = skb->nh.raw = skb->data;
+ 	skb->mac_len = skb->nh.raw - skb->mac.raw;
+ 
++	/* Click: may want to steal the packet */
++	if (notifier_data >= 0
++	    && notifier_call_chain(&net_in_chain,
++				   notifier_data,
++				   skb) & NOTIFY_STOP_MASK) {
++        	return ret;
++	}
++ 
+ 	pt_prev = NULL;
+ 
+ 	rcu_read_lock();
+@@ -1641,8 +1668,7 @@
+ 	if (handle_bridge(&skb, &pt_prev, &ret, orig_dev))
+ 		goto out;
+ 
+-	type = skb->protocol;
+-	list_for_each_entry_rcu(ptype, &ptype_base[ntohs(type)&15], list) {
++       	list_for_each_entry_rcu(ptype, &ptype_base[ntohs(type)&15], list) {
+ 		if (ptype->type == type &&
+ 		    (!ptype->dev || ptype->dev == skb->dev)) {
+ 			if (pt_prev) 
+@@ -1686,7 +1712,7 @@
+ 
+ 		dev = skb->dev;
+ 
+-		netif_receive_skb(skb);
++		netif_receive_skb(skb, skb->protocol, skb_queue_len(&queue->input_pkt_queue));
+ 
+ 		dev_put(dev);
+ 
+@@ -3277,6 +3303,7 @@
+ EXPORT_SYMBOL(dev_get_by_index);
+ EXPORT_SYMBOL(dev_get_by_name);
+ EXPORT_SYMBOL(dev_open);
++EXPORT_SYMBOL(dev_ioctl);
+ EXPORT_SYMBOL(dev_queue_xmit);
+ EXPORT_SYMBOL(dev_remove_pack);
+ EXPORT_SYMBOL(dev_set_allmulti);
+@@ -3293,6 +3320,11 @@
+ EXPORT_SYMBOL(register_gifconf);
+ EXPORT_SYMBOL(register_netdevice);
+ EXPORT_SYMBOL(register_netdevice_notifier);
++
++/* Click */
++EXPORT_SYMBOL(register_net_in);
++EXPORT_SYMBOL(unregister_net_in);
++
+ EXPORT_SYMBOL(skb_checksum_help);
+ EXPORT_SYMBOL(synchronize_net);
+ EXPORT_SYMBOL(unregister_netdevice);
+diff -ru ../linux-2.6.16.13/net/core/neighbour.c ./net/core/neighbour.c
+--- ../linux-2.6.16.13/net/core/neighbour.c	2006-05-02 14:38:44.000000000 -0700
++++ ./net/core/neighbour.c	2006-05-02 22:59:31.000000000 -0700
+@@ -2528,7 +2528,7 @@
+ 
+ int neigh_sysctl_register(struct net_device *dev, struct neigh_parms *p,
+ 			  int p_id, int pdev_id, char *p_name, 
+-			  proc_handler *handler, ctl_handler *strategy)
++			  proc_handler_t *handler, ctl_handler *strategy)
+ {
+ 	struct neigh_sysctl_table *t = kmalloc(sizeof(*t), GFP_KERNEL);
+ 	const char *dev_name_source = NULL;
+diff -ru ../linux-2.6.16.13/net/core/skbuff.c ./net/core/skbuff.c
+--- ../linux-2.6.16.13/net/core/skbuff.c	2006-05-02 14:38:44.000000000 -0700
++++ ./net/core/skbuff.c	2006-05-03 09:38:58.000000000 -0700
+@@ -505,6 +505,102 @@
+ 	skb_shinfo(new)->tso_segs = skb_shinfo(old)->tso_segs;
+ }
+ 
++
++/* Click: clear skb header state */
++static inline void skb_headerinit(void *p, kmem_cache_t *cache,
++				  unsigned long flags)
++{
++	struct sk_buff *skb = p;
++
++	skb->next = NULL;
++	skb->prev = NULL;
++	skb->sk = NULL;
++	skb->tstamp.off_sec = 0;     /* No idea about time */
++	skb->dev = NULL;
++	skb->input_dev = NULL;
++	skb->dst = NULL;
++	skb->sp = NULL;
++	memset(skb->cb, 0, sizeof(skb->cb));
++	skb->priority = 0;
++	skb->pkt_type = PACKET_HOST;   /* Default type */
++	skb->ip_summed = 0;
++	skb->destructor = NULL;
++
++#ifdef CONFIG_NETFILTER
++	skb->nfmark = 0;
++	skb->nfct = NULL;
++# if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
++	skb->nfct_reasm = NULL;
++# endif
++# ifdef CONFIG_BRIDGE_NETFILTER
++	skb->nf_bridge = NULL;
++# endif
++#endif
++#ifdef CONFIG_NET_SCHED
++	skb->tc_index = 0;
++# ifdef CONFIG_NET_CLS_ACT
++	skb->tc_verd = 0;
++# endif
++#endif
++}
++
++/* Click: attempts to recycle a sk_buff. if it can be recycled, return it
++ * without reinitializing any bits */
++struct sk_buff *skb_recycle(struct sk_buff *skb)
++{
++	if (atomic_dec_and_test(&skb->users)) { 
++		dst_release(skb->dst);
++#ifdef CONFIG_XFRM
++		secpath_put(skb->sp);
++#endif
++		if(skb->destructor) {
++			WARN_ON(in_irq());
++			skb->destructor(skb);
++		}
++#ifdef CONFIG_NETFILTER
++		nf_conntrack_put(skb->nfct);
++# if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
++		nf_conntrack_put_reasm(skb->nfct_reasm);
++# endif
++# ifdef CONFIG_BRIDGE_NETFILTER
++		nf_bridge_put(skb->nf_bridge);
++# endif
++#endif
++		skb_headerinit(skb, NULL, 0);
++
++		if (!skb->cloned ||
++		    !atomic_sub_return(skb->nohdr ? (1 << SKB_DATAREF_SHIFT) + 1 : 1,
++				       &skb_shinfo(skb)->dataref)) {
++			if (skb_shinfo(skb)->nr_frags) {
++				int i;
++				for (i = 0; i < skb_shinfo(skb)->nr_frags; i++)
++					put_page(skb_shinfo(skb)->frags[i].page);
++			}
++
++			if (skb_shinfo(skb)->frag_list)
++				skb_drop_fraglist(skb);
++
++			/* Load the data pointers. */
++			skb->data = skb->head;
++			skb->tail = skb->data;
++			/* end and truesize should have never changed */
++			/* skb->end = skb->data + skb->truesize; */
++
++			/* set up other state */
++			skb->len = 0;
++			skb->cloned = 0;
++
++			atomic_set(&skb->users, 1);
++			atomic_set(&(skb_shinfo(skb)->dataref), 1);
++
++			return skb;
++		}
++
++      	}
++
++	return 0;
++}
++
+ /**
+  *	skb_copy	-	create private copy of an sk_buff
+  *	@skb: buffer to copy
+@@ -1806,6 +1902,7 @@
+ EXPORT_SYMBOL(skb_checksum);
+ EXPORT_SYMBOL(skb_clone);
+ EXPORT_SYMBOL(skb_clone_fraglist);
++EXPORT_SYMBOL(skb_recycle);
+ EXPORT_SYMBOL(skb_copy);
+ EXPORT_SYMBOL(skb_copy_and_csum_bits);
+ EXPORT_SYMBOL(skb_copy_and_csum_dev);
+diff -ru ../linux-2.6.16.13/net/ipv4/arp.c ./net/ipv4/arp.c
+--- ../linux-2.6.16.13/net/ipv4/arp.c	2006-05-02 14:38:44.000000000 -0700
++++ ./net/ipv4/arp.c	2006-05-02 22:59:31.000000000 -0700
+@@ -333,6 +333,7 @@
+ {
+ 	u32 saddr = 0;
+ 	u8  *dst_ha = NULL;
++	u8  dst_ha_buf[MAX_ADDR_LEN+sizeof(unsigned long)];
+ 	struct net_device *dev = neigh->dev;
+ 	u32 target = *(u32*)neigh->primary_key;
+ 	int probes = atomic_read(&neigh->probes);
+@@ -370,8 +371,8 @@
+ 	if ((probes -= neigh->parms->ucast_probes) < 0) {
+ 		if (!(neigh->nud_state&NUD_VALID))
+ 			printk(KERN_DEBUG "trying to ucast probe in NUD_INVALID\n");
+-		dst_ha = neigh->ha;
+-		read_lock_bh(&neigh->lock);
++		memcpy(dst_ha_buf, neigh->ha, sizeof(neigh->ha));
++		dst_ha = dst_ha_buf;
+ 	} else if ((probes -= neigh->parms->app_probes) < 0) {
+ #ifdef CONFIG_ARPD
+ 		neigh_app_ns(neigh);
+@@ -381,8 +382,6 @@
+ 
+ 	arp_send(ARPOP_REQUEST, ETH_P_ARP, target, dev, saddr,
+ 		 dst_ha, dev->dev_addr, NULL);
+-	if (dst_ha)
+-		read_unlock_bh(&neigh->lock);
+ }
+ 
+ static int arp_ignore(struct in_device *in_dev, struct net_device *dev,
