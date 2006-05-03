@@ -45,8 +45,9 @@ Version 1.5
    prepared.
 
 ** Add new port_count() method, allowing elements to declare how many ports
-   they support.  Deprecate Element::set_ninputs(), set_noutputs(),
-   add_input(), add_output(), notify_ninputs(), and notify_noutputs().
+   they support.  This replaces Element::set_ninputs(), set_noutputs(),
+   add_input(), add_output(), notify_ninputs(), and notify_noutputs(),
+   which are all now deprecated.
 
 ** Add RAW handler flag, for handlers whose output should not be modified
    (for example, no adding a courtesy newline).
