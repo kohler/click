@@ -1,3 +1,12 @@
+2006-05-03 Wednesday 01:45  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/diagrams/elements.mp (1.12): setting borderscale to 0 means
+	  draw no borders
+
+2006-05-03 Wednesday 01:45  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* NEWS (1.165): nit
+
 2006-04-21 Friday 16:36  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/wifidecap.cc (1.18): fix an alignment bug. ermph.
