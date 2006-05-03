@@ -1,3 +1,12 @@
+2006-05-03 Wednesday 19:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.86), config-linuxmodule.h.in (1.15),
+	  configure (1.76), configure.in (1.281), etc/linux-2.6.16.13-patch
+	  (1.1), include/click/packet.hh (1.54), linuxmodule/Makefile.in
+	  (1.108), linuxmodule/kernelversion.c (1.11),
+	  linuxmodule/proclikefs.c (1.20), linuxmodule/skbmgr.cc (1.22):
+	  support Linux 2.6.16
+
 2006-05-03 Wednesday 15:49  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/fakepcap.cc (1.19): fix bug reported by
