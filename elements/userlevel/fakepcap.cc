@@ -295,6 +295,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	if (Packet *q = p->shift_data(-(header_ptr & 3), false)) {
 	    p = q;
 	    iph = reinterpret_cast<const click_ip *>(q->data() + header_off);
+	    end_data = p->end_data();
 	} else			// cannot align; return it as a non-IP packet
 	    return false;
     }
