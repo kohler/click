@@ -1,3 +1,8 @@
+2006-05-03 Wednesday 15:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/fakepcap.cc (1.19): fix bug reported by
+	  Srikanth Kandula
+
 2006-05-03 Wednesday 01:45  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/diagrams/elements.mp (1.12): setting borderscale to 0 means
