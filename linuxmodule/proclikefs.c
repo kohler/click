@@ -145,7 +145,7 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
     }
 
     if (!newfs) {
-	newfs = kmalloc(sizeof(struct proclikefs_file_system) + strlen(name), GFP_KERNEL);
+	newfs = kmalloc(sizeof(struct proclikefs_file_system) + strlen(name), GFP_ATOMIC);
 	if (!newfs) {		/* out of memory */
 	    spin_unlock(&fslist_lock);
 	    MOD_DEC_USE_COUNT;
@@ -478,7 +478,7 @@ proclikefs_put_super(struct super_block *sb)
 struct file_operations *
 proclikefs_new_file_operations(struct proclikefs_file_system *pfs)
 {
-    struct proclikefs_file_operations *pfo = kmalloc(sizeof(struct proclikefs_file_operations), GFP_KERNEL);
+    struct proclikefs_file_operations *pfo = kmalloc(sizeof(struct proclikefs_file_operations), GFP_ATOMIC);
     
     if (pfo) {
 	spin_lock(&fslist_lock);
@@ -493,7 +493,7 @@ proclikefs_new_file_operations(struct proclikefs_file_system *pfs)
 struct inode_operations *
 proclikefs_new_inode_operations(struct proclikefs_file_system *pfs)
 {
-    struct proclikefs_inode_operations *pio = kmalloc(sizeof(struct proclikefs_inode_operations), GFP_KERNEL);
+    struct proclikefs_inode_operations *pio = kmalloc(sizeof(struct proclikefs_inode_operations), GFP_ATOMIC);
     
     if (pio) {
 	spin_lock(&fslist_lock);
