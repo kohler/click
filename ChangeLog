@@ -1,3 +1,17 @@
+2006-05-03 Wednesday 20:21  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/infinitesource.cc (1.57): handle LIMIT 0
+	  properly: actually stop driver
+
+2006-05-03 Wednesday 20:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/proclikefs.c (1.21): use GFP_ATOMIC when allocating
+	  proclikefs structures to avoid sleeping (Jason Haas)
+
+2006-05-03 Wednesday 20:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/clp.h (1.11): nit
+
 2006-05-03 Wednesday 19:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.86), config-linuxmodule.h.in (1.15),
