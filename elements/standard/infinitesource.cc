@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,6 +24,7 @@
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/glue.hh>
+#include <click/straccum.hh>
 CLICK_DECLS
 
 InfiniteSource::InfiniteSource()
@@ -110,9 +112,7 @@ InfiniteSource::run_task()
 	return false;
     int n = _burstsize;
     if (_limit >= 0 && _count + n >= _limit)
-	n = _limit - _count;
-    if (n <= 0)
-	return false;
+	n = (_count > _limit ? 0 : _limit - _count);
     for (int i = 0; i < n; i++) {
 	Packet *p = _packet->clone();
 	p->timestamp_anno().set_now();
@@ -121,50 +121,50 @@ InfiniteSource::run_task()
     _count += n;
     if (_stop && _limit >= 0 && _count >= _limit)
 	router()->please_stop_driver();
-    _task.fast_reschedule();
-    return true;
+    if (n > 0) {
+	_task.fast_reschedule();
+	return true;
+    } else
+	return false;
 }
 
 Packet *
 InfiniteSource::pull(int)
 {
-  if (!_active) {
-    if (Notifier::active()) {
-      sleep();
+    if (!_active) {
+    done:
+	if (Notifier::active())
+	    sleep();
+	return 0;
     }
-    return 0;
-  }
-  if (_limit >= 0 && _count >= _limit) {
-    if (_stop)
-      router()->please_stop_driver();
-
-    if (Notifier::active()) {
-      sleep();
+    if (_limit >= 0 && _count >= _limit) {
+	if (_stop)
+	    router()->please_stop_driver();
+	goto done;
     }
-    return 0;
-  }
-  _count++;
-  Packet *p = _packet->clone();
-  p->timestamp_anno().set_now();
-  return p;
+    _count++;
+    Packet *p = _packet->clone();
+    p->timestamp_anno().set_now();
+    return p;
 }
 
 void
 InfiniteSource::setup_packet() 
 {
-  if (_packet) _packet->kill();
+    if (_packet)
+	_packet->kill();
 
-  if (_datasize != -1 && _datasize > _data.length()) {
-    // make up some data to fill extra space
-    String new_data;
-    do {
-      new_data += _data;
+    if (_datasize < 0)
+	_packet = Packet::make(_data.data(), _data.length());
+    else if (_datasize <= _data.length())
+	_packet = Packet::make(_data.data(), _datasize);
+    else {
+	// make up some data to fill extra space
+	StringAccum sa;
+	while (sa.length() < _datasize)
+	    sa << _data;
+	_packet = Packet::make(sa.data(), _datasize);
     }
-    while (new_data.length() < _datasize);    
-    _packet = Packet::make(new_data.data(), _datasize);
-  }
-  else
-    _packet = Packet::make(_data.data(), _data.length());
 }
 
 String
