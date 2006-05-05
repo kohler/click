@@ -77,14 +77,14 @@ install-obj: $(TARGETS) always
 install-man: always elementmap-$(package).xml
 	$(mkinstalldirs) $(DESTDIR)$(mandir)
 	$(mkinstalldirs) $(DESTDIR)$(mandir)/mann
-	$(clickbindir)/click-elem2man -L -d $(DESTDIR)$(mandir)/mann -P $(package) -e $(DESTDIR)$(clickdatadir)/elementmap.xml elementmap-$(package).xml
+	$(clickbindir)/click-elem2man -L -d $(DESTDIR)$(mandir)/mann -P $(package) -e $(clickdatadir)/elementmap.xml elementmap-$(package).xml
 
 uninstall: uninstall-obj uninstall-man always
 	/bin/rm -f $(DESTDIR)$(clickdatadir)/elementmap-$(package).xml
 uninstall-obj: always
 	for i in $(TARGETS); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
 uninstall-man: always elementmap-$(package).xml
-	$(clickbindir)/click-elem2man -L -d $(DESTDIR)$(mandir)/mann -P $(package) -e $(DESTDIR)$(clickdatadir)/elementmap.xml -u elementmap-$(package).xml
+	$(clickbindir)/click-elem2man -L -d $(DESTDIR)$(mandir)/mann -P $(package) -e $(clickdatadir)/elementmap.xml -u elementmap-$(package).xml
 
 clean:
 	@for i in $(DRIVERS); do make CLICK_PACKAGE_MAKING=$$i clean; done
