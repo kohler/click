@@ -32,8 +32,6 @@ click-devirtualize: lib Makefile
 	@cd click-devirtualize && $(MAKE) all-local
 click-fastclassifier: lib Makefile
 	@cd click-fastclassifier && $(MAKE) all-local
-click-findpackage: lib Makefile
-	@:
 click-flatten: lib Makefile
 	@cd click-flatten && $(MAKE) all-local
 click-install: lib Makefile

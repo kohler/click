@@ -144,12 +144,12 @@ remove_unneeded_packages(const StringMap &active_modules, const StringMap &packa
   if (removals.size()) {
     String to_remove;
     for (int i = 0; i < removals.size(); i++)
-      to_remove += " " + removals[i];
+	to_remove += (i ? " " : "") + removals[i];
     if (verbose)
       errh->message("Removing packages:%s", to_remove.c_str());
 
 #if FOR_LINUXMODULE
-    String cmdline = "/sbin/rmmod" + to_remove + " 2>/dev/null";
+    String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
     int status = system(cmdline.c_str());
     if (status < 0 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
       retval = errh->error("cannot remove package(s) '%s'", to_remove.c_str());

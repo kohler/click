@@ -309,7 +309,9 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
     } else {
       // package already loaded; note in 'active_modules' that we still need
       // it
-      String filename = req + OBJSUFFIX;
+      String filename = req;
+      if (active_modules[filename] < 0)
+	filename = req + OBJSUFFIX;
       if (active_modules[filename] < 0)
 	filename = req + ".o";
       if (active_modules[filename] == 0)

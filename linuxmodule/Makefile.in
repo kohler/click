@@ -38,10 +38,12 @@ STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o \
 ifndef MINDRIVER
 DRIVER = click
 ELEMENTSCONF = elements
+KSYMS = ksyms
 INSTALLOBJS = $(DRIVER).o proclikefs.o
 else
 DRIVER = $(MINDRIVER)click
 ELEMENTSCONF = elements_$(MINDRIVER)
+KSYMS = ksyms_$(MINDRIVER)
 INSTALLOBJS = $(DRIVER).o
 endif
 
@@ -111,8 +113,11 @@ obj-m += $(INSTALLOBJS)
 
 $(DRIVER)-objs = $(LIB_C_OBJS) $(LIB_CXX_OBJS) $(STD_ELEMENT_OBJS) \
 	$(ELEMENT_OBJS) $(LINUXMODULE_C_OBJS) $(LINUXMODULE_CXX_OBJS) \
-	$(ELEMENTSCONF).o
+	$(KSYMS).o $(ELEMENTSCONF).o
 proclikefs-objs = proclikefsmod.o
+
+KSYM_OBJS = $(LIB_C_OBJS) $(LIB_CXX_OBJS) $(STD_ELEMENT_OBJS) \
+	$(ELEMENT_OBJS) $(LINUXMODULE_C_OBJS) $(LINUXMODULE_CXX_OBJS)
 
 all: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc always
 	$(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules
@@ -138,6 +143,11 @@ $(obj)/$(ELEMENTSCONF).o : $(obj)/$(ELEMENTSCONF).cc
 
 $(obj)/proclikefsmod.o : $(srcdir)/proclikefs.c
 	$(call if_changed_rule,cc_o_c)
+
+$(obj)/$(KSYMS).c: $(addprefix $(obj)/,$(KSYM_OBJS)) $(top_builddir)/click-buildtool
+	$(top_builddir)/click-buildtool ksyms -C $(obj) -x kernelversion.o $(KSYM_OBJS) > $(obj)/$(KSYMS).c
+$(obj)/$(KSYMS).o: $(obj)/$(KSYMS).c
+	$(call if_changed_dep,ccompile)
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(obj)/$(ELEMENTSCONF).mk
@@ -276,7 +286,7 @@ always:
 clean:
 	-rm -f *~ *.d *.o *.mod.c *.ko
 	-rm -f .version .*.o.flags .*.o.d .*.o.cmd .*.ko.cmd
-	-rm -f $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc elements.conf
+	-rm -f $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc $(KSYMS).c elements.conf
 distclean: clean
 	-rm -f Makefile
 

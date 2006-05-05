@@ -858,83 +858,6 @@ $requirements"; shift 1;;
 }
 
 
-###############
-# FINDPACKAGE #
-###############
-
-findpackage_usage () {
-    echo "Usage: click-buildtool findpackage [REQS]" 1>&2
-    echo "Try 'click-buildtool findpackage --help' for more information." 1>&2
-    exit 1
-}
-
-findpackage () {
-    provisions="$default_provisions
-"`elementmap_provisions ${clickdatadir}/elementmap.xml`
-    requirements=""
-    stdin=n
-    while [ x"$1" != x ]; do
-    case $1 in
-    -C|--c|--cl|--cli|--clic|--click|--clickp|--clickpa|--clickpat|--clickpath)
-	if test $# -lt 2; then findpackage_usage; fi
-	shift 1; CLICKPATH="$1"; shift 1;;
-    -C*)
-	CLICKPATH=`echo "$1" | sed 's/^-C//'`; shift 1;;
-    --c=*|--cl=*|--cli=*|--clic=*|--click=*|--clickp=*|--clickpa=*|--clickpat=*|--clickpath=*)
-	CLICKPATH=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
-    -h|--h|--he|--hel|--help)
-	cat <<'EOF' 1>&2
-'Click-buildtool findpackage' exits with status 0 if the Click installation
-provides all requirement(s) in REQ arguments, and status 1 otherwise.
-
-Usage: click-buildtool findpackage [OPTIONS] [REQ...]
-
-Options:
-  -C, --clickpath PATH       Use PATH for CLICKPATH.
-  -h, --help                 Print this message and exit.
-
-Report bugs to <click@pdos.lcs.mit.edu>.
-EOF
-	exit 0;;
-    -)
-	stdin=y; shift 1;;
-    -*)
-	findpackage_usage;;
-    *)
-	requirements="$1
-$requirements"; shift 1;;
-    esac
-    done
-
-    # expand CLICKPATH to find all elementmap.xml files
-    [ -z "$CLICKPATH" ] && CLICKPATH=:
-    default_datadir="$clickdatadir"
-    elementmaps=
-    for pathcmp in `echo "'$CLICKPATH'" | sed "s/:/' '/g"`; do
-	pathcmp="`echo "$pathcmp" | sed "s/^'\(.*\)'/\1/"`"
-	[ -z "$pathcmp" -a -z "$default_datadir" ] && continue
-	if [ -z "$pathcmp" ]; then
-	    pathcmp="$default_datadir"; default_datadir=
-	elif [ -d "$pathcmp/share/click" ]; then
-	    pathcmp="$pathcmp/share/click"
-	else
-	    pathcmp="$pathcmp/share"
-	fi
-	elementmaps="$elementmaps `ls "$pathcmp"/elementmap*.xml 2>/dev/null`"
-    done
-
-    [ $stdin = y ] && requirements="`cat` $requirements"
-    output=
-    while [ -n "$requirements" ]; do
-	requirements=`echo "$requirements" | tr -s ' \011\015\014\013' '\012' | grep . | sort | uniq`
-	grep_requirements=`echo "$requirements" | tr '\012' ' ' | sed 's/ *$//
-s/ /\\\\|/g'`
-	grep " name=['"'"'"]$grep_requirements['"'"]' $elementmaps 
-    done
-    exit 0
-}
-
-
 #############
 # QUIETLINK #
 #############
@@ -1220,6 +1143,90 @@ include ${clickdatadir}/pkg-Makefile" > Makefile
 
 
 
+#########
+# KSYMS #
+#########
+
+ksyms_usage () {
+    echo "Usage: click-buildtool ksyms OBJ... > KSYMS" 1>&2
+    echo "Try 'click-buildtool ksyms --help' for more information." 1>&2
+    exit 1
+}
+
+ksyms () {
+    driver=""
+    date=`date`
+    dir=
+    objs=
+    exclude=
+    while [ x"$1" != x ]; do
+    case $1 in
+    -C|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
+        test $# -lt 2 && ksyms_usage
+	shift 1; dir="$1"; shift 1;;
+    -C*)
+	dir="`echo "$1" | sed 's/^-C//'`"/; shift 1;;
+    --di=*|--dir=*|--dire=*|--direc=*|--direct=*|--directo=*|--director=*|--directory=*)
+	dir="`echo "$1" | sed 's/^[^=]*=//'`"/; shift 1;;
+    -x|--e|--ex|--exc|--excl|--exclu|--exclud|--exclude)
+    	test $# -lt 2 && ksyms_usage
+	shift 1; exclude="$exclude
+$1"; shift 1;;
+    -x*)
+	exclude="$exclude
+`echo "$1" | sed 's/^-x//'`"; shift 1;;
+    --e=*|--ex=*|--exc=*|--excl=*|--exclu=*|--exclud=*|--exclude=*)
+	exclude="$exclude
+`echo "$1" | sed 's/^[^=]*=//'`"; shift 1;;
+    -h|--h|--he|--hel|--help)
+	cat <<'EOF' 1>&2
+'Click-buildtool ksyms' creates a C file that exports all symbols for the
+Click objects listed on the command line.
+
+Usage: click-buildtool ksyms OBJ... > KSYMS
+
+Options:
+  -x, --exclude=FILE       Ignore OBJ even if it is supplied as an argument.
+  -C, --directory DIR      Switch to DIR directory before running.
+  -h, --help               Print this message and exit.
+
+Report bugs to <click@pdos.lcs.mit.edu>.
+EOF
+	exit 0;;
+    *)
+	objs="$objs
+$1"; shift 1;;
+    esac
+    done
+
+    test -z "$objs" && ksyms_usage
+    objs=`echo "$objs" | sort | uniq`
+    test -n "$exclude" && objs=`echo "$objs
+$exclude" | sort | uniq -u`
+
+    if test -n "$dir"; then cd "$dir"; fi
+    echo "// Created by 'click-buildtool ksyms' on $date"
+    echo "#include <click/config.h>"
+    echo "#include <linux/version.h>"
+    echo "#include <linux/module.h>"
+    nm -g $objs | $awk '
+BEGIN {
+    printed["init_module"] = printed["cleanup_module"] = 1;
+}
+/^[ 	]/ { 
+    next 
+}
+/........[ 	][ABCDGRSTVW]/ {
+    if (!printed[$3]) {
+	printed[$3] = 1;
+	print "extern char " $3 "[];";
+	print "EXPORT_SYMBOL(" $3 ");";
+    }
+}'
+}
+
+
+
 ################
 # MAIN PROGRAM #
 ################
@@ -1254,12 +1261,13 @@ Usage: click-buildtool elem2make [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool elem2export [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool elem2package [-V] [-p PREFIX] PACKAGENAME < [ELEMENTS]
    or: click-buildtool findelem [-a] [-V] [-p PREFIX] < [FILES AND DIRECTORIES]
+   or: click-buildtool makepackage [-t DRIVER] PACKAGENAME SRCFILES...
    or: click-buildtool prefix
    or: click-buildtool provides [REQS]
    or: click-buildtool quietlink
-   or: click-buildtool kversion [--gpl]
    or: click-buildtool kbuild
-   or: click-buildtool makepackage [-t DRIVER] PACKAGENAME SRCFILES...
+   or: click-buildtool kversion [--gpl]
+   or: click-buildtool ksyms OBJS > KSYMSFILE
 
 Options:
   -V, --verbose            Print more information.
@@ -1277,8 +1285,8 @@ EOF
      elem2="export"; shift 1; elem2xxx "$@"; exit 0;;
   elem2package)
      elem2="package"; shift 1; elem2xxx "$@"; exit 0;;
-  findpackage)
-     shift 1; findpackage "$@"; exit 0;;
+  makepackage)
+     shift 1; makepackage "$@"; exit 0;;
   prefix)
      shift 1; prefix "$@"; exit 0;;
   provides)
@@ -1289,8 +1297,8 @@ EOF
      shift 1; kversion "$@"; exit 0;;
   kbuild)
      shift 1; kbuild "$@"; exit 0;;
-  makepackage)
-     shift 1; makepackage "$@"; exit 0;;
+  ksyms)
+     shift 1; ksyms "$@"; exit 0;;
   *)
      echo "Usage: click-buildtool TOOLNAME [ARGUMENTS]
 Try 'click-buildtool --help' for more information." 1>&2
