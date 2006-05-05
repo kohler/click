@@ -1,3 +1,12 @@
+2006-05-05 Friday 02:22  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.87), configure (1.77), configure.in
+	  (1.282), linuxmodule/.cvsignore (1.3), linuxmodule/Makefile.in
+	  (1.109), tools/Makefile.in (1.57),
+	  tools/click-install/click-install.cc (1.62),
+	  tools/click-install/common.cc (1.21): Mazu updates for linking
+	  against external packages
+
 2006-05-03 Wednesday 20:21  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/infinitesource.cc (1.57): handle LIMIT 0
