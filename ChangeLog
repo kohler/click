@@ -1,3 +1,7 @@
+2006-05-05 Friday 18:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/pkg-Makefile (1.5): no DESTDIR for base elementmap
+
 2006-05-05 Friday 02:22  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.87), configure (1.77), configure.in
