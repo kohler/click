@@ -41,7 +41,7 @@ sw[1] -> th1;
 ICMPSendPings(2.0.0.2, 1.0.0.1, LIMIT 1) -> EtherEncap(0x0800, fake0, fake0) -> th0;
 ICMPSendPings(2.0.0.3, 1.0.0.1, LIMIT 1) -> EtherEncap(0x0800, fake0, fake0) -> th1;
 
-%ignore FAKE0
+%ignore -i FAKE0
 .*listening on.*
 .*packet.*received by.*
 .*packet.*dropped by.*
@@ -49,6 +49,9 @@ ICMPSendPings(2.0.0.3, 1.0.0.1, LIMIT 1) -> EtherEncap(0x0800, fake0, fake0) -> 
 .*arp.*
 .*verbose output.*
 .*end of file.*
+.*icmp6.*
+.*\.mdns >.*
+.*igmp.*
 
 %expectx -i FAKE0
 .* 1.0.0.1 > 1.0.0.2: icmp.* echo request.*
