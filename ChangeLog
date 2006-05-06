@@ -1,3 +1,8 @@
+2006-05-06 Saturday 13:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/: ethernet/ARPQuerier-01.testie (1.4),
+	  linuxmodule/ToHost-01.testie (1.8): update testie testies
+
 2006-05-05 Friday 18:14  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/pkg-Makefile (1.5): no DESTDIR for base elementmap
