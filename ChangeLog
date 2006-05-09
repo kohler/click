@@ -1,3 +1,19 @@
+2006-05-09 Tuesday 01:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.88), etc/samplepackage/.cvsignore (1.10),
+	  etc/samplepackage/config.h (1.4), include/click/ino.hh (1.7),
+	  include/click/package.hh (1.11), lib/driver.cc (1.33),
+	  tools/click-devirtualize/click-devirtualize.cc (1.51),
+	  tools/click-fastclassifier/click-fastclassifier.cc (1.72),
+	  tools/click-install/click-install.cc (1.63),
+	  tools/click-install/common.cc (1.22), tools/lib/Makefile.in
+	  (1.40), tools/lib/md5.c (1.1), tools/lib/md5.h (1.1): a new story
+	  for packages that are compiled in to a configuration file: use
+	  MD5 hashes to uniqueify the package name, and do not reinstall an
+	  existing package.  This is required by 2.6, which cannot easily
+	  be fooled about a module's name, and refuses to install a module
+	  with the same name as an existing module.
+
 2006-05-08 Monday 21:15  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* INSTALL (1.43), etc/README (1.14), etc/linux-2.6.11.6-patch
