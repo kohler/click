@@ -1,3 +1,9 @@
+2006-05-08 Monday 21:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* INSTALL (1.43), etc/README (1.14), etc/linux-2.6.11.6-patch
+	  (1.4), etc/linux-2.6.13.2-patch (1.2): remove old 2.6 patches,
+	  mention new patch
+
 2006-05-06 Saturday 13:02  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/: ethernet/ARPQuerier-01.testie (1.4),
