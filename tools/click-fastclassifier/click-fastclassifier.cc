@@ -361,39 +361,46 @@ copy_elements(RouterT *oldr, RouterT *newr, ElementClassT *type)
       newr->get_element(x->name(), type, x->configuration(), "");
 }
 
+static RouterT *
+classifiers_program(RouterT *r, const Vector<ElementT *> &classifiers)
+{
+    RouterT *nr = new RouterT;
+    
+    ElementT *idle = nr->add_anon_element(ElementClassT::base_type("Idle"));
+    const Vector<String> &old_requirements = r->requirements();
+    for (int i = 0; i < old_requirements.size(); i++)
+	nr->add_requirement(old_requirements[i]);
+  
+    // copy AlignmentInfos and AddressInfos
+    copy_elements(r, nr, ElementClassT::base_type("AlignmentInfo"));
+    copy_elements(r, nr, ElementClassT::base_type("AddressInfo"));
+
+    // copy all classifiers
+    for (int i = 0; i < classifiers.size(); i++) {
+	ElementT *c = classifiers[i];
+    
+	// add new classifier and connections to idle
+	ElementT *nc = nr->get_element(c->name(), c->type(), c->configuration(), c->landmark());
+  
+	nr->add_connection(idle, i, nc, 0);
+	// count number of output ports
+	int noutputs = c->noutputs();
+	for (int j = 0; j < noutputs; j++)
+	    nr->add_connection(nc, j, idle, 0);
+    }
+
+    return nr;
+}
+
 static void
-analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
+analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
 		    ErrorHandler *errh)
 {
-  // set up new router
-  RouterT nr;
-  ElementT *idle = nr.add_anon_element(ElementClassT::base_type("Idle"));
-  const Vector<String> &old_requirements = r->requirements();
-  for (int i = 0; i < old_requirements.size(); i++)
-    nr.add_requirement(old_requirements[i]);
-  
-  // copy AlignmentInfos and AddressInfos
-  copy_elements(r, &nr, ElementClassT::base_type("AlignmentInfo"));
-  copy_elements(r, &nr, ElementClassT::base_type("AddressInfo"));
-
-  // copy all classifiers
+  // get classifiers
   HashMap<String, int> classifier_map(-1);
   Vector<Classifier_Program> iprograms;
   for (int i = 0; i < classifiers.size(); i++) {
-    ElementT *c = classifiers[i];
-    classifier_map.insert(c->name(), i);
-    
-    // add new classifier and connections to idle
-    ElementT *nc =
-      nr.get_element(c->name(), c->type(), c->configuration(), c->landmark());
-  
-    nr.add_connection(idle, i, nc, 0);
-    // count number of output ports
-    int noutputs = c->noutputs();
-    for (int j = 0; j < noutputs; j++)
-      nr.add_connection(nc, j, idle, 0);
-
-    // add program
+    classifier_map.insert(classifiers[i]->name(), i);
     iprograms.push_back(Classifier_Program());
   }
 
@@ -406,8 +413,8 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
       cmd_sa << " -h '*." << interesting_handler_names[i] << "'";
     cmd_sa << " -q";
     if (verbose)
-      errh->message("Running command '%s' on configuration:\n%s", cmd_sa.c_str(), nr.configuration_string().c_str());
-    handler_text = shell_command_output_string(cmd_sa.take_string(), nr.configuration_string(), errh);
+      errh->message("Running command '%s' on configuration:\n%s", cmd_sa.c_str(), nr->configuration_string().c_str());
+    handler_text = shell_command_output_string(cmd_sa.take_string(), nr->configuration_string(), errh);
   }
 
   // assign handlers to programs; assume handler results contain no par breaks
@@ -611,7 +618,7 @@ output_classifier_program(int which,
 
 static void
 compile_classifiers(RouterT *r, const String &package_name,
-		    Vector<ElementT *> &classifiers,
+		    RouterT *nr, Vector<ElementT *> &classifiers,
 		    int compile_drivers, ErrorHandler *errh)
 {
     // create C++ files
@@ -621,7 +628,7 @@ compile_classifiers(RouterT *r, const String &package_name,
 	   << "#include <click/package.hh>\n#include <click/element.hh>\n";
 
     // analyze Classifiers into programs
-    analyze_classifiers(r, classifiers, errh);
+    analyze_classifiers(nr, classifiers, errh);
 
     // add requirement
     r->add_requirement(package_name);
@@ -983,12 +990,15 @@ particular purpose.\n");
       try_remove_classifiers(r, classifiers);
   }
 
+  // create classifiers program
+  RouterT *classprogr = classifiers_program(r, classifiers);
+
   // figure out package name
   String package_name;
   {
       md5_state_t pms;
       char buf[MD5_TEXT_DIGEST_SIZE];
-      String s = r->configuration_string();
+      String s = classprogr->configuration_string();
       md5_init(&pms);
       md5_append(&pms, (const md5_byte_t *) s.data(), s.length());
       md5_final_text(&pms, buf);
@@ -996,7 +1006,7 @@ particular purpose.\n");
   }
   
   if (do_compile)
-    compile_classifiers(r, package_name, classifiers, compile_drivers, errh);
+    compile_classifiers(r, package_name, classprogr, classifiers, compile_drivers, errh);
 
   // write output
   if (source_only) {
