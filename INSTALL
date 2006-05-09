@@ -12,7 +12,7 @@ architectures.
 
 The Linux kernel module requires a patched Linux 2.2, 2.4, or 2.6 system.
 We provide patches for Linux 2.2.18 through 2.2.21, 2.4.18 through 2.4.28,
-2.6.11, and 2.6.13.  The patches do not apply against Red Hat kernels; use
+and 2.6.16.13.  The patches do not apply against Red Hat kernels; use
 vanilla kernels from kernel.org.
 
 The preliminary FreeBSD Click kernel module compiles against unpatched
@@ -98,8 +98,8 @@ and running Linux kernels.
     do not work.)  Unpack this distribution into /usr/src/linux.  (Save the
     old kernel source tree, if you had one.)
 
-    We supply patches for Linux 2.2.18-21, 2.4.18-28, 2.6.11, and 2.6.13.
-    A patch may or may not work for a slightly different kernel version; we
+    We supply patches for Linux 2.2.18-21, 2.4.18-28, and 2.6.16.13.  A
+    patch may or may not work for a slightly different kernel version; we
     suggest you try it.
 
  3. Install the Click Linux kernel patch:
@@ -110,20 +110,19 @@ and running Linux kernels.
     Use the VERSION that applies to your kernel, as follows:
 
     Kernel version	Patch
-    2.2.18		linux-2.2.18-patch
-    2.2.19		linux-2.2.19-patch
-    2.2.20		linux-2.2.19-patch
-    2.2.21		linux-2.2.19-patch
-    2.4.18		linux-2.4.18-patch
-    2.4.19		linux-2.4.18-patch
-    2.4.20		linux-2.4.20-patch
-    2.4.21		linux-2.4.21-patch
+    2.6.16.13		linux-2.6.16.13-patch
+    2.4.28		linux-2.4.26-patch
+    2.4.27		linux-2.4.26-patch
     2.4.26		linux-2.4.26-patch
     2.4.26-Debian	debian-2.4.26-patch
-    2.4.27		linux-2.4.26-patch
-    2.4.28		linux-2.4.26-patch
-    2.6.11.6		linux-2.6.11.6-patch
-    2.6.13.2		linux-2.6.13.2-patch
+    2.4.21		linux-2.4.21-patch
+    2.4.20		linux-2.4.20-patch
+    2.4.19		linux-2.4.18-patch
+    2.4.18		linux-2.4.18-patch
+    2.2.21		linux-2.2.19-patch
+    2.2.20		linux-2.2.19-patch
+    2.2.19		linux-2.2.19-patch
+    2.2.18		linux-2.2.18-patch
 
     The patch fixes syntax errors in several header files (the C++ compiler
     doesn't accept them), adds several new functions, and changes the
