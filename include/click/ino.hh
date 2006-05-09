@@ -10,10 +10,10 @@ class Router;
 #define INO_ELEMENTNO(ino)		((int)((ino) & 0xFFFFU) - 1)
 #define INO_HANDLERNO(ino)		((((ino) & 0xFFFFU) ? 0 : Router::FIRST_GLOBAL_HANDLER) + (((ino) >> 16) & 0x7FFFU))
 #define INO_DT_H			0x1U /* handlers only */
-#define INO_DT_N			0x2U /* names; >= 2 -> has names */
+#define INO_DT_N			0x2U /* names */
 #define INO_DT_HN			0x3U /* handlers + names */
-#define INO_DT_GLOBAL			0x4U /* handlers + names + all #s */
-#define INO_DT_HAS_H(ino)		(INO_DIRTYPE((ino)) != INO_DT_N)
+#define INO_DT_GLOBAL			0x5U /* handlers + names + all #s */
+#define INO_DT_HAS_H(ino)		(INO_DIRTYPE((ino)) & INO_DT_H)
 #define INO_DT_HAS_N(ino)		(INO_DIRTYPE((ino)) >= INO_DT_N)
 #define INO_DT_HAS_U(ino)		(INO_DIRTYPE((ino)) == INO_DT_GLOBAL)
 

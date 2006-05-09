@@ -5,6 +5,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,10 +36,8 @@
 #endif
 #include <sys/wait.h>
 
-#if FOR_BSDMODULE || (FOR_LINUXMODULE && HAVE_CLICKFS)
+#if FOR_BSDMODULE || FOR_LINUXMODULE
 const char *clickfs_prefix = "/click";
-#elif FOR_LINUXMODULE
-const char *clickfs_prefix = "/proc/click";
 #endif
 
 bool verbose = false;
@@ -121,21 +120,11 @@ remove_unneeded_packages(const StringMap &active_modules, const StringMap &packa
       String key = iter.key();
       if (packages[key] >= 0)
 	removals.push_back(key);
-      else {
-	// check for removing an old archive package;
-	// they are identified by a leading underscore.
-	int p;
-	for (p = 0; p < key.length() && key[p] == '_'; p++)
-	  /* nada */;
-	String s = key.substring(p);
-	if (s && packages[s] >= 0)
+      else if (key.length() > 3 && key.substring(key.length() - 3) == OBJSUFFIX) {
+	// check for .ko/.bo packages
+	key = key.substring(0, key.length() - 3);
+	if (packages[key] >= 0)
 	  removals.push_back(key);
-	else if (s.length() > 3 && s.substring(s.length() - 3) == OBJSUFFIX) {
-	  // check for .ko/.bo packages
-	  s = s.substring(0, s.length() - 3);
-	  if (s && packages[s] >= 0)
-	    removals.push_back(key);
-	}
       }
     }
 
@@ -146,7 +135,7 @@ remove_unneeded_packages(const StringMap &active_modules, const StringMap &packa
     for (int i = 0; i < removals.size(); i++)
 	to_remove += (i ? " " : "") + removals[i];
     if (verbose)
-      errh->message("Removing packages:%s", to_remove.c_str());
+      errh->message("Removing packages: %s", to_remove.c_str());
 
 #if FOR_LINUXMODULE
     String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
@@ -208,7 +197,7 @@ unload_click(ErrorHandler *errh)
   if (status < 0 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
     return errh->error("cannot remove Click module from kernel");
 
-#if FOR_LINUXMODULE && HAVE_CLICKFS
+#if FOR_LINUXMODULE
   // proclikefs will take care of the unmount for us, but we'll give it a shot
   // anyway.
   if (verbose)

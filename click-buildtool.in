@@ -986,11 +986,14 @@ EOF
 
     cat <<EOF
 #include <click/config.h>
+#include <linux/version.h>
 #include <linux/module.h>
+
 /* a new version of EXPORT_NO_SYMBOLS that works */
 const int __ksymtab_nothing[0] __attribute__((section("__ksymtab"))) = { };
 EOF
     test $gpl = 1 && cat <<EOF
+
 #ifdef MODULE_LICENSE
 MODULE_LICENSE("Dual BSD/GPL");
 #endif

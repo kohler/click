@@ -54,12 +54,17 @@
 # include <click/bighashmap_arena.hh>
 #endif
 
+#if HAVE_DYNAMIC_LINKING && !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+# define CLICK_PACKAGE_LOADED	1
+#endif
 
 // GENERIC PACKAGE SUPPORT
 
 struct ClickProvision {
     CLICK_NAME(String) name;
+#if CLICK_PACKAGE_LOADED
     bool loaded : 1;
+#endif
     int provided;
 };
 static int nprovisions;
@@ -67,37 +72,52 @@ static int provisions_cap;
 static ClickProvision *provisions;
 
 static ClickProvision *
-find_provision(const CLICK_NAME(String) &name)
+find_provision(const CLICK_NAME(String) &name, int add)
 {
+    ClickProvision *pf = 0;
+    
     for (int i = 0; i < nprovisions; i++)
 	if (provisions[i].name == name)
 	    return &provisions[i];
+	else if (add && provisions[i].provided == 0
+#if CLICK_PACKAGE_LOADED
+		 && !provisions[i].loaded
+#endif
+		 )
+	    pf = &provisions[i];
+
+    if (!add)
+	return 0;
 
     // otherwise, create new ClickProvision
-    ClickProvision *npf;
-    if (nprovisions >= provisions_cap) {
-	int n = (nprovisions ? nprovisions * 2 : 4);
-	if (!(npf = new ClickProvision[n]))
-	    return 0;
-	for (int i = 0; i < nprovisions; i++)
-	    npf[i] = provisions[i];
-	provisions_cap = n;
-	delete[] provisions;
-	provisions = npf;
-    } else
-	npf = provisions;
+    if (!pf) {
+	if (nprovisions >= provisions_cap) {
+	    int n = (nprovisions ? nprovisions * 2 : 4);
+	    ClickProvision *npf = new ClickProvision[n];
+	    if (!npf)
+		return 0;
+	    for (int i = 0; i < nprovisions; i++)
+		npf[i] = provisions[i];
+	    provisions_cap = n;
+	    delete[] provisions;
+	    provisions = npf;
+	}
+	pf = &provisions[nprovisions++];
+    }
 
-    npf[nprovisions].name = name;
-    npf[nprovisions].loaded = false;
-    npf[nprovisions].provided = 0;
-    return &npf[nprovisions++];
+    pf->name = name;
+#if CLICK_PACKAGE_LOADED
+    pf->loaded = false;
+#endif
+    pf->provided = 0;
+    return pf;
 }
 
 
 extern "C" void
 click_provide(const char *package)
 {
-    ClickProvision *p = find_provision(package);
+    ClickProvision *p = find_provision(package, 1);
     if (p)
 	p->provided++;
 }
@@ -105,7 +125,7 @@ click_provide(const char *package)
 extern "C" void
 click_unprovide(const char *package)
 {
-    ClickProvision *p = find_provision(package);
+    ClickProvision *p = find_provision(package, 0);
     if (p && p->provided > 0)
 	p->provided--;
 }
@@ -113,7 +133,7 @@ click_unprovide(const char *package)
 extern "C" bool
 click_has_provision(const char *package)
 {
-    ClickProvision *p = find_provision(package);
+    ClickProvision *p = find_provision(package, 0);
     return (p && p->provided > 0);
 }
 
@@ -125,7 +145,7 @@ click_public_packages(CLICK_NAME(Vector)<CLICK_NAME(String)> &v)
 	    v.push_back(provisions[i].name);
 }
 
-#if defined(CLICK_LINUXMODULE) || defined(CLICK_BSDMODULE)
+#if CLICK_LINUXMODULE || CLICK_BSDMODULE
 extern "C" void
 click_cleanup_packages()
 {
@@ -136,7 +156,7 @@ click_cleanup_packages()
 #endif
 
 
-#if defined(CLICK_USERLEVEL) || (HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE))
+#if CLICK_USERLEVEL || (HAVE_DYNAMIC_LINKING && !CLICK_LINUXMODULE && !CLICK_BSDMODULE)
 CLICK_DECLS
 
 static int
@@ -153,7 +173,7 @@ CLICK_ENDDECLS
 #endif
 
 
-#if HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE)
+#if CLICK_PACKAGE_LOADED
 CLICK_DECLS
 
 static String *click_buildtool_prog, *tmpdir;
@@ -244,7 +264,7 @@ compile_archive_file(String package, const Vector<ArchiveElement> *archive, int 
 void
 clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, ErrorHandler *errh)
 {
-    ClickProvision *p = find_provision(name);
+    ClickProvision *p = find_provision(name, 1);
     if (!p || p->loaded)
 	return;
 
@@ -291,7 +311,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
 }
 
 CLICK_ENDDECLS
-#endif /* HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE) */
+#endif /* CLICK_PACKAGE_LOADED */
 
 
 #ifdef CLICK_USERLEVEL

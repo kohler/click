@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -27,6 +28,7 @@
 #include "toolutils.hh"
 #include "elementmap.hh"
 #include "cxxclass.hh"
+#include "md5.h"
 #include <click/archive.hh>
 #include "specializer.hh"
 #include "signature.hh"
@@ -66,7 +68,7 @@ static Clp_Option options[] = {
   { "reverse", 'r', REVERSE_OPT, 0, Clp_Negate },
   { "source", 's', SOURCE_OPT, 0, Clp_Negate },
   { "user", 'u', USERLEVEL_OPT, 0, Clp_Negate },
-  { "version", 'v', VERSION_OPT, 0, 0 },
+  { "version", 'v', VERSION_OPT, 0, 0 }
 };
 
 static const char *program_name;
@@ -421,13 +423,15 @@ particular purpose.\n");
   }
   
   // find name of package
-  String package_name = "devirtualize";
-  int uniqueifier = 1;
-  while (1) {
-    if (router->archive_index(package_name + suffix + ".cc") < 0)
-      break;
-    uniqueifier++;
-    package_name = "devirtualize" + String(uniqueifier);
+  String package_name;
+  {
+      md5_state_t pms;
+      char buf[MD5_TEXT_DIGEST_SIZE];
+      String s = router->configuration_string();
+      md5_init(&pms);
+      md5_append(&pms, (const md5_byte_t *) s.data(), s.length());
+      md5_final_text(&pms, buf);
+      package_name = "clickdv_" + String(buf);
   }
   router->add_requirement(package_name);
 

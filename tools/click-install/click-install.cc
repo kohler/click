@@ -40,7 +40,7 @@
 #if FOR_BSDMODULE
 # include <sys/param.h>
 # include <sys/mount.h>
-#elif FOR_LINUXMODULE && HAVE_CLICKFS
+#elif FOR_LINUXMODULE
 # include <sys/mount.h>
 #endif
 #include <fcntl.h>
@@ -162,7 +162,8 @@ prepare_tmpdir(RouterT *r, ErrorHandler *errh)
 }
 
 static void
-compile_archive_packages(RouterT *r, ErrorHandler *errh)
+compile_archive_packages(RouterT *r, HashMap<String, int> &packages,
+			 ErrorHandler *errh)
 {
   Vector<String> requirements = r->requirements();
 
@@ -171,7 +172,8 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
     const String &req = requirements[i];
 
     // skip if already have object file
-    if (r->archive_index(req + OBJSUFFIX) >= 0)
+    if (r->archive_index(req + OBJSUFFIX) >= 0
+	|| packages[req] >= 0)
       continue;
 
     // look for source file, prepare temporary directory
@@ -197,7 +199,7 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
       cerrh.fatal("%s: %s", filename.c_str(), strerror(errno));
     fwrite(source_text.data(), 1, source_text.length(), f);
     fclose(f);
-    
+
     // run click-compile
     StringAccum compile_command;
     compile_command << click_buildtool_prog << " makepackage -C "
@@ -247,7 +249,7 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
 			  ErrorHandler *errh)
 {
   // check for uncompiled archive packages and try to compile them
-  compile_archive_packages(r, errh);
+  compile_archive_packages(r, packages, errh);
   
   Vector<String> requirements = r->requirements();
 
@@ -257,14 +259,12 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
 
     // look for object in archive
     int obj_aei = r->archive_index(req + OBJSUFFIX);
-    if (obj_aei >= 0) {
+    if (obj_aei >= 0 && packages[req] < 0) {
       // install archived objects. mark them with leading underscores.
       // may require renaming to avoid clashes in 'insmod'
       
       // choose module name
-      String insmod_name = "_" + req + OBJSUFFIX;
-      while (active_modules[insmod_name] >= 0)
-	insmod_name = "_" + insmod_name;
+      String insmod_name = req + OBJSUFFIX;
 
       if (verbose)
 	errh->message("Installing package %s (%s" OBJSUFFIX " from config archive)", insmod_name.c_str(), req.c_str());
@@ -285,7 +285,7 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
       // cleanup
       packages.insert(req, 1);
       active_modules.insert(insmod_name, 1);
-      
+
     } else if (packages[req] < 0) {
       // install required package from CLICKPATH
       String filename = req + OBJSUFFIX;
@@ -309,6 +309,9 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
     } else {
       // package already loaded; note in 'active_modules' that we still need
       // it
+      if (verbose)
+	errh->message("Not installing package %s, version already exists", req.c_str());
+	
       String filename = req;
       if (active_modules[filename] < 0)
 	filename = req + OBJSUFFIX;
@@ -456,7 +459,7 @@ particular purpose.\n");
   
   // install Click module if required
   if (access(clickfs_packages.c_str(), F_OK) < 0) {
-#if FOR_LINUXMODULE && HAVE_CLICKFS
+#if FOR_LINUXMODULE
     // find and install proclikefs.o
     StringMap modules(-1);
     if (read_active_modules(modules, errh) && modules["proclikefs"] < 0) {
@@ -498,7 +501,7 @@ particular purpose.\n");
     install_module(click_o, String(), errh);
 #endif
 
-#if FOR_BSDMODULE || (FOR_LINUXMODULE && HAVE_CLICKFS)
+#if FOR_BSDMODULE || FOR_LINUXMODULE
     // make clickfs_prefix directory if required
     if (access(clickfs_prefix, F_OK) < 0 && errno == ENOENT) {
       if (mkdir(clickfs_prefix, 0777) < 0)

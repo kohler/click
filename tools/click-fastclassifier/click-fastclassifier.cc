@@ -30,6 +30,7 @@
 #include "toolutils.hh"
 #include "elementmap.hh"
 #include "click-fastclassifier.hh"
+#include "md5.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -64,14 +65,14 @@ static Clp_Option options[] = {
   { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
+  { "kernel", 'k', KERNEL_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "quiet", 'q', QUIET_OPT, 0, Clp_Negate },
   { "reverse", 'r', REVERSE_OPT, 0, Clp_Negate },
   { "source", 's', SOURCE_OPT, 0, Clp_Negate },
-  { "user", 'u', USERLEVEL_OPT, 0, Clp_Negate },
+  { "user", 'u', USERLEVEL_OPT, 0, 0 },
   { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
-  { "version", 'v', VERSION_OPT, 0, 0 },
+  { "version", 'v', VERSION_OPT, 0, 0 }
 };
 
 static const char *program_name;
@@ -611,7 +612,7 @@ output_classifier_program(int which,
 static void
 compile_classifiers(RouterT *r, const String &package_name,
 		    Vector<ElementT *> &classifiers,
-		    bool compile_kernel, bool compile_user, ErrorHandler *errh)
+		    int compile_drivers, ErrorHandler *errh)
 {
     // create C++ files
     StringAccum header, source, source_body;
@@ -646,7 +647,7 @@ compile_classifiers(RouterT *r, const String &package_name,
 	int nclasses = gen_cxxclass_names.size();
 	for (int i = 0; i < nclasses; i++)
 	    elem2package <<  "-\t\"" << package_name << ".hh\"\t" << gen_cxxclass_names[i] << '-' << gen_eclass_names[i] << '\n';
-	cmd_sa << click_buildtool_prog << " elem2package fastclassifier";
+	cmd_sa << click_buildtool_prog << " elem2package " << package_name;
 	source << shell_command_output_string(cmd_sa.take_string(), elem2package.take_string(), errh);
     }
     source << "CLICK_DECLS\n" << source_body << "CLICK_ENDDECLS\n";
@@ -654,7 +655,7 @@ compile_classifiers(RouterT *r, const String &package_name,
     // compile files if required
     String tmpdir;
   
-    if (compile_kernel || compile_user) {
+    if (compile_drivers) {
 	// create temporary directory
 	if (!(tmpdir = click_mktmpdir(errh)))
 	    exit(1);
@@ -674,7 +675,7 @@ compile_classifiers(RouterT *r, const String &package_name,
 	fclose(f);
     
 	// compile kernel module
-	if (compile_kernel) {
+	if (compile_drivers & Driver::LINUXMODULE) {
 	    StringAccum compile_command;
 	    compile_command << click_buildtool_prog << " makepackage -C "
 			    << tmpdir << " -t linuxmodule " << quiet_arg
@@ -689,7 +690,7 @@ compile_classifiers(RouterT *r, const String &package_name,
 	}
 
 	// compile userlevel
-	if (compile_user) {
+	if (compile_drivers & Driver::USERLEVEL) {
 	    StringAccum compile_command;
 	    compile_command << click_buildtool_prog << " makepackage -C "
 			    << tmpdir << " -t userlevel " << quiet_arg
@@ -714,13 +715,13 @@ compile_classifiers(RouterT *r, const String &package_name,
 	ae.data = header.take_string();
 	r->add_archive(ae);
 
-	if (compile_kernel) {
+	if (compile_drivers & Driver::LINUXMODULE) {
 	    ae.name = package_name + ".ko";
 	    ae.data = file_string(tmpdir + ae.name, errh);
 	    r->add_archive(ae);
 	}
 	
-	if (compile_user) {
+	if (compile_drivers & Driver::USERLEVEL) {
 	    ae.name = package_name + ".uo";
 	    ae.data = file_string(tmpdir + ae.name, errh);
 	    r->add_archive(ae);
@@ -826,8 +827,7 @@ main(int argc, char **argv)
 
   const char *router_file = 0;
   const char *output_file = 0;
-  bool compile_kernel = false;
-  bool compile_user = false;
+  int compile_drivers = 0;
   bool combine_classifiers = true;
   bool do_compile = true;
   bool source_only = false;
@@ -899,11 +899,11 @@ particular purpose.\n");
       break;
       
      case KERNEL_OPT:
-      compile_kernel = !clp->negated;
+      compile_drivers |= Driver::LINUXMODULE;
       break;
       
      case USERLEVEL_OPT:
-      compile_user = !clp->negated;
+      compile_drivers |= Driver::USERLEVEL;
       break;
 
      case QUIET_OPT:
@@ -933,7 +933,7 @@ particular purpose.\n");
   if (!r || errh->nerrors() > 0)
     exit(1);
   if (source_only || config_only)
-    compile_user = compile_kernel = false;
+    compile_drivers = 0;
 
   // open output file
   FILE *outf = stdout;
@@ -974,16 +974,6 @@ particular purpose.\n");
     exit(0);
   }
 
-  // find name of package
-  String package_name = "fastclassifier";
-  int uniqueifier = 1;
-  while (1) {
-    if (r->archive_index(package_name + ".cc") < 0)
-      break;
-    uniqueifier++;
-    package_name = "fastclassifier" + String(uniqueifier);
-  }
-  
   // try combining classifiers
   if (combine_classifiers) {
     bool any_combined = false;
@@ -993,9 +983,20 @@ particular purpose.\n");
       try_remove_classifiers(r, classifiers);
   }
 
+  // figure out package name
+  String package_name;
+  {
+      md5_state_t pms;
+      char buf[MD5_TEXT_DIGEST_SIZE];
+      String s = r->configuration_string();
+      md5_init(&pms);
+      md5_append(&pms, (const md5_byte_t *) s.data(), s.length());
+      md5_final_text(&pms, buf);
+      package_name = "clickfc_" + String(buf);
+  }
+  
   if (do_compile)
-    compile_classifiers(r, package_name, classifiers,
-			compile_kernel, compile_user, errh);
+    compile_classifiers(r, package_name, classifiers, compile_drivers, errh);
 
   // write output
   if (source_only) {

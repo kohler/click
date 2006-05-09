@@ -8,15 +8,15 @@
 #define PACKAGE_BUGREPORT ""
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME "samplepackage"
+#define PACKAGE_NAME ""
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "samplepackage 2.0"
+#define PACKAGE_STRING ""
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "samplepackage"
+#define PACKAGE_TARNAME ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "2.0"
+#define PACKAGE_VERSION ""
 
 #endif /* samplepackage_CLICK_CONFIG_H */

@@ -59,7 +59,7 @@ OBJS = string.o straccum.o \
 	elementt.o eclasst.o routert.o runparse.o variableenv.o \
 	lexert.o lexertinfo.o driver.o \
 	confparse.o archive.o processingt.o etraits.o elementmap.o \
-	userutils.o toolutils.o clp.o @LIBOBJS@ @EXTRA_TOOL_OBJS@
+	userutils.o md5.o toolutils.o clp.o @LIBOBJS@ @EXTRA_TOOL_OBJS@
 BUILDOBJS = $(patsubst %.o,%.bo,$(OBJS))
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_TOOL
