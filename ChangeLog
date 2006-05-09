@@ -1,3 +1,9 @@
+2006-05-09 Tuesday 09:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/click-fastclassifier/click-fastclassifier.cc (1.73):
+	  include only classifier programs (and alignmentinfo etc.) in the
+	  md5 hash
+
 2006-05-09 Tuesday 01:58  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.88), etc/samplepackage/.cvsignore (1.10),
