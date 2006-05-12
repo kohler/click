@@ -14,7 +14,8 @@ subdir = .
 conf_auxdir = @conf_auxdir@
 
 AUTOCONF = @AUTOCONF@
-ACLOCAL = cp m4/click.m4 aclocal.m4
+# ACLOCAL = aclocal -I m4
+ACLOCAL = :
 PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_IF_CHANGED = @INSTALL_IF_CHANGED@
@@ -176,7 +177,6 @@ dist: distdir
 distdir: $(srcdir)/configure
 	cd doc && $(MAKE) info
 	cp $(srcdir)/m4/click.m4 $(srcdir)/etc/samplepackage/m4
-	cp $(srcdir)/aclocal.m4 $(srcdir)/etc/samplepackage
 	cd $(srcdir)/etc/samplepackage && $(AUTOCONF)
 	-rm -rf $(distdir)
 	mkdir $(distdir)

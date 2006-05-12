@@ -5,7 +5,7 @@ SHELL = @SHELL@
 # THESE VARIABLES MAY CHANGE BETWEEN PACKAGES
 
 # Set 'package' to the name of your package.
-package := sample
+package := @CLICKPACKAGENAME@
 
 # Set these variables appropriately.
 top_builddir := .

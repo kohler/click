@@ -1,5 +1,5 @@
 dnl -*- mode: shell-script -*-
-dnl 'configure.in' file for a sample package
+dnl 'configure.ac' file for a sample package
 dnl Process this file with autoconf to produce a configure script.
 dnl
 dnl Permission is hereby granted, free of charge, to any person obtaining a
@@ -13,10 +13,10 @@ dnl notice is a summary of the Click LICENSE file; the license in that file is
 dnl legally binding.
 
 dnl
-dnl the usual 'configure.in' boilerplate
+dnl the usual 'configure.ac' boilerplate
 dnl
 
-AC_INIT(samplepackage, 2.0)
+AC_INIT(click-samplepackage, 2.0)
 AC_CONFIG_HEADER(config.h)
 AC_SUBST(ac_configure_args)
 
@@ -25,6 +25,9 @@ CLICK_INIT('$(top_srcdir)')
 AH_TOP([#ifndef CLICK_]AC_PACKAGE_TARNAME[_CONFIG_H
 #define CLICK_]AC_PACKAGE_TARNAME[_CONFIG_H 1])
 AH_BOTTOM([#endif /* CLICK_]AC_PACKAGE_TARNAME[_CONFIG_H */])
+
+CLICKPACKAGENAME=sample
+AC_SUBST(CLICKPACKAGENAME)
 
 
 dnl
