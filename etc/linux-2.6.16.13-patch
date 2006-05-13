@@ -3108,6 +3108,27 @@ diff -ru ../linux-2.6.16.13/include/linux/seccomp.h ./include/linux/seccomp.h
  
  #define secure_computing(x) do { } while (0)
  /* static inline to preserve typechecking */
+diff -ru ../linux-2.6.16.13/include/linux/security.h ./include/linux/security.h
+--- ../linux-2.6.16.13/include/linux/security.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/linux/security.h	2006-05-13 11:22:48.000000000 -0700
+@@ -2616,7 +2616,7 @@
+ static inline struct dentry *securityfs_create_dir(const char *name,
+ 					struct dentry *parent)
+ {
+-	return ERR_PTR(-ENODEV);
++	return (struct dentry *) ERR_PTR(-ENODEV);
+ }
+ 
+ static inline struct dentry *securityfs_create_file(const char *name,
+@@ -2625,7 +2625,7 @@
+ 						void *data,
+ 						struct file_operations *fops)
+ {
+-	return ERR_PTR(-ENODEV);
++	return (struct dentry *) ERR_PTR(-ENODEV);
+ }
+ 
+ static inline void securityfs_remove(struct dentry *dentry)
 diff -ru ../linux-2.6.16.13/include/linux/skbuff.h ./include/linux/skbuff.h
 --- ../linux-2.6.16.13/include/linux/skbuff.h	2006-05-02 14:38:44.000000000 -0700
 +++ ./include/linux/skbuff.h	2006-05-03 11:34:53.000000000 -0700
