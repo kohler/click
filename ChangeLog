@@ -1,3 +1,23 @@
+2006-05-13 Saturday 14:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/linux-2.6.16.13-patch (1.2): support !CONFIG_SECURITY (Martin
+	  Bailon)
+
+2006-05-13 Saturday 14:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* INSTALL (1.44), README (1.52), config-linuxmodule.h.in (1.16),
+	  configure (1.79): fix 2.4 compilation bug reported by Jason Haas
+
+2006-05-13 Saturday 14:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/: README (1.15), linux-2.4.32-patch (1.1): add linux-2.4.32
+	  patch
+
+2006-05-13 Saturday 14:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/pkg-linuxmodule.mk.in (1.7): comment out symverfile to avoid
+	  missing symbol warnings
+
 2006-05-12 Friday 12:48  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.132), aclocal.m4 (1.53), configure (1.78),
