@@ -92,8 +92,9 @@ OBJS = $(ELEMENT_OBJS) $(PACKAGE_OBJS) kversion.ko
 endif
 
 ifeq ($(CLICK_LINUXMODULE_2_6),1)
+# No symverfile to avoid missing symbol warnings
 $(package).ko: Makefile Kbuild always
-	$(MAKE) -C $(clicklinuxdir) M=$(shell pwd) CLICK_PACKAGE_MAKING=linuxmodule-26 modules
+	$(MAKE) -C $(clicklinuxdir) M=$(shell pwd) symverfile= CLICK_PACKAGE_MAKING=linuxmodule-26 modules
 Kbuild: $(CLICK_BUILDTOOL)
 	echo 'include $$(obj)/Makefile' > Kbuild
 	$(CLICK_BUILDTOOL) kbuild >> Kbuild
