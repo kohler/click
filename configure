@@ -880,7 +880,6 @@ Optional Features:
   --disable-tcpudp        do not include TCP and UDP elements
   --enable-test           include regression test elements
   --enable-wifi           include wifi elements and support
-  --enable-netflow        include netflow elements and support
   --disable-int64         disable 64-bit integer support
   --enable-nanotimestamp  enable nanosecond timestamps
   --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
@@ -4386,17 +4385,6 @@ if test "x$enable_wifi" = xyes; then
     :
 
 fi
-# Check whether --enable-netflow or --disable-netflow was given.
-if test "${enable_netflow+set}" = set; then
-  enableval="$enable_netflow"
-
-else
-  enable_netflow=NO
-fi; test "x$enable_all_elements" = xyes -a "x$enable_netflow" = xNO && enable_netflow=yes
-if test "x$enable_netflow" = xyes; then
-    :
-
-fi
 
 for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^exopc$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d')`; do
     enableval=`eval 'echo $'"enable_$i"`
@@ -7871,7 +7859,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7874 "configure"
+#line 7862 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER

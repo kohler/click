@@ -47,6 +47,9 @@
 /* Define if your Linux kernel has tulip_interrupt_hook. */
 #undef HAVE_LINUX_TULIP_INTERRUPT_HOOK
 
+/* Define if the Click linuxmodule is compiled for a 2.6 kernel. */
+#undef HAVE_LINUXMODULE_2_6
+
 /* Define if fast checksum functions require correct alignment. */
 #ifndef __i386__
 # define FAST_CHECKSUM_ALIGNED 1
@@ -63,7 +66,7 @@ typedef unsigned long uintptr_t; /* XXX? */
 #endif
 
 /* Define KBUILD symbols. */
-#ifndef KBUILD_STR
+#if !defined(KBUILD_STR) && HAVE_LINUXMODULE_2_6
 # define KBUILD_STR(s)		#s
 # define KBUILD_BASENAME	KBUILD_STR(click)
 # define KBUILD_MODNAME		KBUILD_STR(click)
