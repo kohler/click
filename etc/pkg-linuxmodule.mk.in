@@ -92,9 +92,9 @@ OBJS = $(ELEMENT_OBJS) $(PACKAGE_OBJS) kversion.ko
 endif
 
 ifeq ($(CLICK_LINUXMODULE_2_6),1)
-# No symverfile to avoid missing symbol warnings
+# Jump through hoops to avoid missing symbol warnings
 $(package).ko: Makefile Kbuild always
-	$(MAKE) -C $(clicklinuxdir) M=$(shell pwd) symverfile= CLICK_PACKAGE_MAKING=linuxmodule-26 modules
+	{ ( $(MAKE) -C $(clicklinuxdir) M=$(shell pwd) CLICK_PACKAGE_MAKING=linuxmodule-26 modules 2>&1 1>&3; echo $$? > .$(package).ko.status ) | grep -v '^\*\*\* Warning:.*undefined' 1>&2; } 3>&1; v=`cat .$(package).ko.status`; rm .$(package).ko.status; exit $$v
 Kbuild: $(CLICK_BUILDTOOL)
 	echo 'include $$(obj)/Makefile' > Kbuild
 	$(CLICK_BUILDTOOL) kbuild >> Kbuild
@@ -122,7 +122,7 @@ endif
 always:
 	@:
 clean:
-	-rm -f $(package).ko
+	-rm -f $(package).ko .$(package).ko.status
 	-rm -f *.kd *.ko kelements.conf kelements.mk kpackage.cc kversion.c Kbuild
 	-rm -f .*.o.cmd .*.ko.cmd $(package).mod.c $(package).mod.o $(package).o
 	-rm -rf .tmp_versions
