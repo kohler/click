@@ -1,3 +1,9 @@
+2006-05-15 Monday 22:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/: pkg-linuxmodule.mk.in (1.8), samplepackage/config.h (1.5):
+	  really get rid of missing symbol warnings, in a particularly
+	  horrible way
+
 2006-05-13 Saturday 14:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/linux-2.6.16.13-patch (1.2): support !CONFIG_SECURITY (Martin
