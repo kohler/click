@@ -1631,6 +1631,25 @@ diff -ru ../linux-2.6.16.13/include/asm-mips/irq.h ./include/asm-mips/irq.h
  
  #ifdef CONFIG_PREEMPT
  
+diff -ru ../linux-2.6.16.13/include/asm-mips/mipsregs.h ./include/asm-mips/mipsregs.h
+--- ../linux-2.6.16.13/include/asm-mips/mipsregs.h	2006-05-02 14:38:44.000000000 -0700
++++ ./include/asm-mips/mipsregs.h	2006-05-15 23:40:40.000000000 -0700
+@@ -1380,13 +1380,13 @@
+ }								\
+ 								\
+ static inline unsigned int					\
+-change_c0_##name(unsigned int change, unsigned int new)		\
++change_c0_##name(unsigned int change, unsigned int newval)	\
+ {								\
+ 	unsigned int res;					\
+ 								\
+ 	res = read_c0_##name();					\
+ 	res &= ~change;						\
+-	res |= (new & change);					\
++	res |= (newval & change);				\
+ 	write_c0_##name(res);					\
+ 								\
+ 	return res;						\
 diff -ru ../linux-2.6.16.13/include/asm-mips/paccess.h ./include/asm-mips/paccess.h
 --- ../linux-2.6.16.13/include/asm-mips/paccess.h	2006-05-02 14:38:44.000000000 -0700
 +++ ./include/asm-mips/paccess.h	2006-05-02 22:59:19.000000000 -0700
@@ -1683,7 +1702,7 @@ diff -ru ../linux-2.6.16.13/include/asm-mips/smp.h ./include/asm-mips/smp.h
  
 diff -ru ../linux-2.6.16.13/include/asm-mips/system.h ./include/asm-mips/system.h
 --- ../linux-2.6.16.13/include/asm-mips/system.h	2006-05-02 14:38:44.000000000 -0700
-+++ ./include/asm-mips/system.h	2006-05-02 23:11:02.000000000 -0700
++++ ./include/asm-mips/system.h	2006-05-15 23:43:19.000000000 -0700
 @@ -151,7 +151,7 @@
   * switch_to(n) should switch tasks to task nr n, first
   * checking that n isn't the current task, in which case it does nothing.
@@ -1693,6 +1712,18 @@ diff -ru ../linux-2.6.16.13/include/asm-mips/system.h ./include/asm-mips/system.
  
  struct task_struct;
  
+@@ -287,9 +287,9 @@
+ {
+ 	switch (size) {
+ 		case 4:
+-			return __xchg_u32(ptr, x);
++			return __xchg_u32((volatile int *) ptr, x);
+ 		case 8:
+-			return __xchg_u64(ptr, x);
++			return __xchg_u64((volatile __u64 *) ptr, x);
+ 	}
+ 	__xchg_called_with_bad_pointer();
+ 	return x;
 @@ -301,7 +301,7 @@
  #define __HAVE_ARCH_CMPXCHG 1
  
@@ -1784,10 +1815,10 @@ diff -ru ../linux-2.6.16.13/include/asm-mips/system.h ./include/asm-mips/system.
  	switch (size) {
  	case 4:
 -		return __cmpxchg_u32(ptr, old, new);
-+		return __cmpxchg_u32(ptr, old, n);
++		return __cmpxchg_u32((volatile int *) ptr, old, n);
  	case 8:
 -		return __cmpxchg_u64(ptr, old, new);
-+		return __cmpxchg_u64(ptr, old, n);
++		return __cmpxchg_u64((volatile int *) ptr, old, n);
  	}
  	__cmpxchg_called_with_bad_pointer();
  	return old;
