@@ -1,3 +1,8 @@
+2006-05-17 Wednesday 16:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-mkelemmap (1.41): support absolute path names in input
+	  files (bug fix, Mz)
+
 2006-05-16 Tuesday 02:51  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/linux-2.6.16.13-patch (1.3): update arm patch (Bob Keyes)
