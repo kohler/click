@@ -28,7 +28,7 @@ my(@source_file, @header_file, @click_name, @cxx_name, @doc_name,
    @parents, @port_count, @processing, @flow_code, @flags, @requirements,
    @element_methods, @element_libs, @provisions,
    %click_name_to_id, %cxx_name_to_id);
-my(@includes) = ( '.' );
+my(@includes) = ( );
 
 sub driver_mask ($) {
     my($m) = 0;
@@ -38,6 +38,15 @@ sub driver_mask ($) {
     $m |= 4 if $_[0] =~ /\bbsdmodule\b/;
     $m |= 8 if $_[0] =~ /\bns\b/;
     ($m ? $m : 15);
+}
+
+sub filecontents ($) {
+    my $text = "";
+    if (open(IN, $_[0])) {
+	$text = <IN>;
+	close IN;
+    }
+    $text;
 }
 
 sub process_file ($) {
@@ -56,12 +65,12 @@ sub process_file ($) {
 	$headerfile = $headername;
     }
 
-    my $text = "";
-    foreach $i (@includes) {
-	if (open(IN, "$i/$headerfile")) {
-	    $text = <IN>;
-	    close IN;
-	    last;
+    my($text) = "";
+    if ($headerfile =~ m|^/|) {
+	$text = filecontents($headerfile);
+    } else {
+	for ($i = 0; $i < @includes && $text eq ""; $i++) {
+	    $text = filecontents($includes[$i] . "/" . $headerfile);
 	}
     }
     $headername = "" if $text eq "";
@@ -451,6 +460,7 @@ while (@ARGV) {
     }
 }
 push @files, read_files_from("-") if !$any_files;
+push @includes, ($prefix eq '' ? "." : $prefix);
 
 foreach $fn (@files) {
     process_file($fn);
@@ -489,11 +499,11 @@ foreach $id (sort sorter 0..$#click_name) {
     print OUT " docname=\"", $doc_name[$id], "\"" if $doc_name[$id];
   
     my($hf) = $header_file[$id];
-    $hf =~ s/^$prefix\/*//;
+    $hf =~ s/^$prefix\/*// if $prefix;
     print OUT " headerfile=\"", xml_quote($hf), "\"" if $hf;
 
     my($sf) = $source_file[$id];
-    $sf =~ s/^$prefix\/*//;
+    $sf =~ s/^$prefix\/*// if $prefix;
     print OUT " sourcefile=\"", xml_quote($sf), "\"" if $sf;
 
     my($pc) = $port_count[$id];
