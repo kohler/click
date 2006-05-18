@@ -1220,10 +1220,11 @@ BEGIN {
     next 
 }
 /........[ 	][ABCDGRSTVW]/ {
-    if (!printed[$3]) {
-	printed[$3] = 1;
-	print "extern char " $3 "[];";
-	print "EXPORT_SYMBOL(" $3 ");";
+    x = $3;
+    if (x ~ /^[_A-Za-z][_A-Za-z0-9]*$/ && !printed[x]) {
+	printed[x] = 1;
+	print "extern char " x "[];";
+	print "EXPORT_SYMBOL(" x ");";
     }
 }'
 }
