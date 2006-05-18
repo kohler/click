@@ -1,3 +1,8 @@
+2006-05-18 Thursday 04:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.89): avoid symbols that contain magic
+	  characters (Junhe Jian)
+
 2006-05-17 Wednesday 16:02  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-mkelemmap (1.41): support absolute path names in input
