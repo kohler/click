@@ -83,6 +83,7 @@ class Master { public:
 
     // DRIVERMANAGER
     volatile int _stopper;
+    inline void set_stopper(int);
     bool check_driver();
 
     // PENDING TASKS
@@ -178,6 +179,14 @@ Master::run_signals()
 	process_signals();
 }
 #endif
+
+inline void
+Master::set_stopper(int s)
+{
+    _master_lock.acquire();
+    _stopper = s;
+    _master_lock.release();
+}
 
 CLICK_ENDDECLS
 #endif

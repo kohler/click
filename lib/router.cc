@@ -619,7 +619,7 @@ Router::set_runcount(int32_t x)
 {
     _runcount = x;
     if (x <= 0) {
-	_master->_stopper = 1;
+	_master->set_stopper(1);
 	// ensure that at least one thread is awake to handle the stop event
 	_master->_threads[2]->wake();
     }
@@ -640,7 +640,7 @@ Router::adjust_runcount(int32_t delta)
 	    new_value = old_value + delta;
     } while (!_runcount.compare_and_swap(old_value, new_value));
     if (new_value <= 0) {
-	_master->_stopper = 1;
+	_master->set_stopper(1);
 	// ensure that at least one thread is awake to handle the stop event
 	_master->_threads[2]->wake();
     }

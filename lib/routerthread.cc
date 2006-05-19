@@ -1,11 +1,11 @@
 // -*- c-basic-offset: 4; related-file-name: "../include/click/routerthread.hh" -*-
 /*
  * routerthread.{cc,hh} -- Click threads
- * Benjie Chen, Eddie Kohler, Petros Zerfos
+ * Eddie Kohler, Benjie Chen, Petros Zerfos
  *
  * Copyright (c) 2000-2001 Massachusetts Institute of Technology
  * Copyright (c) 2001-2002 International Computer Science Institute
- * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2004-2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -49,6 +49,17 @@ CLICK_DECLS
 # define DRIVER_QUANTUM		8	/* microseconds per stride */
 # define DRIVER_RESTRIDE_INTERVAL 80	/* microseconds between restrides */
 #endif
+
+#if CLICK_DEBUG_SCHEDULING
+# define SET_STATE(s)		_thread_state = (s)
+#else
+# define SET_STATE(s)		/* nada */
+#endif
+
+#if CLICK_LINUXMODULE
+static unsigned long greedy_schedule_jiffies;
+#endif
+
 
 /** @class RouterThread
  * @brief A set of Tasks scheduled on the same CPU.
@@ -97,6 +108,9 @@ RouterThread::RouterThread(Master *m, int id)
 #if CLICK_LINUXMODULE || CLICK_BSDMODULE
     _greedy = false;
 #endif
+#if CLICK_LINUXMODULE
+    greedy_schedule_jiffies = jiffies;
+#endif
     
 #if CLICK_DEBUG_SCHEDULING
     _thread_state = S_BLOCKED;
@@ -120,13 +134,18 @@ inline void
 RouterThread::nice_lock_tasks()
 {
 #if CLICK_LINUXMODULE
-    // If other people are waiting for the task lock, give them a second to
+    // If other people are waiting for the task lock, give them a chance to
     // catch it before we claim it.
-    if (_task_lock_waiting > 0) {
+# if 0
+    if (_task_lock_waiting > 0 && !_greedy) {
 	unsigned long done_jiffies = click_jiffies() + CLICK_HZ;
 	while (_task_lock_waiting > 0 && click_jiffies() < done_jiffies)
 	    /* XXX schedule() instead of spinlock? */;
     }
+# else
+    for (int i = 0; _task_lock_waiting > 0 && i < 10; i++)
+	schedule();
+# endif
 #endif
     lock_tasks();
 }
@@ -360,12 +379,6 @@ RouterThread::run_tasks(int ntasks)
     }
 }
 
-#if CLICK_DEBUG_SCHEDULING
-# define SET_STATE(s)		_thread_state = (s)
-#else
-# define SET_STATE(s)		/* nada */
-#endif
-
 inline void
 RouterThread::run_os()
 {
@@ -379,9 +392,12 @@ RouterThread::run_os()
 #if CLICK_USERLEVEL
     _master->run_selects(active());
 #elif CLICK_LINUXMODULE		/* Linux kernel module */
-    if (_greedy)
-	/* do nothing */;
-    else if (active()) {
+    if (_greedy) {
+	if (time_after(jiffies, greedy_schedule_jiffies + 5 * CLICK_HZ)) {
+	    greedy_schedule_jiffies = jiffies;
+	    goto short_pause;
+	}
+    } else if (active()) {
       short_pause:
 	SET_STATE(S_PAUSED);
 	current->state = TASK_RUNNING;
@@ -488,14 +504,14 @@ RouterThread::driver()
 
 #ifndef HAVE_ADAPTIVE_SCHEDULER
     // run a bunch of tasks
-#if CLICK_BSDMODULE && !BSD_NETISRSCHED
+# if CLICK_BSDMODULE && !BSD_NETISRSCHED
     int s = splimp();
-#endif
+# endif
     run_tasks(_tasks_per_iter);
-#if CLICK_BSDMODULE && !BSD_NETISRSCHED
+# if CLICK_BSDMODULE && !BSD_NETISRSCHED
     splx(s);
-#endif
-#else
+# endif
+#else /* HAVE_ADAPTIVE_SCHEDULER */
     click_gettimeofday(&t_before);
     int client;
     if (PASS_GT(_clients[C_KERNEL].pass, _clients[C_CLICK].pass)) {
@@ -521,7 +537,7 @@ RouterThread::driver()
     }
 #endif
     
-#if !(CLICK_NS|BSD_NETISRSCHED)
+#if !CLICK_NS && !BSD_NETISRSCHED
     // Everyone except the NS driver stays in driver() until the driver is
     // stopped.
     goto driver_loop;

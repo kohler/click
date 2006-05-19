@@ -278,23 +278,26 @@ Master::kill_router(Router *router)
 void
 Master::unregister_router(Router *router)
 {
-    assert(router && (!router->_master || router->_master == this));
-    if (!router->_master)
-	return;
-    
+    assert(router);
     _master_lock.acquire();
-    if (router->_running >= Router::RUNNING_PREPARING)
-	kill_router(router);
+
+    if (router->_master) {
+	assert(router->_master == this);
+
+	if (router->_running >= Router::RUNNING_PREPARING)
+	    kill_router(router);
     
-    Router **pprev = &_routers;
-    for (Router *r = *pprev; r; r = r->_next_router)
-	if (r != router) {
-	    *pprev = r;
-	    pprev = &r->_next_router;
-	}
-    *pprev = 0;
-    _refcount--;		// balanced in register_router()
-    router->_master = 0;
+	Router **pprev = &_routers;
+	for (Router *r = *pprev; r; r = r->_next_router)
+	    if (r != router) {
+		*pprev = r;
+		pprev = &r->_next_router;
+	    }
+	*pprev = 0;
+	_refcount--;		// balanced in register_router()
+	router->_master = 0;
+    }
+    
     _master_lock.release();
 }
 
@@ -864,23 +867,18 @@ Master::run_selects(bool more_tasks)
 
     if (!_master_lock.attempt())
 	return;
-    if (_master_paused > 0 || !_select_lock.attempt()) {
-	_master_lock.release();
-	return;
-    }
+    if (_master_paused > 0 || !_select_lock.attempt())
+	goto unlock_master_exit;
 
     // Return early if there are no selectors and there are tasks to run.
-    if (_pollfds.size() == 0 && more_tasks) {
-	_select_lock.release();
-	_master_lock.release();
-	return;
-    }
+    if (_pollfds.size() == 0 && more_tasks)
+	goto unlock_select_exit;
 
     // Call the relevant selector implementation.
 #if HAVE_SYS_EVENT_H && HAVE_KQUEUE
     if (_kqueue >= 0) {
 	run_selects_kqueue(more_tasks);
-	goto done;
+	goto unlock_select_exit;
     }
 #endif
 #if HAVE_POLL_H
@@ -889,10 +887,9 @@ Master::run_selects(bool more_tasks)
     run_selects_select(more_tasks);
 #endif
 
-#if HAVE_SYS_EVENT_H && HAVE_KQUEUE
-  done:
-#endif
+ unlock_select_exit:
     _select_lock.release();
+ unlock_master_exit:
     _master_lock.release();
 }
 
