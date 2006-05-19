@@ -87,6 +87,7 @@ LinuxIPLookup::init_routes(ErrorHandler *errh)
     net_device *dev = dev_get_by_name(_out2devname[i].c_str());
     if (dev == 0)
       return errh->error("Cannot find device %s", _out2devname[i].c_str());
+    _out2dev[i] = dev;
   }
   return(0);
 }
