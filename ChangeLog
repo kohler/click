@@ -1,3 +1,21 @@
+2006-05-19 Friday 03:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/lookupiproutelinux.cc (1.33): bug fix from Elaine
+	  Runting at CMU
+
+2006-05-19 Friday 03:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/localdelay.click (1.1): include localdelay.click
+	  configuration: induce local delay on incoming and/or outgoing
+	  packets (Roman Chertov)
+
+2006-05-19 Friday 03:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* Makefile.in (1.133), NEWS (1.166), configure (1.80), configure.in
+	  (1.284), installch.in (1.1), elements/userlevel/kerneltun.cc
+	  (1.55), m4/click.m4 (1.54): README updates; add
+	  install-only-if-changed support, even when install lacks -C
+
 2006-05-19 Friday 02:19  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click-install.1 (1.15), tools/click-install/click-install.cc
