@@ -1,0 +1,43 @@
+# pkg-config.mk -- build tools for Click
+# Eddie Kohler
+#
+# Copyright (c) 2006 Regents of the University of California
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, subject to the conditions
+# listed in the Click LICENSE file. These conditions include: you must
+# preserve this copyright notice, and you cannot mention the copyright
+# holders in advertising related to the Software without their permission.
+# The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+# notice is a summary of the Click LICENSE file; the license in that file is
+# legally binding.
+
+CLICKCC = @CC@
+CLICKCPP = @CPP@
+CLICKCXX = @CXX@
+CLICKCXXCPP = @CXXCPP@
+
+CLICKAR_CREATE = @AR@ @AR_CREATEFLAGS@
+CLICKRANLIB = @RANLIB@
+CLICKSTRIP = @STRIP@
+
+CLICKKERNEL_CC = @KERNEL_CC@
+CLICKKERNEL_CXX = @KERNEL_CXX@
+
+CLICKCPPFLAGS = @CPPFLAGS@
+CLICKCFLAGS = @CFLAGS@
+CLICKCFLAGS_NDEBUG = @CFLAGS_NDEBUG@
+CLICKCXXFLAGS = @CXXFLAGS@
+CLICKCXXFLAGS_NDEBUG = @CXXFLAGS_NDEBUG@
+CLICKDEPCFLAGS = @DEPCFLAGS@
+
+CLICKDEFS = @DEFS@
+CLICKINCLUDES = -I$(clickincludedir) -I$(clicksrcdir) @PCAP_INCLUDES@
+CLICKLDFLAGS = @LDFLAGS@
+CLICKLDMODULEFLAGS = @LDMODULEFLAGS@
+
+CLICKAUTOCONF = @AUTOCONF@
+CLICKGMAKE = @GMAKE@
+CLICKINSTALL = @CLICKINSTALL@
+@SUBMAKE@

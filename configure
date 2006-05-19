@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups freebsd_srcdir freebsd_includedir LIBOBJS EGREP BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS LINUXMODULE_2_6 POSSIBLE_DRIVERS DRIVERS HAVE_USERLEVEL_DRIVER HAVE_LINUXMODULE_DRIVER HAVE_BSDMODULE_DRIVER OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS LINUX_CFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE GMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI clickdatadir provisions LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups freebsd_srcdir freebsd_includedir LIBOBJS EGREP BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS LINUXMODULE_2_6 POSSIBLE_DRIVERS DRIVERS HAVE_USERLEVEL_DRIVER HAVE_LINUXMODULE_DRIVER HAVE_BSDMODULE_DRIVER OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS LINUX_CFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED CLICKINSTALL SUBMAKE GMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI clickdatadir provisions LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -14146,6 +14146,8 @@ echo "${ECHO_T}no" >&6
     fi
     rm -f conftest.1 conftest.2
 
+    CLICKINSTALL=`echo "$INSTALL" | sed 's|^\$(.*)/|\$(clickdatadir)/|'`
+
 
 
     if test "${GMAKE-NO}" = NO; then
@@ -14505,7 +14507,7 @@ fi
 
 
 
-config_files="Makefile click-buildtool click-compile config.mk installch tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-userlevel.mk etc/pkg-linuxmodule.mk etc/pkg-linuxmodule-26.mk"
+config_files="Makefile click-buildtool click-compile config.mk installch tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-config.mk"
 for ac_dir in $POSSIBLE_DRIVERS; do
     config_files="$config_files $ac_dir/Makefile"
 done
@@ -15224,6 +15226,7 @@ s,@INSTALL_PROGRAM@,$INSTALL_PROGRAM,;t t
 s,@INSTALL_SCRIPT@,$INSTALL_SCRIPT,;t t
 s,@INSTALL_DATA@,$INSTALL_DATA,;t t
 s,@INSTALL_IF_CHANGED@,$INSTALL_IF_CHANGED,;t t
+s,@CLICKINSTALL@,$CLICKINSTALL,;t t
 s,@SUBMAKE@,$SUBMAKE,;t t
 s,@GMAKE@,$GMAKE,;t t
 s,@AUTOCONF@,$AUTOCONF,;t t

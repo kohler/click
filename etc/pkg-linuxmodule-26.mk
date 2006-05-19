@@ -15,33 +15,23 @@
 
 CLICKBUILD = linux26module
 
-CLICKCC = @KERNEL_CC@
-CLICKCPP = @CPP@
-CLICKCXX = @KERNEL_CXX@
-CLICKCXXCPP = @CXXCPP@
-
-CLICKCPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE
-CLICKCFLAGS = @CFLAGS_NDEBUG@
-CLICKCXXFLAGS = @CXXFLAGS_NDEBUG@
-CLICKDEPCFLAGS = -Wp,-MD,$(depfile)
-
-CLICKDEFS = @DEFS@
-CLICKINCLUDES = -I$(clickincludedir) -I$(clicksrcdir) -I$(clicklinuxdir)/include
+CLICKCPPFLAGS += -DCLICK_LINUXMODULE
+CLICKINCLUDES := -I$(clickincludedir) -I$(clicksrcdir) -I$(clicklinuxdir)/include
 
 LINUXCFLAGS = $(shell echo "$(CFLAGS)" | sed -e s,-fno-unit-at-a-time,, \
 	-e s,-Wstrict-prototypes,, -e s,-Wdeclaration-after-statement,, \
 	-e s,-Wno-pointer-sign,, -e s,-fno-common,,)
 
-CXXFLAGS ?= $(CLICKCXXFLAGS)
-DEPCFLAGS ?= $(CLICKDEPCFLAGS)
+CXXFLAGS ?= $(CLICKCXXFLAGS_NDEBUG)
+DEPCFLAGS ?= -Wp,-MD,$(depfile)
 
 DEFS ?= $(CLICKDEFS)
 INCLUDES ?= $(CLICKINCLUDES)
 
-CXXCOMPILE = $(CLICKCXX) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
-	$(CXXFLAGS) $(DEFS) $(INCLUDES) $(DEPCFLAGS)
-COMPILE = $(CLICKCC) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
-	$(DEFS) $(INCLUDES) $(DEPCFLAGS)
+CXXCOMPILE = $(CLICKKERNEL_CXX) $(LINUXCFLAGS) $(CLICKCPPFLAGS) \
+	$(CLICKCFLAGS_NDEBUG) $(CXXFLAGS) $(DEFS) $(INCLUDES) $(DEPCFLAGS)
+COMPILE = $(CLICKKERNEL_CC) $(LINUXCFLAGS) $(CLICKCPPFLAGS) \
+	$(CLICKCFLAGS_NDEBUG) $(DEFS) $(INCLUDES) $(DEPCFLAGS)
 
 packagesrcdir ?= $(srcdir)
 PACKAGE_OBJS ?= kpackage.ko
@@ -55,7 +45,7 @@ cmd_cxxcompile = $(CXXCOMPILE) -c -o $@ $<
 quiet_cmd_ccompile = CC $(quiet_modtag) $(subst $(obj)/,,$@)
 cmd_ccompile = $(COMPILE) -c -o $@ $<
 
-EXTRA_CFLAGS += $(CLICKCPPFLAGS) $(CLICKCFLAGS) $(CLICKDEFS) $(CLICKINCLUDES) 
+EXTRA_CFLAGS += $(CLICKCPPFLAGS) $(CLICKCFLAGS_NDEBUG) $(CLICKDEFS) $(CLICKINCLUDES) 
 
 ifneq ($(KBUILD_EXTMOD),)
 ifeq ($(srcdir),.)

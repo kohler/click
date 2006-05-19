@@ -1,5 +1,4 @@
 SHELL = @SHELL@
-@SUBMAKE@
 
 
 # THESE VARIABLES MAY CHANGE BETWEEN PACKAGES
@@ -49,11 +48,6 @@ bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
 mandir = @mandir@
-
-INSTALL = @INSTALL@
-INSTALL_DATA = @INSTALL@ -m 644
-conf_auxdir = @conf_auxdir@
-mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 endif
 
 include $(clickdatadir)/pkg-Makefile

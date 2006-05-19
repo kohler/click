@@ -15,6 +15,8 @@
 
 VPATH ?= .:$(top_srcdir)/$(subdir):$(top_srcdir)
 
+include $(clickdatadir)/pkg-config.mk
+
 ifeq ($(CLICK_PACKAGE_MAKING),userlevel)
 include $(clickdatadir)/pkg-userlevel.mk
 endif
@@ -28,6 +30,10 @@ include $(clickdatadir)/pkg-bsdmodule.mk
 endif
 
 ifeq ($(CLICK_PACKAGE_MAKING),)
+
+INSTALL ?= $(CLICKINSTALL)
+INSTALL_DATA ?= $(CLICKINSTALL) -m 644
+mkinstalldirs ?= $(clickdatadir)/mkinstalldirs
 
 CLICK_BUILDTOOL = $(clickbindir)/click-buildtool
 CLICK_ELEM2PACKAGE = $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
@@ -63,7 +69,7 @@ endif
 ifneq ($(wildcard $(top_srcdir)/configure.ac),)
 $(top_builddir)/config.status: $(top_srcdir)/configure
 	cd $(top_builddir) && ./config.status --recheck
-$(top_srcdir)/configure: $(top_srcdir)/configure.ac $(wildcard $(top_srcdir)/m4/click.m4)
+$(top_srcdir)/configure: $(top_srcdir)/configure.ac
 	cd $(top_srcdir) && autoconf
 endif
 
@@ -93,11 +99,14 @@ uninstall-obj: always
 uninstall-man: always elementmap-$(package).xml
 	$(clickbindir)/click-elem2man -L -d $(DESTDIR)$(mandir)/mann -P $(package) -e $(clickdatadir)/elementmap.xml -u elementmap-$(package).xml
 
-clean:
+clean: always
 	@for i in $(DRIVERS); do make CLICK_PACKAGE_MAKING=$$i clean; done
 	-rm -f elementmap-$(package).xml conftest.*
 distclean: clean
 	-rm -f Makefile config.h config.status config.cache config.log
+
+always:
+	@:
 
 .PHONY: all always clean distclean elemlist \
 	install install-obj install-man uninstall uninstall-obj uninstall-man

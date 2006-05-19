@@ -20,11 +20,12 @@ AC_INIT(click-samplepackage, 1.5.0)
 AC_CONFIG_HEADER(config.h)
 AC_SUBST(ac_configure_args)
 
-CLICK_INIT('$(top_srcdir)', sample)
+CLICKPACKAGENAME=sample
+AC_SUBST(CLICKPACKAGENAME)
 
-AH_TOP([#ifndef CLICK_PKG_]CLICK_PACKAGENAME[_CONFIG_H
-#define CLICK_PKG_]CLICK_PACKAGENAME[_CONFIG_H 1])
-AH_BOTTOM([#endif /* CLICK_PKG_]CLICK_PACKAGENAME[_CONFIG_H */])
+AH_TOP([#ifndef CLICK_PKG_SAMPLE_CONFIG_H
+#define CLICK_PKG_SAMPLE_CONFIG_H 1])
+AH_BOTTOM([#endif /* CLICK_PKG_SAMPLE_CONFIG_H */])
 
 
 dnl
@@ -59,30 +60,6 @@ AC_SUBST(clickprefix)
 AC_SUBST(clickbindir)
 AC_SUBST(clicksbindir)
 AC_SUBST(clickdatadir)
-
-
-dnl
-dnl The rest of this file is based on Click 'configure.in'. You shouldn't
-dnl generally need to change it, although you may want to add to it.
-dnl
-
-AC_PATH_PROG(RANLIB, ranlib, :)
-AC_PATH_PROG(STRIP, strip, :)
-
-CLICK_PROG_INSTALL
-CLICK_PROG_AUTOCONF
-CLICK_PROG_GMAKE
-
-if test -z "$GMAKE"; then
-    AC_MSG_ERROR([
-==============================================
-
-I can't find GNU make. Either put 'gmake' on your PATH and
-rerun './configure', or set the GMAKE environment variable to
-GNU make's pathname.
-
-==============================================])
-fi
 
 
 dnl

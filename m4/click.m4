@@ -361,6 +361,8 @@ AC_DEFUN([CLICK_PROG_INSTALL], [
     fi
     rm -f conftest.1 conftest.2
     AC_SUBST(INSTALL_IF_CHANGED)
+    CLICKINSTALL=`echo "$INSTALL" | sed 's|^\$(.*)/|\$(clickdatadir)/|'`
+    AC_SUBST(CLICKINSTALL)
 ])
 
 
