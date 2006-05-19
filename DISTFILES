@@ -1,8 +1,8 @@
 .:
 AUTHORS
+COPYING
 ChangeLog
 ChangeLog.1
-COPYING
 DISTFILES
 FAQ
 INSTALL
@@ -24,6 +24,7 @@ config-ns.h.in
 config-userlevel.h.in
 config.guess
 config.h.in
+config.mk.in
 config.sub
 configure
 configure.in
@@ -33,6 +34,7 @@ elements
 etc
 include
 install-sh
+installch.in
 lib
 linuxmodule
 m4
@@ -62,6 +64,7 @@ Util.java
 ./apps/csclient:
 csclient.cc
 csclient.hh
+test.click
 
 ./bsdmodule:
 Makefile.in
@@ -80,6 +83,7 @@ sched.cc
 
 ./conf:
 click-mkclgw.pl
+delay.click
 dnsproxy.click
 example.clgw
 fake-iprouter.click
@@ -87,6 +91,7 @@ fromhost-tunnel.click
 grid.click
 ip.clickpat
 kernel.clickpat
+localdelay.click
 make-dsdv-config.pl
 make-dsr-config.pl
 make-ip-conf.pl
@@ -94,6 +99,7 @@ make-udpcount.pl
 make-udpgen.pl
 mazu-nat.click
 print-pings.click
+rewriter.click
 sampler.click
 simple-dsdv-userlevel.click
 simple-dsdv.click
@@ -110,14 +116,21 @@ unarp.clickpat
 wifi
 
 ./conf/wifi:
+README
 access-point.click
 associate.pl
 dump.click
+gen_config_roofnet.sh
+gen_config_safe.pl
 pseudo-ibss.click
-read_handler.pl
+read_handler
+sample.click
 scan.pl
+set_channel.pl
+sr2.click
+srcr.click
 station.click
-write_handler.pl
+write_handler
 
 ./doc:
 Doxyfile
@@ -148,6 +161,7 @@ texinfo.tex
 README
 e1000-2.x
 e1000-4.x
+e1000-5.x
 
 ./drivers/e1000-2.x:
 LICENSE
@@ -217,11 +231,35 @@ idiag_test.c
 kcompat.c
 kcompat.h
 
+./drivers/e1000-5.x:
+LICENSE
+README
+e1000.7
+e1000.spec
+ldistrib.txt
+src
+
+./drivers/e1000-5.x/src:
+Makefile
+e1000.h
+e1000_ethtool.c
+e1000_hw.c
+e1000_hw.h
+e1000_main.c
+e1000_osdep.h
+e1000_param.c
+kcompat.c
+kcompat.h
+kcompat_ethtool.c
+
 ./etc:
 README
 debian-2.4.26-patch
 diagrams
+elementmap.xsl
+freebsd-4.3-patch
 libclick
+linux-2.2.18-example-conf
 linux-2.2.18-patch
 linux-2.2.19-patch
 linux-2.4.18-patch
@@ -229,9 +267,13 @@ linux-2.4.20-patch
 linux-2.4.20-wifi-patch
 linux-2.4.21-patch
 linux-2.4.26-patch
-linux-2.6.11.6-patch
-linux-2.6.13.2-patch
+linux-2.4.32-patch
+linux-2.6.16.13-patch
 ns-2.29-patch
+pkg-Makefile
+pkg-linuxmodule-26.mk.in
+pkg-linuxmodule.mk.in
+pkg-userlevel.mk.in
 samplellrpc
 samplepackage
 
@@ -264,7 +306,7 @@ README
 aclocal.m4
 config.h.in
 configure
-configure.in
+configure.ac
 install-sh
 m4
 missing
@@ -352,6 +394,7 @@ storage.hh
 threadsched.hh
 
 ./include/clicknet:
+dhcp.h
 ether.h
 fddi.h
 icmp.h
@@ -360,6 +403,7 @@ ip.h
 ip6.h
 llc.h
 ppp.h
+radiotap.h
 rfc1483.h
 tcp.h
 udp.h
@@ -437,8 +481,10 @@ nsclick.cc
 IPRewriter
 analysis
 compound
+ethernet
 handlers
 icmp
+ip
 linuxmodule
 standard
 tcpudp
@@ -467,6 +513,10 @@ IPSummaryDump-01.testie
 input-01.testie
 overload-01.testie
 
+./test/ethernet:
+ARPQuerier-01.testie
+ARPQuerier-02.testie
+
 ./test/handlers:
 KernelHandlerProxy-01.testie
 handlercall-01.testie
@@ -476,6 +526,9 @@ kernel-01.testie
 ICMPError-sourceroute-01.testie
 ICMPPingEncap-01.testie
 ICMPRewriter-01.testie
+
+./test/ip:
+iplookups-01.testie
 
 ./test/linuxmodule:
 ToHost-01.testie
@@ -618,6 +671,8 @@ lexert.cc
 lexert.hh
 lexertinfo.cc
 lexertinfo.hh
+md5.c
+md5.h
 processingt.cc
 processingt.hh
 routert.cc

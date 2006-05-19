@@ -1,7 +1,7 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-#ifndef samplepackage_CLICK_CONFIG_H
-#define samplepackage_CLICK_CONFIG_H 1
+#ifndef CLICK_PKG_sample_CONFIG_H
+#define CLICK_PKG_sample_CONFIG_H 1
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
@@ -18,4 +18,4 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-#endif /* samplepackage_CLICK_CONFIG_H */
+#endif /* CLICK_PKG_sample_CONFIG_H */

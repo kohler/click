@@ -16,18 +16,15 @@ dnl
 dnl the usual 'configure.ac' boilerplate
 dnl
 
-AC_INIT(click-samplepackage, 2.0)
+AC_INIT(click-samplepackage, 1.5.0)
 AC_CONFIG_HEADER(config.h)
 AC_SUBST(ac_configure_args)
 
-CLICK_INIT('$(top_srcdir)')
+CLICK_INIT('$(top_srcdir)', sample)
 
-AH_TOP([#ifndef CLICK_]AC_PACKAGE_TARNAME[_CONFIG_H
-#define CLICK_]AC_PACKAGE_TARNAME[_CONFIG_H 1])
-AH_BOTTOM([#endif /* CLICK_]AC_PACKAGE_TARNAME[_CONFIG_H */])
-
-CLICKPACKAGENAME=sample
-AC_SUBST(CLICKPACKAGENAME)
+AH_TOP([#ifndef CLICK_PKG_]CLICK_PACKAGENAME[_CONFIG_H
+#define CLICK_PKG_]CLICK_PACKAGENAME[_CONFIG_H 1])
+AH_BOTTOM([#endif /* CLICK_PKG_]CLICK_PACKAGENAME[_CONFIG_H */])
 
 
 dnl

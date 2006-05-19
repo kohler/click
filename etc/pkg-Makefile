@@ -63,7 +63,7 @@ endif
 ifneq ($(wildcard $(top_srcdir)/configure.ac),)
 $(top_builddir)/config.status: $(top_srcdir)/configure
 	cd $(top_builddir) && ./config.status --recheck
-$(top_srcdir)/configure: $(top_srcdir)/configure.ac $(top_srcdir)/m4/click.m4
+$(top_srcdir)/configure: $(top_srcdir)/configure.ac $(wildcard $(top_srcdir)/m4/click.m4)
 	cd $(top_srcdir) && autoconf
 endif
 

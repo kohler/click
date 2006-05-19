@@ -5,7 +5,7 @@ dnl Common Click configure.in functions
 dnl
 
 dnl
-dnl CLICK_INIT
+dnl CLICK_INIT(conf_auxdir, [packagename])
 dnl Initialize Click configure functionality. Must be called before
 dnl CC or CXX are defined.
 dnl Check whether the user specified which compilers we should use.
@@ -23,6 +23,12 @@ AC_DEFUN([CLICK_INIT], [
 
     conf_auxdir=$1
     AC_SUBST(conf_auxdir)
+
+    ifelse([$2], [], [], [
+	AC_DEFUN([CLICK_PACKAGENAME], [$2])
+	CLICKPACKAGENAME=$2
+	AC_SUBST(CLICKPACKAGENAME)
+    ])
 ])
 
 

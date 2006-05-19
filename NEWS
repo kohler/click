@@ -2,7 +2,7 @@ Click NEWS
 
 Version 1.5.0   19.May.2006
 
-* Linux 2.6.16.13 kernel module support.
+* Linux 2.6.16.13 kernel module support, including support for packages.
 
 * IP routing element improvements, including new, gloriously fast
   DirectIPLookup element (Marko Zec with kohler).
