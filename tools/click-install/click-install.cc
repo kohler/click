@@ -116,8 +116,11 @@ Options:\n\
   printf("\
   -p, --private            Make /proc/click readable only by root.\n\
   -t, --threads N          Use N threads (multithreaded Click only).\n\
-  -G, --greedy             Make Click thread take up an entire CPU.\n\
+  -G, --greedy             Make Click thread take up an entire CPU.\n");
+# if HAVE_LINUXMODULE_2_6
+  printf("\
   -m, --map                Print load map to the standard output.\n");
+# endif
 #endif
   printf("\
   -V, --verbose            Print information about files installed.\n\
@@ -402,9 +405,13 @@ particular purpose.\n");
       priority = clp->val.i;
       break;
 
-     case MAP_OPT:
-      output_map = !clp->negated;
-      break;
+    case MAP_OPT:
+# if HAVE_LINUXMODULE_2_6
+	errh->warning("'%s' ignored on 2.6 kernels", Clp_CurOptionName(clp));
+# else
+	output_map = !clp->negated;
+# endif
+	break;
 
       case GREEDY_OPT:
 	greedy = !clp->negated;
