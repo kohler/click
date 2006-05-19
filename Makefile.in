@@ -176,7 +176,6 @@ dist: distdir
 	-rm -rf $(distdir)
 distdir: $(srcdir)/configure
 	cd doc && $(MAKE) info
-	cp $(srcdir)/m4/click.m4 $(srcdir)/etc/samplepackage/m4
 	cd $(srcdir)/etc/samplepackage && $(AUTOCONF)
 	-rm -rf $(distdir)
 	mkdir $(distdir)

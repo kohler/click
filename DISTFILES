@@ -271,9 +271,10 @@ linux-2.4.32-patch
 linux-2.6.16.13-patch
 ns-2.29-patch
 pkg-Makefile
-pkg-linuxmodule-26.mk.in
-pkg-linuxmodule.mk.in
-pkg-userlevel.mk.in
+pkg-config.mk.in
+pkg-linuxmodule-26.mk
+pkg-linuxmodule.mk
+pkg-userlevel.mk
 samplellrpc
 samplepackage
 
@@ -303,20 +304,12 @@ click-readcounter.c
 ./etc/samplepackage:
 Makefile.in
 README
-aclocal.m4
 config.h.in
 configure
 configure.ac
-install-sh
-m4
-missing
-mkinstalldirs
 sampleelt.cc
 sampleelt.hh
 test.click
-
-./etc/samplepackage/m4:
-click.m4
 
 ./include:
 click
