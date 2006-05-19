@@ -3,6 +3,7 @@
 #define CLICK_CONFPARSE_HH
 #include <click/string.hh>
 #include <click/vector.hh>
+struct in_addr;
 CLICK_DECLS
 class ErrorHandler;
 class StringAccum;
