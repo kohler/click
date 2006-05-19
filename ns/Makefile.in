@@ -2,11 +2,11 @@
 ## Click ns driver Makefile ##
 SHELL = @SHELL@
 
-top_srcdir = @top_srcdir@
-srcdir = @srcdir@
-top_builddir = ..
-subdir = ns
-conf_auxdir = @conf_auxdir@
+top_srcdir := @top_srcdir@
+srcdir := @srcdir@
+top_builddir := ..
+subdir := ns
+conf_auxdir := @conf_auxdir@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -25,19 +25,29 @@ RANLIB = @RANLIB@
 INSTALL = @INSTALL@
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
+ifeq ($(V),1)
+ccompile = $(COMPILE) $(1)
+cxxcompile = $(CXXCOMPILE) $(1)
+else
+ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
+cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
+endif
+
 .SUFFIXES:
 .SUFFIXES: .S .c .cc .o .s .ii
 
 .c.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,CC)
 .s.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,ASM)
 .S.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,ASM)
 .cc.o:
-	$(CXXCOMPILE) -c $<
+	$(call cxxcompile,-c $< -o $@,CXX)
+.cc.s:
+	$(call cxxcompile,-S $< -o $@,CXX -S)
 .cc.ii:
-	$(CXXCOMPILE) -E $< > $@
+	$(call cxxcompile,-E $< > $@,CXXCPP)
 
 
 GENERIC_OBJS = string.o straccum.o nameinfo.o \
@@ -57,7 +67,7 @@ EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 LIBOBJS = $(GENERIC_OBJS) $(STD_ELEMENT_OBJS) clp.o
 STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o \
 	errorelement.o portinfo.o scheduleinfo.o
-OBJS = $(ELEMENT_OBJS) elements.o nsclick.o
+OBJS = $(ELEMENT_OBJS) $(ELEMENTSCONF).o nsclick.o
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_NS
 CFLAGS = @CFLAGS@ -fpic
@@ -68,7 +78,7 @@ DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(srcdir) -I$(top_srcdir) @PCAP_INCLUDES@
 LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@ `$(top_builddir)/click-compile --otherlibs`
+LIBS = @LIBS@ `$(top_builddir)/click-compile --otherlibs` $(ELEMENT_LIBS)
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
 CXXLD = $(CXX)
@@ -77,10 +87,18 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: libnsclick.so
+ifndef MINDRIVER
+ELEMENTSCONF = elements
+INSTALLLIBS = libnsclick.so
+else
+ELEMENTSCONF = elements_$(MINDRIVER)
+INSTALLLIBS = libns$(MINDRIVER)click.so
+endif
+
+all: $(INSTALLLIBS)
 
 ifneq ($(MAKECMDGOALS),clean)
--include elements.mk
+-include $(ELEMENTSCONF).mk
 endif
 
 libnsclick.so: Makefile $(LIBOBJS) $(OBJS)
@@ -94,15 +112,15 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 elemlist:
-	@/bin/rm -f elements.conf
+	@rm -f elements.conf
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
 	echo "ns userlevel @element_groups@" | $(top_builddir)/click-buildtool findelem -r ns -p $(top_srcdir) > elements.conf
-elements.mk: elements.conf $(top_builddir)/click-buildtool
-	$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < elements.conf > elements.mk
-elements.cc: elements.conf $(top_builddir)/click-buildtool
-	$(top_builddir)/click-buildtool elem2export < elements.conf > elements.cc
-	@rm -f elements.d
+$(ELEMENTSCONF).mk: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
+	$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).mk
+$(ELEMENTSCONF).cc: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
+	$(top_builddir)/click-buildtool elem2export < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).cc
+	@rm -f $(ELEMENTSCONF).d
 
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)
@@ -116,7 +134,7 @@ uninstall:
 	/bin/rm -f $(DESTDIR)$(libdir)/libnsclick.so
 
 clean:
-	rm -f *.d *.o elements.mk elements.cc elements.conf libnsclick.a \
+	rm -f *.d *.o $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc elements.conf libnsclick.a \
 	libnsclick.so
 distclean: clean
 	-rm -f Makefile
