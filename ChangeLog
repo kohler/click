@@ -1,3 +1,22 @@
+2006-05-18 Thursday 20:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/master.hh (1.17), lib/master.cc (1.39),
+	  lib/router.cc (1.189), lib/routerthread.cc (1.65),
+	  linuxmodule/sched.cc (1.57): Mazu fixes of linuxmodule
+	  accounting: some synchronization errors fixed, --greedy appears
+	  to work
+
+2006-05-18 Thursday 20:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/lib/: md5.c (1.2), md5.h (1.2): clean up
+
+2006-05-18 Thursday 19:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.58): click-elem2man installs not only
+	  elements.n, but also elements-PACKAGENAME.n; default install
+	  installs elements-click.n.  package install can construct
+	  elements.n from elements-click.n (Mz)
+
 2006-05-18 Thursday 04:30  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.89): avoid symbols that contain magic
