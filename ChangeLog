@@ -1,3 +1,7 @@
+2006-05-19 Friday 19:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.101), Makefile.in (1.135): nits
+
 2006-05-19 Friday 18:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.134), config.mk.in (1.2), configure (1.82),
@@ -18,8 +22,7 @@
 	  (1.285), etc/pkg-Makefile (1.7), etc/samplepackage/aclocal.m4
 	  (1.19), etc/samplepackage/config.h (1.6),
 	  etc/samplepackage/config.h.in (1.3),
-	  etc/samplepackage/configure.ac (1.3),
-	  etc/samplepackage/m4/click.m4 (1.9), m4/click.m4 (1.55):
+	  etc/samplepackage/configure.ac (1.3), m4/click.m4 (1.55):
 	  configury
 
 2006-05-19 Friday 14:34  Eddie Kohler <kohler@cs.ucla.edu>
@@ -527,8 +530,8 @@
 	* aclocal.m4 (1.51), click-compile.in (1.37), configure (1.70),
 	  configure.in (1.276), etc/libclick/lc-configure.in (1.45),
 	  etc/ron/configure.in (1.2), etc/samplepackage/aclocal.m4 (1.18),
-	  etc/samplepackage/m4/click.m4 (1.8), m4/click.m4 (1.52): head -1
-	  is nonstandard, use head -n 1 (Bart Braem)
+	  m4/click.m4 (1.52): head -1 is nonstandard, use head -n 1 (Bart
+	  Braem)
 
 2006-03-02 Thursday 01:52  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -2990,8 +2993,8 @@
 
 2005-06-06 Monday 22:01  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* configure (1.56), etc/samplepackage/aclocal.m4 (1.17),
-	  etc/samplepackage/m4/click.m4 (1.7): more of the same
+	* configure (1.56), etc/samplepackage/aclocal.m4 (1.17): more of
+	  the same
 
 2005-06-06 Monday 20:46  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -3399,8 +3402,7 @@
 
 	* INSTALL (1.38), aclocal.m4 (1.47), config-userlevel.h.in (1.27),
 	  configure (1.53), elements/userlevel/fromdevice.hh (1.29),
-	  etc/samplepackage/aclocal.m4 (1.16),
-	  etc/samplepackage/m4/click.m4 (1.6), m4/click.m4 (1.48): Mac OS X
+	  etc/samplepackage/aclocal.m4 (1.16), m4/click.m4 (1.48): Mac OS X
 	  needs to check for declaration of pcap_setnonblock
 
 2005-04-09 Saturday 14:28  Eddie Kohler <kohler@cs.ucla.edu>
@@ -4515,8 +4517,7 @@
 	  (1.8), etc/ron/printtime.cc (1.6), etc/ron/ronroutemodular.cc
 	  (1.13), etc/ron/todevicenotify.cc (1.6),
 	  etc/samplepackage/aclocal.m4 (1.15),
-	  etc/samplepackage/sampleelt.cc (1.10),
-	  etc/samplepackage/m4/click.m4 (1.5), include/click/lexer.hh
+	  etc/samplepackage/sampleelt.cc (1.10), include/click/lexer.hh
 	  (1.17), include/click/package.hh (1.10), include/click/router.hh
 	  (1.69), lib/driver.cc (1.24), lib/lexer.cc (1.79), lib/router.cc
 	  (1.173), linuxmodule/config.cc (1.19),
@@ -5311,8 +5312,8 @@
 
 2004-12-01 Wednesday 15:05  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* etc/samplepackage/: aclocal.m4 (1.14), m4/click.m4 (1.4):
-	  samplepackage gets new click.m4
+	* etc/samplepackage/aclocal.m4 (1.14): samplepackage gets new
+	  click.m4
 
 2004-12-01 Wednesday 15:04  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -6068,13 +6069,11 @@
 2004-08-23 Monday 13:54  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* aclocal.m4 (1.42), config.h.in (1.24), configure (1.28),
-	  etc/samplepackage/m4/click.m4 (1.3), m4/click.m4 (1.43): more
-	  click.m4 fixes
+	  m4/click.m4 (1.43): more click.m4 fixes
 
 2004-08-23 Monday 13:30  Eddie Kohler <kohler@cs.ucla.edu>
 
-	* etc/samplepackage/m4/click.m4 (1.2), m4/click.m4 (1.42): m4
-	  quoting
+	* m4/click.m4 (1.42): m4 quoting
 
 2004-08-23 Monday 12:41  Eddie Kohler <kohler@cs.ucla.edu>
 
@@ -6108,9 +6107,8 @@
 	* DISTFILES (1.85), Makefile.in (1.121), etc/libclick/Makefile.in
 	  (1.10), etc/libclick/lc-Makefile.in (1.13),
 	  etc/samplepackage/acclick.m4 (1.17), etc/samplepackage/aclocal.m4
-	  (1.13), etc/samplepackage/m4/click.m4 (1.1): use m4 directory
-	  instead of acclick.m4, to facilitate use of aclocal in other
-	  packages
+	  (1.13): use m4 directory instead of acclick.m4, to facilitate use
+	  of aclocal in other packages
 
 2004-08-23 Monday 02:51  Eddie Kohler <kohler@cs.ucla.edu>
 
