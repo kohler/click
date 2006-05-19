@@ -1,3 +1,17 @@
+2006-05-19 Friday 12:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/siphmapper.hh (1.7): hate $Id:
+
+2006-05-19 Friday 12:38  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/confparse.hh (1.59): ns requires that struct
+	  in_addr be declared outside of any possible namespace
+
+2006-05-19 Friday 12:38  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* ns/Makefile.in (1.21): update ns makefile according to other
+	  makefiles
+
 2006-05-19 Friday 03:14  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/lookupiproutelinux.cc (1.33): bug fix from Elaine
