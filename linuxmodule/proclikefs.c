@@ -99,11 +99,19 @@ proclikefs_null_read_super(struct super_block *sb, void *data, int silent)
 }
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
+static struct dentry *
+proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry, struct nameidata *namei)
+{
+    return (struct dentry *)(ERR_PTR(-ENOENT));
+}
+#else
 static struct dentry *
 proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry)
 {
     return (struct dentry *)(ERR_PTR(-ENOENT));
 }
+#endif
 
 struct proclikefs_file_system *
 proclikefs_register_filesystem(const char *name, int fs_flags,
