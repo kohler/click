@@ -1,6 +1,5 @@
 #ifndef CLICK_SOURCEIPMAPPER_HH
 #define CLICK_SOURCEIPMAPPER_HH
-
 #include <click/element.hh>
 #include <click/ipflowid.hh>
 #include <clicknet/ip.h>
@@ -26,10 +25,6 @@ CLICK_DECLS
  *
  * =a IPRewriter, TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper 
  */
-
-//
-// $Id: siphmapper.hh,v 1.6 2006/02/18 08:51:12 eddietwo Exp $
-//
 
 //
 // JV-tree.  A dirt-simple binary tree for use in the consistent
