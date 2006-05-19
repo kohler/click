@@ -1,0 +1,66 @@
+#! /bin/sh
+#
+# installch - install a program, script, or datafile if changed
+#
+# Copyright (c) 2006 Mazu Networks, Inc.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, subject to the conditions
+# listed in the Click LICENSE file. These conditions include: you must
+# preserve this copyright notice, and you cannot mention the copyright
+# holders in advertising related to the Software without their permission.
+# The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+# notice is a summary of the Click LICENSE file; the license in that file is
+# legally binding.
+
+install=${INSTALL-@INSTALL@}
+src=
+dst=
+multi=
+mode=0755
+user=`id -u`
+group=`id -g`
+
+while [ x"$1" != x ]; do
+    case $1 in
+    -m)
+	mode="$2"; install="$install -m $2"; shift; shift; continue;;
+    -*)
+	echo "installch: unknown option $1" 1>&2; exit 1;;
+    *)
+	if [ x"$src" = x ]; then
+	    src="$1"
+	elif [ x"$dst" = x ]; then
+	    dst="$1"
+	else
+	    multi=1; src="$src $dst"; dst="$1"
+	fi
+	shift; continue;;
+    esac
+done
+
+if [ x"$dst" = x ]; then
+    echo "installch: too few arguments" 1>&2; exit 1
+fi
+
+if [ x"$multi" = 1 -a ! -d "$dst" ]; then
+    echo "installch: last argument must be directory" 1>&2; exit 1
+fi
+
+doinstall () {
+    while [ x"$1" != x ]; do
+	if [ -d "$dst" ]; then d="$dst/"`basename "$1"`; else d="$dst"; fi
+	if [ -r "$d" ] && cmp "$1" "$d" >/dev/null; then
+	    chmod $mode "$d" || exit 1
+	    chgrp $group "$d" || exit 1
+	else
+	    $install "$1" "$d" || exit 1
+	fi
+	shift
+    done
+}
+
+doinstall $src
+
+exit 0

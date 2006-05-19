@@ -36,7 +36,7 @@
 #elif defined(HAVE_NET_IF_TUN_H)
 # define KERNELTUN_NET 1
 #elif defined(__APPLE__)
-# define KERNELTUN_OSX 1 
+# define KERNELTUN_OSX 1
 // assume tun driver installed from http://chrisp.de/en/projects/tunnel.html
 // this driver doesn't produce or expect packets with an address family prepended
 #endif

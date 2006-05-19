@@ -1090,7 +1090,7 @@ dnl
 dnl Output
 dnl
 
-config_files="Makefile click-buildtool click-compile config.mk tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-userlevel.mk etc/pkg-linuxmodule.mk etc/pkg-linuxmodule-26.mk"
+config_files="Makefile click-buildtool click-compile config.mk installch tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-userlevel.mk etc/pkg-linuxmodule.mk etc/pkg-linuxmodule-26.mk"
 for ac_dir in $POSSIBLE_DRIVERS; do
     config_files="$config_files $ac_dir/Makefile"
 done
@@ -1107,5 +1107,6 @@ done
 for ac_file in $CONFIG_FILES; do
     test $ac_file = click-buildtool && chmod +x click-buildtool
     test $ac_file = click-compile && chmod +x click-compile
+    test $ac_file = installch && chmod +x installch
 done])
 AC_OUTPUT($config_files)

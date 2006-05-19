@@ -350,7 +350,7 @@ AC_DEFUN([CLICK_PROG_INSTALL], [
 	INSTALL_IF_CHANGED='$(INSTALL) -C'
 	AC_MSG_RESULT(yes)
     else
-	INSTALL_IF_CHANGED='$(INSTALL)'
+	INSTALL_IF_CHANGED='$(top_builddir)/installch'
 	AC_MSG_RESULT(no)
     fi
     rm -f conftest.1 conftest.2

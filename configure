@@ -14138,7 +14138,7 @@ echo $ECHO_N "checking whether install accepts -C... $ECHO_C" >&6
 	echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
     else
-	INSTALL_IF_CHANGED='$(INSTALL)'
+	INSTALL_IF_CHANGED='$(top_builddir)/installch'
 	echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
     fi
@@ -14503,7 +14503,7 @@ fi
 
 
 
-config_files="Makefile click-buildtool click-compile config.mk tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-userlevel.mk etc/pkg-linuxmodule.mk etc/pkg-linuxmodule-26.mk"
+config_files="Makefile click-buildtool click-compile config.mk installch tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-userlevel.mk etc/pkg-linuxmodule.mk etc/pkg-linuxmodule-26.mk"
 for ac_dir in $POSSIBLE_DRIVERS; do
     config_files="$config_files $ac_dir/Makefile"
 done
@@ -15815,6 +15815,7 @@ done
 for ac_file in $CONFIG_FILES; do
     test $ac_file = click-buildtool && chmod +x click-buildtool
     test $ac_file = click-compile && chmod +x click-compile
+    test $ac_file = installch && chmod +x installch
 done ;;
   esac
 done

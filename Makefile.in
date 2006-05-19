@@ -55,11 +55,12 @@ exopc: Makefile click-buildtool stamp-h
 tools: Makefile
 	@cd tools && $(MAKE) all
 
-install: Makefile click-buildtool click-compile stamp-h
+install: Makefile click-buildtool click-compile stamp-h installch
 	@for d in $(ALL_TARGETS); do (cd $$d && $(MAKE) install) || exit 1; done
 	@$(MAKE) install-local install-doc install-local-include
 install-local: elementmap.xml click-buildtool click-compile config.mk \
-	etc/pkg-userlevel.mk etc/pkg-linuxmodule.mk etc/pkg-linuxmodule-26.mk
+	etc/pkg-userlevel.mk etc/pkg-linuxmodule.mk etc/pkg-linuxmodule-26.mk \
+	installch
 	$(mkinstalldirs) $(DESTDIR)$(bindir)
 	$(INSTALL_IF_CHANGED) click-buildtool $(DESTDIR)$(bindir)/click-buildtool
 	$(INSTALL_IF_CHANGED) click-compile $(DESTDIR)$(bindir)/click-compile
@@ -81,7 +82,7 @@ install-info:
 	@cd doc && $(MAKE) install-info
 install-man: elementmap.xml
 	@-for d in $(ALL_TARGETS) doc; do (cd $$d && $(MAKE) install-man); done
-install-local-include: stamp-h
+install-local-include: stamp-h installch
 	$(mkinstalldirs) $(DESTDIR)$(clickincludedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(DESTDIR)$(clickincludedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.hh $(DESTDIR)$(clickincludedir)
@@ -129,6 +130,10 @@ click-compile: $(srcdir)/click-compile.in config.status
 config.mk: $(srcdir)/config.mk.in config.status
 	cd $(top_builddir) && \
 	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+installch: $(srcdir)/installch.in config.status
+	cd $(top_builddir) && \
+	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	@chmod +x installch; touch installch
 etc/pkg-userlevel.mk: $(srcdir)/etc/pkg-userlevel.mk.in config.status
 	cd $(top_builddir) && \
 	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
@@ -165,7 +170,7 @@ distclean:
 	-rm -f include/click/config.h include/click/config-*.h include/click/pathvars.h
 	-rm -f config.cache config.log click-buildtool click-compile config.mk stamp-h
 	-rm -f etc/pkg-userlevel.mk etc/pkg-linuxmodule.mk etc/pkg-linuxmodule-26.mk
-	-rm -f elementmap.xml conftest.*
+	-rm -f elementmap.xml conftest.* installch
 
 
 distdir = $(PACKAGE)-$(VERSION)

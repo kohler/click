@@ -1,6 +1,8 @@
 Click NEWS
 
-Version 1.5
+Version 1.5.0   19.May.2006
+
+* Linux 2.6.16.13 kernel module support.
 
 * IP routing element improvements, including new, gloriously fast
   DirectIPLookup element (Marko Zec with kohler).
@@ -30,12 +32,8 @@ Version 1.5
 
 * Wifi (bicket)
 
-** Add srcr version 2 ("sr2") elements which are endian-friendly, but not
-   backward compatible.  Keep sr1 elements for backward compatibility, but
-   eventually these will be deprecated.
-
-** Fix a bunch of wifi performance bugs that came out from porting roofnet
-   to really slow cheap wireless routers.
+** Most wifi elements have been removed from the repository.  They will be
+   added back as a separate package at a future date.
 
 * Internals
 
@@ -67,11 +65,12 @@ Version 1.5
 * Thanks to Dan Aguayo, Mark Allman, Bart Braem, Kristof Cauwel, Spencer
   Chang, YenJung Chang, Jacky Cheng, Beyers Cronje, Weidong Cui, Anne
   Dudfield, Brian Gallaway, Michael Gellman, Chema Gonzalez, Andrew
-  Gorelik, Adam Greenhalgh, Trevor Harrison, Felipe Huici, Bart Jooris, Bob
-  Keyes, Kevin Lahey, Dagang Li, Nikitas Liogkas, Yun Mao, Ross Mcilroy,
-  Alastair McKinley, Indian Mogul, Thomas Paine, Ruoming Pang, Juncheol
-  Park, Vern Paxson, Michael Voorhaen, Michael Walfish, Nick Weaver,
-  Qinghua Ye, Marko Zec, and anyone else whose name was forgotten.
+  Gorelik, Adam Greenhalgh, Jason Haas, Trevor Harrison, Felipe Huici, Bart
+  Jooris, Srikanth Kandula, Bob Keyes, Kevin Lahey, Dagang Li, Nikitas
+  Liogkas, Yun Mao, Ross Mcilroy, Alastair McKinley, Indian Mogul, Thomas
+  Paine, Ruoming Pang, Juncheol Park, Vern Paxson, Michael Voorhaen,
+  Michael Walfish, Nick Weaver, Qinghua Ye, Marko Zec, and anyone else
+  whose name was forgotten.
 
 
 Version 1.4.3   5.Jan.2005
