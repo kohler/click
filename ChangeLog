@@ -1,3 +1,12 @@
+2006-05-19 Friday 20:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.102), NEWS (1.168), etc/pkg-Makefile (1.9),
+	  etc/samplepackage/README (1.5), etc/samplepackage/config.h (1.7),
+	  etc/samplepackage/config.h.in (1.4),
+	  etc/samplepackage/configure.ac (1.5),
+	  etc/samplepackage/sampleelt.cc (1.11): samplepackage has no
+	  config.h
+
 2006-05-19 Friday 19:04  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.101), Makefile.in (1.135): nits
