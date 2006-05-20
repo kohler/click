@@ -78,8 +78,6 @@ elemlist:
 
 elementmap-$(package).xml: $(clickbindir)/click-mkelemmap always
 	r="$(DRIVERS) $(package)"; echo $(srcdir) | $(CLICK_BUILDTOOL) findelem -r "$$r" -P | $(clickbindir)/click-mkelemmap -r "$(package)" -t "$(DRIVERS)" -s `cd $(srcdir) && pwd` > elementmap-$(package).xml
-always:
-	@:
 
 install: install-obj install-man elementmap-$(package).xml always
 	$(mkinstalldirs) $(DESTDIR)$(clickdatadir)

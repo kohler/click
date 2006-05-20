@@ -4,6 +4,9 @@ Version 1.5.0   19.May.2006
 
 * Linux 2.6.16.13 kernel module support, including support for packages.
 
+* click-packages-1.5.0 supports SNMP and Netflow (donated by Mazu Networks)
+  and multicast (preliminary).
+
 * IP routing element improvements, including new, gloriously fast
   DirectIPLookup element (Marko Zec with kohler).
 
@@ -33,7 +36,7 @@ Version 1.5.0   19.May.2006
 * Wifi (bicket)
 
 ** Most wifi elements have been removed from the repository.  They will be
-   added back as a separate package at a future date.
+   added back later as a separate package in click-packages.
 
 * Internals
 
