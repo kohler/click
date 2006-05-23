@@ -3,6 +3,7 @@
 %
 % Copyright (c) 1999-2001 Massachusetts Institute of Technology
 % Copyright (c) 2001-2003 International Computer Science Institute
+% Copyright (c) 2006 Regents of the University of California
 %
 % Permission is hereby granted, free of charge, to any person obtaining a
 % copy of this software and associated documentation files (the "Software"),
@@ -370,25 +371,25 @@ vardef draw_element_outputs(suffix $) =
   endfor;
 enddef;
 
-vardef drawelement(text elements) =
-  drawelementbox(elements);
+vardef drawelement(text elements) text rest =
+  drawelementbox(elements) rest;
   drawunboxed(elements);
 enddef;
 
-vardef drawelementbox(text elements) =
+vardef drawelementbox(text elements) text rest =
   save $, oldpen; oldpen := savepen;
   interim linejoin := mitered;
   fixsize(elements);
   fixpos(elements);
   forsuffixes $ = elements:
-    pickup elementpen.port scaled $.portscale;
     if $.drawports:
+      pickup elementpen.port scaled $.portscale;
       if $.nin > 0: draw_element_inputs($); fi;
       if $.nout > 0: draw_element_outputs($); fi;
     fi;
     if $.borderscale > 0:
       pickup elementpen.border scaled $.borderscale;
-      scantokens elemdraw_$($);
+      scantokens elemdraw_$($) rest;
     fi;
   endfor;
   pickup oldpen;
@@ -405,25 +406,25 @@ enddef;
 
 %% queues
 
-vardef _drawqueued(expr p,delta,rot,lim,pp) =
+vardef _drawqueued(expr p,delta,rot,lim,pp) text rest =
   save i; interim linecap := squared; i := delta;
   forever:
-    draw (p) shifted ((i,0) rotated rot) withpen currentpen scaled 0.25;
+    draw (p) shifted ((i,0) rotated rot) withpen currentpen scaled 0.25 rest;
     i := i + delta; exitunless i < lim;
   endfor;
-  draw (pp);
+  draw (pp) rest;
 enddef;
-vardef drawqueued(suffix $) =
-  _drawqueued($.ne -- $.se, 6, 180, .9*$.width, $.nw -- $.ne -- $.se -- $.sw);
+def drawqueued(suffix $) =
+  _drawqueued($.ne -- $.se, 6, 180, .9*$.width, $.nw -- $.ne -- $.se -- $.sw)
 enddef;
-vardef drawrqueued(suffix $) =
-  _drawqueued($.nw -- $.sw, 6, 0, .9*$.width, $.ne -- $.nw -- $.sw -- $.se);
+def drawrqueued(suffix $) =
+  _drawqueued($.nw -- $.sw, 6, 0, .9*$.width, $.ne -- $.nw -- $.sw -- $.se)
 enddef;
-vardef drawvqueued(suffix $) =
-  _drawqueued($.se -- $.sw, 5, 90, .9*$.height, $.nw -- $.sw -- $.se -- $.ne);
+def drawvqueued(suffix $) =
+  _drawqueued($.se -- $.sw, 5, 90, .9*$.height, $.nw -- $.sw -- $.se -- $.ne)
 enddef;
-vardef drawrvqueued(suffix $) =
-  _drawqueued($.ne -- $.nw, 5, 270, .9*$.height, $.sw -- $.nw -- $.ne -- $.se);
+def drawrvqueued(suffix $) =
+  _drawqueued($.ne -- $.nw, 5, 270, .9*$.height, $.sw -- $.nw -- $.ne -- $.se)
 enddef;
 
 vardef queueit@#(expr s) =
@@ -446,6 +447,8 @@ enddef;
 
 %% connections
 
+picture _cutarrpic;
+
 vardef arrowhead expr p =
   save q,h,e,f; path q,h; pair e,f;
   e = point length p of p;
@@ -456,9 +459,28 @@ vardef arrowhead expr p =
   f = point 0 of h;
   (q rotated .5ahangle & reverse q rotated -.5ahangle -- f -- cycle)  shifted e
 enddef;
+def _cutarr(expr b,e) text t =
+  _cutarrpic := image(draw (0,0) -- (1,0) -- cycle t);
+  _cutarramt := (2ypart urcorner _cutarrpic / sind .5ahangle) - 0.75;
+  if _cutarramt > 0:
+    _apth := subpath (xpart(_apth intersectiontimes makepath(pencircle
+	  scaled (b*_cutarramt)) shifted (point 0 of _apth)),
+      xpart(_apth intersectiontimes makepath(pencircle scaled (e*_cutarramt))
+  shifted (point length _apth of _apth))) of _apth;
+  fi
+enddef;
 def _finarr text t =
+  _cutarr(0,1) t;
   draw (subpath (0, xpart(_apth intersectiontimes makepath(pencircle scaled 1.2ahlength) shifted (point length _apth of _apth))) of _apth) t;
   fill arrowhead _apth  t
+enddef;
+def _findarr text t =
+  _cutarr(1,1) t;
+  draw (subpath
+    (xpart(_apth intersectiontimes makepath(pencircle scaled 1.2ahlength) shifted (point 0 of _apth)),
+     xpart(_apth intersectiontimes makepath(pencircle scaled 1.2ahlength) shifted (point length _apth of _apth))) of _apth) t;
+  fill arrowhead _apth  t;
+  fill arrowhead reverse _apth  t
 enddef;
 
 def connectpath(suffix $,#,##,$$) =
