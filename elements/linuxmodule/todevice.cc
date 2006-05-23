@@ -383,10 +383,9 @@ ToDevice::queue_packet(Packet *p)
 	skb_put(skb1, 60 - skb1->len);
     }
 
-    // set the device annotation if it isn't already set;
+    // set the device annotation;
     // apparently some devices in Linux 2.6 require it
-    if (!skb1->dev)
-	skb1->dev = _dev;
+    skb1->dev = _dev;
     
     int ret;
 #if HAVE_LINUX_POLLING
