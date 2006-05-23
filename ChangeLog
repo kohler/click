@@ -1,3 +1,11 @@
+2006-05-23 Tuesday 14:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/test-tap.click (1.9), elements/userlevel/kerneltap.cc
+	  (1.49), elements/userlevel/kerneltap.hh (1.24),
+	  elements/userlevel/kerneltun.cc (1.56),
+	  elements/userlevel/kerneltun.hh (1.25): regularize KernelTun and
+	  KernelTap
+
 2006-05-23 Tuesday 14:35  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/kerneltap.cc (1.48): fix KernelTap maybe to
