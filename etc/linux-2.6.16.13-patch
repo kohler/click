@@ -1592,7 +1592,79 @@ diff -ru ../linux-2.6.16.13/include/asm-mips/fpu.h ./include/asm-mips/fpu.h
  extern void _init_fpu(void);
 diff -ru ../linux-2.6.16.13/include/asm-mips/io.h ./include/asm-mips/io.h
 --- ../linux-2.6.16.13/include/asm-mips/io.h	2006-05-02 14:38:44.000000000 -0700
-+++ ./include/asm-mips/io.h	2006-05-02 22:59:19.000000000 -0700
++++ ./include/asm-mips/io.h	2006-05-23 08:40:44.000000000 -0700
+@@ -344,7 +344,7 @@
+ 	volatile type *__mem;						\
+ 	type __val;							\
+ 									\
+-	__mem = (void *)__swizzle_addr_##bwlq((unsigned long)(mem));	\
++	__mem = (type *)__swizzle_addr_##bwlq((unsigned long)(mem));	\
+ 									\
+ 	__val = pfx##ioswab##bwlq(val);					\
+ 									\
+@@ -377,7 +377,7 @@
+ 	volatile type *__mem;						\
+ 	type __val;							\
+ 									\
+-	__mem = (void *)__swizzle_addr_##bwlq((unsigned long)(mem));	\
++	__mem = (type *)__swizzle_addr_##bwlq((unsigned long)(mem));	\
+ 									\
+ 	if (sizeof(type) != sizeof(u64) || sizeof(u64) == sizeof(long))	\
+ 		__val = *__mem;						\
+@@ -412,7 +412,7 @@
+ 	type __val;							\
+ 									\
+ 	port = __swizzle_addr_##bwlq(port);				\
+-	__addr = (void *)(mips_io_port_base + port);			\
++	__addr = (type *)(mips_io_port_base + port);			\
+ 									\
+ 	__val = pfx##ioswab##bwlq(val);					\
+ 									\
+@@ -429,7 +429,7 @@
+ 	type __val;							\
+ 									\
+ 	port = __swizzle_addr_##bwlq(port);				\
+-	__addr = (void *)(mips_io_port_base + port);			\
++	__addr = (type *)(mips_io_port_base + port);			\
+ 									\
+ 	BUILD_BUG_ON(sizeof(type) > sizeof(unsigned long));		\
+ 									\
+@@ -491,7 +491,7 @@
+ static inline void writes##bwlq(volatile void __iomem *mem,		\
+ 				const void *addr, unsigned int count)	\
+ {									\
+-	const volatile type *__addr = addr;				\
++	const volatile type *__addr = (const type *) addr;		\
+ 									\
+ 	while (count--) {						\
+ 		__mem_write##bwlq(*__addr, mem);			\
+@@ -502,7 +502,7 @@
+ static inline void reads##bwlq(volatile void __iomem *mem, void *addr,	\
+ 			       unsigned int count)			\
+ {									\
+-	volatile type *__addr = addr;					\
++	volatile type *__addr = (type *) addr;				\
+ 									\
+ 	while (count--) {						\
+ 		*__addr = __mem_read##bwlq(mem);			\
+@@ -515,7 +515,7 @@
+ static inline void outs##bwlq(unsigned long port, const void *addr,	\
+ 			      unsigned int count)			\
+ {									\
+-	const volatile type *__addr = addr;				\
++	const volatile type *__addr = (const type *) addr;		\
+ 									\
+ 	while (count--) {						\
+ 		__mem_out##bwlq(*__addr, port);				\
+@@ -526,7 +526,7 @@
+ static inline void ins##bwlq(unsigned long port, void *addr,		\
+ 			     unsigned int count)			\
+ {									\
+-	volatile type *__addr = addr;					\
++	volatile type *__addr = (type *) addr;				\
+ 									\
+ 	while (count--) {						\
+ 		*__addr = __mem_in##bwlq(port);				\
 @@ -548,7 +548,7 @@
  
  
@@ -2724,7 +2796,7 @@ diff -ru ../linux-2.6.16.13/include/linux/kexec.h ./include/linux/kexec.h
  				unsigned long flags);
 diff -ru ../linux-2.6.16.13/include/linux/ktime.h ./include/linux/ktime.h
 --- ../linux-2.6.16.13/include/linux/ktime.h	2006-05-02 14:38:44.000000000 -0700
-+++ ./include/linux/ktime.h	2006-05-03 11:32:54.000000000 -0700
++++ ./include/linux/ktime.h	2006-05-23 08:36:10.000000000 -0700
 @@ -64,8 +64,10 @@
  
  #if (BITS_PER_LONG == 64) || defined(CONFIG_KTIME_SCALAR)
@@ -2765,6 +2837,79 @@ diff -ru ../linux-2.6.16.13/include/linux/ktime.h ./include/linux/ktime.h
  
  /* convert a timespec to ktime_t format: */
  static inline ktime_t timespec_to_ktime(struct timespec ts)
+@@ -136,13 +138,17 @@
+  *   tv.sec < 0 and 0 >= tv.nsec < NSEC_PER_SEC
+  */
+ 
++#define KTIME_TV64(__s)			({ ktime_t __kt; __kt.tv64 = (__s); __kt; })
++#define KTIME_SEC_NSEC(__sec, __nsec)	({ ktime_t __kt; __kt.tv.sec = (__sec); __kt.tv.nsec = (__nsec); __kt; })
++#define TIMEVAL_SEC_USEC(__sec, __usec)	({ struct timeval __tv; __tv.tv_sec = (__sec); __tv.tv_usec = (__usec); __tv; })
++
+ /* Define a ktime_t variable and initialize it to zero: */
+-#define DEFINE_KTIME(kt)		ktime_t kt = { .tv64 = 0 }
++#define DEFINE_KTIME(kt)		ktime_t kt = KTIME_TV64(0)
+ 
+ /* Set a ktime_t variable to a value in sec/nsec representation: */
+ static inline ktime_t ktime_set(const long secs, const unsigned long nsecs)
+ {
+-	return (ktime_t) { .tv = { .sec = secs, .nsec = nsecs } };
++	return KTIME_SEC_NSEC(secs, nsecs);
+ }
+ 
+ /**
+@@ -210,8 +216,7 @@
+  */
+ static inline ktime_t timespec_to_ktime(const struct timespec ts)
+ {
+-	return (ktime_t) { .tv = { .sec = (s32)ts.tv_sec,
+-			   	   .nsec = (s32)ts.tv_nsec } };
++	return KTIME_SEC_NSEC((s32)ts.tv_sec, (s32)ts.tv_nsec);
+ }
+ 
+ /**
+@@ -223,8 +228,7 @@
+  */
+ static inline ktime_t timeval_to_ktime(const struct timeval tv)
+ {
+-	return (ktime_t) { .tv = { .sec = (s32)tv.tv_sec,
+-				   .nsec = (s32)tv.tv_usec * 1000 } };
++	return KTIME_SEC_NSEC((s32)tv.tv_sec, (s32)tv.tv_usec * 1000);
+ }
+ 
+ /**
+@@ -236,8 +240,7 @@
+  */
+ static inline struct timespec ktime_to_timespec(const ktime_t kt)
+ {
+-	return (struct timespec) { .tv_sec = (time_t) kt.tv.sec,
+-				   .tv_nsec = (long) kt.tv.nsec };
++	return KTIME_SEC_NSEC((time_t) kt.tv.sec, (long) kt.tv.nsec);
+ }
+ 
+ /**
+@@ -249,9 +252,8 @@
+  */
+ static inline struct timeval ktime_to_timeval(const ktime_t kt)
+ {
+-	return (struct timeval) {
+-		.tv_sec = (time_t) kt.tv.sec,
+-		.tv_usec = (suseconds_t) (kt.tv.nsec / NSEC_PER_USEC) };
++	return TIMEVAL_SEC_USEC((time_t) kt.tv.sec,
++				(suseconds_t) (kt.tv.nsec / NSEC_PER_USEC));
+ }
+ 
+ /**
+@@ -284,8 +286,8 @@
+  * idea of the (in)accuracy of timers. Timer values are rounded up to
+  * this resolution values.
+  */
+-#define KTIME_REALTIME_RES	(ktime_t){ .tv64 = TICK_NSEC }
+-#define KTIME_MONOTONIC_RES	(ktime_t){ .tv64 = TICK_NSEC }
++#define KTIME_REALTIME_RES	KTIME_TV64(TICK_NSEC)
++#define KTIME_MONOTONIC_RES	KTIME_TV64(TICK_NSEC)
+ 
+ /* Get the monotonic time in timespec format: */
+ extern void ktime_get_ts(struct timespec *ts);
 diff -ru ../linux-2.6.16.13/include/linux/list.h ./include/linux/list.h
 --- ../linux-2.6.16.13/include/linux/list.h	2006-05-02 14:38:44.000000000 -0700
 +++ ./include/linux/list.h	2006-05-03 11:07:22.000000000 -0700
