@@ -1,3 +1,19 @@
+2006-05-23 Tuesday 12:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/: todevice.cc (1.145), todevice.cc (1.146):
+	  another bug fix from David Claffey: set the device annotation if
+	  its not already set
+
+2006-05-23 Tuesday 11:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/skbmgr.cc (1.23): skbmgr patch from David Claffey:
+	  set skb->dst to NULL; otherwise Linux gets confused
+
+2006-05-23 Tuesday 11:48  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/linux-2.6.16.13-patch (1.4): add more to the patch: remove ({
+	  .blah = foo }), more casts to a type
+
 2006-05-23 Tuesday 11:26  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: iproutetable.cc (1.19), lineariplookup.cc (1.14):
