@@ -5,6 +5,7 @@
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
 CLICK_DECLS
 
 /*
@@ -18,9 +19,10 @@ interface to /dev/tap or ethertap (user-level)
 
 =d
 
-Reads packets from and writes packets to a /dev/tun* or /dev/tap* device.
-This allows a user-level Click to hand packets to the virtual Ethernet device.
-KernelTap will also transfer packets from the virtual Ethernet device.
+Reads Ethernet packets from and writes Ethernet packets to a /dev/tun* or
+/dev/tap* device.  This allows a user-level Click to hand packets to the
+virtual Ethernet device.  KernelTap will also transfer packets from the
+virtual Ethernet device.
 
 KernelTap allocates a /dev/tun* or tap* device (this might fail) and runs
 ifconfig(8) to set the interface's local (i.e., kernel) address to ADDR and
@@ -107,6 +109,7 @@ class KernelTap : public Element { public:
     IPAddress _gw;
     int _headroom;
     Task _task;
+    NotifierSignal _signal;
 
     EtherAddress _macaddr;
 

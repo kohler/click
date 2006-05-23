@@ -67,7 +67,6 @@ KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
     _gw = IPAddress();
     _headroom = Packet::DEFAULT_HEADROOM;
     _mtu_out = DEFAULT_MTU;
-
     if (cp_va_parse(conf, this, errh,
 		    cpIPPrefix, "network address", &_near, &_mask,
 		    cpOptional,
@@ -237,7 +236,11 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
 
     strcpy(tmp0, inet_ntoa(near));
     strcpy(tmp1, inet_ntoa(mask));
+#if KERNELTUN_OSX
+    sprintf(tmp, "/sbin/ifconfig %s %s %s netmask %s up 2>/dev/null", _dev_name.c_str(), tmp0, _gw.s().c_str(), tmp1);
+#else
     sprintf(tmp, "/sbin/ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.c_str(), tmp0, tmp1);
+#endif
     if (system(tmp) != 0) {
 # if defined(__linux__)
 	// Is Ethertap available? If it is moduleified, then it might not be.
@@ -252,7 +255,7 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
     if (_gw) {
 #if defined(__linux__)
 	sprintf(tmp, "/sbin/route -n add default gw %s", _gw.s().c_str());
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
 	sprintf(tmp, "/sbin/route -n add default %s", _gw.s().c_str());
 #endif
 	if (system(tmp) != 0)
@@ -269,6 +272,7 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
 	_mtu_in = _mtu_out + 4; // + 0?
     else /* _type == LINUX_ETHERTAP */
 	_mtu_in = _mtu_out + 16;
+    
     return 0;
 }
 
@@ -287,10 +291,12 @@ KernelTap::initialize(ErrorHandler *errh)
 	return -1;
     if (setup_tun(_near, _mask, errh) < 0)
 	return -1;
-  if (input_is_pull(0))
-    ScheduleInfo::join_scheduler(this, &_task, errh);
-  add_select(_fd, SELECT_READ);
-  return 0;
+    if (input_is_pull(0)) {
+	ScheduleInfo::join_scheduler(this, &_task, errh);
+	_signal = Notifier::upstream_empty_signal(this, 0, &_task);
+    }
+    add_select(_fd, SELECT_READ);
+    return 0;
 }
 
 void
@@ -347,7 +353,9 @@ KernelTap::run_task()
 {
     Packet *p = input(0).pull();
     if (p)
-	push(0, p); 
+	push(0, p);
+    else if (!_signal)
+	return false;
     _task.fast_reschedule();
     return p != 0;
 }
@@ -358,7 +366,7 @@ KernelTap::push(int, Packet *p)
     // Every packet has a 14-byte Ethernet header.
     // Extract the packet type, then ignore the Ether header.
 
-    click_ether *e = (click_ether *) p->data();
+    const click_ether *e = (const click_ether *) p->data();
     if (p->length() < sizeof(*e)){
 	click_chatter("KernelTap(%s): packet too small", _dev_name.c_str());
 	p->kill();
