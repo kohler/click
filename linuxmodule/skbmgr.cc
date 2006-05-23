@@ -248,6 +248,7 @@ skb_recycled_init_fast(struct sk_buff *skb)
   // datarefp (expensive to set).
   if (!(skb->pkt_type & PACKET_CLEAN)) {
     dst_release(skb->dst);
+    skb->dst = NULL;
     if (skb->destructor) {
       skb->destructor(skb);
       skb->destructor = NULL;
