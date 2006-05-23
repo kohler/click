@@ -1,3 +1,12 @@
+2006-05-23 Tuesday 11:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: iproutetable.cc (1.19), lineariplookup.cc (1.14):
+	  update error message (Bart Braem)
+
+2006-05-23 Tuesday 11:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/diagrams/elements.mp (1.13): further diagram updates
+
 2006-05-19 Friday 20:30  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.102), NEWS (1.168), etc/pkg-Makefile (1.9),
