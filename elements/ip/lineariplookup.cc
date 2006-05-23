@@ -230,7 +230,9 @@ LinearIPLookup::push(int, Packet *p)
 	_last_addr = a;
 	_last_entry = ei;
     } else {
-	click_chatter("LinearIPLookup: no gw for %x", a.addr());
+	static int complained = 0;
+	if (++complained <= 5)
+	    click_chatter("LinearIPLookup: no route for %s", a.unparse().c_str());
 	p->kill();
 	return;
     }
