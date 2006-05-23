@@ -4,6 +4,7 @@
  * Robert Morris, Douglas S. J. De Couto, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -319,13 +320,15 @@ KernelTap::selected(int fd)
 	p->take(_mtu_in - cc);
 	
 	if (_type == LINUX_UNIVERSAL) {
-	    // 2-byte padding followed by an Ethernet type
+	    // 2-byte padding, 2-byte Ethernet type, then Ethernet header
 	    p->pull(4);
 	} else if (_type == BSD_TUN) {
-	    // 4-byte address family followed by IP header
+	    // 4-byte address family, then Ethernet header
 	    p->pull(4);
 	} else if (_type == OSX_TUN) {
+	    // Ethernet header
 	} else { /* _type == LINUX_ETHERTAP */
+	    // 2-byte padding, then Ethernet header
 	    p->pull(2);
 	}
 	
@@ -355,32 +358,42 @@ KernelTap::push(int, Packet *p)
     // Every packet has a 14-byte Ethernet header.
     // Extract the packet type, then ignore the Ether header.
 
-    const click_ip *iph = p->ip_header();
     click_ether *e = (click_ether *) p->data();
-    
-    if (!iph) {
-	click_chatter("KernelTap(%s): no network header", _dev_name.c_str());
-	p->kill();
-    }
     if (p->length() < sizeof(*e)){
 	click_chatter("KernelTap(%s): packet too small", _dev_name.c_str());
 	p->kill();
 	return;
     }
+    
     WritablePacket *q;
     if (_type == LINUX_UNIVERSAL) {
-	// 2-byte padding followed by an Ethernet type
-	uint32_t ethertype = (iph->ip_v == 4 ? htonl(ETHERTYPE_IP) : htonl(ETHERTYPE_IP6));
+	// 2-byte padding, 2-byte Ethernet type, then Ethernet header
 	if ((q = p->push(4)))
-	    *(uint32_t *)(q->data()) = ethertype;
+	    ((uint16_t *) q->data())[1] = e->ether_type;
     } else if (_type == BSD_TUN) { 
-	uint32_t af = (iph->ip_v == 4 ? htonl(AF_INET) : htonl(AF_INET6));
-	if ((q = p->push(4)))
-	    *(uint32_t *)(q->data()) = af;
+	// 4-byte address family, then Ethernet header
+	// XXX not sure if this is the right thing
+	if ((q = p->push(4))) {
+	    uint32_t af;
+	    if (e->ether_type == htons(ETHERTYPE_IP))
+		af = htonl(AF_INET);
+	    else if (e->ether_type == htons(ETHERTYPE_IP6))
+		af = htonl(AF_INET6);
+	    else
+#ifdef AF_LINK
+		af = htonl(AF_LINK);
+#elif defined(AF_NETLINK)
+		af = htonl(AF_NETLINK);
+#else
+		af = htonl(AF_UNSPEC);
+#endif
+	    ((uint32_t *) q->data())[0] = af;
+	}
     } else if (_type == OSX_TUN) {
-	// send raw IP
+	// raw Ethernet header
 	q = p->uniqueify();
     } else { /* _type == LINUX_ETHERTAP */
+	// 2-byte padding, then Ethernet header
 	q = p->push(2);
     }
     
