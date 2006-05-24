@@ -17,6 +17,7 @@
 // Linux kernel taps don't work unless you set Ethernet addresses right.
 AddressInfo(tap_local 1:1:1:1:1:1, tap_remote 2:2:2:2:2:2);
 
+// The ETHER argument is required on Linux, but ignored on FreeBSD.
 tap :: KernelTap(1.0.0.1/8, ETHER tap_remote);
 
 ICMPPingSource(1.0.0.2, 1.0.0.1)

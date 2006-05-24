@@ -205,7 +205,7 @@ KernelTun::alloc_tun(ErrorHandler *errh)
     
     if (saved_error == -ENOENT) {
 	tried.pop_back(2);
-	return errh->error("could not find a tap device\n(checked %s)\nYou may need to enable tap support in your kernel.", tried.c_str());
+	return errh->error("could not find a tap device\n(checked %s)\nYou may need to load a kernel module to support tap.", tried.c_str());
     } else
 	return errh->error("could not allocate device /dev/%s: %s%s", saved_device.c_str(), strerror(-saved_error), saved_message.c_str());
 }
@@ -247,9 +247,11 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
 	if (ioctl(s, SIOCSIFHWADDR, &ifr) != 0)
 	    errh->warning("could not set interface Ethernet address: %s", strerror(errno));
     }
-#else
+#elif !defined(__FreeBSD__)
     if (_macaddr)
 	errh->warning("could not set interface Ethernet address: no support");
+#else
+    /* safe to ignore _macaddr on FreeBSD */
 #endif
 #if defined(SIOCSIFMTU)
     if (_mtu_out != DEFAULT_MTU) {

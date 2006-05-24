@@ -51,7 +51,7 @@ CLICK_DECLS
  * =item ETHER
  *
  * Ethernet address. Specifies the fake device's Ethernet address. Default is
- * 00:a01:02:03:04:05.
+ * 00:01:02:03:04:05.
  *
  * =back
  *

@@ -10,7 +10,7 @@ CLICK_DECLS
 /*
 =c
 
-KernelTun(ADDR/MASK [, GATEWAY, I<keywords> HEADROOM, MTU, IGNORE_QUEUE_OVERFLOWS])
+KernelTun(ADDR/MASK [, GATEWAY, I<keywords> HEADROOM, ETHER, MTU, IGNORE_QUEUE_OVERFLOWS])
 
 =s comm
 
@@ -48,7 +48,12 @@ room for additional encapsulation headers. Default is 28.
 =item MTU
 
 Integer. The interface's MTU. KernelTun will refuse to send packets larger
-than the MTU. Default is 1500.
+than the MTU. Default is 1500; not all operating systems allow MTU to be set.
+
+=item ETHER
+
+Ethernet address. Specifies the tunnel device's Ethernet address. Default is
+00:01:02:03:04:05. On FreeBSD, any ETHER argument is silently ignored.
 
 =item IGNORE_QUEUE_OVERFLOWS
 

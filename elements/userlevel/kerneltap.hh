@@ -32,12 +32,18 @@ Keyword arguments are:
 
 =item ETHER
 
-Ethernet address.  Specifies the fake device's Ethernet address. Default is
-00:01:02:03:04:05.
+Ethernet address. Specifies the fake device's Ethernet address. Default is
+00:01:02:03:04:05. On Linux, you must supply an ETHER argument, and use that
+address as the destination Ethernet address for all packets sent to the tap
+element; otherwise, Linux will ignore your packets. On FreeBSD, there is no
+way to set the Ethernet address, and any ETHER argument is silently ignored,
+but it is safe to use any destination Ethernet address for packets sent to the
+tap.
 
 =item MTU
 
-Integer.  The interface's maximum transmission unit.  Default is 2048.
+Integer.  The interface's maximum transmission unit.  Default is 1500; some
+operating systems do not alllow it to be set.
 
 =item HEADROOM
 
@@ -51,6 +57,8 @@ queue overflow errors (ENOBUFS) when sending or receiving packets via the tun
 device.  Default is false.
 
 =back
+
+KernelTap accepts the same arguments as KernelTun.
 
 =n
 
@@ -67,7 +75,7 @@ An error like "could not allocate a /dev/tap* device : No such file or
 directory" usually means that you have not enabled /dev/tap* in your
 kernel. 
 
-=a ToHost, ifconfig(8) */
+=a ToHost, KernelTun, ifconfig(8) */
 
 class KernelTap : public KernelTun { public:
   
