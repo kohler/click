@@ -221,22 +221,21 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     memset(&ifr, 0, sizeof(ifr));
     strncpy(ifr.ifr_name, _dev_name.c_str(), sizeof(ifr.ifr_name));
 #if defined(SIOCSIFADDR) && defined(SIOCSIFNETMASK) 
-    struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
-    sin->sin_family = AF_INET;
-    sin->sin_addr = addr;
-# if defined(__linux__)
-    int ioctlno = SIOCSIFADDR;
-# else
-    int ioctlno = SIOCSIFDSTADDR;
-# endif
-    if (ioctl(s, ioctlno, &ifr) != 0) {
-	errh->error("SIOCSIFADDR failed: %s", strerror(errno));
-	goto out;
-    }
-    sin->sin_addr = mask;
-    if (ioctl(s, SIOCSIFNETMASK, &ifr) != 0) {
-	errh->error("SIOCSIFNETMASK failed: %s", strerror(errno));
-	goto out;
+    {
+	struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
+	sin->sin_family = AF_INET;
+	sin->sin_len = sizeof(struct sockaddr_in);
+	sin->sin_port = 0;
+	sin->sin_addr = mask;
+	if (ioctl(s, SIOCSIFNETMASK, &ifr) != 0) {
+	    errh->error("SIOCSIFNETMASK failed: %s", strerror(errno));
+	    goto out;
+	}
+	sin->sin_addr = addr;
+	if (ioctl(s, SIOCSIFADDR, &ifr) != 0) {
+	    errh->error("SIOCSIFADDR failed: %s", strerror(errno));
+	    goto out;
+	}
     }
 #else
 # error "Lacking SIOCSIFADDR and/or SIOCSIFNETMASK"
@@ -252,6 +251,13 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     if (_macaddr)
 	errh->warning("could not set interface Ethernet address: no support");
 #endif
+#if defined(SIOCSIFMTU)
+    if (_mtu_out != DEFAULT_MTU) {
+	ifr.ifr_mtu = _mtu_out;
+	if (ioctl(s, SIOCSIFMTU, &ifr) != 0)
+	    errh->warning("could not set interface MTU: %s", strerror(errno));
+    }
+#endif
 #if defined(SIOCGIFFLAGS) && defined(SIOCSIFFLAGS)
     if (ioctl(s, SIOCGIFFLAGS, &ifr) != 0) {
 	errh->error("SIOCGIFFLAGS failed: %s", strerror(errno));
@@ -266,13 +272,6 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     }
 #else
 # error "Lacking SIOCGIFFLAGS and/or SIOCSIFFLAGS"
-#endif
-#if defined(SIOCSIFMTU)
-    if (_mtu_out != DEFAULT_MTU) {
-	ifr.ifr_mtu = _mtu_out;
-	if (ioctl(s, SIOCSIFMTU, &ifr) != 0)
-	    errh->warning("could not set interface MTU: %s", strerror(errno));
-    }
 #endif
  out:
     close(s);
@@ -316,7 +315,8 @@ KernelTun::setup_tun(ErrorHandler *errh)
 #endif        
 
     // set addresses and MTU
-    updown(_near, _mask, errh);
+    if (updown(_near, _mask, errh) < 0)
+	return -1;
 
     if (_gw) {
 	String cmd = "/sbin/route -n add default ";
