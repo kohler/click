@@ -48,7 +48,7 @@ room for additional encapsulation headers. Default is 28.
 =item MTU
 
 Integer. The interface's MTU. KernelTun will refuse to send packets larger
-than the MTU. Default is 2048.
+than the MTU. Default is 1500.
 
 =item IGNORE_QUEUE_OVERFLOWS
 
@@ -104,6 +104,7 @@ class KernelTun : public Element { public:
     const char *flow_code() const	{ return "x/y"; }
     const char *flags() const		{ return "S3"; }
 
+    void *cast(const char *);
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
@@ -116,17 +117,19 @@ class KernelTun : public Element { public:
 
   private:
 
-    enum { DEFAULT_MTU = 2048 };
-    enum Type { LINUX_UNIVERSAL, LINUX_ETHERTAP, BSD_TUN, OSX_TUN };
+    enum { DEFAULT_MTU = 1500 };
+    enum Type { LINUX_UNIVERSAL, LINUX_ETHERTAP, BSD_TUN, BSD_TAP, OSX_TUN };
 
     int _fd;
     int _mtu_in;
     int _mtu_out;
     Type _type;
+    bool _tap;
     String _dev_name;
     IPAddress _near;
     IPAddress _mask;
     IPAddress _gw;
+    EtherAddress _macaddr;
     int _headroom;
     Task _task;
     NotifierSignal _signal;
@@ -142,8 +145,10 @@ class KernelTun : public Element { public:
 #endif
     int try_tun(const String &, ErrorHandler *);
     int alloc_tun(ErrorHandler *);
-    int setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *);
-    void dealloc_tun();
+    int setup_tun(ErrorHandler *);
+    int updown(IPAddress, IPAddress, ErrorHandler *);
+
+    friend class KernelTap;
     
 };
 

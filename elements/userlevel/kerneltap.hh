@@ -1,11 +1,7 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_KERNELTAP_HH
 #define CLICK_KERNELTAP_HH
-#include <click/element.hh>
-#include <click/ipaddress.hh>
-#include <click/etheraddress.hh>
-#include <click/task.hh>
-#include <click/notifier.hh>
+#include "kerneltun.hh"
 CLICK_DECLS
 
 /*
@@ -73,59 +69,11 @@ kernel.
 
 =a ToHost, ifconfig(8) */
 
-class KernelTap : public Element { public:
+class KernelTap : public KernelTun { public:
   
     KernelTap();
-    ~KernelTap();
   
     const char *class_name() const	{ return "KernelTap"; }
-    const char *port_count() const	{ return PORTS_1_1; }
-    const char *processing() const	{ return "a/h"; }
-    const char *flow_code() const	{ return "x/y"; }
-    const char *flags() const		{ return "S3"; }
-  
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
-
-    void selected(int fd);
-
-    void push(int port, Packet *);
-    bool run_task();
-
-  private:
-
-    enum { DEFAULT_MTU = 2048 };
-    enum Type { LINUX_UNIVERSAL, LINUX_ETHERTAP, BSD_TUN, OSX_TUN };
-
-    int _fd;
-    int _mtu_in;
-    int _mtu_out;
-    Type _type;
-    String _dev_name;
-    IPAddress _near;
-    IPAddress _mask;
-    IPAddress _gw;
-    int _headroom;
-    Task _task;
-    NotifierSignal _signal;
-
-    EtherAddress _macaddr;
-
-    bool _ignore_q_errs;
-    bool _printed_write_err;
-    bool _printed_read_err;
-
-    static String print_dev_name(Element *e, void *);
-
-#if HAVE_LINUX_IF_TUN_H
-    int try_linux_universal(ErrorHandler *);
-#endif
-    int try_tun(const String &, ErrorHandler *);
-    int alloc_tun(ErrorHandler *);
-    int setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *);
-    void dealloc_tun();
     
 };
 
