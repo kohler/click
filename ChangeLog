@@ -1,3 +1,17 @@
+2006-05-24 Wednesday 02:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: kerneltun.cc (1.58), kerneltun.cc (1.59):
+	  nit
+
+2006-05-24 Wednesday 02:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/test-tap.click (1.10), elements/userlevel/kerneltap.cc
+	  (1.52), elements/userlevel/kerneltap.hh (1.25),
+	  elements/userlevel/kerneltun.cc (1.57),
+	  elements/userlevel/kerneltun.hh (1.26): merge code for KernelTap
+	  and KernelTun; use ioctls rather than spawning /sbin/ifconfig;
+	  fix up Linux version
+
 2006-05-24 Wednesday 00:37  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/kerneltap.cc (1.51): more KernelTap updates
