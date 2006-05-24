@@ -1,3 +1,12 @@
+2006-05-24 Wednesday 03:37  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/kerneltun.cc (1.61): fiddle with the ioctl
+	  ordering until it hopefully works
+
+2006-05-24 Wednesday 02:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/kerneltun.cc (1.60): more nits
+
 2006-05-24 Wednesday 02:33  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/: kerneltun.cc (1.58), kerneltun.cc (1.59):
