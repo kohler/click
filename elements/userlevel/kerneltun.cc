@@ -224,7 +224,12 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
     sin->sin_family = AF_INET;
     sin->sin_addr = addr;
-    if (ioctl(s, SIOCSIFADDR, &ifr) != 0) {
+# if defined(__linux__)
+    int ioctlno = SIOCSIFADDR;
+# else
+    int ioctlno = SIOCSIFDSTADDR;
+# endif
+    if (ioctl(s, ioctlno, &ifr) != 0) {
 	errh->error("SIOCSIFADDR failed: %s", strerror(errno));
 	goto out;
     }
