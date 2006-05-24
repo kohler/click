@@ -12439,7 +12439,8 @@ fi
 
 
 
-for ac_header in linux/if_tun.h net/if_tun.h net/bpf.h
+
+for ac_header in linux/if_tun.h net/if_tun.h net/if_tap.h net/bpf.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then

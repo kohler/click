@@ -33,7 +33,7 @@
 
 #if defined(__linux__) && defined(HAVE_LINUX_IF_TUN_H)
 # define KERNELTUN_LINUX 1
-#elif defined(HAVE_NET_IF_TUN_H)
+#elif defined(HAVE_NET_IF_TAP_H)
 # define KERNELTUN_NET 1
 #elif defined(__APPLE__)
 # define KERNELTUN_OSX 1 
@@ -42,8 +42,8 @@
 #endif
 
 #include <net/if.h>
-#if HAVE_NET_IF_TUN_H
-# include <net/if_tun.h>
+#if HAVE_NET_IF_TAP_H
+# include <net/if_tap.h>
 #elif HAVE_LINUX_IF_TUN_H
 # include <linux/if_tun.h>
 #endif
