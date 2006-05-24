@@ -224,7 +224,9 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     {
 	struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
 	sin->sin_family = AF_INET;
+# if HAVE_SOCKADDR_IN_SIN_LEN
 	sin->sin_len = sizeof(struct sockaddr_in);
+# endif
 	sin->sin_port = 0;
 	sin->sin_addr = mask;
 	if (ioctl(s, SIOCSIFNETMASK, &ifr) != 0) {

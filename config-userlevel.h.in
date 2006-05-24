@@ -106,6 +106,9 @@
 /* Define if you have the snprintf function. */
 #undef HAVE_SNPRINTF
 
+/* Define if 'struct sockaddr_in' has a 'sin_len' member. */
+#undef HAVE_SOCKADDR_IN_SIN_LEN
+
 /* Define if you have the strerror function. */
 #undef HAVE_STRERROR
 
