@@ -64,7 +64,6 @@ KernelTap::~KernelTap()
 int
 KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    _gw = IPAddress();
     _headroom = Packet::DEFAULT_HEADROOM;
     _mtu_out = DEFAULT_MTU;
     if (cp_va_parse(conf, this, errh,
@@ -77,17 +76,6 @@ KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "MTU", cpInteger, "MTU", &_mtu_out,
 		    cpEnd) < 0)
 	return -1;
-
-    if (_gw) { // then it was set to non-zero by arg
-	// check net part matches 
-	unsigned int g = _gw.in_addr().s_addr;
-	unsigned int m = _mask.in_addr().s_addr;
-	unsigned int n = _near.in_addr().s_addr;
-	if ((g & m) != (n & m)) {
-	    _gw = 0;
-	    errh->warning("not setting up default route\n(network address and gateway are on different networks)");
-	}
-    }
     return 0;
 }
 
@@ -162,10 +150,10 @@ KernelTap::alloc_tun(ErrorHandler *errh)
     String dev_prefix = "tap";
 #elif defined(KERNELTUN_OSX)
     _type = OSX_TUN;
-    String dev_prefix = "tun";
+    String dev_prefix = "tap";
 #else
     _type = BSD_TUN;
-    String dev_prefix = "tun";
+    String dev_prefix = "tap";
 #endif
 
     for (int i = 0; i < 6; i++) {
@@ -192,13 +180,6 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
 //     /* see OpenBSD bug: http://cvs.openbsd.org/cgi-bin/wwwgnats.pl/full/782 */
 // #define       TUNSIFMODE      _IOW('t', 88, int)
 // #endif
-#if defined(TUNSIFMODE) || defined(__FreeBSD__)
-    {
-	int mode = IFF_BROADCAST;
-	if (ioctl(_fd, TUNSIFMODE, &mode) != 0)
-	    return errh->error("TUNSIFMODE failed: %s", strerror(errno));
-    }
-#endif
 #if defined(__OpenBSD__)
     {
 	struct tuninfo ti;
@@ -211,33 +192,21 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
     }
 #endif
     
-
     if (_macaddr) {
 	sprintf(tmp, "/sbin/ifconfig %s hw ether %s", _dev_name.c_str(),
 		_macaddr.s().c_str());
-	if (system(tmp) != 0) {
+	if (system(tmp) != 0)
 	    errh->error("%s: %s", tmp, strerror(errno));
-	}
 	
 	sprintf(tmp, "/sbin/ifconfig %s arp", _dev_name.c_str());
 	if (system(tmp) != 0) 
 	    return errh->error("%s: %s", tmp, strerror(errno));
     }
 
-    
-
-#if defined(TUNSIFHEAD) || defined(__FreeBSD__)
-    // Each read/write prefixed with a 32-bit address family,
-    // just as in OpenBSD.
-    int yes = 1;
-    if (ioctl(_fd, TUNSIFHEAD, &yes) != 0)
-	return errh->error("TUNSIFHEAD failed: %s", strerror(errno));
-#endif        
-
     strcpy(tmp0, inet_ntoa(near));
     strcpy(tmp1, inet_ntoa(mask));
 #if KERNELTUN_OSX
-    sprintf(tmp, "/sbin/ifconfig %s %s %s netmask %s up 2>/dev/null", _dev_name.c_str(), tmp0, _gw.s().c_str(), tmp1);
+    sprintf(tmp, "/sbin/ifconfig %s %s 0.0.0.0 netmask %s up 2>/dev/null", _dev_name.c_str(), tmp0, tmp1);
 #else
     sprintf(tmp, "/sbin/ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.c_str(), tmp0, tmp1);
 #endif
@@ -252,22 +221,11 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
 # endif
     }
     
-    if (_gw) {
-#if defined(__linux__)
-	sprintf(tmp, "/sbin/route -n add default gw %s", _gw.s().c_str());
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
-	sprintf(tmp, "/sbin/route -n add default %s", _gw.s().c_str());
-#endif
-	if (system(tmp) != 0)
-	    return errh->error("%s: %s", tmp, strerror(errno));
-    }
-
-        // calculate maximum packet size needed to receive data from
-    // tun/tap.
+    // calculate maximum packet size needed to receive data from tun/tap
     if (_type == LINUX_UNIVERSAL)
 	_mtu_in = _mtu_out + 4;
     else if (_type == BSD_TUN)
-	_mtu_in = _mtu_out + 4;
+	_mtu_in = _mtu_out;
     else if (_type == OSX_TUN)
 	_mtu_in = _mtu_out + 4; // + 0?
     else /* _type == LINUX_ETHERTAP */
@@ -279,9 +237,15 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
 void
 KernelTap::dealloc_tun()
 {
-    String cmd = "/sbin/ifconfig " + _dev_name + " down";
-    if (system(cmd.c_str()) != 0) 
+    String cmd;
+#if __FreeBSD__
+    cmd = "/sbin/ifconfig " + _dev_name + " 0.0.0.0 netmask 255.255.255.255";
+    if (system(cmd.c_str()) != 0)
 	click_chatter("%s: failed: %s", name().c_str(), cmd.c_str());
+#endif
+    cmd = "/sbin/ifconfig " + _dev_name + " down";
+    if (system(cmd.c_str()) != 0) 
+    	click_chatter("%s: failed: %s", name().c_str(), cmd.c_str());
 }
 
 int
@@ -328,12 +292,7 @@ KernelTap::selected(int fd)
 	if (_type == LINUX_UNIVERSAL) {
 	    // 2-byte padding, 2-byte Ethernet type, then Ethernet header
 	    p->pull(4);
-	} else if (_type == BSD_TUN) {
-	    // 4-byte address family, then Ethernet header
-	    p->pull(4);
-	} else if (_type == OSX_TUN) {
-	    // Ethernet header
-	} else { /* _type == LINUX_ETHERTAP */
+	} else if (_type == LINUX_ETHERTAP) {
 	    // 2-byte padding, then Ethernet header
 	    p->pull(2);
 	}
@@ -378,40 +337,20 @@ KernelTap::push(int, Packet *p)
 	// 2-byte padding, 2-byte Ethernet type, then Ethernet header
 	if ((q = p->push(4)))
 	    ((uint16_t *) q->data())[1] = e->ether_type;
-    } else if (_type == BSD_TUN) { 
-	// 4-byte address family, then Ethernet header
-	// XXX not sure if this is the right thing
-	if ((q = p->push(4))) {
-	    uint32_t af;
-	    if (e->ether_type == htons(ETHERTYPE_IP))
-		af = htonl(AF_INET);
-	    else if (e->ether_type == htons(ETHERTYPE_IP6))
-		af = htonl(AF_INET6);
-	    else
-#ifdef AF_LINK
-		af = htonl(AF_LINK);
-#elif defined(AF_NETLINK)
-		af = htonl(AF_NETLINK);
-#else
-		af = htonl(AF_UNSPEC);
-#endif
-	    ((uint32_t *) q->data())[0] = af;
-	}
-    } else if (_type == OSX_TUN) {
-	// raw Ethernet header
-	q = p->uniqueify();
-    } else { /* _type == LINUX_ETHERTAP */
+	p = q;
+    } else if (_type == LINUX_ETHERTAP) {
 	// 2-byte padding, then Ethernet header
-	q = p->push(2);
-    }
+	p = p->push(2);
+    } else
+	/* existing packet is OK */;
     
-    if (q) {
-	int w = write(_fd, q->data(), q->length());
-	if (w != (int) q->length() && (errno != ENOBUFS || !_ignore_q_errs || !_printed_write_err)) {
+    if (p) {
+	int w = write(_fd, p->data(), p->length());
+	if (w != (int) p->length() && (errno != ENOBUFS || !_ignore_q_errs || !_printed_write_err)) {
 	    _printed_write_err = true;
 	    click_chatter("KernelTap(%s): write failed: %s", _dev_name.c_str(), strerror(errno));
 	}
-	q->kill();
+	p->kill();
     } else
 	click_chatter("%{element}: out of memory", this);
 }
