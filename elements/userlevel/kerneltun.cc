@@ -262,7 +262,7 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
 #else
 # error "Lacking SIOCGIFFLAGS and/or SIOCSIFFLAGS"
 #endif
-#if SIOCSIFMTU
+#if defined(SIOCSIFMTU)
     if (_mtu_out != DEFAULT_MTU) {
 	ifr.ifr_mtu = _mtu_out;
 	if (ioctl(s, SIOCSIFMTU, &ifr) != 0)
