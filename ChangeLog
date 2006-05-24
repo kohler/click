@@ -1,3 +1,17 @@
+2006-05-24 Wednesday 03:57  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-userlevel.h.in (1.35), configure (1.84), configure.in
+	  (1.288), elements/userlevel/kerneltun.cc (1.63): need to check
+	  for sockaddr_in.sin_len
+
+2006-05-24 Wednesday 03:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/test-tap.click (1.11), elements/userlevel/fromhost.hh (1.9),
+	  elements/userlevel/kerneltap.hh (1.26),
+	  elements/userlevel/kerneltun.cc (1.62),
+	  elements/userlevel/kerneltun.hh (1.27): update documentation and
+	  patch messages
+
 2006-05-24 Wednesday 03:37  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/kerneltun.cc (1.61): fiddle with the ioctl
