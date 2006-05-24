@@ -220,7 +220,7 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
     strncpy(ifr.ifr_name, _dev_name.c_str(), sizeof(ifr.ifr_name));
-#if SIOCSIFADDR && SIOCSIFNETMASK 
+#if defined(SIOCSIFADDR) && defined(SIOCSIFNETMASK) 
     struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
     sin->sin_family = AF_INET;
     sin->sin_addr = addr;
@@ -236,7 +236,7 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
 #else
 # error "Lacking SIOCSIFADDR and/or SIOCSIFNETMASK"
 #endif
-#if SIOCSIFHWADDR
+#if defined(SIOCSIFHWADDR)
     if (_macaddr) {
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	memcpy(ifr.ifr_hwaddr.sa_data, _macaddr.data(), sizeof(_macaddr));
@@ -247,7 +247,7 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     if (_macaddr)
 	errh->warning("could not set interface Ethernet address: no support");
 #endif
-#if SIOCGIFFLAGS && SIOCSIFFLAGS
+#if defined(SIOCGIFFLAGS) && defined(SIOCSIFFLAGS)
     if (ioctl(s, SIOCGIFFLAGS, &ifr) != 0) {
 	errh->error("SIOCGIFFLAGS failed: %s", strerror(errno));
 	goto out;
