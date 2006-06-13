@@ -1,3 +1,7 @@
+2006-06-13 Tuesday 17:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/module.cc (1.92): Beyers is correct
+
 2006-05-24 Wednesday 03:57  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* config-userlevel.h.in (1.35), configure (1.84), configure.in
