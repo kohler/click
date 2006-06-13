@@ -61,8 +61,8 @@ read_meminfo(Element *, void *)
     extern size_t click_dmalloc_curmem, click_dmalloc_maxmem;
 #endif
     StringAccum sa;
-    sa << "outstanding news " << click_dmalloc_totalnew << "\n"
-       << "news " << click_dmalloc_curnew << "\n";
+    sa << "outstanding news " << click_dmalloc_curnew << "\n"
+       << "news " << click_dmalloc_totalnew << "\n";
 #if CLICK_DMALLOC
     sa << "current allocated mem " << click_dmalloc_curmem << '\n'
        << "max allocated mem " << click_dmalloc_maxmem << '\n';
