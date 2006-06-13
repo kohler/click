@@ -73,7 +73,14 @@ _normal_output := ((-.5,0.5output_length) -- (-output_width,0.5output_length)
     -- (-output_width,-0.5output_length) -- (-.5,-0.5output_length) -- cycle);
 
 
-%% make
+%% redefine 'drawboxes' to allow extra text
+
+vardef drawboxes(text t) text rest =         % Draw boundary path for each box
+  forsuffixes s=t: draw bpath.s rest; endfor
+enddef;
+
+
+%%
 
 vardef _make_element_ports(suffix $, port, side)(expr n, length, isout) =
   save i, sc; pair sc.adj;
