@@ -1,3 +1,21 @@
+2006-06-15 Thursday 21:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/socket.cc (1.5): immediately check whether or
+	  not a socket is writable (Beyers Cronje)
+
+2006-06-15 Thursday 21:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/test/upstreamnotifier.cc (1.7): more 64bitisms
+
+2006-06-15 Thursday 20:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.83), floodinglocquerier.cc
+	  (1.47), grid.hh (1.50), gridlocationinfo2.cc (1.7),
+	  gridroutetable.cc (1.76), hello.cc (1.50), linkstat.cc (1.37),
+	  locqueryresponder.cc (1.35), lookupgeogridroute.cc (1.38),
+	  lrhello.cc (1.35), regionpep.cc (1.24), updateroutes.cc (1.39),
+	  gridheaderinfo.cc (1.14): Grid updates for 64-bit platforms
+
 2006-06-13 Tuesday 18:04  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/diagrams/elements.mp (1.14): allow drawboxes() to take extra
