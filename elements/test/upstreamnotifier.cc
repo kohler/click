@@ -84,7 +84,7 @@ write_param(const String &in_s, Element *e, void *vparam,
 {
   UpstreamNotifier *f = (UpstreamNotifier *)e;
   String s = cp_uncomment(in_s);
-  switch((int)vparam) {
+  switch((intptr_t) vparam) {
   case H_SIGNAL: {
     bool signal;
     if (!cp_bool(s, &signal)) 
