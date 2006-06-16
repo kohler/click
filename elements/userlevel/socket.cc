@@ -4,6 +4,7 @@
  * Mark Huang <mlhuang@cs.princeton.edu>
  *
  * Copyright (c) 2004  The Trustees of Princeton University (Trustees).
+ * Copyright (c) 2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -233,8 +234,8 @@ Socket::selected(int fd)
       fcntl(_active, F_SETFL, O_NONBLOCK);
       fcntl(_active, F_SETFD, FD_CLOEXEC);
 
-      add_select(_active, SELECT_READ);
-      _events = SELECT_READ;
+      add_select(_active, SELECT_READ | SELECT_WRITE);
+      _events = SELECT_READ | SELECT_WRITE;
     }
 
     // read data from socket
