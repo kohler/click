@@ -11,7 +11,7 @@ CLICK_DECLS
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
 // packet data should be 4 byte aligned
-#define ASSERT_ALIGNED(p) assert(((unsigned int)(p) % 4) == 0)
+#define ASSERT_4ALIGNED(p) assert(((uintptr_t) (p) % 4) == 0)
 
 /* All multibyte values sent over the wire in network byte order,
    unless otherwise noted (e.g. IP addresses) */
@@ -64,28 +64,28 @@ public:
   }
 #endif
 
-  // lat, lon in milliseconds, height in millimeters
-  grid_location(long lat, long lon, long h = 0)
-  { set(lat, lon, h); }
+    // lat, lon in milliseconds, height in millimeters
+    grid_location(int32_t lat, int32_t lon, int32_t h = 0)
+    { set(lat, lon, h); }
 
-  long lat_ms() const { return ntohl(_mslat); }
-  long lon_ms() const { return ntohl(_mslon); }
-  long h_mm()   const { return ntohl(_h);   }
+    int32_t lat_ms() const { return ntohl(_mslat); }
+    int32_t lon_ms() const { return ntohl(_mslon); }
+    int32_t h_mm()   const { return ntohl(_h);   }
 
 private:
-  // Internally, we remember positions as lat/lon in milliseconds,
-  // as 32-bit integers in network order.
-  long _mslat;
-  long _mslon;
+    // Internally, we remember positions as lat/lon in milliseconds,
+    // as 32-bit integers in network order.
+    int32_t _mslat;
+    int32_t _mslon;
 
-  // heights as millimetres.  we don't really have a good height
-  // datum.  network byte order.
-  long _h;
+    // heights as millimetres.  we don't really have a good height
+    // datum.  network byte order.
+    int32_t _h;
 
 #ifdef CLICK_USERLEVEL
   // Convert network byte order milliseconds to host byte order degrees
-  static double toDeg(long ms) {
-    return(((long)ntohl(ms)) / (1000.0 * 60.0 * 60.0));
+  static double toDeg(int32_t ms) {
+    return(((int32_t)ntohl(ms)) / (1000.0 * 60.0 * 60.0));
   }
 
   // Convert host byte order degrees to network byte order milliseconds
@@ -104,7 +104,7 @@ private:
   static int sign(double x) { return (((x) < 0) ? -1 : 1); }
 #endif
 
-  void set(long lat, long lon, long h) {
+  void set(int32_t lat, int32_t lon, int32_t h) {
     _mslat = htonl(lat);
     _mslon = htonl(lon);
     _h = htonl(h);
@@ -129,32 +129,36 @@ public:
 
 private:
   struct grid_location _center;
-  unsigned int _radius; // stored in network byte order
+  uint32_t _radius; // stored in network byte order
 };
 
 
 
 struct grid_hdr {
 
-// REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
-  static const unsigned int GRID_VERSION = 0xfed4;
+    // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
+    enum {
+	GRID_VERSION = 0xFED4
+    };
 
-  unsigned int version;     // which version of the grid protocol we are using
+    uint32_t version;		// which version of the grid protocol we are using
 
-  unsigned char hdr_len;    // sizeof(grid_hdr). Why do we need this? -- it was changing...
+    uint8_t hdr_len;		// sizeof(grid_hdr). Why do we need this? -- it was changing...
 
-  unsigned char type;
-  static const unsigned char GRID_HELLO       = 1;  // no additional info in packet beyond header
-  static const unsigned char GRID_LR_HELLO    = 2;  // followed by grid_hello and grid_nbr_entries
-  static const unsigned char GRID_NBR_ENCAP   = 3;  // followed by grid_nbr_encap
-  static const unsigned char GRID_LOC_QUERY   = 4;  // followed by grid_loc_query
-  static const unsigned char GRID_LOC_REPLY   = 5;  // followed by grid_nbr_encap 
-  static const unsigned char GRID_ROUTE_PROBE = 6;  // followed by grid_nbr_encap and grid_route_probe
-  static const unsigned char GRID_ROUTE_REPLY = 7;  // followed by grid_nbr_encap and grid_route_reply
-  static const unsigned char GRID_GEOCAST     = 8;  // followed by grid_geocast
-  static const unsigned char GRID_LINK_PROBE  = 9;  // followed by grid_link_probe
+    uint8_t type;
+    enum Type {
+	GRID_HELLO = 1,		// no additional info in packet beyond header
+	GRID_LR_HELLO = 2,	// followed by grid_hello and grid_nbr_entries
+	GRID_NBR_ENCAP = 3,	// followed by grid_nbr_encap
+	GRID_LOC_QUERY = 4,	// followed by grid_loc_query
+	GRID_LOC_REPLY = 5,	// followed by grid_nbr_encap 
+	GRID_ROUTE_PROBE = 6,	// followed by grid_nbr_encap and grid_route_probe
+	GRID_ROUTE_REPLY = 7,	// followed by grid_nbr_encap and grid_route_reply
+	GRID_GEOCAST = 8,	// followed by grid_geocast
+	GRID_LINK_PROBE = 9	// followed by grid_link_probe
+    };
 
-  unsigned char pad1, pad2;
+    uint8_t pad1, pad2;
 
   /*
    * Sender is who originally created this packet and injected it into
@@ -178,19 +182,19 @@ struct grid_hdr {
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
-  unsigned int ip;          // Sender's IP address. 
-  struct grid_location loc; // Sender's location, set by FixSrcLoc.
-  unsigned short loc_err;   // Error radius of position, in metres.  
-  char /* bool */ loc_good;            // If false, don't believe loc  
-  unsigned char pad3;       // assume bool is char aligned
-  unsigned int loc_seq_no;  
+    uint32_t ip;			// Sender's IP address. 
+    struct grid_location loc;		// Sender's location, set by FixSrcLoc.
+    uint16_t loc_err;			// Error radius of position, in metres.  
+    uint8_t /*bool*/ loc_good;		// If false, don't believe loc  
+    uint8_t pad3;			// assume bool is char aligned
+    uint32_t loc_seq_no;  
 
-  unsigned int tx_ip;       // Transmitter 
-  struct grid_location tx_loc;
-  unsigned short tx_loc_err;
-  char /* bool */ tx_loc_good;
-  unsigned char pad4;
-  unsigned int tx_loc_seq_no;
+    uint32_t tx_ip;			// Transmitter 
+    struct grid_location tx_loc;
+    uint16_t tx_loc_err;
+    uint8_t /*bool*/ tx_loc_good;
+    uint8_t pad4;
+    uint32_t tx_loc_seq_no;
 
   /* XXX this location err and sequence number info needs to be
      incorporated into the grid_location class, which will enable us
@@ -198,44 +202,44 @@ struct grid_hdr {
      okay, by the time i have finished writing this i could probably
      have done it... */
 
-  unsigned short total_len; // Of the whole packet, starting at grid_hdr.
+    uint16_t total_len;		// Of the whole packet, starting at grid_hdr.
                             // Why do we need total_len? What about byte order? -- for cksum.  network order.
-  unsigned short cksum;     // Over the whole packet, starting at grid_hdr.
+    uint16_t cksum;     // Over the whole packet, starting at grid_hdr.
 
   grid_hdr() : hdr_len(sizeof(grid_hdr)), cksum(0) 
   { total_len = htons(sizeof(grid_hdr)); assert(total_len % 4 == 0); }
 
-  static String type_string(unsigned char type);
+    static String type_string(uint8_t type);
 
-  static unsigned int get_pad_bytes(struct grid_hdr &gh) 
-  { return (gh.pad1 << 24) | (gh.pad2 << 16) | (gh.pad3 << 8) | gh.pad4; }
+    static uint32_t get_pad_bytes(struct grid_hdr &gh) 
+    { return (gh.pad1 << 24) | (gh.pad2 << 16) | (gh.pad3 << 8) | gh.pad4; }
   
-  static void set_pad_bytes(struct grid_hdr &gh, unsigned int v) 
-  { gh.pad1 = (v >> 24); gh.pad2 = (v >> 16) & 0xff; gh.pad3 = (v >> 8) & 0xff; gh.pad4 = v & 0xff; }
+    static void set_pad_bytes(struct grid_hdr &gh, uint32_t v) 
+    { gh.pad1 = (v >> 24); gh.pad2 = (v >> 16) & 0xff; gh.pad3 = (v >> 8) & 0xff; gh.pad4 = v & 0xff; }
 };
 
 struct grid_nbr_entry {
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
-  unsigned int ip; 
-  unsigned int next_hop_ip;
-  unsigned char num_hops; 
+    uint32_t ip; 
+    uint32_t next_hop_ip;
+    uint8_t num_hops; 
   /* 0 for num_hops indicate that this dest. is unreachable.  if so,
      loc fields are meaningless */
 
-  struct grid_location loc;
-  unsigned short loc_err;
-  char /* bool */ loc_good;
-  char /* bool */ is_gateway;
-  unsigned int seq_no;
-  union {
-    unsigned int age; /* keep ``age'' for legacy code */
-    unsigned int ttl;
-  };
+    struct grid_location loc;
+    uint16_t loc_err;
+    uint8_t /* bool */ loc_good;
+    uint8_t /* bool */ is_gateway;
+    uint32_t seq_no;
+    union {
+	uint32_t age; /* keep ``age'' for legacy code */
+	uint32_t ttl;
+    };
 
-  unsigned int metric;
-  char /* bool */ metric_valid;
+    uint32_t metric;
+    uint8_t /* bool */ metric_valid;
 
 #ifndef SMALL_GRID_HEADERS
   /* ping-pong stats, valid only for 1-hop nbrs */
@@ -243,20 +247,20 @@ struct grid_nbr_entry {
    * in our route advertisement packet these stats reflect _our_
    * measurements of packets sent by this neighbor.  
    */
-  int link_qual;
-  int link_sig;
-  struct timeval measurement_time;
+    int32_t link_qual;
+    int32_t link_sig;
+    struct timeval measurement_time;
 
-  unsigned char num_rx;
-  unsigned char num_expected;
-  struct timeval last_bcast;
+    uint8_t num_rx;
+    uint8_t num_expected;
+    struct timeval last_bcast;
 #endif
 
-  grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0L, 0L, 0L), seq_no(0) 
-  { assert(sizeof(grid_nbr_entry) % 4 == 0); }
+    grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0, 0), seq_no(0) 
+    { assert(sizeof(grid_nbr_entry) % 4 == 0); }
 
-  grid_nbr_entry(unsigned int _ip, unsigned int _nhip, unsigned char h, unsigned int s)
-    : ip(_ip), next_hop_ip(_nhip), num_hops(h), loc(0L, 0L, 0L), seq_no(s)
+    grid_nbr_entry(uint32_t _ip, uint32_t _nhip, uint8_t h, uint32_t s)
+	: ip(_ip), next_hop_ip(_nhip), num_hops(h), loc(0, 0, 0), seq_no(s)
     { assert(sizeof(grid_nbr_entry) % 4 == 0); }
 };
 
@@ -264,27 +268,29 @@ struct grid_hello {
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
-  unsigned int seq_no;
-  union {
-    unsigned int age; /* keep age field for legacy code */
-    unsigned int ttl; // decreasing, approximately in milliseconds
-  };
+    uint32_t seq_no;
+    union {
+	uint32_t age; /* keep age field for legacy code */
+	uint32_t ttl; // decreasing, approximately in milliseconds
+    };
 
-  char /* bool */ is_gateway; // is the hello's transmitter also a gateway?
+    uint8_t /*bool*/ is_gateway; // is the hello's transmitter also a gateway?
 
-  unsigned char num_nbrs;
-  unsigned char nbr_entry_sz;
+    uint8_t num_nbrs;
+    uint8_t nbr_entry_sz;
   // for GRID_LR_HELLO packets, followed by num_nbrs grid_nbr_entry
   // structs.
 
   grid_hello() : num_nbrs(0), nbr_entry_sz(sizeof(grid_nbr_entry)) 
   { assert(sizeof(grid_hello) % 4 == 0); }
 
-  static const unsigned int MIN_AGE_DECREMENT = 10;
-  static const unsigned int MAX_AGE_DEFAULT = 300000; // ~ 300 secs
-  // age is really ttl...add these new names for clarity
-  static const unsigned int MIN_TTL_DECREMENT = MIN_AGE_DECREMENT;
-  static const unsigned int MAX_TTL_DEFAULT = MAX_AGE_DEFAULT;
+    enum {
+	MIN_AGE_DECREMENT = 10,
+	MAX_AGE_DEFAULT = 300000, // ~ 300 secs
+	// age is really ttl...add these new names for clarity
+	MIN_TTL_DECREMENT = MIN_AGE_DECREMENT,
+	MAX_TTL_DEFAULT = MAX_AGE_DEFAULT
+    };
 };
 
 struct grid_nbr_encap {
@@ -292,24 +298,24 @@ struct grid_nbr_encap {
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
   grid_nbr_encap() { assert(sizeof(grid_nbr_encap) % 4 == 0); }
-  unsigned int dst_ip;
+  uint32_t dst_ip;
 #ifndef SMALL_GRID_HEADERS
   struct grid_location dst_loc;
-  unsigned short dst_loc_err;
-  char /* bool */ dst_loc_good;
+  uint16_t dst_loc_err;
+  uint8_t /* bool */ dst_loc_good;
 #else
-  unsigned char pad1, pad2, pad3;
+  uint8_t pad1, pad2, pad3;
 #endif
-  unsigned char hops_travelled;
+  uint8_t hops_travelled;
 
 #ifndef SMALL_GRID_HEADERS
-  int link_qual;
-  int link_sig;           
-  struct timeval measurement_time;  
+    int32_t link_qual;
+    int32_t link_sig;           
+    struct timeval measurement_time;  
 
-  unsigned char num_rx;
-  unsigned char num_expected;
-  struct timeval last_bcast;
+    uint8_t num_rx;
+    uint8_t num_expected;
+    struct timeval last_bcast;
 #endif
 };
 
@@ -317,58 +323,58 @@ struct grid_loc_query {
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
-  grid_loc_query() { assert(sizeof(grid_loc_query) % 4 == 0); }
-  unsigned int dst_ip;
-  unsigned int seq_no;
+    grid_loc_query() { assert(sizeof(grid_loc_query) % 4 == 0); }
+    uint32_t dst_ip;
+    uint32_t seq_no;
 };
 
 struct grid_route_probe {
-  unsigned int nonce;
-  struct timeval send_time;
+    uint32_t nonce;
+    struct timeval send_time;
 };
 
 struct grid_route_reply {
-  unsigned int nonce;
-  unsigned int probe_dest;
-  unsigned char reply_hop;
-  struct timeval probe_send_time;
-  unsigned int route_action;
-  unsigned int data1;
-  unsigned int data2;
+    uint32_t nonce;
+    uint32_t probe_dest;
+    uint8_t reply_hop;
+    struct timeval probe_send_time;
+    uint32_t route_action;
+    uint32_t data1;
+    uint32_t data2;
 };
 
 struct grid_geocast {
-  struct grid_region dst_region;
-  unsigned short dst_loc_err;
-  unsigned char hops_travelled;
-  char pad;
-  unsigned int seq_no;
-  // no payload length field, use grid_hdr total_len field.
-  // no loc_good flag; by definition, the destination location must be good.
+    struct grid_region dst_region;
+    uint16_t dst_loc_err;
+    uint8_t hops_travelled;
+    uint8_t pad;
+    uint32_t seq_no;
+    // no payload length field, use grid_hdr total_len field.
+    // no loc_good flag; by definition, the destination location must be good.
 };
 
 struct grid_link_probe {
-  unsigned int seq_no;
-  unsigned int period;      // period of this node's probe broadcasts, in msecs
-  unsigned int num_links;   // number of grid_link_entry entries following
-  unsigned int tau;         // this node's loss-rate averaging period, in msecs
+  uint32_t seq_no;
+  uint32_t period;      // period of this node's probe broadcasts, in msecs
+  uint32_t num_links;   // number of grid_link_entry entries following
+  uint32_t tau;         // this node's loss-rate averaging period, in msecs
 };
 
 struct grid_link_entry {
 #ifdef SMALL_GRID_PROBES
-  unsigned char ip;            // last byte of IP address
-  unsigned char num_rx;
+  uint8_t ip;            // last byte of IP address
+  uint8_t num_rx;
 #else
-  unsigned int ip;
-  unsigned int period;         // period of node's probe broadcasts, in msecs
+  uint32_t ip;
+  uint32_t period;         // period of node's probe broadcasts, in msecs
   struct timeval last_rx_time; // time of most recent probe received from node
-  unsigned int last_seq_no;    // seqno of most recent probe received from this host
-  unsigned int num_rx;         // number of probe bcasts received from node during last tau msecs
+  uint32_t last_seq_no;    // seqno of most recent probe received from this host
+  uint32_t num_rx;         // number of probe bcasts received from node during last tau msecs
 #endif
 };
 
 inline String
-grid_hdr::type_string(unsigned char type)
+grid_hdr::type_string(uint8_t type)
 {
   switch (type) {
   case GRID_HELLO: return String("GRID_HELLO"); break;

@@ -95,7 +95,7 @@ static String
 ghi_read_handler(Element *, void *v)
 {
   int num_handlers = sizeof(handler_info_array) / sizeof(GridHeaderInfo::info_t);
-  int handler_index = (int) v;
+  intptr_t handler_index = (intptr_t) v;
   if (handler_index < 0 || handler_index >= num_handlers)
     return String("An non-existent handler was specified\n");
 

@@ -115,7 +115,7 @@ LocQueryResponder::simple_action(Packet *p)
     click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
   } 
-  ASSERT_ALIGNED(q->data());
+  ASSERT_4ALIGNED(q->data());
   q->pull(2);
 
   p->set_timestamp_anno(Timestamp::now());

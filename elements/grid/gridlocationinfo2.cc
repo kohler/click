@@ -25,7 +25,7 @@ CLICK_DECLS
 
 GridLocationInfo2::GridLocationInfo2() 
   : _seq_no(0), _tag("<unknown>"),
-    _loc_good(false), _loc_err(0), _loc(0L, 0L, 0L)
+    _loc_good(false), _loc_err(0), _loc(0, 0, 0)
 {
 }
 
@@ -66,7 +66,7 @@ GridLocationInfo2::read_args(const Vector<String> &conf, ErrorHandler *errh)
   if (lon > 180*msec_per_deg || lon < -180*msec_per_deg)
     return errh->error("%s: longitude arg %d must be between +/- 180 degrees (+/- %d milliseconds)", name().c_str(), lon, 180*msec_per_deg);
 
-  _loc = grid_location((long) lat, (long) lon, (long) h);
+  _loc = grid_location((int32_t) lat, (int32_t) lon, (int32_t) h);
   return res;
 }
 int

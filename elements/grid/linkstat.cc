@@ -70,7 +70,7 @@ LinkStat::send_hook()
     click_chatter("LinkStat %s: cannot make packet!", name().c_str());
     return;
   }
-  ASSERT_ALIGNED(p->data());
+  ASSERT_4ALIGNED(p->data());
   p->pull(2);
   memset(p->data(), 0, p->length());
 

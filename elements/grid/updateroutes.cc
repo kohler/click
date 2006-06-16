@@ -533,7 +533,7 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
     click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
   } 
-  ASSERT_ALIGNED(p->data());
+  ASSERT_4ALIGNED(p->data());
   p->pull(2);
   memset(p->data(), 0, p->length());
 
@@ -545,7 +545,7 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
   memcpy(eh->ether_shost, _ethaddr.data(), 6);
 
   grid_hdr *gh = (grid_hdr *) (eh + 1);
-  ASSERT_ALIGNED(gh);
+  ASSERT_4ALIGNED(gh);
   gh->hdr_len = sizeof(grid_hdr);
   gh->total_len = psz - sizeof(click_ether);
   gh->total_len = htons(gh->total_len);

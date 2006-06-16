@@ -115,7 +115,7 @@ FloodingLocQuerier::send_query_for(const IPAddress &want_ip)
     click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
   } 
-  ASSERT_ALIGNED(q->data());
+  ASSERT_4ALIGNED(q->data());
   q->pull(2);
 
   q->set_timestamp_anno(Timestamp::now());
@@ -392,7 +392,7 @@ FloodingLocQuerier::read_table(Element *e, void *)
     unsigned int age = (1000 * (jiff - e.last_response_jiffies)) / CLICK_HZ;
     if (e.p == 0) {
       char locbuf[255];
-      snprintf(locbuf, sizeof(locbuf), " lat_ms=%ld lon_ms=%ld h_mm=%ld", e.loc.lat_ms(), e.loc.lon_ms(), e.loc.h_mm());
+      snprintf(locbuf, sizeof(locbuf), " lat_ms=%d lon_ms=%d h_mm=%d", (int) e.loc.lat_ms(), (int) e.loc.lon_ms(), (int) e.loc.h_mm());
       s += e.ip.s() + String(locbuf)
 	+ " seq=" + String(e.loc_seq_no) + " age=" + String(age) + "\n";
     }

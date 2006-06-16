@@ -1449,7 +1449,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
     RTEntry &r = rtes_to_send[i];
     if (check_ttls) {
       unsigned int age = jiff_to_msec(jiff - r.last_updated_jiffies);
-      unsigned int new_ttl = decr_ttl(r.ttl, (age > grid_hello::MIN_TTL_DECREMENT ? age : grid_hello::MIN_TTL_DECREMENT));
+      unsigned int new_ttl = decr_ttl(r.ttl, (age > grid_hello::MIN_TTL_DECREMENT ? age : (unsigned int) grid_hello::MIN_TTL_DECREMENT));
       if (new_ttl > 0) {
 	r.ttl = new_ttl;
 	rte_info.push_back(r);
@@ -1475,7 +1475,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
     click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
   } 
-  ASSERT_ALIGNED(p->data());
+  ASSERT_4ALIGNED(p->data());
   p->pull(2);
   memset(p->data(), 0, p->length());
 
@@ -1490,7 +1490,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 
   /* fill in the grid header */
   grid_hdr *gh = (grid_hdr *) (eh + 1);
-  ASSERT_ALIGNED(gh);
+  ASSERT_4ALIGNED(gh);
   gh->hdr_len = sizeof(grid_hdr);
   gh->total_len = htons(psz - sizeof(click_ether));
   gh->type = grid_hdr::GRID_LR_HELLO;

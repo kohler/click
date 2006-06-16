@@ -1497,7 +1497,7 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
     click_chatter("DSDVRouteTable %s: cannot make packet!", name().c_str());
     dsdv_assert(0);
   } 
-  ASSERT_ALIGNED(p->data());
+  ASSERT_4ALIGNED(p->data());
   p->pull(2);
   memset(p->data(), 0, p->length());
 
@@ -1512,7 +1512,7 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
 
   /* fill in the grid header */
   grid_hdr *gh = (grid_hdr *) (eh + 1);
-  ASSERT_ALIGNED(gh);
+  ASSERT_4ALIGNED(gh);
   gh->hdr_len = sizeof(grid_hdr);
   gh->total_len = htons(psz - sizeof(click_ether));
   gh->type = grid_hdr::GRID_LR_HELLO;
@@ -1559,7 +1559,7 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb) const
 
   unsigned int jiff = dsdv_jiffies();
   unsigned int ttl_decrement = jiff_to_msec(good() ? jiff - last_updated_jiffies : jiff - last_expired_jiffies);
-  nb->ttl = htonl(decr_ttl(ttl, max(ttl_decrement, grid_hello::MIN_TTL_DECREMENT)));
+  nb->ttl = htonl(decr_ttl(ttl, max(ttl_decrement, (unsigned int) grid_hello::MIN_TTL_DECREMENT)));
   
   /* ping-pong link stats back to sender */
 #ifndef SMALL_GRID_HEADERS
