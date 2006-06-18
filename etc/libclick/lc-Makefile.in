@@ -28,6 +28,8 @@ includedir = @includedir@
 clickincludedir = $(includedir)/click
 netincludedir = $(includedir)/clicknet
 bindir = @bindir@
+datadir = @datadir@
+clickdatadir = $(datadir)/click
 
 all: libsrc Makefile
 
