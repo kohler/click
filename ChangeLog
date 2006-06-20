@@ -1,3 +1,7 @@
+2006-06-20 Tuesday 12:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/tcpudp/iprewriter.cc (1.53): out of memory != sad crash
+
 2006-06-18 Sunday 13:38  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/libclick/: lc-Makefile.in (1.15), lc-configure.in (1.47):
