@@ -275,6 +275,9 @@ void
 IPRewriter::push(int port, Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
+  if (!p)
+      return;
+  
   click_ip *iph = p->ip_header();
 #if IPRW_RWLOCKS
   bool has_lock = false;
