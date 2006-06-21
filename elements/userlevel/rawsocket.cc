@@ -37,13 +37,17 @@
 #include <sys/ioccom.h>
 #endif
 
+#ifdef HAVE_PROPER
+#include <proper/prop.h>
+#endif
+
 #include "fakepcap.hh"
 
 CLICK_DECLS
 
 RawSocket::RawSocket()
   : _task(this), _timer(this),
-    _fd(-1), _port(0), _snaplen(2048),
+    _fd(-1), _port(0), _proper(false), _snaplen(2048),
     _headroom(Packet::DEFAULT_HEADROOM), _rq(0), _wq(0)
 {
 }
@@ -55,30 +59,18 @@ RawSocket::~RawSocket()
 int
 RawSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  // remove keyword arguments
-  if (cp_va_parse_remove_keywords(conf, 1, this, errh,
-		"SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
-                "HEADROOM", cpUnsigned, "how much header to allocate for the packet", &_headroom,
-		cpEnd) < 0)
-    return -1;
-
   String socktype;
   if (cp_va_parse(conf, this, errh,
 		  cpString, "type of socket (`TCP', `UDP', `GRE', `ICMP')", &socktype,
-		  cpIgnoreRest,
+		  cpOptional,
+		  cpUnsignedShort, "port number", &_port,
+		  cpKeywords,
+		  "SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
+		  "HEADROOM", cpUnsigned, "how much header to allocate for the packet", &_headroom,
+		  "PROPER", cpBool, "use Proper", &_proper,
 		  cpEnd) < 0)
     return -1;
   socktype = socktype.upper();
-
-  // binding a port is optional
-  if (conf.size() > 1) {
-    if (cp_va_parse(conf, this, errh,
-		    cpIgnore,
-		    cpUnsignedShort, "port number", &_port,
-		    cpIgnoreRest,
-		    cpEnd) < 0)
-      return -1;
-  }
 
   if (socktype == "TCP")
     _protocol = IPPROTO_TCP;
@@ -125,10 +117,17 @@ RawSocket::initialize(ErrorHandler *errh)
     sin.sin_addr = inet_makeaddr(0, 0);
 
     // bind to port
+#ifdef HAVE_PROPER
+    int ret = -1;
+    if (_proper) {
+      ret = prop_bind_socket(_fd, (struct sockaddr *)&sin, sizeof(sin));
+      if (ret < 0)
+	errh->warning("prop_bind_socket: %s", strerror(errno));
+    }
+    if (ret < 0)
+#endif
     if (bind(_fd, (struct sockaddr *)&sin, sizeof(sin)) < 0)
       return initialize_socket_error(errh, "bind");
-
-    click_chatter("%s(%d, %d)\n", declaration().c_str(), _protocol, _port);
   }
 
   // nonblocking I/O and close-on-exec for the socket

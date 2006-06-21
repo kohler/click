@@ -39,6 +39,11 @@ represents the MRU of the RawSocket if it is used as a
 packet source. If the MRU is violated by the peer, i.e. if a packet
 longer than SNAPLEN is sent, the connection may be terminated.
 
+=item PROPER
+
+Boolean. PlanetLab specific. If true and Click has been configured
+--with-proper, use Proper to bind a reserved port.
+
 =item HEADROOM
 
 Unsigned Integer. Amount of headroom to reserve in packets created
@@ -81,6 +86,7 @@ private:
   int _fd;			// socket descriptor
   int _protocol;		// IP protocol to bind
   uint16_t _port;		// (PlanetLab only) port to bind
+  bool _proper;			// (PlanetLab only) use Proper to bind port
   int _snaplen;			// maximum received packet length
   unsigned _headroom;           // header length to set aside in the packet 
 
