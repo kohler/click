@@ -34,12 +34,14 @@
 #include <net/if.h>
 #include <linux/if_tun.h>
 
+#ifdef HAVE_PROPER
+#include <proper/prop.h>
+#endif
+
 CLICK_DECLS
 
 FromHost::FromHost()
-  : _fd(-1),
-    _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
-    _task(this)
+    : _fd(-1), _near(0), _mask(0), _macaddr(), _task(this)
 {
 }
 
@@ -55,8 +57,8 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (cp_va_parse(conf, this, errh,
 		  cpString, "device name", &_dev_name, 
-		  cpIPPrefix, "destination IP address", &_near, &_mask,
 		  cpOptional,
+		  cpIPPrefix, "destination IP address", &_near, &_mask,
 		  cpKeywords,
 		  "ETHER", cpEthernetAddress, "fake device Ethernet address", &_macaddr,
 		  "HEADROOM", cpUnsigned, "default headroom for generated packets", &_headroom,
@@ -74,7 +76,21 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 FromHost::try_linux_universal(ErrorHandler *errh)
 {
-    int fd = open("/dev/net/tun", O_RDWR | O_NONBLOCK);
+    int fd;
+#ifdef HAVE_PROPER
+    fd = prop_open("/dev/net/tun", O_RDWR);
+    if (fd >= 0) {
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
+	    int e = errno;
+	    errh->error("fcntl /dev/net/tun: %s", strerror(e));
+	    close(fd);
+	    return -e;
+	}
+    } else
+	errh->warning("prop_open /dev/net/tun: %s", strerror(errno));
+    if (fd < 0)	
+#endif
+    fd = open("/dev/net/tun", O_RDWR | O_NONBLOCK);
     if (fd < 0) {
 	int e = errno;
 	errh->error("open /dev/net/tun: %s", strerror(e));
@@ -123,11 +139,13 @@ FromHost::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *errh
 	    return errh->error("%s: couldn't set arp flags: %s", tmp, strerror(errno));
     }
     
-    strcpy(tmp0, inet_ntoa(near));
-    strcpy(tmp1, inet_ntoa(mask));
-    sprintf(tmp, "/sbin/ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.c_str(), tmp0, tmp1);
-    if (system(tmp) != 0) {
-	return errh->error("%s: `%s' failed\n(Perhaps Ethertap is in a kernel module that you haven't loaded yet?)", _dev_name.c_str(), tmp);
+    if (near.s_addr) {
+	strcpy(tmp0, inet_ntoa(near));
+	strcpy(tmp1, inet_ntoa(mask));
+	sprintf(tmp, "/sbin/ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.c_str(), tmp0, tmp1);
+	if (system(tmp) != 0) {
+	    return errh->error("%s: `%s' failed\n(Perhaps Ethertap is in a kernel module that you haven't loaded yet?)", _dev_name.c_str(), tmp);
+	}
     }
     
     // calculate maximum packet size needed to receive data from
@@ -139,9 +157,11 @@ FromHost::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *errh
 void
 FromHost::dealloc_tun()
 {
-    String cmd = "/sbin/ifconfig " + _dev_name + " down";
-    if (system(cmd.c_str()) != 0) 
-	click_chatter("%s: failed: %s", name().c_str(), cmd.c_str());
+  if (_near) {
+      String cmd = "/sbin/ifconfig " + _dev_name + " down";
+      if (system(cmd.c_str()) != 0) 
+	  click_chatter("%s: failed: %s", name().c_str(), cmd.c_str());
+  }
 }
 
 int

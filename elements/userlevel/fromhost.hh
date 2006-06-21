@@ -14,35 +14,32 @@ CLICK_DECLS
  * 
  * =c
  * 
- * FromHost(DEVNAME, ADDR/MASK [, GATEWAY, HEADROOM] [, I<KEYWORDS>])
+ * FromHost(DEVNAME [, ADDR/MASK, GATEWAY, HEADROOM] [, I<KEYWORDS>])
  * 
  * =s comm
  *
- * interface to /dev/tap or ethertap (user-level)
+ * interface to /dev/net/tun or ethertap (user-level)
  *
  * =d
  *
  * Reads packets from and writes packets through the universal TUN/TAP
- * module in linux (the /dev/net/tun device).  This allows a
+ * module in Linux (the /dev/net/tun device).  This allows a
  * user-level Click to hand packets to the virtual ethernet
  * device. FromHost will also transfer packets from the virtual
  * ethernet device.
  *
- * To use this element you must have 
- * CONFIG_TUN
- * CONFIG_ETHERTAP
- * included in your kernel config (ie. the tun.o module is available).
- * Either modules or compiled in should work.
+ * To use this element your kernel config must support CONFIG_TUN and
+ * CONFIG_ETHERTAP.  Either modules (tun.o) or compiled in should work.
  *
- *
- * FromHost allocates a /dev/net/tun device (this might fail) and
- * runs ifconfig(8) to set the interface's local (i.e., kernel)
- * address to ADDR and the netmask to MASK. If a nonzero GATEWAY IP
- * address (which must be on the same network as the tun) is
- * specified, then FromHost tries to set up a default route through
- * that host.  HEADROOM is the number of bytes left empty before the
- * packet data (to leave room for additional encapsulation
- * headers). Default HEADROOM is 0.
+ * FromHost allocates a /dev/net/tun device (this might fail) and runs
+ * ifconfig(8) to set the interface's local (i.e., kernel) address to ADDR and
+ * the netmask to MASK.  If ADDR and MASK are not specified, then FromHost
+ * assumes the tunnel has already been configured to the correct address.  If
+ * a nonzero GATEWAY IP address (which must be on the same network as the tun)
+ * is specified, then FromHost tries to set up a default route through that
+ * host.  HEADROOM is the number of bytes left empty before the packet data
+ * (to leave room for additional encapsulation headers). Default HEADROOM is
+ * 0.
  *
  * Keyword arguments are:
  *
@@ -51,7 +48,8 @@ CLICK_DECLS
  * =item ETHER
  *
  * Ethernet address. Specifies the fake device's Ethernet address. Default is
- * 00:01:02:03:04:05.
+ * not specified, in which case the fake device's address is whatever the
+ * kernel chooses.
  *
  * =back
  *
@@ -70,9 +68,8 @@ CLICK_DECLS
  *
  *  FromHost(fake, 192.0.0.1/8) -> ...;
  * 
- * An error like "could not allocate a /dev/tap* device : No such file or
- * directory" usually means that you have not enabled /dev/tap* in your
- * kernel. 
+ * An error like "open /dev/net/tun: No such file or directory" usually means
+ * that you have not enabled tunnel support in your kernel.
  *
  * =h dev_name read-only
  * Returns the name of the device that this element is using.
