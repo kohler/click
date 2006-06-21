@@ -221,20 +221,27 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     memset(&ifr, 0, sizeof(ifr));
     strncpy(ifr.ifr_name, _dev_name.c_str(), sizeof(ifr.ifr_name));
 #if defined(SIOCSIFADDR) && defined(SIOCSIFNETMASK) 
-    {
+    for (int trynum = 0; trynum < 2; trynum++) {
 	struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
 	sin->sin_family = AF_INET;
 # if HAVE_SOCKADDR_IN_SIN_LEN
 	sin->sin_len = sizeof(struct sockaddr_in);
 # endif
 	sin->sin_port = 0;
+	// Try setting the netmask twice.  On FreeBSD, we need to set the mask
+	// *before* we set the address, or there's nasty behavior where the
+	// tunnel cannot be assigned a different address.  (Or something like
+	// that, I forget now.)  But on Linux, you must set the mask *after*
+	// the address.
 	sin->sin_addr = mask;
-	if (ioctl(s, SIOCSIFNETMASK, &ifr) != 0) {
+	if (ioctl(s, SIOCSIFNETMASK, &ifr) == 0)
+	    trynum++;
+	else if (trynum == 1) {
 	    errh->error("SIOCSIFNETMASK failed: %s", strerror(errno));
 	    goto out;
 	}
 	sin->sin_addr = addr;
-	if (ioctl(s, SIOCSIFADDR, &ifr) != 0) {
+	if (trynum < 2 && ioctl(s, SIOCSIFADDR, &ifr) != 0) {
 	    errh->error("SIOCSIFADDR failed: %s", strerror(errno));
 	    goto out;
 	}
