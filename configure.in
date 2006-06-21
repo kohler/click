@@ -702,10 +702,51 @@ if test "x$ac_cv_sockaddr_in_sin_len" = xyes; then
 fi
 
 
+dnl PlanetLab "Privileged Operations" library
+
+explicit_proper=yes
+AC_ARG_WITH(proper, [[  --with-proper[=PREFIX]  use PlanetLab Proper library (optional)]],
+  [properprefix=$withval; if test -z "$withval" -o "$withval" = yes; then properprefix=; fi],
+  [properprefix=no; explicit_proper=no])
+if test "$properprefix" != no; then
+    dnl Proper requires libcurl
+    dnl AC_CHECK_HEADER(curl/curl.h, have_curl_h=yes, have_curl_h=no)
+    dnl AC_CHECK_LIB(curl, curl_easy_init)
+
+    saveflags="$CPPFLAGS"; test -n "$properprefix" && CPPFLAGS="$CPPFLAGS -I$properprefix/include"
+    AC_CHECK_HEADER(prop.h, have_prop_h=yes, have_prop_h=no)
+    CPPFLAGS="$saveflags"
+    
+    AC_LANG_C
+    saveflags="$LDFLAGS"; test -n "$properprefix" && LDFLAGS="$LDFLAGS -L$properprefix/lib"
+    AC_CHECK_LIB(proper, prop_open, have_libproper=yes, have_libproper=no)
+    LDFLAGS="$saveflags"
+    AC_LANG_CPLUSPLUS
+
+    if test $have_prop_h = yes -a $have_libproper = yes; then
+	AC_DEFINE(HAVE_PROPER)
+	test -n "$properprefix" && PROPER_INCLUDES="-I$properprefix/include" && PROPER_LIBS="-L$properprefix/lib"
+	PROPER_LIBS="$PROPER_LIBS -lproper"
+    elif test $explicit_proper = yes; then
+	PROPER_INCLUDES= PROPER_LIBS=
+	AC_MSG_ERROR([
+=========================================
+
+You explicitly specified --with-proper, but I can't find the proper headers
+and/or libraries where you said they would be.  Run again supplying
+--without-proper or --with-proper=PREFIX.
+
+=========================================])
+    fi
+fi
+AC_SUBST(PROPER_INCLUDES)
+AC_SUBST(PROPER_LIBS)
+
+
 dnl expat library
 
 explicit_expat=yes
-AC_ARG_WITH(expat, [[  --with-expat[=PREFIX]   Prefix where expat library is installed (optional)]],
+AC_ARG_WITH(expat, [[  --with-expat[=PREFIX]   locate expat XML library (optional)]],
   [expatprefix=$withval; if test -z "$withval" -o "$withval" = yes; then expatprefix=; fi],
   expatprefix=; explicit_expat=no)
 

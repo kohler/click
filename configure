@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups freebsd_srcdir freebsd_includedir LIBOBJS EGREP BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS LINUXMODULE_2_6 POSSIBLE_DRIVERS DRIVERS HAVE_USERLEVEL_DRIVER HAVE_LINUXMODULE_DRIVER HAVE_BSDMODULE_DRIVER OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS LINUX_CFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED CLICKINSTALL SUBMAKE GMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI clickdatadir provisions LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups freebsd_srcdir freebsd_includedir LIBOBJS EGREP BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS LINUXMODULE_2_6 POSSIBLE_DRIVERS DRIVERS HAVE_USERLEVEL_DRIVER HAVE_LINUXMODULE_DRIVER HAVE_BSDMODULE_DRIVER OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS PROPER_INCLUDES PROPER_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS LINUX_CFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED CLICKINSTALL SUBMAKE GMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI clickdatadir provisions LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -901,7 +901,8 @@ Optional Packages:
   --with-linux-map[=FILE] filename for Linux System.map [LINUXDIR/System.map]
   --with-freebsd[=SRC,INC] FreeBSD source code is in SRC [/usr/src/sys],
                           include directory is INC [/usr/include]
-  --with-expat[=PREFIX]   Prefix where expat library is installed (optional)
+  --with-proper[=PREFIX]  use PlanetLab Proper library (optional)
+  --with-expat[=PREFIX]   locate expat XML library (optional)
 
 Some influential environment variables:
   CC          C compiler command
@@ -7861,7 +7862,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7864 "configure"
+#line 7865 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -13333,6 +13334,282 @@ fi
 
 
 
+explicit_proper=yes
+
+# Check whether --with-proper or --without-proper was given.
+if test "${with_proper+set}" = set; then
+  withval="$with_proper"
+  properprefix=$withval; if test -z "$withval" -o "$withval" = yes; then properprefix=; fi
+else
+  properprefix=no; explicit_proper=no
+fi;
+if test "$properprefix" != no; then
+
+    saveflags="$CPPFLAGS"; test -n "$properprefix" && CPPFLAGS="$CPPFLAGS -I$properprefix/include"
+    if test "${ac_cv_header_prop_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for prop.h" >&5
+echo $ECHO_N "checking for prop.h... $ECHO_C" >&6
+if test "${ac_cv_header_prop_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_prop_h" >&5
+echo "${ECHO_T}$ac_cv_header_prop_h" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking prop.h usability" >&5
+echo $ECHO_N "checking prop.h usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <prop.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking prop.h presence" >&5
+echo $ECHO_N "checking prop.h presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <prop.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: prop.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: prop.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: prop.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: prop.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: prop.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: prop.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: prop.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: prop.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: prop.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: prop.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: prop.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: prop.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: prop.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: prop.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: prop.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: prop.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## -------------------------------- ##
+## Report this to the click lists.  ##
+## -------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for prop.h" >&5
+echo $ECHO_N "checking for prop.h... $ECHO_C" >&6
+if test "${ac_cv_header_prop_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_prop_h=$ac_header_preproc
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_prop_h" >&5
+echo "${ECHO_T}$ac_cv_header_prop_h" >&6
+
+fi
+if test $ac_cv_header_prop_h = yes; then
+  have_prop_h=yes
+else
+  have_prop_h=no
+fi
+
+
+    CPPFLAGS="$saveflags"
+
+    ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+    saveflags="$LDFLAGS"; test -n "$properprefix" && LDFLAGS="$LDFLAGS -L$properprefix/lib"
+    echo "$as_me:$LINENO: checking for prop_open in -lproper" >&5
+echo $ECHO_N "checking for prop_open in -lproper... $ECHO_C" >&6
+if test "${ac_cv_lib_proper_prop_open+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lproper  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char prop_open ();
+int
+main ()
+{
+prop_open ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_proper_prop_open=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_proper_prop_open=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_proper_prop_open" >&5
+echo "${ECHO_T}$ac_cv_lib_proper_prop_open" >&6
+if test $ac_cv_lib_proper_prop_open = yes; then
+  have_libproper=yes
+else
+  have_libproper=no
+fi
+
+    LDFLAGS="$saveflags"
+    ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+    if test $have_prop_h = yes -a $have_libproper = yes; then
+	cat >>confdefs.h <<\_ACEOF
+#define HAVE_PROPER 1
+_ACEOF
+
+	test -n "$properprefix" && PROPER_INCLUDES="-I$properprefix/include" && PROPER_LIBS="-L$properprefix/lib"
+	PROPER_LIBS="$PROPER_LIBS -lproper"
+    elif test $explicit_proper = yes; then
+	PROPER_INCLUDES= PROPER_LIBS=
+	{ { echo "$as_me:$LINENO: error:
+=========================================
+
+You explicitly specified --with-proper, but I can't find the proper headers
+and/or libraries where you said they would be.  Run again supplying
+--without-proper or --with-proper=PREFIX.
+
+=========================================" >&5
+echo "$as_me: error:
+=========================================
+
+You explicitly specified --with-proper, but I can't find the proper headers
+and/or libraries where you said they would be.  Run again supplying
+--without-proper or --with-proper=PREFIX.
+
+=========================================" >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+fi
+
+
+
+
+
 explicit_expat=yes
 
 # Check whether --with-expat or --without-expat was given.
@@ -13376,7 +13653,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
+	 { ac_try='test -z "$ac_cxx_werror_flag"
 			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
@@ -13420,8 +13697,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } >/dev/null; then
   if test -s conftest.err; then
-    ac_cpp_err=$ac_c_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
   else
     ac_cpp_err=
   fi
@@ -13441,7 +13718,7 @@ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
 echo "${ECHO_T}$ac_header_preproc" >&6
 
 # So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in
   yes:no: )
     { echo "$as_me:$LINENO: WARNING: expat.h: accepted by the compiler, rejected by the preprocessor!" >&5
 echo "$as_me: WARNING: expat.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
@@ -15282,6 +15559,8 @@ s,@TOOLDIRS@,$TOOLDIRS,;t t
 s,@TOOL_TARGETS@,$TOOL_TARGETS,;t t
 s,@PCAP_INCLUDES@,$PCAP_INCLUDES,;t t
 s,@PCAP_LIBS@,$PCAP_LIBS,;t t
+s,@PROPER_INCLUDES@,$PROPER_INCLUDES,;t t
+s,@PROPER_LIBS@,$PROPER_LIBS,;t t
 s,@XML2CLICK@,$XML2CLICK,;t t
 s,@EXPAT_INCLUDES@,$EXPAT_INCLUDES,;t t
 s,@EXPAT_LIBS@,$EXPAT_LIBS,;t t

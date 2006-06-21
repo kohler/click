@@ -45,13 +45,13 @@ while true; do
       --dr=*|--dri=*|--driv=*|--drive=*|--driver=*)
 	driver=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
       --de|--def|--defs)
-	echo @PCAP_INCLUDES@ -I$includedir
+	echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ -I$includedir
 	exit 0;;
       --l|--li|--lib|--libs)
-	echo -L$libdir -lclick @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
+	echo -L$libdir -lclick @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
 	exit 0;;
       --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
-	echo @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
+	echo @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
 	exit 0;;
       -d|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
 	directory=$2; shift 2;;
