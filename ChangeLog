@@ -1,3 +1,15 @@
+2006-06-21 Wednesday 16:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: fromhost.cc (1.13), fromhost.hh (1.10):
+	  FromHost supports proper support for PlanetLab, and allows zero
+	  ADDR/MASK and ETHER (Mark Huang)
+
+2006-06-21 Wednesday 16:17  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/: icmppingrewriter.cc (1.30), icmppingrewriter.hh
+	  (1.16): ICMPPingRewriter also deserves a DST_ANNO argument (Mark
+	  Huang patch)
+
 2006-06-21 Wednesday 02:44  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/kerneltun.cc (1.64): fix KernelTun bug
