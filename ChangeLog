@@ -1,3 +1,52 @@
+2006-06-21 Wednesday 17:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/local/: reframe.cc (1.2), reframe.hh (1.2): nit
+
+2006-06-21 Wednesday 17:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: local/reframe.cc (1.1), local/reframe.hh (1.1),
+	  userlevel/umlswitch.cc (1.1), userlevel/umlswitch.hh (1.1): add
+	  UMLSwitch and Reframe elements (Mark Huang).	 UMLSwitch:
+	  Transports packets to and from a User Mode Linux switch daemon
+	  instance.  Reframe: useful for reframing a fragmented stream of
+	  packets.
+
+2006-06-21 Wednesday 17:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: socket.cc (1.6), socket.hh (1.5): Support
+	  hosts_access(5) style ACL for Socket elements to provide basic IP
+	  authentication. Specify ALLOW <IPRouteTable element> or DENY
+	  <IPRouteTable element> keywords to Socket to enable this
+	  functionality.
+
+	  Support subclassing of this element (i.e., for UMLSwitch). In
+	  client mode, support binding of a local address/port/file.
+
+	  Make input agnostic. Simplify polling loop by removing backoff
+	  timer.
+
+	  Support SNDBUF and RCVBUF keywords.
+
+	  Support TIMESTAMP option (disable to avoid calling gettimeofday()
+	  for each packet, can reduce syscall overhead greatly if
+	  timestamps are not required).
+
+	  Add PlanetLab "Proper" support (optional).
+
+	  All of that is Mark Huang.  Also some rearranging.
+
+2006-06-21 Wednesday 16:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: rawsocket.cc (1.6), rawsocket.hh (1.6):
+	  RawSocket supports Proper (Mark Huang); other cleanups
+
+2006-06-21 Wednesday 16:42  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-compile.in (1.38), config-userlevel.h.in (1.36), configure
+	  (1.85), configure.in (1.289), userlevel/Makefile.in (1.94): add
+	  support for PlanetLab's Privileged Operations (proper) library
+	  (Mark Huang)
+
 2006-06-21 Wednesday 16:25  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/: fromhost.cc (1.13), fromhost.hh (1.10):
