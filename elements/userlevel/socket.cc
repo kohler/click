@@ -25,6 +25,7 @@
 #include <click/packet_anno.hh>
 #include <click/packet.hh>
 #include <unistd.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <arpa/inet.h>
@@ -32,13 +33,19 @@
 #include <fcntl.h>
 #include "socket.hh"
 
+#ifdef HAVE_PROPER
+#include <proper/prop.h>
+#endif
+
 CLICK_DECLS
 
 Socket::Socket()
   : _task(this), _timer(this),
     _fd(-1), _active(-1), _rq(0), _wq(0),
+    _local_port(0), _local_pathname(""),
+    _timestamp(true), _sndbuf(-1), _rcvbuf(-1),
     _snaplen(2048), _nodelay(1),
-    _verbose(false), _client(false)
+    _verbose(false), _client(false), _proper(false), _allow(0), _deny(0)
 {
 }
 
@@ -59,13 +66,26 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
   socktype = socktype.upper();
 
   // remove keyword arguments
+  Element *allow = 0, *deny = 0;
   if (cp_va_parse_remove_keywords(conf, 2, this, errh,
 		"VERBOSE", cpBool, "be verbose?", &_verbose,
 		"SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
+		"TIMESTAMP", cpBool, "set timestamps on received packets?", &_timestamp,
+		"RCVBUF", cpUnsigned, "maximum socket receive buffer size?", &_rcvbuf,
+		"SNDBUF", cpUnsigned, "maximum socket send buffer size?", &_sndbuf,
 		"NODELAY", cpUnsigned, "disable Nagle algorithm?", &_nodelay,
 		"CLIENT", cpBool, "client or server?", &_client,
+		"PROPER", cpBool, "use Proper", &_proper,
+		"ALLOW", cpElement, "routing table of good hosts", &allow,
+		"DENY", cpElement, "routing table of bad hosts", &deny,
 		cpEnd) < 0)
     return -1;
+
+  if (allow && !(_allow = (IPRouteTable *)allow->cast("IPRouteTable")))
+    return errh->error("%s is not an IPRouteTable", allow->name().c_str());
+
+  if (deny && !(_deny = (IPRouteTable *)deny->cast("IPRouteTable")))
+    return errh->error("%s is not an IPRouteTable", deny->name().c_str());
 
   if (socktype == "TCP" || socktype == "UDP") {
     _family = AF_INET;
@@ -73,8 +93,11 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
     _protocol = socktype == "TCP" ? IPPROTO_TCP : IPPROTO_UDP;
     if (cp_va_parse(conf, this, errh,
 		    cpIgnore,
-		    cpIPAddress, "IP address", &_ip,
-		    cpUnsignedShort, "port number", &_port,
+		    cpIPAddress, "IP address", &_remote_ip,
+		    cpUnsignedShort, "port number", &_remote_port,
+		    cpOptional,
+		    cpIPAddress, "local IP address", &_local_ip,
+		    cpUnsignedShort, "local port number", &_local_port,
 		    cpEnd) < 0)
       return -1;
   }
@@ -84,11 +107,21 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
     _socktype = socktype == "UNIX" ? SOCK_STREAM : SOCK_DGRAM;
     _protocol = 0;
     if (cp_va_parse(conf, this, errh,
-		    cpIgnore, cpString, "filename", &_pathname,
+		    cpIgnore,
+		    cpString, "filename", &_remote_pathname,
+		    cpOptional,
+		    cpString, "local filename", &_local_pathname,
 		    cpEnd) < 0)
       return -1;
-    if (_pathname.length() >= (int)sizeof(((struct sockaddr_un *)0)->sun_path))
-      return errh->error("filename too long");
+    int max_path = (int)sizeof(((struct sockaddr_un *)0)->sun_path);
+    // if not in the abstract namespace (begins with zero byte),
+    // reserve room for trailing NUL
+    if ((_remote_pathname[0] && _remote_pathname.length() >= max_path) ||
+	(_remote_pathname[0] == 0 && _remote_pathname.length() > max_path))
+      return errh->error("remote filename '%s' too long", _remote_pathname.printable().c_str());
+    if ((_local_pathname[0] && _local_pathname.length() >= max_path) ||
+	(_local_pathname[0] == 0 && _local_pathname.length() > max_path))
+      return errh->error("local filename '%s' too long", _local_pathname.printable().c_str());
   }
 
   else
@@ -121,46 +154,98 @@ Socket::initialize(ErrorHandler *errh)
     return initialize_socket_error(errh, "socket");
 
   if (_family == AF_INET) {
-    _sa.in.sin_family = _family;
-    _sa.in.sin_port = htons(_port);
-    _sa.in.sin_addr = _ip.in_addr();
-    _sa_len = sizeof(_sa.in);
+    _remote.in.sin_family = _family;
+    _remote.in.sin_port = htons(_remote_port);
+    _remote.in.sin_addr = _remote_ip.in_addr();
+    _remote_len = sizeof(_remote.in);
+    _local.in.sin_family = _family;
+    _local.in.sin_port = htons(_local_port);
+    _local.in.sin_addr = _local_ip.in_addr();
+    _local_len = sizeof(_local.in);
   }
   else {
-    _sa.un.sun_family = _family;
-    strcpy(_sa.un.sun_path, _pathname.c_str());
-    _sa_len = offsetof(struct sockaddr_un, sun_path) + _pathname.length() + 1;
+    _remote.un.sun_family = _family;
+    _remote_len = offsetof(struct sockaddr_un, sun_path) + _remote_pathname.length();
+    if (_remote_pathname[0]) {
+      strcpy(_remote.un.sun_path, _remote_pathname.c_str());
+      _remote_len++;
+    } else
+      memcpy(_remote.un.sun_path, _remote_pathname.c_str(), _remote_pathname.length());
+    _local.un.sun_family = _family;
+    _local_len = offsetof(struct sockaddr_un, sun_path) + _local_pathname.length();
+    if (_local_pathname[0]) {
+      strcpy(_local.un.sun_path, _local_pathname.c_str());
+      _local_len++;
+    } else
+      memcpy(_local.un.sun_path, _local_pathname.c_str(), _local_pathname.length());
+  }
+
+  // enable timestamps
+  if (_timestamp) {
+    int one = 1;
+    if (setsockopt(_fd, SOL_SOCKET, SO_TIMESTAMP, &one, sizeof(one)) < 0)
+      return initialize_socket_error(errh, "setsockopt(SO_TIMESTAMP)");
   }
 
 #ifdef TCP_NODELAY
   // disable Nagle algorithm
   if (_protocol == IPPROTO_TCP && _nodelay)
     if (setsockopt(_fd, IP_PROTO_TCP, TCP_NODELAY, &_nodelay, sizeof(_nodelay)) < 0)
-      return initialize_socket_error(errh, "setsockopt");
+      return initialize_socket_error(errh, "setsockopt(TCP_NODELAY)");
 #endif
+
+  // set socket send buffer size
+  if (_sndbuf >= 0)
+    if (setsockopt(_fd, SOL_SOCKET, SO_SNDBUF, &_sndbuf, sizeof(_sndbuf)) < 0)
+      return initialize_socket_error(errh, "setsockopt(SO_SNDBUF)");
+
+  // set socket receive buffer size
+  if (_rcvbuf >= 0)
+    if (setsockopt(_fd, SOL_SOCKET, SO_RCVBUF, &_rcvbuf, sizeof(_rcvbuf)) < 0)
+      return initialize_socket_error(errh, "setsockopt(SO_RCVBUF)");
+
+  // if a server, then the first arguments should be interpreted as
+  // the address/port/file to bind() to, not to connect() to
+  if (!_client) {
+    memcpy(&_local, &_remote, _remote_len);
+    _local_len = _remote_len;
+  }
+
+  // if a server, or if the optional local arguments have been
+  // specified, bind() to the specified address/port/file
+  if (!_client || _local_port != 0 || _local_pathname != "") {
+#ifdef HAVE_PROPER
+    int ret = -1;
+    if (_proper) {
+      ret = prop_bind_socket(_fd, (struct sockaddr *)&_local, _local_len);
+      if (ret < 0)
+	errh->warning("prop_bind_socket: %s", strerror(errno));
+    }
+    if (ret < 0)
+#endif
+    if (bind(_fd, (struct sockaddr *)&_local, _local_len) < 0)
+      return initialize_socket_error(errh, "bind");
+  }
 
   if (_client) {
     // connect
     if (_socktype == SOCK_STREAM) {
-      if (connect(_fd, (struct sockaddr *)&_sa, _sa_len) < 0)
+      if (connect(_fd, (struct sockaddr *)&_remote, _remote_len) < 0)
 	return initialize_socket_error(errh, "connect");
       if (_verbose)
-	click_chatter("%s: opened connection %d to %s:%d", declaration().c_str(), _fd, IPAddress(_sa.in.sin_addr).unparse().c_str(), ntohs(_sa.in.sin_port));
+	click_chatter("%s: opened connection %d to %s:%d", declaration().c_str(), _fd, IPAddress(_remote.in.sin_addr).unparse().c_str(), ntohs(_remote.in.sin_port));
     }
     _active = _fd;
   } else {
-    // bind to port
-    if (bind(_fd, (struct sockaddr *)&_sa, _sa_len) < 0)
-      return initialize_socket_error(errh, "bind");
     // start listening
     if (_socktype == SOCK_STREAM) {
       if (listen(_fd, 2) < 0)
 	return initialize_socket_error(errh, "listen");
       if (_verbose) {
 	if (_family == AF_INET)
-	  click_chatter("%s: listening for connections on %s:%d (%d)", declaration().c_str(), IPAddress(_sa.in.sin_addr).unparse().c_str(), ntohs(_sa.in.sin_port), _fd);
+	  click_chatter("%s: listening for connections on %s:%d (%d)", declaration().c_str(), IPAddress(_local.in.sin_addr).unparse().c_str(), ntohs(_local.in.sin_port), _fd);
 	else
-	  click_chatter("%s: listening for connections on %s (%d)", declaration().c_str(), _sa.un.sun_path, _fd);
+	  click_chatter("%s: listening for connections on %s (%d)", declaration().c_str(), _local.un.sun_path, _fd);
       }
     } else {
       _active = _fd;
@@ -174,11 +259,12 @@ Socket::initialize(ErrorHandler *errh)
   if (noutputs())
     add_select(_fd, SELECT_READ);
 
-  if (ninputs()) {
+  if (ninputs() && input_is_pull(0)) {
     ScheduleInfo::join_scheduler(this, &_task, errh);
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
     _timer.initialize(this);
   }
+
   return 0;
 }
 
@@ -202,8 +288,33 @@ Socket::cleanup(CleanupStage)
 #endif
     close(_fd);
     if (_family == AF_UNIX)
-      unlink(_pathname.c_str());
+      unlink(_local_pathname.c_str());
     _fd = -1;
+  }
+}
+
+bool
+Socket::allowed(IPAddress addr)
+{
+  IPAddress gw;
+
+  if (_allow && _allow->lookup_route(addr, gw) >= 0)
+    return true;
+  else if (_deny && _deny->lookup_route(addr, gw) >= 0)
+    return false;
+  else
+    return true;
+}
+
+void
+Socket::close_active(void)
+{
+  if (_active >= 0) {
+    remove_select(_active, SELECT_READ | SELECT_WRITE);
+    close(_active);
+    if (_verbose)
+      click_chatter("%s: closed connection %d", declaration().c_str(), _active);
+    _active = -1;
   }
 }
 
@@ -211,12 +322,14 @@ void
 Socket::selected(int fd)
 {
   int len;
+  union { struct sockaddr_in in; struct sockaddr_un un; } from;
+  socklen_t from_len = sizeof(from);
+  bool allow;
 
   if (noutputs()) {
     // accept new connections
     if (_socktype == SOCK_STREAM && !_client && _active < 0 && fd == _fd) {
-      _sa_len = sizeof(_sa);
-      _active = accept(_fd, (struct sockaddr *)&_sa, &_sa_len);
+      _active = accept(_fd, (struct sockaddr *)&from, &from_len);
 
       if (_active < 0) {
 	if (errno != EAGAIN)
@@ -224,11 +337,22 @@ Socket::selected(int fd)
 	return;
       }
 
-      if (_verbose) {
-	if (_family == AF_INET)
-	  click_chatter("%s: opened connection %d from %s:%d", declaration().c_str(), _active, IPAddress(_sa.in.sin_addr).unparse().c_str(), ntohs(_sa.in.sin_port));
-	else
-	  click_chatter("%s: opened connection %d from %s", declaration().c_str(), _active, _sa.un.sun_path);
+      if (_family == AF_INET) {
+	allow = allowed(IPAddress(from.in.sin_addr));
+	      
+	if (_verbose)
+	  click_chatter("%s: %s connection %d from %s:%d", declaration().c_str(),
+			allow ? "opened" : "denied",
+			_active, IPAddress(from.in.sin_addr).unparse().c_str(), ntohs(from.in.sin_port));
+
+	if (!allow) {
+	  close(_active);
+	  _active = -1;
+	  return;
+	}
+      } else {
+	if (_verbose)
+	  click_chatter("%s: opened connection %d from %s", declaration().c_str(), _active, from.un.sun_path);
       }
 
       fcntl(_active, F_SETFL, O_NONBLOCK);
@@ -248,121 +372,164 @@ Socket::selected(int fd)
 	len = recv(_active, _rq->data(), _rq->length(), MSG_TRUNC);
       else {
 	// datagram server, find out who we are talking to
-	_sa_len = sizeof(_sa);
-	len = recvfrom(_active, _rq->data(), _rq->length(), MSG_TRUNC, (struct sockaddr *)&_sa, &_sa_len);
+	len = recvfrom(_active, _rq->data(), _rq->length(), MSG_TRUNC, (struct sockaddr *)&from, &from_len);
+
+	if (_family == AF_INET && !allowed(IPAddress(from.in.sin_addr))) {
+	  if (_verbose)
+	    click_chatter("%s: dropped datagram from %s:%d", declaration().c_str(),
+			  IPAddress(from.in.sin_addr).unparse().c_str(), ntohs(from.in.sin_port));
+	  len = -1;
+	  errno = EAGAIN;
+	} else if (len > 0) {
+	  memcpy(&_remote, &from, from_len);
+	  _remote_len = from_len;
+	}
       }
+
+      // this segment OK
       if (len > 0) {
 	if (len > _snaplen) {
+	  // truncate packet to max length (should never happen)
 	  assert(_rq->length() == (uint32_t)_snaplen);
 	  SET_EXTRA_LENGTH_ANNO(_rq, len - _snaplen);
-	} else
+	} else {
+	  // trim packet to actual length
 	  _rq->take(_snaplen - len);
+	}
+
 	// set timestamp
-	_rq->timestamp_anno().set_now();
+	if (_timestamp)
+	  _rq->timestamp_anno().set_now();
+
+	// push packet
 	output(0).push(_rq);
 	_rq = 0;
-      } else {
-	if (len == 0 || errno != EAGAIN) {
-	  if (errno != EAGAIN)
-	    click_chatter("%s: %s", declaration().c_str(), strerror(errno));
-	  goto err;
-	}
+      }
+
+      // connection terminated or fatal error
+      else if (len == 0 || errno != EAGAIN) {
+	if (errno != EAGAIN && _verbose)
+	  click_chatter("%s: %s", declaration().c_str(), strerror(errno));
+	close_active();
+	return;
       }
     }
   }
 
-  if (ninputs()) {
-    // write data to socket
-    Packet *p;
-    if (_wq) {
-      p = _wq;
-      _wq = 0;
-    } else {
-      p = input(0).pull();
+  if (ninputs() && input_is_pull(0))
+    run_task();
+}
+
+int
+Socket::write_packet(Packet *p)
+{
+  int len;
+
+  assert(_active >= 0);
+
+  while (p->length()) {
+    if (!IPAddress(_remote_ip) && _client && _family == AF_INET && _socktype != SOCK_STREAM) {
+      // If the IP address specified when the element was created is 0.0.0.0, 
+      // send the packet to its IP destination annotation address
+      _remote.in.sin_addr = p->dst_ip_anno();
     }
-    if (p) {
-      while (p->length()) {
-	if (!IPAddress(_ip) && _client && _family == AF_INET && _socktype != SOCK_STREAM) {
-	  // If the IP address specified when the element was created is 0.0.0.0, 
-	  // send the packet to its IP destination annotation address
-	  _sa.in.sin_addr = p->dst_ip_anno();
-	}
-	if (_socktype == SOCK_STREAM)
-	  len = write(_active, p->data(), p->length());
-	else {
-	  if (_family == AF_INET)
-	    _sa_len = sizeof(_sa.in);
-	  else
-	    _sa_len = offsetof(struct sockaddr_un, sun_path) + strlen(_sa.un.sun_path) + 1;
-	  len = sendto(_active, p->data(), p->length(), 0,
-		       (struct sockaddr *)&_sa, _sa_len);
-	}
-	if (len < 0) {
-	  if (errno == ENOBUFS || errno == EAGAIN) {
-	    // socket queue full, try again later
-	    _wq = p;
-	    remove_select(_active, SELECT_WRITE);
-	    _events &= ~SELECT_WRITE;
-	    _backoff = (!_backoff) ? 1 : _backoff*2;
-	    _timer.schedule_after(Timestamp::make_usec(_backoff));
-	    return;
-	  } else if (errno == EINTR) {
-	    // interrupted by signal, try again immediately
-	    continue;
-	  } else {
-	    // connection probably terminated
-	    if (_verbose)
-	      click_chatter("%s: %s", declaration().c_str(), _sa.un.sun_path);
-	    p->kill();
-	    goto err;
-	  }
-	} else {
-	  p->pull(len);
-	}
+
+    // write segment
+    if (_socktype == SOCK_STREAM)
+      len = write(_active, p->data(), p->length());
+    else
+      len = sendto(_active, p->data(), p->length(), 0,
+		   (struct sockaddr *)&_remote, _remote_len);
+
+    // error
+    if (len < 0) {
+      // out of memory or would block
+      if (errno == ENOBUFS || errno == EAGAIN)
+	return -1;
+
+      // interrupted by signal, try again immediately
+      else if (errno == EINTR)
+	continue;
+
+      // connection probably terminated or other fatal error
+      else {
+	if (_verbose)
+	  click_chatter("%s: %s", declaration().c_str(), strerror(errno));
+	close_active();
       }
-      _backoff = 0;
-      p->kill();
     }
 
-    // nothing to write, wait for upstream signal
-    if (!p && !_signal && (_events & SELECT_WRITE)) {
-      remove_select(_active, SELECT_WRITE);
-      _events &= ~SELECT_WRITE;
-    }
+    // this segment OK
+    else
+      p->pull(len);
   }
 
-  return;
-
- err:
-  if (_active != _fd) {
-    remove_select(_active, SELECT_READ | SELECT_WRITE);
-    close(_active);
-    if (_verbose)
-      click_chatter("%s: closed connection %d", declaration().c_str(), _active);
-    _active = -1;
-  }
+  p->kill();
+  return 0;
 }
 
 void
-Socket::run_timer(Timer *)
+Socket::push(int, Packet *p)
 {
-  if ((_wq || _signal) && !(_events & SELECT_WRITE) && _active >= 0) {
-    add_select(_active, SELECT_WRITE);
-    _events |= SELECT_WRITE;
-    selected(_active);
-  }
+  fd_set fds;
+  int err;
+
+  if (_active >= 0) {
+    // block
+    do {
+      FD_ZERO(&fds);
+      FD_SET(_active, &fds);
+      err = select(_active + 1, NULL, &fds, NULL, NULL);
+    } while (err < 0 && errno == EINTR);
+
+    if (err >= 0) {
+      // write
+      do {
+	err = write_packet(p);
+      } while (err < 0 && (errno == ENOBUFS || errno == EAGAIN));
+    }
+
+    if (err < 0) {
+      if (_verbose)
+	click_chatter("%s: %s, dropping packet", declaration().c_str(), strerror(err));
+      p->kill();
+    }
+  } else
+    p->kill();
 }
 
 bool
 Socket::run_task()
 {
-  if ((_wq || _signal) && !(_events & SELECT_WRITE) && _active >= 0) {
-    add_select(_active, SELECT_WRITE);
-    _events |= SELECT_WRITE;
-    selected(_active);
-    return true;
+  assert(ninputs() && input_is_pull(0));
+  Packet *p = 0;
+
+  if (_active >= 0 && (_wq || _signal)) {
+    int err = 0;
+
+    // write as much as we can
+    do {
+      p = _wq ? _wq : input(0).pull();
+      _wq = 0;
+      if (p)
+	err = write_packet(p);
+    } while (p && !err);
+
+    if (err < 0) {
+      // queue packet for writing when socket becomes available
+      _wq = p;
+      p = 0;
+      add_select(_active, SELECT_WRITE);
+    } else if (_signal)
+      // more pending
+      _task.fast_reschedule();
+    else
+      // wrote all we could and no more pending
+      remove_select(_active, SELECT_WRITE);
   }
-  return false;
+
+  // true if we wrote at least one packet
+  return (p != 0);
 }
 
 void
@@ -372,5 +539,5 @@ Socket::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel IPRouteTable)
 EXPORT_ELEMENT(Socket)
