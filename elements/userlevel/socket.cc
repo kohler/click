@@ -456,11 +456,10 @@ Socket::write_packet(Packet *p)
 	if (_verbose)
 	  click_chatter("%s: %s", declaration().c_str(), strerror(errno));
 	close_active();
+	break;
       }
-    }
-
-    // this segment OK
-    else
+    } else
+      // this segment OK
       p->pull(len);
   }
 
@@ -502,18 +501,21 @@ bool
 Socket::run_task()
 {
   assert(ninputs() && input_is_pull(0));
-  Packet *p = 0;
+  bool any = false;
 
   if (_active >= 0 && (_wq || _signal)) {
+    Packet *p = 0;
     int err = 0;
 
     // write as much as we can
     do {
       p = _wq ? _wq : input(0).pull();
       _wq = 0;
-      if (p)
+      if (p) {
+	any = true;
 	err = write_packet(p);
-    } while (p && !err);
+      }
+    } while (p && err >= 0);
 
     if (err < 0) {
       // queue packet for writing when socket becomes available
@@ -529,7 +531,7 @@ Socket::run_task()
   }
 
   // true if we wrote at least one packet
-  return (p != 0);
+  return any;
 }
 
 void
