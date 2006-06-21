@@ -1,3 +1,13 @@
+2006-06-21 Wednesday 02:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/local/webgen.cc (1.24), elements/local/webgen.hh (1.15),
+	  include/click/bighashmap.cc (1.26), include/click/bighashmap.hh
+	  (1.28), include/click/vector.cc (1.9), include/click/vector.hh
+	  (1.13), lib/vectorv.cc (1.13): HashMap sizes use size_t, not int
+	  (Bart Braem); prepare Vector for a similar future change,
+	  although too much code assumes that one can iterate from 0 to
+	  Vector::size() with an int to make that change now
+
 2006-06-20 Tuesday 12:49  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/tcpudp/iprewriter.cc (1.53): out of memory != sad crash
