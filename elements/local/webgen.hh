@@ -71,7 +71,7 @@ private:
 
     struct timeval last_send;
     char sndbuf[64];
-    int sndlen;
+    unsigned sndlen;
 
     void reset (IPAddress src);
 
@@ -120,7 +120,7 @@ private:
   IPAddress pick_src();
   int connhash(unsigned src, unsigned short sport);
 
-  WritablePacket *fixup_packet (Packet *p, int plen);
+  WritablePacket *fixup_packet (Packet *p, unsigned plen);
 
   void tcp_input(Packet *);
   void tcp_send(CB *, Packet *);

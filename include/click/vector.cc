@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2006 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@ Vector<T>::Vector(const Vector<T> &o)
 template <class T>
 Vector<T>::~Vector()
 {
-  for (int i = 0; i < _n; i++)
+  for (size_type i = 0; i < _n; i++)
     _l[i].~T();
   delete[] (unsigned char *)_l;
 }
@@ -42,12 +43,12 @@ template <class T> Vector<T> &
 Vector<T>::operator=(const Vector<T> &o)
 {
   if (&o != this) {
-    for (int i = 0; i < _n; i++)
+    for (size_type i = 0; i < _n; i++)
       _l[i].~T();
     _n = 0;
     if (reserve(o._n)) {
       _n = o._n;
-      for (int i = 0; i < _n; i++)
+      for (size_type i = 0; i < _n; i++)
         new(velt(i)) T(o._l[i]);
     }
   }
@@ -55,7 +56,7 @@ Vector<T>::operator=(const Vector<T> &o)
 }
 
 template <class T> Vector<T> &
-Vector<T>::assign(int n, const T &e)
+Vector<T>::assign(size_type n, const T &e)
 {
   resize(0, e);
   resize(n, e);
@@ -66,8 +67,8 @@ template <class T> typename Vector<T>::iterator
 Vector<T>::insert(iterator i, const T& e)
 {
   assert(i >= begin() && i <= end());
-  int pos = i - begin();
-  if (_n < _capacity || reserve(-1)) {
+  size_type pos = i - begin();
+  if (_n < _capacity || reserve(0)) {
     for (iterator j = end() - 1; j >= begin() + pos; j--) {
       new((void*) (j+1)) T(*j);
       j->~T();
@@ -97,10 +98,10 @@ Vector<T>::erase(iterator a, iterator b)
 }
 
 template <class T> bool
-Vector<T>::reserve(int want)
+Vector<T>::reserve(size_type want)
 {
-  if (want < 0)
-    want = _capacity > 0 ? _capacity * 2 : 4;
+  if (want <= 0)
+    want = (_capacity > 0 ? _capacity * 2 : 4);
   if (want <= _capacity)
     return true;
   
@@ -108,7 +109,7 @@ Vector<T>::reserve(int want)
   if (!new_l)
     return false;
   
-  for (int i = 0; i < _n; i++) {
+  for (size_type i = 0; i < _n; i++) {
     new(velt(new_l, i)) T(_l[i]);
     _l[i].~T();
   }
@@ -120,12 +121,12 @@ Vector<T>::reserve(int want)
 }
 
 template <class T> void
-Vector<T>::resize(int nn, const T &e)
+Vector<T>::resize(size_type nn, const T &e)
 {
   if (nn <= _capacity || reserve(nn)) {
-    for (int i = nn; i < _n; i++)
+    for (size_type i = nn; i < _n; i++)
       _l[i].~T();
-    for (int i = _n; i < nn; i++)
+    for (size_type i = _n; i < nn; i++)
       new(velt(i)) T(e);
     _n = nn;
   }
@@ -135,8 +136,8 @@ template <class T> void
 Vector<T>::swap(Vector<T> &o)
 {
   T *l = _l;
-  int n = _n;
-  int cap = _capacity;
+  size_type n = _n;
+  size_type cap = _capacity;
   _l = o._l;
   _n = o._n;
   _capacity = o._capacity;

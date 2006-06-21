@@ -30,9 +30,9 @@ class HashMap { public:
 
   void set_arena(HashMap_ArenaFactory *);
   
-  int size() const			{ return _n; }
+  size_t size() const			{ return _n; }
   bool empty() const			{ return _n == 0; }
-  int nbuckets() const			{ return _nbuckets; }
+  size_t nbuckets() const		{ return _nbuckets; }
 
   Pair *find_pair(const K &) const;
   inline V *findp(const K &) const;
@@ -62,7 +62,7 @@ class HashMap { public:
   inline iterator end();
   
   // dynamic resizing
-  void resize(int);
+  void resize(size_t);
   bool dynamic_resizing() const		{ return _capacity < 0x7FFFFFFF; }
   void set_dynamic_resizing(bool);
 
@@ -88,18 +88,18 @@ class HashMap { public:
     };
 
   Elt **_buckets;
-  int _nbuckets;
+  size_t _nbuckets;
   V _default_value;
 
-  int _n;
-  int _capacity;
+  size_t _n;
+  size_t _capacity;
 
   HashMap_Arena *_arena;
 
-  void initialize(HashMap_ArenaFactory *, int);
+  void initialize(HashMap_ArenaFactory *, size_t);
   void copy_from(const HashMap<K, V> &);
-  void resize0(int);
-  int bucket(const K &) const;
+  void resize0(size_t);
+  size_t bucket(const K &) const;
 
   friend class _HashMap_iterator<K, V>;
   friend class _HashMap_const_iterator<K, V>;
@@ -123,7 +123,7 @@ class _HashMap_const_iterator { public:
 
   const HashMap<K, V> *_hm;
   typename HashMap<K, V>::Elt *_elt;
-  int _bucket;
+  size_t _bucket;
 
   _HashMap_const_iterator(const HashMap<K, V> *m, bool begin);
   friend class HashMap<K, V>;
@@ -219,9 +219,9 @@ class HashMap<K, void *> { public:
   
   void set_arena(HashMap_ArenaFactory *);
   
-  int size() const			{ return _n; }
+  size_t size() const			{ return _n; }
   bool empty() const			{ return _n == 0; }
-  int nbuckets() const			{ return _nbuckets; }
+  size_t nbuckets() const		{ return _nbuckets; }
 
   Pair *find_pair(const K &) const;
   inline void **findp(const K &) const;
@@ -251,7 +251,7 @@ class HashMap<K, void *> { public:
   inline iterator end();
 
   // dynamic resizing
-  void resize(int);
+  void resize(size_t);
   bool dynamic_resizing() const		{ return _capacity < 0x7FFFFFFF; }
   void set_dynamic_resizing(bool);
 
@@ -277,18 +277,18 @@ class HashMap<K, void *> { public:
     };
 
   Elt **_buckets;
-  int _nbuckets;
+  size_t _nbuckets;
   void *_default_value;
 
-  int _n;
-  int _capacity;
+  size_t _n;
+  size_t _capacity;
 
   HashMap_Arena *_arena;
 
-  void initialize(HashMap_ArenaFactory *, int);
+  void initialize(HashMap_ArenaFactory *, size_t);
   void copy_from(const HashMap<K, void *> &);
-  void resize0(int);
-  int bucket(const K &) const;
+  void resize0(size_t);
+  size_t bucket(const K &) const;
 
   friend class _HashMap_iterator<K, void *>;
   friend class _HashMap_const_iterator<K, void *>;
@@ -312,7 +312,7 @@ class _HashMap_const_iterator<K, void *> { public:
 
   const HashMap<K, void *> *_hm;
   typename HashMap<K, void *>::Elt *_elt;
-  int _bucket;
+  size_t _bucket;
 
   _HashMap_const_iterator(const HashMap<K, void *> *, bool begin);
   template <class, class> friend class _HashMap_const_iterator;
@@ -410,9 +410,9 @@ class HashMap<K, T *> : public HashMap<K, void *> { public:
   
   void set_arena(HashMap_ArenaFactory *af) { inherited::set_arena(af); }
   
-  // int size() const			inherited
+  // size_t size() const		inherited
   // bool empty() const			inherited
-  // int nbuckets() const		inherited
+  // size_t nbuckets() const		inherited
   
   Pair *find_pair(const K &k) const { return reinterpret_cast<Pair *>(inherited::find_pair(k)); }
   T **findp(const K &k) const { return reinterpret_cast<T **>(inherited::findp(k)); }
@@ -533,13 +533,13 @@ operator!=(const typename HashMap<K, V>::const_iterator &a, const typename HashM
   return a.pair() != b.pair();
 }
 
-inline unsigned
+inline size_t
 hashcode(unsigned u)
 {
   return u;
 }
 
-inline uintptr_t
+inline size_t
 hashcode(void *v)
 {
   return reinterpret_cast<uintptr_t>(v) >> 3;

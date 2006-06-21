@@ -28,11 +28,11 @@ CLICK_DECLS
 
 template <class K, class V>
 void
-HashMap<K, V>::initialize(HashMap_ArenaFactory *factory, int initial_nbuckets)
+HashMap<K, V>::initialize(HashMap_ArenaFactory *factory, size_t initial_nbuckets)
 {
   _nbuckets = initial_nbuckets;
   _buckets = new Elt *[_nbuckets];
-  for (int i = 0; i < _nbuckets; i++)
+  for (size_t i = 0; i < _nbuckets; i++)
     _buckets[i] = 0;
   set_dynamic_resizing(true);
 
@@ -61,7 +61,7 @@ HashMap<K, V>::copy_from(const HashMap<K, V> &o)
   // requires that 'this' is empty and has the same number of buckets as 'o'
   // and the same resize policy
 {
-  for (int i = 0; i < _nbuckets; i++) {
+  for (size_t i = 0; i < _nbuckets; i++) {
     Elt **pprev = &_buckets[i];
     *pprev = 0;
     for (const Elt *e = o._buckets[i]; e; e = e->next) {
@@ -104,7 +104,7 @@ HashMap<K, V>::operator=(const HashMap<K, V> &o)
 template <class K, class V>
 HashMap<K, V>::~HashMap()
 {
-  for (int i = 0; i < _nbuckets; i++)
+  for (size_t i = 0; i < _nbuckets; i++)
     for (Elt *e = _buckets[i]; e; ) {
       Elt *next = e->next;
       e->key.~K();
@@ -140,10 +140,10 @@ HashMap<K, V>::set_arena(HashMap_ArenaFactory *factory)
 }
 
 template <class K, class V>
-inline int
+inline size_t
 HashMap<K, V>::bucket(const K &key) const
 {
-  return ((unsigned) hashcode(key)) % _nbuckets;
+  return ((size_t) hashcode(key)) % _nbuckets;
 }
 
 template <class K, class V>
@@ -152,7 +152,7 @@ HashMap<K, V>::find_pair(const K &key) const
 {
 #if BIGHASHMAP_REARRANGE_ON_FIND
   Elt *prev = 0;
-  int b = bucket(key);
+  size_t b = bucket(key);
   for (Elt *e = _buckets[b]; e; prev = e, e = e->next)
     if (e->key == key) {
       if (prev) {
@@ -175,23 +175,23 @@ HashMap<K, V>::find_pair(const K &key) const
 
 template <class K, class V>
 void
-HashMap<K, V>::resize0(int new_nbuckets)
+HashMap<K, V>::resize0(size_t new_nbuckets)
 {
   Elt **new_buckets = new Elt *[new_nbuckets];
-  for (int i = 0; i < new_nbuckets; i++)
+  for (size_t i = 0; i < new_nbuckets; i++)
     new_buckets[i] = 0;
 
-  int old_nbuckets = _nbuckets;
+  size_t old_nbuckets = _nbuckets;
   Elt **old_buckets = _buckets;
   _nbuckets = new_nbuckets;
   _buckets = new_buckets;
   if (dynamic_resizing())
     set_dynamic_resizing(true);	// reset threshold
   
-  for (int i = 0; i < old_nbuckets; i++)
+  for (size_t i = 0; i < old_nbuckets; i++)
     for (Elt *e = old_buckets[i]; e; ) {
       Elt *n = e->next;
-      int b = bucket(e->key);
+      size_t b = bucket(e->key);
       e->next = new_buckets[b];
       new_buckets[b] = e;
       e = n;
@@ -202,9 +202,9 @@ HashMap<K, V>::resize0(int new_nbuckets)
 
 template <class K, class V>
 void
-HashMap<K, V>::resize(int want_nbuckets)
+HashMap<K, V>::resize(size_t want_nbuckets)
 {
-  int new_nbuckets = 1;
+  size_t new_nbuckets = 1;
   while (new_nbuckets < want_nbuckets && new_nbuckets < MAX_NBUCKETS)
     new_nbuckets = ((new_nbuckets + 1) << 1) - 1;
   assert(new_nbuckets > 0 && new_nbuckets <= MAX_NBUCKETS);
@@ -216,7 +216,7 @@ template <class K, class V>
 bool
 HashMap<K, V>::insert(const K &key, const V &value)
 {
-  int b = bucket(key);
+  size_t b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key) {
       e->value = value;
@@ -242,7 +242,7 @@ template <class K, class V>
 bool
 HashMap<K, V>::remove(const K &key)
 {
-  int b = bucket(key);
+  size_t b = bucket(key);
   Elt *prev = 0;
   Elt *e = _buckets[b];
   while (e && !(e->key == key)) {
@@ -267,7 +267,7 @@ template <class K, class V>
 typename HashMap<K, V>::Pair *
 HashMap<K, V>::find_pair_force(const K &key, const V &default_value)
 {
-  int b = bucket(key);
+  size_t b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key)
       return e;
@@ -290,7 +290,7 @@ template <class K, class V>
 void
 HashMap<K, V>::clear()
 {
-  for (int i = 0; i < _nbuckets; i++) {
+  for (size_t i = 0; i < _nbuckets; i++) {
     for (Elt *e = _buckets[i]; e; ) {
       Elt *next = e->next;
       e->key.~K();
@@ -309,15 +309,15 @@ HashMap<K, V>::swap(HashMap<K, V> &o)
 {
   Elt **t_elts;
   V t_v;
-  int t_int;
+  size_t t_size;
   HashMap_Arena *t_arena;
 
   t_elts = _buckets; _buckets = o._buckets; o._buckets = t_elts;
-  t_int = _nbuckets; _nbuckets = o._nbuckets; o._nbuckets = t_int;
+  t_size = _nbuckets; _nbuckets = o._nbuckets; o._nbuckets = t_size;
   t_v = _default_value; _default_value = o._default_value; o._default_value = t_v;
 
-  t_int = _n; _n = o._n; o._n = t_int;
-  t_int = _capacity; _n = o._capacity; o._capacity = t_int;
+  t_size = _n; _n = o._n; o._n = t_size;
+  t_size = _capacity; _n = o._capacity; o._capacity = t_size;
 
   t_arena = _arena; _arena = o._arena; o._arena = t_arena;
 }
@@ -326,7 +326,7 @@ template <class K, class V>
 _HashMap_const_iterator<K, V>::_HashMap_const_iterator(const HashMap<K, V> *hm, bool begin)
   : _hm(hm)
 {
-  int nb = _hm->_nbuckets;
+  size_t nb = _hm->_nbuckets;
   typename HashMap<K, V>::Elt **b = _hm->_buckets;
   for (_bucket = 0; _bucket < nb && begin; _bucket++)
     if (b[_bucket]) {
@@ -343,7 +343,7 @@ _HashMap_const_iterator<K, V>::operator++(int)
   if (_elt->next)
     _elt = _elt->next;
   else {
-    int nb = _hm->_nbuckets;
+    size_t nb = _hm->_nbuckets;
     typename HashMap<K, V>::Elt **b = _hm->_buckets;
     for (_bucket++; _bucket < nb; _bucket++)
       if (b[_bucket]) {
@@ -355,8 +355,8 @@ _HashMap_const_iterator<K, V>::operator++(int)
 }
 
 #if 0
-static int
-HashMap_partition_elts(void **elts, int left, int right)
+static size_t
+HashMap_partition_elts(void **elts, size_t left, size_t right)
 {
   void *pivot = elts[(left + right) / 2];
 
@@ -379,10 +379,10 @@ HashMap_partition_elts(void **elts, int left, int right)
 }
 
 void
-HashMap_qsort_elts(void **elts, int left, int right)
+HashMap_qsort_elts(void **elts, size_t left, size_t right)
 {
   if (left < right) {
-    int split = HashMap_partition_elts(elts, left, right);
+    size_t split = HashMap_partition_elts(elts, left, right);
     HashMap_qsort_elts(elts, left, split);
     HashMap_qsort_elts(elts, split, right);
   }
@@ -394,11 +394,11 @@ HashMap_qsort_elts(void **elts, int left, int right)
 
 template <class K>
 void
-HashMap<K, void *>::initialize(HashMap_ArenaFactory *factory, int initial_nbuckets)
+HashMap<K, void *>::initialize(HashMap_ArenaFactory *factory, size_t initial_nbuckets)
 {
   _nbuckets = initial_nbuckets;
   _buckets = new Elt *[_nbuckets];
-  for (int i = 0; i < _nbuckets; i++)
+  for (size_t i = 0; i < _nbuckets; i++)
     _buckets[i] = 0;
   set_dynamic_resizing(true);
 
@@ -425,7 +425,7 @@ template <class K>
 void
 HashMap<K, void *>::copy_from(const HashMap<K, void *> &o)
 {
-  for (int i = 0; i < _nbuckets; i++) {
+  for (size_t i = 0; i < _nbuckets; i++) {
     Elt **pprev = &_buckets[i];
     *pprev = 0;
     for (const Elt *e = o._buckets[i]; e; e = e->next) {
@@ -468,7 +468,7 @@ HashMap<K, void *>::operator=(const HashMap<K, void *> &o)
 template <class K>
 HashMap<K, void *>::~HashMap()
 {
-  for (int i = 0; i < _nbuckets; i++)
+  for (size_t i = 0; i < _nbuckets; i++)
     for (Elt *e = _buckets[i]; e; ) {
       Elt *next = e->next;
       e->key.~K();
@@ -503,10 +503,10 @@ HashMap<K, void *>::set_arena(HashMap_ArenaFactory *factory)
 }
 
 template <class K>
-inline int
+inline size_t
 HashMap<K, void *>::bucket(const K &key) const
 {
-  return ((unsigned) hashcode(key)) % _nbuckets;
+  return ((size_t) hashcode(key)) % _nbuckets;
 }
 
 template <class K>
@@ -515,7 +515,7 @@ HashMap<K, void *>::find_pair(const K &key) const
 {
 #if BIGHASHMAP_REARRANGE_ON_FIND
   Elt *prev = 0;
-  int b = bucket(key);
+  size_t b = bucket(key);
   for (Elt *e = _buckets[b]; e; prev = e, e = e->next)
     if (e->key == key) {
       if (prev) {
@@ -538,23 +538,23 @@ HashMap<K, void *>::find_pair(const K &key) const
 
 template <class K>
 void
-HashMap<K, void *>::resize0(int new_nbuckets)
+HashMap<K, void *>::resize0(size_t new_nbuckets)
 {
   Elt **new_buckets = new Elt *[new_nbuckets];
-  for (int i = 0; i < new_nbuckets; i++)
+  for (size_t i = 0; i < new_nbuckets; i++)
     new_buckets[i] = 0;
 
-  int old_nbuckets = _nbuckets;
+  size_t old_nbuckets = _nbuckets;
   Elt **old_buckets = _buckets;
   _nbuckets = new_nbuckets;
   _buckets = new_buckets;
   if (dynamic_resizing())
     set_dynamic_resizing(true);	// reset threshold
   
-  for (int i = 0; i < old_nbuckets; i++)
+  for (size_t i = 0; i < old_nbuckets; i++)
     for (Elt *e = old_buckets[i]; e; ) {
       Elt *n = e->next;
-      int b = bucket(e->key);
+      size_t b = bucket(e->key);
       e->next = new_buckets[b];
       new_buckets[b] = e;
       e = n;
@@ -565,9 +565,9 @@ HashMap<K, void *>::resize0(int new_nbuckets)
 
 template <class K>
 void
-HashMap<K, void *>::resize(int want_nbuckets)
+HashMap<K, void *>::resize(size_t want_nbuckets)
 {
-  int new_nbuckets = 1;
+  size_t new_nbuckets = 1;
   while (new_nbuckets < want_nbuckets && new_nbuckets < MAX_NBUCKETS)
     new_nbuckets = ((new_nbuckets + 1) << 1) - 1;
   assert(new_nbuckets > 0 && new_nbuckets <= MAX_NBUCKETS);
@@ -579,7 +579,7 @@ template <class K>
 bool
 HashMap<K, void *>::insert(const K &key, void *value)
 {
-  int b = bucket(key);
+  size_t b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key) {
       e->value = value;
@@ -605,7 +605,7 @@ template <class K>
 bool
 HashMap<K, void *>::remove(const K &key)
 {
-  int b = bucket(key);
+  size_t b = bucket(key);
   Elt *prev = 0;
   Elt *e = _buckets[b];
   while (e && !(e->key == key)) {
@@ -629,7 +629,7 @@ template <class K>
 typename HashMap<K, void *>::Pair *
 HashMap<K, void *>::find_pair_force(const K &key, void *default_value)
 {
-  int b = bucket(key);
+  size_t b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key)
       return e;
@@ -652,7 +652,7 @@ template <class K>
 void
 HashMap<K, void *>::clear()
 {
-  for (int i = 0; i < _nbuckets; i++) {
+  for (size_t i = 0; i < _nbuckets; i++) {
     for (Elt *e = _buckets[i]; e; ) {
       Elt *next = e->next;
       e->key.~K();
@@ -670,15 +670,15 @@ HashMap<K, void *>::swap(HashMap<K, void *> &o)
 {
   Elt **t_elts;
   void *t_v;
-  int t_int;
+  size_t t_size;
   HashMap_Arena *t_arena;
 
   t_elts = _buckets; _buckets = o._buckets; o._buckets = t_elts;
-  t_int = _nbuckets; _nbuckets = o._nbuckets; o._nbuckets = t_int;
+  t_size = _nbuckets; _nbuckets = o._nbuckets; o._nbuckets = t_size;
   t_v = _default_value; _default_value = o._default_value; o._default_value = t_v;
 
-  t_int = _n; _n = o._n; o._n = t_int;
-  t_int = _capacity; _n = o._capacity; o._capacity = t_int;
+  t_size = _n; _n = o._n; o._n = t_size;
+  t_size = _capacity; _n = o._capacity; o._capacity = t_size;
 
   t_arena = _arena; _arena = o._arena; o._arena = t_arena;
 }
@@ -688,7 +688,7 @@ template <class K>
 _HashMap_const_iterator<K, void *>::_HashMap_const_iterator(const HashMap<K, void *> *hm, bool begin)
   : _hm(hm)
 {
-  int nb = _hm->_nbuckets;
+  size_t nb = _hm->_nbuckets;
   typename HashMap<K, void *>::Elt **b = _hm->_buckets;
   for (_bucket = 0; _bucket < nb && begin; _bucket++)
     if (b[_bucket]) {
@@ -705,7 +705,7 @@ _HashMap_const_iterator<K, void *>::operator++(int)
   if (_elt->next)
     _elt = _elt->next;
   else {
-    int nb = _hm->_nbuckets;
+    size_t nb = _hm->_nbuckets;
     typename HashMap<K, void *>::Elt **b = _hm->_buckets;
     for (_bucket++; _bucket < nb; _bucket++)
       if (b[_bucket]) {

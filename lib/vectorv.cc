@@ -45,7 +45,7 @@ Vector<void*>::operator=(const Vector<void*> &o)
 }
 
 Vector<void*> &
-Vector<void*>::assign(int n, void* e)
+Vector<void*>::assign(size_type n, void* e)
 {
   _n = 0;
   resize(n, e);
@@ -53,9 +53,9 @@ Vector<void*>::assign(int n, void* e)
 }
 
 bool
-Vector<void*>::reserve(int want)
+Vector<void*>::reserve(size_type want)
 {
-  if (want < 0)
+  if (want <= 0)
     want = (_capacity > 0 ? _capacity * 2 : 4);
   if (want <= _capacity)
     return true;
@@ -76,8 +76,8 @@ Vector<void*>::iterator
 Vector<void*>::insert(iterator i, void* e)
 {
   assert(i >= begin() && i <= end());
-  int pos = i - begin();
-  if (_n < _capacity || reserve(-1)) {
+  size_type pos = i - begin();
+  if (_n < _capacity || reserve(0)) {
     i = begin() + pos;
     memmove(i + 1, i, (end() - i) * sizeof(void*));
     *i = e;
@@ -99,10 +99,10 @@ Vector<void*>::erase(iterator a, iterator b)
 }
 
 void
-Vector<void*>::resize(int nn, void* e)
+Vector<void*>::resize(size_type nn, void* e)
 {
   if (nn <= _capacity || reserve(nn)) {
-    for (int i = _n; i < nn; i++)
+    for (size_type i = _n; i < nn; i++)
       _l[i] = e;
     _n = nn;
   }
@@ -112,8 +112,8 @@ void
 Vector<void*>::swap(Vector<void*>& o)
 {
   void **l = _l;
-  int n = _n;
-  int cap = _capacity;
+  size_type n = _n;
+  size_type cap = _capacity;
   _l = o._l;
   _n = o._n;
   _capacity = o._capacity;

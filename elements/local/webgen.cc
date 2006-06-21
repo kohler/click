@@ -272,7 +272,7 @@ WebGen::tcp_input (Packet *p)
 
   CB *cb = find_cb(ip->ip_dst.s_addr, th->th_dport, th->th_sport);
   if (cb == 0) {
-    int plen = sizeof (click_ip) + sizeof (click_tcp);
+    unsigned plen = sizeof (click_ip) + sizeof (click_tcp);
 
     WritablePacket *wp = fixup_packet (p, plen);
     tcp_output (wp,
@@ -335,7 +335,7 @@ WebGen::tcp_input (Packet *p)
 }
 
 WritablePacket *
-WebGen::fixup_packet (Packet *xp, int plen)
+WebGen::fixup_packet (Packet *xp, unsigned plen)
 {
   unsigned int headroom = 34;
   WritablePacket *p;

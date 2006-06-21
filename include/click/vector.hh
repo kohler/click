@@ -74,7 +74,7 @@ class Vector { public:
 template <class T> inline void
 Vector<T>::push_back(const T& e)
 {
-  if (_n < _capacity || reserve(-1)) {
+  if (_n < _capacity || reserve(0)) {
     new(velt(_n)) T(e);
     _n++;
   }
@@ -162,7 +162,7 @@ class Vector<void*> { public:
 inline void
 Vector<void*>::push_back(void *e)
 {
-  if (_n < _capacity || reserve(-1)) {
+  if (_n < _capacity || reserve(0)) {
     _l[_n] = e;
     _n++;
   }
