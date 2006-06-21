@@ -41,6 +41,14 @@ ICMPPingRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int ok = 0;
 
+  _dst_anno = true;
+
+  if (cp_va_parse_remove_keywords
+      (conf, 0, this, errh,
+       "DST_ANNO", cpBool, "set destination IP addr annotation?", &_dst_anno,
+       cpEnd) < 0)
+    return -1;
+
   if (conf.size() != 2)
     return errh->error("%s arguments; expected `IP address, IP address'", conf.size() < 2 ? "too few" : "too many");
   
@@ -113,8 +121,8 @@ ICMPPingRewriter::take_state(Element *e, ErrorHandler *errh)
 }
 */
 
-ICMPPingRewriter::Mapping::Mapping()
-  : _used(false)
+ICMPPingRewriter::Mapping::Mapping(bool dst_anno)
+  : _used(false), _dst_anno(dst_anno)
 {
 }
 
@@ -161,6 +169,8 @@ ICMPPingRewriter::Mapping::apply(WritablePacket *p)
   // IP header
   iph->ip_src = _mapto.saddr();
   iph->ip_dst = _mapto.daddr();
+  if (_dst_anno)
+    p->set_dst_ip_anno(_mapto.daddr());
 
   unsigned sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
   sum = (sum & 0xFFFF) + (sum >> 16);
@@ -225,8 +235,8 @@ ICMPPingRewriter::run_timer(Timer *)
 ICMPPingRewriter::Mapping *
 ICMPPingRewriter::apply_pattern(const IPFlowID &flow)
 {
-  Mapping *forward = new Mapping;
-  Mapping *reverse = new Mapping;
+  Mapping *forward = new Mapping(_dst_anno);
+  Mapping *reverse = new Mapping(_dst_anno);
 
   if (forward && reverse) {
     IPFlowID new_flow(_new_src, _identifier, _new_dst, _identifier);

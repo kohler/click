@@ -28,6 +28,8 @@ However, if either address is a single dash `C<->', the corresponding field in
 the IP header won't be changed. The ICMP `identifier' field is also rewritten
 to a unique number. Replies to the rewritten request are themselves rewritten;
 the rewritten replies look like they were responding to the original request.
+ICMPPingRewriter optionally changes destination IP address annotations; see
+the DST_ANNO keyword argument below.
 
 ICMPPingRewriter actually keeps a table of mappings. Each mapping changes
 a given (source address, destination address, identifier) triple into another
@@ -46,6 +48,17 @@ are handled. On the first input, echo requests with no corresponding
 mapping cause new mappings to be created, while echo replies with no
 corresponding mapping are passed along unchanged. On the second input,
 echo requests or replies with no corresponding mapping are simply dropped.
+
+Keyword arguments are:
+
+=over 8
+
+=item DST_ANNO
+
+Boolean. If true, then set the destination IP address annotation on passing
+packets to the rewritten destination address. Default is true.
+
+=back
 
 =a
 
@@ -77,12 +90,13 @@ class ICMPPingRewriter : public Element { public:
     Mapping *_reverse;
     bool _used;
     bool _is_reverse;
+    bool _dst_anno;
     unsigned short _ip_csum_delta;
     unsigned short _icmp_csum_delta;
 
    public:
     
-    Mapping();
+    Mapping(bool dst_anno);
 
     void initialize(const IPFlowID &, const IPFlowID &, bool, Mapping *);
     static void make_pair(const IPFlowID &, const IPFlowID &,
@@ -110,6 +124,8 @@ class ICMPPingRewriter : public Element { public:
   Map _request_map;
   Map _reply_map;
   Timer _timer;
+
+  bool _dst_anno;
 
   IPAddress _new_src;
   IPAddress _new_dst;
