@@ -107,11 +107,12 @@ Socket(TCP, 0.0.0.0, 12345) -> Reframe(FOFF 6, ADD 4) -> StripGREHeader ...
 
 class Reframe : public Element { public:
 
-  Reframe();
-  ~Reframe();
+    Reframe();
+    ~Reframe();
 
-  const char *class_name() const	{ return "Reframe"; }
-  const char *processing() const	{ return "h/a"; }
+    const char *class_name() const	{ return "Reframe"; }
+    const char *port_count() const	{ return PORTS_1_1; }
+    const char *processing() const	{ return "h/a"; }
 
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);

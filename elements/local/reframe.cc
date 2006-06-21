@@ -4,7 +4,7 @@
  * Copyright (C) 2005  The Trustees of Princeton University
  * Mark Huang <mlhuang@cs.princeton.edu>
  *
- * $Id: reframe.cc,v 1.1 2006/06/21 21:07:45 eddietwo Exp $
+ * $Id: reframe.cc,v 1.2 2006/06/21 21:10:32 eddietwo Exp $
  */
 
 #include <click/config.h>
@@ -26,8 +26,7 @@ CLICK_DECLS
 #define alignto(m, n) (((m)+(n)-1)/(n)*(n))
 
 Reframe::Reframe()
-  : Element(1, 1),
-    _foff(2), _flen(2), _ntoh(true), _mul(1), _align(1), _add(0),
+  : _foff(2), _flen(2), _ntoh(true), _mul(1), _align(1), _add(0),
     _header(0), _qhead(0), _qtail(0), _have(0), _need(-1)
 {
 }
