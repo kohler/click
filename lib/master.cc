@@ -433,15 +433,17 @@ Master::run_timers()
 {
     if (_master_lock.attempt()) {
 	if (_master_paused == 0 && _timer_lock.attempt()) {
-	    Timestamp now = Timestamp::now();
-	    Timer* t;
-	    while (_timer_heap.size() > 0 && !_stopper
-		   && (t = _timer_heap.at_u(0), t->_expiry <= now)) {
-		timer_reheapify_from(0, _timer_heap.back());
-		// must reset _schedpos AFTER timer_reheapify_from
-		t->_schedpos = -1;
-		_timer_heap.pop_back();
-		t->_hook(t, t->_thunk);
+	    if (_timer_heap.size() > 0 && !_stopper) {
+		Timestamp now = Timestamp::now();
+		Timer* t;
+		while (_timer_heap.size() > 0 && !_stopper
+		       && (t = _timer_heap.at_u(0), t->_expiry <= now)) {
+		    timer_reheapify_from(0, _timer_heap.back());
+		    // must reset _schedpos AFTER timer_reheapify_from
+		    t->_schedpos = -1;
+		    _timer_heap.pop_back();
+		    t->_hook(t, t->_thunk);
+		}
 	    }
 	    _timer_lock.release();
 	}
