@@ -384,8 +384,7 @@ RouterThread::run_os()
 {
 #if CLICK_LINUXMODULE
     // set state to interruptible early to avoid race conditions
-    _sleeper = current;
-    current->state = TASK_INTERRUPTIBLE;
+    set_current_state(TASK_INTERRUPTIBLE);
 #endif
     unlock_tasks();
 
@@ -400,7 +399,7 @@ RouterThread::run_os()
     } else if (active()) {
       short_pause:
 	SET_STATE(S_PAUSED);
-	current->state = TASK_RUNNING;
+	set_current_state(TASK_RUNNING);
 	schedule();
     } else if (_id != 0) {
       block:
@@ -433,11 +432,6 @@ RouterThread::run_os()
 #endif
     
     nice_lock_tasks();
-
-#if CLICK_LINUXMODULE
-    // set state to interruptible early to avoid race conditions
-    _sleeper = 0;
-#endif
 }
 
 void
@@ -445,6 +439,10 @@ RouterThread::driver()
 {
     const volatile int * const stopper = _master->stopper_ptr();
     int iter = 0;
+#if CLICK_LINUXMODULE
+    // this task is running the driver
+    _sleeper = current;
+#endif
 
     nice_lock_tasks();
     
@@ -549,6 +547,9 @@ RouterThread::driver()
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     _cur_click_share = 0;
 #endif
+#if CLICK_LINUXMODULE
+    _sleeper = 0;
+#endif
 }
 
 
@@ -565,6 +566,10 @@ RouterThread::driver_once()
 #ifdef CLICK_BSDMODULE  /* XXX MARKO */
     int s = splimp();
 #endif
+#if CLICK_LINUXMODULE
+    // this task is running the driver
+    _sleeper = current;
+#endif
     lock_tasks();
     Task *t = task_begin();
     if (t != task_end()) {
@@ -574,6 +579,9 @@ RouterThread::driver_once()
     unlock_tasks();
 #ifdef CLICK_BSDMODULE  /* XXX MARKO */
     splx(s);
+#endif
+#if CLICK_LINUXMODULE
+    _sleeper = 0;
 #endif
 }
 
