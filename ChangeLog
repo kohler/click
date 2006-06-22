@@ -1,3 +1,10 @@
+2006-06-22 Thursday 00:21  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/routerthread.cc (1.66): Move assignments to _sleeper, so that
+	  router threads will be woken up by RouterThread::wake() even if
+	  they schedule in unexpected places (i.e., outside of
+	  RouterThread::run_os()). (Mz)
+
 2006-06-21 Wednesday 18:03  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/master.cc (1.40): Avoid calling gettimeofday() if there are
