@@ -2796,12 +2796,16 @@ diff -ru ../linux-2.6.16.13/include/linux/kexec.h ./include/linux/kexec.h
  				unsigned long flags);
 diff -ru ../linux-2.6.16.13/include/linux/ktime.h ./include/linux/ktime.h
 --- ../linux-2.6.16.13/include/linux/ktime.h	2006-05-02 14:38:44.000000000 -0700
-+++ ./include/linux/ktime.h	2006-05-23 08:36:10.000000000 -0700
-@@ -64,8 +64,10 @@
++++ ./include/linux/ktime.h	2006-06-23 13:05:15.000000000 -0700
+@@ -64,8 +64,14 @@
  
  #if (BITS_PER_LONG == 64) || defined(CONFIG_KTIME_SCALAR)
  
-+#define KTIME_TV64(__s)			({ ktime_t __kt; __kt.tv64 = (__s); __kt; })
++#ifdef __cplusplus
++# define KTIME_TV64(__s)		({ ktime_t __kt; __kt.tv64 = (__s); __kt; })
++#else
++# define KTIME_TV64(__s)		((ktime_t) { .tv64 = (__s) })
++#endif
 +
  /* Define a ktime_t variable and initialize it to zero: */
 -#define DEFINE_KTIME(kt)		ktime_t kt = { .tv64 = 0 }
@@ -2809,7 +2813,7 @@ diff -ru ../linux-2.6.16.13/include/linux/ktime.h ./include/linux/ktime.h
  
  /**
   * ktime_set - Set a ktime_t variable from a seconds/nanoseconds value
-@@ -77,23 +79,23 @@
+@@ -77,23 +83,23 @@
   */
  static inline ktime_t ktime_set(const long secs, const unsigned long nsecs)
  {
@@ -2837,13 +2841,19 @@ diff -ru ../linux-2.6.16.13/include/linux/ktime.h ./include/linux/ktime.h
  
  /* convert a timespec to ktime_t format: */
  static inline ktime_t timespec_to_ktime(struct timespec ts)
-@@ -136,13 +138,17 @@
+@@ -136,13 +142,23 @@
   *   tv.sec < 0 and 0 >= tv.nsec < NSEC_PER_SEC
   */
  
-+#define KTIME_TV64(__s)			({ ktime_t __kt; __kt.tv64 = (__s); __kt; })
-+#define KTIME_SEC_NSEC(__sec, __nsec)	({ ktime_t __kt; __kt.tv.sec = (__sec); __kt.tv.nsec = (__nsec); __kt; })
-+#define TIMEVAL_SEC_USEC(__sec, __usec)	({ struct timeval __tv; __tv.tv_sec = (__sec); __tv.tv_usec = (__usec); __tv; })
++#ifdef __cplusplus
++# define KTIME_TV64(__s)		({ ktime_t __kt; __kt.tv64 = (__s); __kt; })
++# define KTIME_SEC_NSEC(__sec, __nsec)	({ ktime_t __kt; __kt.tv.sec = (__sec); __kt.tv.nsec = (__nsec); __kt; })
++# define TIMEVAL_SEC_USEC(__sec, __usec) ({ struct timeval __tv; __tv.tv_sec = (__sec); __tv.tv_usec = (__usec); __tv; })
++#else
++# define KTIME_TV64(__s)		((ktime_t) { .tv64 = (__s) })
++# define KTIME_SEC_NSEC(__sec, __nsec)	((ktime_t) { .tv = { .sec = (__sec), .nsec = (__nsec) } })
++# define TIMEVAL_SEC_USEC(__sec, __usec) ((struct timeval) { .tv_sec = (__sec), .tv_usec = (__usec) })
++#endif
 +
  /* Define a ktime_t variable and initialize it to zero: */
 -#define DEFINE_KTIME(kt)		ktime_t kt = { .tv64 = 0 }
@@ -2857,7 +2867,7 @@ diff -ru ../linux-2.6.16.13/include/linux/ktime.h ./include/linux/ktime.h
  }
  
  /**
-@@ -210,8 +216,7 @@
+@@ -210,8 +226,7 @@
   */
  static inline ktime_t timespec_to_ktime(const struct timespec ts)
  {
@@ -2867,7 +2877,7 @@ diff -ru ../linux-2.6.16.13/include/linux/ktime.h ./include/linux/ktime.h
  }
  
  /**
-@@ -223,8 +228,7 @@
+@@ -223,8 +238,7 @@
   */
  static inline ktime_t timeval_to_ktime(const struct timeval tv)
  {
@@ -2877,7 +2887,7 @@ diff -ru ../linux-2.6.16.13/include/linux/ktime.h ./include/linux/ktime.h
  }
  
  /**
-@@ -236,8 +240,7 @@
+@@ -236,8 +250,7 @@
   */
  static inline struct timespec ktime_to_timespec(const ktime_t kt)
  {
@@ -2887,7 +2897,7 @@ diff -ru ../linux-2.6.16.13/include/linux/ktime.h ./include/linux/ktime.h
  }
  
  /**
-@@ -249,9 +252,8 @@
+@@ -249,9 +262,8 @@
   */
  static inline struct timeval ktime_to_timeval(const ktime_t kt)
  {
@@ -2899,7 +2909,7 @@ diff -ru ../linux-2.6.16.13/include/linux/ktime.h ./include/linux/ktime.h
  }
  
  /**
-@@ -284,8 +286,8 @@
+@@ -284,8 +296,8 @@
   * idea of the (in)accuracy of timers. Timer values are rounded up to
   * this resolution values.
   */
