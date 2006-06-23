@@ -43,6 +43,7 @@ class RecycledSkbBucket { public:
 
   bool empty() const		{ return _head == _tail; }
   unsigned size() const;
+
   int enq(struct sk_buff *);	// returns -1 if not enqueued
   struct sk_buff *deq();
 
@@ -54,10 +55,11 @@ class RecycledSkbBucket { public:
 
   static int next_i(int i)	{ return (i == SIZE - 1 ? 0 : i + 1); }
   friend class RecycledSkbPool;
+  
 };
 
-
 class RecycledSkbPool { public:
+
   static const int NBUCKETS = 2;
 
   void initialize();
@@ -90,7 +92,8 @@ class RecycledSkbPool { public:
   
   inline void lock();
   inline void unlock();
-  struct sk_buff *allocate(unsigned hr, unsigned sz, int, int *);
+
+  struct sk_buff *allocate(unsigned headroom, unsigned size, int, int *);
   void recycle(struct sk_buff *);
 
 #if __MTCLICK__ 
@@ -100,7 +103,6 @@ class RecycledSkbPool { public:
   friend struct sk_buff *skbmgr_allocate_skbs(unsigned, unsigned, int *);
   friend void skbmgr_recycle_skbs(struct sk_buff *);
 };
-
 
 void
 RecycledSkbBucket::initialize()
@@ -240,53 +242,6 @@ static RecycledSkbPool pool;
 #define SKBMGR_DEF_HEADSZ 64
 
 
-static inline void 
-skb_recycled_init_fast(struct sk_buff *skb)
-{
-  // i am only resetting the fields that need to be set.
-  // for example, users should already be at 1, so is
-  // datarefp (expensive to set).
-  if (!(skb->pkt_type & PACKET_CLEAN)) {
-    dst_release(skb->dst);
-    skb->dst = NULL;
-    if (skb->destructor) {
-      skb->destructor(skb);
-      skb->destructor = NULL;
-    }
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-    skb->pkt_bridged = 0;
-#endif
-    skb->prev = NULL;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
-    skb->list = NULL;
-#endif
-    skb->sk = NULL;
-#if HAVE_LINUX_SKBUFF_SECURITY
-    skb->security = 0;
-#endif
-    skb->priority = 0;
-  }
-  skb->pkt_type = PACKET_HOST;
-  // XXX - what should we do here
-  // memset(skb->cb, 0, sizeof(skb->cb));
-}
-
-static struct sk_buff *
-skb_recycle_fast(struct sk_buff *skb) 
-{
-  // if already at 1, that means we are the only user,
-  // so no need to go through all the linux crap
-  if (atomic_read(&skb->users) == 1 && !skb->cloned) {
-    skb->data = skb->head;
-    skb->tail = skb->data;
-    skb->len = 0;
-    skb_recycled_init_fast(skb);
-    return skb;
-  } else
-    return skb_recycle(skb);
-}
-
-
 #if __MTCLICK__
 
 inline int
@@ -324,8 +279,10 @@ RecycledSkbPool::recycle(struct sk_buff *skbs)
   while (skbs) {
     struct sk_buff *skb = skbs;
     skbs = skbs->next;
+
     // where should sk_buff go?
     int bucket = size_to_lower_bucket(skb->end - skb->head);
+
     // try to put in that bucket
     if (bucket >= 0) {
       lock();
@@ -333,17 +290,18 @@ RecycledSkbPool::recycle(struct sk_buff *skbs)
       int next = _buckets[bucket].next_i(tail);
       if (next != _buckets[bucket]._head) {
 	// Note: skb_recycle_fast will free the skb if it cannot recycle it
-	if ((skb = skb_recycle_fast(skb))) {
+	if ((skb = skb_recycle(skb))) {
 	  _buckets[bucket]._skbs[tail] = skb;
 	  _buckets[bucket]._tail = next;
+	  skb = 0;
 	}
-	skb = 0;
 #if DEBUG_SKBMGR
         _recycle_freed++;
 #endif
       }
       unlock();
     }
+
     // if not taken care of, then free it
     if (skb) {
 #if DEBUG_SKBMGR
