@@ -1,3 +1,14 @@
+2006-06-23 Friday 16:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/linux-2.6.16.13-patch (1.6): avoid new KTIME_TV64 definitions
+	  in kernel compile, only use them under C++
+
+2006-06-23 Friday 15:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/linux-2.6.16.13-patch (1.5), linuxmodule/skbmgr.cc (1.24):
+	  Mazu: 2.6.16.13 skbmgr had a huge memory leak; fix it.  Also
+	  remove some suspicious-looking optimizations in skbmgr.
+
 2006-06-23 Friday 15:16  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* config.h.in (1.38): CLICK_BYTE_ORDER defines ARCH_IS_BIG_ENDIAN
