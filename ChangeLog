@@ -1,3 +1,7 @@
+2006-06-23 Friday 15:16  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config.h.in (1.38): CLICK_BYTE_ORDER defines ARCH_IS_BIG_ENDIAN
+
 2006-06-22 Thursday 00:21  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/routerthread.cc (1.66): Move assignments to _sleeper, so that
