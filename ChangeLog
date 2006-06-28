@@ -1,3 +1,9 @@
+2006-06-28 Wednesday 14:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/tohost.cc (1.48): avoid crashes in 2.6
+	  ToHost configs by shutting out other bottom halves when packets
+	  are passed to the kernel (Mazu)
+
 2006-06-28 Wednesday 13:50  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/iproutetable.hh (1.22): mention availability of
