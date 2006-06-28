@@ -167,9 +167,11 @@ ToHost::push(int port, Packet *p)
     // pass packet to Linux
 #ifdef HAVE_NETIF_RECEIVE_SKB	// from Linux headers
     struct net_device *dev = skb->dev;
+    local_bh_disable();
     dev_hold(dev);
     netif_receive_skb(skb, protocol, -1);
     dev_put(dev);
+    local_bh_enable();
 #else
     // be nice to libpcap
     if (skb->stamp.tv_sec == 0) {
