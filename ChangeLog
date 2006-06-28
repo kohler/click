@@ -1,3 +1,17 @@
+2006-06-28 Wednesday 13:17  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/ns-2.29-patch (1.6): add missing wtopo argument (Bart Braem)
+
+2006-06-28 Wednesday 13:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/ns-2.29-patch (1.5): add runclick to nsclick example scripts
+	  (Bart Braem)
+
+2006-06-28 Wednesday 12:45  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/linux-2.6.16.13-patch (1.7): fix a crash involving
+	  double-changes to dataref (Beyers Cronje gave an initial fix)
+
 2006-06-23 Friday 16:15  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/linux-2.6.16.13-patch (1.6): avoid new KTIME_TV64 definitions
