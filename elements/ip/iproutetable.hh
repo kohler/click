@@ -69,6 +69,9 @@ should be preferred for almost all purposes.
      StaticIPLookup |  12000  |  233K   |  10s  |   29 KB
      SortedIPLookup |  12500  |  224K   |  38s  |   29 KB
 
+A Click script containing the 167000-route dump is available at
+http://www.read.cs.ucla.edu/click/routetabletest-167k.click.gz
+
 =head1 INTERFACE
 
 These four IPRouteTable virtual functions should generally be overridden by
