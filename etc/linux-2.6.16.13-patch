@@ -3759,8 +3759,8 @@ diff -ru ../linux-2.6.16.13/net/core/neighbour.c ./net/core/neighbour.c
  	const char *dev_name_source = NULL;
 diff -ru ../linux-2.6.16.13/net/core/skbuff.c ./net/core/skbuff.c
 --- ../linux-2.6.16.13/net/core/skbuff.c	2006-05-02 14:38:44.000000000 -0700
-+++ ./net/core/skbuff.c	2006-06-23 12:35:21.000000000 -0700
-@@ -505,6 +505,104 @@
++++ ./net/core/skbuff.c	2006-06-28 09:36:56.000000000 -0700
+@@ -505,6 +505,105 @@
  	skb_shinfo(new)->tso_segs = skb_shinfo(old)->tso_segs;
  }
  
@@ -3803,8 +3803,7 @@ diff -ru ../linux-2.6.16.13/net/core/skbuff.c ./net/core/skbuff.c
 +#endif
 +}
 +
-+/* Click: attempts to recycle a sk_buff. if it can be recycled, return it
-+ * without reinitializing any bits */
++/* Click: attempts to recycle a sk_buff. if it can be recycled, return it */
 +struct sk_buff *skb_recycle(struct sk_buff *skb)
 +{
 +	if (atomic_dec_and_test(&skb->users)) { 
@@ -3829,8 +3828,10 @@ diff -ru ../linux-2.6.16.13/net/core/skbuff.c ./net/core/skbuff.c
 +
 +		if (skb->fclone == SKB_FCLONE_UNAVAILABLE
 +		    && (!skb->cloned ||
-+			!atomic_sub_return(skb->nohdr ? (1 << SKB_DATAREF_SHIFT) + 1 : 1,
-+					   &skb_shinfo(skb)->dataref))) {
++			atomic_read(&skb_shinfo(skb)->dataref) == (skb->nohdr ? (1 << SKB_DATAREF_SHIFT) + 1 : 1))) {
++			/* Don't need to atomic_sub skb_shinfo(skb)->dataref,
++			   as we set that to 1 below. */
++			
 +			if (skb_shinfo(skb)->nr_frags) {
 +				int i;
 +				for (i = 0; i < skb_shinfo(skb)->nr_frags; i++)
@@ -3855,7 +3856,7 @@ diff -ru ../linux-2.6.16.13/net/core/skbuff.c ./net/core/skbuff.c
 +
 +			return skb;
 +		}
-+		
++
 +		kfree_skbmem(skb);
 +      	}
 +
@@ -3865,7 +3866,7 @@ diff -ru ../linux-2.6.16.13/net/core/skbuff.c ./net/core/skbuff.c
  /**
   *	skb_copy	-	create private copy of an sk_buff
   *	@skb: buffer to copy
-@@ -1806,6 +1904,7 @@
+@@ -1806,6 +1905,7 @@
  EXPORT_SYMBOL(skb_checksum);
  EXPORT_SYMBOL(skb_clone);
  EXPORT_SYMBOL(skb_clone_fraglist);
