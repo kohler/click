@@ -2801,6 +2801,50 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/configure.in ns-2.29/
  default_classinstvar=yes
  builtin(include, ./conf/configure.in.debugopts)
  
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/diffusion/diffusion.h ns-2.29/diffusion/diffusion.h
+--- ns-2.29-pure/diffusion/diffusion.h	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/diffusion/diffusion.h	2006-05-19 09:13:56.000000000 -0700
+@@ -138,6 +138,10 @@
+ };
+ 
+ 
++void XmitFailedCallback(Packet *pkt, void *data);
++class ArpBufferTimer;
++class SendBufTimer;
++
+ class DiffusionAgent : public Agent {
+  public:
+   DiffusionAgent();
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/diffusion/omni_mcast.h ns-2.29/diffusion/omni_mcast.h
+--- ns-2.29-pure/diffusion/omni_mcast.h	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/diffusion/omni_mcast.h	2006-05-19 09:15:07.000000000 -0700
+@@ -157,6 +157,10 @@
+ 
+ 
+ 
++void OmniMcastXmitFailedCallback(Packet *pkt, void *data);
++
++class OmniMcastArpBufferTimer;
++class OmniMcastSendBufTimer;
+ 
+ class OmniMcastAgent : public Agent {
+  public:
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/dsr/dsragent.h ns-2.29/dsr/dsragent.h
+--- ns-2.29-pure/dsr/dsragent.h	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/dsr/dsragent.h	2006-05-19 09:11:45.000000000 -0700
+@@ -110,6 +110,12 @@
+ 
+ LIST_HEAD(DSRAgent_List, DSRAgent);
+ 
++void XmitFailureCallback(Packet *pkt, void *data);
++void XmitFlowFailureCallback(Packet *pkt, void *data);
++int FilterFailure(Packet *p, void *data);
++class SendBufferTimer;
++
++
+ class DSRAgent : public Tap, public Agent {
+ public:
+ 
 diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mac/channel.cc ns-2.29/mac/channel.cc
 --- ns-2.29-pure/mac/channel.cc	2005-10-19 21:45:22.000000000 -0700
 +++ ns-2.29/mac/channel.cc	2006-01-08 14:48:01.000000000 -0800
@@ -3173,6 +3217,34 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mac/wireless-phy.cc n
  	} else if(argc == 3) {
  		if (strcasecmp(argv[1], "setTxPower") == 0) {
  			Pt_consume_ = atof(argv[2]);
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mobile/god.h ns-2.29/mobile/god.h
+--- ns-2.29-pure/mobile/god.h	2005-10-19 21:45:22.000000000 -0700
++++ ns-2.29/mobile/god.h	2006-05-19 09:04:38.000000000 -0700
+@@ -85,20 +85,20 @@
+ 		return sqrt(X*X + Y*Y + Z*Z);
+ 	}
+ 
+-	inline void vector::operator=(const vector a) {
++	inline void operator=(const vector a) {
+ 		X = a.X;
+ 		Y = a.Y;
+ 		Z = a.Z;
+ 	}
+-	inline void vector::operator+=(const vector a) {
++	inline void operator+=(const vector a) {
+ 		X += a.X;
+ 		Y += a.Y;
+ 		Z += a.Z;
+ 	}
+-	inline int vector::operator==(const vector a) {
++	inline int operator==(const vector a) {
+ 		return (X == a.X && Y == a.Y && Z == a.Z);
+ 	}
+-	inline int vector::operator!=(const vector a) {
++	inline int operator!=(const vector a) {
+ 		return (X != a.X || Y != a.Y || Z != a.Z);
+ 	}
+ 	inline vector operator-(const vector a) {
 diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mobile/pattern-antenna.cc ns-2.29/mobile/pattern-antenna.cc
 --- ns-2.29-pure/mobile/pattern-antenna.cc	1969-12-31 16:00:00.000000000 -0800
 +++ ns-2.29/mobile/pattern-antenna.cc	2006-01-08 14:48:02.000000000 -0800
@@ -3771,6 +3843,42 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/mobile/uni-antenna.h 
 +
 +
 +#endif // ns_uniantenna_h
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/pgm/pgm-agent.cc ns-2.29/pgm/pgm-agent.cc
+--- ns-2.29-pure/pgm/pgm-agent.cc	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/pgm/pgm-agent.cc	2006-05-19 09:18:11.000000000 -0700
+@@ -304,7 +304,7 @@
+ 
+   void print_stats();
+ 
+-  void PgmAgent::trace_event(char *evType, double evTime);
++  void trace_event(char *evType, double evTime);
+ 
+ #ifdef PGM_DEBUG
+   void display_packet(Packet *pkt);
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/pgm/pgm-receiver.cc ns-2.29/pgm/pgm-receiver.cc
+--- ns-2.29-pure/pgm/pgm-receiver.cc	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/pgm/pgm-receiver.cc	2006-05-19 09:20:21.000000000 -0700
+@@ -183,7 +183,7 @@
+   void print_stats();
+   void display_packet(Packet *pkt); // For debugging.
+ 
+-  void PgmReceiver::trace_event(char *evType, double evTime);
++  void trace_event(char *evType, double evTime);
+ 
+   EventTrace * et_;  //Trace Object for Custom Event Trace
+ 
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/pgm/pgm-sender.cc ns-2.29/pgm/pgm-sender.cc
+--- ns-2.29-pure/pgm/pgm-sender.cc	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/pgm/pgm-sender.cc	2006-05-19 09:19:11.000000000 -0700
+@@ -186,7 +186,7 @@
+ 
+   void display_packet(Packet *pkt); // For debugging.
+ 
+-  void PgmSender::trace_event(char *evType, nsaddr_t daddr, double evTime); 
++  void trace_event(char *evType, nsaddr_t daddr, double evTime); 
+ 
+   EventTrace * et_; 	//Trace Object for custom Event Traces
+ 
 diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/queue/clickqueue.cc ns-2.29/queue/clickqueue.cc
 --- ns-2.29-pure/queue/clickqueue.cc	1969-12-31 16:00:00.000000000 -0800
 +++ ns-2.29/queue/clickqueue.cc	2006-02-28 06:57:35.000000000 -0800
@@ -4164,6 +4272,18 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/routing/rtmodule.h ns
 +};
 +
  #endif //  ns_rtmodule_h
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/sctp/sctp.h ns-2.29/sctp/sctp.h
+--- ns-2.29-pure/sctp/sctp.h	2005-10-19 21:45:23.000000000 -0700
++++ ns-2.29/sctp/sctp.h	2006-05-19 09:03:44.000000000 -0700
+@@ -702,7 +702,7 @@
+ 
+   /* debugging functions
+    */
+-  void SctpAgent::DumpSendBuffer();
++  void		DumpSendBuffer();
+ 
+   /* sctp association state variable
+    */
 diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple-bridge.click ns-2.29/tcl/ex/nsclick-simple-bridge.click
 --- ns-2.29-pure/tcl/ex/nsclick-simple-bridge.click	1969-12-31 16:00:00.000000000 -0800
 +++ ns-2.29/tcl/ex/nsclick-simple-bridge.click	2006-01-08 14:48:02.000000000 -0800
@@ -4210,8 +4330,8 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple
 +
 diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple-hybrid.tcl ns-2.29/tcl/ex/nsclick-simple-hybrid.tcl
 --- ns-2.29-pure/tcl/ex/nsclick-simple-hybrid.tcl	1969-12-31 16:00:00.000000000 -0800
-+++ ns-2.29/tcl/ex/nsclick-simple-hybrid.tcl	2006-02-28 06:58:39.000000000 -0800
-@@ -0,0 +1,388 @@
++++ ns-2.29/tcl/ex/nsclick-simple-hybrid.tcl	2006-06-28 10:01:23.000000000 -0700
+@@ -0,0 +1,390 @@
 +#
 +#  Copyright 2002, Univerity of Colorado at Boulder.                        
 +#                                                                            
@@ -4575,10 +4695,12 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple
 +#
 +for {set i 0} {$i < $wirelessnodecount} {incr i} {
 +    $ns_ initial_node_pos $wireless_node_($i) 10
++    [$wireless_node_($i) entry] runclick
 +}
 +
 +for {set i 0} {$i < $wirednodecount} {incr i} {
 +    $ns_ initial_node_pos $wired_node_($i) 10
++    [$wired_node_($i) entry] runclick
 +}
 +
 +$ns_ initial_node_pos $bridge_node_ 10
@@ -4703,8 +4825,8 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple
 +
 diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple-lan.tcl ns-2.29/tcl/ex/nsclick-simple-lan.tcl
 --- ns-2.29-pure/tcl/ex/nsclick-simple-lan.tcl	1969-12-31 16:00:00.000000000 -0800
-+++ ns-2.29/tcl/ex/nsclick-simple-lan.tcl	2006-02-28 06:59:26.000000000 -0800
-@@ -0,0 +1,270 @@
++++ ns-2.29/tcl/ex/nsclick-simple-lan.tcl	2006-06-28 10:01:58.000000000 -0700
+@@ -0,0 +1,271 @@
 +#
 +#  Copyright 2002, Univerity of Colorado at Boulder.                        
 +#                                                                            
@@ -4956,6 +5078,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple
 +#
 +for {set i 0} {$i < $nodecount} {incr i} {
 +    $ns_ initial_node_pos $node_($i) 20
++    [$node_($i) entry] runclick
 +}
 +
 +#
@@ -4977,8 +5100,8 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple
 +
 diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple-wlan.tcl ns-2.29/tcl/ex/nsclick-simple-wlan.tcl
 --- ns-2.29-pure/tcl/ex/nsclick-simple-wlan.tcl	1969-12-31 16:00:00.000000000 -0800
-+++ ns-2.29/tcl/ex/nsclick-simple-wlan.tcl	2006-02-28 06:59:40.000000000 -0800
-@@ -0,0 +1,294 @@
++++ ns-2.29/tcl/ex/nsclick-simple-wlan.tcl	2006-06-28 10:02:25.000000000 -0700
+@@ -0,0 +1,295 @@
 +#
 +#  Copyright 2002, Univerity of Colorado at Boulder.                        
 +#                                                                            
@@ -5254,6 +5377,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple
 +#
 +for {set i 0} {$i < $nodecount} {incr i} {
 +    $ns_ initial_node_pos $node_($i) 20
++    [$node_($i) entry] runclick
 +}
 +
 +#
@@ -5752,6 +5876,18 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/rtglib/route-prot
  
  ### Local Variables:
  ### mode: tcl
+diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcp/tcp-sack-rh.cc ns-2.29/tcp/tcp-sack-rh.cc
+--- ns-2.29-pure/tcp/tcp-sack-rh.cc	2005-10-19 21:45:25.000000000 -0700
++++ ns-2.29/tcp/tcp-sack-rh.cc	2006-05-19 09:16:07.000000000 -0700
+@@ -65,7 +65,7 @@
+ 	virtual void estadjust();
+ 	virtual void rhclear();
+ 	virtual void computefack();
+-	virtual void SackRHTcpAgent::newack(Packet* pkt);
++	virtual void newack(Packet* pkt);
+  protected:
+ 	int fack_;	          /* the FACK state variable  */
+ 	int retran_data_;         /* the number of retransmitted packets in the pipe  */
 diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tools/random.cc ns-2.29/tools/random.cc
 --- ns-2.29-pure/tools/random.cc	2005-10-19 21:45:25.000000000 -0700
 +++ ns-2.29/tools/random.cc	2006-01-08 14:48:02.000000000 -0800
