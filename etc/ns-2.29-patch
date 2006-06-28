@@ -4523,7 +4523,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple
 +    # "eth2" and so on.
 +    #
 +    $wireless_node_($i) add-interface $wireless_chan_ $prop_ $netll \
-+	    $wirelessmac $netifq 1 $wirelessphy $antenna
++	    $wirelessmac $netifq 1 $wirelessphy $antenna $wtopo
 +
 +    #
 +    # Now configure the interface eth0
@@ -4604,7 +4604,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple
 +$bridge_node_ add-wired-interface $wired_chan_ $netll $wiredmac \
 +	$netifq 1 $wiredphy
 +$bridge_node_ add-interface $wireless_chan_ $prop_ $netll \
-+	    $wirelessmac $netifq 1 $wirelessphy $antenna
++	    $wirelessmac $netifq 1 $wirelessphy $antenna $wtopo
 +
 +$bridge_node_ random-motion 0
 +$bridge_node_ topography $wtopo
@@ -5270,7 +5270,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/tcl/ex/nsclick-simple
 +    # "eth2" and so on.
 +    #
 +    $node_($i) add-interface $chan_1_ $prop_ $netll $netmac \
-+	$netifq 1 $netphy $antenna
++	$netifq 1 $netphy $antenna $wtopo
 +
 +    #
 +    # Now configure the interface eth0
