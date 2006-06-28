@@ -1,3 +1,8 @@
+2006-06-28 Wednesday 13:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/iproutetable.hh (1.22): mention availability of
+	  167k-route dump
+
 2006-06-28 Wednesday 13:17  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/ns-2.29-patch (1.6): add missing wtopo argument (Bart Braem)
