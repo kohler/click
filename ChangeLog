@@ -1,3 +1,12 @@
+2006-06-30 Friday 11:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/clickfs.cc (1.50): move initialization of spinlock in
+	  case we get called early (Mz)
+
+2006-06-30 Friday 11:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/script.hh (1.7): correction
+
 2006-06-28 Wednesday 14:49  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/tohost.cc (1.48): avoid crashes in 2.6
