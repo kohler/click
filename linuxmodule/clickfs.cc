@@ -800,6 +800,10 @@ init_clickfs()
     static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo));
 #endif
 
+    spin_lock_init(&handler_strings_lock);
+    spin_lock_init(&clickfs_write_lock);
+    atomic_set(&clickfs_read_count, 0);
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     clickfs = proclikefs_register_filesystem("click", 0, click_get_sb);
 #else
@@ -851,9 +855,6 @@ init_clickfs()
     click_handler_inode_ops->default_file_ops = click_handler_file_ops;
 #endif
 
-    spin_lock_init(&handler_strings_lock);
-    spin_lock_init(&clickfs_write_lock);
-    atomic_set(&clickfs_read_count, 0);
     click_ino.initialize();
 
     proclikefs_reinitialize_supers(clickfs, click_reread_super);
