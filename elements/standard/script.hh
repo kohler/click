@@ -146,7 +146,7 @@ the default.
 
 =item C<PASSIVE>
 
-A passive script runs in response to a handler, mainly the C<run> handler.
+A passive script runs in response to a handler, namely the C<run> handler.
 Passive scripts can help build complex handlers from existing simple ones; for
 example, here's a passive script whose C<s.run> read handler returns the sum
 of two Counter handlers.
