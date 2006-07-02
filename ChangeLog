@@ -2,10 +2,11 @@
 
 	* elements/linuxmodule/anydevice.cc (1.33),
 	  elements/linuxmodule/anydevice.hh (1.41),
-	  elements/linuxmodule/fromdevice.cc (1.90), lib/task.cc (1.44):
-	  fix FromDevice: make sure that packets cannot be enqueued on a
-	  FromDevice element before it is ready to receive them (i.e. has
-	  completed initialize) (Mz)
+	  elements/linuxmodule/fromdevice.cc (1.90), lib/task.cc (1.44),
+	  elements/linuxmodule/fromdevice.cc (1.91): fix FromDevice: make
+	  sure that packets cannot be enqueued on a FromDevice element
+	  before it is ready to receive them (i.e. has completed
+	  initialize) (Mz)
 
 2006-06-30 Friday 11:54  Eddie Kohler <kohler@cs.ucla.edu>
 
