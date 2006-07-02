@@ -111,8 +111,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	set_promisc();
 
     // make queue look full so packets sent to us are ignored
-    _capacity = QSIZE;
-    _head = next_i(_tail);
+    _head = _tail = _capacity = 0;
     
     return find_device(allow_nonexistent, &from_device_map, errh);
 }
@@ -143,7 +142,6 @@ FromDevice::initialize(ErrorHandler *errh)
     registered_readers++;
 
     _drops = 0;
-
     reset_counts();
 
     ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
@@ -153,9 +151,9 @@ FromDevice::initialize(ErrorHandler *errh)
     _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
 
-    // queue starts out empty (now we can start receiving packets)
-    _head = _tail = 0;
-
+    // set true queue size (now we can start receiving packets)
+    _capacity = QSIZE;
+    
     return 0;
 }
 
@@ -182,26 +180,24 @@ void
 FromDevice::take_state(Element *e, ErrorHandler *errh)
 {
     if (FromDevice *fd = (FromDevice *)e->cast("FromDevice")) {
-	SpinlockIRQ::flags_t flags = local_irq_save();
-	fd->_task.cleanup();
+	SpinlockIRQ::flags_t flags;
+	local_irq_save(flags);
 
-	while (fd->_head != fd->_tail) {
+	unsigned fd_i = fd->_head;
+	while (fd_i != fd->_tail) {
 	    unsigned next = next_i(_tail);
 	    if (next == _head)
 		break;
-	    _queue[next] = fd->_queue[other_head];
-	    fd->_head = fd->next_i(fd->_head);
+	    _queue[_tail] = fd->_queue[fd_i];
+	    fd_i = fd->next_i(fd_i);
 	    _tail = next;
 	}
+	for (; fd_i != fd->_tail; fd_i = fd->next_i(fd_i))
+	    fd->_queue[fd_i]->kill();
 	if (_head != _tail)
 	    _task.reschedule();
 
-	for (unsigned i = fd->_head; i != fd->_tail; i = fd->next_i(i))
-	    fd->_queue[i]->kill();
-
-	fd->_head = fd->_tail = 0;
-	fd->_capacity = 1;
-	fd->_task.cleanup();
+	fd->_head = fd->_tail = fd->_capacity = 0;
 
 	local_irq_restore(flags);
     }
@@ -285,12 +281,12 @@ FromDevice::got_skb(struct sk_buff *skb)
 	_schinfo[_tail].enq_woke_process = enq_process_asleep && rt->sleeper()->state == TASK_RUNNING;
 #endif
 
-    } else if (_task.initialized()) {
+    } else if (_capacity > 0) {
 	/* queue full, drop */
 	kfree_skb(skb);
 	_drops++;
 	
-    } else
+    } else // not yet initialized
 	return 0;
 
     return 1;
