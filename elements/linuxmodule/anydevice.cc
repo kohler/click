@@ -151,30 +151,6 @@ AnyDeviceMap::insert(AnyDevice *d)
 }
 
 void
-AnyDeviceMap::move_to_front(AnyDevice *d)
-{
-    // lock whole kernel when manipulating device map
-    lock_kernel();
-    
-    // put new devices last on list
-    int ifi = d->ifindex();
-    AnyDevice **pprev = (ifi >= 0 ? &_map[ifi % MAP_SIZE] : &_unknown_map);
-    AnyDevice **head = pprev;
-    AnyDevice *trav = *pprev;
-    while (trav && trav != d) {
-	pprev = &trav->_next;
-	trav = *pprev;
-    }
-    if (trav)
-	*pprev = d->_next;
-    d->_next = *head;
-    *head = d;
-
-    d->_in_map = true;
-    unlock_kernel();
-}
-
-void
 AnyDeviceMap::remove(AnyDevice *d)
 {
     lock_kernel();

@@ -159,7 +159,6 @@ class AnyDeviceMap { public:
     void lookup_all(net_device *, bool known, Vector<AnyDevice *> &);
     void insert(AnyDevice *);
     void remove(AnyDevice *);
-    void move_to_front(AnyDevice *);
 
   private:
 

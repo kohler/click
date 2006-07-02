@@ -108,14 +108,16 @@ Task::initialize(Router *router, bool schedule)
 {
     assert(!initialized() && !scheduled());
 
-    _router = router;
-    
     _home_thread_id = router->initial_home_thread_id(this, schedule);
     if (_home_thread_id == ThreadSched::THREAD_UNKNOWN)
 	_home_thread_id = 0;
     // Master::thread() returns the quiescent thread if its argument is out of
     // range
     _thread = router->master()->thread(_home_thread_id);
+
+    // set _router last, since it is used to determine whether task is
+    // initialized
+    _router = router;
     
 #ifdef HAVE_STRIDE_SCHED
     set_tickets(DEFAULT_TICKETS);
