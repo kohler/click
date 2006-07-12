@@ -764,7 +764,9 @@ ControlSocket::selected(int fd)
 		_in_texts[fd] = old_text;
 		blocked = true;
 	    }
-	}
+	} else
+	    // 12.Jul.2006, Cliff Frey: write incomplete, so we are blocked
+	    blocked = true;
     }
 
     // write data until blocked
