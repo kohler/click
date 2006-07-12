@@ -1,3 +1,9 @@
+2006-07-12 Wednesday 13:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/controlsocket.cc (1.67): fix bug mentioned by
+	  Beyers Cronje, with patch from Cliff Frey at Meraki: block if a
+	  command isn't complete
+
 2006-07-02 Sunday 12:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/anydevice.cc (1.33),
