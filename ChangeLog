@@ -1,3 +1,9 @@
+2006-07-20 Thursday 17:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/ino.cc (1.12): fix what I'm pretty sure is a bug, although
+	  since it has never been triggered, and I cant appear to trigger
+	  it, perhaps it is just dead code
+
 2006-07-12 Wednesday 13:14  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/controlsocket.cc (1.67): fix bug mentioned by
