@@ -325,7 +325,7 @@ ClickIno::lookup(ino_t ino, const String &component)
 	int slash = _x[xi].name.find_right('/');
 	if (slash < 0 || INO_DIRTYPE(ino) == INO_DT_H)
 	    return INO_GLOBALDIR;
-	int found = name_search(_x[xi].name.substring(0, slash - 1), 1, _nentries - 1, 0);
+	int found = name_search(_x[xi].name.substring(0, slash), 1, _nentries - 1, 0);
 	if (found >= 0)
 	    return INO_MKHNDIR(ClickIno::elementno(found));
 	panic("clickfs: ..");	// should never happen
