@@ -84,7 +84,7 @@ struct click_ip {
 #define IP_PROTO_NETBLT		30
 #define IP_PROTO_MFENSP		31
 #define IP_PROTO_MERIT		32
-#define IP_PROTO_SEP		33
+#define IP_PROTO_DCCP		33
 #define IP_PROTO_ICMP6          58
 #define IP_PROTO_CFTP		62
 #define IP_PROTO_SATNET		64
@@ -96,6 +96,7 @@ struct click_ip {
 #define IP_PROTO_BRSATMON	76
 #define IP_PROTO_WBMON		78
 #define IP_PROTO_WBEXPAK	79
+#define IP_PROTO_SCTP		132
 
 #define IP_PROTO_NONE		257
 #define IP_PROTO_TRANSP		258

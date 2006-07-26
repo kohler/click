@@ -19,20 +19,30 @@
 #include "ipnameinfo.hh"
 #include <click/nameinfo.hh>
 #include <click/confparse.hh>
+#include <click/hashmap.hh>
 #include <clicknet/ip.h>
 #include <clicknet/icmp.h>
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
 #if CLICK_USERLEVEL && HAVE_NETDB_H
 # include <netdb.h>
+# include <click/userutils.hh>
+# ifndef _PATH_PROTOCOLS
+#  define _PATH_PROTOCOLS "/etc/protocols"
+# endif
+# ifndef _PATH_SERVICES
+#  define _PATH_SERVICES "/etc/services"
+# endif
 #endif
 CLICK_DECLS
 
 static const StaticNameDB::Entry ip_protos[] = {
+    { "dccp", IP_PROTO_DCCP },
     { "icmp", IP_PROTO_ICMP },
     { "igmp", IP_PROTO_IGMP },
     { "ipip", IP_PROTO_IPIP },
     { "payload", IP_PROTO_PAYLOAD },
+    { "sctp", IP_PROTO_SCTP },
     { "tcp", IP_PROTO_TCP },
     { "tcpudp", IP_PROTO_TCP_OR_UDP },
     { "transp", IP_PROTO_TRANSP },
@@ -134,9 +144,141 @@ namespace {
 
 #if CLICK_USERLEVEL && HAVE_NETDB_H
 class ServicesNameDB : public NameDB { public:
-    ServicesNameDB(uint32_t type)	: NameDB(type, String(), 4) { }
+    ServicesNameDB(uint32_t type, ServicesNameDB *other);
+    ~ServicesNameDB();
     bool query(const String &name, void *value, int vsize);
+  private:
+    DynamicNameDB *_db;
+    bool _read_db;
+    ServicesNameDB *_next;
+    ServicesNameDB *_prev;
+    void read_services();
 };
+
+ServicesNameDB::ServicesNameDB(uint32_t type, ServicesNameDB *other)
+    : NameDB(type, String(), 4), _db(0), _read_db(false)
+{
+    if (other) {
+	_next = other;
+	_prev = other->_prev;
+	other->_prev = _prev->_next = this;
+    } else
+	_next = _prev = this;
+}
+
+ServicesNameDB::~ServicesNameDB()
+{
+    _next->_prev = _prev;
+    _prev->_next = _next;
+    delete _db;
+}
+
+void
+ServicesNameDB::read_services()
+{
+#if 0
+    // On my Linux laptop, using the 'getprotoent()/getservent()' interface
+    // takes approximately 0.1s more than the hand-coded version below
+    // (which I coded before realizing 'getprotoent()/getservent()' exists).
+    
+    if (type() == NameInfo::T_IP_PROTO) {
+	if (!_db)
+	    _db = new DynamicNameDB(type(), String(), 4);
+	while (struct protoent *p = getprotoent()) {
+	    uint32_t proto = p->p_proto;
+	    _db->define(p->p_name, &proto, 4);
+	    for (const char **a = (const char **) p->p_aliases; a && *a; a++)
+		_db->define(*a, &proto, 4);
+	}
+    } else
+	while (struct servent *s = getservent()) {
+	    uint32_t port = ntohs(s->s_port), ptype;
+	    if (!NameInfo::query_int(NameInfo::T_IP_PROTO, 0, s->s_proto, &ptype))
+		continue;
+	    ptype += NameInfo::T_IP_PORT;
+	    ServicesNameDB *db;
+	    for (db = _next; db->type() != ptype && db != this; db = db->_next)
+		/* nada */;
+	    if (db->type() != ptype)
+		continue;
+	    if (!db->_db)
+		db->_db = new DynamicNameDB(type(), String(), 4);
+	    db->_db->define(s->s_name, &port, 4);
+	    for (const char **a = (const char **) s->s_aliases; a && *a; a++)
+		db->_db->define(*a, &port, 4);
+	}
+#else
+    // Hand-coded version.
+    
+    bool proto = (type() == NameInfo::T_IP_PROTO);
+    String text = file_string(proto ? _PATH_PROTOCOLS : _PATH_SERVICES);
+    if (!text)
+	return;
+
+    const char *s = text.begin(), *end = text.end();
+    while (s < end) {
+	const char *eol = s;
+	while (eol < end && *eol != '#' && *eol != '\r' && *eol != '\n')
+	    eol++;
+
+	// first word: main name
+	const char *bn, *en;
+	for (bn = s; bn < eol && isspace(*bn); bn++)
+	    /* nada */;
+	for (en = bn; en < eol && !isspace(*en); en++)
+	    /* nada */;
+
+	// second word: protocol type
+	const char *bt, *et;
+	uint32_t pnum = 0;
+	uint32_t ptype;
+	ServicesNameDB *db;
+	for (bt = en; bt < eol && isspace(*bt); bt++)
+	    /* nada */;
+	for (et = bt; et < eol && isdigit(*et) && pnum < 65536; et++)
+	    pnum = 10*pnum + *et - '0';
+	if (et == bt || pnum >= 65536 || et >= eol || (*et != '/' && *et != ','))
+	    goto skip_to_eol;
+	if (proto)
+	    ptype = NameInfo::T_IP_PROTO;
+	else {
+	    for (bt = et = et + 1; et < eol && !isspace(*et); et++)
+		/* nada */;
+	    if (!NameInfo::query_int(NameInfo::T_IP_PROTO, 0, text.substring(bt, et), &ptype))
+		goto skip_to_eol;
+	    ptype += NameInfo::T_IP_PORT;
+	    if (ptype != type())
+		goto skip_to_eol;
+	}
+
+	// find the database
+	for (db = _next; db->type() != ptype && db != this; db = db->_next)
+	    /* nada */;
+	if (db->type() != ptype)
+	    goto skip_to_eol;
+	
+	// a series of assignments
+	if (!db->_db)
+	    db->_db = new DynamicNameDB(ptype, "", 4);
+	do {
+	    db->_db->define(text.substring(bn, en), &pnum, 4);
+	    for (bn = et; bn < eol && isspace(*bn); bn++)
+		/* nada */;
+	    for (en = bn; en < eol && !isspace(*en); en++)
+		/* nada */;
+	    et = en;
+	} while (bn != en);
+
+    skip_to_eol:
+	s = eol;
+	while (s < end && *s != '\r' && *s != '\n')
+	    s++;
+	while (s < end && (*s == '\r' || *s == '\n'))
+	    s++;
+    }
+#endif
+}
+
 bool
 ServicesNameDB::query(const String &name, void *value, int vsize)
 {
@@ -147,28 +289,39 @@ ServicesNameDB::query(const String &name, void *value, int vsize)
     if (cp_integer(name, &crap))
 	return false;
 
+    if (!_read_db) {
+	read_services();
+	_read_db = true;
+    }
+    
     if (type() == NameInfo::T_IP_PROTO) {
-	if (const struct protoent *proto = getprotobyname(name.c_str())) {
-	    *reinterpret_cast<uint32_t*>(value) = proto->p_proto;
+	if (!_db) {
+	    if (const struct protoent *proto = getprotobyname(name.c_str())) {
+		*reinterpret_cast<uint32_t*>(value) = proto->p_proto;
+		return true;
+	    }
+	} else if (_db->query(name, value, vsize))
 	    return true;
-	}
     }
 
     if (type() >= NameInfo::T_IP_PORT && type() < NameInfo::T_IP_PORT + 256) {
-	int proto = type() - NameInfo::T_IP_PORT;
-	const char *proto_name;
-	if (proto == IP_PROTO_TCP)
-	    proto_name = "tcp";
-	else if (proto == IP_PROTO_UDP)
-	    proto_name = "udp";
-	else if (const struct protoent *pe = getprotobynumber(proto))
-	    proto_name = pe->p_name;
-	else
-	    return false;
-	if (const struct servent *srv = getservbyname(name.c_str(), proto_name)) {
-	    *reinterpret_cast<uint32_t*>(value) = ntohs(srv->s_port);
+	if (!_db) {
+	    int proto = type() - NameInfo::T_IP_PORT;
+	    const char *proto_name;
+	    if (proto == IP_PROTO_TCP)
+		proto_name = "tcp";
+	    else if (proto == IP_PROTO_UDP)
+		proto_name = "udp";
+	    else if (const struct protoent *pe = getprotobynumber(proto))
+		proto_name = pe->p_name;
+	    else
+		return false;
+	    if (const struct servent *srv = getservbyname(name.c_str(), proto_name)) {
+		*reinterpret_cast<uint32_t*>(value) = ntohs(srv->s_port);
+		return true;
+	    }
+	} else if (_db->query(name, value, vsize))
 	    return true;
-	}
     }
 
     return false;
@@ -178,13 +331,13 @@ ServicesNameDB::query(const String &name, void *value, int vsize)
 }
 
 
-static NameDB *dbs[11];
+static NameDB *dbs[13];
 
 void
 IPNameInfo::static_initialize()
 {
 #if CLICK_USERLEVEL && HAVE_NETDB_H
-    dbs[0] = new ServicesNameDB(NameInfo::T_IP_PROTO);
+    dbs[0] = new ServicesNameDB(NameInfo::T_IP_PROTO, 0);
 #endif
     dbs[1] = new StaticNameDB(NameInfo::T_IP_PROTO, String(), ip_protos, sizeof(ip_protos) / sizeof(ip_protos[0]));
     dbs[2] = new StaticNameDB(NameInfo::T_ICMP_TYPE, String(), icmp_types, sizeof(icmp_types) / sizeof(icmp_types[0]));
@@ -193,12 +346,15 @@ IPNameInfo::static_initialize()
     dbs[5] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_TIMXCEED, String(), icmp_timxceed_codes, sizeof(icmp_timxceed_codes) / sizeof(icmp_timxceed_codes[0]));
     dbs[6] = new StaticNameDB(NameInfo::T_ICMP_CODE + ICMP_PARAMPROB, String(), icmp_paramprob_codes, sizeof(icmp_paramprob_codes) / sizeof(icmp_paramprob_codes[0]));
 #if CLICK_USERLEVEL && HAVE_NETDB_H
-    dbs[7] = new ServicesNameDB(NameInfo::T_TCP_PORT);
-    dbs[8] = new ServicesNameDB(NameInfo::T_UDP_PORT);
+    ServicesNameDB *portdb;
+    dbs[7] = portdb = new ServicesNameDB(NameInfo::T_TCP_PORT, 0);
+    dbs[8] = new ServicesNameDB(NameInfo::T_UDP_PORT, portdb);
+    dbs[9] = new ServicesNameDB(NameInfo::T_IP_PORT + IP_PROTO_SCTP, portdb);
+    dbs[10] = new ServicesNameDB(NameInfo::T_IP_PORT + IP_PROTO_DCCP, portdb);
 #endif
-    dbs[9] = new StaticNameDB(NameInfo::T_TCP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
-    dbs[10] = new StaticNameDB(NameInfo::T_UDP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
-    for (int i = 0; i < 11; i++)
+    dbs[11] = new StaticNameDB(NameInfo::T_TCP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
+    dbs[12] = new StaticNameDB(NameInfo::T_UDP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
+    for (int i = 0; i < 13; i++)
 	if (dbs[i])
 	    NameInfo::installdb(dbs[i], 0);
 }
@@ -206,7 +362,7 @@ IPNameInfo::static_initialize()
 void
 IPNameInfo::static_cleanup()
 {
-    for (int i = 0; i < 11; i++)
+    for (int i = 0; i < 13; i++)
 	if (dbs[i]) {
 	    NameInfo::removedb(dbs[i]);
 	    delete dbs[i];
