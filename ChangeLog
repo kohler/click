@@ -1,3 +1,10 @@
+2006-07-26 Wednesday 13:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipnameinfo.cc (1.6), include/clicknet/ip.h (1.10):
+	  improve IPNameInfo performance for many port lookups by reading
+	  and caching all of /etc/services (Jim Mott-Smith noticed a
+	  problem at Mazu)
+
 2006-07-20 Thursday 17:34  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/ino.cc (1.12): fix what I'm pretty sure is a bug, although
