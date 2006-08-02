@@ -268,10 +268,20 @@ String::append_garbage(int len)
     }
   
     // Now we have to make new space. Make sure the new capacity is a
-    // multiple of 16 characters and that it is at least 16.
-    int new_capacity = (_length + 16) & ~15;
+    // multiple of 16 characters and that it is at least 16. But for large
+    // strings, allocate a power of 2, since power-of-2 sizes minimize waste
+    // in frequently-used allocators, like Linux kmalloc.
+    int new_capacity = (_length + len < 1024 ? (_length + 16) & ~15 : 1024);
     while (new_capacity < _length + len)
 	new_capacity *= 2;
+
+#if CLICK_DMALLOC
+    // Keep total allocation a power of 2 by leaving extra space for the
+    // DMALLOC Chunk.
+    if (_length + len < new_capacity - 32)
+	new_capacity -= 32;
+#endif
+    
     Memo *new_memo = new Memo(_length + len, new_capacity);
     if (!new_memo || !new_memo->_real_data) {
 	delete new_memo;
