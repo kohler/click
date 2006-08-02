@@ -1,3 +1,13 @@
+2006-08-01 Tuesday 21:23  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/string.cc (1.59): A version of a patch from Cliff Frey at
+	  Meraki: improve memory allocation for strings when running in the
+	  linux kernel.  It had been allocating sizes that were just larger
+	  than a power of two (causing loading our config file, which is
+	  ~65k to turn into a 130k allocation, and linux only supports
+	  sizes of up to 128k by default) This actually makes a significant
+	  difference in overall click memory usage.
+
 2006-07-26 Wednesday 13:13  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/ipnameinfo.cc (1.6), include/clicknet/ip.h (1.10):
