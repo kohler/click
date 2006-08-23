@@ -209,7 +209,7 @@ IPAddrPairRewriter::dump_mappings_handler(Element *e, void *)
     IPAddrPairRewriter *rw = (IPAddrPairRewriter *)e;
   
     StringAccum sa;
-    for (Map::iterator iter = rw->_map.begin(); iter; iter++) {
+    for (Map::iterator iter = rw->_map.begin(); iter.live(); iter++) {
 	Mapping *m = iter.value();
 	if (m->is_primary())
 	    sa << m->unparse() << "\n";

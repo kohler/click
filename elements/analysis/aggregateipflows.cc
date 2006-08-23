@@ -196,7 +196,7 @@ void
 AggregateIPFlows::clean_map(Map &table)
 {
     // free completed flows and emit fragments
-    for (Map::iterator iter = table.begin(); iter; iter++) {
+    for (Map::iterator iter = table.begin(); iter.live(); iter++) {
 	HostPairInfo *hpinfo = &iter.value();
 	while (Packet *p = hpinfo->_fragment_head) {
 	    hpinfo->_fragment_head = p->next();
@@ -316,7 +316,7 @@ AggregateIPFlows::reap_map(Map &table, uint32_t timeout, uint32_t done_timeout)
     int frag_timeout = _active_sec - _fragment_timeout;
 
     // free completed flows and emit fragments
-    for (Map::iterator iter = table.begin(); iter; iter++) {
+    for (Map::iterator iter = table.begin(); iter.live(); iter++) {
 	HostPairInfo *hpinfo = &iter.value();
 	// fragments
 	while (hpinfo->_fragment_head && hpinfo->_fragment_head->timestamp_anno().sec() < frag_timeout)

@@ -317,7 +317,7 @@ print_rtes(Element *e, void *)
   UpdateGridRoutes *n = (UpdateGridRoutes *) e;
   
   String s;
-  for (UpdateGridRoutes::FarTable::iterator iter = n->_rtes.begin(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::iterator iter = n->_rtes.begin(); iter.live(); iter++) {
     UpdateGridRoutes::far_entry f = iter.value();
     s += IPAddress(f.nbr.ip).s() 
       + " next_hop=" + IPAddress(f.nbr.next_hop_ip).s() 
@@ -336,7 +336,7 @@ print_nbrs(Element *e, void *)
   UpdateGridRoutes *n = (UpdateGridRoutes *) e;
 
   String s;
-  for (UpdateGridRoutes::Table::iterator iter = n->_addresses.begin(); iter; iter++) {
+  for (UpdateGridRoutes::Table::iterator iter = n->_addresses.begin(); iter.live(); iter++) {
     s += iter.key().s();
     s += " eth=" + iter.value().eth.s();
     s += "\n";
@@ -377,7 +377,7 @@ UpdateGridRoutes::get_rtes(Vector<grid_nbr_entry> *retval)
 {
   assert(retval != 0);
   expire_routes();
-  for (UpdateGridRoutes::FarTable::iterator iter = _rtes.begin(); iter; iter++)
+  for (UpdateGridRoutes::FarTable::iterator iter = _rtes.begin(); iter.live(); iter++)
     retval->push_back(iter.value().nbr);
 }
 
@@ -408,7 +408,7 @@ UpdateGridRoutes::expire_hook(Timer *, void *thunk)
      routes often in private functions to clean up, and we may not
      want to adjust the age by a whole _period.  yes, basically the
      time handling is junky here */
-  for (UpdateGridRoutes::FarTable::iterator iter = n->_rtes.begin(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::iterator iter = n->_rtes.begin(); iter.live(); iter++) {
     // XXX yucky
     *((unsigned int *) &(iter.value().nbr.age)) = decr_age(iter.value().nbr.age, EXPIRE_TIMER_PERIOD);
   }
@@ -441,14 +441,14 @@ UpdateGridRoutes::expire_routes()
   Vector<grid_nbr_entry> expired_nbrs;
 
   // find the expired immediate entries
-  for (UpdateGridRoutes::Table::iterator iter = _addresses.begin(); iter; iter++) 
+  for (UpdateGridRoutes::Table::iterator iter = _addresses.begin(); iter.live(); iter++) 
     if (jiff - iter.value().last_updated_jiffies > _timeout_jiffies)
       expired_addresses.insert(iter.key(), true);
 
   // find expired routing entries -- either we have had the entry for
   // too long, or it has been flying around the whole network for too
   // long, or we have expired the next hop from our immediate neighbor
-  for (UpdateGridRoutes::FarTable::iterator iter = _rtes.begin(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::iterator iter = _rtes.begin(); iter.live(); iter++) {
     assert(iter.value().nbr.num_hops > 0);
     if (jiff - iter.value().last_updated_jiffies > _timeout_jiffies ||
 	iter.value().nbr.age == 0 ||
@@ -462,7 +462,7 @@ UpdateGridRoutes::expire_routes()
   }
 
   // remove expired immediate nbr entries
-  for (xa_t::iterator iter = expired_addresses.begin(); iter; iter++) {
+  for (xa_t::iterator iter = expired_addresses.begin(); iter.live(); iter++) {
     click_chatter("%s: expiring address for %s",
                   name().c_str(), iter.key().s().c_str());
     assert(_addresses.remove(iter.key()));
@@ -488,7 +488,7 @@ UpdateGridRoutes::hello_hook(Timer *, void *thunk)
   n->expire_routes();
 
   Vector<grid_nbr_entry> rte_entries;
-  for (UpdateGridRoutes::FarTable::iterator iter = n->_rtes.begin(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::iterator iter = n->_rtes.begin(); iter.live(); iter++) {
     /* XXX if everyone is using the same max-hops parameter, we could
        leave out all of our entries that are exactly max-hops hops
        away, because we know those entries will be greater than

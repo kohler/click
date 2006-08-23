@@ -418,7 +418,7 @@ TCPRewriter::dump_mappings_handler(Element *e, void *)
 {
   TCPRewriter *rw = (TCPRewriter *)e;
   StringAccum tcps;
-  for (Map::iterator iter = rw->_tcp_map.begin(); iter; iter++) {
+  for (Map::iterator iter = rw->_tcp_map.begin(); iter.live(); iter++) {
     TCPMapping *m = static_cast<TCPMapping *>(iter.value());
     if (m->is_primary())
       tcps << m->s() << "\n";

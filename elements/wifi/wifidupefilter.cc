@@ -109,7 +109,7 @@ WifiDupeFilter::static_read_stats(Element *xf, void *)
 
   click_gettimeofday(&now);
 
-  for(DstTable::const_iterator i = e->_table.begin(); i; i++) {
+  for(DstTable::const_iterator i = e->_table.begin(); i.live(); i++) {
     DstInfo nfo = i.value();
     sa << nfo._eth;
     sa << " packets " << nfo._packets;

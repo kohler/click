@@ -73,7 +73,7 @@ EtherCount_read_param(Element *e, void *thunk)
     click_gettimeofday(&now);
     
     StringAccum sa;
-    for (EtherCount::NIter iter = td->_neighbors.begin(); iter; iter++) {
+    for (EtherCount::NIter iter = td->_neighbors.begin(); iter.live(); iter++) {
 	    EtherCount::DstInfo n = iter.value();
 	    sa << n._eth.s().c_str() << " " << n.count << "\n";
     }

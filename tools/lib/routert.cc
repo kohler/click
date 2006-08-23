@@ -90,7 +90,7 @@ RouterT::check() const
 
     // check element type names
     int nt_found = 0;
-    for (StringMap::const_iterator iter = _declared_type_map.begin(); iter; iter++) {
+    for (StringMap::const_iterator iter = _declared_type_map.begin(); iter.live(); iter++) {
 	int sc = _scope_cookie;
 	for (int i = iter.value(); i >= 0; i = _declared_types[i].prev_name) {
 	    assert(_declared_types[i].name() == iter.key());
@@ -110,7 +110,7 @@ RouterT::check() const
     }
     
     // check element names
-    for (StringMap::const_iterator iter = _element_name_map.begin(); iter; iter++) {
+    for (StringMap::const_iterator iter = _element_name_map.begin(); iter.live(); iter++) {
 	String key = iter.key();
 	int value = iter.value();
 	if (value >= 0)

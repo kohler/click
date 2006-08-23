@@ -90,7 +90,7 @@ DSDVRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 {
 #if ENABLE_PAUSE
   if (_paused) {
-    for (RTIter iter = _snapshot_rtes.begin(); iter; iter++) {
+    for (RTIter iter = _snapshot_rtes.begin(); iter.live(); iter++) {
       const RTEntry &rte = iter.value();
 #if USE_OLD_SEQ
       if (use_old_route(rte.dest_ip, _snapshot_jiffies))
@@ -108,7 +108,7 @@ DSDVRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 #if USE_OLD_SEQ
   unsigned jiff = dsdv_jiffies();
 #endif
-  for (RTIter iter = _rtes.begin(); iter; iter++) {
+  for (RTIter iter = _rtes.begin(); iter.live(); iter++) {
     const RTEntry &rte = iter.value();
 #if USE_OLD_SEQ
     if (use_old_route(rte.dest_ip, jiff))
@@ -185,19 +185,19 @@ DSDVRouteTable::DSDVRouteTable() :
 DSDVRouteTable::~DSDVRouteTable()
 {
 
-  for (TMIter i = _expire_timers.begin(); i; i++) {
+  for (TMIter i = _expire_timers.begin(); i.live(); i++) {
     if (i.value()->scheduled())
       i.value()->unschedule();
     delete i.value();
   }
-  for (TMIter i = _trigger_timers.begin(); i; i++) {
+  for (TMIter i = _trigger_timers.begin(); i.live(); i++) {
     if (i.value()->scheduled())
       i.value()->unschedule();
     delete i.value();
   }
-  for (HMIter i = _expire_hooks.begin(); i; i++) 
+  for (HMIter i = _expire_hooks.begin(); i.live(); i++) 
     delete i.value();
-  for (HMIter i = _trigger_hooks.begin(); i; i++) 
+  for (HMIter i = _trigger_hooks.begin(); i.live(); i++) 
     delete i.value();
 }
 
@@ -315,7 +315,7 @@ DSDVRouteTable::current_gateway(RouteEntry &gw)
   if (_paused)
     i = _snapshot_rtes.begin();
 #endif  
-  for ( ; i; i++) {
+  for ( ; i.live(); i++) {
     if (i.value().is_gateway) 
       gw_addrs.push_back(i.value().dest_ip);
   }
@@ -439,7 +439,7 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
   // n1 is not its own next hop.
   if (r->num_hops() == 1) {
     dsdv_assert(r->next_hop_ip == r->dest_ip);
-    for (RTIter i = _rtes.begin(); i; i++) {
+    for (RTIter i = _rtes.begin(); i.live(); i++) {
       RTEntry r = i.value();
       if (r.dest_ip == ip)
 	continue; // don't expire this dest twice!
@@ -565,7 +565,7 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
     // it's too early to send this update, so cancel all oustanding
     // triggered updates that would also be too early
     Vector<IPAddress> remove_list;
-    for (TMIter i = _trigger_timers.begin(); i; i++) {
+    for (TMIter i = _trigger_timers.begin(); i.live(); i++) {
       if (i.key() == ip)
 	continue; // don't touch this timer, we'll reschedule it
 
@@ -765,7 +765,7 @@ DSDVRouteTable::send_full_update()
   unsigned int jiff = dsdv_jiffies();
   Vector<RTEntry> routes;
   
-  for (RTIter i = _rtes.begin(); i; i++) {
+  for (RTIter i = _rtes.begin(); i.live(); i++) {
     const RTEntry &r = i.value();
     if (r.advertise_ok_jiffies <= jiff)
       routes.push_back(r);
@@ -825,7 +825,7 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
   unsigned int jiff = dsdv_jiffies();
 
   Vector<RTEntry> triggered_routes;
-  for (RTIter i = _rtes.begin(); i; i++) {
+  for (RTIter i = _rtes.begin(); i.live(); i++) {
     const RTEntry &r = i.value();
     
     if ((r.need_seq_ad || r.need_metric_ad) && 
@@ -1167,7 +1167,7 @@ DSDVRouteTable::print_rtes_v(Element *e, void *)
   unsigned int jiff = dsdv_jiffies();
 
   String s;
-  for (RTIter i = n->_rtes.begin(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i.live(); i++) {
 #if USE_OLD_SEQ
     RTEntry f = i.value();
     if (n->use_old_route(f.dest_ip, jiff))
@@ -1208,7 +1208,7 @@ DSDVRouteTable::print_rtes(Element *e, void *)
   DSDVRouteTable *n = (DSDVRouteTable *) e;
 
   String s;
-  for (RTIter i = n->_rtes.begin(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i.live(); i++) {
 #if USE_OLD_SEQ
     unsigned jiff = dsdv_jiffies();
     RTEntry f = i.value();
@@ -1235,7 +1235,7 @@ DSDVRouteTable::print_nbrs_v(Element *e, void *)
   DSDVRouteTable *n = (DSDVRouteTable *) e;
   
   String s;
-  for (RTIter i = n->_rtes.begin(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i.live(); i++) {
     // only print immediate neighbors 
     if (!i.value().dest_eth) 
       continue;
@@ -1258,7 +1258,7 @@ DSDVRouteTable::print_nbrs(Element *e, void *)
   DSDVRouteTable *n = (DSDVRouteTable *) e;
   
   String s;
-  for (RTIter i = n->_rtes.begin(); i; i++) {
+  for (RTIter i = n->_rtes.begin(); i.live(); i++) {
     // only print immediate neighbors 
     if (!i.value().dest_eth)
       continue;
@@ -1332,11 +1332,11 @@ DSDVRouteTable::write_paused(const String &arg, Element *el,
     // the route table.
     rt->_snapshot_jiffies = dsdv_jiffies();
     rt->_snapshot_rtes.clear();
-    for (RTIter i = rt->_rtes.begin(); i; i++)
+    for (RTIter i = rt->_rtes.begin(); i.live(); i++)
       rt->_snapshot_rtes.insert(i.key(), i.value());
 #if USE_OLD_SEQ
     rt->_snapshot_old_rtes.clear();
-    for (RTIter i = rt->_old_rtes.begin(); i; i++)
+    for (RTIter i = rt->_old_rtes.begin(); i.live(); i++)
       rt->_snapshot_old_rtes.insert(i.key(), i.value());
 #endif
   }
@@ -1410,7 +1410,7 @@ DSDVRouteTable::print_dump(Element *e, void *)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) e;
   StringAccum sa;
-  for (RTIter i = rt->_rtes.begin(); i; i++) {
+  for (RTIter i = rt->_rtes.begin(); i.live(); i++) {
     sa << i.value().dump() << "\n";
   }
 
@@ -1611,7 +1611,7 @@ DSDVRouteTable::RTEntry::dump() const
 void
 DSDVRouteTable::check_invariants(const IPAddress *ignore) const
 {
-  for (RTIter i = _rtes.begin(); i; i++) {
+  for (RTIter i = _rtes.begin(); i.live(); i++) {
     const RTEntry &r = i.value();
 
     r.check();
@@ -1663,7 +1663,7 @@ DSDVRouteTable::dsdv_assert_(const char *file, int line, const char *expr) const
   click_chatter("DSDVRouteTable %s assertion \"%s\" failed: file %s, line %d",
 		name().c_str(), expr, file, line);
   click_chatter("Routing table state:");
-  for (RTIter i = _rtes.begin(); i; i++) {
+  for (RTIter i = _rtes.begin(); i.live(); i++) {
     click_chatter("%s\n", i.value().dump().c_str());
   }
 #ifdef CLICK_USERLEVEL  

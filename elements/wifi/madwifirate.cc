@@ -88,7 +88,7 @@ void
 MadwifiRate::adjust_all()
 {
   Vector<EtherAddress> n;
-  for (NIter iter = _neighbors.begin(); iter; iter++) {
+  for (NIter iter = _neighbors.begin(); iter.live(); iter++) {
     DstInfo nfo = iter.value();
     n.push_back(nfo._eth);
   }
@@ -308,7 +308,7 @@ String
 MadwifiRate::print_rates() 
 {
     StringAccum sa;
-  for (NIter iter = _neighbors.begin(); iter; iter++) {
+  for (NIter iter = _neighbors.begin(); iter.live(); iter++) {
     DstInfo nfo = iter.value();
     sa << nfo._eth << " ";
     if (nfo._rates.size()) {

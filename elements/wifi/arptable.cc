@@ -129,7 +129,7 @@ ARPTable::print_mappings()
   click_gettimeofday(&now);
   
   StringAccum sa;
-  for (ARPIter iter = _table.begin(); iter; iter++) {
+  for (ARPIter iter = _table.begin(); iter.live(); iter++) {
     DstInfo n = iter.value();
     struct timeval age = now - n._when;
     sa << n._ip.s().c_str() << " ";

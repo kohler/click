@@ -86,7 +86,7 @@ RXStats_read_param(Element *e, void *thunk)
     click_gettimeofday(&now);
     
     StringAccum sa;
-    for (RXStats::NIter iter = td->_neighbors.begin(); iter; iter++) {
+    for (RXStats::NIter iter = td->_neighbors.begin(); iter.live(); iter++) {
       RXStats::DstInfo n = iter.value();
       struct timeval age = now - n._last_received;
       Timestamp avg_signal;

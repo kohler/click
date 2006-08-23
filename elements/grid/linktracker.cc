@@ -275,7 +275,7 @@ LinkTracker::read_stats(Element *xf, void *)
 
   char timebuf[80];
   String s;
-  for (HashMap<IPAddress, LinkTracker::stat_t>::iterator i = f->_stats.begin(); i; i++) {
+  for (HashMap<IPAddress, LinkTracker::stat_t>::iterator i = f->_stats.begin(); i.live(); i++) {
     snprintf(timebuf, 80, " %ld.%06ld", 
 	     (long) i.value().last_update.tv_sec, 
 	     (long) i.value().last_update.tv_usec);
@@ -294,7 +294,7 @@ LinkTracker::read_bcast_stats(Element *xf, void *)
 
   char timebuf[80];
   String s;
-  for (HashMap<IPAddress, LinkTracker::bcast_t>::iterator i = f->_bcast_stats.begin(); i; i++) {
+  for (HashMap<IPAddress, LinkTracker::bcast_t>::iterator i = f->_bcast_stats.begin(); i.live(); i++) {
     snprintf(timebuf, 80, " %ld.%06ld", 
 	     (long) i.value().last_update.tv_sec, 
 	     (long) i.value().last_update.tv_usec);

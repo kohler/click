@@ -185,7 +185,7 @@ LinkTable::random_link()
 {
   int ndx = random() % _links.size();
   int current_ndx = 0;
-  for (LTIter iter = _links.begin(); iter; iter++, current_ndx++) {
+  for (LTIter iter = _links.begin(); iter.live(); iter++, current_ndx++) {
     if (current_ndx == ndx) {
       LinkInfo n = iter.value();
       return Link(n._from, n._to, n._seq, n._metric);
@@ -200,7 +200,7 @@ Vector<IPAddress>
 LinkTable::get_hosts()
 {
   Vector<IPAddress> v;
-  for (HTIter iter = _hosts.begin(); iter; iter++) {
+  for (HTIter iter = _hosts.begin(); iter.live(); iter++) {
     HostInfo n = iter.value();
     v.push_back(n._ip);
   }
@@ -388,7 +388,7 @@ LinkTable::print_links()
   StringAccum sa;
   struct timeval now;
   click_gettimeofday(&now);
-  for (LTIter iter = _links.begin(); iter; iter++) {
+  for (LTIter iter = _links.begin(); iter.live(); iter++) {
     LinkInfo n = iter.value();
     sa << n._from.s() << " " << n._to.s();
     sa << " " << n._metric;
@@ -413,7 +413,7 @@ LinkTable::print_routes(bool from_me, bool pretty)
 
   Vector<IPAddress> ip_addrs;
   
-  for (HTIter iter = _hosts.begin(); iter; iter++)
+  for (HTIter iter = _hosts.begin(); iter.live(); iter++)
     ip_addrs.push_back(iter.key());
   
   click_qsort(ip_addrs.begin(), ip_addrs.size(), sizeof(IPAddress), ipaddr_sorter);
@@ -449,7 +449,7 @@ LinkTable::print_hosts()
   StringAccum sa;
   Vector<IPAddress> ip_addrs;
   
-  for (HTIter iter = _hosts.begin(); iter; iter++)
+  for (HTIter iter = _hosts.begin(); iter.live(); iter++)
     ip_addrs.push_back(iter.key());
   
   click_qsort(ip_addrs.begin(), ip_addrs.size(), sizeof(IPAddress), ipaddr_sorter);
@@ -466,7 +466,7 @@ void
 LinkTable::clear_stale() {
 
   LTable links;
-  for (LTIter iter = _links.begin(); iter; iter++) {
+  for (LTIter iter = _links.begin(); iter.live(); iter++) {
     LinkInfo nfo = iter.value();
     if ((unsigned) _stale_timeout.tv_sec >= nfo.age()) {
       links.insert(IPPair(nfo._from, nfo._to), nfo);
@@ -485,7 +485,7 @@ LinkTable::clear_stale() {
   }
   _links.clear();
 
-  for (LTIter iter = links.begin(); iter; iter++) {
+  for (LTIter iter = links.begin(); iter.live(); iter++) {
     LinkInfo nfo = iter.value();
     _links.insert(IPPair(nfo._from, nfo._to), nfo);
   }
@@ -500,11 +500,11 @@ LinkTable::get_neighbors(IPAddress ip)
   typedef HashMap<IPAddress, bool> IPMap;
   IPMap ip_addrs;
 
-  for (HTIter iter = _hosts.begin(); iter; iter++) {
+  for (HTIter iter = _hosts.begin(); iter.live(); iter++) {
     ip_addrs.insert(iter.value()._ip, true);
   }
 
-  for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
+  for (IPMap::const_iterator i = ip_addrs.begin(); i.live(); i++) {
     HostInfo *neighbor = _hosts.findp(i.key());
     assert(neighbor);
     if (ip != neighbor->_ip) {
@@ -529,11 +529,11 @@ LinkTable::dijkstra(bool from_me)
   typedef HashMap<IPAddress, bool> IPMap;
   IPMap ip_addrs;
 
-  for (HTIter iter = _hosts.begin(); iter; iter++) {
+  for (HTIter iter = _hosts.begin(); iter.live(); iter++) {
     ip_addrs.insert(iter.value()._ip, true);
   }
   
-  for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
+  for (IPMap::const_iterator i = ip_addrs.begin(); i.live(); i++) {
     /* clear them all initially */
     HostInfo *n = _hosts.findp(i.key());
     n->clear(from_me);
@@ -563,7 +563,7 @@ LinkTable::dijkstra(bool from_me)
     }
 
 
-    for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
+    for (IPMap::const_iterator i = ip_addrs.begin(); i.live(); i++) {
       HostInfo *neighbor = _hosts.findp(i.key());
       assert(neighbor);
       bool marked = neighbor->_marked_to_me;
@@ -608,7 +608,7 @@ LinkTable::dijkstra(bool from_me)
 
     current_min_ip = IPAddress();
     uint32_t  min_metric = ~0;
-    for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
+    for (IPMap::const_iterator i = ip_addrs.begin(); i.live(); i++) {
       HostInfo *nfo = _hosts.findp(i.key());
       uint32_t metric = nfo->_metric_to_me;
       bool marked = nfo->_marked_to_me;
@@ -658,7 +658,7 @@ LinkTable_read_param(Element *e, void *thunk)
       typedef IPTable::const_iterator IPIter;
   
 
-      for (IPIter iter = td->_blacklist.begin(); iter; iter++) {
+      for (IPIter iter = td->_blacklist.begin(); iter.live(); iter++) {
 	sa << iter.value() << " ";
       }
       return sa.take_string() + "\n";

@@ -47,7 +47,7 @@ check1(HashMap<String, int> &h, ErrorHandler *errh)
 
     char x[4] = "\0\0\0";
     int n = 0;
-    for (HashMap<String, int>::const_iterator i = h.begin(); i; i++) {
+    for (HashMap<String, int>::const_iterator i = h.begin(); i.live(); i++) {
 	CHECK(i.value() >= 1 && i.value() <= 4);
 	CHECK(x[i.value() - 1] == 0);
 	x[i.value() - 1] = 1;
@@ -57,7 +57,7 @@ check1(HashMap<String, int> &h, ErrorHandler *errh)
 
     memset(x, 0, 4);
     n = 0;
-    for (HashMap<String, int>::iterator i = h.begin(); i; i++) {
+    for (HashMap<String, int>::iterator i = h.begin(); i.live(); i++) {
 	int oldv = i.value();
 	CHECK(i.value() >= 1 && i.value() <= 4);
 	i.value() = 5;

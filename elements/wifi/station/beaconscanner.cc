@@ -235,7 +235,7 @@ BeaconScanner::scan_string()
   StringAccum sa;
   struct timeval now;
   click_gettimeofday(&now);
-  for (APIter iter = _waps.begin(); iter; iter++) {
+  for (APIter iter = _waps.begin(); iter.live(); iter++) {
     wap ap = iter.value();
     sa << ap._eth << " ";
     sa << "channel " << ap._channel << " ";

@@ -95,7 +95,7 @@ EtherSwitch::reader(Element* f, void *thunk)
     switch ((intptr_t) thunk) {
     case 0: {
 	StringAccum sa;
-	for (Table::iterator iter = sw->_table.begin(); iter; iter++)
+	for (Table::iterator iter = sw->_table.begin(); iter.live(); iter++)
 	    sa << iter.key() << ' ' << iter.value().port << '\n';
 	return sa.take_string();
     }

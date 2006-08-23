@@ -99,7 +99,7 @@ LinkStat::send_hook()
   d += lp.write(d);
   
   for (ProbeMap::const_iterator i = _bcast_stats.begin(); 
-       i && num_entries > 0; 
+       i.live() && num_entries > 0; 
        num_entries--, i++) {
     const probe_list_t &val = i.value();
     if (val.probes.size() == 0) {
@@ -342,16 +342,16 @@ LinkStat::read_bcast_stats(Element *xf, void *)
   typedef HashMap<EtherAddress, bool> EthMap;
   EthMap eth_addrs;
   
-  for (ProbeMap::const_iterator i = e->_bcast_stats.begin(); i; i++) 
+  for (ProbeMap::const_iterator i = e->_bcast_stats.begin(); i.live(); i++) 
     eth_addrs.insert(i.key(), true);
-  for (ReverseProbeMap::const_iterator i = e->_rev_bcast_stats.begin(); i; i++)
+  for (ReverseProbeMap::const_iterator i = e->_rev_bcast_stats.begin(); i.live(); i++)
     eth_addrs.insert(i.key(), true);
 
   struct timeval now;
   click_gettimeofday(&now);
 
   StringAccum sa;
-  for (EthMap::const_iterator i = eth_addrs.begin(); i; i++) {
+  for (EthMap::const_iterator i = eth_addrs.begin(); i.live(); i++) {
     const EtherAddress &eth = i.key();
     
     probe_list_t *pl = e->_bcast_stats.findp(eth);

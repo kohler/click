@@ -67,7 +67,7 @@ DSRRouteTable::~DSRRouteTable()
   flush_sendbuffer();
   uninitialize();
 
-  for (FWReqIter i = _forwarded_rreq_map.begin(); i; i++) {
+  for (FWReqIter i = _forwarded_rreq_map.begin(); i.live(); i++) {
     ForwardedReqVal &frv = i.value();
     if (frv.p) frv.p->kill();
     frv.p = NULL;
@@ -100,7 +100,7 @@ DSRRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 DSRRouteTable::flush_sendbuffer()
 {
-  for (SBMapIter i=_sendbuffer_map.begin(); i; i++) {
+  for (SBMapIter i=_sendbuffer_map.begin(); i.live(); i++) {
     SendBuffer &sb = i.value();
     for (int j = 0; j < sb.size(); j++) {
       sb[j].check();
@@ -119,11 +119,11 @@ DSRRouteTable::check()
   assert(_link_table);
 
   // _blacklist
-  for (BlacklistIter i = _blacklist.begin(); i; i++)
+  for (BlacklistIter i = _blacklist.begin(); i.live(); i++)
     i.value().check();
 
   // _sendbuffer_map
-  for (SBMapIter i=_sendbuffer_map.begin(); i; i++) {
+  for (SBMapIter i=_sendbuffer_map.begin(); i.live(); i++) {
     SendBuffer &sb = i.value();
     for (int j = 0; j < sb.size(); j++) {
       sb[j].check();
@@ -131,11 +131,11 @@ DSRRouteTable::check()
   }
 
   // _forwarded_rreq_map
-  for (FWReqIter i = _forwarded_rreq_map.begin(); i; i++)
+  for (FWReqIter i = _forwarded_rreq_map.begin(); i.live(); i++)
     i.value().check();
   
   // _initiated_rreq_map
-  for (InitReqIter i = _initiated_rreq_map.begin(); i; i++)
+  for (InitReqIter i = _initiated_rreq_map.begin(); i.live(); i++)
     i.value().check();
     
   // _rreq_expire_timer;
@@ -214,7 +214,7 @@ DSRRouteTable::rreq_expire_hook()
 //   click_chatter("checking\n");
   
   Vector<ForwardedReqKey> remove_list;
-  for (FWReqIter i = _forwarded_rreq_map.begin(); i; i++) {
+  for (FWReqIter i = _forwarded_rreq_map.begin(); i.live(); i++) {
 
     ForwardedReqVal &val = i.value();
     
@@ -297,7 +297,7 @@ DSRRouteTable::sendbuffer_timer_hook()
   int total = 0; // total packets sent this scheduling
   bool check_next_time = false;
 
-  for (SBMapIter i=_sendbuffer_map.begin(); i; i++) {
+  for (SBMapIter i=_sendbuffer_map.begin(); i.live(); i++) {
 
     SendBuffer &sb = i.value();
     IPAddress dst = i.key();
@@ -429,7 +429,7 @@ DSRRouteTable::blacklist_timer_hook()
   timeval curr_time;
   click_gettimeofday(&curr_time);
 
-  for (BlacklistIter i = _blacklist.begin(); i; i++) {
+  for (BlacklistIter i = _blacklist.begin(); i.live(); i++) {
     if ((i.value()._status == DSR_BLACKLIST_UNI_PROBABLE) &&
 	(diff_in_ms(curr_time, i.value()._time_updated) > DSR_BLACKLIST_ENTRY_TIMEOUT)) {
       
@@ -1702,7 +1702,7 @@ DSRRouteTable::rreq_issue_hook()
 
   Vector<IPAddress> remove_list;
   
-  for (InitReqIter i = _initiated_rreq_map.begin(); i; i++) {
+  for (InitReqIter i = _initiated_rreq_map.begin(); i.live(); i++) {
 
     InitiatedReq &ir = i.value();
     assert(ir._target == i.key());

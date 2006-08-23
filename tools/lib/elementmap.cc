@@ -314,7 +314,7 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 	    HashMap<String, String> attrs;
 	    s = parse_xml_attrs(attrs, s + 5, ends, &closed, entities, errh);
 	    Traits elt;
-	    for (HashMap<String, String>::iterator i = attrs.begin(); i; i++)
+	    for (HashMap<String, String>::iterator i = attrs.begin(); i.live(); i++)
 		if (String *sp = elt.component(i.key()))
 		    *sp = i.value();
 	    if (elt.provisions || elt.name) {
@@ -503,7 +503,7 @@ ElementMap::collect_indexes(const RouterT *router, Vector<int> &indexes,
     indexes.clear();
     HashMap<ElementClassT *, int> types(-1);
     router->collect_types(types);
-    for (HashMap<ElementClassT *, int>::iterator i = types.begin(); i; i++)
+    for (HashMap<ElementClassT *, int>::iterator i = types.begin(); i.live(); i++)
 	if (i.key()->primitive()) {
 	    int t = _name_map[i.key()->name()];
 	    if (t > 0)

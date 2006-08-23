@@ -255,7 +255,7 @@ String
 ProbeTXRate::print_rates() 
 {
   StringAccum sa;
-  for (NIter iter = _neighbors.begin(); iter; iter++) {
+  for (NIter iter = _neighbors.begin(); iter.live(); iter++) {
     DstInfo nfo = iter.value();
     sa << nfo._eth << "\n";
     for (int x = 0; x < nfo._rates.size(); x++) {

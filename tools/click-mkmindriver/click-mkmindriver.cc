@@ -186,7 +186,7 @@ Mindriver::add_router_requirements(RouterT* router, const ElementMap& default_ma
 
     HashMap<ElementClassT*, int> primitives(-1);
     router->collect_types(primitives);
-    for (HashMap<ElementClassT*, int>::iterator i = primitives.begin(); i; i++) {
+    for (HashMap<ElementClassT*, int>::iterator i = primitives.begin(); i.live(); i++) {
 	if (!i.key()->primitive())
 	    continue;
 	String tname = i.key()->name();
@@ -292,7 +292,7 @@ Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, 
 {
     Vector<String> sourcevec;
     for (HashMap<String, int>::iterator iter = _source_files.begin();
-	 iter;
+	 iter.live();
 	 iter++) {
 	iter.value() = sourcevec.size();
 	sourcevec.push_back(iter.key());
@@ -535,7 +535,7 @@ particular purpose.\n");
 	HashMap<String, int> old_reqs(-1);
 	old_reqs.swap(md._requirements);
 
-	for (HashMap<String, int>::iterator iter = old_reqs.begin(); iter; iter++)
+	for (HashMap<String, int>::iterator iter = old_reqs.begin(); iter.live(); iter++)
 	    md.resolve_requirement(iter.key(), default_emap, errh);
 
 	if (!md._requirements.size())

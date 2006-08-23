@@ -561,7 +561,7 @@ IPRw::take_state_map(Map &map, Mapping **free_head, Mapping **free_tail,
     int np = in_patterns.size();
     int no = noutputs();
   
-    for (Map::iterator iter = map.begin(); iter; iter++) {
+    for (Map::iterator iter = map.begin(); iter.live(); iter++) {
 	Mapping *m = iter.value();
 	if (m->is_primary()) {
 	    Pattern *p = m->pattern(), *q = 0;
@@ -597,7 +597,7 @@ IPRw::clean_map(Map &table, uint32_t last_jif)
     //click_chatter("cleaning map");
     Mapping *to_free = 0;
 
-    for (Map::iterator iter = table.begin(); iter; iter++)
+    for (Map::iterator iter = table.begin(); iter.live(); iter++)
 	if (Mapping *m = iter.value()) {
 	    if (m->is_primary() && !m->used_since(last_jif) && !m->free_tracked()) {
 		m->set_free_next(to_free);
@@ -680,7 +680,7 @@ IPRw::clear_map(Map &table)
 {
     Mapping *to_free = 0;
 
-    for (Map::iterator iter = table.begin(); iter; iter++) {
+    for (Map::iterator iter = table.begin(); iter.live(); iter++) {
 	Mapping *m = iter.value();
 	if (m->is_primary()) {
 	    m->set_free_next(to_free);

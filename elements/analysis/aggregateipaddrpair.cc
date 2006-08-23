@@ -99,7 +99,7 @@ AggregateIPAddrPair::reap()
 	uint32_t timeout = _active_sec - _timeout;
 
 	Vector<uint32_t> to_free;
-	for (Map::iterator iter = _map.begin(); iter; iter++) {
+	for (Map::iterator iter = _map.begin(); iter.live(); iter++) {
 	    FlowInfo *finfo = &iter.value();
 	    if (SEC_OLDER(finfo->last_timestamp.sec(), timeout)) {
 		notify(finfo->aggregate, AggregateListener::DELETE_AGG, 0);

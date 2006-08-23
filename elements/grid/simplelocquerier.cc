@@ -87,7 +87,7 @@ SimpleLocQuerier::read_table(Element *e, void *)
 {
   SimpleLocQuerier *slq = (SimpleLocQuerier *) e;
   String s;
-  for (locmap::iterator i = slq->_locs.begin(); i; i++)
+  for (locmap::iterator i = slq->_locs.begin(); i.live(); i++)
     s += i.key().s() + " " + i.value().s() + "\n";
   return s;
 }

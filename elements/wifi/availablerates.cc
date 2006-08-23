@@ -184,7 +184,7 @@ AvailableRates_read_param(Element *e, void *thunk)
       }
       sa << "\n";
     }
-    for (AvailableRates::RIter iter = td->_rtable.begin(); iter; iter++) {
+    for (AvailableRates::RIter iter = td->_rtable.begin(); iter.live(); iter++) {
       AvailableRates::DstInfo n = iter.value();
       sa << n._eth.s().c_str() << " ";
       for (int x = 0; x < n._rates.size(); x++) {

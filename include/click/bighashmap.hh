@@ -109,7 +109,8 @@ class HashMap { public:
 template <class K, class V>
 class _HashMap_const_iterator { public:
 
-  operator bool() const			{ return _elt; }
+  bool live() const			{ return _elt; }
+  operator bool() const CLICK_DEPRECATED { return live(); }
   void operator++(int);
   void operator++()			{ (*this)++; }
   
@@ -298,7 +299,8 @@ class HashMap<K, void *> { public:
 template <class K>
 class _HashMap_const_iterator<K, void *> { public:
 
-  operator bool() const			{ return _elt; }
+  bool live() const			{ return _elt; }
+  operator bool() const CLICK_DEPRECATED { return live(); }
   void operator++(int);
   void operator++()			{ (*this)++; }
   
@@ -457,7 +459,8 @@ class _HashMap_const_iterator<K, T *> : private _HashMap_const_iterator<K, void 
 
   typedef _HashMap_const_iterator<K, void *> inherited;
 
-  operator bool() const	{ return inherited::operator bool(); }
+  bool live() const	{ return inherited::live(); }
+  operator bool() const CLICK_DEPRECATED { return inherited::live(); }
   void operator++(int)	{ inherited::operator++(0); }
   void operator++()	{ inherited::operator++(); }
   
@@ -521,14 +524,14 @@ HashMap<K, T *>::end()
 
 template <class K, class V>
 inline bool
-operator==(const typename HashMap<K, V>::const_iterator &a, const typename HashMap<K, V>::const_iterator &b)
+operator==(const _HashMap_const_iterator<K, V> &a, const _HashMap_const_iterator<K, V> &b)
 {
   return a.pair() == b.pair();
 }
 
 template <class K, class V>
 inline bool
-operator!=(const typename HashMap<K, V>::const_iterator &a, const typename HashMap<K, V>::const_iterator &b)
+operator!=(const _HashMap_const_iterator<K, V> &a, const _HashMap_const_iterator<K, V> &b)
 {
   return a.pair() != b.pair();
 }

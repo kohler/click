@@ -81,7 +81,7 @@ ICMPPingRewriter::initialize(ErrorHandler *)
 void
 ICMPPingRewriter::cleanup(CleanupStage)
 {
-  for (Map::iterator iter = _request_map.begin(); iter; iter++) {
+  for (Map::iterator iter = _request_map.begin(); iter.live(); iter++) {
     Mapping *m = iter.value();
     delete m->reverse();
     delete m;
@@ -214,7 +214,7 @@ ICMPPingRewriter::run_timer(Timer *)
 {
   Vector<Mapping *> to_free;
   
-  for (Map::iterator iter = _request_map.begin(); iter; iter++) {
+  for (Map::iterator iter = _request_map.begin(); iter.live(); iter++) {
     Mapping *m = iter.value();
     if (!m->used() && !m->reverse()->used())
       to_free.push_back(m);
@@ -315,7 +315,7 @@ ICMPPingRewriter::dump_mappings_handler(Element *e, void *)
   ICMPPingRewriter *rw = (ICMPPingRewriter *)e;
   
   StringAccum sa;
-  for (Map::iterator iter = rw->_request_map.begin(); iter; iter++) {
+  for (Map::iterator iter = rw->_request_map.begin(); iter.live(); iter++) {
     Mapping *m = iter.value();
     sa << m->s() << "\n";
   }

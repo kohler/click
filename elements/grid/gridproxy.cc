@@ -176,7 +176,7 @@ GridProxy::print_stats()
   struct timeval now;
   click_gettimeofday(&now);
 
-  for (ProxyMap::iterator iter = _map.begin(); iter; iter++) {
+  for (ProxyMap::iterator iter = _map.begin(); iter.live(); iter++) {
     DstInfo nfo = iter.value();
     sa << nfo._ip.s().c_str() << " ";
     sa << nfo._gw.s().c_str() << " ";

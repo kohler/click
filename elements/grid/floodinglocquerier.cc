@@ -77,7 +77,7 @@ FloodingLocQuerier::expire_hook(Timer *, void *thunk)
   // flush old ``last sequence numbers''
   typedef seq_map::iterator smi_t;
   Vector<IPAddress> old_seqs;
-  for (smi_t i = locq->_query_seqs.begin(); i; i++) {
+  for (smi_t i = locq->_query_seqs.begin(); i.live(); i++) {
     if (i.key() == locq->_my_ip) // don't expire own last seq
       continue;
     if (jiff - i.value().last_response_jiffies > locq->_timeout_jiffies)
@@ -91,7 +91,7 @@ FloodingLocQuerier::expire_hook(Timer *, void *thunk)
      cached query responses */
   typedef qmap::iterator qmi_t;
   Vector<IPAddress> old_entries;
-  for (qmi_t i = locq-> _queries.begin(); i; i++) {
+  for (qmi_t i = locq-> _queries.begin(); i.live(); i++) {
     if (jiff - i.value().last_response_jiffies > locq->_timeout_jiffies) {
       old_entries.push_back(i.key());
       if (i.value().p != 0)
@@ -369,7 +369,7 @@ FloodingLocQuerier::read_seqs(Element *e, void *)
   unsigned int jiff = click_jiffies();
 
   typedef seq_map::iterator si_t;
-  for (si_t i = q->_query_seqs.begin(); i; i++) {
+  for (si_t i = q->_query_seqs.begin(); i.live(); i++) {
     const seq_t &e = i.value();
     unsigned int age = (1000 * (jiff - e.last_response_jiffies)) / CLICK_HZ;
     s += i.key().s() + " seq=" + String(e.seq_no) + " age=" + String(age) + "\n";
@@ -387,7 +387,7 @@ FloodingLocQuerier::read_table(Element *e, void *)
   unsigned int jiff = click_jiffies();
 
   typedef qmap::iterator smi_t;
-  for (smi_t i = q->_queries.begin(); i; i++) {
+  for (smi_t i = q->_queries.begin(); i.live(); i++) {
     const LocEntry &e = i.value();
     unsigned int age = (1000 * (jiff - e.last_response_jiffies)) / CLICK_HZ;
     if (e.p == 0) {

@@ -220,7 +220,7 @@ particular purpose.\n");
      HashMap<ElementClassT *, int> m(-1);
      router->collect_types(m);
      Vector<String> classes;
-     for (HashMap<ElementClassT *, int>::iterator iter = m.begin(); iter; iter++)
+     for (HashMap<ElementClassT *, int>::iterator iter = m.begin(); iter.live(); iter++)
        if (iter.key()->primitive())
 	 classes.push_back(iter.key()->name());
      output_sorted_one_per_line(classes, out);
