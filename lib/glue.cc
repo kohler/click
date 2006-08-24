@@ -312,7 +312,7 @@ extern "C" {
 # define CLICK_LALLOC_MAX_SMALL	131072
 
 void *
-click_lalloc(uint32_t size)
+click_lalloc(size_t size)
 {
     void *v;
     if ((v = ((size > CLICK_LALLOC_MAX_SMALL) ? vmalloc(size) : kmalloc(size, GFP_ATOMIC)))) {
@@ -323,7 +323,7 @@ click_lalloc(uint32_t size)
 }
 
 void
-click_lfree(void *p, uint32_t size)
+click_lfree(void *p, size_t size)
 {
     if (p) {
 	((size > CLICK_LALLOC_MAX_SMALL) ? vfree(p) : kfree(p));
