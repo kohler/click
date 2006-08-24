@@ -83,7 +83,7 @@ class ToSimDevice : public Element { public:
   int fd() const				{ return _fd; }
 
   void push(int port, Packet *);
-  bool run_task();
+  bool run_task(Task *);
 
  private:
 

@@ -316,7 +316,7 @@ FromNetFlowSummaryDump::handle_multipacket(Packet *p)
 }
 
 bool
-FromNetFlowSummaryDump::run_task()
+FromNetFlowSummaryDump::run_task(Task *)
 {
     if (!_active)
 	return false;

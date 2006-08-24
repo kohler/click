@@ -126,7 +126,7 @@ ToDevice::cleanup(CleanupStage)
 }
 
 bool
-ToDevice::run_task()
+ToDevice::run_task(Task *)
 {
     int busy;
     int sent = 0;

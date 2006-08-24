@@ -53,7 +53,7 @@ RoundRobinUnqueue::initialize(ErrorHandler *errh)
 }
 
 bool
-RoundRobinUnqueue::run_task()
+RoundRobinUnqueue::run_task(Task *)
 {
   int tries = 0;
   Packet *p_next = input(_next).pull();

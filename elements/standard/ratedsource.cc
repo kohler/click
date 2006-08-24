@@ -91,7 +91,7 @@ RatedSource::cleanup(CleanupStage)
 }
 
 bool
-RatedSource::run_task()
+RatedSource::run_task(Task *)
 {
     if (!_active)
 	return false;

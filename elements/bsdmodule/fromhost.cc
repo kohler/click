@@ -100,7 +100,7 @@ FromHost::cleanup(CleanupStage)
 }
 
 bool
-FromHost::run_task()
+FromHost::run_task(Task *)
 {
     int npq = 0;
     // click_chatter("FromHost::run_task().");

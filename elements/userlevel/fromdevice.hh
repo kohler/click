@@ -144,7 +144,7 @@ class FromDevice : public Element { public:
 
     void selected(int fd);
 #if FROMDEVICE_PCAP
-    bool run_task();
+    bool run_task(Task *);
 #endif
 
 #if FROMDEVICE_LINUX

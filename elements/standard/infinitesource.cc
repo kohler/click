@@ -106,7 +106,7 @@ InfiniteSource::cleanup(CleanupStage)
 }
 
 bool
-InfiniteSource::run_task()
+InfiniteSource::run_task(Task *)
 {
     if (!_active || !_nonfull_signal)
 	return false;

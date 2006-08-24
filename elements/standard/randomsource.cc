@@ -73,7 +73,7 @@ RandomSource::make_packet()
 }
 
 bool
-RandomSource::run_task()
+RandomSource::run_task(Task *)
 {
   Packet *p = make_packet();
   output(0).push(p);

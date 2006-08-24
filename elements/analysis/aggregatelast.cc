@@ -115,7 +115,7 @@ AggregateLast::push(int, Packet *p)
     // clean if we should clean
     if (_clear_task.scheduled()) {
 	_clear_task.unschedule();
-	run_task();
+	run_task(0);
     }
     
     uint32_t agg = AGGREGATE_ANNO(p);
@@ -167,7 +167,7 @@ AggregateLast::aggregate_notify(uint32_t agg, AggregateEvent event, const Packet
 }
 
 bool
-AggregateLast::run_task()
+AggregateLast::run_task(Task *)
 {
     if (!_needs_clear)
 	return false;

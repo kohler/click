@@ -225,7 +225,7 @@ FromHost::selected(int fd)
 }
 
 bool
-FromHost::run_task()
+FromHost::run_task(Task *)
 {
     if (!_nonfull_signal)
 	return false;

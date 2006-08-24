@@ -32,7 +32,7 @@ CLICK_DECLS
  * queues</em>.  These queues are simply lists of @e tasks, which represent
  * functions that would like unconditional access to the CPU.  Tasks are
  * generally associated with elements.  When scheduled, most tasks call some
- * element's @link Element::run_task() run_task()@endlink method.
+ * element's @link Element::run_task(Task *) run_task()@endlink method.
  *
  * Click tasks are represented by Task objects.  An element that would like
  * special access to a router's CPU should include and initialize a Task

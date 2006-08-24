@@ -123,7 +123,7 @@ ToSimDevice::push(int, Packet *p)
 }
 
 bool
-ToSimDevice::run_task()
+ToSimDevice::run_task(Task *)
 {
   // XXX reduce tickets when idle
   bool active = false;

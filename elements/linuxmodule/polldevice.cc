@@ -190,7 +190,7 @@ PollDevice::cleanup(CleanupStage)
 }
 
 bool
-PollDevice::run_task()
+PollDevice::run_task(Task *)
 {
 #if HAVE_LINUX_POLLING
   struct sk_buff *skb_list, *skb;

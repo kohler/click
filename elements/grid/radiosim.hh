@@ -56,7 +56,7 @@ class RadioSim : public Element {
   int initialize(ErrorHandler *errh);
   void add_handlers();
 
-  bool run_task();
+  bool run_task(Task *);
 
 
 

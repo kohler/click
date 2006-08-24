@@ -117,7 +117,7 @@ static void print_queue(Packet *head) {
 #endif
 
 bool
-LinkUnqueue::run_task()
+LinkUnqueue::run_task(Task *)
 {
     bool worked = false;
     Timestamp now = Timestamp::now();

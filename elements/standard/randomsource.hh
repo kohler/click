@@ -30,7 +30,7 @@ class RandomSource : public Element { public:
   void add_handlers();
 
   Packet *pull(int);
-  bool run_task();
+  bool run_task(Task *);
 
  protected:
   

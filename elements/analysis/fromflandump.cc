@@ -370,7 +370,7 @@ FromFlanDump::read_packet(ErrorHandler *errh)
 }
 
 bool
-FromFlanDump::run_task()
+FromFlanDump::run_task(Task *)
 {
     if (!_active)
 	return;

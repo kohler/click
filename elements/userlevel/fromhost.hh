@@ -103,7 +103,7 @@ class FromHost : public Element { public:
 
     void selected(int fd);
 
-    bool run_task();
+    bool run_task(Task *);
     int fd() { return _fd; }
     String dev_name() { return _dev_name; }
 

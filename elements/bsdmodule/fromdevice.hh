@@ -89,7 +89,7 @@ class FromDevice : public AnyDevice, public Storage { public:
     
     int get_inq_drops();	// get some performance stats
 
-    bool run_task();
+    bool run_task(Task *);
 
     poll_handler_t *_poll_handler;
 

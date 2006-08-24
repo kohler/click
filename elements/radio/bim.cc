@@ -167,7 +167,7 @@ BIM::got_char(int c)
 }
 
 bool
-BIM::run_task()
+BIM::run_task(Task *)
 {
   Packet *p = input(0).pull();
   if (p)

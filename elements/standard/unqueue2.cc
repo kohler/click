@@ -60,7 +60,7 @@ Unqueue2::initialize(ErrorHandler *errh)
 }
 
 bool
-Unqueue2::run_task()
+Unqueue2::run_task(Task *)
 {
   int burst = -1;
   for (int i=0; i<_queue_elements.size(); i++) {

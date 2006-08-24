@@ -363,7 +363,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
 }
 
 bool
-FromCapDump::run_task()
+FromCapDump::run_task(Task *)
 {
     if (!_active)
 	return false;

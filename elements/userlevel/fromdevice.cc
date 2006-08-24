@@ -420,7 +420,7 @@ FromDevice::selected(int)
 
 #if FROMDEVICE_PCAP
 bool
-FromDevice::run_task()
+FromDevice::run_task(Task *)
 {
     // Read and push() at most one packet.
     int r = pcap_dispatch(_pcap, 1, FromDevice_get_packet, (u_char *) this);

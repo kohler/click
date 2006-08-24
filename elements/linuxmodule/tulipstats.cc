@@ -199,7 +199,7 @@ TulipStats::stats_poll()
 }
 
 bool
-TulipStats::run_task()
+TulipStats::run_task(Task *)
 {
   stats_poll();
   _task.fast_reschedule();

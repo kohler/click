@@ -197,13 +197,14 @@ Task::Task(TaskHook hook, void* thunk)
 {
 }
 
-/** @brief Construct a task that calls @a e ->@link Element::run_task()
+/** @brief Construct a task that calls @a e ->@link Element::run_task(Task *)
  * run_task()@endlink.
  *
  * @param e element to call
  *
  * Constructs a task that, when fired, calls the element @a e's @link
- * Element::run_task() run_task()@endlink method.
+ * Element::run_task(Task *) run_task()@endlink method, passing this Task
+ * as an argument.
  *
  * @sa Task(TaskHook, void *)
  */
@@ -515,12 +516,12 @@ Task::call_hook()
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     _runs++;
     if (!_hook)
-	_work_done += ((Element*)_thunk)->run_task();
+	_work_done += ((Element*)_thunk)->run_task(this);
     else
 	_work_done += _hook(this, _thunk);
 #else
     if (!_hook)
-	(void) ((Element*)_thunk)->run_task();
+	(void) ((Element*)_thunk)->run_task(this);
     else
 	(void) _hook(this, _thunk);
 #endif

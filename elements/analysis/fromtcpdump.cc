@@ -559,7 +559,7 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 }
 
 bool
-FromTcpdump::run_task()
+FromTcpdump::run_task(Task *)
 {
     if (!_active)
 	return false;

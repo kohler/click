@@ -1371,7 +1371,7 @@ FromIPSummaryDump::handle_multipacket(Packet *p)
 }
 
 bool
-FromIPSummaryDump::run_task()
+FromIPSummaryDump::run_task(Task *)
 {
     if (!_active)
 	return false;

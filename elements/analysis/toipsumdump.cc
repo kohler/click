@@ -274,7 +274,7 @@ ToIPSummaryDump::push(int, Packet *p)
 }
 
 bool
-ToIPSummaryDump::run_task()
+ToIPSummaryDump::run_task(Task *)
 {
     if (!_active)
 	return false;

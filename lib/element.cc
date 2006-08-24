@@ -2156,8 +2156,29 @@ Element::simple_action(Packet *p)
  * @return true if the task accomplished some meaningful work, false otherwise
  *
  * The Task(Element *) constructor creates a Task object that calls this
- * method when it fires.  Most elements that have tasks use this method.  The
- * default implementation causes an assertion failure.
+ * method when it fires.  Most elements that have tasks use this method.
+ *
+ * @note The default implementation calls the deprecated run_timer() method
+ * (the one with no parameters).  In future, the default implementation will
+ * cause an assertion failure.
+ */
+bool
+Element::run_task(Task *)
+{
+    return run_task();
+}
+
+/** @brief Called to run an element's task.
+ *
+ * @return true if the task accomplished some meaningful work, false otherwise
+ *
+ * @deprecated This method is deprecated.  Elements should override the
+ * run_task(Task *) function instead, which can differentiate between
+ * multiple Task objects.
+ *
+ * The Task(Element *) constructor creates a Task object that calls this
+ * method (via Element::run_task(Task *)) when it fires.  The default
+ * implementation causes an assertion failure.
  */
 bool
 Element::run_task()

@@ -61,7 +61,7 @@ Unqueue::initialize(ErrorHandler *errh)
 }
 
 bool
-Unqueue::run_task()
+Unqueue::run_task(Task *)
 {
     if (!_active)
 	return false;

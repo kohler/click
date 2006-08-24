@@ -246,7 +246,7 @@ ToDump::pull(int)
 }
 
 bool
-ToDump::run_task()
+ToDump::run_task(Task *)
 {
     if (!_active)
 	return false;

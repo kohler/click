@@ -67,7 +67,7 @@ DiscardNotify::notify(int signal)
 
 
 bool
-DiscardNotify::run_task()
+DiscardNotify::run_task(Task *)
 {
   Packet *p = input(0).pull();
   if (p)

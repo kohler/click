@@ -363,7 +363,7 @@ FromDevice::take_state(Element *e, ErrorHandler *errh)
 }
 
 bool
-FromDevice::run_task()
+FromDevice::run_task(Task *)
 {
     int npq = 0;
     // click_chatter("FromDevice::run_task().");

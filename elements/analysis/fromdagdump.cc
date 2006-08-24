@@ -358,7 +358,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 }
 
 bool
-FromDAGDump::run_task()
+FromDAGDump::run_task(Task *)
 {
     if (!_active)
 	return false;

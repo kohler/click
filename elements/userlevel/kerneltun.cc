@@ -490,7 +490,7 @@ KernelTun::selected(int fd)
 }
 
 bool
-KernelTun::run_task()
+KernelTun::run_task(Task *)
 {
     Packet *p = input(0).pull();
     if (p)

@@ -59,7 +59,7 @@ class PacketStore : public Element { public:
   DEQueue <store> _packets;
 
   int _dirty;
-  bool run_task();
+  bool run_task(Task *);
 
   Task _task;
 };

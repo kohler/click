@@ -75,7 +75,7 @@ class AggregateLast : public Element, public AggregateListener { public:
     void cleanup(CleanupStage);
 
     void push(int, Packet *);
-    bool run_task();
+    bool run_task(Task *);
 
     void aggregate_notify(uint32_t, AggregateEvent, const Packet *);
     void add_handlers();

@@ -27,7 +27,7 @@ class DiscardNoFree : public Element { public:
   void add_handlers();
   
   void push(int, Packet *);
-  bool run_task();
+  bool run_task(Task *);
 
  private:
 

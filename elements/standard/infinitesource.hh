@@ -105,7 +105,7 @@ class InfiniteSource : public Element, public ActiveNotifier { public:
   bool can_live_reconfigure() const		{ return true; }
   void cleanup(CleanupStage);
 
-  bool run_task();
+  bool run_task(Task *);
   Packet *pull(int);
 
  protected:

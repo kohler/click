@@ -170,7 +170,7 @@ class FromDAGDump : public Element { public:
     void cleanup(CleanupStage);
     void add_handlers();
 
-    bool run_task();
+    bool run_task(Task *);
     Packet *pull(int);
 
     void set_active(bool);

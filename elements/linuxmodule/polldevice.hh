@@ -94,7 +94,7 @@ class PollDevice : public AnyTaskDevice { public:
   /* process a packet. return 0 if not wanted after all. */
   int got_skb(struct sk_buff *);
 
-  bool run_task();
+  bool run_task(Task *);
 
   void reset_counts();
   

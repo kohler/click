@@ -61,7 +61,7 @@ class LookupGeographicGridRoute : public Element, public GridRouteActor {
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
-  bool run_task();
+  bool run_task(Task *);
 
   void push(int port, Packet *);
 

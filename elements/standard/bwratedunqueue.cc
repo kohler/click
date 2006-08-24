@@ -30,7 +30,7 @@ BandwidthRatedUnqueue::~BandwidthRatedUnqueue()
 }
 
 bool
-BandwidthRatedUnqueue::run_task()
+BandwidthRatedUnqueue::run_task(Task *)
 {
     bool worked = false;
     if (_rate.need_update(Timestamp::now())) {

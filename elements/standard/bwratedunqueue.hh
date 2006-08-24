@@ -25,7 +25,7 @@ class BandwidthRatedUnqueue : public RatedUnqueue { public:
   
     const char *class_name() const	{ return "BandwidthRatedUnqueue"; }
   
-    bool run_task();
+    bool run_task(Task *);
   
 };
 

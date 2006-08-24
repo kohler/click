@@ -114,7 +114,7 @@ LookupLocalGridRoute::initialize(ErrorHandler *errh)
 }
 
 bool
-LookupLocalGridRoute::run_task()
+LookupLocalGridRoute::run_task(Task *)
 {
   Packet *p = input(0).pull();
   if (p)

@@ -111,7 +111,7 @@ FromHandler::get_packet()
 }
 
 bool
-FromHandler::run_task()
+FromHandler::run_task(Task *)
 {
     if (!_active) {
 	return false;

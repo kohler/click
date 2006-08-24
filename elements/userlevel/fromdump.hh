@@ -189,7 +189,7 @@ class FromDump : public Element { public:
     FromDump *hotswap_element() const;
     void take_state(Element *, ErrorHandler *);
 
-    bool run_task();
+    bool run_task(Task *);
     Packet *pull(int);
 
     void set_active(bool);

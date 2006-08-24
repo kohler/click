@@ -45,7 +45,7 @@ ScheduleLinux::initialize(ErrorHandler *errh)
 }
 
 bool
-ScheduleLinux::run_task()
+ScheduleLinux::run_task(Task *)
 {
   schedule();
   _task.fast_reschedule();

@@ -27,7 +27,7 @@ class BIM : public Element {
   void selected(int fd);
 
   void push(int port, Packet *);
-  bool run_task();
+  bool run_task(Task *);
 
  private:
   String _dev;

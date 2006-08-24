@@ -71,7 +71,7 @@ class LinkUnqueue : public Element, public Storage { public:
     void cleanup(CleanupStage);
     void add_handlers();
   
-    bool run_task();
+    bool run_task(Task *);
 
   private:
 

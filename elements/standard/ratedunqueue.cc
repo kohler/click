@@ -60,7 +60,7 @@ RatedUnqueue::initialize(ErrorHandler *errh)
 }
 
 bool
-RatedUnqueue::run_task()
+RatedUnqueue::run_task(Task *)
 {
 #if 1    // listening for notifications
     bool worked = false;

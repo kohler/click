@@ -417,7 +417,7 @@ Socket::selected(int fd)
   }
 
   if (ninputs() && input_is_pull(0))
-    run_task();
+    run_task(0);
 }
 
 int
@@ -498,7 +498,7 @@ Socket::push(int, Packet *p)
 }
 
 bool
-Socket::run_task()
+Socket::run_task(Task *)
 {
   assert(ninputs() && input_is_pull(0));
   bool any = false;

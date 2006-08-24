@@ -147,7 +147,7 @@ class TulipStats : public AnyTaskDevice { public:
 
   void reset_counts();
   
-  bool run_task();
+  bool run_task(Task *);
   
  private:
 

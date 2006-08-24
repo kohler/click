@@ -270,7 +270,7 @@ RawSocket::run_timer(Timer *)
 }
 
 bool
-RawSocket::run_task()
+RawSocket::run_task(Task *)
 {
   if ((_wq || _signal) && !(_events & SELECT_WRITE) && _fd >= 0) {
     add_select(_fd, SELECT_WRITE);

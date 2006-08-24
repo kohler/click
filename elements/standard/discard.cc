@@ -48,7 +48,7 @@ Discard::push(int, Packet *p)
 }
 
 bool
-Discard::run_task()
+Discard::run_task(Task *)
 {
   Packet *p = input(0).pull();
   if (p)

@@ -246,7 +246,7 @@ ToDevice::run_timer(Timer *)
 }
 
 bool
-ToDevice::run_task()
+ToDevice::run_task(Task *)
 {
   if (_q || _signal) {
     if (add_select(_fd, SELECT_WRITE) < 0) {

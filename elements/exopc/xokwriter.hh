@@ -32,7 +32,7 @@ class xokWriter : public Element {
   
   void push(int port, Packet *);
 
-    bool run_task();
+    bool run_task(Task *);
   
 };
 

@@ -38,7 +38,7 @@ class Element { public:
     virtual Packet* pull(int port);
     virtual Packet* simple_action(Packet*);
 
-    virtual bool run_task();		// return true iff did useful work
+    virtual bool run_task(Task *);	// return true iff did useful work
     virtual void run_timer(Timer *);
 #if CLICK_USERLEVEL
     virtual void selected(int fd);
@@ -211,6 +211,7 @@ class Element { public:
     inline void add_output() CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
     bool ports_frozen() const CLICK_DEPRECATED;
     
+    virtual bool run_task() CLICK_DEPRECATED;
     virtual void run_timer() CLICK_DEPRECATED;
     
   private:

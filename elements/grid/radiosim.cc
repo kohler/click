@@ -89,7 +89,7 @@ RadioSim::initialize(ErrorHandler *errh)
 }
 
 bool
-RadioSim::run_task()
+RadioSim::run_task(Task *)
 {
   int in, out;
 

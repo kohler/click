@@ -76,7 +76,7 @@ public:
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh);
 
-  bool run_task();
+  bool run_task(Task *);
   void run_timer(Timer *);
   void push(int, Packet *);
 

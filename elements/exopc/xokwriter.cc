@@ -70,7 +70,7 @@ xokWriter::push(int port, Packet *p)
 
 
 bool
-xokWriter::run_task()
+xokWriter::run_task(Task *)
 {
   while (Packet *p = input(0).pull())
     push(0, p);

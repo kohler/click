@@ -96,7 +96,7 @@ class RatedSource : public Element { public:
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
 
-  bool run_task();
+  bool run_task(Task *);
   Packet *pull(int);
   
  protected:

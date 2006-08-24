@@ -380,7 +380,7 @@ IPFlowRawSockets::selected(int fd)
 }
 
 bool
-IPFlowRawSockets::run_task()
+IPFlowRawSockets::run_task(Task *)
 {
     Packet *p = input(0).pull();
     if (p)

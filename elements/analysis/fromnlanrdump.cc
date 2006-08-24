@@ -292,7 +292,7 @@ FromNLANRDump::read_packet(ErrorHandler *errh)
 }
 
 bool
-FromNLANRDump::run_task()
+FromNLANRDump::run_task(Task *)
 {
     if (!_active)
 	return false;

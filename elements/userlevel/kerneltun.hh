@@ -118,7 +118,7 @@ class KernelTun : public Element { public:
     void selected(int fd);
 
     void push(int port, Packet *);
-    bool run_task();
+    bool run_task(Task *);
 
   private:
 

@@ -319,7 +319,7 @@ FromDevice::emission_report(int idx)
 #endif
 
 bool
-FromDevice::run_task()
+FromDevice::run_task(Task *)
 {
     _runs++;
     int npq = 0;

@@ -57,7 +57,7 @@ DelayUnqueue::cleanup(CleanupStage)
 }
 
 bool
-DelayUnqueue::run_task()
+DelayUnqueue::run_task(Task *)
 {
     bool worked = false;
   

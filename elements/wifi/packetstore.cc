@@ -56,7 +56,7 @@ PacketStore::simple_action(Packet *p_in)
 }
 
 bool
-PacketStore::run_task()
+PacketStore::run_task(Task *)
 {
 	return false;
 }

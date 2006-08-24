@@ -81,7 +81,7 @@ SchedOrderTest::initialize(ErrorHandler* errh)
 }
 
 bool
-SchedOrderTest::run_task()
+SchedOrderTest::run_task(Task *)
 {
     if (*_bufpos_ptr < _buf_end) {
 	*((*_bufpos_ptr)++) = _id;

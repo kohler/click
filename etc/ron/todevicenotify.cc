@@ -92,7 +92,7 @@ ToDeviceNotify::notify(int signal)
 }
 
 bool
-ToDeviceNotify::run_task()
+ToDeviceNotify::run_task(Task *)
 {
   Packet *p = input(0).pull();
   if (p)

@@ -826,7 +826,7 @@ ToIPFlowDumps::pull(int)
 }
 
 bool
-ToIPFlowDumps::run_task()
+ToIPFlowDumps::run_task(Task *)
 {
     Packet *p = input(0).pull();
     if (p) {

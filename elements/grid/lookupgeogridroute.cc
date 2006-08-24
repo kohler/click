@@ -89,7 +89,7 @@ LookupGeographicGridRoute::initialize(ErrorHandler *errh)
 }
 
 bool
-LookupGeographicGridRoute::run_task()
+LookupGeographicGridRoute::run_task(Task *)
 {
   Packet *p = input(0).pull();
   if (p)

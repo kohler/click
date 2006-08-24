@@ -31,7 +31,7 @@ class RoundRobinUnqueue : public Element { public:
   int initialize(ErrorHandler *);
   void add_handlers();
   
-  bool run_task();
+  bool run_task(Task *);
 
   static String read_param(Element *e, void *);
 

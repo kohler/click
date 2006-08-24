@@ -424,7 +424,7 @@ FromDump::read_packet(ErrorHandler *errh)
 }
 
 bool
-FromDump::run_task()
+FromDump::run_task(Task *)
 {
     if (!_active)
 	return false;

@@ -181,7 +181,7 @@ class Socket : public Element { public:
   virtual void cleanup(CleanupStage);
 
   void add_handlers();
-  bool run_task();
+  bool run_task(Task *);
   void selected(int);
   void push(int port, Packet*);
 

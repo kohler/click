@@ -319,7 +319,7 @@ fl_stats(net_device *dev)
 }
 
 bool
-FromHost::run_task()
+FromHost::run_task(Task *)
 {
     if (!_nonfull_signal)
 	return false;

@@ -91,7 +91,7 @@ class FromHost : public AnyDevice { public:
 
     int set_device_addresses(ErrorHandler *);
 
-    bool run_task();
+    bool run_task(Task *);
     
   private:
 

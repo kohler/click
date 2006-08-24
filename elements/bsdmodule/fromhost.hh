@@ -19,7 +19,7 @@ class FromHost : public AnyDevice {
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
-    bool run_task();
+    bool run_task(Task *);
     struct ifqueue *_inq;
   
   private:

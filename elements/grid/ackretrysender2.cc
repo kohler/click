@@ -76,7 +76,7 @@ ACKRetrySender2::push(int port, Packet *p)
 }
 
 bool
-ACKRetrySender2::run_task()
+ACKRetrySender2::run_task(Task *)
 {
   check();
 
