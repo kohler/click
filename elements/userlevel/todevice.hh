@@ -60,7 +60,7 @@ CLICK_DECLS
 extern "C" {
 # include <pcap.h>
 }
-# if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
+# if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__) || defined(__NetBSD__)
 #  define TODEVICE_BSD_DEV_BPF 1
 #  define TODEVICE_WRITE 1
 # elif defined(__sun)

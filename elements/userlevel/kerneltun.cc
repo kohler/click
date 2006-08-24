@@ -42,7 +42,7 @@
 // this driver doesn't produce or expect packets with an address family prepended
 #endif
 #if defined(HAVE_NET_IF_TAP_H)
-# define KERNELTAP_NET
+# define KERNELTAP_NET 1
 #endif
 
 #include <net/if.h>
@@ -53,6 +53,11 @@
 #endif
 #if HAVE_NET_IF_TAP_H
 # include <net/if_tap.h>
+#endif
+
+#if defined(__NetBSD__)
+# include <sys/param.h>
+# include <sys/sysctl.h>
 #endif
 
 CLICK_DECLS
@@ -164,7 +169,7 @@ KernelTun::try_tun(const String &dev_name, ErrorHandler *)
 int
 KernelTun::alloc_tun(ErrorHandler *errh)
 {
-#if !KERNELTUN_LINUX && !KERNELTUN_NET && !KERNELTUN_OSX
+#if !KERNELTUN_LINUX && !KERNELTUN_NET && !KERNELTUN_OSX && !KERNELTAP_NET
     return errh->error("%s is not yet supported on this system.\n(Please report this message to click@pdos.lcs.mit.edu.)", class_name());
 #endif
 
@@ -190,9 +195,32 @@ KernelTun::alloc_tun(ErrorHandler *errh)
 #elif defined(KERNELTUN_OSX)
     _type = OSX_TUN;
     dev_prefix = "tun";
+#elif defined(__NetBSD__) && !defined(TUNSIFHEAD)
+    _type = (_tap ? NETBSD_TAP : NETBSD_TUN);
+    dev_prefix = (_tap ? "tap" : "tun");
 #else
     _type = (_tap ? BSD_TAP : BSD_TUN);
     dev_prefix = (_tap ? "tap" : "tun");
+#endif
+
+#if defined(__NetBSD__) && !defined(TUNSIFHEAD)
+    if (_type == NETBSD_TAP) {
+	// In NetBSD, two ways to create a tap:
+	// 1. open /dev/tap cloning interface. 
+	// 2. do ifconfig tapN create (SIOCIFCREATE), and then open(/dev/tapN).
+	// We use the cloning interface.
+	if ((error = try_tun(dev_prefix, errh)) >= 0) {
+	    struct ifreq ifr;
+	    memset(&ifr, 0, sizeof(ifr));
+	    if (ioctl(_fd, TAPGIFNAME, &ifr) != 0)
+		return errh->error("TAPGIFNAME failed: %s", strerror(errno));
+	    _dev_name = ifr.ifr_name; 
+	    return error;
+	} else if (!saved_error || error != -ENOENT)
+	    saved_error = error, saved_device = dev_prefix, saved_message = String();
+	tried << "/dev/" << dev_prefix;
+	goto error_out;
+    }
 #endif
 
     for (int i = 0; i < 6; i++) {
@@ -202,7 +230,10 @@ KernelTun::alloc_tun(ErrorHandler *errh)
 	    saved_error = error, saved_device = dev_prefix + String(i), saved_message = String();
 	tried << "/dev/" << dev_prefix << i << ", ";
     }
-    
+
+#if defined(__NetBSD__) && !defined(TUNSIFHEAD)
+ error_out:
+#endif
     if (saved_error == -ENOENT) {
 	tried.pop_back(2);
 	return errh->error("could not find a tap device\n(checked %s)\nYou may need to load a kernel module to support tap.", tried.c_str());
@@ -256,6 +287,15 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
 	if (ioctl(s, SIOCSIFHWADDR, &ifr) != 0)
 	    errh->warning("could not set interface Ethernet address: %s", strerror(errno));
     }
+#elif defined(__NetBSD__)
+    if (_macaddr && _tap) {
+	StringAccum sa;
+	sa << "net.link.tap." << _dev_name;
+	int r = sysctlbyname(sa.c_str(), (void *) 0, (void *) 0, _macaddr.data(), sizeof(_macaddr));
+	if (r < 0)
+	    errh->warning("could not set interface Ethernet address: %s", strerror(errno));
+    } else if (_macaddr)
+	errh->warning("could not set interface Ethernet address: no support for /dev/tun");
 #elif !defined(__FreeBSD__)
     if (_macaddr)
 	errh->warning("could not set interface Ethernet address: no support");
@@ -346,7 +386,7 @@ KernelTun::setup_tun(ErrorHandler *errh)
 	_mtu_in = _mtu_out + 4;
     else if (_type == BSD_TUN)
 	_mtu_in = _mtu_out + 4;
-    else if (_type == BSD_TAP)
+    else if (_type == BSD_TAP || _type == NETBSD_TAP || _type == NETBSD_TUN)
 	_mtu_in = _mtu_out;
     else if (_type == OSX_TUN)
 	_mtu_in = _mtu_out + 4; // + 0?
@@ -375,7 +415,7 @@ void
 KernelTun::cleanup(CleanupStage)
 {
     if (_fd >= 0) {
-	if (_type != LINUX_UNIVERSAL)
+	if (_type != LINUX_UNIVERSAL && _type != NETBSD_TAP)
 	    updown(0, ~0, ErrorHandler::default_handler());
 	close(_fd);
 	remove_select(_fd, SELECT_READ);
@@ -423,7 +463,7 @@ KernelTun::selected(int fd)
 		checked_output_push(1, p->clone());
 	    } else
 		ok = fake_pcap_force_ip(p, FAKE_DLT_RAW);
-	} else if (_type == OSX_TUN) {
+	} else if (_type == OSX_TUN || _type == NETBSD_TUN) {
 	    ok = fake_pcap_force_ip(p, FAKE_DLT_RAW);
 	} else { /* _type == LINUX_ETHERTAP */
 	    // 2-byte padding followed by a mostly-useless Ethernet header
@@ -524,7 +564,8 @@ KernelTun::push(int, Packet *p)
 	    memcpy(q->data(), "\x00\x00\xFE\xFD\x00\x00\x00\x00\xFE\xFD\x00\x00\x00\x00", 14);
 	    *(uint16_t *)(q->data() + 14) = ethertype;
 	}
-    }
+    } else
+	/* existing packet is OK */;
 
     if (p) {
 	int w = write(_fd, p->data(), p->length());
