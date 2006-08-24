@@ -1,3 +1,20 @@
+2006-08-24 Thursday 12:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: kerneltun.cc (1.65), kerneltun.hh (1.28),
+	  todevice.hh (1.36): make KernelTap, KernelTun, and ToDevice work
+	  on NetBSD; based on patches from Vivek Raghunathan
+
+2006-08-24 Thursday 11:57  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: checkipheader.cc (1.58), checkipheader.hh (1.42),
+	  checkipheader.cc (1.59): use raw bools, rather than : 1; same
+	  amount of space and maybe slightly faster (Koen Beel)
+
+2006-08-24 Thursday 11:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/glue.cc (1.54): click compiles on AMD64: patch from Joe
+	  Maldonado (Mazu)
+
 2006-08-23 Wednesday 16:15  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/aggregateipaddrpair.cc (1.5),
