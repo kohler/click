@@ -104,6 +104,7 @@ CheckIPHeader::static_initialize()
   cp_register_argtype("CheckIPHeader.INTERFACES", "list of router IP addresses and prefixes", cpArgStore2, ipaddr_list_parse, ipaddr_list_store, IPADDR_LIST_INTERFACES);
   cp_register_argtype("CheckIPHeader.BADSRC", "list of IP addresses", cpArgNormal, ipaddr_list_parse, ipaddr_list_store, IPADDR_LIST_BADSRC);
   cp_register_argtype("CheckIPHeader.BADSRC_OLD", "list of IP addresses", cpArgNormal, ipaddr_list_parse, ipaddr_list_store, IPADDR_LIST_BADSRC_OLD);
+  click_chatter("%d", sizeof(CheckIPHeader));
 }
 
 void

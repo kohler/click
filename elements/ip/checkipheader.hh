@@ -129,9 +129,9 @@ class CheckIPHeader : public Element { public:
   
   bool _checksum;
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
-  bool _aligned : 1;
+  bool _aligned;
 #endif
-  bool _verbose : 1;
+  bool _verbose;
   
   IPAddressList _good_dst;	// array of IP dst addrs for which _bad_src
 				// does not apply
