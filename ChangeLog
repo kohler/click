@@ -1,3 +1,8 @@
+2006-08-26 Saturday 17:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/kerneltun.cc (1.67): another NetBSD patch from
+	  Vivek Raghunathan
+
 2006-08-24 Thursday 13:16  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/aggregatelast.cc (1.11),
