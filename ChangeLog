@@ -1,3 +1,8 @@
+2006-08-29 Tuesday 14:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-linuxmodule.h.in (1.17), configure (1.86), configure.in
+	  (1.290), linuxmodule/skbmgr.cc (1.25): minor ports from Mazu
+
 2006-08-26 Saturday 17:54  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/kerneltun.cc (1.67): another NetBSD patch from
