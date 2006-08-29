@@ -895,6 +895,15 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 	AC_DEFINE([HAVE_LINUX_SKBUFF_SECURITY], [1], [Define if 'struct sk_buff' has a 'security' member.])
     fi
 
+    AC_CACHE_CHECK([whether struct sk_buff has an fclone member], [ac_cv_linuxmodule_skbuff_fclone],
+	[AC_LANG_C
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <linux/skbuff.h>]],
+[[extern struct sk_buff *s; s->fclone = 0;]])], 
+	[ac_cv_linuxmodule_skbuff_fclone=yes], [ac_cv_linuxmodule_skbuff_fclone=no])])
+    if test $ac_cv_linuxmodule_skbuff_fclone = yes; then
+	AC_DEFINE([HAVE_LINUX_SKBUFF_FCLONE], [1], [Define if 'struct sk_buff' has an 'fclone' member.])
+    fi
+
 
     CXX="$SAVE_CXX"
     CPPFLAGS="$saveflags"

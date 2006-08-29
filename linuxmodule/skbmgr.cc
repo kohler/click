@@ -102,6 +102,7 @@ class RecycledSkbPool { public:
   
   friend struct sk_buff *skbmgr_allocate_skbs(unsigned, unsigned, int *);
   friend void skbmgr_recycle_skbs(struct sk_buff *);
+  
 };
 
 void
@@ -362,7 +363,8 @@ void
 skbmgr_init()
 {
 #if __MTCLICK__
-  for(int i=0; i<NR_CPUS; i++) pool[i].initialize();
+  for (int i = 0; i < NR_CPUS; i++)
+    pool[i].initialize();
 #else
   pool.initialize();
 #endif
@@ -372,7 +374,8 @@ void
 skbmgr_cleanup()
 {
 #if __MTCLICK__
-  for(int i=0; i<NR_CPUS; i++) pool[i].cleanup();
+  for (int i = 0; i < NR_CPUS; i++)
+    pool[i].cleanup();
 #else
   pool.cleanup();
 #endif
@@ -383,11 +386,11 @@ skbmgr_allocate_skbs(unsigned headroom, unsigned size, int *want)
 {
   if (headroom < SKBMGR_DEF_HEADSZ)
     headroom = SKBMGR_DEF_HEADSZ;
-  
+
 #if __MTCLICK__
   int cpu = click_current_processor();
   int producer = cpu;
-  size += (SKBMGR_DEF_HEADSZ+SKBMGR_DEF_TAILSZ);
+  size += (SKBMGR_DEF_HEADSZ + SKBMGR_DEF_TAILSZ);
   int bucket = RecycledSkbPool::size_to_higher_bucket(headroom + size);
 
   int w = *want;
