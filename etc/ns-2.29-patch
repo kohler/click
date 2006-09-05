@@ -636,7 +636,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.29-pure/classifier/classifier
 +    simstate.curtime = GetSimTime();
 +    //fprintf(stderr,"Sending packet up to click...\n");
 +    simclick_click_send(clickinst_,&simstate,ifid,clicktype,data,len,&simpinfo);
-+    delete data;
++    delete[] data;
 +    data = 0;
 +  }
 +  else {
