@@ -110,7 +110,7 @@ template <class K, class V>
 class _HashMap_const_iterator { public:
 
   bool live() const			{ return _elt; }
-  operator bool() const CLICK_DEPRECATED { return live(); }
+  inline operator bool() const CLICK_DEPRECATED;
   void operator++(int);
   void operator++()			{ (*this)++; }
   
@@ -207,6 +207,13 @@ HashMap<K, V>::operator[](const K &key) const
   return find(key);
 }
 
+template <class K, class V>
+inline
+_HashMap_const_iterator<K, V>::operator bool() const
+{
+    return live();
+}
+
 
 template <class K>
 class HashMap<K, void *> { public:
@@ -300,7 +307,7 @@ template <class K>
 class _HashMap_const_iterator<K, void *> { public:
 
   bool live() const			{ return _elt; }
-  operator bool() const CLICK_DEPRECATED { return live(); }
+  inline operator bool() const CLICK_DEPRECATED;
   void operator++(int);
   void operator++()			{ (*this)++; }
   
@@ -397,6 +404,13 @@ HashMap<K, void *>::operator[](const K &key) const
   return find(key);
 }
 
+template <class K>
+inline
+_HashMap_const_iterator<K, void *>::operator bool() const
+{
+  return live();
+}
+
 
 template <class K, class T>
 class HashMap<K, T *> : public HashMap<K, void *> { public:
@@ -460,7 +474,7 @@ class _HashMap_const_iterator<K, T *> : private _HashMap_const_iterator<K, void 
   typedef _HashMap_const_iterator<K, void *> inherited;
 
   bool live() const	{ return inherited::live(); }
-  operator bool() const CLICK_DEPRECATED { return inherited::live(); }
+  inline operator bool() const CLICK_DEPRECATED;
   void operator++(int)	{ inherited::operator++(0); }
   void operator++()	{ inherited::operator++(); }
   
@@ -520,6 +534,13 @@ inline typename HashMap<K, T *>::iterator
 HashMap<K, T *>::end()
 {
   return iterator(this, false);
+}
+
+template <class K, class T>
+inline
+_HashMap_const_iterator<K, T *>::operator bool() const
+{
+  return inherited::live();
 }
 
 template <class K, class V>
