@@ -1,3 +1,8 @@
+2006-09-06 Wednesday 11:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/bighashmap.hh (1.30): fix CLICK_DEPRECATED (Jens
+	  Mueller)
+
 2006-09-05 Tuesday 01:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/ns-2.29-patch (1.7): match delete and delete[] (Bart)
