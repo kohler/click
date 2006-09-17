@@ -407,7 +407,12 @@ Packet::shift_data(int offset, bool free_on_failure)
     return this;
   else if (!shared() && (offset < 0 ? headroom() >= (uint32_t)(-offset) : tailroom() >= (uint32_t)offset)) {
     WritablePacket *q = static_cast<WritablePacket *>(this);
-    memmove(q->data() + offset, q->data(), q->length());
+    uint8_t *old_head, *new_head;
+    if (offset < 0)
+      old_head = q->data() - offset, new_head = q->data();
+    else
+      old_head = q->data(), new_head = q->data() + offset;
+    memmove(new_head, old_head, q->end_data() - old_head);
 #if CLICK_LINUXMODULE
     struct sk_buff *mskb = q->skb();
     mskb->data += offset;
