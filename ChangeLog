@@ -1,3 +1,22 @@
+2006-09-16 Saturday 23:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/: cyclecountaccum.cc (1.14), rtcycles.cc
+	  (1.14), setcyclecount.cc (1.11): require int64 (Torquato Bertani)
+
+2006-09-16 Saturday 23:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/packet.cc (1.59): shift_data() fix: the old version would not
+	  shift any headers that were Strip()ed off, but some code expected
+	  those shifted headers to continue to exist.  Now we shift the
+	  entire headroom as well as the data area, which is a bit
+	  expensive but should improve things.	(Mathias Kurth reported the
+	  problem)
+
+2006-09-16 Saturday 23:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/: linux-2.6.16.13-patch (1.8), make-linux-patch (1.6): fix
+	  patch for arm (Mathias Jeschke)
+
 2006-09-06 Wednesday 11:26  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/bighashmap.hh (1.30): fix CLICK_DEPRECATED (Jens
