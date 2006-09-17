@@ -43,5 +43,5 @@ SetCycleCount::pull(int)
   return p;
 }
 
-ELEMENT_REQUIRES(linuxmodule)
+ELEMENT_REQUIRES(linuxmodule int64)
 EXPORT_ELEMENT(SetCycleCount)

@@ -91,5 +91,5 @@ CycleCountAccum::add_handlers()
     add_write_handler("reset_counts", reset_handler, (void *)0);
 }
 
-ELEMENT_REQUIRES(linuxmodule)
+ELEMENT_REQUIRES(linuxmodule int64)
 EXPORT_ELEMENT(CycleCountAccum)

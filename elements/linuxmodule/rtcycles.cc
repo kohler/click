@@ -80,5 +80,5 @@ RTCycles::add_handlers()
 }
 
 
-ELEMENT_REQUIRES(linuxmodule)
+ELEMENT_REQUIRES(linuxmodule int64)
 EXPORT_ELEMENT(RTCycles)
