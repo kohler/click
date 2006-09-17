@@ -15,6 +15,8 @@ usage () {
 if [ $# -lt 2 ]; then usage; fi
 if [ ! \( -d "$1" -a -d "$2" \) ]; then usage; fi
 
+puredir_orig="$1"
+clickdir_orig="$2"
 puredir=`cd "$1" && pwd`
 clickdir=`cd "$2" && pwd`
 
@@ -37,4 +39,5 @@ if [ `expr "$puredir" : "/"` != 1 ]; then
 fi
 
 cd $clickdir
+[ $clickdir_orig = . ] && puredir="$puredir_orig"
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' $puredir . | grep -v '^Only in \.[/:]'
