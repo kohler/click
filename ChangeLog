@@ -1,3 +1,8 @@
+2006-09-18 Monday 01:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/libclick/lc-configure.in (1.48): adapt to main click
+	  configury re: PROPER
+
 2006-09-16 Saturday 23:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/: cyclecountaccum.cc (1.14), rtcycles.cc
