@@ -3493,6 +3493,8 @@ e1000_tx_pqueue(struct net_device *netdev, struct sk_buff *skb)
 			       skb->data + offset,
 			       len,
 			       PCI_DMA_TODEVICE);
+	/* thanks Adam Greenhalgh and Beyers Cronje! */
+	adapter->tx_ring.buffer_info[i].time_stamp = jiffies;
 
 	tx_desc->buffer_addr = cpu_to_le64(adapter->tx_ring.buffer_info[i].dma);
 	tx_desc->lower.data = cpu_to_le32(txd_lower | len);
