@@ -906,6 +906,13 @@ struct e1000_ffvt_entry {
 #define E1000_ERT      0x02008  /* Early Rx Threshold - RW */
 #define E1000_FCRTL    0x02160  /* Flow Control Receive Threshold Low - RW */
 #define E1000_FCRTH    0x02168  /* Flow Control Receive Threshold High - RW */
+
+#define E1000_RDFH     0x02410  /* Diagnostic: Receive Data Fifo Head - RW */
+#define E1000_RDFT     0x02418  /* Diagnostic: Receive Data Fifo Tail - RW */
+#define E1000_RDFHS    0x02420  /* Diagnostic: Receive Data Fifo Head Saved - RW */
+#define E1000_RDFTS    0x02428  /* Diagnostic: Receive Data Fifo Tail Saved - RW */
+#define E1000_RDFPC    0x02430  /* Diagnostic: Receive Data Fifo Packet Count - RW */
+
 #define E1000_PSRCTL   0x02170  /* Packet Split Receive Control - RW */
 #define E1000_RDBAL    0x02800  /* RX Descriptor Base Address Low - RW */
 #define E1000_RDBAH    0x02804  /* RX Descriptor Base Address High - RW */
@@ -1208,6 +1215,13 @@ struct e1000_ffvt_entry {
 #define E1000_82542_TDFT     0x08018
 #define E1000_82542_FFMT     E1000_FFMT
 #define E1000_82542_FFVT     E1000_FFVT
+
+#define E1000_82542_RDFH     E1000_RDFH
+#define E1000_82542_RDFT     E1000_RDFT
+#define E1000_82542_RDFHS    E1000_RDFHS
+#define E1000_82542_RDFTS    E1000_RDFTS
+#define E1000_82542_RDFPC    E1000_RDFPC
+
 #define E1000_82542_HOST_IF  E1000_HOST_IF
 #define E1000_82542_IAM         E1000_IAM
 #define E1000_82542_EEMNGCTL    E1000_EEMNGCTL
