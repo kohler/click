@@ -4636,6 +4636,7 @@ e1000_rx_poll(struct net_device *dev, int *want)
       rx_desc->status = 0;
       dev_kfree_skb(*skb);
       *skb = NULL;
+      got--;
       continue;
     }
     rx_desc->status = 0;
