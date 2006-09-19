@@ -49,7 +49,7 @@ int
 MSQueue::initialize(ErrorHandler *errh)
 {
     assert(!_q);
-    _q = new Packet *[_capacity + 1];
+    _q = (Packet **) CLICK_LALLOC(sizeof(Packet *) * (_capacity + 1));
     if (_q == 0)
 	return errh->error("out of memory");
 
@@ -70,7 +70,7 @@ MSQueue::cleanup(CleanupStage)
 	for (int i = 0; i <= _capacity; i++)
 	    if (_q[i])
 		_q[i]->kill();
-    delete[] _q;
+    CLICK_LFREE(_q, sizeof(Packet *) * (_capacity + 1));
     _q = 0;
 }
 

@@ -60,7 +60,7 @@ int
 SimpleQueue::initialize(ErrorHandler *errh)
 {
     assert(!_q && _head == 0 && _tail == 0);
-    _q = new Packet *[_capacity + 1];
+    _q = (Packet **) CLICK_LALLOC(sizeof(Packet *) * (_capacity + 1));
     if (_q == 0)
 	return errh->error("out of memory");
     _drops = 0;
@@ -80,7 +80,7 @@ SimpleQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
     int new_capacity = _capacity;
     _capacity = old_capacity;
   
-    Packet **new_q = new Packet *[new_capacity + 1];
+    Packet **new_q = (Packet **) CLICK_LALLOC(sizeof(Packet *) * (new_capacity + 1));
     if (new_q == 0)
 	return errh->error("out of memory");
   
@@ -93,7 +93,7 @@ SimpleQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
     for (; i != _tail; i = next_i(i))
 	_q[i]->kill();
   
-    delete[] _q;
+    CLICK_LFREE(_q, sizeof(Packet *) * (_capacity + 1));
     _q = new_q;
     _head = 0;
     _tail = j;
@@ -139,7 +139,7 @@ SimpleQueue::cleanup(CleanupStage)
 {
     for (int i = _head; i != _tail; i = next_i(i))
 	_q[i]->kill();
-    delete[] _q;
+    CLICK_LFREE(_q, sizeof(Packet *) * (_capacity + 1));
     _q = 0;
 }
 
