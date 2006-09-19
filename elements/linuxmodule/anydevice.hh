@@ -92,7 +92,6 @@ class AnyDevice : public Element { public:
     int find_device(bool, AnyDeviceMap *, ErrorHandler *);
     void set_device(net_device *, AnyDeviceMap *);
     void clear_device(AnyDeviceMap *);
-    void adjust_tickets(int work);
 
   protected:
 
@@ -111,7 +110,7 @@ class AnyTaskDevice : public AnyDevice { public:
 
     AnyTaskDevice();
 
-    void adjust_tickets(int work);
+    inline void adjust_tickets(int work);
 
   protected:
 

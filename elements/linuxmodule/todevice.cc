@@ -342,8 +342,7 @@ ToDevice::run_task(Task *)
     spin_unlock(&_dev->xmit_lock);
     local_bh_enable();
 #endif
-  
-    adjust_tickets(sent);
+
     // If we're polling, never go to sleep! We're relying on ToDevice to clean
     // the transmit ring.
     // Otherwise, don't go to sleep if the signal isn't active and
@@ -354,7 +353,15 @@ ToDevice::run_task(Task *)
     bool reschedule = (busy || sent > 0 || _signal.active());
 #endif
 #if HAVE_LINUX_POLLING
-    reschedule |= is_polling;
+    if (is_polling) {
+	reschedule = true;
+	// 9/18/06: Frederic Van Quickenborne reports (1/24/05) that ticket
+	// adjustments in FromDevice+ToDevice cause odd behavior.  The ticket
+	// adjustments actually don't feel necessary to me in From/ToDevice
+	// any more, as described in FromDevice.  So adjusting tickets now
+	// only if polling.
+	adjust_tickets(sent);
+    }
 #endif /* HAVE_LINUX_POLLING */
 
     if (reschedule) {

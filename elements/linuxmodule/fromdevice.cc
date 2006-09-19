@@ -335,9 +335,13 @@ FromDevice::run_task(Task *)
     }
     if (npq == 0)
 	_empty_runs++;
-#if CLICK_DEVICE_ADJUST_TICKETS
-    adjust_tickets(npq);
-#endif
+    // 9/18/06: Frederic Van Quickenborne reports (1/24/05) that ticket
+    // adjustments in FromDevice+ToDevice cause odd behavior.  The ticket
+    // adjustments actually don't feel necessary to me in From/ToDevice any
+    // more, since FromDevice's interrupt handler will reschedule FromDevice
+    // as necessary; now "ticket adjustment" is subsumed by "scheduled or not
+    // scheduled".  So commenting this out.
+    // adjust_tickets(npq);
     if (npq > 0)
 	_task.fast_reschedule();
     return npq > 0;
