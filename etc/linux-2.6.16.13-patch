@@ -3778,8 +3778,8 @@ diff -ru ../linux-2.6.16.13/net/core/neighbour.c ./net/core/neighbour.c
  	const char *dev_name_source = NULL;
 diff -ru ../linux-2.6.16.13/net/core/skbuff.c ./net/core/skbuff.c
 --- ../linux-2.6.16.13/net/core/skbuff.c	2006-05-02 14:38:44.000000000 -0700
-+++ ./net/core/skbuff.c	2006-06-28 09:36:56.000000000 -0700
-@@ -505,6 +505,105 @@
++++ ./net/core/skbuff.c	2006-09-18 18:39:35.000000000 -0700
+@@ -505,6 +505,112 @@
  	skb_shinfo(new)->tso_segs = skb_shinfo(old)->tso_segs;
  }
  
@@ -3855,6 +3855,8 @@ diff -ru ../linux-2.6.16.13/net/core/skbuff.c ./net/core/skbuff.c
 +				int i;
 +				for (i = 0; i < skb_shinfo(skb)->nr_frags; i++)
 +					put_page(skb_shinfo(skb)->frags[i].page);
++				/* Jason Park patch */
++				skb_shinfo(skb)->nr_frags = 0;
 +			}
 +
 +			if (skb_shinfo(skb)->frag_list)
@@ -3872,6 +3874,11 @@ diff -ru ../linux-2.6.16.13/net/core/skbuff.c ./net/core/skbuff.c
 +
 +			atomic_set(&skb->users, 1);
 +			atomic_set(&(skb_shinfo(skb)->dataref), 1);
++			/* Jason Park patch */
++			skb_shinfo(skb)->tso_size = 0;
++			skb_shinfo(skb)->tso_segs = 0;
++			skb_shinfo(skb)->ufo_size = 0;
++			skb_shinfo(skb)->ip6_frag_id = 0;
 +
 +			return skb;
 +		}
@@ -3885,7 +3892,7 @@ diff -ru ../linux-2.6.16.13/net/core/skbuff.c ./net/core/skbuff.c
  /**
   *	skb_copy	-	create private copy of an sk_buff
   *	@skb: buffer to copy
-@@ -1806,6 +1905,7 @@
+@@ -1806,6 +1912,7 @@
  EXPORT_SYMBOL(skb_checksum);
  EXPORT_SYMBOL(skb_clone);
  EXPORT_SYMBOL(skb_clone_fraglist);

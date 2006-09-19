@@ -38,6 +38,9 @@
 /* Define if your Linux kernel has read_net_skbcount. */
 #undef HAVE_LINUX_READ_NET_SKBCOUNT
 
+/* Define if 'skb_shinfo(skb)' has a 'tso_size' member. */
+#undef HAVE_LINUX_SKB_SHINFO_TSO_SIZE
+
 /* Define if 'struct sk_buff' has an 'fclone' member. */
 #undef HAVE_LINUX_SKBUFF_FCLONE
 

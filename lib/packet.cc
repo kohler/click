@@ -267,6 +267,12 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
   atomic_set(&(skb_shinfo(nskb)->dataref), 1);
   skb_shinfo(nskb)->nr_frags = 0;
   skb_shinfo(nskb)->frag_list = 0;
+#  if HAVE_LINUX_SKB_SHINFO_TSO_SIZE
+  skb_shinfo(nskb)->tso_size = 0;
+  skb_shinfo(nskb)->tso_segs = 0;
+  skb_shinfo(nskb)->ufo_size = 0;
+  skb_shinfo(nskb)->ip6_frag_id = 0;
+#  endif
 # endif
 
   shift_header_annotations(nskb->head + extra_headroom - old_head);
