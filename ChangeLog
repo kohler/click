@@ -1,3 +1,20 @@
+2006-09-18 Monday 22:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/: anydevice.hh (1.42), fromdevice.cc (1.93),
+	  todevice.cc (1.148): Frederic Van Quickenborne reported an
+	  anomaly with From and ToDevice ticket adjustments: ToDevice got
+	  very few tickets and performance began to suck.  So turn off
+	  ticket adjustment for ToDevice in non-polling mode.  Wonder what
+	  this will do to people's performance -- only one way to find out.
+
+2006-09-18 Monday 21:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-linuxmodule.h.in (1.18), configure (1.87), configure.in
+	  (1.291), etc/linux-2.6.16.13-patch (1.9), lib/packet.cc (1.60):
+	  more e1000 TX timeout fixes, this time from Jason Park: when an
+	  skb is recycled or uniqueified, clear its
+	  transmit-segment-offloading fields
+
 2006-09-18 Monday 21:11  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* drivers/e1000-6.x/src/e1000_main.c (1.4): add patch from Adam
