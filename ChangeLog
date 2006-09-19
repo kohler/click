@@ -1,3 +1,10 @@
+2006-09-19 Tuesday 10:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: frontdropqueue.cc (1.22), msqueue.cc (1.19),
+	  simplequeue.cc (1.16): use CLICK_LALLOC and CLICK_LFREE in
+	  Queue-derived elements, so that Queues can contain more than 32K
+	  packets.  Inspired by Beyers Cronje
+
 2006-09-18 Monday 22:04  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/: anydevice.hh (1.42), fromdevice.cc (1.93),
