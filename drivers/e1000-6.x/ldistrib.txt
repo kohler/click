@@ -1,0 +1,155 @@
+Using Intel(R) Network Adapters with Linux* --
+Information for Specific Linux* Distributions
+==============================================
+
+July 1, 2005
+
+Contents
+========
+
+- SuSE* LINUX Enterprise Server 8 IA64 cause unresolved symbols
+- SuSE LINUX Enterprise Server 9 warning message during driver build   
+- Red Hat* Linux 7.1 - Creating an RPM from tar / zipped File
+- ACPI enable may cause Dual Port Pro/1000 adapters to fail
+- Red Hat Enterprise Linux (RHEL)
+- Loading and unloading modules with the Linux 2.6 Kernel
+- Red Hat Enterprise Linux 3 with Intel(R) Desktop Board D915GEV
+- Support
+
+
+SuSE LINUX Enterprise Server 8 IA64 causes unresolved symbols
+=============================================================
+
+If you get unresolved symbol errors when loading the e1000 driver, perform
+the following:
+
+  1. cd /usr/src/linux
+  2. make cloneconfig
+  3. make dep
+
+Then rebuild the driver.
+
+
+SuSE LINUX Enterprise Server 9 warning message during driver build
+==================================================================
+
+While building the driver on SuSE LINUX Enterprise Server 9 installations, 
+the following warning or something similar may be displayed. It is safe to 
+ignore this message. The driver will load and function normally.
+
+Symbol version dump /usr/src/<kernel-version>-obj/<arch>/<kernel flavor>/
+Module.symvers is missing, modules will have CONFIG_MODVERSIONS disabled. 
+
+While loading the driver, ignore the warnings in the syslog:
+
+  linux kernel: <driver name>: no version for "struct_module" found: kernel 
+  tainted.
+   
+  linux kernel: <driver name>: unsupported module, tainting kernel.
+
+
+Red Hat Linux 7.1 - Creating an RPM from tar / zipped File
+==========================================================
+
+When trying to generate an RPM from the .tar.gz file, a segmentation fault 
+(core dump) occurs. This failure occurs because Red Hat Linux 7.1 uses 
+version 4.0.2 of the RPM utility. This version does not have the ability to 
+handle parameterized macros, which are used within the e100 and e1000 spec 
+files to generate an RPM. Updating the RPM utility to a more current version 
+resolves the issue. The utility can be obtained from http://www.rpm.org.
+
+
+ACPI enable may cause Dual Port PRO/1000 Adapters to fail
+=========================================================
+
+If ACPI is turned on in the kernel, dual port adapters may not work. 
+This is due to a limitation in ACPI. Currently, this affects all new 
+versions of SuSE.
+
+
+Red Hat Enterprise Linux (RHEL)
+===============================
+
+2.1 Distribution
+----------------
+
+If there are errors while compiling the driver, do the following:
+
+  1. Change to the kernel source directory.
+  2. Perform all the required steps to build the kernel up to and including
+     make dep.
+  3. Modify EXTRAVERSION in the Makefile in Red Hat kernel source directory
+     to match the version of the running kernel.
+  3. Build the driver, using instructions located in the README file.
+
+While building the driver, ignore the warning:
+
+   /lib/modules/2.4.9-e.34/build/include/linux/rhconfig.h:31:60:
+   operator '(' has no left operand
+
+NOTE: For Red Hat's procedure for building a Linux kernel we recommend 
+visiting their web site at www.redhat.com.
+NOTE: This problem is resolved in Red Hat Enterprise Linux 2.1 Update 4.
+
+2.5.50 Distribution
+-------------------
+
+In Redhat Enterprise Linux 4 (RHEL4), unplugging network cable while ethtool -p 
+is running will cause sytem to become unresponsive to keyboard commands, except 
+for control-alt-delete.  Restarting the system appears to be the only remedy.  
+
+This occurs in distributions later than v2.5.50. 
+
+
+Loading and unloading modules with the Linux 2.6 Kernel
+=======================================================
+
+A new kernel API has been implemented within the Linux 2.6 kernel regarding 
+the module reference count. This results in the e100, e1000 and ixgb drivers  
+being used with a module reference count of zero. Consequently, our driver 
+module can be removed from the system while still being used by other modules. 
+Until the other modules within the Linux stack use the new API, unintended 
+consequences may occur with module removal. This may result in system hangs 
+and/or panics.
+
+
+Red Hat Enterprise Linux 3 with Intel(R) Desktop Board D915GEV
+==============================================================
+
+If you are using a system based on an Intel(R) Desktop Board D915GEV, and install 
+a PCI Express (PCIe) adapter, and run a Linux distribution with the v2.4 kernel 
+(such as Red Hat Enterprise Linux 3), the system may panic or hang.  This 
+behavior has been observed with various brands of PCIe adapters besides those 
+from Intel.  This does not occur on a Linux distribution with a v2.6 kernel, such 
+as Red Hat EL 4 AS or SUSE Linux Enterprise Server (SLES) 9.  Booting with the 
+'noapic' kernel parameter should also workaround this problem for systems running 
+with a 2.4 kernel. 
+
+
+Support
+=======
+
+For general information and support, go to the Intel support website at:
+
+  http://support.intel.com
+
+If an issue is identified with the released source code on the supported 
+kernel with a supported adapter, email the specific information related to 
+the issue to linux.nics@intel.com.
+
+
+Copyright and Legal Disclaimers
+===============================
+
+Copyright(c) 2005 Intel Corporation. All rights reserved. 
+
+Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497 
+
+Intel Corporation assumes no responsibility for errors or omissions in this 
+document. Nor does Intel make any commitment to update the information 
+contained herein. 
+
+Intel, Itanium, and Pentium are trademarks or registered trademarks of Intel 
+Corporation or its subsidiaries in the United States and other countries. 
+
+*Other names and brands may be claimed as the property of others.
