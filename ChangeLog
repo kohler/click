@@ -1,3 +1,8 @@
+2006-09-20 Wednesday 10:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/module.cc (1.93): don't report cycles if theres no
+	  int64 support (Torquato Bertani)
+
 2006-09-19 Tuesday 10:26  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/: frontdropqueue.cc (1.22), msqueue.cc (1.19),
