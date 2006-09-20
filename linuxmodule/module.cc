@@ -41,6 +41,7 @@ Master *click_master = 0;
 
 /***************************** Global handlers *******************************/
 
+#if HAVE_INT64_TYPES
 static String
 read_cycles(Element *, void *)
 {
@@ -48,6 +49,7 @@ read_cycles(Element *, void *)
   sa << click_get_cycles() << " cycles\n";
   return sa.take_string();
 }
+#endif
 
 #ifdef HAVE_LINUX_READ_NET_SKBCOUNT
 extern "C" int read_net_skbcount(void);
@@ -237,7 +239,9 @@ init_module()
   // global handlers
   Router::add_read_handler(0, "packages", read_packages, 0);
   Router::add_read_handler(0, "meminfo", read_meminfo, 0);
+#if HAVE_INT64_TYPES
   Router::add_read_handler(0, "cycles", read_cycles, 0);
+#endif
   Router::add_read_handler(0, "errors", read_errors, 0);
   Router::change_handler_flags(0, "errors", 0, HANDLER_REREAD);
   Router::add_read_handler(0, "messages", read_errors, (void *)1);
