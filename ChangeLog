@@ -1,3 +1,18 @@
+2006-09-21 Thursday 10:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/wifidecap.cc (1.19), elements/wifi/wifiencap.cc
+	  (1.18), include/clicknet/wifi.h (1.25): correct use of
+	  wifi_llc_header constant: change name to WIFI_LLC_HEADER since it
+	  is a preprocessor #define, and use WIFI_LLC_HEADER_LEN == 6
+	  instead of sizeof(WIFI_LLC_HEADER), since
+	  sizeof(WIFI_LLC_HEADER)==4 because of a cast (Mathias Kurth
+	  reported bug)
+
+2006-09-21 Thursday 10:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* drivers/e1000-6.x/src/e1000_main.c (1.5): whitespace, and replace
+	  local_save_flags with local_irq_save
+
 2006-09-20 Wednesday 10:31  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* linuxmodule/module.cc (1.93): don't report cycles if theres no
