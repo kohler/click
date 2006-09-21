@@ -64,7 +64,7 @@ WifiDecap::simple_action(Packet *p)
   if ((w->i_fc[1] & WIFI_FC1_DIR_MASK) == WIFI_FC1_DIR_DSTODS)
 	  wifi_header_size += WIFI_ADDR_LEN;
   if (WIFI_QOS_HAS_SEQ(w)) 
-	  wifi_header_size += sizeof(u_int16_t);
+	  wifi_header_size += sizeof(uint16_t);
   
   if (p->length() < wifi_header_size + sizeof(struct click_llc)) {
     p->kill();
@@ -118,8 +118,8 @@ WifiDecap::simple_action(Packet *p)
   }
 
   uint16_t ether_type;
-  if (!_strict || memcmp(wifi_llc_header, p_out->data() + wifi_header_size, 
-			 sizeof(wifi_llc_header))) {
+  if (!_strict || memcmp(WIFI_LLC_HEADER, p_out->data() + wifi_header_size, 
+			 WIFI_LLC_HEADER_LEN)) {
 	  memcpy(&ether_type, p_out->data() + wifi_header_size + sizeof(click_llc) - 2, 2);
   } else {
 	  p_out->kill();

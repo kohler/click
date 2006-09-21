@@ -406,6 +406,7 @@ typedef struct {
 #define WIFI_CW_MAX 1023
 
 // 6-byte LLC header (last byte is terminating NUL)
-#define wifi_llc_header ((const uint8_t *) "\xAA\xAA\x03\x00\x00")
+#define WIFI_LLC_HEADER		((const uint8_t *) "\xAA\xAA\x03\x00\x00")
+#define WIFI_LLC_HEADER_LEN	6
 
 #endif /* !_CLICKNET_WIFI_H_ */
