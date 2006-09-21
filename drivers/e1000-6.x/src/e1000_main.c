@@ -4902,24 +4902,22 @@ e1000_tx_clean(struct net_device *netdev)
 static int
 e1000_poll_on(struct net_device *dev)
 {
-  struct e1000_adapter *adapter = dev->priv;
-  unsigned long flags;
+	struct e1000_adapter *adapter = dev->priv;
+	unsigned long flags;
 
-  if (!dev->polling) {
-    printk("e1000_poll_on\n");
+	if (!dev->polling) {
+		printk("e1000_poll_on\n");
 
-		local_save_flags(flags);
+		local_irq_save(flags);
 		local_irq_disable();
 
-
-    dev->polling = 2;
-
+		dev->polling = 2;
+		
 		e1000_irq_disable(adapter);
-
 		local_irq_restore(flags);
-  }
+	}
 
-  return 0;
+	return 0;
 }
 
 static int
