@@ -1,3 +1,8 @@
+2006-09-22 Friday 20:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* drivers/e1000-6.x/src/e1000_main.c (1.6): account for Click patch
+	  around netif_receive_skb (Srivas Chennu)
+
 2006-09-21 Thursday 10:01  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/wifi/wifidecap.cc (1.19), elements/wifi/wifiencap.cc
