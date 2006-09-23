@@ -3659,10 +3659,10 @@ e1000_clean_rx_irq(struct e1000_adapter *adapter,
 						 le16_to_cpu(rx_desc->special) &
 						 E1000_RXD_SPC_VLAN_MASK);
 		} else {
-			netif_receive_skb(skb);
+			netif_receive_skb(skb, skb->protocol, 0);
 		}
 #else
-		netif_receive_skb(skb);
+		netif_receive_skb(skb, skb->protocol, 0);
 #endif
 #else /* CONFIG_E1000_NAPI */
 #ifdef NETIF_F_HW_VLAN_TX
@@ -3799,10 +3799,10 @@ e1000_clean_rx_irq_ps(struct e1000_adapter *adapter,
 				le16_to_cpu(rx_desc->wb.middle.vlan) &
 				E1000_RXD_SPC_VLAN_MASK);
 		} else {
-			netif_receive_skb(skb);
+			netif_receive_skb(skb, skb->protocol, 0);
 		}
 #else
-		netif_receive_skb(skb);
+		netif_receive_skb(skb, skb->protocol, 0);
 #endif
 #else /* CONFIG_E1000_NAPI */
 #ifdef NETIF_F_HW_VLAN_TX
