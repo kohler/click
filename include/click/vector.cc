@@ -68,7 +68,7 @@ Vector<T>::insert(iterator i, const T& e)
 {
   assert(i >= begin() && i <= end());
   size_type pos = i - begin();
-  if (_n < _capacity || reserve(0)) {
+  if (_n < _capacity || reserve(RESERVE_GROW)) {
     for (iterator j = end() - 1; j >= begin() + pos; j--) {
       new((void*) (j+1)) T(*j);
       j->~T();
@@ -100,7 +100,7 @@ Vector<T>::erase(iterator a, iterator b)
 template <class T> bool
 Vector<T>::reserve(size_type want)
 {
-  if (want <= 0)
+  if (want < 0)
     want = (_capacity > 0 ? _capacity * 2 : 4);
   if (want <= _capacity)
     return true;

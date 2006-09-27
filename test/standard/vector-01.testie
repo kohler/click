@@ -1,0 +1,12 @@
+%info
+Tests Vector functionality with the VectorTest element.
+
+%require
+click-buildtool provides VectorTest
+
+%script
+click -qe VectorTest
+
+%expect stderr
+<expr>:1:{{.*}}
+  All tests pass!

@@ -12,6 +12,7 @@ class Vector { public:
   typedef const T* const_pointer;
   
   typedef int size_type;
+  enum { RESERVE_GROW = (size_type) -1 };
   
   typedef T* iterator;
   typedef const T* const_iterator;
@@ -74,7 +75,7 @@ class Vector { public:
 template <class T> inline void
 Vector<T>::push_back(const T& e)
 {
-  if (_n < _capacity || reserve(0)) {
+  if (_n < _capacity || reserve(RESERVE_GROW)) {
     new(velt(_n)) T(e);
     _n++;
   }
@@ -105,6 +106,7 @@ class Vector<void*> { public:
   typedef void* const* const_pointer;
 
   typedef int size_type;
+  enum { RESERVE_GROW = (size_type) -1 };
   
   typedef void** iterator;
   typedef void* const* const_iterator;
@@ -162,7 +164,7 @@ class Vector<void*> { public:
 inline void
 Vector<void*>::push_back(void *e)
 {
-  if (_n < _capacity || reserve(0)) {
+  if (_n < _capacity || reserve(RESERVE_GROW)) {
     _l[_n] = e;
     _n++;
   }
@@ -196,6 +198,7 @@ class Vector<T*>: private Vector<void*> {
   typedef T* const* const_pointer;
 
   typedef int size_type;
+  enum { RESERVE_GROW = Base::RESERVE_GROW };
   
   typedef T** iterator;
   typedef T* const* const_iterator;

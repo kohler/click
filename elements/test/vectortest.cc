@@ -46,6 +46,7 @@ VectorTest::initialize(ErrorHandler *errh)
     v.push_back(2);
     v.push_back(4);
     CHECK(v.size() == 4);
+    CHECK(v.size() <= v.capacity());
     
     Vector<int>::iterator i = v.insert(v.end() - 1, 3);
     CHECK(i - v.begin() == 3);
@@ -56,6 +57,14 @@ VectorTest::initialize(ErrorHandler *errh)
     CHECK(i == v.end() - 1);
     CHECK(*i == 5);
     CHECK(v.back() == 5);
+
+    // test case found by Mathias Kurth
+    Vector<int> v2;
+    v.clear();
+    CHECK(v.size() == 0);
+    CHECK(v2.size() == 0);
+    for (int i = 0; i < 10000; i++)
+	v = v2;
     
     errh->message("All tests pass!");
     return 0;

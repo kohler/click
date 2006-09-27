@@ -55,7 +55,7 @@ Vector<void*>::assign(size_type n, void* e)
 bool
 Vector<void*>::reserve(size_type want)
 {
-  if (want <= 0)
+  if (want < 0)
     want = (_capacity > 0 ? _capacity * 2 : 4);
   if (want <= _capacity)
     return true;
@@ -77,7 +77,7 @@ Vector<void*>::insert(iterator i, void* e)
 {
   assert(i >= begin() && i <= end());
   size_type pos = i - begin();
-  if (_n < _capacity || reserve(0)) {
+  if (_n < _capacity || reserve(RESERVE_GROW)) {
     i = begin() + pos;
     memmove(i + 1, i, (end() - i) * sizeof(void*));
     *i = e;
