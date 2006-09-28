@@ -191,6 +191,9 @@ Master::kill_router(Router *router)
 
     // Fix stopper
     _stopper = 1;
+#if CLICK_LINUXMODULE && HAVE_LINUXMODULE_2_6
+    preempt_disable();
+#endif
     _master_lock.release();
     
     // Remove tasks
@@ -269,6 +272,9 @@ Master::kill_router(Router *router)
     _master_lock.acquire();
     _master_paused--;
     _master_lock.release();
+#if CLICK_LINUXMODULE && HAVE_LINUXMODULE_2_6
+    preempt_enable_no_resched();
+#endif
 
     // something has happened, so wake up threads
     for (RouterThread** tp = _threads.begin() + 2; tp < _threads.end(); tp++)

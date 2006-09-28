@@ -142,6 +142,11 @@ and running Linux kernels.
     you can do the usual 'make menuconfig'. Use a minimal set of
     options.
 
+    Click is not currently safe for kernels with involuntary preemption.
+    Make sure that the CONFIG_PREEMPT option is off.
+    CONFIG_PREEMPT_VOLUNTARY is OK.  We welcome patches to improve Click's
+    preemption behavior.
+
  6. Compile and install the kernel:
 
 	make dep
