@@ -389,6 +389,7 @@ IPReassembler::reap(int now)
 	    if (q->timestamp_anno().sec() < kill_time) {
 		*q_pprev = (WritablePacket *)q->next();
 		q->set_next(0);
+		_mem_used -= IPH_MEM_USED + q->transport_length();
 		checked_output_push(1, q);
 	    } else
 		q_pprev = (WritablePacket **)&q->next();
