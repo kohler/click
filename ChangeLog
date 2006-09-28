@@ -1,3 +1,8 @@
+2006-09-28 Thursday 13:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipreassembler.cc (1.24): Max Poletto: keep track of
+	  _mem_used correctly when a queue is reap()ed (Mz)
+
 2006-09-28 Thursday 12:51  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* INSTALL (1.45), lib/master.cc (1.41): warn against
