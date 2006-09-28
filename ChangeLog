@@ -1,3 +1,9 @@
+2006-09-28 Thursday 12:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* INSTALL (1.45), lib/master.cc (1.41): warn against
+	  CONFIG_PREEMPT, but include a patch to maybe avoid CONFIG_PREEMPT
+	  bugs
+
 2006-09-27 Wednesday 11:20  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/test/vectortest.cc (1.3), include/click/vector.cc
