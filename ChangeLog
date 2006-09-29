@@ -1,3 +1,43 @@
+2006-09-29 Friday 19:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-install.1 (1.16), doc/click.texi (1.69),
+	  linuxmodule/clickfs.cc (1.51), linuxmodule/kernelversion.c
+	  (1.12), linuxmodule/module.cc (1.94), linuxmodule/modulepriv.hh
+	  (1.39), linuxmodule/sched.cc (1.59),
+	  tools/click-install/click-install.cc (1.65): add --user option to
+	  click-install: set uid/gid owning the Click file system
+
+2006-09-29 Friday 19:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* bsdmodule/sched.cc (1.9), elements/analysis/aggcounter.cc (1.39),
+	  elements/analysis/aggpktcounter.cc (1.11),
+	  elements/analysis/aggregatefilter.cc (1.8),
+	  elements/analysis/aggregateipflows.cc (1.35),
+	  elements/analysis/fromcapdump.cc (1.16),
+	  elements/analysis/fromipsumdump.cc (1.79),
+	  elements/analysis/fromnetflowsumdump.cc (1.28),
+	  elements/analysis/fromtcpdump.cc (1.19),
+	  elements/bsdmodule/fastudpsrc.cc (1.9),
+	  elements/grid/dsdvroutetable.cc (1.85), elements/grid/incseqno.cc
+	  (1.9), elements/grid/linkstat.cc (1.39),
+	  elements/ip/checkipheader.cc (1.60), elements/ip/ipfieldinfo.cc
+	  (1.3), elements/ip/ipfilter.cc (1.64),
+	  elements/linuxmodule/fasttcpflows.cc (1.18),
+	  elements/linuxmodule/fastudpflows.cc (1.18),
+	  elements/linuxmodule/fastudpsrc.cc (1.24),
+	  elements/linuxmodule/fastudpsrcip6.cc (1.23),
+	  elements/standard/counter.cc (1.38),
+	  elements/standard/portinfo.cc (1.8),
+	  elements/standard/ratedsource.cc (1.58),
+	  elements/standard/script.cc (1.6),
+	  elements/userlevel/controlsocket.cc (1.68),
+	  elements/userlevel/fakepcap.cc (1.20), include/click/confparse.hh
+	  (1.60), lib/confparse.cc (1.148), lib/nameinfo.cc (1.7),
+	  tools/click-align/alignclass.cc (1.19): should have been done a
+	  long time ago: rename cp_unsigned to cp_integer, so that you can
+	  overload cp_integer on unsigned and signed int variants.
+	  cp_unsigned is deprecated but still there as a synonym.
+
 2006-09-28 Thursday 13:40  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/ipreassembler.cc (1.24): Max Poletto: keep track of
