@@ -121,7 +121,7 @@ Options:\n\
   -n, --priority N         Set kernel thread priority to N (lower is better).\n", program_name);
 #if FOR_LINUXMODULE
   printf("\
-  -p, --private            Make /proc/click readable only by owning user.\n\
+  -p, --private            Make /click readable only by owning user.\n\
   -U, --user USER[:GROUP]  Set owning user [root].\n\
   -t, --threads N          Use N threads (multithreaded Click only).\n\
   -G, --greedy             Make Click thread take up an entire CPU.\n");
