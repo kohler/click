@@ -247,15 +247,15 @@ FromIPSummaryDump::bang_flowid(const String &line, click_ip *iph,
     uint32_t sport = 0, dport = 0, proto = 0;
     if (words.size() < 5
 	|| (!cp_ip_address(words[1], &src) && words[1] != "-")
-	|| (!cp_unsigned(words[2], &sport) && words[2] != "-")
+	|| (!cp_integer(words[2], &sport) && words[2] != "-")
 	|| (!cp_ip_address(words[3], &dst) && words[3] != "-")
-	|| (!cp_unsigned(words[4], &dport) && words[4] != "-")
+	|| (!cp_integer(words[4], &dport) && words[4] != "-")
 	|| sport > 65535 || dport > 65535) {
 	_ff.error(errh, "bad !flowid specification");
 	_have_flowid = _use_flowid = false;
     } else {
 	if (words.size() >= 6) {
-	    if (cp_unsigned(words[5], &proto) && proto < 256)
+	    if (cp_integer(words[5], &proto) && proto < 256)
 		_default_proto = proto;
 	    else if (words[5] == "T")
 		_default_proto = IP_PROTO_TCP;
@@ -281,7 +281,7 @@ FromIPSummaryDump::bang_aggregate(const String &line, ErrorHandler *errh)
     cp_spacevec(line, words);
 
     if (words.size() != 2
-	|| !cp_unsigned(words[1], &_aggregate)) {
+	|| !cp_integer(words[1], &_aggregate)) {
 	_ff.error(errh, "bad !aggregate specification");
 	_have_aggregate = _use_aggregate = false;
     } else {
@@ -340,7 +340,7 @@ FromIPSummaryDump::parse_ip_opt_ascii(const unsigned char *begin, const unsigned
 		    break;
 		for (int i = 0; i < 4; i++) {
 		    u1 = 256;
-		    s = cp_unsigned(s, end, 10, &u1) + (i < 3);
+		    s = cp_integer(s, end, 10, &u1) + (i < 3);
 		    if (u1 > 255 || (i < 3 && (s > end || s[-1] != '.')))
 			goto bad_opt;
 		    sa << (char)u1;
@@ -352,7 +352,7 @@ FromIPSummaryDump::parse_ip_opt_ascii(const unsigned char *begin, const unsigned
 		goto bad_opt;
 	    sa[sa_pos + 2] = (pointer >= 0 ? pointer : sa.length() - sa_pos + 1);
 	    if (s + 2 < end && s[1] == '+' && isdigit(s[2])) {
-		s = cp_unsigned(s + 2, end, 10, &u1);
+		s = cp_integer(s + 2, end, 10, &u1);
 		if (u1 < 64)
 		    sa.append_fill('\0', u1 * 4);
 	    } else
@@ -389,7 +389,7 @@ FromIPSummaryDump::parse_ip_opt_ascii(const unsigned char *begin, const unsigned
 		else if (s + 9 < end && memcmp(s + 3, "preip{", 6) == 0)
 		    flag = 3, s += 9;
 		else if (isdigit(s[3])
-			 && (t = cp_unsigned(s + 3, end, 0, (uint32_t *)&flag))
+			 && (t = cp_integer(s + 3, end, 0, (uint32_t *)&flag))
 			 && flag <= 15 && t < end && *t == '{')
 		    s = t + 1;
 		else
@@ -411,7 +411,7 @@ FromIPSummaryDump::parse_ip_opt_ascii(const unsigned char *begin, const unsigned
 		    // parse IP address
 		    for (int i = 0; i < 4; i++) {
 			u1 = 256;
-			s = cp_unsigned(s, end, 10, &u1) + (i < 3);
+			s = cp_integer(s, end, 10, &u1) + (i < 3);
 			if (u1 > 255 || (i < 3 && (s > end || s[-1] != '.')))
 			    goto bad_opt;
 			sa << (char)u1;
@@ -444,7 +444,7 @@ FromIPSummaryDump::parse_ip_opt_ascii(const unsigned char *begin, const unsigned
 		    top_bit = 0x80000000U, s++;
 		if (s >= end || !isdigit(*s))
 		    goto bad_opt;
-		s = cp_unsigned(s, end, 0, &u1);
+		s = cp_integer(s, end, 0, &u1);
 		if (s < end && *s == '.' && flag == -1) {
 		    flag = -2;
 		    s = entry;
@@ -466,12 +466,12 @@ FromIPSummaryDump::parse_ip_opt_ascii(const unsigned char *begin, const unsigned
 		flag = 1;
 	    sa[sa_pos + 2] = (pointer >= 0 ? pointer : sa.length() - sa_pos + 1);
 	    if (s + 1 < end && *s == '+' && isdigit(s[1])
-		&& (s = cp_unsigned(s + 1, end, 0, &u1))
+		&& (s = cp_integer(s + 1, end, 0, &u1))
 		&& u1 < 64)
 		sa.append_fill('\0', u1 * (flag == 1 || flag == 3 ? 8 : 4));
 	    int overflow = 0;
 	    if (s + 2 < end && *s == '+' && s[1] == '+' && isdigit(s[2])
-		&& (s = cp_unsigned(s + 2, end, 0, &u1))
+		&& (s = cp_integer(s + 2, end, 0, &u1))
 		&& u1 < 16)
 		overflow = u1;
 	    sa[sa_pos + 3] = (overflow << 4) | flag;
@@ -481,7 +481,7 @@ FromIPSummaryDump::parse_ip_opt_ascii(const unsigned char *begin, const unsigned
 	    
 	} else if (s < end && isdigit(*s) && (contents & DO_IPOPT_UNKNOWN)) {
 	    // unknown option
-	    s = cp_unsigned(s, end, 0, &u1);
+	    s = cp_integer(s, end, 0, &u1);
 	    if (u1 >= 256)
 		goto bad_opt;
 	    sa << (char)u1;
@@ -489,7 +489,7 @@ FromIPSummaryDump::parse_ip_opt_ascii(const unsigned char *begin, const unsigned
 		int pos0 = sa.length();
 		sa << (char)0;
 		do {
-		    s = cp_unsigned(s + 1, end, 0, &u1);
+		    s = cp_integer(s + 1, end, 0, &u1);
 		    if (u1 >= 256)
 			goto bad_opt;
 		    sa << (char)u1;
@@ -545,7 +545,7 @@ FromIPSummaryDump::parse_tcp_opt_ascii(const unsigned char *begin, const unsigne
 	if (s + 3 < end && memcmp(s, "mss", 3) == 0
 	    && (contents & DO_TCPOPT_MSS)) {
 	    u1 = 0x10000U;	// bad value
-	    s = cp_unsigned(s + 3, end, 0, &u1);
+	    s = cp_integer(s + 3, end, 0, &u1);
 	    if (u1 <= 0xFFFFU)
 		sa << (char)TCPOPT_MAXSEG << (char)TCPOLEN_MAXSEG << (char)(u1 >> 8) << (char)u1;
 	    else
@@ -553,7 +553,7 @@ FromIPSummaryDump::parse_tcp_opt_ascii(const unsigned char *begin, const unsigne
 	} else if (s + 6 < end && memcmp(s, "wscale", 6) == 0
 		   && (contents & DO_TCPOPT_WSCALE)) {
 	    u1 = 256;		// bad value
-	    s = cp_unsigned(s + 6, end, 0, &u1);
+	    s = cp_integer(s + 6, end, 0, &u1);
 	    if (u1 <= 255)
 		sa << (char)TCPOPT_WSCALE << (char)TCPOLEN_WSCALE << (char)u1;
 	    else
@@ -569,10 +569,10 @@ FromIPSummaryDump::parse_tcp_opt_ascii(const unsigned char *begin, const unsigne
 	    sa << (char)TCPOPT_SACK << (char)0;
 	    s += 4;
 	    while (1) {
-		const unsigned char *t = cp_unsigned(s, end, 0, &u1);
+		const unsigned char *t = cp_integer(s, end, 0, &u1);
 		if (t >= end || (*t != ':' && *t != '-'))
 		    goto bad_opt;
-		t = cp_unsigned(t + 1, end, 0, &u2);
+		t = cp_integer(t + 1, end, 0, &u2);
 		append_net_uint32_t(sa, u1);
 		append_net_uint32_t(sa, u2);
 		if (t < s + 3) // at least 1 digit in each block
@@ -585,10 +585,10 @@ FromIPSummaryDump::parse_tcp_opt_ascii(const unsigned char *begin, const unsigne
 	    sa[sa_pos + 1] = (char)(sa.length() - sa_pos);
 	} else if (s + 2 < end && memcmp(s, "ts", 2) == 0
 		   && (contents & DO_TCPOPT_TIMESTAMP)) {
-	    const unsigned char *t = cp_unsigned(s + 2, end, 0, &u1);
+	    const unsigned char *t = cp_integer(s + 2, end, 0, &u1);
 	    if (t >= end || *t != ':')
 		goto bad_opt;
-	    t = cp_unsigned(t + 1, end, 0, &u2);
+	    t = cp_integer(t + 1, end, 0, &u2);
 	    if (sa.length() == 0)
 		sa << (char)TCPOPT_NOP << (char)TCPOPT_NOP;
 	    sa << (char)TCPOPT_TIMESTAMP << (char)TCPOLEN_TIMESTAMP;
@@ -599,7 +599,7 @@ FromIPSummaryDump::parse_tcp_opt_ascii(const unsigned char *begin, const unsigne
 	    s = t;
 	} else if (s < end && isdigit(*s)
 		   && (contents & DO_TCPOPT_UNKNOWN)) {
-	    s = cp_unsigned(s, end, 0, &u1);
+	    s = cp_integer(s, end, 0, &u1);
 	    if (u1 >= 256)
 		goto bad_opt;
 	    sa << (char)u1;
@@ -607,7 +607,7 @@ FromIPSummaryDump::parse_tcp_opt_ascii(const unsigned char *begin, const unsigne
 		int pos0 = sa.length();
 		sa << (char)0;
 		do {
-		    s = cp_unsigned(s + 1, end, 0, &u1);
+		    s = cp_integer(s + 1, end, 0, &u1);
 		    if (u1 >= 256)
 			goto bad_opt;
 		    sa << (char)u1;
@@ -872,7 +872,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_NTIMESTAMP:
 	      case W_FIRST_TIMESTAMP:
 	      case W_FIRST_NTIMESTAMP:
-		next = cp_unsigned(data, end, 10, &u1);
+		next = cp_integer(data, end, 10, &u1);
 		if (next > data) {
 		    data = next;
 		    if (data + 1 < end && *data == '.') {
@@ -903,18 +903,18 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_TCP_URP:
 	      case W_IP_TOS:
 	      case W_IP_TTL:
-		data = cp_unsigned(data, end, 0, &u1);
+		data = cp_integer(data, end, 0, &u1);
 		break;
 
 	      case W_TIMESTAMP_USEC1: {
 #if HAVE_INT64_TYPES
 		  uint64_t uu;
-		  data = cp_unsigned(data, end, 0, &uu);
+		  data = cp_integer(data, end, 0, &uu);
 		  u1 = (uint32_t)(uu >> 32);
 		  u2 = (uint32_t) uu;
 #else
 		  // silently truncate large numbers
-		  data = cp_unsigned(data, end, 0, &u2);
+		  data = cp_integer(data, end, 0, &u2);
 #endif
 		  break;
 	      }
@@ -947,7 +947,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    u1 = IP_PROTO_ICMP;
 		    data++;
 		} else
-		    data = cp_unsigned(data, end, 0, &u1);
+		    data = cp_integer(data, end, 0, &u1);
 		break;
 
 	      case W_IP_FRAG:
@@ -962,7 +962,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		break;
 
 	      case W_IP_FRAGOFF:
-		next = cp_unsigned(data, end, 0, &u1);
+		next = cp_integer(data, end, 0, &u1);
 		if (_minor_version == 0) // old-style file
 		    u1 <<= 3;
 		if (next > data && (u1 & 7) == 0 && u1 < 65536) {
@@ -977,7 +977,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 
 	      case W_TCP_FLAGS:
 		if (isdigit(*data))
-		    data = cp_unsigned(data, end, 0, &u1);
+		    data = cp_integer(data, end, 0, &u1);
 		else if (*data == '.')
 		    data++;
 		else
@@ -1031,7 +1031,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    u1 = 1;
 		    data++;
 		} else
-		    data = cp_unsigned(data, end, 0, &u1);
+		    data = cp_integer(data, end, 0, &u1);
 		break;
 
 	      case W_PAYLOAD:

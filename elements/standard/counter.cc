@@ -22,12 +22,6 @@
 #include <click/handlercall.hh>
 CLICK_DECLS
 
-#ifdef HAVE_INT64_TYPES
-# define PARSECMD cp_unsigned64
-#else
-# define PARSECMD cp_unsigned
-#endif
-
 Counter::Counter()
   : _count_trigger_h(0), _byte_trigger_h(0)
 {
@@ -59,7 +53,7 @@ Counter::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
 
   if (count_call) {
-    if (!PARSECMD(cp_pop_spacevec(count_call), &_count_trigger))
+    if (!cp_integer(cp_pop_spacevec(count_call), &_count_trigger))
       return errh->error("'COUNT_CALL' first word should be unsigned (count)");
     else if (cp_errno == CPE_OVERFLOW)
       errh->error("COUNT_CALL too large; max %s", String(_count_trigger).c_str());
@@ -68,7 +62,7 @@ Counter::configure(Vector<String> &conf, ErrorHandler *errh)
     _count_trigger = (counter_t)(-1);
 
   if (byte_count_call) {
-    if (!PARSECMD(cp_pop_spacevec(byte_count_call), &_byte_trigger))
+    if (!cp_integer(cp_pop_spacevec(byte_count_call), &_byte_trigger))
       return errh->error("'BYTE_COUNT_CALL' first word should be unsigned (count)");
     else if (cp_errno == CPE_OVERFLOW)
       errh->error("BYTE_COUNT_CALL too large; max %s", String(_count_trigger).c_str());
@@ -141,14 +135,14 @@ Counter::write_handler(const String &in_str, Element *e, void *thunk, ErrorHandl
     String str = cp_uncomment(in_str);
     switch ((intptr_t)thunk) {
       case H_COUNT_CALL:
-	if (!PARSECMD(cp_pop_spacevec(str), &c->_count_trigger))
+	if (!cp_integer(cp_pop_spacevec(str), &c->_count_trigger))
 	    return errh->error("'count_call' first word should be unsigned (count)");
 	if (HandlerCall::reset_write(c->_count_trigger_h, str, c, errh) < 0)
 	    return -1;
 	c->_count_triggered = false;
 	return 0;
       case H_BYTE_COUNT_CALL:
-	if (!PARSECMD(cp_pop_spacevec(str), &c->_byte_trigger))
+	if (!cp_integer(cp_pop_spacevec(str), &c->_byte_trigger))
 	    return errh->error("'byte_count_call' first word should be unsigned (count)");
 	if (HandlerCall::reset_write(c->_byte_trigger_h, str, c, errh) < 0)
 	    return -1;

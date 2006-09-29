@@ -260,7 +260,7 @@ FastUDPSource_limit_write_handler
     FastUDPSource *c = (FastUDPSource *)e;
     String s = cp_uncomment(in_s);
     unsigned limit;
-    if (!cp_unsigned(s, &limit))
+    if (!cp_integer(s, &limit))
 	return errh->error("limit parameter must be integer >= 0");
     c->_limit = (limit >= 0 ? limit : c->NO_LIMIT);
     return 0;
@@ -273,7 +273,7 @@ FastUDPSource_rate_write_handler
     FastUDPSource *c = (FastUDPSource *)e;
     String s = cp_uncomment(in_s);
     unsigned rate;
-    if (!cp_unsigned(s, &rate))
+    if (!cp_integer(s, &rate))
 	return errh->error("rate parameter must be integer >= 0");
     if (rate > GapRate::MAX_RATE) // report error rather than pin to max
 	return errh->error("rate too large; max is %u", GapRate::MAX_RATE);

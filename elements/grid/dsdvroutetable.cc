@@ -1298,7 +1298,7 @@ DSDVRouteTable::write_seqno(const String &arg, Element *el,
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
   unsigned u;
-  if (!cp_unsigned(arg, &u)) 
+  if (!cp_integer(arg, &u)) 
     return errh->error("sequence number must be unsigned");
   if (u & 1)
     return errh->error("sequence number must be even");
@@ -1374,7 +1374,7 @@ DSDVRouteTable::write_use_old_route(const String &arg, Element *el,
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
   unsigned u;
-  if (!cp_unsigned(arg, &u))
+  if (!cp_integer(arg, &u))
     return errh->error("`use_old_route' must be an unsigned integer");
 
   bool use_good = false;

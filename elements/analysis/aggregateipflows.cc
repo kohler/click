@@ -216,7 +216,7 @@ AggregateIPFlows::stat_new_flow_hook(const Packet *p, FlowInfo *finfo)
     sinfo->_first_timestamp = p->timestamp_anno();
     sinfo->_filepos = 0;
     if (_filepos_h)
-	(void) cp_unsigned(_filepos_h->call_read().trim_space(), &sinfo->_filepos);
+	(void) cp_integer(_filepos_h->call_read().trim_space(), &sinfo->_filepos);
 }
 
 inline void

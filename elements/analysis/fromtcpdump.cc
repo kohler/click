@@ -176,10 +176,10 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
     // then read sequence numbers
     uint32_t seq = 0, end_seq = 0, ack_seq = 0;
     if (s < end && s[0] != 'a') {
-	const char *eseq = cp_unsigned(s, end, 0, &seq);
+	const char *eseq = cp_integer(s, end, 0, &seq);
 	if (eseq == s || eseq >= end || *eseq != ':')
 	    return s;
-	const char *eend_seq = cp_unsigned(eseq + 1, end, 0, &end_seq);
+	const char *eend_seq = cp_integer(eseq + 1, end, 0, &end_seq);
 	if (eend_seq == eseq + 1 || eend_seq >= end || *eend_seq != '(')
 	    return s;
 	// skip parenthesized length
@@ -197,7 +197,7 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
     // check for 'ack'
     if (s + 4 < end && s[0] == 'a' && s[1] == 'c' && s[2] == 'k' && s[3] == ' ' && isdigit(s[4])) {
 	tcph->th_flags |= TH_ACK;
-	s = cp_unsigned(s + 4, end, 0, &ack_seq);
+	s = cp_integer(s + 4, end, 0, &ack_seq);
 	if (s < end && *s == ' ')
 	    s++;
     }
@@ -241,7 +241,7 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
     // check for 'win'
     uint32_t u;
     if (s + 4 < end && s[0] == 'w' && s[1] == 'i' && s[2] == 'n' && s[3] == ' ' && isdigit(s[4])) {
-	s = cp_unsigned(s + 4, end, 0, &u); // XXX check u <= 65535
+	s = cp_integer(s + 4, end, 0, &u); // XXX check u <= 65535
 	tcph->th_win = htons(u);
 	if (s < end && *s == ' ')
 	    s++;
@@ -249,7 +249,7 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
 
     // check for 'urg'
     if (s + 4 < end && s[0] == 'u' && s[1] == 'r' && s[2] == 'g' && s[3] == ' ' && isdigit(s[4])) {
-	s = cp_unsigned(s + 4, end, 0, &u); // XXX check u <= 65535
+	s = cp_integer(s + 4, end, 0, &u); // XXX check u <= 65535
 	tcph->th_urp = htons(u);
 	if (s < end && *s != ' ')
 	    s++;
@@ -267,33 +267,33 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
 		opt << (char)TCPOPT_EOL;
 		s += 3;
 	    } else if (s + 4 < end && s[0] == 'm' && s[1] == 's' && s[2] == 's' && s[3] == ' ' && isdigit(s[4])) {
-		s = cp_unsigned(s + 4, end, 0, &u); // XXX check u <= 65535
+		s = cp_integer(s + 4, end, 0, &u); // XXX check u <= 65535
 		opt << (char)TCPOPT_MAXSEG << (char)TCPOLEN_MAXSEG << (char)((u >> 8) & 255) << (char)(u & 255);
 	    } else if (s + 7 < end && memcmp(s, "wscale ", 7) == 0 && isdigit(s[7])) {
-		s = cp_unsigned(s + 7, end, 0, &u); // XXX check u <= 255
+		s = cp_integer(s + 7, end, 0, &u); // XXX check u <= 255
 		opt << (char)TCPOPT_WSCALE << (char)TCPOLEN_WSCALE << (char)u;
 	    } else if (s + 6 <= end && memcmp(s, "sackOK", 6) == 0) {
 		opt << (char)TCPOPT_SACK_PERMITTED << (char)TCPOLEN_SACK_PERMITTED;
 		s += 6;
 	    } else if (s + 10 < end && memcmp(s, "timestamp ", 10) == 0 && isdigit(s[10])) {
-		s = cp_unsigned(s + 10, end, 0, &u);
+		s = cp_integer(s + 10, end, 0, &u);
 		if (s + 1 < end && *s == ' ' && isdigit(s[1])) {
 		    uint32_t u2;
-		    s = cp_unsigned(s + 1, end, 0, &u2);
+		    s = cp_integer(s + 1, end, 0, &u2);
 		    opt << (char)TCPOPT_TIMESTAMP << (char)TCPOLEN_TIMESTAMP;
 		    append_net_uint32_t(opt, u);
 		    append_net_uint32_t(opt, u2);
 		}
 	    } else if (s + 10 < end && memcmp(s, "sack sack ", 10) == 0 && isdigit(s[10])) {
 		uint32_t nsack, u2;
-		s = cp_unsigned(s + 10, end, 0, &nsack);
+		s = cp_integer(s + 10, end, 0, &nsack);
 		opt << (char)TCPOPT_SACK << (char)(nsack * 8 + 2);
 		while (s < end && *s == ' ')
 		    s++;
 		while (s + 1 < end && *s == '{' && isdigit(s[1])) {
-		    s = cp_unsigned(s + 1, end, 0, &u);
+		    s = cp_integer(s + 1, end, 0, &u);
 		    if (s + 1 < end && *s == ':' && isdigit(s[1])) {
-			s = cp_unsigned(s + 1, end, 0, &u2);
+			s = cp_integer(s + 1, end, 0, &u2);
 			if (s < end && *s == '}') {
 			    s++;
 			    if (record && !_absolute_seq) {
@@ -344,7 +344,7 @@ FromTcpdump::read_udp_line(WritablePacket *&, const char *s, const char *end, in
     // then check for 'udp LENGTH'
     if (s + 4 < end && s[0] == 'u' && s[1] == 'd' && s[2] == 'p' && s[3] == ' ' && isdigit(s[4])) {
 	uint32_t dl;
-	s = cp_unsigned(s + 4, end, 0, &dl);
+	s = cp_integer(s + 4, end, 0, &dl);
 	*data_len = dl;
     }
 
@@ -475,7 +475,7 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 		const char *item = open + 1;
 		while (item < close) {
 		    if (close - item >= 7 && memcmp(item, "tos 0x", 6) == 0) {
-			item = cp_unsigned(item + 6, close, 16, &u);
+			item = cp_integer(item + 6, close, 16, &u);
 			iph->ip_tos = u;
 		    } else if (close - item >= 6 && memcmp(item, "ECT(", 4) == 0 && (item[4] == '0' || item[4] == '1') && item[5] == ')') {
 			iph->ip_tos = (iph->ip_tos & ~IP_ECNMASK) | (item[4] == '0' ? IP_ECN_ECT1 : IP_ECN_ECT2);
@@ -487,26 +487,26 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 			iph->ip_off |= htons(IP_DF);
 			item += 2;
 		    } else if (close - item >= 10 && memcmp(item, "frag ", 5) == 0 && isdigit(item[5])) {
-			item = cp_unsigned(item + 5, close, 0, &u);
+			item = cp_integer(item + 5, close, 0, &u);
 			iph->ip_id = htons(u);
 			if (item > close - 2 || *item != ':' || !isdigit(item[1]))
 			    break;
-			item = cp_unsigned(item + 1, close, 0, &u);
+			item = cp_integer(item + 1, close, 0, &u);
 			data_len = u;
 			if (item > close - 2 || *item != '@' || !isdigit(item[1]))
 			    break;
-			item = cp_unsigned(item + 1, close, 0, &u);
+			item = cp_integer(item + 1, close, 0, &u);
 			iph->ip_off = (iph->ip_off & htons(~IP_OFFMASK)) | htons(u);
 			if (item < close && *item == '+')
 			    iph->ip_off |= htons(IP_MF), item++;
 		    } else if (close - item >= 5 && memcmp(item, "ttl ", 4) == 0 && isdigit(item[4])) {
-			item = cp_unsigned(item + 4, close, 0, &u);
+			item = cp_integer(item + 4, close, 0, &u);
 			iph->ip_ttl = u;
 		    } else if (close - item >= 4 && memcmp(item, "id ", 3) == 0 && isdigit(item[3])) {
-			item = cp_unsigned(item + 3, close, 0, &u);
+			item = cp_integer(item + 3, close, 0, &u);
 			iph->ip_id = htons(u);
 		    } else if (close - item >= 5 && memcmp(item, "len ", 4) == 0 && isdigit(item[4])) {
-			item = cp_unsigned(item + 4, close, 0, &u);
+			item = cp_integer(item + 4, close, 0, &u);
 			if (data_len < 0 || u == q->length() + data_len)
 			    data_len = u - q->length();
 			else if (iph->ip_p == IP_PROTO_TCP) {

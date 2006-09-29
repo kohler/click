@@ -49,7 +49,7 @@ PortInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	String port_str = cp_pop_spacevec(str);
 	uint32_t port;
 	int32_t proto = IP_PROTO_TCP_OR_UDP;
-	const char *slash = cp_unsigned(port_str.begin(), port_str.end(), 0, &port);
+	const char *slash = cp_integer(port_str.begin(), port_str.end(), 0, &port);
 	if (slash != port_str.end() && *slash == '/') {
 	    if (slash + 4 == port_str.end() && memcmp(slash, "/tcp", 4) == 0)
 		proto = IP_PROTO_TCP;

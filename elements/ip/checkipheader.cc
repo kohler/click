@@ -143,7 +143,7 @@ CheckIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 		cpEnd) < 0)
     return -1;
 
-  if (conf.size() == 1 && cp_unsigned(conf[0], &_offset))
+  if (conf.size() == 1 && cp_integer(conf[0], &_offset))
     /* nada */;
   else if (cp_va_parse(conf, this, errh, cpOptional,
 		       "CheckIPHeader.BADSRC_OLD", "bad source addresses", &_bad_src,

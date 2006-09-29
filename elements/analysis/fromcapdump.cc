@@ -212,7 +212,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	data = cp_skip_space(data + 1, end);
 
 	// read timestamp
-	const char *next = cp_unsigned(data, end, 10, &u1);
+	const char *next = cp_integer(data, end, 10, &u1);
 	if (next == data)
 	    continue;
 	data = next;
@@ -231,11 +231,11 @@ FromCapDump::read_packet(ErrorHandler *errh)
 
 	// read sequence numbers and lengths
 	uint32_t uniqno, seqno, ip_len, payload_len;
-	data = cp_unsigned(data, end, 10, &uniqno);
-	data = cp_unsigned(cp_skip_space(data, end), end, 10, &seqno);
-	data = cp_unsigned(cp_skip_space(data, end), end, 10, &ip_len);
+	data = cp_integer(data, end, 10, &uniqno);
+	data = cp_integer(cp_skip_space(data, end), end, 10, &seqno);
+	data = cp_integer(cp_skip_space(data, end), end, 10, &ip_len);
 	data = cp_skip_space(data, end);
-	next = cp_unsigned(data, end, 10, &payload_len);
+	next = cp_integer(data, end, 10, &payload_len);
 	if (data == next)
 	    continue;
 
@@ -245,7 +245,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	if (data + 6 < end && data[0] == 'D' && data[1] == 'S'
 	    && data[2] == 'A' && data[3] == 'C' && data[4] == 'K'
 	    && data[5] == ':'
-	    && (next = cp_unsigned(data + 6, end, 10, &u1))) {
+	    && (next = cp_integer(data + 6, end, 10, &u1))) {
 	    q = q->put(12);
 	    uint8_t *opt = q->transport_header() + sizeof(click_tcp);
 	    *opt++ = TCPOPT_NOP;
@@ -282,10 +282,10 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	    
 	    data += 4;
 	    while (data < end && *data == ':') {
-		next = cp_unsigned(data + 1, end, 10, &u1);
+		next = cp_integer(data + 1, end, 10, &u1);
 		if (next != data + 1 && next + 1 < end && next[0] == '-'
 		    && isdigit(next[1])) {
-		    data = cp_unsigned(next + 1, end, 10, &u2);
+		    data = cp_integer(next + 1, end, 10, &u2);
 		    *(reinterpret_cast<uint32_t *>(opt)) = htonl(packno2seqno(u1));
 		    *(reinterpret_cast<uint32_t *>(opt + 4)) = htonl(packno2seqno(u2 + 1));
 		    opt += 8;

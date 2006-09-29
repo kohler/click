@@ -504,7 +504,7 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
 {
   const char *octothorp = find(llrpcname, '#');
   uint32_t command;
-  if (!cp_unsigned(llrpcname.substring(octothorp + 1, llrpcname.end()), 16, &command))
+  if (!cp_integer(llrpcname.substring(octothorp + 1, llrpcname.end()), 16, &command))
     return message(fd, CSERR_SYNTAX, "Syntax error in LLRPC name '" + llrpcname + "'");
   // transform net LLRPC id into host LLRPC id
   command = CLICK_LLRPC_NTOH(command);

@@ -197,7 +197,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
    
    case 1: {			// rate
      unsigned rate;
-     if (!cp_unsigned(s, &rate))
+     if (!cp_integer(s, &rate))
        return errh->error("rate parameter must be integer >= 0");
      if (rate > GapRate::MAX_RATE)
        // report error rather than pin to max

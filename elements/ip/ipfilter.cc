@@ -983,7 +983,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   // optional bitmask
   uint32_t provided_mask = 0;
   if (wd == "&" && pos < words.size() - 1
-      && cp_unsigned(words[pos + 1], &provided_mask)) {
+      && cp_integer(words[pos + 1], &provided_mask)) {
       pos += 2;
       wd = (pos >= words.size() - 1 ? String() : words[pos]);
       if (provided_mask == 0)

@@ -152,7 +152,7 @@ cp_scanf(const char *begin, const char *end, const char *format, ...)
 	    switch (*format) {
 	      case 'u': {
 		  uint32_t *d = va_arg(val, uint32_t *);
-		  if ((ss = cp_unsigned(s, end, 0, d)) == s)
+		  if ((ss = cp_integer(s, end, 0, d)) == s)
 		      goto kill;
 		  s = ss;
 		  must_space = false;

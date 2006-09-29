@@ -177,23 +177,23 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 	int ok = 0;
 
 	// annotations
-	if (cp_unsigned(words[7], &j))
+	if (cp_integer(words[7], &j))
 	    SET_FIRST_TIMESTAMP_ANNO(q, Timestamp(j, 0)), ok++;
-	if (cp_unsigned(words[8], &j)) {
+	if (cp_integer(words[8], &j)) {
 	    if (j)
 		q->timestamp_anno().set(j, 0);
 	    else
 		q->timestamp_anno() = FIRST_TIMESTAMP_ANNO(q);
 	    ok++;
 	}
-	if (cp_unsigned(words[5], &j))
+	if (cp_integer(words[5], &j))
 	    SET_EXTRA_PACKETS_ANNO(q, j - 1), ok++;
 	uint32_t byte_count;
-	if (cp_unsigned(words[6], &byte_count))
+	if (cp_integer(words[6], &byte_count))
 	    ok++;
 	uint32_t input = 0, output = 0;
-	if ((_link == 1 || cp_unsigned(words[3], &input))
-	    && (_link == 0 || cp_unsigned(words[4], &output))) {
+	if ((_link == 1 || cp_integer(words[3], &input))
+	    && (_link == 0 || cp_integer(words[4], &output))) {
 	    ok++;
 	    uint32_t m = (_link == 2 ? 15 : 255);
 	    input = (input < m ? input : m) << (_link == 2 ? 4 : 0);
@@ -204,17 +204,17 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 	// IP header
 	ok += cp_ip_address(words[0], (unsigned char *)&iph->ip_src);
 	ok += cp_ip_address(words[1], (unsigned char *)&iph->ip_dst);
-	if (cp_unsigned(words[13], &j) && j <= 0xFF)
+	if (cp_integer(words[13], &j) && j <= 0xFF)
 	    iph->ip_p = j, ok++;
-	if (cp_unsigned(words[14], &j) && j <= 0xFF)
+	if (cp_integer(words[14], &j) && j <= 0xFF)
 	    iph->ip_tos = j, ok++;
 
 	// TCP header
-	if (cp_unsigned(words[9], &j) && j <= 0xFFFF)
+	if (cp_integer(words[9], &j) && j <= 0xFFFF)
 	    q->udp_header()->uh_sport = htons(j), ok++;
-	if (cp_unsigned(words[10], &j) && j <= 0xFFFF)
+	if (cp_integer(words[10], &j) && j <= 0xFFFF)
 	    q->udp_header()->uh_dport = htons(j), ok++;
-	if (cp_unsigned(words[12], &j) && j <= 0xFF)
+	if (cp_integer(words[12], &j) && j <= 0xFF)
 	    q->tcp_header()->th_flags = j, ok++;
 
 	if (ok < 10)

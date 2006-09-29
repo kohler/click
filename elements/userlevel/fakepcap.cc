@@ -58,7 +58,7 @@ fake_pcap_parse_dlt(const String &str)
 	if (str == d->name)
 	    return d->dlt;
     uint32_t dlt;
-    if (str.length() >= 2 && str[0] == '#' && cp_unsigned(str.substring(1), &dlt) && dlt < 0x7FFFFFFF)
+    if (str.length() >= 2 && str[0] == '#' && cp_integer(str.substring(1), &dlt) && dlt < 0x7FFFFFFF)
 	return dlt;
     else
 	return -1;

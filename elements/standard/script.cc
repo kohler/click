@@ -192,7 +192,7 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	wait_step:
 	case INSN_WAIT_STEP: {
 	    unsigned n = 1;
-	    if (!conf[i] || cp_unsigned(conf[i], &n))
+	    if (!conf[i] || cp_integer(conf[i], &n))
 		add_insn(INSN_WAIT_STEP, n, 0);
 	    else
 		goto syntax_error;
@@ -681,7 +681,7 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
 	    if (pct < end && (*pct == 'o' || *pct == 'x' || *pct == 'X' || *pct == 'u')) {
 		click_uintmax_t ival;
 		String x = cp_pop_spacevec(str);
-		if (!cp_unsigned(x, &ival))
+		if (!cp_integer(x, &ival))
 		    return errh->error("syntax error");
 		if (width_flag == 'h')
 		    ival = (unsigned short) ival;

@@ -400,7 +400,7 @@ LinkStat::write_window(const String &arg, Element *el,
 		       void *, ErrorHandler *errh)
 {
   LinkStat *e = (LinkStat *) el;
-  if (!cp_unsigned(arg, &e->_window))
+  if (!cp_integer(arg, &e->_window))
     return errh->error("window must be >= 0");
   return 0;
 }
@@ -410,7 +410,7 @@ LinkStat::write_period(const String &arg, Element *el,
 		       void *, ErrorHandler *errh)
 {
   LinkStat *e = (LinkStat *) el;
-  if (!cp_unsigned(arg, &e->_period))
+  if (!cp_integer(arg, &e->_period))
     return errh->error("period must be >= 0");
 
   return 0;
@@ -421,7 +421,7 @@ LinkStat::write_tau(const String &arg, Element *el,
 		       void *, ErrorHandler *errh)
 {
   LinkStat *e = (LinkStat *) el;
-  if (!cp_unsigned(arg, &e->_tau))
+  if (!cp_integer(arg, &e->_tau))
     return errh->error("tau must be >= 0");
   return 0;
 }

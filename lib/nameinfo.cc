@@ -396,7 +396,7 @@ NameInfo::query_int(uint32_t type, const Element *e, const String &name, int32_t
 bool
 NameInfo::query_int(uint32_t type, const Element *e, const String &name, uint32_t *value)
 {
-    return query(type, e, name, value, 4) || cp_unsigned(name, value);
+    return query(type, e, name, value, 4) || cp_integer(name, value);
 }
 
 String

@@ -77,7 +77,7 @@ AggregateFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	int port = noutputs();
 	if (words[0] == "allow")
 	    port = 0;
-	else if (cp_unsigned(words[0], (unsigned *)&port))
+	else if (cp_integer(words[0], (unsigned *)&port))
 	    /* OK */;
 	else if (words[0] != "drop" && words[0] != "deny") {
 	    errh->error("pattern %d: expected a port number", argno);
@@ -92,12 +92,12 @@ AggregateFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	    for (int i = 1; i < words.size(); i++) {
 		uint32_t agg1, agg2;
 		const char *dash;
-		if (cp_unsigned(words[i], &agg1))
+		if (cp_integer(words[i], &agg1))
 		    agg2 = agg1;
 		else {
 		    dash = find(words[i], '-');
-		    if (!cp_unsigned(words[i].substring(words[i].begin(), dash), &agg1)
-			|| !cp_unsigned(words[i].substring(dash + 1, words[i].end()), &agg2)) {
+		    if (!cp_integer(words[i].substring(words[i].begin(), dash), &agg1)
+			|| !cp_integer(words[i].substring(dash + 1, words[i].end()), &agg2)) {
 			errh->error("pattern %d: bad aggregate number `%#s'", words[i].c_str());
 			continue;
 		    }

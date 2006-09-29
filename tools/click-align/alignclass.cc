@@ -203,7 +203,7 @@ CheckIPHeaderAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *er
   Vector<String> args;
   cp_argvec(e->configuration(), args);
   if (args.size() > _argno) {
-    if (!cp_unsigned(args[_argno], &offset)) {
+    if (!cp_integer(args[_argno], &offset)) {
       ContextErrorHandler cerrh(errh, "While analyzing alignment for '" + e->declaration() + "':");
       cerrh.error("argument %d should be IP header offset (unsigned)", _argno + 1);
       return default_aligner();
