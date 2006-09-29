@@ -308,7 +308,7 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 
     case H_TASKS_PER_ITER: {
 	unsigned x;
-	if (!cp_unsigned(conf, &x)) 
+	if (!cp_integer(conf, &x)) 
 	    return errh->error("tasks_per_iter must be unsigned\n");
 	
 	// change current thread priorities
@@ -318,7 +318,7 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 
     case H_ITERS_PER_TIMERS: {
 	unsigned x;
-	if (!cp_unsigned(conf, &x)) 
+	if (!cp_integer(conf, &x)) 
 	    return errh->error("tasks_per_iter_timers must be unsigned\n");
 	
 	// change current thread priorities
@@ -328,7 +328,7 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 
     case H_ITERS_PER_OS: {
 	unsigned x;
-	if (!cp_unsigned(conf, &x)) 
+	if (!cp_integer(conf, &x)) 
 	    return errh->error("tasks_per_iter_os must be unsigned\n");
 	
 	// change current thread priorities
@@ -340,20 +340,16 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 }
 
 /********************** Initialization and cleanup ***************************/
-#if __MTCLICK__
-extern "C" int click_threads();
-#endif
-extern "C" int click_greedy();
 
 void
 click_init_sched(ErrorHandler *errh)
 {
   spin_lock_init(&click_thread_lock);
   click_thread_pids = new Vector<int>;
-  bool greedy = click_greedy();
+  bool greedy = click_parm(CLICKPARM_GREEDY);
 
 #if __MTCLICK__
-  click_master = new Master(click_threads());
+  click_master = new Master(click_parm(CLICKPARM_THREADS));
   if (num_possible_cpus() != NUM_CLICK_CPUS)
     click_chatter("warning: click compiled for %d cpus, machine allows %d", 
 	          NUM_CLICK_CPUS, num_possible_cpus());

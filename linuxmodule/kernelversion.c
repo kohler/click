@@ -26,6 +26,7 @@
 #include <click/config.h>
 #include <linux/version.h>
 #include <linux/module.h>
+#include "moduleparm.h"
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 52)
 # define CLICK_INT_MODULE_PARAM(param)	MODULE_PARM(param, "i")
@@ -35,7 +36,14 @@
 
 static int accessible = 1;
 CLICK_INT_MODULE_PARAM(accessible);
-MODULE_PARM_DESC(accessible, "make /proc/click world-readable [1]");
+MODULE_PARM_DESC(accessible, "make /click world-readable [1]");
+
+static int uid = 0;
+static int gid = 0;
+CLICK_INT_MODULE_PARAM(uid);
+CLICK_INT_MODULE_PARAM(gid);
+MODULE_PARM_DESC(uid, "UID owning /click [0]");
+MODULE_PARM_DESC(uid, "GID owning /click [0]");
 
 #if __MTCLICK__
 static int threads = 1;
@@ -52,21 +60,22 @@ CLICK_INT_MODULE_PARAM(greedy);
 MODULE_PARM_DESC(greedy, "Click takes a whole CPU [0]");
 
 int
-click_accessible(void)
+click_parm(int which)
 {
-  return accessible;
-}
-
+    switch (which) {
+    case CLICKPARM_ACCESSIBLE:
+	return accessible;
+    case CLICKPARM_UID:
+	return uid;
+    case CLICKPARM_GID:
+	return gid;
+    case CLICKPARM_GREEDY:
+	return greedy;
 #if __MTCLICK__
-int
-click_threads(void)
-{
-  return threads;
-}
+    case CLICKPARM_THREADS:
+	return threads;
 #endif
-
-int
-click_greedy(void)
-{
-    return greedy;
+    default:
+	return 0;
+    }
 }

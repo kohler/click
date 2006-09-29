@@ -151,8 +151,9 @@ click_inode(struct super_block *sb, ino_t ino)
     if (INO_ISHANDLER(ino)) {
 	int hi = INO_HANDLERNO(ino);
 	if (const Handler *h = Router::handler(click_router, hi)) {
-	    inode->i_mode = S_IFREG | (h->read_visible() ? click_mode_r : 0) | (h->write_visible() ? click_mode_w : 0);
-	    inode->i_uid = inode->i_gid = 0;
+	    inode->i_mode = S_IFREG | (h->read_visible() ? click_fsmode.read : 0) | (h->write_visible() ? click_fsmode.write : 0);
+	    inode->i_uid = click_fsmode.uid;
+	    inode->i_gid = click_fsmode.gid;
 	    inode->i_op = click_handler_inode_ops;
 #ifdef LINUX_2_4
 	    inode->i_fop = click_handler_file_ops;
@@ -165,8 +166,9 @@ click_inode(struct super_block *sb, ino_t ino)
 	    panic("click_inode");
 	}
     } else {
-	inode->i_mode = click_mode_dir;
-	inode->i_uid = inode->i_gid = 0;
+	inode->i_mode = click_fsmode.dir;
+	inode->i_uid = click_fsmode.uid;
+	inode->i_gid = click_fsmode.gid;
 	inode->i_op = click_dir_inode_ops;
 #ifdef LINUX_2_4
 	inode->i_fop = click_dir_file_ops;

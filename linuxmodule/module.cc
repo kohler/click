@@ -28,11 +28,9 @@
 #include <click/notifier.hh>
 #include <click/nameinfo.hh>
 
-int click_mode_r, click_mode_w, click_mode_x, click_mode_dir;
-
-extern "C" int click_accessible();
 extern "C" int click_cleanup_packages();
 
+click_fsmode_t click_fsmode;
 KernelErrorHandler *click_logged_errh = 0;
 static KernelErrorHandler *syslog_errh = 0;
 Router *click_router = 0;
@@ -253,15 +251,17 @@ init_module()
 
   // filesystem interface
   // set modes based on 'accessible'
-  if (click_accessible()) {
-    click_mode_r = S_IRUSR | S_IRGRP | S_IROTH;
-    click_mode_x = S_IXUSR | S_IXGRP | S_IXOTH;
+  if (click_parm(CLICKPARM_ACCESSIBLE)) {
+    click_fsmode.read = S_IRUSR | S_IRGRP | S_IROTH;
+    click_fsmode.exec = S_IXUSR | S_IXGRP | S_IXOTH;
   } else {
-    click_mode_r = S_IRUSR | S_IRGRP;
-    click_mode_x = S_IXUSR | S_IXGRP;
+    click_fsmode.read = S_IRUSR | S_IRGRP;
+    click_fsmode.exec = S_IXUSR | S_IXGRP;
   }
-  click_mode_w = S_IWUSR | S_IWGRP;
-  click_mode_dir = S_IFDIR | click_mode_r | click_mode_x;
+  click_fsmode.write = S_IWUSR | S_IWGRP;
+  click_fsmode.dir = S_IFDIR | click_fsmode.read | click_fsmode.exec;
+  click_fsmode.uid = click_parm(CLICKPARM_UID);
+  click_fsmode.gid = click_parm(CLICKPARM_GID);
 
   init_clickfs();
 

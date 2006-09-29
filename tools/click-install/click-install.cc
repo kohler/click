@@ -42,6 +42,8 @@
 # include <sys/mount.h>
 #elif FOR_LINUXMODULE
 # include <sys/mount.h>
+# include <pwd.h>
+# include <grp.h>
 #endif
 #include <fcntl.h>
 #include <unistd.h>
@@ -59,6 +61,8 @@
 #define PRIVATE_OPT		310
 #define PRIORITY_OPT		311
 #define GREEDY_OPT		312
+#define UID_OPT			313
+#define GID_OPT			314
 
 static Clp_Option options[] = {
   { "cabalistic", 0, PRIVATE_OPT, 0, Clp_Negate },
@@ -74,6 +78,9 @@ static Clp_Option options[] = {
   { "private", 'p', PRIVATE_OPT, 0, Clp_Negate },
   { "threads", 't', THREADS_OPT, Clp_ArgUnsigned, 0 },
   { "greedy", 'G', GREEDY_OPT, 0, Clp_Negate },
+  { "uid", 'U', UID_OPT, Clp_ArgString, 0 },
+  { "user", 0, UID_OPT, Clp_ArgString, 0 },
+  { "gid", 0, GID_OPT, Clp_ArgString, 0 },
 #endif
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
   { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
@@ -114,7 +121,8 @@ Options:\n\
   -n, --priority N         Set kernel thread priority to N (lower is better).\n", program_name);
 #if FOR_LINUXMODULE
   printf("\
-  -p, --private            Make /proc/click readable only by root.\n\
+  -p, --private            Make /proc/click readable only by owning user.\n\
+  -U, --user USER[:GROUP]  Set owning user [root].\n\
   -t, --threads N          Use N threads (multithreaded Click only).\n\
   -G, --greedy             Make Click thread take up an entire CPU.\n");
 # if HAVE_LINUXMODULE_2_6
@@ -350,6 +358,8 @@ main(int argc, char **argv)
   int threads = 1;
   bool greedy = false;
   output_map = false;
+  uid_t uid = 0;
+  gid_t gid = 0;
 #endif
   
   while (1) {
@@ -413,9 +423,46 @@ particular purpose.\n");
 # endif
 	break;
 
-      case GREEDY_OPT:
+    case GREEDY_OPT:
 	greedy = !clp->negated;
 	break;
+
+    case UID_OPT: {
+	const char *colon = find(clp->arg, clp->arg + strlen(clp->arg), ':');
+	if (colon > clp->arg) {
+	    String s(clp->arg, colon);
+	    if (!cp_integer(s, &uid)) {
+		errno = 0;
+		struct passwd *pwd = getpwnam(s.c_str());
+		if (!pwd && errno)
+		    errh->error("username lookup: %s", strerror(errno));
+		else if (!pwd)
+		    errh->error("no such user '%s'", s.c_str());
+		else
+		    uid = pwd->pw_uid;
+	    }
+	}
+	if (*colon && colon[1]) {
+	    clp->arg = colon + 1;
+	    goto gid;
+	}
+	break;
+    }
+
+    gid:
+    case GID_OPT: {
+	if (!cp_integer(clp->arg, &gid)) {
+	    errno = 0;
+	    struct group *grp = getgrnam(clp->arg);
+	    if (!grp && errno)
+		errh->error("group lookup: %s", strerror(errno));
+	    else if (!grp)
+		errh->error("no such group '%s'", clp->arg);
+	    else
+		gid = grp->gr_gid;
+	}
+	break;
+    }
 #endif
 
      case UNINSTALL_OPT:
@@ -502,7 +549,11 @@ particular purpose.\n");
     if (greedy)
 	options += " greedy=1";
     if (!accessible)
-      options += " accessible=0";
+	options += " accessible=0";
+    if (uid != 0)
+	options += " uid=" + String(uid);
+    if (gid != 0)
+	options += " gid=" + String(gid);
     install_module(click_o, options, errh);
 #elif FOR_BSDMODULE
     install_module(click_o, String(), errh);

@@ -4,6 +4,7 @@
 #include <click/router.hh>
 #include <click/driver.hh>
 #include <click/error.hh>
+#include "moduleparm.h"
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -59,7 +60,17 @@ extern Router *click_router;
 void click_init_sched(ErrorHandler *);
 int click_cleanup_sched();
 
-extern int click_mode_r, click_mode_w, click_mode_x, click_mode_dir;
+struct click_fsmode_t {
+    int read;
+    int write;
+    int exec;
+    int dir;
+    uid_t uid;
+    gid_t gid;
+};
+extern click_fsmode_t click_fsmode;
+
+extern "C" int click_parm(int which);
 
 int init_clickfs();
 void cleanup_clickfs();

@@ -904,7 +904,7 @@ Every Click error message eventually reaches some @dfn{basic}
 The user-level driver's basic @code{ErrorHandler} prints error messages
 to standard error, while in the Linux kernel module, the basic
 @code{ErrorHandler} logs messages to the syslog and stores them for
-access via @file{/proc/click/errors}.
+access via @file{/click/errors}.
 
 @cindex default @code{ErrorHandler}
 @cindex @code{ErrorHandler}, default

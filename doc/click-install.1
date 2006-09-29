@@ -49,7 +49,7 @@ language, installs the
 .M click.o 8
 kernel module if necessary, compiles and/or installs any dynamically
 loadable packages required by the router configuration, installs the router
-configuration itself by writing it to /proc/click/config, and uninstalls
+configuration itself by writing it to /click/config, and uninstalls
 any unused packages. It reports any errors to standard error, including
 errors reported by the Click module, and returns a zero (true) exit status
 if and only if the configuration was successfully installed.
@@ -89,7 +89,7 @@ packets contained in
 .M Queue n
 elements\*Ewill be swapped into the new configuration under certain
 conditions. See under
-.B /proc/click/hotconfig
+.B /click/hotconfig
 in
 .M click.o 8
 for details.
@@ -140,9 +140,23 @@ option is useful here.)
 .Sp
 .TP 5
 .BR \-p ", " "\-\-private"
-Make the /proc/click directory hierarchy readable only by root. Generally,
-files under /proc/click are writable only by root, but readable by
-everyone. Works only when simultaneously loading a Click kernel module; see
+Make the /click directory hierarchy readable only by the owning user, which
+is usually root. Generally, files under /click are writable only by the
+owner, but readable by everyone. Works only when simultaneously loading a
+Click kernel module; see
+.BR \-\-uninstall .
+'
+.Sp
+.TP 5
+.BR \-U ", " "\-\-user=\fIUSER\fR[:\fIGROUP\fR]"
+Set the user ID and group ID of the /click directory hierarchy to
+.I USER
+and group
+.IR GROUP .
+By default
+.IR USER " and " GROUP
+are both root. Works only when simultaneously loading a
+Click kernel module; see
 .BR \-\-uninstall .
 '
 .Sp
