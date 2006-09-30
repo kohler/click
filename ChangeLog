@@ -1,3 +1,11 @@
+2006-09-29 Friday 19:45  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/click-install/click-install.cc (1.66): nit
+
+2006-09-29 Friday 19:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/moduleparm.h (1.1): needed for last checkin
+
 2006-09-29 Friday 19:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click-install.1 (1.16), doc/click.texi (1.69),
