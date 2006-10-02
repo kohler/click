@@ -1,3 +1,40 @@
+2006-10-01 Sunday 21:37  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipfragmenter.cc (1.37),
+	  test/ip/IPReassembler-01.testie (1.2): nits
+
+2006-10-01 Sunday 21:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/testie.1 (1.7), elements/ip/ipfragmenter.hh (1.29),
+	  elements/ip/ipreassembler.hh (1.18),
+	  test/ip/IPReassembler-01.testie (1.1): document MAC header
+	  behavior of IPReassembler/Fragmenter; add a test for
+	  IPReassembler
+
+2006-10-01 Sunday 21:21  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/: testie (1.39), IPRewriter/IPAddrPairRewriter-01.testie
+	  (1.2), IPRewriter/IPAddrRewriter-01.testie (1.3),
+	  ip/iplookups-01.testie (1.7), IPRewriter/IPAddrRewriter-02.testie
+	  (1.3), IPRewriter/IPRewriter-01.testie (1.3),
+	  IPRewriter/IPRewriter-02.testie (1.3),
+	  IPRewriter/IPRewriter-03.testie (1.2),
+	  IPRewriter/TCPRewriter-01.testie (1.4),
+	  analysis/FromIPSummaryDump-ipopt-01.testie (1.12),
+	  analysis/FromTcpdump-01.testie (1.5),
+	  analysis/FromTcpdump-02.testie (1.5),
+	  analysis/IPSummaryDump-01.testie (1.3),
+	  ethernet/ARPQuerier-01.testie (1.5), handlers/kernel-01.testie
+	  (1.7), icmp/ICMPError-sourceroute-01.testie (1.4),
+	  linuxmodule/ToHost-01.testie (1.9),
+	  linuxmodule/ToHost-udpsocket-01.testie (1.2),
+	  tools/align-01.testie (1.2), tools/combine-01.testie (1.2),
+	  tools/lexer-01.testie (1.3), tools/lexer-02.testie (1.4),
+	  tools/mkmindriver-01.testie (1.4), tools/mkmindriver-02.testie
+	  (1.4), tools/testie-01.testie (1.3), tools/xform-ip-01.testie
+	  (1.2): testie: %ignore, %ignorev, %ignorex by analogy with
+	  %expect, %expectv, %expectx
+
 2006-09-29 Friday 19:45  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* tools/click-install/click-install.cc (1.66): nit
