@@ -1,0 +1,29 @@
+%script
+click
+
+%file stdin
+InfiniteSource(LIMIT 1, STOP true)
+	-> UDPIPEncap(1.0.0.1, 2, 3.0.0.3, 4)
+	-> IPPrint(PAYLOAD ascii)
+	-> IPFragmenter(45)
+	-> IPPrint
+	-> EtherEncap(80, 1:1:1:1:1:1, 2:2:2:2:2:2)
+	-> MarkIPHeader(14)
+	-> IPReassembler
+	-> IPPrint(PAYLOAD ascii)
+	-> Discard;
+
+%ignore stderr
+expensive{{.*}}
+
+%expect stderr
+{{.*}}: 1.0.0.1.2 > 3.0.0.3.4: udp 77
+  Random b ullshit  in a pac ket, at  least 64  bytes l
+  ong. Wel l, now i t is.
+{{.*}}: 1.0.0.1.2 > 3.0.0.3.4: udp 77 (frag {{\d+}}:24@0+)
+{{.*}}: 1.0.0.1 > 3.0.0.3: udp (frag {{\d+}}:24@24+)
+{{.*}}: 1.0.0.1 > 3.0.0.3: udp (frag {{\d+}}:24@48+)
+{{.*}}: 1.0.0.1 > 3.0.0.3: udp (frag {{\d+}}:5@72)
+{{.*}}: 1.0.0.1.2 > 3.0.0.3.4: udp 77
+  Random b ullshit  in a pac ket, at  least 64  bytes l
+  ong. Wel l, now i t is.

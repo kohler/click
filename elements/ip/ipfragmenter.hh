@@ -22,7 +22,11 @@ CLICK_DECLS
  *
  * Only the mac_broadcast annotation is copied into the fragments.
  *
- * Sends the first fragment last.
+ * Sends the fragments in order, starting with the first.
+ *
+ * It is best to Strip() the MAC header from a packet before sending it to
+ * IPFragmenter, since any MAC header is not copied to second and subsequent
+ * fragments.
  *
  * Keyword arguments are:
  *

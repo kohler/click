@@ -30,6 +30,8 @@ IPReassembler's memory usage is bounded. When memory consumption rises above
 HIMEM bytes, IPReassembler throws away old fragments until memory consumption
 drops below 3/4*HIMEM bytes. Default HIMEM is 256K.
 
+Output packets have no MAC headers, and input MAC headers are ignored.
+
 Keyword arguments are:
 
 =over 8
