@@ -41,5 +41,5 @@ FromIPSummaryDump(IN1, STOP true, CHECKSUM true)
 2.0.0.2 21 200.200.200.200 30 T 0 0 "" sack1-10
 2.0.0.2 21 200.200.200.200 30 T 0 0 "" sack1-10;sack1-30;sack30-32
 
-%ignore
+%ignorex
 !.*

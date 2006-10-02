@@ -202,6 +202,16 @@ sub _read_script_section ($$$$) {
     $t;
 }
 
+sub braces_to_regex ($) {
+    my($x) = @_;
+    my(@a) = split(/(\{\{.*?\}\})/, $x);
+    my($d, $i) = '';
+    for ($i = 0; $i < @a; $i++) {
+	$d .= ($i % 2 ? substr($a[$i], 2, -2) : quotemeta($a[$i]));
+    }
+    $d;
+}
+
 sub _read_file_section ($$$$$) {
     my($fh, $tt, $args, $secname, $prefix) = @_;
     $args =~ s/\s+$//;
@@ -210,7 +220,7 @@ sub _read_file_section ($$$$$) {
     my(@args) = split(/\s+/, $args);
 
     # assert that we understand $secname
-    die if $secname ne 'file' && $secname ne 'expect' && $secname ne 'expectv' && $secname ne 'expectx' && $secname ne 'ignore';
+    die if $secname ne 'file' && $secname ne 'expect' && $secname ne 'expectv' && $secname ne 'expectx' && $secname ne 'ignore' && $secname ne 'ignorex' && $secname ne 'ignorev';
 
     # check for alternates and length
     my($alternate, $delfirst, $regex_opts, $length) = (0, 0, '', undef);
@@ -233,11 +243,11 @@ sub _read_file_section ($$$$$) {
     if (!@args) {
 	push @args, "stdin" if $secname eq 'file';
 	push @args, "stdout" if $secname eq 'expect' || $secname eq 'expectv' || $secname eq 'expectx';
-	push @args, "all" if $secname eq 'ignore';
+	push @args, "all" if $secname eq 'ignore' || $secname eq 'ignorev' || $secname eq 'ignorex';
     }
 
     # complain about '%file -a'
-    if (($secname eq 'file' || $secname eq 'ignore') && $alternate) {
+    if (($secname eq 'file' || $secname eq 'ignore' || $secname eq 'ignorev' || $secname eq 'ignorex') && $alternate) {
 	$tt->file_err("'\%file -a' is illegal");
     } elsif (($secname eq 'file' || $secname eq 'expectv') && $regex_opts) {
 	$tt->file_err("'\%file -i' is illegal");
@@ -254,9 +264,14 @@ sub _read_file_section ($$$$$) {
     }
 
     # modify contents based on flags
-    $alternate = 1 if $secname eq 'ignore'; # 'ignore' always behaves like -a
+    $alternate = 1 if $secname eq 'ignore' || $secname eq 'ignorex' || $secname eq 'ignorev'; # 'ignore' always behaves like -a
     if ($delfirst) {
 	$file_data =~ s{^.}{}mg;
+    }
+    if ($secname eq 'ignorev') {
+	$file_data =~ s{^(.+)}{quotemeta($1)}meg;
+    } elsif ($secname eq 'ignore') {
+	$file_data =~ s{^(.+)}{braces_to_regex($1)}meg;
     }
     if ($regex_opts && $secname eq 'expect') {
 	$file_data =~ s{\{\{}{\{\{$regex_opts}g;
@@ -269,7 +284,7 @@ sub _read_file_section ($$$$$) {
     foreach $fn (@args) {
 	if (($fn eq 'stdin' && $secname ne 'file')
 	    || (($fn eq 'stdout' || $fn eq 'stderr') && $secname eq 'file')
-	    || ($fn eq 'all' && $secname ne 'ignore')) {
+	    || ($fn eq 'all' && ($secname ne 'ignore' && $secname ne 'ignorev' && $secname ne 'ignorex'))) {
 	    $tt->file_err("'$fn' not meaningful for '\%$secname'");
 	}
 
@@ -341,6 +356,10 @@ sub read (*;$) {
 		$t = _read_file_section($fh, $tt, $args, 'expectv', 'v');
 	    } elsif ($command eq 'ignore') {
 		$t = _read_file_section($fh, $tt, $args, 'ignore', 'i');
+	    } elsif ($command eq 'ignorex') {
+		$t = _read_file_section($fh, $tt, $args, 'ignorex', 'i');
+	    } elsif ($command eq 'ignorev') {
+		$t = _read_file_section($fh, $tt, $args, 'ignorev', 'i');
 	    } elsif ($command eq 'eot') {
 		$tt->{'continue'} = 1;
 		last;
@@ -1145,13 +1164,18 @@ Same as '%expect stdout'.
 
 Same as '%expect stderr'.
 
-=item %ignore [-d] [-i] [+LENGTH] [FILENAME]
+=item %ignorex [-d] [-i] [+LENGTH] [FILENAME]
 
-Each line in the %ignore section is a Perl regular expression.  Lines in
+Each line in the %ignorex section is a Perl regular expression.  Lines in
 the supplied FILENAME that match any of those regular expressions will not
 be considered when comparing files with %expect[x] data.  The regular
 expression must match the whole line.  FILENAME may be 'all', in which case
 the regular expressions will apply to all %expect[x] files.
+
+=item %ignore, %ignorev
+
+Like '%ignorex', but '%ignore' parses regular expressions only inside
+double braces ("{{ }}"), and '%ignorev' lines must match exactly.
 
 =item %eot
 

@@ -22,5 +22,5 @@ y :: ThisIsB;
 x :: FromDevice(eth0);
 x -> y;
 
-%ignore
+%ignorex
 #.*

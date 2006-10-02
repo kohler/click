@@ -29,7 +29,7 @@ s[4] -> Truncate(20) -> t
 4 - - -
 - - - -
 
-%ignore
+%ignorex
 !.*
 
 %eof

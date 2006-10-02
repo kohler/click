@@ -31,7 +31,7 @@ DriverManager(wait_stop, write f2.active true, wait_stop)
 10.0.0.8 2 1.0.0.1 1025 T
 10.0.0.8 2 1.0.0.1 1026 T
 
-%ignore
+%ignorex
 !.*
 
 %expect OUT1

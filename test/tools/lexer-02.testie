@@ -41,5 +41,5 @@ Foo(stop);
 Foo@1/Baz@1/Idle@1 :: Idle;
 Foo@1/Baz@1/Bar@2/DriverManager@1 :: DriverManager(stop);
 
-%ignore
+%ignorex
 #.*

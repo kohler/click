@@ -103,7 +103,7 @@ IP (tos 0x0, id 0, offset 0, flags [none], proto: TCP (6), length: 64, optlength
 18.26.4.44 15 10.0.0.1 80 T ts{1,10000,!45}+2;rr{}+1
 18.26.4.44 15 10.0.0.1 80 T ts{1,10000,!45}+2
 
-%ignore
+%ignorex
 !.*
 
 %eof

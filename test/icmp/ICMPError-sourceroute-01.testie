@@ -16,5 +16,5 @@ FromIPSummaryDump(IN1, STOP true, ZERO true)
 %expect OUT1
 19.19.19.19 18.26.4.44 I 68 ssrr{^128.4.49.61,128.4.45.60}
 
-%ignore
+%ignorex
 !.*

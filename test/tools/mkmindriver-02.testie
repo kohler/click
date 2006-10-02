@@ -27,5 +27,5 @@ elements/standard/print.cc	"elements/standard/print.hh"	Print-Print
 elements/standard/scheduleinfo.cc	<click/standard/scheduleinfo.hh>	ScheduleInfo-ScheduleInfo
 elements/standard/shaper.cc	"elements/standard/shaper.hh"	Shaper-Shaper
 
-%ignore
+%ignorex
 #.*

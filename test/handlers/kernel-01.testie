@@ -122,7 +122,7 @@ handlers
 name
 ports
 
-%ignore
+%ignorex
 assert_stop
 min_cpu_share
 max_cpu_share

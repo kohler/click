@@ -26,12 +26,12 @@ testie -V TEST1 TEST2 TEST3 TEST4 || true
  Funny
  %expect -a FOO
  Money
- %ignore FOO
+ %ignorex FOO
  Woman
- %ignore FOO
+ %ignorex FOO
  Honey
 
-%ignore stderr
+%ignorex stderr
 .*Running.*
 
 %expect stderr

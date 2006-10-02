@@ -14,7 +14,7 @@ FromIPSummaryDump(IN1, STOP true, CHECKSUM true) ->
 1.0.0.1 9.9.9.7
 9.9.9.6 3.0.0.1
 
-%ignore
+%ignorex
 !.*
 
 %expect OUT1

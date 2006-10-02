@@ -30,5 +30,5 @@ rw[0] -> i rw[1] -> i
   input spec 3: bad source port
 Router could not be initialized!
 
-%ignore X
+%ignorex X
 <expr.*

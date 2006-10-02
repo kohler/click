@@ -28,5 +28,5 @@ rw[0] -> i rw[1] -> i
   input spec 1: bad source address
 Router could not be initialized!
 
-%ignore X
+%ignorex X
 <expr.*

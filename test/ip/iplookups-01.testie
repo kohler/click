@@ -99,5 +99,5 @@ While{{.*}}:
 While{{.*}}:
   conflict with existing route '18.16.0.0/12 4.0.0.4 0'
 
-%ignore
+%ignorex
 !.*

@@ -346,5 +346,5 @@ IPOutput@1/combo [2] -> ICMPError@37
 IPOutput@1/combo [1] -> ICMPError@39
     -> rt;
 
-%ignore
+%ignorex
 #.*

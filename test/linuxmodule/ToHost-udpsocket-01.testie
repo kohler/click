@@ -24,7 +24,7 @@ RatedSource(DATA "I love myself\n", RATE 10000, LIMIT 15, STOP true)
 %expect COUNT
 15
 
-%ignore NCOUT
+%ignorex NCOUT
  punt!
 
 %expect NCOUT

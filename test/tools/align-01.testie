@@ -27,5 +27,5 @@ src -> Align@click_align@{{\d+}}
     -> ch
     -> d;
 
-%ignore
+%ignorex
 #.*

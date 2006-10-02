@@ -85,7 +85,7 @@ DriverManager(pause, wait .2s, print >TABLE arpq.table)
 2.8.0.1 1 02:01:01:01:01:08
 2.9.0.1 1 02:01:01:01:01:09
 
-%ignore PRINT PRINT2
+%ignorex PRINT PRINT2
 expensive.*
 
 %expect PRINT
