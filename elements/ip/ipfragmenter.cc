@@ -162,7 +162,7 @@ IPFragmenter::fragment(Packet *p_in)
 void
 IPFragmenter::push(int, Packet *p)
 {
-    if (p->length() - p->network_header_offset() <= _mtu)
+    if (p->network_length() <= (int) _mtu)
 	output(0).push(p);
     else
 	fragment(p);

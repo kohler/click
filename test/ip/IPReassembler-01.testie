@@ -4,9 +4,11 @@ click
 %file stdin
 InfiniteSource(LIMIT 1, STOP true)
 	-> UDPIPEncap(1.0.0.1, 2, 3.0.0.3, 4)
+	-> EtherEncap(80, 1:1:1:1:1:1, 2:2:2:2:2:2)
 	-> IPPrint(PAYLOAD ascii)
 	-> IPFragmenter(45)
 	-> IPPrint
+	-> StripToNetworkHeader
 	-> EtherEncap(80, 1:1:1:1:1:1, 2:2:2:2:2:2)
 	-> MarkIPHeader(14)
 	-> IPReassembler
