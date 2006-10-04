@@ -116,7 +116,7 @@ namelist_sort_compar(const void *athunk, const void *bthunk, void *othunk)
 void
 DynamicNameDB::sort()
 {
-    if (_sorted == 100)
+    if (_sorted == 100 || _names.size() == 0)
 	return;
     
     Vector<int> permutation(_names.size(), 0);
