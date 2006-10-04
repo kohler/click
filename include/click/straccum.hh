@@ -108,11 +108,16 @@ StringAccum &operator<<(StringAccum &, void *);
 
 inline
 StringAccum::StringAccum(int cap)
-    : _s(new unsigned char[cap]), _len(0), _cap(cap)
+    : _len(0)
 {
-    assert(cap > 0);
-    if (!_s)
-	_cap = -1;
+    assert(cap >= 0);
+    if (cap) {
+	_s = new unsigned char[cap];
+	_cap = (_s ? cap : -1);
+    } else {
+	_s = 0;
+	_cap = 0;
+    }
 }
 
 inline const char *
