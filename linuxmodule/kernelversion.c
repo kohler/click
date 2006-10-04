@@ -43,7 +43,7 @@ static int gid = 0;
 CLICK_INT_MODULE_PARAM(uid);
 CLICK_INT_MODULE_PARAM(gid);
 MODULE_PARM_DESC(uid, "UID owning /click [0]");
-MODULE_PARM_DESC(uid, "GID owning /click [0]");
+MODULE_PARM_DESC(gid, "GID owning /click [0]");
 
 #if __MTCLICK__
 static int threads = 1;
