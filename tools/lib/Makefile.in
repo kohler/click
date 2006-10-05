@@ -54,7 +54,7 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 OBJS = string.o straccum.o \
 	bitvector.o vectorv.o vectori.o hashmapi.o bighashmap_arena.o \
-	ipaddress.o ipaddresslist.o etheraddress.o \
+	ipaddress.o etheraddress.o \
 	timestamp.o error.o \
 	elementt.o eclasst.o routert.o runparse.o variableenv.o \
 	lexert.o lexertinfo.o driver.o \

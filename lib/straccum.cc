@@ -29,7 +29,7 @@ void
 StringAccum::make_out_of_memory()
 {
     assert(_cap >= 0);
-    delete[] _s;
+    CLICK_LFREE(_s, _cap);
     _s = reinterpret_cast<unsigned char *>(const_cast<char *>(String::out_of_memory_data()));
     _cap = -1;
     _len = 0;
@@ -46,7 +46,7 @@ StringAccum::grow(int want)
     while (ncap <= want)
 	ncap *= 2;
   
-    unsigned char *n = new unsigned char[ncap];
+    unsigned char *n = (unsigned char *) CLICK_LALLOC(ncap);
     if (!n) {
 	make_out_of_memory();
 	return false;
@@ -54,7 +54,7 @@ StringAccum::grow(int want)
   
     if (_s)
 	memcpy(n, _s, _cap);
-    delete[] _s;
+    CLICK_LFREE(_s, _cap);
     _s = n;
     _cap = ncap;
     return true;

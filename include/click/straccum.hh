@@ -16,7 +16,7 @@ class StringAccum { public:
   
     StringAccum()			: _s(0), _len(0), _cap(0) { }
     explicit inline StringAccum(int);
-    ~StringAccum()			{ if (_cap >= 0) delete[] _s; }
+    ~StringAccum()			{ if (_cap >= 0) CLICK_LFREE(_s,_cap);}
 
     const char *data() const		{ return (const char *)_s; }
     char *data()			{ return (char *)_s; }
@@ -112,7 +112,7 @@ StringAccum::StringAccum(int cap)
 {
     assert(cap >= 0);
     if (cap) {
-	_s = new unsigned char[cap];
+	_s = (unsigned char *) CLICK_LALLOC(cap);
 	_cap = (_s ? cap : -1);
     } else {
 	_s = 0;

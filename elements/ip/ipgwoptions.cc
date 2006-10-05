@@ -44,7 +44,7 @@ IPGWOptions::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpIPAddressList, "other interface IP addresses", &_my_addrs,
 		  cpEnd) < 0)
     return -1;
-  _my_addrs.insert(_preferred_addr);
+  _my_addrs.push_back(_preferred_addr);
   return 0;
 }
 
@@ -135,7 +135,7 @@ IPGWOptions::handle_options(Packet *p)
 	unsigned addr;
 	memcpy(&addr, oa + oi + p, 4);
         /* only if it's my address */
-	if (_my_addrs.contains(addr)) {
+	if (find(_my_addrs.begin(), _my_addrs.end(), IPAddress(addr)) < _my_addrs.end()) {
           memcpy(woa + oi + p + 4, &ms, 4);
           woa[oi+2] += 8;
         }

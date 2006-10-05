@@ -1,7 +1,6 @@
 #ifndef CLICK_ICMPERROR_HH
 #define CLICK_ICMPERROR_HH
 #include <click/element.hh>
-#include <click/ipaddresslist.hh>
 CLICK_DECLS
 
 /*
@@ -95,7 +94,7 @@ class ICMPError : public Element { public:
     IPAddress _src_ip;
     int _type;
     int _code;
-    IPAddressList _bad_addrs;
+    Vector<IPAddress> _bad_addrs;
     unsigned _mtu;
     unsigned _pmtu;
 

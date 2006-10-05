@@ -113,8 +113,8 @@ IPInputCombo::smaction(Packet *p)
    * Configuration string should have listed all subnet
    * broadcast addresses known to this router.
    */
-  if (_bad_src.contains(ip->ip_src)
-      && !_good_dst.contains(ip->ip_dst))
+  if (find(_bad_src.begin(), _bad_src.end(), IPAddress(ip->ip_src)) < _bad_src.end()
+      && find(_good_dst.begin(), _good_dst.end(), IPAddress(ip->ip_dst)) == _good_dst.end())
     goto bad;
 
   /*

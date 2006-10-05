@@ -29,6 +29,7 @@ template class Vector<Router::Hookup>;
 template class Vector<int>;
 template class Vector<unsigned int>;
 template class Vector<String>;
+template class Vector<IPAddress>;
 
 #include <click/hashmap.cc>
 template class HashMap<String, int>;

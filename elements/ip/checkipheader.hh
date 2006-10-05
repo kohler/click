@@ -2,7 +2,6 @@
 #define CLICK_CHECKIPHEADER_HH
 #include <click/element.hh>
 #include <click/atomic.hh>
-#include <click/ipaddresslist.hh>
 CLICK_DECLS
 
 /*
@@ -125,7 +124,7 @@ class CheckIPHeader : public Element { public:
   
   unsigned _offset;
   
-  IPAddressList _bad_src;	// array of illegal IP src addresses
+  Vector<IPAddress> _bad_src;	// array of illegal IP src addresses
   
   bool _checksum;
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
@@ -133,7 +132,7 @@ class CheckIPHeader : public Element { public:
 #endif
   bool _verbose;
   
-  IPAddressList _good_dst;	// array of IP dst addrs for which _bad_src
+  Vector<IPAddress> _good_dst;	// array of IP dst addrs for which _bad_src
 				// does not apply
 
   atomic_uint32_t _drops;

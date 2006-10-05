@@ -26,7 +26,6 @@
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/ipaddress.hh>
-#include <click/ipaddresslist.hh>
 #include <click/etheraddress.hh>
 #ifdef HAVE_IP6
 # include <click/ip6address.hh>
@@ -1515,25 +1514,25 @@ cp_ip_prefix(const String &str, IPAddress *address, IPAddress *mask
 }
 
 bool
-cp_ip_address_list(const String &str, IPAddressList *l
+cp_ip_address_list(const String &str, Vector<IPAddress> *l
 		   CP_CONTEXT_ARG)
 {
-  Vector<String> words;
-  cp_spacevec(str, words);
-  StringAccum sa;
-  IPAddress ip;
-  for (int i = 0; i < words.size(); i++) {
-    if (!cp_ip_address(words[i], &ip  CP_PASS_CONTEXT))
-      return false;
-    if (char *x = sa.extend(4))
-      *reinterpret_cast<uint32_t *>(x) = ip.addr();
-    else {
-      cp_errno = CPE_MEMORY;
-      return false;
+    Vector<String> words;
+    cp_spacevec(str, words);
+    Vector<IPAddress> build;
+    build.reserve(words.size());
+    for (int i = 0; i < words.size(); i++) {
+	IPAddress ip;
+	if (!cp_ip_address(words[i], &ip  CP_PASS_CONTEXT))
+	    return false;
+	build.push_back(ip);
     }
-  }
-  l->assign(words.size(), reinterpret_cast<uint32_t *>(sa.take_bytes()));
-  return true;
+    if (build.size() != words.size()) {
+	cp_errno = CPE_MEMORY;
+	return false;
+    }
+    l->swap(build);
+    return true;
 }
 
 
@@ -2333,7 +2332,7 @@ default_parsefunc(cp_value *v, const String &arg,
    }
 
    case cpiIPAddressList: {
-     IPAddressList l;
+     Vector<IPAddress> l;
      if (!cp_ip_address_list(arg, &l CP_PASS_CONTEXT))
        errh->error("%s takes set of IP addresses (%s)", argname, desc);
      break;
@@ -2587,7 +2586,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
 
    case cpiIPAddressList: {
      // oog... parse set into stored set only when we know there are no errors
-     IPAddressList *liststore = (IPAddressList *)v->store;
+     Vector<IPAddress> *liststore = (Vector<IPAddress> *)v->store;
      cp_ip_address_list(v->v_string, liststore  CP_PASS_CONTEXT);
      break;
    }

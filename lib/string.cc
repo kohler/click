@@ -83,7 +83,7 @@ String::Memo::Memo(char *data, int dirty, int capacity)
 
 String::Memo::Memo(int dirty, int capacity)
   : _refcount(1), _capacity(capacity), _dirty(dirty),
-    _real_data(new char[capacity])
+    _real_data((char *) CLICK_LALLOC(capacity))
 {
   assert(_capacity >= _dirty);
 }
@@ -92,7 +92,7 @@ String::Memo::~Memo()
 {
   if (_capacity) {
     assert(_capacity >= _dirty);
-    delete[] _real_data;
+    CLICK_LFREE(_real_data, _capacity);
   }
 }
 /** @endcond never */

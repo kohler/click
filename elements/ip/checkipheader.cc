@@ -74,28 +74,25 @@ ipaddr_list_parse(cp_value *v, const String &arg, ErrorHandler *errh, const char
 static void
 ipaddr_list_store(cp_value *v, Element *)
 {
-  IPAddressList *l1 = (IPAddressList *)v->store;
-  const uint32_t *vec = reinterpret_cast<const uint32_t *>(v->v_string.data());
-  int len = v->v_string.length() / 4;
+    Vector<IPAddress> *l1 = (Vector<IPAddress> *)v->store;
+    l1->clear();
+    const uint32_t *vec = reinterpret_cast<const uint32_t *>(v->v_string.data());
+    int len = v->v_string.length() / 4;
 
-  if (v->argtype->user_data == IPADDR_LIST_INTERFACES) {
-    uint32_t *l = new uint32_t[len/2 + 2];
-    for (int i = 0; i < len/2; i++)
-      l[i] = (vec[i*2] & vec[i*2 + 1]) | ~vec[i*2 + 1];
-    l[len/2] = 0x00000000U;
-    l[len/2+1] = 0xFFFFFFFFU;
-    l1->assign(len/2 + 2, l);
+    if (v->argtype->user_data == IPADDR_LIST_INTERFACES) {
+	for (int i = 0; i < len/2; i++)
+	    l1->push_back((vec[i*2] & vec[i*2 + 1]) | ~vec[i*2 + 1]);
+	l1->push_back(0x00000000U);
+	l1->push_back(0xFFFFFFFFU);
 
-    IPAddressList *l2 = (IPAddressList *)v->store2;
-    l = new uint32_t[len/2];
-    for (int i = 0; i < len/2; i++)
-      l[i] = vec[i*2];
-    l2->assign(len/2, l);
-  } else {
-    uint32_t *l = new uint32_t[len];
-    memcpy(l, vec, len * sizeof(uint32_t));
-    l1->assign(len, l);
-  }
+	Vector<IPAddress> *l2 = (Vector<IPAddress> *)v->store2;
+	l2->clear();
+	for (int i = 0; i < len/2; i++)
+	    l2->push_back(vec[i*2]);
+    } else {
+	for (int i = 0; i < len; i++)
+	    l1->push_back(vec[i]);
+    }
 }
 
 void
@@ -238,8 +235,8 @@ CheckIPHeader::simple_action(Packet *p)
    * Configuration string should have listed all subnet
    * broadcast addresses known to this router.
    */
-  if (_bad_src.contains(ip->ip_src)
-      && !_good_dst.contains(ip->ip_dst))
+  if (find(_bad_src.begin(), _bad_src.end(), IPAddress(ip->ip_src)) < _bad_src.end()
+      && find(_good_dst.begin(), _good_dst.end(), IPAddress(ip->ip_dst)) == _good_dst.end())
     return drop(BAD_SADDR, p);
 
   /*

@@ -91,7 +91,7 @@ ICMPError::unicast(struct in_addr aa) const
     return(0);
 
   /* limited broadcast */
-  if (_bad_addrs.contains(a))
+  if (find(_bad_addrs.begin(), _bad_addrs.end(), IPAddress(a)) < _bad_addrs.end())
     return 0;
   
   return(1);

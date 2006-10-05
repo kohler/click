@@ -4,6 +4,7 @@
 #ifdef HAVE_PERMSTRING
 # include "permstr.hh"
 #endif
+#include <click/algorithm.hh>
 CLICK_DECLS
 
 /** @file <click/string.hh>
@@ -715,13 +716,6 @@ String::out_of_memory_data()
 }
 
 // find methods
-
-inline const char *find(const char *begin, const char *end, char c)
-{
-  while (begin < end && *begin != c)
-    begin++;
-  return begin;
-}
 
 inline const char *rfind(const char *begin, const char *end, char c)
 {

@@ -2,7 +2,6 @@
 #define CLICK_CHECKARPHEADER_HH
 #include <click/element.hh>
 #include <click/atomic.hh>
-#include <click/ipaddresslist.hh>
 CLICK_DECLS
 
 /*

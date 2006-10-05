@@ -3,7 +3,6 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/atomic.hh>
-#include <click/ipaddresslist.hh>
 CLICK_DECLS
 
 /*
@@ -54,7 +53,7 @@ class IPGWOptions : public Element { public:
   
   atomic_uint32_t _drops;
   struct in_addr _preferred_addr;
-  IPAddressList _my_addrs;
+  Vector<IPAddress> _my_addrs;
 
 };
 

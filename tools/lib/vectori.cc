@@ -19,9 +19,11 @@
 
 #include <click/vector.cc>
 #include <click/string.hh>
+#include <click/ipaddress.hh>
 #include "routert.hh"
 template class Vector<int>;
 template class Vector<unsigned>;
+template class Vector<IPAddress>;
 template class Vector<String>;
 template class Vector<PortT>;
 template class Vector<ConnectionT>;

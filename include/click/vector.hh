@@ -1,5 +1,6 @@
 #ifndef CLICK_VECTOR_HH
 #define CLICK_VECTOR_HH
+#include <click/algorithm.hh>
 CLICK_DECLS
 
 template <class T>

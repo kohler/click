@@ -1,7 +1,6 @@
 #ifndef CLICK_IPINPUTCOMBO_HH
 #define CLICK_IPINPUTCOMBO_HH
 #include <click/element.hh>
-#include <click/ipaddresslist.hh>
 #include <click/atomic.hh>
 CLICK_DECLS
 
@@ -38,11 +37,11 @@ class IPInputCombo : public Element {
   atomic_uint32_t _drops;
   int _color;
   
-  IPAddressList _bad_src;
+  Vector<IPAddress> _bad_src;
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   bool _aligned;
 #endif
-  IPAddressList _good_dst;
+  Vector<IPAddress> _good_dst;
 
  public:
   

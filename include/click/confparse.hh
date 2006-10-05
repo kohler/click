@@ -147,7 +147,7 @@ bool cp_ip_prefix(const String&, unsigned char*, unsigned char*, bool allow_bare
 bool cp_ip_prefix(const String&, IPAddress*, IPAddress*, bool allow_bare_address  CP_OPT_CONTEXT);
 bool cp_ip_prefix(const String&, unsigned char*, unsigned char*  CP_OPT_CONTEXT);
 bool cp_ip_prefix(const String&, IPAddress*, IPAddress*  CP_OPT_CONTEXT);
-bool cp_ip_address_list(const String&, IPAddressList*  CP_OPT_CONTEXT);
+bool cp_ip_address_list(const String&, Vector<IPAddress>*  CP_OPT_CONTEXT);
 
 #ifdef HAVE_IP6
 class IP6Address;

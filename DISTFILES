@@ -347,7 +347,6 @@ ip6address.hh
 ip6flowid.hh
 ip6table.hh
 ipaddress.hh
-ipaddresslist.hh
 ipflowid.hh
 iptable.hh
 lexer.hh
@@ -426,7 +425,6 @@ ip6address.cc
 ip6flowid.cc
 ip6table.cc
 ipaddress.cc
-ipaddresslist.cc
 ipflowid.cc
 iptable.cc
 lexer.cc
