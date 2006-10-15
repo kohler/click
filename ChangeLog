@@ -1,3 +1,8 @@
+2006-10-15 Sunday 18:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/bighashmap.cc (1.27): fix HashMap::swap to not be
+	  fucking stupid (Jim Mott-Smith, Jeff Gold [Mz])
+
 2006-10-05 Thursday 15:21  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.103), bsdmodule/Makefile.in (1.38),
