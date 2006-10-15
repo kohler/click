@@ -317,7 +317,7 @@ HashMap<K, V>::swap(HashMap<K, V> &o)
   t_v = _default_value; _default_value = o._default_value; o._default_value = t_v;
 
   t_size = _n; _n = o._n; o._n = t_size;
-  t_size = _capacity; _n = o._capacity; o._capacity = t_size;
+  t_size = _capacity; _capacity = o._capacity; o._capacity = t_size;
 
   t_arena = _arena; _arena = o._arena; o._arena = t_arena;
 }
