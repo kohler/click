@@ -1,3 +1,8 @@
+2006-12-09 Saturday 21:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/bighashmap.cc (1.28): another half of the
+	  HashMap::swap() fix from Jim Mott-Smith
+
 2006-10-15 Sunday 18:18  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/bighashmap.cc (1.27): fix HashMap::swap to not be
