@@ -215,20 +215,28 @@ handler returns with that value.
 
 =h add "read with parameters"
 
-Useful for arithmetic.  Parses its parameters as a space-separated list of
-integers and returns their sum.
+Useful for arithmetic.  Adds a space-separated list of integers; for example,
+'C<add 10 5 2>' returns "C<17>".  (At user level, the arithmetic and
+comparison operators can parse floating-point numbers as well as integers.)
 
 =h sub "read with parameters"
 
-Useful for arithmetic.  Parses its parameters as a space-separated list of
-integers and returns their difference; for example, 'C<sub 10 5 2>' returns
+Subtracts a space-separated list of
+numbers; for example, 'C<sub 10 5 2>' returns
 "C<3>".
+
+=h mul, div, idiv "read with parameters"
+
+Multiplies or divides a space-separated list of numbers and returns the
+result.  At user level, the 'C<idiv>' handler truncates its result to an
+integer and returns that, whereas the 'C<div>' handler returns a
+floating-point number; in the kernel, 'C<idiv>' and 'C<div>' both perform
+integer division.
 
 =h eq, ne, lt, gt, le, ge "read with parameters"
 
-Useful for comparisons.  Compare two integer parameters and return the result.
-For example, 'C<eq 10 0xA>' returns "C<true>", but 'C<le 9 8>' returns
-"C<false>".
+Compares two numeric parameters and return the result.  For example, 'C<eq 10
+0xA>' returns "C<true>", but 'C<le 9 8>' returns "C<false>".
 
 =h not "read with parameters"
 

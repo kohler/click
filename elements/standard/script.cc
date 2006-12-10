@@ -511,7 +511,7 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
 
 enum {
     ST_STEP = 0, ST_RUN, ST_GOTO,
-    AR_ADD = 0, AR_SUB,
+    AR_ADD = 0, AR_SUB, AR_MUL, AR_DIV, AR_IDIV,
     AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
     AR_FIRST, AR_NOT, AR_SPRINTF
 };
@@ -586,26 +586,75 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
 
     switch (what) {
 
+    case AR_FIRST:
+	str = cp_pop_spacevec(str);
+	return 0;
+
     case AR_ADD:
-    case AR_SUB: {
+    case AR_SUB:
+    case AR_MUL:
+    case AR_DIV:
+    case AR_IDIV: {
 	click_intmax_t accum = 0, arg;
 	bool first = true;
+#if CLICK_USERLEVEL
+	double daccum = 0, darg;
+	bool use_daccum = (what == AR_DIV || what == AR_IDIV);
+#endif
 	while (1) {
 	    String word = cp_pop_spacevec(str);
 	    if (!word && cp_is_space(str))
 		break;
+#if CLICK_USERLEVEL
+	    if (!use_daccum && !cp_integer(word, &arg)) {
+		use_daccum = true;
+		daccum = accum;
+	    }
+	    if (use_daccum && !cp_double(word, &darg))
+		return errh->error("expected list of numbers");
+	    if (use_daccum) {
+		if (first)
+		    daccum = darg;
+		else if (what == AR_ADD)
+		    daccum += darg;
+		else if (what == AR_SUB)
+		    daccum -= darg;
+		else if (what == AR_MUL)
+		    daccum *= darg;
+		else
+		    daccum /= darg;
+		goto set_first;
+	    }
+#else
 	    if (!cp_integer(word, &arg))
 		return errh->error("expected list of numbers");
-	    accum += (what == AR_ADD || first ? arg : -arg);
+#endif
+	    if (first)
+		accum = arg;
+	    else if (what == AR_ADD)
+		accum += arg;
+	    else if (what == AR_SUB)
+		accum -= arg;
+	    else if (what == AR_MUL)
+		accum *= arg;
+	    else
+		accum /= arg;
+#if CLICK_USERLEVEL
+	set_first:
+#endif
 	    first = false;
 	}
+#if CLICK_USERLEVEL
+	if (what == AR_IDIV) {
+	    use_daccum = false;
+	    accum = (click_intmax_t) daccum;
+	}
+	str = (use_daccum ? String(daccum) : String(accum));
+#else
 	str = String(accum);
+#endif
 	return 0;
     }
-
-    case AR_FIRST:
-	str = cp_pop_spacevec(str);
-	return 0;
 
     case AR_LT:
     case AR_EQ:
@@ -615,11 +664,30 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
     case AR_GE: {
 	String astr = cp_pop_spacevec(str), bstr = cp_pop_spacevec(str);
 	click_intmax_t a, b;
+	int comparison;
+#if CLICK_USERLEVEL
+	if (str)
+	    goto compare_syntax;
+	if (!cp_integer(astr, &a) || !cp_integer(bstr, &b)) {
+	    double da, db;
+	    if (!cp_double(astr, &da) || !cp_double(bstr, &db))
+		goto compare_syntax;
+	    comparison = (da < db ? AR_LT : (da == db ? AR_EQ : AR_GT));
+	    goto compare_return;
+	}
+#else
 	if (str || !cp_integer(astr, &a) || !cp_integer(bstr, &b))
-	    return errh->error("syntax error '%s' '%s'", astr.c_str(), bstr.c_str());
-	int x = (a < b ? AR_LT : (a == b ? AR_EQ : AR_GT));
-	str = cp_unparse_bool(what == x || (what >= AR_GE && what != x + 3));
+	    goto compare_syntax;
+#endif
+	comparison = (a < b ? AR_LT : (a == b ? AR_EQ : AR_GT));
+#if CLICK_USERLEVEL
+    compare_return:
+#endif
+	str = cp_unparse_bool(what == comparison
+			      || (what >= AR_GE && what != comparison + 3));
 	return 0;
+    compare_syntax:
+	return errh->error("expected two numbers");
     }
 
     case AR_NOT: {
@@ -732,6 +800,9 @@ Script::add_handlers()
     set_handler("run", Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE | Handler::ONE_HOOK, step_handler, (void *) ST_RUN, 0);
     set_handler("add", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_ADD, 0);
     set_handler("sub", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_SUB, 0);
+    set_handler("mul", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_MUL, 0);
+    set_handler("div", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_DIV, 0);
+    set_handler("idiv", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_IDIV, 0);
     set_handler("eq", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_EQ, 0);
     set_handler("ne", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_NE, 0);
     set_handler("gt", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_GT, 0);
