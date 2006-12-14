@@ -637,8 +637,16 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
 		accum -= arg;
 	    else if (what == AR_MUL)
 		accum *= arg;
-	    else
+	    else {
+#if CLICK_USERLEVEL || !HAVE_INT64_TYPES
 		accum /= arg;
+#else
+		// no int64 divide in the kernel
+		if (accum > 0x7FFFFFFF || arg > 0x7FFFFFFF)
+		    errh->warning("int64 divide truncated");
+		accum = (int32_t) accum / (int32_t) arg;
+#endif
+	    }
 #if CLICK_USERLEVEL
 	set_first:
 #endif
