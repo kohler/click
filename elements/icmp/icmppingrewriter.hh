@@ -11,7 +11,7 @@ CLICK_DECLS
 /*
 =c
 
-ICMPPingRewriter(NEWSRC, NEWDST)
+ICMPPingRewriter(NEWSRC, NEWDST, I<keywords> DST_ANNO)
 
 =s nat
 

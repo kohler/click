@@ -11,7 +11,7 @@ CLICK_DECLS
 /*
 =c
 
-ICMPRewriter(MAPS)
+ICMPRewriter(MAPS, I<keywords> DST_ANNO)
 
 =s nat
 
@@ -36,6 +36,17 @@ ICMPRewriter may have one or two outputs. If it has one, then any
 non-rewritten ICMP error packets, and any ICMP packets that are not errors,
 are dropped. If it has two, then these kinds of packets are emitted on output
 1.
+
+Keyword arguments are:
+
+=over 8
+
+=item DST_ANNO
+
+Boolean. If true, then set the destination IP address annotation on passing
+packets to the rewritten destination address. Default is true.
+
+=back
 
 =n
 
@@ -66,6 +77,7 @@ class ICMPRewriter : public Element { public:
 
   Vector<IPRw *> _maps;
   Vector<ICMPPingRewriter *> _ping_maps;
+  bool _dst_anno;
 
   void rewrite_packet(WritablePacket *, click_ip *, click_udp *,
 		      const IPFlowID &, IPRw::Mapping *);

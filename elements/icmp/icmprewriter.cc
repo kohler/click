@@ -36,8 +36,11 @@ int
 ICMPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String arg;
+  _dst_anno = true;
   if (cp_va_parse(conf, this, errh,
 		  cpArgument, "rewriters", &arg,
+		  cpKeywords,
+		  "DST_ANNO", cpBool, "set destination IP addr annotation?", &_dst_anno,
 		  cpEnd) < 0)
     return -1;
 
@@ -78,6 +81,8 @@ ICMPRewriter::rewrite_packet(WritablePacket *p, click_ip *embedded_iph,
     iph->ip_dst = new_flow.saddr();
     iph->ip_sum = 0;
     iph->ip_sum = click_in_cksum((unsigned char *)iph, hlen);
+    if (_dst_anno)
+      p->set_dst_ip_anno(new_flow.saddr());
   }
   
   // don't bother patching embedded IP or UDP checksums
@@ -109,6 +114,8 @@ ICMPRewriter::rewrite_ping_packet(WritablePacket *p, click_ip *embedded_iph,
     iph->ip_dst = new_flow.saddr();
     iph->ip_sum = 0;
     iph->ip_sum = click_in_cksum((unsigned char *)iph, hlen);
+    if (_dst_anno)
+      p->set_dst_ip_anno(new_flow.saddr());
   }
   
   // don't bother patching embedded ICMP checksum
