@@ -119,10 +119,10 @@ InfiniteSource::run_task(Task *)
 	output(0).push(p);
     }
     _count += n;
-    if (_stop && _limit >= 0 && _count >= _limit)
-	router()->please_stop_driver();
-    else if (n > 0)
+    if (n > 0)
 	_task.fast_reschedule();
+    else if (_stop && _limit >= 0 && _count >= _limit)
+	router()->please_stop_driver();
     return n > 0;
 }
 
