@@ -121,11 +121,9 @@ InfiniteSource::run_task(Task *)
     _count += n;
     if (_stop && _limit >= 0 && _count >= _limit)
 	router()->please_stop_driver();
-    if (n > 0) {
+    else if (n > 0)
 	_task.fast_reschedule();
-	return true;
-    } else
-	return false;
+    return n > 0;
 }
 
 Packet *
