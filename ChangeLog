@@ -1,3 +1,14 @@
+2006-12-16 Saturday 02:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/infinitesource.cc (1.59): Isnt it amazingthat
+	  InfiniteSource still has bugs?  Make sure it only calls
+	  please_stop_driver() once per round, by not rescheduling.
+
+2006-12-16 Saturday 01:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click.o.8 (1.17): fix references to click.o/proclikefs.o,
+	  strongly suggest click-install
+
 2006-12-14 Thursday 14:22  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/script.cc (1.8): no int64 divide in kernel
