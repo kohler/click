@@ -1,3 +1,9 @@
+2006-12-16 Saturday 11:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/infinitesource.cc (1.60): another
+	  infinitesource fixlet: use fast_reschedule, stop the driver only
+	  after sending 0 packets
+
 2006-12-16 Saturday 02:31  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/infinitesource.cc (1.59): Isnt it amazingthat
