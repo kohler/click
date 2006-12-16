@@ -1,6 +1,6 @@
 .\" -*- mode: nroff -*-
-.ds V 1.3
-.ds D 27/Apr/2000
+.ds V 1.5
+.ds D 15/Dec/2006
 .ds E " \-\- 
 .if t .ds E \(em
 .de Sp
@@ -43,55 +43,31 @@ It can steal packets from network devices before Linux gets a chance to
 handle them, send packets directly to devices, and send packets to Linux
 for normal processing.
 .PP
-You should generally use
-.M click-install 1
-to load the Click kernel module, rather than doing it manually.
-Nevertheless, the manual loading steps are as follows.
-.TP 3
-1.
-Load the
-.B proclikefs
-module with
-.M insmod 8 :
-"/sbin/insmod proclikefs.o". This module takes charge of the Click
-filesystem, allowing you to safely unload the Click module even if
-user-level programs have Click control files open. 
-.TP
-2.
-Load the
-.B click
-module with
-.BR insmod :
-"/sbin/insmod click.o".
-.TP
-3.
-Mount the Click filesystem on a directory, DIR, using
-.M mount 8 :
-"mount -t click none DIR".
-.B Click-install
-will mount the filesystem on /click. For compatibility, the Click kernel
-module adds a symbolic link from /proc/click to /click.
-.TP
-4.
-Install a configuration by writing it to /click/config:
-"cat CONFIGFILE /click/config", for example.
-.PP
-Use
-.M click-uninstall 1
-to remove the Click module, or try
-.M rmmod 8 :
-"/sbin/rmmod click".
-.PP
-The module creates a filesystem similar to the /proc filesystem
-.RM "(see " proc 5 )
-for its API. It creates a number of files under /click (or wherever you
+The right way to load the Click kernel module is with
+.M click-install 1 ". "
+This installs the module if necessary, mounts the Click file system onto
+the /click directory, and installs a configuration, including any required
+packages.  The right way to unload the Click kernel module is with
+.M click-uninstall 1 ". "
+For example:
+.sp
+.nf
+   # click-install config.click
+   # click-uninstall
+.fi
+'
+.SH "HANDLERS"
+The module's API is a filesystem similar to the
+.M proc 5
+filesystem.  Click creates a number of files under /click (or wherever you
 have mounted the filesystem), some read-only and some read/write (writable
 by the superuser). You control the module by writing to these files, which
 are called
 .IR handlers .
 .PP
-Install a router configuration by writing it to /click/config or
-/click/hotconfig. The configuration can use most of Click's element classes
+.B click-install
+installs a router configuration by writing it to /click/config or
+/click/hotconfig.  The configuration can use most of Click's element classes
 (see
 .M elements n ).
 Several element classes control how the module receives and transmits
@@ -110,15 +86,19 @@ networking behavior.
 The handlers under /click include:
 .TP 5
 .B /click/config
-Read/write. Contains a Click-language description (see
+Read/write.  Contains a Click-language description (see
 .M click 5 )
 of the most recent router configuration, not including any run-time
-reconfiguration. Write a Click-language router description to this file to
+reconfiguration.
+.B click-install
+writes a Click-language router description to this file to
 install a new router configuration.
 '
 .TP
 .B /click/hotconfig
-Write-only. Write a Click-language router description to this file to
+Write-only. 
+.B 'click-install -h'
+writes a Click-language router description to this file to
 hot-swap install a new router configuration. The new router is installed
 only if it initializes correctly; otherwise, error messages will be
 reported to /click/errors, but the old router will keep working
@@ -127,8 +107,8 @@ from the old router, such as any packets stored in
 .M Queue n
 elements, will be moved into the new router before it is installed. This
 happens on a per-element basis, and it only works if the new element and
-the old element have the same name. This behavior differs from
-/click/config, which always throws away the old router.
+the old element have the same name. In contrast,
+/click/config always throws away the old router.
 '
 .TP
 .B /click/errors
@@ -294,6 +274,44 @@ files to report packet counts and the recent rate.
 The subdirectories and generic files are always created, but
 element-specific files are created only if the router configuration was
 initialized successfully.
+'
+.SH "MANUAL LOADING"
+You almost certainly should load Click using 
+.M click-install 1 ". "
+Nevertheless, the manual loading steps are as follows.
+.TP 3
+1.
+Load the
+.B proclikefs
+module with
+.M insmod 8 :
+"/sbin/insmod proclikefs.ko". This module takes charge of the Click
+filesystem, allowing you to safely unload the Click module even if
+user-level programs have Click control files open. 
+.TP
+2.
+Load the
+.B click
+module with
+.BR insmod :
+"/sbin/insmod click.ko".
+.TP
+3.
+Mount the Click filesystem on a directory using
+.M mount 8 ". "
+The usual choice is /click: "mount -t click none /click".  The Click kernel
+module installs a symbolic link from /proc/click to /click.
+.TP
+4.
+Install a configuration by writing it to /click/config:
+"cat CONFIGFILE > /click/config", for example.
+.LP
+To uninstall Click without
+.M click-uninstall 1 ,
+kill the current router by installing an empty configuration ("echo >
+/click/config"), unload any element packages, and finally
+.M rmmod 8
+the "click" module.
 '
 .SH "BUGS"
 If you get an unaligned access error, try running your configuration
