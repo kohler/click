@@ -1,3 +1,19 @@
+2006-12-30 Saturday 20:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* INSTALL (1.47): nit
+
+2006-12-30 Saturday 20:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.104), INSTALL (1.46), etc/README (1.16),
+	  etc/ns-2.30-patch (1.1), lib/glue.cc (1.55), lib/master.cc
+	  (1.42): nsclick fixes: click_random_srandom is in the Click
+	  namespace; add an ns-2.30 patch; avoid some compile warnings; fix
+	  install instructions
+
+2006-12-30 Saturday 20:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/libclick/DISTFILES (1.30): nitlet: include file in libclick
+
 2006-12-16 Saturday 11:41  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/icmp/: icmppingrewriter.hh (1.17), icmprewriter.cc
