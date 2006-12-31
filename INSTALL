@@ -212,7 +212,7 @@ configure and install Click with NS support.  Change to the Click source
 directory and run
 
 	./configure --prefix=CLICKPREFIX [other options] --enable-nsclick
-        make install
+	make install
 
 Now, prepare to compile the NS simulator.  This may involve first compiling
 and installing several external packages, such as tclcl and otcl.  Then
