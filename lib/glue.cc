@@ -337,6 +337,8 @@ click_lfree(void *p, size_t size)
 
 // RANDOMNESS
 
+CLICK_DECLS
+
 void
 click_random_srandom()
 {
@@ -372,6 +374,9 @@ click_random_srandom()
     }
     srandom(result);
 }
+
+CLICK_ENDDECLS
+
 
 #if CLICK_LINUXMODULE
 extern "C" {

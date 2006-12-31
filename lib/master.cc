@@ -672,6 +672,7 @@ Master::run_selects_kqueue(bool more_tasks)
     // Never block if we're running in the simulator.
     struct timespec wait, *wait_ptr = &wait;
     wait.tv_sec = wait.tv_nsec = 0;
+    (void) more_tasks;
 # else /* !CLICK_NS */
     // Never wait if anything is scheduled; otherwise, if no timers, block
     // indefinitely.
@@ -744,6 +745,7 @@ Master::run_selects_poll(bool more_tasks)
 # if CLICK_NS
     // Never block if we're running in the simulator.
     int timeout = -1;
+    (void) more_tasks;
 # else
     // Never wait if anything is scheduled; otherwise, if no timers, block
     // indefinitely.
@@ -802,6 +804,7 @@ Master::run_selects_select(bool more_tasks)
     // Never block if we're running in the simulator.
     struct timeval wait, *wait_ptr = &wait;
     timerclear(&wait);
+    (void) more_tasks;
 # else /* !CLICK_NS */
     // Never wait if anything is scheduled; otherwise, if no timers, block
     // indefinitely.

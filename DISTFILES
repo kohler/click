@@ -270,6 +270,7 @@ linux-2.4.26-patch
 linux-2.4.32-patch
 linux-2.6.16.13-patch
 ns-2.29-patch
+ns-2.30-patch
 pkg-Makefile
 pkg-config.mk.in
 pkg-linuxmodule-26.mk

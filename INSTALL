@@ -211,14 +211,14 @@ To compile a Click-enabled version of the NS simulator, you must first
 configure and install Click with NS support.  Change to the Click source
 directory and run
 
-	./configure --prefix=CLICKPREFIX [other options] --enable-ns
+	./configure --prefix=CLICKPREFIX [other options] --enable-nsclick
         make install
 
 Now, prepare to compile the NS simulator.  This may involve first compiling
 and installing several external packages, such as tclcl and otcl.  Then
-unpack the latest version of NS; we provide a patch for version 2.29, but
-the patch may apply to later versions.  Apply the appropriate patch from
-Click's etc/ directory, like so:
+unpack the latest version of NS; we provide a patch for versions 2.29 and
+2.30, but a patch may apply to later versions.  Apply the appropriate patch
+from Click's etc/ directory, like so:
 
 	cd ns-VERSION
 	patch -p1 < CLICKDIR/etc/ns-VERSION-patch
@@ -232,6 +232,11 @@ the sample scripts we provide:
 
 	cd ns-VERSION/tcl/ex
 	ns nsclick-simple-lan.tcl
+
+If you get a shared library error when running ns, make sure that the
+LD_LIBRARY_PATH environment variable includes the CLICKDIR/lib directory.
+You should see some NS printouts intermixed with some Click printouts,
+which begin with "tokernel", "discard", "fromkernel", and so forth.
 
 Please note that the NS patch no longer requires libnet.
 
