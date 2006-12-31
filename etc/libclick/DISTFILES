@@ -22,6 +22,7 @@ pathvars.h.in
 
 include
 include/click
+include/click/algorithm.hh
 include/click/archive.hh
 include/click/atomic.hh
 include/click/bitvector.hh
