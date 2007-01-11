@@ -1,3 +1,8 @@
+2007-01-11 Thursday 01:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/Makefile.in (1.60): correct infodir creation (patch from
+	  Seiichi Tatsukawa, Mazu)
+
 2007-01-11 Thursday 01:33  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/: averagecounter.cc (1.17), averagecounter.hh
