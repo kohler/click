@@ -61,9 +61,9 @@ class SimpleQueue : public Element, public Storage { public:
     int drops() const				{ return _drops; }
     int highwater_length() const		{ return _highwater_length; }
     
-    void enq(Packet*);
-    void lifo_enq(Packet*);
-    Packet* deq();
+    inline void enq(Packet*);
+    inline void lifo_enq(Packet*);
+    inline Packet* deq();
 
     // to be used with care
     Packet* packet(int i) const			{ return _q[i]; }
@@ -113,8 +113,13 @@ SimpleQueue::enq(Packet *p)
     if (next != _head) {
 	_q[_tail] = p;
 	_tail = next;
-    } else
+	int s = size();
+	if (s > _highwater_length)
+	    _highwater_length = s;
+    } else {
 	p->kill();
+	_drops++;
+    }
 }
 
 inline void
