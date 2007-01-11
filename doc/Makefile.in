@@ -59,7 +59,7 @@ install-info: Makefile $(srcdir)/click.info
 	    echo "$(INSTALL_DATA) $(srcdir)/$$f $(DESTDIR)$(infodir)/$$f"; \
 	    $(INSTALL_DATA) $(srcdir)/$$f $(DESTDIR)$(infodir)/$$f || exit 1; fi; \
 	done
-	-$(INSTALL_INFO) --info-dir=$(infodir) $(DESTDIR)$(infodir)/click.info 2>&1 >/dev/null
+	-$(INSTALL_INFO) --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/click.info 2>&1 >/dev/null
 
 uninstall: uninstall-man uninstall-info
 	/bin/rm -f $(DESTDIR)$(bindir)/click-elem2man
