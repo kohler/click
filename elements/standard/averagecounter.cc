@@ -81,10 +81,14 @@ static String
 averagecounter_read_rate_handler(Element *e, void *)
 {
   AverageCounter *c = (AverageCounter *)e;
-  int d = c->last() - c->first();
+  uint32_t d = c->last() - c->first();
   d -= c->ignore();
   if (d < 1) d = 1;
-  int rate = c->count() * CLICK_HZ / d;
+  uint32_t rate;
+  if (c->count() < (uint32_t) (0xFFFFFFFFU / CLICK_HZ))
+      rate = (c->count() * CLICK_HZ) / d;
+  else
+      rate = (c->count() / d) * CLICK_HZ;
   return String(rate);
 }
 
