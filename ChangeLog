@@ -1,3 +1,8 @@
+2007-01-10 Wednesday 22:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/simplequeue.hh (1.16): make SimpleQueue::enq()
+	  keep track of highwater_length and _drops
+
 2006-12-30 Saturday 20:56  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* INSTALL (1.47): nit
