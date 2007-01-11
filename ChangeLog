@@ -1,3 +1,9 @@
+2007-01-11 Thursday 01:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: averagecounter.cc (1.17), averagecounter.hh
+	  (1.17): fix AverageCounter to report correct averages at high
+	  rates, based on patch from Roman Chertov and Norbert Egi
+
 2007-01-10 Wednesday 22:40  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/simplequeue.hh (1.16): make SimpleQueue::enq()
