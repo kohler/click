@@ -1,3 +1,9 @@
+2007-01-19 Friday 13:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.105), drivers/README (1.2),
+	  drivers/e1000-7.3.20-polling.patch (1.1): update DISTFILES for
+	  e1000-7.x
+
 2007-01-19 Friday 12:27  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* drivers/e1000-7.x/SUMS (1.2): the sums are wrong since the patch,
