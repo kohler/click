@@ -1,3 +1,6 @@
+/* -*- related-file-name: "../../lib/md5.cc" -*-
+  Copyright (c) 2006-2007 Regents of the University of California
+  Altered for Click by Eddie Kohler. */
 /*
   Copyright (C) 1999, 2002 Aladdin Enterprises.  All rights reserved.
 
@@ -46,8 +49,44 @@
   1999-05-03 lpd Original version.
  */
 
-#ifndef md5_INCLUDED
-#  define md5_INCLUDED
+#ifndef CLICK_MD5_H
+#define CLICK_MD5_H
+#if CLICK_LINUXMODULE
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+#include <linux/crypto.h>
+#include <asm/scatterlist.h>
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
+
+typedef struct crypto_tfm *md5_state_t;
+
+static inline void md5_init(md5_state_t *pms) {
+    *pms = crypto_alloc_tfm("md5", 0);
+    if (*pms)
+	crypto_digest_init(*pms);
+}
+
+static inline void md5_append(md5_state_t *pms, const unsigned char *data, int nbytes) {
+    if (*pms) {
+	struct scatterlist sg[1];
+	sg[0].page = virt_to_page(data);
+	sg[0].offset = offset_in_page(data);
+	sg[0].length = nbytes;
+	crypto_digest_update(*pms, sg, 1);
+    }
+}
+
+static inline void md5_finish(md5_state_t *pms, const unsigned char digest[16]) {
+    if (*pms)
+	crypto_digest_final(*pms, digest);
+}
+
+static inline void md5_free(md5_state_t *pms) {
+    crypto_free_tfm(*pms);
+}
+
+#else
 
 /*
  * This package supports both compile-time and run-time determination of CPU
@@ -87,8 +126,12 @@ void md5_finish(md5_state_t *pms, md5_byte_t digest[16]);
 #define MD5_TEXT_DIGEST_SIZE	27 /* includes terminating NUL */
 void md5_final_text(md5_state_t *pms, char *text_digest);
 
+#define md5_free(pms)		/* do nothing */
+
 #ifdef __cplusplus
 }
 #endif
-#endif /* md5_INCLUDED */
+
+#endif
+#endif
 

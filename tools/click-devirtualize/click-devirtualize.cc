@@ -28,7 +28,7 @@
 #include "toolutils.hh"
 #include "elementmap.hh"
 #include "cxxclass.hh"
-#include "md5.h"
+#include <click/md5.h>
 #include <click/archive.hh>
 #include "specializer.hh"
 #include "signature.hh"
@@ -431,6 +431,7 @@ particular purpose.\n");
       md5_init(&pms);
       md5_append(&pms, (const md5_byte_t *) s.data(), s.length());
       md5_final_text(&pms, buf);
+      md5_free(&pms);
       package_name = "clickdv_" + String(buf);
   }
   router->add_requirement(package_name);

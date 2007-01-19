@@ -1,3 +1,6 @@
+/* -*- related-file-name: "../include/click/md5.h" -*-
+  Copyright (c) 2006-2007 Regents of the University of California
+  Altered for Click by Eddie Kohler. */
 /*
   Copyright (C) 1999, 2000, 2002 Aladdin Enterprises.  All rights reserved.
 
@@ -51,8 +54,8 @@
  */
 
 #include <click/config.h>
-#include "md5.h"
-#include <string.h>
+#include <click/md5.h>
+#include <click/glue.hh>
 
 #undef BYTE_ORDER	/* 1 = big-endian, -1 = little-endian, 0 = unknown */
 #ifdef ARCH_IS_BIG_ENDIAN

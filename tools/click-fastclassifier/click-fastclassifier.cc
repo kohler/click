@@ -30,7 +30,7 @@
 #include "toolutils.hh"
 #include "elementmap.hh"
 #include "click-fastclassifier.hh"
-#include "md5.h"
+#include <click/md5.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1002,6 +1002,7 @@ particular purpose.\n");
       md5_init(&pms);
       md5_append(&pms, (const md5_byte_t *) s.data(), s.length());
       md5_final_text(&pms, buf);
+      md5_free(&pms);
       package_name = "clickfc_" + String(buf);
   }
   
