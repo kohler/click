@@ -1,3 +1,25 @@
+2007-01-19 Friday 12:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* drivers/e1000-7.x/SUMS (1.2): the sums are wrong since the patch,
+	  so dont include them
+
+2007-01-19 Friday 12:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* drivers/e1000-7.x/src/: Makefile (1.2), e1000.h (1.2),
+	  e1000_main.c (1.2), e1000_param.c (1.2): add polling patch from
+	  Matt Gordon and Massimiliano Poletto (Mazu), with help from
+	  previous patches (various) and especially Roman Chertov (Purdue)
+
+2007-01-19 Friday 12:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* drivers/e1000-7.x/: COPYING (1.1), README (1.1), SUMS (1.1),
+	  e1000.7 (1.1), e1000.spec (1.1), pci.updates (1.1), ldistrib.txt
+	  (1.1), src/Makefile (1.1), src/e1000.h (1.1), src/e1000_ethtool.c
+	  (1.1), src/e1000_hw.c (1.1), src/e1000_hw.h (1.1),
+	  src/e1000_main.c (1.1), src/e1000_osdep.h (1.1),
+	  src/e1000_param.c (1.1), src/kcompat.c (1.1), src/kcompat.h
+	  (1.1), src/kcompat_ethtool.c (1.1): Initial revision
+
 2007-01-11 Thursday 01:40  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/Makefile.in (1.60): correct infodir creation (patch from
