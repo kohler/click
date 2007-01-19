@@ -1,0 +1,17 @@
+55547    10 src/Makefile
+40758    11 src/e1000.h
+49718    59 src/e1000_ethtool.c
+51189   318 src/e1000_hw.c
+33077   153 src/e1000_hw.h
+18441   156 src/e1000_main.c
+14215     5 src/e1000_osdep.h
+24695    25 src/e1000_param.c
+56928     6 src/kcompat.c
+27190    30 src/kcompat.h
+10752    29 src/kcompat_ethtool.c
+39773    19 COPYING
+33247    30 README
+12936     7 ldistrib.txt
+02281     7 pci.updates
+31642    12 e1000.spec
+36281    12 e1000.7

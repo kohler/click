@@ -1,0 +1,204 @@
+Linux* Distribution Issues
+==========================
+
+September 22, 2006
+
+This document covers known issues between Intel networking drivers
+and various supported Linux distributions.
+
+
+Contents
+========
+
+- Legal Notice
+- Overview
+- Linux Kernel Issues
+- SUSE* Linux Issues
+- SUSE Linux Enterprise Server Issues
+- Red Hat Enterprise Linux AS Issues
+- Support
+
+
+Legal Notice
+============
+
+This software program is released under the terms of a license agreement
+between you ('Licensee') and Intel.  Do not use or load this software or 
+any associated materials (collectively, the 'Software') until you have 
+carefully read the full terms and conditions of the LICENSE located in this 
+software package.  By loading or using the Software, you agree to the terms 
+of this Agreement.  If you do not agree with the terms of this Agreement, 
+do not install or use the Software.
+
+Copyright(c) 2005 Intel Corporation.  All rights reserved.
+
+Intel Corporation, 5200 N.E.  Elam Young Parkway, Hillsboro, OR 97124-6497
+
+Intel Corporation assumes no responsibility for errors or omissions in 
+this document. Nor does Intel make any commitment to update the information
+contained herein.
+
+
+Overview
+========
+
+This file describes Linux distribution-specific issues.  For
+general information and support, see the Support page.
+
+If an issue is identified with the released source code on the
+supported kernel with a supported adapter, email the specific
+information related to the issue to linux.nics@intel.com.
+
+
+Linux Kernel Issues
+===================
+
+Linux 2.6 Kernel: Loading and unloading modules
+-----------------------------------------------
+A new kernel API has been implemented within the Linux 2.6 kernel
+regarding the module reference count.  This results in the e100,
+e1000 and ixgb drivers  being used with a module reference count
+of zero.  Consequently, our driver module can be removed from the
+system while still being used by other modules.  Until the other
+modules within the Linux stack use the new API, unintended
+consequences may occur with module removal.  This may result in
+system hangs and/or panics.
+
+
+Linux 2.4 Kernel: Intel(R) Desktop Board D915GEV and PCIe Adapters
+------------------------------------------------------------------
+If you install a PCI Express (PCIe) adapter in a system based on an
+Intel(R) Desktop Board D915GEV with a Linux distribution using kernel
+version 2.4 (such as RHEL 3), the system may panic or hang.  This
+behavior has been observed with various brands of PCIe adapters
+besides those from Intel.  This does not occur on a Linux distribution
+using a v2.6 kernel, such as Red Hat EL 4 AS or SLES 9.  Booting with
+the NOAPIC kernel parameter will also workaround this problem for
+systems using a 2.4 kernel.
+
+
+SUSE Linux 9.3 and 10
+=====================
+
+Unable to pass traffic with UP or SMP kernel with "noapic"
+----------------------------------------------------------
+In the default (UP) kernel config, APIC is being turned off while MSI
+is being turned on.  MSI requires that LOCAL_APIC be turned on to work
+successfully.
+
+This is a kernel config problem in these versions:
+- SUSE Linux 9.3 (kernel 2.6.11.4-20a-default)
+- SUSE Linux 10 (kernel 2.6.13-15-default)
+
+To get PCIe adapters to function properly with these UP kernels, use
+the "apic" kernel option.
+
+
+SUSE Linux Enterprise Server (SLES) Issues
+==========================================
+
+SLES (based on v2.4 kernels): ACPI enable may cause Intel(R) Dual Port
+PRO/1000 Adapters to fail
+-------------------------------------------------------------
+If ACPI is turned on in the kernel, Intel Dual Port PRO/1000 Adapters
+may not work.  This is due to a limitation in ACPI.
+
+
+SUSE Linux Enterprise Server 9/10: Warning message during driver build
+----------------------------------------------------------------------
+While building the driver on SUSE Linux Enterprise Server 9 or 10
+installations, the following warning or something similar may be
+displayed.
+
+  Symbol version dump /usr/src/<kernel-version>-obj/<arch>/
+  <kernel flavor>/ Module.symvers is missing, modules will have
+  CONFIG_MODVERSIONS disabled.
+
+It is safe to ignore this message.  The driver will load and function
+normally.
+
+While loading the driver, the following warnings in the syslog may be
+ignored:
+
+  linux kernel: <driver name>: no version for "struct_module" found:
+  kernel tainted.
+
+  linux kernel: <driver name>: unsupported module, tainting kernel.
+
+  linux kernel: <driver name>: module not supported by Novell, setting
+  U taint flag.
+
+
+SUSE Linux Enterprise Server 8 for Intel(R) Itanium: Unresolved Symbols
+-----------------------------------------------------------------------
+If you get unresolved symbol errors when loading the e1000 driver,
+perform the following:
+
+  1.  cd /usr/src/linux
+  2.  make cloneconfig
+  3.  make dep
+
+Then rebuild the driver.
+
+
+Red Hat Enterprise Linux AS Issues
+==================================
+
+Red Hat Enterprise Linux AS 3
+-----------------------------
+While building the driver on Intel(R) Itanium systems, the following
+warnings may be ignored:
+
+  warning: unused variable `ptr'
+
+  Use of 'mov' may violate WAW dependency
+
+
+Red Hat Enterprise Linux AS 2.1
+-------------------------------
+In Update 3, if there are errors while compiling the driver, do the
+following:
+
+  1.  Change to the kernel source directory.
+  2.  Perform all the required steps to build the kernel up to and
+      including make dep.
+  3.  Modify EXTRAVERSION in the Makefile in Red Hat kernel source
+      directory to match the version of the running kernel.
+  4.  Build the driver, using instructions located in the README file.
+
+While building the driver, the following warning may be ignored:
+
+   /lib/modules/2.4.9-e.34/build/include/linux/rhconfig.h:31:60:
+   operator '(' has no left operand
+
+NOTE: Go to www.redhat.com for Red Hat's procedure for building a
+      Linux kernel.
+
+NOTE: This problem is resolved in Red Hat Enterprise Linux AS 2.1
+      Update 4.
+
+
+Support
+=======
+
+For general information and support, go to the Intel support website at:
+
+  http://support.intel.com
+
+or the Intel Wired Networking project hosted by Sourceforge at:
+
+    http://sourceforge.net/projects/e1000
+
+If an issue is identified with the released source code on the supported
+kernel with a supported adapter, email the specific information related
+to the issue to e1000-devel@lists.sf.net
+
+
+Trademarks
+==========
+
+Intel, Itanium, and Pentium are trademarks or registered trademarks of
+Intel Corporation or its subsidiaries in the United States and other
+countries.
+
+* Other names and brands may be claimed as the property of others.
