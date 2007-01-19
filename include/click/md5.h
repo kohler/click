@@ -120,11 +120,20 @@ void md5_init(md5_state_t *pms);
 void md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes);
 
 /* Finish the message and return the digest. */
-#define MD5_DIGEST_SIZE		16
+#define MD5_DIGEST_SIZE			16
 void md5_finish(md5_state_t *pms, md5_byte_t digest[16]);
 
-#define MD5_TEXT_DIGEST_SIZE	27 /* includes terminating NUL */
-void md5_final_text(md5_state_t *pms, char *text_digest);
+/* Finish the message and return the digest in ASCII.  DOES NOT write a
+   terminating NUL character.
+   If 'allow_at == 0', the digest uses characters [A-Za-z0-9_], and has
+   length between MD5_TEXT_DIGEST_SIZE and MD5_TEXT_DIGEST_MAX_SIZE.
+   If 'allow_at != 0', the digest uses characters [A-Za-z0-9_@], and has
+   length of exactly MD5_TEXT_DIGEST_SIZE.
+   Returns the number of characters written.  Again, this will NOT include
+   a terminating NUL. */
+#define MD5_TEXT_DIGEST_SIZE		22	/* min len */
+#define MD5_TEXT_DIGEST_MAX_SIZE	26	/* max len if !allow_at */
+int md5_finish_text(md5_state_t *pms, char *text_digest, int allow_at);
 
 #define md5_free(pms)		/* do nothing */
 

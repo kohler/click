@@ -71,6 +71,8 @@ IPSummaryDumpInfo::parse_content(const String &word)
 	return W_COUNT;
     else if (word == "payload")
 	return W_PAYLOAD;
+    else if (word == "payload_md5")
+	return W_PAYLOAD_MD5;
     else if (word == "link" || word == "direction")
 	return W_LINK;
     else if (word == "aggregate" || word == "agg")
@@ -112,8 +114,8 @@ static int content_binary_sizes[] = {
 			// W_FIRST_TIMESTAMP
     2, 4, 1, 1, 8,	// W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL,
 			// W_TIMESTAMP_USEC1
-    4, 2, 8, 8		// W_IP_CAPTURE_LEN, W_TCP_URP, W_NTIMESTAMP,
-			// W_FIRST_NTIMESTAMP
+    4, 2, 8, 8, 16	// W_IP_CAPTURE_LEN, W_TCP_URP, W_NTIMESTAMP,
+			// W_FIRST_NTIMESTAMP, W_PAYLOAD_MD5
 };
 
 int
@@ -150,6 +152,7 @@ int Field::binary_size() const
       case B_2:		return 2;
       case B_4:		return 4;
       case B_8:		return 8;
+      case B_16:	return 16;
       case B_4NET:	return 4;
       case B_SPECIAL:	return 4;
       default:		return -1;

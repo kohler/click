@@ -22,6 +22,7 @@
 #include "ipsumdumpinfo.hh"
 #include <click/packet.hh>
 #include <click/packet_anno.hh>
+#include <click/md5.h>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
@@ -30,7 +31,7 @@ CLICK_DECLS
 
 enum { T_IP_SRC, T_IP_DST, T_IP_TOS, T_IP_TTL, T_IP_FRAG, T_IP_FRAGOFF,
        T_IP_ID, T_IP_SUM, T_IP_PROTO, T_IP_OPT, T_IP_LEN, T_IP_CAPTURE_LEN,
-       T_SPORT, T_DPORT, T_PAYLOAD_LEN, T_PAYLOAD };
+       T_SPORT, T_DPORT, T_PAYLOAD_LEN, T_PAYLOAD, T_PAYLOAD_MD5 };
 
 namespace IPSummaryDump {
 
@@ -257,6 +258,7 @@ static bool transport_extract(PacketDesc& d, int thunk)
 	    d.v = p->length() + EXTRA_LENGTH_ANNO(p);
 	return true;
       case T_PAYLOAD:
+      case T_PAYLOAD_MD5:
 	return true;
 
       default:
@@ -264,29 +266,62 @@ static bool transport_extract(PacketDesc& d, int thunk)
     }
 }
 
+static void payload_info(const PacketDesc &d, int32_t &off, uint32_t &len)
+{
+    if (d.iph) {
+	len = ntohs(d.iph->ip_len);
+	off = d.p->transport_header_offset();
+	if (d.tcph && d.p->transport_length() >= 13
+	    && off + (d.tcph->th_off << 2) <= len)
+	    off += (d.tcph->th_off << 2);
+	else if (d.udph)
+	    off += sizeof(click_udp);
+	len = len - off + d.p->network_header_offset();
+	if (len + off > d.p->length()) // EXTRA_LENGTH?
+	    len = d.p->length() - off;
+    } else {
+	off = 0;
+	len = d.p->length();
+    }
+}
+
 static void transport_outa(const PacketDesc& d, int thunk)
 {
     switch (thunk & ~B_TYPEMASK) {
-      case T_PAYLOAD: {
+      case T_PAYLOAD:
+      case T_PAYLOAD_MD5: {
 	  int32_t off;
 	  uint32_t len;
-	  if (d.iph) {
-	      len = ntohs(d.iph->ip_len);
-	      off = d.p->transport_header_offset();
-	      if (d.tcph && d.p->transport_length() >= 13
-		  && off + (d.tcph->th_off << 2) <= len)
-		  off += (d.tcph->th_off << 2);
-	      else if (d.udph)
-		  off += sizeof(click_udp);
-	      len = len - off + d.p->network_header_offset();
-	      if (len + off > d.p->length()) // EXTRA_LENGTH?
-		  len = d.p->length() - off;
+	  payload_info(d, off, len);
+	  if ((thunk & ~B_TYPEMASK) == T_PAYLOAD) {
+	      String s = String::stable_string((const char *)(d.p->data() + off), len);
+	      *d.sa << cp_quote(s);
 	  } else {
-	      off = 0;
-	      len = d.p->length();
+	      md5_state_t pms;
+	      md5_init(&pms);
+	      md5_append(&pms, (const md5_byte_t *) (d.p->data() + off), len);
+	      if (char *buf = d.sa->extend(MD5_TEXT_DIGEST_SIZE))
+		  md5_finish_text(&pms, buf, 1);
+	      md5_free(&pms);
 	  }
-	  String s = String::stable_string((const char *)(d.p->data() + off), len);
-	  *d.sa << cp_quote(s);
+	  break;
+      }
+    }
+} 
+
+static void transport_outb(const PacketDesc& d, bool, int thunk)
+{
+    switch (thunk & ~B_TYPEMASK) {
+      case T_PAYLOAD_MD5: {
+	  int32_t off;
+	  uint32_t len;
+	  payload_info(d, off, len);
+	  md5_state_t pms;
+	  md5_init(&pms);
+	  md5_append(&pms, (const md5_byte_t *) (d.p->data() + off), len);
+	  if (char *buf = d.sa->extend(MD5_DIGEST_SIZE))
+	      md5_finish(&pms, (md5_byte_t *) buf);
+	  md5_free(&pms);
 	  break;
       }
     }
@@ -529,6 +564,7 @@ void ip_register_unparsers()
     register_unparser("dport", T_DPORT | B_2, ip_prepare, transport_extract, num_outa, outb, inb);
     register_unparser("payload_len", T_PAYLOAD_LEN | B_4, ip_prepare, transport_extract, num_outa, outb, inb);
     register_unparser("payload", T_PAYLOAD | B_NOTALLOWED, ip_prepare, transport_extract, transport_outa, 0, 0);
+    register_unparser("payload_md5", T_PAYLOAD_MD5 | B_16, ip_prepare, transport_extract, transport_outa, transport_outb, 0);
 
     register_synonym("length", "ip_len");
     register_synonym("ip_p", "ip_proto");

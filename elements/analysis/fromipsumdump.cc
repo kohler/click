@@ -855,6 +855,9 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		      }
 		      break;
 		  }
+		  case W_PAYLOAD_MD5: // ignore contents
+		    data += 16;
+		    break;
 		}
 		goto store_contents;
 	    }

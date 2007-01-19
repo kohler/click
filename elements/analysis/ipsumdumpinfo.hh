@@ -67,15 +67,16 @@ void static_cleanup();
 
 void num_outa(const PacketDesc&, int);
 
-enum { B_TYPEMASK = 0x70000000,
+enum { B_TYPEMASK = 0x7F000000,
        B_0 = 0x00000000,
-       B_1 = 0x10000000,
-       B_2 = 0x20000000,
-       B_4 = 0x30000000,
-       B_8 = 0x40000000,
-       B_4NET = 0x50000000,
-       B_SPECIAL = 0x60000000,
-       B_NOTALLOWED = 0x70000000 };
+       B_1 = 0x01000000,
+       B_2 = 0x02000000,
+       B_4 = 0x03000000,
+       B_8 = 0x04000000,
+       B_16 = 0x05000000,
+       B_4NET = 0x06000000,
+       B_SPECIAL = 0x07000000,
+       B_NOTALLOWED = 0x08000000 };
 void outb(const PacketDesc&, bool ok, int);
 const uint8_t *inb(PacketDesc&, const uint8_t*, const uint8_t*, int);
 
@@ -137,7 +138,8 @@ enum Content {
     W_COUNT, W_IP_FRAG, W_IP_FRAGOFF, W_PAYLOAD, W_LINK,
     W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_TCP_NTOPT, W_FIRST_TIMESTAMP,
     W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL, W_TIMESTAMP_USEC1,
-    W_IP_CAPTURE_LEN, W_TCP_URP, W_NTIMESTAMP, W_FIRST_NTIMESTAMP, W_LAST
+    W_IP_CAPTURE_LEN, W_TCP_URP, W_NTIMESTAMP, W_FIRST_NTIMESTAMP, W_PAYLOAD_MD5,
+    W_LAST
 };
 static int parse_content(const String &);
 static int content_binary_size(int);

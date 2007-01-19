@@ -386,26 +386,27 @@ md5_finish(md5_state_t *pms, md5_byte_t digest[16])
 	digest[i] = (md5_byte_t)(pms->abcd[i >> 2] >> ((i & 3) << 3));
 }
 
-void
-md5_final_text(md5_state_t *pms, char *buf)
+int
+md5_finish_text(md5_state_t *pms, char *buf, int allow_at)
 {
-	static const char *chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+	static const char *chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_@";
 	md5_byte_t digest[16];
+	char *initial_buf = buf;
 	int bit;
 
 	md5_finish(pms, digest);
-	for (bit = 0; bit < 16*8; bit += 6) {
+	for (bit = 0; bit < MD5_DIGEST_SIZE * 8; bit += 6) {
 		int first_char = bit / 8;
 		int val = digest[first_char] >> (bit % 8);
-		if (bit + 8 > (first_char + 1) * 8 && first_char < 15)
+		if (bit + 8 > (first_char + 1) * 8 && first_char < MD5_DIGEST_SIZE - 1)
 			val += digest[first_char + 1] << (8 - (bit % 8));
-		if ((val & 0x3F) == 0x3F) {
+		if ((val & 0x3F) == 0x3F && !allow_at) {
 			val = 0x1F;
 			bit--;
 		}
 		*buf++ = chars[val & 0x3F];
 	}
-	*buf++ = 0;
+	return buf - initial_buf;
 }
 
 

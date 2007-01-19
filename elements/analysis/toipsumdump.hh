@@ -69,8 +69,11 @@ contain those fields. Valid field names, with examples, are:
    tcp_window   TCP receive window: '480'
    tcp_urp      TCP urgent pointer: '0'
    udp_len      UDP length: '34'
-   payload_len  Payload length (not including IP/TCP/UDP
-                headers, for this fragment): '34'
+   payload      Payload (not including IP/TCP/UDP headers,
+                for this fragment), in a string
+   payload_len  Payload length: '34'
+   payload_md5  Payload MD5 checksum (in ASCII output,
+                expressed using 22 chars from [A-Za-z0-9_@])
    ip_capture_len  Portion of IP length that contains
                 actual packet data (as opposed to the extra
 		length annotation): '34'
@@ -283,6 +286,7 @@ the 'C<!data>' line, as follows:
    tcp_sack         ?    TCP SACK options
    udp_len          4    UDP length
    payload_len      4    payload length
+   payload_md5	   16    payload MD5 checksum
    ip_capture_len   4    IP capture length
    count            4    packet count
    first_timestamp  8    timestamp sec + usec

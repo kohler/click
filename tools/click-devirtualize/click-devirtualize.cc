@@ -426,13 +426,13 @@ particular purpose.\n");
   String package_name;
   {
       md5_state_t pms;
-      char buf[MD5_TEXT_DIGEST_SIZE];
+      char buf[MD5_TEXT_DIGEST_MAX_SIZE];
       String s = router->configuration_string();
       md5_init(&pms);
       md5_append(&pms, (const md5_byte_t *) s.data(), s.length());
-      md5_final_text(&pms, buf);
+      int buflen = md5_finish_text(&pms, buf, 0);
       md5_free(&pms);
-      package_name = "clickdv_" + String(buf);
+      package_name = "clickdv_" + String(buf, buflen);
   }
   router->add_requirement(package_name);
 
