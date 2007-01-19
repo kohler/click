@@ -1,7 +1,13 @@
 This directory contains polling device drivers usable with Click. In
 particular:
 
-drivers/e1000-2.x	A polling version of Intel's E1000 driver, version
-			2.5.11, suitable for Linux 2.2 kernels
 drivers/e1000-4.x	A polling version of Intel's E1000 driver, version
 			4.3.15, suitable for Linux 2.4 kernels
+drivers/e1000-5.x	A polling version of Intel's E1000 driver, version
+			5.7.6, suitable for Linux 2.6 kernels (but try the
+			e1000-7.x driver)
+drivers/e1000-7.x	A polling version of Intel's E1000 driver, version
+			7.3.20, suitable for Linux 2.6 kernels.  Thanks to
+			Matt Gordon and Massimiliano Poletto from Mazu
+			Networks for providing the patch, with help from
+			Roman Chertov (Purdue) and others.
