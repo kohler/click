@@ -110,9 +110,9 @@ struct e1000_adapter;
 #define E1000_MIN_TXD                       80
 #define E1000_MAX_82544_TXD               4096
 
-#define E1000_DEFAULT_RXD                  256
+#define E1000_DEFAULT_RXD                   64
 #define E1000_MAX_RXD                      256
-#define E1000_MIN_RXD                       80
+#define E1000_MIN_RXD                       64 
 #define E1000_MAX_82544_RXD               4096
 
 /* this is the size past which hardware will drop packets when setting LPE=0 */
@@ -241,6 +241,11 @@ struct e1000_rx_ring {
 #define E1000_RX_DESC(R, i)		E1000_GET_DESC(R, i, e1000_rx_desc)
 #define E1000_TX_DESC(R, i)		E1000_GET_DESC(R, i, e1000_tx_desc)
 #define E1000_CONTEXT_DESC(R, i)	E1000_GET_DESC(R, i, e1000_context_desc)
+
+#define E1000_RX_STATE_NORMAL 0
+#define E1000_RX_STATE_QUIET  1
+#define E1000_RX_STATE_LOCKUP 2
+
 
 /* board specific private data structure */
 
@@ -377,6 +382,16 @@ struct e1000_adapter {
 	boolean_t quad_port_a;
 	unsigned long flags;
 	uint32_t eeprom_wol;
+
+        int do_poll_watchdog; /* Click polling */
+
+        /* Receive Lockup detection and recovery */
+        int rx_state;              /* can be either: NORMAL, QUIET, LOCKUP */
+        int rx_lockup_recoveries;  /* # of times the recovery seq is invoked */
+        int rx_normal_jiffies;     /* jiffies timeout for the NORMAL state */
+        int rx_quiet_jiffies;      /* jiffies timeout for the QUIET state */
+        int prev_rdfh;             /* prev value of Rcv Data Fifo Head register */
+        int prev_rdft;             /* prev value of Rcv Data Fifo Tail register */
 };
 
 enum e1000_state_t {

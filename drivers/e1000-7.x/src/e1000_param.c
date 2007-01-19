@@ -400,7 +400,7 @@ e1000_check_options(struct e1000_adapter *adapter)
 			.type = list_option,
 			.name = "Flow Control",
 			.err  = "reading default settings from EEPROM",
-			.def  = E1000_FC_DEFAULT,
+			.def  = E1000_FC_NONE,
 			.arg  = { .l = { .nr = ARRAY_SIZE(fc_list),
 					 .p = fc_list }}
 		};

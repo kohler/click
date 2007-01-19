@@ -146,7 +146,7 @@ CFLAGS += $(shell [ -f $(KSRC)/include/linux/modversions.h ] && \
             echo "-DMODVERSIONS -DEXPORT_SYMTAB \
                   -include $(KSRC)/include/linux/modversions.h")
 
-CFLAGS += $(CFLAGS_EXTRA)
+CFLAGS += -DCONFIG_E1000_NAPI $(CFLAGS_EXTRA)
 #ifeq (,$(shell echo $(CFLAGS_EXTRA) | grep NAPI))
 #CFLAGS += -DE1000_NO_NAPI
 #CFLAGS_EXTRA += -DE1000_NO_NAPI
