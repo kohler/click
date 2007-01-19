@@ -1,3 +1,21 @@
+2007-01-19 Friday 15:38  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/libclick/: DISTFILES (1.31), lc-libsrc-Makefile.in (1.21):
+	  libclick includes md5
+
+2007-01-19 Friday 15:12  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/fromipsumdump.cc (1.80),
+	  elements/analysis/ipsumdump_ip.cc (1.9),
+	  elements/analysis/ipsumdumpinfo.cc (1.25),
+	  elements/analysis/ipsumdumpinfo.hh (1.21),
+	  elements/analysis/toipsumdump.cc (1.65),
+	  elements/analysis/toipsumdump.hh (1.58), include/click/md5.h
+	  (1.2), lib/md5.cc (1.2),
+	  tools/click-devirtualize/click-devirtualize.cc (1.54),
+	  tools/click-fastclassifier/click-fastclassifier.cc (1.75): add
+	  support for MD5 checksums to IPSummaryDump elements
+
 2007-01-19 Friday 13:58  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/md5.h (1.1), lib/md5.cc (1.1),
