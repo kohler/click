@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <click/string.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
 CLICK_DECLS
 
 /*****************************************************************************
@@ -85,15 +86,16 @@ class ToSimDevice : public Element { public:
   void push(int port, Packet *);
   bool run_task(Task *);
 
- private:
+  private:
 
-  String _ifname;
-  int _fd;
-  bool _my_fd;
-  Task _task;
-  int _encap_type;
+    String _ifname;
+    int _fd;
+    bool _my_fd;
+    Task _task;
+    int _encap_type;
+    NotifierSignal _signal;
   
-  void send_packet(Packet *);
+    void send_packet(Packet *);
   
 };
 

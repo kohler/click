@@ -92,8 +92,11 @@ ToSimDevice::initialize(ErrorHandler *errh)
   if (_fd < 0) return -1;
 
   _my_fd = true;
-  if (input_is_pull(0))
+  if (input_is_pull(0)) {
     ScheduleInfo::join_scheduler(this, &_task, errh);
+    _signal = Notifier::upstream_empty_signal(this, 0, &_task);
+  }
+  
   return 0;
 }
 
@@ -136,7 +139,9 @@ ToSimDevice::run_task(Task *)
     }
   }
 
-  _task.fast_reschedule();
+  // don't reschedule if no packets upstream
+  if (active || _signal.active())
+      _task.fast_reschedule();
   return active;
 }
 

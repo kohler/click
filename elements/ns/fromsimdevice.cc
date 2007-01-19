@@ -133,6 +133,7 @@ int
 FromSimDevice::incoming_packet(int ifid,int ptype,const unsigned char* data,
 			       int len,simclick_simpacketinfo* pinfo){
   int result = 0;
+  (void) ifid;
 
   Packet *p = Packet::make(data, len);
   set_annotations(p,ptype);
