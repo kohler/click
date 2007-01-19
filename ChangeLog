@@ -1,3 +1,13 @@
+2007-01-19 Friday 16:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ns/: fromsimdevice.cc (1.10), tosimdevice.cc (1.15),
+	  tosimdevice.hh (1.9): add notification support to ToSimDevice to
+	  reduce cpu overhead (based off a Wim Vandenberghe patch)
+
+2007-01-19 Friday 16:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* ns/Makefile.in (1.23): add md5 to the library
+
 2007-01-19 Friday 15:38  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/libclick/: DISTFILES (1.31), lc-libsrc-Makefile.in (1.21):
