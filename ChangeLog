@@ -1,3 +1,11 @@
+2007-01-19 Friday 13:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/md5.h (1.1), lib/md5.cc (1.1),
+	  tools/click-devirtualize/click-devirtualize.cc (1.53),
+	  tools/click-fastclassifier/click-fastclassifier.cc (1.74),
+	  tools/lib/md5.c (1.3), tools/lib/md5.h (1.3),
+	  userlevel/Makefile.in (1.96): move md5 into the Click core
+
 2007-01-19 Friday 13:30  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.105), drivers/README (1.2),
