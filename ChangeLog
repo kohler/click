@@ -1,3 +1,18 @@
+2007-01-19 Friday 20:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/ap/beaconsource.cc (1.14): Rearrange the order in
+	  which 802.11 b and g fields are stored in the packet header, so
+	  as to be friendlier to sloppily implemented drivers.	Patch from
+	  Kristian Beilke
+
+2007-01-19 Friday 20:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* LICENSE (1.10), doc/click-flatten.1 (1.9), doc/click-pretty.1
+	  (1.11), tools/click-viz (1.4), tools/click-pretty/click-pretty.cc
+	  (1.32), userlevel/click.cc (1.110): Combine click-viz into
+	  click-pretty to avoid parsing problems (Nicola Arnoldi reported a
+	  problem)
+
 2007-01-19 Friday 16:41  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ns/: fromsimdevice.cc (1.10), tosimdevice.cc (1.15),
