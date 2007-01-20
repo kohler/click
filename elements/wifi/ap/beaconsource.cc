@@ -99,15 +99,20 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
   EtherAddress bssid = _winfo ? _winfo->_bssid : EtherAddress();
   String my_ssid = _winfo ? _winfo->_ssid : "";
   Vector<int> rates = _rtable->lookup(bssid);
+
+  /* order elements by standard
+   * needed by sloppy 802.11b driver implementations
+   * to be able to connect to 802.11g APs */
   int max_len = sizeof (struct click_wifi) + 
     8 +                  /* timestamp */
     2 +                  /* beacon interval */
     2 +                  /* cap_info */
     2 + my_ssid.length() + /* ssid */
     2 + WIFI_RATES_MAXSIZE +  /* rates */
-    2 + WIFI_RATES_MAXSIZE +  /* xrates */
     2 + 1 +              /* ds parms */
     2 + 4 +              /* tim */
+    /* 802.11g Information fields */
+    2 + WIFI_RATES_MAXSIZE +  /* xrates */
     0;
     
 
@@ -178,23 +183,6 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
   actual_length += 2 + min(WIFI_RATE_SIZE, rates.size());
 
 
-  int num_xrates = rates.size() - WIFI_RATE_SIZE;
-  if (num_xrates > 0) {
-    /* rates */
-    ptr[0] = WIFI_ELEMID_XRATES;
-    ptr[1] = num_xrates;
-    for (int x = 0; x < num_xrates; x++) {
-      ptr[2 + x] = (uint8_t) rates[x + WIFI_RATE_SIZE];
-      
-      if (rates[x + WIFI_RATE_SIZE] == 2) {
-	ptr [2 + x] |= WIFI_RATE_BASIC;
-      }
-      
-    }
-    ptr += 2 + num_xrates;
-    actual_length += 2 + num_xrates;
-  }
-
   /* channel */
   ptr[0] = WIFI_ELEMID_DSPARMS;
   ptr[1] = 1;
@@ -213,6 +201,25 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
   ptr[5] = 0; //paritial virtual bitmap
   ptr += 2 + 4;
   actual_length += 2 + 4;
+
+  /* 802.11g fields */
+  /* extended supported rates */
+  int num_xrates = rates.size() - WIFI_RATE_SIZE;
+  if (num_xrates > 0) {
+    /* rates */
+    ptr[0] = WIFI_ELEMID_XRATES;
+    ptr[1] = num_xrates;
+    for (int x = 0; x < num_xrates; x++) {
+      ptr[2 + x] = (uint8_t) rates[x + WIFI_RATE_SIZE];
+      
+      if (rates[x + WIFI_RATE_SIZE] == 2) {
+	ptr [2 + x] |= WIFI_RATE_BASIC;
+      }
+      
+    }
+    ptr += 2 + num_xrates;
+    actual_length += 2 + num_xrates;
+  }
 
   p->take(max_len - actual_length);
   output(0).push(p);
