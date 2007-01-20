@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2001-2002 International Computer Science Institute
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -43,6 +44,7 @@
 #define WRITE_TEMPLATE_OPT	308
 #define DEFINE_OPT		309
 #define PACKAGE_URLS_OPT	310
+#define DOT_OPT			311
 
 #define FIRST_DRIVER_OPT	1000
 #define USERLEVEL_OPT		(1000 + Driver::USERLEVEL)
@@ -54,6 +56,7 @@ static Clp_Option options[] = {
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
     { "class-docs", 'u', CLASS_URLS_OPT, Clp_ArgString, 0 },
     { "define", 'd', DEFINE_OPT, Clp_ArgString, 0 },
+    { "dot", 0, DOT_OPT, 0, 0 },
     { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
     { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
     { "help", 0, HELP_OPT, 0, 0 },
@@ -1077,6 +1080,66 @@ pretty_process(const char *infile, bool file_is_expr, const char *outfile,
     delete r;
 }
 
+// This algorithm based on the original click-viz script,
+// donated by Jose Vasconcellos <jvasco@bellatlantic.net>
+static void
+pretty_process_dot(const char *infile, bool file_is_expr, const char *outfile,
+		   ErrorHandler *errh)
+{
+    RouterT *r = read_router(infile, file_is_expr, errh);
+    if (!r)
+	return;
+
+    // open output file
+    FILE *outf = open_output_file(outfile, errh);
+    if (!outf) {
+	delete r;
+	return;
+    }
+
+    // write dot configuration
+    fprintf(outf, "digraph clickrouter {\n\
+  node [shape=record,height=.1]\n\
+  edge [arrowhead=normal,arrowtail=none,tailclip=false]\n");
+
+    // print all nodes
+    for (RouterT::const_iterator n = r->begin_elements(); n != r->end_elements(); n++) {
+	fprintf(outf, "  \"%s\" [label=\"", n->name_c_str());
+	if (n->ninputs() || n->noutputs())
+	    fprintf(outf, "{");
+	if (n->ninputs()) {
+	    fprintf(outf, "{");
+	    for (int i = 0; i < n->ninputs(); i++)
+		fprintf(outf, (i ? "|<i%d>" : "<i%d>"), i);
+	    fprintf(outf, "}|");
+	}
+	fputs(n->type_name_c_str(), outf);
+	if (n->noutputs()) {
+	    fprintf(outf, "|{");
+	    for (int i = 0; i < n->noutputs(); i++)
+		fprintf(outf, (i ? "|<o%d>" : "<o%d>"), i);
+	    fprintf(outf, "}");
+	}
+	if (n->ninputs() || n->noutputs())
+	    fprintf(outf, "}");
+	fprintf(outf, "\"];\n");
+    }
+
+    // print all connections
+    const Vector<ConnectionT> &conns = r->connections();
+    for (const ConnectionT *c = conns.begin(); c != conns.end(); c++)
+	fprintf(outf, "  \"%s\":o%d -> \"%s\":i%d;\n",
+		c->from_element()->name_c_str(), c->from_port(),
+		c->to_element()->name_c_str(), c->to_port());
+
+    fprintf(outf, "}\n");
+
+    // close files, return
+    if (outf != stdout)
+	fclose(outf);
+    delete r;
+}
+
 void
 usage()
 {
@@ -1095,6 +1158,7 @@ Options:\n\
   -u, --class-docs URL        Link primitive element classes to URL.\n\
       --package-docs PKG=URL  Link element classes in package PKG to URL.\n\
       --write-template        Write template as is, without including router.\n\
+      --dot                   Output a 'dot' graph definition instead of HTML.\n\
   -C, --clickpath PATH        Use PATH for CLICKPATH.\n\
       --help                  Print this message and exit.\n\
   -v, --version               Print version number and exit.\n\
@@ -1121,6 +1185,7 @@ main(int argc, char **argv)
     const char *output_file = 0;
     String html_template = default_template;
     bool write_template = false;
+    bool dot = false;
 
     while (1) {
 	int opt = Clp_Next(clp);
@@ -1134,6 +1199,7 @@ main(int argc, char **argv)
 	  case VERSION_OPT:
 	    printf("click-pretty (Click) %s\n", CLICK_VERSION);
 	    printf("Copyright (c) 2001-2002 International Computer Science Institute\n\
+Copyright (c) 2007 Regents of the University of California\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -1206,6 +1272,10 @@ particular purpose.\n");
 	    specified_driver = opt - FIRST_DRIVER_OPT;
 	    break;
 
+	  case DOT_OPT:
+	    dot = true;
+	    break;
+
 	  bad_option:
 	  case Clp_BadOption:
 	    short_usage();
@@ -1224,7 +1294,9 @@ particular purpose.\n");
 	    fputs(html_template.c_str(), f);
 	    fclose(f);
 	}
-    } else
+    } else if (dot)
+	pretty_process_dot(router_file, file_is_expr, output_file, errh);
+    else
 	pretty_process(router_file, file_is_expr, output_file, html_template.c_str(), errh);
 	
     exit(errh->nerrors() > 0 ? 1 : 0);

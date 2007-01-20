@@ -1,5 +1,5 @@
 .\" -*- mode: nroff -*-
-.ds V 1.0
+.ds V 1.5.0
 .ds E " \-\- 
 .if t .ds E \(em
 .de Sp
@@ -37,24 +37,35 @@ click-pretty \- pretty-prints a Click configuration in HTML
 .SH SYNOPSIS
 .B click-pretty
 .RI \%[ options ]
-.RI \%[ router\-file ]
-.RI "> " output\-file
+.RI \%[ routerfile ]
+.RI "> " output\fR.html
+.br
+.B click-pretty
+.B \-\-dot
+.RI \%[ router\-file \]
+.RB "| " "dot \fR\-Tpng"
+.RI "> " output\fR.png
 '
 .SH DESCRIPTION
 The
 .B click-pretty
 tool pretty-prints Click configurations into HTML files, including syntax
-highlighting and optional indexes.
+highlighting and optional indexes; or, optionally, it can output a graph
+definition suitable for passing to
+.M dot 1 .
 .B Click-pretty
 reads a router configuration and, optionally, an HTML-like template file,
 replaces special tags in the template with HTML code derived from the
 configuration, and writes the result to the standard output.
-.PP
-Special HTML-like tags that start with a tilde "~" control 
+'
+.SH "HTML TEMPLATES"
+.BR Click-pretty 's
+HTML output is based on a template file that contains special HTML-like
+tags.  These tags, which start with a tilde "~", control
 .BR click-pretty 's
 operation.
 '
-.SH "THE CONFIG TAG"
+.SS "The config Tag"
 '
 .PP
 The
@@ -121,7 +132,7 @@ classes. See the
 .B \-u
 option, below.
 '
-.SH "THE ELEMENTS TAG"
+.SS "The elements Tag"
 '
 .PP
 The
@@ -150,7 +161,7 @@ and type names linked to relevant declarations in the configuration:
 </ul>
 .Ee
 '
-.SS "Attributes"
+.SS "elements Tag Attributes"
 .TP 5
 .BR entry =\fItext
 Sets the text used for each element in the configuration. If this attribute
@@ -523,6 +534,20 @@ documentation name. URLs specified in elementmap files take precedence over
 .BI \-\-write\-template
 Output the template unmodified. This is useful for getting a look at the
 built-in default.
+'
+.Sp
+.TP
+.BI \-\-dot
+Rather than generating HTML, generate a graph definition suitable for input
+to the
+.M dot 1
+program (part of the
+.B graphviz
+suite originally from Bell Labs).  Using
+.BR \-\-dot ,
+you can automatically generate a PNG or PostScript graphic showing a
+picture of the Click configuration, as in "\fBclick-pretty\fR router.click
+| \fBdot\fR \-Tpng >routerpicture.png".
 '
 .Sp
 .TP
