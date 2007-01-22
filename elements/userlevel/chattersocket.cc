@@ -120,9 +120,9 @@ ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
   socktype = socktype.upper();
   if (socktype == "TCP") {
     _tcp_socket = true;
-    unsigned short portno;
+    uint16_t portno;
     if (cp_va_parse(conf, this, errh,
-		    cpIgnore, cpUnsignedShort, "port number", &portno, cpEnd) < 0)
+		    cpIgnore, cpTCPPort, "port number", &portno, cpEnd) < 0)
       return -1;
     _unix_pathname = String(portno);
 

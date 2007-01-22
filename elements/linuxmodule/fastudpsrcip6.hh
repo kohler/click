@@ -65,8 +65,8 @@ class FastUDPSourceIP6 : public Element {
   click_ether _ethh;
   IP6Address _sip6addr; 
   IP6Address _dip6addr;
-  unsigned short _sport;
-  unsigned short _dport;
+  uint16_t _sport;
+  uint16_t _dport;
   unsigned short _incr;
   unsigned int _interval;
   bool _cksum;

@@ -44,7 +44,7 @@ IP6Mirror::simple_action(Packet *p_in)
   // may mirror ports as well
   if ((iph->ip6_nxt == IP_PROTO_TCP || iph->ip6_nxt == IP_PROTO_UDP) &&  p->length() >= (uint32_t)(p->transport_header_offset() + 8)) {
     click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
-    unsigned short tmpp = udph->uh_sport;
+    uint16_t tmpp = udph->uh_sport;
     udph->uh_sport = udph->uh_dport;
     udph->uh_dport = tmpp;
   }

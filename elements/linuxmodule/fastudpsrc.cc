@@ -45,7 +45,6 @@ FastUDPSource::configure(Vector<String> &conf, ErrorHandler *errh)
   _cksum = true;
   _active = true;
   _interval = 0;
-  unsigned sp, dp;
   unsigned rate;
   int limit;
   if (cp_va_parse(conf, this, errh,
@@ -54,10 +53,10 @@ FastUDPSource::configure(Vector<String> &conf, ErrorHandler *errh)
 	      	  cpUnsigned, "packet length", &_len,
 		  cpEthernetAddress, "src eth address", &_ethh.ether_shost,
 		  cpIPAddress, "src ip address", &_sipaddr,
-		  cpUnsigned, "src port", &sp,
+		  cpUDPPort, "src port", &_sport,
 		  cpEthernetAddress, "dst eth address", &_ethh.ether_dhost,
 		  cpIPAddress, "dst ip address", &_dipaddr,
-		  cpUnsigned, "dst port", &dp,
+		  cpUDPPort, "dst port", &_dport,
 		  cpOptional,
 		  cpBool, "do UDP checksum?", &_cksum,
 		  cpUnsigned, "interval", &_interval,
@@ -71,8 +70,6 @@ FastUDPSource::configure(Vector<String> &conf, ErrorHandler *errh)
     _len = 60;
   }
   _ethh.ether_type = htons(0x0800);
-  _sport = sp;
-  _dport = dp;
   if(rate != 0){
     _rate_limited = true;
     _rate.set_rate(rate, errh);

@@ -216,10 +216,10 @@ private:
   int _socktype;		// SOCK_STREAM or SOCK_DGRAM
   int _protocol;		// for AF_INET, IPPROTO_TCP, IPPROTO_UDP, etc.
   IPAddress _local_ip;		// for AF_INET, address to bind()
-  unsigned short _local_port;	// for AF_INET, port to bind()
+  uint16_t _local_port;		// for AF_INET, port to bind()
   String _local_pathname;	// for AF_UNIX, file to bind()
   IPAddress _remote_ip;		// for AF_INET, address to connect() to or sendto()
-  unsigned short _remote_port;	// for AF_INET, port to connect() to or sendto()
+  uint16_t _remote_port;	// for AF_INET, port to connect() to or sendto()
   String _remote_pathname;	// for AF_UNIX, file to sendto()
 
   bool _timestamp;		// set the timestamp on received packets

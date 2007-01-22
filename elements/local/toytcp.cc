@@ -61,11 +61,11 @@ ToyTCP::~ToyTCP()
 int
 ToyTCP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  unsigned dport;
+  uint16_t dport;
   int ret;
 
   ret = cp_va_parse(conf, this, errh,
-                    cpUnsigned, "destination port", &dport,
+                    cpTCPPort, "destination port", &dport,
                     cpEnd);
   if(ret < 0)
     return(ret);

@@ -59,11 +59,17 @@ RawSocket::~RawSocket()
 int
 RawSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+  CpVaParseCmd parsecmd = cpUnsignedShort;
+  if (conf.size() && conf[0].upper() == "TCP")
+    parsecmd = cpTCPPort;
+  else if (conf.size() && conf[0].upper() == "UDP")
+    parsecmd = cpUDPPort;
+  
   String socktype;
   if (cp_va_parse(conf, this, errh,
 		  cpString, "type of socket (`TCP', `UDP', `GRE', `ICMP')", &socktype,
 		  cpOptional,
-		  cpUnsignedShort, "port number", &_port,
+		  parsecmd, "port number", &_port,
 		  cpKeywords,
 		  "SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
 		  "HEADROOM", cpUnsigned, "how much header to allocate for the packet", &_headroom,

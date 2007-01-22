@@ -91,13 +91,14 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
     _family = AF_INET;
     _socktype = socktype == "TCP" ? SOCK_STREAM : SOCK_DGRAM;
     _protocol = socktype == "TCP" ? IPPROTO_TCP : IPPROTO_UDP;
+    CpVaParseCmd portcmd = (socktype == "TCP" ? cpTCPPort : cpUDPPort);
     if (cp_va_parse(conf, this, errh,
 		    cpIgnore,
 		    cpIPAddress, "IP address", &_remote_ip,
-		    cpUnsignedShort, "port number", &_remote_port,
+		    portcmd, "port number", &_remote_port,
 		    cpOptional,
 		    cpIPAddress, "local IP address", &_local_ip,
-		    cpUnsignedShort, "local port number", &_local_port,
+		    portcmd, "local port number", &_local_port,
 		    cpEnd) < 0)
       return -1;
   }

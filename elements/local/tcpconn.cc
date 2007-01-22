@@ -246,16 +246,15 @@ TCPConn::ctrl_write_handler
   String action;
   String str_addr0, str_addr1;
   IPAddress addr0, addr1;
-  unsigned short port0, port1;
-  port0 = port1 = 0;
+  uint16_t port0 = 0, port1 = 0;
 
   if(cp_va_space_parse(s, e, errh, 
 	cpString, "action", &action,
 	cpString, "source address", &str_addr0,
-	cpInteger, "source port", &port0, 
+	cpTCPPort, "source port", &port0, 
 	cpOptional,
 	cpString, "destination address", &str_addr1,
-	cpInteger, "destinatin port", &port1,
+	cpTCPPort, "destination port", &port1,
 	cpEnd) < 0)
     return -1;
   addr0 = IPAddress(str_addr0);

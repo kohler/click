@@ -42,7 +42,7 @@ TCPIPSend::send_write_handler(const String &conf, Element *e, void *, ErrorHandl
   TCPIPSend* me = (TCPIPSend *) e;
 
   unsigned int saddr, daddr;
-  unsigned short sport, dport;
+  uint16_t sport, dport;
   unsigned char bits;
   unsigned seqn, ackn;
   if(cp_va_space_parse(conf, me, errh,

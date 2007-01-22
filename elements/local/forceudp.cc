@@ -37,14 +37,16 @@ ForceUDP::~ForceUDP()
 int
 ForceUDP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int ret;
-
-  ret = cp_va_parse(conf, this, errh,
-                    cpOptional,
-                    cpInteger, "destination port", &_dport,
-                    cpEnd);
-
-  return(ret);
+    if (conf.size() == 0 || conf[0] == "-1")
+	return 0;
+    uint16_t dp;
+    if (cp_va_parse(conf, this, errh,
+		    cpOptional,
+		    cpUDPPort, "destination port", &dp,
+		    cpEnd) < 0)
+	return -1;
+    _dport = dp;
+    return 0;
 }
 
 Packet *

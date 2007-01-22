@@ -543,9 +543,9 @@ AddressTranslator::handle_outward(Packet *p)
   IP6Address ip6_src = IP6Address(ip6->ip6_src);
   IP6Address ip6_msrc;
   IP6Address ip6_dst = IP6Address(ip6->ip6_dst);
-  unsigned short sport;
-  unsigned short dport;
-  unsigned short mport;
+  uint16_t sport;
+  uint16_t dport;
+  uint16_t mport;
   
   WritablePacket *q= Packet::make(p->length());
   if (q==0) {
@@ -667,9 +667,9 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
   IP6Address ip6_src = IP6Address(ip6->ip6_src);
   IP6Address ip6_mdst = IP6Address(ip6->ip6_dst);
   IP6Address ip6_dst ;
-  unsigned short sport;
-  unsigned short mport;
-  unsigned short dport;
+  uint16_t sport;
+  uint16_t mport;
+  uint16_t dport;
 
   
   WritablePacket *q= Packet::make(p->length());

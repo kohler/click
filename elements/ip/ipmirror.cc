@@ -44,12 +44,12 @@ IPMirror::simple_action(Packet *p_in)
   // may mirror ports as well
   if ((iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP) && IP_FIRSTFRAG(iph) && (int)p->length() >= p->transport_header_offset() + 8) {
     click_udp *udph = p->udp_header();
-    unsigned short tmpp = udph->uh_sport;
+    uint16_t tmpp = udph->uh_sport;
     udph->uh_sport = udph->uh_dport;
     udph->uh_dport = tmpp;
     if (iph->ip_p == IP_PROTO_TCP) {
       click_tcp *tcph = p->tcp_header();
-      unsigned seqn = tcph->th_seq;
+      uint32_t seqn = tcph->th_seq;
       tcph->th_seq = tcph->th_ack;
       tcph->th_ack = seqn;
     }
