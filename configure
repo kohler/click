@@ -14439,6 +14439,225 @@ _ACEOF
 
     fi
 
+    echo "$as_me:$LINENO: checking whether skb_shinfo has a gso_size member" >&5
+echo $ECHO_N "checking whether skb_shinfo has a gso_size member... $ECHO_C" >&6
+if test "${ac_cv_linuxmodule_skb_shinfo_gso_size+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#include <linux/config.h>
+#include <linux/skbuff.h>
+int
+main ()
+{
+extern struct sk_buff *s; skb_shinfo(s)->gso_size = 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_linuxmodule_skb_shinfo_gso_size=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_linuxmodule_skb_shinfo_gso_size=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_linuxmodule_skb_shinfo_gso_size" >&5
+echo "${ECHO_T}$ac_cv_linuxmodule_skb_shinfo_gso_size" >&6
+    if test $ac_cv_linuxmodule_skb_shinfo_gso_size = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LINUX_SKB_SHINFO_GSO_SIZE 1
+_ACEOF
+
+    fi
+
+    echo "$as_me:$LINENO: checking whether skb_shinfo has a ufo_size member" >&5
+echo $ECHO_N "checking whether skb_shinfo has a ufo_size member... $ECHO_C" >&6
+if test "${ac_cv_linuxmodule_skb_shinfo_ufo_size+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#include <linux/config.h>
+#include <linux/skbuff.h>
+int
+main ()
+{
+extern struct sk_buff *s; skb_shinfo(s)->ufo_size = 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_linuxmodule_skb_shinfo_ufo_size=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_linuxmodule_skb_shinfo_ufo_size=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_linuxmodule_skb_shinfo_ufo_size" >&5
+echo "${ECHO_T}$ac_cv_linuxmodule_skb_shinfo_ufo_size" >&6
+    if test $ac_cv_linuxmodule_skb_shinfo_ufo_size = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LINUX_SKB_SHINFO_UFO_SIZE 1
+_ACEOF
+
+    fi
+
+    echo "$as_me:$LINENO: checking whether skb_shinfo has an ip6_frag_id member" >&5
+echo $ECHO_N "checking whether skb_shinfo has an ip6_frag_id member... $ECHO_C" >&6
+if test "${ac_cv_linuxmodule_skb_shinfo_ip6_frag_id+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#include <linux/config.h>
+#include <linux/skbuff.h>
+int
+main ()
+{
+extern struct sk_buff *s; skb_shinfo(s)->ip6_frag_id = 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_linuxmodule_skb_shinfo_ip6_frag_id" >&5
+echo "${ECHO_T}$ac_cv_linuxmodule_skb_shinfo_ip6_frag_id" >&6
+    if test $ac_cv_linuxmodule_skb_shinfo_ip6_frag_id = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID 1
+_ACEOF
+
+    fi
+
 
     CXX="$SAVE_CXX"
     CPPFLAGS="$saveflags"
