@@ -151,6 +151,8 @@ RawSocket::initialize(ErrorHandler *errh)
   if (ninputs()) {
     ScheduleInfo::join_scheduler(this, &_task, errh);
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
+    add_select(_fd, SELECT_WRITE);
+    _timer.initialize(this);
   }
   return 0;
 }
@@ -278,13 +280,13 @@ RawSocket::run_timer(Timer *)
 bool
 RawSocket::run_task(Task *)
 {
-  if ((_wq || _signal) && !(_events & SELECT_WRITE) && _fd >= 0) {
+  if (!_wq && !(_events & SELECT_WRITE) && _fd >= 0) {
     add_select(_fd, SELECT_WRITE);
     _events |= SELECT_WRITE;
     selected(_fd);
     return true;
-  }
-  return false;
+  } else
+    return false;
 }
 
 void

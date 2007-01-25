@@ -263,6 +263,7 @@ Socket::initialize(ErrorHandler *errh)
   if (ninputs() && input_is_pull(0)) {
     ScheduleInfo::join_scheduler(this, &_task, errh);
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
+    add_select(_fd, SELECT_WRITE);
     _timer.initialize(this);
   }
 
@@ -504,7 +505,7 @@ Socket::run_task(Task *)
   assert(ninputs() && input_is_pull(0));
   bool any = false;
 
-  if (_active >= 0 && (_wq || _signal)) {
+  if (_active >= 0) {
     Packet *p = 0;
     int err = 0;
 

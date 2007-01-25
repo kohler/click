@@ -124,37 +124,30 @@ LinkUnqueue::run_task(Task *)
     Timestamp now_delayed = now + _latency;
 
     // Read a new packet if there's room.  Room is measured by the latency
-    if (_signal) {
-	Packet *p;
-	while (!_qtail || now_delayed >= _qtail->timestamp_anno()) {
-	    // try to pull a packet
-	    if (!(p = input(0).pull()))
-		goto not_back_to_back;
-
-	    // set new timestamp to delayed timestamp
-	    if (_qtail) {
-		_qtail->set_next(p);
-		if (_back_to_back && _qtail)
-		    delay_by_bandwidth(p, _qtail->timestamp_anno());
-		else
-		    delay_by_bandwidth(p, now_delayed);
-	    } else {
-		_qhead = p;
-		delay_by_bandwidth(p, now_delayed);
-	    }
-
-	    // hook up, and remember we were doing this back to back
-	    _qtail = p;
-	    p->set_next(0);
-	    Storage::_tail++;
-	    worked = _back_to_back = true;
+    while (!_qtail || now_delayed >= _qtail->timestamp_anno()) {
+	// try to pull a packet
+	Packet *p = input(0).pull();
+	if (!p) {
+	    _back_to_back = false;
+	    break;
 	}
-    } else if (!_qtail || now_delayed > _qtail->timestamp_anno()) {
-    not_back_to_back:
-	_back_to_back = false;
+
+	// set new timestamp to delayed timestamp
+	if (_qtail) {
+	    _qtail->set_next(p);
+	    delay_by_bandwidth(p, (_back_to_back ? _qtail->timestamp_anno() : now_delayed));
+	} else {
+	    _qhead = p;
+	    delay_by_bandwidth(p, now_delayed);
+	}
+
+	// hook up, and remember we were doing this back to back
+	_qtail = p;
+	p->set_next(0);
+	Storage::_tail++;
+	worked = _back_to_back = true;
     }
 	    
-
     // Emit packets if it's time
     while (_qhead && now >= _qhead->timestamp_anno()) {
 	Packet *p = _qhead;

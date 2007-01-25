@@ -141,7 +141,7 @@ String
 NotifierSignal::unparse() const
 {
     char buf[40];
-    sprintf(buf, "%p/%x:%x", _value, _mask, (*_value)&_mask);
+    sprintf(buf, "%p/%x:%x", _value, _mask, (*_value) & _mask);
     return String(buf);
 }
 
@@ -298,7 +298,7 @@ ActiveNotifier::listeners(Vector<Task*>& v) const
 namespace {
 
 class NotifierElementFilter : public ElementFilter { public:
-    NotifierElementFilter(const char* name);
+    NotifierElementFilter(const char* name, bool wake_pass);
     bool check_match(Element*, int, PortType);
     Vector<Notifier*> _notifiers;
     NotifierSignal _signal;
@@ -307,9 +307,9 @@ class NotifierElementFilter : public ElementFilter { public:
     const char* _name;
 };
 
-NotifierElementFilter::NotifierElementFilter(const char* name)
+NotifierElementFilter::NotifierElementFilter(const char* name, bool wake_pass)
     : _signal(NotifierSignal::idle_signal()),
-      _pass2(false), _need_pass2(false), _name(name)
+      _pass2(!wake_pass), _need_pass2(false), _name(name)
 {
 }
 
@@ -322,9 +322,9 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
 	    n->initialize(e->router());
 	_signal += n->signal();
 	Notifier::SearchOp search_op = n->search_op();
-	if (search_op == Notifier::SEARCH_CONTINUE_WAKE) {
+	if (search_op == Notifier::SEARCH_CONTINUE_WAKE && !_pass2) {
 	    _need_pass2 = true;
-	    return !_pass2;
+	    return true;
 	} else
 	    return search_op == Notifier::SEARCH_STOP;
 	
@@ -363,6 +363,13 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
  * notifier.  Thus, when a notifier becomes active (when packets become
  * available), @a task will be rescheduled.
  *
+ * If @a task is null, then the returned signal is conservative: if it's
+ * inactive, no packets are available upstream.  However, if @a task is
+ * <em>not</em> null, then when the task runs, <em>it should pull packets from
+ * its input before checking whether the returned signal is active</em>.  The
+ * returned signal is conservative only <em>after</em> an initial pull to
+ * "prime the pump".
+ *
  * <h3>Supporting upstream_empty_signal()</h3>
  *
  * Elements that have an empty notifier must override the Element::cast()
@@ -372,7 +379,7 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
 NotifierSignal
 Notifier::upstream_empty_signal(Element* e, int port, Task* task)
 {
-    NotifierElementFilter filter(EMPTY_NOTIFIER);
+    NotifierElementFilter filter(EMPTY_NOTIFIER, task != 0);
     Vector<Element*> v;
     int ok = e->router()->upstream_elements(e, port, &filter, v);
 
@@ -416,6 +423,9 @@ Notifier::upstream_empty_signal(Element* e, int port, Task* task)
  * notifier.  Thus, when a notifier becomes active (when space become
  * available), @a task will be rescheduled.
  *
+ * In current Click, the returned signal is conservative: if it's inactive,
+ * then there is no space for packets downstream.
+ *
  * <h3>Supporting downstream_full_signal()</h3>
  *
  * Elements that have a full notifier must override the Element::cast()
@@ -425,7 +435,7 @@ Notifier::upstream_empty_signal(Element* e, int port, Task* task)
 NotifierSignal
 Notifier::downstream_full_signal(Element* e, int port, Task* task)
 {
-    NotifierElementFilter filter(FULL_NOTIFIER);
+    NotifierElementFilter filter(FULL_NOTIFIER, task != 0);
     Vector<Element*> v;
     int ok = e->router()->downstream_elements(e, port, &filter, v);
 
