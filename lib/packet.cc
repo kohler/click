@@ -264,14 +264,23 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
   atomic_set(skb_datarefp(nskb), 1);
 # else
   nskb->truesize = size + sizeof(struct sk_buff);
-  atomic_set(&(skb_shinfo(nskb)->dataref), 1);
-  skb_shinfo(nskb)->nr_frags = 0;
-  skb_shinfo(nskb)->frag_list = 0;
-#  if HAVE_LINUX_SKB_SHINFO_TSO_SIZE
-  skb_shinfo(nskb)->tso_size = 0;
-  skb_shinfo(nskb)->tso_segs = 0;
-  skb_shinfo(nskb)->ufo_size = 0;
-  skb_shinfo(nskb)->ip6_frag_id = 0;
+  struct skb_shared_info *nskb_shinfo = skb_shinfo(nskb);
+  atomic_set(&nskb_shinfo->dataref, 1);
+  nskb_shinfo->nr_frags = 0;
+  nskb_shinfo->frag_list = 0;
+#  if HAVE_LINUX_SKB_SHINFO_GSO_SIZE
+  nskb_shinfo->gso_size = 0;
+  nskb_shinfo->gso_segs = 0;
+  nskb_shinfo->gso_type = 0;
+#  elif HAVE_LINUX_SKB_SHINFO_TSO_SIZE
+  nskb_shinfo->tso_size = 0;
+  nskb_shinfo->tso_segs = 0;
+#  endif
+#  if HAVE_LINUX_SKB_SHINFO_UFO_SIZE
+  nskb_shinfo->ufo_size = 0;
+#  endif
+#  if HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID
+  nskb_shinfo->ip6_frag_id = 0;
 #  endif
 # endif
 

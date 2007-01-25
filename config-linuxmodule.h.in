@@ -38,8 +38,17 @@
 /* Define if your Linux kernel has read_net_skbcount. */
 #undef HAVE_LINUX_READ_NET_SKBCOUNT
 
-/* Define if 'skb_shinfo(skb)' has a 'tso_size' member. */
+/* Define if 'struct skb_shared_info' has a 'gso_size' member. */
+#undef HAVE_LINUX_SKB_SHINFO_GSO_SIZE
+
+/* Define if 'struct skb_shared_info' has an 'ip6_frag_id' member. */
+#undef HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID
+
+/* Define if 'struct skb_shared_info' has a 'tso_size' member. */
 #undef HAVE_LINUX_SKB_SHINFO_TSO_SIZE
+
+/* Define if 'struct skb_shared_info' has a 'ufo_size' member. */
+#undef HAVE_LINUX_SKB_SHINFO_UFO_SIZE
 
 /* Define if 'struct sk_buff' has an 'fclone' member. */
 #undef HAVE_LINUX_SKBUFF_FCLONE
