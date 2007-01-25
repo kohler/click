@@ -1,3 +1,9 @@
+2007-01-25 Thursday 15:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-linuxmodule.h.in (1.19), configure.in (1.292),
+	  lib/packet.cc (1.61): reset tso_ information when a packet is
+	  uniqueified (Thanks Matt Gordon!)
+
 2007-01-22 Monday 17:48  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/: bsdmodule/fastudpsrc.cc (1.10), ip/ipmirror.cc (1.22),
