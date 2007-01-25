@@ -1,3 +1,21 @@
+2007-01-25 Thursday 18:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/linkunqueue.cc (1.13),
+	  elements/userlevel/rawsocket.cc (1.9),
+	  elements/userlevel/socket.cc (1.10),
+	  elements/userlevel/todevice.cc (1.59), lib/notifier.cc (1.22):
+	  attempt to fix people's Notifier problems.  Document that if one
+	  passes a Task to upstream_empty_signal, you should pull() BEFORE
+	  checking the signal.	(Would it be better to implement signals
+	  differently, so that waking the downstreams would also make the
+	  returned signal conservative?)  Change existing code to pull()
+	  before checking the signal.  If you aren't scheduling a task, the
+	  returned signal is always conservative.
+
+2007-01-25 Thursday 18:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.88): compile configure checks from last checkin
+
 2007-01-25 Thursday 15:59  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* config-linuxmodule.h.in (1.19), configure.in (1.292),
