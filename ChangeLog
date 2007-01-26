@@ -1,3 +1,9 @@
+2007-01-26 Friday 15:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: ipencap.cc (1.42), ipencap.hh (1.29): add DST_ANNO
+	  option to IPEncap; also, use incremental checksum updates (why
+	  not?)
+
 2007-01-26 Friday 15:17  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* conf/make-dsr-config.pl (1.4), elements/grid/dsrroutetable.cc
