@@ -1,3 +1,8 @@
+2007-01-25 Thursday 19:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/task.hh (1.45): not much need for this assertion
+	  when true_reschedule() asserts it too
+
 2007-01-25 Thursday 18:18  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/linkunqueue.cc (1.13),
