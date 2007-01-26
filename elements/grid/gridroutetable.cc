@@ -1623,9 +1623,11 @@ ELEMENT_PROVIDES(GridGenericRouteTable)
 
 #include <click/bighashmap.cc>
 #include <click/vector.cc>
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class HashMap<IPAddress, GridRouteTable::RTEntry>;
 template class HashMap<IPAddress, bool>;
 template class Vector<IPAddress>;
 template class Vector<GridRouteTable::RTEntry>;
 template class Vector<GridGenericRouteTable::RouteEntry>;
+#endif
 CLICK_ENDDECLS
