@@ -22,6 +22,9 @@ PROTOCOL, source address SRC, and destination address DST.
 This is most useful for IP-in-IP encapsulation.
 Its destination address annotation is also set to DST.
 
+As a special case, if DST equals "DST_ANNO", then the destination address
+is set to the incoming packet's destination address annotation.
+
 Keyword arguments are:
 
 =over 8
@@ -48,7 +51,7 @@ Default is false.
 =item TOS
 
 Byte. The IP header's TOS value. Default is 0. If you specify TOS, you may not
-specify DSCP, ECT, ECT1, ECT2, or CE.
+specify DSCP, ECT, or CE.
 
 =item DF
 
@@ -98,12 +101,9 @@ class IPEncap : public Element { public:
  private:
 
   click_ip _iph;
-#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
-  bool _aligned;
-#endif
-
   atomic_uint32_t _id;
 
+  inline void update_cksum(click_ip *, int) const;
   static String read_handler(Element *, void *);
   
 };

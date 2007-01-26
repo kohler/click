@@ -39,13 +39,14 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   memset(&iph, 0, sizeof(click_ip));
   iph.ip_v = 4;
   iph.ip_hl = sizeof(click_ip) >> 2;
-  iph.ip_tos = 0;
-  iph.ip_off = 0;
   iph.ip_ttl = 250;
-  iph.ip_sum = 0;
   int proto, tos = -1, dscp = -1;
-  bool ce = false, df = false;
+  bool ce = false, df = false, use_dst_anno;
   String ect_str;
+
+  use_dst_anno = (conf.size() >= 3 && conf[2] == "DST_ANNO");
+  if (use_dst_anno)
+      conf[2] = "0.0.0.0";
   
   if (cp_va_parse(conf, this, errh,
 		  cpNamedInteger, "protocol", NameInfo::T_IP_PROTO, &proto,
@@ -98,19 +99,17 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   if (df)
     iph.ip_off |= htons(IP_DF);
   _iph = iph;
-  
-#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
-  // check alignment
-  {
-    int ans, c, o;
-    ans = AlignmentInfo::query(this, 0, c, o);
-    _aligned = (ans && c == 4 && o == 0);
-    if (!_aligned)
-      errh->warning("IP header unaligned, cannot use fast IP checksum");
-    if (!ans)
-      errh->message("(Try passing the configuration through 'click-align'.)");
-  }
+
+  // set the checksum field so we can calculate the checksum incrementally
+#if HAVE_FAST_CHECKSUM
+  _iph.ip_sum = ip_fast_csum((unsigned char *) &_iph, sizeof(click_ip) >> 2);
+#else
+  _iph.ip_sum = click_in_cksum((unsigned char *) &_iph, sizeof(click_ip));
 #endif
+  
+  // store information about use_dst_anno in the otherwise useless
+  // _iph.ip_len field
+  _iph.ip_len = (use_dst_anno ? 1 : 0);
   
   return 0;
 }
@@ -122,6 +121,21 @@ IPEncap::initialize(ErrorHandler *)
   return 0;
 }
 
+inline void
+IPEncap::update_cksum(click_ip *ip, int off) const
+{
+#if HAVE_INDIFFERENT_ALIGNMENT
+    click_update_in_cksum(&ip->ip_sum, 0, ((uint16_t *) ip)[off/2]);
+#else
+    const uint8_t *u = (const uint8_t *) ip;
+# if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+    click_update_in_cksum(&ip->ip_sum, 0, u[off]*256 + u[off+1]);
+# else
+    click_update_in_cksum(&ip->ip_sum, 0, u[off] + u[off+1]*256);
+# endif
+#endif
+}
+
 Packet *
 IPEncap::simple_action(Packet *p_in)
 {
@@ -130,21 +144,17 @@ IPEncap::simple_action(Packet *p_in)
   
   click_ip *ip = reinterpret_cast<click_ip *>(p->data());
   memcpy(ip, &_iph, sizeof(click_ip));
+  if (ip->ip_len) {		// use_dst_anno
+      ip->ip_dst = p->dst_ip_anno();
+      update_cksum(ip, 16);
+      update_cksum(ip, 18);
+  } else
+      p->set_dst_ip_anno(IPAddress(ip->ip_dst));
   ip->ip_len = htons(p->length());
   ip->ip_id = htons(_id.fetch_and_add(1));
-
-#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
-  if (_aligned)
-    ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
-  else
-    ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
-#elif HAVE_FAST_CHECKSUM
-  ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
-#else
-  ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
-#endif
+  update_cksum(ip, 2);
+  update_cksum(ip, 4);
   
-  p->set_dst_ip_anno(IPAddress(ip->ip_dst));
   p->set_ip_header(ip, sizeof(click_ip));
   
   return p;
@@ -155,9 +165,15 @@ IPEncap::read_handler(Element *e, void *thunk)
 {
   IPEncap *ipe = static_cast<IPEncap *>(e);
   switch ((intptr_t)thunk) {
-   case 0:	return IPAddress(ipe->_iph.ip_src).s();
-   case 1:	return IPAddress(ipe->_iph.ip_dst).s();
-   default:	return "<error>";
+    case 0:
+      return IPAddress(ipe->_iph.ip_src).unparse();
+    case 1:
+      if (ipe->_iph.ip_len == 1)
+	  return "DST_ANNO";
+      else
+	  return IPAddress(ipe->_iph.ip_dst).unparse();
+    default:
+      return "<error>";
   }
 }
 
