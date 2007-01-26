@@ -298,7 +298,7 @@ in_cl[1] -> dsr_filter; // non-probes
 
 kt :: KernelTun(me0/$netmask);
 
-kt -> Strip(14) -> icmp_cl :: Classifier(20/0302, -);
+kt -> icmp_cl :: Classifier(20/0302, -);
 
 icmp_cl[0] -> Discard; // icmp 'protocol not supported'
 icmp_cl[1] -> IPPrint(0rt, CONTENTS true, NBYTES 128) -> 

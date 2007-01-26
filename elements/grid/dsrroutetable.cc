@@ -987,7 +987,7 @@ DSRRouteTable::add_dsr_header(Packet *p_in, Vector<IPAddress> source_route)
   }
   
   // set the ip dest annotation to the next hop
-  p->set_dst_ip_anno(source_route[1].addr());   
+  p->set_dst_ip_anno(source_route[0].addr());   
   
   DEBUG_CHATTER(" * added source route header");
   
