@@ -496,7 +496,6 @@ inline void
 Task::reschedule()
 {
     SPLCHECK;
-    assert(_thread);
     if (!scheduled())
 	true_reschedule();
 }
