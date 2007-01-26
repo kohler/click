@@ -1,3 +1,10 @@
+2007-01-25 Thursday 20:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/timesortedsched.cc (1.10),
+	  elements/standard/delayshaper.cc (1.23), elements/standard/drr.cc
+	  (1.12), include/click/notifier.hh (1.20), lib/notifier.cc (1.23):
+	  another notifier fix plan: dependent signals
+
 2007-01-25 Thursday 19:33  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/task.hh (1.45): not much need for this assertion
