@@ -1,3 +1,17 @@
+2007-01-26 Friday 15:17  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/make-dsr-config.pl (1.4), elements/grid/dsrroutetable.cc
+	  (1.16): fixes from a DSR user: lastlijing, yahoo com cn
+
+2007-01-26 Friday 15:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/grid/gridroutetable.cc (1.78): compilability on Mac
+	  needs explicit template instances
+
+2007-01-26 Friday 15:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/tohost.cc (1.6): correct name of element
+
 2007-01-25 Thursday 20:43  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/timesortedsched.cc (1.10),
