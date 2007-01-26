@@ -99,7 +99,7 @@ ToHost::push(int, Packet *p)
 	static bool _printed_write_err = false;
 	if (w != (int) q->length() && (errno != ENOBUFS || !_printed_write_err)) {
 	    _printed_write_err = true;
-	    click_chatter("KernelTun(%s): write failed: %s", _dev_name.c_str(), strerror(errno));
+	    click_chatter("ToHost(%s): write failed: %s", _dev_name.c_str(), strerror(errno));
 	}
 	q->kill();
     } else
