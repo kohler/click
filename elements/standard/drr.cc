@@ -60,7 +60,7 @@ DRRSched::initialize(ErrorHandler *errh)
     for (int i = 0; i < ninputs(); i++) {
 	_head[i] = 0;
 	_deficit[i] = 0;
-	_signals[i] = Notifier::upstream_empty_signal(this, i, 0);
+	_signals[i] = Notifier::upstream_empty_signal(this, i, 0, &_notifier);
     }
     _next = 0;
     return 0;

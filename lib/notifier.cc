@@ -178,6 +178,21 @@ Notifier::remove_listener(Task* task)
     (void) task;
 }
 
+/** @brief Called to register a dependent signal with this Notifier.
+ * @param signal the dependent signal
+ *
+ * This notifier should register @a signal as a dependent signal, if
+ * appropriate.  Later, when this notifier's signal is activated, it should go
+ * ahead and activate @a signal as well.  Not all types of Notifier need to
+ * provide this functionality.  The default implementation does nothing.
+ */
+int
+Notifier::add_dependent_signal(NotifierSignal* signal)
+{
+    (void) signal;
+    return 0;
+}
+
 /** @brief Initialize the associated NotifierSignal, if necessary.
  * @param r the associated router
  *
@@ -213,70 +228,104 @@ ActiveNotifier::~ActiveNotifier()
     delete[] _listeners;
 }
 
+int
+ActiveNotifier::listener_change(void *what, int where, bool add)
+{
+    int n = 0, x;
+    task_or_signal_t *tos, *ntos, *otos;
+
+    // common case
+    if (!_listener1 && !_listeners && where == 0 && add) {
+	_listener1 = (Task *) what;
+	return 0;
+    }
+
+    for (tos = _listeners, x = 0; tos && x < 2; tos++)
+	tos->v ? n++ : x++;
+    if (_listener1)
+	n++;
+
+    if (!(ntos = new task_or_signal_t[n + 2 + add])) {
+	click_chatter("out of memory in Notifier!");
+	return -1;
+    }
+
+    otos = ntos;
+    if (_listener1) {
+	if (add || what != _listener1)
+	    (otos++)->t = _listener1;
+	if (add && what != _listener1 && where == 0)
+	    (otos++)->v = what;
+	(otos++)->v = 0;
+	if (add && where == 1)
+	    (otos++)->v = what;
+	(otos++)->v = 0;
+    }
+    for (tos = _listeners, x = 0; tos && x < 2; tos++)
+	if (tos->v && (add || tos->v != what)) {
+	    (otos++)->v = tos->v;
+	    if (tos->v == what)
+		add = false;
+	} else if (!tos->v) {
+	    if (add && where == x)
+		(otos++)->v = what;
+	    (otos++)->v = 0;
+	    x++;
+	}
+    assert(otos - ntos <= n + 2 + add);
+
+    delete[] _listeners;
+    if (!ntos[0].v && !ntos[1].v) {
+	_listeners = 0;
+	_listener1 = 0;
+	delete[] ntos;
+    } else if (ntos[0].v && !ntos[1].v && !ntos[2].v) {
+	_listeners = 0;
+	_listener1 = ntos[0].t;
+	delete[] ntos;
+    } else {
+	_listeners = ntos;
+	_listener1 = 0;
+    }
+    return 0;
+}
+
 /** @brief Add a listener to this notifier.
  * @param task the listener to add
  *
- * Adds @a task to this element's listener list (the clients interested in
+ * Adds @a task to this notifier's listener list (the clients interested in
  * notification).  Whenever the ActiveNotifier activates its signal, @a task
  * will be rescheduled.
  */
 int
 ActiveNotifier::add_listener(Task* task)
 {
-    if (!_listeners && (!_listener1 || _listener1 == task)) {
-	_listener1 = task;
-	return 0;
-    } else if (task == 0)
-	return 0;
-
-    int n = (_listener1 ? 1 : 0);
-    if (!_listener1)
-	for (Task **t = _listeners; *t; t++) {
-	    if (*t == task)
-		return 0;
-	    n++;
-	}
-    Task** old_list = (_listener1 ? &_listener1 : _listeners);
-    
-    Task** new_list = new Task *[n + 2];
-    if (!new_list) {
-	click_chatter("out of memory in Notifier::add_listener!");
-	return -1;
-    }
-    memcpy(new_list, old_list, sizeof(Task *) * 1);
-    new_list[n] = task;
-    new_list[n + 1] = _listener1 = 0;
-    delete[] _listeners;
-    _listeners = new_list;
-    return 0;
+    return listener_change(task, 0, true);
 }
 
 /** @brief Remove a listener from this notifier.
  * @param task the listener to remove
  *
- * Removes @a task from this element's listener list (the clients interested
+ * Removes @a task from this notifier's listener list (the clients interested
  * in notification).  @a task will not be rescheduled when the Notifier is
  * activated.
  */
 void
 ActiveNotifier::remove_listener(Task* task)
 {
-    if (!task)
-	/* nada */;
-    else if (_listener1 == task)
-	_listener1 = 0;
-    else if (_listeners) {
-	int n = 0, which = -1;
-	for (Task** l = _listeners; *l; l++) {
-	    if (*l == task)
-		which = n;
-	    n++;
-	}
-	if (which >= 0) {
-	    _listeners[which] = _listeners[n - 1];
-	    _listeners[n - 1] = 0;
-	}
-    }
+    listener_change(task, 0, false);
+}
+
+/** @brief Add a dependent signal to this Notifier.
+ * @param signal the dependent signal
+ *
+ * Adds @a signal as a dependent signal to this notifier.  Whenever the
+ * ActiveNotifier activates its signal, @a signal will be activated as well.
+ */
+int
+ActiveNotifier::add_dependent_signal(NotifierSignal* signal)
+{
+    return listener_change(signal, 1, true);
 }
 
 /** @brief Return the listener list.
@@ -290,15 +339,15 @@ ActiveNotifier::listeners(Vector<Task*>& v) const
     if (_listener1)
 	v.push_back(_listener1);
     else if (_listeners)
-	for (Task** l = _listeners; *l; l++)
-	    v.push_back(*l);
+	for (task_or_signal_t* l = _listeners; l->t; l++)
+	    v.push_back(l->t);
 }
 
 
 namespace {
 
 class NotifierElementFilter : public ElementFilter { public:
-    NotifierElementFilter(const char* name, bool wake_pass);
+    NotifierElementFilter(const char* name);
     bool check_match(Element*, int, PortType);
     Vector<Notifier*> _notifiers;
     NotifierSignal _signal;
@@ -307,9 +356,9 @@ class NotifierElementFilter : public ElementFilter { public:
     const char* _name;
 };
 
-NotifierElementFilter::NotifierElementFilter(const char* name, bool wake_pass)
+NotifierElementFilter::NotifierElementFilter(const char* name)
     : _signal(NotifierSignal::idle_signal()),
-      _pass2(!wake_pass), _need_pass2(false), _name(name)
+      _pass2(false), _need_pass2(false), _name(name)
 {
 }
 
@@ -349,6 +398,7 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
  * @param e an element
  * @param port the input port of @a e at which to start the upstream search
  * @param task Task to register as a listener, or null
+ * @param dependent_notifier Notifier to register as dependent, or null
  *
  * Searches the configuration upstream of element @a e's input @a port for @e
  * empty @e notifiers.  These notifiers are associated with packet storage,
@@ -359,16 +409,18 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
  * derived signal will also be active.  Element @a e's code generally uses the
  * resulting signal to decide whether or not to reschedule itself.
  *
+ * The returned signal is generally conservative, meaning that the signal
+ * is true whenever a packet exists upstream, but the elements that provide
+ * notification are responsible for ensuring this.
+ *
  * If @a task is nonnull, then @a task becomes a listener for each located
  * notifier.  Thus, when a notifier becomes active (when packets become
  * available), @a task will be rescheduled.
  *
- * If @a task is null, then the returned signal is conservative: if it's
- * inactive, no packets are available upstream.  However, if @a task is
- * <em>not</em> null, then when the task runs, <em>it should pull packets from
- * its input before checking whether the returned signal is active</em>.  The
- * returned signal is conservative only <em>after</em> an initial pull to
- * "prime the pump".
+ * If @a dependent_notifier is null, then its signal is registered as a
+ * <em>dependent signal</em> on each located upstream notifier.  When
+ * an upstream notifier becomes active, @a dependent_notifier's signal is also
+ * activated.
  *
  * <h3>Supporting upstream_empty_signal()</h3>
  *
@@ -377,9 +429,9 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
  * should return a pointer to the corresponding Notifier object.
  */
 NotifierSignal
-Notifier::upstream_empty_signal(Element* e, int port, Task* task)
+Notifier::upstream_empty_signal(Element* e, int port, Task* task, Notifier* dependent_notifier)
 {
-    NotifierElementFilter filter(EMPTY_NOTIFIER, task != 0);
+    NotifierElementFilter filter(EMPTY_NOTIFIER);
     Vector<Element*> v;
     int ok = e->router()->upstream_elements(e, port, &filter, v);
 
@@ -399,6 +451,9 @@ Notifier::upstream_empty_signal(Element* e, int port, Task* task)
     if (task)
 	for (int i = 0; i < filter._notifiers.size(); i++)
 	    filter._notifiers[i]->add_listener(task);
+    if (dependent_notifier)
+	for (int i = 0; i < filter._notifiers.size(); i++)
+	    filter._notifiers[i]->add_dependent_signal(&dependent_notifier->_signal);
 
     return signal;
 }
@@ -409,6 +464,7 @@ Notifier::upstream_empty_signal(Element* e, int port, Task* task)
  * @param e an element
  * @param port the output port of @a e at which to start the downstream search
  * @param task Task to register as a listener, or null
+ * @param dependent_notifier Notifier to register as dependent, or null
  *
  * Searches the configuration downstream of element @a e's output @a port for
  * @e full @e notifiers.  These notifiers are associated with packet storage,
@@ -423,6 +479,11 @@ Notifier::upstream_empty_signal(Element* e, int port, Task* task)
  * notifier.  Thus, when a notifier becomes active (when space become
  * available), @a task will be rescheduled.
  *
+ * If @a dependent_notifier is null, then its signal is registered as a
+ * <em>dependent signal</em> on each located downstream notifier.  When
+ * an downstream notifier becomes active, @a dependent_notifier's signal is
+ * also activated.
+ *
  * In current Click, the returned signal is conservative: if it's inactive,
  * then there is no space for packets downstream.
  *
@@ -433,9 +494,9 @@ Notifier::upstream_empty_signal(Element* e, int port, Task* task)
  * should return a pointer to the corresponding Notifier object.
  */
 NotifierSignal
-Notifier::downstream_full_signal(Element* e, int port, Task* task)
+Notifier::downstream_full_signal(Element* e, int port, Task* task, Notifier* dependent_notifier)
 {
-    NotifierElementFilter filter(FULL_NOTIFIER, task != 0);
+    NotifierElementFilter filter(FULL_NOTIFIER);
     Vector<Element*> v;
     int ok = e->router()->downstream_elements(e, port, &filter, v);
 
@@ -455,6 +516,9 @@ Notifier::downstream_full_signal(Element* e, int port, Task* task)
     if (task)
 	for (int i = 0; i < filter._notifiers.size(); i++)
 	    filter._notifiers[i]->add_listener(task);
+    if (dependent_notifier)
+	for (int i = 0; i < filter._notifiers.size(); i++)
+	    filter._notifiers[i]->add_dependent_signal(&dependent_notifier->_signal);
 
     return signal;
 }

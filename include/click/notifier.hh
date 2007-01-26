@@ -66,12 +66,13 @@ class Notifier { public:
     
     virtual int add_listener(Task*);
     virtual void remove_listener(Task*);
+    virtual int add_dependent_signal(NotifierSignal*);
 
     static const char EMPTY_NOTIFIER[];
     static const char FULL_NOTIFIER[];
     
-    static NotifierSignal upstream_empty_signal(Element* e, int port, Task* task);
-    static NotifierSignal downstream_full_signal(Element* e, int port, Task* task);
+    static NotifierSignal upstream_empty_signal(Element* e, int port, Task* task, Notifier* dependent_notifier = 0);
+    static NotifierSignal downstream_full_signal(Element* e, int port, Task* task, Notifier* dependent_notifier = 0);
 
   private:
 
@@ -87,6 +88,7 @@ class ActiveNotifier : public Notifier { public:
 
     int add_listener(Task*);		// complains on out of memory
     void remove_listener(Task*);
+    int add_dependent_signal(NotifierSignal*);
     void listeners(Vector<Task*>&) const;
 
     inline void set_active(bool active, bool schedule = true);
@@ -94,10 +96,18 @@ class ActiveNotifier : public Notifier { public:
     inline void sleep();
     
   private:
+
+    typedef union {
+	Task *t;
+	NotifierSignal *s;
+	void *v;
+    } task_or_signal_t;
     
     Task* _listener1;
-    Task** _listeners;
+    task_or_signal_t* _listeners;
 
+    int listener_change(void *what, int where, bool rem);
+    
     ActiveNotifier(const ActiveNotifier&); // does not exist
     ActiveNotifier& operator=(const ActiveNotifier&); // does not exist
 
@@ -327,8 +337,12 @@ operator+(NotifierSignal a, const NotifierSignal& b)
  * objects.  This operation is useful, for example, for schedulers that store
  * packets temporarily.  Such schedulers provide their own NotifierSignal,
  * since the scheduler may still hold a packet even when all upstream sources
- * are empty.  However, since they aren't packet sources, they don't know when
- * new packets arrive, and can't wake up sleeping listeners.</dd>
+ * are empty, but since they aren't packet sources, they don't know when
+ * new packets arrive and can't wake up sleeping listeners.  During
+ * initialization, such schedulers should call Notifier::upstream_empty_signal,
+ * passing their own Notifier as the fourth argument.  This will ensure that
+ * their signal is turned on appropriately whenever an upstream queue becomes
+ * nonempty.</dd>
  * </dl>
  */
 inline
@@ -428,9 +442,12 @@ ActiveNotifier::set_active(bool active, bool schedule)
     if (active && !Notifier::active() && schedule) {
 	if (_listener1)
 	    _listener1->reschedule();
-	else if (_listeners)
-	    for (Task **t = _listeners; *t; t++)
-		(*t)->reschedule();
+	else if (task_or_signal_t *tos = _listeners) {
+	    for (; tos->t; tos++)
+		tos->t->reschedule();
+	    for (tos++; tos->s; tos++)
+		tos->s->set_active(true);
+	}
     }
     Notifier::set_active(active);
 }
