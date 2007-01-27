@@ -33,6 +33,7 @@ clickincludedir = $(includedir)/click
 netincludedir = $(includedir)/clicknet
 toolincludedir = $(includedir)/clicktool
 bindir = @bindir@
+datarootdir = @datarootdir@
 datadir = @datadir@
 clickdatadir = $(datadir)/click
 

@@ -21,6 +21,7 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@
+datarootdir=@datarootdir@
 datadir=@datadir@
 clickdatadir=@clickdatadir@
 LINUXMODULE_2_6=@LINUXMODULE_2_6@

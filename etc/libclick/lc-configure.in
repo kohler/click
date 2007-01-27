@@ -427,9 +427,9 @@ fi
 shell_expand bindir
 shell_expand sbindir
 shell_expand libdir
+shell_expand datarootdir
 shell_expand datadir
 shell_expand includedir
-shell_expand datadir
 
 clickdatadir="$datadir/click"
 AC_SUBST(clickdatadir)

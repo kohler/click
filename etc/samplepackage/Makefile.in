@@ -48,6 +48,8 @@ bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
 mandir = @mandir@
+datarootdir = @datarootdir@
+datadir = @datadir@
 endif
 
 include $(clickdatadir)/pkg-Makefile

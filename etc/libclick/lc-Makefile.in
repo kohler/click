@@ -28,6 +28,7 @@ includedir = @includedir@
 clickincludedir = $(includedir)/click
 netincludedir = $(includedir)/clicknet
 bindir = @bindir@
+datarootdir = @datarootdir@
 datadir = @datadir@
 clickdatadir = $(datadir)/click
 
