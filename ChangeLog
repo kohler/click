@@ -1,3 +1,12 @@
+2007-01-26 Friday 20:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: ipencap.cc (1.43), ipencap.hh (1.30): nits
+
+2007-01-26 Friday 19:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/tcpudp/: udpipencap.cc (1.23), udpipencap.hh (1.14):
+	  UDPIPEncap also understands DST == DST_ANNO (Mike Wilson request)
+
 2007-01-26 Friday 15:53  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: ipencap.cc (1.42), ipencap.hh (1.29): add DST_ANNO
