@@ -17,6 +17,9 @@ CLICK_DECLS
  * DPORT. The UDP checksum is calculated if CHECKSUM? is true; it is true by
  * default.
  *
+ * As a special case, if DADDR is "DST_ANNO", then the destination address
+ * is set to the incoming packet's destination address annotation.
+ *
  * The UDPIPEncap element adds both a UDP header and an IP header.
  *
  * The Strip element can be used by the receiver to get rid of the
@@ -44,9 +47,10 @@ class UDPIPEncap : public Element { public:
 
   struct in_addr _saddr;
   struct in_addr _daddr;
-  unsigned short _sport;
-  unsigned short _dport;
+  uint16_t _sport;
+  uint16_t _dport;
   bool _cksum : 1;
+  bool _use_dst_anno : 1;
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   bool _aligned : 1;
 #endif

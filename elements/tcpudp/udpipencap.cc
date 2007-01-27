@@ -39,6 +39,12 @@ int
 UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool do_cksum = true;
+  _use_dst_anno = false;
+  if (conf.size() >= 3 && conf[2] == "DST_ANNO") {
+      _use_dst_anno = true;
+      conf[2] = "0.0.0.0";
+  }
+  
   if (cp_va_parse(conf, this, errh,
 		  cpIPAddress, "source address", &_saddr,
 		  cpUDPPort, "source port", &_sport,
@@ -82,7 +88,12 @@ UDPIPEncap::simple_action(Packet *p_in)
   ip->ip_id = htons(_id.fetch_and_add(1));
   ip->ip_p = IP_PROTO_UDP;
   ip->ip_src = _saddr;
-  ip->ip_dst = _daddr;
+  if (_use_dst_anno)
+      ip->ip_dst = p->dst_ip_anno();
+  else {
+      ip->ip_dst = _daddr;
+      p->set_dst_ip_anno(IPAddress(_daddr));
+  }
   ip->ip_tos = 0;
   ip->ip_off = 0;
   ip->ip_ttl = 250;
@@ -99,7 +110,6 @@ UDPIPEncap::simple_action(Packet *p_in)
   ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 #endif
   
-  p->set_dst_ip_anno(IPAddress(_daddr));
   p->set_ip_header(ip, sizeof(click_ip));
 
   // set up UDP header
