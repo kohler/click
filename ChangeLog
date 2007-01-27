@@ -1,3 +1,34 @@
+2007-01-26 Friday 21:38  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/ipsec-router.click (1.1), elements/ipsec/aes.cc (1.1),
+	  elements/ipsec/aes.hh (1.1), elements/ipsec/des.cc (1.22),
+	  elements/ipsec/des.hh (1.16), elements/ipsec/desp.cc (1.26),
+	  elements/ipsec/desp.hh (1.15), elements/ipsec/esp.cc (1.31),
+	  elements/ipsec/esp.hh (1.19), elements/ipsec/hmac.cc (1.1),
+	  elements/ipsec/hmac.hh (1.1), elements/ipsec/hmacsha1.cc (1.1),
+	  elements/ipsec/hmacsha1.hh (1.1), elements/ipsec/ipsecencap.cc
+	  (1.1), elements/ipsec/ipsecencap.hh (1.1),
+	  elements/ipsec/ipsecroutetable.cc (1.1),
+	  elements/ipsec/ipsecroutetable.hh (1.1),
+	  elements/ipsec/radixipseclookup.cc (1.1),
+	  elements/ipsec/radixipseclookup.hh (1.1),
+	  elements/ipsec/sadatatuple.hh (1.1), elements/ipsec/satable.cc
+	  (1.1), elements/ipsec/satable.hh (1.1), elements/ipsec/sha1.cc
+	  (1.12), elements/ipsec/sha1.hh (1.13),
+	  elements/ipsec/sha1_impl.cc (1.1), elements/ipsec/sha1_impl.hh
+	  (1.5), include/click/packet_anno.hh (1.28): import greatly
+	  revised IPsec elements from Dimitris Syrivelis and Ioannis
+	  Avramopoulos (THANKS!)
+
+2007-01-26 Friday 20:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* Makefile.in (1.136), click-buildtool.in (1.90), click-compile.in
+	  (1.39), configure (1.89), configure.in (1.293), doc/Makefile.in
+	  (1.61), etc/libclick/lc-Makefile.in (1.16),
+	  etc/libclick/lc-configure.in (1.49), etc/ron/Makefile.in (1.6),
+	  etc/samplepackage/Makefile.in (1.56): specify $(datarootdir), as
+	  apparently required by newer autoconf
+
 2007-01-26 Friday 20:11  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: ipencap.cc (1.43), ipencap.hh (1.30): nits
