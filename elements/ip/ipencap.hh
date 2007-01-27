@@ -22,7 +22,7 @@ PROTOCOL, source address SRC, and destination address DST.
 This is most useful for IP-in-IP encapsulation.
 Its destination address annotation is also set to DST.
 
-As a special case, if DST equals "DST_ANNO", then the destination address
+As a special case, if DST is "DST_ANNO", then the destination address
 is set to the incoming packet's destination address annotation.
 
 Keyword arguments are:

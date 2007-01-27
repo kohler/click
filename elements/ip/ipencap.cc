@@ -21,7 +21,6 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <click/standard/alignmentinfo.hh>
 CLICK_DECLS
 
 IPEncap::IPEncap()
