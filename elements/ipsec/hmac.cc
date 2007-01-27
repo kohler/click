@@ -1,5 +1,5 @@
-/* crypto/sha/sha1dgst.c */
-/* Copyright (C) 1995-1997 Eric Young (eay@cryptsoft.com)
+/* crypto/hmac/hmac.h */
+/* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
  * This package is an SSL implementation written
@@ -55,33 +55,105 @@
  * copied and put under another distribution licence
  * [including the GNU Public Licence.]
  */
-#ifndef SHA1_IMPL_HH
-#define SHA1_IMPL_HH
-
-#undef  SHA_0
-#define SHA_1
-
-#define SHA_CBLOCK	64
-#define SHA_LBLOCK	16
-#define SHA_BLOCK	16
-#define SHA_LAST_BLOCK  56
-#define SHA_LENGTH_BLOCK 8
-#define SHA_DIGEST_LENGTH 20
-typedef struct SHAstate_st
-{
-  unsigned long h0, h1, h2, h3, h4;
-  unsigned long Nl, Nh;
-  unsigned long data[SHA_LBLOCK];
-  int num;
-}
-SHA1_ctx;
-
-void SHA1_init (SHA1_ctx * c);
-void SHA1_update (SHA1_ctx * c, unsigned char *data, unsigned long len);
-void SHA1_final (unsigned char *md, SHA1_ctx * c);
-void SHA1_transform (SHA1_ctx * c, unsigned char *data);
 
 
+#include "hmac.hh"
 
-#endif
+void OpenSSLDie(void)
+	{
+	   click_chatter("HMAC computation internal error, assertion failed\n");
+	}
+
+
+void HMAC_Init_ex(HMAC_CTX *ctx, const void *key, int len)
+	{
+	int i,j,reset=0;
+	unsigned char pad[HMAC_MAX_MD_CBLOCK];
+
+	if (key != NULL)
+		{
+		reset=1;
+		j=SHA_CBLOCK;
+		OPENSSL_assert(j <= (int)sizeof(ctx->key));
+		if (j < len)
+			{
+			SHA1_init(&ctx->md_ctx);
+			SHA1_update(&ctx->md_ctx,(unsigned char*)key,len);
+			SHA1_final(ctx->key,&(ctx->md_ctx));
+			}
+		else
+			{
+			OPENSSL_assert(len>=0 && len<=(int)sizeof(ctx->key));
+			memcpy(ctx->key,key,len);
+			ctx->key_length=len;
+			}
+		if(ctx->key_length != HMAC_MAX_MD_CBLOCK)
+			memset(&ctx->key[ctx->key_length], 0,
+				HMAC_MAX_MD_CBLOCK - ctx->key_length);
+		}
+
+	if (reset)	
+		{
+		for (i=0; i<HMAC_MAX_MD_CBLOCK; i++)
+			pad[i]=0x36^ctx->key[i];
+		SHA1_init(&ctx->i_ctx);
+		SHA1_update(&ctx->i_ctx,pad,SHA_BLOCK);
+
+		for (i=0; i<HMAC_MAX_MD_CBLOCK; i++)
+			pad[i]=0x5c^ctx->key[i];
+		SHA1_init(&ctx->o_ctx);
+		SHA1_update(&ctx->o_ctx,pad,SHA_BLOCK);
+		}
+	memcpy((void *)&ctx->md_ctx,(void*)&ctx->i_ctx,sizeof(SHA1_ctx));
+	}
+
+void HMAC_Init(HMAC_CTX *ctx, const void *key, int len)
+	{
+	if(key /*&& md*/)
+	    HMAC_CTX_init(ctx);
+	    HMAC_Init_ex(ctx,key,len);
+	}
+
+void HMAC_Update(HMAC_CTX *ctx, unsigned char *data, size_t len)
+	{
+	   SHA1_update(&ctx->md_ctx,data,len);
+	}
+
+void HMAC_Final(HMAC_CTX *ctx, unsigned char *md, unsigned int *len)
+	{
+	 int j;
+	 unsigned char buf[EVP_MAX_MD_SIZE];
+
+	 j=SHA_BLOCK;
+	 SHA1_final(buf,&ctx->md_ctx);
+	 memcpy((void *)&ctx->md_ctx,(void*)&ctx->o_ctx,sizeof(SHA1_ctx));
+	 SHA1_update(&ctx->md_ctx,buf,(unsigned long)*len);
+	 SHA1_final(md,&ctx->md_ctx);
+	}
+
+void HMAC_CTX_init(HMAC_CTX *ctx)
+	{
+		SHA1_init(&ctx->i_ctx);
+		SHA1_init(&ctx->o_ctx);
+		SHA1_init(&ctx->md_ctx);
+	}
+
+void HMAC_CTX_cleanup(HMAC_CTX *ctx)
+	{
+	     memset(ctx,0,sizeof *ctx);
+	}
+
+unsigned char *HMAC(void *key, int key_len,unsigned char *d, size_t n, unsigned char *md,unsigned int *md_len)
+	{
+	HMAC_CTX c;
+	static unsigned char m[EVP_MAX_MD_SIZE];
+
+	if (md == NULL) md=m;
+		HMAC_CTX_init(&c);
+		HMAC_Init(&c,key,key_len);
+		HMAC_Update(&c,d,n);
+		HMAC_Final(&c,md,md_len);
+		HMAC_CTX_cleanup(&c);
+		return(md);
+	}
 

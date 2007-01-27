@@ -1,5 +1,5 @@
-/* crypto/sha/sha1dgst.c */
-/* Copyright (C) 1995-1997 Eric Young (eay@cryptsoft.com)
+/* crypto/hmac/hmac.h */
+/* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
  * This package is an SSL implementation written
@@ -55,33 +55,36 @@
  * copied and put under another distribution licence
  * [including the GNU Public Licence.]
  */
-#ifndef SHA1_IMPL_HH
-#define SHA1_IMPL_HH
 
-#undef  SHA_0
-#define SHA_1
+#ifndef HEADER_HMAC_H
+#define HEADER_HMAC_H
 
-#define SHA_CBLOCK	64
-#define SHA_LBLOCK	16
-#define SHA_BLOCK	16
-#define SHA_LAST_BLOCK  56
-#define SHA_LENGTH_BLOCK 8
-#define SHA_DIGEST_LENGTH 20
-typedef struct SHAstate_st
-{
-  unsigned long h0, h1, h2, h3, h4;
-  unsigned long Nl, Nh;
-  unsigned long data[SHA_LBLOCK];
-  int num;
-}
-SHA1_ctx;
+#define HMAC_MAX_MD_CBLOCK	128	/* largest known is SHA512 */
+#include "elements/ipsec/sha1_impl.hh"
 
-void SHA1_init (SHA1_ctx * c);
-void SHA1_update (SHA1_ctx * c, unsigned char *data, unsigned long len);
-void SHA1_final (unsigned char *md, SHA1_ctx * c);
-void SHA1_transform (SHA1_ctx * c, unsigned char *data);
+#define EVP_MAX_MD_SIZE			64
+void OpenSSLDie(void);
+#define OPENSSL_assert(e) (void)((e) ? 0 : (OpenSSLDie(),1))
 
 
+typedef struct hmac_ctx_st
+	{
+	SHA1_ctx md_ctx;
+	SHA1_ctx i_ctx;
+	SHA1_ctx o_ctx;
+	unsigned int key_length;
+	unsigned char key[HMAC_MAX_MD_CBLOCK];
+	} HMAC_CTX;
+
+
+
+void HMAC_CTX_init(HMAC_CTX *ctx);
+void HMAC_CTX_cleanup(HMAC_CTX *ctx);
+
+void HMAC_Init(HMAC_CTX *ctx, const void *key, int len); /* deprecated */
+void HMAC_Init_ex(HMAC_CTX *ctx, const void *key, int len);
+void HMAC_Update(HMAC_CTX *ctx, unsigned char *data, size_t len);
+void HMAC_Final(HMAC_CTX *ctx, unsigned char * md, unsigned int *len);
+unsigned char * HMAC( void *key, int key_len,unsigned char *d, size_t n, unsigned char *md,unsigned int *md_len);
 
 #endif
-

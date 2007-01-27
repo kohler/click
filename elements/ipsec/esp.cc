@@ -2,7 +2,12 @@
  * esp.{cc,hh} -- element implements IPsec encapsulation (RFC 2406)
  * Alex Snoeren, Benjie Chen
  *
+ *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ *
+ * Added Security Association Database support. Dimitris Syrivelis <jsyr@inf.uth.gr>, University of Thessaly, *
+ * Hellas
+ *  
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,16 +30,13 @@
 #include <clicknet/ip.h>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
+#include "satable.hh"
+#include "sadatatuple.hh"
 CLICK_DECLS
 
 IPsecESPEncap::IPsecESPEncap()
-  : _spi(-1)
 {
-}
-
-IPsecESPEncap::IPsecESPEncap(int spi)
-{
-  _spi = spi;
 }
 
 IPsecESPEncap::~IPsecESPEncap()
@@ -43,34 +45,27 @@ IPsecESPEncap::~IPsecESPEncap()
 
 int
 IPsecESPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
-{
-  unsigned int spi_uc;
-
-  if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "Security Parameter Index", &spi_uc, cpEnd) < 0)
-    return -1;
-  _spi = spi_uc;
+{ 
   return 0;
 }
 
 int
 IPsecESPEncap::initialize(ErrorHandler *errh)
 {
-  if (_spi < 0)
-    return errh->error("not configured");
-  _rpl = 0;
   return 0;
 }
-
 
 Packet *
 IPsecESPEncap::simple_action(Packet *p)
 {
   int i;
+  SADataTuple * sa_data; 
+  u_char ip_p=0;
 
   // extract protocol header
   const click_ip *ip = p->ip_header();
-  u_char ip_p = ip->ip_p;
+  if(ip != NULL) {ip_p = ip->ip_p;}	
+  sa_data=(SADataTuple *)IPSEC_SA_DATA_REFERENCE_ANNO(p);
   
   // make room for ESP header and padding
   int plen = p->length();
@@ -79,14 +74,18 @@ IPsecESPEncap::simple_action(Packet *p)
   WritablePacket *q = p->push(sizeof(esp_new));
   q = q->put(padding);
 
-  struct esp_new *esp = (struct esp_new *) q->data();  
+  struct esp_new *esp = (struct esp_new *) q->data();
   u_char *pad = ((u_char *) q->data()) + sizeof(esp_new) + plen;
 
   // copy in ESP header
-  esp->esp_spi = htonl(_spi);
-  _rpl++;
-  int rpl = _rpl;
-  esp->esp_rpl = htonl(rpl);
+  // Get SPI from packet user annotation. This is the fourth user integer.
+  esp->esp_spi = htonl((uint32_t)IPSEC_SPI_ANNO(p));
+  esp->esp_rpl = htonl(sa_data->cur_rpl);
+ 
+  if((sa_data->cur_rpl++) == 0) {
+ 	//if the replay counter rolls over...set it to the agreed start value
+        sa_data->cur_rpl = sa_data->replay_start_counter;
+  }
   i = random() >> 2;
   memmove(&esp->esp_iv[0], &i, 4);
   i = random() >> 2;
@@ -97,12 +96,14 @@ IPsecESPEncap::simple_action(Packet *p)
   for (i = 0; i < padding - 2; i++)
     pad[i] = i + 1;
   pad[padding - 2] = padding - 2;
-  
+
   // next header = ip protocol number
   pad[padding - 1] = ip_p;
-
+  
   return(q);
 }
+
+
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(IPsecESPEncap)

@@ -34,7 +34,7 @@ class Address;
 class Des : public Element {
 public:
   Des();
-  Des(int, unsigned char *);
+  Des(int);
   ~Des();
   
   const char *class_name() const	{ return "IPsecDES"; }
@@ -58,7 +58,6 @@ private:
 
   unsigned _op;
   int _ignore;
-  des_cblock _key;
   des_key_schedule _ks;
 };
 

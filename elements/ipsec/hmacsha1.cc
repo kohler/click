@@ -1,8 +1,8 @@
 /*
- * sha1.{cc,hh} -- element implements IPsec SHA1 authentication (RFC 2404)
- * Benjie Chen
+ * hmacsha1.{cc,hh} -- element implements IPsec hmac authentication using SHA1
+ * Dimitris Syrivelis
  *
- * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2006 University of Thessaly, Hellas
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -19,28 +19,33 @@
 #ifndef HAVE_IPSEC
 # error "Must #define HAVE_IPSEC in config.h"
 #endif
-#include "sha1.hh"
+#include "hmacsha1.hh"
 #include "esp.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <clicknet/ip.h>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include "elements/ipsec/sha1_impl.hh"
+#include <click/packet_anno.hh>
+
+#include "elements/ipsec/hmac.hh"
+#include "satable.hh"
+#include "sadatatuple.hh"
 CLICK_DECLS
 
 #define SHA_DIGEST_LEN 20
+#define KEY_SIZE 16
 
-IPsecAuthSHA1::IPsecAuthSHA1()
+IPsecAuthHMACSHA1::IPsecAuthHMACSHA1()
 {
 }
 
-IPsecAuthSHA1::~IPsecAuthSHA1()
+IPsecAuthHMACSHA1::~IPsecAuthHMACSHA1()
 {
 }
 
 int
-IPsecAuthSHA1::configure(Vector<String> &conf, ErrorHandler *errh)
+IPsecAuthHMACSHA1::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpInteger, "Compute/Verify (0/1)", &_op, cpEnd) < 0)
@@ -49,7 +54,7 @@ IPsecAuthSHA1::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-IPsecAuthSHA1::initialize(ErrorHandler *)
+IPsecAuthHMACSHA1::initialize(ErrorHandler *)
 {
   _drops = 0;
   return 0;
@@ -57,28 +62,26 @@ IPsecAuthSHA1::initialize(ErrorHandler *)
 
 
 Packet *
-IPsecAuthSHA1::simple_action(Packet *p)
+IPsecAuthHMACSHA1::simple_action(Packet *p)
 {
-  // compute sha1
+  SADataTuple * sa_data=(SADataTuple *)IPSEC_SA_DATA_REFERENCE_ANNO(p); 
+  unsigned int len;
+  // compute HMAC
+  len = SHA_DIGEST_LEN;
+
   if (_op == COMPUTE_AUTH) {
     unsigned char digest [SHA_DIGEST_LEN];
-    SHA1_ctx ctx;
-    SHA1_init (&ctx);
-    SHA1_update (&ctx, (u_char*) p->data(), p->length());
-    SHA1_final (digest, &ctx);
+    HMAC(sa_data->Authentication_key,KEY_SIZE,(u_char*) p->data(),p->length(),digest,&len);
     WritablePacket *q = p->put(12);
     u_char *ah = ((u_char*)q->data())+q->length()-12;
     memmove(ah, digest, 12);
     return q;
   } 
-  
   else {
     const u_char *ah = p->data()+p->length()-12;
     unsigned char digest [SHA_DIGEST_LEN];
-    SHA1_ctx ctx;
-    SHA1_init (&ctx);
-    SHA1_update (&ctx, (u_char*) p->data(), p->length()-12);
-    SHA1_final (digest, &ctx);
+
+    HMAC(sa_data->Authentication_key,KEY_SIZE,(u_char*) p->data(),p->length()-12,digest,&len);
     if (memcmp(ah, digest, 12)) {
       if (_drops == 0) 
 	click_chatter("Invalid SHA1 authentication digest");
@@ -89,24 +92,28 @@ IPsecAuthSHA1::simple_action(Packet *p)
 	p->kill(); 
       return 0;
     }
+    //remove digest
     p->take(12);
     return p;
   }
 }
 
 String
-IPsecAuthSHA1::drop_handler(Element *e, void *)
+IPsecAuthHMACSHA1::drop_handler(Element *e, void *)
 {
-  IPsecAuthSHA1 *a = (IPsecAuthSHA1 *)e;
+  IPsecAuthHMACSHA1 *a = (IPsecAuthHMACSHA1 *)e;
   return String(a->_drops);
 }
 
 void
-IPsecAuthSHA1::add_handlers()
+IPsecAuthHMACSHA1::add_handlers()
 {
   add_read_handler("drops", drop_handler, 0);
 }
 
+#include "sha1_impl.cc"
+#include "hmac.cc"
+
 CLICK_ENDDECLS
-EXPORT_ELEMENT(IPsecAuthSHA1)
-ELEMENT_MT_SAFE(IPsecAuthSHA1)
+EXPORT_ELEMENT(IPsecAuthHMACSHA1)
+ELEMENT_MT_SAFE(IPsecAuthHMACSHA1)

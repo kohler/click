@@ -2,6 +2,8 @@
 #define CLICK_IPSEC_DESP_HH
 #include <click/element.hh>
 #include <click/glue.hh>
+#include "satable.hh"
+#include "sadatatuple.hh"
 CLICK_DECLS
 
 /*
@@ -27,6 +29,7 @@ public:
   const char *processing() const	{ return AGNOSTIC; }
   
   int configure(Vector<String> &, ErrorHandler *);
+  int checkreplaywindow(SADataTuple * sa_data,unsigned long seq);
   
   Packet *simple_action(Packet *);
 };

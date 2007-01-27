@@ -47,8 +47,6 @@ public:
   
 private:
 
-  int _spi;
-  atomic_uint32_t _rpl;
   enum { BLKS = 8 };
 };
 

@@ -52,4 +52,10 @@
 #define FIRST_TIMESTAMP_ANNO(p)		(*((Timestamp*) ((p)->all_user_anno_u() + 4)))
 #define SET_FIRST_TIMESTAMP_ANNO(p, v)	(*((Timestamp*) ((p)->all_user_anno_u() + 4)) = (v))
 
+// bytes 16-23
+#define IPSEC_SPI_ANNO(p)		((p)->user_anno_u(4))
+#define SET_IPSEC_SPI_ANNO(p, v)	((p)->set_user_anno_u(4, (v)))
+#define IPSEC_SA_DATA_REFERENCE_ANNO(p)	((p)->user_anno_u(5))
+#define SET_IPSEC_SA_DATA_REFERENCE_ANNO(p, v) ((p)->set_user_anno_u(5, (v)))
+
 #endif

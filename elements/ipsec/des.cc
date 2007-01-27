@@ -5,6 +5,11 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  *
+ * Changed to use the Security Association Table. Dimitris Syrivelis <jsyr@inf.uth.gr>, University of Thessaly ,
+ * Hellas
+ *
+ * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, subject to the conditions
@@ -26,6 +31,9 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
+#include "sadatatuple.hh"
+
 CLICK_DECLS
 
 Des::Des()
@@ -37,10 +45,9 @@ Des::~Des()
 {
 }
 
-Des::Des(int decrypt, unsigned char * key)
+Des::Des(int decrypt)
 {
   _op = decrypt;
-  memcpy(_key, key, 8);
 }
 
 int
@@ -51,26 +58,17 @@ Des::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (cp_va_parse(conf, this, errh,
 		  cpInteger, "Decrypt/Encrypt (0/1)", &dec_int,
-		  cpDesCblock, "64-bit DES key", _key,
-		  cpOptional,
-		  cpInteger, "Bytes to ignore at the end", &_ignore,
 		  cpEnd) < 0)
     return -1;
   _op = dec_int;
-#ifdef DEBUG
-  click_chatter("Key: %x%x%x%x%x%x%x%x",_key[0], _key[1], _key[2], _key[3],
-	      _key[4], _key[5], _key[6], _key[7]);
-#endif
   return 0;
 }
 
 int
 Des::initialize(ErrorHandler *)
 {
-  des_set_key(&_key, _ks);
-  return 0;
+ return 0;
 }
-
 
 Packet *
 Des::simple_action(Packet *p_in)
@@ -80,18 +78,23 @@ Des::simple_action(Packet *p_in)
   unsigned char *idat = p->data();
   struct esp_new *esp = (struct esp_new *)p->data();
   des_cblock iv;
-
+  SADataTuple * sa_data;
   unsigned char *ivp = esp->esp_iv;
   int i, plen = p->length() - sizeof(esp_new) - _ignore;
   idat = p->data() + sizeof(esp_new);
   
-  if (_op == DES_DECRYPT)
-    memcpy(iv, ivp, 8);
+  if (_op == DES_DECRYPT) { memcpy(iv, ivp, 8);}
+  
+  sa_data =(SADataTuple *)IPSEC_SA_DATA_REFERENCE_ANNO(p);
+  /*sanity check*/
+     if(sa_data==NULL) {click_chatter("DES: No SADataTuple annotation. Check man page\n"); p->kill(); return 0;}
+  /*Set the key*/ 
+  des_set_key((unsigned char (*)[8])&sa_data->Encryption_key, _ks);
 
   // de/encrypt the payload
   while (plen > 0) {
     if(_op == DES_DECRYPT) {
-      memcpy(hold, idat, 8);
+        memcpy(hold, idat, 8);
       des_ecb_encrypt((des_cblock *)idat, (des_cblock *)idat,
 		      _ks, DES_DECRYPT);
       /* CBC: XOR with the IV */
