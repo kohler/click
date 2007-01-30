@@ -3,6 +3,7 @@
 #define CLICK_FROMNETFLOWSUMDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/timer.hh>
 #include <click/notifier.hh>
 #include "elements/userlevel/fromfile.hh"
 CLICK_DECLS
@@ -57,6 +58,11 @@ Sets the interface type used to set the paint annotation.  Can be "input",
 "output", or "both", which means the upper 4 bits of the annotation are the
 input interface and the lower 4 bits are the output interface.  Too-large
 interface numbers are pinned at 255 (or 15, for "both").  Default is "input".
+
+=item TIMING
+
+Boolean.  If true, FromNetDlowSummaryDump tries to maintain the timing of the
+original packet stream.  TIMING is false by default.
 
 =back
 
@@ -137,6 +143,7 @@ class FromNetFlowSummaryDump : public Element { public:
     void cleanup(CleanupStage);
     void add_handlers();
 
+    void run_timer(Timer *);
     bool run_task(Task *);
     Packet *pull(int);
 
@@ -148,15 +155,18 @@ class FromNetFlowSummaryDump : public Element { public:
     
     bool _stop : 1;
     bool _format_complaint : 1;
+    bool _timing;
     bool _zero;
     bool _active;
     bool _multipacket;
     uint8_t _link;
+    Packet *_packet;
     Packet *_work_packet;
     uint32_t _multipacket_length;
     Timestamp _multipacket_timestamp_delta;
     Timestamp _multipacket_end_timestamp;
 
+    Timer _timer;
     Task _task;
     ActiveNotifier _notifier;
 
@@ -164,6 +174,7 @@ class FromNetFlowSummaryDump : public Element { public:
 
     Packet *read_packet(ErrorHandler *);
     Packet *handle_multipacket(Packet *);
+    Packet *next_packet();
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);

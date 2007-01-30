@@ -47,7 +47,7 @@ CLICK_DECLS
 	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
 FromDump::FromDump()
-    : _packet(0), _end_h(0), _task(this)
+    : _packet(0), _end_h(0), _timer(this), _task(this)
 {
 }
 
@@ -211,6 +211,7 @@ FromDump::initialize(ErrorHandler *errh)
 	return -1;
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
+    _timer.initialize(this);
 
     // skip if hotswapping
     if (hotswap_element())
@@ -423,6 +424,17 @@ FromDump::read_packet(ErrorHandler *errh)
     return true;
 }
 
+void
+FromDump::run_timer(Timer *)
+{
+    if (_active) {
+	if (output_is_push(0))
+	    _task.reschedule();
+	else
+	    _notifier.wake();
+    }
+}
+	
 bool
 FromDump::run_task(Task *)
 {
@@ -432,12 +444,18 @@ FromDump::run_task(Task *)
     bool more = true;
     if (!_packet)
 	more = read_packet(0);
-    if (_packet && _timing)
-	if (_packet->timestamp_anno() > Timestamp::now() - _time_offset) {
-	    _task.fast_reschedule();
+    if (_packet && _timing) {
+	Timestamp now = Timestamp::now();
+	Timestamp t = _packet->timestamp_anno() + _time_offset;
+	if (t > now) {
+	    t -= Timestamp::make_msec(50);
+	    if (t > now)
+		_timer.schedule_at(t);
+	    else
+		_task.fast_reschedule();
 	    return false;
 	}
-
+    }
     if (more)
 	_task.fast_reschedule();
     else if (_end_h)
@@ -462,9 +480,18 @@ FromDump::pull(int)
     bool more = true;
     if (!_packet)
 	more = read_packet(0);
-    if (_packet && _timing)
-	if (_packet->timestamp_anno() > Timestamp::now() - _time_offset)
+    if (_packet && _timing) {
+	Timestamp now = Timestamp::now();
+	Timestamp t = _packet->timestamp_anno() + _time_offset;
+	if (t > now) {
+	    t -= Timestamp::make_msec(50);
+	    if (t > now) {
+		_timer.schedule_at(t);
+		_notifier.sleep();
+	    }
 	    return 0;
+	}
+    }
 
     // notify presence/absence of more packets
     _notifier.set_active(more, true);

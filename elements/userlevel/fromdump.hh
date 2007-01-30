@@ -3,6 +3,7 @@
 #define CLICK_FROMDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/timer.hh>
 #include <click/notifier.hh>
 #include "fromfile.hh"
 CLICK_DECLS
@@ -189,6 +190,7 @@ class FromDump : public Element { public:
     FromDump *hotswap_element() const;
     void take_state(Element *, ErrorHandler *);
 
+    void run_timer(Timer *);
     bool run_task(Task *);
     Packet *pull(int);
 
@@ -221,6 +223,7 @@ class FromDump : public Element { public:
     Timestamp _last_time;
     HandlerCall *_end_h;
     
+    Timer _timer;
     Task _task;
     ActiveNotifier _notifier;
 
