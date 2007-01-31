@@ -2136,7 +2136,7 @@ Element::pull(int port)
  * @endcode
  *
  * An element that implements its processing with simple_action() should have
- * a processing() code like #AGNOSTIC or "a/ah", and a flow_code() like
+ * a processing() code like AGNOSTIC or "a/ah", and a flow_code() like
  * COMPLETE_FLOW or "x/x" indicating that packets can flow between the first
  * input and the first output.
  *

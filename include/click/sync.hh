@@ -38,7 +38,7 @@ CLICK_DECLS
  * Spinlock operations do nothing unless Click was compiled with SMP support
  * (with --enable-multithread).  Therefore, Spinlock should not be used to,
  * for example, synchronize handlers with main element threads.  See also
- * @link SpinlockIRQ.
+ * SpinlockIRQ.
  *
  * The main Spinlock operations are acquire(), which acquires the lock, and
  * release(), which releases the lock.  attempt() acquires the lock only if it
