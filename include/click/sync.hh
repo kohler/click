@@ -91,7 +91,7 @@ Spinlock::~Spinlock()
 }
 #endif
 
-/** @brief Acquire the Spinlock.
+/** @brief Acquires the Spinlock.
  *
  * On return, this thread has acquired the lock.  The function will spin
  * indefinitely until the lock is acquired.  It is OK to acquire a lock you
@@ -125,7 +125,7 @@ Spinlock::acquire()
 #endif
 }
 
-/** @brief Attempt to acquire the Spinlock.
+/** @brief Attempts to acquire the Spinlock.
  * @return True iff the Spinlock was acquired.
  *
  * This function will acquire the lock and return true only if the Spinlock
@@ -180,7 +180,7 @@ Spinlock::release()
 #endif
 }
 
-/** @brief Return true iff the Spinlock has been acquired more than once by
+/** @brief Returns true iff the Spinlock has been acquired more than once by
  * the current thread.
  */
 inline bool
@@ -236,7 +236,7 @@ class SpinlockIRQ { public:
   
 };
 
-/** @brief Create a SpinlockIRQ. */
+/** @brief Creates a SpinlockIRQ. */
 inline
 SpinlockIRQ::SpinlockIRQ()
 {
@@ -245,7 +245,7 @@ SpinlockIRQ::SpinlockIRQ()
 #endif
 } 
 
-/** @brief Acquire the SpinlockIRQ.
+/** @brief Acquires the SpinlockIRQ.
  * @return The current state of the interrupt flags.
  */
 inline SpinlockIRQ::flags_t
@@ -337,7 +337,7 @@ class ReadWriteLock { public:
     
 };
 
-/** @brief Create a ReadWriteLock. */
+/** @brief Creates a ReadWriteLock. */
 inline
 ReadWriteLock::ReadWriteLock()
 {
@@ -354,7 +354,7 @@ ReadWriteLock::~ReadWriteLock()
 }
 #endif
 
-/** @brief Acquire the ReadWriteLock for reading.
+/** @brief Acquires the ReadWriteLock for reading.
  *
  * On return, this thread has acquired the lock for reading.  The function
  * will spin indefinitely until the lock is acquired.  It is OK to acquire a
