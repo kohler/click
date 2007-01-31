@@ -1,3 +1,13 @@
+2007-01-31 Wednesday 00:55  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* drivers/e1000-5.x/src/e1000_main.c (1.10): months later, include
+	  patch from Kevin Lahey to improve e1000-5.x stability
+
+2007-01-31 Wednesday 00:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/todevice.cc (1.149): tweak notification
+	  stuff
+
 2007-01-31 Wednesday 00:09  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/sync.hh (1.22): nit
