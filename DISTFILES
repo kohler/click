@@ -348,6 +348,7 @@ iptable.hh
 lexer.hh
 llrpc.h
 master.hh
+md5.h
 nameinfo.hh
 notifier.hh
 package.hh
@@ -425,6 +426,7 @@ ipflowid.cc
 iptable.cc
 lexer.cc
 master.cc
+md5.cc
 nameinfo.cc
 notifier.cc
 packet.cc
@@ -657,8 +659,6 @@ lexert.cc
 lexert.hh
 lexertinfo.cc
 lexertinfo.hh
-md5.c
-md5.h
 processingt.cc
 processingt.hh
 routert.cc
