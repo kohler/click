@@ -2432,6 +2432,11 @@ e1000_clean(struct net_device *netdev, int *budget)
 	int work_to_do = min(*budget, netdev->quota);
 	int tx_cleaned;
 	int work_done = 0;
+
+	if (unlikely(netdev->polling > 1)) {
+		netif_rx_complete(netdev);
+		return 0;
+	}
 	
 	tx_cleaned = e1000_clean_tx_irq(adapter);
 	e1000_clean_rx_irq(adapter, &work_done, work_to_do);
@@ -3746,13 +3751,22 @@ e1000_poll_on(struct net_device *dev)
 	if (!dev->polling) {
 		printk("e1000_poll_on\n");
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 28)
+		save_flags(flags);
+		cli();
+#else
 		local_save_flags(flags);
 		local_irq_disable();
+#endif
 
 		dev->polling = 2;
 		e1000_irq_disable(adapter);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 28)
+		restore_flags(flags);
+#else
 		local_irq_restore(flags);
+#endif
 	}
 
 	return 0;
