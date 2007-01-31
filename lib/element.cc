@@ -134,8 +134,8 @@ int Element::nelements_allocated = 0;
 
   -# Removes all element handlers.
   -# Calls each element's cleanup() function in reverse configuration order,
-     passing a constant that specifies which configuration functions
-     returned successfully.
+     passing a constant that specifies which of that element's configuration
+     functions were called and returned successfully.
   -# Deletes each element.  This step might be delayed relative to cleanup()
      to allow the programmer to examine an erroneous router's state.
   
