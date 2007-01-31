@@ -56,7 +56,7 @@ diff -ruNbB e1000-7.3.20/src/e1000.h e1000-7.3.20-3patched/src/e1000.h
  enum e1000_state_t {
 diff -ruNbB e1000-7.3.20/src/e1000_main.c e1000-7.3.20-3patched/src/e1000_main.c
 --- e1000-7.3.20/src/e1000_main.c	2006-11-27 15:31:38.000000000 -0500
-+++ e1000-7.3.20-3patched/src/e1000_main.c	2007-01-16 01:27:40.000000000 -0500
++++ e1000-7.3.20-3patched/src/e1000_main.c	2007-01-20 20:46:13.000000000 -0500
 @@ -164,6 +164,8 @@
  static void e1000_set_multi(struct net_device *netdev);
  static void e1000_update_phy_info(unsigned long data);
@@ -148,8 +148,8 @@ diff -ruNbB e1000-7.3.20/src/e1000_main.c e1000-7.3.20-3patched/src/e1000_main.c
  #ifdef ETHTOOL_GPERMADDR
  	memcpy(netdev->perm_addr, adapter->hw.mac_addr, netdev->addr_len);
  
-@@ -2603,6 +2640,18 @@
- e1000_82547_tx_fifo_stall(unsigned long data)
+@@ -2644,6 +2681,18 @@
+ e1000_watchdog(unsigned long data)
  {
  	struct e1000_adapter *adapter = (struct e1000_adapter *) data;
 +  if(adapter->netdev->polling){
@@ -165,8 +165,8 @@ diff -ruNbB e1000-7.3.20/src/e1000_main.c e1000-7.3.20-3patched/src/e1000_main.c
 +e1000_watchdog_1(struct e1000_adapter *adapter)
 +{
  	struct net_device *netdev = adapter->netdev;
- 	uint32_t tctl;
- 
+ 	struct e1000_tx_ring *txdr = adapter->tx_ring;
+ 	uint32_t link, tctl;
 @@ -2820,9 +2869,6 @@
  	 * reset from the other port. Set the appropriate LAA in RAR[0] */
  	if (adapter->hw.mac_type == e1000_82571 && adapter->hw.laa_is_present)

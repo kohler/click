@@ -2640,18 +2640,6 @@ static void
 e1000_82547_tx_fifo_stall(unsigned long data)
 {
 	struct e1000_adapter *adapter = (struct e1000_adapter *) data;
-  if(adapter->netdev->polling){
-    adapter->do_poll_watchdog = 1;
-  } else {
-    e1000_watchdog_1(adapter);
-  }
-
-  mod_timer(&adapter->watchdog_timer, jiffies + 2 * HZ);
-}
-
-static void
-e1000_watchdog_1(struct e1000_adapter *adapter)
-{
 	struct net_device *netdev = adapter->netdev;
 	uint32_t tctl;
 
@@ -2693,6 +2681,18 @@ static void
 e1000_watchdog(unsigned long data)
 {
 	struct e1000_adapter *adapter = (struct e1000_adapter *) data;
+  if(adapter->netdev->polling){
+    adapter->do_poll_watchdog = 1;
+  } else {
+    e1000_watchdog_1(adapter);
+  }
+
+  mod_timer(&adapter->watchdog_timer, jiffies + 2 * HZ);
+}
+
+static void
+e1000_watchdog_1(struct e1000_adapter *adapter)
+{
 	struct net_device *netdev = adapter->netdev;
 	struct e1000_tx_ring *txdr = adapter->tx_ring;
 	uint32_t link, tctl;
