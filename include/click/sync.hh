@@ -71,11 +71,11 @@ class Spinlock { public:
 /** @brief Create a Spinlock. */
 inline
 Spinlock::Spinlock()
+#if CLICK_LINUXMODULE && defined(__SMP__)
+    : _lock(0), _depth(0), _owner(-1)
+#endif
 {
 #if CLICK_LINUXMODULE && defined(__SMP__)
-    _lock = 0;
-    _depth = 0;
-    _owner = -1;
 # if !defined(__i386__) && !defined(__x86_64__)
 #  error "no multithread support for non i386 click"
 # endif
