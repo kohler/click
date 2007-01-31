@@ -2168,7 +2168,7 @@ Element::run_task(Task *)
     return run_task();
 }
 
-/** @brief Called to run an element's task.
+/** @brief Called to run an element's task (deprecated).
  *
  * @return true if the task accomplished some meaningful work, false otherwise
  *
