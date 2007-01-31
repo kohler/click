@@ -43,18 +43,20 @@ CLICK_CXX_UNPROTECT
 /* for watching when devices go offline */
 static AnyDeviceMap to_device_map;
 static struct notifier_block device_notifier;
-static struct notifier_block tx_notifier;
-static int registered_tx_notifiers;
 extern "C" {
 static int device_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
+#if HAVE_CLICK_KERNEL_TX_NOTIFY
+static struct notifier_block tx_notifier;
+static int registered_tx_notifiers;
 static int tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
+#endif
 }
 
 void
 ToDevice::static_initialize()
 {
     to_device_map.initialize();
-#ifdef HAVE_CLICK_KERNEL_TX_NOTIFY
+#if HAVE_CLICK_KERNEL_TX_NOTIFY
     tx_notifier.notifier_call = tx_notifier_hook;
     tx_notifier.priority = 1;
     tx_notifier.next = 0;
@@ -70,15 +72,14 @@ void
 ToDevice::static_cleanup()
 {
     unregister_netdevice_notifier(&device_notifier);
-#ifdef HAVE_CLICK_KERNEL_TX_NOTIFY
-    if (registered_tx_notifiers) {
+#if HAVE_CLICK_KERNEL_TX_NOTIFY
+    if (registered_tx_notifiers)
 	unregister_net_tx(&tx_notifier);
-    }
 #endif
 }
 
 
-
+#if HAVE_CLICK_KERNEL_TX_NOTIFY
 extern "C" {
 static int
 tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v) 
@@ -92,10 +93,10 @@ tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v)
     to_device_map.lookup_all(dev, down, es);
     for (int i = 0; i < es.size(); i++) 
 	((ToDevice *)(es[i]))->tx_wake_queue(dev);
-
     return 0;
 }
 }
+#endif
 
 void
 ToDevice::tx_wake_queue(net_device *dev) 
@@ -139,10 +140,6 @@ ToDevice::initialize(ErrorHandler *errh)
     errh->warning("not compiled for a Click kernel");
 #endif
 
-#ifndef HAVE_CLICK_KERNEL_TX_NOTIFY
-    //errh->warning("not compiled for a Click kernel with transmit notification");
-#endif
-
     // check for duplicate writers
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_writer_" + String(ifindex()));
@@ -151,13 +148,13 @@ ToDevice::initialize(ErrorHandler *errh)
 	used = this;
     }
 
+#if HAVE_CLICK_KERNEL_TX_NOTIFY
     if (!registered_tx_notifiers) {
-#ifdef HAVE_CLICK_KERNEL_TX_NOTIFY
 	tx_notifier.next = 0;
 	register_net_tx(&tx_notifier);
-#endif
     }
     registered_tx_notifiers++;
+#endif
 
     ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
@@ -203,15 +200,13 @@ ToDevice::reset_counts()
 void
 ToDevice::cleanup(CleanupStage stage)
 {
+#if HAVE_CLICK_KERNEL_TX_NOTIFY
     if (stage >= CLEANUP_INITIALIZED) {
 	registered_tx_notifiers--;
-#ifdef HAVE_CLICK_KERNEL_TX_NOTIFY
-	if (registered_tx_notifiers == 0) {
+	if (registered_tx_notifiers == 0)
 	    unregister_net_tx(&tx_notifier);
-	}
-#endif
     }
-
+#endif
     clear_device(&to_device_map);
 }
 
@@ -347,8 +342,8 @@ ToDevice::run_task(Task *)
     // the transmit ring.
     // Otherwise, don't go to sleep if the signal isn't active and
     // we didn't just send any packets
-#ifdef HAVE_CLICK_KERNEL_TX_NOTIFY
-    bool reschedule = ((!busy) && (sent > 0 || _signal.active()));
+#if HAVE_CLICK_KERNEL_TX_NOTIFY
+    bool reschedule = (!busy && (sent > 0 || _signal.active()));
 #else 
     bool reschedule = (busy || sent > 0 || _signal.active());
 #endif
