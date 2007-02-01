@@ -27,6 +27,20 @@ INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
+ifeq ($(V),1)
+ccompile = $(COMPILE) $(1)
+cxxcompile = $(CXXCOMPILE) $(1)
+else
+ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
+cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
+endif
+
+quiet_cmd_cxxcompile = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
+cmd_cxxcompile = $(CXXCOMPILE) -c -o $@ $<
+
+quiet_cmd_ccompile = CC $(quiet_modtag) $(subst $(obj)/,,$@)
+cmd_ccompile = $(COMPILE) -c -o $@ $<
+
 .SUFFIXES:
 .SUFFIXES: .S .c .cc .o .s .ii
 
@@ -60,12 +74,12 @@ GENERIC_OBJS = string.o straccum.o nameinfo.o \
 	driver.o \
 	$(EXTRA_DRIVER_OBJS)
 
-BSDMODULE_OBJS = config.o sched.o module.o \
+BSDMODULE_OBJS = config.o sched.o module.o module_c.o \
 	clickfs.o clickfs_vnops.o clickfs_tree.o clickfs_element.o
 
 EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 
-OBJS = setdef0.o $(GENERIC_OBJS) $(ELEMENT_OBJS) $(BSDMODULE_OBJS) elements.o setdef1.o
+OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(BSDMODULE_OBJS) elements.o
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_BSDMODULE -DBSD_NETISRSCHED
 CFLAGS = @CFLAGS_NDEBUG@ -g
@@ -90,7 +104,7 @@ ifneq ($(MAKECMDGOALS),clean)
 -include elements.mk
 endif
 
-click.ko: Makefile vnode_if.h $(OBJS)
+click.ko: Makefile vnode_if.h vnode_if_newproto.h vnode_if_typedef.h $(OBJS)
 	$(LD) -Bshareable -o click.ko $(OBJS)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
@@ -108,11 +122,13 @@ elements.cc: elements.conf $(top_builddir)/click-buildtool
 	$(top_builddir)/click-buildtool elem2export < elements.conf > elements.cc
 	@rm -f elements.d
 
-setdef0.c setdef1.c: module.o
-	gensetdefs module.o
-vnode_if.h: $(freebsd_srcdir)/kern/vnode_if.pl $(freebsd_srcdir)/kern/vnode_if.src $(srcdir)/massage-vnode_if.pl
-	$(PERL) $(freebsd_srcdir)/kern/vnode_if.pl -h $(freebsd_srcdir)/kern/vnode_if.src
-	$(PERL) $(srcdir)/massage-vnode_if.pl vnode_if.h
+vnode_if.h: $(freebsd_srcdir)/kern/vnode_if.src
+	/usr/bin/awk -f $(freebsd_srcdir)/tools/vnode_if.awk $(freebsd_srcdir)/kern/vnode_if.src -h
+vnode_if_newproto.h: $(freebsd_srcdir)/kern/vnode_if.src
+	/usr/bin/awk -f $(freebsd_srcdir)/tools/vnode_if.awk $(freebsd_srcdir)/kern/vnode_if.src -p
+vnode_if_typedef.h: $(freebsd_srcdir)/kern/vnode_if.src
+	/usr/bin/awk -f $(freebsd_srcdir)/tools/vnode_if.awk $(freebsd_srcdir)/kern/vnode_if.src -q
+
 
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)
@@ -129,7 +145,7 @@ uninstall:
 
 clean:
 	-rm -f *.d *.o click.ko elements.mk elements.cc elements.conf \
-	vnode_if.h vnode_if.h~ setdef0.c setdef1.c setdefs.h
+	vnode_if.h vnode_if_newproto.h vnode_if_typedef.h
 distclean: clean
 	-rm -f Makefile
 

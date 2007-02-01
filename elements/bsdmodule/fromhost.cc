@@ -57,15 +57,17 @@ printf ("FromHost 1\n");
 int
 FromHost::initialize(ErrorHandler *errh)
 {
+#if 1 /* XXX: Needs rewritten to use new polling and netisr handlers. -bms */
+    return -1;
+#else
     // create queue
     int s = splimp();
-    if (device()->if_poll_xmit != NULL) {
+    if (device()->if_spare3 != NULL) {
 	splx(s);
-	click_chatter("FromHost: %s%d already in use",
-		device()->if_name, device()->if_unit);
+	click_chatter("FromHost: %s already in use", device()->if_xname);
 	return -1;
     }
-    (FromHost *)(device()->if_poll_xmit) = this;
+    (FromHost *)(device()->if_spare3) = this;
     _inq = (struct ifqueue *)
             malloc(sizeof (struct ifqueue), M_DEVBUF, M_NOWAIT|M_ZERO);
     assert(_inq);
@@ -73,6 +75,7 @@ FromHost::initialize(ErrorHandler *errh)
     ScheduleInfo::initialize_task(this, &_task, true, errh);
     splx(s);
     return 0;
+#endif
 }
 
 void
@@ -85,7 +88,7 @@ FromHost::cleanup(CleanupStage)
     int s = splimp();
     struct ifqueue *q = _inq ;
     _inq = NULL;
-    device()->if_poll_xmit = NULL;
+    device()->if_spare3 = NULL;
     splx(s);
 
     int i, max = q->ifq_maxlen ;

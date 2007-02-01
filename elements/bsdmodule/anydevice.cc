@@ -147,7 +147,7 @@ AnyDeviceMap::lookup_unknown(struct ifnet *dev)
 	return NULL;
 
     // look first by device names
-    String dev_name = dev->if_name;
+    String dev_name = dev->if_xname;
     for (AnyDevice *d = _unknown_map; d; d = d->next())
 	if (d->devname() == dev_name)
 	    return d;

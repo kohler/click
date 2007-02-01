@@ -222,8 +222,7 @@ Task::unschedule()
     assert(!in_interrupt());
 #endif
 #if CLICK_BSDMODULE
-    assert(!intr_nesting_level);
-    SPLCHECK;
+    GIANT_REQUIRED;
 #endif
     if (_thread) {
 	lock_tasks();
@@ -244,8 +243,7 @@ Task::fast_reschedule()
     assert(!in_interrupt());
 #endif
 #if CLICK_BSDMODULE
-    // assert(!intr_nesting_level); it happens all the time from fromdevice!
-    SPLCHECK;
+    // GIANT_REQUIRED;
 #endif
 
     if (!scheduled()) {
@@ -272,9 +270,6 @@ Task::true_reschedule()
 #if CLICK_LINUXMODULE
     if (in_interrupt())
 	goto skip_lock;
-#endif
-#if CLICK_BSDMODULE
-    SPLCHECK;
 #endif
     if (attempt_lock_tasks()) {
 	if (_router->_running >= Router::RUNNING_BACKGROUND) {
@@ -310,8 +305,7 @@ Task::strong_unschedule()
     assert(!in_interrupt());
 #endif
 #if CLICK_BSDMODULE
-    assert(!intr_nesting_level);
-    SPLCHECK;
+    GIANT_REQUIRED;
 #endif
     // unschedule() and move to a quiescent thread, so that subsequent
     // reschedule()s won't have any effect
@@ -342,8 +336,7 @@ Task::strong_reschedule()
     assert(!in_interrupt());
 #endif
 #if CLICK_BSDMODULE
-    assert(!intr_nesting_level);
-    SPLCHECK;
+    GIANT_REQUIRED;
 #endif
     assert(_thread);
     lock_tasks();
@@ -371,8 +364,7 @@ Task::move_thread(int thread_id)
     assert(!in_interrupt());
 #endif
 #if CLICK_BSDMODULE
-    assert(!intr_nesting_level);
-    SPLCHECK;
+    GIANT_REQUIRED;
 #endif
     if (thread_id < RouterThread::THREAD_QUIESCENT)
 	thread_id = RouterThread::THREAD_QUIESCENT;

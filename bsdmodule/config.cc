@@ -24,6 +24,7 @@
 #include <click/straccum.hh>
 #include <click/router.hh>
 #include <click/lexer.hh>
+CLICK_USING_DECLS
 
 static String *current_config = 0;
 uint32_t click_config_generation;

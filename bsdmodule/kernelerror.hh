@@ -1,6 +1,7 @@
 #ifndef KERNELERROR_HH
 #define KERNELERROR_HH
 #include <click/error.hh>
+CLICK_DECLS
 
 class KernelErrorHandler : public BaseErrorHandler { public:
   KernelErrorHandler()			{ }
@@ -12,4 +13,5 @@ class SyslogErrorHandler : public BaseErrorHandler { public:
   void handle_text(Seriousness, const String &);
 };
 
+CLICK_ENDDECLS
 #endif

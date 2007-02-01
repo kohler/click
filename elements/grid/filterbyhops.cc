@@ -24,7 +24,7 @@
 #include <clicknet/ether.h>
 #include <click/glue.hh>
 #include "grid.hh"
-#include <math.h>
+//#include <math.h>
 CLICK_DECLS
 
 FilterByGridHops::FilterByGridHops()

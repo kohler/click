@@ -28,9 +28,7 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 #include <click/string.hh>
-
-extern vop_t **clickfs_root_vnops;
-extern struct vnodeopv_desc clickfs_vnodeop_opv_desc;
+CLICK_USING_DECLS
 
 struct clickfs_mount {
     struct vnode *click_root;
@@ -38,7 +36,7 @@ struct clickfs_mount {
 
 static int
 clickfs_mount(struct mount *mp, char *user_path, caddr_t data,
-	      struct nameidata *ndp, struct proc *p)
+	      struct nameidata *ndp, struct thread *td)
 {
     char path[MAXPATHLEN];
     size_t count;
@@ -82,13 +80,7 @@ clickfs_mount(struct mount *mp, char *user_path, caddr_t data,
 }
 
 static int
-clickfs_start(struct mount *mp, int flags, struct proc *p)
-{
-    return 0;
-}
-
-static int
-clickfs_unmount(struct mount *mp, int mntflags, struct proc *p)
+clickfs_unmount(struct mount *mp, int mntflags, struct thread *td)
 {
     struct clickfs_mount *cmp = (struct clickfs_mount *)mp->mnt_data;
     int error;
@@ -97,7 +89,7 @@ clickfs_unmount(struct mount *mp, int mntflags, struct proc *p)
     if (mntflags & MNT_FORCE)
 	flags |= FORCECLOSE;
 
-    error = vflush(mp, 1, flags); // there is 1 extra vnode ref.
+    error = vflush(mp, 1, flags, td); // there is 1 extra vnode ref.
     if (error)
 	return error;
 
@@ -114,13 +106,13 @@ clickfs_root(struct mount *mp, struct vnode **vpp)
 
     *vpp = cmp->click_root;
     VREF(*vpp);
-    vn_lock(*vpp, LK_EXCLUSIVE | LK_RETRY, curproc);
+    vn_lock(*vpp, LK_EXCLUSIVE | LK_RETRY, curthread);
 
     return 0;
 }
 
 static int
-clickfs_statfs(struct mount *mp, struct statfs *sbp, struct proc *p)
+clickfs_statfs(struct mount *mp, struct statfs *sbp, struct thread *td)
 {
     memcpy(sbp, &mp->mnt_stat, sizeof(*sbp));
     return 0;
@@ -128,7 +120,7 @@ clickfs_statfs(struct mount *mp, struct statfs *sbp, struct proc *p)
 
 static int
 clickfs_sync(struct mount *mp, int waitfor, struct ucred *cred,
-	     struct proc *p)
+	     struct thread *td)
 {
     return 0;
 }
@@ -145,19 +137,20 @@ clickfs_uninit(struct vfsconf *vfsp)
     return 0;
 }
 
-struct vfsops clickfs_vfsops = {
-    clickfs_mount,
-    clickfs_start,
-    clickfs_unmount,
-    clickfs_root,
-    vfs_stdquotactl,
-    clickfs_statfs,
-    clickfs_sync,
-    vfs_stdvget,
-    vfs_stdfhtovp,
-    vfs_stdcheckexp,
-    vfs_stdvptofh,
-    clickfs_init,
-    clickfs_uninit,
-    vfs_stdextattrctl
+extern "C" struct vfsops clickfs_vfsops = {
+	clickfs_mount,
+	NULL,
+	clickfs_unmount,
+	clickfs_root,
+	NULL,
+	clickfs_statfs,
+	clickfs_sync,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	clickfs_init,
+	clickfs_uninit,
+	NULL,
+	NULL
 };

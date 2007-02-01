@@ -61,7 +61,7 @@ static int from_device_count;
 
 /*
  * Process incoming packets using the ng_ether_input_p hook.
- * The if_poll_intren (normally unused) field from the struct ifnet is
+ * The if_spare2 (normally unused) field from the struct ifnet is
  * used as a pointer to the fromdevice data structure. Call it "xp".
  *
  * If xp == NULL, no FromDevice element is registered on this
@@ -78,7 +78,7 @@ extern "C"
 void
 click_ether_input(struct ifnet *ifp, struct mbuf **mp, struct ether_header *eh)
 {
-    if (ifp->if_poll_intren == NULL)	// not for click.
+    if (ifp->if_spare2 == NULL)	// not for click.
 	return ;
 
     struct mbuf *m = *mp;
@@ -89,8 +89,9 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp, struct ether_header *eh)
 
     *mp = NULL;		// tell ether_input no further processing needed.
 
-    FromDevice *me = (FromDevice *)(ifp->if_poll_intren);
+    FromDevice *me = (FromDevice *)(ifp->if_spare2);
 
+#if 0	/* XXX: needs rewriting for polling(4) rewrite. -bms */
     /*
      * If sysctl kern.polling.enable == 2 we should take care of polling
      * this NIC from inside a Click thread, so steal the handler from BSD.
@@ -106,26 +107,27 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp, struct ether_header *eh)
 		me->_poll_status_tick = ticks;
 		prp->handler = NULL;
 		prp->ifp = NULL;
-		printf("Click FromDevice(%s%d) taking control over NIC driver polling\n", ifp->if_name, ifp->if_unit);
+		printf("Click FromDevice(%s) taking control over NIC driver polling\n", ifp->if_xname);
 		me->_polling = -1; // wakeup task thread only once more
 		break;
 	    }
 	if (!me->_polling) {
-	    printf("Strange, couldn't find polling handler for %s%d\n",
-			ifp->if_name, ifp->if_unit);
+	    printf("Strange, couldn't find polling handler for %s\n",
+			ifp->if_xname);
 	    me->_polling = -2; // Do not bother trying to register again
 	}
     }
+#endif
 
     // put the ethernet header back into the mbuf.
     M_PREPEND(m, sizeof(*eh), M_WAIT);
     bcopy(eh, mtod(m, struct ether_header *), sizeof(*eh));
 
-    if (IF_QFULL(me->_inq)) {
-	IF_DROP(me->_inq);
+    if (_IF_QFULL(me->_inq)) {
+	_IF_DROP(me->_inq);
 	m_freem(m);
     } else
-	IF_ENQUEUE(me->_inq, m);
+	_IF_ENQUEUE(me->_inq, m);
     if (me->_polling != 1)
 	me->intr_reschedule();
     if (me->_polling == -1)
@@ -137,9 +139,9 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp, struct ether_header *eh)
 
 /*
  * Process outgoing packets using the ng_ether_output_p hook.
- * If if_poll_xmit == NULL, no FromHost element is registered on this
+ * If if_spare3 == NULL, no FromHost element is registered on this
  * interface, so return 0 to pass the packet back to FreeBSD.
- * Otherwise, if_poll_xmit points to the element, which in turn contains
+ * Otherwise, if_spare3 points to the element, which in turn contains
  * a queue. Append the packet there, clear *mp to grab the pkt from FreeBSD,
  * and possibly wakeup the element.
  *
@@ -150,19 +152,19 @@ int
 click_ether_output(struct ifnet *ifp, struct mbuf **mp)
 {
     int s = splimp();
-    if (ifp->if_poll_xmit == NULL) { // not for click...
+    if (ifp->if_spare3 == NULL) { // not for click...
 	splx(s);
 	return 0;
     }
     struct mbuf *m = *mp;
     *mp = NULL; // tell ether_output no further processing needed
 
-    FromHost *me = (FromHost *)(ifp->if_poll_xmit);
-    if (IF_QFULL(me->_inq)) {
-        IF_DROP(me->_inq);
+    FromHost *me = (FromHost *)(ifp->if_spare3);
+    if (_IF_QFULL(me->_inq)) {
+        _IF_DROP(me->_inq);
         m_freem(m);
     } else
-        IF_ENQUEUE(me->_inq, m);
+        _IF_ENQUEUE(me->_inq, m);
     me->intr_reschedule();
     splx(s);
     return 0;
@@ -280,7 +282,7 @@ FromDevice::initialize(ErrorHandler *errh)
 	    malloc(sizeof (struct ifqueue), M_DEVBUF, M_NOWAIT|M_ZERO);
 	assert(_inq);
 	_inq->ifq_maxlen = QSIZE;
-	(FromDevice *)(device()->if_poll_intren) = this;
+	(FromDevice *)(device()->if_spare2) = this;
     } else {
 	if (_readers == 0)
 	    printf("Warning, _readers mismatch (should not be 0)\n");
@@ -324,7 +326,7 @@ FromDevice::cleanup(CleanupStage)
     if (_readers == 0) {	// flush queue
 	q = _inq ;
 	_inq = NULL ;
-	device()->if_poll_intren = NULL ;
+	device()->if_spare2 = NULL ;
     }
     if (_polling == 1) {	// return polling handler to the kernel
 	struct pollrec *prp = pr;
@@ -334,7 +336,7 @@ FromDevice::cleanup(CleanupStage)
 		break;
 	prp->handler = _poll_handler;
 	prp->ifp = _dev;
-	if (*poll_handlers == 0 && (_dev->if_flags & IFF_RUNNING))
+	if (*poll_handlers == 0 && (_dev->if_drv_flags & IFF_DRV_RUNNING))
 	    *poll_handlers = 1;
     }
     splx(s);
@@ -355,12 +357,14 @@ FromDevice::cleanup(CleanupStage)
 	ifpromisc(device(), 0);
 }
 
+#if 0 /* XXX: method signature has disappeared. -bms */
 void
 FromDevice::take_state(Element *e, ErrorHandler *errh)
 {
   FromDevice *fd = (FromDevice *)e->cast("FromDevice");
   if (!fd) return;
 }
+#endif
 
 bool
 FromDevice::run_task(Task *)
@@ -368,6 +372,7 @@ FromDevice::run_task(Task *)
     int npq = 0;
     // click_chatter("FromDevice::run_task().");
 
+#if 0 /* XXX: See polling(4). -bms */
     if (_dev && _polling == 1) {
 	if (_dev->if_ipending & IFF_POLLING) {
 	    enum poll_cmd cmd;
@@ -387,13 +392,15 @@ FromDevice::run_task(Task *)
 			break;
 		prp->handler = _poll_handler;
 		prp->ifp = _dev;
-		if (*poll_handlers == 0 && (_dev->if_flags & IFF_RUNNING))
+		if (*poll_handlers == 0 &&
+		    (_dev->if_drv_flags & IFF_DRV_RUNNING))
 		    *poll_handlers = 1;
 	    } else
 		_poll_handler(_dev, cmd, _burst);
 	} else
 	    _polling = 0;		// No more polling
     }
+#endif
 
 #ifdef FROMDEVICE_TSTAMP
     if (_tstamp) {

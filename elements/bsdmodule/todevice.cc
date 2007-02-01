@@ -28,6 +28,7 @@
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 
+#include <net/ethernet.h>
 
 /* for watching when devices go offline */
 static AnyDeviceMap to_device_map;
@@ -132,7 +133,7 @@ ToDevice::run_task(Task *)
     int sent = 0;
     // click_chatter("ToDevice::run_task().");
 
-    while (sent < _burst && (busy = IF_QFULL(&device()->if_snd)) == 0) {
+    while (sent < _burst && (busy = _IF_QFULL(&device()->if_snd)) == 0) {
 
 	Packet *p = input(0).pull();
 	if (!p)

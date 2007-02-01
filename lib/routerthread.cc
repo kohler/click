@@ -421,7 +421,7 @@ RouterThread::run_os()
     if (_greedy)
 	/* do nothing */;
     else if (active()) {	// just schedule others for a moment
-	yield(curproc, NULL);
+	yield(curthread, NULL);
     } else {
 	_sleep_ident = &_sleep_ident;	// arbitrary address, != NULL
 	tsleep(&_sleep_ident, PPAUSE, "pause", 1);

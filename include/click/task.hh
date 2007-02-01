@@ -9,19 +9,13 @@
 #endif
 CLICK_DECLS
 
-#ifdef CLICK_BSDMODULE
-# include <machine/cpu.h>
-# include <assert.h>	/* MARKO XXX */
-#endif
-
-#if CLICK_BSDMODULE && !BSD_NETISRSCHED
-# define SPLCHECK				\
-	int s = splimp();			\
-	if (s == 0)				\
-	    panic("not spl'ed: %d\n", s);	\
-	splx(s)
+#if CLICK_BSDMODULE
+extern "C" {
+ #include <sys/lock.h>
+ #include <sys/mutex.h>
+}
 #else
-# define SPLCHECK
+#define GIANT_REQUIRED
 #endif
 
 #define PASS_GT(a, b)	((int)(a - b) > 0)
@@ -320,8 +314,7 @@ Task::fast_unschedule()
     assert(!in_interrupt());
 #endif
 #if CLICK_BSDMODULE
-    // assert(!intr_nesting_level);
-    SPLCHECK;
+    GIANT_REQUIRED;
 #endif
     if (scheduled()) {
 #ifdef HAVE_TASK_HEAP
@@ -402,8 +395,7 @@ Task::fast_reschedule()
     assert(!in_interrupt());
 #endif
 #if CLICK_BSDMODULE
-    // assert(!intr_nesting_level); it happens all the time from fromdevice!
-    SPLCHECK;
+    GIANT_REQUIRED;
 #endif
 
     if (!scheduled()) {
@@ -444,7 +436,7 @@ Task::fast_reschedule()
 inline void
 Task::fast_schedule()
 {
-    SPLCHECK;
+    GIANT_REQUIRED;
     assert(_tickets >= 1);
 #if HAVE_TASK_HEAP
     _pass = (_thread->active() ? _thread->_task_heap[0]->_pass : 0);
@@ -466,7 +458,7 @@ Task::fast_reschedule()
 #endif
 #if CLICK_BSDMODULE
     // assert(!intr_nesting_level);
-    SPLCHECK;
+    GIANT_REQUIRED;
 #endif
     if (!scheduled()) {
 	_prev = _thread->_prev;
@@ -495,7 +487,7 @@ Task::fast_schedule()
 inline void
 Task::reschedule()
 {
-    SPLCHECK;
+    GIANT_REQUIRED;
     if (!scheduled())
 	true_reschedule();
 }

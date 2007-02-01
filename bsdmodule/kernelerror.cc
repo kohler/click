@@ -21,6 +21,7 @@
 
 #include "kernelerror.hh"
 #include <click/straccum.hh>
+CLICK_USING_DECLS
 
 static StringAccum *all_errors = 0;
 
@@ -39,6 +40,8 @@ syslog_message(const String &message)
   }
 }
 
+CLICK_DECLS
+
 void
 KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
@@ -56,3 +59,4 @@ SyslogErrorHandler::handle_text(Seriousness, const String &message)
   syslog_message(message);
 }
 
+CLICK_ENDDECLS

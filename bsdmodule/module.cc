@@ -28,7 +28,7 @@
 #include <click/notifier.hh>
 #include <click/nameinfo.hh>
 #include <sys/stat.h>
-
+CLICK_USING_DECLS
 
 int click_mode_r, click_mode_w, click_mode_x, click_mode_dir;
 static int click_accessible = 1;
@@ -315,68 +315,3 @@ cleanup_module()
 	click_dmalloc_cleanup();
     }
 }
-
-static int
-click_load(struct module *mod, int cmd, void *arg)
-{
-    int ret = ENOTSUP;
-
-    /* Load and unload the VFS part first */
-    ret = vfs_modevent(mod, cmd, arg);
-    if (ret)
-	return ret;
- 
-    switch (cmd) {
-	case MOD_LOAD:
-	    printf("Click module loading\n");
-	    if (init_module()) {
-		ret = EINVAL;
-		break;
-	    }
-
-	    ret = 0;
-	    break;
-
-	case MOD_UNLOAD:
-	    printf("Click module unloading\n");
-	    cleanup_module();
-	    ret = 0;
-	    break;
-
-	case MOD_SHUTDOWN:
-	    /*
-	     * MOD_SHUTDOWN is usually called when the machine is
-	     * about to shut down and the module is loaded at the
-	     * moment. Perhaps we should call cleanup_module() at
-	     * this point, but since we're shutting down anyway,
-	     * it doesn't really matter..
-	     */
-	    printf("Click module shutdown\n");
-	    ret = 0;
-	    break;
-
-	default:
-	    printf("Click: unknown module command %d\n", cmd);
-	    ret = EINVAL;
-	    break;
-    }
-
-    return ret;
-}
-
-static struct vfsconf click_vfsconf = {
-	&clickfs_vfsops,
-	"click",
-	-1,
-	0,
-	VFCF_SYNTHETIC
-};
-
-static moduledata_t mod_data = {
-	"click",
-	click_load,
-	&click_vfsconf
-};
-
-DECLARE_MODULE(click, mod_data, SI_SUB_VFS, SI_ORDER_MIDDLE);
-VNODEOP_SET(clickfs_vnodeop_opv_desc);

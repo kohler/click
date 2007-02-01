@@ -5271,14 +5271,14 @@ are relative.  You must supply absolute paths starting with /.
 
 =========================================" >&2;}
    { (exit 1); exit 1; }; }
-elif test -r $freebsd_includedir/net/if_var.h -a -r $freebsd_srcdir/kern/vnode_if.pl; then
+elif test -r $freebsd_includedir/net/if_var.h -a -r $freebsd_srcdir/kern/vnode_if.src; then
   ac_have_bsd_kernel=y
 else
   { { echo "$as_me:$LINENO: error:
 =========================================
 
 Can't find $freebsd_includedir/net/if_var.h and/or
-$freebsd_srcdir/kern/vnode_if.pl.  Are you sure $freebsd_srcdir
+$freebsd_srcdir/kern/vnode_if.src.  Are you sure $freebsd_srcdir
 and $freebsd_includedir contain FreeBSD kernel source?
 
 =========================================" >&5
@@ -5286,7 +5286,7 @@ echo "$as_me: error:
 =========================================
 
 Can't find $freebsd_includedir/net/if_var.h and/or
-$freebsd_srcdir/kern/vnode_if.pl.  Are you sure $freebsd_srcdir
+$freebsd_srcdir/kern/vnode_if.src.  Are you sure $freebsd_srcdir
 and $freebsd_includedir contain FreeBSD kernel source?
 
 =========================================" >&2;}
@@ -14218,6 +14218,7 @@ fi
 
 
 if test $ac_have_bsd_kernel = y; then
+    KERNEL_CXX="$KERNEL_CXX -fpermissive"
     { echo "$as_me:$LINENO: checking FreeBSD version" >&5
 echo $ECHO_N "checking FreeBSD version... $ECHO_C" >&6; }
 if test "${ac_cv_freebsd_version+set}" = set; then
@@ -14233,7 +14234,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <sys/param.h>
-#if __FreeBSD_version < 440002 || __FreeBSD_version >= 500000
+#if __FreeBSD_version < 500000
 #include <NONEXISTENT_FILE>
 #endif
 _ACEOF
@@ -14297,13 +14298,13 @@ _ACEOF
 	{ echo "$as_me:$LINENO: WARNING:
 =========================================
 
-Your version of FreeBSD is old.  Click works with FreeBSD 4.5 and later.
+Your version of FreeBSD is old.  Click works with FreeBSD 5.x and later.
 
 =========================================" >&5
 echo "$as_me: WARNING:
 =========================================
 
-Your version of FreeBSD is old.  Click works with FreeBSD 4.5 and later.
+Your version of FreeBSD is old.  Click works with FreeBSD 5.x and later.
 
 =========================================" >&2;}
     fi

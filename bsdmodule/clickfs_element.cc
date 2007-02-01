@@ -23,7 +23,7 @@
 
 #include <click/string.hh>
 #include <click/straccum.hh>
-
+CLICK_USING_DECLS
 
 void
 init_router_element_procs()

@@ -28,6 +28,7 @@ CLICK_CXX_UNPROTECT
 #define HANDLER_SPECIAL_INODE           (Handler::DRIVER_FLAG_2)
 #define HANDLER_WRITE_UNLIMITED         (Handler::DRIVER_FLAG_3)
 
+CLICK_DECLS
 
 class KernelErrorHandler : public BaseErrorHandler { public:
 
@@ -47,16 +48,19 @@ class KernelErrorHandler : public BaseErrorHandler { public:
 };
 
 extern KernelErrorHandler *click_logged_errh;
+
+CLICK_ENDDECLS
+
 void click_clear_error_log();
 
 void click_init_config();
 void click_cleanup_config();
 
-extern Master *click_master;
-extern Router *click_router;
+extern CLICK_NAME(Master) *click_master;
+extern CLICK_NAME(Router) *click_router;
 int click_kill_router_threads();
 
-void click_init_sched(ErrorHandler *);
+void click_init_sched(CLICK_NAME(ErrorHandler) *);
 int click_cleanup_sched();
 
 void init_router_element_procs();

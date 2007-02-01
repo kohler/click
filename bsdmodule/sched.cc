@@ -41,6 +41,8 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
+CLICK_USING_DECLS
+
 static Router *placeholder_router;
 
 #ifdef BSD_NETISRSCHED
@@ -317,11 +319,8 @@ click_timer(void *arg)
 void
 click_netisr(void)
 {
-  int s = splimp();
   RouterThread *rt = click_master->thread(0);
-
   rt->driver();
-  splx(s);
 }
 
 #endif //BSD_NETISRSCHED
@@ -344,10 +343,10 @@ click_init_sched(ErrorHandler *errh)
 #endif
 
 #ifdef BSD_NETISRSCHED
-  register_netisr(NETISR_CLICK, click_netisr);
+  netisr_register(NETISR_CLICK, click_netisr, NULL, 0);
   schednetisr(NETISR_CLICK);
   click_timer_h = timeout(click_timer, NULL, 1);
-  click_dummyifnet.if_flags |= IFF_UP|IFF_RUNNING;
+  click_dummyifnet.if_flags |= IFF_UP|IFF_DRV_RUNNING;
 #endif
 
   placeholder_router = new Router("", click_master);
@@ -403,7 +402,7 @@ click_cleanup_sched()
 {
 #ifdef BSD_NETISRSCHED
   untimeout(click_timer, NULL, click_timer_h);
-  unregister_netisr(NETISR_CLICK);
+  netisr_unregister(NETISR_CLICK);
   ether_poll_deregister(&click_dummyifnet);
   delete placeholder_router;
 #else

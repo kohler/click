@@ -26,9 +26,9 @@ struct clickfs_dirent {
 	struct handle_struct {
 	    int eindex;
 	    int handle;
-	    String *wbuf;
+	    CLICK_NAME(String) *wbuf;
 	    off_t w_offset;
-	    String *rbuf;
+	    CLICK_NAME(String) *rbuf;
 	    off_t r_offset;
 	} handle;
 	struct symlink_struct {
@@ -46,7 +46,7 @@ struct clickfs_dirent *clickfs_tree_add_dir(struct clickfs_dirent *cde,
 void clickfs_tree_add_link(struct clickfs_dirent *cde, char *name,
 			  char *lnk_name);
 void clickfs_tree_add_handle(struct clickfs_dirent *cde,
-			     const Handler *h, int eindex, int handle);
+			     const CLICK_NAME(Handler) *h, int eindex, int handle);
 void clickfs_tree_unlink(struct clickfs_dirent *cde, char *name);
 
 #endif

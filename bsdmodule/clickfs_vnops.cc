@@ -29,15 +29,17 @@ CLICK_CXX_PROTECT
 #include <sys/dirent.h>
 #include <sys/stat.h>
 #include <sys/uio.h>
+#include <sys/vnode.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 #include <click/string.hh>
 #include <click/error.hh>
+CLICK_USING_DECLS
 
 #define UIO_MX			32
 
-vop_t **clickfs_vnops;
+extern struct vop_vector clickfs_vnodeops;	/* forward declaration */
 
 static enum vtype clickfs_vtype[] = {
     VDIR,		/* CLICKFS_DIRENT_DIR */
@@ -54,7 +56,7 @@ clickfs_rootvnode(struct mount *mp, struct vnode **vpp)
     struct clickfs_dirent *de;
     int error;
 
-    error = getnewvnode(VT_NON, mp, clickfs_vnops, vpp);
+    error = getnewvnode("click", mp, &clickfs_vnodeops, vpp);
     if (error)
 	return error;
     de = clickfs_tree_root;
@@ -62,7 +64,7 @@ clickfs_rootvnode(struct mount *mp, struct vnode **vpp)
     vp = *vpp;
     vp->v_data = de;
     vp->v_type = clickfs_vtype[de->type];
-    vp->v_flag = VROOT;
+    vp->v_vflag = VV_ROOT;
     return 0;
 }
 
@@ -74,7 +76,7 @@ clickfs_lookup(struct vop_lookup_args *ap)
     struct vnode *dvp = ap->a_dvp;
     char *pname = cnp->cn_nameptr;
     int plen = cnp->cn_namelen;
-    struct proc *p = cnp->cn_proc;
+    struct thread *td = cnp->cn_thread;
     struct clickfs_dirent *cde= VTOCDE(dvp);
     int error = 0;
 
@@ -84,7 +86,7 @@ clickfs_lookup(struct vop_lookup_args *ap)
 	return ENOTDIR;
     if (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME)
 	return EROFS;
-    VOP_UNLOCK(dvp, 0, p);
+    VOP_UNLOCK(dvp, 0, td);
 
     if (plen == 1 && *pname == '.') {
 	*vpp = dvp;
@@ -105,19 +107,19 @@ clickfs_lookup(struct vop_lookup_args *ap)
 	goto done;
     }
 
-    error = getnewvnode(VT_NON, dvp->v_mount, clickfs_vnops, vpp);
+    error = getnewvnode("click", dvp->v_mount, &clickfs_vnodeops, vpp);
     if (error)
 	goto done;
 
     (*vpp)->v_data = cde;
     (*vpp)->v_type = clickfs_vtype[cde->type];
     if (cde == clickfs_tree_root)
-	(*vpp)->v_flag = VROOT;
-    vn_lock(*vpp, LK_SHARED | LK_RETRY, p);
+	(*vpp)->v_vflag = VV_ROOT;
+    vn_lock(*vpp, LK_SHARED | LK_RETRY, td);
     return 0;
 
 done:
-    vn_lock(dvp, LK_SHARED | LK_RETRY, p);
+    vn_lock(dvp, LK_SHARED | LK_RETRY, td);
     return error;
 }
 
@@ -179,7 +181,7 @@ clickfs_inactive(struct vop_inactive_args *ap)
 	cde->data.handle.r_offset = cde->data.handle.w_offset = 0;
     vp->v_data = NULL;
     vp->v_type = VNON;
-    VOP_UNLOCK(vp, 0, ap->a_p);
+    VOP_UNLOCK(vp, 0, ap->a_td);
 
     return 0;
 }
@@ -461,30 +463,38 @@ clickfs_fsync(struct vop_fsync_args *ap)
     return(clickfs_fsync_body(cde));
 }
 
-int
-clickfs_default(struct vop_generic_args *ap)
-{
-    return(vop_defaultop(ap));
-}
-
-static struct vnodeopv_entry_desc clickfs_root_vnop_entries[] =
-{
-    { &vop_default_desc,		(vop_t *) clickfs_default	},
-    { &vop_lookup_desc,			(vop_t *) clickfs_lookup	},
-    { &vop_getattr_desc,		(vop_t *) clickfs_getattr	},
-    { &vop_setattr_desc,		(vop_t *) clickfs_setattr	},
-    { &vop_reclaim_desc,		(vop_t *) clickfs_reclaim	},
-    { &vop_inactive_desc,		(vop_t *) clickfs_inactive	},
-    { &vop_access_desc,			(vop_t *) clickfs_access	},
-    { &vop_readdir_desc,		(vop_t *) clickfs_readdir	},
-    { &vop_open_desc,			(vop_t *) clickfs_open		},
-    { &vop_read_desc,			(vop_t *) clickfs_read		},
-    { &vop_write_desc,			(vop_t *) clickfs_write		},
-    { &vop_close_desc,			(vop_t *) clickfs_close		},
-    { &vop_fsync_desc,			(vop_t *) clickfs_fsync		},
-    { &vop_readlink_desc,		(vop_t *) clickfs_readlink	},
-    { (struct vnodeop_desc *) NULL,	(int (*) (void *)) NULL		}
+/* XXX: Blatant kludge as c++ does not like c99 initializers. */
+static struct vop_vector clickfs_vnodeops = {
+	&default_vnodeops,
+	NULL,
+	NULL,
+	clickfs_lookup,
+	NULL,
+	NULL,
+	NULL,
+	clickfs_open,
+	clickfs_close,
+	clickfs_access,
+	clickfs_getattr,
+	clickfs_setattr,
+	clickfs_read,
+	clickfs_write,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	clickfs_fsync,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	clickfs_readdir,
+	clickfs_readlink,
+	clickfs_inactive,
+	clickfs_reclaim,
+	NULL,	/* .. 5 at current revision */
 };
-
-struct vnodeopv_desc clickfs_vnodeop_opv_desc =
-{ &clickfs_vnops, clickfs_root_vnop_entries };

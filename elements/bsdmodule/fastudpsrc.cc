@@ -93,12 +93,12 @@ FastUDPSource::initialize(ErrorHandler *)
     // Create an mbuf with an mbuf cluster so copies are quick
     // (we just add a reference to the cluster rather than doing
     // a memory copy).
-    MGETHDR(_m, M_WAIT, MT_DATA);
+    MGETHDR(_m, M_TRYWAIT, MT_DATA);
     if (_m == NULL) {
 	click_chatter("unable to get mbuf for FastUDPSource");
 	return -1;
     }
-    MCLGET(_m, M_WAIT);
+    MCLGET(_m, M_TRYWAIT);
     if ((_m->m_flags & M_EXT) == 0) {
 	m_freem(_m);
 	click_chatter("unable to get mbuf cluster for FastUDPSource");
@@ -162,20 +162,8 @@ FastUDPSource::pull(int)
 	return 0;
     }
 
-    if (mclrefcnt[mtocl(_m->m_ext.ext_buf)] >= SCHAR_MAX) {
-	caddr_t mcl, mcl0;
-	MCLALLOC(mcl, M_WAIT);
-	if (!mcl) {
-	    click_chatter("failure to allocate new mbuf cluster\n");
-	    return 0;
-	}
-
-	bcopy(_m->m_data, mcl, _m->m_len);
-	mcl0 = _m->m_ext.ext_buf;
-	_m->m_data = mcl;
-	_m->m_ext.ext_buf = mcl;
-	MCLFREE(mcl0);
-    }
+    // FreeBSD's mbuf cluster refcounting was completely rewritten,
+    // so we don't need to check for the lame 127 references limitation. -bms
 
     bool need_packet = false;
     if (_rate_limited) {
@@ -190,7 +178,7 @@ FastUDPSource::pull(int)
     if (!need_packet)
 	return 0;	// nothing to pull
 
-    m = m_copypacket(_m, M_WAIT);
+    m = m_copypacket(_m, M_TRYWAIT);
     if (!m) {
 	click_chatter("unable to m_copypacket\n");
 	return 0;	// bad luck.
