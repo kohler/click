@@ -1,6 +1,7 @@
 Use the Linux patches in this directory as follows:
 
 For this version of Linux	Use this patch
+2.6.19.2			linux-2.6.19.2-patch
 2.6.16.13			linux-2.6.16.13-patch
 2.4.32				linux-2.4.32-patch
 2.4.28				linux-2.4.26-patch

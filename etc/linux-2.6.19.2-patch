@@ -1,0 +1,3908 @@
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/drivers/input/serio/i8042-ppcio.h ./drivers/input/serio/i8042-ppcio.h
+--- /home/kohler/click-linux/linux-2.6.19.2/drivers/input/serio/i8042-ppcio.h	2007-01-10 11:10:37.000000000 -0800
++++ ./drivers/input/serio/i8042-ppcio.h	2007-02-01 22:37:01.000000000 -0800
+@@ -77,7 +77,7 @@
+ 	asm volatile("lis     7,0xff88        \n\
+ 		      lswi    6,7,0x8         \n\
+ 		      mr      %0,6"
+-	              : "=r" (kbd_data) :: "6", "7");
++	              : "=r" (kbd_data) : : "6", "7");
+ 
+ 	__raw_writel(0x00000000, 0xff50000c);
+ 	eieio();
+@@ -99,7 +99,7 @@
+ 		      ori     7,7,0x8         \n\
+ 		      lswi    6,7,0x8         \n\
+ 		      mr      %0,6"
+-		      : "=r" (kbd_status) :: "6", "7");
++		      : "=r" (kbd_status) : : "6", "7");
+ 
+ 	__raw_writel(0x00000000, 0xff50000c);
+ 	eieio();
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/drivers/media/dvb/bt8xx/bt878.h ./drivers/media/dvb/bt8xx/bt878.h
+--- /home/kohler/click-linux/linux-2.6.19.2/drivers/media/dvb/bt8xx/bt878.h	2007-01-10 11:10:37.000000000 -0800
++++ ./drivers/media/dvb/bt8xx/bt878.h	2007-02-01 22:37:01.000000000 -0800
+@@ -153,7 +153,7 @@
+ {
+ 	__asm__ __volatile__("stwbrx %1,0,%2":"=m"(*addr):"r"(val),
+ 			     "r"(addr));
+-	__asm__ __volatile__("eieio":::"memory");
++	__asm__ __volatile__("eieio": : :"memory");
+ }
+ 
+ #define bmtwrite(dat,adr)  io_st_le32((adr),(dat))
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/drivers/net/ibmveth.c ./drivers/net/ibmveth.c
+--- /home/kohler/click-linux/linux-2.6.19.2/drivers/net/ibmveth.c	2007-01-10 11:10:37.000000000 -0800
++++ ./drivers/net/ibmveth.c	2007-02-03 12:43:03.000000000 -0800
+@@ -802,7 +802,7 @@
+ 				skb->dev = netdev;
+ 				skb->protocol = eth_type_trans(skb, netdev);
+ 
+-				netif_receive_skb(skb);	/* send it up */
++				netif_receive_skb(skb); /* send it up */
+ 
+ 				adapter->stats.rx_packets++;
+ 				adapter->stats.rx_bytes += length;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/drivers/net/wireless/rayctl.h ./drivers/net/wireless/rayctl.h
+--- /home/kohler/click-linux/linux-2.6.19.2/drivers/net/wireless/rayctl.h	2007-01-10 11:10:37.000000000 -0800
++++ ./drivers/net/wireless/rayctl.h	2007-02-01 22:37:01.000000000 -0800
+@@ -418,9 +418,7 @@
+ };
+ 
+ /****** Host-to-ECF Data Area at Shared RAM offset 0x200 *********************/
+-struct host_to_ecf_area {
+-    
+-};
++EMPTY_STRUCT_DECL(host_to_ecf_area);
+ 
+ /****** ECF-to-Host Data Area at Shared RAM offset 0x0300 ********************/
+ struct startup_res_518 {
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/drivers/video/i810/i810_main.h ./drivers/video/i810/i810_main.h
+--- /home/kohler/click-linux/linux-2.6.19.2/drivers/video/i810/i810_main.h	2007-01-10 11:10:37.000000000 -0800
++++ ./drivers/video/i810/i810_main.h	2007-02-01 22:37:01.000000000 -0800
+@@ -54,7 +54,7 @@
+ #ifdef CONFIG_X86
+ static inline void flush_cache(void)
+ {
+-	asm volatile ("wbinvd":::"memory");
++	asm volatile ("wbinvd": : :"memory");
+ }
+ #else
+ #define flush_cache() do { } while(0)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/fs/file_table.c ./fs/file_table.c
+--- /home/kohler/click-linux/linux-2.6.19.2/fs/file_table.c	2007-01-10 11:10:37.000000000 -0800
++++ ./fs/file_table.c	2007-02-01 22:37:01.000000000 -0800
+@@ -32,6 +32,8 @@
+ /* public. Not pretty! */
+ __cacheline_aligned_in_smp DEFINE_SPINLOCK(files_lock);
+ 
++EXPORT_SYMBOL(files_lock);
++
+ static struct percpu_counter nr_files __cacheline_aligned_in_smp;
+ 
+ static inline void file_free_rcu(struct rcu_head *head)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/fs/super.c ./fs/super.c
+--- /home/kohler/click-linux/linux-2.6.19.2/fs/super.c	2007-01-10 11:10:37.000000000 -0800
++++ ./fs/super.c	2007-02-01 22:37:01.000000000 -0800
+@@ -47,6 +47,8 @@
+ LIST_HEAD(super_blocks);
+ DEFINE_SPINLOCK(sb_lock);
+ 
++EXPORT_SYMBOL(sb_lock);
++
+ /**
+  *	alloc_super	-	create new superblock
+  *	@type:	filesystem type superblock should belong to
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-alpha/core_tsunami.h ./include/asm-alpha/core_tsunami.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-alpha/core_tsunami.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-alpha/core_tsunami.h	2007-02-01 22:37:01.000000000 -0800
+@@ -281,8 +281,7 @@
+ /*
+  * Data structure for handling TSUNAMI machine checks:
+  */
+-struct el_TSUNAMI_sysdata_mcheck {
+-};
++EMPTY_STRUCT_DECL(el_TSUNAMI_sysdata_mcheck);
+ 
+ 
+ #ifdef __KERNEL__
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-alpha/processor.h ./include/asm-alpha/processor.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-alpha/processor.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-alpha/processor.h	2007-02-01 22:37:01.000000000 -0800
+@@ -31,8 +31,8 @@
+ } mm_segment_t;
+ 
+ /* This is dead.  Everything has been moved to thread_info.  */
+-struct thread_struct { };
+-#define INIT_THREAD  { }
++EMPTY_STRUCT_DECL(thread_struct);
++#define INIT_THREAD  EMPTY_STRUCT_INIT(thread_struct)
+ 
+ /* Return saved PC of a blocked thread.  */
+ struct task_struct;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-alpha/system.h ./include/asm-alpha/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-alpha/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-alpha/system.h	2007-02-01 22:37:01.000000000 -0800
+@@ -460,7 +460,7 @@
+ #define __HAVE_ARCH_CMPXCHG 1
+ 
+ static inline unsigned long
+-__cmpxchg_u8(volatile char *m, long old, long new)
++__cmpxchg_u8(volatile char *m, long old, long n)
+ {
+ 	unsigned long prev, tmp, cmp, addr64;
+ 
+@@ -482,14 +482,14 @@
+ 	".subsection 2\n"
+ 	"3:	br	1b\n"
+ 	".previous"
+-	: "=&r" (prev), "=&r" (new), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
+-	: "r" ((long)m), "Ir" (old), "1" (new) : "memory");
++	: "=&r" (prev), "=&r" (n), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
++	: "r" ((long)m), "Ir" (old), "1" (n) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static inline unsigned long
+-__cmpxchg_u16(volatile short *m, long old, long new)
++__cmpxchg_u16(volatile short *m, long old, long n)
+ {
+ 	unsigned long prev, tmp, cmp, addr64;
+ 
+@@ -511,14 +511,14 @@
+ 	".subsection 2\n"
+ 	"3:	br	1b\n"
+ 	".previous"
+-	: "=&r" (prev), "=&r" (new), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
+-	: "r" ((long)m), "Ir" (old), "1" (new) : "memory");
++	: "=&r" (prev), "=&r" (n), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
++	: "r" ((long)m), "Ir" (old), "1" (n) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static inline unsigned long
+-__cmpxchg_u32(volatile int *m, int old, int new)
++__cmpxchg_u32(volatile int *m, int old, int n)
+ {
+ 	unsigned long prev, cmp;
+ 
+@@ -537,13 +537,13 @@
+ 	"3:	br 1b\n"
+ 	".previous"
+ 	: "=&r"(prev), "=&r"(cmp), "=m"(*m)
+-	: "r"((long) old), "r"(new), "m"(*m) : "memory");
++	: "r"((long) old), "r"(n), "m"(*m) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static inline unsigned long
+-__cmpxchg_u64(volatile long *m, unsigned long old, unsigned long new)
++__cmpxchg_u64(volatile long *m, unsigned long old, unsigned long n)
+ {
+ 	unsigned long prev, cmp;
+ 
+@@ -562,7 +562,7 @@
+ 	"3:	br 1b\n"
+ 	".previous"
+ 	: "=&r"(prev), "=&r"(cmp), "=m"(*m)
+-	: "r"((long) old), "r"(new), "m"(*m) : "memory");
++	: "r"((long) old), "r"(n), "m"(*m) : "memory");
+ 
+ 	return prev;
+ }
+@@ -572,17 +572,17 @@
+ extern void __cmpxchg_called_with_bad_pointer(void);
+ 
+ static __always_inline unsigned long
+-__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
++__cmpxchg(volatile void *ptr, unsigned long old, unsigned long n, int size)
+ {
+ 	switch (size) {
+ 		case 1:
+-			return __cmpxchg_u8(ptr, old, new);
++			return __cmpxchg_u8(ptr, old, n);
+ 		case 2:
+-			return __cmpxchg_u16(ptr, old, new);
++			return __cmpxchg_u16(ptr, old, n);
+ 		case 4:
+-			return __cmpxchg_u32(ptr, old, new);
++			return __cmpxchg_u32(ptr, old, n);
+ 		case 8:
+-			return __cmpxchg_u64(ptr, old, new);
++			return __cmpxchg_u64(ptr, old, n);
+ 	}
+ 	__cmpxchg_called_with_bad_pointer();
+ 	return old;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-arm/arch-omap/mtd-xip.h ./include/asm-arm/arch-omap/mtd-xip.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-arm/arch-omap/mtd-xip.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-arm/arch-omap/mtd-xip.h	2007-02-02 08:17:42.000000000 -0800
+@@ -56,6 +56,6 @@
+  * As above, this should not rely upon standard kernel code.
+  */
+ 
+-#define xip_cpu_idle()  asm volatile ("mcr p15, 0, %0, c7, c0, 4" :: "r" (1))
++#define xip_cpu_idle()  asm volatile ("mcr p15, 0, %0, c7, c0, 4" : : "r" (1))
+ 
+ #endif /* __ARCH_OMAP_MTD_XIP_H__ */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-arm/arch-pxa/mtd-xip.h ./include/asm-arm/arch-pxa/mtd-xip.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-arm/arch-pxa/mtd-xip.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-arm/arch-pxa/mtd-xip.h	2007-02-01 22:37:01.000000000 -0800
+@@ -32,6 +32,6 @@
+  * As above, this should not rely upon standard kernel code.
+  */
+ 
+-#define xip_cpu_idle()  asm volatile ("mcr p14, 0, %0, c7, c0, 0" :: "r" (1))
++#define xip_cpu_idle()  asm volatile ("mcr p14, 0, %0, c7, c0, 0" : : "r" (1))
+ 
+ #endif /* __ARCH_PXA_MTD_XIP_H__ */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-arm/system.h ./include/asm-arm/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-arm/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-arm/system.h	2007-02-01 22:37:01.000000000 -0800
+@@ -101,8 +101,8 @@
+ 
+ #define tas(ptr) (xchg((ptr),1))
+ 
+-extern asmlinkage void __backtrace(void);
+-extern asmlinkage void c_backtrace(unsigned long fp, int pmode);
++asmlinkage void __backtrace(void);
++asmlinkage void c_backtrace(unsigned long fp, int pmode);
+ 
+ struct mm_struct;
+ extern void show_pte(struct mm_struct *mm, unsigned long addr);
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-arm26/hardirq.h ./include/asm-arm26/hardirq.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-arm26/hardirq.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-arm26/hardirq.h	2007-02-01 22:37:01.000000000 -0800
+@@ -24,7 +24,7 @@
+ 
+ #ifndef CONFIG_SMP
+ 
+-extern asmlinkage void __do_softirq(void);
++asmlinkage void __do_softirq(void);
+ 
+ #endif
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-arm26/mmu.h ./include/asm-arm26/mmu.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-arm26/mmu.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-arm26/mmu.h	2007-02-01 22:37:01.000000000 -0800
+@@ -4,6 +4,6 @@
+ /*
+  * The ARM doesn't have a mmu context
+  */
+-typedef struct { } mm_context_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) mm_context_t;
+ 
+ #endif
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-arm26/system.h ./include/asm-arm26/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-arm26/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-arm26/system.h	2007-02-01 22:37:01.000000000 -0800
+@@ -54,7 +54,7 @@
+ 
+ #define tas(ptr) (xchg((ptr),1))
+ 
+-extern asmlinkage void __backtrace(void);
++asmlinkage void __backtrace(void);
+ 
+ #define set_cr(x)					\
+ 	__asm__ __volatile__(				\
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-avr32/user.h ./include/asm-avr32/user.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-avr32/user.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-avr32/user.h	2007-02-02 08:18:02.000000000 -0800
+@@ -38,9 +38,8 @@
+  *	to write an integer number of pages.
+  */
+ 
+-struct user_fpu_struct {
++EMPTY_STRUCT_DECL(user_fpu_struct);
+ 	/* We have no FPU (yet) */
+-};
+ 
+ struct user {
+ 	struct pt_regs	regs;			/* entire machine state */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-cris/arch-v10/io.h ./include/asm-cris/arch-v10/io.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-cris/arch-v10/io.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-cris/arch-v10/io.h	2007-02-01 22:37:01.000000000 -0800
+@@ -184,8 +184,8 @@
+  ({ int _Foofoo; __asm__ volatile ("bmod [%0],%0" : "=r" (_Foofoo) : "0" \
+ 			       (255)); _Foofoo; })
+ 
+-#define TRACE_OFF() do { __asm__ volatile ("bmod [%0],%0" :: "r" (254)); } while (0)
+-#define SIM_END() do { __asm__ volatile ("bmod [%0],%0" :: "r" (28)); } while (0)
++#define TRACE_OFF() do { __asm__ volatile ("bmod [%0],%0" : : "r" (254)); } while (0)
++#define SIM_END() do { __asm__ volatile ("bmod [%0],%0" : : "r" (28)); } while (0)
+ #define CRIS_CYCLES() __extension__ \
+  ({ unsigned long c; asm ("bmod [%1],%0" : "=r" (c) : "r" (27)); c;})
+ #endif /* ! defined CONFIG_SVINTO_SIM */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-cris/module.h ./include/asm-cris/module.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-cris/module.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-cris/module.h	2007-02-01 22:37:01.000000000 -0800
+@@ -1,7 +1,7 @@
+ #ifndef _ASM_CRIS_MODULE_H
+ #define _ASM_CRIS_MODULE_H
+ /* cris is simple */
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/bug.h ./include/asm-frv/bug.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/bug.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-frv/bug.h	2007-02-01 22:37:01.000000000 -0800
+@@ -17,7 +17,7 @@
+ /*
+  * Tell the user there is some problem.
+  */
+-extern asmlinkage void __debug_bug_trap(int signr);
++asmlinkage void __debug_bug_trap(int signr);
+ 
+ #ifdef CONFIG_NO_KERNEL_MSG
+ #define	_debug_bug_printk()
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/fpu.h ./include/asm-frv/fpu.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/fpu.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-frv/fpu.h	2007-02-01 22:37:01.000000000 -0800
+@@ -6,6 +6,6 @@
+  * MAX floating point unit state size (FSAVE/FRESTORE)
+  */
+ 
+-#define kernel_fpu_end() do { asm volatile("bar":::"memory"); preempt_enable(); } while(0)
++#define kernel_fpu_end() do { asm volatile("bar": : :"memory"); preempt_enable(); } while(0)
+ 
+ #endif /* __ASM_FPU_H */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/gdb-stub.h ./include/asm-frv/gdb-stub.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/gdb-stub.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-frv/gdb-stub.h	2007-02-01 22:39:51.000000000 -0800
+@@ -87,14 +87,14 @@
+ extern void gdbstub_tx_flush(void);
+ extern void gdbstub_do_rx(void);
+ 
+-extern asmlinkage void __debug_stub_init_break(void);
+-extern asmlinkage void __break_hijack_kernel_event(void);
+-extern asmlinkage void __break_hijack_kernel_event_breaks_here(void);
+-extern asmlinkage void start_kernel(void);
+-
+-extern asmlinkage void gdbstub_rx_handler(void);
+-extern asmlinkage void gdbstub_rx_irq(void);
+-extern asmlinkage void gdbstub_intercept(void);
++asmlinkage void __debug_stub_init_break(void);
++asmlinkage void __break_hijack_kernel_event(void);
++asmlinkage void __break_hijack_kernel_event_breaks_here(void);
++asmlinkage void start_kernel(void);
++
++asmlinkage void gdbstub_rx_handler(void);
++asmlinkage void gdbstub_rx_irq(void);
++asmlinkage void gdbstub_intercept(void);
+ 
+ extern uint32_t __entry_usertrap_table[];
+ extern uint32_t __entry_kerneltrap_table[];
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/highmem.h ./include/asm-frv/highmem.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/highmem.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-frv/highmem.h	2007-02-01 22:40:57.000000000 -0800
+@@ -82,11 +82,11 @@
+ 	dampr = paddr | xAMPRx_L | xAMPRx_M | xAMPRx_S | xAMPRx_SS_16Kb | xAMPRx_V;		\
+ 												\
+ 	if (type != __KM_CACHE)									\
+-		asm volatile("movgs %0,dampr"#ampr :: "r"(dampr) : "memory");			\
++		asm volatile("movgs %0,dampr"#ampr : : "r"(dampr) : "memory");			\
+ 	else											\
+ 		asm volatile("movgs %0,iampr"#ampr"\n"						\
+ 			     "movgs %0,dampr"#ampr"\n"						\
+-			     :: "r"(dampr) : "memory"						\
++			     : : "r"(dampr) : "memory"						\
+ 			     );									\
+ 												\
+ 	asm("movsg damlr"#ampr",%0" : "=r"(damlr));						\
+@@ -140,9 +140,9 @@
+ 
+ #define __kunmap_atomic_primary(type, ampr)				\
+ do {									\
+-	asm volatile("movgs gr0,dampr"#ampr"\n" ::: "memory");		\
++	asm volatile("movgs gr0,dampr"#ampr"\n" : : : "memory");	\
+ 	if (type == __KM_CACHE)						\
+-		asm volatile("movgs gr0,iampr"#ampr"\n" ::: "memory");	\
++		asm volatile("movgs gr0,iampr"#ampr"\n" : : : "memory");\
+ } while(0)
+ 
+ #define __kunmap_atomic_secondary(slot, vaddr)				\
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/module.h ./include/asm-frv/module.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/module.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-frv/module.h	2007-02-02 08:18:15.000000000 -0800
+@@ -11,9 +11,7 @@
+ #ifndef _ASM_MODULE_H
+ #define _ASM_MODULE_H
+ 
+-struct mod_arch_specific
+-{
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr	Elf32_Shdr
+ #define Elf_Sym		Elf32_Sym
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/pgtable.h ./include/asm-frv/pgtable.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/pgtable.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-frv/pgtable.h	2007-02-01 22:37:01.000000000 -0800
+@@ -172,7 +172,7 @@
+ #define set_pte(pteptr, pteval)				\
+ do {							\
+ 	*(pteptr) = (pteval);				\
+-	asm volatile("dcf %M0" :: "U"(*pteptr));	\
++	asm volatile("dcf %M0" : : "U"(*pteptr));	\
+ } while(0)
+ #define set_pte_at(mm,addr,ptep,pteval) set_pte(ptep,pteval)
+ 
+@@ -206,7 +206,7 @@
+ #define set_pgd(pgdptr, pgdval)				\
+ do {							\
+ 	memcpy((pgdptr), &(pgdval), sizeof(pgd_t));	\
+-	asm volatile("dcf %M0" :: "U"(*(pgdptr)));	\
++	asm volatile("dcf %M0" : : "U"(*(pgdptr)));	\
+ } while(0)
+ 
+ static inline pud_t *pud_offset(pgd_t *pgd, unsigned long address)
+@@ -393,28 +393,28 @@
+ static inline int ptep_test_and_clear_dirty(struct vm_area_struct *vma, unsigned long addr, pte_t *ptep)
+ {
+ 	int i = test_and_clear_bit(_PAGE_BIT_DIRTY, ptep);
+-	asm volatile("dcf %M0" :: "U"(*ptep));
++	asm volatile("dcf %M0" : : "U"(*ptep));
+ 	return i;
+ }
+ 
+ static inline int ptep_test_and_clear_young(struct vm_area_struct *vma, unsigned long addr, pte_t *ptep)
+ {
+ 	int i = test_and_clear_bit(_PAGE_BIT_ACCESSED, ptep);
+-	asm volatile("dcf %M0" :: "U"(*ptep));
++	asm volatile("dcf %M0" : : "U"(*ptep));
+ 	return i;
+ }
+ 
+ static inline pte_t ptep_get_and_clear(struct mm_struct *mm, unsigned long addr, pte_t *ptep)
+ {
+ 	unsigned long x = xchg(&ptep->pte, 0);
+-	asm volatile("dcf %M0" :: "U"(*ptep));
++	asm volatile("dcf %M0" : : "U"(*ptep));
+ 	return __pte(x);
+ }
+ 
+ static inline void ptep_set_wrprotect(struct mm_struct *mm, unsigned long addr, pte_t *ptep)
+ {
+ 	set_bit(_PAGE_BIT_WP, ptep);
+-	asm volatile("dcf %M0" :: "U"(*ptep));
++	asm volatile("dcf %M0" : : "U"(*ptep));
+ }
+ 
+ /*
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/processor.h ./include/asm-frv/processor.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/processor.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-frv/processor.h	2007-02-01 22:37:01.000000000 -0800
+@@ -111,9 +111,9 @@
+ {
+ }
+ 
+-extern asmlinkage int kernel_thread(int (*fn)(void *), void * arg, unsigned long flags);
+-extern asmlinkage void save_user_regs(struct user_context *target);
+-extern asmlinkage void *restore_user_regs(const struct user_context *target, ...);
++asmlinkage int kernel_thread(int (*fn)(void *), void * arg, unsigned long flags);
++asmlinkage void save_user_regs(struct user_context *target);
++asmlinkage void *restore_user_regs(const struct user_context *target, ...);
+ 
+ #define copy_segments(tsk, mm)		do { } while (0)
+ #define release_segments(mm)		do { } while (0)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/spr-regs.h ./include/asm-frv/spr-regs.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/spr-regs.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-frv/spr-regs.h	2007-02-01 22:37:01.000000000 -0800
+@@ -329,7 +329,7 @@
+ 
+ #define restore_dampr(R, _dampr)			\
+ do {							\
+-	asm volatile("movgs %0,dampr"R :: "r"(_dampr));	\
++	asm volatile("movgs %0,dampr"R : : "r"(_dampr));	\
+ } while(0)
+ 
+ /*
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/system.h ./include/asm-frv/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-frv/system.h	2007-02-01 22:37:01.000000000 -0800
+@@ -22,7 +22,7 @@
+  * `prev' will never be the same as `next'.
+  * The `mb' is to tell GCC not to cache `current' across this call.
+  */
+-extern asmlinkage
++asmlinkage
+ struct task_struct *__switch_to(struct thread_struct *prev_thread,
+ 				struct thread_struct *next_thread,
+ 				struct task_struct *prev);
+@@ -174,7 +174,7 @@
+ /*
+  * Force strict CPU ordering.
+  */
+-#define nop()			asm volatile ("nop"::)
++#define nop()			asm volatile ("nop": :)
+ #define mb()			asm volatile ("membar" : : :"memory")
+ #define rmb()			asm volatile ("membar" : : :"memory")
+ #define wmb()			asm volatile ("membar" : : :"memory")
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/tlbflush.h ./include/asm-frv/tlbflush.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-frv/tlbflush.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-frv/tlbflush.h	2007-02-01 22:37:01.000000000 -0800
+@@ -58,7 +58,7 @@
+ #define flush_tlb()				flush_tlb_all()
+ #define flush_tlb_kernel_range(start, end)	flush_tlb_all()
+ #define flush_tlb_pgtables(mm,start,end) \
+-	asm volatile("movgs %0,scr0 ! movgs %0,scr1" :: "r"(ULONG_MAX) : "memory");
++	asm volatile("movgs %0,scr0 ! movgs %0,scr1" : : "r"(ULONG_MAX) : "memory");
+ 
+ #else
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-h8300/bitops.h ./include/asm-h8300/bitops.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-h8300/bitops.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-h8300/bitops.h	2007-02-01 22:37:01.000000000 -0800
+@@ -34,7 +34,7 @@
+ 
+ #define H8300_GEN_BITOP_CONST(OP,BIT)			    \
+ 	case BIT:					    \
+-	__asm__(OP " #" #BIT ",@%0"::"r"(b_addr):"memory"); \
++	__asm__(OP " #" #BIT ",@%0": :"r"(b_addr):"memory"); \
+ 	break;
+ 
+ #define H8300_GEN_BITOP(FNAME,OP)				      \
+@@ -54,7 +54,7 @@
+ 			H8300_GEN_BITOP_CONST(OP,7)		      \
+ 		}						      \
+ 	} else {						      \
+-		__asm__(OP " %w0,@%1"::"r"(nr),"r"(b_addr):"memory"); \
++		__asm__(OP " %w0,@%1": :"r"(nr),"r"(b_addr):"memory"); \
+ 	}							      \
+ }
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-h8300/module.h ./include/asm-h8300/module.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-h8300/module.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-h8300/module.h	2007-02-01 22:37:01.000000000 -0800
+@@ -3,7 +3,7 @@
+ /*
+  * This file contains the H8/300 architecture specific module code.
+  */
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+ #define Elf_Ehdr Elf32_Ehdr
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-h8300/system.h ./include/asm-h8300/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-h8300/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-h8300/system.h	2007-02-01 22:37:01.000000000 -0800
+@@ -78,7 +78,7 @@
+  * Force strict CPU ordering.
+  * Not really required on H8...
+  */
+-#define nop()  asm volatile ("nop"::)
++#define nop()  asm volatile ("nop": :)
+ #define mb()   asm volatile (""   : : :"memory")
+ #define rmb()  asm volatile (""   : : :"memory")
+ #define wmb()  asm volatile (""   : : :"memory")
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/alternative.h ./include/asm-i386/alternative.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/alternative.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-i386/alternative.h	2007-02-02 08:18:39.000000000 -0800
+@@ -59,7 +59,7 @@
+ 		      ".previous\n"					\
+ 		      ".section .altinstr_replacement,\"ax\"\n"		\
+ 		      "663:\n\t" newinstr "\n664:\n"   /* replacement */\
+-		      ".previous" :: "i" (feature) : "memory")
++		      ".previous" : : "i" (feature) : "memory")
+ 
+ /*
+  * Alternative inline assembly with input.
+@@ -83,7 +83,7 @@
+ 		      ".previous\n"					\
+ 		      ".section .altinstr_replacement,\"ax\"\n"		\
+ 		      "663:\n\t" newinstr "\n664:\n"   /* replacement */\
+-		      ".previous" :: "i" (feature), ##input)
++		      ".previous" : : "i" (feature), ##input)
+ 
+ /*
+  * Alternative inline assembly for SMP.
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/desc.h ./include/asm-i386/desc.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/desc.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-i386/desc.h	2007-02-01 22:41:18.000000000 -0800
+@@ -64,13 +64,13 @@
+ #define DESCTYPE_DPL3	0x60	/* DPL-3 */
+ #define DESCTYPE_S	0x10	/* !system */
+ 
+-#define load_TR_desc() __asm__ __volatile__("ltr %w0"::"q" (GDT_ENTRY_TSS*8))
+-#define load_LDT_desc() __asm__ __volatile__("lldt %w0"::"q" (GDT_ENTRY_LDT*8))
++#define load_TR_desc() __asm__ __volatile__("ltr %w0": :"q" (GDT_ENTRY_TSS*8))
++#define load_LDT_desc() __asm__ __volatile__("lldt %w0": :"q" (GDT_ENTRY_LDT*8))
+ 
+-#define load_gdt(dtr) __asm__ __volatile("lgdt %0"::"m" (*dtr))
+-#define load_idt(dtr) __asm__ __volatile("lidt %0"::"m" (*dtr))
+-#define load_tr(tr) __asm__ __volatile("ltr %0"::"m" (tr))
+-#define load_ldt(ldt) __asm__ __volatile("lldt %0"::"m" (ldt))
++#define load_gdt(dtr) __asm__ __volatile("lgdt %0": :"m" (*dtr))
++#define load_idt(dtr) __asm__ __volatile("lidt %0": :"m" (*dtr))
++#define load_tr(tr) __asm__ __volatile("ltr %0": :"m" (tr))
++#define load_ldt(ldt) __asm__ __volatile("lldt %0": :"m" (ldt))
+ 
+ #define store_gdt(dtr) __asm__ ("sgdt %0":"=m" (*dtr))
+ #define store_idt(dtr) __asm__ ("sidt %0":"=m" (*dtr))
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/edac.h ./include/asm-i386/edac.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/edac.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-i386/edac.h	2007-02-02 08:18:55.000000000 -0800
+@@ -12,7 +12,7 @@
+ 		/* Very carefully read and write to memory atomically
+ 		 * so we are interrupt, DMA and SMP safe.
+ 		 */
+-		__asm__ __volatile__("lock; addl $0, %0"::"m"(*virt_addr));
++		__asm__ __volatile__("lock; addl $0, %0": :"m"(*virt_addr));
+ }
+ 
+ #endif
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/elf.h ./include/asm-i386/elf.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/elf.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-i386/elf.h	2007-02-01 22:41:37.000000000 -0800
+@@ -152,7 +152,7 @@
+ #define VDSO_HIGH_EHDR		((const struct elfhdr *) VDSO_HIGH_BASE)
+ #define VDSO_EHDR		((const struct elfhdr *) VDSO_COMPAT_BASE)
+ 
+-extern void __kernel_vsyscall;
++extern void *__kernel_vsyscall;
+ 
+ #define VDSO_ENTRY		VDSO_SYM(&__kernel_vsyscall)
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/mach-voyager/irq_vectors.h ./include/asm-i386/mach-voyager/irq_vectors.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/mach-voyager/irq_vectors.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-i386/mach-voyager/irq_vectors.h	2007-02-01 22:37:01.000000000 -0800
+@@ -66,14 +66,14 @@
+ #define invalid_vm86_irq(irq)	((irq) < 3 || (irq) > 15)
+ 
+ #ifndef __ASSEMBLY__
+-extern asmlinkage void vic_cpi_interrupt(void);
+-extern asmlinkage void vic_sys_interrupt(void);
+-extern asmlinkage void vic_cmn_interrupt(void);
+-extern asmlinkage void qic_timer_interrupt(void);
+-extern asmlinkage void qic_invalidate_interrupt(void);
+-extern asmlinkage void qic_reschedule_interrupt(void);
+-extern asmlinkage void qic_enable_irq_interrupt(void);
+-extern asmlinkage void qic_call_function_interrupt(void);
++asmlinkage void vic_cpi_interrupt(void);
++asmlinkage void vic_sys_interrupt(void);
++asmlinkage void vic_cmn_interrupt(void);
++asmlinkage void qic_timer_interrupt(void);
++asmlinkage void qic_invalidate_interrupt(void);
++asmlinkage void qic_reschedule_interrupt(void);
++asmlinkage void qic_enable_irq_interrupt(void);
++asmlinkage void qic_call_function_interrupt(void);
+ #endif /* !__ASSEMBLY__ */
+ 
+ #endif /* _ASM_IRQ_VECTORS_H */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/module.h ./include/asm-i386/module.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/module.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-i386/module.h	2007-02-01 22:37:01.000000000 -0800
+@@ -2,9 +2,7 @@
+ #define _ASM_I386_MODULE_H
+ 
+ /* x86 is simple */
+-struct mod_arch_specific
+-{
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/processor.h ./include/asm-i386/processor.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/processor.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-i386/processor.h	2007-02-03 08:56:39.000000000 -0800
+@@ -173,7 +173,7 @@
+ {
+ 	*eax = op;
+ 	*ecx = count;
+-	__cpuid(eax, ebx, ecx, edx);
++	__cpuid((unsigned int *) eax, (unsigned int *) ebx, (unsigned int *) ecx, (unsigned int *) edx);
+ }
+ 
+ /*
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/spinlock.h ./include/asm-i386/spinlock.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/spinlock.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-i386/spinlock.h	2007-02-01 22:41:56.000000000 -0800
+@@ -96,7 +96,7 @@
+ 
+ static inline void __raw_spin_unlock(raw_spinlock_t *lock)
+ {
+-	asm volatile("movb $1,%0" : "+m" (lock->slock) :: "memory");
++	asm volatile("movb $1,%0" : "+m" (lock->slock) : : "memory");
+ }
+ 
+ #else
+@@ -163,7 +163,7 @@
+ 		     "jns 1f\n"
+ 		     "call __read_lock_failed\n\t"
+ 		     "1:\n"
+-		     ::"a" (rw) : "memory");
++		     : :"a" (rw) : "memory");
+ }
+ 
+ static inline void __raw_write_lock(raw_rwlock_t *rw)
+@@ -172,7 +172,7 @@
+ 		     "jz 1f\n"
+ 		     "call __write_lock_failed\n\t"
+ 		     "1:\n"
+-		     ::"a" (rw) : "memory");
++		     : :"a" (rw) : "memory");
+ }
+ 
+ static inline int __raw_read_trylock(raw_rwlock_t *lock)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/system.h ./include/asm-i386/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-i386/system.h	2007-02-01 22:37:01.000000000 -0800
+@@ -273,26 +273,26 @@
+ #endif
+ 
+ static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
+-				      unsigned long new, int size)
++				      unsigned long n, int size)
+ {
+ 	unsigned long prev;
+ 	switch (size) {
+ 	case 1:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgb %b1,%2"
+ 				     : "=a"(prev)
+-				     : "q"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "q"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	case 2:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgw %w1,%2"
+ 				     : "=a"(prev)
+-				     : "r"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "r"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	case 4:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgl %1,%2"
+ 				     : "=a"(prev)
+-				     : "r"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "r"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	}
+@@ -344,15 +344,15 @@
+ extern unsigned long cmpxchg_386_u32(volatile void *, u32, u32);
+ 
+ static inline unsigned long cmpxchg_386(volatile void *ptr, unsigned long old,
+-				      unsigned long new, int size)
++				      unsigned long n, int size)
+ {
+ 	switch (size) {
+ 	case 1:
+-		return cmpxchg_386_u8(ptr, old, new);
++		return cmpxchg_386_u8(ptr, old, n);
+ 	case 2:
+-		return cmpxchg_386_u16(ptr, old, new);
++		return cmpxchg_386_u16(ptr, old, n);
+ 	case 4:
+-		return cmpxchg_386_u32(ptr, old, new);
++		return cmpxchg_386_u32(ptr, old, n);
+ 	}
+ 	return old;
+ }
+@@ -373,13 +373,13 @@
+ #ifdef CONFIG_X86_CMPXCHG64
+ 
+ static inline unsigned long long __cmpxchg64(volatile void *ptr, unsigned long long old,
+-				      unsigned long long new)
++				      unsigned long long n)
+ {
+ 	unsigned long long prev;
+ 	__asm__ __volatile__(LOCK_PREFIX "cmpxchg8b %3"
+ 			     : "=A"(prev)
+-			     : "b"((unsigned long)new),
+-			       "c"((unsigned long)(new >> 32)),
++			     : "b"((unsigned long)n),
++			       "c"((unsigned long)(n >> 32)),
+ 			       "m"(*__xg(ptr)),
+ 			       "0"(old)
+ 			     : "memory");
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/tlbflush.h ./include/asm-i386/tlbflush.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/tlbflush.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-i386/tlbflush.h	2007-02-02 08:18:48.000000000 -0800
+@@ -12,7 +12,7 @@
+ 			"movl %%cr3, %0;              \n"		\
+ 			"movl %0, %%cr3;  # flush TLB \n"		\
+ 			: "=r" (tmpreg)					\
+-			:: "memory");					\
++			: : "memory");					\
+ 	} while (0)
+ 
+ /*
+@@ -47,7 +47,7 @@
+ #define cpu_has_invlpg	(boot_cpu_data.x86 > 3)
+ 
+ #define __flush_tlb_single(addr) \
+-	__asm__ __volatile__("invlpg (%0)" ::"r" (addr) : "memory")
++	__asm__ __volatile__("invlpg (%0)" : :"r" (addr) : "memory")
+ 
+ #ifdef CONFIG_X86_INVLPG
+ # define __flush_tlb_one(addr) __flush_tlb_single(addr)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/unwind.h ./include/asm-i386/unwind.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-i386/unwind.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-i386/unwind.h	2007-02-02 08:18:26.000000000 -0800
+@@ -73,7 +73,7 @@
+ 	info->regs.xes = __USER_DS;
+ }
+ 
+-extern asmlinkage int arch_unwind_init_running(struct unwind_frame_info *,
++asmlinkage int arch_unwind_init_running(struct unwind_frame_info *,
+                                                asmlinkage int (*callback)(struct unwind_frame_info *,
+                                                                           void *arg),
+                                                void *arg);
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-ia64/gcc_intrin.h ./include/asm-ia64/gcc_intrin.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-ia64/gcc_intrin.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-ia64/gcc_intrin.h	2007-02-01 22:37:01.000000000 -0800
+@@ -13,13 +13,13 @@
+ 
+ /* Optimization barrier */
+ /* The "volatile" is due to gcc bugs */
+-#define ia64_barrier()	asm volatile ("":::"memory")
++#define ia64_barrier()	asm volatile ("": : :"memory")
+ 
+-#define ia64_stop()	asm volatile (";;"::)
++#define ia64_stop()	asm volatile (";;": :)
+ 
+-#define ia64_invala_gr(regnum)	asm volatile ("invala.e r%0" :: "i"(regnum))
++#define ia64_invala_gr(regnum)	asm volatile ("invala.e r%0" : : "i"(regnum))
+ 
+-#define ia64_invala_fr(regnum)	asm volatile ("invala.e f%0" :: "i"(regnum))
++#define ia64_invala_fr(regnum)	asm volatile ("invala.e f%0" : : "i"(regnum))
+ 
+ extern void ia64_bad_param_for_setreg (void);
+ extern void ia64_bad_param_for_getreg (void);
+@@ -30,24 +30,24 @@
+ ({										\
+ 	switch (regnum) {							\
+ 	    case _IA64_REG_PSR_L:						\
+-		    asm volatile ("mov psr.l=%0" :: "r"(val) : "memory");	\
++		    asm volatile ("mov psr.l=%0" : : "r"(val) : "memory");	\
+ 		    break;							\
+ 	    case _IA64_REG_AR_KR0 ... _IA64_REG_AR_EC:				\
+-		    asm volatile ("mov ar%0=%1" ::				\
++		    asm volatile ("mov ar%0=%1" : :				\
+ 		    			  "i" (regnum - _IA64_REG_AR_KR0),	\
+ 					  "r"(val): "memory");			\
+ 		    break;							\
+ 	    case _IA64_REG_CR_DCR ... _IA64_REG_CR_LRR1:			\
+-		    asm volatile ("mov cr%0=%1" ::				\
++		    asm volatile ("mov cr%0=%1" : :				\
+ 				          "i" (regnum - _IA64_REG_CR_DCR),	\
+ 					  "r"(val): "memory" );			\
+ 		    break;							\
+ 	    case _IA64_REG_SP:							\
+-		    asm volatile ("mov r12=%0" ::				\
++		    asm volatile ("mov r12=%0" : :				\
+ 			    		  "r"(val): "memory");			\
+ 		    break;							\
+ 	    case _IA64_REG_GP:							\
+-		    asm volatile ("mov gp=%0" :: "r"(val) : "memory");		\
++		    asm volatile ("mov gp=%0" : : "r"(val) : "memory");		\
+ 		break;								\
+ 	    default:								\
+ 		    ia64_bad_param_for_setreg();				\
+@@ -96,7 +96,7 @@
+ ({								\
+ 	switch (mode) {						\
+ 	case ia64_hint_pause:					\
+-		asm volatile ("hint @pause" ::: "memory");	\
++		asm volatile ("hint @pause" : : : "memory");	\
+ 		break;						\
+ 	}							\
+ })
+@@ -194,31 +194,31 @@
+ #define ia64_stfs(x, regnum)						\
+ ({									\
+ 	register double __f__ asm ("f"#regnum);				\
+-	asm volatile ("stfs [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stfs [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_stfd(x, regnum)						\
+ ({									\
+ 	register double __f__ asm ("f"#regnum);				\
+-	asm volatile ("stfd [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stfd [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_stfe(x, regnum)						\
+ ({									\
+ 	register double __f__ asm ("f"#regnum);				\
+-	asm volatile ("stfe [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stfe [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_stf8(x, regnum)						\
+ ({									\
+ 	register double __f__ asm ("f"#regnum);				\
+-	asm volatile ("stf8 [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stf8 [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_stf_spill(x, regnum)						\
+ ({										\
+ 	register double __f__ asm ("f"#regnum);					\
+-	asm volatile ("stf.spill [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stf.spill [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_fetchadd4_acq(p, inc)						\
+@@ -298,7 +298,7 @@
+ #define ia64_cmpxchg1_acq(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg1.acq %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -307,7 +307,7 @@
+ #define ia64_cmpxchg1_rel(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg1.rel %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -316,7 +316,7 @@
+ #define ia64_cmpxchg2_acq(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg2.acq %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -325,7 +325,7 @@
+ #define ia64_cmpxchg2_rel(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 											\
+ 	asm volatile ("cmpxchg2.rel %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+@@ -335,7 +335,7 @@
+ #define ia64_cmpxchg4_acq(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg4.acq %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -344,7 +344,7 @@
+ #define ia64_cmpxchg4_rel(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg4.rel %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -353,7 +353,7 @@
+ #define ia64_cmpxchg8_acq(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg8.acq %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -362,17 +362,17 @@
+ #define ia64_cmpxchg8_rel(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 											\
+ 	asm volatile ("cmpxchg8.rel %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+ })
+ 
+-#define ia64_mf()	asm volatile ("mf" ::: "memory")
+-#define ia64_mfa()	asm volatile ("mf.a" ::: "memory")
++#define ia64_mf()	asm volatile ("mf" : : : "memory")
++#define ia64_mfa()	asm volatile ("mf.a" : : : "memory")
+ 
+-#define ia64_invala() asm volatile ("invala" ::: "memory")
++#define ia64_invala() asm volatile ("invala" : : : "memory")
+ 
+ #define ia64_thash(addr)							\
+ ({										\
+@@ -381,8 +381,8 @@
+ 	ia64_intri_res;								\
+ })
+ 
+-#define ia64_srlz_i()	asm volatile (";; srlz.i ;;" ::: "memory")
+-#define ia64_srlz_d()	asm volatile (";; srlz.d" ::: "memory");
++#define ia64_srlz_i()	asm volatile (";; srlz.i ;;" : : : "memory")
++#define ia64_srlz_d()	asm volatile (";; srlz.d" : : : "memory");
+ 
+ #ifdef HAVE_SERIALIZE_DIRECTIVE
+ # define ia64_dv_serialize_data()		asm volatile (".serialize.data");
+@@ -392,18 +392,18 @@
+ # define ia64_dv_serialize_instruction()
+ #endif
+ 
+-#define ia64_nop(x)	asm volatile ("nop %0"::"i"(x));
++#define ia64_nop(x)	asm volatile ("nop %0": :"i"(x));
+ 
+-#define ia64_itci(addr)	asm volatile ("itc.i %0;;" :: "r"(addr) : "memory")
++#define ia64_itci(addr)	asm volatile ("itc.i %0;;" : : "r"(addr) : "memory")
+ 
+-#define ia64_itcd(addr)	asm volatile ("itc.d %0;;" :: "r"(addr) : "memory")
++#define ia64_itcd(addr)	asm volatile ("itc.d %0;;" : : "r"(addr) : "memory")
+ 
+ 
+ #define ia64_itri(trnum, addr) asm volatile ("itr.i itr[%0]=%1"				\
+-					     :: "r"(trnum), "r"(addr) : "memory")
++					     : : "r"(trnum), "r"(addr) : "memory")
+ 
+ #define ia64_itrd(trnum, addr) asm volatile ("itr.d dtr[%0]=%1"				\
+-					     :: "r"(trnum), "r"(addr) : "memory")
++					     : : "r"(trnum), "r"(addr) : "memory")
+ 
+ #define ia64_tpa(addr)								\
+ ({										\
+@@ -413,22 +413,22 @@
+ })
+ 
+ #define __ia64_set_dbr(index, val)						\
+-	asm volatile ("mov dbr[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov dbr[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_ibr(index, val)						\
+-	asm volatile ("mov ibr[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov ibr[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_pkr(index, val)						\
+-	asm volatile ("mov pkr[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov pkr[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_pmc(index, val)						\
+-	asm volatile ("mov pmc[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov pmc[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_pmd(index, val)						\
+-	asm volatile ("mov pmd[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov pmd[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_rr(index, val)							\
+-	asm volatile ("mov rr[%0]=%1" :: "r"(index), "r"(val) : "memory");
++	asm volatile ("mov rr[%0]=%1" : : "r"(index), "r"(val) : "memory");
+ 
+ #define ia64_get_cpuid(index)								\
+ ({											\
+@@ -480,35 +480,35 @@
+ 	ia64_intri_res;								\
+ })
+ 
+-#define ia64_fc(addr)	asm volatile ("fc %0" :: "r"(addr) : "memory")
++#define ia64_fc(addr)	asm volatile ("fc %0" : : "r"(addr) : "memory")
+ 
+ 
+-#define ia64_sync_i()	asm volatile (";; sync.i" ::: "memory")
++#define ia64_sync_i()	asm volatile (";; sync.i" : : : "memory")
+ 
+-#define ia64_ssm(mask)	asm volatile ("ssm %0":: "i"((mask)) : "memory")
+-#define ia64_rsm(mask)	asm volatile ("rsm %0":: "i"((mask)) : "memory")
+-#define ia64_sum(mask)	asm volatile ("sum %0":: "i"((mask)) : "memory")
+-#define ia64_rum(mask)	asm volatile ("rum %0":: "i"((mask)) : "memory")
++#define ia64_ssm(mask)	asm volatile ("ssm %0": : "i"((mask)) : "memory")
++#define ia64_rsm(mask)	asm volatile ("rsm %0": : "i"((mask)) : "memory")
++#define ia64_sum(mask)	asm volatile ("sum %0": : "i"((mask)) : "memory")
++#define ia64_rum(mask)	asm volatile ("rum %0": : "i"((mask)) : "memory")
+ 
+-#define ia64_ptce(addr)	asm volatile ("ptc.e %0" :: "r"(addr))
++#define ia64_ptce(addr)	asm volatile ("ptc.e %0" : : "r"(addr))
+ 
+ #define ia64_ptcga(addr, size)							\
+ do {										\
+-	asm volatile ("ptc.ga %0,%1" :: "r"(addr), "r"(size) : "memory");	\
++	asm volatile ("ptc.ga %0,%1" : : "r"(addr), "r"(size) : "memory");	\
+ 	ia64_dv_serialize_data();						\
+ } while (0)
+ 
+ #define ia64_ptcl(addr, size)							\
+ do {										\
+-	asm volatile ("ptc.l %0,%1" :: "r"(addr), "r"(size) : "memory");	\
++	asm volatile ("ptc.l %0,%1" : : "r"(addr), "r"(size) : "memory");	\
+ 	ia64_dv_serialize_data();						\
+ } while (0)
+ 
+ #define ia64_ptri(addr, size)						\
+-	asm volatile ("ptr.i %0,%1" :: "r"(addr), "r"(size) : "memory")
++	asm volatile ("ptr.i %0,%1" : : "r"(addr), "r"(size) : "memory")
+ 
+ #define ia64_ptrd(addr, size)						\
+-	asm volatile ("ptr.d %0,%1" :: "r"(addr), "r"(size) : "memory")
++	asm volatile ("ptr.d %0,%1" : : "r"(addr), "r"(size) : "memory")
+ 
+ /* Values for lfhint in ia64_lfetch and ia64_lfetch_fault */
+ 
+@@ -539,16 +539,16 @@
+ ({									\
+         switch (lfhint) {						\
+         case ia64_lfhint_none:						\
+-                asm volatile ("lfetch.excl [%0]" :: "r"(y));		\
++                asm volatile ("lfetch.excl [%0]" : : "r"(y));		\
+                 break;							\
+         case ia64_lfhint_nt1:						\
+-                asm volatile ("lfetch.excl.nt1 [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.excl.nt1 [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nt2:						\
+-                asm volatile ("lfetch.excl.nt2 [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.excl.nt2 [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nta:						\
+-                asm volatile ("lfetch.excl.nta [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.excl.nta [%0]" : : "r"(y));	\
+                 break;							\
+         }								\
+ })
+@@ -575,16 +575,16 @@
+ ({									\
+         switch (lfhint) {						\
+         case ia64_lfhint_none:						\
+-                asm volatile ("lfetch.fault.excl [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.fault.excl [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nt1:						\
+-                asm volatile ("lfetch.fault.excl.nt1 [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.fault.excl.nt1 [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nt2:						\
+-                asm volatile ("lfetch.fault.excl.nt2 [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.fault.excl.nt2 [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nta:						\
+-                asm volatile ("lfetch.fault.excl.nta [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.fault.excl.nta [%0]" : : "r"(y));	\
+                 break;							\
+         }								\
+ })
+@@ -595,7 +595,7 @@
+ 		      "(p6) ssm psr.i;"				\
+ 		      "(p7) rsm psr.i;;"			\
+ 		      "(p6) srlz.d"				\
+-		      :: "r"((x)) : "p6", "p7", "memory");	\
++		      : : "r"((x)) : "p6", "p7", "memory");	\
+ } while (0)
+ 
+ #endif /* _ASM_IA64_GCC_INTRIN_H */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-ia64/spinlock.h ./include/asm-ia64/spinlock.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-ia64/spinlock.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-ia64/spinlock.h	2007-02-02 08:19:21.000000000 -0800
+@@ -91,7 +91,7 @@
+ /* Unlock by doing an ordered store and releasing the cacheline with nta */
+ static inline void __raw_spin_unlock(raw_spinlock_t *x) {
+ 	barrier();
+-	asm volatile ("st4.rel.nta [%0] = r0\n\t" :: "r"(x));
++	asm volatile ("st4.rel.nta [%0] = r0\n\t" : : "r"(x));
+ }
+ 
+ #else /* !ASM_SUPPORTED */
+@@ -150,7 +150,7 @@
+ 		"cmpxchg4.acq r2 = [%0], r29, ar.ccv;;\n"			\
+ 		"cmp4.eq p0,p7 = r0, r2\n"					\
+ 		"(p7) br.cond.spnt.few 1b;;\n"					\
+-		:: "r"(rw) : "ar.ccv", "p7", "r2", "r29", "memory");		\
++		: : "r"(rw) : "ar.ccv", "p7", "r2", "r29", "memory");		\
+ } while(0)
+ 
+ #define __raw_write_trylock(rw)							\
+@@ -169,7 +169,7 @@
+ {
+ 	u8 *y = (u8 *)x;
+ 	barrier();
+-	asm volatile ("st1.rel.nta [%0] = r0\n\t" :: "r"(y+3) : "memory" );
++	asm volatile ("st1.rel.nta [%0] = r0\n\t" : : "r"(y+3) : "memory" );
+ }
+ 
+ #else /* !ASM_SUPPORTED */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-m32r/module.h ./include/asm-m32r/module.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-m32r/module.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-m32r/module.h	2007-02-01 22:37:01.000000000 -0800
+@@ -3,7 +3,7 @@
+ 
+ /* $Id$ */
+ 
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr	Elf32_Shdr
+ #define Elf_Sym		Elf32_Sym
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-m68k/module.h ./include/asm-m68k/module.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-m68k/module.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-m68k/module.h	2007-02-01 22:37:01.000000000 -0800
+@@ -1,6 +1,6 @@
+ #ifndef _ASM_M68K_MODULE_H
+ #define _ASM_M68K_MODULE_H
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+ #define Elf_Ehdr Elf32_Ehdr
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-m68k/system.h ./include/asm-m68k/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-m68k/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-m68k/system.h	2007-02-01 22:37:01.000000000 -0800
+@@ -165,23 +165,23 @@
+ #define __HAVE_ARCH_CMPXCHG	1
+ 
+ static inline unsigned long __cmpxchg(volatile void *p, unsigned long old,
+-				      unsigned long new, int size)
++				      unsigned long n, int size)
+ {
+ 	switch (size) {
+ 	case 1:
+ 		__asm__ __volatile__ ("casb %0,%2,%1"
+ 				      : "=d" (old), "=m" (*(char *)p)
+-				      : "d" (new), "0" (old), "m" (*(char *)p));
++				      : "d" (n), "0" (old), "m" (*(char *)p));
+ 		break;
+ 	case 2:
+ 		__asm__ __volatile__ ("casw %0,%2,%1"
+ 				      : "=d" (old), "=m" (*(short *)p)
+-				      : "d" (new), "0" (old), "m" (*(short *)p));
++				      : "d" (n), "0" (old), "m" (*(short *)p));
+ 		break;
+ 	case 4:
+ 		__asm__ __volatile__ ("casl %0,%2,%1"
+ 				      : "=d" (old), "=m" (*(int *)p)
+-				      : "d" (new), "0" (old), "m" (*(int *)p));
++				      : "d" (n), "0" (old), "m" (*(int *)p));
+ 		break;
+ 	}
+ 	return old;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-m68knommu/mcfwdebug.h ./include/asm-m68knommu/mcfwdebug.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-m68knommu/mcfwdebug.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-m68knommu/mcfwdebug.h	2007-02-01 22:37:01.000000000 -0800
+@@ -108,10 +108,10 @@
+ 	asm(	"move.l	%0, %%a0\n\t"
+ 		".word	0xfbd0\n\t"
+ 		".word	0x0003\n\t"
+-	    :: "g" (dbg) : "a0");
++	    : : "g" (dbg) : "a0");
+ #else
+ 	// And this is for when it does
+-	asm(	"wdebug	(%0)" :: "a" (dbg));
++	asm(	"wdebug	(%0)" : : "a" (dbg));
+ #endif
+ }
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-m68knommu/system.h ./include/asm-m68knommu/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-m68knommu/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-m68knommu/system.h	2007-02-01 22:37:01.000000000 -0800
+@@ -100,7 +100,7 @@
+  * Force strict CPU ordering.
+  * Not really required on m68k...
+  */
+-#define nop()  asm volatile ("nop"::)
++#define nop()  asm volatile ("nop": :)
+ #define mb()   asm volatile (""   : : :"memory")
+ #define rmb()  asm volatile (""   : : :"memory")
+ #define wmb()  asm volatile (""   : : :"memory")
+@@ -196,14 +196,14 @@
+ #define __HAVE_ARCH_CMPXCHG	1
+ 
+ static __inline__ unsigned long
+-cmpxchg(volatile int *p, int old, int new)
++cmpxchg(volatile int *p, int old, int n)
+ {
+ 	unsigned long flags;
+ 	int prev;
+ 
+ 	local_irq_save(flags);
+ 	if ((prev = *p) == old)
+-		*p = new;
++		*p = n;
+ 	local_irq_restore(flags);
+ 	return(prev);
+ }
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/fpu.h ./include/asm-mips/fpu.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/fpu.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/fpu.h	2007-02-01 22:37:01.000000000 -0800
+@@ -27,11 +27,11 @@
+ struct sigcontext;
+ struct sigcontext32;
+ 
+-extern asmlinkage int (*save_fp_context)(struct sigcontext *sc);
+-extern asmlinkage int (*restore_fp_context)(struct sigcontext *sc);
++extern_asmlinkage int (*save_fp_context)(struct sigcontext *sc);
++extern_asmlinkage int (*restore_fp_context)(struct sigcontext *sc);
+ 
+-extern asmlinkage int (*save_fp_context32)(struct sigcontext32 *sc);
+-extern asmlinkage int (*restore_fp_context32)(struct sigcontext32 *sc);
++extern_asmlinkage int (*save_fp_context32)(struct sigcontext32 *sc);
++extern_asmlinkage int (*restore_fp_context32)(struct sigcontext32 *sc);
+ 
+ extern void fpu_emulator_init_fpu(void);
+ extern void _init_fpu(void);
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/io.h ./include/asm-mips/io.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/io.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/io.h	2007-02-01 22:44:02.000000000 -0800
+@@ -300,7 +300,7 @@
+ 	volatile type *__mem;						\
+ 	type __val;							\
+ 									\
+-	__mem = (void *)__swizzle_addr_##bwlq((unsigned long)(mem));	\
++	__mem = (type *)__swizzle_addr_##bwlq((unsigned long)(mem));	\
+ 									\
+ 	__val = pfx##ioswab##bwlq(__mem, val);				\
+ 									\
+@@ -333,7 +333,7 @@
+ 	volatile type *__mem;						\
+ 	type __val;							\
+ 									\
+-	__mem = (void *)__swizzle_addr_##bwlq((unsigned long)(mem));	\
++	__mem = (type *)__swizzle_addr_##bwlq((unsigned long)(mem));	\
+ 									\
+ 	if (sizeof(type) != sizeof(u64) || sizeof(u64) == sizeof(long))	\
+ 		__val = *__mem;						\
+@@ -367,7 +367,7 @@
+ 	volatile type *__addr;						\
+ 	type __val;							\
+ 									\
+-	__addr = (void *)__swizzle_addr_##bwlq(mips_io_port_base + port); \
++	__addr = (type *)__swizzle_addr_##bwlq(mips_io_port_base + port); \
+ 									\
+ 	__val = pfx##ioswab##bwlq(__addr, val);				\
+ 									\
+@@ -383,7 +383,7 @@
+ 	volatile type *__addr;						\
+ 	type __val;							\
+ 									\
+-	__addr = (void *)__swizzle_addr_##bwlq(mips_io_port_base + port); \
++	__addr = (type *)__swizzle_addr_##bwlq(mips_io_port_base + port); \
+ 									\
+ 	BUILD_BUG_ON(sizeof(type) > sizeof(unsigned long));		\
+ 									\
+@@ -445,7 +445,7 @@
+ static inline void writes##bwlq(volatile void __iomem *mem,		\
+ 				const void *addr, unsigned int count)	\
+ {									\
+-	const volatile type *__addr = addr;				\
++	const volatile type *__addr = (const type *) addr;		\
+ 									\
+ 	while (count--) {						\
+ 		__mem_write##bwlq(*__addr, mem);			\
+@@ -456,7 +456,7 @@
+ static inline void reads##bwlq(volatile void __iomem *mem, void *addr,	\
+ 			       unsigned int count)			\
+ {									\
+-	volatile type *__addr = addr;					\
++	volatile type *__addr = (type *) addr;				\
+ 									\
+ 	while (count--) {						\
+ 		*__addr = __mem_read##bwlq(mem);			\
+@@ -469,7 +469,7 @@
+ static inline void outs##bwlq(unsigned long port, const void *addr,	\
+ 			      unsigned int count)			\
+ {									\
+-	const volatile type *__addr = addr;				\
++	const volatile type *__addr = (const type *) addr;		\
+ 									\
+ 	while (count--) {						\
+ 		__mem_out##bwlq(*__addr, port);				\
+@@ -480,7 +480,7 @@
+ static inline void ins##bwlq(unsigned long port, void *addr,		\
+ 			     unsigned int count)			\
+ {									\
+-	volatile type *__addr = addr;					\
++	volatile type *__addr = (type *) addr;				\
+ 									\
+ 	while (count--) {						\
+ 		*__addr = __mem_in##bwlq(port);				\
+@@ -502,7 +502,7 @@
+ 
+ 
+ /* Depends on MIPS II instruction set */
+-#define mmiowb() asm volatile ("sync" ::: "memory")
++#define mmiowb() asm volatile ("sync" : : : "memory")
+ 
+ static inline void memset_io(volatile void __iomem *addr, unsigned char val, int count)
+ {
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/ip32/mace.h ./include/asm-mips/ip32/mace.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/ip32/mace.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/ip32/mace.h	2007-02-01 22:37:02.000000000 -0800
+@@ -311,11 +311,9 @@
+  */
+ 
+ /* Parallel port */
+-struct mace_parallel {
+-};
++EMPTY_STRUCT_DECL(mace_parallel);
+ 
+-struct mace_ecp1284 {	/* later... */
+-};
++EMPTY_STRUCT_DECL(mace_ecp1284);	/* later... */
+ 
+ /* Serial port */
+ struct mace_serial {
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/irq.h ./include/asm-mips/irq.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/irq.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/irq.h	2007-02-01 22:44:16.000000000 -0800
+@@ -24,7 +24,7 @@
+ #define irq_canonicalize(irq) (irq)	/* Sane hardware, sane code ... */
+ #endif
+ 
+-extern asmlinkage unsigned int do_IRQ(unsigned int irq);
++asmlinkage unsigned int do_IRQ(unsigned int irq);
+ 
+ #ifdef CONFIG_MIPS_MT_SMTC
+ /*
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/mips-boards/sim.h ./include/asm-mips/mips-boards/sim.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/mips-boards/sim.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/mips-boards/sim.h	2007-02-02 08:19:33.000000000 -0800
+@@ -31,7 +31,7 @@
+ ({					   \
+ 	__asm__  __volatile__( \
+         "sltiu $0,$0, %0" \
+-		::"i"(code)					\
++		: :"i"(code)					\
+ 		); \
+ })
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/mipsregs.h ./include/asm-mips/mipsregs.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/mipsregs.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/mipsregs.h	2007-02-02 08:19:45.000000000 -0800
+@@ -1095,15 +1095,15 @@
+ #define mfhi2() ({ long mfhi2; __asm__("mfhi %0, $ac2" : "=r" (mfhi2)); mfhi2;})
+ #define mfhi3() ({ long mfhi3; __asm__("mfhi %0, $ac3" : "=r" (mfhi3)); mfhi3;})
+ 
+-#define mtlo0(x) __asm__("mtlo %0, $ac0" ::"r" (x))
+-#define mtlo1(x) __asm__("mtlo %0, $ac1" ::"r" (x))
+-#define mtlo2(x) __asm__("mtlo %0, $ac2" ::"r" (x))
+-#define mtlo3(x) __asm__("mtlo %0, $ac3" ::"r" (x))
+-
+-#define mthi0(x) __asm__("mthi %0, $ac0" ::"r" (x))
+-#define mthi1(x) __asm__("mthi %0, $ac1" ::"r" (x))
+-#define mthi2(x) __asm__("mthi %0, $ac2" ::"r" (x))
+-#define mthi3(x) __asm__("mthi %0, $ac3" ::"r" (x))
++#define mtlo0(x) __asm__("mtlo %0, $ac0" : :"r" (x))
++#define mtlo1(x) __asm__("mtlo %0, $ac1" : :"r" (x))
++#define mtlo2(x) __asm__("mtlo %0, $ac2" : :"r" (x))
++#define mtlo3(x) __asm__("mtlo %0, $ac3" : :"r" (x))
++
++#define mthi0(x) __asm__("mthi %0, $ac0" : :"r" (x))
++#define mthi1(x) __asm__("mthi %0, $ac1" : :"r" (x))
++#define mthi2(x) __asm__("mthi %0, $ac2" : :"r" (x))
++#define mthi3(x) __asm__("mthi %0, $ac3" : :"r" (x))
+ 
+ #else
+ 
+@@ -1404,13 +1404,13 @@
+ }								\
+ 								\
+ static inline unsigned int					\
+-change_c0_##name(unsigned int change, unsigned int new)		\
++change_c0_##name(unsigned int change, unsigned int newval)	\
+ {								\
+ 	unsigned int res;					\
+ 								\
+ 	res = read_c0_##name();					\
+ 	res &= ~change;						\
+-	res |= (new & change);					\
++	res |= (newval & change);				\
+ 	write_c0_##name(res);					\
+ 								\
+ 	return res;						\
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/paccess.h ./include/asm-mips/paccess.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/paccess.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/paccess.h	2007-02-01 22:37:02.000000000 -0800
+@@ -22,8 +22,8 @@
+ #define __PA_ADDR	".dword"
+ #endif
+ 
+-extern asmlinkage void handle_ibe(void);
+-extern asmlinkage void handle_dbe(void);
++asmlinkage void handle_ibe(void);
++asmlinkage void handle_dbe(void);
+ 
+ #define put_dbe(x,ptr) __put_dbe((x),(ptr),sizeof(*(ptr)))
+ #define get_dbe(x,ptr) __get_dbe((x),(ptr),sizeof(*(ptr)))
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/processor.h ./include/asm-mips/processor.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/processor.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/processor.h	2007-02-01 22:37:02.000000000 -0800
+@@ -231,7 +231,7 @@
+  * overhead of a function call by forcing the compiler to save the return
+  * address register on the stack.
+  */
+-#define return_address() ({__asm__ __volatile__("":::"$31");__builtin_return_address(0);})
++#define return_address() ({__asm__ __volatile__("": : :"$31");__builtin_return_address(0);})
+ 
+ #ifdef CONFIG_CPU_HAS_PREFETCH
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/ptrace.h ./include/asm-mips/ptrace.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/ptrace.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/ptrace.h	2007-02-01 22:37:02.000000000 -0800
+@@ -82,7 +82,7 @@
+ 
+ extern void show_regs(struct pt_regs *);
+ 
+-extern asmlinkage void do_syscall_trace(struct pt_regs *regs, int entryexit);
++asmlinkage void do_syscall_trace(struct pt_regs *regs, int entryexit);
+ 
+ #endif
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/smp.h ./include/asm-mips/smp.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/smp.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/smp.h	2007-02-01 22:37:02.000000000 -0800
+@@ -109,7 +109,7 @@
+ 	core_send_ipi(cpu, SMP_RESCHEDULE_YOURSELF);
+ }
+ 
+-extern asmlinkage void smp_call_function_interrupt(void);
++asmlinkage void smp_call_function_interrupt(void);
+ 
+ #endif /* CONFIG_SMP */
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/system.h ./include/asm-mips/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/system.h	2007-02-01 22:45:05.000000000 -0800
+@@ -147,7 +147,7 @@
+  * switch_to(n) should switch tasks to task nr n, first
+  * checking that n isn't the current task, in which case it does nothing.
+  */
+-extern asmlinkage void *resume(void *last, void *next, void *next_ti);
++asmlinkage void *resume(void *last, void *next, void *next_ti);
+ 
+ struct task_struct;
+ 
+@@ -315,9 +315,9 @@
+ {
+ 	switch (size) {
+ 	case 4:
+-		return __xchg_u32(ptr, x);
++		return __xchg_u32((volatile int *) ptr, x);
+ 	case 8:
+-		return __xchg_u64(ptr, x);
++		return __xchg_u64((volatile __u64 *) ptr, x);
+ 	}
+ 	__xchg_called_with_bad_pointer();
+ 	return x;
+@@ -329,7 +329,7 @@
+ #define __HAVE_ARCH_CMPXCHG 1
+ 
+ static inline unsigned long __cmpxchg_u32(volatile int * m, unsigned long old,
+-	unsigned long new)
++	unsigned long n)
+ {
+ 	__u32 retval;
+ 
+@@ -351,7 +351,7 @@
+ 		"2:							\n"
+ 		"	.set	pop					\n"
+ 		: "=&r" (retval), "=R" (*m)
+-		: "R" (*m), "Jr" (old), "Jr" (new)
++		: "R" (*m), "Jr" (old), "Jr" (n)
+ 		: "memory");
+ 	} else if (cpu_has_llsc) {
+ 		__asm__ __volatile__(
+@@ -371,7 +371,7 @@
+ 		"2:							\n"
+ 		"	.set	pop					\n"
+ 		: "=&r" (retval), "=R" (*m)
+-		: "R" (*m), "Jr" (old), "Jr" (new)
++		: "R" (*m), "Jr" (old), "Jr" (n)
+ 		: "memory");
+ 	} else {
+ 		unsigned long flags;
+@@ -379,7 +379,7 @@
+ 		local_irq_save(flags);
+ 		retval = *m;
+ 		if (retval == old)
+-			*m = new;
++			*m = n;
+ 		local_irq_restore(flags);	/* implies memory barrier  */
+ 	}
+ 
+@@ -388,7 +388,7 @@
+ 
+ #ifdef CONFIG_64BIT
+ static inline unsigned long __cmpxchg_u64(volatile int * m, unsigned long old,
+-	unsigned long new)
++	unsigned long n)
+ {
+ 	__u64 retval;
+ 
+@@ -408,7 +408,7 @@
+ 		"2:							\n"
+ 		"	.set	pop					\n"
+ 		: "=&r" (retval), "=R" (*m)
+-		: "R" (*m), "Jr" (old), "Jr" (new)
++		: "R" (*m), "Jr" (old), "Jr" (n)
+ 		: "memory");
+ 	} else if (cpu_has_llsc) {
+ 		__asm__ __volatile__(
+@@ -426,7 +426,7 @@
+ 		"2:							\n"
+ 		"	.set	pop					\n"
+ 		: "=&r" (retval), "=R" (*m)
+-		: "R" (*m), "Jr" (old), "Jr" (new)
++		: "R" (*m), "Jr" (old), "Jr" (n)
+ 		: "memory");
+ 	} else {
+ 		unsigned long flags;
+@@ -434,7 +434,7 @@
+ 		local_irq_save(flags);
+ 		retval = *m;
+ 		if (retval == old)
+-			*m = new;
++			*m = n;
+ 		local_irq_restore(flags);	/* implies memory barrier  */
+ 	}
+ 
+@@ -442,7 +442,7 @@
+ }
+ #else
+ extern unsigned long __cmpxchg_u64_unsupported_on_32bit_kernels(
+-	volatile int * m, unsigned long old, unsigned long new);
++	volatile int * m, unsigned long old, unsigned long n);
+ #define __cmpxchg_u64 __cmpxchg_u64_unsupported_on_32bit_kernels
+ #endif
+ 
+@@ -451,19 +451,19 @@
+ extern void __cmpxchg_called_with_bad_pointer(void);
+ 
+ static inline unsigned long __cmpxchg(volatile void * ptr, unsigned long old,
+-	unsigned long new, int size)
++	unsigned long n, int size)
+ {
+ 	switch (size) {
+ 	case 4:
+-		return __cmpxchg_u32(ptr, old, new);
++		return __cmpxchg_u32((volatile int *) ptr, old, n);
+ 	case 8:
+-		return __cmpxchg_u64(ptr, old, new);
++		return __cmpxchg_u64((volatile int *) ptr, old, n);
+ 	}
+ 	__cmpxchg_called_with_bad_pointer();
+ 	return old;
+ }
+ 
+-#define cmpxchg(ptr,old,new) ((__typeof__(*(ptr)))__cmpxchg((ptr), (unsigned long)(old), (unsigned long)(new),sizeof(*(ptr))))
++#define cmpxchg(ptr,old,n) ((__typeof__(*(ptr)))__cmpxchg((ptr), (unsigned long)(old), (unsigned long)(n),sizeof(*(ptr))))
+ 
+ extern void set_handler (unsigned long offset, void *addr, unsigned long len);
+ extern void set_uncached_handler (unsigned long offset, void *addr, unsigned long len);
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/time.h ./include/asm-mips/time.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/time.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/time.h	2007-02-01 22:46:07.000000000 -0800
+@@ -66,13 +66,13 @@
+ /*
+  * the corresponding low-level timer interrupt routine.
+  */
+-extern asmlinkage void ll_timer_interrupt(int irq);
++asmlinkage void ll_timer_interrupt(int irq);
+ 
+ /*
+  * profiling and process accouting is done separately in local_timer_interrupt
+  */
+ extern void local_timer_interrupt(int irq, void *dev_id);
+-extern asmlinkage void ll_local_timer_interrupt(int irq);
++asmlinkage void ll_local_timer_interrupt(int irq);
+ 
+ /*
+  * board specific routines required by time_init().
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/watch.h ./include/asm-mips/watch.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-mips/watch.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-mips/watch.h	2007-02-01 22:37:02.000000000 -0800
+@@ -18,9 +18,9 @@
+ 	wr_load = 2
+ };
+ 
+-extern asmlinkage void __watch_set(unsigned long addr, enum wref_type ref);
+-extern asmlinkage void __watch_clear(void);
+-extern asmlinkage void __watch_reenable(void);
++asmlinkage void __watch_set(unsigned long addr, enum wref_type ref);
++asmlinkage void __watch_clear(void);
++asmlinkage void __watch_reenable(void);
+ 
+ #define watch_set(addr, ref)					\
+ 	if (cpu_has_watch)					\
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-parisc/system.h ./include/asm-parisc/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-parisc/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-parisc/system.h	2007-02-01 22:37:02.000000000 -0800
+@@ -133,7 +133,7 @@
+ ** The __asm__ op below simple prevents gcc/ld from reordering
+ ** instructions across the mb() "call".
+ */
+-#define mb()		__asm__ __volatile__("":::"memory")	/* barrier() */
++#define mb()		__asm__ __volatile__("": : :"memory")	/* barrier() */
+ #define rmb()		mb()
+ #define wmb()		mb()
+ #define smp_mb()	mb()
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-powerpc/reg.h ./include/asm-powerpc/reg.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-powerpc/reg.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-powerpc/reg.h	2007-02-02 08:19:59.000000000 -0800
+@@ -649,8 +649,8 @@
+ 			asm volatile("mftbu %0" : "=r" (rval)); rval;})
+ #endif /* !__powerpc64__ */
+ 
+-#define mttbl(v)	asm volatile("mttbl %0":: "r"(v))
+-#define mttbu(v)	asm volatile("mttbu %0":: "r"(v))
++#define mttbl(v)	asm volatile("mttbl %0": : "r"(v))
++#define mttbu(v)	asm volatile("mttbu %0": : "r"(v))
+ 
+ #ifdef CONFIG_PPC32
+ #define mfsrin(v)	({unsigned int rval; \
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-ppc/system.h ./include/asm-ppc/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-ppc/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-ppc/system.h	2007-02-01 22:37:02.000000000 -0800
+@@ -197,7 +197,7 @@
+ #define __HAVE_ARCH_CMPXCHG	1
+ 
+ static __inline__ unsigned long
+-__cmpxchg_u32(volatile unsigned int *p, unsigned int old, unsigned int new)
++__cmpxchg_u32(volatile unsigned int *p, unsigned int old, unsigned int n)
+ {
+ 	unsigned int prev;
+ 
+@@ -213,7 +213,7 @@
+ #endif /* CONFIG_SMP */
+ "2:"
+ 	: "=&r" (prev), "=m" (*p)
+-	: "r" (p), "r" (old), "r" (new), "m" (*p)
++	: "r" (p), "r" (old), "r" (n), "m" (*p)
+ 	: "cc", "memory");
+ 
+ 	return prev;
+@@ -224,14 +224,14 @@
+ extern void __cmpxchg_called_with_bad_pointer(void);
+ 
+ static __inline__ unsigned long
+-__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
++__cmpxchg(volatile void *ptr, unsigned long old, unsigned long n, int size)
+ {
+ 	switch (size) {
+ 	case 4:
+-		return __cmpxchg_u32(ptr, old, new);
++		return __cmpxchg_u32(ptr, old, n);
+ #if 0	/* we don't have __cmpxchg_u64 on 32-bit PPC */
+ 	case 8:
+-		return __cmpxchg_u64(ptr, old, new);
++		return __cmpxchg_u64(ptr, old, n);
+ #endif /* 0 */
+ 	}
+ 	__cmpxchg_called_with_bad_pointer();
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-s390/system.h ./include/asm-s390/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-s390/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-s390/system.h	2007-02-01 22:47:14.000000000 -0800
+@@ -207,7 +207,7 @@
+ 					(unsigned long)(n),sizeof(*(ptr))))
+ 
+ static inline unsigned long
+-__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
++__cmpxchg(volatile void *ptr, unsigned long old, unsigned long n, int size)
+ {
+ 	unsigned long addr, prev, tmp;
+ 	int shift;
+@@ -230,7 +230,7 @@
+ 			"	jnz	0b\n"
+ 			"1:"
+ 			: "=&d" (prev), "=&d" (tmp)
+-			: "d" (old << shift), "d" (new << shift), "a" (ptr),
++			: "d" (old << shift), "d" (n << shift), "a" (ptr),
+ 			  "d" (~(255 << shift))
+ 			: "memory", "cc");
+ 		return prev >> shift;
+@@ -251,21 +251,21 @@
+ 			"	jnz	0b\n"
+ 			"1:"
+ 			: "=&d" (prev), "=&d" (tmp)
+-			: "d" (old << shift), "d" (new << shift), "a" (ptr),
++			: "d" (old << shift), "d" (n << shift), "a" (ptr),
+ 			  "d" (~(65535 << shift))
+ 			: "memory", "cc");
+ 		return prev >> shift;
+ 	case 4:
+ 		asm volatile(
+ 			"	cs	%0,%2,0(%3)\n"
+-			: "=&d" (prev) : "0" (old), "d" (new), "a" (ptr)
++			: "=&d" (prev) : "0" (old), "d" (n), "a" (ptr)
+ 			: "memory", "cc");
+ 		return prev;
+ #ifdef __s390x__
+ 	case 8:
+ 		asm volatile(
+ 			"	csg	%0,%2,0(%3)\n"
+-			: "=&d" (prev) : "0" (old), "d" (new), "a" (ptr)
++			: "=&d" (prev) : "0" (old), "d" (n), "a" (ptr)
+ 			: "memory", "cc");
+ 		return prev;
+ #endif /* __s390x__ */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-sh/module.h ./include/asm-sh/module.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-sh/module.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-sh/module.h	2007-02-01 22:37:02.000000000 -0800
+@@ -5,9 +5,7 @@
+  * This file contains the SH architecture specific module code.
+  */
+ 
+-struct mod_arch_specific {
+-	/* Nothing to see here .. */
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific); /* Nothing to see here .. */
+ 
+ #define Elf_Shdr		Elf32_Shdr
+ #define Elf_Sym			Elf32_Sym
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-sh64/module.h ./include/asm-sh64/module.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-sh64/module.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-sh64/module.h	2007-02-01 22:37:02.000000000 -0800
+@@ -4,9 +4,7 @@
+  * This file contains the SH architecture specific module code.
+  */
+ 
+-struct mod_arch_specific {
+-	/* empty */
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr		Elf32_Shdr
+ #define Elf_Sym			Elf32_Sym
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-sparc/module.h ./include/asm-sparc/module.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-sparc/module.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-sparc/module.h	2007-02-01 22:37:02.000000000 -0800
+@@ -1,6 +1,6 @@
+ #ifndef _ASM_SPARC_MODULE_H
+ #define _ASM_SPARC_MODULE_H
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+ #define Elf_Ehdr Elf32_Ehdr
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-sparc/system.h ./include/asm-sparc/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-sparc/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-sparc/system.h	2007-02-01 22:47:43.000000000 -0800
+@@ -199,9 +199,9 @@
+ #define wmb()	mb()
+ #define read_barrier_depends()	do { } while(0)
+ #define set_mb(__var, __value)  do { __var = __value; mb(); } while(0)
+-#define smp_mb()	__asm__ __volatile__("":::"memory")
+-#define smp_rmb()	__asm__ __volatile__("":::"memory")
+-#define smp_wmb()	__asm__ __volatile__("":::"memory")
++#define smp_mb()	__asm__ __volatile__("": : :"memory")
++#define smp_rmb()	__asm__ __volatile__("": : :"memory")
++#define smp_wmb()	__asm__ __volatile__("": : :"memory")
+ #define smp_read_barrier_depends()	do { } while(0)
+ 
+ #define nop() __asm__ __volatile__ ("nop")
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-sparc64/module.h ./include/asm-sparc64/module.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-sparc64/module.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-sparc64/module.h	2007-02-01 22:37:02.000000000 -0800
+@@ -1,6 +1,6 @@
+ #ifndef _ASM_SPARC64_MODULE_H
+ #define _ASM_SPARC64_MODULE_H
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ #define Elf_Shdr Elf64_Shdr
+ #define Elf_Sym Elf64_Sym
+ #define Elf_Ehdr Elf64_Ehdr
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-sparc64/system.h ./include/asm-sparc64/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-sparc64/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-sparc64/system.h	2007-02-01 22:37:02.000000000 -0800
+@@ -130,9 +130,9 @@
+ #define smp_wmb()	wmb()
+ #define smp_read_barrier_depends()	read_barrier_depends()
+ #else
+-#define smp_mb()	__asm__ __volatile__("":::"memory")
+-#define smp_rmb()	__asm__ __volatile__("":::"memory")
+-#define smp_wmb()	__asm__ __volatile__("":::"memory")
++#define smp_mb()	__asm__ __volatile__("": : :"memory")
++#define smp_rmb()	__asm__ __volatile__("": : :"memory")
++#define smp_wmb()	__asm__ __volatile__("": : :"memory")
+ #define smp_read_barrier_depends()	do { } while(0)
+ #endif
+ 
+@@ -324,29 +324,29 @@
+ #define __HAVE_ARCH_CMPXCHG 1
+ 
+ static __inline__ unsigned long
+-__cmpxchg_u32(volatile int *m, int old, int new)
++__cmpxchg_u32(volatile int *m, int old, int n)
+ {
+ 	__asm__ __volatile__("membar #StoreLoad | #LoadLoad\n"
+ 			     "cas [%2], %3, %0\n\t"
+ 			     "membar #StoreLoad | #StoreStore"
+-			     : "=&r" (new)
+-			     : "0" (new), "r" (m), "r" (old)
++			     : "=&r" (n)
++			     : "0" (n), "r" (m), "r" (old)
+ 			     : "memory");
+ 
+-	return new;
++	return n;
+ }
+ 
+ static __inline__ unsigned long
+-__cmpxchg_u64(volatile long *m, unsigned long old, unsigned long new)
++__cmpxchg_u64(volatile long *m, unsigned long old, unsigned long n)
+ {
+ 	__asm__ __volatile__("membar #StoreLoad | #LoadLoad\n"
+ 			     "casx [%2], %3, %0\n\t"
+ 			     "membar #StoreLoad | #StoreStore"
+-			     : "=&r" (new)
+-			     : "0" (new), "r" (m), "r" (old)
++			     : "=&r" (n)
++			     : "0" (n), "r" (m), "r" (old)
+ 			     : "memory");
+ 
+-	return new;
++	return n;
+ }
+ 
+ /* This function doesn't exist, so you'll get a linker error
+@@ -354,13 +354,13 @@
+ extern void __cmpxchg_called_with_bad_pointer(void);
+ 
+ static __inline__ unsigned long
+-__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
++__cmpxchg(volatile void *ptr, unsigned long old, unsigned long n, int size)
+ {
+ 	switch (size) {
+ 		case 4:
+-			return __cmpxchg_u32(ptr, old, new);
++			return __cmpxchg_u32(ptr, old, n);
+ 		case 8:
+-			return __cmpxchg_u64(ptr, old, new);
++			return __cmpxchg_u64(ptr, old, n);
+ 	}
+ 	__cmpxchg_called_with_bad_pointer();
+ 	return old;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-um/elf-x86_64.h ./include/asm-um/elf-x86_64.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-um/elf-x86_64.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-um/elf-x86_64.h	2007-02-01 22:37:02.000000000 -0800
+@@ -34,7 +34,7 @@
+ #define ELF_NGREG (sizeof (struct user_regs_struct) / sizeof(elf_greg_t))
+ typedef elf_greg_t elf_gregset_t[ELF_NGREG];
+ 
+-typedef struct { } elf_fpregset_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) elf_fpregset_t;
+ 
+ /*
+  * This is used to ensure we don't load something for the wrong architecture.
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-um/module-i386.h ./include/asm-um/module-i386.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-um/module-i386.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-um/module-i386.h	2007-02-01 22:37:02.000000000 -0800
+@@ -2,9 +2,7 @@
+ #define __UM_MODULE_I386_H
+ 
+ /* UML is simple */
+-struct mod_arch_specific
+-{
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-um/module-x86_64.h ./include/asm-um/module-x86_64.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-um/module-x86_64.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-um/module-x86_64.h	2007-02-01 22:37:02.000000000 -0800
+@@ -8,9 +8,7 @@
+ #define __UM_MODULE_X86_64_H
+ 
+ /* UML is simple */
+-struct mod_arch_specific
+-{
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf64_Shdr
+ #define Elf_Sym Elf64_Sym
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-v850/bitops.h ./include/asm-v850/bitops.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-v850/bitops.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-v850/bitops.h	2007-02-01 22:37:02.000000000 -0800
+@@ -45,13 +45,13 @@
+ 
+ #define __const_bit_op(op, nr, addr)					\
+   ({ __asm__ (op " (%0 - 0x123), %1"					\
+-	      :: "g" (((nr) & 0x7) + 0x123),				\
++	      : : "g" (((nr) & 0x7) + 0x123),				\
+ 		 "m" (*((char *)(addr) + ((nr) >> 3)))			\
+ 	      : "memory"); })
+ #define __var_bit_op(op, nr, addr)					\
+   ({ int __nr = (nr);							\
+      __asm__ (op " %0, [%1]"						\
+-	      :: "r" (__nr & 0x7),					\
++	      : : "r" (__nr & 0x7),					\
+ 		 "r" ((char *)(addr) + (__nr >> 3))			\
+ 	      : "memory"); })
+ #define __bit_op(op, nr, addr)						\
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-v850/system.h ./include/asm-v850/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-v850/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-v850/system.h	2007-02-01 22:37:02.000000000 -0800
+@@ -40,7 +40,7 @@
+ #define local_save_flags(flags) \
+   __asm__ __volatile__ ("stsr %1, %0" : "=r" (flags) : "i" (SR_PSW))
+ #define local_restore_flags(flags) \
+-  __asm__ __volatile__ ("ldsr %0, %1" :: "r" (flags), "i" (SR_PSW))
++  __asm__ __volatile__ ("ldsr %0, %1" : : "r" (flags), "i" (SR_PSW))
+ 
+ /* For spinlocks etc */
+ #define	local_irq_save(flags) \
+@@ -62,7 +62,7 @@
+  * Not really required on v850...
+  */
+ #define nop()			__asm__ __volatile__ ("nop")
+-#define mb()			__asm__ __volatile__ ("" ::: "memory")
++#define mb()			__asm__ __volatile__ ("" : : : "memory")
+ #define rmb()			mb ()
+ #define wmb()			mb ()
+ #define read_barrier_depends()	((void)0)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-v850/v850e_intc.h ./include/asm-v850/v850e_intc.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-v850/v850e_intc.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-v850/v850e_intc.h	2007-02-01 22:37:02.000000000 -0800
+@@ -49,7 +49,7 @@
+ static inline void v850e_intc_enable_irq (unsigned irq)
+ {
+ 	__asm__ __volatile__ ("clr1 %0, [%1]"
+-			      :: "r" (V850E_INTC_IMR_BIT (irq)),
++			      : : "r" (V850E_INTC_IMR_BIT (irq)),
+ 			         "r" (V850E_INTC_IMR_ADDR (irq))
+ 			      : "memory");
+ }
+@@ -61,7 +61,7 @@
+ static inline void v850e_intc_disable_irq (unsigned irq)
+ {
+ 	__asm__ __volatile__ ("set1 %0, [%1]"
+-			      :: "r" (V850E_INTC_IMR_BIT (irq)),
++			      : : "r" (V850E_INTC_IMR_BIT (irq)),
+ 			         "r" (V850E_INTC_IMR_ADDR (irq))
+ 			      : "memory");
+ }
+@@ -93,7 +93,7 @@
+ static inline void v850e_intc_clear_pending_irq (unsigned irq)
+ {
+ 	__asm__ __volatile__ ("clr1 %0, 0[%1]"
+-			      :: "i" (V850E_INTC_IC_IF_BIT),
++			      : : "i" (V850E_INTC_IC_IF_BIT),
+ 			         "r" (V850E_INTC_IC_ADDR (irq))
+ 			      : "memory");
+ }
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/agp.h ./include/asm-x86_64/agp.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/agp.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/agp.h	2007-02-01 22:37:02.000000000 -0800
+@@ -17,7 +17,7 @@
+ /* Could use CLFLUSH here if the cpu supports it. But then it would
+    need to be called for each cacheline of the whole page so it may not be 
+    worth it. Would need a page for it. */
+-#define flush_agp_cache() asm volatile("wbinvd":::"memory")
++#define flush_agp_cache() asm volatile("wbinvd": : :"memory")
+ 
+ /* Convert a physical address to an address suitable for the GART. */
+ #define phys_to_gart(x) (x)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/alternative.h ./include/asm-x86_64/alternative.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/alternative.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/alternative.h	2007-02-02 08:20:22.000000000 -0800
+@@ -59,7 +59,7 @@
+ 		      ".previous\n"					\
+ 		      ".section .altinstr_replacement,\"ax\"\n"		\
+ 		      "663:\n\t" newinstr "\n664:\n"   /* replacement */ \
+-		      ".previous" :: "i" (feature) : "memory")
++		      ".previous" : : "i" (feature) : "memory")
+ 
+ /*
+  * Alternative inline assembly with input.
+@@ -83,7 +83,7 @@
+ 		      ".previous\n"					\
+ 		      ".section .altinstr_replacement,\"ax\"\n"		\
+ 		      "663:\n\t" newinstr "\n664:\n"   /* replacement */ \
+-		      ".previous" :: "i" (feature), ##input)
++		      ".previous" : : "i" (feature), ##input)
+ 
+ /* Like alternative_input, but with a single output argument */
+ #define alternative_io(oldinstr, newinstr, feature, output, input...) \
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/bug.h ./include/asm-x86_64/bug.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/bug.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/bug.h	2007-02-01 22:37:02.000000000 -0800
+@@ -23,7 +23,7 @@
+    The magic numbers generate mov $64bitimm,%eax ; ret $offset. */
+ #define BUG() 								\
+ 	asm volatile(							\
+-	"ud2 ; pushq $%c1 ; ret $%c0" :: 				\
++	"ud2 ; pushq $%c1 ; ret $%c0" : : 				\
+ 		     "i"(__LINE__), "i" (__FILE__))
+ void out_of_line_bug(void);
+ #else
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/desc.h ./include/asm-x86_64/desc.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/desc.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/desc.h	2007-02-01 22:37:02.000000000 -0800
+@@ -67,9 +67,9 @@
+ 	unsigned long address;
+ } __attribute__((packed)) ;
+ 
+-#define load_TR_desc() asm volatile("ltr %w0"::"r" (GDT_ENTRY_TSS*8))
+-#define load_LDT_desc() asm volatile("lldt %w0"::"r" (GDT_ENTRY_LDT*8))
+-#define clear_LDT()  asm volatile("lldt %w0"::"r" (0))
++#define load_TR_desc() asm volatile("ltr %w0": :"r" (GDT_ENTRY_TSS*8))
++#define load_LDT_desc() asm volatile("lldt %w0": :"r" (GDT_ENTRY_LDT*8))
++#define clear_LDT()  asm volatile("lldt %w0": :"r" (0))
+ 
+ /*
+  * This is the ldt that every process will get unless we need
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/edac.h ./include/asm-x86_64/edac.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/edac.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/edac.h	2007-02-02 08:20:28.000000000 -0800
+@@ -12,7 +12,7 @@
+ 		/* Very carefully read and write to memory atomically
+ 		 * so we are interrupt, DMA and SMP safe.
+ 		 */
+-		__asm__ __volatile__("lock; addl $0, %0"::"m"(*virt_addr));
++		__asm__ __volatile__("lock; addl $0, %0": :"m"(*virt_addr));
+ }
+ 
+ #endif
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/i387.h ./include/asm-x86_64/i387.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/i387.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/i387.h	2007-02-02 08:20:07.000000000 -0800
+@@ -24,7 +24,7 @@
+ extern void mxcsr_feature_mask_init(void);
+ extern void init_fpu(struct task_struct *child);
+ extern int save_i387(struct _fpstate __user *buf);
+-extern asmlinkage void math_state_restore(void);
++asmlinkage void math_state_restore(void);
+ 
+ /*
+  * FPU lazy state save handling...
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/mmu_context.h ./include/asm-x86_64/mmu_context.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/mmu_context.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/mmu_context.h	2007-02-01 22:37:02.000000000 -0800
+@@ -24,7 +24,7 @@
+ 
+ static inline void load_cr3(pgd_t *pgd)
+ {
+-	asm volatile("movq %0,%%cr3" :: "r" (__pa(pgd)) : "memory");
++	asm volatile("movq %0,%%cr3" : : "r" (__pa(pgd)) : "memory");
+ }
+ 
+ static inline void switch_mm(struct mm_struct *prev, struct mm_struct *next, 
+@@ -63,7 +63,7 @@
+ 
+ #define deactivate_mm(tsk,mm)	do { \
+ 	load_gs_index(0); \
+-	asm volatile("movl %0,%%fs"::"r"(0));  \
++	asm volatile("movl %0,%%fs": :"r"(0));  \
+ } while(0)
+ 
+ #define activate_mm(prev, next) \
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/module.h ./include/asm-x86_64/module.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/module.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/module.h	2007-02-01 22:37:02.000000000 -0800
+@@ -1,7 +1,7 @@
+ #ifndef _ASM_X8664_MODULE_H
+ #define _ASM_X8664_MODULE_H
+ 
+-struct mod_arch_specific {}; 
++EMPTY_STRUCT_DECL(mod_arch_specific); 
+ 
+ #define Elf_Shdr Elf64_Shdr
+ #define Elf_Sym Elf64_Sym
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/processor.h ./include/asm-x86_64/processor.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/processor.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/processor.h	2007-02-01 22:37:02.000000000 -0800
+@@ -408,7 +408,7 @@
+ #define ARCH_HAS_PREFETCH
+ static inline void prefetch(void *x) 
+ { 
+-	asm volatile("prefetcht0 %0" :: "m" (*(unsigned long *)x));
++	asm volatile("prefetcht0 %0" : : "m" (*(unsigned long *)x));
+ } 
+ 
+ #define ARCH_HAS_PREFETCHW 1
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/spinlock.h ./include/asm-x86_64/spinlock.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/spinlock.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/spinlock.h	2007-02-01 22:49:07.000000000 -0800
+@@ -52,7 +52,7 @@
+ 
+ static inline void __raw_spin_unlock(raw_spinlock_t *lock)
+ {
+-	asm volatile("movl $1,%0" :"=m" (lock->slock) :: "memory");
++	asm volatile("movl $1,%0" :"=m" (lock->slock) : : "memory");
+ }
+ 
+ static inline void __raw_spin_unlock_wait(raw_spinlock_t *lock)
+@@ -91,7 +91,7 @@
+ 		     "jns 1f\n"
+ 		     "call __read_lock_failed\n"
+ 		     "1:\n"
+-		     ::"D" (rw), "i" (RW_LOCK_BIAS) : "memory");
++		     : :"D" (rw), "i" (RW_LOCK_BIAS) : "memory");
+ }
+ 
+ static inline void __raw_write_lock(raw_rwlock_t *rw)
+@@ -100,7 +100,7 @@
+ 		     "jz 1f\n"
+ 		     "\tcall __write_lock_failed\n\t"
+ 		     "1:\n"
+-		     ::"D" (rw), "i" (RW_LOCK_BIAS) : "memory");
++		     : :"D" (rw), "i" (RW_LOCK_BIAS) : "memory");
+ }
+ 
+ static inline int __raw_read_trylock(raw_rwlock_t *lock)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/system.h ./include/asm-x86_64/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/system.h	2007-02-01 22:37:02.000000000 -0800
+@@ -79,7 +79,7 @@
+ 
+ static inline void write_cr0(unsigned long val) 
+ { 
+-	asm volatile("movq %0,%%cr0" :: "r" (val));
++	asm volatile("movq %0,%%cr0" : : "r" (val));
+ } 
+ 
+ static inline unsigned long read_cr3(void)
+@@ -98,7 +98,7 @@
+ 
+ static inline void write_cr4(unsigned long val)
+ { 
+-	asm volatile("movq %0,%%cr4" :: "r" (val));
++	asm volatile("movq %0,%%cr4" : : "r" (val));
+ } 
+ 
+ #define stts() write_cr0(8 | read_cr0())
+@@ -177,32 +177,32 @@
+ #define __HAVE_ARCH_CMPXCHG 1
+ 
+ static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
+-				      unsigned long new, int size)
++				      unsigned long n, int size)
+ {
+ 	unsigned long prev;
+ 	switch (size) {
+ 	case 1:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgb %b1,%2"
+ 				     : "=a"(prev)
+-				     : "q"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "q"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	case 2:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgw %w1,%2"
+ 				     : "=a"(prev)
+-				     : "r"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "r"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	case 4:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgl %k1,%2"
+ 				     : "=a"(prev)
+-				     : "r"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "r"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	case 8:
+ 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgq %1,%2"
+ 				     : "=a"(prev)
+-				     : "r"(new), "m"(*__xg(ptr)), "0"(old)
++				     : "r"(n), "m"(*__xg(ptr)), "0"(old)
+ 				     : "memory");
+ 		return prev;
+ 	}
+@@ -231,13 +231,13 @@
+  * And yes, this is required on UP too when we're talking
+  * to devices.
+  */
+-#define mb() 	asm volatile("mfence":::"memory")
+-#define rmb()	asm volatile("lfence":::"memory")
++#define mb() 	asm volatile("mfence": : :"memory")
++#define rmb()	asm volatile("lfence": : :"memory")
+ 
+ #ifdef CONFIG_UNORDERED_IO
+-#define wmb()	asm volatile("sfence" ::: "memory")
++#define wmb()	asm volatile("sfence" : : : "memory")
+ #else
+-#define wmb()	asm volatile("" ::: "memory")
++#define wmb()	asm volatile("" : : : "memory")
+ #endif
+ #define read_barrier_depends()	do {} while(0)
+ #define set_mb(var, value) do { (void) xchg(&var, value); } while (0)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/thread_info.h ./include/asm-x86_64/thread_info.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/thread_info.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/thread_info.h	2007-02-01 22:37:02.000000000 -0800
+@@ -60,7 +60,7 @@
+ static inline struct thread_info *current_thread_info(void)
+ { 
+ 	struct thread_info *ti;
+-	ti = (void *)(read_pda(kernelstack) + PDA_STACKOFFSET - THREAD_SIZE);
++	ti = (struct thread_info *)(read_pda(kernelstack) + PDA_STACKOFFSET - THREAD_SIZE);
+ 	return ti; 
+ }
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/tlbflush.h ./include/asm-x86_64/tlbflush.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/tlbflush.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/tlbflush.h	2007-02-01 22:49:23.000000000 -0800
+@@ -13,7 +13,7 @@
+ 
+ static inline void set_cr3(unsigned long cr3)
+ {
+-	asm volatile("mov %0,%%cr3" :: "r" (cr3) : "memory");
++	asm volatile("mov %0,%%cr3" : : "r" (cr3) : "memory");
+ }
+ 
+ static inline void __flush_tlb(void)
+@@ -30,7 +30,7 @@
+ 
+ static inline void set_cr4(unsigned long cr4)
+ {
+-	asm volatile("mov %0,%%cr4" :: "r" (cr4) : "memory");
++	asm volatile("mov %0,%%cr4" : : "r" (cr4) : "memory");
+ }
+ 
+ static inline void __flush_tlb_all(void)
+@@ -41,7 +41,7 @@
+ }
+ 
+ #define __flush_tlb_one(addr) \
+-	__asm__ __volatile__("invlpg (%0)" :: "r" (addr) : "memory")
++	__asm__ __volatile__("invlpg (%0)" : : "r" (addr) : "memory")
+ 
+ 
+ /*
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/uaccess.h ./include/asm-x86_64/uaccess.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-x86_64/uaccess.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-x86_64/uaccess.h	2007-02-01 22:37:02.000000000 -0800
+@@ -295,13 +295,13 @@
+ 	case 10:
+ 		__put_user_asm(*(u64*)src,(u64 __user *)dst,ret,"q","","ir",10);
+ 		if (unlikely(ret)) return ret;
+-		asm("":::"memory");
++		asm("": : :"memory");
+ 		__put_user_asm(4[(u16*)src],4+(u16 __user *)dst,ret,"w","w","ir",2);
+ 		return ret; 
+ 	case 16:
+ 		__put_user_asm(*(u64*)src,(u64 __user *)dst,ret,"q","","ir",16);
+ 		if (unlikely(ret)) return ret;
+-		asm("":::"memory");
++		asm("": : :"memory");
+ 		__put_user_asm(1[(u64*)src],1+(u64 __user *)dst,ret,"q","","ir",8);
+ 		return ret; 
+ 	default:
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-xtensa/module.h ./include/asm-xtensa/module.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-xtensa/module.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-xtensa/module.h	2007-02-01 22:37:02.000000000 -0800
+@@ -13,10 +13,8 @@
+ #ifndef _XTENSA_MODULE_H
+ #define _XTENSA_MODULE_H
+ 
+-struct mod_arch_specific
+-{
+-	/* Module support is not completely implemented. */
+-};
++/* Module support is not completely implemented. */
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-xtensa/pgalloc.h ./include/asm-xtensa/pgalloc.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-xtensa/pgalloc.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-xtensa/pgalloc.h	2007-02-01 22:37:02.000000000 -0800
+@@ -71,14 +71,14 @@
+ pmd_populate_kernel(struct mm_struct *mm, pmd_t *pmdp, pte_t *pte)
+ {
+ 	pmd_val(*(pmdp)) = (unsigned long)(pte);
+-	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" :: "a" (pmdp));
++	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" : : "a" (pmdp));
+ }
+ 
+ static inline void
+ pmd_populate(struct mm_struct *mm, pmd_t *pmdp, struct page *page)
+ {
+ 	pmd_val(*(pmdp)) = (unsigned long)page_to_virt(page);
+-	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" :: "a" (pmdp));
++	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" : : "a" (pmdp));
+ }
+ 
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-xtensa/pgtable.h ./include/asm-xtensa/pgtable.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-xtensa/pgtable.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-xtensa/pgtable.h	2007-02-01 22:37:02.000000000 -0800
+@@ -274,7 +274,7 @@
+ {
+ 	*ptep = pteval;
+ #if (DCACHE_WAY_SIZE > PAGE_SIZE) && XCHAL_DCACHE_IS_WRITEBACK
+-	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" :: "a" (ptep));
++	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" : : "a" (ptep));
+ #endif
+ }
+ 
+@@ -292,7 +292,7 @@
+ {
+ 	*pmdp = pmdval;
+ #if (DCACHE_WAY_SIZE > PAGE_SIZE) && XCHAL_DCACHE_IS_WRITEBACK
+-	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" :: "a" (pmdp));
++	__asm__ __volatile__ ("memw; dhwb %0, 0; dsync" : : "a" (pmdp));
+ #endif
+ }
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-xtensa/processor.h ./include/asm-xtensa/processor.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-xtensa/processor.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-xtensa/processor.h	2007-02-01 22:37:02.000000000 -0800
+@@ -196,7 +196,7 @@
+ 
+ /* Special register access. */
+ 
+-#define WSR(v,sr) __asm__ __volatile__ ("wsr %0,"__stringify(sr) :: "a"(v));
++#define WSR(v,sr) __asm__ __volatile__ ("wsr %0,"__stringify(sr) : : "a"(v));
+ #define RSR(v,sr) __asm__ __volatile__ ("rsr %0,"__stringify(sr) : "=a"(v));
+ 
+ #define set_sr(x,sr) ({unsigned int v=(unsigned int)x; WSR(v,sr);})
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-xtensa/system.h ./include/asm-xtensa/system.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-xtensa/system.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-xtensa/system.h	2007-02-01 22:37:02.000000000 -0800
+@@ -21,21 +21,21 @@
+ 	__asm__ __volatile__ ("rsr %0,"__stringify(PS) : "=a" (x));
+ #define local_irq_restore(x)	do {					\
+ 	__asm__ __volatile__ ("wsr %0, "__stringify(PS)" ; rsync" 	\
+-	    		      :: "a" (x) : "memory"); } while(0);
++	    		      : : "a" (x) : "memory"); } while(0);
+ #define local_irq_save(x)	do {					\
+ 	__asm__ __volatile__ ("rsil %0, "__stringify(LOCKLEVEL) 	\
+-	    		      : "=a" (x) :: "memory");} while(0);
++	    		      : "=a" (x) : : "memory");} while(0);
+ 
+ static inline void local_irq_disable(void)
+ {
+ 	unsigned long flags;
+ 	__asm__ __volatile__ ("rsil %0, "__stringify(LOCKLEVEL)
+-	    		      : "=a" (flags) :: "memory");
++	    		      : "=a" (flags) : : "memory");
+ }
+ static inline void local_irq_enable(void)
+ {
+ 	unsigned long flags;
+-	__asm__ __volatile__ ("rsil %0, 0" : "=a" (flags) :: "memory");
++	__asm__ __volatile__ ("rsil %0, 0" : "=a" (flags) : : "memory");
+ 
+ }
+ 
+@@ -51,7 +51,7 @@
+ 	} while(0);
+ #define WSR_CPENABLE(x)	do {						  \
+   	__asm__ __volatile__("wsr %0," __stringify(CPENABLE)";rsync" 	  \
+-	    		     :: "a" (x));} while(0);
++	    		     : : "a" (x));} while(0);
+ 
+ #define clear_cpenable() __clear_cpenable()
+ 
+@@ -223,7 +223,7 @@
+ 		"mov	a0, a12\n\t"
+ 		"wsr	a13," __stringify(SAR) "\n\t"
+ 		"wsr	a14," __stringify(PS) "\n\t"
+-		:: "a" (&a0), "a" (&ps)
++		: : "a" (&a0), "a" (&ps)
+ 		: "a2", "a3", "a12", "a13", "a14", "a15", "memory");
+ }
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/asm-xtensa/timex.h ./include/asm-xtensa/timex.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/asm-xtensa/timex.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/asm-xtensa/timex.h	2007-02-01 22:37:02.000000000 -0800
+@@ -58,9 +58,9 @@
+  * Register access.
+  */
+ 
+-#define WSR_CCOUNT(r)	  __asm__("wsr %0,"__stringify(CCOUNT) :: "a" (r))
++#define WSR_CCOUNT(r)	  __asm__("wsr %0,"__stringify(CCOUNT) : : "a" (r))
+ #define RSR_CCOUNT(r)	  __asm__("rsr %0,"__stringify(CCOUNT) : "=a" (r))
+-#define WSR_CCOMPARE(x,r) __asm__("wsr %0,"__stringify(CCOMPARE_0)"+"__stringify(x) :: "a"(r))
++#define WSR_CCOMPARE(x,r) __asm__("wsr %0,"__stringify(CCOMPARE_0)"+"__stringify(x) : : "a"(r))
+ #define RSR_CCOMPARE(x,r) __asm__("rsr %0,"__stringify(CCOMPARE_0)"+"__stringify(x) : "=a"(r))
+ 
+ static inline unsigned long get_ccount (void)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/backing-dev.h ./include/linux/backing-dev.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/backing-dev.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/backing-dev.h	2007-02-03 09:01:13.000000000 -0800
+@@ -22,13 +22,13 @@
+ 	BDI_unused,		/* Available bits start here */
+ };
+ 
+-typedef int (congested_fn)(void *, int);
++typedef int (congested_fn_t)(void *, int);
+ 
+ struct backing_dev_info {
+ 	unsigned long ra_pages;	/* max readahead in PAGE_CACHE_SIZE units */
+ 	unsigned long state;	/* Always use atomic bitops on this */
+ 	unsigned int capabilities; /* Device capabilities */
+-	congested_fn *congested_fn; /* Function pointer if device is md/dm */
++	congested_fn_t *congested_fn; /* Function pointer if device is md/dm */
+ 	void *congested_data;	/* Pointer to aux data for congested func */
+ 	void (*unplug_io_fn)(struct backing_dev_info *, struct page *);
+ 	void *unplug_io_data;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/compat.h ./include/linux/compat.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/compat.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/compat.h	2007-02-01 22:37:02.000000000 -0800
+@@ -114,7 +114,7 @@
+ 
+ struct compat_siginfo;
+ 
+-extern asmlinkage long compat_sys_waitid(int, compat_pid_t,
++asmlinkage long compat_sys_waitid(int, compat_pid_t,
+ 		struct compat_siginfo __user *, int,
+ 		struct compat_rusage __user *);
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/dqblk_v1.h ./include/linux/dqblk_v1.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/dqblk_v1.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/dqblk_v1.h	2007-02-01 22:37:02.000000000 -0800
+@@ -18,7 +18,6 @@
+ #define V1_DEL_REWRITE 2
+ 
+ /* Special information about quotafile */
+-struct v1_mem_dqinfo {
+-};
++EMPTY_STRUCT_DECL(v1_mem_dqinfo);
+ 
+ #endif	/* _LINUX_DQBLK_V1_H */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/fs.h ./include/linux/fs.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/fs.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/fs.h	2007-02-01 22:37:02.000000000 -0800
+@@ -1956,7 +1956,7 @@
+ 
+ static inline void simple_transaction_set(struct file *file, size_t n)
+ {
+-	struct simple_transaction_argresp *ar = file->private_data;
++	struct simple_transaction_argresp *ar = (struct simple_transaction_argresp *) file->private_data;
+ 
+ 	BUG_ON(n > SIMPLE_TRANSACTION_LIMIT);
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/highmem.h ./include/linux/highmem.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/highmem.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/highmem.h	2007-02-01 22:37:02.000000000 -0800
+@@ -98,8 +98,8 @@
+ {
+ 	char *vfrom, *vto;
+ 
+-	vfrom = kmap_atomic(from, KM_USER0);
+-	vto = kmap_atomic(to, KM_USER1);
++	vfrom = (char*)kmap_atomic(from, KM_USER0);
++	vto = (char*)kmap_atomic(to, KM_USER1);
+ 	copy_user_page(vto, vfrom, vaddr, to);
+ 	kunmap_atomic(vfrom, KM_USER0);
+ 	kunmap_atomic(vto, KM_USER1);
+@@ -111,8 +111,8 @@
+ {
+ 	char *vfrom, *vto;
+ 
+-	vfrom = kmap_atomic(from, KM_USER0);
+-	vto = kmap_atomic(to, KM_USER1);
++	vfrom = (char*)kmap_atomic(from, KM_USER0);
++	vto = (char*)kmap_atomic(to, KM_USER1);
+ 	copy_page(vto, vfrom);
+ 	kunmap_atomic(vfrom, KM_USER0);
+ 	kunmap_atomic(vto, KM_USER1);
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/inetdevice.h ./include/linux/inetdevice.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/inetdevice.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/inetdevice.h	2007-02-01 22:37:02.000000000 -0800
+@@ -145,7 +145,7 @@
+ 
+ static inline struct in_device *__in_dev_get_rcu(const struct net_device *dev)
+ {
+-	struct in_device *in_dev = dev->ip_ptr;
++	struct in_device *in_dev = (struct in_device *) dev->ip_ptr;
+ 	if (in_dev)
+ 		in_dev = rcu_dereference(in_dev);
+ 	return in_dev;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/kexec.h ./include/linux/kexec.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/kexec.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/kexec.h	2007-02-01 22:37:02.000000000 -0800
+@@ -91,12 +91,12 @@
+ extern NORET_TYPE void machine_kexec(struct kimage *image) ATTRIB_NORET;
+ extern int machine_kexec_prepare(struct kimage *image);
+ extern void machine_kexec_cleanup(struct kimage *image);
+-extern asmlinkage long sys_kexec_load(unsigned long entry,
++asmlinkage long sys_kexec_load(unsigned long entry,
+ 					unsigned long nr_segments,
+ 					struct kexec_segment __user *segments,
+ 					unsigned long flags);
+ #ifdef CONFIG_COMPAT
+-extern asmlinkage long compat_sys_kexec_load(unsigned long entry,
++asmlinkage long compat_sys_kexec_load(unsigned long entry,
+ 				unsigned long nr_segments,
+ 				struct compat_kexec_segment __user *segments,
+ 				unsigned long flags);
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/ktime.h ./include/linux/ktime.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/ktime.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/ktime.h	2007-02-01 22:58:51.000000000 -0800
+@@ -65,6 +65,12 @@
+ 
+ #if (BITS_PER_LONG == 64) || defined(CONFIG_KTIME_SCALAR)
+ 
++#ifdef __cplusplus
++# define KTIME_TV64(__s)	({ ktime_t __kt; __kt.tv64 = (__s); __kt; })
++#else
++# define KTIME_TV64(__s)	((ktime_t) { .tv64 = (__s) })
++#endif
++
+ /**
+  * ktime_set - Set a ktime_t variable from a seconds/nanoseconds value
+  * @secs:	seconds to set
+@@ -76,25 +82,25 @@
+ {
+ #if (BITS_PER_LONG == 64)
+ 	if (unlikely(secs >= KTIME_SEC_MAX))
+-		return (ktime_t){ .tv64 = KTIME_MAX };
++		return KTIME_TV64(KTIME_MAX);
+ #endif
+-	return (ktime_t) { .tv64 = (s64)secs * NSEC_PER_SEC + (s64)nsecs };
++	return KTIME_TV64((s64)secs * NSEC_PER_SEC + (s64)nsecs);
+ }
+ 
+ /* Subtract two ktime_t variables. rem = lhs -rhs: */
+ #define ktime_sub(lhs, rhs) \
+-		({ (ktime_t){ .tv64 = (lhs).tv64 - (rhs).tv64 }; })
++		KTIME_TV64((lhs).tv64 - (rhs).tv64)
+ 
+ /* Add two ktime_t variables. res = lhs + rhs: */
+ #define ktime_add(lhs, rhs) \
+-		({ (ktime_t){ .tv64 = (lhs).tv64 + (rhs).tv64 }; })
++		KTIME_TV64((lhs).tv64 + (rhs).tv64)
+ 
+ /*
+  * Add a ktime_t variable and a scalar nanosecond value.
+  * res = kt + nsval:
+  */
+ #define ktime_add_ns(kt, nsval) \
+-		({ (ktime_t){ .tv64 = (kt).tv64 + (nsval) }; })
++		KTIME_TV64((kt).tv64 + (nsval))
+ 
+ /* convert a timespec to ktime_t format: */
+ static inline ktime_t timespec_to_ktime(struct timespec ts)
+@@ -119,6 +125,18 @@
+ 
+ #else
+ 
++#ifdef __cplusplus
++# define KTIME_TV64(__s)		({ ktime_t __kt; __kt.tv64 = (__s); __kt; })
++# define KTIME_SEC_NSEC(__sec, __nsec)	({ ktime_t __kt; __kt.tv.sec = (__sec); __kt.tv.nsec = (__nsec); __kt; })
++# define TIMEVAL_SEC_USEC(__sec, __usec) ({ struct timeval __tv; __tv.tv_sec = (__sec); __tv.tv_usec = (__usec); __tv; })
++# define TIMESPEC_SEC_NSEC(__sec, __nsec) ({ struct timespec __ts; __ts.tv_sec = (__sec); __ts.tv_nsec = (__nsec); __ts; })
++#else
++# define KTIME_TV64(__s)		((ktime_t) { .tv64 = (__s) })
++# define KTIME_SEC_NSEC(__sec, __nsec)	((ktime_t) { .tv = { .sec = (__sec), .nsec = (__nsec) } })
++# define TIMEVAL_SEC_USEC(__sec, __usec) ((struct timeval) { .tv_sec = (__sec), .tv_usec = (__usec) })
++# define TIMESPEC_SEC_NSEC(__sec, __nsec) ((struct timespec) { .tv_sec = (__sec), .tv_nsec = (__nsec) })
++#endif
++
+ /*
+  * Helper macros/inlines to get the ktime_t math right in the timespec
+  * representation. The macros are sometimes ugly - their actual use is
+@@ -137,7 +155,7 @@
+ /* Set a ktime_t variable to a value in sec/nsec representation: */
+ static inline ktime_t ktime_set(const long secs, const unsigned long nsecs)
+ {
+-	return (ktime_t) { .tv = { .sec = secs, .nsec = nsecs } };
++	return KTIME_SEC_NSEC(secs, nsecs);
+ }
+ 
+ /**
+@@ -201,8 +219,7 @@
+  */
+ static inline ktime_t timespec_to_ktime(const struct timespec ts)
+ {
+-	return (ktime_t) { .tv = { .sec = (s32)ts.tv_sec,
+-			   	   .nsec = (s32)ts.tv_nsec } };
++	return KTIME_SEC_NSEC((s32)ts.tv_sec, (s32)ts.tv_nsec);
+ }
+ 
+ /**
+@@ -213,8 +230,7 @@
+  */
+ static inline ktime_t timeval_to_ktime(const struct timeval tv)
+ {
+-	return (ktime_t) { .tv = { .sec = (s32)tv.tv_sec,
+-				   .nsec = (s32)tv.tv_usec * 1000 } };
++	return KTIME_SEC_NSEC((s32)tv.tv_sec, (s32)tv.tv_usec * 1000);
+ }
+ 
+ /**
+@@ -225,8 +241,7 @@
+  */
+ static inline struct timespec ktime_to_timespec(const ktime_t kt)
+ {
+-	return (struct timespec) { .tv_sec = (time_t) kt.tv.sec,
+-				   .tv_nsec = (long) kt.tv.nsec };
++	return TIMESPEC_SEC_NSEC((time_t) kt.tv.sec, (long) kt.tv.nsec);
+ }
+ 
+ /**
+@@ -237,9 +252,8 @@
+  */
+ static inline struct timeval ktime_to_timeval(const ktime_t kt)
+ {
+-	return (struct timeval) {
+-		.tv_sec = (time_t) kt.tv.sec,
+-		.tv_usec = (suseconds_t) (kt.tv.nsec / NSEC_PER_USEC) };
++	return TIMEVAL_SEC_USEC((time_t) kt.tv.sec,
++				(suseconds_t) (kt.tv.nsec / NSEC_PER_USEC));
+ }
+ 
+ /**
+@@ -261,8 +275,8 @@
+  * idea of the (in)accuracy of timers. Timer values are rounded up to
+  * this resolution values.
+  */
+-#define KTIME_REALTIME_RES	(ktime_t){ .tv64 = TICK_NSEC }
+-#define KTIME_MONOTONIC_RES	(ktime_t){ .tv64 = TICK_NSEC }
++#define KTIME_REALTIME_RES	KTIME_TV64(TICK_NSEC)
++#define KTIME_MONOTONIC_RES	KTIME_TV64(TICK_NSEC)
+ 
+ /* Get the monotonic time in timespec format: */
+ extern void ktime_get_ts(struct timespec *ts);
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/linkage.h ./include/linux/linkage.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/linkage.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/linkage.h	2007-02-01 22:37:02.000000000 -0800
+@@ -12,6 +12,13 @@
+ #ifndef asmlinkage
+ #define asmlinkage CPP_ASMLINKAGE
+ #endif
++#ifndef extern_asmlinkage
++# ifdef __cplusplus
++#  define extern_asmlinkage asmlinkage
++# else
++#  define extern_asmlinkage extern asmlinkage
++# endif
++#endif
+ 
+ #ifndef prevent_tail_call
+ # define prevent_tail_call(ret) do { } while (0)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/list.h ./include/linux/list.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/list.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/list.h	2007-02-03 08:57:04.000000000 -0800
+@@ -40,50 +40,50 @@
+  * the prev/next entries already!
+  */
+ #ifndef CONFIG_DEBUG_LIST
+-static inline void __list_add(struct list_head *new,
++static inline void __list_add(struct list_head *entry,
+ 			      struct list_head *prev,
+ 			      struct list_head *next)
+ {
+-	next->prev = new;
+-	new->next = next;
+-	new->prev = prev;
+-	prev->next = new;
++	next->prev = entry;
++	entry->next = next;
++	entry->prev = prev;
++	prev->next = entry;
+ }
+ #else
+-extern void __list_add(struct list_head *new,
++extern void __list_add(struct list_head *entry,
+ 			      struct list_head *prev,
+ 			      struct list_head *next);
+ #endif
+ 
+ /**
+  * list_add - add a new entry
+- * @new: new entry to be added
++ * @entry: new entry to be added
+  * @head: list head to add it after
+  *
+  * Insert a new entry after the specified head.
+  * This is good for implementing stacks.
+  */
+ #ifndef CONFIG_DEBUG_LIST
+-static inline void list_add(struct list_head *new, struct list_head *head)
++static inline void list_add(struct list_head *entry, struct list_head *head)
+ {
+-	__list_add(new, head, head->next);
++	__list_add(entry, head, head->next);
+ }
+ #else
+-extern void list_add(struct list_head *new, struct list_head *head);
++extern void list_add(struct list_head *entry, struct list_head *head);
+ #endif
+ 
+ 
+ /**
+  * list_add_tail - add a new entry
+- * @new: new entry to be added
++ * @entry: new entry to be added
+  * @head: list head to add it before
+  *
+  * Insert a new entry before the specified head.
+  * This is useful for implementing queues.
+  */
+-static inline void list_add_tail(struct list_head *new, struct list_head *head)
++static inline void list_add_tail(struct list_head *entry, struct list_head *head)
+ {
+-	__list_add(new, head->prev, head);
++	__list_add(entry, head->prev, head);
+ }
+ 
+ /*
+@@ -92,19 +92,19 @@
+  * This is only for internal list manipulation where we know
+  * the prev/next entries already!
+  */
+-static inline void __list_add_rcu(struct list_head * new,
++static inline void __list_add_rcu(struct list_head * entry,
+ 		struct list_head * prev, struct list_head * next)
+ {
+-	new->next = next;
+-	new->prev = prev;
++	entry->next = next;
++	entry->prev = prev;
+ 	smp_wmb();
+-	next->prev = new;
+-	prev->next = new;
++	next->prev = entry;
++	prev->next = entry;
+ }
+ 
+ /**
+  * list_add_rcu - add a new entry to rcu-protected list
+- * @new: new entry to be added
++ * @entry: new entry to be added
+  * @head: list head to add it after
+  *
+  * Insert a new entry after the specified head.
+@@ -118,14 +118,14 @@
+  * the _rcu list-traversal primitives, such as
+  * list_for_each_entry_rcu().
+  */
+-static inline void list_add_rcu(struct list_head *new, struct list_head *head)
++static inline void list_add_rcu(struct list_head *entry, struct list_head *head)
+ {
+-	__list_add_rcu(new, head, head->next);
++	__list_add_rcu(entry, head, head->next);
+ }
+ 
+ /**
+  * list_add_tail_rcu - add a new entry to rcu-protected list
+- * @new: new entry to be added
++ * @entry: new entry to be added
+  * @head: list head to add it before
+  *
+  * Insert a new entry before the specified head.
+@@ -139,10 +139,10 @@
+  * the _rcu list-traversal primitives, such as
+  * list_for_each_entry_rcu().
+  */
+-static inline void list_add_tail_rcu(struct list_head *new,
++static inline void list_add_tail_rcu(struct list_head *entry,
+ 					struct list_head *head)
+ {
+-	__list_add_rcu(new, head->prev, head);
++	__list_add_rcu(entry, head->prev, head);
+ }
+ 
+ /*
+@@ -168,8 +168,8 @@
+ static inline void list_del(struct list_head *entry)
+ {
+ 	__list_del(entry->prev, entry->next);
+-	entry->next = LIST_POISON1;
+-	entry->prev = LIST_POISON2;
++	entry->next = (struct list_head*)(LIST_POISON1);
++	entry->prev = (struct list_head*)(LIST_POISON2);
+ }
+ #else
+ extern void list_del(struct list_head *entry);
+@@ -202,48 +202,48 @@
+ static inline void list_del_rcu(struct list_head *entry)
+ {
+ 	__list_del(entry->prev, entry->next);
+-	entry->prev = LIST_POISON2;
++	entry->prev = (struct list_head *) LIST_POISON2;
+ }
+ 
+ /**
+  * list_replace - replace old entry by new one
+  * @old : the element to be replaced
+- * @new : the new element to insert
++ * @entry : the new element to insert
+  * Note: if 'old' was empty, it will be overwritten.
+  */
+ static inline void list_replace(struct list_head *old,
+-				struct list_head *new)
++				struct list_head *entry)
+ {
+-	new->next = old->next;
+-	new->next->prev = new;
+-	new->prev = old->prev;
+-	new->prev->next = new;
++	entry->next = old->next;
++	entry->next->prev = entry;
++	entry->prev = old->prev;
++	entry->prev->next = entry;
+ }
+ 
+ static inline void list_replace_init(struct list_head *old,
+-					struct list_head *new)
++					struct list_head *entry)
+ {
+-	list_replace(old, new);
++	list_replace(old, entry);
+ 	INIT_LIST_HEAD(old);
+ }
+ 
+ /*
+  * list_replace_rcu - replace old entry by new one
+  * @old : the element to be replaced
+- * @new : the new element to insert
++ * @entry : the new element to insert
+  *
+  * The old entry will be replaced with the new entry atomically.
+  * Note: 'old' should not be empty.
+  */
+ static inline void list_replace_rcu(struct list_head *old,
+-				struct list_head *new)
++				struct list_head *entry)
+ {
+-	new->next = old->next;
+-	new->prev = old->prev;
++	entry->next = old->next;
++	entry->prev = old->prev;
+ 	smp_wmb();
+-	new->next->prev = new;
+-	new->prev->next = new;
+-	old->prev = LIST_POISON2;
++	entry->next->prev = entry;
++	entry->prev->next = entry;
++	old->prev = (struct list_head *) LIST_POISON2;
+ }
+ 
+ /**
+@@ -643,8 +643,8 @@
+ static inline void hlist_del(struct hlist_node *n)
+ {
+ 	__hlist_del(n);
+-	n->next = LIST_POISON1;
+-	n->pprev = LIST_POISON2;
++	n->next = (struct hlist_node*)(LIST_POISON1);
++	n->pprev = (struct hlist_node**)(LIST_POISON2);
+ }
+ 
+ /**
+@@ -669,7 +669,7 @@
+ static inline void hlist_del_rcu(struct hlist_node *n)
+ {
+ 	__hlist_del(n);
+-	n->pprev = LIST_POISON2;
++	n->pprev = (struct hlist_node**)(LIST_POISON2);
+ }
+ 
+ static inline void hlist_del_init(struct hlist_node *n)
+@@ -683,22 +683,22 @@
+ /*
+  * hlist_replace_rcu - replace old entry by new one
+  * @old : the element to be replaced
+- * @new : the new element to insert
++ * @newentry : the new element to insert
+  *
+  * The old entry will be replaced with the new entry atomically.
+  */
+ static inline void hlist_replace_rcu(struct hlist_node *old,
+-					struct hlist_node *new)
++					struct hlist_node *newentry)
+ {
+ 	struct hlist_node *next = old->next;
+ 
+-	new->next = next;
+-	new->pprev = old->pprev;
++	newentry->next = next;
++	newentry->pprev = old->pprev;
+ 	smp_wmb();
+ 	if (next)
+-		new->next->pprev = &new->next;
+-	*new->pprev = new;
+-	old->pprev = LIST_POISON2;
++		newentry->next->pprev = &newentry->next;
++	*newentry->pprev = newentry;
++	old->pprev = (struct hlist_node **) LIST_POISON2;
+ }
+ 
+ static inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/lockdep.h ./include/linux/lockdep.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/lockdep.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/lockdep.h	2007-02-02 08:21:01.000000000 -0800
+@@ -276,7 +276,7 @@
+ /*
+  * The class key takes no space if lockdep is disabled:
+  */
+-struct lock_class_key { };
++EMPTY_STRUCT_DECL(lock_class_key);
+ #endif /* !LOCKDEP */
+ 
+ #if defined(CONFIG_TRACE_IRQFLAGS) && defined(CONFIG_GENERIC_HARDIRQS)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/mempolicy.h ./include/linux/mempolicy.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/mempolicy.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/mempolicy.h	2007-02-01 22:37:02.000000000 -0800
+@@ -177,7 +177,7 @@
+ 
+ #else
+ 
+-struct mempolicy {};
++EMPTY_STRUCT_DECL(mempolicy);
+ 
+ static inline int mpol_equal(struct mempolicy *a, struct mempolicy *b)
+ {
+@@ -200,7 +200,7 @@
+ 	return NULL;
+ }
+ 
+-struct shared_policy {};
++EMPTY_STRUCT_DECL(shared_policy);
+ 
+ static inline int mpol_set_shared_policy(struct shared_policy *info,
+ 					struct vm_area_struct *vma,
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/mm.h ./include/linux/mm.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/mm.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/mm.h	2007-02-03 09:02:05.000000000 -0800
+@@ -430,7 +430,7 @@
+ 
+ static inline enum zone_type page_zonenum(struct page *page)
+ {
+-	return (page->flags >> ZONES_PGSHIFT) & ZONES_MASK;
++	return (enum zone_type) ((page->flags >> ZONES_PGSHIFT) & ZONES_MASK);
+ }
+ 
+ struct zone;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/netdevice.h ./include/linux/netdevice.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/netdevice.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/netdevice.h	2007-02-02 16:35:14.000000000 -0800
+@@ -522,6 +522,46 @@
+ 	struct divert_blk	*divert;
+ #endif /* CONFIG_NET_DIVERT */
+ 
++	/* Click polling support */
++	/*
++	 * polling is < 0 if the device does not support polling, == 0 if the
++	 * device supports polling but interrupts are on, and > 0 if polling
++	 * is on.
++	 */
++	int			polling;
++	int			(*poll_on)(struct net_device *);
++	int			(*poll_off)(struct net_device *);
++	/*
++	 * rx_poll returns to caller a linked list of sk_buff objects received
++	 * by the device. on call, the want argument specifies the number of
++	 * packets wanted. on return, the want argument specifies the number
++	 * of packets actually returned.
++	 */
++	struct sk_buff *	(*rx_poll)(struct net_device*, int *want);
++	/* refill rx dma ring using the given sk_buff list. returns 0 if
++	 * successful, or if there are more entries need to be cleaned,
++	 * returns the number of dirty entries. the ptr to the sk_buff list is
++	 * updated by the driver to point to any unused skbs.
++	 */
++	int			(*rx_refill)(struct net_device*, struct sk_buff**);
++	/*
++	 * place sk_buff on the transmit ring. returns 0 if successful, 1
++	 * otherwise
++	 */
++	int			(*tx_queue)(struct net_device *, struct sk_buff *);
++	/*
++	 * clean tx dma ring. returns the list of skb objects cleaned
++	 */
++	struct sk_buff*		(*tx_clean)(struct net_device *);
++	/*
++	 * start transmission. returns 0 if successful, 1 otherwise
++	 */
++	int			(*tx_start)(struct net_device *);
++	/*
++	 * tell device the end of a batch of packets
++	 */
++	int			(*tx_eob)(struct net_device *);
++
+ 	/* class/net/name entry */
+ 	struct class_device	class_dev;
+ 	/* space for optional statistics and wireless sysfs groups */
+@@ -587,6 +627,9 @@
+ extern void		synchronize_net(void);
+ extern int 		register_netdevice_notifier(struct notifier_block *nb);
+ extern int		unregister_netdevice_notifier(struct notifier_block *nb);
++extern int		register_net_in(struct notifier_block *nb); /* Click */
++extern int		unregister_net_in(struct notifier_block *nb); /* Click */
++extern int		ptype_dispatch(struct sk_buff *skb, unsigned short type); /* Click */
+ extern int		call_netdevice_notifiers(unsigned long val, void *v);
+ extern struct net_device	*dev_get_by_index(int ifindex);
+ extern struct net_device	*__dev_get_by_index(int ifindex);
+@@ -694,7 +737,8 @@
+ extern int		netif_rx(struct sk_buff *skb);
+ extern int		netif_rx_ni(struct sk_buff *skb);
+ #define HAVE_NETIF_RECEIVE_SKB 1
+-extern int		netif_receive_skb(struct sk_buff *skb);
++#define HAVE___NETIF_RECEIVE_SKB 1
++extern int		__netif_receive_skb(struct sk_buff *skb, unsigned short protocol, int ignore_notifiers);
+ extern int		dev_valid_name(const char *name);
+ extern int		dev_ioctl(unsigned int cmd, void __user *);
+ extern int		dev_ethtool(struct ifreq *);
+@@ -779,6 +823,11 @@
+ 
+ extern void netif_device_attach(struct net_device *dev);
+ 
++static inline int netif_receive_skb(struct sk_buff *skb)
++{
++	return __netif_receive_skb(skb, skb->protocol, 0);
++}
++
+ /*
+  * Network interface message level settings
+  */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/netfilter_ipv4/ip_conntrack_irc.h ./include/linux/netfilter_ipv4/ip_conntrack_irc.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/netfilter_ipv4/ip_conntrack_irc.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/netfilter_ipv4/ip_conntrack_irc.h	2007-02-01 22:37:02.000000000 -0800
+@@ -15,8 +15,7 @@
+ #define _IP_CONNTRACK_IRC_H
+ 
+ /* This structure exists only once per master */
+-struct ip_ct_irc_master {
+-};
++EMPTY_STRUCT_DECL(ip_ct_irc_master);
+ 
+ #ifdef __KERNEL__
+ extern unsigned int (*ip_nat_irc_hook)(struct sk_buff **pskb,
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/netlink.h ./include/linux/netlink.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/netlink.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/netlink.h	2007-02-01 22:37:02.000000000 -0800
+@@ -204,7 +204,7 @@
+ 	nlh->nlmsg_flags = flags;
+ 	nlh->nlmsg_pid = pid;
+ 	nlh->nlmsg_seq = seq;
+-	memset(NLMSG_DATA(nlh) + len, 0, NLMSG_ALIGN(size) - size);
++	memset((char*) NLMSG_DATA(nlh) + len, 0, NLMSG_ALIGN(size) - size);
+ 	return nlh;
+ }
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/prefetch.h ./include/linux/prefetch.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/prefetch.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/prefetch.h	2007-02-01 22:37:02.000000000 -0800
+@@ -59,9 +59,9 @@
+ {
+ #ifdef ARCH_HAS_PREFETCH
+ 	char *cp;
+-	char *end = addr + len;
++	char *end = (char*)(addr) + len;
+ 
+-	for (cp = addr; cp < end; cp += PREFETCH_STRIDE)
++	for (cp = (char*)(addr); cp < end; cp += PREFETCH_STRIDE)
+ 		prefetch(cp);
+ #endif
+ }
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/reiserfs_fs_sb.h ./include/linux/reiserfs_fs_sb.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/reiserfs_fs_sb.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/reiserfs_fs_sb.h	2007-02-01 22:37:02.000000000 -0800
+@@ -339,8 +339,7 @@
+ 	} journal;
+ } reiserfs_proc_info_data_t;
+ #else
+-typedef struct reiserfs_proc_info_data {
+-} reiserfs_proc_info_data_t;
++typedef EMPTY_STRUCT_DECL(reiserfs_proc_info_data) reiserfs_proc_info_data_t;
+ #endif
+ 
+ /* reiserfs union of in-core super block data */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/rtnetlink.h ./include/linux/rtnetlink.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/rtnetlink.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/rtnetlink.h	2007-02-01 22:37:02.000000000 -0800
+@@ -685,7 +685,7 @@
+ 	rta = (struct rtattr*)skb_put(skb, RTA_ALIGN(size));
+ 	rta->rta_type = attrtype;
+ 	rta->rta_len = size;
+-	memset(RTA_DATA(rta) + attrlen, 0, RTA_ALIGN(size) - size);
++	memset((char*) RTA_DATA(rta) + attrlen, 0, RTA_ALIGN(size) - size);
+ 	return rta;
+ }
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/seccomp.h ./include/linux/seccomp.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/seccomp.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/seccomp.h	2007-02-01 22:37:02.000000000 -0800
+@@ -25,7 +25,7 @@
+ 
+ #else /* CONFIG_SECCOMP */
+ 
+-typedef struct { } seccomp_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) seccomp_t;
+ 
+ #define secure_computing(x) do { } while (0)
+ /* static inline to preserve typechecking */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/security.h ./include/linux/security.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/security.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/security.h	2007-02-01 22:37:02.000000000 -0800
+@@ -2781,7 +2781,7 @@
+ static inline struct dentry *securityfs_create_dir(const char *name,
+ 					struct dentry *parent)
+ {
+-	return ERR_PTR(-ENODEV);
++	return (struct dentry *) ERR_PTR(-ENODEV);
+ }
+ 
+ static inline struct dentry *securityfs_create_file(const char *name,
+@@ -2790,7 +2790,7 @@
+ 						void *data,
+ 						struct file_operations *fops)
+ {
+-	return ERR_PTR(-ENODEV);
++	return (struct dentry *) ERR_PTR(-ENODEV);
+ }
+ 
+ static inline void securityfs_remove(struct dentry *dentry)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/skbuff.h ./include/linux/skbuff.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/skbuff.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/skbuff.h	2007-02-01 23:02:00.000000000 -0800
+@@ -183,6 +183,12 @@
+ 	SKB_GSO_TCPV6 = 1 << 4,
+ };
+ 
++/* Click: overload sk_buff.pkt_type to contain information about whether
++   a packet is clean. Clean packets have the following fields zero:
++   dst, destructor, pkt_bridged, prev, list, sk, security, priority. */
++#define PACKET_CLEAN           128             /* Is packet clean? */
++#define PACKET_TYPE_MASK       127             /* Actual packet type */
++
+ /** 
+  *	struct sk_buff - socket buffer
+  *	@next: Next buffer in list
+@@ -354,6 +360,7 @@
+ 				gfp_t priority);
+ extern struct sk_buff *pskb_copy(struct sk_buff *skb,
+ 				 gfp_t gfp_mask);
++extern struct sk_buff *skb_recycle(struct sk_buff *skb);
+ extern int	       pskb_expand_head(struct sk_buff *skb,
+ 					int nhead, int ntail,
+ 					gfp_t gfp_mask);
+@@ -1193,7 +1200,7 @@
+ }
+ 
+ static inline int skb_add_data(struct sk_buff *skb,
+-			       char __user *from, int copy)
++			       unsigned char __user *from, int copy)
+ {
+ 	const int off = skb->len;
+ 
+@@ -1270,7 +1277,7 @@
+ 				      const void *start, unsigned int len)
+ {
+ 	if (skb->ip_summed == CHECKSUM_COMPLETE)
+-		skb->csum = csum_sub(skb->csum, csum_partial(start, len, 0));
++		skb->csum = csum_sub(skb->csum, csum_partial((const unsigned char *) start, len, 0));
+ }
+ 
+ unsigned char *skb_pull_rcsum(struct sk_buff *skb, unsigned int len);
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/spinlock.h ./include/linux/spinlock.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/spinlock.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/spinlock.h	2007-02-01 23:02:21.000000000 -0800
+@@ -53,6 +53,7 @@
+ #include <linux/kernel.h>
+ #include <linux/stringify.h>
+ #include <linux/bottom_half.h>
++#include <linux/types.h>
+ 
+ #include <asm/system.h>
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/spinlock_types.h ./include/linux/spinlock_types.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/spinlock_types.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/spinlock_types.h	2007-02-01 23:12:26.000000000 -0800
+@@ -51,37 +51,47 @@
+ 
+ #define SPINLOCK_OWNER_INIT	((void *)-1L)
+ 
++#if defined(CONFIG_PREEMPT) && defined(CONFIG_SMP)
++# define SPINLOCK_BREAK_LOCK_INIT 0,
++#else
++# define SPINLOCK_BREAK_LOCK_INIT
++#endif
++
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC
+-# define SPIN_DEP_MAP_INIT(lockname)	.dep_map = { .name = #lockname }
++# define SPIN_DEP_MAP_INIT(lockname)	{ 0, 0, #lockname }
+ #else
+ # define SPIN_DEP_MAP_INIT(lockname)
+ #endif
+ 
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC
+-# define RW_DEP_MAP_INIT(lockname)	.dep_map = { .name = #lockname }
++# define RW_DEP_MAP_INIT(lockname)	{ 0, 0, #lockname }
+ #else
+ # define RW_DEP_MAP_INIT(lockname)
+ #endif
+ 
+ #ifdef CONFIG_DEBUG_SPINLOCK
+ # define __SPIN_LOCK_UNLOCKED(lockname)					\
+-	(spinlock_t)	{	.raw_lock = __RAW_SPIN_LOCK_UNLOCKED,	\
+-				.magic = SPINLOCK_MAGIC,		\
+-				.owner = SPINLOCK_OWNER_INIT,		\
+-				.owner_cpu = -1,			\
+-				SPIN_DEP_MAP_INIT(lockname) }
++	(spinlock_t)	{ /*raw_lock*/	__RAW_SPIN_LOCK_UNLOCKED,	\
++			  /*break_lock*/ SPINLOCK_BREAK_LOCK_INIT	\
++			  /*magic*/	SPINLOCK_MAGIC,			\
++			  /*owner_cpu*/	-1,				\
++			  /*owner*/	SPINLOCK_OWNER_INIT,		\
++			  SPIN_DEP_MAP_INIT(lockname) }
+ #define __RW_LOCK_UNLOCKED(lockname)					\
+-	(rwlock_t)	{	.raw_lock = __RAW_RW_LOCK_UNLOCKED,	\
+-				.magic = RWLOCK_MAGIC,			\
+-				.owner = SPINLOCK_OWNER_INIT,		\
+-				.owner_cpu = -1,			\
++	(rwlock_t)	{ /*raw_lock*/	__RAW_RW_LOCK_UNLOCKED,		\
++			  /*break_lock*/ SPINLOCK_BREAK_LOCK_INIT	\
++			  /*magic*/	RWLOCK_MAGIC,			\
++			  /*owner_cpu*/ -1,				\
++			  /*owner*/	SPINLOCK_OWNER_INIT,		\
+ 				RW_DEP_MAP_INIT(lockname) }
+ #else
+ # define __SPIN_LOCK_UNLOCKED(lockname) \
+-	(spinlock_t)	{	.raw_lock = __RAW_SPIN_LOCK_UNLOCKED,	\
++	(spinlock_t)	{ /*raw_lock*/	__RAW_SPIN_LOCK_UNLOCKED,	\
++			  /*break_lock*/ SPINLOCK_BREAK_LOCK_INIT	\
+ 				SPIN_DEP_MAP_INIT(lockname) }
+ #define __RW_LOCK_UNLOCKED(lockname) \
+-	(rwlock_t)	{	.raw_lock = __RAW_RW_LOCK_UNLOCKED,	\
++	(rwlock_t)	{ /*raw_lock*/	__RAW_RW_LOCK_UNLOCKED,		\
++			  /*break_lock*/ SPINLOCK_BREAK_LOCK_INIT	\
+ 				RW_DEP_MAP_INIT(lockname) }
+ #endif
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/spinlock_types_up.h ./include/linux/spinlock_types_up.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/spinlock_types_up.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/spinlock_types_up.h	2007-02-01 23:15:15.000000000 -0800
+@@ -26,18 +26,20 @@
+ 
+ #else
+ 
+-typedef struct { } raw_spinlock_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) raw_spinlock_t;
+ 
+ #define __RAW_SPIN_LOCK_UNLOCKED { }
+ 
+ #endif
+ 
++#ifdef CONFIG_DEBUG_LOCK_ALLOC
+ typedef struct {
+ 	/* no debug version on UP */
+-#ifdef CONFIG_DEBUG_LOCK_ALLOC
+ 	struct lockdep_map dep_map;
+-#endif
+ } raw_rwlock_t;
++#else
++typedef EMPTY_STRUCT_DECL(/* unnamed */) raw_rwlock_t;
++#endif
+ 
+ #define __RAW_RW_LOCK_UNLOCKED { }
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/stddef.h ./include/linux/stddef.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/stddef.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/stddef.h	2007-02-03 08:49:33.000000000 -0800
+@@ -12,10 +12,12 @@
+ 
+ #ifdef __KERNEL__
+ 
++#ifndef __cplusplus
+ enum {
+ 	false	= 0,
+ 	true	= 1
+ };
++#endif
+ 
+ #undef offsetof
+ #ifdef __compiler_offsetof
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/sysctl.h ./include/linux/sysctl.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/sysctl.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/sysctl.h	2007-02-01 22:37:02.000000000 -0800
+@@ -929,7 +929,7 @@
+ 			 void __user *newval, size_t newlen, 
+ 			 void **context);
+ 
+-typedef int proc_handler (ctl_table *ctl, int write, struct file * filp,
++typedef int proc_handler_t (ctl_table *ctl, int write, struct file * filp,
+ 			  void __user *buffer, size_t *lenp, loff_t *ppos);
+ 
+ extern int proc_dostring(ctl_table *, int, struct file *,
+@@ -1007,7 +1007,7 @@
+  */
+ 
+ /* A sysctl table is an array of struct ctl_table: */
+-struct ctl_table 
++struct ctl_table
+ {
+ 	int ctl_name;			/* Binary ID */
+ 	const char *procname;		/* Text ID for /proc/sys, or zero */
+@@ -1015,7 +1015,7 @@
+ 	int maxlen;
+ 	mode_t mode;
+ 	ctl_table *child;
+-	proc_handler *proc_handler;	/* Callback for text formatting */
++	proc_handler_t *proc_handler;	/* Callback for text formatting */
+ 	ctl_handler *strategy;		/* Callback function for all r/w */
+ 	struct proc_dir_entry *de;	/* /proc control block */
+ 	void *extra1;
+@@ -1026,7 +1026,7 @@
+    ctl_table trees. */
+ struct ctl_table_header
+ {
+-	ctl_table *ctl_table;
++	struct ctl_table *ctl_table;
+ 	struct list_head ctl_entry;
+ 	int used;
+ 	struct completion *unregistering;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/textsearch.h ./include/linux/textsearch.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/textsearch.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/textsearch.h	2007-02-01 22:37:02.000000000 -0800
+@@ -164,9 +164,9 @@
+ {
+ 	struct ts_config *conf;
+ 
+-	conf = kmalloc(TS_PRIV_ALIGN(sizeof(*conf)) + payload, gfp_mask);
++	conf = (struct ts_config *) kmalloc(TS_PRIV_ALIGN(sizeof(*conf)) + payload, gfp_mask);
+ 	if (conf == NULL)
+-		return ERR_PTR(-ENOMEM);
++		return (struct ts_config *) ERR_PTR(-ENOMEM);
+ 
+ 	memset(conf, 0, TS_PRIV_ALIGN(sizeof(*conf)) + payload);
+ 	return conf;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/types.h ./include/linux/types.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/types.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/types.h	2007-02-03 08:49:02.000000000 -0800
+@@ -33,7 +33,9 @@
+ typedef __kernel_mqd_t		mqd_t;
+ 
+ #ifdef __KERNEL__
++#ifndef __cplusplus
+ typedef _Bool			bool;
++#endif
+ 
+ typedef __kernel_uid32_t	uid_t;
+ typedef __kernel_gid32_t	gid_t;
+@@ -199,4 +201,12 @@
+ 	char			f_fpack[6];
+ };
+ 
++/*
++ * Click: Macros for defining empty structures. Needed because GCC's C and C++
++ * compilers have different ABIs for empty structures.
++ */
++
++#define EMPTY_STRUCT_DECL(s) struct s { int gcc_is_buggy; }
++#define EMPTY_STRUCT_INIT(s) (s) { 0 }
++
+ #endif /* _LINUX_TYPES_H */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/unwind.h ./include/linux/unwind.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/unwind.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/unwind.h	2007-02-02 08:20:40.000000000 -0800
+@@ -71,7 +71,7 @@
+ 
+ #else
+ 
+-struct unwind_frame_info {};
++EMPTY_STRUCT_DECL(unwind_frame_info);
+ 
+ static inline void unwind_init(void) {}
+ static inline void unwind_setup(void) {}
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/linux/wait.h ./include/linux/wait.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/linux/wait.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/linux/wait.h	2007-02-01 22:37:02.000000000 -0800
+@@ -429,7 +429,7 @@
+ static inline int wait_on_bit(void *word, int bit,
+ 				int (*action)(void *), unsigned mode)
+ {
+-	if (!test_bit(bit, word))
++	if (!test_bit(bit, (volatile unsigned long *) word))
+ 		return 0;
+ 	return out_of_line_wait_on_bit(word, bit, action, mode);
+ }
+@@ -453,7 +453,7 @@
+ static inline int wait_on_bit_lock(void *word, int bit,
+ 				int (*action)(void *), unsigned mode)
+ {
+-	if (!test_and_set_bit(bit, word))
++	if (!test_and_set_bit(bit, (volatile unsigned long *) word))
+ 		return 0;
+ 	return out_of_line_wait_on_bit_lock(word, bit, action, mode);
+ }
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/net/compat.h ./include/net/compat.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/net/compat.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/net/compat.h	2007-02-01 22:37:02.000000000 -0800
+@@ -32,9 +32,9 @@
+ 
+ extern int get_compat_msghdr(struct msghdr *, struct compat_msghdr __user *);
+ extern int verify_compat_iovec(struct msghdr *, struct iovec *, char *, int);
+-extern asmlinkage long compat_sys_sendmsg(int,struct compat_msghdr __user *,unsigned);
+-extern asmlinkage long compat_sys_recvmsg(int,struct compat_msghdr __user *,unsigned);
+-extern asmlinkage long compat_sys_getsockopt(int, int, int, char __user *, int __user *);
++asmlinkage long compat_sys_sendmsg(int,struct compat_msghdr __user *,unsigned);
++asmlinkage long compat_sys_recvmsg(int,struct compat_msghdr __user *,unsigned);
++asmlinkage long compat_sys_getsockopt(int, int, int, char __user *, int __user *);
+ extern int put_cmsg_compat(struct msghdr*, int, int, int, void *);
+ 
+ extern int cmsghdr_from_user_compat_to_kern(struct msghdr *, struct sock *, unsigned char *, int);
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/net/neighbour.h ./include/net/neighbour.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/net/neighbour.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/net/neighbour.h	2007-02-01 22:37:02.000000000 -0800
+@@ -245,7 +245,7 @@
+ 						      struct neigh_parms *p,
+ 						      int p_id, int pdev_id,
+ 						      char *p_name,
+-						      proc_handler *proc_handler,
++						      proc_handler_t *proc_handler,
+ 						      ctl_handler *strategy);
+ extern void			neigh_sysctl_unregister(struct neigh_parms *p);
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/net/pkt_cls.h ./include/net/pkt_cls.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/net/pkt_cls.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/net/pkt_cls.h	2007-02-01 22:37:02.000000000 -0800
+@@ -308,9 +308,7 @@
+ 
+ #else /* CONFIG_NET_EMATCH */
+ 
+-struct tcf_ematch_tree
+-{
+-};
++EMPTY_STRUCT_DECL(tcf_ematch_tree);
+ 
+ #define tcf_em_tree_validate(tp, tb, t) ((void)(t), 0)
+ #define tcf_em_tree_destroy(tp, t) do { (void)(t); } while(0)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/net/route.h ./include/net/route.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/net/route.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/net/route.h	2007-02-01 22:37:02.000000000 -0800
+@@ -148,6 +148,16 @@
+ 				   __be32 src, u32 tos, int oif, u8 protocol,
+ 				   __be16 sport, __be16 dport, struct sock *sk)
+ {
++#ifdef __cplusplus
++	struct flowi fl;
++	fl.oif = oif;
++	fl.nl_u.ip4_u.daddr = dst;
++	fl.nl_u.ip4_u.saddr = src;
++	fl.nl_u.ip4_u.tos = tos;
++	fl.proto = protocol;
++	fl.uli_u.ports.sport = sport;
++	fl.uli_u.ports.dport = dport;
++#else
+ 	struct flowi fl = { .oif = oif,
+ 			    .nl_u = { .ip4_u = { .daddr = dst,
+ 						 .saddr = src,
+@@ -156,6 +166,7 @@
+ 			    .uli_u = { .ports =
+ 				       { .sport = sport,
+ 					 .dport = dport } } };
++#endif
+ 
+ 	int err;
+ 	if (!dst || !src) {
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/net/sock.h ./include/net/sock.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/net/sock.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/net/sock.h	2007-02-01 22:37:02.000000000 -0800
+@@ -1082,13 +1082,13 @@
+ {
+ 	if (skb->ip_summed == CHECKSUM_NONE) {
+ 		int err = 0;
+-		unsigned int csum = csum_and_copy_from_user(from,
+-						     page_address(page) + off,
++		unsigned int csum = csum_and_copy_from_user((unsigned char *) from,
++							    (unsigned char *) page_address(page) + off,
+ 							    copy, 0, &err);
+ 		if (err)
+ 			return err;
+ 		skb->csum = csum_block_add(skb->csum, csum, skb->len);
+-	} else if (copy_from_user(page_address(page) + off, from, copy))
++	} else if (copy_from_user((char*) page_address(page) + off, from, copy))
+ 		return -EFAULT;
+ 
+ 	skb->len	     += copy;
+@@ -1363,9 +1363,9 @@
+ static inline void sock_valbool_flag(struct sock *sk, int bit, int valbool)
+ {
+ 	if (valbool)
+-		sock_set_flag(sk, bit);
++		sock_set_flag(sk, (enum sock_flags)bit);
+ 	else
+-		sock_reset_flag(sk, bit);
++		sock_reset_flag(sk, (enum sock_flags)bit);
+ }
+ 
+ extern __u32 sysctl_wmem_max;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/include/rdma/ib_user_verbs.h ./include/rdma/ib_user_verbs.h
+--- /home/kohler/click-linux/linux-2.6.19.2/include/rdma/ib_user_verbs.h	2007-01-10 11:10:37.000000000 -0800
++++ ./include/rdma/ib_user_verbs.h	2007-02-02 08:21:40.000000000 -0800
+@@ -503,8 +503,7 @@
+ 	__u64 driver_data[0];
+ };
+ 
+-struct ib_uverbs_modify_qp_resp {
+-};
++EMPTY_STRUCT_DECL(ib_uverbs_modify_qp_resp);
+ 
+ struct ib_uverbs_destroy_qp {
+ 	__u64 response;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/net/core/dev.c ./net/core/dev.c
+--- /home/kohler/click-linux/linux-2.6.19.2/net/core/dev.c	2007-01-10 11:10:37.000000000 -0800
++++ ./net/core/dev.c	2007-02-02 17:11:45.000000000 -0800
+@@ -197,6 +197,9 @@
+ 	return &dev_index_head[ifindex & ((1<<NETDEV_HASHBITS)-1)];
+ }
+ 
++/* Click: input packet handlers, might steal packets from net_rx_action. */
++static RAW_NOTIFIER_HEAD(net_in_chain);
++
+ /*
+  *	Our notifier list
+  */
+@@ -1696,6 +1699,31 @@
+ 	return pt_prev->func(skb, skb->dev, pt_prev, orig_dev);
+ }
+ 
++
++/*
++ * Click: Allow Click to ask to intercept input packets.
++ */
++int
++register_net_in(struct notifier_block *nb)
++{
++	int err;
++	rtnl_lock();
++	err = raw_notifier_chain_register(&net_in_chain, nb);
++	rtnl_unlock();
++	return err;
++}
++
++int
++unregister_net_in(struct notifier_block *nb)
++{
++	int err;
++	rtnl_lock();
++	err = raw_notifier_chain_unregister(&net_in_chain, nb);
++	rtnl_unlock();
++	return err;
++}
++
++
+ #if defined(CONFIG_BRIDGE) || defined (CONFIG_BRIDGE_MODULE)
+ int (*br_handle_frame_hook)(struct net_bridge_port *p, struct sk_buff **pskb);
+ struct net_bridge;
+@@ -1762,12 +1790,11 @@
+ }
+ #endif
+ 
+-int netif_receive_skb(struct sk_buff *skb)
++int __netif_receive_skb(struct sk_buff *skb, unsigned short type, int notifier_data)
+ {
+ 	struct packet_type *ptype, *pt_prev;
+ 	struct net_device *orig_dev;
+ 	int ret = NET_RX_DROP;
+-	unsigned short type;
+ 
+ 	/* if we've gotten here through NAPI, check netpoll */
+ 	if (skb->dev->poll && netpoll_rx(skb))
+@@ -1789,6 +1816,14 @@
+ 	skb->h.raw = skb->nh.raw = skb->data;
+ 	skb->mac_len = skb->nh.raw - skb->mac.raw;
+ 
++	/* Click: may want to steal the packet */
++	if (notifier_data >= 0
++	    && raw_notifier_call_chain(&net_in_chain,
++				   notifier_data,
++				   skb) & NOTIFY_STOP_MASK) {
++        	return ret;
++	}
++ 
+ 	pt_prev = NULL;
+ 
+ 	rcu_read_lock();
+@@ -1832,8 +1867,7 @@
+ 	if (handle_bridge(&skb, &pt_prev, &ret, orig_dev))
+ 		goto out;
+ 
+-	type = skb->protocol;
+-	list_for_each_entry_rcu(ptype, &ptype_base[ntohs(type)&15], list) {
++       	list_for_each_entry_rcu(ptype, &ptype_base[ntohs(type)&15], list) {
+ 		if (ptype->type == type &&
+ 		    (!ptype->dev || ptype->dev == skb->dev)) {
+ 			if (pt_prev) 
+@@ -1877,7 +1911,7 @@
+ 
+ 		dev = skb->dev;
+ 
+-		netif_receive_skb(skb);
++		__netif_receive_skb(skb, skb->protocol, skb_queue_len(&queue->input_pkt_queue));
+ 
+ 		dev_put(dev);
+ 
+@@ -3563,6 +3597,7 @@
+ EXPORT_SYMBOL(dev_get_by_index);
+ EXPORT_SYMBOL(dev_get_by_name);
+ EXPORT_SYMBOL(dev_open);
++EXPORT_SYMBOL(dev_ioctl);
+ EXPORT_SYMBOL(dev_queue_xmit);
+ EXPORT_SYMBOL(dev_remove_pack);
+ EXPORT_SYMBOL(dev_set_allmulti);
+@@ -3575,10 +3610,16 @@
+ EXPORT_SYMBOL(netdev_set_master);
+ EXPORT_SYMBOL(netdev_state_change);
+ EXPORT_SYMBOL(netif_receive_skb);
++EXPORT_SYMBOL(__netif_receive_skb);
+ EXPORT_SYMBOL(netif_rx);
+ EXPORT_SYMBOL(register_gifconf);
+ EXPORT_SYMBOL(register_netdevice);
+ EXPORT_SYMBOL(register_netdevice_notifier);
++
++/* Click */
++EXPORT_SYMBOL(register_net_in);
++EXPORT_SYMBOL(unregister_net_in);
++
+ EXPORT_SYMBOL(skb_checksum_help);
+ EXPORT_SYMBOL(synchronize_net);
+ EXPORT_SYMBOL(unregister_netdevice);
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/net/core/neighbour.c ./net/core/neighbour.c
+--- /home/kohler/click-linux/linux-2.6.19.2/net/core/neighbour.c	2007-01-10 11:10:37.000000000 -0800
++++ ./net/core/neighbour.c	2007-02-01 22:37:02.000000000 -0800
+@@ -2616,7 +2616,7 @@
+ 
+ int neigh_sysctl_register(struct net_device *dev, struct neigh_parms *p,
+ 			  int p_id, int pdev_id, char *p_name, 
+-			  proc_handler *handler, ctl_handler *strategy)
++			  proc_handler_t *handler, ctl_handler *strategy)
+ {
+ 	struct neigh_sysctl_table *t = kmalloc(sizeof(*t), GFP_KERNEL);
+ 	const char *dev_name_source = NULL;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/net/core/skbuff.c ./net/core/skbuff.c
+--- /home/kohler/click-linux/linux-2.6.19.2/net/core/skbuff.c	2007-01-10 11:10:37.000000000 -0800
++++ ./net/core/skbuff.c	2007-02-02 16:54:16.000000000 -0800
+@@ -564,6 +564,112 @@
+ 	skb_shinfo(new)->gso_type = skb_shinfo(old)->gso_type;
+ }
+ 
++
++/* Click: clear skb header state */
++static inline void skb_headerinit(void *p, kmem_cache_t *cache,
++				  unsigned long flags)
++{
++	struct sk_buff *skb = p;
++
++	skb->next = NULL;
++	skb->prev = NULL;
++	skb->sk = NULL;
++	skb->tstamp.off_sec = 0;     /* No idea about time */
++	skb->dev = NULL;
++	skb->input_dev = NULL;
++	skb->dst = NULL;
++	skb->sp = NULL;
++	memset(skb->cb, 0, sizeof(skb->cb));
++	skb->priority = 0;
++	skb->pkt_type = PACKET_HOST;   /* Default type */
++	skb->ip_summed = 0;
++	skb->destructor = NULL;
++
++#ifdef CONFIG_NETFILTER
++	skb->nfmark = 0;
++	skb->nfct = NULL;
++# if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
++	skb->nfct_reasm = NULL;
++# endif
++# ifdef CONFIG_BRIDGE_NETFILTER
++	skb->nf_bridge = NULL;
++# endif
++#endif
++#ifdef CONFIG_NET_SCHED
++	skb->tc_index = 0;
++# ifdef CONFIG_NET_CLS_ACT
++	skb->tc_verd = 0;
++# endif
++#endif
++}
++
++/* Click: attempts to recycle a sk_buff. if it can be recycled, return it */
++struct sk_buff *skb_recycle(struct sk_buff *skb)
++{
++	if (atomic_dec_and_test(&skb->users)) { 
++		dst_release(skb->dst);
++#ifdef CONFIG_XFRM
++		secpath_put(skb->sp);
++#endif
++		if(skb->destructor) {
++			WARN_ON(in_irq());
++			skb->destructor(skb);
++		}
++#ifdef CONFIG_NETFILTER
++		nf_conntrack_put(skb->nfct);
++# if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
++		nf_conntrack_put_reasm(skb->nfct_reasm);
++# endif
++# ifdef CONFIG_BRIDGE_NETFILTER
++		nf_bridge_put(skb->nf_bridge);
++# endif
++#endif
++		skb_headerinit(skb, NULL, 0);
++
++		if (skb->fclone == SKB_FCLONE_UNAVAILABLE
++		    && (!skb->cloned ||
++			atomic_read(&skb_shinfo(skb)->dataref) == (skb->nohdr ? (1 << SKB_DATAREF_SHIFT) + 1 : 1))) {
++			/* Don't need to atomic_sub skb_shinfo(skb)->dataref,
++			   as we set that to 1 below. */
++			
++			if (skb_shinfo(skb)->nr_frags) {
++				int i;
++				for (i = 0; i < skb_shinfo(skb)->nr_frags; i++)
++					put_page(skb_shinfo(skb)->frags[i].page);
++				/* Jason Park patch */
++				skb_shinfo(skb)->nr_frags = 0;
++			}
++
++			if (skb_shinfo(skb)->frag_list)
++				skb_drop_fraglist(skb);
++
++			/* Load the data pointers. */
++			skb->data = skb->head;
++			skb->tail = skb->data;
++			/* end and truesize should have never changed */
++			/* skb->end = skb->data + skb->truesize; */
++
++			/* set up other state */
++			skb->len = 0;
++			skb->cloned = 0;
++
++			atomic_set(&skb->users, 1);
++			atomic_set(&(skb_shinfo(skb)->dataref), 1);
++			/* Jason Park patch */
++			skb_shinfo(skb)->gso_size = 0;
++			skb_shinfo(skb)->gso_segs = 0;
++			skb_shinfo(skb)->gso_type = 0;
++			skb_shinfo(skb)->ip6_frag_id = 0;
++
++			return skb;
++		}
++
++		kfree_skbmem(skb);
++      	}
++
++	return 0;
++}
++
+ /**
+  *	skb_copy	-	create private copy of an sk_buff
+  *	@skb: buffer to copy
+@@ -2068,6 +2174,7 @@
+ EXPORT_SYMBOL(skb_checksum);
+ EXPORT_SYMBOL(skb_clone);
+ EXPORT_SYMBOL(skb_clone_fraglist);
++EXPORT_SYMBOL(skb_recycle);
+ EXPORT_SYMBOL(skb_copy);
+ EXPORT_SYMBOL(skb_copy_and_csum_bits);
+ EXPORT_SYMBOL(skb_copy_and_csum_dev);
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/net/ipv4/arp.c ./net/ipv4/arp.c
+--- /home/kohler/click-linux/linux-2.6.19.2/net/ipv4/arp.c	2007-01-10 11:10:37.000000000 -0800
++++ ./net/ipv4/arp.c	2007-02-01 22:37:02.000000000 -0800
+@@ -332,6 +332,7 @@
+ {
+ 	__be32 saddr = 0;
+ 	u8  *dst_ha = NULL;
++	u8  dst_ha_buf[MAX_ADDR_LEN+sizeof(unsigned long)];
+ 	struct net_device *dev = neigh->dev;
+ 	__be32 target = *(__be32*)neigh->primary_key;
+ 	int probes = atomic_read(&neigh->probes);
+@@ -369,8 +370,8 @@
+ 	if ((probes -= neigh->parms->ucast_probes) < 0) {
+ 		if (!(neigh->nud_state&NUD_VALID))
+ 			printk(KERN_DEBUG "trying to ucast probe in NUD_INVALID\n");
+-		dst_ha = neigh->ha;
+-		read_lock_bh(&neigh->lock);
++		memcpy(dst_ha_buf, neigh->ha, sizeof(neigh->ha));
++		dst_ha = dst_ha_buf;
+ 	} else if ((probes -= neigh->parms->app_probes) < 0) {
+ #ifdef CONFIG_ARPD
+ 		neigh_app_ns(neigh);
+@@ -380,8 +381,6 @@
+ 
+ 	arp_send(ARPOP_REQUEST, ETH_P_ARP, target, dev, saddr,
+ 		 dst_ha, dev->dev_addr, NULL);
+-	if (dst_ha)
+-		read_unlock_bh(&neigh->lock);
+ }
+ 
+ static int arp_ignore(struct in_device *in_dev, struct net_device *dev,
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /home/kohler/click-linux/linux-2.6.19.2/net/ipv4/devinet.c ./net/ipv4/devinet.c
+--- /home/kohler/click-linux/linux-2.6.19.2/net/ipv4/devinet.c	2007-01-10 11:10:37.000000000 -0800
++++ ./net/ipv4/devinet.c	2007-02-03 09:41:07.000000000 -0800
+@@ -1639,3 +1639,4 @@
+ EXPORT_SYMBOL(inetdev_by_index);
+ EXPORT_SYMBOL(register_inetaddr_notifier);
+ EXPORT_SYMBOL(unregister_inetaddr_notifier);
++EXPORT_SYMBOL(devinet_ioctl);
