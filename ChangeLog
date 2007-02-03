@@ -1,3 +1,28 @@
+2007-02-03 Saturday 13:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-linuxmodule.h.in (1.20), configure (1.91), configure.in
+	  (1.295), drivers/e1000-5.x/src/e1000_main.c (1.11),
+	  drivers/e1000-6.x/src/e1000_main.c (1.7),
+	  drivers/e1000-7.x/src/e1000_main.c (1.4),
+	  elements/linuxmodule/anydevice.cc (1.34),
+	  elements/linuxmodule/todevice.cc (1.150),
+	  elements/linuxmodule/tohost.cc (1.49),
+	  elements/standard/addressinfo.cc (1.39), include/click/glue.hh
+	  (1.55), linuxmodule/clickfs.cc (1.52), linuxmodule/proclikefs.c
+	  (1.23), linuxmodule/proclikefs.h (1.6), linuxmodule/read-pmc.c
+	  (1.4): update for linux 2.6.19.2, hopefully without breaking
+	  earlier versions
+
+2007-02-03 Saturday 13:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/clicknet/: ether.h (1.8), wifi.h (1.26): define
+	  ARPHRD_80211 with the other ARPHRDs
+
+2007-02-03 Saturday 13:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/fastudpsrc.cc (1.26): whoops: fix code
+	  should have been removed long ago
+
 2007-02-01 Thursday 16:54  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* config-bsdmodule.h.in (1.10), configure (1.90), configure.in
