@@ -1,3 +1,9 @@
+2007-02-03 Saturday 18:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/: clickfs.cc (1.53), config.cc (1.25): avoid "wrong
+	  cpu" problems in click-install by not holding any spinlock_t
+	  objects for long periods
+
 2007-02-03 Saturday 17:20  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.107), INSTALL (1.48), etc/README (1.17),
