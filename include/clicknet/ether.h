@@ -36,6 +36,7 @@ struct click_arp {		/* Offsets relative to ARP (Ethernet) header */
 #define ARPHRD_FRELAY	15	/*		  frame relay    	     */
 #define ARPHRD_STRIP	23	/*		  Ricochet Starmode Radio    */
 #define ARPHRD_IEEE1394	24	/*		  IEEE 1394 (FireWire)	     */
+#define ARPHRD_80211    801	/*		  IEEE 802.11 (wifi)	     */
     uint16_t	ar_pro;		/* 2-3 (16-17)  protocol address format      */
     uint8_t	ar_hln;		/* 4   (18)     hardware address length      */
     uint8_t	ar_pln;		/* 5   (19)     protocol address length      */

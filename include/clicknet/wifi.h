@@ -11,8 +11,6 @@
 #define _CLICKNET_WIFI_H_
 
 
-#define ARPHRD_80211    801       /* wifi      */
-
 #define WIFI_EXTRA_MAGIC  0x7492001
 
 enum {
