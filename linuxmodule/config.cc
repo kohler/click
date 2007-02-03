@@ -111,9 +111,7 @@ kill_router()
 
 
 /******************************* Handlers ************************************/
-
-extern spinlock_t clickfs_write_lock;
-extern atomic_t clickfs_read_count;
+/*         Must be called with the click configuration write locked!         */
 
 static int
 swap_config(const String &s)
@@ -146,7 +144,6 @@ hotswap_config(const String &s)
 	&& router->initialize(click_logged_errh) >= 0) {
 	click_config_generation++;
 	router->activate(click_logged_errh);
-	assert(spin_is_locked(&clickfs_write_lock) && atomic_read(&clickfs_read_count) == 0);
 	kill_router();
 	install_router(s, router);
     } else
@@ -159,7 +156,6 @@ static int
 write_config(const String &s, Element *, void *thunk, ErrorHandler *)
 {
     click_clear_error_log();
-    assert(spin_is_locked(&clickfs_write_lock) && atomic_read(&clickfs_read_count) == 0);
     int retval = (thunk ? hotswap_config(s) : swap_config(s));
     return retval;
 }

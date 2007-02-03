@@ -43,8 +43,9 @@ static struct inode_operations *click_handler_inode_ops;
 static struct dentry_operations click_dentry_ops;
 static struct proclikefs_file_system *clickfs;
 
-spinlock_t clickfs_write_lock;
-atomic_t clickfs_read_count;
+static spinlock_t clickfs_lock;
+static wait_queue_head_t clickfs_waitq;
+static atomic_t clickfs_read_count;
 extern uint32_t click_config_generation;
 static int clickfs_ready;
 
@@ -64,11 +65,21 @@ static int clickfs_ready;
 static inline void
 lock_config_read(const char *file, int line)
 {
-    SPIN_LOCK_MSG(&clickfs_write_lock, file, line, "soft lock");
-    while (!spin_trylock(&clickfs_write_lock))
+    wait_queue_t wait;
+#define private xxx_private
+    init_wait(&wait);
+#undef private
+    for (;;) {
+	SPIN_LOCK(&clickfs_lock, file, line);
+	prepare_to_wait(&clickfs_waitq, &wait, TASK_UNINTERRUPTIBLE);
+	if (atomic_read(&clickfs_read_count) >= 0)
+	    break;
+	SPIN_UNLOCK(&clickfs_lock, file, line);
 	schedule();
+    }
     atomic_inc(&clickfs_read_count);
-    SPIN_UNLOCK(&clickfs_write_lock, file, line);
+    SPIN_UNLOCK(&clickfs_lock, file, line);
+    finish_wait(&clickfs_waitq, &wait);
 }
 
 static inline void
@@ -76,26 +87,34 @@ unlock_config_read()
 {
     assert(atomic_read(&clickfs_read_count) > 0);
     atomic_dec(&clickfs_read_count);
+    wake_up(&clickfs_waitq);
 }
 
 static inline void
 lock_config_write(const char *file, int line)
 {
-    while (1) {
-	SPIN_LOCK_MSG(&clickfs_write_lock, file, line, "soft lock");
-	while (!spin_trylock(&clickfs_write_lock))
-	    schedule();
+    wait_queue_t wait;
+#define private xxx_private
+    init_wait(&wait);
+#undef private
+    for (;;) {
+	SPIN_LOCK(&clickfs_lock, file, line);
+	prepare_to_wait(&clickfs_waitq, &wait, TASK_UNINTERRUPTIBLE);
 	if (atomic_read(&clickfs_read_count) == 0)
-	    return;
-	SPIN_UNLOCK(&clickfs_write_lock, file, line);
+	    break;
+	SPIN_UNLOCK(&clickfs_lock, file, line);
 	schedule();
     }
+    atomic_dec(&clickfs_read_count);
+    SPIN_UNLOCK(&clickfs_lock, file, line);
+    finish_wait(&clickfs_waitq, &wait);
 }
 
 static inline void
 unlock_config_write(const char *file, int line)
 {
-    SPIN_UNLOCK(&clickfs_write_lock, file, line);
+    atomic_inc(&clickfs_read_count);
+    wake_up_all(&clickfs_waitq);
 }
 
 
@@ -819,7 +838,8 @@ init_clickfs()
 #endif
 
     spin_lock_init(&handler_strings_lock);
-    spin_lock_init(&clickfs_write_lock);
+    spin_lock_init(&clickfs_lock);
+    init_waitqueue_head(&clickfs_waitq);
     atomic_set(&clickfs_read_count, 0);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
