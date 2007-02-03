@@ -169,7 +169,11 @@ ToHost::push(int port, Packet *p)
     struct net_device *dev = skb->dev;
     local_bh_disable();
     dev_hold(dev);
+# if HAVE___NETIF_RECEIVE_SKB
+    __netif_receive_skb(skb, protocol, -1);
+# else
     netif_receive_skb(skb, protocol, -1);
+# endif
     dev_put(dev);
     local_bh_enable();
 #else

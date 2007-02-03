@@ -65,12 +65,16 @@
 /* Define if the Click linuxmodule is compiled for a 2.6 kernel. */
 #undef HAVE_LINUXMODULE_2_6
 
+/* Define if you have the netif_tx_lock function. */
+#undef HAVE_NETIF_TX_LOCK
+
 /* Define if fast checksum functions require correct alignment. */
 #ifndef __i386__
 # define FAST_CHECKSUM_ALIGNED 1
 #endif
 
 /* Include integer type definitions. */
+#include <linux/autoconf.h>
 #include <linux/types.h>
 typedef ptrdiff_t intptr_t;
 typedef unsigned long uintptr_t; /* XXX? */

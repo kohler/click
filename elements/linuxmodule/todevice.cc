@@ -230,14 +230,23 @@ ToDevice::run_task(Task *)
     _runs++;
 
 #if LINUX_VERSION_CODE >= 0x020400
+# if HAVE_NETIF_TX_LOCK
+    int ok = spin_trylock_bh(&_dev->_xmit_lock);
+    if (likely(ok))
+	_dev->xmit_lock_owner = smp_processor_id();
+    else {
+	_task.fast_reschedule();
+	return false;
+    }
+# else
     local_bh_disable();
     if (!spin_trylock(&_dev->xmit_lock)) {
 	local_bh_enable();
 	_task.fast_reschedule();
 	return false;
     }
-
     _dev->xmit_lock_owner = smp_processor_id();
+# endif
 #endif
 
 #if CLICK_DEVICE_STATS
@@ -334,8 +343,12 @@ ToDevice::run_task(Task *)
 #endif
 
 #if LINUX_VERSION_CODE >= 0x020400
+# if HAVE_NETIF_TX_LOCK
+    netif_tx_unlock_bh(_dev);
+# else
     spin_unlock(&_dev->xmit_lock);
     local_bh_enable();
+# endif
 #endif
 
     // If we're polling, never go to sleep! We're relying on ToDevice to clean

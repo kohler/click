@@ -825,7 +825,9 @@ Can't find Linux 2.6 compilation flags.
 
     AC_CACHE_CHECK([for C++-includable kernel header files], [ac_cv_cxx_aware_system],
 	[AC_LANG_CPLUSPLUS
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <linux/signal.h>]], [[return 0]])], ac_cv_cxx_aware_system=yes, ac_cv_cxx_aware_system=no)
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define new xxx_new
+#include <linux/autoconf.h>
+#include <linux/signal.h>]], [[return 0]])], ac_cv_cxx_aware_system=yes, ac_cv_cxx_aware_system=no)
 	])
 
 
@@ -847,6 +849,7 @@ Can't find Linux 2.6 compilation flags.
 #define protected xxx_protected
 #define public xxx_public
 #define namespace xxx_namespace
+#include <linux/autoconf.h>
 #include <linux/skbuff.h>]], [[]])], ac_cv_f_permissive=no, ac_cv_f_permissive=yes)])
 
 	if test $ac_cv_f_permissive = yes; then
@@ -865,6 +868,7 @@ Can't find Linux 2.6 compilation flags.
 #define protected xxx_protected
 #define public xxx_public
 #define namespace xxx_namespace
+#include <linux/autoconf.h>
 #include <linux/skbuff.h>]], [[]])], ac_cv_f_permissive_ok=yes, ac_cv_f_permissive_ok=no)])
 
 	    if test $ac_cv_f_permissive_ok = no; then
@@ -877,7 +881,8 @@ Can't find Linux 2.6 compilation flags.
 
 
     AC_CACHE_CHECK([whether long and int64_t are the same type in the Linux kernel],
-	ac_cv_long_64_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <linux/types.h>
+	ac_cv_long_64_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <linux/autoconf.h>
+#include <linux/types.h>
 void f1(long) {
 }
 void f1(int64_t) { // will fail if long and int64_t are the same type
@@ -893,7 +898,7 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 # define KBUILD_BASENAME	KBUILD_STR(click)
 # define KBUILD_MODNAME		KBUILD_STR(click)
 #endif
-#include <linux/config.h>
+#include <linux/autoconf.h>
 #include <linux/skbuff.h>]])
 
     AC_CACHE_CHECK([whether struct sk_buff has a security member], [ac_cv_linuxmodule_skbuff_security],
@@ -948,6 +953,16 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 	[ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=yes], [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_ip6_frag_id = yes; then
 	AC_DEFINE([HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID], [1], [Define if 'struct skb_shared_info' has an 'ip6_frag_id' member.])
+    fi
+
+    AC_CACHE_CHECK([for netif_tx_lock], [ac_cv_linuxmodule_netif_tx_lock],
+	[AC_LANG_C
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_SKBUFF_PROLOGUE()
+#include <linux/netdevice.h>],
+[[extern struct net_device dev; netif_tx_lock(&dev);]])],
+	[ac_cv_linuxmodule_netif_tx_lock=yes], [ac_cv_linuxmodule_netif_tx_lock=no])])
+    if test $ac_cv_linuxmodule_netif_tx_lock = yes; then
+	AC_DEFINE([HAVE_NETIF_TX_LOCK], [1], [Define if you have the 'netif_tx_lock' function.])
     fi
 
 

@@ -24,7 +24,7 @@
 #include "anydevice.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <clicknet/wifi.h>
+#include <clicknet/ether.h>
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)

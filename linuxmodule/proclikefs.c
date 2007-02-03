@@ -19,7 +19,7 @@
 
 #undef CLICK_LINUXMODULE
 #include <linux/version.h>
-#include <linux/config.h>
+#include <linux/autoconf.h>
 #ifndef EXPORT_SYMTAB
 # define EXPORT_SYMTAB
 #endif
@@ -115,7 +115,9 @@ proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry)
 
 struct proclikefs_file_system *
 proclikefs_register_filesystem(const char *name, int fs_flags,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+	int (*get_sb) (struct file_system_type *, int, const char *, void *, struct vfsmount *)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	struct super_block *(*get_sb) (struct file_system_type *, int, const char *, void *)
 #else
 	struct super_block *(*read_super) (struct super_block *, void *, int)
@@ -343,8 +345,10 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	fo->fsync = (void *) return_EIO;
 	fo->fasync = (void *) return_EIO;
 	fo->lock = (void *) return_EIO;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 	fo->readv = (void *) return_EIO;
 	fo->writev = (void *) return_EIO;
+#endif
 	fo->sendpage = (void *) return_EIO;
 	fo->get_unmapped_area = (void *) return_EIO;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
@@ -356,6 +360,11 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	fo->sendfile = (void *) return_EIO;
 	fo->check_flags = (void *) return_EIO;
 	fo->flock = (void *) return_EIO;
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+	fo->dir_notify = (void *) return_EIO;
+	fo->splice_write = (void *) return_EIO;
+	fo->splice_read = (void *) return_EIO;
 #endif
     }
 
@@ -390,6 +399,9 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	io->put_link = (void *) return_EIO;
 #else
 	io->revalidate = (void *) return_EIO;
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+	io->truncate_range = (void *) return_EIO;
 #endif
     }
     

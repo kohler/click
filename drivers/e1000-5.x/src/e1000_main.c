@@ -96,6 +96,10 @@ char e1000_driver_string[] = "Intel(R) PRO/1000 Network Driver";
 char e1000_driver_version[] = "5.7.6"DRIVERNAPI;
 char e1000_copyright[] = "Copyright (c) 1999-2004 Intel Corporation.";
 
+#if !HAVE___NETIF_RECEIVE_SKB
+#define netif_receive_skb(skb)		netif_receive_skb((skb), (skb)->protocol, 0)
+#endif
+
 /* e1000_pci_tbl - PCI Device ID Table
  *
  * Last entry must be all 0s
@@ -2659,10 +2663,10 @@ e1000_clean_rx_irq(struct e1000_adapter *adapter)
 					le16_to_cpu(rx_desc->special) &
 					E1000_RXD_SPC_VLAN_MASK);
 		} else {
-			netif_receive_skb(skb, skb->protocol, 0);
+			netif_receive_skb(skb);
 		}
 #else
-		netif_receive_skb(skb, skb->protocol, 0);
+		netif_receive_skb(skb);
 #endif
 #else /* CONFIG_E1000_NAPI */
 #ifdef NETIF_F_HW_VLAN_TX

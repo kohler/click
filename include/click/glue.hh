@@ -20,7 +20,6 @@ CLICK_CXX_PROTECT
 #  include <linux/module.h>
 #  define HAVE_MOD_USE_COUNT 1
 # endif
-# include <linux/config.h>
 # include <linux/kernel.h>
 # include <linux/version.h>
 # include <linux/string.h>

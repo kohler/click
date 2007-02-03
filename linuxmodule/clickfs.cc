@@ -101,7 +101,11 @@ unlock_config_write(const char *file, int line)
 
 /*************************** Inode constants ********************************/
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+#define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->i_private)))
+#else
 #define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
+#endif
 
 struct ClickInodeInfo {
     uint32_t config_generation;
@@ -383,11 +387,19 @@ click_fill_super(struct super_block *sb, void *data, int flags)
     return click_read_super(sb, data, flags) ? 0 : -ENOMEM;
 }
 
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+static int
+click_get_sb(struct file_system_type *fs_type, int flags, const char *, void *data, struct vfsmount *vfsmount)
+{
+    return get_sb_single(fs_type, flags, data, click_fill_super, vfsmount);
+}
+# else
 static struct super_block *
 click_get_sb(struct file_system_type *fs_type, int flags, const char *, void *data)
 {
     return get_sb_single(fs_type, flags, data, click_fill_super);
 }
+# endif
 #endif
 
 static void
@@ -651,7 +663,11 @@ handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store
 }
 
 static int
-handler_flush(struct file *filp)
+handler_flush(struct file *filp
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+	      , struct files_struct *files
+#endif
+	      )
 {
     bool writing = (filp->f_flags & O_ACCMODE) != O_RDONLY;
     int stringno = FILP_WRITE_STRINGNO(filp);

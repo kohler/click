@@ -17,7 +17,6 @@
 
 #include <click/config.h>
 #include <linux/types.h>
-#include <linux/config.h>
 #include <linux/kernel.h>
 #include <asm/system.h>
 

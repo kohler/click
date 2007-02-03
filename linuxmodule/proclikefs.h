@@ -12,7 +12,9 @@ struct proclikefs_file_system;
 
 struct proclikefs_file_system *proclikefs_register_filesystem
 		(const char *name, int fs_flags,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+		 int (*get_sb) (struct file_system_type *, int, const char *, void *, struct vfsmount *)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 		 struct super_block *(*get_sb) (struct file_system_type *, int, const char *, void *)
 #else
 		 struct super_block *(*read_super) (struct super_block *, void *, int)

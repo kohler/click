@@ -24,6 +24,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+#include <clicknet/ether.h>
 #if CLICK_NS
 # include <click/master.hh>
 #endif
@@ -384,7 +385,7 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
 #  define dev_put(dev) /* nada */
 # endif
     net_device *dev = dev_get_by_name(s.c_str());
-    if (dev && dev->type == ARPHRD_ETHER) {
+    if (dev && (dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211)) {
 	memcpy(store, dev->dev_addr, 6);
 	dev_put(dev);
 	return true;
