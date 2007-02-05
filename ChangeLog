@@ -1,3 +1,32 @@
+2007-02-05 Monday 16:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/pkg-userlevel.mk (1.2): apply ELEMENT_LIBS external libraries
+	  to packages (patch from Vladimir Bychkovsky)
+
+2007-02-05 Monday 16:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.108), conf/test-ping.click (1.1): add
+	  test-ping.click
+
+2007-02-05 Monday 16:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/todevice.cc (1.152): a version of a patch
+	  from Jason Park: do not spin in ToDevice when there is no carrier
+	  on the device
+
+2007-02-05 Monday 16:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-linuxmodule.h.in (1.21), configure (1.92), configure.in
+	  (1.296), elements/linuxmodule/anydevice.cc (1.36),
+	  elements/linuxmodule/anydevice.hh (1.44),
+	  elements/linuxmodule/fromdevice.cc (1.95),
+	  elements/linuxmodule/fromdevice.hh (1.46),
+	  elements/linuxmodule/polldevice.cc (1.145),
+	  elements/linuxmodule/polldevice.hh (1.72): add TIMESTAMP
+	  arguments, which enable the net_enable_timestamp() function by
+	  default; this is required on recent kernels which dont timestamp
+	  received packets most of the time
+
 2007-02-05 Monday 16:38  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/icmp/icmpsendpings.cc (1.40): don't update times if the
