@@ -74,7 +74,7 @@ endif
 OBJS = $(ELEMENT_OBJS) $(PACKAGE_OBJS)
 
 $(package).uo: $(clickdatadir)/pkg-userlevel.mk $(OBJS)
-	$(CXXLINK) -o $(package).uo $(OBJS)
+	$(CXXLINK) -o $(package).uo $(OBJS) $(ELEMENT_LIBS)
 	$(STRIP_UPACKAGE) $(package).uo
 
 elemlist uelements.conf: $(CLICK_BUILDTOOL)
