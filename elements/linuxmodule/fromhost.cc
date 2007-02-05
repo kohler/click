@@ -128,7 +128,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 	    _dev = 0;
 	    return errh->error("device '%s' already exists", _devname.c_str());
 	} else {
-	    fromlinux_map.insert(this);
+	    fromlinux_map.insert(this, false);
 	    return 0;
 	}
     }
@@ -145,7 +145,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     }
 
     dev_hold(_dev);
-    fromlinux_map.insert(this);
+    fromlinux_map.insert(this, false);
     return 0;
 }
 
@@ -229,7 +229,7 @@ FromHost::initialize(ErrorHandler *errh)
 void
 FromHost::cleanup(CleanupStage)
 {
-    fromlinux_map.remove(this);
+    fromlinux_map.remove(this, false);
 
     if (_queue) {
 	_queue->kill();
@@ -238,9 +238,12 @@ FromHost::cleanup(CleanupStage)
     
     if (_dev) {
 	dev_put(_dev);
+	fromlinux_map.lock(false);
 	if (fromlinux_map.lookup(_dev, 0))
-	    _dev = 0;		// do not free device; still in use
-	else {
+	    // do not free device if it is in use
+	    _dev = 0;
+	fromlinux_map.unlock(false);
+	if (_dev) {
 	    if (_dev->flags & IFF_UP)
 		dev_updown(_dev, -1, 0);
 	    unregister_netdev(_dev);
@@ -298,24 +301,30 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
          Click Task takes the packet off the queue. We could have implemented
          a larger queue, but why bother? Linux already maintains a queue for
          the device. */
+    fromlinux_map.lock(false);
     if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0))
 	if (!fl->_queue) {
 	    fl->_queue = Packet::make(skb);
-	    netif_stop_queue(dev);
 	    fl->_stats.tx_packets++;
 	    fl->_stats.tx_bytes += fl->_queue->length();
 	    fl->_task.reschedule();
+	    fromlinux_map.unlock(false);
+	    netif_stop_queue(dev);
     	    return 0;
 	}
+    fromlinux_map.unlock(false);
     return -1;
 }
 
 static net_device_stats *
 fl_stats(net_device *dev)
 {
+    net_device_stats *stats = 0;
+    fromlinux_map.lock(false);
     if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0))
-	return fl->stats();
-    return 0;
+	stats = fl->stats();
+    fromlinux_map.unlock(false);
+    return stats;
 }
 
 bool

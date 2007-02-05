@@ -68,13 +68,13 @@ AnyDevice::find_device(bool allow_nonexistent, AnyDeviceMap *adm,
 	dev_set_promiscuity(_dev, 1);
 
     if (adm)
-	adm->insert(this);
+	adm->insert(this, false);
 
     return 0;
 }
 
 void
-AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm)
+AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
 {
     if (_dev == dev)		// changing to the same device is a noop
 	return;
@@ -88,14 +88,14 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm)
 	dev_set_promiscuity(_dev, -1);
     
     if (adm && _in_map)
-	adm->remove(this);
+	adm->remove(this, locked);
     if (_dev)
 	dev_put(_dev);
     _dev = dev;
     if (_dev)
 	dev_hold(_dev);
     if (adm)
-	adm->insert(this);
+	adm->insert(this, locked);
 
     if (_dev && _promisc)
 	dev_set_promiscuity(_dev, 1);
@@ -106,9 +106,8 @@ AnyDevice::clear_device(AnyDeviceMap *adm)
 {
     if (_dev && _promisc)
 	dev_set_promiscuity(_dev, -1);
-    
-    if (adm)
-	adm->remove(this);
+    if (adm && _in_map)
+	adm->remove(this, false);
     if (_dev)
 	dev_put(_dev);
     _dev = 0;
@@ -127,13 +126,15 @@ AnyDeviceMap::initialize()
     _unknown_map = 0;
     for (int i = 0; i < MAP_SIZE; i++)
 	_map[i] = 0;
+    rwlock_init(&_lock);
 }
 
 void
-AnyDeviceMap::insert(AnyDevice *d)
+AnyDeviceMap::insert(AnyDevice *d, bool locked)
 {
-    // lock whole kernel when manipulating device map
-    lock_kernel();
+    // lock when manipulating device map
+    if (!locked)
+	lock(true);
     
     // put new devices last on list
     int ifi = d->ifindex();
@@ -147,14 +148,15 @@ AnyDeviceMap::insert(AnyDevice *d)
     *pprev = d;
 
     d->_in_map = true;
-    unlock_kernel();
+    if (!locked)
+	unlock(true);
 }
 
 void
-AnyDeviceMap::remove(AnyDevice *d)
+AnyDeviceMap::remove(AnyDevice *d, bool locked)
 {
-    lock_kernel();
-    
+    if (!locked)
+	lock(true);
     int ifi = d->ifindex();
     AnyDevice **pprev = (ifi >= 0 ? &_map[ifi % MAP_SIZE] : &_unknown_map);
     AnyDevice *trav = *pprev;
@@ -164,13 +166,14 @@ AnyDeviceMap::remove(AnyDevice *d)
     }
     if (trav)
 	*pprev = d->_next;
-
     d->_in_map = false;
-    unlock_kernel();
+    if (!locked)
+	unlock(true);
 }
 
 AnyDevice *
-AnyDeviceMap::lookup_unknown(net_device *dev, AnyDevice *last)
+AnyDeviceMap::lookup_unknown(net_device *dev, AnyDevice *last) const
+    // must be called between AnyDeviceMap::lock() ... unlock()
 {
     // make sure device is valid
     if (!dev)
@@ -192,7 +195,8 @@ AnyDeviceMap::lookup_unknown(net_device *dev, AnyDevice *last)
 }
 
 void
-AnyDeviceMap::lookup_all(net_device *dev, bool known, Vector<AnyDevice *> &v)
+AnyDeviceMap::lookup_all(net_device *dev, bool known, Vector<AnyDevice *> &v) const
+    // must be called between AnyDeviceMap::lock() ... unlock()
 {
     if (known)
 	for (AnyDevice *d = 0; d = lookup(dev, d); v.push_back(d))
@@ -209,13 +213,17 @@ dev_get_by_ether_address(const String &name, Element *context)
     unsigned char en[6];
     if (!cp_ethernet_address(name, en, context))
 	return 0;
-    for (net_device *dev = dev_base; dev; dev = dev->next)
-	if ((dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211) && memcmp(en, dev->dev_addr, 6) == 0) {
+    read_lock(&dev_base_lock);
+    net_device *dev;
+    for (dev = dev_base; dev; dev = dev->next)
+	if ((dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211)
+	    && memcmp(en, dev->dev_addr, 6) == 0) {
 	    dev_hold(dev);	// dev_get_by_name does dev_hold; so
 				// should we
-	    return dev;
+	    break;
 	}
-    return 0;
+    read_unlock(&dev_base_lock);
+    return dev;
 }
 
 ELEMENT_REQUIRES(linuxmodule)

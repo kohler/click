@@ -88,8 +88,6 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
     void add_handlers();
     void take_state(Element *, ErrorHandler *);
 
-    void change_device(net_device *);
-    
     /* process a packet. return 0 if not wanted after all. */
     int got_skb(struct sk_buff *);
 

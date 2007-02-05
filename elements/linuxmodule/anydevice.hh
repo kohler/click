@@ -90,7 +90,7 @@ class AnyDevice : public Element { public:
     void set_promisc()			{ _promisc = true; }
 
     int find_device(bool, AnyDeviceMap *, ErrorHandler *);
-    void set_device(net_device *, AnyDeviceMap *);
+    void set_device(net_device *, AnyDeviceMap *, bool locked = false);
     void clear_device(AnyDeviceMap *);
 
   protected:
@@ -153,22 +153,44 @@ AnyTaskDevice::adjust_tickets(int work)
 class AnyDeviceMap { public:
 
     void initialize();
-    AnyDevice *lookup(net_device *, AnyDevice *);
-    AnyDevice *lookup_unknown(net_device *, AnyDevice *);
-    void lookup_all(net_device *, bool known, Vector<AnyDevice *> &);
-    void insert(AnyDevice *);
-    void remove(AnyDevice *);
+    inline void lock(bool write);
+    inline void unlock(bool write);
+    inline AnyDevice *lookup(net_device *, AnyDevice *) const;
+    AnyDevice *lookup_unknown(net_device *, AnyDevice *) const;
+    void lookup_all(net_device *, bool known, Vector<AnyDevice *> &) const;
+    void insert(AnyDevice *, bool locked);
+    void remove(AnyDevice *, bool locked);
 
   private:
 
     enum { MAP_SIZE = 64 };
     AnyDevice *_unknown_map;
     AnyDevice *_map[MAP_SIZE];
+    rwlock_t _lock;
 
 };
 
+inline void
+AnyDeviceMap::lock(bool write)
+{
+    if (write)
+	write_lock_bh(&_lock);
+    else
+	read_lock(&_lock);
+}
+
+inline void
+AnyDeviceMap::unlock(bool write)
+{
+    if (write)
+	write_unlock_bh(&_lock);
+    else
+	read_unlock(&_lock);
+}
+
 inline AnyDevice *
-AnyDeviceMap::lookup(net_device *dev, AnyDevice *last)
+AnyDeviceMap::lookup(net_device *dev, AnyDevice *last) const
+    // must be called between AnyDeviceMap::lookup_lock() ... lookup_unlock()
 {
     if (!dev)
 	return 0;

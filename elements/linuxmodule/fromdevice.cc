@@ -203,12 +203,6 @@ FromDevice::take_state(Element *e, ErrorHandler *errh)
     }
 }
 
-void
-FromDevice::change_device(net_device *dev)
-{
-    set_device(dev, &from_device_map);
-}
-
 /*
  * Called by Linux net_bh[2.2]/net_rx_action[2.4] with each packet.
  */
@@ -221,8 +215,10 @@ packet_notifier_hook(struct notifier_block *nb, unsigned long backlog_len, void 
     struct sk_buff *skb = (struct sk_buff *)v;
     int stolen = 0;
     FromDevice *fd = 0;
+    from_device_map.lock(false);
     while (stolen == 0 && (fd = (FromDevice *)from_device_map.lookup(skb->dev, fd)))
 	stolen = fd->got_skb(skb);
+    from_device_map.unlock(false);
     return (stolen ? NOTIFY_STOP_MASK : 0);
 }
 #endif
@@ -238,9 +234,11 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 	bool down = (flags == NETDEV_DOWN);
 	net_device* dev = (net_device*)v;
 	Vector<AnyDevice*> es;
+	from_device_map.lock(true);
 	from_device_map.lookup_all(dev, down, es);
 	for (int i = 0; i < es.size(); i++)
-	    ((FromDevice*)(es[i]))->change_device(down ? 0 : dev);
+	    ((FromDevice*)(es[i]))->set_device(down ? 0 : dev, &from_device_map, true);
+	from_device_map.unlock(true);
     }
     return 0;
 }

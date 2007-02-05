@@ -230,17 +230,15 @@ TulipStats::reset_counts()
 void
 TulipStats::interrupt_notifier(net_device *dev, unsigned csr5)
 {
-  AnyDevice *anydev = tulip_stats_map.lookup(dev);
-  if (!anydev)
-    return;
-  TulipStats *tulips = static_cast<TulipStats *>(anydev);
-
-  tulips->_nintr++;
-  for (unsigned bit = 0; bit < 17; bit++)
-    if (csr5 & (1 << bit))
-      tulips->_intr[bit]++;
-
-  tulips->stats_poll();
+    tulip_stats_map.lock(false);
+    if (TulipStats *tulips = static_cast<TulipStats *>(tulip_stats_map.lookup(dev))) {
+	tulips->_nintr++;
+	for (unsigned bit = 0; bit < 17; bit++)
+	    if (csr5 & (1 << bit))
+		tulips->_intr[bit]++;
+	tulips->stats_poll();
+    }
+    tulip_stats_map.unlock(false);
 }
 
 static void
