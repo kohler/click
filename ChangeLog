@@ -1,3 +1,8 @@
+2007-02-05 Monday 16:38  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/icmpsendpings.cc (1.40): don't update times if the
+	  incoming packet has no timestamp
+
 2007-02-05 Monday 15:11  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/: anydevice.cc (1.35), anydevice.hh (1.43),
