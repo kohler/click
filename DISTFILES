@@ -104,6 +104,7 @@ sampler.click
 simple-dsdv-userlevel.click
 simple-dsdv.click
 test-device.click
+test-ping.click
 test-tap.click
 test-tun.click
 test.click
