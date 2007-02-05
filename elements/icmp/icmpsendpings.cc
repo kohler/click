@@ -190,15 +190,19 @@ ICMPPingSource::push(int, Packet *p)
 		_receiver->nduplicate++;
 		send_ts->_subsec ^= 0xFFFFFFFF;
 	    }
-	    
-	    Timestamp diff = p->timestamp_anno() - *send_ts;
-	    uint32_t diffval = diff.usec1();
-	    if (diffval < _receiver->time_min || !_receiver->nreceived)
-		_receiver->time_min = diffval;
-	    if (diffval > _receiver->time_max || !_receiver->nreceived)
-		_receiver->time_max = diffval;
-	    _receiver->time_sum += diffval;
-	    _receiver->time_sq_sum += ((counter_t)diffval) * diffval;
+
+	    uint32_t diffval;
+	    if (p->timestamp_anno()) {
+		Timestamp diff = p->timestamp_anno() - *send_ts;
+		diffval = diff.usec1();
+		if (diffval < _receiver->time_min || !_receiver->nreceived)
+		    _receiver->time_min = diffval;
+		if (diffval > _receiver->time_max || !_receiver->nreceived)
+		    _receiver->time_max = diffval;
+		_receiver->time_sum += diffval;
+		_receiver->time_sq_sum += ((counter_t)diffval) * diffval;
+	    } else
+		diffval = 0;
 
 	    _receiver->nreceived++;
 	    send_ts->_subsec ^= 0xFFFFFFFF;
