@@ -4,7 +4,7 @@
 /*
 =c
 
-PollDevice(DEVNAME [, PROMISC, BURST, I<KEYWORDS>])
+PollDevice(DEVNAME [, I<keywords> PROMISC, BURST, TIMESTAMP...])
 
 =s netdevices
 
@@ -20,9 +20,6 @@ device with that address.
 Each time PollDevice is scheduled, it emits at most BURST packets. By default,
 BURST is 8.
 
-If PROMISC is set (by default, it is not), then the device is put into
-promiscuous mode.
-
 This element is only available in the Linux kernel module.
 
 Keyword arguments are:
@@ -31,11 +28,17 @@ Keyword arguments are:
 
 =item PROMISC
 
-Boolean. Same as the PROMISC argument.
+Boolean.  If true, the device is put into promiscuous mode while FromDevice is
+active.  Default is false.
 
 =item BURST
 
-Unsigned integer. Same as the BURST argument.
+Unsigned integer.  Sets the BURST parameter.
+
+=item TIMESTAMP
+
+Boolean.  If true, then ensure that received packets have correctly-set
+timestamp annotations.  Default is true.
 
 =item ALLOW_NONEXISTENT
 

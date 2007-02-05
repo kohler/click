@@ -955,7 +955,14 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 	AC_DEFINE([HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID], [1], [Define if 'struct skb_shared_info' has an 'ip6_frag_id' member.])
     fi
 
-    AC_CACHE_CHECK([for netif_tx_lock], [ac_cv_linuxmodule_netif_tx_lock],
+    AC_LANG_C
+    AC_CHECK_DECL(net_enable_timestamp, [ac_cv_net_enable_timestamp=yes], [ac_cv_net_enable_timestamp=no], [CLICK_SKBUFF_PROLOGUE()
+#include <linux/netdevice.h>])
+    if test $ac_cv_net_enable_timestamp = yes; then
+	AC_DEFINE([HAVE_NET_ENABLE_TIMESTAMP], [1], [Define if you have the 'net_enable_timestamp' function.])
+    fi
+
+    AC_CACHE_CHECK([Linux kernel for netif_tx_lock], [ac_cv_linuxmodule_netif_tx_lock],
 	[AC_LANG_C
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_SKBUFF_PROLOGUE()
 #include <linux/netdevice.h>],

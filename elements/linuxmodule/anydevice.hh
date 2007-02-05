@@ -87,7 +87,8 @@ class AnyDevice : public Element { public:
     int ifindex() const			{ return _dev ? _dev->ifindex : -1; }
 
     bool promisc() const		{ return _promisc; }
-    void set_promisc()			{ _promisc = true; }
+    bool timestamp() const		{ return _timestamp; }
+    inline void set_device_flags(bool promisc, bool timestamp);
 
     int find_device(bool, AnyDeviceMap *, ErrorHandler *);
     void set_device(net_device *, AnyDeviceMap *, bool locked = false);
@@ -99,6 +100,7 @@ class AnyDevice : public Element { public:
     net_device *_dev;
 
     bool _promisc : 1;
+    bool _timestamp : 1;
     bool _in_map : 1;
     AnyDevice *_next;
 
@@ -169,6 +171,13 @@ class AnyDeviceMap { public:
     rwlock_t _lock;
 
 };
+
+inline void
+AnyDevice::set_device_flags(bool promisc, bool timestamp)
+{
+    _promisc = promisc;
+    _timestamp = timestamp;
+}
 
 inline void
 AnyDeviceMap::lock(bool write)

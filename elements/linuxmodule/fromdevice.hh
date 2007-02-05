@@ -5,7 +5,7 @@
 /*
 =c
 
-FromDevice(DEVNAME [, PROMISC, BURST, I<KEYWORDS>])
+FromDevice(DEVNAME [, I<keywords> PROMISC, BURST, TIMESTAMP...])
 
 =s netdevices
 
@@ -27,20 +27,23 @@ thread -- that is, not at interrupt time -- FromDevice emits packets from that
 queue as it is scheduled by the driver. It emits at most BURST packets per
 scheduling; BURST is 8 by default.
 
-If PROMISC is set (by default, it is not), then the device is put into
-promiscuous mode while FromDevice is active.
-
 Keyword arguments are:
 
 =over 8
 
 =item PROMISC
 
-Boolean. Same as the PROMISC argument.
+Boolean.  If true, the device is put into promiscuous mode while FromDevice is
+active.  Default is false.
 
 =item BURST
 
-Unsigned integer. Same as the BURST argument.
+Unsigned integer.  Sets the BURST parameter.
+
+=item TIMESTAMP
+
+Boolean.  If true, then ensure that received packets have correctly-set
+timestamp annotations.  Default is true.
 
 =item ALLOW_NONEXISTENT
 

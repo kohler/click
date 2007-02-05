@@ -75,8 +75,7 @@ int
 PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 8;
-    bool promisc = false;
-    bool allow_nonexistent = false;
+    bool promisc = false, allow_nonexistent = false, timestamp = true;
     if (cp_va_parse(conf, this, errh,
 		    cpString, "device name", &_devname,
 		    cpOptional,
@@ -86,11 +85,11 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "PROMISC", cpBool, "enter promiscuous mode?", &promisc,
 		    "PROMISCUOUS", cpBool, "enter promiscuous mode?", &promisc,
 		    "BURST", cpUnsigned, "burst size", &_burst,
+		    "TIMESTAMP", cpBool, "set timestamps?", &timestamp,
 		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &allow_nonexistent,
 		    cpEnd) < 0)
 	return -1;
-    if (promisc)
-	set_promisc();
+    set_device_flags(promisc, timestamp);
     
 #if HAVE_LINUX_POLLING
     if (find_device(allow_nonexistent, &poll_device_map, errh) < 0)
@@ -274,7 +273,8 @@ PollDevice::run_task(Task *)
     Packet *p = Packet::make(skb); 
    
 # ifndef CLICK_WARP9
-    p->timestamp_anno().set_now();
+    if (timestamp())
+	p->timestamp_anno().set_now();
 # endif
 
     _npackets++;

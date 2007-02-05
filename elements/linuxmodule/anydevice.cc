@@ -35,7 +35,7 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 AnyDevice::AnyDevice()
-    : _dev(0), _promisc(false), _in_map(false), _next(0)
+    : _dev(0), _promisc(false), _timestamp(true), _in_map(false), _next(0)
 {
 }
 
@@ -66,7 +66,10 @@ AnyDevice::find_device(bool allow_nonexistent, AnyDeviceMap *adm,
 
     if (_dev && _promisc)
 	dev_set_promiscuity(_dev, 1);
-
+#if HAVE_NET_ENABLE_TIMESTAMP
+    if (_dev && _timestamp)
+	net_enable_timestamp();
+#endif
     if (adm)
 	adm->insert(this, false);
 
@@ -83,9 +86,13 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
 	click_chatter("%s: device '%s' went down", declaration().c_str(), _devname.c_str());
     if (dev)
 	click_chatter("%s: device '%s' came up", declaration().c_str(), _devname.c_str());
-
+    
     if (_dev && _promisc)
 	dev_set_promiscuity(_dev, -1);
+#if HAVE_NET_ENABLE_TIMESTAMP
+    if (_dev && _timestamp)
+	net_disable_timestamp();
+#endif
     
     if (adm && _in_map)
 	adm->remove(this, locked);
@@ -99,6 +106,10 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
 
     if (_dev && _promisc)
 	dev_set_promiscuity(_dev, 1);
+#if HAVE_NET_ENABLE_TIMESTAMP
+    if (_dev && _timestamp)
+	net_enable_timestamp();
+#endif
 }
 
 void
@@ -106,6 +117,10 @@ AnyDevice::clear_device(AnyDeviceMap *adm)
 {
     if (_dev && _promisc)
 	dev_set_promiscuity(_dev, -1);
+#if HAVE_NET_ENABLE_TIMESTAMP
+    if (_dev && _timestamp)
+	net_disable_timestamp();
+#endif
     if (adm && _in_map)
 	adm->remove(this, false);
     if (_dev)

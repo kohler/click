@@ -65,6 +65,9 @@
 /* Define if the Click linuxmodule is compiled for a 2.6 kernel. */
 #undef HAVE_LINUXMODULE_2_6
 
+/* Define if you have the net_enable_timestamp function. */
+#undef HAVE_NET_ENABLE_TIMESTAMP
+
 /* Define if you have the netif_tx_lock function. */
 #undef HAVE_NETIF_TX_LOCK
 

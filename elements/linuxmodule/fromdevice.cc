@@ -2,13 +2,14 @@
 /*
  * fromdevice.{cc,hh} -- element steals packets from Linux devices using
  * register_net_in
+ * Eddie Kohler
  * Robert Morris
- * Eddie Kohler: AnyDevice, other changes
  * Benjie Chen: scheduling, internal queue
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -92,8 +93,7 @@ FromDevice::cast(const char *n)
 int
 FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool promisc = false;
-    bool allow_nonexistent = false;
+    bool promisc = false, allow_nonexistent = false, timestamp = true;
     _burst = 8;
     if (cp_va_parse(conf, this, errh, 
 		    cpString, "device name", &_devname, 
@@ -104,11 +104,11 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "PROMISC", cpBool, "enter promiscuous mode?", &promisc,
 		    "PROMISCUOUS", cpBool, "enter promiscuous mode?", &promisc,
 		    "BURST", cpUnsigned, "burst size", &_burst,
+		    "TIMESTAMP", cpBool, "set timestamps?", &timestamp,
 		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &allow_nonexistent,
 		    cpEnd) < 0)
 	return -1;
-    if (promisc)
-	set_promisc();
+    set_device_flags(promisc, timestamp);
 
     // make queue look full so packets sent to us are ignored
     _head = _tail = _capacity = 0;
