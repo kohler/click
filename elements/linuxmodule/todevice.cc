@@ -226,7 +226,7 @@ ToDevice::cleanup(CleanupStage stage)
 bool
 ToDevice::run_task(Task *)
 {
-    int busy;
+    int busy = 0;
     int sent = 0;
 
     _runs++;
@@ -362,6 +362,7 @@ ToDevice::run_task(Task *)
 #else 
     bool reschedule = (busy || sent > 0 || _signal.active());
 #endif
+    
 #if HAVE_LINUX_POLLING
     if (is_polling) {
 	reschedule = true;
@@ -374,9 +375,14 @@ ToDevice::run_task(Task *)
     }
 #endif /* HAVE_LINUX_POLLING */
 
-    if (reschedule) {
+    // 5.Feb.2007: Incorporate a version of a patch from Jason Park.  If the
+    // device is "busy", perhaps there is no carrier!  Don't spin on no
+    // carrier; instead, rely on Linux's notifer_hook to wake us up again.
+    if (busy && sent == 0 && !netif_carrier_ok(_dev))
+	reschedule = false;
+    
+    if (reschedule)
 	_task.fast_reschedule();
-    }
     return sent > 0;
 }
 
@@ -451,6 +457,14 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 	for (int i = 0; i < es.size(); i++)
 	    ((ToDevice *)(es[i]))->change_device(down ? 0 : dev);
 	to_device_map.unlock(true);
+    } else if (flags == NETDEV_CHANGE) {
+	net_device *dev = (net_device *)v;
+	Vector<AnyDevice *> es;
+	to_device_map.lock(false);
+	to_device_map.lookup_all(dev, true, es);
+	for (int i = 0; i < es.size(); i++)
+	    ((ToDevice *)(es[i]))->tx_wake_queue(dev);
+	to_device_map.unlock(false);
     }
     return 0;
 }
