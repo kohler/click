@@ -1,3 +1,14 @@
+2007-02-06 Tuesday 05:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/master.hh (1.18), include/click/routerthread.hh
+	  (1.37), include/click/sync.hh (1.23), lib/master.cc (1.43),
+	  lib/routerthread.cc (1.68), lib/timer.cc (1.41),
+	  linuxmodule/clickfs.cc (1.54): change Master and timers to use
+	  real spinlocks, rather than fakey Spinlocks.	Also reduce number
+	  of locks that need to be grabbed when doing timer operations and
+	  pending operations.  Might make things slower, certainly will
+	  increase correctness in handler interactions.
+
 2007-02-05 Monday 16:47  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/pkg-userlevel.mk (1.2): apply ELEMENT_LIBS external libraries
