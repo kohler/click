@@ -129,7 +129,7 @@ Timer::schedule_at(const Timestamp& when)
     // acquire lock, unschedule
     assert(_router && initialized());
     Master* master = _router->master();
-    master->_timer_lock.acquire();
+    master->lock_timers();
 
     // set expiration timer
     _expiry = when;
@@ -139,14 +139,14 @@ Timer::schedule_at(const Timestamp& when)
 	_schedpos = master->_timer_heap.size();
 	master->_timer_heap.push_back(0);
     }
-    master->timer_reheapify_from(_schedpos, this);
+    master->timer_reheapify_from(_schedpos, this, false);
 
     // if we changed the timeout, wake up the first thread
     if (_schedpos == 0)
 	master->_threads[2]->wake();
 
     // done
-    master->_timer_lock.release();
+    master->unlock_timers();
 }
 
 /** @brief Schedule the timer to fire @a delta time in the future.
@@ -172,14 +172,16 @@ Timer::schedule_after(const Timestamp &delta)
 void
 Timer::unschedule()
 {
+    if (!scheduled())
+	return;
+    Master* master = _router->master();
+    master->lock_timers();
     if (scheduled()) {
-	Master* master = _router->master();
-	master->_timer_lock.acquire();
-	master->timer_reheapify_from(_schedpos, master->_timer_heap.back());
+	master->timer_reheapify_from(_schedpos, master->_timer_heap.back(), true);
 	_schedpos = -1;
 	master->_timer_heap.pop_back();
-	master->_timer_lock.release();
     }
+    master->unlock_timers();
 }
 
 // list-related functions in master.cc

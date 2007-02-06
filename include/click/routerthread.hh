@@ -77,7 +77,7 @@ class RouterThread
     uint32_t driver_task_epoch() const	{ return _driver_task_epoch; }
     timeval task_epoch_time(uint32_t epoch) const;
 # if CLICK_LINUXMODULE
-    struct task_struct *sleeper() const	{ return _sleeper; }
+    struct task_struct *sleeper() const	{ return _linux_task; }
 # endif
 #endif
 
@@ -95,12 +95,15 @@ class RouterThread
     Master *_master;
     int _id;
 
-    Spinlock _lock;
+#if CLICK_LINUXMODULE
+    struct task_struct *_linux_task;
+    spinlock_t _lock;
     atomic_uint32_t _task_lock_waiting;
+#endif
+    
     atomic_uint32_t _pending;
 
 #if CLICK_LINUXMODULE
-    struct task_struct *_sleeper;
     bool _greedy;
 #endif
     
@@ -144,7 +147,8 @@ class RouterThread
     inline void add_pending();
 
     // task running functions
-    inline void nice_lock_tasks();
+    inline void driver_lock_tasks();
+    inline void driver_unlock_tasks();
     inline void run_tasks(int ntasks);
     inline void run_os();
 #ifdef HAVE_ADAPTIVE_SCHEDULER
@@ -270,29 +274,42 @@ RouterThread::task_end() const
 inline void
 RouterThread::lock_tasks()
 {
-    _task_lock_waiting++;
-    _lock.acquire();
-    _task_lock_waiting--;
+#if CLICK_LINUXMODULE
+    if (unlikely(current != _linux_task)) {
+	_task_lock_waiting++;
+	spin_lock(&_lock);
+	_task_lock_waiting--;
+    }
+#endif
 }
 
 inline bool
 RouterThread::attempt_lock_tasks()
 {
-    return _lock.attempt();
+#if CLICK_LINUXMODULE
+    if (likely(current == _linux_task))
+	return true;
+    return spin_trylock(&_lock);
+#else
+    return true;
+#endif
 }
 
 inline void
 RouterThread::unlock_tasks()
 {
-    _lock.release();
+#if CLICK_LINUXMODULE
+    if (unlikely(current != _linux_task))
+	spin_unlock(&_lock);
+#endif
 }
 
 inline void
 RouterThread::wake()
 {
 #if CLICK_LINUXMODULE
-    if (_sleeper)
-	wake_up_process(_sleeper);
+    if (_linux_task)
+	wake_up_process(_linux_task);
 #endif
 #if CLICK_BSDMODULE && !BSD_NETISRSCHED
     if (_sleep_ident)

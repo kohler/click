@@ -75,10 +75,11 @@ RouterThread::RouterThread(Master *m, int id)
 #ifndef HAVE_TASK_HEAP
     _prev = _next = _thread = this;
 #endif
-    _task_lock_waiting = 0;
     _pending = 0;
 #if CLICK_LINUXMODULE
-    _sleeper = 0;
+    _linux_task = 0;
+    _task_lock_waiting = 0;
+    spin_lock_init(&_lock);
 #endif
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     _max_click_share = 80 * Task::MAX_UTILIZATION / 100;
@@ -131,23 +132,23 @@ RouterThread::~RouterThread()
 }
 
 inline void
-RouterThread::nice_lock_tasks()
+RouterThread::driver_lock_tasks()
 {
 #if CLICK_LINUXMODULE
     // If other people are waiting for the task lock, give them a chance to
     // catch it before we claim it.
-# if 0
-    if (_task_lock_waiting > 0 && !_greedy) {
-	unsigned long done_jiffies = click_jiffies() + CLICK_HZ;
-	while (_task_lock_waiting > 0 && click_jiffies() < done_jiffies)
-	    /* XXX schedule() instead of spinlock? */;
-    }
-# else
     for (int i = 0; _task_lock_waiting > 0 && i < 10; i++)
 	schedule();
-# endif
+    spin_lock(&_lock);
 #endif
-    lock_tasks();
+}
+
+inline void
+RouterThread::driver_unlock_tasks()
+{
+#if CLICK_LINUXMODULE
+    spin_unlock(&_lock);
+#endif
 }
 
 
@@ -386,7 +387,7 @@ RouterThread::run_os()
     // set state to interruptible early to avoid race conditions
     set_current_state(TASK_INTERRUPTIBLE);
 #endif
-    unlock_tasks();
+    driver_unlock_tasks();
 
 #if CLICK_USERLEVEL
     _master->run_selects(active());
@@ -431,7 +432,7 @@ RouterThread::run_os()
 # error "Compiling for unknown target."
 #endif
     
-    nice_lock_tasks();
+    driver_lock_tasks();
 }
 
 void
@@ -441,10 +442,10 @@ RouterThread::driver()
     int iter = 0;
 #if CLICK_LINUXMODULE
     // this task is running the driver
-    _sleeper = current;
+    _linux_task = current;
 #endif
 
-    nice_lock_tasks();
+    driver_lock_tasks();
     
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     int restride_iter = 0;
@@ -526,10 +527,10 @@ RouterThread::driver()
 
 #ifndef BSD_NETISRSCHED
     // check to see if driver is stopped
-    if (*stopper) {
-	unlock_tasks();
+    if (*stopper > 0) {
+	driver_unlock_tasks();
 	bool b = _master->check_driver();
-	nice_lock_tasks();
+	driver_lock_tasks();
 	if (!b)
 	    goto finish_driver;
     }
@@ -542,13 +543,13 @@ RouterThread::driver()
 #endif
 
   finish_driver:
-    unlock_tasks();
+    driver_unlock_tasks();
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     _cur_click_share = 0;
 #endif
 #if CLICK_LINUXMODULE
-    _sleeper = 0;
+    _linux_task = 0;
 #endif
 }
 
@@ -568,20 +569,20 @@ RouterThread::driver_once()
 #endif
 #if CLICK_LINUXMODULE
     // this task is running the driver
-    _sleeper = current;
+    _linux_task = current;
+    spin_lock(&_lock);
 #endif
-    lock_tasks();
     Task *t = task_begin();
     if (t != task_end()) {
 	t->fast_unschedule();
 	t->call_hook();
     }
-    unlock_tasks();
 #ifdef CLICK_BSDMODULE  /* XXX MARKO */
     splx(s);
 #endif
 #if CLICK_LINUXMODULE
-    _sleeper = 0;
+    spin_unlock(&_lock);
+    _linux_task = 0;
 #endif
 }
 

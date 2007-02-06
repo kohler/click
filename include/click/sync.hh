@@ -109,11 +109,9 @@ Spinlock::acquire()
   
     register unsigned short content = 1;
   test_and_set:
-    asm volatile ("xchgw %0,%1" :
-		  "=r" (content),
-		  "=m" (_lock) :
-		  "0" (content),
-		  "m" (_lock));
+    asm volatile ("xchgw %0,%1"
+		  : "=r" (content), "=m" (_lock)
+		  : "0" (content), "m" (_lock));
     if (content != 0) {
 	while(_lock != 0)
 	    asm volatile ("" : : : "memory");  
@@ -141,11 +139,9 @@ Spinlock::attempt()
     }
   
     register unsigned short content = 1;
-    asm volatile ("xchgw %0,%1" :
-		  "=r" (content),
-		  "=m" (_lock) :
-		  "0" (content),
-		  "m" (_lock));
+    asm volatile ("xchgw %0,%1"
+		  : "=r" (content), "=m" (_lock)
+		  : "0" (content), "m" (_lock));
     if (content != 0)
 	return false;
     else {

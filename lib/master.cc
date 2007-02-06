@@ -3,7 +3,7 @@
  * master.{cc,hh} -- Click event master
  * Eddie Kohler
  *
- * Copyright (c) 2003-6 The Regents of the University of California
+ * Copyright (c) 2003-7 The Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -43,10 +43,11 @@ atomic_uint32_t Master::signals_pending;
 #endif
 
 Master::Master(int nthreads)
-    : _master_paused(0), _routers(0), _task_list(0, 0)
+    : _routers(0), _task_list(0, 0)
 {
     _refcount = 0;
     _stopper = 0;
+    _master_paused = 0;
 
     for (int tid = -2; tid < nthreads; tid++)
 	_threads.push_back(new RouterThread(this, tid));
@@ -79,6 +80,14 @@ Master::Master(int nthreads)
     _signal_adding = false;
 #endif
 
+#if CLICK_LINUXMODULE
+    spin_lock_init(&_master_lock);
+    _master_lock_task = 0;
+    _master_lock_count = 0;
+    spin_lock_init(&_timer_lock);
+    _timer_task = 0;
+#endif
+    
 #if CLICK_NS
     _siminst = 0;
     _clickinst = 0;
@@ -87,18 +96,18 @@ Master::Master(int nthreads)
 
 Master::~Master()
 {
-    _master_lock.acquire();
+    lock_master();
     _refcount++;
     while (_routers) {
 	Router *r = _routers;
 	r->use();
-	_master_lock.release();
+	unlock_master();
 	unregister_router(r);
 	r->unuse();
-	_master_lock.acquire();
+	lock_master();
     }
     _refcount--;
-    _master_lock.release();
+    unlock_master();
 
     if (_refcount > 0)
 	click_chatter("deleting master while ref count = %d", _refcount);
@@ -114,20 +123,36 @@ Master::~Master()
 void
 Master::use()
 {
-    _master_lock.acquire();
+    lock_master();
     _refcount++;
-    _master_lock.release();
+    unlock_master();
 }
 
 void
 Master::unuse()
 {
-    _master_lock.acquire();
+    lock_master();
     _refcount--;
     bool del = (_refcount <= 0);
-    _master_lock.release();
+    unlock_master();
     if (del)
 	delete this;
+}
+
+void
+Master::pause()
+{
+    lock_timers();
+#if CLICK_USERLEVEL
+    _select_lock.acquire();
+#endif
+    SpinlockIRQ::flags_t flags = _task_lock.acquire();
+    _master_paused++;
+    _task_lock.release(flags);
+#if CLICK_USERLEVEL
+    _select_lock.release();
+#endif
+    unlock_timers();
 }
 
 
@@ -136,13 +161,13 @@ Master::unuse()
 void
 Master::register_router(Router *router)
 {
-    _master_lock.acquire();
+    lock_master();
     assert(router && router->_master == 0 && router->_running == Router::RUNNING_INACTIVE && !router->_next_router);
     _refcount++;		// balanced in unregister_router()
     router->_master = this;
     router->_next_router = _routers;
     _routers = router;
-    _master_lock.release();
+    unlock_master();
 }
 
 void
@@ -150,21 +175,21 @@ Master::prepare_router(Router *router)
 {
     // increments _master_paused; should quickly call run_router() or
     // kill_router()
-    _master_lock.acquire();
+    lock_master();
     assert(router && router->_master == this && router->_running == Router::RUNNING_INACTIVE);
-    _master_paused++;
     router->_running = Router::RUNNING_PREPARING;
-    _master_lock.release();
+    unlock_master();
+    pause();
 }
 
 void
 Master::run_router(Router *router, bool foreground)
 {
-    _master_lock.acquire();
+    lock_master();
     assert(router && router->_master == this && router->_running == Router::RUNNING_PREPARING);
     router->_running = (foreground ? Router::RUNNING_ACTIVE : Router::RUNNING_BACKGROUND);
-    _master_paused--;
-    _master_lock.release();
+    unlock_master();
+    unpause();
 }
 
 void
@@ -174,18 +199,18 @@ Master::kill_router(Router *router)
     assert(!in_interrupt());
 #endif
     
-    _master_lock.acquire();
+    lock_master();
     assert(router && router->_master == this);
     int was_running = router->_running;
     router->_running = Router::RUNNING_DEAD;
     if (was_running >= Router::RUNNING_BACKGROUND)
-	_master_paused++;
+	pause();
     else if (was_running == Router::RUNNING_PREPARING)
 	/* nada */;
     else {
 	/* could not have anything on the list */
 	assert(was_running == Router::RUNNING_INACTIVE || was_running == Router::RUNNING_DEAD);
-	_master_lock.release();
+	unlock_master();
 	return;
     }
 
@@ -194,7 +219,7 @@ Master::kill_router(Router *router)
 #if CLICK_LINUXMODULE && HAVE_LINUXMODULE_2_6
     preempt_disable();
 #endif
-    _master_lock.release();
+    unlock_master();
     
     // Remove tasks
     for (RouterThread **tp = _threads.begin(); tp < _threads.end(); tp++)
@@ -222,11 +247,11 @@ Master::kill_router(Router *router)
     
     // Remove timers
     {
-	_timer_lock.acquire();
+	lock_timers();
 	Timer* t;
 	for (Timer** tp = _timer_heap.end(); tp > _timer_heap.begin(); )
 	    if ((t = *--tp, t->_router == router)) {
-		timer_reheapify_from(tp - _timer_heap.begin(), _timer_heap.back());
+		timer_reheapify_from(tp - _timer_heap.begin(), _timer_heap.back(), true);
 		// must clear _schedpos AFTER timer_reheapify_from()
 		t->_router = 0;
 		t->_schedpos = -1;
@@ -235,7 +260,7 @@ Master::kill_router(Router *router)
 		if (tp < _timer_heap.end())
 		    tp++;
 	    }
-	_timer_lock.release();
+	unlock_timers();
     }
 
 #if CLICK_USERLEVEL
@@ -269,9 +294,7 @@ Master::kill_router(Router *router)
     }
 #endif
 
-    _master_lock.acquire();
-    _master_paused--;
-    _master_lock.release();
+    unpause();
 #if CLICK_LINUXMODULE && HAVE_LINUXMODULE_2_6
     preempt_enable_no_resched();
 #endif
@@ -285,7 +308,7 @@ void
 Master::unregister_router(Router *router)
 {
     assert(router);
-    _master_lock.acquire();
+    lock_master();
 
     if (router->_master) {
 	assert(router->_master == this);
@@ -304,7 +327,7 @@ Master::unregister_router(Router *router)
 	router->_master = 0;
     }
     
-    _master_lock.release();
+    unlock_master();
 }
 
 bool
@@ -314,7 +337,7 @@ Master::check_driver()
     assert(!in_interrupt());
 #endif
     
-    _master_lock.acquire();
+    lock_master();
     _stopper = 0;
     bool any_active = false;
     
@@ -341,7 +364,7 @@ Master::check_driver()
 
     if (!any_active)
 	_stopper = 1;
-    _master_lock.release();
+    unlock_master();
     return any_active;
 }
 
@@ -351,34 +374,33 @@ Master::check_driver()
 void
 Master::process_pending(RouterThread *thread)
 {
-    if (_master_lock.attempt()) {
-	if (_master_paused == 0) {
-	    // get a copy of the list
-	    SpinlockIRQ::flags_t flags = _task_lock.acquire();
-	    Task *t = _task_list._pending_next;
-	    _task_list._pending_next = &_task_list;
-	    thread->_pending = 0;
-	    _task_lock.release(flags);
+    SpinlockIRQ::flags_t flags = _task_lock.acquire();
+    if (_master_paused > 0) {
+	_task_lock.release(flags);
+	return;
+    }
+    // steal the list
+    Task *t = _task_list._pending_next;
+    _task_list._pending_next = &_task_list;
+    thread->_pending = 0;
+    _task_lock.release(flags);
 
-	    // reverse list so pending tasks are processed in the order we
-	    // added them
-	    Task *prev = &_task_list;
-	    while (t != &_task_list) {
-		Task* next = t->_pending_next;
-		t->_pending_next = prev;
-		prev = t;
-		t = next;
-	    }
+    // reverse list so pending tasks are processed in the order we
+    // added them
+    Task *prev = &_task_list;
+    while (t != &_task_list) {
+	Task* next = t->_pending_next;
+	t->_pending_next = prev;
+	prev = t;
+	t = next;
+    }
 
-	    // process list
-	    for (t = prev; t != &_task_list; ) {
-		Task* next = t->_pending_next;
-		t->_pending_next = 0;
-		t->process_pending(thread);
-		t = next;
-	    }
-	}
-	_master_lock.release();
+    // process list
+    for (t = prev; t != &_task_list; ) {
+	Task* next = t->_pending_next;
+	t->_pending_next = 0;
+	t->process_pending(thread);
+	t = next;
     }
 }
 
@@ -386,9 +408,9 @@ Master::process_pending(RouterThread *thread)
 // TIMERS
 
 void
-Master::timer_reheapify_from(int pos, Timer* t)
+Master::timer_reheapify_from(int pos, Timer* t, bool will_delete)
 {
-    // MUST be called with _timer_lock held
+    // MUST be called with timer lock held
     Timer** tbegin = _timer_heap.begin();
     Timer** tend = _timer_heap.end();
     int npos;
@@ -416,45 +438,37 @@ Master::timer_reheapify_from(int pos, Timer* t)
 
 	pos = tp - tbegin;
     }
-}
 
-// How long until next timer expires.
-
-Timestamp
-Master::next_timer_expiry()
-{
-    _timer_lock.acquire();
-    if (_timer_heap.size() == 0) {
-	_timer_lock.release();
-	return Timestamp();
-    } else {
-	Timestamp next_expiry = _timer_heap.at_u(0)->_expiry;
-	_timer_lock.release();
-	return next_expiry;
-    }
+    if (tbegin + 1 < tend || !will_delete)
+	_timer_expiry = tbegin[0]->_expiry;
+    else
+	_timer_expiry = Timestamp();
 }
 
 void
 Master::run_timers()
 {
-    if (_master_lock.attempt()) {
-	if (_master_paused == 0 && _timer_lock.attempt()) {
-	    if (_timer_heap.size() > 0 && !_stopper) {
-		Timestamp now = Timestamp::now();
-		Timer* t;
-		while (_timer_heap.size() > 0 && !_stopper
-		       && (t = _timer_heap.at_u(0), t->_expiry <= now)) {
-		    timer_reheapify_from(0, _timer_heap.back());
-		    // must reset _schedpos AFTER timer_reheapify_from
-		    t->_schedpos = -1;
-		    _timer_heap.pop_back();
-		    t->_hook(t, t->_thunk);
-		}
-	    }
-	    _timer_lock.release();
+    if (!attempt_lock_timers())
+	return;
+    if (_master_paused == 0 && _timer_heap.size() > 0 && !_stopper) {
+#if CLICK_LINUXMODULE
+	_timer_task = current;
+#endif
+	Timestamp now = Timestamp::now();
+	Timer* t;
+	while (_timer_heap.size() > 0 && !_stopper
+	       && (t = _timer_heap.at_u(0), t->_expiry <= now)) {
+	    timer_reheapify_from(0, _timer_heap.back(), true);
+	    // must reset _schedpos AFTER timer_reheapify_from
+	    t->_schedpos = -1;
+	    _timer_heap.pop_back();
+	    t->_hook(t, t->_thunk);
 	}
-	_master_lock.release();
+#if CLICK_LINUXMODULE
+	_timer_task = 0;
+#endif
     }
+    unlock_timers();
 }
 
 
@@ -876,10 +890,12 @@ Master::run_selects(bool more_tasks)
     // Wait in select() for input or timer, and call relevant elements'
     // selected() methods.
 
-    if (!_master_lock.attempt())
+    if (!_select_lock.attempt())
 	return;
-    if (_master_paused > 0 || !_select_lock.attempt())
-	goto unlock_master_exit;
+
+    // Return early if paused.
+    if (_master_paused > 0)
+	goto unlock_select_exit;
 
     // Return early if there are no selectors and there are tasks to run.
     if (_pollfds.size() == 0 && more_tasks)
@@ -900,8 +916,6 @@ Master::run_selects(bool more_tasks)
 
  unlock_select_exit:
     _select_lock.release();
- unlock_master_exit:
-    _master_lock.release();
 }
 
 #endif
