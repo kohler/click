@@ -54,32 +54,50 @@ static int clickfs_ready;
 #define SPIN_LOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "lock"); spin_lock((l)); } while (0)
 #define SPIN_UNLOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "unlock"); spin_unlock((l)); } while (0)
 
-#define LOCK_CONFIG_READ()	lock_config_read(__FILE__, __LINE__)
+#define LOCK_CONFIG_READ()	lock_config(__FILE__, __LINE__, 0)
 #define UNLOCK_CONFIG_READ()	unlock_config_read()
-#define LOCK_CONFIG_WRITE()	lock_config_write(__FILE__, __LINE__)
+#define LOCK_CONFIG_WRITE()	lock_config(__FILE__, __LINE__, 1)
 #define UNLOCK_CONFIG_WRITE()	unlock_config_write(__FILE__, __LINE__)
 
 
 /*************************** Config locking *********************************/
 
 static inline void
-lock_config_read(const char *file, int line)
+lock_config(const char *file, int line, int iswrite)
 {
     wait_queue_t wait;
-#define private xxx_private
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+# define private xxx_private
     init_wait(&wait);
-#undef private
+# undef private
+#else
+    init_waitqueue_entry(&wait, current);
+    add_wait_queue(&clickfs_waitq, &wait);
+#endif
     for (;;) {
 	SPIN_LOCK(&clickfs_lock, file, line);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	prepare_to_wait(&clickfs_waitq, &wait, TASK_UNINTERRUPTIBLE);
-	if (atomic_read(&clickfs_read_count) >= 0)
+#else
+	set_current_state(TASK_UNINTERRUPTIBLE);
+#endif
+	int reads = atomic_read(&clickfs_read_count);
+	if (iswrite ? reads == 0 : reads >= 0)
 	    break;
 	SPIN_UNLOCK(&clickfs_lock, file, line);
 	schedule();
     }
-    atomic_inc(&clickfs_read_count);
+    if (iswrite)
+	atomic_dec(&clickfs_read_count);
+    else
+	atomic_inc(&clickfs_read_count);
     SPIN_UNLOCK(&clickfs_lock, file, line);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     finish_wait(&clickfs_waitq, &wait);
+#else
+    __set_current_state(TASK_RUNNING);
+    remove_wait_queue(&clickfs_waitq, &wait);
+#endif
 }
 
 static inline void
@@ -91,28 +109,9 @@ unlock_config_read()
 }
 
 static inline void
-lock_config_write(const char *file, int line)
-{
-    wait_queue_t wait;
-#define private xxx_private
-    init_wait(&wait);
-#undef private
-    for (;;) {
-	SPIN_LOCK(&clickfs_lock, file, line);
-	prepare_to_wait(&clickfs_waitq, &wait, TASK_UNINTERRUPTIBLE);
-	if (atomic_read(&clickfs_read_count) == 0)
-	    break;
-	SPIN_UNLOCK(&clickfs_lock, file, line);
-	schedule();
-    }
-    atomic_dec(&clickfs_read_count);
-    SPIN_UNLOCK(&clickfs_lock, file, line);
-    finish_wait(&clickfs_waitq, &wait);
-}
-
-static inline void
 unlock_config_write(const char *file, int line)
 {
+    assert(atomic_read(&clickfs_read_count) == -1);
     atomic_inc(&clickfs_read_count);
     wake_up_all(&clickfs_waitq);
 }
