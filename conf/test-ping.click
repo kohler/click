@@ -12,13 +12,14 @@
 
 FromDevice(eth1)
 	-> c :: Classifier(12/0800, 12/0806 20/0002, -)
-	-> Strip(14)
-	-> CheckIPHeader
+	-> CheckIPHeader(14)
 	-> ip :: IPClassifier(icmp echo-reply, -)
 	-> ping :: ICMPPingSource(eth1, 18.26.4.9)
+	// -> SetIPAddress(10.0.1.1)
 	-> IPPrint
 	-> arpq :: ARPQuerier(eth1)
 	-> Queue
+	-> { input -> t :: PullTee -> output; t -> ToHostSniffers(eth1) }
 	-> ToDevice(eth1);
 c[1]	-> t :: Tee
 	-> [1] arpq;
