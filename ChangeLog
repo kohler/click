@@ -1,3 +1,12 @@
+2007-02-07 Wednesday 11:38  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/clickfs.cc (1.55): towards linux 2.4 compilability
+
+2007-02-07 Wednesday 11:37  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/test-ping.click (1.2): improve ping configuration to throw
+	  away fewer packets
+
 2007-02-06 Tuesday 05:20  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/master.hh (1.18), include/click/routerthread.hh
