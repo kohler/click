@@ -1,3 +1,9 @@
+2007-02-08 Thursday 02:19  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/variableenv.hh (1.9), lib/lexer.cc (1.85),
+	  lib/variableenv.cc (1.16), tools/lib/routert.cc (1.85): simplify
+	  VariableEnvironment interface
+
 2007-02-07 Wednesday 11:38  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* linuxmodule/clickfs.cc (1.55): towards linux 2.4 compilability
