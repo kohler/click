@@ -1,3 +1,31 @@
+2007-02-08 Thursday 16:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/notifier.cc (1.24): fix notification bug found by regression
+	  test
+
+2007-02-08 Thursday 16:16  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/lexer.cc (1.88): one more bug fix, and the lexing-related
+	  regression tests pass
+
+2007-02-08 Thursday 16:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/lib/routert.cc (1.87): correct another buglet (yay
+	  regression tests)
+
+2007-02-08 Thursday 15:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/lexer.cc (1.87): correct a buglet
+
+2007-02-08 Thursday 15:45  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.93), include/click/lexer.hh (1.21),
+	  include/click/variableenv.hh (1.10), lib/lexer.cc (1.86),
+	  lib/variableenv.cc (1.17), tools/click-combine/click-combine.cc
+	  (1.43), tools/click-xform/click-xform.cc (1.62),
+	  tools/lib/routert.cc (1.86): change implementation of
+	  VariableEnvironment, preparing for new var() form
+
 2007-02-08 Thursday 02:19  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/variableenv.hh (1.9), lib/lexer.cc (1.85),
