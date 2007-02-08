@@ -37,9 +37,10 @@ RouterT::RouterT()
       _free_conn(-1),
       _declared_type_map(-1),
       _archive_map(-1),
-      _declaration_scope(0), _declaration_depth(1), _scope_cookie(0),
-      _ninputs(0), _noutputs(0), _overload_type(0),
-      _circularity_flag(false)
+      _declaration_scope(0), _scope_cookie(0),
+      _scope(0),
+      _nformals(0), _ninputs(0), _noutputs(0), _scope_order_error(false),
+      _overload_type(0), _circularity_flag(false)
 {
 }
 
@@ -51,17 +52,16 @@ RouterT::RouterT(const String &name, const String &landmark, RouterT *declaratio
       _declared_type_map(-1),
       _archive_map(-1),
       _declaration_scope(declaration_scope), _scope_cookie(0),
-      _ninputs(0), _noutputs(0), _overload_type(0),
-      _type_landmark(landmark), _circularity_flag(false)
+      _scope(declaration_scope ? &declaration_scope->_scope : 0),
+      _nformals(0), _ninputs(0), _noutputs(0), _scope_order_error(false),
+      _overload_type(0), _type_landmark(landmark), _circularity_flag(false)
 {
     // borrow definitions from 'declaration'
     if (_declaration_scope) {
 	_declaration_scope_cookie = _declaration_scope->_scope_cookie;
 	_declaration_scope->_scope_cookie++;
 	_declaration_scope->use();
-	_declaration_depth = _declaration_scope->_declaration_depth + 1;
-    } else
-	_declaration_depth = 1;
+    }
     // create input and output pseudoelements
     get_element("input", ElementClassT::tunnel_type(), String(), landmark);
     get_element("output", ElementClassT::tunnel_type(), String(), landmark);
@@ -1230,9 +1230,9 @@ RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *
 
     while (1) {
 	if (r->_ninputs == ninputs && r->_noutputs == noutputs
-	    && cp_assign_arguments(args, r->_formal_types.begin(), r->_formal_types.end(), &args) >= 0)
+	    && cp_assign_arguments(args, r->_scope.values().begin(), r->_scope.values().end(), &args) >= 0)
 	    return r;
-	else if (cp_assign_arguments(args, r->_formal_types.begin(), r->_formal_types.end()) >= 0)
+	else if (cp_assign_arguments(args, r->_scope.values().begin(), r->_scope.values().end()) >= 0)
 	    closest = r;
 
 	ElementClassT *overload = r->_overload_type;
@@ -1251,7 +1251,7 @@ RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *
     for (r = this; r; r = (r->_overload_type ? r->_overload_type->cast_router() : 0))
 	cerrh.lmessage(r->landmark(), "%s", r->unparse_signature().c_str());
     if (closest)
-	cp_assign_arguments(args, closest->_formal_types.begin(), closest->_formal_types.end(), &args);
+	cp_assign_arguments(args, closest->_scope.values().begin(), closest->_scope.values().end(), &args);
     return closest;
 }
 
@@ -1269,13 +1269,13 @@ RouterT::complex_expand_element(
     _circularity_flag = true;
 
     // parse configuration string
-    int nargs = _formals.size();
+    int nargs = _nformals;
     if (args.size() != nargs) {
 	const char *whoops = (args.size() < nargs ? "few" : "many");
 	String signature;
 	for (int i = 0; i < nargs; i++) {
 	    if (i) signature += ", ";
-	    signature += _formals[i];
+	    signature += _scope.name(i);
 	}
 	if (errh)
 	    errh->lerror(compound->landmark(),
@@ -1287,9 +1287,9 @@ RouterT::complex_expand_element(
 
     // create prefix
     assert(compound->name());
-    VariableEnvironment new_env(env.parent_of(_declaration_depth - 1));
+    VariableEnvironment new_env(env.parent_of(_scope.depth()));
     for (int i = 0; i < args.size(); i++)
-	new_env.define(_formals[i], args[i]);
+	new_env.define(_scope.name(i), args[i]);
     String new_prefix = prefix + compound->name(); // includes previous prefix
     if (new_prefix.back() != '/')
 	new_prefix += '/';
@@ -1313,7 +1313,7 @@ RouterT::complex_expand_element(
 String
 RouterT::unparse_signature() const
 {
-    return ElementClassT::unparse_signature(name(), &_formal_types, -1, ninputs(), noutputs());
+    return ElementClassT::unparse_signature(name(), &_scope.values(), -1, ninputs(), noutputs());
 }
 
 

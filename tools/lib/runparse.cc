@@ -82,13 +82,13 @@ RouterT::unparse_declaration(StringAccum &sa, const String &indent, UnparseKind 
     }
 
     // print formals
-    for (int i = 0; i < _formals.size(); i++) {
+    for (int i = 0; i < _nformals; i++) {
 	sa << (i ? ", " : " ");
-	if (_formal_types[i])
-	    sa << _formal_types[i] << ' ';
-	sa << _formals[i];
+	if (_scope.value(i))
+	    sa << _scope.value(i) << ' ';
+	sa << _scope.name(i);
     }
-    if (_formals.size())
+    if (_nformals)
 	sa << " |";
     sa << "\n";
 

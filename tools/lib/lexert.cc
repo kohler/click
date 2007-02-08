@@ -854,9 +854,31 @@ LexerT::ytunnel()
 }
 
 void
+LexerT::ydefine(RouterT *r, const String &fname, const String &ftype, bool isformal, const Lexeme &t, bool &scope_order_error)
+{
+    if (r->define(fname, ftype, isformal) < 0)
+	lerror(t, "parameter '$%s' multiply defined", fname.c_str());
+    else if (isformal) {
+	if (ftype)
+	    for (int i = 0; i < r->scope().size() - 1; i++)
+		if (r->scope().value(i) == ftype) {
+		    lerror(t, "repeated keyword parameter '%s' in compound element", ftype.c_str());
+		    break;
+		}
+	if (!scope_order_error && r->nformals() > 1
+	    && ((!ftype && r->scope().value(r->nformals() - 2))
+		|| r->scope().value(r->nformals() - 2) == "__REST__")) {
+	    lerror(t, "compound element parameters out of order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
+	    scope_order_error = true;
+	}
+    }
+}
+
+void
 LexerT::ycompound_arguments(RouterT *comptype)
 {
   Lexeme t1, t2;
+  bool scope_order_error = false;
   
   while (1) {
     String vartype, varname;
@@ -886,7 +908,7 @@ LexerT::ycompound_arguments(RouterT *comptype)
       break;
     }
 
-    comptype->add_formal(varname, vartype);
+    ydefine(comptype, varname, vartype, true, t1, scope_order_error);
 
     const Lexeme &tsep = lex();
     if (tsep.is('|'))
@@ -897,25 +919,6 @@ LexerT::ycompound_arguments(RouterT *comptype)
       break;
     }
   }
-
-  // check argument types
-  bool positional = true, error = false;
-  for (int i = 0; i < comptype->nformals(); i++)
-    if (const String &ftype = comptype->formal_types()[i]) {
-      positional = false;
-      if (ftype == "__REST__") {
-	if (i < comptype->nformals() - 1)
-	  error = true;
-      } else
-	for (int j = i + 1; j < comptype->nformals(); j++)
-	  if (comptype->formal_types()[j] == ftype) {
-	    lerror(t1, "repeated keyword parameter '%s' in compound element", ftype.c_str());
-	    break;
-	  }
-    } else if (!positional)
-      error = true;
-  if (error)
-    lerror(t1, "compound element parameters out of order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
 }
 
 ElementClassT *

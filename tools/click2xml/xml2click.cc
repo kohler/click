@@ -502,7 +502,7 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 	    cerrh.lerror(_xml_landmark, "definition missing for formal %d", i);
 	else if (_formals[i][0] != '$')
 	    cerrh.lerror(_xml_landmark, "formal %d ('%s') does not begin with '$'", i, _formals[i].c_str());
-	else if (formal_map[_formals[i]] >= 0)
+	else if (_router->define(_formals[i], _formal_types[i], true) < 0)
 	    cerrh.lerror(_xml_landmark, "redeclaration of formal '%s'", _formals[i].c_str());
 	else {
 	    if ((!_formal_types[i] && formal_state == 1)
@@ -510,7 +510,6 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 		cerrh.lerror(_xml_landmark, "formals out of order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
 	    if (_formal_types[i])
 		formal_state = 1;
-	    _router->add_formal(_formals[i], _formal_types[i]);
 	}
     if (_decl_nformals >= 0 && _formals.size() != _decl_nformals)
 	cerrh.lerror(_xml_landmark, "<formal> count and 'nformals' attribute disagree");

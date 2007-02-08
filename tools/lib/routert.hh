@@ -6,6 +6,7 @@
 #include <click/error.hh>
 #include <click/hashmap.hh>
 #include <click/archive.hh>
+#include <click/variableenv.hh>
 typedef HashMap<String, int> StringMap;
 
 class RouterT : public ElementClassT { public:
@@ -133,15 +134,13 @@ class RouterT : public ElementClassT { public:
     
     bool primitive() const		{ return false; }
     
-    int nformals() const		{ return _formals.size(); }
-    const Vector<String> &formals() const { return _formals; }
-    const Vector<String> &formal_types() const { return _formal_types; }
-    inline void add_formal(const String &fname, const String &ftype);
+    int nformals() const		{ return _nformals; }
+    const VariableEnvironment &scope() const { return _scope; }
+    inline int define(const String &fname, const String &ftype, bool isformal);
     int ninputs() const			{ return _ninputs; }
     int noutputs() const		{ return _noutputs; }
     
     RouterT *declaration_scope() const	{ return _declaration_scope; }
-    int declaration_depth() const	{ return _declaration_depth; }
     ElementClassT *overload_type() const { return _overload_type; }
     void set_overload_type(ElementClassT *);
 
@@ -196,13 +195,13 @@ class RouterT : public ElementClassT { public:
 
     RouterT *_declaration_scope;
     int _declaration_scope_cookie;
-    int _declaration_depth;
     int _scope_cookie;
 
-    Vector<String> _formals;
-    Vector<String> _formal_types;
+    VariableEnvironment _scope;
+    int _nformals;
     int _ninputs;
     int _noutputs;
+    bool _scope_order_error : 1;
     ElementClassT *_overload_type;
     String _type_landmark;
     mutable ElementTraits _traits;
@@ -393,6 +392,16 @@ RouterT::insert_after(ElementT *e, const PortT &h)
     return insert_after(PortT(e, 0), h);
 }
 
+inline int
+RouterT::define(const String &name, const String &value, bool isformal)
+{
+    assert(!isformal || _nformals == _scope.size());
+    int retval = _scope.define(name, value);
+    if (isformal)
+	_nformals = _scope.size();
+    return retval;
+}
+
 inline ArchiveElement &
 RouterT::archive(const String &name)
 {
@@ -403,13 +412,6 @@ inline const ArchiveElement &
 RouterT::archive(const String &name) const
 {
     return _archive[_archive_map[name]];
-}
-
-inline void
-RouterT::add_formal(const String &fname, const String &ftype)
-{
-    _formals.push_back(fname);
-    _formal_types.push_back(ftype);
 }
 
 inline bool
