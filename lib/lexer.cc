@@ -444,7 +444,8 @@ Lexer::end_parse(int cookie)
   }
   delete _c;
   _c = 0;
-
+  
+  _element_map.clear();
   _requirements.clear();
   
   _big_string = "";
