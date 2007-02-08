@@ -383,7 +383,7 @@ Lexer::Lexer()
     _element_type_map(-1),
     _last_element_type(ET_NULL),
     _free_element_type(-1),
-    _element_map(-1),
+    _element_map(-1), _c(0),
     _definputs(0), _defoutputs(0),
     _errh(ErrorHandler::default_handler())
 {
