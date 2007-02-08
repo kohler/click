@@ -246,22 +246,20 @@ ActiveNotifier::listener_change(void *what, int where, bool add)
 	n++;
 
     if (!(ntos = new task_or_signal_t[n + 2 + add])) {
+      memory_error:
 	click_chatter("out of memory in Notifier!");
 	return -1;
     }
 
     otos = ntos;
-    if (_listener1) {
-	if (add || what != _listener1)
-	    (otos++)->t = _listener1;
-	if (add && what != _listener1 && where == 0)
-	    (otos++)->v = what;
-	(otos++)->v = 0;
-	if (add && where == 1)
-	    (otos++)->v = what;
-	(otos++)->v = 0;
+    if (!_listeners) {
+	// handles both the case of _listener1 != 0 and _listener1 == 0
+	if (!(_listeners = new task_or_signal_t[3]))
+	    goto memory_error;
+	_listeners[0].t = _listener1;
+	_listeners[1].v = _listeners[2].v = 0;
     }
-    for (tos = _listeners, x = 0; tos && x < 2; tos++)
+    for (tos = _listeners, x = 0; x < 2; tos++)
 	if (tos->v && (add || tos->v != what)) {
 	    (otos++)->v = tos->v;
 	    if (tos->v == what)
