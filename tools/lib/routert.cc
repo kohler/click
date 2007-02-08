@@ -1287,7 +1287,7 @@ RouterT::complex_expand_element(
 
     // create prefix
     assert(compound->name());
-    VariableEnvironment new_env(env.parent_of(_declaration_depth));
+    VariableEnvironment new_env(env.parent_of(_declaration_depth - 1));
     for (int i = 0; i < args.size(); i++)
 	new_env.define(_formals[i], args[i]);
     String new_prefix = prefix + compound->name(); // includes previous prefix
