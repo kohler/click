@@ -188,8 +188,8 @@ Lexer::Compound::define(const String &fname, const String &ftype, bool isformal,
 	  break;
 	}
     if (!_scope_order_error && _nformals > 1
-	&& ((!ftype && _scope.value(_nformals - 1))
-	    || _scope.value(_nformals - 1) == "__REST__")) {
+	&& ((!ftype && _scope.value(_nformals - 2))
+	    || _scope.value(_nformals - 2) == "__REST__")) {
       l->lerror("compound element parameters out of order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
       _scope_order_error = true;
     }
