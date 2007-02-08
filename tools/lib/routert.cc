@@ -1287,12 +1287,11 @@ RouterT::complex_expand_element(
 
     // create prefix
     assert(compound->name());
-    VariableEnvironment new_env(env);
+    VariableEnvironment new_env(env, _declaration_depth);
+    new_env.enter(_formals, args, _declaration_depth);
     String new_prefix = prefix + compound->name(); // includes previous prefix
     if (new_prefix.back() != '/')
 	new_prefix += '/';
-    new_env.limit_depth(_declaration_depth);
-    new_env.enter(_formals, args, _declaration_depth);
 
     // create input/output tunnels
     if (fromr == tor)

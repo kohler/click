@@ -165,11 +165,10 @@ cp_expand_in_quotes(const String &s, int quote)
 	return s;
 }
 
-void
-VariableEnvironment::enter(const VariableEnvironment &ve)
+VariableEnvironment::VariableEnvironment(const VariableEnvironment &ve, int depth)
+    : VariableExpander()
 {
-    assert(_depths.size() == 0 || ve._depths.size() == 0 || _depths.back() < ve._depths[0]);
-    for (int i = 0; i < ve._formals.size(); i++) {
+    for (int i = 0; i < ve._formals.size() && ve._depths[i] < depth; i++) {
 	_formals.push_back(ve._formals[i]);
 	_values.push_back(ve._values[i]);
 	_depths.push_back(ve._depths[i]);
@@ -185,17 +184,6 @@ VariableEnvironment::enter(const Vector<String> &formals, const Vector<String> &
 	_values.push_back(values[arg]);
 	_depths.push_back(enter_depth);
     }
-}
-
-void
-VariableEnvironment::limit_depth(int deepest)
-{
-    int s = _formals.size();
-    while (s > 0 && _depths[s-1] >= deepest)
-	s--;
-    _formals.resize(s);
-    _values.resize(s);
-    _depths.resize(s);
 }
 
 bool

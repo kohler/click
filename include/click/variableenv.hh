@@ -18,14 +18,10 @@ class VariableExpander { public:
 class VariableEnvironment : public VariableExpander { public:
   
     VariableEnvironment()	{ }
-    inline VariableEnvironment(const VariableEnvironment &ve);
+    VariableEnvironment(const VariableEnvironment &ve, int depth);
 
     int depth() const		{ return _depths.size() ? _depths.back() : -1; }
-
-    void enter(const VariableEnvironment &);
     void enter(const Vector<String> &formals, const Vector<String> &values, int depth);
-    void limit_depth(int);
-
     bool expand(const String &var, int vartype, int quote, StringAccum &);
 
   private:
@@ -38,13 +34,6 @@ class VariableEnvironment : public VariableExpander { public:
 
 String cp_expand(const String &, VariableExpander &, bool expand_quote = false);
 String cp_expand_in_quotes(const String &, int quote);
-
-inline
-VariableEnvironment::VariableEnvironment(const VariableEnvironment &ve)
-    : VariableExpander()
-{
-    enter(ve);
-}
 
 CLICK_ENDDECLS
 #endif

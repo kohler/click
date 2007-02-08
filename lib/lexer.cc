@@ -635,11 +635,11 @@ Lexer::next_lexeme()
       goto more_word_characters;
     _pos = s;
     String word = _big_string.substring(word_pos, s);
-    if (word.length() == 16 && word == "connectiontunnel")
+    if (word.length() == 16 && memcmp(word.data(), "connectiontunnel", 16) == 0)
       return Lexeme(lexTunnel, word);
-    else if (word.length() == 12 && word == "elementclass")
+    else if (word.length() == 12 && memcmp(word.data(), "elementclass", 12) == 0)
       return Lexeme(lexElementclass, word);
-    else if (word.length() == 7 && word == "require")
+    else if (word.length() == 7 && memcmp(word.data(), "require", 7) == 0)
       return Lexeme(lexRequire, word);
     else
       return Lexeme(lexIdent, word);
@@ -1598,9 +1598,7 @@ Lexer::expand_compound_element(int which, VariableEnvironment &ve)
   else {
     Compound *found_comp = (Compound *) _element_types[found_type].thunk;
     
-    VariableEnvironment new_ve;
-    new_ve.enter(ve);
-    new_ve.limit_depth(found_comp->depth());
+    VariableEnvironment new_ve(ve, found_comp->depth());
     new_ve.enter(found_comp->formals(), args, found_comp->depth());
 
     found_comp->expand_into(this, which, new_ve);
