@@ -1103,7 +1103,7 @@ void
 RouterT::remove_compound_elements(ErrorHandler *errh)
 {
     int nelements = _elements.size();
-    VariableEnvironment env;
+    VariableEnvironment env(0);
     for (int i = 0; i < nelements; i++)
 	if (_elements[i]->live()) // allow deleted elements
 	    ElementClassT::expand_element(_elements[i], this, String(), env, errh);
@@ -1287,8 +1287,9 @@ RouterT::complex_expand_element(
 
     // create prefix
     assert(compound->name());
-    VariableEnvironment new_env(env, _declaration_depth);
-    new_env.enter(_formals, args, _declaration_depth);
+    VariableEnvironment new_env(env.parent_of(_declaration_depth));
+    for (int i = 0; i < args.size(); i++)
+	new_env.define(_formals[i], args[i]);
     String new_prefix = prefix + compound->name(); // includes previous prefix
     if (new_prefix.back() != '/')
 	new_prefix += '/';

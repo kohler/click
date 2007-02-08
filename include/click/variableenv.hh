@@ -17,18 +17,26 @@ class VariableExpander { public:
 
 class VariableEnvironment : public VariableExpander { public:
   
-    VariableEnvironment()	{ }
-    VariableEnvironment(const VariableEnvironment &ve, int depth);
+    VariableEnvironment(VariableEnvironment *parent);
 
-    int depth() const		{ return _depths.size() ? _depths.back() : -1; }
-    void enter(const Vector<String> &formals, const Vector<String> &values, int depth);
+    int depth() const		{ return _depth; }
+    int size() const		{ return _formals.size(); }
+
+    const String &name(int i) const	{ return _formals[i]; }
+    const Vector<String> &values() const	{ return _values; }
+    const String &value(int i) const	{ return _values[i]; }
+    const String &value(const String &formal, bool &found) const;
+    
+    VariableEnvironment *parent_of(int depth);
+    int define(const String &formal, const String &value);
     bool expand(const String &var, int vartype, int quote, StringAccum &);
 
   private:
 
     Vector<String> _formals;
     Vector<String> _values;
-    Vector<int> _depths;
+    int _depth;
+    VariableEnvironment *_parent;
 
 };
 

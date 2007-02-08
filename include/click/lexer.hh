@@ -143,20 +143,13 @@ class Lexer { public:
 
     // elements
     HashMap<String, int> _element_map;
-    Vector<int> _elements;
-    Vector<String> _element_names;
-    Vector<String> _element_configurations;
-    Vector<String> _element_landmarks;
-
-    Vector<Hookup> _hookup_from;
-    Vector<Hookup> _hookup_to;
+    Compound *_c;
   
     TunnelEnd *_definputs;
     TunnelEnd *_defoutputs;
   
     // compound elements
     int _anonymous_offset;
-    int _compound_depth;
 
     // requirements
     Vector<String> _requirements;

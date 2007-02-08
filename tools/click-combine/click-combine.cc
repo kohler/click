@@ -468,7 +468,7 @@ particular purpose.\n");
 
   // combine routers
   RouterT *combined = new RouterT;
-  VariableEnvironment empty_ve;
+  VariableEnvironment empty_ve(0);
   for (int i = 0; i < routers.size(); i++)
       routers[i]->expand_into(combined, router_names[i] + "/", empty_ve, errh);
 

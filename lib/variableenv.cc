@@ -165,25 +165,45 @@ cp_expand_in_quotes(const String &s, int quote)
 	return s;
 }
 
-VariableEnvironment::VariableEnvironment(const VariableEnvironment &ve, int depth)
-    : VariableExpander()
+VariableEnvironment::VariableEnvironment(VariableEnvironment *parent)
+    : _depth(parent ? parent->_depth + 1 : 0), _parent(parent)
 {
-    for (int i = 0; i < ve._formals.size() && ve._depths[i] < depth; i++) {
-	_formals.push_back(ve._formals[i]);
-	_values.push_back(ve._values[i]);
-	_depths.push_back(ve._depths[i]);
-    }
 }
 
-void
-VariableEnvironment::enter(const Vector<String> &formals, const Vector<String> &values, int enter_depth)
+VariableEnvironment *
+VariableEnvironment::parent_of(int depth)
 {
-    assert(enter_depth > depth());
-    for (int arg = 0; arg < formals.size(); arg++) {
-	_formals.push_back(formals[arg]);
-	_values.push_back(values[arg]);
-	_depths.push_back(enter_depth);
+    VariableEnvironment *v = this;
+    while (v && v->_depth >= depth)
+	v = v->_parent;
+    return v;
+}
+
+int
+VariableEnvironment::define(const String &formal, const String &value)
+{
+    for (String *s = _formals.begin(); s != _formals.end(); s++)
+	if (*s == formal)
+	    return -1;
+    _formals.push_back(formal);
+    _values.push_back(value);
+    return 0;
+}
+
+const String &
+VariableEnvironment::value(const String &formal, bool &found) const
+{
+    const VariableEnvironment *v = this;
+    while (v) {
+	for (int i = 0; i < v->_formals.size(); i++)
+	    if (v->_formals[i] == formal) {
+		found = true;
+		return v->_values[i];
+	    }
+	v = v->_parent;
     }
+    found = false;
+    return String::empty_string();
 }
 
 bool
@@ -194,12 +214,12 @@ VariableEnvironment::expand(const String &var, int vartype, int quote,
     const char *minus = 0;
     if (vartype == '{' && (minus = find(var, '-')) != var.end())
 	v = var.substring(var.begin(), minus);
-    for (int vnum = _formals.size() - 1; vnum >= 0; vnum--)
-	if (v == _formals[vnum]) {
-	    output << cp_expand_in_quotes(_values[vnum], quote);
-	    return true;
-	}
-    if (minus) {
+    bool found;
+    const String &val = value(v, found);
+    if (found) {
+	output << cp_expand_in_quotes(val, quote);
+	return true;
+    } else if (minus) {
 	output << cp_expand_in_quotes(var.substring(minus + 1, var.end()), quote);
 	return true;
     } else
