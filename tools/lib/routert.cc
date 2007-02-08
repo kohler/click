@@ -1230,9 +1230,9 @@ RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *
 
     while (1) {
 	if (r->_ninputs == ninputs && r->_noutputs == noutputs
-	    && cp_assign_arguments(args, r->_formal_types, &args) >= 0)
+	    && cp_assign_arguments(args, r->_formal_types.begin(), r->_formal_types.end(), &args) >= 0)
 	    return r;
-	else if (cp_assign_arguments(args, r->_formal_types) >= 0)
+	else if (cp_assign_arguments(args, r->_formal_types.begin(), r->_formal_types.end()) >= 0)
 	    closest = r;
 
 	ElementClassT *overload = r->_overload_type;
@@ -1251,7 +1251,7 @@ RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *
     for (r = this; r; r = (r->_overload_type ? r->_overload_type->cast_router() : 0))
 	cerrh.lmessage(r->landmark(), "%s", r->unparse_signature().c_str());
     if (closest)
-	cp_assign_arguments(args, closest->_formal_types, &args);
+	cp_assign_arguments(args, closest->_formal_types.begin(), closest->_formal_types.end(), &args);
     return closest;
 }
 

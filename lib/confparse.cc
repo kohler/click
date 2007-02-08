@@ -3203,11 +3203,11 @@ cp_va_parse_remove_keywords(Vector<String> &argv, int first,
 }
 
 int
-cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vector<String> *values)
+cp_assign_arguments(const Vector<String> &argv, const String *keys_begin, const String *keys_end, Vector<String> *values)
 {
   // check common case
-  if (keys.size() == 0 || !keys.back()) {
-    if (argv.size() != keys.size())
+  if (keys_begin == keys_end || !keys_end[-1]) {
+    if (argv.size() != keys_end - keys_begin)
       return -EINVAL;
     else {
       if (values)
@@ -3216,27 +3216,27 @@ cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vect
     }
   }
 
-  if (!cp_values || !cp_parameter_used || keys.size() > CP_VALUES_SIZE)
+  if (!cp_values || !cp_parameter_used || keys_end - keys_begin > CP_VALUES_SIZE)
     return -ENOMEM; /*errh->error("out of memory in cp_va_parse");*/
 
   CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
-  if (keys.size() && keys.back() == "__REST__") {
+  if (keys_begin != keys_end && keys_end[-1] == "__REST__") {
     cpva.ignore_rest = true;
-    cpva.nvalues = keys.size() - 1;
+    cpva.nvalues = (keys_end - keys_begin) - 1;
   } else {
     cpva.ignore_rest = false;
-    cpva.nvalues = keys.size();
+    cpva.nvalues = keys_end - keys_begin;
   }
   
   int arg;
-  for (arg = 0; arg < cpva.nvalues && keys[arg] == ""; arg++) {
+  for (arg = 0; arg < cpva.nvalues && keys_begin[arg] == ""; arg++) {
     cp_values[arg].argtype = 0;
     cp_values[arg].keyword = 0;
   }
   cpva.nrequired = cpva.npositional = arg;
   for (; arg < cpva.nvalues; arg++) {
     cp_values[arg].argtype = 0;
-    cp_values[arg].keyword = keys[arg].c_str();
+    cp_values[arg].keyword = keys_begin[arg].c_str();
     cp_values[arg].v.i = -1;	// mandatory keyword
   }
 
@@ -3253,8 +3253,8 @@ cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vect
 	}
       cp_values[cpva.nvalues].v_string = sa.take_string();
     }
-    values->resize(keys.size());
-    for (arg = 0; arg < keys.size(); arg++)
+    values->resize(keys_end - keys_begin);
+    for (arg = 0; arg < keys_end - keys_begin; arg++)
       (*values)[arg] = cp_values[arg].v_string;
   }
   return retval;

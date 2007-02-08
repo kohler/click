@@ -261,10 +261,11 @@ Lexer::Compound::resolve(Lexer *lexer, int etype, int ninputs, int noutputs, Vec
   int closest_etype = -1;
   
   while (ct) {
+    VariableEnvironment &scope = ct->_scope;
     if (ct->_ninputs == ninputs && ct->_noutputs == noutputs
-	&& cp_assign_arguments(args, ct->scope().values(), &args) >= 0)
+	&& cp_assign_arguments(args, scope.values().begin(), scope.values().end(), &args) >= 0)
       return etype;
-    else if (cp_assign_arguments(args, ct->scope().values()) >= 0)
+    else if (cp_assign_arguments(args, scope.values().begin(), scope.values().end()) >= 0)
       closest_etype = etype;
 
     if (Compound *next = ct->overload_compound(lexer)) {
@@ -282,7 +283,7 @@ Lexer::Compound::resolve(Lexer *lexer, int etype, int ninputs, int noutputs, Vec
     cerrh.lmessage(ct->landmark(), "%s", ct->signature().c_str());
   ct = (closest_etype >= 0 ? (Compound *) lexer->_element_types[closest_etype].thunk : 0);
   if (ct)
-    cp_assign_arguments(args, ct->scope().values(), &args);
+    cp_assign_arguments(args, ct->scope().values().begin(), ct->scope().values().end(), &args);
   return closest_etype;
 }
 
