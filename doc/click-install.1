@@ -38,6 +38,7 @@ click-install \- installs a Click configuration into the kernel module driver
 .SH SYNOPSIS
 .B click-install
 .RI \%[ options ]
+.RI \%[ param = value " ...]"
 .RI \%[ router\-file ]
 '
 .SH DESCRIPTION
@@ -56,6 +57,10 @@ if and only if the configuration was successfully installed.
 '
 .SH "OPTIONS"
 '
+Arguments such as "NAME=value" set configuration parameters, overriding any
+existing settings. Thus, "echo \%'Message($MSG)' | \fBclick\-install\fR
+MSG=Hi" will cause the kernel module to print "Hi".
+.PP
 If any filename argument is a single dash "-",
 .B click-install
 will use the standard input or output instead, as appropriate.

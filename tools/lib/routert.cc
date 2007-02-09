@@ -1100,21 +1100,30 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 
 
 void
-RouterT::remove_compound_elements(ErrorHandler *errh)
+RouterT::remove_compound_elements(ErrorHandler *errh, bool expand_vars)
 {
     int nelements = _elements.size();
-    VariableEnvironment env(0);
+
+    // construct a fake VariableEnvironment so we preserve variable names
+    // even in the presence of ${NAME-DEFAULT}
+    VariableEnvironment ve(0);
+    for (int i = 0; i < _scope.size(); i++)
+	if (expand_vars)
+	    ve.define(_scope.name(i), cp_expand(_scope.value(i), ve), true);
+	else
+	    ve.define(_scope.name(i), String("$") + _scope.name(i), true);
+	 
     for (int i = 0; i < nelements; i++)
 	if (_elements[i]->live()) // allow deleted elements
-	    ElementClassT::expand_element(_elements[i], this, String(), env, errh);
+	    ElementClassT::expand_element(_elements[i], this, String(), ve, errh);
 }
 
 void
-RouterT::flatten(ErrorHandler *errh)
+RouterT::flatten(ErrorHandler *errh, bool expand_vars)
 {
     check();
     //String s = configuration_string(); fprintf(stderr, "1.\n%s\n\n", s.c_str());
-    remove_compound_elements(errh);
+    remove_compound_elements(errh, expand_vars);
     //s = configuration_string(); fprintf(stderr, "2.\n%s\n\n", s.c_str());
     remove_tunnels(errh);
     //s = configuration_string(); fprintf(stderr, "3.\n%s\n\n", s.c_str());
@@ -1124,6 +1133,8 @@ RouterT::flatten(ErrorHandler *errh)
     //s = configuration_string(); fprintf(stderr, "5.\n%s\n\n", s.c_str());
     _declared_type_map.clear();
     _declared_types.clear();
+    if (expand_vars)
+	_scope.clear();
     check();
 }
 
@@ -1220,6 +1231,12 @@ RouterT::set_overload_type(ElementClassT *t)
 	_overload_type->use();
 }
 
+inline int
+RouterT::assign_arguments(const Vector<String> &args, Vector<String> *values) const
+{
+    return cp_assign_arguments(args, _scope.values().begin(), _scope.values().begin() + _nformals, values);
+}
+
 ElementClassT *
 RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *errh, const String &landmark)
 {
@@ -1230,9 +1247,9 @@ RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *
 
     while (1) {
 	if (r->_ninputs == ninputs && r->_noutputs == noutputs
-	    && cp_assign_arguments(args, r->_scope.values().begin(), r->_scope.values().end(), &args) >= 0)
+	    && r->assign_arguments(args, &args) >= 0)
 	    return r;
-	else if (cp_assign_arguments(args, r->_scope.values().begin(), r->_scope.values().end()) >= 0)
+	else if (r->assign_arguments(args, 0) >= 0)
 	    closest = r;
 
 	ElementClassT *overload = r->_overload_type;
@@ -1251,7 +1268,7 @@ RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *
     for (r = this; r; r = (r->_overload_type ? r->_overload_type->cast_router() : 0))
 	cerrh.lmessage(r->landmark(), "%s", r->unparse_signature().c_str());
     if (closest)
-	cp_assign_arguments(args, closest->_scope.values().begin(), closest->_scope.values().end(), &args);
+	closest->assign_arguments(args, &args);
     return closest;
 }
 
@@ -1288,8 +1305,10 @@ RouterT::complex_expand_element(
     // create prefix
     assert(compound->name());
     VariableEnvironment new_env(env.parent_of(_scope.depth()));
-    for (int i = 0; i < args.size(); i++)
-	new_env.define(_scope.name(i), args[i]);
+    for (int i = 0; i < _nformals; i++)
+	new_env.define(_scope.name(i), args[i], true);
+    for (int i = _nformals; i < _scope.size(); i++)
+	new_env.define(_scope.name(i), cp_expand(_scope.value(i), new_env), true);
     String new_prefix = prefix + compound->name(); // includes previous prefix
     if (new_prefix.back() != '/')
 	new_prefix += '/';

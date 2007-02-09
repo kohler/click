@@ -331,7 +331,7 @@ main(int argc, char **argv)
       
      case ROUTER_OPT:
      case EXPRESSION_OPT:
-     case Clp_NotOption:
+     router_file:
       if (router_file) {
 	errh->error("router configuration specified twice");
 	goto bad_option;
@@ -339,6 +339,16 @@ main(int argc, char **argv)
       router_file = clp->arg;
       file_is_expr = (opt == EXPRESSION_OPT);
       break;
+
+     case Clp_NotOption:
+      for (const char *s = clp->arg; *s; s++)
+	  if (*s == '=' && s > clp->arg) {
+	      if (!click_lexer()->global_scope().define(String(clp->arg, s), s + 1, false))
+		  errh->error("parameter '%.*s' multiply defined", s - clp->arg, clp->arg);
+	      goto next_argument;
+	  } else if (!isalnum((unsigned char) *s) && *s != '_')
+	      break;
+      goto router_file;
       
      case OUTPUT_OPT:
       if (output_file) {
@@ -418,6 +428,7 @@ particular purpose.\n");
       goto done;
       
     }
+   next_argument: ;
   }
   
  done:

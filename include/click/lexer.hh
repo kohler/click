@@ -4,9 +4,9 @@
 #include <click/hashmap.hh>
 #include <click/router.hh>
 #include <click/glue.hh>
+#include <click/variableenv.hh>
 CLICK_DECLS
 class LexerExtra;
-class VariableEnvironment;
 
 enum Lexemes {
     lexEOF = 0,
@@ -18,7 +18,8 @@ enum Lexemes {
     lex3Dot,
     lexTunnel,
     lexElementclass,
-    lexRequire
+    lexRequire,
+    lexDefine
 };
 
 class Lexeme { public:
@@ -53,6 +54,7 @@ class Lexer { public:
     int begin_parse(const String &data, const String &filename, LexerExtra *, ErrorHandler * = 0);
     void end_parse(int);
 
+    VariableEnvironment &global_scope()	{ return _global_scope; }
     ErrorHandler *errh() const		{ return _errh; }
   
     String remaining_text() const;
@@ -93,6 +95,7 @@ class Lexer { public:
     void ycompound_arguments(Compound *);
     int ycompound(String name = String());
     void yrequire();
+    void yvar();
     bool ystatement(bool nested = false);
   
     Router *create_router(Master *);
@@ -140,6 +143,7 @@ class Lexer { public:
     enum { ET_SCOPED = 0x80000000, ET_TMASK = 0x7FFFFFFF, ET_NULL = 0x7FFFFFFF };
     int _last_element_type;
     int _free_element_type;
+    VariableEnvironment _global_scope;
 
     // elements
     HashMap<String, int> _element_map;

@@ -37,6 +37,7 @@ click-flatten \- removes compound elements from a Click configuration
 .SH SYNOPSIS
 .B click-flatten
 .RI \%[ options ]
+.RI \%[ param = value " ...]"
 .RI \%[ router\-file ]
 '
 .SH DESCRIPTION
@@ -89,6 +90,16 @@ a string in the Click language, as the router configuration to flatten.
 .BR \-\-config
 Output flattened configuration only -- if the input was an archive, ignore
 other archive elements.
+'
+.Sp
+.TP
+.BR \-\-expand\-vars
+Expand global variables.  By default,
+.B click-flatten
+does not expand global variables into configuration strings, allowing later
+operations, such as
+.BR click-install ,
+to override their values.
 '
 .Sp
 .TP

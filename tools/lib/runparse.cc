@@ -116,6 +116,19 @@ RouterT::unparse_requirements(StringAccum &sa, const String &indent) const
     }
 }
 
+void
+RouterT::unparse_defines(StringAccum &sa, const String &indent) const
+{
+    if (_scope.size() > _nformals) {
+	sa << indent << "define(";
+	for (int i = _nformals; i < _scope.size(); i++) {
+	    if (i > _nformals) sa << ", ";
+	    sa << '$' << _scope.name(i) << ' ' << _scope.value(i);
+	}
+	sa << ");\n\n";
+    }
+}
+
 
 #if 0
 
@@ -332,6 +345,7 @@ void
 RouterT::unparse(StringAccum &sa, const String &indent) const
 {
     unparse_requirements(sa, indent);
+    unparse_defines(sa, indent);
     unparse_declarations(sa, indent);
     unparse_connections(sa, indent);
 }

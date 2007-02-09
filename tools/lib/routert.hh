@@ -115,15 +115,16 @@ class RouterT : public ElementClassT { public:
     void remove_duplicate_connections();
     void remove_dead_elements(ErrorHandler * = 0);
 
-    void remove_compound_elements(ErrorHandler *);
+    void remove_compound_elements(ErrorHandler *, bool expand_vars);
     void remove_tunnels(ErrorHandler * = 0);
 
     void expand_into(RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
-    void flatten(ErrorHandler *);
+    void flatten(ErrorHandler *, bool expand_vars = false);
 
     // UNPARSING
     void unparse(StringAccum &, const String & = String()) const;
     void unparse_requirements(StringAccum &, const String & = String()) const;
+    void unparse_defines(StringAccum &, const String & = String()) const;
     void unparse_declarations(StringAccum &, const String & = String()) const;
     void unparse_connections(StringAccum &, const String & = String()) const;
     String configuration_string() const;
@@ -136,7 +137,8 @@ class RouterT : public ElementClassT { public:
     
     int nformals() const		{ return _nformals; }
     const VariableEnvironment &scope() const { return _scope; }
-    inline int define(const String &fname, const String &ftype, bool isformal);
+    inline bool define(const String &name, const String &value, bool isformal);
+    inline void redefine(const VariableEnvironment &);
     int ninputs() const			{ return _ninputs; }
     int noutputs() const		{ return _noutputs; }
     
@@ -219,7 +221,7 @@ class RouterT : public ElementClassT { public:
     void unlink_connection_from(int ci);
     void unlink_connection_to(int ci);
     void expand_tunnel(Vector<PortT> *port_expansions, const Vector<PortT> &ports, bool is_output, int which, ErrorHandler *) const;
-    String interpolate_arguments(const String &, const Vector<String> &) const;
+    int assign_arguments(const Vector<String> &, Vector<String> *) const;
 
     friend class RouterUnparserT;
     
@@ -392,14 +394,21 @@ RouterT::insert_after(ElementT *e, const PortT &h)
     return insert_after(PortT(e, 0), h);
 }
 
-inline int
+inline bool
 RouterT::define(const String &name, const String &value, bool isformal)
 {
     assert(!isformal || _nformals == _scope.size());
-    int retval = _scope.define(name, value);
+    bool retval = _scope.define(name, value, false);
     if (isformal)
 	_nformals = _scope.size();
     return retval;
+}
+
+inline void
+RouterT::redefine(const VariableEnvironment &ve)
+{
+    for (int i = 0; i < ve.size(); i++)
+	_scope.define(ve.name(i), ve.value(i), true);
 }
 
 inline ArchiveElement &

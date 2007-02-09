@@ -27,6 +27,7 @@
 #include <click/confparse.hh>
 #include <ctype.h>
 #include <stdlib.h>
+#include <string.h>
 
 static LexerTInfo *stub_lexinfo = 0;
 
@@ -72,7 +73,7 @@ LexerT::clear()
 {
     if (_router)
 	_router->unuse();
-    _router = new RouterT;
+    _router = new RouterT();
     _router->use();		// hold a reference to the router
 
     _big_string = "";
@@ -277,15 +278,18 @@ LexerT::next_lexeme()
       goto more_word_characters;
     _pos = s;
     String word = _big_string.substring(word_pos, s);
-    if (word.length() == 16 && word == "connectiontunnel") {
+    if (word.length() == 16 && memcmp(word.data(), "connectiontunnel", 16) == 0) {
       _lexinfo->notify_keyword(word, word_pos, s);
       return Lexeme(lexTunnel, word, word_pos);
-    } else if (word.length() == 12 && word == "elementclass") {
+    } else if (word.length() == 12 && memcmp(word.data(), "elementclass", 12) == 0) {
       _lexinfo->notify_keyword(word, word_pos, s);
       return Lexeme(lexElementclass, word, word_pos);
-    } else if (word.length() == 7 && word == "require") {
+    } else if (word.length() == 7 && memcmp(word.data(), "require", 7) == 0) {
       _lexinfo->notify_keyword(word, word_pos, s);
       return Lexeme(lexRequire, word, word_pos);
+    } else if (word.length() == 6 && memcmp(word.data(), "define", 6) == 0) {
+      _lexinfo->notify_keyword(word, word_pos, s);
+      return Lexeme(lexDefine, word, word_pos);
     } else
       return Lexeme(lexIdent, word, word_pos);
   }
@@ -381,6 +385,8 @@ LexerT::lexeme_string(int kind)
     return "'elementclass'";
   else if (kind == lexRequire)
     return "'require'";
+  else if (kind == lexDefine)
+    return "'define'";
   else if (kind >= 32 && kind < 127) {
     sprintf(buf, "'%c'", kind);
     return buf;
@@ -779,6 +785,7 @@ LexerT::yconnection()
 	  case lexTunnel:
 	  case lexElementclass:
 	  case lexRequire:
+	  case lexDefine:
 	    unlex(t);
 	    // FALLTHRU
 	  case ';':
@@ -856,7 +863,7 @@ LexerT::ytunnel()
 void
 LexerT::ydefine(RouterT *r, const String &fname, const String &ftype, bool isformal, const Lexeme &t, bool &scope_order_error)
 {
-    if (r->define(fname, ftype, isformal) < 0)
+    if (!r->define(fname, ftype, isformal))
 	lerror(t, "parameter '$%s' multiply defined", fname.c_str());
     else if (isformal) {
 	if (ftype)
@@ -1017,6 +1024,34 @@ LexerT::yrequire()
     }
 }
 
+void
+LexerT::yvar()
+{
+    if (expect('(')) {
+	Lexeme vars = lex_config();
+	expect(')');
+    
+	Vector<String> args;
+	String word;
+	cp_argvec(vars.string(), args);
+	for (int i = 0; i < args.size(); i++)
+	    if (args[i]) {
+		String var = cp_pop_spacevec(args[i]);
+		const char *s = var.begin();
+		if (s != var.end() && *s == '$')
+		    for (s++; s != var.end() && (isalnum((unsigned char) *s) || *s == '_'); s++)
+			/* nada */;
+		if (var.length() < 2 || s != var.end())
+		    lerror(vars, "bad 'var' declaration: not a variable");
+		else {
+		    var = var.substring(1);
+		    if (!_router->define(var, args[i], false))
+			lerror(vars, "parameter '%s' multiply defined", var.c_str());
+		}
+	    }
+    }
+}
+
 bool
 LexerT::ystatement(bool nested)
 {
@@ -1040,6 +1075,10 @@ LexerT::ystatement(bool nested)
 
    case lexRequire:
     yrequire();
+    return true;
+
+   case lexDefine:
+    yvar();
     return true;
 
    case ';':
@@ -1069,10 +1108,11 @@ LexerT::ystatement(bool nested)
 // COMPLETION
 
 RouterT *
-LexerT::finish()
+LexerT::finish(const VariableEnvironment &global_scope)
 {
     RouterT *r = _router;
     _router = 0;
+    r->redefine(global_scope);
     // resolve anonymous element names
     r->deanonymize_elements();
     // returned router has one reference count

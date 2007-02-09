@@ -10,10 +10,12 @@ CLICK_DECLS
 class Router;
 class Master;
 class ErrorHandler;
+class Lexer;
 
 void click_static_initialize();
 void click_static_cleanup();
 
+Lexer *click_lexer();
 Router *click_read_router(String filename, bool is_expr, ErrorHandler * = 0, bool initialize = true, Master * = 0);
 
 CLICK_ENDDECLS

@@ -41,6 +41,7 @@
 #define ELEMENTS_OPT		308
 #define DECLARATIONS_OPT	309
 #define CONFIG_OPT		310
+#define EXPAND_VARS_OPT		311
 
 static Clp_Option options[] = {
   { "classes", 'c', CLASSES_OPT, 0, 0 },
@@ -49,6 +50,7 @@ static Clp_Option options[] = {
   { "decls", 'd', DECLARATIONS_OPT, 0, 0 },
   { "declarations", 'd', DECLARATIONS_OPT, 0, 0 },
   { "elements", 'n', ELEMENTS_OPT, 0, 0 },
+  { "expand-vars", 0, EXPAND_VARS_OPT, 0, Clp_Negate },
   { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
@@ -84,6 +86,7 @@ Options:\n\
   -f, --file FILE           Read router configuration from FILE.\n\
   -e, --expression EXPR     Use EXPR as router configuration.\n\
       --config              Output configuration only (not an archive).\n\
+      --expand-vars         Expand global variables.\n\
   -o, --output FILE         Write output configuration to FILE.\n\
   -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
       --help                Print this message and exit.\n\
@@ -116,6 +119,7 @@ main(int argc, char **argv)
   click_static_initialize();
   CLICK_DEFAULT_PROVIDES;
   ErrorHandler *errh = ErrorHandler::default_handler();
+  ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-flatten: ");
 
   // read command line arguments
   Clp_Parser *clp =
@@ -127,6 +131,7 @@ main(int argc, char **argv)
   bool file_is_expr = false;
   const char *output_file = 0;
   int action = FLATTEN_OPT;
+  bool expand_vars = false;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -141,6 +146,7 @@ main(int argc, char **argv)
       printf("click-flatten (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2001 Mazu Networks, Inc.\n\
 Copyright (c) 2001 International Computer Science Institute\n\
+Copyright (c) 2007 Regents of the University of California\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -157,10 +163,14 @@ particular purpose.\n");
      case CONFIG_OPT:
       action = opt;
       break;
-      
+
+     case EXPAND_VARS_OPT:
+      expand_vars = !clp->negated;
+      break;
+
      case OUTPUT_OPT:
       if (output_file) {
-	errh->error("--output file specified twice");
+	p_errh->error("--output file specified twice");
 	goto bad_option;
       }
       output_file = clp->arg;
@@ -168,13 +178,18 @@ particular purpose.\n");
 
      case ROUTER_OPT:
      case EXPRESSION_OPT:
-     case Clp_NotOption:
+     router_file:
       if (router_file) {
-	errh->error("router configuration specified twice");
+	p_errh->error("router configuration specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
       file_is_expr = (opt == EXPRESSION_OPT);
+      break;
+
+     case Clp_NotOption:
+      if (!click_maybe_define(clp->arg, p_errh))
+	  goto router_file;
       break;
 
      case Clp_BadOption:
@@ -192,7 +207,7 @@ particular purpose.\n");
  done:
   RouterT *router = read_router(router_file, file_is_expr, errh);
   if (router)
-    router->flatten(errh);
+      router->flatten(errh, expand_vars);
   if (!router || errh->nerrors() > 0)
     exit(1);
 

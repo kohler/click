@@ -179,15 +179,18 @@ VariableEnvironment::parent_of(int depth)
     return v;
 }
 
-int
-VariableEnvironment::define(const String &formal, const String &value)
+bool
+VariableEnvironment::define(const String &name, const String &value, bool override)
 {
-    for (String *s = _formals.begin(); s != _formals.end(); s++)
-	if (*s == formal)
-	    return -1;
-    _formals.push_back(formal);
+    for (String *s = _names.begin(); s != _names.end(); s++)
+	if (*s == name) {
+	    if (override)
+		_values[s - _names.begin()] = value;
+	    return false;
+	}
+    _names.push_back(name);
     _values.push_back(value);
-    return 0;
+    return true;
 }
 
 const String &
@@ -195,8 +198,8 @@ VariableEnvironment::value(const String &formal, bool &found) const
 {
     const VariableEnvironment *v = this;
     while (v) {
-	for (int i = 0; i < v->_formals.size(); i++)
-	    if (v->_formals[i] == formal) {
+	for (int i = 0; i < v->_names.size(); i++)
+	    if (v->_names[i] == formal) {
 		found = true;
 		return v->_values[i];
 	    }
@@ -230,8 +233,8 @@ VariableEnvironment::expand(const String &var, int vartype, int quote,
 void
 VariableEnvironment::print() const
 {
-    for (int i = 0; i < _formals.size(); i++)
-	fprintf(stderr, "%s.%d=%s ", _formals[i].c_str(), _depths[i], _values[i].c_str());
+    for (int i = 0; i < _names.size(); i++)
+	fprintf(stderr, "%s.%d=%s ", _names[i].c_str(), _depths[i], _values[i].c_str());
     fprintf(stderr, "\n");
 }
 #endif

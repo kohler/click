@@ -24,6 +24,7 @@
 #include "lexert.hh"
 #include "toolutils.hh"
 #include <click/confparse.hh>
+#include <click/variableenv.hh>
 #include <errno.h>
 #include <string.h>
 #include <time.h>
@@ -35,6 +36,7 @@
 #include <dirent.h>
 #include <stdarg.h>
 
+VariableEnvironment global_scope(0);
 bool ignore_line_directives = false;
 
 
@@ -70,6 +72,22 @@ shell_command_output_string(String cmdline, const String &input, ErrorHandler *e
   return sa.take_string();
 }
 
+
+int
+click_maybe_define(const char *arg, ErrorHandler *errh)
+{
+    for (const char *s = arg; *s; s++)
+	if (*s == '=' && s > arg) {
+	    if (!global_scope.define(String(arg, s), s + 1, true)) {
+		if (errh)
+		    errh->error("parameter '%.*s' multiply defined", s - arg, arg);
+		return -1;
+	    } else
+		return 1;
+	} else if (!isalnum((unsigned char) *s) && *s != '_')
+	    break;
+    return 0;
+}
 
 RouterT *
 read_router_string(String text, const String &landmark, bool empty_ok,
@@ -110,7 +128,7 @@ read_router_string(String text, const String &landmark, bool empty_ok,
     /* nada */;
 
   // done
-  return lexer.finish();
+  return lexer.finish(global_scope);
 }
 
 RouterT *

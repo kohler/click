@@ -558,6 +558,8 @@ particular purpose.\n");
       break;
       
      case Clp_NotOption:
+      if (click_maybe_define(clp->arg, errh))
+	  break;
       if (num_nondash_args == 0 && router_file) {
 	errh->error("router configuration specified twice");
 	goto bad_option;

@@ -342,23 +342,31 @@ RequireLexerExtra::require(String name, ErrorHandler *errh)
 }
 
 
-static Lexer *click_lexer;
+static Lexer *_click_lexer;
+
+Lexer *
+click_lexer()
+{
+    if (!_click_lexer)
+	_click_lexer = new Lexer;
+    return _click_lexer;
+}
 
 extern "C" int
 click_add_element_type(const char *ename, Element *(*func)(uintptr_t), uintptr_t thunk)
 {
     assert(ename);
-    if (!click_lexer && !(click_lexer = new Lexer))
-	return -99;
+    if (Lexer *l = click_lexer())
+	return l->add_element_type(ename, func, thunk);
     else
-	return click_lexer->add_element_type(ename, func, thunk);
+	return -99;
 }
 
 extern "C" void
 click_remove_element_type(int which)
 {
-    if (click_lexer)
-	click_lexer->remove_element_type(which);
+    if (_click_lexer)
+	_click_lexer->remove_element_type(which);
 }
 
 
@@ -370,8 +378,8 @@ read_handler(Element *, void *thunk)
     Vector<String> v;
     switch (reinterpret_cast<intptr_t>(thunk)) {
       case GH_CLASSES:
-	if (click_lexer)
-	    click_lexer->element_type_names(v);
+	if (_click_lexer)
+	    _click_lexer->element_type_names(v);
 	break;
       case GH_PACKAGES:
 	click_public_packages(v);
@@ -408,8 +416,8 @@ click_static_initialize()
 void
 click_static_cleanup()
 {
-    delete click_lexer;
-    click_lexer = 0;
+    delete _click_lexer;
+    _click_lexer = 0;
     
     click_unexport_elements();
     
@@ -462,14 +470,13 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
     }
 
     // lex
-    if (!click_lexer)
-	click_lexer = new Lexer();
+    Lexer *l = click_lexer();
     RequireLexerExtra lextra(&archive);
-    int cookie = click_lexer->begin_parse(config_str, filename, &lextra, errh);
-    while (click_lexer->ystatement())
+    int cookie = l->begin_parse(config_str, filename, &lextra, errh);
+    while (l->ystatement())
 	/* do nothing */;
-    Router *router = click_lexer->create_router(master ? master : new Master(1));
-    click_lexer->end_parse(cookie);
+    Router *router = l->create_router(master ? master : new Master(1));
+    l->end_parse(cookie);
 
     // initialize if requested
     if (initialize)

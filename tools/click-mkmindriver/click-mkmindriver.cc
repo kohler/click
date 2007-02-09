@@ -476,8 +476,13 @@ particular purpose.\n");
 	    break;
 
 	  case ROUTER_OPT:
-	  case Clp_NotOption:
+	  router_file:
 	    router_filenames.push_back(specifier + String("f") + clp->arg);
+	    break;
+
+	  case Clp_NotOption:
+	    if (!click_maybe_define(clp->arg, &arg_lerrh))
+		goto router_file;
 	    break;
 
 	  case EXPRESSION_OPT:

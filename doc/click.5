@@ -46,10 +46,11 @@ two main directives:
 .IR declarations
 declare new elements, and
 .IR connections
-connect those elements together.
-Click router configurations are like directed graphs of elements; in this
-interpretation, declarations specify the vertices of the graph and
-connections specify the edges.
+connect those elements together.  Click router configurations are like
+directed graphs of elements; in this interpretation, declarations specify
+the vertices of the graph and connections specify the edges.  Other
+language statements define configuration parameters and create new element
+types.
 '
 .SS "Declarations"
 '
@@ -236,6 +237,11 @@ documentation for details.
 If the last argument in a configuration string is empty (containing only
 whitespace and comments), then it is ignored.  Thus, `Element(1, )',
 `Element(1, /* comment */)', and `Element(1)' behave exactly alike.
+.PP
+Configuration strings may also contain parameter references, such as
+`$interface'. The parameter values are substituted in. Parameters may be
+defined either by compound element arguments, by explicit `define'
+statements, or on the command line.
 '
 .SS "Backslash Substitutions"
 .PP
@@ -452,6 +458,7 @@ You can avoid substitution by putting the dollar sign inside single quotes.
 Use braces, like `${a}', to avoid including following letters in a variable
 name. Click also supports the shell-like `${VAR-DEFAULT}' syntax, which
 substitutes the value of `$VAR', or `DEFAULT' if that variable was not set.
+See also PARAMETER DEFINITIONS, below.
 '
 .SS "Overloading"
 '
@@ -604,6 +611,32 @@ necessary package code. Furthermore, the required package names are checked
 against a list of currently active packages when a configuration is
 installed. If any required packages are unavailable, an error is reported.
 '
+.SH "PARAMETER DEFINITIONS"
+'
+Parameters are defined using the `define' statement. Its argument is a
+comma-separated list of pairs, each pair consisting of a configuration
+variable and a value:
+.Rs
+define($DEVNAME eth0, $COUNT 1);
+.Re
+This sets the `$DEVNAME' parameter to `eth0' and the `$COUNT' parameter to
+`1'. Definitions are lexically scoped, so definitions inside a compound
+element are not visible outside it. However, all definitions in a given
+scope take place simultaneously, regardless of their ordering. The
+following two configurations have the same effect:
+.Rs
+1) define($a 2); Message($a)
+.br
+2) Message($a); define($a 2)
+.Re
+It is an error to define a parameter more than once in any single
+scope. Click programs such as
+.M click 1
+and
+.M click-install 1
+allow parameters to specified on the command line; these override any
+global parameters with the same names.
+'
 .SH "LEXICAL ISSUES"
 '
 Click identifiers are nonempty sequences of letters, numbers, underscores
@@ -615,9 +648,9 @@ their own identifiers. Identifiers are case-sensitive. No component of an
 identifier may consist solely of numbers; for example, `1/x' is an illegal
 identifier.
 .PP
-The keywords `connectiontunnel', `elementclass' and `require' may not be
-used as identifiers. The normal identifiers `input' and `output' have
-special meaning inside compound element definitions.
+The keywords `connectiontunnel', `elementclass', `require', and `define'
+may not be used as identifiers. The normal identifiers `input' and `output'
+have special meaning inside compound element definitions.
 .PP
 The following characters and multi-character sequences are single Click
 tokens:
@@ -689,7 +722,7 @@ kernel module will not accept archives; use
 .br
 .RI "    | " tunnelstmt " | " elementclassstmt " | " requirestmt
 .br
-.RI "    | "";"""
+.RI "    | " definestmt " | "";"""
 .br
 .IR declaration " ::= " element-names " ""::"" "
 .IR class " " opt-config
@@ -734,6 +767,8 @@ kernel module will not accept archives; use
 .IR elementclassstmt " ::= ""elementclass"" identifier " class
 .br
 .IR requirestmt " ::= ""require"" ""("" configstring "")"""
+.br
+.IR definestmt " ::= ""define"" ""("" configstring "")"""
 .br
 .IR empty " ::= "
 '

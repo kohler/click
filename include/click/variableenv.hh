@@ -19,21 +19,23 @@ class VariableEnvironment : public VariableExpander { public:
   
     VariableEnvironment(VariableEnvironment *parent);
 
-    int depth() const		{ return _depth; }
-    int size() const		{ return _formals.size(); }
+    int depth() const			{ return _depth; }
+    int size() const			{ return _names.size(); }
 
-    const String &name(int i) const	{ return _formals[i]; }
+    const String &name(int i) const	{ return _names[i]; }
     const Vector<String> &values() const	{ return _values; }
     const String &value(int i) const	{ return _values[i]; }
-    const String &value(const String &formal, bool &found) const;
+    const String &value(const String &name, bool &found) const;
+
+    void clear()			{ _names.clear(); _values.clear(); }
     
     VariableEnvironment *parent_of(int depth);
-    int define(const String &formal, const String &value);
+    bool define(const String &name, const String &value, bool override);
     bool expand(const String &var, int vartype, int quote, StringAccum &);
 
   private:
 
-    Vector<String> _formals;
+    Vector<String> _names;
     Vector<String> _values;
     int _depth;
     VariableEnvironment *_parent;

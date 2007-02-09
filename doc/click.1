@@ -37,6 +37,7 @@ click \- Click user-level driver
 .SH SYNOPSIS
 .B click
 .RI \%[ options ]
+.RI \%[ param = value " ...]"
 .RI \%[ router\-file ]
 '
 .SH DESCRIPTION
@@ -70,6 +71,10 @@ without affecting the network.
 '
 .SH "OPTIONS"
 '
+Arguments such as "NAME=value" set configuration parameters, overriding any
+existing settings. Thus, "echo \%'Message($MSG)' | \fBclick\fR MSG=Hi" will
+print "Hi".
+.PP
 If any filename argument is a single dash "-",
 .B click
 will use the standard input or output instead, as appropriate.

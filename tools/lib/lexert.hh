@@ -8,6 +8,7 @@ class RouterT;
 class ElementClassT;
 class StringAccum;
 class LexerTInfo;
+class VariableEnvironment;
 
 enum {
     lexEOF = 0,
@@ -20,7 +21,8 @@ enum {
     lex3Dot,
     lexTunnel,
     lexElementclass,
-    lexRequire
+    lexRequire,
+    lexDefine
 };
 
 class Lexeme { public:
@@ -48,7 +50,7 @@ class Lexeme { public:
 
 class LexerT { public:
 
-    LexerT(ErrorHandler * = 0, bool ignore_line_directives = false);
+    LexerT(ErrorHandler *, bool ignore_line_directives);
     virtual ~LexerT();
   
     void reset(const String &data, const String &filename = String());
@@ -73,10 +75,11 @@ class LexerT { public:
     void ytunnel();
     ElementClassT *ycompound(String, const char *decl_pos1, const char *name_pos1);
     void yrequire();
+    void yvar();
     bool ystatement(bool nested = false);
 
     RouterT *router() const		{ return _router; }
-    RouterT *finish();
+    RouterT *finish(const VariableEnvironment &global_scope);
   
   protected:
   

@@ -566,13 +566,18 @@ particular purpose.\n");
       
      case ROUTER_OPT:
      case EXPRESSION_OPT:
-     case Clp_NotOption:
+     router_file:
       if (router_file) {
 	p_errh->error("router configuration specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
       file_is_expr = (opt == EXPRESSION_OPT);
+      break;
+
+     case Clp_NotOption:
+      if (!click_maybe_define(clp->arg, p_errh))
+	  goto router_file;
       break;
 
      case OUTPUT_OPT:

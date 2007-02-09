@@ -482,6 +482,8 @@ Try '%s --help' for more information.\n",
 	    program_name, program_name);
 }
 
+extern VariableEnvironment global_scope;
+
 static RouterT *
 pretty_read_router(const char *filename, bool file_is_expr,
 		   ErrorHandler *errh, String &config)
@@ -528,7 +530,7 @@ pretty_read_router(const char *filename, bool file_is_expr,
     // read router
     if (!config.length())
 	errh->warning("%s: empty configuration", filename);
-    LexerT lexer(ErrorHandler::silent_handler());
+    LexerT lexer(ErrorHandler::silent_handler(), false);
     PrettyLexerTInfo pinfo(config);
     lexer.reset(config, filename);
     lexer.set_lexinfo(&pinfo);
@@ -545,7 +547,7 @@ pretty_read_router(const char *filename, bool file_is_expr,
 	/* nada */;
 
     // done
-    return lexer.finish();
+    return lexer.finish(global_scope);
 }
 
 
@@ -1245,13 +1247,18 @@ particular purpose.\n");
 
 	  case ROUTER_OPT:
 	  case EXPRESSION_OPT:
-	  case Clp_NotOption:
+	  router_file:
 	    if (router_file) {
 		p_errh->error("router configuration specified twice");
 		goto bad_option;
 	    }
 	    router_file = clp->arg;
 	    file_is_expr = (opt == EXPRESSION_OPT);
+	    break;
+
+	  case Clp_NotOption:
+	    if (!click_maybe_define(clp->arg, p_errh))
+		goto router_file;
 	    break;
 
 	  case OUTPUT_OPT:

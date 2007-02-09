@@ -111,6 +111,7 @@ class Lexer::Compound : public Element { public:
 
   void finish(Lexer *, ErrorHandler *);
 
+  inline int assign_arguments(const Vector<String> &args, Vector<String> *values) const;
   int resolve(Lexer *, int etype, int ninputs, int noutputs, Vector<String> &, ErrorHandler *, const String &landmark);
   void expand_into(Lexer *, int, VariableEnvironment &);
   
@@ -174,21 +175,21 @@ Lexer::Compound::cast(const char *s)
 }
 
 inline void
-Lexer::Compound::define(const String &fname, const String &ftype, bool isformal, Lexer *l)
+Lexer::Compound::define(const String &name, const String &value, bool isformal, Lexer *l)
 {
   assert(!isformal || _nformals == _scope.size());
-  if (_scope.define(fname, ftype) < 0)
-    l->lerror("parameter '$%s' multiply defined", fname.c_str());
+  if (!_scope.define(name, value, false))
+    l->lerror("parameter '$%s' multiply defined", name.c_str());
   else if (isformal) {
     _nformals = _scope.size();
-    if (ftype)
+    if (value)
       for (int i = 0; i < _scope.size() - 1; i++)
-	if (_scope.value(i) == ftype) {
-	  l->lerror("repeated keyword parameter '%s' in compound element", ftype.c_str());
+	if (_scope.value(i) == value) {
+	  l->lerror("repeated keyword parameter '%s' in compound element", value.c_str());
 	  break;
 	}
     if (!_scope_order_error && _nformals > 1
-	&& ((!ftype && _scope.value(_nformals - 2))
+	&& ((!value && _scope.value(_nformals - 2))
 	    || _scope.value(_nformals - 2) == "__REST__")) {
       l->lerror("compound element parameters out of order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
       _scope_order_error = true;
@@ -252,6 +253,12 @@ Lexer::Compound::overload_compound(Lexer *lexer) const
     return 0;
 }
 
+inline int
+Lexer::Compound::assign_arguments(const Vector<String> &args, Vector<String> *values) const
+{
+  return cp_assign_arguments(args, _scope.values().begin(), _scope.values().begin() + _nformals, values);
+}
+
 int
 Lexer::Compound::resolve(Lexer *lexer, int etype, int ninputs, int noutputs, Vector<String> &args, ErrorHandler *errh, const String &landmark)
 {
@@ -261,11 +268,10 @@ Lexer::Compound::resolve(Lexer *lexer, int etype, int ninputs, int noutputs, Vec
   int closest_etype = -1;
   
   while (ct) {
-    VariableEnvironment &scope = ct->_scope;
     if (ct->_ninputs == ninputs && ct->_noutputs == noutputs
-	&& cp_assign_arguments(args, scope.values().begin(), scope.values().end(), &args) >= 0)
+	&& ct->assign_arguments(args, &args) >= 0)
       return etype;
-    else if (cp_assign_arguments(args, scope.values().begin(), scope.values().end()) >= 0)
+    else if (ct->assign_arguments(args, 0) >= 0)
       closest_etype = etype;
 
     if (Compound *next = ct->overload_compound(lexer)) {
@@ -283,7 +289,7 @@ Lexer::Compound::resolve(Lexer *lexer, int etype, int ninputs, int noutputs, Vec
     cerrh.lmessage(ct->landmark(), "%s", ct->signature().c_str());
   ct = (closest_etype >= 0 ? (Compound *) lexer->_element_types[closest_etype].thunk : 0);
   if (ct)
-    cp_assign_arguments(args, ct->scope().values().begin(), ct->scope().values().end(), &args);
+    ct->assign_arguments(args, &args);
   return closest_etype;
 }
 
@@ -381,9 +387,8 @@ Lexer::Lexer()
   : _data(0), _end(0), _pos(0), _lineno(1), _lextra(0),
     _tpos(0), _tfull(0),
     _element_type_map(-1),
-    _last_element_type(ET_NULL),
-    _free_element_type(-1),
-    _element_map(-1), _c(0),
+    _last_element_type(ET_NULL), _free_element_type(-1),
+    _global_scope(0), _element_map(-1), _c(0),
     _definputs(0), _defoutputs(0),
     _errh(ErrorHandler::default_handler())
 {
@@ -648,6 +653,8 @@ Lexer::next_lexeme()
       return Lexeme(lexElementclass, word);
     else if (word.length() == 7 && memcmp(word.data(), "require", 7) == 0)
       return Lexeme(lexRequire, word);
+    else if (word.length() == 6 && memcmp(word.data(), "define", 3) == 0)
+      return Lexeme(lexDefine, word);
     else
       return Lexeme(lexIdent, word);
   }
@@ -655,7 +662,7 @@ Lexer::next_lexeme()
   // check for variable
   if (*s == '$') {
     s++;
-    while (s < _end && (isalnum(*s) || *s == '_'))
+    while (s < _end && (isalnum((unsigned char) *s) || *s == '_'))
       s++;
     if (s + 1 > word_pos) {
       _pos = s;
@@ -741,6 +748,8 @@ Lexer::lexeme_string(int kind)
     return "'elementclass'";
   else if (kind == lexRequire)
     return "'require'";
+  else if (kind == lexDefine)
+    return "'define'";
   else if (kind >= 32 && kind < 127) {
     sprintf(buf, "'%c'", kind);
     return buf;
@@ -1256,6 +1265,7 @@ Lexer::yconnection()
      case lexTunnel:
      case lexElementclass:
      case lexRequire:
+     case lexDefine:
       unlex(t);
       // FALLTHRU
      case ';':
@@ -1469,6 +1479,33 @@ Lexer::yrequire()
   }
 }
 
+void
+Lexer::yvar()
+{
+  if (expect('(')) {
+    String requirement = lex_config();
+    expect(')');
+    
+    Vector<String> args;
+    String word;
+    cp_argvec(requirement, args);
+    for (int i = 0; i < args.size(); i++)
+      if (args[i]) {
+	String var = cp_pop_spacevec(args[i]);
+	const char *s = var.begin();
+	if (s != var.end() && *s == '$')
+	  for (s++; s != var.end() && (isalnum((unsigned char) *s) || *s == '_'); s++)
+	    /* nada */;
+	if (var.length() < 2 || s != var.end())
+	  lerror("bad 'var' declaration: not a variable");
+	else {
+	  var = var.substring(1);
+	  _c->define(var, args[i], false, this);
+	}
+      }
+  }
+}
+
 bool
 Lexer::ystatement(bool nested)
 {
@@ -1492,6 +1529,10 @@ Lexer::ystatement(bool nested)
 
    case lexRequire:
     yrequire();
+    return true;
+
+   case lexDefine:
+    yvar();
     return true;
 
    case ';':
@@ -1586,9 +1627,9 @@ Lexer::expand_compound_element(int which, VariableEnvironment &ve)
     
     VariableEnvironment new_ve(ve.parent_of(found_comp->depth()));
     for (int i = 0; i < found_comp->nformals(); i++)
-      new_ve.define(found_comp->scope().name(i), args[i]);
+      new_ve.define(found_comp->scope().name(i), args[i], true);
     for (int i = found_comp->nformals(); i < found_comp->scope().size(); i++)
-      new_ve.define(found_comp->scope().name(i), found_comp->scope().value(i));
+      new_ve.define(found_comp->scope().name(i), cp_expand(found_comp->scope().value(i), new_ve), true);
 
     found_comp->expand_into(this, which, new_ve);
   }
@@ -1602,10 +1643,11 @@ Lexer::create_router(Master *master)
     return 0;
   
   // expand compounds
+  for (int i = 0; i < _global_scope.size(); i++)
+    _c->scope().define(_global_scope.name(i), _global_scope.value(i), true);
   int initial_elements_size = _c->_elements.size();
-  VariableEnvironment ve(0);
   for (int i = 0; i < initial_elements_size; i++)
-    expand_compound_element(i, ve);
+    expand_compound_element(i, _c->scope());
 
   // add elements to router
   Vector<int> router_id;
