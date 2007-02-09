@@ -565,7 +565,7 @@ AddressTranslator::handle_outward(Packet *p)
     {
 
       unsigned char * icmp6_start = (unsigned char *)(ip6_new +1);
-      if (lookup(ip6_src, dport, ip6_msrc, mport, ip6_dst, sport, _dynamic_mapping_allocation_direction))
+      if (lookup(ip6_src, dport, ip6_msrc, mport, ip6_dst, sport, 0))
 	{
 	 
 	  ip6_new->ip6_src = ip6_msrc;
@@ -611,7 +611,7 @@ AddressTranslator::handle_outward(Packet *p)
        sport = ntohs(tcp_new->th_sport);
        dport = ntohs(tcp_new->th_dport);
 
-      if (lookup(ip6_src, sport, ip6_msrc, mport, ip6_dst, dport, _dynamic_mapping_allocation_direction))
+      if (lookup(ip6_src, sport, ip6_msrc, mport, ip6_dst, dport, 0))
 	{
 	  ip6_new->ip6_src = ip6_msrc;
 	  tcp_new->th_sport = htons(mport);
@@ -634,7 +634,7 @@ AddressTranslator::handle_outward(Packet *p)
       sport = ntohs(udp_new->uh_sport);
       dport = ntohs(udp_new->uh_dport);
 
-      if (lookup(ip6_src, sport, ip6_msrc, mport, ip6_dst, dport, _dynamic_mapping_allocation_direction))
+      if (lookup(ip6_src, sport, ip6_msrc, mport, ip6_dst, dport, 0))
 	{
 	  ip6_new->ip6_src = ip6_msrc;
 	  udp_new->uh_sport = htons(mport);
