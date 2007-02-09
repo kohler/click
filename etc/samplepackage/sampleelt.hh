@@ -16,14 +16,14 @@
 
 class SamplePackageElement : public Element { public:
   
-  SamplePackageElement();		// SEE sample.cc FOR CONSTRUCTOR
-  ~SamplePackageElement();		// SEE sample.cc FOR DESTRUCTOR
+    SamplePackageElement();		// SEE sample.cc FOR CONSTRUCTOR
+    ~SamplePackageElement();		// SEE sample.cc FOR DESTRUCTOR
   
-  const char *class_name() const	{ return "SamplePackageElement"; }
-  const char *processing() const	{ return AGNOSTIC; }
+    const char *class_name() const	{ return "SamplePackageElement"; }
+    const char *processing() const	{ return AGNOSTIC; }
 
-  int initialize(ErrorHandler *);
-  void add_handlers();
+    int initialize(ErrorHandler *);
+    void add_handlers();
   
 };
 

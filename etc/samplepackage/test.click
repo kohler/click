@@ -2,4 +2,4 @@ require(sample);
 
 test :: SamplePackageElement;
 
-QuitWatcher(test);
+DriverManager(wait 0.1s, stop);
