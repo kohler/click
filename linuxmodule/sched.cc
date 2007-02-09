@@ -35,6 +35,9 @@ CLICK_CXX_PROTECT
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <asm/bitops.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+# include <linux/cpumask.h>
+#endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
@@ -107,8 +110,19 @@ click_sched(void *thunk)
 
 #if CONFIG_SMP
   int mycpu = click_parm(CLICKPARM_CPU);
-  if (mycpu >= 0 && mycpu < smp_num_cpus && click_parm(CLICKPARM_THREADS) <= 1)
-      set_cpus_allowed(current, 1UL << cpu_logical_map(mycpu));
+  if (mycpu >= 0 && click_parm(CLICKPARM_THREADS) <= 1) {
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+      if (mycpu < num_possible_cpus() && cpu_online(mycpu))
+	  set_cpus_allowed(current, cpumask_of_cpu(mycpu));
+      else
+	  printk("<1>click: warning: cpu %d offline\n", mycpu);
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 21)
+      if (mycpu < smp_num_cpus && (cpu_online_map & (1UL << cpu_logical_map(mycpu))))
+	  set_cpus_allowed(current, 1UL << cpu_logical_map(mycpu));
+      else
+	  printk("<1>click: warning: cpu %d offline\n", mycpu);
+# endif
+  }
 #endif
   
   printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);

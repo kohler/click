@@ -598,8 +598,8 @@ particular purpose.\n");
       errh->fatal("cannot install Click module");
   } else {
 #if FOR_LINUXMODULE
-    if (threads > 1)
-      errh->warning("Click module already installed, '--threads' ignored");
+    if (threads > 1 || greedy || !accessible || uid != 0 || gid != 0 || cpu != -1)
+      errh->warning("Click module already installed, some options ignored");
 #endif
   }
 
