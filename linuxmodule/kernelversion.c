@@ -59,6 +59,10 @@ static int greedy = 0;
 CLICK_INT_MODULE_PARAM(greedy);
 MODULE_PARM_DESC(greedy, "Click takes a whole CPU [0]");
 
+static int cpu = -1;
+CLICK_INT_MODULE_PARAM(cpu);
+MODULE_PARM_DESC(cpu, "Click thread preferred CPU [-1=any]");
+
 int
 click_parm(int which)
 {
@@ -71,6 +75,8 @@ click_parm(int which)
 	return gid;
     case CLICKPARM_GREEDY:
 	return greedy;
+    case CLICKPARM_CPU:
+	return cpu;
 #if __MTCLICK__
     case CLICKPARM_THREADS:
 	return threads;

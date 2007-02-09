@@ -104,6 +104,13 @@ click_sched(void *thunk)
 #ifdef HAVE_ADAPTIVE_SCHEDULER
   rt->set_cpu_share(min_click_frac, max_click_frac);
 #endif
+
+#if CONFIG_SMP
+  int mycpu = click_parm(CLICKPARM_CPU);
+  if (mycpu >= 0 && mycpu < smp_num_cpus && click_parm(CLICKPARM_THREADS) <= 1)
+      set_cpus_allowed(current, 1UL << cpu_logical_map(mycpu));
+#endif
+  
   printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
 
   // add pid to thread list

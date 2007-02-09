@@ -63,6 +63,7 @@
 #define GREEDY_OPT		312
 #define UID_OPT			313
 #define GID_OPT			314
+#define CPU_OPT			315
 
 static Clp_Option options[] = {
   { "cabalistic", 0, PRIVATE_OPT, 0, Clp_Negate },
@@ -81,6 +82,7 @@ static Clp_Option options[] = {
   { "uid", 'U', UID_OPT, Clp_ArgString, 0 },
   { "user", 0, UID_OPT, Clp_ArgString, 0 },
   { "gid", 0, GID_OPT, Clp_ArgString, 0 },
+  { "cpu", 0, CPU_OPT, Clp_ArgUnsigned, 0 },
 #endif
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
   { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
@@ -124,7 +126,8 @@ Options:\n\
   -p, --private            Make /click readable only by owning user.\n\
   -U, --user USER[:GROUP]  Set owning user [root].\n\
   -t, --threads N          Use N threads (multithreaded Click only).\n\
-  -G, --greedy             Make Click thread take up an entire CPU.\n");
+  -G, --greedy             Make Click thread take up an entire CPU.\n\
+      --cpu N              Click thread runs on CPU N.\n");
 # if HAVE_LINUXMODULE_2_6
   printf("\
   -m, --map                Print load map to the standard output.\n");
@@ -360,6 +363,7 @@ main(int argc, char **argv)
   output_map = false;
   uid_t uid = 0;
   gid_t gid = 0;
+  int cpu = -1;
 #endif
   
   while (1) {
@@ -468,6 +472,10 @@ particular purpose.\n");
 	}
 	break;
     }
+
+     case CPU_OPT:
+      cpu = clp->val.i;
+      break; 
 #endif
 
      case UNINSTALL_OPT:
@@ -559,6 +567,8 @@ particular purpose.\n");
 	options += " uid=" + String(uid);
     if (gid != 0)
 	options += " gid=" + String(gid);
+    if (cpu != -1)
+	options += " cpu=" + String(cpu);
     install_module(click_o, options, errh);
 #elif FOR_BSDMODULE
     install_module(click_o, String(), errh);
