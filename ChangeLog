@@ -1,3 +1,8 @@
+2007-02-09 Friday 11:37  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/samplepackage/: sampleelt.hh (1.7), test.click (1.2): little
+	  nits
+
 2007-02-09 Friday 03:20  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click-install.1 (1.18), linuxmodule/kernelversion.c (1.15),
