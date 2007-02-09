@@ -1,3 +1,16 @@
+2007-02-09 Friday 03:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-install.1 (1.18), linuxmodule/kernelversion.c (1.15),
+	  linuxmodule/sched.cc (1.61), tools/click-install/click-install.cc
+	  (1.69): fix CPU setting to work on 2.4 (hopefully) and 2.6
+
+2007-02-09 Friday 02:45  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/kernelversion.c (1.14), linuxmodule/moduleparm.h
+	  (1.2), linuxmodule/sched.cc (1.60),
+	  tools/click-install/click-install.cc (1.68): attempt to provide a
+	  --cpu option (Beyers Cronje asked for one) in linuxmodule
+
 2007-02-09 Friday 02:34  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip6/addresstranslator.cc (1.24): include a bug fix
