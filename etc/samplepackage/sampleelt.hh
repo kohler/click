@@ -23,7 +23,6 @@ class SamplePackageElement : public Element { public:
     const char *processing() const	{ return AGNOSTIC; }
 
     int initialize(ErrorHandler *);
-    void add_handlers();
   
 };
 

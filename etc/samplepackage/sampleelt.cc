@@ -37,17 +37,4 @@ SamplePackageElement::initialize(ErrorHandler *errh)
     return 0;
 }
 
-static String
-read_handler(Element *, void *)
-{
-    return "false\n";
-}
-
-void
-SamplePackageElement::add_handlers()
-{
-    // needed for QuitWatcher
-    add_read_handler("scheduled", read_handler, 0);
-}
-
 EXPORT_ELEMENT(SamplePackageElement)
