@@ -122,9 +122,9 @@ atomic_uint32_t::operator|=(uint32_t u)
     atomic_set_mask(u, &_val);
 #elif CLICK_LINUXMODULE
     unsigned long flags;
-    __save_flags_cli(flags);
+    local_irq_save(flags);
     CLICK_ATOMIC_VAL |= u;
-    __restore_flags(flags);
+    local_irq_restore(flags);
 #elif CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "orl %1,%0"
 		  : "=m" (CLICK_ATOMIC_VAL)
@@ -143,9 +143,9 @@ atomic_uint32_t::operator&=(uint32_t u)
     atomic_clear_mask(~u, &_val);
 #elif CLICK_LINUXMODULE
     unsigned long flags;
-    __save_flags_cli(flags);
+    local_irq_save(flags);
     CLICK_ATOMIC_VAL &= u;
-    __restore_flags(flags);
+    local_irq_restore(flags);
 #elif CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "andl %1,%0"
 		  : "=m" (CLICK_ATOMIC_VAL)
@@ -196,10 +196,10 @@ atomic_uint32_t::swap(uint32_t new_value)
     return new_value;
 #elif CLICK_LINUXMODULE
     unsigned long flags;
-    __save_flags_cli(flags);
+    local_irq_save(flags);
     uint32_t old_value = value();
     CLICK_ATOMIC_VAL = new_value;
-    __restore_flags(flags);
+    local_irq_restore(flags);
     return old_value;
 #else
     uint32_t old_value = value();
@@ -219,10 +219,10 @@ atomic_uint32_t::fetch_and_add(uint32_t delta)
     return delta;
 #elif CLICK_LINUXMODULE
     unsigned long flags;
-    __save_flags_cli(flags);
+    local_irq_save(flags);
     uint32_t old_value = value();
     CLICK_ATOMIC_VAL += delta;
-    __restore_flags(flags);
+    local_irq_restore(flags);
     return old_value;
 #else
     uint32_t old_value = value();
@@ -267,11 +267,11 @@ atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
     return (uint8_t) test_value;
 #elif CLICK_LINUXMODULE
     unsigned long flags;
-    __save_flags_cli(flags);
+    local_irq_save(flags);
     uint32_t old_value = value();
     if (old_value == test_value)
 	CLICK_ATOMIC_VAL = new_value;
-    __restore_flags(flags);
+    local_irq_restore(flags);
     return old_value == test_value;
 #else
     uint32_t old_value = value();
