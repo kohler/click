@@ -1,3 +1,9 @@
+2007-02-14 Wednesday 02:57  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/atomic.hh (1.18): use
+	  local_save_irq/local_restore_irq, rather than nonstandard __
+	  functions (based on comment from David Claffey)
+
 2007-02-09 Friday 11:58  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/samplepackage/: sampleelt.cc (1.12), sampleelt.hh (1.8),
