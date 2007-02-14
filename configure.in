@@ -962,13 +962,9 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 	AC_DEFINE([HAVE_NET_ENABLE_TIMESTAMP], [1], [Define if you have the 'net_enable_timestamp' function.])
     fi
 
-    AC_CACHE_CHECK([Linux kernel for netif_tx_lock], [ac_cv_linuxmodule_netif_tx_lock],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_SKBUFF_PROLOGUE()
-#include <linux/netdevice.h>],
-[[extern struct net_device dev; netif_tx_lock(&dev);]])],
-	[ac_cv_linuxmodule_netif_tx_lock=yes], [ac_cv_linuxmodule_netif_tx_lock=no])])
-    if test $ac_cv_linuxmodule_netif_tx_lock = yes; then
+    AC_CHECK_DECL(netif_tx_lock, [ac_cv_netif_tx_lock=yes], [ac_cv_netif_tx_lock=no], [CLICK_SKBUFF_PROLOGUE()
+#include <linux/netdevice.h>])
+    if test $ac_cv_netif_tx_lock = yes; then
 	AC_DEFINE([HAVE_NETIF_TX_LOCK], [1], [Define if you have the 'netif_tx_lock' function.])
     fi
 
