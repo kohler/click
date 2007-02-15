@@ -113,7 +113,6 @@ inline void *operator new(size_t, void *v) { return v; }
 #endif /* __cplusplus */
 
 /* Define assert macro. */
-#ifdef HAVE_KERNEL_ASSERT
 # ifdef __cplusplus
 extern "C" {
 # endif
@@ -121,6 +120,8 @@ void click_assert_failed(const char *file, int line, const char *problem_text);
 # ifdef __cplusplus
 }
 # endif
+
+#ifdef HAVE_KERNEL_ASSERT
 # define assert(x)	((x) ? (void)0 : click_assert_failed(__FILE__, __LINE__, #x))
 #else
 # define assert(x)	/* nada */

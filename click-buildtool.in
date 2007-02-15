@@ -1224,7 +1224,8 @@ BEGIN {
     x = $3;
     if (x ~ /^[_A-Za-z][_A-Za-z0-9]*$/ && !printed[x]) {
 	printed[x] = 1;
-	print "extern char " x "[];";
+	if (x != "click_assert_failed")
+	    print "extern char " x "[];";
 	print "EXPORT_SYMBOL(" x ");";
     }
 }'
