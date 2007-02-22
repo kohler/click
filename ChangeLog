@@ -1,3 +1,8 @@
+2007-02-22 Thursday 11:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* LICENSE (1.11): slight license edit: make the extra paragraph
+	  correspond exactly to the W3Cs version, and explain it
+
 2007-02-15 Thursday 12:58  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.91), config-linuxmodule.h.in (1.22): fix
