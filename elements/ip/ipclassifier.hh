@@ -30,7 +30,7 @@ Matches packets of the given protocol.
 
 IPADDR is an IP address and SRCORDST is 'src', 'dst', 'src or dst', or 'src
 and dst'. (If SRCORDST is missing, 'src or dst' is assumed.) Matches
-packets sent to and/or from the given machine.
+packets sent to and/or from the given address.
 
 =item B<[SRCORDST] net NETADDR>
 

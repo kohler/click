@@ -2,7 +2,8 @@
  * ipfilter.{cc,hh} -- IP-packet filter with tcpdumplike syntax
  * Eddie Kohler
  *
- * Copyright (c) 2000-2004 Mazu Networks, Inc.
+ * Copyright (c) 2000-2007 Mazu Networks, Inc.
+ * Copyright (c) 2004-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -553,7 +554,7 @@ add_exprs_for_proto(int32_t proto, int32_t mask, Classifier *c, Vector<int> &tre
 }
 
 void
-IPFilter::Primitive::add_comparison_exprs(Classifier *c, Vector<int> &tree, int offset, int shift, bool swapped) const
+IPFilter::Primitive::add_comparison_exprs(Classifier *c, Vector<int> &tree, int offset, int shift, bool swapped, bool op_negate) const
 {
   assert(_op == IPFilter::OP_EQ || _op == IPFilter::OP_GT);
 
@@ -566,7 +567,7 @@ IPFilter::Primitive::add_comparison_exprs(Classifier *c, Vector<int> &tree, int 
 
   if (_op == IPFilter::OP_EQ) {
     c->add_expr(tree, offset, htonl(u << shift), htonl(mask << shift));
-    if (_op_negated)
+    if (_op_negated && op_negate)
       c->negate_expr_subtree(tree);
     return;
   }
@@ -615,7 +616,7 @@ IPFilter::Primitive::add_comparison_exprs(Classifier *c, Vector<int> &tree, int 
     count--;
   }
 
-  if (_op_negated)
+  if (_op_negated && op_negate)
     c->negate_expr_subtree(tree);
 }
 
@@ -639,15 +640,17 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
    case TYPE_HOST:
     c->start_expr_subtree(tree);
     if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR)
-      add_comparison_exprs(c, tree, 12, 0, true);
+      add_comparison_exprs(c, tree, 12, 0, true, false);
     if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR)
-      add_comparison_exprs(c, tree, 16, 0, true);
+      add_comparison_exprs(c, tree, 16, 0, true, false);
     c->finish_expr_subtree(tree, (_srcdst == SD_OR ? C_OR : C_AND));
+    if (_op_negated)
+      c->negate_expr_subtree(tree);
     break;
 
    case TYPE_PROTO:
     if (_transp_proto < 256)
-      add_comparison_exprs(c, tree, 8, 16);
+      add_comparison_exprs(c, tree, 8, 16, false, true);
     break;
 
    case TYPE_IPFRAG:
@@ -659,10 +662,12 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
    case TYPE_PORT:
     c->start_expr_subtree(tree);
     if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR)
-      add_comparison_exprs(c, tree, TRANSP_FAKE_OFFSET, 16);
+      add_comparison_exprs(c, tree, TRANSP_FAKE_OFFSET, 16, false, false);
     if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR)
-      add_comparison_exprs(c, tree, TRANSP_FAKE_OFFSET, 0);
+      add_comparison_exprs(c, tree, TRANSP_FAKE_OFFSET, 0, false, false);
     c->finish_expr_subtree(tree, (_srcdst == SD_OR ? C_OR : C_AND));
+    if (_op_negated)
+      c->negate_expr_subtree(tree);
     break;
 
    case TYPE_TCPOPT:
@@ -675,7 +680,7 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
       int length = ((_type & FIELD_LENGTH_MASK) >> FIELD_LENGTH_SHIFT) + 1;
       int word_offset = (offset >> 3) & ~3, bit_offset = offset & 0x1F;
       int transp_offset = (_type & FIELD_PROTO_MASK ? TRANSP_FAKE_OFFSET : 0);
-      add_comparison_exprs(c, tree, transp_offset + word_offset, 32 - (bit_offset + length));
+      add_comparison_exprs(c, tree, transp_offset + word_offset, 32 - (bit_offset + length), false, true);
     } else
       assert(0);
     break;

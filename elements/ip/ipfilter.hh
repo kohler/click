@@ -219,7 +219,7 @@ class IPFilter : public Classifier { public:
 
    private:
 
-    void add_comparison_exprs(Classifier *, Vector<int> &tree, int offset, int shift, bool swapped = false) const;
+    void add_comparison_exprs(Classifier *, Vector<int> &tree, int offset, int shift, bool swapped, bool op_negate) const;
     
   };
 
