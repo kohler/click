@@ -42,7 +42,6 @@ class String { public:
   inline ~String();
   
   static inline const String &empty_string();
-  static inline const String &null_string() CLICK_DEPRECATED;
   static String garbage_string(int len);	// len garbage characters
   static String stable_string(const char *s, int len = -1); // stable read-only mem.
   static inline String stable_string(const char *begin, const char *end);
@@ -64,7 +63,6 @@ class String { public:
   inline char back() const;
   
   const char *c_str() const;		// pointer returned is semi-transient
-  inline const char *cc() const CLICK_DEPRECATED;
   
   bool equals(const char *s, int len) const;
   // bool operator==(const String &, const String &);
@@ -399,17 +397,6 @@ String::empty_string()
   return *null_string_p;
 }
 
-/** @brief Return an empty String (deprecated).
- * @deprecated Use empty_string() instead.
- *
- * Returns a global constant, so it's quicker than String::String().
- */
-inline const String &
-String::null_string()
-{
-  return *null_string_p;
-}
-
 /** @brief Return a String that directly references the character data in
  * [@a begin, @a end).
  * @param begin pointer to the first character in the character data.
@@ -426,15 +413,6 @@ String::stable_string(const char *begin, const char *end)
 	return String::stable_string(begin, end - begin);
     else
 	return String();
-}
-
-/** @brief Null-terminates the string (deprecated).
- * @deprecated This function is a synonym for c_str().  You should call
- * c_str() instead, since the C++ standard library uses that name. */
-inline const char *
-String::cc() const
-{
-  return c_str();
 }
 
 /** @brief Return a substring of the current string starting at @a begin and
