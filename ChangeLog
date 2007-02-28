@@ -1,3 +1,17 @@
+2007-02-28 Wednesday 11:44  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: ipclassifier.hh (1.37), ipfilter.cc (1.65),
+	  ipfilter.hh (1.35): What an embarrassing checkin.  Expressions
+	  like "src or dst host != 5.0.0.1" were being parsed as "(src host
+	  != 5.0.0.1) or (dst host != 5.0.0.1)", rather than the correct
+	  parse of "not (src or dst host == 5.0.0.1)".	This has been true
+	  for years.  It is fixed.
+
+2007-02-28 Wednesday 11:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/: straccum.hh (1.39), string.hh (1.44): remove
+	  deprecated null_string() and cc() members
+
 2007-02-22 Thursday 11:59  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* LICENSE (1.11): slight license edit: make the extra paragraph
