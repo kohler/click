@@ -1,3 +1,11 @@
+2007-03-01 Thursday 12:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: standard/discard.cc (1.30), standard/discard.hh
+	  (1.26), userlevel/fromdevice.cc (1.60), userlevel/fromdevice.hh
+	  (1.35): add "count" and "reset_counts" handlers to user-level
+	  FromDevice and to Discard (if you want the fastest possible
+	  Discard, use Idle)
+
 2007-03-01 Thursday 10:54  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/ipfilter.cc (1.67): for what it's worth, the
