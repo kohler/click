@@ -1181,7 +1181,7 @@ IPFilter::length_checked_push(Packet *p)
     else
 	pos = ex->j[1];
     continue;
-    
+   
    check_length:
     if (ex->offset < packet_length) {
       unsigned available = packet_length - ex[pos].offset;
