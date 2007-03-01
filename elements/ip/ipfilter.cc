@@ -1141,6 +1141,7 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
   
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   optimize_exprs(errh);
+  mark_common_offset_exprs();
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   return (errh->nerrors() == before_nerrors ? 0 : -1);
 }
@@ -1156,35 +1157,40 @@ IPFilter::length_checked_push(Packet *p)
   const unsigned char *neth_data = (const unsigned char *)p->ip_header();
   const unsigned char *transph_data = (const unsigned char *)p->transport_header();
   int packet_length = p->length() + TRANSP_FAKE_OFFSET - p->transport_header_offset();
-  Expr *ex = &_exprs[0];	// avoid bounds checking
   int pos = 0;
+  uint32_t data = 0;
   
   do {
-    int off = ex[pos].offset;
-    unsigned data;
+    const Expr *ex = _exprs.begin() + pos;
+    int off = ex->offset;
+    if (off < 0)
+      goto retry_data;
     if (off + 4 > packet_length)
       goto check_length;
     
    length_ok:
     if (off >= TRANSP_FAKE_OFFSET)
-      data = *(const unsigned *)(transph_data + off - TRANSP_FAKE_OFFSET);
+      data = *(const uint32_t *)(transph_data + off - TRANSP_FAKE_OFFSET);
     else
-      data = *(const unsigned *)(neth_data + off);
-    if ((data & ex[pos].mask.u)	== ex[pos].value.u)
-      pos = ex[pos].yes;
+      data = *(const uint32_t *)(neth_data + off);
+    data &= ex->mask.u;
+    
+   retry_data:
+    if (data != ex->value.u)
+	pos = ex->j[0];
     else
-      pos = ex[pos].no;
+	pos = ex->j[1];
     continue;
     
    check_length:
-    if (ex[pos].offset < packet_length) {
+    if (ex->offset < packet_length) {
       unsigned available = packet_length - ex[pos].offset;
-      if (!(ex[pos].mask.c[3]
-	    || (ex[pos].mask.c[2] && available <= 2)
-	    || (ex[pos].mask.c[1] && available == 1)))
+      if (!(ex->mask.c[3]
+	    || (ex->mask.c[2] && available <= 2)
+	    || (ex->mask.c[1] && available == 1)))
 	goto length_ok;
     }
-    pos = ex[pos].no;
+    pos = ex->j[0];
   } while (pos > 0);
   
   checked_output_push(-pos, p);
@@ -1195,8 +1201,8 @@ IPFilter::push(int, Packet *p)
 {
   const unsigned char *neth_data = (const unsigned char *)p->ip_header();
   const unsigned char *transph_data = (const unsigned char *)p->transport_header();
-  Expr *ex;
   int pos = 0;
+  uint32_t data = 0;
   
   if (_output_everything >= 0) {
     // must use checked_output_push because the output number might be
@@ -1209,19 +1215,22 @@ IPFilter::push(int, Packet *p)
     return;
   }
   
-  ex = &_exprs[0];	// avoid bounds checking
-  
   do {
-    int off = ex[pos].offset;
-    unsigned data;
-    if (off >= TRANSP_FAKE_OFFSET)
-      data = *(const unsigned *)(transph_data + off - TRANSP_FAKE_OFFSET);
-    else
-      data = *(const unsigned *)(neth_data + off);
-    if ((data & ex[pos].mask.u)	== ex[pos].value.u)
-      pos = ex[pos].yes;
-    else
-      pos = ex[pos].no;
+      const Expr *ex = _exprs.begin() + pos;
+      int off = ex->offset;
+      if (off < 0)
+	  /* do nothing */;
+      else {
+	  if (off >= TRANSP_FAKE_OFFSET)
+	      data = *(const uint32_t *)(transph_data + off - TRANSP_FAKE_OFFSET);
+	  else
+	      data = *(const uint32_t *)(neth_data + off);
+	  data &= ex->mask.u;
+      }
+      if (data != ex->value.u)
+	  pos = ex->j[0];
+      else
+	  pos = ex->j[1];
   } while (pos > 0);
   
  found:

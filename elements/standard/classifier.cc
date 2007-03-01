@@ -106,9 +106,9 @@ Classifier::Expr::flip()
 {
   assert(flippable());
   value.u ^= mask.u;
-  int tmp = yes;
-  yes = no;
-  no = tmp;
+  int tmp = j[0];
+  j[0] = j[1];
+  j[1] = tmp;
 }
 
 StringAccum &
@@ -118,21 +118,21 @@ operator<<(StringAccum &sa, const Classifier::Expr &e)
   int offset = e.offset;
   sprintf(buf, "%3d/", offset);
   sa << buf;
-  for (int j = 0; j < 4; j++)
-    sprintf(buf + 2*j, "%02x", e.value.c[j]);
+  for (int i = 0; i < 4; i++)
+    sprintf(buf + 2*i, "%02x", e.value.c[i]);
   sprintf(buf + 8, "%%");
-  for (int j = 0; j < 4; j++)
-    sprintf(buf + 9 + 2*j, "%02x", e.mask.c[j]);
+  for (int i = 0; i < 4; i++)
+    sprintf(buf + 9 + 2*i, "%02x", e.mask.c[i]);
   sa << buf << "  yes->";
-  if (e.yes <= 0)
-    sa << "[" << -e.yes << "]";
+  if (e.yes() <= 0)
+      sa << "[" << -e.yes() << "]";
   else
-    sa << "step " << e.yes;
+      sa << "step " << e.yes();
   sa << "  no->";
-  if (e.no <= 0)
-    sa << "[" << -e.no << "]";
+  if (e.no() <= 0)
+      sa << "[" << -e.no() << "]";
   else
-    sa << "step " << e.no;
+      sa << "step " << e.no();
   return sa;
 }
 
@@ -241,9 +241,9 @@ Classifier::DominatorOptimizer::find_predecessors(int state, Vector<int> &v) con
 {
   for (int i = 0; i < state; i++) {
     Expr &e = expr(i);
-    if (e.yes == state)
+    if (e.yes() == state)
       v.push_back(brno(i, true));
-    if (e.no == state)
+    if (e.no() == state)
       v.push_back(brno(i, false));
   }
 }
@@ -285,11 +285,11 @@ Classifier::DominatorOptimizer::calculate_dom(int state)
   // if no predecessors, kill this expr
   if (predecessors.size() == 0) {
     if (state > 0)
-      expr(state).yes = expr(state).no = -_c->noutputs();
+	expr(state).j[0] = expr(state).j[1] = -_c->noutputs();
     else {
-      assert(state == 0);
-      _dom.push_back(brno(state, false));
-      _dom_start.push_back(_dom.size());
+	assert(state == 0);
+	_dom.push_back(brno(state, false));
+	_dom_start.push_back(_dom.size());
     }
     _domlist_start.push_back(_dom_start.size() - 1);
     return;
@@ -404,11 +404,11 @@ Classifier::DominatorOptimizer::dom_shift_branch(int brno, int to_state, int dom
   while (to_state > 0) {
     for (int j = dom_end - 1; j >= dom; j--)
       if (br_implies(_dom[j], to_state)) {
-	to_state = expr(to_state).yes;
-	goto found;
+	  to_state = expr(to_state).yes();
+	  goto found;
       } else if (br_implies_not(_dom[j], to_state)) {
-	to_state = expr(to_state).no;
-	goto found;
+	  to_state = expr(to_state).no();
+	  goto found;
       }
     // not found
     break;
@@ -443,7 +443,7 @@ Classifier::DominatorOptimizer::shift_branch(int brno)
   // shift a branch by examining its dominators
   
   int s = stateno(brno);
-  int &to_state = (br(brno) ? expr(s).yes : expr(s).no);
+  int &to_state = expr(s).j[br(brno)];
   if (to_state <= 0)
     return;
 
@@ -481,17 +481,17 @@ Classifier::remove_unused_states()
   int first = 0;
   for (int i = 0; _output_everything < 0 && i < _exprs.size(); i++) {
     Expr &e = _exprs[i];
-    int next = e.yes;
-    if (e.yes == e.no || e.mask.u == 0) {
+    int next = e.yes();
+    if (e.yes() == e.no() || e.mask.u == 0) {
       if (i == first && next <= 0)
-	_output_everything = e.yes;
+	_output_everything = e.yes();
       else {
-	for (int j = 0; j < i; j++) {
-	  Expr &ee = _exprs[j];
-	  if (ee.yes == i) ee.yes = next;
-	  if (ee.no == i) ee.no = next;
-	}
-	if (i == 0) first = next;
+	for (int j = 0; j < i; j++)
+	    for (int k = 0; k < 2; k++)
+		if (_exprs[j].j[k] == i)
+		    _exprs[j].j[k] = next;
+	if (i == 0)
+	    first = next;
       }
     }
   }
@@ -501,16 +501,16 @@ Classifier::remove_unused_states()
   // Remove unreachable states
   for (int i = 1; i < _exprs.size(); i++) {
     for (int j = 0; j < i; j++)	// all branches are forward
-      if (_exprs[j].yes == i || _exprs[j].no == i)
+      if (_exprs[j].yes() == i || _exprs[j].no() == i)
 	goto done;
     // if we get here, the state is unused
     for (int j = i+1; j < _exprs.size(); j++)
       _exprs[j-1] = _exprs[j];
     _exprs.pop_back();
-    for (int j = 0; j < _exprs.size(); j++) {
-      if (_exprs[j].yes >= i) _exprs[j].yes--;
-      if (_exprs[j].no >= i) _exprs[j].no--;
-    }
+    for (int j = 0; j < _exprs.size(); j++)
+	for (int k = 0; k < 2; k++)
+	    if (_exprs[j].j[k] >= i)
+		_exprs[j].j[k]--;
     i--;			// shifted downward, so must reconsider `i'
    done: ;
   }
@@ -520,18 +520,15 @@ Classifier::remove_unused_states()
   bool changed = false;
   for (int i = _exprs.size() - 1; i >= 0; i--) {
     Expr &e = _exprs[i];
-    if (e.yes > 0 && failure_states[e.yes] != FAILURE) {
-      e.yes = failure_states[e.yes];
-      changed = true;
-    }
-    if (e.no > 0 && failure_states[e.no] != FAILURE) {
-      e.no = failure_states[e.no];
-      changed = true;
-    }
-    if (e.yes == FAILURE)
-      failure_states[i] = e.no;
-    else if (e.no == FAILURE)
-      failure_states[i] = e.yes;
+    for (int k = 0; k < 2; k++)
+	if (e.j[k] > 0 && failure_states[e.j[k]] != FAILURE) {
+	    e.j[k] = failure_states[e.j[k]];
+	    changed = true;
+	}
+    if (e.yes() == FAILURE)
+      failure_states[i] = e.no();
+    else if (e.no() == FAILURE)
+      failure_states[i] = e.yes();
   }
   return changed;
 }
@@ -541,15 +538,15 @@ Classifier::combine_compatible_states()
 {
   for (int i = 0; i < _exprs.size(); i++) {
     Expr &e = _exprs[i];
-    if (e.no > 0 && _exprs[e.no].compatible(e) && e.flippable())
+    if (e.no() > 0 && _exprs[e.no()].compatible(e) && e.flippable())
       e.flip();
-    if (e.yes <= 0)
+    if (e.yes() <= 0)
       continue;
-    Expr &ee = _exprs[e.yes];
-    if (e.no == ee.yes && ee.flippable())
+    Expr &ee = _exprs[e.yes()];
+    if (e.no() == ee.yes() && ee.flippable())
       ee.flip();
-    if (e.no == ee.no && ee.compatible(e)) {
-      e.yes = ee.yes;
+    if (e.no() == ee.no() && ee.compatible(e)) {
+      e.yes() = ee.yes();
       if (!e.mask.u)		// but probably ee.mask.u is always != 0...
 	e.offset = ee.offset;
       e.value.u = (e.value.u & e.mask.u) | (ee.value.u & ee.mask.u);
@@ -560,33 +557,42 @@ Classifier::combine_compatible_states()
 }
 
 void
+Classifier::count_inbranches(Vector<int> &inbranch) const
+{
+    inbranch.assign(_exprs.size(), -2);
+    for (int i = 0; i < _exprs.size(); i++) {
+	const Expr &e = _exprs[i];
+	for (int k = 0; k < 2; k++)
+	    if (e.j[k] > 0)
+		inbranch[e.j[k]] = (inbranch[e.j[k]] >= 0 ? 0 : i);
+    }
+}
+
+void
 Classifier::bubble_sort_and_exprs(int sort_stopper)
 {
-  // count inbranches
-  Vector<int> inbranch(_exprs.size(), -1);
-  for (int i = 0; i < _exprs.size(); i++) {
-    Expr &e = _exprs[i];
-    if (e.yes > 0)
-      inbranch[e.yes] = (inbranch[e.yes] >= 0 ? 0 : i);
-    if (e.no > 0)
-      inbranch[e.no] = (inbranch[e.no] >= 0 ? 0 : i);
-  }
-
-  // do bubblesort
-  for (int i = 0; i < _exprs.size(); i++)
-    if (_exprs[i].yes > 0) {
-      int j = _exprs[i].yes;
-      Expr &e1 = _exprs[i], &e2 = _exprs[j];
-      if (e1.no == e2.no && e1.offset > e2.offset && e1.offset < sort_stopper
-	  && inbranch[j] > 0) {
-	Expr temp(e2);
-	e2 = e1;
-	e2.yes = temp.yes;
-	e1 = temp;
-	e1.yes = j;
-	// step backwards to continue the sort
-	i = (inbranch[i] > 0 ? inbranch[i] - 1 : i - 1);
-      }
+    Vector<int> inbranch;
+    count_inbranches(inbranch);
+    
+    // do bubblesort
+    for (int i = 0; i < _exprs.size(); i++) {
+	Expr &e1 = _exprs[i];
+	for (int k = 0; k < 2; k++)
+	    if (e1.j[k] > 0) {
+		int j = e1.j[k];
+		Expr &e2 = _exprs[j];
+		if (e1.j[!k] == e2.j[!k] && e1.offset > e2.offset
+		    && e1.offset < sort_stopper && inbranch[j] > 0) {
+		    Expr temp(e2);
+		    e2 = e1;
+		    e2.j[k] = temp.j[k];
+		    e1 = temp;
+		    e1.j[k] = j;
+		    // step backwards to continue the sort
+		    i = (inbranch[i] > 0 ? inbranch[i] - 1 : i - 1);
+		    break;
+		}
+	    }
     }
 }
 
@@ -607,7 +613,7 @@ Classifier::optimize_exprs(ErrorHandler *errh, int sort_stopper)
     combine_compatible_states();
     (void) remove_unused_states();
   }
-  
+
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   
   // Check for case where all patterns have conflicts: _exprs will be empty
@@ -635,15 +641,26 @@ Classifier::optimize_exprs(ErrorHandler *errh, int sort_stopper)
   if (_output_everything >= 0)
     used_patterns[_output_everything] = 1;
   else
-    for (int i = 0; i < _exprs.size(); i++) {
-      if (_exprs[i].yes <= 0) used_patterns[-_exprs[i].yes] = 1;
-      if (_exprs[i].no <= 0) used_patterns[-_exprs[i].no] = 1;
-    }
+    for (int i = 0; i < _exprs.size(); i++)
+	for (int k = 0; k < 2; k++)
+	    if (_exprs[i].j[k] <= 0)
+		used_patterns[-_exprs[i].j[k]] = 1;
   for (int i = 0; i < noutputs(); i++)
     if (!used_patterns[i])
       errh->warning("pattern %d matches no packets", i);
 
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
+}
+
+void
+Classifier::mark_common_offset_exprs()
+{
+    Vector<int> inbranch;
+    count_inbranches(inbranch);
+    for (int i = _exprs.size() - 1; i >= 0; i--)
+	if (inbranch[i] > 0 && _exprs[i].offset == _exprs[inbranch[i]].offset
+	    && _exprs[i].mask.u == _exprs[inbranch[i]].mask.u)
+	    _exprs[i].offset = -1;
 }
 
 //
@@ -662,8 +679,8 @@ Classifier::add_expr(Vector<int> &tree, const Expr &e)
 {
   _exprs.push_back(e);
   Expr &ee = _exprs.back();
-  ee.yes = SUCCESS;
-  ee.no = FAILURE;
+  ee.yes() = SUCCESS;
+  ee.no() = FAILURE;
   int level = tree[0];
   tree.push_back(level);
 }
@@ -689,14 +706,14 @@ Classifier::redirect_expr_subtree(int first, int last, int success, int failure)
 {
   for (int i = first; i < last; i++) {
     Expr &e = _exprs[i];
-    if (e.yes == SUCCESS)
-      e.yes = success;
-    else if (e.yes == FAILURE)
-      e.yes = failure;
-    if (e.no == SUCCESS)
-      e.no = success;
-    else if (e.no == FAILURE)
-      e.no = failure;
+    if (e.yes() == SUCCESS)
+	e.yes() = success;
+    else if (e.yes() == FAILURE)
+	e.yes() = failure;
+    if (e.no() == SUCCESS)
+	e.no() = success;
+    else if (e.no() == FAILURE)
+	e.no() = failure;
   }
 }
 
@@ -770,14 +787,14 @@ Classifier::negate_expr_subtree(Vector<int> &tree)
 
   for (int i = first; i < _exprs.size(); i++) {
     Expr &e = _exprs[i];
-    if (e.yes == FAILURE)
-      e.yes = SUCCESS;
-    else if (e.yes == SUCCESS)
-      e.yes = FAILURE;
-    if (e.no == FAILURE)
-      e.no = SUCCESS;
-    else if (e.no == SUCCESS)
-      e.no = FAILURE;
+    if (e.yes() == FAILURE)
+	e.yes() = SUCCESS;
+    else if (e.yes() == SUCCESS)
+	e.yes() = FAILURE;
+    if (e.no() == FAILURE)
+	e.no() = SUCCESS;
+    else if (e.no() == SUCCESS)
+	e.no() = FAILURE;
   }
 }
 
@@ -987,17 +1004,16 @@ Classifier::length_checked_push(Packet *p)
   int packet_length = p->length() + _align_offset; // XXX >= MAXINT?
   Expr *ex = &_exprs[0];	// avoid bounds checking
   int pos = 0;
+  uint32_t data;
   
   do {
     if (ex[pos].offset+UBYTES > packet_length)
       goto check_length;
     
    length_ok:
-    if ((*((uint32_t *)(packet_data + ex[pos].offset)) & ex[pos].mask.u)
-	== ex[pos].value.u)
-      pos = ex[pos].yes;
-    else
-      pos = ex[pos].no;
+    data = *(const uint32_t *)(packet_data + ex[pos].offset);
+    data &= ex[pos].mask.u;
+    pos = ex[pos].j[data == ex[pos].value.u];
     continue;
     
    check_length:
@@ -1008,7 +1024,7 @@ Classifier::length_checked_push(Packet *p)
 	    || (ex[pos].mask.c[1] && available == 1)))
 	goto length_ok;
     }
-    pos = ex[pos].no;
+    pos = ex[pos].no();
   } while (pos > 0);
   
   checked_output_push(-pos, p);
@@ -1033,11 +1049,9 @@ Classifier::push(int, Packet *p)
   }
   
   do {
-    if ((*((uint32_t *)(packet_data + ex[pos].offset)) & ex[pos].mask.u)
-	== ex[pos].value.u)
-      pos = ex[pos].yes;
-    else
-      pos = ex[pos].no;
+      uint32_t data = *((const uint32_t *)(packet_data + ex[pos].offset));
+      data &= ex[pos].mask.u;
+      pos = ex[pos].j[data == ex[pos].value.u];
   } while (pos > 0);
   
  found:
