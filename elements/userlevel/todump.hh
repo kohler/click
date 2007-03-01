@@ -68,6 +68,14 @@ This element is only available at user level.
 
 ToDump stores packets' true length annotations when available.
 
+=h count read-only
+
+Returns the number of packets emitted so far.
+
+=h reset_counts write-only
+
+Resets "count" to 0.
+
 =h filename read-only
 
 Returns the filename.
@@ -107,11 +115,20 @@ class ToDump : public Element { public:
     int _linktype;
     bool _active;
     bool _extra_length;
+
+#if HAVE_INT64_TYPES
+    typedef uint64_t counter_t;
+#else
+    typedef uint32_t counter_t;
+#endif
+    counter_t _count;
+    
     Task _task;
     NotifierSignal _signal;
     Element **_use_encap_from;
 
     static String read_handler(Element *, void *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *);
     void write_packet(Packet *);
 
 };

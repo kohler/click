@@ -129,6 +129,14 @@ contains more packets.
 If FromDump uses mmap, then a corrupt file might cause Click to crash with a
 segmentation violation.
 
+=h count read-only
+
+Returns the number of packets output so far.
+
+=h reset_counts write-only
+
+Resets "count" to 0.
+
 =h sampling_prob read-only
 
 Returns the sampling probability (see the SAMPLE keyword argument).
@@ -223,6 +231,13 @@ class FromDump : public Element { public:
     Timestamp _last_time;
     HandlerCall *_end_h;
     
+#if HAVE_INT64_TYPES
+    typedef uint64_t counter_t;
+#else
+    typedef uint32_t counter_t;
+#endif
+    counter_t _count;
+
     Timer _timer;
     Task _task;
     ActiveNotifier _notifier;

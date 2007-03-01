@@ -47,7 +47,7 @@ CLICK_DECLS
 	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
 FromDump::FromDump()
-    : _packet(0), _end_h(0), _timer(this), _task(this)
+    : _packet(0), _end_h(0), _count(0), _timer(this), _task(this)
 {
 }
 
@@ -463,6 +463,7 @@ FromDump::run_task(Task *)
 
     if (_packet) {
 	output(0).push(_packet);
+	_count++;
 	_packet = 0;
 	return true;
     } else
@@ -497,15 +498,18 @@ FromDump::pull(int)
     _notifier.set_active(more, true);
     if (!more && _end_h)
 	_end_h->call_write(ErrorHandler::default_handler());
-    
-    Packet *p = _packet;
-    _packet = 0;
-    return p;
+
+    if (Packet *p = _packet) {
+	_count++;
+	_packet = 0;
+	return p;
+    } else
+	return 0;
 }
 
 enum {
     H_SAMPLING_PROB, H_ACTIVE, H_ENCAP, H_STOP, H_PACKET_FILEPOS,
-    H_EXTEND_INTERVAL
+    H_EXTEND_INTERVAL, H_COUNT, H_RESET_COUNTS
 };
 
 String
@@ -521,6 +525,8 @@ FromDump::read_handler(Element *e, void *thunk)
 	return String(fake_pcap_unparse_dlt(fd->_linktype));
     case H_PACKET_FILEPOS:
 	return String(fd->_packet_filepos);
+    case H_COUNT:
+	return String(fd->_count);
     default:
 	return "<error>";
     }
@@ -554,6 +560,9 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 	  } else
 	      return errh->error("'extend_interval' takes a time interval");
       }
+      case H_RESET_COUNTS:
+	fd->_count = 0;
+	return 0;
       default:
 	return -EINVAL;
     }
@@ -570,6 +579,8 @@ FromDump::add_handlers()
     add_write_handler("stop", write_handler, (void *)H_STOP);
     add_read_handler("packet_filepos", read_handler, (void *)H_PACKET_FILEPOS);
     add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
+    add_read_handler("count", read_handler, (void *)H_COUNT);
+    add_write_handler("reset_counts", write_handler, (void *)H_RESET_COUNTS);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }

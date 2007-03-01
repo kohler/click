@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@
 CLICK_DECLS
 
 ToDump::ToDump()
-    : _fp(0), _task(this), _use_encap_from(0)
+    : _fp(0), _count(0), _task(this), _use_encap_from(0)
 {
 }
 
@@ -260,7 +261,7 @@ ToDump::run_task(Task *)
     return p != 0;
 }
 
-enum { H_FILENAME = 0 };
+enum { H_FILENAME = 0, H_COUNT = 1, H_RESET_COUNTS = 2 };
 
 String
 ToDump::read_handler(Element *e, void *thunk)
@@ -269,15 +270,27 @@ ToDump::read_handler(Element *e, void *thunk)
     switch ((uintptr_t) thunk) {
     case H_FILENAME:
 	return td->_filename;
+    case H_COUNT:
+	return String(td->_count);
     default:
 	return "<error>";
     }
+}
+
+int
+ToDump::write_handler(const String &, Element *e, void *, ErrorHandler *)
+{
+    ToDump *td = static_cast<ToDump *>(e);
+    td->_count = 0;
+    return 0;
 }
 
 void
 ToDump::add_handlers()
 {
     add_read_handler("filename", read_handler, (void *)H_FILENAME);
+    add_read_handler("count", read_handler, (void *)H_COUNT);
+    add_write_handler("reset_counts", write_handler, (void *)H_RESET_COUNTS);
     if (input_is_pull(0) && noutputs() == 0)
 	add_task_handlers(&_task);
 }

@@ -20,11 +20,11 @@ Discards all packets received on its single input. If used in a pull context,
 it initiates pulls whenever packets are available, and listens for activity
 notification, such as that available from Queue.
 
-=h count r
+=h count read-only
 
 Returns the number of packets discarded.
 
-=h reset_counts w
+=h reset_counts write-only
 
 Resets "count" to 0.
 
