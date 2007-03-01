@@ -105,6 +105,14 @@ false.
 
 FromDevice sets packets' extra length annotations as appropriate.
 
+=h count read-only
+
+Returns the number of packets read by the device.
+
+=h reset_counts write-only
+
+Resets "count" to zero.
+
 =h kernel_drops read-only
 
 Returns the number of packets dropped by the kernel, probably due to memory
@@ -169,6 +177,13 @@ class FromDevice : public Element { public:
 #endif
     bool _force_ip;
     int _datalink;
+
+#if HAVE_INT64_TYPES
+    typedef uint64_t counter_t;
+#else
+    typedef uint32_t counter_t;
+#endif
+    counter_t _count;
   
     String _ifname;
     bool _promisc : 1;
@@ -181,8 +196,8 @@ class FromDevice : public Element { public:
     String _bpf_filter;
 #endif
 
-    static String read_kernel_drops(Element*, void*);
-    static String read_encap(Element*, void*);
+    static String read_handler(Element*, void*);
+    static int write_handler(const String&, Element*, void*, ErrorHandler*);
 
 };
 

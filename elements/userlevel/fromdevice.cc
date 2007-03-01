@@ -5,7 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2001 International Computer Science Institute
- * Copyright (c) 2005 Regents of the University of California
+ * Copyright (c) 2005-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -60,7 +60,7 @@ FromDevice::FromDevice()
 #if FROMDEVICE_PCAP
       _pcap(0), _pcap_task(this), _pcap_complaints(0),
 #endif
-      _promisc(0), _snaplen(0)
+      _count(0), _promisc(0), _snaplen(0)
 {
 }
 
@@ -295,7 +295,7 @@ FromDevice::initialize(ErrorHandler *errh)
 	_datalink = FAKE_DLT_EN10MB;
     }
 #endif
-    
+
     return 0;
 }
 
@@ -450,32 +450,40 @@ FromDevice::kernel_drops(bool& known, int& max_drops) const
 }
 
 String
-FromDevice::read_kernel_drops(Element* e, void*)
+FromDevice::read_handler(Element* e, void *thunk)
 {
     FromDevice* fd = static_cast<FromDevice*>(e);
-    int max_drops;
-    bool known;
-    fd->kernel_drops(known, max_drops);
-    if (known)
-	return String(max_drops);
-    else if (max_drops >= 0)
-	return "<" + String(max_drops);
+    if (thunk == (void *) 0) {
+	int max_drops;
+	bool known;
+	fd->kernel_drops(known, max_drops);
+	if (known)
+	    return String(max_drops);
+	else if (max_drops >= 0)
+	    return "<" + String(max_drops);
+	else
+	    return "??";
+    } else if (thunk == (void *) 1)
+	return String(fake_pcap_unparse_dlt(fd->_datalink));
     else
-	return "??";
+	return String(fd->_count);
 }
 
-String
-FromDevice::read_encap(Element* e, void*)
+int
+FromDevice::write_handler(const String &, Element *e, void *, ErrorHandler *)
 {
     FromDevice* fd = static_cast<FromDevice*>(e);
-    return String(fake_pcap_unparse_dlt(fd->_datalink));
+    fd->_count = 0;
+    return 0;
 }
 
 void
 FromDevice::add_handlers()
 {
-    add_read_handler("kernel_drops", read_kernel_drops, 0);
-    add_read_handler("encap", read_encap, 0);
+    add_read_handler("kernel_drops", read_handler, (void *) 0);
+    add_read_handler("encap", read_handler, (void *) 1);
+    add_read_handler("count", read_handler, (void *) 2);
+    add_write_handler("reset_counts", write_handler, 0);
 }
 
 CLICK_ENDDECLS

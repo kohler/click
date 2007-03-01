@@ -20,6 +20,14 @@ Discards all packets received on its single input. If used in a pull context,
 it initiates pulls whenever packets are available, and listens for activity
 notification, such as that available from Queue.
 
+=h count r
+
+Returns the number of packets discarded.
+
+=h reset_counts w
+
+Resets "count" to 0.
+
 =a Queue */
 
 class Discard : public Element { public:
@@ -41,7 +49,17 @@ class Discard : public Element { public:
 
   Task _task;
   NotifierSignal _signal;
-  
+
+#if HAVE_INT64_TYPES
+    typedef uint64_t counter_t;
+#else
+    typedef uint32_t counter_t;
+#endif
+    counter_t _count;
+
+    static String read_handler(Element *, void *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    
 };
 
 CLICK_ENDDECLS
