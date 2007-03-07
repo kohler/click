@@ -226,7 +226,8 @@ ToDump::write_packet(Packet *p)
 	    _active = false;
 	    click_chatter("ToDump(%s): %s", _filename.c_str(), strerror(errno));
 	}
-    }
+    } else
+	_count++;
 }
 
 void
