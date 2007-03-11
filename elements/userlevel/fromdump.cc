@@ -331,14 +331,7 @@ FromDump::read_packet(ErrorHandler *errh)
     const Timestamp *ts_ptr;
     int len, caplen, skiplen = 0;
     Packet *p;
-    int tries = 0;
     assert(!_packet);
-
-  retry:
-    // quit if we have tried too many times
-    tries++;
-    if ((tries % 16) == 0 && output_is_push(0))
-	return true;
 
     // record file position
     _packet_filepos = _ff.file_pos();
@@ -384,7 +377,7 @@ FromDump::read_packet(ErrorHandler *errh)
     if (_have_first_time) {
 	if (*ts_ptr < _first_time) {
 	    _ff.shift_pos(caplen + skiplen);
-	    goto retry;
+	    return true;
 	} else
 	    _have_first_time = false;
     }
@@ -403,7 +396,7 @@ FromDump::read_packet(ErrorHandler *errh)
     if (_sampling_prob < (1 << SAMPLING_SHIFT)
 	&& (uint32_t)(random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob) {
 	_ff.shift_pos(caplen + skiplen);
-	goto retry;
+	return true;
     }
     
     // create packet
@@ -417,7 +410,7 @@ FromDump::read_packet(ErrorHandler *errh)
     
     if (_force_ip && !fake_pcap_force_ip(p, _linktype)) {
 	checked_output_push(1, p);
-	goto retry;
+	p = 0;
     }
 
     _packet = p;
@@ -443,7 +436,9 @@ FromDump::run_task(Task *)
 
     bool more = true;
     if (!_packet)
-	more = read_packet(0);
+	for (int i = 0; i < 16; i++)
+	    if (!(more = read_packet(0)) || _packet)
+		break;
     if (_packet && _timing) {
 	Timestamp now = Timestamp::now();
 	Timestamp t = _packet->timestamp_anno() + _time_offset;

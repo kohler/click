@@ -5,7 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2001-2003 International Computer Science Institute
- * Copyright (c) 2004 The Regents of the University of California
+ * Copyright (c) 2004-2007 The Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -38,11 +38,7 @@ CLICK_DECLS
 FromFile::FromFile()
     : _fd(-1), _buffer(0), _data_packet(0),
 #ifdef ALLOW_MMAP
-# ifdef __linux__
-      _mmap(false),
-# else
       _mmap(true),
-# endif
 #endif
       _filename(), _pipe(0), _landmark_pattern("%f"), _lineno(0)
 {
