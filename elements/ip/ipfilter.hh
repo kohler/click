@@ -224,7 +224,9 @@ class IPFilter : public Classifier { public:
   };
 
  private:
-  
+
+  Vector<uint32_t> _prog;
+    
   int lookup(String word, int type, int transp_proto, uint32_t &data, ErrorHandler *errh) const;
   
   int parse_expr(const Vector<String> &, int, Vector<int> &, Primitive &,

@@ -1141,7 +1141,78 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
   
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   optimize_exprs(errh);
-  mark_common_offset_exprs();
+
+  // Optimize into an unsigned-integer program.
+  
+  // It helps to do another bubblesort for things like ports.
+  bubble_sort_and_exprs();
+  
+  Vector<int> wanted(_exprs.size(), 0);
+  wanted[0] = 1;
+  for (const Expr *ex = _exprs.begin(); ex < _exprs.end(); ex++)
+      for (int j = 0; j < 2; j++)
+	  if (ex->j[j] > 0)
+	      wanted[ex->j[j]]++;
+
+  Vector<int> offsets;
+  for (int i = 0; i < _exprs.size(); i++) {
+      int off = _prog.size();
+      offsets.push_back(off);
+      if (wanted[i] == 0)
+	  continue;
+      assert(_exprs[i].offset >= 0);
+      _prog.push_back(_exprs[i].offset + 0x10000);
+      _prog.push_back(_exprs[i].no());
+      _prog.push_back(_exprs[i].yes());
+      _prog.push_back(_exprs[i].mask.u);
+      _prog.push_back(_exprs[i].value.u);
+      int no;
+      while ((no = (int32_t) _prog[off+1]) > 0 && wanted[no] == 1
+	     && _exprs[no].yes() == _exprs[i].yes()
+	     && _exprs[no].offset == _exprs[i].offset
+	     && _exprs[no].mask.u == _exprs[i].mask.u) {
+	  _prog[off] += 0x10000;
+	  _prog[off+1] = _exprs[no].no();
+	  _prog.push_back(_exprs[no].value.u);
+	  wanted[no]--;
+      }
+  }
+  offsets.push_back(_prog.size());
+  
+  for (int i = 0; i < _exprs.size(); i++)
+      if (offsets[i] < _prog.size() && offsets[i] < offsets[i+1]) {
+	  int off = offsets[i];
+	  if ((int32_t) _prog[off+1] > 0)
+	      _prog[off+1] = offsets[_prog[off+1]] - off;
+	  if ((int32_t) _prog[off+2] > 0)
+	      _prog[off+2] = offsets[_prog[off+2]] - off;
+      }
+
+#if 0 && CLICK_USERLEVEL
+  // print program
+  StringAccum sa;
+  int x = 0;
+  for (int i = 0; i < _prog.size(); i++) {
+      while (x < offsets.size() && i > offsets[x])
+	  x++;
+      if (x < offsets.size() && i == offsets[x]) {
+	  sa.snprintf(80, "%3d  %d #%d  %02x%02x%02x%02x  yes->", i, (uint16_t) _prog[i], _prog[i] >> 16, _prog[i+3] >> 24, (_prog[i+3] >> 16) & 255, (_prog[i+3] >> 8) & 255, _prog[i+3] & 255);
+	  if ((int32_t) _prog[i+1] > 0)
+	      sa << "step " << (_prog[i+1] + i);
+	  else
+	      sa << "[" << -((int32_t) _prog[i+1]) << "]";
+	  if ((int32_t) _prog[i+2] > 0)
+	      sa << "  no->step " << (_prog[i+2] + i);
+	  else
+	      sa << "  no->[" << -((int32_t) _prog[i+2]) << "]";
+	  sa << "\n";
+	  i += 3;
+      } else
+	  sa.snprintf(80, "%3d    %02x%02x%02x%02x\n", i, _prog[i] >> 24, (_prog[i] >> 16) & 255, (_prog[i] >> 8) & 255, _prog[i] & 255);
+  }
+  fputs(sa.c_str(), stderr);
+#endif
+  
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   return (errh->nerrors() == before_nerrors ? 0 : -1);
 }
@@ -1157,43 +1228,47 @@ IPFilter::length_checked_push(Packet *p)
   const unsigned char *neth_data = (const unsigned char *)p->ip_header();
   const unsigned char *transph_data = (const unsigned char *)p->transport_header();
   int packet_length = p->length() + TRANSP_FAKE_OFFSET - p->transport_header_offset();
-  int pos = 0;
+  const uint32_t *pr = _prog.begin();
+  const uint32_t *pp;
   uint32_t data = 0;
   
-  do {
-    const Expr *ex = _exprs.begin() + pos;
-    int off = ex->offset;
-    if (off < 0)
-      goto retry_data;
-    if (off + 4 > packet_length)
-      goto check_length;
+  while (1) {
+      int off = (int16_t) pr[0];
+      if (off + 4 > packet_length)
+	  goto check_length;
     
-   length_ok:
-    if (off >= TRANSP_FAKE_OFFSET)
-      data = *(const uint32_t *)(transph_data + off - TRANSP_FAKE_OFFSET);
-    else
-      data = *(const uint32_t *)(neth_data + off);
-    data &= ex->mask.u;
-    
-   retry_data:
-    if (data != ex->value.u)
-	pos = ex->j[0];
-    else
-	pos = ex->j[1];
-    continue;
+    length_ok:
+      if (off >= TRANSP_FAKE_OFFSET)
+	  data = *(const uint32_t *)(transph_data + off - TRANSP_FAKE_OFFSET);
+      else
+	  data = *(const uint32_t *)(neth_data + off);
+      data &= pr[3];
+      for (off = pr[0] >> 16, pp = pr + 4; off; off--, pp++)
+	  if (*pp == data) {
+	      off = pr[2];
+	      goto gotit;
+	  }
+    failure:
+      off = pr[1];
+    gotit:
+      if (off <= 0) {
+	  checked_output_push(-off, p);
+	  return;
+      }
+      pr += off;
+      continue;
    
-   check_length:
-    if (ex->offset < packet_length) {
-      unsigned available = packet_length - ex[pos].offset;
-      if (!(ex->mask.c[3]
-	    || (ex->mask.c[2] && available <= 2)
-	    || (ex->mask.c[1] && available == 1)))
-	goto length_ok;
-    }
-    pos = ex->j[0];
-  } while (pos > 0);
-  
-  checked_output_push(-pos, p);
+    check_length:
+      if (off < packet_length) {
+	  unsigned available = packet_length - off;
+	  const uint8_t *c = (const uint8_t *) &pr[3];
+	  if (!(c[3]
+		|| (c[2] && available <= 2)
+		|| (c[1] && available == 1)))
+	      goto length_ok;
+      }
+      goto failure;
+  }
 }
 
 void
@@ -1201,40 +1276,41 @@ IPFilter::push(int, Packet *p)
 {
   const unsigned char *neth_data = (const unsigned char *)p->ip_header();
   const unsigned char *transph_data = (const unsigned char *)p->transport_header();
-  int pos = 0;
-  uint32_t data = 0;
   
   if (_output_everything >= 0) {
     // must use checked_output_push because the output number might be
     // out of range
-    pos = -_output_everything;
-    goto found;
+    checked_output_push(_output_everything, p);
+    return;
   } else if (p->length() + TRANSP_FAKE_OFFSET - p->transport_header_offset() < _safe_length) {
     // common case never checks packet length
     length_checked_push(p);
     return;
   }
-  
-  do {
-      const Expr *ex = _exprs.begin() + pos;
-      int off = ex->offset;
-      if (off < 0)
-	  /* do nothing */;
-      else {
-	  if (off >= TRANSP_FAKE_OFFSET)
-	      data = *(const uint32_t *)(transph_data + off - TRANSP_FAKE_OFFSET);
-	  else
-	      data = *(const uint32_t *)(neth_data + off);
-	  data &= ex->mask.u;
-      }
-      if (data != ex->value.u)
-	  pos = ex->j[0];
+
+  const uint32_t *pr = _prog.begin();
+  const uint32_t *pp;
+  uint32_t data;
+  while (1) {
+      int off = (int16_t) pr[0];
+      if (off >= TRANSP_FAKE_OFFSET)
+	  data = *(const uint32_t *)(transph_data + off - TRANSP_FAKE_OFFSET);
       else
-	  pos = ex->j[1];
-  } while (pos > 0);
-  
- found:
-  checked_output_push(-pos, p);
+	  data = *(const uint32_t *)(neth_data + off);
+      data &= pr[3];
+      for (off = pr[0] >> 16, pp = pr + 4; off; off--, pp++)
+	  if (*pp == data) {
+	      off = pr[2];
+	      goto gotit;
+	  }
+      off = pr[1];
+    gotit:
+      if (off <= 0) {
+	  checked_output_push(-off, p);
+	  return;
+      }
+      pr += off;
+  }
 }
 
 CLICK_ENDDECLS
