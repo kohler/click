@@ -107,11 +107,11 @@ class Classifier : public Element { public:
       unsigned char c[4];
       uint32_t u;
     } value;
-    int j[2];
-    int yes() const			{ return j[1]; }
-    int no() const			{ return j[0]; }
-    int &yes()				{ return j[1]; }
-    int &no()				{ return j[0]; }
+    int32_t j[2];
+    int32_t yes() const			{ return j[1]; }
+    int32_t no() const			{ return j[0]; }
+    int32_t &yes()			{ return j[1]; }
+    int32_t &no()			{ return j[0]; }
     bool implies(const Expr &) const;
     bool implies_not(const Expr &) const;
     bool not_implies(const Expr &) const;
@@ -138,8 +138,9 @@ class Classifier : public Element { public:
   //int count_occurrences(const Expr &, int state, bool first) const;
   //bool remove_duplicate_states();
   void unaligned_optimize();
+  void count_inbranches(Vector<int> &) const;
+  void bubble_sort_and_exprs(int sort_stopper = 0x7FFFFFFF);
   void optimize_exprs(ErrorHandler *, int sort_stopper = 0x7FFFFFFF);
-  void mark_common_offset_exprs();
   
   static String program_string(Element *, void *);
   
@@ -182,8 +183,6 @@ class Classifier : public Element { public:
     
   };
 
-  void count_inbranches(Vector<int> &) const;
-  void bubble_sort_and_exprs(int sort_stopper);
   //bool check_path_iterative(Vector<int> &, int interested, int eventual) const;
   //bool check_path(const Vector<int> &path, Vector<int> &, int ei, int interested, int eventual, bool first, bool yet) const;
   //int check_path(int, bool) const;

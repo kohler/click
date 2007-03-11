@@ -443,7 +443,7 @@ Classifier::DominatorOptimizer::shift_branch(int brno)
   // shift a branch by examining its dominators
   
   int s = stateno(brno);
-  int &to_state = expr(s).j[br(brno)];
+  int32_t &to_state = expr(s).j[br(brno)];
   if (to_state <= 0)
     return;
 
@@ -559,7 +559,7 @@ Classifier::combine_compatible_states()
 void
 Classifier::count_inbranches(Vector<int> &inbranch) const
 {
-    inbranch.assign(_exprs.size(), -2);
+    inbranch.assign(_exprs.size(), -1);
     for (int i = 0; i < _exprs.size(); i++) {
 	const Expr &e = _exprs[i];
 	for (int k = 0; k < 2; k++)
@@ -581,7 +581,9 @@ Classifier::bubble_sort_and_exprs(int sort_stopper)
 	    if (e1.j[k] > 0) {
 		int j = e1.j[k];
 		Expr &e2 = _exprs[j];
-		if (e1.j[!k] == e2.j[!k] && e1.offset > e2.offset
+		if (e1.j[!k] == e2.j[!k]
+		    && (e1.offset > e2.offset
+			|| (e1.offset == e2.offset && e1.mask.u > e2.mask.u))
 		    && e1.offset < sort_stopper && inbranch[j] > 0) {
 		    Expr temp(e2);
 		    e2 = e1;
@@ -652,17 +654,6 @@ Classifier::optimize_exprs(ErrorHandler *errh, int sort_stopper)
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
 }
 
-void
-Classifier::mark_common_offset_exprs()
-{
-    Vector<int> inbranch;
-    count_inbranches(inbranch);
-    for (int i = _exprs.size() - 1; i >= 0; i--)
-	if (inbranch[i] > 0 && _exprs[i].offset == _exprs[inbranch[i]].offset
-	    && _exprs[i].mask.u == _exprs[inbranch[i]].mask.u)
-	    _exprs[i].offset = -1;
-}
-
 //
 // CONFIGURATION
 //
@@ -677,12 +668,14 @@ Classifier::init_expr_subtree(Vector<int> &tree)
 void
 Classifier::add_expr(Vector<int> &tree, const Expr &e)
 {
-  _exprs.push_back(e);
-  Expr &ee = _exprs.back();
-  ee.yes() = SUCCESS;
-  ee.no() = FAILURE;
-  int level = tree[0];
-  tree.push_back(level);
+    if (_exprs.size() < 0x7FFF) {
+	_exprs.push_back(e);
+	Expr &ee = _exprs.back();
+	ee.yes() = SUCCESS;
+	ee.no() = FAILURE;
+	int level = tree[0];
+	tree.push_back(level);
+    }
 }
 
 void
