@@ -1,3 +1,8 @@
+2007-03-11 Sunday 04:45  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: fromdump.cc (1.106), fromfile.cc (1.12):
+	  default to mmap even on linux; a bit of rearrangement in FromDump
+
 2007-03-11 Sunday 01:53  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/ipfilter.cc (1.69): correct printing
