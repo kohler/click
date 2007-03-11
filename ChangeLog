@@ -1,3 +1,8 @@
+2007-03-11 Sunday 01:37  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: classifier.cc (1.55), classifier.hh (1.33):
+	  get rid of mark_common_offset_exprs; allow at most 32767 Exprs
+
 2007-03-06 Tuesday 21:10  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/todump.cc (1.70): update the count
