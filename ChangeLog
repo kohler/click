@@ -1,3 +1,14 @@
+2007-03-11 Sunday 01:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipfilter.cc (1.69): correct printing
+
+2007-03-11 Sunday 01:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: ipfilter.cc (1.68), ipfilter.hh (1.36):
+	  IPClassifier/IPFilter compiles the Expr tree into an array of
+	  uint32_t programs, optimizing things like "ip addr 1.0.0.1 || ip
+	  addr 2.0.0.2"
+
 2007-03-11 Sunday 01:37  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/: classifier.cc (1.55), classifier.hh (1.33):
