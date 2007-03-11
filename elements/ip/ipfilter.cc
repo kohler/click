@@ -1196,19 +1196,19 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
       while (x < offsets.size() && i > offsets[x])
 	  x++;
       if (x < offsets.size() && i == offsets[x]) {
-	  sa.snprintf(80, "%3d  %d #%d  %02x%02x%02x%02x  yes->", i, (uint16_t) _prog[i], _prog[i] >> 16, _prog[i+3] >> 24, (_prog[i+3] >> 16) & 255, (_prog[i+3] >> 8) & 255, _prog[i+3] & 255);
-	  if ((int32_t) _prog[i+1] > 0)
-	      sa << "step " << (_prog[i+1] + i);
-	  else
-	      sa << "[" << -((int32_t) _prog[i+1]) << "]";
+	  sa.snprintf(80, "%3d  %d #%d  %08x  yes->", i, (uint16_t) _prog[i], _prog[i] >> 16, htonl(_prog[i+3]));
 	  if ((int32_t) _prog[i+2] > 0)
-	      sa << "  no->step " << (_prog[i+2] + i);
+	      sa << "step " << (_prog[i+2] + i);
 	  else
-	      sa << "  no->[" << -((int32_t) _prog[i+2]) << "]";
+	      sa << "[" << -((int32_t) _prog[i+2]) << "]";
+	  if ((int32_t) _prog[i+1] > 0)
+	      sa << "  no->step " << (_prog[i+1] + i);
+	  else
+	      sa << "  no->[" << -((int32_t) _prog[i+1]) << "]";
 	  sa << "\n";
 	  i += 3;
       } else
-	  sa.snprintf(80, "%3d    %02x%02x%02x%02x\n", i, _prog[i] >> 24, (_prog[i] >> 16) & 255, (_prog[i] >> 8) & 255, _prog[i] & 255);
+	  sa.snprintf(80, "%3d    %08x\n", i, htonl(_prog[i]));
   }
   fputs(sa.c_str(), stderr);
 #endif
