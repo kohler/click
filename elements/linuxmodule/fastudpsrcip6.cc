@@ -63,8 +63,6 @@ FastUDPSourceIP6::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpBool, "active?", &_active,
 		  cpEnd) < 0)
     return -1;
-  if (sp >= 0x10000 || dp >= 0x10000)
-    return errh->error("source or destination port too large");
   if (_len < 60) {
     click_chatter("warning: packet length < 60, defaulting to 60");
     _len = 60;
