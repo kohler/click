@@ -1,3 +1,8 @@
+2007-03-23 Friday 21:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/fastudpsrcip6.cc (1.25): compilation fix
+	  (Andy Van Maele)
+
 2007-03-11 Sunday 04:45  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/: fromdump.cc (1.106), fromfile.cc (1.12):
