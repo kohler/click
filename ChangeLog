@@ -1,3 +1,8 @@
+2007-03-26 Monday 15:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.95), configure.in (1.298), m4/click.m4 (1.57):
+	  attempt to ensure that the alignment detector uses 4-byte ints
+
 2007-03-23 Friday 21:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/fastudpsrcip6.cc (1.25): compilation fix
