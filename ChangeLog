@@ -1,3 +1,8 @@
+2007-03-26 Monday 16:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/classifier.cc (1.56): complain about missing
+	  alignment when !HAVE_INDIFFERENT_ALIGNMENT; x86ness doesnt matter
+
 2007-03-26 Monday 15:28  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.95), configure.in (1.298), m4/click.m4 (1.57):
