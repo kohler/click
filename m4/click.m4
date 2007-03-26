@@ -456,20 +456,24 @@ dnl
 
 AC_DEFUN([CLICK_CHECK_ALIGNMENT], [
     AC_CACHE_CHECK([whether machine is indifferent to alignment], [ac_cv_alignment_indifferent],
-    [AC_RUN_IFELSE([AC_LANG_SOURCE([[#ifdef __cplusplus
+    [if test "x$have_inttypes_h" = xyes; then inttypes_hdr='inttypes.h'; else inttypes_hdr='sys/types.h'; fi
+
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <$inttypes_hdr>
+#ifdef __cplusplus
 extern "C" void exit(int);
 #else
 void exit(int status);
 #endif
-void get_value(char *buf, int offset, int *value) {
+void get_value(char *buf, int offset, int32_t *value) {
     int i;
     for (i = 0; i < 4; i++)
 	buf[i + offset] = i;
-    *value = *((int *)(buf + offset));
+    *value = *((int32_t *)(buf + offset));
 }
 int main(int argc, char *argv[]) {
     char buf[12];
-    int value, i, try_value;
+    int i;
+    int32_t value, try_value;
     get_value(buf, 0, &value);
     for (i = 1; i < 4; i++) {
 	get_value(buf, i, &try_value);
