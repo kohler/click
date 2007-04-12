@@ -78,6 +78,11 @@ Contrast the 'C<print>' instruction.
 Call a write handler.  The handler's return status is available in following
 instructions as the '$?' variable.
 
+=item 'C<readq> HANDLER [ARG...]', 'C<writeq> HANDLER [ARG...]'
+
+Same as C<read> and C<write>, but removes one layer of quoting from the ARGs
+before calling the handler.
+
 =back
 
 =head2 Blocking Instructions
@@ -270,8 +275,8 @@ class Script : public Element { public:
 
     enum Insn {
 	INSN_INITIAL, INSN_WAIT_STEP, INSN_WAIT_TIME, // order required
-	INSN_PRINT, INSN_READ, INSN_WRITE, INSN_SET, INSN_INIT,
-	INSN_SAVE, INSN_APPEND, INSN_STOP, INSN_END, INSN_EXIT,
+	INSN_PRINT, INSN_READ, INSN_READQ, INSN_WRITE, INSN_WRITEQ, INSN_SET,
+	INSN_INIT, INSN_SAVE, INSN_APPEND, INSN_STOP, INSN_END, INSN_EXIT,
 	INSN_LABEL, INSN_GOTO, INSN_RETURN,
 	INSN_WAIT_PSEUDO, INSN_LOOP_PSEUDO
     };

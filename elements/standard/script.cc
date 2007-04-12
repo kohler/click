@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2001 Mazu Networks, Inc.
- * Copyright (c) 2005-2006 Regents of the University of California
+ * Copyright (c) 2005-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -42,6 +42,7 @@ static const StaticNameDB::Entry instruction_entries[] = {
     { "pause", Script::INSN_WAIT_STEP },
     { "print", Script::INSN_PRINT },
     { "read", Script::INSN_READ },
+    { "readq", Script::INSN_READQ },
     { "return", Script::INSN_RETURN },
     { "set", Script::INSN_SET },
     { "stop", Script::INSN_STOP },
@@ -50,7 +51,8 @@ static const StaticNameDB::Entry instruction_entries[] = {
     { "wait_step", Script::INSN_WAIT_STEP },
     { "wait_stop", Script::INSN_WAIT_STEP },
     { "wait_time", Script::INSN_WAIT_TIME },
-    { "write", Script::INSN_WRITE }
+    { "write", Script::INSN_WRITE },
+    { "writeq", Script::INSN_WRITEQ }
 };
 
 #if CLICK_USERLEVEL
@@ -200,7 +202,9 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	}
 
 	case INSN_WRITE:
+	case INSN_WRITEQ:
 	case INSN_READ:
+	case INSN_READQ:
 	case INSN_PRINT:
 	case INSN_GOTO:
 	    add_insn(insn, 0, 0, conf[i]);
@@ -406,8 +410,10 @@ Script::step(int nsteps, int step_type, int njumps)
 	    break;
 	}
 	    
-	case INSN_READ: {
-	    HandlerCall hc(cp_expand(_args3[ipos], expander));
+	case INSN_READ:
+	case INSN_READQ: {
+	    String arg = (insn == INSN_READ ? _args3[ipos] : cp_unquote(_args3[ipos]));
+	    HandlerCall hc(cp_expand(arg, expander));
 	    if (hc.initialize_read(this, &cerrh) >= 0) {
 		String result = hc.call_read(errh);
 		errh->message("%s:\n%s\n", hc.handler()->unparse_name(hc.element()).c_str(), result.c_str());
@@ -415,8 +421,10 @@ Script::step(int nsteps, int step_type, int njumps)
 	    break;
 	}
 
-	case INSN_WRITE: {
-	    HandlerCall hc(cp_expand(_args3[ipos], expander));
+	case INSN_WRITE:
+	case INSN_WRITEQ: {
+	    String arg = (insn == INSN_WRITE ? _args3[ipos] : cp_unquote(_args3[ipos]));
+	    HandlerCall hc(cp_expand(arg, expander));
 	    if (hc.initialize_write(this, &cerrh) >= 0)
 		_write_status = hc.call_write(&cerrh);
 	    break;
