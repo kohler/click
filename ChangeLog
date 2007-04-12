@@ -1,3 +1,9 @@
+2007-04-12 Thursday 15:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.96), elements/standard/script.cc (1.9),
+	  elements/standard/script.hh (1.9): add "readq" and "writeq"
+	  operations (Rob Wachol)
+
 2007-03-26 Monday 16:01  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/classifier.cc (1.56): complain about missing
