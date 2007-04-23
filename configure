@@ -6110,11 +6110,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <$inttypes_hdr>
-#ifdef __cplusplus
-extern "C" void exit(int);
-#else
-void exit(int status);
-#endif
+#include <stdlib.h>
 void get_value(char *buf, int offset, int32_t *value) {
     int i;
     for (i = 0; i < 4; i++)
@@ -7866,7 +7862,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7869 "configure"
+#line 7865 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -7911,11 +7907,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#ifdef __cplusplus
-extern "C" void exit(int);
-#else
-void exit(int status);
-#endif
+#include <stdlib.h>
 #include <stdio.h>
 int main(int argc, char *argv[]) {
     union { int i; char c[4]; } u;

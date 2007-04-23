@@ -459,11 +459,7 @@ AC_DEFUN([CLICK_CHECK_ALIGNMENT], [
     [if test "x$have_inttypes_h" = xyes; then inttypes_hdr='inttypes.h'; else inttypes_hdr='sys/types.h'; fi
 
     AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <$inttypes_hdr>
-#ifdef __cplusplus
-extern "C" void exit(int);
-#else
-void exit(int status);
-#endif
+#include <stdlib.h>
 void get_value(char *buf, int offset, int32_t *value) {
     int i;
     for (i = 0; i < 4; i++)
@@ -617,11 +613,7 @@ EOF
 	    rm -f conftest*])
     elif test "x$cross_compiling" != xyes ; then
 	AC_CACHE_CHECK(endianness, ac_cv_endian,
-	    [AC_RUN_IFELSE([AC_LANG_SOURCE([[#ifdef __cplusplus
-extern "C" void exit(int);
-#else
-void exit(int status);
-#endif
+	    [AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdlib.h>
 #include <stdio.h>
 int main(int argc, char *argv[]) {
     union { int i; char c[4]; } u;
