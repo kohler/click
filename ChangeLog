@@ -1,3 +1,9 @@
+2007-04-23 Monday 12:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.97), m4/click.m4 (1.58): fix configury to correctly
+	  detect HAVE_INDIFFERENT_ALIGNMENT (problem reported by Roberto
+	  Riggio)
+
 2007-04-12 Thursday 15:49  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.96), elements/standard/script.cc (1.9),
