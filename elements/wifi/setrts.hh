@@ -2,7 +2,7 @@
 #define CLICK_SETRTS_HH
 #include <click/element.hh>
 #include <click/glue.hh>
-#include <elements/wifi/sr/ettmetric.hh>
+#include <clicknet/wifi.h>
 CLICK_DECLS
 
 /*
