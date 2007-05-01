@@ -11,10 +11,14 @@ CLICK_DECLS
  * =s udp
  * sets UDP packets' checksums
  * =d
- * Input packets should be UDP in IP.
+ * Input packets must be UDP in IP (the protocol field isn't checked).
  *
  * Calculates the UDP checksum and sets the UDP header's checksum field. Uses
  * IP header fields to generate the pseudo-header.
+ *
+ * If input packets are IP fragments, or the UDP length is longer than the
+ * packet, then pushes the input packets to the 2nd output, or drops them if
+ * there is no 2nd output.
  *
  * =a CheckUDPHeader, SetIPChecksum, CheckIPHeader, SetTCPChecksum */
 
@@ -24,8 +28,8 @@ class SetUDPChecksum : public Element { public:
     ~SetUDPChecksum();
   
     const char *class_name() const	{ return "SetUDPChecksum"; }
-    const char *port_count() const	{ return PORTS_1_1; }
-    const char *processing() const	{ return AGNOSTIC; }
+    const char *port_count() const	{ return "1/1-2"; }
+    const char *processing() const	{ return "a/ah"; }
 
     Packet *simple_action(Packet *);
 

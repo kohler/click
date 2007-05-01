@@ -43,10 +43,13 @@ SetUDPChecksum::simple_action(Packet *p_in)
     // XXX check IP header/UDP protocol?
     click_ip *iph = p->ip_header();
     click_udp *udph = p->udp_header();
-    int len = ntohs(udph->uh_ulen);
-    if ((unsigned)len > p->length() - p->transport_header_offset()) {
-	// packet data too short
-	p->kill();
+    int len;
+    if (IP_ISFRAG(iph)
+	|| p->transport_length() < (int) sizeof(click_udp)
+	|| (len = ntohs(udph->uh_ulen),
+	    p->transport_length() < len)) {
+	// fragment, or packet data too short
+	checked_output_push(1, p);
 	return 0;
     }
 
