@@ -26,50 +26,146 @@
 #include <click/error.hh>
 CLICK_DECLS
 
-DirectIPLookup::DirectIPLookup()
-{
-    flush_table();
-}
 
-DirectIPLookup::~DirectIPLookup()
-{
-}
+// DIRECTIPLOOKUP::TABLE
 
-int
-DirectIPLookup::initialize(ErrorHandler *)
+// The DirectIPLookup table must be stored in a sub-object in the Linux
+// kernel, because it's too large to be allocated all at once.
+
+inline uint32_t
+DirectIPLookup::Table::prefix_hash(uint32_t prefix, uint32_t len)
 {
-    return 0;
+    // An arbitrary hash function - it'd better be good...
+    uint32_t hash = prefix ^ (len << 5) ^ (prefix >> (len >> 2)) - len;
+    hash ^= (hash >> 23) ^ ((hash >> 15) * len) ^ ((prefix >> 17) * 53);
+    hash -= (prefix >> 3) ^ ((hash >> len) * 7) ^ ((hash >> 11) * 103);
+    hash =  (hash ^ (hash >> 17)) & (PREF_HASHSIZE - 1);
+
+    return hash;
 }
 
 void
-DirectIPLookup::push(int, Packet *p)
+DirectIPLookup::Table::flush()
 {
-    IPAddress gw;
-    int port = DirectIPLookup::lookup_route(p->dst_ip_anno(), gw);
+    memset(_rt_hashtbl, -1, sizeof(_rt_hashtbl));
 
-    if (port >= 0) {
-        if (gw)
-            p->set_dst_ip_anno(gw);
-        output(port).push(p);
-    } else
-        p->kill();
+    // _vport[0] is our "discard" port
+    _vport_head = 0;
+    _vport[0].ll_prev = -1;
+    _vport[0].ll_next = -1;
+    _vport[0].refcount = 1;		// _rtable[0] will point to _vport[0]
+    _vport[0].gw = IPAddress(0);
+    _vport[0].port = DISCARD_PORT;
+    _vport_t_size = 1;
+    _vport_empty_head = -1;
+
+    // _rtable[0] is the default route entry
+    _rt_hashtbl[prefix_hash(0, 0)] = 0;
+    _rtable[0].ll_prev = -1;
+    _rtable[0].ll_next = -1;
+    _rtable[0].prefix = 0;
+    _rtable[0].plen = 0;
+    _rtable[0].vport = 0;
+    _rt_size = 1;
+    _rt_empty_head = -1;
+
+    // Bzeroed lookup tables resolve 0.0.0.0/0 to _vport[0]
+    memset(&_tbl_0_23, 0, sizeof(_tbl_0_23));
+    memset(&_tbl_24_31, 0, sizeof(_tbl_24_31));
+
+    // Prefix len helper tables also have to be cleared
+    memset(&_tbl_0_23_plen, 0, sizeof(_tbl_0_23_plen));
+    memset(&_tbl_24_31_plen, 0, sizeof(_tbl_24_31_plen));
+
+    _sec_t_size = 0;
+    _sec_t_empty_head = 0x8000;
+}
+
+String
+DirectIPLookup::Table::dump() const
+{
+    StringAccum sa;
+    for (uint32_t i = 0; i < PREF_HASHSIZE; i++)
+	for (int rt_i = _rt_hashtbl[i]; rt_i >= 0; rt_i = _rtable[rt_i].ll_next) {
+	    const CleartextEntry& rt = _rtable[rt_i];
+	    if (_vport[rt.vport].port != -1) {
+		IPRoute route = IPRoute(IPAddress(htonl(rt.prefix)), IPAddress::make_prefix(rt.plen), _vport[rt.vport].gw, _vport[rt.vport].port);
+		route.unparse(sa, true) << '\n';
+	    }
+	}
+    return sa.take_string();
+}
+
+uint16_t
+DirectIPLookup::Table::vport_ref(IPAddress gw, int16_t port)
+{
+    int16_t vport_i;
+
+    // Search for an existing entry
+    for (vport_i = _vport_head; vport_i >= 0; vport_i = _vport[vport_i].ll_next)
+	if (gw == _vport[vport_i].gw && port == _vport[vport_i].port)
+	    break;
+
+    if (vport_i >= 0)
+	_vport[vport_i].refcount++;
+    else {
+	// Create a new vport entry
+	if (_vport_empty_head >= 0) {
+	    vport_i = _vport_empty_head;
+	    _vport_empty_head = _vport[vport_i].ll_next;
+	} else
+	    vport_i = _vport_t_size++;
+	_vport[vport_i].refcount = 1;
+	_vport[vport_i].gw = gw;
+	_vport[vport_i].port = port;
+
+	// Add the entry to the vport linked list
+	_vport[vport_i].ll_prev = -1;
+	_vport[vport_i].ll_next = _vport_head;
+	if (_vport_head >= 0)
+	    _vport[_vport_head].ll_prev = vport_i;
+	_vport_head = vport_i;
+    }
+
+    return vport_i;
+}
+
+void
+DirectIPLookup::Table::vport_unref(uint16_t vport_i)
+{
+    if (--_vport[vport_i].refcount == 0) {
+	int16_t prev, next;
+
+	// Prune our entry from the vport list
+	prev = _vport[vport_i].ll_prev;
+	next = _vport[vport_i].ll_next;
+	if (prev >= 0)
+	    _vport[prev].ll_next = next;
+	else
+	    _vport_head = next;
+	if (next >= 0)
+	    _vport[next].ll_prev = prev;
+
+	// Add the entry to empty vports list
+	_vport[vport_i].ll_next = _vport_empty_head;
+	_vport_empty_head = vport_i;
+    }
 }
 
 int
-DirectIPLookup::lookup_route(IPAddress dest, IPAddress &gw) const
+DirectIPLookup::Table::find_entry(uint32_t prefix, uint32_t plen) const
 {
-    uint32_t ip_addr = ntohl(dest.addr());
-    uint16_t vport_i = _tbl_0_23[ip_addr >> 8];
+    int rt_i;
 
-    if (vport_i & 0x8000)
-        vport_i = _tbl_24_31[((vport_i & 0x7fff) << 8) | (ip_addr & 0xff)];
-
-    gw = _vport[vport_i].gw;
-    return _vport[vport_i].port;
+    for (rt_i = _rt_hashtbl[prefix_hash(prefix, plen)]; rt_i >= 0 ;
+      rt_i = _rtable[rt_i].ll_next)
+	if (_rtable[rt_i].prefix == prefix && _rtable[rt_i].plen == plen)
+	    return rt_i;
+    return -1;
 }
 
 int
-DirectIPLookup::add_route(const IPRoute& route, bool allow_replace, IPRoute* old_route, ErrorHandler *errh)
+DirectIPLookup::Table::add_route(const IPRoute& route, bool allow_replace, IPRoute* old_route, ErrorHandler *errh)
 {
     uint32_t start, end, i, j, sec_i, sec_start, sec_end, hash;
     uint32_t prefix = ntohl(route.addr.addr());
@@ -207,7 +303,7 @@ DirectIPLookup::add_route(const IPRoute& route, bool allow_replace, IPRoute* old
 }
 
 int
-DirectIPLookup::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHandler *errh)
+DirectIPLookup::Table::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHandler *errh)
 {
     uint32_t prefix = ntohl(route.addr.addr());
     uint32_t plen = route.prefix_len();
@@ -326,29 +422,78 @@ DirectIPLookup::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHand
     return 0;
 }
 
+
+// DIRECTIPLOOKUP
+
+DirectIPLookup::DirectIPLookup()
+    : _t((Table *) CLICK_LALLOC(sizeof(Table)))
+{
+    _t->flush();
+}
+
+DirectIPLookup::~DirectIPLookup()
+{
+    CLICK_LFREE(_t, sizeof(Table));
+}
+
+int
+DirectIPLookup::initialize(ErrorHandler *)
+{
+    return 0;
+}
+
+void
+DirectIPLookup::push(int, Packet *p)
+{
+    IPAddress gw;
+    int port = DirectIPLookup::lookup_route(p->dst_ip_anno(), gw);
+
+    if (port >= 0) {
+        if (gw)
+            p->set_dst_ip_anno(gw);
+        output(port).push(p);
+    } else
+        p->kill();
+}
+
+int
+DirectIPLookup::lookup_route(IPAddress dest, IPAddress &gw) const
+{
+    uint32_t ip_addr = ntohl(dest.addr());
+    uint16_t vport_i = _t->_tbl_0_23[ip_addr >> 8];
+
+    if (vport_i & 0x8000)
+        vport_i = _t->_tbl_24_31[((vport_i & 0x7fff) << 8) | (ip_addr & 0xff)];
+
+    gw = _t->_vport[vport_i].gw;
+    return _t->_vport[vport_i].port;
+}
+
+int
+DirectIPLookup::add_route(const IPRoute& route, bool allow_replace, IPRoute* old_route, ErrorHandler *errh)
+{
+    return _t->add_route(route, allow_replace, old_route, errh);
+}
+
+int
+DirectIPLookup::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHandler *errh)
+{
+    return _t->remove_route(route, old_route, errh);
+}
+
 int
 DirectIPLookup::flush_handler(const String &, Element *e, void *,
 				ErrorHandler *)
 {
     DirectIPLookup *t = static_cast<DirectIPLookup *>(e);
-
-    t->flush_table();
+    t->_t->flush();
     return 0;
 }
 
 String
 DirectIPLookup::dump_routes()
 {
-    StringAccum sa;
-    for (uint32_t i = 0; i < PREF_HASHSIZE; i++)
-	for (int rt_i = _rt_hashtbl[i]; rt_i >= 0 ; rt_i = _rtable[rt_i].ll_next) {
-	    const CleartextEntry& rt = _rtable[rt_i];
-	    if (_vport[rt.vport].port != -1) {
-		IPRoute route = IPRoute(IPAddress(htonl(rt.prefix)), IPAddress::make_prefix(rt.plen), _vport[rt.vport].gw, _vport[rt.vport].port);
-		route.unparse(sa, true) << '\n';
-	    }
-	}
-    return sa.take_string();
+    return _t->dump();
 }
 
 void
@@ -363,123 +508,6 @@ DirectIPLookup::add_handlers()
     add_read_handler("table", table_handler, 0);
     set_handler("lookup", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, lookup_handler);
     add_write_handler("flush", flush_handler, 0);
-}
-
-int
-DirectIPLookup::find_entry(uint32_t prefix, uint32_t plen) const
-{
-    int rt_i;
-
-    for (rt_i = _rt_hashtbl[prefix_hash(prefix,plen)]; rt_i >= 0 ;
-      rt_i = _rtable[rt_i].ll_next)
-	if (_rtable[rt_i].prefix == prefix && _rtable[rt_i].plen == plen)
-	    return rt_i;
-    return -1;
-}
-
-inline uint32_t
-DirectIPLookup::prefix_hash(uint32_t prefix, uint32_t len) const
-{
-    // An arbitrary hash function - it'd better be good...
-    uint32_t hash = prefix ^ (len << 5) ^ (prefix >> (len >> 2)) - len;
-    hash ^= (hash >> 23) ^ ((hash >> 15) * len) ^ ((prefix >> 17) * 53);
-    hash -= (prefix >> 3) ^ ((hash >> len) * 7) ^ ((hash >> 11) * 103);
-    hash =  (hash ^ (hash >> 17)) & (PREF_HASHSIZE - 1);
-
-    return hash;
-};
-
-void
-DirectIPLookup::flush_table()
-{
-    memset(_rt_hashtbl, -1, sizeof(_rt_hashtbl));
-
-    // _vport[0] is our "discard" port
-    _vport_head = 0;
-    _vport[0].ll_prev = -1;
-    _vport[0].ll_next = -1;
-    _vport[0].refcount = 1;		// _rtable[0] will point to _vport[0]
-    _vport[0].gw = IPAddress(0);
-    _vport[0].port = DISCARD_PORT;
-    _vport_t_size = 1;
-    _vport_empty_head = -1;
-
-    // _rtable[0] is the default route entry
-    _rt_hashtbl[prefix_hash(0,0)] = 0;
-    _rtable[0].ll_prev = -1;
-    _rtable[0].ll_next = -1;
-    _rtable[0].prefix = 0;
-    _rtable[0].plen = 0;
-    _rtable[0].vport = 0;
-    _rt_size = 1;
-    _rt_empty_head = -1;
-
-    // Bzeroed lookup tables resolve 0.0.0.0/0 to _vport[0]
-    memset(&_tbl_0_23, 0, sizeof(_tbl_0_23));
-    memset(&_tbl_24_31, 0, sizeof(_tbl_24_31));
-
-    // Prefix len helper tables also have to be cleared
-    memset(&_tbl_0_23_plen, 0, sizeof(_tbl_0_23_plen));
-    memset(&_tbl_24_31_plen, 0, sizeof(_tbl_24_31_plen));
-
-    _sec_t_size = 0;
-    _sec_t_empty_head = 0x8000;
-}
-
-uint16_t
-DirectIPLookup::vport_ref(IPAddress gw, int16_t port)
-{
-    int16_t vport_i;
-
-    // Search for an existing entry
-    for (vport_i = _vport_head; vport_i >= 0; vport_i = _vport[vport_i].ll_next)
-	if (gw == _vport[vport_i].gw && port == _vport[vport_i].port)
-	    break;
-
-    if (vport_i >= 0)
-	_vport[vport_i].refcount++;
-    else {
-	// Create a new vport entry
-	if (_vport_empty_head >= 0) {
-	    vport_i = _vport_empty_head;
-	    _vport_empty_head = _vport[vport_i].ll_next;
-	} else
-	    vport_i = _vport_t_size++;
-	_vport[vport_i].refcount = 1;
-	_vport[vport_i].gw = gw;
-	_vport[vport_i].port = port;
-
-	// Add the entry to the vport linked list
-	_vport[vport_i].ll_prev = -1;
-	_vport[vport_i].ll_next = _vport_head;
-	if (_vport_head >= 0)
-	    _vport[_vport_head].ll_prev = vport_i;
-	_vport_head = vport_i;
-    }
-
-    return vport_i;
-}
-
-void
-DirectIPLookup::vport_unref(uint16_t vport_i)
-{
-    if (--_vport[vport_i].refcount == 0) {
-	int16_t prev, next;
-
-	// Prune our entry from the vport list
-	prev = _vport[vport_i].ll_prev;
-	next = _vport[vport_i].ll_next;
-	if (prev >= 0)
-	    _vport[prev].ll_next = next;
-	else
-	    _vport_head = next;
-	if (next >= 0)
-	    _vport[next].ll_prev = prev;
-
-	// Add the entry to empty vports list
-	_vport[vport_i].ll_next = _vport_empty_head;
-	_vport_empty_head = vport_i;
-    }
 }
 
 CLICK_ENDDECLS

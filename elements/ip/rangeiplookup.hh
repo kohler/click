@@ -111,12 +111,12 @@ class RangeIPLookup : public IPRouteTable { public:
     enum { RANGE_MASK = 0xffffffff >> KICKSTART_BITS };
     enum { RANGE_SHIFT = 32 - KICKSTART_BITS };
 
-    uint32_t _range_base[1 << KICKSTART_BITS];
-    uint32_t _range_len[1 << KICKSTART_BITS];
-    uint32_t _range_t[RANGES_MAX];
+    uint32_t *_range_base;
+    uint32_t *_range_len;
+    uint32_t *_range_t;
     bool _active;
 
-    DirectIPLookup _helper;
+    DirectIPLookup::Table *_helper;
 
 };
 

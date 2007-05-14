@@ -106,20 +106,12 @@ class DirectIPLookup : public IPRouteTable { public:
 
     static int flush_handler(const String &, Element *, void *, ErrorHandler *);
 
-  protected:
-
     enum { RT_SIZE_MAX = 256 * 1024 }; // accomodate a full BGP view and more
     enum { SEC_SIZE_MAX = 4096 };      // max 32768!
     enum { VPORTS_MAX = 1024 };	       // max 32768!
     enum { PREF_HASHSIZE = 64 * 1024 }; // must be a power of 2!
     enum { DISCARD_PORT = -1 };
     
-    void flush_table();
-    int find_entry(uint32_t, uint32_t) const;
-    uint32_t prefix_hash(uint32_t, uint32_t) const;
-    uint16_t vport_ref(IPAddress, int16_t);
-    void vport_unref(uint16_t);
-
     struct CleartextEntry {
 	int ll_next;
 	int ll_prev;
@@ -137,26 +129,48 @@ class DirectIPLookup : public IPRouteTable { public:
 	int16_t padding;
     };
 
-    // Structures used for IP lookup
-    uint16_t _tbl_0_23[1 << 24];
-    uint16_t _tbl_24_31[SEC_SIZE_MAX << 8];
-    VirtualPort _vport[VPORTS_MAX];
+    struct Table {
+	// Structures used for IP lookup
+	uint16_t _tbl_0_23[1 << 24];
+	uint16_t _tbl_24_31[SEC_SIZE_MAX << 8];
+	VirtualPort _vport[VPORTS_MAX];
 
-    // Structures used for lookup table maintenance (add/remove operations)
-    CleartextEntry _rtable[RT_SIZE_MAX];
-    int _rt_hashtbl[PREF_HASHSIZE];
-    uint8_t _tbl_0_23_plen[1 << 24];
-    uint8_t _tbl_24_31_plen[SEC_SIZE_MAX << 8];
+	// Structures used for lookup table maintenance (add/remove operations)
+	CleartextEntry _rtable[RT_SIZE_MAX];
+	int _rt_hashtbl[PREF_HASHSIZE];
+	uint8_t _tbl_0_23_plen[1 << 24];
+	uint8_t _tbl_24_31_plen[SEC_SIZE_MAX << 8];
 
-    uint32_t _rt_size;
-    uint32_t _sec_t_size;
-    uint32_t _vport_t_size;
-    int _rt_empty_head;
-    uint16_t _sec_t_empty_head;
-    int _vport_head;
-    int _vport_empty_head;
+	uint32_t _rt_size;
+	uint32_t _sec_t_size;
+	uint32_t _vport_t_size;
+	int _rt_empty_head;
+	uint16_t _sec_t_empty_head;
+	int _vport_head;
+	int _vport_empty_head;
+
+	Table() { }
+	
+	static inline uint32_t prefix_hash(uint32_t, uint32_t);
+
+	int find_entry(uint32_t, uint32_t) const;
+	String dump() const;
+
+	uint16_t vport_ref(IPAddress, int16_t);
+	void vport_unref(uint16_t);
+
+	int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
+	int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
+	void flush();
+	
+    };
+
+  protected:
+
+    Table *_t;
 
     friend class RangeIPLookup;
+    
 };
 
 CLICK_ENDDECLS

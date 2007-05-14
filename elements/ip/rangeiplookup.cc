@@ -27,13 +27,21 @@
 CLICK_DECLS
 
 RangeIPLookup::RangeIPLookup()
-    : _active(0)
+    : _range_base((uint32_t *) CLICK_LALLOC((1 << KICKSTART_BITS) * sizeof(uint32_t))),
+      _range_len((uint32_t *) CLICK_LALLOC((1 << KICKSTART_BITS) * sizeof(uint32_t))),
+      _range_t((uint32_t *) CLICK_LALLOC(RANGES_MAX * sizeof(uint32_t))),
+      _active(false),
+      _helper((DirectIPLookup::Table *) CLICK_LALLOC(sizeof(DirectIPLookup::Table)))
 {
     flush_table();
 }
 
 RangeIPLookup::~RangeIPLookup()
 {
+    CLICK_LFREE(_range_base, (1 << KICKSTART_BITS) * sizeof(uint32_t));
+    CLICK_LFREE(_range_len, (1 << KICKSTART_BITS) * sizeof(uint32_t));
+    CLICK_LFREE(_range_t, RANGES_MAX * sizeof(uint32_t));
+    CLICK_LFREE(_helper, sizeof(DirectIPLookup::Table));
 }
 
 int
@@ -92,8 +100,8 @@ RangeIPLookup::lookup_route(IPAddress dest, IPAddress &gw) const
 
     // MS bits of the found range contain an index into the output port table
     vport_i = _range_t[lowerbound] >> RANGE_SHIFT;
-    gw = _helper._vport[vport_i].gw;
-    return _helper._vport[vport_i].port;
+    gw = _helper->_vport[vport_i].gw;
+    return _helper->_vport[vport_i].port;
 }
 
 void
@@ -113,7 +121,7 @@ RangeIPLookup::add_handlers()
 int
 RangeIPLookup::add_route(const IPRoute& route, bool allow_replace, IPRoute* old_route, ErrorHandler *errh)
 {
-    int error = _helper.add_route(route, allow_replace, old_route, errh);
+    int error = _helper->add_route(route, allow_replace, old_route, errh);
     if (error == 0 && _active)
 	expand();
     return error;
@@ -122,7 +130,7 @@ RangeIPLookup::add_route(const IPRoute& route, bool allow_replace, IPRoute* old_
 int
 RangeIPLookup::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHandler *errh)
 {
-    int error = _helper.remove_route(route, old_route, errh);
+    int error = _helper->remove_route(route, old_route, errh);
     if (error == 0 && _active)
 	expand();
     return error;
@@ -153,12 +161,12 @@ RangeIPLookup::expand()
 	for (range_len = 0;
 	  tbl_0_23_index < ((range_base + 1) << (24 - KICKSTART_BITS));
 	  tbl_0_23_index++) {
-	    if (_helper._tbl_0_23[tbl_0_23_index] & 0x8000) {
+	    if (_helper->_tbl_0_23[tbl_0_23_index] & 0x8000) {
 		uint32_t tbl_24_31_index, j;
 		tbl_24_31_index =
-			(_helper._tbl_0_23[tbl_0_23_index] & 0x7fff) << 8;
+			(_helper->_tbl_0_23[tbl_0_23_index] & 0x7fff) << 8;
 		for (j = 0; j < 256; j++) {
-		    vport_i1 = _helper._tbl_24_31[tbl_24_31_index + j];
+		    vport_i1 = _helper->_tbl_24_31[tbl_24_31_index + j];
 		    if (vport_i != vport_i1) {
 			vport_i = vport_i1;
 			_range_t[range_t_index] =
@@ -170,7 +178,7 @@ RangeIPLookup::expand()
 		    }
 		}
 	    } else {
-		vport_i1 = _helper._tbl_0_23[tbl_0_23_index];
+		vport_i1 = _helper->_tbl_0_23[tbl_0_23_index];
 		if (vport_i != vport_i1) {
 		    vport_i = vport_i1;
 		    _range_t[range_t_index] =
@@ -195,7 +203,7 @@ RangeIPLookup::expand()
 void
 RangeIPLookup::flush_table()
 {
-    _helper.flush_table();
+    _helper->flush();
     memset(_range_base, 0, sizeof(_range_base));
     memset(_range_len, 0, sizeof(_range_len));
     memset(_range_t, 0, sizeof(_range_t));
@@ -206,7 +214,6 @@ RangeIPLookup::flush_handler(const String &, Element *e, void *,
                                 ErrorHandler *)
 {
     RangeIPLookup *t = static_cast<RangeIPLookup *>(e);
-
     t->flush_table();
     return 0;
 }
@@ -214,7 +221,7 @@ RangeIPLookup::flush_handler(const String &, Element *e, void *,
 String
 RangeIPLookup::dump_routes()
 {
-    return (_helper.dump_routes());
+    return _helper->dump();
 }
 
 CLICK_ENDDECLS
