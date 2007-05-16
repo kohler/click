@@ -37,7 +37,8 @@ CLICK_DECLS
  *   ... -> m :: Meter(10000) -> ...;
  *   m[1] -> Discard;
  *
- * =a BandwidthMeter, RatedSplitter, Shaper, BandwidthShaper */
+ * =a BandwidthMeter, RatedSplitter, Shaper, BandwidthShaper,
+ * RatedUnqueue, BandwidthRatedUnqueue */
 
 class Meter : public BandwidthMeter { public:
   

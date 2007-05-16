@@ -59,8 +59,8 @@ LinuxIPLookup::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _out2devname = conf;
   _nout = _out2devname.size();
-  if (_nout + 1 >= noutputs())
-      return errh->error("need %d or more output ports", _nout + 1);
+  if (noutputs() < _nout || noutputs() > _nout + 1)
+      return errh->error("need %d or %d output ports", _nout, _nout + 1);
   return 0;
 }
 
@@ -180,7 +180,7 @@ LinuxIPLookup::push(int, Packet *p)
     output(ifi).push(p);
   } else {
     click_chatter("LinuxIPLookup: no gw for %x", a.addr());
-    output(_nout).push(p);
+    checked_output_push(_nout, p);
   }
 }
 
