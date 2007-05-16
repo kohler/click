@@ -1,5 +1,81 @@
 Click NEWS
 
+Version 1.6.0
+
+* Drivers
+
+** The Click drivers, language, and tools support named configuration
+   parameters, which can be set in configuration files or on the command
+   line.  See 'conf/test-ping.click' for an example.
+
+** click-install provides a --cpu option, to force Click to run on a given
+   CPU (Beyers Cronje).  Also, click-install provides a --user option,
+   setting the uid/gid owning the Click file system.
+
+** Linux 2.6.19 support.
+
+** Improved support for recent FreeBSD kernels (Bruce Simpson).
+
+** ns-2.30 support.
+
+** Improved stability for e1000-5.x drivers (Kevin Lahey), e1000-6.x
+   drivers (Beyers Cronje, Adam Greenhalgh, Jason Park), and e1000-7.x
+   drivers (Max Poletto, Roman Chertov).
+
+** Improved stability for Linux kernel module.
+
+** click-viz is an integrated tool.
+
+* Elements
+
+** The Linux kernel module device elements FromDevice and PollDevice have a
+   TIMESTAMP keyword argument, to force timestamps at device receive time.
+   Recent kernels don't timestamp received packets most of the time.
+
+** Greatly improved IPsec elements (thanks, Dimitris Syrivelis and Ioannis
+   Avramopoulos).
+
+** ToIPSummaryDump supports MD5 checksums (Vern Paxson request).
+
+** Add support for PlanetLab Privileged Operations (proper) packet sending
+   and receiving.
+
+** Bug fixes, performance improvements, and extensions to many elements,
+   including AddressTranslator, AverageCounter, BandwidthMeter,
+   BeaconSource, ControlSocket, DSRRouteTable, DirectIPLookup, Discard,
+   FromDevice, FromDump, FromNetFlowSummaryDump, FromSimDevice,
+   ICMPPingRewriter, ICMPRewriter, IP6Mirror, IPClassifier/IPFilter,
+   IPEncap, IPMirror, IPNameInfo, InfiniteSource, KernelTap, KernelTun,
+   LinuxIPLookup, RangeIPLookup, RawSocket, Reframe, Script,
+   SetUDPChecksum, SimpleQueue, Socket, ToDevice, ToDump, ToHost,
+   ToSimDevice, UDPIPEncap, UMLSwitch.
+
+* Internals
+
+** Remove some deprecated member functions in String,
+
+** Fix bugs in lexing, notification, and Linux kernel module locking and
+   SMP support.
+
+** String and StringAccum objects use specialized memory allocation
+   functions, allowing very large Strings and StringAccums in kernel space.
+   So do Queues.
+
+* Other bug fixes and improvements.
+
+* Thanks to Nicola Arnoldi, Ioannis Avramopoulos, Koen Beel, Kristian
+  Beilke, Torquato Bertani, John Bicket, Bart Braem, Vladimir Bychkovsky,
+  Srivas Chennu, Roman Chertov, David Claffey, Beyers Cronje, Norbert Egi,
+  Nick Feamster, Cliff Frey, Matt Gordon, Adam Greenhalgh, Mark Huang,
+  Mathias Jeschke, Azeem Khan, Christian Kreibich, Mathias Kurth, Kevin
+  Lahey, lastlijing yahoo com cn, Joe Maldonaldo, Tim Morgan, Jim
+  Mott-Smith, Jens Mueller, Arvid Nilsson, Jason Park, Vern Paxson, Max
+  Poletto, Vivek Raghunathan, Roberto Riggio, Robert Ross, Bruce Simpson,
+  Dimitris Syrivelis, Seiichi Tatsukawa, Andy Van Maele, Frederic Van
+  Quickenborne, Wim Vandenberghe, Rob Wachol, and Mike Wilson, and anyone
+  we inadvertently forgot to mention here.
+
+
 Version 1.5.0   19.May.2006
 
 * Linux 2.6.16.13 kernel module support, including support for packages.
@@ -120,7 +196,7 @@ Version 1.4.2   29.Dec.2004
   (jbicket)
 
 * Add header (click_wifi_extra) to replace prism header. Communicates
-  with the device driver (things like transmission status, bitrate, 
+  with the device driver (things like transmission status, bitrate,
   retries, etc).  See ExtraEncap and ExtraDecap as well as FilterTX.
   (jbicket)
 

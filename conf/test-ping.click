@@ -2,7 +2,9 @@
 
 // This kernel configuration tests the FromDevice and ToDevice elements
 // by sending pings to host 131.179.80.139 (read.cs.ucla.edu) via 'eth1'.
-// Change the 'define' statement to use another device or address.
+// Change the 'define' statement to use another device or address, or run
+// e.g. "click test-ping.click DEVNAME=eth0" to change a parameter at the
+// command line.
 //
 // You should see, in 'dmesg' or /var/log/messages, a sequence of "icmp echo"
 // printouts intermixed with "ping :: ICMPPingSource" receive reports.  Also
