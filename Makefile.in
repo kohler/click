@@ -104,13 +104,16 @@ uninstall: elementmap.xml
 	@for d in $(ALL_TARGETS) doc; do (cd $$d && $(MAKE) uninstall) || exit 1; done
 	@$(MAKE) uninstall-local uninstall-local-include
 uninstall-local:
-	/bin/rm -f $(DESTDIR)$(bindir)/click-buildtool $(DESTDIR)$(bindir)/click-compile $(DESTDIR)$(bindir)/click-mkelemmap $(DESTDIR)$(clickdatadir)/elementmap.xml $(DESTDIR)$(clickdatadir)/srcdir $(DESTDIR)$(clickdatadir)/src $(DESTDIR)$(clickdatadir)/config.mk $(DESTDIR)$(clickdatadir)/mkinstalldirs
+	/bin/rm -f $(DESTDIR)$(bindir)/click-buildtool $(DESTDIR)$(bindir)/click-compile $(DESTDIR)$(bindir)/click-mkelemmap $(DESTDIR)$(bindir)/testie $(DESTDIR)$(clickdatadir)/elementmap.xml $(DESTDIR)$(clickdatadir)/srcdir $(DESTDIR)$(clickdatadir)/src $(DESTDIR)$(clickdatadir)/config.mk $(DESTDIR)$(clickdatadir)/mkinstalldirs
 	/bin/rm -f $(DESTDIR)$(clickdatadir)/pkg-config.mk $(DESTDIR)$(clickdatadir)/pkg-userlevel.mk $(DESTDIR)$(clickdatadir)/pkg-linuxmodule.mk $(DESTDIR)$(clickdatadir)/pkg-linuxmodule-26.mk $(DESTDIR)$(clickdatadir)/pkg-Makefile
 uninstall-local-include:
 	cd $(srcdir)/include/click; for i in *.h *.hh *.cc; do /bin/rm -f $(DESTDIR)$(clickincludedir)/$$i; done
-	cd $(top_builddir); for i in *.h; do /bin/rm -f $(DESTDIR)$(clickincludedir)/$$i; done
+	cd $(top_builddir)/include/click; for i in *.h; do /bin/rm -f $(DESTDIR)$(clickincludedir)/$$i; done
 	cd $(srcdir)/include/click/standard; for i in *.hh; do /bin/rm -f $(DESTDIR)$(clickincludedir)/standard/$$i; done
 	cd $(srcdir)/include/clicknet; for i in *.h; do /bin/rm -f $(DESTDIR)$(netincludedir)/$$i; done
+	@-/bin/rmdir $(DESTDIR)$(clickincludedir)/standard
+	@-/bin/rmdir $(DESTDIR)$(clickincludedir)
+	@-/bin/rmdir $(DESTDIR)$(netincludedir)
 
 elemlist elemlists: click-buildtool
 	@for d in $(DRIVERS); do (cd $$d && $(MAKE) elemlist) || exit 1; done
