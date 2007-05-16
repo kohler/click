@@ -1,3 +1,8 @@
+2007-05-16 Wednesday 15:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* NEWS (1.169), README (1.53), configure (1.98), configure.in
+	  (1.299), conf/test-ping.click (1.4): prepare for 1.6.0 release
+
 2007-05-16 Wednesday 13:02  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.137), doc/Makefile.in (1.62): make uninstall
