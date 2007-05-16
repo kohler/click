@@ -1,3 +1,13 @@
+2007-05-16 Wednesday 01:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: ip/lookupiproutelinux.cc (1.34), standard/meter.hh
+	  (1.22): correctly count output ports (Christian Kreibich)
+
+2007-05-16 Wednesday 00:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/bandwidthmeter.hh (1.12): fix BandwidthMeter
+	  port count specification (Beyers Cronje/Roberto Riggio)
+
 2007-05-14 Monday 03:05  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: directiplookup.cc (1.15), directiplookup.hh (1.18),
