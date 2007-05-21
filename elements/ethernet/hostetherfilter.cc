@@ -77,7 +77,7 @@ HostEtherFilter::simple_action(Packet *p)
   } else if (daddr[0] == 0xFFFF && daddr[1] == 0xFFFF && daddr[2] == 0xFFFF) {
     p->set_packet_type_anno(Packet::BROADCAST);
     return p;
-  } else if (e->ether_dhost[0] & 0x80) {
+  } else if (e->ether_dhost[0] & 0x01) {
     p->set_packet_type_anno(Packet::MULTICAST);
     return p;
   } else {

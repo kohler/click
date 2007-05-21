@@ -44,10 +44,10 @@ Version 1.6.0
    including AddressTranslator, AverageCounter, BandwidthMeter,
    BeaconSource, ControlSocket, DSRRouteTable, DirectIPLookup, Discard,
    FromDevice, FromDump, FromNetFlowSummaryDump, FromSimDevice,
-   ICMPPingRewriter, ICMPRewriter, IP6Mirror, IPClassifier/IPFilter,
-   IPEncap, IPMirror, IPNameInfo, InfiniteSource, KernelTap, KernelTun,
-   LinuxIPLookup, RangeIPLookup, RawSocket, Reframe, Script,
-   SetUDPChecksum, SimpleQueue, Socket, ToDevice, ToDump, ToHost,
+   HostEtherFilter, ICMPPingRewriter, ICMPRewriter, IP6Mirror,
+   IPClassifier/IPFilter, IPEncap, IPMirror, IPNameInfo, InfiniteSource,
+   KernelTap, KernelTun, LinuxIPLookup, RangeIPLookup, RawSocket, Reframe,
+   Script, SetUDPChecksum, SimpleQueue, Socket, ToDevice, ToDump, ToHost,
    ToSimDevice, UDPIPEncap, UMLSwitch.
 
 * Internals
@@ -68,12 +68,12 @@ Version 1.6.0
   Srivas Chennu, Roman Chertov, David Claffey, Beyers Cronje, Norbert Egi,
   Nick Feamster, Cliff Frey, Matt Gordon, Adam Greenhalgh, Mark Huang,
   Mathias Jeschke, Azeem Khan, Christian Kreibich, Mathias Kurth, Kevin
-  Lahey, lastlijing yahoo com cn, Joe Maldonaldo, Tim Morgan, Jim
-  Mott-Smith, Jens Mueller, Arvid Nilsson, Jason Park, Vern Paxson, Max
-  Poletto, Vivek Raghunathan, Roberto Riggio, Robert Ross, Bruce Simpson,
-  Dimitris Syrivelis, Seiichi Tatsukawa, Andy Van Maele, Frederic Van
-  Quickenborne, Wim Vandenberghe, Rob Wachol, and Mike Wilson, and anyone
-  we inadvertently forgot to mention here.
+  Lahey, lastlijing yahoo com cn, Pierre-Emmanuel Le Roux, Joe Maldonaldo,
+  Tim Morgan, Jim Mott-Smith, Jens Mueller, Arvid Nilsson, Jason Park, Vern
+  Paxson, Max Poletto, Vivek Raghunathan, Roberto Riggio, Robert Ross,
+  Bruce Simpson, Dimitris Syrivelis, Seiichi Tatsukawa, Andy Van Maele,
+  Frederic Van Quickenborne, Wim Vandenberghe, Rob Wachol, and Mike Wilson,
+  and anyone we inadvertently forgot to mention here.
 
 
 Version 1.5.0   19.May.2006
