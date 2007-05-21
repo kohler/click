@@ -1,3 +1,7 @@
+2007-05-21 Monday 14:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* NEWS (1.171): correct credit
+
 2007-05-21 Monday 13:07  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/linkunqueue.cc (1.14),
