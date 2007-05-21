@@ -1,3 +1,18 @@
+2007-05-21 Monday 13:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/linkunqueue.cc (1.14),
+	  include/click/routerthread.hh (1.38), include/click/task.hh
+	  (1.47), lib/routerthread.cc (1.69), lib/task.cc (1.47): fix
+	  notifier problem, perhaps finally at last.  Here is what was
+	  happening.  fast_reschedule() does _pass += _stride.
+	  fast_schedule() looks at the first _pass scheduled on the router,
+	  OR USES 0 IF THERE IS NO TASK ON THE ROUTER AT THE MOMENT.
+	  Result: if a task is schedule()d while the router is empty,
+	  before a fast_reschedule(), the newly schedule()d task will have
+	  a really tiny _pass (like based on 0), and the new task will win
+	  for a long time.  Better plan: keep track of the current _pass in
+	  RouterThread.  Thanks to Peter De Cleyn for an example.
+
 2007-05-21 Monday 11:54  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* NEWS (1.170), elements/ethernet/hostetherfilter.cc (1.20): fix
