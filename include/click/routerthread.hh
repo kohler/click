@@ -90,6 +90,7 @@ class RouterThread
 #ifdef HAVE_TASK_HEAP
     Vector<Task*> _task_heap;
     int _task_heap_hole;
+    unsigned _pass;
 #endif
     
     Master *_master;

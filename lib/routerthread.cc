@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2000-2001 Massachusetts Institute of Technology
  * Copyright (c) 2001-2002 International Computer Science Institute
- * Copyright (c) 2004-2006 Regents of the University of California
+ * Copyright (c) 2004-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -72,7 +72,9 @@ RouterThread::RouterThread(Master *m, int id)
     : Task(Task::error_hook, 0), _master(m), _id(id)
 #endif
 {
-#ifndef HAVE_TASK_HEAP
+#ifdef HAVE_TASK_HEAP
+    _pass = 0;
+#else
     _prev = _next = _thread = this;
 #endif
     _pending = 0;
@@ -353,6 +355,11 @@ RouterThread::run_tasks(int ntasks)
 #else
 	t->fast_unschedule();
 #endif
+
+	// 21.May.2007: Always set the current thread's pass to the current
+	// task's pass, to avoid problems when fast_reschedule() interacts
+	// with fast_schedule() (passes got out of sync).
+	_pass = t->_pass;
 	
 	t->call_hook();
 

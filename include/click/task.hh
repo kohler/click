@@ -378,7 +378,7 @@ Task::adjust_tickets(int delta)
     set_tickets(_tickets + delta);
 }
 
-#ifndef HAVE_TASK_HEAP
+# ifndef HAVE_TASK_HEAP
 /** @brief Reschedules the task.  The task's current thread must be currently
  * locked.
  *
@@ -390,19 +390,19 @@ inline void
 Task::fast_reschedule()
 {
     assert(_thread);
-#if CLICK_LINUXMODULE
+#  if CLICK_LINUXMODULE
     // tasks never run at interrupt time in Linux
     assert(!in_interrupt());
-#endif
-#if CLICK_BSDMODULE
+#  endif
+#  if CLICK_BSDMODULE
     GIANT_REQUIRED;
-#endif
+#  endif
 
     if (!scheduled()) {
 	// increase pass
 	_pass += _stride;
 
-#if 0
+#  if 0
 	// look for 'n' immediately before where we should be scheduled
 	Task* n = _thread->_prev;
 	while (n != _thread && PASS_GT(n->_pass, _pass))
@@ -413,14 +413,14 @@ Task::fast_reschedule()
 	_prev = n;
 	n->_next = this;
 	_next->_prev = this;
-#else
+#  else
 	// look for 'n' immediately after where we should be scheduled
 	Task* n = _thread->_next;
-#ifdef CLICK_BSDMODULE /* XXX MARKO a race occured here when not spl'ed */
+#   ifdef CLICK_BSDMODULE /* XXX MARKO a race occured here when not spl'ed */
 	while (n->_next != NULL && n != _thread && !PASS_GT(n->_pass, _pass))
-#else
+#   else
 	while (n != _thread && !PASS_GT(n->_pass, _pass))
-#endif
+#   endif
 	    n = n->_next;
     
 	// schedule before 'n'
@@ -428,21 +428,17 @@ Task::fast_reschedule()
 	_next = n;
 	_prev->_next = this;
 	n->_prev = this;
-#endif
+#  endif
     }
 }
-#endif
+# endif /* !HAVE_TASK_HEAP */
 
 inline void
 Task::fast_schedule()
 {
     GIANT_REQUIRED;
     assert(_tickets >= 1);
-#if HAVE_TASK_HEAP
-    _pass = (_thread->active() ? _thread->_task_heap[0]->_pass : 0);
-#else
-    _pass = _thread->_next->_pass;
-#endif
+    _pass = _thread->_pass;
     fast_reschedule();
 }
 
@@ -475,6 +471,7 @@ Task::fast_schedule()
 }
 
 #endif /* HAVE_STRIDE_SCHED */
+
 
 /** @brief Reschedules the task.
  *

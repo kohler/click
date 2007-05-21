@@ -164,7 +164,6 @@ LinkUnqueue::run_task(Task *)
     // Figure out when to schedule next
     //print_queue(_qhead);
     if (_qhead) {
-	now = Timestamp::now();
 	Timestamp expiry = _qhead->timestamp_anno();
 	if (_signal) {
 	    Timestamp expiry2 = _qtail->timestamp_anno() - _latency;
