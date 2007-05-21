@@ -38,7 +38,7 @@ Version 1.6.0
 ** ToIPSummaryDump supports MD5 checksums (Vern Paxson request).
 
 ** Add support for PlanetLab Privileged Operations (proper) packet sending
-   and receiving.
+   and receiving (thanks, Mark Huang).
 
 ** Bug fixes, performance improvements, and extensions to many elements,
    including AddressTranslator, AverageCounter, BandwidthMeter,
