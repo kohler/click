@@ -576,7 +576,10 @@ SortTest::initialize(ErrorHandler *errh)
 
 	click_qsort(classes, nclasses, sizeof(classes[0]), compar);
     }
-    
+
+    memcpy(classes, sorted_classes, sizeof(classes));
+    click_qsort(classes, nclasses, sizeof(classes[0]), compar);
+
     errh->message("All tests pass!");
     return 0;
 }

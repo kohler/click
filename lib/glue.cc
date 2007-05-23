@@ -408,17 +408,37 @@ click_qsort_partition(void *base_v, size_t size, size_t *stack,
 	return -E2BIG;
     }
     
-    uint8_t pivot[64], tmp[64];
     uint8_t *base = reinterpret_cast<uint8_t *>(base_v);
-
-    // Dutch national flag algorithm
     size_t left = stack[0];
     size_t right = stack[3] - 1;
-    size_t middle = left;
-    memcpy(&pivot[0], &base[size * ((left + right) / 2)], size);
+    size_t middle;
 
+    // optimize for already-sorted case
+    while (left < right) {
+	int cmp = compar(&base[size * left], &base[size * (left + 1)], thunk);
+	if (cmp > 0)
+	    goto true_qsort;
+	left++;
+    }
+
+    stack[1] = stack[0];
+    stack[2] = stack[3];
+    return 0;
+
+  true_qsort:
+    // current invariant:
+    // base[i] <= base[left] for all left_init <= i < left
+    // base[left+1] < base[left]
+    // => swap base[left] <=> base[left+1], make base[left] the pivot
+    uint8_t pivot[64], tmp[64];
+    memcpy(&pivot[0], &base[size * left], size);
+    memcpy(&base[size * left], &base[size * (left + 1)], size);
+    memcpy(&base[size * (left + 1)], &pivot[0], size);
+    left = left + 1;
+    middle = left + 1;
+    
     // loop invariant:
-    // base[i] < pivot for all left_init <= i < left
+    // base[i] <= pivot for all left_init <= i < left
     // base[i] > pivot for all right < i <= right_init
     // base[i] == pivot for all left <= i < middle
     while (middle <= right) {
