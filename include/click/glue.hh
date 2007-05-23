@@ -126,8 +126,8 @@ random()
 
 // SORTING
 
-void click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *, void *), void *thunk);
-void click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *));
+int click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *, void *), void *thunk);
+int click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *));
 
 
 // OTHER

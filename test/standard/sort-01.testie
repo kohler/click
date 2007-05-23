@@ -1,0 +1,12 @@
+%info
+Tests click_qsort functionality with the SortTest element.
+
+%require
+click-buildtool provides SortTest
+
+%script
+click -qe SortTest
+
+%expect stderr
+<expr>:1:{{.*}}
+  All tests pass!

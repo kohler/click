@@ -394,9 +394,9 @@ srandom(uint32_t seed)
 // SORTING
 
 static int
-click_qsort_partition(void *base_v, size_t size, int left, int right,
+click_qsort_partition(void *base_v, size_t size, size_t *stack,
 		      int (*compar)(const void *, const void *, void *),
-		      int *split_left, int *split_right, void *thunk)
+		      void *thunk)
 {
     if (size >= 64) {
 #if CLICK_LINUXMODULE
@@ -404,7 +404,7 @@ click_qsort_partition(void *base_v, size_t size, int left, int right,
 #elif CLICK_BSDMODULE
 	printf("click_qsort_partition: elements too large!\n");
 #endif
-	*split_left = *split_right = 0;
+	stack[1] = stack[2] = 0;
 	return -E2BIG;
     }
     
@@ -412,7 +412,9 @@ click_qsort_partition(void *base_v, size_t size, int left, int right,
     uint8_t *base = reinterpret_cast<uint8_t *>(base_v);
 
     // Dutch national flag algorithm
-    int middle = left;
+    size_t left = stack[0];
+    size_t right = stack[3] - 1;
+    size_t middle = left;
     memcpy(&pivot[0], &base[size * ((left + right) / 2)], size);
 
     // loop invariant:
@@ -421,7 +423,7 @@ click_qsort_partition(void *base_v, size_t size, int left, int right,
     // base[i] == pivot for all left <= i < middle
     while (middle <= right) {
 	int cmp = compar(&base[size * middle], &pivot[0], thunk);
-	int swapper = (cmp < 0 ? left : right);
+	size_t swapper = (cmp < 0 ? left : right);
 	if (cmp != 0 && middle != swapper) {
 	    memcpy(&tmp[0], &base[size * swapper], size);
 	    memcpy(&base[size * swapper], &base[size * middle], size);
@@ -438,36 +440,62 @@ click_qsort_partition(void *base_v, size_t size, int left, int right,
 
     // afterwards, middle == right + 1
     // so base[i] == pivot for all left <= i <= right
-    *split_left = left - 1;
-    *split_right = right + 1;
+    stack[1] = left;
+    stack[2] = right + 1;
     return 0;
 }
 
-static void
-click_qsort_subroutine(void *base, size_t size, int left, int right, int (*compar)(const void *, const void *, void *), void *thunk)
-{
-    // XXX recursion
-    if (left < right) {
-	int split_left, split_right;
-	click_qsort_partition(base, size, left, right, compar, &split_left, &split_right, thunk);
-	click_qsort_subroutine(base, size, left, split_left, compar, thunk);
-	click_qsort_subroutine(base, size, split_right, right, compar, thunk);
-    }
-}
+#define CLICK_QSORT_INITSTACK 20
 
-void
+int
 click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *, void *), void *thunk)
 {
-    click_qsort_subroutine(base, size, 0, n - 1, compar, thunk);
+    size_t stackbuf[CLICK_QSORT_INITSTACK];
+    size_t stacksiz = CLICK_QSORT_INITSTACK;
+    size_t *stack = stackbuf;
+    size_t stackpos = 0;
+    int r = 0;
+
+    stack[stackpos++] = 0;
+    stack[stackpos++] = n;
+
+    while (stackpos != 0 && r >= 0) {
+	stackpos -= 2;
+	if (stack[stackpos] + 1 >= stack[stackpos + 1])
+	    continue;
+	
+	// grow stack if appropriate
+	if (stackpos + 4 > stacksiz) {
+	    size_t *nstack = (size_t *) CLICK_LALLOC(sizeof(size_t) * stacksiz * 2);
+	    if (!nstack) {
+		r = -ENOMEM;
+		break;
+	    }
+	    memcpy(nstack, stack, sizeof(size_t) * stacksiz);
+	    if (stack != stackbuf)
+		CLICK_LFREE(stack, sizeof(size_t) * stacksiz);
+	    stack = nstack;
+	    stacksiz *= 2;
+	}
+
+	// partition
+	stack[stackpos + 3] = stack[stackpos + 1];
+	r = click_qsort_partition(base, size, stack + stackpos, compar, thunk);
+	stackpos += 4;
+    }
+
+    if (stack != stackbuf)
+	CLICK_LFREE(stack, sizeof(size_t) * stacksiz);
+    return r;
 }
 
-void
+int
 click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *))
 {
     // XXX fix cast
     int (*compar2)(const void *, const void *, void *);
     compar2 = reinterpret_cast<int (*)(const void *, const void *, void *)>(compar);
-    click_qsort_subroutine(base, size, 0, n - 1, compar2, 0);
+    return click_qsort(base, n, size, compar2, 0);
 }
 
 
