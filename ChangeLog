@@ -1,3 +1,11 @@
+2007-05-23 Wednesday 15:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/test/sorttest.cc (1.1), elements/test/sorttest.hh (1.1),
+	  include/click/glue.hh (1.56), lib/glue.cc (1.56),
+	  test/standard/sort-01.testie (1.1): make click_qsort
+	  non-recursive to avoid exploding kernel stack include regression
+	  tests for sorting (bug reported by Jason Park)
+
 2007-05-21 Monday 14:01  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* NEWS (1.171): correct credit
