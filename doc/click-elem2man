@@ -565,7 +565,7 @@ sub dokuwiki_do_section ($$$) {
 	if (@Over == 0) {
 	    print STDERR "click-elem2man: $Filename: '=item' outside any '=over' section\n";
 	} else {
-	    print OUT "\n ", ' ' x @Over, "?? " if $dokuwiki_dl;
+	    print OUT "\n", ' ' x @Over, "? " if $dokuwiki_dl;
 	    print OUT dokuwikiize("B<" . quote_unquoted_gt($args) . ">");
 	    print OUT ($dokuwiki_dl ? "\n" : "\n\n");
 	}
@@ -582,8 +582,6 @@ sub dokuwiki_do_section ($$$) {
 	    my($over) = pop @Over;
 	    print STDERR "click-elem2man: $Filename: '=back $overarg' paired with '=over $over'\n"
 		if defined($overarg) && $over != $overarg;
-	    print OUT "!!\n" if $dokuwiki_dl;
-	    print OUT "\n" if $dokuwiki_dl && !@Over;
 	}
     } elsif ($name eq 'for') {
 	my($fortext);
@@ -618,7 +616,7 @@ EOD;
 	return;
     }
 
-    print OUT ":: " if $text =~ /\S/ && @Over && $dokuwiki_dl;
+    print OUT " ! " if $text =~ /\S/ && @Over && $dokuwiki_dl;
     print OUT dokuwikiize($text), "\n";
     print OUT "\n" if $name eq 'head1';
 }
