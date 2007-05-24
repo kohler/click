@@ -1,3 +1,15 @@
+2007-05-24 Thursday 03:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.61): x
+
+2007-05-24 Thursday 03:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.60): restore to dl syntax
+
+2007-05-24 Thursday 03:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.59): dokuwiki update
+
 2007-05-23 Wednesday 15:48  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* NEWS (1.172), elements/test/sorttest.cc (1.2), lib/glue.cc
