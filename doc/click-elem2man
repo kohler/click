@@ -616,7 +616,7 @@ EOD;
 	return;
     }
 
-    print OUT " ! " if $text =~ /\S/ && @Over && $dokuwiki_dl;
+    print OUT ' ' x @Over, "! " if $text =~ /\S/ && @Over && $dokuwiki_dl;
     print OUT dokuwikiize($text), "\n";
     print OUT "\n" if $name eq 'head1';
 }
