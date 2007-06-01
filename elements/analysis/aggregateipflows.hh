@@ -167,7 +167,9 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
 	uint32_t a;
 	uint32_t b;
 	HostPair() : a(0), b(0) { }
-	HostPair(uint32_t aa, uint32_t bb) : a(aa), b(bb) { if (a > b) a ^= b ^= a ^= b; }
+	HostPair(uint32_t aa, uint32_t bb) {
+	    aa > bb ? (a = bb, b = aa) : (a = aa, b = bb);
+	}
     };
 
   private:
