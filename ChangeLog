@@ -1,3 +1,9 @@
+2007-06-07 Thursday 14:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/: ipsec-3des.click (1.6), ipsec-des.click (1.5),
+	  ipsec-router.click (1.2): update ipsec-router with some comments
+	  from Dimitris Syrivelis
+
 2007-06-01 Friday 12:03  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: aggregateipaddrpair.hh (1.5),
