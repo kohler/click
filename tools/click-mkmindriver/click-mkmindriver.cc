@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2001 Massachusetts Institute of Technology
  * Copyright (c) 2001 International Computer Science Institute
- * Copyright (c) 2004-2006 Regents of the University of California
+ * Copyright (c) 2004-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -48,6 +48,7 @@
 #define ALL_OPT			312
 #define CHECK_OPT		313
 #define VERBOSE_OPT		314
+#define EXTRAS_OPT		315
 
 static Clp_Option options[] = {
   { "align", 'A', ALIGN_OPT, 0, 0 },
@@ -57,6 +58,7 @@ static Clp_Option options[] = {
   { "directory", 'd', DIRECTORY_OPT, Clp_ArgString, 0 },
   { "elements", 'E', ELEMENT_OPT, Clp_ArgString, 0 },
   { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
+  { "extras", 0, EXTRAS_OPT, 0, Clp_Negate },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, 0 },
@@ -105,7 +107,7 @@ Options:\n\
   -d, --directory DIR      Put files in DIR. DIR must contain a 'Makefile'\n\
                            for the relevant driver. Default is '.'.\n\
   -E, --elements ELTS      Include element classes ELTS.\n\
-  -A, --align              Include element classes required by click-align.\n\
+      --no-extras          Do include useful non-required element classes.\n\
   -V, --verbose            Print progress information.\n\
   -C, --clickpath PATH     Use PATH for CLICKPATH.\n\
       --help               Print this message and exit.\n\
@@ -406,6 +408,7 @@ main(int argc, char **argv)
     const char *package_name = 0;
     String directory;
     bool check = true;
+    bool extras = true;
 
     Mindriver md;
   
@@ -422,7 +425,7 @@ main(int argc, char **argv)
 	    printf("click-mkmindriver (Click) %s\n", CLICK_VERSION);
 	    printf("Copyright (c) 2001 Massachusetts Institute of Technology\n\
 Copyright (c) 2001 International Computer Science Institute\n\
-Copyright (c) 2004-2006 Regents of the University of California\n\
+Copyright (c) 2004-2007 Regents of the University of California\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -468,7 +471,10 @@ particular purpose.\n");
 	  }
 
 	  case ALIGN_OPT:
-	    md.require("Align", &arg_lerrh);
+	    break;
+
+	  case EXTRAS_OPT:
+	    extras = !clp->negated;
 	    break; 
 
 	  case VERBOSE_OPT:
@@ -505,7 +511,11 @@ particular purpose.\n");
 	driver = Driver::USERLEVEL;
     if (!package_name)
 	errh->fatal("fatal error: no package name specified\nPlease supply the '-p PKG' option.");
-
+    if (extras) {
+	md.require("Align", errh);
+	md.require("IPNameInfo", errh);
+    }
+    
     ElementMap default_emap;
     if (!default_emap.parse_default_file(CLICK_DATADIR, errh))
 	default_emap.report_file_not_found(CLICK_DATADIR, false, errh);

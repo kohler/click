@@ -158,12 +158,14 @@ below.
 '
 .Sp
 .TP
-.BR \-A ", " \-\-align
-Include element classes required by
-.M click-align 1 .
-Currently, this is the single
+.BR \-\-no\-extras
+Do not add optional, but useful, element classes by default.  Currently,
+these classes are
 .M Align n
-class.
+and
+.M IPNameInfo n ". "
+If a configuration or option explicitly requires one of these classes, it
+will of course be included.
 '
 .Sp
 .TP
