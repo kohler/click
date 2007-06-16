@@ -39,13 +39,13 @@ ifndef MINDRIVER
 DRIVER = click
 ELEMENTSCONF = elements
 KSYMS = ksyms
-INSTALLOBJS = $(DRIVER).o proclikefs.o
 else
 DRIVER = $(MINDRIVER)click
 ELEMENTSCONF = elements_$(MINDRIVER)
 KSYMS = ksyms_$(MINDRIVER)
-INSTALLOBJS = $(DRIVER).o
 endif
+
+INSTALLOBJS = $(DRIVER).o proclikefs.o
 
 
 ifeq (@LINUXMODULE_2_6@,1)
