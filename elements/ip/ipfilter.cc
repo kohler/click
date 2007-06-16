@@ -1137,7 +1137,8 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
     finish_expr_subtree(tree, C_AND, -slot);
   }
 
-  finish_expr_subtree(tree, C_OR, -noutputs(), -noutputs());
+  if (tree.size())
+    finish_expr_subtree(tree, C_OR, -noutputs(), -noutputs());
   
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   optimize_exprs(errh);
@@ -1147,7 +1148,7 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
   // It helps to do another bubblesort for things like ports.
   bubble_sort_and_exprs();
   
-  Vector<int> wanted(_exprs.size(), 0);
+  Vector<int> wanted(_exprs.size() + 1, 0);
   wanted[0] = 1;
   for (const Expr *ex = _exprs.begin(); ex < _exprs.end(); ex++)
       for (int j = 0; j < 2; j++)
