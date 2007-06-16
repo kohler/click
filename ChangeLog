@@ -1,3 +1,12 @@
+2007-06-16 Saturday 16:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipfilter.cc (1.70): dont crash when given a garbage
+	  IPFilter expression
+
+2007-06-16 Saturday 16:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/glue.cc (1.58): copyright fix
+
 2007-06-07 Thursday 14:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* conf/: ipsec-3des.click (1.6), ipsec-des.click (1.5),
