@@ -1,3 +1,15 @@
+2007-06-16 Saturday 17:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-mkmindriver.1 (1.10),
+	  tools/click-mkmindriver/click-mkmindriver.cc (1.39): try to fix
+	  mkmindriver issue reported by Jason Park: include IPNameInfo
+	  unless explicitly ordered not to.  Makes -A option obsolete
+
+2007-06-16 Saturday 16:42  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/Makefile.in (1.111): installing any driver will
+	  install proclikefs (Jason Park)
+
 2007-06-16 Saturday 16:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/ipfilter.cc (1.70): dont crash when given a garbage
