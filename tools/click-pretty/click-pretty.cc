@@ -60,7 +60,7 @@ static Clp_Option options[] = {
     { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
     { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
     { "help", 0, HELP_OPT, 0, 0 },
-    { "kernel", 'k', LINUXMODULE_OPT, 0, 0 },
+    { "kernel", 'k', LINUXMODULE_OPT, 0, 0 }, // DEPRECATED
     { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
     { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
     { "package-docs", 0, PACKAGE_URLS_OPT, Clp_ArgString, 0 },
@@ -1159,6 +1159,9 @@ Options:\n\
   -d, --define NAME=TEXT      Define a new tag, NAME, that expands to TEXT.\n\
   -u, --class-docs URL        Link primitive element classes to URL.\n\
       --package-docs PKG=URL  Link element classes in package PKG to URL.\n\
+  -l, --linuxmodule           Prefer Linux kernel module elements.\n\
+  -b, --bsdmodule             Prefer FreeBSD kernel module elements.\n\
+      --userlevel             Prefer user-level driver elements.\n\
       --write-template        Write template as is, without including router.\n\
       --dot                   Output a 'dot' graph definition instead of HTML.\n\
   -C, --clickpath PATH        Use PATH for CLICKPATH.\n\

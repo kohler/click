@@ -19,7 +19,7 @@ class ElementClassT { public:
     ElementClassT(const String &);
     virtual ~ElementClassT();
 
-    static void set_base_type(ElementClassT *);
+    static void set_base_type_factory(ElementClassT *(*factory)(const String &));
     static ElementClassT *base_type(const String &);
     static ElementClassT *tunnel_type();
 

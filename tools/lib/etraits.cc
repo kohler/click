@@ -132,7 +132,7 @@ ElementTraits::flag_value(int flag) const
 	    } else
 		return 1;
 	} else
-	    while (i < len && data[i] != ',')
+	    while (i < len && !isspace((unsigned char) data[i]))
 		i++;
     }
     return -1;
@@ -194,6 +194,7 @@ ElementTraits::parse_component(const String &s)
 	components.insert("provides", D_PROVISIONS);
 	components.insert("libs", D_LIBS);
 	components.insert("docname", D_DOC_NAME);
+	components.insert("flags", D_FLAGS);
 	// for compatibility
 	components.insert("class", D_CLASS);
 	components.insert("cxx_class", D_CXX_CLASS);

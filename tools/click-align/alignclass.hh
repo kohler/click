@@ -7,20 +7,24 @@
 class Aligner { public:
     Aligner()		{ }
     virtual ~Aligner()	{ }
-  virtual void have_flow(const Vector<Alignment> &in, int ioff, int nin,
-			 Vector<Alignment> &out, int ooff, int nout);
-  virtual void want_flow(Vector<Alignment> &in, int ioff, int nin,
-			 const Vector<Alignment> &out, int ooff, int nout);
-  virtual void adjust_flow(Vector<Alignment> &in, int ioff, int nin,
-			   const Vector<Alignment> &out, int ooff, int nout);
+    virtual void have_flow(Vector<Alignment>::const_iterator in, int nin,
+			   Vector<Alignment>::iterator out, int nout,
+			   const String &flow_code);
+    virtual void want_flow(Vector<Alignment>::iterator in, int nin,
+			   Vector<Alignment>::const_iterator out, int nout,
+			   const String &flow_code);
+    virtual void adjust_flow(Vector<Alignment>::iterator in, int nin,
+			     Vector<Alignment>::const_iterator out, int nout);
 };
 
 class NullAligner : public Aligner { public:
   NullAligner() { }
-  void have_flow(const Vector<Alignment> &in, int ioff, int nin,
-		 Vector<Alignment> &out, int ooff, int nout);
-  void want_flow(Vector<Alignment> &in, int ioff, int nin,
-		 const Vector<Alignment> &out, int ooff, int nout);
+  void have_flow(Vector<Alignment>::const_iterator in, int nin,
+		 Vector<Alignment>::iterator out, int nout,
+		 const String &flow_code);
+  void want_flow(Vector<Alignment>::iterator in, int nin,
+		 Vector<Alignment>::const_iterator out, int nout,
+		 const String &flow_code);
 };
 
 class CombinedAligner : public Aligner {
@@ -28,45 +32,52 @@ class CombinedAligner : public Aligner {
   Aligner *_want;
  public:
   CombinedAligner(Aligner *have, Aligner *want) : _have(have), _want(want) { }
-  void have_flow(const Vector<Alignment> &in, int ioff, int nin,
-		 Vector<Alignment> &out, int ooff, int nout);
-  void want_flow(Vector<Alignment> &in, int ioff, int nin,
-		 const Vector<Alignment> &out, int ooff, int nout);
+  void have_flow(Vector<Alignment>::const_iterator in, int nin,
+		 Vector<Alignment>::iterator out, int nout,
+		 const String &flow_code);
+  void want_flow(Vector<Alignment>::iterator in, int nin,
+		 Vector<Alignment>::const_iterator out, int nout,
+		 const String &flow_code);
 };
 
 class GeneratorAligner : public Aligner {
   Alignment _alignment;
  public:
   GeneratorAligner(const Alignment &a) : _alignment(a) { }
-  void have_flow(const Vector<Alignment> &in, int ioff, int nin,
-		 Vector<Alignment> &out, int ooff, int nout);
-  void want_flow(Vector<Alignment> &in, int ioff, int nin,
-		 const Vector<Alignment> &out, int ooff, int nout);
+  void have_flow(Vector<Alignment>::const_iterator in, int nin,
+		 Vector<Alignment>::iterator out, int nout,
+		 const String &flow_code);
+  void want_flow(Vector<Alignment>::iterator in, int nin,
+		 Vector<Alignment>::const_iterator out, int nout,
+		 const String &flow_code);
 };
 
 class ShifterAligner : public Aligner {
   int _shift;
  public:
   ShifterAligner(int shift) : _shift(shift) { }
-  void have_flow(const Vector<Alignment> &in, int ioff, int nin,
-		 Vector<Alignment> &out, int ooff, int nout);
-  void want_flow(Vector<Alignment> &in, int ioff, int nin,
-		 const Vector<Alignment> &out, int ooff, int nout);
+  void have_flow(Vector<Alignment>::const_iterator in, int nin,
+		 Vector<Alignment>::iterator out, int nout,
+		 const String &flow_code);
+  void want_flow(Vector<Alignment>::iterator in, int nin,
+		 Vector<Alignment>::const_iterator out, int nout,
+		 const String &flow_code);
 };
 
 class WantAligner : public Aligner {
   Alignment _alignment;
  public:
   WantAligner(Alignment a) : _alignment(a) { }
-  void want_flow(Vector<Alignment> &in, int ioff, int nin,
-		 const Vector<Alignment> &out, int ooff, int nout);
+  void want_flow(Vector<Alignment>::iterator in, int nin,
+		 Vector<Alignment>::const_iterator out, int nout,
+		 const String &flow_code);
 };
 
 class ClassifierAligner : public Aligner {
  public:
   ClassifierAligner() { }
-  void adjust_flow(Vector<Alignment> &in, int ioff, int nin,
-		   const Vector<Alignment> &out, int ooff, int nout);
+  void adjust_flow(Vector<Alignment>::iterator in, int nin,
+		   Vector<Alignment>::const_iterator out, int nout);
 };
 
 
@@ -99,7 +110,7 @@ class AlignAlignClass : public AlignClass {
 };
 
 
-Alignment common_alignment(const Vector<Alignment> &, int off, int count);
+Alignment common_alignment(Vector<Alignment>::const_iterator, int count);
 Aligner *default_aligner();
 
 #endif

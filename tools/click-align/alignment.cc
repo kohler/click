@@ -16,7 +16,6 @@
  */
 
 #include <click/config.h>
-
 #include "alignment.hh"
 
 bool
@@ -72,8 +71,10 @@ Alignment::operator|=(const Alignment &o)
 
   // check for lowering chunk
   int diff = new_off2 - new_off1;
-  if (diff < 0) diff += new_chunk;
-  if (diff > new_chunk / 2) diff = new_chunk - diff;
+  if (diff < 0)
+      diff += new_chunk;
+  if (diff > new_chunk / 2)
+      diff = new_chunk - diff;
   if (new_chunk % diff == 0) {
     _chunk = diff;
     _offset = new_off1 % diff;
@@ -88,14 +89,14 @@ Alignment::operator|=(const Alignment &o)
 Alignment &
 Alignment::operator&=(const Alignment &o)
 {
-  // XXX doesn't work for arbitrary alignments; should use some set method
-  // and least-common-multiple
-  if (o <= *this)
-    return (*this = o);
-  else if (*this <= o)
-    return *this;
-  else
-    return (*this = Alignment(-1, 0, 0));
+    // XXX doesn't work for arbitrary alignments; should use some set method
+    // and least-common-multiple
+    if (empty() || o <= *this)
+	return (*this = o);
+    else if (*this <= o)
+	return *this;
+    else
+	return (*this = Alignment(-1, 0, 0));
 }
 
 String

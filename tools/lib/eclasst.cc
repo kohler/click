@@ -92,18 +92,16 @@ ElementClassT::printable_name_c_str()
 	return "<anonymous>";
 }
 
-void
-ElementClassT::set_base_type(ElementClassT *t)
+static ElementClassT *default_base_type_factory(const String &name)
 {
-    t->use();
-    int i = base_type_map[t->name()];
-    if (i < 0) {
-	base_type_map.insert(t->name(), base_types.size());
-	base_types.push_back(t);
-    } else {
-	base_types[i]->unuse();
-	base_types[i] = t;
-    }
+    return new ElementClassT(name);
+}
+
+static ElementClassT *(*base_type_factory)(const String &) = default_base_type_factory;
+
+void ElementClassT::set_base_type_factory(ElementClassT *(*f)(const String &))
+{
+    base_type_factory = f;
 }
 
 ElementClassT *
@@ -112,11 +110,15 @@ ElementClassT::base_type(const String &name)
     if (!name)
 	return 0;
     int i = base_type_map[name];
-    if (i >= 0)
-	return base_types[i];
-    ElementClassT *ec = new ElementClassT(name);
-    set_base_type(ec);
-    return ec;
+    if (i < 0) {
+	ElementClassT *t = base_type_factory(name);
+	assert(t && t->name() == name);
+	t->use();
+	i = base_types.size();
+	base_type_map.insert(name, i);
+	base_types.push_back(t);
+    }
+    return base_types[i];
 }
 
 

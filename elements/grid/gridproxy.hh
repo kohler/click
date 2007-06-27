@@ -58,6 +58,7 @@ public:
     const char *class_name() const { return "GridProxy"; }
     const char *port_count() const { return "2/2"; }
     const char *processing() const { return PUSH; }
+    const char *flags() const	   { return "A"; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

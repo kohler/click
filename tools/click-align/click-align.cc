@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -16,6 +17,7 @@
  */
 
 #include <click/config.h>
+#include <click/pathvars.h>
 
 #include <click/error.hh>
 #include <click/confparse.hh>
@@ -25,23 +27,27 @@
 #include "routert.hh"
 #include "alignment.hh"
 #include "alignclass.hh"
+#include "elementmap.hh"
 #include "toolutils.hh"
 #include <click/clp.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <algorithm>
+
+static ElementMap element_map;
 
 struct RouterAlign {
 
-  RouterT *_router;
-  Vector<int> _icount;
-  Vector<int> _ocount;
-  Vector<int> _ioffset;
-  Vector<int> _ooffset;
-  Vector<Alignment> _ialign;
-  Vector<Alignment> _oalign;
-  Vector<Aligner *> _aligners;
+    RouterT *_router;
+    Vector<int> _icount;
+    Vector<int> _ocount;
+    Vector<int> _ioffset;
+    Vector<int> _ooffset;
+    Vector<Alignment> _ialign;
+    Vector<Alignment> _oalign;
+    Vector<Aligner *> _aligners;
 
-  RouterAlign(RouterT *, ErrorHandler *);
+    RouterAlign(RouterT *, ErrorHandler *);
 
   int iindex_eindex(int) const;
   int iindex_port(int) const;
@@ -61,8 +67,8 @@ struct RouterAlign {
 };
 
 RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
+    : _router(r)
 {
-  _router = r;
   int ne = r->nelements();
   int id = 0, od = 0;
   for (int i = 0; i < ne; i++) {
@@ -132,9 +138,12 @@ void
 RouterAlign::have_output()
 {
   int ne = _icount.size();
-  for (int i = 0; i < ne; i++)
-    _aligners[i]->have_flow(_ialign, _ioffset[i], _icount[i],
-			    _oalign, _ooffset[i], _ocount[i]);
+  for (int i = 0; i < ne; i++) {
+      Traits t = element_map.traits(_router->etype_name(i));
+      _aligners[i]->have_flow(_ialign.begin() + _ioffset[i], _icount[i],
+			      _oalign.begin() + _ooffset[i], _ocount[i],
+			      t.flow_code);
+  }
 }
 
 bool
@@ -165,9 +174,12 @@ void
 RouterAlign::want_input()
 {
   int ne = _icount.size();
-  for (int i = 0; i < ne; i++)
-    _aligners[i]->want_flow(_ialign, _ioffset[i], _icount[i],
-			    _oalign, _ooffset[i], _ocount[i]);
+  for (int i = 0; i < ne; i++) {
+      Traits t = element_map.traits(_router->etype_name(i));
+      _aligners[i]->want_flow(_ialign.begin() + _ioffset[i], _icount[i],
+			      _oalign.begin() + _ooffset[i], _ocount[i],
+			      t.flow_code);
+  }
 }
 
 bool
@@ -204,8 +216,8 @@ RouterAlign::adjust()
 {
   int ne = _icount.size();
   for (int i = 0; i < ne; i++)
-    _aligners[i]->adjust_flow(_ialign, _ioffset[i], _icount[i],
-			      _oalign, _ooffset[i], _ocount[i]);
+      _aligners[i]->adjust_flow(_ialign.begin() + _ioffset[i], _icount[i],
+				_oalign.begin() + _ooffset[i], _ocount[i]);
 }
 
 void
@@ -229,66 +241,44 @@ RouterAlign::print(FILE *f)
 }
 
 
-void
-prepare_classes()
+static ElementClassT *class_factory(const String &name)
 {
-  // specialized classes
-  ElementClassT::set_base_type(new AlignAlignClass);
-  ElementClassT::set_base_type(new StripAlignClass);
-  ElementClassT::set_base_type(new CheckIPHeaderAlignClass("CheckIPHeader", 1));
-  ElementClassT::set_base_type(new CheckIPHeaderAlignClass("CheckIPHeader2", 1));
-  ElementClassT::set_base_type(new CheckIPHeaderAlignClass("MarkIPHeader", 0));
-  ElementClassT::set_base_type(new AlignClass("Classifier", new ClassifierAligner));
-  ElementClassT::set_base_type(new AlignClass("EtherEncap", new ShifterAligner(-14)));
-
-  Aligner *a2 = new GeneratorAligner(Alignment(4, 2));
-  ElementClassT::set_base_type(new AlignClass("SR2SetChecksum", a2));
-  ElementClassT::set_base_type(new AlignClass("SR2CheckHeader", a2));
-  ElementClassT::set_base_type(new AlignClass("SetSRChecksum", a2));
-  ElementClassT::set_base_type(new AlignClass("CheckSRHeader", a2));
-
-  ElementClassT::set_base_type(new AlignClass("IPInputCombo",
-	new CombinedAligner(new ShifterAligner(14),
-			    new WantAligner(Alignment(4, 2)))));
-
-  ElementClassT::set_base_type(new AlignClass("GridEncap",
-	new CombinedAligner(new ShifterAligner(98),
-			    new WantAligner(Alignment(4, 0)))));
-
-  // no alignment requirements, and do not transmit packets between input and
-  // output
-  Aligner *a = new NullAligner;
-  ElementClassT::set_base_type(new AlignClass("Idle", a));
-  ElementClassT::set_base_type(new AlignClass("Discard", a));
-  
-  // generate alignment 4/2
-  a = new GeneratorAligner(Alignment(4, 2));
-  ElementClassT::set_base_type(new AlignClass("FromDevice", a));
-  ElementClassT::set_base_type(new AlignClass("PollDevice", a));
-  ElementClassT::set_base_type(new AlignClass("FromLinux", a));
-
-  // generate alignment 4/0
-  a = new GeneratorAligner(Alignment(4, 0));
-  ElementClassT::set_base_type(new AlignClass("RatedSource", a));
-  ElementClassT::set_base_type(new AlignClass("ICMPError", a));
-
-  // want alignment 4/2
-  a = new WantAligner(Alignment(4, 2));
-  ElementClassT::set_base_type(new AlignClass("ToLinux", a));
-
-  // want alignment 4/0
-  a = new WantAligner(Alignment(4, 0));
-  ElementClassT::set_base_type(new AlignClass("IPEncap", a));
-  ElementClassT::set_base_type(new AlignClass("UDPIPEncap", a));
-  ElementClassT::set_base_type(new AlignClass("ICMPPingEncap", a));
-  ElementClassT::set_base_type(new AlignClass("RandomUDPIPEncap", a));
-  ElementClassT::set_base_type(new AlignClass("RoundRobinUDPIPEncap", a));
-  ElementClassT::set_base_type(new AlignClass("RoundRobinTCPIPEncap", a));
-
-  // want alignment 2/0
-  a = new WantAligner(Alignment(2, 0));
-  ElementClassT::set_base_type(new AlignClass("ARPResponder", a));
-  ElementClassT::set_base_type(new AlignClass("ARPQuerier", a));
+    if (name == "Align")
+	return new AlignAlignClass;
+    if (name == "Strip")
+	return new StripAlignClass;
+    if (name == "CheckIPHeader" || name == "CheckIPHeader2")
+	return new CheckIPHeaderAlignClass(name, 1);
+    if (name == "MarkIPHeader")
+	return new CheckIPHeaderAlignClass(name, 0);
+    if (name == "Classifier")
+	return new AlignClass(name, new ClassifierAligner);
+    if (name == "EtherEncap")
+	return new AlignClass(name, new ShifterAligner(-14));
+    if (name == "FromDevice" || name == "PollDevice" || name == "FromHost"
+	|| name == "SR2SetChecksum" || name == "SR2CheckHeader"
+	|| name == "SetSRChecksum" || name == "CheckSRHeader")
+	return new AlignClass(name, new GeneratorAligner(Alignment(4, 2)));
+    if (name == "InfiniteSource" || name == "RatedSource"
+	|| name == "ICMPError")
+	return new AlignClass(name, new GeneratorAligner(Alignment(4, 0)));
+    if (name == "ToHost")
+	return new AlignClass(name, new WantAligner(Alignment(4, 2)));
+    if (name == "IPEncap" || name == "UDPIPEncap" || name == "ICMPPingEncap"
+	|| name == "RandomUDPIPEncap" || name == "RoundRobinUDPIPEncap"
+	|| name == "RoundRobinTCPIPEncap")
+	return new AlignClass(name, new WantAligner(Alignment(4, 0)));
+    if (name == "ARPResponder" || name == "ARPQuerier")
+	return new AlignClass(name, new WantAligner(Alignment(2, 0)));
+    if (name == "IPInputCombo")
+	return new AlignClass(name, new CombinedAligner(new ShifterAligner(14),
+							new WantAligner(Alignment(4, 2))));
+    if (name == "GridEncap")
+	return new AlignClass(name, new CombinedAligner(new ShifterAligner(98),
+							new WantAligner(Alignment(4, 0))));
+    if (name == "Idle" || name == "Discard")
+	return new AlignClass(name, new NullAligner);
+    return new AlignClass(name, default_aligner());
 }
 
 
@@ -298,15 +288,24 @@ prepare_classes()
 #define EXPRESSION_OPT		304
 #define OUTPUT_OPT		305
 
+#define FIRST_DRIVER_OPT	1000
+#define USERLEVEL_OPT		(1000 + Driver::USERLEVEL)
+#define LINUXMODULE_OPT		(1000 + Driver::LINUXMODULE)
+#define BSDMODULE_OPT		(1000 + Driver::BSDMODULE)
+
 static Clp_Option options[] = {
+  { "bsdmodule", 'b', BSDMODULE_OPT, 0, 0 },
   { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
+  { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "userlevel", 'u', USERLEVEL_OPT, 0, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
 static const char *program_name;
+static int specified_driver = -1;
 
 void
 short_usage()
@@ -371,7 +370,8 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("click-align (Click) %s\n", CLICK_VERSION);
-      printf("Copyright (C) 1999 Massachusetts Institute of Technology\n\
+      printf("Copyright (C) 1999-2000 Massachusetts Institute of Technology\n\
+Copyright (C) 2007 Regents of the University of California\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -388,6 +388,16 @@ particular purpose.\n");
       router_file = clp->arg;
       file_is_expr = (opt == EXPRESSION_OPT);
       break;
+
+      case USERLEVEL_OPT:
+      case LINUXMODULE_OPT:
+      case BSDMODULE_OPT:
+	if (specified_driver >= 0) {
+	    errh->error("driver specified twice");
+	    goto bad_option;
+	}
+	specified_driver = opt - FIRST_DRIVER_OPT;
+	break;
 
      case Clp_NotOption:
       if (!click_maybe_define(clp->arg, errh))
@@ -414,188 +424,218 @@ particular purpose.\n");
     }
   }
   
- done:
-  prepare_classes();
-  RouterT *router = read_router(router_file, file_is_expr, errh);
-  if (router)
-    router->flatten(errh);
-  if (!router || errh->nerrors() > 0)
-    exit(1);
-  ElementClassT *align_class = ElementClassT::base_type("Align");
-  assert(align_class);
+  done:
+    // read router
+    ElementClassT::set_base_type_factory(class_factory);
+    RouterT *router = read_router(router_file, file_is_expr, errh);
+    if (router)
+	router->flatten(errh);
+    if (!router || errh->nerrors() > 0)
+	exit(1);
 
-  int original_nelements = router->nelements();
-  int anonymizer = original_nelements + 1;
-  while (router->eindex(aligner_name(anonymizer)) >= 0)
-    anonymizer++;
+    // get element map and processing
+    element_map.parse_all_files(router, CLICK_DATADIR, errh);
 
-  /*
-   * Add Align elements for required alignments
-   */
-  int num_aligns_added = 0;
-  {
-    // calculate current alignment
-    RouterAlign ral(router, errh);
-    do {
-      ral.have_output();
-    } while (ral.have_input());
-    
-    // calculate desired alignment
-    RouterAlign want_ral(router, errh);
-    do {
-      want_ral.want_input();
-    } while (want_ral.want_output());
-
-    // add required aligns
-    for (int i = 0; i < original_nelements; i++)
-      for (int j = 0; j < ral._icount[i]; j++) {
-	Alignment have = ral._ialign[ ral._ioffset[i] + j ];
-	Alignment want = want_ral._ialign[ ral._ioffset[i] + j ];
-	if (have <= want || want.bad())
-	  /* do nothing */;
-	else {
-	  ElementT *e = router->get_element
-	    (aligner_name(anonymizer), align_class,
-	     String(want.chunk()) + ", " + String(want.offset()),
-	     "<click-align>");
-	  router->insert_before(e, PortT(router->element(i), j));
-	  anonymizer++;
-	  num_aligns_added++;
-	}
-      }
-  }
-
-  /*
-   * remove duplicate Aligns (Align_1 -> Align_2)
-   */
-  {
-    const Vector<ConnectionT> &conn = router->connections();
-    int nhook = conn.size();
-    for (int i = 0; i < nhook; i++)
-      if (conn[i].live() && conn[i].to_element()->type() == align_class
-	  && conn[i].from_element()->type() == align_class) {
-	// skip over hf[i]
-	Vector<PortT> above, below;
-	router->find_connections_to(conn[i].from(), above);
-	router->find_connections_from(conn[i].from(), below);
-	if (below.size() == 1) {
-	  for (int j = 0; j < nhook; j++)
-	    if (conn[j].to() == conn[i].from())
-	      router->change_connection_to(j, conn[i].to());
-	} else if (above.size() == 1) {
-	  for (int j = 0; j < nhook; j++)
-	    if (conn[j].to() == conn[i].to())
-	      router->change_connection_from(j, above[0]);
-	}
-      }
-  }
-
-  /*
-   * Add Aligns required for adjustment alignments
-   *
-   * Classifier is an example: it can cope with any alignment that is
-   * consistent and has a chunk >= 4. Rather than require a specific alignment
-   * above, we handle Classifier here; required alignments may have generated
-   * an alignment we can deal with.
-   */
-  {
-    // calculate current alignment
-    RouterAlign ral(router, errh);
-    do {
-      ral.have_output();
-    } while (ral.have_input());
-    
-    // calculate adjusted alignment
-    RouterAlign want_ral(ral);
-    want_ral.adjust();
-
-    // add required aligns
-    for (int i = 0; i < original_nelements; i++)
-      for (int j = 0; j < ral._icount[i]; j++) {
-	Alignment have = ral._ialign[ ral._ioffset[i] + j ];
-	Alignment want = want_ral._ialign[ ral._ioffset[i] + j ];
-	if (have <= want || want.bad())
-	  /* do nothing */;
-	else {
-	  ElementT *e = router->get_element
-	    (aligner_name(anonymizer), align_class,
-	     String(want.chunk()) + ", " + String(want.offset()),
-	     "<click-align>");
-	  router->insert_before(e, PortT(router->element(i), j));
-	  anonymizer++;
-	  num_aligns_added++;
-	}
-      }
-  }
-
-  while (1) {
-    // calculate current alignment
-    RouterAlign ral(router, errh);
-    do {
-      ral.have_output();
-    } while (ral.have_input());
-
-    bool changed = false;
-    
-    // skip redundant Aligns
-    const Vector<ConnectionT> &conn = router->connections();
-    int nhook = conn.size();
-    for (int i = 0; i < nhook; i++)
-      if (conn[i].live() && conn[i].to_element()->type() == align_class) {
-	Alignment have = ral._oalign[ ral._ooffset[conn[i].from_eindex()] + conn[i].from_port() ];
-	Alignment want = ral._oalign[ ral._ooffset[conn[i].to_eindex()] ];
-	if (have <= want) {
-	  changed = true;
-	  Vector<PortT> align_dest;
-	  router->find_connections_from(conn[i].to(), align_dest);
-	  for (int j = 0; j < align_dest.size(); j++)
-	    router->add_connection(conn[i].from(), align_dest[j]);
-	  router->kill_connection(i);
-	}
-      }
-
-    if (!changed) break;
-    
-    router->remove_duplicate_connections();
-  }
-
-  // remove unused Aligns (they have no input) and old AlignmentInfos
-  ElementClassT *aligninfo_class = ElementClassT::base_type("AlignmentInfo");
-  {
-    for (RouterT::iterator x = router->begin_elements(); x; x++)
-      if (x->type() == align_class && (x->ninputs() == 0 || x->noutputs() == 0)) {
-	x->kill();
-	num_aligns_added--;
-      } else if (x->type() == aligninfo_class)
-	x->kill();
-    router->remove_dead_elements();
-  }
-  
-  // make the AlignmentInfo element
-  {
-    RouterAlign ral(router, errh);
-    do {
-      ral.have_output();
-    } while (ral.have_input());
-
-    // collect alignment information, delete old AlignmentInfos
-    StringAccum sa;
-    for (RouterT::iterator x = router->begin_elements(); x; x++) {
-      if (sa.length())
-	sa << ",\n  ";
-      sa << x->name();
-      int i = x->eindex();
-      for (int j = 0; j < ral._icount[i]; j++) {
-	const Alignment &a = ral._ialign[ ral._ioffset[i] + j ];
-	sa << "  " << a.chunk() << " " << a.offset();
-      }
+    // decide on a driver
+    if (specified_driver >= 0) {
+	if (!element_map.driver_compatible(router, specified_driver))
+	    errh->warning("configuration not compatible with %s driver", Driver::name(specified_driver));
+	element_map.set_driver_mask(1 << specified_driver);
+    } else {
+	int driver_mask = 0;
+	for (int d = 0; d < Driver::COUNT; d++)
+	    if (element_map.driver_compatible(router, d))
+		driver_mask |= 1 << d;
+	if (driver_mask == 0)
+	    errh->warning("configuration not compatible with any driver");
+	else
+	    element_map.set_driver_mask(driver_mask);
     }
+
+    // correct classes for router
+    //correct_classes(driver_mask);
+
+    ElementClassT *align_class = ElementClassT::base_type("Align");
+    assert(align_class);
+
+    int original_nelements = router->nelements();
+    int anonymizer = original_nelements + 1;
+    while (router->eindex(aligner_name(anonymizer)) >= 0)
+	anonymizer++;
+
+    /*
+     * Add Align elements for required alignments
+     */
+    int num_aligns_added = 0;
+    {
+	// calculate current alignment
+	RouterAlign ral(router, errh);
+	do {
+	    ral.have_output();
+	} while (ral.have_input());
     
-    router->get_element(String("AlignmentInfo@click_align@")
-			+ String(router->nelements() + 1),
-			aligninfo_class, sa.take_string(),
-			"<click-align>");
-  }
+	// calculate desired alignment
+	RouterAlign want_ral(router, errh);
+	do {
+	    want_ral.want_input();
+	} while (want_ral.want_output());
+
+	// add required aligns
+	for (int i = 0; i < original_nelements; i++)
+	    for (int j = 0; j < ral._icount[i]; j++) {
+		Alignment have = ral._ialign[ ral._ioffset[i] + j ];
+		Alignment want = want_ral._ialign[ ral._ioffset[i] + j ];
+		if (have <= want || want.bad())
+		    /* do nothing */;
+		else {
+		    ElementT *e = router->get_element
+			(aligner_name(anonymizer), align_class,
+			 String(want.chunk()) + ", " + String(want.offset()),
+			 "<click-align>");
+		    router->insert_before(e, PortT(router->element(i), j));
+		    anonymizer++;
+		    num_aligns_added++;
+		}
+	    }
+    }
+
+    /*
+     * remove duplicate Aligns (Align_1 -> Align_2)
+     */
+    {
+	const Vector<ConnectionT> &conn = router->connections();
+	int nhook = conn.size();
+	for (int i = 0; i < nhook; i++)
+	    if (conn[i].live() && conn[i].to_element()->type() == align_class
+		&& conn[i].from_element()->type() == align_class) {
+		// skip over hf[i]
+		Vector<PortT> above, below;
+		router->find_connections_to(conn[i].from(), above);
+		router->find_connections_from(conn[i].from(), below);
+		if (below.size() == 1) {
+		    for (int j = 0; j < nhook; j++)
+			if (conn[j].to() == conn[i].from())
+			    router->change_connection_to(j, conn[i].to());
+		} else if (above.size() == 1) {
+		    for (int j = 0; j < nhook; j++)
+			if (conn[j].to() == conn[i].to())
+			    router->change_connection_from(j, above[0]);
+		}
+	    }
+    }
+
+    /*
+     * Add Aligns required for adjustment alignments
+     *
+     * Classifier is an example: it can cope with any alignment that is
+     * consistent and has a chunk >= 4. Rather than require a specific
+     * alignment above, we handle Classifier here; required alignments may
+     * have generated an alignment we can deal with.
+     */
+    {
+	// calculate current alignment
+	RouterAlign ral(router, errh);
+	do {
+	    ral.have_output();
+	} while (ral.have_input());
+    
+	// calculate adjusted alignment
+	RouterAlign want_ral(ral);
+	want_ral.adjust();
+
+	// add required aligns
+	for (int i = 0; i < original_nelements; i++)
+	    for (int j = 0; j < ral._icount[i]; j++) {
+		Alignment have = ral._ialign[ ral._ioffset[i] + j ];
+		Alignment want = want_ral._ialign[ ral._ioffset[i] + j ];
+		if (have <= want || want.bad())
+		    /* do nothing */;
+		else {
+		    ElementT *e = router->get_element
+			(aligner_name(anonymizer), align_class,
+			 String(want.chunk()) + ", " + String(want.offset()),
+			 "<click-align>");
+		    router->insert_before(e, PortT(router->element(i), j));
+		    anonymizer++;
+		    num_aligns_added++;
+		}
+	    }
+    }
+
+    while (1) {
+	// calculate current alignment
+	RouterAlign ral(router, errh);
+	do {
+	    ral.have_output();
+	} while (ral.have_input());
+
+	bool changed = false;
+    
+	// skip redundant Aligns
+	const Vector<ConnectionT> &conn = router->connections();
+	int nhook = conn.size();
+	for (int i = 0; i < nhook; i++)
+	    if (conn[i].live() && conn[i].to_element()->type() == align_class) {
+		Alignment have = ral._oalign[ ral._ooffset[conn[i].from_eindex()] + conn[i].from_port() ];
+		Alignment want = ral._oalign[ ral._ooffset[conn[i].to_eindex()] ];
+		if (have <= want) {
+		    changed = true;
+		    Vector<PortT> align_dest;
+		    router->find_connections_from(conn[i].to(), align_dest);
+		    for (int j = 0; j < align_dest.size(); j++)
+			router->add_connection(conn[i].from(), align_dest[j]);
+		    router->kill_connection(i);
+		}
+	    }
+
+	if (!changed)
+	    break;
+    
+	router->remove_duplicate_connections();
+    }
+
+    // remove unused Aligns (they have no input) and old AlignmentInfos
+    ElementClassT *aligninfo_class = ElementClassT::base_type("AlignmentInfo");
+    {
+	for (RouterT::iterator x = router->begin_elements(); x; x++)
+	    if (x->type() == align_class
+		&& (x->ninputs() == 0 || x->noutputs() == 0)) {
+		x->kill();
+		num_aligns_added--;
+	    } else if (x->type() == aligninfo_class)
+		x->kill();
+	router->remove_dead_elements();
+    }
+  
+    // make the AlignmentInfo element
+    {
+	RouterAlign ral(router, errh);
+	do {
+	    ral.have_output();
+	} while (ral.have_input());
+
+	// collect alignment information, delete old AlignmentInfos
+	StringAccum sa;
+	for (RouterT::iterator x = router->begin_elements(); x; x++) {
+	    ElementTraits t = element_map.traits(x->type_name());
+	    if (x->ninputs() && t.flag_value('A') > 0) {
+		if (sa.length())
+		    sa << ",\n  ";
+		sa << x->name();
+		int i = x->eindex();
+		for (int j = 0; j < ral._icount[i]; j++) {
+		    const Alignment &a = ral._ialign[ ral._ioffset[i] + j ];
+		    sa << "  " << a.chunk() << " " << a.offset();
+		}
+	    }
+	}
+
+	if (sa.length())
+	    router->get_element(String("AlignmentInfo@click_align@")
+				+ String(router->nelements() + 1),
+				aligninfo_class, sa.take_string(),
+				"<click-align>");
+    }
 
   // warn if added aligns
   if (num_aligns_added > 0)

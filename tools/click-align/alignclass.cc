@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,121 +21,142 @@
 #include "alignclass.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/bitvector.hh>
+#include "processingt.hh"
 #include "routert.hh"
 #include <string.h>
 
 Alignment
-common_alignment(const Vector<Alignment> &a, int off, int n)
+common_alignment(Vector<Alignment>::const_iterator a, int n)
 {
   if (n == 0)
     return Alignment(1, 0);
-  Alignment m = a[off];
+  Alignment m = *a;
   for (int i = 1; i < n; i++)
-    m |= a[off+i];
+      m |= *++a;
   return m;
 }
 
 Alignment
-combine_alignment(const Vector<Alignment> &a, int off, int n)
+combine_alignment(Vector<Alignment>::const_iterator a, int n)
 {
   if (n == 0)
     return Alignment(1, 0);
-  Alignment m = a[off];
+  Alignment m = *a;
   for (int i = 1; i < n; i++)
-    m &= a[off+i];
+      m &= *++a;
   return m;
 }
 
 void
-Aligner::have_flow(const Vector<Alignment> &ain, int offin, int nin, Vector<Alignment> &aout, int offout, int nout)
+Aligner::have_flow(Vector<Alignment>::const_iterator ain, int nin, Vector<Alignment>::iterator aout, int nout, const String &flow_code)
 {
-  Alignment a = common_alignment(ain, offin, nin);
-  for (int j = 0; j < nout; j++)
-    aout[offout + j] = a;
+    Bitvector b;
+    for (int j = 0; j < nout; ++j, ++aout) {
+	ProcessingT::backward_flow(flow_code, j, nin, &b);
+	Alignment a;
+	for (int i = 0; i < nin; ++i)
+	    if (b[i])
+		a |= ain[i];
+	*aout = a;
+    }
+    //Alignment a = common_alignment(ain, nin);
+    //for (int j = 0; j < nout; ++j, ++aout)
+    //    *aout = a;
 }
 
 void
-Aligner::want_flow(Vector<Alignment> &ain, int offin, int nin, const Vector<Alignment> &aout, int offout, int nout)
+Aligner::want_flow(Vector<Alignment>::iterator ain, int nin, Vector<Alignment>::const_iterator aout, int nout, const String &flow_code)
 {
-  Alignment a = combine_alignment(aout, offout, nout);
-  for (int j = 0; j < nin; j++)
-    ain[offin + j] = a;
+    Bitvector b;
+    for (int i = 0; i < nin; ++i, ++ain) {
+	ProcessingT::forward_flow(flow_code, i, nout, &b);
+	Alignment a;
+	for (int j = 0; j < nout; ++j)
+	    if (b[j])
+		a &= aout[i];
+	*ain = a;
+    }
+
+    //Alignment a = combine_alignment(aout, nout);
+    //for (int j = 0; j < nin; ++j, ++ain)
+    //   *ain = a;
 }
 
 void
-Aligner::adjust_flow(Vector<Alignment> &, int, int, const Vector<Alignment> &, int, int)
+Aligner::adjust_flow(Vector<Alignment>::iterator, int, Vector<Alignment>::const_iterator, int)
 {
 }
 
 void
-NullAligner::have_flow(const Vector<Alignment> &, int, int, Vector<Alignment> &, int, int)
+NullAligner::have_flow(Vector<Alignment>::const_iterator, int, Vector<Alignment>::iterator, int, const String &)
 {
 }
 
 void
-NullAligner::want_flow(Vector<Alignment> &, int, int, const Vector<Alignment> &, int, int)
+NullAligner::want_flow(Vector<Alignment>::iterator, int, Vector<Alignment>::const_iterator, int, const String &)
 {
 }
 
 void
-CombinedAligner::have_flow(const Vector<Alignment> &ain, int offin, int nin, Vector<Alignment> &aout, int offout, int nout)
+CombinedAligner::have_flow(Vector<Alignment>::const_iterator ain, int nin, Vector<Alignment>::iterator aout, int nout, const String &flow_code)
 {
-  _have->have_flow(ain, offin, nin, aout, offout, nout);
+    _have->have_flow(ain, nin, aout, nout, flow_code);
 }
 
 void
-CombinedAligner::want_flow(Vector<Alignment> &ain, int offin, int nin, const Vector<Alignment> &aout, int offout, int nout)
+CombinedAligner::want_flow(Vector<Alignment>::iterator ain, int nin, Vector<Alignment>::const_iterator aout, int nout, const String &flow_code)
 {
-  _want->want_flow(ain, offin, nin, aout, offout, nout);
+    _want->want_flow(ain, nin, aout, nout, flow_code);
 }
 
 void
-GeneratorAligner::have_flow(const Vector<Alignment> &, int, int, Vector<Alignment> &aout, int offout, int nout)
+GeneratorAligner::have_flow(Vector<Alignment>::const_iterator, int, Vector<Alignment>::iterator aout, int nout, const String &)
 {
-  for (int j = 0; j < nout; j++)
-    aout[offout + j] = _alignment;
+    for (int j = 0; j < nout; ++j, ++aout)
+	*aout = _alignment;
 }
 
 void
-GeneratorAligner::want_flow(Vector<Alignment> &ain, int offin, int nin, const Vector<Alignment> &, int, int)
+GeneratorAligner::want_flow(Vector<Alignment>::iterator ain, int nin, Vector<Alignment>::const_iterator, int, const String &)
 {
-  for (int j = 0; j < nin; j++)
-    ain[offin + j] = Alignment();
+    for (int j = 0; j < nin; ++j, ++ain)
+	*ain = Alignment();
 }
 
 void
-ShifterAligner::have_flow(const Vector<Alignment> &ain, int offin, int nin, Vector<Alignment> &aout, int offout, int nout)
+ShifterAligner::have_flow(Vector<Alignment>::const_iterator ain, int nin, Vector<Alignment>::iterator aout, int nout, const String &)
 {
-  Alignment a = common_alignment(ain, offin, nin);
+  Alignment a = common_alignment(ain, nin);
   a += _shift;
-  for (int j = 0; j < nout; j++)
-    aout[offout + j] = a;
+  for (int j = 0; j < nout; ++j, ++aout)
+      *aout = a;
 }
 
 void
-ShifterAligner::want_flow(Vector<Alignment> &ain, int offin, int nin, const Vector<Alignment> &aout, int offout, int nout)
+ShifterAligner::want_flow(Vector<Alignment>::iterator ain, int nin, Vector<Alignment>::const_iterator aout, int nout, const String &)
 {
-  Alignment a = combine_alignment(aout, offout, nout);
+  Alignment a = combine_alignment(aout, nout);
   a -= _shift;
-  for (int j = 0; j < nin; j++)
-    ain[offin + j] = a;
+  for (int j = 0; j < nin; ++j, ++ain)
+      *ain = a;
 }
 
 void
-WantAligner::want_flow(Vector<Alignment> &ain, int offin, int nin, const Vector<Alignment> &, int, int)
+WantAligner::want_flow(Vector<Alignment>::iterator ain, int nin, Vector<Alignment>::const_iterator, int, const String &)
 {
-  for (int j = 0; j < nin; j++)
-    ain[offin + j] = _alignment;
+    for (int j = 0; j < nin; ++j, ++ain)
+	*ain = _alignment;
 }
 
 void
-ClassifierAligner::adjust_flow(Vector<Alignment> &ain, int offin, int nin, const Vector<Alignment> &, int, int)
-{ 
-  Alignment a = common_alignment(ain, offin, nin);
-  if (a.chunk() < 4)
-    a = Alignment(4, a.offset());
-  for (int j = 0; j < nin; j++)
-    ain[offin + j] = a;
+ClassifierAligner::adjust_flow(Vector<Alignment>::iterator ain, int nin, Vector<Alignment>::const_iterator, int)
+{
+    Alignment a = common_alignment(ain, nin);
+    if (a.chunk() < 4)
+	a = Alignment(4, a.offset());
+    for (int j = 0; j < nin; ++j, ++ain)
+	*ain = a;
 }
 
 

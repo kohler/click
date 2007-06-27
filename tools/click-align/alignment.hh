@@ -11,25 +11,25 @@ class Alignment {
   
  public:
 
-  Alignment()				: _chunk(0), _offset(0) { }
-  Alignment(int, int);
+    Alignment()				: _chunk(0), _offset(0) { }
+    Alignment(int, int);
 
-  int chunk() const			{ return _chunk; }
-  int offset() const			{ return _offset; }
-  bool bad() const			{ return _chunk < 0; }
-  bool empty() const			{ return _chunk == 0; }
+    int chunk() const			{ return (_chunk > 1 ? _chunk : 1); }
+    int offset() const			{ return _offset; }
+    bool bad() const			{ return _chunk < 0; }
+    bool empty() const			{ return _chunk == 0; }
 
-  bool operator==(const Alignment &) const;
-  bool operator!=(const Alignment &) const;
-  bool operator<=(const Alignment &) const;
+    bool operator==(const Alignment &) const;
+    bool operator!=(const Alignment &) const;
+    bool operator<=(const Alignment &) const;
 
-  Alignment &operator+=(int);
-  Alignment &operator-=(int);
-  Alignment &operator|=(const Alignment &);
-  Alignment &operator&=(const Alignment &);
+    Alignment &operator+=(int);
+    Alignment &operator-=(int);
+    Alignment &operator|=(const Alignment &);
+    Alignment &operator&=(const Alignment &);
 
-  String unparse() const;
-  String s() const			{ return unparse(); }
+    String unparse() const;
+    String s() const			{ return unparse(); }
 
 };
 

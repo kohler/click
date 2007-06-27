@@ -62,12 +62,13 @@ static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { 0, 'n', NO_DEVIRTUALIZE_OPT, Clp_ArgString, 0 },
-  { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
+  { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate }, // DEPRECATED
+  { "linuxmodule", 'l', KERNEL_OPT, 0, Clp_Negate },
   { "instructions", 'i', INSTRS_OPT, Clp_ArgString, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "reverse", 'r', REVERSE_OPT, 0, Clp_Negate },
   { "source", 's', SOURCE_OPT, 0, Clp_Negate },
-  { "user", 'u', USERLEVEL_OPT, 0, Clp_Negate },
+  { "userlevel", 'u', USERLEVEL_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 }
 };
 
@@ -203,8 +204,8 @@ Options:\n\
   -f, --file FILE              Read router configuration from FILE.\n\
   -e, --expression EXPR        Use EXPR as router configuration.\n\
   -o, --output FILE            Write output to FILE.\n\
-  -k, --kernel                 Compile into Linux kernel binary package.\n\
-  -u, --user                   Compile into user-level binary package.\n\
+  -l, --linuxmodule            Compile into Linux kernel binary package.\n\
+  -u, --userlevel              Compile into user-level binary package.\n\
   -s, --source                 Write source code only.\n\
   -c, --config                 Write new configuration only.\n\
   -r, --reverse                Reverse devirtualization.\n\

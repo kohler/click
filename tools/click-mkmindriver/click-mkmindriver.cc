@@ -61,8 +61,8 @@ static Clp_Option options[] = {
   { "extras", 0, EXTRAS_OPT, 0, Clp_Negate },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "kernel", 'k', KERNEL_OPT, 0, 0 },
-  { "linuxmodule", 0, KERNEL_OPT, 0, 0 },
+  { "kernel", 'k', KERNEL_OPT, 0, 0 }, // DEPRECATED
+  { "linuxmodule", 'l', KERNEL_OPT, 0, 0 },
   { "package", 'p', PACKAGE_OPT, Clp_ArgString, 0 },
   { "userlevel", 'u', USERLEVEL_OPT, 0, 0 },
   { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate }
@@ -102,7 +102,7 @@ Options:\n\
   -e, --expression EXPR    Use EXPR as a router configuration.\n\
   -a, --all                Add all element classes from following configs,\n\
                            even those in unused compound elements.\n\
-  -k, --linuxmodule        Build Makefile for Linux kernel module driver.\n\
+  -l, --linuxmodule        Build Makefile for Linux kernel module driver.\n\
   -u, --userlevel          Build Makefile for user-level driver (default).\n\
   -d, --directory DIR      Put files in DIR. DIR must contain a 'Makefile'\n\
                            for the relevant driver. Default is '.'.\n\
