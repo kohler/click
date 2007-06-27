@@ -1,3 +1,8 @@
+2007-06-27 Wednesday 09:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: ip/ipfilter.hh (1.37), standard/classifier.hh (1.35):
+	  nit
+
 2007-06-27 Wednesday 09:37  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click-devirtualize.1 (1.9), doc/click-mkmindriver.1 (1.11),
