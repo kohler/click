@@ -81,6 +81,7 @@ class Classifier : public Element { public:
   const char *class_name() const		{ return "Classifier"; }
   const char *port_count() const		{ return "1/-"; }
   const char *processing() const		{ return PUSH; }
+  // this element needs AlignmentInfo, so supply the "A" flag
   const char *flags() const			{ return "A"; }
   
   int configure(Vector<String> &, ErrorHandler *);
