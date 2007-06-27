@@ -94,7 +94,7 @@ tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v)
     to_device_map.lookup_all(dev, down, es);
     for (int i = 0; i < es.size(); i++) 
 	((ToDevice *)(es[i]))->tx_wake_queue(dev);
-    AnyDeviceMap::unlock(false);
+    to_device_map.unlock(false);
     return 0;
 }
 }
@@ -348,6 +348,7 @@ ToDevice::run_task(Task *)
 # if HAVE_NETIF_TX_LOCK
     netif_tx_unlock_bh(_dev);
 # else
+    _dev->xmit_lock_owner = -1;
     spin_unlock(&_dev->xmit_lock);
     local_bh_enable();
 # endif
