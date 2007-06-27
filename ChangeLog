@@ -1,3 +1,27 @@
+2007-06-27 Wednesday 09:37  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-devirtualize.1 (1.9), doc/click-mkmindriver.1 (1.11),
+	  elements/grid/gridproxy.hh (1.8), elements/icmp/icmppingencap.hh
+	  (1.6), elements/ip/checkipheader.hh (1.44),
+	  elements/ip/ipinputcombo.hh (1.25), elements/ipsec/ipsecencap.hh
+	  (1.2), elements/standard/classifier.hh (1.34),
+	  elements/tcpudp/dynudpipencap.hh (1.14),
+	  elements/tcpudp/udpipencap.hh (1.15),
+	  tools/click-align/alignclass.cc (1.20),
+	  tools/click-align/alignclass.hh (1.10),
+	  tools/click-align/alignment.cc (1.9),
+	  tools/click-align/alignment.hh (1.6),
+	  tools/click-align/click-align.cc (1.56),
+	  tools/click-devirtualize/click-devirtualize.cc (1.56),
+	  tools/click-mkmindriver/click-mkmindriver.cc (1.40),
+	  tools/click-pretty/click-pretty.cc (1.34), tools/lib/eclasst.cc
+	  (1.35), tools/lib/eclasst.hh (1.27), tools/lib/etraits.cc (1.14):
+	  move to common "-l/--linuxmodule" driver specification option
+	  click-align updates for Cliff Frey: only generate AlignmentInfo
+	  for elements that require it some bug fixes wrt "flags" add an
+	  AlignmentInfo-related flag(): "A" means "this element requires
+	  AlignmentInfo"
+
 2007-06-16 Saturday 17:01  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click-mkmindriver.1 (1.10),
