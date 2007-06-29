@@ -28,6 +28,9 @@
 /* Define if 'int64_t' is typedefed to 'long' in linuxmodule. */
 #undef HAVE_INT64_IS_LONG_LINUXMODULE
 
+/* Define if 'int64_t' is typedefed to 'long long' in linuxmodule. */
+#undef HAVE_INT64_IS_LONG_LONG_LINUXMODULE
+
 /* Define to enable assertion checking. Failed assertions will print a message
    and optionally stop the router. */
 #undef HAVE_KERNEL_ASSERT
@@ -85,6 +88,11 @@ typedef unsigned long uintptr_t; /* XXX? */
 /* Define HAVE_INT64_IS_LONG based on HAVE_INT64_IS_LONG_LINUXMODULE. */
 #ifdef HAVE_INT64_IS_LONG_LINUXMODULE
 # define HAVE_INT64_IS_LONG HAVE_INT64_IS_LONG_LINUXMODULE
+#endif
+
+/* Define HAVE_INT64_IS_LONG_LONG based on HAVE_INT64_IS_LONG_LONG_LINUXMODULE. */
+#if HAVE_LONG_LONG && defined(HAVE_INT64_IS_LONG_LONG_LINUXMODULE)
+# define HAVE_INT64_IS_LONG_LONG HAVE_INT64_IS_LONG_LONG_LINUXMODULE
 #endif
 
 /* Define KBUILD symbols. */

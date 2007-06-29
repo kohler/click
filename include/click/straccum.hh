@@ -46,6 +46,9 @@ class StringAccum { public:
     inline void append(const unsigned char *, int);
     void append_fill(int c, int len);
 
+    void append_numeric(String::int_large_t num, int base = 10, bool uppercase = true);
+    void append_numeric(String::uint_large_t num, int base = 10, bool uppercase = true);
+    
     inline char *reserve(int);
     void set_length(int l)	{ assert(l>=0 && _len<=_cap);	_len = l; }
     void forward(int n)		{ assert(n>=0 && _len+n<=_cap);	_len += n; }
@@ -94,9 +97,13 @@ inline StringAccum &operator<<(StringAccum &, int);
 inline StringAccum &operator<<(StringAccum &, unsigned);
 StringAccum &operator<<(StringAccum &, long);
 StringAccum &operator<<(StringAccum &, unsigned long);
-#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
-StringAccum &operator<<(StringAccum &, int64_t);
-StringAccum &operator<<(StringAccum &, uint64_t);
+#if HAVE_LONG_LONG
+inline StringAccum &operator<<(StringAccum &, long long);
+inline StringAccum &operator<<(StringAccum &, unsigned long long);
+#endif
+#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
+inline StringAccum &operator<<(StringAccum &, int64_t);
+inline StringAccum &operator<<(StringAccum &, uint64_t);
 #endif
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 StringAccum &operator<<(StringAccum &, double);
@@ -250,6 +257,38 @@ operator<<(StringAccum &sa, unsigned u)
 {
     return sa << static_cast<unsigned long>(u);
 }
+
+#if HAVE_LONG_LONG
+inline StringAccum &
+operator<<(StringAccum &sa, long long q)
+{
+    sa.append_numeric(q);
+    return sa;
+}
+
+inline StringAccum &
+operator<<(StringAccum &sa, unsigned long long q)
+{
+    sa.append_numeric(q);
+    return sa;
+}
+#endif
+
+#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
+inline StringAccum &
+operator<<(StringAccum &sa, int64_t q)
+{
+    sa.append_numeric(q);
+    return sa;
+}
+
+inline StringAccum &
+operator<<(StringAccum &sa, uint64_t q)
+{
+    sa.append_numeric(q);
+    return sa;
+}
+#endif
 
 inline StringAccum &
 operator<<(StringAccum &sa, const String &s)

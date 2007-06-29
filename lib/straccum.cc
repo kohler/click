@@ -119,21 +119,68 @@ operator<<(StringAccum &sa, unsigned long u)
     return sa;
 }
 
-#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
-StringAccum &
-operator<<(StringAccum &sa, int64_t q)
+void
+StringAccum::append_numeric(String::uint_large_t q, int base, bool uppercase)
 {
-    String qstr = cp_unparse_integer64(q, 10, false);
-    return sa << qstr;
+    // Unparse a large integer. Linux kernel sprintf can't handle %lld, so we
+    // provide our own function, and use it everywhere to catch bugs.
+  
+    char buf[256];
+    char *trav = buf + 256;
+
+    assert(base == 10 || base == 16 || base == 8);
+    if (base != 10) {
+	const char *digits = (uppercase ? "0123456789ABCDEF" : "0123456789abcdef");
+	while (q > 0) {
+	    *--trav = digits[q & (base - 1)];
+	    q >>= (base >> 3) + 2;
+	}
+    }
+  
+    while (q > 0) {
+	// k = Approx[q/10] -- know that k <= q/10
+	String::uint_large_t k = (q >> 4) + (q >> 5) + (q >> 8) + (q >> 9)
+	    + (q >> 12) + (q >> 13) + (q >> 16) + (q >> 17);
+	String::uint_large_t m;
+
+	// increase k until it exactly equals floor(q/10). on exit, m is
+	// the remainder: m < 10 and q == 10*k + m.
+	while (1) {
+	    // d = 10*k
+	    String::uint_large_t d = (k << 3) + (k << 1);
+	    m = q - d;
+	    if (m < 10)
+		break;
+	
+	    // delta = Approx[m/10] -- know that delta <= m/10
+	    String::uint_large_t delta = (m >> 4) + (m >> 5) + (m >> 8) + (m >> 9);
+	    if (m >= 0x1000)
+		delta += (m >> 12) + (m >> 13) + (m >> 16) + (m >> 17);
+	
+	    // delta might have underflowed: add at least 1
+	    k += (delta ? delta : 1);
+	}
+      
+	*--trav = '0' + (unsigned)m;
+	q = k;
+    }
+  
+    // make sure at least one 0 is written
+    if (trav == buf + 256)
+	*--trav = '0';
+
+    append(trav, buf + 256);
 }
 
-StringAccum &
-operator<<(StringAccum &sa, uint64_t q)
+void
+StringAccum::append_numeric(String::int_large_t q, int base, bool uppercase)
 {
-    String qstr = cp_unparse_unsigned64(q, 10, false);
-    return sa << qstr;
+    if (q < 0) {
+	*this << '-';
+	append_numeric(static_cast<String::uint_large_t>(-q), base, uppercase);
+    } else
+	append_numeric(static_cast<String::uint_large_t>(q), base, uppercase);
 }
-#endif
 
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 StringAccum &

@@ -49,6 +49,9 @@
 /* Define if 'int64_t' is typedefed to 'long' at user level. */
 #undef HAVE_INT64_IS_LONG_USERLEVEL
 
+/* Define if 'int64_t' is typedefed to 'long long' at user level. */
+#undef HAVE_INT64_IS_LONG_LONG_USERLEVEL
+
 /* Define if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -174,6 +177,11 @@ typedef unsigned long uintptr_t;
 /* Define HAVE_INT64_IS_LONG based on HAVE_INT64_IS_LONG_USERLEVEL. */
 #ifdef HAVE_INT64_IS_LONG_USERLEVEL
 # define HAVE_INT64_IS_LONG HAVE_INT64_IS_LONG_USERLEVEL
+#endif
+
+/* Define HAVE_INT64_IS_LONG_LONG based on HAVE_INT64_IS_LONG_LONG_USERLEVEL. */
+#if HAVE_LONG_LONG && defined(HAVE_INT64_IS_LONG_LONG_USERLEVEL)
+# define HAVE_INT64_IS_LONG_LONG HAVE_INT64_IS_LONG_LONG_USERLEVEL
 #endif
 
 /* Include assert macro. */

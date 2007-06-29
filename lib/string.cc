@@ -134,10 +134,30 @@ String::String(unsigned long u)
   assign(buf, -1);
 }
 
-#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
-// Implemented a lovely [u]int64_t converter in StringAccum
+// Implemented a [u]int64_t converter in StringAccum
 // (use the code even at user level to hunt out bugs)
 
+#if HAVE_LONG_LONG
+/** @brief Create a String containing the ASCII base-10 representation of @a q.
+ */
+String::String(long long q)
+{
+  StringAccum sa;
+  sa << q;
+  assign(sa.data(), sa.length());
+}
+
+/** @brief Create a String containing the ASCII base-10 representation of @a q.
+ */
+String::String(unsigned long long q)
+{
+  StringAccum sa;
+  sa << q;
+  assign(sa.data(), sa.length());
+}
+#endif
+
+#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
 /** @brief Create a String containing the ASCII base-10 representation of @a q.
  */
 String::String(int64_t q)
@@ -155,7 +175,6 @@ String::String(uint64_t q)
   sa << q;
   assign(sa.data(), sa.length());
 }
-
 #endif
 
 #ifdef CLICK_USERLEVEL
@@ -205,6 +224,32 @@ String::garbage_string(int len)
   String s;
   s.append_garbage(len);
   return s;
+}
+
+/** @brief Create and return a String containing an ASCII representation of @a num.
+ *  @param  num        Number.
+ *  @param  base       Base; must be 8, 10, or 16.  Defaults to 10.
+ *  @param  uppercase  If true, then use uppercase letters in base 16.
+ */
+String
+String::numeric_string(int_large_t num, int base, bool uppercase)
+{
+    StringAccum sa;
+    sa.append_numeric(num, base, uppercase);
+    return sa.take_string();
+}
+
+/** @brief Create and return a String containing an ASCII representation of @a num.
+ *  @param  num        Number.
+ *  @param  base       Base; must be 8, 10, or 16.  Defaults to 10.
+ *  @param  uppercase  If true, then use uppercase letters in base 16.
+ */
+String
+String::numeric_string(uint_large_t num, int base, bool uppercase)
+{
+    StringAccum sa;
+    sa.append_numeric(num, base, uppercase);
+    return sa.take_string();
 }
 
 void

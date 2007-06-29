@@ -823,10 +823,29 @@ Can't find Linux 2.6 compilation flags.
     saveflags="$CPPFLAGS"
     CPPFLAGS="$saveflags -D__KERNEL__ -I$linuxdir/include $LINUX_CFLAGS"
 
+
+    # CLICK_LINUXMODULE_PROLOGUE()
+    AC_DEFUN([CLICK_LINUXMODULE_PROLOGUE], [[#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#define new xxx_new
+#define this xxx_this
+#define delete xxx_delete
+#define class xxx_class
+#define virtual xxx_virtual
+#define typename xxx_typename
+#define private xxx_private
+#define protected xxx_protected
+#define public xxx_public
+#define namespace xxx_namespace
+#include <linux/autoconf.h>]])
+
+
     AC_CACHE_CHECK([for C++-includable kernel header files], [ac_cv_cxx_aware_system],
 	[AC_LANG_CPLUSPLUS
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define new xxx_new
-#include <linux/autoconf.h>
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/signal.h>]], [[return 0]])], ac_cv_cxx_aware_system=yes, ac_cv_cxx_aware_system=no)
 	])
 
@@ -836,39 +855,14 @@ Can't find Linux 2.6 compilation flags.
 
 	AC_CACHE_CHECK([whether -fpermissive is required], [ac_cv_f_permissive],
 	    [AC_LANG_CPLUSPLUS
-	    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define MODULE
-#define KBUILD_BASENAME "whatever"
-#define _FEATURES_H
-#define new xxx_new
-#define this xxx_this
-#define delete xxx_delete
-#define class xxx_class
-#define virtual xxx_virtual
-#define typename xxx_typename
-#define private xxx_private
-#define protected xxx_protected
-#define public xxx_public
-#define namespace xxx_namespace
-#include <linux/autoconf.h>
+	    AC_LINK_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]], [[]])], ac_cv_f_permissive=no, ac_cv_f_permissive=yes)])
 
 	if test $ac_cv_f_permissive = yes; then
 	    CXX="$KERNEL_CXX -fpermissive"
 	    AC_CACHE_CHECK([whether -fpermissive is allowed], [ac_cv_f_permissive_ok],
 		[AC_LANG_CPLUSPLUS
-		AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define MODULE
-#define _FEATURES_H
-#define new xxx_new
-#define this xxx_this
-#define delete xxx_delete
-#define class xxx_class
-#define virtual xxx_virtual
-#define typename xxx_typename
-#define private xxx_private
-#define protected xxx_protected
-#define public xxx_public
-#define namespace xxx_namespace
-#include <linux/autoconf.h>
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]], [[]])], ac_cv_f_permissive_ok=yes, ac_cv_f_permissive_ok=no)])
 
 	    if test $ac_cv_f_permissive_ok = no; then
@@ -881,7 +875,7 @@ Can't find Linux 2.6 compilation flags.
 
 
     AC_CACHE_CHECK([whether long and int64_t are the same type in the Linux kernel],
-	ac_cv_long_64_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <linux/autoconf.h>
+	ac_cv_long_64_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/types.h>
 void f1(long) {
 }
@@ -892,18 +886,22 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
     fi
 
 
-    # CLICK_SKBUFF_PROLOGUE()
-    AC_DEFUN([CLICK_SKBUFF_PROLOGUE], [[#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
-#include <linux/autoconf.h>
-#include <linux/skbuff.h>]])
+    AC_CACHE_CHECK([whether long long and int64_t are the same type in the Linux kernel],
+	ac_cv_long_long_64_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/types.h>
+void f1(long long) {
+}
+void f1(int64_t) { // will fail if long long and int64_t are the same type
+}]], [[]])], ac_cv_long_long_64_linuxmodule=no, ac_cv_long_long_64_linuxmodule=yes)])
+    if test $ac_cv_long_long_64_linuxmodule = yes; then
+	AC_DEFINE([HAVE_INT64_IS_LONG_LONG_LINUXMODULE], [1], [Define if 'int64_t' is typedefed to 'long long' in linuxmodule.])
+    fi
+
 
     AC_CACHE_CHECK([whether struct sk_buff has a security member], [ac_cv_linuxmodule_skbuff_security],
 	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_SKBUFF_PROLOGUE()],
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; s->security = 0;]])], 
 	[ac_cv_linuxmodule_skbuff_security=yes], [ac_cv_linuxmodule_skbuff_security=no])])
     if test $ac_cv_linuxmodule_skbuff_security = yes; then
@@ -912,7 +910,8 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 
     AC_CACHE_CHECK([whether struct sk_buff has an fclone member], [ac_cv_linuxmodule_skbuff_fclone],
 	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_SKBUFF_PROLOGUE()],
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; s->fclone = 0;]])], 
 	[ac_cv_linuxmodule_skbuff_fclone=yes], [ac_cv_linuxmodule_skbuff_fclone=no])])
     if test $ac_cv_linuxmodule_skbuff_fclone = yes; then
@@ -921,7 +920,8 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 
     AC_CACHE_CHECK([whether skb_shinfo has a tso_size member], [ac_cv_linuxmodule_skb_shinfo_tso_size],
 	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_SKBUFF_PROLOGUE()],
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->tso_size = 0;]])],
 	[ac_cv_linuxmodule_skb_shinfo_tso_size=yes], [ac_cv_linuxmodule_skb_shinfo_tso_size=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_tso_size = yes; then
@@ -930,7 +930,8 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 
     AC_CACHE_CHECK([whether skb_shinfo has a gso_size member], [ac_cv_linuxmodule_skb_shinfo_gso_size],
 	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_SKBUFF_PROLOGUE()],
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->gso_size = 0;]])],
 	[ac_cv_linuxmodule_skb_shinfo_gso_size=yes], [ac_cv_linuxmodule_skb_shinfo_gso_size=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_gso_size = yes; then
@@ -939,7 +940,8 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 
     AC_CACHE_CHECK([whether skb_shinfo has a ufo_size member], [ac_cv_linuxmodule_skb_shinfo_ufo_size],
 	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_SKBUFF_PROLOGUE()],
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->ufo_size = 0;]])],
 	[ac_cv_linuxmodule_skb_shinfo_ufo_size=yes], [ac_cv_linuxmodule_skb_shinfo_ufo_size=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_ufo_size = yes; then
@@ -948,7 +950,8 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 
     AC_CACHE_CHECK([whether skb_shinfo has an ip6_frag_id member], [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id],
 	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_SKBUFF_PROLOGUE()],
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->ip6_frag_id = 0;]])],
 	[ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=yes], [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_ip6_frag_id = yes; then
@@ -956,14 +959,16 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
     fi
 
     AC_LANG_C
-    AC_CHECK_DECL(net_enable_timestamp, [ac_cv_net_enable_timestamp=yes], [ac_cv_net_enable_timestamp=no], [CLICK_SKBUFF_PROLOGUE()
-#include <linux/netdevice.h>])
+    AC_CHECK_DECL(net_enable_timestamp, [ac_cv_net_enable_timestamp=yes], [ac_cv_net_enable_timestamp=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>
+#include <linux/netdevice.h>]])
     if test $ac_cv_net_enable_timestamp = yes; then
 	AC_DEFINE([HAVE_NET_ENABLE_TIMESTAMP], [1], [Define if you have the 'net_enable_timestamp' function.])
     fi
 
-    AC_CHECK_DECL(netif_tx_lock, [ac_cv_netif_tx_lock=yes], [ac_cv_netif_tx_lock=no], [CLICK_SKBUFF_PROLOGUE()
-#include <linux/netdevice.h>])
+    AC_CHECK_DECL(netif_tx_lock, [ac_cv_netif_tx_lock=yes], [ac_cv_netif_tx_lock=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>
+#include <linux/netdevice.h>]])
     if test $ac_cv_netif_tx_lock = yes; then
 	AC_DEFINE([HAVE_NETIF_TX_LOCK], [1], [Define if you have the 'netif_tx_lock' function.])
     fi

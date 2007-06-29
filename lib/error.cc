@@ -419,9 +419,10 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 	 uint64_t qnum = va_arg(val, uint64_t);
 	 if ((flags & SIGNED) && (int64_t)qnum < 0)
 	   qnum = -(int64_t) qnum, flags |= NEGATIVE;
-	 String q = cp_unparse_unsigned64(qnum, base, flags & UPPERCASE);
-	 s1 = s2 - q.length();
-	 memcpy((char *)s1, q.data(), q.length());
+	 StringAccum sa;
+	 sa.append_numeric(qnum, base, (flags & UPPERCASE));
+	 s1 = s2 - sa.length();
+	 memcpy(const_cast<char*>(s1), sa.data(), s2 - s1);
 	 goto got_number;
        }
 #endif

@@ -119,10 +119,6 @@ bool cp_time(const String&, Timestamp*);
 bool cp_bandwidth(const String&, uint32_t*);
 
 String cp_unparse_bool(bool);
-#ifdef HAVE_INT64_TYPES
-String cp_unparse_integer64(int64_t, int base, bool uppercase);
-String cp_unparse_unsigned64(uint64_t, int base, bool uppercase);
-#endif
 String cp_unparse_real2(int32_t, int frac_bits);
 String cp_unparse_real2(uint32_t, int frac_bits);
 #ifdef HAVE_INT64_TYPES

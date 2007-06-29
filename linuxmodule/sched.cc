@@ -291,71 +291,63 @@ enum { H_TASKS_PER_ITER, H_ITERS_PER_TIMERS, H_ITERS_PER_OS };
 static String
 read_sched_param(Element *, void *thunk) 
 {
-    switch ((int)thunk) {
-    case H_TASKS_PER_ITER: {
-	if (click_router) {
-	    String s;
-	    for (int i = 0; i < click_master->nthreads(); i++)
-		s += String(click_master->thread(i)->_tasks_per_iter) + "\n";
-	return s;
-	}
-    }
+    String s;
+    switch (reinterpret_cast<uintptr_t>(thunk)) {
+	
+      case H_TASKS_PER_ITER:
+	for (int i = 0; i < click_master->nthreads(); i++)
+	    s += String(click_master->thread(i)->_tasks_per_iter) + "\n";
+	break;
 
-    case H_ITERS_PER_TIMERS: {
-	if (click_router) {
-	    String s;
-	    for (int i = 0; i < click_master->nthreads(); i++)
-		s += String(click_master->thread(i)->_iters_per_timers) + "\n";
-	return s;
-	}
+      case H_ITERS_PER_TIMERS:
+	for (int i = 0; i < click_master->nthreads(); i++)
+	    s += String(click_master->thread(i)->_iters_per_timers) + "\n";
+	break;
+	  
+      case H_ITERS_PER_OS:
+	for (int i = 0; i < click_master->nthreads(); i++)
+	    s += String(click_master->thread(i)->_iters_per_os) + "\n";
+	break;
+	
     }
-    case H_ITERS_PER_OS: {
-	if (click_router) {
-	    String s;
-	    for (int i = 0; i < click_master->nthreads(); i++)
-		s += String(click_master->thread(i)->_iters_per_os) + "\n";
-	return s;
-	}
-    }
-    }
-    return String("0\n");
-
+    return s;
 }
+
 static int
 write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *errh) 
 {
+    switch (reinterpret_cast<uintptr_t>(thunk)) {
 
-    switch((int)thunk) {
+      case H_TASKS_PER_ITER: {
+	  unsigned x;
+	  if (!cp_integer(conf, &x)) 
+	      return errh->error("tasks_per_iter must be unsigned\n");
+	  // change current thread priorities
+	  for (int i = 0; i < click_master->nthreads(); i++)
+	      click_master->thread(i)->_tasks_per_iter = x;
+	  break;
+      }
 
-    case H_TASKS_PER_ITER: {
-	unsigned x;
-	if (!cp_integer(conf, &x)) 
-	    return errh->error("tasks_per_iter must be unsigned\n");
+      case H_ITERS_PER_TIMERS: {
+	  unsigned x;
+	  if (!cp_integer(conf, &x)) 
+	      return errh->error("tasks_per_iter_timers must be unsigned\n");
+	  // change current thread priorities
+	  for (int i = 0; i < click_master->nthreads(); i++)
+	      click_master->thread(i)->_iters_per_timers = x;
+	  break;
+      }
+
+      case H_ITERS_PER_OS: {
+	  unsigned x;
+	  if (!cp_integer(conf, &x)) 
+	      return errh->error("tasks_per_iter_os must be unsigned\n");
+	  // change current thread priorities
+	  for (int i = 0; i < click_master->nthreads(); i++)
+	      click_master->thread(i)->_iters_per_os = x;
+	  break;
+      }
 	
-	// change current thread priorities
-	for (int i = 0; i < click_master->nthreads(); i++)
-	    click_master->thread(i)->_tasks_per_iter = x;
-    }
-
-    case H_ITERS_PER_TIMERS: {
-	unsigned x;
-	if (!cp_integer(conf, &x)) 
-	    return errh->error("tasks_per_iter_timers must be unsigned\n");
-	
-	// change current thread priorities
-	for (int i = 0; i < click_master->nthreads(); i++)
-	    click_master->thread(i)->_iters_per_timers = x;
-    }
-
-    case H_ITERS_PER_OS: {
-	unsigned x;
-	if (!cp_integer(conf, &x)) 
-	    return errh->error("tasks_per_iter_os must be unsigned\n");
-	
-	// change current thread priorities
-	for (int i = 0; i < click_master->nthreads(); i++)
-	    click_master->thread(i)->_iters_per_os = x;
-    }
     }
     return 0;
 }

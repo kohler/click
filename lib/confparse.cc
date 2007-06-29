@@ -3270,76 +3270,6 @@ cp_unparse_bool(bool b)
 	return String::stable_string("false", 5);
 }
 
-#ifdef HAVE_INT64_TYPES
-
-String
-cp_unparse_unsigned64(uint64_t q, int base, bool uppercase)
-{
-  // Unparse a uint64_t. Linux kernel sprintf can't handle %lld, so we provide
-  // our own function.
-  
-  char buf[256];
-  char *lastbuf = buf + 255;
-  char *trav;
-  
-  if (base == 16 || base == 8) {
-    // different code.
-    const char *digits = (uppercase ? "0123456789ABCDEF" : "0123456789abcdef");
-    int shift = (base == 16 ? 4 : 3);
-    for (trav = lastbuf; q > 0; trav--) {
-      *trav = digits[q & (base - 1)];
-      q >>= shift;
-    }
-  } else {
-    assert(base == 10);
-    
-    for (trav = lastbuf; q > 0; trav--) {
-      
-      // k = Approx[q/10] -- know that k <= q/10
-      uint64_t k = (q >> 4) + (q >> 5) + (q >> 8) + (q >> 9)
-	+ (q >> 12) + (q >> 13) + (q >> 16) + (q >> 17);
-      uint64_t m;
-      
-      // increase k until it exactly equals floor(q/10). on exit, m is the
-      // remainder: m < 10 and q == 10*k + m.
-      while (1) {
-	// d = 10*k
-	uint64_t d = (k << 3) + (k << 1);
-	m = q - d;
-	if (m < 10) break;
-	
-	// delta = Approx[m/10] -- know that delta <= m/10
-	uint64_t delta = (m >> 4) + (m >> 5) + (m >> 8) + (m >> 9);
-	if (m >= 0x1000)
-	  delta += (m >> 12) + (m >> 13) + (m >> 16) + (m >> 17);
-	
-	// delta might have underflowed: add at least 1
-	k += (delta ? delta : 1);
-      }
-      
-      *trav = '0' + (unsigned)m;
-      q = k;
-    }
-  }
-  
-  // make sure at least one 0 is written
-  if (trav == lastbuf)
-    *trav-- = '0';
-  
-  return String(trav + 1, lastbuf - trav);
-}
-
-String
-cp_unparse_integer64(int64_t q, int base, bool uppercase)
-{
-  if (q < 0)
-    return "-" + cp_unparse_unsigned64(-q, base, uppercase);
-  else
-    return cp_unparse_unsigned64(q, base, uppercase);
-}
-
-#endif
-
 String
 cp_unparse_real2(uint32_t real, int frac_bits)
 {
@@ -3414,7 +3344,7 @@ String
 cp_unparse_real2(uint64_t real, int frac_bits)
 {
   assert(frac_bits <= CP_REAL2_MAX_FRAC_BITS);
-  String int_part = cp_unparse_unsigned64(real >> frac_bits, 10, false);
+  String int_part(real >> frac_bits);
   String frac_part = cp_unparse_real2((uint32_t)(real & ((1 << frac_bits) - 1)), frac_bits);
   return int_part + frac_part.substring(1);
 }

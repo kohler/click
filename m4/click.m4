@@ -566,6 +566,17 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 	if test $ac_cv_long_64 = yes; then
 	    AC_DEFINE([HAVE_INT64_IS_LONG_USERLEVEL], [1], [Define if 'int64_t' is typedefed to 'long' at user level.])
 	fi
+
+	AC_CACHE_CHECK(whether long long and int64_t are the same type,
+	    ac_cv_long_long_64, [AC_LANG_CPLUSPLUS
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <$inttypes_hdr>
+void f1(long long) {
+}
+void f1(int64_t) { // will fail if long long and int64_t are the same type
+}]], [[]])], ac_cv_long_long_64=no, ac_cv_long_long_64=yes)])
+	if test $ac_cv_long_long_64 = yes; then
+	    AC_DEFINE([HAVE_INT64_IS_LONG_LONG_USERLEVEL], [1], [Define if 'int64_t' is typedefed to 'long long' at user level.])
+	fi
     fi])
 
 

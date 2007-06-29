@@ -32,7 +32,11 @@ class String { public:
   explicit String(unsigned u);
   explicit String(long i);
   explicit String(unsigned long u);
-#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
+#if HAVE_LONG_LONG
+  explicit String(long long q);
+  explicit String(unsigned long long q);
+#endif
+#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
   explicit String(int64_t q);
   explicit String(uint64_t q);
 #endif
@@ -45,6 +49,20 @@ class String { public:
   static String garbage_string(int len);	// len garbage characters
   static String stable_string(const char *s, int len = -1); // stable read-only mem.
   static inline String stable_string(const char *begin, const char *end);
+  
+#if HAVE_LONG_LONG
+  typedef long long int_large_t;
+  typedef unsigned long long uint_large_t;
+#elif HAVE_INT64_TYPES
+  typedef int64_t int_large_t;
+  typedef uint64_t uint_large_t;
+#else
+  typedef long int_large_t;
+  typedef unsigned long uint_large_t;
+#endif
+  
+  static String numeric_string(int_large_t num, int base = 10, bool uppercase = true);
+  static String numeric_string(uint_large_t num, int base = 10, bool uppercase = true);
   
   inline int length() const;
   inline const char *data() const;
