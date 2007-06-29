@@ -1,3 +1,13 @@
+2007-06-29 Friday 18:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/grid/: airoinfo.hh (1.9), region.hh (1.6): improve grid
+	  elements compilability
+
+2007-06-29 Friday 18:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/classifier.cc (1.57): improve unaligned-access
+	  error on Classifier
+
 2007-06-29 Friday 16:10  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* NEWS (1.173), elements/linuxmodule/polldevice.cc (1.146),
