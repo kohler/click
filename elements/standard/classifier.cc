@@ -823,7 +823,7 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
       _align_offset = (4 - (o % 4)) % 4;
     else {
 #if !HAVE_INDIFFERENT_ALIGNMENT
-      errh->error("no AlignmentInfo available: you may experience unaligned accesses");
+      errh->error("machine is sensitive to alignment: you must run config through click-align");
 #endif
       _align_offset = 0;
     }
