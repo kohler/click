@@ -120,7 +120,7 @@ class PollDevice : public AnyTaskDevice { public:
   uint32_t _activations;
 #endif
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-  uint64_t _push_cycles;
+  click_cycles_t _push_cycles;
 #endif
     
   uint32_t _buffers_reused;

@@ -40,8 +40,8 @@ class RTCycles : public Element { public:
   Packet *pull(int);
   void add_handlers();
   
-  uint64_t _accum;
-  uint64_t _npackets;
+    click_cycles_t _accum;
+    click_cycles_t _npackets;
   
 };
 

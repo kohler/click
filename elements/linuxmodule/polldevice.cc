@@ -279,7 +279,7 @@ PollDevice::run_task(Task *)
 
     _npackets++;
 # if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
-    uint64_t before_push_cycles = click_get_cycles();
+    click_cycles_t before_push_cycles = click_get_cycles();
 # endif
     output(0).push(p);
 # if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS

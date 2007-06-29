@@ -279,7 +279,7 @@ ToDevice::run_task(Task *)
     /* try to send from click */
     while (sent < _burst && (busy = netif_queue_stopped(_dev)) == 0) {
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
-	uint64_t before_pull_cycles = click_get_cycles();
+	click_cycles_t before_pull_cycles = click_get_cycles();
 #endif
 
 	_pulls++;

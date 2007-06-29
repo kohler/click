@@ -32,7 +32,7 @@ RTCycles::~RTCycles()
 void
 RTCycles::push(int, Packet *p)
 {
-  uint64_t c = click_get_cycles();
+  click_cycles_t c = click_get_cycles();
   output(0).push(p);
   _accum += click_get_cycles() - c;
   _npackets++;
@@ -41,7 +41,7 @@ RTCycles::push(int, Packet *p)
 Packet *
 RTCycles::pull(int)
 {
-  uint64_t c = click_get_cycles();
+  click_cycles_t c = click_get_cycles();
   Packet *p = input(0).pull();
   _accum += click_get_cycles() - c;
   if (p) _npackets++;

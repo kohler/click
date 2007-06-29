@@ -384,37 +384,33 @@ CLICK_ENDDECLS
 
 // CYCLE COUNTS
 
-#ifdef HAVE_INT64_TYPES
-# if CLICK_LINUXMODULE
-
-inline uint64_t
-click_get_cycles()
-{
-#  if __i386__
-  uint64_t x;
-  __asm__ __volatile__("rdtsc": "=A" (x));
-  return x;
-#  else
-  // add other architectures here
-  return 0;
-#  endif
-}
-
-# elif CLICK_BSDMODULE
-
-#  define click_get_cycles()		rdtsc()
-
-# else
-
 CLICK_DECLS
-inline uint64_t
+
+#if HAVE_INT64_TYPES
+typedef uint64_t click_cycles_t;
+#else
+typedef uint32_t click_cycles_t;
+#endif
+
+inline click_cycles_t
 click_get_cycles()
 {
-  return 0;
-}
-CLICK_ENDDECLS
-
-# endif
+#if CLICK_LINUXMODULE && HAVE_INT64_TYPES && __i386__
+    uint64_t x;
+    __asm__ __volatile__ ("rdtsc" : "=A" (x));
+    return x;
+#elif CLICK_LINUXMODULE && __i386__
+    uint32_t xlo, xhi;
+    __asm__ __volatile__ ("rdtsc" : "=d" (xhi), "=a" (xlo));
+    return xhi ? 0xFFFFFFFF : xlo;
+#elif CLICK_BSDMODULE
+    return rdtsc();
+#else
+    // add other architectures here
+    return 0;
 #endif
+}
+
+CLICK_ENDDECLS
 
 #endif

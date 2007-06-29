@@ -134,7 +134,7 @@ class ToDevice : public AnyTaskDevice { public:
   uint32_t _pulls;
   uint32_t _npackets;
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-  uint64_t _pull_cycles;
+  click_cycles_t _pull_cycles;
 #endif
   uint32_t _rejected;
   uint32_t _hard_start;
