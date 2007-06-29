@@ -1,3 +1,30 @@
+2007-06-29 Friday 16:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* NEWS (1.173), elements/linuxmodule/polldevice.cc (1.146),
+	  elements/linuxmodule/polldevice.hh (1.73),
+	  elements/linuxmodule/rtcycles.cc (1.15),
+	  elements/linuxmodule/rtcycles.hh (1.10),
+	  elements/linuxmodule/todevice.cc (1.154),
+	  elements/linuxmodule/todevice.hh (1.76), include/click/glue.hh
+	  (1.57): click_get_cycles() works [sort of] even if
+	  !HAVE_INT64_TYPES (Jason Park report)
+
+2007-06-29 Friday 15:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-linuxmodule.h.in (1.23), config-userlevel.h.in (1.37),
+	  configure (1.99), configure.in (1.300),
+	  elements/etherswitch/bridgemessage.cc (1.22),
+	  include/click/confparse.hh (1.63), include/click/straccum.hh
+	  (1.40), include/click/string.hh (1.45), lib/confparse.cc (1.152),
+	  lib/error.cc (1.57), lib/straccum.cc (1.41), lib/string.cc
+	  (1.61), linuxmodule/sched.cc (1.62), m4/click.m4 (1.59): fixes
+	  based on comments from Puneet Sood re: compiling for x86_64.
+	  Remove cp_unparse_unsigned64 in favor of
+	  StringAccum::append_numeric and String::numeric_string.
+	  String::numeric_string and friends work on the largest known
+	  integer size.  Also, some bug fixes to the iters_per_os, etc.
+	  handlers.
+
 2007-06-29 Friday 15:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/tools/align-01.testie (1.3): adapt to smaller AlignmentInfo
