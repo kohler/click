@@ -3,6 +3,8 @@
 #include <click/element.hh>
 #include <click/etheraddress.hh>
 #ifdef __linux__
+#include <linux/types.h>
+#include <linux/if.h>
 #include <linux/wireless.h>
 #else
 /* OpenBSD 2.9 doesn't protect <net/if.h> from multiple inclusion, but

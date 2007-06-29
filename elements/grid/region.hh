@@ -22,7 +22,7 @@ public:
 
   // create an empty region -- this is not the same as an infinitely
   // thin region
-  RectRegion() : _w(-1), _h(-1) { }
+  RectRegion() : _x(0), _y(0), _w(-1), _h(-1) { }
 
   // resulting region may be empty!
   RectRegion intersect(RectRegion &r);
