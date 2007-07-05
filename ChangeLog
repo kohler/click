@@ -1,3 +1,9 @@
+2007-07-05 Thursday 15:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.100), include/click/straccum.hh (1.41),
+	  include/click/string.hh (1.46), lib/error.cc (1.58): try another
+	  x86_64 related fix
+
 2007-06-29 Friday 18:20  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/grid/: airoinfo.hh (1.9), region.hh (1.6): improve grid
