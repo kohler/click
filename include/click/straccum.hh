@@ -48,6 +48,10 @@ class StringAccum { public:
 
     void append_numeric(String::int_large_t num, int base = 10, bool uppercase = true);
     void append_numeric(String::uint_large_t num, int base = 10, bool uppercase = true);
+#if HAVE_LONG_LONG && HAVE_INT64_TYPES && SIZEOF_LONG_LONG > 8
+    inline void append_numeric(int64_t num, int base = 10, bool uppercase = true);
+    inline void append_numeric(uint64_t num, int base = 10, bool uppercase = true);
+#endif
     
     inline char *reserve(int);
     void set_length(int l)	{ assert(l>=0 && _len<=_cap);	_len = l; }
@@ -262,14 +266,14 @@ operator<<(StringAccum &sa, unsigned u)
 inline StringAccum &
 operator<<(StringAccum &sa, long long q)
 {
-    sa.append_numeric(q);
+    sa.append_numeric(static_cast<String::int_large_t>(q));
     return sa;
 }
 
 inline StringAccum &
 operator<<(StringAccum &sa, unsigned long long q)
 {
-    sa.append_numeric(q);
+    sa.append_numeric(static_cast<String::uint_large_t>(q));
     return sa;
 }
 #endif
@@ -278,14 +282,14 @@ operator<<(StringAccum &sa, unsigned long long q)
 inline StringAccum &
 operator<<(StringAccum &sa, int64_t q)
 {
-    sa.append_numeric(q);
+    sa.append_numeric(static_cast<String::int_large_t>(q));
     return sa;
 }
 
 inline StringAccum &
 operator<<(StringAccum &sa, uint64_t q)
 {
-    sa.append_numeric(q);
+    sa.append_numeric(static_cast<String::uint_large_t>(q));
     return sa;
 }
 #endif
@@ -312,6 +316,20 @@ operator<<(StringAccum &sa, const StringAccum &sb)
     sa.append(sb.data(), sb.length());
     return sa;
 }
+
+#if HAVE_LONG_LONG && HAVE_INT64_TYPES && SIZEOF_LONG_LONG > 8
+inline void
+StringAccum::append_numeric(int64_t num, int base, bool uppercase)
+{
+    append_numeric(static_cast<String::int_large_t>(num), base, uppercase);
+}
+
+inline void
+StringAccum::append_numeric(uint64_t num, int base, bool uppercase)
+{
+    append_numeric(static_cast<String::uint_large_t>(num), base, uppercase);
+}
+#endif
 
 CLICK_ENDDECLS
 #endif

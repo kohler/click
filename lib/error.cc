@@ -420,7 +420,7 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 	 if ((flags & SIGNED) && (int64_t)qnum < 0)
 	   qnum = -(int64_t) qnum, flags |= NEGATIVE;
 	 StringAccum sa;
-	 sa.append_numeric(qnum, base, (flags & UPPERCASE));
+	 sa.append_numeric(static_cast<String::uint_large_t>(qnum), base, (flags & UPPERCASE));
 	 s1 = s2 - sa.length();
 	 memcpy(const_cast<char*>(s1), sa.data(), s2 - s1);
 	 goto got_number;
