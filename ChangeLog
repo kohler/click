@@ -1,3 +1,8 @@
+2007-07-06 Friday 12:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.92): fix ELEMENT_LIBS support (problem
+	  reported by Beyers Cronje)
+
 2007-07-05 Thursday 15:58  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.100), include/click/straccum.hh (1.41),
