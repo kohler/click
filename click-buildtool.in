@@ -543,6 +543,13 @@ EOF
 
     # find libraries
     libs=`echo "$elemconf" | sed '/-!lib/!d;s/^.*-!lib//g;s/;/ /g' | grep .`
+    if test -n "$libs"; then
+	libs=`echo "$libs" | sed 's/^\([^ ][^ ]*\) *$/\1 \1/'`
+	while echo "$libs" | grep ' [^ ].* [^ ]' >/dev/null; do
+	    libs=`echo "$libs" | sed '/ [^ ].* [^ ]/s/^\([^ ][^ ]*\)  *\([^ ][^ ]*\) /\1 \2\\
+\2 /'`
+	done
+    fi
     test -n "$libs" && libs=`echo "$libs" | tsort`
 
     # massage awk script based on Linux 2.6 or not
