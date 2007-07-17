@@ -78,7 +78,9 @@ uninstall-info: $(srcdir)/click.info
 	    /bin/rm -f $(DESTDIR)$(infodir)/$$f; fi; \
 	done
 
-$(srcdir)/click.info:
+info: $(srcdir)/click.info
+	@:
+$(srcdir)/click.info: $(srcdir)/click.texi
 	@rm -f $@ $@-[0-9] $@-[0-9][0-9]
 	cd $(srcdir); $(MAKEINFO) click.texi
 click.html: $(srcdir)/click.texi
@@ -88,14 +90,8 @@ click.html: $(srcdir)/click.texi
 click.dvi: $(srcdir)/click.texi always
 	$(TEXI2DVI) $(srcdir)/click.texi
 
-$(srcdir)/testie.1:
+$(srcdir)/testie.1: $(top_srcdir)/test/testie
 	pod2man -d '' -c '' $(top_srcdir)/test/testie > $(srcdir)/testie.1
-
-info: $(srcdir)/click.info
-	@:
-force-srcdoc:
-	/bin/rm -f $(srcdir)/click.info $(srcdir)/testie.1
-	$(MAKE) $(srcdir)/click.info $(srcdir)/testie.1
 
 always:
 	@:
