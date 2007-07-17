@@ -44,14 +44,8 @@ IPsecESPEncap::~IPsecESPEncap()
 }
 
 int
-IPsecESPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
+IPsecESPEncap::configure(Vector<String> &, ErrorHandler *)
 { 
-  return 0;
-}
-
-int
-IPsecESPEncap::initialize(ErrorHandler *errh)
-{
   return 0;
 }
 
