@@ -1,0 +1,4 @@
+Makefile
+*.d
+click-install
+click-uninstall

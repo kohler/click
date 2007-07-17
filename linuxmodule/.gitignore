@@ -1,0 +1,6 @@
+Makefile
+*.d
+elements.conf
+elements.mk
+elements.cc
+ksyms.c

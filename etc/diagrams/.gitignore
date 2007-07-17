@@ -1,0 +1,6 @@
+*.[12345789]
+*.log
+*.mpx
+*.aux
+*.dvi
+mpxerr.tex

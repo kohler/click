@@ -1,0 +1,7 @@
+Makefile
+*.d
+click
+click.aout
+elements.conf
+elements.cc
+elements.mk
