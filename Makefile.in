@@ -179,7 +179,7 @@ dist: distdir
 	tar czf $(distdir).tar.gz $(distdir)
 	-rm -rf $(distdir)
 distdir: $(srcdir)/configure
-	cd doc && $(MAKE) info
+	cd doc && $(MAKE) force-srcdoc
 	cd $(srcdir)/etc/samplepackage && $(AUTOCONF)
 	-rm -rf $(distdir)
 	mkdir $(distdir)
