@@ -405,7 +405,7 @@ click_fill_super(struct super_block *sb, void *data, int flags)
     return click_read_super(sb, data, flags) ? 0 : -ENOMEM;
 }
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 static int
 click_get_sb(struct file_system_type *fs_type, int flags, const char *, void *data, struct vfsmount *vfsmount)
 {
