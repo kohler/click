@@ -15,11 +15,16 @@ typedef void (*TimerHook)(Timer *, void *);
 
 class Timer { public:
 
+    Timer();
     Timer(TimerHook hook, void *thunk);
     Timer(Element *element);		// call element->run_timer()
     Timer(Task *task);			// call task->reschedule()
     inline ~Timer();
 
+    void set_hook(TimerHook hook, void *thunk);
+    void set_hook(Element *element);
+    void set_hook(Task *task);
+    
     inline bool initialized() const;
     inline bool scheduled() const;
     inline const Timestamp &expiry() const;

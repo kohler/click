@@ -68,27 +68,32 @@ CLICK_DECLS
  very large numbers of timers.
  */
 
-/*
- * element_hook is a callback that gets called when a Timer,
- * constructed with just an Element instance, expires. 
- * 
- * When used in userlevel or kernel polling mode, timer is maintained by
- * Click, so element_hook is called within Click.
- */
+static void
+empty_hook(Timer *, void *)
+{
+}
+
 static void
 element_hook(Timer *timer, void *thunk)
 {
-    Element* e = (Element*)thunk;
+    Element* e = static_cast<Element *>(thunk);
     e->run_timer(timer);
 }
 
 static void
-task_hook(Timer*, void* thunk)
+task_hook(Timer *, void *thunk)
 {
-    Task* task = (Task*)thunk;
+    Task* task = static_cast<Task *>(thunk);
     task->reschedule();
 }
 
+
+/** @brief Create a Timer that will do nothing when fired.
+ */
+Timer::Timer()
+    : _schedpos(-1), _hook(empty_hook), _thunk(0), _router(0)
+{
+}
 
 /** @brief Create a Timer that will call @a hook(this, @a thunk) when fired.
  *
@@ -117,6 +122,38 @@ Timer::Timer(Element* element)
 Timer::Timer(Task* task)
     : _schedpos(-1), _hook(task_hook), _thunk(task), _router(0)
 {
+}
+
+/** @brief Change the Timer to call @a hook(this, @a thunk) when fired.
+ *
+ * @param hook the callback function
+ * @param thunk argument for the callback function
+ */
+void Timer::set_hook(TimerHook hook, void* thunk)
+{
+    _hook = hook;
+    _thunk = thunk;
+}
+
+/** @brief Change the Timer to call @a element ->@link
+ * Element::run_timer() run_timer@endlink(this) when fired.
+ *
+ * @param element the element
+ */
+void Timer::set_hook(Element* element)
+{
+    _hook = element_hook;
+    _thunk = element;
+}
+
+/** @brief Change the Timer to schedule @a task when fired.
+
+ * @param task the task
+ */
+void Timer::set_hook(Task* task)
+{
+    _hook = task_hook;
+    _thunk = task;
 }
 
 /** @brief Schedule the timer to fire at @a when.
