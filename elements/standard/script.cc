@@ -505,6 +505,19 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
 	sa << script->_write_status;
 	return true;
     }
+
+    if (vname.length() == 4 && memcmp(vname.data(), "args", 4) == 0) {
+	sa << cp_expand_in_quotes(script->_run_args, quote);
+	return true;
+    }
+
+    if (vname[0] >= '1' && vname[0] <= '9' && cp_integer(vname, &x)) {
+	String arg, run_args = script->_run_args;
+	for (; x > 0; --x)
+	    arg = cp_pop_spacevec(run_args);
+	sa << cp_expand_in_quotes(arg, quote);
+	return true;
+    }
     
     if (vartype == '(') {
 	HandlerCall hc(vname);
@@ -543,6 +556,7 @@ Script::step_handler(int, String &str, Element *e, const Handler *h, ErrorHandle
 	nsteps = 0, steptype = STEP_JUMP;
     } else if (what == ST_RUN) {
 	scr->_insn_pos = 0;
+	scr->_run_args = str;
 	nsteps = 0, steptype = STEP_JUMP;
     } else {
 	if (data == "router")

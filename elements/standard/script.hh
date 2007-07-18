@@ -160,6 +160,10 @@ of two Counter handlers.
    s :: Script(TYPE PASSIVE,
           return $(add $(c1.count) $(c2.count)))
 
+Within the script, the C<run> handler's arguments, if any, are available
+via the C<$args> variable.  The first, second, and so forth space-separated
+portions of C<$args> are available via the C<$1>, C<$2>, ... variables.
+	  
 =item C<DRIVER>
 
 A driver script manages the Click driver's stop events.  See DriverManager for
@@ -297,6 +301,7 @@ class Script : public Element { public:
     Vector<String> _args3;
     
     Vector<String> _vars;
+    String _run_args;
 
     int _insn_pos;
     int _step_count;
