@@ -29,7 +29,7 @@
 CLICK_DECLS
 
 UDPIPEncap::UDPIPEncap()
-    : _cksum(0), _use_dst_anno(false)
+    : _cksum(true), _use_dst_anno(false)
 {
     _id = 0;
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
