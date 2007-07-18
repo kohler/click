@@ -179,12 +179,14 @@ dist: distdir
 	tar czf $(distdir).tar.gz $(distdir)
 	-rm -rf $(distdir)
 distdir: $(srcdir)/configure
-	cd doc && $(MAKE) info
+	-rm -rf doc/click.info* doc/testie.1 $(srcdir)/doc/click.info* $(srcdir)/doc/testie.1
+	cd doc && $(MAKE) info testie.1
 	cd $(srcdir)/etc/samplepackage && $(AUTOCONF)
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	chmod 777 $(distdir)
 	@echo Copying library, documentation, configuration, and driver files...
+	[ "$(srcdir)" == . ] || cp doc/click.info* doc/testie.1 $(srcdir)/doc
 	@for file in `cat $(srcdir)/DISTFILES | grep .`; do \
 	  if expr "$$file" : '.*:$$' >/dev/null 2>&1; then \
 	    d=`echo $$file | sed 's/:$$//;s/^\.\///'`; \
