@@ -77,7 +77,7 @@ if [ -x /sbin/install-info ] ; then
 fi
 
 %changelog
-* Jan 10 2005 Jonathan Day <imipak@yahoo.com>
+* Mon Jan 10 2005 Jonathan Day <imipak@yahoo.com>
 - update for new syntax
 
 * Fri May 28 2004 Mark Huang <mlhuang@cs.princeton.edu>
