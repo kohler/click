@@ -31,9 +31,9 @@ BridgeMessage::s(String tag) const {
 
   sprintf(buf, "%s %16s:%04hx: %2s  %x -> %16s  m/h/d: %hx/%hx/%hx",
 	  tag.c_str(),
-	  String::numeric_string(_bridge_id,16,false).c_str(), _port_id,
+	  String::numeric_string(static_cast<String::uint_large_t>(_bridge_id), 16, false).c_str(), _port_id,
 	  _tc ? "TC" : "tc",
-	  _cost, String::numeric_string(_root,16,false).c_str(),
+	  _cost, String::numeric_string(static_cast<String::uint_large_t>(_root), 16, false).c_str(),
 	  _max_age, _hello_time, _forward_delay);
   s = buf;
   delete [] buf;
@@ -168,10 +168,10 @@ BridgeMessage::wire::s(String tag) const {
 	    "a/m/h/d: %hx/%hx/%hx/%hx",
 	    tag.c_str(),
 	    type ? "???" : "CFG",
-	    String::numeric_string(ntohq(bridge_id),16,false).c_str(),
+	    String::numeric_string(static_cast<String::uint_large_t>(ntohq(bridge_id)), 16, false).c_str(),
 	    ntohs(port_id),
 	    tca ? "TCA":"tca", tc ? "TC" : "tc",
-	    ntohl(cost), String::numeric_string(ntohq(root),16,false).c_str(),
+	    ntohl(cost), String::numeric_string(static_cast<String::uint_large_t>(ntohq(root)), 16, false).c_str(),
 	    ntohs(message_age), ntohs(max_age),
 	    ntohs(hello_time), ntohs(forward_delay));
   s = buf;

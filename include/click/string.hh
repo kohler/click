@@ -49,13 +49,13 @@ class String { public:
   static String garbage_string(int len);	// len garbage characters
   static String stable_string(const char *s, int len = -1); // stable read-only mem.
   static inline String stable_string(const char *begin, const char *end);
-  
-#if HAVE_LONG_LONG
-  typedef long long int_large_t;
-  typedef unsigned long long uint_large_t;
-#elif HAVE_INT64_TYPES
+
+#if HAVE_INT64_TYPES && (!HAVE_LONG_LONG || SIZEOF_LONG_LONG <= 8)
   typedef int64_t int_large_t;
   typedef uint64_t uint_large_t;
+#elif HAVE_LONG_LONG
+  typedef long long int_large_t;
+  typedef unsigned long long uint_large_t;
 #else
   typedef long int_large_t;
   typedef unsigned long uint_large_t;
@@ -63,10 +63,6 @@ class String { public:
   
   static String numeric_string(int_large_t num, int base = 10, bool uppercase = true);
   static String numeric_string(uint_large_t num, int base = 10, bool uppercase = true);
-#if HAVE_LONG_LONG && HAVE_INT64_TYPES && SIZEOF_LONG_LONG > 8
-  static inline String numeric_string(int64_t num, int base = 10, bool uppercase = true);
-  static inline String numeric_string(uint64_t num, int base = 10, bool uppercase = true);
-#endif
   
   inline int length() const;
   inline const char *data() const;
@@ -436,30 +432,6 @@ String::stable_string(const char *begin, const char *end)
     else
 	return String();
 }
-
-#if HAVE_LONG_LONG && HAVE_INT64_TYPES && SIZEOF_LONG_LONG > 8
-/** @brief Create and return a String containing an ASCII representation of @a num.
- *  @param  num        Number.
- *  @param  base       Base; must be 8, 10, or 16.  Defaults to 10.
- *  @param  uppercase  If true, then use uppercase letters in base 16.
- */
-inline String
-String::numeric_string(int64_t num, int base, bool uppercase)
-{
-    return String::numeric_string(static_cast<int_large_t>(num), base, uppercase);
-}
-
-/** @brief Create and return a String containing an ASCII representation of @a num.
- *  @param  num        Number.
- *  @param  base       Base; must be 8, 10, or 16.  Defaults to 10.
- *  @param  uppercase  If true, then use uppercase letters in base 16.
- */
-inline String
-String::numeric_string(uint64_t num, int base, bool uppercase)
-{
-    return String::numeric_string(static_cast<uint_large_t>(num), base, uppercase);
-}
-#endif
 
 /** @brief Return a substring of the current string starting at @a begin and
  * ending before @a end.
