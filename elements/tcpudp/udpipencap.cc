@@ -3,6 +3,7 @@
  * Benjie Chen, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,7 +29,12 @@
 CLICK_DECLS
 
 UDPIPEncap::UDPIPEncap()
+    : _cksum(0), _use_dst_anno(false)
 {
+    _id = 0;
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
+    _checked_aligned = false;
+#endif
 }
 
 UDPIPEncap::~UDPIPEncap()
@@ -38,40 +44,38 @@ UDPIPEncap::~UDPIPEncap()
 int
 UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  bool do_cksum = true;
-  _use_dst_anno = false;
-  if (conf.size() >= 3 && conf[2] == "DST_ANNO") {
-      _use_dst_anno = true;
-      conf[2] = "0.0.0.0";
-  }
+    bool use_dst_anno = (conf.size() >= 3 && conf[2] == "DST_ANNO");
+    if (use_dst_anno)
+	conf[2] = "0.0.0.0";
   
-  if (cp_va_parse(conf, this, errh,
-		  cpIPAddress, "source address", &_saddr,
-		  cpUDPPort, "source port", &_sport,
-		  cpIPAddress, "destination address", &_daddr,
-		  cpUDPPort, "destination port", &_dport,
-		  cpOptional,
-		  cpBool, "do UDP checksum?", &do_cksum,
-		  cpEnd) < 0)
-    return -1;
+    if (cp_va_parse(conf, this, errh,
+		    cpIPAddress, "source address", &_saddr,
+		    cpUDPPort, "source port", &_sport,
+		    cpIPAddress, "destination address", &_daddr,
+		    cpUDPPort, "destination port", &_dport,
+		    cpOptional,
+		    cpBool, "do UDP checksum?", &_cksum,
+		    cpEnd) < 0)
+	return -1;
 
-  _id = 0;
-  _cksum = do_cksum;
+    _sport = htons(_sport);
+    _dport = htons(_dport);
+    _use_dst_anno = use_dst_anno;
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
-  // check alignment
-  {
-    int ans, c, o;
-    ans = AlignmentInfo::query(this, 0, c, o);
-    _aligned = (ans && c == 4 && o == 0);
-    if (!_aligned)
-      errh->warning("IP header unaligned, cannot use fast IP checksum");
-    if (!ans)
-      errh->message("(Try passing the configuration through `click-align'.)");
-  }
+    if (!_checked_aligned) {
+	int ans, c, o;
+	ans = AlignmentInfo::query(this, 0, c, o);
+	_aligned = (ans && c == 4 && o == 0);
+	if (!_aligned)
+	    errh->warning("IP header unaligned, cannot use fast IP checksum");
+	if (!ans)
+	    errh->message("(Try passing the configuration through `click-align'.)");
+	_checked_aligned = true;
+    }
 #endif
   
-  return 0;
+    return 0;
 }
 
 Packet *
@@ -113,8 +117,8 @@ UDPIPEncap::simple_action(Packet *p_in)
   p->set_ip_header(ip, sizeof(click_ip));
 
   // set up UDP header
-  udp->uh_sport = htons(_sport);
-  udp->uh_dport = htons(_dport);
+  udp->uh_sport = _sport;
+  udp->uh_dport = _dport;
   uint16_t len = p->length() - sizeof(click_ip);
   udp->uh_ulen = htons(len);
   udp->uh_sum = 0;
@@ -124,6 +128,35 @@ UDPIPEncap::simple_action(Packet *p_in)
   }
   
   return p;
+}
+
+String UDPIPEncap::read_handler(Element *e, void *thunk)
+{
+    UDPIPEncap *u = static_cast<UDPIPEncap *>(e);
+    switch ((uintptr_t) thunk) {
+      case 0:
+	return IPAddress(u->_saddr).unparse();
+      case 1:
+	return String(ntohs(u->_sport));
+      case 2:
+	return IPAddress(u->_daddr).unparse();
+      case 3:
+	return String(ntohs(u->_dport));
+      default:
+	return String();
+    }
+}
+
+void UDPIPEncap::add_handlers()
+{
+    add_read_handler("src", read_handler, (void *) 0);
+    add_write_handler("src", reconfigure_positional_handler, (void *) 0);
+    add_read_handler("sport", read_handler, (void *) 1);
+    add_write_handler("sport", reconfigure_positional_handler, (void *) 1);
+    add_read_handler("dst", read_handler, (void *) 2);
+    add_write_handler("dst", reconfigure_positional_handler, (void *) 2);
+    add_read_handler("dport", read_handler, (void *) 3);
+    add_write_handler("dport", reconfigure_positional_handler, (void *) 3);
 }
 
 CLICK_ENDDECLS
