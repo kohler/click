@@ -81,6 +81,10 @@ their next packet annotations.
 
 ARPQuerier will send at most 10 queries a second for any IP address.
 
+=h ipaddr read/write
+
+Returns or sets the ARPQuerier's source IP address.
+
 =h table read-only
 
 Returns a textual representation of the ARP table.
@@ -178,6 +182,7 @@ class ARPQuerier : public Element { public:
     static void expire_hook(Timer *, void *);
     static String read_table(Element *, void *);
     static String read_stats(Element *, void *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *);
   
 };
 

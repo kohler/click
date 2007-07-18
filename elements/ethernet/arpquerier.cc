@@ -470,9 +470,25 @@ ARPQuerier::read_stats(Element *e, void *thunk)
       return String(q->_arp_responses.value());
     case 3:
       return String(q->_drops.value());
+    case 4:
+      return q->_my_ip.unparse();
     default:
       return String();
   }
+}
+
+int
+ARPQuerier::write_handler(const String &s, Element *e, void *thunk, ErrorHandler *errh)
+{
+    ARPQuerier *q = static_cast<ARPQuerier *>(e);
+    if ((uintptr_t) thunk == 4) {
+	IPAddress x;
+	if (!cp_ip_address(cp_uncomment(s), &x))
+	    return errh->error("'ipaddr' expects IP address");
+	q->_my_ip = x;
+	return 0;
+    } else
+	return -1;
 }
 
 void
@@ -483,6 +499,8 @@ ARPQuerier::add_handlers()
     add_read_handler("queries", read_stats, (void *)1);
     add_read_handler("responses", read_stats, (void *)2);
     add_read_handler("drops", read_stats, (void *)3);
+    add_read_handler("ipaddr", read_stats, (void *)4);
+    add_write_handler("ipaddr", write_handler, (void *)4);
 }
 
 CLICK_ENDDECLS
