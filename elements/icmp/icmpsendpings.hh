@@ -9,8 +9,7 @@ CLICK_DECLS
 /*
 =c
 
-ICMPPingSource(SADDR, DADDR [, I<keywords> INTERVAL, IDENTIFIER, LIMIT, DATA,
-ACTIVE])
+ICMPPingSource(SADDR, DADDR [, I<keywords> INTERVAL, IDENTIFIER, LIMIT, DATA, ACTIVE])
 
 =s icmp
 
@@ -80,6 +79,14 @@ Sets the INTERVAL argument.
 =h reset_counts write-only
 
 Resets all counters to zero.
+
+=h src read/write
+
+Returns or sets the SRC argument.
+
+=h dst read/write
+
+Returns or sets the DST argument.
 
 =h summary read-only
 

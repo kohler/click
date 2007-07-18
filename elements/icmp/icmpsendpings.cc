@@ -220,7 +220,7 @@ ICMPPingSource::push(int, Packet *p)
 }
 
 enum { H_ACTIVE, H_LIMIT, H_INTERVAL, H_RESET_COUNTS, H_COUNT, H_SUMMARY,
-       H_RTT_MIN, H_RTT_AVG, H_RTT_MAX };
+       H_RTT_MIN, H_RTT_AVG, H_RTT_MAX, H_SRC, H_DST };
 
 String
 ICMPPingSource::read_handler(Element *e, void *thunk)
@@ -232,6 +232,10 @@ ICMPPingSource::read_handler(Element *e, void *thunk)
 	return String(ps->_active);
       case H_COUNT:
 	return String(ps->_count);
+      case H_SRC:
+	return IPAddress(ps->_src).unparse();
+      case H_DST:
+	return IPAddress(ps->_dst).unparse();
       case H_SUMMARY: {
 	  StringAccum sa;
 	  sa << ps->_count << " packets transmitted"
@@ -273,6 +277,14 @@ ICMPPingSource::write_handler(const String &str_in, Element *e, void *thunk, Err
 	else if (!ps->_active)
 	    ps->_timer.unschedule();
 	return 0;
+      case H_SRC:
+	if (!cp_ip_address(s, &ps->_src))
+	    return errh->error("'src' should be IP address");
+	return 0;
+      case H_DST:
+	if (!cp_ip_address(s, &ps->_dst))
+	    return errh->error("'dst' should be IP address");
+	return 0;
       case H_LIMIT:
 	if (!cp_integer(s, &ps->_limit))
 	    return errh->error("'limit' should be integer");
@@ -300,6 +312,10 @@ ICMPPingSource::add_handlers()
 {
     add_read_handler("active", read_handler, (void *)H_ACTIVE);
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
+    add_read_handler("src", read_handler, (void *)H_SRC);
+    add_write_handler("src", write_handler, (void *)H_SRC);
+    add_read_handler("dst", read_handler, (void *)H_DST);
+    add_write_handler("dst", write_handler, (void *)H_DST);
     add_read_handler("count", read_handler, (void *)H_COUNT);
     add_write_handler("limit", write_handler, (void *)H_LIMIT);
     add_write_handler("interval", write_handler, (void *)H_INTERVAL);
