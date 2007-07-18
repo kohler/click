@@ -116,6 +116,9 @@ element's script appears to be looping (it executes 1000 goto instructions
 without blocking), the script is disabled.  If CONDITION is supplied, then the
 branch executes only when CONDITION is true.
 
+As a special case, 'C<goto exit [CONDITION]>' or 'C<goto end [CONDITION]>'
+ends execution of the script, much like an 'C<exit>' or 'C<end>' instruction.
+
 =item 'C<loop>'
 
 Transfers control to the first instruction.
@@ -244,8 +247,10 @@ integer division.
 
 =h eq, ne, lt, gt, le, ge "read with parameters"
 
-Compares two numeric parameters and return the result.  For example, 'C<eq 10
-0xA>' returns "C<true>", but 'C<le 9 8>' returns "C<false>".
+Compares two parameters and return the result.  For example, 'C<eq 10
+0xA>' returns "C<true>", but 'C<le 9 8>' returns "C<false>".  If either
+parameter cannot be interpreted as a number, performs a string comparison.
+For example, 'C<eq 10x 10x>' return "C<true>".
 
 =h not "read with parameters"
 
@@ -292,7 +297,8 @@ class Script : public Element { public:
     };
 
     enum {
-	MAX_JUMPS = 1000, STEP_NORMAL = 0, STEP_ROUTER, STEP_TIMER, STEP_JUMP
+	MAX_JUMPS = 1000, STEP_NORMAL = 0, STEP_ROUTER, STEP_TIMER, STEP_JUMP,
+	LABEL_EXIT = -1, LABEL_END = -2
     };
 
     Vector<int> _insns;

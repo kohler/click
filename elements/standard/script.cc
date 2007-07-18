@@ -121,6 +121,10 @@ Script::find_label(const String &label) const
     for (int i = 0; i < _insns.size(); i++)
 	if (_insns[i] == INSN_LABEL && _args3[i] == label)
 	    return i;
+    if (label == "exit")
+	return LABEL_EXIT;
+    if (label == "end")
+	return LABEL_END;
     return _insns.size();
 }
 
@@ -448,6 +452,10 @@ Script::step(int nsteps, int step_type, int njumps)
 	    if (cond_text && !cp_bool(cond_text, &cond))
 		cerrh.error("bad condition '%s'", cond_text.c_str());
 	    else if (!cond_text || cond) {
+		if (_args[ipos] == LABEL_END)
+		    goto insn_end;
+		if (_args[ipos] == LABEL_EXIT)
+		    goto insn_exit;
 		for (int i = _args[ipos]; i < ipos; i++)
 		    if (_insns[i] == INSN_WAIT_STEP)
 			_args2[i] = 0;
@@ -457,6 +465,7 @@ Script::step(int nsteps, int step_type, int njumps)
 	}
 
 	case INSN_END:
+	insn_end:
 #if CLICK_USERLEVEL
 	    if (_type == TYPE_SIGNAL)
 		for (int i = 0; i < _signos.size(); i++)
@@ -464,6 +473,7 @@ Script::step(int nsteps, int step_type, int njumps)
 #endif
 	    /* fallthru */
 	case INSN_EXIT:
+	insn_exit:
 	    _insn_pos--;
 	    goto done;
 	    
@@ -547,7 +557,7 @@ Script::step_handler(int, String &str, Element *e, const Handler *h, ErrorHandle
 
     if (what == ST_GOTO) {
 	int step = scr->find_label(cp_uncomment(data));
-	if (step >= scr->_insns.size())
+	if (step >= scr->_insns.size() || step < 0)
 	    return errh->error("jump to nonexistent label");
 	for (int i = step; i < scr->_insns.size(); i++)
 	    if (scr->_insns[i] == INSN_WAIT_STEP)
@@ -695,29 +705,31 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
 	String astr = cp_pop_spacevec(str), bstr = cp_pop_spacevec(str);
 	click_intmax_t a, b;
 	int comparison;
-#if CLICK_USERLEVEL
 	if (str)
 	    goto compare_syntax;
+#if CLICK_USERLEVEL
 	if (!cp_integer(astr, &a) || !cp_integer(bstr, &b)) {
 	    double da, db;
 	    if (!cp_double(astr, &da) || !cp_double(bstr, &db))
-		goto compare_syntax;
+		goto compare_strings;
 	    comparison = (da < db ? AR_LT : (da == db ? AR_EQ : AR_GT));
 	    goto compare_return;
 	}
 #else
-	if (str || !cp_integer(astr, &a) || !cp_integer(bstr, &b))
-	    goto compare_syntax;
+	if (!cp_integer(astr, &a) || !cp_integer(bstr, &b))
+	    goto compare_strings;
 #endif
 	comparison = (a < b ? AR_LT : (a == b ? AR_EQ : AR_GT));
-#if CLICK_USERLEVEL
     compare_return:
-#endif
 	str = cp_unparse_bool(what == comparison
 			      || (what >= AR_GE && what != comparison + 3));
 	return 0;
     compare_syntax:
 	return errh->error("expected two numbers");
+    compare_strings:
+	a = String::compare(astr, bstr);
+	comparison = (a < 0 ? AR_LT : (a == 0 ? AR_EQ : AR_GT));
+	goto compare_return;
     }
 
     case AR_NOT: {
