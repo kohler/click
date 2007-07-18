@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
 =c
 
-ICMPPingEncap(SADDR, DADDR [, I<keyword> IDENTIFIER])
+ICMPPingEncap(SRC, DST [, I<keyword> IDENTIFIER])
 
 =s icmp
 
@@ -16,8 +16,8 @@ encapsulates packets in ICMP ping headers
 
 =d
 
-Encapsulates input packets in an ICMP ping header with source IP address SADDR
-and destination IP address DADDR.  Advances the "sequence" field by one for
+Encapsulates input packets in an ICMP ping header with source IP address SRC
+and destination IP address DST.  Advances the "sequence" field by one for
 each packet.  (The sequence field is stored in network byte order in the
 packet.)
 
@@ -31,6 +31,14 @@ Integer. Determines the ICMP identifier field in emitted pings. Default is
 0.
 
 =back
+
+=h src read/write
+
+Returns or sets the SRC argument.
+
+=h dst read/write
+
+Returns or sets the DST argument.
 
 =a
 
@@ -47,6 +55,7 @@ class ICMPPingEncap : public Element { public:
     const char *flags() const			{ return "A"; }
     
     int configure(Vector<String> &, ErrorHandler *);
+    void add_handlers();
 
     Packet *simple_action(Packet *);
 
@@ -59,6 +68,9 @@ class ICMPPingEncap : public Element { public:
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
     bool _aligned;
 #endif
+
+    static String read_handler(Element *, void *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *);
 
 };
 

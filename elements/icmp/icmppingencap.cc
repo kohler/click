@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (C) 2003 International Computer Science Institute
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -110,6 +111,36 @@ ICMPPingEncap::simple_action(Packet *p)
 	return q;
     } else
 	return 0;
+}
+
+String ICMPPingEncap::read_handler(Element *e, void *thunk)
+{
+    ICMPPingEncap *i = static_cast<ICMPPingEncap *>(e);
+    if (thunk)
+	return IPAddress(i->_dst).unparse();
+    else
+	return IPAddress(i->_src).unparse();
+}
+
+int ICMPPingEncap::write_handler(const String &str, Element *e, void *thunk, ErrorHandler *errh)
+{
+    ICMPPingEncap *i = static_cast<ICMPPingEncap *>(e);
+    IPAddress a;
+    if (!cp_ip_address(cp_uncomment(str), &a))
+	return errh->error("expected IP address");
+    if (thunk)
+	i->_dst = a;
+    else
+	i->_src = a;
+    return 0;
+}
+
+void ICMPPingEncap::add_handlers()
+{
+    add_read_handler("src", read_handler, (void *) 0);
+    add_write_handler("src", write_handler, (void *) 0);
+    add_read_handler("dst", read_handler, (void *) 1);
+    add_write_handler("dst", write_handler, (void *) 1);
 }
 
 CLICK_ENDDECLS
