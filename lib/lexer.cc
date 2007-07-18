@@ -793,9 +793,13 @@ Lexer::expect(int kind, bool report_error)
       return true;
     }
   } else {
+    String old_filename = _filename;
+    unsigned old_lineno = _lineno;
     const char *old_pos = _pos;
     if (next_lexeme().is(kind))
       return true;
+    _filename = old_filename;
+    _lineno = old_lineno;
     _pos = old_pos;
   }
   if (report_error)
