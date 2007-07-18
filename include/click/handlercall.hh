@@ -37,6 +37,7 @@ class HandlerCall { public:
     // negative if the HandlerCall isn't ok().
     inline String call_read(ErrorHandler* = 0) const;
     inline int call_write(ErrorHandler* = 0) const;
+    inline int call_write(const String &extra, ErrorHandler* = 0) const;
 
     // Call the specified handler and return its result. Returns the empty
     // string or negative if the handler isn't valid.
@@ -130,6 +131,15 @@ inline int
 HandlerCall::call_write(ErrorHandler *errh) const
 {
     return _h->call_write(_value, _e, false, errh);
+}
+
+inline int
+HandlerCall::call_write(const String &extra, ErrorHandler *errh) const
+{
+    if (_value && extra)
+	return _h->call_write(_value + " " + extra, _e, false, errh);
+    else
+	return _h->call_write(_value ? _value : extra, _e, false, errh);
 }
 
 CLICK_ENDDECLS
