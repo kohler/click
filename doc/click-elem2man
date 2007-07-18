@@ -19,6 +19,8 @@
 # notice is a summary of the Click LICENSE file; the license in that file is
 # legally binding.
 
+my($verbose) = 0;
+
 # information stored about each Click element, indexed by C++ class name
 my(%processing, %deprecated, %portcount, %docrequires, %requires, $PREFIX);
 
@@ -824,9 +826,12 @@ sub process_comment ($$) {
     if ($filename_func) {
 	$main_outname = &$filename_func($outfiles[0], $outsections[0]);
 	if ($uninstall) {
+	    print STDERR "Uninstalled $main_outname\n" if $verbose;
 	    unlink($main_outname);
 	    open(OUT, ">/dev/null");
-	} elsif (!open(OUT, ">$main_outname")) {
+	} elsif (open(OUT, ">$main_outname")) {
+	    print STDERR "Writing to $main_outname\n" if $verbose;
+	} else {
 	    print STDERR "$main_outname: $!\n";
 	    return;
 	}
@@ -985,10 +990,12 @@ sub process_comment ($$) {
 	close OUT;
 	for ($i = 1; $i < @outfiles; $i++) {
 	    my($outname) = &$filename_func($outfiles[$i], $outsections[$i]);
+	    print STDERR "Unlinking $outname\n" if $verbose;
 	    unlink($outname);
 	    if ($uninstall) {
 		# do nothing
 	    } elsif (link $main_outname, $outname) {
+		print STDERR "Linked $outname\n" if $verbose;
 		push @all_outfiles, $outfiles[$i];
 		$all_outsections{$outfiles[$i]} = $outsections[$i];
 		process_summary_section($summary_section, $outfiles[$i]);
@@ -1003,9 +1010,11 @@ sub process_comment ($$) {
 sub process_file ($;$) {
     my($filename, $text) = @_;
 
+    print STDERR "Attempting $filename...\n" if $verbose;
     $filename = "include/$1" if !-e $filename && $filename =~ /^<(.*)>$/s;
     $filename = "$PREFIX/$filename" if !-e $filename && defined($PREFIX);
     return if !-e $filename;
+    print STDERR "Found $filename\n" if $verbose;
     if (!defined($text)) {
 	if (!open(IN, $filename)) {
 	    print STDERR "click-elem2man: $filename: $!\n";
@@ -1017,7 +1026,7 @@ sub process_file ($;$) {
 
     print "$filename??\n" if !defined $text;
     foreach $_ (split(m{(/\*.*?\*/)}s, $text)) {
-	if (/^\/\*/ && /^[\/*\s]+=/) {
+	if (/^\/\*/m && /^[\/*\s]+=/m) {
 	    s/^(.*?)\t/$1 . (' ' x (8 - (length($1) % 8)))/egm while /\t/;
 	    s/^\/\*\s*//g;
 	    s/\s*\*\/$//g;
@@ -1227,6 +1236,8 @@ while (@ARGV) {
     } elsif (/^-P$/ || /^--package$/) {
 	usage() if !@ARGV;
 	$package = shift @ARGV;
+    } elsif (/^-V$/ || /^--verbose$/) {
+	$verbose = 1;
     } elsif (/^--package=(.*)$/) {
 	$package = $1;
     } elsif (/^-f$/ || /^--files$/) {
@@ -1397,6 +1408,7 @@ sub write_elementlist ($$) {
     if ($filename_func) {
 	my($fn) = &$filename_func($enamebase, $section);
 	if ($l_uninstall) {
+	    print STDERR "Removing $fn\n" if $verbose;
 	    unlink($fn);
 	    return;
 	}
