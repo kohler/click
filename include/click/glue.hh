@@ -395,7 +395,7 @@ typedef uint32_t click_cycles_t;
 inline click_cycles_t
 click_get_cycles()
 {
-#if CLICK_LINUXMODULE && HAVE_INT64_TYPES && __i386__
+#if CLICK_LINUXMODULE && HAVE_INT64_TYPES && (__i386__ || __x86_64__)
     uint64_t x;
     __asm__ __volatile__ ("rdtsc" : "=A" (x));
     return x;
