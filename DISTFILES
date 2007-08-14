@@ -337,6 +337,7 @@ ewma64.hh
 gaprate.hh
 glue.hh
 handlercall.hh
+hashcode.hh
 hashmap.cc
 hashmap.hh
 ino.hh

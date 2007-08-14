@@ -1,6 +1,8 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_PAIR_HH
 #define CLICK_PAIR_HH
+#include <click/hashcode.hh>
+CLICK_DECLS
 
 template <class T, class U>
 struct Pair {
@@ -9,6 +11,7 @@ struct Pair {
     Pair()				: first(), second() { }
     Pair(const T &t, const U &u)	: first(t), second(u) { }
     inline operator bool() const;
+    inline size_t hashcode() const;
 };
 
 template <class T, class U>
@@ -37,9 +40,9 @@ inline bool operator<(const Pair<T, U> &a, const Pair<T, U> &b)
 }
 
 template <class T, class U>
-inline unsigned hashcode(const Pair<T, U> &a)
+inline size_t Pair<T, U>::hashcode() const
 {
-    return (hashcode(a.first) << 13) ^ hashcode(a.second);
+    return (::hashcode(first) << 13) ^ ::hashcode(second);
 }
 
 template <class T, class U>
@@ -48,4 +51,5 @@ inline Pair<T, U> make_pair(const T &t, const U &u)
     return Pair<T, U>(t, u);
 }
 
+CLICK_ENDDECLS
 #endif

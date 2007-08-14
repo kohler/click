@@ -1,5 +1,6 @@
 #ifndef CLICK_BIGHASHMAP_HH
 #define CLICK_BIGHASHMAP_HH
+#include <click/hashcode.hh>
 CLICK_DECLS
 class HashMap_Arena;
 class HashMap_ArenaFactory;
@@ -8,7 +9,7 @@ class HashMap_ArenaFactory;
 //
 //		K::K(const K &)
 //		k1 == k2
-// int		hashcode(const K &)
+// unsigned	hashcode(const K &)
 //			If hashcode(k1) != hashcode(k2), then k1 != k2.
 //
 //		V::V() -- only used for default value
@@ -555,18 +556,6 @@ inline bool
 operator!=(const _HashMap_const_iterator<K, V> &a, const _HashMap_const_iterator<K, V> &b)
 {
   return a.pair() != b.pair();
-}
-
-inline size_t
-hashcode(unsigned u)
-{
-  return u;
-}
-
-inline size_t
-hashcode(void *v)
-{
-  return reinterpret_cast<uintptr_t>(v) >> 3;
 }
 
 CLICK_ENDDECLS

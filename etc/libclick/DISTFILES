@@ -45,6 +45,7 @@ include/click/ewma64.hh
 include/click/gaprate.hh
 include/click/glue.hh
 include/click/handlercall.hh
+include/click/hashcode.hh
 include/click/hashmap.cc
 include/click/hashmap.hh
 include/click/integers.hh

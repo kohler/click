@@ -81,6 +81,8 @@ class String { public:
   inline char back() const;
   
   const char *c_str() const;		// pointer returned is semi-transient
+
+  size_t hashcode() const;
   
   bool equals(const char *s, int len) const;
   // bool operator==(const String &, const String &);
@@ -683,9 +685,6 @@ operator+(String a, char b)
   a.append(&b, 1);
   return a;
 }
-
-/** @relates String */
-int hashcode(const String &);
 
 /** @brief Returns true iff this is an out-of-memory string. */
 inline bool

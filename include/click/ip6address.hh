@@ -27,6 +27,8 @@ class IP6Address { public:
   const unsigned char *data() const	{ return &_addr.s6_addr[0]; }
   unsigned *data32()			{ return &_addr.s6_addr32[0]; }
   const unsigned *data32() const	{ return &_addr.s6_addr32[0]; }
+
+    inline size_t hashcode() const;
   
   int mask_to_prefix_len() const;
   bool matches_prefix(const IP6Address &addr, const IP6Address &mask) const;
@@ -178,10 +180,10 @@ IP6Address::operator=(const click_in6_addr &a)
   return *this;
 }
 
-inline unsigned
-hashcode(const IP6Address &a)
+inline size_t
+IP6Address::hashcode() const
 {
-  return a.data32()[3];
+  return data32()[3];
 }
 
 CLICK_ENDDECLS

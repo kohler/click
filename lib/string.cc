@@ -664,20 +664,25 @@ String::quoted_hex() const
     return sa.take_string();
 }
 
-int
-hashcode(const String &s)
+/** @brief Hash function.
+ * @return The hash value of this String.
+ *
+ * Equal String objects always have equal hashcode() values.
+ */
+size_t
+String::hashcode() const
 {
-    int length = s.length();
-    const char *data = s.data();
-    if (!length)
+    int l = length();
+    const char *d = data();
+    if (!l)
 	return 0;
-    else if (length == 1)
-	return data[0] | (data[0] << 8);
-    else if (length < 4)
-	return data[0] + (data[1] << 3) + (length << 12);
+    else if (l == 1)
+	return d[0] | (d[0] << 8);
+    else if (l < 4)
+	return d[0] + (d[1] << 3) + (l << 12);
     else
-	return data[0] + (data[1] << 8) + (data[2] << 16) + (data[3] << 24)
-	    + (length << 12) + (data[length-1] << 10);
+	return d[0] + (d[1] << 8) + (d[2] << 16) + (d[3] << 24)
+	    + (l << 12) + (d[l-1] << 10);
 }
 
 /** @brief Return true iff this string is equal to the data in @a s.

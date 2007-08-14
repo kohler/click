@@ -38,6 +38,8 @@ public:
   }
   bool other(IPAddress foo) { return ((_to == foo) ? _from : _to); }
 
+    inline size_t hashcode() const;
+
 
   inline bool
   operator==(IPPair other)
@@ -47,10 +49,9 @@ public:
 
 };
 
-inline unsigned
-hashcode(IPPair p) 
+inline size_t IPPair::hashcode() const
 {
-return hashcode(p._to) + hashcode(p._from);
+    return ::hashcode(_to) + ::hashcode(_from);
 }
 
 

@@ -2,6 +2,7 @@
 #ifndef CLICK_IP6FLOWID_HH
 #define CLICK_IP6FLOWID_HH
 #include <click/ip6address.hh>
+#include <click/hashcode.hh>
 CLICK_DECLS
 class Packet;
 
@@ -24,6 +25,8 @@ class IP6FlowID { public:
   void set_dport(uint16_t p)		{ _dport = p; }
   
   inline IP6FlowID rev() const;
+
+  inline size_t hashcode() const;
 
   String unparse() const;
   operator String() const		{ return unparse(); }
@@ -68,7 +71,7 @@ IP6FlowID::rev() const
 #define ROT(v, r) ((v)<<(r) | ((unsigned)(v))>>(32-(r)))
 
 #if 0
-inline unsigned
+inline size_t
 IP6FlowID::hashcode() const
 { 
   return (ROT(_saddr.hashcode(), 13) 
@@ -76,14 +79,15 @@ IP6FlowID::hashcode() const
 }
 #endif
 
-inline unsigned
-hashcode(const IP6FlowID &f)
+inline size_t IP6FlowID::hashcode() const
 { 
   // more complicated hashcode, but causes less collision
-  uint16_t s = ntohs(f.sport());
-  uint16_t d = ntohs(f.dport());
-  return (ROT(hashcode(f.saddr()), s%16)
-          ^ ROT(hashcode(f.daddr()), 31-d%16))
+  uint16_t s = ntohs(sport());
+  uint16_t d = ntohs(dport());
+  size_t sx = ::hashcode(saddr());
+  size_t dx = ::hashcode(daddr());
+  return (ROT(sx, s%16)
+          ^ ROT(dx, 31-d%16))
 	  ^ ((d << 16) | s);
 }
 

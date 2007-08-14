@@ -29,6 +29,8 @@ class IPAddress { public:
 
     inline unsigned char* data();
     inline const unsigned char* data() const;
+
+    inline size_t hashcode() const;
   
     int mask_to_prefix_len() const;
     inline bool matches_prefix(IPAddress addr, IPAddress mask) const;
@@ -308,10 +310,15 @@ operator~(IPAddress a)
     return IPAddress(~a.addr());
 }
 
-inline unsigned
-hashcode(IPAddress a)
+/** @brief Hash function.
+ * @return The hash value of this IPAddress.
+ *
+ * Equal IPAddress objects always have equal hashcode() values.
+ */
+inline size_t
+IPAddress::hashcode() const
 {
-    return a.addr();
+    return addr();
 }
 
 /** @brief Unparses this address into a dotted-quad format String.

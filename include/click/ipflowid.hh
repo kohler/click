@@ -2,6 +2,7 @@
 #ifndef CLICK_IPFLOWID_HH
 #define CLICK_IPFLOWID_HH
 #include <click/ipaddress.hh>
+#include <click/hashcode.hh>
 CLICK_DECLS
 class Packet;
 
@@ -25,6 +26,8 @@ class IPFlowID { public:
   void set_dport(uint16_t p)		{ _dport = p; }	// network order
   
   IPFlowID rev() const;
+
+  inline size_t hashcode() const;
 
   String unparse() const;
   operator String() const		{ return unparse(); }
@@ -68,14 +71,15 @@ IPFlowID::rev() const
 
 #define ROT(v, r) ((v)<<(r) | ((unsigned)(v))>>(32-(r)))
 
-inline unsigned
-hashcode(const IPFlowID &f)
+inline size_t IPFlowID::hashcode() const
 { 
   // more complicated hashcode, but causes less collision
-  uint16_t s = ntohs(f.sport());
-  uint16_t d = ntohs(f.dport());
-  return (ROT(hashcode(f.saddr()), s%16)
-          ^ ROT(hashcode(f.daddr()), 31-d%16))
+  uint16_t s = ntohs(sport());
+  uint16_t d = ntohs(dport());
+  size_t sx = ::hashcode(saddr());
+  size_t dx = ::hashcode(daddr());
+  return (ROT(sx, s%16)
+          ^ ROT(dx, 31-d%16))
 	  ^ ((d << 16) | s);
 }
 

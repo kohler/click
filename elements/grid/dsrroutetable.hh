@@ -132,6 +132,7 @@ public:
 	      (_target == f1._target) &&
 	      (_id     == f1._id));	      
     }
+    inline size_t hashcode() const;
     void check() const {
       assert(_src);
       assert(_target);
@@ -441,11 +442,11 @@ private:
   bool _debug;
 };
 
-inline unsigned int hashcode(const DSRRouteTable::ForwardedReqKey &f) {
+inline size_t DSRRouteTable::ForwardedReqKey::hashcode() const {
   return ((unsigned int)( // XXX is this reasonable?
-			 ((f._src.addr() << 16) + f._src.addr() >> 16) ^
-			 f._target.addr() ^
-			 f._id));
+			 ((_src.addr() << 16) + _src.addr() >> 16) ^
+			 _target.addr() ^
+			 _id));
 }
 
 CLICK_ENDDECLS

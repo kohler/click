@@ -58,11 +58,11 @@ class SPI {
 	{
     		return (this->_spi != b._spi);
 	}
-	uint32_t
-	getValue()
+	uint32_t getValue() const
 	{
     		return (_spi);
 	}
+	inline size_t hashcode() const;
    private:
 	uint32_t _spi;
  };
@@ -103,7 +103,7 @@ class SADataTuple {
 
 String unparse_entries() const
      {
-         char buf[65];
+         char buf[71];
 	 int i,j;
 	 sprintf(buf," |");
 	 for(i=0,j=0;i<16;i++,j+=2) {
@@ -119,7 +119,10 @@ String unparse_entries() const
 };
 
 
-
+inline size_t SPI::hashcode() const
+{
+    return _spi;
+}
 
 CLICK_ENDDECLS
 #endif

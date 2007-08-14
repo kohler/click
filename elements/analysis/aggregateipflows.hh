@@ -170,6 +170,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
 	HostPair(uint32_t aa, uint32_t bb) {
 	    aa > bb ? (a = bb, b = aa) : (a = aa, b = bb);
 	}
+	inline size_t hashcode() const;
     };
 
   private:

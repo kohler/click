@@ -1,17 +1,17 @@
 #ifndef CLICK_PATH_HH
 #define CLICK_PATH_HH
 #include <click/straccum.hh>
+#include <click/hashcode.hh>
 CLICK_DECLS
 
 typedef Vector<IPAddress> Path;
 
 
-inline unsigned
-hashcode(const Path &p)
+inline size_t hashcode(const Path &p)
 {
   unsigned h = 0;
   for (int x = 0; x < p.size(); x++) {
-    h = h ^ hashcode(p[x]);
+    h = h ^ ::hashcode(p[x]);
   }
   return h;
 }

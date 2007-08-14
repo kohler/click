@@ -17,6 +17,8 @@ class EtherAddress { public:
     inline const unsigned char *data() const;
     inline const uint16_t *sdata() const;
 
+    inline size_t hashcode() const;
+    
     // bool operator==(EtherAddress, EtherAddress);
     // bool operator!=(EtherAddress, EtherAddress);
 
@@ -123,10 +125,10 @@ operator!=(const EtherAddress &a, const EtherAddress &b)
 class StringAccum;
 StringAccum &operator<<(StringAccum &, const EtherAddress &);
 
-inline int
-hashcode(const EtherAddress &ea)
+inline size_t
+EtherAddress::hashcode() const
 {
-    const uint16_t *d = ea.sdata();
+    const uint16_t *d = sdata();
     return (d[2] | (d[1] << 16)) ^ (d[0] << 9);
 }
 
