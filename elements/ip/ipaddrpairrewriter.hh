@@ -84,7 +84,8 @@ Returns a human-readable description of the patterns associated with this
 IPAddrRewriter.
 
 =a IPRewriter, IPAddrRewriter, TCPRewriter, IPRewriterPatterns,
-RoundRobinIPMapper, FTPPortMapper, ICMPRewriter, ICMPPingRewriter */
+RoundRobinIPMapper, FTPPortMapper, ICMPRewriter, ICMPPingRewriter,
+StoreIPAddress (for simple uses) */
 
 class IPAddrPairRewriter : public IPRw { public:
 

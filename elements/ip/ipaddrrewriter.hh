@@ -43,9 +43,11 @@ These INPUTSPECs behave like those in IPRewriter.
 
 =item 'pattern SADDR[-SADDR2] - FOUTPUT ROUTPUT'
 
-Creates a mapping according to the given pattern, 'SADDR -'.  The destination
+Creates a mapping according to the given pattern.  The destination
 address must be a dash '-', since IPAddrRewriter only changes outgoing
-packets' source addresses.  SADDR may be a range 'L-H' or prefix 'ADDR/PFX';
+packets' source addresses.  (If you want to rewrite destination addresses,
+use IPAddrPairRewriter instead.)
+SADDR may be a range 'L-H' or prefix 'ADDR/PFX';
 IPRewriter will choose an unallocated address in that range, or drop the
 packet if no address is available.  Normally addresses are chosen randomly
 within the range.  To allocate addresses sequentially (which can make testing
@@ -81,7 +83,8 @@ Returns a human-readable description of the patterns associated with this
 IPAddrRewriter.
 
 =a IPRewriter, IPAddrPairRewriter, TCPRewriter, IPRewriterPatterns,
-RoundRobinIPMapper, FTPPortMapper, ICMPRewriter, ICMPPingRewriter */
+RoundRobinIPMapper, FTPPortMapper, ICMPRewriter, ICMPPingRewriter,
+StoreIPAddress (for simple uses) */
 
 class IPAddrRewriter : public IPRw { public:
 
