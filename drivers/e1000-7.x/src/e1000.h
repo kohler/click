@@ -388,8 +388,8 @@ struct e1000_adapter {
         /* Receive Lockup detection and recovery */
         int rx_state;              /* can be either: NORMAL, QUIET, LOCKUP */
         int rx_lockup_recoveries;  /* # of times the recovery seq is invoked */
-        int rx_normal_jiffies;     /* jiffies timeout for the NORMAL state */
-        int rx_quiet_jiffies;      /* jiffies timeout for the QUIET state */
+        unsigned long rx_normal_jiffies;     /* jiffies timeout for the NORMAL state */
+        unsigned long rx_quiet_jiffies;      /* jiffies timeout for the QUIET state */
         int prev_rdfh;             /* prev value of Rcv Data Fifo Head register */
         int prev_rdft;             /* prev value of Rcv Data Fifo Tail register */
 };

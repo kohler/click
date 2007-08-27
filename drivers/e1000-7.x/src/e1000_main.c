@@ -5647,7 +5647,7 @@ e1000_rx_poll(struct net_device *dev, int *want)
     int rdft;
     switch (adapter->rx_state) {
     case E1000_RX_STATE_NORMAL:
-      if (jiffies < adapter->rx_normal_jiffies)
+      if (time_before(jiffies, adapter->rx_normal_jiffies))
         break;
       adapter->rx_state = E1000_RX_STATE_QUIET;
       adapter->rx_quiet_jiffies = jiffies + HZ;
@@ -5665,7 +5665,7 @@ e1000_rx_poll(struct net_device *dev, int *want)
         adapter->rx_quiet_jiffies = jiffies + HZ;
         break;
       }
-      if (jiffies < adapter->rx_quiet_jiffies)
+      if (time_before(jiffies, adapter->rx_quiet_jiffies))
         break;
       /* Fall into the lockup case */
     case E1000_RX_STATE_LOCKUP:
