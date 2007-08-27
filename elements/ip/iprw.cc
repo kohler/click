@@ -118,9 +118,7 @@ IPRw::Mapping::apply(WritablePacket *p)
 	click_tcp *tcph = p->tcp_header();
 	tcph->th_sport = _mapto.sport();
 	tcph->th_dport = _mapto.dport();
-	unsigned sum2 = (~tcph->th_sum & 0xFFFF) + _udp_csum_delta;
-	sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
-	tcph->th_sum = ~(sum2 + (sum2 >> 16));
+	click_update_in_cksum(&tcph->th_sum, 0xFFFF, _udp_csum_delta);
     
 	// check for session ending flags
 	if (tcph->th_flags & TH_RST)
@@ -135,11 +133,8 @@ IPRw::Mapping::apply(WritablePacket *p)
 	click_udp *udph = p->udp_header();
 	udph->uh_sport = _mapto.sport();
 	udph->uh_dport = _mapto.dport();
-	if (udph->uh_sum) {	// 0 checksum is no checksum
-	    unsigned sum2 = (~udph->uh_sum & 0xFFFF) + _udp_csum_delta;
-	    sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
-	    udph->uh_sum = ~(sum2 + (sum2 >> 16));
-	}
+	if (udph->uh_sum)	// 0 checksum is no checksum
+	    click_update_in_cksum(&udph->uh_sum, 0xFFFF, _udp_csum_delta);
     
     }
 }
