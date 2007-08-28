@@ -528,6 +528,14 @@ if test $ac_cv_linux_poll_extension = yes; then
     AC_DEFINE(HAVE_LINUX_POLLING)
 fi
 
+AC_CACHE_CHECK(for atomic_set_mask, ac_cv_linux_atomic_set_mask,
+[if grep atomic_set_mask $linuxdir/include/asm/netdevice.h >/dev/null 2>&1; then
+  ac_cv_linux_atomic_set_mask=yes
+else ac_cv_linux_atomic_set_mask=no; fi])
+if test $ac_cv_linux_atomic_set_mask = yes; then
+    AC_DEFINE(HAVE_LINUX_ATOMIC_SET_MASK)
+fi
+
 AC_CACHE_CHECK(for SMP, ac_cv_smp,
 [if grep "#define CONFIG_SMP 1" $linuxdir/include/linux/autoconf.h >/dev/null 2>&1; then
   ac_cv_smp=yes
