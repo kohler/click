@@ -35,6 +35,9 @@
    and optionally stop the router. */
 #undef HAVE_KERNEL_ASSERT
 
+/* Define if your Linux kernel architecture defines atomic_set_mask. */
+#undef HAVE_LINUX_ATOMIC_SET_MASK
+
 /* Define if your Linux kernel has polling extensions. */
 #undef HAVE_LINUX_POLLING
 
@@ -133,6 +136,11 @@ void click_assert_failed(const char *file, int line, const char *problem_text);
 # define assert(x)	((x) ? (void)0 : click_assert_failed(__FILE__, __LINE__, #x))
 #else
 # define assert(x)	/* nada */
+#endif
+
+/* Some architectures do not have builtin integer functions in kernel. */
+#if defined(__MIPSEL__) || defined(__MIPSEB__)
+# define HAVE_NO_INTEGER_BUILTINS 1
 #endif
 
 #endif /* CLICK_CONFIG_LINUXMODULE_H */

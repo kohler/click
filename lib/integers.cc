@@ -24,7 +24,7 @@ CLICK_DECLS
 
 // ffs_msb(uint32_t) borrowed from tcpdpriv
 
-#if !HAVE___BUILTIN_CLZ
+#if NEED_FFS_MSB_UINT32_T
 int
 ffs_msb(uint32_t value)
 {
@@ -52,7 +52,7 @@ ffs_msb(uint32_t value)
 }
 #endif
 
-#if HAVE_INT64_TYPES && !(HAVE___BUILTIN_CLZLL && SIZEOF_LONG_LONG == 8) && !(HAVE___BUILTIN_CLZL && SIZEOF_LONG == 8) && !(HAVE___BUILTIN_CLZ && SIZEOF_INT == 8)
+#if NEED_FFS_MSB_UINT64_T
 int
 ffs_msb(uint64_t value)
 {
@@ -66,7 +66,7 @@ ffs_msb(uint64_t value)
 #endif
 
 
-#if !HAVE___BUILTIN_FFS && !HAVE_FFS
+#if NEED_FFS_LSB_UINT32_T
 int
 ffs_lsb(uint32_t value)
 {
@@ -94,7 +94,7 @@ ffs_lsb(uint32_t value)
 }
 #endif
 
-#if HAVE_INT64_TYPES && !(HAVE___BUILTIN_FFSLL && SIZEOF_LONG_LONG == 8) && !(HAVE___BUILTIN_FFSL && SIZEOF_LONG == 8) && !(HAVE___BUILTIN_FFS && SIZEOF_INT == 8)
+#if NEED_FFS_LSB_UINT64_T
 int
 ffs_lsb(uint64_t value)
 {

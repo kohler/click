@@ -118,7 +118,7 @@ atomic_uint32_t::operator-=(int32_t delta)
 inline atomic_uint32_t &
 atomic_uint32_t::operator|=(uint32_t u)
 {
-#if CLICK_LINUXMODULE && !defined(__arm__)
+#if CLICK_LINUXMODULE && HAVE_LINUX_ATOMIC_SET_MASK
     atomic_set_mask(u, &_val);
 #elif CLICK_LINUXMODULE
     unsigned long flags;
@@ -139,7 +139,7 @@ atomic_uint32_t::operator|=(uint32_t u)
 inline atomic_uint32_t &
 atomic_uint32_t::operator&=(uint32_t u)
 {
-#if CLICK_LINUXMODULE && !defined(__arm__)
+#if CLICK_LINUXMODULE && HAVE_LINUX_ATOMIC_SET_MASK
     atomic_clear_mask(~u, &_val);
 #elif CLICK_LINUXMODULE
     unsigned long flags;
