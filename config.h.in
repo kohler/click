@@ -38,6 +38,9 @@
 /* Define if the va_list type is addressable. */
 #undef HAVE_ADDRESSABLE_VA_LIST
 
+/* Define if right shift of signed integers acts by sign extension. */
+#undef HAVE_ARITHMETIC_RIGHT_SHIFT
+
 /* Define if the machine is indifferent to alignment. */
 #undef HAVE_INDIFFERENT_ALIGNMENT
 

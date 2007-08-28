@@ -644,6 +644,19 @@ int main(int argc, char *argv[]) {
 
 
 dnl
+dnl CLICK_CHECK_SIGNED_SHIFT
+dnl Checks whether right-shift of a negative number is arithmetic or logical.
+dnl
+
+AC_DEFUN([CLICK_CHECK_SIGNED_SHIFT], [
+    AC_CACHE_CHECK(whether signed right shift is arithmetic, ac_cv_arithmetic_right_shift,
+	 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int f(int x[((int) -1) >> 15]) { return x[0]; }]], [[]])], [ac_cv_arithmetic_right_shift=no], [ac_cv_arithmetic_right_shift=yes])])
+    if test $ac_cv_arithmetic_right_shift = yes; then
+	AC_DEFINE([HAVE_ARITHMETIC_RIGHT_SHIFT], [1], [Define if right shift of signed integers acts by sign extension.])
+    fi])
+
+
+dnl
 dnl CLICK_CHECK_INTEGER_BUILTINS
 dnl Checks whether '__builtin_clz' and '__builtin_clzll' exist.
 dnl
