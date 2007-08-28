@@ -20,6 +20,7 @@
 
 #include <click/config.h>
 #include "fromdevice.hh"
+#include "kernelfilter.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/glue.hh>
@@ -122,9 +123,8 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     
     if (bpf_filter && _capture != CAPTURE_PCAP)
 	errh->warning("not using PCAP capture method, BPF filter ignored");
-    
-    if (!sniffer)
-	return errh->error("SNIFFER must be set to true for now");
+
+    _sniffer = sniffer;
     _promisc = promisc;
     _outbound = outbound;
     return 0;
@@ -296,12 +296,17 @@ FromDevice::initialize(ErrorHandler *errh)
     }
 #endif
 
+    if (!_sniffer)
+	KernelFilter::device_filter(_ifname, true, errh);
+    
     return 0;
 }
 
 void
-FromDevice::cleanup(CleanupStage)
+FromDevice::cleanup(CleanupStage stage)
 {
+    if (stage >= CLEANUP_INITIALIZED && !_sniffer)
+	KernelFilter::device_filter(_ifname, false, ErrorHandler::default_handler());
 #if FROMDEVICE_LINUX
     if (_linux_fd >= 0) {
 	if (_was_promisc >= 0)
@@ -487,5 +492,5 @@ FromDevice::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel FakePcap)
+ELEMENT_REQUIRES(userlevel FakePcap KernelFilter)
 EXPORT_ELEMENT(FromDevice)

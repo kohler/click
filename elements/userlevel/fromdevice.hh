@@ -38,11 +38,12 @@ page.
 Reads packets from the kernel that were received on the network controller
 named DEVNAME.
 
-User-level FromDevice is like a packet sniffer.  Packets emitted by FromDevice
-are also received and processed by the kernel.  Thus, it doesn't usually make
-sense to run a router with user-level Click, since each packet will get
-processed twice (once by Click, once by the kernel).  Install firewalling
-rules in your kernel if you want to prevent this.
+User-level FromDevice behaves like a packet sniffer by default.  Packets
+emitted by FromDevice are also received and processed by the kernel.  Thus, it
+doesn't usually make sense to run a router with user-level Click, since each
+packet will get processed twice (once by Click, once by the kernel).  Install
+firewalling rules in your kernel if you want to prevent this, for instance
+using the KernelFilter element or FromDevice's SNIFFER false argument.
 
 Under Linux, a FromDevice element will not receive packets sent by a
 ToDevice element for the same device. Under other operating systems, your
@@ -57,9 +58,10 @@ Keyword arguments are:
 
 =item SNIFFER
 
-Boolean.  This placeholder argument will be used in future to specify whether
-FromDevice should run in sniffer mode.  Currently, it must be set to true.
-Default is true.
+Boolean.  Specifies whether FromDevice should run in sniffer mode.  In
+non-sniffer mode, FromDevice installs KernelFilter filtering rules to block
+the kernel from handling any packets arriving on device DEVNAME.  Default is
+true (sniffer mode).
 
 =item PROMISC
 
@@ -125,7 +127,7 @@ number of drops is not known.
 Returns a string indicating the encapsulation type on this link. Can be
 `C<IP>', `C<ETHER>', or `C<FDDI>', for example.
 
-=a ToDevice.u, FromDump, ToDump, FromDevice(n) */
+=a ToDevice.u, FromDump, ToDump, KernelFilter, FromDevice(n) */
 
 class FromDevice : public Element { public:
 
@@ -186,6 +188,7 @@ class FromDevice : public Element { public:
     counter_t _count;
   
     String _ifname;
+    bool _sniffer : 1;
     bool _promisc : 1;
     bool _outbound : 1;
     int _was_promisc : 2;
