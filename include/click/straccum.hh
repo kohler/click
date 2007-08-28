@@ -135,7 +135,7 @@ class StringAccum { public:
 
     StringAccum &snprintf(int, const char *, ...);
   
-    String take_string();		// returns String
+    String take_string();
 
     void swap(StringAccum &);
 
