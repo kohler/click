@@ -85,7 +85,7 @@ a string in the Click language, as the router configuration.
 '
 .Sp
 .TP 5
-.BR \-h ", " \-\-hot\-swap
+.BR \-h ", " \-\-hotswap
 Hot-swap install the new configuration. If you supply this option, the new
 configuration will only be installed if it initializes correctly. If it
 fails, the old configuration will continue to route packets without
@@ -103,7 +103,7 @@ for details.
 .TP 5
 .BR \-u ", " \-\-uninstall
 Uninstall and reinstall the Click kernel module.
-.B \-\-hot\-swap
+.B \-\-hotswap
 and
 .B \-\-uninstall
 are mutually exclusive.
@@ -166,12 +166,18 @@ Click kernel module; see
 '
 .Sp
 .TP 5
-.BR \-\cpu =\fIN
+.BR \-\-\cpu =\fIN
 Sets the Click thread to preferentially run on CPU
 .IR N .
-Ignored if
+If Click is running
+.I K
+threads, they are run preferentially on CPUs
 .I N
-is not an available CPU, or if Click is running multiple threads. Works
+up to, but not including,
+.I N
++
+.IR K .
+Thread affinities are ignored if they refer to unavailable CPUs. Works
 only when simultaneously loading a Click kernel module; see
 .BR \-\-uninstall .
 '

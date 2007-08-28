@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2002-2003 International Computer Science Institute
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -110,17 +111,18 @@ click_sched(void *thunk)
 
 #if CONFIG_SMP
   int mycpu = click_parm(CLICKPARM_CPU);
-  if (mycpu >= 0 && click_parm(CLICKPARM_THREADS) <= 1) {
+  if (mycpu >= 0) {
+      mycpu += rt->thread_id();
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
       if (mycpu < num_possible_cpus() && cpu_online(mycpu))
 	  set_cpus_allowed(current, cpumask_of_cpu(mycpu));
       else
-	  printk("<1>click: warning: cpu %d offline\n", mycpu);
+	  printk("<1>click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 21)
       if (mycpu < smp_num_cpus && (cpu_online_map & (1UL << cpu_logical_map(mycpu))))
 	  set_cpus_allowed(current, 1UL << cpu_logical_map(mycpu));
       else
-	  printk("<1>click: warning: cpu %d offline\n", mycpu);
+	  printk("<1>click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
 # endif
   }
 #endif
