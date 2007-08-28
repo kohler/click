@@ -36,6 +36,7 @@ void
 AverageCounter::reset()
 {
   _count = 0;
+  _byte_count = 0;
   _first = 0;
   _last = 0;
 }
@@ -64,32 +65,39 @@ Packet *
 AverageCounter::simple_action(Packet *p)
 {
   _first.compare_and_swap(0, click_jiffies());
-  if (click_jiffies() - _first >= _ignore)
+  if (click_jiffies() - _first >= _ignore) {
     _count++;
+    _byte_count += p->length();
+  }
   _last = click_jiffies();
   return p;
 }
 
 static String
-averagecounter_read_count_handler(Element *e, void *)
+averagecounter_read_count_handler(Element *e, void *thunk)
 {
   AverageCounter *c = (AverageCounter *)e;
-  return String(c->count());
+  return String(thunk ? c->byte_count() : c->count());
 }
 
 static String
-averagecounter_read_rate_handler(Element *e, void *)
+averagecounter_read_rate_handler(Element *e, void *thunk)
 {
   AverageCounter *c = (AverageCounter *)e;
   uint32_t d = c->last() - c->first();
   d -= c->ignore();
   if (d < 1) d = 1;
+  uint32_t count = (thunk ? c->byte_count() : c->count());
+#if CLICK_USERLEVEL
+  return String(((double) count * CLICK_HZ) / d);
+#else
   uint32_t rate;
-  if (c->count() < (uint32_t) (0xFFFFFFFFU / CLICK_HZ))
-      rate = (c->count() * CLICK_HZ) / d;
+  if (count < (uint32_t) (0xFFFFFFFFU / CLICK_HZ))
+      rate = (count * CLICK_HZ) / d;
   else
-      rate = (c->count() / d) * CLICK_HZ;
+      rate = (count / d) * CLICK_HZ;
   return String(rate);
+#endif
 }
 
 static int
@@ -105,7 +113,9 @@ void
 AverageCounter::add_handlers()
 {
   add_read_handler("count", averagecounter_read_count_handler, 0);
+  add_read_handler("byte_count", averagecounter_read_count_handler, (void *) 1);
   add_read_handler("rate", averagecounter_read_rate_handler, 0);
+  add_read_handler("byte_rate", averagecounter_read_rate_handler, (void *) 1);
   add_write_handler("reset", averagecounter_reset_write_handler, 0);
 }
 

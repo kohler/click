@@ -25,10 +25,16 @@ CLICK_DECLS
  * the count.
  *
  * =h count read-only
- * Returns the number of packets that have passed through.
+ * Returns the number of packets that have passed through since the last reset.
+ *
+ * =h byte_count read-only
+ * Returns the number of packets that have passed through since the last reset.
  *
  * =h rate read-only
  * Returns packet arrival rate.
+ *
+ * =h byte_rate read-only
+ * Returns packet arrival rate in bytes per second.  (Beware overflow!)
  *
  * =h reset write-only
  * Resets the count and rate to zero.
@@ -45,6 +51,7 @@ class AverageCounter : public Element { public:
     int configure(Vector<String> &, ErrorHandler *);
 
     uint32_t count() const			{ return _count; }
+    uint32_t byte_count() const			{ return _byte_count; }
     uint32_t first() const			{ return _first; }
     uint32_t last() const			{ return _last; }
     uint32_t ignore() const			{ return _ignore; }
@@ -58,6 +65,7 @@ class AverageCounter : public Element { public:
   private:
   
     atomic_uint32_t _count;
+    atomic_uint32_t _byte_count;
     atomic_uint32_t _first;
     atomic_uint32_t _last;
     atomic_uint32_t _first_count;
