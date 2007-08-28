@@ -172,12 +172,12 @@ operator<<(StringAccum &sa, unsigned long u)
     return sa;
 }
 
-/** @brief Append representation of @a q to this StringAccum.
-    @param  q          number to append
+/** @brief Append representation of @a num to this StringAccum.
+    @param  num        number to append
     @param  base       numeric base: must be 8, 10, or 16
     @param  uppercase  true means use uppercase letters in base 16 */
 void
-StringAccum::append_numeric(String::uint_large_t q, int base, bool uppercase)
+StringAccum::append_numeric(String::uint_large_t num, int base, bool uppercase)
 {
     // Unparse a large integer. Linux kernel sprintf can't handle %lld, so we
     // provide our own function, and use it everywhere to catch bugs.
@@ -188,24 +188,25 @@ StringAccum::append_numeric(String::uint_large_t q, int base, bool uppercase)
     assert(base == 10 || base == 16 || base == 8);
     if (base != 10) {
 	const char *digits = (uppercase ? "0123456789ABCDEF" : "0123456789abcdef");
-	while (q > 0) {
-	    *--trav = digits[q & (base - 1)];
-	    q >>= (base >> 3) + 2;
+	while (num > 0) {
+	    *--trav = digits[num & (base - 1)];
+	    num >>= (base >> 3) + 2;
 	}
     }
   
-    while (q > 0) {
-	// k = Approx[q/10] -- know that k <= q/10
-	String::uint_large_t k = (q >> 4) + (q >> 5) + (q >> 8) + (q >> 9)
-	    + (q >> 12) + (q >> 13) + (q >> 16) + (q >> 17);
+    while (num > 0) {
+	// k = Approx[num/10] -- know that k <= num/10
+	String::uint_large_t k = (num >> 4) + (num >> 5) + (num >> 8)
+	    + (num >> 9) + (num >> 12) + (num >> 13) + (num >> 16)
+	    + (num >> 17);
 	String::uint_large_t m;
 
-	// increase k until it exactly equals floor(q/10). on exit, m is
-	// the remainder: m < 10 and q == 10*k + m.
+	// increase k until it exactly equals floor(num/10). on exit, m is
+	// the remainder: m < 10 and num == 10*k + m.
 	while (1) {
 	    // d = 10*k
 	    String::uint_large_t d = (k << 3) + (k << 1);
-	    m = q - d;
+	    m = num - d;
 	    if (m < 10)
 		break;
 	
@@ -219,7 +220,7 @@ StringAccum::append_numeric(String::uint_large_t q, int base, bool uppercase)
 	}
       
 	*--trav = '0' + (unsigned)m;
-	q = k;
+	num = k;
     }
   
     // make sure at least one 0 is written
@@ -231,13 +232,13 @@ StringAccum::append_numeric(String::uint_large_t q, int base, bool uppercase)
 
 /** @overload */
 void
-StringAccum::append_numeric(String::int_large_t q, int base, bool uppercase)
+StringAccum::append_numeric(String::int_large_t num, int base, bool uppercase)
 {
-    if (q < 0) {
+    if (num < 0) {
 	*this << '-';
-	append_numeric(static_cast<String::uint_large_t>(-q), base, uppercase);
+	append_numeric(static_cast<String::uint_large_t>(-num), base, uppercase);
     } else
-	append_numeric(static_cast<String::uint_large_t>(q), base, uppercase);
+	append_numeric(static_cast<String::uint_large_t>(num), base, uppercase);
 }
 
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)

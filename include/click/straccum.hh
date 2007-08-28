@@ -117,14 +117,14 @@ class StringAccum { public:
 
     inline void clear();
   
-    inline char *reserve(int);
+    inline char *reserve(int n);
     void set_length(int len);
-    void adjust_length(int n);
+    void adjust_length(int delta);
     inline char *extend(int nadjust, int nreserve = 0);
     void pop_back(int n = 1);
   
-    inline void append(char);
-    inline void append(unsigned char);
+    inline void append(char c);
+    inline void append(unsigned char c);
     inline void append(const char *s, int len);
     inline void append(const unsigned char *s, int len);
     inline void append(const char *begin, const char *end);
@@ -133,15 +133,15 @@ class StringAccum { public:
     void append_numeric(String::int_large_t num, int base = 10, bool uppercase = true);
     void append_numeric(String::uint_large_t num, int base = 10, bool uppercase = true);
 
-    StringAccum &snprintf(int, const char *, ...);
+    StringAccum &snprintf(int n, const char *format, ...);
   
     String take_string();
 
-    void swap(StringAccum &);
+    void swap(StringAccum &o);
 
     // see also operator<< declarations below
   
-    void forward(int n) CLICK_DEPRECATED;
+    void forward(int delta) CLICK_DEPRECATED;
 
   private:
   
@@ -232,24 +232,27 @@ StringAccum::reserve(int n)
 }
 
 /** @brief Adjust the StringAccum's length.
-    @param  n  length adjustment.
-    @pre  If @a n > 0, then length() + @a n <= capacity().  If @a n < 0, then length() + n >= 0.
+    @param  delta  length adjustment
+    @pre  If @a delta > 0, then length() + @a delta <= capacity().
+          If @a delta < 0, then length() + delta >= 0.
 
-    Generally adjust_length() is used after a call to reserve().
+    The StringAccum's length after adjust_length(@a delta) equals its old
+    length plus @a delta.  Generally adjust_length() is used after a call to
+    reserve().
     @sa set_length */
 inline void
-StringAccum::adjust_length(int n) {
-    assert(_len + n >= 0 && _len + n <= _cap);
-    _len += n;
+StringAccum::adjust_length(int delta) {
+    assert(_len + delta >= 0 && _len + delta <= _cap);
+    _len += delta;
 }
 
 /** @brief Adjust the StringAccum's length (deprecated).
-    @param  n  length adjustment.
+    @param  delta  length adjustment.
     @deprecated  Use adjust_length() instead. */
 inline void
-StringAccum::forward(int n)
+StringAccum::forward(int delta)
 {
-    adjust_length(n);
+    adjust_length(delta);
 }
 
 /** @brief Reserve space and adjust length in one operation.
