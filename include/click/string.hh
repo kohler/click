@@ -71,9 +71,9 @@ class String { public:
   typedef const_iterator iterator;
   inline const_iterator begin() const;
   inline const_iterator end() const;
-  
-  inline operator bool() const;
-  inline operator bool();
+
+  typedef int String::*unspecified_bool_type;
+  inline operator unspecified_bool_type() const;
   
   inline char operator[](int i) const;
   inline char at(int i) const;
@@ -346,17 +346,9 @@ String::end() const
 
 /** @brief Returns true iff the string is nonempty. */
 inline
-String::operator bool() const
+String::operator unspecified_bool_type() const
 {
-  return _length != 0;
-}
-
-/** @overload
- */
-inline
-String::operator bool()
-{
-  return _length != 0;
+  return _length != 0 ? &String::_length : 0;
 }
   
 /** @brief Returns the @a i th character in the string.
@@ -609,7 +601,7 @@ String::operator=(const char *cstr)
 
 /** @brief Appends the data from @a begin to @a end to the end of this string.
  *
- * Does nothing if @a begin @> @a end. */
+ * Does nothing if @a begin @>= @a end. */
 inline void
 String::append(const char *begin, const char *end)
 {
