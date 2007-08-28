@@ -88,7 +88,7 @@ operator<<(StringAccum &sa, const struct timeval &tv)
 	    len = sprintf(x, "%ld.%06ld", (long)tv.tv_sec, (long)tv.tv_usec);
 	else
 	    len = sprintf(x, "-%ld.%06ld", -((long)tv.tv_sec) - 1L, 1000000L - (long)tv.tv_usec);
-	sa.forward(len);
+	sa.adjust_length(len);
     }
     return sa;
 }
@@ -105,7 +105,7 @@ operator<<(StringAccum &sa, const Timestamp& ts)
 	if (ts.sec() >= 0)
 	    sec = ts.sec(), subsec = ts.subsec();
 	else {
-	    *x++ = '-', sa.forward(1);
+	    *x++ = '-', sa.adjust_length(1);
 	    sec = -ts.sec() - 1, subsec = Timestamp::NSUBSEC - ts.subsec();
 	}
 	
@@ -119,7 +119,7 @@ operator<<(StringAccum &sa, const Timestamp& ts)
 #else
 	len = sprintf(x, "%u.%06u", sec, subsec);
 #endif
-	sa.forward(len);
+	sa.adjust_length(len);
     }
     return sa;
 }

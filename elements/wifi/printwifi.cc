@@ -331,21 +331,21 @@ PrintWifi::simple_action(Packet *p)
 
   int len;
   len = sprintf(sa.reserve(9), "%4d | ", p->length());
-  sa.forward(len);
+  sa.adjust_length(len);
 
   if (ceh->rate == 11) {
     sa << " 5.5";
   } else {
     len = sprintf(sa.reserve(2), "%2d", ceh->rate/2);
-    sa.forward(len);
+    sa.adjust_length(len);
   }
   sa << "Mb ";
   
   len = sprintf(sa.reserve(9), "+%2d/", ceh->rssi);
-  sa.forward(len);
+  sa.adjust_length(len);
 
   len = sprintf(sa.reserve(9), "%2d | ", ceh->silence);
-  sa.forward(len);
+  sa.adjust_length(len);
 
 
 

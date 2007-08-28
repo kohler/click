@@ -280,7 +280,7 @@ file_string(FILE *f, ErrorHandler *errh)
   while (!feof(f))
     if (char *x = sa.reserve(4096)) {
       size_t r = fread(x, 1, 4096, f);
-      sa.forward(r);
+      sa.adjust_length(r);
     } else {
       if (errh)
 	errh->error("file too large, out of memory");

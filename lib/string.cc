@@ -291,7 +291,11 @@ String::assign(const char *str, int len)
   _length = len;
 }
 
-/** @brief Append @a len random characters to this string. */
+/** @brief Append @a len random characters to this string.
+    @return  Modifiable pointer to the appended random characters.
+
+    The caller may safely modify the returned memory.  Null is returned if the
+    string becomes out-of-memory. */
 char *
 String::append_garbage(int len)
 {
@@ -368,7 +372,7 @@ String::append(const char *suffix, int len)
 	memcpy(space, suffix, len);
 }
 
-/** @brief Append @a len copies of the character @a c to this string. */
+/** @brief Append @a len copies of character @a c to this string. */
 void
 String::append_fill(int c, int len)
 {

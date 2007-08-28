@@ -109,7 +109,7 @@ PacketLogger::print_log(Element *e, void *)
     }
     buf[pos++] = '\n';
 
-    sa.forward(pos);
+    sa.adjust_length(pos);
   }
 
   return sa.take_string();

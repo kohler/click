@@ -60,7 +60,7 @@ shell_command_output_string(String cmdline, const String &input, ErrorHandler *e
     if (char *s = sa.reserve(2048)) {
       int x = fread(s, 1, 2048, p);
       if (x > 0)
-	sa.forward(x);
+	sa.adjust_length(x);
     } else /* out of memory */
       break;
   }

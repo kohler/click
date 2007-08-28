@@ -77,7 +77,7 @@ IP6Print::simple_action(Packet *p)
 	}
 	if (orig_buf) {
 	    assert(buf <= orig_buf + amt);
-	    sa.forward(buf - orig_buf);
+	    sa.adjust_length(buf - orig_buf);
 	}
     }
     click_chatter("%s", sa.c_str());

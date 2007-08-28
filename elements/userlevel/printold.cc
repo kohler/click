@@ -109,7 +109,7 @@ PrintOld::simple_action(Packet *p)
   // sa.reserve() must return non-null; we checked capacity above
   int len;
   sprintf(sa.reserve(9), "(%5ld msecs) %4d | %n", age_ms, p->length(), &len);
-  sa.forward(len);
+  sa.adjust_length(len);
 
   char *buf = sa.data() + sa.length();
   int pos = 0;
@@ -118,7 +118,7 @@ PrintOld::simple_action(Packet *p)
     pos += 2;
     if ((i % 4) == 3) buf[pos++] = ' ';
   }
-  sa.forward(pos);
+  sa.adjust_length(pos);
 
   click_chatter("%s", sa.c_str());
 

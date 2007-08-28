@@ -82,7 +82,7 @@ read_param(Element *e, void *thunk)
 		for (int x = 0; x < s.len; x++) {
 			sprintf(buf + 2*x, "%02x", s.data[x] & 0xff);
 		}
-		sap.forward(s.len *2);
+		sap.adjust_length(s.len *2);
 		sap << "\n";
 		td->_packets.pop_front();
 		return sap.take_string();

@@ -100,17 +100,17 @@ Print::simple_action(Packet *p)
   // sa.reserve() must return non-null; we checked capacity above
   int len;
   len = sprintf(sa.reserve(9), "%4d | ", p->length());
-  sa.forward(len);
+  sa.adjust_length(len);
 
   if (_print_anno) {
     char *buf = sa.reserve(Packet::USER_ANNO_SIZE*2);
     int pos = 0;
     for (unsigned j = 0; j < Packet::USER_ANNO_SIZE; j++, pos += 2) 
       sprintf(buf + pos, "%02x", p->user_anno_c(j));
-    sa.forward(pos);
+    sa.adjust_length(pos);
     
     len = sprintf(sa.reserve(3), " | ");
-    sa.forward(len);
+    sa.adjust_length(len);
   }
 
   char *buf = sa.data() + sa.length();
@@ -121,7 +121,7 @@ Print::simple_action(Packet *p)
     pos += 2;
     if ((i % 4) == 3) buf[pos++] = ' ';
   }
-  sa.forward(pos);
+  sa.adjust_length(pos);
 
   click_chatter("%s", sa.c_str());
 

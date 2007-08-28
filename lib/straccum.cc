@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -24,6 +25,32 @@
 #include <click/timestamp.hh>
 #include <stdarg.h>
 CLICK_DECLS
+
+/** @class StringAccum
+ * @brief Efficiently build up Strings from pieces.
+ *
+ * Like the String class, StringAccum represents a string of characters.
+ * However, unlike a String, a StringAccum is inherently mutable, and
+ * efficiently supports building up a large string from many smaller pieces.
+ *
+ * StringAccum objects support operator<<() operations for most fundamental
+ * data types.  A StringAccum is generally built up by operator<<(), and then
+ * turned into a String by the take_string() method.  Extracting the String
+ * from a StringAccum does no memory allocation or copying; the StringAccum's
+ * memory is donated to the String.
+ *
+ * <h3>Out-of-memory StringAccums</h3>
+ *
+ * When there is not enough memory to add requested characters to a
+ * StringAccum object, the object becomes a special "out-of-memory" string.
+ * Out-of-memory strings are contagious: the result of any concatenation
+ * operation involving an out-of-memory string is another out-of-memory
+ * string.  Calling take_string() on an out-of-memory StringAccum returns an
+ * out-of-memory String.
+ *
+ * Out-of-memory StringAccum objects nominally have zero characters.
+ */
+    
 
 void
 StringAccum::make_out_of_memory()
@@ -60,6 +87,20 @@ StringAccum::grow(int want)
     return true;
 }
 
+/** @brief Append @a len copies of character @a c to this StringAccum. */
+void
+StringAccum::append_fill(int c, int len)
+{
+    if (char *s = extend(len))
+	memset(s, c, len);
+}
+
+/** @brief Null-terminate this StringAccum and return its data.
+
+    Note that the null character does not contribute to the StringAccum's
+    length(), and later append() and similar operations can overwrite it.  If
+    appending the null character fails, the StringAccum becomes out-of-memory
+    and the returned value is a null string. */
 const char *
 StringAccum::c_str()
 {
@@ -68,26 +109,32 @@ StringAccum::c_str()
     return reinterpret_cast<char *>(_s);
 }
 
+/** @brief Return a String object with this StringAccum's contents.
+
+    This operation donates the StringAccum's memory to the returned String.
+    After a call to take_string(), the StringAccum object becomes empty, and
+    any future append() operations may cause memory allocations.  If the
+    StringAccum is out-of-memory, the returned String is also out-of-memory.
+    However, take_string() resets the StringAccum's out-of-memory state. */
 String
 StringAccum::take_string()
 {
     int len = length();
-    if (len) {
-	int capacity = _cap;
-	return String::claim_string(reinterpret_cast<char *>(take_bytes()), len, capacity);
-    } else if (out_of_memory())
-	return String::out_of_memory_string();
-    else
+    int cap = _cap;
+    char *str = reinterpret_cast<char *>(_s);
+    if (len > 0) {
+	_s = 0;
+	_len = _cap = 0;
+	return String::claim_string(str, len, cap);
+    } else if (!out_of_memory())
 	return String();
+    else {
+	clear();
+	return String::out_of_memory_string();
+    }
 }
 
-void
-StringAccum::append_fill(int c, int len)
-{
-    if (char *s = extend(len))
-	memset(s, c, len);
-}
-
+/** @brief Swaps this StringAccum's contents with @a o. */
 void
 StringAccum::swap(StringAccum &o)
 {
@@ -99,26 +146,36 @@ StringAccum::swap(StringAccum &o)
     _len = olen, _cap = ocap;
 }
 
+/** @relates StringAccum
+    @brief Append decimal representation of @a i to @a sa.
+    @return @a sa */
 StringAccum &
 operator<<(StringAccum &sa, long i)
 {
     if (char *x = sa.reserve(24)) {
 	int len = sprintf(x, "%ld", i);
-	sa.forward(len);
+	sa.adjust_length(len);
     }
     return sa;
 }
 
+/** @relates StringAccum
+    @brief Append decimal representation of @a u to @a sa.
+    @return @a sa */
 StringAccum &
 operator<<(StringAccum &sa, unsigned long u)
 {
     if (char *x = sa.reserve(24)) {
 	int len = sprintf(x, "%lu", u);
-	sa.forward(len);
+	sa.adjust_length(len);
     }
     return sa;
 }
 
+/** @brief Append representation of @a q to this StringAccum.
+    @param  q          number to append
+    @param  base       numeric base: must be 8, 10, or 16
+    @param  uppercase  true means use uppercase letters in base 16 */
 void
 StringAccum::append_numeric(String::uint_large_t q, int base, bool uppercase)
 {
@@ -172,6 +229,7 @@ StringAccum::append_numeric(String::uint_large_t q, int base, bool uppercase)
     append(trav, buf + 256);
 }
 
+/** @overload */
 void
 StringAccum::append_numeric(String::int_large_t q, int base, bool uppercase)
 {
@@ -183,27 +241,45 @@ StringAccum::append_numeric(String::int_large_t q, int base, bool uppercase)
 }
 
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+/** @relates StringAccum
+    @brief Append decimal representation of @a d to @a sa.
+    @return @a sa */
 StringAccum &
 operator<<(StringAccum &sa, double d)
 {
     if (char *x = sa.reserve(256)) {
 	int len = sprintf(x, "%.12g", d);
-	sa.forward(len);
+	sa.adjust_length(len);
     }
     return sa;
 }
 #endif
 
+/** @relates StringAccum
+    @brief Append hexadecimal representation @a ptr's value to @a sa.
+    @return @a sa */
 StringAccum &
-operator<<(StringAccum &sa, void *v)
+operator<<(StringAccum &sa, void *ptr)
 {
     if (char *x = sa.reserve(30)) {
-	int len = sprintf(x, "%p", v);
-	sa.forward(len);
+	int len = sprintf(x, "%p", ptr);
+	sa.adjust_length(len);
     }
     return sa;
 }
 
+/** @brief Append result of snprintf() to this StringAccum.
+    @param  n       maximum number of characters to print
+    @param  format  format argument to snprintf()
+
+    The terminating null character is not appended to the string.
+    
+    @note The safe vsnprintf() variant is called if it exists.  It does in
+    the Linux kernel, and on modern Unix variants.  However,
+    if it does not exist on your machine, then this function is actually
+    unsafe, and you should make sure that the printf() invocation represented
+    by your arguments will never write more than @a n characters, not
+    including the terminating null. */
 StringAccum &
 StringAccum::snprintf(int n, const char *format, ...)
 {
@@ -216,7 +292,7 @@ StringAccum::snprintf(int n, const char *format, ...)
 	int len = vsprintf(x, format, val);
 	assert(len <= n);
 #endif
-	forward(len);
+	adjust_length(len);
     }
     va_end(val);
     return *this;

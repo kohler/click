@@ -121,7 +121,7 @@ PacketLogger2::print_log(Element *e, void *)
     }
     buf[pos++] = '\n';
 
-    sa.forward(pos);
+    sa.adjust_length(pos);
 
     p->_p.pop_front();
   }
