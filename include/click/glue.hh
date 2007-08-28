@@ -395,13 +395,17 @@ typedef uint32_t click_cycles_t;
 inline click_cycles_t
 click_get_cycles()
 {
-#if CLICK_LINUXMODULE && HAVE_INT64_TYPES && (__i386__ || __x86_64__)
+#if CLICK_LINUXMODULE && HAVE_INT64_TYPES && __i386__
     uint64_t x;
     __asm__ __volatile__ ("rdtsc" : "=A" (x));
     return x;
+#elif CLICK_LINUXMODULE && HAVE_INT64_TYPES && __x86_64__
+    uint32_t xlo, xhi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (xlo), "=d" (xhi));
+    return xlo | (((uint64_t) xhi) << 32);
 #elif CLICK_LINUXMODULE && __i386__
     uint32_t xlo, xhi;
-    __asm__ __volatile__ ("rdtsc" : "=d" (xhi), "=a" (xlo));
+    __asm__ __volatile__ ("rdtsc" : "=a" (xlo), "=d" (xhi));
     return xhi ? 0xFFFFFFFF : xlo;
 #elif CLICK_BSDMODULE
     return rdtsc();
