@@ -5,6 +5,7 @@
 #include <click/master.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+#include <click/confparse.hh>
 
 StaticThreadSched::StaticThreadSched()
     : _next_thread_sched(0)

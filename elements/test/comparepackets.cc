@@ -20,6 +20,7 @@
 #include "comparepackets.hh"
 #include <click/straccum.hh>
 #include <click/error.hh>
+#include <click/confparse.hh>
 CLICK_DECLS
 
 ComparePackets::ComparePackets()

@@ -242,8 +242,8 @@ IPRateMonitor::update(unsigned addr, int val, Packet *p,
     s = c->next_level;
   }
     
-  int fwd_rate = c->fwd_and_rev_rate.average(0); 
-  int rev_rate = c->fwd_and_rev_rate.average(1); 
+  int fwd_rate = c->fwd_and_rev_rate.scaled_average(0); 
+  int rev_rate = c->fwd_and_rev_rate.scaled_average(1); 
   int scale = c->fwd_and_rev_rate.scale;
   int freq = c->fwd_and_rev_rate.freq();
   fwd_rate = (fwd_rate * freq) >> scale;

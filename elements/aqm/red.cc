@@ -220,7 +220,7 @@ RED::should_drop()
     // (Therefore it contains errors. XXX)
     int s = queue_size();
     if (s) {
-	_size.update_with(s << QUEUE_SCALE);
+	_size.update(s);
 	_last_jiffies = 0;
     } else {
 	// do timing stuff for when the queue was empty
@@ -229,11 +229,11 @@ RED::should_drop()
 #else
 	int j = click_jiffies() / (CLICK_HZ / 50);
 #endif
-	_size.update_zero_period(_last_jiffies ? j - _last_jiffies : 1);
+	_size.update_n(0, _last_jiffies ? j - _last_jiffies : 1);
 	_last_jiffies = j;
     }
     
-    unsigned avg = _size.average() >> QUEUE_SCALE;
+    unsigned avg = _size.unscaled_average();
     if (avg <= _min_thresh) {
 	_count = -1;
 #if RED_DEBUG
@@ -251,9 +251,9 @@ RED::should_drop()
     // note: use SCALED _size.average()
     int p_b;
     if (avg <= _max_thresh)
-	p_b = ((_C1 * _size.average()) >> QUEUE_SCALE) - _C2;
+	p_b = ((_C1 * _size.scaled_average()) >> QUEUE_SCALE) - _C2;
     else
-	p_b = ((_G1 * _size.average()) >> QUEUE_SCALE) - _G2;
+	p_b = ((_G1 * _size.scaled_average()) >> QUEUE_SCALE) - _G2;
     
     _count++;
     // note: division had Approx[]
@@ -330,7 +330,7 @@ RED::read_parameter(Element *f, void *vparam)
       case 2:			// max_p
 	return cp_unparse_real2(red->_max_p, 16);
       case 3:			// avg_queue_size
-	return cp_unparse_real2(red->_size.average(), QUEUE_SCALE);
+	return red->_size.unparse();
       default:
 	return "";
     }
@@ -342,7 +342,7 @@ RED::read_stats(Element *f, void *)
     RED *r = (RED *)f;
     return
 	String(r->queue_size()) + " current queue\n" +
-	cp_unparse_real2(r->_size.average(), QUEUE_SCALE) + " avg queue\n" +
+	r->_size.unparse() + " avg queue\n" +
 	String(r->drops()) + " drops\n"
 #if CLICK_STATS >= 1
 	+ String(r->output(0).npackets()) + " packets\n"

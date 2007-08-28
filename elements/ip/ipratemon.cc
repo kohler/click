@@ -194,8 +194,8 @@ start:
     // Shitty code, but avoids an update() and average() call if one of both
     // rates is not below thresh.
     s->_parent->fwd_and_rev_rate.update_time();
-    if (s->_parent->fwd_and_rev_rate.average(0) < thresh) {
-      if (s->_parent->fwd_and_rev_rate.average(1) < thresh) {
+    if (s->_parent->fwd_and_rev_rate.scaled_average(0) < thresh) {
+      if (s->_parent->fwd_and_rev_rate.scaled_average(1) < thresh) {
         delete s;
         if ((_alloced_mem < memmax) ||
            !(s = (forward ? _next_deleted : _prev_deleted))) // set by ~Stats().
@@ -293,8 +293,8 @@ IPRateMonitor::print(Stats *s, String ip)
     if (!(c = s->counter[i]))
       continue;
 
-    if (c->fwd_and_rev_rate.average(1) > 0 || 
-	c->fwd_and_rev_rate.average(0) > 0) {
+    if (c->fwd_and_rev_rate.scaled_average(1) > 0 || 
+	c->fwd_and_rev_rate.scaled_average(0) > 0) {
       String this_ip;
       if (ip)
         this_ip = ip + "." + String(i);
@@ -304,11 +304,11 @@ IPRateMonitor::print(Stats *s, String ip)
 
       c->fwd_and_rev_rate.update_time();
       ret += "\t"; 
-      ret += cp_unparse_real2(c->fwd_and_rev_rate.average(0) *
+      ret += cp_unparse_real2(c->fwd_and_rev_rate.scaled_average(0) *
 			      c->fwd_and_rev_rate.freq(),
 			      c->fwd_and_rev_rate.scale);
       ret += "\t"; 
-      ret += cp_unparse_real2(c->fwd_and_rev_rate.average(1) *
+      ret += cp_unparse_real2(c->fwd_and_rev_rate.scaled_average(1) *
 			      c->fwd_and_rev_rate.freq(),
 			      c->fwd_and_rev_rate.scale);
       
@@ -517,7 +517,7 @@ IPRateMonitor::llrpc(unsigned command, void *data)
       if (s->counter[i]) {
         s->counter[i]->fwd_and_rev_rate.update_time();
 	averages[i] = 
-	  (s->counter[i]->fwd_and_rev_rate.average(which) * freq) >> scale;
+	  (s->counter[i]->fwd_and_rev_rate.scaled_average(which) * freq) >> scale;
       }
       else
 	averages[i] = -1;
@@ -561,9 +561,9 @@ IPRateMonitor::llrpc(unsigned command, void *data)
       unsigned scale = s->counter[b]->fwd_and_rev_rate.scale;
       s->counter[b]->fwd_and_rev_rate.update_time();
       averages[n*2+1] = 
-	(s->counter[b]->fwd_and_rev_rate.average(0) * freq) >> scale;
+	(s->counter[b]->fwd_and_rev_rate.scaled_average(0) * freq) >> scale;
       averages[n*2+2] = 
-	(s->counter[b]->fwd_and_rev_rate.average(1) * freq) >> scale;
+	(s->counter[b]->fwd_and_rev_rate.scaled_average(1) * freq) >> scale;
       n++;
 
       if (!s->counter[b]->next_level)
@@ -613,7 +613,4 @@ IPRateMonitor::llrpc(unsigned command, void *data)
 
 EXPORT_ELEMENT(IPRateMonitor)
 ELEMENT_REQUIRES(userlevel)
-
-// template instances
-#include <click/ewma.cc>
 CLICK_ENDDECLS

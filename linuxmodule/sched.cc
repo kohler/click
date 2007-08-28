@@ -27,6 +27,7 @@
 #include <click/router.hh>
 #include <click/straccum.hh>
 #include <click/master.hh>
+#include <click/confparse.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT

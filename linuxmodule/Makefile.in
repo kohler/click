@@ -20,7 +20,7 @@ LIB_CXX_OBJS = string.o straccum.o nameinfo.o \
 	element.o \
 	confparse.o variableenv.o lexer.o elemfilter.o \
 	routerthread.o router.o master.o handlercall.o notifier.o \
-	integers.o iptable.o ewma64.o \
+	integers.o iptable.o \
 	driver.o ino.o \
 	$(EXTRA_DRIVER_OBJS)
 

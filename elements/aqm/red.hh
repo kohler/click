@@ -2,7 +2,7 @@
 #ifndef CLICK_RED_HH
 #define CLICK_RED_HH
 #include <click/element.hh>
-#include <click/ewma64.hh>
+#include <click/ewma.hh>
 CLICK_DECLS
 class Storage;
 
@@ -104,6 +104,11 @@ probability", October 1997. L<http://www.icir.org/floyd/REDfunc.txt>. */
 
 class RED : public Element { public:
 
+    // Queue sizes are shifted by this much.
+    enum { QUEUE_SCALE = 10 };
+
+    typedef StabilityEWMAX<StabilityEWMAXParameters<QUEUE_SCALE, uint64_t, int64_t> > ewma_type;
+    
     RED();
     ~RED();
 
@@ -112,7 +117,7 @@ class RED : public Element { public:
     const char *processing() const		{ return "a/ah"; }
 
     int queue_size() const;
-    const DirectEWMA64 &average_queue_size() const { return _size; }
+    const ewma_type &average_queue_size() const { return _size; }
     int drops() const				{ return _drops; }
 
     int configure(Vector<String> &, ErrorHandler *);
@@ -134,14 +139,11 @@ class RED : public Element { public:
     Storage *_queue1;
     Vector<Storage *> _queues;
 
-    // Queue sizes are shifted by this much.
-    static const unsigned QUEUE_SCALE = 10;
-
     unsigned _min_thresh;
     unsigned _max_thresh;
     unsigned _max_p;		// out of 0xFFFF
 
-    DirectEWMA64 _size;
+    ewma_type _size;
 
     unsigned _C1;
     unsigned _C2;

@@ -98,7 +98,7 @@ void
 AdaptiveRED::run_timer(Timer *)
 {
     uint32_t part = (_max_thresh - _min_thresh) / 2;
-    uint32_t avg = (_size.average() >> QUEUE_SCALE);
+    uint32_t avg = _size.unscaled_average();
     if (avg < _min_thresh + part && _max_p > ONE_HUNDREDTH) {
 	_max_p = (_max_p * NINE_TENTHS) >> 16;
     } else if (avg > _max_thresh - part && _max_p < 0x8000) {

@@ -54,7 +54,7 @@ class BandwidthMeter : public Element { protected:
   const char *port_count() const		{ return "1/2-"; }
   const char *processing() const		{ return PUSH; }
   
-  unsigned rate() const				{ return _rate.average(); }
+  unsigned scaled_rate() const			{ return _rate.scaled_average(); }
   unsigned rate_scale() const			{ return _rate.scale; }
   unsigned rate_freq() const			{ return _rate.freq(); }
   

@@ -39,9 +39,7 @@ include/click/element.hh
 include/click/elemfilter.hh
 include/click/error.hh
 include/click/etheraddress.hh
-include/click/ewma.cc
 include/click/ewma.hh
-include/click/ewma64.hh
 include/click/gaprate.hh
 include/click/glue.hh
 include/click/handlercall.hh
@@ -116,7 +114,6 @@ lib/element.cc:libsrc/element.cc
 lib/elemfilter.cc:libsrc/elemfilter.cc
 lib/error.cc:libsrc/error.cc
 lib/etheraddress.cc:libsrc/etheraddress.cc
-lib/ewma64.cc:libsrc/ewma64.cc
 lib/exportstub.cc:libsrc/exportstub.cc
 lib/gaprate.cc:libsrc/gaprate.cc
 lib/glue.cc:libsrc/glue.cc

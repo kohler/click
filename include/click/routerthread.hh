@@ -3,7 +3,6 @@
 #define CLICK_ROUTERTHREAD_HH
 #include <click/sync.hh>
 #include <click/vector.hh>
-#include <click/ewma.hh>
 #if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT

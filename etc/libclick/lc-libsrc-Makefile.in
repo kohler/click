@@ -49,7 +49,7 @@ GENERIC_OBJS = string.o straccum.o nameinfo.o \
 	element.o \
 	confparse.o variableenv.o lexer.o elemfilter.o \
 	routerthread.o router.o master.o handlercall.o notifier.o \
-	integers.o md5.o crc32.o in_cksum.o iptable.o ewma64.o \
+	integers.o md5.o crc32.o in_cksum.o iptable.o \
 	archive.o userutils.o driver.o \
 	$(EXTRA_DRIVER_OBJS)
 

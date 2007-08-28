@@ -28,6 +28,7 @@
 #include <click/package.hh>
 #include <click/hashmap.hh>
 #include <click/error.hh>
+#include <click/confparse.hh>
 
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
 # include <click/userutils.hh>

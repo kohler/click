@@ -33,7 +33,7 @@ Meter::push(int, Packet *p)
 {
   _rate.update(1);		// packets, not bytes
 
-  unsigned r = _rate.average();
+  unsigned r = _rate.scaled_average();
   if (_nmeters < 2) {
     int n = (r >= _meter1);
     output(n).push(p);

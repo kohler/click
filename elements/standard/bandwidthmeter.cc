@@ -84,7 +84,7 @@ BandwidthMeter::push(int, Packet *p)
 {
   _rate.update(p->length());
 
-  unsigned r = _rate.average();
+  unsigned r = _rate.scaled_average();
   if (_nmeters < 2) {
     int n = (r >= _meter1);
     output(n).push(p);
@@ -118,7 +118,7 @@ static String
 read_rate_handler(Element *f, void *)
 {
   BandwidthMeter *c = (BandwidthMeter *)f;
-  return cp_unparse_real2(c->rate()*c->rate_freq(), c->rate_scale());
+  return cp_unparse_real2(c->scaled_rate()*c->rate_freq(), c->rate_scale());
 }
 
 void

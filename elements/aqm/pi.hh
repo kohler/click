@@ -2,12 +2,16 @@
 #ifndef CLICK_PI_HH
 #define CLICK_PI_HH
 #include <click/element.hh>
-#include <click/ewma64.hh>
+#include <click/ewma.hh>
 #include <click/timer.hh>
 CLICK_DECLS
 class Storage;
 
 class PI : public Element { public:
+
+    // Queue sizes are shifted by this much.
+    enum { QUEUE_SCALE = 10 };
+    typedef StabilityEWMAX<StabilityEWMAXParameters<QUEUE_SCALE, uint64_t, int64_t> > ewma_type;
 
     PI();
     ~PI();
@@ -17,7 +21,7 @@ class PI : public Element { public:
     const char *processing() const		{ return "a/ah"; }
 
     int queue_size() const;
-    const DirectEWMA64 &average_queue_size() const { return _size; }
+    const ewma_type &average_queue_size() const { return _size; }
     int drops() const				{ return _drops; }
 
     int configure(Vector<String> &, ErrorHandler *);
@@ -42,10 +46,7 @@ class PI : public Element { public:
     Storage *_queue1;
     Vector<Storage *> _queues;
 
-    // Queue sizes are shifted by this much.
-    static const unsigned QUEUE_SCALE = 10;
-
-    DirectEWMA64 _size;
+    ewma_type _size;
 
     int _random_value;
     int _last_jiffies;

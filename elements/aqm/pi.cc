@@ -313,7 +313,7 @@ PI::read_stats(Element *f, void *)
     PI *r = (PI *)f;
     return
 	String(r->queue_size()) + " current queue\n" +
-	cp_unparse_real2(r->_size.average(), QUEUE_SCALE) + " avg queue\n" +
+	r->_size.unparse() + " avg queue\n" +
 	String(r->drops()) + " drops\n"
 #if CLICK_STATS >= 1
 	+ String(r->output(0).npackets()) + " packets\n"

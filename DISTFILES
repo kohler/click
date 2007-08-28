@@ -331,9 +331,7 @@ element.hh
 elemfilter.hh
 error.hh
 etheraddress.hh
-ewma.cc
 ewma.hh
-ewma64.hh
 gaprate.hh
 glue.hh
 handlercall.hh
@@ -413,7 +411,6 @@ element.cc
 elemfilter.cc
 error.cc
 etheraddress.cc
-ewma64.cc
 exportstub.cc
 gaprate.cc
 glue.cc

@@ -38,7 +38,4 @@ template class _HashMap_const_iterator<String, int>;
 template class HashMap<IPAddress, unsigned>;
 template class HashMap<IPFlowID, bool>;
 
-#include <click/ewma.cc>
-template class DirectEWMAX<4, 10>;
-
 CLICK_ENDDECLS
