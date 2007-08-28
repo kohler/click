@@ -34,6 +34,8 @@ Currently only one form of FILTERSPEC is understood.
 =item 'C<drop dev DEVNAME>'
 
 The kernel is blocked from handling any packets arriving on device DEVNAME.
+However, these packets will still be visible to tcpdump(1), and to Click
+elements like FromDevice.u.
 
 =back
 

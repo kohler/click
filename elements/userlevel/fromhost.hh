@@ -59,12 +59,12 @@ CLICK_DECLS
  * queries in order to receive any IP packets, but you can obviously respond
  * with any Ethernet address you'd like. Here is one common idiom:
  *
- * tap0 :: FromHost(fake, 192.0.0.1/8)
- * -> fromhost_cl :: Classifier(12/0806, 12/0800);
- * fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> tap0;
- * fromhost_cl[1] -> ... // IP packets
- *  
- *  =e
+ *  tap0 :: FromHost(fake, 192.0.0.1/8)
+ *      -> fromhost_cl :: Classifier(12/0806, 12/0800);
+ *  fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> tap0;
+ *  fromhost_cl[1] -> ... // IP packets
+ * 
+ * =e
  *
  *  FromHost(fake, 192.0.0.1/8) -> ...;
  * 
