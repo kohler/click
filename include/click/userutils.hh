@@ -34,6 +34,7 @@ void parse_tabbed_lines(const String &, Vector<String> *, ...);
 ArchiveElement init_archive_element(const String &, int);
 
 String shell_quote(const String &, bool quote_tilde = false);
+String shell_command_output_string(String command_line, const String &command_stdin, ErrorHandler *);
 
 bool compressed_data(const unsigned char *, int);
 FILE *open_uncompress_pipe(const String &filename, const unsigned char *, int, ErrorHandler *);

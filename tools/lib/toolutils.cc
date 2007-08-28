@@ -39,40 +39,6 @@
 VariableEnvironment global_scope(0);
 bool ignore_line_directives = false;
 
-
-String
-shell_command_output_string(String cmdline, const String &input, ErrorHandler *errh)
-{
-  FILE *f = tmpfile();
-  if (!f)
-    errh->fatal("cannot create temporary file: %s", strerror(errno));
-  fwrite(input.data(), 1, input.length(), f);
-  fflush(f);
-  rewind(f);
-  
-  String new_cmdline = cmdline + " 0<&" + String(fileno(f));
-  FILE *p = popen(new_cmdline.c_str(), "r");
-  if (!p)
-    errh->fatal("'%s': %s", cmdline.c_str(), strerror(errno));
-
-  StringAccum sa;
-  while (!feof(p)) {
-    if (char *s = sa.reserve(2048)) {
-      int x = fread(s, 1, 2048, p);
-      if (x > 0)
-	sa.adjust_length(x);
-    } else /* out of memory */
-      break;
-  }
-  if (!feof(p))
-    errh->warning("'%s' output too long, truncated", cmdline.c_str());
-
-  fclose(f);
-  pclose(p);
-  return sa.take_string();
-}
-
-
 int
 click_maybe_define(const char *arg, ErrorHandler *errh)
 {
