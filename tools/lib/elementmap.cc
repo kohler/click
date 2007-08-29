@@ -28,7 +28,6 @@
 #include "toolutils.hh"
 #include <click/confparse.hh>
 
-static String::Initializer string_initializer;
 int32_t default_element_map_version = 0;
 static ElementMap main_element_map;
 ElementMap *ElementMap::the_element_map = &main_element_map;
@@ -38,6 +37,7 @@ static Vector<ElementMap *> element_map_stack;
 ElementMap::ElementMap()
     : _name_map(0), _use_count(0), _driver_mask(Driver::ALLMASK)
 {
+    String::static_initialize();
     _e.push_back(Traits());
     _def.push_back(Globals());
 }
