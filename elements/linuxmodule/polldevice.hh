@@ -44,6 +44,10 @@ timestamp annotations.  Default is true.
 
 Boolean.  If true, then suppress device up/down messages.  Default is false.
 
+=item HEADROOM
+
+Unsigned.  Amount of extra headroom to request on each packet.  Default is 64.
+
 =item ALLOW_NONEXISTENT
 
 Allow nonexistent devices. If true, and no device named DEVNAME exists when
@@ -131,7 +135,8 @@ class PollDevice : public AnyTaskDevice { public:
 
  private:
 
-  unsigned _burst;
+    unsigned _burst;
+    unsigned _headroom;
 
 };
 

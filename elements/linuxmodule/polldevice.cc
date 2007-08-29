@@ -75,6 +75,7 @@ int
 PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 8;
+    _headroom = 64;
     bool promisc = false, allow_nonexistent = false, quiet = false, timestamp = true;
     if (cp_va_parse(conf, this, errh,
 		    cpString, "device name", &_devname,
@@ -88,6 +89,7 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "TIMESTAMP", cpBool, "set timestamps?", &timestamp,
 		    "QUIET", cpBool, "suppress up/down messages?", &quiet,
 		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &allow_nonexistent,
+		    "HEADROOM", cpUnsigned, "headroom", &_headroom,
 		    cpEnd) < 0)
 	return -1;
     set_device_flags(promisc, timestamp, allow_nonexistent, quiet);
@@ -224,11 +226,14 @@ PollDevice::run_task(Task *)
 
   if (nskbs > 0) {
     /*
-     * Extra 16 bytes in the SKB for eepro100 RxFD -- perhaps there
+     * Need to allocate 1536+16 == 1552 bytes per packet.
+     * "Extra 16 bytes in the SKB for eepro100 RxFD -- perhaps there
      * should be some callback to the device driver to query for the
-     * desired packet size.
+     * desired packet size."
+     * Skbmgr adds 64 bytes of headroom and tailroom, so back request off to
+     * 1536.
      */
-    struct sk_buff *new_skbs = skbmgr_allocate_skbs(0, 1536+16, &nskbs);
+    struct sk_buff *new_skbs = skbmgr_allocate_skbs(_headroom, 1536, &nskbs);
 
 # if CLICK_DEVICE_STATS
     if (_activations > 0)
