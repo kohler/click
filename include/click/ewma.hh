@@ -199,27 +199,38 @@ class FixedEWMAXParameters { public:
 
     typedef T value_type;
     typedef U signed_value_type;
-    
+
+    /** @brief  Returns this EWMA's stability shift.
+     *  @return  the 1st template parameter */
     static unsigned stability_shift() {
 	return STABILITY;
     }
 
+    /** @brief  Returns this EWMA's scaling factor (bits of fraction).
+     *  @return  the 2nd template parameter */
     static unsigned scale() {
 	return SCALE;
     }
 
+    /** @brief  Returns this EWMA's compensation.
+     *  @return  1 << (stability_shift() - 1) */
     static unsigned compensation() {
 	return 1 << (STABILITY - 1);
     }
     
 };
 
+/** @brief A DirectEWMAX with stability shift 4 (alpha 1/16), scaling factor
+ *  10 (10 bits of fraction), and underlying type <code>unsigned</code>. */
 typedef DirectEWMAX<FixedEWMAXParameters<4, 10> > DirectEWMA;
+
+/** @brief A DirectEWMAX with stability shift 3 (alpha 1/8), scaling factor
+ *  10 (10 bits of fraction), and underlying type <code>unsigned</code>. */
 typedef DirectEWMAX<FixedEWMAXParameters<3, 10> > FastDirectEWMA;
 
 
 /** @class StabilityEWMAXParameters include/click/ewma.hh <click/ewma.hh>
- *  @brief  Parameters for a StabilityEWMA with constant scaling factor
+ *  @brief  Parameters for a EWMA with constant scaling factor
  *	    and user-settable alpha.
  *
  *  The StabilityEWMAXParameters template class is used as a template argument
@@ -260,10 +271,14 @@ class StabilityEWMAXParameters { public:
 	_stability = stability_shift;
     }
     
+    /** @brief  Returns this EWMA's scaling factor (bits of fraction).
+     *  @return  the 1st template parameter */
     static unsigned scale() {
 	return SCALE;
     }
 
+    /** @brief  Returns this EWMA's compensation.
+     *  @return  1 << (stability_shift() - 1) */
     unsigned compensation() const {
 	return 1 << (stability_shift() - 1);
     }
@@ -406,20 +421,26 @@ class RateEWMAX : public P { public:
  *  initially equal to 1/16, scaling factor 10, and value type unsigned.
  */
 template <unsigned STABILITY, unsigned SCALE, typename T = unsigned, typename U = int>
-struct RateEWMAXParameters : public FixedEWMAXParameters<STABILITY, SCALE, T, U> {
+class RateEWMAXParameters : public FixedEWMAXParameters<STABILITY, SCALE, T, U> { public:
     enum {
 	rate_count = 1
     };
-    
+
+    /** @brief  Return the current epoch number.
+     *  @note   RateEWMAXParameters measures epochs in jiffies. */
     static unsigned epoch() {
 	return click_jiffies();
     }
-    
+
+    /** @brief  Return the number of epochs (jiffies) per second. */
     static unsigned epoch_frequency() {
 	return CLICK_HZ;
     }
 };
 
+/** @brief A RateEWMAX with stability shift 4 (alpha 1/16), scaling factor 10
+ *  (10 bits of fraction), one rate, and underlying type <code>unsigned</code>
+ *  that measures epochs in jiffies. */
 typedef RateEWMAX<RateEWMAXParameters<4, 10> > RateEWMA;
 
 
