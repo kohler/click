@@ -47,8 +47,7 @@ CLICK_DECLS
  *
  * Since Click tasks are cooperatively scheduled, executing a task should not
  * take a long time.  Very long tasks can inappropriately delay timers and
- * other periodic events.  We may address this problem in a future release,
- * but for now, keep tasks short.
+ * other periodic events, so keep tasks short.
  */
 
 // - Changes to _thread are protected by _thread->lock.
