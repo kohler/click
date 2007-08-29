@@ -53,7 +53,7 @@ CLICK_DECLS
 // - Changes to _thread are protected by _thread->lock.
 // - Changes to _home_thread_id are protected by
 //   _router->master()->task_lock.
-// - If _pending is nonzero, then _pending_next is nonnull.
+// - If _pending_reschedule is nonzero, then _pending_next is nonnull.
 // - Either _home_thread_id == _thread->thread_id(), or
 //   _thread->thread_id() == -1.
 
@@ -74,10 +74,10 @@ Task::make_list()
 Task::~Task()
 {
 #if HAVE_TASK_HEAP
-    if (scheduled() || _pending)
+    if (scheduled() || _pending_next)
 	cleanup();
 #else
-    if ((scheduled() || _pending) && _thread != this)
+    if ((scheduled() || _pending_next) && _thread != this)
 	cleanup();
 #endif
 }
@@ -123,7 +123,7 @@ Task::initialize(Router *router, bool schedule)
 #endif
 
     if (schedule)
-	add_pending(RESCHEDULE);
+	add_pending(true);
 }
 
 /** @brief Initialize the Task, and optionally schedule it.
@@ -144,7 +144,7 @@ Task::cleanup()
     if (initialized()) {
 	strong_unschedule();
 
-	if (_pending) {
+	if (_pending_next) {
 	    Master *m = _router->master();
 	    SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
 	    Task *prev = &m->_task_list;
@@ -153,7 +153,7 @@ Task::cleanup()
 		    prev->_pending_next = t->_pending_next;
 		    break;
 		}
-	    _pending = 0;
+	    _pending_reschedule = 0;
 	    _pending_next = 0;
 	    m->_task_lock.release(flags);
 	}
@@ -188,18 +188,18 @@ Task::attempt_lock_tasks()
 }
 
 void
-Task::add_pending(int p)
+Task::add_pending(bool reschedule)
 {
     Master *m = _router->master();
     SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
     if (_router->_running >= Router::RUNNING_PREPARING) {
-	_pending |= p;
-	if (!_pending_next && _pending) {
+	if (reschedule)
+	    _pending_reschedule = 1;
+	if (!_pending_next) {
 	    _pending_next = m->_task_list._pending_next;
 	    m->_task_list._pending_next = this;
-	}
-	if (_pending)
 	    _thread->add_pending();
+	}
     }
     m->_task_lock.release(flags);
 }
@@ -226,7 +226,7 @@ Task::unschedule()
     if (_thread) {
 	lock_tasks();
 	fast_unschedule();
-	_pending &= ~RESCHEDULE;
+	_pending_reschedule = 0;
 	_thread->unlock_tasks();
     }
 }
@@ -284,7 +284,7 @@ Task::true_reschedule()
   skip_lock:
 #endif
     if (!done)
-	add_pending(RESCHEDULE);
+	add_pending(true);
 }
 
 /** @brief Unschedules the Task and moves it to a quiescent thread.
@@ -312,7 +312,7 @@ Task::strong_unschedule()
 	lock_tasks();
 	fast_unschedule();
 	RouterThread *old_thread = _thread;
-	_pending &= ~(RESCHEDULE | CHANGE_THREAD);
+	_pending_reschedule = 0;
 	_thread = _router->master()->thread(RouterThread::THREAD_STRONG_UNSCHEDULE);
 	old_thread->unlock_tasks();
     }
@@ -343,7 +343,7 @@ Task::strong_reschedule()
     if (old_thread->thread_id() == RouterThread::THREAD_STRONG_UNSCHEDULE) {
 	fast_unschedule();
 	_thread = _router->master()->thread(_home_thread_id);
-	add_pending(RESCHEDULE);
+	add_pending(true);
     } else if (old_thread->thread_id() == _home_thread_id)
 	fast_reschedule();
     old_thread->unlock_tasks();
@@ -375,15 +375,15 @@ Task::move_thread(int thread_id)
 	    && old_thread->thread_id() != RouterThread::THREAD_STRONG_UNSCHEDULE) {
 	    if (scheduled()) {
 		fast_unschedule();
-		_pending |= RESCHEDULE;
+		_pending_reschedule = 1;
 	    }
 	    _thread = _router->master()->thread(_home_thread_id);
 	    old_thread->unlock_tasks();
-	    add_pending(0);
+	    add_pending(false);
 	} else
 	    old_thread->unlock_tasks();
     } else
-	add_pending(CHANGE_THREAD);
+	add_pending(false);
 }
 
 void
@@ -396,27 +396,24 @@ Task::process_pending(RouterThread *thread)
 #endif
 
     if (_thread == thread) {
-	if (_pending & CHANGE_THREAD) {
-	    // see also move_thread() above
-	    _pending &= ~CHANGE_THREAD;
-	    if (_thread->thread_id() != _home_thread_id
-		&& _thread->thread_id() != RouterThread::THREAD_STRONG_UNSCHEDULE) {
-		if (scheduled()) {
-		    fast_unschedule();
-		    _pending |= RESCHEDULE;
-		}
-		_thread = _router->master()->thread(_home_thread_id);
+	// see also move_thread() above
+	if (_thread->thread_id() != _home_thread_id
+	    && _thread->thread_id() != RouterThread::THREAD_STRONG_UNSCHEDULE) {
+	    if (scheduled()) {
+		fast_unschedule();
+		_pending_reschedule = 1;
 	    }
-	} else if (_pending & RESCHEDULE) {
-	    _pending &= ~RESCHEDULE;
+	    _thread = _router->master()->thread(_home_thread_id);
+	} else if (_pending_reschedule) {
+	    _pending_reschedule = 0;
 	    if (!scheduled())
 		fast_schedule();
 	}
     }
 
-    if (_pending)
-	add_pending(0);
-
+    if (_pending_reschedule)
+	add_pending(true);
+    
 #if CLICK_BSDMODULE
     splx(s);
 #endif

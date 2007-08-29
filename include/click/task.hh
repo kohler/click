@@ -121,15 +121,14 @@ class Task { public:
   
     Router* _router;
 
-    enum { RESCHEDULE = 1, CHANGE_THREAD = 2 };
-    unsigned _pending;
+    unsigned _pending_reschedule;
     Task* _pending_next;
 
     Task(const Task&);
     Task& operator=(const Task&);
     void cleanup();
     
-    void add_pending(int);
+    void add_pending(bool reschedule);
     void process_pending(RouterThread*);
     inline void fast_schedule();
     void true_reschedule();
@@ -187,7 +186,7 @@ Task::Task(TaskHook hook, void* thunk)
       _cycle_runs(0),
 #endif
       _thread(0), _home_thread_id(-1),
-      _router(0), _pending(0), _pending_next(0)
+      _router(0), _pending_reschedule(0), _pending_next(0)
 {
 }
 
@@ -220,7 +219,7 @@ Task::Task(Element* e)
       _cycle_runs(0),
 #endif
       _thread(0), _home_thread_id(-1),
-      _router(0), _pending(0), _pending_next(0)
+      _router(0), _pending_reschedule(0), _pending_next(0)
 {
 }
 
