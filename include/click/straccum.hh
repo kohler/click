@@ -125,13 +125,14 @@ class StringAccum { public:
   
     inline void append(char c);
     inline void append(unsigned char c);
-    inline void append(const char *s, int len);
-    inline void append(const unsigned char *s, int len);
-    inline void append(const char *begin, const char *end);
     void append_fill(int c, int len);
+    
+    inline void append(const char *suffix, int len);
+    inline void append(const unsigned char *suffix, int len);
+    inline void append(const char *begin, const char *end);
 
-    void append_numeric(String::int_large_t num, int base = 10, bool uppercase = true);
     void append_numeric(String::uint_large_t num, int base = 10, bool uppercase = true);
+    void append_numeric(String::int_large_t num, int base = 10, bool uppercase = true);
 
     StringAccum &snprintf(int n, const char *format, ...);
   
@@ -296,7 +297,7 @@ StringAccum::set_length(int len) {
 /** @brief Extend the StringAccum by character @a c.
     @param  c  character to extend */
 inline void
-StringAccum::append(unsigned char c)
+StringAccum::append(char c)
 {
     if (_len < _cap || grow(_len))
 	_s[_len++] = c;
@@ -304,9 +305,9 @@ StringAccum::append(unsigned char c)
 
 /** @overload */
 inline void
-StringAccum::append(char c)
+StringAccum::append(unsigned char c)
 {
-    append(static_cast<unsigned char>(c));
+    append(static_cast<char>(c));
 }
 
 inline void
