@@ -11,7 +11,9 @@ Creating elements_foo.conf...
 Build 'fooclick' with 'make MINDRIVER=foo'.
 
 %expect elements_foo.conf
+elements/ip/ipnameinfo.cc	"elements/ip/ipnameinfo.hh"	IPNameInfo-IPNameInfo IPNameInfo-!si IPNameInfo-!sc
 elements/standard/addressinfo.cc	<click/standard/addressinfo.hh>	AddressInfo-AddressInfo
+elements/standard/align.cc	"elements/standard/align.hh"	Align-Align
 elements/standard/alignmentinfo.cc	<click/standard/alignmentinfo.hh>	AlignmentInfo-AlignmentInfo
 elements/standard/errorelement.cc	<click/standard/errorelement.hh>	ErrorElement-Error
 elements/standard/portinfo.cc	<click/standard/portinfo.hh>	PortInfo-PortInfo
