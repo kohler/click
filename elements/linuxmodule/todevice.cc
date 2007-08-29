@@ -401,10 +401,13 @@ ToDevice::queue_packet(Packet *p)
      */
     if (!_no_pad && skb1->len < 60) {
 	if (skb_tailroom(skb1) < 60 - skb1->len) {
-	    printk("ToDevice: too small: len %d tailroom %d\n",
-		   skb1->len, skb_tailroom(skb1));
+	    if (++_too_short == 1)
+		printk("<1>ToDevice %s packet too small (len %d, tailroom %d), had to copy\n", skb1->len, skb_tailroom(skb1));
+	    struct sk_buff *nskb = skb_copy_expand(skb1, skb_headroom(skb1), skb_tailroom(skb1) + 60 - skb1->len, GFP_ATOMIC);
 	    kfree_skb(skb1);
-	    return -1;
+	    if (!nskb)
+		return -1;
+	    skb1 = nskb;
 	}
 	skb_put(skb1, 60 - skb1->len);
     }
@@ -424,10 +427,9 @@ ToDevice::queue_packet(Packet *p)
 	    _hard_start++;
 	}
     if (ret != 0) {
-	if (_rejected == 0)
+	if (++_rejected == 1)
 	    printk("<1>ToDevice %s rejected a packet!\n", _dev->name);
 	kfree_skb(skb1);
-	_rejected++;
     }
     return ret;
 }
@@ -514,7 +516,7 @@ ToDevice_read_stats(Element *e, void *thunk)
       case H_COUNT:
 	return String(td->_npackets);
       case H_DROPS:
-	return String(td->_rejected + td->_too_short);
+	return String(td->_rejected);
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
       case H_PULL_CYCLES:
 	return String(td->_pull_cycles);
