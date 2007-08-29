@@ -124,6 +124,9 @@ Router::~Router()
 	_master->unregister_router(this);
 }
 
+/** @brief  Decrement the router's reference count.
+ *
+ *  Destroys the router if the reference count decrements to zero. */
 void
 Router::unuse()
 {
@@ -134,12 +137,28 @@ Router::unuse()
 
 // ACCESS
 
+/** @brief  Finds an element named @a name.
+ *  @param  name     element name
+ *  @param  context  compound element context
+ *  @param  errh     optional error handler
+ *
+ *  Searches for an element named @a name in the compound element context
+ *  specified by @a context, returning the first element found.  For example,
+ *  if @a context was <tt>"aaa/bbb/ccc/"</tt>, then find() would search for
+ *  elements named <tt>aaa/bbb/ccc/name</tt>, <tt>aaa/bbb/name</tt>,
+ *  <tt>aaa/name</tt>, and finally <tt>name</tt>, returning the first element
+ *  found.  If nonempty, @a context should end with a slash.
+ *
+ *  If no element named @a name is found, reports an error to @a errh and
+ *  returns null.  The error is "<tt>no element named 'name'</tt>".  If @a
+ *  errh is null, no error is reported.
+ */
 Element *
-Router::find(const String &name, String prefix, ErrorHandler *errh) const
+Router::find(const String &name, String context, ErrorHandler *errh) const
 {
   while (1) {
     int got = -1;
-    String n = prefix + name;
+    String n = context + name;
     for (int i = 0; i < _elements.size(); i++)
       if (_element_names[i] == n) {
 	if (got >= 0) {
@@ -150,11 +169,11 @@ Router::find(const String &name, String prefix, ErrorHandler *errh) const
       }
     if (got >= 0)
       return _elements[got];
-    if (!prefix)
+    if (!context)
       break;
     
-    int slash = prefix.find_right('/', prefix.length() - 2);
-    prefix = (slash >= 0 ? prefix.substring(0, slash + 1) : String());
+    int slash = context.find_right('/', context.length() - 2);
+    context = (slash >= 0 ? context.substring(0, slash + 1) : String());
   }
   
   if (errh)
@@ -162,6 +181,21 @@ Router::find(const String &name, String prefix, ErrorHandler *errh) const
   return 0;
 }
 
+/** @brief  Finds an element named @a name.
+ *  @param  name     element name
+ *  @param  context  compound element context
+ *  @param  errh     optional error handler
+ *
+ *  Searches for an element named @a name in the compound element context
+ *  specified by @a context, returning the first element found.  For example,
+ *  if ename(@a context) was <tt>"aaa/bbb/element"</tt>, then find(@a name, @a
+ *  context, @a errh) is equivalent to find(@a name, <tt>"aaa/bbb/"</tt>, @a
+ *  errh), and will search for elements named <tt>aaa/bbb/name</tt>,
+ *  <tt>aaa/name</tt>, and finally <tt>name</tt>.
+ *
+ *  If no element named @a name is found, reports an error to @a errh and
+ *  returns null.  The error is "<tt>no element named 'name'</tt>".  If @a
+ *  errh is null, no error is reported. */
 Element *
 Router::find(const String &name, Element *context, ErrorHandler *errh) const
 {
@@ -170,49 +204,81 @@ Router::find(const String &name, Element *context, ErrorHandler *errh) const
   return find(name, (slash >= 0 ? prefix.substring(0, slash + 1) : String()), errh);
 }
 
+/** @brief  Return @a router's element with index @a eindex.
+ *  @param  router  the router (may be null)
+ *  @param  eindex  element index, or -1 for router->root_element()
+ *
+ *  This function returns @a router's element with index @a eindex.  If
+ *  @a router is null or @a eindex is out of range, returns null. */
 Element *
-Router::element(const Router *r, int ei)
+Router::element(const Router *router, int eindex)
 {
-    if (r && ei >= 0 && ei < r->nelements())
-	return r->_elements[ei];
-    else if (r && ei == -1)
-	return r->root_element();
+    if (router && eindex >= 0 && eindex < router->nelements())
+	return router->_elements[eindex];
+    else if (router && eindex == -1)
+	return router->root_element();
     else
 	return 0;
 }
 
+/** @brief  Returns element index @a eindex's name.
+ *  @param  eindex  element index
+ *
+ *  Returns the empty string if @a eindex is out of range. */
 const String &
-Router::ename(int ei) const
+Router::ename(int eindex) const
 {
-    if (ei < 0 || ei >= nelements())
+    if (eindex < 0 || eindex >= nelements())
 	return String::empty_string();
     else
-	return _element_names[ei];
+	return _element_names[eindex];
 }
 
+/** @brief  Returns element index @a eindex's configuration string.
+ *  @param  eindex  element index
+ *
+ *  Returns the empty string if @a eindex is out of range.
+ *
+ *  @note econfiguration() returns the element's most recently specified
+ *  static configuration string, which might differ from the element's active
+ *  configuration string.  For the active configuration, call the virtual
+ *  function Element::configuration(), which defaults to returning
+ *  econfiguration(). */
 const String &
-Router::default_configuration_string(int ei) const
+Router::econfiguration(int eindex) const
 {
-    if (ei < 0 || ei >= nelements())
+    if (eindex < 0 || eindex >= nelements())
 	return String::empty_string();
     else
-	return _element_configurations[ei];
+	return _element_configurations[eindex];
 }
 
+/** @brief  Sets element index @a eindex's configuration string.
+ *  @param  eindex  element index
+ *  @param  conf    configuration string
+ *
+ *  Does nothing if @a eindex is out of range. */
 void
-Router::set_default_configuration_string(int ei, const String &s)
+Router::set_econfiguration(int eindex, const String &conf)
 {
-    if (ei >= 0 && ei < nelements())
-	_element_configurations[ei] = s;
+    if (eindex >= 0 && eindex < nelements())
+	_element_configurations[eindex] = conf;
 }
 
+/** @brief  Returns element index @a eindex's landmark.
+ *  @param  eindex  element index
+ *
+ *  A landmark is a short string specifying where the element was defined.  A
+ *  typical landmark has the form "file:linenumber", as in
+ *  <tt>"file.click:30"</tt>.  Returns the empty string if @a eindex is out of
+ *  range. */
 const String &
-Router::elandmark(int ei) const
+Router::elandmark(int eindex) const
 {
-    if (ei < 0 || ei >= nelements())
+    if (eindex < 0 || eindex >= nelements())
 	return String::empty_string();
     else
-	return _element_landmarks[ei];
+	return _element_landmarks[eindex];
 }
 
 
@@ -708,19 +774,6 @@ Router::downstream_elements(Element* first_element, int first_output, ElementFil
 }
 
 int
-Router::downstream_elements(Element* first_element, int first_output,
-			    Vector<Element*>& results)
-{
-    return downstream_elements(first_element, first_output, 0, results);
-}
-
-int
-Router::downstream_elements(Element* first_element, Vector<Element*>& results)
-{
-    return downstream_elements(first_element, -1, 0, results);
-}
-
-int
 Router::upstream_elements(Element* first_element, int first_input, ElementFilter* stop_filter, Vector<Element*>& results)
 {
     Bitvector bv;
@@ -728,18 +781,6 @@ Router::upstream_elements(Element* first_element, int first_input, ElementFilter
 	return -1;
     gport_list_elements(true, bv, results);
     return 0;
-}
-
-int
-Router::upstream_elements(Element* first_element, int first_input, Vector<Element*>& results)
-{
-    return upstream_elements(first_element, first_input, 0, results);
-}
-
-int
-Router::upstream_elements(Element* first_element, Vector<Element*>& results)
-{
-    return upstream_elements(first_element, -1, 0, results);
 }
 
 

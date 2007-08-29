@@ -21,113 +21,106 @@ class NameInfo;
 
 class Router { public:
 
-    Router(const String &configuration, Master *);
+    Router(const String& configuration, Master* master);
     ~Router();
-    inline void use();
-    void unuse();
 
-    static void static_initialize();
-    static void static_cleanup();
-
-    enum {
-	ROUTER_NEW, ROUTER_PRECONFIGURE, ROUTER_PREINITIALIZE,
-	ROUTER_LIVE, ROUTER_DEAD		// order is important
-    };
+    // STATUS
     inline bool initialized() const;
     inline bool handlers_ready() const;
     inline bool running() const;
 
     // ELEMENTS
-    inline int nelements() const;
     inline const Vector<Element*>& elements() const;
-    static Element* element(const Router*, int);
-    inline Element* element(int e) const;
-    // element() returns 0 on bad index/no router, root_element() on index -1
+    inline int nelements() const;
+    // eindex -1 returns root_element(), other out-of-range indexes return 0
+    inline Element* element(int eindex) const;
     inline Element* root_element() const;
+    static Element* element(const Router *router, int eindex);
   
-    const String& ename(int) const;
-    const String& elandmark(int) const;
-    const String& default_configuration_string(int) const;
-    void set_default_configuration_string(int, const String&);
+    Element* find(const String& name, ErrorHandler* errh = 0) const;
+    Element* find(const String& name, String context, ErrorHandler* errh = 0) const;
+    Element* find(const String& name, Element* context, ErrorHandler* errh = 0) const;
   
-    Element* find(const String&, ErrorHandler* = 0) const;
-    Element* find(const String&, Element* context, ErrorHandler* = 0) const;
-    Element* find(const String&, String prefix, ErrorHandler* = 0) const;
+    const String& ename(int eindex) const;
+    const String& elandmark(int eindex) const;
+    const String& econfiguration(int eindex) const;
+    void set_econfiguration(int eindex, const String& conf);
   
-    int downstream_elements(Element*, int o, ElementFilter*, Vector<Element*>&);
-    int downstream_elements(Element*, int o, Vector<Element*> &);
-    int downstream_elements(Element*, Vector<Element*> &);
-    int upstream_elements(Element*, int i, ElementFilter*, Vector<Element*>&);
-    int upstream_elements(Element*, int i, Vector<Element*> &);  
-    int upstream_elements(Element*, Vector<Element*> &);
+    int downstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
+    int upstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
 
     // HANDLERS
     enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
-    static int hindex(const Element*, const String&);
-    static void element_hindexes(const Element*, Vector<int>&);
+    static int hindex(const Element* e, const String& hname);
+    static void element_hindexes(const Element* e, Vector<int>& result);
 
     // 'const Handler*' results last until that element/handlername modified
-    static const Handler* handler(const Router*, int);
-    static const Handler* handler(const Element*, const String&);
+    static const Handler* handler(const Router* router, int hindex);
+    static const Handler* handler(const Element* e, const String& hname);
 
-    static void add_read_handler(const Element*, const String&, ReadHandlerHook, void*);
-    static void add_write_handler(const Element*, const String&, WriteHandlerHook, void*);
-    static void set_handler(const Element*, const String&, int mask, HandlerHook, void* = 0, void* = 0);
-    static int change_handler_flags(const Element*, const String&, uint32_t clear_flags, uint32_t set_flags);
+    static void add_read_handler(const Element* e, const String& hname, ReadHandlerHook hook, void* thunk);
+    static void add_write_handler(const Element* e, const String& hname, WriteHandlerHook hook, void* thunk);
+    static void set_handler(const Element* e, const String& hname, int mask, HandlerHook hook, void* thunk1 = 0, void* thunk2 = 0);
+    static int change_handler_flags(const Element* e, const String& hname, uint32_t clear_flags, uint32_t set_flags);
 
     // ATTACHMENTS AND REQUIREMENTS
-    void* attachment(const String&) const;
-    void*& force_attachment(const String&);
-    void* set_attachment(const String&, void*);
-    inline const Vector<String>& requirements() const;
-
-    inline Router* hotswap_router() const;
-    void set_hotswap_router(Router*);
+    void* attachment(const String& aname) const;
+    void*& force_attachment(const String& aname);
+    void* set_attachment(const String& aname, void* value);
     
-    ErrorHandler* chatter_channel(const String&) const;
+    ErrorHandler* chatter_channel(const String& channel_name) const;
     HashMap_ArenaFactory* arena_factory() const;
 
     inline ThreadSched* thread_sched() const;
-    inline void set_thread_sched(ThreadSched* ts);
-    inline int initial_home_thread_id(Task*, bool scheduled) const;
+    inline void set_thread_sched(ThreadSched* scheduler);
+    inline int initial_home_thread_id(Task* task, bool scheduled) const;
 
-    int new_notifier_signal(NotifierSignal&);
+    int new_notifier_signal(NotifierSignal& signal);
 
     inline NameInfo* name_info() const;
     NameInfo* force_name_info();
 
     // MASTER
     inline Master* master() const;
-    enum { RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_PREPARING = 0, RUNNING_BACKGROUND = 1, RUNNING_ACTIVE = 2 };
 
     // RUNCOUNT AND RUNCLASS
     enum { STOP_RUNCOUNT = -2147483647 - 1 };
     inline int32_t runcount() const;
     inline void please_stop_driver();
     inline void reserve_driver();
-    void set_runcount(int32_t);
-    void adjust_runcount(int32_t);
+    void set_runcount(int32_t rc);
+    void adjust_runcount(int32_t rc);
 
     // UNPARSING
     inline const String& configuration_string() const;
-    void unparse(StringAccum&, const String& = String()) const;
-    void unparse_requirements(StringAccum&, const String& = String()) const;
-    void unparse_classes(StringAccum&, const String& = String()) const;
-    void unparse_declarations(StringAccum&, const String& = String()) const;
-    void unparse_connections(StringAccum&, const String& = String()) const;
+    void unparse(StringAccum& sa, const String& indent = String()) const;
+    void unparse_requirements(StringAccum& sa, const String& indent = String()) const;
+    void unparse_classes(StringAccum& sa, const String& indent = String()) const;
+    void unparse_declarations(StringAccum& sa, const String& indent = String()) const;
+    void unparse_connections(StringAccum& sa, const String& indent = String()) const;
 
-    String element_ports_string(int) const;
+    String element_ports_string(int eindex) const;
   
     // INITIALIZATION
-    void add_requirement(const String&);
-    int add_element(Element*, const String& name, const String& conf, const String& landmark);
+    static void static_initialize();
+    static void static_cleanup();
+
+    inline void use();
+    void unuse();
+
+    inline const Vector<String>& requirements() const;
+    void add_requirement(const String& requirement);
+    int add_element(Element* e, const String& name, const String& conf, const String& landmark);
     int add_connection(int from_idx, int from_port, int to_idx, int to_port);
 #if CLICK_LINUXMODULE
-    int add_module_ref(struct module *);
+    int add_module_ref(struct module* module);
 #endif
-  
-    int initialize(ErrorHandler*);
-    void activate(bool foreground, ErrorHandler*);
+
+    inline Router* hotswap_router() const;
+    void set_hotswap_router(Router* router);
+
+    int initialize(ErrorHandler* errh);
+    void activate(bool foreground, ErrorHandler* errh);
     inline void activate(ErrorHandler* errh);
 
     /** @cond never */
@@ -158,6 +151,15 @@ class Router { public:
 #endif
   
   private:
+
+    enum {
+	ROUTER_NEW, ROUTER_PRECONFIGURE, ROUTER_PREINITIALIZE,
+	ROUTER_LIVE, ROUTER_DEAD		// order is important
+    };
+    enum {
+	RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_PREPARING = 0,
+	RUNNING_BACKGROUND = 1, RUNNING_ACTIVE = 2
+    };
 
     Master* _master;
     
@@ -347,48 +349,81 @@ operator!=(const Router::Hookup& a, const Router::Hookup& b)
     return a.idx != b.idx || a.port != b.port;
 }
 
+/** @brief  Increment the router's reference count.
+ *
+ *  Routers are reference counted objects.  A Router is created with one
+ *  reference, which is held by its Master object.  Normally the Router and
+ *  all its elements will be deleted when the Master drops this reference, but
+ *  you can preserve the Router for longer by adding a reference yourself. */
 inline void
 Router::use()
 {
     _refcount++;
 }
 
-inline bool
-Router::initialized() const
-{
-    return _state == ROUTER_LIVE;
-}
-
-inline bool
-Router::handlers_ready() const
-{
-    return _state > ROUTER_PRECONFIGURE;
-}
-
+/** @brief  Return true iff the router is currently running.
+ *
+ *  A running router has been successfully initialized (so running() implies
+ *  initialized()), and has not stopped yet. */
 inline bool
 Router::running() const
 {
     return _running > 0;
 }
 
-inline int
-Router::nelements() const
+/** @brief  Return true iff the router has been successfully initialized. */
+inline bool
+Router::initialized() const
 {
-    return _elements.size();
+    return _state == ROUTER_LIVE;
 }
 
+/** @brief  Return true iff the router's handlers have been initialized.
+ *
+ *  handlers_ready() returns false until each element's
+ *  Element::add_handlers() method has been called.  This happens after
+ *  Element::configure(), but before Element::initialize(). */
+inline bool
+Router::handlers_ready() const
+{
+    return _state > ROUTER_PRECONFIGURE;
+}
+
+/** @brief  Returns a vector containing all the router's elements.
+ *  @invariant  elements()[i] == element(i) for all i in range. */
 inline const Vector<Element*>&
 Router::elements() const
 {
     return _elements;
 }
 
-inline Element*
-Router::element(int e) const
+/** @brief  Returns the number of elements in the router. */
+inline int
+Router::nelements() const
 {
-    return element(this, e);
+    return _elements.size();
 }
 
+/** @brief  Returns the element with index @a eindex.
+ *  @param  eindex  element index, or -1 for root_element()
+ *  @invariant  If eindex(i) isn't null, then eindex(i)->@link Element::eindex eindex@endlink() == i.
+ *
+ *  This function returns the element with index @a eindex.  If @a eindex ==
+ *  -1, returns root_element().  If @a eindex is otherwise out of range,
+ *  returns null. */
+inline Element*
+Router::element(int eindex) const
+{
+    return element(this, eindex);
+}
+
+/** @brief  Returns this router's root element.
+ *
+ *  Every router has a root Element.  This element has Element::eindex -1 and
+ *  name "".  It is not configured or initialized, and doesn't appear in the
+ *  configuration; it exists only for convenience, when other Click code needs
+ *  to refer to some arbitrary element at the top level of the compound
+ *  element hierarchy. */
 inline Element*
 Router::root_element() const
 {
@@ -464,6 +499,17 @@ Router::activate(ErrorHandler* errh)
     activate(true, errh);
 }
 
+/** @brief  Finds an element named @a name.
+ *  @param  name     element name
+ *  @param  errh     optional error handler
+ *
+ *  Returns the unique element named @a name, if any.  If no element named @a
+ *  name is found, reports an error to @a errh and returns null.  The error is
+ *  "<tt>no element named 'name'</tt>".  If @a errh is null, no error is
+ *  reported.
+ *
+ *  This function is equivalent to find(const String&, String, ErrorHandler*)
+ *  with a context argument of the empty string. */
 inline Element *
 Router::find(const String& name, ErrorHandler *errh) const
 {

@@ -1397,8 +1397,8 @@ Element::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 
 
 // used by configuration() and reconfigure_handler()
-static int store_default_configuration;
-static int was_default_configuration;
+static int store_econfiguration;
+static int was_econfiguration;
 
 /** @brief Called to fetch the element's current configuration arguments.
  *
@@ -1414,12 +1414,12 @@ void
 Element::configuration(Vector<String> &conf) const
 {
   // Handle configuration(void) requests specially by preserving whitespace.
-  String s = router()->default_configuration_string(eindex());
-  if (store_default_configuration)
+  String s = router()->econfiguration(eindex());
+  if (store_econfiguration)
     conf.push_back(s);
   else
     cp_argvec(s, conf);
-  was_default_configuration = 1;
+  was_econfiguration = 1;
 }
 
 /** @brief Returns the element's current configuration string.
@@ -1431,12 +1431,12 @@ Element::configuration(Vector<String> &conf) const
 String
 Element::configuration() const
 {
-  store_default_configuration = 1;
+  store_econfiguration = 1;
   Vector<String> conf;
   configuration(conf);
-  store_default_configuration = 0;
+  store_econfiguration = 0;
   // cp_unargvec(conf) will return conf[0] if conf has one element, so
-  // store_default_configuration will work as expected.
+  // store_econfiguration will work as expected.
   return cp_unargvec(conf);
 }
 
@@ -1662,7 +1662,7 @@ write_config_handler(const String &str, Element *e, void *,
     cp_argvec(str, conf);
     int r = e->live_reconfigure(conf, errh);
     if (r >= 0)
-	e->router()->set_default_configuration_string(e->eindex(), str);
+	e->router()->set_econfiguration(e->eindex(), str);
     return r;
 }
 
@@ -1901,11 +1901,11 @@ reconfigure_handler(const String &arg, Element *e,
 		    int argno, const char *keyword, ErrorHandler *errh)
 {
   Vector<String> conf;
-  was_default_configuration = 0;
+  was_econfiguration = 0;
   e->configuration(conf);
 
   if (keyword) {
-    if (was_default_configuration)
+    if (was_econfiguration)
       return errh->error("can't use reconfigure_keyword_handler with default configuration() method");
     conf.push_back(String(keyword) + " " + arg);
   } else {
@@ -1925,7 +1925,7 @@ reconfigure_handler(const String &arg, Element *e,
   if (e->live_reconfigure(conf, errh) < 0)
     return -EINVAL;
   else {
-    e->router()->set_default_configuration_string(e->eindex(), new_config);
+    e->router()->set_econfiguration(e->eindex(), new_config);
     return 0;
   }
 }
