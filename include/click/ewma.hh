@@ -380,7 +380,7 @@ class RateEWMAX : public P { public:
      *		If an epoch might have passed since the last update(), you
      *		should call update(0, @a ratenum) before calling this
      *		function. */
-    String unparse_rate(unsigned which = 0) const;
+    String unparse_rate(unsigned ratenum = 0) const;
   
   private:
   
@@ -444,24 +444,24 @@ RateEWMAX<P>::update_time(unsigned now)
 
 template <typename P>
 inline void
-RateEWMAX<P>::update(signed_value_type delta, unsigned which)
+RateEWMAX<P>::update(signed_value_type delta, unsigned ratenum)
 {
     update_time(P::epoch());
-    _current[which] += delta;
+    _current[ratenum] += delta;
 }
 
 template <typename P>
 inline int
-RateEWMAX<P>::rate(unsigned which) const
+RateEWMAX<P>::rate(unsigned ratenum) const
 {
-    return (scaled_average(which) * P::epoch_frequency()) >> _avg[which].scale();
+    return (scaled_average(ratenum) * P::epoch_frequency()) >> _avg[ratenum].scale();
 }
 
 template <typename P>
 inline String
-RateEWMAX<P>::unparse_rate(unsigned which) const
+RateEWMAX<P>::unparse_rate(unsigned ratenum) const
 {
-    return cp_unparse_real2(scaled_average(which) * P::epoch_frequency(), _avg[which].scale());
+    return cp_unparse_real2(scaled_average(ratenum) * P::epoch_frequency(), _avg[ratenum].scale());
 }
 
 CLICK_ENDDECLS
