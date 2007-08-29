@@ -386,11 +386,11 @@ skbmgr_allocate_skbs(unsigned headroom, unsigned size, int *want)
 {
   if (headroom < SKBMGR_DEF_HEADSZ)
     headroom = SKBMGR_DEF_HEADSZ;
+  size += SKBMGR_DEF_TAILSZ;
 
 #if __MTCLICK__
   int cpu = click_current_processor();
   int producer = cpu;
-  size += (SKBMGR_DEF_HEADSZ + SKBMGR_DEF_TAILSZ);
   int bucket = RecycledSkbPool::size_to_higher_bucket(headroom + size);
 
   int w = *want;
