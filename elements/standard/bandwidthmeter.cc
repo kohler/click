@@ -51,11 +51,11 @@ BandwidthMeter::configure(Vector<String> &conf, ErrorHandler *errh)
     else if (cp_errno == CPE_NOUNITS)
       errh->warning("no units for bandwidth argument %d, assuming Bps", i+1);
 
-  unsigned max_value = 0xFFFFFFFF >> _rate.scale;
+  unsigned max_value = 0xFFFFFFFF >> _rate.scale();
   for (int i = 0; i < conf.size(); i++) {
     if (vals[i] > max_value)
       return errh->error("rate %d too large (max %u)", i+1, max_value);
-    vals[i] = (vals[i]<<_rate.scale) / _rate.freq();
+    vals[i] = (vals[i]<<_rate.scale()) / _rate.epoch_frequency();
   }
   
   if (vals.size() == 1) {
@@ -75,7 +75,6 @@ BandwidthMeter::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 BandwidthMeter::initialize(ErrorHandler *)
 {
-  _rate.initialize();
   return 0;
 }
 
@@ -105,19 +104,20 @@ BandwidthMeter::meters_read_handler(Element *f, void *)
 {
   BandwidthMeter *m = (BandwidthMeter *)f;
   if (m->_nmeters == 1)
-    return cp_unparse_real2(m->_meter1*m->rate_freq(), m->rate_scale());
+      return cp_unparse_real2(m->_meter1*m->rate_freq(), m->rate_scale());
   else {
-    String s;
-    for (int i = 0; i < m->_nmeters; i++)
-      s = s + cp_unparse_real2(m->_meters[i]*m->rate_freq(), m->rate_scale());
-    return s;
+      String s;
+      for (int i = 0; i < m->_nmeters; i++)
+	  s = s + cp_unparse_real2(m->_meters[i]*m->rate_freq(), m->rate_scale());
+      return s;
   }
 }
 
-static String
-read_rate_handler(Element *f, void *)
+String
+BandwidthMeter::read_rate_handler(Element *f, void *)
 {
   BandwidthMeter *c = (BandwidthMeter *)f;
+  c->_rate.update(0);
   return cp_unparse_real2(c->scaled_rate()*c->rate_freq(), c->rate_scale());
 }
 

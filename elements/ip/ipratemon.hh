@@ -65,17 +65,33 @@ CLICK_DECLS
  *
  * =a IPFlexMonitor, CompareBlock */
 
-struct IPRateMonitor_HalfSecondsTimer {
-  static unsigned now()			{ return click_jiffies() >> 3; }
-  static unsigned freq()                { return CLICK_HZ >> 3; }
-};
-
 class Spinlock;
 
 class IPRateMonitor : public Element {
 public:
-  IPRateMonitor();
-  ~IPRateMonitor();
+
+    enum {
+	stability_shift = 5,
+	scale = 10
+    };
+    
+    struct EWMAParameters : public FixedEWMAXParameters<stability_shift, scale> {
+	enum {
+	    rate_count = 2
+	};
+    
+	static unsigned epoch() {
+	    return click_jiffies() >> 3;
+	}
+    
+	static unsigned epoch_frequency() {
+	    return CLICK_HZ >> 3;
+	}
+    };
+
+
+    IPRateMonitor();
+    ~IPRateMonitor();
 
   const char *class_name() const		{ return "IPRateMonitor"; }
   const char *port_count() const		{ return "1-2/1-2"; }
@@ -85,7 +101,9 @@ public:
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
 
-  void set_resettime()                          { _resettime = MyEWMA::now(); }
+  void set_resettime() {
+      _resettime = EWMAParameters::epoch();
+  }
   void set_anno_level(unsigned addr, unsigned level, unsigned when);
 
   void push(int port, Packet *p);
@@ -93,7 +111,7 @@ public:
 
   int llrpc(unsigned, void *);
 
-  typedef RateEWMAX<5, 10, 2, IPRateMonitor_HalfSecondsTimer> MyEWMA;
+  typedef RateEWMAX<EWMAParameters> MyEWMA;
   struct Stats; struct Counter;	// so they can find one another
   
   struct Counter {
@@ -102,6 +120,12 @@ public:
     MyEWMA fwd_and_rev_rate;
     Stats *next_level;
     unsigned anno_this;
+      Counter()
+	  : next_level(0), anno_this(0) {
+      }
+      Counter(const MyEWMA &ewma)
+	  : fwd_and_rev_rate(ewma), next_level(0), anno_this(0) {
+      }
   };
 
   struct Stats {
@@ -212,7 +236,7 @@ IPRateMonitor::update(unsigned addr, int val, Packet *p,
 {
   Stats *s = _base;
   Counter *c = 0;
-  unsigned now = MyEWMA::now();
+  unsigned now = EWMAParameters::epoch();
   static unsigned prev_fold_time = now;
 
   // zoom in to deepest opened level
@@ -244,8 +268,7 @@ IPRateMonitor::update(unsigned addr, int val, Packet *p,
     
   int fwd_rate = c->fwd_and_rev_rate.scaled_average(0); 
   int rev_rate = c->fwd_and_rev_rate.scaled_average(1); 
-  int scale = c->fwd_and_rev_rate.scale;
-  int freq = c->fwd_and_rev_rate.freq();
+  int freq = EWMAParameters::epoch_frequency();
   fwd_rate = (fwd_rate * freq) >> scale;
   rev_rate = (rev_rate * freq) >> scale;
 
@@ -291,7 +314,7 @@ IPRateMonitor::update(unsigned addr, int val, Packet *p,
     _last = c->next_level;
   }
 
-  if(now - prev_fold_time >= MyEWMA::freq()) {
+  if(now - prev_fold_time >= EWMAParameters::epoch_frequency()) {
     fold(_thresh);
     prev_fold_time = now;
   }

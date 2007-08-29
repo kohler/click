@@ -133,18 +133,15 @@ IPRateMonitor::make_counter(Stats *s, unsigned char index, MyEWMA *rate)
   // Return NULL if
   // 1. This allocation would violate memory limit
   // 2. Allocation did not succeed
-  if ((_memmax && (_alloced_mem + sizeof(Counter) > _memmax)) ||
-      !(c = s->counter[index] = new Counter))
-    return NULL;
-  _alloced_mem += sizeof(Counter);
-
-  if (!rate)
-    c->fwd_and_rev_rate.initialize();
+  if (_memmax && (_alloced_mem + sizeof(Counter) > _memmax))
+      return NULL;
+  if (rate)
+      c = s->counter[index] = new Counter(*rate);
   else
-    c->fwd_and_rev_rate = *rate;
-
-  c->next_level = 0;
-  c->anno_this = 0;
+      c = s->counter[index] = new Counter;
+  if (!c)
+      return NULL;
+  _alloced_mem += sizeof(Counter);
 
   return c;
 }
@@ -193,7 +190,7 @@ start:
 
     // Shitty code, but avoids an update() and average() call if one of both
     // rates is not below thresh.
-    s->_parent->fwd_and_rev_rate.update_time();
+    s->_parent->fwd_and_rev_rate.update(0);
     if (s->_parent->fwd_and_rev_rate.scaled_average(0) < thresh) {
       if (s->_parent->fwd_and_rev_rate.scaled_average(1) < thresh) {
         delete s;
@@ -302,15 +299,11 @@ IPRateMonitor::print(Stats *s, String ip)
         this_ip = String(i);
       ret += this_ip;
 
-      c->fwd_and_rev_rate.update_time();
+      c->fwd_and_rev_rate.update(0);
       ret += "\t"; 
-      ret += cp_unparse_real2(c->fwd_and_rev_rate.scaled_average(0) *
-			      c->fwd_and_rev_rate.freq(),
-			      c->fwd_and_rev_rate.scale);
+      ret += c->fwd_and_rev_rate.unparse_rate(0);
       ret += "\t"; 
-      ret += cp_unparse_real2(c->fwd_and_rev_rate.scaled_average(1) *
-			      c->fwd_and_rev_rate.freq(),
-			      c->fwd_and_rev_rate.scale);
+      ret += c->fwd_and_rev_rate.unparse_rate(1);
       
       ret += "\n";
       if (c->next_level) 
@@ -326,7 +319,7 @@ IPRateMonitor::look_read_handler(Element *e, void *)
 {
   IPRateMonitor *me = (IPRateMonitor*) e;
 
-  String ret = String(MyEWMA::now() - me->_resettime) + "\n";
+  String ret = String(EWMAParameters::epoch() - me->_resettime) + "\n";
 
   if (me->_lock->attempt()) {
     ret = ret + me->print(me->_base);
@@ -441,8 +434,8 @@ IPRateMonitor::anno_level_write_handler
     return -1;
   }
 
-  when *= MyEWMA::freq();
-  when += MyEWMA::now();
+  when *= EWMAParameters::epoch_frequency();
+  when += EWMAParameters::epoch();
 
   me->_lock->acquire();
   unsigned addr = a.addr();
@@ -510,12 +503,11 @@ IPRateMonitor::llrpc(unsigned command, void *data)
       s = s->counter[b]->next_level;
     }
 
-    unsigned freq = MyEWMA::freq();
-    unsigned scale = MyEWMA::scale;
+    unsigned freq = EWMAParameters::epoch_frequency();
 
     for (int i = 0; i < 256; i++) {
       if (s->counter[i]) {
-        s->counter[i]->fwd_and_rev_rate.update_time();
+	s->counter[i]->fwd_and_rev_rate.update(0);
 	averages[i] = 
 	  (s->counter[i]->fwd_and_rev_rate.scaled_average(which) * freq) >> scale;
       }
@@ -557,9 +549,8 @@ IPRateMonitor::llrpc(unsigned command, void *data)
       if (!s->counter[b]) 
 	break;
       
-      unsigned freq = s->counter[b]->fwd_and_rev_rate.freq();
-      unsigned scale = s->counter[b]->fwd_and_rev_rate.scale;
-      s->counter[b]->fwd_and_rev_rate.update_time();
+      unsigned freq = EWMAParameters::epoch_frequency();
+      s->counter[b]->fwd_and_rev_rate.update(0);
       averages[n*2+1] = 
 	(s->counter[b]->fwd_and_rev_rate.scaled_average(0) * freq) >> scale;
       averages[n*2+2] = 
@@ -597,8 +588,8 @@ IPRateMonitor::llrpc(unsigned command, void *data)
     if (CLICK_LLRPC_GET(when, udata+2) < 0 || when < 1)
       return -EFAULT;
   
-    when *= MyEWMA::freq(); 
-    when += MyEWMA::now();
+    when *= EWMAParameters::epoch_frequency(); 
+    when += EWMAParameters::epoch();
 
     _lock->acquire();
     set_anno_level(ipaddr, static_cast<unsigned>(level), 

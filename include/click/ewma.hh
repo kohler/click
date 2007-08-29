@@ -39,7 +39,7 @@ CLICK_DECLS
  *  account for large values.
  *
  *  These EWMA parameters are defined by five of P's members, two typedefs and
- *  three static member functions.
+ *  three possibly static member functions.
  *
  *  <dl>
  *  <dt><strong>P::value_type</strong></dt>
@@ -49,25 +49,29 @@ CLICK_DECLS
  *  <dd>The signed version of <code>P::value_type</code>.  Used internally.
  *  Example: <code>int</code>.</dd>
  *
- *  <dt><strong>unsigned P::stability_shift(const DirectEWMAX<P> &e)</strong></dt>
- *  <dd>This static function should return this EWMA's stability shift
+ *  <dt><strong>unsigned P::stability_shift()</strong></dt>
+ *  <dd>This function should return this EWMA's stability shift
  *  (see below).</dd>
  *
- *  <dt><strong>unsigned P::scale(const DirectEWMAX<P> &e)</strong></dt>
- *  <dd>This static function should return this EWMA's scaling factor
+ *  <dt><strong>unsigned P::scale()</strong></dt>
+ *  <dd>This function should return this EWMA's scaling factor
  *  (see below).</dd>
  *
- *  <dt><strong>unsigned P::compensation(const DirectEWMAX<P> &e)</strong></dt>
- *  <dd>This static function should return this EWMA's stability compensation,
+ *  <dt><strong>unsigned P::compensation()</strong></dt>
+ *  <dd>This function should return this EWMA's stability compensation,
  *  which normally equals 1 @<@< (stability_shift - 1).</dd>
  *  </dl>
  *
- *  The FixedEWMAXParameters type is a good template argument for DirectEWMAX.
+ *  Since DirectEWMAX inherits from an object of type P, these members are
+ *  also directly available to callers.
  *
- *  @sa StabilityEWMAX, RateEWMAX
+ *  The FixedEWMAXParameters and StabilityEWMAXParameters types are good
+ *  template arguments for DirectEWMAX.
+ *
+ *  @sa RateEWMAX
  */
 template <typename P>
-class DirectEWMAX { public:
+class DirectEWMAX : public P { public:
 
     typedef typename P::value_type value_type;
     
@@ -77,8 +81,7 @@ class DirectEWMAX { public:
     }
 
     /** @brief  Return the current scaled moving average.
-     *  @note   The returned value is scaled by the factor Scale; that is,
-     *		it has Scale bits of fraction. */
+     *  @note   The returned value has scale() bits of fraction. */
     value_type scaled_average() const {
 	return _avg;
     }
@@ -86,7 +89,7 @@ class DirectEWMAX { public:
     /** @brief  Return the current moving average.
      *  @note   The returned value is unscaled. */
     value_type unscaled_average() const {
-	return (_avg + P::compensation(*this)) >> P::scale(*this);
+	return (_avg + P::compensation()) >> P::scale();
     }
 
     /** @brief  Reset the EWMA to value 0. */
@@ -123,13 +126,12 @@ class DirectEWMAX { public:
   
 };
 
-
 template <typename P>
 inline void
 DirectEWMAX<P>::update(value_type val)
 {
-    value_type val_scaled = (val << P::scale(*this)) + P::compensation(*this);
-    unsigned stability = P::stability_shift(*this);
+    value_type val_scaled = (val << P::scale()) + P::compensation();
+    unsigned stability = P::stability_shift();
 #if HAVE_ARITHMETIC_RIGHT_SHIFT
     _avg += static_cast<typename P::signed_value_type>(val_scaled - _avg) >> stability;
 #else
@@ -145,12 +147,12 @@ void
 DirectEWMAX<P>::update_n(value_type value, unsigned count)
 {
     // XXX use table lookup
-    value_type val_scaled = value << P::scale(*this);
+    value_type val_scaled = value << P::scale();
     if (count >= 100)
 	_avg = val_scaled;
     else {
-	val_scaled += P::compensation(*this);
-	unsigned stability = P::stability_shift(*this);
+	val_scaled += P::compensation();
+	unsigned stability = P::stability_shift();
 #if HAVE_ARITHMETIC_RIGHT_SHIFT
 	for (; count > 0; count--)
 	    _avg += static_cast<typename P::signed_value_type>(val_scaled - _avg) >> stability;
@@ -169,9 +171,8 @@ template <typename P>
 inline String
 DirectEWMAX<P>::unparse() const
 {
-    return cp_unparse_real2(scaled_average(), P::scale(*this));
+    return cp_unparse_real2(scaled_average(), P::scale());
 }
-
 
 /** @class FixedEWMAXParameters include/click/ewma.hh <click/ewma.hh>
  *  @brief  Parameters for a EWMA with constant scaling factor and stability
@@ -199,15 +200,15 @@ class FixedEWMAXParameters { public:
     typedef T value_type;
     typedef U signed_value_type;
     
-    static unsigned stability_shift(const DirectEWMAX<FixedEWMAXParameters> &) {
+    static unsigned stability_shift() {
 	return STABILITY;
     }
 
-    static unsigned scale(const DirectEWMAX<FixedEWMAXParameters> &) {
+    static unsigned scale() {
 	return SCALE;
     }
 
-    static unsigned compensation(const DirectEWMAX<FixedEWMAXParameters> &) {
+    static unsigned compensation() {
 	return 1 << (STABILITY - 1);
     }
     
@@ -217,25 +218,32 @@ typedef DirectEWMAX<FixedEWMAXParameters<4, 10> > DirectEWMA;
 typedef DirectEWMAX<FixedEWMAXParameters<3, 10> > FastDirectEWMA;
 
 
-
-/** @class StabilityEWMAX include/click/ewma.hh <click/ewma.hh>
- *  @brief  An exponentially weighted moving average with user-settable alpha.
+/** @class StabilityEWMAXParameters include/click/ewma.hh <click/ewma.hh>
+ *  @brief  Parameters for a StabilityEWMA with constant scaling factor
+ *	    and user-settable alpha.
  *
- *  The StabilityEWMAX template class is a type of EWMA with a user-settable
- *  alpha value.  The alpha value is defined by a stability shift.
- *  StabilityEWMAX<P> is a subclass of DirectEWMAX<P>.
+ *  The StabilityEWMAXParameters template class is used as a template argument
+ *  to DirectEWMAX.  It defines a EWMA with fixed constant scaling factor.
+ *  StabilityEWMAXParameters's first template argument is the EWMA's scaling
+ *  factor, its second template argument is the EWMA's value type, and the
+ *  third template argument is the EWMA's signed value type.
  *
- *  As in DirectEWMAX, the template parameter P defines the EWMA's value type,
- *  stability shift, and scale factor.  A StabilityEWMAX should use
- *  StabilityEWMAXParameters as its template parameter.
+ *  Example: <code>DirectEWMAX@<StabilityEWMAXParameters@<10, unsigned, int@>
+ *  @></code> defines a EWMA with user-settable alpha (stability shift)
+ *  initially equal to 1/16, scaling factor 10, and value type unsigned.
  *
- *  @sa StabilityEWMAXParameters, DirectEWMAX
+ *  A <code>DirectEWMAX@<StabilityEWMAXParameters@<...@> @></code> object has
+ *  stability_shift() and set_stability_shift() methods.
  */
-template <typename P>
-class StabilityEWMAX : public DirectEWMAX<P> { public:
+template <unsigned SCALE, typename T = unsigned, typename U = int>
+class StabilityEWMAXParameters { public:
 
-    /** @brief  Create a EWMA with initial value 0 and initial alpha 1/16. */
-    StabilityEWMAX()
+    typedef T value_type;
+    typedef U signed_value_type;
+
+    /** @brief  Create a StabilityEWMAXParameters with initial value 0 and
+     *		initial alpha 1/16. */
+    StabilityEWMAXParameters()
 	: _stability(4) {
     }
 
@@ -251,163 +259,209 @@ class StabilityEWMAX : public DirectEWMAX<P> { public:
     void set_stability_shift(unsigned stability_shift) {
 	_stability = stability_shift;
     }
+    
+    static unsigned scale() {
+	return SCALE;
+    }
+
+    unsigned compensation() const {
+	return 1 << (stability_shift() - 1);
+    }
 
   private:
 
     unsigned _stability;
-
+    
 };
 
-/** @class StabilityEWMAXParameters include/click/ewma.hh <click/ewma.hh>
- *  @brief  Parameters for a StabilityEWMA with constant scaling factor.
+
+
+/** @class RateEWMAX include/click/ewma.hh <click/ewma.hh>
+ *  @brief  An exponentially weighted moving average used to measure a rate.
  *
- *  The StabilityEWMAXParameters template class is used as a template argument
- *  to StabilityEWMAX.  It defines a EWMA with fixed constant scaling factor.
- *  StabilityEWMAXParameters's first template argument is the EWMA's scaling
- *  factor, its second template argument is the EWMA's value type, and the
- *  third template argument is the EWMA's signed value type.
+ *  The RateEWMAX template class represents an exponentially weighted moving
+ *  average that measures a <em>rate</em>: a value that changes over time.
+ *  The average starts out with value 0.
  *
- *  Example: <code>StabilityEWMAX@<StabilityEWMAXParameters@<10, unsigned,
- *  int@> @></code> defines a EWMA with user-settable alpha (stability shift),
- *  scaling factor 10, and value type unsigned.
+ *  RateEWMAX adds to DirectEWMAX a concept of epochs, which are periods of
+ *  time.  A RateEWMAX object collects samples over the current epoch.  When
+ *  the epoch closes, the collected sample count is used to update the moving
+ *  average.  Thus, the moving average is measured in samples per epoch.  The
+ *  rate() and unparse_rate() member functions return the rate in samples per
+ *  <em>second</em>, rather than per epoch.
+ *
+ *  Note that it often makes sense to call update() before calling
+ *  scaled_average(), rate(), or unparse_rate(), in case an epoch or two has
+ *  passed and the average should take account of passing time.
+ *
+ *  The template parameter P defines the EWMA parameters required by
+ *  DirectEWMAX, and three others: a rate count, an epoch measurement, and an
+ *  epoch frequency.
+ *
+ *  The rate count is the number of rates measured per object.  Usually it is
+ *  1.
+ *
+ *  The epoch measurement is a function that returns the current epoch as an
+ *  unsigned number.  Epochs should increase monotonically.
+ *
+ *  The epoch frequency is the number of epochs per second, and is only used
+ *  by rate() and unparse_rate().
+ *
+ *  These are defined by:
+ *
+ *  <dl>
+ *  <dt><strong>P::rate_count</strong></dt>
+ *  <dd>The rate count, as a static constant (for example, defined by an
+ *  enum).</dd>
+ *
+ *  <dt><strong>unsigned P::epoch()</strong></dt>
+ *  <dd>This function returns the current epoch number.</dd>
+ *
+ *  <dt><strong>unsigned P::epoch_frequency()</strong></dt>
+ *  <dd>This function returns the number of epochs per second.</dd>
+ *  </dl>
+ *
+ *  Since RateEWMAX inherits from an object of type P, these members are
+ *  also directly available to callers.
+ *
+ *  The RateEWMAXParameters type is a good template argument for DirectEWMAX.
+ *
+ *  @sa RateEWMAX
  */
-template <unsigned SCALE, typename T = unsigned, typename U = int>
-class StabilityEWMAXParameters { public:
+template <typename P>
+class RateEWMAX : public P { public:
 
-    typedef T value_type;
-    typedef U signed_value_type;
+    typedef typename P::value_type value_type;
+    typedef typename P::signed_value_type signed_value_type;
 
-    static unsigned stability_shift(const DirectEWMAX<StabilityEWMAXParameters> &s) {
-	return static_cast<const StabilityEWMAX<StabilityEWMAXParameters> &>(s).stability_shift();
-    }
-
-    static unsigned scale(const DirectEWMAX<StabilityEWMAXParameters> &) {
-	return SCALE;
-    }
-
-    static unsigned compensation(const DirectEWMAX<StabilityEWMAXParameters> &s) {
-	return 1 << (stability_shift(s) - 1);
-    }
-
-};
-
-
-template <unsigned Stability_shift, unsigned Scale, unsigned N, class Timer>
-class RateEWMAX { public:
-
-    enum { stability_shift = Stability_shift,
-	   scale = Scale };
-    
+    /** @brief  Create a rate EWMA with initial value(s) 0. */
     RateEWMAX() {
+	_current_epoch = P::epoch();
+	for (unsigned i = 0; i < P::rate_count; i++)
+	    _current[i] = 0;
     }
 
-    // note: must be 'signed int'
-    int scaled_average(unsigned which = 0) const {
-	return _avg[which].scaled_average();
-    }
-    int rate(unsigned which = 0) const;
-
-    static unsigned now() {
-	return Timer::now();
+    /** @brief  Return the current scaled moving average.
+     *  @param  ratenum  rate index (0 <= ratenum < rate_count)
+     *  @note   The returned value has scale() bits of fraction.
+     *  @note   scaled_average() does not check the current epoch.
+     *		If an epoch might have passed since the last update(), you
+     *		should call update(0, @a ratenum) before calling this
+     *		function. */
+    signed_value_type scaled_average(unsigned ratenum = 0) const {
+	// note: return type must be signed!
+	return _avg[ratenum].scaled_average();
     }
     
-    static unsigned freq() {
-	return Timer::freq();
-    }
-
-    String unparse(unsigned which = 0) const;
-    void initialize();
+    /** @brief  Return the current rate in samples per second.
+     *  @param  ratenum  rate index (0 <= ratenum < rate_count)
+     *  @note   The returned value is unscaled.
+     *  @note   rate() does not check the current epoch.
+     *		If an epoch might have passed since the last update(), you
+     *		should call update(0, @a ratenum) before calling this
+     *		function. */
+    inline int rate(unsigned ratenum = 0) const;
  
-    inline void update_time(unsigned now);
-    inline void update_time();
-    inline void update_now(int delta, unsigned which = 0);
-    inline void update(int delta, unsigned which = 0);
+    /** @brief  Update the sample count for the current epoch.
+     *  @param  delta    increment for current epoch sample count
+     *  @param  ratenum  rate index (0 <= ratenum < rate_count)
+     *  @note   If the epoch has changed since the last update(),
+     *		this function applies the last epoch's sample count (if any)
+     *		to the relevant moving average, accounts for any passage of
+     *		time (in case one or more epochs have passed with no samples),
+     *		and clears the sample count for	the new epoch. */
+    inline void update(signed_value_type delta, unsigned ratenum = 0);
+
+    /** @brief  Unparse the current average into a String.
+     *  @param  ratenum  rate index (0 <= ratenum < rate_count)
+     *  @note   The returned value is unscaled, but may contain a fractional
+     *  part.
+     *  @note   unparse_rate() does not check the current epoch.
+     *		If an epoch might have passed since the last update(), you
+     *		should call update(0, @a ratenum) before calling this
+     *		function. */
+    String unparse_rate(unsigned which = 0) const;
   
   private:
   
-    unsigned _now_time;
-    unsigned _total[N];
-    DirectEWMAX<FixedEWMAXParameters<Stability_shift, Scale> > _avg[N];
+    unsigned _current_epoch;
+    value_type _current[P::rate_count];
+    DirectEWMAX<P> _avg[P::rate_count];
   
+    inline void update_time(unsigned now);
+    
 };
 
-struct JiffiesTimer {
-    static unsigned now() {
+/** @class RateEWMAXParameters include/click/ewma.hh <click/ewma.hh>
+ *  @brief  Parameters for a RateEWMA with constant scaling factor
+ *	    and alpha, one rate count, and epochs of jiffies.
+ *
+ *  The RateEWMAXParameters template class is used as a template argument
+ *  to RateEWMAX.  It defines a EWMA with fixed constant scaling factor and
+ *  alpha and one rate count.  The EWMA uses jiffies as epochs.  Template
+ *  parameters are as for DirectEWMAXParameters.
+ *
+ *  Example: <code>RateEWMAX@<RateEWMAXParameters@<4, 10, unsigned, int@>
+ *  @></code> defines a rate EWMA with user-settable alpha (stability shift)
+ *  initially equal to 1/16, scaling factor 10, and value type unsigned.
+ */
+template <unsigned STABILITY, unsigned SCALE, typename T = unsigned, typename U = int>
+struct RateEWMAXParameters : public FixedEWMAXParameters<STABILITY, SCALE, T, U> {
+    enum {
+	rate_count = 1
+    };
+    
+    static unsigned epoch() {
 	return click_jiffies();
     }
     
-    static unsigned freq() {
+    static unsigned epoch_frequency() {
 	return CLICK_HZ;
     }
 };
 
-typedef RateEWMAX<4, 10, 1, JiffiesTimer> RateEWMA;
+typedef RateEWMAX<RateEWMAXParameters<4, 10> > RateEWMA;
 
-template <unsigned Stability_shift, unsigned Scale, unsigned N, class Timer>
+
+template <typename P>
 inline void
-RateEWMAX<Stability_shift, Scale, N, Timer>::initialize()
+RateEWMAX<P>::update_time(unsigned now)
 {
-  _now_time = now();
-  for (unsigned i = 0; i < N; i++) {
-    _total[i] = 0;
-    _avg[i].clear();
-  }
-}
+    unsigned jj = _current_epoch;
+    if (now != jj) {
+	for (unsigned i = 0; i < P::rate_count; i++) {
+	    // adjust the average rate using the last measured packets
+	    _avg[i].update(_current[i]);
 
-template <unsigned Stability_shift, unsigned Scale, unsigned N, class Timer>
-inline void
-RateEWMAX<Stability_shift, Scale, N, Timer>::update_time(unsigned now)
-{
-  unsigned jj = _now_time;
-  if (now != jj) {
-    for (unsigned i = 0; i < N; i++) {
-      // adjust the average rate using the last measured packets
-      _avg[i].update(_total[i]);
-
-      // adjust for time w/ no packets
-      if (jj + 1 != now)
-	  _avg[i].update_n(0, now - jj - 1);
-      _total[i] = 0;
+	    // adjust for time w/ no packets
+	    if (jj + 1 != now)
+		_avg[i].update_n(0, now - jj - 1);
+	    _current[i] = 0;
+	}
+	_current_epoch = now;
     }
-    _now_time = now;
-  }
 }
 
-template <unsigned Stability_shift, unsigned Scale, unsigned N, class Timer>
-inline void 
-RateEWMAX<Stability_shift, Scale, N, Timer>::update_now(int delta, 
-                                                        unsigned which)
-{ 
-  _total[which] += delta; 
-}
-
-template <unsigned Stability_shift, unsigned Scale, unsigned N, class Timer>
+template <typename P>
 inline void
-RateEWMAX<Stability_shift, Scale, N, Timer>::update_time()
+RateEWMAX<P>::update(signed_value_type delta, unsigned which)
 {
-  update_time(now());
+    update_time(P::epoch());
+    _current[which] += delta;
 }
 
-template <unsigned Stability_shift, unsigned Scale, unsigned N, class Timer>
-inline void
-RateEWMAX<Stability_shift, Scale, N, Timer>::update(int delta, unsigned which)
-{
-  update_time();
-  update_now(delta, which);
-}
-
-template <unsigned Stability_shift, unsigned Scale, unsigned N, class Timer>
+template <typename P>
 inline int
-RateEWMAX<Stability_shift, Scale, N, Timer>::rate(unsigned which) const
+RateEWMAX<P>::rate(unsigned which) const
 {
-    return (scaled_average(which) * Timer::freq()) >> Scale;
+    return (scaled_average(which) * P::epoch_frequency()) >> _avg[which].scale();
 }
 
-template <unsigned Stability_shift, unsigned Scale, unsigned N, class Timer>
+template <typename P>
 inline String
-RateEWMAX<Stability_shift, Scale, N, Timer>::unparse(unsigned which) const
+RateEWMAX<P>::unparse_rate(unsigned which) const
 {
-    return cp_unparse_real2(scaled_average(which) * Timer::freq(), Scale);
+    return cp_unparse_real2(scaled_average(which) * P::epoch_frequency(), _avg[which].scale());
 }
 
 CLICK_ENDDECLS

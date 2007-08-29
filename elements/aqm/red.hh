@@ -107,7 +107,7 @@ class RED : public Element { public:
     // Queue sizes are shifted by this much.
     enum { QUEUE_SCALE = 10 };
 
-    typedef StabilityEWMAX<StabilityEWMAXParameters<QUEUE_SCALE, uint64_t, int64_t> > ewma_type;
+    typedef DirectEWMAX<StabilityEWMAXParameters<QUEUE_SCALE, uint64_t, int64_t> > ewma_type;
     
     RED();
     ~RED();

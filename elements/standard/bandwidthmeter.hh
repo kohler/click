@@ -44,6 +44,7 @@ class BandwidthMeter : public Element { protected:
   int _nmeters;
 
   static String meters_read_handler(Element *, void *);
+  static String read_rate_handler(Element *, void *);
 
  public:
   
@@ -54,9 +55,9 @@ class BandwidthMeter : public Element { protected:
   const char *port_count() const		{ return "1/2-"; }
   const char *processing() const		{ return PUSH; }
   
-  unsigned scaled_rate() const			{ return _rate.scaled_average(); }
-  unsigned rate_scale() const			{ return _rate.scale; }
-  unsigned rate_freq() const			{ return _rate.freq(); }
+  unsigned scaled_rate() const		{ return _rate.scaled_average(); }
+  unsigned rate_scale() const		{ return _rate.scale(); }
+  unsigned rate_freq() const		{ return _rate.epoch_frequency(); }
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

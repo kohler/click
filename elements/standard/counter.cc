@@ -37,7 +37,6 @@ void
 Counter::reset()
 {
   _count = _byte_count = 0;
-  _rate.initialize();
   _count_triggered = _byte_triggered = false;
 }
 
@@ -119,8 +118,8 @@ Counter::read_handler(Element *e, void *thunk)
       case H_BYTE_COUNT:
 	return String(c->_byte_count);
       case H_RATE:
-	c->_rate.update_time();	// drop rate after zero period
-	return c->_rate.unparse();
+	c->_rate.update(0);	// drop rate after idle period
+	return c->_rate.unparse_rate();
     case H_COUNT_CALL:
 	return String(c->_count_trigger);
       default:
@@ -176,7 +175,7 @@ Counter::llrpc(unsigned command, void *data)
     uint32_t *val = reinterpret_cast<uint32_t *>(data);
     if (*val != 0)
       return -EINVAL;
-    _rate.update_time();	// drop rate after zero period
+    _rate.update(0);		// drop rate after idle period
     *val = _rate.rate();
     return 0;
 
