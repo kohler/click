@@ -399,7 +399,7 @@ private:
   GridGenericMetric *_metric;
   bool _use_blacklist;
   
-  Packet *add_dsr_header(Packet *, Vector<IPAddress>);
+  Packet *add_dsr_header(Packet *, const Vector<IPAddress> &);
   Packet *strip_headers(Packet *);
 
   void start_issuing_request(IPAddress host);

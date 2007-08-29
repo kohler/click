@@ -287,7 +287,7 @@ LinkTable::get_link_age(IPAddress from, IPAddress to)
   
   
 unsigned 
-LinkTable::get_route_metric(Vector<IPAddress> route) 
+LinkTable::get_route_metric(const Vector<IPAddress> &route) 
 {
   unsigned metric = 0;
   for (int i = 0; i < route.size() - 1; i++) {
@@ -319,7 +319,7 @@ LinkTable::route_to_string(Path p) {
 	return sa.take_string();
 }
 bool
-LinkTable::valid_route(Vector<IPAddress> route) 
+LinkTable::valid_route(const Vector<IPAddress> &route) 
 {
   if (route.size() < 1) {
     return false;

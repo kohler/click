@@ -95,8 +95,8 @@ public:
   uint32_t get_link_metric(IPAddress from, IPAddress to);
   uint32_t get_link_seq(IPAddress from, IPAddress to);
   uint32_t get_link_age(IPAddress from, IPAddress to);
-  bool valid_route(Vector<IPAddress> route);
-  unsigned get_route_metric(Vector<IPAddress> route);
+  bool valid_route(const Vector<IPAddress> &route);
+  unsigned get_route_metric(const Vector<IPAddress> &route);
   Vector<IPAddress> get_neighbors(IPAddress ip);
   void dijkstra(bool);
   void clear_stale();

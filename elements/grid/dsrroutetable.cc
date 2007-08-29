@@ -917,7 +917,7 @@ DSRRouteTable::push(int port, Packet *p_in)
 }
 
 Packet *
-DSRRouteTable::add_dsr_header(Packet *p_in, Vector<IPAddress> source_route)
+DSRRouteTable::add_dsr_header(Packet *p_in, const Vector<IPAddress> &source_route)
 {
   int old_len = p_in->length();
   int payload;
@@ -987,7 +987,7 @@ DSRRouteTable::add_dsr_header(Packet *p_in, Vector<IPAddress> source_route)
   }
   
   // set the ip dest annotation to the next hop
-  p->set_dst_ip_anno(source_route[0].addr());   
+  p->set_dst_ip_anno(source_route[hop_count].addr());   
   
   DEBUG_CHATTER(" * added source route header");
   
