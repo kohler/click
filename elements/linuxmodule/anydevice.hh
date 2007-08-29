@@ -88,9 +88,10 @@ class AnyDevice : public Element { public:
 
     bool promisc() const		{ return _promisc; }
     bool timestamp() const		{ return _timestamp; }
-    inline void set_device_flags(bool promisc, bool timestamp);
+    inline void set_device_flags(bool promisc, bool timestamp,
+				 bool allow_nonexistent, bool quiet);
 
-    int find_device(bool, AnyDeviceMap *, ErrorHandler *);
+    int find_device(AnyDeviceMap *, ErrorHandler *);
     void set_device(net_device *, AnyDeviceMap *, bool locked = false);
     void clear_device(AnyDeviceMap *);
 
@@ -99,9 +100,12 @@ class AnyDevice : public Element { public:
     String _devname;
     net_device *_dev;
 
-    bool _promisc : 1;
-    bool _timestamp : 1;
+    bool _promisc;
+    bool _timestamp;
     bool _in_map : 1;
+    bool _quiet : 1;
+    bool _allow_nonexistent : 1;
+    bool _devname_exists : 1;
     AnyDevice *_next;
 
     friend class AnyDeviceMap;
@@ -173,10 +177,13 @@ class AnyDeviceMap { public:
 };
 
 inline void
-AnyDevice::set_device_flags(bool promisc, bool timestamp)
+AnyDevice::set_device_flags(bool promisc, bool timestamp,
+			    bool allow_nonexistent, bool quiet)
 {
     _promisc = promisc;
     _timestamp = timestamp;
+    _allow_nonexistent = allow_nonexistent;
+    _quiet = quiet;
 }
 
 inline void

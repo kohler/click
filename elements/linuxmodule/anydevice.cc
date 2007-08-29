@@ -6,7 +6,7 @@
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
- * Copyright (c) 2004-2005 Regents of the University of California
+ * Copyright (c) 2004-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,7 +35,8 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 AnyDevice::AnyDevice()
-    : _dev(0), _promisc(false), _timestamp(true), _in_map(false), _next(0)
+    : _dev(0), _promisc(false), _timestamp(true), _in_map(false),
+      _quiet(false), _allow_nonexistent(false), _devname_exists(false), _next(0)
 {
 }
 
@@ -46,20 +47,20 @@ AnyDevice::~AnyDevice()
 }
 
 int
-AnyDevice::find_device(bool allow_nonexistent, AnyDeviceMap *adm,
-		       ErrorHandler *errh)
+AnyDevice::find_device(AnyDeviceMap *adm, ErrorHandler *errh)
 {
     _dev = dev_get_by_name(_devname.c_str());
+    _devname_exists = (bool) _dev;
     if (!_dev)
 	_dev = dev_get_by_ether_address(_devname, this);
-    if (!_dev) {
-	if (!allow_nonexistent)
-	    return errh->error("unknown device '%s'", _devname.c_str());
-	else
-	    errh->warning("unknown device '%s'", _devname.c_str());
-    }
-    if (_dev && !(_dev->flags & IFF_UP)) {
-	errh->warning("device '%s' is down", _devname.c_str());
+
+    if (!_dev && !_allow_nonexistent)
+	return errh->error("unknown device '%s'", _devname.c_str());
+    else if (!_dev && !_quiet)
+	errh->warning("unknown device '%s'", _devname.c_str());
+    else if (_dev && !(_dev->flags & IFF_UP)) {
+	if (!_quiet)
+	    errh->warning("device '%s' is down", _devname.c_str());
 	dev_put(_dev);
 	_dev = 0;
     }
@@ -82,9 +83,9 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
     if (_dev == dev)		// changing to the same device is a noop
 	return;
     
-    if (_dev)
+    if (_dev && !_quiet)
 	click_chatter("%s: device '%s' went down", declaration().c_str(), _devname.c_str());
-    if (dev)
+    if (dev && !_quiet)
 	click_chatter("%s: device '%s' came up", declaration().c_str(), _devname.c_str());
     
     if (_dev && _promisc)
@@ -199,11 +200,13 @@ AnyDeviceMap::lookup_unknown(net_device *dev, AnyDevice *last) const
     unsigned char en[6];
     
     for (AnyDevice *d = (last ? last->_next : _unknown_map); d; d = d->_next)
-	if (d->devname() == dev_name)
+	if (d->devname() == dev_name) {
+	    d->_devname_exists = true;
 	    return d;
-	else if ((dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211)
-		 && cp_ethernet_address(d->devname(), en, d)
-		 && memcmp(en, dev->dev_addr, 6) == 0)
+	} else if ((dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211)
+		   && !d->_devname_exists
+		   && cp_ethernet_address(d->devname(), en, d)
+		   && memcmp(en, dev->dev_addr, 6) == 0)
 	    return d;
 
     return 0;

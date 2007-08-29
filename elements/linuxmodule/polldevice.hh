@@ -40,6 +40,10 @@ Unsigned integer.  Sets the BURST parameter.
 Boolean.  If true, then ensure that received packets have correctly-set
 timestamp annotations.  Default is true.
 
+=item QUIET
+
+Boolean.  If true, then suppress device up/down messages.  Default is false.
+
 =item ALLOW_NONEXISTENT
 
 Allow nonexistent devices. If true, and no device named DEVNAME exists when

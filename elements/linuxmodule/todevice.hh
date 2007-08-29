@@ -34,6 +34,10 @@ Keyword arguments are:
 
 Unsigned integer. Same as the BURST argument.
 
+=item QUIET
+
+Boolean.  If true, then suppress device up/down messages.  Default is false.
+
 =item ALLOW_NONEXISTENT
 
 Allow nonexistent devices. If true, and no device named DEVNAME exists when

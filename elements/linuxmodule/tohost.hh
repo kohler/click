@@ -6,7 +6,7 @@
 /*
  * =c
  *
- * ToHost([DEVNAME, I<keywords> SNIFFERS, ALLOW_NONEXISTENT])
+ * ToHost([DEVNAME, I<keywords> SNIFFERS, QUIET, ALLOW_NONEXISTENT])
  *
  * =s comm
  *
@@ -36,6 +36,10 @@
  * Boolean. If true, then ToHost will send packets to the kernel so that only
  * tcpdump(1), and other sniffer programs on the host, will receive them.
  * Default is false.
+ *
+ * =item QUIET
+ *
+ * Boolean.  If true, then suppress device up/down messages.  Default is false.
  *
  * =item ALLOW_NONEXISTENT
  *
@@ -102,7 +106,6 @@ class ToHost : public AnyDevice { public:
   private:
 
     bool _sniffers;
-    bool _allow_nonexistent;
     int _drops;
 
     static String read_handler(Element *, void *);

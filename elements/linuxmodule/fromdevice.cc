@@ -93,7 +93,7 @@ FromDevice::cast(const char *n)
 int
 FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool promisc = false, allow_nonexistent = false, timestamp = true;
+    bool promisc = false, quiet = false, allow_nonexistent = false, timestamp = true;
     _burst = 8;
     if (cp_va_parse(conf, this, errh, 
 		    cpString, "device name", &_devname, 
@@ -105,15 +105,16 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "PROMISCUOUS", cpBool, "enter promiscuous mode?", &promisc,
 		    "BURST", cpUnsigned, "burst size", &_burst,
 		    "TIMESTAMP", cpBool, "set timestamps?", &timestamp,
+		    "QUIET", cpBool, "suppress up/down messages?", &quiet,
 		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &allow_nonexistent,
 		    cpEnd) < 0)
 	return -1;
-    set_device_flags(promisc, timestamp);
+    set_device_flags(promisc, timestamp, allow_nonexistent, quiet);
 
     // make queue look full so packets sent to us are ignored
     _head = _tail = _capacity = 0;
-    
-    return find_device(allow_nonexistent, &from_device_map, errh);
+
+    return find_device(&from_device_map, errh);
 }
 
 /*

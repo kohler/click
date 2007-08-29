@@ -8,7 +8,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
- * Copyright (c) 2005 Regents of the University of California
+ * Copyright (c) 2005-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -121,18 +121,20 @@ int
 ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 16;
-    bool allow_nonexistent = false;
+    bool allow_nonexistent = false, quiet = false;
     if (cp_va_parse(conf, this, errh,
 		    cpString, "device name", &_devname,
 		    cpOptional,
 		    cpUnsigned, "burst size", &_burst,
 		    cpKeywords,
 		    "BURST", cpUnsigned, "burst size", &_burst,
+		    "QUIET", cpBool, "suppress up/down messages?", &quiet,
 		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &allow_nonexistent,
 		    "NO_PAD", cpBool, "don't pad packets to 60 bytes?", &_no_pad,
 		    cpEnd) < 0)
 	return -1;
-    return find_device(allow_nonexistent, &to_device_map, errh);
+    set_device_flags(false, true, allow_nonexistent, quiet);
+    return find_device(&to_device_map, errh);
 }
 
 int

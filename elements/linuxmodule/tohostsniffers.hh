@@ -5,7 +5,7 @@
 
 /*
  * =c
- * ToHostSniffers([DEVNAME, I<keywords> SNIFFERS, ALLOW_NONEXISTENT])
+ * ToHostSniffers([DEVNAME, I<keywords> SNIFFERS, QUIET, ALLOW_NONEXISTENT])
  * =s comm
  * sends packets to Linux packet sniffers
  * =d

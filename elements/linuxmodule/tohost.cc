@@ -59,7 +59,7 @@ ToHost::static_cleanup()
 }
 
 ToHost::ToHost()
-    : _sniffers(false), _allow_nonexistent(false), _drops(0)
+    : _sniffers(false), _drops(0)
 {
 }
 
@@ -70,13 +70,18 @@ ToHost::~ToHost()
 int
 ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_parse(conf, this, errh,
-		       cpOptional,
-		       cpString, "device name", &_devname,
-		       cpKeywords,
-		       "SNIFFERS", cpBool, "send packets to sniffers only?", &_sniffers,
-		       "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &_allow_nonexistent,
-		       cpEnd);
+    bool allow_nonexistent = false, quiet = false;
+    if (cp_va_parse(conf, this, errh,
+		    cpOptional,
+		    cpString, "device name", &_devname,
+		    cpKeywords,
+		    "SNIFFERS", cpBool, "send packets to sniffers only?", &_sniffers,
+		    "QUIET", "suppress up/down messages?", &quiet,
+		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &allow_nonexistent,
+		    cpEnd) < 0)
+	return -1;
+    set_device_flags(false, true, allow_nonexistent, quiet);
+    return 0;
 }
 
 int
@@ -85,7 +90,7 @@ ToHost::initialize(ErrorHandler *errh)
     // We find the device here, rather than in 'initialize', to avoid warnings
     // about "device down" with FromHost devices -- FromHost brings up its
     // device during initialize().
-    return (_devname ? find_device(_allow_nonexistent, &to_host_map, errh) : 0);
+    return (_devname ? find_device(&to_host_map, errh) : 0);
 }
 
 void
