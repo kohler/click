@@ -111,7 +111,8 @@ template <class K, class V>
 class _HashMap_const_iterator { public:
 
   bool live() const			{ return _elt; }
-  inline operator bool() const CLICK_DEPRECATED;
+  typedef size_t _HashMap_const_iterator::*unspecified_bool_type;
+  inline operator unspecified_bool_type() const CLICK_DEPRECATED;
   void operator++(int);
   void operator++()			{ (*this)++; }
   
@@ -210,9 +211,9 @@ HashMap<K, V>::operator[](const K &key) const
 
 template <class K, class V>
 inline
-_HashMap_const_iterator<K, V>::operator bool() const
+_HashMap_const_iterator<K, V>::operator unspecified_bool_type() const
 {
-    return live();
+    return live() ? &_HashMap_const_iterator::_bucket : 0;
 }
 
 
@@ -308,7 +309,8 @@ template <class K>
 class _HashMap_const_iterator<K, void *> { public:
 
   bool live() const			{ return _elt; }
-  inline operator bool() const CLICK_DEPRECATED;
+  typedef size_t _HashMap_const_iterator::*unspecified_bool_type;
+  inline operator unspecified_bool_type() const CLICK_DEPRECATED;
   void operator++(int);
   void operator++()			{ (*this)++; }
   
@@ -407,9 +409,9 @@ HashMap<K, void *>::operator[](const K &key) const
 
 template <class K>
 inline
-_HashMap_const_iterator<K, void *>::operator bool() const
+_HashMap_const_iterator<K, void *>::operator unspecified_bool_type() const
 {
-  return live();
+    return live() ? &_HashMap_const_iterator::_bucket : 0;
 }
 
 
@@ -470,26 +472,29 @@ class HashMap<K, T *> : public HashMap<K, void *> { public:
 };
 
 template <class K, class T>
-class _HashMap_const_iterator<K, T *> : private _HashMap_const_iterator<K, void *> { public:
+class _HashMap_const_iterator<K, T *> { public:
 
-  typedef _HashMap_const_iterator<K, void *> inherited;
+    typedef _HashMap_const_iterator<K, void *> inherited;
 
-  bool live() const	{ return inherited::live(); }
-  inline operator bool() const CLICK_DEPRECATED;
-  void operator++(int)	{ inherited::operator++(0); }
-  void operator++()	{ inherited::operator++(); }
+    bool live() const		{ return _i.live(); }
+    typedef typename inherited::unspecified_bool_type unspecified_bool_type;
+    inline operator unspecified_bool_type() const CLICK_DEPRECATED;
+    void operator++(int)	{ _i.operator++(0); }
+    void operator++()		{ _i.operator++(); }
   
-  typedef typename HashMap<K, T *>::Pair Pair;
-  const Pair *pair() const { return reinterpret_cast<const Pair *>(inherited::pair()); }
+    typedef typename HashMap<K, T *>::Pair Pair;
+    const Pair *pair() const { return reinterpret_cast<const Pair *>(_i.pair()); }
   
-  const K &key() const	{ return inherited::key(); }
-  T *value() const	{ return reinterpret_cast<T *>(inherited::value()); }
+    const K &key() const	{ return _i.key(); }
+    T *value() const		{ return reinterpret_cast<T *>(_i.value()); }
 
  private:
 
-  _HashMap_const_iterator(const HashMap<K, T *> *t, bool begin) : inherited(t, begin) { }  
-  friend class _HashMap_iterator<K, T *>;
-  template <class, class> friend class HashMap;
+    inherited _i;
+    
+    _HashMap_const_iterator(const HashMap<K, T *> *t, bool begin) : _i(t, begin) { }  
+    friend class _HashMap_iterator<K, T *>;
+    template <class, class> friend class HashMap;
   
 };
 
@@ -539,9 +544,9 @@ HashMap<K, T *>::end()
 
 template <class K, class T>
 inline
-_HashMap_const_iterator<K, T *>::operator bool() const
+_HashMap_const_iterator<K, T *>::operator unspecified_bool_type() const
 {
-  return inherited::live();
+    return inherited::live() ? &inherited::_bucket : 0;
 }
 
 template <class K, class V>
