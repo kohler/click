@@ -122,7 +122,7 @@ class Task { public:
     Router* _router;
 
     unsigned _pending_reschedule;
-    Task* _pending_next;
+    uintptr_t _pending_nextptr;
 
     Task(const Task&);
     Task& operator=(const Task&);
@@ -135,10 +135,12 @@ class Task { public:
     inline void lock_tasks();
     inline bool attempt_lock_tasks();
 
-    void make_list();
     static bool error_hook(Task*, void*);
 
     inline void fast_unschedule();
+
+    static inline Task *pending_to_task(uintptr_t);
+    inline Task *pending_to_task() const;
     
     friend class RouterThread;
     friend class Master;
@@ -186,7 +188,7 @@ Task::Task(TaskHook hook, void* thunk)
       _cycle_runs(0),
 #endif
       _thread(0), _home_thread_id(-1),
-      _router(0), _pending_reschedule(0), _pending_next(0)
+      _router(0), _pending_reschedule(0), _pending_nextptr(0)
 {
 }
 
@@ -219,7 +221,7 @@ Task::Task(Element* e)
       _cycle_runs(0),
 #endif
       _thread(0), _home_thread_id(-1),
-      _router(0), _pending_reschedule(0), _pending_next(0)
+      _router(0), _pending_reschedule(0), _pending_nextptr(0)
 {
 }
 
@@ -560,6 +562,18 @@ Task::update_cycles(unsigned c)
     _cycle_runs = 0;
 }
 #endif
+
+inline Task *
+Task::pending_to_task(uintptr_t ptr)
+{
+    return reinterpret_cast<Task *>(ptr & ~(uintptr_t) 3);
+}
+
+inline Task *
+Task::pending_to_task() const
+{
+    return pending_to_task(_pending_nextptr);
+}
 
 CLICK_ENDDECLS
 #endif

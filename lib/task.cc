@@ -53,7 +53,7 @@ CLICK_DECLS
 // - Changes to _thread are protected by _thread->lock.
 // - Changes to _home_thread_id are protected by
 //   _router->master()->task_lock.
-// - If _pending_reschedule is nonzero, then _pending_next is nonnull.
+// - If _pending_reschedule is nonzero, then _pending_nextptr is nonzero.
 // - Either _home_thread_id == _thread->thread_id(), or
 //   _thread->thread_id() == -1.
 
@@ -64,20 +64,13 @@ Task::error_hook(Task *, void *)
     return false;
 }
 
-void
-Task::make_list()
-{
-    _hook = error_hook;
-    _pending_next = this;
-}
-
 Task::~Task()
 {
 #if HAVE_TASK_HEAP
-    if (scheduled() || _pending_next)
+    if (scheduled() || _pending_nextptr)
 	cleanup();
 #else
-    if ((scheduled() || _pending_next) && _thread != this)
+    if ((scheduled() || _pending_nextptr) && _thread != this)
 	cleanup();
 #endif
 }
@@ -144,17 +137,25 @@ Task::cleanup()
     if (initialized()) {
 	strong_unschedule();
 
-	if (_pending_next) {
+	if (_pending_nextptr) {
 	    Master *m = _router->master();
+	    unsigned cp = _pending_nextptr & 1;
 	    SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
-	    Task *prev = &m->_task_list;
-	    for (Task *t = prev->_pending_next; t != &m->_task_list; prev = t, t = t->_pending_next)
-		if (t == this) {
-		    prev->_pending_next = t->_pending_next;
-		    break;
-		}
-	    _pending_reschedule = 0;
-	    _pending_next = 0;
+	    SpinlockIRQ::flags_t pflags = m->_pending_lock[cp].acquire();
+	    if (_pending_nextptr) {
+		uintptr_t *tptr = &m->_pending_head[cp];
+		while (Task *t = pending_to_task(*tptr))
+		    if (t == this) {
+			*tptr = _pending_nextptr;
+			if (!pending_to_task(_pending_nextptr))
+			    m->_pending_tail[cp] = tptr;
+			break;
+		    } else
+			tptr = &t->_pending_nextptr;
+		_pending_nextptr = 0;
+		_pending_reschedule = 0;
+	    }
+	    m->_pending_lock[cp].release(pflags);
 	    m->_task_lock.release(flags);
 	}
 	
@@ -195,9 +196,11 @@ Task::add_pending(bool reschedule)
     if (_router->_running >= Router::RUNNING_PREPARING) {
 	if (reschedule)
 	    _pending_reschedule = 1;
-	if (!_pending_next) {
-	    _pending_next = m->_task_list._pending_next;
-	    m->_task_list._pending_next = this;
+	if (!_pending_nextptr) {
+	    unsigned cp = m->_current_pending;
+	    _pending_nextptr = 2 | cp;
+	    *m->_pending_tail[cp] = reinterpret_cast<uintptr_t>(this) | cp;
+	    m->_pending_tail[cp] = &_pending_nextptr;
 	    _thread->add_pending();
 	}
     }
