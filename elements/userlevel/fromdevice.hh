@@ -202,6 +202,8 @@ class FromDevice : public Element { public:
     static String read_handler(Element*, void*);
     static int write_handler(const String&, Element*, void*, ErrorHandler*);
 
+    int device_filter(bool add, ErrorHandler *);
+
 };
 
 

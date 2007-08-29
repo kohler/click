@@ -20,12 +20,13 @@
 
 #include <click/config.h>
 #include "fromdevice.hh"
-#include "kernelfilter.hh"
 #include <click/error.hh>
+#include <click/straccum.hh>
 #include <click/confparse.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
 #include <click/standard/scheduleinfo.hh>
+#include <click/userutils.hh>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -297,7 +298,7 @@ FromDevice::initialize(ErrorHandler *errh)
 #endif
 
     if (!_sniffer)
-	KernelFilter::device_filter(_ifname, true, errh);
+	device_filter(true, errh);
     
     return 0;
 }
@@ -306,7 +307,7 @@ void
 FromDevice::cleanup(CleanupStage stage)
 {
     if (stage >= CLEANUP_INITIALIZED && !_sniffer)
-	KernelFilter::device_filter(_ifname, false, ErrorHandler::default_handler());
+	device_filter(false, ErrorHandler::default_handler());
 #if FROMDEVICE_LINUX
     if (_linux_fd >= 0) {
 	if (_was_promisc >= 0)
@@ -321,6 +322,20 @@ FromDevice::cleanup(CleanupStage stage)
 	_pcap = 0;
     }
 #endif
+}
+
+int
+FromDevice::device_filter(bool add, ErrorHandler *errh)
+{
+    StringAccum cmda;
+    cmda << "/sbin/iptables " << (add ? "-A" : "-D") << " INPUT -i "
+	 << shell_quote(_ifname) << " -j DROP";
+    String cmd = cmda.take_string();
+    int before = errh->nerrors();
+    String out = shell_command_output_string(cmd, "", errh);
+    if (out)
+	errh->error("%s: %s", cmd.c_str(), out.c_str());
+    return errh->nerrors() == before ? 0 : -1;
 }
 
 #if FROMDEVICE_PCAP
@@ -492,5 +507,5 @@ FromDevice::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel FakePcap KernelFilter)
+ELEMENT_REQUIRES(userlevel FakePcap)
 EXPORT_ELEMENT(FromDevice)

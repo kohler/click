@@ -53,6 +53,7 @@ KernelFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 KernelFilter::initialize(ErrorHandler *errh)
 {
+    // If you update this, also update the device_filter code in FromDevice.u
     int before = errh->nerrors();
     for (int i = 0; i < _filters.size(); i++) {
 	String out = shell_command_output_string("/sbin/iptables -A " + _filters[i], "", errh);
@@ -77,20 +78,6 @@ KernelFilter::cleanup(CleanupStage stage)
 		errh->error("iptables -D %s: %s", _filters[i].c_str(), out.c_str());
 	}
     }
-}
-
-int
-KernelFilter::device_filter(const String &devname, bool add, ErrorHandler *errh)
-{
-    StringAccum cmda;
-    cmda << "/sbin/iptables " << (add ? "-A" : "-D") << " INPUT -i "
-	 << shell_quote(devname) << " -j DROP";
-    String cmd = cmda.take_string();
-    int before = errh->nerrors();
-    String out = shell_command_output_string(cmd, "", errh);
-    if (out)
-	errh->error("%s: %s", cmd.c_str(), out.c_str());
-    return errh->nerrors() == before ? 0 : -1;
 }
 
 CLICK_ENDDECLS

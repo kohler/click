@@ -56,8 +56,6 @@ class KernelFilter : public Element { public:
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
 
-    static int device_filter(const String &devname, bool add, ErrorHandler *);
-
   private:
 
     Vector<String> _filters;
