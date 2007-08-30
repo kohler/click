@@ -249,8 +249,7 @@ SpinlockIRQ::acquire()
 {
 #if CLICK_LINUXMODULE
     flags_t flags;
-    local_irq_save(flags);
-    spin_lock(&_lock);
+    spin_lock_irqsave(&_lock, flags);
     return flags;
 #else
     return 0;
@@ -264,8 +263,7 @@ inline void
 SpinlockIRQ::release(flags_t flags)
 {
 #if CLICK_LINUXMODULE
-    spin_unlock(&_lock);
-    local_irq_restore(flags);
+    spin_unlock_irqrestore(&_lock, flags);
 #else
     (void) flags;
 #endif
