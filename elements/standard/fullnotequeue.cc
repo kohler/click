@@ -3,7 +3,7 @@
  * fullnotequeue.{cc,hh} -- queue element that notifies on full
  * Eddie Kohler
  *
- * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2004-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -61,22 +61,19 @@ FullNoteQueue::push(int, Packet *p)
 	if (s > _highwater_length)
 	    _highwater_length = s;
 
-#if !NOTIFIERQUEUE_LOCK
-	// This can leave a single packet in the queue indefinitely in
-	// multithreaded Click, because of a race condition with pull().
-        if (!_empty_note.active()) 
+        if (s == 1 && !_empty_note.active()) 
 	    _empty_note.wake(); 
-#else
-        if (s == 1) {
-            _lock.acquire();
-	    if (!_empty_note.active())
-	        _empty_note.wake();
-	    _lock.release();
-	}
-#endif
 
-	if (s == capacity())
+	if (s == capacity()) {
 	    _full_note.sleep();
+#if __MTCLICK__
+	    // Work around race condition between push() and pull().
+	    // We might have just undone pull()'s Notifier::wake() call.
+	    // Easiest lock-free solution: check whether we should wake again!
+	    if (size() < capacity() && !_full_note.active())
+		_full_note.wake();
+#endif
+	}
 
     } else {
 	if (_drops == 0)
@@ -97,13 +94,13 @@ FullNoteQueue::pull(int)
 	    _full_note.wake();
 	
     } else if (++_sleepiness == SLEEPINESS_TRIGGER) {
-#if !NOTIFIERQUEUE_LOCK
         _empty_note.sleep();
-#else
-	_lock.acquire();
-	if (_head == _tail)  // if still empty...
-	    _empty_note.sleep();
-	_lock.release();
+#if __MTCLICK__
+	// Work around race condition between push() and pull().
+	// We might have just undone push()'s Notifier::wake() call.
+	// Easiest lock-free solution: check whether we should wake again!
+	if (_head != _tail && !_empty_note.active())
+	    _empty_note.wake();
 #endif
     }
 

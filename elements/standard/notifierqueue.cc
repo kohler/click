@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -61,19 +62,8 @@ NotifierQueue::push(int, Packet *p)
 	if (s > _highwater_length)
 	    _highwater_length = s;
 
-#if !NOTIFIERQUEUE_LOCK
-	// This can leave a single packet in the queue indefinitely in
-	// multithreaded Click, because of a race condition with pull().
-        if (!_empty_note.active()) 
+        if (s == 1 && !_empty_note.active()) 
 	    _empty_note.wake(); 
-#else
-        if (s == 1) {
-            _lock.acquire();
-	    if (!_empty_note.active())
-	        _empty_note.wake();
-	    _lock.release();
-	}
-#endif
 
     } else {
 	if (_drops == 0)
@@ -91,13 +81,13 @@ NotifierQueue::pull(int)
     if (p)
 	_sleepiness = 0;
     else if (++_sleepiness == SLEEPINESS_TRIGGER) {
-#if !NOTIFIERQUEUE_LOCK
-        _empty_note.sleep();
-#else
-	_lock.acquire();
-	if (_head == _tail)  // if still empty...
-	    _empty_note.sleep();
-	_lock.release();
+	_empty_note.sleep();
+#if __MTCLICK__
+	// Work around race condition between push() and pull().
+	// We might have just undone push()'s Notifier::wake() call.
+	// Easiest lock-free solution: check whether we should wake again!
+	if (_head != _tail && !_empty_note.active())
+	    _empty_note.wake();
 #endif
     }
 

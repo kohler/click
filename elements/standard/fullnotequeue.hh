@@ -30,6 +30,13 @@ respects but notification, Queue behaves exactly like SimpleQueue.
 
 You may also use the old element name "FullNoteQueue".
 
+B<Multithreaded Click note:> Queue is designed to be used in an
+environment with at most one concurrent pusher and at most one concurrent
+puller.  Thus, at most one thread pushes to the Queue at a time and at
+most one thread pulls from the Queue at a time.  Different threads can
+push to and pull from the Queue concurrently, however.  See MSQueue for
+a queue that can support multiple concurrent pushers.
+
 =h length read-only
 
 Returns the current number of packets in the queue.
@@ -54,7 +61,7 @@ When written, resets the C<drops> and C<highwater_length> counters.
 
 When written, drops all packets in the queue.
 
-=a SimpleQueue, MixedQueue, FrontDropQueue */
+=a SimpleQueue, NotifierQueue, MixedQueue, FrontDropQueue, MSQueue */
 
 class FullNoteQueue : public NotifierQueue { public:
 

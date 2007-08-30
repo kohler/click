@@ -4,9 +4,6 @@
 #include <click/element.hh>
 #include <click/notifier.hh>
 #include "simplequeue.hh"
-#if NOTIFIERQUEUE_LOCK
-# include <click/sync.hh>
-#endif
 CLICK_DECLS
 
 /*
@@ -30,6 +27,13 @@ formerly-empty queue receives a packet. The empty notification takes place
 some time after the queue goes empty, to prevent thrashing for queues that
 hover around 1 or 2 packets long. In all other respects, NotifierQueue behaves
 like SimpleQueue.
+
+B<Multithreaded Click note:> NotifierQueue is designed to be used in an
+environment with at most one concurrent pusher and at most one concurrent
+puller.  Thus, at most one thread pushes to the NotifierQueue at a time and at
+most one thread pulls from the NotifierQueue at a time.  Different threads can
+push to and pull from the NotifierQueue concurrently, however.  See MSQueue for
+a queue that can support multiple concurrent pushers.
 
 =n
 
@@ -60,7 +64,7 @@ When written, resets the C<drops> and C<highwater_length> counters.
 
 When written, drops all packets in the queue.
 
-=a Queue, SimpleQueue, MixedQueue, FrontDropQueue */
+=a Queue, SimpleQueue, MixedQueue, FrontDropQueue, MSQueue */
 
 class NotifierQueue : public SimpleQueue { public:
 
@@ -83,9 +87,6 @@ class NotifierQueue : public SimpleQueue { public:
 
     enum { SLEEPINESS_TRIGGER = 9 };
     int _sleepiness;
-#if NOTIFIERQUEUE_LOCK
-    Spinlock _lock;
-#endif
     ActiveNotifier _empty_note;
 
     friend class MixedQueue;
