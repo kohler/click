@@ -76,7 +76,7 @@ ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpString, "device name", &_devname,
 		    cpKeywords,
 		    "SNIFFERS", cpBool, "send packets to sniffers only?", &_sniffers,
-		    "QUIET", "suppress up/down messages?", &quiet,
+		    "QUIET", cpBool, "suppress up/down messages?", &quiet,
 		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &allow_nonexistent,
 		    cpEnd) < 0)
 	return -1;
