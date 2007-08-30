@@ -546,7 +546,7 @@ Task::clear_runs()
 inline int
 Task::cycles() const
 {
-    return _cycles.average() >> _cycles.scale;
+    return _cycles.unscaled_average();
 }
 
 inline unsigned
@@ -558,7 +558,7 @@ Task::cycle_runs() const
 inline void
 Task::update_cycles(unsigned c) 
 {
-    _cycles.update_with(c);
+    _cycles.update(c);
     _cycle_runs = 0;
 }
 #endif
