@@ -359,8 +359,8 @@ $bad_files"
   next
 }
 /:ELEMENT_LIBS/ {
-  sub(/.*ELEMENT_LIBS[ 	]*\(/, "", $2)
-  sub(/\).*/, "", $2)
+  sub(/.*ELEMENT_LIBS[ 	]*\(\(?/, "", $2)
+  sub(/\)?\).*/, "", $2)
   gsub(/[ 	][ 	]*/, ";", $2)
   gsub(/-L;/, "-L", $2)
   libs[$1] = $2

@@ -213,7 +213,7 @@ A. Add the required linker flags to an 'ELEMENT_LIBS' statement in your
 	...
 	CLICK_ENDDECLS
 	EXPORT_ELEMENT(MyElement)
-	ELEMENT_LIBS(-L/usr/local/lib -lmy_library)
+	ELEMENT_LIBS((-L/usr/local/lib -lmy_library))
 
    Every element that needs a library should contain the relevant
    ELEMENT_LIBS.
