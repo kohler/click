@@ -920,8 +920,16 @@ cp_file_offset(const String &str, off_t *return_value)
 {
 # if SIZEOF_OFF_T == 4
   return cp_integer(str, reinterpret_cast<uint32_t *>(return_value));
-# elif SIZEOF_OFF_T == 8
+# elif SIZEOF_OFF_T == 8 && HAVE_INT64_TYPES
   return cp_integer(str, reinterpret_cast<uint64_t *>(return_value));
+# elif SIZEOF_OFF_T == 8
+#  warning "--disable-int64 means I can handle files up to only 4GB"
+  uint32_t x;
+  if (cp_integer(str, &x)) {
+      *return_value = x;
+      return true;
+  } else
+      return false;
 # else
 #  error "unexpected sizeof(off_t)"
 # endif
