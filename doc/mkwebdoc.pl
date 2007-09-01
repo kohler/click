@@ -8,32 +8,43 @@ sub mysystem ($) {
 }
 
 my($INSTALL) = 1;
-my($ELEMENTS) = 1;
-my($PROGMAN) = 1;
-my($DOC_TAR_GZ) = 1;
-my($NEWS) = 1;
+my($ELEMENTS) = 0;
+my($PROGMAN) = 0;
+my($EXAMPLES) = 0;
+my($DOXYGEN) = 0;
+my($DOC_TAR_GZ) = 0;
+my($NEWS) = 0;
 while (@ARGV && $ARGV[0] =~ /^-/) {
     $_ = shift @ARGV;
     if (/^-x$/ || /^--no-install$/) {
 	$INSTALL = 0;
     } elsif (/^-p$/ || /^--progman$/) {
-	$PROGMAN = 1;
-	$ELEMENTS = $DOC_TAR_GZ = $NEWS = 0;
+	$PROGMAN = $DOXYGEN = 1;
+    } elsif (/^-D$/ || /^--doxygen$/) {
+	$DOXYGEN = 1;
     } else {
 	die "Usage: ./mkwebdoc.pl [-x] [-p|--progman] CLICKWEBDIR";
     }
 }
+$ELEMENTS = $PROGMAN = $EXAMPLES = $DOXYGEN = $DOC_TAR_GZ = $NEWS = 1
+    if !($ELEMENTS + $PROGMAN + $DOXYGEN + $DOC_TAR_GZ + $NEWS + $EXAMPLES);
 
 @ARGV == 1 || die "Usage: ./mkwebdoc.pl [-x] [-p|--progman] CLICKWEBDIR";
 my($WEBDIR) = $ARGV[0];
 $WEBDIR =~ s/\/+$//;
 my($DOCDIR, $EXDIR) = ("$WEBDIR/doc", "$WEBDIR/ex");
--r "$DOCDIR/template" || die "'$DOCDIR/template' not found";
--r "$EXDIR/template" || die "'$EXDIR/template' not found";
+if ($ELEMENTS) {
+    -r "$DOCDIR/template" || die "'$DOCDIR/template' not found";
+}
+if ($EXAMPLES) {
+    -r "$EXDIR/template" || die "'$EXDIR/template' not found";
+}
 
 # -1. get into correct directory
 chdir('..') if !-d 'linuxmodule';
 -d 'linuxmodule' || die "must be in CLICKDIR or CLICKDIR/doc";
+$top_srcdir = `grep '^top_srcdir' Makefile | sed 's/^.*= *//'`;
+chomp $top_srcdir;
 
 # 0. create distdir
 mysystem("gmake distdir") if ($INSTALL);
@@ -57,7 +68,9 @@ if ($INSTALL) {
     if ($ELEMENTS) {
 	mysystem("cd click-$VERSION && gmake install-doc EXTRA_PROVIDES='linuxmodule bsdmodule ns i586 i686 linux_2_2 linux_2_4 linux_2_6 smpclick int64'");
     }
-    mysystem("cd tools/click-pretty && gmake install");
+    if ($EXAMPLES) {
+	mysystem("cd tools/click-pretty && gmake install");
+    }
 }
 
 # 1.5. install examples
@@ -75,11 +88,13 @@ my(@examples) = ([ 'test.click', 'Trivial Test Configuration' ],
 		 [ 'dnsproxy.click', 'Trivial DNS Proxy' ],
 		 [ 'simple-dsdv.click', 'Simple DSDV Configuration' ],
 		 [ 'print-pings.click', 'ICMP Ping Printer' ]);
-foreach $i (@examples) {
-    my($fn, $title) = ('"' . $i->[0] . '"', '"' . $i->[1] . '"');
-    my($html) = $fn;
-    $html =~ s/\.click\"$/.html\"/;
-    mysystem("click-pretty -C /tmp/%click-webdoc -t $EXDIR/template -dfilename=$fn -dtitle=$title click-$VERSION/conf/$fn > $EXDIR/$html");
+if ($EXAMPLES) {
+    foreach $i (@examples) {
+	my($fn, $title) = ('"' . $i->[0] . '"', '"' . $i->[1] . '"');
+	my($html) = $fn;
+	$html =~ s/\.click\"$/.html\"/;
+	mysystem("click-pretty -C /tmp/%click-webdoc -t $EXDIR/template -dfilename=$fn -dtitle=$title click-$VERSION/conf/$fn > $EXDIR/$html");
+    }
 }
 
 # 2.0. read elementmap
@@ -374,12 +389,15 @@ if ($NEWS) {
 }
 
 # 9. install clickconfig.dtd
-mysystem("cp click-$VERSION/tools/click2xml/clickconfig.dtd $WEBDIR");
+if ($NEWS) {
+    mysystem("cp click-$VERSION/tools/click2xml/clickconfig.dtd $WEBDIR");
+}
 
 # 10. doxycute
-if ($PROGMAN) {
-    open(IN, "click-$VERSION/doc/Doxyfile");
-    open(OUT, "| (cd click-$VERSION; doxygen -)");
+if ($DOXYGEN) {
+    $directory = ($INSTALL ? "click-$VERSION" : $top_srcdir);
+    open(IN, "$directory/doc/Doxyfile");
+    open(OUT, "| (cd $directory; doxygen -)");
     while (<IN>) {
 	if (/^OUTPUT_DIRECTORY/) {
 	    print OUT "OUTPUT_DIRECTORY = $WEBDIR\n";
