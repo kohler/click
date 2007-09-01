@@ -95,10 +95,10 @@ CLICK_DECLS
  *  }
  *  @endcode
  *
- *  If usually handler calls are not specified, you can save a small amount of
- *  space by using pointers to HandlerCall objects, as in this example.  The
- *  cpHandlerCallPtrRead and cpHandlerCallPtrWrite types allow the _read_call
- *  and _write_call members to start out as null pointers.
+ *  If usually your element's handler calls aren't used, you can save a small
+ *  amount of space by using pointers to HandlerCall objects, as in this
+ *  example.  The cpHandlerCallPtrRead and cpHandlerCallPtrWrite types allow
+ *  the _read_call and _write_call members to start out as null pointers.
  *
  *  @code
  *  class YourElement { ...
@@ -177,7 +177,8 @@ class HandlerCall { public:
      *  handler description is not checked for syntax errors, though;
      *  initialize() does that. */
     HandlerCall(const String &hdesc)
-	: _e(0), _h(Handler::blank_handler()), _value(hdesc) {
+	: _e(reinterpret_cast<Element *>(4)), _h(Handler::blank_handler()),
+	  _value(hdesc) {
     }
 
 
@@ -207,8 +208,9 @@ class HandlerCall { public:
      *  named handler does not exist, if a read handler description has
      *  parameters but the read handler doesn't actually take parameters, and
      *  so forth.  If @a errh is nonnull, errors are reported there.  The
-     *  HandlerCall remains uninitialized on failure, and future call_read()
-     *  and call_write() attempts will correctly fail.
+     *  HandlerCall becomes empty on failure: empty() will return true, and
+     *  (bool) *this will return false.  Future call_read() and call_write()
+     *  attempts will correctly fail.
      *
      *  If the PREINITIALIZE flag is set, the initialize function will check
      *  whether the router's handlers are ready (Router::handlers_ready()).
@@ -243,13 +245,13 @@ class HandlerCall { public:
      *
      *  Valid HandlerCall objects have been successfully initialized. */
     operator unspecified_bool_type() const {
-	return _h != Handler::blank_handler() || _value ? &HandlerCall::_e : 0;
+	return _h != Handler::blank_handler() || _e ? &HandlerCall::_e : 0;
     }
     
     /** @brief  Test if HandlerCall is empty.
      *  @return True if HandlerCall is empty, false otherwise. */
     bool empty() const {
-	return _h == Handler::blank_handler() && !_value;
+	return _h == Handler::blank_handler() && !_e;
     }
 
     /** @brief  Test if HandlerCall is initialized.
@@ -437,8 +439,8 @@ class HandlerCall { public:
     
   private:
     
-    Element* _e;
-    const Handler* _h;
+    Element *_e;
+    const Handler *_h;
     String _value;
 
     int parse(int flags, Element*, ErrorHandler*);

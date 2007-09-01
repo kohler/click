@@ -30,26 +30,29 @@ HandlerCall::initialize(int flags, Element* context, ErrorHandler* errh)
     if (!errh)
 	errh = ErrorHandler::silent_handler();
 
-    Element *e;
+    Element *e = _e;
     String hname;
     String value = _value;
+    _e = 0;			// "initialization attempted"
 
-    if (initialized()) {
-	e = _e;
-	hname = _h->name();
-	value = _value;
-    } else {
+    if (!initialized()) {
 	// parse handler name
 	if (!cp_handler_name(cp_pop_spacevec(value), &e, &hname, context, errh))
 	    return -EINVAL;
 	// local handler reference
 	if (e->eindex() == -1 && _value[0] != '.' && Router::handler(context, hname))
 	    e = context;
-    }
+    } else
+	hname = _h->name();
 
     // exit early if handlers not yet defined
-    if (!e->router()->handlers_ready())
-	return (flags & PREINITIALIZE ? 0 : errh->error("handlers not yet defined"));
+    if (!e->router()->handlers_ready()) {
+	_e = reinterpret_cast<Element *>(4); // "initialization not attempted"
+	if (flags & PREINITIALIZE)
+	    return 0;
+	else
+	    return errh->error("handlers not yet defined");
+    }
 
     // finish up in assign()
     return assign(e, hname, value, flags, errh);
