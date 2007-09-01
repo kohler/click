@@ -430,8 +430,10 @@ class HandlerCall { public:
 	_value = String();
     }
 
-    
+
+    /** @cond never */
     enum { CHECK_READ = OP_READ, CHECK_WRITE = OP_WRITE };
+    /** @endcond never */
     
   private:
     
