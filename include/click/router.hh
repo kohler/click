@@ -21,13 +21,22 @@ class NameInfo;
 
 class Router { public:
 
-    Router(const String& configuration, Master* master);
-    ~Router();
+    /** @name Public Member Functions */
+    //@{
+    // MASTER
+    inline Master* master() const;
 
     // STATUS
     inline bool initialized() const;
     inline bool handlers_ready() const;
     inline bool running() const;
+
+    // RUNCOUNT AND RUNCLASS
+    enum { STOP_RUNCOUNT = -2147483647 - 1 };
+    inline int32_t runcount() const;
+    void adjust_runcount(int32_t delta);
+    void set_runcount(int32_t rc);
+    inline void please_stop_driver();
 
     // ELEMENTS
     inline const Vector<Element*>& elements() const;
@@ -40,15 +49,15 @@ class Router { public:
     Element* find(const String& name, ErrorHandler* errh = 0) const;
     Element* find(const String& name, String context, ErrorHandler* errh = 0) const;
     Element* find(const String& name, Element* context, ErrorHandler* errh = 0) const;
+
+    int downstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
+    int upstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
   
     const String& ename(int eindex) const;
     const String& elandmark(int eindex) const;
     const String& econfiguration(int eindex) const;
     void set_econfiguration(int eindex, const String& conf);
   
-    int downstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
-    int upstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
-
     // HANDLERS
     enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
     static int hindex(const Element* e, const String& hname);
@@ -75,21 +84,8 @@ class Router { public:
     inline void set_thread_sched(ThreadSched* scheduler);
     inline int initial_home_thread_id(Task* task, bool scheduled) const;
 
-    int new_notifier_signal(NotifierSignal& signal);
-
     inline NameInfo* name_info() const;
     NameInfo* force_name_info();
-
-    // MASTER
-    inline Master* master() const;
-
-    // RUNCOUNT AND RUNCLASS
-    enum { STOP_RUNCOUNT = -2147483647 - 1 };
-    inline int32_t runcount() const;
-    inline void please_stop_driver();
-    inline void reserve_driver();
-    void set_runcount(int32_t rc);
-    void adjust_runcount(int32_t rc);
 
     // UNPARSING
     inline const String& configuration_string() const;
@@ -100,8 +96,14 @@ class Router { public:
     void unparse_connections(StringAccum& sa, const String& indent = String()) const;
 
     String element_ports_string(int eindex) const;
+    //@}
   
     // INITIALIZATION
+    /** @name Internal Functions */
+    //@{
+    Router(const String& configuration, Master* master);
+    ~Router();
+
     static void static_initialize();
     static void static_cleanup();
 
@@ -122,6 +124,9 @@ class Router { public:
     int initialize(ErrorHandler* errh);
     void activate(bool foreground, ErrorHandler* errh);
     inline void activate(ErrorHandler* errh);
+
+    int new_notifier_signal(NotifierSignal& signal);
+    //@}
 
     /** @cond never */
     // Needs to be public for Lexer, etc., but not useful outside
@@ -298,12 +303,14 @@ class Handler { public:
     inline bool exclusive() const;
     inline bool raw() const;
 
-    inline String call_read(Element *, ErrorHandler * = 0) const;
-    String call_read(Element *, const String &, bool, ErrorHandler *) const;
-    int call_write(const String &, Element *, bool, ErrorHandler *) const;
+    inline String call_read(Element *e, ErrorHandler *errh = 0) const;
+    String call_read(Element *e, const String &param, bool raw,
+		     ErrorHandler *errh) const;
+    int call_write(const String &value, Element *e, bool raw,
+		   ErrorHandler *errh) const;
   
-    String unparse_name(Element *) const;
-    static String unparse_name(Element *, const String &);
+    String unparse_name(Element *e) const;
+    static String unparse_name(Element *e, const String &hname);
 
     static inline const Handler *blank_handler();
     
@@ -463,30 +470,38 @@ Router::name_info() const
     return _name_info;
 }
 
+/** @brief  Returns the Master object for this router. */
 inline Master*
 Router::master() const
 {
     return _master;
 }
 
+/** @brief  Return the router's runcount.
+ *
+ *  The runcount is an integer that determines whether the router is running.
+ *  A running router has positive runcount.  Decrementing the router's runcount
+ *  to zero or below will cause the router to stop, although elements like
+ *  DriverManager can intercept the stop request and continue processing.
+ *
+ *  Elements request that the router stop its processing by calling
+ *  adjust_runcount() or please_stop_driver(). */
 inline int32_t
 Router::runcount() const
 {
     return _runcount.value();
 }
 
+/** @brief  Request a driver stop by adjusting the runcount by -1.
+ *  @note   Equivalent to adjust_runcount(-1). */
 inline void
 Router::please_stop_driver()
 {
     adjust_runcount(-1);
 }
 
-inline void
-Router::reserve_driver()
-{
-    adjust_runcount(1);
-}
-
+/** @brief  Returns the router's initial configuration string.
+ *  @return The configuration string specified to the constructor. */
 inline const String&
 Router::configuration_string() const
 {
@@ -670,7 +685,10 @@ Handler::call_read(Element* e, ErrorHandler* errh) const
     return call_read(e, String(), false, errh);
 }
 
-/** @brief Returns a handler incapable of doing anything. */
+/** @brief Returns a handler incapable of doing anything.
+ *
+ *  The returned handler returns false for readable() and writable()
+ *  and has flags() of zero. */
 inline const Handler *
 Handler::blank_handler()
 {

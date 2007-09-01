@@ -53,7 +53,15 @@ static Handler* globalh;
 static int nglobalh;
 static int globalh_cap;
 
-Router::Router(const String &configuration, Master *m)
+/** @brief  Create a router.
+ *  @param  configuration  router configuration
+ *  @param  master         Master object
+ *
+ *  Users generally do not call this function directly, instead creating a
+ *  router object by calling Lexer functions (this function doesn't actually
+ *  parse the configuration string).  The router is registered with the Master
+ *  object, but not initialized or activated. */
+Router::Router(const String &configuration, Master *master)
     : _master(0), _state(ROUTER_NEW), _have_connections(false),
       _running(RUNNING_INACTIVE),
       _handler_bufs(0), _nhandlers_bufs(0), _free_handler(-1),
@@ -67,9 +75,14 @@ Router::Router(const String &configuration, Master *m)
     _runcount = 0;
     _root_element = new ErrorElement;
     _root_element->attach_router(this, -1);
-    m->register_router(this);
+    master->register_router(this);
 }
 
+/** @brief  Destroy the router.
+ *  @invariant  The reference count must be zero.
+ *
+ *  Users generally do not destroy Router objects directly, instead calling
+ *  Router::unuse(). */
 Router::~Router()
 {
     if (_refcount != 0)
@@ -680,17 +693,36 @@ Router::set_connections()
 
 // RUNCOUNT
 
+/** @brief  Set the runcount.
+ *  @param  rc  new runcount
+ *
+ *  Sets the runcount to a specific value.  If the new runcount is zero or
+ *  negative, stops the router; see adjust_runcount(). */
 void
-Router::set_runcount(int32_t x)
+Router::set_runcount(int32_t rc)
 {
-    _runcount = x;
-    if (x <= 0) {
+    _runcount = rc;
+    if (rc <= 0) {
 	_master->set_stopper(1);
 	// ensure that at least one thread is awake to handle the stop event
 	_master->_threads[2]->wake();
     }
 }
 
+/** @brief  Adjust the runcount by @a delta.
+ *  @param  delta  runcount adjustment
+ *
+ *  Essentially performs the assignment "runcount += delta" with compensation
+ *  for integer overflow.  (For instance, if runcount is INT_MAX and delta is
+ *  INT_MAX, the resulting runcount will be INT_MAX, not -2.)  Uses atomic
+ *  operations to ensure that runcount adjustments are not lost.
+ *
+ *  If the adjusted runcount is zero or negative, the router is asked to stop
+ *  its normal processing.  This will happen soon, although not necessarily
+ *  immediately.  Once it stops, the router will search for an element to
+ *  manage the stop event (see the Script and DriverManager elements).  If no
+ *  such element exists, or the script completes without raising the runcount,
+ *  the router stops permanently. */
 void
 Router::adjust_runcount(int32_t delta)
 {
@@ -1031,13 +1063,16 @@ Router::set_hotswap_router(Router *r)
     Handlers cannot be created directly; to create one, call methods such as
     Router::add_read_handler(), Router::add_write_handler(),
     Router::set_handler(), Element::add_read_handler(),
-    Element::add_write_handler(), and Element::set_handler().  */
+    Element::add_write_handler(), and Element::set_handler().
+
+    The HandlerCall class simplifies interaction with handlers and is
+    preferred to direct Handler calls for most purposes. */
 
 /** @brief Call a read handler, possibly with parameters.
     @param e element on which to call the handler
     @param param parameters, or an empty string if no parameters
     @param raw true iff value is raw text (see raw())
-    @param errh error handler
+    @param errh optional error handler
 
     The element must be nonnull; to call a global handler, pass the relevant
     router's Router::root_element().  @a errh may be null, in which case
@@ -1064,33 +1099,39 @@ Handler::call_read(Element* e, const String& param, bool raw, ErrorHandler* errh
 }
 
 /** @brief Call a write handler.
-    @param s value to write to the handler
+    @param value value to write to the handler
     @param e element on which to call the handler
     @param raw true iff value is raw text (see raw())
-    @param errh error handler
+    @param errh optional error handler
 
     The element must be nonnull; to call a global handler, pass the relevant
     router's Router::root_element().  @a errh may be null, in which case
     errors are reported to ErrorHandler::silent_handler(). */
 int
-Handler::call_write(const String& s, Element* e, bool raw, ErrorHandler* errh) const
+Handler::call_write(const String& value, Element* e, bool raw, ErrorHandler* errh) const
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
-    String s_copy(s);
+    String value_copy(value);
     if ((_flags & RAW) && !raw)
-	s_copy = cp_unquote(s_copy);
+	value_copy = cp_unquote(value_copy);
     if ((_flags & (ONE_HOOK | OP_WRITE)) == OP_WRITE)
-	return _hook.rw.w(s_copy, e, _thunk2, errh);
+	return _hook.rw.w(value_copy, e, _thunk2, errh);
     else if (_flags & OP_WRITE)
-	return _hook.h(OP_WRITE, s_copy, e, this, errh);
+	return _hook.h(OP_WRITE, value_copy, e, this, errh);
     else {
 	errh->error("'%s' not a write handler", unparse_name(e).c_str());
 	return -EACCES;
     }
 }
 
-/** @brief Unparses this handler's name, including */
+/** @brief Unparse a handler name.
+ *  @param  e      relevant element, if any
+ *  @param  hname  handler name
+ *
+ *  If @a e is an actual element on some router, then returns "ENAME.hname",
+ *  where ENAME is @a e's @link Element::name() name@endlink.  Otherwise, just
+ *  returns @a hname.*/
 String
 Handler::unparse_name(Element *e, const String &hname)
 {
@@ -1100,10 +1141,12 @@ Handler::unparse_name(Element *e, const String &hname)
 	return hname;
 }
 
-/** @brief Unparses this handler's name.
-    @param e the relevant element
+/** @brief Unparse this handler's name.
+    @param  e  relevant element
 
-    If @a e is an actual element, then returns "ENAME.NAME", where I@a e->name() + "." + */
+    If @a e is an actual element, then returns "ENAME.HNAME", where ENAME is
+    @a e's @link Element::name() name@endlink and HNAME is this handler's
+    name. */
 String
 Handler::unparse_name(Element *e) const
 {
@@ -1465,6 +1508,9 @@ Router::chatter_channel(const String &name) const
  * Creates a new basic NotifierSignal and stores it in @a signal.  The signal
  * is initially active.
  *
+ * @note Users will not generally call this function directly;
+ * Notifier::initialize() will call it as required.
+ *
  * @return >= 0 on success, < 0 on failure
  * @sa NotifierSignal
  */
@@ -1684,7 +1730,7 @@ Router::router_read_handler(Element *e, void *thunk)
     switch (reinterpret_cast<intptr_t>(thunk)) {
 
       case GH_VERSION:
-	return String(CLICK_VERSION "\n");
+	return String(CLICK_VERSION);
     
       case GH_CONFIG:
 	if (r)
