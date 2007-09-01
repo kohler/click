@@ -50,7 +50,7 @@ TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "END_AFTER", cpTimestamp, "end T after first packet", &last_delta,
 		    "INTERVAL", cpTimestamp, "interval", &interval,
 		    "STOP", cpBool, "stop when after end?", &stop,
-		    "END_CALL", cpWriteHandlerCall, "handler to call at end", &_last_h,
+		    "END_CALL", cpHandlerCallPtrWrite, "handler to call at end", &_last_h,
 		    cpEnd) < 0)
 	return -1;
 

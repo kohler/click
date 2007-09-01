@@ -6,7 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000-2001 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
- * Copyright (c) 2004-2006 Regents of the University of California
+ * Copyright (c) 2004-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1989,19 +1989,23 @@ const CpVaParseCmd
   cpIPAddressOrPrefix	= "ip_addr_or_prefix",
   cpIPAddressList	= "ip_addr_list",
   cpEthernetAddress	= "ether_addr",
-  cpEtherAddress	= "ether_addr", // synonym
+  cpEtherAddress	= cpEthernetAddress, // synonym
   cpTCPPort		= "tcp_port",
   cpUDPPort		= "udp_port",
   cpElement		= "element",
   cpHandlerName		= "handler_name",
   cpHandler		= "handler",
-  cpReadHandlerCall	= "read_handler_call",
-  cpWriteHandlerCall	= "write_handler_call",
+  cpHandlerCallRead	= "handler_call_read",
+  cpHandlerCallWrite	= "handler_call_write",
+  cpHandlerCallPtrRead	= "handler_call_ptr_read",
+  cpHandlerCallPtrWrite	= "handler_call_ptr_write",
   cpIP6Address		= "ip6_addr",
   cpIP6Prefix		= "ip6_prefix",
   cpIP6AddressOrPrefix	= "ip6_addr_or_prefix",
   cpDesCblock		= "des_cblock",
-  cpFilename		= "filename";
+  cpFilename		= "filename",
+  cpReadHandlerCall	= cpHandlerCallPtrRead,
+  cpWriteHandlerCall	= cpHandlerCallPtrWrite;
 
 enum {
   cpiEnd = 0,
@@ -2046,8 +2050,10 @@ enum {
   cpiUDPPort,
   cpiElement,
   cpiHandlerName,
-  cpiReadHandlerCall,
-  cpiWriteHandlerCall,
+  cpiHandlerCallRead,
+  cpiHandlerCallWrite,
+  cpiHandlerCallPtrRead,
+  cpiHandlerCallPtrWrite,
   cpiIP6Address,
   cpiIP6Prefix,
   cpiIP6AddressOrPrefix,
@@ -2394,12 +2400,14 @@ default_parsefunc(cp_value *v, const String &arg,
      break;
    }
 
-   case cpiReadHandlerCall:
-    underflower = HandlerCall::CHECK_READ | HandlerCall::ALLOW_PREINITIALIZE;
+   case cpiHandlerCallRead:
+   case cpiHandlerCallPtrRead:
+    underflower = HandlerCall::OP_READ | HandlerCall::PREINITIALIZE;
     goto handler_call;
 
-   case cpiWriteHandlerCall:
-    underflower = HandlerCall::CHECK_WRITE | HandlerCall::ALLOW_PREINITIALIZE;
+   case cpiHandlerCallWrite:
+   case cpiHandlerCallPtrWrite:
+    underflower = HandlerCall::OP_WRITE | HandlerCall::PREINITIALIZE;
     goto handler_call;
 
    handler_call: {
@@ -2612,15 +2620,30 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      break;
    }
 
-   case cpiReadHandlerCall:
-    helper = HandlerCall::CHECK_READ | HandlerCall::ALLOW_PREINITIALIZE;
+   case cpiHandlerCallRead:
+    helper = HandlerCall::OP_READ | HandlerCall::PREINITIALIZE;
     goto handler_call;
 
-   case cpiWriteHandlerCall:
-    helper = HandlerCall::CHECK_WRITE | HandlerCall::ALLOW_PREINITIALIZE;
+   case cpiHandlerCallWrite:
+    helper = HandlerCall::OP_WRITE | HandlerCall::PREINITIALIZE;
     goto handler_call;
 
-   handler_call:
+   handler_call: {
+	HandlerCall *hc = static_cast<HandlerCall *>(v->store);
+	*hc = HandlerCall(v->v_string);
+	hc->initialize(helper, context);
+	break;
+    }
+
+   case cpiHandlerCallPtrRead:
+    helper = HandlerCall::OP_READ | HandlerCall::PREINITIALIZE;
+    goto handler_call_ptr;
+
+   case cpiHandlerCallPtrWrite:
+    helper = HandlerCall::OP_WRITE | HandlerCall::PREINITIALIZE;
+    goto handler_call_ptr;
+
+   handler_call_ptr:
     HandlerCall::reset(*(HandlerCall**)v->store, v->v_string, helper, context, (ErrorHandler*)0);
     break;
 #endif
@@ -3508,8 +3531,10 @@ cp_va_static_initialize()
 #ifndef CLICK_TOOL
     cp_register_argtype(cpElement, "element name", 0, default_parsefunc, default_storefunc, cpiElement);
     cp_register_argtype(cpHandlerName, "handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiHandlerName);
-    cp_register_argtype(cpReadHandlerCall, "read handler name", 0, default_parsefunc, default_storefunc, cpiReadHandlerCall);
-    cp_register_argtype(cpWriteHandlerCall, "write handler name and value", 0, default_parsefunc, default_storefunc, cpiWriteHandlerCall);
+    cp_register_argtype(cpHandlerCallRead, "read handler name", 0, default_parsefunc, default_storefunc, cpiHandlerCallRead);
+    cp_register_argtype(cpHandlerCallWrite, "write handler name and value", 0, default_parsefunc, default_storefunc, cpiHandlerCallWrite);
+    cp_register_argtype(cpHandlerCallPtrRead, "read handler name", 0, default_parsefunc, default_storefunc, cpiHandlerCallPtrRead);
+    cp_register_argtype(cpHandlerCallPtrWrite, "write handler name and value", 0, default_parsefunc, default_storefunc, cpiHandlerCallPtrWrite);
 #endif
 #ifdef HAVE_IP6
     cp_register_argtype(cpIP6Address, "IPv6 address", 0, default_parsefunc, default_storefunc, cpiIP6Address);

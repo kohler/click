@@ -227,19 +227,19 @@ extern const CpVaParseCmd
     cpUDPPort,		// 			uint16_t*
     cpElement,		//			Element**
     cpHandlerName,	//			Element**, String* hname
-    cpReadHandlerCall,	//			HandlerCall**
-    cpWriteHandlerCall,	//			HandlerCall**
+    cpHandlerCallRead,	//			HandlerCall*
+    cpHandlerCallWrite,	//			HandlerCall*
+    cpHandlerCallPtrRead, //			HandlerCall**
+    cpHandlerCallPtrWrite, //			HandlerCall**
     cpIP6Address,	//			IP6Address*
     cpIP6Prefix,	//			IP6Address* a, IP6Address* mask
     cpIP6AddressOrPrefix,//			IP6Address* a, IP6Address* mask
     cpDesCblock,	//			uint8_t[8]
     cpFilename,		//			String*
     // old names, here for compatibility:
-    cpMilliseconds,	//			int* milliseconds
-    cpUnsignedLongLong,	//			uint64_t*
-    cpNonnegReal2,	// int frac_bits	unsigned*
-    cpNonnegReal10,	// int frac_digits	unsigned*
-    cpEtherAddress;	//			EtherAddress*
+    cpEtherAddress,	//			EtherAddress*
+    cpReadHandlerCall,	//			HandlerCall**
+    cpWriteHandlerCall;	//			HandlerCall**
 
 int cp_va_parse(const Vector<String>& argv, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse(const String& arg, CP_VA_PARSE_ARGS_REST);

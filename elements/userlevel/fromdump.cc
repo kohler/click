@@ -104,7 +104,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "END", cpTimestamp, "ending time", &last_time,
 		    "END_AFTER", cpTimestamp, "ending time offset", &last_time_off,
 		    "INTERVAL", cpTimestamp, "time interval", &interval,
-		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_end_h,
+		    "END_CALL", cpHandlerCallPtrWrite, "write handler for ending time", &_end_h,
 #if CLICK_NS
 		    "PER_NODE", cpBool, "prepend unique node name?", &per_node,
 #endif

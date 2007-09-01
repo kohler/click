@@ -4,76 +4,435 @@
 #include <click/router.hh>
 CLICK_DECLS
 
+/** @brief  Convenience class for calling handlers.
+ *
+ *  The HandlerCall class simplifies the process of calling Click handlers.
+ *  (The lower-level interface is the Handler class.)  HandlerCall is used in
+ *  two ways: (1) to call handlers immediately via static member functions,
+ *  and (2) to set up future handler calls via HandlerCall objects.  The
+ *  immediate handler call functions take handler names as arguments and
+ *  perform all necessary error checks before calling handlers, if any.  A
+ *  HandlerCall object encapsulates a handler reference (possibly including
+ *  parameters), again automating all necessary error checks.
+ *
+ *  <h2>Immediate Handler Calls</h2>
+ *
+ *  This example code shows how to use the HandlerCall functions for calling
+ *  handlers immediately.
+ *
+ *  @code
+ *  class YourElement { ...
+ *      Element *_other;
+ *  }
+ *
+ *  void YourElement::function() {
+ *      // Call _other's "config" read handler.
+ *      String result = HandlerCall::call_read(_other, "config");
+ *
+ *      // The same, providing an error handler to print errors.
+ *      ErrorHandler *errh = ErrorHandler::default_handler();
+ *      result = HandlerCall::call_read(_other, "config", errh);
+ *      // (Each function takes an optional last argument of "errh".)
+ *
+ *      // Call the "foo.config" read handler.  Search for element "foo" in
+ *      // the current compound element context.
+ *      result = HandlerCall::call_read("foo.config", this);
+ *
+ *      // Call the global "config" read handler for the current router.
+ *      result = HandlerCall::call_read("config", this);
+ *
+ *      // Call _other's "stop" write handler with empty value.
+ *      int success = HandlerCall::call_write(_other, "stop");
+ *
+ *      // Call _other's "config" write handler with value "blah".
+ *      success = HandlerCall::call_write(_other, "config", "blah");
+ *
+ *      // Call the "foo.config" write handler with value "blah".
+ *      success = HandlerCall::call_write("foo.config blah", this);
+ *      // Or, alternately:
+ *      success = HandlerCall::call_write("foo.config", "blah", this);
+ *  }
+ *  @endcode
+ *
+ *  <h2>HandlerCall Objects</h2>
+ *
+ *  This example code shows how to use the HandlerCall objects to call
+ *  handlers with simplified error checking.
+ *
+ *  @code
+ *  class YourElement { ...
+ *      HandlerCall _read_call;
+ *      HandlerCall _write_call;
+ *  }
+ *
+ *  YourElement::YourElement()
+ *      : _read_call(), _write_call() {
+ *  }
+ *
+ *  int YourElement::configure(Vector<String> &conf, ErrorHandler *errh) {
+ *      return cp_va_parse(conf, this, errh,
+ *                         cpOptional,
+ *                         cpHandlerCallRead, "read call", &_read_call,
+ *                         cpHandlerCallWrite, "write call", &_write_call,
+ *                         cpEnd);
+ *  }
+ *
+ *  int YourElement::initialize(ErrorHandler *errh) {
+ *      if ((_read_call && _read_call.initialize_read(this, errh) < 0)
+ *          || (_write_call && _write_call.initialize_write(this, errh) < 0))
+ *          return -1;
+ *      return 0;
+ *  }
+ *
+ *  void YourElement::function() {
+ *      // call _read_call, print result
+ *      if (_read_call)
+ *          click_chatter("%s", _read_call.call_read());
+ *
+ *      // call _write_call with error handler
+ *      if (_write_call)
+ *          _write_call.call_write(ErrorHandler::default_handler());
+ *  }
+ *  @endcode
+ *
+ *  If usually handler calls are not specified, you can save a small amount of
+ *  space by using pointers to HandlerCall objects, as in this example.  The
+ *  cpHandlerCallPtrRead and cpHandlerCallPtrWrite types allow the _read_call
+ *  and _write_call members to start out as null pointers.
+ *
+ *  @code
+ *  class YourElement { ...
+ *      HandlerCall *_read_call;
+ *      HandlerCall *_write_call;
+ *  }
+ *
+ *  YourElement::YourElement()
+ *      : _read_call(0), _write_call(0) {
+ *  }
+ *
+ *  int YourElement::configure(Vector<String> &conf, ErrorHandler *errh) {
+ *      return cp_va_parse(conf, this, errh,
+ *                         cpOptional,
+ *                         cpHandlerCallPtrRead, "read call", &_read_call,
+ *                         cpHandlerCallPtrWrite, "write call", &_write_call,
+ *                         cpEnd);
+ *  }
+ *
+ *  int YourElement::initialize(ErrorHandler *errh) {
+ *      if ((_read_call && _read_call->initialize_read(this, errh) < 0)
+ *          || (_write_call && _write_call->initialize_write(this, errh) < 0))
+ *          return -1;
+ *      return 0;
+ *  }
+ *
+ *  void YourElement::cleanup(CleanupStage) {
+ *      delete _read_call;
+ *      delete _write_call;
+ *  }
+ *
+ *  void YourElement::function() {
+ *      // call _read_call, print result
+ *      if (_read_call)
+ *          click_chatter("%s", _read_call->call_read());
+ *
+ *      // call _write_call with error handler
+ *      if (_write_call)
+ *          _write_call->call_write(ErrorHandler::default_handler());
+ *  }
+ *  @endcode
+ */
 class HandlerCall { public:
 
-    // Create a HandlerCall. You generally don't need to do this explicitly;
-    // see the 'reset_read' and 'reset_write' methods below.
-    HandlerCall()		: _e(0), _h(Handler::blank_handler()) { }
-    HandlerCall(const String& s): _e((Element*)(-1)), _h(Handler::blank_handler()), _value(s) { }
+    /** @name Immediate Handler Calls */
+    //@{
+    static String call_read(Element *e, const String &hname,
+			    ErrorHandler *errh = 0);
+    static String call_read(const String &hdesc, Element *context,
+			    ErrorHandler *errh = 0);
+    static int call_write(Element *e, const String &hname,
+			  ErrorHandler *errh = 0);
+    static int call_write(Element *e, const String &hname, const String &value,
+			  ErrorHandler *errh = 0);
+    static int call_write(const String &hdesc,
+			  Element *context, ErrorHandler *errh = 0);
+    static int call_write(const String &hdesc, const String &value,
+			  Element *context, ErrorHandler *errh = 0);
+    //@}
 
-    // Return true iff the HandlerCall is valid.
-    bool ok() const		{ return _h != Handler::blank_handler(); }
-    operator bool() const	{ return _h != Handler::blank_handler(); }
 
-    // Return true iff the HandlerCall has been initialized.
-    bool initialized() const	{ return _e != (Element*)(-1); }
-
-    // Return a String that will parse into an equivalent HandlerCall.
-    String unparse() const;
-
-    // Return the element on which to call this handler.
-    Element* element() const	{ return _e; }
     
-    // Return the handler to call.
-    const Handler* handler() const { return _h; }
-    
-    // Return the value to be sent to a write handler.
-    const String& value() const	{ assert(initialized()); return _value; }
+    /** @brief  Construct an empty HandlerCall.
+     *
+     *  Any attempt to read, write, or initialize the HandlerCall will
+     *  fail. */
+    HandlerCall()
+	: _e(0), _h(Handler::blank_handler()) {
+    }
 
-    // Change the value to be sent to a write handler.
-    void set_value(const String& v) { assert(initialized()); _value = v; }
+    /** @brief  Construct a HandlerCall described by @a hdesc.
+     *  @param  hdesc  handler description <tt>"[ename.]hname[ value]"</tt>
+     *
+     *  Although the resulting HandlerCall isn't empty, it must be initialized
+     *  before it can be used.  It returns false for initialized().  The
+     *  handler description is not checked for syntax errors, though;
+     *  initialize() does that. */
+    HandlerCall(const String &hdesc)
+	: _e(0), _h(Handler::blank_handler()), _value(hdesc) {
+    }
 
-    // Call this handler and return its result. Returns the empty string or
-    // negative if the HandlerCall isn't ok().
-    inline String call_read(ErrorHandler* = 0) const;
-    inline int call_write(ErrorHandler* = 0) const;
-    inline int call_write(const String &extra, ErrorHandler* = 0) const;
 
-    // Call the specified handler and return its result. Returns the empty
-    // string or negative if the handler isn't valid.
-    static String call_read(Element *e, const String &hname, ErrorHandler* = 0);
-    static String call_read(const String &hdesc, Element *context, ErrorHandler* = 0);
-    static int call_write(Element *e, const String &hname, const String& value = String(), ErrorHandler* = 0);
-    static int call_write(const String &hdesc_with_value, Element *context, ErrorHandler* = 0);
-    static int call_write(const String &hdesc, const String &value, Element *context, ErrorHandler* = 0);
-    
-    // Replace 'hcall' with a handler call parsed from 'hdesc'. A new
-    // HandlerCall may be allocated if 'hcall' is null. 'hcall' is not changed
-    // unless 'hdesc' is valid. Returns 0 if valid, negative if not.
-    static inline int reset_read(HandlerCall*& hcall, const String& hdesc, Element* context, ErrorHandler* = 0);
-    static inline int reset_write(HandlerCall*& hcall, const String& hdesc, Element* context, ErrorHandler* = 0);
-
-    // Replace 'hcall' with a handler call obtained from 'e', 'hname', and
-    // possibly 'value'. A new HandlerCall may be allocated if 'hcall' is
-    // null. 'hcall' is not changed unless the specified handler is valid.
-    // Returns 0 if valid, negative if not.
-    static inline int reset_read(HandlerCall*& hcall, Element* e, const String& hname, ErrorHandler* = 0);
-    static inline int reset_write(HandlerCall*& hcall, Element* e, const String& hname, const String& value = String(), ErrorHandler* = 0);
-
-    // Initialize a handler call once handler information is available.
-    // Returns 0 if valid, negative if not.
     enum Flags {
-	CHECK_READ = 1, CHECK_WRITE = 2, ALLOW_PREINITIALIZE = 4
+	OP_READ = Handler::OP_READ, OP_WRITE = Handler::OP_WRITE,
+	PREINITIALIZE = 4
     };
-    int initialize(int flags, Element *context, ErrorHandler* = 0);
-    inline int initialize_read(Element *context, ErrorHandler* = 0);
-    inline int initialize_write(Element *context, ErrorHandler* = 0);
 
-    // Less-used functions.
-    void clear()		{ _e = 0; _h = Handler::blank_handler(); _value = String(); }
-    static int reset(HandlerCall*&, const String& hdesc, int flags, Element*, ErrorHandler* = 0);
-    static int reset(HandlerCall*&, Element*, const String& hname, const String& value, int flags, ErrorHandler* = 0);
+    /** @brief  Initialize the HandlerCall.
+     *  @param  flags    zero or more of OP_READ, OP_WRITE, PREINITIALIZE
+     *  @param  context  optional element context
+     *  @param  errh     optional error handler
+     *  @return 0 on success, negative on failure
+     *
+     *  Initializes the HandlerCall object.  The handler description supplied
+     *  to the constructor is parsed and checked for syntax errors.  Any
+     *  element reference is looked up relative to @a context, if any.  (For
+     *  example, if @a hdesc was "x.config" and @a context's name is
+     *  "aaa/bbb/ccc", this will search for elements named aaa/bbb/x, aaa/x,
+     *  and finally x.  If @a context is null, then the description must refer
+     *  to a global handler.)  If OP_READ is set in @a flags, then there
+     *  must be a read handler named appropriately; if OP_WRITE is set,
+     *  then there must be a write handler.
+     *
+     *  Initialization fails if the handler description was bogus (for
+     *  example, an empty string, or something like "*#!$&!(#&$."), if the
+     *  named handler does not exist, if a read handler description has
+     *  parameters but the read handler doesn't actually take parameters, and
+     *  so forth.  If @a errh is nonnull, errors are reported there.  The
+     *  HandlerCall remains uninitialized on failure, and future call_read()
+     *  and call_write() attempts will correctly fail.
+     *
+     *  If the PREINITIALIZE flag is set, the initialize function will check
+     *  whether the router's handlers are ready (Router::handlers_ready()).
+     *  If handlers are not ready, then initialize() will check for syntax
+     *  errors, but not actually look up the handler (since we don't know yet
+     *  whether or not the handler exists).  Absent a syntax error,
+     *  initialize() will return 0 for success even though the HandlerCall
+     *  remains uninitialized. */
+    int initialize(int flags, Element *context, ErrorHandler *errh = 0);
 
+    /** @brief  Initialize the HandlerCall for reading.
+     *  @param  context  optional element context
+     *  @param  errh     optional error handler
+     *
+     *  Equivalent to @link initialize(int, Element*, ErrorHandler*)
+     *  initialize@endlink(OP_READ, @a context, @a errh). */
+    inline int initialize_read(Element *context, ErrorHandler *errh = 0);
+
+    /** @brief  Initialize the HandlerCall for writing.
+     *  @param  context  optional element context
+     *  @param  errh     optional error handler
+     *
+     *  Equivalent to @link initialize(int, Element*, ErrorHandler*)
+     *  initialize@endlink(OP_WRITE, @a context, @a errh). */
+    inline int initialize_write(Element *context, ErrorHandler *errh = 0);
+
+    
+    typedef Element *HandlerCall::*unspecified_bool_type;
+
+    /** @brief  Test if HandlerCall is empty.
+     *  @return True if HandlerCall is not empty, false otherwise.
+     *
+     *  Valid HandlerCall objects have been successfully initialized. */
+    operator unspecified_bool_type() const {
+	return _h != Handler::blank_handler() || _value ? &HandlerCall::_e : 0;
+    }
+    
+    /** @brief  Test if HandlerCall is empty.
+     *  @return True if HandlerCall is empty, false otherwise. */
+    bool empty() const {
+	return _h == Handler::blank_handler() && !_value;
+    }
+
+    /** @brief  Test if HandlerCall is initialized.
+     *  @return True if HandlerCall is initialized, false otherwise. */
+    bool initialized() const {
+	return _h != Handler::blank_handler();
+    }
+
+
+    /** @brief  Call a read handler.
+     *  @param  errh  optional error handler
+     *  @return  Read handler result.
+     *
+     *  Fails and returns the empty string if this HandlerCall is invalid or
+     *  not a read handler.  If @a errh is nonnull, then any errors are
+     *  reported there, whether from HandlerCall or the handler itself. */
+    inline String call_read(ErrorHandler *errh = 0) const;
+
+    /** @brief  Call a write handler.
+     *  @param  errh  optional error handler
+     *  @return  Write handler result.
+     *
+     *  Fails and returns -EINVAL if this HandlerCall is invalid or not a
+     *  write handler.  If @a errh is nonnull, then any errors are reported
+     *  there, whether from HandlerCall or the handler itself. */
+    inline int call_write(ErrorHandler *errh = 0) const;
+
+    /** @brief  Call a write handler with an additional value.
+     *  @param  value_ext  write value extension
+     *  @param  errh       optional error handler
+     *  @return  Write handler result.
+     *
+     *  The @a value_ext is appended to the write value before the handler is
+     *  called.  (For example, consider a handler with description "a.set
+     *  value".  call_write("foo") will call "a.set value foo".)  Fails and
+     *  returns -EINVAL if this HandlerCall is invalid or not a write handler.
+     *  If @a errh is nonnull, then any errors are reported there, whether
+     *  from HandlerCall or the handler itself. */
+    inline int call_write(const String &value_ext, ErrorHandler *errh = 0) const;
+
+
+    /** @brief  Create and initialize a HandlerCall from @a hdesc.
+     *  @param  hcall    stores the HandlerCall result
+     *  @param  hdesc    handler description "[ename.]hname[ value]"
+     *  @param  flags    initialization flags (OP_READ, OP_WRITE, PREINITIALIZE)
+     *  @param  context  optional element context
+     *  @param  errh     optional error handler
+     *  @return  0 on success, -EINVAL on failure
+     *
+     *  Creates a HandlerCall and initializes it.  Behaves somewhat like:
+     *
+     *  @code
+     *  hcall = new HandlerCall(hdesc);
+     *  return hcall->initialize(flags, context, errh);
+     *  @endcode
+     *
+     *  However, (1) if initialization fails, then @a hcall is untouched; and
+     *  (2) if initialization succeeds and @a hcall is not null, then the
+     *  existing HandlerCall is assigned so that it corresponds to the new one
+     *  (no new memory allocations).
+     *
+     *  If @a errh is nonnull, then any errors are reported there. */
+    static int reset(HandlerCall *&hcall, const String &hdesc, int flags,
+		     Element *context, ErrorHandler *errh = 0);
+
+    /** @brief  Create and initialize a HandlerCall on element @a e.
+     *  @param  hcall  stores the HandlerCall result
+     *  @param  e      relevant element, if any
+     *  @param  hname  handler name
+     *  @param  value  handler value
+     *  @param  flags  initialization flags (OP_READ, OP_WRITE, PREINITIALIZE)
+     *  @param  errh   optional error handler
+     *  @return  0 on success, -EINVAL on failure
+     *
+     *  Creates a HandlerCall and initializes it.  Behaves analogously to
+     *  reset(HandlerCall*&, const String&, int, Element*, ErrorHandler*). */
+    static int reset(HandlerCall *&hcall,
+		     Element *e, const String &hname, const String &value,
+		     int flags, ErrorHandler *errh = 0);
+
+
+    /** @brief  Create and initialize a read HandlerCall from @a hdesc.
+     *  @param  hcall    stores the HandlerCall result
+     *  @param  hdesc    handler description "[ename.]hdesc[ param]"
+     *  @param  context  optional element context
+     *  @param  errh     optional error handler
+     *  @return  0 on success, -EINVAL on failure
+     *
+     *  Equivalent to
+     *  @link reset(HandlerCall*&, const String&, int, Element*, ErrorHandler*) reset@endlink(@a hcall, @a hdesc, OP_READ, @a context, @a errh). */
+    static inline int reset_read(HandlerCall *&hcall, const String &hdesc,
+				 Element *context, ErrorHandler *errh = 0);
+
+    /** @brief  Create and initialize a read HandlerCall from @a hdesc.
+     *  @param  hcall  stores the HandlerCall result
+     *  @param  e      relevant element, if any
+     *  @param  hname  handler name
+     *  @param  errh   optional error handler
+     *  @return  0 on success, -EINVAL on failure
+     *
+     *  Equivalent to
+     *  @link reset(HandlerCall*&, Element*, const String&, const String&, int, ErrorHandler*) reset@endlink(@a hcall, @a e, @a hname, String(), OP_READ, @a context, @a errh). */
+    static inline int reset_read(HandlerCall *&hcall,
+				 Element *e, const String &hname,
+				 ErrorHandler *errh = 0);
+
+    /** @brief  Create and initialize a write HandlerCall from @a hdesc.
+     *  @param  hcall    stores the HandlerCall result
+     *  @param  hdesc    handler description "[ename.]hdesc[ value]"
+     *  @param  context  optional element context
+     *  @param  errh     optional error handler
+     *  @return  0 on success, -EINVAL on failure
+     *
+     *  Equivalent to
+     *  @link reset(HandlerCall*&, const String&, int, Element*, ErrorHandler*) reset@endlink(@a hcall, @a hdesc, OP_WRITE, @a context, @a errh). */
+    static inline int reset_write(HandlerCall *&hcall, const String &hdesc,
+				  Element *context, ErrorHandler *errh = 0);
+
+    /** @brief  Create and initialize a read HandlerCall from @a hdesc.
+     *  @param  hcall  stores the HandlerCall result
+     *  @param  e      relevant element, if any
+     *  @param  hname  handler name
+     *  @param  value  write handler value
+     *  @param  errh   optional error handler
+     *  @return  0 on success, -EINVAL on failure
+     *
+     *  Equivalent to
+     *  @link reset(HandlerCall*&, Element*, const String&, const String&, int, ErrorHandler*) reset@endlink(@a hcall, @a e, @a hname, @ value, OP_WRITE, @a context, @a errh). */
+    static inline int reset_write(HandlerCall *&hcall,
+				  Element *e, const String &hname,
+				  const String &value = String(),
+				  ErrorHandler *errh = 0);
+
+
+    /** @brief  Return the Element corresponding to this HandlerCall.
+     *
+     *  Returns null if invalid.  A global handler may return some
+     *  Router::root_element() or null. */
+    Element *element() const {
+	return _e;
+    }
+    
+    /** @brief  Return the Handler corresponding to this HandlerCall.
+     *
+     *  Returns Handler::blank_handler() if invalid. */
+    const Handler *handler() const {
+	return _h;
+    }
+
+    /** @brief  Return the write handler value and/or read handler parameters.
+     *
+     *  Returns the empty string if invalid. */
+    const String &value() const	{
+	return initialized() ? _value : String::empty_string();
+    }
+
+    /** @brief  Sets the write handler value and/or read handler parameters.
+     *  @param  value  new value and/or parameters
+     *
+     *  Does nothing if invalid. */
+    void set_value(const String &value) {
+	if (initialized())
+	    _value = value;
+    }
+
+    /** @brief  Return a String that will parse into an equivalent HandlerCall.
+     *
+     *  Will work even if the HandlerCall has not been initialized. */
+    String unparse() const;
+    
+    /** @brief  Make this HandlerCall empty.
+     *
+     *  Subsequent attempts to read, write, or initialize the HandlerCall will
+     *  fail. */
+    void clear() {
+	_e = 0;
+	_h = Handler::blank_handler();
+	_value = String();
+    }
+
+    
+    enum { CHECK_READ = OP_READ, CHECK_WRITE = OP_WRITE };
+    
   private:
     
     Element* _e;
@@ -88,37 +447,37 @@ class HandlerCall { public:
 inline int
 HandlerCall::reset_read(HandlerCall*& hcall, const String& hdesc, Element* context, ErrorHandler* errh)
 {
-    return reset(hcall, hdesc, CHECK_READ, context, errh);
+    return reset(hcall, hdesc, OP_READ, context, errh);
 }
 
 inline int
 HandlerCall::reset_write(HandlerCall*& hcall, const String& hdesc, Element* context, ErrorHandler* errh)
 {
-    return reset(hcall, hdesc, CHECK_WRITE, context, errh);
+    return reset(hcall, hdesc, OP_WRITE, context, errh);
 }
 
 inline int
 HandlerCall::reset_read(HandlerCall*& hcall, Element* e, const String& hname, ErrorHandler* errh)
 {
-    return reset(hcall, e, hname, String(), CHECK_READ, errh);
+    return reset(hcall, e, hname, String(), OP_READ, errh);
 }
 
 inline int
 HandlerCall::reset_write(HandlerCall*& hcall, Element* e, const String& hname, const String& value, ErrorHandler* errh)
 {
-    return reset(hcall, e, hname, value, CHECK_WRITE, errh);
+    return reset(hcall, e, hname, value, OP_WRITE, errh);
 }
 
 inline int
 HandlerCall::initialize_read(Element* context, ErrorHandler* errh)
 {
-    return initialize(CHECK_READ, context, errh);
+    return initialize(OP_READ, context, errh);
 }
 
 inline int
 HandlerCall::initialize_write(Element* context, ErrorHandler* errh)
 {
-    return initialize(CHECK_WRITE, context, errh);
+    return initialize(OP_WRITE, context, errh);
 }
 
 inline String
@@ -134,12 +493,30 @@ HandlerCall::call_write(ErrorHandler *errh) const
 }
 
 inline int
-HandlerCall::call_write(const String &extra, ErrorHandler *errh) const
+HandlerCall::call_write(const String &value_ext, ErrorHandler *errh) const
 {
-    if (_value && extra)
-	return _h->call_write(_value + " " + extra, _e, false, errh);
+    if (_value && value_ext)
+	return _h->call_write(_value + " " + value_ext, _e, false, errh);
     else
-	return _h->call_write(_value ? _value : extra, _e, false, errh);
+	return _h->call_write(_value ? _value : value_ext, _e, false, errh);
+}
+
+/** @brief  Call a write handler specified by element and handler name.
+ *  @param  e      relevant element, if any
+ *  @param  hname  handler name
+ *  @param  errh   optional error handler
+ *  @return  handler result, or -EINVAL on error
+ *
+ *  Searches for a write handler named @a hname on element @a e.  If the
+ *  handler exists, calls it (with empty write value) and returns the result.
+ *  If @a errh is nonnull, then errors, such as a missing handler or a
+ *  read-only handler, are reported there.  If @a e is some router's @link
+ *  Router::root_element() root element@endlink, calls the global write
+ *  handler named @a hname on that router. */
+inline int
+HandlerCall::call_write(Element *e, const String &hname, ErrorHandler *errh)
+{
+    return call_write(e, hname, String(), errh);
 }
 
 CLICK_ENDDECLS

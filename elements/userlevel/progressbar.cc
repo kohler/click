@@ -81,7 +81,7 @@ ProgressBar::initialize(ErrorHandler *errh)
     _hs.assign(words.size(), 0);
 
     for (int i = 0; i < words.size(); i++)
-	if (!cp_handler(words[i], HandlerCall::CHECK_READ, &_es[i], &_hs[i], this, errh))
+	if (!cp_handler(words[i], Handler::OP_READ, &_es[i], &_hs[i], this, errh))
 	    return -1;
 
     if (!isatty(STDERR_FILENO) || (check_stdout && isatty(STDOUT_FILENO)))
@@ -396,7 +396,7 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 	if (cp_double(str, &pb->_size))
 	    return 0;
 	else
-	    return errh->error("`size' should be double (size value)");
+	    return errh->error("'size' should be double (size value)");
       case H_POSHANDLER:
       case H_SIZEHANDLER: {
 	  Vector<String> words;
@@ -409,7 +409,7 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 	  Vector<const Handler*> hs(total, 0);
 
 	  for (int i = 0; i < words.size(); i++)
-	      if (!cp_handler(words[i], HandlerCall::CHECK_READ, &es[i+offset], &hs[i+offset], pb, errh))
+	      if (!cp_handler(words[i], Handler::OP_READ, &es[i+offset], &hs[i+offset], pb, errh))
 		  return -1;
 
 	  offset = (is_pos ? 0 : words.size() - pb->_first_pos_h);
@@ -430,7 +430,7 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 		pb->_timer.schedule_now();
 	    return 0;
 	} else
-	    return errh->error("`active' should be bool (active setting)");
+	    return errh->error("'active' should be bool (active setting)");
       case H_RESET:
 	pb->_have_size = false;
 	pb->_status = ST_FIRST;

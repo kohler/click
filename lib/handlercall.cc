@@ -4,7 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2001 International Computer Science Institute
- * Copyright (c) 2004-2006 Regents of the University of California
+ * Copyright (c) 2004-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -49,14 +49,14 @@ HandlerCall::initialize(int flags, Element* context, ErrorHandler* errh)
 
     // exit early if handlers not yet defined
     if (!e->router()->handlers_ready())
-	return (flags & ALLOW_PREINITIALIZE ? 0 : errh->error("handlers not yet defined"));
+	return (flags & PREINITIALIZE ? 0 : errh->error("handlers not yet defined"));
 
     // finish up in assign()
     return assign(e, hname, value, flags, errh);
 }
 
 static int
-handler_error(Element* e, const String& hname, bool write, ErrorHandler* errh)
+handler_error(Element* e, const String &hname, bool write, ErrorHandler* errh)
 {
     if (errh)
 	errh->error((write ? "no '%s' write handler" : "no '%s' read handler"), Handler::unparse_name(e, hname).c_str());
@@ -64,15 +64,16 @@ handler_error(Element* e, const String& hname, bool write, ErrorHandler* errh)
 }
 
 int
-HandlerCall::assign(Element* e, const String& hname, const String& value, int flags, ErrorHandler* errh)
+HandlerCall::assign(Element *e, const String &hname, const String &value, int flags, ErrorHandler* errh)
 {
     // find handler
     const Handler* h = Router::handler(e, hname);
     if (!h
-	|| ((flags & CHECK_READ) && !h->readable())
-	|| ((flags & CHECK_WRITE) && !h->writable()))
-	return handler_error(e, hname, flags & CHECK_WRITE /* XXX */, errh);
-    else if (value && (flags & CHECK_READ) && !h->read_param()) {
+	|| ((flags & OP_WRITE) && !h->writable()))
+	return handler_error(e, hname, flags & OP_WRITE, errh);
+    else if ((flags & OP_READ) && !h->readable())
+	return handler_error(e, hname, false, errh);
+    else if (value && (flags & OP_READ) && !h->read_param()) {
 	errh->error("read handler '%s' does not take parameters", Handler::unparse_name(e, hname).c_str());
 	return -EINVAL;
     }
@@ -110,51 +111,120 @@ HandlerCall::reset(HandlerCall*& call, Element* e, const String& hname, const St
     return retval;
 }
 
+/** @brief  Call a read handler specified by element and handler name.
+ *  @param  e      relevant element, if any
+ *  @param  hname  handler name
+ *  @param  errh   optional error handler
+ *  @return  handler result, or empty string on error
+ *
+ *  Searches for a read handler named @a hname on element @a e.  If the
+ *  handler exists, calls it (with no parameters) and returns the result.  If
+ *  @a errh is nonnull, then errors, such as a missing handler or a write-only
+ *  handler, are reported there.  If @a e is some router's @link
+ *  Router::root_element() root element@endlink, calls the global handler
+ *  named @a hname on that router. */
 String
-HandlerCall::call_read(Element* e, const String& hname, ErrorHandler* errh)
+HandlerCall::call_read(Element *e, const String &hname, ErrorHandler *errh)
 {
     HandlerCall hc;
     String empty;
-    if (hc.assign(e, hname, empty, CHECK_READ, errh) >= 0)
+    if (hc.assign(e, hname, empty, OP_READ, errh) >= 0)
 	return hc._h->call_read(hc._e, empty, true, errh);
     else
 	return empty;
 }
 
-int
-HandlerCall::call_write(Element* e, const String& hname, const String& value, ErrorHandler* errh)
-{
-    HandlerCall hc;
-    int rv = hc.assign(e, hname, value, CHECK_WRITE, errh);
-    return (rv >= 0 ? hc.call_write(errh) : rv);
-}
-
-
+/** @brief  Call a read handler.
+ *  @param  hdesc    handler description <tt>"[ename.]hname[ params]"</tt>
+ *  @param  context  optional element context
+ *  @param  errh     optional error handler
+ *  @return  handler result, or empty string on error
+ *
+ *  Searches for a read handler matching @a hdesc.  Any element name in @a
+ *  hdesc is looked up relative to @a context.  (For example, if @a hdesc is
+ *  "x.config" and @a context's name is "aaa/bbb/ccc", will search for
+ *  elements named aaa/bbb/x, aaa/x, and finally x.)  If the handler exists,
+ *  calls it (with specified parameters, if any) and returns the result.  If
+ *  @a errh is nonnull, then errors, such as a missing handler or a write-only
+ *  handler, are reported there.  If @a hdesc has no <tt>ename</tt>, then
+ *  calls the global handler named <tt>hname</tt> on @a context's router. */
 String
-HandlerCall::call_read(const String& hdesc, Element* e, ErrorHandler* errh)
+HandlerCall::call_read(const String &hdesc, Element *context, ErrorHandler* errh)
 {
     HandlerCall hcall(hdesc);
-    if (hcall.initialize(CHECK_READ, e, errh) >= 0)
+    if (hcall.initialize(OP_READ, context, errh) >= 0)
 	return hcall.call_read();
     else
 	return String();
 }
 
+/** @brief  Call a write handler specified by element and handler name.
+ *  @param  e      relevant element, if any
+ *  @param  hname  handler name
+ *  @param  value  write value
+ *  @param  errh   optional error handler
+ *  @return  handler result, or -EINVAL on error
+ *
+ *  Searches for a write handler named @a hname on element @a e.  If the
+ *  handler exists, calls it with @a value and returns the result.
+ *  If @a errh is nonnull, then errors, such as a missing handler or a
+ *  read-only handler, are reported there.  If @a e is some router's @link
+ *  Router::root_element() root element@endlink, calls the global write
+ *  handler named @a hname on that router. */
 int
-HandlerCall::call_write(const String &hdesc, Element *e, ErrorHandler *errh)
+HandlerCall::call_write(Element* e, const String& hname, const String& value, ErrorHandler* errh)
+{
+    HandlerCall hc;
+    int rv = hc.assign(e, hname, value, OP_WRITE, errh);
+    return (rv >= 0 ? hc.call_write(errh) : rv);
+}
+
+/** @brief  Call a write handler.
+ *  @param  hdesc    handler description <tt>"[ename.]hname[ value]"</tt>
+ *  @param  context  optional element context
+ *  @param  errh     optional error handler
+ *  @return  handler result, or -EINVAL on error
+ *
+ *  Searches for a write handler matching @a hdesc.  Any element name in @a
+ *  hdesc is looked up relative to @a context (see @link
+ *  HandlerCall::call_read(const String &, Element *, ErrorHandler *)
+ *  above@endlink).  If the handler exists, calls it with the value
+ *  specified by @a hdesc and returns the result.  If @a errh is nonnull, then
+ *  errors, such as a missing handler or a read-only handler, are reported
+ *  there.  If @a e is some router's @link Router::root_element() root
+ *  element@endlink, calls the global write handler named @a hname on that
+ *  router. */
+int
+HandlerCall::call_write(const String &hdesc, Element *context, ErrorHandler *errh)
 {
     HandlerCall hcall(hdesc);
-    if (hcall.initialize(CHECK_WRITE, e, errh) >= 0)
+    if (hcall.initialize(OP_WRITE, context, errh) >= 0)
 	return hcall.call_write(errh);
     else
 	return -EINVAL;
 }
 
+/** @brief  Call a write handler with a specified value.
+ *  @param  hdesc    handler description <tt>"[ename.]hname[ value]"</tt>
+ *  @param  value    handler value
+ *  @param  context  optional element context
+ *  @param  errh     optional error handler
+ *  @return  handler result, or -EINVAL on error
+ *
+ *  Searches for a write handler matching @a hdesc.  Any element name in @a
+ *  hdesc is looked up relative to @a context (see @link
+ *  HandlerCall::call_read(const String &, Element *, ErrorHandler *)
+ *  above@endlink).  If the handler exists, calls it with @a value and returns
+ *  the result.  (Any value specified by @a hdesc is ignored.)  If @a errh is
+ *  nonnull, then errors, such as a missing handler or a read-only handler,
+ *  are reported there.  If @a e is some router's @link Router::root_element()
+ *  root element@endlink, calls the global write handler named @a hname on
+ *  that router. */
 int
-HandlerCall::call_write(const String &hdesc, const String &value, Element *e, ErrorHandler *errh)
+HandlerCall::call_write(const String &hdesc, const String &value, Element *context, ErrorHandler *errh)
 {
     HandlerCall hcall(hdesc);
-    if (hcall.initialize(CHECK_WRITE, e, errh) >= 0) {
+    if (hcall.initialize(OP_WRITE, context, errh) >= 0) {
 	hcall.set_value(value);
 	return hcall.call_write(errh);
     } else
@@ -164,14 +234,16 @@ HandlerCall::call_write(const String &hdesc, const String &value, Element *e, Er
 String
 HandlerCall::unparse() const
 {
-    if (ok()) {
+    if (initialized()) {
 	String name = _h->unparse_name(_e);
 	if (!_value)
 	    return name;
 	else
 	    return name + " " + _value;
-    } else
-	return "<bad handler>";
+    } else if (_value)
+	return _value;
+    else
+	return "<empty handler>";
 }
 
 CLICK_ENDDECLS
