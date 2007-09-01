@@ -4,8 +4,8 @@ usleep () {
    click -e "DriverManager(wait $1us)"
 }
 
-(usleep 5000 && nc localhost 8000 <CSIN >CSOUT) &
-click -R -p 8000 -e "Idle -> s :: Switch(0) -> Idle; s[1] -> Idle; DriverManager(wait 1s, stop)"
+(usleep 5000 && nc localhost 41900 <CSIN >CSOUT) &
+click -R -p 41900 -e "Idle -> s :: Switch(0) -> Idle; s[1] -> Idle; DriverManager(wait 1s, stop)"
 
 %file CSIN
 read s.config
