@@ -77,7 +77,7 @@ RouterThread::RouterThread(Master *m, int id)
 #else
     _prev = _next = _thread = this;
 #endif
-    _pending = 0;
+    _any_pending = 0;
 #if CLICK_LINUXMODULE
     _linux_task = 0;
     _task_lock_waiting = 0;
@@ -129,7 +129,7 @@ RouterThread::RouterThread(Master *m, int id)
 
 RouterThread::~RouterThread()
 {
-    _pending = 0;
+    _any_pending = 0;
     assert(!active());
 }
 
@@ -505,7 +505,7 @@ RouterThread::driver()
     }
 
     // run task requests (1)
-    if (_pending)
+    if (_any_pending)
 	_master->process_pending(this);
 
 #ifndef HAVE_ADAPTIVE_SCHEDULER

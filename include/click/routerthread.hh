@@ -101,7 +101,7 @@ class RouterThread
     atomic_uint32_t _task_lock_waiting;
 #endif
     
-    atomic_uint32_t _pending;
+    uint32_t _any_pending;
 
 #if CLICK_LINUXMODULE
     bool _greedy;
@@ -195,9 +195,9 @@ inline bool
 RouterThread::active() const
 {
 #ifdef HAVE_TASK_HEAP
-    return _task_heap.size() != 0 || _pending;
+    return _task_heap.size() != 0 || _any_pending;
 #else
-    return ((const Task *)_next != this) || _pending;
+    return ((const Task *)_next != this) || _any_pending;
 #endif
 }
 
@@ -320,7 +320,7 @@ RouterThread::wake()
 inline void
 RouterThread::add_pending()
 {
-    _pending++;
+    _any_pending = 1;
     wake();
 }
 

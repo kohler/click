@@ -53,7 +53,6 @@ CLICK_DECLS
 // - Changes to _thread are protected by _thread->lock.
 // - Changes to _home_thread_id are protected by
 //   _router->master()->task_lock.
-// - If _pending_reschedule is nonzero, then _pending_nextptr is nonzero.
 // - Either _home_thread_id == _thread->thread_id(), or
 //   _thread->thread_id() == -1.
 
@@ -137,26 +136,34 @@ Task::cleanup()
     if (initialized()) {
 	strong_unschedule();
 
-	if (_pending_nextptr) {
+	while (_pending_nextptr) {
+	    assert(!_pending_reschedule);
+
+	    // Perhaps the task is enqueued on the current pending collection.
+	    // If so, remove it.
 	    Master *m = _router->master();
-	    unsigned cp = _pending_nextptr & 1;
 	    SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
-	    SpinlockIRQ::flags_t pflags = m->_pending_lock[cp].acquire();
 	    if (_pending_nextptr) {
-		uintptr_t *tptr = &m->_pending_head[cp];
+		volatile uintptr_t *tptr = &m->_pending_head;
 		while (Task *t = pending_to_task(*tptr))
 		    if (t == this) {
 			*tptr = _pending_nextptr;
 			if (!pending_to_task(_pending_nextptr))
-			    m->_pending_tail[cp] = tptr;
+			    m->_pending_tail = tptr;
+			_pending_nextptr = 0;
 			break;
 		    } else
 			tptr = &t->_pending_nextptr;
-		_pending_nextptr = 0;
-		_pending_reschedule = 0;
 	    }
-	    m->_pending_lock[cp].release(pflags);
 	    m->_task_lock.release(flags);
+
+	    // If not on the current pending list, perhaps this task is on
+	    // some list currently being processed by
+	    // Master::process_pending().  Wait until that processing is done.
+	    // It is safe to simply spin because pending list processing is so
+	    // simple: processing a pending list will NEVER cause a task to
+	    // get deleted, so ~Task is never called from
+	    // Master::process_pending().
 	}
 	
 	_router = 0;
@@ -197,10 +204,9 @@ Task::add_pending(bool reschedule)
 	if (reschedule)
 	    _pending_reschedule = 1;
 	if (!_pending_nextptr) {
-	    unsigned cp = m->_current_pending;
-	    _pending_nextptr = 2 | cp;
-	    *m->_pending_tail[cp] = reinterpret_cast<uintptr_t>(this) | cp;
-	    m->_pending_tail[cp] = &_pending_nextptr;
+	    *m->_pending_tail = reinterpret_cast<uintptr_t>(this);
+	    m->_pending_tail = &_pending_nextptr;
+	    _pending_nextptr = 1;
 	    _thread->add_pending();
 	}
     }
@@ -392,7 +398,10 @@ Task::move_thread(int thread_id)
 void
 Task::process_pending(RouterThread *thread)
 {
-    // must be called with thread->lock held
+    // Must be called with thread->lock held.
+    // May be called in the process of destroying _router, so must check
+    // _router->_running when necessary.  (Not necessary for add_pending()
+    // since that function does it already.)
 
 #if CLICK_BSDMODULE
     int s = splimp();
@@ -407,7 +416,7 @@ Task::process_pending(RouterThread *thread)
 		_pending_reschedule = 1;
 	    }
 	    _thread = _router->master()->thread(_home_thread_id);
-	} else if (_pending_reschedule) {
+	} else if (_pending_reschedule && _router->running()) {
 	    _pending_reschedule = 0;
 	    if (!scheduled())
 		fast_schedule();

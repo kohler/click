@@ -97,11 +97,9 @@ class Master { public:
     bool check_driver();
 
     // PENDING TASKS
-    unsigned _current_pending;
-    uintptr_t _pending_head[2];
-    uintptr_t *_pending_tail[2];
+    uintptr_t _pending_head;
+    volatile uintptr_t *_pending_tail;
     SpinlockIRQ _task_lock;
-    SpinlockIRQ _pending_lock[2];
     void process_pending(RouterThread*);
 
     // TIMERS

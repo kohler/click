@@ -43,7 +43,7 @@ atomic_uint32_t Master::signals_pending;
 #endif
 
 Master::Master(int nthreads)
-    : _routers(0), _current_pending(0)
+    : _routers(0), _pending_head(0), _pending_tail(&_pending_head)
 {
     _refcount = 0;
     _stopper = 0;
@@ -51,10 +51,6 @@ Master::Master(int nthreads)
 
     for (int tid = -2; tid < nthreads; tid++)
 	_threads.push_back(new RouterThread(this, tid));
-
-    _pending_head[0] = _pending_head[1] = 0;
-    _pending_tail[0] = &_pending_head[0];
-    _pending_tail[1] = &_pending_head[1];
     
 #if CLICK_USERLEVEL
 # if HAVE_SYS_EVENT_H && HAVE_KQUEUE
@@ -226,27 +222,10 @@ Master::kill_router(Router *router)
     // Remove tasks
     for (RouterThread **tp = _threads.begin(); tp < _threads.end(); tp++)
 	(*tp)->unschedule_router_tasks(router);
-    
-    {
-	SpinlockIRQ::flags_t flags = _task_lock.acquire();
 
-	// Remove pending tasks
-	for (unsigned x = 0; x < 2; x++) {
-	    SpinlockIRQ::flags_t pflags = _pending_lock[x].acquire();
-	    uintptr_t *tptr = &_pending_head[x];
-	    while (Task *t = Task::pending_to_task(*tptr))
-		if (t->_router == router) {
-		    *tptr = t->_pending_nextptr;
-		    t->_pending_nextptr = 0;
-		    t->_pending_reschedule = 0;
-		} else
-		    tptr = &t->_pending_nextptr;
-	    _pending_tail[x] = tptr;
-	    _pending_lock[x].release(pflags);
-	}
-
-	_task_lock.release(flags);
-    }
+    // 4.Sep.2007 - Don't bother to remove pending tasks.  They will be
+    // removed shortly anyway, either when the task itself is deleted or (more
+    // likely) when the pending list is processed.
     
     // Remove timers
     {
@@ -377,27 +356,26 @@ Master::check_driver()
 void
 Master::process_pending(RouterThread *thread)
 {
+    // must be called with thread's lock acquired
+
+    // claim the current pending list
     SpinlockIRQ::flags_t flags = _task_lock.acquire();
     if (_master_paused > 0) {
 	_task_lock.release(flags);
 	return;
     }
-    // switch lists
-    unsigned cp = _current_pending;
-    _current_pending = 1 - _current_pending;
-    assert(_pending_head[_current_pending] == 0 && _pending_tail[_current_pending] == &_pending_head[_current_pending]);
-    thread->_pending = 0;
+    uintptr_t my_pending = _pending_head;
+    _pending_head = 0;
+    _pending_tail = &_pending_head;
+    thread->_any_pending = 0;
     _task_lock.release(flags);
 
     // process the list
-    flags = _pending_lock[cp].acquire();
-    while (Task *t = Task::pending_to_task(_pending_head[cp])) {
-	_pending_head[cp] = t->_pending_nextptr;
+    while (Task *t = Task::pending_to_task(my_pending)) {
+	my_pending = t->_pending_nextptr;
 	t->_pending_nextptr = 0;
 	t->process_pending(thread);
     }
-    _pending_tail[cp] = &_pending_head[cp];
-    _pending_lock[cp].release(flags);
 }
 
 
@@ -1064,7 +1042,7 @@ Master::info() const
     StringAccum sa;
     sa << "paused:\t" << _master_paused << '\n';
     sa << "stopper:\t" << _stopper << '\n';
-    sa << "pending:\t" << (Task::pending_to_task(_pending_head[0]) || Task::pending_to_task(_pending_head[1])) << '\n';
+    sa << "pending:\t" << (Task::pending_to_task(_pending_head) != 0) << '\n';
     for (int i = 0; i < _threads.size(); i++) {
 	RouterThread *t = _threads[i];
 	sa << "thread " << (i - 1) << ":";

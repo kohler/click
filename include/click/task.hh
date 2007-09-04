@@ -122,7 +122,7 @@ class Task { public:
     Router* _router;
 
     unsigned _pending_reschedule;
-    uintptr_t _pending_nextptr;
+    volatile uintptr_t _pending_nextptr;
 
     Task(const Task&);
     Task& operator=(const Task&);
