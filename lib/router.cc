@@ -1405,7 +1405,7 @@ Router::add_read_handler(const Element* e, const String& name, ReadHandlerHook h
     if (to_add._flags & Handler::ONE_HOOK) {
 	to_add._hook.rw.w = 0;
 	to_add._thunk2 = 0;
-	to_add._flags &= ~Handler::PRIVATE_MASK;
+	to_add._flags &= ~Handler::SPECIAL_FLAGS;
     }
     to_add._hook.rw.r = hook;
     to_add._thunk1 = thunk;
@@ -1420,7 +1420,7 @@ Router::add_write_handler(const Element* e, const String& name, WriteHandlerHook
     if (to_add._flags & Handler::ONE_HOOK) {
 	to_add._hook.rw.r = 0;
 	to_add._thunk1 = 0;
-	to_add._flags &= ~Handler::PRIVATE_MASK;
+	to_add._flags &= ~Handler::SPECIAL_FLAGS;
     }
     to_add._hook.rw.w = hook;
     to_add._thunk2 = thunk;
@@ -1445,8 +1445,8 @@ Router::change_handler_flags(const Element* e, const String& name,
 {
     Handler to_add = fetch_handler(e, name);
     if (to_add._use_count > 0) {	// only modify existing handlers
-	clear_flags &= ~Handler::PRIVATE_MASK;
-	set_flags &= ~Handler::PRIVATE_MASK;
+	clear_flags &= ~Handler::SPECIAL_FLAGS;
+	set_flags &= ~Handler::SPECIAL_FLAGS;
 	to_add._flags = (to_add._flags & ~clear_flags) | set_flags;
 	store_handler(e, to_add);
 	return 0;

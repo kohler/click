@@ -281,11 +281,12 @@ class Router { public:
 class Handler { public:
 
     enum Flags {
-	OP_READ = 1, OP_WRITE = 2, READ_PARAM = 4, ONE_HOOK = 8,
-	PRIVATE_MASK = 0xF,
-	EXCLUSIVE = 16, RAW = 32,
-	DRIVER_FLAG_0 = 64, DRIVER_FLAG_1 = 128,
-	DRIVER_FLAG_2 = 256, DRIVER_FLAG_3 = 512,
+	OP_READ = 0x001, OP_WRITE = 0x002,
+	READ_PARAM = 0x004, ONE_HOOK = 0x008,
+	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | ONE_HOOK,
+	EXCLUSIVE = 0x010, RAW = 0x020,
+	DRIVER_FLAG_0 = 0x040, DRIVER_FLAG_1 = 0x080,
+	DRIVER_FLAG_2 = 0x100, DRIVER_FLAG_3 = 0x200,
 	USER_FLAG_SHIFT = 10, USER_FLAG_0 = 1 << USER_FLAG_SHIFT
     };
 
@@ -315,7 +316,7 @@ class Handler { public:
     static inline const Handler *blank_handler();
     
   private:
-  
+
     String _name;
     union {
 	HandlerHook h;
