@@ -47,7 +47,10 @@ $top_srcdir = `grep '^top_srcdir' Makefile | sed 's/^.*= *//'`;
 chomp $top_srcdir;
 
 # 0. create distdir
-mysystem("gmake distdir") if ($INSTALL);
+$MAKE = `which gmake`;
+chomp $MAKE;
+$MAKE = "make" if $MAKE eq "";
+mysystem("$MAKE distdir") if ($INSTALL);
 
 my($VERSION);
 open(MK, 'Makefile') || die "no Makefile";
@@ -64,12 +67,12 @@ close MK;
 if ($INSTALL) {
     mysystem("/bin/rm -rf /tmp/%click-webdoc");
     mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --disable-linuxmodule --disable-bsdmodule --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid --enable-analysis --enable-aqm --enable-test --enable-wifi");
-    mysystem("cd click-$VERSION && gmake install-local EXTRA_PROVIDES='linuxmodule bsdmodule ns i586 i686 linux_2_2 linux_2_4 linux_2_6 smpclick int64' MKELEMMAPFLAGS='--dochref \"../doc/%s.n.html\"'");
+    mysystem("cd click-$VERSION && $MAKE install-local EXTRA_PROVIDES='linuxmodule bsdmodule ns i586 i686 linux_2_2 linux_2_4 linux_2_6 smpclick int64' MKELEMMAPFLAGS='--dochref \"../doc/%s.n.html\"'");
     if ($ELEMENTS) {
-	mysystem("cd click-$VERSION && gmake install-doc EXTRA_PROVIDES='linuxmodule bsdmodule ns i586 i686 linux_2_2 linux_2_4 linux_2_6 smpclick int64'");
+	mysystem("cd click-$VERSION && $MAKE install-doc EXTRA_PROVIDES='linuxmodule bsdmodule ns i586 i686 linux_2_2 linux_2_4 linux_2_6 smpclick int64'");
     }
     if ($EXAMPLES) {
-	mysystem("cd tools/click-pretty && gmake install");
+	mysystem("cd tools/click-pretty && $MAKE install");
     }
 }
 
@@ -345,7 +348,7 @@ if ($NEWS) {
 
 # 7. install programming manual
 if ($PROGMAN) {
-    mysystem("cd click-$VERSION/doc && gmake click.html") if ($INSTALL || !-r "click-$VERSION/doc/click.html");
+    mysystem("cd click-$VERSION/doc && $MAKE click.html") if ($INSTALL || !-r "click-$VERSION/doc/click.html");
 
     open(IN, "click-$VERSION/doc/click.html") || die "couldn't make click.html";
     open(OUT, ">$DOCDIR/progman.html") || die;
