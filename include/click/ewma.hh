@@ -252,8 +252,7 @@ class StabilityEWMAXParameters { public:
     typedef T value_type;
     typedef U signed_value_type;
 
-    /** @brief  Create a StabilityEWMAXParameters with initial value 0 and
-     *		initial alpha 1/16. */
+    /** @brief  Create a StabilityEWMAXParameters with initial alpha 1/16. */
     StabilityEWMAXParameters()
 	: _stability(4) {
     }
