@@ -57,7 +57,7 @@ ToSimTrace::configure(Vector<String> &conf, ErrorHandler *errh)
                         "ADDITIONAL_INFO", cpString, "additional info", &additional_info_,
                         "ANALYZER", cpElement, "Packet Analyzer", &_packetAnalyzer,
                         "OFFSET", cpInteger, "Offset", &_offset,
-                        0) < 0)
+                        cpEnd) < 0)
                 return -1;
         return 0;
 }
