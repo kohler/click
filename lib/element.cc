@@ -59,6 +59,20 @@ int Element::nelements_allocated = 0;
 # define ELEMENT_CTOR_STATS
 #endif
 
+/** @mainpage Click
+ *  @section  Introduction
+ *
+ *  The Click modular router is a system for developing network packet
+ *  processors.  This documentation describes Click's internal programming
+ *  interfaces, which you will use if you want to write new packet processing
+ *  modules (which we call <em>elements</em>).
+ *
+ *  Most documented Click classes can be found under the "Classes" tab.  Get
+ *  started by looking at the Element class.
+ *
+ *  <a href='http://www.read.cs.ucla.edu/click/'>Main Click page</a>
+ */
+
 /** @class Element
     @brief Base class for Click elements.
  

@@ -43,8 +43,10 @@ if ($EXAMPLES) {
 # -1. get into correct directory
 chdir('..') if !-d 'linuxmodule';
 -d 'linuxmodule' || die "must be in CLICKDIR or CLICKDIR/doc";
-$top_srcdir = `grep '^top_srcdir' Makefile | sed 's/^.*= *//'`;
+$top_srcdir = `grep '^top_srcdir' Makefile 2>/dev/null | sed 's/^.*= *//'`;
 chomp $top_srcdir;
+$top_srcdir = "." if $top_srcdir eq "" && -f "Makefile.in";
+$top_srcdir || die "cannot extract top_srcdir";
 
 # 0. create distdir
 $MAKE = `which gmake`;
@@ -53,15 +55,15 @@ $MAKE = "make" if $MAKE eq "";
 mysystem("$MAKE distdir") if ($INSTALL);
 
 my($VERSION);
-open(MK, 'Makefile') || die "no Makefile";
-while (<MK>) {
-  if (/VERSION\s*=\s*(\S*)/) {
+open(CONFIN, "$top_srcdir/configure.in") || die "no configure.in";
+while (<CONFIN>) {
+  if (/AC_INIT\(click, (\S*?)\)/) {
     $VERSION = $1;
     last;
   }
 }
-defined $VERSION || die "VERSION not defined in Makefile";
-close MK;
+defined $VERSION || die "VERSION not defined in configure.in";
+close CONFIN;
 
 # 1. install manual pages and click-pretty tool
 if ($INSTALL) {
