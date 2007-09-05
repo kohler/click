@@ -136,7 +136,7 @@ Task::cleanup()
     if (initialized()) {
 	strong_unschedule();
 
-	while (_pending_nextptr) {
+	if (_pending_nextptr) {
 	    assert(!_pending_reschedule);
 
 	    // Perhaps the task is enqueued on the current pending collection.
@@ -164,6 +164,8 @@ Task::cleanup()
 	    // simple: processing a pending list will NEVER cause a task to
 	    // get deleted, so ~Task is never called from
 	    // Master::process_pending().
+	    while (_pending_nextptr)
+		/* do nothing */;
 	}
 	
 	_router = 0;
