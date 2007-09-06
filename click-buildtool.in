@@ -6,7 +6,7 @@
 # Copyright (c) 2000-2001 Massachusetts Institute of Technology
 # Copyright (c) 2000-2006 Mazu Networks, Inc.
 # Copyright (c) 2001-2003 International Computer Science Institute
-# Copyright (c) 2004-2006 Regents of the University of California
+# Copyright (c) 2004-2007 Regents of the University of California
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -1063,6 +1063,7 @@ makepackage () {
     pkg=
     srcs=
     quiet=
+    cflags=
     while [ x"$1" != x ]; do
     case $1 in
     -t|--d|--dr|--dri|--driv|--drive|--driver)
@@ -1099,10 +1100,13 @@ Options:
   -q, --quiet              Build quietly (may be ignored).
   -C, --directory DIR      Switch to DIR directory before building.
   -h, --help               Print this message and exit.
+  -[other options]         Passed to the C/C++ compiler.
 
 Report bugs to <click@pdos.lcs.mit.edu>.
 EOF
 	exit 0;;
+    -*)
+	cflags="$cflags $1"; shift 1;;
     *)
 	if test -z "$pkg"; then
 	    pkg="$1"; shift 1
@@ -1144,6 +1148,8 @@ srcdir = .
 top_srcdir = .
 builddir = .
 top_builddir = .
+PACKAGE_CFLAGS = $cflags
+PACKAGE_CXXFLAGS = $cflags
 
 include ${clickdatadir}/config.mk
 include ${clickdatadir}/pkg-Makefile" > Makefile
@@ -1257,7 +1263,7 @@ click-buildtool (Click) @CLICK_VERSION@
 Copyright (c) 2000-2001 Massachusetts Institute of Technology
 Copyright (c) 2000-2004 Mazu Networks, Inc.
 Copyright (c) 2001-2003 International Computer Science Institute
-Copyright (c) 2004-2006 Regents of the University of California
+Copyright (c) 2004-2007 Regents of the University of California
 This is free software; see the source for copying conditions.
 There is NO warranty, not even for merchantability or fitness for a
 particular purpose.

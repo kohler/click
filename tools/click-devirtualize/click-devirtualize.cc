@@ -462,81 +462,7 @@ particular purpose.\n");
     exit(0);
   }
   
-  // create temporary directory
-  String tmpdir;
-  
-  if (compile_user > 0 || compile_kernel > 0) {
-    if (!(tmpdir = click_mktmpdir(errh)))
-      exit(1);
-    
-    // find Click binaries
-    String click_buildtool_prog = clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, errh);
-
-    // write header file
-    String hh_filename = package_name + suffix + ".hh";
-    FILE *f = fopen((tmpdir + hh_filename).c_str(), "w");
-    if (!f)
-	errh->fatal("%s: %s", (tmpdir + hh_filename).c_str(), strerror(errno));
-    fwrite(header.data(), 1, header.length(), f);
-    fclose(f);
-    
-    // write C++ file
-    String cxx_filename = package_name + suffix + "_.cc";
-    f = fopen((tmpdir + cxx_filename).c_str(), "w");
-    if (!f)
-      errh->fatal("%s: %s", (tmpdir + cxx_filename).c_str(), strerror(errno));
-    fwrite(source.data(), 1, source.length(), f);
-    fclose(f);
-
-    // write any archived headers
-    const Vector<ArchiveElement> &aelist = router->archive();
-    for (int i = 0; i < aelist.size(); i++)
-      if (aelist[i].name.substring(-3) == ".hh") {
-	String filename = tmpdir + aelist[i].name;
-	f = fopen(filename.c_str(), "w");
-	if (!f)
-	  errh->warning("%s: %s", filename.c_str(), strerror(errno));
-	else {
-	  fwrite(aelist[i].data.data(), 1, aelist[i].data.length(), f);
-	  fclose(f);
-	}
-      }
-    
-    // compile kernel module
-    if (compile_kernel > 0) {
-      StringAccum compile_command;
-      compile_command << click_buildtool_prog << " makepackage -C "
-		      << tmpdir << " -t linuxmodule "
-		      << package_name << " " << cxx_filename << " 1>&2";
-      int compile_retval = system(compile_command.c_str());
-      if (compile_retval == 127)
-	errh->fatal("could not run '%s'", compile_command.c_str());
-      else if (compile_retval < 0)
-	errh->fatal("could not run '%s': %s", compile_command.c_str(), strerror(errno));
-      else if (compile_retval != 0)
-	errh->fatal("'%s' failed", compile_command.c_str());
-    }
-    
-    // compile userlevel
-    if (compile_user > 0) {
-      StringAccum compile_command;
-      compile_command << click_buildtool_prog << " makepackage -C "
-		      << tmpdir << " -t userlevel "
-		      << package_name << " " << cxx_filename << " 1>&2";
-      int compile_retval = system(compile_command.c_str());
-      if (compile_retval == 127)
-	errh->fatal("could not run '%s'", compile_command.c_str());
-      else if (compile_retval < 0)
-	errh->fatal("could not run '%s': %s", compile_command.c_str(), strerror(errno));
-      else if (compile_retval != 0)
-	errh->fatal("'%s' failed", compile_command.c_str());
-    }
-  }
-
-  // retype elements
-  specializer.fix_elements();
-  
-  // read .cc and .?o files, add them to archive
+  // add source to archive
   {
     ArchiveElement ae = init_archive_element(package_name + suffix + ".cc", 0600);
     ae.data = source.take_string();
@@ -545,19 +471,30 @@ particular purpose.\n");
     ae.name = package_name + suffix + ".hh";
     ae.data = header.take_string();
     router->add_archive(ae);
-    
-    if (compile_kernel > 0) {
-      ae.name = package_name + ".ko";
-      ae.data = file_string(tmpdir + ae.name, errh);
-      router->add_archive(ae);
-    }
-    
-    if (compile_user > 0) {
-      ae.name = package_name + ".uo";
-      ae.data = file_string(tmpdir + ae.name, errh);
-      router->add_archive(ae);
-    }
   }
+
+  // add compiled versions to archive
+  if (compile_user > 0 || compile_kernel > 0) {
+    int source_ae = router->archive_index(package_name + suffix + ".cc");
+    BailErrorHandler berrh(errh);
+    
+    if (compile_kernel > 0)
+	if (String fn = click_compile_archive_file(package_name, router->archive(), source_ae, "linuxmodule", "", &berrh)) {
+	    ArchiveElement ae = init_archive_element(package_name + ".ko", 0600);
+	    ae.data = file_string(fn, errh);
+	    router->add_archive(ae);
+	}
+    
+    if (compile_user > 0)
+	if (String fn = click_compile_archive_file(package_name, router->archive(), source_ae, "userlevel", "", &berrh)) {
+	    ArchiveElement ae = init_archive_element(package_name + ".uo", 0600);
+	    ae.data = file_string(fn, errh);
+	    router->add_archive(ae);
+	}
+  }
+
+  // retype elements
+  specializer.fix_elements();
   
   // add elementmap to archive
   {

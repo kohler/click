@@ -1,7 +1,7 @@
 # pkg-userlevel.mk -- build tools for Click
 # Eddie Kohler
 #
-# Copyright (c) 2006 Regents of the University of California
+# Copyright (c) 2006-2007 Regents of the University of California
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -15,17 +15,17 @@
 
 CLICKBUILD = userlevel
 
-CC ?= $(CLICKCC)
+CC ?= $(CLICKCC) -fPIC
 CPP ?= $(CLICKCPP)
-CXX ?= $(CLICKCXX)
+CXX ?= $(CLICKCXX) -fPIC
 CXXCPP ?= $(CLICKCXXCPP)
 AR_CREATE ?= $(CLICKAR_CREATE)
 RANLIB ?= $(CLICKRANLIB)
 STRIP ?= $(CLICKSTRIP)
 
 CPPFLAGS ?= $(CLICKCPPFLAGS) -DCLICK_USERLEVEL
-CFLAGS ?= -fPIC $(CLICKCFLAGS)
-CXXFLAGS ?= -fPIC $(CLICKCXXFLAGS)
+CFLAGS ?= $(CLICKCFLAGS)
+CXXFLAGS ?= $(CLICKCXXFLAGS)
 DEPCFLAGS ?= $(CLICKDEPCFLAGS)
 
 DEFS ?= $(CLICKDEFS)
@@ -39,10 +39,10 @@ CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
 CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
 STRIP_UPACKAGE ?= true
 
-CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
+CXXCOMPILE = $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(PACKAGE_CXXFLAGS) $(DEFS) $(INCLUDES) $(DEPCFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
+COMPILE = $(CC) $(CPPFLAGS) $(CFLAGS) $(PACKAGE_CFLAGS) $(DEFS) $(INCLUDES) $(DEPCFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 FIXDEP = @-sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d

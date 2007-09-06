@@ -659,60 +659,7 @@ compile_classifiers(RouterT *r, const String &package_name,
     }
     source << "CLICK_DECLS\n" << source_body << "CLICK_ENDDECLS\n";
 
-    // compile files if required
-    String tmpdir;
-  
-    if (compile_drivers) {
-	// create temporary directory
-	if (!(tmpdir = click_mktmpdir(errh)))
-	    exit(1);
-    
-	String filename = tmpdir + package_name + ".hh";
-	FILE *f = fopen(filename.c_str(), "w");
-	if (!f)
-	    errh->fatal("%s: %s", filename.c_str(), strerror(errno));
-	fwrite(header.data(), 1, header.length(), f);
-	fclose(f);
-
-	String cxx_filename = package_name + "_.cc";
-	f = fopen((tmpdir + cxx_filename).c_str(), "w");
-	if (!f)
-	    errh->fatal("%s%s: %s", tmpdir.c_str(), cxx_filename.c_str(), strerror(errno));
-	fwrite(source.data(), 1, source.length(), f);
-	fclose(f);
-    
-	// compile kernel module
-	if (compile_drivers & Driver::LINUXMODULE) {
-	    StringAccum compile_command;
-	    compile_command << click_buildtool_prog << " makepackage -C "
-			    << tmpdir << " -t linuxmodule " << quiet_arg
-			    << package_name << " " << package_name << "_.cc 1>&2";
-	    int compile_retval = system(compile_command.c_str());
-	    if (compile_retval == 127)
-		errh->fatal("could not run '%s'", compile_command.c_str());
-	    else if (compile_retval < 0)
-		errh->fatal("could not run '%s': %s", compile_command.c_str(), strerror(errno));
-	    else if (compile_retval != 0)
-		errh->fatal("'%s' failed", compile_command.c_str());
-	}
-
-	// compile userlevel
-	if (compile_drivers & Driver::USERLEVEL) {
-	    StringAccum compile_command;
-	    compile_command << click_buildtool_prog << " makepackage -C "
-			    << tmpdir << " -t userlevel " << quiet_arg
-			    << package_name << " " << package_name << "_.cc 1>&2";
-	    int compile_retval = system(compile_command.c_str());
-	    if (compile_retval == 127)
-		errh->fatal("could not run '%s'", compile_command.c_str());
-	    else if (compile_retval < 0)
-		errh->fatal("could not run '%s': %s", compile_command.c_str(), strerror(errno));
-	    else if (compile_retval != 0)
-		errh->fatal("'%s' failed", compile_command.c_str());
-	}
-    }
-
-    // add .cc, .hh and .?o files to archive
+    // add source files to archive
     {
 	ArchiveElement ae = init_archive_element(package_name + ".cc", 0600);
 	ae.data = source.take_string();
@@ -721,25 +668,34 @@ compile_classifiers(RouterT *r, const String &package_name,
 	ae.name = package_name + ".hh";
 	ae.data = header.take_string();
 	r->add_archive(ae);
+    }
+    
+    // add compiled versions to archive
+    if (compile_drivers) {
+	int source_ae = r->archive_index(package_name + ".cc");
+	BailErrorHandler berrh(errh);
+    
+	if (compile_drivers & (1 << Driver::LINUXMODULE))
+	    if (String fn = click_compile_archive_file(package_name, r->archive(), source_ae, "linuxmodule", "", &berrh)) {
+		ArchiveElement ae = init_archive_element(package_name + ".ko", 0600);
+		ae.data = file_string(fn, errh);
+		r->add_archive(ae);
+	    }
 
-	if (compile_drivers & Driver::LINUXMODULE) {
-	    ae.name = package_name + ".ko";
-	    ae.data = file_string(tmpdir + ae.name, errh);
-	    r->add_archive(ae);
-	}
-	
-	if (compile_drivers & Driver::USERLEVEL) {
-	    ae.name = package_name + ".uo";
-	    ae.data = file_string(tmpdir + ae.name, errh);
-	    r->add_archive(ae);
-	}
+	if (compile_drivers & (1 << Driver::USERLEVEL))
+	    if (String fn = click_compile_archive_file(package_name, r->archive(), source_ae, "userlevel", "", &berrh)) {
+		ArchiveElement ae = init_archive_element(package_name + ".uo", 0600);
+		ae.data = file_string(fn, errh);
+		r->add_archive(ae);
+	    }
     }
 
     // add elementmap to archive
     {
-	if (r->archive_index("elementmap-fastclassifier.xml") < 0)
-	    r->add_archive(init_archive_element("elementmap-fastclassifier.xml", 0600));
-	ArchiveElement &ae = r->archive("elementmap-fastclassifier.xml");
+	String emap_package = "elementmap-" + package_name + ".xml";
+	if (r->archive_index(emap_package) < 0)
+	    r->add_archive(init_archive_element(emap_package, 0600));
+	ArchiveElement &ae = r->archive(emap_package);
 	ElementMap em(ae.data);
 	ElementTraits t;
 	t.header_file = package_name + ".hh";
@@ -911,11 +867,11 @@ particular purpose.\n");
       break;
       
      case KERNEL_OPT:
-      compile_drivers |= Driver::LINUXMODULE;
+      compile_drivers |= 1 << Driver::LINUXMODULE;
       break;
       
      case USERLEVEL_OPT:
-      compile_drivers |= Driver::USERLEVEL;
+      compile_drivers |= 1 << Driver::USERLEVEL;
       break;
 
      case QUIET_OPT:

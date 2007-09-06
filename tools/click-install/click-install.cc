@@ -96,7 +96,6 @@ static bool output_map;
 
 static String::Initializer string_initializer;
 static String tmpdir;
-static String click_buildtool_prog;
 
 void
 short_usage()
@@ -143,7 +142,7 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n");
 }
 
 static void
-prepare_tmpdir(RouterT *r, ErrorHandler *errh)
+prepare_tmpdir(ErrorHandler *errh)
 {
   ContextErrorHandler cerrh(errh, "While preparing to compile packages:");
   BailErrorHandler berrh(&cerrh);
@@ -153,26 +152,6 @@ prepare_tmpdir(RouterT *r, ErrorHandler *errh)
   assert(tmpdir);
   if (chdir(tmpdir.c_str()) < 0)
     berrh.fatal("cannot chdir to %s: %s", tmpdir.c_str(), strerror(errno));
-
-  // find compile program
-  click_buildtool_prog = clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, &cerrh);
-  assert(click_buildtool_prog);
-
-  // look for .hh files
-  if (r) {
-    const Vector<ArchiveElement> &archive = r->archive();  
-    for (int i = 0; i < archive.size(); i++)
-      if (archive[i].name.substring(-3) == ".hh") {
-	String filename = archive[i].name;
-	FILE *f = fopen(filename.c_str(), "w");
-	if (!f)
-	  cerrh.warning("%s: %s", filename.c_str(), strerror(errno));
-	else {
-	  fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
-	  fclose(f);
-	}
-      }
-  }
 }
 
 static void
@@ -196,41 +175,17 @@ compile_archive_packages(RouterT *r, HashMap<String, int> &packages,
       source_ae = r->archive_index(req + ".cc");
     if (source_ae < 0)
       continue;
-    if (!tmpdir)
-      prepare_tmpdir(r, errh);
 
     // found source file, so compile it
-    ArchiveElement ae = r->archive(source_ae);
-    errh->message("Compiling package %s from config archive", ae.name.c_str());
-    ContextErrorHandler cerrh
-      (errh, "While compiling package '" + req + OBJSUFFIX "':");
-
-    // write .cc file
-    String filename = req + "_.cc";
-    String source_text = ae.data;
-    FILE *f = fopen(filename.c_str(), "w");
-    if (!f)
-      cerrh.fatal("%s: %s", filename.c_str(), strerror(errno));
-    fwrite(source_text.data(), 1, source_text.length(), f);
-    fclose(f);
-
-    // run click-compile
-    StringAccum compile_command;
-    compile_command << click_buildtool_prog << " makepackage -C "
-		    << tmpdir << " -t " COMPILETARGET " "
-		    << req << " " << req << "_.cc 1>&2";
-    int compile_retval = system(compile_command.c_str());
-    if (compile_retval == 127)
-      cerrh.fatal("could not run '%s'", compile_command.c_str());
-    else if (compile_retval < 0)
-      cerrh.fatal("could not run '%s': %s", compile_command.c_str(), strerror(errno));
-    else if (compile_retval != 0)
-      cerrh.fatal("'%s' failed", compile_command.c_str());
+    errh->message("Compiling package %s from config archive", req.c_str());
+    String result_filename = click_compile_archive_file(req, r->archive(), source_ae, COMPILETARGET, "", errh);
     
     // grab object file and add to archive
-    ArchiveElement obj_ae = init_archive_element(req + OBJSUFFIX, 0600);
-    obj_ae.data = file_string(req + OBJSUFFIX, &cerrh);
-    r->add_archive(obj_ae);
+    if (result_filename) {
+	ArchiveElement obj_ae = init_archive_element(req + OBJSUFFIX, 0600);
+	obj_ae.data = file_string(result_filename, errh);
+	r->add_archive(obj_ae);
+    }
   }
 }
 
@@ -285,7 +240,7 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
       
       // install module
       if (!tmpdir)
-	prepare_tmpdir(0, errh);
+	prepare_tmpdir(errh);
       const ArchiveElement &ae = r->archive(obj_aei);
       String tmpnam = tmpdir + insmod_name;
       FILE *f = fopen(tmpnam.c_str(), "w");

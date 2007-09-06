@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2001 Mazu Networks, Inc.
  * Copyright (c) 2003 International Computer Science Institute
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -180,7 +181,7 @@ CLICK_DECLS
 static String *click_buildtool_prog, *tmpdir;
 
 static bool
-check_tmpdir(const Vector<ArchiveElement> *archive, ErrorHandler *errh)
+check_tmpdir(const Vector<ArchiveElement> &archive, ErrorHandler *errh)
 {
     // change to temporary directory
     if (!tmpdir)
@@ -194,42 +195,45 @@ check_tmpdir(const Vector<ArchiveElement> *archive, ErrorHandler *errh)
     if (!*click_buildtool_prog)
 	return *click_buildtool_prog;
 
-    // store .hh files in temporary directory
-    if (archive)
-	for (int i = 0; i < archive->size(); i++)
-	    if ((*archive)[i].name.substring(-3) == ".hh") {
-		String filename = *tmpdir + (*archive)[i].name;
-		FILE *f = fopen(filename.c_str(), "w");
-		if (!f)
-		    errh->warning("%s: %s", filename.c_str(), strerror(errno));
-		else {
-		    fwrite((*archive)[i].data.data(), 1, (*archive)[i].data.length(), f);
-		    fclose(f);
-		}
+    // store .h/.hh/.hxx files in temporary directory
+    for (int i = 0; i < archive.size(); i++)
+	if (archive[i].name.substring(-3) == ".hh"
+	    || archive[i].name.substring(-2) == ".h"
+	    || archive[i].name.substring(-4) == ".hxx") {
+	    String filename = *tmpdir + archive[i].name;
+	    FILE *f = fopen(filename.c_str(), "w");
+	    if (!f)
+		errh->warning("%s: %s", filename.c_str(), strerror(errno));
+	    else {
+		fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
+		fclose(f);
 	    }
+	}
 
     return *tmpdir;
 }
 
-static String
-compile_archive_file(String package, const Vector<ArchiveElement> *archive, int ai, ErrorHandler *errh)
+String
+click_compile_archive_file(String package, const Vector<ArchiveElement> &archive, int ai, const String &target, const String &extra_flags, ErrorHandler *errh)
 {
     if (!check_tmpdir(archive, errh))
 	return String();
 
-#ifdef CLICK_TOOL
-    String package_file = package + ".to";
-    String target = "tool";
-#else
-    String package_file = package + ".uo";
-    String target = "userlevel";
-#endif
+    String package_file = package;
+    if (target == "tool")
+	package_file += ".to";
+    else if (target == "userlevel")
+	package_file += ".uo";
+    else if (target == "linuxmodule")
+	package_file += ".ko";
+    else if (target == "bsdmodule")
+	package_file += ".bo";
   
     ContextErrorHandler cerrh
 	(errh, "While compiling package '" + package_file + "':");
 
     // write .cc file
-    const ArchiveElement &ae = archive->at(ai);
+    const ArchiveElement &ae = archive.at(ai);
     String filename = ae.name;
     int rightdot = filename.find_right('.');
     if (rightdot >= 0 && filename.substring(0, rightdot) == package)
@@ -242,12 +246,43 @@ compile_archive_file(String package, const Vector<ArchiveElement> *archive, int 
     }
     fwrite(ae.data.data(), 1, ae.data.length(), f);
     fclose(f);
-  
-    // run click-compile
+
+    // prepare click-buildtool makepackage
     StringAccum compile_command;
-    compile_command << *click_buildtool_prog << " makepackage -q -C "
-		    << *tmpdir << " -t " << target << " "
-		    << package << " " << filename << " 1>&2";
+    compile_command << *click_buildtool_prog << " makepackage " << extra_flags
+		    << " -C " << *tmpdir << " -t " << target;
+    
+    // check for compile flags
+    const char *ss = ae.data.begin();
+    const char *send = ae.data.end();
+    for (int i = 0; i < 5 && ss < send; i++) {
+	// grab first line
+	const char *eb = ss;
+	const char *el = ss;
+	while (el < send && *el != '\n' && *el != '\r')
+	    el++;
+	if (el + 1 < send && *el == '\r' && el[1] == '\n')
+	    ss = el + 2;
+	else if (el < send)
+	    ss = el + 1;
+
+	// eat end-of-line space
+	while (eb < el && isspace(el[-1]))
+	    el--;
+
+	// check for click-compile
+	if (eb + 20 < send && memcmp(eb, "/** click-compile:", 18) == 0
+	    && el[-1] == '/' && el[-2] == '*') {
+	    for (const char *x = eb + 18; x < el - 2; x++)
+		if (*x == '\'' || *x == '\"' || *x == ';' || *x == '|' || *x == '>' || *x == '<' || *x == '&' || *x == '*')
+		    goto bad_click_compile;
+	    compile_command << ' ' << ae.data.substring(eb + 18, el - 2);
+	  bad_click_compile: ;
+	}
+    }
+
+    // finish compile_command
+    compile_command << ' ' << package << ' ' << filename << " 1>&2";
     errh->message("%s", compile_command.c_str());
     int compile_retval = system(compile_command.c_str());
     if (compile_retval == 127)
@@ -272,16 +307,16 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     ContextErrorHandler cerrh(errh, "While loading package '" + name + "':");
 
 #ifdef CLICK_TOOL
-    String suffix = ".to", cxx_suffix = ".t.cc";
+    String suffix = ".to", cxx_suffix = ".t.cc", target = "tool";
 #else
-    String suffix = ".uo", cxx_suffix = ".u.cc";
+    String suffix = ".uo", cxx_suffix = ".u.cc", target = "userlevel";
 #endif
     String package;
   
     // check archive
     int ai;
     if ((ai = archive_index(archive, name + suffix)) >= 0) {
-	if (!check_tmpdir(archive, &cerrh))
+	if (!check_tmpdir(*archive, &cerrh))
 	    return;
 	package = *tmpdir + "/" + name + suffix;
 	FILE *f = fopen(package.c_str(), "wb");
@@ -294,9 +329,9 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
 	    fclose(f);
 	}
     } else if ((ai = archive_index(archive, name + cxx_suffix)) >= 0)
-	package = compile_archive_file(name, archive, ai, &cerrh);
+	package = click_compile_archive_file(name, *archive, ai, target, "-q", &cerrh);
     else if ((ai = archive_index(archive, name + ".cc")) >= 0)
-	package = compile_archive_file(name, archive, ai, &cerrh);
+	package = click_compile_archive_file(name, *archive, ai, target, "-q", &cerrh);
     else {
 	// search path
 	package = clickpath_find_file(name + suffix, "lib", CLICK_LIBDIR);
