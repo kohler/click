@@ -61,7 +61,7 @@ FullNoteQueue::push(int, Packet *p)
 	if (s > _highwater_length)
 	    _highwater_length = s;
 
-        if (s == 1 && !_empty_note.active()) 
+        if (s == 1) 
 	    _empty_note.wake(); 
 
 	if (s == capacity()) {
@@ -70,7 +70,7 @@ FullNoteQueue::push(int, Packet *p)
 	    // Work around race condition between push() and pull().
 	    // We might have just undone pull()'s Notifier::wake() call.
 	    // Easiest lock-free solution: check whether we should wake again!
-	    if (size() < capacity() && !_full_note.active())
+	    if (size() < capacity())
 		_full_note.wake();
 #endif
 	}
@@ -99,7 +99,7 @@ FullNoteQueue::pull(int)
 	// Work around race condition between push() and pull().
 	// We might have just undone push()'s Notifier::wake() call.
 	// Easiest lock-free solution: check whether we should wake again!
-	if (_head != _tail && !_empty_note.active())
+	if (_head != _tail)
 	    _empty_note.wake();
 #endif
     }

@@ -439,17 +439,25 @@ Notifier::sleep()
 inline void
 ActiveNotifier::set_active(bool active, bool schedule)
 {
-    if (active && !Notifier::active() && schedule) {
-	if (_listener1)
-	    _listener1->reschedule();
-	else if (task_or_signal_t *tos = _listeners) {
-	    for (; tos->t; tos++)
-		tos->t->reschedule();
-	    for (tos++; tos->s; tos++)
-		tos->s->set_active(true);
+    if (active != Notifier::active()) {
+	// 2007.Sep.6: Perhaps there was a race condition here.  Make sure
+	// that we set the notifier to active BEFORE rescheduling downstream
+	// tasks.  This is because, in a multithreaded environment, a task we
+	// reschedule might run BEFORE we set the notifier; after which it
+	// would go to sleep forever.
+	Notifier::set_active(active);
+	
+	if (active && schedule) {
+	    if (_listener1)
+		_listener1->reschedule();
+	    else if (task_or_signal_t *tos = _listeners) {
+		for (; tos->t; tos++)
+		    tos->t->reschedule();
+		for (tos++; tos->s; tos++)
+		    tos->s->set_active(true);
+	    }
 	}
     }
-    Notifier::set_active(active);
 }
 
 /** @brief Sets the associated signal to active and schedules any listener
