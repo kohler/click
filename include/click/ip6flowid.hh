@@ -84,8 +84,8 @@ inline size_t IP6FlowID::hashcode() const
   // more complicated hashcode, but causes less collision
   uint16_t s = ntohs(sport());
   uint16_t d = ntohs(dport());
-  size_t sx = ::hashcode(saddr());
-  size_t dx = ::hashcode(daddr());
+  size_t sx = CLICK_NAME(hashcode)(saddr());
+  size_t dx = CLICK_NAME(hashcode)(daddr());
   return (ROT(sx, s%16)
           ^ ROT(dx, 31-d%16))
 	  ^ ((d << 16) | s);

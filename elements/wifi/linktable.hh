@@ -51,7 +51,7 @@ public:
 
 inline size_t IPPair::hashcode() const
 {
-    return ::hashcode(_to) + ::hashcode(_from);
+    return CLICK_NAME(hashcode)(_to) + CLICK_NAME(hashcode)(_from);
 }
 
 

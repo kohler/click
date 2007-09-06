@@ -223,7 +223,7 @@ extern "C" int madvise(void *addr, size_t len, int behav);
 # define CLICK_DECLS		/* */
 # define CLICK_ENDDECLS		/* */
 # define CLICK_USING_DECLS	/* */
-# define CLICK_NAME(name)	name
+# define CLICK_NAME(name)	::name
 #endif
 
 #endif /* __cplusplus */

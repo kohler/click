@@ -171,7 +171,7 @@ ElementClassT::provides(const String &req) const
 }
 
 inline size_t hashcode(ElementClassT *e) {
-    return ::hashcode(static_cast<void *>(e));
+    return CLICK_NAME(hashcode)(static_cast<void *>(e));
 }
 
 #endif

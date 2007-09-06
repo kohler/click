@@ -8,7 +8,7 @@
 #define CLICK_DECLS		namespace Click {
 #define CLICK_ENDDECLS		}
 #define CLICK_USING_DECLS	using namespace Click;
-#define CLICK_NAME(name)	Click::name
+#define CLICK_NAME(name)	::Click::name
 
 #endif /* __cplusplus */
 
