@@ -65,18 +65,18 @@ Version 1.6.0
 
 * Other bug fixes and improvements.
 
-* Thanks to Nicola Arnoldi, Ioannis Avramopoulos, Koen Beel, Kristian
-  Beilke, Torquato Bertani, John Bicket, Bart Braem, Vladimir Bychkovsky,
-  Srivas Chennu, Roman Chertov, David Claffey, Beyers Cronje, Peter De
-  Cleyn, Norbert Egi, Nick Feamster, Cliff Frey, Matt Gordon, Adam
-  Greenhalgh, Mark Huang, Mathias Jeschke, Azeem Khan, Christian Kreibich,
-  Mathias Kurth, Kevin Lahey, lastlijing yahoo com cn, Pierre-Emmanuel Le
-  Roux, Joe Maldonaldo, Tim Morgan, Jim Mott-Smith, Jens Mueller, Arvid
-  Nilsson, Jason Park, Vern Paxson, Max Poletto, Vivek Raghunathan, Roberto
-  Riggio, Robert Ross, Bruce Simpson, Puneet Sood, Dimitris Syrivelis,
-  Seiichi Tatsukawa, Andy Van Maele, Frederic Van Quickenborne, Wim
-  Vandenberghe, Rob Wachol, and Mike Wilson, and anyone we inadvertently
-  forgot to mention here.
+* Thanks to Nicola Arnoldi, Ioannis Avramopoulos, Salman Abdul Baset, Koen
+  Beel, Kristian Beilke, Torquato Bertani, John Bicket, Bart Braem,
+  Vladimir Bychkovsky, Srivas Chennu, Roman Chertov, David Claffey, Beyers
+  Cronje, Peter De Cleyn, Norbert Egi, Nick Feamster, Cliff Frey, Matt
+  Gordon, Adam Greenhalgh, Mark Huang, Mathias Jeschke, Azeem Khan,
+  Christian Kreibich, Mathias Kurth, Kevin Lahey, lastlijing yahoo com cn,
+  Pierre-Emmanuel Le Roux, Joe Maldonaldo, Tim Morgan, Jim Mott-Smith, Jens
+  Mueller, Arvid Nilsson, Joonwoo (Jason) Park, Vern Paxson, Max Poletto,
+  Vivek Raghunathan, Roberto Riggio, Robert Ross, Bruce Simpson, Puneet
+  Sood, Dimitris Syrivelis, Seiichi Tatsukawa, Andy Van Maele, Frederic Van
+  Quickenborne, Wim Vandenberghe, Rob Wachol, and Mike Wilson, and anyone
+  we inadvertently forgot to mention here.
 
 
 Version 1.5.0   19.May.2006
