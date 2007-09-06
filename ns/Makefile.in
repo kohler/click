@@ -70,14 +70,14 @@ STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o \
 OBJS = $(ELEMENT_OBJS) $(ELEMENTSCONF).o nsclick.o
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_NS
-CFLAGS = @CFLAGS@ -fpic
-CXXFLAGS = @CXXFLAGS@ -fpic
+CFLAGS = @CFLAGS@ -fPIC
+CXXFLAGS = @CXXFLAGS@ -fPIC
 DEPCFLAGS = @DEPCFLAGS@
 
 DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(srcdir) -I$(top_srcdir) @PCAP_INCLUDES@
-LDFLAGS = @LDFLAGS@
+LDFLAGS = @LDMODULEFLAGS@
 LIBS = @LIBS@ `$(top_builddir)/click-compile --otherlibs` $(ELEMENT_LIBS)
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
@@ -102,7 +102,7 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 libnsclick.so: Makefile $(LIBOBJS) $(OBJS)
-	$(CXX) -shared -o libnsclick.so $(LIBOBJS) $(OBJS)
+	$(CXXLINK) -shared $(LIBOBJS) $(OBJS)
 libnsclick.a: Makefile $(LIBOBJS) $(OBJS)
 	$(AR_CREATE) libnsclick.a $(LIBOBJS) $(OBJS)
 	$(RANLIB) libnsclick.a
