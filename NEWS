@@ -26,6 +26,8 @@ Version 1.6.0
 
 ** click-viz is an integrated tool.
 
+** click-fastclassifier and click-devirtualize work.
+
 * Elements
 
 ** The Linux kernel module device elements FromDevice and PollDevice have a
@@ -52,12 +54,13 @@ Version 1.6.0
 
 * Internals
 
-** Important bug fix in Task will make notification more stable.
+** Important bug fixes in Task will make notification more stable.
 
 ** Remove some deprecated member functions in String,
 
 ** Fix bugs in lexing, notification, and Linux kernel module locking and
-   SMP support.
+   SMP support.  Thanks especially to Joonwoo (Jason) Park for SMP patches
+   and bug reports.
 
 ** String and StringAccum objects use specialized memory allocation
    functions, allowing very large Strings and StringAccums in kernel space.
