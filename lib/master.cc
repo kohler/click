@@ -29,9 +29,6 @@
 #  define EV_SET_UDATA_CAST	/* nothing */
 # endif
 #endif
-#if CLICK_USERLEVEL
-# include <signal.h>
-#endif
 CLICK_DECLS
 
 #if CLICK_USERLEVEL && !HAVE_POLL_H
@@ -39,7 +36,8 @@ enum { POLLIN = Element::SELECT_READ, POLLOUT = Element::SELECT_WRITE };
 #endif
 
 #if CLICK_USERLEVEL
-atomic_uint32_t Master::signals_pending;
+sig_atomic_t Master::signals_pending;
+static sig_atomic_t signal_pending[NSIG];
 #endif
 
 Master::Master(int nthreads)
@@ -910,8 +908,7 @@ sighandler(int signo)
 #if !HAVE_SIGACTION
     signal(signo, SIG_DFL);
 #endif
-    if (signo >= 0 && signo < 32)
-	Master::signals_pending |= (1 << signo);
+    Master::signals_pending = signal_pending[signo] = 1;
 }
 }
 
@@ -977,40 +974,49 @@ Master::remove_signal_handler(int signo, Router *router, const String &handler)
 void
 Master::process_signals()
 {
-    uint32_t had_signals = signals_pending.swap(0);
-    uint32_t unhandled_signals = had_signals;
+    signals_pending = 0;
+    char handled[NSIG];
     _signal_lock.acquire();
 
     SignalInfo *happened = 0;
     SignalInfo **pprev = &_siginfo;
+    sigset_t sigset;
+    sigemptyset(&sigset);
     for (SignalInfo *si = *pprev; si; si = *pprev)
-	if ((had_signals & (1 << si->signo)) && si->router->running()) {
+	if (signal_pending[si->signo] && si->router->running()) {
 	    *pprev = si->next;
 	    si->next = happened;
 	    happened = si;
+	    handled[si->signo] = 0;
+	    signal_pending[happened->signo] = 0;
+	    sigaddset(&sigset, si->signo);
 	} else
 	    pprev = &si->next;
 
+    SignalInfo *unhandled;
+    SignalInfo **unhandled_pprev = &unhandled;
     while (happened) {
 	SignalInfo *next = happened->next;
-	if (HandlerCall::call_write(happened->handler, happened->router->root_element()) >= 0)
-	    unhandled_signals &= ~(1 << happened->signo);
-	delete happened;
+	if (HandlerCall::call_write(happened->handler, happened->router->root_element()) >= 0) {
+	    handled[happened->signo] = 1;
+	    delete happened;
+	} else {
+	    *unhandled_pprev = happened;
+	    unhandled_pprev = &happened->next;
+	}
 	happened = next;
     }
+    *unhandled_pprev = 0;
 
-    sigset_t sigset;
-    sigemptyset(&sigset);
-    for (int signo = 0; signo < 32; signo++)
-	if (had_signals & (1 << signo))
-	    sigaddset(&sigset, signo);
     sigprocmask(SIG_UNBLOCK, &sigset, 0);
 
-    for (int signo = 0; unhandled_signals; signo++)
-	if (unhandled_signals & (1 << signo)) {
-	    unhandled_signals &= ~(1 << signo);
-	    kill(getpid(), signo);
-	}
+    while (unhandled) {
+	SignalInfo *next = unhandled->next;
+	if (!handled[unhandled->signo])
+	    kill(getpid(), unhandled->signo);
+	delete unhandled;
+	unhandled = next;
+    }
 
     _signal_lock.release();
 }

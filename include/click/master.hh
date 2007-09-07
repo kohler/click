@@ -8,6 +8,7 @@
 #include <click/atomic.hh>
 #if CLICK_USERLEVEL
 # include <unistd.h>
+# include <signal.h>
 # if HAVE_POLL_H
 #  include <poll.h>
 # endif
@@ -62,7 +63,7 @@ class Master { public:
 #endif
 
 #if CLICK_USERLEVEL
-    static atomic_uint32_t signals_pending;
+    static sig_atomic_t signals_pending;
 #endif
     
   private:
