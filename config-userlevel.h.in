@@ -143,6 +143,9 @@
 /* Define if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define if a Click user-level driver might run multiple threads. */
+#undef HAVE_USER_MULTITHREAD
+
 /* Define if you have the vsnprintf function. */
 #undef HAVE_VSNPRINTF
 
@@ -182,6 +185,11 @@ typedef unsigned long uintptr_t;
 /* Define HAVE_INT64_IS_LONG_LONG based on HAVE_INT64_IS_LONG_LONG_USERLEVEL. */
 #ifdef HAVE_INT64_IS_LONG_LONG_USERLEVEL
 # define HAVE_INT64_IS_LONG_LONG HAVE_INT64_IS_LONG_LONG_USERLEVEL
+#endif
+
+/* Define HAVE_MULTITHREAD based on HAVE_USER_MULTITHREAD. */
+#ifdef HAVE_USER_MULTITHREAD
+# define HAVE_MULTITHREAD HAVE_USER_MULTITHREAD
 #endif
 
 /* Include assert macro. */

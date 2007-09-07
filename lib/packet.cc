@@ -446,7 +446,7 @@ Packet::shift_data(int offset, bool free_on_failure)
     if (offset < 0 && headroom() < (uint32_t)(-offset))
       offset = -headroom() + ((uintptr_t)(data() + offset) & 7);
     else
-      offset += ((uintptr_t)buffer_data() & 7);
+      offset += ((uintptr_t)buffer() & 7);
     return expensive_uniqueify(offset, tailroom_offset, free_on_failure);
   }
 }

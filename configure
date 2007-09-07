@@ -1329,7 +1329,13 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-userlevel     disable user-level driver
+    --enable-user-multithread support userlevel multithreading (EXPERIMENTAL)
   --disable-linuxmodule   disable Linux kernel driver
+    --enable-multithread[=N]  support kernel multithreading, N threads max
+    --enable-warp9            reduce PollDevice functionality for speed
+    --enable-kassert          enable kernel assertions
+    --enable-adaptive         use adaptive scheduler to flexibly arbitrate
+                              between Click and the kernel (EXPERIMENTAL)
   --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)
   --enable-nsclick        enable NS simulator driver (EXPERIMENTAL)
   --enable-all-elements   include all provided element groups
@@ -1353,15 +1359,10 @@ Optional Features:
   --disable-int64         disable 64-bit integer support
   --enable-nanotimestamp  enable nanosecond timestamps
   --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
-  --disable-dynamic-linking     disable dynamic-linking
-  --enable-multithread[=NUM] support kernel multithreading, NUM threads max
-  --enable-warp9          reduce PollDevice functionality for speed
+  --disable-dynamic-linking disable dynamic linking
   --disable-stride        disable stride scheduler
   --enable-task-heap      use heap for task list
-  --enable-adaptive       use adaptive scheduler to flexibly arbitrate between
-                          Click and the kernel (EXPERIMENTAL)
   --enable-dmalloc        enable debugging malloc
-  --enable-kassert        enable kernel assertions
   --enable-intel-cpu      enable Intel-specific machine instructions
 
 Optional Packages:
@@ -4641,12 +4642,30 @@ test -z "$AR_CREATEFLAGS" && AR_CREATEFLAGS=cru
 
 
 
+
 # Check whether --enable-userlevel was given.
 if test "${enable_userlevel+set}" = set; then
   enableval=$enable_userlevel; :
 else
   enable_userlevel=yes
 fi
+
+
+# Check whether --enable-user-multithread was given.
+if test "${enable_user_multithread+set}" = set; then
+  enableval=$enable_user_multithread; :
+else
+  enable_user_multithread=no
+fi
+
+if test "x$enable_user_multithread" = xyes; then
+    cat >>confdefs.h <<\_ACEOF
+#define HAVE_USER_MULTITHREAD 1
+_ACEOF
+
+fi
+
+
 
 # Check whether --enable-linuxmodule was given.
 if test "${enable_linuxmodule+set}" = set; then
@@ -4655,12 +4674,93 @@ else
   enable_linuxmodule=yes; enable_linuxmodule_default=yes
 fi
 
+
+# Check whether --enable-multithread was given.
+if test "${enable_multithread+set}" = set; then
+  enableval=$enable_multithread; :
+else
+  enable_multithread=no
+fi
+
+
+test "$enable_multithread" = yes && enable_multithread=4
+test "$enable_multithread" = no && enable_multithread=1
+if test "$enable_multithread" -gt 1; then
+    cat >>confdefs.h <<_ACEOF
+#define NUM_CLICK_CPUS $enable_multithread
+_ACEOF
+
+    cat >>confdefs.h <<_ACEOF
+#define __MTCLICK__ 1
+_ACEOF
+
+    saveflags="$CPPFLAGS"
+    CPPFLAGS="$saveflags -D__MTCLICK__"
+else
+    cat >>confdefs.h <<_ACEOF
+#define NUM_CLICK_CPUS 1
+_ACEOF
+
+fi
+
+# Check whether --enable-warp9 was given.
+if test "${enable_warp9+set}" = set; then
+  enableval=$enable_warp9; :
+else
+  enable_warp9=no
+fi
+
+if test "x$enable_warp9" = xyes; then
+    cat >>confdefs.h <<\_ACEOF
+#define CLICK_WARP9 1
+_ACEOF
+
+fi
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_CLICKFS 1
+_ACEOF
+
+
+# Check whether --enable-kassert was given.
+if test "${enable_kassert+set}" = set; then
+  enableval=$enable_kassert; :
+else
+  enable_kassert=no
+fi
+
+if test $enable_kassert = yes; then
+    cat >>confdefs.h <<\_ACEOF
+#define HAVE_KERNEL_ASSERT 1
+_ACEOF
+
+fi
+
+# Check whether --enable-adaptive was given.
+if test "${enable_adaptive+set}" = set; then
+  enableval=$enable_adaptive; :
+else
+  enable_adaptive=no
+fi
+
+if test "x$enable_adaptive" = xyes; then
+    cat >>confdefs.h <<\_ACEOF
+#define HAVE_ADAPTIVE_SCHEDULER 1
+_ACEOF
+
+fi
+
+
+
+
 # Check whether --enable-bsdmodule was given.
 if test "${enable_bsdmodule+set}" = set; then
   enableval=$enable_bsdmodule; :
 else
   enable_bsdmodule=no
 fi
+
+
 
 # Check whether --enable-nsclick was given.
 if test "${enable_nsclick+set}" = set; then
@@ -8580,7 +8680,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 8583 "configure"
+#line 8683 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -12513,55 +12613,6 @@ fi
 
 
 
-# Check whether --enable-multithread was given.
-if test "${enable_multithread+set}" = set; then
-  enableval=$enable_multithread; :
-else
-  enable_multithread=no
-fi
-
-
-test "$enable_multithread" = yes && enable_multithread=4
-test "$enable_multithread" = no && enable_multithread=1
-if test "$enable_multithread" -gt 1; then
-    cat >>confdefs.h <<_ACEOF
-#define NUM_CLICK_CPUS $enable_multithread
-_ACEOF
-
-    cat >>confdefs.h <<_ACEOF
-#define __MTCLICK__ 1
-_ACEOF
-
-    saveflags="$CPPFLAGS"
-    CPPFLAGS="$saveflags -D__MTCLICK__"
-else
-    cat >>confdefs.h <<_ACEOF
-#define NUM_CLICK_CPUS 1
-_ACEOF
-
-fi
-
-# Check whether --enable-warp9 was given.
-if test "${enable_warp9+set}" = set; then
-  enableval=$enable_warp9; :
-else
-  enable_warp9=no
-fi
-
-if test "x$enable_warp9" = xyes; then
-    cat >>confdefs.h <<\_ACEOF
-#define CLICK_WARP9 1
-_ACEOF
-
-fi
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_CLICKFS 1
-_ACEOF
-
-
-
-
 EXTRA_DRIVER_OBJS=
 EXTRA_TOOL_OBJS=
 if test "x$enable_ip6" = xyes; then
@@ -12900,20 +12951,6 @@ _ACEOF
 
 fi
 
-# Check whether --enable-adaptive was given.
-if test "${enable_adaptive+set}" = set; then
-  enableval=$enable_adaptive; :
-else
-  enable_adaptive=no
-fi
-
-if test "x$enable_adaptive" = xyes; then
-    cat >>confdefs.h <<\_ACEOF
-#define HAVE_ADAPTIVE_SCHEDULER 1
-_ACEOF
-
-fi
-
 
 
 # Check whether --enable-dmalloc was given.
@@ -12926,22 +12963,6 @@ fi
 if test $enable_dmalloc = yes; then
     cat >>confdefs.h <<\_ACEOF
 #define CLICK_DMALLOC 1
-_ACEOF
-
-fi
-
-
-
-# Check whether --enable-kassert was given.
-if test "${enable_kassert+set}" = set; then
-  enableval=$enable_kassert; :
-else
-  enable_kassert=no
-fi
-
-if test $enable_kassert = yes; then
-    cat >>confdefs.h <<\_ACEOF
-#define HAVE_KERNEL_ASSERT 1
 _ACEOF
 
 fi
@@ -16003,6 +16024,10 @@ fi
 
 if test "$enable_multithread" -gt 1; then
     provisions="$provisions smpclick"
+fi
+
+if test "x$enable_user_multithread" = xyes; then
+    provisions="$provisions umultithread"
 fi
 
 if test "x$enable_wifi" = xyes; then

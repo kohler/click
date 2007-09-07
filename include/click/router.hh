@@ -194,9 +194,9 @@ class Router { public:
 
     Vector<String> _requirements;
 
-    int _state;
+    volatile int _state;
     bool _have_connections : 1;
-    int _running;
+    volatile int _running;
   
     Vector<int> _ehandler_first_by_element;
     Vector<int> _ehandler_to_handler;

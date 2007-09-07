@@ -90,6 +90,14 @@ PacketTest::initialize(ErrorHandler *errh)
     p3->kill();
 
 #if 0
+    // time cloning
+    p = Packet::make(4);
+    for (int i = 0; i < 40000000; i++)
+	p->clone()->kill();
+    p->kill();
+#endif
+
+#if 0
     // test shift_data()
     p = Packet::make(10, lowers, 60, 4);
     CHECK(p->headroom() == 10 && p->tailroom() == 4);

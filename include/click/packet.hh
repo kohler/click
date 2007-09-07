@@ -8,6 +8,9 @@
 #if CLICK_LINUXMODULE
 # include <click/skbmgr.hh>
 #endif
+#if !CLICK_LINUXMODULE && HAVE_MULTITHREAD
+# include <click/atomic.hh>
+#endif
 struct click_ether;
 struct click_ip;
 struct click_icmp;
@@ -41,7 +44,6 @@ class Packet { public:
   static Packet *make(struct sk_buff *);
   struct sk_buff *skb()			{ return (struct sk_buff *)this; }
   const struct sk_buff *skb() const	{ return (const struct sk_buff*)this; }
-  void kill();
 #elif CLICK_BSDMODULE
   // Packet::make(mbuf *) wraps a Packet around an existing mbuf.
   // Packet now owns the mbuf.
@@ -49,11 +51,11 @@ class Packet { public:
   struct mbuf *m()			{ return _m; }
   const struct mbuf *m() const		{ return (const struct mbuf *)_m; }
   struct mbuf *steal_m();
-  void kill()				{ if (--_use_count <= 0) delete this; }
 #else			/* User-space */
   static WritablePacket *make(unsigned char *, uint32_t, void (*destructor)(unsigned char *, size_t));
-  void kill()				{ if (--_use_count <= 0) delete this; }
 #endif
+
+    inline void kill();
 
     inline bool shared() const;
     Packet *clone();
@@ -64,7 +66,8 @@ class Packet { public:
     inline uint32_t length() const;
     inline uint32_t headroom() const;
     inline uint32_t tailroom() const;
-    inline const unsigned char *buffer_data() const;
+    inline const unsigned char *buffer() const;
+    inline const unsigned char *end_buffer() const;
     inline uint32_t buffer_length() const;
   
     WritablePacket *push(uint32_t nb);	// Add more space before packet.
@@ -216,6 +219,8 @@ class Packet { public:
   
   void clear_annotations();
   void copy_annotations(const Packet *);
+
+    inline const unsigned char *buffer_data() const CLICK_DEPRECATED;
   
   private:
 
@@ -242,18 +247,20 @@ class Packet { public:
     };
 
 #if !CLICK_LINUXMODULE
-  /*
-   * User-space and BSD kernel module implementations.
-   */
-  int _use_count;
-  Packet *_data_packet;
-  /* mimic Linux sk_buff */
-  unsigned char *_head; /* start of allocated buffer */
-  unsigned char *_data; /* where the packet starts */
-  unsigned char *_tail; /* one beyond end of packet */
-  unsigned char *_end;  /* one beyond end of allocated buffer */
+    // User-space and BSD kernel module implementations.
+# if HAVE_MULTITHREAD
+    atomic_uint32_t _use_count;
+# else
+    uint32_t _use_count;
+# endif
+    Packet *_data_packet;
+    /* mimic Linux sk_buff */
+    unsigned char *_head; /* start of allocated buffer */
+    unsigned char *_data; /* where the packet starts */
+    unsigned char *_tail; /* one beyond end of packet */
+    unsigned char *_end;  /* one beyond end of allocated buffer */
 # if CLICK_USERLEVEL
-  void (*_destructor)(unsigned char *, size_t);
+    void (*_destructor)(unsigned char *, size_t);
 # endif
     unsigned char _cb[48];
     unsigned char *_mac;
@@ -262,11 +269,11 @@ class Packet { public:
     PacketType _pkt_type;
     Timestamp _timestamp;
 # if CLICK_BSDMODULE
-  struct mbuf *_m;
+    struct mbuf *_m;
 # endif
-  Packet *_next;
+    Packet *_next;
 # if CLICK_NS
-  SimPacketinfoWrapper _sim_packetinfo;
+    SimPacketinfoWrapper _sim_packetinfo;
 # endif
 #endif
   
@@ -299,7 +306,8 @@ class WritablePacket : public Packet { public:
   
     inline unsigned char *data() const;
     inline unsigned char *end_data() const;
-    inline unsigned char *buffer_data() const;
+    inline unsigned char *buffer() const;
+    inline unsigned char *end_buffer() const;
     inline unsigned char *mac_header() const;
     inline click_ether *ether_header() const;
     inline unsigned char *network_header() const;
@@ -309,6 +317,8 @@ class WritablePacket : public Packet { public:
     inline click_icmp *icmp_header() const;
     inline click_tcp *tcp_header() const;
     inline click_udp *udp_header() const;
+
+    inline unsigned char *buffer_data() const CLICK_DEPRECATED;
     
  private:
 
@@ -373,12 +383,22 @@ Packet::tailroom() const
 }
 
 inline const unsigned char *
-Packet::buffer_data() const
+Packet::buffer() const
 {
 #if CLICK_LINUXMODULE
     return skb()->head;
 #else
     return _head;
+#endif
+}
+
+inline const unsigned char *
+Packet::end_buffer() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->end;
+#else
+    return _end;
 #endif
 }
 
@@ -389,6 +409,16 @@ Packet::buffer_length() const
     return skb()->end - skb()->head;
 #else
     return _end - _head;
+#endif
+}
+
+inline const unsigned char *
+Packet::buffer_data() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->head;
+#else
+    return _head;
 #endif
 }
 
@@ -628,18 +658,30 @@ Packet::make(struct sk_buff *skb)
     return p;
   }
 }
+#endif
+
 
 inline void
 Packet::kill()
 {
+#if CLICK_LINUXMODULE
     struct sk_buff *b = skb();
     b->next = b->prev = 0;
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 15)
+# if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 15)
     b->list = 0;
-#endif
+# endif
     skbmgr_recycle_skbs(b);
-}
+#else
+# if HAVE_MULTITHREAD
+    if (_use_count.dec_and_test())
+	delete this;
+# else
+    if (--_use_count == 0)
+	delete this;
+# endif
 #endif
+}
+
 
 #if CLICK_BSDMODULE		/* BSD kernel module */
 inline void
@@ -1064,9 +1106,21 @@ WritablePacket::end_data() const
 }
 
 inline unsigned char *
+WritablePacket::buffer() const
+{
+    return const_cast<unsigned char *>(Packet::buffer());
+}
+
+inline unsigned char *
+WritablePacket::end_buffer() const
+{
+    return const_cast<unsigned char *>(Packet::end_buffer());
+}
+
+inline unsigned char *
 WritablePacket::buffer_data() const
 {
-    return const_cast<unsigned char *>(Packet::buffer_data());
+    return const_cast<unsigned char *>(Packet::buffer());
 }
 
 inline unsigned char *
