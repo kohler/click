@@ -3,6 +3,7 @@
 #define CLICK_ATOMIC_HH
 CLICK_DECLS
 #if CLICK_LINUXMODULE
+# include <click/glue.hh>
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 #  define CLICK_ATOMIC_VAL	_val.counter
 # else
