@@ -324,10 +324,13 @@ click_lalloc(size_t size)
 }
 
 void
-click_lfree(void *p, size_t size)
+click_lfree(volatile void *p, size_t size)
 {
     if (p) {
-	((size > CLICK_LALLOC_MAX_SMALL) ? vfree(p) : kfree(p));
+	if (size > CLICK_LALLOC_MAX_SMALL)
+	    vfree((void *) p);
+	else
+	    kfree((void *) p);
 	click_dmalloc_curnew--;
     }
 }

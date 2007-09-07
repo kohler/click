@@ -95,7 +95,7 @@ extern uint32_t click_dmalloc_where;
 # define CLICK_LFREE(p, size)	(click_lfree((p), (size)))
 extern "C" {
 void *click_lalloc(size_t size);
-void click_lfree(void *p, size_t size);
+void click_lfree(volatile void *p, size_t size);
 }
 #else
 # define CLICK_LALLOC(size)	((void *)(new uint8_t[(size)]))
