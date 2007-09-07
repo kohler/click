@@ -70,22 +70,26 @@ const char String::oom_string_data = 0;
 /** @cond never */
 inline
 String::Memo::Memo()
-  : _refcount(0), _capacity(0), _dirty(0), _real_data("")
+  : _capacity(0), _real_data("")
 {
+    _refcount = 0;
+    _dirty = 0;
 }
 
 inline
 String::Memo::Memo(char *data, int dirty, int capacity)
-  : _refcount(0), _capacity(capacity), _dirty(dirty),
-    _real_data(data)
+  : _capacity(capacity), _real_data(data)
 {
+    _refcount = 0;
+    _dirty = dirty;
 }
 
 String::Memo::Memo(int dirty, int capacity)
-  : _refcount(1), _capacity(capacity), _dirty(dirty),
-    _real_data((char *) CLICK_LALLOC(capacity))
+  : _capacity(capacity), _real_data((char *) CLICK_LALLOC(capacity))
 {
-  assert(_capacity >= _dirty);
+    assert(_capacity >= _dirty);
+    _refcount = 1;
+    _dirty = dirty;
 }
 
 String::Memo::~Memo()
@@ -304,13 +308,14 @@ String::append_garbage(int len)
 	return 0;
   
     // If we can, append into unused space. First, we check that there's
-    // enough unused space for `len' characters to fit; then, we check
-    // that the unused space immediately follows the data in `*this'.
-    if (_memo->_capacity > _memo->_dirty + len) {
-	char *real_dirty = _memo->_real_data + _memo->_dirty;
-	if (real_dirty == _data + _length) {
+    // enough unused space for 'len' characters to fit; then, we check
+    // that the unused space immediately follows the data in '*this'.
+    uint32_t dirty = _memo->_dirty;
+    if (_memo->_capacity > dirty + len) {
+	char *real_dirty = _memo->_real_data + dirty;
+	if (real_dirty == _data + _length
+	    && _memo->_dirty.compare_and_swap(dirty, dirty + len)) {
 	    _length += len;
-	    _memo->_dirty += len;
 	    assert(_memo->_dirty < _memo->_capacity);
 	    return real_dirty;
 	}
@@ -432,11 +437,16 @@ String::c_str() const
 	 || _memo->_real_data + _memo->_dirty >= _data + _length);
   
   // Has the character after our substring been set?
-  if (_memo->_real_data + _memo->_dirty == _data + _length) {
-    // Character after our substring has not been set. May be able to change
-    // it to '\0'. This case will never occur on special strings.
-    if (_memo->_dirty < _memo->_capacity)
-      goto add_final_nul;
+  uint32_t dirty = _memo->_dirty;
+  if (_memo->_real_data + dirty == _data + _length) {
+      if (_memo->_capacity > dirty
+	  && _memo->_dirty.compare_and_swap(dirty, dirty + 1)) {
+	  // Character after our substring has not been set. Change it to '\0'.
+	  // This case will never occur on special strings.
+	  char *real_data = const_cast<char *>(_data);
+	  real_data[_length] = '\0';
+	  return _data;
+      }
     
   } else {
     // Character after our substring has been set. OK to return _data if it is
@@ -452,7 +462,6 @@ String::c_str() const
     assign(s);
   }
   
- add_final_nul:
   char *real_data = const_cast<char *>(_data);
   real_data[_length] = '\0';
   _memo->_dirty++;		// include '\0' in used portion of _memo
@@ -810,11 +819,11 @@ String::static_cleanup()
 	null_string_p = 0;
 	delete oom_string_p;
 	oom_string_p = 0;
-	if (--oom_memo->_refcount == 0)
+	if (oom_memo->_refcount.dec_and_test())
 	    delete oom_memo;
-	if (--permanent_memo->_refcount == 0)
+	if (permanent_memo->_refcount.dec_and_test())
 	    delete permanent_memo;
-	if (--null_memo->_refcount == 0)
+	if (null_memo->_refcount.dec_and_test())
 	    delete null_memo;
 	null_memo = permanent_memo = oom_memo = 0;
     }

@@ -5,6 +5,7 @@
 # include "permstr.hh"
 #endif
 #include <click/algorithm.hh>
+#include <click/atomic.hh>
 CLICK_DECLS
 
 /** @file <click/string.hh>
@@ -147,9 +148,9 @@ class String { public:
 
   /** @cond never */
   struct Memo {
-    int _refcount;
-    int _capacity;
-    int _dirty;
+    atomic_uint32_t _refcount;
+    uint32_t _capacity;
+    atomic_uint32_t _dirty;
     char *_real_data;
     
     Memo();
@@ -204,7 +205,7 @@ String::assign(const String &str) const
 inline void
 String::deref() const
 {
-  if (--_memo->_refcount == 0)
+  if (_memo->_refcount.dec_and_test())
     delete _memo;
 }
 
