@@ -15,7 +15,7 @@ CLICK_DECLS
 # endif
 #else
 # define CLICK_ATOMIC_VAL	_val
-# if CLICK_USERLEVEL && defined(__i386__)
+# if HAVE_MULTITHREAD && defined(__i386__)
 #  define CLICK_ATOMIC_X86	1
 #  define CLICK_ATOMIC_LOCK	"lock ; "
 # else
@@ -50,6 +50,8 @@ class atomic_uint32_t { public:
 
 #if CLICK_LINUXMODULE
     atomic_t _val;
+#elif HAVE_MULTITHREAD
+    volatile uint32_t _val;
 #else
     uint32_t _val;
 #endif

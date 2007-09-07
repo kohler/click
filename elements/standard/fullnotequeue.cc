@@ -62,8 +62,7 @@ FullNoteQueue::push(int, Packet *p)
 	if (s > _highwater_length)
 	    _highwater_length = s;
 
-        if (s == 1)
-	    _empty_note.wake(); 
+	_empty_note.wake(); 
 
 	if (s == capacity()) {
 	    _full_note.sleep();
@@ -96,9 +95,8 @@ FullNoteQueue::pull(int)
 	_head = nh;
 
 	_sleepiness = 0;
-	
-	if (size(nh, t) == capacity() - 1)
-	    _full_note.wake();
+
+	_full_note.wake();
 	
 	return p;
 	

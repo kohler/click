@@ -63,8 +63,7 @@ NotifierQueue::push(int, Packet *p)
 	if (s > _highwater_length)
 	    _highwater_length = s;
 
-        if (s == 1)
-	    _empty_note.wake(); 
+	_empty_note.wake(); 
 
     } else {
 	if (_drops == 0)

@@ -7,8 +7,7 @@
 #include <click/timestamp.hh>
 #if CLICK_LINUXMODULE
 # include <click/skbmgr.hh>
-#endif
-#if !CLICK_LINUXMODULE && HAVE_MULTITHREAD
+#else
 # include <click/atomic.hh>
 #endif
 struct click_ether;
@@ -248,11 +247,7 @@ class Packet { public:
 
 #if !CLICK_LINUXMODULE
     // User-space and BSD kernel module implementations.
-# if HAVE_MULTITHREAD
     atomic_uint32_t _use_count;
-# else
-    uint32_t _use_count;
-# endif
     Packet *_data_packet;
     /* mimic Linux sk_buff */
     unsigned char *_head; /* start of allocated buffer */
@@ -672,13 +667,8 @@ Packet::kill()
 # endif
     skbmgr_recycle_skbs(b);
 #else
-# if HAVE_MULTITHREAD
     if (_use_count.dec_and_test())
 	delete this;
-# else
-    if (--_use_count == 0)
-	delete this;
-# endif
 #endif
 }
 
