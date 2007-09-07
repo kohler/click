@@ -10,6 +10,7 @@ class Storage { public:
     operator bool() const		{ return _head != _tail; }
     bool empty() const			{ return _head == _tail; }
     int size() const;
+    int size(int head, int tail) const;
     int capacity() const		{ return _capacity; }
 
     int head() const			{ return _head; }
@@ -26,16 +27,22 @@ class Storage { public:
   protected:
 
     int _capacity;
-    int _head;
-    int _tail;
+    volatile int _head;
+    volatile int _tail;
   
 };
 
 inline int
+Storage::size(int head, int tail) const
+{
+    int x = tail - head;
+    return (x >= 0 ? x : _capacity + x + 1);
+}
+    
+inline int
 Storage::size() const
 {
-    register int x = _tail - _head;
-    return (x >= 0 ? x : _capacity + x + 1);
+    return size(_head, _tail);
 }
 
 CLICK_ENDDECLS

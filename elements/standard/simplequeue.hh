@@ -68,7 +68,7 @@ class SimpleQueue : public Element, public Storage { public:
     int drops() const				{ return _drops; }
     int highwater_length() const		{ return _highwater_length; }
     
-    inline void enq(Packet*);
+    inline bool enq(Packet*);
     inline void lifo_enq(Packet*);
     inline Packet* deq();
 
@@ -97,8 +97,8 @@ class SimpleQueue : public Element, public Storage { public:
   
   protected:
   
-    Packet** _q;
-    int _drops;
+    Packet* volatile * _q;
+    volatile int _drops;
     int _highwater_length;
 
     friend class MixedQueue;
@@ -112,20 +112,22 @@ class SimpleQueue : public Element, public Storage { public:
 };
 
 
-inline void
+inline bool
 SimpleQueue::enq(Packet *p)
 {
     assert(p);
-    int next = next_i(_tail);
-    if (next != _head) {
-	_q[_tail] = p;
-	_tail = next;
-	int s = size();
+    int h = _head, t = _tail, nt = next_i(t);
+    if (nt != h) {
+	_q[t] = p;
+	_tail = nt;
+	int s = size(h, nt);
 	if (s > _highwater_length)
 	    _highwater_length = s;
+	return true;
     } else {
 	p->kill();
 	_drops++;
+	return false;
     }
 }
 
@@ -135,22 +137,24 @@ SimpleQueue::lifo_enq(Packet *p)
     // XXX NB: significantly more dangerous in a multithreaded environment
     // than plain (FIFO) enq().
     assert(p);
-    int prev = prev_i(_head);
-    if (prev == _tail) {
-	_tail = prev_i(_tail);
-	_q[_tail]->kill();
+    int h = _head, t = _tail, ph = prev_i(h);
+    if (ph == t) {
+	t = prev_i(t);
+	_q[t]->kill();
+	_tail = t;
     }
-    _q[prev] = p;
-    _head = prev;
+    _q[ph] = p;
+    _head = ph;
 }
 
 inline Packet *
 SimpleQueue::deq()
 {
-    if (_head != _tail) {
-	Packet *p = _q[_head];
+    int h = _head, t = _tail;
+    if (h != t) {
+	Packet *p = _q[h];
+	_head = next_i(h);
 	assert(p);
-	_head = next_i(_head);
 	return p;
     } else
 	return 0;

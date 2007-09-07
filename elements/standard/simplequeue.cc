@@ -146,15 +146,16 @@ SimpleQueue::cleanup(CleanupStage)
 void
 SimpleQueue::push(int, Packet *p)
 {
-    // If you change this code, also change NotifierQueue::push().
-    int next = next_i(_tail);
+    // If you change this code, also change NotifierQueue::push()
+    // and FullNoteQueue::push().
+    int h = _head, t = _tail, nt = next_i(t);
   
     // should this stuff be in SimpleQueue::enq?
-    if (next != _head) {
-	_q[_tail] = p;
-	_tail = next;
+    if (nt != h) {
+	_q[t] = p;
+	_tail = nt;
 
-	int s = size();
+	int s = size(h, nt);
 	if (s > _highwater_length)
 	    _highwater_length = s;
     

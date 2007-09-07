@@ -52,13 +52,13 @@ void
 NotifierQueue::push(int, Packet *p)
 {
     // Code taken from SimpleQueue::push().
-    int next = next_i(_tail);
+    int h = _head, t = _tail, nt = next_i(t);
 
-    if (next != _head) {
-	_q[_tail] = p;
-	_tail = next;
+    if (nt != h) {
+	_q[t] = p;
+	_tail = nt;
 
-	int s = size();
+	int s = size(h, nt);
 	if (s > _highwater_length)
 	    _highwater_length = s;
 
@@ -86,7 +86,7 @@ NotifierQueue::pull(int)
 	// Work around race condition between push() and pull().
 	// We might have just undone push()'s Notifier::wake() call.
 	// Easiest lock-free solution: check whether we should wake again!
-	if (_head != _tail)
+	if (size())
 	    _empty_note.wake();
 #endif
     }

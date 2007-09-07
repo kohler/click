@@ -51,17 +51,17 @@ void
 FullNoteQueue::push(int, Packet *p)
 {
     // Code taken from SimpleQueue::push().
-    int next = next_i(_tail);
+    int h = _head, t = _tail, nt = next_i(t);
 
-    if (next != _head) {
-	_q[_tail] = p;
-	_tail = next;
+    if (nt != h) {
+	_q[t] = p;
+	_tail = nt;
 
-	int s = size();
+	int s = size(h, nt);
 	if (s > _highwater_length)
 	    _highwater_length = s;
 
-        if (s == 1) 
+        if (s == 1)
 	    _empty_note.wake(); 
 
 	if (s == capacity()) {
@@ -86,12 +86,19 @@ FullNoteQueue::push(int, Packet *p)
 Packet *
 FullNoteQueue::pull(int)
 {
-    Packet *p = deq();
+    // Code taken from SimpleQueue::deq.
+    int h = _head, t = _tail, nh = next_i(h);
 
-    if (p) {
+    if (h != t) {
+	Packet *p = _q[h];
+	_head = nh;
+
 	_sleepiness = 0;
-	if (size() == capacity() - 1)
+	
+	if (size(nh, t) == capacity() - 1)
 	    _full_note.wake();
+	
+	return p;
 	
     } else if (++_sleepiness == SLEEPINESS_TRIGGER) {
         _empty_note.sleep();
@@ -99,12 +106,12 @@ FullNoteQueue::pull(int)
 	// Work around race condition between push() and pull().
 	// We might have just undone push()'s Notifier::wake() call.
 	// Easiest lock-free solution: check whether we should wake again!
-	if (_head != _tail)
+	if (size())
 	    _empty_note.wake();
 #endif
     }
 
-    return p;
+    return 0;
 }
 
 CLICK_ENDDECLS
