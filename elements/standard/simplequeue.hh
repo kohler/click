@@ -119,6 +119,7 @@ SimpleQueue::enq(Packet *p)
     int h = _head, t = _tail, nt = next_i(t);
     if (nt != h) {
 	_q[t] = p;
+	// memory barrier here
 	_tail = nt;
 	int s = size(h, nt);
 	if (s > _highwater_length)
@@ -153,6 +154,7 @@ SimpleQueue::deq()
     int h = _head, t = _tail;
     if (h != t) {
 	Packet *p = _q[h];
+	// memory barrier here
 	_head = next_i(h);
 	assert(p);
 	return p;

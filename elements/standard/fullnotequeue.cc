@@ -55,6 +55,7 @@ FullNoteQueue::push(int, Packet *p)
 
     if (nt != h) {
 	_q[t] = p;
+	// memory barrier here
 	_tail = nt;
 
 	int s = size(h, nt);
@@ -91,6 +92,7 @@ FullNoteQueue::pull(int)
 
     if (h != t) {
 	Packet *p = _q[h];
+	// memory barrier here
 	_head = nh;
 
 	_sleepiness = 0;

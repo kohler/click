@@ -56,6 +56,7 @@ NotifierQueue::push(int, Packet *p)
 
     if (nt != h) {
 	_q[t] = p;
+	// memory barrier here
 	_tail = nt;
 
 	int s = size(h, nt);
