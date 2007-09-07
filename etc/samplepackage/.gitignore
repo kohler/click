@@ -4,11 +4,13 @@ Makefile
 *.ud
 *.ko
 *.uo
+*.o
 Kbuild
 kelements.conf
 kelements.mk
 kpackage.cc
 kversion.c
+Module.symvers
 uelements.conf
 uelements.mk
 upackage.cc
