@@ -24,6 +24,27 @@ CLICK_DECLS
 # endif
 #endif
 
+/** @file <click/atomic.hh>
+ * @brief An atomic 32-bit integer.
+ */
+
+/** @class atomic_uint32_t
+ * @brief A 32-bit integer with support for atomic operations.
+ *
+ * The atomic_uint32_t class represents a 32-bit integer, with support for
+ * atomic operations.  The +=, -=, &=, |=, ++, and -- operations are
+ * implemented using atomic instructions.  There are also atomic swap(),
+ * fetch_and_add(), dec_and_test(), and compare_and_swap() operations.
+ *
+ * Because of some issues with compiler implementations, atomic_uint32_t has
+ * no explicit constructor; to set an atomic_uint32_t to a value, use
+ * operator=.
+ *
+ * The atomic_uint32_t only provides true atomic semantics when that has been
+ * implemented.  It has been implemented in the Linux kernel, and at userlevel
+ * (when --enable-multithread has been defined) for x86 machines.  In other
+ * situations, it's not truly atomic (because it doesn't need to be).
+ */
 class atomic_uint32_t { public:
 
     // No constructors because, unfortunately, GCC generates worse code. Use
@@ -32,20 +53,20 @@ class atomic_uint32_t { public:
     inline uint32_t value() const;
     inline operator uint32_t() const;
   
-    inline atomic_uint32_t &operator=(uint32_t);
+    inline atomic_uint32_t &operator=(uint32_t v);
 
-    inline atomic_uint32_t &operator+=(int32_t);
-    inline atomic_uint32_t &operator-=(int32_t);
-    inline atomic_uint32_t &operator|=(uint32_t);
-    inline atomic_uint32_t &operator&=(uint32_t);
+    inline atomic_uint32_t &operator+=(int32_t delta);
+    inline atomic_uint32_t &operator-=(int32_t delta);
+    inline atomic_uint32_t &operator|=(uint32_t mask);
+    inline atomic_uint32_t &operator&=(uint32_t mask);
 
     inline void operator++(int);
     inline void operator--(int);
 
-    inline uint32_t swap(uint32_t new_value);
+    inline uint32_t swap(uint32_t v);
     inline uint32_t fetch_and_add(uint32_t delta);
     inline bool dec_and_test();
-    inline bool compare_and_swap(uint32_t test, uint32_t new_value);
+    inline bool compare_and_swap(uint32_t test_value, uint32_t new_value);
   
   private:
 
@@ -59,6 +80,7 @@ class atomic_uint32_t { public:
 
 };
 
+/** @brief  Return the value. */
 inline uint32_t
 atomic_uint32_t::value() const
 {
@@ -69,23 +91,26 @@ atomic_uint32_t::value() const
 #endif
 }
 
+/** @brief  Return the value. */
 inline
 atomic_uint32_t::operator uint32_t() const
 {
     return value();
 }
 
+/** @brief  Set the value to @a v. */
 inline atomic_uint32_t &
-atomic_uint32_t::operator=(uint32_t u)
+atomic_uint32_t::operator=(uint32_t v)
 {
 #if CLICK_LINUXMODULE
-    atomic_set(&_val, u);
+    atomic_set(&_val, v);
 #else
-    CLICK_ATOMIC_VAL = u;
+    CLICK_ATOMIC_VAL = v;
 #endif
     return *this;
 }
 
+/** @brief  Atomically add @a delta to the value. */
 inline atomic_uint32_t &
 atomic_uint32_t::operator+=(int32_t delta)
 {
@@ -102,6 +127,7 @@ atomic_uint32_t::operator+=(int32_t delta)
     return *this;
 }
 
+/** @brief  Atomically subtract @a delta from the value. */
 inline atomic_uint32_t &
 atomic_uint32_t::operator-=(int32_t delta)
 {
@@ -118,48 +144,51 @@ atomic_uint32_t::operator-=(int32_t delta)
     return *this;
 }
 
+/** @brief  Atomically bitwise-or the value with @a mask. */
 inline atomic_uint32_t &
-atomic_uint32_t::operator|=(uint32_t u)
+atomic_uint32_t::operator|=(uint32_t mask)
 {
 #if CLICK_LINUXMODULE && HAVE_LINUX_ATOMIC_SET_MASK
-    atomic_set_mask(u, &_val);
+    atomic_set_mask(mask, &_val);
 #elif CLICK_LINUXMODULE
     unsigned long flags;
     local_irq_save(flags);
-    CLICK_ATOMIC_VAL |= u;
+    CLICK_ATOMIC_VAL |= mask;
     local_irq_restore(flags);
 #elif CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "orl %1,%0"
 		  : "=m" (CLICK_ATOMIC_VAL)
-		  : "r" (u), "m" (CLICK_ATOMIC_VAL)
+		  : "r" (mask), "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
 #else
-    CLICK_ATOMIC_VAL |= u;
+    CLICK_ATOMIC_VAL |= mask;
 #endif
      return *this;
 }
 
+/** @brief  Atomically bitwise-and the value with @a mask. */
 inline atomic_uint32_t &
-atomic_uint32_t::operator&=(uint32_t u)
+atomic_uint32_t::operator&=(uint32_t mask)
 {
 #if CLICK_LINUXMODULE && HAVE_LINUX_ATOMIC_SET_MASK
-    atomic_clear_mask(~u, &_val);
+    atomic_clear_mask(~mask, &_val);
 #elif CLICK_LINUXMODULE
     unsigned long flags;
     local_irq_save(flags);
-    CLICK_ATOMIC_VAL &= u;
+    CLICK_ATOMIC_VAL &= mask;
     local_irq_restore(flags);
 #elif CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "andl %1,%0"
 		  : "=m" (CLICK_ATOMIC_VAL)
-		  : "r" (u), "m" (CLICK_ATOMIC_VAL)
+		  : "r" (mask), "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
 #else
-    CLICK_ATOMIC_VAL &= u;
+    CLICK_ATOMIC_VAL &= mask;
 #endif
     return *this;
 }
 
+/** @brief  Atomically increment the value. */
 inline void
 atomic_uint32_t::operator++(int)
 {
@@ -175,6 +204,7 @@ atomic_uint32_t::operator++(int)
 #endif
 }
 
+/** @brief  Atomically decrement the value. */
 inline void
 atomic_uint32_t::operator--(int)
 {
@@ -190,27 +220,30 @@ atomic_uint32_t::operator--(int)
 #endif
 }
 
+/** @brief  Atomically assign the value to @a v, returning the old value.
+ *  @return The old value. */
 inline uint32_t
-atomic_uint32_t::swap(uint32_t new_value)
+atomic_uint32_t::swap(uint32_t v)
 {
 #if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
     asm ("xchgl %0,%1"
-	 : "=r" (new_value), "=m" (CLICK_ATOMIC_VAL));
-    return new_value;
+	 : "=r" (v), "=m" (CLICK_ATOMIC_VAL));
+    return v;
 #elif CLICK_LINUXMODULE
     unsigned long flags;
     local_irq_save(flags);
     uint32_t old_value = value();
-    CLICK_ATOMIC_VAL = new_value;
+    CLICK_ATOMIC_VAL = v;
     local_irq_restore(flags);
     return old_value;
 #else
     uint32_t old_value = value();
-    CLICK_ATOMIC_VAL = new_value;
+    CLICK_ATOMIC_VAL = v;
     return old_value;
 #endif
 }
 
+/** @brief  Atomically add @a delta to the value, returning the old value. */
 inline uint32_t
 atomic_uint32_t::fetch_and_add(uint32_t delta)
 {
@@ -234,6 +267,10 @@ atomic_uint32_t::fetch_and_add(uint32_t delta)
 #endif
 }
 
+/** @brief  Atomically decrement the value, returning true if the new value
+ *	    is 0.
+ *  @return True if the atomic decrement sets the value to 0, false
+ *	    otherwise. */
 inline bool
 atomic_uint32_t::dec_and_test()
 {
@@ -251,6 +288,19 @@ atomic_uint32_t::dec_and_test()
 #endif
 }
 
+/** @brief  Perform a compare-and-swap operation.
+ *  @param  test_value  test value
+ *  @param  new_value   new value
+ *  @return True if the old value equaled @a test_value (in which case the
+ *	    value was set to @a new_value), false otherwise.
+ *
+ *  The compare-and-swap operation behaves like the following:
+ *  @code
+ *  uint32_t old_value = value();
+ *  if (old_value == test_value)
+ *      *this = new_value;
+ *  return old_value == test_value;
+ *  @endcode */
 inline bool
 atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
 {
