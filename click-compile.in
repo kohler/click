@@ -45,11 +45,17 @@ while true; do
         driver=`echo "$1" | sed 's/^-t//'`; shift 1;;
       --dr=*|--dri=*|--driv=*|--drive=*|--driver=*)
 	driver=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
-      --de|--def|--defs)
+      --c|--cf|--cfl|--cfla|--cflag|--cflags|--de|--def|--defs)
 	echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ -I$includedir
 	exit 0;;
       --l|--li|--lib|--libs)
 	echo -L$libdir -lclick @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
+	exit 0;;
+      --toolc|--toolcf|--toolcfl|--toolcfla|--toolcflag|--toolcflags)
+	echo -DCLICK_TOOL -I$includedir
+	exit 0;;
+      --tooll|--toolli|--toollib|--toollibs)
+	echo -L$libdir -lclicktool @DL_LIBS@ @SOCKET_LIBS@
 	exit 0;;
       --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
 	echo @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
@@ -87,6 +93,8 @@ Options:
       --defs              Outputs preprocessor options for userlevel drivers.
       --libs              Outputs link options for userlevel drivers.
       --otherlibs         Like '--libs' minus the Click library.
+      --toolcflags        Outputs C/C++ flags options for tools.
+      --toollibs          Outputs link options for tools.
   -t, --driver DRIVER     Sets target driver to 'bsdmodule', 'linuxmodule',
                           'userlevel', 'ns', or 'tool'.
   -p, --package PACKAGE   Build a dynamically loadable package named PACKAGE.
