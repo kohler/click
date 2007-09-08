@@ -15,8 +15,6 @@
  * legally binding.
  */
 
-import java.util.*;
-
 public class Util {
 
     static public void fail(String msg) {

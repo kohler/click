@@ -20,10 +20,6 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.tree.*;
-import javax.swing.event.*;
-import java.net.InetAddress;
-import java.util.Vector;
 
 class NewConnectionDialog extends JDialog {
     

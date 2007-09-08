@@ -17,9 +17,7 @@
  * also accessible at http://www.pdos.lcs.mit.edu/click/license.html
  */
 
-import javax.swing.*;
 import javax.swing.tree.*;
-import javax.swing.event.*;
 import java.util.*;
 
 public class RouterTreeModel extends DefaultTreeModel {
