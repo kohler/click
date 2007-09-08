@@ -36,10 +36,9 @@ int
 MSQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int new_capacity = 128;
-    if (cp_va_parse(conf, this, errh,
-		    cpOptional,
-		    cpUnsigned, "maximum queue length", &new_capacity,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "CAPACITY", cpkP, cpUnsigned, &new_capacity,
+		     cpEnd) < 0)
 	return -1;
     _capacity = new_capacity;
     return 0;

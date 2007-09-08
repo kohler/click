@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
 =c
 
-InfiniteSource([DATA, LIMIT, BURST, ACTIVE?, I<KEYWORDS>])
+InfiniteSource([DATA, LIMIT, BURST, ACTIVE, I<KEYWORDS>])
 
 =s basicsources
 
@@ -45,7 +45,7 @@ Integer. Same as the BURST argument.
 
 =item ACTIVE
 
-Boolean. Same as the ACTIVE? argument.
+Boolean. Same as the ACTIVE argument.
 
 =item STOP
 

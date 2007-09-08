@@ -21,6 +21,7 @@
 
 #include <click/config.h>
 
+#define CLICK_COMPILING_CONFPARSE_CC 1
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -36,12 +37,15 @@
 # include <click/handlercall.hh>
 # include <click/nameinfo.hh>
 # include <click/standard/addressinfo.hh>
-# define CP_CONTEXT_ARG , Element *context
+# define CP_CONTEXT , Element *context
 # define CP_PASS_CONTEXT , context
 #else
 # include <click/hashmap.hh>
 # include <click/timestamp.hh>
-# define CP_CONTEXT_ARG
+# if HAVE_NETDB_H
+#  include <netdb.h>
+# endif
+# define CP_CONTEXT
 # define CP_PASS_CONTEXT
 #endif
 #ifdef CLICK_USERLEVEL
@@ -52,6 +56,14 @@ CLICK_DECLS
 
 int cp_errno;
 
+/** @brief  Find the first nonspace character in the string [@a begin, @a end).
+ *  @param  begin  beginning of string
+ *  @param  end    one past end of string
+ *  @return Pointer to first non-space character in [@a begin, @a end), or
+ *          @a end if the string is all spaces.
+ *
+ *  Space characters are defined by as by isspace() in the "C" locale, and
+ *  consist of the characters in <tt>[ \\f\\n\\r\\t\\v]</tt>. */
 const char *
 cp_skip_space(const char *begin, const char *end)
 {
@@ -60,6 +72,9 @@ cp_skip_space(const char *begin, const char *end)
     return begin;
 }
 
+/** @brief  Remove spaces from the beginning of @a str.
+ *  @param[in,out]  str  string
+ *  @return  True if the resulting string is nonempty, false otherwise. */
 bool
 cp_eat_space(String &str)
 {
@@ -69,6 +84,11 @@ cp_eat_space(String &str)
     return space != begin;
 }
 
+/** @brief  Test whether @a str is a valid "word".
+ *
+ *  A "word" in Click consists of one or more characters in the ASCII range
+ *  '!' through '~', inclusive, except for the quote characters '"' and ''',
+ *  the backslash '\', and the comma ','. */
 bool
 cp_is_word(const String &str)
 {
@@ -79,6 +99,12 @@ cp_is_word(const String &str)
     return str.length() > 0;
 }
 
+/** @brief  Test if @a str is a valid Click identifier.
+ *
+ *  A Click identifier consists of one or more characters in the set
+ *  <tt>[A-Za-z0-9/_@]</tt>, with restrictions on where <tt>/</tt> may appear
+ *  (it cannot be the first character or the last character, and two adjacent
+ *  slashes aren't allowed either). */
 bool
 cp_is_click_id(const String &str)
 {
@@ -173,6 +199,19 @@ skip_single_quote(const char *s, const char *end)
   return end;
 }
 
+/// @brief  Find the first nonspace, noncomment character in the string [@a begin, @a end).
+/// @param  begin  beginning of string
+/// @param  end    one past end of string
+/// @return Pointer to first nonspace and noncomment character in [@a begin,
+///	    @a end), or @a end if the string is all spaces and comments.
+///
+/// This function recognizes C-style and C++-style comments:
+/// @code
+/// /* C style */  // C++ style (runs until newline)
+/// @endcode
+/// In C++-style comments, the character
+/// sequences <tt>"\n"</tt>, <tt>"\r"</tt>, and <tt>"\r\n"</tt> are
+/// recognized as newlines.  The newline is considered part of the comment.
 const char *
 cp_skip_comment_space(const char *begin, const char *end)
 {
@@ -238,75 +277,121 @@ partial_uncomment(const String &str, int i, int *comma_pos)
   }
 }
 
+/// @brief  Simplify @a str's whitespace and replace comments by spaces,
+///	    returning the result.
+/// @return  A version of @a str with all initial space removed, all final
+///	     space removed, and all comments and space-comment sequences
+///	     replaced by a single space character.
+///
+/// Adjacent space characters are preserved in the output @em unless they
+/// appear next to a comment.  For example:
+/// @code
+/// cp_uncomment("  a   b  ") == "a   b", but:
+/// cp_uncomment("  a /* Comment */       b  ") == "a b"
+/// @endcode
+/// Comment characters inside double or single quotes are ignored:
+/// @code
+/// cp_uncomment("  \" /*???  */ \"  ") == "\" /*???  */ \""
+/// @endcode
 String
 cp_uncomment(const String &str)
 {
   return partial_uncomment(str, 0, 0);
 }
 
+/// @brief  Process a backslash escape, appending results to @a sa.
+/// @param  begin  beginning of string
+/// @param  end    end of string
+/// @param  sa     string accumulator
+/// @pre  @a begin < @a end, and @a begin points to a backslash character.
+/// @return A pointer to the first character in [@a begin, @a end) following
+///	    the backslash escape.
+///
+/// This function understands the following backslash escapes.
+/// <ul>
+/// <li><tt>"\[newline]"</tt> is ignored (it adds no characters to @a sa),
+/// where <tt>[newline]</tt> is one of the sequences <tt>"\n"</tt>,
+/// <tt>"\r"</tt>, or <tt>"\r\n"</tt>.</li>
+/// <li><tt>"\[C escape]"</tt> is processed as in C, where <tt>[C escape]</tt>
+/// is one of the characters in <tt>[abfnrtv]</tt>.</li>
+/// <li><tt>"\\"</tt> expands to a single backslash.  Similarly,
+/// <tt>"\$"</tt>, <tt>"\'"</tt>, <tt>"\\""</tt>, and <tt>"\,"</tt>
+/// expand to the escaped character.</li>
+/// <li><tt>"\[1-3 octal digits]"</tt> expands to the given character.</li>
+/// <li><tt>"\x[hex digits]"</tt> expands to the given character.</li>
+/// <li><tt>"\<[hex digits, spaces, and comments]>"</tt> expands to the
+/// binary string indicated by the <tt>hex digits</tt>.  Spaces and comments
+/// are removed.  For example,
+/// @code
+/// "\<48656c6C 6f 2 /* And finally */ 1>" expands to "Hello!"
+/// @endcode
+/// (This example should begin with <tt>"\<"</tt>; it may not because of Doxygen problems.)</li>
+/// <li>A backslash at the end of the string expands to a backslash.</li>
+/// </ul>
 const char *
-cp_process_backslash(const char *s, const char *end, StringAccum &sa)
+cp_process_backslash(const char *begin, const char *end, StringAccum &sa)
 {
-  assert(s < end && *s == '\\');
+  assert(begin < end && *begin == '\\');
 
-  if (s == end - 1) {
+  if (begin == end - 1) {
     sa << '\\';
     return end;
   }
   
-  switch (s[1]) {
+  switch (begin[1]) {
     
    case '\r':
-    return (s + 2 < end && s[2] == '\n' ? s + 3 : s + 2);
+    return (begin + 2 < end && begin[2] == '\n' ? begin + 3 : begin + 2);
 
    case '\n':
-    return s + 2;
+    return begin + 2;
     
-   case 'a': sa << '\a'; return s + 2;
-   case 'b': sa << '\b'; return s + 2;
-   case 'f': sa << '\f'; return s + 2;
-   case 'n': sa << '\n'; return s + 2;
-   case 'r': sa << '\r'; return s + 2;
-   case 't': sa << '\t'; return s + 2;
-   case 'v': sa << '\v'; return s + 2;
+   case 'a': sa << '\a'; return begin + 2;
+   case 'b': sa << '\b'; return begin + 2;
+   case 'f': sa << '\f'; return begin + 2;
+   case 'n': sa << '\n'; return begin + 2;
+   case 'r': sa << '\r'; return begin + 2;
+   case 't': sa << '\t'; return begin + 2;
+   case 'v': sa << '\v'; return begin + 2;
     
    case '0': case '1': case '2': case '3':
    case '4': case '5': case '6': case '7': {
      int c = 0, d = 0;
-     for (s++; s < end && *s >= '0' && *s <= '7' && d < 3; s++, d++)
-       c = c*8 + *s - '0';
+     for (begin++; begin < end && *begin >= '0' && *begin <= '7' && d < 3;
+	  begin++, d++)
+       c = c*8 + *begin - '0';
      sa << (char)c;
-     return s;
+     return begin;
    }
    
    case 'x': {
      int c = 0;
-     for (s += 2; s < end; s++)
-       if (*s >= '0' && *s <= '9')
-	 c = c*16 + *s - '0';
-       else if (*s >= 'A' && *s <= 'F')
-	 c = c*16 + *s - 'A' + 10;
-       else if (*s >= 'a' && *s <= 'f')
-	 c = c*16 + *s - 'a' + 10;
+     for (begin += 2; begin < end; begin++)
+       if (*begin >= '0' && *begin <= '9')
+	 c = c*16 + *begin - '0';
+       else if (*begin >= 'A' && *begin <= 'F')
+	 c = c*16 + *begin - 'A' + 10;
+       else if (*begin >= 'a' && *begin <= 'f')
+	 c = c*16 + *begin - 'a' + 10;
        else
 	 break;
      sa << (char)c;
-     return s;
+     return begin;
    }
    
    case '<': {
      int c = 0, d = 0;
-     for (s += 2; s < end; s++) {
-       if (*s == '>')
-	 return s + 1;
-       else if (*s >= '0' && *s <= '9')
-	 c = c*16 + *s - '0';
-       else if (*s >= 'A' && *s <= 'F')
-	 c = c*16 + *s - 'A' + 10;
-       else if (*s >= 'a' && *s <= 'f')
-	 c = c*16 + *s - 'a' + 10;
-       else if (*s == '/' && s + 1 < end && (s[1] == '/' || s[1] == '*')) {
-	 s = skip_comment(s, end) - 1;
+     for (begin += 2; begin < end; begin++) {
+       if (*begin == '>')
+	 return begin + 1;
+       else if (*begin >= '0' && *begin <= '9')
+	 c = c*16 + *begin - '0';
+       else if (*begin >= 'A' && *begin <= 'F')
+	 c = c*16 + *begin - 'A' + 10;
+       else if (*begin >= 'a' && *begin <= 'f')
+	 c = c*16 + *begin - 'a' + 10;
+       else if (*begin == '/' && begin + 1 < end && (begin[1] == '/' || begin[1] == '*')) {
+	 begin = skip_comment(begin, end) - 1;
 	 continue;
        } else
 	 continue;	// space (ignore it) or random (error)
@@ -319,20 +404,30 @@ cp_process_backslash(const char *s, const char *end, StringAccum &sa)
      return end;
    }
 
-   case '\\': case '\'': case '\"': case '$':
+   case '\\': case '\'': case '\"': case '$': case ',':
    default:
-    sa << s[1];
-    return s + 2;
+    sa << begin[1];
+    return begin + 2;
     
   }
 }
 
+/// @brief  Remove one level of quoting from @a str, returning the result.
+///
+/// This function acts as cp_uncomment, plus removing one level of quoting.
+/// <tt>"..."</tt> and <tt>'...'</tt> sequences are replaced by their contents.
+/// Backslash escapes are expanded inside double quotes (see
+/// cp_process_backslash).  Additionally, <tt>"\<...>"</tt> sequences are
+/// expanded outside of any quotes.  For example:
+/// @code
+/// cp_unquote("\"\\n\" abc /* 123 */ '/* def */'") == "\n abc /* def */"
+/// @endcode
 String
-cp_unquote(const String &in_str)
+cp_unquote(const String &str)
 {
-  String str = partial_uncomment(in_str, 0, 0);
-  const char *s = str.data();
-  const char *end = str.end();
+  String xtr = partial_uncomment(str, 0, 0);
+  const char *s = xtr.data();
+  const char *end = xtr.end();
 
   // accumulate a word
   StringAccum sa;
@@ -345,11 +440,11 @@ cp_unquote(const String &in_str)
      case '\"':
      case '\'':
       if (quote_state == 0) {
-	sa << str.substring(start, s); // null string if start >= s
+	sa << xtr.substring(start, s); // null string if start >= s
 	start = s + 1;
 	quote_state = *s;
       } else if (quote_state == *s) {
-	sa << str.substring(start, s);
+	sa << xtr.substring(start, s);
 	start = s + 1;
 	quote_state = 0;
       }
@@ -358,7 +453,7 @@ cp_unquote(const String &in_str)
      case '\\':
       if (s + 1 < end && (quote_state == '\"'
 			  || (quote_state == 0 && s[1] == '<'))) {
-	sa << str.substring(start, s);
+	sa << xtr.substring(start, s);
 	start = cp_process_backslash(s, end, sa);
 	s = start - 1;
       }
@@ -366,14 +461,25 @@ cp_unquote(const String &in_str)
       
     }
 
-  if (start == str.begin())
-    return str;
+  if (start == xtr.begin())
+    return xtr;
   else {
-    sa << str.substring(start, s);
+    sa << xtr.substring(start, s);
     return sa.take_string();
   }
 }
 
+/// @brief  Return a quoted version of @a str.
+/// @param  str  string
+/// @param  allow_newlines  If true, then newline sequences are allowed in
+///	    in the result.  If false, then newline sequences should be
+///	    translated to their backslash escape equivalents.  Default is false.
+///
+/// Returns a double-quoted string that, when unquoted by cp_unquote, will
+/// equal @a str.  The returned string consists of a single double-quoted
+/// string, and in particular is never empty.
+///
+/// @invariant cp_quote(@a str) != "" && cp_unquote(cp_quote(@a str)) == @a str
 String
 cp_quote(const String &str, bool allow_newlines)
 {
@@ -944,8 +1050,8 @@ static uint32_t exp10val[] = { 1, 10, 100, 1000, 10000, 100000, 1000000,
 			       10000000, 100000000, 1000000000 };
 
 bool
-cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
-		   uint32_t *return_int_part, uint32_t *return_frac_part)
+cp_real10(const String &str, int frac_digits, int exponent_delta,
+	  uint32_t *return_int_part, uint32_t *return_frac_part)
 {
   const char *s = str.data();
   const char *last = s + str.length();
@@ -1091,30 +1197,28 @@ unsigned_real10_2to1(uint32_t int_part, uint32_t frac_part, int frac_digits,
 }
 
 bool
-cp_unsigned_real10(const String &str, int frac_digits,
-		   uint32_t *return_int_part, uint32_t *return_frac_part)
+cp_real10(const String &str, int frac_digits,
+	  uint32_t *return_int_part, uint32_t *return_frac_part)
 {
-  return cp_unsigned_real10(str, frac_digits, 0,
-			    return_int_part, return_frac_part);
+  return cp_real10(str, frac_digits, 0, return_int_part, return_frac_part);
 }
 
 bool
-cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
-		   uint32_t *return_value)
+cp_real10(const String &str, int frac_digits, int exponent_delta,
+	  uint32_t *return_value)
 {
   uint32_t int_part, frac_part;
-  if (!cp_unsigned_real10(str, frac_digits, exponent_delta, &int_part, &frac_part))
+  if (!cp_real10(str, frac_digits, exponent_delta, &int_part, &frac_part))
     return false;
   else
     return unsigned_real10_2to1(int_part, frac_part, frac_digits, return_value);
 }
 
 bool
-cp_unsigned_real10(const String &str, int frac_digits,
-		   uint32_t *return_value)
+cp_real10(const String &str, int frac_digits, uint32_t *return_value)
 {
   uint32_t int_part, frac_part;
-  if (!cp_unsigned_real10(str, frac_digits, 0, &int_part, &frac_part))
+  if (!cp_real10(str, frac_digits, 0, &int_part, &frac_part))
     return false;
   else
     return unsigned_real10_2to1(int_part, frac_part, frac_digits, return_value);
@@ -1126,7 +1230,7 @@ static uint32_t ureal2_digit_fractions[] = {
 };
 
 bool
-cp_unsigned_real2(const String &str, int frac_bits, uint32_t *return_value)
+cp_real2(const String &str, int frac_bits, uint32_t *return_value)
 {
   if (frac_bits < 0 || frac_bits > CP_REAL2_MAX_FRAC_BITS) {
     cp_errno = CPE_INVALID;
@@ -1134,7 +1238,7 @@ cp_unsigned_real2(const String &str, int frac_bits, uint32_t *return_value)
   }
   
   uint32_t int_part, frac_part;
-  if (!cp_unsigned_real10(str, 9, 0, &int_part, &frac_part)) {
+  if (!cp_real10(str, 9, 0, &int_part, &frac_part)) {
     cp_errno = CPE_FORMAT;
     return false;
   }
@@ -1195,13 +1299,13 @@ cp_real_base(const String &in_str, int frac_digits, int32_t *return_value,
 bool
 cp_real10(const String &str, int frac_digits, int32_t *return_value)
 {
-  return cp_real_base(str, frac_digits, return_value, cp_unsigned_real10);
+  return cp_real_base(str, frac_digits, return_value, cp_real10);
 }
 
 bool
 cp_real2(const String &str, int frac_bits, int32_t *return_value)
 {
-  return cp_real_base(str, frac_bits, return_value, cp_unsigned_real2);
+  return cp_real_base(str, frac_bits, return_value, cp_real2);
 }
 
 #ifdef HAVE_FLOAT_TYPES
@@ -1288,7 +1392,7 @@ bool cp_seconds_as(int want_power, const String &str, uint32_t *return_value)
 {
   int power = 0, factor = 1;
   const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
-  if (!cp_unsigned_real10(str.substring(str.begin(), after_unit), want_power, power, return_value))
+  if (!cp_real10(str.substring(str.begin(), after_unit), want_power, power, return_value))
     return false;
   if (*return_value > 0xFFFFFFFFU / factor) {
     cp_errno = CPE_OVERFLOW;
@@ -1313,7 +1417,7 @@ bool cp_time(const String &str, Timestamp* return_value)
     int power = 0, factor = 1;
     const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
     uint32_t sec, nsec;
-    if (!cp_unsigned_real10(str.substring(str.begin(), after_unit), 9, power, &sec, &nsec))
+    if (!cp_real10(str.substring(str.begin(), after_unit), 9, power, &sec, &nsec))
 	return false;
     if (factor != 1) {
 	nsec *= factor;
@@ -1345,7 +1449,7 @@ cp_bandwidth(const String &str, uint32_t *return_value)
 {
   int power = 0, factor = 1;
   const char *after_unit = read_unit(str.begin(), str.end(), byte_bandwidth_units, sizeof(byte_bandwidth_units), byte_bandwidth_prefixes, &power, &factor);
-  if (!cp_unsigned_real10(str.substring(str.begin(), after_unit), 0, power, return_value))
+  if (!cp_real10(str.substring(str.begin(), after_unit), 0, power, return_value))
     return false;
   if (*return_value > 0xFFFFFFFFU / factor) {
     cp_errno = CPE_OVERFLOW;
@@ -1389,7 +1493,7 @@ ip_address_portion(const String &str, unsigned char *value)
 
 bool
 cp_ip_address(const String &str, unsigned char *return_value
-	      CP_CONTEXT_ARG)
+	      CP_CONTEXT)
 {
   unsigned char value[4];
   if (ip_address_portion(str, value) == 4) {
@@ -1408,7 +1512,7 @@ static bool
 bad_ip_prefix(const String &str,
 	      unsigned char *return_value, unsigned char *return_mask,
 	      bool allow_bare_address
-	      CP_CONTEXT_ARG)
+	      CP_CONTEXT)
 {
 #ifndef CLICK_TOOL
   if (AddressInfo::query_ip_prefix(str, return_value, return_mask, context))
@@ -1428,7 +1532,7 @@ bad_ip_prefix(const String &str,
 bool
 cp_ip_prefix(const String &str,
 	     unsigned char *return_value, unsigned char *return_mask,
-	     bool allow_bare_address  CP_CONTEXT_ARG)
+	     bool allow_bare_address  CP_CONTEXT)
 {
   do {
     unsigned char value[4], mask[4];
@@ -1489,7 +1593,7 @@ cp_ip_prefix(const String &str,
 
 bool
 cp_ip_address(const String &str, IPAddress *address
-	      CP_CONTEXT_ARG)
+	      CP_CONTEXT)
 {
   return cp_ip_address(str, address->data()
 		       CP_PASS_CONTEXT);
@@ -1497,7 +1601,7 @@ cp_ip_address(const String &str, IPAddress *address
 
 bool
 cp_ip_prefix(const String &str, IPAddress *address, IPAddress *mask,
-	     bool allow_bare_address  CP_CONTEXT_ARG)
+	     bool allow_bare_address  CP_CONTEXT)
 {
   return cp_ip_prefix(str, address->data(), mask->data(),
 		      allow_bare_address  CP_PASS_CONTEXT);
@@ -1505,7 +1609,7 @@ cp_ip_prefix(const String &str, IPAddress *address, IPAddress *mask,
 
 bool
 cp_ip_prefix(const String &str, unsigned char *address, unsigned char *mask
-	     CP_CONTEXT_ARG)
+	     CP_CONTEXT)
 {
   return cp_ip_prefix(str, address, mask,
 		      false  CP_PASS_CONTEXT);
@@ -1513,7 +1617,7 @@ cp_ip_prefix(const String &str, unsigned char *address, unsigned char *mask
 
 bool
 cp_ip_prefix(const String &str, IPAddress *address, IPAddress *mask
-	     CP_CONTEXT_ARG)
+	     CP_CONTEXT)
 {
   return cp_ip_prefix(str, address->data(), mask->data(),
 		      false  CP_PASS_CONTEXT);
@@ -1521,7 +1625,7 @@ cp_ip_prefix(const String &str, IPAddress *address, IPAddress *mask
 
 bool
 cp_ip_address_list(const String &str, Vector<IPAddress> *l
-		   CP_CONTEXT_ARG)
+		   CP_CONTEXT)
 {
     Vector<String> words;
     cp_spacevec(str, words);
@@ -1548,7 +1652,7 @@ cp_ip_address_list(const String &str, Vector<IPAddress> *l
 
 static bool
 bad_ip6_address(const String &str, unsigned char *return_value
-		CP_CONTEXT_ARG)
+		CP_CONTEXT)
 {
 #ifndef CLICK_TOOL
   return AddressInfo::query_ip6(str, return_value, context);
@@ -1560,7 +1664,7 @@ bad_ip6_address(const String &str, unsigned char *return_value
 
 bool
 cp_ip6_address(const String &str, unsigned char *return_value
-	       CP_CONTEXT_ARG)
+	       CP_CONTEXT)
 {
   unsigned short parts[8];
   int coloncolon = -1;
@@ -1623,7 +1727,7 @@ cp_ip6_address(const String &str, unsigned char *return_value
 
 bool
 cp_ip6_address(const String &str, IP6Address *address
-	       CP_CONTEXT_ARG)
+	       CP_CONTEXT)
 {
   return cp_ip6_address(str, address->data()  CP_PASS_CONTEXT);
 }
@@ -1633,7 +1737,7 @@ static bool
 bad_ip6_prefix(const String &str,
 	       unsigned char *return_value, int *return_bits,
 	       bool allow_bare_address
-	       CP_CONTEXT_ARG)
+	       CP_CONTEXT)
 {
 #ifndef CLICK_TOOL
   if (AddressInfo::query_ip6_prefix(str, return_value, return_bits, context))
@@ -1653,7 +1757,7 @@ bad_ip6_prefix(const String &str,
 bool
 cp_ip6_prefix(const String &str,
 	      unsigned char *return_value, int *return_bits,
-	      bool allow_bare_address  CP_CONTEXT_ARG)
+	      bool allow_bare_address  CP_CONTEXT)
 {
   unsigned char value[16], mask[16];
 
@@ -1700,7 +1804,7 @@ cp_ip6_prefix(const String &str,
 
 bool
 cp_ip6_prefix(const String &str, unsigned char *address, unsigned char *mask,
-	      bool allow_bare_address  CP_CONTEXT_ARG)
+	      bool allow_bare_address  CP_CONTEXT)
 {
   int bits;
   if (cp_ip6_prefix(str, address, &bits, allow_bare_address  CP_PASS_CONTEXT)) {
@@ -1713,14 +1817,14 @@ cp_ip6_prefix(const String &str, unsigned char *address, unsigned char *mask,
 
 bool
 cp_ip6_prefix(const String &str, IP6Address *address, int *prefix,
-	      bool allow_bare_address  CP_CONTEXT_ARG)
+	      bool allow_bare_address  CP_CONTEXT)
 {
   return cp_ip6_prefix(str, address->data(), prefix, allow_bare_address  CP_PASS_CONTEXT);
 }
 
 bool
 cp_ip6_prefix(const String &str, IP6Address *address, IP6Address *prefix,
-	      bool allow_bare_address  CP_CONTEXT_ARG)
+	      bool allow_bare_address  CP_CONTEXT)
 {
   return cp_ip6_prefix(str, address->data(), prefix->data(), allow_bare_address  CP_PASS_CONTEXT);
 }
@@ -1730,7 +1834,7 @@ cp_ip6_prefix(const String &str, IP6Address *address, IP6Address *prefix,
 
 bool
 cp_ethernet_address(const String &str, unsigned char *return_value
-		    CP_CONTEXT_ARG)
+		    CP_CONTEXT)
 {
   int i = 0;
   const unsigned char* s = reinterpret_cast<const unsigned char*>(str.data());
@@ -1767,7 +1871,7 @@ cp_ethernet_address(const String &str, unsigned char *return_value
 
 bool
 cp_ethernet_address(const String &str, EtherAddress *address
-		    CP_CONTEXT_ARG)
+		    CP_CONTEXT)
 {
   return cp_ethernet_address(str, address->data()
 			     CP_PASS_CONTEXT);
@@ -1776,7 +1880,7 @@ cp_ethernet_address(const String &str, EtherAddress *address
 
 bool
 cp_tcpudp_port(const String &str, int ip_p, uint16_t *return_value
-	       CP_CONTEXT_ARG)
+	       CP_CONTEXT)
 {
     uint32_t value;
     assert(ip_p > 0 && ip_p < 256);
@@ -1784,9 +1888,15 @@ cp_tcpudp_port(const String &str, int ip_p, uint16_t *return_value
     if (!NameInfo::query_int(NameInfo::T_IP_PORT + ip_p, context, str, &value))
 	return false;
 #else
-    (void) ip_p;
-    if (!cp_integer(str, &value))
+    if (!cp_integer(str, &value)) {
+# if HAVE_NETDB_H
+	if (struct servent *s = getservbyname(str.c_str(), ip_p == IP_PROTO_TCP ? "tcp" : "udp")) {
+	    *return_value = ntohs(s->s_port);
+	    return true;
+	}
+# endif
 	return false;
+    }
 #endif
     if (value <= 0xFFFF) {
 	*return_value = value;
@@ -2015,6 +2125,7 @@ enum {
   cpiMandatoryKeywords,
   cpiIgnore,
   cpiIgnoreRest,
+  cpiLastMagic = cpiIgnoreRest, // everything before here is a magic command
   cpiArgument,
   cpiArguments,
   cpiString,
@@ -2122,11 +2233,17 @@ cp_register_argtype(const char *name, const char *desc, int flags,
 }
 
 
+static int type_mismatch(ErrorHandler *errh, cp_value *v, const char *argname, const char *type_description = 0)
+{
+    if (!type_description)
+	type_description = v->argtype->description;
+    return errh->error("type mismatch: %s requires %s", argname, type_description);
+}
+
 static void
 default_parsefunc(cp_value *v, const String &arg,
-		  ErrorHandler *errh, const char *argname  CP_CONTEXT_ARG)
+		  ErrorHandler *errh, const char *argname  CP_CONTEXT)
 {
-  const char *desc = v->description;
   int underflower = -0x80000000;
   unsigned overflower = 0xFFFFFFFFU;
   const cp_argtype *argtype = v->argtype;
@@ -2140,22 +2257,22 @@ default_parsefunc(cp_value *v, const String &arg,
     
    case cpiString:
     if (!cp_string(arg, &v->v_string))
-      errh->error("%s takes string (%s)", argname, desc);
+      goto type_mismatch;
     break;
     
    case cpiWord:
     if (!cp_word(arg, &v->v_string))
-      errh->error("%s takes word (%s)", argname, desc);
+      goto type_mismatch;
     break;
     
    case cpiKeyword:
     if (!cp_keyword(arg, &v->v_string))
-      errh->error("%s takes keyword (%s)", argname, desc);
+      goto type_mismatch;
     break;
     
    case cpiBool:
     if (!cp_bool(arg, &v->v.b))
-      errh->error("%s takes bool (%s)", argname, desc);
+      goto type_mismatch;
     break;
 
    case cpiByte:
@@ -2190,96 +2307,96 @@ default_parsefunc(cp_value *v, const String &arg,
 
    handle_signed:
     if (!cp_integer(arg, &v->v.i))
-      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+      goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s (%s) too large; max %d", argname, desc, v->v.i);
+      errh->error("%s too large; max %d", argname, v->v.i);
     else if (v->v.i < underflower)
-      errh->error("%s (%s) must be >= %d", argname, desc, underflower);
+      errh->error("%s must be >= %d", argname, underflower);
     else if (v->v.i > (int)overflower)
-      errh->error("%s (%s) must be <= %u", argname, desc, overflower);
+      errh->error("%s must be <= %u", argname, overflower);
     break;
 
    handle_unsigned:
     if (!cp_integer(arg, &v->v.u))
-      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+      goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s (%s) too large; max %u", argname, desc, v->v.u);
+      errh->error("%s too large; max %u", argname, v->v.u);
     else if (v->v.u > overflower)
-      errh->error("%s (%s) must be <= %u", argname, desc, overflower);
+      errh->error("%s must be <= %u", argname, overflower);
     break;
 
 #ifdef HAVE_INT64_TYPES
    case cpiInteger64:
     if (!cp_integer(arg, &v->v.i64))
-      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+      goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s (%s) too large; max %^64d", argname, desc, v->v.i64);
+      errh->error("%s too large; max %^64d", argname, v->v.i64);
     break;
 
    case cpiUnsigned64:
     if (!cp_integer(arg, &v->v.u64))
-      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+      goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s (%s) too large; max %^64u", argname, desc, v->v.u64);
+      errh->error("%s too large; max %^64u", argname, v->v.u64);
     break;
 #endif
 
 #ifdef CLICK_USERLEVEL
    case cpiFileOffset:
     if (!cp_file_offset(arg, (off_t *) &v->v))
-      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+      goto type_mismatch;
     break;
 #endif
 
    case cpiReal10:
     if (!cp_real10(arg, v->extra, &v->v.i))
-      errh->error("%s takes real (%s)", argname, desc);
+      goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real10(v->v.i, v->extra);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
+      errh->error("%s too large; max %s", argname, m.c_str());
     }
     break;
 
    case cpiUnsignedReal10:
-    if (!cp_unsigned_real10(arg, v->extra, &v->v.u))
-      errh->error("%s takes unsigned real (%s)", argname, desc);
+    if (!cp_real10(arg, v->extra, &v->v.u))
+      goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real10(v->v.u, v->extra);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
+      errh->error("%s too large; max %s", argname, m.c_str());
     }
     break;
 
 #ifdef HAVE_FLOAT_TYPES
    case cpiDouble:
     if (!cp_double(arg, &v->v.d))
-      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+      goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s (%s) out of range; limit %g", argname, desc, v->v.d);
+      errh->error("%s out of range; limit %g", argname, v->v.d);
     break;
 #endif
 
    case cpiSeconds:
     if (!cp_seconds_as(0, arg, &v->v.u))
-      errh->error("%s takes time in seconds (%s)", argname, desc);
+      goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s (%s) too large; max %u", argname, desc, v->v.u);
+      errh->error("%s too large; max %u", argname, v->v.u);
     break;
 
    case cpiSecondsAsMilli:
     if (!cp_seconds_as(3, arg, &v->v.u))
-      errh->error("%s takes time in seconds (%s)", argname, desc);
+      goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_milliseconds(v->v.u);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
+      errh->error("%s too large; max %s", argname, m.c_str());
     }
     break;
 
    case cpiSecondsAsMicro:
     if (!cp_seconds_as(6, arg, &v->v.u))
-      errh->error("%s takes time in seconds (%s)", argname, desc);
+      goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_microseconds(v->v.u);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
+      errh->error("%s too large; max %s", argname, m.c_str());
     }
     break;
 
@@ -2288,11 +2405,11 @@ default_parsefunc(cp_value *v, const String &arg,
      struct timeval tv;
      if (!cp_time(arg, &tv)) {
        if (cp_errno == CPE_NEGATIVE)
-	 errh->error("%s (%s) must be >= 0", argname, desc);
+	 errh->error("%s must be >= 0", argname);
        else
-	 errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+	 goto type_mismatch;
      } else if (cp_errno == CPE_OVERFLOW)
-       errh->error("%s (%s) too large", argname, desc);
+       errh->error("%s too large", argname);
      else {
        v->v.i = tv.tv_sec;
        v->v2.i = tv.tv_usec;
@@ -2302,100 +2419,100 @@ default_parsefunc(cp_value *v, const String &arg,
 
    case cpiBandwidth:
     if (!cp_bandwidth(arg, &v->v.u))
-      errh->error("%s takes bandwidth (%s)", argname, desc);
+      goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_bandwidth(v->v.u);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
+      errh->error("%s too large; max %s", argname, m.c_str());
     } else if (cp_errno == CPE_NOUNITS)
-      errh->warning("no units on bandwidth %s (%s), assuming Bps", argname, desc);
+      errh->warning("no units on bandwidth %s, assuming Bps", argname);
     break;
 
    case cpiReal2:
     if (!cp_real2(arg, v->extra, &v->v.i)) {
       // CPE_INVALID would indicate a bad 'v->extra'
-      errh->error("%s takes real (%s)", argname, desc);
+      goto type_mismatch;
     } else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real2(v->v.i, v->extra);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
+      errh->error("%s too large; max %s", argname, m.c_str());
     }
     break;
 
    case cpiUnsignedReal2:
-    if (!cp_unsigned_real2(arg, v->extra, &v->v.u)) {
+    if (!cp_real2(arg, v->extra, &v->v.u)) {
       // CPE_INVALID would indicate a bad 'v->extra'
-      errh->error("%s takes unsigned real (%s)", argname, desc);
+      goto type_mismatch;
     } else if (cp_errno == CPE_OVERFLOW) {
       String m  = cp_unparse_real2(v->v.u, v->extra);
-      errh->error("%s (%s) too large; max %s", argname, desc, m.c_str());
+      errh->error("%s too large; max %s", argname, m.c_str());
     }
     break;
 
    case cpiIPAddress:
     if (!cp_ip_address(arg, v->v.address CP_PASS_CONTEXT))
-      errh->error("%s takes IP address (%s)", argname, desc);
+      goto type_mismatch;
     break;
 
    case cpiIPPrefix:
    case cpiIPAddressOrPrefix: {
      bool mask_optional = (argtype->internal == cpiIPAddressOrPrefix);
      if (!cp_ip_prefix(arg, v->v.address, v->v2.address, mask_optional CP_PASS_CONTEXT))
-       errh->error("%s takes IP address prefix (%s)", argname, desc);
+       goto type_mismatch;
      break;
    }
 
    case cpiIPAddressList: {
      Vector<IPAddress> l;
      if (!cp_ip_address_list(arg, &l CP_PASS_CONTEXT))
-       errh->error("%s takes set of IP addresses (%s)", argname, desc);
+       goto type_mismatch;
      break;
    }
 
 #ifdef HAVE_IP6
    case cpiIP6Address:
     if (!cp_ip6_address(arg, (unsigned char *)v->v.address))
-      errh->error("%s takes IPv6 address (%s)", argname, desc);
+      goto type_mismatch;
     break;
 
    case cpiIP6Prefix:
    case cpiIP6AddressOrPrefix: {
      bool mask_optional = (argtype->internal == cpiIP6AddressOrPrefix);
      if (!cp_ip6_prefix(arg, v->v.address, v->v2.address, mask_optional CP_PASS_CONTEXT))
-       errh->error("%s takes IPv6 address prefix (%s)", argname, desc);
+       goto type_mismatch;
      break;
    }
 #endif
 
    case cpiEthernetAddress:
     if (!cp_ethernet_address(arg, v->v.address CP_PASS_CONTEXT))
-      errh->error("%s takes Ethernet address (%s)", argname, desc);
+      goto type_mismatch;
     break;
 
    case cpiTCPPort:
     if (!cp_tcpudp_port(arg, IP_PROTO_TCP, (uint16_t *) v->v.address CP_PASS_CONTEXT))
-      errh->error("%s takes TCP port (%s)", argname, desc);
+      goto type_mismatch;
     break;
 
    case cpiUDPPort:
     if (!cp_tcpudp_port(arg, IP_PROTO_UDP, (uint16_t *) v->v.address CP_PASS_CONTEXT))
-      errh->error("%s takes UDP port (%s)", argname, desc);
+      goto type_mismatch;
     break;
 
 #ifdef HAVE_IPSEC
    case cpiDesCblock:
     if (!cp_des_cblock(arg, v->v.address))
-      errh->error("%s takes DES encryption block (%s)", argname, desc);
+      goto type_mismatch;
     break;
 #endif
 
 #ifndef CLICK_TOOL
    case cpiElement: {
-     ContextErrorHandler cerrh(errh, String(argname) + " (" + desc + "):");
+     ContextErrorHandler cerrh(errh, String(argname) + ":");
      v->v.element = cp_element(arg, context, &cerrh);
      break;
    }
    
    case cpiHandlerName: {
-     ContextErrorHandler cerrh(errh, String(argname) + " (" + desc + "):");
+     ContextErrorHandler cerrh(errh, String(argname) + ":");
      cp_handler_name(arg, &v->v.element, &v->v2_string, context, &cerrh);
      break;
    }
@@ -2411,7 +2528,7 @@ default_parsefunc(cp_value *v, const String &arg,
     goto handler_call;
 
    handler_call: {
-     ContextErrorHandler cerrh(errh, String(argname) + " (" + desc + "):");
+     ContextErrorHandler cerrh(errh, String(argname) + ":");
      HandlerCall garbage(arg);
      garbage.initialize(underflower, context, &cerrh);
      break;
@@ -2421,15 +2538,19 @@ default_parsefunc(cp_value *v, const String &arg,
 #ifdef CLICK_USERLEVEL
    case cpiFilename:
     if (!cp_filename(arg, &v->v_string))
-      errh->error("%s takes filename (%s)", argname, desc);
+      goto type_mismatch;
     break;
 #endif
+
+   type_mismatch:
+    type_mismatch(errh, v, argname);
+    break;
     
   }
 }
 
 static void
-default_storefunc(cp_value *v  CP_CONTEXT_ARG)
+default_storefunc(cp_value *v  CP_CONTEXT)
 {
   int helper;
   const cp_argtype *argtype = v->argtype;
@@ -2658,9 +2779,8 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
 
 static void
 stringlist_parsefunc(cp_value *v, const String &arg,
-		     ErrorHandler *errh, const char *argname  CP_CONTEXT_ARG)
+		     ErrorHandler *errh, const char *argname  CP_CONTEXT)
 {
-    const char *desc = v->description;
     const cp_argtype *argtype = v->argtype;
 #ifndef CLICK_TOOL
     (void) context;
@@ -2677,11 +2797,11 @@ stringlist_parsefunc(cp_value *v, const String &arg,
 
     if (argtype->flags & cpArgAllowNumbers) {
 	if (!cp_integer(arg, &v->v.i))
-	    errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+	    errh->error("%s has type %s", argname, argtype->description);
 	else if (cp_errno == CPE_OVERFLOW)
-	    errh->error("%s (%s) too large; max %d", argname, desc, v->v.i);
+	    errh->error("%s too large; max %d", argname, v->v.i);
     } else
-	errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+	errh->error("%s has type %s", argname, argtype->description);
 }
 
 int
@@ -2757,16 +2877,20 @@ special_argtype_for_keyword(const cp_argtype *t)
     return t && t->internal == cpiArguments;
 }
 
+enum {
+    cpkSupplied = cpkConfirm * 2
+};
+
 static int
 handle_special_argtype_for_keyword(cp_value *val, const String &rest)
 {
   if (val->argtype->internal == cpiArguments) {
-    if (val->v.i > 0) {
+    if (val->v.i & cpkSupplied) {
       uint32_t l = val->v_string.length();
       val->v2_string += String((const char *)&l, 4);
       val->v_string += rest;
     } else {
-      val->v.i = 1;
+      val->v.i |= cpkSupplied;
       val->v_string = rest;
       val->v2_string = String();
     }
@@ -2785,6 +2909,7 @@ struct CpVaHelper {
   CpVaHelper(struct cp_value *, int, bool keywords_only);
 
   int develop_values(va_list val, ErrorHandler *errh);
+  int develop_kvalues(va_list val, ErrorHandler *errh);
 
   int assign_keyword_argument(const String &);
   void add_keyword_error(StringAccum &, int err, const String &arg, const char *argname, int argno);
@@ -2792,7 +2917,7 @@ struct CpVaHelper {
 
   int assign_arguments(const Vector<String> &args, const char *argname, ErrorHandler *errh);
   
-  int parse_arguments(const char *argname  CP_CONTEXT_ARG, ErrorHandler *errh);
+  int parse_arguments(const char *argname  CP_CONTEXT, ErrorHandler *errh);
 
   bool keywords_only;
   int nvalues;
@@ -2854,6 +2979,9 @@ CpVaHelper::develop_values(va_list val, ErrorHandler *errh)
     const cp_argtype *argtype = cp_find_argtype(command_name);
     if (!argtype)
       return errh->error("unknown argument type '%s'!", command_name);
+    v->argtype = argtype;
+    v->v.i = (mandatory_keywords || (nrequired < 0 && npositional < 0)
+	      ? cpkMandatory : 0);
     
     // check for special commands
     if (argtype->internal == cpiOptional) {
@@ -2871,7 +2999,6 @@ CpVaHelper::develop_values(va_list val, ErrorHandler *errh)
       mandatory_keywords = (argtype->internal == cpiMandatoryKeywords);
       continue;
     } else if (argtype->internal == cpiIgnore) {
-      v->argtype = argtype;
       nvalues++;
       continue;
     } else if (argtype->internal == cpiIgnoreRest) {
@@ -2882,25 +3009,86 @@ CpVaHelper::develop_values(va_list val, ErrorHandler *errh)
     }
 
     // store stuff in v
-    v->argtype = argtype;
-    v->description = va_arg(val, const char *);
+    v->description = va_arg(val, const char *); // NB deprecated
     if (argtype->flags & cpArgExtraInt)
       v->extra = va_arg(val, int);
     v->store_confirm = (confirm_keywords ? va_arg(val, bool *) : 0);
     v->store = va_arg(val, void *);
     if (argtype->flags & cpArgStore2)
       v->store2 = va_arg(val, void *);
-    v->v.i = (mandatory_keywords ? -1 : 0);
     nvalues++;
   }
 
  done:
-  
   if (nrequired < 0)
     nrequired = nvalues;
   if (npositional < 0)
     npositional = nvalues;
-  
+  return 0;
+}
+
+int
+CpVaHelper::develop_kvalues(va_list val, ErrorHandler *errh)
+{
+  if (!cp_values || !cp_parameter_used)
+    return errh->error("out of memory in cp_va_kparse");
+
+  while (1) {
+    
+    if (nvalues == cp_values_size - 1)
+      // no more space to store information about the arguments; break
+      return errh->error("too many arguments to cp_va_kparse!");
+
+    cp_value *v = &cp_values[nvalues];
+    v->argtype = 0;
+    v->keyword = va_arg(val, const char *);
+    if (v->keyword == 0)
+	goto done;
+    else if (v->keyword[0] == '\377' && strcmp(v->keyword, cpIgnoreRest) == 0) {
+	ignore_rest = true;
+	goto done;
+    }
+    int flags = va_arg(val, int);
+    if ((flags & cpkPositional) && npositional > 0)
+	return errh->error("%s: positional arguments must be grouped at the beginning", v->keyword);
+    if ((flags & (cpkPositional | cpkMandatory)) == (cpkPositional | cpkMandatory)
+	&& nrequired > 0)
+	return errh->error("%s: mandatory positional arguments must precede optional ones", v->keyword);
+    if (!(flags & cpkPositional))
+	npositional = nvalues;
+    if ((flags & (cpkPositional | cpkMandatory)) != (cpkPositional | cpkMandatory))
+	nrequired = nvalues;
+    
+    // find cp_argtype
+    const char *command_name = va_arg(val, const char *);
+    const cp_argtype *argtype = cp_find_argtype(command_name);
+    if (!argtype)
+      return errh->error("unknown argument type '%s'!", command_name);
+    v->argtype = argtype;
+    v->v.i = (flags & cpkMandatory);
+    
+    // check for special commands
+    if (argtype->internal == cpiIgnore) {
+	nvalues++;
+	continue;
+    } else if (argtype->internal >= 0 && argtype->internal <= cpiLastMagic)
+	return errh->error("%s: bad magic command in cp_va_kparse", command_name + 1);
+
+    // store stuff in v
+    v->description = "?"; // NB deprecated
+    if (argtype->flags & cpArgExtraInt)
+      v->extra = va_arg(val, int);
+    v->store_confirm = (flags & cpkConfirm ? va_arg(val, bool *) : 0);
+    v->store = va_arg(val, void *);
+    if (argtype->flags & cpArgStore2)
+      v->store2 = va_arg(val, void *);
+    nvalues++;
+  }
+
+ done:
+  if (npositional < 0)
+      npositional = nvalues;
+  nrequired = 0;
   return 0;
 }
 
@@ -2917,17 +3105,17 @@ CpVaHelper::assign_keyword_argument(const String &arg)
   if (!rest)
     return kwNoKeyword;
   // look for keyword value
-  for (int i = npositional; i < nvalues; i++)
-    if (keyword == cp_values[i].keyword) {
+  for (int i = 0; i < nvalues; i++)
+    if (cp_values[i].keyword && keyword == cp_values[i].keyword) {
       cp_value *val = &cp_values[i];
       // handle special types differently
       if (special_argtype_for_keyword(val->argtype))
 	return handle_special_argtype_for_keyword(val, rest);
       else {
 	// do not report error if keyword used already
-	// if (cp_values[i].v.i > 0)
+	// if (cp_values[i].v.i & cpkSupplied)
 	//   return kwDupKeyword;
-	val->v.i = 1;
+	val->v.i |= cpkSupplied;
 	val->v_string = rest;
 	return kwSuccess;
       }
@@ -3004,6 +3192,7 @@ CpVaHelper::assign_arguments(const Vector<String> &args, const char *argname, Er
     if (npositional_supplied < npositional) {
       (*cp_parameter_used)[i] = 1;
       cp_values[npositional_supplied].v_string = args[i];
+      cp_values[npositional_supplied].v.i |= cpkSupplied;
     }
     npositional_supplied++;
   }
@@ -3013,53 +3202,28 @@ CpVaHelper::assign_arguments(const Vector<String> &args, const char *argname, Er
     return finish_keyword_error("bad keyword(s) %s\n(valid keywords are %s)", keyword_error_sa.c_str(), errh);
   
   // report missing mandatory keywords
-  for (int i = npositional; i < nvalues; i++)
-    if (cp_values[i].v.i < 0) {
+  int nmissing = 0;
+  for (int i = 0; i < nvalues; i++)
+    if ((cp_values[i].v.i & (cpkMandatory | cpkSupplied)) == cpkMandatory) {
+      nmissing++;
       if (keyword_error_sa.length())
-	keyword_error_sa << ", ";
-      keyword_error_sa << cp_values[i].keyword;
-    }
-  if (keyword_error_sa.length())
-    return errh->error("missing mandatory keyword(s) %s", keyword_error_sa.c_str());
+	  keyword_error_sa << ", ";
+      if (cp_values[i].keyword)
+	  keyword_error_sa << cp_values[i].keyword;
+      else if (const cp_argtype *t = cp_values[i].argtype)
+	  keyword_error_sa << t->description;
+      else
+	  keyword_error_sa << "#" << i;
+    } else if (!(cp_values[i].v.i & cpkSupplied))
+	// clear 'argtype' on unused arguments
+	cp_values[i].argtype = 0;
+  
+  if (nmissing)
+      return errh->error("missing mandatory %s %s%s", keyword_error_sa.c_str(), argname, (nmissing > 1 ? "s" : ""));
   
   // if wrong number of arguments, print signature
-  if (npositional_supplied < nrequired
-      || (npositional_supplied > npositional && !ignore_rest)) {
-    StringAccum signature;
-    for (int i = 0; i < npositional; i++) {
-      if (i == nrequired)
-	signature << (nrequired > 0 ? " [" : "[");
-      if (i)
-	signature << ", ";
-      if (const cp_argtype *t = cp_values[i].argtype)
-	signature << t->description;
-      else
-	signature << "??";
-    }
-    if (ignore_rest)
-      signature << "...";
-    if (nrequired < npositional)
-      signature << "]";
-    if (npositional < nvalues) {
-      if (npositional)
-	signature << ", ";
-      signature << "[keywords]";
-    }
-
-    const char *whoops = (npositional_supplied > npositional ? "too many" : "too few");
-    if (signature.length())
-      errh->error("%s %ss; expected '%s'", whoops, argname, signature.c_str());
-    else
-      errh->error("expected empty %s list", argname);
-    return -EINVAL;
-  }
-
-  // clear 'argtype' on unused arguments
-  for (int i = npositional_supplied; i < npositional; i++)
-    cp_values[i].argtype = 0;
-  for (int i = npositional; i < nvalues; i++)
-    if (cp_values[i].v.i <= 0)
-      cp_values[i].argtype = 0;
+  if (npositional_supplied > npositional && !ignore_rest)
+      return errh->error("too many %ss", argname);
 
   return 0;
 }
@@ -3078,20 +3242,16 @@ CpVaHelper::parse_arguments(const char *argname,
   int argname_offset;
   argname_offset = sprintf(argname_buf, "%s ", argname);
 
-  for (int i = 0; i < npositional; i++) {
-    cp_value *v = &cp_values[i];
-    if (v->argtype) {
-      sprintf(argname_buf + argname_offset, "%d", i + 1);
-      v->argtype->parse(v, v->v_string, errh, argname_buf  CP_PASS_CONTEXT);
-    }
-  }
-  for (int i = npositional; i < nvalues; i++) {
-    cp_value *v = &cp_values[i];
-    if (v->argtype) {
-      StringAccum sa;
-      sa << "keyword " << v->keyword;
-      v->argtype->parse(v, v->v_string, errh, sa.c_str()  CP_PASS_CONTEXT);
-    }
+  for (int i = 0; i < nvalues; i++) {
+      cp_value *v = &cp_values[i];
+      if (!v->argtype)
+	  continue;
+      if (v->keyword)
+	  v->argtype->parse(v, v->v_string, errh, v->keyword  CP_PASS_CONTEXT);
+      else {
+	  sprintf(argname_buf + argname_offset, "%d", i + 1);
+	  v->argtype->parse(v, v->v_string, errh, argname_buf  CP_PASS_CONTEXT);
+      }
   }
 
   // check for failure
@@ -3231,6 +3391,121 @@ cp_va_parse_remove_keywords(Vector<String> &argv, int first,
   return retval;
 }
 
+
+int
+cp_va_kparse(const Vector<String> &argv,
+#ifndef CLICK_TOOL
+	     Element *context,
+#endif
+	     ErrorHandler *errh, ...)
+{
+  va_list val;
+  va_start(val, errh);
+  CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
+  int retval = cpva.develop_kvalues(val, errh);
+  if (retval >= 0)
+    retval = cpva.assign_arguments(argv, "argument", errh);
+  if (retval >= 0)
+    retval = cpva.parse_arguments("argument"  CP_PASS_CONTEXT, errh);
+  va_end(val);
+  return retval;
+}
+
+int
+cp_va_kparse(const String &confstr,
+#ifndef CLICK_TOOL
+	     Element *context,
+#endif
+	     ErrorHandler *errh, ...)
+{
+  va_list val;
+  va_start(val, errh);
+  Vector<String> argv;
+  cp_argvec(confstr, argv);
+  CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
+  int retval = cpva.develop_kvalues(val, errh);
+  if (retval >= 0)
+    retval = cpva.assign_arguments(argv, "argument", errh);
+  if (retval >= 0)
+    retval = cpva.parse_arguments("argument"  CP_PASS_CONTEXT, errh);
+  va_end(val);
+  return retval;
+}
+
+int
+cp_va_space_kparse(const String &arg,
+#ifndef CLICK_TOOL
+		   Element *context,
+#endif
+		   ErrorHandler *errh, ...)
+{
+  va_list val;
+  va_start(val, errh);
+  Vector<String> argv;
+  cp_spacevec(arg, argv);
+  CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
+  int retval = cpva.develop_kvalues(val, errh);
+  if (retval >= 0)
+    retval = cpva.assign_arguments(argv, "word", errh);
+  if (retval >= 0)
+    retval = cpva.parse_arguments("word"  CP_PASS_CONTEXT, errh);
+  va_end(val);
+  return retval;
+}
+
+int
+cp_va_kparse_keyword(const String &arg,
+#ifndef CLICK_TOOL
+		     Element *context,
+#endif
+		     ErrorHandler *errh, ...)
+{
+  va_list val;
+  va_start(val, errh);
+  Vector<String> argv;
+  argv.push_back(arg);
+  CpVaHelper cpva(cp_values, CP_VALUES_SIZE, true);
+  int retval = cpva.develop_kvalues(val, errh);
+  if (retval >= 0)
+    retval = cpva.assign_arguments(argv, "argument", errh);
+  if (retval >= 0)
+    retval = cpva.parse_arguments("argument"  CP_PASS_CONTEXT, errh);
+  va_end(val);
+  return retval;
+}
+
+int
+cp_va_kparse_remove_keywords(Vector<String> &argv,
+#ifndef CLICK_TOOL
+			     Element *context,
+#endif
+			     ErrorHandler *errh, ...)
+{
+  va_list val;
+  va_start(val, errh);
+  CpVaHelper cpva(cp_values, CP_VALUES_SIZE, true);
+  int retval = cpva.develop_kvalues(val, errh);
+  if (retval >= 0)
+    retval = cpva.assign_arguments(argv, "argument", errh);
+  if (retval >= 0)
+    retval = cpva.parse_arguments("argument"  CP_PASS_CONTEXT, errh);
+  va_end(val);
+
+  // remove keywords that were used
+  if (retval >= 0) {
+    int delta = 0;
+    for (int i = 0; i < argv.size(); i++)
+      if ((*cp_parameter_used)[i])
+	delta++;
+      else if (delta)
+	argv[i - delta] = argv[i];
+    argv.resize(argv.size() - delta);
+  }
+  
+  return retval;
+}
+
+
 int
 cp_assign_arguments(const Vector<String> &argv, const String *keys_begin, const String *keys_end, Vector<String> *values)
 {
@@ -3344,7 +3619,7 @@ cp_unparse_real2(uint32_t real, int frac_bits)
 void
 test_unparse_real2()
 {
-#define TEST(s, frac_bits, result) { String q = (#s); uint32_t r; if (!cp_unsigned_real2(q, (frac_bits), &r)) fprintf(stderr, "FAIL: %s unparsable\n", q.c_str()); else { String qq = cp_unparse_real2(r, (frac_bits)); fprintf(stderr, "%s: %s %d/%d %s\n", (qq == (result) ? "PASS" : "FAIL"), q.c_str(), r, (frac_bits), qq.c_str()); }}
+#define TEST(s, frac_bits, result) { String q = (#s); uint32_t r; if (!cp_real2(q, (frac_bits), &r)) fprintf(stderr, "FAIL: %s unparsable\n", q.c_str()); else { String qq = cp_unparse_real2(r, (frac_bits)); fprintf(stderr, "%s: %s %d/%d %s\n", (qq == (result) ? "PASS" : "FAIL"), q.c_str(), r, (frac_bits), qq.c_str()); }}
   TEST(0.418, 8, "0.418");
   TEST(0.417, 8, "0.418");
   TEST(0.416, 8, "0.414");

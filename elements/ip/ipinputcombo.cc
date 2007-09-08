@@ -37,15 +37,13 @@ IPInputCombo::~IPInputCombo()
 int
 IPInputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "color", &_color,
-		  cpOptional,
-		  "CheckIPHeader.BADSRC_OLD", "bad source addresses", &_bad_src,
-		  cpKeywords,
-		  "INTERFACES", "CheckIPHeader.INTERFACES", "router interface addresses", &_bad_src, &_good_dst,
-		  "BADSRC", "CheckIPHeader.BADSRC", "bad source addresses", &_bad_src,
-		  "GOODDST", "CheckIPHeader.BADSRC", "good destination addresses", &_good_dst,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "COLOR", cpkP+cpkM, cpUnsigned, &_color,
+		   "BADSRC*", cpkP, "CheckIPHeader.BADSRC_OLD", &_bad_src,
+		   "INTERFACES", 0, "CheckIPHeader.INTERFACES", &_bad_src, &_good_dst,
+		   "BADSRC", 0, "CheckIPHeader.BADSRC", &_bad_src,
+		   "GOODDST", 0, "CheckIPHeader.BADSRC", &_good_dst,
+		   cpEnd) < 0)
     return -1;
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED

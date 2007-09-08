@@ -35,12 +35,10 @@ AggregatePaint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _bits = 8;
     _incremental = false;
-    if (cp_va_parse(conf, this, errh,
-		    cpOptional,
-		    cpInteger, "bits", &_bits,
-		    cpKeywords,
-		    "INCREMENTAL", cpBool, "incremental?", &_incremental,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "BITS", cpkP, cpInteger, &_bits,
+		     "INCREMENTAL", 0, cpBool, &_incremental,
+		     cpEnd) < 0)
 	return -1;
     if (_bits <= 0 || _bits > 8)
 	return errh->error("bad number of bits");

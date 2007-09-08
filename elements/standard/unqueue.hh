@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
 =c
 
-Unqueue([BURSTSIZE] [, I<KEYWORDS>])
+Unqueue([BURST, I<KEYWORDS>])
 
 =s shaping
 
@@ -17,8 +17,8 @@ pull-to-push converter
 =d
 
 Pulls packets whenever they are available, then pushes them out
-its single output. Pulls a maximum of BURSTSIZE packets every time
-it is scheduled. Default BURSTSIZE is 1. If BURSTSIZE
+its single output. Pulls a maximum of BURST packets every time
+it is scheduled. Default BURST is 1. If BURST
 is less than 0, pull until nothing comes back.
 
 Keyword arguments are:

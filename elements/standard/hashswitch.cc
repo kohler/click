@@ -34,10 +34,10 @@ HashSwitch::~HashSwitch()
 int
 HashSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "byte offset", &_offset,
-		  cpUnsigned, "number of bytes", &_length,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "OFFSET", cpkP+cpkM, cpUnsigned, &_offset,
+		   "LENGTH", cpkP+cpkM, cpUnsigned, &_length,
+		   cpEnd) < 0)
     return -1;
   if (_length == 0)
     return errh->error("length must be > 0");

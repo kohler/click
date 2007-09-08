@@ -65,18 +65,17 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool multipacket = false;
     bool binary = false;
 
-    if (cp_va_parse(conf, this, errh,
-		    cpFilename, "dump filename", &_filename,
-		    cpKeywords,
-		    "CONTENTS", cpArgument, "log contents", &save,
-		    "DATA", cpArgument, "log contents", &save,
-		    "VERBOSE", cpBool, "be verbose?", &verbose,
-		    "BANNER", cpString, "banner", &_banner,
-		    "MULTIPACKET", cpBool, "output multiple packets based on packet count anno?", &multipacket,
-		    "BAD_PACKETS", cpBool, "output '!bad' messages for non-IP or bad IP packets?", &bad_packets,
-		    "CAREFUL_TRUNC", cpBool, "output '!bad' messages for truncated IP packets?", &careful_trunc,
-		    "BINARY", cpBool, "output binary data?", &binary,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "FILENAME", cpkP+cpkM, cpFilename, &_filename,
+		     "CONTENTS", 0, cpArgument, &save,
+		     "DATA", 0, cpArgument, &save,
+		     "VERBOSE", 0, cpBool, &verbose,
+		     "BANNER", 0, cpString, &_banner,
+		     "MULTIPACKET", 0, cpBool, &multipacket,
+		     "BAD_PACKETS", 0, cpBool, &bad_packets,
+		     "CAREFUL_TRUNC", 0, cpBool, &careful_trunc,
+		     "BINARY", 0, cpBool, &binary,
+		     cpEnd) < 0)
 	return -1;
 
     Vector<String> v;

@@ -10,7 +10,7 @@ CLICK_DECLS
 
 /*
  * =c
- * IPRateMonitor(PB, RATIO, THRESH [, MEMORY, ANNO])
+ * IPRateMonitor(TYPE, RATIO, THRESH [, MEMORY, ANNO])
  * =s ipmeasure
  * measures coming and going IP traffic rates
  *
@@ -25,7 +25,7 @@ CLICK_DECLS
  * in on input 1 are insepected on dst address. This enables IPRateMonitor to
  * annotate packets with both the forward rate and reverse rate.
  *
- * PB: PACKETS or BYTES. Count number of packets or bytes.
+ * TYPE: PACKETS or BYTES. Count number of packets or bytes.
  *
  * RATIO: chance that EWMA gets updated before packet is annotated with EWMA
  * value.

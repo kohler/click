@@ -40,31 +40,32 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   iph.ip_hl = sizeof(click_ip) >> 2;
   iph.ip_ttl = 250;
   int proto, tos = -1, dscp = -1;
-  bool ce = false, df = false, use_dst_anno;
-  String ect_str;
-
-  use_dst_anno = (conf.size() >= 3 && conf[2] == "DST_ANNO");
-  if (use_dst_anno)
-      conf[2] = "0.0.0.0";
+  bool ce = false, df = false;
+  String ect_str, dst_str;
   
-  if (cp_va_parse(conf, this, errh,
-		  cpNamedInteger, "protocol", NameInfo::T_IP_PROTO, &proto,
-		  cpIPAddress, "source address", &iph.ip_src,
-		  cpIPAddress, "destination address", &iph.ip_dst,
-		  cpKeywords,
-		  "TOS", cpUnsigned, "TOS", &tos,
-		  "TTL", cpByte, "time-to-live", &iph.ip_ttl,
-		  "DSCP", cpUnsigned, "DSCP", &dscp,
-		  "ECT", cpKeyword, "ECN capable transport", &ect_str,
-		  "CE", cpBool, "ECN congestion experienced", &ce,
-		  "DF", cpBool, "don't fragment", &df,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "PROTO", cpkP+cpkM, cpNamedInteger, NameInfo::T_IP_PROTO, &proto,
+		   "SRC", cpkP+cpkM, cpIPAddress, &iph.ip_src,
+		   "DST", cpkP+cpkM, cpArgument, &dst_str,
+		   "TOS", 0, cpUnsigned, &tos,
+		   "TTL", 0, cpByte, &iph.ip_ttl,
+		   "DSCP", 0, cpUnsigned, &dscp,
+		   "ECT", 0, cpKeyword, &ect_str,
+		   "CE", 0, cpBool, &ce,
+		   "DF", 0, cpBool, &df,
+		   cpEnd) < 0)
     return -1;
 
   if (proto < 0 || proto > 255)
       return errh->error("bad IP protocol");
   iph.ip_p = proto;
-  
+
+  bool use_dst_anno = dst_str == "DST_ANNO";
+  if (use_dst_anno)
+      iph.ip_dst.s_addr = 0;
+  else if (!cp_ip_address(dst_str, &iph.ip_dst, this))
+      return errh->error("DST argument should be IP address or 'DST_ANNO'");
+
   int ect = 0;
   if (ect_str) {
     bool x;

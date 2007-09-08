@@ -32,10 +32,10 @@ StoreData::~StoreData()
 int
 StoreData::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_parse(conf, this, errh,
-		       cpUnsigned, "offset", &_offset,
-		       cpString, "data", &_data,
-		       cpEnd);
+    return cp_va_kparse(conf, this, errh,
+			"OFFSET", cpkP+cpkM, cpUnsigned, &_offset,
+			"DATA", cpkP+cpkM, cpString, &_data,
+			cpEnd);
 }
 
 Packet *

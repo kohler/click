@@ -50,10 +50,10 @@ LinkUnqueue::cast(const char *n)
 int
 LinkUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (cp_va_parse(conf, this, errh,
-		    cpInterval, "latency", &_latency,
-		    cpBandwidth, "bandwidth", &_bandwidth,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "LATENCY", cpkP+cpkM, cpInterval, &_latency,
+		     "BANDWIDTH", cpkP+cpkM, cpBandwidth, &_bandwidth,
+		     cpEnd) < 0)
 	return -1;
     if (_bandwidth < 100)
 	return errh->error("bandwidth too small, minimum 100Bps");

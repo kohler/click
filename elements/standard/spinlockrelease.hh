@@ -6,11 +6,11 @@ CLICK_DECLS
 
 /*
  * =c
- * SpinlockRelease(S)
+ * SpinlockRelease(LOCK)
  * =s smpclick
  * releases spinlock
  * =d
- * Releases the spinlock named S. S must be defined in a SpinlockInfo element.
+ * Releases the spinlock named LOCK. LOCK must be defined in a SpinlockInfo element.
  */
 
 class SpinlockRelease : public Element {

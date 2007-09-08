@@ -63,16 +63,15 @@ FromNetFlowSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _multipacket = _timing = false;
     String link = "input";
     
-    if (cp_va_parse(conf, this, errh,
-		    cpFilename, "dump file name", &_ff.filename(),
-		    cpKeywords,
-		    "STOP", cpBool, "stop driver when done?", &stop,
-		    "ACTIVE", cpBool, "start active?", &_active,
-		    "ZERO", cpBool, "zero packet data?", &_zero,
-		    "MULTIPACKET", cpBool, "generate multiple packets per flow?", &_multipacket,
-		    "LINK", cpWord, "link annotation", &link,
-		    "TIMING", cpBool, "preserve packet timing?", &_timing,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),
+		     "STOP", 0, cpBool, &stop,
+		     "ACTIVE", 0, cpBool, &_active,
+		     "ZERO", 0, cpBool, &_zero,
+		     "MULTIPACKET", 0, cpBool, &_multipacket,
+		     "LINK", 0, cpWord, &link,
+		     "TIMING", 0, cpBool, &_timing,
+		     cpEnd) < 0)
 	return -1;
 
     _stop = stop;

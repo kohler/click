@@ -40,14 +40,11 @@ IPFragmenter::~IPFragmenter()
 int
 IPFragmenter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (cp_va_parse(conf, this, errh,
-		    cpUnsigned, "MTU", &_mtu,
-		    cpOptional,
-		    cpBool, "HONOR_DF", &_honor_df,
-		    cpKeywords,
-		    "HONOR_DF", cpBool, "honor DF bit?", &_honor_df,
-		    "VERBOSE", cpBool, "be verbose?", &_verbose,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "MTU", cpkP+cpkM, cpUnsigned, &_mtu,
+		     "HONOR_DF", cpkP, cpBool, &_honor_df,
+		     "VERBOSE", cpkP, cpBool, &_verbose,
+		     cpEnd) < 0)
 	return -1;
     if (_mtu < 8)
 	return errh->error("MTU must be at least 8");

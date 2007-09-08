@@ -19,10 +19,9 @@ int
 AggregateLength::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _ip = false;
-    if (cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "IP", cpBool, "IP length?", &_ip,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "IP", 0, cpBool, &_ip,
+		     cpEnd) < 0)
 	return -1;
     return 0;
 }

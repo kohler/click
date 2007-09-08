@@ -34,9 +34,9 @@ Truncate::~Truncate()
 int
 Truncate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_parse(conf, this, errh,
-		       cpUnsigned, "number of bytes to strip", &_nbytes,
-		       cpEnd);
+    return cp_va_kparse(conf, this, errh,
+			"LENGTH", cpkP+cpkM, cpUnsigned, &_nbytes,
+			cpEnd);
 }
 
 Packet *

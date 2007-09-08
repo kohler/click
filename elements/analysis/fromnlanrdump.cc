@@ -64,23 +64,22 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
 
     if (_ff.configure_keywords(conf, 1, this, errh) < 0)
 	return -1;
-    if (cp_va_parse(conf, this, errh,
-		    cpFilename, "dump file name", &_ff.filename(),
-		    cpKeywords,
-		    "FORMAT", cpWord, "file format", &format,
-		    "STOP", cpBool, "stop driver when done?", &stop,
-		    "ACTIVE", cpBool, "start active?", &active,
-		    "FORCE_IP", cpBool, "ignored for compatibility", &force_ip,
-		    "START", cpTimestamp, "starting time", &first_time,
-		    "START_AFTER", cpTimestamp, "starting time offset", &first_time_off,
-		    "END", cpTimestamp, "ending time", &last_time,
-		    "END_AFTER", cpTimestamp, "ending time offset", &last_time_off,
-		    "INTERVAL", cpTimestamp, "time interval", &interval,
-		    "END_CALL", cpHandlerCallPtrWrite, "write handler for ending time", &_end_h,
-		    "FILEPOS", cpFileOffset, "starting file position", &_packet_filepos,
-		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
-		    "TIMING", cpBool, "use original packet timing?", &timing,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),
+		     "FORMAT", 0, cpWord, &format,
+		     "STOP", 0, cpBool, &stop,
+		     "ACTIVE", 0, cpBool, &active,
+		     "FORCE_IP", 0, cpBool, &force_ip,
+		     "START", 0, cpTimestamp, &first_time,
+		     "START_AFTER", 0, cpTimestamp, &first_time_off,
+		     "END", 0, cpTimestamp, &last_time,
+		     "END_AFTER", 0, cpTimestamp, &last_time_off,
+		     "INTERVAL", 0, cpTimestamp, &interval,
+		     "END_CALL", 0, cpHandlerCallPtrWrite, &_end_h,
+		     "FILEPOS", 0, cpFileOffset, &_packet_filepos,
+		     "SAMPLE", 0, cpUnsignedReal2, SAMPLING_SHIFT, &_sampling_prob,
+		     "TIMING", 0, cpBool, &timing,
+		     cpEnd) < 0)
 	return -1;
 
     // check sampling rate

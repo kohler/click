@@ -6,11 +6,11 @@ CLICK_DECLS
 
 /*
  * =c
- * SpinlockAcquire(S)
+ * SpinlockAcquire(LOCK)
  * =s smpclick
  * acquires spinlock
  * =d
- * Acquires the spinlock named S. S must be defined in a SpinlockInfo element.
+ * Acquires the spinlock named LOCK. LOCK must be defined in a SpinlockInfo element.
  */
 
 class SpinlockAcquire : public Element {

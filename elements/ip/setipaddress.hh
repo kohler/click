@@ -6,12 +6,12 @@ CLICK_DECLS
 
 /*
  * =c
- * SetIPAddress(IP)
+ * SetIPAddress(IPADDR)
  * =s ip
  * sets destination IP address annotations
  * =d
  * Set the destination IP address annotation of incoming packets to the
- * static IP address IP.
+ * static IP address IPADDR.
  *
  * =a StoreIPAddress, GetIPAddress
  */

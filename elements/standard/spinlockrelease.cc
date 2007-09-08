@@ -22,7 +22,7 @@ int
 SpinlockRelease::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String name;
-    if (cp_va_parse(conf, this, errh, cpString, "name of spinlock", &name, cpEnd)<0)
+    if (cp_va_kparse(conf, this, errh, "LOCK", cpkP+cpkM, cpString, &name, cpEnd)<0)
 	return -1;
     for (int i = 0; i < router()->nelements(); i++) {
 	if (SpinlockInfo *si = 

@@ -7,13 +7,13 @@ CLICK_DECLS
 
 /*
  * =c
- * Burster(I, N)
+ * Burster(INTERVAL, BURST)
  * =s shaping
  * pull-to-push converter
  * =d
- * Pulls N packets each interval I (seconds) from its input.
+ * Pulls BURST packets each INTERVAL (seconds) from its input.
  * Pushes them out its single output. The interval can be
- * a floating point number.
+ * a floating point number.  Default BURST is 8.
  *
  * There are usually Queues both upstream and downstream
  * of Burster elements.

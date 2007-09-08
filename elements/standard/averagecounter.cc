@@ -45,10 +45,9 @@ int
 AverageCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _ignore = 0;
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpUnsigned, "number of seconds to ignore", &_ignore,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "IGNORE", cpkP, cpUnsigned, &_ignore,
+		   cpEnd) < 0)
     return -1;
   _ignore *= CLICK_HZ;
   return 0;

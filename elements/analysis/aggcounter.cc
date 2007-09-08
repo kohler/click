@@ -63,20 +63,19 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
     freeze_nnz = stop_nnz = _call_nnz = (uint32_t)(-1);
     freeze_count = stop_count = _call_count = (uint64_t)(-1);
     
-    if (cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "BYTES", cpBool, "count bytes?", &bytes,
-		    "IP_BYTES", cpBool, "do not count link header bytes?", &ip_bytes,
-		    "MULTIPACKET", cpBool, "use packet count annotation?", &packet_count,
-		    "EXTRA_LENGTH", cpBool, "use extra length annotation?", &extra_length,
-		    "AGGREGATE_FREEZE", cpUnsigned, "freeze after N nonzero aggregates", &freeze_nnz,
-		    "COUNT_FREEZE", cpUnsigned64, "freeze after count reaches N", &freeze_count,
-		    "AGGREGATE_STOP", cpUnsigned, "stop router after N nonzero aggregates", &stop_nnz,
-		    "COUNT_STOP", cpUnsigned64, "stop router after count reaches N", &stop_count,
-		    "AGGREGATE_CALL", cpArgument, "call handler after N nonzero aggregates", &call_nnz,
-		    "COUNT_CALL", cpArgument, "call handler after count reaches N", &call_count,
-		    "BANNER", cpString, "output banner", &_output_banner,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "BYTES", 0, cpBool, &bytes,
+		     "IP_BYTES", 0, cpBool, &ip_bytes,
+		     "MULTIPACKET", 0, cpBool, &packet_count,
+		     "EXTRA_LENGTH", 0, cpBool, &extra_length,
+		     "AGGREGATE_FREEZE", 0, cpUnsigned, &freeze_nnz,
+		     "COUNT_FREEZE", 0, cpUnsigned64, &freeze_count,
+		     "AGGREGATE_STOP", 0, cpUnsigned, &stop_nnz,
+		     "COUNT_STOP", 0, cpUnsigned64, &stop_count,
+		     "AGGREGATE_CALL", 0, cpArgument, &call_nnz,
+		     "COUNT_CALL", 0, cpArgument, &call_count,
+		     "BANNER", 0, cpString, &_output_banner,
+		     cpEnd) < 0)
 	return -1;
     
     _bytes = bytes;

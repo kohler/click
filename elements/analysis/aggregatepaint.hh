@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-AggregatePaint([LENGTH, I<KEYWORDS>])
+AggregatePaint([BITS, I<KEYWORDS>])
 
 =s aggregates
 
@@ -17,8 +17,8 @@ sets aggregate annotation based on paint annotation
 
 AggregatePaint sets the aggregate annotation on every passing packet to a
 portion of that packet's paint annotation.  By default, it is simply set to
-the paint annotation; but if you specify LENGTH, then only the low-order
-LENGTH bits of the annotation are used.
+the paint annotation; but if you specify a number for BITS, then only the
+low-order BITS bits of the annotation are used.
 
 Keyword arguments are:
 

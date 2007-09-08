@@ -6,11 +6,11 @@ CLICK_DECLS
 
 /*
  * =c
- * Strip(N)
+ * Strip(LENGTH)
  * =s basicmod
  * strips bytes from front of packets
  * =d
- * Deletes the first N bytes from each packet.
+ * Deletes the first LENGTH bytes from each packet.
  * =e
  * Use this to get rid of the Ethernet header:
  *

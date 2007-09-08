@@ -8,6 +8,7 @@ CLICK_DECLS
 class ErrorHandler;
 class StringAccum;
 class Timestamp;
+/** @cond never */
 #ifndef CLICK_TOOL
 class Element;
 class Router;
@@ -23,18 +24,27 @@ class HandlerCall;
 # define CP_CONTEXT
 # define CP_PASS_CONTEXT
 #endif
+#ifndef CLICK_COMPILING_CONFPARSE_CC
+# define CLICK_CONFPARSE_DEPRECATED CLICK_DEPRECATED
+#else
+# define CLICK_CONFPARSE_DEPRECATED /* */
+#endif
+/** @endcond */
+
+/** @file <click/confparse.hh>
+ * @brief Configuration string parsing functions. */
 
 const char* cp_skip_space(const char* begin, const char* end);
 const char* cp_skip_comment_space(const char* begin, const char* end);
-bool cp_eat_space(String&);
-inline bool cp_is_space(const String&);
-bool cp_is_word(const String&);
-bool cp_is_click_id(const String&);
+bool cp_eat_space(String &str);
+inline bool cp_is_space(const String &str);
+bool cp_is_word(const String &str);
+bool cp_is_click_id(const String &str);
 
-String cp_unquote(const String&);
-String cp_quote(const String&, bool allow_newlines = false);
-String cp_uncomment(const String&);
-const char* cp_process_backslash(const char* begin, const char* end, StringAccum&);
+String cp_uncomment(const String &str);
+String cp_unquote(const String &str);
+const char* cp_process_backslash(const char* begin, const char* end, StringAccum &sa);
+String cp_quote(const String &str, bool allow_newlines = false);
 
 // argument lists <-> lists of arguments
 void cp_argvec(const String&, Vector<String>&);
@@ -90,11 +100,7 @@ const char *cp_integer(const char* begin, const char* end, int base, uint64_t*);
 inline const unsigned char *cp_integer(const unsigned char* begin, const unsigned char* end, int base, uint64_t*);
 bool cp_integer(const String&, int base, uint64_t*);
 inline bool cp_integer(const String&, uint64_t*);
-# define cp_integer64 cp_integer
-# define cp_unsigned64 cp_integer
 #endif
-
-#define cp_unsigned cp_integer
 
 #ifdef CLICK_USERLEVEL
 bool cp_file_offset(const String&, off_t*);
@@ -102,10 +108,10 @@ bool cp_file_offset(const String&, off_t*);
 
 #define CP_REAL2_MAX_FRAC_BITS 28
 bool cp_real2(const String&, int frac_bits, int32_t*);
-bool cp_unsigned_real2(const String&, int frac_bits, uint32_t*);
+bool cp_real2(const String&, int frac_bits, uint32_t*);
 bool cp_real10(const String&, int frac_digits, int32_t*);
-bool cp_unsigned_real10(const String&, int frac_digits, uint32_t*);
-bool cp_unsigned_real10(const String&, int frac_digits, uint32_t*, uint32_t*);
+bool cp_real10(const String&, int frac_digits, uint32_t*);
+bool cp_real10(const String&, int frac_digits, uint32_t*, uint32_t*);
 #ifdef HAVE_FLOAT_TYPES
 bool cp_double(const String&, double*);
 #endif
@@ -241,11 +247,42 @@ extern const CpVaParseCmd
     cpReadHandlerCall,	//			HandlerCall**
     cpWriteHandlerCall;	//			HandlerCall**
 
+enum CpKparseFlags {
+    cpkNormal = 0, cpkN = 0,
+    cpkMandatory = 1, cpkM = 1,
+    cpkPositional = 2, cpkP = 2,
+    cpkConfirm = 4, cpkC = 4
+};
+
+int cp_va_kparse(const Vector<String>& argv, CP_VA_PARSE_ARGS_REST);
+int cp_va_kparse(const String& arg, CP_VA_PARSE_ARGS_REST);
+int cp_va_space_kparse(const String& arg, CP_VA_PARSE_ARGS_REST);
+int cp_va_kparse_keyword(const String& arg, CP_VA_PARSE_ARGS_REST);
+int cp_va_kparse_remove_keywords(Vector<String>& argv, CP_VA_PARSE_ARGS_REST);
+// Argument syntax:
+// cp_va_arg ::= cpEnd		// terminates argument list (not 0!)
+//    |   cpIgnoreRest		// terminates argument list
+//    |   const char *keyword,
+//	  int flags (0 or more of cpkMandatory|cpkPositional),
+//	  CpVaParseCmd cmd,
+//	  [Optional Helpers], Results
+//				// Helpers and Results depend on 'cmd';
+//				// see table above
+//    |   const char *keyword,
+//	  int flags (cpkConfirm + 0 or more of cpkMandatory|cpkPositional),
+//	  CpVaParseCmd cmd,
+//	  bool *keyword_given,
+//	  [Optional Helpers], Results
+//				// Helpers and Results depend on 'cmd';
+//				// see table above
+// Returns the number of result arguments set, or negative on error.
+// Stores no values in the result arguments on error.
+
 int cp_va_parse(const Vector<String>& argv, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse(const String& arg, CP_VA_PARSE_ARGS_REST);
 int cp_va_space_parse(const String& arg, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse_keyword(const String& arg, CP_VA_PARSE_ARGS_REST);
-int cp_va_parse_remove_keywords(Vector<String>& argv, int, CP_VA_PARSE_ARGS_REST);
+int cp_va_parse_remove_keywords(Vector<String>& argv, int first, CP_VA_PARSE_ARGS_REST);
 // Argument syntax:
 // cp_va_arg ::= cpEnd		// terminates argument list (not 0!)
 //    |   cpOptional | cpKeywords | cpIgnore...		// manipulators
@@ -302,7 +339,7 @@ struct cp_value {
     // set by cp_va_parse:
     const cp_argtype* argtype;
     const char* keyword;
-    const char* description;
+    const char* description CLICK_CONFPARSE_DEPRECATED;
     int extra;
     void* store;
     void* store2;
@@ -329,11 +366,21 @@ struct cp_value {
     String v2_string;
 };
 
+/** @cond never */
+#define cp_integer64 cp_integer
+#define cp_unsigned64 cp_integer
+#define cp_unsigned cp_integer
+#define cp_unsigned_real10 cp_real10
+#define cp_unsigned_real2 cp_real2
+/** @endcond */
+
 inline String cp_unspacevec(const Vector<String>& conf)
 {
     return cp_unspacevec(conf.begin(), conf.end());
 }
 
+/** @brief  Test if @a str is all spaces.
+ *  @return True when every character in @a str is a space. */
 inline bool cp_is_space(const String& str)
 {
     return cp_skip_space(str.begin(), str.end()) == str.end();
@@ -412,5 +459,6 @@ inline bool cp_ip_address(const String& str, struct in_addr* ina  CP_CONTEXT)
 #undef CP_OPT_CONTEXT
 #undef CP_CONTEXT
 #undef CP_PASS_CONTEXT
+#undef CLICK_CONFPARSE_DEPRECATED
 CLICK_ENDDECLS
 #endif

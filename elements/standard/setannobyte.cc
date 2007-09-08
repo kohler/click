@@ -37,10 +37,10 @@ SetAnnoByte::~SetAnnoByte()
 int
 SetAnnoByte::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpUnsigned, "offset", &_offset,
-			cpByte, "value", &_value,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "OFFSET", cpkP+cpkM, cpUnsigned, &_offset,
+			 "VALUE", cpkP+cpkM, cpByte, &_value,
+			 cpEnd);
   if (res < 0) 
     return res;
 

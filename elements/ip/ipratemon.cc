@@ -45,14 +45,13 @@ IPRateMonitor::configure(Vector<String> &conf, ErrorHandler *errh)
   String count_what;
   _memmax = 0;
   _anno_packets = true;
-  if (cp_va_parse(conf, this, errh,
-		  cpWord, "monitor type", &count_what,
-		  cpUnsignedReal2, "ratio", 16, &_ratio,
-		  cpUnsigned, "threshold", &_thresh,
-		  cpOptional, 
-		  cpUnsigned, "memmax", &_memmax,
-		  cpBool, "annotate", &_anno_packets,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "TYPE", cpkP+cpkM, cpWord, &count_what,
+		   "RATIO", cpkP+cpkM, cpUnsignedReal2, 16, &_ratio,
+		   "THRESH", cpkP+cpkM, cpUnsigned, &_thresh,
+		   "MEMORY", cpkP, cpUnsigned, &_memmax,
+		   "ANNO", cpkP, cpBool, &_anno_packets,
+		   cpEnd) < 0)
     return -1;
   if (count_what.upper() == "PACKETS")
     _count_packets = true;

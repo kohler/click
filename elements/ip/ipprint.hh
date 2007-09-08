@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
 =c
 
-IPPrint([TAG, I<KEYWORDS>])
+IPPrint([LABEL, I<KEYWORDS>])
 
 =s ip
 
@@ -18,7 +18,7 @@ Expects IP packets as input.  Should be placed downstream of a
 CheckIPHeader or equivalent element.
 
 Prints out IP packets in a human-readable tcpdump-like format, preceded by
-the TAG text.
+the LABEL text.
 
 Keyword arguments are:
 

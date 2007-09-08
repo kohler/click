@@ -49,8 +49,8 @@ int
 DelayShaper::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _notifier.initialize(router());
-    return cp_va_parse(conf, this, errh,
-		       cpTimestamp, "delay", &_delay, cpEnd);
+    return cp_va_kparse(conf, this, errh,
+			"DELAY", cpkP+cpkM, cpTimestamp, &_delay, cpEnd);
 }
 
 int

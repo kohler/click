@@ -6,11 +6,11 @@ CLICK_DECLS
 
 /*
  * =c
- * Truncate(MAX)
+ * Truncate(LENGTH)
  * =s basicmod
  * limit packet length.
  * =d
- * Shorten packets to at most MAX bytes.
+ * Shorten packets to at most LENGTH bytes.
  * =a Strip
  */
 

@@ -72,11 +72,10 @@ AggregateIPAddrPair::configure(Vector<String> &conf, ErrorHandler *errh)
     _timeout = 0;
     _gc_interval = 20 * 60;
     
-    if (cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "TIMEOUT", cpSeconds, "timeout for address pairs", &_timeout,
-		    "REAP", cpSeconds, "garbage collection interval", &_gc_interval,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "TIMEOUT", 0, cpSeconds, &_timeout,
+		     "REAP", 0, cpSeconds, &_gc_interval,
+		     cpEnd) < 0)
 	return -1;
     
     return 0;

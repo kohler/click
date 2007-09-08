@@ -32,9 +32,9 @@ CheckLength::~CheckLength()
 int
 CheckLength::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpUnsigned, "max length", &_max,
-		     cpEnd);
+  return cp_va_kparse(conf, this, errh,
+		      "LENGTH", cpkP+cpkM, cpUnsigned, &_max,
+		      cpEnd);
 }
 
 void

@@ -45,20 +45,14 @@ RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
   int datasize = -1;
   bool active = true, stop = false;
   
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpString, "packet data", &data,
-		  cpUnsigned, "sending rate (packets/s)", &rate,
-		  cpInteger, "total packet count", &limit,
-		  cpBool, "active?", &active,
-		  cpKeywords,
-		  "DATA", cpString, "packet data", &data,
-		  "DATASIZE", cpInteger, "minimum packet size", &datasize,
-		  "RATE", cpUnsigned, "sending rate (packets/s)", &rate,
-		  "LIMIT", cpInteger, "total packet count", &limit,
-		  "ACTIVE", cpBool, "active?", &active,
-		  "STOP", cpBool, "stop driver when done?", &stop,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DATA", cpkP, cpString, &data,
+		   "RATE", cpkP, cpUnsigned, &rate,
+		   "LIMIT", cpkP, cpInteger, &limit,
+		   "ACTIVE", cpkP, cpBool, &active,
+		   "DATASIZE", 0, cpInteger, &datasize,
+		   "STOP", 0, cpBool, &stop,
+		   cpEnd) < 0)
     return -1;
   
   _data = data;

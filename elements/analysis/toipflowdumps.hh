@@ -14,7 +14,7 @@ CLICK_DECLS
 /*
 =c
 
-ToIPFlowDumps(OUTPUT_PATTERN [, I<KEYWORDS>])
+ToIPFlowDumps(FILEPATTERN [, I<KEYWORDS>])
 
 =s traces
 
@@ -27,7 +27,7 @@ ToIPSummaryDump, to several files, one file per flow. It distinguishes flows
 by their aggregate annotations. You usually will run ToIPFlowDumps downstream
 of an AggregateIPFlows element.
 
-The OUTPUT_PATTERN argument gives the pattern used by ToIPSummaryDump to
+The FILEPATTERN argument gives the pattern used by ToIPSummaryDump to
 generate filenames. Printf-like `C<%>' escapes in the pattern are expanded
 differently for each flow. Available escapes are:
 
@@ -83,7 +83,7 @@ to false.
 =item GZIP
 
 Boolean. If true, then run C<gzip> to compress completed trace files. (The
-resulting files have F<.gz> appended to their OUTPUT_PATTERN names.) Defaults
+resulting files have F<.gz> appended to their FILEPATTERN names.) Defaults
 to false.
 
 =item ALL_TCP_OPT

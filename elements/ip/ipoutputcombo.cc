@@ -34,11 +34,11 @@ IPOutputCombo::~IPOutputCombo()
 int
 IPOutputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "color (PaintTee)", &_color,
-		  cpIPAddress, "dest IP address", &_my_ip,
-		  cpUnsigned, "MTU (IPFragmenter)", &_mtu,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "COLOR", cpkP+cpkM, cpUnsigned, &_color,
+		   "IPADDR", cpkP+cpkM, cpIPAddress, &_my_ip,
+		   "MTU", cpkP+cpkM, cpUnsigned, &_mtu,
+		   cpEnd) < 0)
     return -1;
   return 0;
 }

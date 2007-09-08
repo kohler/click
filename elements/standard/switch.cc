@@ -34,10 +34,9 @@ int
 Switch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _output = 0;
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpInteger, "active output", &_output,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "OUTPUT", cpkP, cpInteger, &_output,
+		   cpEnd) < 0)
     return -1;
   if (_output >= noutputs())
     _output = -1;

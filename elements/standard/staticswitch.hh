@@ -5,19 +5,19 @@ CLICK_DECLS
 
 /*
  * =c
- * StaticSwitch(K)
+ * StaticSwitch(OUTPUT)
  * =s classification
  * sends packet stream to fixed output
  * =d
  *
  * StaticSwitch sends every incoming packet to one of its output ports --
- * specifically, output number K. Negative K means to destroy input packets
+ * specifically, OUTPUT. Negative OUTPUT means to destroy input packets
  * instead of forwarding them. StaticSwitch has an unlimited number of
  * outputs.
  *
  * =n
  * StaticSwitch differs from Switch in that it has no C<switch> write handler,
- * and thus does not allow K to be changed at run time.
+ * and thus does not allow OUTPUT to be changed at run time.
  *
  * =a Switch, StrideSwitch, PullSwitch */
 

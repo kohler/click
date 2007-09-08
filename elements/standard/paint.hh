@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
 =c
 
-Paint(X)
+Paint(COLOR)
 
 =s paint
 
@@ -14,7 +14,7 @@ sets packet paint annotations
 
 =d
 
-Sets each packet's paint annotation to X, an integer 0..255. Note that a
+Sets each packet's paint annotation to COLOR, an integer 0..255. Note that a
 packet may only be painted with one color.
 
 

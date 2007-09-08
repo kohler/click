@@ -40,18 +40,17 @@ TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
     Timestamp first, last, first_init, last_init, first_delta, last_delta, interval;
     bool stop = false;
 
-    if (cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "START", cpTimestamp, "start time", &first,
-		    "END", cpTimestamp, "end time", &last,
-		    "START_DELAY", cpTimestamp, "start T after initialization", &first_init,
-		    "END_DELAY", cpTimestamp, "end T after initialization", &last_init,
-		    "START_AFTER", cpTimestamp, "start T after first packet", &first_delta,
-		    "END_AFTER", cpTimestamp, "end T after first packet", &last_delta,
-		    "INTERVAL", cpTimestamp, "interval", &interval,
-		    "STOP", cpBool, "stop when after end?", &stop,
-		    "END_CALL", cpHandlerCallPtrWrite, "handler to call at end", &_last_h,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "START", 0, cpTimestamp, &first,
+		     "END", 0, cpTimestamp, &last,
+		     "START_DELAY", 0, cpTimestamp, &first_init,
+		     "END_DELAY", 0, cpTimestamp, &last_init,
+		     "START_AFTER", 0, cpTimestamp, &first_delta,
+		     "END_AFTER", 0, cpTimestamp, &last_delta,
+		     "INTERVAL", 0, cpTimestamp, &interval,
+		     "STOP", 0, cpBool, &stop,
+		     "END_CALL", 0, cpHandlerCallPtrWrite, &_last_h,
+		     cpEnd) < 0)
 	return -1;
 
     _first_relative = _first_init_relative = _last_relative = _last_init_relative = _last_interval = false;

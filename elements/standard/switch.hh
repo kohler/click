@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
 =c
 
-Switch([K])
+Switch([OUTPUT])
 
 =s classification
 
@@ -15,13 +15,13 @@ sends packet stream to settable output
 =d
 
 Switch sends every incoming packet to one of its output ports --
-specifically, output number K. The default K is zero; negative K means to
-destroy input packets instead of forwarding them. You can change K with a
+specifically, OUTPUT. The default OUTPUT is zero; negative OUTPUT means to
+destroy input packets instead of forwarding them. You can change OUTPUT with a
 write handler. Switch has an unlimited number of outputs.
 
 =h switch read/write
 
-Return or set the K parameter.
+Return or set the OUTPUT parameter.
 
 =h CLICK_LLRPC_GET_SWITCH llrpc
 

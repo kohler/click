@@ -57,20 +57,14 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
   int datasize = -1;
   bool active = true, stop = false;
 
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpString, "packet data", &data,
-		  cpInteger, "total packet count", &limit,
-		  cpInteger, "burst size (packets per scheduling)", &burstsize,
-		  cpBool, "active?", &active,
-		  cpKeywords,
-		  "DATA", cpString, "packet data", &data,
-		  "DATASIZE", cpInteger, "minimum packet size", &datasize,
-		  "LIMIT", cpInteger, "total packet count", &limit,
-		  "BURST", cpInteger, "burst size (packets per scheduling)", &burstsize,
-		  "ACTIVE", cpBool, "active?", &active,
-		  "STOP", cpBool, "stop driver when done?", &stop,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DATA", cpkP, cpString, &data,
+		   "LIMIT", cpkP, cpInteger, &limit,
+		   "BURST", cpkP, cpInteger, &burstsize,
+		   "ACTIVE", cpkP, cpBool, &active,
+		   "DATASIZE", 0, cpInteger, &datasize,
+		   "STOP", 0, cpBool, &stop,
+		   cpEnd) < 0)
     return -1;
   if (burstsize < 1)
     return errh->error("burst size must be >= 1");

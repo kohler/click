@@ -66,26 +66,24 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   bool print_aggregate = false;
   String channel;
   
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpString, "label", &_label,
-		  cpKeywords,
-		  "CONTENTS", cpWord, "print packet contents (false/hex/ascii)", &contents,
-		  "PAYLOAD", cpWord, "print packet payload (false/hex/ascii)", &payload,
-		  "NBYTES", cpInteger, "max data bytes to print", &_bytes,
-		  "ID", cpBool, "print IP ID?", &print_id,
-		  "TIMESTAMP", cpBool, "print packet timestamps?", &print_time,
-		  "PAINT", cpBool, "print paint?", &print_paint,
-		  "TOS", cpBool, "print IP TOS?", &print_tos,
-		  "TTL", cpBool, "print IP TTL?", &print_ttl,
-		  "SWAP", cpBool, "swap ICMP values when printing?", &_swap,
-		  "LENGTH", cpBool, "print IP length?", &print_len,
-		  "AGGREGATE", cpBool, "print aggregate annotation?", &print_aggregate,
+  if (cp_va_kparse(conf, this, errh,
+		   "LABEL", cpkP, cpString, &_label,
+		   "CONTENTS", 0, cpWord, &contents,
+		   "PAYLOAD", 0, cpWord, &payload,
+		   "NBYTES", 0, cpInteger, &_bytes,
+		   "ID", 0, cpBool, &print_id,
+		   "TIMESTAMP", 0, cpBool, &print_time,
+		   "PAINT", 0, cpBool, &print_paint,
+		   "TOS", 0, cpBool, &print_tos,
+		   "TTL", 0, cpBool, &print_ttl,
+		   "SWAP", 0, cpBool, &_swap,
+		   "LENGTH", 0, cpBool, &print_len,
+		   "AGGREGATE", 0, cpBool, &print_aggregate,
 #if CLICK_USERLEVEL
-		  "OUTFILE", cpFilename, "output filename", &_outfilename,
+		   "OUTFILE", 0, cpFilename, &_outfilename,
 #endif
-		  "CHANNEL", cpWord, "output channel", &channel,
-		  cpEnd) < 0)
+		   "CHANNEL", 0, cpWord, &channel,
+		   cpEnd) < 0)
     return -1;
 
   contents = contents.upper();

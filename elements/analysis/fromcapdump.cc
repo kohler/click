@@ -63,17 +63,16 @@ FromCapDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool stop = false, active = true, zero = true, checksum = false;
     _sampling_prob = (1 << SAMPLING_SHIFT);
     
-    if (cp_va_parse(conf, this, errh,
-		    cpFilename, "dump file name", &_ff.filename(),
-		    cpKeywords,
-		    "STOP", cpBool, "stop driver when done?", &stop,
-		    "ACTIVE", cpBool, "start active?", &active,
-		    "ZERO", cpBool, "zero packet data?", &zero,
-		    "CHECKSUM", cpBool, "set packet checksums?", &checksum,
-		    "AGGREGATE", cpUnsigned, "aggregate annotation", &_aggregate,
-		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
-		    "FLOWID", cpArgument, "default flow ID", &_flowid,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),
+		     "STOP", 0, cpBool, &stop,
+		     "ACTIVE", 0, cpBool, &active,
+		     "ZERO", 0, cpBool, &zero,
+		     "CHECKSUM", 0, cpBool, &checksum,
+		     "AGGREGATE", 0, cpUnsigned, &_aggregate,
+		     "SAMPLE", 0, cpUnsignedReal2, SAMPLING_SHIFT, &_sampling_prob,
+		     "FLOWID", 0, cpArgument, &_flowid,
+		     cpEnd) < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
 	errh->warning("SAMPLE probability reduced to 1");

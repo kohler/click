@@ -38,9 +38,9 @@ Shaper::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     uint32_t rate;
     CpVaParseCmd cmd = (is_bandwidth() ? cpBandwidth : cpUnsigned);
-    if (cp_va_parse(conf, this, errh,
-		    cmd, "max allowable rate", &rate,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "RATE", cpkP+cpkM, cmd, &rate,
+		     cpEnd) < 0)
 	return -1;
     _rate.set_rate(rate, errh);
     return 0;

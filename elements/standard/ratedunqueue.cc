@@ -38,8 +38,8 @@ RatedUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned r;
     CpVaParseCmd cmd = (is_bandwidth() ? cpBandwidth : cpUnsigned);
-    if (cp_va_parse(conf, this, errh, 
-		    cmd, "unqueueing rate", &r, cpEnd) < 0) 
+    if (cp_va_kparse(conf, this, errh, 
+		     "RATE", cpkP+cpkM, cmd, &r, cpEnd) < 0) 
 	return -1;
     _rate.set_rate(r, errh);
     return 0;

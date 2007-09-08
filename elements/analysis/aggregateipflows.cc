@@ -98,19 +98,17 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
     bool handle_icmp_errors = false;
     bool gave_fragments = false, fragments = true;
     
-    if (cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "TCP_TIMEOUT", cpSeconds, "timeout for active TCP connections", &_tcp_timeout,
-		    "TCP_DONE_TIMEOUT", cpSeconds, "timeout for completed TCP connections", &_tcp_done_timeout,
-		    "UDP_TIMEOUT", cpSeconds, "timeout for UDP connections", &_udp_timeout,
-		    "FRAGMENT_TIMEOUT", cpSeconds, "timeout for fragment collection", &_fragment_timeout,
-		    "REAP", cpSeconds, "garbage collection interval", &_gc_interval,
-		    "ICMP", cpBool, "handle ICMP errors?", &handle_icmp_errors,
-		    "TRACEINFO", cpFilename, "filename for connection info file", &_traceinfo_filename,
-		    "SOURCE", cpElement, "packet source element", &_packet_source,
-		    cpConfirmKeywords,
-		    "FRAGMENTS", cpBool, "handle fragmented packets?", &gave_fragments, &fragments,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "TCP_TIMEOUT", 0, cpSeconds, &_tcp_timeout,
+		     "TCP_DONE_TIMEOUT", 0, cpSeconds, &_tcp_done_timeout,
+		     "UDP_TIMEOUT", 0, cpSeconds, &_udp_timeout,
+		     "FRAGMENT_TIMEOUT", 0, cpSeconds, &_fragment_timeout,
+		     "REAP", 0, cpSeconds, &_gc_interval,
+		     "ICMP", 0, cpBool, &handle_icmp_errors,
+		     "TRACEINFO", 0, cpFilename, &_traceinfo_filename,
+		     "SOURCE", 0, cpElement, &_packet_source,
+		     "FRAGMENTS", cpkC, cpBool, &gave_fragments, &fragments,
+		     cpEnd) < 0)
 	return -1;
     
     _smallest_timeout = (_tcp_timeout < _tcp_done_timeout ? _tcp_timeout : _tcp_done_timeout);

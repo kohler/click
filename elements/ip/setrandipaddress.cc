@@ -37,11 +37,10 @@ SetRandIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
   int ret;
 
   _max = -1;
-  ret = cp_va_parse(conf, this, errh,
-                    cpIPAddressOrPrefix, "IP address/len", &_ip, &_mask,
-                    cpOptional,
-                    cpInteger, "MAX addresses", &_max,
-                    cpEnd);
+  ret = cp_va_kparse(conf, this, errh,
+		     "PREFIX", cpkP+cpkM, cpIPAddressOrPrefix, &_ip, &_mask,
+		     "LIMIT", cpkP, cpInteger, &_max,
+		     cpEnd);
 
   if(_max >= 0){
     _addrs = new IPAddress [_max] ();

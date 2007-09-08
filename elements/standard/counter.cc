@@ -44,11 +44,10 @@ int
 Counter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String count_call, byte_count_call;
-  if (cp_va_parse(conf, this, errh,
-		  cpKeywords,
-		  "COUNT_CALL", cpArgument, "handler to call after a count", &count_call,
-		  "BYTE_COUNT_CALL", cpArgument, "handler to call after a byte count", &byte_count_call,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "COUNT_CALL", 0, cpArgument, &count_call,
+		   "BYTE_COUNT_CALL", 0, cpArgument, &byte_count_call,
+		   cpEnd) < 0)
     return -1;
 
   if (count_call) {

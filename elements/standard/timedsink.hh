@@ -6,12 +6,12 @@ CLICK_DECLS
 
 /*
  * =c
- * TimedSink(I)
+ * TimedSink([INTERVAL])
  * =s basicsources
  * periodically pulls and drops a packet
  * =d
- * Pulls one packet every I seconds from its input.
- * Discards the packet.
+ * Pulls one packet every INTERVAL seconds from its input.
+ * Discards the packet.  Default INTERVAL is 500 milliseconds.
  * =a Shaper
  */
 

@@ -37,9 +37,9 @@ FixIPSrc::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   IPAddress a;
 
-  if (cp_va_parse(conf, this, errh,
-                  cpIPAddress, "local addr", &a,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "IPADDR", cpkP+cpkM, cpIPAddress, &a,
+		   cpEnd) < 0)
     return -1;
   _my_ip = a.in_addr();
   return 0;

@@ -7,15 +7,15 @@ CLICK_DECLS
 
 /*
  * =c
- * RatedSplitter(R)
+ * RatedSplitter(RATE)
  * =s shaping
  * splits flow of packets at specified rate
  * =d
  * 
  * RatedSplitter has two output ports. All incoming packets up to a maximum of
- * R packets per second are emitted on output port 0. Any remaining packets
- * are emitted on output port 1. Unlike Meter, R packets per second are
- * emitted on output port 0 even when the input rate is greater than R.
+ * RATE packets per second are emitted on output port 0. Any remaining packets
+ * are emitted on output port 1. Unlike Meter, RATE packets per second are
+ * emitted on output port 0 even when the input rate is greater than RATE.
  *
  * =e
  *   rs :: RatedSplitter(2000);

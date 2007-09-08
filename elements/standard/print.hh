@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-Print([TAG, NBYTES, I<KEYWORDS>])
+Print([LABEL, LENGTH, I<KEYWORDS>])
 
 =s debugging
 
@@ -15,14 +15,14 @@ prints packet contents
 
 =d
 
-Prints up to NBYTES bytes of data from each packet, in hex, preceded by the
-TAG text. Default NBYTES is 24.
+Prints up to LENGTH bytes of data from each packet, in hex, preceded by the
+LABEL text. Default LENGTH is 24.
 
 Keyword arguments are:
 
 =over 8
 
-=item NBYTES
+=item LENGTH
 
 Number of bytes to print. Default is 24.
 

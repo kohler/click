@@ -119,12 +119,11 @@ RandomBitErrors::configure(Vector<String> &conf, ErrorHandler *errh)
   unsigned bit_error;
   String kind_str = "flip";
   bool on = true;
-  if (cp_va_parse(conf, this, errh,
-		  cpUnsignedReal2, "bit error probability", 28, &bit_error,
-		  cpOptional,
-		  cpString, "action (set/clear/flip)", &kind_str,
-		  cpBool, "active?", &on,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "P", cpkP+cpkM, cpUnsignedReal2, 28, &bit_error,
+		   "KIND", cpkP, cpString, &kind_str,
+		   "ACTIVE", cpkP, cpBool, &on,
+		   cpEnd) < 0)
     return -1;
 
   unsigned kind;

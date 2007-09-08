@@ -32,9 +32,9 @@ SetIPAddress::~SetIPAddress()
 int
 SetIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpIPAddress, "IP address", &_ip,
-		     cpEnd);
+  return cp_va_kparse(conf, this, errh,
+		      "IPADDR", cpkP+cpkM, cpIPAddress, &_ip,
+		      cpEnd);
 }
 
 Packet *

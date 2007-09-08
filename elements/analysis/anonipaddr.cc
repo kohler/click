@@ -70,12 +70,11 @@ AnonymizeIPAddr::configure(Vector<String> &conf, ErrorHandler *errh)
     String preserve_8;
     bool seed = true;
     
-    if (cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "CLASS", cpInteger, "preserve class bits?", &_preserve_class,
-		    "PRESERVE_8", cpArgument, "list of /8s to preserve", &preserve_8,
-		    "SEED", cpBool, "seed random number generator?", &seed,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "CLASS", 0, cpInteger, &_preserve_class,
+		     "PRESERVE_8", 0, cpArgument, &preserve_8,
+		     "SEED", 0, cpBool, &seed,
+		     cpEnd) < 0)
 	return -1;
 
     // check CLASS value

@@ -35,9 +35,9 @@ Paint::~Paint()
 int
 Paint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpByte, "color", &_color,
-		     cpEnd);
+  return cp_va_kparse(conf, this, errh,
+		      "COLOR", cpkP+cpkM, cpByte, &_color,
+		      cpEnd);
 }
 
 Packet *

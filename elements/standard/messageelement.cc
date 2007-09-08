@@ -34,11 +34,10 @@ int
 MessageElement::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String message, type = "MESSAGE";
-    if (cp_va_parse(conf, this, errh,
-		    cpString, "message", &message,
-		    cpOptional,
-		    cpKeyword, "message type", &type,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "MESSAGE", cpkP+cpkM, cpString, &message,
+		     "TYPE", cpkP, cpKeyword, &type,
+		     cpEnd) < 0)
 	return -1;
     ErrorHandler::Seriousness s;
     if (type == "MESSAGE")

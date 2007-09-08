@@ -47,9 +47,8 @@ TimeSortedSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _notifier.initialize(router());
     _stop = false;
-    return cp_va_parse(conf, this, errh,
-		       cpKeywords,
-		       "STOP", cpBool, "stop when queue empty?", &_stop,
+    return cp_va_kparse(conf, this, errh,
+			"STOP", 0, cpBool, &_stop,
 		       cpEnd);
 }
 

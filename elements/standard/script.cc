@@ -141,9 +141,9 @@ int
 Script::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String type_arg;
-    if (cp_va_parse_remove_keywords
-	(conf, 0, this, errh,
-	 "TYPE", cpArgument, "type of script", &type_arg,
+    if (cp_va_kparse_remove_keywords
+	(conf, this, errh,
+	 "TYPE", 0, cpArgument, &type_arg,
 	 cpEnd) < 0)
 	return -1;
 

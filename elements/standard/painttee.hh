@@ -5,12 +5,12 @@ CLICK_DECLS
 
 /*
  * =c
- * PaintTee(X)
+ * PaintTee(COLOR)
  * =s paint
  * duplicates packets with given paint annotation
  * =d
  * PaintTee sends every packet through output 0. If the packet's
- * color annotation is equal to X (an integer), it also
+ * color annotation is equal to COLOR (an integer), it also
  * sends a copy through output 1.
  *
  * =e

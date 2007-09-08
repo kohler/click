@@ -99,11 +99,10 @@ AggregatePacketCounter::configure(Vector<String> &conf, ErrorHandler *errh)
     Element *e = 0;
     _packetno = 0;
     
-    if (cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "NOTIFIER", cpElement, "aggregate deletion notifier", &e,
-		    "PACKETNO", cpInteger, "packet number annotation (-1..1)", &_packetno,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "NOTIFIER", 0, cpElement, &e,
+		     "PACKETNO", 0, cpInteger, &_packetno,
+		     cpEnd) < 0)
 	return -1;
 
     if (_packetno > 1)

@@ -39,13 +39,11 @@ SetTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
     bool first = false, delta = false;
     _tv.set_sec(-1);
     _action = ACT_NOW;
-    if (cp_va_parse(conf, this, errh,
-		    cpOptional,
-		    cpTimestamp, "timestamp", &_tv,
-		    cpKeywords,
-		    "FIRST", cpBool, "set first timestamp?", &first,
-		    "DELTA", cpBool, "set timestamp delta?", &delta,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "TIMESTAMP", cpkP, cpTimestamp, &_tv,
+		     "FIRST", 0, cpBool, &first,
+		     "DELTA", 0, cpBool, &delta,
+		     cpEnd) < 0)
 	return -1;
     if ((first && delta) || (_tv.sec() >= 0 && delta))
 	return errh->error("must specify at most one of 'FIRST' and 'DELTA'");

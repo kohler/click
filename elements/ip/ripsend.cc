@@ -35,12 +35,12 @@ RIPSend::~RIPSend()
 int
 RIPSend::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int ret = cp_va_parse(conf, this, errh,
-                        cpIPAddress, "source addr", &_src,
-                        cpIPAddress, "dst addr", &_dst,
-                        cpIPPrefix, "advertised address", &_what, &_mask,
-                        cpInteger, "metric", &_metric,
-                        cpEnd);
+  int ret = cp_va_kparse(conf, this, errh,
+			 "SRC", cpkP+cpkM, cpIPAddress, &_src,
+			 "DST", cpkP+cpkM, cpIPAddress, &_dst,
+			 "PREFIX", cpkP+cpkM, cpIPPrefix, &_what, &_mask,
+			 "METRIC", cpkP+cpkM, cpInteger, &_metric,
+			 cpEnd);
   if(ret < 0)
     return(ret);
 

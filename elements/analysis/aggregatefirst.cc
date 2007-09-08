@@ -38,10 +38,9 @@ AggregateFirst::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
     
-    if (cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "NOTIFIER", cpElement, "aggregate creation and deletion notifier", &e,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "NOTIFIER", 0, cpElement, &e,
+		     cpEnd) < 0)
 	return -1;
     
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))

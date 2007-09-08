@@ -36,13 +36,10 @@ StoreTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _offset = -1;
     bool tail = false;
-    if (cp_va_parse(conf, this, errh,
-		    cpOptional,
-		    cpInteger, "storage offset", &_offset,
-		    cpKeywords,
-		    "TAIL", cpBool, "put timestamp at end of packet?", &tail,
-		    "OFFSET", cpInteger, "storage offset", &_offset,
-		    0) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "OFFSET", cpkP, cpInteger, &_offset,
+		     "TAIL", 0, cpBool, &tail,
+		     0) < 0)
 	return -1;
     if (_offset >= 0 ? tail : !tail)
 	return errh->error("supply exactly one of 'OFFSET' and 'TAIL'");

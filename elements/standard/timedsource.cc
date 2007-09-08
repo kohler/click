@@ -40,17 +40,13 @@ TimedSource::configure(Vector<String> &conf, ErrorHandler *errh)
   int interval = 500;
   bool active = true, stop = false;
 
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpSecondsAsMilli, "packet generation interval", &interval,
-		  cpString, "packet data", &data,
-		  cpKeywords,
-		  "DATA", cpString, "packet data", &data,
-		  "INTERVAL", cpSecondsAsMilli, "packet generation interval", &interval,
-		  "LIMIT", cpInteger, "total packet count", &limit,
-		  "ACTIVE", cpBool, "active?", &active,
-		  "STOP", cpBool, "stop driver when done?", &stop,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "INTERVAL", cpkP, cpSecondsAsMilli, &interval,
+		   "DATA", cpkP, cpString, &data,
+		   "LIMIT", 0, cpInteger, &limit,
+		   "ACTIVE", 0, cpBool, &active,
+		   "STOP", 0, cpBool, &stop,
+		   cpEnd) < 0)
     return -1;
 
   _data = data;

@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 Burster::Burster()
-  : _npackets(0), _timer(this)
+  : _npackets(8), _timer(this)
 {
 }
 
@@ -34,11 +34,10 @@ Burster::~Burster()
 int
 Burster::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpSecondsAsMilli, "packet pulling interval", &_interval,
-		  cpOptional,
-		  cpUnsigned, "max packets per interval", &_npackets,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "INTERVAL", cpkP+cpkM, cpSecondsAsMilli, &_interval,
+		   "BURST", cpkP, cpUnsigned, &_npackets,
+		   cpEnd) < 0)
     return -1;
   if (_npackets <= 0)
     return errh->error("max packets per interval must be > 0");

@@ -49,18 +49,16 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
   String label;
   unsigned bytes = 24;
   
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpString, "label", &label,
-		  cpInteger, "max bytes to print", &bytes,
-		  cpKeywords,
-		  "NBYTES", cpInteger, "max bytes to print", &bytes,
-		  "TIMESTAMP", cpBool, "print packet timestamps?", &timestamp,
-		  "PRINTANNO", cpBool, "print packet annotation bytes?", &print_anno,
+  if (cp_va_kparse(conf, this, errh,
+		   "LABEL", cpkP, cpString, &label,
+		   "LENGTH", cpkP, cpInteger, &bytes,
+		   "NBYTES", cpkP, cpInteger, &bytes, // deprecated
+		   "TIMESTAMP", 0, cpBool, &timestamp,
+		   "PRINTANNO", 0, cpBool, &print_anno,
 #ifdef CLICK_LINUXMODULE
-		  "CPU", cpBool, "print CPU IDs?", &print_cpu,
+		   "CPU", 0, cpBool, &print_cpu,
 #endif
-		  cpEnd) < 0)
+		   cpEnd) < 0)
     return -1;
   
   _label = label;

@@ -5,11 +5,11 @@ CLICK_DECLS
 
 /*
  * =c
- * Unstrip(N)
+ * Unstrip(LENGTH)
  * =s basicmod
  * unstrips bytes from front of packets
  * =d
- * Put N bytes at the front of the packet. These N bytes may be bytes
+ * Put LENGTH bytes at the front of the packet. These LENGTH bytes may be bytes
  * previously removed by Strip.
  * =e
  * Use this to get rid of the Ethernet header and put it back on:

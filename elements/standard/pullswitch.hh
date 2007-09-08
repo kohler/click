@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
 =c
 
-PullSwitch([K])
+PullSwitch([INPUT])
 
 =s scheduling
 
@@ -15,8 +15,8 @@ forwards pull requests to settable input
 =d
 
 On every pull, PullSwitch returns the packet pulled from one of its input
-ports -- specifically, input number K. The default K is zero; negative Ks
-mean always return a null packet. You can change K with a write handler.
+ports -- specifically, INPUT. The default INPUT is zero; negative INPUTs
+mean always return a null packet. You can change INPUT with a write handler.
 PullSwitch has an unlimited number of inputs.
 
 =h switch read/write

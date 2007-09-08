@@ -36,10 +36,9 @@ int
 SetTimestampDelta::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String typ = "RANGE";
-    if (cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "TYPE", cpWord, "type", &typ,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "TYPE", 0, cpWord, &typ,
+		     cpEnd) < 0)
 	return -1;
     if (typ == "RANGE")
 	_type = 0;

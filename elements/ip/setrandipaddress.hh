@@ -6,14 +6,14 @@ CLICK_DECLS
 
 /*
  * =c
- * SetRandIPAddress(ADDR/LEN, [MAX])
+ * SetRandIPAddress(PREFIX, [LIMIT])
  * =s ip
  * sets destination IP address annotations randomly
  * =d
- * Set the destination IP address annotation to a random number whose
- * upper LEN bits are equal to ADDR.
+ * Set the destination IP address annotation to a random number within
+ * the specified PREFIX.
  *
- * If MAX is given, at most MAX distinct addresses will be generated.
+ * If LIMIT is given, at most LIMIT distinct addresses will be generated.
  *
  * =a StoreIPAddress, GetIPAddress, SetIPAddress
  */

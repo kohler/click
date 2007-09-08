@@ -38,11 +38,10 @@ IPGWOptions::~IPGWOptions()
 int
 IPGWOptions::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-                  cpIPAddress, "local IP address", &_preferred_addr,
-		  cpOptional,
-		  cpIPAddressList, "other interface IP addresses", &_my_addrs,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "MYADDR", cpkP+cpkM, cpIPAddress, &_preferred_addr,
+		   "OTHERADDRS", cpkP, cpIPAddressList, &_my_addrs,
+		   cpEnd) < 0)
     return -1;
   _my_addrs.push_back(_preferred_addr);
   return 0;

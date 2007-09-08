@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
 =c
 
-IPEncap(PROTOCOL, SRC, DST, I<KEYWORDS>)
+IPEncap(PROTO, SRC, DST, I<KEYWORDS>)
 
 =s ip
 
@@ -18,7 +18,7 @@ encapsulates packets in static IP header
 =d
 
 Encapsulates each incoming packet in an IP packet with protocol
-PROTOCOL, source address SRC, and destination address DST.
+PROTO, source address SRC, and destination address DST.
 This is most useful for IP-in-IP encapsulation.
 Its destination address annotation is also set to DST.
 

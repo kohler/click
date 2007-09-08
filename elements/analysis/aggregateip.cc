@@ -41,12 +41,11 @@ AggregateIP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String arg;
     _incremental = _unshift_ip_addr = false;
-    if (cp_va_parse(conf, this, errh,
-		    cpArgument, "field specification", &arg,
-		    cpKeywords,
-		    "INCREMENTAL", cpBool, "incremental?", &_incremental,
-		    "UNSHIFT_IP_ADDR", cpBool, "unshift IP address fields?", &_unshift_ip_addr,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "FIELD", cpkP+cpkM, cpArgument, &arg,
+		     "INCREMENTAL", 0, cpBool, &_incremental,
+		     "UNSHIFT_IP_ADDR", 0, cpBool, &_unshift_ip_addr,
+		     cpEnd) < 0)
 	return -1;
     const char *end = IPField::parse(arg.begin(), arg.end(), -1, &_f, errh, this);
     if (end == arg.begin())

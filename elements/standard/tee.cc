@@ -33,10 +33,9 @@ int
 Tee::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int n = noutputs();
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpUnsigned, "number of arms", &n,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "N", cpkP, cpUnsigned, &n,
+		   cpEnd) < 0)
     return -1;
   if (n != noutputs())
       return errh->error("%d outputs implies %d arms", noutputs(), noutputs());
@@ -69,10 +68,9 @@ int
 PullTee::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int n = noutputs();
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpUnsigned, "number of arms", &n,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "N", cpkP, cpUnsigned, &n,
+		   cpEnd) < 0)
     return -1;
   if (n != noutputs())
       return errh->error("%d outputs implies %d arms", noutputs(), noutputs());

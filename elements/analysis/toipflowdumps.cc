@@ -535,22 +535,20 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
     bool absolute_time = false, absolute_seq = false, binary = false, all_tcp_opt = false, tcp_opt = false, tcp_window = false, ip_id = false, gzip = false;
     _mincount = 0;
     
-    if (cp_va_parse(conf, this, errh,
-		    cpOptional,
-		    cpFilename, "output filename pattern", &_filename_pattern,
-		    cpKeywords,
-		    "OUTPUT_PATTERN", cpFilename, "output filename pattern", &_filename_pattern,
-		    "NOTIFIER", cpElement, "aggregate deletion notifier", &e,
-		    "ABSOLUTE_TIME", cpBool, "print absolute timestamps?", &absolute_time,
-		    "ABSOLUTE_SEQ", cpBool, "print absolute sequence numbers?", &absolute_seq,
-		    "BINARY", cpBool, "output binary records?", &binary,
-		    "ALL_TCP_OPT", cpBool, "output all TCP options?", &all_tcp_opt,
-		    "TCP_OPT", cpBool, "output TCP options?", &tcp_opt,
-		    "TCP_WINDOW", cpBool, "output TCP windows?", &tcp_window,
-		    "GZIP", cpBool, "gzip output files?", &gzip,
-		    "IP_ID", cpBool, "output IP IDs?", &ip_id,
-		    "MINCOUNT", cpUnsigned, "output flows with at least this many packets", &_mincount,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "FILEPATTERN", cpkP, cpFilename, &_filename_pattern,
+		     "OUTPUT_PATTERN", 0, cpFilename, &_filename_pattern,
+		     "NOTIFIER", 0, cpElement, &e,
+		     "ABSOLUTE_TIME", 0, cpBool, &absolute_time,
+		     "ABSOLUTE_SEQ", 0, cpBool, &absolute_seq,
+		     "BINARY", 0, cpBool, &binary,
+		     "ALL_TCP_OPT", 0, cpBool, &all_tcp_opt,
+		     "TCP_OPT", 0, cpBool, &tcp_opt,
+		     "TCP_WINDOW", 0, cpBool, &tcp_window,
+		     "GZIP", 0, cpBool, &gzip,
+		     "IP_ID", 0, cpBool, &ip_id,
+		     "MINCOUNT", 0, cpUnsigned, &_mincount,
+		     cpEnd) < 0)
 	return -1;
 
     if (!_filename_pattern)

@@ -37,14 +37,12 @@ RandomSample::configure(Vector<String> &conf, ErrorHandler *errh)
     uint32_t sampling_prob = 0xFFFFFFFFU;
     uint32_t drop_prob = 0xFFFFFFFFU;
     bool active = true;
-    if (cp_va_parse(conf, this, errh,
-		    cpOptional,
-		    cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &sampling_prob,
-		    cpKeywords,
-		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &sampling_prob,
-		    "DROP", cpUnsignedReal2, "drop probability", SAMPLING_SHIFT, &drop_prob,
-		    "ACTIVE", cpBool, "active?", &active,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "P", cpkP, cpUnsignedReal2, SAMPLING_SHIFT, &sampling_prob,
+		     "SAMPLE", 0, cpUnsignedReal2, SAMPLING_SHIFT, &sampling_prob,
+		     "DROP", 0, cpUnsignedReal2, SAMPLING_SHIFT, &drop_prob,
+		     "ACTIVE", 0, cpBool, &active,
+		     cpEnd) < 0)
 	return -1;
     if (sampling_prob == 0xFFFFFFFFU && drop_prob <= (1 << SAMPLING_SHIFT))
 	sampling_prob = (1 << SAMPLING_SHIFT) - drop_prob;

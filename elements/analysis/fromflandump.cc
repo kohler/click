@@ -58,15 +58,13 @@ FromFlanDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool stop = false, active = true;
     bool have_packets = false, packets, have_flows = false, flows;
     
-    if (cp_va_parse(conf, this, errh,
-		    cpFilename, "dump directory name", &_dirname,
-		    cpKeywords,
-		    "STOP", cpBool, "stop driver when done?", &stop,
-		    "ACTIVE", cpBool, "start active?", &active,
-		    cpConfirmKeywords,
-		    "PACKETS", cpBool, "output packets?", &have_packets, &packets,
-		    "FLOWS", cpBool, "output flows?", &have_flows, &flows,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "FILENAME", cpkP+cpkM, cpFilename, &_dirname,
+		     "STOP", 0, cpBool, &stop,
+		     "ACTIVE", 0, cpBool, &active,
+		     "PACKETS", cpkC, cpBool, &have_packets, &packets,
+		     "FLOWS", cpkC, cpBool, &have_flows, &flows,
+		     cpEnd) < 0)
 	return -1;
 
     // check packets vs. flows

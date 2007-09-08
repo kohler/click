@@ -53,7 +53,7 @@ ipaddr_list_parse(cp_value *v, const String &arg, ErrorHandler *errh, const char
       if (cp_ip_prefix(words[i], &addr[0], &addr[1], true, context))
 	memcpy(sa.extend(8), &addr[0], 8);
       else {
-	errh->error("%s takes list of IP prefixes (%s)", argname, v->description);
+	errh->error("%s takes list of IP prefixes", argname);
 	return;
       }
   } else {
@@ -61,7 +61,7 @@ ipaddr_list_parse(cp_value *v, const String &arg, ErrorHandler *errh, const char
       if (cp_ip_address(words[i], &addr[0], context))
 	memcpy(sa.extend(4), &addr[0], 4);
       else {
-	errh->error("%s takes list of IP addresses (%s) [%s]", argname, v->description, words[i].c_str());
+	errh->error("%s takes list of IP addresses [%s]", argname, words[i].c_str());
 	return;
       }
     if (v->argtype->user_data == IPADDR_LIST_BADSRC_OLD)
@@ -129,23 +129,23 @@ CheckIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
   bool verbose = false;
   bool details = false;
 
-  if (cp_va_parse_remove_keywords(conf, 0, this, errh,
-		"INTERFACES", "CheckIPHeader.INTERFACES", "router interface addresses", &_bad_src, &_good_dst,
-		"BADSRC", "CheckIPHeader.BADSRC", "bad source addresses", &_bad_src,
-		"GOODDST", "CheckIPHeader.BADSRC", "good destination addresses", &_good_dst,
-		"OFFSET", cpUnsigned, "IP header offset", &_offset,
-		"VERBOSE", cpBool, "be verbose?", &verbose,
-		"DETAILS", cpBool, "keep detailed counts?", &details,
-		"CHECKSUM", cpBool, "check checksum?", &_checksum,
+  if (cp_va_kparse_remove_keywords(conf, this, errh,
+		"INTERFACES", 0, "CheckIPHeader.INTERFACES", &_bad_src, &_good_dst,
+		"BADSRC", 0, "CheckIPHeader.BADSRC", &_bad_src,
+		"GOODDST", 0, "CheckIPHeader.BADSRC", &_good_dst,
+		"OFFSET", 0, cpUnsigned, &_offset,
+		"VERBOSE", 0, cpBool, &verbose,
+		"DETAILS", 0, cpBool, &details,
+		"CHECKSUM", 0, cpBool, &_checksum,
 		cpEnd) < 0)
     return -1;
 
   if (conf.size() == 1 && cp_integer(conf[0], &_offset))
     /* nada */;
-  else if (cp_va_parse(conf, this, errh, cpOptional,
-		       "CheckIPHeader.BADSRC_OLD", "bad source addresses", &_bad_src,
-		       cpUnsigned, "IP header offset", &_offset,
-		       cpEnd) < 0)
+  else if (cp_va_kparse(conf, this, errh,
+			"BADSRC*", cpkP, "CheckIPHeader.BADSRC_OLD", &_bad_src,
+			"OFFSET", cpkP, cpUnsigned, &_offset,
+			cpEnd) < 0)
     return -1;
 
   _verbose = verbose;

@@ -39,12 +39,10 @@ Unqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 1;
     _active = true;
-    return cp_va_parse(conf, this, errh,
-		       cpOptional,
-		       cpInteger, "burst size", &_burst,
-		       cpKeywords,
-		       "ACTIVE", cpBool, "is active?", &_active,
-		       cpEnd);
+    return cp_va_kparse(conf, this, errh,
+			"BURST", cpkP, cpInteger, &_burst,
+			"ACTIVE", 0, cpBool, &_active,
+			cpEnd);
 }
 
 int

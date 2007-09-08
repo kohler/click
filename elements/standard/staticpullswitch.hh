@@ -5,19 +5,19 @@ CLICK_DECLS
 
 /*
  * =c
- * StaticPullSwitch(K)
+ * StaticPullSwitch(INPUT)
  * =s scheduling
  * forwards pull requests to fixed input
  * =d
  *
  * On every pull, StaticPullSwitch returns the packet pulled from one of its
- * input ports -- specifically, input number K. Negative Ks mean always return
+ * input ports -- specifically, INPUT. Negative INPUTs mean always return
  * a null packet. StaticPullSwitch has an unlimited number of inputs.
  *
  * =n
  *
  * StaticPullSwitch differs from PullSwitch in that it has no C<switch> write
- * handler, and thus does not allow K to be changed at run time.
+ * handler, and thus does not allow INPUT to be changed at run time.
  *
  * =a PullSwitch, PrioSched, RoundRobinSched, StrideSched, Switch */
 

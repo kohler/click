@@ -6,12 +6,12 @@ CLICK_DECLS
 
 /*
  * =c
- * SetIPDSCP(VAL)
+ * SetIPDSCP(DSCP)
  * =s ip
  * sets IP packets' DSCP fields
  * =d
  * Expects IP packets as input and
- * sets their Differential Services Code Point to VAL.
+ * sets their Differential Services Code Point to DSCP.
  * Then it incrementally recalculates the IP checksum
  * and passes the packet to output 0.
  * The DSCP is the upper 6 bits of the IP TOS field.

@@ -36,11 +36,11 @@ int
 CompareBlock::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _bad = 0;
-  return cp_va_parse(conf, this, errh,
-		     cpInteger, "forward weight", &_fwd_weight,
-		     cpInteger, "reverse weight", &_rev_weight,
-		     cpInteger, "threshold", &_thresh,
-		     cpEnd);
+  return cp_va_kparse(conf, this, errh,
+		      "FWD_WEIGHT", cpkP+cpkM, cpInteger, &_fwd_weight,
+		      "REV_WEIGHT", cpkP+cpkM, cpInteger, &_rev_weight,
+		      "THRESH", cpkP+cpkM, cpInteger, &_thresh,
+		      cpEnd);
 }
 
 void
