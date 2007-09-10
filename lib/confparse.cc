@@ -56,6 +56,144 @@ CLICK_DECLS
 
 int cp_errno;
 
+/// @file confparse.hh
+/// @brief Support for parsing configuration strings.
+///
+/// Defines functions and helpers for parsing configuration strings into
+/// numbers, IP addresses, and other useful types.
+///
+/// <h3>cp_va_kparse Introduction</h3>
+///
+/// Most elements that take configuration strings parse them using the
+/// cp_va_kparse() function and friends.  These functions take a variable
+/// argument list describing the desired arguments and result slots.  They
+/// parse the configuration, store the results in the slots, report any
+/// errors, and return the number of arguments successfully assigned on
+/// success or a negative value on failure.
+///
+/// Here are some examples of its use.
+///
+/// @code
+/// int MyElement::configure(Vector<String> &conf, ErrorHandler *errh) {
+///     String data; uint32_t limit = 0; bool stop = false;
+///     if (cp_va_kparse(conf, this, errh,
+///                      "DATA", cpkP+cpkM, cpString, &data,
+///                      "LIMIT", cpkP, cpUnsigned, &limit,
+///                      "STOP", 0, cpBool, &stop,
+///                      cpEnd) < 0)   // argument list always terminated by cpEnd
+///         return -1;
+///     ... }
+/// @endcode
+///
+/// This element supports three arguments, <tt>DATA</tt> (a string),
+/// <tt>LIMIT</tt> (an unsigned integer), and <tt>STOP</tt> (a boolean).  Here
+/// are some example element definitions:
+///
+/// @code
+/// MyElement(DATA "blah blah blah", LIMIT 10);
+///             /* OK, sets data = "blah blah blah", limit = 10; leaves stop unchanged */
+/// MyElement(LIMIT 10, DATA "blah blah blah");
+///             /* OK, has the same effect */
+/// MyElement(LIMIT 10);
+///             /* error "missing mandatory DATA argument" */
+///             /* (the cpkM flag marks an argument as mandatory) */
+/// MyElement(DATA "blah blah blah");
+///             /* OK, sets data = "blah blah blah" and leaves limit unchanged */
+///             /* (LIMIT lacks the cpkM flag, so it can be left off) */
+/// MyElement(DATA "blah blah blah", STOP true);
+///             /* OK, sets data = "blah blah blah" and stop = true */
+///             /* (LIMIT lacks the cpkM flag, so it can be left off) */
+/// MyElement(DATA "blah blah blah", LIMIT 10, DATA "blah");
+///             /* OK, sets data = "blah" (later arguments take precedence) */
+/// MyElement(DATA "blah blah blah", LIMIT 10, BOGUS "bogus");
+///             /* error "too many arguments" */
+/// MyElement("blah blah blah", 10);
+///             /* OK, same as MyElement(DATA "blah blah blah", LIMIT 10) */
+///             /* (the cpkP flag allows positional arguments) */
+/// MyElement("blah blah blah", 10, true);
+///             /* error "too many arguments" */
+///             /* (STOP lacks the cpkP flag and must be given by name) */
+/// @endcode
+///
+/// <h3>cp_va_kparse Items</h3>
+///
+/// An item in a cp_va_kparse() argument list consists of:
+///
+/// <ol>
+/// <li><strong>Argument name</strong> (type: const char *).  Example: <tt>"DATA"</tt>.</li>
+/// <li><strong>Parse flags</strong> (type: int).  Zero or more of
+/// #cpkP, #cpkM, and #cpkC.</li>
+/// <li>If the parse flags contain #cpkC, then a <strong>confirmation
+/// flag</strong> comes next (type: bool *).  This flag is set to false if the
+/// argument wasn't given and true if it was.</li>
+/// <li><strong>Argument type</strong> (type: @ref CpVaParseCmd).  Defines the type
+/// of argument read from the configuration string.  Example: ::cpString.</li>
+/// <li>Optional <strong>parse parameters</strong> (determined by the
+/// argument type).  For example, ::cpUnsignedReal2 takes a parse parameter
+/// that defines how many bits of fraction are needed.</li>
+/// <li><strong>Result storage</strong> (determined by the argument type).</li>
+/// </ol>
+///
+/// This example uses more of these features.
+///
+/// @code
+/// int MyElement2::configure(Vector<String> &conf, ErrorHandler *errh) {
+///     bool p_given; uint32_t p = 0x10000; IPAddress addr, mask;
+///     if (cp_va_kparse(conf, this, errh,
+///                      "P", cpkC, &p_given, cpUnsignedReal2, 16, &p,
+///                      "NETWORK", 0, cpIPPrefix, &addr, &mask,
+///                      cpEnd) < 0)
+///         return -1;
+///     ... }
+/// @endcode
+///
+/// This element supports two arguments, <tt>P</tt> (a fixed-point number with
+/// 16 bits of fraction) and <tt>NETWORK</tt> (an IP prefix, defined by
+/// address and mask).  Here are some example element definitions:
+///
+/// @code
+/// MyElement2();
+///             /* OK, since neither argument is mandatory; sets p_given = false */
+/// MyElement2(P 0.5, PREFIX 10/8);
+///             /* OK, sets p_given = true, p = 0x8000, addr = 10.0.0.0, and mask = 255.0.0.0 */
+/// @endcode
+///
+/// <h3>cp_va_kparse Argument Types</h3>
+///
+/// cp_va_kparse() argument types are defined by @ref CpVaParseCmd constants.
+/// For example, the ::cpInteger argument type parses a 32-bit signed integer.
+/// See @ref CpVaParseCmd for more.  Elements may also define their own
+/// argument types with cp_register_argtype().
+///
+/// <h3>Direct Parsing Functions</h3>
+///
+/// The cp_va_kparse() function is a convenient interface for many other
+/// parsing functions, which have names like cp_bool(), cp_string(),
+/// cp_integer(), cp_ip_address(), and so forth.  These functions all have the
+/// same basic interface:
+///
+/// @li The first argument, const String &@a str, contains the string to be
+/// parsed.
+/// @li The last argument(s) specify locations where the parsed results should
+/// be stored. These @a result arguments have pointer type.
+/// @li The return type is bool.  True is returned if and only if parsing
+/// succeeds, and the @a result slots are modified if and only if parsing
+/// succeeds.
+/// @li Most parsing functions expect to parse the entire supplied string. Any
+/// extraneous characters, such as trailing whitespace, cause parsing to
+/// fail.
+/// @li Most parsing functions never report errors to any source; they simply
+/// return false when parsing fails.
+///
+/// <h3>Argument Manipulation</h3>
+///
+/// Finally, functions like cp_uncomment(), cp_unquote(), cp_quote(),
+/// cp_argvec(), and cp_is_space() manipulate arguments more generally.
+/// cp_uncomment() removes comments and simplifies white space; cp_unquote()
+/// removes quotation marks and expands backslash escapes; cp_argvec() splits
+/// a configuration string at commas; and so forth.
+
+
 /** @brief  Find the first nonspace character in the string [@a begin, @a end).
  *  @param  begin  beginning of string
  *  @param  end    one past end of string
@@ -475,7 +613,7 @@ cp_unquote(const String &str)
 ///	    in the result.  If false, then newline sequences should be
 ///	    translated to their backslash escape equivalents.  Default is false.
 ///
-/// Returns a double-quoted string that, when unquoted by cp_unquote, will
+/// Returns a double-quoted string that, when unquoted by cp_unquote(), will
 /// equal @a str.  The returned string consists of a single double-quoted
 /// string, and in particular is never empty.
 ///
@@ -536,19 +674,31 @@ cp_quote(const String &str, bool allow_newlines)
   return sa.take_string();
 }
 
+/// @brief  Separate a configuration string into arguments at commas.
+/// @param       str   configuration string
+/// @param[out]  conf  arguments
+///
+/// The configuration string is broken into arguments at unquoted commas.
+/// Each argument is passed through cp_uncomment(), then appended to @a conf.
+/// If the final argument is empty, it is ignored.  For example:
+/// @code
+/// cp_argvec("a, b, c", v)            appends  "a", "b", "c"
+/// cp_argvec("  a /*?*/ b,  c, ", v)  appends  "a b", "c"
+/// cp_argvec("\"x, y\" // ?", v)      appends  "\"x, y\""
+/// @endcode
 void
-cp_argvec(const String &conf, Vector<String> &args)
+cp_argvec(const String &str, Vector<String> &conf)
 {
   // common case: no configuration
-  int len = conf.length();
+  int len = str.length();
   if (len == 0)
     return;
   
   for (int pos = 0; pos < len; pos++) {
-    String arg = partial_uncomment(conf, pos, &pos);
+    String arg = partial_uncomment(str, pos, &pos);
     // add the argument if it is nonempty or not the last argument
     if (arg || pos < len)
-      args.push_back(arg);
+      conf.push_back(arg);
   }
 }
 
@@ -596,50 +746,80 @@ skip_spacevec_item(const char *s, const char *end)
   return s;
 }
 
+/// @brief  Separate a configuration string into arguments at unquoted spaces.
+/// @param       str   configuration string
+/// @param[out]  conf  arguments
+///
+/// The configuration string is broken into arguments at unquoted spaces.
+/// Each argument is passed through cp_uncomment(), then appended to @a conf.
+/// If the final argument is empty, it is ignored.  For example:
+/// @code
+/// cp_spacevec("a  b, c", v)            appends  "a", "b,", "c"
+/// cp_spacevec("  'a /*?*/ b'c", v)     appends  "'a /*?*/ b'c"
+/// @endcode
 void
-cp_spacevec(const String &conf, Vector<String> &vec)
+cp_spacevec(const String &str, Vector<String> &conf)
 {
   // common case: no configuration
-  if (conf.length() == 0)
+  if (str.length() == 0)
     return;
 
   // collect arguments with cp_pop_spacevec
-  const char *s = conf.data();
-  const char *end = conf.end();
+  const char *s = str.data();
+  const char *end = str.end();
   while ((s = cp_skip_comment_space(s, end)) < end) {
     const char *t = skip_spacevec_item(s, end);
-    vec.push_back(conf.substring(s, t));
+    conf.push_back(str.substring(s, t));
     s = t;
   }
 }
 
+/// @brief  Remove and return the first space-separated argument from @a str.
+/// @param[in,out]  str  space-separated configuration string
+///
+/// The first space-separated argument in the configuration string is removed
+/// and returned.  The returned argument is passed through cp_uncomment().
+/// @a str is set to the remaining portion of the string, with any preceding
+/// space removed.  If the input string is all spaces and comments, then both 
+/// the returned string and @a str will be empty.
 String
-cp_pop_spacevec(String &conf)
+cp_pop_spacevec(String &str)
 {
-  const char *item = cp_skip_comment_space(conf.begin(), conf.end());
-  const char *item_end = skip_spacevec_item(item, conf.end());
-  String answer = conf.substring(item, item_end);
-  item_end = cp_skip_comment_space(item_end, conf.end());
-  conf = conf.substring(item_end, conf.end());
+  const char *item = cp_skip_comment_space(str.begin(), str.end());
+  const char *item_end = skip_spacevec_item(item, str.end());
+  String answer = str.substring(item, item_end);
+  item_end = cp_skip_comment_space(item_end, str.end());
+  str = str.substring(item_end, str.end());
   return answer;
 }
 
+/// @brief  Join the strings of @a conf with commas and return the result.
+///
+/// This function does not quote or otherwise protect the strings in @a conf.
+/// The caller should do that if necessary.
 String
-cp_unargvec(const Vector<String> &args)
+cp_unargvec(const Vector<String> &conf)
 {
-  if (args.size() == 0)
+  if (conf.size() == 0)
     return String();
-  else if (args.size() == 1)
-    return args[0];
+  else if (conf.size() == 1)
+    return conf[0];
   else {
     StringAccum sa;
-    sa << args[0];
-    for (int i = 1; i < args.size(); i++)
-      sa << ", " << args[i];
+    sa << conf[0];
+    for (int i = 1; i < conf.size(); i++)
+      sa << ", " << conf[i];
     return sa.take_string();
   }
 }
 
+/// @brief  Join the strings in [@a begin, @a end) with spaces and return the result.
+/// @param  begin  first string in range
+/// @param  end    one past last string in range
+///
+/// This function does not quote or otherwise protect the strings in [@a
+/// begin, @a end).  The caller should do that if necessary.
+/// @sa cp_unspacevec(const Vector<String> &)
 String
 cp_unspacevec(const String *begin, const String *end)
 {
@@ -653,8 +833,25 @@ cp_unspacevec(const String *begin, const String *end)
 
 // PARSING STRINGS
 
+/** @brief Parse a string from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @param[out]  rest  (optional) stores unparsed portion of @a str
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a string from @a str.  The first unquoted space encountered ends the
+ * string, but spaces are allowed within single or double quotes.  Unquoted
+ * empty strings are not accepted.  If the string fully parses, then the
+ * result is unquoted by cp_unquote() and stored in *@a result and the function
+ * returns true.  Otherwise, *@a result remains unchanged and the function
+ * returns false.
+ *
+ * If @a rest is nonnull, then the string doesn't need to fully parse; the
+ * part of the string starting with the first unquoted space is stored in *@a
+ * rest and the function returns true.
+ */
 bool
-cp_string(const String &str, String *return_value, String *rest)
+cp_string(const String &str, String *result, String *rest)
 {
   const char *s = str.data();
   const char *end = str.end();
@@ -698,13 +895,30 @@ cp_string(const String &str, String *return_value, String *rest)
   else {
     if (rest)
       *rest = str.substring(s, end);
-    *return_value = cp_unquote(str.substring(str.begin(), s));
+    *result = cp_unquote(str.substring(str.begin(), s));
     return true;
   }
 }
 
+/** @brief Parse a word from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @param[out]  rest  (optional) stores unparsed portion of @a str
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a word from @a str.  The first unquoted space encountered ends the
+ * word.  Single and double quotes are removed as by cp_unquote, but the
+ * unquoted string must satisfy cp_is_word.  If the string fully parses, then
+ * the resulting value is stored in *@a result and the function returns true.
+ * Otherwise, *@a result remains unchanged and the function returns false.
+ *
+ * If @a rest is nonnull, then the string doesn't need to fully parse; the
+ * part of the string starting with the first unquoted space is stored in *@a
+ * rest and the function returns true (assuming cp_is_word succeeds on the
+ * initial portion).
+ */
 bool
-cp_word(const String &str, String *return_value, String *rest)
+cp_word(const String &str, String *result, String *rest)
 {
   String word;
   if (!cp_string(str, &word, rest))
@@ -712,13 +926,30 @@ cp_word(const String &str, String *return_value, String *rest)
   else if (!cp_is_word(word))
     return false;
   else {
-    *return_value = word;
+    *result = word;
     return true;
   }
 }
 
+/** @brief Parse a keyword from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @param[out]  rest  (optional) stores unparsed portion of @a str
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a keyword from @a str.  Keywords consist of characters in
+ * <tt>[A-Za-z0-9_.:]</tt>.  Quotes and spaces are not allowed; neither is the
+ * empty string.  If the string fully parses as a keyword, then the resulting
+ * value is stored in *@a result and the function returns true.  Otherwise,
+ * *@a result remains unchanged and the function returns false.
+ *
+ * If @a rest is nonnull, then the string doesn't need to fully parse; the
+ * part of the string starting with the first unquoted space is stored in *@a
+ * rest and the function returns true (assuming the initial portion is a valid
+ * keyword).
+ */
 bool
-cp_keyword(const String &str, String *return_value, String *rest)
+cp_keyword(const String &str, String *result, String *rest)
 {
   const char *s = str.data();
   const char *end = str.end();
@@ -752,7 +983,7 @@ cp_keyword(const String &str, String *return_value, String *rest)
   if (s == str.begin() || (!rest && s < end))
     return false;
   else {
-    *return_value = str.substring(str.begin(), s);
+    *result = str.substring(str.begin(), s);
     if (rest) {
       for (; s < end; s++)
 	if (!isspace((unsigned char) *s))
@@ -766,32 +997,115 @@ cp_keyword(const String &str, String *return_value, String *rest)
 
 // PARSING INTEGERS
 
+/** @brief Parse a boolean from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a boolean from @a str.  The following strings are the valid
+ * representations for booleans:
+ *
+ * <dl>
+ * <dt>0, false, no, f, n<dt><dd>Means false</dd>
+ * <dt>1, true, yes, t, y</dt><dd>Means true</dd>
+ * </dl>
+ *
+ * If the string fully parses, then the resulting value is stored in *@a
+ * result and the function returns true.  Otherwise, *@a result remains
+ * unchanged and the function returns false.
+ */
 bool
-cp_bool(const String &str, bool *return_value)
+cp_bool(const String &str, bool *result)
 {
   const char *s = str.data();
   int len = str.length();
   
   if (len == 1 && (s[0] == '0' || s[0] == 'n' || s[0] == 'f'))
-    *return_value = false;
+    *result = false;
   else if (len == 1 && (s[0] == '1' || s[0] == 'y' || s[0] == 't'))
-    *return_value = true;
+    *result = true;
   else if (len == 5 && memcmp(s, "false", 5) == 0)
-    *return_value = false;
+    *result = false;
   else if (len == 4 && memcmp(s, "true", 4) == 0)
-    *return_value = true;
+    *result = true;
   else if (len == 2 && memcmp(s, "no", 2) == 0)
-    *return_value = false;
+    *result = false;
   else if (len == 3 && memcmp(s, "yes", 3) == 0)
-    *return_value = true;
+    *result = true;
   else
     return false;
 
   return true;
 }
 
+/** @brief  Parse an integer from [@a begin, @a end) in base @a base.
+ * @param  begin  first character in string
+ * @param  end    one past last character in string
+ * @param  base   base of integer: 0 or 2-36
+ * @param[out]  result  stores parsed result
+ * @return  pointer to first unparsed character in string; equals @a begin
+ * 	     if the string didn't start with a valid integer
+ *
+ * This function parses an integer from the initial characters of a string.
+ * The resulting integer is stored in *@a result.
+ *
+ * The integer format consists of an optional initial sign <tt>+/-</tt>,
+ * followed by one or more digits.  A negative sign is only accepted if @a
+ * result has a signed type.  Digits may be separated by underscores (to make
+ * numbers easier to read), but the first and last characters in the integer
+ * cannot be underscores, and two underscores can't appear in a row.  Some
+ * examples:
+ *
+ * @code
+ * 0
+ * 0x100
+ * -1_000_023
+ * @endcode
+ *
+ * Digits are numbered from 0-9, then A-Z/a-z.  @a base determines which
+ * digits are legal.  If @a base is 0, then a leading <tt>0x</tt> or
+ * <tt>0X</tt> may precede the digits, indicating base 16; a leading
+ * <tt>0</tt> indicates base 8; anything else is base 10.
+ *
+ * Returns the first character that can't be parsed as part of the integer.
+ * If there is no valid integer at the beginning of the string, then returns
+ * @a begin; *@a result is unchanged.
+ *
+ * This function checks for overflow.  If an integer is too large for @a
+ * result, then the maximum possible value is stored in @a result and the
+ * cp_errno variable is set to CPE_OVERFLOW.  Otherwise, cp_errno is set to
+ * CPE_FORMAT (for no valid integer) or CPE_OK (if all was well).
+ *
+ * Overloaded versions of this function are available for int, unsigned int,
+ * long, unsigned long, and (depending on configuration) long and unsigned
+ * long long @a result values.
+ */
 const char *
-cp_integer(const char *begin, const char *end, int base, uint32_t *return_value)
+cp_integer(const char *begin, const char *end, int base, int *result)
+{
+  const char *s = begin;
+  bool negative = false;
+  if (s + 1 < end && *s == '-' && s[1] != '+') {
+    negative = true;
+    s++;
+  }
+
+  uint32_t value;
+  if ((end = cp_integer(s, end, base, &value)) == s)
+    return begin;
+
+  uint32_t max = (negative ? 0x80000000U : 0x7FFFFFFFU);
+  if (value > max) {
+    cp_errno = CPE_OVERFLOW;
+    value = max;
+  }
+
+  *result = (negative ? -value : value);
+  return end;
+}
+
+const char *
+cp_integer(const char *begin, const char *end, int base, unsigned *result)
 {
   const char *s = begin;
   if (s < end && *s == '+')
@@ -824,9 +1138,9 @@ cp_integer(const char *begin, const char *end, int base, uint32_t *return_value)
     int digit;
     if (*s >= '0' && *s <= '9')
       digit = *s - '0';
-    else if (*s >= 'A' && *s <= 'Z')
+    else if (base > 10 && *s >= 'A' && *s <= 'Z')
       digit = *s - 'A' + 10;
-    else if (*s >= 'a' && *s <= 'z')
+    else if (base > 10 && *s >= 'a' && *s <= 'z')
       digit = *s - 'a' + 10;
     else if (*s == '_' && s + 1 < end && s[1] != '_')
       // skip underscores between digits
@@ -849,52 +1163,46 @@ cp_integer(const char *begin, const char *end, int base, uint32_t *return_value)
   if (cp_errno == CPE_FORMAT)
     return begin;
   else {
-    *return_value = (cp_errno ? 0xFFFFFFFFU : val);
+    *result = (cp_errno ? 0xFFFFFFFFU : val);
     return (s > begin && s[-1] == '_' ? s - 1 : s);
   }
 }
 
-bool cp_integer(const String &str, int base, uint32_t *return_value)
+/** @brief  Parse an integer from @a str in base @a base.
+ * @param  str   string
+ * @param  base  base of integer: 0 or 2-36
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an integer from an input string.  If the string correctly parses as
+ * an integer, then the resulting value is stored in *@a result and the
+ * function returns true.  Otherwise, *@a result remains unchanged and the
+ * function returns false.
+ *
+ * Overloaded versions are available for int, unsigned int, long, unsigned
+ * long, and (depending on configuration) long and unsigned long long @a
+ * result values.
+ *
+ * @sa cp_integer(const char *, const char *, int, int *) for the rules on
+ * parsing integers.
+ */
+bool cp_integer(const String &str, int base, int *result)
 {
-  uint32_t u;
-  const char *s = cp_integer(str.begin(), str.end(), base, &u);
+  int32_t i;
+  const char *s = cp_integer(str.begin(), str.end(), base, &i);
   if (s == str.end() && str.length()) {
-    *return_value = u;
+    *result = i;
     return true;
   } else
     return false;
 }
 
-const char *
-cp_integer(const char *begin, const char *end, int base, int32_t *return_value)
+bool cp_integer(const String &str, int base, unsigned *result)
 {
-  const char *s = begin;
-  bool negative = false;
-  if (s + 1 < end && *s == '-' && s[1] != '+') {
-    negative = true;
-    s++;
-  }
-
-  uint32_t value;
-  if ((end = cp_integer(s, end, base, &value)) == s)
-    return begin;
-
-  uint32_t max = (negative ? 0x80000000U : 0x7FFFFFFFU);
-  if (value > max) {
-    cp_errno = CPE_OVERFLOW;
-    value = max;
-  }
-
-  *return_value = (negative ? -value : value);
-  return end;
-}
-
-bool cp_integer(const String &str, int base, int32_t *return_value)
-{
-  int32_t i;
-  const char *s = cp_integer(str.begin(), str.end(), base, &i);
+  uint32_t u;
+  const char *s = cp_integer(str.begin(), str.end(), base, &u);
   if (s == str.end() && str.length()) {
-    *return_value = i;
+    *result = u;
     return true;
   } else
     return false;
@@ -906,7 +1214,7 @@ bool cp_integer(const String &str, int base, int32_t *return_value)
 static uint64_t unsigned64_overflow_vals[] = { 0, 0, 9223372036854775807ULL, 6148914691236517205ULL, 4611686018427387903ULL, 3689348814741910323ULL, 3074457345618258602ULL, 2635249153387078802ULL, 2305843009213693951ULL, 2049638230412172401ULL, 1844674407370955161ULL, 1676976733973595601ULL, 1537228672809129301ULL, 1418980313362273201ULL, 1317624576693539401ULL, 1229782938247303441ULL, 1152921504606846975ULL, 1085102592571150095ULL, 1024819115206086200ULL, 970881267037344821ULL, 922337203685477580ULL, 878416384462359600ULL, 838488366986797800ULL, 802032351030850070ULL, 768614336404564650ULL, 737869762948382064ULL, 709490156681136600ULL, 683212743470724133ULL, 658812288346769700ULL, 636094623231363848ULL, 614891469123651720ULL, 595056260442243600ULL, 576460752303423487ULL, 558992244657865200ULL, 542551296285575047ULL, 527049830677415760ULL };
 
 const char *
-cp_integer(const char *begin, const char *end, int base, uint64_t *return_value)
+cp_integer(const char *begin, const char *end, int base, uint64_t *result)
 {
   const char *s = begin;
   if (s < end && *s == '+')
@@ -964,25 +1272,25 @@ cp_integer(const char *begin, const char *end, int base, uint64_t *return_value)
   if (cp_errno == CPE_FORMAT)
     return begin;
   else {
-    *return_value = (cp_errno ? 0xFFFFFFFFFFFFFFFFULL : val);
+    *result = (cp_errno ? 0xFFFFFFFFFFFFFFFFULL : val);
     return (s > begin && s[-1] == '_' ? s - 1 : s);
   }
 }
 
 bool
-cp_integer(const String &str, int base, uint64_t *return_value)
+cp_integer(const String &str, int base, uint64_t *result)
 {
   uint64_t q;
   const char *s = cp_integer(str.begin(), str.end(), base, &q);
   if (s == str.end() && str.length()) {
-    *return_value = q;
+    *result = q;
     return true;
   } else
     return false;
 }
 
 const char *
-cp_integer(const char *begin, const char *end, int base, int64_t *return_value)
+cp_integer(const char *begin, const char *end, int base, int64_t *result)
 {
   const char *s = begin;
   bool negative = false;
@@ -1001,17 +1309,17 @@ cp_integer(const char *begin, const char *end, int base, int64_t *return_value)
     value = max;
   }
 
-  *return_value = (negative ? -value : value);
+  *result = (negative ? -value : value);
   return end;
 }
 
 bool
-cp_integer(const String &str, int base, int64_t *return_value)
+cp_integer(const String &str, int base, int64_t *result)
 {
   int64_t q;
   const char *s = cp_integer(str.begin(), str.end(), base, &q);
   if (s == str.end() && str.length()) {
-    *return_value = q;
+    *result = q;
     return true;
   } else
     return false;
@@ -1021,18 +1329,25 @@ cp_integer(const String &str, int base, int64_t *return_value)
 
 #ifdef CLICK_USERLEVEL
 
+/** @brief  Parse a file offset from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an unsigned integer from @a str, similarly to cp_integer(str,
+ * result). */
 bool
-cp_file_offset(const String &str, off_t *return_value)
+cp_file_offset(const String &str, off_t *result)
 {
 # if SIZEOF_OFF_T == 4
-  return cp_integer(str, reinterpret_cast<uint32_t *>(return_value));
+  return cp_integer(str, reinterpret_cast<uint32_t *>(result));
 # elif SIZEOF_OFF_T == 8 && HAVE_INT64_TYPES
-  return cp_integer(str, reinterpret_cast<uint64_t *>(return_value));
+  return cp_integer(str, reinterpret_cast<uint64_t *>(result));
 # elif SIZEOF_OFF_T == 8
 #  warning "--disable-int64 means I can handle files up to only 4GB"
   uint32_t x;
   if (cp_integer(str, &x)) {
-      *return_value = x;
+      *result = x;
       return true;
   } else
       return false;
@@ -1183,45 +1498,66 @@ cp_real10(const String &str, int frac_digits, int exponent_delta,
 
 static bool
 unsigned_real10_2to1(uint32_t int_part, uint32_t frac_part, int frac_digits,
-		     uint32_t *return_value)
+		     uint32_t *result)
 {
   uint32_t one = exp10val[frac_digits];
   uint32_t int_max = 0xFFFFFFFFU / one;
   uint32_t frac_max = 0xFFFFFFFFU - int_max * one;
   if (int_part > int_max || (int_part == int_max && frac_part > frac_max)) {
     cp_errno = CPE_OVERFLOW;
-    *return_value = 0xFFFFFFFFU;
+    *result = 0xFFFFFFFFU;
   } else
-    *return_value = int_part * one + frac_part;
+    *result = int_part * one + frac_part;
   return true;
 }
 
+/** @brief Parse a real number from @a str, representing the result as an
+ * integer with @a frac_digits decimal digits of fraction.
+ * @param  str  string
+ * @param  frac_digits  number of decimal digits of fraction, 0-9
+ * @param[out]  result_int_part  stores integer portion of parsed result
+ * @param[out]  result_frac_part  stores fractional portion of parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an unsigned real number from an input string.  The result is
+ * represented with @a frac_digits decimal digits of fraction.  The integer
+ * and fraction parts of the result are stored in two separate integers, @a
+ * result_int_part and @a result_frac_part.  For example, the number 10.5
+ * would be represented as 10 and 5 if @a frac_digits == 1, or 10 and 5000 if
+ * @a frac_digits == 4.  If the string fully parses, then the resulting value
+ * is stored in the result variables and the function returns true.
+ * Otherwise, the result variables remains unchanged and the function returns
+ * false.
+ *
+ * The real number format and error conditions are the same as for cp_real2().
+ * (Negative numbers are not allowed.)
+ */
 bool
 cp_real10(const String &str, int frac_digits,
-	  uint32_t *return_int_part, uint32_t *return_frac_part)
+	  uint32_t *result_int_part, uint32_t *result_frac_part)
 {
-  return cp_real10(str, frac_digits, 0, return_int_part, return_frac_part);
+  return cp_real10(str, frac_digits, 0, result_int_part, result_frac_part);
 }
 
 bool
 cp_real10(const String &str, int frac_digits, int exponent_delta,
-	  uint32_t *return_value)
+	  uint32_t *result)
 {
   uint32_t int_part, frac_part;
   if (!cp_real10(str, frac_digits, exponent_delta, &int_part, &frac_part))
     return false;
   else
-    return unsigned_real10_2to1(int_part, frac_part, frac_digits, return_value);
+    return unsigned_real10_2to1(int_part, frac_part, frac_digits, result);
 }
 
 bool
-cp_real10(const String &str, int frac_digits, uint32_t *return_value)
+cp_real10(const String &str, int frac_digits, uint32_t *result)
 {
   uint32_t int_part, frac_part;
   if (!cp_real10(str, frac_digits, 0, &int_part, &frac_part))
     return false;
   else
-    return unsigned_real10_2to1(int_part, frac_part, frac_digits, return_value);
+    return unsigned_real10_2to1(int_part, frac_part, frac_digits, result);
 }
 
 static uint32_t ureal2_digit_fractions[] = {
@@ -1230,7 +1566,7 @@ static uint32_t ureal2_digit_fractions[] = {
 };
 
 bool
-cp_real2(const String &str, int frac_bits, uint32_t *return_value)
+cp_real2(const String &str, int frac_bits, uint32_t *result)
 {
   if (frac_bits < 0 || frac_bits > CP_REAL2_MAX_FRAC_BITS) {
     cp_errno = CPE_INVALID;
@@ -1260,9 +1596,9 @@ cp_real2(const String &str, int frac_bits, uint32_t *return_value)
   // check for overflow
   if (cp_errno || int_part > (1U << (32 - frac_bits)) - 1) {
     cp_errno = CPE_OVERFLOW;
-    *return_value = 0xFFFFFFFFU;
+    *result = 0xFFFFFFFFU;
   } else
-    *return_value = (int_part << frac_bits) + fraction;
+    *result = (int_part << frac_bits) + fraction;
   
   return true;
 }
@@ -1271,7 +1607,7 @@ cp_real2(const String &str, int frac_bits, uint32_t *return_value)
 // Parsing signed reals
 
 static bool
-cp_real_base(const String &in_str, int frac_digits, int32_t *return_value,
+cp_real_base(const String &in_str, int frac_digits, int32_t *result,
 	     bool (*func)(const String &, int, uint32_t *))
 {
   String str = in_str;
@@ -1292,33 +1628,126 @@ cp_real_base(const String &in_str, int frac_digits, int32_t *return_value,
     value = umax;
   }
 
-  *return_value = (negative ? -value : value);
+  *result = (negative ? -value : value);
   return true;
 }
 
+/** @brief Parse a real number from @a str, representing the result as an
+ * integer with @a frac_digits decimal digits of fraction.
+ * @param  str  string
+ * @param  frac_digits  number of decimal digits of fraction, 0-9
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a real number from an input string.  The result is represented as an
+ * integer with @a frac_digits decimal digits of fraction.  For example, the
+ * number 0.5 would be represented as 5 if @a frac_digits == 1, or 5000 if @a
+ * frac_digits == 4.  If the string fully parses, then the resulting value is
+ * stored in *@a result and the function returns true.  Otherwise, *@a result
+ * remains unchanged and the function returns false.
+ *
+ * The real number format and error conditions are the same as for cp_real2().
+ *
+ * An overloaded version of this function is available for uint32_t
+ * @a result values; it doesn't accept negative numbers.
+ */
 bool
-cp_real10(const String &str, int frac_digits, int32_t *return_value)
+cp_real10(const String &str, int frac_digits, int32_t *result)
 {
-  return cp_real_base(str, frac_digits, return_value, cp_real10);
+  return cp_real_base(str, frac_digits, result, cp_real10);
 }
 
+/** @brief  Parse a fixed-point number from @a str.
+ * @param  str  string
+ * @param  frac_bits  number of bits of fraction, 0-CP_REAL2_MAX_FRAC_BITS
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a real number from an input string.  The result is represented as a
+ * fixed-point number with @a frac_bits bits of fraction.  For example, the
+ * number 0.5 would be represented as 0x1 if @a frac_bits == 1, or 0x8000 if
+ * @a frac_bits == 16.  If the string fully parses, then the resulting value
+ * is stored in *@a result and the function returns true.  Otherwise, *@a
+ * result remains unchanged and the function returns false.
+ *
+ * The real number format is the familiar decimal format parsed by, for
+ * example, C's strtod() function.  It consists of, in order:
+ *
+ * @li An optional <tt>+</tt> or <tt>-</tt> sign.
+ * @li An optional sequence of decimal digits representing the integer part.
+ * @li An optional fraction point, followed by an optional sequence of decimal
+ * digits representing the fraction part.
+ * @li An optional exponent (either <tt>E&lt;digits&gt;</tt>,
+ * <tt>E+&lt;digits&gt;</tt>, or <tt>E-&lt;digits&gt;</tt>).
+ *
+ * There must be at least one digit in either the integer part or the fraction
+ * part.  As with cp_integer, digits can be separated by underscores to make
+ * large numbers easier to read.  Some examples:
+ *
+ * @code
+ * 0
+ * -100_000_000
+ * 1e8
+ * +10.
+ * .1
+ * 0.000_000_01e10
+ * @endcode
+ *
+ * This function checks for overflow.  If a number is too large for @a result,
+ * then the maximum possible value is stored in @a result and the cp_errno
+ * variable is set to CPE_OVERFLOW.  Otherwise, cp_errno is set to CPE_FORMAT
+ * (unparsable input) or CPE_OK (if all was well).  Underflow is handled by
+ * rounding the result to the nearest representable number.
+ *
+ * The following invariant always holds for all values @e x and fraction bits
+ * @e frac_bits:
+ * @code
+ * check_invariant(int32_t x, int frac_bits) {
+ *     int32_t y;
+ *     assert(cp_real2(cp_unparse_real2(x, frac_bits), frac_bits, &y) == true
+ *            && y == x);
+ * }
+ * @endcode
+ *
+ * An overloaded version of this function is available for uint32_t
+ * @a result values; it doesn't accept negative numbers.
+ *
+ * @sa The cp_real10() functions behave like cp_real2(), but the fractional
+ * part is expressed in decimal digits rather than bits.
+ */
 bool
-cp_real2(const String &str, int frac_bits, int32_t *return_value)
+cp_real2(const String &str, int frac_bits, int32_t *result)
 {
-  return cp_real_base(str, frac_bits, return_value, cp_real2);
+  return cp_real_base(str, frac_bits, result, cp_real2);
 }
 
 #ifdef HAVE_FLOAT_TYPES
+/** @brief  Parse a real number from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a real number from an input string in double format.  It is
+ * basically equivalent to C's strtod(), but follows Click's configuration
+ * parsing conventions: If the string fully parses, then the resulting value
+ * is stored in *@a result and the function returns true.  Otherwise, *@a
+ * result remains unchanged and the function returns false.  If a number is
+ * too large for @a result, then the maximum possible value is stored in @a
+ * result and the cp_errno variable is set to CPE_OVERFLOW; otherwise,
+ * cp_errno is set to CPE_FORMAT (unparsable) or CPE_OK (if all was well).
+ *
+ * This function is not available in the kernel, since double objects cannot
+ * be used there.
+ */
 bool
-cp_double(const String &in_str, double *result)
+cp_double(const String &str, double *result)
 {
   cp_errno = CPE_FORMAT;
-  if (in_str.length() == 0 || isspace((unsigned char) in_str[0]))
+  if (str.length() == 0 || isspace((unsigned char) str[0]))
     // check for space because strtod() accepts leading whitespace
     return false;
 
   errno = 0;
-  String str = in_str;
   char *endptr;
   double val = strtod(str.c_str(), &endptr);
   if (*endptr)			// bad format; garbage after number
@@ -1388,31 +1817,104 @@ static const char seconds_units[] = "\
 \2\003\140\2day";
 static const char seconds_prefixes[] = "m\075u\072n\067";
 
-bool cp_seconds_as(int want_power, const String &str, uint32_t *return_value)
+/** @brief Parse an amount of time from @a str.
+ * @param  str  string
+ * @param  frac_digits  number of decimal digits of fraction, 0-9
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an amount of time, measured in seconds, from @a str.  @a frac_digits
+ * is the number of decimal digits of fraction returned in the result.  For
+ * example, to measure the result in milliseconds, set @a frac_digits == 3;
+ * for microseconds, set @a frac_digits == 6.  Does not handle negative
+ * amounts of time.
+ *
+ * The input string is a real number (as in cp_real2) followed by an optional
+ * unit suffix.  Units are:
+ *
+ * <dl>
+ * <dt>ns, nsec</dt><dd>nanoseconds</dd>
+ * <dt>us, usec</dt><dd>microseconds</dd>
+ * <dt>ms, msec</dt><dd>milliseconds</dd>
+ * <dt>s, sec</dt><dd>seconds</dd>
+ * <dt>m, min</dt><dd>minutes</dd>
+ * <dt>h, hr</dt><dd>hours</dd>
+ * <dt>d, day</dt><dd>days</dd>
+ * </dl>
+ *
+ * The default unit suffix is seconds.  Thus, "3600", "3600s", "3.6e6 msec",
+ * "60m", and "1 hr" all parse to the same result, 3600 seconds.
+ *
+ * If the string fully parses, then the resulting value is stored in *@a
+ * result and the function returns true.  Otherwise, *@a result remains
+ * unchanged and the function returns false.
+ *
+ * If a number is too large for @a result, then the maximum possible value is
+ * stored in @a result and the cp_errno variable is set to CPE_OVERFLOW;
+ * otherwise, cp_errno is set to CPE_FORMAT (unparsable) or CPE_OK (if all was
+ * well).
+ */
+bool cp_seconds_as(const String &str, int frac_digits, uint32_t *result)
 {
   int power = 0, factor = 1;
   const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
-  if (!cp_real10(str.substring(str.begin(), after_unit), want_power, power, return_value))
+  if (!cp_real10(str.substring(str.begin(), after_unit), frac_digits, power, result))
     return false;
-  if (*return_value > 0xFFFFFFFFU / factor) {
+  if (*result > 0xFFFFFFFFU / factor) {
     cp_errno = CPE_OVERFLOW;
-    *return_value = 0xFFFFFFFFU;
+    *result = 0xFFFFFFFFU;
   } else
-    *return_value *= factor;
+    *result *= factor;
   return true;
 }
 
-bool cp_seconds_as_milli(const String &str_in, uint32_t *return_value)
+/** @brief Parse an amount of time in milliseconds from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an amount of time, measured in milliseconds, from @a str.
+ * Equivalent to cp_seconds_as(@a str, 3, @a result).
+ */
+bool cp_seconds_as_milli(const String &str, uint32_t *result)
 {
-  return cp_seconds_as(3, str_in, return_value);
+    return cp_seconds_as(str, 3, result);
 }
 
-bool cp_seconds_as_micro(const String &str_in, uint32_t *return_value)
+/** @brief Parse an amount of time in microseconds from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an amount of time, measured in microseconds, from @a str.
+ * Equivalent to cp_seconds_as(@a str, 6, @a result).
+ */
+bool cp_seconds_as_micro(const String &str, uint32_t *result)
 {
-  return cp_seconds_as(6, str_in, return_value);
+    return cp_seconds_as(str, 6, result);
 }
 
-bool cp_time(const String &str, Timestamp* return_value)
+/** @brief Parse a timestamp from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a timestamp from @a str.  Timestamps are expressed as fractional
+ * amounts of seconds, usually measured in Unix time, such as
+ * <tt>"1189383079.180265331"</tt>.  The input format accepts the unit
+ * suffixes described at cp_seconds_as.  If the string fully parses, then the
+ * resulting value is stored in *@a result and the function returns true.
+ * Otherwise, *@a result remains unchanged and the function returns false.
+ *
+ * If a number is too large for @a result, then the maximum possible value is
+ * stored in @a result and the cp_errno variable is set to CPE_OVERFLOW;
+ * otherwise, cp_errno is set to CPE_FORMAT (unparsable) or CPE_OK (if all was
+ * well).
+ *
+ * An overloaded version of this function is available for struct timeval @a
+ * result values.
+ */
+bool cp_time(const String &str, Timestamp* result)
 {
     int power = 0, factor = 1;
     const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
@@ -1425,13 +1927,22 @@ bool cp_time(const String &str, Timestamp* return_value)
 	nsec -= delta * 1000000000;
 	sec = (sec * factor) + delta;
     }
-    *return_value = Timestamp::make_nsec(sec, nsec);
+    *result = Timestamp::make_nsec(sec, nsec);
     return true;
 }
 
-bool cp_time(const String &str, timeval *return_value)
+bool cp_time(const String &str, timeval *result)
 {
-    return cp_time(str, (Timestamp*) return_value);
+#if TIMESTAMP_PUNS_TIMEVAL
+    return cp_time(str, reinterpret_cast<Timestamp*>(result));
+#else
+    Timestamp t;
+    if (cp_time(str, &t)) {
+	result->tv_sec = t.timeval();
+	return true;
+    } else
+	return false;
+#endif
 }
 
 
@@ -1444,20 +1955,44 @@ static const char byte_bandwidth_units[] = "\
 ";
 static const char byte_bandwidth_prefixes[] = "k\103K\103M\106G\111";
 
-bool
-cp_bandwidth(const String &str, uint32_t *return_value)
+/** @brief Parse a bandwidth value from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a bandwidth value from @a str.  The input format is a real number
+ * followed by an optional unit suffix.  Units are:
+ *
+ * <dl>
+ * <dt>baud, bps, b/s</dt><dd>bits per second</dd>
+ * <dt>Bps, B/s</dt><dd>bytes per second</dd>
+ * <dt>e.g. kbaud, Mbps, GBps</dt><dd>kilo, mega, giga are supported
+ * (they mean 10^3, 10^6, and 10^9)</dd>
+ * </dl>
+ *
+ * The default unit suffix is bytes per second.
+ *
+ * If a number is too large for @a result, then the maximum possible value is
+ * stored in @a result and the cp_errno variable is set to CPE_OVERFLOW;
+ * otherwise, cp_errno is set to CPE_FORMAT (unparsable) or CPE_OK (if all was
+ * well).
+ *
+ * An overloaded version of this function is available for struct timeval @a
+ * result values.
+ */
+bool cp_bandwidth(const String &str, uint32_t *result)
 {
   int power = 0, factor = 1;
   const char *after_unit = read_unit(str.begin(), str.end(), byte_bandwidth_units, sizeof(byte_bandwidth_units), byte_bandwidth_prefixes, &power, &factor);
-  if (!cp_real10(str.substring(str.begin(), after_unit), 0, power, return_value))
+  if (!cp_real10(str.substring(str.begin(), after_unit), 0, power, result))
     return false;
-  if (*return_value > 0xFFFFFFFFU / factor) {
+  if (*result > 0xFFFFFFFFU / factor) {
     cp_errno = CPE_OVERFLOW;
-    *return_value = 0xFFFFFFFFU;
+    *result = 0xFFFFFFFFU;
   } else {
     if (after_unit == str.end())
       cp_errno = CPE_NOUNITS;
-    *return_value *= factor;
+    *result *= factor;
   }
   return true;
 }
@@ -1492,16 +2027,16 @@ ip_address_portion(const String &str, unsigned char *value)
 }
 
 bool
-cp_ip_address(const String &str, unsigned char *return_value
+cp_ip_address(const String &str, unsigned char *result
 	      CP_CONTEXT)
 {
   unsigned char value[4];
   if (ip_address_portion(str, value) == 4) {
-    memcpy(return_value, value, 4);
+    memcpy(result, value, 4);
     return true;
   }
 #ifndef CLICK_TOOL
-  return AddressInfo::query_ip(str, return_value, context);
+  return AddressInfo::query_ip(str, result, context);
 #else
   return false;
 #endif
@@ -1510,28 +2045,28 @@ cp_ip_address(const String &str, unsigned char *return_value
 
 static bool
 bad_ip_prefix(const String &str,
-	      unsigned char *return_value, unsigned char *return_mask,
+	      unsigned char *result, unsigned char *return_mask,
 	      bool allow_bare_address
 	      CP_CONTEXT)
 {
 #ifndef CLICK_TOOL
-  if (AddressInfo::query_ip_prefix(str, return_value, return_mask, context))
+  if (AddressInfo::query_ip_prefix(str, result, return_mask, context))
     return true;
   else if (allow_bare_address
-	   && AddressInfo::query_ip(str, return_value, context)) {
+	   && AddressInfo::query_ip(str, result, context)) {
     return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 255;
     return true;
   }
 #else
   // shut up, compiler!
-  (void)str, (void)return_value, (void)return_mask, (void)allow_bare_address;
+  (void)str, (void)result, (void)return_mask, (void)allow_bare_address;
 #endif
   return false;
 }
 
 bool
 cp_ip_prefix(const String &str,
-	     unsigned char *return_value, unsigned char *return_mask,
+	     unsigned char *result, unsigned char *return_mask,
 	     bool allow_bare_address  CP_CONTEXT)
 {
   do {
@@ -1557,7 +2092,7 @@ cp_ip_prefix(const String &str,
 
     // check mask
     if (allow_bare_address && !mask_part.length() && good_ip_bytes == 4) {
-      memcpy(return_value, value, 4);
+      memcpy(result, value, 4);
       return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 255;
       return true;
     }
@@ -1581,29 +2116,84 @@ cp_ip_prefix(const String &str,
     } else
       goto failure;
 
-    memcpy(return_value, value, 4);
+    memcpy(result, value, 4);
     memcpy(return_mask, mask, 4);
     return true;
     
   } while (0);
 
  failure:
-  return bad_ip_prefix(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
+  return bad_ip_prefix(str, result, return_mask, allow_bare_address CP_PASS_CONTEXT);
 }
 
+/** @brief Parse an IP address from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @param  context  optional context for AddressInfo
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an IP address from @a str.  The input format is the usual
+ * dotted-quad format, as in <tt>"18.26.4.9"</tt>, where each number is a
+ * decimal number from 0-255.  The AddressInfo element can be used to register
+ * shorthand names for other IP addresses.  If the string fully parses, then
+ * the resulting value is stored in *@a result and the function returns true.
+ * Otherwise, *@a result remains unchanged and the function returns false.
+ *
+ * Overloaded versions of this function are available for unsigned char[4] and
+ * struct in_addr * result types.
+ */
 bool
-cp_ip_address(const String &str, IPAddress *address
-	      CP_CONTEXT)
+cp_ip_address(const String &str, IPAddress *result  CP_CONTEXT)
 {
-  return cp_ip_address(str, address->data()
-		       CP_PASS_CONTEXT);
+  return cp_ip_address(str, result->data()  CP_PASS_CONTEXT);
 }
 
+/** @brief Parse an IP address or prefix from @a str.
+ * @param  str  string
+ * @param[out]  result_addr  stores parsed address result
+ * @param[out]  result_mask  stores parsed address mask result
+ * @param  allow_bare_address  optional: if true, allow raw IP addresses;
+ * defaults to false
+ * @param  context  optional context for AddressInfo
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an IP prefix description from @a str.  The input format is the usual
+ * CIDR format with some additions.  Allowed examples:
+ *
+ * <ul>
+ * <li><tt>"18.26.4.0/24"</tt>: the default CIDR format.  The prefix length,
+ * here 24, is a number between 0 and 32.  This stores the equivalents of
+ * 18.26.4.0 in *@a result_addr and 255.255.255.0 in *@a result_mask.</li>
+ * <li><tt>"18.26.4/24"</tt>: it is OK to leave off irrelevant parts of the
+ * address.  However, <tt>"18.26/24"</tt> will not parse.
+ * <li><tt>"18.26.4.0/255.255.255.0"</tt>: the mask may be specified directly.
+ * This is the only way to define a non-prefix mask.</li>
+ * <li>Additionally, AddressInfo names may be used to specify the address part
+ * or the whole prefix: given AddressInfo(a 18.26.4.9), <tt>"a/24"</tt> is
+ * parseable as an IP prefix.</li>
+ * </ul>
+ *
+ * The address part need not fit entirely within the prefix.
+ * <tt>"18.26.4.9/24"</tt> will parse into address 18.26.4.9 and mask
+ * 255.255.255.0.
+ *
+ * If @a allow_bare_address is true, then a raw IP address is also acceptable
+ * input.  The resulting mask will equal 255.255.255.255.  @a
+ * allow_bare_address defaults to false.
+ *
+ * If the string fully parses, then the resulting address is stored in *@a
+ * result_addr, the resulting mask is stored in *@a result_mask, and the
+ * function returns true.  Otherwise, the results remain unchanged and the
+ * function returns false.
+ *
+ * Overloaded versions of this function are available for unsigned char[4]
+ * result types.
+ */
 bool
-cp_ip_prefix(const String &str, IPAddress *address, IPAddress *mask,
+cp_ip_prefix(const String &str, IPAddress *result_addr, IPAddress *result_mask,
 	     bool allow_bare_address  CP_CONTEXT)
 {
-  return cp_ip_prefix(str, address->data(), mask->data(),
+  return cp_ip_prefix(str, result_addr->data(), result_mask->data(),
 		      allow_bare_address  CP_PASS_CONTEXT);
 }
 
@@ -1623,9 +2213,22 @@ cp_ip_prefix(const String &str, IPAddress *address, IPAddress *mask
 		      false  CP_PASS_CONTEXT);
 }
 
+/** @brief Parse a space-separated list of IP addresses from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @param  context  optional context for AddressInfo
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a space-separated list of IP addresses from @a str.  Each individual
+ * IP address is parsed as by cp_ip_address().  If the string fully parses,
+ * then *@a result is set to the resulting values in order.  Otherwise, *@a
+ * result remains unchanged and the function returns false.
+ *
+ * In addition to errors from cp_ip_address(), this function might run out of
+ * memory for *@a result, which produces a CPE_MEMORY error.
+ */
 bool
-cp_ip_address_list(const String &str, Vector<IPAddress> *l
-		   CP_CONTEXT)
+cp_ip_address_list(const String &str, Vector<IPAddress> *result  CP_CONTEXT)
 {
     Vector<String> words;
     cp_spacevec(str, words);
@@ -1641,7 +2244,7 @@ cp_ip_address_list(const String &str, Vector<IPAddress> *l
 	cp_errno = CPE_MEMORY;
 	return false;
     }
-    l->swap(build);
+    result->swap(build);
     return true;
 }
 
@@ -1651,19 +2254,19 @@ cp_ip_address_list(const String &str, Vector<IPAddress> *l
 #ifdef HAVE_IP6
 
 static bool
-bad_ip6_address(const String &str, unsigned char *return_value
+bad_ip6_address(const String &str, unsigned char *result
 		CP_CONTEXT)
 {
 #ifndef CLICK_TOOL
-  return AddressInfo::query_ip6(str, return_value, context);
+  return AddressInfo::query_ip6(str, result, context);
 #else
-  (void)str, (void)return_value;
+  (void)str, (void)result;
   return false;
 #endif
 }
 
 bool
-cp_ip6_address(const String &str, unsigned char *return_value
+cp_ip6_address(const String &str, unsigned char *result
 	       CP_CONTEXT)
 {
   unsigned short parts[8];
@@ -1687,7 +2290,7 @@ cp_ip6_address(const String &str, unsigned char *return_value
     for (; pos < len && isxdigit((unsigned char) s[pos]) && part <= 0xFFFF; pos++)
       part = (part<<4) + xvalue((unsigned char) s[pos]);
     if (part > 0xFFFF)
-      return bad_ip6_address(str, return_value  CP_PASS_CONTEXT);
+      return bad_ip6_address(str, result  CP_PASS_CONTEXT);
     parts[d] = part;
   }
 
@@ -1704,7 +2307,7 @@ cp_ip6_address(const String &str, unsigned char *return_value
 
   // handle zero blocks surrounding ::
   if ((d < 8 && coloncolon < 0) || (d == 8 && coloncolon >= 0))
-    return bad_ip6_address(str, return_value  CP_PASS_CONTEXT);
+    return bad_ip6_address(str, result  CP_PASS_CONTEXT);
   else if (d < 8) {
     int num_zeros = 8 - d;
     for (int x = d - 1; x >= coloncolon; x--)
@@ -1715,11 +2318,11 @@ cp_ip6_address(const String &str, unsigned char *return_value
 
   // return
   if (pos < len)
-    return bad_ip6_address(str, return_value  CP_PASS_CONTEXT);
+    return bad_ip6_address(str, result  CP_PASS_CONTEXT);
   else {
     for (d = 0; d < 8; d++) {
-      return_value[d<<1] = (parts[d]>>8) & 0xFF;
-      return_value[(d<<1) + 1] = parts[d] & 0xFF;
+      result[d<<1] = (parts[d]>>8) & 0xFF;
+      result[(d<<1) + 1] = parts[d] & 0xFF;
     }
     return true;
   }
@@ -1735,28 +2338,28 @@ cp_ip6_address(const String &str, IP6Address *address
 
 static bool
 bad_ip6_prefix(const String &str,
-	       unsigned char *return_value, int *return_bits,
+	       unsigned char *result, int *return_bits,
 	       bool allow_bare_address
 	       CP_CONTEXT)
 {
 #ifndef CLICK_TOOL
-  if (AddressInfo::query_ip6_prefix(str, return_value, return_bits, context))
+  if (AddressInfo::query_ip6_prefix(str, result, return_bits, context))
     return true;
   else if (allow_bare_address
-	   && AddressInfo::query_ip6(str, return_value, context)) {
+	   && AddressInfo::query_ip6(str, result, context)) {
     *return_bits = 128;
     return true;
   }
 #else
   // shut up, compiler!
-  (void)str, (void)return_value, (void)return_bits, (void)allow_bare_address;
+  (void)str, (void)result, (void)return_bits, (void)allow_bare_address;
 #endif
   return false;
 }
 
 bool
 cp_ip6_prefix(const String &str,
-	      unsigned char *return_value, int *return_bits,
+	      unsigned char *result, int *return_bits,
 	      bool allow_bare_address  CP_CONTEXT)
 {
   unsigned char value[16], mask[16];
@@ -1767,16 +2370,16 @@ cp_ip6_prefix(const String &str,
     ip_part = str.substring(0, slash);
     mask_part = str.substring(slash + 1);
   } else if (!allow_bare_address)
-    return bad_ip6_prefix(str, return_value, return_bits, allow_bare_address CP_PASS_CONTEXT);
+    return bad_ip6_prefix(str, result, return_bits, allow_bare_address CP_PASS_CONTEXT);
   else
     ip_part = str;
   
   if (!cp_ip6_address(ip_part, value  CP_PASS_CONTEXT))
-    return bad_ip6_prefix(str, return_value, return_bits, allow_bare_address CP_PASS_CONTEXT);
+    return bad_ip6_prefix(str, result, return_bits, allow_bare_address CP_PASS_CONTEXT);
 
   // move past /
   if (allow_bare_address && !mask_part.length()) {
-    memcpy(return_value, value, 16);
+    memcpy(result, value, 16);
     *return_bits = 64;
     return true;
   }
@@ -1795,9 +2398,9 @@ cp_ip6_prefix(const String &str,
     /* OK */;
     
   else
-    return bad_ip6_prefix(str, return_value, return_bits, allow_bare_address CP_PASS_CONTEXT);
+    return bad_ip6_prefix(str, result, return_bits, allow_bare_address CP_PASS_CONTEXT);
 
-  memcpy(return_value, value, 16);
+  memcpy(result, value, 16);
   *return_bits = relevant_bits;
   return true;
 }
@@ -1833,7 +2436,7 @@ cp_ip6_prefix(const String &str, IP6Address *address, IP6Address *prefix,
 
 
 bool
-cp_ethernet_address(const String &str, unsigned char *return_value
+cp_ethernet_address(const String &str, unsigned char *result
 		    CP_CONTEXT)
 {
   int i = 0;
@@ -1857,13 +2460,13 @@ cp_ethernet_address(const String &str, unsigned char *return_value
   }
 
   if (i == len) {
-    memcpy(return_value, value, 6);
+    memcpy(result, value, 6);
     return true;
   }
 
  bad:
 #ifndef CLICK_TOOL
-  return AddressInfo::query_ethernet(str, return_value, context);
+  return AddressInfo::query_ethernet(str, result, context);
 #else
   return false;
 #endif
@@ -1879,7 +2482,7 @@ cp_ethernet_address(const String &str, EtherAddress *address
 
 
 bool
-cp_tcpudp_port(const String &str, int ip_p, uint16_t *return_value
+cp_tcpudp_port(const String &str, int ip_p, uint16_t *result
 	       CP_CONTEXT)
 {
     uint32_t value;
@@ -1891,7 +2494,7 @@ cp_tcpudp_port(const String &str, int ip_p, uint16_t *return_value
     if (!cp_integer(str, &value)) {
 # if HAVE_NETDB_H
 	if (struct servent *s = getservbyname(str.c_str(), ip_p == IP_PROTO_TCP ? "tcp" : "udp")) {
-	    *return_value = ntohs(s->s_port);
+	    *result = ntohs(s->s_port);
 	    return true;
 	}
 # endif
@@ -1899,7 +2502,7 @@ cp_tcpudp_port(const String &str, int ip_p, uint16_t *return_value
     }
 #endif
     if (value <= 0xFFFF) {
-	*return_value = value;
+	*result = value;
 	return true;
     } else {
 	cp_errno = CPE_OVERFLOW;
@@ -1984,7 +2587,7 @@ cp_handler(const String &str, int flags,
 
 #ifdef HAVE_IPSEC
 bool
-cp_des_cblock(const String &str, unsigned char *return_value)
+cp_des_cblock(const String &str, unsigned char *result)
 {
   int i = 0;
   const unsigned char *s = reinterpret_cast<const unsigned char*>(str.data());
@@ -2005,7 +2608,7 @@ cp_des_cblock(const String &str, unsigned char *return_value)
   if (len != i)
     return false;
   else {
-    memcpy(return_value, value, 8);
+    memcpy(result, value, 8);
     return true;
   }
 }
@@ -2013,7 +2616,7 @@ cp_des_cblock(const String &str, unsigned char *return_value)
 
 #ifdef CLICK_USERLEVEL
 bool
-cp_filename(const String &str, String *return_value)
+cp_filename(const String &str, String *result)
 {
   String fn;
   if (!cp_string(str, &fn) || !fn)
@@ -2046,7 +2649,7 @@ cp_filename(const String &str, String *return_value)
     }
 
   // return
-  *return_value = fn;
+  *result = fn;
   return true;
 }
 #endif
@@ -2149,6 +2752,7 @@ enum {
   cpiSeconds,
   cpiSecondsAsMilli,
   cpiSecondsAsMicro,
+  cpiTimestamp,
   cpiTimeval,
   cpiInterval,
   cpiBandwidth,
@@ -2376,14 +2980,14 @@ default_parsefunc(cp_value *v, const String &arg,
 #endif
 
    case cpiSeconds:
-    if (!cp_seconds_as(0, arg, &v->v.u))
+    if (!cp_seconds_as(arg, 0, &v->v.u))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
       errh->error("%s too large; max %u", argname, v->v.u);
     break;
 
    case cpiSecondsAsMilli:
-    if (!cp_seconds_as(3, arg, &v->v.u))
+    if (!cp_seconds_as(arg, 3, &v->v.u))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_milliseconds(v->v.u);
@@ -2392,13 +2996,29 @@ default_parsefunc(cp_value *v, const String &arg,
     break;
 
    case cpiSecondsAsMicro:
-    if (!cp_seconds_as(6, arg, &v->v.u))
+    if (!cp_seconds_as(arg, 6, &v->v.u))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_microseconds(v->v.u);
       errh->error("%s too large; max %s", argname, m.c_str());
     }
     break;
+
+   case cpiTimestamp: {
+     Timestamp t;
+     if (!cp_time(arg, &t)) {
+       if (cp_errno == CPE_NEGATIVE)
+	 errh->error("%s must be >= 0", argname);
+       else
+	 goto type_mismatch;
+     } else if (cp_errno == CPE_OVERFLOW)
+       errh->error("%s too large", argname);
+     else {
+       v->v.i = t.sec();
+       v->v2.i = t.subsec();
+     }
+     break;
+   }
 
    case cpiTimeval:
    case cpiInterval: {
@@ -2641,6 +3261,12 @@ default_storefunc(cp_value *v  CP_CONTEXT)
      break;
    }
 #endif
+
+   case cpiTimestamp: {
+     Timestamp *tstore = (Timestamp *)v->store;
+     *tstore = Timestamp(v->v.i, v->v2.i);
+     break;
+   }
 
    case cpiTimeval:
    case cpiInterval: {
@@ -3012,7 +3638,11 @@ CpVaHelper::develop_values(va_list val, ErrorHandler *errh)
     v->description = va_arg(val, const char *); // NB deprecated
     if (argtype->flags & cpArgExtraInt)
       v->extra = va_arg(val, int);
-    v->store_confirm = (confirm_keywords ? va_arg(val, bool *) : 0);
+    if (confirm_keywords) {
+	v->store_confirm = va_arg(val, bool *);
+	*v->store_confirm = false;
+    } else
+	v->store_confirm = 0;
     v->store = va_arg(val, void *);
     if (argtype->flags & cpArgStore2)
       v->store2 = va_arg(val, void *);
@@ -3058,6 +3688,11 @@ CpVaHelper::develop_kvalues(va_list val, ErrorHandler *errh)
 	npositional = nvalues;
     if ((flags & (cpkPositional | cpkMandatory)) != (cpkPositional | cpkMandatory))
 	nrequired = nvalues;
+    if (flags & cpkConfirm) {
+	v->store_confirm = va_arg(val, bool *);
+	*v->store_confirm = false;
+    } else
+	v->store_confirm = 0;
     
     // find cp_argtype
     const char *command_name = va_arg(val, const char *);
@@ -3078,7 +3713,6 @@ CpVaHelper::develop_kvalues(va_list val, ErrorHandler *errh)
     v->description = "?"; // NB deprecated
     if (argtype->flags & cpArgExtraInt)
       v->extra = va_arg(val, int);
-    v->store_confirm = (flags & cpkConfirm ? va_arg(val, bool *) : 0);
     v->store = va_arg(val, void *);
     if (argtype->flags & cpArgStore2)
       v->store2 = va_arg(val, void *);
@@ -3392,8 +4026,15 @@ cp_va_parse_remove_keywords(Vector<String> &argv, int first,
 }
 
 
+/** @brief Parse a list of arguments.
+ * @param  conf  argument list
+ * @param  context  element context
+ * @param  errh  error handler
+ * @param  ...  zero or more parameter items, terminated by ::cpEnd
+ * @return  The number of parameters successfully assigned, or negative on error.
+ */
 int
-cp_va_kparse(const Vector<String> &argv,
+cp_va_kparse(const Vector<String> &conf,
 #ifndef CLICK_TOOL
 	     Element *context,
 #endif
@@ -3404,7 +4045,7 @@ cp_va_kparse(const Vector<String> &argv,
   CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
   int retval = cpva.develop_kvalues(val, errh);
   if (retval >= 0)
-    retval = cpva.assign_arguments(argv, "argument", errh);
+    retval = cpva.assign_arguments(conf, "argument", errh);
   if (retval >= 0)
     retval = cpva.parse_arguments("argument"  CP_PASS_CONTEXT, errh);
   va_end(val);
@@ -3433,7 +4074,7 @@ cp_va_kparse(const String &confstr,
 }
 
 int
-cp_va_space_kparse(const String &arg,
+cp_va_space_kparse(const String &str,
 #ifndef CLICK_TOOL
 		   Element *context,
 #endif
@@ -3441,12 +4082,12 @@ cp_va_space_kparse(const String &arg,
 {
   va_list val;
   va_start(val, errh);
-  Vector<String> argv;
-  cp_spacevec(arg, argv);
+  Vector<String> conf;
+  cp_spacevec(str, conf);
   CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
   int retval = cpva.develop_kvalues(val, errh);
   if (retval >= 0)
-    retval = cpva.assign_arguments(argv, "word", errh);
+    retval = cpva.assign_arguments(conf, "word", errh);
   if (retval >= 0)
     retval = cpva.parse_arguments("word"  CP_PASS_CONTEXT, errh);
   va_end(val);
@@ -3454,7 +4095,7 @@ cp_va_space_kparse(const String &arg,
 }
 
 int
-cp_va_kparse_keyword(const String &arg,
+cp_va_kparse_keyword(const String &str,
 #ifndef CLICK_TOOL
 		     Element *context,
 #endif
@@ -3462,12 +4103,12 @@ cp_va_kparse_keyword(const String &arg,
 {
   va_list val;
   va_start(val, errh);
-  Vector<String> argv;
-  argv.push_back(arg);
+  Vector<String> conf;
+  conf.push_back(str);
   CpVaHelper cpva(cp_values, CP_VALUES_SIZE, true);
   int retval = cpva.develop_kvalues(val, errh);
   if (retval >= 0)
-    retval = cpva.assign_arguments(argv, "argument", errh);
+    retval = cpva.assign_arguments(conf, "argument", errh);
   if (retval >= 0)
     retval = cpva.parse_arguments("argument"  CP_PASS_CONTEXT, errh);
   va_end(val);
@@ -3475,7 +4116,7 @@ cp_va_kparse_keyword(const String &arg,
 }
 
 int
-cp_va_kparse_remove_keywords(Vector<String> &argv,
+cp_va_kparse_remove_keywords(Vector<String> &conf,
 #ifndef CLICK_TOOL
 			     Element *context,
 #endif
@@ -3486,7 +4127,7 @@ cp_va_kparse_remove_keywords(Vector<String> &argv,
   CpVaHelper cpva(cp_values, CP_VALUES_SIZE, true);
   int retval = cpva.develop_kvalues(val, errh);
   if (retval >= 0)
-    retval = cpva.assign_arguments(argv, "argument", errh);
+    retval = cpva.assign_arguments(conf, "argument", errh);
   if (retval >= 0)
     retval = cpva.parse_arguments("argument"  CP_PASS_CONTEXT, errh);
   va_end(val);
@@ -3494,12 +4135,12 @@ cp_va_kparse_remove_keywords(Vector<String> &argv,
   // remove keywords that were used
   if (retval >= 0) {
     int delta = 0;
-    for (int i = 0; i < argv.size(); i++)
+    for (int i = 0; i < conf.size(); i++)
       if ((*cp_parameter_used)[i])
 	delta++;
       else if (delta)
-	argv[i - delta] = argv[i];
-    argv.resize(argv.size() - delta);
+	conf[i - delta] = conf[i];
+    conf.resize(conf.size() - delta);
   }
   
   return retval;
@@ -3792,8 +4433,8 @@ cp_va_static_initialize()
     cp_register_argtype(cpSeconds, "time in sec", 0, default_parsefunc, default_storefunc, cpiSeconds);
     cp_register_argtype(cpSecondsAsMilli, "time in sec (msec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMilli);
     cp_register_argtype(cpSecondsAsMicro, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMicro);
+    cp_register_argtype(cpTimestamp, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimestamp);
     cp_register_argtype(cpTimeval, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);
-    cp_register_argtype(cpTimestamp, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);
     cp_register_argtype(cpInterval, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiInterval);
     cp_register_argtype(cpBandwidth, "bandwidth", 0, default_parsefunc, default_storefunc, cpiBandwidth);
     cp_register_argtype(cpIPAddress, "IP address", 0, default_parsefunc, default_storefunc, cpiIPAddress);

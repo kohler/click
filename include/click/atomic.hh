@@ -60,7 +60,9 @@ class atomic_uint32_t { public:
     inline atomic_uint32_t &operator|=(uint32_t mask);
     inline atomic_uint32_t &operator&=(uint32_t mask);
 
+    inline void operator++();
     inline void operator++(int);
+    inline void operator--();
     inline void operator--(int);
 
     inline uint32_t swap(uint32_t v);
@@ -190,6 +192,22 @@ atomic_uint32_t::operator&=(uint32_t mask)
 
 /** @brief  Atomically increment the value. */
 inline void
+atomic_uint32_t::operator++()
+{
+#if CLICK_LINUXMODULE
+    atomic_inc(&_val);
+#elif CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "incl %0"
+		  : "=m" (CLICK_ATOMIC_VAL)
+		  : "m" (CLICK_ATOMIC_VAL)
+		  : "cc");
+#else
+    CLICK_ATOMIC_VAL++;
+#endif
+}
+
+/** @brief  Atomically increment the value. */
+inline void
 atomic_uint32_t::operator++(int)
 {
 #if CLICK_LINUXMODULE
@@ -201,6 +219,22 @@ atomic_uint32_t::operator++(int)
 		  : "cc");
 #else
     CLICK_ATOMIC_VAL++;
+#endif
+}
+
+/** @brief  Atomically decrement the value. */
+inline void
+atomic_uint32_t::operator--()
+{
+#if CLICK_LINUXMODULE
+    atomic_dec(&_val);
+#elif CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "decl %0"
+		  : "=m" (CLICK_ATOMIC_VAL)
+		  : "m" (CLICK_ATOMIC_VAL)
+		  : "cc");
+#else
+    CLICK_ATOMIC_VAL--;
 #endif
 }
 
@@ -221,7 +255,13 @@ atomic_uint32_t::operator--(int)
 }
 
 /** @brief  Atomically assign the value to @a v, returning the old value.
- *  @return The old value. */
+ *
+ * Behaves like this, but in one atomic step:
+ * @code
+ * uint32_t old_value = value();
+ * *this = v;
+ * return old_value;
+ * @endcode*/
 inline uint32_t
 atomic_uint32_t::swap(uint32_t v)
 {
@@ -243,7 +283,14 @@ atomic_uint32_t::swap(uint32_t v)
 #endif
 }
 
-/** @brief  Atomically add @a delta to the value, returning the old value. */
+/** @brief  Atomically add @a delta to the value, returning the old value.
+ *
+ * Behaves like this, but in one atomic step:
+ * @code
+ * uint32_t old_value = value();
+ * *this += delta;
+ * return old_value;
+ * @endcode */
 inline uint32_t
 atomic_uint32_t::fetch_and_add(uint32_t delta)
 {
@@ -269,8 +316,12 @@ atomic_uint32_t::fetch_and_add(uint32_t delta)
 
 /** @brief  Atomically decrement the value, returning true if the new value
  *	    is 0.
- *  @return True if the atomic decrement sets the value to 0, false
- *	    otherwise. */
+ *
+ * Behaves like this, but in one atomic step:
+ * @code
+ * --*this;
+ * return value() == 0;
+ * @endcode */
 inline bool
 atomic_uint32_t::dec_and_test()
 {
@@ -294,24 +345,16 @@ atomic_uint32_t::dec_and_test()
  *  @return True if the old value equaled @a test_value (in which case the
  *	    value was set to @a new_value), false otherwise.
  *
- *  The compare-and-swap operation behaves like the following:
- *  @code
- *  uint32_t old_value = value();
- *  if (old_value == test_value)
- *      *this = new_value;
- *  return old_value == test_value;
- *  @endcode */
+ * Behaves like this, but in one atomic step:
+ * @code
+ * uint32_t old_value = value();
+ * if (old_value == test_value)
+ *     *this = new_value;
+ * return old_value == test_value;
+ * @endcode */
 inline bool
 atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
 {
-    // Pseudocode:
-    //   begin_atomic_section();
-    //   uint32_t old_value = *this;
-    //   if (old_value == test_value)
-    //       *this = new_value;
-    //   end_atomic_section();
-    //   return old_value == test_value;
-
 #if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%0 ; sete %%al"
 		  : "=m" (CLICK_ATOMIC_VAL), "=a" (test_value)

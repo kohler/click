@@ -23,6 +23,10 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
+/** @file string.hh
+ * @brief Click's String class.
+ */
+
 /** @class String
  * @brief A string of characters.
  *

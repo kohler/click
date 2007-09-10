@@ -1,0 +1,12 @@
+%info
+Tests configuration parsing functionality with the ConfParseTest element.
+
+%require
+click-buildtool provides ConfParseTest
+
+%script
+click -qe ConfParseTest
+
+%expect stderr
+<expr>:1:{{.*}}
+  All tests pass!

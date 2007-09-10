@@ -56,14 +56,14 @@ int
 FromFlanDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool stop = false, active = true;
-    bool have_packets = false, packets, have_flows = false, flows;
+    bool have_packets, packets, have_flows, flows;
     
     if (cp_va_kparse(conf, this, errh,
 		     "FILENAME", cpkP+cpkM, cpFilename, &_dirname,
 		     "STOP", 0, cpBool, &stop,
 		     "ACTIVE", 0, cpBool, &active,
-		     "PACKETS", cpkC, cpBool, &have_packets, &packets,
-		     "FLOWS", cpkC, cpBool, &have_flows, &flows,
+		     "PACKETS", cpkC, &have_packets, cpBool, &packets,
+		     "FLOWS", cpkC, &have_flows, cpBool, &flows,
 		     cpEnd) < 0)
 	return -1;
 

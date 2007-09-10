@@ -107,7 +107,7 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "ICMP", 0, cpBool, &handle_icmp_errors,
 		     "TRACEINFO", 0, cpFilename, &_traceinfo_filename,
 		     "SOURCE", 0, cpElement, &_packet_source,
-		     "FRAGMENTS", cpkC, cpBool, &gave_fragments, &fragments,
+		     "FRAGMENTS", cpkC, &gave_fragments, cpBool, &fragments,
 		     cpEnd) < 0)
 	return -1;
     

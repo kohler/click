@@ -8,10 +8,6 @@
 #include <click/atomic.hh>
 CLICK_DECLS
 
-/** @file <click/string.hh>
- * @brief Click's String class.
- */
-
 class String { public:
   
   // Call static_initialize() before any function which might deal with

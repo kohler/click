@@ -151,7 +151,7 @@ MULTILINE_CPP_IS_BRIEF = NO
 # If set to NO, the detailed description appears after the member 
 # documentation.
 
-DETAILS_AT_TOP         = NO
+DETAILS_AT_TOP         = YES
 
 # If the INHERIT_DOCS tag is set to YES (the default) then an undocumented 
 # member inherits the documentation from any documented member that it 
@@ -220,7 +220,7 @@ DISTRIBUTE_GROUP_DOC   = NO
 # NO to prevent subgrouping. Alternatively, this can be done per class using 
 # the \nosubgrouping command.
 
-SUBGROUPING            = YES
+SUBGROUPING            = NO
 
 #---------------------------------------------------------------------------
 # Build related configuration options
@@ -1037,6 +1037,7 @@ PREDEFINED             = CLICK_DECLS= \
                          EXPORT_ELEMENT(elt)= \
                          "CP_CONTEXT=, Element *context" \
 			 "CP_OPT_CONTEXT=, Element *context=0" \
+			 "CP_VA_PARSE_ARGS_REST=Element *context, ErrorHandler *errh, ..." \
                          CLICK_USERLEVEL \
                          CLICK_LINUXMODULE \
                          CLICK_DEPRECATED= \
@@ -1045,7 +1046,8 @@ PREDEFINED             = CLICK_DECLS= \
                          HAVE_INT64_TYPES \
                          HAVE_STRIDE_SCHED \
                          HAVE_STRUCT_TIMESPEC \
-                         HAVE_NANOTIMESTAMP
+                         HAVE_NANOTIMESTAMP \
+			 HAVE_FLOAT_TYPES
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 

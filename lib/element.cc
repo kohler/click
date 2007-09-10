@@ -68,7 +68,8 @@ int Element::nelements_allocated = 0;
  *  modules (which we call <em>elements</em>).
  *
  *  Most documented Click classes can be found under the "Classes" tab.  Get
- *  started by looking at the Element class.
+ *  started by looking at the Element class, or the confparse.hh header file
+ *  for configuration string parsing.
  *
  *  <a href='http://www.read.cs.ucla.edu/click/'>Main Click page</a>
  */
@@ -1123,12 +1124,13 @@ Element::configure_phase() const
  * set_ninputs() or set_noutputs() function from configure(), then all push,
  * pull, and neighbor information is invalidated until initialize() time.
  *
- * @sa live_reconfigure
+ * @sa live_reconfigure, confparse.hh for useful parsing functions like
+ * cp_va_kparse()
  */
 int
 Element::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_parse(conf, this, errh, cpEnd);
+    return cp_va_kparse(conf, this, errh, cpEnd);
 }
 
 /** @brief Called when an element should install its handlers.
@@ -1904,8 +1906,8 @@ Element::read_keyword_handler(Element *element, void *thunk)
   const char *kw = (const char *)thunk;
   String s;
   for (int i = conf.size() - 1; i >= 0; i--)
-    if (cp_va_parse_keyword(conf[i], element, ErrorHandler::silent_handler(),
-			    kw, cpArgument, &s, cpEnd) > 0)
+    if (cp_va_kparse_keyword(conf[i], element, ErrorHandler::silent_handler(),
+			     kw, 0, cpArgument, &s, cpEnd) > 0)
       break;
   return s;
 }
