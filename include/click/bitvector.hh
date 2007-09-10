@@ -20,7 +20,9 @@ class Bitvector { public:
     int size() const		{ return _max + 1; }
 
     bool zero() const;
-    operator bool() const	{ return !zero(); }
+    
+    typedef bool (Bitvector::*unspecified_bool_type)() const;
+    operator bool() const	{ return !zero() ? &Bitvector::zero : 0; }
 
     Bit operator[](int);
     bool operator[](int) const;
@@ -74,8 +76,10 @@ class Bitvector::Bit { public:
 
     Bit(uint32_t &p, int off)		: _p(p), _mask(1U<<off) { }
 
-    operator bool() const		{ return (_p & _mask) != 0; }
-    operator bool()			{ return (_p & _mask) != 0; }
+    typedef Bitvector::unspecified_bool_type unspecified_bool_type;
+    inline operator unspecified_bool_type() const {
+	return (_p & _mask) != 0 ? &Bitvector::zero : 0;
+    }
 
     bool operator=(bool b);
     bool operator=(const Bit &);

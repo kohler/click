@@ -69,7 +69,7 @@ class String { public:
   inline const_iterator begin() const;
   inline const_iterator end() const;
 
-  typedef int String::*unspecified_bool_type;
+  typedef int (String::*unspecified_bool_type)() const;
   inline operator unspecified_bool_type() const;
   
   inline char operator[](int i) const;
@@ -345,7 +345,7 @@ String::end() const
 inline
 String::operator unspecified_bool_type() const
 {
-  return _length != 0 ? &String::_length : 0;
+  return _length != 0 ? &String::length : 0;
 }
   
 /** @brief Returns the @a i th character in the string.

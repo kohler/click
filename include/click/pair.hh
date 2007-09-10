@@ -10,14 +10,15 @@ struct Pair {
     U second;
     Pair()				: first(), second() { }
     Pair(const T &t, const U &u)	: first(t), second(u) { }
-    inline operator bool() const;
+    typedef size_t (Pair<T, U>::*unspecified_bool_type)() const;
+    inline operator unspecified_bool_type() const;
     inline size_t hashcode() const;
 };
 
 template <class T, class U>
-inline Pair<T, U>::operator bool() const
+inline Pair<T, U>::operator unspecified_bool_type() const
 {
-    return (bool) first || (bool) second;
+    return first || second ? &Pair<T, U>::hashcode : 0;
 }
 
 template <class T, class U>

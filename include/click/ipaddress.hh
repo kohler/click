@@ -18,8 +18,9 @@ class IPAddress { public:
     explicit IPAddress(const String&);	// "18.26.4.99"
     inline IPAddress(struct in_addr);
     static IPAddress make_prefix(int prefix_len);
-  
-    inline operator bool() const;
+
+    typedef uint32_t (IPAddress::*unspecified_bool_type)() const;
+    inline operator unspecified_bool_type() const;
     
     inline uint32_t addr() const;
     inline operator uint32_t() const;
@@ -113,9 +114,9 @@ IPAddress::IPAddress(struct in_addr ina)
 
 /** @brief Returns true iff the address is not 0.0.0.0. */
 inline
-IPAddress::operator bool() const
+IPAddress::operator unspecified_bool_type() const
 {
-    return _addr != 0;
+    return _addr != 0 ? &IPAddress::addr : 0;
 }
 
 /** @brief Returns the address as a uint32_t in network byte order. */

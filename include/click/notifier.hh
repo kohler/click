@@ -14,8 +14,9 @@ class NotifierSignal { public:
     static inline NotifierSignal busy_signal();
     static inline NotifierSignal overderived_signal();
     static inline NotifierSignal uninitialized_signal();
-    
-    inline operator bool() const;
+
+    typedef bool (NotifierSignal::*unspecified_bool_type)() const;
+    inline operator unspecified_bool_type() const;
     inline bool active() const;
 
     inline bool idle() const;
@@ -190,9 +191,9 @@ NotifierSignal::active() const
  * @return true iff the signal is currently active.
  */
 inline
-NotifierSignal::operator bool() const
+NotifierSignal::operator unspecified_bool_type() const
 {
-    return active();
+    return active() ? &NotifierSignal::active : 0;
 }
 
 /** @brief Return whether the signal is idle.

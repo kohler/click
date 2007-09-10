@@ -9,8 +9,9 @@ class EtherAddress { public:
   
     inline EtherAddress();
     explicit EtherAddress(const unsigned char *data);
-  
-    inline operator bool() const;
+
+    typedef bool (EtherAddress::*unspecified_bool_type)() const;
+    inline operator unspecified_bool_type() const;
     inline bool is_group() const;
     
     inline unsigned char *data();
@@ -52,9 +53,9 @@ EtherAddress::EtherAddress(const unsigned char *data)
 
 /** @brief Returns true iff the address is not 00:00:00:00:00:00. */
 inline
-EtherAddress::operator bool() const
+EtherAddress::operator unspecified_bool_type() const
 {
-    return _data[0] || _data[1] || _data[2];
+    return _data[0] || _data[1] || _data[2] ? &EtherAddress::is_group : 0;
 }
 
 /** @brief Returns true iff this address is a group address.

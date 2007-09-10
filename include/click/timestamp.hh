@@ -44,7 +44,8 @@ class Timestamp { public:
     inline Timestamp(double);
 #endif
 
-    inline operator bool() const;
+    typedef int32_t (Timestamp::*unspecified_bool_type)() const;
+    inline operator unspecified_bool_type() const;
     
     inline int32_t sec() const;
     inline uint32_t subsec() const;
@@ -234,9 +235,9 @@ Timestamp::Timestamp(const struct timespec& ts)
 
 /** @brief Returns true iff this timestamp is not zero-valued. */
 inline
-Timestamp::operator bool() const
+Timestamp::operator unspecified_bool_type() const
 {
-    return _sec || _subsec;
+    return _sec || _subsec ? &Timestamp::sec : 0;
 }
 
 /** @brief Sets this timestamp to the current time.

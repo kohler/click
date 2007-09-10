@@ -16,7 +16,8 @@ class IP6Address { public:
   explicit IP6Address(const click_in6_addr &a)	: _addr(a) { }
   static IP6Address make_prefix(int);
 
-  operator bool() const;
+  typedef size_t (IP6Address::*unspecified_bool_type)() const;
+  operator unspecified_bool_type() const;
   
   operator const click_in6_addr &() const	{ return _addr; }
   operator click_in6_addr &()			{ return _addr; }
@@ -64,10 +65,10 @@ class IP6Address { public:
 };
 
 inline
-IP6Address::operator bool() const
+IP6Address::operator unspecified_bool_type() const
 {
   const unsigned *ai = data32();
-  return ai[0] || ai[1] || ai[2] || ai[3];
+  return ai[0] || ai[1] || ai[2] || ai[3] ? &IP6Address::hashcode : 0;
 }
 
 inline bool

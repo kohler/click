@@ -13,7 +13,8 @@ class IPFlowID { public:
   explicit IPFlowID(const Packet *);	// reads ip_header and udp_header
   explicit IPFlowID(const click_ip *);	// also reads adjacent TCP/UDP header
 
-  operator bool() const;
+  typedef IPAddress (IPFlowID::*unspecified_bool_type)() const;
+  operator unspecified_bool_type() const;
 
   IPAddress saddr() const		{ return _saddr; }
   IPAddress daddr() const		{ return _daddr; }
@@ -57,9 +58,9 @@ IPFlowID::IPFlowID(IPAddress saddr, uint16_t sport,
 }
 
 inline
-IPFlowID::operator bool() const
+IPFlowID::operator unspecified_bool_type() const
 {
-  return _saddr || _daddr;
+  return _saddr || _daddr ? &IPFlowID::saddr : 0;
 }
 
 inline IPFlowID

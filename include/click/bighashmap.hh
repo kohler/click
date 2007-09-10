@@ -111,7 +111,7 @@ template <class K, class V>
 class _HashMap_const_iterator { public:
 
   bool live() const			{ return _elt; }
-  typedef size_t _HashMap_const_iterator::*unspecified_bool_type;
+  typedef bool (_HashMap_const_iterator::*unspecified_bool_type)() const;
   inline operator unspecified_bool_type() const CLICK_DEPRECATED;
   void operator++(int);
   void operator++()			{ (*this)++; }
@@ -213,7 +213,7 @@ template <class K, class V>
 inline
 _HashMap_const_iterator<K, V>::operator unspecified_bool_type() const
 {
-    return live() ? &_HashMap_const_iterator::_bucket : 0;
+    return live() ? &_HashMap_const_iterator::live : 0;
 }
 
 
@@ -309,7 +309,7 @@ template <class K>
 class _HashMap_const_iterator<K, void *> { public:
 
   bool live() const			{ return _elt; }
-  typedef size_t _HashMap_const_iterator::*unspecified_bool_type;
+  typedef bool (_HashMap_const_iterator::*unspecified_bool_type)() const;
   inline operator unspecified_bool_type() const CLICK_DEPRECATED;
   void operator++(int);
   void operator++()			{ (*this)++; }
@@ -411,7 +411,7 @@ template <class K>
 inline
 _HashMap_const_iterator<K, void *>::operator unspecified_bool_type() const
 {
-    return live() ? &_HashMap_const_iterator::_bucket : 0;
+    return live() ? &_HashMap_const_iterator::live : 0;
 }
 
 
@@ -546,7 +546,7 @@ template <class K, class T>
 inline
 _HashMap_const_iterator<K, T *>::operator unspecified_bool_type() const
 {
-    return inherited::live() ? &inherited::_bucket : 0;
+    return inherited::live() ? &inherited::live : 0;
 }
 
 template <class K, class V>

@@ -60,13 +60,13 @@ class StringAccum { public:
 	return _cap;
     }
     
-    typedef int StringAccum::*unspecified_bool_type;
+    typedef int (StringAccum::*unspecified_bool_type)() const;
 
     /** @brief Return true iff the StringAccum contains characters.
 
         Returns false for empty and out-of-memory StringAccums. */
     operator unspecified_bool_type() const {
-	return _len != 0 ? &StringAccum::_len : 0;
+	return _len != 0 ? &StringAccum::capacity : 0;
     }
 
     /** @brief Returns true iff the StringAccum does not contain characters.

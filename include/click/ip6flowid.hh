@@ -12,7 +12,8 @@ class IP6FlowID { public:
   inline IP6FlowID(const IP6Address &, uint16_t, const IP6Address &, uint16_t);
   explicit IP6FlowID(Packet *);
 
-  inline operator bool() const;
+  typedef const IP6Address &(IP6FlowID::*unspecified_bool_type)() const;
+  inline operator unspecified_bool_type() const;
 
   const IP6Address &saddr() const	{ return _saddr; }
   const IP6Address &daddr() const	{ return _daddr; }
@@ -56,9 +57,9 @@ IP6FlowID::IP6FlowID(const IP6Address &saddr, uint16_t sport,
 }
 
 inline
-IP6FlowID::operator bool() const
+IP6FlowID::operator unspecified_bool_type() const
 {
-  return _saddr || _daddr;
+  return _saddr || _daddr ? &IP6FlowID::saddr : 0;
 }
 
 inline IP6FlowID

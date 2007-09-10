@@ -238,14 +238,14 @@ class HandlerCall { public:
     inline int initialize_write(Element *context, ErrorHandler *errh = 0);
 
     
-    typedef Element *HandlerCall::*unspecified_bool_type;
+    typedef bool (HandlerCall::*unspecified_bool_type)() const;
 
     /** @brief  Test if HandlerCall is empty.
      *  @return True if HandlerCall is not empty, false otherwise.
      *
      *  Valid HandlerCall objects have been successfully initialized. */
     operator unspecified_bool_type() const {
-	return _h != Handler::blank_handler() || _e ? &HandlerCall::_e : 0;
+	return _h != Handler::blank_handler() || _e ? &HandlerCall::empty : 0;
     }
     
     /** @brief  Test if HandlerCall is empty.
