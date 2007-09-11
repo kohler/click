@@ -41,15 +41,12 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   _et = 0;
   _offset = 0;
   _tries = WIFI_MAX_RETRIES+1;
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpUnsigned, "rate", &_rate, 
-		  cpKeywords, 
-		  "RATE", cpUnsigned, "rate", &_rate, 
-		  "TRIES", cpUnsigned, "tries", &_tries,
-		  "ETHTYPE", cpUnsignedShort, "Ethernet encapsulation type", &_et,
-		  "OFFSET", cpUnsigned, "offset", &_offset,
-		  cpEnd) < 0) {
+  if (cp_va_kparse(conf, this, errh,
+		   "RATE", cpkP, cpUnsigned, &_rate, 
+		   "TRIES", 0, cpUnsigned, &_tries,
+		   "ETHTYPE", 0, cpUnsignedShort, &_et,
+		   "OFFSET", 0, cpUnsigned, &_offset,
+		   cpEnd) < 0) {
     return -1;
   }
 

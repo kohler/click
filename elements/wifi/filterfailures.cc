@@ -19,18 +19,6 @@ FilterFailures::~FilterFailures()
 {
 }
 
-int
-FilterFailures::configure(Vector<String> &conf, ErrorHandler *errh)
-{
-
-    if (cp_va_parse(conf, this, errh, 
-		    cpKeywords,
-		    cpEnd) < 0) {
-      return -1;
-    }
-  return 0;
-}
-
 Packet *
 FilterFailures::simple_action(Packet *p)
 {

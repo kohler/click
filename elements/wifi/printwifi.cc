@@ -47,12 +47,10 @@ PrintWifi::configure(Vector<String> &conf, ErrorHandler* errh)
 {
   int ret;
   _timestamp = false;
-  ret = cp_va_parse(conf, this, errh,
-                  cpOptional,
-		  cpString, "label", &_label,
-		  cpKeywords,
-		    "TIMESTAMP", cpBool, "print timestamp", &_timestamp,
-		    cpEnd);
+  ret = cp_va_kparse(conf, this, errh,
+		     "LABEL", cpkP, cpString, &_label,
+		     "TIMESTAMP", 0, cpBool, &_timestamp,
+		     cpEnd);
   return ret;
 }
 

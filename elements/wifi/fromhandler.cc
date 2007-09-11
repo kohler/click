@@ -40,11 +40,9 @@ FromHandler::~FromHandler()
 int
 FromHandler::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (cp_va_parse(conf, this, errh,
-		    cpString, "handler", &_handler,
-		    cpOptional,
-		    cpKeywords,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "HANDLER", cpkP+cpkM, cpString, &_handler,
+		     cpEnd) < 0)
 	return -1;
 
     _active = false;

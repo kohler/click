@@ -36,10 +36,9 @@ SetRTS::~SetRTS()
 int
 SetRTS::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpBool, "RTS", &_rts,
-		  cpKeywords, 
-		  cpEnd) < 0) {
+  if (cp_va_kparse(conf, this, errh,
+		   "RTS", cpkP+cpkM, cpBool, &_rts,
+		   cpEnd) < 0) {
     return -1;
   }
   return 0;

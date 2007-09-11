@@ -32,8 +32,6 @@ class FilterPhyErr : public Element { public:
   const char *port_count() const		{ return "1/1-3"; }
   const char *processing() const		{ return "a/ah"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-
   void add_handlers();
   Packet *simple_action(Packet *);  
 

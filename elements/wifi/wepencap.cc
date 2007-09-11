@@ -73,16 +73,13 @@ WepEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   _strict = false;
   _active = false;
   _keyid = 0;
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional, 
-		  cpString, "key", &_key,
-		  /* not required */
-		  cpKeywords,
-		  "KEYID", cpUnsigned, "keyid", &_keyid,
-		  "DEBUG", cpBool, "Debug", &_debug,
-		  "STRICT", cpBool, "strict header check", &_strict,
-		  "ACTIVE", cpBool, "active", &_active,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "KEY", cpkP, cpString, &_key,
+		   "KEYID", 0, cpUnsigned, &_keyid,
+		   "DEBUG", 0, cpBool, &_debug,
+		   "STRICT", 0, cpBool, &_strict,
+		   "ACTIVE", 0, cpBool, &_active,
+		   cpEnd) < 0)
     return -1;
   memset(&_rc4, 0,sizeof(_rc4));
   return 0;

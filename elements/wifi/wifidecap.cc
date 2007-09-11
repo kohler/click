@@ -39,12 +39,10 @@ WifiDecap::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _debug = false;
   _strict = false;
-  if (cp_va_parse(conf, this, errh,
-		  /* not required */
-		  cpKeywords,
-		  "DEBUG", cpBool, "Debug", &_debug,
-		  "STRICT", cpBool, "strict header check", &_strict,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DEBUG", 0, cpBool, &_debug,
+		   "STRICT", 0, cpBool, &_strict,
+		   cpEnd) < 0)
     return -1;
   return 0;
 }

@@ -43,10 +43,9 @@ int
 WifiDupeFilter::configure(Vector<String> &conf, ErrorHandler* errh)
 {
   int ret;
-  ret = cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "DEBUG", cpBool, "debug level", &_debug,
-		    cpEnd);
+  ret = cp_va_kparse(conf, this, errh,
+		     "DEBUG", 0, cpBool, &_debug,
+		     cpEnd);
   return ret;
 }
 

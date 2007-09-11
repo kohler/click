@@ -34,8 +34,6 @@ class FilterFailures : public Element { public:
   const char *port_count() const		{ return "1/1-3"; }
   const char *processing() const		{ return "a/ah"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-
   void add_handlers();
   static String static_print_drops(Element *, void *);
   Packet *simple_action(Packet *);

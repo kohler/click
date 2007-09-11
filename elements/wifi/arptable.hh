@@ -35,7 +35,6 @@ class ARPTable : public Element { public:
   const char *class_name() const		{ return "ARPTable"; }
   const char *port_count() const		{ return PORTS_0_0; }
 
-  int configure(Vector<String> &, ErrorHandler *);
   void *cast(const char *n);
   bool can_live_reconfigure() const		{ return true; }
 

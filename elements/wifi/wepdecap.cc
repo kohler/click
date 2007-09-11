@@ -72,16 +72,12 @@ WepDecap::configure(Vector<String> &conf, ErrorHandler *errh)
   _debug = false;
   _strict = false;
   _keyid = 0;
-  if (cp_va_parse(conf, this, errh,
-		  /* not required */
-		  cpOptional,
-		  cpString, "key", &_key,
-		  cpUnsigned, "keyid", &_keyid,
-		  cpKeywords,
-		  "KEYID", cpUnsigned, "keyid", &_keyid,
-		  "DEBUG", cpBool, "Debug", &_debug,
-		  "STRICT", cpBool, "strict header check", &_strict,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "KEY", cpkP, cpString, &_key,
+		   "KEYID", cpkP, cpUnsigned, &_keyid,
+		   "DEBUG", 0, cpBool, &_debug,
+		   "STRICT", 0, cpBool, &_strict,
+		   cpEnd) < 0)
     return -1;
   memset(&_rc4, 0,sizeof(_rc4));
   return 0;

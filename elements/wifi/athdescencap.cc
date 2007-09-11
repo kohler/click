@@ -41,11 +41,9 @@ AthdescEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
-  if (cp_va_parse(conf, this, errh,
-		  /* not required */
-		  cpKeywords,
-		  "DEBUG", cpBool, "Debug", &_debug,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DEBUG", 0, cpBool, &_debug,
+		   cpEnd) < 0)
     return -1;
   return 0;
 }

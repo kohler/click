@@ -53,16 +53,15 @@ AutoRateFallback::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _active = true;
   _adaptive_stepup = true;
-  int ret = cp_va_parse(conf, this, errh,
-			cpKeywords, 
-			"OFFSET", cpUnsigned, "offset", &_offset,
-			"ADAPTIVE_STEPUP", cpBool, "offset", &_adaptive_stepup,
-			"STEPUP", cpInteger, "0-100", &_stepup,
-			"STEPDOWN", cpInteger, "0-100", &_stepdown,
-			"RT", cpElement, "availablerates", &_rtable,
-			"THRESHOLD", cpUnsigned, "xxx", &_packet_size_threshold,
-			"ACTIVE", cpBool, "xxx", &_active,
-			cpEnd);
+  int ret = cp_va_kparse(conf, this, errh,
+			 "OFFSET", 0, cpUnsigned, &_offset,
+			 "ADAPTIVE_STEPUP", 0, cpBool, &_adaptive_stepup,
+			 "STEPUP", 0, cpInteger, &_stepup,
+			 "STEPDOWN", 0, cpInteger, &_stepdown,
+			 "RT", 0, cpElement, &_rtable,
+			 "THRESHOLD", 0, cpUnsigned, &_packet_size_threshold,
+			 "ACTIVE", 0, cpBool, &_active,
+			 cpEnd);
   return ret;
 }
 

@@ -46,14 +46,12 @@ WifiSeq::configure(Vector<String> &conf, ErrorHandler *errh)
   _bytes = 2;
   _shift = 4;
 
-  if (cp_va_parse(conf, this, errh,
-		  /* not required */
-		  cpKeywords,
-		  "DEBUG", cpBool, "Debug", &_debug,
-		  "OFFSET", cpUnsigned, "offset", &_offset,
-		  "BYTES", cpUnsigned, "bytes", &_bytes,
-		  "SHIFT", cpUnsigned, "shift", &_shift,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DEBUG", 0, cpBool, &_debug,
+		   "OFFSET", 0, cpUnsigned, &_offset,
+		   "BYTES", 0, cpUnsigned, &_bytes,
+		   "SHIFT", 0, cpUnsigned, &_shift,
+		   cpEnd) < 0)
     return -1;
 
   if (_bytes != 2 && _bytes != 4) {

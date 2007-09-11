@@ -66,11 +66,10 @@ LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   int stale_period = 120;
-  ret = cp_va_parse(conf, this, errh,
-		    cpKeywords,
-                    "IP", cpIPAddress, "IP address", &_ip,
-		    "STALE", cpUnsigned, "Stale info timeout", &stale_period,
-                    cpEnd);
+  ret = cp_va_kparse(conf, this, errh,
+		     "IP", 0, cpIPAddress, &_ip,
+		     "STALE", 0, cpUnsigned, &stale_period,
+		     cpEnd);
   
   if (!_ip) 
     return errh->error("IP not specified");

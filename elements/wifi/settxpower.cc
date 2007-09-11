@@ -39,12 +39,9 @@ SetTXPower::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _power = 0;
 
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpUnsigned, "power", &_power, 
-		  cpKeywords, 
-		  "POWER", cpUnsigned, "power", &_power, 
-		  0) < 0) {
+  if (cp_va_kparse(conf, this, errh,
+		   "POWER", cpkP, cpUnsigned, &_power, 
+		   cpEnd) < 0) {
     return -1;
   }
 

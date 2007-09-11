@@ -39,9 +39,6 @@ class RXStats : public Element { public:
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  int configure(Vector<String> &, ErrorHandler *);
-  bool can_live_reconfigure() const		{ return true; }
-
   Packet *simple_action(Packet *);
 
   void add_handlers();

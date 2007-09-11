@@ -34,18 +34,6 @@ EtherCount::~EtherCount()
 {
 }
 
-int
-EtherCount::configure(Vector<String> &conf, ErrorHandler *errh)
-{
-  if (cp_va_parse(conf, this, errh,
-		  cpKeywords, 
-		  cpEnd) < 0) {
-    return -1;
-  }
-
-  return 0;
-}
-
 Packet *
 EtherCount::simple_action(Packet *p_in)
 {

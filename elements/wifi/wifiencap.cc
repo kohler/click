@@ -42,15 +42,12 @@ WifiEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _debug = false;
   _mode = WIFI_FC1_DIR_NODS;
-  if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "mode", &_mode, 
-		  cpOptional,
-		  cpEthernetAddress, "bssid", &_bssid,
-		  /* not required */
-		  cpKeywords,
-		  "WIRELESS_INFO", cpElement, "wirleess_info", &_winfo,
-		  "DEBUG", cpBool, "Debug", &_debug,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "MODE", cpkP+cpkM, cpUnsigned, &_mode, 
+		   "BSSID", cpkP, cpEthernetAddress, &_bssid,
+		   "WIRELESS_INFO", 0, cpElement, &_winfo,
+		   "DEBUG", 0, cpBool, &_debug,
+		   cpEnd) < 0)
     return -1;
   return 0;
 }

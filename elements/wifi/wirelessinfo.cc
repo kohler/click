@@ -22,6 +22,7 @@
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
 #include "wirelessinfo.hh"
+#include <click/router.hh>
 CLICK_DECLS
 
 WirelessInfo::WirelessInfo()
@@ -43,14 +44,13 @@ WirelessInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res;
   reset();
-  res = cp_va_parse(conf, this, errh,
-		    cpKeywords, 
-		    "SSID", cpString, "ssid", &_ssid,
-		    "BSSID", cpEthernetAddress, "bssid", &_bssid,
-		    "CHANNEL", cpInteger, "channel", &_channel,
-		    "INTERVAL", cpInteger, "interval", &_interval,
-		    "WEP", cpBool, "wep", &_wep,
-		    cpEnd);
+  res = cp_va_kparse(conf, this, errh,
+		     "SSID", 0, cpString, &_ssid,
+		     "BSSID", 0, cpEthernetAddress, &_bssid,
+		     "CHANNEL", 0, cpInteger, &_channel,
+		     "INTERVAL", 0, cpInteger, &_interval,
+		     "WEP", 0, cpBool, &_wep,
+		     cpEnd);
 
   return res;
 }

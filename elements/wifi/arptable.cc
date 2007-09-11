@@ -45,16 +45,6 @@ ARPTable::cast(const char *n)
   else
     return 0;
 }
-int
-ARPTable::configure(Vector<String> &conf, ErrorHandler *errh)
-{
-  int res;
-  res = cp_va_parse(conf, this, errh,
-		    cpKeywords, 
-		    cpEnd);
-
-  return res;
-}
 
 void 
 ARPTable::take_state(Element *e, ErrorHandler *)

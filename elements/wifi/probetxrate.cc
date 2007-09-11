@@ -50,15 +50,14 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   _active = true;
   _original_retries = 4;
   _min_sample = 20;
-  int ret = cp_va_parse(conf, this, errh,
-			cpKeywords, 
-			"OFFSET", cpUnsigned, "offset", &_offset,
-			"WINDOW", cpUnsigned, "window", &_rate_window_ms,
-			"THRESHOLD", cpUnsigned, "threshold", &_packet_size_threshold,
-			"DEBUG", cpBool, "debug", &_debug,
-			"RT", cpElement, "availablerates", &_rtable,
-			"ACTIVE", cpBool, "xxx", &_active,
-			cpEnd);
+  int ret = cp_va_kparse(conf, this, errh,
+			 "OFFSET", 0, cpUnsigned, &_offset,
+			 "WINDOW", 0, cpUnsigned, &_rate_window_ms,
+			 "THRESHOLD", 0, cpUnsigned, &_packet_size_threshold,
+			 "DEBUG", 0, cpBool, &_debug,
+			 "RT", 0, cpElement, &_rtable,
+			 "ACTIVE", 0, cpBool, &_active,
+			 cpEnd);
   if (ret < 0) {
     return ret;
   }

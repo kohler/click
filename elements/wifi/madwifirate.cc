@@ -72,15 +72,14 @@ MadwifiRate::configure(Vector<String> &conf, ErrorHandler *errh)
   _alt_rate = false;
   _active = true;
   _period = 1000;
-  int ret = cp_va_parse(conf, this, errh,
-			cpKeywords, 
-			"OFFSET", cpUnsigned, "offset", &_offset,
-			"RT", cpElement, "availablerates", &_rtable,
-			"THRESHOLD", cpUnsigned, "xxx", &_packet_size_threshold,
-			"ALT_RATE", cpBool, "xxx", &_alt_rate,
-			"ACTIVE", cpBool, "xxx", &_active,
-			"PERIOD", cpUnsigned, "xxx", &_period,
-			0);
+  int ret = cp_va_kparse(conf, this, errh,
+			 "OFFSET", 0, cpUnsigned, &_offset,
+			 "RT", 0, cpElement, &_rtable,
+			 "THRESHOLD", 0, cpUnsigned, &_packet_size_threshold,
+			 "ALT_RATE", 0, cpBool, &_alt_rate,
+			 "ACTIVE", 0, cpBool, &_active,
+			 "PERIOD", 0, cpUnsigned, &_period,
+			 cpEnd);
   return ret;
 }
 
