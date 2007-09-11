@@ -162,7 +162,8 @@ EXPORT_ELEMENT(MyNothingElement)
     elements.cc.
   - All Click declarations are enclosed within a macro pair,
     <tt>CLICK_DECLS</tt> and <tt>CLICK_ENDDECLS</tt>.  These are required for
-    the NS and FreeBSD kernel drivers.
+    the NS and FreeBSD kernel drivers.  Note that <tt>\#include</tt> statements
+    go @em outside the <tt>CLICK_DECLS/CLICK_ENDDECLS</tt> pair.
   - The element's C++ class is defined in the header file.
   - The first thing the source file does is <tt>\#include
     <click/config.h></tt>.  <strong>This is mandatory.</strong>
