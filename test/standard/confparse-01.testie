@@ -5,7 +5,7 @@ Tests configuration parsing functionality with the ConfParseTest element.
 click-buildtool provides ConfParseTest
 
 %script
-click -qe ConfParseTest
+click -qe 'AddressInfo(ip4_addr 1.2.3.4); ConfParseTest'
 
 %expect stderr
 <expr>:1:{{.*}}

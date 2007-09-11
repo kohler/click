@@ -90,6 +90,7 @@ class Element { public:
 
     enum CleanupStage {
 	CLEANUP_NO_ROUTER,
+	CLEANUP_BEFORE_CONFIGURE = CLEANUP_NO_ROUTER,
 	CLEANUP_CONFIGURE_FAILED,
 	CLEANUP_CONFIGURED,
 	CLEANUP_INITIALIZE_FAILED,
@@ -198,18 +199,12 @@ class Element { public:
     };
 
     // DEPRECATED
-    Element(int ninputs, int noutputs) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
-
     String id() const CLICK_DEPRECATED;
-
-    virtual void notify_ninputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
-    virtual void notify_noutputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
 
     inline void set_ninputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
     inline void set_noutputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
     inline void add_input() CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
     inline void add_output() CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
-    bool ports_frozen() const CLICK_DEPRECATED;
     
     virtual bool run_task() CLICK_DEPRECATED;
     virtual void run_timer() CLICK_DEPRECATED;

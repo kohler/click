@@ -412,9 +412,11 @@ Router::check_hookup_elements(ErrorHandler *errh)
     return (errh->nerrors() == before ? 0 : -1);
 }
 
-void
-Router::notify_hookup_range(ErrorHandler *errh)
+int
+Router::check_hookup_range(ErrorHandler *errh)
 {
+    int before_all = errh->nerrors();
+    
     // Count inputs and outputs, and notify elements how many they have
     Vector<int> nin(nelements(), -1);
     Vector<int> nout(nelements(), -1);
@@ -426,13 +428,7 @@ Router::notify_hookup_range(ErrorHandler *errh)
     }
     for (int f = 0; f < nelements(); f++)
 	_elements[f]->notify_nports(nin[f] + 1, nout[f] + 1, errh);
-}
 
-int
-Router::check_hookup_range(ErrorHandler *errh, bool check_only)
-{
-    int before_all = errh->nerrors();
-    
     // Check each hookup to ensure its port numbers are within range
     for (int c = 0; c < _hookup_from.size(); c++) {
 	Hookup &hfrom = _hookup_from[c];
@@ -447,7 +443,7 @@ Router::check_hookup_range(ErrorHandler *errh, bool check_only)
 	// remove the connection if there were errors
 	if (errh->nerrors() == before)
 	    /* do nothing */;
-	else if (!check_only) {
+	else {
 	    remove_hookup(c);
 	    c--;
 	}
@@ -457,7 +453,7 @@ Router::check_hookup_range(ErrorHandler *errh, bool check_only)
 }
 
 int
-Router::check_hookup_completeness(ErrorHandler *errh, bool check_only)
+Router::check_hookup_completeness(ErrorHandler *errh)
 {
     Bitvector used_outputs(ngports(true), false);
     Bitvector used_inputs(ngports(false), false);
@@ -483,7 +479,7 @@ Router::check_hookup_completeness(ErrorHandler *errh, bool check_only)
 	if (errh->nerrors() == before) {
 	    used_outputs[fromg] = true;
 	    used_inputs[tog] = true;
-	} else if (!check_only) {
+	} else {
 	    remove_hookup(c);
 	    c--;
 	}
@@ -897,61 +893,54 @@ Router::initialize(ErrorHandler *errh)
 	click_qsort(&_element_configure_order[0], _element_configure_order.size(), sizeof(int), configure_order_compar, configure_phase.begin());
     }
 
-    // notify elements of hookup range
-    // XXX Note: When set_ninputs/set_noutputs is fully removed, this should
-    // change to report errors and bail out if necessary.
-    notify_hookup_range(errh);
-    if (check_hookup_range(ErrorHandler::silent_handler(), true) >= 0) {
+    // remember how far the configuration process got for each element
+    Vector<int> element_stage(nelements(), Element::CLEANUP_BEFORE_CONFIGURE);
+    bool all_ok = false;
+    
+    // check connections
+    if (check_hookup_range(errh) >= 0) {
 	make_gports();
-	if (check_push_and_pull(ErrorHandler::silent_handler()) >= 0
-	    && check_hookup_completeness(ErrorHandler::silent_handler(), true) >= 0)
+	if (check_push_and_pull(errh) >= 0
+	    && check_hookup_completeness(errh) >= 0) {
 	    set_connections();
+	    all_ok = true;
+	}
     }
 
     // Configure all elements in configure order. Remember the ones that failed
-    Vector<int> element_stage(nelements(), Element::CLEANUP_CONFIGURED);
-    bool all_ok = true;
-    Vector<String> conf;
+    if (all_ok) {
+	Vector<String> conf;
 #if CLICK_DMALLOC
-    char dmalloc_buf[12];
+	char dmalloc_buf[12];
 #endif
-    for (int ord = 0; ord < _elements.size(); ord++) {
-	int i = _element_configure_order[ord];
+	for (int ord = 0; ord < _elements.size(); ord++) {
+	    int i = _element_configure_order[ord];
 #if CLICK_DMALLOC
-	sprintf(dmalloc_buf, "c%d  ", i);
-	CLICK_DMALLOC_REG(dmalloc_buf);
+	    sprintf(dmalloc_buf, "c%d  ", i);
+	    CLICK_DMALLOC_REG(dmalloc_buf);
 #endif
-	ContextErrorHandler cerrh
-	    (errh, context_message(i, "While configuring"));
-	int before = cerrh.nerrors();
-	conf.clear();
-	cp_argvec(_element_configurations[i], conf);
-	if (_elements[i]->configure(conf, &cerrh) < 0) {
-	    element_stage[i] = Element::CLEANUP_CONFIGURE_FAILED;
-	    all_ok = false;
-	    if (cerrh.nerrors() == before)
-		cerrh.error("unspecified error");
+	    ContextErrorHandler cerrh
+		(errh, context_message(i, "While configuring"));
+	    int before = cerrh.nerrors();
+	    conf.clear();
+	    cp_argvec(_element_configurations[i], conf);
+	    if (_elements[i]->configure(conf, &cerrh) < 0) {
+		element_stage[i] = Element::CLEANUP_CONFIGURE_FAILED;
+		all_ok = false;
+		if (cerrh.nerrors() == before)
+		    cerrh.error("unspecified error");
+	    } else
+		element_stage[i] = Element::CLEANUP_CONFIGURED;
 	}
     }
 
 #if CLICK_DMALLOC
     CLICK_DMALLOC_REG("iHoo");
 #endif
-  
-    int before = errh->nerrors();
-    if (!_have_connections) {
-	check_hookup_range(errh, false);
-	make_gports();
-	check_push_and_pull(errh);
-	check_hookup_completeness(errh, false);
-	set_connections();
-    }
-    _state = ROUTER_PREINITIALIZE;
-    if (before != errh->nerrors())
-	all_ok = false;
 
     // Initialize elements if OK so far.
     if (all_ok) {
+	_state = ROUTER_PREINITIALIZE;
 	initialize_handlers(true, true);
 	for (int ord = 0; all_ok && ord < _elements.size(); ord++) {
 	    int i = _element_configure_order[ord];

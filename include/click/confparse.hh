@@ -155,12 +155,12 @@ bool cp_ip_address_list(const String& str, Vector<IPAddress>* result  CP_OPT_CON
 
 #ifdef HAVE_IP6
 class IP6Address;
-bool cp_ip6_address(const String&, IP6Address*  CP_OPT_CONTEXT);
-bool cp_ip6_address(const String&, unsigned char*  CP_OPT_CONTEXT);
-bool cp_ip6_prefix(const String&, IP6Address*, int*, bool allow_bare_address  CP_OPT_CONTEXT);
-bool cp_ip6_prefix(const String&, unsigned char*, int*, bool allow_bare_address  CP_OPT_CONTEXT);
-bool cp_ip6_prefix(const String&, unsigned char*, unsigned char*, bool allow_bare_address  CP_OPT_CONTEXT);
-bool cp_ip6_prefix(const String&, IP6Address*, IP6Address*, bool allow_bare_address  CP_OPT_CONTEXT);
+bool cp_ip6_address(const String& str, IP6Address* result  CP_OPT_CONTEXT);
+bool cp_ip6_address(const String& str, unsigned char* result  CP_OPT_CONTEXT);
+bool cp_ip6_prefix(const String& str, IP6Address* result_addr, int* result_prefix, bool allow_bare_address  CP_OPT_CONTEXT);
+bool cp_ip6_prefix(const String& str, unsigned char* result_addr, int* result_prefix, bool allow_bare_address  CP_OPT_CONTEXT);
+bool cp_ip6_prefix(const String& str, unsigned char* result_addr, unsigned char* result_mask, bool allow_bare_address  CP_OPT_CONTEXT);
+bool cp_ip6_prefix(const String& str, IP6Address* result_addr, IP6Address* result_mask, bool allow_bare_address  CP_OPT_CONTEXT);
 #endif
 
 class EtherAddress;
@@ -170,17 +170,17 @@ bool cp_ethernet_address(const String& str, unsigned char* result  CP_OPT_CONTEX
 bool cp_tcpudp_port(const String& str, int proto, uint16_t* result  CP_OPT_CONTEXT);
 
 #ifndef CLICK_TOOL
-Element *cp_element(const String& str, Element* context, ErrorHandler* errh);
-Element *cp_element(const String& str, Router* router, ErrorHandler* errh);
-bool cp_handler_name(const String&, Element**, String*, Element*, ErrorHandler*);
-bool cp_handler(const String&, int flags, Element**, const Handler**, Element*, ErrorHandler*);
+Element *cp_element(const String& str, Element* context, ErrorHandler* errh=0);
+Element *cp_element(const String& str, Router* router, ErrorHandler* errh=0);
+bool cp_handler_name(const String& str, Element** result_element, String* result_hname, Element* context, ErrorHandler* errh=0);
+bool cp_handler(const String& str, int flags, Element** result_element, const Handler** result_handler, Element* context, ErrorHandler* errh=0);
 #endif
 
 #ifdef HAVE_IPSEC
-bool cp_des_cblock(const String&, unsigned char*);
+bool cp_des_cblock(const String& str, unsigned char* result);
 #endif
 
-#ifndef CLICK_LINUXMODULE
+#if CLICK_USERLEVEL
 bool cp_filename(const String& str, String* result);
 #endif
 //@}
@@ -325,9 +325,9 @@ int cp_va_parse_remove_keywords(Vector<String>& conf, int first, CP_VA_PARSE_ARG
 struct cp_value;
 struct cp_argtype;
 
-typedef void (*cp_parsefunc)(cp_value*, const String& arg,
-			     ErrorHandler*, const char* argdesc  CP_CONTEXT);
-typedef void (*cp_storefunc)(cp_value*  CP_CONTEXT);
+typedef void (*cp_parsefunc)(cp_value* value, const String& arg,
+			     ErrorHandler* errh, const char* argdesc  CP_CONTEXT);
+typedef void (*cp_storefunc)(cp_value* value  CP_CONTEXT);
 
 struct cp_argtype {
     const char* name;
@@ -373,14 +373,15 @@ struct cp_value {
 };
 
 enum { cpArgNormal = 0, cpArgStore2 = 1, cpArgExtraInt = 2, cpArgAllowNumbers = 4 };
-int cp_register_argtype(const char* name, const char* description,
-			int flags, cp_parsefunc, cp_storefunc, void* user_data = 0);
+int cp_register_argtype(const char* name, const char* description, int flags,
+			cp_parsefunc parsefunc, cp_storefunc storefunc,
+			void* user_data = 0);
 void cp_unregister_argtype(const char* name);
 
 int cp_register_stringlist_argtype(const char* name, const char* description,
 				   int flags);
 int cp_extend_stringlist_argtype(const char* name, ...);
-// Takes: const char* name, int value, ...., const char* ender = 0
+// Takes: const char* name, int value, ...., const char* ender = (const char*)0
 //@}
 
 /// @cond never

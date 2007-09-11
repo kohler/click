@@ -5,7 +5,7 @@
  * statistics: Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
- * Copyright (c) 2004-2005 Regents of the University of California
+ * Copyright (c) 2004-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software")
@@ -75,15 +75,15 @@ int Element::nelements_allocated = 0;
  */
 
 /** @class Element
-    @brief Base class for Click elements.
- 
-    Click programmers spend most of their time writing elements, which are
-    subclasses of class Element.  Element provides functionality of its own,
-    particularly the input() and output() methods and associated Element::Port
-    objects.  More important, however, is the set of functions that derived
-    classes override to define element behavior.  Good Click programmers
-    understand how the Click system uses these functions to manipulate and
-    initialize elements.  These functions fall into several categories:
+  @brief Base class for Click elements.
+
+  Click programmers spend most of their time writing elements, which are
+  subclasses of class Element.  Element provides functionality of its own,
+  particularly the input() and output() methods and associated Element::Port
+  objects.  More important, however, is the set of functions that derived
+  classes override to define element behavior.  Good Click programmers
+  understand how the Click system uses these functions to manipulate and
+  initialize elements.  These functions fall into several categories:
  
   <dl>
   <dt>Behavior specifications</dt>
@@ -107,15 +107,241 @@ int Element::nelements_allocated = 0;
   other events.  Examples: push(), pull(), simple_action(), run_task(),
   run_timer(), selected().</dd>
   </dl>
- 
+
+  <h3>Examples</h3>
+
+  Here is the simplest possible element definition.
+
+@code
+class MyNothingElement : public Element { public:
+    MyNothingElement() { }
+    ~MyNothingElement() { }
+    const char *class_name() const { return "MyNothingElement"; }
+};
+@endcode
+
+  This element has no ports and accepts no configuration arguments; it does
+  nothing.  The required class_name() function informs Click's infrastructure
+  of the element's class name.
+
+  Although this element definition is complete, Click's compilation process
+  requires that a real element come with a bit more boilerplate.  In
+  particular, both a header file and a source file are required.  Here's a
+  possible definition of our nothing element, including all boilerplate:
+
+@code
+// ================== elements/local/mynothingelement.hh ==================
+#ifndef CLICK_MYNOTHINGELEMENT_HH
+#define CLICK_MYNOTHINGELEMENT_HH
+#include <click/element.hh>
+CLICK_DECLS
+class MyNothingElement : public Element { public:
+    MyNothingElement() { }
+    ~MyNothingElement() { }
+    const char *class_name() const { return "MyNothingElement"; }
+};
+CLICK_ENDDECLS
+#endif
+
+// ================== elements/local/mynothingelement.cc ==================
+#include <click/config.h>
+#include "mynothingelement.hh"
+CLICK_DECLS
+// Non-inline element code would go here.
+CLICK_ENDDECLS
+EXPORT_ELEMENT(MyNothingElement)
+@endcode
+
+  Some things to notice:
+
+  - The element class must be defined in a header file and a source file.
+  - The header file is protected from multiple inclusion.  A common error is
+    to copy and paste another element's header file, but forget to change the
+    header protection symbol (here, CLICK_MYNOTHINGELEMENT_HH).  This will
+    cause an error when Click tries to compile a generated file called
+    elements.cc.
+  - All Click declarations are enclosed within a macro pair,
+    <tt>CLICK_DECLS</tt> and <tt>CLICK_ENDDECLS</tt>.  These are required for
+    the NS and FreeBSD kernel drivers.
+  - The element's C++ class is defined in the header file.
+  - The first thing the source file does is <tt>\#include
+    <click/config.h></tt>.  <strong>This is mandatory.</strong>
+  - The source file must contain a line like
+    <tt>EXPORT_ELEMENT(NameOfC++ClassForElement)</tt>.  Click's compilation
+    process will ignore your element unless there's a line like this.
+
+  This slightly more complex example illustrates some more of Click's
+  element infrastructure.
+
+@code
+class MyNullElement : public Element { public:
+    MyNullElement() { }
+    ~MyNullElement() { }
+    const char *class_name() const { return "MyNullElement"; }
+    const char *port_count() const { return PORTS_1_1; }
+    const char *processing() const { return PUSH; }
+    void push(int port, Packet *p) {
+        output(0).push(p);
+    }
+};
+@endcode
+
+  This element processes packets in push mode, much like the standard @e
+  PushNull element.
+
+  <ul>
+  <li>The port_count() method tells Click that this element has one input and
+    one output.  See port_count() for more.</li>
+  <li>The processing() method tells Click that this element's ports are in push
+    mode.  See processing() for more.</li>
+  <li>The element doesn't define a configure() or initialize() method, so the
+    defaults are used:  the element takes no configuration arguments, and
+    always initializes successfully.</li>
+  <li>The element has just one function called after router initialization,
+    namely push().  This function is called when another element pushes a
+    packet to this element.  The implementation here simply pushes the packet
+    to the element's first output port.</li>
+  <li><strong>Invariants:</strong> Click's initialization process checks for
+    many kinds of errors, allowing the push() method to assume several
+    invariants.  In particular, port_count() and processing() specify that
+    this element has one push input and one push output.  Click therefore
+    ensures that the element's first input is used in a connection at least
+    once; that its first output is used in a connection
+    <em>exactly</em> once; that its other inputs and outputs are not
+    used at all; and that all connections involving the element's ports are
+    push.
+
+    As a result, the push() method can assume that <tt>port == 0</tt>, that
+    <tt>output(0)</tt> exists, and that <tt>output(0).push(p)</tt> is valid.
+
+    Elements must not push null packet pointers, either, so the push() method
+    can assume that <tt>p != 0</tt>.
+
+    There is no harm in verifying these invariants with assertions, since
+    bogus element code can violate them (by passing a bad value for
+    <tt>port</tt> or <tt>p</tt>, for example), but such errors are rare in
+    practice.  The elements that we write mostly assume that the invariants
+    hold.</li>
+  </ul>
+
+  <h3>Packet Accounting</h3>
+
+  Element run-time methods, such as push(), pull(), run_task(), and
+  run_timer(), must always obey the following rules:
+
+  - Each Packet pointer is used by at most one element at a time.
+  - An element that obtains a Packet pointer must eventually free it or pass
+    it to another element.  This avoids memory leaks.
+
+  Beginning Click programmers often violate these rules.  Here are some
+  examples to make them concrete.
+
+This incorrect version of Click's @e Tee element attempts to duplicate a
+packet and send the duplicates to two different outputs.
+
+@code
+void BadTee::push(int port, Packet *p) {
+    output(0).push(p);
+    output(1).push(p);
+}
+@endcode
+
+A single packet pointer @c p has been pushed to two different outputs. This is
+always illegal; the rest of the configuration may have modified or even freed
+the packet before returning control to @e BadTee, so
+<tt>output(1).push(p)</tt> would probably touch freed memory!  This situation
+requires the Packet::clone() method, which makes a copy of a packet:
+
+@code
+void BetterTee::push(int port, Packet *p) {
+    output(0).push(p->clone());
+    output(1).push(p);
+}
+@endcode
+
+However, @e BetterTee would fail if the router ran out of memory for packet
+clones.  @c p->clone() would return null, and passing a null pointer to
+another element's push() method isn't allowed.  Here's how to fix this:
+
+@code
+void BestTee::push(int port, Packet *p) {
+    if (Packet *clone = p->clone())
+        output(0).push(clone);
+    output(1).push(p);
+}
+@endcode
+
+Here's an example of a push() method with an obvious leak:
+
+@code
+void LeakyCounter::push(int port, Packet *p) {
+    _counter++;
+}
+@endcode
+
+The method doesn't do anything with @c p, so its memory will never be
+reclaimed.  Instead, it should either free the packet or pass it on to another
+element:
+
+@code
+void BetterCounter1::push(int port, Packet *p) {
+    _counter++;
+    p->kill();            // free packet
+}
+
+void BetterCounter2::push(int port, Packet *p) {
+    _counter++;
+    output(0).push(p);    // push packet on
+}
+@endcode
+
+Leaks involving error conditions are more common in practice.  For instance,
+this push() method counts IP packets.  The programmer has defensively checked
+whether or not the input packet is IP.
+
+@code
+void LeakyIPCounter::push(int port, Packet *p) {
+    if (!p->ip_header())
+        return;
+    _counter++;
+    output(0).push(p);
+}
+@endcode
+
+Close, but no cigar: if the input packet has no IP header, the packet will
+leak.  Here are some better versions.
+
+@code
+void BetterIPCounter1::push(int port, Packet *p) {
+    // In this version, non-IP packets are dropped.  This is closest to LeakyIPCounter's intended functionality.
+    if (!p->ip_header()) {
+        p->kill();
+	return;
+    }
+    _counter++;
+    output(0).push(p);
+}
+
+void BetterIPCounter2::push(int port, Packet *p) {
+    // This programmer thinks non-IP packets are serious errors and should cause a crash.
+    assert(p->ip_header());
+    _counter++;
+    output(0).push(p);
+}
+
+void BetterIPCounter3::push(int port, Packet *p) {
+    // This programmer passes non-IP packets through without counting them.
+    if (p->ip_header())
+        _counter++;
+    output(0).push(p);
+}
+@endcode
+
   <h3>Initialization Phases</h3>
  
-  Interactions between Click elements' initialization functions can be
-  relatively complex.  This section describes which element functions are
-  called during router initialization and cleanup, and in what order.
-
-  Initialization takes place as follows.  Errors at any stage prevent later
-  stages from running; Click executes the cleanup code instead.
+  The Click infrastructure calls element initialization functions in a
+  specific order during router initialization.  Errors at any stage prevent
+  later stages from running.
  
   -# Collects element properties, specifically configure_phase(),
      port_count(), flow_code(), processing(), and can_live_reconfigure().
@@ -148,16 +374,12 @@ int Element::nelements_allocated = 0;
   Router cleanup takes place as follows.  Click:
 
   -# Removes all element handlers.
-  -# Calls each element's cleanup() function in reverse configuration order,
-     passing a constant that specifies which of that element's configuration
-     functions were called and returned successfully.
+  -# Calls each element's cleanup() function in reverse configuration order.
+     The argument to cleanup() indicates where the initialization process
+     completed for that element.  See cleanup() for the specific constant
+     names.
   -# Deletes each element.  This step might be delayed relative to cleanup()
      to allow the programmer to examine an erroneous router's state.
-  
-  @note For backwards compatibility, the current version will call configure()
-  even if ports or connections are incorrect, giving old code a chance to fix
-  the port counts with add_input() and add_output().  This behavior will be
-  removed in a future version.
 */
 
 /** @class Element::Port
@@ -194,27 +416,6 @@ Element::Element()
     nelements_allocated++;
     _ports[0] = _ports[1] = &_inline_ports[0];
     _nports[0] = _nports[1] = 0;
-}
-
-/** @brief Constructs an Element with @a ninputs input ports and @a noutputs
- * output ports (deprecated).
- *
- * @param ninputs number of input ports
- * @param noutputs number of output ports
- *
- * @deprecated This constructor is deprecated.  Elements should use the
- * port_count() function, not the constructor, to define the expected numbers
- * of ports.
- *
- * @sa port_count
- */
-Element::Element(int ninputs, int noutputs)
-    : ELEMENT_CTOR_STATS _router(0), _eindex(-1)
-{
-    nelements_allocated++;
-    _ports[0] = _ports[1] = &_inline_ports[0];
-    _nports[0] = _nports[1] = 0;
-    set_nports(ninputs, noutputs);
 }
 
 Element::~Element()
@@ -409,23 +610,6 @@ Element::set_nports(int new_ninputs, int new_noutputs)
     return 0;
 }
 
-/** @brief Returns true iff the element's ports are frozen (deprecated).
- *
- * @deprecated This function is deprecated.  Elements should not set their
- * port counts directly; instead, they should use the port_count() function to
- * give acceptable port count ranges.  In future, ports may be frozen even
- * before configure() runs.
- *
- * An element can change its input and output port counts until after its
- * configure() method returns.  After that point, the ports are frozen, and
- * any attempt to add or remove a port will fail.  The ports_frozen() function
- * returns true once an element's ports are frozen. */
-bool
-Element::ports_frozen() const
-{
-    return _router->_state > Router::ROUTER_PRECONFIGURE;
-}
-
 /** @brief Called to fetch the element's port count specifier.
  *
  * An element class overrides this virtual function to return a C string
@@ -462,10 +646,7 @@ Element::ports_frozen() const
  * const char *port_count() const     { return "1/1"; }
  * @endcode
  *
- * The default port_count() method effectively returns @c "0/0".  (In reality,
- * it returns a special value that causes Click to call notify_ninputs() and
- * notify_noutputs(), as in previous releases.  This behavior is deprecated;
- * code should be updated to use port_count().)
+ * The default port_count() method returns @c "0/0".
  *
  * The following names are available for common port count specifiers.
  *
@@ -480,7 +661,7 @@ Element::ports_frozen() const
 const char *
 Element::port_count() const
 {
-    return "";
+    return PORTS_0_0;
 }
 
 static int
@@ -507,12 +688,6 @@ int
 Element::notify_nports(int ninputs, int noutputs, ErrorHandler *errh)
 {
     const char *s_in = port_count();
-    if (!*s_in) {
-	notify_ninputs(ninputs);
-	notify_noutputs(noutputs);
-	return 0;
-    }
-
     const char *s = s_in, *ends = s + strlen(s);
     int ninlo, ninhi, noutlo, nouthi, equal = 0;
 
@@ -557,54 +732,6 @@ Element::notify_nports(int ninputs, int noutputs, ErrorHandler *errh)
     if (errh)
 	errh->error("%{element}: bad port count", this);
     return -1;
-}
-
-/** @brief Informs an element how many of its input ports were used
- * (deprecated).
- *
- * @param ninputs number of input ports
- *
- * @deprecated The notify_ninputs() function is deprecated.  Elements should
- * use port_count() instead.
- *
- * Click calls the notify_ninputs() function to inform an element how many of
- * its input ports are used in the configuration.  Thus, if input ports 0-2
- * were used, @a ninputs will be 3.  A typical notify_ninputs() implementation
- * will call set_ninputs() to set the actual number of input ports equal to
- * the number used.
- *
- * notify_ninputs() is called before configure().
- *
- * @sa notify_noutputs, set_ninputs, port_count
- */
-void
-Element::notify_ninputs(int ninputs)
-{
-    (void) ninputs;
-}
-
-/** @brief Informs an element how many of its output ports were used
- * (deprecated).
- *
- * @param noutputs number of output ports
- *
- * @deprecated The notify_noutputs() function is deprecated.  Elements should
- * use port_count() instead.
- *
- * Click calls the notify_noutputs() function to inform an element how many of
- * its output ports are used in the configuration.  Thus, if output ports 0-2
- * were used, @a noutputs will be 3.  A typical notify_noutputs()
- * implementation will call set_noutputs() to set the actual number of output
- * ports equal to the number used.
- *
- * notify_noutputs() is called after notify_ninputs() and before configure().
- *
- * @sa notify_ninputs, set_noutputs, port_count
- */
-void
-Element::notify_noutputs(int noutputs)
-{
-    (void) noutputs;
 }
 
 void
@@ -1317,8 +1444,9 @@ Element::hotswap_element() const
  * in increasing order:
  *
  * <dl>
- * <dt><tt>CLEANUP_NO_ROUTER</tt></dt>
- * <dd>The element was never attached to a router.</dd>
+ * <dt><tt>CLEANUP_BEFORE_CONFIGURE</tt></dt>
+ * <dd>The element's configure() method was not called.  This happens when
+ *   some element's port counts or push/pull processing was wrong.</dd>
  *
  * <dt><tt>CLEANUP_CONFIGURE_FAILED</tt></dt>
  * <dd>The element's configure() method was called, but it failed.</dd>

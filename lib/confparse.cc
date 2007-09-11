@@ -124,8 +124,8 @@ int cp_errno;
 /// <li><strong>Parse flags</strong> (type: int).  Zero or more of
 /// #cpkP, #cpkM, and #cpkC.</li>
 /// <li>If the parse flags contain #cpkC, then a <strong>confirmation
-/// flag</strong> comes next (type: bool *).  This flag is set to false if the
-/// argument wasn't given and true if it was.</li>
+/// flag</strong> comes next (type: bool *).  This flag is set to true if an
+/// argument successfully matched the item and false if not.</li>
 /// <li><strong>Argument type</strong> (type: @ref CpVaParseCmd).  Defines the type
 /// of argument read from the configuration string.  Example: ::cpString.</li>
 /// <li>Optional <strong>parse parameters</strong> (determined by the
@@ -167,10 +167,9 @@ int cp_errno;
 ///
 /// <h3>Direct Parsing Functions</h3>
 ///
-/// The cp_va_kparse() function is a convenient interface for many other
-/// parsing functions, which have names like cp_bool(), cp_string(),
-/// cp_integer(), cp_ip_address(), and so forth.  These functions all have the
-/// same basic interface:
+/// You may also call parsing functions directly if cp_va_kparse() doesn't
+/// match your needs.  These functions have names like cp_bool(), cp_string(),
+/// cp_integer(), cp_ip_address(), and so forth, and share a basic interface:
 ///
 /// @li The first argument, const String &@a str, contains the string to be
 /// parsed.
@@ -188,7 +187,7 @@ int cp_errno;
 /// <h3>Argument Manipulation</h3>
 ///
 /// Finally, functions like cp_uncomment(), cp_unquote(), cp_quote(),
-/// cp_argvec(), and cp_is_space() manipulate arguments more generally.
+/// cp_argvec(), and cp_is_space() manipulate arguments as strings.
 /// cp_uncomment() removes comments and simplifies white space; cp_unquote()
 /// removes quotation marks and expands backslash escapes; cp_argvec() splits
 /// a configuration string at commas; and so forth.
@@ -2129,12 +2128,12 @@ cp_ip_prefix(const String &str,
 /** @brief Parse an IP address from @a str.
  * @param  str  string
  * @param[out]  result  stores parsed result
- * @param  context  optional context for AddressInfo
+ * @param  context  optional context for @e AddressInfo
  * @return  True if @a str parsed correctly, false otherwise.
  *
  * Parses an IP address from @a str.  The input format is the usual
  * dotted-quad format, as in <tt>"18.26.4.9"</tt>, where each number is a
- * decimal number from 0-255.  The AddressInfo element can be used to register
+ * decimal number from 0-255.  The @e AddressInfo element can be used to register
  * shorthand names for other IP addresses.  If the string fully parses, then
  * the resulting value is stored in *@a result and the function returns true.
  * Otherwise, *@a result remains unchanged and the function returns false.
@@ -2154,7 +2153,7 @@ cp_ip_address(const String &str, IPAddress *result  CP_CONTEXT)
  * @param[out]  result_mask  stores parsed address mask result
  * @param  allow_bare_address  optional: if true, allow raw IP addresses;
  * defaults to false
- * @param  context  optional context for AddressInfo
+ * @param  context  optional context for @e AddressInfo
  * @return  True if @a str parsed correctly, false otherwise.
  *
  * Parses an IP prefix description from @a str.  The input format is the usual
@@ -2168,7 +2167,7 @@ cp_ip_address(const String &str, IPAddress *result  CP_CONTEXT)
  * address.  However, <tt>"18.26/24"</tt> will not parse.
  * <li><tt>"18.26.4.0/255.255.255.0"</tt>: the mask may be specified directly.
  * This is the only way to define a non-prefix mask.</li>
- * <li>Additionally, AddressInfo names may be used to specify the address part
+ * <li>Additionally, @e AddressInfo names may be used to specify the address part
  * or the whole prefix: given AddressInfo(a 18.26.4.9), <tt>"a/24"</tt> is
  * parseable as an IP prefix.</li>
  * </ul>
@@ -2216,7 +2215,7 @@ cp_ip_prefix(const String &str, IPAddress *address, IPAddress *mask
 /** @brief Parse a space-separated list of IP addresses from @a str.
  * @param  str  string
  * @param[out]  result  stores parsed result
- * @param  context  optional context for AddressInfo
+ * @param  context  optional context for @e AddressInfo
  * @return  True if @a str parsed correctly, false otherwise.
  *
  * Parses a space-separated list of IP addresses from @a str.  Each individual
@@ -2328,11 +2327,36 @@ cp_ip6_address(const String &str, unsigned char *result
   }
 }
 
+/** @brief Parse an IPv6 address from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @param  context  optional context for @e AddressInfo
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an IPv6 address from @a str.  The input format may be any of the
+ * forms allowed by <a href="ftp://ftp.ietf.org/rfc/rfc2373.txt">RFC2373</a>:
+ *
+ * - A nonabbreviated address consists of eight colon-separated 16-bit
+ *   hexadecimal numbers, as in <tt>"1080:0:0:0:8:800:200C:417a"</tt>.
+ * - Groups of zeros may be abbrivated with two colons, as in the equivalent
+ *   <tt>"1080::8:800:200C:417A"</tt>.
+ * - An address may end with an embedded IPv4 address, as in
+ *   <tt>"::13.1.68.3"</tt>, <tt>"::FFFF:129.144.52.38"</tt>, and (assuming
+ *   the appropriate @e AddressInfo information) <tt>"0::ip4_addr"</tt>.
+ *
+ * The @e AddressInfo element can be used to register shorthand names for
+ * other IPv6 addresses.  If the string fully parses, then the resulting value
+ * is stored in *@a result and the function returns true.  Otherwise, *@a
+ * result remains unchanged and the function returns false.
+ *
+ * An overloaded version of this function is available for unsigned char[16]
+ * result type.
+ */
 bool
-cp_ip6_address(const String &str, IP6Address *address
+cp_ip6_address(const String &str, IP6Address *result
 	       CP_CONTEXT)
 {
-  return cp_ip6_address(str, address->data()  CP_PASS_CONTEXT);
+  return cp_ip6_address(str, result->data()  CP_PASS_CONTEXT);
 }
 
 
@@ -2418,11 +2442,44 @@ cp_ip6_prefix(const String &str, unsigned char *address, unsigned char *mask,
     return false;
 }
 
+/** @brief Parse an IPv6 address or prefix from @a str.
+ * @param  str  string
+ * @param[out]  result_addr  stores parsed address result
+ * @param[out]  result_prefix  stores parsed prefix length result
+ * @param  allow_bare_address  if true, allow raw IPv6 addresses
+ * @param  context  optional context for @e AddressInfo
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an IPv6 prefix description from @a str.  The input format is the
+ * usual CIDR format: an IPv6 address, followed by <tt>"/prefixlen"</tt>,
+ * where <tt>prefixlen</tt> is a number between 0 and 128.  As an extension,
+ * the format <tt>"addr/mask"</tt> is supported, where both @c addr and @c
+ * mask are valid IPv6 addresses.  However, unlike cp_ip_prefix(), @c mask
+ * must correspond to a valid prefix length -- some number of one bits,
+ * followed by all zero bits.  For example, "::/::1" will not parse.  Finally,
+ * @e AddressInfo names may be used to specify the address part or the whole
+ * prefix.
+ *
+ * The address part need not fit entirely within the prefix.
+ * <tt>"::1/32"</tt> will parse into address ::1 and prefix length 32.
+ *
+ * If @a allow_bare_address is true, then a raw IPv6 address is also
+ * acceptable input.  The resulting prefix will equal 128.
+ *
+ * If the string fully parses, then the resulting address is stored in *@a
+ * result_addr, the resulting prefix length is stored in *@a result_prefix,
+ * and the function returns true.  Otherwise, the results remain unchanged and
+ * the function returns false.
+ *
+ * Overloaded versions of this function are available for unsigned char[16]
+ * result address type, and for IP6Address or unsigned char[16] result masks
+ * (instead of result prefix lengths).
+ */
 bool
-cp_ip6_prefix(const String &str, IP6Address *address, int *prefix,
+cp_ip6_prefix(const String &str, IP6Address *result_addr, int *result_prefix,
 	      bool allow_bare_address  CP_CONTEXT)
 {
-  return cp_ip6_prefix(str, address->data(), prefix, allow_bare_address  CP_PASS_CONTEXT);
+    return cp_ip6_prefix(str, result_addr->data(), result_prefix, allow_bare_address  CP_PASS_CONTEXT);
 }
 
 bool
@@ -2472,28 +2529,68 @@ cp_ethernet_address(const String &str, unsigned char *result
 #endif
 }
 
+/** @brief Parse an Ethernet address from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @param  context  optional context for AddressInfo
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an Ethernet address from @a str.  The input format is the usual
+ * format, as in <tt>"00:15:58:2D:FB:8F"</tt>: six colon-separated 8-bit
+ * hexadecimal numbers.  The AddressInfo element can be used to register
+ * shorthand names for other Ethernet addresses.  If the string fully parses,
+ * then the resulting value is stored in *@a result and the function returns
+ * true.  Otherwise, *@a result remains unchanged and the function returns
+ * false.
+ *
+ * An overloaded version of this function is available for unsigned char[6]
+ * result type.
+ */
 bool
-cp_ethernet_address(const String &str, EtherAddress *address
-		    CP_CONTEXT)
+cp_ethernet_address(const String &str, EtherAddress *result  CP_CONTEXT)
 {
-  return cp_ethernet_address(str, address->data()
-			     CP_PASS_CONTEXT);
+  return cp_ethernet_address(str, result->data()  CP_PASS_CONTEXT);
 }
 
 
+/** @brief Parse a TCP, UDP, etc. port number from @a str.
+ * @param  str  string
+ * @param  proto  protocol number, e.g. IP_PROTO_TCP == 6
+ * @param[out]  result  stores parsed result
+ * @param  context  optional context for IPNameInfo
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a port number for IP protocol @a proto from @a str.  The input may
+ * be a 16-bit number parsable by cp_integer(), as in <tt>"80"</tt>.  It may
+ * also be a port name, such as <tt>"www"</tt>.  Several port names are
+ * defined by default, including @c auth, @c chargen, @c echo, @c finger, @c
+ * ftp, @c https, @c ntp, and @c www.  The @e PortInfo element can be used to
+ * define additional names, and at user level, cp_tcpudp_port() will consult
+ * the /etc/services database using getservbyname() as a last resort.  If the
+ * string fully parses, then the resulting value is stored in *@a result and
+ * the function returns true.  Otherwise, *@a result remains unchanged and the
+ * function returns false.
+ */
 bool
-cp_tcpudp_port(const String &str, int ip_p, uint16_t *result
+cp_tcpudp_port(const String &str, int proto, uint16_t *result
 	       CP_CONTEXT)
 {
     uint32_t value;
-    assert(ip_p > 0 && ip_p < 256);
+    assert(proto > 0 && proto < 256);
 #ifndef CLICK_TOOL
-    if (!NameInfo::query_int(NameInfo::T_IP_PORT + ip_p, context, str, &value))
+    if (!NameInfo::query_int(NameInfo::T_IP_PORT + proto, context, str, &value))
 	return false;
 #else
     if (!cp_integer(str, &value)) {
 # if HAVE_NETDB_H
-	if (struct servent *s = getservbyname(str.c_str(), ip_p == IP_PROTO_TCP ? "tcp" : "udp")) {
+	const char *proto_name;
+	if (proto == IP_PROTO_TCP)
+	    proto_name = "tcp";
+	else if (proto == IP_PROTO_UDP)
+	    proto_name = "udp";
+	else
+	    return false;
+	if (struct servent *s = getservbyname(str.c_str(), proto_name)) {
 	    *result = ntohs(s->s_port);
 	    return true;
 	}
@@ -2512,11 +2609,30 @@ cp_tcpudp_port(const String &str, int ip_p, uint16_t *result
 
 
 #ifndef CLICK_TOOL
+/** @brief Parse an element reference from @a str.
+ * @param  str  string
+ * @param  context  element context
+ * @param  errh  optional error handler
+ * @return  Element pointer, or null if no such element is found.
+ *
+ * Parses an element reference from @a str.  The input must be a single
+ * (possibly quoted) string acceptable to cp_string().  The unquoted value
+ * should be an element name.  The name may be relative to a compound element;
+ * for instance, if @a context is an element named <tt>a/b/c/xxx</tt>, and @a
+ * str was <tt>"yyy"</tt>, then cp_element() would search for elements named
+ * <tt>a/b/c/yyy</tt>, <tt>a/b/yyy</tt>, <tt>a/yyy</tt>, and finally
+ * <tt>yyy</tt>, returning the first one found.  (See Router::find().)  If no
+ * element is found, reports an error to @a errh and returns null.  If @a errh
+ * is null, no error is reported.
+ *
+ * @sa This function differs from Router::find() in that it unquotes its
+ * argument.
+ */
 Element *
-cp_element(const String &text_in, Element *context, ErrorHandler *errh)
+cp_element(const String &str, Element *context, ErrorHandler *errh)
 {
   String name;
-  if (!cp_string(text_in, &name)) {
+  if (!cp_string(str, &name)) {
     if (errh)
       errh->error("bad name format");
     return 0;
@@ -2524,11 +2640,26 @@ cp_element(const String &text_in, Element *context, ErrorHandler *errh)
     return context->router()->find(name, context, errh);
 }
 
+/** @brief Parse an element reference from @a str.
+ * @param  str  string
+ * @param  router  router
+ * @param  errh  optional error handler
+ * @return  Element pointer, or null if no such element is found.
+ *
+ * Parses an element reference from @a str.  The input must be a single
+ * (possibly quoted) string acceptable to cp_string().  The unquoted value
+ * should be a fully qualified element name corresponding to an element in @a
+ * router.  If no element is found, reports an error to @a errh and returns
+ * null.  If @a errh is null, no error is reported.
+ *
+ * @sa This function differs from Router::find() in that it unquotes its
+ * argument.
+ */
 Element *
-cp_element(const String &text_in, Router *router, ErrorHandler *errh)
+cp_element(const String &str, Router *router, ErrorHandler *errh)
 {
   String name;
-  if (!cp_string(text_in, &name)) {
+  if (!cp_string(str, &name)) {
     if (errh)
       errh->error("bad name format");
     return 0;
@@ -2536,6 +2667,33 @@ cp_element(const String &text_in, Router *router, ErrorHandler *errh)
     return router->find(name, errh);
 }
 
+/** @brief Parse a handler name from @a str.
+ * @param  str  string
+ * @param[out]  result_element  stores parsed element result
+ * @param[out]  result_hname  stores parsed handler name result
+ * @param  context  element context
+ * @param  errh  optional error handler
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a handler name from @a str.  Three formats are supported:
+ *
+ * - <tt>"elementname.handlername"</tt>, for a handler on a named element.
+ *   The named element must exist; it is looked up as by cp_element() in the
+ *   compound element context specified by @a context.
+ * - <tt>".handlername"</tt>, for a global handler on @a context's router.
+ * - <tt>"handlername"</tt>, for a global handler on @a context's router.
+ *
+ * The handler name must contain at least one character.  Although the named
+ * element must exist, this function does not check whether the named handler
+ * exists.  The input string may contain quotes; it is unquoted by
+ * cp_string().
+ *
+ * If the string fully parses, then the resulting element is stored in *@a
+ * result_element, the resulting handler name is stored in *@a result_hname,
+ * and the function returns true.  For global handlers, *@a result_element is
+ * set to Router::root_element().  If the string does not fully parse, the
+ * results remain unchanged and the function returns false.
+ */
 bool
 cp_handler_name(const String& str,
 		Element** result_element, String* result_hname,
@@ -2569,9 +2727,28 @@ cp_handler_name(const String& str,
   return true;
 }
 
+/** @brief Parse a handler reference from @a str.
+ * @param  str  string
+ * @param  flags  zero or more of Handler::OP_READ, Handler::OP_WRITE, and HandlerCall::PREINITIALIZE
+ * @param[out]  result_element  stores parsed element result
+ * @param[out]  result_handler  stores parsed handler result
+ * @param  context  element context
+ * @param  errh  optional error handler
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a handler reference from @a str.  The input format is as in
+ * cp_handler_name(), but the named handler must actually exist.  The @a flags
+ * argument lets the caller check for read and/or write handlers; its values
+ * are as for HandlerCall::initialize().  If the string fully parses, then the
+ * resulting element is stored in *@a result_element, the resulting handler is
+ * stored in *@a result_handler, and the function returns true.  For global
+ * handlers, *@a result_element is set to Router::root_element().  If the
+ * string does not fully parse, the results remain unchanged and the function
+ * returns false.
+ */
 bool
 cp_handler(const String &str, int flags,
-	   Element** result_element, const Handler** result_h,
+	   Element** result_element, const Handler** result_handler,
 	   Element* context, ErrorHandler* errh)
 {
   HandlerCall hc(str);
@@ -2579,7 +2756,7 @@ cp_handler(const String &str, int flags,
     return false;
   else {
     *result_element = hc.element();
-    *result_h = hc.handler();
+    *result_handler = hc.handler();
     return true;
   }
 }
@@ -2615,6 +2792,26 @@ cp_des_cblock(const String &str, unsigned char *result)
 #endif
 
 #ifdef CLICK_USERLEVEL
+
+/** @brief Parse a filename string from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a filename from @a str.  This behaves like cp_string() plus
+ * shell-style tilde expansion.  Thus, <tt>~/</tt> at the beginning of a
+ * string is replaced with the value of the <tt>HOME</tt> environment variable
+ * (if it exists), and <tt>~username/</tt> is replaced with the given user's
+ * home directory as returned by getpwnam() (if the given user exists).
+ * Additionally, double slashes are replaced by single slashes.  Thus,
+ * <tt>"~//myfile.txt~"</tt> might parse to
+ * <tt>"/home/kohler/myfile.txt~"</tt>.  Empty strings are not accepted.  If
+ * the string fully parses, then the result is stored in *@a result and the
+ * function returns true.  Otherwise, *@a result remains unchanged and the
+ * function returns false.
+ *
+ * This function is only available at user level.
+ */
 bool
 cp_filename(const String &str, String *result)
 {
@@ -4032,6 +4229,17 @@ cp_va_parse_remove_keywords(Vector<String> &argv, int first,
  * @param  errh  error handler
  * @param  ...  zero or more parameter items, terminated by ::cpEnd
  * @return  The number of parameters successfully assigned, or negative on error.
+ *
+ * The arguments in @a conf are parsed according to the items.  Each supplied
+ * argument must match one of the items, and at least one argument must match
+ * each mandatory item.  Any errors are reported to @a errh.  If no error
+ * occurs, then the item results are assigned appropriately, and the function
+ * returns the number of assigned items, which might be 0.  If any error
+ * occurs, then the item results are left unchanged and the function returns a
+ * negative error code.
+ *
+ * The @a context argument is passed to any parsing functions that require
+ * element context.  See above for more information on cp_va_kparse items.
  */
 int
 cp_va_kparse(const Vector<String> &conf,
@@ -4052,8 +4260,19 @@ cp_va_kparse(const Vector<String> &conf,
   return retval;
 }
 
+/** @brief Parse a comma-separated argument string.
+ * @param  str  comma-separated argument string
+ * @param  context  element context
+ * @param  errh  error handler
+ * @param  ...  zero or more parameter items, terminated by ::cpEnd
+ * @return  The number of parameters successfully assigned, or negative on error.
+ *
+ * The argument string is separated into an argument list by cp_argvec(),
+ * after which the function behaves like cp_va_kparse(const Vector<String>&,
+ * Element *, ErrorHandler *, ...).
+ */
 int
-cp_va_kparse(const String &confstr,
+cp_va_kparse(const String &str,
 #ifndef CLICK_TOOL
 	     Element *context,
 #endif
@@ -4062,7 +4281,7 @@ cp_va_kparse(const String &confstr,
   va_list val;
   va_start(val, errh);
   Vector<String> argv;
-  cp_argvec(confstr, argv);
+  cp_argvec(str, argv);
   CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
   int retval = cpva.develop_kvalues(val, errh);
   if (retval >= 0)
@@ -4073,6 +4292,17 @@ cp_va_kparse(const String &confstr,
   return retval;
 }
 
+/** @brief Parse a space-separated argument string.
+ * @param  str  space-separated argument string
+ * @param  context  element context
+ * @param  errh  error handler
+ * @param  ...  zero or more parameter items, terminated by ::cpEnd
+ * @return  The number of parameters successfully assigned, or negative on error.
+ *
+ * The argument string is separated into an argument list by cp_spacevec(),
+ * after which the function behaves like cp_va_kparse(const Vector<String>&,
+ * Element *, ErrorHandler *, ...).
+ */
 int
 cp_va_space_kparse(const String &str,
 #ifndef CLICK_TOOL
@@ -4094,6 +4324,17 @@ cp_va_space_kparse(const String &str,
   return retval;
 }
 
+/** @brief Parse a single argument.
+ * @param  str  argument
+ * @param  context  element context
+ * @param  errh  error handler
+ * @param  ...  zero or more parameter items, terminated by ::cpEnd
+ * @return  The number of parameters successfully assigned (0 or 1), or negative on error.
+ *
+ * An argument list consisting of the single argument @a str is formed,
+ * after which this function behaves like cp_va_kparse(const Vector<String>&,
+ * Element *, ErrorHandler *, ...).
+ */
 int
 cp_va_kparse_keyword(const String &str,
 #ifndef CLICK_TOOL
@@ -4115,6 +4356,25 @@ cp_va_kparse_keyword(const String &str,
   return retval;
 }
 
+/** @brief Parse and remove matching arguments from @a conf.
+ * @param  conf  argument list
+ * @param  context  element context
+ * @param  errh  error handler
+ * @param  ...  zero or more parameter items, terminated by ::cpEnd
+ * @return  The number of parameters successfully assigned (0 or 1), or negative on error.
+ *
+ * The arguments in @a conf are parsed according to the items.  At least one
+ * argument must correspond to each mandatory item, but extra arguments are
+ * not errors.  If no error occurs, then the item results are assigned
+ * appropriately; any arguments that successfully matched are removed from @a
+ * conf; and the function returns the number of assigned items, which might be
+ * 0.  If any error occurs, then @a conf and the item results are left
+ * unchanged and the function returns a negative error code.  Errors are
+ * reported to @a errh.
+ *
+ * The @a context argument is passed to any parsing functions that require
+ * element context.
+ */
 int
 cp_va_kparse_remove_keywords(Vector<String> &conf,
 #ifndef CLICK_TOOL
@@ -4392,10 +4652,18 @@ cp_unparse_bandwidth(uint32_t bw)
 
 // initialization and cleanup
 
+/** @brief Initialize the cp_va_kparse implementation.
+ *
+ * This function must be called before any cp_va function is called.  It is
+ * safe to call it multiple times.
+ *
+ * @note Elements don't need to worry about cp_va_static_initialize(); Click
+ * drivers have already called it for you. */
 void
 cp_va_static_initialize()
 {
-    assert(!cp_values);
+    if (cp_values)
+	return;
   
     cp_register_argtype(cpOptional, "<optional arguments marker>", 0, default_parsefunc, default_storefunc, cpiOptional);
     cp_register_argtype(cpKeywords, "<keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiKeywords);
@@ -4478,6 +4746,11 @@ cp_va_static_initialize()
 #endif
 }
 
+/** @brief Clean up the cp_va_kparse implementation.
+ *
+ * Call this function to release any memory allocated by the cp_va
+ * implementation.  As a side effect, this function unregisters all argument
+ * types registered by cp_register_argtype(). */
 void
 cp_va_static_cleanup()
 {

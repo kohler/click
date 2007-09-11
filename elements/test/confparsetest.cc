@@ -71,6 +71,38 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(cp_seconds_as("60m", 0, &u32) == true && u32 == 3600);
     CHECK(cp_seconds_as("1 hr", 0, &u32) == true && u32 == 3600);
 
+#if CLICK_IP6
+    {
+	IP6Address a;
+	CHECK(cp_ip6_address("1080:0:0:0:8:800:200C:417a", &a, this) == true
+	      && a.data32()[0] == ntohl(0x10800000)
+	      && a.data32()[1] == ntohl(0x00000000)
+	      && a.data32()[2] == ntohl(0x00080800)
+	      && a.data32()[3] == ntohl(0x200C417a));
+	CHECK(cp_ip6_address("1080::8:800:200C:417a", &a, this) == true
+	      && a.data32()[0] == ntohl(0x10800000)
+	      && a.data32()[1] == ntohl(0x00000000)
+	      && a.data32()[2] == ntohl(0x00080800)
+	      && a.data32()[3] == ntohl(0x200C417a));
+	CHECK(cp_ip6_address("::13.1.68.3", &a, this) == true
+	      && a.data32()[0] == 0x00000000
+	      && a.data32()[1] == 0x00000000
+	      && a.data32()[2] == 0x00000000
+	      && a.data32()[3] == ntohl(0x0D014403));
+	CHECK(cp_ip6_address("::ffff:129.144.52.38", &a, this) == true
+	      && a.data32()[0] == 0x00000000
+	      && a.data32()[1] == 0x00000000
+	      && a.data32()[2] == ntohl(0x0000FFFF)
+	      && a.data32()[3] == ntohl(0x81903426));
+	IPAddress a4;
+	if (cp_ip_address("ip4_addr", &a4, this) == true)
+	    CHECK(cp_ip6_address("0::ip4_addr", &a, this) == true
+		  && a.data32()[0] == 0x00000000 && a.data32()[1] == 0x00000000
+		  && a.data32()[2] == 0x00000000
+		  && a.data32()[3] == a4.addr());
+    }
+#endif
+
     errh->message("All tests pass!");
     return 0;
 }

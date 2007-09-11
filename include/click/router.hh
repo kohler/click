@@ -235,9 +235,8 @@ class Router { public:
     void remove_hookup(int);
     void hookup_error(const Hookup&, bool, const char*, ErrorHandler*);
     int check_hookup_elements(ErrorHandler*);
-    void notify_hookup_range(ErrorHandler*);
-    int check_hookup_range(ErrorHandler*, bool check_only);
-    int check_hookup_completeness(ErrorHandler*, bool check_only);
+    int check_hookup_range(ErrorHandler*);
+    int check_hookup_completeness(ErrorHandler*);
   
     int processing_error(const Hookup&, const Hookup&, bool, int, ErrorHandler*);
     int check_push_and_pull(ErrorHandler*);
@@ -271,7 +270,6 @@ class Router { public:
     /** @cond never */
     friend class Master;
     friend class Task;
-    friend bool Element::ports_frozen() const;
     friend int Element::set_nports(int, int);
     /** @endcond never */
   
