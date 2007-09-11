@@ -39,7 +39,7 @@ ClickIno::cleanup()
 {
     for (int i = 0; i < _cap; i++)
 	_x[i].name.~String();
-    delete[] ((uint8_t *)_x);
+    CLICK_LFREE(_x, sizeof(Entry) * _cap);
     initialize();
 }
 
@@ -52,13 +52,13 @@ ClickIno::grow(int min_size)
     while (new_cap < min_size)
 	new_cap *= 2;
     // cheat on memory: bad me!
-    Entry *nse = (Entry *)(new uint8_t[sizeof(Entry) * new_cap]);
+    Entry *nse = (Entry *)CLICK_LALLOC(sizeof(Entry) * new_cap);
     if (!nse)
 	return -ENOMEM;
     memcpy(nse, _x, sizeof(Entry) * _cap);
     for (int i = _cap; i < new_cap; i++)
 	new((void *)&nse[i]) String();
-    delete[] ((uint8_t *)_x);
+    CLICK_LFREE(_x, sizeof(Entry) * _cap);
     _x = nse;
     _cap = new_cap;
     return 0;
