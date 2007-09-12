@@ -53,9 +53,8 @@ class Master { public:
     void kill_router(Router*);
     
 #if CLICK_NS
-    void initialize_ns(simclick_sim, simclick_click);
-    simclick_sim siminst() const		{ return _siminst; }
-    simclick_click clickinst() const		{ return _clickinst; }
+    void initialize_ns(simclick_node_t *simnode);
+    simclick_node_t *simnode() const		{ return _simnode; }
 #endif
     
 #if CLICK_DEBUG_MASTER
@@ -158,8 +157,7 @@ class Master { public:
 #endif
 
 #if CLICK_NS
-    simclick_sim _siminst;
-    simclick_click _clickinst;
+    simclick_node_t *_simnode;
 #endif
     
     Master(const Master&);

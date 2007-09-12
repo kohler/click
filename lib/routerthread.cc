@@ -498,7 +498,7 @@ RouterThread::driver()
 	    // run when it's due to go off.
 	    if (Timestamp next_expiry = _master->next_timer_expiry()) {
 		struct timeval nexttime = next_expiry.timeval();
-		simclick_sim_schedule(_master->_siminst, _master->_clickinst, &nexttime);
+		simclick_sim_command(_master->simnode(), SIMCLICK_SCHEDULE, &nexttime);
 	    }
 #endif
 	}

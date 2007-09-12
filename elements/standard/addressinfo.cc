@@ -292,10 +292,9 @@ AddressInfo::query_ip(String s, unsigned char *store, Element *e)
 # endif
 #elif CLICK_NS
     if (e) {
-	simclick_sim mysiminst = e->router()->master()->siminst();
 	char tmp[255];
-	simclick_sim_ipaddr_from_name(mysiminst, s.c_str(), tmp, 255);
-	if (tmp[0] && cp_ip_address(tmp, store))
+	int r = simclick_sim_command(e->router()->master()->simnode(), SIMCLICK_IPADDR_FROM_NAME, s.c_str(), tmp, 255);
+	if (r >= 0 && tmp[0] && cp_ip_address(tmp, store))
 	    return true;
     }
 #elif CLICK_QUERY_NETDEVICE
@@ -393,10 +392,9 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
 	dev_put(dev);
 #elif CLICK_NS
     if (e) {
-	simclick_sim mysiminst = e->router()->master()->siminst();
 	char tmp[255];
-	simclick_sim_macaddr_from_name(mysiminst, s.c_str(), tmp, 255);
-	if (tmp[0] && cp_ethernet_address(tmp, store))
+	int r = simclick_sim_command(e->router()->master()->simnode(), SIMCLICK_MACADDR_FROM_NAME, s.c_str(), tmp, 255);
+	if (r >= 0 && tmp[0] && cp_ethernet_address(tmp, store))
 	    return true;
     }
 #elif CLICK_QUERY_NETDEVICE

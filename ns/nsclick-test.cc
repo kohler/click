@@ -12,13 +12,15 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
-#include <stl.h>
-#include <hash_map.h>
+#include <map>
+#include <vector>
+#include <stdarg.h>
 #include "CUT_BinHeap.h"
 #include "click/simclick.h"
 
 const int TESTSIM_IFID_KERNELTAP=0;
 const int TESTSIM_IFID_FIRSTIF=1;
+using namespace std;
 
 class Simulator {
 public:
@@ -37,6 +39,10 @@ public:
     bool operator<(const struct timeval& tv) const { 
       return ((tv_sec < tv.tv_sec) ||
 	      ((tv_sec == tv.tv_sec) && (tv_usec < tv.tv_usec)));
+    }
+    bool operator<=(const struct timeval& tv) const { 
+      return ((tv_sec < tv.tv_sec) ||
+	      ((tv_sec == tv.tv_sec) && (tv_usec <= tv.tv_usec)));
     }
     bool operator==(const struct timeval& tv) const {
       return ((tv_sec == tv.tv_sec) && (tv_usec == tv.tv_usec));
@@ -92,12 +98,12 @@ public:
   virtual ~TestClickSimulator();
 
   int add_node(char* clickfile);
-  void handle_packet_from_click(simclick_click node,int ifid,int ptype,
+  void handle_packet_from_click(simclick_node_t *node,int ifid,int ptype,
 				const unsigned char* data,int len);
-  void handle_schedule_from_click(simclick_click node,struct timeval* when);
-  void add_lan_entry(simclick_click node,int ifid,int lanid);
+  void handle_schedule_from_click(simclick_node_t *node,const struct timeval* when);
+  void add_lan_entry(simclick_node_t *node,int ifid,int lanid);
   void add_lan_entry(int nodenum,int ifid,int lanid);
-  simclick_click get_node(int nodenum);
+  simclick_node_t *get_node(int nodenum);
 
   class PacketEvent : public Simulator::SimEvent {
   public:
@@ -105,8 +111,7 @@ public:
     virtual ~PacketEvent();
     virtual int go(SimTime* when);
 
-    simclick_click clickinst_;
-    simclick_sim siminst_;
+    simclick_node_t *simnode_;
     int ifid_;
     unsigned char* data_;
     int len_;
@@ -119,34 +124,30 @@ public:
     virtual ~ScheduledEvent();
     virtual int go(SimTime* when);
 
-    simclick_click clickinst_;
-    simclick_sim siminst_;
+    simclick_node_t *simnode_;
   };
 protected:
-  simclick_simstate clickstate_;
   struct netif {
-    netif(simclick_click n,int i) { node=n,ifid=i; }
-    simclick_click node;
+    netif(simclick_node_t *n,int i) { node=n,ifid=i; }
+    simclick_node_t *node;
     int ifid;
     bool operator==(const netif& rhs) const {
       return((node == rhs.node) && (ifid == rhs.ifid));
     }
-  };
-  struct hash<netif> {
-    size_t operator()(const netif& x) const {
-      // Probably not much of a hash function, but it
-      // should do for now.
-      return ((int)x.node + x.ifid);
-    }
+      bool operator<(const netif& rhs) const {
+	  return (node < rhs.node) || (node == rhs.node && ifid < rhs.ifid);
+      }
   };
 
-  vector<simclick_click> clickrouters_;
-  hash_map<netif,int> netiftolanid_;
-  hash_map< int,vector<netif> > lanidtonetif_;
+    struct clicknode : public simclick_node_t {
+	TestClickSimulator *sim;
+    };
+    vector<clicknode *> clickrouters_;
+    map<netif,int> netiftolanid_;
+    map< int,vector<netif> > lanidtonetif_;
 };
 
 TestClickSimulator::TestClickSimulator() {
-  memset(&clickstate_,0,sizeof(simclick_simstate));
 }
 
 TestClickSimulator::~TestClickSimulator() {
@@ -155,18 +156,19 @@ TestClickSimulator::~TestClickSimulator() {
 int
 TestClickSimulator::add_node(char* clickfile) {
   int result = -1;
-  simclick_click newnode = simclick_click_create((simclick_sim)this,
-						 clickfile,&clickstate_);
-  if (newnode) {
-    clickrouters_.push_back(newnode);
-    result = clickrouters_.size();
-  }
-  
+  clicknode *c = new clicknode;
+  c->sim = this;
+  timerclear(&c->curtime);
+  if (simclick_click_create(c, clickfile) >= 0) {
+      clickrouters_.push_back(c);
+      result = clickrouters_.size();
+  } else
+      delete c;
   return result;
 }
 
 void
-TestClickSimulator::handle_packet_from_click(simclick_click node,int ifid,
+TestClickSimulator::handle_packet_from_click(simclick_node_t *node,int ifid,
 					     int ptype,
 					     const unsigned char* data,int len)
 {
@@ -184,30 +186,28 @@ TestClickSimulator::handle_packet_from_click(simclick_click node,int ifid,
     // Assume overhead of 0.1ms (pulled out of air)
     newtime.tv_usec += 100;
     PacketEvent* pkt = new PacketEvent();
-    pkt->clickinst_ = lanidtonetif_[onlan][i].node;
-    pkt->siminst_ = (simclick_sim*)this;
+    pkt->simnode_ = lanidtonetif_[onlan][i].node;
     pkt->ifid_ = lanidtonetif_[onlan][i].ifid;
     pkt->data_ = new unsigned char[len];
     pkt->len_ = len;
     pkt->ptype_ = ptype;
     memcpy(pkt->data_,data,len);
     eventheap_.insert(newtime,pkt);
-    fprintf(stderr,"Added send packet event: clickinst: %d ifid: %d time: %d %d\n",(int)(pkt->clickinst_),pkt->ifid_,newtime.tv_sec,newtime.tv_usec);
+    fprintf(stderr,"Added send packet event: clickinst: %d ifid: %d time: %d %d\n",(int)(pkt->simnode_),pkt->ifid_,(int)newtime.tv_sec,(int)newtime.tv_usec);
   }
 }
 
 void
-TestClickSimulator::handle_schedule_from_click(simclick_click node,
-					       struct timeval* when) {
+TestClickSimulator::handle_schedule_from_click(simclick_node_t *node,
+					       const struct timeval* when) {
   // Stuff a click trigger event into the simulator queue
   ScheduledEvent* sevent = new ScheduledEvent;
   SimTime newtime(*when);
-  sevent->clickinst_ = node;
-  sevent->siminst_ = (simclick_sim*)this;
+  sevent->simnode_ = node;
   eventheap_.insert(newtime,sevent);
 }
 
-simclick_click
+simclick_node_t *
 TestClickSimulator::get_node(int nodenum) {
   return clickrouters_[nodenum];
 }
@@ -218,7 +218,7 @@ TestClickSimulator::add_lan_entry(int nodenum,int ifid,int lanid) {
 }
 
 void
-TestClickSimulator::add_lan_entry(simclick_click node,int ifid,int lanid) {
+TestClickSimulator::add_lan_entry(simclick_node_t *node,int ifid,int lanid) {
   netif newif(node,ifid);
   netiftolanid_[newif] = lanid;
   lanidtonetif_[lanid].push_back(newif);
@@ -227,21 +227,19 @@ TestClickSimulator::add_lan_entry(simclick_click node,int ifid,int lanid) {
 int
 TestClickSimulator::PacketEvent::go(SimTime* when) {
   int result = 0;
-  struct simclick_simpacketinfo pinfo;
-  simclick_simstate curstate;
+  simclick_simpacketinfo pinfo;
 
-  curstate.curtime.tv_sec = when->tv_sec;
-  curstate.curtime.tv_usec = when->tv_usec;
+  simnode_->curtime = *when;
   pinfo.id = 2;
   pinfo.fid =2;
-  fprintf(stderr,"Dispatching send packet event: clickinst: %d ifid: %d time: %d %d pid %d fid %d\n",(int)clickinst_,ifid_,when->tv_sec,when->tv_usec,pinfo.id,pinfo.fid);
-  simclick_click_send(clickinst_,&curstate,ifid_,ptype_,data_,len_,&pinfo);
+  fprintf(stderr,"Dispatching send packet event: clickinst: %d ifid: %d time: %d %d pid %d fid %d\n",(int)simnode_,ifid_,(int)when->tv_sec,(int)when->tv_usec,pinfo.id,pinfo.fid);
+  simclick_click_send(simnode_,ifid_,ptype_,data_,len_,&pinfo);
   
   return result;
 }
 
 TestClickSimulator::PacketEvent::PacketEvent() {
-  clickinst_ = 0;
+  simnode_ = 0;
   ifid_ = -1;
   ptype_ = -1;
   data_ = 0;
@@ -262,23 +260,17 @@ TestClickSimulator::ScheduledEvent::~ScheduledEvent() {
 
 int
 TestClickSimulator::ScheduledEvent::go(SimTime* when) {
-  int result = 0;
-
-  simclick_simstate curstate;
-  curstate.curtime.tv_sec = when->tv_sec;
-  curstate.curtime.tv_usec = when->tv_usec;
-  simclick_click_run(clickinst_,&curstate);
-  
-  return result;
+  simnode_->curtime = *when;
+  simclick_click_run(simnode_);
+  return 0;
 }
 
 static TestClickSimulator thesim;
 
-int main(int argc,char** argv) {
+int main(int,char**) {
   int result = 0;
   int i = 0;
   const int numclicks = 3;
-  const unsigned char mypacket[] = "this is my bogus packet\n";
 
   printf("Testing the simclick interface...\n");
 
@@ -304,12 +296,9 @@ int main(int argc,char** argv) {
   //thesim.add_lan_entry(1,1,3);
   //thesim.add_lan_entry(2,2,3);
 
-  simclick_simstate startstate;
-  startstate.curtime.tv_sec = 0;
-  startstate.curtime.tv_usec = 0;
   // Send a packet out to eth0 of node 0.
   //printf("About to send out test packet on node 0, eth0...\n");
-  //simclick_click_send(thesim.get_node(0),&startstate,TESTSIM_IFID_FIRSTIF,
+  //simclick_click_send(thesim.get_node(0),TESTSIM_IFID_FIRSTIF,
   //		      SIMCLICK_PTYPE_ETHER,mypacket,sizeof(mypacket));
 
   // Prime the simulator pump
@@ -330,67 +319,87 @@ int main(int argc,char** argv) {
   return result;
 }
 
-int
-simclick_sim_ifid_from_name(simclick_sim siminst,const char* ifname) {
-  int ifid = -1;
-  char* devname = NULL;
-
-  fprintf(stderr,"Woo! Got a request for %s\n",ifname);
-  /*
-   * Provide a mapping between a textual interface name
-   * and the id numbers used. This is so that click scripts
-   * can still refer to an interface as, say, /dev/eth0.
-   */
-  if (strstr(ifname,"tap") || strstr(ifname,"tun")) {
-    /*
-     * A tapX or tunX interface goes to and from the kernel -
-     * always TESTSIM_IFID_KERNELTAP
-     */
-    ifid = TESTSIM_IFID_KERNELTAP;
-  }
-  else if ((devname = strstr(ifname,"eth"))) {
-    /*
-     * Anything with an "eth" followed by a number is a
-     * regular interface. Add the number to TESTSIM_IFID_FIRSTIF
-     * to get the handle.
-     */
-    while (*devname && !isdigit(*devname)) {
-      devname++;
-    }
-    if (*devname) {
-      ifid = atoi(devname) + TESTSIM_IFID_FIRSTIF;
-    }
-  }
-  fprintf(stderr,"Corresponds to simdev number %d\n",ifid);
-  return ifid;
-}
-
-void
-simclick_sim_ipaddr_from_name(simclick_sim siminst,const char* ifname,
-			      char* buf,int len) {
-}
-
-void
-simclick_sim_macaddr_from_name(simclick_sim siminst,const char* ifname,
-			       char* buf,int len) {
-}
+extern "C" {
 
 int
-simclick_sim_send_to_if(simclick_sim siminst,simclick_click clickinst,
-			int ifid,int type,const unsigned char* data,int len,
-			simclick_simpacketinfo* pinfo) {
+simclick_sim_command(simclick_node_t *simnode, int cmd, ...) {
+    va_list val;
+    va_start(val, cmd);
+    int r;
+
+    switch (cmd) {
+
+      case SIMCLICK_VERSION:
+	r = 0;
+	break;
+
+      case SIMCLICK_SUPPORTS: {
+	  int othercmd = va_arg(val, int);
+	  r = (othercmd == SIMCLICK_VERSION || othercmd == SIMCLICK_SUPPORTS
+	       || othercmd == SIMCLICK_IFID_FROM_NAME
+	       || othercmd == SIMCLICK_SCHEDULE);
+	  break;
+      }
+
+      case SIMCLICK_IFID_FROM_NAME: {
+	  const char *ifname = va_arg(val, const char *);
+	  r = -1;
+
+	  fprintf(stderr,"Woo! Got a request for %s\n",ifname);
+	  /*
+	   * Provide a mapping between a textual interface name
+	   * and the id numbers used. This is so that click scripts
+	   * can still refer to an interface as, say, /dev/eth0.
+	   */
+	  if (strstr(ifname,"tap") || strstr(ifname,"tun")) {
+	      /*
+	       * A tapX or tunX interface goes to and from the kernel -
+	       * always TESTSIM_IFID_KERNELTAP
+	       */
+	      r = TESTSIM_IFID_KERNELTAP;
+	  } else if (const char *devname = strstr(ifname, "eth")) {
+	      /*
+	       * Anything with an "eth" followed by a number is a
+	       * regular interface. Add the number to TESTSIM_IFID_FIRSTIF
+	       * to get the handle.
+	       */
+	      while (*devname && !isdigit((unsigned char) *devname))
+		  devname++;
+	      if (*devname)
+		  r = atoi(devname) + TESTSIM_IFID_FIRSTIF;
+	  }
+	  fprintf(stderr,"Corresponds to simdev number %d\n", r);
+	  break;
+      }
+
+      case SIMCLICK_SCHEDULE: {
+	  const struct timeval *when = va_arg(val, const struct timeval *);
+	  thesim.handle_schedule_from_click(simnode, when);
+	  r = 0;
+	  break;
+      }
+
+      default:
+	r = -1;
+	break;
+	
+    }
+
+    va_end(val);
+    return r;
+}
+
+
+int
+simclick_sim_send(simclick_node_t *simnode,
+		  int ifid,int type,const unsigned char* data,int len,
+		  simclick_simpacketinfo*) {
   int result = 0;
   // XXX print pinfo data
-  fprintf(stderr,"Packet incoming on clickinst %d ifid %d\n",(int)clickinst,ifid);
-  thesim.handle_packet_from_click(clickinst,ifid,type,data,len);
+  fprintf(stderr,"Packet incoming on clickinst %d ifid %d\n",(int)simnode,ifid);
+  thesim.handle_packet_from_click(simnode,ifid,type,data,len);
   fprintf(stderr,"Exiting simclick_send_to_if...\n");
   return result;
 }
 
-int
-simclick_sim_schedule(simclick_sim siminst,simclick_click clickinst,
-		      struct timeval* when) {
-  int result = 0;
-  thesim.handle_schedule_from_click(clickinst,when);
-  return result;
 }

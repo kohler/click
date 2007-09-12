@@ -25,7 +25,6 @@ Patch Linux using a command like this:
 Use the NS patches in this directory as follows:
 
 For this version of NS		Use this patch
-2.29				ns-2.29-patch
 2.30				ns-2.30-patch
 
 Patch NS using a command like this:

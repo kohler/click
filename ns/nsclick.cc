@@ -67,30 +67,7 @@ CLICK_USING_DECLS
 #define EXPRESSION_OPT		313
 
 
-//
-// State for each simulated machine
-//
-
-class SimState {
-public:
-  Router *router;
-
-  //String::Initializer crap_initializer;
-  //Vector<String> packages;
-  //String configuration_string;
-  //Vector<String> handlers;
-
-  SimState() {
-    router = NULL;
-  }
-
-  static SimState* simmain(simclick_sim siminst,const char* router_file);
-  static bool didinit_;
-};
-
-bool SimState::didinit_ = false;
-
-static simclick_simstate* cursimclickstate = NULL;
+static simclick_node_t *cursimnode = NULL;
 
 //
 // XXX
@@ -98,268 +75,90 @@ static simclick_simstate* cursimclickstate = NULL;
 // isn't multithreaded. If it is, there could be multiple threads stomping
 // on each other and potentially causing subtle or unsubtle problems.
 //
-static void setsimstate(simclick_simstate* newstate) {
-  cursimclickstate = newstate;
+static void setsimstate(simclick_node_t *newstate) {
+    cursimnode = newstate;
 }
-
-static simclick_simstate* getsimstate() {
-  return cursimclickstate;
-}
-
-static ErrorHandler *errh;
 
 // functions for packages
 
-static String::Initializer crap_initializer;
-static String configuration_string;
 
-#if 0
-extern "C" int
-click_add_element_type(const char *, Element *(*)(uintptr_t), uintptr_t)
-{
-  // if (name)
-  //   return lexer->add_element_type(name, e);
-  // else
-  //   return lexer->add_element_type(e);
-  fprintf(stderr,"Hey! Need to do click_add_element_type!\n");
-  return 0;
-}
+extern "C" {
 
-extern "C" void
-click_remove_element_type(int)
-{
-  //lexer->remove_element_type(which);
-  fprintf(stderr,"Hey! Need to do click_remove_element_type!\n");
-}
+int simclick_click_create(simclick_node_t *simnode, const char* router_file) {
+    static bool didinit = false;
 
-// global handlers for ControlSocket
-
-enum {
-  GH_VERSION, GH_LIST, GH_CLASSES, GH_CONFIG,
-  GH_FLATCONFIG, GH_PACKAGES, GH_REQUIREMENTS
-};
-
-String
-read_global_handler(Element *, void *thunk)
-{
-  StringAccum sa;
-
-  switch (reinterpret_cast<int>(thunk)) {
-
-   case GH_VERSION:
-    return String(CLICK_VERSION "\n");
-
-   case GH_LIST:
-    return router->element_list_string();
-  
-   case GH_CLASSES: {
-     Vector<String> v;
-     lexer->element_type_names(v);
-     for (int i = 0; i < v.size(); i++)
-       sa << v[i] << "\n";
-     return sa.take_string();
-   }
-
-   case GH_CONFIG:
-    return configuration_string;
-
-   case GH_FLATCONFIG:
-    return router->flat_configuration_string();
-
-   case GH_PACKAGES: {
-     Vector<String> p;
-     click_public_packages(p);
-     for (int i = 0; i < p.size(); i++)
-       sa << p[i] << "\n";
-     return sa.take_string();
-   }
-
-   case GH_REQUIREMENTS: {
-     const Vector<String> &v = router->requirements();
-     for (int i = 0; i < v.size(); i++)
-       sa << v[i] << "\n";
-     return sa.take_string();
-   }
-
-   default:
-    return "<error>\n";
-
-  }
-}
-
-static int
-stop_global_handler(const String &s, Element *, void *, ErrorHandler *)
-{
-  int n = 1;
-  (void) cp_integer(cp_uncomment(s), &n);
-  router->adjust_runcount(-n);
-  return 0;
-}
-
-
-// report handler results
-
-static int
-call_read_handler(Element *e, String handler_name, Router *r,
-		  bool print_name, ErrorHandler *errh)
-{
-  const Handler *rh = Router::handler(e, handler_name);
-  String full_name = Handler::unparse_name(e, handler_name);
-  if (!rh || !rh->visible())
-    return errh->error("no `%s' handler", full_name.c_str());
-  else if (!rh->read_visible())
-    return errh->error("`%s' is a write handler", full_name.c_str());
-
-  if (print_name)
-    fprintf(stdout, "%s:\n", full_name.c_str());
-  String result = rh->call_read(e);
-  fputs(result.c_str(), stdout);
-  if (print_name)
-    fputs("\n", stdout);
-
-  return 0;
-}
-
-static bool
-expand_handler_elements(const String &pattern, const String &handler_name,
-			Vector<Element *> &elements, Router *router)
-{
-  int nelem = router->nelements();
-  bool any_elements = false;
-  for (int i = 0; i < nelem; i++) {
-    const String &id = router->ename(i);
-    if (glob_match(id, pattern)) {
-      any_elements = true;
-      if (const Handler *h = Router::handler(router->element(i), handler_name))
-	if (h->read_visible())
-	  elements.push_back(router->element(i));
-    }
-  }
-  return any_elements;
-}
-
-static int
-call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
-{
-  Vector<Element *> handler_elements;
-  Vector<String> handler_names;
-  bool print_names = (handlers.size() > 1);
-  int before = errh->nerrors();
-
-  // expand handler names
-  for (int i = 0; i < handlers.size(); i++) {
-    const char *dot = find(handlers[i], '.');
-    if (dot == handlers[i].end()) {
-      call_read_handler(0, handlers[i], router, print_names, errh);
-      continue;
-    }
+    setsimstate(simnode);
     
-    String element_name = handlers[i].substring(handlers[i].begin(), dot);
-    String handler_name = handlers[i].substring(dot + 1, handlers[i].end());
+    if (!didinit) {
+	click_static_initialize();
+	didinit = true;
+    }
 
-    Vector<Element *> elements;
-    if (Element *e = router->find(element_name))
-      elements.push_back(e);
-    else if (expand_handler_elements(element_name, handler_name, elements, router))
-      print_names = true;
-    else
-      errh->error("no element matching `%s'", element_name.c_str());
+    bool warnings = true;
 
-    for (int j = 0; j < elements.size(); j++)
-      call_read_handler(elements[j], handler_name, router, print_names, errh);
-  }
+    // lex
+    ErrorHandler *errh = ErrorHandler::default_handler();
+    int before = errh->nerrors();
+    
+    Router *r = click_read_router(router_file, false, errh, false);
+    simnode->clickinfo = r;
+    if (!r)
+	return errh->fatal("%s: not a valid router", router_file);
+    r->master()->initialize_ns(simnode);
+    if (r->nelements() == 0 && warnings)
+	errh->warning("%s: configuration has no elements", router_file);
+    if (errh->nerrors() != before || r->initialize(errh) < 0)
+	return errh->fatal("%s: errors prevent router from initializing", router_file);
 
-  return (errh->nerrors() == before ? 0 : -1);
-}
-#endif
-
-
-// main
-
-SimState*
-SimState::simmain(simclick_sim siminst, const char *router_file)
-{
-  if (!didinit_) {
-    click_static_initialize();
-    errh = ErrorHandler::default_handler();
-    didinit_ = true;
-  }
-
-  bool warnings = true;
-
-  SimState* newstate = new SimState();
-
-  // lex
-  newstate->router = click_read_router(router_file, false, errh, false);
-  if (!newstate->router)
-    exit(1);
-  
-  newstate->router->master()->initialize_ns(siminst, (simclick_click)newstate);
-
-  if (newstate->router->nelements() == 0 && warnings)
-    errh->warning("%s: configuration has no elements", router_file);
-
-  if (errh->nerrors() > 0 || newstate->router->initialize(errh) < 0)
-    exit(1);
-
-  newstate->router->activate(errh);
-  return newstate;
-}
-
-
-simclick_click simclick_click_create(simclick_sim siminst,
-				     const char* router_file,
-				     simclick_simstate* startstate) {
-  setsimstate(startstate);
-  return SimState::simmain(siminst,router_file);
+    r->activate(errh);
+    return 0;
 }
 
 /*
  * XXX Need to actually implement this a little more intelligenetly...
  */
-void simclick_click_run(simclick_click clickinst,simclick_simstate* state) {
-  setsimstate(state);
+void simclick_click_run(simclick_node_t *simnode) {
+  setsimstate(simnode);
   //fprintf(stderr,"Hey! Need to implement simclick_click_run!\n");
   // not right - mostly smoke testing for now...
-  Router* r = ((SimState*)clickinst)->router;
+  Router* r = (Router *) simnode->clickinfo;
   if (r) {
     r->master()->thread(0)->driver();
-  }
-  else {
+  } else {
     click_chatter("simclick_click_run: call with null router");
   }
 }
 
-void simclick_click_kill(simclick_click clickinst, simclick_simstate* state) {
+void simclick_click_kill(simclick_node_t *simnode) {
   //fprintf(stderr,"Hey! Need to implement simclick_click_kill!\n");
-  setsimstate(state);
-  Router *r = ((SimState*)clickinst)->router;
+  setsimstate(simnode);
+  Router *r = (Router *) simnode->clickinfo;
   if (r) {
     delete r;
-    ((SimState*)clickinst)->router = 0;
-  }
-  else {
+    simnode->clickinfo = 0;
+  } else {
     click_chatter("simclick_click_kill: call with null router");
   }
 }
 
 int simclick_gettimeofday(struct timeval* tv) {
-  simclick_simstate* sstate = getsimstate();
-  if (sstate) {
-    *tv = sstate->curtime;
+    if (cursimnode) {
+	*tv = cursimnode->curtime;
+	return 0;
+    } else {
+	tv->tv_sec = 0;
+	tv->tv_usec = 0;
+	fprintf(stderr,"Hey! Called simclick_gettimeofday without simstate set!\n");
+	return -1;
   }
-  else {
-    fprintf(stderr,"Hey! Called simclick_gettimeofday without simstate set!\n");
-  }
-  return 0;
 }
 
-int simclick_click_send(simclick_click clickinst,simclick_simstate* state,
+int simclick_click_send(simclick_node_t *simnode,
 			int ifid,int type,const unsigned char* data,int len,
 			simclick_simpacketinfo* pinfo) {
-  setsimstate(state);
+  setsimstate(simnode);
   int result = 0;
-  Router* r = ((SimState*)clickinst)->router;
+  Router* r = (Router *) simnode->clickinfo;
   if (r) {
     r->sim_incoming_packet(ifid,type,data,len,pinfo);
     r->master()->thread(0)->driver();
@@ -371,18 +170,17 @@ int simclick_click_send(simclick_click clickinst,simclick_simstate* state,
   return result;
 }
 
-char* simclick_click_read_handler(simclick_click clickinst,
+char* simclick_click_read_handler(simclick_node_t *simnode,
 				  const char* elementname,
 				  const char* handlername,
 				  SIMCLICK_MEM_ALLOC memalloc,
-				  void* memparam,
-				  simclick_simstate *state) {
-    Router *r = ((SimState*)clickinst)->router;
+				  void* memparam) {
+    Router *r = (Router *) simnode->clickinfo;
     if (!r) {
       click_chatter("simclick_click_read_handler: call with null router");
       return 0;
     }
-    setsimstate(state);
+    setsimstate(simnode);
     String hdesc = String(elementname) + "." + String(handlername);
     ErrorHandler *errh = ErrorHandler::default_handler();
     int before = errh->nerrors();
@@ -401,17 +199,36 @@ char* simclick_click_read_handler(simclick_click clickinst,
     return rstr;
 }
 
-int simclick_click_write_handler(simclick_click clickinst,
+int simclick_click_write_handler(simclick_node_t *simnode,
 				 const char* elementname,
 				 const char* handlername,
-				 const char* writestring,
-				 simclick_simstate *state) {
-    Router *r = ((SimState*)clickinst)->router;
+				 const char* writestring) {
+    Router *r = (Router *) simnode->clickinfo;
     if (!r) {
       click_chatter("simclick_click_write_handler: call with null router");
       return -3;
     }
-    setsimstate(state);
+    setsimstate(simnode);
     String hdesc = String(elementname) + "." + String(handlername);
     return HandlerCall::call_write(hdesc, String(writestring), r->root_element(), ErrorHandler::default_handler());
+}
+
+int simclick_click_command(simclick_node_t *, int cmd, ...)
+{
+    va_list val;
+    va_start(val, cmd);
+    int r;
+    
+    if (cmd == SIMCLICK_VERSION)
+	r = 0;
+    else if (cmd == SIMCLICK_SUPPORTS) {
+	int othercmd = va_arg(val, int);
+	r = othercmd >= SIMCLICK_VERSION && othercmd <= SIMCLICK_SUPPORTS;
+    } else
+	r = 1;
+
+    va_end(val);
+    return r;
+}
+
 }

@@ -85,8 +85,7 @@ Master::Master(int nthreads)
 #endif
     
 #if CLICK_NS
-    _siminst = 0;
-    _clickinst = 0;
+    _simnode = 0;
 #endif
 }
 
@@ -1029,11 +1028,10 @@ Master::process_signals()
 #if CLICK_NS
 
 void
-Master::initialize_ns(simclick_sim siminst, simclick_click clickinst)
+Master::initialize_ns(simclick_node_t *simnode)
 {
-    assert(!_siminst && !_clickinst);
-    _siminst = siminst;
-    _clickinst = clickinst;
+    assert(!_simnode);
+    _simnode = simnode;
 }
 
 #endif

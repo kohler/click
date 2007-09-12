@@ -1798,9 +1798,15 @@ Router::static_cleanup()
 
 #ifdef CLICK_NS
 
+simclick_node_t *
+Router::simnode() const
+{
+    return master()->simnode();
+}
+
 int
 Router::sim_get_ifid(const char* ifname) {
-  return simclick_sim_ifid_from_name(_master->siminst(), ifname);
+    return simclick_sim_command(_master->simnode(), SIMCLICK_IFID_FROM_NAME, ifname);
 }
 
 Vector<int> *
@@ -1829,12 +1835,12 @@ Router::sim_listen(int ifid, int element) {
 int
 Router::sim_write(int ifid,int ptype,const unsigned char* data,int len,
 		     simclick_simpacketinfo* pinfo) {
-  return simclick_sim_send_to_if(_master->siminst(),_master->clickinst(),ifid,ptype,data,len,pinfo);
+    return simclick_sim_send(_master->simnode(),ifid,ptype,data,len,pinfo);
 }
 
 int
 Router::sim_if_ready(int ifid) {
-  return simclick_sim_if_ready(_master->siminst(),_master->clickinst(),ifid);
+    return simclick_sim_command(_master->simnode(), SIMCLICK_IF_READY, ifid);
 }
 
 int
@@ -1849,17 +1855,17 @@ Router::sim_incoming_packet(int ifid, int ptype, const unsigned char* data,
 
 void
 Router::sim_trace(const char* event) {
-	simclick_sim_trace(_master->siminst(), _master->clickinst(), event);
+    simclick_sim_command(_master->simnode(), SIMCLICK_TRACE, event);
 }
 
 int
 Router::sim_get_node_id() {
-	return simclick_sim_get_node_id(_master->siminst(), _master->clickinst());
+    return simclick_sim_command(_master->simnode(), SIMCLICK_GET_NODE_ID);
 }
 
 int
 Router::sim_get_next_pkt_id() {
-	return simclick_sim_get_next_pkt_id(_master->siminst(), _master->clickinst());
+    return simclick_sim_command(_master->simnode(), SIMCLICK_GET_NEXT_PKT_ID);
 }
 
 #endif // CLICK_NS

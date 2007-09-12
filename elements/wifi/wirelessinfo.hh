@@ -80,6 +80,11 @@ class WirelessInfo : public Element { public:
   int _channel;
   int _interval;
   bool _wep;
+#if CLICK_NS
+    // nletor -- indicates which wireless interface of the node is managed
+    // eth0 corresponds to 0 , eth1 corresponds to 1 , etc.
+    int _ifid;
+#endif
 };
 
 CLICK_ENDDECLS

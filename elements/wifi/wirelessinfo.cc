@@ -50,8 +50,18 @@ WirelessInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "CHANNEL", 0, cpInteger, &_channel,
 		     "INTERVAL", 0, cpInteger, &_interval,
 		     "WEP", 0, cpBool, &_wep,
+#if CLICK_NS
+		     "IFID", 0, cpInteger, &_ifid,
+#endif
 		     cpEnd);
 
+#if CLICK_NS
+  // nletor - change interface number ifid 
+  // to correct channel in simulator
+  if (_ifid >= 0)
+      simclick_sim_command(router()->simnode(), SIMCLICK_CHANGE_CHANNEL, _ifid, _channel);
+#endif
+  
   return res;
 }
 
@@ -67,6 +77,9 @@ WirelessInfo::reset()
   _bssid = EtherAddress();
   _interval = 100;
   _wep = false;
+#if CLICK_NS
+  _ifid = -1;
+#endif
 }
 int 
 WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
@@ -92,6 +105,10 @@ WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
     if (!cp_integer(s, &m)) 
       return errh->error("channel parameter must be int");
     f->_channel = m;
+#if CLICK_NS
+    if (f->_ifid >= 0)
+	simclick_sim_command(router()->simnode(), SIMCLICK_CHANGE_CHANNEL, f->_ifid, f->_channel);
+#endif
     break;
   }
  case H_INTERVAL: {

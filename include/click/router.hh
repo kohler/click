@@ -139,6 +139,7 @@ class Router { public:
     /** @endcond never */
       
 #if CLICK_NS
+    simclick_node_t *simnode() const;
     int sim_get_ifid(const char* ifname);
     int sim_listen(int ifid, int element);
     int sim_if_ready(int ifid);

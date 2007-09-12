@@ -66,7 +66,7 @@ CLICK_CXX_UNPROTECT
 # include <netinet/in.h>
 # include <sys/time.h>
 # ifdef CLICK_NS
-#  include "simclick.h"
+extern "C" int simclick_gettimeofday(struct timeval *);
 # endif
 
 #endif

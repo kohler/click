@@ -1,15 +1,12 @@
 #ifndef SIMCLICK_H
 #define SIMCLICK_H
-
 /*
- *
  * simclick.h
  *
  * API for sending packets to Click. Mostly intended for use
  * by a network simulator which wants to use Click to do routing.
  * 
  */
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,54 +26,38 @@ extern "C" {
  */
 
 /*
- * This encapsulates the state info that click needs from the simulator.
- * Right now this is just a timestamp, but we might need to send over
- * more stuff at some point. This is essentially a big old blob of globals,
- * so watch out that it doesn't turn into a monstrosity.
- */
-typedef struct {
-  struct timeval curtime;
-} simclick_simstate;
-
-
-/*
  * This contains per packet data we need to preserve when the packet gets
  * dragged through click. Heavily biased towards ns-2 right now.
  */
 typedef struct {
-  /*
-   * Simulator ID number for the packet
-   */
-  int id;
-
-  /*
-   * Simulator flow ID number for the packet
-   */
-  int fid;
-
-  /*
-   * Original simulator packet type - useful
-   * for morphing between raw and simulator packet types
-   */
-  int simtype;
+    int id;			/* Simulator ID number for the packet */
+    int fid;			/* Simulator flow ID number for the packet */
+    int simtype;		/* Original simulator packet type - useful
+				 * for morphing between raw and simulator
+				 * packet types */
 } simclick_simpacketinfo;
+
 
 /*
  * Opaque handles for the sim and click instances
  */
-typedef void* simclick_click;
-typedef void* simclick_sim;
+typedef struct simclick_node {
+    void *clickinfo;
+    struct timeval curtime;
+} simclick_node_t;
 
-simclick_click simclick_click_create(simclick_sim siminst,
-				     const char* router_file,
-				     simclick_simstate* startstate);
-int simclick_click_send(simclick_click clickinst,simclick_simstate* state,
+int simclick_click_create(simclick_node_t *sim, const char *router_file);
+
+int simclick_click_send(simclick_node_t *sim,
 			int ifid,int type,const unsigned char* data,int len,
 			simclick_simpacketinfo* pinfo);
+int simclick_sim_send(simclick_node_t *sim,
+		      int ifid,int type, const unsigned char* data,int len,
+		      simclick_simpacketinfo*);
 
-void simclick_click_run(simclick_click clickinst,simclick_simstate* state);
+void simclick_click_run(simclick_node_t *sim);
 
-void simclick_click_kill(simclick_click clickinst,simclick_simstate* state);
+void simclick_click_kill(simclick_node_t *sim);
 
 /*
  * simclick_click_read_handler will allocate a buffer of adequate length
@@ -88,45 +69,15 @@ void simclick_click_kill(simclick_click clickinst,simclick_simstate* state);
  * value which will be passed back to the memory allocation function.
  */
 typedef void* (*SIMCLICK_MEM_ALLOC)(size_t,void*);
-char* simclick_click_read_handler(simclick_click clickinst,
+char* simclick_click_read_handler(simclick_node_t *sim,
 				  const char* elementname,
 				  const char* handlername,
 				  SIMCLICK_MEM_ALLOC memalloc,
-				  void* memparam,
-				  simclick_simstate *state);
+				  void* memparam);
 
-int simclick_click_write_handler(simclick_click clickinst,
+int simclick_click_write_handler(simclick_node_t *sim,
 				 const char* elemname, const char* handlername,
-				 const char* writestring,
-				 simclick_simstate *state);
-
-/*
- * The simulated system also has to provide a few services to click,
- * notably some way of injecting packets back into the system,
- * mapping interface names to id numbers, and arranging for click
- * to execute at a specified time in the future.
- */
-int simclick_sim_ifid_from_name(simclick_sim siminst,const char* ifname);
-void simclick_sim_ipaddr_from_name(simclick_sim siminst,const char* ifname,
-				   char* buf,int len);
-void simclick_sim_macaddr_from_name(simclick_sim siminst,const char* ifname,
-				    char* buf,int len);
-int simclick_sim_send_to_if(simclick_sim siminst,simclick_click clickinst,
-			    int ifid,int type, const unsigned char* data,
-			    int len,simclick_simpacketinfo*);
-int simclick_sim_schedule(simclick_sim siminst,simclick_click clickinst,
-			  struct timeval* when);
-void simclick_sim_get_node_name(simclick_sim siminst,char* buf,int len);
-
-int simclick_sim_if_ready(simclick_sim siminst,simclick_click clickinst,
-			  int ifid);
-
-int simclick_sim_trace(simclick_sim simins, simclick_click clickinst, const char* event);
-
-int simclick_sim_get_node_id(simclick_sim siminst, simclick_click clickinst);
-
-int simclick_sim_get_next_pkt_id(simclick_sim siminst, simclick_click clickinst);
-
+				 const char* writestring);
 
 /*
  * We also provide a gettimeofday substitute which utilizes the 
@@ -134,8 +85,30 @@ int simclick_sim_get_next_pkt_id(simclick_sim siminst, simclick_click clickinst)
  */
 int simclick_gettimeofday(struct timeval* tv);
 
+/*
+ * The simulated system also has to provide a few services to click,
+ * notably some way of injecting packets back into the system,
+ * mapping interface names to id numbers, and arranging for click
+ * to execute at a specified time in the future.
+ * We implement 
+ */
+#define SIMCLICK_VERSION		0  // none
+#define SIMCLICK_SUPPORTS		1  // int call
+#define SIMCLICK_IFID_FROM_NAME		2  // const char *ifname
+#define SIMCLICK_IPADDR_FROM_NAME	3  // const char *ifname, char *buf, int len
+#define SIMCLICK_MACADDR_FROM_NAME	4  // const char *ifname, char *buf, int len
+#define SIMCLICK_SCHEDULE		5  // struct timeval *when
+#define SIMCLICK_GET_NODE_NAME		6  // char *buf, int len
+#define SIMCLICK_IF_READY		7  // int ifid
+#define SIMCLICK_TRACE			8  // const char *event
+#define SIMCLICK_GET_NODE_ID		9  // none
+#define SIMCLICK_GET_NEXT_PKT_ID	10 // none
+#define SIMCLICK_CHANGE_CHANNEL		11 // int ifid, int channelid
+
+int simclick_sim_command(simclick_node_t *sim, int cmd, ...);
+int simclick_click_command(simclick_node_t *sim, int cmd, ...);
+
 #ifdef __cplusplus
 }
 #endif
-
 #endif

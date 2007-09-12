@@ -87,10 +87,10 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 
 #ifdef CLICK_NS
     if (per_node) {
-	simclick_sim mysiminst = router()->master()->siminst();
 	char tmp[255];
-	simclick_sim_get_node_name(mysiminst,tmp,255);
-	_filename = String(tmp) + String("_") +  _filename;
+	int r = simclick_sim_command(router()->simnode(), SIMCLICK_GET_NODE_NAME,tmp,255);
+	if (r >= 0)
+	    _filename = String(tmp) + String("_") + _filename;
     }
 #endif
 
