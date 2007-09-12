@@ -829,6 +829,24 @@ read_ino_info(Element *, void *)
 
 /*********************** Initialization and termination **********************/
 
+struct file_operations *
+click_new_file_operations()
+{
+    if (!clickfs) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+	clickfs = proclikefs_register_filesystem("click", 0, click_get_sb);
+#else
+	// NB: remove FS_SINGLE if it will ever make sense to have different
+	// Click superblocks -- if we introduce mount options, for example
+	clickfs = proclikefs_register_filesystem("click", FS_SINGLE, click_read_super);
+#endif
+    }
+    if (clickfs)
+	return proclikefs_new_file_operations(clickfs);
+    else
+	return 0;
+}
+
 int
 init_clickfs()
 {
@@ -841,17 +859,10 @@ init_clickfs()
     init_waitqueue_head(&clickfs_waitq);
     atomic_set(&clickfs_read_count, 0);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    clickfs = proclikefs_register_filesystem("click", 0, click_get_sb);
-#else
-    // NB: remove FS_SINGLE if it will ever make sense to have different
-    // Click superblocks -- if we introduce mount options, for example
-    clickfs = proclikefs_register_filesystem("click", FS_SINGLE, click_read_super);
-#endif
-    if (!clickfs
-	|| !(click_dir_file_ops = proclikefs_new_file_operations(clickfs))
+    // clickfs creation moved to click_new_file_operations()
+    if (!(click_dir_file_ops = click_new_file_operations())
 	|| !(click_dir_inode_ops = proclikefs_new_inode_operations(clickfs))
-	|| !(click_handler_file_ops = proclikefs_new_file_operations(clickfs))
+	|| !(click_handler_file_ops = click_new_file_operations())
 	|| !(click_handler_inode_ops = proclikefs_new_inode_operations(clickfs))) {
 	printk("<1>click: could not initialize clickfs!\n");
 	return -EINVAL;
@@ -924,7 +935,8 @@ cleanup_clickfs()
     // kill filesystem
     MDEBUG("proclikefs_unregister_filesystem");
     clickfs_ready = 0;
-    proclikefs_unregister_filesystem(clickfs);
+    if (clickfs)
+	proclikefs_unregister_filesystem(clickfs);
 
     // clean up handler_strings
     MDEBUG("cleaning up handler strings");
