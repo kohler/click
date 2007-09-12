@@ -144,7 +144,7 @@ $(obj)/$(ELEMENTSCONF).o : $(obj)/$(ELEMENTSCONF).cc
 $(obj)/proclikefsmod.o : $(srcdir)/proclikefs.c
 	$(call if_changed_rule,cc_o_c)
 
-$(obj)/$(KSYMS).c: $(addprefix $(obj)/,$(KSYM_OBJS)) $(top_builddir)/click-buildtool
+$(obj)/$(KSYMS).c: $(addprefix $(obj)/,$(KSYM_OBJS)) $(top_builddir)/click-buildtool $(addprefix $(obj)/,$(ELEMENTSCONF).mk)
 	$(top_builddir)/click-buildtool ksyms -C $(obj) -x kernelversion.o $(KSYM_OBJS) > $(obj)/$(KSYMS).c
 $(obj)/$(KSYMS).o: $(obj)/$(KSYMS).c
 	$(call if_changed_dep,ccompile)
