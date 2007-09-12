@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-Print([LABEL, LENGTH, I<KEYWORDS>])
+Print([LABEL, LENGTH, I<keywords>])
 
 =s debugging
 
@@ -25,6 +25,12 @@ Keyword arguments are:
 =item LENGTH
 
 Number of bytes to print. Default is 24.
+
+=item CONTENTS
+
+Determines whether the packet data is printed. It may be `NONE' (do not print
+packet data), `HEX' (print packet data in hexadecimal), or `ASCII' (print
+packet data in plaintext). Default is `HEX'.
 
 =item TIMESTAMP
 
@@ -69,6 +75,7 @@ class Print : public Element { public:
   bool _cpu : 1;
 #endif
   bool _print_anno;
+  uint8_t _contents;
 };
 
 CLICK_ENDDECLS

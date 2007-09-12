@@ -64,6 +64,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   bool print_ttl = false;
   bool print_len = false;
   bool print_aggregate = false;
+  bool bcontents;
   String channel;
   
   if (cp_va_kparse(conf, this, errh,
@@ -86,15 +87,16 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 		   cpEnd) < 0)
     return -1;
 
-  contents = contents.upper();
-  if (contents == "NO" || contents == "FALSE")
-    _contents = 0;
-  else if (contents == "YES" || contents == "TRUE" || contents == "HEX")
-    _contents = 1;
+  if (cp_bool(contents, &bcontents))
+      _contents = bcontents;
+  else if ((contents = contents.upper()), contents == "NONE")
+      _contents = 0;
+  else if (contents == "HEX")
+      _contents = 1;
   else if (contents == "ASCII")
-    _contents = 2;
+      _contents = 2;
   else
-    return errh->error("bad contents value '%s'; should be 'false', 'hex', or 'ascii'", contents.c_str());
+      return errh->error("bad contents value '%s'; should be 'NONE', 'HEX', or 'ASCII'", contents.c_str());
 
   int payloadv;
   payload = payload.upper();

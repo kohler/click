@@ -45,14 +45,15 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
 #ifdef CLICK_LINUXMODULE
   bool print_cpu = false;
 #endif
-  bool print_anno = false;
-  String label;
+  bool print_anno = false, bcontents;
+  String label, contents = "HEX";
   unsigned bytes = 24;
   
   if (cp_va_kparse(conf, this, errh,
 		   "LABEL", cpkP, cpString, &label,
 		   "LENGTH", cpkP, cpInteger, &bytes,
-		   "NBYTES", cpkP, cpInteger, &bytes, // deprecated
+		   "NBYTES", 0, cpInteger, &bytes, // deprecated
+		   "CONTENTS", 0, cpWord, &contents,
 		   "TIMESTAMP", 0, cpBool, &timestamp,
 		   "PRINTANNO", 0, cpBool, &print_anno,
 #ifdef CLICK_LINUXMODULE
@@ -60,6 +61,17 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
 #endif
 		   cpEnd) < 0)
     return -1;
+
+  if (cp_bool(contents, &bcontents))
+      _contents = bcontents;
+  else if ((contents = contents.upper()), contents == "NONE")
+      _contents = 0;
+  else if (contents == "HEX")
+      _contents = 1;
+  else if (contents == "ASCII")
+      _contents = 2;
+  else
+      return errh->error("bad contents value '%s'; should be 'NONE', 'HEX', or 'ASCII'", contents.c_str());
   
   _label = label;
   _bytes = bytes;
@@ -85,41 +97,58 @@ Print::simple_action(Packet *p)
 	return p;
     }
 
-  sa << _label;
+    const char *sep = "";
+    if (_label) {
+	sa << _label;
+	sep = ": ";
+    }
 #ifdef CLICK_LINUXMODULE
-  if (_cpu)
-    sa << '(' << click_current_processor() << ')';
+    if (_cpu) {
+	sa << '(' << click_current_processor() << ')';
+	sep = ": ";
+    }
 #endif
-  if (_label)
-    sa << ": ";
-  if (_timestamp)
-    sa << p->timestamp_anno() << ": ";
+    if (_timestamp) {
+	sa << sep << p->timestamp_anno();
+	sep = ": ";
+    }
 
-  // sa.reserve() must return non-null; we checked capacity above
-  int len;
-  len = sprintf(sa.reserve(9), "%4d | ", p->length());
-  sa.adjust_length(len);
+    // sa.reserve() must return non-null; we checked capacity above
+    int len;
+    len = sprintf(sa.reserve(11), "%s%4d", sep, p->length());
+    sa.adjust_length(len);
 
   if (_print_anno) {
-    char *buf = sa.reserve(Packet::USER_ANNO_SIZE*2);
-    int pos = 0;
-    for (unsigned j = 0; j < Packet::USER_ANNO_SIZE; j++, pos += 2) 
-      sprintf(buf + pos, "%02x", p->user_anno_c(j));
-    sa.adjust_length(pos);
-    
-    len = sprintf(sa.reserve(3), " | ");
-    sa.adjust_length(len);
+      sa << " | ";
+      char *buf = sa.reserve(Packet::USER_ANNO_SIZE*2);
+      int pos = 0;
+      for (unsigned j = 0; j < Packet::USER_ANNO_SIZE; j++, pos += 2) 
+	  sprintf(buf + pos, "%02x", p->user_anno_c(j));
+      sa.adjust_length(pos);
   }
 
-  char *buf = sa.data() + sa.length();
-  int pos = 0;
-
-  for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
-    sprintf(buf + pos, "%02x", p->data()[i] & 0xff);
-    pos += 2;
-    if ((i % 4) == 3) buf[pos++] = ' ';
-  }
-  sa.adjust_length(pos);
+    if (_contents) {
+	sa << " | ";
+	char *buf = sa.data() + sa.length();
+	const unsigned char *data = p->data();
+	if (_contents == 1) {
+	    for (unsigned i = 0; i < _bytes && i < p->length(); i++, data++) {
+		sprintf(buf, "%02x", *data & 0xff);
+		buf += 2;
+		if ((i % 4) == 3) *buf++ = ' ';
+	    }
+	} else if (_contents == 2) {
+	    for (unsigned i = 0; i < _bytes && data < p->end_data(); i++, data++) {
+		if ((i % 8) == 0)
+		    *buf++ = ' ';
+		if (*data < 32 || *data > 126)
+		    *buf++ = '.';
+		else
+		    *buf++ = *data;
+	    }
+	}
+	sa.adjust_length(buf - (sa.data() + sa.length()));
+    }
 
   click_chatter("%s", sa.c_str());
 

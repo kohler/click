@@ -26,9 +26,9 @@ Keyword arguments are:
 
 =item CONTENTS
 
-Determines whether the packet data is printed. It may be `false' (do not print
-packet data), `hex' (print packet data in hexadecimal), or `ascii' (print
-packet data in plaintext). Default is `false'.
+Determines whether the packet data is printed. It may be `NONE' (do not print
+packet data), `HEX' (print packet data in hexadecimal), or `ASCII' (print
+packet data in plaintext). Default is `NONE'.
 
 =item PAYLOAD
 
