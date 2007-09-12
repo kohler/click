@@ -3037,11 +3037,11 @@ cp_register_argtype(const char *name, const char *desc, int flags,
 }
 
 
-static int type_mismatch(ErrorHandler *errh, cp_value *v, const char *argname, const char *type_description = 0)
+static int type_mismatch(ErrorHandler *errh, cp_value *v, const char *argname, const String &arg, const char *type_description = 0)
 {
     if (!type_description)
 	type_description = v->argtype->description;
-    return errh->error("type mismatch: %s requires %s", argname, type_description);
+    return errh->error("type mismatch: %s requires %s (got %s)", argname, type_description, arg.c_str());
 }
 
 static void
@@ -3363,7 +3363,7 @@ default_parsefunc(cp_value *v, const String &arg,
 #endif
 
    type_mismatch:
-    type_mismatch(errh, v, argname);
+    type_mismatch(errh, v, argname, arg);
     break;
     
   }
@@ -3879,14 +3879,14 @@ CpVaHelper::develop_kvalues(va_list val, ErrorHandler *errh)
 	goto done;
     }
     int flags = va_arg(val, int);
-    if ((flags & cpkPositional) && npositional > 0)
+    if ((flags & cpkPositional) && npositional >= 0)
 	return errh->error("%s: positional arguments must be grouped at the beginning", v->keyword);
     if ((flags & (cpkPositional | cpkMandatory)) == (cpkPositional | cpkMandatory)
-	&& nrequired > 0)
+	&& nrequired >= 0)
 	return errh->error("%s: mandatory positional arguments must precede optional ones", v->keyword);
-    if (!(flags & cpkPositional))
+    if (npositional < 0 && !(flags & cpkPositional))
 	npositional = nvalues;
-    if ((flags & (cpkPositional | cpkMandatory)) != (cpkPositional | cpkMandatory))
+    if (nrequired < 0 && (flags & (cpkPositional | cpkMandatory)) != (cpkPositional | cpkMandatory))
 	nrequired = nvalues;
     if (flags & cpkConfirm) {
 	v->store_confirm = va_arg(val, bool *);

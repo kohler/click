@@ -45,15 +45,15 @@ TCPIPSend::send_write_handler(const String &conf, Element *e, void *, ErrorHandl
   uint16_t sport, dport;
   unsigned char bits;
   unsigned seqn, ackn;
-  if(cp_va_space_parse(conf, me, errh,
-       cpIPAddress, "source address", &saddr,
-       cpTCPPort, "source port", &sport,
-       cpIPAddress, "destination address", &daddr,
-       cpTCPPort, "destination port", &dport,
-       cpUnsigned, "seq number", &seqn,
-       cpUnsigned, "ack number", &ackn,
-       cpByte, "bits", &bits,
-       cpEnd) < 0)
+  if(cp_va_space_kparse(conf, me, errh,
+			"SRC", cpkP+cpkM, cpIPAddress, &saddr,
+			"SPORT", cpkP+cpkM, cpTCPPort, &sport,
+			"DST", cpkP+cpkM, cpIPAddress, &daddr,
+			"DPORT", cpkP+cpkM, cpTCPPort, &dport,
+			"SEQNO", cpkP+cpkM, cpUnsigned, &seqn,
+			"ACKNO", cpkP+cpkM, cpUnsigned, &ackn,
+			"FLAGS", cpkP+cpkM, cpByte, &bits,
+			cpEnd) < 0)
     return -1;
 
   Packet *p = me->make_packet(saddr, daddr, sport, dport, seqn, ackn, bits);

@@ -40,15 +40,14 @@ DynamicUDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool do_cksum = true;
   _interval = 0;
-  if (cp_va_parse(conf, this, errh,
-		  cpIPAddress, "source address", &_saddr,
-		  cpUDPPort, "source port", &_sport,
-		  cpIPAddress, "destination address", &_daddr,
-		  cpUDPPort, "destination port", &_dport,
-		  cpOptional,
-		  cpBool, "do UDP checksum?", &do_cksum,
-		  cpUnsigned, "change interval", &_interval,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "SRC", cpkP+cpkM, cpIPAddress, &_saddr,
+		   "SPORT", cpkP+cpkM, cpUDPPort, &_sport,
+		   "DST", cpkP+cpkM, cpIPAddress, &_daddr,
+		   "DPORT", cpkP+cpkM, cpUDPPort, &_dport,
+		   "CHECKSUM", 0, cpBool, &do_cksum,
+		   "INTERVAL", 0, cpUnsigned, &_interval,
+		   cpEnd) < 0)
     return -1;
   
   _id = 0;

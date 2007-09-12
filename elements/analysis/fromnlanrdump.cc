@@ -62,7 +62,7 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _packet_filepos = 0;
     bool force_ip = true;
 
-    if (_ff.configure_keywords(conf, 1, this, errh) < 0)
+    if (_ff.configure_keywords(conf, this, errh) < 0)
 	return -1;
     if (cp_va_kparse(conf, this, errh,
 		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),

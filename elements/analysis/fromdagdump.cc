@@ -61,7 +61,7 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
     String encap;
     _sampling_prob = (1 << SAMPLING_SHIFT);
 
-    if (_ff.configure_keywords(conf, 1, this, errh) < 0)
+    if (_ff.configure_keywords(conf, this, errh) < 0)
 	return -1;
     if (cp_va_kparse(conf, this, errh,
 		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),

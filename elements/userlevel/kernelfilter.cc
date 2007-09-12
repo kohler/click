@@ -37,11 +37,11 @@ KernelFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String action, type, arg;
     for (int i = 0; i < conf.size(); i++) {
-	if (cp_va_space_parse(conf[i], this, errh,
-			      cpWord, "action", &action,
-			      cpWord, "type", &type,
-			      cpArgument, "arg", &arg,
-			      cpEnd) < 0)
+	if (cp_va_space_kparse(conf[i], this, errh,
+			       "ACTION", cpkP+cpkM, cpWord, &action,
+			       "TYPE", cpkP+cpkM, cpWord, &type,
+			       "ARG", cpkP+cpkM, cpArgument, &arg,
+			       cpEnd) < 0)
 	    return -1;
 	if (action != "drop" || type != "dev" || !arg)
 	    return errh->error("arguments must follow 'drop dev DEVNAME'");

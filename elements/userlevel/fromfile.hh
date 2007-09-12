@@ -28,7 +28,7 @@ class FromFile { public:
 
     off_t file_pos() const		{ return _file_offset + _pos; }
 
-    int configure_keywords(Vector<String> &conf, int first_keyword, Element *, ErrorHandler *);
+    int configure_keywords(Vector<String> &conf, Element *, ErrorHandler *);
     int initialize(ErrorHandler *);
     void add_handlers(Element *, bool filepos_writable = false) const;
     void cleanup();

@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
 =c
 
-AdaptiveRED(TARGET_Q, MAX_P [, I<KEYWORDS>])
+AdaptiveRED(TARGET, MAX_P [, I<KEYWORDS>])
 
 =s aqm
 
@@ -20,8 +20,8 @@ Implements the Adaptive Random Early Detection packet dropping algorithm. This
 algorithm implements Random Early Detection, as by the RED element, plus
 automatic parameter setting.
 
-The TARGET_Q argument is the target queue length. RED's MIN_THRESH parameter
-is set to TARGET_Q/2, and MAX_THRESH to 3*TARGET_Q/2. The MAX_P parameter, and
+The TARGET argument is the target queue length. RED's MIN_THRESH parameter
+is set to TARGET/2, and MAX_THRESH to 3*TARGET/2. The MAX_P parameter, and
 QUEUES and STABILITY keywords, are as in the RED element.
 
 =a RED */

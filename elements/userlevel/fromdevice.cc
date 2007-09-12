@@ -77,20 +77,16 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _snaplen = 2046;
     _force_ip = false;
     String bpf_filter, capture;
-    if (cp_va_parse(conf, this, errh,
-		    cpString, "interface name", &_ifname,
-		    cpOptional,
-		    cpBool, "be promiscuous?", &promisc,
-		    cpUnsigned, "maximum packet length", &_snaplen,
-		    cpKeywords,
-		    "SNIFFER", cpBool, "act as sniffer?", &sniffer,
-		    "PROMISC", cpBool, "be promiscuous?", &promisc,
-		    "SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
-		    "FORCE_IP", cpBool, "force IP packets?", &_force_ip,
-		    "CAPTURE", cpWord, "capture method", &capture,
-		    "BPF_FILTER", cpString, "BPF filter", &bpf_filter,
-		    "OUTBOUND", cpBool, "emit outbound packets?", &outbound,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "DEVNAME", cpkP+cpkM, cpString, &_ifname,
+		     "PROMISC", cpkP, cpBool, &promisc,
+		     "SNAPLEN", cpkP, cpUnsigned, &_snaplen,
+		     "SNIFFER", 0, cpBool, &sniffer,
+		     "FORCE_IP", 0, cpBool, &_force_ip,
+		     "CAPTURE", 0, cpWord, &capture,
+		     "BPF_FILTER", 0, cpString, &bpf_filter,
+		     "OUTBOUND", 0, cpBool, &outbound,
+		     cpEnd) < 0)
 	return -1;
     if (_snaplen > 8190 || _snaplen < 14)
 	return errh->error("maximum packet length out of range");

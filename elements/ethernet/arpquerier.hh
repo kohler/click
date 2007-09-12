@@ -10,7 +10,7 @@ CLICK_DECLS
 /*
 =c
 
-ARPQuerier(I, E, I<keywords>)
+ARPQuerier(IP, ETH, I<keywords>)
 ARPQuerier(NAME, I<keywords>)
 
 =s arp
@@ -19,8 +19,8 @@ encapsulates IP packets in Ethernet headers found via ARP
 
 =d
 
-Handles most of the ARP protocol. Argument I should be
-this host's IP address, and E should be this host's
+Handles most of the ARP protocol. Argument IP should be
+this host's IP address, and ETH should be this host's
 Ethernet address. (In
 the one-argument form, NAME should be shorthand for
 both an IP and an Ethernet address; see AddressInfo(n).)

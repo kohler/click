@@ -37,16 +37,12 @@ HostEtherFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool drop_own = false, drop_other = true;
   _offset = 0;
-  if (cp_va_parse(conf, this, errh,
-		  cpEthernetAddress, "Ethernet address", &_addr,
-		  cpOptional,
-		  cpBool, "Drop packets from us?", &drop_own,
-		  cpBool, "Drop packets to others?", &drop_other,
-		  cpKeywords,
-		  "DROP_OWN", cpBool, "Drop packets from us?", &drop_own,
-		  "DROP_OTHER", cpBool, "Drop packets to others?", &drop_other,
-		  "OFFSET", cpUnsigned, "offset to IP header", &_offset,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "ETHER", cpkP+cpkM, cpEthernetAddress, &_addr,
+		   "DROP_OWN", cpkP, cpBool, &drop_own,
+		   "DROP_OTHER", cpkP, cpBool, &drop_other,
+		   "OFFSET", 0, cpUnsigned, &_offset,
+		   cpEnd) < 0)
     return -1;
   _drop_own = drop_own;
   _drop_other = drop_other;

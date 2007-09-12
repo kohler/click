@@ -40,12 +40,11 @@ ICMPPingEncap::~ICMPPingEncap()
 int
 ICMPPingEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (cp_va_parse(conf, this, errh,
-		    cpIPAddress, "source IP address", &_src,
-		    cpIPAddress, "destination IP address", &_dst,
-		    cpKeywords,
-		    "IDENTIFIER", cpUnsignedShort, "ICMP echo identifier", &_icmp_id,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "SRC", cpkP+cpkM, cpIPAddress, &_src,
+		     "DST", cpkP+cpkM, cpIPAddress, &_dst,
+		     "IDENTIFIER", 0, cpUnsignedShort, &_icmp_id,
+		     cpEnd) < 0)
 	return -1;
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED

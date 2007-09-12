@@ -69,15 +69,13 @@ ARPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   bool print_time = true;
   String channel;
   
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpString, "label", &_label,
-		  cpKeywords,
-		  "TIMESTAMP", cpBool, "print packet timestamps?", &print_time,
+  if (cp_va_kparse(conf, this, errh,
+		   "LABEL", cpkP, cpString, &_label,
+		   "TIMESTAMP", 0, cpBool, &print_time,
 #if CLICK_USERLEVEL
-		  "OUTFILE", cpFilename, "output filename", &_outfilename,
+		   "OUTFILE", 0, cpFilename, &_outfilename,
 #endif
-		  cpEnd) < 0)
+		   cpEnd) < 0)
     return -1;
 
   _print_timestamp = print_time;

@@ -39,7 +39,7 @@ StoreTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_kparse(conf, this, errh,
 		     "OFFSET", cpkP, cpInteger, &_offset,
 		     "TAIL", 0, cpBool, &tail,
-		     0) < 0)
+		     cpEnd) < 0)
 	return -1;
     if (_offset >= 0 ? tail : !tail)
 	return errh->error("supply exactly one of 'OFFSET' and 'TAIL'");

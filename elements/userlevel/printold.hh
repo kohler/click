@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-PrintOld([TAG, THRESH, NBYTES])
+PrintOld([LABEL, AGE, LENGTH])
 
 =s debugging
 
@@ -15,10 +15,10 @@ conditionally prints packet contents
 
 =d
 
-Prints up to NBYTES bytes of data from each packet, in hex, preceded
-by the TAG text, if more than THRESH milliseconds have elapsed since
-the packet was timestamped.  Default THRESH is 5 milliseconds.
-Default NBYTES is 24.
+Prints up to LENGTH bytes of data from each packet, in hex, preceded
+by the LABEL text, if more than AGE milliseconds have elapsed since
+the packet was timestamped.  Default AGE is 5 milliseconds.
+Default LENGTH is 24.
 
 
 =a

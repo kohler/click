@@ -51,17 +51,14 @@ ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
     String code_str = "0";
     _mtu = 576;
     _pmtu = 0;
-    if (cp_va_parse(conf, this, errh,
-		    cpIPAddress, "source IP address", &_src_ip,
-		    cpNamedInteger, "ICMP error type", NameInfo::T_ICMP_TYPE, &_type,
-		    cpOptional,
-		    cpWord, "ICMP error code", &code_str,
-		    cpIPAddressList, "bad IP addresses", &_bad_addrs,
-		    cpKeywords,
-		    "BADADDRS", cpIPAddressList, "bad IP addresses", &_bad_addrs,
-		    "MTU", cpUnsigned, "MTU", &_mtu,
-		    "PMTU", cpUnsigned, "Next-Hop MTU", &_pmtu,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "SRC", cpkP+cpkM, cpIPAddress, &_src_ip,
+		     "TYPE", cpkP+cpkM, cpNamedInteger, NameInfo::T_ICMP_TYPE, &_type,
+		     "CODE", cpkP, cpWord, &code_str,
+		     "BADADDRS", cpkP, cpIPAddressList, &_bad_addrs,
+		     "MTU", 0, cpUnsigned, &_mtu,
+		     "PMTU", 0, cpUnsigned, &_pmtu,
+		     cpEnd) < 0)
 	return -1;
     if (_type < 0 || _type > 255)
 	return errh->error("ICMP type must be between 0 and 255");

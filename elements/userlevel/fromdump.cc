@@ -87,29 +87,26 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 #endif
     _packet_filepos = 0;
 
-    if (_ff.configure_keywords(conf, 1, this, errh) < 0)
+    if (_ff.configure_keywords(conf, this, errh) < 0)
 	return -1;
-    if (cp_va_parse(conf, this, errh,
-		    cpFilename, "dump file name", &_ff.filename(),
-		    cpOptional,
-		    cpBool, "use original packet timing?", &timing,
-		    cpKeywords,
-		    "TIMING", cpBool, "use original packet timing?", &timing,
-		    "STOP", cpBool, "stop driver when done?", &stop,
-		    "ACTIVE", cpBool, "start active?", &active,
-		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
-		    "FORCE_IP", cpBool, "emit IP packets only?", &force_ip,
-		    "START", cpTimestamp, "starting time", &first_time,
-		    "START_AFTER", cpTimestamp, "starting time offset", &first_time_off,
-		    "END", cpTimestamp, "ending time", &last_time,
-		    "END_AFTER", cpTimestamp, "ending time offset", &last_time_off,
-		    "INTERVAL", cpTimestamp, "time interval", &interval,
-		    "END_CALL", cpHandlerCallPtrWrite, "write handler for ending time", &_end_h,
+    if (cp_va_kparse(conf, this, errh,
+		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),
+		     "TIMING", cpkP, cpBool, &timing,
+		     "STOP", 0, cpBool, &stop,
+		     "ACTIVE", 0, cpBool, &active,
+		     "SAMPLE", 0, cpUnsignedReal2, SAMPLING_SHIFT, &_sampling_prob,
+		     "FORCE_IP", 0, cpBool, &force_ip,
+		     "START", 0, cpTimestamp, &first_time,
+		     "START_AFTER", 0, cpTimestamp, &first_time_off,
+		     "END", 0, cpTimestamp, &last_time,
+		     "END_AFTER", 0, cpTimestamp, &last_time_off,
+		     "INTERVAL", 0, cpTimestamp, &interval,
+		     "END_CALL", 0, cpHandlerCallPtrWrite, &_end_h,
 #if CLICK_NS
-		    "PER_NODE", cpBool, "prepend unique node name?", &per_node,
+		     "PER_NODE", 0, cpBool, &per_node,
 #endif
-		    "FILEPOS", cpFileOffset, "starting file position", &_packet_filepos,
-		    cpEnd) < 0)
+		     "FILEPOS", 0, cpFileOffset, &_packet_filepos,
+		     cpEnd) < 0)
 	return -1;
 
     // check sampling rate

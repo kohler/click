@@ -14,7 +14,7 @@ CLICK_DECLS
  * 
  * =c
  * 
- * FromHost(DEVNAME [, ADDR/MASK, GATEWAY, HEADROOM] [, I<KEYWORDS>])
+ * FromHost(DEVNAME [, DST, GATEWAY, HEADROOM] [, I<KEYWORDS>])
  * 
  * =s comm
  *
@@ -32,8 +32,9 @@ CLICK_DECLS
  * CONFIG_ETHERTAP.  Either modules (tun.o) or compiled in should work.
  *
  * FromHost allocates a /dev/net/tun device (this might fail) and runs
- * ifconfig(8) to set the interface's local (i.e., kernel) address to ADDR and
- * the netmask to MASK.  If ADDR and MASK are not specified, then FromHost
+ * ifconfig(8) to set the interface's local (i.e., kernel) address and netmask
+ * to DST, which must be an IP prefix such as 18.26.4.9/24.  If DST is not
+ * specified, then FromHost
  * assumes the tunnel has already been configured to the correct address.  If
  * a nonzero GATEWAY IP address (which must be on the same network as the tun)
  * is specified, then FromHost tries to set up a default route through that

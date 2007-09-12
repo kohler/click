@@ -58,26 +58,25 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String socktype;
   _client = (noutputs() == 0);
-  if (cp_va_parse(conf, this, errh,
-		  cpString, "type of socket (`TCP' or `UDP' or `UNIX' or `UNIX_DGRAM')", &socktype,
-		  cpIgnoreRest,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "TYPE", cpkP+cpkM, cpString, &socktype,
+		   cpIgnoreRest, cpEnd) < 0)
     return -1;
   socktype = socktype.upper();
 
   // remove keyword arguments
   Element *allow = 0, *deny = 0;
-  if (cp_va_parse_remove_keywords(conf, 2, this, errh,
-		"VERBOSE", cpBool, "be verbose?", &_verbose,
-		"SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
-		"TIMESTAMP", cpBool, "set timestamps on received packets?", &_timestamp,
-		"RCVBUF", cpUnsigned, "maximum socket receive buffer size?", &_rcvbuf,
-		"SNDBUF", cpUnsigned, "maximum socket send buffer size?", &_sndbuf,
-		"NODELAY", cpUnsigned, "disable Nagle algorithm?", &_nodelay,
-		"CLIENT", cpBool, "client or server?", &_client,
-		"PROPER", cpBool, "use Proper", &_proper,
-		"ALLOW", cpElement, "routing table of good hosts", &allow,
-		"DENY", cpElement, "routing table of bad hosts", &deny,
+  if (cp_va_kparse_remove_keywords(conf, this, errh,
+		"VERBOSE", 0, cpBool, &_verbose,
+		"SNAPLEN", 0, cpUnsigned, &_snaplen,
+		"TIMESTAMP", 0, cpBool, &_timestamp,
+		"RCVBUF", 0, cpUnsigned, &_rcvbuf,
+		"SNDBUF", 0, cpUnsigned, &_sndbuf,
+		"NODELAY", 0, cpUnsigned, &_nodelay,
+		"CLIENT", 0, cpBool, &_client,
+		"PROPER", 0, cpBool, &_proper,
+		"ALLOW", 0, cpElement, &allow,
+		"DENY", 0, cpElement, &deny,
 		cpEnd) < 0)
     return -1;
 
@@ -92,14 +91,13 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
     _socktype = socktype == "TCP" ? SOCK_STREAM : SOCK_DGRAM;
     _protocol = socktype == "TCP" ? IPPROTO_TCP : IPPROTO_UDP;
     CpVaParseCmd portcmd = (socktype == "TCP" ? cpTCPPort : cpUDPPort);
-    if (cp_va_parse(conf, this, errh,
-		    cpIgnore,
-		    cpIPAddress, "IP address", &_remote_ip,
-		    portcmd, "port number", &_remote_port,
-		    cpOptional,
-		    cpIPAddress, "local IP address", &_local_ip,
-		    portcmd, "local port number", &_local_port,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "TYPE", cpkP+cpkM, cpIgnore,
+		     "ADDR", cpkP+cpkM, cpIPAddress, &_remote_ip,
+		     "PORT", cpkP+cpkM, portcmd, &_remote_port,
+		     "LOCAL_ADDR", cpkP, cpIPAddress, &_local_ip,
+		     "LOCAL_PORT", cpkP, portcmd, &_local_port,
+		     cpEnd) < 0)
       return -1;
   }
 
@@ -107,12 +105,11 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
     _family = AF_UNIX;
     _socktype = socktype == "UNIX" ? SOCK_STREAM : SOCK_DGRAM;
     _protocol = 0;
-    if (cp_va_parse(conf, this, errh,
-		    cpIgnore,
-		    cpString, "filename", &_remote_pathname,
-		    cpOptional,
-		    cpString, "local filename", &_local_pathname,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "TYPE", cpkP+cpkM, cpIgnore,
+		     "FILENAME", cpkP+cpkM, cpFilename, &_remote_pathname,
+		     "LOCAL_FILENAME", cpkP, cpFilename, &_local_pathname,
+		     cpEnd) < 0)
       return -1;
     int max_path = (int)sizeof(((struct sockaddr_un *)0)->sun_path);
     // if not in the abstract namespace (begins with zero byte),

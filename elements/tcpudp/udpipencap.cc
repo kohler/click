@@ -48,14 +48,13 @@ UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     if (use_dst_anno)
 	conf[2] = "0.0.0.0";
   
-    if (cp_va_parse(conf, this, errh,
-		    cpIPAddress, "source address", &_saddr,
-		    cpUDPPort, "source port", &_sport,
-		    cpIPAddress, "destination address", &_daddr,
-		    cpUDPPort, "destination port", &_dport,
-		    cpOptional,
-		    cpBool, "do UDP checksum?", &_cksum,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "SRC", cpkP+cpkM, cpIPAddress, &_saddr,
+		     "SPORT", cpkP+cpkM, cpUDPPort, &_sport,
+		     "DST", cpkP+cpkM, cpIPAddress, &_daddr,
+		     "DPORT", cpkP+cpkM, cpUDPPort, &_dport,
+		     "CHECKSUM", cpkP, cpBool, &_cksum,
+		     cpEnd) < 0)
 	return -1;
 
     _sport = htons(_sport);

@@ -104,14 +104,13 @@ RED::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned min_thresh, max_thresh, max_p, stability = 4;
     String queues_string = String();
-    if (cp_va_parse(conf, this, errh,
-		    cpUnsigned, "min_thresh queue length", &min_thresh,
-		    cpUnsigned, "max_thresh queue length", &max_thresh,
-		    cpUnsignedReal2, "max_p drop probability", 16, &max_p,
-		    cpKeywords,
-		    "QUEUES", cpArgument, "relevant queues", &queues_string,
-		    "STABILITY", cpUnsigned, "stability shift", &stability,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "MIN_THRESH", cpkP+cpkM, cpUnsigned, &min_thresh,
+		     "MAX_THRESH", cpkP+cpkM, cpUnsigned, &max_thresh,
+		     "MAX_P", cpkP+cpkM, cpUnsignedReal2, 16, &max_p,
+		     "QUEUES", 0, cpArgument, &queues_string,
+		     "STABILITY", 0, cpUnsigned, &stability,
+		     cpEnd) < 0)
 	return -1;
     return finish_configure(min_thresh, max_thresh, max_p, stability, queues_string, errh);
 }
@@ -121,14 +120,13 @@ RED::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned min_thresh, max_thresh, max_p, stability = 4;
     String queues_string = String();
-    if (cp_va_parse(conf, this, errh,
-		    cpUnsigned, "min_thresh queue length", &min_thresh,
-		    cpUnsigned, "max_thresh queue length", &max_thresh,
-		    cpUnsignedReal2, "max_p drop probability", 16, &max_p,
-		    cpKeywords,
-		    "QUEUES", cpArgument, "relevant queues", &queues_string,
-		    "STABILITY", cpUnsigned, "stability shift", &stability,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "MIN_THRESH", cpkP+cpkM, cpUnsigned, &min_thresh,
+		     "MAX_THRESH", cpkP+cpkM, cpUnsigned, &max_thresh,
+		     "MAX_P", cpkP+cpkM, cpUnsignedReal2, 16, &max_p,
+		     "QUEUES", 0, cpArgument, &queues_string,
+		     "STABILITY", 0, cpUnsigned, &stability,
+		     cpEnd) < 0)
 	return -1;
     // XXX This warning is a pain in the ass for "max_p" write handlers, so
     // it's commented out.

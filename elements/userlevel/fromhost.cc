@@ -55,15 +55,13 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
   _headroom = Packet::DEFAULT_HEADROOM;
   _mtu_out = DEFAULT_MTU;
 
-  if (cp_va_parse(conf, this, errh,
-		  cpString, "device name", &_dev_name, 
-		  cpOptional,
-		  cpIPPrefix, "destination IP address", &_near, &_mask,
-		  cpKeywords,
-		  "ETHER", cpEthernetAddress, "fake device Ethernet address", &_macaddr,
-		  "HEADROOM", cpUnsigned, "default headroom for generated packets", &_headroom,
-		  "MTU", cpInteger, "MTU", &_mtu_out,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DEVNAME", cpkP+cpkM, cpString, &_dev_name, 
+		   "DST", cpkP, cpIPPrefix, &_near, &_mask,
+		   "ETHER", 0, cpEthernetAddress, &_macaddr,
+		   "HEADROOM", 0, cpUnsigned, &_headroom,
+		   "MTU", 0, cpInteger, &_mtu_out,
+		   cpEnd) < 0)
     return -1;
 
   if (!_dev_name) {

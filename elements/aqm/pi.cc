@@ -64,20 +64,15 @@ PI::configure(Vector<String> &conf, ErrorHandler *errh)
     unsigned stability = 4;
 
     String queues_string = String();
-	if (cp_va_parse(conf, this, errh,
-	    cpDouble, "sampling frequency", &w,
-	    cpDouble, "a", &a,
-	    cpDouble, "b", &b,
-		cpUnsigned, "target queue length", &target_q,
-	    cpOptional,
-	    cpArgument, "relevant queues", &queues_string,
-	    cpKeywords,
-	    "W", cpDouble, "sampling frequency", &w,
-	    "A", cpDouble, "a", &a,
-	    "B", cpDouble, "b", &b,
-	    "QREF",  cpUnsigned, "target queue", &target_q,
-	    "STABILITY", cpUnsigned, "stability shift", &stability,
-	    "QUEUES", cpArgument, "relevant queues", &queues_string, cpEnd) < 0)
+	if (cp_va_kparse(conf, this, errh,
+			 "W", cpkP+cpkM, cpDouble, &w,
+			 "A", cpkP+cpkM, cpDouble, &a,
+			 "B", cpkP+cpkM, cpDouble, &b,
+			 "TARGET", cpkP+cpkM, cpUnsigned, &target_q,
+			 "QUEUES", cpkP, cpArgument, &queues_string,
+			 "QREF", 0, cpUnsigned, &target_q,
+			 "STABILITY", 0, cpUnsigned, &stability,
+			 cpEnd) < 0)
 		return -1;
 
     if (check_params(w, a, b, target_q, stability, errh) < 0)
@@ -112,20 +107,15 @@ PI::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
     unsigned stability = 4;
 
     String queues_string = String();
-	if (cp_va_parse(conf, this, errh,
-	    cpDouble, "sampling frequency", &w,
-	    cpDouble, "a", &a,
-	    cpDouble, "b", &b,
-		cpUnsigned, "target queue length", &target_q,
-	    cpOptional,
-	    cpArgument, "relevant queues", &queues_string,
-	    cpKeywords,
-	    "W", cpDouble, "sampling frequency", &w,
-	    "A", cpDouble, "a", &a,
-	    "B", cpDouble, "b", &b,
-	    "QREF",  cpUnsigned, "target queue", &target_q,
-	    "STABILITY", cpUnsigned, "stability shift", &stability,
-	    "QUEUES", cpArgument, "relevant queues", &queues_string, cpEnd) < 0)
+	if (cp_va_kparse(conf, this, errh,
+			 "W", cpkP+cpkM, cpDouble, &w,
+			 "A", cpkP+cpkM, cpDouble, &a,
+			 "B", cpkP+cpkM, cpDouble, &b,
+			 "TARGET", cpkP+cpkM, cpUnsigned, &target_q,
+			 "QUEUES", cpkP, cpArgument, &queues_string,
+			 "QREF", 0, cpUnsigned, &target_q,
+			 "STABILITY", 0, cpUnsigned, &stability,
+			 cpEnd) < 0)
 		return -1;
 
     if (check_params(w, a, b, target_q, stability, errh) < 0)

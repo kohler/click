@@ -8,12 +8,12 @@ CLICK_DECLS
 
 /*
  * =c
- * DynamicUDPIPEncap(SADDR, SPORT, DADDR, DPORT [, CHECKSUM? [, INTERVAL]])
+ * DynamicUDPIPEncap(SRC, SPORT, DST, DPORT [, CHECKSUM, INTERVAL])
  * =s udp
  * encapsulates packets in dynamic UDP/IP headers
  * =d
  * Encapsulates each incoming packet in a UDP/IP packet
- * with source address SADDR, source port SPORT,
+ * with source address SRC, source port SPORT,
  * destination address DADDR, and destination port
  * DPORT. The UDP checksum is calculated if CHECKSUM? is
  * true; it is true by default. SPORT and DPORT are

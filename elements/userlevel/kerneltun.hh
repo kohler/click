@@ -62,9 +62,9 @@ there are queue overflows error when sending/receiving packets
 to/from the tun device (e.g. there was an ENOBUFS error).  Default
 is false.
 
-=item DEV_NAME
+=item DEVNAME
 
-String. If specified, try to alloc a tun device with name DEV_NAME.
+String. If specified, try to alloc a tun device with name DEVNAME.
 Otherwise, we'll just take the first virtual device we find. This option
 only works with the Linux Universal TUN/TAP driver.
 

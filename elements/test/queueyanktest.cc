@@ -36,9 +36,9 @@ QueueYankTest::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e;
     
-    if (cp_va_parse(conf, this, errh,
-		    cpElement, "Queue element", &e,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "QUEUE", cpkP+cpkM, cpElement, &e,
+		     cpEnd) < 0)
 	return -1;
 
     if (!(_q = static_cast<SimpleQueue *>(e->cast("SimpleQueue"))))

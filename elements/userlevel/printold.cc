@@ -39,12 +39,12 @@ PrintOld::configure(Vector<String> &conf, ErrorHandler* errh)
   _bytes = 24;
   _thresh = 5;
   
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpString, "label", &_label,
-		  cpInteger, "age threshold (milliseconds)", &_thresh,
-		  cpInteger, "max bytes to print", &_bytes,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "LABEL", cpkP, cpString, &_label,
+		   "AGE", cpkP, cpInteger, &_thresh,
+		   "LENGTH", cpkP, cpInteger, &_bytes,
+		   "NBYTES", 0, cpInteger, &_bytes,
+		   cpEnd) < 0)
     return -1;
   
   return 0;

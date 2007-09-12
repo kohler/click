@@ -50,11 +50,10 @@ CheckUDPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
   bool verbose = false;
   bool details = false;
   
-  if (cp_va_parse(conf, this, errh,
-		  cpKeywords,
-		  "VERBOSE", cpBool, "be verbose?", &verbose,
-		  "DETAILS", cpBool, "keep detailed counts?", &details,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "VERBOSE", 0, cpBool, &verbose,
+		   "DETAILS", 0, cpBool, &details,
+		   cpEnd) < 0)
     return -1;
   
   _verbose = verbose;

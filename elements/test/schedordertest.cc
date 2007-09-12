@@ -40,13 +40,12 @@ SchedOrderTest::~SchedOrderTest()
 int
 SchedOrderTest::configure(Vector<String>& conf, ErrorHandler* errh)
 {
-    if (cp_va_parse(conf, this, errh,
-		    cpInteger, "ID", &_id,
-		    cpKeywords,
-		    "SIZE", cpInteger, "buffer size", &_bufsiz,
-		    "STOP", cpBool, "stop driver when done?", &_stop,
-		    "LIMIT", cpUnsigned, "maximum number of schedulings", &_limit,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "ID", cpkP+cpkM, cpInteger, &_id,
+		     "SIZE", 0, cpInteger, &_bufsiz,
+		     "STOP", 0, cpBool, &_stop,
+		     "LIMIT", 0, cpUnsigned, &_limit,
+		     cpEnd) < 0)
 	return -1;
 
     void*& main = router()->force_attachment("SchedOrderTest");

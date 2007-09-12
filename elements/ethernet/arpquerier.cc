@@ -49,18 +49,17 @@ ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
     _bcast_addr = IPAddress();
     IPAddress bcast_mask;
     bool confirm_bcast = false;
-    if (cp_va_parse_remove_keywords(conf, 1, this, errh,
-				    "CAPACITY", cpUnsigned, "packet capacity", &_capacity,
-				    cpConfirmKeywords,
-				    "BROADCAST", cpIPAddress, "IP local broadcast address", &confirm_bcast, &_bcast_addr,
-				    cpEnd) < 0)
+    if (cp_va_kparse_remove_keywords(conf, this, errh,
+				     "CAPACITY", 0, cpUnsigned, &_capacity,
+				     "BROADCAST", cpkC, &confirm_bcast, cpIPAddress, &_bcast_addr,
+				     cpEnd) < 0)
 	return -1;
     if (conf.size() == 1)
 	conf.push_back(conf[0]);
-    if (cp_va_parse(conf, this, errh,
-		    cpIPAddressOrPrefix, "IP address", &_my_ip, &bcast_mask,
-		    cpEthernetAddress, "Ethernet address", &_my_en,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "IP", cpkP+cpkM, cpIPAddressOrPrefix, &_my_ip, &bcast_mask,
+		     "ETH", cpkP+cpkM, cpEthernetAddress, &_my_en,
+		     cpEnd) < 0)
 	return -1;
     if (!_bcast_addr)
 	_bcast_addr = _my_ip | ~bcast_mask;

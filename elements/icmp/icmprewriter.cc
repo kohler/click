@@ -37,11 +37,10 @@ ICMPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String arg;
   _dst_anno = true;
-  if (cp_va_parse(conf, this, errh,
-		  cpArgument, "rewriters", &arg,
-		  cpKeywords,
-		  "DST_ANNO", cpBool, "set destination IP addr annotation?", &_dst_anno,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "MAPS", cpkP+cpkM, cpArgument, &arg,
+		   "DST_ANNO", 0, cpBool, &_dst_anno,
+		   cpEnd) < 0)
     return -1;
 
   Vector<String> words;

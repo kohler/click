@@ -51,10 +51,9 @@ UpstreamNotifier::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _notifier.initialize(router());
 
-  if (cp_va_parse(conf, this, errh,
-		  cpBool, "Signal", &signal,
-		  cpKeywords, 
-		  cpEnd) < 0) {
+  if (cp_va_kparse(conf, this, errh,
+		   "SIGNAL", cpkP+cpkM, cpBool, &signal,
+		   cpEnd) < 0) {
     return -1;
   }
 

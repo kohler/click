@@ -9,13 +9,13 @@ CLICK_DECLS
 
 /*
  * =c
- * ARPFaker(IP1, ETH1, IP2, ETH2)
+ * ARPFaker(DSTIP, DSTETH, SRCIP, SRCETH)
  * =s arp
  * periodically generates an ARP reply
  * =d
  * Every 10 seconds,
- * sends an ARP "reply" packet to IP1/ETH1 claiming that IP2 has ethernet
- * address ETH2. Generates the ethernet header as well as the
+ * sends an ARP "reply" packet to DSTIP/DSTETH claiming that SRCIP has ethernet
+ * address SRCETH. Generates the ethernet header as well as the
  * ARP header.
  * 
  * =e

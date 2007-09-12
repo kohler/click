@@ -51,14 +51,12 @@ CheckARPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
   bool verbose = false;
   bool details = false;
 
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpUnsigned, "ARP header offset", &_offset,
-		  cpKeywords,
-		  "OFFSET", cpUnsigned, "ARP header offset", &_offset,
-		  "VERBOSE", cpBool, "be verbose?", &verbose,
-		  "DETAILS", cpBool, "keep detailed counts?", &details,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "OFFSET", cpkP, cpUnsigned, &_offset,
+		   "OFFSET", 0, cpUnsigned, &_offset,
+		   "VERBOSE", 0, cpBool, &verbose,
+		   "DETAILS", 0, cpBool, &details,
+		   cpEnd) < 0)
       return -1;
 
   _verbose = verbose;

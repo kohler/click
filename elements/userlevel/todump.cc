@@ -53,20 +53,16 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool per_node = false;
 #endif
   
-    if (cp_va_parse(conf, this, errh,
-		    cpFilename, "dump filename", &_filename,
-		    cpOptional,
-		    cpUnsigned, "max packet length", &_snaplen,
-		    cpWord, "encapsulation type", &encap_type,
-		    cpKeywords,
-		    "SNAPLEN", cpUnsigned, "max packet length", &_snaplen,
-		    "ENCAP", cpWord, "encapsulation type", &encap_type,
-		    "USE_ENCAP_FROM", cpArgument, "use encapsulation from elements", &use_encap_from,
-		    "EXTRA_LENGTH", cpBool, "record extra length?", &_extra_length,
+    if (cp_va_kparse(conf, this, errh,
+		     "FILENAME", cpkP+cpkM, cpFilename, &_filename,
+		     "SNAPLEN", cpkP, cpUnsigned, &_snaplen,
+		     "ENCAP", cpkP, cpWord, &encap_type,
+		     "USE_ENCAP_FROM", 0, cpArgument, &use_encap_from,
+		     "EXTRA_LENGTH", 0, cpBool, &_extra_length,
 #if CLICK_NS
-		    "PER_NODE", cpBool, "prepend unique node name?", &per_node,
+		     "PER_NODE", 0, cpBool, &per_node,
 #endif
-		    cpEnd) < 0)
+		     cpEnd) < 0)
 	return -1;
 
     if (_snaplen == 0)

@@ -98,20 +98,20 @@ int
 ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String socktype;
-  if (cp_va_parse(conf, this, errh,
-		  cpString, "type of socket (`TCP' or `UNIX')", &socktype,
-		  cpIgnoreRest, cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "TYPE", cpkP+cpkM, cpString, &socktype,
+		   cpIgnoreRest, cpEnd) < 0)
     return -1;
 
   // remove keyword arguments
   bool quiet_channel = true, greeting = true, retry_warnings = true;
   _retries = 0;
-  if (cp_va_parse_remove_keywords(conf, 2, this, errh,
-		"CHANNEL", cpWord, "chatter channel", &_channel,
-		"QUIET_CHANNEL", cpElement, "channel is quiet?", &quiet_channel,
-		"GREETING", cpBool, "greet connectors?", &greeting,
-		"RETRIES", cpInteger, "number of retries", &_retries,
-		"RETRY_WARNINGS", cpBool, "warn on unsuccessful socket attempt?", &retry_warnings,
+  if (cp_va_kparse_remove_keywords(conf, this, errh,
+		"CHANNEL", 0, cpWord, &_channel,
+		"QUIET_CHANNEL", 0, cpElement, &quiet_channel,
+		"GREETING", 0, cpBool, &greeting,
+		"RETRIES", 0, cpInteger, &_retries,
+		"RETRY_WARNINGS", 0, cpBool, &retry_warnings,
 		cpEnd) < 0)
     return -1;
   _greeting = greeting;
@@ -121,15 +121,17 @@ ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
   if (socktype == "TCP") {
     _tcp_socket = true;
     uint16_t portno;
-    if (cp_va_parse(conf, this, errh,
-		    cpIgnore, cpTCPPort, "port number", &portno, cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "TYPE", cpkP+cpkM, cpIgnore,
+		     "PORT", cpkP+cpkM, cpTCPPort, &portno, cpEnd) < 0)
       return -1;
     _unix_pathname = String(portno);
 
   } else if (socktype == "UNIX") {
     _tcp_socket = false;
-    if (cp_va_parse(conf, this, errh,
-		    cpIgnore, cpString, "filename", &_unix_pathname, cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "TYPE", cpkP+cpkM, cpIgnore,
+		     "FILENAME", cpkP+cpkM, cpFilename, &_unix_pathname, cpEnd) < 0)
       return -1;
     if (_unix_pathname.length() >= (int)sizeof(((struct sockaddr_un *)0)->sun_path))
       return errh->error("filename too long");

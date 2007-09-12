@@ -58,19 +58,16 @@ ProgressBar::initialize(ErrorHandler *errh)
     String position_str, size_str;
     bool check_stdout = false, have_size = false;
 
-    if (cp_va_parse(conf, this, errh,
-		    cpArgument, "position handler", &position_str,
-		    cpOptional,
-		    cpArgument, "size handler", &size_str,
-		    cpKeywords,
-		    "UPDATE", cpSecondsAsMilli, "update interval (s)", &_interval,
-		    "BANNER", cpString, "banner string", &_banner,
-		    "ACTIVE", cpBool, "start active?", &_active,
-		    "DELAY", cpSecondsAsMilli, "display delay (s)", &_delay_ms,
-		    "CHECK_STDOUT", cpBool, "check if stdout is terminal?", &check_stdout,
-		    cpConfirmKeywords,
-		    "FIXED_SIZE", cpDouble, "fixed size", &have_size, &_size,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "POSHANDLER", cpkP+cpkM, cpArgument, &position_str,
+		     "SIZEHANDLER", cpkP, cpArgument, &size_str,
+		     "UPDATE", 0, cpSecondsAsMilli, &_interval,
+		     "BANNER", 0, cpString, &_banner,
+		     "ACTIVE", 0, cpBool, &_active,
+		     "DELAY", 0, cpSecondsAsMilli, &_delay_ms,
+		     "CHECK_STDOUT", 0, cpBool, &check_stdout,
+		     "FIXED_SIZE", cpkC, &have_size, cpDouble, &_size,
+		     cpEnd) < 0)
 	return -1;
 
     Vector<String> words;

@@ -39,10 +39,9 @@ int
 ComparePackets::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool timestamp = true;
-    if (cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "TIMESTAMP", cpBool, "check timestamps?", &timestamp,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "TIMESTAMP", 0, cpBool, &timestamp,
+		     cpEnd) < 0)
 	return -1;
     _timestamp = timestamp;
     return 0;

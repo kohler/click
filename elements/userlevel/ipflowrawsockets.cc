@@ -191,13 +191,12 @@ IPFlowRawSockets::configure(Vector<String> &conf, ErrorHandler *errh)
 
     _snaplen = 2046;
     _usepcap = true;
-    if (cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "NOTIFIER", cpElement, "aggregate deletion notifier", &e,
-		    "SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
-		    "PCAP", cpBool, "use libpcap", &_usepcap,
-		    "HEADROOM", cpUnsigned, "headroom to add to packet", &_headroom,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "NOTIFIER", 0, cpElement, &e,
+		     "SNAPLEN", 0, cpUnsigned, &_snaplen,
+		     "PCAP", 0, cpBool, &_usepcap,
+		     "HEADROOM", 0, cpUnsigned, &_headroom,
+		     cpEnd) < 0)
 	return -1;
 
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))

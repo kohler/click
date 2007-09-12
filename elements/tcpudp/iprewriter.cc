@@ -68,16 +68,16 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
   _tcp_done_gc_incr = false;
   _dst_anno = true;
   
-  if (cp_va_parse_remove_keywords
-      (conf, 0, this, errh,
-       "REAP_TCP", cpSeconds, "TCP garbage collection interval", &_tcp_gc_interval,
-       "REAP_TCP_DONE", cpSeconds, "TCP garbage collection interval for completed sessions", &_tcp_done_gc_interval,
-       "REAP_UDP", cpSeconds, "UDP garbage collection interval", &_udp_gc_interval,
-       "TCP_TIMEOUT", cpSeconds, "TCP timeout interval", &_tcp_timeout_jiffies,
-       "TCP_DONE_TIMEOUT", cpSeconds, "Completed TCP timeout interval", &_tcp_done_timeout_jiffies,
-       "UDP_TIMEOUT", cpSeconds, "UDP timeout interval", &_udp_timeout_jiffies,
-       "TCP_DONE_GC_INCR", cpBool, "clean tcp completed sessions incrementally", &_tcp_done_gc_incr,
-       "DST_ANNO", cpBool, "set destination IP addr annotation?", &_dst_anno,
+  if (cp_va_kparse_remove_keywords
+      (conf, this, errh,
+       "REAP_TCP", 0, cpSeconds, &_tcp_gc_interval,
+       "REAP_TCP_DONE", 0, cpSeconds, &_tcp_done_gc_interval,
+       "REAP_UDP", 0, cpSeconds, &_udp_gc_interval,
+       "TCP_TIMEOUT", 0, cpSeconds, &_tcp_timeout_jiffies,
+       "TCP_DONE_TIMEOUT", 0, cpSeconds, &_tcp_done_timeout_jiffies,
+       "UDP_TIMEOUT", 0, cpSeconds, &_udp_timeout_jiffies,
+       "TCP_DONE_GC_INCR", 0, cpBool, &_tcp_done_gc_incr,
+       "DST_ANNO", 0, cpBool, &_dst_anno,
        cpEnd) < 0)
     return -1;
   

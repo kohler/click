@@ -11,7 +11,7 @@ CLICK_DECLS
 /*
 =c
 
-ICMPPingRewriter(NEWSRC, NEWDST, I<keywords> DST_ANNO)
+ICMPPingRewriter(SRC, DST, I<keywords> DST_ANNO)
 
 =s nat
 
@@ -23,7 +23,7 @@ Rewrites ICMP echo requests and replies by changing their source and/or
 destination addresses. This lets pings pass through a NAT gateway.
 
 Expects ICMP echo requests and echo replies. Each ICMP echo request is
-rewritten to have source IP address NEWSRC and destination IP address NEWDST.
+rewritten to have source IP address SRC and destination IP address DST.
 However, if either address is a single dash `C<->', the corresponding field in
 the IP header won't be changed. The ICMP `identifier' field is also rewritten
 to a unique number. Replies to the rewritten request are themselves rewritten;

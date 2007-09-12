@@ -42,25 +42,24 @@ ICMPPingRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
   int ok = 0;
 
   _dst_anno = true;
+  String srcarg, dstarg;
 
-  if (cp_va_parse_remove_keywords
-      (conf, 0, this, errh,
-       "DST_ANNO", cpBool, "set destination IP addr annotation?", &_dst_anno,
-       cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "SRC", cpkP+cpkM, cpArgument, &srcarg,
+		   "DST", cpkP+cpkM, cpArgument, &dstarg,
+		   "DST_ANNO", 0, cpBool, &_dst_anno,
+		   cpEnd) < 0)
     return -1;
 
-  if (conf.size() != 2)
-    return errh->error("%s arguments; expected `IP address, IP address'", conf.size() < 2 ? "too few" : "too many");
-  
-  if (conf[0] == "-")
+  if (srcarg == "-")
     _new_src = IPAddress();
-  else if (!cp_ip_address(conf[0], &_new_src, this))
-    ok = errh->error("argument 1 should be new source address (IP address)");
+  else if (!cp_ip_address(srcarg, &_new_src, this))
+    ok = errh->error("type mismatch: SRC requires IP address");
 
-  if (conf[1] == "-")
+  if (dstarg == "-")
     _new_dst = IPAddress();
-  else if (!cp_ip_address(conf[1], &_new_dst, this))
-    ok = errh->error("argument 2 should be new destination address (IP address)");
+  else if (!cp_ip_address(dstarg, &_new_dst, this))
+    ok = errh->error("type mismatch: DST requires IP address");
 
   return ok;
 }

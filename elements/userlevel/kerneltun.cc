@@ -87,18 +87,17 @@ KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
     _gw = IPAddress();
     _headroom = Packet::DEFAULT_HEADROOM;
     _mtu_out = DEFAULT_MTU;
-    if (cp_va_parse(conf, this, errh,
-		    cpIPPrefix, "network address", &_near, &_mask,
-		    cpOptional,
-		    cpIPAddress, "default gateway", &_gw,
-		    cpKeywords,
-		    "TAP", cpBool, "supply Ethernet headers?", &_tap,
-		    "HEADROOM", cpUnsigned, "default headroom for generated packets", &_headroom,
-		    "ETHER", cpEthernetAddress, "fake device Ethernet address", &_macaddr,
-		    "IGNORE_QUEUE_OVERFLOWS", cpBool, "ignore queue overflow errors?", &_ignore_q_errs,
-		    "MTU", cpInteger, "MTU", &_mtu_out,
+    if (cp_va_kparse(conf, this, errh,
+		     "ADDR", cpkP+cpkM, cpIPPrefix, &_near, &_mask,
+		     "GATEWAY", cpkP, cpIPAddress, &_gw,
+		     "TAP", 0, cpBool, &_tap,
+		     "HEADROOM", 0, cpUnsigned, &_headroom,
+		     "ETHER", 0, cpEthernetAddress, &_macaddr,
+		     "IGNORE_QUEUE_OVERFLOWS", 0, cpBool, &_ignore_q_errs,
+		     "MTU", 0, cpInteger, &_mtu_out,
 #if KERNELTUN_LINUX
-		    "DEV_NAME", cpString, "device name", &_dev_name,
+		     "DEV_NAME", 0, cpString, &_dev_name, // deprecated
+		     "DEVNAME", 0, cpString, &_dev_name,
 #endif
 		    cpEnd) < 0)
 	return -1;

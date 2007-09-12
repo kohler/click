@@ -46,13 +46,12 @@ AdaptiveRED::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned target_q, max_p, stability = 4;
     String queues_string = String();
-    if (cp_va_parse(conf, this, errh,
-		    cpUnsigned, "target queue length", &target_q,
-		    cpUnsignedReal2, "max_p drop probability", 16, &max_p,
-		    cpKeywords,
-		    "QUEUES", cpArgument, "relevant queues", &queues_string,
-		    "STABILITY", cpUnsigned, "stability shift", &stability,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "TARGET", cpkP+cpkM, cpUnsigned, &target_q,
+		     "MAX_P", cpkP+cpkM, cpUnsignedReal2, 16, &max_p,
+		     "QUEUES", 0, cpArgument, &queues_string,
+		     "STABILITY", 0, cpUnsigned, &stability,
+		     cpEnd) < 0)
 	return -1;
     if (target_q < 10)
 	target_q = 10;
@@ -66,13 +65,12 @@ AdaptiveRED::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned target_q, max_p, stability = 4;
     String queues_string = String();
-    if (cp_va_parse(conf, this, errh,
-		    cpUnsigned, "target queue length", &target_q,
-		    cpUnsignedReal2, "max_p drop probability", 16, &max_p,
-		    cpKeywords,
-		    "QUEUES", cpArgument, "relevant queues", &queues_string,
-		    "STABILITY", cpUnsigned, "stability shift", &stability,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "TARGET", cpkP+cpkM, cpUnsigned, &target_q,
+		     "MAX_P", cpkP+cpkM, cpUnsignedReal2, 16, &max_p,
+		     "QUEUES", 0, cpArgument, &queues_string,
+		     "STABILITY", 0, cpUnsigned, &stability,
+		     cpEnd) < 0)
 	return -1;
     if (queues_string)
 	errh->warning("QUEUES argument ignored");

@@ -66,15 +66,13 @@ RawSocket::configure(Vector<String> &conf, ErrorHandler *errh)
     parsecmd = cpUDPPort;
   
   String socktype;
-  if (cp_va_parse(conf, this, errh,
-		  cpString, "type of socket (`TCP', `UDP', `GRE', `ICMP')", &socktype,
-		  cpOptional,
-		  parsecmd, "port number", &_port,
-		  cpKeywords,
-		  "SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
-		  "HEADROOM", cpUnsigned, "how much header to allocate for the packet", &_headroom,
-		  "PROPER", cpBool, "use Proper", &_proper,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "TYPE", cpkP+cpkM, cpString, &socktype,
+		   "PORT", cpkP, parsecmd, &_port,
+		   "SNAPLEN", 0, cpUnsigned, &_snaplen,
+		   "HEADROOM", 0, cpUnsigned, &_headroom,
+		   "PROPER", 0, cpBool, &_proper,
+		   cpEnd) < 0)
     return -1;
   socktype = socktype.upper();
 

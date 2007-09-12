@@ -53,17 +53,16 @@ ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
     _data = String();
     _active = true;
     _verbose = true;
-    if (cp_va_parse(conf, this, errh,
-		    cpIPAddress, "source IP address", &_src,
-		    cpIPAddress, "destination IP address", &_dst,
-		    cpKeywords,
-		    "INTERVAL", cpSecondsAsMilli, "time between pings (s)", &_interval,
-		    "IDENTIFIER", cpUnsignedShort, "ICMP echo identifier", &_icmp_id,
-		    "DATA", cpString, "payload", &_data,
-		    "LIMIT", cpInteger, "total packet count", &_limit,
-		    "ACTIVE", cpBool, "active?", &_active,
-		    "VERBOSE", cpBool, "be verbose?", &_verbose,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "SRC", cpkP+cpkM, cpIPAddress, &_src,
+		     "DST", cpkP+cpkM, cpIPAddress, &_dst,
+		     "INTERVAL", 0, cpSecondsAsMilli, &_interval,
+		     "IDENTIFIER", 0, cpUnsignedShort, &_icmp_id,
+		     "DATA", 0, cpString, &_data,
+		     "LIMIT", 0, cpInteger, &_limit,
+		     "ACTIVE", 0, cpBool, &_active,
+		     "VERBOSE", 0, cpBool, &_verbose,
+		     cpEnd) < 0)
 	return -1;
 #ifndef __linux__
     _icmp_id = htons(_icmp_id);

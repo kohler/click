@@ -38,16 +38,15 @@ CheckPacket::configure(Vector<String> &conf, ErrorHandler *errh)
     String alignment;
     int length_eq = -1, length_ge = -1, length_le = -1;
     
-    if (cp_va_parse(conf, this, errh,
-		    cpKeywords,
-		    "DATA", cpString, "expected packet contents", &_data,
-		    "DATA_OFFSET", cpInteger, "packet contents match offset", &_data_offset,
-		    "LENGTH", cpInteger, "expected packet length", &length_eq,
-		    "LENGTH_EQ", cpInteger, "expected packet length", &length_eq,
-		    "LENGTH_GE", cpInteger, "minimum packet length", &length_ge,
-		    "LENGTH_LE", cpInteger, "maximum packet length", &length_le,
-		    "ALIGNMENT", cpArgument, "packet alignment specification", &alignment,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "DATA", 0, cpString, &_data,
+		     "DATA_OFFSET", 0, cpInteger, &_data_offset,
+		     "LENGTH", 0, cpInteger, &length_eq,
+		     "LENGTH_EQ", 0, cpInteger, &length_eq,
+		     "LENGTH_GE", 0, cpInteger, &length_ge,
+		     "LENGTH_LE", 0, cpInteger, &length_le,
+		     "ALIGNMENT", 0, cpArgument, &alignment,
+		     cpEnd) < 0)
 	return -1;
 
     if ((length_eq >= 0) + (length_ge >= 0) + (length_le >= 0) > 1)
@@ -64,10 +63,10 @@ CheckPacket::configure(Vector<String> &conf, ErrorHandler *errh)
     _data_op = (_data.out_of_memory() ? 0 : '=');
 
     if (alignment) {
-	if (cp_va_space_parse(alignment, this, errh,
-			      cpInteger, "modulus", &_alignment_chunk,
-			      cpInteger, "offset", &_alignment_offset,
-			      cpEnd) < 0)
+	if (cp_va_space_kparse(alignment, this, errh,
+			       "MODULUS", cpkP+cpkM, cpInteger, &_alignment_chunk,
+			       "OFFSET", cpkP+cpkM, cpInteger, &_alignment_offset,
+			       cpEnd) < 0)
 	    return -1;
 	else if (_alignment_chunk <= 1 || _alignment_offset < 0 || _alignment_offset >= _alignment_chunk)
 	    return errh->error("bad alignment modulus and/or offset");

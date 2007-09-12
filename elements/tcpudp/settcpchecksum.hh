@@ -6,7 +6,7 @@ CLICK_DECLS
 
 /*
  * =c
- * SetTCPChecksum([FIX-OFF?])
+ * SetTCPChecksum([FIXOFF])
  * =s tcp
  * sets TCP packets' checksums
  * =d

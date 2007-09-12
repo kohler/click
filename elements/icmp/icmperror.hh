@@ -5,13 +5,13 @@ CLICK_DECLS
 
 /*
  * =c
- * ICMPError(IPADDR, TYPE [, CODE, I<keywords> BADADDRS, MTU])
+ * ICMPError(SRC, TYPE [, CODE, I<keywords> BADADDRS, MTU])
  * =s icmp
  * generates ICMP error packets
  * =d
  * Generate an ICMP error packet, with specified TYPE and CODE,
  * in response to an incoming IP packet. The output is an IP/ICMP packet.
- * The ICMP packet's IP source address is set to IPADDR.
+ * The ICMP packet's IP source address is set to SRC.
  * The error packet will include (as payload)
  * the original packet's IP header and an initial segment of its
  * IP payload. ICMPError sets the packet destination IP and

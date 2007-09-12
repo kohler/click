@@ -70,11 +70,10 @@ int
 ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   
-  if (cp_va_parse(conf, this, errh,
-		  cpString, "interface name", &_ifname,
-		  cpKeywords,
-		  "DEBUG", cpBool, "debug", &_debug,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DEVNAME", cpkP+cpkM, cpString, &_ifname,
+		   "DEBUG", 0, cpBool, &_debug,
+		   cpEnd) < 0)
     return -1;
   if (!_ifname)
     return errh->error("interface not set");

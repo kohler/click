@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
 =c
 
-UDPIPEncap(SRC, SPORT, DST, DPORT [, CHECKSUM?])
+UDPIPEncap(SRC, SPORT, DST, DPORT [, CHECKSUM])
 
 =s udp
 

@@ -8,12 +8,12 @@ CLICK_DECLS
 
 /*
  * =c
- * IP6NDSolicitor(I, E)
+ * IP6NDSolicitor(IP, ETH)
  * =s ip6
  * 
  * =d
  * Handles most of the Neighbor Discovery(ND) protocol. 
- * Argument I should be this host's IP6 address, and E should 
+ * Argument IP should be this host's IP6 address, and ETH should 
  * be this host's ethernet address.
  *
  * Expects ordinary IP6 packets on input 0, each with a destination

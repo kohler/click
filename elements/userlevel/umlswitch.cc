@@ -22,10 +22,9 @@ CLICK_DECLS
 int
 UMLSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpString, "path to uml_switch control socket", &_ctl_path,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "PATH", cpkP, cpFilename, &_ctl_path,
+		   cpEnd) < 0)
     return -1;
 
   return 0;
