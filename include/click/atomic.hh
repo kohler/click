@@ -1,9 +1,11 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_ATOMIC_HH
 #define CLICK_ATOMIC_HH
-CLICK_DECLS
 #if CLICK_LINUXMODULE
 # include <click/glue.hh>
+#endif
+CLICK_DECLS
+#if CLICK_LINUXMODULE
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 #  define CLICK_ATOMIC_VAL	_val.counter
 # else
