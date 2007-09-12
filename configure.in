@@ -214,6 +214,7 @@ ELEMENTS_ARG_ENABLE(standard, [include standard elements], yes)
 ELEMENTS_ARG_ENABLE(tcpudp, [include TCP and UDP elements], yes)
 ELEMENTS_ARG_ENABLE(test, [include regression test elements], NO)
 ELEMENTS_ARG_ENABLE(wifi, [include wifi elements and support], NO)
+AC_ARG_ENABLE(experimental, [  --enable-experimental   enable experimental elements in normal groups], :, enable_experimental=no)
 
 for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^exopc$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d')`; do
     enableval=`eval 'echo $'"enable_$i"`
@@ -1195,6 +1196,11 @@ esac
 dnl add 'analysis' if analysis elements are available
 if test "x$enable_analysis" = xyes; then
     provisions="$provisions analysis"
+fi
+
+dnl add 'experimental' if --enable-experimental was supplied
+if test "x$enable_experimental" = xyes; then
+    provisions="$provisions experimental"
 fi
 
 dnl add 'int64' if 64-bit integers are available

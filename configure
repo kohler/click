@@ -1356,6 +1356,7 @@ Optional Features:
   --disable-tcpudp        do not include TCP and UDP elements
   --enable-test           include regression test elements
   --enable-wifi           include wifi elements and support
+  --enable-experimental   enable experimental elements in normal groups
   --disable-int64         disable 64-bit integer support
   --enable-nanotimestamp  enable nanosecond timestamps
   --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
@@ -5073,6 +5074,13 @@ if test "x$enable_wifi" = xyes; then
     :
 
 fi
+# Check whether --enable-experimental was given.
+if test "${enable_experimental+set}" = set; then
+  enableval=$enable_experimental; :
+else
+  enable_experimental=no
+fi
+
 
 for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^exopc$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d')`; do
     enableval=`eval 'echo $'"enable_$i"`
@@ -8680,7 +8688,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 8683 "configure"
+#line 8691 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -15993,6 +16001,10 @@ esac
 
 if test "x$enable_analysis" = xyes; then
     provisions="$provisions analysis"
+fi
+
+if test "x$enable_experimental" = xyes; then
+    provisions="$provisions experimental"
 fi
 
 if test "x$have_int64_types" = xyes; then
