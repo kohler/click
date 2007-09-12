@@ -73,6 +73,9 @@
 #define CLICK_LLRPC_IPRATEMON_FWD_N_REV_AVG	_CLICK_IO(12)
 #define CLICK_LLRPC_IPRATEMON_SET_ANNO_LEVEL	_CLICK_IO(13)
 
+#define CLICK_IOC_TOUSERDEVICE_GET_MULTI	_CLICK_IOS(14)
+#define CLICK_IOC_TOUSERDEVICE_SET_MULTI	_CLICK_IOS(15)
+
 struct click_llrpc_proxy_st {
   void* proxied_handler;	/* const Router::Handler* */
   uint32_t proxied_command;
