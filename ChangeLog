@@ -1,3 +1,1022 @@
+2007-09-12 Wed 12:44:47 -0700  Puneet Sood <psood74@gmail.com>
+Commit 5be6c31ede58b812a3d6075dc91f597d1726eb66
+
+	* lib/confparse.cc: Compilation fix for when Timestamp does not pun
+	timeval.
+	
+	Signed-off-by: Eddie Kohler <kohler@cs.ucla.edu>
+
+2007-09-12 Wed 12:36:46 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 9cf6c3d111a56a57cd47ba1cc7ae395091414bbc
+
+	* elements/linuxmodule/: touserdevice.cc, touserdevice.hh: Remove
+	ToUserDevice's burst size limit.
+	
+	Now that ToUserDevice doesn't have a temporary buffer, and now that
+	the locking discipline is a bit better, it seems OK to read as many
+	packets as possible.
+
+2007-09-12 Wed 12:00:54 -0700  Roman Chertov <rchertov@purdue.edu>
+Commit 6823936b3f124ec105f683e8108f4f42f0a4d106
+
+	* elements/linuxmodule/fromuserdevice.cc,
+	elements/linuxmodule/fromuserdevice.hh,
+	elements/linuxmodule/touserdevice.cc,
+	elements/linuxmodule/touserdevice.hh, include/click/llrpc.h: Add
+	linuxmodule elements that send packets to/from user level /dev.
+	
+	The elements are called ToUserDevice and FromUserDevice. 
+	ToUserDevice is a ring buffer of packets pulled from the rest of
+	the Click config; the user can extract packets from the buffer via
+	character device 241. FromUserDevice is a ring buffer of packets
+	that can be pulled from the rest of the Click config; the user can
+	write packets to the buffer via character device 240.
+	
+	The elements are considered experimental, and are only available if
+	you supply --enable-experimental.
+	
+	There are several differences relative to Roman's versions.  The
+	wait queue handling is marginally safer (but there are still
+	problems).  ToUserDevice stores packets, not packet copies, to
+	minimize copies (not clear this is faster).  The protocol for
+	interacting with ToUserDevice has changed; now a read() will return
+	one packet and returns that packet's length.  To read multiple
+	packets, use ioctl(fd, CLICK_IOC_TOUSERDEVICE_SET_MULTI, 1); this
+	writes [length, data, (padding to multiple of sizeof(int)), length,
+	data], etc.
+	
+	Signed-off-by: Eddie Kohler <kohler@cs.ucla.edu>
+
+2007-09-12 Wed 11:55:28 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit f986b6d4b81ca44eb7fd8d430397c8e65e027664
+
+	* linuxmodule/clickfs.cc: Export click_new_file_operations() for
+	use by elements.
+	
+	click_new_file_operations() creates a new set of file operations on
+	the Click proclikefs file system.  If the Click module is unloaded,
+	the file operations will get automatically zeroed out.
+
+2007-09-12 Wed 11:54:35 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 24b89ae86b52901a24eeb4605363d441afe2e84c
+
+	* linuxmodule/Makefile.in: Remake required symbols if elements list
+	changes.
+
+2007-09-12 Wed 11:54:16 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 459b9064ebbbf056f678149730f421f0016985f3
+
+	* elements/: ip/ipprint.cc, ip/ipprint.hh, standard/print.cc,
+	standard/print.hh: Add CONTENTS argument to Print to allow printing
+	ASCII contents.
+	
+	Also some nits in IPPrint.
+
+2007-09-12 Wed 11:53:28 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 77cb89d0ef6a0660f81100f28979d21b1842afd3
+
+	* configure: .in: Add --enable-experimental configure switch.
+	
+	Some elements might be experimental even though they belong in a
+	normal collection.  Add --enable-experimental; if supplied, the
+	"experimental" requirement is provided, and elements that
+	ELEMENT_REQUIRES(experimental) will get compiled.  Off by default.
+
+2007-09-11 Tue 23:42:26 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 386c747cca2eb9933dbfbaf9970a5309796617b1
+
+	* DISTFILES, INSTALL, elements/standard/addressinfo.cc,
+	elements/userlevel/fromdump.cc, elements/userlevel/todump.cc,
+	elements/wifi/wirelessinfo.cc, elements/wifi/wirelessinfo.hh,
+	etc/README, etc/ns-2.29-patch, etc/ns-2.30-patch,
+	include/click/glue.hh, include/click/master.hh,
+	include/click/router.hh, include/click/simclick.h, lib/master.cc,
+	lib/router.cc, lib/routerthread.cc, ns/Makefile.in,
+	ns/nsclick-test.cc, ns/nsclick.cc: Update ns-2.30 patch from Szymon
+	Chachulski and Nicolas Letor.
+	
+	This commit breaks compatibility with existing nsclick
+	installations. However, a wholesale rewrite of the ns-nsclick
+	interface by Eddie should allow most future updates to maintain
+	binary compatibility.
+	
+	Additionally remove ns-2.29-patch for now.
+	
+	Lightly tested.
+
+2007-09-11 Tue 17:05:20 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit a46eabc662160d0a7d540cb14e024585e08da3a7
+
+	* elements/analysis/fromdagdump.cc,
+	elements/analysis/fromnlanrdump.cc,
+	elements/analysis/storetimestamp.cc, elements/aqm/adaptivered.cc,
+	elements/aqm/adaptivered.hh, elements/aqm/pi.cc,
+	elements/aqm/red.cc, elements/ethernet/arpfaker.cc,
+	elements/ethernet/arpfaker.hh, elements/ethernet/arpprint.cc,
+	elements/ethernet/arpquerier.cc, elements/ethernet/arpquerier.hh,
+	elements/ethernet/checkarpheader.cc,
+	elements/ethernet/ensureether.cc, elements/ethernet/etherencap.cc,
+	elements/ethernet/hostetherfilter.cc,
+	elements/ethernet/ip6ndsolicitor.cc,
+	elements/ethernet/ip6ndsolicitor.hh,
+	elements/icmp/checkicmpheader.cc, elements/icmp/icmperror.cc,
+	elements/icmp/icmperror.hh, elements/icmp/icmppingencap.cc,
+	elements/icmp/icmppingrewriter.cc,
+	elements/icmp/icmppingrewriter.hh, elements/icmp/icmprewriter.cc,
+	elements/icmp/icmpsendpings.cc, elements/tcpudp/checktcpheader.cc,
+	elements/tcpudp/checkudpheader.cc,
+	elements/tcpudp/dynudpipencap.cc, elements/tcpudp/dynudpipencap.hh,
+	elements/tcpudp/iprewriter.cc, elements/tcpudp/settcpchecksum.cc,
+	elements/tcpudp/settcpchecksum.hh, elements/tcpudp/tcpipsend.cc,
+	elements/tcpudp/tcprewriter.cc, elements/tcpudp/udpipencap.cc,
+	elements/tcpudp/udpipencap.hh, elements/test/checkpacket.cc,
+	elements/test/comparepackets.cc, elements/test/queueyanktest.cc,
+	elements/test/randomseed.cc, elements/test/schedordertest.cc,
+	elements/test/upstreamnotifier.cc,
+	elements/userlevel/chattersocket.cc,
+	elements/userlevel/controlsocket.cc,
+	elements/userlevel/fromdevice.cc, elements/userlevel/fromdump.cc,
+	elements/userlevel/fromfile.cc, elements/userlevel/fromfile.hh,
+	elements/userlevel/fromhost.cc, elements/userlevel/fromhost.hh,
+	elements/userlevel/ipflowrawsockets.cc,
+	elements/userlevel/kernelfilter.cc,
+	elements/userlevel/kerneltun.cc, elements/userlevel/kerneltun.hh,
+	elements/userlevel/khandlerproxy.cc,
+	elements/userlevel/printold.cc, elements/userlevel/printold.hh,
+	elements/userlevel/progressbar.cc, elements/userlevel/rawsocket.cc,
+	elements/userlevel/socket.cc, elements/userlevel/todevice.cc,
+	elements/userlevel/todump.cc, elements/userlevel/tohost.cc,
+	elements/userlevel/umlswitch.cc, lib/confparse.cc: More cp_va_parse
+	=> cp_va_kparse transition.
+	
+	Plus fix a bug in cp_va_kparse itself, and fix a bug found by the
+	sentinel attribute.
+
+2007-09-11 Tue 17:04:25 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit f6a6a9e57ea1812b600bc2178cf5daf0fed72b0f
+
+	* include/click/confparse.hh, lib/confparse.cc: Use GCC sentinel
+	attribute to find cp_va_kparse errors.
+	
+	If you don't terminate your cp_va_kparse argument list with cpEnd,
+	you'll get a "warning: missing sentinel" error.
+	
+	Also allow ? and ! to appear in keywords.
+
+2007-09-11 Tue 16:37:38 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit f0630737810b64aa765397ced581fc514e488f8a
+
+	* elements/wifi/: arptable.cc, arptable.hh, athdescdecap.cc,
+	athdescencap.cc, autoratefallback.cc, ethercount.cc, ethercount.hh,
+	extradecap.cc, extraencap.cc, filterfailures.cc, filterfailures.hh,
+	filterphyerr.cc, filterphyerr.hh, filtertx.cc, filtertx.hh,
+	fromhandler.cc, linktable.cc, madwifirate.cc, printtxfeedback.cc,
+	printwifi.cc, prism2decap.cc, prism2encap.cc, probetxrate.cc,
+	pushanno.cc, pushanno.hh, radiotapdecap.cc, radiotapencap.cc,
+	readanno.cc, readanno.hh, rxstats.cc, rxstats.hh, setrts.cc,
+	settxpower.cc, settxrate.cc, wepdecap.cc, wepencap.cc,
+	wifidecap.cc, wifidefrag.cc, wifidupefilter.cc, wifiencap.cc,
+	wififragment.cc, wifiseq.cc, wirelessinfo.cc: Wifi elements use
+	cp_va_kparse.
+	
+	Also remove redundant configure() methods that behave like the
+	default implementation (which accepts only empty config strings).
+
+2007-09-11 Tue 13:02:16 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 99955406148312112a63538d68fefb464536fd94
+
+	* lib/element.cc: Documentation nit.
+
+2007-09-11 Tue 12:54:53 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit e3450878ed01d69ba775ac696a8c150e8ce8ce54
+
+	* doc/Doxyfile, doc/click.texi, elements/test/confparsetest.cc,
+	include/click/confparse.hh, include/click/element.hh,
+	include/click/router.hh, lib/confparse.cc, lib/element.cc,
+	lib/router.cc, test/standard/confparse-01.testie: More confparse
+	documentation, and remove Element::notify_ninputs().
+	
+	Document almost all of the cp_ functions, and the cp_va_kparse()
+	functions. Add more useful documentation to Element, including
+	examples.  Remove redundant documentation from the programming
+	manual.  Also remove long-deprecated Element::notify_ninputs,
+	notify_noutputs, and ports_frozen methods, and apply the
+	corresponding cleanups to Router::initialize().
+
+2007-09-11 Tue 14:27:09 +0900  Joonwoo Park <joonwpark81@gmail.com>
+Commit 6b5267dbb0bc48890612733b575d3b75c0e4350a
+
+	* lib/ino.cc: More number of elements configuration support.
+	
+	Hi,
+	
+	For the second time after patch for click_qsort(). Recently I tried
+	to configure about 4000 click elements. (Lots of interfaces from
+	VLAN) But I couldn't get it due to size limitation of atomic memory
+	allocation of ClickIno::grow(). After configuration, 'ls -al
+	/click/' shows nothing. I think we need vmalloc() or
+	kmalloc(GFP_KERNEL) at there. I tried vmalloc() with CLICK_LALLOC()
+	Therefore, It showed me up to running 7500 elements. (for further
+	more I got a failed Vector::reserve()) I hope I didn't missed
+	something that we can't use vmalloc instead of kmalloc(GFP_ATOMIC)
+	at that point.
+	
+	- Signed-off-by: Joonwoo Park <joonwpark81@gmail.com>
+	
+	 lib/ino.cc		 |    6 +++---
+	 1 files changed, 3 insertions(+), 3 deletions(-)
+	Signed-off-by: Eddie Kohler <kohler@cs.ucla.edu>
+
+2007-09-10 Mon 16:54:35 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 6a8780c45b45e547740034fe5e63c86a1939bbe2
+
+	* include/click/: bighashmap.hh, bitvector.hh, etheraddress.hh,
+	handlercall.hh, ip6address.hh, ip6flowid.hh, ipaddress.hh,
+	ipflowid.hh, notifier.hh, pair.hh, straccum.hh, string.hh,
+	timestamp.hh: Add more operator unspecified_bool_type()s.
+
+2007-09-09 Sun 22:37:22 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 1fb2f3bd5224498792d3cd2516030a521b2c901f
+
+	* doc/Doxyfile, doc/click.texi,
+	elements/analysis/aggregateipflows.cc,
+	elements/analysis/fromflandump.cc,
+	elements/etherswitch/etherswitch.cc,
+	elements/test/confparsetest.cc, elements/test/confparsetest.hh,
+	include/click/atomic.hh, include/click/confparse.hh,
+	include/click/string.hh, lib/confparse.cc, lib/element.cc,
+	lib/string.cc, test/standard/confparse-01.testie: More confparse
+	documentation and some minor fixes.
+	
+	Also add test for some confparse functionality, and remove
+	redundant texinfo documentation.
+
+2007-09-08 Sat 13:08:16 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit e96fb483297a659d188f6c7bf84a33f43ffae228
+
+	* doc/Doxyfile, elements/analysis/aggcounter.cc,
+	elements/analysis/aggpktcounter.cc,
+	elements/analysis/aggregatefirst.cc,
+	elements/analysis/aggregateip.cc,
+	elements/analysis/aggregateipaddrpair.cc,
+	elements/analysis/aggregateipflows.cc,
+	elements/analysis/aggregatelast.cc,
+	elements/analysis/aggregatelen.cc,
+	elements/analysis/aggregatepaint.cc,
+	elements/analysis/aggregatepaint.hh,
+	elements/analysis/anonipaddr.cc, elements/analysis/fromcapdump.cc,
+	elements/analysis/fromdagdump.cc,
+	elements/analysis/fromflandump.cc,
+	elements/analysis/fromipsumdump.cc,
+	elements/analysis/fromnetflowsumdump.cc,
+	elements/analysis/fromnlanrdump.cc,
+	elements/analysis/fromtcpdump.cc,
+	elements/analysis/settimestampdelta.cc,
+	elements/analysis/storetimestamp.cc,
+	elements/analysis/timefilter.cc, elements/analysis/timerange.cc,
+	elements/analysis/timesortedsched.cc,
+	elements/analysis/toipflowdumps.cc,
+	elements/analysis/toipflowdumps.hh,
+	elements/analysis/toipsumdump.cc, elements/ip/checkipheader.cc,
+	elements/ip/fixipsrc.cc, elements/ip/getipaddress.cc,
+	elements/ip/ipencap.cc, elements/ip/ipencap.hh,
+	elements/ip/ipfragmenter.cc, elements/ip/ipgwoptions.cc,
+	elements/ip/ipinputcombo.cc, elements/ip/ipoutputcombo.cc,
+	elements/ip/ipprint.cc, elements/ip/ipprint.hh,
+	elements/ip/ipratemon.cc, elements/ip/ipratemon.hh,
+	elements/ip/ipreassembler.cc, elements/ip/markipheader.cc,
+	elements/ip/ripsend.cc, elements/ip/ripsend.hh,
+	elements/ip/setipaddress.cc, elements/ip/setipaddress.hh,
+	elements/ip/setipdscp.cc, elements/ip/setipdscp.hh,
+	elements/ip/setrandipaddress.cc, elements/ip/setrandipaddress.hh,
+	elements/standard/align.cc, elements/standard/averagecounter.cc,
+	elements/standard/block.cc, elements/standard/burster.cc,
+	elements/standard/burster.hh, elements/standard/checklength.cc,
+	elements/standard/checklength.hh, elements/standard/checkpaint.cc,
+	elements/standard/compblock.cc, elements/standard/counter.cc,
+	elements/standard/delayshaper.cc,
+	elements/standard/delayunqueue.cc, elements/standard/hashswitch.cc,
+	elements/standard/infinitesource.cc,
+	elements/standard/infinitesource.hh,
+	elements/standard/linkunqueue.cc,
+	elements/standard/messageelement.cc, elements/standard/msqueue.cc,
+	elements/standard/paint.cc, elements/standard/paint.hh,
+	elements/standard/painttee.cc, elements/standard/painttee.hh,
+	elements/standard/print.cc, elements/standard/print.hh,
+	elements/standard/pullswitch.cc, elements/standard/pullswitch.hh,
+	elements/standard/randomerror.cc,
+	elements/standard/randomsample.cc,
+	elements/standard/randomsource.cc,
+	elements/standard/ratedsource.cc,
+	elements/standard/ratedsplitter.cc,
+	elements/standard/ratedsplitter.hh,
+	elements/standard/ratedunqueue.cc, elements/standard/script.cc,
+	elements/standard/setannobyte.cc,
+	elements/standard/setpackettype.cc,
+	elements/standard/settimestamp.cc, elements/standard/shaper.cc,
+	elements/standard/simplequeue.cc,
+	elements/standard/spinlockacquire.cc,
+	elements/standard/spinlockacquire.hh,
+	elements/standard/spinlockrelease.cc,
+	elements/standard/spinlockrelease.hh,
+	elements/standard/staticpullswitch.cc,
+	elements/standard/staticpullswitch.hh,
+	elements/standard/staticswitch.cc,
+	elements/standard/staticswitch.hh, elements/standard/storedata.cc,
+	elements/standard/strip.cc, elements/standard/strip.hh,
+	elements/standard/switch.cc, elements/standard/switch.hh,
+	elements/standard/tee.cc, elements/standard/timedsink.cc,
+	elements/standard/timedsink.hh, elements/standard/timedsource.cc,
+	elements/standard/truncate.cc, elements/standard/truncate.hh,
+	elements/standard/unqueue.cc, elements/standard/unqueue.hh,
+	elements/standard/unqueue2.cc, elements/standard/unstrip.cc,
+	elements/standard/unstrip.hh, include/click/confparse.hh,
+	lib/confparse.cc: Confparse documentation, and add cp_va_kparse.
+	
+	cp_va_parse has had some problems for a long time.  It is more
+	convenient for both users and programs to refer to arguments by
+	keyword name; and the long "description" was used for next to
+	nothing, it just took up space. Move some of Click to a brand-new
+	variant, cp_va_kparse, in which EVERY argument is a keyword
+	argument.  However, some keyword arguments can be positional as
+	well.  Example:
+	
+	  cp_va_kparse(conf, this, errh,
+		       "MANDATORY", cpkP+cpkM, cpBool, &a,
+		       "OPTIONAL", cpkP, cpInt, &b,
+		       "KEYWORD_ONLY", 0, cpString, &c,
+		       cpEnd);
+	
+	This will accept any of the following configuration strings:
+	
+	  1.  "MANDATORY true, OPTIONAL 0, KEYWORD_ONLY 'x'"
+	  2.  "true, KEYWORD_ONLY 'x', OPTIONAL 0"
+	  3.  "false, 0"
+	  4.  "OPTIONAL 0, MANDATORY true"
+	
+	This causes an error since MANDATORY was unspecified:
+	
+	  5.  "OPTIONAL 0"
+	
+	Deprecate cp_value::description; it did not help error messages
+	very much.
+	
+	Document some simple confparse functions.
+
+2007-09-08 Sat 13:02:39 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit b163678fa425f8dffbad99e49363af679f154ccb
+
+	* click-compile.in: Add --toolcflags and --toollibs arguments to
+	click-compile.
+
+2007-09-08 Sat 13:02:14 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit f403aa7ce791a0438ca4255069c1fa7ff0bfd469
+
+	* apps/ClickController/: NewConnectionDialog.java,
+	RouterTreeModel.java, StringUtils.java, Util.java: Some Java fixes
+	to ClickController to fix warnings.
+
+2007-09-07 Fri 16:44:27 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit ffc5d5e346e2c31061da52e372e406e1ea9a5f88
+
+	* lib/string.cc: Stop being such an idiot.
+
+2007-09-07 Fri 14:59:57 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 333a43a11fac3d4ef25d26052b7e4ed8e12e5b7a
+
+	* include/click/atomic.hh: Document atomic_uint32_t.
+
+2007-09-07 Fri 14:41:40 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit cae9dfebb64ce3b8c20d9a282d46010a2ead82a2
+
+	* include/click/atomic.hh, lib/string.cc: Correct compilation on
+	linuxmodule.
+
+2007-09-07 Fri 14:38:35 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 4a703e04dd4fc762b12e3aff8f4dd2b820d36f62
+
+	* include/click/string.hh, lib/string.cc: Use atomic operations in
+	String.
+
+2007-09-07 Fri 13:26:45 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit c145996051c376f3a646c60295aa68ece2eb4e49
+
+	* elements/standard/fullnotequeue.cc,
+	elements/standard/notifierqueue.cc, include/click/atomic.hh,
+	include/click/packet.hh: Atomicity changes at userlevel, and
+	potential notification fix.
+	
+	Now that we don't need atomic_uint32_t to be atomic for signals,
+	make atomic_uint32_t equivalent to uint32_t at userlevel, unless
+	HAVE_MULTITHREAD is true.  This lets us safely use atomic_uint32_t
+	for Packet::_use_count in all circumstances.
+	
+	A little measurement seems to reveal that the "if (s == 1)" and "if
+	(size() == capacity() - 1)" guards in NotifierQueue and
+	FullNoteQueue did not help performance, and they definitely caused
+	race conditions, so remove them.
+
+2007-09-07 Fri 13:08:30 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 7f45c98c261f9686be0dedda69eaee3716c778b6
+
+	* include/click/master.hh, lib/master.cc: Change atomicity plan for
+	signals based on Tamer.
+	
+	Still not fully atomic; need to implement the self-pipe trick.
+
+2007-09-07 Fri 12:10:00 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 02f13474065fbfee20987a55da42d6d1292c26a1
+
+	* elements/standard/: fullnotequeue.cc, notifierqueue.cc,
+	simplequeue.cc, simplequeue.hh: Note where memory barriers would
+	go.
+	
+	On x86, however, memory barriers aren't needed.
+
+2007-09-07 Fri 11:34:17 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 1652d76b7a7685105bcb244e7f58a55a9226c19e
+
+	* include/click/glue.hh, lib/glue.cc: click_lfree() takes "volatile
+	void *" rather than "void *".
+
+2007-09-07 Fri 10:53:46 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 88dd39f8f000965d7644e0e66e8ed13f48d51ba1
+
+	* config-userlevel.h.in, configure, configure.in,
+	elements/test/packettest.cc, elements/test/queuethreadtest.cc,
+	elements/test/queuethreadtest.hh, include/click/packet.hh,
+	include/click/router.hh, lib/packet.cc: Introduce preliminary
+	support for user-level multithreading.
+	
+	The QueueThreadTest1 and QueueThreadTest2 elements were added to
+	test very simple user-level multithreaded configurations.  Adding
+	this feature led to some fixes:
+	
+	(1) Packet use counts must be updated atomically.  However, making
+	packet use counts atomic_uint32_t reduces performance on a
+	clone-heavy test by roughly 20% (before it took ~7.38s on my laptop
+	to clone and kill 40M packets; after it took ~8.85s).
+	
+	(2) Router _running and _state must be volatile.
+	
+	Implement these fixes.	However, because of the performance
+	degradation, packet use counts are atomic at userlevel only if
+	--enable-user-multithread was supplied to configure. 
+	(--enable-user-multithread also provides the "umultithread"
+	requirement, which lets you compile elements conditionally based on
+	user-level multithreading support.)
+	
+	Also Packet::buffer() replaces Packet::buffer_data().
+	
+	Lots of aspects of user-level multithreading still need work.  For
+	example one thread can't reschedule tasks on another, since the
+	relevant atomic operations are unimplemented.  But this is a start.
+
+2007-09-07 Fri 10:46:00 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 2f07186fbc5faded33394f8535b27eb04f9bc644
+
+	* elements/standard/fullnotequeue.cc,
+	elements/standard/notifierqueue.cc,
+	elements/standard/simplequeue.cc, elements/standard/simplequeue.hh,
+	include/click/standard/storage.hh: Use "volatile" in storage
+	elements to improve multithreaded behavior.
+	
+	Believing that marking important objects as "volatile" will improve
+	SMP/SMT behavior, mark Queue _head, _tail, and _q slots as
+	"volatile".  But refer to them less often (mostly operate on cached
+	values).
+
+2007-09-07 Fri 10:25:37 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 502f7e892e2e30a4748b7a49f4b2f67e7ab9fd48
+
+	* etc/samplepackage/.gitignore: Ignore more generated files.
+
+2007-09-06 Thu 14:53:32 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit d6a9b41467deae0920d2cf28d60080e52c9b0109
+
+	* NEWS: More NEWS updates.
+
+2007-09-06 Thu 14:50:04 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit d152972422b6da7294e6a93258d250cc5cb69554
+
+	* NEWS: Mention some more helpful people.
+
+2007-09-06 Thu 13:30:04 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit cf598629a5b99c32e0f7a55a0f4665a4dce85453
+
+	* click-buildtool.in, etc/pkg-linuxmodule-26.mk,
+	etc/pkg-linuxmodule.mk, etc/pkg-userlevel.mk,
+	include/click/driver.hh, lib/driver.cc,
+	tools/click-devirtualize/click-devirtualize.cc,
+	tools/click-fastclassifier/click-fastclassifier.cc,
+	tools/click-install/click-install.cc: Improve click-devirtualize
+	and click-fastclassifier support.
+	
+	Click-devirtualize and click-fastclassifier rotted with recent
+	package system updates.  Restore it to functionality at userlevel
+	and kernel. Devirtualize, fastclassifier, and packages all lightly
+	tested.
+
+2007-09-06 Thu 11:24:35 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 9d7c96daa823560438989a0120806ebc2e42ef34
+
+	* ns/Makefile.in: Allow compiling nsclick module on Mac.
+
+2007-09-06 Thu 11:12:55 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 67799307240e063c0f8fc12d0b01fd6b80651841
+
+	* elements/standard/fullnotequeue.cc,
+	elements/standard/notifierqueue.cc, include/click/notifier.hh: Fix
+	a potential race condition in notification.
+	
+	Make sure that we turn on a notifier before rescheduling its
+	associated tasks -- so in case those tasks run, they will observe
+	the notifier as on.
+
+2007-09-06 Thu 10:39:03 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 07c3b08dbf7fe1d31e022b64337f923cee7d5c01
+
+	* config-bsdmodule.h.in, config-linuxmodule.h.in, config-ns.h.in,
+	config-userlevel.h.in, elements/wifi/linktable.hh,
+	elements/wifi/path.hh, include/click/ip6flowid.hh,
+	include/click/ipflowid.hh, include/click/pair.hh, lib/glue.cc,
+	tools/lib/eclasst.hh: Make hashcode system work in nsclick.
+	
+	References to "::hashcode" don't work in nsclick, where "hashcode"
+	is in namespace Click.	Use "CLICK_NAME(hashcode)" instead.
+
+2007-09-05 Wed 14:01:35 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 806cf79710d02713b59b30217e4501f0a88a937c
+
+	* doc/Doxyfile, doc/mkwebdoc.pl, lib/element.cc: More
+	documentation, and update Doxyfile.
+
+2007-09-05 Wed 11:14:05 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 61aec64f5409b7cc298c6b9d693323ac4e3f22c0
+
+	* include/click/ewma.hh: Comment correction.
+
+2007-09-05 Wed 10:41:06 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit d119d366b4309bd4e456bf813014b648b7571e96
+
+	* include/click/router.hh, lib/router.cc: Improve presentation of
+	Handler::Flags.
+
+2007-09-05 Wed 01:08:27 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit f465161cf56c62fbe2a376e531d23f6b92c26054
+
+	* lib/task.cc: Do not spin while grabbing and releasing _task_lock.
+	
+	Instead, spin without holding _task_lock.  Seems likely to be
+	better.
+
+2007-09-05 Wed 00:52:48 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit f96291a79f0d7f063814bf4242401b9a2d3044ad
+
+	* doc/mkwebdoc.pl: Some distributions do not provide the "gmake"
+	alias.
+
+2007-09-05 Wed 00:51:14 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 523fd1433e36e8e4cebccb43d6860dbb6c21f46c
+
+	* elements/ns/tosimtrace.cc: Replace stray "0" argument-ender with
+	"cpEnd".
+
+2007-09-04 Tue 14:13:00 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit ba637c51282065cdae499b9f5cb5320950c11271
+
+	* include/click/master.hh, include/click/routerthread.hh,
+	include/click/task.hh, lib/master.cc, lib/router.cc,
+	lib/routerthread.cc, lib/task.cc: Further update to pending task
+	locking.
+	
+	The prior _pending story had a problem in systems with 2 or more
+	Click threads.	If two threads simultaneously called
+	Master::process_pending(), they would switch _current_pending back
+	to its original value, causing problems with future add_pending()
+	calls.	Jason (Joonwoo) Park sent in a patch that drew attention to
+	this problem but didn't truly fix it.
+	
+	This _pending story attempts to fix this.  We go back to the
+	original pending list design, where there is only one pending list.
+	 To address the problem of deleting a task on a pending list, we
+	simply wait (pending list processing is essentially nonblocking). 
+	Also be careful in Task::process_pending() to avoid scheduling
+	tasks on dead routers; this lets us avoid taking tasks off pending
+	lists on router death.
+	
+	Again untested on SMP, since I can't do that at the moment.
+
+2007-08-31 Fri 22:05:23 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 0afb917d14a36b0d6337895eb8971d48a8f0ad1f
+
+	* include/click/handlercall.hh, lib/handlercall.cc: A HandlerCall
+	that fails to initialize becomes empty.
+
+2007-08-31 Fri 22:04:10 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit daebbfbaef017d56d4e63e46e293115b140b1b00
+
+	* test/userlevel/: ControlSocket-llrpc-01.testie,
+	ControlSocket-llrpc-02.testie, uhotswap-01.testie: Someone is using
+	port 8000 on my machine; don't use it in tests.
+
+2007-08-31 Fri 18:56:40 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 503d7b089030071e0d172dd04e0f16977a77afd3
+
+	* include/click/handlercall.hh: Documentation nit.
+
+2007-08-31 Fri 18:54:19 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit cc915ee0e4ecce05b9eec51781acb490e490f595
+
+	* elements/analysis/fromdagdump.cc,
+	elements/analysis/fromnlanrdump.cc,
+	elements/analysis/timefilter.cc, elements/userlevel/fromdump.cc,
+	elements/userlevel/progressbar.cc, include/click/confparse.hh,
+	include/click/handlercall.hh, lib/confparse.cc, lib/handlercall.cc:
+	HandlerCall documentation and updates.
+	
+	Functionality changes: Refer to Handler::OP_READ and
+	Handler::OP_WRITE rather than HandlerCall::CHECK_READ and
+	CHECK_WRITE.
+	
+	Refer to cpHandlerCallPtrRead and cpHandlerCallPtrWrite instead of
+	cpReadHandlerCall and cpWriteHandlerCall.
+
+2007-08-31 Fri 18:52:01 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 08b01ff39663528cdcf42b847e814b65b8e27da5
+
+	* include/click/router.hh, lib/router.cc: Document Router functions
+	further.
+
+2007-08-31 Fri 18:46:20 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 44b39a056d8b6e8183a389bec36480c41b0a6bdc
+
+	* doc/mkwebdoc.pl: mkwebdoc.pl -D will only build the Doxygen
+	documentation.
+
+2007-08-31 Fri 18:46:02 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 08c165a809422e93ebb0f62bc154b9ad7529ca02
+
+	* doc/Doxyfile: Do not include bsdmodule-only code in Doxygen
+	output.
+
+2007-08-31 Fri 11:10:24 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit d0a8084b173ff2b7ac0f609e57188fa67caf6fd6
+
+	* lib/confparse.cc: Support 64-bit off_t even when user has
+	--disable-int64.
+	
+	Reported by Christian Kreibich.
+
+2007-08-31 Fri 08:29:03 -0700  Christian Kreibich <christian@icir.org>
+Commit 7d5797ddcf10b8f2e9163c242a05e681735d6b5f
+
+	* config-userlevel.h.in: Define HAVE_INT64_IS_LONG_LONG at
+	userlevel better.
+	
+	Problem found on Fedora 7.
+	
+	Signed-off-by: Eddie Kohler <kohler@cs.ucla.edu>
+
+2007-08-31 Fri 08:27:04 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit d14859e5ac3faf9ee495392882347418ef5ff376
+
+	* FAQ, click-buildtool.in: Allow extra parens around ELEMENT_LIBS
+	argument.
+	
+	Christian Kreibich points out that some linker arguments contain
+	commas, which makes the preprocessor unhappy.  Add an extra pair of
+	parens to make the preprocessor happy.
+
+2007-08-30 Thu 08:19:12 -0700  Jason Park (Joonwoo Park) <jason@geninetworks.com>
+Commit 65b812b5a665cae53a2c3a1f5fdeeef2100176d0
+
+	* elements/linuxmodule/tohost.cc: Correct bad configuration
+	argument in ToHost introduced recently.
+	
+	Signed-off-by: Eddie Kohler <kohler@cs.ucla.edu>
+
+2007-08-30 Thu 08:18:12 -0700  Jason Park (Joonwoo Park) <jason@geninetworks.com>
+Commit e91a1663cc2a4e703012e71a42a86a401f3daa7e
+
+	* include/click/task.hh: Update Task's SMP methods to use new EWMA
+	interface.
+	
+	Signed-off-by: Eddie Kohler <kohler@cs.ucla.edu>
+
+2007-08-29 Wed 17:49:15 -0700  Jason Park (Joonwoo Park) <jason@geninetworks.com>
+Commit 38306cbb025ae3404482bb48a1242303bbda3fe7
+
+	* include/click/sync.hh: Use spin_lock_irqsave to disable
+	preemption and lock atomically.
+
+2007-08-29 Wed 17:31:47 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 2cefae18ac7d55e25dfde8cd27991b5cc25c4f0f
+
+	* elements/standard/: fullnotequeue.cc, fullnotequeue.hh,
+	notifierqueue.cc, notifierqueue.hh, simplequeue.hh: Improve
+	NotifierQueue and Queue behavior on SMP Click.
+	
+	Jason (Joonwoo) Park reports a desire to use NotifierQueue and
+	Queue on SMP Click.  This didn't work so well because of
+	notification-related race conditions.  There was code there to
+	avoid the race conditions, but commented out, as the locking was
+	observed to make things LOTS slower. This patch attempts to avoid
+	the race conditions without locking, simply by double-waking the
+	Notifiers.  There may be bugs.
+	
+	Also check in comments explicitly noting NotifierQueue/Queue
+	assumptions on SMP.
+
+2007-08-29 Wed 15:34:47 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 7ec20ef8190937aaa62c3aeb57af9d3e51ecf659
+
+	* include/click/master.hh, include/click/task.hh, lib/master.cc,
+	lib/task.cc: Update pending task mechanism again for greater
+	correctness.
+	
+	On second thought, there were problems in BOTH John's and my prior
+	fixes to the pending task implementation -- specifically, when a
+	Task was deleted while it lay on a pending list.  This
+	implementation uses two lists to solve that problem, without
+	synchronizing the whole router on pending processing the way John's
+	did.  It also seems a tiny bit faster, probably because there is no
+	need to reverse the pending list any more.
+	
+	Not tested nearly enough.
+
+2007-08-29 Wed 12:02:19 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 2dfacc0df1a67918866862f16a82d516ba8bb9e7
+
+	* include/click/task.hh, lib/task.cc: The _pending member required
+	more atomic handling; try this.
+	
+	Patch inspired by a patch from Jason (Joonwoo) Park.
+
+2007-08-29 Wed 11:55:31 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit dc84d40d4f44cc64ee0b90b201bc1511dc7d02f4
+
+	* test/tools/mkmindriver-01.testie: Correct test.
+
+2007-08-29 Wed 11:50:59 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 3b4f34ed31927ac23792fd0870154bbebb6da127
+
+	* tools/lib/elementmap.cc: Call String::static_initialize() when
+	needed.
+	
+	This lets us define static global ElementMap objects without
+	declaring String::Initializers.
+
+2007-08-29 Wed 10:54:03 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 45063d34e1712f25459e3ea31c8453b54cb855d7
+
+	* lib/task.cc: Don't provide misinformation about the future.
+
+2007-08-29 Wed 10:48:48 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 970e4adacd5a7661c21eb2a86ac049850420a495
+
+	* elements/linuxmodule/: polldevice.cc, polldevice.hh: Add HEADROOM
+	argument to PollDevice.
+
+2007-08-29 Wed 10:48:30 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit ffa208aa01530502fbf4c0885e3a8090799fcfbb
+
+	* linuxmodule/skbmgr.cc: Handle tailroom equivalently in SMP click
+	and regular Click.
+	
+	Formerly, the skbmgr appended tailroom only on SMP click.  That
+	seems odd. Now it happens in single-threaded Click as well.
+
+2007-08-29 Wed 10:35:57 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 3ee7c1d8afb4f4154bcdc73197fa1c60a2434522
+
+	* include/click/router.hh, lib/element.cc, lib/router.cc: Begin
+	process of documenting Router.
+
+2007-08-29 Wed 10:34:51 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit a715ba5842cd6cfd599fd07451f156f5d3e4130a
+
+	* elements/userlevel/: fromdevice.cc, fromdevice.hh,
+	kernelfilter.cc, kernelfilter.hh: Decouple FromDevice and
+	KernelFilter.
+	
+	Move KernelFilter::device_filter into FromDevice.
+
+2007-08-29 Wed 01:25:09 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit b2551b25a0755b4f339245e5d0209603ab3069d9
+
+	* elements/linuxmodule/todevice.cc: Don't drop too-short packets in
+	ToDevice; instead make them long enough.
+	
+	Torquato Bertani sent in a patch somewhat like this.  (This is
+	untested.)
+
+2007-08-29 Wed 01:09:16 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 51b43964a0489daf26257c59eff436752b70acb0
+
+	* elements/linuxmodule/: anydevice.cc, anydevice.hh, fromdevice.cc,
+	fromdevice.hh, polldevice.cc, polldevice.hh, todevice.cc,
+	todevice.hh, tohost.cc, tohost.hh, tohostsniffers.hh: Add QUIET
+	argument to suppress device up/down messages in kernel.
+	
+	Also add another change: When searching for a device, only use the
+	device's Ethernet name if NO device by that name has EVER existed. 
+	This avoids problems if a host has multiple devices with the same
+	Ethernet address.
+	
+	Both changes thanks to Cliff Frey (discussions and patch base).
+
+2007-08-29 Wed 00:02:39 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit f1dd871add28b5d0b753b98a6f180a992d6af11a
+
+	* elements/: grid/dsrroutetable.cc, grid/dsrroutetable.hh,
+	wifi/linktable.cc, wifi/linktable.hh: DSR fix (?) from Dries
+	Naudts.
+	
+	Also some API fixes to reduce vector copies.
+
+2007-08-28 Tue 20:50:02 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 86d1b37357b69cb2ce273e7f1fc6fbb0ab5d9987
+
+	* include/click/bighashmap.hh: HashMap iterators gain
+	unspecified_bool_type.
+	
+	In addition, _HashMap_const_iterator<K, T*> loses its private
+	inheritance, since that confused overload resolution.
+
+2007-08-28 Tue 20:02:42 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 7332fc5ef799e1cab98bf457d3f1a483cf455118
+
+	* include/click/straccum.hh: More documentation updates.
+
+2007-08-28 Tue 19:54:43 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 8e97706c70aff237d10cbf0ab76c768178dac453
+
+	* include/click/ewma.hh: More documentation updates.
+
+2007-08-28 Tue 19:37:20 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 5bb0957007bf5f0e1aed0e0ba7977ba086c4abaa
+
+	* include/click/ewma.hh: Small documentation fix.
+
+2007-08-28 Tue 19:24:02 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 2947aaaf20d5b0a1936077c06ebcdbd8bf9f5746
+
+	* lib/: bigewma.cc, bigewma.hh: BigEWMA is not useful.
+
+2007-08-28 Tue 19:23:41 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 6e75f69aa53a87668a34b579a9913c4cce9b91da
+
+	* elements/aqm/pi.hh, elements/aqm/red.hh,
+	elements/ip/ipratemon.cc, elements/ip/ipratemon.hh,
+	elements/standard/bandwidthmeter.cc,
+	elements/standard/bandwidthmeter.hh, elements/standard/counter.cc,
+	include/click/ewma.hh: Document RateEWMAX, and update its
+	implementation as for DirectEWMAX.
+	
+	At the same time, update the DirectEWMAX<P> template class so that
+	DirectEWMAX<P> inherits from P.  This makes the interaction between
+	P and its EWMA object more comfortable, and removes the need for
+	StabilityEWMAX<P>.
+	
+	All of RateEWMAX's template arguments are folded into a single
+	parameter, as in DirectEWMAX.  The now() Tamer function is renamed
+	epoch(); the freq() function is renamed epoch_frequency().
+	
+	RateEWMAX: Remove update_time() and update_now() as unused and
+	confusing. Also, replace unparse() with unparse_rate(), to be more
+	specific.
+
+2007-08-28 Tue 16:14:43 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 5d1cf3b683c065322392c7a4af84491872396305
+
+	* DISTFILES, bsdmodule/Makefile.in, elements/aqm/adaptivered.cc,
+	elements/aqm/pi.cc, elements/aqm/pi.hh, elements/aqm/red.cc,
+	elements/aqm/red.hh, elements/ip/ipratemon.cc,
+	elements/ip/ipratemon.hh,
+	elements/linuxmodule/staticthreadsched.cc,
+	elements/standard/bandwidthmeter.cc,
+	elements/standard/bandwidthmeter.hh, elements/standard/meter.cc,
+	elements/test/comparepackets.cc, etc/libclick/DISTFILES,
+	etc/libclick/lc-libsrc-Makefile.in, include/click/ewma.cc,
+	include/click/ewma.hh, include/click/ewma64.hh,
+	include/click/routerthread.hh, lib/driver.cc, lib/ewma64.cc,
+	lib/templatei.cc, linuxmodule/Makefile.in, linuxmodule/sched.cc,
+	ns/Makefile.in, userlevel/Makefile.in: Document and rework EWMA
+	classes.
+	
+	Remove EWMA64; instead, the value_type becomes a template parameter
+	for the base EWMA classes.
+	
+	Change the name of average(); it is now either scaled_average() or
+	unscaled_average(), depending on what is desired.
+	
+	Introduce a template parameter plan that allows a single EWMA base
+	class to either accept fast, fixed parameters or user-settable
+	parameters.
+	
+	Rename update_zero_period() to update_n().  Rename update_with()
+	to, simply, update().
+	
+	Document DirectEWMAX and StabilityEWMAX.  Use StabilityEWMAX in RED
+	and PI.
+	
+	Also, include ewma.hh less often.  This causes us to have to adjust
+	other files' includes.
+
+2007-08-28 Tue 15:53:56 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 1309cf0ea984bc488bd64fb144042bb6d5a72538
+
+	* config.h.in, configure, configure.in, m4/click.m4: Add configury
+	check for arithmetic right shift.
+	
+	The configuration variable is HAVE_ARITHMETIC_RIGHT_SHIFT.
+
+2007-08-28 Tue 13:46:35 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 40b1f4c8e57221882d64ffdf7951153132df301f
+
+	* elements/standard/: averagecounter.cc, averagecounter.hh:
+	AverageCounter gains byte_count and byte_rate handlers.
+	
+	Inspired by Roman Chertov.  Also, at user level, rate handlers
+	return doubles.
+
+2007-08-28 Tue 13:35:00 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 152a1ccafd5b42f90e3cea4b2367e5265260a0e9
+
+	* elements/userlevel/: fromhost.hh, kernelfilter.hh: Documentation
+	fixlets.
+
+2007-08-28 Tue 12:38:18 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 869cecf74e2004495e8ea2a367a8432b281957b6
+
+	* conf/test-ping-userlevel.click, conf/test-ping.click,
+	elements/userlevel/fromdevice.cc, elements/userlevel/fromdevice.hh,
+	elements/userlevel/kernelfilter.cc,
+	elements/userlevel/kernelfilter.hh: Add KernelFilter element, which
+	installs kernel firewall rules.
+	
+	KernelFilter(drop dev eth0) says the kernel should not handle any
+	packets arriving on interface eth0.  However, any packets that do
+	arrive there will be visible to Click's userlevel FromDevice
+	element, so you can automatically install a configuration that
+	routes at user level.
+	
+	Also, FromDevice gains a real SNIFFER argument, which just calls
+	KernelFilter.
+	
+	KernelFilter works by executing /sbin/iptables, which is
+	OS-specific.
+	
+	Also add test-ping-userlevel.click to demonstrate this
+	functionality, and update test-ping a bit.
+
+2007-08-28 Tue 12:34:32 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 66def0c651a99bba32f0c121b74dc6aa077cda3b
+
+	* include/click/userutils.hh, lib/userutils.cc,
+	tools/lib/toolutils.cc, tools/lib/toolutils.hh: Move
+	shell_command_output_string() to userutils from toolutils.
+	
+	Prepare to use shell_command_output_string() in an element.
+
+2007-08-28 Tue 11:46:39 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 7748623427a134c8cd4b88e961211a552a0902ec
+
+	* conf/test-ping.click: Change $DEVNAME parameter to $DEV (better
+	name).
+
+2007-08-28 Tue 10:58:27 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit ac1d6940a3ea72fb5578e102fd12afc4f8206aef
+
+	* config-linuxmodule.h.in, configure, configure.in,
+	include/click/atomic.hh, include/click/integers.hh,
+	lib/integers.cc: Mips crosscompile fixes inspired by Jens Mueller.
+	
+	(1) Describe mips as an architecture with no in-kernel integer
+	builtins. (2) Check for atomic_set_mask explicitly rather than
+	implicitly.  This (still leaves uncommitted his change that adds
+	-mlong-calls to CLICKCFLAGS (and CLICKCXXFLAGS; don't know why that
+	isn't extracted from Linux.
+
+2007-08-28 Tue 10:58:27 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 5b3e56b3091dbbf4fa347b787558c89a2c99a0f9
+
+	* config-linuxmodule.h.in, configure, configure.in,
+	include/click/atomic.hh, include/click/integers.hh,
+	lib/integers.cc: Mips crosscompile fixes inspired by Jens Mueller.
+	
+	(1) Describe mips as an architecture with no in-kernel integer
+	builtins. (2) Check for atomic_set_mask explicitly rather than
+	implicitly.  This (still leaves uncommitted his change that adds
+	-mlong-calls to CLICKCFLAGS (and CLICKCXXFLAGS; don't know why that
+	isn't extracted from Linux.
+
+2007-08-28 Tue 10:12:15 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit d236b6be387588599a1aee53ff827a72ad655fb8
+
+	* ChangeLog: .1: New ChangeLog format, corresponding to git.
+
 2007-08-27 Mon 22:39:02 -0700  Eddie Kohler <kohler@cs.ucla.edu>
 Commit 68b84ac96de5ab92077e9cf21d6306393645ab79
 

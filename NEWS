@@ -16,31 +16,60 @@ Version 1.6.0
 
 ** Improved support for recent FreeBSD kernels (Bruce Simpson).
 
-** ns-2.30 support.
+** ns-2.30 support, and ns-2.29 support removed.  You will need to apply
+   the ns-2.30-patch with this distribution; old patches are obsolete.
 
 ** Improved stability for e1000-5.x drivers (Kevin Lahey), e1000-6.x
-   drivers (Beyers Cronje, Adam Greenhalgh, Jason Park), and e1000-7.x
+   drivers (Beyers Cronje, Adam Greenhalgh, Joonwoo Park), and e1000-7.x
    drivers (Max Poletto, Roman Chertov).
 
 ** Improved stability for Linux kernel module.
 
-** click-viz is an integrated tool.
+** Improved SMP Click.  For instance, removed NotifierQueue race
+   conditions.  Thanks very much to Joonwoo Park.
+
+** click-viz is integrated into click-pretty.
 
 ** click-fastclassifier and click-devirtualize work.
 
+** click-align's output is smaller; it generates output only for elements
+   that require alignment information.  The need for alignment information
+   is indicated by the character A in flags().
+
 * Elements
 
-** The Linux kernel module device elements FromDevice and PollDevice have a
-   TIMESTAMP keyword argument, to force timestamps at device receive time.
-   Recent kernels don't timestamp received packets most of the time.
+** Linuxmodule elements FromDevice and PollDevice have a TIMESTAMP keyword
+   argument, to force timestamps at device receive time.  Recent kernels
+   don't timestamp received packets most of the time.
 
-** Greatly improved IPsec elements (thanks, Dimitris Syrivelis and Ioannis
-   Avramopoulos).
+** Linuxmodule FromDevice, PollDevice, and ToDevice support the QUIET
+   keyword argument.  Another change makes it easier to use these elements
+   when there are many devices with the same Ethernet address.  Thanks to
+   Cliff Frey.
+
+** Greatly improved IPsec elements from Dimitris Syrivelis and Ioannis
+   Avramopoulos.
 
 ** ToIPSummaryDump supports MD5 checksums (Vern Paxson request).
 
 ** Add support for PlanetLab Privileged Operations (proper) packet sending
    and receiving (thanks, Mark Huang).
+
+** Script: The "run" handlers accepts arguments, which the script can refer
+   to as $args, $1, $2, and so forth.  "goto exit" works.
+
+** User-level FromDevice's SNIFFER argument now works.  SNIFFER false
+   automatically installs a firewall rule that prevents the kernel from
+   processing FromDevice's packets.  When Click stops, the rule is
+   automatically removed.  Works only on Linux at the moment.
+
+** More handlers for UDPIPEncap, ARPQuerier, ICMPPingSource, ICMPPingEncap,
+   and others.
+
+** Linuxmodule: Add experimental FromUserDevice and ToUserDevice elements,
+   for communicating between kernel configurations and user level via /dev.
+   Only available if --enable-experimental was supplied to configure.
+   Thanks to Roman Chertov.
 
 ** Bug fixes, performance improvements, and extensions to many elements,
    including AddressTranslator, AverageCounter, BandwidthMeter,
@@ -54,9 +83,20 @@ Version 1.6.0
 
 * Internals
 
+** Initial and very preliminary support for multithreading at user level.
+   If one of your elements plans to fork a new thread, compile Click with
+   --enable-user-multithread.  Most of Click is still not thread safe, but
+   this will fix some common problems, such as Packet reference counts.
+
+** Introduce new cp_va_kparse() functions with a better interface than
+   cp_va_parse().  Document confparse functions.
+
+** Document and rewrite EWMA classes.
+
 ** Important bug fixes in Task will make notification more stable.
 
-** Remove some deprecated member functions in String,
+** Remove some deprecated member functions in String and Element
+   (notify_ninputs() and notify_noutputs()).
 
 ** Fix bugs in lexing, notification, and Linux kernel module locking and
    SMP support.  Thanks especially to Joonwoo (Jason) Park for SMP patches
@@ -66,18 +106,28 @@ Version 1.6.0
    functions, allowing very large Strings and StringAccums in kernel space.
    So do Queues.
 
+** Compilation fixes for x86_64.  Thanks, Puneet Sood.
+
+** A better hashcode() system uses templates and overloading, reducing the
+   chance that an operator bool() will mistakenly be used as a hashcode().
+   Thanks, Andrew Ratin.
+
+** Use operator unspecified_bool_type() rather than operator bool() for
+   similar reasons.
+
 * Other bug fixes and improvements.
 
 * Thanks to Nicola Arnoldi, Ioannis Avramopoulos, Salman Abdul Baset, Koen
   Beel, Kristian Beilke, Torquato Bertani, John Bicket, Bart Braem,
-  Vladimir Bychkovsky, Srivas Chennu, Roman Chertov, David Claffey, Beyers
-  Cronje, Peter De Cleyn, Norbert Egi, Nick Feamster, Cliff Frey, Matt
-  Gordon, Adam Greenhalgh, Mark Huang, Mathias Jeschke, Azeem Khan,
-  Christian Kreibich, Mathias Kurth, Kevin Lahey, lastlijing yahoo com cn,
-  Pierre-Emmanuel Le Roux, Joe Maldonaldo, Tim Morgan, Jim Mott-Smith, Jens
-  Mueller, Arvid Nilsson, Joonwoo (Jason) Park, Vern Paxson, Max Poletto,
-  Vivek Raghunathan, Roberto Riggio, Robert Ross, Bruce Simpson, Puneet
-  Sood, Dimitris Syrivelis, Seiichi Tatsukawa, Andy Van Maele, Frederic Van
+  Vladimir Bychkovsky, Marco Canini, Srivas Chennu, Szymon Chachulski,
+  Roman Chertov, David Claffey, Beyers Cronje, Peter De Cleyn, Norbert Egi,
+  Nick Feamster, Cliff Frey, Matt Gordon, Adam Greenhalgh, Mark Huang,
+  Mathias Jeschke, Azeem Khan, Christian Kreibich, Mathias Kurth, Kevin
+  Lahey, lastlijing yahoo com cn, Pierre-Emmanuel Le Roux, Nicolas Letor,
+  Joe Maldonaldo, David Moore, Tim Morgan, Jim Mott-Smith, Jens Mueller,
+  Arvid Nilsson, Joonwoo (Jason) Park, Vern Paxson, Max Poletto, Vivek
+  Raghunathan, Roberto Riggio, Robert Ross, Bruce Simpson, Puneet Sood,
+  Dimitris Syrivelis, Seiichi Tatsukawa, Andy Van Maele, Frederic Van
   Quickenborne, Wim Vandenberghe, Rob Wachol, and Mike Wilson, and anyone
   we inadvertently forgot to mention here.
 
