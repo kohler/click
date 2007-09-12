@@ -1939,7 +1939,7 @@ bool cp_time(const String &str, timeval *result)
 #else
     Timestamp t;
     if (cp_time(str, &t)) {
-	result->tv_sec = t.timeval();
+	*result = t.timeval();
 	return true;
     } else
 	return false;
