@@ -54,7 +54,6 @@ ToUserDevice */
 
 #define SLOT_SIZE       (1536+16)
 #define CAPACITY        64
-#define PKT_BURST_FETCH 4
 #define VARIABLE_SIZE_COPY
 
 class ToUserDevice : public Element
@@ -93,7 +92,6 @@ private:
     ulong	    _pkt_count;
     ulong	    _drop_count;
     ulong           _block_count;
-    ulong           _burst_fetch;
     atomic_uint32_t _failed_count;
     Task            _task;
     NotifierSignal  _signal;

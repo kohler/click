@@ -74,7 +74,6 @@ ToUserDevice::ToUserDevice() : _task(this)
     _block_count = 0;
     _pkt_read_count = 0;
     _failed_count = 0;
-    _burst_fetch = PKT_BURST_FETCH;
 }
 
 ToUserDevice::~ToUserDevice()
@@ -175,7 +174,6 @@ ssize_t ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t
     int nfetched = 0;
     while (elem->_size
 	   && (nfetched == 0 || multi)
-	   && nfetched < elem->_burst_fetch
 	   && nread < len
 	   && !elem->_exit) {
 	Packet *p = elem->_q[elem->_r_slot];
