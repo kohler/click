@@ -937,7 +937,7 @@ cp_word(const String &str, String *result, String *rest)
  * @return  True if @a str parsed correctly, false otherwise.
  *
  * Parses a keyword from @a str.  Keywords consist of characters in
- * <tt>[A-Za-z0-9_.:]</tt>.  Quotes and spaces are not allowed; neither is the
+ * <tt>[A-Za-z0-9_.:?!]</tt>.  Quotes and spaces are not allowed; neither is the
  * empty string.  If the string fully parses as a keyword, then the resulting
  * value is stored in *@a result and the function returns true.  Otherwise,
  * *@a result remains unchanged and the function returns false.
@@ -969,6 +969,8 @@ cp_keyword(const String &str, String *result, String *rest)
      case '_':
      case '.':
      case ':':
+     case '?':
+     case '!':
       break;
       
      default:
@@ -2858,6 +2860,7 @@ cp_filename(const String &str, String *result)
 
 // parse commands; those which must be recognized inside a keyword section
 // must begin with "\377"
+#undef cpEnd
 
 const CpVaParseCmd
   cpEnd			= 0,
@@ -4240,6 +4243,10 @@ cp_va_parse_remove_keywords(Vector<String> &argv, int first,
  *
  * The @a context argument is passed to any parsing functions that require
  * element context.  See above for more information on cp_va_kparse items.
+ *
+ * The item list must be terminated with cpEnd.  An error message such as
+ * "warning: missing sentinel in function call" indicates that you terminated
+ * the list with 0 instead.  Fix it by replacing the 0 with cpEnd.
  */
 int
 cp_va_kparse(const Vector<String> &conf,

@@ -29,6 +29,11 @@ class HandlerCall;
 #else
 # define CLICK_CONFPARSE_DEPRECATED /* */
 #endif
+#if __GNUC__ <= 3
+# define CP_SENTINEL
+#else
+# define CP_SENTINEL __attribute__((sentinel))
+#endif
 /// @endcond
 
 /// @name Argument Manipulation
@@ -187,11 +192,11 @@ bool cp_filename(const String& str, String* result);
 
 /// @name cp_va_kparse
 //@{
-int cp_va_kparse(const Vector<String>& conf, CP_VA_PARSE_ARGS_REST);
-int cp_va_kparse(const String& str, CP_VA_PARSE_ARGS_REST);
-int cp_va_space_kparse(const String& str, CP_VA_PARSE_ARGS_REST);
-int cp_va_kparse_keyword(const String& str, CP_VA_PARSE_ARGS_REST);
-int cp_va_kparse_remove_keywords(Vector<String>& conf, CP_VA_PARSE_ARGS_REST);
+int cp_va_kparse(const Vector<String>& conf, CP_VA_PARSE_ARGS_REST) CP_SENTINEL;
+int cp_va_kparse(const String& str, CP_VA_PARSE_ARGS_REST) CP_SENTINEL;
+int cp_va_space_kparse(const String& str, CP_VA_PARSE_ARGS_REST) CP_SENTINEL;
+int cp_va_kparse_keyword(const String& str, CP_VA_PARSE_ARGS_REST) CP_SENTINEL;
+int cp_va_kparse_remove_keywords(Vector<String>& conf, CP_VA_PARSE_ARGS_REST) CP_SENTINEL;
 
 int cp_assign_arguments(const Vector<String>& argv, const String *keys_begin, const String *keys_end, Vector<String>* values = 0);
 
@@ -214,8 +219,8 @@ enum CpKparseFlags {
 typedef const char *CpVaParseCmd;
 
 extern const CpVaParseCmd
-    cpEnd,		///< Ends cp_va argument list.
-    cpIgnoreRest,	///< Ends cp_va argument list, ignores unparsed arguments.
+    cpEnd,		///< Use as argument name.  Ends cp_va argument list.
+    cpIgnoreRest,	///< Use as argument name.  No result storage; causes cp_va_kparse to ignore unparsed arguments and any remaining items.
     cpIgnore,		///< No result storage (this argument is ignored).
     cpArgument,		///< Result storage String*, accepts any argument.
     cpArguments,	///< Result storage Vector<String>*, accepts any number of arguments with the same keyword.
@@ -482,16 +487,15 @@ inline bool cp_integer(const String& str, unsigned long* result)
 }
 #endif
 
+inline bool cp_ip_address(const String& str, struct in_addr* ina  CP_CONTEXT)
+{
+    return cp_ip_address(str, reinterpret_cast<IPAddress*>(ina)  CP_PASS_CONTEXT);
+}
+
 /// @cond never
 inline bool cp_seconds_as(int want_power, const String &str, uint32_t *result)
 {
     return cp_seconds_as(str, want_power, result);
-}
-/// @endcond
-
-inline bool cp_ip_address(const String& str, struct in_addr* ina  CP_CONTEXT)
-{
-    return cp_ip_address(str, reinterpret_cast<IPAddress*>(ina)  CP_PASS_CONTEXT);
 }
 
 #undef CP_VA_ARGS_REST
@@ -499,5 +503,8 @@ inline bool cp_ip_address(const String& str, struct in_addr* ina  CP_CONTEXT)
 #undef CP_CONTEXT
 #undef CP_PASS_CONTEXT
 #undef CLICK_CONFPARSE_DEPRECATED
+#undef CP_SENTINEL
+#define cpEnd ((CpVaParseCmd) 0)
+/// @endcond
 CLICK_ENDDECLS
 #endif
