@@ -97,6 +97,7 @@ class Task { public:
     Task* _prev;
     Task* _next;
 #endif
+    unsigned _should_be_scheduled;
     
 #ifdef HAVE_STRIDE_SCHED
     unsigned _pass;
@@ -121,14 +122,13 @@ class Task { public:
   
     Router* _router;
 
-    unsigned _pending_reschedule;
     volatile uintptr_t _pending_nextptr;
 
     Task(const Task&);
     Task& operator=(const Task&);
     void cleanup();
     
-    void add_pending(bool reschedule);
+    void add_pending();
     void process_pending(RouterThread*);
     inline void fast_schedule();
     void true_reschedule();
@@ -177,6 +177,7 @@ Task::Task(TaskHook hook, void* thunk)
 #else
     : _prev(0), _next(0),
 #endif
+      _should_be_scheduled(false),
 #ifdef HAVE_STRIDE_SCHED
       _pass(0), _stride(0), _tickets(-1),
 #endif
@@ -188,7 +189,7 @@ Task::Task(TaskHook hook, void* thunk)
       _cycle_runs(0),
 #endif
       _thread(0), _home_thread_id(-1),
-      _router(0), _pending_reschedule(0), _pending_nextptr(0)
+      _router(0), _pending_nextptr(0)
 {
 }
 
@@ -210,6 +211,7 @@ Task::Task(Element* e)
 #else
     : _prev(0), _next(0),
 #endif
+      _should_be_scheduled(false),
 #ifdef HAVE_STRIDE_SCHED
       _pass(0), _stride(0), _tickets(-1),
 #endif
@@ -221,7 +223,7 @@ Task::Task(Element* e)
       _cycle_runs(0),
 #endif
       _thread(0), _home_thread_id(-1),
-      _router(0), _pending_reschedule(0), _pending_nextptr(0)
+      _router(0), _pending_nextptr(0)
 {
 }
 
@@ -330,6 +332,7 @@ Task::fast_unschedule()
 	_next = _prev = 0;
 #endif
     }
+    _should_be_scheduled = false;
 }
 
 #ifdef HAVE_STRIDE_SCHED
