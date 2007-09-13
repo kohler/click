@@ -175,7 +175,7 @@ CLICK_ENDDECLS
 #endif
 
 
-#if CLICK_PACKAGE_LOADED
+#if CLICK_PACKAGE_LOADED || CLICK_TOOL
 CLICK_DECLS
 
 static String *click_buildtool_prog, *tmpdir;
@@ -297,6 +297,7 @@ click_compile_archive_file(String package, const Vector<ArchiveElement> &archive
     return String();
 }
 
+# if CLICK_PACKAGE_LOADED
 void
 clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, ErrorHandler *errh)
 {
@@ -345,9 +346,10 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     if (package)
 	clickdl_load_package(package, &cerrh);
 }
+# endif /* CLICK_PACKAGE_LOADED */
 
 CLICK_ENDDECLS
-#endif /* CLICK_PACKAGE_LOADED */
+#endif /* CLICK_PACKAGE_LOADED || CLICK_TOOL */
 
 
 #ifdef CLICK_USERLEVEL
