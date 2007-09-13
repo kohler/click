@@ -56,6 +56,8 @@ class Vector { public:
   // modifiers
   inline void push_back(const T&);
   inline void pop_back();
+  inline void push_front(const T&);
+  inline void pop_front();
   iterator insert(iterator, const T&);
   inline iterator erase(iterator);
   iterator erase(iterator, iterator);
@@ -94,6 +96,18 @@ template <class T> inline typename Vector<T>::iterator
 Vector<T>::erase(iterator i)
 {
   return (i < end() ? erase(i, i + 1) : i);
+}
+
+template <class T> inline void
+Vector<T>::push_front(const T& e)
+{
+  insert(begin(), e);
+}
+
+template <class T> inline void
+Vector<T>::pop_front()
+{
+  erase(begin());
 }
 
 
@@ -148,6 +162,8 @@ class Vector<void*> { public:
   // modifiers
   inline void push_back(void*);
   inline void pop_back();
+  inline void push_front(void*);
+  inline void pop_front();
   iterator insert(iterator, void*);
   inline iterator erase(iterator);
   iterator erase(iterator, iterator);
@@ -182,6 +198,18 @@ inline Vector<void*>::iterator
 Vector<void*>::erase(Vector<void*>::iterator e)
 {
   return (e < end() ? erase(e, e + 1) : e);
+}
+
+inline void
+Vector<void*>::push_front(void *e)
+{
+  insert(begin(), e);
+}
+
+inline void
+Vector<void*>::pop_front()
+{
+  erase(begin());
 }
 
 
@@ -242,6 +270,8 @@ class Vector<T*>: private Vector<void*> {
   // modifiers
   void push_back(T* e)		{ Base::push_back((void*)e); }
   void pop_back()		{ Base::pop_back(); }
+  void push_front(T *e)		{ Base::push_front((void*)e); }
+  void pop_front()		{ Base::pop_front(); }
   iterator insert(iterator i, T* e) { return (iterator)Base::insert((void**)i, (void*)e); }
   iterator erase(iterator i)	{ return (iterator)Base::erase((void**)i); }
   iterator erase(iterator i, iterator j) { return (iterator)Base::erase((void**)i, (void**)j); }
