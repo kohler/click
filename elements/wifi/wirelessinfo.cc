@@ -107,7 +107,7 @@ WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
     f->_channel = m;
 #if CLICK_NS
     if (f->_ifid >= 0)
-	simclick_sim_command(router()->simnode(), SIMCLICK_CHANGE_CHANNEL, f->_ifid, f->_channel);
+	simclick_sim_command(f->router()->simnode(), SIMCLICK_CHANGE_CHANNEL, f->_ifid, f->_channel);
 #endif
     break;
   }
