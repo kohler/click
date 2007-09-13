@@ -879,9 +879,6 @@ Router::initialize(ErrorHandler *errh)
     if (check_hookup_elements(errh) < 0)
 	return -1;
   
-    _runcount = 1;
-    _master->prepare_router(this);
-
     // set up configuration order
     _element_configure_order.assign(nelements(), 0);
     if (_element_configure_order.size()) {
@@ -906,6 +903,10 @@ Router::initialize(ErrorHandler *errh)
 	    all_ok = true;
 	}
     }
+
+    // prepare master
+    _runcount = 1;
+    _master->prepare_router(this);
 
     // Configure all elements in configure order. Remember the ones that failed
     if (all_ok) {
