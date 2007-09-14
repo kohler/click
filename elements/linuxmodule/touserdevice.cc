@@ -138,7 +138,7 @@ int ToUserDevice::dev_ioctl(struct inode *inode, struct file *filp,
     else if (command == CLICK_IOC_TOUSERDEVICE_SET_MULTI) {
 	if ((int) address != 0 && (int) address != 1)
 	    return -EINVAL;
-	filp->private_data = (void *) ((uintptr_t) filp | (int) address);
+	filp->private_data = (void *) ((uintptr_t) elem | (int) address);
 	return 0;
     } else
 	return -EINVAL;
@@ -177,6 +177,7 @@ ssize_t ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t
 	   && nread < len
 	   && !elem->_exit) {
 	Packet *p = elem->_q[elem->_r_slot];
+	// user buffer is full
 	if (nfetched > 0 && nread + sizeof(int) + p->length() > len)
 	    break;
 	elem->_r_slot++;
@@ -184,6 +185,7 @@ ssize_t ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t
 	    elem->_r_slot = 0;
 	elem->_size--;
 	spin_unlock(&elem->_lock);
+	// unlock as don't need the lock, and can't have a lock and copy_to_user
 
 	// copy packet to user level
 	if (multi) {
@@ -208,8 +210,9 @@ ssize_t ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t
 	}
 	nread += to_copy;
 
+	// to get int alignment
 	if (multi && nread % sizeof(int))
-	    nread += 4 - nread % sizeof(int);
+	    nread += sizeof(int) - nread % sizeof(int);
 
 	p->kill();
 	spin_lock(&elem->_lock);
@@ -227,14 +230,16 @@ uint ToUserDevice::dev_poll(struct file *filp, struct poll_table_struct *pt)
     ToUserDevice *elem = GETELEM(filp);
     uint    mask = 0;
 
-    click_chatter("ToUserDevice_poll\n");
+    //click_chatter("ToUserDevice_poll\n");
+    if (!elem || elem->_exit)
+	return mask;
 
     poll_wait(filp, &elem->_proc_queue, pt);
     spin_lock(&elem->_lock); // LOCK
     if (elem->_size)
     {
         mask |= POLLIN | POLLRDNORM; /* readable */
-        click_chatter("ToUserDevice_poll Readable\n");
+        //click_chatter("ToUserDevice_poll Readable\n");
     }
     spin_unlock(&elem->_lock); // UNLOCK
     return mask;
@@ -245,10 +250,10 @@ int ToUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     int          res;
     dev_t        dev;
 
+    //click_chatter("CONFIGURE\n");
     if (!dev_fops)
-	return errh->error("file operations not created");
+	return errh->error("file operations missing");
 
-    click_chatter("CONFIGURE\n");
     if (cp_va_kparse(conf, this, errh,
 		     "DEV_MINOR", cpkP+cpkM, cpUnsigned, &_dev_minor,
 		     "CAPACITY", 0, cpUnsigned, &_capacity,
@@ -267,7 +272,6 @@ int ToUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     if (DEV_NUM == 1)
     {
         // time to associate the devname with this class
-        // dynamically allocate the major number with the device
     
         //register the device now. this will register 255 minor numbers 
         res = register_chrdev(_dev_major, DEV_NAME, dev_fops);

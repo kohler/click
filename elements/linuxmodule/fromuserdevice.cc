@@ -224,7 +224,7 @@ int FromUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     if (!dev_fops)
 	return errh->error("file operations missing");
     
-    click_chatter("CONFIGURE\n");
+    //click_chatter("CONFIGURE\n");
     if (cp_va_kparse(conf, this, errh,
 		     "DEV_MINOR", cpkP+cpkM, cpUnsigned, &_dev_minor,
 		     "CAPACITY", 0, cpUnsigned, &_capacity,
