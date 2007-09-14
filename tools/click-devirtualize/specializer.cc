@@ -548,12 +548,12 @@ Specializer::output(StringAccum& out_header, StringAccum& out)
 }
 
 void
-Specializer::output_package(const String &package_name, StringAccum &out, ErrorHandler* errh)
+Specializer::output_package(const String &package_name, const String &suffix, StringAccum &out, ErrorHandler* errh)
 {
     StringAccum elem2package, cmd_sa;
     for (int i = 0; i < _specials.size(); i++)
 	if (_specials[i].special())
-	    elem2package <<  "-\t\"" << package_name << ".hh\"\t" << _specials[i].cxx_name << '-' << _specials[i].click_name << '\n';
+	    elem2package <<  "-\t\"" << package_name << suffix << ".hh\"\t" << _specials[i].cxx_name << '-' << _specials[i].click_name << '\n';
     String click_buildtool_prog = clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, errh);
     cmd_sa << click_buildtool_prog << " elem2package " << package_name;
     out << shell_command_output_string(cmd_sa.take_string(), elem2package.take_string(), errh);    

@@ -53,7 +53,7 @@ class Specializer { public:
   const SpecializedClass &special(int i) const	{ return _specials[i]; }
   
     void output(StringAccum& out_header, StringAccum& out_source );
-    void output_package(const String &, StringAccum &, ErrorHandler*);
+    void output_package(const String &package_name, const String &suffix, StringAccum &, ErrorHandler*);
     void output_new_elementmap(const ElementMap &, ElementMap &, const String &,
 			       const String &requirements) const;
   

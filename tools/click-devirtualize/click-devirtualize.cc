@@ -450,7 +450,7 @@ particular purpose.\n");
 	 << "#define CLICK_" << package_name << "_HH\n"
 	 << "#include <click/package.hh>\n#include <click/element.hh>\n";
   
-  specializer.output_package(package_name, source, errh);
+  specializer.output_package(package_name, suffix, source, errh);
   specializer.output(header, source);
 
   header << "#endif\n";
