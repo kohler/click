@@ -353,7 +353,7 @@ RouterThread::run_tasks(int ntasks)
 	t->_schedpos = -1;
 	_task_heap_hole = 1;
 #else
-	t->fast_unschedule();
+	t->fast_unschedule(false);
 #endif
 
 	// 21.May.2007: Always set the current thread's pass to the current
@@ -581,7 +581,7 @@ RouterThread::driver_once()
 #endif
     Task *t = task_begin();
     if (t != task_end()) {
-	t->fast_unschedule();
+	t->fast_unschedule(false);
 	t->call_hook();
     }
 #ifdef CLICK_BSDMODULE  /* XXX MARKO */

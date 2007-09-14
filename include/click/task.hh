@@ -137,7 +137,7 @@ class Task { public:
 
     static bool error_hook(Task*, void*);
 
-    inline void fast_unschedule();
+    inline void fast_unschedule(bool should_be_scheduled);
 
     static inline Task *pending_to_task(uintptr_t);
     inline Task *pending_to_task() const;
@@ -311,7 +311,7 @@ Task::thread() const
 }
 
 inline void
-Task::fast_unschedule()
+Task::fast_unschedule(bool should_be_scheduled)
 {
 #if CLICK_LINUXMODULE
     assert(!in_interrupt());
@@ -332,7 +332,7 @@ Task::fast_unschedule()
 	_next = _prev = 0;
 #endif
     }
-    _should_be_scheduled = false;
+    _should_be_scheduled = should_be_scheduled;
 }
 
 #ifdef HAVE_STRIDE_SCHED

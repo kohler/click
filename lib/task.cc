@@ -231,8 +231,7 @@ Task::unschedule()
 #endif
     if (_thread) {
 	lock_tasks();
-	fast_unschedule();
-	_should_be_scheduled = false;
+	fast_unschedule(false);
 	_thread->unlock_tasks();
     }
 }
@@ -317,9 +316,8 @@ Task::strong_unschedule()
     // reschedule()s won't have any effect
     if (_thread) {
 	lock_tasks();
-	fast_unschedule();
+	fast_unschedule(false);
 	RouterThread *old_thread = _thread;
-	_should_be_scheduled = false;
 	_thread = _router->master()->thread(RouterThread::THREAD_STRONG_UNSCHEDULE);
 	old_thread->unlock_tasks();
     }
@@ -347,14 +345,17 @@ Task::strong_reschedule()
     assert(_thread);
     lock_tasks();
     RouterThread *old_thread = _thread;
-    _should_be_scheduled = true;
     if (old_thread->thread_id() == RouterThread::THREAD_STRONG_UNSCHEDULE) {
-	fast_unschedule();
+	fast_unschedule(true);
 	_thread = _router->master()->thread(_home_thread_id);
 	add_pending();
-    } else if (old_thread->thread_id() == _home_thread_id)
+    } else if (old_thread->thread_id() == _home_thread_id) {
+	_should_be_scheduled = true;
 	fast_reschedule();
-    // Otherwise, this task is already on the pending list.
+    } else {
+	// This task must already be on the pending list so it can be moved.
+	_should_be_scheduled = true;
+    }
     old_thread->unlock_tasks();
 }
 
@@ -382,10 +383,8 @@ Task::move_thread(int thread_id)
 	RouterThread *old_thread = _thread;
 	if (old_thread->thread_id() != _home_thread_id
 	    && old_thread->thread_id() != RouterThread::THREAD_STRONG_UNSCHEDULE) {
-	    if (scheduled()) {
-		_should_be_scheduled = true;
-		fast_unschedule();
-	    }
+	    if (scheduled())
+		fast_unschedule(true);
 	    _thread = _router->master()->thread(_home_thread_id);
 	    old_thread->unlock_tasks();
 	    if (_should_be_scheduled)
@@ -413,10 +412,8 @@ Task::process_pending(RouterThread *thread)
 	// see also move_thread() above
 	if (_thread->thread_id() != _home_thread_id
 	    && _thread->thread_id() != RouterThread::THREAD_STRONG_UNSCHEDULE) {
-	    if (scheduled()) {
-		_should_be_scheduled = true;
-		fast_unschedule();
-	    }
+	    if (scheduled())
+		fast_unschedule(true);
 	    _thread = _router->master()->thread(_home_thread_id);
 	    if (_should_be_scheduled)
 		add_pending();
