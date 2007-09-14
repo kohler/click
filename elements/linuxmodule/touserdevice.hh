@@ -16,7 +16,7 @@ CLICK_CXX_UNPROTECT
 
 /*
 =c
-ToUserDevice(DEV_MINOR, [<keywords> CAPACITY])
+ToUserDevice(DEV_MINOR, [<keywords> CAPACITY, BURST])
  
 =s netdevices
 Writes packets from the click into a device's ring buffer, which can be
@@ -30,7 +30,14 @@ Keyword arguments are:
 =over 8
 
 =item CAPACITY
-Unsigned integer.  Sets the capacity of the internal ring buffer that stores the packets.
+
+Unsigned integer.  Sets the capacity of the internal ring buffer that stores
+the packets.
+
+=item BURST
+
+Sets the maximum number of packets returned per multipacket read.  Default is
+0, which means no limit.
 
 =back
 
@@ -46,15 +53,32 @@ Eth frames, IP packets, etc.)
 =n
 
 =e
-... -> ToUserDevice(0, SIZE 200);
+
+  ... -> ToUserDevice(0, CAPACITY 200);
+
+Example how to read from the element in a userprogram when multi 
+mode is enabled.
+
+   unsigned char buffer[BUFFERLEN];
+   ssize_t readlen = read(fd, buffer, BUFFERLEN);
+   for (ssize_t pos = 0; pos < readlen; ) {
+           int len = *(int*)(buffer + pos);
+           pos += sizeof(int);
+	   int stored_len = (len <= readlen - pos ? len : readlen - pos);
+           
+           // At this point "buffer + pos" contains a packet that was "len"
+           // bytes long.  "stored_len" of those bytes are in the buffer.
+           process_packet(buffer + pos, len, stored_len);
+           
+           // shift to next packet
+           pos += stored_len;
+           if (pos % sizeof(int))
+                   pos += sizeof(int) - pos % sizeof(int);
+   }
 
 =a
 ToUserDevice */
 
-
-#define SLOT_SIZE       (1536+16)
-#define CAPACITY        64
-#define VARIABLE_SIZE_COPY
 
 class ToUserDevice : public Element
 {
@@ -81,6 +105,8 @@ public:
     static String read_handler(Element *e, void *thunk);
 
 private:
+    enum { default_capacity = 64 };
+    
     Packet **	    _q;
     uint32_t	    _size;
     uint32_t 	    _r_slot;	// where we read from
@@ -92,6 +118,7 @@ private:
     ulong	    _pkt_count;
     ulong	    _drop_count;
     ulong           _block_count;
+    unsigned	    _max_burst;
     atomic_uint32_t _failed_count;
     Task            _task;
     NotifierSignal  _signal;

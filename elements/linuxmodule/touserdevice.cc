@@ -60,7 +60,7 @@ ToUserDevice::ToUserDevice() : _task(this)
 {
     _exit = false;
     _size = 0;
-    _capacity = CAPACITY;
+    _capacity = default_capacity;
     _devname = DEV_NAME;
     _q = 0;
     _r_slot = 0;
@@ -156,6 +156,7 @@ ssize_t ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t
 #include <click/cxxunprotect.h>
 
     spin_lock(&elem->_lock); // LOCK
+    elem->_read_count++;
     while (!elem->_size && !elem->_exit) {
 	// need to put the process to sleep
 	elem->_block_count++;
@@ -171,9 +172,10 @@ ssize_t ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t
     }
 
     ssize_t nread = 0;
-    int nfetched = 0;
+    unsigned nfetched = 0;
     while (elem->_size
 	   && (nfetched == 0 || multi)
+	   && (nfetched < elem->_max_burst || elem->_max_burst == 0)
 	   && nread < len
 	   && !elem->_exit) {
 	Packet *p = elem->_q[elem->_r_slot];
@@ -217,6 +219,7 @@ ssize_t ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t
 	p->kill();
 	spin_lock(&elem->_lock);
 	nfetched++;
+        elem->_pkt_read_count++;       
     }
 
     if (nread == 0 && elem->_exit)
@@ -254,9 +257,11 @@ int ToUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     if (!dev_fops)
 	return errh->error("file operations missing");
 
+    _max_burst = 0;
     if (cp_va_kparse(conf, this, errh,
 		     "DEV_MINOR", cpkP+cpkM, cpUnsigned, &_dev_minor,
 		     "CAPACITY", 0, cpUnsigned, &_capacity,
+		     "BURST", 0, cpUnsigned, &_max_burst,
 		     cpEnd) < 0)
         return -1;
 
@@ -377,7 +382,7 @@ bool ToUserDevice::run_task()
 }
 
 enum { H_COUNT, H_DROPS, H_READ_CALLS, H_CAPACITY,
-       H_SLOT_SIZE, H_READ_COUNT, H_SIZE, H_BLOCKS, H_FAILED};
+       H_READ_COUNT, H_SIZE, H_BLOCKS, H_FAILED};
 
 String ToUserDevice::read_handler(Element *e, void *thunk)
 {
