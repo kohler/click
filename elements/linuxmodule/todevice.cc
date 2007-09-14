@@ -78,6 +78,12 @@ ToDevice::static_cleanup()
 #endif
 }
 
+inline void
+ToDevice::tx_wake_queue(net_device *dev) 
+{
+    //click_chatter("%{element}::%s for dev %s\n", this, __func__, dev->name);
+    _task.reschedule();
+}
 
 #if HAVE_CLICK_KERNEL_TX_NOTIFY
 extern "C" {
@@ -99,13 +105,6 @@ tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v)
 }
 }
 #endif
-
-void
-ToDevice::tx_wake_queue(net_device *dev) 
-{
-    //click_chatter("%{element}::%s for dev %s\n", this, __func__, dev->name);
-    _task.reschedule();
-}
 
 ToDevice::ToDevice()
     : _dev_idle(0), _rejected(0), _hard_start(0), _no_pad(false)

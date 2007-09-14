@@ -115,7 +115,7 @@ class ToDevice : public AnyTaskDevice { public:
   bool run_task(Task *);
 
   void reset_counts();
-  void tx_wake_queue(net_device *);
+  inline void tx_wake_queue(net_device *);
   bool tx_intr();
   void change_device(net_device *);
 

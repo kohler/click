@@ -26,6 +26,10 @@
 /* Define assert macro. */
 #define assert(x) /* nada */
 
+/* Define likely and unlikely macros. */
+#define likely(x)	(x)
+#define unlikely(x)	(x)
+
 #ifdef __cplusplus
 
 /* Declare operator new. */

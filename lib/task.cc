@@ -269,14 +269,15 @@ Task::fast_reschedule()
 void
 Task::true_reschedule()
 {
-    assert(_thread);
     bool done = false;
     _should_be_scheduled = true;
 #if CLICK_LINUXMODULE
     if (in_interrupt())
 	goto skip_lock;
 #endif
-    if (attempt_lock_tasks()) {
+    if (unlikely(_thread == 0))
+	_should_be_scheduled = done = true;
+    else if (attempt_lock_tasks()) {
 	if (_router->_running >= Router::RUNNING_BACKGROUND) {
 	    if (!scheduled() && _should_be_scheduled) {
 		fast_schedule();
@@ -314,7 +315,7 @@ Task::strong_unschedule()
 #endif
     // unschedule() and move to a quiescent thread, so that subsequent
     // reschedule()s won't have any effect
-    if (_thread) {
+    if (likely(_thread != 0)) {
 	lock_tasks();
 	fast_unschedule(false);
 	RouterThread *old_thread = _thread;
@@ -342,7 +343,10 @@ Task::strong_reschedule()
 #if CLICK_BSDMODULE
     GIANT_REQUIRED;
 #endif
-    assert(_thread);
+    if (unlikely(_thread == 0)) {
+	_should_be_scheduled = true;
+	return;
+    }
     lock_tasks();
     RouterThread *old_thread = _thread;
     if (old_thread->thread_id() == RouterThread::THREAD_STRONG_UNSCHEDULE) {
@@ -379,7 +383,9 @@ Task::move_thread(int thread_id)
 	thread_id = RouterThread::THREAD_QUIESCENT;
     _home_thread_id = thread_id;
 
-    if (attempt_lock_tasks()) {
+    if (unlikely(_thread == 0))
+	/* do nothing */;
+    else if (attempt_lock_tasks()) {
 	RouterThread *old_thread = _thread;
 	if (old_thread->thread_id() != _home_thread_id
 	    && old_thread->thread_id() != RouterThread::THREAD_STRONG_UNSCHEDULE) {
