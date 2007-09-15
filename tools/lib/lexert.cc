@@ -471,6 +471,7 @@ LexerT::vlerror(const char *pos1, const char *pos2, const String &lm, const char
     _lexinfo->notify_error(text, pos1, pos2);
     text = _errh->decorate_text(ErrorHandler::ERR_ERROR, lm, text);
     _errh->handle_text(ErrorHandler::ERR_ERROR, text);
+    _errh->count_error(ErrorHandler::ERR_ERROR, text);
 }
 
 int
