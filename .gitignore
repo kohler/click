@@ -13,3 +13,4 @@ bin
 man
 autom4te*
 +*
+depcomp
