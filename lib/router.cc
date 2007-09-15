@@ -470,10 +470,10 @@ Router::check_hookup_completeness(ErrorHandler *errh)
 	int tog = gport(false, hto);
 	if (used_outputs[fromg]
 	    && _elements[hfrom.idx]->output_is_push(hfrom.port))
-	    hookup_error(hfrom, true, "can't reuse '%{element}' push %s %d", errh);
+	    hookup_error(hfrom, true, "illegal reuse of '%{element}' push %s %d", errh);
 	else if (used_inputs[tog]
 		 && _elements[hto.idx]->input_is_pull(hto.port))
-	    hookup_error(hto, false, "can't reuse '%{element}' pull %s %d", errh);
+	    hookup_error(hto, false, "illegal reuse of '%{element}' pull %s %d", errh);
 	
 	// remove the connection if there were errors
 	if (errh->nerrors() == before) {
