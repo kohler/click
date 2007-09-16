@@ -4,7 +4,7 @@
  * Mark Huang <mlhuang@cs.princeton.edu>
  *
  * Copyright (c) 2004  The Trustees of Princeton University (Trustees).
- * Copyright (c) 2006 Regents of the University of California
+ * Copyright (c) 2006-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -180,9 +180,13 @@ Socket::initialize(ErrorHandler *errh)
 
   // enable timestamps
   if (_timestamp) {
+#ifdef SO_TIMESTAMP
     int one = 1;
     if (setsockopt(_fd, SOL_SOCKET, SO_TIMESTAMP, &one, sizeof(one)) < 0)
       return initialize_socket_error(errh, "setsockopt(SO_TIMESTAMP)");
+#else
+    return initialize_socket_error(errh, "TIMESTAMP not supported on this platform");
+#endif
   }
 
 #ifdef TCP_NODELAY
