@@ -1,7 +1,7 @@
 # pkg-linuxmodule-26.mk -- build tools for Click
 # Eddie Kohler
 #
-# Copyright (c) 2006 Regents of the University of California
+# Copyright (c) 2006-2007 Regents of the University of California
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -18,8 +18,9 @@ CLICKBUILD = linux26module
 CLICKCPPFLAGS += -DCLICK_LINUXMODULE
 CLICKINCLUDES := -I$(clickincludedir) -I$(clicksrcdir) -I$(clicklinuxdir)/include
 
-LINUXCFLAGS = $(shell echo "$(CFLAGS)" | sed -e s,-fno-unit-at-a-time,, \
-	-e s,-Wstrict-prototypes,, -e s,-Wdeclaration-after-statement,, \
+LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS)" | sed \
+	-e s,-fno-unit-at-a-time,, -e s,-Wstrict-prototypes,, \
+	-e s,-Wdeclaration-after-statement,, \
 	-e s,-Wno-pointer-sign,, -e s,-fno-common,,)
 
 CXXFLAGS ?= $(CLICKCXXFLAGS_NDEBUG)

@@ -12849,6 +12849,24 @@ _ACEOF
     KERNEL_CXX="$KERNEL_CXX -D__SMP__"
 fi
 
+{ echo "$as_me:$LINENO: checking for <asm/alternative.h>" >&5
+echo $ECHO_N "checking for <asm/alternative.h>... $ECHO_C" >&6; }
+if test "${ac_cv_linux_asm_alternative_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -r $linuxdir/include/asm/alternative.h >/dev/null 2>&1; then
+  ac_cv_linux_asm_alternative_h=yes
+else ac_cv_linux_asm_alternative_h=no; fi
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_linux_asm_alternative_h" >&5
+echo "${ECHO_T}$ac_cv_linux_asm_alternative_h" >&6; }
+if test $ac_cv_linux_asm_alternative_h = yes; then
+    cat >>confdefs.h <<\_ACEOF
+#define HAVE_LINUX_ASM_ALTERNATIVE_H 1
+_ACEOF
+
+fi
+
 fi
 
 

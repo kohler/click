@@ -572,6 +572,14 @@ if test $ac_cv_smp = yes; then
     KERNEL_CXX="$KERNEL_CXX -D__SMP__"
 fi
 
+AC_CACHE_CHECK(for <asm/alternative.h>, ac_cv_linux_asm_alternative_h,
+[if test -r $linuxdir/include/asm/alternative.h >/dev/null 2>&1; then
+  ac_cv_linux_asm_alternative_h=yes
+else ac_cv_linux_asm_alternative_h=no; fi])
+if test $ac_cv_linux_asm_alternative_h = yes; then
+    AC_DEFINE(HAVE_LINUX_ASM_ALTERNATIVE_H)
+fi
+
 fi
 
 

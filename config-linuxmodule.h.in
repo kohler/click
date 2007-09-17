@@ -35,6 +35,9 @@
    and optionally stop the router. */
 #undef HAVE_KERNEL_ASSERT
 
+/* Define if you have the <asm/alternative.h> header file. */
+#undef HAVE_LINUX_ASM_ALTERNATIVE_H
+
 /* Define if your Linux kernel architecture defines atomic_set_mask. */
 #undef HAVE_LINUX_ATOMIC_SET_MASK
 
@@ -120,6 +123,9 @@ inline void *operator new(size_t, void *v) { return v; }
 #define CLICK_ENDDECLS		/* */
 #define CLICK_USING_DECLS	/* */
 #define CLICK_NAME(name)	::name
+
+/* Fix incompatibilities between some Linux versions and Click/C++. */
+#include <click/fixconfig.h>
 
 #endif /* __cplusplus */
 

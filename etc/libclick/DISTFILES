@@ -40,6 +40,7 @@ include/click/elemfilter.hh
 include/click/error.hh
 include/click/etheraddress.hh
 include/click/ewma.hh
+include/click/fixconfig.h
 include/click/gaprate.hh
 include/click/glue.hh
 include/click/handlercall.hh
