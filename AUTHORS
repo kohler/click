@@ -28,8 +28,8 @@ Eddie Kohler
 kohler@cs.ucla.edu
 design, core, language, Linux /proc interface, Linux kernel module,
 standard elements, tools, documentation, distribution, IP rewriting
-elements, ClickController, other elements, Tasks, Linux 2.4, clickfs, 
-adaptive task scheduler
+elements, ClickController, other elements, Tasks, Linux 2.4, Linux 2.6,
+clickfs, adaptive task scheduler, continuing maintenance
 
 Mazu Networks, Inc.
 http://www.mazunetworks.com/

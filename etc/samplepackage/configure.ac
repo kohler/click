@@ -16,7 +16,7 @@ dnl
 dnl the usual 'configure.ac' boilerplate
 dnl
 
-AC_INIT(click-samplepackage, 1.5.0)
+AC_INIT(click-samplepackage, 1.6.0)
 AC_SUBST(ac_configure_args)
 
 CLICKPACKAGENAME=sample

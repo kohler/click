@@ -312,6 +312,7 @@ click
 clicknet
 
 ./include/click:
+algorithm.hh
 archive.hh
 atomic.hh
 bighashmap.cc
@@ -449,6 +450,7 @@ clickfs.cc
 config.cc
 kernelversion.c
 module.cc
+moduleparm.h
 modulepriv.hh
 proclikefs.c
 proclikefs.h
@@ -516,6 +518,7 @@ ICMPPingEncap-01.testie
 ICMPRewriter-01.testie
 
 ./test/ip:
+IPReassembler-01.testie
 iplookups-01.testie
 
 ./test/linuxmodule:
@@ -531,10 +534,13 @@ MixedQueue-01.testie
 MixedQueue-02.testie
 Queue-yank-01.testie
 StrideSched-01.testie
+confparse-01.testie
 notifier-01.testie
 notifier-02.testie
 notifier-03.testie
 notifier-04.testie
+sort-01.testie
+vector-01.testie
 
 ./test/tcpudp:
 UDPIPEncap-01.testie

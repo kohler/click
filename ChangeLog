@@ -1,3 +1,209 @@
+2007-09-18 Tue 13:58:43 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 1bf329c1ae0c6fbba227dd94c1fd63bbc8c01255
+
+	* AUTHORS, ChangeLog, DISTFILES, README, configure, configure.in,
+	etc/libclick/lc-configure.in, etc/samplepackage/configure.ac: Add
+	more files to the distribution for 1.6.0 release.
+
+2007-09-18 Tue 13:37:05 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 7344172a79d08d38fc24834060494936beea4e18
+
+	* config-userlevel.h.in, configure,
+	elements/analysis/aggcounter.cc,
+	elements/analysis/aggpktcounter.cc,
+	elements/analysis/timestampaccum.cc,
+	elements/userlevel/fromfile.cc, m4/click.m4: Compilation fixes on
+	--disable-int64.
+	
+	Don't include large file support when --disable-int64; off_t
+	becomes 4 bytes long.  Also, ELEMENT_REQUIRE(int64) when
+	appropriate.  Problem reported by Joonwoo Park.
+
+2007-09-18 Tue 09:15:44 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 949daa4a22c3d4410dbb509c4b28cce6ef2a63f6
+
+	* elements/linuxmodule/: perfcountaccum.cc, perfcountuser.cc,
+	setperfcount.cc: Mark PerfCount elements as requiring Pentium Pro
+	and int64.
+	
+	Problem reported by Joonwoo Park.
+
+2007-09-18 Tue 08:55:47 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 862612cd6e461287fbeacb0d180844a4634ee66f
+
+	* config-linuxmodule.h.in, include/click/fixconfig.h: Correctly
+	spell a configuration variable.
+	
+	NOW LEAVING MORON COUNTRY #!(*&$^^(*&(*&(*!(*)$#!)!)@(#*()@(! 
+	Also, let the Linux build process include autoconf.h for us; don't
+	override it.
+
+2007-09-17 Mon 14:46:57 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 4dcddd534538155b79ce42f8f87c330193abb85a
+
+	* etc/pkg-userlevel.mk: Small fix to package makefiles: add -fPIC
+	to FLAGS.
+	
+	This is a version of a fix from Pavlos Papageorgiou, who likes to
+	override CXX.
+
+2007-09-17 Mon 13:49:47 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 00844b7668fe272765ddb1d810296f5c883bf21c
+
+	* DISTFILES, config-linuxmodule.h.in, configure, configure.in,
+	etc/libclick/DISTFILES, etc/pkg-linuxmodule-26.mk,
+	include/click/fixconfig.h: Avoid linking problems on linuxmodule.
+	
+	Linux attempts to be smart about SMP spinlocks: the "lock" prefix
+	is emitted, but on UP kernels, it is dynamically turned into a
+	no-op using information collected in a special linker section
+	(.smp_locks).  This interacts badly with C++: a template function
+	is emitted into its own .gnu.linkonce.t section, and then only one
+	version is chosen for the final binary -- but .smp_locks has
+	references to them ALL, causing link time problems about
+	"referenced in section / defined in discarded section". Avoid this
+	problem by redefining LOCK_PREFIX to "lock ; " (no linker magic)
+	early on in the build process.	Problem reported by Adam Greenhalgh
+	and others; thanks to Adam for a test machine.
+
+2007-09-16 Sun 10:13:59 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 72103424eec2887d8f2a968c2dbf14da4adf4d4d
+
+	* elements/userlevel/socket.cc: Check whether SO_TIMESTAMP exists
+	(it doesn't seem to on OpenBSD).
+	
+	Problem reported by Bob Keyes.
+
+2007-09-15 Sat 08:48:52 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 1422256bf77111346ddd0fef046b70bc60a9608a
+
+	* tools/lib/lexert.cc: Bug fix: count tool lexer errors correctly.
+
+2007-09-15 Sat 10:39:40 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit d13ada56f9a9c673457390126a551343740126cc
+
+	* lib/router.cc: Better error message.
+
+2007-09-15 Sat 10:50:36 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 0d963d68ee243464c3fe799e788dfaa4a1636170
+
+	* .gitignore: Ignore ignorables.
+
+2007-09-14 Fri 09:16:38 -0700  Roman Chertov <rchertov@purdue.edu>
+Commit a49a17e3540259fa03c82274302ba762909e0fb5
+
+	* elements/linuxmodule/: touserdevice.cc, touserdevice.hh: Correct
+	counter usage and add burst mode to ToUserDevice.
+	
+	Also add documentation for multipacket mode.  Relative to Roman's
+	patch, Eddie added burst mode (based on Roman's original burst
+	mode) and fixed documentation.
+	
+	Signed-off-by: Eddie Kohler <kohler@cs.ucla.edu>
+
+2007-09-13 Thu 10:45:38 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit a6f8bdba6866cb8dd8b62699a336ec43a97cdbbc
+
+	* include/click/vector.hh: Add Vector<T>::push_front() and
+	pop_front() operations.
+
+2007-09-14 Fri 08:48:09 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 61ee00cdea7a75254c1c54e00d43165ddd45d854
+
+	* config-bsdmodule.h.in, config-userlevel.h.in,
+	elements/linuxmodule/todevice.cc, elements/linuxmodule/todevice.hh,
+	lib/task.cc: Most Task methods safely do nothing
+	pre-initialization.
+	
+	This may fix David Moore's problem, which involved an unfortunate
+	interaction between FromHost (created a device) and ToDevice (got
+	notified of device creation and tried to schedule its task --
+	BEFORE the task was initialized: collapse).
+	
+	Also introduce likely() and unlikely() macros.
+
+2007-09-13 Thu 23:07:22 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit ab8a05b032d67345efc20c5a22df9db7bf0075de
+
+	* elements/linuxmodule/: fromuserdevice.cc, touserdevice.cc: Fix
+	ToUserDevice multimode: no bogus pointers.
+	
+	Problem reported by Roman Chertov.  This checkin also contains
+	several cleanups and reduced click_chatters from a patch of
+	Roman's.  For that reason (although he solved the basic multimode
+	problem differently):
+	
+	Signed-off-by: Roman Chertov <rchertov@purdue.edu>
+
+2007-09-13 Thu 22:43:41 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 35aebeba26c6b88311f8f3f2a10a48a2db36ecb7
+
+	* tools/click-devirtualize/: click-devirtualize.cc, specializer.cc,
+	specializer.hh: Fix devirtualize filename reference when
+	kernel/user configs differ.
+	
+	Problem reported by Pavlos Papageorgiou <pavlos@cs.umd.edu>.
+
+2007-09-13 Thu 22:22:29 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit e60baa5217233cd663bc584c51e4507340c9f9bc
+
+	* include/click/task.hh, lib/routerthread.cc, lib/task.cc: Don't
+	clear _should_be_scheduled immediately after setting it.
+	
+	Bug reported by Joonwoo Park; his fix is included in this, but this
+	fixes other instances of the problem too.
+
+2007-09-13 Thu 14:42:56 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 724db3002e595a269649b4ea7d9f156489860f05
+
+	* include/click/task.hh, lib/task.cc: More pending race conditions.
+	
+	Joonwoo Park reports yet another problem with notification on SMP
+	Click. Try to avoid this problem by only resetting
+	_should_be_scheduled to 0 while the thread lock is held; this
+	should make reschedule requests stick until they are satisfied. 
+	This adds an assignment to the fast_unschedule() fast path, but
+	this will probably not matter as the assignment is near variables
+	that already needed to be assigned.
+
+2007-09-13 Thu 14:41:07 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit b6a0addf88465d0eafb6a98cf3fa900d3d1008b2
+
+	* lib/router.cc: Do more router initialization before pausing
+	master.
+	
+	May improve hotswap performance a tad; hopefully no errors.
+
+2007-09-13 Thu 08:07:30 -0700  Nicolas Letor <nicolas.letor@gmail.com>
+Commit 3d50c91e692698585b6f09613916509e68df7b96
+
+	* elements/wifi/wirelessinfo.cc: Fix nsclick wifi compilation bug.
+	
+	Signed-off-by: Eddie Kohler <kohler@cs.ucla.edu>
+
+2007-09-12 Wed 17:56:41 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit e0d6f568d59d4eaa7dc04adbe87f6db7b9e6ed50
+
+	* lib/driver.cc, tools/click-devirtualize/click-devirtualize.cc,
+	tools/click-fastclassifier/click-fastclassifier.cc: Always compile
+	click_compile_archive_file() in tools.
+	
+	Problem reported by skatsu@gmail.com.  Also some copyright updates.
+
+2007-09-12 Wed 15:30:44 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 184a9128b8d0723cae6cdf819e4b3d6a2a9e8cdd
+
+	* include/click/atomic.hh, linuxmodule/Makefile.in: Include Linux's
+	CPPFLAGS when compiling linuxmodule.
+	
+	Maybe this fixes Adam Greenhalgh's problem?  Also, fix CLICK_DECLS
+	error in atomic.hh.
+
+2007-09-12 Wed 13:43:02 -0700  Eddie Kohler <kohler@cs.ucla.edu>
+Commit 24b9e38fa1a1eacf8a325807903be009b66c8ea6
+
+	* ChangeLog, NEWS: Update NEWS.
+
 2007-09-12 Wed 12:44:47 -0700  Puneet Sood <psood74@gmail.com>
 Commit 5be6c31ede58b812a3d6075dc91f597d1726eb66
 
