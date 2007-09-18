@@ -20,9 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#if __i386__
 #include <asm/msr.h>
-#endif
 
 PerfCountAccum::PerfCountAccum()
 {
@@ -65,15 +63,11 @@ PerfCountAccum::initialize(ErrorHandler *errh)
 inline void
 PerfCountAccum::smaction(Packet *p)
 {
-#if __i386__
   unsigned l, h;
   rdpmc(_which, l, h);
   uint64_t delta =
     p->perfctr_anno() - (((uint64_t)h << 32) | l);
   _accum += delta;
-#else
-  // add other architectures here
-#endif
   _count++;
 }
 
@@ -125,5 +119,5 @@ PerfCountAccum::add_handlers()
   add_write_handler("reset_counts", reset_handler, (void *)0);
 }
 
-ELEMENT_REQUIRES(linuxmodule PerfCountUser)
+ELEMENT_REQUIRES(linuxmodule i586 int64 PerfCountUser)
 EXPORT_ELEMENT(PerfCountAccum)

@@ -21,9 +21,7 @@
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/glue.hh>
-#if __i386__
 #include <asm/msr.h>
-#endif
 #include <click/perfctr-i586.hh>
 
 PerfCountUser::PerfCountUser()
@@ -39,7 +37,6 @@ static int
 string_to_perfctr(const String &name_in)
 {
   String name = name_in.upper();
-#if __i386__
 #define TRY(x)		if (name == #x) return x;
   TRY(BUS_TRAN_INVAL);
   TRY(BUS_TRAN_MEM);
@@ -56,9 +53,6 @@ string_to_perfctr(const String &name_in)
   TRY(L2_RQSTS);
   TRY(BUS_LOCK_CLOCKS);
 #undef TRY
-#else
-  (void) name;
-#endif
   return -1;
 }
 
@@ -100,12 +94,10 @@ PerfCountUser::prepare(const String &name, ErrorHandler *errh, int force)
 int
 PerfCountUser::initialize(ErrorHandler *)
 {
-#if __i386__
   if (_metric0 >= 0)
     wrmsr(MSR_EVNTSEL0, _metric0 | MSR_FLAGS0, 0);
   if (_metric1 >= 0)
     wrmsr(MSR_EVNTSEL1, _metric1 | MSR_FLAGS1, 0);
-#endif
   return 0;
 }
 
