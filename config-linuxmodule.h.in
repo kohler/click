@@ -86,7 +86,9 @@
 #endif
 
 /* Include integer type definitions. */
-#include <linux/autoconf.h>
+#if !HAVE_LINUXMODULE_2_6
+# include <linux/autoconf.h>
+#endif
 #include <linux/types.h>
 typedef ptrdiff_t intptr_t;
 typedef unsigned long uintptr_t; /* XXX? */
