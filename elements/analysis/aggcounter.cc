@@ -551,6 +551,6 @@ AggregateCounter::add_handlers()
     add_read_handler("nagg", read_handler, (void *)AC_NAGG);
 }
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel int64)
 EXPORT_ELEMENT(AggregateCounter)
 CLICK_ENDDECLS

@@ -311,7 +311,7 @@ FromFile::peek_line(String &result, ErrorHandler *errh)
 int
 FromFile::seek(off_t want, ErrorHandler* errh)
 {
-    if (want >= _file_offset && want < _file_offset + _len) {
+    if (want >= _file_offset && want < (off_t) (_file_offset + _len)) {
 	_pos = want;
 	return 0;
     }
@@ -339,7 +339,7 @@ FromFile::seek(off_t want, ErrorHandler* errh)
     }
 
     // otherwise, read data
-    while (_file_offset + _len < want && _len)
+    while ((off_t) (_file_offset + _len) < want && _len)
 	if (read_buffer(errh) < 0)
 	    return -1;
     _pos = want - _file_offset;

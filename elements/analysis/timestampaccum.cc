@@ -81,5 +81,5 @@ TimestampAccum::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel int64)
 EXPORT_ELEMENT(TimestampAccum)

@@ -749,7 +749,7 @@ void h(off_t a) {
 	AC_DEFINE([HAVE_LARGE_FILE_SUPPORT], [1], [Define if your C library contains large file support.])
     fi
 
-    AC_CHECK_SIZEOF(off_t, [], [#ifdef HAVE_LARGE_FILE_SUPPORT
+    AC_CHECK_SIZEOF(off_t, [], [#if HAVE_LARGE_FILE_SUPPORT && HAVE_INT64_TYPES
 # define _LARGEFILE_SOURCE 1
 # define _FILE_OFFSET_BITS 64
 #endif
