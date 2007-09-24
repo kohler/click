@@ -51,7 +51,7 @@ int
 LinkUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     if (cp_va_kparse(conf, this, errh,
-		     "LATENCY", cpkP+cpkM, cpInterval, &_latency,
+		     "LATENCY", cpkP+cpkM, cpTimestamp, &_latency,
 		     "BANDWIDTH", cpkP+cpkM, cpBandwidth, &_bandwidth,
 		     cpEnd) < 0)
 	return -1;

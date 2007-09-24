@@ -37,7 +37,8 @@ int
 DelayUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     return cp_va_kparse(conf, this, errh,
-			"DELAY", cpkP+cpkM, cpInterval, &_delay, cpEnd);
+			"DELAY", cpkP+cpkM, cpTimestamp, &_delay,
+			cpEnd);
 }
 
 int

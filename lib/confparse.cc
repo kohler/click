@@ -2893,9 +2893,8 @@ const CpVaParseCmd
   cpSeconds		= "sec",
   cpSecondsAsMilli	= "msec",
   cpSecondsAsMicro	= "usec",
-  cpTimeval		= "timeval",
   cpTimestamp		= "timestamp",
-  cpInterval		= "interval",
+  cpTimeval		= "timeval",
   cpBandwidth		= "bandwidth_Bps",
   cpIPAddress		= "ip_addr",
   cpIPPrefix		= "ip_prefix",
@@ -2917,6 +2916,7 @@ const CpVaParseCmd
   cpIP6AddressOrPrefix	= "ip6_addr_or_prefix",
   cpDesCblock		= "des_cblock",
   cpFilename		= "filename",
+  cpInterval		= cpTimeval,
   cpReadHandlerCall	= cpHandlerCallPtrRead,
   cpWriteHandlerCall	= cpHandlerCallPtrWrite;
 
@@ -2954,7 +2954,6 @@ enum {
   cpiSecondsAsMicro,
   cpiTimestamp,
   cpiTimeval,
-  cpiInterval,
   cpiBandwidth,
   cpiIPAddress,
   cpiIPPrefix,
@@ -3220,8 +3219,7 @@ default_parsefunc(cp_value *v, const String &arg,
      break;
    }
 
-   case cpiTimeval:
-   case cpiInterval: {
+   case cpiTimeval: {
      struct timeval tv;
      if (!cp_time(arg, &tv)) {
        if (cp_errno == CPE_NEGATIVE)
@@ -3468,8 +3466,7 @@ default_storefunc(cp_value *v  CP_CONTEXT)
      break;
    }
 
-   case cpiTimeval:
-   case cpiInterval: {
+   case cpiTimeval: {
      struct timeval *tvstore = (struct timeval *)v->store;
      tvstore->tv_sec = v->v.i;
      tvstore->tv_usec = v->v2.i;
@@ -4710,7 +4707,6 @@ cp_va_static_initialize()
     cp_register_argtype(cpSecondsAsMicro, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMicro);
     cp_register_argtype(cpTimestamp, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimestamp);
     cp_register_argtype(cpTimeval, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);
-    cp_register_argtype(cpInterval, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiInterval);
     cp_register_argtype(cpBandwidth, "bandwidth", 0, default_parsefunc, default_storefunc, cpiBandwidth);
     cp_register_argtype(cpIPAddress, "IP address", 0, default_parsefunc, default_storefunc, cpiIPAddress);
     cp_register_argtype(cpIPPrefix, "IP address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPPrefix);

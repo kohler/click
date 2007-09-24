@@ -252,7 +252,6 @@ extern const CpVaParseCmd
     cpSecondsAsMicro,	///< Result storage uint32_t*, parsed by cp_seconds_as_micro().
     cpTimestamp,	///< Result storage Timestamp*, parsed by cp_time().
     cpTimeval,		///< Result storage struct timeval*, parsed by cp_time().
-    cpInterval,		///< Result storage struct timeval*, parsed by cp_time().
     cpBandwidth,	///< Result storage uint32_t*, parsed by cp_bandwidth().
     cpIPAddress,	///< Result storage IPAddress* or equivalent, parsed by cp_ip_address().
     cpIPPrefix,		///< Result storage IPAddress* addr and IPAddress *mask, parsed by cp_ip_prefix().
@@ -275,11 +274,13 @@ extern const CpVaParseCmd
     cpOptional,		///< cp_va_parse only: Following arguments are optional.
     cpKeywords,		///< cp_va_parse only: Following arguments are keywords.
     cpConfirmKeywords,	///< cp_va_parse only: Following arguments are confirmed keywords.
-    cpMandatoryKeywords,///< cp_va_parse only: Following arguments are mandatory keywords.
-    // old names, here for compatibility:
-    cpEtherAddress,	//			EtherAddress*
-    cpReadHandlerCall,	//			HandlerCall**
-    cpWriteHandlerCall;	//			HandlerCall**
+    cpMandatoryKeywords;///< cp_va_parse only: Following arguments are mandatory keywords.
+// old names, here for compatibility:
+extern const CpVaParseCmd
+    cpInterval CLICK_CONFPARSE_DEPRECATED,		// struct timeval*
+    cpEtherAddress CLICK_CONFPARSE_DEPRECATED,		// EtherAddress*
+    cpReadHandlerCall CLICK_CONFPARSE_DEPRECATED,	// HandlerCall**
+    cpWriteHandlerCall CLICK_CONFPARSE_DEPRECATED;	// HandlerCall**
 //@}
 
 /// @name Unparsing
