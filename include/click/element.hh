@@ -5,6 +5,7 @@
 #include <click/vector.hh>
 #include <click/string.hh>
 #include <click/packet.hh>
+#include <click/handler.hh>
 CLICK_DECLS
 class Router;
 class Master;
@@ -13,19 +14,12 @@ class Timer;
 class Element;
 class ErrorHandler;
 class Bitvector;
-class Handler;
 
 /** @file <click/element.hh>
  * @brief Click's Element class.
  */
 
 #define CLICK_ELEMENT_PORT_COUNT_DEPRECATED CLICK_DEPRECATED
-
-// #define CLICK_STATS 5
-
-typedef int (*HandlerHook)(int operation, String&, Element*, const Handler*, ErrorHandler*);
-typedef String (*ReadHandlerHook)(Element*, void*);
-typedef int (*WriteHandlerHook)(const String&, Element*, void*, ErrorHandler*);
 
 class Element { public:
     
@@ -145,11 +139,11 @@ class Element { public:
 #endif
 
     // HANDLERS
-    void add_read_handler(const String &name, ReadHandlerHook, void*);
-    void add_write_handler(const String &name, WriteHandlerHook, void*);
-    void set_handler(const String &name, int flags, HandlerHook, void* = 0, void* = 0);
+    void add_read_handler(const String &name, ReadHandlerHook read_hook, void *user_data, uint32_t flags = 0);
+    void add_write_handler(const String &name, WriteHandlerHook write_hook, void *user_data, uint32_t flags = 0);
+    void set_handler(const String &name, int flags, HandlerHook hook, void *user_data1 = 0, void *user_data2 = 0);
     int set_handler_flags(const String &name, int flags);
-    void add_task_handlers(Task*, const String& prefix = String());
+    void add_task_handlers(Task *task, const String& prefix = String());
 
     static String read_positional_handler(Element*, void*);
     static String read_keyword_handler(Element*, void*);
@@ -503,12 +497,10 @@ Element::input_is_push(int port) const
 
 #if CLICK_STATS >= 2
 # define PORT_CTOR_INIT(o) , _packets(0), _owner(o)
+#elif CLICK_STATS >= 1
+# define PORT_CTOR_INIT(o) , _packets(0)
 #else
-# if CLICK_STATS >= 1
-#  define PORT_CTOR_INIT(o) , _packets(0)
-# else
-#  define PORT_CTOR_INIT(o)
-# endif
+# define PORT_CTOR_INIT(o)
 #endif
 
 inline

@@ -499,7 +499,7 @@ FromDevice::add_handlers()
     add_read_handler("kernel_drops", read_handler, (void *) 0);
     add_read_handler("encap", read_handler, (void *) 1);
     add_read_handler("count", read_handler, (void *) 2);
-    add_write_handler("reset_counts", write_handler, 0);
+    add_write_handler("reset_counts", write_handler, 0, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS

@@ -189,7 +189,8 @@ void
 Signatures::analyze(ElementMap &em)
 {
   int ne = _router->nelements();
-  ProcessingT pt(_router, &em, true, 0); // true -> AGNOSTIC becomes PUSH
+  ProcessingT pt(_router, &em);
+  pt.create("", true, 0);	// true -> AGNOSTIC becomes PUSH
   
   create_phase_0(pt);
 

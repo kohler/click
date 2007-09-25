@@ -250,7 +250,7 @@ frob_nested_routerlink(ElementT *e)
   cp_argvec(e->configuration(), words);
   for (int i = 0; i < words.size(); i += 2)
     words[i] = prefix + words[i];
-  e->configuration() = cp_unargvec(words);
+  e->set_configuration(cp_unargvec(words));
 }
 
 static int
@@ -311,7 +311,7 @@ make_link(const Vector<RouterPortT> &from, const Vector<RouterPortT> &to,
   // add new element
   ElementClassT *link_type = ElementClassT::base_type("RouterLink");
   ElementT *newe = combined->get_element
-    ("link" + String(++linkno), link_type, cp_unargvec(words), "<click-combine>");
+      ("link" + String(++linkno), link_type, cp_unargvec(words), LandmarkT("<click-combine>"));
 
   for (int i = 0; i < from.size(); i++) {
     combined->insert_before(PortT(newe, i), PortT(combes[i], 0));

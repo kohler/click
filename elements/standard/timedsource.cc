@@ -167,17 +167,16 @@ TimedSource::change_param(const String &in_s, Element *e, void *vparam,
 void
 TimedSource::add_handlers()
 {
-  add_read_handler("data", read_param, (void *)0);
-  add_write_handler("data", change_param, (void *)0);
-  set_handler_flags("data", Handler::RAW);
-  add_read_handler("limit", read_param, (void *)1);
+  add_read_handler("data", read_param, (void *)0, Handler::CALM);
+  add_write_handler("data", change_param, (void *)0, Handler::RAW);
+  add_read_handler("limit", read_param, (void *)1, Handler::CALM);
   add_write_handler("limit", change_param, (void *)1);
-  add_read_handler("interval", read_param, (void *)2);
+  add_read_handler("interval", read_param, (void *)2, Handler::CALM);
   add_write_handler("interval", change_param, (void *)2);
-  add_read_handler("active", read_param, (void *)3);
+  add_read_handler("active", read_param, (void *)3, Handler::CALM | Handler::CHECKBOX);
   add_write_handler("active", change_param, (void *)3);
   add_read_handler("count", read_param, (void *)4);
-  add_write_handler("reset", change_param, (void *)5);
+  add_write_handler("reset", change_param, (void *)5, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS

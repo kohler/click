@@ -43,6 +43,7 @@ include/click/ewma.hh
 include/click/fixconfig.h
 include/click/gaprate.hh
 include/click/glue.hh
+include/click/handler.hh
 include/click/handlercall.hh
 include/click/hashcode.hh
 include/click/hashmap.cc

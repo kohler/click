@@ -65,8 +65,8 @@ read_uint(const char *data, int max_len,
 }
 
 int
-separate_ar_string(const String &s, Vector<ArchiveElement> &v,
-		   ErrorHandler *errh)
+ArchiveElement::parse(const String &s, Vector<ArchiveElement> &v,
+		      ErrorHandler *errh)
 {
   if (!errh)
     errh = ErrorHandler::silent_handler();
@@ -162,7 +162,7 @@ separate_ar_string(const String &s, Vector<ArchiveElement> &v,
 }
 
 String
-create_ar_string(const Vector<ArchiveElement> &v, ErrorHandler *errh)
+ArchiveElement::unparse(const Vector<ArchiveElement> &v, ErrorHandler *errh)
 {
   if (!errh)
     errh = ErrorHandler::silent_handler();
@@ -224,6 +224,14 @@ create_ar_string(const Vector<ArchiveElement> &v, ErrorHandler *errh)
     return sa.take_string();
 }
 
+int
+ArchiveElement::arindex(const Vector<ArchiveElement> &archive, const String &what)
+{
+  for (int i = 0; i < archive.size(); i++)
+    if (archive.at(i).name == what)
+      return i;
+  return -1;
+}
 
 // generate Vector template instance
 #include <click/vector.cc>

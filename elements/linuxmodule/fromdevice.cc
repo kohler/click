@@ -388,7 +388,7 @@ FromDevice::add_handlers()
     add_task_handlers(&_task);
     add_read_handler("drops", FromDevice_read_stats, (void *) 0);
     add_read_handler("calls", FromDevice_read_stats, (void *) 1);
-    add_write_handler("reset_counts", FromDevice_write_stats, 0);
+    add_write_handler("reset_counts", FromDevice_write_stats, 0, Handler::BUTTON);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)

@@ -444,11 +444,10 @@ ProgressBar::add_handlers()
 {
     add_write_handler("mark_stopped", write_handler, (void *)H_MARK_STOPPED);
     add_write_handler("mark_done", write_handler, (void *)H_MARK_DONE);
-    add_read_handler("active", read_handler, (void *)H_ACTIVE);
+    add_read_handler("active", read_handler, (void *)H_ACTIVE, Handler::CHECKBOX);
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
     add_read_handler("banner", read_handler, (void *)H_BANNER);
-    add_write_handler("banner", write_handler, (void *)H_BANNER);
-    set_handler_flags("banner", Handler::RAW);
+    add_write_handler("banner", write_handler, (void *)H_BANNER, Handler::RAW);
     add_read_handler("poshandler", read_handler, (void *)H_POSHANDLER);
     add_write_handler("poshandler", write_handler, (void *)H_POSHANDLER);
     add_read_handler("sizehandler", read_handler, (void *)H_SIZEHANDLER);
@@ -456,7 +455,7 @@ ProgressBar::add_handlers()
     add_read_handler("pos", read_handler, (void *)H_POS);
     add_read_handler("size", read_handler, (void *)H_SIZE);
     add_write_handler("size", write_handler, (void *)H_SIZE);
-    add_write_handler("reset", write_handler, (void *)H_RESET);
+    add_write_handler("reset", write_handler, (void *)H_RESET, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS

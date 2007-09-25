@@ -113,6 +113,11 @@ class BaseErrorHandler : public ErrorHandler { public:
   int _nwarnings, _nerrors;
 };
 
+class SilentErrorHandler : public BaseErrorHandler { public:
+  SilentErrorHandler()			{ }
+  void handle_text(Seriousness, const String &);  
+};
+
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 class FileErrorHandler : public BaseErrorHandler { public:
   FileErrorHandler(FILE *, const String & = String());
@@ -123,6 +128,24 @@ class FileErrorHandler : public BaseErrorHandler { public:
 };
 #endif
 
+class LocalErrorHandler : public BaseErrorHandler { public:
+
+  LocalErrorHandler(ErrorHandler *errh)	: _errh(errh) { }
+
+  int min_verbosity() const;
+
+  String make_text(Seriousness, const char *, va_list);
+  String decorate_text(Seriousness, const String &, const String &);
+  void handle_text(Seriousness, const String &);
+  int count_error(Seriousness, const String &);
+  void set_error_code(int);
+
+ private:
+
+  ErrorHandler *_errh;
+ 
+};
+
 class ErrorVeneer : public ErrorHandler { public:
 
   ErrorVeneer(ErrorHandler *errh)	: _errh(errh) { }
@@ -130,11 +153,13 @@ class ErrorVeneer : public ErrorHandler { public:
   int nwarnings() const;
   int nerrors() const;
   void reset_counts();
+  int min_verbosity() const;
 
   String make_text(Seriousness, const char *, va_list);
   String decorate_text(Seriousness, const String &, const String &);
   void handle_text(Seriousness, const String &);
   int count_error(Seriousness, const String &);
+  void set_error_code(int);
 
  protected:
 

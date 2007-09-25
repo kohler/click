@@ -983,7 +983,7 @@ Classifier::program_string(Element *element, void *)
 void
 Classifier::add_handlers()
 {
-  add_read_handler("program", Classifier::program_string, 0);
+    add_read_handler("program", Classifier::program_string, 0, Handler::CALM);
 }
 
 //

@@ -266,8 +266,10 @@ Lexer::Compound::resolve(Lexer *lexer, int etype, int ninputs, int noutputs, Vec
   // are friendlier
   Compound *ct = this;
   int closest_etype = -1;
+  int nct = 0;
   
   while (ct) {
+    nct++;
     if (ct->_ninputs == ninputs && ct->_noutputs == noutputs
 	&& ct->assign_arguments(args, &args) >= 0)
       return etype;
@@ -283,10 +285,12 @@ Lexer::Compound::resolve(Lexer *lexer, int etype, int ninputs, int noutputs, Vec
       break;
   }
 
-  errh->lerror(landmark, "no match for '%s'", signature(name(), 0, args.size(), ninputs, noutputs).c_str());
-  ContextErrorHandler cerrh(errh, "candidates are:", "  ");
-  for (ct = this; ct; ct = ct->overload_compound(lexer))
-    cerrh.lmessage(ct->landmark(), "%s", ct->signature().c_str());
+  if (nct != 1 || closest_etype < 0) {
+    errh->lerror(landmark, "no match for '%s'", signature(name(), 0, args.size(), ninputs, noutputs).c_str());
+    ContextErrorHandler cerrh(errh, "candidates are:", "  ");
+    for (ct = this; ct; ct = ct->overload_compound(lexer))
+      cerrh.lmessage(ct->landmark(), "%s", ct->signature().c_str());
+  }
   ct = (closest_etype >= 0 ? (Compound *) lexer->_element_types[closest_etype].thunk : 0);
   if (ct)
     ct->assign_arguments(args, &args);
@@ -419,7 +423,7 @@ Lexer::begin_parse(const String &data, const String &filename,
   _end = _big_string.end();
 
   if (!filename)
-    _filename = "line ";
+    _filename = "config:";
   else if (filename.back() != ':' && !isspace(filename.back()))
     _filename = filename + ":";
   else

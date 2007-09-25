@@ -119,7 +119,7 @@ void
 RXStats::add_handlers()
 {
   add_read_handler("stats", RXStats_read_param, (void *) H_STATS);
-  add_write_handler("reset", RXStats_write_param, (void *) H_RESET);
+  add_write_handler("reset", RXStats_write_param, (void *) H_RESET, Handler::BUTTON);
 
 }
 // generate Vector template instance

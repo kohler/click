@@ -1,0 +1,12 @@
+*.bak
+*.o
+po
+.deps
+Makefile.in
+aclocal.m4
+autogen.sh
+config.h.in
+configure
+stamp-h.in
+stamp-h1
+.gdb_history

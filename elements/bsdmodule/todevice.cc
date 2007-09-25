@@ -192,7 +192,7 @@ ToDevice::add_handlers()
 {
   add_read_handler("calls", ToDevice_read_calls, 0);
   add_read_handler("packets", ToDevice_read_stats, 0);
-  add_write_handler("reset_counts", ToDevice_write_stats, 0);
+  add_write_handler("reset_counts", ToDevice_write_stats, 0, Handler::BUTTON);
   add_task_handlers(&_task);
 }
 

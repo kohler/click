@@ -4,7 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
- * Copyright (c) 2001-2005 Eddie Kohler
+ * Copyright (c) 2001-2007 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -524,23 +524,28 @@ String
 ErrorHandler::decorate_text(Seriousness, const String &landmark, const String &text)
 {
   String new_text = text;
+
+  // skip initial special-purpose portion of a landmark ('\<...>')
+  int first_lpos = 0;
+  if (landmark.length() > 2 && landmark[0] == '\\' && landmark[1] == '<') {
+    int end_special = landmark.find_left('>');
+    if (end_special > 0)
+      first_lpos = end_special + 1;
+  }
   
   // handle landmark
-  if (landmark
-      && !(landmark.length() > 2 && landmark[0] == '\\'
-	   && landmark.back() == '\\')) {
-    // ignore special-purpose landmarks (begin and end with a backslash `\')
+  if (first_lpos < landmark.length()) {
     // fix landmark: skip trailing spaces and trailing colon
     int i, len = landmark.length();
-    for (i = len - 1; i >= 0; i--)
+    for (i = len - 1; i >= first_lpos; i--)
       if (!isspace((unsigned char) landmark[i]))
 	break;
-    if (i >= 0 && landmark[i] == ':')
+    if (i >= first_lpos && landmark[i] == ':')
       i--;
 
     // prepend landmark, unless all spaces
-    if (i >= 0)
-      new_text = prepend_lines(landmark.substring(0, i+1) + ": ", new_text);
+    if (i >= first_lpos)
+      new_text = prepend_lines(landmark.substring(first_lpos, i + 1 - first_lpos) + ": ", new_text);
   }
 
   return new_text;
@@ -638,11 +643,6 @@ FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
 //
 // SILENT ERROR HANDLER
 //
-
-class SilentErrorHandler : public BaseErrorHandler { public:
-  SilentErrorHandler()			{ }
-  void handle_text(Seriousness, const String &);  
-};
 
 void
 SilentErrorHandler::handle_text(Seriousness, const String &)
@@ -794,6 +794,12 @@ ErrorVeneer::reset_counts()
   _errh->reset_counts();
 }
 
+int
+ErrorVeneer::min_verbosity() const
+{
+  return _errh->min_verbosity();
+}
+
 String
 ErrorVeneer::make_text(Seriousness seriousness, const char *s, va_list val)
 {
@@ -816,6 +822,59 @@ int
 ErrorVeneer::count_error(Seriousness seriousness, const String &text)
 {
   return _errh->count_error(seriousness, text);
+}
+
+void
+ErrorVeneer::set_error_code(int code)
+{
+  _errh->set_error_code(code);
+}
+
+
+//
+// LOCAL ERROR HANDLER
+//
+
+int
+LocalErrorHandler::min_verbosity() const
+{
+  return (_errh ? _errh->min_verbosity() : 0);
+}
+
+String
+LocalErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
+{
+  return (_errh ? _errh->make_text(seriousness, s, val) : ErrorHandler::make_text(seriousness, s, val));
+}
+
+String
+LocalErrorHandler::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
+{
+  return (_errh ? _errh->decorate_text(seriousness, landmark, text) : ErrorHandler::decorate_text(seriousness, landmark, text));
+}
+
+void
+LocalErrorHandler::handle_text(Seriousness seriousness, const String &text)
+{
+  if (_errh)
+    _errh->handle_text(seriousness, text);
+}
+
+int
+LocalErrorHandler::count_error(Seriousness seriousness, const String &text)
+{
+  int val = BaseErrorHandler::count_error(seriousness, text);
+  if (_errh)
+    return _errh->count_error(seriousness, text);
+  else
+    return val;
+}
+
+void
+LocalErrorHandler::set_error_code(int code)
+{
+  if (_errh)
+    _errh->set_error_code(code);
 }
 
 

@@ -183,9 +183,8 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 static void
 generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh)
 {
-    ProcessingT processing(r, ElementMap::default_map(), errh);
-    if (top)
-	processing.resolve_agnostics();
+    ProcessingT processing(r, ElementMap::default_map());
+    processing.create("", top, errh);
 
     Vector<ElementClassT *> declared_types;
     r->collect_locally_declared_types(declared_types);

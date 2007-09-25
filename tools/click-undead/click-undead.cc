@@ -139,7 +139,7 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
 	break;
       }
     
-    ElementT *idle = r->add_anon_element(idlet, "", "<click-undead>");
+    ElementT *idle = r->add_anon_element(idlet, "", LandmarkT("<click-undead>"));
     int idle_in = 0, idle_out = 0;
     
     PortT jump_hook;
@@ -186,7 +186,7 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
 	break;
       }
     
-    ElementT *idle = r->add_anon_element(idlet, "", "<click-undead>");
+    ElementT *idle = r->add_anon_element(idlet, "", LandmarkT("<click-undead>"));
     int idle_in = 0, idle_out = 0;
     
     PortT jump_hook;
@@ -288,7 +288,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
 	  for (int pp = p + 1; pp < hprev.size(); pp++)
 	    args[pp-1] = args[pp];
 	  args.pop_back();
-	  x->configuration() = cp_unargvec(args);
+	  x->set_configuration(cp_unargvec(args));
 	}
 
 	// now do connections
@@ -365,7 +365,7 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
 
     // save number of outputs so we don't attach new Idles
     element_noutputs.insert(x->name(), hnext.size());
-    x->configuration() = String(hnext.size());
+    x->set_configuration(String(hnext.size()));
   }
 
   return changed;
@@ -385,7 +385,8 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
   full_elementmap.set_driver(driver);
 
   // get processing
-  ProcessingT processing(r, &full_elementmap, errh);
+  ProcessingT processing(r, &full_elementmap);
+  processing.create("", true, errh);
   // ... it will report errors as required
 
   Bitvector sources(r->nelements(), false);
@@ -504,7 +505,7 @@ replace_blank_ports(RouterT *r)
     for (int p = 0; p < connv.size(); p++)
       if (connv[p] == -1) {	// unconnected port
 	if (!idle)
-	  idle = r->add_anon_element(idlet, "", "<click-undead>");
+	  idle = r->add_anon_element(idlet, "", LandmarkT("<click-undead>"));
 	r->add_connection(idle, idle_next_out++, x, p);
       }
 
@@ -513,7 +514,7 @@ replace_blank_ports(RouterT *r)
     for (int p = 0; p < connv.size(); p++)
       if (connv[p] == -1) {	// unconnected port
 	if (!idle)
-	  idle = r->add_anon_element(idlet, "", "<click-undead>");
+	  idle = r->add_anon_element(idlet, "", LandmarkT("<click-undead>"));
 	r->add_connection(x, p, idle, idle_next_in++);
       }
   }
@@ -623,7 +624,7 @@ particular purpose.\n");
   if (!r || default_errh->nerrors() > 0)
     exit(1);
   if (file_is_expr)
-    router_file = "<expr>";
+    router_file = "config";
   else if (!router_file || strcmp(router_file, "-") == 0)
     router_file = "<stdin>";
 

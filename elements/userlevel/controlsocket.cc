@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
  * Copyright (c) 2001-3 International Computer Science Institute
- * Copyright (c) 2004-2006 Regents of the University of California
+ * Copyright (c) 2004-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -444,7 +444,7 @@ ControlSocket::write_command(int fd, const String &handlername, String data, boo
   ControlSocketErrorHandler errh;
   
   // call handler
-  int result = h->call_write(data, e, !writedata, &errh);
+  int result = h->call_write(data, e, writedata, &errh);
 
   // add a generic error message for certain handler codes
   int code = errh.error_code();
@@ -649,6 +649,17 @@ ControlSocket::parse_command(int fd, const String &line)
     message(fd, CSERR_OK, "Goodbye!");
     _flags[fd] |= READ_CLOSED;
     _in_texts[fd] = String();
+    return 0;
+
+  } else if (command == "HELP") {
+    message(fd, CSERR_OK, "Commands supported:", true);
+    message(fd, CSERR_OK, "READ handler [params...]   call read handler, returns results in DATA", true);
+    message(fd, CSERR_OK, "WRITE handler [params...]  call write handler", true);
+    message(fd, CSERR_OK, "WRITEDATA handler len      call write handler, pass len data bytes", true);
+    message(fd, CSERR_OK, "CHECKREAD handler          check if read handler is valid", true);
+    message(fd, CSERR_OK, "CHECKWRITE handler         check if write handler is valid", true);
+    message(fd, CSERR_OK, "LLRPC elt#number [len]     call LLRPC, pass len data bytes, return DATA", true);
+    message(fd, CSERR_OK, "QUIT                       close connection");
     return 0;
     
   } else

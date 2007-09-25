@@ -1061,7 +1061,7 @@ Router::set_hotswap_router(Router *r)
 /** @brief Call a read handler, possibly with parameters.
     @param e element on which to call the handler
     @param param parameters, or an empty string if no parameters
-    @param raw true iff value is raw text (see raw())
+    @param raw true iff param is raw text (see raw())
     @param errh optional error handler
 
     The element must be nonnull; to call a global handler, pass the relevant
@@ -1389,7 +1389,7 @@ Router::element_hindexes(const Element* e, Vector<int>& hindexes)
 // Public functions for storing handlers
 
 void
-Router::add_read_handler(const Element* e, const String& name, ReadHandlerHook hook, void* thunk)
+Router::add_read_handler(const Element* e, const String& name, ReadHandlerHook hook, void* thunk, uint32_t flags)
 {
     Handler to_add = fetch_handler(e, name);
     if (to_add._flags & Handler::ONE_HOOK) {
@@ -1399,12 +1399,12 @@ Router::add_read_handler(const Element* e, const String& name, ReadHandlerHook h
     }
     to_add._hook.rw.r = hook;
     to_add._thunk1 = thunk;
-    to_add._flags |= Handler::OP_READ;
+    to_add._flags |= Handler::OP_READ | (flags & ~Handler::SPECIAL_FLAGS);
     store_handler(e, to_add);
 }
 
 void
-Router::add_write_handler(const Element* e, const String& name, WriteHandlerHook hook, void* thunk)
+Router::add_write_handler(const Element* e, const String& name, WriteHandlerHook hook, void* thunk, uint32_t flags)
 {
     Handler to_add = fetch_handler(e, name);
     if (to_add._flags & Handler::ONE_HOOK) {
@@ -1414,7 +1414,7 @@ Router::add_write_handler(const Element* e, const String& name, WriteHandlerHook
     }
     to_add._hook.rw.w = hook;
     to_add._thunk2 = thunk;
-    to_add._flags |= Handler::OP_WRITE;
+    to_add._flags |= Handler::OP_WRITE | (flags & ~Handler::SPECIAL_FLAGS);
     store_handler(e, to_add);
 }
 

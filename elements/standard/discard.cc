@@ -80,7 +80,7 @@ void
 Discard::add_handlers()
 {
     add_read_handler("count", read_handler, 0);
-    add_write_handler("reset_counts", write_handler, 0);
+    add_write_handler("reset_counts", write_handler, 0, Handler::BUTTON);
     if (input_is_pull(0))
 	add_task_handlers(&_task);
 }

@@ -73,7 +73,9 @@ ElementClassT *ElementClassT::the_tunnel_type = new TraitsElementClassT("<tunnel
 
 
 ElementClassT::ElementClassT(const String &name)
-    : _name(name), _use_count(0), _traits_version(-1)
+    : _name(name),
+      _printable_name(name ? name : String::stable_string("<anonymous>")),
+      _use_count(0), _traits_version(-1)
 {
     //fprintf(stderr, "%p: %s\n", this, printable_name_c_str());
 }
@@ -81,15 +83,6 @@ ElementClassT::ElementClassT(const String &name)
 ElementClassT::~ElementClassT()
 {
     //fprintf(stderr, "%p: ~%s\n", this, printable_name_c_str());
-}
-
-const char *
-ElementClassT::printable_name_c_str()
-{
-    if (_name)
-	return _name.c_str();
-    else
-	return "<anonymous>";
 }
 
 static ElementClassT *default_base_type_factory(const String &name)
@@ -143,8 +136,14 @@ ElementClassT::documentation_url() const
 }
 
 
+bool
+ElementClassT::need_resolve() const
+{
+    return false;
+}
+
 ElementClassT *
-ElementClassT::resolve(int, int, Vector<String> &, ErrorHandler *, const String &)
+ElementClassT::resolve(int, int, Vector<String> &, ErrorHandler *, const LandmarkT &)
 {
     return this;
 }
@@ -169,18 +168,18 @@ ElementClassT::direct_expand_element(
 	if (e->tunnel_output()) {
 	    tor->add_tunnel(new_name,
 			    prefix + e->tunnel_output()->name(),
-			    e->landmark(), errh);
+			    e->landmarkt(), errh);
 	    return tor->element(new_name);
 	} else
 	    return tor->get_element
-		(new_name, e->type(), new_configuration, e->landmark());
+		(new_name, e->type(), new_configuration, e->landmarkt());
     }
     
     // otherwise, not tunnel
-	  
+    
     // check for common case -- expanding router into itself
     if (fromr == tor && !prefix) {
-	e->configuration() = new_configuration;
+	e->set_configuration(new_configuration);
 	e->set_type(this);
 	return e;
     }
@@ -190,7 +189,7 @@ ElementClassT::direct_expand_element(
 	ElementT::redeclaration_error(errh, "element", new_name, e->landmark(), new_e->landmark());
     
     // add element
-    return tor->get_element(new_name, this, new_configuration, e->landmark());
+    return tor->get_element(new_name, this, new_configuration, e->landmarkt());
 }
 
 ElementT *
@@ -211,7 +210,7 @@ ElementClassT::expand_element(
     String new_configuration = cp_expand(e->configuration(), env);
     cp_argvec(new_configuration, args);
 
-    ElementClassT *found_c = c->resolve(inputs_used, outputs_used, args, errh, e->landmark());
+    ElementClassT *found_c = c->resolve(inputs_used, outputs_used, args, errh, e->landmarkt());
     if (!found_c) {		// destroy element
 	if (fromr == tor)
 	    e->kill();
@@ -272,8 +271,14 @@ SynonymElementClassT::SynonymElementClassT(const String &name, ElementClassT *ec
     assert(eclass);
 }
 
+bool
+SynonymElementClassT::need_resolve() const
+{
+    return true;
+}
+
 ElementClassT *
-SynonymElementClassT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *errh, const String &landmark)
+SynonymElementClassT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *errh, const LandmarkT &landmark)
 {
     return _eclass->resolve(ninputs, noutputs, args, errh, landmark);
 }

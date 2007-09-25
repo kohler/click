@@ -1429,7 +1429,7 @@ DSDVRouteTable::add_handlers()
   add_read_handler("seqno", print_seqno, 0);
   add_write_handler("seqno", write_seqno, 0);
 #if ENABLE_PAUSE
-  add_read_handler("paused", print_paused, 0);
+  add_read_handler("paused", print_paused, 0, Handler::CHECKBOX);
   add_write_handler("paused", write_paused, 0);
 #endif
   add_read_handler("use_old_route", print_use_old_route, 0);

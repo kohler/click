@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../../lib/archive.cc" -*-
+// -*- c-basic-offset: 4; related-file-name: "../../lib/archive.cc" -*-
 #ifndef CLICK_ARCHIVE_HH
 #define CLICK_ARCHIVE_HH
 #include <click/string.hh>
@@ -8,22 +8,22 @@ class ErrorHandler;
 
 struct ArchiveElement {
   
-  String name;
-  int date;
-  int uid;
-  int gid;
-  int mode;
-  String data;
+    String name;
+    int date;
+    int uid;
+    int gid;
+    int mode;
+    String data;
 
-  bool live() const			{ return name; }
-  bool dead() const			{ return !name; }
-  void kill()				{ name = String(); }
+    bool live() const			{ return name; }
+    bool dead() const			{ return !name; }
+    void kill()				{ name = String(); }
+
+    static int parse(const String &str, Vector<ArchiveElement> &ar, ErrorHandler *errh = 0);
+    static String unparse(const Vector<ArchiveElement> &ar, ErrorHandler *errh = 0);
+    static int arindex(const Vector<ArchiveElement> &ar, const String &name);
   
 };
-
-int separate_ar_string(const String &, Vector<ArchiveElement> &,
-		       ErrorHandler * = 0);
-String create_ar_string(const Vector<ArchiveElement> &, ErrorHandler * = 0);
 
 CLICK_ENDDECLS
 #endif

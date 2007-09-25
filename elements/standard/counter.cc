@@ -119,8 +119,11 @@ Counter::read_handler(Element *e, void *thunk)
       case H_RATE:
 	c->_rate.update(0);	// drop rate after idle period
 	return c->_rate.unparse_rate();
-    case H_COUNT_CALL:
-	return String(c->_count_trigger);
+      case H_COUNT_CALL:
+	if (c->_count_trigger_h)
+	    return String(c->_count_trigger);
+	else
+	    return String();
       default:
 	return "<error>";
     }
@@ -161,8 +164,8 @@ Counter::add_handlers()
     add_read_handler("byte_count", read_handler, (void *)H_BYTE_COUNT);
     add_read_handler("rate", read_handler, (void *)H_RATE);
     add_read_handler("count_call", read_handler, (void *)H_COUNT_CALL);
-    add_write_handler("reset", write_handler, (void *)H_RESET);
-    add_write_handler("reset_counts", write_handler, (void *)H_RESET);
+    add_write_handler("reset", write_handler, (void *)H_RESET, Handler::BUTTON);
+    add_write_handler("reset_counts", write_handler, (void *)H_RESET, Handler::BUTTON);
     add_write_handler("count_call", write_handler, (void *)H_COUNT_CALL);
     add_write_handler("byte_count_call", write_handler, (void *)H_BYTE_COUNT_CALL);
 }

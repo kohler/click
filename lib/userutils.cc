@@ -235,7 +235,7 @@ const char *
 filename_landmark(const char *filename, bool file_is_expr)
 {
     if (file_is_expr)
-	return "<expr>";
+	return "config";
     else if (!filename || !*filename || strcmp(filename, "-") == 0)
 	return "<stdin>";
     else

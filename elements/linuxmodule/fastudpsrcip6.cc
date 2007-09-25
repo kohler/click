@@ -268,8 +268,8 @@ FastUDPSourceIP6::add_handlers()
   add_read_handler("count", FastUDPSourceIP6_read_count_handler, 0);
   add_read_handler("rate", FastUDPSourceIP6_read_rate_handler, 0);
   add_write_handler("rate", FastUDPSourceIP6_rate_write_handler, 0);
-  add_write_handler("reset", FastUDPSourceIP6_reset_write_handler, 0);
-  add_write_handler("active", FastUDPSourceIP6_active_write_handler, 0);
+  add_write_handler("reset", FastUDPSourceIP6_reset_write_handler, 0, Handler::BUTTON);
+  add_write_handler("active", FastUDPSourceIP6_active_write_handler, 0, Handler::CHECKBOX);
   add_write_handler("limit", FastUDPSourceIP6_limit_write_handler, 0);
 }
 

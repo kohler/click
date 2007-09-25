@@ -139,7 +139,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
 	errh->lerror(links[i]->landmark(), "RouterLink '%s' element '%s' already exists", link_name.c_str(), name.c_str());
 	errh->lerror(preexist->landmark(), "(previous definition was here)");
       } else if (clauses[0] == component) {
-	ElementT *newe = r->get_element(clauses[1], ElementClassT::base_type(clauses[2]), words[j+1], "<click-uncombine>");
+	ElementT *newe = r->get_element(clauses[1], ElementClassT::base_type(clauses[2]), words[j+1], LandmarkT("<click-uncombine>"));
 	if (j/2 < ninputs)
 	  r->insert_before(newe, PortT(links[i], j/2));
 	else
@@ -205,7 +205,7 @@ frob_nested_routerlinks(RouterT *r, const String &compname)
       if (words[j].substring(0, cnamelen) == compname)
 	words[j] = words[j].substring(cnamelen);
     }
-    x->configuration() = cp_unargvec(words);
+    x->set_configuration(cp_unargvec(words));
   }
 }
 

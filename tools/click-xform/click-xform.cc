@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -44,8 +45,8 @@ class Matcher { public:
   bool check_match();
   bool next_match();
 
-  void replace_config(String &) const;
-  void replace(RouterT *, const String &, const String &, ErrorHandler *);
+  void replace_config(ElementT *) const;
+  void replace(RouterT *, const String &, const LandmarkT &, ErrorHandler *);
 
  private:
   
@@ -275,10 +276,10 @@ uniqueify_prefix(const String &base_prefix, RouterT *r)
 }
 
 void
-Matcher::replace_config(String &configuration) const
+Matcher::replace_config(ElementT *e) const
 {
   Vector<String> confvec;
-  cp_argvec(configuration, confvec);
+  cp_argvec(e->configuration(), confvec);
   
   bool changed = false;
   for (int i = 0; i < confvec.size(); i++) {
@@ -291,12 +292,12 @@ Matcher::replace_config(String &configuration) const
   }
 
   if (changed)
-    configuration = cp_unargvec(confvec);
+    e->set_configuration(cp_unargvec(confvec));
 }
 
 void
 Matcher::replace(RouterT *replacement, const String &try_prefix,
-		 const String &landmark, ErrorHandler *errh)
+		 const LandmarkT &landmark, ErrorHandler *errh)
 {
   //fprintf(stderr, "replace...\n");
   String prefix = uniqueify_prefix(try_prefix, _body);
@@ -330,7 +331,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
     if (e->dead())
       continue;
     e->flags = _patid;
-    replace_config(e->configuration());
+    replace_config(e);
   }
 
   // save old element name if matched element and some replacement element
@@ -628,7 +629,7 @@ particular purpose.\n");
     for (int i = 0; i < patterns.size(); i++) {
       Matcher m(patterns[i], patterns_adj[i], r, &matrix, i + 1, errh);
       if (m.next_match()) {
-	m.replace(replacements[i], pat_names[i], String(), errh);
+	m.replace(replacements[i], pat_names[i], LandmarkT(), errh);
 	nreplace++;
 	any = true;
 	break;

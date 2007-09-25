@@ -148,7 +148,7 @@ WifiSeq::add_handlers()
 
   add_write_handler("debug", write_param, (void *) H_DEBUG);
   add_write_handler("seq", write_param, (void *) H_SEQ);
-  add_write_handler("reset", write_param, (void *) H_RESET);
+  add_write_handler("reset", write_param, (void *) H_RESET, Handler::BUTTON);
 }
 CLICK_ENDDECLS
 EXPORT_ELEMENT(WifiSeq)

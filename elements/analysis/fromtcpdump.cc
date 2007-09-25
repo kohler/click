@@ -662,10 +662,10 @@ void
 FromTcpdump::add_handlers()
 {
     add_read_handler("sampling_prob", read_handler, (void *)H_SAMPLING_PROB);
-    add_read_handler("active", read_handler, (void *)H_ACTIVE);
+    add_read_handler("active", read_handler, (void *)H_ACTIVE, Handler::CHECKBOX);
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
     add_read_handler("encap", read_handler, (void *)H_ENCAP);
-    add_write_handler("stop", write_handler, (void *)H_STOP);
+    add_write_handler("stop", write_handler, (void *)H_STOP, Handler::BUTTON);
     _ff.add_handlers(this);
     if (output_is_push(0))
 	add_task_handlers(&_task);

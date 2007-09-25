@@ -136,9 +136,9 @@ int ICMPPingEncap::write_handler(const String &str, Element *e, void *thunk, Err
 
 void ICMPPingEncap::add_handlers()
 {
-    add_read_handler("src", read_handler, (void *) 0);
+    add_read_handler("src", read_handler, (void *) 0, Handler::CALM);
     add_write_handler("src", write_handler, (void *) 0);
-    add_read_handler("dst", read_handler, (void *) 1);
+    add_read_handler("dst", read_handler, (void *) 1, Handler::CALM);
     add_write_handler("dst", write_handler, (void *) 1);
 }
 

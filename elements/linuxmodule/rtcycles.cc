@@ -76,7 +76,7 @@ RTCycles::add_handlers()
 {
   add_read_handler("packets", RTCycles_read_cycles, (void *)0);
   add_read_handler("cycles", RTCycles_read_cycles, (void *)1);
-  add_write_handler("reset_counts", RTCycles_reset_counts, 0);
+  add_write_handler("reset_counts", RTCycles_reset_counts, 0, Handler::BUTTON);
 }
 
 

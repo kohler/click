@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -44,7 +45,7 @@ RouterT::RouterT()
 {
 }
 
-RouterT::RouterT(const String &name, const String &landmark, RouterT *declaration_scope)
+RouterT::RouterT(const String &name, const LandmarkT &landmark, RouterT *declaration_scope)
     : ElementClassT(name),
       _element_name_map(-1), _free_element(0), _n_live_elements(0),
       _new_eindex_collector(0),
@@ -177,6 +178,28 @@ RouterT::check() const
 }
 
 
+bool
+RouterT::element_path(const String &name, Vector<ElementT *> &path) const
+{
+    String n(name), suffix;
+    while (1) {
+	int ei = eindex(n);
+	if (ei >= 0 && !suffix) {
+	    path.push_back(_elements[ei]);
+	    return true;
+	} else if (ei >= 0 && _elements[ei]->resolved_compound()) {
+	    path.push_back(_elements[ei]);
+	    if (_elements[ei]->resolved_router()->element_path(suffix, path))
+		return true;
+	    path.pop_back();
+	}
+	int slash = n.find_right('/');
+	if (slash < 0)
+	    return false;
+	n = name.substring(0, slash);
+	suffix = name.substring(slash + 1);
+    }
+}
 
 ElementT *
 RouterT::add_element(const ElementT &elt_in)
@@ -204,7 +227,7 @@ RouterT::add_element(const ElementT &elt_in)
 
 ElementT *
 RouterT::get_element(const String &name, ElementClassT *type,
-		     const String &config, const String &landmark)
+		     const String &config, const LandmarkT &landmark)
 {
     int i = _element_name_map[name];
     if (i >= 0)
@@ -218,7 +241,7 @@ RouterT::get_element(const String &name, ElementClassT *type,
 
 ElementT *
 RouterT::add_anon_element(ElementClassT *type, const String &config,
-			  const String &landmark)
+			  const LandmarkT &landmark)
 {
     String name = ";" + type->name() + "@" + String(_n_live_elements + 1);
     ElementT *result = add_element(ElementT(name, type, config, landmark));
@@ -346,6 +369,7 @@ RouterT::update_noutputs(int e)
 	if (_conn[i].from().port >= n)
 	    n = _conn[i].from().port + 1;
     _elements[e]->_noutputs = n;
+    _elements[e]->unresolve_type();
 }
 
 void
@@ -355,12 +379,12 @@ RouterT::update_ninputs(int e)
     for (int i = _first_conn[e].to; i >= 0; i = _conn[i].next_to())
 	if (_conn[i].to().port >= n)
 	    n = _conn[i].to().port + 1;
-    _elements[e]->_ninputs = n;
+    _elements[e]->set_ninputs(n);
 }
 
 bool
 RouterT::add_connection(const PortT &hfrom, const PortT &hto,
-			const String &landmark)
+			const LandmarkT &landmark)
 {
     assert(hfrom.router() == this && hfrom.element->live()
 	   && hto.router() == this && hto.element->live());
@@ -381,10 +405,10 @@ RouterT::add_connection(const PortT &hfrom, const PortT &hto,
     first_from.from = first_to.to = i;
 
     // maintain port counts
-    if (hfrom.port >= hfrom.element->_noutputs)
-	hfrom.element->_noutputs = hfrom.port + 1;
-    if (hto.port >= hto.element->_ninputs)
-	hto.element->_ninputs = hto.port + 1;
+    if (hfrom.port >= hfrom.element->noutputs())
+	hfrom.element->set_noutputs(hfrom.port + 1);
+    if (hto.port >= hto.element->ninputs())
+	hto.element->set_ninputs(hto.port + 1);
 
     return true;
 }
@@ -536,13 +560,73 @@ RouterT::change_connection_to(int c, PortT h)
     unlink_connection_to(c);
 
     _conn[c]._to = h;
-    if (h.port >= h.element->_ninputs)
-	h.element->_ninputs = h.port + 1;
+    if (h.port >= h.element->ninputs())
+	h.element->set_ninputs(h.port + 1);
 
     int ei = h.eindex();
     _conn[c]._next_to = _first_conn[ei].to;
     _first_conn[ei].to = c;
 }
+
+
+RouterT::conn_iterator
+RouterT::begin_connections_from(const PortT &port) const
+{
+    assert(port.router() == this);
+    int c = _first_conn[port.eindex()].from;
+    while (c >= 0 && _conn[c].from_port() != port.port)
+	c = _conn[c].next_from();
+    return (c >= 0 ? conn_iterator(&_conn[c], port.port + 2) : conn_iterator());
+}
+
+RouterT::conn_iterator
+RouterT::begin_connections_from(ElementT *element) const
+{
+    assert(element->router() == this);
+    int c = _first_conn[element->eindex()].from;
+    return (c >= 0 ? conn_iterator(&_conn[c], 1) : conn_iterator());
+}
+
+RouterT::conn_iterator
+RouterT::begin_connections_to(const PortT &port) const
+{
+    assert(port.router() == this);
+    int c = _first_conn[port.eindex()].to;
+    while (c >= 0 && _conn[c].to_port() != port.port)
+	c = _conn[c].next_to();
+    return (c >= 0 ? conn_iterator(&_conn[c], -port.port - 2) : conn_iterator());
+}
+
+RouterT::conn_iterator
+RouterT::begin_connections_to(ElementT *element) const
+{
+    assert(element->router() == this);
+    int c = _first_conn[element->eindex()].to;
+    return (c >= 0 ? conn_iterator(&_conn[c], -1) : conn_iterator());
+}
+
+void
+RouterT::conn_iterator::complex_step(const RouterT *router)
+{
+    int c = _conn - router->_conn.begin();
+    assert(c >= 0 && c < router->_conn.size());
+    if (_by == 0)
+	++c;
+    else if (_by >= 1) {
+	c = _conn->next_from();
+	while (c >= 0 && _by > 1 && router->_conn[c].from_port() != _by - 2)
+	    c = _conn->next_from();
+    } else {
+	c = _conn->next_to();
+	while (c >= 0 && _by < -1 && router->_conn[c].to_port() != -_by - 2)
+	    c = _conn->next_to();
+    }
+    if (c == router->_conn.size() || c < 0)
+	_conn = 0;
+    else
+	_conn = &router->_conn[c];
+}
+
 
 int
 RouterT::find_connection(const PortT &hfrom, const PortT &hto) const
@@ -557,23 +641,35 @@ RouterT::find_connection(const PortT &hfrom, const PortT &hto) const
     return c;
 }
 
-bool
-RouterT::find_connection_from(const PortT &h, PortT &out) const
+void
+RouterT::find_connections_from(ElementT *e, Vector<int> &v) const
+{
+    assert(e->router() == this);
+    int c = _first_conn[e->eindex()].from;
+    v.clear();
+    while (c >= 0) {
+	v.push_back(c);
+	c = _conn[c].next_from();
+    }
+}
+
+int
+RouterT::find_connection_id_from(const PortT &h) const
 {
     assert(h.router() == this);
     int c = _first_conn[h.eindex()].from;
     int p = h.port;
-    out = PortT(0, -1);
+    int result = -1;
     while (c >= 0) {
 	if (_conn[c].from_port() == p) {
-	    if (out.port == -1)
-		out = _conn[c].to();
+	    if (result == -1)
+		result = c;
 	    else
-		out.port = -2;
+		return -2;
 	}
 	c = _conn[c].next_from();
     }
-    return out.port >= 0;
+    return result;
 }
 
 void
@@ -630,6 +726,25 @@ RouterT::find_connections_to(const PortT &h, Vector<int> &v) const
 	    v.push_back(c);
 	c = _conn[c].next_to();
     }
+}
+
+int
+RouterT::find_connection_id_to(const PortT &h) const
+{
+    assert(h.router() == this);
+    int c = _first_conn[h.eindex()].to;
+    int p = h.port;
+    int result = -1;
+    while (c >= 0) {
+	if (_conn[c].to_port() == p) {
+	    if (result == -1)
+		result = c;
+	    else
+		return -2;
+	}
+	c = _conn[c].next_to();
+    }
+    return result;
 }
 
 void
@@ -704,7 +819,7 @@ RouterT::insert_after(const PortT &inserter, const PortT &h)
 
 void
 RouterT::add_tunnel(const String &namein, const String &nameout,
-		    const String &landmark, ErrorHandler *errh)
+		    const LandmarkT &landmark, ErrorHandler *errh)
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
@@ -937,7 +1052,7 @@ RouterT::expand_into(RouterT *tor, const String &prefix, VariableEnvironment &en
 	const PortT &hf = _conn[i].from(), &ht = _conn[i].to();
 	tor->add_connection(PortT(new_e[hf.eindex()], hf.port),
 			    PortT(new_e[ht.eindex()], ht.port),
-			    _conn[i].landmark());
+			    _conn[i].landmarkt());
     }
 
     // add requirements
@@ -1080,7 +1195,7 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 	// add cross product
 	// hf, ht are invalidated by adding new connections!
 	PortT safe_ht(ht);
-	String landmark = _conn[i].landmark(); // must not be reference!
+	LandmarkT landmark = _conn[i].landmarkt(); // must not be reference!
 	const Vector<PortT> &v = out_expansions[x];
 	for (int j = 0; j < v.size(); j++)
 	    add_connection(v[j], safe_ht, landmark);
@@ -1138,6 +1253,52 @@ RouterT::flatten(ErrorHandler *errh, bool expand_vars)
     check();
 }
 
+void
+RouterT::flatten_path(const Vector<ElementT *> &path, String &name, String &config)
+{
+    // common case
+    if (path.size() == 1) {
+	name = path.back()->name();
+	config = path.back()->configuration();
+	return;
+    }
+
+    // expansion case
+    StringAccum sa;
+    Vector<VariableEnvironment *> envs;
+    envs.push_back(new VariableEnvironment(0));
+    assert(path.size());
+    for (int i = 0; i < path.size() - 1; i++) {
+	ElementT *e = path[i];
+	RouterT *c = e->type()->cast_router();
+	assert(c);
+	
+	sa << e->name();
+	if (sa.back() != '/')
+	    sa << '/';
+
+	Vector<String> args;
+	cp_argvec(cp_expand(e->configuration(), *envs.back()), args);
+	(void) c->assign_arguments(args, &args);
+
+	VariableEnvironment *new_env = new VariableEnvironment(envs.back()->parent_of(c->_scope.depth()));
+	for (int i = 0; i < c->_nformals && i < args.size(); i++)
+	    new_env->define(c->_scope.name(i), args[i], true);
+	for (int i = args.size(); i < c->_nformals; i++)
+	    new_env->define(c->_scope.name(i), "$" + c->_scope.name(i), true);
+	for (int i = c->_nformals; i < c->_scope.size(); i++)
+	    new_env->define(c->_scope.name(i), cp_expand(c->_scope.value(i), *new_env), true);
+	envs.push_back(new_env);
+    }
+    
+    sa << path.back()->name();
+    name = sa.take_string();
+    config = cp_expand(path.back()->config(), *envs.back());
+    
+    for (Vector<VariableEnvironment *>::iterator i = envs.begin(); i != envs.end(); i++)
+	delete *i;
+}
+
 
 void
 RouterT::const_iterator::step(const RouterT *r, int eindex)
@@ -1169,10 +1330,11 @@ const ElementTraits *
 RouterT::find_traits() const
 {
     if (ElementMap::default_map()) {
-	ErrorHandler *errh = ErrorHandler::silent_handler();
-	ProcessingT pt(this, errh);
+	ProcessingT pt(this, ElementMap::default_map());
+	pt.check();
+	*(_traits.component(Traits::D_PORT_COUNT)) = pt.compound_port_count_code();
 	*(_traits.component(Traits::D_PROCESSING)) = pt.compound_processing_code();
-	*(_traits.component(Traits::D_FLOW_CODE)) = pt.compound_flow_code(errh);
+	*(_traits.component(Traits::D_FLOW_CODE)) = pt.compound_flow_code();
     }
     return &_traits;
 }
@@ -1180,14 +1342,12 @@ RouterT::find_traits() const
 int
 RouterT::finish_type(ErrorHandler *errh)
 {
-    if (!errh)
-	errh = ErrorHandler::silent_handler();
-    int before_nerrors = errh->nerrors();
+    LocalErrorHandler lerrh(errh);
 
     if (ElementT *einput = element("input")) {
 	_ninputs = einput->noutputs();
 	if (einput->ninputs())
-	    errh->lerror(_type_landmark, "'%s' pseudoelement 'input' may only be used as output", printable_name_c_str());
+	    lerrh.lerror(_type_landmark.str(), "'%s' pseudoelement 'input' may only be used as output", printable_name_c_str());
 
 	if (_ninputs) {
 	    Vector<int> used;
@@ -1195,7 +1355,7 @@ RouterT::finish_type(ErrorHandler *errh)
 	    assert(used.size() == _ninputs);
 	    for (int i = 0; i < _ninputs; i++)
 		if (used[i] == -1)
-		    errh->lerror(_type_landmark, "compound element '%s' input %d unused", printable_name_c_str(), i);
+		    lerrh.lerror(_type_landmark.str(), "compound element '%s' input %d unused", printable_name_c_str(), i);
 	}
     } else
 	_ninputs = 0;
@@ -1203,7 +1363,7 @@ RouterT::finish_type(ErrorHandler *errh)
     if (ElementT *eoutput = element("output")) {
 	_noutputs = eoutput->ninputs();
 	if (eoutput->noutputs())
-	    errh->lerror(_type_landmark, "'%s' pseudoelement 'output' may only be used as input", printable_name_c_str());
+	    lerrh.lerror(_type_landmark.str(), "'%s' pseudoelement 'output' may only be used as input", printable_name_c_str());
 
 	if (_noutputs) {
 	    Vector<int> used;
@@ -1211,7 +1371,7 @@ RouterT::finish_type(ErrorHandler *errh)
 	    assert(used.size() == _noutputs);
 	    for (int i = 0; i < _noutputs; i++)
 		if (used[i] == -1)
-		    errh->lerror(_type_landmark, "compound element '%s' output %d unused", printable_name_c_str(), i);
+		    lerrh.lerror(_type_landmark.str(), "compound element '%s' output %d unused", printable_name_c_str(), i);
 	}
     } else
 	_noutputs = 0;
@@ -1219,7 +1379,7 @@ RouterT::finish_type(ErrorHandler *errh)
     // resolve anonymous element names
     deanonymize_elements();
 
-    return (errh->nerrors() == before_nerrors ? 0 : -1);
+    return (lerrh.nerrors() ? -1 : 0);
 }
 
 void
@@ -1237,15 +1397,23 @@ RouterT::assign_arguments(const Vector<String> &args, Vector<String> *values) co
     return cp_assign_arguments(args, _scope.values().begin(), _scope.values().begin() + _nformals, values);
 }
 
+bool
+RouterT::need_resolve() const
+{
+    return true;		// always resolve compound b/c of arguments
+}
+
 ElementClassT *
-RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *errh, const String &landmark)
+RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *errh, const LandmarkT &landmark)
 {
     // Try to return an element class, even if it is wrong -- the error
     // messages are friendlier
     RouterT *r = this;
     RouterT *closest = 0;
+    int nct = 0;
 
     while (1) {
+	nct++;
 	if (r->_ninputs == ninputs && r->_noutputs == noutputs
 	    && r->assign_arguments(args, &args) >= 0)
 	    return r;
@@ -1263,10 +1431,12 @@ RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *
 	    break;
     }
 
-    errh->lerror(landmark, "no match for '%s'", ElementClassT::unparse_signature(name(), 0, args.size(), ninputs, noutputs).c_str());
-    ContextErrorHandler cerrh(errh, "candidates are:", "  ");
-    for (r = this; r; r = (r->_overload_type ? r->_overload_type->cast_router() : 0))
-	cerrh.lmessage(r->landmark(), "%s", r->unparse_signature().c_str());
+    if (nct != 1 || !closest) {
+	errh->lerror(landmark.decorated_str(), "no match for '%s'", ElementClassT::unparse_signature(name(), 0, args.size(), ninputs, noutputs).c_str());
+	ContextErrorHandler cerrh(errh, "candidates are:", "  ");
+	for (r = this; r; r = (r->_overload_type ? r->_overload_type->cast_router() : 0))
+	    cerrh.lmessage(r->decorated_landmark(), "%s", r->unparse_signature().c_str());
+    }
     if (closest)
 	closest->assign_arguments(args, &args);
     return closest;
@@ -1316,8 +1486,8 @@ RouterT::complex_expand_element(
     // create input/output tunnels
     if (fromr == tor)
 	compound->set_type(tunnel_type());
-    tor->add_tunnel(prefix + compound->name(), new_prefix + "input", compound->landmark(), errh);
-    tor->add_tunnel(new_prefix + "output", prefix + compound->name(), compound->landmark(), errh);
+    tor->add_tunnel(prefix + compound->name(), new_prefix + "input", compound->landmarkt(), errh);
+    tor->add_tunnel(new_prefix + "output", prefix + compound->name(), compound->landmarkt(), errh);
     ElementT *new_e = tor->element(prefix + compound->name());
 
     // dump compound router into 'tor'

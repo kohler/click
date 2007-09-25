@@ -335,6 +335,7 @@ ewma.hh
 fixconfig.h
 gaprate.hh
 glue.hh
+handler.hh
 handlercall.hh
 hashcode.hh
 hashmap.cc

@@ -1,0 +1,217 @@
+#ifndef CLICK_HANDLER_HH
+#define CLICK_HANDLER_HH 1
+#include <click/string.hh>
+CLICK_DECLS
+class Element;
+class ErrorHandler;
+class Handler;
+
+typedef int (*HandlerHook)(int operation, String &data, Element *element,
+			   const Handler *handler, ErrorHandler *errh);
+typedef String (*ReadHandlerHook)(Element *handler, void *user_data);
+typedef int (*WriteHandlerHook)(const String &data, Element *element,
+				void *user_data, ErrorHandler *errh);
+
+class Handler { public:
+
+    enum Flags {
+	OP_READ = 0x0001,	//< Handler supports read operations.
+	OP_WRITE = 0x0002,	//< Handler supports write operations.
+	READ_PARAM = 0x0004,	//< Read handler takes parameters.
+	ONE_HOOK = 0x0008,	//< Use one hook for all operations.
+	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | ONE_HOOK,
+	EXCLUSIVE = 0x0010,
+	RAW = 0x0020,		//< Don't add newline to results.
+	CALM = 0x0040,		//< Read handler value changes rarely.
+	EXPENSIVE = 0x0080,	//< Read handler is expensive to call.
+	BUTTON = 0x0100,	//< Write handler ignores data.
+	CHECKBOX = 0x0200,	//< Read/write handlers are boolean checkboxes.
+	DRIVER_FLAG_0 = 0x0400, DRIVER_FLAG_1 = 0x0800,
+	DRIVER_FLAG_2 = 0x1000, DRIVER_FLAG_3 = 0x2000,
+	USER_FLAG_SHIFT = 14, USER_FLAG_0 = 1 << USER_FLAG_SHIFT
+    };
+
+    inline const String &name() const;
+    inline uint32_t flags() const;
+    inline void *thunk1() const;
+    inline void *thunk2() const;
+
+    inline bool readable() const;
+    inline bool read_param() const;
+    inline bool read_visible() const;
+    inline bool writable() const;
+    inline bool write_visible() const;
+    inline bool visible() const;
+    inline bool exclusive() const;
+    inline bool raw() const;
+
+    inline String call_read(Element *e, ErrorHandler *errh = 0) const;
+    String call_read(Element *e, const String &param, bool raw,
+		     ErrorHandler *errh) const;
+    int call_write(const String &value, Element *e, bool raw,
+		   ErrorHandler *errh) const;
+  
+    String unparse_name(Element *e) const;
+    static String unparse_name(Element *e, const String &hname);
+
+    static inline const Handler *blank_handler();
+    
+  private:
+
+    String _name;
+    union {
+	HandlerHook h;
+	struct {
+	    ReadHandlerHook r;
+	    WriteHandlerHook w;
+	} rw;
+    } _hook;
+    void *_thunk1;
+    void *_thunk2;
+    uint32_t _flags;
+    int _use_count;
+    int _next_by_name;
+
+    static const Handler *the_blank_handler;
+    
+    Handler(const String & = String());
+
+    bool compatible(const Handler &) const;
+  
+    friend class Router;
+  
+};
+
+/* The largest size a write handler is allowed to have. */
+#define LARGEST_HANDLER_WRITE 65536
+
+
+/** @brief Returns this handler's name. */
+inline const String&
+Handler::name() const
+{
+    return _name;
+}
+
+/** @brief Returns this handler's flags.
+
+    The result is a bitwise-or of flags from the Flags enumeration type. */
+inline uint32_t
+Handler::flags() const
+{
+    return _flags;
+}
+
+/** @brief Returns this handler's first callback data. */
+inline void*
+Handler::thunk1() const
+{
+    return _thunk1;
+}
+
+/** @brief Returns this handler's second callback data. */
+inline void*
+Handler::thunk2() const
+{
+    return _thunk2;
+}
+
+/** @brief Returns true iff this is a valid read handler. */
+inline bool
+Handler::readable() const
+{
+    return _flags & OP_READ;
+}
+
+/** @brief Returns true iff this is a valid read handler that may accept
+    parameters. */
+inline bool
+Handler::read_param() const
+{
+    return _flags & READ_PARAM;
+}
+
+/** @brief Returns true iff this is a valid visible read handler.
+
+    Only visible handlers may be called from outside the router
+    configuration. */
+inline bool
+Handler::read_visible() const
+{
+    return _flags & OP_READ;
+}
+
+/** @brief Returns true iff this is a valid write handler. */
+inline bool
+Handler::writable() const
+{
+    return _flags & OP_WRITE;
+}
+
+/** @brief Returns true iff this is a valid visible write handler.
+
+    Only visible handlers may be called from outside the router
+    configuration. */
+inline bool
+Handler::write_visible() const
+{
+    return _flags & OP_WRITE;
+}
+
+/** @brief Returns true iff this handler is visible. */
+inline bool
+Handler::visible() const
+{
+    return _flags & (OP_READ | OP_WRITE);
+}
+
+/** @brief Returns true iff this handler is exclusive.
+
+    Exclusive means mutually exclusive with all other router processing.  In
+    the Linux kernel module driver, reading or writing an exclusive handler
+    using the Click filesystem will first lock all router threads and
+    handlers. */
+inline bool
+Handler::exclusive() const
+{
+    return _flags & EXCLUSIVE;
+}
+
+/** @brief Returns true iff quotes should be removed when calling this
+    handler.
+
+    A raw handler expects and returns raw text.  Click will unquote quoted
+    text before passing it to a raw handler, and (in the Linux kernel module)
+    will not add a courtesy newline to the end of a raw handler's value. */
+inline bool
+Handler::raw() const
+{
+    return _flags & RAW;
+}
+
+/** @brief Call a read handler without parameters.
+    @param e element on which to call the handler
+    @param errh error handler
+
+    The element must be nonnull; to call a global handler, pass the relevant
+    router's Router::root_element().  @a errh may be null, in which case
+    errors are ignored. */
+inline String
+Handler::call_read(Element* e, ErrorHandler* errh) const
+{
+    return call_read(e, String(), false, errh);
+}
+
+/** @brief Returns a handler incapable of doing anything.
+ *
+ *  The returned handler returns false for readable() and writable()
+ *  and has flags() of zero. */
+inline const Handler *
+Handler::blank_handler()
+{
+    return the_blank_handler;
+}
+
+CLICK_ENDDECLS
+#endif
+

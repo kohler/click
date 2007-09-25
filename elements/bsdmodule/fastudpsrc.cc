@@ -287,8 +287,8 @@ FastUDPSource::add_handlers()
     add_read_handler("count", FastUDPSource_read_count_handler, 0);
     add_read_handler("rate", FastUDPSource_read_rate_handler, 0);
     add_write_handler("rate", FastUDPSource_rate_write_handler, 0);
-    add_write_handler("reset", FastUDPSource_reset_write_handler, 0);
-    add_write_handler("active", FastUDPSource_active_write_handler, 0);
+    add_write_handler("reset", FastUDPSource_reset_write_handler, 0, Handler::BUTTON);
+    add_write_handler("active", FastUDPSource_active_write_handler, 0, Handler::CHECKBOX);
     add_write_handler("limit", FastUDPSource_limit_write_handler, 0);
 }
 

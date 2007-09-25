@@ -123,6 +123,9 @@ KernelHandlerProxy::check_handler_name(const String &hname, ErrorHandler *errh)
   for (const char *s = dot + 1; s < hname.end(); s++)
     if (*s < 32 || *s >= 127 || *s == '/')
       return complain(errh, hname, CSERR_SYNTAX, "Bad character in handler name '" + hname.printable() + "'");
+  if ((dot == hname.end() - 2 && dot[1] == '.')
+      || (dot == hname.end() - 3 && dot[1] == '.' && dot[2] == '.'))
+      return complain(errh, hname, CSERR_SYNTAX, "Bad handler name '" + hname.printable() + "'");
 
   return 0;
 }

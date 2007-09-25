@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
  * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,33 +24,54 @@
 #include <click/error.hh>
 #include <click/bitvector.hh>
 #include <click/straccum.hh>
+#include <click/confparse.hh>
 #include "elementmap.hh"
 #include <string.h>
 
-const char ProcessingT::processing_letters[] = "ahl";
+const char ProcessingT::processing_letters[] = "ahlXahlX";
+const char ProcessingT::decorated_processing_letters[] = "ahlXaHLX";
 
-ProcessingT::ProcessingT()
-    : _router(0)
+static String::Initializer initializer;
+static String dpcode_push("h");
+static String dpcode_pull("l");
+static String dpcode_apush("H");
+static String dpcode_apull("L");
+static String dpcode_push_to_pull("h/l");
+
+ProcessingT::ProcessingT(const RouterT *router, ElementMap *emap)
+    : _router(router), _element_map(emap), _scope(0)
 {
 }
 
-ProcessingT::ProcessingT(const RouterT *r, ErrorHandler *errh)
-    : _router(0)
+void
+ProcessingT::check_types(ErrorHandler *errh)
 {
-    reset(r, ElementMap::default_map(), false, errh);
+    Vector<ElementClassT *> types;
+    _router->collect_locally_declared_types(types);
+    for (Vector<ElementClassT *>::iterator ti = types.begin(); ti != types.end(); ++ti)
+	if (RouterT *rx = (*ti)->cast_router()) {
+	    ProcessingT subp(rx, _element_map);
+	    subp.check_types(errh);
+	    subp.check(errh);
+	}
 }
 
-ProcessingT::ProcessingT(const RouterT *r, ElementMap *em, ErrorHandler *errh)
-    : _router(0)
+void
+ProcessingT::create(const String &compound_pcode, bool flatten, ErrorHandler *errh)
 {
-    reset(r, em, false, errh);
-}
+    LocalErrorHandler lerrh(errh);
+    ElementMap::push_default(_element_map);
+    
+    // create pidx and elt arrays, warn about dead elements
+    create_pidx(&lerrh);
+    initial_processing(compound_pcode, &lerrh);
+    check_processing(&lerrh);
+    // 'flat' configurations have no agnostic ports; change them to push
+    if (flatten)
+	resolve_agnostics();
+    check_connections(&lerrh);
 
-ProcessingT::ProcessingT(const RouterT *r, ElementMap *em, bool flatten,
-			 ErrorHandler *errh)
-    : _router(0)
-{
-    reset(r, em, flatten, errh);
+    ElementMap::pop_default();
 }
 
 void
@@ -86,115 +108,133 @@ ProcessingT::create_pidx(ErrorHandler *errh)
     if (errh) {
 	for (RouterT::const_iterator x = _router->begin_elements(); x; x++)
 	    if (x->dead() && (x->ninputs() > 0 || x->noutputs() > 0))
-		errh->lwarning(x->landmark(), "dead element %s has live connections", x->name_c_str());
+		errh->lwarning(x->decorated_landmark(), "dead element %s has live connections", x->name_c_str());
     }
 }
 
-static int
-next_processing_code(const String &str, int &pos, ErrorHandler *errh,
-		     const String &landmark, ElementClassT *etype)
+const char *
+ProcessingT::processing_code_next(const char *code, const char *end_code, int &processing)
 {
-    const char *s = str.data();
-    int len = str.length();
-    if (pos >= len)
-	return -2;
-
-    switch (s[pos]) {
-
-      case 'h': case 'H':
-	pos++;
-	return ProcessingT::VPUSH;
-    
-      case 'l': case 'L':
-	pos++;
-	return ProcessingT::VPULL;
-	
-      case 'a': case 'A':
-	pos++;
-	return ProcessingT::VAGNOSTIC;
-
-      case '/':
-	return -2;
-
-      default:
-	errh->lerror(landmark, "bad character '%c' in processing code for '%s'", s[pos], etype->printable_name_c_str());
-	pos++;
-	return -1;
-    
+    assert(code <= end_code);
+    if (code == end_code) {
+	processing = -1;
+	return code;
+    } else if (*code == 'h')
+	processing = VPUSH;
+    else if (*code == 'l')
+	processing = VPULL;
+    else if (*code == 'a')
+	processing = VAGNOSTIC;
+    else if (*code == 'H')
+	processing = VPUSH + VAFLAG;
+    else if (*code == 'L')
+	processing = VPULL + VAFLAG;
+    else {
+	processing = -1;
+	return code;
     }
+    if (code + 1 == end_code || code[1] == '/')
+	return code;
+    else
+	return code + 1;
+}
+
+String
+ProcessingT::processing_code_reverse(const String &s)
+{
+    const char *slash = find(s.begin(), s.end(), '/');
+    if (slash != s.end())
+	return s.substring(slash + 1, s.end()) + "/" + s.substring(s.begin(), slash);
+    else
+	return s;
 }
 
 void
-ProcessingT::initial_processing_for(int ei, ErrorHandler *errh)
+ProcessingT::initial_processing_for(int ei, const String &compound_pcode, ErrorHandler *errh)
 {
     // don't handle uprefs or tunnels
     const ElementT *e = _router->element(ei);
-    ElementClassT *etype = e->type();
-    if (!etype || etype == ElementClassT::tunnel_type())
+    // resolved_type() errors reported in check_nports(), do not pass errh here
+    ElementClassT *etype = e->resolved_type(_scope);
+    if (!etype)
 	return;
 
-    String landmark = e->landmark();
-    String pc = etype->traits().processing_code;
+    // fetch initial processing code
+    String pc;
+    if (e->tunnel() && (e->name() == "input" || e->name() == "output"))
+	pc = compound_pcode;
+    else
+	pc = etype->traits().processing_code;
     if (!pc) {
-	errh->lwarning(landmark, "'%s' has no processing code; assuming agnostic", etype->printable_name_c_str());
+	int &class_warning = _class_warnings.find_force(etype);
+	if (!e->tunnel() && !(class_warning & classwarn_unknown)) {
+	    class_warning |= classwarn_unknown;
+	    errh->lwarning(e->decorated_landmark(), "unknown element class '%s'", etype->printable_name_c_str());
+	}
 	return;
     }
 
-    int pos = 0;
-    int len = pc.length();
+    // parse processing code
+    const char *pcpos = pc.begin();
 
     int start_in = _input_pidx[ei];
     int start_out = _output_pidx[ei];
 
-    int val = 0;
-    int last_val = 0;
+    int val;
     for (int i = 0; i < e->ninputs(); i++) {
-	if (last_val >= 0)
-	    last_val = next_processing_code(pc, pos, errh, landmark, etype);
-	if (last_val >= 0)
-	    val = last_val;
-	_input_processing[start_in + i] = val;
+	pcpos = processing_code_next(pcpos, pc.end(), val);
+	if (val < 0) {
+	    int &cwarn = _class_warnings.find_force(etype);
+	    if (!(cwarn & classwarn_pcode)) {
+		// "String(pc).c_str()" so pcpos remains valid
+		errh->lerror(e->landmark(), "syntax error in processing code '%s' for '%s'", String(pc).c_str(), etype->printable_name_c_str());
+		cwarn |= classwarn_pcode;
+	    }
+	    val = VAGNOSTIC;
+	}
+	_input_processing[start_in + i] = (val & 3);
     }
 
-    while (pos < len && pc[pos] != '/')
-	pos++;
-    if (pos >= len)
-	pos = 0;
-    else
-	pos++;
+    pcpos = processing_code_output(pc.begin(), pc.end(), pcpos);
 
-    last_val = 0;
     for (int i = 0; i < e->noutputs(); i++) {
-	if (last_val >= 0)
-	    last_val = next_processing_code(pc, pos, errh, landmark, etype);
-	if (last_val >= 0)
-	    val = last_val;
-	_output_processing[start_out + i] = val;
+	pcpos = processing_code_next(pcpos, pc.end(), val);
+	if (val < 0) {
+	    int &cwarn = _class_warnings.find_force(etype);
+	    if (!(cwarn & classwarn_pcode)) {
+		// "String(pc).c_str()" so pcpos remains valid
+		errh->lerror(e->landmark(), "syntax error in processing code '%s' for '%s'", String(pc).c_str(), etype->printable_name_c_str());
+		cwarn |= classwarn_pcode;
+	    }
+	    val = VAGNOSTIC;
+	}
+	_output_processing[start_out + i] = (val & 3);
     }
 }
 
 void
-ProcessingT::initial_processing(ErrorHandler *errh)
+ProcessingT::initial_processing(const String &compound_pcode, ErrorHandler *errh)
 {
     _input_processing.assign(ninput_pidx(), VAGNOSTIC);
     _output_processing.assign(noutput_pidx(), VAGNOSTIC);
+    String reversed_pcode = processing_code_reverse(compound_pcode);
     for (int i = 0; i < nelements(); i++)
-	initial_processing_for(i, errh);
+	initial_processing_for(i, reversed_pcode, errh);
 }
 
 void
 ProcessingT::processing_error(const ConnectionT &conn, int processing_from,
 			      ErrorHandler *errh)
 {
-  const char *type1 = (processing_from == VPUSH ? "push" : "pull");
-  const char *type2 = (processing_from == VPUSH ? "pull" : "push");
+  const char *type1 = (processing_from & VPUSH ? "push" : "pull");
+  const char *type2 = (processing_from & VPUSH ? "pull" : "push");
   if (conn.landmark() == "<agnostic>")
-    errh->lerror(conn.from_element()->landmark(),
+    errh->lerror(conn.from_element()->decorated_landmark(),
 		 "agnostic '%s' in mixed context: %s input %d, %s output %d",
 		 conn.from_element()->name_c_str(), type2, conn.to_port(),
 		 type1, conn.from_port());
   else
-    errh->lerror(conn.landmark(),
+    errh->lerror(conn.decorated_landmark(),
 		 "'%s' %s output %d connected to '%s' %s input %d",
 		 conn.from_element()->name_c_str(), type1, conn.from_port(),
 		 conn.to_element()->name_c_str(), type2, conn.to_port());
@@ -204,6 +244,7 @@ void
 ProcessingT::check_processing(ErrorHandler *errh)
 {
     // add fake connections for agnostics
+    LandmarkT agnostic_landmark("<agnostic>");
     Vector<ConnectionT> conn = _router->connections();
     Bitvector bv;
     for (int i = 0; i < ninput_pidx(); i++)
@@ -217,12 +258,11 @@ ProcessingT::check_processing(ErrorHandler *errh)
 			 port, noutputs, &bv, errh);
 	    for (int j = 0; j < noutputs; j++)
 		if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC)
-		    conn.push_back(ConnectionT(PortT(e, j), PortT(e, port), "<agnostic>"));
+		    conn.push_back(ConnectionT(PortT(e, j), PortT(e, port), agnostic_landmark));
 	}
 
     // spread personalities
     while (true) {
-    
 	bool changed = false;
 	for (int c = 0; c < conn.size(); c++) {
 	    if (conn[c].dead())
@@ -233,11 +273,11 @@ ProcessingT::check_processing(ErrorHandler *errh)
 	    int pf = _output_processing[offf];
 	    int pt = _input_processing[offt];
 
-	    switch (pt) {
+	    switch (pt & 3) {
 	
 	      case VAGNOSTIC:
 		if (pf != VAGNOSTIC) {
-		    _input_processing[offt] = pf;
+		    _input_processing[offt] = VAFLAG | (pf & 3);
 		    changed = true;
 		}
 		break;
@@ -245,9 +285,9 @@ ProcessingT::check_processing(ErrorHandler *errh)
 	      case VPUSH:
 	      case VPULL:
 		if (pf == VAGNOSTIC) {
-		    _output_processing[offf] = pt;
+		    _output_processing[offf] = VAFLAG | (pt & 3);
 		    changed = true;
-		} else if (pf != pt) {
+		} else if (((pf ^ pt) & 3) != 0) {
 		    processing_error(conn[c], pf, errh);
 		    conn[c].kill();
 		}
@@ -264,14 +304,104 @@ ProcessingT::check_processing(ErrorHandler *errh)
 static const char *
 processing_name(int p)
 {
-  if (p == ProcessingT::VAGNOSTIC)
-    return "agnostic";
-  else if (p == ProcessingT::VPUSH)
-    return "push";
-  else if (p == ProcessingT::VPULL)
-    return "pull";
-  else
-    return "?";
+    if (p == ProcessingT::VAGNOSTIC)
+	return "agnostic";
+    else if (p & ProcessingT::VPUSH)
+	return "push";
+    else if (p & ProcessingT::VPULL)
+	return "pull";
+    else
+	return "?";
+}
+
+static int
+notify_nports_pair(const char *&s, const char *ends, int &lo, int &hi)
+{
+    if (s == ends || *s == '-')
+	lo = 0;
+    else if (isdigit(*s))
+	s = cp_integer(s, ends, 10, &lo);
+    else
+	return -1;
+    if (s < ends && *s == '-') {
+	s++;
+	if (s < ends && isdigit(*s))
+	    s = cp_integer(s, ends, 10, &hi);
+	else
+	    hi = INT_MAX;
+    } else
+	hi = lo;
+    return 0;
+}
+
+void
+ProcessingT::check_nports(const ElementT *e, const int *input_used, const int *output_used, ErrorHandler *errh)
+{
+    String port_count = e->resolved_type(_scope, errh)->port_count_code();
+    const char *s_in = port_count.c_str();
+    const char *s = s_in, *ends = s + port_count.length();
+    int ninputs, ninlo, ninhi, noutlo, nouthi, equal = 0;
+    StringAccum equalmsg;
+
+    if (s == ends)		// no information about element; assume OK
+	return;
+    
+    if (notify_nports_pair(s, ends, ninlo, ninhi) < 0)
+	goto parse_error;
+    
+    if (s == ends)
+	s = s_in;
+    else if (*s == '/')
+	s++;
+    else
+	goto parse_error;
+
+    if (*s == '=') {
+	const char *plus = s + 1;
+	do {
+	    equal++;
+	} while (plus != ends && *plus++ == '+');
+	if (plus != ends)
+	    equal = 0;
+    }
+    if (!equal)
+	if (notify_nports_pair(s, ends, noutlo, nouthi) < 0 || s != ends)
+	    goto parse_error;
+
+    ninputs = e->ninputs();
+    if (ninputs < ninlo) {
+	errh->lerror(e->decorated_landmark(), "too few inputs for '%s', %s%d required", e->name_c_str(), (ninlo == ninhi ? "" : "at least "), ninlo);
+	ninputs = ninlo;
+    } else if (ninputs > ninhi) {
+	const Vector<ConnectionT> &conn = _router->connections();
+	errh->lerror(e->decorated_landmark(), "too many inputs for '%s', %s%d allowed", e->name_c_str(), (ninlo == ninhi ? "" : "at most "), ninhi);
+	for (int i = ninhi; i < e->ninputs(); i++)
+	    if (input_used[i] >= 0)
+		errh->lmessage(conn[input_used[i]].decorated_landmark(),
+			       "  '%s' input %d used here", e->name_c_str(), i);
+	ninputs = ninhi;
+    }
+
+    if (equal) {
+	noutlo = nouthi = ninputs + equal - 1;
+	if (e->noutputs() != noutlo)
+	    equalmsg << " with " << ninputs << " input" << (ninputs == 1 ? "" : "s");
+    }
+    if (e->noutputs() < noutlo)
+	errh->lerror(e->decorated_landmark(), "too few outputs for '%s'%s, %s%d required", e->name_c_str(), equalmsg.c_str(), (noutlo == nouthi ? "" : "at least "), noutlo);
+    else if (e->noutputs() > nouthi) {
+	const Vector<ConnectionT> &conn = _router->connections();
+	errh->lerror(e->decorated_landmark(), "too many outputs for '%s'%s, %s%d allowed", e->name_c_str(), equalmsg.c_str(), (noutlo == nouthi ? "" : "at most "), nouthi);
+	for (int i = nouthi; i < e->noutputs(); i++)
+	    if (output_used[i] >= 0)
+		errh->lmessage(conn[output_used[i]].decorated_landmark(),
+			       "  '%s' output %d used here", e->name_c_str(), i);
+    }
+
+    return;
+
+  parse_error:
+    errh->lerror(e->decorated_landmark(), "syntax error in port count code for '%s'", e->type()->printable_name_c_str());
 }
 
 void
@@ -289,21 +419,21 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	const PortT &hf = conn[c].from(), &ht = conn[c].to();
 	int fp = output_pidx(hf), tp = input_pidx(ht);
 
-	if (_output_processing[fp] == VPUSH && output_used[fp] >= 0) {
-	    errh->lerror(conn[c].landmark(),
-			 "reuse of '%s' push output %d",
+	if ((_output_processing[fp] & VPUSH) && output_used[fp] >= 0) {
+	    errh->lerror(conn[c].decorated_landmark(),
+			 "illegal reuse of '%s' push output %d",
 			 hf.element->name_c_str(), hf.port);
-	    errh->lmessage(conn[output_used[fp]].landmark(),
+	    errh->lmessage(conn[output_used[fp]].decorated_landmark(),
 			   "  '%s' output %d previously used here",
 			   hf.element->name_c_str(), hf.port);
 	} else
 	    output_used[fp] = c;
 
-	if (_input_processing[tp] == VPULL && input_used[tp] >= 0) {
-	    errh->lerror(conn[c].landmark(),
-			 "reuse of '%s' pull input %d",
+	if ((_input_processing[tp] & VPULL) && input_used[tp] >= 0) {
+	    errh->lerror(conn[c].decorated_landmark(),
+			 "illegal reuse of '%s' pull input %d",
 			 ht.element->name_c_str(), ht.port);
-	    errh->lmessage(conn[input_used[tp]].landmark(),
+	    errh->lmessage(conn[input_used[tp]].decorated_landmark(),
 			   "  '%s' input %d previously used here",
 			   ht.element->name_c_str(), ht.port);
 	} else
@@ -311,68 +441,34 @@ ProcessingT::check_connections(ErrorHandler *errh)
     }
 
     // Check for unused inputs and outputs, set _connected_* properly.
-    for (int i = 0; i < ninput_pidx(); i++)
-	if (input_used[i] < 0) {
-	    const ElementT *e = _input_elt[i];
-	    if (e->dead())
-		continue;
-	    int port = i - _input_pidx[e->eindex()];
-	    errh->lerror(e->landmark(),
-			 "'%s' %s input %d not connected",
-			 e->name_c_str(), processing_name(_input_processing[i]), port);
-	}
-
-    for (int i = 0; i < noutput_pidx(); i++)
-	if (output_used[i] < 0) {
-	    const ElementT *e = _output_elt[i];
-	    if (e->dead())
-		continue;
-	    int port = i - _output_pidx[e->eindex()];
-	    errh->lerror(e->landmark(),
-			 "'%s' %s output %d not connected",
-			 e->name_c_str(), processing_name(_output_processing[i]), port);
-	}
+    for (int ei = 0; ei < _router->nelements(); ei++) {
+	const ElementT *e = _router->element(ei);
+	if (e->dead())
+	    continue;
+	int ipdx = _input_pidx[ei], opdx = _output_pidx[ei];
+	check_nports(e, input_used.begin() + ipdx, output_used.begin() + opdx, errh);
+	for (int i = 0; i < e->ninputs(); i++)
+	    if (input_used[ipdx + i] < 0)
+		errh->lerror(e->decorated_landmark(),
+			     "'%s' %s input %d not connected",
+			     e->name_c_str(), processing_name(_input_processing[ipdx + i]), i);
+	for (int i = 0; i < e->noutputs(); i++)
+	    if (output_used[opdx + i] < 0)
+		errh->lerror(e->decorated_landmark(),
+			     "'%s' %s output %d not connected",
+			     e->name_c_str(), processing_name(_output_processing[opdx + i]), i);
+    }
 
     // Set _connected_* properly.
     PortT crap(0, -1);
     _connected_input.assign(ninput_pidx(), crap);
     _connected_output.assign(noutput_pidx(), crap);
     for (int i = 0; i < ninput_pidx(); i++)
-	if (_input_processing[i] == VPULL && input_used[i] >= 0)
+	if ((_input_processing[i] & VPULL) && input_used[i] >= 0)
 	    _connected_input[i] = conn[ input_used[i] ].from();
     for (int i = 0; i < noutput_pidx(); i++)
-	if (_output_processing[i] == VPUSH && output_used[i] >= 0)
+	if ((_output_processing[i] & VPUSH) && output_used[i] >= 0)
 	    _connected_output[i] = conn[ output_used[i] ].to();
-}
-
-int
-ProcessingT::reset(const RouterT *r, ElementMap *emap, bool flatten,
-		   ErrorHandler *errh)
-{
-    _router = r;
-    if (!errh)
-	errh = ErrorHandler::silent_handler();
-    int before = errh->nerrors();
-
-    ElementMap::push_default(emap);
-
-    // create pidx and elt arrays, warn about dead elements
-    create_pidx(errh);
-    
-    initial_processing(errh);
-    check_processing(errh);
-
-    // 'flat' configurations have no agnostic ports; change them to push
-    if (flatten)
-	resolve_agnostics();
-    
-    check_connections(errh);
-
-    ElementMap::pop_default();
-
-    if (errh->nerrors() != before)
-	return -1;
-    return 0;
 }
 
 void
@@ -380,10 +476,10 @@ ProcessingT::resolve_agnostics()
 {
     for (int i = 0; i < _input_processing.size(); i++)
 	if (_input_processing[i] == VAGNOSTIC)
-	    _input_processing[i] = VPUSH;
+	    _input_processing[i] = VPUSH | VAFLAG;
     for (int i = 0; i < _output_processing.size(); i++)
 	if (_output_processing[i] == VAGNOSTIC)
-	    _output_processing[i] = VPUSH;
+	    _output_processing[i] = VPUSH | VAFLAG;
 }
 
 bool
@@ -413,6 +509,44 @@ ProcessingT::processing_code(const ElementT *e) const
     sa << '/';
     for (int i = _output_pidx[ei]; i < _output_pidx[ei+1]; i++)
 	sa << processing_letters[_output_processing[i]];
+    return sa.take_string();
+}
+
+String
+ProcessingT::decorated_processing_code(const ElementT *e) const
+{
+    assert(e->router() == _router);
+    int ei = e->eindex();
+    int ipb = _input_pidx[ei], ipe = _input_pidx[ei+1];
+    int opb = _output_pidx[ei], ope = _output_pidx[ei+1];
+
+    // avoid memory allocation by returning an existing string
+    // (premature optimization?)
+    uint32_t allin = 255, allout = 255;
+    for (int i = ipb; i < ipe; i++)
+	allin &= 1 << _input_processing[i];
+    for (int i = opb; i < ope; i++)
+	allout &= 1 << _output_processing[i];
+    if (allin && allout) {
+	if ((allin & (1 << VPUSH)) && (allout & (1 << VPUSH)))
+	    return dpcode_push;
+	if ((allin & (1 << VPULL)) && (allout & (1 << VPULL)))
+	    return dpcode_pull;
+	if ((allin & (1 << (VPUSH + VAFLAG))) && (allout & (1 << (VPUSH + VAFLAG))))
+	    return dpcode_apush;
+	if ((allin & (1 << (VPULL + VAFLAG))) && (allout & (1 << (VPULL + VAFLAG))))
+	    return dpcode_apull;
+	if ((allin & (1 << VPUSH)) && (allout & (1 << VPULL)))
+	    return dpcode_push_to_pull;
+    }
+    
+    // no optimization possible; just return the whole code
+    StringAccum sa;
+    for (int i = ipb; i < ipe; i++)
+	sa << decorated_processing_letters[_input_processing[i]];
+    sa << '/';
+    for (int i = opb; i < ope; i++)
+	sa << decorated_processing_letters[_output_processing[i]];
     return sa.take_string();
 }
 
@@ -648,8 +782,21 @@ ProcessingT::forward_reachable_inputs(Bitvector &inputs, ErrorHandler *errh) con
 }
 
 String
+ProcessingT::compound_port_count_code() const
+{
+    ElementT *input = const_cast<ElementT *>(_router->element("input"));
+    ElementT *output = const_cast<ElementT *>(_router->element("output"));
+    assert(input && output && input->tunnel() && output->tunnel());
+    if (input->noutputs() == 0 && output->ninputs() == 0)
+	return String::stable_string("0/0", 3);
+    else
+	return String(input->noutputs()) + "/" + String(output->ninputs());
+}
+
+String
 ProcessingT::compound_processing_code() const
 {
+    assert(_input_elt.size());
     ElementT *input = const_cast<ElementT *>(_router->element("input"));
     ElementT *output = const_cast<ElementT *>(_router->element("output"));
     assert(input && output && input->tunnel() && output->tunnel());
@@ -682,6 +829,7 @@ ProcessingT::compound_processing_code() const
 String
 ProcessingT::compound_flow_code(ErrorHandler *errh) const
 {
+    assert(_input_elt.size());
     ElementT *input = const_cast<ElementT *>(_router->element("input"));
     ElementT *output = const_cast<ElementT *>(_router->element("output"));
     assert(input && output && input->tunnel() && output->tunnel());

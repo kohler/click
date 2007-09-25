@@ -627,10 +627,10 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
     case AR_MUL:
     case AR_DIV:
     case AR_IDIV: {
-	click_intmax_t accum = 0, arg;
+	click_intmax_t accum = (what == AR_ADD || what == AR_SUB ? 0 : 1), arg;
 	bool first = true;
 #if CLICK_USERLEVEL
-	double daccum = 0, darg;
+	double daccum = (what == AR_ADD || what == AR_SUB ? 0 : 1), darg;
 	bool use_daccum = (what == AR_DIV || what == AR_IDIV);
 #endif
 	while (1) {
@@ -705,7 +705,7 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
 	String astr = cp_pop_spacevec(str), bstr = cp_pop_spacevec(str);
 	click_intmax_t a, b;
 	int comparison;
-	if (str)
+	if (str || !astr || !bstr)
 	    goto compare_syntax;
 #if CLICK_USERLEVEL
 	if (!cp_integer(astr, &a) || !cp_integer(bstr, &b)) {
@@ -727,7 +727,7 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
     compare_syntax:
 	return errh->error("expected two numbers");
     compare_strings:
-	a = String::compare(astr, bstr);
+	a = String::compare(cp_unquote(astr), cp_unquote(bstr));
 	comparison = (a < 0 ? AR_LT : (a == 0 ? AR_EQ : AR_GT));
 	goto compare_return;
     }

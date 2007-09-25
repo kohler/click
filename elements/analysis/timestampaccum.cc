@@ -77,7 +77,7 @@ TimestampAccum::add_handlers()
     add_read_handler("count", read_handler, (void *)0);
     add_read_handler("time", read_handler, (void *)1);
     add_read_handler("average_time", read_handler, (void *)2);
-    add_write_handler("reset_counts", reset_handler, (void *)0);
+    add_write_handler("reset_counts", reset_handler, (void *)0, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS

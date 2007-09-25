@@ -217,7 +217,7 @@ BeaconTracker::add_handlers()
   add_read_handler("beacon_interval", read_param, (void *) H_BEACON_INTERVAL);
 
   add_write_handler("debug", write_param, (void *) H_DEBUG);
-  add_write_handler("reset", write_param, (void *) H_RESET);
+  add_write_handler("reset", write_param, (void *) H_RESET, Handler::BUTTON);
 }
 
 

@@ -436,7 +436,7 @@ PollDevice::add_handlers()
   add_read_handler("poll_cycles", PollDevice_read_stats, (void *)2);
   add_read_handler("refill_dma_cycles", PollDevice_read_stats, (void *)3);
 #endif
-  add_write_handler("reset_counts", PollDevice_write_stats, 0);
+  add_write_handler("reset_counts", PollDevice_write_stats, 0, Handler::BUTTON);
   add_read_handler("buffers_reused", PollDevice_read_stats, (void *)4);
   add_task_handlers(&_task);
 }

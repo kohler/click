@@ -90,7 +90,7 @@ void
 EtherCount::add_handlers()
 {
 	add_read_handler("stats", EtherCount_read_param, (void *) H_STATS);
-	add_write_handler("reset", EtherCount_write_param, (void *) H_RESET);
+	add_write_handler("reset", EtherCount_write_param, (void *) H_RESET, Handler::BUTTON);
 }
 // generate Vector template instance
 #include <click/bighashmap.cc>

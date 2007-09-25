@@ -223,10 +223,10 @@ LinkUnqueue::write_handler(const String &, Element *e, void *, ErrorHandler *)
 void
 LinkUnqueue::add_handlers()
 {
-    add_read_handler("latency", read_param, (void *)H_LATENCY);
-    add_read_handler("bandwidth", read_param, (void *)H_BANDWIDTH);
+    add_read_handler("latency", read_param, (void *)H_LATENCY, Handler::CALM);
+    add_read_handler("bandwidth", read_param, (void *)H_BANDWIDTH, Handler::CALM);
     add_read_handler("size", read_param, (void *)H_SIZE);
-    add_write_handler("reset", write_handler, 0);
+    add_write_handler("reset", write_handler, 0, Handler::BUTTON);
     add_task_handlers(&_task);
 }
 

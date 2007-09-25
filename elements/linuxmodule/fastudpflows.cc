@@ -289,8 +289,8 @@ FastUDPFlows::add_handlers()
   add_read_handler("count", FastUDPFlows_read_count_handler, 0);
   add_read_handler("rate", FastUDPFlows_read_rate_handler, 0);
   add_write_handler("rate", FastUDPFlows_rate_write_handler, 0);
-  add_write_handler("reset", FastUDPFlows_reset_write_handler, 0);
-  add_write_handler("active", FastUDPFlows_active_write_handler, 0);
+  add_write_handler("reset", FastUDPFlows_reset_write_handler, 0, Handler::BUTTON);
+  add_write_handler("active", FastUDPFlows_active_write_handler, 0, Handler::CHECKBOX);
   add_write_handler("limit", FastUDPFlows_limit_write_handler, 0);
 }
 

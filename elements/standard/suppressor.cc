@@ -107,10 +107,10 @@ Suppressor::add_handlers()
 {
   for (int i = 0; i < ninputs(); i++) {
     String s = "active" + String(i);
-    add_read_handler(s, read_active, (void *)i);
+    add_read_handler(s, read_active, (void *)i, Handler::CHECKBOX);
     add_write_handler(s, write_active, (void *)i);
   }
-  add_write_handler("reset", write_reset, 0);
+  add_write_handler("reset", write_reset, 0, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS

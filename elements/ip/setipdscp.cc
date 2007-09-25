@@ -92,7 +92,7 @@ SetIPDSCP_read_dscp(Element *xf, void *)
 void
 SetIPDSCP::add_handlers()
 {
-  add_read_handler("dscp", SetIPDSCP_read_dscp, (void *)0);
+  add_read_handler("dscp", SetIPDSCP_read_dscp, (void *)0, Handler::CALM);
   add_write_handler("dscp", reconfigure_positional_handler, (void *)0);
 }
 

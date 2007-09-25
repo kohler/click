@@ -3,12 +3,15 @@
 #define CLICK_LEXERT_HH
 #include <click/error.hh>
 #include <click/hashmap.hh>
+#include <click/archive.hh>
+#include "landmarkt.hh"
 #include <stdio.h>
 class RouterT;
 class ElementClassT;
 class StringAccum;
 class LexerTInfo;
 class VariableEnvironment;
+class ArchiveElement;
 
 enum {
     lexEOF = 0,
@@ -27,7 +30,7 @@ enum {
 
 class Lexeme { public:
 
-    Lexeme()				: _kind(lexEOF) { }
+    Lexeme()				: _kind(lexEOF), _pos(0) { }
     Lexeme(int k, const String &s, const char *p) : _kind(k), _s(s), _pos(p) { }
     
     int kind() const			{ return _kind; }
@@ -53,7 +56,7 @@ class LexerT { public:
     LexerT(ErrorHandler *, bool ignore_line_directives);
     virtual ~LexerT();
   
-    void reset(const String &data, const String &filename = String());
+    void reset(const String &data, const Vector<ArchiveElement> &archive, const String &filename);
     void clear();
     void set_lexinfo(LexerTInfo *);
     void ignore_line_directives(bool g)	{ _ignore_line_directives = g; }
@@ -65,6 +68,7 @@ class LexerT { public:
     void unlex(const Lexeme &);
     Lexeme lex_config();
     String landmark() const;
+    inline LandmarkT landmarkt(const char *pos1, const char *pos2) const;
   
     bool yport(int &port, const char *&pos1, const char *&pos2);
     bool yelement(int &element, bool comma_ok);
@@ -93,6 +97,7 @@ class LexerT { public:
     String _filename;
     String _original_filename;
     unsigned _lineno;
+    LandmarkSetT *_lset;
     bool _ignore_line_directives;
     
     bool get_data();
@@ -114,6 +119,7 @@ class LexerT { public:
     RouterT *_router;
     
     int _anonymous_offset;
+    int _anonymous_class_count;
   
     // what names represent types? (builds up linearly)
     HashMap<String, ElementClassT *> _base_type_map;
@@ -136,10 +142,18 @@ class LexerT { public:
 
     LexerT(const LexerT &);
     LexerT &operator=(const LexerT &);
-    int make_element(String, const Lexeme &, const char *decl_pos2, ElementClassT *, const String &, const String &);
-    int make_anon_element(const Lexeme &, const char *decl_pos2, ElementClassT *, const String &, const String &);
-    void connect(int f1, int p1, int p2, int f2);
+    int make_element(String, const Lexeme &, const char *decl_pos2, ElementClassT *, const String &);
+    int make_anon_element(const Lexeme &, const char *decl_pos2, ElementClassT *, const String &);
+    void connect(int f1, int p1, int p2, int f2, const char *pos1, const char *pos2);
   
 };
+
+inline LandmarkT
+LexerT::landmarkt(const char *pos1, const char *pos2) const
+{
+    assert(pos1 >= _big_string.begin() && pos1 <= _big_string.end());
+    assert(pos2 >= _big_string.begin() && pos2 <= _big_string.end());
+    return LandmarkT(_lset, pos1 - _big_string.begin(), pos2 - _big_string.begin());
+}
 
 #endif

@@ -218,7 +218,7 @@ handle_router(Mindriver& md, String filename_in, const ElementMap &default_map, 
     int before = errh->nerrors();
     RouterT *router = read_router(filename, file_is_expr, errh);
     if (file_is_expr)
-	filename = "<expr>";
+	filename = "config";
     else if (!filename || strcmp(filename, "-") == 0)
 	filename = "<stdin>";
     LandmarkErrorHandler lerrh(errh, filename);

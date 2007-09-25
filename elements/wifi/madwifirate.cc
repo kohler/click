@@ -446,7 +446,7 @@ MadwifiRate::add_handlers()
   add_write_handler("stepup", MadwifiRate_write_param, (void *) H_STEPUP);
   add_write_handler("stepdown", MadwifiRate_write_param, (void *) H_STEPDOWN);
   add_write_handler("offset", MadwifiRate_write_param, (void *) H_OFFSET);
-  add_write_handler("reset", MadwifiRate_write_param, (void *) H_RESET);
+  add_write_handler("reset", MadwifiRate_write_param, (void *) H_RESET, Handler::BUTTON);
   add_write_handler("active", MadwifiRate_write_param, (void *) H_ACTIVE);
   add_write_handler("alt_rate", MadwifiRate_write_param, (void *) H_ALT_RATE);
 

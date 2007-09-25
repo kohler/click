@@ -98,7 +98,7 @@ write_param(const String &in_s, Element *e, void *vparam,
 void
 UpstreamNotifier::add_handlers()
 {
-  add_write_handler("signal", write_param, (void *) H_SIGNAL);
+  add_write_handler("signal", write_param, (void *) H_SIGNAL, Handler::CHECKBOX);
   add_read_handler("signal", read_param, (void *) H_SIGNAL);
 
 }

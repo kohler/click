@@ -491,7 +491,7 @@ particular purpose.\n");
 		    ElementT *e = router->get_element
 			(aligner_name(anonymizer), align_class,
 			 String(want.chunk()) + ", " + String(want.offset()),
-			 "<click-align>");
+			 LandmarkT("<click-align>"));
 		    router->insert_before(e, PortT(router->element(i), j));
 		    anonymizer++;
 		    num_aligns_added++;
@@ -554,7 +554,7 @@ particular purpose.\n");
 		    ElementT *e = router->get_element
 			(aligner_name(anonymizer), align_class,
 			 String(want.chunk()) + ", " + String(want.offset()),
-			 "<click-align>");
+			 LandmarkT("<click-align>"));
 		    router->insert_before(e, PortT(router->element(i), j));
 		    anonymizer++;
 		    num_aligns_added++;
@@ -634,7 +634,7 @@ particular purpose.\n");
 	    router->get_element(String("AlignmentInfo@click_align@")
 				+ String(router->nelements() + 1),
 				aligninfo_class, sa.take_string(),
-				"<click-align>");
+				LandmarkT("<click-align>"));
     }
 
   // warn if added aligns

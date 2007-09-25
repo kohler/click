@@ -2701,8 +2701,9 @@ cp_handler_name(const String& str,
 		Element** result_element, String* result_hname,
 		Element* context, ErrorHandler* errh)
 {
+  SilentErrorHandler serrh;
   if (!errh)
-    errh = ErrorHandler::silent_handler();
+    errh = &serrh;
   
   String text;
   if (!cp_string(str, &text) || !text) {
@@ -4441,15 +4442,17 @@ cp_assign_arguments(const Vector<String> &argv, const String *keys_begin, const 
   for (arg = 0; arg < cpva.nvalues && keys_begin[arg] == ""; arg++) {
     cp_values[arg].argtype = 0;
     cp_values[arg].keyword = 0;
+    cp_values[arg].v.i = cpkMandatory;
   }
   cpva.nrequired = cpva.npositional = arg;
   for (; arg < cpva.nvalues; arg++) {
     cp_values[arg].argtype = 0;
     cp_values[arg].keyword = keys_begin[arg].c_str();
-    cp_values[arg].v.i = -1;	// mandatory keyword
+    cp_values[arg].v.i = cpkMandatory;	// mandatory keyword
   }
 
-  int retval = cpva.assign_arguments(argv, "argument", ErrorHandler::silent_handler());
+  SilentErrorHandler serrh;
+  int retval = cpva.assign_arguments(argv, "argument", &serrh);
   if (retval >= 0 && values) {
     if (cpva.ignore_rest) {
       // collect '__REST__' argument

@@ -180,9 +180,9 @@ IPEncap::read_handler(Element *e, void *thunk)
 void
 IPEncap::add_handlers()
 {
-  add_read_handler("src", read_handler, (void *)0);  
+  add_read_handler("src", read_handler, (void *)0, Handler::CALM);
   add_write_handler("src", reconfigure_positional_handler, (void *)1);
-  add_read_handler("dst", read_handler, (void *)1);  
+  add_read_handler("dst", read_handler, (void *)1, Handler::CALM);
   add_write_handler("dst", reconfigure_positional_handler, (void *)2);
 }
 

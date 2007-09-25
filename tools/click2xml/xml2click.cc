@@ -487,7 +487,7 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 
     // otherwise, compound
     assert(_enclosing);
-    _type = _router = new RouterT(_name, (_landmark ? _landmark : _xml_landmark), enclosing_type);
+    _type = _router = new RouterT(_name, LandmarkT(_landmark ? _landmark : _xml_landmark), enclosing_type);
     _type->use();
     _router->use();
     enclosing_type->add_declared_type(_type, true);
@@ -561,7 +561,7 @@ CxConfig::complete(ErrorHandler *errh)
 		eclass = ::complete_elementclass(e->class_id, e->xml_landmark, errh);
 	    else if (e->class_name)
 		eclass = ElementClassT::base_type(e->class_name);
-	    ElementT *ne = r->get_element(e->name, (eclass ? eclass : ElementClassT::base_type("Error")), e->config, (e->landmark ? e->landmark : e->xml_landmark));
+	    ElementT *ne = r->get_element(e->name, (eclass ? eclass : ElementClassT::base_type("Error")), e->config, LandmarkT(e->landmark ? e->landmark : e->xml_landmark));
 	    ne->set_user_data(e - _elements.begin());
 	}
 
@@ -570,14 +570,14 @@ CxConfig::complete(ErrorHandler *errh)
 	ElementT *frome = r->element(c->from);
 	if (!frome) {
 	    errh->lerror(c->xml_landmark, "undeclared element '%s' (first use this block)", c->from.c_str());
-	    frome = r->get_element(c->from, ElementClassT::base_type("Error"), String(), c->xml_landmark);
+	    frome = r->get_element(c->from, ElementClassT::base_type("Error"), String(), LandmarkT(c->xml_landmark));
 	}
 	ElementT *toe = r->element(c->to);
 	if (!toe) {
 	    errh->lerror(c->xml_landmark, "undeclared element '%s' (first use this block)", c->to.c_str());
-	    toe = r->get_element(c->to, ElementClassT::base_type("Error"), String(), c->xml_landmark);
+	    toe = r->get_element(c->to, ElementClassT::base_type("Error"), String(), LandmarkT(c->xml_landmark));
 	}
-	r->add_connection(frome, c->fromport, toe, c->toport, c->xml_landmark);
+	r->add_connection(frome, c->fromport, toe, c->toport, LandmarkT(c->xml_landmark));
     }
 
     // check elements' ninputs and noutputs

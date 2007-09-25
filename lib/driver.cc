@@ -43,6 +43,7 @@
 #if CLICK_TOOL
 # include "lexert.hh"
 # include "routert.hh"
+# include "landmarkt.hh"
 # include <click/confparse.hh>
 #else
 # include <click/lexer.hh>
@@ -155,23 +156,6 @@ click_cleanup_packages()
     provisions = 0;
     nprovisions = provisions_cap = 0;
 }
-#endif
-
-
-#if CLICK_USERLEVEL || (HAVE_DYNAMIC_LINKING && !CLICK_LINUXMODULE && !CLICK_BSDMODULE)
-CLICK_DECLS
-
-static int
-archive_index(const Vector<ArchiveElement> *archive, const String &what)
-{
-    if (archive)
-	for (int i = 0; i < archive->size(); i++)
-	    if (archive->at(i).name == what)
-		return i;
-    return -1;
-}
-
-CLICK_ENDDECLS
 #endif
 
 
@@ -315,8 +299,8 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     String package;
   
     // check archive
-    int ai;
-    if ((ai = archive_index(archive, name + suffix)) >= 0) {
+    int ai = -1;
+    if (archive && (ai = ArchiveElement::arindex(*archive, name + suffix)) >= 0) {
 	if (!check_tmpdir(*archive, &cerrh))
 	    return;
 	package = *tmpdir + "/" + name + suffix;
@@ -329,9 +313,9 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
 	    fwrite(ae.data.data(), 1, ae.data.length(), f);
 	    fclose(f);
 	}
-    } else if ((ai = archive_index(archive, name + cxx_suffix)) >= 0)
+    } else if (archive && (ai = ArchiveElement::arindex(*archive, name + cxx_suffix)) >= 0)
 	package = click_compile_archive_file(name, *archive, ai, target, "-q", &cerrh);
-    else if ((ai = archive_index(archive, name + ".cc")) >= 0)
+    else if (archive && (ai = ArchiveElement::arindex(*archive, name + ".cc")) >= 0)
 	package = click_compile_archive_file(name, *archive, ai, target, "-q", &cerrh);
     else {
 	// search path
@@ -485,7 +469,7 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
     String config_str;
     if (is_expr) {
 	config_str = filename;
-	filename = "<expr>";
+	filename = "config";
     } else {
 	config_str = file_string(filename, errh);
 	if (!filename || filename == "-")
@@ -497,8 +481,8 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
     // find config string in archive
     Vector<ArchiveElement> archive;
     if (config_str.length() != 0 && config_str[0] == '!') {
-	separate_ar_string(config_str, archive, errh);
-	int i = archive_index(&archive, "config");
+	ArchiveElement::parse(config_str, archive, errh);
+	int i = ArchiveElement::arindex(archive, "config");
 	if (i >= 0)
 	    config_str = archive[i].data;
 	else {
@@ -539,6 +523,7 @@ click_static_initialize()
     String::static_initialize();
     cp_va_static_initialize();
     ErrorHandler::static_initialize(new FileErrorHandler(stderr, ""));
+    LandmarkT::static_initialize();
 }
 
 CLICK_ENDDECLS

@@ -362,7 +362,7 @@ ProbeTXRate::add_handlers()
   add_write_handler("debug", ProbeTXRate_write_param, (void *) H_DEBUG);
   add_write_handler("threshold", ProbeTXRate_write_param, (void *) H_THRESHOLD);
   add_write_handler("offset", ProbeTXRate_write_param, (void *) H_OFFSET);
-  add_write_handler("reset", ProbeTXRate_write_param, (void *) H_RESET);
+  add_write_handler("reset", ProbeTXRate_write_param, (void *) H_RESET, Handler::BUTTON);
   add_write_handler("active", ProbeTXRate_write_param, (void *) H_ACTIVE);
   
 }

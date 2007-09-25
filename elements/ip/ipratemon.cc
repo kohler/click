@@ -454,7 +454,7 @@ IPRateMonitor::add_handlers()
   add_read_handler("memmax", memmax_read_handler, 0);
 
   add_write_handler("anno_level", anno_level_write_handler, 0);
-  add_write_handler("reset", reset_write_handler, 0);
+  add_write_handler("reset", reset_write_handler, 0, Handler::BUTTON);
   add_write_handler("memmax", memmax_write_handler, 0);
 }
 

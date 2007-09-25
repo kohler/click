@@ -2,6 +2,8 @@
 #ifndef CLICK_ELEMENTMAP_HH
 #define CLICK_ELEMENTMAP_HH
 #include "etraits.hh"
+#include <click/hashmap.hh>
+class RouterT;
 
 class ElementMap { public:
 
@@ -50,11 +52,14 @@ class ElementMap { public:
 
     int check_completeness(const RouterT*, ErrorHandler*) const;
     bool driver_indifferent(const RouterT*, int driver_mask = Driver::ALLMASK, ErrorHandler* = 0) const;
+    int compatible_driver_mask(const RouterT*, ErrorHandler* = 0) const;
     bool driver_compatible(const RouterT*, int driver, ErrorHandler* = 0) const;
 
+    int provided_driver_mask() const	{ return _provided_driver_mask; }
     int driver_mask() const		{ return _driver_mask; }
     void set_driver(int d)		{ set_driver_mask(1 << d); }
-    void set_driver_mask(int);
+    void set_driver_mask(int mask);
+    int pick_driver(int wanted_driver, const RouterT* router, ErrorHandler* = 0) const;
 
   private:
 
@@ -63,6 +68,7 @@ class ElementMap { public:
 	String compile_flags;
 	String package;
 	String dochref;
+	int driver_mask;
     };
     
     Vector<Traits> _e;
@@ -72,6 +78,7 @@ class ElementMap { public:
 
     int _use_count;
     int _driver_mask;
+    int _provided_driver_mask;
 
     int get_driver_mask(const String&);
     int driver_elt_index(int) const;

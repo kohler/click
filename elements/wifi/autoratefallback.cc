@@ -369,7 +369,7 @@ AutoRateFallback::add_handlers()
   add_write_handler("threshold", AutoRateFallback_write_param, (void *) H_THRESHOLD);
   add_write_handler("stepup", AutoRateFallback_write_param, (void *) H_STEPUP);
   add_write_handler("stepdown", AutoRateFallback_write_param, (void *) H_STEPDOWN);
-  add_write_handler("reset", AutoRateFallback_write_param, (void *) H_RESET);
+  add_write_handler("reset", AutoRateFallback_write_param, (void *) H_RESET, Handler::BUTTON);
   add_write_handler("offset", AutoRateFallback_write_param, (void *) H_OFFSET);
   add_write_handler("active", AutoRateFallback_write_param, (void *) H_ACTIVE);
 }

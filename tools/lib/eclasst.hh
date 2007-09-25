@@ -13,10 +13,11 @@ class ElementT;
 class VariableEnvironment;
 class ElementMap;
 class SynonymElementClassT;
+class LandmarkT;
 
 class ElementClassT { public:
 
-    ElementClassT(const String &);
+    ElementClassT(const String &name);
     virtual ~ElementClassT();
 
     static void set_base_type_factory(ElementClassT *(*factory)(const String &));
@@ -27,7 +28,9 @@ class ElementClassT { public:
     void unuse()			{ if (--_use_count <= 0) delete this; }
 
     const String &name() const		{ return _name; }
-    const char *printable_name_c_str();
+    String printable_name() const	{ return _printable_name; }
+    const char *printable_name_c_str() const { return _printable_name.c_str(); }
+    void set_printable_name(const String &s) { _printable_name = s; }
     virtual String landmark() const	{ return String(); }
 
     // 'primitive' means 'not tunnel, not compound, not synonym'.
@@ -55,7 +58,8 @@ class ElementClassT { public:
 
     static ElementT *expand_element(ElementT *, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
 
-    virtual ElementClassT *resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *, const String &landmark);
+    virtual bool need_resolve() const;
+    virtual ElementClassT *resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *, const LandmarkT &landmark);
     virtual ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
 
     enum UnparseKind { UNPARSE_NAMED, UNPARSE_ANONYMOUS, UNPARSE_OVERLOAD };
@@ -70,6 +74,7 @@ class ElementClassT { public:
   private:
 
     String _name;
+    String _printable_name;
     int _use_count;
 
     mutable int _traits_version;
@@ -90,7 +95,8 @@ class SynonymElementClassT : public ElementClassT { public:
 
     ElementClassT *synonym_of() const	{ return _eclass; }
 
-    ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const String &);
+    bool need_resolve() const;
+    ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const LandmarkT &);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
     
     void collect_types(HashMap<ElementClassT *, int> &) const;

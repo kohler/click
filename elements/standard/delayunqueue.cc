@@ -109,7 +109,7 @@ DelayUnqueue::read_param(Element *e, void *)
 void
 DelayUnqueue::add_handlers()
 {
-    add_read_handler("delay", read_param, (void *)0);
+    add_read_handler("delay", read_param, (void *)0, Handler::CALM);
     add_task_handlers(&_task);
 }
 

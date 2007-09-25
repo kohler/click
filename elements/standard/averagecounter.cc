@@ -115,7 +115,7 @@ AverageCounter::add_handlers()
   add_read_handler("byte_count", averagecounter_read_count_handler, (void *) 1);
   add_read_handler("rate", averagecounter_read_rate_handler, 0);
   add_read_handler("byte_rate", averagecounter_read_rate_handler, (void *) 1);
-  add_write_handler("reset", averagecounter_reset_write_handler, 0);
+  add_write_handler("reset", averagecounter_reset_write_handler, 0, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS

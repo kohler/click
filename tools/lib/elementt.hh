@@ -2,13 +2,14 @@
 #ifndef CLICK_ELEMENTT_HH
 #define CLICK_ELEMENTT_HH
 #include "eclasst.hh"
+#include "landmarkt.hh"
 
 struct ElementT {
     
     int flags;
 
     ElementT();
-    ElementT(const String &, ElementClassT *, const String &, const String & = String());
+    ElementT(const String &name, ElementClassT *type, const String &config, const LandmarkT &landmark = LandmarkT::empty_landmark());
     ~ElementT();
 
     RouterT *router() const		{ return _owner; }
@@ -23,22 +24,26 @@ struct ElementT {
     bool anonymous() const		{ return _name && _name[0] == ';'; }
     
     ElementClassT *type() const		{ return _type; }
+    ElementClassT *resolved_type() const;
+    ElementClassT *resolved_type(VariableEnvironment &ve, ErrorHandler *errh = 0) const;
     String type_name() const		{ return _type->name(); }
+    String printable_type_name() const	{ return _type->printable_name(); }
     const char *type_name_c_str() const	{ return _type->printable_name_c_str(); }
     void set_type(ElementClassT *);
+    inline bool compound() const;
+    inline bool resolved_compound() const;
+    RouterT *resolved_router() const;
 
     const String &config() const	{ return _configuration; }
     const String &configuration() const	{ return _configuration; }
-    void set_config(const String &s)	{ _configuration = s; }
-    void set_configuration(const String &s) { _configuration = s; }
-    String &config()			{ return _configuration; }
-    String &configuration()		{ return _configuration; }
-    
-    const String &landmark() const	{ return _landmark; }
-    void set_landmark(const String &s)	{ _landmark = s; }
-    String &landmark()			{ return _landmark; }
-    
-    bool tunnel() const		{ return _type==ElementClassT::tunnel_type(); }
+    inline void set_configuration(const String &s);
+
+    const LandmarkT &landmarkt() const	{ return _landmark; }
+    String landmark() const		{ return _landmark.str(); }
+    String decorated_landmark() const	{ return _landmark.decorated_str(); }
+    void set_landmark(const LandmarkT &lm) { _landmark = lm; }
+
+    inline bool tunnel() const;
     inline bool tunnel_connected() const;
     ElementT *tunnel_input() const	{ return _tunnel_input; }
     ElementT *tunnel_output() const	{ return _tunnel_output; }
@@ -47,6 +52,7 @@ struct ElementT {
     int noutputs() const		{ return _noutputs; }
     
     inline String declaration() const;
+    inline String reverse_declaration() const;
 
     void *user_data() const		{ return _user_data; }
     void set_user_data(void *v)		{ _user_data = v; }
@@ -60,8 +66,11 @@ struct ElementT {
     int _eindex;
     String _name;
     ElementClassT *_type;
+    mutable ElementClassT *_resolved_type;
+    enum { resolved_type_expand = 1, resolved_type_error = 2 };
+    mutable int _resolved_type_status;
     String _configuration;
-    String _landmark;
+    LandmarkT _landmark;
     int _ninputs;
     int _noutputs;
     ElementT *_tunnel_input;
@@ -71,6 +80,21 @@ struct ElementT {
 
     ElementT(const ElementT &);
     ElementT &operator=(const ElementT &);
+
+    inline void unresolve_type() {
+	if (_resolved_type) {
+	    _resolved_type->unuse();
+	    _resolved_type = 0;
+	}
+    }
+    inline void set_ninputs(int n) {
+	unresolve_type();
+	_ninputs = n;
+    }
+    inline void set_noutputs(int n) {
+	unresolve_type();
+	_noutputs = n;
+    }
 
     friend class RouterT;
     
@@ -84,6 +108,14 @@ struct PortT {
     PortT()				: element(0), port(-1) { }
     PortT(ElementT *e, int p)		: element(e), port(p) { }
 
+    static const PortT null_port;
+
+    typedef bool (PortT::*unspecified_bool_type)() const;
+
+    operator unspecified_bool_type() const {
+	return element != 0 ? &PortT::live : 0;
+    }
+    
     bool live() const			{ return element != 0; }
     bool dead() const			{ return element == 0; }
     RouterT *router() const		{ return (element ? element->router() : 0); }
@@ -103,13 +135,14 @@ struct PortT {
 class ConnectionT { public:
 
     ConnectionT();
-    ConnectionT(const PortT &, const PortT &, const String & = String());
-    ConnectionT(const PortT &, const PortT &, const String &, int, int);
+    ConnectionT(const PortT &, const PortT &, const LandmarkT & = LandmarkT::empty_landmark());
+    ConnectionT(const PortT &, const PortT &, const LandmarkT &, int, int);
 
     bool live() const			{ return _from.live(); }
     bool dead() const			{ return _from.dead(); }
     void kill()				{ _from.element = 0; }
-    
+
+    RouterT *router() const		{ return _to.router(); }
     const PortT &from() const		{ return _from; }
     const PortT &to() const		{ return _to; }
     ElementT *from_element() const	{ return _from.element; }
@@ -118,7 +151,9 @@ class ConnectionT { public:
     ElementT *to_element() const	{ return _to.element; }
     int to_eindex() const		{ return _to.eindex(); }
     int to_port() const			{ return _to.port; }
-    const String &landmark() const	{ return _landmark; }
+    String landmark() const		{ return _landmark.str(); }
+    String decorated_landmark() const	{ return _landmark.decorated_str(); }
+    const LandmarkT &landmarkt() const	{ return _landmark; }
 
     int next_from() const		{ return _next_from; }
     int next_to() const			{ return _next_to; }
@@ -129,7 +164,7 @@ class ConnectionT { public:
 
     PortT _from;
     PortT _to;
-    String _landmark;
+    LandmarkT _landmark;
     int _next_from;
     int _next_to;
 
@@ -144,6 +179,7 @@ ElementT::kill()
     if (_type)
 	_type->unuse();
     _type = 0;
+    unresolve_type();
 }
 
 inline void
@@ -153,14 +189,57 @@ ElementT::set_type(ElementClassT *t)
     t->use();
     if (_type)
 	_type->unuse();
+    unresolve_type();
     _type = t;
+}
+
+inline bool
+ElementT::compound() const
+{
+    return _type && _type->cast_router();
+}
+
+inline bool
+ElementT::resolved_compound() const
+{
+    ElementClassT *t = resolved_type();
+    return t && t->cast_router();
+}
+
+inline RouterT *
+ElementT::resolved_router() const
+{
+    if (ElementClassT *t = resolved_type())
+	return t->cast_router();
+    else
+	return 0;
+}
+
+inline void
+ElementT::set_configuration(const String &configuration)
+{
+    unresolve_type();
+    _configuration = configuration;
 }
 
 inline String
 ElementT::declaration() const
 {
     assert(_type);
-    return _name + " :: " + _type->name();
+    return _name + " :: " + _type->printable_name();
+}
+
+inline String
+ElementT::reverse_declaration() const
+{
+    assert(_type);
+    return _type->printable_name() + " " + _name;
+}
+
+inline bool
+ElementT::tunnel() const
+{
+    return _type == ElementClassT::tunnel_type();
 }
 
 inline bool

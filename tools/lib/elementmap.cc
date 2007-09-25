@@ -35,7 +35,8 @@ static Vector<ElementMap *> element_map_stack;
 
 
 ElementMap::ElementMap()
-    : _name_map(0), _use_count(0), _driver_mask(Driver::ALLMASK)
+    : _name_map(0), _use_count(0), _driver_mask(Driver::ALLMASK),
+      _provided_driver_mask(0)
 {
     String::static_initialize();
     _e.push_back(Traits());
@@ -43,7 +44,8 @@ ElementMap::ElementMap()
 }
 
 ElementMap::ElementMap(const String& str, ErrorHandler* errh)
-    : _name_map(0), _use_count(0), _driver_mask(Driver::ALLMASK)
+    : _name_map(0), _use_count(0), _driver_mask(Driver::ALLMASK),
+      _provided_driver_mask(0)
 {
     _e.push_back(Traits());
     _def.push_back(Globals());
@@ -301,6 +303,11 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 		    g.dochref = attrs["webdoc"];
 		if (attrs["provides"])
 		    _e[0].provisions += " " + attrs["provides"];
+		g.driver_mask = Driver::ALLMASK;
+		if (attrs["drivers"])
+		    g.driver_mask = Driver::driver_mask(attrs["drivers"]);
+		if (!_provided_driver_mask)
+		    _provided_driver_mask = g.driver_mask;
 		_def.push_back(g);
 		in_elementmap = true;
 	    }
@@ -516,12 +523,10 @@ ElementMap::collect_indexes(const RouterT *router, Vector<int> &indexes,
 int
 ElementMap::check_completeness(const RouterT *r, ErrorHandler *errh) const
 {
-    if (!errh)
-	errh = ErrorHandler::silent_handler();
-    int before = errh->nerrors();
+    LocalErrorHandler lerrh(errh);
     Vector<int> indexes;
-    collect_indexes(r, indexes, errh);
-    return (errh->nerrors() == before ? 0 : -1);
+    collect_indexes(r, indexes, &lerrh);
+    return (lerrh.nerrors() ? -1 : 0);
 }
 
 bool
@@ -537,9 +542,28 @@ ElementMap::driver_indifferent(const RouterT *r, int driver_mask, ErrorHandler *
     return true;
 }
 
+int
+ElementMap::compatible_driver_mask(const RouterT *r, ErrorHandler *errh) const
+{
+    Vector<int> indexes;
+    collect_indexes(r, indexes, errh);
+    int mask = Driver::ALLMASK;
+    for (int i = 0; i < indexes.size(); i++) {
+	int idx = indexes[i];
+	int this_mask = 0;
+	while (idx > 0) {
+	    this_mask |= _e[idx].driver_mask;
+	    idx = _e[idx].name_next;
+	}
+	mask &= this_mask;
+    }
+    return mask;
+}
+
 bool
 ElementMap::driver_compatible(const RouterT *r, int driver, ErrorHandler *errh) const
 {
+#if 0
     Vector<int> indexes;
     collect_indexes(r, indexes, errh);
     int mask = 1 << driver;
@@ -556,6 +580,9 @@ ElementMap::driver_compatible(const RouterT *r, int driver, ErrorHandler *errh) 
       found: ;
     }
     return true;
+#else
+    return compatible_driver_mask(r, errh) & (1 << driver);
+#endif
 }
 
 void
@@ -564,6 +591,35 @@ ElementMap::set_driver_mask(int driver_mask)
     if (_driver_mask != driver_mask)
 	incr_version();
     _driver_mask = driver_mask;
+}
+
+int
+ElementMap::pick_driver(int wanted_driver, const RouterT* router, ErrorHandler* errh) const
+{
+    LocalErrorHandler lerrh(errh);
+    int driver_mask = compatible_driver_mask(router, &lerrh);
+    if (driver_mask == 0) {
+	lerrh.warning("configuration not compatible with any driver");
+	return Driver::USERLEVEL;
+    }
+    if ((driver_mask & _provided_driver_mask) == 0) {
+	lerrh.warning("configuration not compatible with installed drivers");
+	driver_mask = _provided_driver_mask;
+    }
+    if (wanted_driver >= 0) {
+	if (!(driver_mask & (1 << wanted_driver)))
+	    lerrh.warning("configuration not compatible with %s driver", Driver::name(wanted_driver));
+	return wanted_driver;
+    }
+
+    for (int d = Driver::COUNT - 1; d >= 0; d--)
+	if (driver_mask & (1 << d))
+	    wanted_driver = d;
+    // don't complain if only a single driver works
+    if ((driver_mask & (driver_mask - 1)) != 0
+	&& !driver_indifferent(router, driver_mask, errh))
+	lerrh.warning("configuration not indifferent to driver, picking %s\n(You might want to specify a driver explicitly.)", Driver::name(wanted_driver));
+    return wanted_driver;
 }
 
 

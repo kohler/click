@@ -160,7 +160,7 @@ WirelessInfo::add_handlers()
   add_write_handler("channel", write_param, (void *) H_CHANNEL);
   add_write_handler("interval", write_param, (void *) H_INTERVAL);
   add_write_handler("wep", write_param, (void *) H_WEP);
-  add_write_handler("reset", write_param, (void *) H_RESET);
+  add_write_handler("reset", write_param, (void *) H_RESET, Handler::BUTTON);
   
 }
 

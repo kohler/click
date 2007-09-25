@@ -62,11 +62,8 @@ read_router_string(String text, const String &landmark, bool empty_ok,
   // check for archive
   Vector<ArchiveElement> archive;
   if (text.length() && text[0] == '!') {
-    separate_ar_string(text, archive, errh);
-    int found = -1;
-    for (int i = 0; i < archive.size(); i++)
-      if (archive[i].name == "config")
-	found = i;
+    ArchiveElement::parse(text, archive, errh);
+    int found = ArchiveElement::arindex(archive, "config");
     if (found >= 0)
       text = archive[found].data;
     else {
@@ -79,15 +76,7 @@ read_router_string(String text, const String &landmark, bool empty_ok,
   if (!text.length() && !empty_ok)
     errh->lwarning(landmark, "empty configuration");
   LexerT lexer(errh, ignore_line_directives);
-  lexer.reset(text, landmark);
-  RouterT *router = lexer.router();
-  
-  // add archive bits first
-  if (router && archive.size()) {
-    for (int i = 0; i < archive.size(); i++)
-      if (archive[i].live() && archive[i].name != "config")
-	router->add_archive(archive[i]);
-  }
+  lexer.reset(text, archive, landmark);
 
   // read statements
   while (lexer.ystatement())
@@ -128,7 +117,7 @@ RouterT *
 read_router(const String &whatever, bool is_expr, ErrorHandler *errh)
 {
   if (is_expr)
-    return read_router_string(whatever, "<expr>", errh);
+    return read_router_string(whatever, "config", errh);
   else
     return read_router_file(whatever.c_str(), false, errh);
 }
@@ -163,7 +152,7 @@ write_router_file(RouterT *r, FILE *f, ErrorHandler *errh)
 	narchive.push_back(archive[i]);
 
     if (narchive.size() > 1)
-      config_str = create_ar_string(narchive, errh);
+      config_str = ArchiveElement::unparse(narchive, errh);
   }
   
   fwrite(config_str.data(), 1, config_str.length(), f);

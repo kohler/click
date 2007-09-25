@@ -554,7 +554,7 @@ ToDevice::add_handlers()
     add_read_handler("enqueue_cycles", ToDevice_read_stats, (void *)H_TIME_QUEUE);
     add_read_handler("clean_dma_cycles", ToDevice_read_stats, (void *)H_TIME_CLEAN);
 #endif
-    add_write_handler("reset_counts", ToDevice_write_stats, 0);
+    add_write_handler("reset_counts", ToDevice_write_stats, 0, Handler::BUTTON);
     add_task_handlers(&_task);
 }
 

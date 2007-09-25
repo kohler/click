@@ -130,7 +130,7 @@ void
 Unqueue::add_handlers()
 {
     add_read_handler("count", read_param, (void *)H_COUNT);
-    add_read_handler("active", read_param, (void *)H_ACTIVE);
+    add_read_handler("active", read_param, (void *)H_ACTIVE, Handler::CHECKBOX);
     add_write_handler("active", write_param, (void *)H_ACTIVE);
     add_task_handlers(&_task);
 }

@@ -59,6 +59,37 @@ class StringAccum { public:
     int capacity() const {
 	return _cap;
     }
+
+    
+    typedef const char *const_iterator;
+    typedef char *iterator;
+
+    /** @brief Return an iterator for the first character in the StringAccum.
+     *
+     * StringAccum iterators are simply pointers into string data, so they are
+     * quite efficient.  @sa String::data */
+    inline const_iterator begin() const {
+	return reinterpret_cast<char *>(_s);
+    }
+
+    /** @overload */
+    inline iterator begin() {
+	return reinterpret_cast<char *>(_s);
+    }
+
+    /** @brief Return an iterator for the end of the StringAccum.
+     *
+     * The return value points one character beyond the last character in the
+     * StringAccum. */
+    inline StringAccum::const_iterator end() const {
+	return reinterpret_cast<char *>(_s + _len);
+    }
+
+    /** @overload */
+    inline iterator end() {
+	return reinterpret_cast<char *>(_s + _len);
+    }
+    
     
     typedef int (StringAccum::*unspecified_bool_type)() const;
 

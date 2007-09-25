@@ -1,0 +1,5 @@
+.deps
+*.bak
+clicky
+main.c
+callbacks.c

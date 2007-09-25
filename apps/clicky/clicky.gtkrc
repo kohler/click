@@ -1,0 +1,6 @@
+style "smallexpander" {
+  GtkExpander::expander-size = 12
+  GtkExpander::expander-spacing = 0
+}
+
+widget "*.eviewbox.*.GtkExpander" style "smallexpander"

@@ -332,7 +332,7 @@ BeaconScanner::add_handlers()
   add_read_handler("scan", BeaconScanner_read_param, (void *) H_SCAN);
 
   add_write_handler("debug", BeaconScanner_write_param, (void *) H_DEBUG);
-  add_write_handler("reset", BeaconScanner_write_param, (void *) H_RESET);
+  add_write_handler("reset", BeaconScanner_write_param, (void *) H_RESET, Handler::BUTTON);
 }
 
 

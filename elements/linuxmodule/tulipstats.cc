@@ -304,7 +304,7 @@ void
 TulipStats::add_handlers()
 {
   add_read_handler("counts", read_counts, 0);
-  add_write_handler("reset_counts", TulipStats_reset, 0);
+  add_write_handler("reset_counts", TulipStats_reset, 0, Handler::BUTTON);
   add_task_handlers(&_task);
 }
 

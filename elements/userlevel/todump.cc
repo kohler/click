@@ -287,7 +287,7 @@ ToDump::add_handlers()
 {
     add_read_handler("filename", read_handler, (void *)H_FILENAME);
     add_read_handler("count", read_handler, (void *)H_COUNT);
-    add_write_handler("reset_counts", write_handler, (void *)H_RESET_COUNTS);
+    add_write_handler("reset_counts", write_handler, (void *)H_RESET_COUNTS, Handler::BUTTON);
     if (input_is_pull(0) && noutputs() == 0)
 	add_task_handlers(&_task);
 }

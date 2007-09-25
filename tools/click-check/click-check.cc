@@ -126,7 +126,9 @@ check_once(const RouterT *r, const char *filename,
   int before_warnings = errh->nwarnings();
 
   // get processing
-  ProcessingT p(r, &full_elementmap, errh);
+  ProcessingT p(r, &full_elementmap);
+  p.check_types(errh);
+  p.check(errh);
   // ... it will report errors as required
 
   if (print_ok_message && errh->nerrors() == before && errh->nwarnings() == before_warnings)
@@ -246,7 +248,7 @@ particular purpose.\n");
   if (!r || errh->nerrors() > 0)
     exit(1);
   if (file_is_expr)
-    router_file = "<expr>";
+    router_file = "config";
   else if (!router_file || strcmp(router_file, "-") == 0)
     router_file = "<stdin>";
 

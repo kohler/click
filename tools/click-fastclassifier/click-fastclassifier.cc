@@ -163,7 +163,7 @@ combine_classifiers(RouterT *router, ElementT *from, int from_port, ElementT *to
       new_words.push_back(from_words[from_port] + " " + to_words[i]);
   for (int i = from_port + 1; i < from_words.size(); i++)
     new_words.push_back(from_words[i]);
-  from->configuration() = cp_unargvec(new_words);
+  from->set_configuration(cp_unargvec(new_words));
 
   // change connections
   router->kill_connection(first_hop[from_port]);
@@ -347,11 +347,12 @@ static Vector<Classifier_Program> all_programs;
 static void
 change_landmark(ElementT *e)
 {
-  int colon = e->landmark().find_right(':');
-  if (colon >= 0)
-    e->set_landmark(e->landmark().substring(0, colon) + "<click-fastclassifier>" + e->landmark().substring(colon));
-  else
-    e->set_landmark(e->landmark() + "<click-fastclassifier>");
+    String lm = e->landmark();
+    int colon = lm.find_right(':');
+    if (colon >= 0)
+	e->set_landmark(LandmarkT(lm.substring(0, colon) + "<click-fastclassifier>" + lm.substring(colon)));
+    else
+	e->set_landmark(LandmarkT(lm + "<click-fastclassifier>"));
 }
 
 static void
@@ -359,7 +360,7 @@ copy_elements(RouterT *oldr, RouterT *newr, ElementClassT *type)
 {
   if (type)
     for (RouterT::type_iterator x = oldr->begin_elements(type); x; x++)
-      newr->get_element(x->name(), type, x->configuration(), "");
+	newr->get_element(x->name(), type, x->configuration(), x->landmarkt());
 }
 
 static RouterT *
@@ -381,7 +382,7 @@ classifiers_program(RouterT *r, const Vector<ElementT *> &classifiers)
 	ElementT *c = classifiers[i];
     
 	// add new classifier and connections to idle
-	ElementT *nc = nr->get_element(c->name(), c->type(), c->configuration(), c->landmark());
+	ElementT *nc = nr->get_element(c->name(), c->type(), c->configuration(), c->landmarkt());
   
 	nr->add_connection(idle, i, nc, 0);
 	// count number of output ports

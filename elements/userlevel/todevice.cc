@@ -298,7 +298,7 @@ ToDevice::add_handlers()
 {
   add_task_handlers(&_task);
 
-  add_read_handler("debug", read_param, (void *) H_DEBUG);
+  add_read_handler("debug", read_param, (void *) H_DEBUG, Handler::CHECKBOX);
   add_read_handler("pulls", read_param, (void *) H_PULLS);
   add_read_handler("signal", read_param, (void *) H_SIGNAL);
   add_read_handler("q", read_param, (void *) H_Q);

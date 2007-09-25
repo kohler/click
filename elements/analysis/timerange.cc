@@ -96,7 +96,7 @@ TimeRange::add_handlers()
     add_read_handler("last", read_handler, (void *)1);
     add_read_handler("range", read_handler, (void *)2);
     add_read_handler("interval", read_handler, (void *)3);
-    add_write_handler("reset", write_handler, (void *)0);
+    add_write_handler("reset", write_handler, (void *)0, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS

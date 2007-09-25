@@ -130,7 +130,7 @@ DelayShaper::write_param(const String &s, Element *e, void *, ErrorHandler *errh
 void
 DelayShaper::add_handlers()
 {
-    add_read_handler("delay", read_param, (void *)0);
+    add_read_handler("delay", read_param, (void *)0, Handler::CALM);
     add_write_handler("delay", write_param, (void *)0);
 }
 

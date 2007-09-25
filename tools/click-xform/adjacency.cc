@@ -225,7 +225,7 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
       // single element connected from (match[E1])[0]. Find it directly so we
       // don't have to scan over all elements in the input.
       PortT output(input_r->element(match[output_0_of[match_eindex]]), 0), result;
-      if (rover > 0 || !input_r->find_connection_from(output, result))
+      if (rover > 0 || !(result = input_r->find_connection_from(output)))
 	max_rover = -1;
       else {
 	rover = result.eindex();

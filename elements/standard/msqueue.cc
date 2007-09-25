@@ -145,7 +145,7 @@ void
 MSQueue::add_handlers()
 {
   add_read_handler("length", read_handler, (void *)0);
-  add_read_handler("capacity", read_handler, (void *)1);
+  add_read_handler("capacity", read_handler, (void *)1, Handler::CALM);
   add_read_handler("drops", read_handler, (void *)2);
 }
 

@@ -408,8 +408,8 @@ FastTCPFlows::add_handlers()
   add_read_handler("count", FastTCPFlows_read_count_handler, 0);
   add_read_handler("rate", FastTCPFlows_read_rate_handler, 0);
   add_write_handler("rate", FastTCPFlows_rate_write_handler, 0);
-  add_write_handler("reset", FastTCPFlows_reset_write_handler, 0);
-  add_write_handler("active", FastTCPFlows_active_write_handler, 0);
+  add_write_handler("reset", FastTCPFlows_reset_write_handler, 0, Handler::BUTTON);
+  add_write_handler("active", FastTCPFlows_active_write_handler, 0, Handler::CHECKBOX);
   add_write_handler("limit", FastTCPFlows_limit_write_handler, 0);
 }
 

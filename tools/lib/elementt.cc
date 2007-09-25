@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,15 +30,16 @@
 #include <stdlib.h>
 
 ElementT::ElementT()
-    : flags(0), _eindex(-1), _type(0), _tunnel_input(0), _tunnel_output(0),
-      _owner(0), _user_data(0)
+    : flags(0), _eindex(-1), _type(0), _resolved_type(0),
+      _resolved_type_status(0),
+      _tunnel_input(0), _tunnel_output(0), _owner(0), _user_data(0)
 {
 }
 
 ElementT::ElementT(const String &n, ElementClassT *eclass,
-		   const String &config, const String &lm)
-    : flags(0), _eindex(-1), _name(n),
-      _type(eclass), _configuration(config), _landmark(lm),
+		   const String &config, const LandmarkT &lm)
+    : flags(0), _eindex(-1), _name(n), _type(eclass), _resolved_type(0),
+      _resolved_type_status(0), _configuration(config), _landmark(lm),
       _ninputs(0), _noutputs(0), _tunnel_input(0), _tunnel_output(0),
       _owner(0), _user_data(0)
 {
@@ -48,18 +50,24 @@ ElementT::ElementT(const String &n, ElementClassT *eclass,
 
 ElementT::ElementT(const ElementT &o)
     : flags(o.flags), _eindex(-1), _name(o._name),
-      _type(o._type), _configuration(o._configuration), _landmark(o._landmark),
+      _type(o._type), _resolved_type(o._resolved_type),
+      _resolved_type_status(o._resolved_type_status),
+      _configuration(o._configuration), _landmark(o._landmark),
       _ninputs(0), _noutputs(0), _tunnel_input(0), _tunnel_output(0),
       _owner(0), _user_data(o._user_data)
 {
     if (_type)
 	_type->use();
+    if (_resolved_type)
+	_resolved_type->use();
 }
 
 ElementT::~ElementT()
 {
     if (_type)
 	_type->unuse();
+    if (_resolved_type)
+	_resolved_type->unuse();
 }
 
 bool
@@ -109,6 +117,51 @@ ElementT::redeclaration_error(ErrorHandler *errh, const char *what, String name,
     errh->lerror(old_landmark, "'%s' previously declared here", name.c_str());
 }
 
+ElementClassT *
+ElementT::resolved_type() const
+{
+    VariableEnvironment crapve(0);
+    return resolved_type(crapve);
+}
+
+ElementClassT *
+ElementT::resolved_type(VariableEnvironment &ve, ErrorHandler *errh) const
+{
+    if (!_type)
+	return 0;
+    if (_resolved_type
+	&& (!(_resolved_type_status & resolved_type_expand) || (!ve.depth() && !ve.size()))
+	&& (!(_resolved_type_status & resolved_type_error) || !errh))
+	return _resolved_type;
+
+    _resolved_type_status = 0;
+    if (!_type->need_resolve()) {
+	_resolved_type = _type;
+	_resolved_type->use();
+	return _resolved_type;
+    }
+
+    if (!errh)
+	errh = ErrorHandler::silent_handler();
+    if (find(_configuration, '$') != _configuration.end())
+	_resolved_type_status += resolved_type_expand;
+    Vector<String> conf;
+    cp_argvec(cp_expand(_configuration, ve), conf);
+    int before = errh->nerrors();
+    ElementClassT *t = _type->resolve(_ninputs, _noutputs, conf, errh, _landmark);
+    if (errh->nerrors() != before)
+	_resolved_type_status += resolved_type_error;
+    if (!t)
+	t = _type;
+    if (!(_resolved_type_status & resolved_type_expand) || (!ve.depth() && !ve.size())) {
+	_resolved_type = t;
+	_resolved_type->use();
+    }
+    return t;
+}
+
+
+const PortT PortT::null_port;
 
 int
 PortT::index_in(const Vector<PortT> &v, int start) const
@@ -173,12 +226,12 @@ ConnectionT::ConnectionT()
 {
 }
 
-ConnectionT::ConnectionT(const PortT &from, const PortT &to, const String &lm)
+ConnectionT::ConnectionT(const PortT &from, const PortT &to, const LandmarkT &lm)
     : _from(from), _to(to), _landmark(lm), _next_from(-1), _next_to(-1)
 {
 }
 
-ConnectionT::ConnectionT(const PortT &from, const PortT &to, const String &lm, int next_from, int next_to)
+ConnectionT::ConnectionT(const PortT &from, const PortT &to, const LandmarkT &lm, int next_from, int next_to)
     : _from(from), _to(to), _landmark(lm),
       _next_from(next_from), _next_to(next_to)
 {

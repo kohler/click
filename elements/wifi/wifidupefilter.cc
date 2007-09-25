@@ -165,7 +165,7 @@ WifiDupeFilter::add_handlers()
   add_read_handler("drops", WifiDupeFilter_read_param, (void *) H_DUPES);
 
   add_write_handler("debug", WifiDupeFilter_write_param, (void *) H_DEBUG);
-  add_write_handler("reset", WifiDupeFilter_write_param, (void *) H_RESET);
+  add_write_handler("reset", WifiDupeFilter_write_param, (void *) H_RESET, Handler::BUTTON);
 
   add_read_handler("stats", static_read_stats, 0);
 }

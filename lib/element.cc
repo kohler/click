@@ -688,6 +688,8 @@ notify_nports_pair(const char *&s, const char *ends, int &lo, int &hi)
 int
 Element::notify_nports(int ninputs, int noutputs, ErrorHandler *errh)
 {
+    // Another version of this function is in tools/lib/processingt.cc.
+    // Make sure you keep them in sync.
     const char *s_in = port_count();
     const char *s = s_in, *ends = s + strlen(s);
     int ninlo, ninhi, noutlo, nouthi, equal = 0;
@@ -983,6 +985,8 @@ next_flow_code(const char*& p, int port, Bitvector& code, ErrorHandler* errh, co
 void
 Element::port_flow(bool isoutput, int p, Bitvector* travels) const
 {
+    // Another version of this function is in tools/lib/processingt.cc.
+    // Make sure you keep them in sync.
     const char *f = flow_code();
     int nother = nports(!isoutput);
     if (p < 0 || p >= nports(isoutput)) {
@@ -1670,13 +1674,14 @@ Element::remove_select(int fd, int mask)
  *
  * @param name handler name
  * @param hook function called when handler is read
- * @param thunk user data parameter passed to @a hook
+ * @param user_data user data parameter passed to @a hook
+ * @param flags flags to set
  *
  * Adds a read handler named @a name for this element.  Reading the handler
  * returns the result of the @a hook function, which is called like this:
  *
  * @code
- * String result = hook(e, thunk);
+ * String result = hook(e, user_data);
  * @endcode
  *
  * @a e is this element pointer.
@@ -1690,22 +1695,23 @@ Element::remove_select(int fd, int mask)
  * @sa add_write_handler, set_handler, add_task_handlers
  */
 void
-Element::add_read_handler(const String &name, ReadHandlerHook hook, void *thunk)
+Element::add_read_handler(const String &name, ReadHandlerHook hook, void *user_data, uint32_t flags)
 {
-    Router::add_read_handler(this, name, hook, thunk);
+    Router::add_read_handler(this, name, hook, user_data, flags);
 }
 
 /** @brief Register a write handler named @a name.
  *
  * @param name handler name
  * @param hook function called when handler is written
- * @param thunk user data parameter passed to @a hook
+ * @param user_data user data parameter passed to @a hook
+ * @param flags flags to set
  *
  * Adds a write handler named @a name for this element.  Writing the handler
  * calls the @a hook function like this:
  *
  * @code
- * int r = hook(data, e, thunk, errh);
+ * int r = hook(data, e, user_data, errh);
  * @endcode
  *
  * @a e is this element pointer.  The return value @a r should be negative on
@@ -1721,9 +1727,9 @@ Element::add_read_handler(const String &name, ReadHandlerHook hook, void *thunk)
  * @sa add_read_handler, set_handler, add_task_handlers
  */
 void
-Element::add_write_handler(const String &name, WriteHandlerHook hook, void *thunk)
+Element::add_write_handler(const String &name, WriteHandlerHook hook, void *user_data, uint32_t flags)
 {
-    Router::add_write_handler(this, name, hook, thunk);
+    Router::add_write_handler(this, name, hook, user_data, flags);
 }
 
 /** @brief Register a comprehensive handler named @a name.
@@ -1731,8 +1737,8 @@ Element::add_write_handler(const String &name, WriteHandlerHook hook, void *thun
  * @param name handler name
  * @param flags handler flags
  * @param hook function called when handler is written
- * @param thunk1 user data parameter stored in the handler
- * @param thunk2 user data parameter stored in the handler
+ * @param user_data1 user data parameter stored in the handler
+ * @param user_data2 user data parameter stored in the handler
  *
  * Registers a comprehensive handler named @a name for this element.  The
  * handler handles the operations specified by @a flags, which can include
@@ -1762,9 +1768,9 @@ Element::add_write_handler(const String &name, WriteHandlerHook hook, void *thun
  * name).
  */
 void
-Element::set_handler(const String& name, int flags, HandlerHook hook, void* thunk1, void* thunk2)
+Element::set_handler(const String& name, int flags, HandlerHook hook, void* user_data1, void* user_data2)
 {
-    Router::set_handler(this, name, flags, hook, thunk1, thunk2);
+    Router::set_handler(this, name, flags, hook, user_data1, user_data2);
 }
 
 /** @brief Sets flags for the handler named @a name.
@@ -1825,8 +1831,26 @@ read_handlers_handler(Element *e, void *)
     StringAccum sa;
     for (int* hip = hindexes.begin(); hip < hindexes.end(); hip++) {
 	const Handler* h = Router::handler(e->router(), *hip);
-	if (h->read_visible() || h->write_visible())
-	    sa << h->name() << '\t' << (h->read_visible() ? "r" : "") << (h->write_visible() ? "w" : "") << '\n';
+	if (h->read_visible() || h->write_visible()) {
+	    sa << h->name() << '\t';
+	    if (h->read_visible())
+		sa << 'r';
+	    if (h->write_visible())
+		sa << 'w';
+	    if (h->read_param())
+		sa << '+';
+	    if (h->flags() & Handler::RAW)
+		sa << '%';
+	    if (h->flags() & Handler::CALM)
+		sa << '.';
+	    if (h->flags() & Handler::EXPENSIVE)
+		sa << '$';
+	    if (h->flags() & Handler::BUTTON)
+		sa << 'b';
+	    if (h->flags() & Handler::CHECKBOX)
+		sa << 'c';
+	    sa << '\n';
+	}
     }
     return sa.take_string();
 }
@@ -1879,13 +1903,13 @@ read_cycles_handler(Element *f, void *)
 void
 Element::add_default_handlers(bool allow_write_config)
 {
-  add_read_handler("class", read_class_handler, 0);
-  add_read_handler("name", read_name_handler, 0);
+  add_read_handler("name", read_name_handler, 0, Handler::CALM);
+  add_read_handler("class", read_class_handler, 0, Handler::CALM);
   add_read_handler("config", read_config_handler, 0);
   if (allow_write_config && can_live_reconfigure())
     add_write_handler("config", write_config_handler, 0);
-  add_read_handler("ports", read_ports_handler, 0);
-  add_read_handler("handlers", read_handlers_handler, 0);
+  add_read_handler("ports", read_ports_handler, 0, Handler::CALM);
+  add_read_handler("handlers", read_handlers_handler, 0, Handler::CALM);
 #if CLICK_STATS >= 1
   add_read_handler("icounts", read_icounts_handler, 0);
   add_read_handler("ocounts", read_ocounts_handler, 0);

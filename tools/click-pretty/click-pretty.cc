@@ -45,6 +45,8 @@
 #define DEFINE_OPT		309
 #define PACKAGE_URLS_OPT	310
 #define DOT_OPT			311
+#define GML_OPT			312
+#define GRAPHML_OPT		313
 
 #define FIRST_DRIVER_OPT	1000
 #define USERLEVEL_OPT		(1000 + Driver::USERLEVEL)
@@ -59,6 +61,8 @@ static Clp_Option options[] = {
     { "dot", 0, DOT_OPT, 0, 0 },
     { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
     { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+    { "gml", 0, GML_OPT, 0, 0 },
+    { "graphml", 0, GRAPHML_OPT, 0, 0 },
     { "help", 0, HELP_OPT, 0, 0 },
     { "kernel", 'k', LINUXMODULE_OPT, 0, 0 }, // DEPRECATED
     { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
@@ -67,7 +71,7 @@ static Clp_Option options[] = {
     { "template", 't', TEMPLATE_OPT, Clp_ArgString, 0 },
     { "userlevel", 0, USERLEVEL_OPT, 0, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
-    { "write-template", 0, WRITE_TEMPLATE_OPT, 0, Clp_Negate },
+    { "write-template", 0, WRITE_TEMPLATE_OPT, 0, 0 },
 };
 
 static String::Initializer string_initializer;
@@ -482,8 +486,6 @@ Try '%s --help' for more information.\n",
 	    program_name, program_name);
 }
 
-extern VariableEnvironment global_scope;
-
 static RouterT *
 pretty_read_router(const char *filename, bool file_is_expr,
 		   ErrorHandler *errh, String &config)
@@ -502,18 +504,15 @@ pretty_read_router(const char *filename, bool file_is_expr,
 
     // set readable filename
     if (file_is_expr)
-	filename = "<expr>";
+	filename = "config";
     else if (!filename || strcmp(filename, "-") == 0)
 	filename = "<stdin>";
 
     // check for archive
     Vector<ArchiveElement> archive;
     if (config.length() && config[0] == '!') {
-	separate_ar_string(config, archive, errh);
-	int found = -1;
-	for (int i = 0; i < archive.size(); i++)
-	    if (archive[i].name == "config")
-		found = i;
+	ArchiveElement::parse(config, archive, errh);
+	int found = ArchiveElement::arindex(archive, "config");
 	if (found >= 0)
 	    config = archive[found].data;
 	else {
@@ -532,15 +531,8 @@ pretty_read_router(const char *filename, bool file_is_expr,
 	errh->warning("%s: empty configuration", filename);
     LexerT lexer(ErrorHandler::silent_handler(), false);
     PrettyLexerTInfo pinfo(config);
-    lexer.reset(config, filename);
+    lexer.reset(config, archive, filename);
     lexer.set_lexinfo(&pinfo);
-
-    // add archive bits first
-    if (lexer.router() && archive.size()) {
-	for (int i = 0; i < archive.size(); i++)
-	    if (archive[i].live() && archive[i].name != "config")
-		lexer.router()->add_archive(archive[i]);
-    }
 
     // read statements
     while (lexer.ystatement())
@@ -735,7 +727,7 @@ ElementsOutput::ElementsOutput(RouterT *r, const ProcessingT &processing, const 
 	if (do_elements)
 	    _entries.push_back(x);
 	if (do_types && done_types[x->type()] < 0) {
-	    ElementT *fake = new ElementT(x->type_name(), x->type(), "", type_landmark);
+	    ElementT *fake = new ElementT(x->type_name(), x->type(), "", LandmarkT(type_landmark));
 	    _entries.push_back(fake);
 	    done_types.insert(x->type(), 1);
 	}
@@ -1045,29 +1037,10 @@ pretty_process(const char *infile, bool file_is_expr, const char *outfile,
     // get element map and processing
     ElementMap emap;
     emap.parse_all_files(r, CLICK_DATADIR, errh);
-
-    int driver = specified_driver;
-    if (driver < 0) {
-	int driver_mask = 0;
-	for (int d = 0; d < Driver::COUNT; d++)
-	    if (emap.driver_compatible(r, d))
-		driver_mask |= 1 << d;
-	if (driver_mask == 0)
-	    errh->warning("configuration not compatible with any driver");
-	else {
-	    for (int d = Driver::COUNT - 1; d >= 0; d--)
-		if (driver_mask & (1 << d))
-		    driver = d;
-	    // don't complain if only a single driver works
-	    if ((driver_mask & (driver_mask - 1)) != 0
-		&& !emap.driver_indifferent(r, driver_mask, errh))
-		errh->warning("configuration not indifferent to driver, picking %s\n(You might want to specify a driver explicitly.)", Driver::name(driver));
-	}
-    } else if (!emap.driver_compatible(r, driver))
-	errh->warning("configuration not compatible with %s driver", Driver::name(driver));
-
-    emap.set_driver(driver);
-    ProcessingT processing(r, &emap, errh);
+    emap.set_driver(emap.pick_driver(specified_driver, r, errh));
+    ProcessingT processing(r, &emap);
+    processing.check_types(errh);
+    processing.check(errh);
 
     ElementMap::push_default(&emap);
     
@@ -1106,6 +1079,7 @@ pretty_process_dot(const char *infile, bool file_is_expr, const char *outfile,
 
     // print all nodes
     for (RouterT::const_iterator n = r->begin_elements(); n != r->end_elements(); n++) {
+#if 1
 	fprintf(outf, "  \"%s\" [label=\"", n->name_c_str());
 	if (n->ninputs() || n->noutputs())
 	    fprintf(outf, "{");
@@ -1125,6 +1099,28 @@ pretty_process_dot(const char *infile, bool file_is_expr, const char *outfile,
 	if (n->ninputs() || n->noutputs())
 	    fprintf(outf, "}");
 	fprintf(outf, "\"];\n");
+#else
+	if (!n->ninputs() && !n->noutputs())
+	    fprintf(outf, "  \"%s\" [label=\"%s\"];\n",
+		    n->name_c_str(), n->type_name_c_str());
+	else {
+	    fprintf(outf, "  \"%s\" [label=< <TABLE BORDER=\"0\">", n->name_c_str());
+	    if (n->ninputs() > 0) {
+		fprintf(outf, "<TR><TD><TABLE BORDER=\"0\"><TR>");
+		for (int i = 0; i < n->ninputs(); i++)
+		    fprintf(outf, "<TD PORT=\"i%d\">X</TD>", i);
+		fprintf(outf, "</TR></TABLE></TD></TR>");
+	    }
+	    fprintf(outf, "<TR><TD>%s</TD></TR>", n->type_name_c_str());
+	    if (n->noutputs() > 0) {
+		fprintf(outf, "<TR><TD><TABLE BORDER=\"0\"><TR>");
+		for (int i = 0; i < n->noutputs(); i++)
+		    fprintf(outf, "<TD PORT=\"o%d\">X</TD>", i);
+		fprintf(outf, "</TR></TABLE></TD></TR>");
+	    }
+	    fprintf(outf, "</TABLE> >];\n");
+	}
+#endif
     }
 
     // print all connections
@@ -1135,6 +1131,113 @@ pretty_process_dot(const char *infile, bool file_is_expr, const char *outfile,
 		c->to_element()->name_c_str(), c->to_port());
 
     fprintf(outf, "}\n");
+
+    // close files, return
+    if (outf != stdout)
+	fclose(outf);
+    delete r;
+}
+
+static void
+pretty_process_gml(const char *infile, bool file_is_expr, const char *outfile,
+		   ErrorHandler *errh)
+{
+    RouterT *r = read_router(infile, file_is_expr, errh);
+    if (!r)
+	return;
+
+    // open output file
+    FILE *outf = open_output_file(outfile, errh);
+    if (!outf) {
+	delete r;
+	return;
+    }
+
+    // write dot configuration
+    fprintf(outf, "Creator \"click-pretty\"\n\
+graph\n[ hierarchic 1\n\
+  directed 1\n");
+
+    // print all nodes
+    for (RouterT::const_iterator n = r->begin_elements(); n != r->end_elements(); n++)
+	fprintf(outf, "  node\n  [ id %d\n    label \"%s\"\n  ]\n", n->eindex(), n->name().c_str());
+
+    // print all connections
+    const Vector<ConnectionT> &conns = r->connections();
+    for (const ConnectionT *c = conns.begin(); c != conns.end(); c++) {
+	fprintf(outf, "  edge\n  [ source %d\n    target %d\n", c->from_eindex(), c->to_eindex());
+
+	double amt_from = 1. / c->from_element()->noutputs();
+	double first_from = -(c->from_element()->noutputs() - 1.) * amt_from;
+	double amt_to = 1. / c->to_element()->ninputs();
+	double first_to = -(c->to_element()->ninputs() - 1.) * amt_to;
+	fprintf(outf, "    edgeAnchor\n    [ xSource %f\n      xTarget %f\n      ySource 1\n      yTarget -1\n    ]\n", first_from + c->from_port() * amt_from, first_to + c->to_port() * amt_to);
+	fprintf(outf, "  ]\n");
+    }
+
+    fprintf(outf, "]\n");
+
+    // close files, return
+    if (outf != stdout)
+	fclose(outf);
+    delete r;
+}
+
+static void
+pretty_process_graphml(const char *infile, bool file_is_expr, const char *outfile,
+		       ErrorHandler *errh)
+{
+    RouterT *r = read_router(infile, file_is_expr, errh);
+    if (!r)
+	return;
+
+    // get element map and processing
+    ElementMap emap;
+    emap.parse_all_files(r, CLICK_DATADIR, errh);
+    emap.set_driver(emap.pick_driver(specified_driver, r, errh));
+    ProcessingT processing(r, &emap);
+    processing.check_types(errh);
+    processing.check(errh);
+
+    // open output file
+    FILE *outf = open_output_file(outfile, errh);
+    if (!outf) {
+	delete r;
+	return;
+    }
+
+    // write dot configuration
+    fprintf(outf, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
+<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">\n\
+<key id=\"kn\" for=\"node\" attr.name=\"name\" attr.type=\"string\" />\n\
+<key id=\"kc\" for=\"node\" attr.name=\"class\" attr.type=\"string\" />\n\
+<key id=\"kp\" for=\"port\" attr.name=\"processing\" attr.type=\"string\">\n\
+  <default>a</default>\n\
+</key>\n\
+<graph id=\"G\" edgedefault=\"directed\">\n");
+
+    // print all nodes
+    int nodeid = 0;
+    for (RouterT::iterator n = r->begin_elements(); n != r->end_elements(); n++) {
+	fprintf(outf, "  <node id=\"n%d\" parse.indegree=\"%d\" parse.outdegree=\"%d\">\n\
+    <data key=\"kn\">%s</data> <data key=\"kc\">%s</data>\n",
+		nodeid++, n->ninputs(), n->noutputs(), n->name().c_str(),
+		n->type_name().c_str());
+	for (int i = 0; i < n->ninputs(); i++)
+	    fprintf(outf, "    <port name=\"i%d\"> <data key=\"kp\">%c</data> </port>\n", i, processing.decorated_input_processing_letter(PortT(n.operator->(), i)));
+	for (int i = 0; i < n->noutputs(); i++)
+	    fprintf(outf, "    <port name=\"o%d\"> <data key=\"kp\">%c</data> </port>\n", i, processing.decorated_output_processing_letter(PortT(n.operator->(), i)));
+	fprintf(outf, "  </node>\n");
+    }
+
+    // print all connections
+    int edgeid = 0;
+    const Vector<ConnectionT> &conns = r->connections();
+    for (const ConnectionT *c = conns.begin(); c != conns.end(); c++)
+	fprintf(outf, "  <edge id=\"e%d\" source=\"n%d\" target=\"n%d\" sourceport=\"o%d\" targetport=\"i%d\" />\n",
+		edgeid++, c->from_eindex(), c->to_eindex(), c->from_port(), c->to_port());
+
+    fprintf(outf, "</graph>\n</graphml>\n");
 
     // close files, return
     if (outf != stdout)
@@ -1163,7 +1266,9 @@ Options:\n\
   -b, --bsdmodule             Prefer FreeBSD kernel module elements.\n\
       --userlevel             Prefer user-level driver elements.\n\
       --write-template        Write template as is, without including router.\n\
-      --dot                   Output a 'dot' graph definition instead of HTML.\n\
+      --dot                   Output a 'dot' graph definition.\n\
+      --gml                   Output a GML graph definition.\n\
+      --graphml               Output a GraphML XML graph definition.\n\
   -C, --clickpath PATH        Use PATH for CLICKPATH.\n\
       --help                  Print this message and exit.\n\
   -v, --version               Print version number and exit.\n\
@@ -1189,8 +1294,7 @@ main(int argc, char **argv)
     bool file_is_expr = false;
     const char *output_file = 0;
     String html_template = default_template;
-    bool write_template = false;
-    bool dot = false;
+    int action = 0;
 
     while (1) {
 	int opt = Clp_Next(clp);
@@ -1244,10 +1348,6 @@ particular purpose.\n");
 	      break;
 	  }
 
-	  case WRITE_TEMPLATE_OPT:
-	    write_template = !clp->negated;
-	    break;
-
 	  case ROUTER_OPT:
 	  case EXPRESSION_OPT:
 	  router_file:
@@ -1282,8 +1382,15 @@ particular purpose.\n");
 	    specified_driver = opt - FIRST_DRIVER_OPT;
 	    break;
 
+	  case WRITE_TEMPLATE_OPT:
 	  case DOT_OPT:
-	    dot = true;
+	  case GML_OPT:
+	  case GRAPHML_OPT:
+	    if (action) {
+		p_errh->error("action specified twice");
+		goto bad_option;
+	    }
+	    action = opt;
 	    break;
 
 	  bad_option:
@@ -1299,13 +1406,17 @@ particular purpose.\n");
     }
 
   done:
-    if (write_template) {
+    if (action == WRITE_TEMPLATE_OPT) {
 	if (FILE *f = open_output_file(output_file, errh)) {
 	    fputs(html_template.c_str(), f);
 	    fclose(f);
 	}
-    } else if (dot)
+    } else if (action == DOT_OPT)
 	pretty_process_dot(router_file, file_is_expr, output_file, errh);
+    else if (action == GML_OPT)
+	pretty_process_gml(router_file, file_is_expr, output_file, errh);
+    else if (action == GRAPHML_OPT)
+	pretty_process_graphml(router_file, file_is_expr, output_file, errh);
     else
 	pretty_process(router_file, file_is_expr, output_file, html_template.c_str(), errh);
 	

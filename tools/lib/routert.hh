@@ -12,7 +12,7 @@ typedef HashMap<String, int> StringMap;
 class RouterT : public ElementClassT { public:
 
     RouterT();
-    RouterT(const String &name, const String &landmark, RouterT *declaration_scope = 0);
+    RouterT(const String &name, const LandmarkT &landmark, RouterT *declaration_scope = 0);
     virtual ~RouterT();
 
     // ELEMENTS
@@ -21,7 +21,8 @@ class RouterT : public ElementClassT { public:
     
     inline const ElementT *element(const String &) const;
     inline ElementT *element(const String &);
-    int eindex(const String &s) const	{ return _element_name_map[s]; }
+    int eindex(const String &name) const { return _element_name_map[name]; }
+    bool element_path(const String &name, Vector<ElementT *> &path) const;
     
     const ElementT *element(int i) const{ return _elements[i]; }
     ElementT *element(int i)		{ return _elements[i]; }
@@ -43,8 +44,8 @@ class RouterT : public ElementClassT { public:
     inline ElementClassT *etype(int) const;
     inline String etype_name(int) const;
     
-    ElementT *get_element(const String &name, ElementClassT *, const String &configuration, const String &landmark);
-    ElementT *add_anon_element(ElementClassT *, const String &configuration = String(), const String &landmark = String());
+    ElementT *get_element(const String &name, ElementClassT *, const String &configuration, const LandmarkT &landmark);
+    ElementT *add_anon_element(ElementClassT *, const String &configuration = String(), const LandmarkT &landmark = LandmarkT::empty_landmark());
     void change_ename(int, const String &);
     void deanonymize_elements();
     void free_element(ElementT *);
@@ -67,10 +68,18 @@ class RouterT : public ElementClassT { public:
     const ConnectionT &connection(int c) const	{ return _conn[c]; }
     bool connection_live(int c) const		{ return _conn[c].live(); }
 
-    void add_tunnel(const String &, const String &, const String &, ErrorHandler *);
+    class conn_iterator;
+    conn_iterator begin_connections() const;
+    conn_iterator end_connections() const;
+    conn_iterator begin_connections_from(const PortT &port) const;
+    conn_iterator begin_connections_from(ElementT *e) const;
+    conn_iterator begin_connections_to(const PortT &port) const;
+    conn_iterator begin_connections_to(ElementT *e) const;
+    
+    void add_tunnel(const String &namein, const String &nameout, const LandmarkT &, ErrorHandler *);
 
-    bool add_connection(const PortT &, const PortT &, const String &landmark = String());
-    inline bool add_connection(ElementT *, int, ElementT *, int, const String &landmark = String());
+    bool add_connection(const PortT &, const PortT &, const LandmarkT &landmark = LandmarkT::empty_landmark());
+    inline bool add_connection(ElementT *, int, ElementT *, int, const LandmarkT &landmark = LandmarkT::empty_landmark());
     void kill_connection(int);
     void kill_bad_connections();
     void compact_connections();
@@ -79,9 +88,13 @@ class RouterT : public ElementClassT { public:
     int find_connection(const PortT &, const PortT &) const;
     void change_connection_to(int, PortT);
     void change_connection_from(int, PortT);
-    bool find_connection_from(const PortT &, PortT &) const;
+    int find_connection_id_from(const PortT &) const;
+    inline const PortT &find_connection_from(const PortT &) const;
+    void find_connections_from(ElementT *, Vector<int> &) const;
     void find_connections_from(const PortT &, Vector<PortT> &) const;
     void find_connections_from(const PortT &, Vector<int> &) const;
+    int find_connection_id_to(const PortT &) const;
+    inline const PortT &find_connection_to(const PortT &) const;
     void find_connections_to(const PortT &, Vector<PortT> &) const;
     void find_connections_to(const PortT &, Vector<int> &) const;
     void find_connection_vector_from(ElementT *, Vector<int> &) const;
@@ -91,7 +104,7 @@ class RouterT : public ElementClassT { public:
     bool insert_after(const PortT &, const PortT &);
     inline bool insert_before(ElementT *, const PortT &);
     inline bool insert_after(ElementT *, const PortT &);
-
+    
     // REQUIREMENTS
     void add_requirement(const String &);
     void remove_requirement(const String &);
@@ -121,6 +134,8 @@ class RouterT : public ElementClassT { public:
     void expand_into(RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
     void flatten(ErrorHandler *, bool expand_vars = false);
 
+    static void flatten_path(const Vector<ElementT *> &path, String &name, String &config);
+
     // UNPARSING
     void unparse(StringAccum &, const String & = String()) const;
     void unparse_requirements(StringAccum &, const String & = String()) const;
@@ -130,7 +145,9 @@ class RouterT : public ElementClassT { public:
     String configuration_string() const;
 
     // COMPOUND ELEMENTS
-    String landmark() const		{ return _type_landmark; }
+    String landmark() const		{ return _type_landmark.str(); }
+    String decorated_landmark() const	{ return _type_landmark.decorated_str(); }
+    void set_landmarkt(const LandmarkT &l) { _type_landmark = l; }
     const ElementTraits *find_traits() const;
     
     bool primitive() const		{ return false; }
@@ -148,7 +165,8 @@ class RouterT : public ElementClassT { public:
 
     int finish_type(ErrorHandler *);
     
-    ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const String &landmark);
+    bool need_resolve() const;
+    ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const LandmarkT &landmark);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
 
     String unparse_signature() const;
@@ -205,7 +223,7 @@ class RouterT : public ElementClassT { public:
     int _noutputs;
     bool _scope_order_error : 1;
     ElementClassT *_overload_type;
-    String _type_landmark;
+    LandmarkT _type_landmark;
     mutable ElementTraits _traits;
     bool _circularity_flag;
     
@@ -224,6 +242,7 @@ class RouterT : public ElementClassT { public:
     int assign_arguments(const Vector<String> &, Vector<String> *) const;
 
     friend class RouterUnparserT;
+    friend class conn_iterator;
     
 };
 
@@ -281,6 +300,21 @@ class RouterT::type_iterator : public RouterT::const_type_iterator { public:
     friend class RouterT;
 };
 
+class RouterT::conn_iterator { public:
+    inline void operator++(int);
+    inline void operator++();
+    operator const ConnectionT &() const	{ return *_conn; }
+    const ConnectionT *operator->() const	{ return _conn; }
+    const ConnectionT &operator*() const	{ return *_conn; }
+  private:
+    const ConnectionT *_conn;
+    int _by;
+    conn_iterator()			: _conn(0), _by(0) { }
+    conn_iterator(const ConnectionT *conn, int by) : _conn(conn), _by(by) { }
+    void complex_step(const RouterT *);
+    friend class RouterT;
+};
+
 
 inline RouterT::iterator
 RouterT::begin_elements()
@@ -331,6 +365,41 @@ RouterT::const_type_iterator::operator++()
     (*this)++;
 }
 
+inline RouterT::conn_iterator
+RouterT::begin_connections() const
+{
+    if (_conn.size())
+	return conn_iterator(_conn.begin(), 0);
+    else
+	return conn_iterator();
+}
+
+inline RouterT::conn_iterator
+RouterT::end_connections() const
+{
+    return conn_iterator();
+}
+
+inline void
+RouterT::conn_iterator::operator++(int)
+{
+    if (_conn) {
+	const RouterT *r = _conn->router();
+	if (_by == 0)
+	    ++_conn;
+	else
+	    complex_step(r);
+	if (_conn == r->_conn.end())
+	    _conn = 0;
+    }
+}
+
+inline void
+RouterT::conn_iterator::operator++()
+{
+    (*this)++;
+}
+
 inline const ElementT *
 RouterT::element(const String &s) const
 {
@@ -371,7 +440,7 @@ RouterT::declared_type(const String &name) const
 
 inline bool
 RouterT::add_connection(ElementT *from_elt, int from_port, ElementT *to_elt,
-			int to_port, const String &landmark)
+			int to_port, const LandmarkT &landmark)
 {
     return add_connection(PortT(from_elt, from_port), PortT(to_elt, to_port), landmark);
 }
@@ -380,6 +449,20 @@ inline bool
 RouterT::has_connection(const PortT &hfrom, const PortT &hto) const
 {
     return find_connection(hfrom, hto) >= 0;
+}
+
+inline const PortT &
+RouterT::find_connection_from(const PortT &h) const
+{
+    int c = find_connection_id_from(h);
+    return (c >= 0 ? _conn[c].to() : PortT::null_port);
+}
+
+inline const PortT &
+RouterT::find_connection_to(const PortT &h) const
+{
+    int c = find_connection_id_to(h);
+    return (c >= 0 ? _conn[c].from() : PortT::null_port);
 }
 
 inline bool
@@ -455,6 +538,18 @@ operator==(const RouterT::const_type_iterator &i, const RouterT::const_iterator 
 
 inline bool
 operator!=(const RouterT::const_type_iterator &i, const RouterT::const_iterator &j)
+{
+    return i.operator->() != j.operator->();
+}
+
+inline bool
+operator==(const RouterT::conn_iterator &i, const RouterT::conn_iterator &j)
+{
+    return i.operator->() == j.operator->();
+}
+
+inline bool
+operator!=(const RouterT::conn_iterator &i, const RouterT::conn_iterator &j)
 {
     return i.operator->() != j.operator->();
 }

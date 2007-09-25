@@ -6,7 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
- * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2004-2007 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +32,7 @@
 static LexerTInfo *stub_lexinfo = 0;
 
 LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
-  : _data(0), _end(0), _pos(0), _lineno(1),
+  : _data(0), _end(0), _pos(0), _lineno(1), _lset(0),
     _ignore_line_directives(ignore_line_directives),
     _tpos(0), _tfull(0), _router(0), _base_type_map(0), _errh(errh)
 {
@@ -47,10 +47,12 @@ LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
 LexerT::~LexerT()
 {
     clear();
+    _router->unuse();
+    _lset->unref();
 }
 
 void
-LexerT::reset(const String &data, const String &filename)
+LexerT::reset(const String &data, const Vector<ArchiveElement> &archive, const String &filename)
 {
     clear();
   
@@ -58,14 +60,14 @@ LexerT::reset(const String &data, const String &filename)
     _data = _pos = _big_string.begin();
     _end = _big_string.end();
 
-    if (!filename)
-	_filename = "line ";
-    else if (filename.back() != ':' && !isspace(filename.back()))
-	_filename = filename + ":";
-    else
-	_filename = filename;
-    _original_filename = _filename;
+    _original_filename = _filename = filename;
     _lineno = 1;
+    _lset->new_line(0, _filename, _lineno);
+
+    // provide archive elements
+    for (int i = 0; i < archive.size(); i++)
+	if (archive[i].live() && archive[i].name != "config")
+	    _router->add_archive(archive[i]);
 }
 
 void
@@ -73,8 +75,11 @@ LexerT::clear()
 {
     if (_router)
 	_router->unuse();
+    if (_lset)
+	_lset->unref();
     _router = new RouterT();
     _router->use();		// hold a reference to the router
+    _lset = new LandmarkSetT();
 
     _big_string = "";
     // _data was freed by _big_string
@@ -88,6 +93,7 @@ LexerT::clear()
 
     _base_type_map.clear();
     _anonymous_offset = 0;
+    _anonymous_class_count = 0;
 }
 
 void
@@ -218,9 +224,9 @@ LexerT::process_line_directive(const char *s)
     for (s++; s < _end && *s != '\"' && *s != '\n' && *s != '\r'; s++)
       if (*s == '\\' && s + 1 < _end && s[1] != '\n' && s[1] != '\r')
 	s++;
-    _filename = cp_unquote(_big_string.substring(first_in_filename, s) + "\":");
+    _filename = cp_unquote(_big_string.substring(first_in_filename, s) + "\"");
     // an empty filename means return to the input file's name
-    if (_filename == ":")
+    if (_filename == "")
       _filename = _original_filename;
   }
 
@@ -238,19 +244,21 @@ LexerT::next_lexeme()
   const char *s = _pos;
   while (true) {
     while (s < _end && isspace(*s)) {
-      if (*s == '\n')
+      if (*s == '\n') {
 	_lineno++;
-      else if (*s == '\r') {
+	_lset->new_line(s + 1 - _big_string.begin(), _filename, _lineno);
+      } else if (*s == '\r') {
 	if (s + 1 < _end && s[1] == '\n')
 	  s++;
 	_lineno++;
+	_lset->new_line(s + 1 - _big_string.begin(), _filename, _lineno);
       }
       s++;
     }
     const char *opos = s;
     if (s >= _end) {
       _pos = _end;
-      return Lexeme();
+      return Lexeme(lexEOF, String(), _pos);
     } else if (*s == '/' && s + 1 < _end) {
       if (s[1] == '/')
 	s = skip_line(s + 2);
@@ -341,12 +349,14 @@ LexerT::lex_config()
       paren_depth--;
       if (!paren_depth)
 	break;
-    } else if (*s == '\n')
+    } else if (*s == '\n') {
       _lineno++;
-    else if (*s == '\r') {
+      _lset->new_line(s + 1 - _big_string.begin(), _filename, _lineno);
+    } else if (*s == '\r') {
       if (s + 1 < _end && s[1] == '\n')
 	s++;
       _lineno++;
+      _lset->new_line(s + 1 - _big_string.begin(), _filename, _lineno);
     } else if (*s == '/' && s + 1 < _end) {
       if (s[1] == '/')
 	s = skip_line(s + 2) - 1;
@@ -461,7 +471,10 @@ LexerT::next_pos() const
 String
 LexerT::landmark() const
 {
-    return _filename + String(_lineno);
+    if (_filename && _filename.back() != ':' && !isspace((unsigned char) _filename.back()))
+	return _filename + ":" + String(_lineno);
+    else
+	return _filename + String(_lineno);
 }
 
 void
@@ -540,7 +553,7 @@ LexerT::anon_element_name(const String &class_name) const
 
 int
 LexerT::make_element(String name, const Lexeme &location, const char *decl_pos2,
-		     ElementClassT *type, const String &conf, const String &lm)
+		     ElementClassT *type, const String &conf)
 {
     // check 'name' for validity
     for (int i = 0; i < name.length(); i++) {
@@ -553,21 +566,21 @@ LexerT::make_element(String name, const Lexeme &location, const char *decl_pos2,
 	    break;
 	}
     }
-    ElementT *e = _router->get_element(name, type, conf, lm ? lm : landmark());
-    _lexinfo->notify_element_declaration(e, location.pos1(), location.pos2(), (decl_pos2 < 0 ? location.pos2() : decl_pos2));
+    const char *end_decl = (decl_pos2 ? decl_pos2 : location.pos2());
+    ElementT *e = _router->get_element(name, type, conf, landmarkt(location.pos1(), location.pos2()));
+    _lexinfo->notify_element_declaration(e, location.pos1(), location.pos2(), end_decl);
     return e->eindex();
 }
 
 int
 LexerT::make_anon_element(const Lexeme &what, const char *decl_pos2,
-			  ElementClassT *type, const String &conf,
-			  const String &lm)
+			  ElementClassT *type, const String &conf)
 {
-    return make_element(anon_element_name(type->name()), what, decl_pos2, type, conf, lm);
+    return make_element(anon_element_name(type->name()), what, decl_pos2, type, conf);
 }
 
 void
-LexerT::connect(int element1, int port1, int port2, int element2)
+LexerT::connect(int element1, int port1, int port2, int element2, const char *pos1, const char *pos2)
 {
     if (port1 < 0)
 	port1 = 0;
@@ -575,7 +588,7 @@ LexerT::connect(int element1, int port1, int port2, int element2)
 	port2 = 0;
     _router->add_connection
 	(PortT(_router->element(element1), port1),
-	 PortT(_router->element(element2), port2), landmark());
+	 PortT(_router->element(element2), port2), landmarkt(pos1, pos2));
 }
 
 
@@ -585,11 +598,12 @@ bool
 LexerT::yport(int &port, const char *&pos1, const char *&pos2)
 {
     const Lexeme &tlbrack = lex();
+    pos1 = tlbrack.pos1();
     if (!tlbrack.is('[')) {
 	unlex(tlbrack);
+	pos2 = pos1;
 	return false;
     }
-    pos1 = tlbrack.pos1();
 
     const Lexeme &tword = lex();
     if (tword.is(lexIdent)) {
@@ -638,10 +652,8 @@ LexerT::yelement(int &element, bool comma_ok)
     }
     
     Lexeme configuration;
-    String lm;
     const Lexeme &tparen = lex();
     if (tparen.is('(')) {
-	lm = landmark();	// report landmark from before config string
 	if (!etype)
 	    etype = force_element_type(tname);
 	configuration = lex_config();
@@ -651,7 +663,7 @@ LexerT::yelement(int &element, bool comma_ok)
 	unlex(tparen);
 
     if (etype)
-	element = make_anon_element(tname, decl_pos2, etype, configuration.string(), lm);
+	element = make_anon_element(tname, decl_pos2, etype, configuration.string());
     else {
 	const Lexeme &t2colon = lex();
 	unlex(t2colon);
@@ -663,7 +675,7 @@ LexerT::yelement(int &element, bool comma_ok)
 	    if (element < 0) {
 		// assume it's an element type
 		etype = force_element_type(tname);
-		element = make_anon_element(tname, tname.pos2(), etype, configuration.string(), lm);
+		element = make_anon_element(tname, tname.pos2(), etype, configuration.string());
 	    } else
 		_lexinfo->notify_element_reference(_router->element(element), tname.pos1(), tname.pos2());
 	}
@@ -703,7 +715,6 @@ LexerT::ydeclaration(const Lexeme &first_element)
 	}
     }
 
-    String lm = landmark();
     ElementClassT *etype;
     Lexeme etypet = lex();
     if (etypet.is(lexIdent))
@@ -732,7 +743,7 @@ LexerT::ydeclaration(const Lexeme &first_element)
 	else if (_router->declared_type(name) || _base_type_map[name])
 	    lerror(decls[i], "class '%s' used as element name", name.c_str());
 	else
-	    make_element(name, decls[i], decl_pos2, etype, configuration.string(), lm);
+	    make_element(name, decls[i], decl_pos2, etype, configuration.string());
     }
 }
 
@@ -740,15 +751,16 @@ bool
 LexerT::yconnection()
 {
     int element1 = -1, port1 = -1;
-    const char *port1_pos1 = 0, *port1_pos2 = 0;
+    const char *last_element_pos = next_pos(), *port1_pos1 = 0, *port1_pos2 = 0;
     Lexeme t;
 
     while (true) {
 	int element2, port2 = -1;
-	const char *port2_pos1, *port2_pos2;
+	const char *port2_pos1, *port2_pos2, *next_element_pos;
 
 	// get element
 	yport(port2, port2_pos1, port2_pos2);
+	next_element_pos = next_pos();
 	if (!yelement(element2, element1 < 0)) {
 	    if (port1 >= 0)
 		lerror(port1_pos1, port1_pos2, "output port useless at end of chain");
@@ -756,11 +768,13 @@ LexerT::yconnection()
 	}
 
 	if (element1 >= 0)
-	    connect(element1, port1, port2, element2);
+	    connect(element1, port1, port2, element2, last_element_pos, next_pos());
 	else if (port2 >= 0)
 	    lerror(port2_pos1, port2_pos2, "input port useless at start of chain");
     
 	port1 = -1;
+	port1_pos1 = port1_pos2 = 0;
+	last_element_pos = next_element_pos;
     
       relex:
 	t = lex();
@@ -862,7 +876,7 @@ LexerT::ytunnel()
     }
   
     if (tname1.is(lexIdent) && tname2.is(lexIdent))
-	_router->add_tunnel(tname1.string(), tname2.string(), landmark(), _errh);
+	_router->add_tunnel(tname1.string(), tname2.string(), landmarkt(tname1.pos1(), tname2.pos2()), _errh);
 }
 
 void
@@ -937,6 +951,9 @@ ElementClassT *
 LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 {
     bool anonymous = (name.length() == 0);
+    String printable_name = name;
+    if (anonymous)
+	printable_name = "<anonymous" + String(++_anonymous_class_count) + ">";
 
     // '{' was already read
     RouterT *old_router = _router;
@@ -945,6 +962,7 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
     RouterT *first = 0, *last = 0;
     ElementClassT *extension = 0;
 
+    const char *class_pos1 = name_pos1;
     const char *pos2 = name_pos1;
     
     while (1) {
@@ -968,7 +986,8 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 	unlex(dots);
 
 	// create a compound
-	RouterT *compound_class = new RouterT(name, landmark(), old_router);
+	RouterT *compound_class = new RouterT(name, landmarkt(class_pos1, dots.pos1()), old_router);
+	compound_class->set_printable_name(printable_name);
 	_router = compound_class->cast_router();
 	_anonymous_offset = 2;
 
@@ -986,6 +1005,8 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 
 	// check for '||' or '}'
 	const Lexeme &t = lex();
+	compound_class->set_landmarkt(landmarkt(class_pos1, t.pos2()));
+	class_pos1 = t.pos1();
 	if (!t.is(lex2Bar)) {
 	    pos2 = t.pos2();
 	    break;
