@@ -117,11 +117,8 @@ class ClickyDiagram { public:
 	elt *_next_htype_click;
 	int _row;
 	int _rowpos;
-	
-	double _local_x;
-	double _local_y;
-	double _drag_x;
-	double _drag_y;
+
+	rectangle _xrect;
 
 	double _name_raw_width;
 	double _name_raw_height;
@@ -148,6 +145,7 @@ class ClickyDiagram { public:
 	void layout(ClickyDiagram *, PangoLayout *);
 
 	void finish(const eltstyle &es, double dx, double dy, rect_search<ink> &rects);
+	void finish_compound(const eltstyle &es);
 	
 	void remove(rect_search<ink> &rects, rectangle &rect);
 	void insert(rect_search<ink> &rects, const eltstyle &style, rectangle &rect);
@@ -191,9 +189,18 @@ class ClickyDiagram { public:
     PangoAttrList *_name_attrs;
     PangoAttrList *_class_attrs;
 
+    enum { c_c = 0, c_top = 1, c_bot = 2,
+	   c_lft = 3 + c_c, c_ulft = c_lft + c_top, c_llft = c_lft + c_bot,
+	   c_rt = 6 + c_c, c_urt = c_rt + c_top, c_lrt = c_rt + c_bot };
+    GdkCursor *_dir_cursor[9];
+
+    int _last_cursorno;
+    
+    void initialize();
     void unhighlight(uint8_t htype, rectangle *expose);
     elt *point_elt(double x, double y) const;
     void highlight(elt *e, uint8_t htype, rectangle *expose, bool incremental);
+    void set_cursor(elt *e, double x, double y);
     void on_drag_motion(double x, double y);
     
     friend class elt;
@@ -239,7 +246,7 @@ inline void ClickyDiagram::elt::input_position(int port, const eltstyle &style, 
 	double offset0, separation;
 	port_position(width(), 0, _e->ninputs(), style, offset0, separation);
 	x_result = x1() + offset0 + separation * port;
-	y_result = y1();
+	y_result = y1() + 0.5;
     }
 }
 
@@ -252,7 +259,7 @@ inline void ClickyDiagram::elt::output_position(int port, const eltstyle &style,
 	double offset0, separation;
 	port_position(width(), 1, _e->noutputs(), style, offset0, separation);
 	x_result = x1() + offset0 + separation * port;
-	y_result = y2();
+	y_result = y2() - 0.5;
     }
 }
 
