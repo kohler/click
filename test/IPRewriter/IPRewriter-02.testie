@@ -31,4 +31,4 @@ rw[0] -> i rw[1] -> i
 Router could not be initialized!
 
 %ignorex X
-<expr.*
+config.*

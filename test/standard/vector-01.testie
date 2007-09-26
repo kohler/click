@@ -8,5 +8,5 @@ click-buildtool provides VectorTest
 click -qe VectorTest
 
 %expect stderr
-<expr>:1:{{.*}}
+config:1:{{.*}}
   All tests pass!

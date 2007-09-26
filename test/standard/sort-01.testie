@@ -8,5 +8,5 @@ click-buildtool provides SortTest
 click -qe SortTest
 
 %expect stderr
-<expr>:1:{{.*}}
+config:1:{{.*}}
   All tests pass!

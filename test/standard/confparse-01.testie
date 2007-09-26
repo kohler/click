@@ -8,5 +8,5 @@ click-buildtool provides ConfParseTest
 click -qe 'AddressInfo(ip4_addr 1.2.3.4); ConfParseTest'
 
 %expect stderr
-<expr>:1:{{.*}}
+config:1:{{.*}}
   All tests pass!

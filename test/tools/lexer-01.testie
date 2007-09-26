@@ -5,26 +5,26 @@ elementclass Foo {
    A -> B;
 }
 A :: Idle;
-"
+" || true
 
 click-flatten -o/dev/null -e "
 elementclass Foo {
    A :: A -> B;
 }
 A :: Idle;
-"
+" || true
 
 click-flatten -o/dev/null -e "
 elementclass Foo {
    A :: AA -> B;
 }
 A :: Idle;
-"
+" || true
 
 %expect stderr
-<expr>:5: class 'A' used as element name
-<expr>:3: class 'A' used as element name
-<expr>:5: class 'A' used as element name
+config:5: class 'A' used as element name
+config:3: class 'A' used as element name
+config:5: class 'A' used as element name
 
 %ignorex
 #.*
