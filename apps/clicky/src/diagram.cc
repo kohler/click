@@ -731,6 +731,26 @@ void ClickyDiagram::elt::insert(rect_search<ink> &rects, const eltstyle &style, 
     }
 }
 
+void ClickyDiagram::elt::drag_prepare()
+{
+    _drag_x = _x;
+    _drag_y = _y;
+    for (std::vector<elt *>::iterator ei = _elt.begin(); ei != _elt.end(); ++ei)
+	(*ei)->drag_prepare();
+}
+
+void ClickyDiagram::elt::drag_shift(double dx, double dy, ClickyDiagram *cd)
+{
+    rectangle rect = *this;
+    remove(cd->_rects, rect);
+    _x = _drag_x + dx;
+    _y = _drag_y + dy;
+    insert(cd->_rects, cd->_eltstyle, rect);
+    cd->redraw(rect);
+    for (std::vector<elt *>::iterator ei = _elt.begin(); ei != _elt.end(); ++ei)
+	(*ei)->drag_shift(dx, dy, cd);
+}
+
 void ClickyDiagram::conn::finish(const eltstyle &style)
 {
     double fromx, fromy, tox, toy;
@@ -1118,21 +1138,14 @@ void ClickyDiagram::on_drag_motion(double x, double y)
     if (_drag_state == 0
 	&& (fabs(x - _drag_first_x) >= 3 * _scale
 	    || fabs(y - _drag_first_y) >= 3 * _scale)) {
-	for (elt *hx = h; hx; hx = hx->_next_htype_click) {
-	    hx->_drag_x = hx->_x;
-	    hx->_drag_y = hx->_y;
-	}
+	for (elt *hx = h; hx; hx = hx->_next_htype_click)
+	    h->drag_prepare();
 	_drag_state = 1;
     }
     
     if (_drag_state == 1) {
 	while (h) {
-	    rectangle rect = *h;
-	    h->remove(_rects, rect);
-	    h->_x = h->_drag_x + (x - _drag_first_x);
-	    h->_y = h->_drag_y + (y - _drag_first_y);
-	    h->insert(_rects, _eltstyle, rect);
-	    redraw(rect);
+	    h->drag_shift(x - _drag_first_x, y - _drag_first_y, this);
 	    h = h->_next_htype_click;
 	}
     }

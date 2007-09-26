@@ -146,8 +146,12 @@ class ClickyDiagram { public:
 	void layout(ClickyDiagram *, PangoLayout *);
 
 	void finish(const eltstyle &es, double dx, double dy, rect_search<ink> &rects);
+	
 	void remove(rect_search<ink> &rects, rectangle &rect);
 	void insert(rect_search<ink> &rects, const eltstyle &style, rectangle &rect);
+
+	void drag_prepare();
+	void drag_shift(double dx, double dy, ClickyDiagram *cd);
 	
 	static void port_position(double side_length, int port_type, int nports, const eltstyle &style, double &offset0, double &separation);
 	inline void input_position(int port, const eltstyle &style, double &x, double &y);
