@@ -869,13 +869,14 @@ Lexer::element_type(const String &s) const
 }
 
 int
-Lexer::force_element_type(String s)
+Lexer::force_element_type(String name, bool report_error)
 {
-  int ftid = _element_type_map[s];
+  int ftid = _element_type_map[name];
   if (ftid >= 0)
     return ftid;
-  lerror("unknown element class '%s'", s.c_str());
-  return ADD_ELEMENT_TYPE(s, error_element_factory, 0, true);
+  if (report_error)
+    lerror("unknown element class '%s'", name.c_str());
+  return ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
 }
 
 int
@@ -1148,11 +1149,11 @@ Lexer::yelement(int &element, bool comma_ok)
     unlex(t2colon);
     if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok))
       ydeclaration(name);
-    else if (_element_map[name] < 0) {
-      lerror("undeclared element '%s' (first use this block)", name.c_str());
-      get_element(name, ERROR_TYPE);
+    if ((element = _element_map[name]) < 0) {
+      lerror("undeclared element '%s', assuming element class", name.c_str());
+      etype = force_element_type(name, false);
+      element = get_element(anon_element_name(name), etype, configuration, lm);
     }
-    element = _element_map[name];
   }
   
   return true;

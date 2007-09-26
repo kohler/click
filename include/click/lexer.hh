@@ -74,7 +74,7 @@ class Lexer { public:
     int add_element_type(const String &, ElementFactory factory, uintptr_t thunk, bool scoped = false);
 #endif
     int element_type(const String &) const;
-    int force_element_type(String);
+    int force_element_type(String name, bool report_error = true);
 
     void element_type_names(Vector<String> &) const;
   
