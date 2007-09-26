@@ -882,7 +882,9 @@ void ClickyDiagram::elt::draw(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl)
     else if (_highlight & (1 << htype_hover))
 	cairo_set_source_rgb(cr, 1, 1, 242./255);
     else
-	cairo_set_source_rgb(cr, 1, 1, 222./255);
+	cairo_set_source_rgb(cr, 1.00 - .02 * MIN(_depth - 1, 4),
+			     1.00 - .02 * MIN(_depth - 1, 4),
+			     0.87 - .06 * MIN(_depth - 1, 4));
 
     double shift = (_highlight & (1 << htype_pressed) ? 1 : 0);
     

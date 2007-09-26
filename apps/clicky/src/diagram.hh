@@ -113,6 +113,7 @@ class ClickyDiagram { public:
 	bool _expanded;
 	bool _show_class;
 	uint8_t _highlight;
+	uint16_t _depth;
 	elt *_next_htype_click;
 	int _row;
 	int _rowpos;
@@ -134,6 +135,7 @@ class ClickyDiagram { public:
 	elt(elt *parent, int z_index)
 	    : ink(i_elt, z_index), _e(0), _parent(parent), _visible(true),
 	      _layout(false), _expanded(true), _show_class(true), _highlight(0),
+	      _depth(parent ? parent->_depth + 1 : 0),
 	      _next_htype_click(0), _contents_width(0), _contents_height(0) {
 	}
 	~elt();
