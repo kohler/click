@@ -57,7 +57,9 @@ class ClickyDiagram { public:
   private:
 
     enum { elt_expand = 4,	// max dimension of drawing outside width-height
-	   elt_shadow = 3 };	// shadow width on bottom and right
+	   elt_shadow = 3,	// shadow width on bottom and right
+	   lay_border = 4,	// border around layout
+	   drag_threshold = 8 };// amount after which recalculate layout
 
     enum { htype_hover = 0, htype_click = 1, htype_pressed = 2 };
 
@@ -155,6 +157,7 @@ class ClickyDiagram { public:
 
 	void finish(const eltstyle &es, double dx, double dy, rect_search<ink> &rects);
 	void finish_compound(const eltstyle &es);
+	void union_bounds(rectangle &r, bool self) const;
 	
 	void remove(rect_search<ink> &rects, rectangle &rect);
 	void insert(rect_search<ink> &rects, const eltstyle &style, rectangle &rect);
@@ -184,8 +187,11 @@ class ClickyDiagram { public:
     GtkAdjustment *_horiz_adjust;
     GtkAdjustment *_vert_adjust;
     eltstyle _style;
+    
     int _scale_step;
     double _scale;
+    int _origin_x;
+    int _origin_y;
 
     elt *_relt;
     rect_search<ink> _rects;
@@ -194,8 +200,7 @@ class ClickyDiagram { public:
 
     elt *_highlight[3];
 
-    double _drag_first_x;
-    double _drag_first_y;
+    point _drag_first;
     int _drag_state;
     
     PangoAttrList *_name_attrs;
@@ -210,10 +215,16 @@ class ClickyDiagram { public:
     
     void initialize();
     void unhighlight(uint8_t htype, rectangle *expose);
-    elt *point_elt(double x, double y) const;
+    elt *point_elt(const point &p) const;
     void highlight(elt *e, uint8_t htype, rectangle *expose, bool incremental);
     void set_cursor(elt *e, double x, double y);
-    void on_drag_motion(double x, double y);
+    point scroll_center() const;
+    void scroll_recenter(const point &p);
+    void on_drag_motion(const point &p);
+    void on_drag_complete();
+    
+    point window_to_canvas(double x, double y) const;
+    point canvas_to_window(double x, double y) const;
     
     friend class elt;
     
@@ -230,7 +241,7 @@ inline void ClickyDiagram::redraw(rectangle r)
     r.expand(elt_expand);
     r.scale(_scale);
     r.integer_align();
-    gtk_widget_queue_draw_area(_widget, (gint) (r.x() - _horiz_adjust->value), (gint) (r.y() - _vert_adjust->value), (gint) r.width(), (gint) r.height());
+    gtk_widget_queue_draw_area(_widget, (gint) (r.x() - _horiz_adjust->value - _origin_x), (gint) (r.y() - _vert_adjust->value - _origin_y), (gint) r.width(), (gint) r.height());
 }
 
 inline ClickyDiagram::elt *ClickyDiagram::ink::cast_elt() {
@@ -273,6 +284,22 @@ inline void ClickyDiagram::elt::output_position(int port, const eltstyle &style,
 	x_result = x1() + offset0 + separation * port;
 	y_result = y2() - 0.5;
     }
+}
+
+inline point ClickyDiagram::window_to_canvas(double x, double y) const
+{
+    return point((x + _origin_x) / _scale, (y + _origin_y) / _scale);
+}
+
+inline point ClickyDiagram::canvas_to_window(double x, double y) const
+{
+    return point(x * _scale - _origin_x, y * _scale - _origin_y);
+}
+
+inline point ClickyDiagram::scroll_center() const
+{
+    return window_to_canvas(_horiz_adjust->value + _horiz_adjust->page_size / 2,
+			    _vert_adjust->value + _vert_adjust->page_size / 2);
 }
 
 #endif

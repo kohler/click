@@ -22,7 +22,8 @@ static gboolean diagram_expose(GtkWidget *, GdkEventExpose *, gpointer);
 }
 
 ClickyDiagram::ClickyDiagram(RouterWindow *rw)
-    : _rw(rw), _scale_step(0), _scale(1), _relt(0)
+    : _rw(rw), _scale_step(0), _scale(1), _origin_x(0), _origin_y(0),
+      _relt(0)
 {
     _widget = lookup_widget(_rw->_window, "diagram");
     gtk_widget_realize(_widget);
@@ -112,41 +113,49 @@ void ClickyDiagram::display(const String &ename, bool scroll_to)
 	highlight(e, htype_click, 0, scroll_to);
 }
 
+void ClickyDiagram::scroll_recenter(const point &old_ctr)
+{
+    GtkAdjustment *ha = _horiz_adjust, *va = _vert_adjust;
+    double scaled_width = ha->page_size / _scale;
+    if (scaled_width >= _relt->_width) {
+	_origin_x = (int) ((_relt->center_x() - scaled_width / 2) * _scale);
+	gtk_adjustment_set_value(ha, 0);
+    } else {
+	_origin_x = (int) (_relt->x() * _scale);
+	if (old_ctr.x() - scaled_width / 2 < _relt->x())
+	    gtk_adjustment_set_value(ha, 0);
+	else if (old_ctr.x() + scaled_width / 2 > _relt->x2())
+	    gtk_adjustment_set_value(ha, _relt->width() * _scale - ha->page_size);
+	else
+	    gtk_adjustment_set_value(ha, (old_ctr.x() - scaled_width / 2) * _scale - _origin_x);
+    }
+    
+    double scaled_height = va->page_size / _scale;
+    if (scaled_height >= _relt->_height) {
+	_origin_y = (int) ((_relt->center_y() - scaled_height / 2) * _scale);
+	gtk_adjustment_set_value(va, 0);
+    } else {
+	_origin_y = (int) (_relt->y() * _scale);
+	if (old_ctr.y() - scaled_height / 2 < _relt->y())
+	    gtk_adjustment_set_value(va, 0);
+	else if (old_ctr.y() + scaled_height / 2 > _relt->y2())
+	    gtk_adjustment_set_value(va, _relt->height() * _scale - va->page_size);
+	else
+	    gtk_adjustment_set_value(va, (old_ctr.y() - scaled_height / 2) * _scale - _origin_y);
+    }
+
+    redraw();
+}
+
 void ClickyDiagram::zoom(bool incremental, int amount)
 {
     _scale_step = (incremental ? _scale_step + amount : amount);
 
     if (_layout) {
-	GtkAdjustment *ha = _horiz_adjust, *va = _vert_adjust;
-	double old_x_center = (ha->value + ha->page_size / 2) / _scale;
-	double old_y_center = (va->value + va->page_size / 2) / _scale;
-    
+	point old_ctr = scroll_center();
 	_scale = pow(1.2, _scale_step);
-
 	gtk_layout_set_size(GTK_LAYOUT(_widget), (guint) (_relt->_width * _scale), (guint) (_relt->_height * _scale));
-	
-	redraw();
-
-	double scaled_width = ha->page_size / _scale;
-	double scaled_height = va->page_size / _scale;
-
-	if (old_x_center - scaled_width / 2 < 0
-	    && old_x_center + scaled_width / 2 <= _relt->_width)
-	    gtk_adjustment_set_value(ha, 0);
-	else if (old_x_center + scaled_width / 2 > _relt->_width
-		 && old_x_center - scaled_width / 2 >= 0)
-	    gtk_adjustment_set_value(ha, _relt->_width * _scale - ha->page_size);
-	else
-	    gtk_adjustment_set_value(ha, (old_x_center - scaled_width / 2) * _scale);
-
-	if (old_y_center - scaled_height / 2 < 0
-	    && old_y_center + scaled_height / 2 <= _relt->_height)
-	    gtk_adjustment_set_value(va, 0);
-	else if (old_y_center + scaled_height / 2 > _relt->_height
-		 && old_y_center - scaled_height / 2 >= 0)
-	    gtk_adjustment_set_value(va, _relt->_height * _scale - va->page_size);
-	else
-	    gtk_adjustment_set_value(va, (old_y_center - scaled_height / 2) * _scale);
+	scroll_recenter(old_ctr);
     } else
 	_scale = pow(1.2, _scale_step);	
 }
@@ -737,6 +746,19 @@ void ClickyDiagram::elt::finish(const eltstyle &es, double dx, double dy, rect_s
     }
 }
 
+void ClickyDiagram::elt::union_bounds(rectangle &r, bool self) const
+{
+    if (self)
+	r |= *this;
+    for (std::vector<elt *>::const_iterator ci = _elt.begin();
+	 ci != _elt.end(); ++ci)
+	if ((*ci)->_visible)
+	    (*ci)->union_bounds(r, true);
+    for (std::vector<conn *>::const_iterator ci = _conn.begin();
+	 ci != _conn.end(); ++ci)
+	r |= **ci;
+}
+
 void ClickyDiagram::elt::remove(rect_search<ink> &rects, rectangle &rect)
 {
     rect |= *this;
@@ -1113,6 +1135,7 @@ void ClickyDiagram::elt::draw(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl)
 void ClickyDiagram::conn::draw(ClickyDiagram *cd, cairo_t *cr)
 {
     cairo_set_source_rgb(cr, 0, 0, 0);
+    cairo_set_line_width(cr, 1);
 
     double fromx, fromy, tox, toy;
     _from_elt->output_position(_from_port, cd->_style, fromx, fromy);
@@ -1125,10 +1148,10 @@ void ClickyDiagram::conn::draw(ClickyDiagram *cd, cairo_t *cr)
     cairo_line_to(cr, tox, toy);
     cairo_stroke(cr);
 
-    cairo_move_to(cr, tox, toy);
-    cairo_line_to(cr, tox - 3, toy - 6);
-    cairo_line_to(cr, tox, toy - 4);
-    cairo_line_to(cr, tox + 3, toy - 6);
+    cairo_move_to(cr, tox, toy + 0.25);
+    cairo_line_to(cr, tox - 3, toy - 5.75);
+    cairo_line_to(cr, tox, toy - 3.75);
+    cairo_line_to(cr, tox + 3, toy - 5.75);
     cairo_close_path(cr);
     cairo_fill(cr);
 }
@@ -1143,12 +1166,13 @@ void ClickyDiagram::layout()
 	ElementMap::push_default(_rw->element_map());
 	_relt->layout_contents(_rw->_r, this, pl);
 	_rects.clear();
-	_relt->finish(_style, 4, 4, _rects);
+	_relt->finish(_style, lay_border, lay_border, _rects);
 	_relt->_x = _relt->_y = 0;
-	_relt->_width = _relt->_contents_width + 8;
-	_relt->_height = _relt->_contents_height + 8;
+	_relt->_width = _relt->_contents_width + 2 * lay_border;
+	_relt->_height = _relt->_contents_height + 2 * lay_border;
 	g_object_unref(G_OBJECT(pl));
 	gtk_layout_set_size(GTK_LAYOUT(_widget), (guint) (_relt->_width * _scale), (guint) (_relt->_height * _scale));
+	scroll_recenter(point(0, 0));
 	ElementMap::pop_default();
 	_layout = true;
     }
@@ -1173,7 +1197,8 @@ void ClickyDiagram::on_expose(const GdkRectangle *area, bool clip)
     
     PangoLayout *pl = gtk_widget_create_pango_layout(_widget, NULL);
 
-    rectangle r(area->x, area->y, area->width, area->height);
+    rectangle r(area->x + _origin_x, area->y + _origin_y,
+		area->width, area->height);
     r.scale(1 / _scale);
     r.expand(elt_expand);
     std::vector<ink *> elts;
@@ -1182,6 +1207,7 @@ void ClickyDiagram::on_expose(const GdkRectangle *area, bool clip)
     std::vector<ink *>::iterator eltsi = std::unique(elts.begin(), elts.end());
     elts.erase(eltsi, elts.end());
 
+    cairo_translate(cr, -_origin_x, -_origin_y);
     cairo_scale(cr, _scale, _scale);
     for (eltsi = elts.begin(); eltsi != elts.end(); ++eltsi)
 	if (elt *e = (*eltsi)->cast_elt())
@@ -1236,16 +1262,15 @@ void ClickyDiagram::unhighlight(uint8_t htype, rectangle *expose)
     }
 }
 
-ClickyDiagram::elt *ClickyDiagram::point_elt(double x, double y) const
+ClickyDiagram::elt *ClickyDiagram::point_elt(const point &p) const
 {
     std::vector<ink *> elts;
-    x /= _scale, y /= _scale;
-    _rects.find_all(x, y, elts);
+    _rects.find_all(p.x(), p.y(), elts);
     std::sort(elts.begin(), elts.end(), ink::z_index_greater);
     std::vector<ink *>::iterator eltsi = std::unique(elts.begin(), elts.end());
     elts.erase(eltsi, elts.end());
     for (eltsi = elts.begin(); eltsi != elts.end(); ++eltsi)
-	if ((*eltsi)->contains(x, y))
+	if ((*eltsi)->contains(p))
 	    if (elt *e = (*eltsi)->cast_elt())
 		if (e->_visible)
 		    return e;
@@ -1270,29 +1295,31 @@ void ClickyDiagram::highlight(elt *h, uint8_t htype, rectangle *expose, bool scr
     }
     if (h && scroll_to && _layout) {
 	GtkAdjustment *ha = _horiz_adjust, *va = _vert_adjust;
+	point h_tl = canvas_to_window(h->x(), h->y());
+	point h_br = canvas_to_window(h->x2() + elt_shadow, h->y2() + elt_shadow);
 	
-	if ((h->x2() + elt_shadow) * _scale >= ha->value + ha->page_size
-	    && h->x() * _scale >= floor((h->x2() + elt_shadow) * _scale - ha->page_size))
-	    gtk_adjustment_set_value(ha, floor((h->x2() + elt_shadow) * _scale - ha->page_size));
-	else if ((h->x2() + elt_shadow) * _scale >= ha->value + ha->page_size
-		 || h->x1() * _scale < ha->value)
-	    gtk_adjustment_set_value(ha, floor(h->x() * _scale) - 4);
+	if (h_br.x() >= ha->value + ha->page_size
+	    && h_tl.x() >= floor(h_br.x() - ha->page_size))
+	    gtk_adjustment_set_value(ha, floor(h_br.x() - ha->page_size));
+	else if (h_br.x() >= ha->value + ha->page_size
+		 || h_tl.x() < ha->value)
+	    gtk_adjustment_set_value(ha, floor(h_tl.x() - 4));
 	
-	if ((h->y2() + elt_shadow) * _scale >= va->value + va->page_size
-	    && h->y() * _scale >= floor((h->y2() + elt_shadow) * _scale - va->page_size))
-	    gtk_adjustment_set_value(va, floor((h->y2() + elt_shadow) * _scale - va->page_size));
-	else if ((h->y2() + elt_shadow) * _scale >= va->value + va->page_size
-		 || h->y1() * _scale < va->value)
-	    gtk_adjustment_set_value(va, floor(h->y() * _scale) - 4);
+	if (h_br.y() >= va->value + va->page_size
+	    && h_tl.y() >= floor(h_br.y() - va->page_size))
+	    gtk_adjustment_set_value(va, floor(h_br.y() - va->page_size));
+	else if (h_br.y() >= va->value + va->page_size
+		 || h_tl.y() < va->value)
+	    gtk_adjustment_set_value(va, floor(h_tl.y() - 4));
     }
 }
 
-void ClickyDiagram::on_drag_motion(double x, double y)
+void ClickyDiagram::on_drag_motion(const point &p)
 {
     elt *h = _highlight[htype_click];
     if (_drag_state == 0
-	&& (fabs(x - _drag_first_x) * _scale >= 3
-	    || fabs(y - _drag_first_y) * _scale >= 3)) {
+	&& (fabs(p.x() - _drag_first._x) * _scale >= 3
+	    || fabs(p.y() - _drag_first._y) * _scale >= 3)) {
 	for (elt *hx = h; hx; hx = hx->_next_htype_click)
 	    hx->drag_prepare();
 	_drag_state = 1;
@@ -1300,7 +1327,7 @@ void ClickyDiagram::on_drag_motion(double x, double y)
     
     if (_drag_state == 1 && _last_cursorno == c_c) {
 	for (elt *hx = h; hx; hx = hx->_next_htype_click)
-	    hx->drag_shift(x - _drag_first_x, y - _drag_first_y, this);
+	    hx->drag_shift(p.x() - _drag_first._x, p.y() - _drag_first._y, this);
     } else if (_drag_state == 1) {
 	// assume that _highlight[htype_hover] is relevant
 	elt *h = _highlight[htype_hover];
@@ -1309,7 +1336,7 @@ void ClickyDiagram::on_drag_motion(double x, double y)
 	h->remove(_rects, r);
 	int vtype = _last_cursorno % 3;
 	int htype = _last_cursorno - vtype;
-	double dx = x - _drag_first_x, dy = y - _drag_first_y;
+	double dx = p.x() - _drag_first._x, dy = p.y() - _drag_first._y;
 	if (vtype == c_top && h->_xrect._height - dy >= _style.min_height) {
 	    h->_y = h->_xrect._y + dy;
 	    h->_height = h->_xrect._height - dy;
@@ -1334,26 +1361,48 @@ void ClickyDiagram::on_drag_motion(double x, double y)
     }
 }
 
+void ClickyDiagram::on_drag_complete()
+{
+    rectangle r = *_relt;
+    for (elt *h = _highlight[htype_click]; h; h = h->_next_htype_click)
+	if (!(h->_xrect.x() > _relt->x() + drag_threshold
+	      && h->x() > _relt->x() + drag_threshold
+	      && h->_xrect.x2() < _relt->x2() - drag_threshold
+	      && h->x2() < _relt->x2() - drag_threshold
+	      && h->_xrect.y() > _relt->y() + drag_threshold
+	      && h->y() > _relt->y() + drag_threshold
+	      && h->_xrect.y2() < _relt->y2() - drag_threshold
+	      && h->y2() < _relt->y2() - drag_threshold)) {
+	    point old_ctr = scroll_center();
+	    _relt->assign(h->_x, h->_y, 0, 0);
+	    _relt->union_bounds(*_relt, false);
+	    _relt->_contents_width = _relt->_width;
+	    _relt->_contents_height = _relt->_height;
+	    _relt->expand(lay_border);
+	    gtk_layout_set_size(GTK_LAYOUT(_widget), (guint) (_relt->_width * _scale), (guint) (_relt->_height * _scale));
+	    scroll_recenter(old_ctr);
+	    break;
+	}
+}
+
 void ClickyDiagram::set_cursor(elt *h, double x, double y)
 {
     int cnum = c_c;
     if (h) {
-	double hx1 = h->x1() * _scale;
-	double hy1 = h->y1() * _scale;
-	double hx2 = h->x2() * _scale;
-	double hy2 = h->y2() * _scale;
+	point h_tl = canvas_to_window(h->x1(), h->y1());
+	point h_br = canvas_to_window(h->x2(), h->y2());
 	double attach = MAX(2.0, _scale);
-	if (hx2 - hx1 >= 6 && hy2 - hy1 >= 6
-	    && (x - hx1 < attach || y - hy1 < attach
-		|| hx2 - x < attach || hy2 - y < attach)) {
+	if (h_br.x() - h_tl.x() >= 6 && h_br.y() - h_tl.y() >= 6
+	    && (x - h_tl.x() < attach || y - h_tl.y() < attach
+		|| h_br.x() - x < attach || h_br.y() - y < attach)) {
 	    cnum = c_c;
-	    if (x - hx1 < 12)
+	    if (x - h_tl.x() < 12)
 		cnum += c_lft;
-	    else if (hx2 - x < 12)
+	    else if (h_br.x() - x < 12)
 		cnum += c_rt;
-	    if (y - hy1 < 12)
+	    if (y - h_tl.y() < 12)
 		cnum += c_top;
-	    else if (hy2 - y < 12)
+	    else if (h_br.y() - y < 12)
 		cnum += c_bot;
 	}
     }
@@ -1367,21 +1416,21 @@ gboolean ClickyDiagram::on_event(GdkEvent *event)
 {
     if (event->type == GDK_MOTION_NOTIFY) {
 	if (!(event->motion.state & GDK_BUTTON1_MASK)) {
-	    elt *h = point_elt(event->motion.x, event->motion.y);
+	    elt *h = point_elt(window_to_canvas(event->motion.x, event->motion.y));
 	    highlight(h, htype_hover, 0, false);
 	    set_cursor(h, event->motion.x, event->motion.y);
 	} else if (_highlight[htype_click])
-	    on_drag_motion(event->motion.x / _scale, event->motion.y / _scale);
+	    on_drag_motion(window_to_canvas(event->motion.x, event->motion.y));
 	
 	GdkModifierType mod;
 	gint mx, my;
 	(void) gdk_window_get_pointer(_widget->window, &mx, &my, &mod);
 
     } else if (event->type == GDK_BUTTON_PRESS && event->button.button == 1) {
-	elt *h = point_elt(event->button.x, event->button.y);
+	point p = window_to_canvas(event->button.x, event->button.y);
+	elt *h = point_elt(p);
 	if (h) {
-	    _drag_first_x = event->button.x / _scale;
-	    _drag_first_y = event->button.y / _scale;
+	    _drag_first = p;
 	    _drag_state = 0;
 	}
 
@@ -1410,10 +1459,12 @@ gboolean ClickyDiagram::on_event(GdkEvent *event)
 	highlight(h, htype_pressed, 0, false);
 	
     } else if (event->type == GDK_BUTTON_RELEASE && event->button.button == 1) {
+	if (_drag_state == 1)
+	    on_drag_complete();
 	unhighlight(htype_pressed, 0);
 	
     } else if (event->type == GDK_2BUTTON_PRESS && event->button.button == 1) {
-	elt *h = point_elt(event->button.x, event->button.y);
+	elt *h = point_elt(window_to_canvas(event->button.x, event->button.y));
 	highlight(h, htype_click, 0, true);
 	if (h)
 	    _rw->element_show(h->_flat_name, 1, true);

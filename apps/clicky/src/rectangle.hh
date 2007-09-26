@@ -2,6 +2,40 @@
 #define CLICKY_RECTANGLE_HH 1
 #include <math.h>
 
+struct point {
+    double _x;
+    double _y;
+
+    point() {
+    }
+
+    point(double x, double y)
+	: _x(x), _y(y) {
+    }
+
+    double x() const {
+	return _x;
+    }
+
+    double y() const {
+	return _y;
+    }
+
+    void shift(double dx, double dy) {
+	_x += dx;
+	_y += dy;
+    }
+
+    void shift(const point &p) {
+	shift(p._x, p._y);
+    }
+
+    void scale(double s) {
+	_x *= s;
+	_y *= s;
+    }
+};
+
 struct rectangle {
     double _x;
     double _y;
@@ -54,11 +88,18 @@ struct rectangle {
     double center_y() const {
 	return _y + _height / 2;
     }
+
+    void assign(double x, double y, double width, double height) {
+	_x = x;
+	_y = y;
+	_width = width;
+	_height = height;
+    }
 	
-    typedef void (rectangle::*unspecified_bool_type)(double, double);
+    typedef void (rectangle::*unspecified_bool_type)(double);
 
     operator unspecified_bool_type() const {
-	return (_width > 0 && _height > 0 ? &rectangle::shift : 0);
+	return (_width > 0 && _height > 0 ? &rectangle::expand : 0);
     }
 
     void expand(double d) {
@@ -73,6 +114,10 @@ struct rectangle {
 	_y += dy;
     }
 
+    void shift(const point &p) {
+	shift(p._x, p._y);
+    }
+
     void scale(double s) {
 	_x *= s;
 	_y *= s;
@@ -82,6 +127,10 @@ struct rectangle {
     
     bool contains(double x, double y) const {
 	return (x >= _x && x <= _x + _width && y >= _y && y <= _y + _height);
+    }
+
+    bool contains(const point &p) const {
+	return contains(p._x, p._y);
     }
 
     bool operator&(const rectangle &o) const {
@@ -113,5 +162,9 @@ struct rectangle {
 	_height = ceil(y2_) - _y;
     }
 };
+
+inline point operator+(const point &a, const point &b) {
+    return point(a.x() + b.x(), a.y() + b.y());
+}
 
 #endif
