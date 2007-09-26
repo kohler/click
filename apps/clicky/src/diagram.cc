@@ -503,7 +503,6 @@ void ClickyDiagram::elt::position_contents_dot(RouterT *router, const eltstyle &
     }
     sa << "}\n";
 
-    g_file_set_contents("/tmp/x", sa.data(), sa.length(), 0);
     String result = shell_command_output_string("dot", sa.take_string(), errh);
 
     const char *end = result.end();
@@ -661,12 +660,28 @@ void ClickyDiagram::elt::finish(const eltstyle &es, double dx, double dy, rect_s
     }
 
     for (std::vector<elt *>::iterator ci = _elt.begin();
-	 ci != _elt.end(); ++ci) {
-	(*ci)->_x = floor((*ci)->_local_x + dx) + 0.5;
-	(*ci)->_y = floor((*ci)->_local_y + dy) + 0.5;
-	r.insert(*ci);
-	if ((*ci)->_elt.size())
-	    (*ci)->finish(es, (*ci)->_local_x + dx, (*ci)->_local_y + dy, r);
+	 ci != _elt.end(); ++ci)
+	if ((*ci)->_visible) {
+	    (*ci)->_x = floor((*ci)->_local_x + dx) + 0.5;
+	    (*ci)->_y = floor((*ci)->_local_y + dy) + 0.5;
+	    r.insert(*ci);
+	    if ((*ci)->_elt.size())
+		(*ci)->finish(es, (*ci)->_local_x + dx, (*ci)->_local_y + dy, r);
+	}
+
+    if (_e && _parent && _elt.size()) {
+	if (_elt[0]->_e->name() == "input") {
+	    _elt[0]->_x = _x;
+	    _elt[0]->_y = _y - 10;
+	    _elt[0]->_width = _width;
+	    _elt[0]->_height = 10 + es.port_width[0] - 1;
+	}
+	if (_elt[1]->_e->name() == "output") {
+	    _elt[1]->_x = _x;
+	    _elt[1]->_y = _y + _height - es.port_width[1] + 1;
+	    _elt[1]->_width = _width;
+	    _elt[1]->_height = 10;
+	}
     }
 
     for (std::vector<conn *>::iterator ci = _conn.begin();
@@ -676,14 +691,54 @@ void ClickyDiagram::elt::finish(const eltstyle &es, double dx, double dy, rect_s
     }
 }
 
+void ClickyDiagram::elt::remove(rect_search<ink> &rects, rectangle &rect)
+{
+    rect |= *this;
+    rects.remove(this);
+    
+    Vector<int> conn;
+    _e->router()->find_connections_to(_e, conn);
+    for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter) {
+	rect |= *_parent->_conn[*iter];
+	rects.remove(_parent->_conn[*iter]);
+    }
+
+    _e->router()->find_connections_from(_e, conn);
+    for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter) {
+	rect |= *_parent->_conn[*iter];
+	rects.remove(_parent->_conn[*iter]);
+    }
+}
+
+void ClickyDiagram::elt::insert(rect_search<ink> &rects, const eltstyle &style, rectangle &rect)
+{
+    rect |= *this;
+    rects.insert(this);
+    
+    Vector<int> conn;
+    _e->router()->find_connections_to(_e, conn);
+    for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter) {
+	_parent->_conn[*iter]->finish(style);
+	rect |= *_parent->_conn[*iter];
+	rects.insert(_parent->_conn[*iter]);
+    }
+
+    _e->router()->find_connections_from(_e, conn);
+    for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter) {
+	_parent->_conn[*iter]->finish(style);
+	rect |= *_parent->_conn[*iter];
+	rects.insert(_parent->_conn[*iter]);
+    }
+}
+
 void ClickyDiagram::conn::finish(const eltstyle &style)
 {
     double fromx, fromy, tox, toy;
     _from_elt->output_position(_from_port, style, fromx, fromy);
-    _to_elt->input_position(_from_port, style, tox, toy);
-    _x = MIN(fromx, tox - 1);
+    _to_elt->input_position(_to_port, style, tox, toy);
+    _x = MIN(fromx, tox - 3);
     _y = MIN(fromy, toy - 12);
-    _width = MAX(fromx, tox + 1) - _x;
+    _width = MAX(fromx, tox + 3) - _x;
     _height = MAX(fromy + 5, toy) - _y;
 }
 
@@ -890,7 +945,7 @@ void ClickyDiagram::conn::draw(ClickyDiagram *cd, cairo_t *cr)
     _from_elt->output_position(_from_port, cd->_eltstyle, fromx, fromy);
     _to_elt->input_position(_to_port, cd->_eltstyle, tox, toy);
     cairo_move_to(cr, fromx, fromy);
-    if (fabs(tox - fromx) >= 10) {
+    if (fabs(tox - fromx) >= 6) {
 	cairo_line_to(cr, fromx, fromy + 3);
 	cairo_curve_to(cr, fromx, fromy + 10, tox, toy - 12, tox, toy - 7);
     }
@@ -992,7 +1047,7 @@ void diagram_map(GtkWidget *, gpointer user_data)
 void ClickyDiagram::unhighlight(uint8_t htype, rectangle *expose)
 {
     assert(htype <= htype_pressed);
-    if (elt *h = _highlight[htype]) {
+    while (elt *h = _highlight[htype]) {
 	h->_highlight &= ~(1 << htype);
 	if (!_layout)
 	    /* do nothing */;
@@ -1000,6 +1055,11 @@ void ClickyDiagram::unhighlight(uint8_t htype, rectangle *expose)
 	    *expose |= *h;
 	else
 	    redraw(*h);
+	if (htype == htype_click) {
+	    _highlight[htype] = h->_next_htype_click;
+	    h->_next_htype_click = 0;
+	} else
+	    _highlight[htype] = 0;
     }
 }
 
@@ -1020,7 +1080,8 @@ ClickyDiagram::elt *ClickyDiagram::point_elt(double x, double y) const
 void ClickyDiagram::highlight(elt *h, uint8_t htype, rectangle *expose, bool scroll_to)
 {
     bool same = (h == _highlight[htype]);
-    if (!same || (h && !(h->_highlight & (1 << htype)))) {
+    if (!same || (h && !(h->_highlight & (1 << htype)))
+	|| (htype == htype_click && h && h->_next_htype_click)) {
 	unhighlight(htype, expose);
 	if ((_highlight[htype] = h)) {
 	    h->_highlight |= (1 << htype);
@@ -1051,21 +1112,76 @@ void ClickyDiagram::highlight(elt *h, uint8_t htype, rectangle *expose, bool scr
     }
 }
 
+void ClickyDiagram::on_drag_motion(double x, double y)
+{
+    elt *h = _highlight[htype_click];
+    if (_drag_state == 0
+	&& (fabs(x - _drag_first_x) >= 3 * _scale
+	    || fabs(y - _drag_first_y) >= 3 * _scale)) {
+	for (elt *hx = h; hx; hx = hx->_next_htype_click) {
+	    hx->_drag_x = hx->_x;
+	    hx->_drag_y = hx->_y;
+	}
+	_drag_state = 1;
+    }
+    
+    if (_drag_state == 1) {
+	while (h) {
+	    rectangle rect = *h;
+	    h->remove(_rects, rect);
+	    h->_x = h->_drag_x + (x - _drag_first_x);
+	    h->_y = h->_drag_y + (y - _drag_first_y);
+	    h->insert(_rects, _eltstyle, rect);
+	    redraw(rect);
+	    h = h->_next_htype_click;
+	}
+    }
+}
+
 gboolean ClickyDiagram::on_event(GdkEvent *event)
 {
     if (event->type == GDK_MOTION_NOTIFY) {
-	elt *h = point_elt(event->motion.x, event->motion.y);
-	highlight(h, htype_hover, 0, false);
+	if (!(event->motion.state & GDK_BUTTON1_MASK)) {
+	    elt *h = point_elt(event->motion.x, event->motion.y);
+	    highlight(h, htype_hover, 0, false);
+	} else if (_highlight[htype_click])
+	    on_drag_motion(event->motion.x / _scale, event->motion.y / _scale);
+	
 	GdkModifierType mod;
 	gint mx, my;
 	(void) gdk_window_get_pointer(_widget->window, &mx, &my, &mod);
 
     } else if (event->type == GDK_BUTTON_PRESS && event->button.button == 1) {
 	elt *h = point_elt(event->button.x, event->button.y);
-	highlight(h, htype_click, 0, false);
+	if (h) {
+	    _drag_first_x = event->button.x / _scale;
+	    _drag_first_y = event->button.y / _scale;
+	    _drag_state = 0;
+	}
+
+	if (!(event->button.state & GDK_SHIFT_MASK)) {
+	    //|| !_highlight[htype_click]) {
+	    //if (!h || !(h->_highlight & (1 << htype_click)))
+	    highlight(h, htype_click, 0, false);
+	    if (h)
+		_rw->element_show(h->_flat_name, 0, true);
+	} else if (h && (h->_highlight & (1 << htype_click))) {
+	    elt **prev = &_highlight[htype_click];
+	    while (*prev && *prev != h)
+		prev = &(*prev)->_next_htype_click;
+	    if (*prev == h)
+		*prev = h->_next_htype_click;
+	    h->_highlight &= ~(1 << htype_click);
+	    h->_next_htype_click = 0;
+	    _drag_state = -1;
+	} else if (h) {
+	    h->_highlight |= 1 << htype_click;
+	    h->_next_htype_click = _highlight[htype_click];
+	    _highlight[htype_click] = h;
+	} else
+	    _drag_state = -1;
+
 	highlight(h, htype_pressed, 0, false);
-	if (h)
-	    _rw->element_show(h->_flat_name, 0, true);
 	
     } else if (event->type == GDK_BUTTON_RELEASE && event->button.button == 1) {
 	unhighlight(htype_pressed, 0);

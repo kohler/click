@@ -113,11 +113,14 @@ class ClickyDiagram { public:
 	bool _expanded;
 	bool _show_class;
 	uint8_t _highlight;
+	elt *_next_htype_click;
 	int _row;
 	int _rowpos;
 	
 	double _local_x;
 	double _local_y;
+	double _drag_x;
+	double _drag_y;
 
 	double _name_raw_width;
 	double _name_raw_height;
@@ -131,7 +134,7 @@ class ClickyDiagram { public:
 	elt(elt *parent, int z_index)
 	    : ink(i_elt, z_index), _e(0), _parent(parent), _visible(true),
 	      _layout(false), _expanded(true), _show_class(true), _highlight(0),
-	      _contents_width(0), _contents_height(0) {
+	      _next_htype_click(0), _contents_width(0), _contents_height(0) {
 	}
 	~elt();
 
@@ -143,6 +146,8 @@ class ClickyDiagram { public:
 	void layout(ClickyDiagram *, PangoLayout *);
 
 	void finish(const eltstyle &es, double dx, double dy, rect_search<ink> &rects);
+	void remove(rect_search<ink> &rects, rectangle &rect);
+	void insert(rect_search<ink> &rects, const eltstyle &style, rectangle &rect);
 	
 	static void port_position(double side_length, int port_type, int nports, const eltstyle &style, double &offset0, double &separation);
 	inline void input_position(int port, const eltstyle &style, double &x, double &y);
@@ -172,6 +177,10 @@ class ClickyDiagram { public:
     bool _layout;
 
     elt *_highlight[3];
+
+    double _drag_first_x;
+    double _drag_first_y;
+    int _drag_state;
     
     PangoAttrList *_name_attrs;
     PangoAttrList *_class_attrs;
@@ -179,6 +188,7 @@ class ClickyDiagram { public:
     void unhighlight(uint8_t htype, rectangle *expose);
     elt *point_elt(double x, double y) const;
     void highlight(elt *e, uint8_t htype, rectangle *expose, bool incremental);
+    void on_drag_motion(double x, double y);
     
     friend class elt;
     
