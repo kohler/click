@@ -202,10 +202,16 @@ void RouterWindow::on_open_file()
 	    gerrh.translate_prefix(filename, "Error opening '" + String(filename) + "'");
 	    gerrh.run_dialog(GTK_WINDOW(dialog));
 	} else {
-	    clear(true);
-	    set_landmark(filename);
-	    set_config(s, true);
-	    set_save_file(filename, true);
+	    RouterWindow *rw;
+	    if (empty()) {
+		rw = this;
+		rw->clear(true);
+	    } else
+		rw = new RouterWindow;
+	    rw->set_landmark(filename);
+	    rw->set_config(s, true);
+	    rw->set_save_file(filename, true);
+	    rw->show();
 	}
 	g_free(filename);
     }
@@ -312,10 +318,16 @@ void RouterWindow::on_open_socket()
 		    helper.ready = false;
 	    }
 	}
-	
-	clear(true);
-	set_landmark(String(hosts) + ":" + String(ports));
-	(void) new wdriver_csocket(this, socket, helper.ready);
+
+	RouterWindow *rw;
+	if (empty()) {
+	    rw = this;
+	    rw->clear(true);
+	} else
+	    rw = new RouterWindow;
+	rw->set_landmark(String(hosts) + ":" + String(ports));
+	(void) new wdriver_csocket(rw, socket, helper.ready);
+	rw->show();
 	break;
     }
 
@@ -331,9 +343,15 @@ void RouterWindow::on_open_kernel()
 	_gerrh.error("No kernel configuration installed: %s", strerror(errno));
 	_gerrh.run_dialog(GTK_WINDOW(_window), gerrh_pos);
     } else {
-	clear(true);
-	set_landmark(prefix);
-	(void) new wdriver_kernel(this, prefix);
+	RouterWindow *rw;
+	if (empty()) {
+	    rw = this;
+	    rw->clear(true);
+	} else
+	    rw = new RouterWindow;
+	rw->set_landmark(prefix);
+	(void) new wdriver_kernel(rw, prefix);
+	rw->show();
     }
 }
 

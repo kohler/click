@@ -244,6 +244,11 @@ RouterWindow::~RouterWindow()
     delete _handlers;
 }
 
+bool RouterWindow::empty() const
+{
+    return !(_r || _conf || _driver);
+}
+
 void RouterWindow::clear(bool alive)
 {
     delete _r;

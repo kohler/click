@@ -21,6 +21,7 @@ class RouterWindow { public:
     RouterWindow();
     ~RouterWindow();
 
+    bool empty() const;
     void clear(bool alive);
     void show();
 
