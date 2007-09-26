@@ -26,6 +26,7 @@ class ClickyDiagram { public:
 
     void display(const String &ename, bool scroll_to);
     void zoom(bool incremental, int amount);
+    void scroll_recenter(point p);
 
     void on_expose(const GdkRectangle *r, bool clip);
     gboolean on_event(GdkEvent *event);
@@ -219,7 +220,6 @@ class ClickyDiagram { public:
     void highlight(elt *e, uint8_t htype, rectangle *expose, bool incremental);
     void set_cursor(elt *e, double x, double y);
     point scroll_center() const;
-    void scroll_recenter(const point &p);
     void on_drag_motion(const point &p);
     void on_drag_complete();
     

@@ -19,11 +19,11 @@ extern "C" {
 static void diagram_map(GtkWidget *, gpointer);
 static gboolean on_diagram_event(GtkWidget *, GdkEvent *, gpointer);
 static gboolean diagram_expose(GtkWidget *, GdkEventExpose *, gpointer);
+static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer);
 }
 
 ClickyDiagram::ClickyDiagram(RouterWindow *rw)
-    : _rw(rw), _scale_step(0), _scale(1), _origin_x(0), _origin_y(0),
-      _relt(0)
+    : _rw(rw), _scale_step(0), _scale(1), _origin_x(0), _origin_y(0), _relt(0)
 {
     _widget = lookup_widget(_rw->_window, "diagram");
     gtk_widget_realize(_widget);
@@ -72,6 +72,8 @@ ClickyDiagram::ClickyDiagram(RouterWindow *rw)
 		     G_CALLBACK(diagram_expose), this);
     g_signal_connect(G_OBJECT(_widget), "map",
 		     G_CALLBACK(diagram_map), this);
+    g_signal_connect(G_OBJECT(_widget), "size-allocate",
+		     G_CALLBACK(on_diagram_size_allocate), this);
 
     _highlight[0] = _highlight[1] = _highlight[2] = 0;
     for (int i = 0; i < 9; i++)
@@ -113,8 +115,17 @@ void ClickyDiagram::display(const String &ename, bool scroll_to)
 	highlight(e, htype_click, 0, scroll_to);
 }
 
-void ClickyDiagram::scroll_recenter(const point &old_ctr)
+void ClickyDiagram::scroll_recenter(point old_ctr)
 {
+    if (old_ctr.x() < -1000000)
+	old_ctr = scroll_center();
+    
+    gtk_layout_set_size(GTK_LAYOUT(_widget),
+			MAX((gint) (_relt->_width * _scale),
+			    _widget->allocation.width),
+			MAX((gint) (_relt->_height * _scale),
+			    _widget->allocation.height));
+    
     GtkAdjustment *ha = _horiz_adjust, *va = _vert_adjust;
     double scaled_width = ha->page_size / _scale;
     if (scaled_width >= _relt->_width) {
@@ -154,7 +165,6 @@ void ClickyDiagram::zoom(bool incremental, int amount)
     if (_layout) {
 	point old_ctr = scroll_center();
 	_scale = pow(1.2, _scale_step);
-	gtk_layout_set_size(GTK_LAYOUT(_widget), (guint) (_relt->_width * _scale), (guint) (_relt->_height * _scale));
 	scroll_recenter(old_ctr);
     } else
 	_scale = pow(1.2, _scale_step);	
@@ -1171,7 +1181,6 @@ void ClickyDiagram::layout()
 	_relt->_width = _relt->_contents_width + 2 * lay_border;
 	_relt->_height = _relt->_contents_height + 2 * lay_border;
 	g_object_unref(G_OBJECT(pl));
-	gtk_layout_set_size(GTK_LAYOUT(_widget), (guint) (_relt->_width * _scale), (guint) (_relt->_height * _scale));
 	scroll_recenter(point(0, 0));
 	ElementMap::pop_default();
 	_layout = true;
@@ -1222,16 +1231,22 @@ void ClickyDiagram::on_expose(const GdkRectangle *area, bool clip)
 }
 
 extern "C" {
-gboolean diagram_expose(GtkWidget *, GdkEventExpose *e, gpointer user_data)
+static gboolean diagram_expose(GtkWidget *, GdkEventExpose *e, gpointer user_data)
 {
     ClickyDiagram *cd = reinterpret_cast<ClickyDiagram *>(user_data);
     cd->on_expose(&e->area, true);
     return FALSE;
 }
 
-void diagram_map(GtkWidget *, gpointer user_data)
+static void diagram_map(GtkWidget *, gpointer user_data)
 {
     reinterpret_cast<ClickyDiagram *>(user_data)->router_create(true, true);
+}
+
+static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer user_data)
+{
+    ClickyDiagram *cd = reinterpret_cast<ClickyDiagram *>(user_data);
+    cd->scroll_recenter(point(-1000001, -1000001));
 }
 }
 
@@ -1379,7 +1394,6 @@ void ClickyDiagram::on_drag_complete()
 	    _relt->_contents_width = _relt->_width;
 	    _relt->_contents_height = _relt->_height;
 	    _relt->expand(lay_border);
-	    gtk_layout_set_size(GTK_LAYOUT(_widget), (guint) (_relt->_width * _scale), (guint) (_relt->_height * _scale));
 	    scroll_recenter(old_ctr);
 	    break;
 	}
