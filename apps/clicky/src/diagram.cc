@@ -61,6 +61,9 @@ ClickyDiagram::ClickyDiagram(RouterWindow *rw)
     _style.element_dy = 8 * portscale;
     _style.min_height = MAX(_style.port_width[0], _style.port_width[1]) * 2.5;
     _style.min_width = 2 *_style.min_port_offset + MAX(_style.port_length[0], _style.port_length[1]);
+    _style.min_queue_width = 11 * portscale;
+    _style.min_queue_height = 31 * portscale;
+    _style.queue_line_sep = 8 * portscale;
     
     g_signal_connect(G_OBJECT(_widget), "event",
 		     G_CALLBACK(on_diagram_event), this);
@@ -191,6 +194,10 @@ void ClickyDiagram::elt::fill(RouterT *r, ProcessingT *processing, HashMap<Strin
 	    e->fill(r, &subprocessing, collector, path, z_index);
 	}
 	path.pop_back();
+
+	if (e->_e->type_name().length() >= 5
+	    && memcmp(e->_e->type_name().end() - 5, "Queue", 5) == 0)
+	    e->_style = es_queue;
     }
 
     for (RouterT::conn_iterator i = r->begin_connections(); i != r->end_connections(); ++i) {
@@ -658,18 +665,30 @@ void ClickyDiagram::elt::layout(ClickyDiagram *cd, PangoLayout *pl)
 	layout_contents(_e->resolved_router(), cd, pl);
     
     // get element width and height
-    const eltstyle &es = cd->_style;
-    double w = MAX(MAX(_name_raw_width, _contents_width), _class_raw_width);
-    _width = ceil(MAX(w + 2 * es.inside_dx,
-		 MAX(_e->ninputs(), _e->noutputs()) * es.min_port_distance
-		      + 2 * es.min_port_offset));
+    const eltstyle &style = cd->_style;
+    double xwidth, xheight;
+
+    if (_style == es_queue && _contents_height == 0) {
+	xwidth = MAX(_name_raw_height + _class_raw_height,
+		     style.min_queue_width);
+	xheight = MAX(MAX(_name_raw_width, _class_raw_width) + 2 * style.inside_dy,
+		      style.min_queue_height);
+    } else {
+	xwidth = MAX(MAX(_name_raw_width, _contents_width), _class_raw_width);
+	xheight = _name_raw_height + _class_raw_height + 2 * style.inside_dy;
+	if (_contents_height)
+	    xheight += style.inside_contents_dy + _contents_height;
+    }
     
-    double want_height = _name_raw_height + _class_raw_height + 2 * es.inside_dy;
-    if (_contents_height)
-	want_height += es.inside_contents_dy + _contents_height;
-    _height = ceil(es.min_preferred_height
-		   + MAX(ceil((want_height - es.min_preferred_height)
-			      / es.height_increment), 0) * es.height_increment);
+    _width = ceil(MAX(xwidth + 2 * style.inside_dx,
+		      (MAX(_e->ninputs(), _e->noutputs()) *
+		       style.min_port_distance) +
+		      2 * style.min_port_offset));
+    
+    _height = ceil(style.min_preferred_height +
+		   (MAX(ceil((xheight - style.min_preferred_height)
+			     / style.height_increment), 0) *
+		    style.height_increment));
 
     _layout = true;
 }
@@ -999,12 +1018,53 @@ void ClickyDiagram::elt::draw_text(ClickyDiagram *cd, cairo_t *cr, PangoLayout *
 	cairo_restore(cr);
 }
 
+void ClickyDiagram::elt::draw_outline(ClickyDiagram *cd, cairo_t *cr, PangoLayout *, double shift)
+{
+    const eltstyle &style = cd->_style;
+    
+    // shadow
+    cairo_set_source_rgba(cr, 0.1, 0.1, 0.2, 0.5);
+    cairo_set_line_width(cr, 3 - shift);
+    cairo_move_to(cr, _x + 3, _y + _height + 1.5 + shift / 2);
+    cairo_line_to(cr, _x + _width + 1.5 + shift / 2, _y + _height + 1.5 + shift / 2);
+    cairo_line_to(cr, _x + _width + 1.5 + shift / 2, _y + 3);
+    cairo_stroke(cr);
+
+    // outline
+    if (_style == es_queue) {
+	cairo_set_source_rgb(cr, 0.87, 0.87, 0.5);
+	cairo_set_line_width(cr, 1);
+	for (int i = 1; i * style.queue_line_sep <= _height - style.inside_dy; ++i) {
+	    cairo_move_to(cr, _x + shift + 0.5,
+			  _y + shift - 0.5 + _height - floor(i * style.queue_line_sep));
+	    cairo_rel_line_to(cr, _width, 0);
+	}
+	cairo_stroke(cr);
+	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_move_to(cr, _x + shift + 0.5, _y + shift + 0.5);
+	cairo_rel_line_to(cr, 0, _height - 1);
+	cairo_rel_line_to(cr, _width - 1, 0);
+	cairo_rel_line_to(cr, 0, -_height + 1);
+	cairo_stroke(cr);
+	    
+    } else {
+	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_set_line_width(cr, 1);
+	cairo_move_to(cr, _x + shift + 0.5, _y + shift + 0.5);
+	cairo_rel_line_to(cr, _width - 1, 0);
+	cairo_rel_line_to(cr, 0, _height - 1);
+	cairo_rel_line_to(cr, -_width + 1, 0);
+	cairo_close_path(cr);
+	cairo_stroke(cr);
+    }
+}
+
 void ClickyDiagram::elt::draw(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl)
 {
     if (!_visible)
 	return;
     
-    // background
+    // draw background
     if (_highlight & (1 << htype_click))
 	cairo_set_source_rgb(cr, 1, 1, 180./255);
     else if (_highlight & (1 << htype_hover))
@@ -1025,7 +1085,7 @@ void ClickyDiagram::elt::draw(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl)
 
     // contents drawn by rectsearch based on z_index!
 
-    // input ports
+    // draw ports
     double offset0, separation;
     const char *pcpos = _processing_code.begin();
     int pcode;
@@ -1042,26 +1102,12 @@ void ClickyDiagram::elt::draw(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl)
 	pcpos = ProcessingT::processing_code_next(pcpos, _processing_code.end(), pcode);
 	draw_output_port(cr, cd->_style, offset0 + separation * i, _y + shift + _height - 0.5, pcode);
     }
-    
-    // text
-    draw_text(cd, cr, pl, shift);
 
     // outline
-    cairo_set_source_rgba(cr, 0.1, 0.1, 0.2, 0.5);
-    cairo_set_line_width(cr, 3 - shift);
-    cairo_move_to(cr, _x + 3, _y + _height + 1.5 + shift / 2);
-    cairo_line_to(cr, _x + _width + 1.5 + shift / 2, _y + _height + 1.5 + shift / 2);
-    cairo_line_to(cr, _x + _width + 1.5 + shift / 2, _y + 3);
-    cairo_stroke(cr);
-    
-    cairo_set_source_rgb(cr, 0, 0, 0);
-    cairo_set_line_width(cr, 1);
-    cairo_move_to(cr, _x + shift + 0.5, _y + shift + 0.5);
-    cairo_rel_line_to(cr, _width - 1, 0);
-    cairo_rel_line_to(cr, 0, _height - 1);
-    cairo_rel_line_to(cr, -_width + 1, 0);
-    cairo_close_path(cr);
-    cairo_stroke(cr);
+    draw_outline(cd, cr, pl, shift);
+
+    // text
+    draw_text(cd, cr, pl, shift);
 }
 
 void ClickyDiagram::conn::draw(ClickyDiagram *cd, cairo_t *cr)

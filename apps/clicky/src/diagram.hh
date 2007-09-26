@@ -49,6 +49,9 @@ class ClickyDiagram { public:
 	double element_dy;
 	double min_width;
 	double min_height;
+	double min_queue_width;
+	double min_queue_height;
+	double queue_line_sep;
     };
 
   private:
@@ -100,6 +103,8 @@ class ClickyDiagram { public:
 	void finish(const eltstyle &es);
 	void draw(ClickyDiagram *cd, cairo_t *cr);
     };
+
+    enum { es_normal, es_queue };
     
     class elt : public ink { public:
 	ElementT *_e;
@@ -109,6 +114,7 @@ class ClickyDiagram { public:
 	elt *_parent;
 	String _flat_name;
 	String _flat_config;
+	int _style;
 
 	bool _visible;
 	bool _layout;
@@ -132,8 +138,9 @@ class ClickyDiagram { public:
 	class layoutelt;
 
 	elt(elt *parent, int z_index)
-	    : ink(i_elt, z_index), _e(0), _parent(parent), _visible(true),
-	      _layout(false), _expanded(true), _show_class(true), _highlight(0),
+	    : ink(i_elt, z_index), _e(0), _parent(parent), _style(es_normal),
+	      _visible(true), _layout(false), _expanded(true),
+	      _show_class(true), _highlight(0),
 	      _depth(parent ? parent->_depth + 1 : 0),
 	      _next_htype_click(0), _contents_width(0), _contents_height(0) {
 	}
@@ -161,6 +168,7 @@ class ClickyDiagram { public:
 	void draw_input_port(cairo_t *, const eltstyle &, double, double, int processing);
 	void draw_output_port(cairo_t *, const eltstyle &, double, double, int processing);
 	void clip_to_border(cairo_t *cr, double shift) const;
+	void draw_outline(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
 	void draw_text(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
 	void draw(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl);
 
