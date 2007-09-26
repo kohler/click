@@ -701,6 +701,18 @@ RouterT::find_connections_from(const PortT &h, Vector<int> &v) const
 }
 
 void
+RouterT::find_connections_to(ElementT *e, Vector<int> &v) const
+{
+    assert(e->router() == this);
+    int c = _first_conn[e->eindex()].to;
+    v.clear();
+    while (c >= 0) {
+	v.push_back(c);
+	c = _conn[c].next_to();
+    }
+}
+
+void
 RouterT::find_connections_to(const PortT &h, Vector<PortT> &v) const
 {
     assert(h.router() == this);

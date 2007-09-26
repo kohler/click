@@ -95,6 +95,7 @@ class RouterT : public ElementClassT { public:
     void find_connections_from(const PortT &, Vector<int> &) const;
     int find_connection_id_to(const PortT &) const;
     inline const PortT &find_connection_to(const PortT &) const;
+    void find_connections_to(ElementT *, Vector<int> &) const;
     void find_connections_to(const PortT &, Vector<PortT> &) const;
     void find_connections_to(const PortT &, Vector<int> &) const;
     void find_connection_vector_from(ElementT *, Vector<int> &) const;
