@@ -431,7 +431,7 @@ void RouterWindow::set_config(String conf, bool replace)
 	if (_driver)
 	    emap->set_driver_mask(_driver->driver_mask());
 	else {
-	    int driver = emap->pick_driver(_selected_driver, r, &_gerrh);
+	    int driver = emap->pick_driver(_selected_driver, r, 0);
 	    emap->set_driver_mask(1 << driver);
 	}
 	processing = new ProcessingT(r, emap);
