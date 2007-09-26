@@ -43,10 +43,12 @@ class ClickyDiagram { public:
 	double inside_dx;
 	double inside_dy;
 	double inside_contents_dy;
-	double min_height;
+	double min_preferred_height;
 	double height_increment;
 	double element_dx;
 	double element_dy;
+	double min_width;
+	double min_height;
     };
 
   private:
@@ -158,7 +160,9 @@ class ClickyDiagram { public:
 	inline void output_position(int port, const eltstyle &style, double &x, double &y);
 	void draw_input_port(cairo_t *, const eltstyle &, double, double, int processing);
 	void draw_output_port(cairo_t *, const eltstyle &, double, double, int processing);
-	void draw(ClickyDiagram *, cairo_t *, PangoLayout *);
+	void clip_to_border(cairo_t *cr, double shift) const;
+	void draw_text(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
+	void draw(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl);
 
 	void fill(RouterT *, ProcessingT *, HashMap<String, elt *> &collector, Vector<ElementT *> &, int &z_index);
 	
@@ -171,7 +175,7 @@ class ClickyDiagram { public:
     GtkWidget *_widget;
     GtkAdjustment *_horiz_adjust;
     GtkAdjustment *_vert_adjust;
-    eltstyle _eltstyle;
+    eltstyle _style;
     int _scale_step;
     double _scale;
 
