@@ -112,7 +112,8 @@ void ClickyDiagram::initialize()
 void ClickyDiagram::display(const String &ename, bool scroll_to)
 {
     if (elt *e = _elt_map[ename])
-	highlight(e, htype_click, 0, scroll_to);
+	if (!(e->_highlight & (1 << htype_click)))
+	    highlight(e, htype_click, 0, scroll_to);
 }
 
 void ClickyDiagram::scroll_recenter(point old_ctr)
@@ -1517,9 +1518,8 @@ gboolean ClickyDiagram::on_event(GdkEvent *event)
 	}
 
 	if (!(event->button.state & GDK_SHIFT_MASK)) {
-	    //|| !_highlight[htype_click]) {
-	    //if (!h || !(h->_highlight & (1 << htype_click)))
-	    highlight(h, htype_click, 0, false);
+	    if (!h || !(h->_highlight & (1 << htype_click)))
+		highlight(h, htype_click, 0, false);
 	    if (h)
 		_rw->element_show(h->_flat_name, 0, true);
 	} else if (h && (h->_highlight & (1 << htype_click))) {
