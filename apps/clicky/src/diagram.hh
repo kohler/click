@@ -48,8 +48,7 @@ class ClickyDiagram { public:
 	double height_increment;
 	double element_dx;
 	double element_dy;
-	double min_width;
-	double min_height;
+	double min_dimen;
 	double min_queue_width;
 	double min_queue_height;
 	double queue_line_sep;
@@ -123,6 +122,7 @@ class ClickyDiagram { public:
 	bool _layout;
 	bool _expanded;
 	bool _show_class;
+	bool _vertical;
 	uint8_t _highlight;
 	uint16_t _depth;
 	elt *_next_htype_click;
@@ -143,7 +143,7 @@ class ClickyDiagram { public:
 	elt(elt *parent, int z_index)
 	    : ink(i_elt, z_index), _e(0), _parent(parent), _style(es_normal),
 	      _visible(true), _layout(false), _expanded(true),
-	      _show_class(true), _highlight(0),
+	      _show_class(true), _vertical(true), _highlight(0),
 	      _depth(parent ? parent->_depth + 1 : 0),
 	      _next_htype_click(0), _contents_width(0), _contents_height(0) {
 	}
@@ -166,9 +166,10 @@ class ClickyDiagram { public:
 	void drag_prepare();
 	void drag_shift(double dx, double dy, ClickyDiagram *cd);
 	
-	static void port_position(double side_length, int port_type, int nports, const eltstyle &style, double &offset0, double &separation);
-	inline void input_position(int port, const eltstyle &style, double &x, double &y);
-	inline void output_position(int port, const eltstyle &style, double &x, double &y);
+	static void port_offsets(double side_length, int nports, const eltstyle &style, double &offset0, double &separation);
+	inline double port_position(int port, int nports, double side, const eltstyle &style) const;
+	inline void input_position(int port, const eltstyle &style, double &x_result, double &y_result) const;
+	inline void output_position(int port, const eltstyle &style, double &x_result, double &y_result) const;
 	void draw_input_port(cairo_t *, const eltstyle &, double, double, int processing);
 	void draw_output_port(cairo_t *, const eltstyle &, double, double, int processing);
 	void clip_to_border(cairo_t *cr, double shift) const;
@@ -260,29 +261,36 @@ inline const ClickyDiagram::conn *ClickyDiagram::ink::cast_conn() const {
     return (_type == i_conn ? static_cast<const conn *>(this) : 0);
 }
 
-inline void ClickyDiagram::elt::input_position(int port, const eltstyle &style, double &x_result, double &y_result)
+inline double ClickyDiagram::elt::port_position(int port, int nports, double side, const eltstyle &style) const
 {
-    if (port >= _e->ninputs()) {
-	x_result = x2();
-	y_result = y1();
-    } else {
+    if (port >= nports)
+	return side;
+    else {
 	double offset0, separation;
-	port_position(width(), 0, _e->ninputs(), style, offset0, separation);
-	x_result = x1() + offset0 + separation * port;
-	y_result = y1() + 0.5;
+	port_offsets(side, nports, style, offset0, separation);
+	return offset0 + separation * port;
     }
 }
 
-inline void ClickyDiagram::elt::output_position(int port, const eltstyle &style, double &x_result, double &y_result)
+inline void ClickyDiagram::elt::input_position(int port, const eltstyle &style, double &x_result, double &y_result) const
 {
-    if (port >= _e->noutputs()) {
-	x_result = x2();
-	y_result = y2();
+    if (_vertical) {
+	x_result = x1() + port_position(port, _e->ninputs(), width(), style);
+	y_result = y1() + 0.5;
     } else {
-	double offset0, separation;
-	port_position(width(), 1, _e->noutputs(), style, offset0, separation);
-	x_result = x1() + offset0 + separation * port;
-	y_result = y2() - 0.5;
+	x_result = x1() + 0.5;
+	y_result = y1() + port_position(port, _e->ninputs(), height(), style);
+    }
+}
+
+inline void ClickyDiagram::elt::output_position(int port, const eltstyle &style, double &x_result, double &y_result) const
+{
+    if (_vertical) {
+	x_result = x1() + port_position(port, _e->noutputs(), width(), style);
+	y_result = y2() + 0.5;
+    } else {
+	x_result = x2() + 0.5;
+	y_result = y1() + port_position(port, _e->noutputs(), height(), style);
     }
 }
 

@@ -60,8 +60,8 @@ ClickyDiagram::ClickyDiagram(RouterWindow *rw)
     _style.height_increment = 4;
     _style.element_dx = 8 * portscale;
     _style.element_dy = 8 * portscale;
-    _style.min_height = MAX(_style.port_width[0], _style.port_width[1]) * 2.5;
-    _style.min_width = 2 *_style.min_port_offset + MAX(_style.port_length[0], _style.port_length[1]);
+    _style.min_dimen = MAX(_style.port_width[0], _style.port_width[1]) * 2.5;
+    _style.min_dimen = MAX(_style.min_dimen, 2 *_style.min_port_offset + MAX(_style.port_length[0], _style.port_length[1]));
     _style.min_queue_width = 11 * portscale;
     _style.min_queue_height = 31 * portscale;
     _style.queue_line_sep = 8 * portscale;
@@ -217,6 +217,9 @@ void ClickyDiagram::elt::fill(RouterT *r, ProcessingT *processing, HashMap<Strin
 	if (e->_e->type_name().length() >= 5
 	    && memcmp(e->_e->type_name().end() - 5, "Queue", 5) == 0)
 	    e->_style = es_queue;
+	if (e->_e->type_name().length() >= 4
+	    && memcmp(e->_e->type_name().begin(), "ICMP", 4) == 0)
+	    e->_vertical = false;
     }
 
     for (RouterT::conn_iterator i = r->begin_connections(); i != r->end_connections(); ++i) {
@@ -698,11 +701,16 @@ void ClickyDiagram::elt::layout(ClickyDiagram *cd, PangoLayout *pl)
 	if (_contents_height)
 	    xheight += style.inside_contents_dy + _contents_height;
     }
+
+    double xportlen = MAX(_e->ninputs(), _e->noutputs()) *
+	style.min_port_distance + 2 * style.min_port_offset;
     
-    _width = ceil(MAX(xwidth + 2 * style.inside_dx,
-		      (MAX(_e->ninputs(), _e->noutputs()) *
-		       style.min_port_distance) +
-		      2 * style.min_port_offset));
+    if (_vertical)
+	_width = ceil(MAX(xwidth + 2 * style.inside_dx, xportlen));
+    else {
+	_width = ceil(xwidth + 2 * style.inside_dx);
+	xheight = MAX(xheight, xportlen);
+    }
     
     _height = ceil(style.min_preferred_height +
 		   (MAX(ceil((xheight - style.min_preferred_height)
@@ -833,13 +841,20 @@ void ClickyDiagram::conn::finish(const eltstyle &style)
     double fromx, fromy, tox, toy;
     _from_elt->output_position(_from_port, style, fromx, fromy);
     _to_elt->input_position(_to_port, style, tox, toy);
-    _x = MIN(fromx, tox - 3);
-    _y = MIN(fromy, toy - 12);
-    _width = MAX(fromx, tox + 3) - _x;
-    _height = MAX(fromy + 5, toy) - _y;
+    if (_from_elt->_vertical && _to_elt->_vertical) {
+	_x = MIN(fromx, tox - 3);
+	_y = MIN(fromy, toy - 12);
+	_width = MAX(fromx, tox + 3) - _x;
+	_height = MAX(fromy + 5, toy) - _y;
+    } else {
+	_x = MIN(fromx, tox - 12);
+	_y = MIN(fromy - 2, toy - 12);
+	_width = MAX(fromx + 5, tox + 3) - _x;
+	_height = MAX(fromy + 5, toy + 3) - _y;
+    }
 }
 
-void ClickyDiagram::elt::port_position(double side_length, int, int nports, const eltstyle &style, double &offset0, double &separation)
+void ClickyDiagram::elt::port_offsets(double side_length, int nports, const eltstyle &style, double &offset0, double &separation)
 {
     if (nports == 0) {
 	offset0 = separation = 0;
@@ -875,11 +890,16 @@ void ClickyDiagram::elt::draw_input_port(cairo_t *cr, const eltstyle &style, dou
     double pw = style.port_width[0];
     double as = style.port_agnostic_separation[0];
     cairo_set_line_width(cr, 1);
+    cairo_matrix_t original_matrix;
+    cairo_get_matrix(cr, &original_matrix);
+    cairo_translate(cr, x, y);
+    if (!_vertical)
+	cairo_rotate(cr, -M_PI / 2);
 
     for (int i = 0; i < 2; i++) {
-	cairo_move_to(cr, x - pl / 2, y);
-	cairo_line_to(cr, x, y + pw);
-	cairo_line_to(cr, x + pl / 2, y);
+	cairo_move_to(cr, -pl / 2, 0);
+	cairo_line_to(cr, 0, pw);
+	cairo_line_to(cr, pl / 2, 0);
 	if (processing != ProcessingT::VPUSH && i == 0)
 	    cairo_set_source_rgb(cr, 1, 1, 1);
 	else
@@ -894,9 +914,9 @@ void ClickyDiagram::elt::draw_input_port(cairo_t *cr, const eltstyle &style, dou
     if (processing == ProcessingT::VAGNOSTIC
 	|| (processing & ProcessingT::VAFLAG))
 	for (int i = 0; i < 2; i++) {
-	    cairo_move_to(cr, x - pl / 2 + as, y);
-	    cairo_line_to(cr, x, y + pw - 1.15 * as);
-	    cairo_line_to(cr, x + pl / 2 - as, y);
+	    cairo_move_to(cr, -pl / 2 + as, 0);
+	    cairo_line_to(cr, 0, pw - 1.15 * as);
+	    cairo_line_to(cr, pl / 2 - as, 0);
 	    if (i == 0) {
 		cairo_processing_rgb(cr, processing);
 		cairo_close_path(cr);
@@ -907,6 +927,8 @@ void ClickyDiagram::elt::draw_input_port(cairo_t *cr, const eltstyle &style, dou
 		cairo_stroke(cr);
 	    }
 	}
+
+    cairo_set_matrix(cr, &original_matrix);
 }
 
 void ClickyDiagram::elt::draw_output_port(cairo_t *cr, const eltstyle &style, double x, double y, int processing)
@@ -915,12 +937,17 @@ void ClickyDiagram::elt::draw_output_port(cairo_t *cr, const eltstyle &style, do
     double pw = style.port_width[1];
     double as = style.port_agnostic_separation[1];
     cairo_set_line_width(cr, 1);
+    cairo_matrix_t original_matrix;
+    cairo_get_matrix(cr, &original_matrix);
+    cairo_translate(cr, x, y);
+    if (!_vertical)
+	cairo_rotate(cr, -M_PI / 2);
 
     for (int i = 0; i < 2; i++) {
-	cairo_move_to(cr, x - pl / 2, y);
-	cairo_line_to(cr, x - pl / 2, y - pw);
-	cairo_line_to(cr, x + pl / 2, y - pw);
-	cairo_line_to(cr, x + pl / 2, y);
+	cairo_move_to(cr, -pl / 2, 0);
+	cairo_line_to(cr, -pl / 2, -pw);
+	cairo_line_to(cr, pl / 2, -pw);
+	cairo_line_to(cr, pl / 2, 0);
 	if (processing != ProcessingT::VPUSH && i == 0)
 	    cairo_set_source_rgb(cr, 1, 1, 1);
 	else
@@ -935,10 +962,10 @@ void ClickyDiagram::elt::draw_output_port(cairo_t *cr, const eltstyle &style, do
     if (processing == ProcessingT::VAGNOSTIC
 	|| (processing & ProcessingT::VAFLAG))
 	for (int i = 0; i < 2; i++) {
-	    cairo_move_to(cr, x - pl / 2 + as, y);
-	    cairo_line_to(cr, x - pl / 2 + as, y - pw + as);
-	    cairo_line_to(cr, x + pl / 2 - as, y - pw + as);
-	    cairo_line_to(cr, x + pl / 2 - as, y);
+	    cairo_move_to(cr, -pl / 2 + as, 0);
+	    cairo_line_to(cr, -pl / 2 + as, -pw + as);
+	    cairo_line_to(cr, pl / 2 - as, -pw + as);
+	    cairo_line_to(cr, pl / 2 - as, 0);
 	    if (i == 0) {
 		cairo_processing_rgb(cr, processing);	
 		cairo_close_path(cr);
@@ -949,6 +976,8 @@ void ClickyDiagram::elt::draw_output_port(cairo_t *cr, const eltstyle &style, do
 		cairo_stroke(cr);
 	    }
 	}
+
+    cairo_set_matrix(cr, &original_matrix);
 }
 
 void ClickyDiagram::elt::clip_to_border(cairo_t *cr, double shift) const
@@ -1121,18 +1150,34 @@ void ClickyDiagram::elt::draw(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl)
     double offset0, separation;
     const char *pcpos = _processing_code.begin();
     int pcode;
-    port_position(_width, 0, _e->ninputs(), cd->_style, offset0, separation);
-    offset0 += _x + shift;
-    for (int i = 0; i < _e->ninputs(); i++) {
-	pcpos = ProcessingT::processing_code_next(pcpos, _processing_code.end(), pcode);
-	draw_input_port(cr, cd->_style, offset0 + separation * i, _y + shift + 0.5, pcode);
-    }
-    pcpos = ProcessingT::processing_code_output(_processing_code.begin(), _processing_code.end(), pcpos);
-    port_position(_width, 1, _e->noutputs(), cd->_style, offset0, separation);
-    offset0 += _x + shift;
-    for (int i = 0; i < _e->noutputs(); i++) {
-	pcpos = ProcessingT::processing_code_next(pcpos, _processing_code.end(), pcode);
-	draw_output_port(cr, cd->_style, offset0 + separation * i, _y + shift + _height - 0.5, pcode);
+    if (_vertical) {
+	port_offsets(_width, _e->ninputs(), cd->_style, offset0, separation);
+	offset0 += _x + shift;
+	for (int i = 0; i < _e->ninputs(); i++) {
+	    pcpos = ProcessingT::processing_code_next(pcpos, _processing_code.end(), pcode);
+	    draw_input_port(cr, cd->_style, offset0 + separation * i, _y + shift + 0.5, pcode);
+	}
+	pcpos = ProcessingT::processing_code_output(_processing_code.begin(), _processing_code.end(), pcpos);
+	port_offsets(_width, _e->noutputs(), cd->_style, offset0, separation);
+	offset0 += _x + shift;
+	for (int i = 0; i < _e->noutputs(); i++) {
+	    pcpos = ProcessingT::processing_code_next(pcpos, _processing_code.end(), pcode);
+	    draw_output_port(cr, cd->_style, offset0 + separation * i, _y + shift + _height - 0.5, pcode);
+	}
+    } else {
+	port_offsets(_height, _e->ninputs(), cd->_style, offset0, separation);
+	offset0 += _y + shift;
+	for (int i = 0; i < _e->ninputs(); i++) {
+	    pcpos = ProcessingT::processing_code_next(pcpos, _processing_code.end(), pcode);
+	    draw_input_port(cr, cd->_style, _x + shift + 0.5, offset0 + separation * i, pcode);
+	}
+	pcpos = ProcessingT::processing_code_output(_processing_code.begin(), _processing_code.end(), pcpos);
+	port_offsets(_height, _e->noutputs(), cd->_style, offset0, separation);
+	offset0 += _y + shift;
+	for (int i = 0; i < _e->noutputs(); i++) {
+	    pcpos = ProcessingT::processing_code_next(pcpos, _processing_code.end(), pcode);
+	    draw_output_port(cr, cd->_style, _x + shift + _width - 0.5, offset0 + separation * i, pcode);
+	}
     }
 
     // outline
@@ -1151,17 +1196,39 @@ void ClickyDiagram::conn::draw(ClickyDiagram *cd, cairo_t *cr)
     _from_elt->output_position(_from_port, cd->_style, fromx, fromy);
     _to_elt->input_position(_to_port, cd->_style, tox, toy);
     cairo_move_to(cr, fromx, fromy);
-    if (fabs(tox - fromx) >= 6) {
-	cairo_line_to(cr, fromx, fromy + 3);
-	cairo_curve_to(cr, fromx, fromy + 10, tox, toy - 12, tox, toy - 7);
+    if ((_from_elt->_vertical && _to_elt->_vertical && fabs(tox - fromx) <= 6)
+	|| (!_from_elt->_vertical && !_to_elt->_vertical && fabs(toy - fromy) <= 6))
+	/* no curves */;
+    else {
+	point curvea;
+	if (_from_elt->_vertical) {
+	    cairo_line_to(cr, fromx, fromy + 3);
+	    curvea = point(fromx, fromy + 10);
+	} else {
+	    cairo_line_to(cr, fromx + 3, fromy);
+	    curvea = point(fromx + 10, fromy);
+	}
+	if (_to_elt->_vertical)
+	    cairo_curve_to(cr, curvea.x(), curvea.y(),
+			   tox, toy - 12, tox, toy - 7);
+	else
+	    cairo_curve_to(cr, curvea.x(), curvea.y(),
+			   tox - 12, toy, tox - 7, toy);
     }
     cairo_line_to(cr, tox, toy);
     cairo_stroke(cr);
 
-    cairo_move_to(cr, tox, toy + 0.25);
-    cairo_line_to(cr, tox - 3, toy - 5.75);
-    cairo_line_to(cr, tox, toy - 3.75);
-    cairo_line_to(cr, tox + 3, toy - 5.75);
+    if (_to_elt->_vertical) {
+	cairo_move_to(cr, tox, toy + 0.25);
+	cairo_line_to(cr, tox - 3, toy - 5.75);
+	cairo_line_to(cr, tox, toy - 3.75);
+	cairo_line_to(cr, tox + 3, toy - 5.75);
+    } else {
+	cairo_move_to(cr, tox + 0.25, toy);
+	cairo_line_to(cr, tox - 5.75, toy - 3);
+	cairo_line_to(cr, tox - 3.75, toy);
+	cairo_line_to(cr, tox - 5.75, toy + 3);
+    }
     cairo_close_path(cr);
     cairo_fill(cr);
 }
@@ -1352,15 +1419,15 @@ void ClickyDiagram::on_drag_motion(const point &p)
 	int vtype = _last_cursorno % 3;
 	int htype = _last_cursorno - vtype;
 	double dx = p.x() - _drag_first._x, dy = p.y() - _drag_first._y;
-	if (vtype == c_top && h->_xrect._height - dy >= _style.min_height) {
+	if (vtype == c_top && h->_xrect._height - dy >= _style.min_dimen) {
 	    h->_y = h->_xrect._y + dy;
 	    h->_height = h->_xrect._height - dy;
-	} else if (vtype == c_bot && h->_xrect._height + dy >= _style.min_height)
+	} else if (vtype == c_bot && h->_xrect._height + dy >= _style.min_dimen)
 	    h->_height = h->_xrect._height + dy;
-	if (htype == c_lft && h->_xrect._width - dx >= _style.min_width) {
+	if (htype == c_lft && h->_xrect._width - dx >= _style.min_dimen) {
 	    h->_x = h->_xrect._x + dx;
 	    h->_width = h->_xrect._width - dx;
-	} else if (htype == c_rt && h->_xrect._width + dx >= _style.min_width)
+	} else if (htype == c_rt && h->_xrect._width + dx >= _style.min_dimen)
 	    h->_width = h->_xrect._width + dx;
 	h->insert(_rects, _style, r);
 	
@@ -1406,7 +1473,8 @@ void ClickyDiagram::set_cursor(elt *h, double x, double y)
 	point h_tl = canvas_to_window(h->x1(), h->y1());
 	point h_br = canvas_to_window(h->x2(), h->y2());
 	double attach = MAX(2.0, _scale);
-	if (h_br.x() - h_tl.x() >= 6 && h_br.y() - h_tl.y() >= 6
+	if (_scale_step > -5
+	    && h_br.x() - h_tl.x() >= 18 && h_br.y() - h_tl.y() >= 18
 	    && (x - h_tl.x() < attach || y - h_tl.y() < attach
 		|| h_br.x() - x < attach || h_br.y() - y < attach)) {
 	    cnum = c_c;
