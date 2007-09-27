@@ -140,7 +140,8 @@ class RouterWindow { public:
     
     GtkWidget *_config_view;
     GtkTextBuffer *_config_buffer;
-    bool _config_clean;
+    bool _config_clean_errors;
+    bool _config_clean_elements;
 
     GtkWidget *_error_view;
     GtkTextBuffer *_error_buffer;

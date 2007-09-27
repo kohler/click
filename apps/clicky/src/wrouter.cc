@@ -152,7 +152,8 @@ static void destroy(gpointer data) {
 RouterWindow::RouterWindow()
     : _r(0), _emap(0), _processing(0), _throbber_count(0),
       _window(create_mainw()), _bold_font(0), _small_attr(0),
-      _config_clean(true), _error_hover_tag(0), _error_highlight_tag(0),
+      _config_clean_errors(true), _config_clean_elements(true),
+      _error_hover_tag(0), _error_highlight_tag(0),
       _error_endpos(0), _error_hover_index(-1),
       _config_error_highlight_tag(0), _error_highlight_index(-1),
       _error_highlight_x(-1), _error_highlight_y(-1), _error_scroller(0),
@@ -261,7 +262,7 @@ void RouterWindow::clear(bool alive)
     _gerrh.clear();
     _error_endpos = 0;
     _conf = _landmark = _savefile = String();
-    _config_clean = true;
+    _config_clean_errors = _config_clean_elements = true;
 
     // kill throbber before removing csocket messages, so if destroying window
     // while callbacks are outstanding, won't touch throbber widget
@@ -410,7 +411,7 @@ void RouterWindow::set_config(String conf, bool replace)
     element_unhighlight();
     gtk_text_buffer_set_text(_config_buffer, conf.data(), conf.length());
     config_changed_initialize(true, false);
-    _config_clean = true;
+    _config_clean_errors = true;
 
     // read router
     if (!conf.length())
@@ -453,6 +454,7 @@ void RouterWindow::set_config(String conf, bool replace)
 	_emap = emap;
 	_processing = processing;
 	_diagram->router_create(false, false);
+	_config_clean_elements = true;
 	config_choose_driver();
     } else {
 	delete r;
@@ -625,7 +627,7 @@ void RouterWindow::element_show(String ename, int expand, bool incremental)
 
 	// highlight config and diagram
 	ElementT *backe = epath.back();
-	if (backe->landmarkt().offset1() != backe->landmarkt().offset2() && expand >= 0 && _config_clean)
+	if (backe->landmarkt().offset1() != backe->landmarkt().offset2() && expand >= 0 && _config_clean_elements)
 	    _element_highlight = backe;
 	if (expand <= 0)	// expand > 0 taken care of below
 	    _diagram->display(ename, false);
@@ -878,7 +880,7 @@ bool RouterWindow::error_view_motion_position(gint x, gint y)
     GatherErrorHandler::iterator message = _gerrh.find_offset(gtk_text_iter_get_offset(&i));
 
     // get buffer positions
-    if (message != _gerrh.end() && !_config_clean)
+    if (message != _gerrh.end() && !_config_clean_errors)
 	message->errpos1 = message->errpos2 = 0;
     if (message != _gerrh.end() && message->errpos1 == 0 && message->errpos2 == 0) {
 	const char *next;
@@ -1090,7 +1092,7 @@ void RouterWindow::on_config_changed()
     if (_config_changed_signal)
 	g_signal_handler_disconnect(_config_buffer, _config_changed_signal);
     _config_changed_signal = 0;
-    _config_clean = false;
+    _config_clean_errors = _config_clean_elements = false;
     error_unhighlight();
     element_unhighlight();
     gtk_widget_set_sensitive(lookup_widget(_window, "toolbar_check"), TRUE);
