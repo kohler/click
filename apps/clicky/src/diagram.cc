@@ -23,7 +23,8 @@ static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer);
 }
 
 ClickyDiagram::ClickyDiagram(RouterWindow *rw)
-    : _rw(rw), _scale_step(0), _scale(1), _origin_x(0), _origin_y(0), _relt(0)
+    : _rw(rw), _scale_step(0), _scale(1), _origin_x(0), _origin_y(0), _relt(0),
+      _drag_state(drag_none)
 {
     _widget = lookup_widget(_rw->_window, "diagram");
     gtk_widget_realize(_widget);
@@ -114,6 +115,14 @@ void ClickyDiagram::display(const String &ename, bool scroll_to)
     if (elt *e = _elt_map[ename])
 	if (!(e->_highlight & (1 << htype_click)))
 	    highlight(e, htype_click, 0, scroll_to);
+}
+
+inline void ClickyDiagram::find_rect_elts(const rectangle &r, std::vector<ink *> &result) const
+{
+    _rects.find_all(r, result);
+    std::sort(result.begin(), result.end(), ink::z_index_less);
+    std::vector<ink *>::iterator eltsi = std::unique(result.begin(), result.end());
+    result.erase(eltsi, result.end());
 }
 
 void ClickyDiagram::scroll_recenter(point old_ctr)
@@ -1255,22 +1264,35 @@ void ClickyDiagram::layout()
     }
 }
 
-void ClickyDiagram::on_expose(const GdkRectangle *area, bool clip)
+void ClickyDiagram::on_expose(const GdkRectangle *area)
 {
     if (!_layout)
 	layout();
 
     cairo_t *cr = gdk_cairo_create(GTK_LAYOUT(_widget)->bin_window);
-    if (clip) {
-	cairo_rectangle(cr, area->x, area->y, area->width, area->height);
-	cairo_clip(cr);
-    }
+    cairo_rectangle(cr, area->x, area->y, area->width, area->height);
+    cairo_clip(cr);
 
     // background
     cairo_rectangle(cr, area->x, area->y, area->width, area->height);
     const GdkColor &bgcolor = _widget->style->bg[GTK_STATE_NORMAL];
     cairo_set_source_rgb(cr, bgcolor.red / 65535., bgcolor.green / 65535., bgcolor.blue / 65535.);
     cairo_fill(cr);
+
+    // highlight rectangle
+    if (_drag_state == drag_rect_dragging) {
+	cairo_set_line_width(cr, 4);
+	const GdkColor &bgcolor = _widget->style->bg[GTK_STATE_ACTIVE];
+	cairo_set_source_rgb(cr, bgcolor.red / 65535., bgcolor.green / 65535., bgcolor.blue / 65535.);
+	rectangle r = canvas_to_window(_dragr).normalize();
+	if (r.width() < 8 || r.height() < 8) {
+	    cairo_rectangle(cr, r.x(), r.y(), r.width(), r.height());
+	    cairo_fill(cr);
+	} else {
+	    cairo_rectangle(cr, r.x() + 2, r.y() + 2, r.width() - 4, r.height() - 4);
+	    cairo_stroke(cr);
+	}
+    }
     
     PangoLayout *pl = gtk_widget_create_pango_layout(_widget, NULL);
 
@@ -1279,14 +1301,12 @@ void ClickyDiagram::on_expose(const GdkRectangle *area, bool clip)
     r.scale(1 / _scale);
     r.expand(elt_expand);
     std::vector<ink *> elts;
-    _rects.find_all(r, elts);
-    std::sort(elts.begin(), elts.end(), ink::z_index_less);
-    std::vector<ink *>::iterator eltsi = std::unique(elts.begin(), elts.end());
-    elts.erase(eltsi, elts.end());
+    find_rect_elts(r, elts);
 
     cairo_translate(cr, -_origin_x, -_origin_y);
     cairo_scale(cr, _scale, _scale);
-    for (eltsi = elts.begin(); eltsi != elts.end(); ++eltsi)
+    for (std::vector<ink *>::iterator eltsi = elts.begin();
+	 eltsi != elts.end(); ++eltsi)
 	if (elt *e = (*eltsi)->cast_elt())
 	    e->draw(this, cr, pl);
 	else {
@@ -1302,7 +1322,7 @@ extern "C" {
 static gboolean diagram_expose(GtkWidget *, GdkEventExpose *e, gpointer user_data)
 {
     ClickyDiagram *cd = reinterpret_cast<ClickyDiagram *>(user_data);
-    cd->on_expose(&e->area, true);
+    cd->on_expose(&e->area);
     return FALSE;
 }
 
@@ -1400,18 +1420,18 @@ void ClickyDiagram::highlight(elt *h, uint8_t htype, rectangle *expose, bool scr
 void ClickyDiagram::on_drag_motion(const point &p)
 {
     elt *h = _highlight[htype_click];
-    if (_drag_state == 0
-	&& (fabs(p.x() - _drag_first._x) * _scale >= 3
-	    || fabs(p.y() - _drag_first._y) * _scale >= 3)) {
+    if (_drag_state == drag_start
+	&& (fabs(p.x() - _dragr.x()) * _scale >= 3
+	    || fabs(p.y() - _dragr.y()) * _scale >= 3)) {
 	for (elt *hx = h; hx; hx = hx->_next_htype_click)
 	    hx->drag_prepare();
-	_drag_state = 1;
+	_drag_state = drag_dragging;
     }
     
-    if (_drag_state == 1 && _last_cursorno == c_c) {
+    if (_drag_state == drag_dragging && _last_cursorno == c_c) {
 	for (elt *hx = h; hx; hx = hx->_next_htype_click)
-	    hx->drag_shift(p.x() - _drag_first._x, p.y() - _drag_first._y, this);
-    } else if (_drag_state == 1) {
+	    hx->drag_shift(p.x() - _dragr.x(), p.y() - _dragr.y(), this);
+    } else if (_drag_state == drag_dragging) {
 	// assume that _highlight[htype_hover] is relevant
 	elt *h = _highlight[htype_hover];
 	assert(h);
@@ -1419,7 +1439,7 @@ void ClickyDiagram::on_drag_motion(const point &p)
 	h->remove(_rects, r);
 	int vtype = _last_cursorno % 3;
 	int htype = _last_cursorno - vtype;
-	double dx = p.x() - _drag_first._x, dy = p.y() - _drag_first._y;
+	double dx = p.x() - _dragr.x(), dy = p.y() - _dragr.y();
 	if (vtype == c_top && h->_xrect._height - dy >= _style.min_dimen) {
 	    h->_y = h->_xrect._y + dy;
 	    h->_height = h->_xrect._height - dy;
@@ -1444,6 +1464,46 @@ void ClickyDiagram::on_drag_motion(const point &p)
     }
 }
 
+void ClickyDiagram::on_drag_rect_motion(const point &p)
+{
+    if (_drag_state == drag_rect_start
+	&& (fabs(p.x() - _dragr.x()) * _scale >= 3
+	    || fabs(p.y() - _dragr.y()) * _scale >= 3))
+	_drag_state = drag_rect_dragging;
+
+    if (_drag_state == drag_rect_dragging) {
+	rectangle to_redraw = _dragr.normalize();
+	
+	elt **pprev = &_highlight[htype_click];
+	for (elt *e = *pprev; e; e = *pprev)
+	    if (e->_highlight & (1 << htype_rect_click)) {
+		e->_highlight &= ~((1 << htype_rect_click) | (1 << htype_click));
+		*pprev = e->_next_htype_click;
+		e->_next_htype_click = 0;
+		to_redraw |= *e;
+	    } else
+		pprev = &e->_next_htype_click;
+	
+	_dragr._width = p.x() - _dragr.x();
+	_dragr._height = p.y() - _dragr.y();
+
+	std::vector<ink *> elts;
+	find_rect_elts(_dragr.normalize(), elts);
+	for (std::vector<ink *>::iterator iter = elts.begin();
+	     iter != elts.end(); ++iter)
+	    if (elt *e = (*iter)->cast_elt())
+		if (!(e->_highlight & (1 << htype_click))) {
+		    e->_highlight |= (1 << htype_rect_click) | (1 << htype_click);
+		    e->_next_htype_click = _highlight[htype_click];
+		    _highlight[htype_click] = e;
+		    to_redraw |= *e;
+		}
+
+	to_redraw |= _dragr.normalize();
+	redraw(to_redraw);
+    }
+}
+
 void ClickyDiagram::on_drag_complete()
 {
     rectangle r = *_relt;
@@ -1465,6 +1525,16 @@ void ClickyDiagram::on_drag_complete()
 	    scroll_recenter(old_ctr);
 	    break;
 	}
+}
+
+void ClickyDiagram::on_drag_rect_complete()
+{
+    std::vector<ink *> elts;
+    find_rect_elts(_dragr, elts);
+    for (std::vector<ink *>::iterator iter = elts.begin(); iter != elts.end(); ++iter)
+	if (elt *e = (*iter)->cast_elt())
+	    e->_highlight &= ~(1 << htype_rect_click);
+    redraw(_dragr.normalize());
 }
 
 void ClickyDiagram::set_cursor(elt *h, double x, double y)
@@ -1498,24 +1568,25 @@ void ClickyDiagram::set_cursor(elt *h, double x, double y)
 gboolean ClickyDiagram::on_event(GdkEvent *event)
 {
     if (event->type == GDK_MOTION_NOTIFY) {
+	point p = window_to_canvas(event->motion.x, event->motion.y);
 	if (!(event->motion.state & GDK_BUTTON1_MASK)) {
-	    elt *h = point_elt(window_to_canvas(event->motion.x, event->motion.y));
+	    elt *h = point_elt(p);
 	    highlight(h, htype_hover, 0, false);
 	    set_cursor(h, event->motion.x, event->motion.y);
-	} else if (_highlight[htype_click])
-	    on_drag_motion(window_to_canvas(event->motion.x, event->motion.y));
-	
+	} else if (_drag_state == drag_start || _drag_state == drag_dragging)
+	    on_drag_motion(p);
+	else if (_drag_state == drag_rect_start || _drag_state == drag_rect_dragging)
+	    on_drag_rect_motion(p);
+
+	// Getting pointer position tells GTK to give us more motion events
 	GdkModifierType mod;
 	gint mx, my;
 	(void) gdk_window_get_pointer(_widget->window, &mx, &my, &mod);
 
     } else if (event->type == GDK_BUTTON_PRESS && event->button.button == 1) {
-	point p = window_to_canvas(event->button.x, event->button.y);
-	elt *h = point_elt(p);
-	if (h) {
-	    _drag_first = p;
-	    _drag_state = 0;
-	}
+	_dragr.set_origin(window_to_canvas(event->button.x, event->button.y));
+	elt *h = point_elt(_dragr.origin());
+	_drag_state = (h ? drag_start : drag_rect_start);
 
 	if (!(event->button.state & GDK_SHIFT_MASK)) {
 	    if (!h || !(h->_highlight & (1 << htype_click)))
@@ -1530,19 +1601,21 @@ gboolean ClickyDiagram::on_event(GdkEvent *event)
 		*prev = h->_next_htype_click;
 	    h->_highlight &= ~(1 << htype_click);
 	    h->_next_htype_click = 0;
-	    _drag_state = -1;
+	    _drag_state = drag_none;
 	} else if (h) {
 	    h->_highlight |= 1 << htype_click;
 	    h->_next_htype_click = _highlight[htype_click];
 	    _highlight[htype_click] = h;
-	} else
-	    _drag_state = -1;
+	}
 
 	highlight(h, htype_pressed, 0, false);
 	
     } else if (event->type == GDK_BUTTON_RELEASE && event->button.button == 1) {
-	if (_drag_state == 1)
+	if (_drag_state == drag_dragging)
 	    on_drag_complete();
+	else if (_drag_state == drag_rect_dragging)
+	    on_drag_rect_complete();
+	_drag_state = drag_none;
 	unhighlight(htype_pressed, 0);
 	
     } else if (event->type == GDK_2BUTTON_PRESS && event->button.button == 1) {

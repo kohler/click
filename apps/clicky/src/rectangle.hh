@@ -89,17 +89,42 @@ struct rectangle {
 	return _y + _height / 2;
     }
 
+    point origin() const {
+	return point(_x, _y);
+    }
+    
+    typedef void (rectangle::*unspecified_bool_type)(double);
+
+    operator unspecified_bool_type() const {
+	return (_width > 0 && _height > 0 ? &rectangle::expand : 0);
+    }
+
     void assign(double x, double y, double width, double height) {
 	_x = x;
 	_y = y;
 	_width = width;
 	_height = height;
     }
-	
-    typedef void (rectangle::*unspecified_bool_type)(double);
 
-    operator unspecified_bool_type() const {
-	return (_width > 0 && _height > 0 ? &rectangle::expand : 0);
+    rectangle normalize() const {
+	if (_width >= 0 && _height >= 0)
+	    return *this;
+	else if (_width >= 0)
+	    return rectangle(_x, _y + _height, _width, -_height);
+	else if (_height >= 0)
+	    return rectangle(_x + _width, _y, -_width, _height);
+	else
+	    return rectangle(_x + _width, _y + _height, -_width, -_height);
+    }
+
+    void set_origin(const point &p) {
+	_x = p.x();
+	_y = p.y();
+    }
+    
+    void shift(double dx, double dy) {
+	_x += dx;
+	_y += dy;
     }
 
     void expand(double d) {
@@ -107,11 +132,6 @@ struct rectangle {
 	_y -= d;
 	_width += 2 * d;
 	_height += 2 * d;
-    }
-    
-    void shift(double dx, double dy) {
-	_x += dx;
-	_y += dy;
     }
 
     void shift(const point &p) {

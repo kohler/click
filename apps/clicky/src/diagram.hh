@@ -28,7 +28,7 @@ class ClickyDiagram { public:
     void zoom(bool incremental, int amount);
     void scroll_recenter(point p);
 
-    void on_expose(const GdkRectangle *r, bool clip);
+    void on_expose(const GdkRectangle *r);
     gboolean on_event(GdkEvent *event);
     
     struct eltstyle {
@@ -61,7 +61,8 @@ class ClickyDiagram { public:
 	   lay_border = 4,	// border around layout
 	   drag_threshold = 8 };// amount after which recalculate layout
 
-    enum { htype_hover = 0, htype_click = 1, htype_pressed = 2 };
+    enum { htype_hover = 0, htype_click = 1, htype_pressed = 2,
+	   htype_rect_click = 3 };
 
     enum { i_elt = 0, i_conn = 1 };
     class elt;
@@ -202,7 +203,10 @@ class ClickyDiagram { public:
 
     elt *_highlight[3];
 
-    point _drag_first;
+    enum { drag_none, drag_start, drag_dragging, drag_rect_start,
+	   drag_rect_dragging };
+    
+    rectangle _dragr;
     int _drag_state;
     
     PangoAttrList *_name_attrs;
@@ -221,11 +225,15 @@ class ClickyDiagram { public:
     void highlight(elt *e, uint8_t htype, rectangle *expose, bool incremental);
     void set_cursor(elt *e, double x, double y);
     point scroll_center() const;
+    inline void find_rect_elts(const rectangle &r, std::vector<ink *> &result) const;
     void on_drag_motion(const point &p);
+    void on_drag_rect_motion(const point &p);
     void on_drag_complete();
+    void on_drag_rect_complete();
     
     point window_to_canvas(double x, double y) const;
     point canvas_to_window(double x, double y) const;
+    rectangle canvas_to_window(const rectangle &r) const;
     
     friend class elt;
     
@@ -302,6 +310,12 @@ inline point ClickyDiagram::window_to_canvas(double x, double y) const
 inline point ClickyDiagram::canvas_to_window(double x, double y) const
 {
     return point(x * _scale - _origin_x, y * _scale - _origin_y);
+}
+
+inline rectangle ClickyDiagram::canvas_to_window(const rectangle &r) const
+{
+    return rectangle(r.x() * _scale - _origin_x, r.y() * _scale - _origin_y,
+		     r.width() * _scale, r.height() * _scale);
 }
 
 inline point ClickyDiagram::scroll_center() const
