@@ -499,15 +499,8 @@ DirectIPLookup::dump_routes()
 void
 DirectIPLookup::add_handlers()
 {
-    // Must keep those in sync with iproutetable.cc!  We need to have our
-    // own add_handlers() in order to support the flush() operation.
-    add_write_handler("add", add_route_handler, 0);
-    add_write_handler("set", add_route_handler, (void*) 1);
-    add_write_handler("remove", remove_route_handler, 0);
-    add_write_handler("ctrl", ctrl_handler, 0);
-    add_read_handler("table", table_handler, 0);
-    set_handler("lookup", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, lookup_handler);
-    add_write_handler("flush", flush_handler, 0);
+    IPRouteTable::add_handlers();
+    add_write_handler("flush", flush_handler, 0, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS

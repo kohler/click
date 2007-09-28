@@ -37,7 +37,7 @@ Gupta, Lin, and McKeown in the paper cited below.
 
 Outputs a human-readable version of the current routing table.
 
-=h lookup read-only
+=h lookup read-only, requires parameters
 
 Reports the OUTput port and GW corresponding to an address.
 
