@@ -28,8 +28,8 @@ struct RouterWindow::whandler {
 
     void notify_element(const String &ename);
     void notify_handlers(const String &ename, const String &data);
-    void notify_read(const String &hname, const String &data, bool real = true);
-    void notify_write(const String &hname, const String &data, int status);
+    void notify_read(const String &hname, const String &hparam, const String &hvalue, bool real = true);
+    void notify_write(const String &hname, const String &hvalue, int status);
 
     void refresh_all();
     void show_actions(GtkWidget *near, const String &hname, bool changed);
@@ -43,7 +43,8 @@ struct RouterWindow::whandler {
 	   hflag_ready = 1 << 3, hflag_raw = 1 << 4, hflag_calm = 1 << 5,
 	   hflag_expensive = 1 << 6, hflag_boring = 1 << 7,
 	   hflag_multiline = 1 << 8, hflag_collapse = 1 << 9,
-	   hflag_button = 1 << 10, hflag_checkbox = 1 << 11 };
+	   hflag_button = 1 << 10, hflag_checkbox = 1 << 11,
+	   hflag_hparam_displayed = 1 << 12 };
     struct hinfo {
 	String fullname;
 	String name;
@@ -77,13 +78,9 @@ struct RouterWindow::whandler {
 	    return (flags & (hflag_r | hflag_rparam | hflag_boring | hflag_expensive)) == hflag_r;
 	}
 
-	void unhighlight(const RouterWindow *rw) const {
-	    if (wlabel)
-		gtk_label_set_attributes(GTK_LABEL(wlabel), rw->small_attr());
-	}
-	
+	void set_edit_active(const RouterWindow *rw, bool active);
 	void widget_create(RouterWindow::whandler *wh, int new_flags);
-	void widget_set_data(RouterWindow::whandler *wh, const String &data, bool change_form);
+	void display(RouterWindow::whandler *wh, const String &hparam, const String &hvalue, bool change_form);
     };
     
     RouterWindow *_rw;
@@ -113,6 +110,19 @@ inline void RouterWindow::whandler::notify_element(const String &ename)
 inline const String &RouterWindow::whandler::active_action() const
 {
     return _actions_hname;
+}
+
+inline void RouterWindow::whandler::hinfo::set_edit_active(const RouterWindow *rw, bool active)
+{
+    if (wlabel && !active)
+	gtk_label_set_attributes(GTK_LABEL(wlabel), rw->small_attr());
+    else if (wlabel && active) {
+	if (flags & hflag_hparam_displayed) {
+	    gtk_label_set_text(GTK_LABEL(wlabel), name.c_str());
+	    flags &= ~hflag_hparam_displayed;
+	}
+	gtk_label_set_attributes(GTK_LABEL(wlabel), rw->small_bold_attr());
+    }
 }
 
 #endif

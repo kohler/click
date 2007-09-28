@@ -89,6 +89,8 @@ void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, in
     if ((flags & hflag_collapse) || !(flags & (hflag_button | hflag_checkbox))) {
 	wlabel = gtk_label_new(name.c_str());
 	gtk_label_set_attributes(GTK_LABEL(wlabel), wh->router_window()->small_attr());
+	if (!(flags & hflag_collapse))
+	    gtk_label_set_ellipsize(GTK_LABEL(wlabel), PANGO_ELLIPSIZE_END);
 	gtk_misc_set_alignment(GTK_MISC(wlabel), 0, 0.5);
 	gtk_widget_show(wlabel);
 	if (flags & hflag_collapse)
@@ -205,7 +207,7 @@ bool binary_to_utf8(const String &data, StringAccum &text, Vector<int> &position
     return multiline;
 }
 
-void RouterWindow::whandler::hinfo::widget_set_data(RouterWindow::whandler *wh, const String &data, bool change_form)
+void RouterWindow::whandler::hinfo::display(RouterWindow::whandler *wh, const String &hparam, const String &hvalue, bool change_form)
 {
     if (flags & hflag_button)
 	return;
@@ -213,12 +215,12 @@ void RouterWindow::whandler::hinfo::widget_set_data(RouterWindow::whandler *wh, 
     // Multiline data requires special handling
     StringAccum binary_data;
     Vector<int> positions;
-    bool multiline = binary_to_utf8(data, binary_data, positions);
+    bool multiline = binary_to_utf8(hvalue, binary_data, positions);
 
     // Valid checkbox data?
     if (flags & hflag_checkbox) {
 	bool value;
-	if (cp_bool(cp_uncomment(data), &value)) {
+	if (cp_bool(cp_uncomment(hvalue), &value)) {
 	    gtk_toggle_button_set_inconsistent(GTK_TOGGLE_BUTTON(wdata), FALSE);
 	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(wdata), value);
 	    return;
@@ -232,7 +234,7 @@ void RouterWindow::whandler::hinfo::widget_set_data(RouterWindow::whandler *wh, 
     // Valid multiline data?
     if (!(flags & hflag_multiline) && (multiline || positions.size())) {
 	if (!change_form) {
-	    widget_set_data(wh, "???", false);
+	    display(wh, String(), "???", false);
 	    return;
 	} else
 	    widget_create(wh, flags | hflag_multiline);
@@ -253,14 +255,29 @@ void RouterWindow::whandler::hinfo::widget_set_data(RouterWindow::whandler *wh, 
 	gtk_text_buffer_place_cursor(b, &i1);	
     } else if (flags & hflag_multiline) {
 	GtkTextBuffer *b = gtk_text_view_get_buffer(GTK_TEXT_VIEW(wdata));
-	gtk_text_buffer_set_text(b, data.data(), data.length());
+	gtk_text_buffer_set_text(b, hvalue.data(), hvalue.length());
 	GtkTextIter i1;
 	gtk_text_buffer_get_end_iter(b, &i1);
 	gtk_text_buffer_place_cursor(b, &i1);	
     } else {
-	gtk_entry_set_text(GTK_ENTRY(wdata), data.c_str());
+	gtk_entry_set_text(GTK_ENTRY(wdata), hvalue.c_str());
 	gtk_entry_set_position(GTK_ENTRY(wdata), -1);
     }
+
+    // Display parameters
+    if (wlabel && (hparam || (flags & hflag_hparam_displayed)))
+	if (!hparam) {
+	    gtk_label_set_text(GTK_LABEL(wlabel), name.c_str());
+	    flags &= ~hflag_hparam_displayed;
+	} else {
+	    StringAccum sa;
+	    sa << name << ' ' << hparam.substring(0, MIN(hparam.length(), 100));
+	    gtk_label_set_text(GTK_LABEL(wlabel), sa.c_str());
+	    flags |= hflag_hparam_displayed;
+	}
+
+    // Unhighlight
+    set_edit_active(wh->router_window(), false);
 }
 
 
@@ -400,7 +417,7 @@ void RouterWindow::whandler::display(const String &ename, bool incremental)
 	if (String *x = _hvalues.findp(hi.fullname))
 	    if ((hi.flags & hflag_r) && (hi.flags & hflag_calm)) {
 		_updating++;
-		hi.widget_set_data(this, *x, true);
+		hi.display(this, String(), *x, true);
 		_updating--;
 	    } else
 		_hvalues.remove(hi.fullname);
@@ -475,8 +492,7 @@ void RouterWindow::whandler::show_actions(GtkWidget *near, const String &hname, 
 
     // mark change
     if (changed) {
-	if (hi->wlabel)
-	    gtk_label_set_attributes(GTK_LABEL(hi->wlabel), router_window()->small_bold_attr());
+	hi->set_edit_active(router_window(), true);
 	if (hname == _actions_hname) {
 	    _actions_changed = changed;
 	    return;
@@ -572,11 +588,11 @@ void RouterWindow::whandler::hide_actions(const String &hname, bool restore)
 	if (hi->write_only() || hi->read_param()) {
 	    if (GTK_IS_ENTRY(hi->wdata)
 		&& strlen(gtk_entry_get_text(GTK_ENTRY(hi->wdata))) == 0)
-		hi->unhighlight(_rw);
+		hi->set_edit_active(_rw, false);
 	    else if (GTK_IS_TEXT_VIEW(hi->wdata)) {
 		GtkTextBuffer *b = gtk_text_view_get_buffer(GTK_TEXT_VIEW(hi->wdata));
 		if (gtk_text_buffer_get_char_count(b) == 0)
-		    hi->unhighlight(_rw);
+		    hi->set_edit_active(_rw, false);
 	    }
 	}
 	
@@ -695,13 +711,11 @@ void RouterWindow::whandler::refresh_all()
 	if (hi->refreshable()) {
 	    int flags = (hi->flags & hflag_raw ? 0 : wdriver::dflag_nonraw);
 	    _rw->driver()->do_read(hi->fullname, String(), flags);
-	} else if (hi->write_only() && _actions_hname != hi->fullname) {
-	    hi->widget_set_data(this, "", false);
-	    hi->unhighlight(_rw);
-	}
+	} else if (hi->write_only() && _actions_hname != hi->fullname)
+	    hi->display(this, String(), String(), false);
 }
 
-void RouterWindow::whandler::notify_read(const String &hname, const String &data, bool real)
+void RouterWindow::whandler::notify_read(const String &hname, const String &hparam, const String &hvalue, bool real)
 {
     if (_display_ename.length() >= hname.length()
 	|| memcmp(hname.data(), _display_ename.data(), _display_ename.length()) != 0)
@@ -709,13 +723,12 @@ void RouterWindow::whandler::notify_read(const String &hname, const String &data
     for (std::deque<hinfo>::iterator hi = _hinfo.begin(); hi != _hinfo.end(); ++hi)
 	if (hi->readable() && hi->fullname == hname) {
 	    _updating++;
-	    hi->widget_set_data(this, data, true);
-	    hi->unhighlight(_rw);
+	    hi->display(this, hparam, hvalue, true);
 	    _updating--;
 
 	    // set sticky value
 	    if (real)
-		_hvalues.insert(hi->fullname, data);
+		_hvalues.insert(hi->fullname, hvalue);
 	    break;
 	}
 }
@@ -728,10 +741,8 @@ void RouterWindow::whandler::notify_write(const String &hname, const String &, i
     for (std::deque<hinfo>::iterator hi = _hinfo.begin(); hi != _hinfo.end(); ++hi)
 	if (hi->writable() && hi->fullname == hname) {
 	    _updating++;
-	    if (!hi->readable() && status < 300) {
-		hi->widget_set_data(this, "", false);
-		hi->unhighlight(_rw);
-	    }
+	    if (!hi->readable() && status < 300)
+		hi->display(this, String(), String(), false);
 	    _updating--;
 	    break;
 	}

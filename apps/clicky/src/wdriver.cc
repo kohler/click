@@ -387,15 +387,17 @@ bool RouterWindow::wdriver_csocket::msg_parse(msg *m, GatherErrorHandler *gerrh,
     }
 
     // act on results
-    String data = response.substring(m->rdatapos);
+    String hparam;
+    if (m->command_datalen >= 0)
+	hparam = m->command.substring(m->command.length() - m->command_datalen);
+    else			// leave off "\r\n"
+	hparam = m->command.substring(m->command.length() + m->command_datalen - 2, m->command_datalen - 2);
+    String hvalue = response.substring(m->rdatapos);
     if (m->type == dtype_read)
-	_rw->on_read(m->hname, data, status, messages);
-    else if (m->type == dtype_write) {
-	const char *s = find(m->command.begin(), m->command.end(), '\n');
-	s = find(s + 1, m->command.end(), '\n');
-	_rw->on_write(m->hname, m->command.substring(s + 1, m->command.end()),
-		      status, messages);
-    } else if (m->type == dtype_check_write)
+	_rw->on_read(m->hname, hparam, hvalue, status, messages);
+    else if (m->type == dtype_write)
+	_rw->on_write(m->hname, hparam, status, messages);
+    else if (m->type == dtype_check_write)
 	_rw->on_check_write(m->hname, status, messages);
 
     transfer_messages(_rw, status, messages);
@@ -405,10 +407,10 @@ bool RouterWindow::wdriver_csocket::msg_parse(msg *m, GatherErrorHandler *gerrh,
     return true;
 }
 
-void RouterWindow::wdriver_csocket::add_msg(const String &hname, const String &command, int type, int flags)
+void RouterWindow::wdriver_csocket::add_msg(const String &hname, const String &command, int command_datalen, int type, int flags)
 {
     if (_csocket && _csocket_state == csocket_connected) {
-	msg *csm = new msg(_rw, hname, command, type, flags);
+	msg *csm = new msg(_rw, hname, command, command_datalen, type, flags);
 
 	if ((flags & (dflag_background | dflag_clear)) == dflag_background)
 	    _csocket_msgq.push_back(csm);
@@ -430,36 +432,37 @@ void RouterWindow::wdriver_csocket::add_msg(const String &hname, const String &c
 
 void RouterWindow::wdriver_csocket::do_read(const String &hname, const String &hparam, int flags)
 {
+    StringAccum sa;
+    int hparam_len = hparam.length();
     if (!hparam)
-	add_msg(hname, "READ " + hname + "\r\n", dtype_read, flags);
-    else if (_csocket_minor_version >= 2) {
-	StringAccum sa;
+	sa << "READ " << hname << "\r\n";
+    else if (_csocket_minor_version >= 2)
 	sa << "READDATA " << hname << " " << hparam.length() << "\r\n" << hparam;
-	add_msg(hname, sa.take_string(), dtype_read, flags);
-    } else if (find(hparam, '\r') == hparam.end()
-	       && find(hparam, '\n') == hparam.end()) {
-	StringAccum sa;
+    else if (find(hparam, '\r') == hparam.end()
+	     && find(hparam, '\n') == hparam.end()) {
 	sa << "READ " << hname << " " << hparam << "\r\n";
-	add_msg(hname, sa.take_string(), dtype_read, flags);
+	hparam_len = -hparam_len;
     } else {
 	messagevector messages;
 	messages.push_back(make_pair(String(), String("Read handler '") + hname + "' error:"));
 	messages.push_back(make_pair(String(), String("  Connection does not support read handlers with parameters")));
-	_rw->on_read(hname, String(), 500, messages);
+	_rw->on_read(hname, hparam, String(), 500, messages);
 	transfer_messages(_rw, 500, messages);
+	return;
     }
+    add_msg(hname, sa.take_string(), hparam_len, dtype_read, flags);
 }
 
 void RouterWindow::wdriver_csocket::do_write(const String &hname, const String &hvalue, int flags)
 {
     StringAccum sa;
     sa << "WRITEDATA " << hname << " " << hvalue.length() << "\r\n" << hvalue;
-    add_msg(hname, sa.take_string(), dtype_write, flags);
+    add_msg(hname, sa.take_string(), hvalue.length(), dtype_write, flags);
 }
 
 void RouterWindow::wdriver_csocket::do_check_write(const String &hname, int flags)
 {
-    add_msg(hname, "CHECKWRITE " + hname + "\r\n", dtype_check_write, flags);
+    add_msg(hname, "CHECKWRITE " + hname + "\r\n", 0, dtype_check_write, flags);
 }
 
 
@@ -526,7 +529,7 @@ void RouterWindow::wdriver_kernel::do_read(const String &fullname, const String 
     if (hparam) {
 	messages.push_back(make_pair(String(), "Read handler '" + fullname + "' error:"));
 	messages.push_back(make_pair(String(), "  Kernel configurations do not support read handler parameters"));
-	_rw->on_read(fullname, String(), 500, messages);
+	_rw->on_read(fullname, hparam, String(), 500, messages);
 	transfer_messages(_rw, 500, messages);
 	return;
     }
@@ -563,7 +566,7 @@ void RouterWindow::wdriver_kernel::do_read(const String &fullname, const String 
     if ((flags & dflag_nonraw) && results.length() && results.back() == '\n'
 	&& find(results.begin(), results.end() - 1, '\n') == results.end() - 1)
 	results.pop_back();
-    _rw->on_read(fullname, results.take_string(), status, messages);
+    _rw->on_read(fullname, hparam, results.take_string(), status, messages);
     transfer_messages(_rw, status, messages);
 }
 

@@ -504,39 +504,39 @@ void RouterWindow::on_driver(wdriver *driver, bool active)
     _driver_active = active;
 }
 
-void RouterWindow::on_read(const String &hname, const String &data, int status, messagevector &messages)
+void RouterWindow::on_read(const String &hname, const String &hparam, const String &hvalue, int status, messagevector &messages)
 {
     if (hname == "config")
-	set_config(data, true);
+	set_config(hvalue, true);
     else if (hname == "list") {
 	_handlers->clear();
-	const char *s = data.begin();
+	const char *s = hvalue.begin();
 	int line = 0, nelements = 0;
-	while (s != data.end()) {
+	while (s != hvalue.end()) {
 	    const char *x = s;
-	    while (x != data.end() && !isspace((unsigned char) *x))
+	    while (x != hvalue.end() && !isspace((unsigned char) *x))
 		++x;
-	    String name = data.substring(s, x);
+	    String name = hvalue.substring(s, x);
 	    
 	    // first line is count of elements
 	    if (++line == 1 && !cp_integer(name, &nelements))
 		/* syntax error */;
 	    else if (line > 1)
 		_handlers->notify_element(name);
-	    for (s = x; s != data.end() && isspace((unsigned char) *s); )
+	    for (s = x; s != hvalue.end() && isspace((unsigned char) *s); )
 		++s;
 	}
     } else if (hname.length() >= 10 && memcmp(hname.end() - 9, ".handlers", 9) == 0)
-	_handlers->notify_handlers(hname.substring(0, hname.length() - 9), data);
+	_handlers->notify_handlers(hname.substring(0, hname.length() - 9), hvalue);
     else
-	_handlers->notify_read(hname, data);
+	_handlers->notify_read(hname, hparam, hvalue);
     if (status == 200)
 	messages.clear();
 }
 
-void RouterWindow::on_write(const String &hname, const String &data, int status, messagevector &messages)
+void RouterWindow::on_write(const String &hname, const String &hvalue, int status, messagevector &messages)
 {
-    _handlers->notify_write(hname, data, status);
+    _handlers->notify_write(hname, hvalue, status);
     if (hname == "hotconfig") {
 	if (status < 300)
 	    messages.erase(messages.begin());

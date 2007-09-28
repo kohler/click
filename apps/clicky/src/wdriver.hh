@@ -48,6 +48,7 @@ class RouterWindow::wdriver_csocket : public RouterWindow::wdriver { public:
 	int flags;
 	String hname;
 	String command;
+	int command_datalen;
 	int wpos;
 	StringAccum sa;
 	size_t rlinepos;
@@ -56,9 +57,10 @@ class RouterWindow::wdriver_csocket : public RouterWindow::wdriver { public:
 	size_t rdatalen;
 	bool ignore_newline;
 	
-	msg(RouterWindow *rw_, const String &hname_, const String &command_, int type_, int flags_)
+	msg(RouterWindow *rw_, const String &hname_, const String &command_, int command_datalen_, int type_, int flags_)
 	    : tnotify(rw_, 400), type(type_), flags(flags_), hname(hname_),
-	      command(command_), wpos(0), rlinepos(0), rendmsgpos((size_t) -1),
+	      command(command_), command_datalen(command_datalen_),
+	      wpos(0), rlinepos(0), rendmsgpos((size_t) -1),
 	      rdatapos((size_t) -1), rdatalen(0), ignore_newline(false) {
 	}
     };
@@ -72,7 +74,7 @@ class RouterWindow::wdriver_csocket : public RouterWindow::wdriver { public:
 
     gboolean kill_with_dialog(GatherErrorHandler *gerrh, int gerrh_pos, const char *format, ...);
     bool msg_parse(msg *m, GatherErrorHandler *gerrh, int gerrh_pos);
-    void add_msg(const String &hname, const String &contents, int type, int flags);
+    void add_msg(const String &hname, const String &command, int command_datalen, int type, int flags);
     
 };
 

@@ -85,8 +85,8 @@ class RouterWindow { public:
 
     typedef Vector<Pair<String, String> > messagevector;
     void on_driver(wdriver *driver, bool active);
-    void on_read(const String &hname, const String &data, int status, messagevector &messages);
-    void on_write(const String &hname, const String &data, int status, messagevector &messages);
+    void on_read(const String &hname, const String &hparam, const String &hvalue, int status, messagevector &messages);
+    void on_write(const String &hname, const String &hvalue, int status, messagevector &messages);
     void on_check_write(const String &hname, int status, messagevector &messages);
     
     void errors_fill(bool initial);
