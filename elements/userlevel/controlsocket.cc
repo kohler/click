@@ -415,7 +415,7 @@ ControlSocket::read_command(int fd, const String &handlername, String param, boo
 
   // did we get an error message?
   if (errh.nerrors() > 0)
-    return transfer_messages(fd, CSERR_UNSPECIFIED, String(), &errh);
+    return transfer_messages(fd, CSERR_UNSPECIFIED, "Read handler '" + handlername + "' error", &errh);
   
   message(fd, CSERR_OK, "Read handler '" + handlername + "' OK");
   _out_texts[fd] += "DATA " + String(data.length()) + "\r\n";
