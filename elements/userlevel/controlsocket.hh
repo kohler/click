@@ -38,8 +38,8 @@ The server will accept lines terminated by CR, LF, or CRLF. Its response
 lines are always terminated by CRLF.
 
 When a connection is opened, the server responds by stating its protocol
-version number with a line like "Click::ControlSocket/1.1". The current
-version number is 1.1. Changes in minor version number will only add commands
+version number with a line like "Click::ControlSocket/1.2". The current
+version number is 1.2. Changes in minor version number will only add commands
 and functionality to this specification, not change existing functionality.
 
 ControlSocket supports hot-swapping, meaning you can change configurations
@@ -106,6 +106,13 @@ code 2xy) followed by a line like "DATA I<n>". Here, I<n> is a
 decimal integer indicating the length of the read handler data. The I<n>
 bytes immediately following (the CRLF that terminates) the DATA line are
 the handler's results.
+
+=item READDATA I<handler> I<n>
+
+Call a read I<handler>, passing the I<n> bytes immediately following (the CRLF
+that terminates) the READDATA line as arguments, and return the results with
+"DATA I<n>" as in the READ command. Introduced in version 1.2 of the
+ControlSocket protocol.
 
 =item WRITE I<handler> I<params...>
 

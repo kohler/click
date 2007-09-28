@@ -32,7 +32,7 @@
 #include <fcntl.h>
 CLICK_DECLS
 
-const char ControlSocket::protocol_version[] = "1.1";
+const char ControlSocket::protocol_version[] = "1.2";
 
 struct ControlSocketErrorHandler : public BaseErrorHandler { public:
 
@@ -591,8 +591,24 @@ ControlSocket::parse_command(int fd, const String &line)
       String param;
       if (words.size() > 2)
 	  param = line.substring(words[2].begin(), words.back().end());
-      return read_command(fd, words[1], param, true);
+      return read_command(fd, words[1], param, false);
     
+  } else if (command == "READDATA") {
+      if (words.size() != 3)
+	  return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
+      int datalen;
+      if (!cp_integer(words[2], &datalen) || datalen < 0)
+	  return message(fd, CSERR_SYNTAX, "Syntax error in 'readdata'");
+      if (_in_texts[fd].length() < datalen) {
+	  if (_flags[fd] & READ_CLOSED)
+	      return message(fd, CSERR_SYNTAX, "Not enough data");
+	  else			// retry
+	      return 1;
+      }
+      String data = _in_texts[fd].substring(0, datalen);
+      _in_texts[fd] = _in_texts[fd].substring(datalen);
+      return read_command(fd, words[1], data, true);
+
   } else if (command == "WRITE" || command == "SET") {
       if (words.size() < 2)
 	  return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
@@ -653,13 +669,14 @@ ControlSocket::parse_command(int fd, const String &line)
 
   } else if (command == "HELP") {
     message(fd, CSERR_OK, "Commands supported:", true);
-    message(fd, CSERR_OK, "READ handler [params...]   call read handler, returns results in DATA", true);
-    message(fd, CSERR_OK, "WRITE handler [params...]  call write handler", true);
-    message(fd, CSERR_OK, "WRITEDATA handler len      call write handler, pass len data bytes", true);
-    message(fd, CSERR_OK, "CHECKREAD handler          check if read handler is valid", true);
-    message(fd, CSERR_OK, "CHECKWRITE handler         check if write handler is valid", true);
-    message(fd, CSERR_OK, "LLRPC elt#number [len]     call LLRPC, pass len data bytes, return DATA", true);
-    message(fd, CSERR_OK, "QUIT                       close connection");
+    message(fd, CSERR_OK, "READ handler [arg...]   call read handler, return DATA", true);
+    message(fd, CSERR_OK, "READDATA handler len    call read handler with len data bytes, return DATA", true);
+    message(fd, CSERR_OK, "WRITE handler [arg...]  call write handler", true);
+    message(fd, CSERR_OK, "WRITEDATA handler len   call write handler, pass len data bytes", true);
+    message(fd, CSERR_OK, "CHECKREAD handler       check if read handler is valid", true);
+    message(fd, CSERR_OK, "CHECKWRITE handler      check if write handler is valid", true);
+    message(fd, CSERR_OK, "LLRPC elt#number [len]  call LLRPC, pass len data bytes, return DATA", true);
+    message(fd, CSERR_OK, "QUIT                    close connection");
     return 0;
     
   } else
