@@ -151,7 +151,7 @@ static void destroy(gpointer data) {
 
 RouterWindow::RouterWindow()
     : _r(0), _emap(0), _processing(0), _throbber_count(0),
-      _window(create_mainw()), _bold_font(0), _small_attr(0),
+      _window(create_mainw()),
       _config_clean_errors(true), _config_clean_elements(true),
       _error_hover_tag(0), _error_highlight_tag(0),
       _error_endpos(0), _error_hover_index(-1),
@@ -196,14 +196,29 @@ RouterWindow::RouterWindow()
     gtk_widget_add_events(_error_view, GDK_LEAVE_NOTIFY_MASK);
 
     // label precision
-    _bold_font = pango_font_description_new();
-    pango_font_description_set_weight(_bold_font, PANGO_WEIGHT_BOLD);
+    _bold_attr = pango_attr_list_new();
+    PangoAttribute *a = pango_attr_weight_new(PANGO_WEIGHT_BOLD);
+    a->start_index = 0;
+    a->end_index = G_MAXUINT;
+    pango_attr_list_insert(_bold_attr, a);
+
     _small_attr = pango_attr_list_new();
-    PangoAttribute *a = pango_attr_scale_new(PANGO_SCALE_SMALL);
+    a = pango_attr_scale_new(PANGO_SCALE_SMALL);
     a->start_index = 0;
     a->end_index = G_MAXUINT;
     pango_attr_list_insert(_small_attr, a);
-    gtk_widget_modify_font(lookup_widget(_window, "eview_label"), _bold_font);
+    
+    _small_bold_attr = pango_attr_list_new();
+    a = pango_attr_scale_new(PANGO_SCALE_SMALL);
+    a->start_index = 0;
+    a->end_index = G_MAXUINT;
+    pango_attr_list_insert(_small_bold_attr, a);
+    a = pango_attr_weight_new(PANGO_WEIGHT_BOLD);
+    a->start_index = 0;
+    a->end_index = G_MAXUINT;
+    pango_attr_list_insert(_small_bold_attr, a);
+    
+    gtk_label_set_attributes(GTK_LABEL(lookup_widget(_window, "eview_label")), _bold_attr);
     gtk_label_set_attributes(GTK_LABEL(lookup_widget(_window, "eview_classinfo_ports")), _small_attr);
     gtk_label_set_attributes(GTK_LABEL(lookup_widget(_window, "eview_classinfo_processing")), _small_attr);
     gtk_label_set_attributes(GTK_LABEL(lookup_widget(_window, "eview_classinfo_flow")), _small_attr);
@@ -239,8 +254,9 @@ RouterWindow::~RouterWindow()
 
     gdk_cursor_unref(_normal_cursor);
     gdk_cursor_unref(_link_cursor);
-    pango_font_description_free(_bold_font);
     pango_attr_list_unref(_small_attr);
+    pango_attr_list_unref(_bold_attr);
+    pango_attr_list_unref(_small_bold_attr);
     delete _diagram;
     delete _handlers;
 }

@@ -53,8 +53,14 @@ class RouterWindow { public:
     GtkWindow *window() const {
 	return GTK_WINDOW(_window);
     }
+    PangoAttrList *bold_attr() const {
+	return _bold_attr;
+    }
     PangoAttrList *small_attr() const {
 	return _small_attr;
+    }
+    PangoAttrList *small_bold_attr() const {
+	return _small_bold_attr;
     }
     GtkTextTagTable *binary_tag_table() const {
 	return _binary_tag_table;
@@ -135,8 +141,9 @@ class RouterWindow { public:
     // UI features
     GtkWidget *_window;
 
-    PangoFontDescription *_bold_font;
     PangoAttrList *_small_attr;
+    PangoAttrList *_bold_attr;
+    PangoAttrList *_small_bold_attr;
     
     GtkWidget *_config_view;
     GtkTextBuffer *_config_buffer;

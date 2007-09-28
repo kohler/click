@@ -31,7 +31,7 @@ struct RouterWindow::whandler {
     void notify_read(const String &hname, const String &data, bool real = true);
 
     void refresh_all();
-    void show_actions(GtkWidget *near, const String &hname);
+    void show_actions(GtkWidget *near, const String &hname, bool changed);
     void hide_actions(const String &hname = String(), bool restore = true);
     void apply_action(const String &hname, bool activate);
     const String &active_action() const;
@@ -49,10 +49,11 @@ struct RouterWindow::whandler {
 	String name;
 	int flags;
 	GtkWidget *wcontainer;
+	GtkWidget *wlabel;
 	GtkWidget *wdata;
 	hinfo(const String &e, const String &n, int f)
 	    : fullname(e ? e + "." + n : n), name(n), flags(f),
-	      wcontainer(0), wdata(0) {
+	      wcontainer(0), wlabel(0), wdata(0) {
 	}
 	void widget_create(RouterWindow::whandler *wh, int position, int new_flags);
 	void widget_set_data(RouterWindow::whandler *wh, const String &data, bool change_form, int position);
@@ -68,8 +69,9 @@ struct RouterWindow::whandler {
     GtkWidget *_actions;
     GtkWidget *_actions_apply;
     String _actions_hname;
+    bool _actions_changed;
     int _updating;
-
+    
     GtkWidget *_eview_config;
 
     void make_actions();

@@ -24,7 +24,8 @@ static void destroy_callback(GtkWidget *w, gpointer) {
 }
 
 RouterWindow::whandler::whandler(RouterWindow *rw)
-    : _rw(rw), _actions(0), _actions_apply(0), _updating(0)
+    : _rw(rw), _actions(0), _actions_apply(0), _actions_changed(false),
+      _updating(0)
 {
     _handlerbox = GTK_BOX(lookup_widget(_rw->_window, "eview_handlerbox"));
 
@@ -65,7 +66,7 @@ void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, in
 	wdata = 0;
     } else if (flags & hflag_shown) {
 	gtk_widget_destroy(wcontainer);
-	wcontainer = wdata = 0;
+	wcontainer = wlabel = wdata = 0;
     }
 
     flags = new_flags;
@@ -76,22 +77,24 @@ void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, in
     if (wcontainer)
 	/* do not recreate */;
     else if (flags & hflag_collapse) {
-	StringAccum sa;
-	sa << "<small>" << name << "</small>";
-	wcontainer = gtk_expander_new(sa.c_str());
-	gtk_expander_set_use_markup(GTK_EXPANDER(wcontainer), TRUE);
+	wcontainer = gtk_expander_new(NULL);
 	if (flags & hflag_collapse_expanded)
 	    gtk_expander_set_expanded(GTK_EXPANDER(wcontainer), TRUE);
     } else if (flags & (hflag_button | hflag_checkbox))
 	wcontainer = gtk_hbox_new(FALSE, 0);
-    else {
+    else
 	wcontainer = gtk_vbox_new(FALSE, 0);
-	
-	GtkWidget *l = gtk_label_new(name.c_str());
-	gtk_label_set_attributes(GTK_LABEL(l), wh->router_window()->small_attr());
-	gtk_misc_set_alignment(GTK_MISC(l), 0, 0.5);
-	gtk_widget_show(l);
-	gtk_box_pack_start(GTK_BOX(wcontainer), l, FALSE, FALSE, 0);
+
+    // create label
+    if ((flags & hflag_collapse) || !(flags & (hflag_button | hflag_checkbox))) {
+	wlabel = gtk_label_new(name.c_str());
+	gtk_label_set_attributes(GTK_LABEL(wlabel), wh->router_window()->small_attr());
+	gtk_misc_set_alignment(GTK_MISC(wlabel), 0, 0.5);
+	gtk_widget_show(wlabel);
+	if (flags & hflag_collapse)
+	    gtk_expander_set_label_widget(GTK_EXPANDER(wcontainer), wlabel);
+	else
+	    gtk_box_pack_start(GTK_BOX(wcontainer), wlabel, FALSE, FALSE, 0);
     }
 
     // create data widget
@@ -451,24 +454,34 @@ void RouterWindow::whandler::make_actions()
     gtk_widget_realize(_actions);
 }
 
-void RouterWindow::whandler::show_actions(GtkWidget *near, const String &hname)
+void RouterWindow::whandler::show_actions(GtkWidget *near, const String &hname, bool changed)
 {
-    if (hname == _actions_hname || _updating)
+    if ((hname == _actions_hname && (!changed || _actions_changed))
+	|| _updating)
 	return;
-
-    if (_actions_hname)
-	hide_actions(_actions_hname);
     
-    // outline from GtkTreeView's interactive search popup
-    gtk_widget_realize(near);
-    _actions_hname = hname;
-
-    // maybe do not show
+    // find handler
     std::deque<hinfo>::iterator hi = _hinfo.begin();
     while (hi != _hinfo.end() && hi->fullname != hname)
 	++hi;
     if (hi == _hinfo.end() || !(hi->flags & hflag_w) || !active())
 	return;
+
+    // mark change
+    if (changed) {
+	if (hi->wlabel)
+	    gtk_label_set_attributes(GTK_LABEL(hi->wlabel), router_window()->small_bold_attr());
+	if (hname == _actions_hname) {
+	    _actions_changed = changed;
+	    return;
+	}
+    }
+
+    // hide old actions, create new ones
+    if (_actions_hname)
+	hide_actions(_actions_hname);
+    _actions_hname = hname;
+    _actions_changed = changed;
 
     // remember checkbox state
     if (hi->flags & hflag_checkbox) {
@@ -480,8 +493,9 @@ void RouterWindow::whandler::show_actions(GtkWidget *near, const String &hname)
 	    _hvalues.insert(hi->fullname, cp_unparse_bool(gtk_toggle_button_get_active(b)));
 	gtk_toggle_button_set_inconsistent(b, FALSE);
     }
-
+    
     // get monitor and widget coordinates
+    gtk_widget_realize(near);    
     GdkScreen *screen = gdk_drawable_get_screen(near->window);
     gint monitor_num = gdk_screen_get_monitor_at_window(screen, near->window);
     GdkRectangle monitor;
@@ -547,6 +561,7 @@ void RouterWindow::whandler::hide_actions(const String &hname, bool restore)
 	}
 	
 	_actions_hname = String();
+	_actions_changed = false;
     }
 }
 
@@ -609,7 +624,7 @@ static gboolean on_handler_event(GtkWidget *w, GdkEvent *event, gpointer user_da
     } else if (event->type == GDK_BUTTON_PRESS
 	     || event->type == GDK_2BUTTON_PRESS
 	     || event->type == GDK_3BUTTON_PRESS)
-	wh->show_actions(w, hname);
+	wh->show_actions(w, hname, false);
 
     return FALSE;
 }
@@ -617,20 +632,22 @@ static gboolean on_handler_event(GtkWidget *w, GdkEvent *event, gpointer user_da
 static void on_handler_check_button_toggled(GtkToggleButton *tb, gpointer user_data)
 {
     const gchar *hname = (const gchar *) g_object_get_data(G_OBJECT(tb), "clicky_hname");
-    reinterpret_cast<RouterWindow::whandler *>(user_data)->show_actions(GTK_WIDGET(tb), hname);
+    reinterpret_cast<RouterWindow::whandler *>(user_data)->show_actions(GTK_WIDGET(tb), hname, true);
 }
 
 static void on_handler_entry_changed(GObject *obj, GParamSpec *, gpointer user_data)
 {
     const gchar *hname = (const gchar *) g_object_get_data(obj, "clicky_hname");
-    reinterpret_cast<RouterWindow::whandler *>(user_data)->show_actions(GTK_WIDGET(obj), hname);
+    RouterWindow::whandler *wh = reinterpret_cast<RouterWindow::whandler *>(user_data);
+    wh->show_actions(GTK_WIDGET(obj), hname, true);
 }
 
 static void on_handler_text_buffer_changed(GtkTextBuffer *buffer, gpointer user_data)
 {
     GtkWidget *view = (GtkWidget *) g_object_get_data(G_OBJECT(buffer), "clicky_view");
     const gchar *hname = (const gchar *) g_object_get_data(G_OBJECT(view), "clicky_hname");
-    reinterpret_cast<RouterWindow::whandler *>(user_data)->show_actions(view, hname);
+    RouterWindow::whandler *wh = reinterpret_cast<RouterWindow::whandler *>(user_data);
+    wh->show_actions(view, hname, true);
 }
 
 static void on_handler_action_cancel_clicked(GtkButton *, gpointer user_data)
@@ -642,7 +659,8 @@ static void on_handler_action_apply_clicked(GtkButton *button, gpointer user_dat
 {
     RouterWindow::whandler *wh = reinterpret_cast<RouterWindow::whandler *>(user_data);
     const gchar *hname = (const gchar *) g_object_get_data(G_OBJECT(button), "clicky_hname");
-    wh->apply_action(hname ? hname : wh->active_action(), false);
+    String hstr = (hname ? String(hname) : wh->active_action());
+    wh->apply_action(hstr, false);
 }
 }
 
@@ -666,6 +684,8 @@ void RouterWindow::whandler::notify_read(const String &hname, const String &data
 	if ((hi->flags & hflag_r) && hi->fullname == hname) {
 	    _updating++;
 	    hi->widget_set_data(this, data, true, pos);
+	    if (hi->wlabel)
+		gtk_label_set_attributes(GTK_LABEL(hi->wlabel), router_window()->small_attr());
 	    _updating--;
 
 	    // set sticky value
