@@ -10,9 +10,20 @@ struct Pair {
     U second;
     Pair()				: first(), second() { }
     Pair(const T &t, const U &u)	: first(t), second(u) { }
+    Pair(const Pair<T, U> &p)		: first(p.first), second(p.second) { }
+    template <typename V, typename W>
+    Pair(const Pair<V, W> &p)		: first(p.first), second(p.second) { }
+    
     typedef size_t (Pair<T, U>::*unspecified_bool_type)() const;
     inline operator unspecified_bool_type() const;
     inline size_t hashcode() const;
+
+    template <typename V, typename W>
+    Pair<T, U> &operator=(const Pair<V, W> &p) {
+	first = p.first;
+	second = p.second;
+	return *this;
+    }
 };
 
 template <class T, class U>
@@ -50,6 +61,12 @@ template <class T, class U>
 inline Pair<T, U> make_pair(const T &t, const U &u)
 {
     return Pair<T, U>(t, u);
+}
+
+template <class T, class U>
+inline Pair<T, U *> make_pair(const T &t, U *u)
+{
+    return Pair<T, U *>(t, u);
 }
 
 CLICK_ENDDECLS
