@@ -534,8 +534,9 @@ void RouterWindow::on_read(const String &hname, const String &data, int status, 
 	messages.clear();
 }
 
-void RouterWindow::on_write(const String &hname, int status, messagevector &messages)
+void RouterWindow::on_write(const String &hname, const String &data, int status, messagevector &messages)
 {
+    _handlers->notify_write(hname, data, status);
     if (hname == "hotconfig") {
 	if (status < 300)
 	    messages.erase(messages.begin());
@@ -1136,7 +1137,7 @@ void RouterWindow::config_check(bool install)
 
     if (_driver_active && install) {
 	_driver->do_write("hotconfig", config, wdriver::dflag_clear);
-	_driver->do_read("list", 0);
+	_driver->do_read("list", String(), 0);
     }
     _landmark = "config";
     set_config(config, install || !_driver_active);

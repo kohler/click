@@ -24,8 +24,7 @@ static void destroy_callback(GtkWidget *w, gpointer) {
 }
 
 RouterWindow::whandler::whandler(RouterWindow *rw)
-    : _rw(rw), _actions(0), _actions_apply(0), _actions_changed(false),
-      _updating(0)
+    : _rw(rw), _actions_changed(false), _updating(0)
 {
     _handlerbox = GTK_BOX(lookup_widget(_rw->_window, "eview_handlerbox"));
 
@@ -36,6 +35,9 @@ RouterWindow::whandler::whandler(RouterWindow *rw)
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(_eview_config));
     g_signal_connect(buffer, "changed", G_CALLBACK(on_handler_text_buffer_changed), this);
     g_object_set_data(G_OBJECT(buffer), "clicky_view", _eview_config);
+
+    _actions[0] = _actions[1] = 0;
+    _actions_apply[0] = _actions_apply[1] = 0;
 }
 
 RouterWindow::whandler::~whandler()
@@ -57,30 +59,28 @@ void RouterWindow::whandler::clear()
  *
  */
 
-void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, int position, int new_flags)
+void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, int new_flags)
 {
+    assert(wposition >= 0);
+    
     // don't flash the expander
-    if ((flags & hflag_shown) && (flags & hflag_collapse)
-	&& (new_flags & hflag_shown) && (new_flags & hflag_collapse)) {
+    if (wcontainer && (flags & hflag_collapse)
+	&& (new_flags & hflag_collapse)) {
 	gtk_widget_destroy(gtk_bin_get_child(GTK_BIN(wcontainer)));
 	wdata = 0;
-    } else if (flags & hflag_shown) {
+    } else if (wcontainer) {
 	gtk_widget_destroy(wcontainer);
 	wcontainer = wlabel = wdata = 0;
     }
 
     flags = new_flags;
-    if (!(flags & hflag_shown))
-	return;
 
     // create container
     if (wcontainer)
 	/* do not recreate */;
-    else if (flags & hflag_collapse) {
+    else if (flags & hflag_collapse)
 	wcontainer = gtk_expander_new(NULL);
-	if (flags & hflag_collapse_expanded)
-	    gtk_expander_set_expanded(GTK_EXPANDER(wcontainer), TRUE);
-    } else if (flags & (hflag_button | hflag_checkbox))
+    else if (flags & (hflag_button | hflag_checkbox))
 	wcontainer = gtk_hbox_new(FALSE, 0);
     else
 	wcontainer = gtk_vbox_new(FALSE, 0);
@@ -103,7 +103,7 @@ void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, in
     gboolean expand = FALSE;
     if (flags & hflag_button) {
 	wadd = wdata = gtk_button_new_with_label(name.c_str());
-	if (!(flags & hflag_w))
+	if (!editable())
 	    gtk_widget_set_sensitive(wdata, FALSE);
 	else if (wh->active())
 	    g_signal_connect(wdata, "clicked", G_CALLBACK(on_handler_action_apply_clicked), wh);
@@ -113,7 +113,7 @@ void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, in
 	wadd = gtk_event_box_new();
 	wdata = gtk_check_button_new_with_label(name.c_str());
 	gtk_toggle_button_set_inconsistent(GTK_TOGGLE_BUTTON(wdata), TRUE);
-	if (!(flags & hflag_w))
+	if (!editable())
 	    gtk_widget_set_sensitive(wdata, FALSE);
 	else if (wh->active()) {
 	    g_signal_connect(wdata, "toggled", G_CALLBACK(on_handler_check_button_toggled), wh);
@@ -132,7 +132,7 @@ void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, in
 	gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(wadd), GTK_SHADOW_IN);
 
 	GtkTextBuffer *buffer = gtk_text_buffer_new(wh->router_window()->binary_tag_table());
-	if (flags & hflag_r)
+	if (refreshable())
 	    gtk_text_buffer_set_text(buffer, "???", 3);
 	wdata = gtk_text_view_new_with_buffer(buffer);
 	g_object_set_data(G_OBJECT(buffer), "clicky_view", wdata);
@@ -140,7 +140,7 @@ void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, in
 	gtk_widget_show(wdata);
 	gtk_container_add(GTK_CONTAINER(wadd), wdata);
 
-	if (!(flags & hflag_w)) {
+	if (!editable()) {
 	    gtk_text_view_set_editable(GTK_TEXT_VIEW(wdata), FALSE);
 	    g_object_set(wdata, "can-focus", FALSE, (const char *) NULL);
 	} else if (wh->active()) {
@@ -150,10 +150,10 @@ void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, in
 	
     } else {
 	wadd = wdata = gtk_entry_new();
-	if (flags & hflag_r)
+	if (refreshable())
 	    gtk_entry_set_text(GTK_ENTRY(wdata), "???");
 
-	if (!(flags & hflag_w)) {
+	if (!editable()) {
 	    gtk_entry_set_editable(GTK_ENTRY(wdata), FALSE);
 	    g_object_set(wdata, "can-focus", FALSE, (const char *) NULL);
 	} else if (wh->active()) {
@@ -172,7 +172,7 @@ void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, in
 
     if (!wcontainer->parent) {
 	gtk_box_pack_start(wh->handler_box(), wcontainer, FALSE, FALSE, padding);
-	gtk_box_reorder_child(wh->handler_box(), wcontainer, position);
+	gtk_box_reorder_child(wh->handler_box(), wcontainer, wposition);
 	gtk_widget_show(wcontainer);
     }
 
@@ -205,7 +205,7 @@ bool binary_to_utf8(const String &data, StringAccum &text, Vector<int> &position
     return multiline;
 }
 
-void RouterWindow::whandler::hinfo::widget_set_data(RouterWindow::whandler *wh, const String &data, bool change_form, int position)
+void RouterWindow::whandler::hinfo::widget_set_data(RouterWindow::whandler *wh, const String &data, bool change_form)
 {
     if (flags & hflag_button)
 	return;
@@ -226,16 +226,16 @@ void RouterWindow::whandler::hinfo::widget_set_data(RouterWindow::whandler *wh, 
 	    gtk_toggle_button_set_inconsistent(GTK_TOGGLE_BUTTON(wdata), TRUE);
 	    return;
 	} else
-	    widget_create(wh, position, (flags & ~hflag_checkbox) | (multiline ? hflag_multiline : 0));
+	    widget_create(wh, (flags & ~hflag_checkbox) | (multiline ? hflag_multiline : 0));
     }
 
     // Valid multiline data?
     if (!(flags & hflag_multiline) && (multiline || positions.size())) {
 	if (!change_form) {
-	    widget_set_data(wh, "???", false, position);
+	    widget_set_data(wh, "???", false);
 	    return;
 	} else
-	    widget_create(wh, position, flags | hflag_multiline);
+	    widget_create(wh, flags | hflag_multiline);
     }
     
     // Set data
@@ -243,17 +243,24 @@ void RouterWindow::whandler::hinfo::widget_set_data(RouterWindow::whandler *wh, 
 	assert(flags & hflag_multiline);
 	GtkTextBuffer *b = gtk_text_view_get_buffer(GTK_TEXT_VIEW(wdata));
 	gtk_text_buffer_set_text(b, binary_data.data(), binary_data.length());
+	GtkTextIter i1, i2;
 	for (int *i = positions.begin(); i != positions.end(); i += 2) {
-	    GtkTextIter i1, i2;
 	    gtk_text_buffer_get_iter_at_offset(b, &i1, i[0]);
 	    gtk_text_buffer_get_iter_at_offset(b, &i2, i[1]);
 	    gtk_text_buffer_apply_tag(b, wh->router_window()->binary_tag(), &i1, &i2);
 	}
+	gtk_text_buffer_get_end_iter(b, &i1);
+	gtk_text_buffer_place_cursor(b, &i1);	
     } else if (flags & hflag_multiline) {
 	GtkTextBuffer *b = gtk_text_view_get_buffer(GTK_TEXT_VIEW(wdata));
 	gtk_text_buffer_set_text(b, data.data(), data.length());
-    } else
+	GtkTextIter i1;
+	gtk_text_buffer_get_end_iter(b, &i1);
+	gtk_text_buffer_place_cursor(b, &i1);	
+    } else {
 	gtk_entry_set_text(GTK_ENTRY(wdata), data.c_str());
+	gtk_entry_set_position(GTK_ENTRY(wdata), -1);
+    }
 }
 
 
@@ -299,7 +306,7 @@ void RouterWindow::whandler::display(const String &ename, bool incremental)
 	gtk_label_set_markup(GTK_LABEL(l), _("<i>Loading...</i>"));
 	gtk_widget_show(l);
 	gtk_box_pack_start(_handlerbox, l, FALSE, FALSE, 0);
-	_rw->driver()->do_read(ename + ".handlers", 0);
+	_rw->driver()->do_read(ename + ".handlers", String(), 0);
 	return;
     }
     
@@ -328,6 +335,9 @@ void RouterWindow::whandler::display(const String &ename, bool incremental)
 	      case 'w':
 		hflags |= hflag_w;
 		break;
+	      case '+':
+		hflags |= hflag_rparam;
+		break;
 	      case '%':
 		hflags |= hflag_raw;
 		break;
@@ -344,8 +354,12 @@ void RouterWindow::whandler::display(const String &ename, bool incremental)
 		hflags |= hflag_checkbox;
 		break;
 	    }
+	if (!(hflags & hflag_r))
+	    hflags &= ~hflag_rparam;
 	if (hflags & hflag_r)
 	    hflags &= ~hflag_button;
+	if (hflags & hflag_rparam)
+	    hflags &= ~hflag_checkbox;
 	if (n == "class" || n == "name")
 	    hflags |= hflag_boring;
 	else if (n == "config")
@@ -373,23 +387,23 @@ void RouterWindow::whandler::display(const String &ename, bool incremental)
 
 	if (hi.name == "config") {
 	    hi.wdata = _eview_config;
-	    gboolean editable = (active() && (hi.flags & hflag_w) ? TRUE : FALSE);
-	    gtk_text_view_set_editable(GTK_TEXT_VIEW(hi.wdata), editable);
-	    g_object_set(hi.wdata, "can-focus", editable, (const char *) NULL);
+	    gboolean edit = (active() && hi.editable() ? TRUE : FALSE);
+	    gtk_text_view_set_editable(GTK_TEXT_VIEW(hi.wdata), edit);
+	    g_object_set(hi.wdata, "can-focus", edit, (const char *) NULL);
 	    g_object_set_data_full(G_OBJECT(hi.wdata), "clicky_hname", g_strdup(hi.fullname.c_str()), g_free);
 	    continue;
 	}
 
-	hi.widget_create(this, pos, hi.flags | hflag_shown);
+	hi.wposition = pos++;
+	hi.widget_create(this, hi.flags);
 
 	if (String *x = _hvalues.findp(hi.fullname))
 	    if ((hi.flags & hflag_r) && (hi.flags & hflag_calm)) {
 		_updating++;
-		hi.widget_set_data(this, *x, true, pos);
+		hi.widget_set_data(this, *x, true);
 		_updating--;
 	    } else
 		_hvalues.remove(hi.fullname);
-	++pos;
     }
 }
 
@@ -403,39 +417,26 @@ void RouterWindow::whandler::notify_handlers(const String &ename, const String &
     }
 }
 
-void RouterWindow::whandler::make_actions()
+void RouterWindow::whandler::make_actions(int which)
 {
-    if (_actions)
+    assert(which == 0 || which == 1);
+    if (_actions[which])
 	return;
     // modified from GtkTreeView's search window
 
     // create window
-    _actions = gtk_window_new(GTK_WINDOW_POPUP);
+    _actions[which] = gtk_window_new(GTK_WINDOW_POPUP);
     if (GTK_WINDOW(_rw->_window)->group)
-	gtk_window_group_add_window(GTK_WINDOW(_rw->_window)->group, GTK_WINDOW(_actions));
-    gtk_window_set_transient_for(GTK_WINDOW(_actions), GTK_WINDOW(_rw->_window));
-    gtk_window_set_destroy_with_parent(GTK_WINDOW(_actions), TRUE);
+	gtk_window_group_add_window(GTK_WINDOW(_rw->_window)->group, GTK_WINDOW(_actions[which]));
+    gtk_window_set_transient_for(GTK_WINDOW(_actions[which]), GTK_WINDOW(_rw->_window));
+    gtk_window_set_destroy_with_parent(GTK_WINDOW(_actions[which]), TRUE);
     // gtk_window_set_modal(GTK_WINDOW(tree_view->priv->search_window), TRUE);
-#if 0
-    g_signal_connect (tree_view->priv->search_window, "delete_event",
-		      G_CALLBACK (gtk_tree_view_search_delete_event),
-		      tree_view);
-    g_signal_connect (tree_view->priv->search_window, "key_press_event",
-		      G_CALLBACK (gtk_tree_view_search_key_press_event),
-		      tree_view);
-    g_signal_connect (tree_view->priv->search_window, "button_press_event",
-		      G_CALLBACK (gtk_tree_view_search_button_press_event),
-		      tree_view);
-    g_signal_connect (tree_view->priv->search_window, "scroll_event",
-		      G_CALLBACK (gtk_tree_view_search_scroll_event),
-		      tree_view);
-#endif
 
     // add contents
     GtkWidget *frame = gtk_frame_new(NULL);
     gtk_frame_set_shadow_type(GTK_FRAME(frame), GTK_SHADOW_ETCHED_IN);
     gtk_widget_show(frame);
-    gtk_container_add(GTK_CONTAINER(_actions), frame);
+    gtk_container_add(GTK_CONTAINER(_actions[which]), frame);
 
     GtkWidget *bbox = gtk_hbutton_box_new();
     gtk_box_set_spacing(GTK_BOX(bbox), 5);
@@ -446,12 +447,17 @@ void RouterWindow::whandler::make_actions()
     gtk_widget_show(cancel);
     gtk_container_add(GTK_CONTAINER(bbox), cancel);
     g_signal_connect(cancel, "clicked", G_CALLBACK(on_handler_action_cancel_clicked), this);
-    _actions_apply = gtk_button_new_from_stock(GTK_STOCK_APPLY);
-    gtk_widget_show(_actions_apply);
-    gtk_container_add(GTK_CONTAINER(bbox), _actions_apply);
-    g_signal_connect(_actions_apply, "clicked", G_CALLBACK(on_handler_action_apply_clicked), this);
+    if (which == 0)
+	_actions_apply[which] = gtk_button_new_from_stock(GTK_STOCK_APPLY);
+    else {
+	_actions_apply[which] = gtk_button_new_with_mnemonic(_("_Query"));
+	gtk_button_set_image(GTK_BUTTON(_actions_apply[which]), gtk_image_new_from_stock(GTK_STOCK_OK, GTK_ICON_SIZE_BUTTON));
+    }
+    gtk_widget_show(_actions_apply[which]);
+    gtk_container_add(GTK_CONTAINER(bbox), _actions_apply[which]);
+    g_signal_connect(_actions_apply[which], "clicked", G_CALLBACK(on_handler_action_apply_clicked), this);
 
-    gtk_widget_realize(_actions);
+    gtk_widget_realize(_actions[which]);
 }
 
 void RouterWindow::whandler::show_actions(GtkWidget *near, const String &hname, bool changed)
@@ -464,7 +470,7 @@ void RouterWindow::whandler::show_actions(GtkWidget *near, const String &hname, 
     std::deque<hinfo>::iterator hi = _hinfo.begin();
     while (hi != _hinfo.end() && hi->fullname != hname)
 	++hi;
-    if (hi == _hinfo.end() || !(hi->flags & hflag_w) || !active())
+    if (hi == _hinfo.end() || !hi->editable() || !active())
 	return;
 
     // mark change
@@ -509,9 +515,10 @@ void RouterWindow::whandler::show_actions(GtkWidget *near, const String &hname, 
     near_x2 += near_x1, near_y2 += near_y1;
 
     // get action area requisition
-    make_actions();
+    int which = (hi->writable() ? 0 : 1);
+    make_actions(which);
     GtkRequisition requisition;
-    gtk_widget_size_request(_actions, &requisition);
+    gtk_widget_size_request(_actions[which], &requisition);
 
     // adjust position based on screen
     gint x, y;
@@ -530,23 +537,24 @@ void RouterWindow::whandler::show_actions(GtkWidget *near, const String &hname, 
     } else
 	y = near_y2;
 
-    gtk_window_move(GTK_WINDOW(_actions), x, y);
-    gtk_widget_show(_actions);
+    gtk_window_move(GTK_WINDOW(_actions[which]), x, y);
+    gtk_widget_show(_actions[which]);
 }
 
 void RouterWindow::whandler::hide_actions(const String &hname, bool restore)
 {
     if (!hname || hname == _actions_hname) {
-	if (_actions)
-	    gtk_widget_hide(_actions);
+	if (_actions[0])
+	    gtk_widget_hide(_actions[0]);
+	if (_actions[1])
+	    gtk_widget_hide(_actions[1]);
 
-	// maybe do not show
 	std::deque<hinfo>::iterator hi = _hinfo.begin();
 	while (hi != _hinfo.end() && hi->fullname != _actions_hname)
 	    ++hi;
-	if (hi == _hinfo.end() || !(hi->flags & hflag_w) || !active())
+	if (hi == _hinfo.end() || !hi->editable() || !active())
 	    return;
-
+	
 	// remember checkbox state
 	if ((hi->flags & hflag_checkbox) && restore) {
 	    GtkToggleButton *b = GTK_TOGGLE_BUTTON(hi->wdata);
@@ -558,6 +566,18 @@ void RouterWindow::whandler::hide_actions(const String &hname, bool restore)
 		_updating--;
 	    } else
 		gtk_toggle_button_set_inconsistent(b, TRUE);
+	}
+
+	// unbold label on empty handlers
+	if (hi->write_only() || hi->read_param()) {
+	    if (GTK_IS_ENTRY(hi->wdata)
+		&& strlen(gtk_entry_get_text(GTK_ENTRY(hi->wdata))) == 0)
+		hi->unhighlight(_rw);
+	    else if (GTK_IS_TEXT_VIEW(hi->wdata)) {
+		GtkTextBuffer *b = gtk_text_view_get_buffer(GTK_TEXT_VIEW(hi->wdata));
+		if (gtk_text_buffer_get_char_count(b) == 0)
+		    hi->unhighlight(_rw);
+	    }
 	}
 	
 	_actions_hname = String();
@@ -571,11 +591,12 @@ void RouterWindow::whandler::apply_action(const String &action_for, bool activat
 	std::deque<hinfo>::iterator hi = _hinfo.begin();
 	while (hi != _hinfo.end() && hi->fullname != action_for)
 	    ++hi;
-	if (hi == _hinfo.end() || !(hi->flags & hflag_w))
+	if (hi == _hinfo.end() || !hi->editable())
 	    return;
-
+	
+	int which = (hi->writable() ? 0 : 1);
 	if (activate)
-	    g_signal_emit_by_name(G_OBJECT(_actions_apply), "activate");
+	    g_signal_emit_by_name(G_OBJECT(_actions_apply[which]), "activate");
 
 	const gchar *data;
 	gchar *data_free = 0;
@@ -599,7 +620,10 @@ void RouterWindow::whandler::apply_action(const String &action_for, bool activat
 	    data = "";
 
 	assert(_rw->driver());
-	_rw->driver()->do_write(action_for, data, 0);
+	if (hi->writable())
+	    _rw->driver()->do_write(action_for, data, 0);
+	else
+	    _rw->driver()->do_read(action_for, data, 0);
 	_hvalues.remove(hi->fullname);
 	
 	hide_actions(action_for, false);
@@ -664,34 +688,51 @@ static void on_handler_action_apply_clicked(GtkButton *button, gpointer user_dat
 }
 }
 
+/** @brief Read all read handlers and reset all write-only handlers. */
 void RouterWindow::whandler::refresh_all()
 {
-    for (size_t i = 0; i < _hinfo.size(); i++)
-	if ((_hinfo[i].flags & hflag_r)
-	    && !(_hinfo[i].flags & (hflag_boring | hflag_expensive))) {
-	    int flags = (_hinfo[i].flags & hflag_raw ? 0 : wdriver::dflag_nonraw);
-	    _rw->driver()->do_read(_hinfo[i].fullname, flags);
+    for (std::deque<hinfo>::iterator hi = _hinfo.begin(); hi != _hinfo.end(); ++hi)
+	if (hi->refreshable()) {
+	    int flags = (hi->flags & hflag_raw ? 0 : wdriver::dflag_nonraw);
+	    _rw->driver()->do_read(hi->fullname, String(), flags);
+	} else if (hi->write_only() && _actions_hname != hi->fullname) {
+	    hi->widget_set_data(this, "", false);
+	    hi->unhighlight(_rw);
 	}
 }
 
 void RouterWindow::whandler::notify_read(const String &hname, const String &data, bool real)
 {
     if (_display_ename.length() >= hname.length()
-	|| hname.substring(0, _display_ename.length()) != _display_ename)
+	|| memcmp(hname.data(), _display_ename.data(), _display_ename.length()) != 0)
 	return;
-    int pos = 0;
     for (std::deque<hinfo>::iterator hi = _hinfo.begin(); hi != _hinfo.end(); ++hi)
-	if ((hi->flags & hflag_r) && hi->fullname == hname) {
+	if (hi->readable() && hi->fullname == hname) {
 	    _updating++;
-	    hi->widget_set_data(this, data, true, pos);
-	    if (hi->wlabel)
-		gtk_label_set_attributes(GTK_LABEL(hi->wlabel), router_window()->small_attr());
+	    hi->widget_set_data(this, data, true);
+	    hi->unhighlight(_rw);
 	    _updating--;
 
 	    // set sticky value
 	    if (real)
 		_hvalues.insert(hi->fullname, data);
 	    break;
-	} else
-	    ++pos;
+	}
+}
+
+void RouterWindow::whandler::notify_write(const String &hname, const String &, int status)
+{
+    if (_display_ename.length() >= hname.length()
+	|| memcmp(hname.data(), _display_ename.data(), _display_ename.length()) != 0)
+	return;
+    for (std::deque<hinfo>::iterator hi = _hinfo.begin(); hi != _hinfo.end(); ++hi)
+	if (hi->writable() && hi->fullname == hname) {
+	    _updating++;
+	    if (!hi->readable() && status < 300) {
+		hi->widget_set_data(this, "", false);
+		hi->unhighlight(_rw);
+	    }
+	    _updating--;
+	    break;
+	}
 }

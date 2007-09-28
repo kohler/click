@@ -10,7 +10,7 @@ class RouterWindow::wdriver { public:
 
     virtual int driver_mask() const = 0;
 
-    virtual void do_read(const String &hname, int flags) = 0;
+    virtual void do_read(const String &hname, const String &hparam, int flags) = 0;
     virtual void do_write(const String &hname, const String &hvalue, int flags) = 0;
     virtual void do_check_write(const String &hname, int flags) = 0;
 
@@ -29,7 +29,7 @@ class RouterWindow::wdriver_csocket : public RouterWindow::wdriver { public:
 
     int driver_mask() const;
     
-    void do_read(const String &hname, int flags);
+    void do_read(const String &hname, const String &hparam, int flags);
     void do_write(const String &hname, const String &hvalue, int flags);
     void do_check_write(const String &hname, int flags);
 
@@ -67,6 +67,7 @@ class RouterWindow::wdriver_csocket : public RouterWindow::wdriver { public:
     GIOChannel *_csocket;
     guint _csocket_watch;
     int _csocket_state;
+    int _csocket_minor_version;
     std::deque<msg *> _csocket_msgq;
 
     gboolean kill_with_dialog(GatherErrorHandler *gerrh, int gerrh_pos, const char *format, ...);
@@ -82,7 +83,7 @@ class RouterWindow::wdriver_kernel : public RouterWindow::wdriver { public:
 
     int driver_mask() const;
     
-    void do_read(const String &hname, int flags);
+    void do_read(const String &hname, const String &hparam, int flags);
     void do_write(const String &hname, const String &hvalue, int flags);
     void do_check_write(const String &hname, int flags);
 

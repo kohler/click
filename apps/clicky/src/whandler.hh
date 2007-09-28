@@ -29,6 +29,7 @@ struct RouterWindow::whandler {
     void notify_element(const String &ename);
     void notify_handlers(const String &ename, const String &data);
     void notify_read(const String &hname, const String &data, bool real = true);
+    void notify_write(const String &hname, const String &data, int status);
 
     void refresh_all();
     void show_actions(GtkWidget *near, const String &hname, bool changed);
@@ -38,12 +39,11 @@ struct RouterWindow::whandler {
     
   private:
 
-    enum { hflag_r = 1 << 0, hflag_w = 1 << 1, hflag_ready = 1 << 2,
-	   hflag_boring = 1 << 3, hflag_multiline = 1 << 4,
-	   hflag_collapse = 1 << 5, hflag_collapse_expanded = 1 << 6,
-	   hflag_expensive = 1 << 7, hflag_shown = 1 << 8,
-	   hflag_button = 1 << 9, hflag_calm = 1 << 10,
-	   hflag_checkbox = 1 << 11, hflag_raw = 1 << 12 };
+    enum { hflag_r = 1 << 0, hflag_w = 1 << 1, hflag_rparam = 1 << 2,
+	   hflag_ready = 1 << 3, hflag_raw = 1 << 4, hflag_calm = 1 << 5,
+	   hflag_expensive = 1 << 6, hflag_boring = 1 << 7,
+	   hflag_multiline = 1 << 8, hflag_collapse = 1 << 9,
+	   hflag_button = 1 << 10, hflag_checkbox = 1 << 11 };
     struct hinfo {
 	String fullname;
 	String name;
@@ -51,12 +51,39 @@ struct RouterWindow::whandler {
 	GtkWidget *wcontainer;
 	GtkWidget *wlabel;
 	GtkWidget *wdata;
+	int wposition;
+	
 	hinfo(const String &e, const String &n, int f)
 	    : fullname(e ? e + "." + n : n), name(n), flags(f),
-	      wcontainer(0), wlabel(0), wdata(0) {
+	      wcontainer(0), wlabel(0), wdata(0), wposition(-1) {
 	}
-	void widget_create(RouterWindow::whandler *wh, int position, int new_flags);
-	void widget_set_data(RouterWindow::whandler *wh, const String &data, bool change_form, int position);
+
+	bool readable() const {
+	    return (flags & hflag_r) != 0;
+	}
+	bool read_param() const {
+	    return (flags & hflag_rparam) != 0;
+	}
+	bool writable() const {
+	    return (flags & hflag_w) != 0;
+	}
+	bool editable() const {
+	    return (flags & (hflag_w | hflag_rparam)) != 0;
+	}
+	bool write_only() const {
+	    return (flags & (hflag_r | hflag_w)) == hflag_w;
+	}
+	bool refreshable() const {
+	    return (flags & (hflag_r | hflag_rparam | hflag_boring | hflag_expensive)) == hflag_r;
+	}
+
+	void unhighlight(const RouterWindow *rw) const {
+	    if (wlabel)
+		gtk_label_set_attributes(GTK_LABEL(wlabel), rw->small_attr());
+	}
+	
+	void widget_create(RouterWindow::whandler *wh, int new_flags);
+	void widget_set_data(RouterWindow::whandler *wh, const String &data, bool change_form);
     };
     
     RouterWindow *_rw;
@@ -66,15 +93,15 @@ struct RouterWindow::whandler {
     GtkBox *_handlerbox;
     String _display_ename;
     
-    GtkWidget *_actions;
-    GtkWidget *_actions_apply;
+    GtkWidget *_actions[2];
+    GtkWidget *_actions_apply[2];
     String _actions_hname;
     bool _actions_changed;
     int _updating;
     
     GtkWidget *_eview_config;
 
-    void make_actions();
+    void make_actions(int which);
     
 };
 
