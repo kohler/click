@@ -1060,7 +1060,7 @@
 		  <property name="spacing">0</property>
 
 		  <child>
-		    <widget class="GtkHBox" id="hbox2">
+		    <widget class="GtkHBox" id="eview_titlebox">
 		      <property name="visible">True</property>
 		      <property name="homogeneous">False</property>
 		      <property name="spacing">0</property>

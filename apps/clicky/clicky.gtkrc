@@ -3,11 +3,11 @@ style "smallexpander" {
   GtkExpander::expander-spacing = 0
 }
 style "smallbutton" {
-  GtkButton::inner-border = {0, 0, 0, 0}
+  GtkButton::inner-border = {2, 2, 2, 2}
   GtkButton::image-spacing = 0
   GtkWidget::focus-line-width = 0
   GtkWidget::focus-padding = 0
 }
 
 widget "*.eviewbox.*.GtkExpander" style "smallexpander"
-widget "*.eviewbox.*.hmenubutton" style "smallbutton"
+widget "*.eview_titlebox*GtkButton" style "smallbutton"

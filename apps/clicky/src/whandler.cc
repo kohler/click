@@ -95,19 +95,8 @@ void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, in
 	gtk_widget_show(wlabel);
 	if (flags & hflag_collapse)
 	    gtk_expander_set_label_widget(GTK_EXPANDER(wcontainer), wlabel);
-	else {
-	    GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
-	    gtk_box_pack_start(GTK_BOX(hbox), wlabel, TRUE, TRUE, 0);
-	    GtkWidget *b = gtk_button_new();
-	    gtk_widget_set_name(b, "hmenubutton");
-	    gtk_container_add(GTK_CONTAINER(b), gtk_arrow_new(GTK_ARROW_DOWN, GTK_SHADOW_NONE));
-	    gtk_button_set_relief(GTK_BUTTON(b), GTK_RELIEF_NONE);
-	    gtk_button_set_focus_on_click(GTK_BUTTON(b), FALSE);
-	    gtk_widget_set_usize(b, 18, 12);
-	    gtk_box_pack_end(GTK_BOX(hbox), b, FALSE, FALSE, 0);
-	    gtk_widget_show_all(hbox);
-	    gtk_box_pack_start(GTK_BOX(wcontainer), hbox, FALSE, FALSE, 0);
-	}
+	else
+	    gtk_box_pack_start(GTK_BOX(wcontainer), wlabel, FALSE, FALSE, 0);
     }
 
     // create data widget

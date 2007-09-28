@@ -206,7 +206,7 @@ create_mainw (void)
   GtkWidget *diagramwindow;
   GtkWidget *diagram;
   GtkWidget *eviewbox;
-  GtkWidget *hbox2;
+  GtkWidget *eview_titlebox;
   GtkWidget *eview_label;
   GtkWidget *eview_close;
   GtkWidget *image5;
@@ -601,17 +601,17 @@ create_mainw (void)
   eviewbox = gtk_vbox_new (FALSE, 0);
   gtk_paned_pack2 (GTK_PANED (eviewpane), eviewbox, FALSE, TRUE);
 
-  hbox2 = gtk_hbox_new (FALSE, 0);
-  gtk_widget_show (hbox2);
-  gtk_box_pack_start (GTK_BOX (eviewbox), hbox2, FALSE, TRUE, 0);
+  eview_titlebox = gtk_hbox_new (FALSE, 0);
+  gtk_widget_show (eview_titlebox);
+  gtk_box_pack_start (GTK_BOX (eviewbox), eview_titlebox, FALSE, TRUE, 0);
 
   eview_label = gtk_label_new (_("Element"));
   gtk_widget_show (eview_label);
-  gtk_box_pack_start (GTK_BOX (hbox2), eview_label, FALSE, FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (eview_titlebox), eview_label, FALSE, FALSE, 0);
 
   eview_close = gtk_button_new ();
   gtk_widget_show (eview_close);
-  gtk_box_pack_end (GTK_BOX (hbox2), eview_close, FALSE, FALSE, 0);
+  gtk_box_pack_end (GTK_BOX (eview_titlebox), eview_close, FALSE, FALSE, 0);
   gtk_tooltips_set_tip (tooltips, eview_close, _("Close pane"), NULL);
   gtk_button_set_relief (GTK_BUTTON (eview_close), GTK_RELIEF_NONE);
   gtk_button_set_focus_on_click (GTK_BUTTON (eview_close), FALSE);
@@ -621,7 +621,7 @@ create_mainw (void)
   gtk_container_add (GTK_CONTAINER (eview_close), image5);
 
   eview_refresh = gtk_button_new ();
-  gtk_box_pack_end (GTK_BOX (hbox2), eview_refresh, FALSE, FALSE, 0);
+  gtk_box_pack_end (GTK_BOX (eview_titlebox), eview_refresh, FALSE, FALSE, 0);
   gtk_tooltips_set_tip (tooltips, eview_refresh, _("Load handler values"), NULL);
   gtk_button_set_relief (GTK_BUTTON (eview_refresh), GTK_RELIEF_NONE);
   gtk_button_set_focus_on_click (GTK_BUTTON (eview_refresh), FALSE);
@@ -809,7 +809,7 @@ create_mainw (void)
   GLADE_HOOKUP_OBJECT (mainw, diagramwindow, "diagramwindow");
   GLADE_HOOKUP_OBJECT (mainw, diagram, "diagram");
   GLADE_HOOKUP_OBJECT (mainw, eviewbox, "eviewbox");
-  GLADE_HOOKUP_OBJECT (mainw, hbox2, "hbox2");
+  GLADE_HOOKUP_OBJECT (mainw, eview_titlebox, "eview_titlebox");
   GLADE_HOOKUP_OBJECT (mainw, eview_label, "eview_label");
   GLADE_HOOKUP_OBJECT (mainw, eview_close, "eview_close");
   GLADE_HOOKUP_OBJECT (mainw, image5, "image5");

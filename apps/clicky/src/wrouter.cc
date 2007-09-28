@@ -189,6 +189,7 @@ RouterWindow::RouterWindow()
 		     "notify::expanded",
 		     G_CALLBACK(on_eview_classexpander_expanded), this);
     gtk_widget_set_name(lookup_widget(_window, "eviewbox"), "eviewbox");
+    gtk_widget_set_name(lookup_widget(_window, "eview_titlebox"), "eview_titlebox");
     g_signal_connect(lookup_widget(_window, "elementtreesort"),
 		     "clicked",
 		     G_CALLBACK(elementtreesort_callback), this);
