@@ -11,6 +11,18 @@ extern "C" {
 #include "support.h"
 }
 
+typedef RouterWindow::whandler whandler;
+
+namespace {
+struct whandler_autorefresh {
+    String hname;
+    whandler *wh;
+    whandler_autorefresh(const String &hname_, whandler *wh_)
+	: hname(hname_), wh(wh_) {
+    }
+};
+}
+
 extern "C" {
 static gboolean on_handler_event(GtkWidget *, GdkEvent *, gpointer);
 static void on_handler_entry_changed(GObject *, GParamSpec *, gpointer);
@@ -18,13 +30,27 @@ static void on_handler_text_buffer_changed(GtkTextBuffer *, gpointer);
 static void on_handler_check_button_toggled(GtkToggleButton *, gpointer);
 static void on_handler_action_apply_clicked(GtkButton *, gpointer);
 static void on_handler_action_cancel_clicked(GtkButton *, gpointer);
+static gboolean on_handler_autorefresh(gpointer);
+
+static void on_hpref_visible_toggled(GtkToggleButton *, gpointer);
+static void on_hpref_refreshable_toggled(GtkToggleButton *, gpointer);
+static void on_hpref_autorefresh_toggled(GtkToggleButton *, gpointer);
+static void on_hpref_autorefresh_value_changed(GtkSpinButton *, gpointer);
+static void on_hpref_preferences_clicked(GtkButton *, gpointer);
+static void on_hpref_ok_clicked(GtkButton *, gpointer);
+static void on_hpref_cancel_clicked(GtkButton *, gpointer);
+
 static void destroy_callback(GtkWidget *w, gpointer) {
     gtk_widget_destroy(w);
+}
+static void destroy_autorefresh_callback(gpointer user_data) {
+    whandler_autorefresh *wa = reinterpret_cast<whandler_autorefresh *>(user_data);
+    delete wa;
 }
 }
 
 RouterWindow::whandler::whandler(RouterWindow *rw)
-    : _rw(rw), _actions_changed(false), _updating(0)
+    : _rw(rw), _hpref_actions(0), _actions_changed(false), _updating(0)
 {
     _handlerbox = GTK_BOX(lookup_widget(_rw->_window, "eview_handlerbox"));
 
@@ -59,22 +85,102 @@ void RouterWindow::whandler::clear()
  *
  */
 
-void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, int new_flags)
+void RouterWindow::whandler::recalculate_positions()
 {
-    assert(wposition >= 0);
+    int pos = 0;
+    for (std::deque<hinfo>::iterator iter = _hinfo.begin();
+	 iter != _hinfo.end(); ++iter) {
+	iter->wposition = pos;
+	if (iter->flags & (hflag_visible | hflag_preferences))
+	    ++pos;
+    }
+}
+
+void RouterWindow::whandler::hinfo::start_autorefresh(whandler *wh)
+{
+    if ((flags & hflag_autorefresh)
+	&& (flags & hflag_r)
+	&& !(flags & hflag_autorefresh_outstanding)
+	&& !autorefresh_source
+	&& wh->active()) {
+	whandler_autorefresh *wa = new whandler_autorefresh(fullname, wh);
+	autorefresh_source = g_timeout_add_full
+	    (G_PRIORITY_DEFAULT, autorefresh, on_handler_autorefresh, wa,
+	     destroy_autorefresh_callback);
+    }
+}
+
+int RouterWindow::whandler::hinfo::create_preferences(whandler *wh)
+{
+    assert((flags & hflag_preferences) && !wcontainer && !wlabel && !wdata);
+
+    // set up the frame
+    wcontainer = gtk_frame_new(NULL);
+    wlabel = gtk_label_new(name.c_str());
+    gtk_label_set_attributes(GTK_LABEL(wlabel), wh->router_window()->small_attr());
+    gtk_misc_set_alignment(GTK_MISC(wlabel), 0, 0.5);
+    gtk_misc_set_padding(GTK_MISC(wlabel), 2, 0);
+    gtk_frame_set_label_widget(GTK_FRAME(wcontainer), wlabel);
+    GtkWidget *aligner = gtk_alignment_new(0, 0, 1, 1);
+    gtk_alignment_set_padding(GTK_ALIGNMENT(aligner), 0, 4, 2, 2);
+    gtk_container_add(GTK_CONTAINER(wcontainer), aligner);
+    g_object_set_data_full(G_OBJECT(aligner), "clicky_hname", g_strdup(fullname.c_str()), g_free);
     
-    // don't flash the expander
-    if (wcontainer && (flags & hflag_collapse)
-	&& (new_flags & hflag_collapse)) {
-	gtk_widget_destroy(gtk_bin_get_child(GTK_BIN(wcontainer)));
-	wdata = 0;
-    } else if (wcontainer) {
-	gtk_widget_destroy(wcontainer);
-	wcontainer = wlabel = wdata = 0;
+    // fill the dialog
+    GtkWidget *mainbox = gtk_vbox_new(FALSE, 0);
+    gtk_container_add(GTK_CONTAINER(aligner), mainbox);
+
+    GtkWidget *w = gtk_check_button_new_with_label(_("Visible"));
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(w), (flags & hflag_visible));
+    gtk_box_pack_start(GTK_BOX(mainbox), w, FALSE, FALSE, 0);
+    g_signal_connect(w, "toggled", G_CALLBACK(on_hpref_visible_toggled), wh);
+
+    GtkWidget *visiblebox = gtk_vbox_new(FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(mainbox), visiblebox, FALSE, FALSE, 0);
+    g_object_set_data(G_OBJECT(w), "clicky_hider", visiblebox);
+
+    GtkWidget *autorefresh_period = 0;
+
+    if (flags & hflag_r) {
+	w = gtk_check_button_new_with_label(_("Refreshable"));
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(w), (flags & hflag_refresh));
+	gtk_box_pack_start(GTK_BOX(visiblebox), w, FALSE, FALSE, 0);
+	g_signal_connect(w, "toggled", G_CALLBACK(on_hpref_refreshable_toggled), wh);
+	if (flags & hflag_rparam) {
+	    // XXX add a text widget for refresh data
+	}
+
+	// autorefresh
+	w = gtk_check_button_new_with_label(_("Autorefresh"));
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(w), (flags & hflag_autorefresh));
+	gtk_box_pack_start(GTK_BOX(visiblebox), w, FALSE, FALSE, 0);
+	g_signal_connect(w, "toggled", G_CALLBACK(on_hpref_autorefresh_toggled), wh);
+
+	autorefresh_period = gtk_hbox_new(FALSE, 0);
+	g_object_set_data(G_OBJECT(w), "clicky_hider", autorefresh_period);
+	GtkAdjustment *adj = (GtkAdjustment *) gtk_adjustment_new(autorefresh / 1000., 0.01, 60, 0.01, 0.5, 0.5);
+	GtkWidget *spin = gtk_spin_button_new(adj, 0.01, 3);
+	gtk_box_pack_start(GTK_BOX(autorefresh_period), spin, FALSE, FALSE, 0);
+	g_signal_connect(spin, "value-changed", G_CALLBACK(on_hpref_autorefresh_value_changed), wh);
+	GtkWidget *label = gtk_label_new(_(" sec period"));
+	gtk_box_pack_start(GTK_BOX(autorefresh_period), label, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(visiblebox), autorefresh_period, FALSE, FALSE, 0);
     }
 
-    flags = new_flags;
+    // return
+    gtk_widget_show_all(wcontainer);
+    if ((flags & (hflag_r | hflag_autorefresh)) != (hflag_r | hflag_autorefresh)
+	&& autorefresh_period)
+	gtk_widget_hide(autorefresh_period);
+    if (!(flags & hflag_visible))
+	gtk_widget_hide(visiblebox);
+    return 0;
+}
 
+int RouterWindow::whandler::hinfo::create_display(whandler *wh)
+{
+    assert(!(flags & hflag_preferences) && !wdata);
+    
     // create container
     if (wcontainer)
 	/* do not recreate */;
@@ -172,13 +278,54 @@ void RouterWindow::whandler::hinfo::widget_create(RouterWindow::whandler *wh, in
     else
 	gtk_box_pack_start(GTK_BOX(wcontainer), wadd, expand, expand, 0);
 
+    // initiate autorefresh
+    if (flags & hflag_autorefresh)
+	start_autorefresh(wh);
+    
+    return padding;
+}
+
+void RouterWindow::whandler::hinfo::create(whandler *wh, int new_flags)
+{
+    if (flags & hflag_special)
+	return;
+    
+    // don't flash the expander
+    if (wcontainer
+	&& (((flags & new_flags) & (hflag_collapse | hflag_visible))
+	    == (hflag_collapse | hflag_visible))
+	&& (flags & hflag_preferences) == 0
+	&& (new_flags & hflag_preferences) == 0) {
+	gtk_widget_destroy(gtk_bin_get_child(GTK_BIN(wcontainer)));
+	wdata = 0;
+    } else if (wcontainer) {
+	gtk_widget_destroy(wcontainer);
+	wcontainer = wlabel = wdata = 0;
+    } else
+	assert(wcontainer == 0 && wlabel == 0 && wdata == 0);
+    
+    // set flags, potentially recalculate positions
+    if ((flags ^ new_flags) & (hflag_visible | hflag_preferences)) {
+	flags = new_flags;
+	wh->recalculate_positions();
+    } else
+	flags = new_flags;
+    
+    // create the body
+    int padding;
+    if (flags & hflag_preferences)
+	padding = create_preferences(wh);
+    else if (flags & hflag_visible)
+	padding = create_display(wh);
+    else
+	return;
+    
+    // add to the container
     if (!wcontainer->parent) {
 	gtk_box_pack_start(wh->handler_box(), wcontainer, FALSE, FALSE, padding);
 	gtk_box_reorder_child(wh->handler_box(), wcontainer, wposition);
 	gtk_widget_show(wcontainer);
     }
-
-    assert(wcontainer && wdata);
 }
 
 bool binary_to_utf8(const String &data, StringAccum &text, Vector<int> &positions)
@@ -209,7 +356,7 @@ bool binary_to_utf8(const String &data, StringAccum &text, Vector<int> &position
 
 void RouterWindow::whandler::hinfo::display(RouterWindow::whandler *wh, const String &hparam, const String &hvalue, bool change_form)
 {
-    if (flags & hflag_button)
+    if (!wdata || (flags & hflag_button))
 	return;
 
     // Multiline data requires special handling
@@ -228,7 +375,7 @@ void RouterWindow::whandler::hinfo::display(RouterWindow::whandler *wh, const St
 	    gtk_toggle_button_set_inconsistent(GTK_TOGGLE_BUTTON(wdata), TRUE);
 	    return;
 	} else
-	    widget_create(wh, (flags & ~hflag_checkbox) | (multiline ? hflag_multiline : 0));
+	    create(wh, (flags & ~hflag_checkbox) | (multiline ? hflag_multiline : 0));
     }
 
     // Valid multiline data?
@@ -237,7 +384,7 @@ void RouterWindow::whandler::hinfo::display(RouterWindow::whandler *wh, const St
 	    display(wh, String(), "???", false);
 	    return;
 	} else
-	    widget_create(wh, flags | hflag_multiline);
+	    create(wh, flags | hflag_multiline);
     }
     
     // Set data
@@ -296,6 +443,7 @@ void RouterWindow::whandler::display(const String &ename, bool incremental)
     gtk_container_foreach(GTK_CONTAINER(_handlerbox), destroy_callback, NULL);
     _hinfo.clear();
     hide_actions();
+    _hpref_actions = 0;
     
     String *hdata;
     if (ename)
@@ -377,10 +525,12 @@ void RouterWindow::whandler::display(const String &ename, bool incremental)
 	    hflags &= ~hflag_button;
 	if (hflags & hflag_rparam)
 	    hflags &= ~hflag_checkbox;
+	if (hinfo::default_refreshable(hflags))
+	    hflags |= hflag_refresh;
 	if (n == "class" || n == "name")
-	    hflags |= hflag_boring;
+	    hflags |= hflag_boring | hflag_special;
 	else if (n == "config")
-	    hflags |= hflag_multiline;
+	    hflags |= hflag_multiline | hflag_special;
 	else if (n == "ports" || n == "handlers")
 	    hflags |= hflag_collapse;
 
@@ -395,7 +545,6 @@ void RouterWindow::whandler::display(const String &ename, bool incremental)
     }
 
     // parse _hinfo into widgets
-    int pos = 0;
     for (size_t i = 0; i < _hinfo.size(); i++) {
 	hinfo &hi = _hinfo[i];
 
@@ -411,8 +560,7 @@ void RouterWindow::whandler::display(const String &ename, bool incremental)
 	    continue;
 	}
 
-	hi.wposition = pos++;
-	hi.widget_create(this, hi.flags);
+	hi.create(this, hi.flags | hflag_visible);
 
 	if (String *x = _hvalues.findp(hi.fullname))
 	    if ((hi.flags & hflag_r) && (hi.flags & hflag_calm)) {
@@ -422,8 +570,49 @@ void RouterWindow::whandler::display(const String &ename, bool incremental)
 	    } else
 		_hvalues.remove(hi.fullname);
     }
+
+    // the final button box
+    GtkWidget *bbox = gtk_hbutton_box_new();
+    gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
+    _hpref_actions = GTK_BUTTON_BOX(bbox);
+    on_preferences(onpref_initial);
+    gtk_box_pack_end(_handlerbox, bbox, FALSE, FALSE, 0);    
+
+    GtkWidget *w = gtk_hseparator_new();
+    gtk_box_pack_end(_handlerbox, w, FALSE, FALSE, 4);
+    gtk_widget_show(w);
 }
 
+void RouterWindow::whandler::on_preferences(int action)
+{
+    gtk_container_foreach(GTK_CONTAINER(_hpref_actions), destroy_callback, NULL);
+    if (action == onpref_initial || action == onpref_prefok
+	|| action == onpref_prefcancel) {
+	GtkWidget *w = gtk_button_new_from_stock(GTK_STOCK_PREFERENCES);
+	gtk_button_set_relief(GTK_BUTTON(w), GTK_RELIEF_NONE);
+	gtk_container_add(GTK_CONTAINER(_hpref_actions), w);
+	g_signal_connect(w, "clicked", G_CALLBACK(on_hpref_preferences_clicked), this);
+    } else {
+	GtkWidget *w = gtk_button_new_from_stock(GTK_STOCK_CANCEL);
+	gtk_container_add(GTK_CONTAINER(_hpref_actions), w);
+	g_signal_connect(w, "clicked", G_CALLBACK(on_hpref_cancel_clicked), this);
+	w = gtk_button_new_from_stock(GTK_STOCK_APPLY);
+	gtk_container_add(GTK_CONTAINER(_hpref_actions), w);
+	g_signal_connect(w, "clicked", G_CALLBACK(on_hpref_ok_clicked), this);
+    }
+    gtk_widget_show_all(GTK_WIDGET(_hpref_actions));
+
+    if (action == onpref_showpref) {
+	for (std::deque<hinfo>::iterator iter = _hinfo.begin();
+	     iter != _hinfo.end(); ++iter)
+	    iter->create(this, iter->flags | hflag_preferences);
+    } else if (action == onpref_prefok || action == onpref_prefcancel) {
+	for (std::deque<hinfo>::iterator iter = _hinfo.begin();
+	     iter != _hinfo.end(); ++iter)
+	    iter->create(this, iter->flags & ~hflag_preferences);
+    }
+}
+    
 void RouterWindow::whandler::notify_handlers(const String &ename, const String &data)
 {
     if (_ehandlers[ename] != data) {
@@ -484,10 +673,8 @@ void RouterWindow::whandler::show_actions(GtkWidget *near, const String &hname, 
 	return;
     
     // find handler
-    std::deque<hinfo>::iterator hi = _hinfo.begin();
-    while (hi != _hinfo.end() && hi->fullname != hname)
-	++hi;
-    if (hi == _hinfo.end() || !hi->editable() || !active())
+    hinfo *hi = find_hinfo(hname);
+    if (!hi || !hi->editable() || !active())
 	return;
 
     // mark change
@@ -564,11 +751,9 @@ void RouterWindow::whandler::hide_actions(const String &hname, bool restore)
 	    gtk_widget_hide(_actions[0]);
 	if (_actions[1])
 	    gtk_widget_hide(_actions[1]);
-
-	std::deque<hinfo>::iterator hi = _hinfo.begin();
-	while (hi != _hinfo.end() && hi->fullname != _actions_hname)
-	    ++hi;
-	if (hi == _hinfo.end() || !hi->editable() || !active())
+	
+	hinfo *hi = find_hinfo(_actions_hname);
+	if (!hi || !hi->editable() || !active())
 	    return;
 	
 	// remember checkbox state
@@ -604,10 +789,8 @@ void RouterWindow::whandler::hide_actions(const String &hname, bool restore)
 void RouterWindow::whandler::apply_action(const String &action_for, bool activate)
 {
     if (active()) {
-	std::deque<hinfo>::iterator hi = _hinfo.begin();
-	while (hi != _hinfo.end() && hi->fullname != action_for)
-	    ++hi;
-	if (hi == _hinfo.end() || !hi->editable())
+	hinfo *hi = find_hinfo(action_for);
+	if (!hi || !hi->editable())
 	    return;
 	
 	int which = (hi->writable() ? 0 : 1);
@@ -720,17 +903,22 @@ void RouterWindow::whandler::notify_read(const String &hname, const String &hpar
     if (_display_ename.length() >= hname.length()
 	|| memcmp(hname.data(), _display_ename.data(), _display_ename.length()) != 0)
 	return;
-    for (std::deque<hinfo>::iterator hi = _hinfo.begin(); hi != _hinfo.end(); ++hi)
-	if (hi->readable() && hi->fullname == hname) {
-	    _updating++;
-	    hi->display(this, hparam, hvalue, true);
-	    _updating--;
-
-	    // set sticky value
-	    if (real)
-		_hvalues.insert(hi->fullname, hvalue);
-	    break;
+    hinfo *hi = find_hinfo(hname);
+    if (hi && hi->readable()) {
+	_updating++;
+	hi->display(this, hparam, hvalue, true);
+	_updating--;
+	
+	// set sticky value
+	if (real)
+	    _hvalues.insert(hi->fullname, hvalue);
+	
+	// restart autorefresh
+	if (hi->flags & hflag_autorefresh_outstanding) {
+	    hi->flags &= ~hflag_autorefresh_outstanding;
+	    hi->start_autorefresh(this);
 	}
+    }
 }
 
 void RouterWindow::whandler::notify_write(const String &hname, const String &, int status)
@@ -738,12 +926,128 @@ void RouterWindow::whandler::notify_write(const String &hname, const String &, i
     if (_display_ename.length() >= hname.length()
 	|| memcmp(hname.data(), _display_ename.data(), _display_ename.length()) != 0)
 	return;
-    for (std::deque<hinfo>::iterator hi = _hinfo.begin(); hi != _hinfo.end(); ++hi)
-	if (hi->writable() && hi->fullname == hname) {
-	    _updating++;
-	    if (!hi->readable() && status < 300)
-		hi->display(this, String(), String(), false);
-	    _updating--;
-	    break;
-	}
+    hinfo *hi = find_hinfo(hname);
+    if (hi && hi->writable()) {
+	_updating++;
+	if (!hi->readable() && status < 300)
+	    hi->display(this, String(), String(), false);
+	_updating--;
+    }
+}
+
+bool RouterWindow::whandler::on_autorefresh(const String &hname)
+{
+    hinfo *hi = find_hinfo(hname);
+    if (hi && hi->readable() && (hi->flags & hflag_autorefresh)
+	&& !(hi->flags & hflag_autorefresh_outstanding) && active()) {
+	hi->flags |= hflag_autorefresh_outstanding;
+	int flags = (hi->flags & hflag_raw ? 0 : wdriver::dflag_nonraw);
+	_rw->driver()->do_read(hi->fullname, String(), flags);
+	return TRUE;
+    } else {
+	hi->autorefresh_source = 0;
+	return FALSE;
+    }
+}
+
+
+/*****
+ *
+ * Handler preferences
+ *
+ */
+
+void RouterWindow::whandler::set_hinfo_flags(const String &hname, int flags, int flag_value)
+{
+    if (hinfo *hi = find_hinfo(hname))
+	hi->flags = (hi->flags & ~flags) | (flags & flag_value);
+}
+
+void RouterWindow::whandler::set_hinfo_autorefresh_period(const String &hname, int period)
+{
+    if (hinfo *hi = find_hinfo(hname))
+	hi->autorefresh = (period > 0 ? period : 1);
+}
+
+const gchar *RouterWindow::whandler::hpref_handler_name(GtkWidget *w)
+{
+    gpointer x;
+    while (w) {
+	while (w && !GTK_IS_ALIGNMENT(w))
+	    w = w->parent;
+	if (w && (x = g_object_get_data(G_OBJECT(w), "clicky_hname")))
+	    return reinterpret_cast<gchar *>(x);
+	if (w)
+	    w = w->parent;
+    }
+    return "";
+}
+
+extern "C" {
+static void on_hpref_visible_toggled(GtkToggleButton *button, gpointer user_data)
+{
+    whandler *wh = reinterpret_cast<whandler *>(user_data);
+    const gchar *hname = whandler::hpref_handler_name(GTK_WIDGET(button));
+    gboolean on = gtk_toggle_button_get_active(button);
+    wh->set_hinfo_flags(hname, whandler::hflag_visible, on ? whandler::hflag_visible : 0);
+    
+    GtkWidget *widget = reinterpret_cast<GtkWidget *>(g_object_get_data(G_OBJECT(button), "clicky_hider"));
+    if (on)
+	gtk_widget_show(widget);
+    else
+	gtk_widget_hide(widget);
+}
+
+static void on_hpref_refreshable_toggled(GtkToggleButton *button, gpointer user_data)
+{
+    whandler *wh = reinterpret_cast<whandler *>(user_data);
+    const gchar *hname = whandler::hpref_handler_name(GTK_WIDGET(button));
+    gboolean on = gtk_toggle_button_get_active(button);
+    wh->set_hinfo_flags(hname, whandler::hflag_refresh, on ? whandler::hflag_refresh : 0);
+}
+
+static void on_hpref_autorefresh_toggled(GtkToggleButton *button, gpointer user_data)
+{
+    whandler *wh = reinterpret_cast<whandler *>(user_data);
+    const gchar *hname = whandler::hpref_handler_name(GTK_WIDGET(button));
+    gboolean on = gtk_toggle_button_get_active(button);
+    wh->set_hinfo_flags(hname, whandler::hflag_autorefresh, on ? whandler::hflag_autorefresh : 0);
+    
+    GtkWidget *widget = reinterpret_cast<GtkWidget *>(g_object_get_data(G_OBJECT(button), "clicky_hider"));
+    if (on)
+	gtk_widget_show(widget);
+    else
+	gtk_widget_hide(widget);
+}
+
+static void on_hpref_autorefresh_value_changed(GtkSpinButton *button, gpointer user_data)
+{
+    whandler *wh = reinterpret_cast<whandler *>(user_data);
+    const gchar *hname = whandler::hpref_handler_name(GTK_WIDGET(button));
+    wh->set_hinfo_autorefresh_period(hname, (guint) (gtk_spin_button_get_value(button) * 1000));
+}
+
+static void on_hpref_preferences_clicked(GtkButton *, gpointer user_data)
+{
+    whandler *wh = reinterpret_cast<whandler *>(user_data);
+    wh->on_preferences(whandler::onpref_showpref);
+}
+
+static void on_hpref_ok_clicked(GtkButton *, gpointer user_data)
+{
+    whandler *wh = reinterpret_cast<whandler *>(user_data);
+    wh->on_preferences(whandler::onpref_prefok);
+}
+
+static void on_hpref_cancel_clicked(GtkButton *, gpointer user_data)
+{
+    whandler *wh = reinterpret_cast<whandler *>(user_data);
+    wh->on_preferences(whandler::onpref_prefcancel);
+}
+
+static gboolean on_handler_autorefresh(gpointer user_data)
+{
+    whandler_autorefresh *wa = reinterpret_cast<whandler_autorefresh *>(user_data);
+    return wa->wh->on_autorefresh(wa->hname);
+}
 }

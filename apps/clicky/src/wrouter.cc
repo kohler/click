@@ -658,10 +658,10 @@ void RouterWindow::element_show(String ename, int expand, bool incremental)
 	    gtk_widget_show(n);
 	    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(lookup_widget(_window, "menu_view_element")), TRUE);
 	    GtkPaned *paned = GTK_PANED(lookup_widget(_window, "eviewpane"));
-	    if (GTK_WIDGET(paned)->allocation.width > 250)
-		gtk_paned_set_position(paned, GTK_WIDGET(paned)->allocation.width - 200);
+	    if (GTK_WIDGET(paned)->allocation.width > 275)
+		gtk_paned_set_position(paned, GTK_WIDGET(paned)->allocation.width - 225);
 	    else
-		gtk_paned_set_position(paned, GTK_WIDGET(paned)->allocation.width - (guint) (GTK_WIDGET(paned)->allocation.width * 200. / 250.));
+		gtk_paned_set_position(paned, GTK_WIDGET(paned)->allocation.width - (guint) (GTK_WIDGET(paned)->allocation.width * 225. / 275.));
 	} else if (expand < 0) {
 	    gtk_widget_hide(n);
 	    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(lookup_widget(_window, "menu_view_element")), FALSE);

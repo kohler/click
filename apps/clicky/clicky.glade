@@ -204,13 +204,13 @@
 </widget>
 
 <widget class="GtkWindow" id="mainw">
-  <property name="width_request">710</property>
-  <property name="height_request">580</property>
   <property name="visible">True</property>
   <property name="title" translatable="yes">Clicky</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
+  <property name="default_width">810</property>
+  <property name="default_height">640</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="decorated">True</property>
@@ -1031,7 +1031,7 @@
 			      <property name="width">400</property>
 			      <property name="height">400</property>
 			      <property name="hadjustment">0 0 400 10 0.9 1</property>
-			      <property name="vadjustment">0 0 400 10 214.2 238</property>
+			      <property name="vadjustment">0 0 400 10 241.2 268</property>
 			    </widget>
 			  </child>
 			</widget>

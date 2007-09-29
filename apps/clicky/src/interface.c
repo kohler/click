@@ -238,8 +238,8 @@ create_mainw (void)
   accel_group = gtk_accel_group_new ();
 
   mainw = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-  gtk_widget_set_size_request (mainw, 710, 580);
   gtk_window_set_title (GTK_WINDOW (mainw), _("Clicky"));
+  gtk_window_set_default_size (GTK_WINDOW (mainw), 810, 640);
 
   vbox1 = gtk_vbox_new (FALSE, 0);
   gtk_widget_show (vbox1);
