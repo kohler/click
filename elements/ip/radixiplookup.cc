@@ -119,7 +119,7 @@ RadixIPLookup::dump_routes()
     for (int j = _vfree; j >= 0; j = _v[j].extra)
 	_v[j].kill();
     for (int i = 0; i < _v.size(); i++)
-	if (!_v[i].addr || _v[i].mask)
+	if (_v[i].real())
 	    _v[i].unparse(sa, true) << '\n';
     return sa.take_string();
 }
