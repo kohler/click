@@ -69,5 +69,12 @@ inline size_t hashcode(void *v) {
     return reinterpret_cast<uintptr_t>(v) >> 3;
 }
 
+template <typename T>
+inline typename T::key_type
+hashkey(const T &x)
+{
+    return x.hashkey();
+}
+
 CLICK_ENDDECLS
 #endif
