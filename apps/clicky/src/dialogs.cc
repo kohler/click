@@ -13,37 +13,38 @@ extern "C" {
 #include "interface.h"
 #include "support.h"
 }
+namespace clicky {
 
 extern "C" {
 static void on_new_window_activate(GtkMenuItem *, gpointer)
 {
-    RouterWindow *rw = new RouterWindow;
+    wmain *rw = new wmain;
     rw->show();
 }
 
 static void on_open_file_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->on_open_file();
+    reinterpret_cast<wmain *>(user_data)->on_open_file();
 }
 
 static void on_open_socket_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->on_open_socket();
+    reinterpret_cast<wmain *>(user_data)->on_open_socket();
 }
 
 static void on_open_kernel_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->on_open_kernel();
+    reinterpret_cast<wmain *>(user_data)->on_open_kernel();
 }
 
 static void on_save_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->on_save_file(false);
+    reinterpret_cast<wmain *>(user_data)->on_save_file(false);
 }
 
 static void on_save_as_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->on_save_file(true);
+    reinterpret_cast<wmain *>(user_data)->on_save_file(true);
 }
 
 static void on_quit_activate(GtkMenuItem *, gpointer)
@@ -53,69 +54,69 @@ static void on_quit_activate(GtkMenuItem *, gpointer)
 
 static void on_check_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->config_check(false);
+    reinterpret_cast<wmain *>(user_data)->config_check(false);
 }
 
 static void on_install_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->config_check(true);
+    reinterpret_cast<wmain *>(user_data)->config_check(true);
 }
 
 static void on_view_element_toggled(GtkCheckMenuItem *check, gpointer user_data)
 {
-    RouterWindow *rw = reinterpret_cast<RouterWindow *>(user_data);
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
     rw->element_show(rw->element_showing(), check->active ? 1 : -1, false);
 }
 
 static void on_view_configuration_toggled(GtkCheckMenuItem *check, gpointer user_data)
 {
-    RouterWindow *rw = reinterpret_cast<RouterWindow *>(user_data);
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
     rw->set_diagram_mode(!check->active);
 }
 
 static void on_toolbar_diagram_toggled(GtkToggleToolButton *button, gpointer user_data)
 {
-    RouterWindow *rw = reinterpret_cast<RouterWindow *>(user_data);
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
     rw->set_diagram_mode(gtk_toggle_tool_button_get_active(button));
 }
 
 static void on_zoom_in_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->diagram()->zoom(true, 1);
+    reinterpret_cast<wmain *>(user_data)->diagram()->zoom(true, 1);
 }
 
 static void on_zoom_out_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->diagram()->zoom(true, -1);
+    reinterpret_cast<wmain *>(user_data)->diagram()->zoom(true, -1);
 }
 
 static void on_normal_size_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->diagram()->zoom(false, 0);
+    reinterpret_cast<wmain *>(user_data)->diagram()->zoom(false, 0);
 }
 
 static void on_config_userlevel_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->config_set_driver(Driver::USERLEVEL);
+    reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::USERLEVEL);
 }
 
 static void on_config_linuxmodule_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->config_set_driver(Driver::LINUXMODULE);
+    reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::LINUXMODULE);
 }
 
 static void on_config_bsdmodule_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->config_set_driver(Driver::BSDMODULE);
+    reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::BSDMODULE);
 }
 
 static void on_config_ns_activate(GtkMenuItem *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->config_set_driver(Driver::NSMODULE);
+    reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::NSMODULE);
 }
 }
 
-void RouterWindow::dialogs_connect()
+void wmain::dialogs_connect()
 {
     g_signal_connect(lookup_widget(_window, "menu_new_window"), "activate",
 		     G_CALLBACK(on_new_window_activate), this);
@@ -167,7 +168,7 @@ void RouterWindow::dialogs_connect()
 		     G_CALLBACK(on_config_ns_activate), this);
 }
 
-void RouterWindow::on_open_file()
+void wmain::on_open_file()
 {
     static GtkFileFilter *filter;
     
@@ -202,12 +203,12 @@ void RouterWindow::on_open_file()
 	    gerrh.translate_prefix(filename, "Error opening '" + String(filename) + "'");
 	    gerrh.run_dialog(GTK_WINDOW(dialog));
 	} else {
-	    RouterWindow *rw;
+	    wmain *rw;
 	    if (empty()) {
 		rw = this;
 		rw->clear(true);
 	    } else
-		rw = new RouterWindow;
+		rw = new wmain;
 	    rw->set_landmark(filename);
 	    rw->set_config(s, true);
 	    rw->set_save_file(filename, true);
@@ -276,7 +277,7 @@ int do_fd_connected(int fd, ErrorHandler *errh)
 	return 1;
 }
 
-void RouterWindow::on_open_socket()
+void wmain::on_open_socket()
 {
     GtkWidget *dialog = create_opensocketdialog();
     gtk_window_set_transient_for(GTK_WINDOW(dialog), GTK_WINDOW(_window));
@@ -293,7 +294,7 @@ void RouterWindow::on_open_socket()
 	}
 
 	open_socket_helper helper = { NULL, false };
-	GIOChannel *socket = wdriver_csocket::start_connect(addr, port, &helper.ready, &gerrh);
+	GIOChannel *socket = csocket_wdriver::start_connect(addr, port, &helper.ready, &gerrh);
 	if (!socket) {
 	    gerrh.run_dialog(GTK_WINDOW(dialog));
 	    continue;
@@ -319,14 +320,14 @@ void RouterWindow::on_open_socket()
 	    }
 	}
 
-	RouterWindow *rw;
+	wmain *rw;
 	if (empty()) {
 	    rw = this;
 	    rw->clear(true);
 	} else
-	    rw = new RouterWindow;
+	    rw = new wmain;
 	rw->set_landmark(String(hosts) + ":" + String(ports));
-	(void) new wdriver_csocket(rw, socket, helper.ready);
+	(void) new csocket_wdriver(rw, socket, helper.ready);
 	rw->show();
 	break;
     }
@@ -334,7 +335,7 @@ void RouterWindow::on_open_socket()
     gtk_widget_destroy(dialog);
 }
 
-void RouterWindow::on_open_kernel()
+void wmain::on_open_kernel()
 {
     String prefix = "/click/";
     String config_name = prefix + "config";
@@ -343,19 +344,19 @@ void RouterWindow::on_open_kernel()
 	_gerrh.error("No kernel configuration installed: %s", strerror(errno));
 	_gerrh.run_dialog(GTK_WINDOW(_window), gerrh_pos);
     } else {
-	RouterWindow *rw;
+	wmain *rw;
 	if (empty()) {
 	    rw = this;
 	    rw->clear(true);
 	} else
-	    rw = new RouterWindow;
+	    rw = new wmain;
 	rw->set_landmark(prefix);
-	(void) new wdriver_kernel(rw, prefix);
+	(void) new clickfs_wdriver(rw, prefix);
 	rw->show();
     }
 }
 
-void RouterWindow::on_save_file(bool save_as)
+void wmain::on_save_file(bool save_as)
 {
     if (save_as || !_savefile) {
 	GtkWidget *dialog = gtk_file_chooser_dialog_new("Save File",
@@ -404,7 +405,7 @@ void RouterWindow::on_save_file(bool save_as)
     g_free(data);
 }
 
-void RouterWindow::config_choose_driver()
+void wmain::config_choose_driver()
 {
     int driver_mask = (_driver ? _driver->driver_mask() : _emap->provided_driver_mask());
     for (int d = 0; d < Driver::COUNT; ++d) {
@@ -416,8 +417,10 @@ void RouterWindow::config_choose_driver()
     }
 }
 
-void RouterWindow::config_set_driver(int driver)
+void wmain::config_set_driver(int driver)
 {
     _selected_driver = driver;
     on_config_changed();
+}
+
 }

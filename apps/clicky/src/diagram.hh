@@ -5,13 +5,14 @@
 #include "rectangle.hh"
 #include "rectsearch.hh"
 #include <clicktool/elementt.hh>
-class RouterWindow;
 class Bitvector;
+namespace clicky {
+class wmain;
 
-class ClickyDiagram { public:
+class wdiagram { public:
 
-    ClickyDiagram(RouterWindow *rw);
-    ~ClickyDiagram();
+    wdiagram(wmain *rw);
+    ~wdiagram();
 
     void router_create(bool incremental, bool always);
 
@@ -104,7 +105,7 @@ class ClickyDiagram { public:
 	}
 
 	void finish(const eltstyle &es);
-	void draw(ClickyDiagram *cd, cairo_t *cr);
+	void draw(wdiagram *cd, cairo_t *cr);
     };
 
     enum { es_normal, es_queue };
@@ -154,8 +155,8 @@ class ClickyDiagram { public:
 	void position_contents_scc(RouterT *);
 	void position_contents_dot(RouterT *, const eltstyle &, ErrorHandler *);
 	void position_contents_first_heuristic(RouterT *, const eltstyle &);
-	void layout_contents(RouterT *, ClickyDiagram *, PangoLayout *);
-	void layout(ClickyDiagram *, PangoLayout *);
+	void layout_contents(RouterT *, wdiagram *, PangoLayout *);
+	void layout(wdiagram *, PangoLayout *);
 
 	void finish(const eltstyle &es, double dx, double dy, rect_search<ink> &rects);
 	void finish_compound(const eltstyle &es);
@@ -165,7 +166,7 @@ class ClickyDiagram { public:
 	void insert(rect_search<ink> &rects, const eltstyle &style, rectangle &rect);
 
 	void drag_prepare();
-	void drag_shift(double dx, double dy, ClickyDiagram *cd);
+	void drag_shift(double dx, double dy, wdiagram *cd);
 	
 	static void port_offsets(double side_length, int nports, const eltstyle &style, double &offset0, double &separation);
 	inline double port_position(int port, int nports, double side, const eltstyle &style) const;
@@ -174,9 +175,9 @@ class ClickyDiagram { public:
 	void draw_input_port(cairo_t *, const eltstyle &, double, double, int processing);
 	void draw_output_port(cairo_t *, const eltstyle &, double, double, int processing);
 	void clip_to_border(cairo_t *cr, double shift) const;
-	void draw_outline(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
-	void draw_text(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
-	void draw(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl);
+	void draw_outline(wdiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
+	void draw_text(wdiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
+	void draw(wdiagram *cd, cairo_t *cr, PangoLayout *pl);
 
 	void fill(RouterT *, ProcessingT *, HashMap<String, elt *> &collector, Vector<ElementT *> &, int &z_index);
 	
@@ -185,7 +186,7 @@ class ClickyDiagram { public:
 	elt &operator=(const elt &);
     };
     
-    RouterWindow *_rw;
+    wmain *_rw;
     GtkWidget *_widget;
     GtkAdjustment *_horiz_adjust;
     GtkAdjustment *_vert_adjust;
@@ -240,12 +241,12 @@ class ClickyDiagram { public:
 };
 
 
-inline void ClickyDiagram::redraw()
+inline void wdiagram::redraw()
 {
     gtk_widget_queue_draw(_widget);
 }
 
-inline void ClickyDiagram::redraw(rectangle r)
+inline void wdiagram::redraw(rectangle r)
 {
     r.expand(elt_expand);
     r.scale(_scale);
@@ -253,23 +254,23 @@ inline void ClickyDiagram::redraw(rectangle r)
     gtk_widget_queue_draw_area(_widget, (gint) (r.x() - _horiz_adjust->value - _origin_x), (gint) (r.y() - _vert_adjust->value - _origin_y), (gint) r.width(), (gint) r.height());
 }
 
-inline ClickyDiagram::elt *ClickyDiagram::ink::cast_elt() {
+inline wdiagram::elt *wdiagram::ink::cast_elt() {
     return (_type == i_elt ? static_cast<elt *>(this) : 0);
 }
 
-inline const ClickyDiagram::elt *ClickyDiagram::ink::cast_elt() const {
+inline const wdiagram::elt *wdiagram::ink::cast_elt() const {
     return (_type == i_elt ? static_cast<const elt *>(this) : 0);
 }
 
-inline ClickyDiagram::conn *ClickyDiagram::ink::cast_conn() {
+inline wdiagram::conn *wdiagram::ink::cast_conn() {
     return (_type == i_conn ? static_cast<conn *>(this) : 0);
 }
 
-inline const ClickyDiagram::conn *ClickyDiagram::ink::cast_conn() const {
+inline const wdiagram::conn *wdiagram::ink::cast_conn() const {
     return (_type == i_conn ? static_cast<const conn *>(this) : 0);
 }
 
-inline double ClickyDiagram::elt::port_position(int port, int nports, double side, const eltstyle &style) const
+inline double wdiagram::elt::port_position(int port, int nports, double side, const eltstyle &style) const
 {
     if (port >= nports)
 	return side;
@@ -280,7 +281,7 @@ inline double ClickyDiagram::elt::port_position(int port, int nports, double sid
     }
 }
 
-inline void ClickyDiagram::elt::input_position(int port, const eltstyle &style, double &x_result, double &y_result) const
+inline void wdiagram::elt::input_position(int port, const eltstyle &style, double &x_result, double &y_result) const
 {
     if (_vertical) {
 	x_result = x1() + port_position(port, _e->ninputs(), width(), style);
@@ -291,7 +292,7 @@ inline void ClickyDiagram::elt::input_position(int port, const eltstyle &style, 
     }
 }
 
-inline void ClickyDiagram::elt::output_position(int port, const eltstyle &style, double &x_result, double &y_result) const
+inline void wdiagram::elt::output_position(int port, const eltstyle &style, double &x_result, double &y_result) const
 {
     if (_vertical) {
 	x_result = x1() + port_position(port, _e->noutputs(), width(), style);
@@ -302,26 +303,27 @@ inline void ClickyDiagram::elt::output_position(int port, const eltstyle &style,
     }
 }
 
-inline point ClickyDiagram::window_to_canvas(double x, double y) const
+inline point wdiagram::window_to_canvas(double x, double y) const
 {
     return point((x + _origin_x) / _scale, (y + _origin_y) / _scale);
 }
 
-inline point ClickyDiagram::canvas_to_window(double x, double y) const
+inline point wdiagram::canvas_to_window(double x, double y) const
 {
     return point(x * _scale - _origin_x, y * _scale - _origin_y);
 }
 
-inline rectangle ClickyDiagram::canvas_to_window(const rectangle &r) const
+inline rectangle wdiagram::canvas_to_window(const rectangle &r) const
 {
     return rectangle(r.x() * _scale - _origin_x, r.y() * _scale - _origin_y,
 		     r.width() * _scale, r.height() * _scale);
 }
 
-inline point ClickyDiagram::scroll_center() const
+inline point wdiagram::scroll_center() const
 {
     return window_to_canvas(_horiz_adjust->value + _horiz_adjust->page_size / 2,
 			    _vert_adjust->value + _vert_adjust->page_size / 2);
 }
 
+}
 #endif

@@ -25,6 +25,7 @@ extern "C" {
 #include "interface.h"
 #include "support.h"
 }
+namespace clicky {
 
 extern "C" {
 static void error_expanders_callback(GObject *, GParamSpec *, gpointer);
@@ -34,7 +35,7 @@ static gboolean on_error_view_event(GtkWidget *, GdkEvent *, gpointer);
 }
 
 static String::Initializer initializer;
-String RouterWindow::last_savefile;
+String wmain::last_savefile;
 
 String g_click_to_utf8(const String &str)
 {
@@ -145,11 +146,11 @@ class ClickyLexerTInfo : public LexerTInfo { public:
 
 extern "C" {
 static void destroy(gpointer data) {
-    delete reinterpret_cast<RouterWindow *>(data);
+    delete reinterpret_cast<wmain *>(data);
 }
 }
 
-RouterWindow::RouterWindow()
+wmain::wmain()
     : _r(0), _emap(0), _processing(0), _throbber_count(0),
       _window(create_mainw()),
       _config_clean_errors(true), _config_clean_elements(true),
@@ -162,7 +163,7 @@ RouterWindow::RouterWindow()
       _config_changed_signal(0), _binary_tag(0),
       _driver(0), _driver_active(false)
 {
-    g_object_set_data_full(G_OBJECT(_window), "RouterWindow", this, destroy);
+    g_object_set_data_full(G_OBJECT(_window), "wmain", this, destroy);
 
     // look up widgets
     _config_view = lookup_widget(_window, "configview");
@@ -240,7 +241,7 @@ RouterWindow::RouterWindow()
 
     // subsystems
     _handlers = new whandler(this);
-    _diagram = new ClickyDiagram(this);
+    _diagram = new wdiagram(this);
     dialogs_connect();
     config_changed_initialize(true, false);
     set_diagram_mode(false);
@@ -248,7 +249,7 @@ RouterWindow::RouterWindow()
     gtk_quit_add_destroy(1, GTK_OBJECT(_window));
 }
 
-RouterWindow::~RouterWindow()
+wmain::~wmain()
 {
     // only call from GtkWidget destruction
     clear(false);
@@ -262,12 +263,18 @@ RouterWindow::~RouterWindow()
     delete _handlers;
 }
 
-bool RouterWindow::empty() const
+bool wmain::empty() const
 {
     return !(_r || _conf || _driver);
 }
 
-void RouterWindow::clear(bool alive)
+bool wmain::element_exists(const String &ename) const
+{
+    Vector<ElementT *> path;
+    return (_r && _r->element_path(ename, path));
+}
+
+void wmain::clear(bool alive)
 {
     delete _r;
     delete _emap;
@@ -318,7 +325,7 @@ void RouterWindow::clear(bool alive)
     }
 }
 
-void RouterWindow::set_landmark(const String &landmark)
+void wmain::set_landmark(const String &landmark)
 {
     _landmark = landmark;
     if (_landmark) {
@@ -328,7 +335,7 @@ void RouterWindow::set_landmark(const String &landmark)
 	gtk_window_set_title(GTK_WINDOW(_window), "Clicky");
 }
 
-void RouterWindow::set_save_file(const String &savefile, bool loading)
+void wmain::set_save_file(const String &savefile, bool loading)
 {
     _savefile = last_savefile = savefile;
     if (loading)
@@ -345,7 +352,7 @@ void RouterWindow::set_save_file(const String &savefile, bool loading)
 static GdkPixbufAnimation *throbber = 0;
 static bool throbber_loaded = false;
 
-void RouterWindow::throbber_show()
+void wmain::throbber_show()
 {
     if (++_throbber_count == 1) {
 	if (!throbber_loaded) {
@@ -366,7 +373,7 @@ void RouterWindow::throbber_show()
     }
 }
 
-void RouterWindow::throbber_hide()
+void wmain::throbber_hide()
 {
     if (_throbber_count > 0 && --_throbber_count == 0) {
 	GtkWidget *throbberw = lookup_widget(_window, "throbber");
@@ -377,19 +384,19 @@ void RouterWindow::throbber_hide()
 extern "C" {
 static gboolean throb_after_timeout(gpointer user_data)
 {
-    RouterWindow::throb_after *ta = reinterpret_cast<RouterWindow::throb_after *>(user_data);
+    wmain::throb_after *ta = reinterpret_cast<wmain::throb_after *>(user_data);
     ta->_timeout = 0;
     ta->_rw->throbber_show();
     return FALSE;
 }
 }
 
-RouterWindow::throb_after::throb_after(RouterWindow *rw, int timeout)
+wmain::throb_after::throb_after(wmain *rw, int timeout)
     : _rw(rw), _timeout(g_timeout_add(timeout, throb_after_timeout, this))
 {
 }
 
-RouterWindow::throb_after::~throb_after()
+wmain::throb_after::~throb_after()
 {
     if (_timeout)
 	g_source_remove(_timeout);
@@ -404,7 +411,7 @@ RouterWindow::throb_after::~throb_after()
  *
  */
 
-void RouterWindow::set_config(String conf, bool replace)
+void wmain::set_config(String conf, bool replace)
 {
     _gerrh.clear();
     _error_endpos = 0;
@@ -486,7 +493,7 @@ void RouterWindow::set_config(String conf, bool replace)
 	errors_fill(true);
 }
 
-void RouterWindow::show()
+void wmain::show()
 {
     gtk_widget_show(_window);
 }
@@ -498,14 +505,14 @@ void RouterWindow::show()
  *
  */
 
-void RouterWindow::on_driver(wdriver *driver, bool active)
+void wmain::on_driver(wdriver *driver, bool active)
 {
     assert(driver && (!_driver || driver == _driver));
     _driver = driver;
     _driver_active = active;
 }
 
-void RouterWindow::on_read(const String &hname, const String &hparam, const String &hvalue, int status, messagevector &messages)
+void wmain::on_read(const String &hname, const String &hparam, const String &hvalue, int status, messagevector &messages)
 {
     if (hname == "config")
 	set_config(hvalue, true);
@@ -527,15 +534,13 @@ void RouterWindow::on_read(const String &hname, const String &hparam, const Stri
 	    for (s = x; s != hvalue.end() && isspace((unsigned char) *s); )
 		++s;
 	}
-    } else if (hname.length() >= 10 && memcmp(hname.end() - 9, ".handlers", 9) == 0)
-	_handlers->notify_handlers(hname.substring(0, hname.length() - 9), hvalue);
-    else
+    } else
 	_handlers->notify_read(hname, hparam, hvalue);
     if (status == 200)
 	messages.clear();
 }
 
-void RouterWindow::on_write(const String &hname, const String &hvalue, int status, messagevector &messages)
+void wmain::on_write(const String &hname, const String &hvalue, int status, messagevector &messages)
 {
     _handlers->notify_write(hname, hvalue, status);
     if (hname == "hotconfig") {
@@ -545,7 +550,7 @@ void RouterWindow::on_write(const String &hname, const String &hvalue, int statu
 	messages.clear();
 }
 
-void RouterWindow::on_check_write(const String &hname, int status, messagevector &messages)
+void wmain::on_check_write(const String &hname, int status, messagevector &messages)
 {
     if (hname == "hotconfig" && status < 300) {
 	// allow install handlers from now on
@@ -562,7 +567,7 @@ void RouterWindow::on_check_write(const String &hname, int status, messagevector
  *
  */
 
-void RouterWindow::element_unhighlight()
+void wmain::element_unhighlight()
 {
     if (_element_highlight) {
 	GtkTextIter i1, i2;
@@ -573,7 +578,7 @@ void RouterWindow::element_unhighlight()
     }
 }
 
-void RouterWindow::element_show(String ename, int expand, bool incremental)
+void wmain::element_show(String ename, int expand, bool incremental)
 {
     // check if element exists
     Vector<ElementT *> epath;
@@ -601,9 +606,7 @@ void RouterWindow::element_show(String ename, int expand, bool incremental)
 	n = lookup_widget(_window, "eview_classinfo_flow");
 	gtk_label_set_text(GTK_LABEL(n), "");
 
-	_handlers->display("", false);
-	if (expand <= 0)	// expand > 0 taken care of below
-	    _diagram->display("", false);
+	incremental = false;
 	
     } else {
 	element_unhighlight();
@@ -637,18 +640,15 @@ void RouterWindow::element_show(String ename, int expand, bool incremental)
 	
 	// clear handlers
 	n = lookup_widget(_window, "eview_refresh");
-	if (_driver_active) {
+	if (_driver_active)
 	    gtk_widget_show(n);
-	    _handlers->display(ename, incremental);
-	} else
+	else
 	    gtk_widget_hide(n);
 
 	// highlight config and diagram
 	ElementT *backe = epath.back();
 	if (backe->landmarkt().offset1() != backe->landmarkt().offset2() && expand >= 0 && _config_clean_elements)
 	    _element_highlight = backe;
-	if (expand <= 0)	// expand > 0 taken care of below
-	    _diagram->display(ename, false);
     }
 
     // expand and highlight whether or not viewed element changed
@@ -666,10 +666,13 @@ void RouterWindow::element_show(String ename, int expand, bool incremental)
 	    gtk_widget_hide(n);
 	    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(lookup_widget(_window, "menu_view_element")), FALSE);
 	}
-
-	_diagram->display(ename, true);
     }
 
+    // display in handlers and diagram
+    _handlers->display(_eview_name, incremental);
+    _diagram->display(_eview_name, expand > 0);
+
+    // highlight config
     if (_element_highlight && expand >= 0) {
 	GtkTextIter i1, i2;
 	gtk_text_buffer_get_iter_at_offset(_config_buffer, &i1, _element_highlight->landmarkt().offset1());
@@ -685,7 +688,7 @@ void RouterWindow::element_show(String ename, int expand, bool incremental)
 extern "C" {
 static void on_elementtree_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTreeViewColumn *, gpointer user_data)
 {
-    RouterWindow *rw = reinterpret_cast<RouterWindow *>(user_data);
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
     GtkTreeIter iter;
     char *ename;
     GtkTreeModel *model = gtk_tree_view_get_model(treeview);
@@ -698,7 +701,7 @@ static void on_elementtree_row_activated(GtkTreeView *treeview, GtkTreePath *pat
 
 static void on_elementtree_select(GtkTreeSelection *selection, gpointer user_data)
 {
-    RouterWindow *rw = reinterpret_cast<RouterWindow *>(user_data);
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
     GtkTreeIter iter;
     GtkTreeModel *model;
     char *ename;
@@ -716,8 +719,8 @@ static void on_eview_close_clicked(GtkButton *button, gpointer)
 
 static void on_eview_refresh_clicked(GtkButton *, gpointer user_data)
 {
-    RouterWindow *rw = reinterpret_cast<RouterWindow *>(user_data);
-    rw->handlers()->refresh_all();
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
+    rw->handlers()->refresh_all(true);
 }
 }
 
@@ -734,7 +737,7 @@ bool eclass_sorter(const Pair<String, ElementT *> &a, const Pair<String, Element
 }
 }
 
-void RouterWindow::fill_elements(RouterT *r, const String &compound, int compound_state, Vector<Pair<String, ElementT *> > &v)
+void wmain::fill_elements(RouterT *r, const String &compound, int compound_state, Vector<Pair<String, ElementT *> > &v)
 {
     for (RouterT::iterator i = r->begin_elements(); i != r->end_elements(); ++i) {
 	if (i->tunnel())
@@ -751,7 +754,7 @@ void RouterWindow::fill_elements(RouterT *r, const String &compound, int compoun
     }
 }
 
-void RouterWindow::fill_elements_tree_store(GtkTreeStore *store, RouterT *r, GtkTreeIter *parent, const String &compound)
+void wmain::fill_elements_tree_store(GtkTreeStore *store, RouterT *r, GtkTreeIter *parent, const String &compound)
 {
     Vector<Pair<String, ElementT *> > v;
     fill_elements(r, "", (_elist_sort == elist_sort_class ? 1 : 0), v);
@@ -783,7 +786,7 @@ void RouterWindow::fill_elements_tree_store(GtkTreeStore *store, RouterT *r, Gtk
     }
 }
 
-void RouterWindow::element_tree_sort(int state)
+void wmain::element_tree_sort(int state)
 {
     if (state >= 0 && state <= 2 && _elist_sort == state)
 	return;
@@ -804,7 +807,7 @@ void RouterWindow::element_tree_sort(int state)
     fill_elements_tree_store(_elist_store, _r, 0, "");
 }
 
-void RouterWindow::etree_fill() {
+void wmain::etree_fill() {
     // elements list
     _elist_view = GTK_TREE_VIEW(lookup_widget(_window, "elementtree"));
 
@@ -849,7 +852,7 @@ void RouterWindow::etree_fill() {
  *
  */
 
-void RouterWindow::error_unhighlight()
+void wmain::error_unhighlight()
 {
     if (_error_highlight_index >= 0) {
 	GatherErrorHandler::iterator gi = _gerrh.begin() + _error_highlight_index;
@@ -866,7 +869,7 @@ void RouterWindow::error_unhighlight()
     }
 }
 
-bool RouterWindow::error_view_motion_offsets(int off1, int off2, int eindex)
+bool wmain::error_view_motion_offsets(int off1, int off2, int eindex)
 {
     if (eindex != _error_hover_index) {
 	GtkTextIter i1, i2;
@@ -889,7 +892,7 @@ bool RouterWindow::error_view_motion_offsets(int off1, int off2, int eindex)
 	return false;
 }
 
-bool RouterWindow::error_view_motion_position(gint x, gint y)
+bool wmain::error_view_motion_position(gint x, gint y)
 {
     gtk_text_view_window_to_buffer_coords(GTK_TEXT_VIEW(_error_view), GTK_TEXT_WINDOW_WIDGET, x, y, &x, &y);
     
@@ -931,7 +934,7 @@ bool RouterWindow::error_view_motion_position(gint x, gint y)
     return result;
 }
 
-gboolean RouterWindow::error_view_event(GdkEvent *event)
+gboolean wmain::error_view_event(GdkEvent *event)
 {
     if (event->type == GDK_MOTION_NOTIFY)
 	error_view_motion_position((gint) event->motion.x, (gint) event->motion.y);
@@ -970,18 +973,18 @@ gboolean RouterWindow::error_view_event(GdkEvent *event)
 extern "C" {
 static gboolean on_error_view_event(GtkWidget *, GdkEvent *event, gpointer user_data)
 {
-    RouterWindow *rw = reinterpret_cast<RouterWindow *>(user_data);
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
     return rw->error_view_event(event);
 }
 
 static gboolean on_error_scroll_timeout(gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->on_error_scroll_timeout();
+    reinterpret_cast<wmain *>(user_data)->on_error_scroll_timeout();
     return FALSE;
 }
 }
 
-void RouterWindow::errors_fill(bool initial) {
+void wmain::errors_fill(bool initial) {
     if (!_gerrh.size()) {
 	gtk_widget_hide(lookup_widget(_window, "errorviewbox"));
 	gtk_widget_show(lookup_widget(_window, "elementtreelabel"));
@@ -1028,10 +1031,10 @@ void RouterWindow::errors_fill(bool initial) {
 
     if (_error_scroller)
 	g_source_remove(_error_scroller);
-    _error_scroller = g_timeout_add(20, ::on_error_scroll_timeout, this);
+    _error_scroller = g_timeout_add(20, clicky::on_error_scroll_timeout, this);
 }
 
-void RouterWindow::on_error_scroll_timeout()
+void wmain::on_error_scroll_timeout()
 {
     GtkWidget *error_scrolled = lookup_widget(_window, "errorviewwindow");
     GtkAdjustment *vadj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(error_scrolled));
@@ -1067,7 +1070,7 @@ static void error_expanders_callback(GObject *object, GParamSpec *, gpointer)
 
 static void elementtreesort_callback(GtkButton *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->element_tree_sort(-1);
+    reinterpret_cast<wmain *>(user_data)->element_tree_sort(-1);
 }
 }
 
@@ -1091,21 +1094,21 @@ static void on_eview_classexpander_expanded(GObject *object, GParamSpec *, gpoin
 
 static void config_changed(GtkTextBuffer *, gpointer user_data)
 {
-    reinterpret_cast<RouterWindow *>(user_data)->on_config_changed();
+    reinterpret_cast<wmain *>(user_data)->on_config_changed();
 }
 }
 
-void RouterWindow::config_changed_initialize(bool check, bool save)
+void wmain::config_changed_initialize(bool check, bool save)
 {
     if (!_config_changed_signal)
-	_config_changed_signal = g_signal_connect(_config_buffer, "changed", G_CALLBACK(::config_changed), this);
+	_config_changed_signal = g_signal_connect(_config_buffer, "changed", G_CALLBACK(clicky::config_changed), this);
     if (check)
 	gtk_widget_set_sensitive(lookup_widget(_window, "toolbar_check"), FALSE);
     if (save && _savefile)
 	gtk_widget_set_sensitive(lookup_widget(_window, "toolbar_save"), FALSE);
 }
 
-void RouterWindow::on_config_changed()
+void wmain::on_config_changed()
 {
     if (_config_changed_signal)
 	g_signal_handler_disconnect(_config_buffer, _config_changed_signal);
@@ -1117,7 +1120,7 @@ void RouterWindow::on_config_changed()
     gtk_widget_set_sensitive(lookup_widget(_window, "toolbar_save"), TRUE);
 }
 
-void RouterWindow::config_check(bool install)
+void wmain::config_check(bool install)
 {
     GtkTextIter i1, i2;
     gtk_text_buffer_get_start_iter(_config_buffer, &i1);
@@ -1150,7 +1153,7 @@ void RouterWindow::config_check(bool install)
  *
  */
 
-void RouterWindow::set_diagram_mode(bool diagram)
+void wmain::set_diagram_mode(bool diagram)
 {
     if (diagram) {
 	g_object_set(G_OBJECT(lookup_widget(_window, "menu_view_diagram")), "active", TRUE, (const char *) NULL);
@@ -1170,3 +1173,6 @@ void RouterWindow::set_diagram_mode(bool diagram)
 	gtk_widget_set_sensitive(lookup_widget(_window, "menu_normal_size"), FALSE);
     }
 }
+
+}
+

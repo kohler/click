@@ -14,6 +14,7 @@
 extern "C" {
 #include "support.h"
 }
+namespace clicky {
 
 extern "C" {
 static void diagram_map(GtkWidget *, gpointer);
@@ -22,7 +23,7 @@ static gboolean diagram_expose(GtkWidget *, GdkEventExpose *, gpointer);
 static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer);
 }
 
-ClickyDiagram::ClickyDiagram(RouterWindow *rw)
+wdiagram::wdiagram(wmain *rw)
     : _rw(rw), _scale_step(0), _scale(1), _origin_x(0), _origin_y(0), _relt(0),
       _drag_state(drag_none)
 {
@@ -82,7 +83,7 @@ ClickyDiagram::ClickyDiagram(RouterWindow *rw)
     _last_cursorno = c_c;
 }
 
-ClickyDiagram::~ClickyDiagram()
+wdiagram::~wdiagram()
 {
     pango_attr_list_unref(_class_attrs);
     delete _relt;
@@ -92,7 +93,7 @@ ClickyDiagram::~ClickyDiagram()
 	    gdk_cursor_unref(_dir_cursor[i]);
 }
 
-void ClickyDiagram::initialize()
+void wdiagram::initialize()
 {
     if (!_dir_cursor[c_ulft]) {
 	_dir_cursor[c_c] = _rw->_normal_cursor;
@@ -110,14 +111,14 @@ void ClickyDiagram::initialize()
 }
 
 
-void ClickyDiagram::display(const String &ename, bool scroll_to)
+void wdiagram::display(const String &ename, bool scroll_to)
 {
     if (elt *e = _elt_map[ename])
 	if (!(e->_highlight & (1 << htype_click)))
 	    highlight(e, htype_click, 0, scroll_to);
 }
 
-inline void ClickyDiagram::find_rect_elts(const rectangle &r, std::vector<ink *> &result) const
+inline void wdiagram::find_rect_elts(const rectangle &r, std::vector<ink *> &result) const
 {
     _rects.find_all(r, result);
     std::sort(result.begin(), result.end(), ink::z_index_less);
@@ -125,7 +126,7 @@ inline void ClickyDiagram::find_rect_elts(const rectangle &r, std::vector<ink *>
     result.erase(eltsi, result.end());
 }
 
-void ClickyDiagram::scroll_recenter(point old_ctr)
+void wdiagram::scroll_recenter(point old_ctr)
 {
     if (old_ctr.x() < -1000000)
 	old_ctr = scroll_center();
@@ -168,7 +169,7 @@ void ClickyDiagram::scroll_recenter(point old_ctr)
     redraw();
 }
 
-void ClickyDiagram::zoom(bool incremental, int amount)
+void wdiagram::zoom(bool incremental, int amount)
 {
     _scale_step = (incremental ? _scale_step + amount : amount);
 
@@ -180,7 +181,7 @@ void ClickyDiagram::zoom(bool incremental, int amount)
 	_scale = pow(1.2, _scale_step);	
 }
 
-ClickyDiagram::elt::~elt()
+wdiagram::elt::~elt()
 {
     while (_elt.size()) {
 	delete _elt.back();
@@ -192,7 +193,7 @@ ClickyDiagram::elt::~elt()
     }
 }
 
-void ClickyDiagram::elt::fill(RouterT *r, ProcessingT *processing, HashMap<String, elt *> &collector, Vector<ElementT *> &path, int &z_index)
+void wdiagram::elt::fill(RouterT *r, ProcessingT *processing, HashMap<String, elt *> &collector, Vector<ElementT *> &path, int &z_index)
 {
     for (RouterT::iterator i = r->begin_elements(); i != r->end_elements(); ++i) {
 	elt *e = new elt(this, z_index);
@@ -240,7 +241,7 @@ void ClickyDiagram::elt::fill(RouterT *r, ProcessingT *processing, HashMap<Strin
     }
 }
 
-void ClickyDiagram::router_create(bool incremental, bool always)
+void wdiagram::router_create(bool incremental, bool always)
 {
     if (!incremental) {
 	delete _relt;
@@ -271,7 +272,7 @@ void ClickyDiagram::router_create(bool incremental, bool always)
  *
  */
 
-class ClickyDiagram::elt::layoutelt : public rectangle { public:
+class wdiagram::elt::layoutelt : public rectangle { public:
     int scc;
     std::vector<int> scc_contents;
     
@@ -291,7 +292,7 @@ class ClickyDiagram::elt::layoutelt : public rectangle { public:
     }
 };
 
-void ClickyDiagram::elt::layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc)
+void wdiagram::elt::layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc)
 {
     const std::vector<int> &scc_contents = layinfo[scc].scc_contents;
 
@@ -359,7 +360,7 @@ void ClickyDiagram::elt::layout_one_scc(RouterT *router, std::vector<layoutelt> 
 #endif
 }
 
-void ClickyDiagram::elt::position_contents_scc(RouterT *router)
+void wdiagram::elt::position_contents_scc(RouterT *router)
 {
     // initialize DFS
     Bitvector connlive(router->nconnections(), true);
@@ -456,7 +457,7 @@ void ClickyDiagram::elt::position_contents_scc(RouterT *router)
  *
  */
 
-void ClickyDiagram::elt::position_contents_first_heuristic(RouterT *router, const eltstyle &es)
+void wdiagram::elt::position_contents_first_heuristic(RouterT *router, const eltstyle &es)
 {
     // lay out into rows
     std::vector<int> row_counts;
@@ -542,7 +543,7 @@ void ClickyDiagram::elt::position_contents_first_heuristic(RouterT *router, cons
     }
 }
 
-void ClickyDiagram::elt::position_contents_dot(RouterT *router, const eltstyle &es, ErrorHandler *errh)
+void wdiagram::elt::position_contents_dot(RouterT *router, const eltstyle &es, ErrorHandler *errh)
 {
     StringAccum sa;
     sa << "digraph {\n"
@@ -650,7 +651,7 @@ void ClickyDiagram::elt::position_contents_dot(RouterT *router, const eltstyle &
 	}
 }
 
-void ClickyDiagram::elt::layout_contents(RouterT *router, ClickyDiagram *cd, PangoLayout *pl)
+void wdiagram::elt::layout_contents(RouterT *router, wdiagram *cd, PangoLayout *pl)
 {
     for (std::vector<elt *>::iterator ci = _elt.begin();
 	 ci != _elt.end(); ++ci) {
@@ -670,7 +671,7 @@ void ClickyDiagram::elt::layout_contents(RouterT *router, ClickyDiagram *cd, Pan
     }
 }
 
-void ClickyDiagram::elt::layout(ClickyDiagram *cd, PangoLayout *pl)
+void wdiagram::elt::layout(wdiagram *cd, PangoLayout *pl)
 {
     if (_layout)
 	return;
@@ -730,7 +731,7 @@ void ClickyDiagram::elt::layout(ClickyDiagram *cd, PangoLayout *pl)
     _layout = true;
 }
 
-void ClickyDiagram::elt::finish_compound(const eltstyle &es)
+void wdiagram::elt::finish_compound(const eltstyle &es)
 {
     if (_elt.size() > 0 && _elt[0]->_e->name() == "input") {
 	_elt[0]->_x = _x;
@@ -746,7 +747,7 @@ void ClickyDiagram::elt::finish_compound(const eltstyle &es)
     }
 }
 
-void ClickyDiagram::elt::finish(const eltstyle &es, double dx, double dy, rect_search<ink> &r)
+void wdiagram::elt::finish(const eltstyle &es, double dx, double dy, rect_search<ink> &r)
 {
     if (_e) {
 	dx += es.inside_dx;
@@ -774,7 +775,7 @@ void ClickyDiagram::elt::finish(const eltstyle &es, double dx, double dy, rect_s
     }
 }
 
-void ClickyDiagram::elt::union_bounds(rectangle &r, bool self) const
+void wdiagram::elt::union_bounds(rectangle &r, bool self) const
 {
     if (self)
 	r |= *this;
@@ -787,7 +788,7 @@ void ClickyDiagram::elt::union_bounds(rectangle &r, bool self) const
 	r |= **ci;
 }
 
-void ClickyDiagram::elt::remove(rect_search<ink> &rects, rectangle &rect)
+void wdiagram::elt::remove(rect_search<ink> &rects, rectangle &rect)
 {
     rect |= *this;
     rects.remove(this);
@@ -806,7 +807,7 @@ void ClickyDiagram::elt::remove(rect_search<ink> &rects, rectangle &rect)
     }
 }
 
-void ClickyDiagram::elt::insert(rect_search<ink> &rects, const eltstyle &style, rectangle &rect)
+void wdiagram::elt::insert(rect_search<ink> &rects, const eltstyle &style, rectangle &rect)
 {
     rect |= *this;
     rects.insert(this);
@@ -827,14 +828,14 @@ void ClickyDiagram::elt::insert(rect_search<ink> &rects, const eltstyle &style, 
     }
 }
 
-void ClickyDiagram::elt::drag_prepare()
+void wdiagram::elt::drag_prepare()
 {
     _xrect = *this;
     for (std::vector<elt *>::iterator ei = _elt.begin(); ei != _elt.end(); ++ei)
 	(*ei)->drag_prepare();
 }
 
-void ClickyDiagram::elt::drag_shift(double dx, double dy, ClickyDiagram *cd)
+void wdiagram::elt::drag_shift(double dx, double dy, wdiagram *cd)
 {
     rectangle rect = *this;
     remove(cd->_rects, rect);
@@ -846,7 +847,7 @@ void ClickyDiagram::elt::drag_shift(double dx, double dy, ClickyDiagram *cd)
 	(*ei)->drag_shift(dx, dy, cd);
 }
 
-void ClickyDiagram::conn::finish(const eltstyle &style)
+void wdiagram::conn::finish(const eltstyle &style)
 {
     double fromx, fromy, tox, toy;
     _from_elt->output_position(_from_port, style, fromx, fromy);
@@ -864,7 +865,7 @@ void ClickyDiagram::conn::finish(const eltstyle &style)
     }
 }
 
-void ClickyDiagram::elt::port_offsets(double side_length, int nports, const eltstyle &style, double &offset0, double &separation)
+void wdiagram::elt::port_offsets(double side_length, int nports, const eltstyle &style, double &offset0, double &separation)
 {
     if (nports == 0) {
 	offset0 = separation = 0;
@@ -894,7 +895,7 @@ static void cairo_processing_rgb(cairo_t *cr, int processing)
 	cairo_set_source_rgb(cr, 1, 1, 1);
 }
 
-void ClickyDiagram::elt::draw_input_port(cairo_t *cr, const eltstyle &style, double x, double y, int processing)
+void wdiagram::elt::draw_input_port(cairo_t *cr, const eltstyle &style, double x, double y, int processing)
 {
     double pl = style.port_length[0];
     double pw = style.port_width[0];
@@ -941,7 +942,7 @@ void ClickyDiagram::elt::draw_input_port(cairo_t *cr, const eltstyle &style, dou
     cairo_set_matrix(cr, &original_matrix);
 }
 
-void ClickyDiagram::elt::draw_output_port(cairo_t *cr, const eltstyle &style, double x, double y, int processing)
+void wdiagram::elt::draw_output_port(cairo_t *cr, const eltstyle &style, double x, double y, int processing)
 {
     double pl = style.port_length[1];
     double pw = style.port_width[1];
@@ -990,7 +991,7 @@ void ClickyDiagram::elt::draw_output_port(cairo_t *cr, const eltstyle &style, do
     cairo_set_matrix(cr, &original_matrix);
 }
 
-void ClickyDiagram::elt::clip_to_border(cairo_t *cr, double shift) const
+void wdiagram::elt::clip_to_border(cairo_t *cr, double shift) const
 {
     double fx = floor(_x + shift), fy = floor(_y + shift);
     cairo_rectangle(cr, fx, fy,
@@ -999,7 +1000,7 @@ void ClickyDiagram::elt::clip_to_border(cairo_t *cr, double shift) const
     cairo_clip(cr);
 }
 
-void ClickyDiagram::elt::draw_text(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl, double shift)
+void wdiagram::elt::draw_text(wdiagram *cd, cairo_t *cr, PangoLayout *pl, double shift)
 {
     // text
     cairo_set_source_rgb(cr, 0, 0, 0);
@@ -1089,7 +1090,7 @@ void ClickyDiagram::elt::draw_text(ClickyDiagram *cd, cairo_t *cr, PangoLayout *
 	cairo_restore(cr);
 }
 
-void ClickyDiagram::elt::draw_outline(ClickyDiagram *cd, cairo_t *cr, PangoLayout *, double shift)
+void wdiagram::elt::draw_outline(wdiagram *cd, cairo_t *cr, PangoLayout *, double shift)
 {
     const eltstyle &style = cd->_style;
     
@@ -1130,7 +1131,7 @@ void ClickyDiagram::elt::draw_outline(ClickyDiagram *cd, cairo_t *cr, PangoLayou
     }
 }
 
-void ClickyDiagram::elt::draw(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl)
+void wdiagram::elt::draw(wdiagram *cd, cairo_t *cr, PangoLayout *pl)
 {
     if (!_visible)
 	return;
@@ -1197,7 +1198,7 @@ void ClickyDiagram::elt::draw(ClickyDiagram *cd, cairo_t *cr, PangoLayout *pl)
     draw_text(cd, cr, pl, shift);
 }
 
-void ClickyDiagram::conn::draw(ClickyDiagram *cd, cairo_t *cr)
+void wdiagram::conn::draw(wdiagram *cd, cairo_t *cr)
 {
     cairo_set_source_rgb(cr, 0, 0, 0);
     cairo_set_line_width(cr, 1);
@@ -1243,7 +1244,7 @@ void ClickyDiagram::conn::draw(ClickyDiagram *cd, cairo_t *cr)
     cairo_fill(cr);
 }
 
-void ClickyDiagram::layout()
+void wdiagram::layout()
 {
     //fprintf(stderr, "Layout\n");
     if (!_relt)
@@ -1264,7 +1265,7 @@ void ClickyDiagram::layout()
     }
 }
 
-void ClickyDiagram::on_expose(const GdkRectangle *area)
+void wdiagram::on_expose(const GdkRectangle *area)
 {
     if (!_layout)
 	layout();
@@ -1321,19 +1322,19 @@ void ClickyDiagram::on_expose(const GdkRectangle *area)
 extern "C" {
 static gboolean diagram_expose(GtkWidget *, GdkEventExpose *e, gpointer user_data)
 {
-    ClickyDiagram *cd = reinterpret_cast<ClickyDiagram *>(user_data);
+    wdiagram *cd = reinterpret_cast<wdiagram *>(user_data);
     cd->on_expose(&e->area);
     return FALSE;
 }
 
 static void diagram_map(GtkWidget *, gpointer user_data)
 {
-    reinterpret_cast<ClickyDiagram *>(user_data)->router_create(true, true);
+    reinterpret_cast<wdiagram *>(user_data)->router_create(true, true);
 }
 
 static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer user_data)
 {
-    ClickyDiagram *cd = reinterpret_cast<ClickyDiagram *>(user_data);
+    wdiagram *cd = reinterpret_cast<wdiagram *>(user_data);
     cd->scroll_recenter(point(-1000001, -1000001));
 }
 }
@@ -1346,7 +1347,7 @@ static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer user
  *
  */
 
-void ClickyDiagram::unhighlight(uint8_t htype, rectangle *expose)
+void wdiagram::unhighlight(uint8_t htype, rectangle *expose)
 {
     assert(htype <= htype_pressed);
     while (elt *h = _highlight[htype]) {
@@ -1365,7 +1366,7 @@ void ClickyDiagram::unhighlight(uint8_t htype, rectangle *expose)
     }
 }
 
-ClickyDiagram::elt *ClickyDiagram::point_elt(const point &p) const
+wdiagram::elt *wdiagram::point_elt(const point &p) const
 {
     std::vector<ink *> elts;
     _rects.find_all(p.x(), p.y(), elts);
@@ -1380,7 +1381,7 @@ ClickyDiagram::elt *ClickyDiagram::point_elt(const point &p) const
     return 0;
 }
 
-void ClickyDiagram::highlight(elt *h, uint8_t htype, rectangle *expose, bool scroll_to)
+void wdiagram::highlight(elt *h, uint8_t htype, rectangle *expose, bool scroll_to)
 {
     bool same = (h == _highlight[htype]);
     if (!same || (h && !(h->_highlight & (1 << htype)))
@@ -1417,7 +1418,7 @@ void ClickyDiagram::highlight(elt *h, uint8_t htype, rectangle *expose, bool scr
     }
 }
 
-void ClickyDiagram::on_drag_motion(const point &p)
+void wdiagram::on_drag_motion(const point &p)
 {
     elt *h = _highlight[htype_click];
     if (_drag_state == drag_start
@@ -1464,7 +1465,7 @@ void ClickyDiagram::on_drag_motion(const point &p)
     }
 }
 
-void ClickyDiagram::on_drag_rect_motion(const point &p)
+void wdiagram::on_drag_rect_motion(const point &p)
 {
     if (_drag_state == drag_rect_start
 	&& (fabs(p.x() - _dragr.x()) * _scale >= 3
@@ -1504,7 +1505,7 @@ void ClickyDiagram::on_drag_rect_motion(const point &p)
     }
 }
 
-void ClickyDiagram::on_drag_complete()
+void wdiagram::on_drag_complete()
 {
     rectangle r = *_relt;
     for (elt *h = _highlight[htype_click]; h; h = h->_next_htype_click)
@@ -1527,7 +1528,7 @@ void ClickyDiagram::on_drag_complete()
 	}
 }
 
-void ClickyDiagram::on_drag_rect_complete()
+void wdiagram::on_drag_rect_complete()
 {
     std::vector<ink *> elts;
     find_rect_elts(_dragr, elts);
@@ -1537,7 +1538,7 @@ void ClickyDiagram::on_drag_rect_complete()
     redraw(_dragr.normalize());
 }
 
-void ClickyDiagram::set_cursor(elt *h, double x, double y)
+void wdiagram::set_cursor(elt *h, double x, double y)
 {
     int cnum = c_c;
     if (h) {
@@ -1565,7 +1566,7 @@ void ClickyDiagram::set_cursor(elt *h, double x, double y)
     }
 }
 
-gboolean ClickyDiagram::on_event(GdkEvent *event)
+gboolean wdiagram::on_event(GdkEvent *event)
 {
     if (event->type == GDK_MOTION_NOTIFY) {
 	point p = window_to_canvas(event->motion.x, event->motion.y);
@@ -1631,7 +1632,9 @@ gboolean ClickyDiagram::on_event(GdkEvent *event)
 extern "C" {
 static gboolean on_diagram_event(GtkWidget *, GdkEvent *event, gpointer user_data)
 {
-    ClickyDiagram *cd = reinterpret_cast<ClickyDiagram *>(user_data);
+    wdiagram *cd = reinterpret_cast<wdiagram *>(user_data);
     return cd->on_event(event);
 }
+}
+
 }

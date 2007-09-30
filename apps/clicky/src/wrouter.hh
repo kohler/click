@@ -9,17 +9,19 @@ class ElementT;
 class RouterT;
 class ElementMap;
 class ProcessingT;
-class ClickyDiagram;
+namespace clicky {
+class wdiagram;
+class wdriver;
+class whandler;
+class csocket_wdriver;
+class clickfs_wdriver;
 
-class RouterWindow { public:
+typedef Vector<Pair<String, String> > messagevector;
 
-    class whandler;
-    class wdriver;
-    class wdriver_csocket;
-    class wdriver_kernel;
+class wmain { public:
     
-    RouterWindow();
-    ~RouterWindow();
+    wmain();
+    ~wmain();
 
     bool empty() const;
     void clear(bool alive);
@@ -39,7 +41,7 @@ class RouterWindow { public:
     whandler *handlers() const {
 	return _handlers;
     }
-    ClickyDiagram *diagram() const {
+    wdiagram *diagram() const {
 	return _diagram;
     }
     ElementMap *element_map() const {
@@ -48,6 +50,8 @@ class RouterWindow { public:
     ProcessingT *processing() const {
 	return _processing;
     }
+
+    bool element_exists(const String &ename) const;
 
     // GTK properties
     GtkWindow *window() const {
@@ -73,17 +77,16 @@ class RouterWindow { public:
     void throbber_show();
     void throbber_hide();
     class throb_after { public:
-	throb_after(RouterWindow *rw, int timeout);
+	throb_after(wmain *w, int timeout);
 	~throb_after();
 	// actually private:
-	RouterWindow *_rw;
+	wmain *_rw;
 	guint _timeout;
     };
     
     // driver
     void set_csocket(GIOChannel *socket, bool ready);
 
-    typedef Vector<Pair<String, String> > messagevector;
     void on_driver(wdriver *driver, bool active);
     void on_read(const String &hname, const String &hparam, const String &hvalue, int status, messagevector &messages);
     void on_write(const String &hname, const String &hvalue, int status, messagevector &messages);
@@ -183,7 +186,7 @@ class RouterWindow { public:
     whandler *_handlers;
     wdriver *_driver;
     bool _driver_active;
-    ClickyDiagram *_diagram;
+    wdiagram *_diagram;
     
     void dialogs_connect();
 
@@ -201,11 +204,12 @@ class RouterWindow { public:
     void config_changed_initialize(bool check, bool save);
 
     friend class whandler;
-    friend class ClickyDiagram;
+    friend class wdiagram;
     
 };
 
 bool cp_host_port(const String &hosts, const String &ports, IPAddress *result_addr, uint16_t *result_port, ErrorHandler *errh);
 int do_fd_connected(int fd, ErrorHandler *errh);
 
+}
 #endif

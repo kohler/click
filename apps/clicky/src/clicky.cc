@@ -47,25 +47,25 @@ main(int argc, char *argv[])
     add_pixmap_directory(PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");
 
     if (argc == 1) {
-	RouterWindow *rw = new RouterWindow;
+	clicky::wmain *rw = new clicky::wmain;
 	rw->show();
     }
 
     for (; argc > 1; argc--, argv++) {
-	RouterWindow *rw = new RouterWindow;
+	clicky::wmain *rw = new clicky::wmain;
 	String filename = argv[1];
 	rw->set_landmark(filename);
 	int colon = filename.find_right(':');
 	uint16_t port;
 	if (colon >= 0 && cp_tcpudp_port(filename.substring(colon + 1), IP_PROTO_TCP, &port)) {
 	    IPAddress addr;
-	    if (cp_host_port(filename.substring(0, colon), filename.substring(colon + 1), &addr, &port, rw->error_handler())) {
+	    if (clicky::cp_host_port(filename.substring(0, colon), filename.substring(colon + 1), &addr, &port, rw->error_handler())) {
 		bool ready = false;
-		GIOChannel *channel = RouterWindow::wdriver_csocket::start_connect(addr, port, &ready, rw->error_handler());
+		GIOChannel *channel = clicky::csocket_wdriver::start_connect(addr, port, &ready, rw->error_handler());
 		if (rw->error_handler()->size())
 		    rw->error_handler()->run_dialog(rw->window());
 		if (channel)
-		    (void) new RouterWindow::wdriver_csocket(rw, channel, ready);
+		    (void) new clicky::csocket_wdriver(rw, channel, ready);
 	    }
 	} else {
 	    String s = file_string(filename, rw->error_handler());
