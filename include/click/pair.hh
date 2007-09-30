@@ -6,16 +6,40 @@ CLICK_DECLS
 
 template <class T, class U>
 struct Pair {
+
+    typedef T first_type;
+    typedef U second_type;
+    typedef T key_type;
+    
     T first;
     U second;
-    Pair()				: first(), second() { }
-    Pair(const T &t, const U &u)	: first(t), second(u) { }
-    Pair(const Pair<T, U> &p)		: first(p.first), second(p.second) { }
+    
+    inline Pair()
+	: first(), second() {
+    }
+    
+    inline Pair(const T &t, const U &u)
+	: first(t), second(u) {
+    }
+    
+    inline Pair(const Pair<T, U> &p)
+	: first(p.first), second(p.second) {
+    }
+    
     template <typename V, typename W>
-    Pair(const Pair<V, W> &p)		: first(p.first), second(p.second) { }
+    inline Pair(const Pair<V, W> &p)
+	: first(p.first), second(p.second) {
+    }
     
     typedef size_t (Pair<T, U>::*unspecified_bool_type)() const;
-    inline operator unspecified_bool_type() const;
+    inline operator unspecified_bool_type() const {
+	return first || second ? &Pair<T, U>::hashcode : 0;
+    }
+    
+    inline const T &hashkey() const {
+	return first;
+    }
+    
     inline size_t hashcode() const;
 
     template <typename V, typename W>
@@ -24,13 +48,8 @@ struct Pair {
 	second = p.second;
 	return *this;
     }
+    
 };
-
-template <class T, class U>
-inline Pair<T, U>::operator unspecified_bool_type() const
-{
-    return first || second ? &Pair<T, U>::hashcode : 0;
-}
 
 template <class T, class U>
 inline bool operator==(const Pair<T, U> &a, const Pair<T, U> &b)
@@ -58,15 +77,9 @@ inline size_t Pair<T, U>::hashcode() const
 }
 
 template <class T, class U>
-inline Pair<T, U> make_pair(const T &t, const U &u)
+inline Pair<T, U> make_pair(T t, U u)
 {
     return Pair<T, U>(t, u);
-}
-
-template <class T, class U>
-inline Pair<T, U *> make_pair(const T &t, U *u)
-{
-    return Pair<T, U *>(t, u);
 }
 
 CLICK_ENDDECLS
