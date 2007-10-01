@@ -9,6 +9,7 @@ class wdriver { public:
     
     enum { dflag_background = 1, dflag_clear = 2, dflag_nonraw = 4 };
 
+    virtual bool active() const = 0;
     virtual int driver_mask() const = 0;
 
     virtual void do_read(const String &hname, const String &hparam, int flags) = 0;
@@ -28,6 +29,7 @@ class csocket_wdriver : public wdriver { public:
 
     static GIOChannel *start_connect(IPAddress addr, uint16_t port, bool *ready, ErrorHandler *errh);
 
+    bool active() const;
     int driver_mask() const;
     
     void do_read(const String &hname, const String &hparam, int flags);
@@ -84,6 +86,7 @@ class clickfs_wdriver : public wdriver { public:
 
     clickfs_wdriver(wmain *rw, const String &prefix);
 
+    bool active() const;
     int driver_mask() const;
     
     void do_read(const String &hname, const String &hparam, int flags);

@@ -150,6 +150,11 @@ csocket_wdriver::~csocket_wdriver()
     _csocket_state = csocket_failed;
 }
 
+bool csocket_wdriver::active() const
+{
+    return _csocket_state != csocket_failed;
+}
+
 int csocket_wdriver::driver_mask() const
 {
     return 1 << Driver::USERLEVEL;
@@ -484,6 +489,11 @@ clickfs_wdriver::clickfs_wdriver(wmain *rw, const String &prefix)
     do_read("config", String(), 0);
     do_check_write("hotconfig", 0);
     do_read("list", String(), 0);
+}
+
+bool clickfs_wdriver::active() const
+{
+    return _active;
 }
 
 int clickfs_wdriver::driver_mask() const

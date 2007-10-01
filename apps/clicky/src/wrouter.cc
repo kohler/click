@@ -265,7 +265,7 @@ wmain::~wmain()
 
 bool wmain::empty() const
 {
-    return !(_r || _conf || _driver);
+    return (!_r && !_conf && (!_driver || !_driver->active()));
 }
 
 bool wmain::element_exists(const String &ename) const
