@@ -57,6 +57,45 @@ TimedSink::run_timer(Timer *)
   _timer.reschedule_after_msec(_interval);
 }
 
+enum { H_INTERVAL };
+
+String
+TimedSink::read_handler(Element *e, void *vparam)
+{
+    TimedSink *ts = static_cast<TimedSink *>(e);
+    switch ((intptr_t)vparam) {
+      case H_INTERVAL:
+	return cp_unparse_milliseconds(ts->_interval);
+      default:
+	return "";
+    }
+}
+
+int
+TimedSink::write_handler(const String &str, Element *e, void *vparam,
+			 ErrorHandler *errh)
+{
+    TimedSink *ts = static_cast<TimedSink *>(e);
+    String s = cp_uncomment(str);
+    switch ((intptr_t)vparam) {
+      case H_INTERVAL: {	// interval
+	  uint32_t interval;
+	  if (!cp_seconds_as_milli(s, &interval) || interval < 1)
+	      return errh->error("interval parameter must be integer >= 1");
+	  ts->_interval = interval;
+	  break;
+      }
+    }
+    return 0;
+}
+
+void
+TimedSink::add_handlers()
+{
+    add_read_handler("interval", read_handler, (void *) H_INTERVAL, Handler::CALM);
+    add_write_handler("interval", write_handler, (void *) H_INTERVAL);
+}
+
 CLICK_ENDDECLS
 EXPORT_ELEMENT(TimedSink)
 ELEMENT_MT_SAFE(TimedSink)

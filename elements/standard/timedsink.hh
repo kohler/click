@@ -12,15 +12,12 @@ CLICK_DECLS
  * =d
  * Pulls one packet every INTERVAL seconds from its input.
  * Discards the packet.  Default INTERVAL is 500 milliseconds.
+ * =h interval read/write
+ * Returns or sets the INTERVAL parameter.
  * =a Shaper
  */
 
-class TimedSink : public Element {
-
-  Timer _timer;
-  int _interval;
-  
- public:
+class TimedSink : public Element { public:
   
   TimedSink();
   ~TimedSink();
@@ -31,9 +28,18 @@ class TimedSink : public Element {
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
+  void add_handlers();
   
   void run_timer(Timer *);
-  
+
+  private:
+
+    Timer _timer;
+    int _interval;
+
+    static String read_handler(Element *, void *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    
 };
 
 CLICK_ENDDECLS
