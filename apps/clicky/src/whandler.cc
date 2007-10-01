@@ -4,6 +4,7 @@
 #include <click/config.h>
 #include "whandler.hh"
 #include "wdriver.hh"
+#include "diagram.hh"
 #include <gdk/gdkkeysyms.h>
 #include <click/confparse.hh>
 extern "C" {
@@ -11,221 +12,6 @@ extern "C" {
 #include "support.h"
 }
 namespace clicky {
-
-/*****
- *
- * handler_value, including autorefresh
- *
- */
-
-static String::Initializer string_initializer;
-const String handler_value::no_hvalue_string = String::stable_string("???", 3);
-
-namespace {
-struct autorefresher {
-    handler_value *hv;
-    wmain *w;
-    autorefresher(handler_value *hv_, wmain *w_)
-	: hv(hv_), w(w_) {
-    }
-};
-
-extern "C" {
-static gboolean on_autorefresh(gpointer user_data)
-{
-    autorefresher *wa = reinterpret_cast<autorefresher *>(user_data);
-    return wa->hv->on_autorefresh(wa->w);
-}
-
-static void destroy_autorefresh(gpointer user_data) {
-    autorefresher *wa = reinterpret_cast<autorefresher *>(user_data);
-    delete wa;
-}
-}}
-
-void handler_value::refresh(wmain *w)
-{
-    int read_flags = (_flags & hflag_raw ? 0 : wdriver::dflag_nonraw);
-    w->driver()->do_read(_hname, _hparam, read_flags);
-}
-
-gboolean handler_value::on_autorefresh(wmain *w)
-{
-    if ((_flags & hflag_autorefresh) != 0
-	&& (_flags & hflag_autorefresh_outstanding) == 0
-	&& readable()
-	&& w->driver()) {
-	_flags |= hflag_autorefresh_outstanding;
-	refresh(w);
-	return TRUE;
-    } else {
-	_autorefresh_source = 0;
-	return FALSE;
-    }
-}
-
-void handler_value::set_flags(wmain *w, int new_flags)
-{
-    assert((new_flags & hflag_mandatory_driver_mask) == (_driver_flags & hflag_mandatory_driver_mask));
-    
-    if (_autorefresh_source
-	&& ((new_flags & hflag_autorefresh) == 0
-	    || (new_flags & hflag_r) == 0)) {
-	g_source_remove(_autorefresh_source);
-	_autorefresh_source = 0;
-    } else if (_autorefresh_source == 0
-	       && (new_flags & hflag_autorefresh) != 0
-	       && (new_flags & hflag_autorefresh_outstanding) == 0
-	       && (new_flags & hflag_r)) {
-	autorefresher *a = new autorefresher(this, w);
-	_autorefresh_source = g_timeout_add_full
-	    (G_PRIORITY_DEFAULT, _autorefresh_period,
-	     clicky::on_autorefresh, a, destroy_autorefresh);
-    }
-
-    if ((new_flags & hflag_have_hvalue) == 0)
-	_hvalue = (new_flags & hflag_r ? no_hvalue_string : String());
-
-    _flags = new_flags;
-}
-
-
-/*****
- *
- * handler_values
- *
- */
-
-handler_values::handler_values(wmain *w)
-    : _w(w)
-{
-}
-
-handler_values::iterator handler_values::begin(const String &ename)
-{
-    HashMap<handler_value>::iterator iter = _hv.find(ename + ".handlers");
-    if (iter && (iter->_driver_flags & hflag_dead) == 0)
-	return iterator(iter.operator->());
-    else
-	return iterator(0);
-}
-
-handler_value *handler_values::set(const String &hname, const String &hparam, const String &hvalue)
-{
-    if (hname.length() > 9 && memcmp(hname.end() - 9, ".handlers", 9) == 0)
-	set_handlers(hname, hparam, hvalue);
-    
-    handler_value *hv = _hv.find_force(hname).get();
-    hv->_hparam = hparam;
-    hv->_hvalue = hvalue;
-    hv->_flags |= hflag_have_hvalue;
-    if (hv->_flags & hflag_autorefresh_outstanding)
-	hv->set_flags(_w, hv->_flags & ~hflag_autorefresh_outstanding);
-    return hv;
-}
-
-void handler_values::set_handlers(const String &hname, const String &, const String &hvalue)
-{
-    assert(hname.length() > 9 && memcmp(hname.end() - 9, ".handlers", 9) == 0);
-
-    handler_value *handlers = _hv.find_force(hname).get();
-    if (handlers && handlers->hvalue() == hvalue)
-	return;
-
-    Vector<handler_value *> old_handlers;
-    for (handler_value *v = handlers; v; v = v->_next) {
-	v->_driver_flags |= hflag_dead;
-	old_handlers.push_back(v);
-    }
-    
-    handlers->_next = 0;
-    
-    // parse handler data into _hinfo
-    const char *s = hvalue.begin();
-    bool syntax_error = false;
-    while (s != hvalue.end()) {
-	const char *name_start = s;
-	while (s != hvalue.end() && !isspace((unsigned char) *s))
-	    ++s;
-	if (s == name_start || s == hvalue.end() || *s != '\t') {
-	    syntax_error = true;
-	    break;
-	}
-	String name = hvalue.substring(name_start, s);
-
-	while (s != hvalue.end() && isspace((unsigned char) *s))
-	    ++s;
-
-	int flags = 0;
-	for (; s != hvalue.end() && !isspace((unsigned char) *s); ++s)
-	    switch (*s) {
-	      case 'r':
-		flags |= hflag_r;
-		break;
-	      case 'w':
-		flags |= hflag_w;
-		break;
-	      case '+':
-		flags |= hflag_rparam;
-		break;
-	      case '%':
-		flags |= hflag_raw;
-		break;
-	      case '.':
-		flags |= hflag_calm;
-		break;
-	      case '$':
-		flags |= hflag_expensive;
-		break;
-	      case 'b':
-		flags |= hflag_button;
-		break;
-	      case 'c':
-		flags |= hflag_checkbox;
-		break;
-	    }
-	if (!(flags & hflag_r))
-	    flags &= ~hflag_rparam;
-	if (flags & hflag_r)
-	    flags &= ~hflag_button;
-	if (flags & hflag_rparam)
-	    flags &= ~hflag_checkbox;
-	
-	// default appearance
-	if (name == "class" || name == "name")
-	    flags |= hflag_special;
-	else if (name == "config")
-	    flags |= hflag_multiline | hflag_special;
-	else if (name == "ports")
-	    flags |= hflag_collapse | hflag_visible;
-	else if (name == "handlers")
-	    flags |= hflag_collapse;
-	else
-	    flags |= hflag_visible;
-	if (handler_value::default_refreshable(flags))
-	    flags |= hflag_refresh;
-	
-	String full_name = hname.substring(0, hname.length() - 8) + name;
-	handler_value *v = _hv.find_force(full_name).get();
-	if (v != handlers) {
-	    v->_next = handlers->_next;
-	    handlers->_next = v;
-	}
-	v->set_driver_flags(_w, flags);
-	
-	while (s != hvalue.end() && *s != '\r' && *s != '\n')
-	    ++s;
-	if (s + 1 < hvalue.end() && *s == '\r' && s[1] == '\n')
-	    s += 2;
-	else if (s != hvalue.end())
-	    ++s;
-    }
-
-    for (handler_value **hv = old_handlers.begin(); hv != old_handlers.end();
-	 ++hv)
-	if ((*hv)->_flags & hflag_dead)
-	    _hv.remove((*hv)->_hname);
-}
 
 /*****
  *
@@ -264,7 +50,7 @@ const char *whandler::widget_hname(GtkWidget *w)
 }
 
 whandler::whandler(wmain *rw)
-    : _rw(rw), _hv(rw), _hpref_actions(0), _actions_changed(false), _updating(0)
+    : _rw(rw), _hpref_actions(0), _actions_changed(false), _updating(0)
 {
     _eviewbox = lookup_widget(_rw->_window, "eviewbox");
     _handlerbox = GTK_BOX(lookup_widget(_rw->_window, "eview_handlerbox"));
@@ -287,7 +73,6 @@ whandler::~whandler()
 
 void whandler::clear()
 {
-    _hv.clear();
     _hinfo.clear();
     _display_ename = String();
 }
@@ -312,12 +97,13 @@ void whandler::recalculate_positions()
 
 int whandler::hinfo::create_preferences(whandler *wh)
 {
-    int flags = hv->flags();
+    int flags = _new_flags = hv->flags();
+    _new_autorefresh_period = hv->autorefresh_period();
     assert((flags & hflag_preferences) && !wcontainer && !wlabel && !wdata);
 
     // set up the frame
     wcontainer = gtk_frame_new(NULL);
-    wlabel = gtk_label_new(hv->leaf_name().c_str());
+    wlabel = gtk_label_new(hv->handler_name().c_str());
     gtk_label_set_attributes(GTK_LABEL(wlabel), wh->main()->small_attr());
     gtk_misc_set_alignment(GTK_MISC(wlabel), 0, 0.5);
     gtk_misc_set_padding(GTK_MISC(wlabel), 2, 0);
@@ -368,6 +154,9 @@ int whandler::hinfo::create_preferences(whandler *wh)
 	gtk_box_pack_start(GTK_BOX(visiblebox), autorefresh_period, FALSE, FALSE, 0);
     }
 
+    // diagram may be interested
+    wh->main()->diagram()->hpref_widgets(hv, mainbox);
+
     // return
     gtk_widget_show_all(wcontainer);
     if ((flags & (hflag_r | hflag_autorefresh)) != (hflag_r | hflag_autorefresh)
@@ -397,7 +186,7 @@ int whandler::hinfo::create_display(whandler *wh)
 
     // create label
     if ((flags & hflag_collapse) || !(flags & (hflag_button | hflag_checkbox))) {
-	wlabel = gtk_label_new(hv->leaf_name().c_str());
+	wlabel = gtk_label_new(hv->handler_name().c_str());
 	gtk_label_set_attributes(GTK_LABEL(wlabel), wh->main()->small_attr());
 	if (!(flags & hflag_collapse))
 	    gtk_label_set_ellipsize(GTK_LABEL(wlabel), PANGO_ELLIPSIZE_END);
@@ -414,7 +203,7 @@ int whandler::hinfo::create_display(whandler *wh)
     int padding = 0;
     gboolean expand = FALSE;
     if (flags & hflag_button) {
-	wadd = wdata = gtk_button_new_with_label(hv->leaf_name().c_str());
+	wadd = wdata = gtk_button_new_with_label(hv->handler_name().c_str());
 	if (!hv->editable())
 	    gtk_widget_set_sensitive(wdata, FALSE);
 	else if (wh->active())
@@ -423,7 +212,7 @@ int whandler::hinfo::create_display(whandler *wh)
 	
     } else if (flags & hflag_checkbox) {
 	wadd = gtk_event_box_new();
-	wdata = gtk_check_button_new_with_label(hv->leaf_name().c_str());
+	wdata = gtk_check_button_new_with_label(hv->handler_name().c_str());
 	if (!hv->editable())
 	    gtk_widget_set_sensitive(wdata, FALSE);
 	else if (wh->active()) {
@@ -482,7 +271,7 @@ void whandler::hinfo::create(whandler *wh, int new_flags, bool always_position)
 {
     if (hv->flags() & hflag_special)
 	return;
-    
+
     // don't flash the expander
     if (wcontainer
 	&& (((hv->flags() & new_flags) & (hflag_collapse | hflag_visible))
@@ -615,10 +404,10 @@ void whandler::hinfo::display(whandler *wh, bool change_form)
     // Display parameters
     if (wlabel && hv->read_param() && (hv->hparam() || hv->have_hvalue())) {
 	if (!hv->hparam())
-	    gtk_label_set_text(GTK_LABEL(wlabel), hv->leaf_name().c_str());
+	    gtk_label_set_text(GTK_LABEL(wlabel), hv->handler_name().c_str());
 	else {
 	    StringAccum sa;
-	    sa << hv->leaf_name() << ' '
+	    sa << hv->handler_name() << ' '
 	       << hv->hparam().substring(0, MIN(hv->hparam().length(), 100));
 	    gtk_label_set_text(GTK_LABEL(wlabel), sa.c_str());
 	}
@@ -643,14 +432,20 @@ void whandler::display(const String &ename, bool incremental)
 	return;
     _display_ename = ename;
     gtk_container_foreach(GTK_CONTAINER(_handlerbox), destroy_callback, NULL);
+
+    // no longer interested in old handler values
+    for (std::deque<hinfo>::iterator hiter = _hinfo.begin();
+	 hiter != _hinfo.end(); ++hiter)
+	hiter->hv->set_flags(main(), hiter->hv->flags() & ~(hflag_preferences | hflag_notify_whandlers));
     _hinfo.clear();
+    
     hide_actions();
     _hpref_actions = 0;
 
-    handler_values::iterator hiter = _hv.begin(ename);
+    handler_values::iterator hiter = main()->hvalues().begin(ename);
 
     // no information about this element's handlers yet
-    if (hiter == _hv.end()) {
+    if (hiter == main()->hvalues().end()) {
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(_eview_config), TRUE);
 	g_object_set(G_OBJECT(_eview_config), "can-focus", TRUE, (const char *) NULL);
 
@@ -666,20 +461,22 @@ void whandler::display(const String &ename, bool incremental)
 	    gtk_label_set_markup(GTK_LABEL(l), _("<i>Loading...</i>"));
 	    gtk_widget_show(l);
 	    gtk_box_pack_start(_handlerbox, l, FALSE, FALSE, 0);
-	    _rw->driver()->do_read(ename + ".handlers", String(), 0);
+	    handler_value *hv = _rw->hvalues().find_force(ename + ".handlers");
+	    hv->set_flags(main(), hv->flags() | hflag_notify_whandlers);
+	    hv->refresh(main());
 	}
 	return;   
     }
     
     // parse handlers into _hinfo
-    for (; hiter != _hv.end(); ++hiter)
+    for (; hiter != main()->hvalues().end(); ++hiter)
 	_hinfo.push_back(hiter.operator->());
 
     // parse _hinfo into widgets
     for (std::deque<hinfo>::iterator hi = _hinfo.begin();
 	 hi != _hinfo.end(); ++hi)
 	if (hi->hv->flags() & hflag_special) {
-	    if (hi->hv->leaf_name() == "config") {
+	    if (hi->hv->handler_name() == "config") {
 		hi->wdata = _eview_config;
 		gboolean edit = (active() && hi->editable() ? TRUE : FALSE);
 		gtk_text_view_set_editable(GTK_TEXT_VIEW(hi->wdata), edit);
@@ -687,7 +484,7 @@ void whandler::display(const String &ename, bool incremental)
 		g_object_set_data_full(G_OBJECT(hi->wdata), "clicky_hname", g_strdup(hi->hv->hname().c_str()), g_free);
 	    }
 	} else {
-	    hi->create(this, hi->hv->flags() & ~hflag_preferences, true);
+	    hi->create(this, hi->hv->flags() | hflag_notify_whandlers, true);
 	    if (hi->hv->refreshable() && !hi->hv->have_hvalue()
 		&& hi->hv->have_required_hparam()
 		&& (hi->hv->flags() & hflag_collapse) == 0)
@@ -725,17 +522,29 @@ void whandler::on_preferences(int action)
     }
     gtk_widget_show_all(GTK_WIDGET(_hpref_actions));
 
-    if (action == onpref_showpref) {
+    if (action == onpref_prefok)
 	for (std::deque<hinfo>::iterator iter = _hinfo.begin();
 	     iter != _hinfo.end(); ++iter)
-	    iter->create(this, iter->hv->flags() | hflag_preferences, false);
-    } else if (action == onpref_prefok || action == onpref_prefcancel) {
+	    if (!iter->hv->special()) {
+		iter->hv->set_autorefresh_period(iter->_new_autorefresh_period);
+		int flag_diff = iter->hv->flags() ^ iter->_new_flags;
+		iter->hv->set_flags(main(), iter->_new_flags);
+		if (flag_diff & hflag_notify_diagram)
+		    main()->diagram()->hpref_apply(iter->hv);
+	    }
+
+    int clear = 0, set = 0;
+    if (action == onpref_showpref)
+	set = hflag_preferences;
+    if (action == onpref_prefok || action == onpref_prefcancel)
+	clear = hflag_preferences;
+    if (clear || set)
 	for (std::deque<hinfo>::iterator iter = _hinfo.begin();
 	     iter != _hinfo.end(); ++iter)
-	    iter->create(this, iter->hv->flags() & ~hflag_preferences, false);
-    }
+	    if (!iter->hv->special())
+		iter->create(this, (iter->hv->flags() & ~clear) | set, false);
 }
-    
+
 void whandler::make_actions(int which)
 {
     assert(which == 0 || which == 1);
@@ -952,6 +761,8 @@ void whandler::apply_action(const String &action_for, bool activate)
 	if (hi->writable()) {
 	    _rw->driver()->do_write(action_for, data, 0);
 	    hi->hv->clear_hvalue();
+	    if (hi->hv->refreshable())
+		hi->hv->refresh(main());
 	} else
 	    _rw->driver()->do_read(action_for, data, 0);
 	
@@ -1047,18 +858,16 @@ void whandler::refresh_all(bool always)
     }
 }
 
-void whandler::notify_read(const String &hname, const String &hparam, const String &hvalue)
+void whandler::notify_read(handler_value *hv)
 {
-    _hv.set(hname, hparam, hvalue);
-    
-    hinfo *hi = find_hinfo(hname);
-    if (hi && hi->readable() && (hi->hv->flags() & hflag_visible)) {
+    hinfo *hi = find_hinfo(hv);
+    if (hi && hv->readable() && hv->visible()) {
 	_updating++;
 	hi->display(this, true);
 	_updating--;
-    } else if (hname.length() == _display_ename.length() + 9
-	       && memcmp(hname.begin(), _display_ename.begin(), _display_ename.length()) == 0
-	       && memcmp(hname.end() - 9, ".handlers", 9) == 0)
+    } else if (hv->hname().length() == _display_ename.length() + 9
+	       && memcmp(hv->hname().begin(), _display_ename.begin(), _display_ename.length()) == 0
+	       && memcmp(hv->hname().end() - 9, ".handlers", 9) == 0)
 	display(_display_ename, false);
 }
 
@@ -1082,14 +891,14 @@ void whandler::notify_write(const String &hname, const String &, int status)
 
 void whandler::set_hinfo_flags(const String &hname, int flags, int flag_values)
 {
-    if (handler_value *hv = _hv.find(hname))
-	hv->set_flags(main(), (hv->flags() & ~flags) | (flags & flag_values));
+    if (hinfo *hi = find_hinfo(hname))
+	hi->_new_flags = (hi->_new_flags & ~flags) | (flags & flag_values);
 }
 
 void whandler::set_hinfo_autorefresh_period(const String &hname, int period)
 {
-    if (handler_value *hv = _hv.find(hname))
-	hv->set_autorefresh_period(period > 0 ? period : 1);
+    if (hinfo *hi = find_hinfo(hname))
+	hi->_new_autorefresh_period = (period > 0 ? period : 1);
 }
 
 extern "C" {

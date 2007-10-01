@@ -11,6 +11,7 @@
 #include <math.h>
 #include "diagram.hh"
 #include "wrouter.hh"
+#include "whandler.hh"
 extern "C" {
 #include "support.h"
 }
@@ -227,7 +228,7 @@ void wdiagram::elt::fill(RouterT *r, ProcessingT *processing, HashMap<String, el
 
 	if (e->_e->type_name().length() >= 5
 	    && memcmp(e->_e->type_name().end() - 5, "Queue", 5) == 0)
-	    e->_style = es_queue;
+	    e->_style = esflag_queue;
 	if (e->_e->type_name().length() >= 4
 	    && memcmp(e->_e->type_name().begin(), "ICMP", 4) == 0)
 	    e->_vertical = false;
@@ -701,7 +702,7 @@ void wdiagram::elt::layout(wdiagram *cd, PangoLayout *pl)
     const eltstyle &style = cd->_style;
     double xwidth, xheight;
 
-    if (_style == es_queue && _contents_height == 0) {
+    if ((_style & esflag_queue) && _contents_height == 0) {
 	xwidth = MAX(_name_raw_height + _class_raw_height,
 		     style.min_queue_width);
 	xheight = MAX(MAX(_name_raw_width, _class_raw_width) + 2 * style.inside_dy,
@@ -1103,7 +1104,7 @@ void wdiagram::elt::draw_outline(wdiagram *cd, cairo_t *cr, PangoLayout *, doubl
     cairo_stroke(cr);
 
     // outline
-    if (_style == es_queue) {
+    if (_style & esflag_queue) {
 	cairo_set_source_rgb(cr, 0.87, 0.87, 0.5);
 	cairo_set_line_width(cr, 1);
 	for (int i = 1; i * style.queue_line_sep <= _height - style.inside_dy; ++i) {
@@ -1155,6 +1156,23 @@ void wdiagram::elt::draw(wdiagram *cd, cairo_t *cr, PangoLayout *pl)
     cairo_close_path(cr);
     cairo_fill(cr);
 
+    // draw fullness
+    if ((_style & esflag_fullness) && _hvalue_fullness >= 0) {
+	cairo_set_source_rgba(cr, 0, 0, 1.0, 0.2);
+	cairo_move_to(cr, _x + shift, _y + _height + shift);
+	if (_vertical) {
+	    cairo_rel_line_to(cr, _width, 0);
+	    cairo_rel_line_to(cr, 0, -_height * _hvalue_fullness);
+	    cairo_rel_line_to(cr, -_width, 0);
+	} else {
+	    cairo_rel_line_to(cr, 0, -_height);
+	    cairo_rel_line_to(cr, _width * _hvalue_fullness, 0);
+	    cairo_rel_line_to(cr, 0, _height);
+	}
+	cairo_close_path(cr);
+	cairo_fill(cr);
+    }
+    
     // contents drawn by rectsearch based on z_index!
 
     // draw ports
@@ -1339,6 +1357,94 @@ static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer user
 }
 }
 
+
+/*****
+ *
+ * handlers
+ *
+ */
+
+extern "C" {
+static void on_hpref_diagram_toggled(GtkToggleButton *, gpointer);
+}
+
+void wdiagram::hpref_widgets(handler_value *hv, GtkWidget *box)
+{
+    if (hv->special() || !hv->readable())
+	return;
+
+    // for now, only know how to display lengths on Queue elements
+    if (hv->handler_name() == "length") {
+	handler_value *ohv = main()->hvalues().find(hv->element_name() + ".capacity");
+	if (ohv && ohv->readable()) {
+	    GtkWidget *w = gtk_check_button_new_with_label(_("Diagram Fullness"));
+	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(w), (hv->flags() & hflag_notify_diagram));
+	    gtk_box_pack_start(GTK_BOX(box), w, FALSE, FALSE, 0);
+	    g_signal_connect(w, "toggled", G_CALLBACK(on_hpref_diagram_toggled), _rw->handlers());
+	}
+    }
+}
+
+void wdiagram::hpref_apply(handler_value *hv)
+{
+    if (hv->handler_name() == "length") {
+	handler_value *ohv = main()->hvalues().find(hv->element_name() + ".capacity");
+	if (ohv)
+	    ohv->set_flags(main(), (ohv->flags() & ~hflag_notify_diagram) | (hv->flags() & hflag_notify_diagram));
+
+	if (!_relt)
+	    router_create(true, true);
+	if (elt *e = _elt_map[hv->element_name()]) {
+	    if (hv->notify_diagram() && ohv) {
+		e->_style = e->_style | esflag_fullness;
+		e->_hvalue_fullness = -1;
+		if (hv->have_hvalue() && ohv->have_hvalue())
+		    notify_read(hv);
+	    } else
+		e->_style = e->_style & ~esflag_fullness;
+	    if (_layout)
+		redraw(*e);
+	}
+    }
+}
+
+void wdiagram::notify_read(handler_value *hv)
+{
+    if (elt *e = _elt_map[hv->element_name()]) {
+	if (e->_style & esflag_fullness) {
+	    handler_value *lhv = 0, *chv = 0;
+	    if (hv->handler_name() == "length") {
+		lhv = hv;
+		chv = main()->hvalues().find(hv->element_name() + ".capacity");
+	    } else if (hv->handler_name() == "capacity") {
+		lhv = main()->hvalues().find(hv->element_name() + ".length");
+		chv = hv;
+	    }
+	    if (lhv && chv && lhv->have_hvalue() && chv->have_hvalue()) {
+		double length, capacity;
+		if (cp_double(lhv->hvalue(), &length)
+		    && cp_double(chv->hvalue(), &capacity)
+		    && length >= 0 && length <= capacity) {
+		    double new_fullness = length / capacity;
+		    double diff = fabs(new_fullness - e->_hvalue_fullness) * (e->_vertical ? e->_height : e->_width);
+		    e->_hvalue_fullness = new_fullness;
+		    if (diff * _scale > 0.5)
+			redraw(*e);
+		}
+	    }
+	}
+    }
+}
+
+extern "C" {
+static void on_hpref_diagram_toggled(GtkToggleButton *button, gpointer user_data)
+{
+    whandler *wh = reinterpret_cast<whandler *>(user_data);
+    const gchar *hname = whandler::widget_hname(GTK_WIDGET(button));
+    gboolean on = gtk_toggle_button_get_active(button);
+    wh->set_hinfo_flags(hname, hflag_notify_diagram, on ? hflag_notify_diagram : 0);
+}
+}
 
 
 /*****

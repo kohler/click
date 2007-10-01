@@ -8,12 +8,17 @@
 class Bitvector;
 namespace clicky {
 class wmain;
+class handler_value;
 
 class wdiagram { public:
 
     wdiagram(wmain *rw);
     ~wdiagram();
 
+    wmain *main() const {
+	return _rw;
+    }
+    
     void router_create(bool incremental, bool always);
 
     double scale() const {
@@ -31,6 +36,11 @@ class wdiagram { public:
 
     void on_expose(const GdkRectangle *r);
     gboolean on_event(GdkEvent *event);
+
+    // handlers
+    void hpref_widgets(handler_value *hv, GtkWidget *box);
+    void hpref_apply(handler_value *hv);
+    void notify_read(handler_value *hv);
     
     struct eltstyle {
 	double port_layout_length;
@@ -108,7 +118,8 @@ class wdiagram { public:
 	void draw(wdiagram *cd, cairo_t *cr);
     };
 
-    enum { es_normal, es_queue };
+    enum { esflag_queue = 1,
+	   esflag_fullness = 2 };
     
     class elt : public ink { public:
 	ElementT *_e;
@@ -140,10 +151,12 @@ class wdiagram { public:
 	double _contents_width;
 	double _contents_height;
 
+	double _hvalue_fullness;
+
 	class layoutelt;
 
 	elt(elt *parent, int z_index)
-	    : ink(i_elt, z_index), _e(0), _parent(parent), _style(es_normal),
+	    : ink(i_elt, z_index), _e(0), _parent(parent), _style(0),
 	      _visible(true), _layout(false), _expanded(true),
 	      _show_class(true), _vertical(true), _highlight(0),
 	      _depth(parent ? parent->_depth + 1 : 0),

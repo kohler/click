@@ -161,7 +161,7 @@ wmain::wmain()
       _elist_view(0), _elist_store(0), _elist_sort(elist_sort_none),
       _config_element_highlight_tag(0), _element_highlight(0),
       _config_changed_signal(0), _binary_tag(0),
-      _driver(0), _driver_active(false)
+      _hvalues(this), _driver(0), _driver_active(false)
 {
     g_object_set_data_full(G_OBJECT(_window), "wmain", this, destroy);
 
@@ -274,6 +274,15 @@ bool wmain::element_exists(const String &ename) const
     return (_r && _r->element_path(ename, path));
 }
 
+ElementClassT *wmain::element_type(const String &ename) const
+{
+    Vector<ElementT *> path;
+    if (_r && _r->element_path(ename, path))
+	return path.back()->type();
+    else
+	return 0;
+}
+
 void wmain::clear(bool alive)
 {
     delete _r;
@@ -313,6 +322,7 @@ void wmain::clear(bool alive)
 	g_source_remove(_error_scroller);
     _error_scroller = 0;
 
+    // XXX _hvalues.clear();
     _handlers->clear();
     _diagram->router_create(false, false);
 
@@ -534,8 +544,14 @@ void wmain::on_read(const String &hname, const String &hparam, const String &hva
 	    for (s = x; s != hvalue.end() && isspace((unsigned char) *s); )
 		++s;
 	}
-    } else
-	_handlers->notify_read(hname, hparam, hvalue);
+    } else {
+	bool changed;
+	handler_value *hv = _hvalues.set(hname, hparam, hvalue, changed);
+	if (changed && hv->notify_whandlers())
+	    _handlers->notify_read(hv);
+	if (changed && hv->notify_diagram())
+	    _diagram->notify_read(hv);
+    }
     if (status == 200)
 	messages.clear();
 }

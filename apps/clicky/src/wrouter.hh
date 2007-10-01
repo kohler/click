@@ -4,8 +4,9 @@
 #include <click/ipaddress.hh>
 #include <click/straccum.hh>
 #include <deque>
-#include <click/hashmap.hh>
+#include "hvalues.hh"
 class ElementT;
+class ElementClassT;
 class RouterT;
 class ElementMap;
 class ProcessingT;
@@ -35,6 +36,12 @@ class wmain { public:
     GatherErrorHandler *error_handler() const {
 	return &_gerrh;
     }
+    handler_values &hvalues() {
+	return _hvalues;
+    }
+    const handler_values &hvalues() const {
+	return _hvalues;
+    }
     wdriver *driver() const {
 	return _driver_active ? _driver : 0;
     }
@@ -52,6 +59,7 @@ class wmain { public:
     }
 
     bool element_exists(const String &ename) const;
+    ElementClassT *element_type(const String &ename) const;
 
     // GTK properties
     GtkWindow *window() const {
@@ -183,6 +191,7 @@ class wmain { public:
     GdkCursor *_link_cursor;
 
     // subsystems
+    handler_values _hvalues;
     whandler *_handlers;
     wdriver *_driver;
     bool _driver_active;
