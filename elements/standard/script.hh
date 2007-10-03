@@ -117,7 +117,7 @@ without blocking), the script is disabled.  If CONDITION is supplied, then the
 branch executes only when CONDITION is true.
 
 Also, 'C<goto exit [CONDITION]>' and 'C<goto end [CONDITION]>'
-ends execution of the script, like 'C<exit>' and 'C<end>' respectively, and
+end execution of the script, like 'C<exit>' and 'C<end>' respectively, and
 'C<goto begin [CONDITION]>' transfers control to the first instruction, like
 'C<loop>'.
 
