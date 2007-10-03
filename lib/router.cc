@@ -907,13 +907,13 @@ Router::initialize(ErrorHandler *errh)
     // prepare master
     _runcount = 1;
     _master->prepare_router(this);
+#if CLICK_DMALLOC
+    char dmalloc_buf[12];
+#endif
 
     // Configure all elements in configure order. Remember the ones that failed
     if (all_ok) {
 	Vector<String> conf;
-#if CLICK_DMALLOC
-	char dmalloc_buf[12];
-#endif
 	for (int ord = 0; ord < _elements.size(); ord++) {
 	    int i = _element_configure_order[ord];
 #if CLICK_DMALLOC
