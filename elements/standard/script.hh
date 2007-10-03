@@ -116,8 +116,10 @@ element's script appears to be looping (it executes 1000 goto instructions
 without blocking), the script is disabled.  If CONDITION is supplied, then the
 branch executes only when CONDITION is true.
 
-As a special case, 'C<goto exit [CONDITION]>' or 'C<goto end [CONDITION]>'
-ends execution of the script, much like an 'C<exit>' or 'C<end>' instruction.
+Also, 'C<goto exit [CONDITION]>' and 'C<goto end [CONDITION]>'
+ends execution of the script, like 'C<exit>' and 'C<end>' respectively, and
+'C<goto begin [CONDITION]>' transfers control to the first instruction, like
+'C<loop>'.
 
 =item 'C<loop>'
 
@@ -298,7 +300,7 @@ class Script : public Element { public:
 
     enum {
 	MAX_JUMPS = 1000, STEP_NORMAL = 0, STEP_ROUTER, STEP_TIMER, STEP_JUMP,
-	LABEL_EXIT = -1, LABEL_END = -2
+	LABEL_EXIT = -1, LABEL_END = -2, LABEL_BEGIN = 0
     };
 
     Vector<int> _insns;

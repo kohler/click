@@ -121,10 +121,12 @@ Script::find_label(const String &label) const
     for (int i = 0; i < _insns.size(); i++)
 	if (_insns[i] == INSN_LABEL && _args3[i] == label)
 	    return i;
-    if (label == "exit")
+    if (label.length() == 4 && memcmp(label.data(), "exit", 4) == 0)
 	return LABEL_EXIT;
-    if (label == "end")
+    if (label.length() == 3 && memcmp(label.data(), "end", 3) == 0)
 	return LABEL_END;
+    if (label.length() == 5 && memcmp(label.data(), "begin", 5) == 0)
+	return LABEL_BEGIN;
     return _insns.size();
 }
 
