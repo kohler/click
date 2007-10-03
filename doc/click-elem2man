@@ -7,7 +7,7 @@
 #
 # Copyright (c) 1999-2001 Massachusetts Institute of Technology
 # Copyright (c) 2001-2003 International Computer Science Institute
-# Copyright (c) 2006 Regents of the University of California
+# Copyright (c) 2006-2007 Regents of the University of California
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -324,6 +324,12 @@ sub nroffize ($) {
     }
 }
 
+sub protquote ($) {
+    my($t) = @_;
+    $t =~ s/\"/\\(dq/g;
+    $t;
+}
+
 sub nroff_do_section ($$$) {
     my($name, $args, $text) = @_;
     if (!exists($xsection_takes_args{$name})) {
@@ -344,9 +350,9 @@ sub nroff_do_section ($$$) {
     }
   
     if ($name eq 'head1') {
-	print OUT ".SH \"", nroffize($args), "\"\n";
+	print OUT ".SH \"", protquote(nroffize($args)), "\"\n";
     } elsif ($name eq 'head2') {
-	print OUT ".SS \"", nroffize($args), "\"\n";
+	print OUT ".SS \"", protquote(nroffize($args)), "\"\n";
     } elsif ($name eq 'over') {
 	if ($args =~ /^\s*(\d+)\s*$/s) {
 	    print OUT ".RS $Over[-1]\n" if @Over;
@@ -358,7 +364,7 @@ sub nroff_do_section ($$$) {
 	if (@Over == 0) {
 	    print STDERR "click-elem2man: $Filename: '=item' outside any '=over' section\n";
 	} else {
-	    print OUT ".IP \"", nroffize($args), "\" $Over[-1]\n";
+	    print OUT ".IP \"", protquote(nroffize($args)), "\" $Over[-1]\n";
 	}
     } elsif ($name eq 'back') {
 	my($overarg);
