@@ -67,7 +67,9 @@ flip_ports(uint32_t ports)
 // actual AggregateIPFlows operations
 
 AggregateIPFlows::AggregateIPFlows()
+#if CLICK_USERLEVEL
     : _traceinfo_file(0), _packet_source(0), _filepos_h(0)
+#endif		
 {
 }
 
@@ -105,8 +107,10 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "FRAGMENT_TIMEOUT", 0, cpSeconds, &_fragment_timeout,
 		     "REAP", 0, cpSeconds, &_gc_interval,
 		     "ICMP", 0, cpBool, &handle_icmp_errors,
+#if CLICK_USERLEVEL			 
 		     "TRACEINFO", 0, cpFilename, &_traceinfo_filename,
 		     "SOURCE", 0, cpElement, &_packet_source,
+#endif
 		     "FRAGMENTS", cpkC, &gave_fragments, cpBool, &fragments,
 		     cpEnd) < 0)
 	return -1;
@@ -126,6 +130,7 @@ AggregateIPFlows::initialize(ErrorHandler *errh)
     _active_sec = _gc_sec = 0;
     _timestamp_warning = false;
     
+#if CLICK_USERLEVEL
     if (_traceinfo_filename == "-")
 	_traceinfo_file = stdout;
     else if (_traceinfo_filename && !(_traceinfo_file = fopen(_traceinfo_filename.c_str(), "w")))
@@ -140,6 +145,7 @@ AggregateIPFlows::initialize(ErrorHandler *errh)
 	}
 	fprintf(_traceinfo_file, ">\n");
     }
+#endif
 
     if (_fragments == 2)
 	_fragments = !input_is_pull(0);
@@ -154,16 +160,19 @@ AggregateIPFlows::cleanup(CleanupStage)
 {
     clean_map(_tcp_map);
     clean_map(_udp_map);
+#if CLICK_USERLEVEL		
     if (_traceinfo_file && _traceinfo_file != stdout) {
 	fprintf(_traceinfo_file, "</trace>\n");
 	fclose(_traceinfo_file);
     }
     delete _filepos_h;
+#endif
 }
 
 inline void
 AggregateIPFlows::delete_flowinfo(const HostPair &hp, FlowInfo *finfo, bool really_delete)
 {
+#if CLICK_USERLEVEL	
     if (_traceinfo_file) {
 	StatFlowInfo *sinfo = static_cast<StatFlowInfo *>(finfo);
 	IPAddress src(sinfo->reverse() ? hp.b : hp.a);
@@ -186,6 +195,7 @@ AggregateIPFlows::delete_flowinfo(const HostPair &hp, FlowInfo *finfo, bool real
 	if (really_delete)
 	    delete sinfo;
     } else
+#endif			
 	if (really_delete)
 	    delete finfo;
 }
@@ -207,6 +217,7 @@ AggregateIPFlows::clean_map(Map &table)
     }
 }
 
+#if CLICK_USERLEVEL
 void
 AggregateIPFlows::stat_new_flow_hook(const Packet *p, FlowInfo *finfo)
 {
@@ -216,6 +227,7 @@ AggregateIPFlows::stat_new_flow_hook(const Packet *p, FlowInfo *finfo)
     if (_filepos_h)
 	(void) cp_integer(_filepos_h->call_read().trim_space(), &sinfo->_filepos);
 }
+#endif
 
 inline void
 AggregateIPFlows::packet_emit_hook(const Packet *p, const click_ip *iph, FlowInfo *finfo)
@@ -235,11 +247,13 @@ AggregateIPFlows::packet_emit_hook(const Packet *p, const click_ip *iph, FlowInf
 	    finfo->_flow_over = 0;
     }
 
+#if CLICK_USERLEVEL
     // count packets
     if (stats() && PAINT_ANNO(p) < 2) {
 	StatFlowInfo *sinfo = static_cast<StatFlowInfo *>(finfo);
 	sinfo->_packets[PAINT_ANNO(p)]++;
     }
+#endif
 }
 
 void
@@ -410,8 +424,10 @@ AggregateIPFlows::find_flow_info(Map &m, HostPairInfo *hpinfo, uint32_t ports, b
 		_next++;
 		finfo->_reverse = flipped;
 		finfo->_flow_over = 0;
+#if CLICK_USERLEVEL
 		if (stats())
 		    stat_new_flow_hook(p, finfo);
+#endif
 		notify(finfo->aggregate(), AggregateListener::NEW_AGG, p);
 	    }
 
@@ -424,10 +440,12 @@ AggregateIPFlows::find_flow_info(Map &m, HostPairInfo *hpinfo, uint32_t ports, b
 
     // make and install new FlowInfo pair
     FlowInfo *finfo;
+#if CLICK_USERLEVEL
     if (stats()) {
 	finfo = new StatFlowInfo(ports, hpinfo->_flows, _next);
 	stat_new_flow_hook(p, finfo);
     } else
+#endif
 	finfo = new FlowInfo(ports, hpinfo->_flows, _next);
     
     finfo->_reverse = flipped;
@@ -591,7 +609,7 @@ AggregateIPFlows::add_handlers()
     add_write_handler("clear", write_handler, (void *)H_CLEAR);
 }
 
-ELEMENT_REQUIRES(userlevel AggregateNotifier)
+ELEMENT_REQUIRES(AggregateNotifier)
 EXPORT_ELEMENT(AggregateIPFlows)
 #include <click/hashmap.cc>
 CLICK_ENDDECLS

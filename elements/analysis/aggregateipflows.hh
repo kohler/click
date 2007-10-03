@@ -66,7 +66,7 @@ Keywords are:
 =item TRACEINFO
 
 Filename. If provided, output information about each flow to that filename in
-an XML format.
+an XML format. Only available at userlevel.
 
 =item SOURCE
 
@@ -74,7 +74,7 @@ Element. If provided, the results of that element's 'C<filename>' and
 'C<packet_filepos>' read handlers will be recorded in the TRACEINFO dump. (It
 is not an error if the element doesn't have those handlers.) The
 'C<packet_filepos>' results may be particularly useful, since a reader can use
-those results to skip ahead through a trace file.
+those results to skip ahead through a trace file. Only available at userlevel.
 
 =item TCP_TIMEOUT
 
@@ -158,7 +158,9 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     void add_handlers();
     void cleanup(CleanupStage);
 
+#if CLICK_USERLEVEL		
     bool stats() const			{ return _traceinfo_file; }
+#endif
     
     void push(int, Packet *);
     Packet *pull(int);
@@ -189,12 +191,14 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
 	bool reverse() const	{ return _reverse; }
     };
 
+#if CLICK_USERLEVEL	
     struct StatFlowInfo : public FlowInfo {
 	Timestamp _first_timestamp;
 	uint32_t _filepos;
 	uint32_t _packets[2];
 	StatFlowInfo(uint32_t ports, FlowInfo *next, uint32_t agg) : FlowInfo(ports, next, agg) { _packets[0] = _packets[1] = 0; }
     };
+#endif
 
     struct HostPairInfo {
 	FlowInfo *_flows;
@@ -224,11 +228,13 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     unsigned _fragments : 2;
     bool _timestamp_warning : 1;
 
+#if CLICK_USERLEVEL
     FILE *_traceinfo_file;
     String _traceinfo_filename;
 
     Element *_packet_source;
     HandlerCall *_filepos_h;
+#endif
 
     static const click_ip *icmp_encapsulated_header(const Packet *);
     
@@ -237,7 +243,9 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     void reap();
 
     inline int relevant_timeout(const FlowInfo *, const Map &) const;
+#if CLICK_USERLEVEL
     void stat_new_flow_hook(const Packet *, FlowInfo *);
+#endif
     inline void packet_emit_hook(const Packet *, const click_ip *, FlowInfo *);
     inline void delete_flowinfo(const HostPair &, FlowInfo *, bool really_delete = true);
     void assign_aggregate(Map &, HostPairInfo *, int emit_before_sec);

@@ -29,5 +29,4 @@ AggregateNotifier::remove_listener(AggregateListener *l)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
 ELEMENT_PROVIDES(AggregateNotifier)
