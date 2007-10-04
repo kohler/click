@@ -32,7 +32,7 @@ enum {
 
     hflag_preferences = 1 << 17,
     hflag_notify_whandlers = 1 << 18,
-    hflag_notify_diagram = 1 << 19,
+    hflag_notify_delt = 1 << 19,
 
     hflag_mandatory_driver_mask = hflag_r | hflag_w | hflag_rparam | hflag_raw
     | hflag_special | hflag_dead,
@@ -127,8 +127,8 @@ class handler_value { public:
     bool notify_whandlers() const {
 	return (_flags & hflag_notify_whandlers) != 0;
     }
-    bool notify_diagram() const {
-	return (_flags & hflag_notify_diagram) != 0;
+    bool notify_delt() const {
+	return (_flags & hflag_notify_delt) != 0;
     }
 
     int flags() const {

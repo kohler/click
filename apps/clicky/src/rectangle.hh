@@ -106,6 +106,13 @@ struct rectangle {
 	_height = height;
     }
 
+    void assign(const rectangle &r) {
+	_x = r.x();
+	_y = r.y();
+	_width = r.width();
+	_height = r.height();
+    }
+
     rectangle normalize() const {
 	if (_width >= 0 && _height >= 0)
 	    return *this;
@@ -126,15 +133,15 @@ struct rectangle {
 	_y += dy;
     }
 
+    void shift(const point &p) {
+	shift(p._x, p._y);
+    }
+
     void expand(double d) {
 	_x -= d;
 	_y -= d;
 	_width += 2 * d;
 	_height += 2 * d;
-    }
-
-    void shift(const point &p) {
-	shift(p._x, p._y);
     }
 
     void scale(double s) {
@@ -184,6 +191,10 @@ struct rectangle {
 
 inline point operator+(const point &a, const point &b) {
     return point(a.x() + b.x(), a.y() + b.y());
+}
+
+inline point operator-(const point &a, const point &b) {
+    return point(a.x() - b.x(), a.y() - b.y());
 }
 
 #endif

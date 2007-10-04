@@ -529,7 +529,7 @@ void whandler::on_preferences(int action)
 		iter->hv->set_autorefresh_period(iter->_new_autorefresh_period);
 		int flag_diff = iter->hv->flags() ^ iter->_new_flags;
 		iter->hv->set_flags(main(), iter->_new_flags);
-		if (flag_diff & hflag_notify_diagram)
+		if (flag_diff & hflag_notify_delt)
 		    main()->diagram()->hpref_apply(iter->hv);
 	    }
 

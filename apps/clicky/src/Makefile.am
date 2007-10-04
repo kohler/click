@@ -14,6 +14,8 @@ clicky_SOURCES = \
 	gathererror.cc gathererror.hh \
 	wrouter.cc wrouter.hh \
 	dialogs.cc \
+	dwidget.cc dwidget.hh \
+	dstyle.hh \
 	hvalues.cc hvalues.hh \
 	whandler.cc whandler.hh \
 	wdriver.cc wdriver.hh \

@@ -549,7 +549,7 @@ void wmain::on_read(const String &hname, const String &hparam, const String &hva
 	handler_value *hv = _hvalues.set(hname, hparam, hvalue, changed);
 	if (changed && hv->notify_whandlers())
 	    _handlers->notify_read(hv);
-	if (changed && hv->notify_diagram())
+	if (changed && hv->notify_delt())
 	    _diagram->notify_read(hv);
     }
     if (status == 200)
