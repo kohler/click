@@ -113,8 +113,7 @@ struct rectangle {
 	    return rectangle(_x, _y + _height, _width, -_height);
 	else if (_height >= 0)
 	    return rectangle(_x + _width, _y, -_width, _height);
-	else
-	    return rectangle(_x + _width, _y + _height, -_width, -_height);
+	return rectangle(_x + _width, _y + _height, -_width, -_height);
     }
 
     void set_origin(const point &p) {

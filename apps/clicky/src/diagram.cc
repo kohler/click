@@ -245,6 +245,8 @@ void wdiagram::elt::fill(RouterT *r, ProcessingT *processing, HashMap<String, el
 void wdiagram::router_create(bool incremental, bool always)
 {
     if (!incremental) {
+	for (int i = 0; i < 3; ++i)
+	    unhighlight(i, 0);
 	delete _relt;
 	_relt = 0;
 	_rects.clear();
