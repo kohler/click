@@ -1711,7 +1711,8 @@ Router::element_ports_string(int ei) const
 
 // STATIC INITIALIZATION, DEFAULT GLOBAL HANDLERS
 
-enum { GH_VERSION, GH_CONFIG, GH_FLATCONFIG, GH_LIST, GH_REQUIREMENTS };
+enum { GH_VERSION, GH_CONFIG, GH_FLATCONFIG, GH_LIST, GH_REQUIREMENTS,
+       GH_DRIVER };
 
 String
 Router::router_read_handler(Element *e, void *thunk)
@@ -1754,8 +1755,18 @@ Router::router_read_handler(Element *e, void *thunk)
 	}
 	break;
 
-      default:
-	return "<error>\n";
+      case GH_DRIVER:
+#if CLICK_NS
+	return String::stable_string("ns", 2);
+#elif CLICK_USERLEVEL
+	return String::stable_string("userlevel", 9);
+#elif CLICK_LINUXMODULE
+	return String::stable_string("linuxmodule", 11);
+#elif CLICK_BSDMODULE
+	return String::stable_string("bsdmodule", 9);
+#else
+	break;
+#endif
     
     }
     return String();
@@ -1783,6 +1794,7 @@ Router::static_initialize()
 	add_read_handler(0, "flatconfig", router_read_handler, (void *)GH_FLATCONFIG);
 	add_read_handler(0, "list", router_read_handler, (void *)GH_LIST);
 	add_read_handler(0, "requirements", router_read_handler, (void *)GH_REQUIREMENTS);
+	add_read_handler(0, "driver", router_read_handler, (void *)GH_DRIVER);
 	add_write_handler(0, "stop", stop_global_handler, 0);
     }
 }
