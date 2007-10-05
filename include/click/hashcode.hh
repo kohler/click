@@ -65,7 +65,8 @@ inline size_t hashcode(uint64_t uq) {
 }
 #endif
 
-inline size_t hashcode(void *v) {
+template <typename T>
+inline size_t hashcode(T *v) {
     return reinterpret_cast<uintptr_t>(v) >> 3;
 }
 
