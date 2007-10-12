@@ -30,47 +30,66 @@ delt::~delt()
     }
 }
 
-void delt::fill(RouterT *r, ProcessingT *processing, HashMap<String, delt *> &collector, Vector<ElementT *> &path, int &z_index)
+void delt::prepare(ElementT *e, ProcessingT *processing,
+		   HashMap<String, delt *> &collector, Vector<ElementT *> &path,
+		   int &z_index)
 {
-    for (RouterT::iterator i = r->begin_elements(); i != r->end_elements(); ++i) {
+    assert(!_e);
+    _e = e;
+    _processing_code = processing->decorated_processing_code(_e);
+
+    if (_e->tunnel()) {
+	_visible = false;
+	_layout = true;
+	_width = _height = 0;
+	return;
+    }
+
+    const String &name = _e->name(), &type_name = _e->type_name();
+    if (name.length() > type_name.length() + 1
+	&& name[type_name.length()] == '@'
+	&& name.substring(0, type_name.length()) == type_name)
+	_show_class = false;
+
+    path.push_back(_e);
+    RouterT::flatten_path(path, _flat_name, _flat_config);
+    collector.insert(_flat_name, this);
+    if (RouterT *r = _e->resolved_router()) {
+	ProcessingT subprocessing(r, processing->element_map());
+	subprocessing.create(_processing_code, true);
+	prepare_router(r, &subprocessing, collector, path, z_index);
+    }
+    path.pop_back();
+
+    if (_e->type_name().length() >= 5
+	&& memcmp(_e->type_name().end() - 5, "Queue", 5) == 0)
+	_style = esflag_queue;
+    if (_e->type_name().length() >= 4
+	&& memcmp(_e->type_name().begin(), "ICMP", 4) == 0)
+	_vertical = false;
+    if (_flat_name.length() > 2
+	&& _flat_name[0] == '@' && _flat_name[1] == '@'
+	&& _e->ninputs() == 0 && _e->noutputs() == 0
+	&& _elt.size() == 0) {
+	_visible = false;
+	_width = _height = 0;
+    }
+}
+
+void delt::prepare_router(RouterT *router, ProcessingT *processing,
+			  HashMap<String, delt *> &collector,
+			  Vector<ElementT *> &path, int &z_index)
+{
+    for (RouterT::iterator i = router->begin_elements();
+	 i != router->end_elements(); ++i) {
 	delt *e = new delt(this, z_index);
 	z_index++;
 	_elt.push_back(e);
-	e->_e = i.operator->();
-	e->_processing_code = processing->decorated_processing_code(e->_e);
-	
-	if (i->tunnel()) {
-	    e->_visible = false;
-	    e->_layout = true;
-	    e->_width = e->_height = 0;
-	    continue;
-	}
-
-	const String &name = e->_e->name(), &type_name = e->_e->type_name();
-	if (name.length() > type_name.length() + 1
-	    && name[type_name.length()] == '@'
-	    && name.substring(0, type_name.length()) == type_name)
-	    e->_show_class = false;
-	
-	path.push_back(e->_e);
-	RouterT::flatten_path(path, e->_flat_name, e->_flat_config);
-	collector.insert(e->_flat_name, e);
-	if (RouterT *r = e->_e->resolved_router()) {
-	    ProcessingT subprocessing(r, processing->element_map());
-	    subprocessing.create(e->_processing_code, true);
-	    e->fill(r, &subprocessing, collector, path, z_index);
-	}
-	path.pop_back();
-
-	if (e->_e->type_name().length() >= 5
-	    && memcmp(e->_e->type_name().end() - 5, "Queue", 5) == 0)
-	    e->_style = esflag_queue;
-	if (e->_e->type_name().length() >= 4
-	    && memcmp(e->_e->type_name().begin(), "ICMP", 4) == 0)
-	    e->_vertical = false;
+	e->prepare(i.operator->(), processing, collector, path, z_index);
     }
 
-    for (RouterT::conn_iterator i = r->begin_connections(); i != r->end_connections(); ++i) {
+    for (RouterT::conn_iterator i = router->begin_connections();
+	 i != router->end_connections(); ++i) {
 	dconn *c = new dconn(_elt[i->from_eindex()], i->from_port(),
 			     _elt[i->to_eindex()], i->to_port(), z_index);
 	_conn.push_back(c);
@@ -937,7 +956,7 @@ void delt::draw_outline(wdiagram *cd, cairo_t *cr, PangoLayout *, double shift)
 	for (int i = 1; i * style.queue_line_sep <= _height - style.inside_dy; ++i) {
 	    cairo_move_to(cr, _x + shift + 0.5,
 			  _y + shift - 0.5 + _height - floor(i * style.queue_line_sep));
-	    cairo_rel_line_to(cr, _width, 0);
+	    cairo_rel_line_to(cr, _width - 1, 0);
 	}
 	cairo_stroke(cr);
 	cairo_set_source_rgb(cr, 0, 0, 0);

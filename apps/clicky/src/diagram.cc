@@ -205,7 +205,8 @@ void wdiagram::router_create(bool incremental, bool always)
 	if (_rw->_r) {
 	    Vector<ElementT *> path;
 	    int z_index = 0;
-	    _relt->fill(_rw->_r, _rw->_processing, _elt_map, path, z_index);
+	    _relt->prepare_router(_rw->_r, _rw->_processing, _elt_map,
+				  path, z_index);
 	}
 	if (!_cursor[0])
 	    initialize();

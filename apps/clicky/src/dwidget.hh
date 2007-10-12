@@ -157,7 +157,9 @@ class delt : public dwidget { public:
     void draw_text(wdiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
     void draw(wdiagram *cd, cairo_t *cr, PangoLayout *pl);
     
-    void fill(RouterT *, ProcessingT *, HashMap<String, delt *> &collector, Vector<ElementT *> &, int &z_index);
+    void prepare_router(RouterT *router, ProcessingT *processing,
+			HashMap<String, delt *> &collector,
+			Vector<ElementT *> &path, int &z_index);
     
   private:
     
@@ -196,6 +198,10 @@ class delt : public dwidget { public:
 
     void gadget_fullness(wdiagram *d);
     bool expand_handlers(wmain *w);
+
+    void prepare(ElementT *e, ProcessingT *processing,
+		 HashMap<String, delt *> &collector, Vector<ElementT *> &path,
+		 int &z_index);
 
     void layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc);
     void position_contents_scc(RouterT *);
