@@ -45,7 +45,7 @@ AC_DEFUN([CLICK_PROG_CC], [
 	CC="$CC -W -Wall"
 
     test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depcflags" && \
-	DEPCFLAGS="-MD"
+	DEPCFLAGS="-MD -MP"
     AC_SUBST(DEPCFLAGS)
 
     CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
