@@ -10,6 +10,7 @@ enum { dhlt_hover = 0,
 
 struct dstyle {
     double port_layout_length;
+    double port_layout_width;
     double port_length[2];
     double port_width[2];
     double port_separation;

@@ -69,6 +69,7 @@ class dconn : public dwidget { public:
 
 };
 
+
 enum { esflag_queue = 1,
        esflag_fullness = 2 };
 
@@ -103,6 +104,9 @@ class delt : public dwidget { public:
     bool visible() const {
 	return _visible;
     }
+    void set_vertical(bool vertical) {
+	_vertical = vertical;
+    }
 
     const String &flat_name() const {
 	return _flat_name;
@@ -125,6 +129,11 @@ class delt : public dwidget { public:
 	_highlight &= ~(1 << htype);
     }
 
+    // creating
+    void create(RouterT *router, ProcessingT *processing,
+		HashMap<String, delt *> &collector, Vector<ElementT *> &epath,
+		int &z_index);
+    
     // gadgets
     void add_gadget(wdiagram *d, int gadget);
     void remove_gadget(wdiagram *d, int gadget);
@@ -136,8 +145,9 @@ class delt : public dwidget { public:
     void layout_main(wdiagram *d, RouterT *router, PangoLayout *pl);
     void layout_recompute_bounds();
 
-    void remove(rect_search<dwidget> &rects, rectangle &rect);
-    void insert(rect_search<dwidget> &rects, const dstyle &style, rectangle &rect);
+    void remove(rect_search<dwidget> &rects, rectangle &bounds);
+    void insert(rect_search<dwidget> &rects, const dstyle &style,
+		rectangle &bounds);
 
     // dragging
     enum { drag_threshold = 8 };// amount after which recalculate layout
@@ -145,16 +155,10 @@ class delt : public dwidget { public:
     void drag_shift(wdiagram *d, const point &delta);
     void drag_size(wdiagram *d, const point &delta, int direction);
     bool drag_canvas_changed(const rectangle &canvas) const;
-    
-    static void port_offsets(double side_length, int nports, const dstyle &style, double &offset0, double &separation);
-    inline double port_position(int port, int nports, double side, const dstyle &style) const;
-    inline void input_position(int port, const dstyle &style, double &x_result, double &y_result) const;
-    inline void output_position(int port, const dstyle &style, double &x_result, double &y_result) const;
-    void draw_input_port(cairo_t *, const dstyle &, double, double, int processing);
-    void draw_output_port(cairo_t *, const dstyle &, double, double, int processing);
-    void clip_to_border(cairo_t *cr, double shift) const;
-    void draw_outline(wdiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
-    void draw_text(wdiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
+
+    // drawing
+    inline point input_position(const dstyle &style, int port) const;
+    inline point output_position(const dstyle &style, int port) const;
     void draw(wdiagram *cd, cairo_t *cr, PangoLayout *pl);
     
     void prepare_router(RouterT *router, ProcessingT *processing,
@@ -192,6 +196,7 @@ class delt : public dwidget { public:
     double _contents_height;
 
     double _hvalue_fullness;
+    double _drawn_fullness;
     
     delt(const delt &);
     delt &operator=(const delt &);
@@ -213,6 +218,23 @@ class delt : public dwidget { public:
     void layout_complete(wdiagram *d, double dx, double dy);
     void layout_compound_ports(const dstyle &es);
     void union_bounds(rectangle &r, bool self) const;
+
+    static void port_offsets(const dstyle &style, int nports,
+			     double side_length,
+			     double &offset0, double &separation);
+    inline double port_position(const dstyle &style, int port, int nports,
+				double side_length) const;
+    void draw_input_port(cairo_t *cr, const dstyle &style, double x, double y,
+			 int processing);
+    void draw_output_port(cairo_t *cr, const dstyle &style, double x, double y,
+			  int processing);
+    void clip_to_border(cairo_t *cr, double shift) const;
+
+    void draw_background(wdiagram *cd, cairo_t *cr, PangoLayout *pl,
+			 double shift);
+    void draw_text(wdiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
+    void draw_ports(wdiagram *cd, cairo_t *cr, double shift);
+    void draw_outline(wdiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
         
 };
 
@@ -241,37 +263,36 @@ inline void dwidget::draw(wdiagram *d, cairo_t *cr, PangoLayout *pl) {
 	static_cast<dconn *>(this)->draw(d, cr);
 }
     
-inline double delt::port_position(int port, int nports, double side, const dstyle &style) const
+inline double delt::port_position(const dstyle &style, int port, int nports,
+				  double side_length) const
 {
     if (port >= nports)
-	return side;
+	return side_length;
     else {
 	double offset0, separation;
-	port_offsets(side, nports, style, offset0, separation);
+	port_offsets(style, nports, side_length, offset0, separation);
 	return offset0 + separation * port;
     }
 }
 
-inline void delt::input_position(int port, const dstyle &style, double &x_result, double &y_result) const
+inline point delt::input_position(const dstyle &style, int port) const
 {
-    if (_vertical) {
-	x_result = x1() + port_position(port, _e->ninputs(), width(), style);
-	y_result = y1() + 0.5;
-    } else {
-	x_result = x1() + 0.5;
-	y_result = y1() + port_position(port, _e->ninputs(), height(), style);
-    }
+    if (_vertical)
+	return point(x1() + port_position(style, port, _e->ninputs(), width()),
+		     y1() + 0.5);
+    else
+	return point(x1() + 0.5,
+		     y1() + port_position(style, port, _e->ninputs(), height()));
 }
 
-inline void delt::output_position(int port, const dstyle &style, double &x_result, double &y_result) const
+inline point delt::output_position(const dstyle &style, int port) const
 {
-    if (_vertical) {
-	x_result = x1() + port_position(port, _e->noutputs(), width(), style);
-	y_result = y2() + 0.5;
-    } else {
-	x_result = x2() + 0.5;
-	y_result = y1() + port_position(port, _e->noutputs(), height(), style);
-    }
+    if (_vertical)
+	return point(x1() + port_position(style, port, _e->noutputs(), width()),
+		     y2() + 0.5);
+    else
+	return point(x2() + 0.5,
+		     y1() + port_position(style, port, _e->noutputs(), height()));
 }
 
 }

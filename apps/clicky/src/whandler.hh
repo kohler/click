@@ -58,8 +58,8 @@ struct whandler {
 	GtkWidget *wdata;
 	int wposition;
 
-	int _new_flags;
-	int _new_autorefresh_period;
+	int _old_flags;
+	int _old_autorefresh_period;
 	
 	hinfo(handler_value *hv_)
 	    : hv(hv_), wcontainer(0), wlabel(0), wdata(0), wposition(0) {

@@ -31,7 +31,9 @@ wdiagram::wdiagram(wmain *rw)
 {
     _widget = lookup_widget(_rw->_window, "diagram");
     gtk_widget_realize(_widget);
-    gtk_widget_add_events(_widget, GDK_POINTER_MOTION_MASK | GDK_BUTTON_RELEASE_MASK);
+    gtk_widget_add_events(_widget, GDK_POINTER_MOTION_MASK
+			  | GDK_BUTTON_RELEASE_MASK | GDK_FOCUS_CHANGE_MASK
+			  | GDK_LEAVE_NOTIFY_MASK);
 
     GtkScrolledWindow *sw = GTK_SCROLLED_WINDOW(_widget->parent);
     _horiz_adjust = gtk_scrolled_window_get_hadjustment(sw);
@@ -43,6 +45,7 @@ wdiagram::wdiagram(wmain *rw)
     _style.port_separation = 3 * portscale;
     _style.min_port_distance = 7 * portscale;
     _style.port_layout_length = 6 * portscale;
+    _style.port_layout_width = 4 * portscale;
     _style.port_length[0] = 7 * portscale;
     _style.port_width[0] = 4.5 * portscale;
     _style.port_length[1] = 6 * portscale;
@@ -253,15 +256,20 @@ void wdiagram::on_expose(const GdkRectangle *area)
 
     // highlight rectangle
     if (_drag_state == drag_rect_dragging) {
-	cairo_set_line_width(cr, 4);
+	cairo_set_line_width(cr, 2);
 	const GdkColor &bgcolor = _widget->style->bg[GTK_STATE_ACTIVE];
-	cairo_set_source_rgb(cr, bgcolor.red / 65535., bgcolor.green / 65535., bgcolor.blue / 65535.);
 	rectangle r = canvas_to_window(_dragr).normalize();
-	if (r.width() < 8 || r.height() < 8) {
+	if (r.width() > 4 && r.height() > 4) {
+	    cairo_set_source_rgb(cr, bgcolor.red / 65535., bgcolor.green / 65535., bgcolor.blue / 65535.);
+	    cairo_rectangle(cr, r.x() + 2, r.y() + 2, r.width() - 4, r.height() - 4);
+	    cairo_fill(cr);
+	}
+	cairo_set_source_rgb(cr, bgcolor.red / 80000., bgcolor.green / 80000., bgcolor.blue / 80000.);
+	if (r.width() <= 4 || r.height() <= 4) {
 	    cairo_rectangle(cr, r.x(), r.y(), r.width(), r.height());
 	    cairo_fill(cr);
 	} else {
-	    cairo_rectangle(cr, r.x() + 2, r.y() + 2, r.width() - 4, r.height() - 4);
+	    cairo_rectangle(cr, r.x() + 1, r.y() + 1, r.width() - 2, r.height() - 2);
 	    cairo_stroke(cr);
 	}
     }
@@ -577,7 +585,8 @@ gboolean wdiagram::on_event(GdkEvent *event)
 
 	highlight(e, dhlt_pressed, 0, false);
 	
-    } else if (event->type == GDK_BUTTON_RELEASE && event->button.button == 1) {
+    } else if ((event->type == GDK_BUTTON_RELEASE && event->button.button == 1)
+	       || (event->type == GDK_FOCUS_CHANGE && !event->focus_change.in)) {
 	if (_drag_state == drag_dragging)
 	    on_drag_complete();
 	else if (_drag_state == drag_rect_dragging)
@@ -588,8 +597,20 @@ gboolean wdiagram::on_event(GdkEvent *event)
     } else if (event->type == GDK_2BUTTON_PRESS && event->button.button == 1) {
 	delt *e = point_elt(window_to_canvas(event->button.x, event->button.y));
 	highlight(e, dhlt_click, 0, true);
-	if (e)
+	if (e) {
 	    _rw->element_show(e->flat_name(), 1, true);
+	    _drag_state = drag_start;
+	}
+	
+    } else if (event->type == GDK_BUTTON_RELEASE && event->button.button == 3) {
+	delt *e = point_elt(window_to_canvas(event->button.x, event->button.y));
+	if (e) {
+	    rectangle bounds = *e;
+	    e->remove(_rects, bounds);
+	    e->set_vertical(!e->vertical());
+	    e->insert(_rects, _style, bounds);
+	    redraw(bounds);
+	}
     }
     
     return FALSE;

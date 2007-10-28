@@ -97,8 +97,8 @@ void whandler::recalculate_positions()
 
 int whandler::hinfo::create_preferences(whandler *wh)
 {
-    int flags = _new_flags = hv->flags();
-    _new_autorefresh_period = hv->autorefresh_period();
+    int flags = _old_flags = hv->flags();
+    _old_autorefresh_period = hv->autorefresh_period();
     assert((flags & hflag_preferences) && !wcontainer && !wlabel && !wdata);
 
     // set up the frame
@@ -508,7 +508,7 @@ void whandler::on_preferences(int action)
     gtk_container_foreach(GTK_CONTAINER(_hpref_actions), destroy_callback, NULL);
     if (action == onpref_initial || action == onpref_prefok
 	|| action == onpref_prefcancel) {
-	GtkWidget *w = gtk_button_new_from_stock(GTK_STOCK_PREFERENCES);
+	GtkWidget *w = gtk_button_new_from_stock(GTK_STOCK_PROPERTIES);
 	gtk_button_set_relief(GTK_BUTTON(w), GTK_RELIEF_NONE);
 	gtk_container_add(GTK_CONTAINER(_hpref_actions), w);
 	g_signal_connect(w, "clicked", G_CALLBACK(on_hpref_preferences_clicked), this);
@@ -516,23 +516,23 @@ void whandler::on_preferences(int action)
 	GtkWidget *w = gtk_button_new_from_stock(GTK_STOCK_CANCEL);
 	gtk_container_add(GTK_CONTAINER(_hpref_actions), w);
 	g_signal_connect(w, "clicked", G_CALLBACK(on_hpref_cancel_clicked), this);
-	w = gtk_button_new_from_stock(GTK_STOCK_APPLY);
+	w = gtk_button_new_from_stock(GTK_STOCK_OK);
 	gtk_container_add(GTK_CONTAINER(_hpref_actions), w);
 	g_signal_connect(w, "clicked", G_CALLBACK(on_hpref_ok_clicked), this);
     }
     gtk_widget_show_all(GTK_WIDGET(_hpref_actions));
 
-    if (action == onpref_prefok)
+    if (action == onpref_prefcancel)
 	for (std::deque<hinfo>::iterator iter = _hinfo.begin();
 	     iter != _hinfo.end(); ++iter)
 	    if (!iter->hv->special()) {
-		iter->hv->set_autorefresh_period(iter->_new_autorefresh_period);
-		int flag_diff = iter->hv->flags() ^ iter->_new_flags;
-		iter->hv->set_flags(main(), iter->_new_flags);
+		iter->hv->set_autorefresh_period(iter->_old_autorefresh_period);
+		int flag_diff = iter->hv->flags() ^ iter->_old_flags;
+		iter->hv->set_flags(main(), iter->_old_flags);
 		if (flag_diff & hflag_notify_delt)
 		    main()->diagram()->hpref_apply(iter->hv);
 	    }
-
+    
     int clear = 0, set = 0;
     if (action == onpref_showpref)
 	set = hflag_preferences;
@@ -891,14 +891,17 @@ void whandler::notify_write(const String &hname, const String &, int status)
 
 void whandler::set_hinfo_flags(const String &hname, int flags, int flag_values)
 {
-    if (hinfo *hi = find_hinfo(hname))
-	hi->_new_flags = (hi->_new_flags & ~flags) | (flags & flag_values);
+    if (hinfo *hi = find_hinfo(hname)) {
+	hi->hv->set_flags(main(), (hi->hv->flags() & ~flags) | flag_values);
+	if (flags & hflag_notify_delt)
+	    main()->diagram()->hpref_apply(hi->hv);
+    }
 }
 
 void whandler::set_hinfo_autorefresh_period(const String &hname, int period)
 {
     if (hinfo *hi = find_hinfo(hname))
-	hi->_new_autorefresh_period = (period > 0 ? period : 1);
+	hi->hv->set_autorefresh_period(period > 0 ? period : 1);
 }
 
 extern "C" {
