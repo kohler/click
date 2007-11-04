@@ -82,7 +82,7 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
   
   if (conf.size() != ninputs())
-      return errh->error("need %d arguments, one per input port", conf.size());
+      return errh->error("need %d arguments, one per input port", ninputs());
   
   for (int i = 0; i < conf.size(); i++) {
     InputSpec is;
