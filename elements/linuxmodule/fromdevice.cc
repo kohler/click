@@ -139,7 +139,6 @@ FromDevice::initialize(ErrorHandler *errh)
     }
     registered_readers++;
 
-    _drops = 0;
     reset_counts();
 
     ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
