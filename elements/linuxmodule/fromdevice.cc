@@ -95,19 +95,16 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool promisc = false, quiet = false, allow_nonexistent = false, timestamp = true;
     _burst = 8;
-    if (cp_va_parse(conf, this, errh, 
-		    cpString, "device name", &_devname, 
-		    cpOptional,
-		    cpBool, "enter promiscuous mode?", &promisc,
-		    cpUnsigned, "burst size", &_burst,
-		    cpKeywords,
-		    "PROMISC", cpBool, "enter promiscuous mode?", &promisc,
-		    "PROMISCUOUS", cpBool, "enter promiscuous mode?", &promisc,
-		    "BURST", cpUnsigned, "burst size", &_burst,
-		    "TIMESTAMP", cpBool, "set timestamps?", &timestamp,
-		    "QUIET", cpBool, "suppress up/down messages?", &quiet,
-		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &allow_nonexistent,
-		    cpEnd) < 0)
+    _active = true;
+    if (cp_va_kparse(conf, this, errh,
+		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
+		     "PROMISC", cpkP, cpBool, &promisc,
+		     "BURST", cpkP, cpUnsigned, &_burst,
+		     "ACTIVE", 0, cpBool, &_active,
+		     "TIMESTAMP", 0, cpBool, &timestamp,
+		     "QUIET", 0, cpBool, &quiet,
+		     "ALLOW_NONEXISTENT", 0, cpBool, &allow_nonexistent,
+		     cpEnd) < 0)
 	return -1;
     set_device_flags(promisc, timestamp, allow_nonexistent, quiet);
 
@@ -252,6 +249,9 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 int
 FromDevice::got_skb(struct sk_buff *skb)
 {
+    if (!_active)
+	return 0;		// 0 means not handled
+    
     unsigned next = next_i(_tail);
 
     if (next != _head) { /* ours */
@@ -346,49 +346,54 @@ FromDevice::run_task(Task *)
     return npq > 0;
 }
 
-void
-FromDevice::reset_counts()
-{
-    _runs = 0;
-    _empty_runs = 0;
-    _pushes = 0;
-}
+enum { H_ACTIVE, H_DROPS, H_CALLS, H_RESET_COUNTS };
 
-static int
-FromDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
+String FromDevice::read_handler(Element *e, void *thunk)
 {
-    FromDevice *fd = (FromDevice *) e;
-    fd->reset_counts();
-    return 0;
-}
-
-static String
-FromDevice_read_stats(Element *e, void *thunk)
-{
-    FromDevice *fd = (FromDevice *) e;
+    FromDevice *fd = static_cast<FromDevice *>(e);
     switch (reinterpret_cast<intptr_t>(thunk)) {
-    case 0: return String(fd->drops()); break;
-    case 1: {
-	StringAccum sa;
-	sa << "calls to run_task(): " << fd->runs() << "\n"
-	   << "calls to push():     " << fd->pushes() << "\n"
-	   << "empty runs:          " << fd->empty_runs() << "\n"
-	   << "drops:               " << fd->drops() << "\n";
-	return sa.take_string();
-	break;
-    }
-    default: 
+      case H_ACTIVE:
+	return cp_unparse_bool(fd->_active);
+      case H_DROPS:
+	return String(fd->_drops);
+      case H_CALLS: {
+	  StringAccum sa;
+	  sa << "calls to run_task(): " << fd->_runs << "\n"
+	     << "calls to push():     " << fd->_pushes << "\n"
+	     << "empty runs:          " << fd->_empty_runs << "\n"
+	     << "drops:               " << fd->_drops << "\n";
+	  return sa.take_string();
+      }
+      default:
 	return String();
-    }	
+    }
+}
+
+int FromDevice::write_handler(const String &str, Element *e, void *thunk, ErrorHandler *errh)
+{
+    FromDevice *fd = static_cast<FromDevice *>(e);
+    switch (reinterpret_cast<intptr_t>(thunk)) {
+      case H_ACTIVE:
+	if (!cp_bool(cp_uncomment(str), &fd->_active))
+	    return errh->error("active parameter must be boolean");
+	return 0;
+      case H_RESET_COUNTS:
+	fd->reset_counts();
+	return 0;
+      default:
+	return 0;
+    }
 }
 
 void
 FromDevice::add_handlers()
 {
     add_task_handlers(&_task);
-    add_read_handler("drops", FromDevice_read_stats, (void *) 0);
-    add_read_handler("calls", FromDevice_read_stats, (void *) 1);
-    add_write_handler("reset_counts", FromDevice_write_stats, 0, Handler::BUTTON);
+    add_read_handler("active", read_handler, (void *) H_ACTIVE, Handler::CHECKBOX);
+    add_read_handler("drops", read_handler, (void *) H_DROPS);
+    add_read_handler("calls", read_handler, (void *) H_CALLS);
+    add_write_handler("active", write_handler, (void *) H_ACTIVE);
+    add_write_handler("reset_counts", write_handler, (void *) H_RESET_COUNTS, Handler::BUTTON);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)

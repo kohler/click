@@ -57,6 +57,12 @@ an error). Later, while the router is running, if a device named DEVNAME
 appears, FromDevice will seamlessly begin outputing its packets. Default is
 false.
 
+=item ACTIVE
+
+Boolean.  If false, then FromDevice will not accept packets from the attached
+device; instead, packets from the device are processed by Linux as usual.
+Default is true.
+
 =back
 
 =n
@@ -99,16 +105,13 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
     int got_skb(struct sk_buff *);
 
     bool run_task(Task *);
-
-    void reset_counts();
-
-    unsigned drops()                   { return _drops; }
-    unsigned runs()                    { return _runs; }
-    unsigned empty_runs()              { return _empty_runs; }
-    unsigned pushes()                  { return _pushes; }
+    void reset_counts() {
+	_runs = _empty_runs = _pushes = _drops = 0;
+    }
 
   private:
 
+    bool _active;
     unsigned _burst;
     unsigned _drops;
 
@@ -131,6 +134,9 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
     void emission_report(int);
 #endif
 
+    static String read_handler(Element *, void *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    
 };
 
 #endif
