@@ -47,10 +47,10 @@ BalancedThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _interval = 1000;
     _increasing = true;
-    if (cp_va_parse(conf, this, errh, 
-		    cpOptional,
-		    cpUnsigned, "interval", &_interval, 
-		    cpBool, "increasing?", &_increasing, cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh, 
+		     "INTERVAL", cpkP, cpUnsigned, &_interval, 
+		     "INCREASING", cpkP, cpBool, &_increasing,
+		     cpEnd) < 0)
 	return -1;
     return 0;
 }

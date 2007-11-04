@@ -25,8 +25,6 @@ class CPUSwitch : public Element {
   const char *port_count() const		{ return "1/1-"; }
   const char *processing() const		{ return PUSH; }
   
-  int configure(Vector<String> &, ErrorHandler *);
-  
   void push(int port, Packet *);
   
 };

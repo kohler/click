@@ -21,8 +21,7 @@ class ScheduleLinux : public Element { public:
   ~ScheduleLinux();
   
   const char *class_name() const		{ return "ScheduleLinux"; }
-  
-  int configure(Vector<String> &, ErrorHandler *);
+
   int initialize(ErrorHandler *);
   void add_handlers();
 

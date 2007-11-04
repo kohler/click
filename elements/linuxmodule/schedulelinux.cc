@@ -32,12 +32,6 @@ ScheduleLinux::~ScheduleLinux()
 }
 
 int
-ScheduleLinux::configure(Vector<String> &conf, ErrorHandler *errh)
-{
-  return cp_va_parse(conf, this, errh, cpEnd);
-}
-
-int
 ScheduleLinux::initialize(ErrorHandler *errh)
 {
   ScheduleInfo::join_scheduler(this, &_task, errh);

@@ -4,7 +4,7 @@
 
 /*
  * =c
- * PerfCountInfo([TYPE0, TYPE1])
+ * PerfCountInfo([METRIC0, METRIC1])
  *
  * =s counters
  * turn on Pentium Pro performance metrics
@@ -12,8 +12,8 @@
  * =d
  *
  * The Pentium Pro CPU can maintain up to two performance counters.
- * PerfCountInfo turns on those counters. TYPE0 is the type of performance
- * counter 0, TYPE1 is the type of performance counter 1. Either type may be
+ * PerfCountInfo turns on those counters. METRIC0 is the type of performance
+ * counter 0, METRIC1 is the type of performance counter 1. Either type may be
  * empty, in which case that counter will not be used.
  *
  * The SetPerfCount and PerfCountAccum elements automatically turn on the

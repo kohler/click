@@ -45,9 +45,9 @@ int
 PerfCountAccum::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String metric_name;
-  if (cp_va_parse(conf, this, errh,
-		  cpWord, "performance metric", &metric_name,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "METRIC", cpkP+cpkM, cpWord, &metric_name,
+		   cpEnd) < 0)
     return -1;
   _which = PerfCountUser::prepare(metric_name, errh);
   return (_which < 0 ? -1 : 0);

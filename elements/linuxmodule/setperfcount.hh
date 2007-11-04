@@ -4,12 +4,12 @@
 
 /*
  * =c
- * SetPerfCount(TYPE)
+ * SetPerfCount(METRIC)
  * =s counters
  * stores Pentium Pro performance metric in annotation
  * =d
  *
- * Stores information about the Pentium Pro performance metric TYPE in each
+ * Stores information about the Pentium Pro performance metric METRIC in each
  * packet. In combination with PerfCountAccum, this lets you measure how the
  * metric changes over the packet's lifetime.
  *

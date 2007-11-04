@@ -119,9 +119,9 @@ TulipStats::~TulipStats()
 int
 TulipStats::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpString, "device name", &_devname,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DEVNAME", cpkP+cpkM, cpString, &_devname,
+		   cpEnd) < 0)
     return -1;
   _dev = dev_get_by_name(_devname.c_str());
   if (!_dev)
