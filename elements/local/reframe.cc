@@ -39,13 +39,13 @@ int
 Reframe::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   // remove keyword arguments
-  if (cp_va_parse_remove_keywords(conf, 0, this, errh,
-		"FOFF", cpUnsigned, "offset of encoded length field", &_foff,
-		"FLEN", cpUnsigned, "length of encoded length field", &_flen,
-		"NTOH", cpBool, "length field encoded in network order?", &_ntoh,
-		"MUL", cpInteger, "bytes per unit of encoded length", &_mul,
-		"ALIGN", cpInteger, "byte alignment of each frame", &_align,
-		"ADD", cpInteger, "additional bytes to add to encoded length plus alignment padding", &_add,
+  if (cp_va_kparse_remove_keywords(conf, this, errh,
+		"FOFF", 0, cpUnsigned, &_foff,
+		"FLEN", 0, cpUnsigned, &_flen,
+		"NTOH", 0, cpBool, &_ntoh,
+		"MUL", 0, cpInteger, &_mul,
+		"ALIGN", 0, cpInteger, &_align,
+		"ADD", 0, cpInteger, &_add,
 		cpEnd) < 0)
     return -1;
 

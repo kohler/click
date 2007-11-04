@@ -61,11 +61,11 @@ WebGen::configure (Vector<String> &conf, ErrorHandler *errh)
   int ret;
   int cps;
 
-  ret = cp_va_parse(conf, this, errh,
-                    cpIPAddressOrPrefix, "IP address/len", &_src_prefix, &_mask,
-                    cpIPAddress, "IP address/len", &_dst,
-                    cpUnsigned, "connections per second", &cps,
-                    cpEnd);
+  ret = cp_va_kparse(conf, this, errh,
+		     "PREFIX", cpkP+cpkM, cpIPAddressOrPrefix, &_src_prefix, &_mask,
+		     "DST", cpkP+cpkM, cpIPAddress, &_dst,
+		     "RATE", cpkP+cpkM, cpUnsigned, &cps,
+		     cpEnd);
 
   start_interval = 1000000 / cps;
   return ret;

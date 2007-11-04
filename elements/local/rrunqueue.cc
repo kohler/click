@@ -35,10 +35,9 @@ int
 RoundRobinUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _burst = 1;
-  return cp_va_parse(conf, this, errh,
-		     cpOptional,
-		     cpUnsigned, "burst size", &_burst,
-		     cpEnd);
+  return cp_va_kparse(conf, this, errh,
+		      "BURST", cpkP, cpUnsigned, &_burst,
+		      cpEnd);
 }
 
 int

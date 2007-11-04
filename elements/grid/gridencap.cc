@@ -37,7 +37,7 @@ int
 GridEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
-		  cpEtherAddress, "Ethernet address", &_eth,
+		  cpEthernetAddress, "Ethernet address", &_eth,
 		  cpIPAddress, "IP address", &_ip,
 		  cpEnd) < 0)
     return -1;

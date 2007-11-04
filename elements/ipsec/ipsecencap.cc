@@ -54,9 +54,9 @@ IPsecEncap::configure(Vector<String> &conf, ErrorHandler *errh)
    bool ce = false, df = false;
   String ect_str;
 
-  if (cp_va_parse(conf, this, errh,
-		  cpNamedInteger, "protocol", NameInfo::T_IP_PROTO, &proto,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "PROTO", cpkP+cpkM, cpNamedInteger, NameInfo::T_IP_PROTO, &proto,
+		   cpEnd) < 0)
     return -1;
 
   if (proto < 0 || proto > 255)

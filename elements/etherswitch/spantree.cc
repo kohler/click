@@ -43,12 +43,12 @@ EtherSpanTree::configure(Vector<String> &conf, ErrorHandler *errh)
   Element* sw;
   _port.resize(noutputs());
 
-  if (cp_va_parse(conf, this, errh,
-		  cpEthernetAddress, "bridge address", _addr,
-		  cpElement, "Suppressor to control input", &in,
-		  cpElement, "Suppressor to control output", &out,
-		  cpElement, "EtherSwitch", &sw,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "ADDR", cpkP+cpkM, cpEthernetAddress, _addr,
+		   "INPUT_SUPPRESSOR", cpkP+cpkM, cpElement, &in,
+		   "OUTPUT_SUPPRESSOR", cpkP+cpkM, cpElement, &out,
+		   "SWITCH", cpkP+cpkM, cpElement, &sw,
+		   cpEnd) < 0)
     return -1;
   
   if (!in->cast("Suppressor"))

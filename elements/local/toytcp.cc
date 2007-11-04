@@ -64,9 +64,9 @@ ToyTCP::configure(Vector<String> &conf, ErrorHandler *errh)
   uint16_t dport;
   int ret;
 
-  ret = cp_va_parse(conf, this, errh,
-                    cpTCPPort, "destination port", &dport,
-                    cpEnd);
+  ret = cp_va_kparse(conf, this, errh,
+		     "DPORT", cpkP+cpkM, cpTCPPort, &dport,
+		     cpEnd);
   if(ret < 0)
     return(ret);
 

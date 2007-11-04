@@ -6,7 +6,7 @@ CLICK_DECLS
 
 /*
  * =c
- * IPsecDES(DECRYPT/ENCRYPT, KEY [, IGNORE])
+ * IPsecDES(ENCRYPT, KEY [, IGNORE])
  * =s ipsec
  * encrypt packet using DES-CBC
  * =d

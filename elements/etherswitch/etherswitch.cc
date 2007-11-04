@@ -38,10 +38,9 @@ EtherSwitch::~EtherSwitch()
 int
 EtherSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_parse(conf, this, errh,
-		       cpKeywords,
-		       "TIMEOUT", cpSeconds, "timeout (s)", &_timeout,
-		       cpEnd);
+    return cp_va_kparse(conf, this, errh,
+			"TIMEOUT", 0, cpSeconds, &_timeout,
+			cpEnd);
 }
 
 void

@@ -45,7 +45,7 @@ LinkStat::configure(Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpKeywords,
 			"WINDOW", cpUnsigned, "Broadcast loss rate window", &_window,
-			"ETH", cpEtherAddress, "Source Ethernet address", &_eth,
+			"ETH", cpEthernetAddress, "Source Ethernet address", &_eth,
 			"PERIOD", cpUnsigned, "Probe broadcast period (msecs)", &_period,
 			"TAU", cpUnsigned, "Loss-rate averaging period (msecs)", &_tau,
 			"SIZE", cpUnsigned, "Probe size (bytes)", &_probe_size,

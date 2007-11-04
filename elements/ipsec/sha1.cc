@@ -42,8 +42,8 @@ IPsecAuthSHA1::~IPsecAuthSHA1()
 int
 IPsecAuthSHA1::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpInteger, "Compute/Verify (0/1)", &_op, cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "VERIFY", cpkP+cpkM, cpInteger, &_op, cpEnd) < 0)
     return -1;
   return 0;
 }

@@ -68,14 +68,12 @@ PrintAiro::configure(Vector<String> &conf, ErrorHandler* errh)
   bool timestamp = false;
   bool quiet = false;
   bool verbose = false;
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpString, "label", &label,
-		  cpKeywords,
-		  "TIMESTAMP", cpBool, "print packet timestamps?", &timestamp,
-		  "QUIET", cpBool, "print aironet header?", &quiet,
-		  "VERBOSE", cpBool, "print extra PLCP header information?", &verbose,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "LABEL", cpkP, cpString, &label,
+		   "TIMESTAMP", 0, cpBool, &timestamp,
+		   "QUIET", 0, cpBool, &quiet,
+		   "VERBOSE", 0, cpBool, &verbose,
+		   cpEnd) < 0)
     return -1;
   
   _label = label;

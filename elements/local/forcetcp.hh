@@ -6,15 +6,15 @@ CLICK_DECLS
 
 /*
  * =c
- * ForceTCP([DPORT [,RANDOM [, FLAGS]]])
+ * ForceTCP([DPORT, RANDOM_DPORT, FLAGS])
  * =s tcp
  * sets TCP packet fields
  * =d
  * Set the checksum and some other fields to try to make a packet look like
- * TCP. If DPORT is specified and not -1, forces the destination port to be
- * DPORT. Otherwise, if RANDOM is set, destination port may be randomly set.
- * If RANDOM is not set and DPORT is -1, destination port is untouched. RANDOM
- * has no effect if DPORT is not -1. If FLAGS is specified and not -1, set the
+ * TCP. If DPORT is specified and not 0, forces the destination port to be
+ * DPORT. Otherwise, if RANDOM_DPORT is set, destination port may be randomly set.
+ * If RANDOM_DPORT is not set and DPORT is 0, destination port is untouched. RANDOM_DPORT
+ * has no effect if DPORT is not 0. If FLAGS is specified and not -1, set the
  * TCP flags field to FLAGS.
  */
 
@@ -32,7 +32,7 @@ public:
 
 private:
   int _count;
-  int _dport;
+  uint16_t _dport;
   int _flags;
   bool _random;
 };

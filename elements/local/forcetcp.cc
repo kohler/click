@@ -28,7 +28,6 @@ ForceTCP::ForceTCP()
 {
   _count = 0;
   _random = false;
-  _dport = -1;
   _flags = -1;
 }
 
@@ -39,16 +38,12 @@ ForceTCP::~ForceTCP()
 int
 ForceTCP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int ret;
-
-  ret = cp_va_parse(conf, this, errh,
-                    cpOptional,
-                    cpInteger, "destination port", &_dport,
-                    cpBool, "randomize destination port", &_random,
-                    cpInteger, "TCP flags", &_flags,
-                    cpEnd);
-
-  return(ret);
+  _dport = 0;
+  return cp_va_kparse(conf, this, errh,
+		      "DPORT", cpkP, cpTCPPort, &_dport,
+		      "RANDOM_DPORT", cpkP, cpBool, &_random,
+		      "FLAGS", cpkP, cpInteger, &_flags,
+		      cpEnd);
 }
 
 Packet *
@@ -93,7 +88,7 @@ ForceTCP::simple_action(Packet *p_in)
     th->th_flags = _flags;
   }
 
-  if(_dport >= 0){
+  if(_dport > 0){
     th->th_dport = htons(_dport);
   } 
   else if (_random) { 

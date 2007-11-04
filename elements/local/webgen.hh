@@ -8,12 +8,12 @@ CLICK_DECLS
 
 /*
  * =c
- * WebGen(PREFIX/LEN, DST)
+ * WebGen(PREFIX, DST, RATE)
  * =s app
  * =d
  * Ask for a random web pages over and over with repeated HTTP
  * connections. Generate them with random source IP addresses
- * starting with PREFIX.
+ * starting with PREFIX, and destination address DST.
  * =e
  * kt :: KernelTap(11.11.0.0/16);
  * kt -> Strip(14)

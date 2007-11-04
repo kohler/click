@@ -53,7 +53,7 @@ int
 LookupLocalGridRoute2::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
-			cpEtherAddress, "this node's ethernet address", &_eth,
+			cpEthernetAddress, "this node's ethernet address", &_eth,
 			cpIPAddress, "this node's IP address", &_ip,
 			cpOptional,
                         cpElement, "GenericGridRouteTable element", &_rtes,

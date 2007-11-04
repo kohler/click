@@ -22,6 +22,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/icmp.h>
 #include <click/confparse.hh>
+#include <click/nameinfo.hh>
 CLICK_DECLS
 
 ForceICMP::ForceICMP()
@@ -38,15 +39,18 @@ ForceICMP::~ForceICMP()
 int
 ForceICMP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int ret;
-
-  ret = cp_va_parse(conf, this, errh,
-                    cpOptional,
-                    cpInteger, "ICMP type", &_type,
-                    cpInteger, "ICMP code", &_code,
-                    cpEnd);
-
-  return(ret);
+    String code_str;
+    if (cp_va_kparse(conf, this, errh,
+		     "TYPE", cpkP+cpkM, cpNamedInteger, NameInfo::T_ICMP_TYPE, &_type,
+		     "CODE", cpkP+cpkM, cpWord, &code_str,
+		     cpEnd) < 0)
+	return -1;
+    if (_type < 0 || _type > 255)
+	return errh->error("ICMP type must be between 0 and 255");
+    if (!NameInfo::query_int(NameInfo::T_ICMP_CODE + _type, this, code_str, &_code)
+	|| _code < 0 || _code > 255)
+	return errh->error("argument 2 takes ICMP code");
+    return 0;
 }
 
 Packet *

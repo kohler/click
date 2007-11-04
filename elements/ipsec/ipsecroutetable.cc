@@ -81,13 +81,13 @@ cp_ipsec_route(String s, IPsecRoute *r_store, bool remove_route, Element *contex
     words.push_back(word);
     cp_spacevec(s, words);
     String enc_key, auth_key;
-    if (cp_va_parse(words, context, ErrorHandler::default_handler(),
-		    cpUnsigned, "SPI", &r.spi,
-		    cpString, "encryption key", &enc_key,
-		    cpString, "authentication key", &auth_key,
-		    cpUnsigned, "replay counter start value", &replay,
-		    cpUnsigned, "out-of-order window size", &oowin,
-		    cpEnd) < 0)
+    if (cp_va_kparse(words, context, ErrorHandler::default_handler(),
+		     "SPI", cpkP+cpkM, cpUnsigned, &r.spi,
+		     "ENCRYPT_KEY", cpkP+cpkM, cpString, &enc_key,
+		     "AUTH_KEY", cpkP+cpkM, cpString, &auth_key,
+		     "REPLAY", cpkP+cpkM, cpUnsigned, &replay,
+		     "OOSIZE", cpkP+cpkM, cpUnsigned, &oowin,
+		     cpEnd) < 0)
 	return false;
     if (enc_key.length() != 16 || auth_key.length() != 16) {
 	click_chatter("key has bad length");

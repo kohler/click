@@ -45,13 +45,11 @@ Print80211::configure(Vector<String> &conf, ErrorHandler* errh)
   String label;
   bool timestamp = false;
   bool verbose = false;
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpString, "label", &label,
-		  cpKeywords,
-		  "TIMESTAMP", cpBool, "print packet timestamps?", &timestamp,
-		  "VERBOSE", cpBool, "be verbose?", &verbose,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "LABEL", cpkP, cpString, &label,
+		   "TIMESTAMP", 0, cpBool, &timestamp,
+		   "VERBOSE", 0, cpBool, &verbose,
+		   cpEnd) < 0)
     return -1;
   
   _label = label;

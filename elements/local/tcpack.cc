@@ -39,9 +39,8 @@ int
 TCPAck::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _ackdelay_ms = 20;
-  return cp_va_parse(conf, this, errh, 
-                     cpOptional, 
-		     cpUnsigned, "ack delay (ms)", &_ackdelay_ms, cpEnd);
+  return cp_va_kparse(conf, this, errh, 
+		      "DELAY", cpSecondsAsMilli, &_ackdelay_ms, cpEnd);
 }
 
 

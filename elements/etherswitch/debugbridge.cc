@@ -33,9 +33,9 @@ DebugBridge::~DebugBridge()
 int
 DebugBridge::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpString, "label", &_label,
-		     cpEnd);
+  return cp_va_kparse(conf, this, errh,
+		      "LABEL", cpkP+cpkM, cpString, &_label,
+		      cpEnd);
 }
 
 Packet *

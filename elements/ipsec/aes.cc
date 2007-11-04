@@ -54,9 +54,9 @@ Aes::configure(Vector<String> &conf, ErrorHandler *errh)
   int dec_int;
   _ignore = 12;/*This is the message digest*/
 
-  if (cp_va_parse(conf, this, errh,
-		  cpInteger, "Decrypt/Encrypt (0/1)", &dec_int,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "ENCRYPT", cpkP+cpkM, cpInteger, &dec_int,
+		   cpEnd) < 0)
     return -1;
   _op = dec_int;
   return 0;
