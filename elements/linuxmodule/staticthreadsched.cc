@@ -22,10 +22,10 @@ StaticThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
     Element *e;
     int preference;
     for (int i = 0; i < conf.size(); i++) {
-	if (cp_va_space_parse(conf[i], this, errh,
-			      cpElement, "element", &e,
-			      cpInteger, "thread ID", &preference,
-			      cpEnd) < 0)
+	if (cp_va_space_kparse(conf[i], this, errh,
+			       "ELEMENT", cpkP+cpkM, cpElement, &e,
+			       "THREAD", cpkP+cpkM, cpInteger, &preference,
+			       cpEnd) < 0)
 	    return -1;
 	if (e->eindex() >= _thread_preferences.size())
 	    _thread_preferences.resize(e->eindex() + 1, THREAD_UNKNOWN);

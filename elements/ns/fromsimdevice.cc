@@ -61,10 +61,10 @@ int
 FromSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _packetbuf_size = 2048;
-  if (cp_va_parse(conf, this, errh,
-		  cpString, "interface name", &_ifname,
-		  cpUnsigned, "maximum packet length", &_packetbuf_size,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DEVNAME", cpkP+cpkM, cpString, &_ifname,
+		   "SNAPLEN", cpkP+cpkM, cpUnsigned, &_packetbuf_size,
+		   cpEnd) < 0)
     return -1;
   if (_packetbuf_size > 8192 || _packetbuf_size < 128)
     return errh->error("maximum packet length out of range");

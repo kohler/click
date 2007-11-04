@@ -3,14 +3,14 @@
 
 /*
  * =c
- * PerfCountAccum(TYPE)
+ * PerfCountAccum(METRIC)
  * =s counters
  * collects differences in Pentium Pro performance metrics
  * =d
  *
  * Expects incoming packets to have their performance metric annotation set
- * according to the Pentium Pro performance metric TYPE. Calculates the
- * current value of the performance metric TYPE, and keeps track of the total
+ * according to the Pentium Pro performance metric METRIC. Calculates the
+ * current value of the performance metric METRIC, and keeps track of the total
  * accumulated difference.
  *
  * =n

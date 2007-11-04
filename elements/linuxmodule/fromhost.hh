@@ -9,7 +9,7 @@
 /*
 =c
 
-FromHost(DEVNAME, ADDR/MASK [, I<KEYWORDS>])
+FromHost(DEVNAME, PREFIX [, I<KEYWORDS>])
 
 =s comm
 
@@ -22,8 +22,9 @@ Captures packets orginating from the Linux kernel and pushes them on output
 interesting.
 
 Installs a fake interface called DEVNAME, and changes the routing table so
-that every packet destined for ADDR/MASK is sent through that interface.
-The packet then leaves on output 0. The device's native address is ADDR.
+that every packet destined for PREFIX = ADDR/MASK is sent through that
+interface.  The packet then leaves on output 0. The device's native address is
+ADDR.
 
 After the fake device is created, the effect of bringing up the interface
 and changing the routing table is analogous to:

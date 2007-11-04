@@ -3,17 +3,17 @@
 
 /*
  * =c
- * FastTCPFlows(RATE, LIMIT, LEN,
- *              SETHADDR, SIPADDR,
- *              DETHADDR, DIPADDR,
+ * FastTCPFlows(RATE, LIMIT, LENGTH,
+ *              SRCETH, SRCIP,
+ *              DSTETH, DSTIP,
  *              FLOWS, FLOWSIZE [, ACTIVE])
  * =s tcp
  * creates packets flows with static TCP/IP/Ethernet headers
  * =d
  * FastTCPFlows is a benchmark tool. At initialization time, FastTCPFlows
- * creates FLOWS number of fake TCP/IP packets of length LEN (min 60), with
- * source ethernet address SETHADDR, source IP address SIPADDR, destination
- * ethernet address DETHADDR, and destination IP address DIPADDR. Source and
+ * creates FLOWS number of fake TCP/IP packets of length LENGTH (min 60), with
+ * source ethernet address SRCETH, source IP address SRCIP, destination
+ * ethernet address DSTETH, and destination IP address DSTIP. Source and
  * destination ports are randomly generated. The TCP checksum is calculated.
  * Each time the FastTCPFlows element is called, it selects a flow, increments
  * the reference count on the skbuff created and returns the skbuff object w/o

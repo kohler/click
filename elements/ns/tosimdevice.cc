@@ -57,13 +57,10 @@ int
 ToSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String encap_type;
-  if (cp_va_parse(conf, this, errh,
-		  cpString, "interface name", &_ifname,
-		  cpOptional,
-		  cpWord, "encapsulation type", &encap_type,
-		  cpKeywords,
-		  "ENCAP", cpWord, "encapsulation type", &encap_type,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DEVNAME", cpkP+cpkM, cpString, &_ifname,
+		   "ENCAP", cpkP, cpWord, &encap_type,
+		   cpEnd) < 0)
     return -1;
   if (!_ifname)
     return errh->error("interface not set");

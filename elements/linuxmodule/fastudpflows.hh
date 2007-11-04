@@ -4,18 +4,18 @@
 /*
  * =c
  * FastUDPFlows(RATE, LIMIT, LEN,
- *              SETHADDR, SIPADDR,
- *              DETHADDR, DIPADDR,
- *              FLOWS, FLOWSIZE [, CHECKSUM?, ACTIVE])
+ *              SRCETH, SRCIP,
+ *              DSTETH, DSTIP,
+ *              FLOWS, FLOWSIZE [, CHECKSUM, ACTIVE])
  * =s udp
  * creates packets flows with static UDP/IP/Ethernet headers
  * =d
  * FastUDPFlows is a benchmark tool. At initialization time, FastUDPFlows
- * creates FLOWS number of UDP/IP packets of length LEN (min 60), with source
- * ethernet address SETHADDR, source IP address SIPADDR, destination ethernet
- * address DETHADDR, and destination IP address DIPADDR. Source and
+ * creates FLOWS number of UDP/IP packets of length LENGTH (min 60), with source
+ * ethernet address SRCETH, source IP address SRCIP, destination ethernet
+ * address DSTETH, and destination IP address DSTIP. Source and
  * destination ports are randomly generated. The UDP checksum is calculated if
- * CHECKSUM? is true; it is true by default. Each time the FastUDPFlows
+ * CHECKSUM is true; it is true by default. Each time the FastUDPFlows
  * element is called, it selects a flow, increments the reference count on the
  * skbuff created and returns the skbuff object w/o copying or cloning.
  * Therefore, the packet returned by FastUDPFlows should not be modified.

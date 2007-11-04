@@ -25,13 +25,6 @@ CPUSwitch::~CPUSwitch()
 {
 }
 
-int
-CPUSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
-{
-  if (cp_va_parse(conf, this, errh, cpEnd) < 0) return -1;
-  return 0;
-}
-
 void
 CPUSwitch::push(int, Packet *p)
 {

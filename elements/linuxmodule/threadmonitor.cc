@@ -39,10 +39,10 @@ ThreadMonitor::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _interval = 1000;
     _thresh = 1000;
-    if (cp_va_parse(conf, this, errh, 
-		    cpOptional,
-		    cpUnsigned, "interval", &_interval,
-		    cpUnsigned, "threshold", &_thresh, cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh, 
+		     "INTERVAL", cpkP, cpUnsigned, &_interval,
+		     "THRESH", cpkP, cpUnsigned, &_thresh,
+		     cpEnd) < 0)
 	return -1;
     return 0;
 }

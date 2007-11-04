@@ -104,12 +104,11 @@ FromHost::new_device(const char *name)
 int
 FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (cp_va_parse(conf, this, errh,
-		    cpString, "device name", &_devname,
-		    cpIPPrefix, "destination IP prefix", &_destaddr, &_destmask,
-		    cpKeywords,
-		    "ETHER", cpEthernetAddress, "fake device Ethernet address", &_macaddr,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
+		     "PREFIX", cpkP+cpkM, cpIPPrefix, &_destaddr, &_destmask,
+		     "ETHER", 0, cpEthernetAddress, &_macaddr,
+		     cpEnd) < 0)
 	return -1;
     if (_devname.length() > IFNAMSIZ - 1)
 	return errh->error("device name '%s' too long", _devname.c_str());

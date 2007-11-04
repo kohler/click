@@ -71,14 +71,12 @@ int
 ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool allow_nonexistent = false, quiet = false;
-    if (cp_va_parse(conf, this, errh,
-		    cpOptional,
-		    cpString, "device name", &_devname,
-		    cpKeywords,
-		    "SNIFFERS", cpBool, "send packets to sniffers only?", &_sniffers,
-		    "QUIET", cpBool, "suppress up/down messages?", &quiet,
-		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &allow_nonexistent,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "DEVNAME", cpkP, cpString, &_devname,
+		     "SNIFFERS", 0, cpBool, &_sniffers,
+		     "QUIET", 0, cpBool, &quiet,
+		     "ALLOW_NONEXISTENT", 0, cpBool, &allow_nonexistent,
+		     cpEnd) < 0)
 	return -1;
     set_device_flags(false, true, allow_nonexistent, quiet);
     return 0;

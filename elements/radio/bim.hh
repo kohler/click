@@ -5,11 +5,12 @@
 CLICK_DECLS
 
 /*
- * BIM(/dev/cuaa0, speed)
+ * BIM(DEVNAME, BAUD)
  *
  * Read and write packets from/to ABACOM BIM-4xx-RS232 radio.
  * Takes care of low-level framing.
  * Pulls *and* pushes packets.
+ * Example DEVNAME: /dev/cuaa0
  */
 
 class BIM : public Element {

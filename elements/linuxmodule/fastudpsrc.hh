@@ -3,17 +3,17 @@
 
 /*
  * =c
- * FastUDPSource(RATE, LIMIT, LEN, SETHADDR, SIPADDR, SPORT, DETHADDR, DIPADDR, DPORT [, CHECKSUM?, INTERVAL, ACTIVE])
+ * FastUDPSource(RATE, LIMIT, LENGTH, SRCETH, SRCIP, SPORT, DSTETH, DSTIP, DPORT [, CHECKSUM, INTERVAL, ACTIVE])
  * =s udp
  * creates packets with static UDP/IP/Ethernet headers
  * =d
  * FastUDPSource is a benchmark tool. At initialization
  * time, FastUDPSource creates a UDP/IP packet of length
- * LEN (min 60), with source ethernet address SETHADDR,
- * source IP address SIPADDR, source port SPORT,
- * destination ethernet address DETHADDR, destination IP
- * address DIPADDR, and destination port DPORT. The UDP
- * checksum is calculated if CHECKSUM? is true; it is
+ * LENGTH (min 60), with source ethernet address SRCETH,
+ * source IP address SRCIP, source port SPORT,
+ * destination ethernet address DSTETH, destination IP
+ * address DSTIP, and destination port DPORT. The UDP
+ * checksum is calculated if CHECKSUM is true; it is
  * true by default. Each time the FastUDPSource element
  * is called, it increments the reference count on the
  * skbuff created and returns the skbuff object w/o
@@ -31,8 +31,8 @@
  *
  * By default FastUDPSource is ACTIVE.
  *
- * PACKET is zero by default. If it is not 0, after
- * PACKET number of packets, both sport and dport will
+ * INTERVAL is zero by default. If it is not 0, after
+ * INTERVAL number of packets, both sport and dport will
  * be incremented by 1. Checksum will be recomputed.
  *
  * =h count read-only

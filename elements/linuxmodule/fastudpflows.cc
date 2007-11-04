@@ -47,20 +47,19 @@ FastUDPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
   _active = true;
   unsigned rate;
   int limit;
-  if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "send rate", &rate,
-		  cpInteger, "limit", &limit,
-	      	  cpUnsigned, "packet length", &_len,
-		  cpEthernetAddress, "src eth address", &_ethh.ether_shost,
-		  cpIPAddress, "src ip address", &_sipaddr,
-		  cpEthernetAddress, "dst eth address", &_ethh.ether_dhost,
-		  cpIPAddress, "dst ip address", &_dipaddr,
-		  cpUnsigned, "number of flows", &_nflows,
-		  cpUnsigned, "flow size", &_flowsize,
-		  cpOptional,
-		  cpBool, "do UDP checksum?", &_cksum,
-		  cpBool, "active?", &_active,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "RATE", cpkP+cpkM, cpUnsigned, &rate,
+		   "LIMIT", cpkP+cpkM, cpInteger, &limit,
+		   "LENGTH", cpkP+cpkM, cpUnsigned, &_len,
+		   "SRCETH", cpkP+cpkM, cpEthernetAddress, &_ethh.ether_shost,
+		   "SRCIP", cpkP+cpkM, cpIPAddress, &_sipaddr,
+		   "DSTETH", cpkP+cpkM, cpEthernetAddress, &_ethh.ether_dhost,
+		   "DSTIP", cpkP+cpkM, cpIPAddress, &_dipaddr,
+		   "FLOWS", cpkP+cpkM, cpUnsigned, &_nflows,
+		   "FLOWSIZE", cpkP+cpkM, cpUnsigned, &_flowsize,
+		   "CHECKSUM", cpkP, cpBool, &_cksum,
+		   "ACTIVE", cpkP, cpBool, &_active,
+		   cpEnd) < 0)
     return -1;
   if (_len < 60) {
     click_chatter("warning: packet length < 60, defaulting to 60");

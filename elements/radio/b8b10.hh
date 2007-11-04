@@ -4,10 +4,10 @@
 CLICK_DECLS
 
 /*
- * B8B10(flag)
+ * B8B10(ENCODE)
  * 
- * If flag is 1, encode each packet with a 8b10b code.
- * If flag is 0, decode.
+ * If ENCODE is 1, encode each packet with a 8b10b code.
+ * If ENCODE is 0, decode.
  *
  * Encodes each 8-bit byte into a 10-bit symbol with as
  * many 0s as 1s. The point is to keep the BIM-4xx-RS232

@@ -51,13 +51,12 @@ ToSimTrace::~ToSimTrace()
 int
 ToSimTrace::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-        if (cp_va_parse(conf, this, errh,
-                        cpString, "event", &event_,
-                        cpKeywords,
-                        "ADDITIONAL_INFO", cpString, "additional info", &additional_info_,
-                        "ANALYZER", cpElement, "Packet Analyzer", &_packetAnalyzer,
-                        "OFFSET", cpInteger, "Offset", &_offset,
-                        cpEnd) < 0)
+        if (cp_va_kparse(conf, this, errh,
+			 "EVENT", cpkP+cpkM, cpString, &event_,
+			 "ADDITIONAL_INFO", 0, cpString, &additional_info_,
+			 "ANALYZER", 0, cpElement, &_packetAnalyzer,
+			 "OFFSET", 0, cpInteger, &_offset,
+			 cpEnd) < 0)
                 return -1;
         return 0;
 }

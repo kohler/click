@@ -102,9 +102,9 @@ B8B10::initialize(ErrorHandler *errh)
 int
 B8B10::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpInteger, "encode flag", &_flag,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "ENCODE", cpkP+cpkM, cpInteger, &_flag,
+		   cpEnd) < 0)
     return -1;
   return(0);
 }

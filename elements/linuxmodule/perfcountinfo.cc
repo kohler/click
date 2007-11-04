@@ -42,11 +42,10 @@ int
 PerfCountInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String metric0, metric1;
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpWord, "performance metric 0", &metric0,
-		  cpWord, "performance metric 1", &metric1,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "METRIC0", cpkP, cpWord, &metric0,
+		   "METRIC1", cpkP, cpWord, &metric1,
+		   cpEnd) < 0)
     return -1;
   
   bool ok = true;
