@@ -175,6 +175,11 @@ Text is a time interval. If END_TIME or one of its cousins was specified, then
 writing to this handler extends END_TIME by that many seconds. Also, ACTIVE is
 set to true.
 
+=h reset_timing write-only
+
+Resets timing information.  Useful when TIMING is true and you skate around in
+the file by writing C<filepos>.
+
 =a
 
 ToDump, FromDevice.u, ToDevice.u, tcpdump(1), mmap(2), AggregateIPFlows,

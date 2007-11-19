@@ -246,11 +246,9 @@ FromDump::initialize(ErrorHandler *errh)
     if (_force_ip) {
 	if (!fake_pcap_dlt_force_ipable(_linktype))
 	    return _ff.error(errh, "unknown linktype %d; can't force IP packets", _linktype);
-	if (_timing)
-	    return errh->error("FORCE_IP and TIMING options are incompatible");
     } else if (_linktype == FAKE_DLT_RAW)
 	// force FORCE_IP.
-	_force_ip = true;	// XXX _timing?
+	_force_ip = true;
 
     // maybe skip ahead in the file
     if (_packet_filepos != 0) {
@@ -404,12 +402,6 @@ FromDump::read_packet(ErrorHandler *errh)
     _ff.shift_pos(skiplen);
 
     p->set_mac_header(p->data());
-    
-    if (_force_ip && !fake_pcap_force_ip(p, _linktype)) {
-	checked_output_push(1, p);
-	p = 0;
-    }
-
     _packet = p;
     return true;
 }
@@ -431,11 +423,13 @@ FromDump::run_task(Task *)
     if (!_active)
 	return false;
 
-    bool more = true;
-    if (!_packet)
-	for (int i = 0; i < 16; i++)
-	    if (!(more = read_packet(0)) || _packet)
-		break;
+    int retry_count = 0;
+  again:
+    if (!_packet && !read_packet(0)) {
+	if (_end_h)
+	    _end_h->call_write(ErrorHandler::default_handler());
+	return false;
+    }
     if (_packet && _timing) {
 	Timestamp now = Timestamp::now();
 	Timestamp t = _packet->timestamp_anno() + _time_offset;
@@ -448,11 +442,14 @@ FromDump::run_task(Task *)
 	    return false;
 	}
     }
-    if (more)
-	_task.fast_reschedule();
-    else if (_end_h)
-	_end_h->call_write(ErrorHandler::default_handler());
-
+    if (_packet && _force_ip && !fake_pcap_force_ip(_packet, _linktype)) {
+	checked_output_push(1, _packet);
+	_packet = 0;
+    }
+    if (!_packet && ++retry_count < 16)
+	goto again;
+    
+    _task.fast_reschedule();
     if (_packet) {
 	output(0).push(_packet);
 	_count++;
@@ -485,6 +482,10 @@ FromDump::pull(int)
 	    return 0;
 	}
     }
+    if (_packet && _force_ip && !fake_pcap_force_ip(_packet, _linktype)) {
+	checked_output_push(1, _packet);
+	_packet = 0;
+    }
 
     // notify presence/absence of more packets
     _notifier.set_active(more, true);
@@ -501,7 +502,7 @@ FromDump::pull(int)
 
 enum {
     H_SAMPLING_PROB, H_ACTIVE, H_ENCAP, H_STOP, H_PACKET_FILEPOS,
-    H_EXTEND_INTERVAL, H_COUNT, H_RESET_COUNTS
+    H_EXTEND_INTERVAL, H_COUNT, H_RESET_COUNTS, H_RESET_TIMING
 };
 
 String
@@ -555,6 +556,11 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
       case H_RESET_COUNTS:
 	fd->_count = 0;
 	return 0;
+      case H_RESET_TIMING:
+	fd->_first_time_relative = false;
+	fd->_last_time_relative = fd->_last_time_interval = false;
+	fd->_have_any_times = false;
+	return 0;
       default:
 	return -EINVAL;
     }
@@ -573,6 +579,7 @@ FromDump::add_handlers()
     add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
     add_read_handler("count", read_handler, (void *)H_COUNT);
     add_write_handler("reset_counts", write_handler, (void *)H_RESET_COUNTS, Handler::BUTTON);
+    add_write_handler("reset_timing", write_handler, (void *)H_RESET_TIMING, Handler::BUTTON);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }
