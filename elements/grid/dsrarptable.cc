@@ -51,7 +51,7 @@ DSRArpTable::configure(Vector<String> &conf, ErrorHandler *errh)
   unsigned int etht = 0x0800;
   if (cp_va_kparse(conf, this, errh, 
 		   "IP", cpkP+cpkM, cpIPAddress, &_me,
-		   "ETH", cpk+cpkM, cpEthernetAddress, &_me_ether,
+		   "ETH", cpkP+cpkM, cpEthernetAddress, &_me_ether,
 		   "ETHERTYPE", 0, cpUnsigned, &etht,
 		   "DEBUG", 0, cpBool, &_debug,
 		   cpEnd) < 0)
