@@ -248,14 +248,13 @@ TCPConn::ctrl_write_handler
   IPAddress addr0, addr1;
   uint16_t port0 = 0, port1 = 0;
 
-  if(cp_va_space_parse(s, e, errh, 
-	cpString, "action", &action,
-	cpString, "source address", &str_addr0,
-	cpTCPPort, "source port", &port0, 
-	cpOptional,
-	cpString, "destination address", &str_addr1,
-	cpTCPPort, "destination port", &port1,
-	cpEnd) < 0)
+  if(cp_va_space_kparse(s, e, errh, 
+			"ACTION", cpkP+cpkM, cpString, &action,
+			"SRC", cpkP+cpkM, cpString, &str_addr0,
+			"SPORT", cpkP+cpkM, cpTCPPort, &port0, 
+			"DST", cpkP, cpString, &str_addr1,
+			"DPORT", cpkP, cpTCPPort, &port1,
+			cpEnd) < 0)
     return -1;
   addr0 = IPAddress(str_addr0);
   addr1 = IPAddress(str_addr1);

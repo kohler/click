@@ -39,14 +39,6 @@ HopcountMetric::cast(const char *n)
     return 0;
 }
 
-int
-HopcountMetric::configure(Vector<String> &conf, ErrorHandler *errh)
-{
-  int res = cp_va_parse(conf, this, errh,
-			cpEnd);
-  return res;
-}
-
 
 bool
 HopcountMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const

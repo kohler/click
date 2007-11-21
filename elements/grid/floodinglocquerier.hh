@@ -11,7 +11,7 @@ CLICK_DECLS
 
 /*
  * =c
- * FloodingLocQuerier(E, I)
+ * FloodingLocQuerier(ETH, IP)
  * =s Grid
  * Sets Grid Destination location by running a flooding query protocol
  *

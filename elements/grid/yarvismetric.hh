@@ -6,7 +6,7 @@ CLICK_DECLS
 
 /*
  * =c
- * YarvisMetric(LinkStat)
+ * YarvisMetric(LINKSTAT)
  * =s Grid
  * =io
  * None

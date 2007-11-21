@@ -46,16 +46,14 @@ int
 GridLocationInfo2::read_args(const Vector<String> &conf, ErrorHandler *errh)
 {
   int lat, lon, h = 0;
-  int res = cp_va_parse(conf, this, errh,
-			cpInteger, "latitude (integer milliseconds)", &lat,
-			cpInteger, "longitude (integer milliseconds)", &lon,
-			cpOptional,
-			cpInteger, "height (integer millemetres)", &h,
-			cpKeywords,
-			"LOC_GOOD", cpBool, "Is our location information valid?", &_loc_good,
-			"ERR_RADIUS", cpUnsignedShort, "Location error radius, in metres", &_loc_err,
-			"TAG", cpString, "location tag", &_tag,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "LATITUDE", cpkP+cpkM, cpInteger, &lat,
+			 "LONGITUDE", cpkP+cpkM, cpInteger, &lon,
+			 "HEIGHT", cpkP, cpInteger, &h,
+			 "LOC_GOOD", 0, cpBool, &_loc_good,
+			 "ERR_RADIUS", 0, cpUnsignedShort, &_loc_err,
+			 "TAG", 0, cpString, &_tag,
+			 cpEnd);
   if (res < 0)
     return res;
 

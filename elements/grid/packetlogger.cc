@@ -19,11 +19,10 @@ PacketLogger::~PacketLogger()
 int
 PacketLogger::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpKeywords,
-		  "ETHERTYPE", cpUnsignedShort, "ethertype", &_et,
-		  "NBYTES", cpUnsigned, "number of bytes to record", &_nb,
-		  cpEnd) < 0) {
+  if (cp_va_kparse(conf, this, errh,
+		   "ETHERTYPE", 0, cpUnsignedShort, &_et,
+		   "NBYTES", 0, cpUnsigned, &_nb,
+		   cpEnd) < 0) {
     return -1;
   }
 

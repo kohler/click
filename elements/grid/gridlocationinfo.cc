@@ -81,19 +81,17 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   int h_int = 0;
 
   String chan("routelog");
-  int res = cp_va_parse(conf, this, errh,
-			// 5 fractional digits ~= 1 metre precision at the equator
-			cpReal10, "latitude (decimal degrees)", 5, &lat_int,
-			cpReal10, "longitude (decimal degrees)", 5, &lon_int,
-			cpOptional,
-			cpReal10, "height (decimal metres)", 3, &h_int,
-			cpKeywords,
-                        "MOVESIM", cpInteger, "simulate moving?", &do_move,
-			"LOC_GOOD", cpBool, "Is our location information valid?", &_loc_good,
-			"ERR_RADIUS", cpUnsignedShort, "Location error radius, in metres", &_loc_err,
-			"LOGCHANNEL", cpString, "log channel name", &chan,
-			"TAG", cpString, "location tag", &_tag,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 // 5 fractional digits ~= 1 metre precision at the equator
+			 "LATITUDE", cpkP+cpkM, cpReal10, 5, &lat_int,
+			 "LONGITUDE", cpkP+cpkM, cpReal10, 5, &lon_int,
+			 "HEIGHT", cpkP, cpReal10, 3, &h_int,
+			 "MOVESIM", 0, cpInteger, &do_move,
+			 "LOC_GOOD", 0, cpBool, &_loc_good,
+			 "ERR_RADIUS", 0, cpUnsignedShort, &_loc_err,
+			 "LOGCHANNEL", 0, cpString, &chan,
+			 "TAG", 0, cpString, &_tag,
+			 cpEnd);
   if (res < 0)
     return res;
 

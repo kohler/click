@@ -117,21 +117,20 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String chan("routelog");
   String metric("est_tx_count");
-  int res = cp_va_parse(conf, this, errh,
-			cpInteger, "entry timeout (msec)", &_timeout,
-			cpInteger, "route broadcast period (msec)", &_period,
-			cpInteger, "route broadcast jitter (msec)", &_jitter,
-			cpEthernetAddress, "source Ethernet address", &_eth,
-			cpIPAddress, "source IP address", &_ip,
-			cpElement, "GridGatewayInfo element", &_gw_info,
-			cpElement, "LinkTracker element", &_link_tracker,
-			cpElement, "LinkStat element", &_link_stat,
-			cpKeywords,
-			"MAX_HOPS", cpInteger, "max hops", &_max_hops,
-			"LOGCHANNEL", cpString, "log channel name", &chan,
-			"METRIC", cpString, "route metric", &metric,
-			"LOG", cpElement, "GridLogger element", &_log,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "TIMEOUT", cpkP+cpkM, cpInteger, &_timeout,
+			 "PERIOD", cpkP+cpkM, cpInteger, &_period,
+			 "JITTER", cpkP+cpkM, cpInteger, &_jitter,
+			 "ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
+			 "IP", cpkP+cpkM, cpIPAddress, &_ip,
+			 "GATEWAYINFO", cpkP+cpkM, cpElement, &_gw_info,
+			 "LINKTRACKER", cpkP+cpkM, cpElement, &_link_tracker,
+			 "LINKSTAT", cpkP+cpkM, cpElement, &_link_stat,
+			 "MAX_HOPS", 0, cpInteger, &_max_hops,
+			 "LOGCHANNEL", 0, cpString, &chan,
+			 "METRIC", 0, cpString, &metric,
+			 "LOG", 0, cpElement, &_log,
+			 cpEnd);
 
   if (res < 0)
     return res;
@@ -1125,10 +1124,10 @@ GridRouteTable::write_metric_range(const String &arg, Element *el,
 {
   GridRouteTable *rt = (GridRouteTable *) el;
   int max, min;
-  int res = cp_va_space_parse(arg, rt, errh,
-			      cpInteger, "metric range max", &max,
-			      cpInteger, "metric range min", &min,
-			      cpEnd);
+  int res = cp_va_space_kparse(arg, rt, errh,
+			       "MAX", cpkP+cpkM, cpInteger, &max,
+			       "MIN", cpkP+cpkM, cpInteger, &min,
+			       cpEnd);
   if (res < 0)
     return -1;
 

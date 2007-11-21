@@ -43,9 +43,9 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 8;	// same as in FromDevice
 
-    if (cp_va_parse(conf, this, errh,
-                    cpString, "interface name", &_devname,
-                    cpEnd) < 0 ) {
+    if (cp_va_kparse(conf, this, errh,
+		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
+		     cpEnd) < 0 ) {
 printf ("FromHost 1\n");
         return -1;
     }

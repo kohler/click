@@ -53,12 +53,12 @@ LookupGeographicGridRoute::cast(const char *n)
 int
 LookupGeographicGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpEthernetAddress, "source Ethernet address", &_ethaddr,
-			cpIPAddress, "source IP address", &_ipaddr,
-                        cpElement, "GridGenericRouteTable element", &_rt,
-			cpElement, "GridLocationInfo element", &_li,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "ETH", cpkP+cpkM, cpEthernetAddress, &_ethaddr,
+			 "IP", cpkP+cpkM, cpIPAddress, &_ipaddr,
+			 "GRIDROUTES", cpkP+cpkM, cpElement, &_rt,
+			 "LOCINFO", cpkP+cpkM, cpElement, &_li,
+			 cpEnd);
 
   if (res < 0)
     return res;

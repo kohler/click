@@ -6,7 +6,7 @@ CLICK_DECLS
 
 /*
  * =c
- * GetIP6Address(offset)
+ * GetIP6Address(OFFSET)
  * =s ip6
  * 
  * =d

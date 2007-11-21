@@ -80,21 +80,23 @@ int
 DSRRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   // read the parameters from a configuration string 
-  return (cp_va_parse(conf, this, errh,
-		      cpIPAddress, "ip address", me, 
-		      cpElement, "link table", &_link_table, 
-		      cpKeywords,
-		      "OUTQUEUE", cpElement, "SimpleQueue element", &_outq,
-		      "METRIC", cpElement, "GridGenericMetric element", &_metric,
-		      "USE_BLACKLIST", cpBool, "use blacklist?", &_use_blacklist,
-		      "DEBUG", cpBool, "Debug", &_debug,
-		      cpEnd)<0);
+  if (cp_va_kparse(conf, this, errh,
+		   "IP", cpkP+cpkM, cpIPAddress, me, 
+		   "LINKTABLE", cpkP+cpkM, cpElement, &_link_table, 
+		   "OUTQUEUE", 0, cpElement, &_outq,
+		   "METRIC", 0, cpElement, &_metric,
+		   "USE_BLACKLIST", 0, cpBool, &_use_blacklist,
+		   "DEBUG", 0, cpBool, &_debug,
+		   cpEnd)<0)
+      return -1;
 
   if (_outq && _outq->cast("SimpleQueue") == 0)
     return errh->error("OUTQUEUE element is not a SimpleQueue");
 
   if (_metric && _metric->cast("GridGenericMetric") == 0)
     return errh->error("METRIC element is not a GridGenericMetric");
+  
+  return 0;
 }
 
 void

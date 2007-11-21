@@ -55,12 +55,11 @@ IncrementSeqNo::configure(Vector<String> &conf, ErrorHandler *errh)
   _seqno = 0;
   _offset = 0;
   _use_net_byteorder = false;
-  int res = cp_va_parse(conf, this, errh,
-			cpKeywords,
-			"OFFSET", cpUnsigned, "offset to store sequence number at", &_offset,
-			"FIRST", cpUnsigned, "first sequence number to use", &_seqno,
-			"NET_BYTE_ORDER", cpBool, "use network byte order?", &_use_net_byteorder,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "OFFSET", 0, cpUnsigned, &_offset,
+			 "FIRST", 0, cpUnsigned, &_seqno,
+			 "NET_BYTE_ORDER", 0, cpBool, &_use_net_byteorder,
+			 cpEnd);
   return res;
 }
 

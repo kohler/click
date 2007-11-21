@@ -9,7 +9,7 @@ CLICK_DECLS
 
 /*
  * =c 
- * LinkTester(SRC_ETH, DST_ETH [, KEYWORDS])
+ * LinkTester(SRC, DST [, KEYWORDS])
  * 
  * =s Grid
  *

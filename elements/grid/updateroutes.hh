@@ -3,7 +3,7 @@
 
 /*
  * =c
- * UpdateGridRoutes(TIMEOUT, PERIOD, JITTER, ETH, IP [, MAX-HOPS])
+ * UpdateGridRoutes(TIMEOUT, PERIOD, JITTER, ETH, IP [, MAXHOPS])
  *
  * =s Grid
  * Run DSDV-like local routing protocol.
@@ -46,7 +46,7 @@
  * Output 1: every PERIOD milliseconds (+/- a jitter bounded by JITTER
  * milliseconds), emits a Grid protocol ``LR_HELLO'' packet for the
  * Grid node at address IP with MAC address ETH, advertising any
- * neighbors within MAX-HOPS of the node.  MAX-HOPS defaults to 3.
+ * neighbors within MAXHOPS of the node.  MAXHOPS defaults to 3.
  * PERIOD must be greater than 0, JITTER must be positive and less
  * than JITTER.  Produces MAC layer Grid packets.
  *

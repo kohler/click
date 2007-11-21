@@ -50,10 +50,10 @@ LocQueryResponder::~LocQueryResponder()
 int
 LocQueryResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpEthernetAddress, "Ethernet address", &_eth,
-		     cpIPAddress, "IP address", &_ip,
-		     cpEnd);
+    return cp_va_kparse(conf, this, errh,
+			"ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
+			"IP", cpkP+cpkM, cpIPAddress, &_ip,
+			cpEnd);
 }
 
 void

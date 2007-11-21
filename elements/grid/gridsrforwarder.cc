@@ -30,9 +30,9 @@ GridSRForwarder::cast(const char *name)
 int
 GridSRForwarder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh, 
-			cpIPAddress, "this node's IP", &_ip,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh, 
+			 "IP", cpkP+cpkM, cpIPAddress, &_ip,
+			 cpEnd);
   return res;
 }
 

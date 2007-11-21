@@ -50,9 +50,9 @@ ACKResponder2::simple_action(Packet *p)
 int
 ACKResponder2::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpIPAddress, "our IP address", &_ip,
-		     cpEnd);
+  return cp_va_kparse(conf, this, errh,
+		      "IP", cpkP+cpkM, cpIPAddress, &_ip,
+		      cpEnd);
 }
 
 CLICK_ENDDECLS

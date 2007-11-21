@@ -52,15 +52,13 @@ LookupLocalGridRoute2::cast(const char *n)
 int
 LookupLocalGridRoute2::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpEthernetAddress, "this node's ethernet address", &_eth,
-			cpIPAddress, "this node's IP address", &_ip,
-			cpOptional,
-                        cpElement, "GenericGridRouteTable element", &_rtes,
-			cpKeywords,
-			"LOG", cpElement, "GridGenericLogger element", &_log,
-			"VERBOSE", cpBool, "be verbose about drops?", &_verbose,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
+			 "IP", cpkP+cpkM, cpIPAddress, &_ip,
+			 "GRIDROUTES", cpkP, cpElement, &_rtes,
+			 "LOG", 0, cpElement, &_log,
+			 "VERBOSE", 0, cpBool, &_verbose,
+			 cpEnd);
   return res;
 }
 

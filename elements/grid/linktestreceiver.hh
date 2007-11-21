@@ -3,7 +3,7 @@
 
 /*
  * =c
- * LinkTestReceiver([AiroInfo])
+ * LinkTestReceiver([AIROINFO])
  * =s Grid
  *
  * =d

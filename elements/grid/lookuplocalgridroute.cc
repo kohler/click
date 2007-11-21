@@ -60,16 +60,14 @@ LookupLocalGridRoute::cast(const char *n)
 int
 LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpEthernetAddress, "source Ethernet address", &_ethaddr,
-			cpIPAddress, "source IP address", &_ipaddr,
-			cpOptional, 
-                        cpElement, "GenericGridRouteTable element", &_rtes,
-			cpKeywords,
-                        "GWI", cpElement, "GridGatewayInfo element", &_gw_info,
-			"LT", cpElement, "LinkTracker element", &_link_tracker,
-			"LOG", cpElement, "GridGenericLogger element", &_log,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "ETH", cpkP+cpkM, cpEthernetAddress, &_ethaddr,
+			 "IP", cpkP+cpkM, cpIPAddress, &_ipaddr,
+			 "GRIDROUTES", cpkP+cpkM, cpElement, &_rtes,
+			 "GWI", 0, cpElement, &_gw_info,
+			 "LT", 0, cpElement, &_link_tracker,
+			 "LOG", 0, cpElement, &_log,
+			 cpEnd);
   _any_gateway_ip = htonl((ntohl(_ipaddr.addr()) & 0xFFffFF00) | 254);
   return res;
 }

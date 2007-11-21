@@ -14,12 +14,12 @@ CLICK_DECLS
 
 /*
  * =c
- * GridProbeHandler(E, I, LookupLocalGridRoute, LookupGeographicGridRoute, FloodingLocQuerier)
+ * GridProbeHandler(ETH, IP, LookupLocalGridRoute, LookupGeographicGridRoute, FloodingLocQuerier)
  * =s Grid
  * Handles Grid route probes, producing probe replies
  * =d
  * 
- * E and I are this nodes's ethernet and IP addresses, respectively.
+ * ETH and IP are this nodes's ethernet and IP addresses, respectively.
  * The 3rd, 4th, and 5th arguments are the configuration's local and
  * geographic forwarding elements.  They are required so that the
  * probe replies can contain information about the routing actions

@@ -44,9 +44,9 @@ LIRMetric::cast(const char *n)
 int
 LIRMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpElement, "GridGenericRouteTable element", &_rt,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "GRIDROUTES", cpkP+cpkM, cpElement, &_rt,
+			 cpEnd);
   if (res < 0)
     return res;
   if (_rt == 0) 

@@ -35,8 +35,8 @@ int
 xokWriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String _ifname;
-  int r = cp_va_parse(conf, this, errh, cpString, 
-	              "interface name", &_ifname, cpEnd);
+  int r = cp_va_kparse(conf, this, errh,
+		       "DEVNAME", cpkP+cpkM, cpString, &_ifname, cpEnd);
   if (r < 0) return r;
 
   const char *name = _ifname.data();

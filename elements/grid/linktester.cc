@@ -54,21 +54,20 @@ LinkTester::~LinkTester()
 int
 LinkTester::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpEthernetAddress, "source ethernet address", &_src_eth,
-			cpEthernetAddress, "destination ethernet address", &_dst_eth,
-			cpKeywords,
-			"START_TIME", cpInteger, "start time (unix time_t)", &_start_time,
-			"ITERATIONS", cpUnsigned, "number of iterations", &_num_iters,
-			"SEND_FIRST", cpBool, "send first?", &_send_first,
-			"PAD_TIME", cpUnsigned, "milliseconds between each phase", &_pad,
-			"UNICAST_SEND_TIME", cpUnsigned, "time to send unicast backets (milliseconds)", &_send_time,
-			"BROADCAST_SEND_TIME", cpUnsigned, "time to send broadcast backets (milliseconds)", &_bcast_send_time,
-			"UNICAST_PACKET_SZ", cpUnsigned, "total size of unicast backets (bytes)", &_packet_size,
-			"BROADCAST_PACKET_SZ", cpUnsigned, "total size of broadcast backets (bytes)", &_bcast_packet_size,
-			"UNICAST_LAMBDA", cpDouble, "unicast inter-packet spacing lambda parameter", &_lambda,
-			"BROADCAST_LAMBDA", cpDouble, "broadcast inter-packet spacing lambda parameter", &_bcast_lambda,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "SRC", cpkP+cpkM, cpEthernetAddress, &_src_eth,
+			 "DST", cpkP+cpkM, cpEthernetAddress, &_dst_eth,
+			 "START_TIME", 0, cpInteger, &_start_time,
+			 "ITERATIONS", 0, cpUnsigned, &_num_iters,
+			 "SEND_FIRST", 0, cpBool, &_send_first,
+			 "PAD_TIME", 0, cpUnsigned, &_pad,
+			 "UNICAST_SEND_TIME", 0, cpUnsigned, &_send_time,
+			 "BROADCAST_SEND_TIME", 0, cpUnsigned, &_bcast_send_time,
+			 "UNICAST_PACKET_SZ", 0, cpUnsigned, &_packet_size,
+			 "BROADCAST_PACKET_SZ", 0, cpUnsigned, &_bcast_packet_size,
+			 "UNICAST_LAMBDA", 0, cpDouble, &_lambda,
+			 "BROADCAST_LAMBDA", 0, cpDouble, &_bcast_lambda,
+			 cpEnd);
 
   if (res > -1 && experiment_params_ok(errh))
     return 1;

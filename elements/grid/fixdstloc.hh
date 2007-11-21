@@ -7,7 +7,7 @@ CLICK_DECLS
 
 /*
  * =c
- * FixDstLoc(LocationTable)
+ * FixDstLoc(LOCTABLE)
  * =s Grid
  * =d
  *

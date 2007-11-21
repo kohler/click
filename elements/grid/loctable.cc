@@ -38,12 +38,12 @@ LocationTable::read_args(const Vector<String> &conf, ErrorHandler *errh)
     IPAddress ip;
     int lat, lon;
     int err;
-    int res = cp_va_space_parse(conf[i], this, errh,
-				cpIPAddress, "IP", &ip,
-				cpReal10, "latitude", 7, &lat,
-				cpReal10, "longitude", 7, &lon,
-				cpInteger, "error_radius", &err,
-				cpEnd);
+    int res = cp_va_space_kparse(conf[i], this, errh,
+				 "IP", cpkP+cpkM, cpIPAddress, &ip,
+				 "LATITUDE", cpkP+cpkM, cpReal10, 7, &lat,
+				 "LONGITUDE", cpkP+cpkM, cpReal10, 7, &lon,
+				 "ERROR_RADIUS", cpkP+cpkM, cpInteger, &err,
+				 cpEnd);
     if (res < 0)
       return -1;
     
@@ -102,12 +102,12 @@ loc_write_handler(const String &arg, Element *element,
   int lat, lon;
   IPAddress ip;
   int err;
-  int res = cp_va_space_parse(arg, l, errh,
-			      cpIPAddress, "IP", &ip,
-			      cpReal10, "latitude", 7, &lat,
-			      cpReal10, "longitude", 7, &lon,
-			      cpInteger, "error_radius", &err,
-			      cpEnd);
+  int res = cp_va_space_kparse(arg, l, errh,
+			       "IP", cpkP+cpkM, cpIPAddress, &ip,
+			       "LATITUDE", cpkP+cpkM, cpReal10, 7, &lat,
+			       "LONGITUDE", cpkP+cpkM, cpReal10, 7, &lon,
+			       "ERROR_RADIUS", cpkP+cpkM, cpInteger, &err,
+			       cpEnd);
   if (res < 0)
     return -1;
   grid_location loc((double) lat /  1.0e7, (double) lon /  1.0e7);

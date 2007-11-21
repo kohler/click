@@ -115,14 +115,13 @@ ACKRetrySender2::configure(Vector<String> &conf, ErrorHandler *errh)
   _timeout = 10;
   _verbose = true;
   _history_length = 500;
-  int res = cp_va_parse(conf, this, errh,
-			cpKeywords,
-			"IP", cpIPAddress, "this node's IP address", &_ip,
-			"MAX_TRIES", cpUnsigned, "max retries per packet (> 0)", &_max_tries,
-			"TIMEOUT", cpUnsigned, "time between retried (> 0 msecs)", &_timeout,
-			"VERBOSE", cpBool, "noisy?", &_verbose,
-			"HISTORY_LEN", cpUnsigned, "max number of packets for which to remember retry history", &_history_length,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "IP", 0, cpIPAddress, &_ip,
+			 "MAX_TRIES", 0, cpUnsigned, &_max_tries,
+			 "TIMEOUT", 0, cpUnsigned, &_timeout,
+			 "VERBOSE", 0, cpBool, &_verbose,
+			 "HISTORY_LEN", 0, cpUnsigned, &_history_length,
+			 cpEnd);
   
   if (res < 0)
     return res;

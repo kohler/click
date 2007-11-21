@@ -11,7 +11,7 @@ CLICK_DECLS
 /*
  * =c
  * 
- * GridEncap(MAC-ADDRESS, IP-ADDRESS)
+ * GridEncap(ETH, IP)
  * 
  * =s Grid
  * 
@@ -21,10 +21,10 @@ CLICK_DECLS
  *
  * =d
  *
- * MAC-ADDRESS and IP-ADDRESS are this node's ethernet and IP
+ * ETH and IP are this node's ethernet and IP
  * addresses, respectively.  Sets the ethernet type to the Grid
- * ethertype; sets the ethernet source address to MAC-ADDRESS.  Sets the Grid
- * src and tx IP to be IP-ADDRESS.  Sets all locations to invalid.
+ * ethertype; sets the ethernet source address to ETH.  Sets the Grid
+ * src and tx IP to be IP.  Sets all locations to invalid.
  * Does not set checksum.
  * 
  * Sets the grid destination IP to the packet's dest_ip annotation.

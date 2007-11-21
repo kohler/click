@@ -51,9 +51,9 @@ ACKResponder::simple_action(Packet *p)
 int
 ACKResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpEthernetAddress, "our Ethernet address", &_eth,
-		     cpEnd);
+  return cp_va_kparse(conf, this, errh,
+		      "ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
+		      cpEnd);
 }
 
 CLICK_ENDDECLS

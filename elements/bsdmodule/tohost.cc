@@ -65,14 +65,11 @@ ToHost::~ToHost()
 int
 ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_parse(conf, this, errh,
-                       cpOptional,
-                       cpString, "device name", &_devname,
-                       cpKeywords,
-                       "SNIFFERS", cpBool, "send packets to sniffers only?", &_sniffers,
-                       "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?",
- &_allow_nonexistent,
-                       cpEnd);
+    return cp_va_kparse(conf, this, errh,
+			"DEVNAME", cpkP, cpString, &_devname,
+			"SNIFFERS", 0, cpBool, &_sniffers,
+			"ALLOW_NONEXISTENT", 0, cpBool, &_allow_nonexistent,
+			cpEnd);
 
 }
 

@@ -230,17 +230,12 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _inq = NULL;
     bool allow_nonexistent = false;
     _burst = 8;
-    if (cp_va_parse(conf, this, errh, 
-		    cpString, "interface name", &_devname, 
-		    cpOptional,
-		    cpBool, "enter promiscuous mode?", &_promisc,
-		    cpUnsigned, "burst size", &_burst,
-		    cpKeywords,
-		    "PROMISC", cpBool, "enter promiscuous mode?", &_promisc,
-		    "PROMISCUOUS", cpBool, "enter promiscuous mode?", &_promisc,
-		    "BURST", cpUnsigned, "burst size", &_burst,
-		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent interface?", &allow_nonexistent,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh, 
+		     "DEVNAME", cpkP+cpkM, cpString, &_devname, 
+		     "PROMISC", cpkP, cpBool, &_promisc,
+		     "BURST", cpkP, cpUnsigned, &_burst,
+		     "ALLOW_NONEXISTENT", 0, cpBool, &allow_nonexistent,
+		     cpEnd) < 0)
 	return -1;
 
     if (find_device(allow_nonexistent, &from_device_map, errh) < 0)

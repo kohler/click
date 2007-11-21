@@ -36,10 +36,10 @@ GridGatewayInfo::~GridGatewayInfo()
 int
 GridGatewayInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpElement, "GridGenericRouteTable element", &_rt,
-			cpBool, "is this node a gateway?", &_is_gateway,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "ROUTETABLE", cpkP+cpkM, cpElement, &_rt,
+			 "IS_GATEWAY", cpkP+cpkM, cpBool, &_is_gateway,
+			 cpEnd);
   if (_rt == 0) 
     return errh->error("No route table specified");
   if (_rt->cast("GridGenericRouteTable") == 0)

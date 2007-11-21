@@ -3,12 +3,12 @@
 
 /*
  * =c
- * PingPong(LinkStat)
+ * PingPong(LINKSTAT)
  * =s Grid
  * =d
  *
  * Expects Grid packets as input.  Places ping-pong link stats,
- * acquired from LinkStat, into outgoing unicast packets.  On the
+ * acquired from LINKSTAT, a LinkStat element, into outgoing unicast packets.  On the
  * other side of the link a LinkTracker element will aggregate these
  * statistics as neccessary.
  *

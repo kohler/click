@@ -3,7 +3,7 @@
 
 /*
  * =c
- * LookupLocalGridRoute(MAC-ADDRESS, IP-ADDRESS, GenericGridRouteTable, I<KEYWORDS>)
+ * LookupLocalGridRoute(ETH, IP, GenericGridRouteTable, I<KEYWORDS>)
  *
  * =s Grid
  * =d 

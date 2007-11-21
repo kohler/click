@@ -81,14 +81,13 @@ GridProbeHandler::~GridProbeHandler()
 int
 GridProbeHandler::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpEthernetAddress, "Ethernet address", &_eth,
-		     cpIPAddress, "IP address", &_ip,
-		     cpOptional,
-		     cpElement, "LookupLocalGridRoute element", &_lr_el,
-		     cpElement, "LookupGeographicsGridRoute element", &_gf_el,
-		     cpElement, "FloodingLocQuerier element", &_fq_el,
-		     cpEnd);
+  return cp_va_kparse(conf, this, errh,
+		      "ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
+		      "IP", cpkP+cpkM, cpIPAddress, &_ip,
+		      "GRIDROUTE", cpkP, cpElement, &_lr_el,
+		      "GEOGRAPHICROUTE", cpkP, cpElement, &_gf_el,
+		      "LOCQUERIER", cpkP, cpElement, &_fq_el,
+		      cpEnd);
 }
 
 

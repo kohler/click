@@ -3,15 +3,15 @@
 
 /*
  * =c
- * SendGridLRHello(PERIOD, JITTER, ETH, IP, UpdateGridRoutes [, MAX-HOPS])
+ * SendGridLRHello(PERIOD, JITTER, ETH, IP, UpdateGridRoutes [, MAXHOPS])
  * =s Grid
  * =d
  *
  * Every PERIOD millseconds (+/- a jitter bounded by JITTER
  * milliseconds), emit a Grid protocol ``LR_HELLO'' packet for the
  * Grid node at address IP with MAC address ETH, advertising any
- * neighbors within MAX-HOPS of the node, as reported by the
- * UpdateGridRoutes element named by the 5th argument.  MAX-HOPS
+ * neighbors within MAXHOPS of the node, as reported by the
+ * UpdateGridRoutes element named by the 5th argument.  MAXHOPS
  * defaults to 1.  PERIOD must be greater than 0, JITTER must be
  * positive and less than PERIOD.  Produces Grid packets with MAC
  * headers.

@@ -44,10 +44,10 @@ GridProbeSender::~GridProbeSender()
 int
 GridProbeSender::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpEthernetAddress, "Ethernet address", &_eth,
-		     cpIPAddress, "IP address", &_ip,
-		     cpEnd);
+  return cp_va_kparse(conf, this, errh,
+		      "ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
+		      "IP", cpkP+cpkM, cpIPAddress, &_ip,
+		      cpEnd);
 }
 
 void 
@@ -101,10 +101,10 @@ probe_write_handler(const String &arg, Element *element,
 
   IPAddress ip;
   unsigned int nonce;
-  int res = cp_va_parse(arg_list, element, errh,
-			cpIPAddress, "IP address", &ip,
-			cpUnsigned, "Nonce (unsigned int)", &nonce,
-			cpEnd);
+  int res = cp_va_kparse(arg_list, element, errh,
+			 "IP", cpkP+cpkM, cpIPAddress, &ip,
+			 "NONCE", cpkP+cpkM, cpUnsigned, &nonce,
+			 cpEnd);
   if (res < 0)
     return res;
 

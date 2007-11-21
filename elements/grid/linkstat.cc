@@ -42,15 +42,14 @@ LinkStat::~LinkStat()
 int
 LinkStat::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpKeywords,
-			"WINDOW", cpUnsigned, "Broadcast loss rate window", &_window,
-			"ETH", cpEthernetAddress, "Source Ethernet address", &_eth,
-			"PERIOD", cpUnsigned, "Probe broadcast period (msecs)", &_period,
-			"TAU", cpUnsigned, "Loss-rate averaging period (msecs)", &_tau,
-			"SIZE", cpUnsigned, "Probe size (bytes)", &_probe_size,
-			"USE_SECOND_PROTO", cpBool, "Use alternate protocol number?", &_use_proto2,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "WINDOW", 0, cpUnsigned, &_window,
+			 "ETH", 0, cpEthernetAddress, &_eth,
+			 "PERIOD", 0, cpUnsigned, &_period,
+			 "TAU", 0, cpUnsigned, &_tau,
+			 "SIZE", 0, cpUnsigned, &_probe_size,
+			 "USE_SECOND_PROTO", 0, cpBool, &_use_proto2,
+			 cpEnd);
   if (res < 0)
     return res;
   

@@ -6,7 +6,7 @@ CLICK_DECLS
 
 /*
  * =c
- * ETX2Metric(LinkStat l1, LinkStat l2)
+ * ETX2Metric(DATA_LINKSTAT, ACK_LINKSTAT)
  * =s Grid
  * =io
  * None

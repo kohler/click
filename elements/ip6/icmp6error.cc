@@ -39,11 +39,11 @@ ICMP6Error::~ICMP6Error()
 int
 ICMP6Error::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-                  cpIP6Address, "Source IP6 address", &_src_ip,
-                  cpInteger, "ICMP6 Type", &_type,
-                  cpInteger, "ICMP6 Code", &_code,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "SRC", cpkP+cpkM, cpIP6Address, &_src_ip,
+		   "TYPE", cpkP+cpkM, cpInteger, &_type,
+		   "CODE", cpkP+cpkM, cpInteger, &_code,
+		   cpEnd) < 0)
     return -1;
   return 0;
 }

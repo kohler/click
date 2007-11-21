@@ -68,11 +68,9 @@ AiroInfo::~AiroInfo()
 int
 AiroInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-
-  int res = cp_va_parse(conf, this, errh,
-			cpString, "device name", &_ifname,
+    return cp_va_kparse(conf, this, errh,
+			"DEVNAME", cpkP+cpkM, cpString, &_ifname,
 			cpEnd);
-  return res;
 }
 
 int

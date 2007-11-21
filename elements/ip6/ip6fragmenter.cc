@@ -38,9 +38,9 @@ IP6Fragmenter::~IP6Fragmenter()
 int
 IP6Fragmenter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-                  cpUnsigned, "MTU", &_mtu,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "MTU", cpkP+cpkM, cpUnsigned, &_mtu,
+		   cpEnd) < 0)
     return -1;
   return 0;
 }

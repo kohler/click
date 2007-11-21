@@ -43,9 +43,9 @@ BottleneckMetric::cast(const char *n)
 int
 BottleneckMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpElement, "LinkStat element", &_ls,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "LINKSTAT", cpkP+cpkM, cpElement, &_ls,
+			 cpEnd);
   if (res < 0)
     return res;
   if (_ls == 0) 

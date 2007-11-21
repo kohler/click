@@ -216,28 +216,27 @@ int
 DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String logfile;
-  int res = cp_va_parse(conf, this, errh,
-			cpUnsigned, "entry timeout (msec)", &_timeout,
-			cpUnsigned, "route broadcast period (msec)", &_period,
-			cpUnsigned, "route broadcast jitter (msec)", &_jitter,
-			cpUnsigned, "minimum triggered update period (msec)", &_min_triggered_update_period,
-			cpEthernetAddress, "source Ethernet address", &_eth,
-			cpIPAddress, "source IP address", &_ip,
-			cpKeywords,
-			"VERBOSE", cpBool, "verbose warnings and messages?", &_verbose,
-			"GW", cpElement, "GridGatewayInfo element", &_gw_info,
-			"MAX_HOPS", cpUnsigned, "max hops", &_max_hops,
-			"METRIC", cpElement, "GridGenericMetric element", &_metric,
-			"LOG", cpElement, "GridGenericLogger element", &_log,
-			"WST0", cpUnsigned, "initial weight settling time, wst0 (msec)", &_wst0,
-			"ALPHA", cpUnsigned, "alpha parameter for settling time computation, in percent (0 <= ALPHA <= 100)", &_alpha,
-			"SEQ0", cpUnsigned, "initial sequence number (must be even)", &_seq_no,
-			"MTU", cpUnsigned, "interface MTU", &_mtu,
-			"IGNORE_INVALID_ROUTES", cpBool, "ignore routes with invalid metrics?", &_ignore_invalid_routes,
+  int res = cp_va_kparse(conf, this, errh,
+			 "TIMEOUT", cpkP+cpkM, cpUnsigned, &_timeout,
+			 "PERIOD", cpkP+cpkM, cpUnsigned, &_period,
+			 "JITTER", cpkP+cpkM, cpUnsigned, &_jitter,
+			 "MIN_TRIGGER_PERIOD", cpkP+cpkM, cpUnsigned, &_min_triggered_update_period,
+			 "ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
+			 "IP", cpkP+cpkM, cpIPAddress, &_ip,
+			 "VERBOSE", 0, cpBool, &_verbose,
+			 "GW", 0, cpElement, &_gw_info,
+			 "MAX_HOPS", 0, cpUnsigned, &_max_hops,
+			 "METRIC", 0, cpElement, &_metric,
+			 "LOG", 0, cpElement, &_log,
+			 "WST0", 0, cpUnsigned, &_wst0,
+			 "ALPHA", 0, cpUnsigned, &_alpha,
+			 "SEQ0", 0, cpUnsigned, &_seq_no,
+			 "MTU", 0, cpUnsigned, &_mtu,
+			 "IGNORE_INVALID_ROUTES", 0, cpBool, &_ignore_invalid_routes,
 #if SEQ_METRIC
-			"USE_SEQ_METRIC", cpBool, "use `dsdv_seqs' metric?", &_use_seq_metric,
+			 "USE_SEQ_METRIC", 0, cpBool, &_use_seq_metric,
 #endif
-			cpEnd);
+			 cpEnd);
 
   if (res < 0)
     return res;

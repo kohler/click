@@ -6,7 +6,7 @@ CLICK_DECLS
 
 /*
  * =c
- * ThresholdMetric(LinkStat, [, I<KEYWORDS>])
+ * ThresholdMetric(LINKSTAT, [, I<KEYWORDS>])
  * =s Grid
  * =io
  * None

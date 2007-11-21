@@ -44,21 +44,20 @@ FastUDPSource::configure(Vector<String> &conf, ErrorHandler *errh)
     _interval = 0;
     unsigned rate;
     int limit;
-    if (cp_va_parse(conf, this, errh,
-		    cpUnsigned, "send rate", &rate,
-		    cpInteger, "limit", &limit,
-		    cpUnsigned, "packet length", &_len,
-		    cpEthernetAddress, "src eth address", &_ethh.ether_shost,
-		    cpIPAddress, "src ip address", &_sipaddr,
-		    cpUDPPort, "src port", &_sport,
-		    cpEthernetAddress, "dst eth address", &_ethh.ether_dhost,
-		    cpIPAddress, "dst ip address", &_dipaddr,
-		    cpUDPPort, "dst port", &_dport,
-		    cpOptional,
-		    cpBool, "do UDP checksum?", &_cksum,
-		    cpUnsigned, "interval", &_interval,
-		    cpBool, "active?", &_active,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "RATE", cpkP+cpkM, cpUnsigned, &rate,
+		     "LIMIT", cpkP+cpkM, cpInteger, &limit,
+		     "LENGTH", cpkP+cpkM, cpUnsigned, &_len,
+		     "SRCETH", cpkP+cpkM, cpEthernetAddress, &_ethh.ether_shost,
+		     "SRCIP", cpkP+cpkM, cpIPAddress, &_sipaddr,
+		     "SPORT", cpkP+cpkM, cpUDPPort, &_sport,
+		     "DSTETH", cpkP+cpkM, cpEthernetAddress, &_ethh.ether_dhost,
+		     "DSTIP", cpkP+cpkM, cpIPAddress, &_dipaddr,
+		     "DPORT", cpkP+cpkM, cpUDPPort, &_dport,
+		     "CHECKSUM", cpkP, cpBool, &_cksum,
+		     "INTERVAL", cpkP, cpUnsigned, &_interval,
+		     "ACTIVE", cpkP, cpBool, &_active,
+		     cpEnd) < 0)
 	return -1;
     if (sp >= 0x10000 || dp >= 0x10000)
 	return errh->error("source or destination port too large");

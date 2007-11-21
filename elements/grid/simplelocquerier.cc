@@ -41,11 +41,11 @@ SimpleLocQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
   for (int i = 0; i < conf.size(); i++) {
     IPAddress ip;
     int ilat, ilon;
-    if (cp_va_space_parse(conf[i], this, errh,
-			  cpIPAddress, "IP address", &ip,
-			  cpReal10, "latitude", 7, &ilat,
-			  cpReal10, "longitude", 7, &ilon,
-			  cpEnd) < 0)
+    if (cp_va_space_kparse(conf[i], this, errh,
+			   "IP", cpkP+cpkM, cpIPAddress, &ip,
+			   "LATITUDE", cpkP+cpkM, cpReal10, 7, &ilat,
+			   "LONGITUDE", cpkP+cpkM, cpReal10, 7, &ilon,
+			   cpEnd) < 0)
       return -1;
     grid_location loc((double) ilat /  1.0e7, (double) ilon /  1.0e7);
     _locs.insert(ip, loc);
@@ -100,11 +100,11 @@ SimpleLocQuerier::add_entry(const String &arg, Element *element,
   
   IPAddress ip;
   int ilat, ilon;
-  if (cp_va_space_parse(arg, l, errh,
-			cpIPAddress, "IP address", &ip,
-			cpReal10, "latitude", 7, &ilat,
-			cpReal10, "longitude", 7, &ilon,
-			cpEnd) < 0)
+  if (cp_va_space_kparse(arg, l, errh,
+			 "IP", cpkP+cpkM, cpIPAddress, &ip,
+			 "LATITUDE", cpkP+cpkM, cpReal10, 7, &ilat,
+			 "LONGITUDE", cpkP+cpkM, cpReal10, 7, &ilon,
+			 cpEnd) < 0)
     return -1;
   grid_location loc((double) ilat /  1.0e7, (double) ilon /  1.0e7);
   l->_locs.insert(ip, loc);

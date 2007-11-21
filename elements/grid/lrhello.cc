@@ -36,15 +36,14 @@ SendGridLRHello::~SendGridLRHello()
 int
 SendGridLRHello::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpInteger, "period (msec)", &_period,
-			cpInteger, "jitter (msec)", &_jitter,
-			cpEthernetAddress, "source Ethernet address", &_from_eth,
-			cpIPAddress, "source IP address", &_from_ip,
-                        cpElement, "UpdateGridRoutes element", &_nbr,
-			cpOptional,
-			cpInteger, "max nbr hops", &_hops,
-			cpEnd);
+    int res = cp_va_kparse(conf, this, errh,
+			   "PERIOD", cpkP+cpkM, cpInteger, &_period,
+			   "JITTER", cpkP+cpkM, cpInteger, &_jitter,
+			   "ETH", cpkP+cpkM, cpEthernetAddress, &_from_eth,
+			   "IP", cpkP+cpkM, cpIPAddress, &_from_ip,
+			   "UPDATEROUTES", cpkP+cpkM, cpElement, &_nbr,
+			   "MAXHOPS", cpkP, cpInteger, &_hops,
+			   cpEnd);
   if (res < 0)
     return res;
 

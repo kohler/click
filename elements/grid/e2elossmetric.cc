@@ -43,11 +43,10 @@ E2ELossMetric::cast(const char *n)
 int
 E2ELossMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpElement, "LinkStat element", &_ls,
-			cpKeywords, 
-			"TWOWAY", cpBool, "use delivery ratios in both link directions?", &_twoway,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "LINKSTAT", cpkP+cpkM, cpElement, &_ls,
+			 "TWOWAY", 0, cpBool, &_twoway,
+			 cpEnd);
   if (res < 0)
     return res;
   if (_ls == 0) 

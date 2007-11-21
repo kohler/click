@@ -69,14 +69,14 @@ IP6RouteTable::add_route_handler(const String &conf, Element *e, void *, ErrorHa
     int port, ok;
 
     if (words.size() == 2)
-        ok = cp_va_parse(words, r, errh,
-                         cpIP6AddressOrPrefix, "routing prefix", &dst, &mask,
-                         cpInteger, "output port", &port, cpEnd);
+        ok = cp_va_kparse(words, r, errh,
+			  "PREFIX", cpkP+cpkM, cpIP6AddressOrPrefix, &dst, &mask,
+			  "PORT", cpkP+cpkM, cpInteger, &port, cpEnd);
     else
-        ok = cp_va_parse(words, r, errh,
-                         cpIP6AddressOrPrefix, "routing prefix", &dst, &mask,
-                         cpIP6Address, "gateway address", &gw,
-                         cpInteger, "output port", &port, cpEnd);
+        ok = cp_va_kparse(words, r, errh,
+			  "PREFIX", cpkP+cpkM, cpIP6AddressOrPrefix, &dst, &mask,
+			  "GATEWAY", cpkP+cpkM, cpIP6Address, &gw,
+			  "PORT", cpkP+cpkM, cpInteger, &port, cpEnd);
 
     if (ok >= 0 && (port < 0 || port >= r->noutputs()))
         ok = errh->error("output port out of range");
@@ -96,9 +96,9 @@ IP6RouteTable::remove_route_handler(const String &conf, Element *e, void *, Erro
     IP6Address a, mask;
     int ok = 0;
 
-    ok = cp_va_parse(words, r, errh,
-		     cpIP6AddressOrPrefix, "routing prefix", &a, &mask,
-		     cpEnd);
+    ok = cp_va_kparse(words, r, errh,
+		      "PREFIX", cpkP+cpkM, cpIP6AddressOrPrefix, &a, &mask,
+		      cpEnd);
 
     if (ok >= 0)
 	ok = r->remove_route(a, mask, errh);

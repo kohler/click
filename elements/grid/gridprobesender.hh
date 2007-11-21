@@ -10,12 +10,12 @@ CLICK_DECLS
 
 /*
  * =c
- * GridProbeSender(E, I)
+ * GridProbeSender(ETH, IP)
  * =s Grid
  * Produces a Grid route probe packet.
  * =d
  * 
- * E and I are this node's ethernet and IP addresses, respectively.
+ * ETH and IP are this node's ethernet and IP addresses, respectively.
  * When the element's send_probe handler is called, pushes a
  * GRID_ROUTE_PROBE packet for the specified destination, with the
  * specified nonce.  This packet should probably be sent back through

@@ -36,10 +36,10 @@ GridEncap::~GridEncap()
 int
 GridEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpEthernetAddress, "Ethernet address", &_eth,
-		  cpIPAddress, "IP address", &_ip,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
+		   "IP", cpkP+cpkM, cpIPAddress, &_ip,
+		   cpEnd) < 0)
     return -1;
 
   memset(&_eh, 0, sizeof(_eh));

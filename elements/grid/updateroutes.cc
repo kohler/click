@@ -54,15 +54,14 @@ UpdateGridRoutes::cast(const char *n)
 int
 UpdateGridRoutes::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpInteger, "entry timeout (msec)", &_timeout,
-			cpInteger, "Hello broadcast period (msec)", &_period,
-			cpInteger, "Hello broadcast jitter (msec)", &_jitter,
-			cpEthernetAddress, "source Ethernet address", &_ethaddr,
-			cpIPAddress, "source IP address", &_ipaddr,
-			cpOptional,
-			cpInteger, "max hops", &_max_hops,
-			cpEnd);
+    int res = cp_va_kparse(conf, this, errh,
+			   "TIMEOUT", cpkP+cpkM, cpInteger, &_timeout,
+			   "PERIOD", cpkP+cpkM, cpInteger, &_period,
+			   "JITTER", cpkP+cpkM, cpInteger, &_jitter,
+			   "ETH", cpkP+cpkM, cpEthernetAddress, &_ethaddr,
+			   "IP", cpkP+cpkM, cpIPAddress, &_ipaddr,
+			   "MAXHOPS", cpkP, cpInteger, &_max_hops,
+			   cpEnd);
   if (res < 0)
     return res;
 

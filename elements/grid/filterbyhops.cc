@@ -39,9 +39,9 @@ int
 FilterByGridHops::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int mh;
-  int res = cp_va_parse(conf, this, errh,
-			cpInteger, "max hops", &mh,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "HOPS", cpkP+cpkM, cpInteger, &mh,
+			 cpEnd);
   if (res < 0)
     return res;
 

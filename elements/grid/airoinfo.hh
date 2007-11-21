@@ -18,7 +18,7 @@ CLICK_DECLS
 
 /*
  * =c
- * AiroInfo(INTERFACE-NAME)
+ * AiroInfo(DEVNAME)
  * =s Grid
  * =d
  *

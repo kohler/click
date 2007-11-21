@@ -48,10 +48,10 @@ FloodingLocQuerier::~FloodingLocQuerier()
 int
 FloodingLocQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpEthernetAddress, "Ethernet address", &_my_en,
-		     cpIPAddress, "IP address", &_my_ip,
-		     cpEnd);
+  return cp_va_kparse(conf, this, errh,
+		      "ETH", cpkP+cpkM, cpEthernetAddress, &_my_en,
+		      "IP", cpkP+cpkM, cpIPAddress, &_my_ip,
+		      cpEnd);
 }
 
 int

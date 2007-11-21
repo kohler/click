@@ -43,12 +43,11 @@ ThresholdMetric::cast(const char *n)
 int
 ThresholdMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpElement, "LinkStat element", &_ls,
-			cpKeywords,
-			"THRESH", cpUnsigned, "delivery ratio threshold, 0--100 percent", &_thresh,
-			"TWOWAY", cpBool, "apply threshold to delivery ratios in both link directions?", &_twoway,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "LINKSTAT", cpkP+cpkM, cpElement, &_ls,
+			 "THRESH", 0, cpUnsigned, &_thresh,
+			 "TWOWAY", 0, cpBool, &_twoway,
+			 cpEnd);
   if (res < 0)
     return res;
   if (_ls == 0) 

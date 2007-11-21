@@ -36,10 +36,9 @@ LinkTestReceiver::~LinkTestReceiver()
 int
 LinkTestReceiver::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpOptional,
-			cpElement, "AiroInfo element", &_ai,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "AIROINFO", cpkP, cpElement, &_ai,
+			 cpEnd);
   if (res < 0)
     return res;
   return 0;

@@ -38,11 +38,10 @@ GridLogger::configure(Vector<String> &conf, ErrorHandler *errh)
   String logfile;
   bool short_ip = true;
 
-  int res = cp_va_parse(conf, this, errh,
-			cpKeywords,
-			"LOGFILE", cpString, "logfile name", &logfile,
-			"SHORT_IP", cpBool, "log short IP addresses?", &short_ip,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "LOGFILE", 0, cpString, &logfile,
+			 "SHORT_IP", 0, cpBool, &short_ip,
+			 cpEnd);
   if (res < 0)
     return res;
 

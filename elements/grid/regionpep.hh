@@ -3,7 +3,7 @@
 
 /*
  * =c
- * EstimateRouterRegion(IP, [fixed?, fix-lat, fix-lon])
+ * EstimateRouterRegion(IP, [FIXED, LATITUDE, LONGITUDE])
  * =s Grid
  * =d
  * Run the Region-based Grid Position Estimation Protocol. Subtypes

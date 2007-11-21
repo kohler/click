@@ -7,7 +7,7 @@ CLICK_DECLS
 
 /*
  * =c
- * GridGatewayInfo(GridGenericRouteTable, IS_GATEWAY)
+ * GridGatewayInfo(ROUTETABLE, IS_GATEWAY)
  * =s Grid
  * Manage grid node gateway info. 
  *

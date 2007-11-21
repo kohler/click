@@ -3,7 +3,7 @@
 
 /*
  * =c
- * LookupGeographicGridRoute(MAC-ADDRESS, IP-ADDRESS, GridGenericRouteTable, GridLocationInfo)
+ * LookupGeographicGridRoute(ETH, IP, GRIDROUTES, LOCINFO)
  *
  * =s Grid
  * =d 

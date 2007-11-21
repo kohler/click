@@ -489,10 +489,10 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
 	is.u.output = outnum;
     
     } else if (word == "keep") {
-	if (cp_va_space_parse(rest, this, ErrorHandler::silent_handler(),
-			      cpUnsigned, "forward output", &is.u.pattern.fport,
-			      cpUnsigned, "reverse output", &is.u.pattern.rport,
-			      cpEnd) < 0)
+	if (cp_va_space_kparse(rest, this, ErrorHandler::silent_handler(),
+			       "FOUTPUT", cpkP+cpkM, cpUnsigned, &is.u.pattern.fport,
+			       "ROUTPUT", cpkP+cpkM, cpUnsigned, &is.u.pattern.rport,
+			       cpEnd) < 0)
 	    return cerrh.error("syntax error, expected 'keep FOUTPUT ROUTPUT'");
 	if (is.u.pattern.fport >= noutputs() || is.u.pattern.rport >= noutputs())
 	    return cerrh.error("output port out of range");

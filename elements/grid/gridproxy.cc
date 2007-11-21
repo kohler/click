@@ -49,9 +49,9 @@ GridProxy::configure(Vector<String> &conf, ErrorHandler *errh)
   iph.ip_sum = 0;
   iph.ip_p = 4; /* IP in IP */
 
-  int res = cp_va_parse(conf, this, errh,
-			cpIPAddress, "proxy address", &iph.ip_src,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "IP", cpkP+cpkM, cpIPAddress, &iph.ip_src,
+			 cpEnd);
 
   if (res < 0)
     return res;

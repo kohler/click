@@ -31,13 +31,11 @@ IP6Print::configure(Vector<String> &conf, ErrorHandler *errh)
     _label = "";
     _contents = false;
   
-    if (cp_va_parse(conf, this, errh,
-		    cpOptional,
-		    cpString, "label", &_label,
-		    cpKeywords,
-		    "CONTENTS", cpBool, "print packet contents", &_contents,
-		    "NBYTES", cpUnsigned, "max data bytes to print", &_bytes,
-		    cpEnd) < 0)
+    if (cp_va_kparse(conf, this, errh,
+		     "LABEL", cpkP, cpString, &_label,
+		     "CONTENTS", 0, cpBool, &_contents,
+		     "NBYTES", 0, cpUnsigned, &_bytes,
+		     cpEnd) < 0)
 	return -1;
     return 0;
 }

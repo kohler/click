@@ -43,10 +43,10 @@ ETX2Metric::cast(const char *n)
 int
 ETX2Metric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpElement, "data packet size LinkStat element", &_ls_data,
-			cpElement, "ACK packet size LinkStat element", &_ls_ack,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "DATA_LINKSTAT", cpkP+cpkM, cpElement, &_ls_data,
+			 "ACK_LINKSTAT", cpkP+cpkM, cpElement, &_ls_ack,
+			 cpEnd);
   if (res < 0)
     return res;
   if (_ls_data == 0) 

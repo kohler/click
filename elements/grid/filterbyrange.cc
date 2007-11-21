@@ -36,10 +36,10 @@ FilterByRange::~FilterByRange()
 int
 FilterByRange::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_parse(conf, this, errh,
-			cpInteger, "range (metres)", &_range,
-                        cpElement, "GridLocationInfo element", &_locinfo,
-			cpEnd);
+  int res = cp_va_kparse(conf, this, errh,
+			 "RANGE", cpkP+cpkM, cpInteger, &_range,
+			 "LOCINFO", cpkP+cpkM, cpElement, &_locinfo,
+			 cpEnd);
 
   return res;
 }

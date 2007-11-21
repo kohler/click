@@ -7,7 +7,7 @@ CLICK_DECLS
 
 /*
  * =c
- * PrintGrid([TAG] [, KEYWORDS])
+ * PrintGrid([LABEL] [, KEYWORDS])
  * =s Grid
  * =d
  * Assumes input packets have Ethernet headers enclosing Grid

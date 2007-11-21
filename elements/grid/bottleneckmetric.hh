@@ -6,7 +6,7 @@ CLICK_DECLS
 
 /*
  * =c
- * BottleneckMetric(LinkStat)
+ * BottleneckMetric(LINKSTAT)
  * =s Grid
  * =io
  * None

@@ -3,7 +3,7 @@
 
 /*
  * =c
- * PEP(IP, [fixed?, fix-lat, fix-lon])
+ * PEP(IP, [FIXED, LATITUDE, LONGITUDE])
  * =s Grid
  * runs the Grid Position Estimation Protocol
  * =d

@@ -20,10 +20,9 @@ PacketLogger2::~PacketLogger2()
 int
 PacketLogger2::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpKeywords,
-		  "NBYTES", cpUnsigned, "number of bytes to record", &_nb,
-		  cpEnd) < 0) {
+  if (cp_va_kparse(conf, this, errh,
+		   "NBYTES", 0, cpUnsigned, &_nb,
+		   cpEnd) < 0) {
     return -1;
   }
 

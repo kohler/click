@@ -43,18 +43,16 @@ PrintGrid::~PrintGrid()
 int
 PrintGrid::configure(Vector<String> &conf, ErrorHandler* errh)
 {
-  if (cp_va_parse(conf, this, errh,
-                  cpOptional,
-		  cpString, "label", &_label,
-		  cpKeywords,
-		  "SHOW_ROUTES", cpBool, "print route entries in advertisments?", &_print_routes,
-		  "SHOW_PROBE_CONTENTS", cpBool, "print link probe entries?", &_print_probe_entries,
-		  "VERBOSE", cpBool, "show more detail?", &_verbose,
-		  "TIMESTAMP", cpBool, "print packet timestamps?", &_timestamp,
-		  "PRINT_ETH", cpBool, "print ethernet headers?", &_print_eth,
-		  cpEnd) < 0)
-    return -1;
-  return(0);
+    if (cp_va_kparse(conf, this, errh,
+		     "LABEL", cpkP, cpString, &_label,
+		     "SHOW_ROUTES", 0, cpBool, &_print_routes,
+		     "SHOW_PROBE_CONTENTS", 0, cpBool, &_print_probe_entries,
+		     "VERBOSE", 0, cpBool, &_verbose,
+		     "TIMESTAMP", 0, cpBool, &_timestamp,
+		     "PRINT_ETH", 0, cpBool, &_print_eth,
+		     cpEnd) < 0)
+	return -1;
+    return(0);
 }
 
 String
