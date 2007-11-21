@@ -199,7 +199,7 @@ int cp_errno;
  *  @return Pointer to first non-space character in [@a begin, @a end), or
  *          @a end if the string is all spaces.
  *
- *  Space characters are defined by as by isspace() in the "C" locale, and
+ *  Space characters are defined as by isspace() in the "C" locale, and
  *  consist of the characters in <tt>[ \\f\\n\\r\\t\\v]</tt>. */
 const char *
 cp_skip_space(const char *begin, const char *end)

@@ -257,7 +257,8 @@ extern const CpVaParseCmd
     cpIPPrefix,		///< Result storage IPAddress* addr and IPAddress *mask, parsed by cp_ip_prefix().
     cpIPAddressOrPrefix,///< Result storage IPAddress* addr and IPAddress *mask, parsed by cp_ip_prefix().
     cpIPAddressList,	///< Result storage Vector<IPAddress>*, parsed by cp_ip_address_list().
-    cpEthernetAddress,	///< Result storage EtherAddress*, parsed by cp_ethernet_address().
+    cpEtherAddress,	///< Result storage EtherAddress*, parsed by cp_ethernet_address().
+    cpEthernetAddress,	///< Result storage EtherAddress*, parsed by cp_ethernet_address().  Synonym for cpEtherAddress.
     cpTCPPort,		///< Result storage uint16_t*, parsed by cp_tcpudp_port().
     cpUDPPort,		///< Result storage uint16_t*, parsed by cp_tcpudp_port().
     cpElement,		///< Result storage Element**, parsed by cp_element().
@@ -278,7 +279,6 @@ extern const CpVaParseCmd
 // old names, here for compatibility:
 extern const CpVaParseCmd
     cpInterval CLICK_CONFPARSE_DEPRECATED,		// struct timeval*
-    cpEtherAddress CLICK_CONFPARSE_DEPRECATED,		// EtherAddress*
     cpReadHandlerCall CLICK_CONFPARSE_DEPRECATED,	// HandlerCall**
     cpWriteHandlerCall CLICK_CONFPARSE_DEPRECATED;	// HandlerCall**
 //@}
