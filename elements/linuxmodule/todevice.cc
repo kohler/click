@@ -257,21 +257,11 @@ ToDevice::run_task(Task *)
     
 #if HAVE_LINUX_POLLING
     bool is_polling = (_dev->polling > 0);
-    if (is_polling) {
-	struct sk_buff *skbs = _dev->tx_clean(_dev);
-# if CLICK_DEVICE_STATS
-	if (_activations > 0 && skbs)
-	    GET_STATS_RESET(low00, low10, time_now, 
-			    _perfcnt1_clean, _perfcnt2_clean, _time_clean);
-# endif
-	if (skbs)
-	    skbmgr_recycle_skbs(skbs);
-# if CLICK_DEVICE_STATS
-	if (_activations > 0 && skbs)
-	    GET_STATS_RESET(low00, low10, time_now, 
-			    _perfcnt1_freeskb, _perfcnt2_freeskb, _time_freeskb);
-# endif
-    }
+    struct sk_buff *clean_skbs;
+    if (is_polling)
+	clean_skbs = _dev->tx_clean(_dev);
+    else
+	clean_skbs = 0;
 #endif
   
     /* try to send from click */
@@ -364,6 +354,22 @@ ToDevice::run_task(Task *)
     
 #if HAVE_LINUX_POLLING
     if (is_polling) {
+	// 8.Dec.07: Do not recycle skbs until after unlocking the device, to
+	// avoid deadlock.  After initial patch by Joonwoo Park.
+	if (clean_skbs) {
+# if CLICK_DEVICE_STATS
+	    if (_activations > 1)
+		GET_STATS_RESET(low00, low10, time_now, 
+				_perfcnt1_clean, _perfcnt2_clean, _time_clean);
+# endif
+	    skbmgr_recycle_skbs(clean_skbs);
+# if CLICK_DEVICE_STATS
+	    if (_activations > 1)
+		GET_STATS_RESET(low00, low10, time_now, 
+				_perfcnt1_freeskb, _perfcnt2_freeskb, _time_freeskb);
+# endif
+	}
+
 	reschedule = true;
 	// 9/18/06: Frederic Van Quickenborne reports (1/24/05) that ticket
 	// adjustments in FromDevice+ToDevice cause odd behavior.  The ticket
