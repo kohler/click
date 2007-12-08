@@ -2513,7 +2513,7 @@ cp_ethernet_address(const String &str, unsigned char *result
     } else
       goto bad;
     if (d == 5) break;
-    if (i >= len - 1 || s[i] != ':')
+    if (i >= len - 1 || (s[i] != ':' && s[i] != '-'))
       goto bad;
     i++;
   }
@@ -2537,13 +2537,13 @@ cp_ethernet_address(const String &str, unsigned char *result
  * @param  context  optional context for AddressInfo
  * @return  True if @a str parsed correctly, false otherwise.
  *
- * Parses an Ethernet address from @a str.  The input format is the usual
- * format, as in <tt>"00:15:58:2D:FB:8F"</tt>: six colon-separated 8-bit
- * hexadecimal numbers.  The AddressInfo element can be used to register
- * shorthand names for other Ethernet addresses.  If the string fully parses,
- * then the resulting value is stored in *@a result and the function returns
- * true.  Otherwise, *@a result remains unchanged and the function returns
- * false.
+ * Parses an Ethernet address from @a str.  The input format is the IEEE
+ * standard format, as in <tt>"00-15-58-2D-FB-8F"</tt>: six dash-separated
+ * 8-bit hexadecimal numbers in transmission order.  Colons are also accepted
+ * as separators.  The AddressInfo element can be used to register shorthand
+ * names for other Ethernet addresses.  If the string fully parses, then the
+ * resulting value is stored in *@a result and the function returns true.
+ * Otherwise, *@a result remains unchanged and the function returns false.
  *
  * An overloaded version of this function is available for unsigned char[6]
  * result type.

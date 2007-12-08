@@ -13,6 +13,7 @@ class EtherAddress { public:
     typedef bool (EtherAddress::*unspecified_bool_type)() const;
     inline operator unspecified_bool_type() const;
     inline bool is_group() const;
+    inline bool is_broadcast() const;
     
     inline unsigned char *data();
     inline const unsigned char *data() const;
@@ -24,6 +25,7 @@ class EtherAddress { public:
     // bool operator!=(EtherAddress, EtherAddress);
 
     String unparse() const;
+    String unparse_colon() const;
 
     inline operator String() const;
     inline String s() const;
@@ -34,7 +36,7 @@ class EtherAddress { public:
   
 };
 
-/** @brief Constructs an EtherAddress equal to 00:00:00:00:00:00. */
+/** @brief Constructs an EtherAddress equal to 00-00-00-00-00-00. */
 inline
 EtherAddress::EtherAddress()
 {
@@ -51,7 +53,7 @@ EtherAddress::EtherAddress(const unsigned char *data)
     memcpy(_data, data, 6);
 }
 
-/** @brief Returns true iff the address is not 00:00:00:00:00:00. */
+/** @brief Returns true iff the address is not 00-00-00-00-00-00. */
 inline
 EtherAddress::operator unspecified_bool_type() const
 {
@@ -61,11 +63,20 @@ EtherAddress::operator unspecified_bool_type() const
 /** @brief Returns true iff this address is a group address.
 
     Group addresses have the low-order bit of the first byte set to 1, as in
-    01:00:00:00:00:00. */
+    01-00-00-00-00-00. */
 inline bool
 EtherAddress::is_group() const
 {
     return data()[0] & 1;
+}
+
+/** @brief Returns true iff this address is the broadcast address.
+
+    The Ethernet broadcast address is FF-FF-FF-FF-FF-FF. */
+inline bool
+EtherAddress::is_broadcast() const
+{
+    return _data[0] == 0xFFFF && _data[1] == 0xFFFF && _data[2] == 0xFFFF;
 }
 
 /** @brief Returns a pointer to the address data. */

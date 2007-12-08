@@ -49,7 +49,7 @@ Any name can be simultaneously associated with an IP address, an IP network
 address, and an Ethernet address. The kind of address that is returned is
 generally determined from context. For example:
 
-   AddressInfo(mauer 10.0.0.1/8 00:50:BA:85:84:A9);
+   AddressInfo(mauer 10.0.0.1/8 00-50-BA-85-84-A9);
    ... -> IPEncap(6, mauer, ...)                  // as IP address
        -> EtherEncap(0x0800, mauer, ...) -> ...   // as Ethernet address
    ... -> ARPResponder(mauer) -> ...              // as IP prefix AND Ethernet address!

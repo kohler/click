@@ -37,12 +37,12 @@ ARPFaker::~ARPFaker()
 int
 ARPFaker::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "DSTIP", cpkP+cpkM, cpIPAddress, &_ip1,
-		      "DSTETH", cpkP+cpkM, cpEthernetAddress, &_eth1,
-		      "SRCIP", cpkP+cpkM, cpIPAddress, &_ip2,
-		      "SRCETH", cpkP+cpkM, cpEthernetAddress, &_eth2,
-		      cpEnd);
+    return cp_va_kparse(conf, this, errh,
+			"DSTIP", cpkP+cpkM, cpIPAddress, &_ip1,
+			"DSTETH", cpkP+cpkM, cpEthernetAddress, &_eth1,
+			"SRCIP", cpkP+cpkM, cpIPAddress, &_ip2,
+			"SRCETH", cpkP+cpkM, cpEthernetAddress, &_eth2,
+			cpEnd);
 }
 
 int

@@ -53,7 +53,6 @@ CheckARPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (cp_va_kparse(conf, this, errh,
 		   "OFFSET", cpkP, cpUnsigned, &_offset,
-		   "OFFSET", 0, cpUnsigned, &_offset,
 		   "VERBOSE", 0, cpBool, &verbose,
 		   "DETAILS", 0, cpBool, &details,
 		   cpEnd) < 0)
