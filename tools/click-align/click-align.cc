@@ -348,6 +348,7 @@ main(int argc, char **argv)
   click_static_initialize();
   CLICK_DEFAULT_PROVIDES;
   ErrorHandler *errh = ErrorHandler::default_handler();
+  PrefixErrorHandler p_errh(errh, "click-align: ");
 
   // read command line arguments
   Clp_Parser *clp =
@@ -434,7 +435,20 @@ particular purpose.\n");
 	exit(1);
 
     // get element map and processing
-    element_map.parse_all_files(router, CLICK_DATADIR, errh);
+    element_map.parse_all_files(router, CLICK_DATADIR, &p_errh);
+
+    // we know that Classifier requires alignment.  If the element map does
+    // not, complain loudly.
+    if (!element_map.has_traits("Classifier")) {
+	p_errh.warning("elementmap has no information for Classifier, muddling along");
+	p_errh.message("(This is usually because of a missing 'elementmap.xml'.\nYou may get errors when running this configuration.)");
+	const char *classes[] = { "Classifier", "IPClassifier", "IPFilter", "CheckIPHeader", "CheckIPHeader2", "UDPIPEncap", "IPInputCombo", 0 };
+	for (const char **sp = classes; *sp; ++sp) {
+	    ElementTraits t = element_map.traits(*sp);
+	    t.flags += "A";
+	    element_map.add(t);
+	}
+    }
 
     // decide on a driver
     if (specified_driver >= 0) {

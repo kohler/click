@@ -634,7 +634,7 @@ ElementMap::parse_default_file(const String &default_path, ErrorHandler *errh)
 	parse(text);
 	return true;
     } else {
-	errh->warning("cannot find default elementmap");
+	errh->warning("default elementmap missing");
 	return false;
     }
 }
@@ -683,7 +683,7 @@ ElementMap::parse_requirement_files(RouterT *r, const String &default_path, Erro
     if (not_found_store)
 	*not_found_store = not_found;
     if (not_found) {
-	errh->warning("cannot find package-specific elementmaps:\n  %s", not_found.c_str());
+	errh->warning("package-specific elementmaps missing:\n  %s", not_found.c_str());
 	return false;
     } else
 	return true;
@@ -708,7 +708,7 @@ ElementMap::report_file_not_found(String default_path, bool found_default,
 				  ErrorHandler *errh)
 {
     if (!found_default)
-	errh->message("(You may get unknown element class errors.\nTry 'make install' or set the CLICKPATH evironment variable.");
+	errh->message("(The 'elementmap.xml' file stores information about available elements,\nand is required for correct operation.  'make install' should install it.");
     else
 	errh->message("(You may get unknown element class errors.");
 

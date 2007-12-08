@@ -18,8 +18,6 @@ collects differences in timestamps
 For each passing packet, measures the elapsed time since the packet's
 timestamp. Keeps track of the total elapsed time accumulated over all packets.
 
-=n
-
 =h count read-only
 Returns the number of packets that have passed.
 
