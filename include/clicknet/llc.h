@@ -51,7 +51,8 @@
  * compilers.
  */
 
-struct click_llc {
+CLICK_SIZE_PACKED_STRUCTURE(
+struct click_llc {,
 	uint8_t	llc_dsap;
 	uint8_t	llc_ssap;
 	union {
@@ -89,7 +90,7 @@ struct click_llc {
 		uint8_t control_ext;
 	    } type_raw;
 	} llc_un;
-};
+});
 
 #define llc_control            llc_un.type_u.control
 #define	llc_control_ext        llc_un.type_raw.control_ext
