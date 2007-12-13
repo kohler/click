@@ -66,8 +66,8 @@ class ICMPRewriter : public Element { public:
   ~ICMPRewriter();
 
   const char *class_name() const	{ return "ICMPRewriter"; }
-  const char *port_count() const	{ return "1/1-2"; }
-  const char *processing() const	{ return AGNOSTIC; }
+  const char *port_count() const	{ return PORTS_1_1X2; }
+  const char *processing() const	{ return PROCESSING_A_AH; }
 
   int configure(Vector<String> &, ErrorHandler *);
 

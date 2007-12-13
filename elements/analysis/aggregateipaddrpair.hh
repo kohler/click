@@ -64,8 +64,8 @@ class AggregateIPAddrPair : public Element, public AggregateNotifier { public:
     ~AggregateIPAddrPair();
 
     const char *class_name() const	{ return "AggregateIPAddrPair"; }
-    const char *port_count() const	{ return "1/1-2"; }
-    const char *processing() const	{ return "a/ah"; }
+    const char *port_count() const	{ return PORTS_1_1X2; }
+    const char *processing() const	{ return PROCESSING_A_AH; }
     void *cast(const char *);
 
     int configure(Vector<String> &, ErrorHandler *);

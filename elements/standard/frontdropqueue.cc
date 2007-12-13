@@ -116,7 +116,7 @@ FrontDropQueue::push(int, Packet *p)
     if (next == _head) {
 	if (_drops == 0)
 	    click_chatter("%{element}: overflow", this);
-	_q[_head]->kill();
+	checked_output_push(1, _q[_head]);
 	_drops++;
 	_head = next_i(_head);
     }

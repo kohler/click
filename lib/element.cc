@@ -42,12 +42,14 @@ const char Element::PORTS_0_0[] = "0";
 const char Element::PORTS_0_1[] = "0/1";
 const char Element::PORTS_1_0[] = "1/0";
 const char Element::PORTS_1_1[] = "1";
+const char Element::PORTS_1_1X2[] = "1/1-2";
 
 const char Element::AGNOSTIC[] = "a";
 const char Element::PUSH[] = "h";
 const char Element::PULL[] = "l";
 const char Element::PUSH_TO_PULL[] = "h/l";
 const char Element::PULL_TO_PUSH[] = "l/h";
+const char Element::PROCESSING_A_AH[] = "a/ah";
 
 const char Element::COMPLETE_FLOW[] = "x/x";
 
@@ -655,6 +657,7 @@ Element::set_nports(int new_ninputs, int new_noutputs)
  * @arg @c PORTS_0_1 for @c "0/1"
  * @arg @c PORTS_1_0 for @c "1/0"
  * @arg @c PORTS_1_1 for @c "1/1"
+ * @arg @c PORTS_1_1X2 for @c "1/1-2"
  *
  * Since port_count() should simply return a C string constant, it shouldn't
  * matter when it's called; nevertheless, it is called before configure().
@@ -1073,6 +1076,7 @@ Element::port_flow(bool isoutput, int p, Bitvector* travels) const
  * @arg @c PULL for @c "l/l"
  * @arg @c PUSH_TO_PULL for @c "h/l"
  * @arg @c PULL_TO_PUSH for @c "l/h"
+ * @arg @c PROCESSING_A_AH for @c "a/ah"
  *
  * Since processing() should simply return a C string constant, it shouldn't
  * matter when it's called; nevertheless, it is called before configure().

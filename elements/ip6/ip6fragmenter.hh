@@ -47,7 +47,7 @@ class IP6Fragmenter : public Element {
   ~IP6Fragmenter();
   
   const char *class_name() const		{ return "IP6Fragmenter"; }
-  const char *port_count() const		{ return "1/1-2"; }
+  const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PUSH; }
   int configure(Vector<String> &, ErrorHandler *);
   

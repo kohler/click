@@ -33,7 +33,8 @@ Returns or sets the queue's capacity.
 
 =h drops read-only
 
-Returns the number of packets dropped by the Queue so far.
+Returns the number of packets dropped by the Queue so far.  Dropped packets
+are emitted on output 1 if output 1 exists.
 
 =h reset_counts write-only
 

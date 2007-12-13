@@ -30,7 +30,7 @@ class FilterPhyErr : public Element { public:
   
   const char *class_name() const		{ return "FilterPhyErr"; }
   const char *port_count() const		{ return "1/1-3"; }
-  const char *processing() const		{ return "a/ah"; }
+  const char *processing() const		{ return PROCESSING_A_AH; }
 
   void add_handlers();
   Packet *simple_action(Packet *);  

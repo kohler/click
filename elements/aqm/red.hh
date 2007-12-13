@@ -113,8 +113,8 @@ class RED : public Element { public:
     ~RED();
 
     const char *class_name() const		{ return "RED"; }
-    const char *port_count() const		{ return "1/1-2"; }
-    const char *processing() const		{ return "a/ah"; }
+    const char *port_count() const		{ return PORTS_1_1X2; }
+    const char *processing() const		{ return PROCESSING_A_AH; }
 
     int queue_size() const;
     const ewma_type &average_queue_size() const { return _size; }

@@ -104,7 +104,7 @@ class AnonymizeIPAddr : public Element { public:
     ~AnonymizeIPAddr();
 
     const char *class_name() const	{ return "AnonymizeIPAddr"; }
-    const char *port_count() const	{ return "1/1-2"; }
+    const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return AGNOSTIC; }
 
     int configure(Vector<String> &, ErrorHandler *);

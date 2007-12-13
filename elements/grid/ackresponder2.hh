@@ -32,7 +32,7 @@ public:
 
   const char *class_name() const { return "ACKResponder2"; }
   const char *port_count() const { return "1/2"; }
-  const char *processing() const { return "a/ah"; }
+  const char *processing() const { return PROCESSING_A_AH; }
   const char *flow_code()  const { return "x/xy"; }
 
   int configure(Vector<String> &, ErrorHandler *);

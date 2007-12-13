@@ -164,7 +164,7 @@ SimpleQueue::push(int, Packet *p)
 	if (_drops == 0)
 	    click_chatter("%{element}: overflow", this);
 	_drops++;
-	p->kill();
+	checked_output_push(1, p);
     }
 }
 
@@ -232,7 +232,7 @@ SimpleQueue::write_handler(const String &, Element *e, void *thunk, ErrorHandler
 	while (q->_head != q->_tail) {
 	    int i = q->_head;
 	    q->_head = q->next_i(q->_head);
-	    q->_q[i]->kill();
+	    q->checked_output_push(1, q->_q[i]);
 	}
 	return 0;
       default:

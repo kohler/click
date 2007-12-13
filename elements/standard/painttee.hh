@@ -35,7 +35,7 @@ class PaintTee : public Element {
   
   const char *class_name() const	{ return "PaintTee"; }
   const char *port_count() const	{ return "1/2"; }
-  const char *processing() const	{ return "a/ah"; }
+  const char *processing() const	{ return PROCESSING_A_AH; }
   
   int configure(Vector<String> &, ErrorHandler *);
   

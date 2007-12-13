@@ -54,7 +54,8 @@ my(@all_outnames, %all_outsections, %summaries_by_section, %all_roff_summaries);
 
 my(%processing_constants) =
     ( 'AGNOSTIC' => 'a/a', 'PUSH' => 'h/h', 'PULL' => 'l/l',
-      'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h' );
+      'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h',
+      'PROCESSING_A_AH' => 'a/ah', 'PROCESSING_H_LH' => 'h/lh' );
 my(%processing_text) =
     ( 'a/a' => 'agnostic', 'h/h' => 'push', 'l/l' => 'pull',
       'h/l' => 'push inputs, pull outputs',

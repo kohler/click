@@ -18,10 +18,11 @@
 
 my(%port_count_constants) =
     ('PORTS_0_0' => '0/0', 'PORTS_0_1' => '0/1', 'PORTS_1_0' => '1/0',
-     'PORTS_1_1' => '1/1');
+     'PORTS_1_1' => '1/1', 'PORTS_1_1X2' => '1/1-2');
 my(%processing_constants) =
     ('AGNOSTIC' => 'a/a', 'PUSH' => 'h/h', 'PULL' => 'l/l',
-     'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h');
+     'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h',
+     'PROCESSING_A_AH' => 'a/ah', 'PROCESSING_H_LH' => 'h/lh');
 my(%flow_code_constants) =
     ('COMPLETE_FLOW' => 'x/x');
 my(@source_file, @header_file, @click_name, @cxx_name, @doc_name,

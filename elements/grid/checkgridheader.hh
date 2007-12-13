@@ -29,7 +29,7 @@ class CheckGridHeader : public Element {
   
   const char *class_name() const		{ return "CheckGridHeader"; }
   const char *port_count() const		{ return "1/1-2"; }
-  const char *processing() const		{ return "a/ah"; }
+  const char *processing() const		{ return PROCESSING_A_AH; }
   
   int drops() const				{ return _drops; }
   

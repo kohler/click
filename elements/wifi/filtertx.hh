@@ -31,8 +31,8 @@ class FilterTX : public Element { public:
   ~FilterTX();
   
   const char *class_name() const		{ return "FilterTX"; }
-  const char *port_count() const		{ return "1/1-2"; }
-  const char *processing() const		{ return "a/ah"; }
+  const char *port_count() const		{ return PORTS_1_1X2; }
+  const char *processing() const		{ return PROCESSING_A_AH; }
 
   void add_handlers();
   static String static_print_drops(Element *, void *);

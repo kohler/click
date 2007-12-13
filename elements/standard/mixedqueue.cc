@@ -46,7 +46,7 @@ MixedQueue::push(int port, Packet *p)
 	    if (_drops == 0)
 		click_chatter("%{element}: overflow", this);
 	    _drops++;
-	    p->kill();
+	    checked_output_push(1, p);
 	} else {
 	    _q[_tail] = p;
 	    _tail = pindex;
@@ -58,7 +58,7 @@ MixedQueue::push(int port, Packet *p)
 		click_chatter("%{element}: overflow", this);
 	    _drops++;
 	    _tail = prev_i(_tail);
-	    _q[_tail]->kill();
+	    checked_output_push(1, _q[_tail]);
 	}
 	_q[pindex] = p;
 	_head = pindex;

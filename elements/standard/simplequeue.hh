@@ -48,7 +48,8 @@ Returns or sets the queue's capacity.
 
 =h drops read-only
 
-Returns the number of packets dropped by the queue so far.
+Returns the number of packets dropped by the queue so far.  Dropped packets
+are emitted on output 1 if output 1 exists.
 
 =h reset_counts write-only
 
@@ -79,9 +80,9 @@ class SimpleQueue : public Element, public Storage { public:
     template <typename Filter> Packet* yank1_peek(Filter);
     template <typename Filter> int yank(Filter, Vector<Packet *> &);
 
-    const char* class_name() const		{ return "SimpleQueue"; }
-    const char *port_count() const		{ return PORTS_1_1; }
-    const char* processing() const		{ return PUSH_TO_PULL; }
+    const char *class_name() const		{ return "SimpleQueue"; }
+    const char *port_count() const		{ return PORTS_1_1X2; }
+    const char *processing() const		{ return "h/lh"; }
     void* cast(const char*);
   
     int configure(Vector<String>&, ErrorHandler*);

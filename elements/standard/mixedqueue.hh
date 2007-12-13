@@ -78,7 +78,7 @@ class MixedQueue : public NotifierQueue { public:
     ~MixedQueue();
 
     const char *class_name() const	{ return "MixedQueue"; }
-    const char *port_count() const	{ return "2/1"; }
+    const char *port_count() const	{ return "2/1-2"; }
     void *cast(const char *);
 
     void push(int port, Packet *);

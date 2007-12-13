@@ -48,6 +48,7 @@ class Element { public:
     static const char PORTS_0_1[];
     static const char PORTS_1_0[];
     static const char PORTS_1_1[];
+    static const char PORTS_1_1X2[];
     
     virtual const char *processing() const;
     static const char AGNOSTIC[];
@@ -55,6 +56,7 @@ class Element { public:
     static const char PULL[];
     static const char PUSH_TO_PULL[];
     static const char PULL_TO_PUSH[];
+    static const char PROCESSING_A_AH[];
     
     virtual const char *flow_code() const;
     static const char COMPLETE_FLOW[];
