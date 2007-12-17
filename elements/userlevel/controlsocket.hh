@@ -251,7 +251,7 @@ class ControlSocket : public Element { public:
     String proxied_handler_name(const String &) const;
     const Handler* parse_handler(int fd, const String &, Element **);
     int read_command(int fd, const String &, String, bool readdata);
-    int write_command(int fd, const String &, String, bool writedata);
+    int write_command(int fd, const String &, String);
     int check_command(int fd, const String &, bool write);
     int llrpc_command(int fd, const String &, String);
     int parse_command(int fd, const String &);

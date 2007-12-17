@@ -424,7 +424,7 @@ ControlSocket::read_command(int fd, const String &handlername, String param, boo
 }
 
 int
-ControlSocket::write_command(int fd, const String &handlername, String data, bool writedata)
+ControlSocket::write_command(int fd, const String &handlername, String data)
 {
   Element *e;
   const Handler* h = parse_handler(fd, handlername, &e);
@@ -444,7 +444,7 @@ ControlSocket::write_command(int fd, const String &handlername, String data, boo
   ControlSocketErrorHandler errh;
   
   // call handler
-  int result = h->call_write(data, e, writedata, &errh);
+  int result = h->call_write(data, e, true, &errh);
 
   // add a generic error message for certain handler codes
   int code = errh.error_code();
@@ -615,7 +615,7 @@ ControlSocket::parse_command(int fd, const String &line)
       String data;
       if (words.size() > 2)
 	  data = line.substring(words[2].begin(), words.back().end());
-      return write_command(fd, words[1], data, false);
+      return write_command(fd, words[1], data);
     
   } else if (command == "WRITEDATA" || command == "SETDATA") {
     if (words.size() != 3)
@@ -631,7 +631,7 @@ ControlSocket::parse_command(int fd, const String &line)
     }
     String data = _in_texts[fd].substring(0, datalen);
     _in_texts[fd] = _in_texts[fd].substring(datalen);
-    return write_command(fd, words[1], data, true);
+    return write_command(fd, words[1], data);
 
   } else if (command == "CHECKREAD") {
     if (words.size() != 2)
