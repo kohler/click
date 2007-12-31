@@ -69,18 +69,19 @@ class RouterT : public ElementClassT { public:
     bool connection_live(int c) const		{ return _conn[c].live(); }
 
     class conn_iterator;
-    conn_iterator begin_connections() const;
-    conn_iterator end_connections() const;
+    inline conn_iterator begin_connections() const;
+    inline conn_iterator end_connections() const;
     conn_iterator begin_connections_from(const PortT &port) const;
     conn_iterator begin_connections_from(ElementT *e) const;
     conn_iterator begin_connections_to(const PortT &port) const;
     conn_iterator begin_connections_to(ElementT *e) const;
+    inline conn_iterator find_connection(int ci) const;
     
     void add_tunnel(const String &namein, const String &nameout, const LandmarkT &, ErrorHandler *);
 
     bool add_connection(const PortT &, const PortT &, const LandmarkT &landmark = LandmarkT::empty_landmark());
     inline bool add_connection(ElementT *, int, ElementT *, int, const LandmarkT &landmark = LandmarkT::empty_landmark());
-    void kill_connection(int);
+    void kill_connection(const conn_iterator &);
     void kill_bad_connections();
     void compact_connections();
 
@@ -284,9 +285,10 @@ class RouterT::const_type_iterator { public:
     const ElementT &operator*() const	{ return *_e; }
   private:
     const ElementT *_e;
-    const_type_iterator()		: _e(0) { }
-    const_type_iterator(const RouterT *r, ElementClassT *t, int i) { step(r, t, i); }
-    void step(const RouterT *, ElementClassT *, int);
+    ElementClassT *_t;
+    const_type_iterator()		: _e(0), _t(0) { }
+    const_type_iterator(const RouterT *r, ElementClassT *t, int i) : _t(t) { step(r, i); }
+    void step(const RouterT *, int);
     friend class RouterT;
     friend class RouterT::type_iterator;
 };
@@ -302,6 +304,7 @@ class RouterT::type_iterator : public RouterT::const_type_iterator { public:
 };
 
 class RouterT::conn_iterator { public:
+    inline conn_iterator()			: _conn(0), _by(0) { }
     inline void operator++(int);
     inline void operator++();
     operator const ConnectionT &() const	{ return *_conn; }
@@ -310,8 +313,7 @@ class RouterT::conn_iterator { public:
   private:
     const ConnectionT *_conn;
     int _by;
-    conn_iterator()			: _conn(0), _by(0) { }
-    conn_iterator(const ConnectionT *conn, int by) : _conn(conn), _by(by) { }
+    inline conn_iterator(const ConnectionT *conn, int by);
     void complex_step(const RouterT *);
     friend class RouterT;
 };
@@ -357,13 +359,21 @@ inline void
 RouterT::const_type_iterator::operator++(int)
 {
     if (_e)
-	step(_e->router(), _e->type(), _e->eindex() + 1);
+	step(_e->router(), _e->eindex() + 1);
 }
 
 inline void
 RouterT::const_type_iterator::operator++()
 {
     (*this)++;
+}
+
+inline
+RouterT::conn_iterator::conn_iterator(const ConnectionT *conn, int by)
+    : _conn(conn), _by(by)
+{
+    if (_conn && _conn->dead())
+	(*this)++;
 }
 
 inline RouterT::conn_iterator
@@ -381,17 +391,29 @@ RouterT::end_connections() const
     return conn_iterator();
 }
 
+inline RouterT::conn_iterator
+RouterT::find_connection(int c) const
+{
+    if (c < 0 || c >= _conn.size())
+	return end_connections();
+    else
+	return conn_iterator(&_conn[c], 0);
+}
+
 inline void
 RouterT::conn_iterator::operator++(int)
 {
     if (_conn) {
 	const RouterT *r = _conn->router();
+      again:
 	if (_by == 0)
 	    ++_conn;
 	else
 	    complex_step(r);
 	if (_conn == r->_conn.end())
 	    _conn = 0;
+	else if (!_conn->live())
+	    goto again;
     }
 }
 

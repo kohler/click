@@ -17,7 +17,8 @@ struct ElementT {
     
     bool live() const			{ return _type; }
     bool dead() const			{ return !_type; }
-    void kill();
+    void full_kill();
+    inline void simple_kill();
 
     const String &name() const		{ return _name; }
     const char *name_c_str() const	{ return _name.c_str(); }
@@ -134,13 +135,15 @@ struct PortT {
 
 class ConnectionT { public:
 
-    ConnectionT();
+    inline ConnectionT();
     ConnectionT(const PortT &, const PortT &, const LandmarkT & = LandmarkT::empty_landmark());
     ConnectionT(const PortT &, const PortT &, const LandmarkT &, int, int);
 
+    typedef PortT::unspecified_bool_type unspecified_bool_type;
+    inline operator unspecified_bool_type() const;
+
     bool live() const			{ return _from.live(); }
     bool dead() const			{ return _from.dead(); }
-    void kill()				{ _from.element = 0; }
 
     RouterT *router() const		{ return _to.router(); }
     const PortT &from() const		{ return _from; }
@@ -174,7 +177,7 @@ class ConnectionT { public:
 
 
 inline void
-ElementT::kill()
+ElementT::simple_kill()
 {
     if (_type)
 	_type->unuse();
@@ -282,6 +285,18 @@ inline bool
 operator>=(const PortT &h1, const PortT &h2)
 {
     return h1.eindex() > h2.eindex() || (h1.element == h2.element && h1.port >= h2.port);
+}
+
+inline
+ConnectionT::ConnectionT()
+    : _from(), _to(), _landmark(), _next_from(-1), _next_to(-1)
+{
+}
+
+inline
+ConnectionT::operator unspecified_bool_type() const
+{
+    return (unspecified_bool_type) _from;
 }
 
 #endif

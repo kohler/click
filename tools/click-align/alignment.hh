@@ -2,14 +2,7 @@
 #define ALIGNMENT_HH
 #include <click/string.hh>
 
-class Alignment {
-
-  int _chunk;
-  int _offset;
-
-  Alignment(int a, int b, int)		: _chunk(a), _offset(b) { }
-  
- public:
+class Alignment { public:
 
     Alignment()				: _chunk(0), _offset(0) { }
     Alignment(int, int);
@@ -30,6 +23,13 @@ class Alignment {
 
     String unparse() const;
     String s() const			{ return unparse(); }
+
+  private:
+
+    int _chunk;
+    int _offset;
+
+    Alignment(int a, int b, int)		: _chunk(a), _offset(b) { }
 
 };
 

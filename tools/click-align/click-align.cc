@@ -245,12 +245,11 @@ static ElementClassT *class_factory(const String &name)
 {
     if (name == "Align")
 	return new AlignAlignClass;
-    if (name == "Strip")
-	return new StripAlignClass;
-    if (name == "CheckIPHeader" || name == "CheckIPHeader2")
-	return new CheckIPHeaderAlignClass(name, 1);
-    if (name == "MarkIPHeader")
-	return new CheckIPHeaderAlignClass(name, 0);
+    if (name == "Strip" || name == "Unstrip")
+	return new StripAlignClass(name, name == "Strip");
+    if (name == "CheckIPHeader" || name == "CheckIPHeader2"
+	|| name == "MarkIPHeader")
+	return new CheckIPHeaderAlignClass(name);
     if (name == "Classifier")
 	return new AlignClass(name, new ClassifierAligner);
     if (name == "EtherEncap")
@@ -586,19 +585,18 @@ particular purpose.\n");
 	bool changed = false;
     
 	// skip redundant Aligns
-	const Vector<ConnectionT> &conn = router->connections();
-	int nhook = conn.size();
-	for (int i = 0; i < nhook; i++)
-	    if (conn[i].live() && conn[i].to_element()->type() == align_class) {
-		Alignment have = ral._oalign[ ral._ooffset[conn[i].from_eindex()] + conn[i].from_port() ];
-		Alignment want = ral._oalign[ ral._ooffset[conn[i].to_eindex()] ];
+	for (RouterT::conn_iterator ci = router->begin_connections();
+	     ci != router->end_connections(); ++ci)
+	    if (ci->live() && ci->to_element()->type() == align_class) {
+		Alignment have = ral._oalign[ ral._ooffset[ci->from_eindex()] + ci->from_port() ];
+		Alignment want = ral._oalign[ ral._ooffset[ci->to_eindex()] ];
 		if (have <= want) {
 		    changed = true;
 		    Vector<PortT> align_dest;
-		    router->find_connections_from(conn[i].to(), align_dest);
+		    router->find_connections_from(ci->to(), align_dest);
 		    for (int j = 0; j < align_dest.size(); j++)
-			router->add_connection(conn[i].from(), align_dest[j]);
-		    router->kill_connection(i);
+			router->add_connection(ci->from(), align_dest[j]);
+		    router->kill_connection(ci);
 		}
 	    }
 
@@ -611,16 +609,22 @@ particular purpose.\n");
     // remove unused Aligns (they have no input) and old AlignmentInfos
     ElementClassT *aligninfo_class = ElementClassT::base_type("AlignmentInfo");
     {
-	for (RouterT::iterator x = router->begin_elements(); x; x++)
-	    if (x->type() == align_class
-		&& (x->ninputs() == 0 || x->noutputs() == 0)) {
-		x->kill();
-		num_aligns_added--;
-	    } else if (x->type() == aligninfo_class)
-		x->kill();
+	for (RouterT::type_iterator x = router->begin_elements(aligninfo_class);
+	     x != router->end_elements(); ++x)
+	    x->full_kill();
+	int old_num_aligns_added;
+	do {
+	    old_num_aligns_added = num_aligns_added;
+	    for (RouterT::type_iterator x = router->begin_elements(align_class);
+		 x != router->end_elements(); ++x)
+		if (x->ninputs() == 0 || x->noutputs() == 0) {
+		    x->full_kill();
+		    num_aligns_added--;
+		}
+	} while (old_num_aligns_added != num_aligns_added);
 	router->remove_dead_elements();
     }
-  
+    
     // make the AlignmentInfo element
     {
 	RouterAlign ral(router, errh);
@@ -628,7 +632,7 @@ particular purpose.\n");
 	    ral.have_output();
 	} while (ral.have_input());
 
-	// collect alignment information, delete old AlignmentInfos
+	// collect alignment information
 	StringAccum sa;
 	for (RouterT::iterator x = router->begin_elements(); x; x++) {
 	    ElementTraits t = element_map.traits(x->type_name());
@@ -646,7 +650,7 @@ particular purpose.\n");
 
 	if (sa.length())
 	    router->get_element(String("AlignmentInfo@click_align@")
-				+ String(router->nelements() + 1),
+				+ String(anonymizer),
 				aligninfo_class, sa.take_string(),
 				LandmarkT("<click-align>"));
     }

@@ -240,7 +240,7 @@ remove_toplevel_component(String component, RouterT *r, const char *filename,
   // remove everything not part of the component
   for (RouterT::iterator e = r->begin_elements(); e; e++)
     if (e->live() && !live[e->eindex()])
-      e->kill();
+      e->simple_kill();
   r->free_dead_elements();
 
   // rename component

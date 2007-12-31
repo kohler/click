@@ -195,43 +195,42 @@ AlignClass::cast(const char *s)
 }
 
 
-StripAlignClass::StripAlignClass()
-  : AlignClass("Strip")
+StripAlignClass::StripAlignClass(const String &name, bool is_strip)
+    : AlignClass(name), _is_strip(is_strip)
 {
 }
 
 Aligner *
 StripAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
 {
-  int m;
-  ContextErrorHandler cerrh(errh, "While analyzing alignment for '" + e->declaration() + "':");
-  if (cp_va_parse(e->configuration(), &cerrh,
-		  cpInteger, "amount to strip", &m,
-		  cpEnd) < 0)
-    return default_aligner();
-  return new ShifterAligner(m);
+    Vector<String> args;
+    cp_argvec(e->configuration(), args);
+    unsigned nbytes;
+    ContextErrorHandler cerrh(errh, "While analyzing alignment for '" + e->declaration() + "':");
+    if (cp_va_kparse(args, &cerrh,
+		     "LENGTH", cpkP+cpkM, cpUnsigned, &nbytes,
+		     cpEnd) < 0)
+	return default_aligner();
+    return new ShifterAligner(_is_strip ? nbytes : -nbytes);
 }
 
 
-CheckIPHeaderAlignClass::CheckIPHeaderAlignClass(const String &name, int argno)
-  : AlignClass(name), _argno(argno)
+CheckIPHeaderAlignClass::CheckIPHeaderAlignClass(const String &name)
+    : AlignClass(name)
 {
 }
 
 Aligner *
-CheckIPHeaderAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
+CheckIPHeaderAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *)
 {
-  unsigned offset = 0;
-  Vector<String> args;
-  cp_argvec(e->configuration(), args);
-  if (args.size() > _argno) {
-    if (!cp_integer(args[_argno], &offset)) {
-      ContextErrorHandler cerrh(errh, "While analyzing alignment for '" + e->declaration() + "':");
-      cerrh.error("argument %d should be IP header offset (unsigned)", _argno + 1);
-      return default_aligner();
-    }
-  }
-  return new WantAligner(Alignment(4, 0) - (int)offset);
+    Vector<String> args;
+    cp_argvec(e->configuration(), args);
+    unsigned offset = 0;
+    // Old CheckIPHeader elements might have a BADSRC* argument before the
+    // OFFSET argument.  This magic supposedly parses either.
+    if (cp_va_kparse(args, ErrorHandler::silent_handler(), "OFFSET", cpkP, cpUnsigned, &offset, cpIgnoreRest, cpEnd) < 0)
+	(void) cp_va_kparse(args, ErrorHandler::silent_handler(), "BADSRC*", cpkP, cpIgnore, "OFFSET", cpkP, cpUnsigned, &offset, cpIgnoreRest, cpEnd);
+    return new WantAligner(Alignment(4, 0) - (int)offset);
 }
 
 

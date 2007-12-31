@@ -265,7 +265,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
     while (true) {
 	bool changed = false;
 	for (int c = 0; c < conn.size(); c++) {
-	    if (conn[c].dead())
+	    if (!conn[c])
 		continue;
 
 	    int offf = output_pidx(conn[c].from());
@@ -289,7 +289,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 		    changed = true;
 		} else if (((pf ^ pt) & 3) != 0) {
 		    processing_error(conn[c], pf, errh);
-		    conn[c].kill();
+		    conn[c] = ConnectionT();
 		}
 		break;
 	

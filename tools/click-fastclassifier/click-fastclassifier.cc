@@ -166,7 +166,7 @@ combine_classifiers(RouterT *router, ElementT *from, int from_port, ElementT *to
   from->set_configuration(cp_unargvec(new_words));
 
   // change connections
-  router->kill_connection(first_hop[from_port]);
+  router->kill_connection(router->find_connection(first_hop[from_port]));
   for (int i = from_port + 1; i < first_hop.size(); i++)
     router->change_connection_from(first_hop[i], PortT(from, i + to_words.size() - 1));
   const Vector<ConnectionT> &conn = router->connections();
@@ -205,7 +205,7 @@ try_remove_classifiers(RouterT *router, Vector<ElementT *> &classifiers)
     Vector<PortT> v;
     router->find_connections_to(PortT(classifiers[i], 0), v);
     if (v.size() == 0) {
-      classifiers[i]->kill();
+      classifiers[i]->simple_kill();
       classifiers[i] = classifiers.back();
       classifiers.pop_back();
       i--;

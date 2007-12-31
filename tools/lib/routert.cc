@@ -512,30 +512,31 @@ RouterT::unlink_connection_to(int c)
 void
 RouterT::free_connection(int c)
 {
-    _conn[c].kill();
+    _conn[c]._from.element = 0;	// kill();
     _conn[c]._next_from = _free_conn;
     _free_conn = c;
 }
 
 void
-RouterT::kill_connection(int c)
+RouterT::kill_connection(const conn_iterator &ci)
 {
-    if (connection_live(c)) {
-	unlink_connection_from(c);
-	unlink_connection_to(c);
-	free_connection(c);
+    if (ci != end_connections()) {
+	assert(ci._conn && ci._conn >= _conn.begin() && ci._conn < _conn.end());
+	int c = ci._conn - _conn.begin();
+	if (ci->live()) {
+	    unlink_connection_from(c);
+	    unlink_connection_to(c);
+	    free_connection(c);
+	}
     }
 }
 
 void
 RouterT::kill_bad_connections()
 {
-    int nc = nconnections();
-    for (int i = 0; i < nc; i++) {
-	ConnectionT &c = _conn[i];
-	if (c.live() && (c.from_element()->dead() || c.to_element()->dead()))
-	    kill_connection(i);
-    }
+    for (conn_iterator ci = begin_connections(); ci != end_connections(); ++ci)
+	if (ci->from_element()->dead() || ci->to_element()->dead())
+	    kill_connection(ci);
 }
 
 void
@@ -921,7 +922,7 @@ RouterT::remove_duplicate_connections()
 	    while (prev >= 0 && prev != trav) {
 		if (_conn[prev].from().port == trav_port
 		    && _conn[prev].to() == _conn[trav].to()) {
-		    kill_connection(trav);
+		    kill_connection(conn_iterator(&_conn[trav], 0));
 		    goto duplicate;
 		}
 		prev = _conn[prev].next_from();
@@ -1004,7 +1005,7 @@ RouterT::free_element(ElementT *e)
     // finally, free the element itself
     if (_element_name_map[e->name()] == ei)
 	_element_name_map.insert(e->name(), -1);
-    e->kill();
+    e->simple_kill();
     e->_tunnel_input = _free_element;
     _free_element = e;
     _n_live_elements--;
@@ -1218,7 +1219,7 @@ RouterT::remove_tunnels(ErrorHandler *errh)
     for (int i = 0; i < nelements; i++)
 	if (_elements[i]->tunnel()
 	    && (_elements[i]->tunnel_output() || _elements[i]->tunnel_input()))
-	    _elements[i]->kill();
+	    _elements[i]->simple_kill();
 
     // actually remove tunnel connections and elements
     remove_duplicate_connections();
@@ -1323,11 +1324,10 @@ RouterT::const_iterator::step(const RouterT *r, int eindex)
 }
 
 void
-RouterT::const_type_iterator::step(const RouterT *r, ElementClassT *type, int eindex)
+RouterT::const_type_iterator::step(const RouterT *r, int eindex)
 {
-    assert(type);
     int n = (r ? r->nelements() : -1);
-    while (eindex < n && (_e = r->element(eindex), _e->type() != type))
+    while (eindex < n && (_e = r->element(eindex), _e->type() != _t))
 	eindex++;
     if (eindex >= n)
 	_e = 0;

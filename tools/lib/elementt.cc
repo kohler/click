@@ -70,6 +70,23 @@ ElementT::~ElementT()
 	_resolved_type->unuse();
 }
 
+void
+ElementT::full_kill()
+{
+    if (_type) {
+	if (_owner) {
+	    RouterT::conn_iterator ci;
+	    while ((ci = _owner->begin_connections_from(this)) != _owner->end_connections())
+		_owner->kill_connection(ci);
+	    while ((ci = _owner->begin_connections_to(this)) != _owner->end_connections())
+		_owner->kill_connection(ci);
+	}
+	_type->unuse();
+	_type = 0;
+	unresolve_type();
+    }
+}
+
 bool
 ElementT::name_ok(const String &name, bool allow_anon_names)
 {
@@ -220,11 +237,6 @@ PortT::unparse_output() const
 	return "<>";
 }
 
-
-ConnectionT::ConnectionT()
-    : _from(), _to(), _landmark(), _next_from(-1), _next_to(-1)
-{
-}
 
 ConnectionT::ConnectionT(const PortT &from, const PortT &to, const LandmarkT &lm)
     : _from(from), _to(to), _landmark(lm), _next_from(-1), _next_to(-1)

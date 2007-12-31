@@ -91,15 +91,15 @@ class AlignClass : public ElementClassT {
 };
 
 class StripAlignClass : public AlignClass {
+    bool _is_strip;
  public:
-  StripAlignClass();
-  Aligner *create_aligner(ElementT *, RouterT *, ErrorHandler *);
+    StripAlignClass(const String &name, bool is_strip);
+    Aligner *create_aligner(ElementT *, RouterT *, ErrorHandler *);
 };
 
 class CheckIPHeaderAlignClass : public AlignClass {
-  int _argno;
  public:
-  CheckIPHeaderAlignClass(const String &, int);
+  CheckIPHeaderAlignClass(const String &);
   Aligner *create_aligner(ElementT *, RouterT *, ErrorHandler *);
 };
 
