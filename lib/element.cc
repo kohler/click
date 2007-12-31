@@ -1923,7 +1923,7 @@ Element::add_default_handlers(bool allow_write_config)
 #endif
 }
 
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
 static String
 read_task_tickets(Element *e, void *thunk)
 {
@@ -1993,7 +1993,7 @@ Element::add_task_handlers(Task *task, const String &prefix)
   intptr_t task_offset = (uint8_t *)task - (uint8_t *)this;
   void *thunk = (void *)task_offset;
   add_read_handler(prefix + "scheduled", read_task_scheduled, thunk);
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
   add_read_handler(prefix + "tickets", read_task_tickets, thunk);
   add_write_handler(prefix + "tickets", write_task_tickets, thunk);
 #endif

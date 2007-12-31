@@ -21,7 +21,7 @@ CLICK_CXX_UNPROTECT
 # define NETISR_CLICK 1		// must match empty slots in net/netisr.h !!!
 #endif
 
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
 # define CLICK_DEVICE_ADJUST_TICKETS 1
 #endif
 

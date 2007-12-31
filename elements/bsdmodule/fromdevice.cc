@@ -287,7 +287,7 @@ FromDevice::initialize(ErrorHandler *errh)
     splx(s);
 
     ScheduleInfo::initialize_task(this, &_task, device() != 0, errh);
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
     // start out with default number of tickets, inflate up to max
     set_max_tickets( _task.tickets() );
     _task.set_tickets(Task::DEFAULT_TICKETS);

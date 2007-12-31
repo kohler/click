@@ -109,7 +109,7 @@ Task::initialize(Router *router, bool schedule)
     // initialized
     _router = router;
     
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
     set_tickets(DEFAULT_TICKETS);
 #endif
 

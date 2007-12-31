@@ -12970,11 +12970,24 @@ else
   enable_task_heap=no
 fi
 
-if test $enable_task_heap = yes; then
+if test $enable_task_heap = yes -a $enable_stride = yes; then
     cat >>confdefs.h <<\_ACEOF
 #define HAVE_TASK_HEAP 1
 _ACEOF
 
+elif test $enable_task_heap = yes; then
+	{ echo "$as_me:$LINENO: WARNING:
+=========================================
+
+Ignoring --enable-task-heap, which is incompatible with --disable-stride.
+
+=========================================" >&5
+echo "$as_me: WARNING:
+=========================================
+
+Ignoring --enable-task-heap, which is incompatible with --disable-stride.
+
+=========================================" >&2;}
 fi
 
 

@@ -26,7 +26,7 @@ CLICK_CXX_UNPROTECT
 CLICK_DECLS
 
 class RouterThread
-#ifndef HAVE_TASK_HEAP
+#if !HAVE_TASK_HEAP
     : private Task
 #endif
 { public:
@@ -86,7 +86,7 @@ class RouterThread
 
   private:
 
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     Vector<Task*> _task_heap;
     int _task_heap_hole;
     unsigned _pass;
@@ -156,7 +156,7 @@ class RouterThread
     inline void client_update_pass(int client, const struct timeval &before, const struct timeval &after);
     inline void check_restride(struct timeval &before, const struct timeval &now, int &restride_iter);
 #endif
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     void task_reheapify_from(int pos, Task*);
 #endif
     
@@ -194,7 +194,7 @@ RouterThread::master() const
 inline bool
 RouterThread::active() const
 {
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     return _task_heap.size() != 0 || _any_pending;
 #else
     return ((const Task *)_next != this) || _any_pending;
@@ -227,7 +227,7 @@ RouterThread::active() const
 inline Task *
 RouterThread::task_begin() const
 {
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     int p = _task_heap_hole;
     return (p < _task_heap.size() ? _task_heap[p] : 0);
 #else
@@ -247,7 +247,7 @@ RouterThread::task_begin() const
 inline Task *
 RouterThread::task_next(Task *task) const
 {
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     int p = task->_schedpos + 1;
     return (p < _task_heap.size() ? _task_heap[p] : 0);
 #else
@@ -264,7 +264,7 @@ RouterThread::task_next(Task *task) const
 inline Task *
 RouterThread::task_end() const
 {
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     return 0;
 #else
     return (Task *) this;

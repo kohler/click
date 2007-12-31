@@ -28,7 +28,7 @@ CLICK_DECLS
 
 ScheduleInfo::ScheduleInfo()
 {
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
     static_assert((1 << FRAC_BITS) == Task::DEFAULT_TICKETS);
 #endif
 }
@@ -61,7 +61,7 @@ ScheduleInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 ScheduleInfo::query(Element *e, ErrorHandler *errh)
 {
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
     // check prefixes in order of increasing length
     String id = e->name();
     
@@ -117,7 +117,7 @@ void
 ScheduleInfo::initialize_task(Element *e, Task *task, bool schedule,
 			      ErrorHandler *errh)
 {
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
     int tickets = query(e, errh);
     if (tickets > 0) {
 	task->initialize(e, schedule);

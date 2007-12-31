@@ -283,7 +283,7 @@ int FromUserDevice::initialize(ErrorHandler *errh)
 /*
     // don't schedule until we get configured
     ScheduleInfo::initialize_task(this, &_task, _buff != 0, errh);
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
     // user specifies max number of tickets; we start with default
     _max_tickets = _task.tickets();
     _task.set_tickets(Task::DEFAULT_TICKETS);

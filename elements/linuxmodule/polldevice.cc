@@ -130,7 +130,7 @@ you include a ToDevice for the same device. Try adding\n\
     }
 
     ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
     // user specifies max number of tickets; we start with default
     _max_tickets = _task.tickets();
     _task.set_tickets(Task::DEFAULT_TICKETS);

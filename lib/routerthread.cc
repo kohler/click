@@ -66,13 +66,13 @@ static unsigned long greedy_schedule_jiffies;
  */
 
 RouterThread::RouterThread(Master *m, int id)
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     : _task_heap_hole(0), _master(m), _id(id)
 #else
     : Task(Task::error_hook, 0), _master(m), _id(id)
 #endif
 {
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     _pass = 0;
 #else
     _prev = _next = _thread = this;
@@ -336,7 +336,7 @@ RouterThread::run_tasks(int ntasks)
 #endif
 
     Task *t;
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     while (_task_heap.size() > 0 && ntasks >= 0) {
 	t = _task_heap.at_u(0);
 #else
@@ -349,21 +349,23 @@ RouterThread::run_tasks(int ntasks)
 	    cycles = click_get_cycles();
 #endif
 
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
 	t->_schedpos = -1;
 	_task_heap_hole = 1;
 #else
 	t->fast_unschedule(false);
 #endif
 
+#if HAVE_STRIDE_SCHED
 	// 21.May.2007: Always set the current thread's pass to the current
 	// task's pass, to avoid problems when fast_reschedule() interacts
 	// with fast_schedule() (passes got out of sync).
 	_pass = t->_pass;
+#endif
 	
 	t->call_hook();
 
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
 	if (_task_heap_hole) {
 	    Task* back = _task_heap.back();
 	    _task_heap.pop_back();

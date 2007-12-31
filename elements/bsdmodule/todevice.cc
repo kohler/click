@@ -100,7 +100,7 @@ ToDevice::initialize(ErrorHandler *errh)
     ScheduleInfo::initialize_task(this, &_task, device() != 0, errh);
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
 
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
     // start out with max number of tickets
     set_max_tickets( _task.tickets() );
     _task.set_tickets(Task::DEFAULT_TICKETS);

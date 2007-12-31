@@ -27,11 +27,11 @@ class Master;
 
 class Task { public:
 
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
     enum { STRIDE1 = 1U<<16, MAX_STRIDE = 1U<<31 };
     enum { MAX_TICKETS = 1<<15, DEFAULT_TICKETS = 1<<10 };
 #endif
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
     enum { MAX_UTILIZATION = 1000 };
 #endif
 
@@ -51,7 +51,7 @@ class Task { public:
     void strong_unschedule();
     void strong_reschedule();
 
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     void fast_reschedule();
 #else
     inline void fast_reschedule();
@@ -60,7 +60,7 @@ class Task { public:
     inline int home_thread_id() const;
     void move_thread(int thread_id);
  
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
     inline int tickets() const;
     inline void set_tickets(int n);
     inline void adjust_tickets(int delta);
@@ -91,7 +91,7 @@ class Task { public:
     /* if gcc keeps this ordering, we may get some cache locality on a 16 or 32
      * byte cache line: the first three fields are used in list traversal */
 
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     int _schedpos;
 #else
     Task* _prev;
@@ -99,7 +99,7 @@ class Task { public:
 #endif
     unsigned _should_be_scheduled;
     
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
     unsigned _pass;
     unsigned _stride;
     int _tickets;
@@ -172,17 +172,17 @@ CLICK_DECLS
  */
 inline
 Task::Task(TaskHook hook, void* thunk)
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     : _schedpos(-1),
 #else
     : _prev(0), _next(0),
 #endif
       _should_be_scheduled(false),
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
       _pass(0), _stride(0), _tickets(-1),
 #endif
       _hook(hook), _thunk(thunk),
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
       _runs(0), _work_done(0),
 #endif
 #if __MTCLICK__
@@ -206,17 +206,17 @@ Task::Task(TaskHook hook, void* thunk)
  */
 inline
 Task::Task(Element* e)
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
     : _schedpos(-1),
 #else
     : _prev(0), _next(0),
 #endif
       _should_be_scheduled(false),
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
       _pass(0), _stride(0), _tickets(-1),
 #endif
       _hook(0), _thunk(e),
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
       _runs(0), _work_done(0),
 #endif
 #if __MTCLICK__
@@ -320,7 +320,7 @@ Task::fast_unschedule(bool should_be_scheduled)
     GIANT_REQUIRED;
 #endif
     if (scheduled()) {
-#ifdef HAVE_TASK_HEAP
+#if HAVE_TASK_HEAP
 	Task* back = _thread->_task_heap.back();
 	_thread->_task_heap.pop_back();
 	if (_thread->_task_heap.size() > 0)
@@ -335,7 +335,7 @@ Task::fast_unschedule(bool should_be_scheduled)
     _should_be_scheduled = should_be_scheduled;
 }
 
-#ifdef HAVE_STRIDE_SCHED
+#if HAVE_STRIDE_SCHED
 
 /** @brief Returns the task's number of tickets.
  *
@@ -382,7 +382,7 @@ Task::adjust_tickets(int delta)
     set_tickets(_tickets + delta);
 }
 
-# ifndef HAVE_TASK_HEAP
+# if !HAVE_TASK_HEAP
 /** @brief Reschedules the task.  The task's current thread must be currently
  * locked.
  *
