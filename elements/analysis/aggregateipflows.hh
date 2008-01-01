@@ -248,13 +248,13 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
 #endif
     inline void packet_emit_hook(const Packet *, const click_ip *, FlowInfo *);
     inline void delete_flowinfo(const HostPair &, FlowInfo *, bool really_delete = true);
-    void assign_aggregate(Map &, HostPairInfo *, int emit_before_sec);
+    void emit_fragment_head(HostPairInfo *hpinfo);
     FlowInfo *find_flow_info(Map &, HostPairInfo *, uint32_t ports, bool flipped, const Packet *);
 
     FlowInfo *uncommon_case(FlowInfo *finfo, const click_ip *iph);
 
     enum { ACT_EMIT, ACT_DROP, ACT_NONE };
-    int handle_fragment(Packet *, int paint, Map &, HostPairInfo *);
+    int handle_fragment(Packet *, HostPairInfo *);
     int handle_packet(Packet *);
 
     static int write_handler(const String &, Element *, void *, ErrorHandler *);

@@ -1,0 +1,38 @@
+%require -q
+click-buildtool provides FromIPSummaryDump
+
+%script
+
+click -e "
+FromIPSummaryDump(IN1, STOP true, ZERO true)
+	-> SetTimestamp
+	-> a::AggregateIPFlows
+	-> ToIPSummaryDump(OUT1, CONTENTS aggregate link ip_len ip_id);
+DriverManager(pause, write a.clear, stop)
+"
+
+%file IN1
+!data src sport dst dport proto ip_id ip_fragoff ip_len
+18.26.4.44 30 10.0.0.4 40 U 1 0 100
+18.26.4.44 30 18.26.4.44 41 U 2 0 100
+10.0.0.4 40 18.26.4.44 30 U 3 0 100
+18.26.4.44 41 18.26.4.44 30 U 4 0 100
+18.26.4.44 41 18.26.4.44 30 U 5 24 80
+18.26.4.44 30 18.26.4.44 41 U 6 24 84
+18.26.4.44 41 18.26.4.44 30 U 5 0+ 24
+18.26.4.44 30 18.26.4.44 41 U 6 0+ 24
+
+%expect OUT1
+1 0 100 1
+2 0 100 2
+1 1 100 3
+2 1 100 4
+2 1 80 5
+2 0 84 6
+2 1 24 5
+2 0 24 6
+
+%ignorex
+!.*
+
+%eof

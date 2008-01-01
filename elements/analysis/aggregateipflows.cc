@@ -3,7 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2001-2003 International Computer Science Institute
- * Copyright (c) 2005 Regents of the University of California
+ * Copyright (c) 2005-2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -55,6 +55,12 @@ inline size_t
 AggregateIPFlows::HostPair::hashcode() const
 {
     return (a << 12) + b + ((a >> 20) & 0x1F);
+}
+
+static inline bool
+ports_reverse_order(uint32_t ports)
+{
+    return (int32_t) ((ports << 16) - ports) < 0;
 }
 
 static inline uint32_t
@@ -150,7 +156,7 @@ AggregateIPFlows::initialize(ErrorHandler *errh)
     if (_fragments == 2)
 	_fragments = !input_is_pull(0);
     else if (_fragments == 1 && input_is_pull(0))
-	return errh->error("`FRAGMENTS true' is incompatible with pull; run this element in a push context");
+	return errh->error("'FRAGMENTS true' is incompatible with pull; run this element in a push context");
     
     return 0;
 }
@@ -232,6 +238,9 @@ AggregateIPFlows::stat_new_flow_hook(const Packet *p, FlowInfo *finfo)
 inline void
 AggregateIPFlows::packet_emit_hook(const Packet *p, const click_ip *iph, FlowInfo *finfo)
 {
+    // account for timestamp
+    finfo->_last_timestamp = p->timestamp_anno();
+    
     // check whether this indicates the flow is over
     if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)
 	/* 3.Feb.2004 - NLANR dumps do not contain full TCP headers! So relax
@@ -257,70 +266,6 @@ AggregateIPFlows::packet_emit_hook(const Packet *p, const click_ip *iph, FlowInf
 }
 
 void
-AggregateIPFlows::assign_aggregate(Map &table, HostPairInfo *hpinfo, int emit_before_sec)
-{
-    Packet *first = hpinfo->_fragment_head;
-    uint16_t want_ip_id = good_ip_header(first)->ip_id;
-
-    // find FlowInfo
-    FlowInfo *finfo = 0;
-    if (AGGREGATE_ANNO(first)) {
-	for (finfo = hpinfo->_flows; finfo && finfo->_aggregate != AGGREGATE_ANNO(first); finfo = finfo->_next)
-	    /* nada */;
-    } else {
-	for (Packet *p = first; !finfo && p; p = p->next()) {
-	    const click_ip *iph = good_ip_header(p);
-	    if (iph->ip_id == want_ip_id) {
-		if (IP_FIRSTFRAG(iph)) {
-		    uint32_t ports = *(reinterpret_cast<const uint32_t *>(reinterpret_cast<const uint8_t *>(iph) + (iph->ip_hl << 2)));
-		    if (PAINT_ANNO(p) & 1)
-			ports = flip_ports(ports);
-		    finfo = find_flow_info(table, hpinfo, ports, PAINT_ANNO(p) & 1, p);
-		}
-	    }
-	}
-    }
-
-    // if no FlowInfo found, delete packet
-    if (!finfo) {
-	hpinfo->_fragment_head = first->next();
-	first->kill();
-	return;
-    }
-
-    // emit packets at the beginning of the list that have the same IP ID
-    const click_ip *iph;
-    while (first && (iph = good_ip_header(first)) && iph->ip_id == want_ip_id
-	   && (SEC_OLDER(first->timestamp_anno().sec(), emit_before_sec)
-	       || !IP_ISFRAG(iph))) {
-	Packet *p = first;
-	hpinfo->_fragment_head = first = p->next();
-	p->set_next(0);
-	bool was_fragment = IP_ISFRAG(iph);
-
-	SET_AGGREGATE_ANNO(p, finfo->aggregate());
-
-	// actually emit packet
-	if (finfo->reverse())
-	    SET_PAINT_ANNO(p, PAINT_ANNO(p) ^ 1);
-	finfo->_last_timestamp = p->timestamp_anno();
-
-	packet_emit_hook(p, iph, finfo);
-	
-	output(0).push(p);
-
-	// if not a fragment, know we don't have more fragments
-	if (!was_fragment)
-	    return;
-    }
-    
-    // assign aggregate annotation to other packets with the same IP ID
-    for (Packet *p = first; p; p = p->next())
-	if (good_ip_header(p)->ip_id == want_ip_id)
-	    SET_AGGREGATE_ANNO(p, finfo->aggregate());
-}
-
-void
 AggregateIPFlows::reap_map(Map &table, uint32_t timeout, uint32_t done_timeout)
 {
     timeout = _active_sec - timeout;
@@ -330,9 +275,12 @@ AggregateIPFlows::reap_map(Map &table, uint32_t timeout, uint32_t done_timeout)
     // free completed flows and emit fragments
     for (Map::iterator iter = table.begin(); iter.live(); iter++) {
 	HostPairInfo *hpinfo = &iter.value();
+	Packet *head;
 	// fragments
-	while (hpinfo->_fragment_head && hpinfo->_fragment_head->timestamp_anno().sec() < frag_timeout)
-	    assign_aggregate(table, hpinfo, frag_timeout);
+	while ((head = hpinfo->_fragment_head)
+	       && (head->timestamp_anno().sec() < frag_timeout
+		   || !IP_ISFRAG(good_ip_header(head))))
+	    emit_fragment_head(hpinfo);
 
 	// can't delete any flows if there are fragments
 	if (hpinfo->_fragment_head)
@@ -455,8 +403,52 @@ AggregateIPFlows::find_flow_info(Map &m, HostPairInfo *hpinfo, uint32_t ports, b
     return finfo;
 }
 
+void
+AggregateIPFlows::emit_fragment_head(HostPairInfo *hpinfo)
+{
+    Packet *head = hpinfo->_fragment_head;
+    hpinfo->_fragment_head = head->next();
+
+    const click_ip *iph = good_ip_header(head);
+    // XXX multiple linear traversals of entire fragment list!
+    // want a faster method that takes up little memory?
+    
+    if (AGGREGATE_ANNO(head)) {
+	for (Packet *p = hpinfo->_fragment_head; p; p = p->next())
+	    if (good_ip_header(p)->ip_id == iph->ip_id) {
+		SET_AGGREGATE_ANNO(p, AGGREGATE_ANNO(head));
+		SET_PAINT_ANNO(p, PAINT_ANNO(head));
+	    }
+    } else {
+	for (Packet *p = hpinfo->_fragment_head; p; p = p->next())
+	    if (good_ip_header(p)->ip_id == iph->ip_id
+		&& AGGREGATE_ANNO(p)) {
+		SET_AGGREGATE_ANNO(head, AGGREGATE_ANNO(p));
+		SET_PAINT_ANNO(head, PAINT_ANNO(p));
+		goto find_flowinfo;
+	    }
+	head->kill();
+	return;
+    }
+    
+  find_flowinfo:
+    // find the packet's FlowInfo
+    FlowInfo *finfo, **pprev = &hpinfo->_flows;
+    for (finfo = *pprev; finfo; pprev = &finfo->_next, finfo = *pprev)
+	if (finfo->_aggregate == AGGREGATE_ANNO(head)) {
+	    *pprev = finfo->_next;
+	    finfo->_next = hpinfo->_flows;
+	    hpinfo->_flows = finfo;
+	    break;
+	}
+
+    assert(finfo);
+    packet_emit_hook(head, iph, finfo);
+    output(0).push(head);
+}
+
 int
-AggregateIPFlows::handle_fragment(Packet *p, int paint, Map &table, HostPairInfo *hpinfo)
+AggregateIPFlows::handle_fragment(Packet *p, HostPairInfo *hpinfo)
 {
     if (hpinfo->_fragment_head)
 	hpinfo->_fragment_tail->set_next(p);
@@ -464,17 +456,15 @@ AggregateIPFlows::handle_fragment(Packet *p, int paint, Map &table, HostPairInfo
 	hpinfo->_fragment_head = p;
     hpinfo->_fragment_tail = p;
     p->set_next(0);
-    SET_AGGREGATE_ANNO(p, 0);
-    SET_PAINT_ANNO(p, paint);
-    if (int p_sec = p->timestamp_anno().sec())
-	_active_sec = p_sec;
+    _active_sec = p->timestamp_anno().sec();
 
     // get rid of old fragments
     int frag_timeout = _active_sec - _fragment_timeout;
     Packet *head;
     while ((head = hpinfo->_fragment_head)
-	   && (head->timestamp_anno().sec() < frag_timeout || !IP_ISFRAG(good_ip_header(head))))
-	assign_aggregate(table, hpinfo, frag_timeout);
+	   && (head->timestamp_anno().sec() < frag_timeout
+	       || !IP_ISFRAG(good_ip_header(head))))
+	emit_fragment_head(hpinfo);
 
     return ACT_NONE;
 }
@@ -507,46 +497,54 @@ AggregateIPFlows::handle_packet(Packet *p)
 	|| (iph->ip_src.s_addr == 0 && iph->ip_dst.s_addr == 0))
 	return ACT_DROP;
     
-    const uint8_t *udp_ptr = reinterpret_cast<const uint8_t *>(iph) + (iph->ip_hl << 2);
-    if ((udp_ptr + sizeof(click_udp)) - p->data() > (int) p->length())
-	// packet not big enough
-	return ACT_DROP;
-
-    // find relevant FlowInfo
+    // find relevant HostPairInfo
     Map &m = (iph->ip_p == IP_PROTO_TCP ? _tcp_map : _udp_map);
     HostPair hosts(iph->ip_src.s_addr, iph->ip_dst.s_addr);
     if (hosts.a != iph->ip_src.s_addr)
 	paint ^= 1;
     HostPairInfo *hpinfo = m.findp_force(hosts);
 
-    // check for fragment
-    if (IP_ISFRAG(iph)) {
-	if (IP_FIRSTFRAG(iph) || _fragments)
-	    return handle_fragment(p, paint, m, hpinfo);
-	else
+    // find relevant FlowInfo, if any
+    FlowInfo *finfo;
+    if (IP_FIRSTFRAG(iph)) {
+	const uint8_t *udp_ptr = reinterpret_cast<const uint8_t *>(iph) + (iph->ip_hl << 2);
+	if ((udp_ptr + sizeof(click_udp)) - p->data() > (int) p->length())
+	    // packet not big enough
 	    return ACT_DROP;
-    } else if (hpinfo->_fragment_head)
-	return handle_fragment(p, paint, m, hpinfo);
-    
-    uint32_t ports = *(reinterpret_cast<const uint32_t *>(udp_ptr));
-    if (paint & 1)
-	ports = flip_ports(ports);
-    FlowInfo *finfo = find_flow_info(m, hpinfo, ports, paint & 1, p);
-    
-    if (!finfo) {
-	click_chatter("out of memory!");
-	return ACT_DROP;
+
+	uint32_t ports = *reinterpret_cast<const uint32_t *>(udp_ptr);
+	// 1.Jan.08: handle connections where IP addresses are the same (John
+	// Russell Lane)
+	if (hosts.a == hosts.b && ports_reverse_order(ports))
+	    paint ^= 1;
+	if (paint & 1)
+	    ports = flip_ports(ports);
+	
+	finfo = find_flow_info(m, hpinfo, ports, paint & 1, p);
+	if (!finfo) {
+	    click_chatter("out of memory!");
+	    return ACT_DROP;
+	}
+	if (finfo->reverse())
+	    paint ^= 1;
+
+	// set aggregate annotations
+	SET_AGGREGATE_ANNO(p, finfo->aggregate());
+	SET_PAINT_ANNO(p, paint);
+    } else {
+	finfo = 0;
+	SET_AGGREGATE_ANNO(p, 0);
+	SET_PAINT_ANNO(p, paint);
     }
 
-    // mark packet with aggregate number and paint
-    _active_sec = p->timestamp_anno().sec();
-    finfo->_last_timestamp = p->timestamp_anno();
-    SET_AGGREGATE_ANNO(p, finfo->aggregate());
-    if (finfo->reverse())
-	paint ^= 1;
-    SET_PAINT_ANNO(p, paint);
+    // check for fragment
+    if ((_fragments && IP_ISFRAG(iph)) || hpinfo->_fragment_head)
+	return handle_fragment(p, hpinfo);
+    else if (!finfo)
+	return ACT_DROP;
 
     // packet emit hook
+    _active_sec = p->timestamp_anno().sec();
     packet_emit_hook(p, iph, finfo);
 
     return ACT_EMIT;
