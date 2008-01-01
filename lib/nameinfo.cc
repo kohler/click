@@ -3,7 +3,7 @@
  * nameinfo.{cc,hh} -- stores name information
  * Eddie Kohler
  *
- * Copyright (c) 2005 The Regents of the University of California
+ * Copyright (c) 2005-2008 The Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -173,7 +173,7 @@ DynamicNameDB::revfind(const void *value, int vsize)
 
 NameInfo::NameInfo()
 {
-#ifdef CLICK_NAMEDB_CHECK
+#if CLICK_NAMEDB_CHECK
     _check_generation = (uintptr_t) this;
 #endif
 }
@@ -416,7 +416,7 @@ NameInfo::revquery(uint32_t type, const Element *e, const void *value, int vsize
 }
 
 
-#ifdef CLICK_NAMEDB_CHECK
+#if CLICK_NAMEDB_CHECK
 void
 NameInfo::check(ErrorHandler *errh)
 {

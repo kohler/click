@@ -53,7 +53,7 @@ class NameInfo { public:
     static inline void define(uint32_t type, const Element *prefix, const String &name, const void *value, int value_size);
     static inline void define_int(uint32_t type, const Element *prefix, const String &name, int32_t value);
 
-#ifdef CLICK_NAMEDB_CHECK
+#if CLICK_NAMEDB_CHECK
     void check(ErrorHandler *);
     static void check(const Element *, ErrorHandler *);
 #endif
@@ -66,7 +66,7 @@ class NameInfo { public:
     inline NameDB *install_dynamic_sentinel() { return (NameDB *) this; }
     NameDB *namedb(uint32_t type, int value_size, const String &prefix, NameDB *installer);
     
-#ifdef CLICK_NAMEDB_CHECK
+#if CLICK_NAMEDB_CHECK
     uintptr_t _check_generation;
     void checkdb(NameDB *db, NameDB *parent, ErrorHandler *errh);
 #endif
@@ -89,7 +89,7 @@ class NameDB { public:
     virtual void define(const String &name, const void *value, int vsize);
     inline void define_int(const String &name, int32_t value);
 
-#ifdef CLICK_NAMEDB_CHECK
+#if CLICK_NAMEDB_CHECK
     virtual void check(ErrorHandler *);
 #endif
     
@@ -103,7 +103,7 @@ class NameDB { public:
     NameDB *_prefix_child;
     NameInfo *_installed;
 
-#ifdef CLICK_NAMEDB_CHECK
+#if CLICK_NAMEDB_CHECK
     uintptr_t _check_generation;
 #endif
     
@@ -123,7 +123,7 @@ class StaticNameDB : public NameDB { public:
     bool query(const String &name, void *value, int vsize);
     String revfind(const void *value, int vsize);
 
-#ifdef CLICK_NAMEDB_CHECK
+#if CLICK_NAMEDB_CHECK
     void check(ErrorHandler *);
 #endif
     
@@ -142,7 +142,7 @@ class DynamicNameDB : public NameDB { public:
     void define(const String &name, const void *value, int vsize);
     String revfind(const void *value, int vsize);
     
-#ifdef CLICK_NAMEDB_CHECK
+#if CLICK_NAMEDB_CHECK
     void check(ErrorHandler *);
 #endif
     
@@ -163,7 +163,7 @@ NameDB::NameDB(uint32_t type, const String &prefix, int vsize)
     : _type(type), _prefix(prefix), _value_size(vsize),
       _prefix_parent(0), _prefix_sibling(0), _prefix_child(0), _installed(0)
 {
-#ifdef CLICK_NAMEDB_CHECK
+#if CLICK_NAMEDB_CHECK
     _check_generation = 0;
 #endif
 }

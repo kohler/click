@@ -3288,7 +3288,7 @@ default_parsefunc(cp_value *v, const String &arg,
 
 #ifdef HAVE_IP6
    case cpiIP6Address:
-    if (!cp_ip6_address(arg, (unsigned char *)v->v.address))
+    if (!cp_ip6_address(arg, (unsigned char *)v->v.address CP_PASS_CONTEXT))
       goto type_mismatch;
     break;
 

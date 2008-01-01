@@ -59,8 +59,8 @@ static const StaticNameDB::Entry udp_fields[] = {
 };
 
 static const StaticNameDB::Entry tcp_fields[] = {
-    { "ackno",	BITFIELD(IP_PROTO_TCP, 8*8, 32) },
     { "ack",	BITFIELD(IP_PROTO_TCP, 13*8+3, 1) },
+    { "ackno",	BITFIELD(IP_PROTO_TCP, 8*8, 32) },
     { "dport",	BITFIELD(IP_PROTO_TCP, 2*8, 16) },
     { "fin",	BITFIELD(IP_PROTO_TCP, 13*8+7, 1) },
     { "flags",	BITFIELD(IP_PROTO_TCP, 13*8, 8) },
