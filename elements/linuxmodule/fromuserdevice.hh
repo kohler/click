@@ -78,26 +78,20 @@ class FromUserDevice : public Element
     static uint    dev_poll(struct file *, struct poll_table_struct *);
 
 private:
-    struct slot
-    {
-        uint32_t size;
-        u_char   buff[SLOT_SIZE];
-    };
-
-    String          _devname;
-    ulong           _size;
-    struct slot    *_buff;
-    ulong           _slot_size;
-    ulong           _r_slot; // where we read from
-    ulong           _w_slot; // where we write to
-    ulong           _capacity;
-    spinlock_t      _lock;
-    ulong           _write_count;
-    ulong           _drop_count;
-    ulong           _pkt_count;
-    ulong           _block_count;
-    atomic_uint32_t _failed_count;
-    bool            _exit;
+    String           _devname;
+    ulong            _size;
+    WritablePacket **_buff;
+    ulong            _r_slot; // where we read from
+    ulong            _w_slot; // where we write to
+    ulong            _capacity;
+    spinlock_t       _lock;
+    ulong            _write_count;
+    ulong            _drop_count;
+    ulong            _pkt_count;
+    ulong            _block_count;
+    ulong            _max;
+    ulong            _failed_count;
+    bool             _exit;
 
     // related to the device management
     ulong                  _sleep_proc;

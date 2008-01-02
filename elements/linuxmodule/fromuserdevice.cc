@@ -65,7 +65,6 @@ FromUserDevice::FromUserDevice()
     _size = 0;
     _capacity = CAPACITY;
     _devname = DEV_NAME;
-    _slot_size = SLOT_SIZE; 
     _buff = 0;
     _r_slot = 0;
     _w_slot = 0;
@@ -77,11 +76,11 @@ FromUserDevice::FromUserDevice()
     _block_count = 0;
     _failed_count = 0;
     _exit = false;
+    _max = 0;
 }
 
 FromUserDevice::~FromUserDevice()
 {
-
 }
 
 extern struct file_operations *click_new_file_operations();
@@ -135,14 +134,13 @@ ssize_t FromUserDevice::dev_write (struct file *filp, const char *buf,
                              size_t count, loff_t *ppos)
 {
     FromUserDevice *elem = (FromUserDevice*)filp->private_data;
-    int          err;
-    struct slot *slot;
+    int             err;
+    WritablePacket *p;
     // there is a private field and that doesn't compile in C++ so we can't use DEFINE_WAIT macro
     wait_queue_t wq;
 #include <click/cxxprotect.h>
     init_wait(&wq);
 #include <click/cxxunprotect.h>
-    u_char      *temp_buff; 
     ulong        flags;
 
     //click_chatter("FromUserDevice_write %d\n", count);
@@ -151,34 +149,37 @@ ssize_t FromUserDevice::dev_write (struct file *filp, const char *buf,
         click_chatter("Empty private struct!\n");
         return -EIO;
     }
+    
+    // the incoming buffer is too big
+    if (count > SLOT_SIZE)
+    {
+        spin_lock_irqsave(&elem->_lock, flags);
+        elem->_drop_count++;
+        spin_unlock_irqrestore(&elem->_lock, flags);
+        click_chatter("Incoming buffer is bigger than current slot size\n");
+        return -EFAULT;
+    }
+    
     // we should make a copy_from_user here and not while we hold the spinlock
-    temp_buff = (u_char*)click_lalloc(SLOT_SIZE);
-    err = copy_from_user(temp_buff, buf, count);
+    p = WritablePacket::make(count);
+    err = copy_from_user((char*)p->data(), buf, count);
     if (err != 0)
     {
-        click_lfree(temp_buff, SLOT_SIZE);
+        p->kill();
+        spin_lock_irqsave(&elem->_lock, flags);
         elem->_failed_count++;
+        spin_unlock_irqrestore(&elem->_lock, flags);
         click_chatter("Write Fault");
         return -EFAULT;
     }
 
     spin_lock_irqsave(&elem->_lock, flags);
-    // the incoming buffer is too big
-    if (count > elem->_slot_size)
-    {
-        elem->_drop_count++;
-
-        spin_unlock_irqrestore(&elem->_lock, flags);
-        click_lfree(temp_buff, SLOT_SIZE);
-        click_chatter("Incoming buffer is bigger than current slot size\n");
-        return -EFAULT;
-    }
     while(1)
     {
         if (elem->_exit)
         {
             spin_unlock_irqrestore(&elem->_lock, flags);
-            click_lfree(temp_buff, SLOT_SIZE);
+            p->kill();
             return -EIO;
         }
         if (elem->_size >= elem->_capacity)
@@ -191,27 +192,26 @@ ssize_t FromUserDevice::dev_write (struct file *filp, const char *buf,
             prepare_to_wait(&elem->_proc_queue, &wq, TASK_INTERRUPTIBLE);
             schedule();
             finish_wait(&elem->_proc_queue, &wq);
-	    if (elem->_exit)
-		return -EIO;
+            if (elem->_exit)
+                return -EIO;
             spin_lock_irqsave(&elem->_lock, flags);
             elem->_sleep_proc--;
         }
         else
             break; // we are sure that size is not zero so continue now
     }
-    slot = elem->_buff + elem->_w_slot;
-    slot->size = count;
-    // copy from our temp buff into the ring buffer
-    memcpy(slot->buff, temp_buff, count);
+    // put the packet pointer into the buffer
+    elem->_buff[elem->_w_slot] = p;
+
     elem->_w_slot = (elem->_w_slot + 1) % elem->_capacity;
     elem->_size++;
     elem->_write_count++;
-
+    if (elem->_max < elem->_size)
+        elem->_max = elem->_size;
     //click_ip  *ip = (click_ip*)slot->buff;
     //click_chatter("%x %x %d %d", ip->ip_src.s_addr, ip->ip_dst.s_addr,
     //              ip->ip_v, ip->ip_hl);
     spin_unlock_irqrestore(&elem->_lock, flags);
-    click_lfree(temp_buff, SLOT_SIZE);
     return count;
 }
 
@@ -232,7 +232,7 @@ int FromUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
         return -1;
 
     spin_lock_init(&_lock);
-    if (!(_buff = (struct slot*)click_lalloc(_capacity * sizeof(struct slot))))
+    if (!(_buff = (WritablePacket**)click_lalloc(_capacity * sizeof(WritablePacket*))))
     {
         click_chatter("FromUserDevice Failed to alloc %lu slots\n", _capacity);
         return -1;
@@ -251,7 +251,7 @@ int FromUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
         {
             click_chatter("Failed to Register Dev:%s Major:%d Minor:%d\n", 
                 DEV_NAME, _dev_major, _dev_minor);
-            click_lfree((char*)_buff, _capacity * sizeof(struct slot));
+            click_lfree((char*)_buff, _capacity * sizeof(WritablePacket*));
             _buff = 0;
             return - EIO;
         }
@@ -294,32 +294,14 @@ int FromUserDevice::initialize(ErrorHandler *errh)
 Packet* FromUserDevice::pull(int)
 {
     WritablePacket *p = 0;
-    struct slot    *slot;
     ulong           flags;
 
     spin_lock_irqsave(&_lock, flags);
-    click_ip       *ip;
-    struct sk_buff *skb;
-
-    if (_size)
-    {
-        slot = _buff + _r_slot;
+    if (_size) {
+        p = _buff[_r_slot];
         _r_slot = (_r_slot + 1) % _capacity;
         _size--;
-
-        p = Packet::make(slot->size);
-
-        memcpy(p->data(), slot->buff, slot->size);
-        /*ip = (click_ip*)(p->data());
-        p->timestamp_anno().set_now();
-        p->set_dst_ip_anno(ip->ip_dst);
-        p->set_ip_header(ip, sizeof(click_ip));*/
-        // output the packet
-
-        //click_chatter("%x %x %d %d", ip->ip_src.s_addr, ip->ip_dst.s_addr,
-        //              ip->ip_v, ip->ip_hl);
         _pkt_count++;
-        //click_chatter("Pkt Push: %d\n", slot->size);
     }
     spin_unlock_irqrestore(&_lock, flags);
     // wake up procs if any are sleeping
@@ -339,8 +321,7 @@ void FromUserDevice::cleanup(CleanupStage)
     _exit = true;
     spin_unlock_irqrestore(&_lock, flags);
 
-    if (_buff)
-    {
+    if (_buff) {
         wake_up_interruptible(&_proc_queue);
 	while (waitqueue_active(&_proc_queue))
 	    schedule();
@@ -349,12 +330,18 @@ void FromUserDevice::cleanup(CleanupStage)
         if (!DEV_NUM)
             unregister_chrdev(_dev_major, DEV_NAME);
         // now clear out the memory
-        click_lfree((char*)_buff, _capacity * sizeof(struct slot));
+	while (_size) {
+	    Packet *p = _buff[_r_slot];
+	    _r_slot = (_r_slot + 1) % _capacity;
+	    p->kill();
+	    _size--;
+	}
+        click_lfree((char*)_buff, _capacity * sizeof(WritablePacket*));
     }  
 }
 
 enum { H_COUNT, H_DROPS, H_WRITE_CALLS, H_CAPACITY,
-       H_SLOT_SIZE, H_SIZE, H_BLOCK, H_FAILED };
+       H_SLOT_SIZE, H_SIZE, H_BLOCK, H_FAILED, H_MAX };
 
 String FromUserDevice::read_handler(Element *e, void *thunk)
 {
@@ -369,7 +356,7 @@ String FromUserDevice::read_handler(Element *e, void *thunk)
         case H_DROPS:       return String(c->_drop_count);
         case H_WRITE_CALLS: return String(c->_write_count);
         case H_CAPACITY:    return String(c->_capacity);
-        case H_SLOT_SIZE:   return String(c->_slot_size);
+        case H_MAX:         return String(c->_max);
         default:            return "<error>";
     }
 }
@@ -384,6 +371,7 @@ void FromUserDevice::add_handlers()
     add_read_handler("writes", read_handler, (void *)H_WRITE_CALLS);
     add_read_handler("capacity", read_handler, (void *)H_CAPACITY);
     add_read_handler("slot_size", read_handler, (void *)H_SLOT_SIZE);
+    add_read_handler("max", read_handler, (void *)H_MAX);
 }
 
 
