@@ -1,0 +1,39 @@
+%script
+click -e "
+rw :: IPRewriter(pattern 1.0.0.1 1024-1026# - - 0 1, drop);
+FromIPSummaryDump(IN1, STOP true, CHECKSUM true)
+	-> c1 :: CheckIPHeader(VERBOSE true)
+	-> [0]rw[0]
+	-> c2 :: CheckIPHeader(VERBOSE true)
+	-> ToIPSummaryDump(OUT1, CONTENTS src sport dst dport proto tcp_seq);
+f2 :: FromIPSummaryDump(IN2, ACTIVE false, STOP true, CHECKSUM true)
+	-> c3 :: CheckIPHeader(VERBOSE true)
+	-> [1]rw[1]
+	-> c4 :: CheckIPHeader(VERBOSE true)
+	-> ToIPSummaryDump(OUT2, CONTENTS src sport dst dport proto tcp_seq);
+DriverManager(wait_stop, write f2.active true, wait_stop)
+"
+
+%file IN1
+!data src sport dst dport proto tcp_seq
+18.26.4.44 1 18.26.4.44 2 T 1
+18.26.4.44 1 18.26.4.44 2 T 2
+18.26.4.9 10 18.26.4.44 20 T 3
+
+%file IN2
+!data src sport dst dport proto tcp_seq
+18.26.4.44 2 1.0.0.1 1024 T 4
+18.26.4.44 1 1.0.0.1 1024 T 5
+18.26.4.44 20 1.0.0.1 1025 T 6
+
+%ignorex
+!.*
+
+%expect OUT1
+1.0.0.1 1024 18.26.4.44 2 T 1
+1.0.0.1 1024 18.26.4.44 2 T 2
+1.0.0.1 1025 18.26.4.44 20 T 3
+
+%expect OUT2
+18.26.4.44 2 18.26.4.44 1 T 4
+18.26.4.44 20 18.26.4.9 10 T 6
