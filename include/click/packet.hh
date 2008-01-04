@@ -287,7 +287,7 @@ class Packet { public:
   void assimilate_mbuf();
 #endif
 
-  inline void shift_header_annotations(int32_t shift);
+  inline void shift_header_annotations(ptrdiff_t shift);
   WritablePacket *expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom, bool free_on_failure);
   WritablePacket *expensive_push(uint32_t nbytes);
   WritablePacket *expensive_put(uint32_t nbytes);
@@ -1068,7 +1068,7 @@ Packet::copy_annotations(const Packet *p)
 }
 
 inline void
-Packet::shift_header_annotations(int32_t shift)
+Packet::shift_header_annotations(ptrdiff_t shift)
 {
 #if CLICK_USERLEVEL || CLICK_BSDMODULE
   _mac += (_mac ? shift : 0);
