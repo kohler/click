@@ -77,7 +77,7 @@ class HashMap { public:
     V value;
   };
 
-  enum { MAX_NBUCKETS = 32767,
+  enum { MAX_NBUCKETS = 4194303,
 	 DEFAULT_INITIAL_NBUCKETS = 127,
 	 DEFAULT_RESIZE_THRESHOLD = 2 };
   

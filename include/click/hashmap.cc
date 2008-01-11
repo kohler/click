@@ -23,6 +23,7 @@
 CLICK_ENDDECLS
 #include <click/hashmap.hh>
 #include <click/bighashmap_arena.hh>
+#include <click/glue.hh>
 CLICK_DECLS
 
 #define BIGHASHMAP_REARRANGE_ON_FIND 1
@@ -32,7 +33,7 @@ void
 HashMap<K, V>::initialize(HashMap_ArenaFactory *factory, size_t initial_nbuckets)
 {
   _nbuckets = initial_nbuckets;
-  _buckets = new Elt *[_nbuckets];
+  _buckets = (Elt **) CLICK_LALLOC(_nbuckets * sizeof(Elt *));
   for (size_t i = 0; i < _nbuckets; i++)
     _buckets[i] = 0;
   set_dynamic_resizing(true);
@@ -79,8 +80,9 @@ HashMap<K, V>::copy_from(const HashMap<K, V> &o)
 
 template <class K, class V>
 HashMap<K, V>::HashMap(const HashMap<K, V> &o)
-  : _buckets(new Elt *[o._nbuckets]), _nbuckets(o._nbuckets),
-    _default_value(o._default_value), _capacity(o._capacity), _arena(o._arena)
+    : _buckets((Elt **) CLICK_LALLOC(o._nbuckets * sizeof(Elt *))),
+      _nbuckets(o._nbuckets), _default_value(o._default_value),
+      _capacity(o._capacity), _arena(o._arena)
 {
   _arena->use();
   copy_from(o);
@@ -113,7 +115,7 @@ HashMap<K, V>::~HashMap()
       _arena->free(e);
       e = next;
     }
-  delete[] _buckets;
+  CLICK_LFREE(_buckets, _nbuckets * sizeof(Elt *));
   _arena->unuse();
 }
 
@@ -178,9 +180,9 @@ template <class K, class V>
 void
 HashMap<K, V>::resize0(size_t new_nbuckets)
 {
-  Elt **new_buckets = new Elt *[new_nbuckets];
-  for (size_t i = 0; i < new_nbuckets; i++)
-    new_buckets[i] = 0;
+    Elt **new_buckets = (Elt **) CLICK_LALLOC(new_nbuckets * sizeof(Elt *));
+    for (size_t i = 0; i < new_nbuckets; i++)
+	new_buckets[i] = 0;
 
   size_t old_nbuckets = _nbuckets;
   Elt **old_buckets = _buckets;
@@ -198,7 +200,7 @@ HashMap<K, V>::resize0(size_t new_nbuckets)
       e = n;
     }
 
-  delete[] old_buckets;
+  CLICK_LFREE(old_buckets, old_nbuckets * sizeof(Elt *));
 }
 
 template <class K, class V>
@@ -398,7 +400,7 @@ void
 HashMap<K, void *>::initialize(HashMap_ArenaFactory *factory, size_t initial_nbuckets)
 {
   _nbuckets = initial_nbuckets;
-  _buckets = new Elt *[_nbuckets];
+  _buckets = (Elt **) CLICK_LALLOC(_nbuckets * sizeof(Elt *));
   for (size_t i = 0; i < _nbuckets; i++)
     _buckets[i] = 0;
   set_dynamic_resizing(true);
@@ -443,8 +445,9 @@ HashMap<K, void *>::copy_from(const HashMap<K, void *> &o)
 
 template <class K>
 HashMap<K, void *>::HashMap(const HashMap<K, void *> &o)
-  : _buckets(new Elt *[o._nbuckets]), _nbuckets(o._nbuckets),
-    _default_value(o._default_value), _capacity(o._capacity), _arena(o._arena)
+    : _buckets((Elt **) CLICK_LALLOC(o._nbuckets * sizeof(Elt *))),
+      _nbuckets(o._nbuckets), _default_value(o._default_value),
+      _capacity(o._capacity), _arena(o._arena)
 {
   _arena->use();
   copy_from(o);
@@ -476,7 +479,7 @@ HashMap<K, void *>::~HashMap()
       _arena->free(e);
       e = next;
     }
-  delete[] _buckets;
+  CLICK_LFREE(_buckets, _nbuckets * sizeof(Elt *));
   _arena->unuse();
 }
 
@@ -541,9 +544,9 @@ template <class K>
 void
 HashMap<K, void *>::resize0(size_t new_nbuckets)
 {
-  Elt **new_buckets = new Elt *[new_nbuckets];
-  for (size_t i = 0; i < new_nbuckets; i++)
-    new_buckets[i] = 0;
+    Elt **new_buckets = (Elt **) CLICK_LALLOC(new_nbuckets * sizeof(Elt *));
+    for (size_t i = 0; i < new_nbuckets; i++)
+	new_buckets[i] = 0;
 
   size_t old_nbuckets = _nbuckets;
   Elt **old_buckets = _buckets;
@@ -561,7 +564,7 @@ HashMap<K, void *>::resize0(size_t new_nbuckets)
       e = n;
     }
 
-  delete[] old_buckets;
+  CLICK_LFREE(old_buckets, old_nbuckets * sizeof(Elt *));
 }
 
 template <class K>
