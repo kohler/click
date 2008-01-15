@@ -1694,6 +1694,9 @@ Element::remove_select(int fd, int mask)
  * add_read_handler(@a name) or set_handler(@a name), but any previous
  * add_write_handler(@a name) remains in effect.
  *
+ * The added read handler takes no parameters.  To create a read handler with
+ * parameters, use set_handler() or set_handler_flags().
+ *
  * @sa read_positional_handler, read_keyword_handler: standard read handler
  * hook functions
  * @sa add_write_handler, set_handler, add_task_handlers
