@@ -101,7 +101,8 @@ StringAccum &
 operator<<(StringAccum &sa, const Timestamp& ts)
 {
     if (char *x = sa.reserve(33)) {
-	uint32_t sec, subsec;
+	Timestamp::seconds_type sec;
+	uint32_t subsec;
 	if (ts.sec() >= 0)
 	    sec = ts.sec(), subsec = ts.subsec();
 	else {

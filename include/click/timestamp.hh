@@ -22,6 +22,9 @@ class String;
 
 class Timestamp { public:
 
+    /** @brief  Type used to represent a number of seconds. */
+    typedef int32_t seconds_type;
+
 #if HAVE_NANOTIMESTAMP
     enum {
 	NSUBSEC = 1000000000	/**< Number of subseconds in a second.  Can be
@@ -35,7 +38,7 @@ class Timestamp { public:
 #endif
 
     inline Timestamp();
-    inline Timestamp(int32_t sec, uint32_t subsec);
+    inline Timestamp(seconds_type sec, uint32_t subsec);
     inline Timestamp(const struct timeval &tv);
 #if HAVE_STRUCT_TIMESPEC
     inline Timestamp(const struct timespec &ts);
@@ -44,19 +47,19 @@ class Timestamp { public:
     inline Timestamp(double);
 #endif
 
-    typedef int32_t (Timestamp::*unspecified_bool_type)() const;
+    typedef seconds_type (Timestamp::*unspecified_bool_type)() const;
     inline operator unspecified_bool_type() const;
     
-    inline int32_t sec() const;
+    inline seconds_type sec() const;
     inline uint32_t subsec() const;
     
     inline uint32_t msec() const;
     inline uint32_t usec() const;
     inline uint32_t nsec() const;
     
-    inline int32_t msec1() const;
-    inline int32_t usec1() const;
-    inline int32_t nsec1() const;
+    inline seconds_type msec1() const;
+    inline seconds_type usec1() const;
+    inline seconds_type nsec1() const;
 
 #if TIMESTAMP_PUNS_TIMEVAL
     inline const struct timeval &timeval() const;
@@ -75,18 +78,18 @@ class Timestamp { public:
 #endif
     
     static inline Timestamp make_msec(uint32_t msec);
-    static inline Timestamp make_usec(int32_t sec, uint32_t usec);
+    static inline Timestamp make_usec(seconds_type sec, uint32_t usec);
     static inline Timestamp make_usec(uint32_t usec);
-    static inline Timestamp make_nsec(int32_t sec, uint32_t nsec);
+    static inline Timestamp make_nsec(seconds_type sec, uint32_t nsec);
     
     static inline Timestamp epsilon();
     static inline Timestamp now();
 
-    inline void set(int32_t sec, uint32_t subsec);
-    inline void set_sec(int32_t sec);
+    inline void set(seconds_type sec, uint32_t subsec);
+    inline void set_sec(seconds_type sec);
     inline void set_subsec(uint32_t subsec);
-    inline void set_usec(int32_t sec, uint32_t usec);
-    inline void set_nsec(int32_t sec, uint32_t nsec);
+    inline void set_usec(seconds_type sec, uint32_t usec);
+    inline void set_nsec(seconds_type sec, uint32_t nsec);
 
     inline void set_now();
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
@@ -105,7 +108,7 @@ class Timestamp { public:
     inline static uint32_t subsec_to_usec(uint32_t subsec);
     inline static uint32_t subsec_to_nsec(uint32_t subsec);
     
-    int32_t _sec;
+    seconds_type _sec;
     int32_t _subsec;
     
 };
@@ -210,7 +213,7 @@ Timestamp::Timestamp()
     The @a subsec parameter must be between 0 and NSUBSEC - 1; errors are not
     necessarily checked. */
 inline
-Timestamp::Timestamp(int32_t sec, uint32_t subsec)
+Timestamp::Timestamp(seconds_type sec, uint32_t subsec)
     : _sec(sec), _subsec(subsec)
 {
 }
@@ -292,7 +295,7 @@ Timestamp::make_msec(uint32_t msec)
     @param sec number of seconds
     @param usec number of microseconds (less than 1000000) */
 inline Timestamp
-Timestamp::make_usec(int32_t sec, uint32_t usec)
+Timestamp::make_usec(seconds_type sec, uint32_t usec)
 {
     return Timestamp(sec, usec_to_subsec(usec));
 }
@@ -311,7 +314,7 @@ Timestamp::make_usec(uint32_t usec)
     @param sec number of seconds
     @param nsec number of nanoseconds (less than 1000000000) */
 inline Timestamp
-Timestamp::make_nsec(int32_t sec, uint32_t nsec)
+Timestamp::make_nsec(seconds_type sec, uint32_t nsec)
 {
     return Timestamp(sec, nsec_to_subsec(nsec));
 }
@@ -320,7 +323,7 @@ Timestamp::make_nsec(int32_t sec, uint32_t nsec)
     @param sec number of seconds
     @param subsec number of subseconds */
 inline void
-Timestamp::set(int32_t sec, uint32_t subsec)
+Timestamp::set(seconds_type sec, uint32_t subsec)
 {
     _sec = sec;
     _subsec = subsec;
@@ -331,7 +334,7 @@ Timestamp::set(int32_t sec, uint32_t subsec)
     
     The subseconds component is left unchanged. */
 inline void
-Timestamp::set_sec(int32_t sec)
+Timestamp::set_sec(seconds_type sec)
 {
     _sec = sec;
 }
@@ -351,7 +354,7 @@ Timestamp::set_subsec(uint32_t subsec)
     @param usec number of microseconds (must be less than 1000000)
     @sa make_usec() */
 inline void
-Timestamp::set_usec(int32_t sec, uint32_t usec)
+Timestamp::set_usec(seconds_type sec, uint32_t usec)
 {
     _sec = sec;
     _subsec = usec_to_subsec(usec);
@@ -362,14 +365,14 @@ Timestamp::set_usec(int32_t sec, uint32_t usec)
     @param nsec number of nanoseconds (must be less than 1000000000)
     @sa make_nsec() */
 inline void
-Timestamp::set_nsec(int32_t sec, uint32_t nsec)
+Timestamp::set_nsec(seconds_type sec, uint32_t nsec)
 {
     _sec = sec;
     _subsec = nsec_to_subsec(nsec);
 }
 
 /** @brief Returns this timestamp's seconds component. */
-inline int32_t
+inline Timestamp::seconds_type
 Timestamp::sec() const
 {
     return _sec;
@@ -410,7 +413,7 @@ Timestamp::nsec() const
     milliseconds.
 
     Will overflow on intervals of more than 2147483.647 seconds. */
-inline int32_t
+inline Timestamp::seconds_type
 Timestamp::msec1() const
 {
     return _sec * 1000 + subsec_to_msec(_subsec);
@@ -420,7 +423,7 @@ Timestamp::msec1() const
     microseconds.
 
     Will overflow on intervals of more than 2147.483647 seconds. */
-inline int32_t
+inline Timestamp::seconds_type
 Timestamp::usec1() const
 {
     return _sec * 1000000 + subsec_to_usec(_subsec);
@@ -430,7 +433,7 @@ Timestamp::usec1() const
     nanoseconds.
 
     Will overflow on intervals of more than 2.147483647 seconds. */
-inline int32_t
+inline Timestamp::seconds_type
 Timestamp::nsec1() const
 {
     return _sec * 1000000000 + subsec_to_nsec(_subsec);
@@ -624,7 +627,7 @@ inline
 Timestamp::Timestamp(double d)
 {
     double dfloor = floor(d);
-    _sec = (int32_t) dfloor;
+    _sec = (seconds_type) dfloor;
     _subsec = (uint32_t) ((d - dfloor) * NSUBSEC + 0.5);
     add_fix();
 }
