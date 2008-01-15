@@ -101,12 +101,12 @@ class DirectEWMAX : public P { public:
      *  @param  value  the observation (unscaled) */
     inline void update(value_type value);
 
-    /** @brief  Update the moving average with @a count identical observations.
+    /** @brief  Update the moving average with @a n identical observations.
      *  @param  value  the observation (unscaled)
-     *  @param  count  number of observations
-     *  @note   This may be faster than calling update(@a value) @a count
+     *  @param  n      number of observations
+     *  @note   This may be faster than calling update(@a value) @a n
      *  times. */
-    void update_n(value_type value, unsigned count);
+    void update_n(value_type value, unsigned n);
 
     /** @brief  Unparse the current average into a String.
      *  @note   The returned value is unscaled, but may contain a fractional
@@ -144,24 +144,24 @@ DirectEWMAX<P>::update(value_type val)
 
 template <typename P>
 void
-DirectEWMAX<P>::update_n(value_type value, unsigned count)
+DirectEWMAX<P>::update_n(value_type value, unsigned n)
 {
     // XXX use table lookup
     value_type val_scaled = value << P::scale();
-    if (count >= 100)
+    if (n >= 100)
 	_avg = val_scaled;
     else {
 	val_scaled += P::compensation();
 	unsigned stability = P::stability_shift();
 #if HAVE_ARITHMETIC_RIGHT_SHIFT
-	for (; count > 0; count--)
+	for (; n > 0; n--)
 	    _avg += static_cast<typename P::signed_value_type>(val_scaled - _avg) >> stability;
 #else
 	if (val_scaled < _avg)
-	    for (; count > 0; count--)
+	    for (; n > 0; n--)
 		_avg -= (_avg - val_scaled) >> stability;
 	else
-	    for (; count > 0; count--)
+	    for (; n > 0; n--)
 		_avg += (val_scaled - _avg) >> stability;
 #endif
     }
