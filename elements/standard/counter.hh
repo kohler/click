@@ -50,6 +50,16 @@ Returns the number of bytes that have passed through since the last reset.
 Returns the recent arrival rate, measured by exponential
 weighted moving average, in packets per second.
 
+=h bit_rate read-only
+
+Returns the recent arrival rate, measured by exponential
+weighted moving average, in bits per second.
+
+=h byte_rate read-only
+
+Returns the recent arrival rate, measured by exponential
+weighted moving average, in bytes per second.
+
 =h reset_counts write-only
 
 Resets the counts and rates to zero.
@@ -108,13 +118,19 @@ class Counter : public Element { public:
 
 #ifdef HAVE_INT64_TYPES
     typedef uint64_t counter_t;
+    // Reduce bits of fraction for byte rate to avoid overflow
+    typedef RateEWMAX<RateEWMAXParameters<4, 10, uint64_t, int64_t> > rate_t;
+    typedef RateEWMAX<RateEWMAXParameters<4, 4, uint64_t, int64_t> > byte_rate_t;
 #else
     typedef uint32_t counter_t;
+    typedef RateEWMAX<RateEWMAXParameters<4, 10> > rate_t;
+    typedef RateEWMAX<RateEWMAXParameters<4, 4> > byte_rate_t;
 #endif
     
     counter_t _count;
     counter_t _byte_count;
-    RateEWMA _rate;
+    rate_t _rate;
+    byte_rate_t _byte_rate;
 
     counter_t _count_trigger;
     HandlerCall *_count_trigger_h;

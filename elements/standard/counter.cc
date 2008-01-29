@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -85,9 +86,10 @@ Counter::initialize(ErrorHandler *errh)
 Packet *
 Counter::simple_action(Packet *p)
 {
-  _count++;
-  _byte_count += p->length();
-  _rate.update(1);
+    _count++;
+    _byte_count += p->length();
+    _rate.update(1);
+    _byte_rate.update(p->length());
 
   if (_count == _count_trigger && !_count_triggered) {
     _count_triggered = true;
@@ -104,7 +106,7 @@ Counter::simple_action(Packet *p)
 }
 
 
-enum { H_COUNT, H_BYTE_COUNT, H_RATE, H_RESET,
+enum { H_COUNT, H_BYTE_COUNT, H_RATE, H_BIT_RATE, H_BYTE_RATE, H_RESET,
        H_COUNT_CALL, H_BYTE_COUNT_CALL };
 
 String
@@ -119,6 +121,17 @@ Counter::read_handler(Element *e, void *thunk)
       case H_RATE:
 	c->_rate.update(0);	// drop rate after idle period
 	return c->_rate.unparse_rate();
+      case H_BIT_RATE:
+	c->_byte_rate.update(0); // drop rate after idle period
+	// avoid integer overflow by adjusting scale factor instead of
+	// multiplying
+	if (c->_byte_rate.scale() >= 3)
+	    return cp_unparse_real2(c->_byte_rate.scaled_average() * c->_byte_rate.epoch_frequency(), c->_byte_rate.scale() - 3);
+	else
+	    return cp_unparse_real2(c->_byte_rate.scaled_average() * c->_byte_rate.epoch_frequency() * 8, c->_byte_rate.scale());
+      case H_BYTE_RATE:
+	c->_byte_rate.update(0); // drop rate after idle period
+	return c->_byte_rate.unparse_rate();
       case H_COUNT_CALL:
 	if (c->_count_trigger_h)
 	    return String(c->_count_trigger);
@@ -163,6 +176,8 @@ Counter::add_handlers()
     add_read_handler("count", read_handler, (void *)H_COUNT);
     add_read_handler("byte_count", read_handler, (void *)H_BYTE_COUNT);
     add_read_handler("rate", read_handler, (void *)H_RATE);
+    add_read_handler("bit_rate", read_handler, (void *)H_BIT_RATE);
+    add_read_handler("byte_rate", read_handler, (void *)H_BYTE_RATE);
     add_read_handler("count_call", read_handler, (void *)H_COUNT_CALL);
     add_write_handler("reset", write_handler, (void *)H_RESET, Handler::BUTTON);
     add_write_handler("reset_counts", write_handler, (void *)H_RESET, Handler::BUTTON);

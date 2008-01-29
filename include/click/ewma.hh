@@ -302,7 +302,8 @@ class StabilityEWMAXParameters { public:
  *  the epoch closes, the collected sample count is used to update the moving
  *  average.  Thus, the moving average is measured in samples per epoch.  The
  *  rate() and unparse_rate() member functions return the rate in samples per
- *  <em>second</em>, rather than per epoch.
+ *  <em>second</em>, rather than per epoch.  These functions use the epoch
+ *  frequency to translate between epochs and seconds.
  *
  *  Note that it often makes sense to call update() before calling
  *  scaled_average(), rate(), or unparse_rate(), in case an epoch or two has
@@ -365,6 +366,12 @@ class RateEWMAX : public P { public:
     signed_value_type scaled_average(unsigned ratenum = 0) const {
 	// note: return type must be signed!
 	return _avg[ratenum].scaled_average();
+    }
+
+    /** @brief  Returns one of the average's scaling factors (bits of
+     *		fraction). */
+    unsigned scale(unsigned ratenum = 0) const {
+	return _avg[ratenum].scale();
     }
     
     /** @brief  Return the current rate in samples per second.
