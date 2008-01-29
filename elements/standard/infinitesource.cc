@@ -62,7 +62,8 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
 		   "LIMIT", cpkP, cpInteger, &limit,
 		   "BURST", cpkP, cpInteger, &burstsize,
 		   "ACTIVE", cpkP, cpBool, &active,
-		   "DATASIZE", 0, cpInteger, &datasize,
+		   "LENGTH", 0, cpInteger, &datasize,
+		   "DATASIZE", 0, cpInteger, &datasize, // deprecated
 		   "STOP", 0, cpBool, &stop,
 		   cpEnd) < 0)
     return -1;
@@ -229,8 +230,8 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
 
    case 6: {			// datasize
      int datasize;
-     if (!cp_integer(s, &datasize) || datasize < 1)
-       return errh->error("datasize parameter must be integer >= 1");
+     if (!cp_integer(s, &datasize))
+       return errh->error("length must be integer");
      is->_datasize = datasize;
      is->setup_packet();
      break;
@@ -254,12 +255,17 @@ InfiniteSource::add_handlers()
   add_write_handler("data", change_param, (void *)0, Handler::RAW);
   add_read_handler("limit", read_param, (void *)1, Handler::CALM);
   add_write_handler("limit", change_param, (void *)1);
-  add_read_handler("burstsize", read_param, (void *)2, Handler::CALM);
-  add_write_handler("burstsize", change_param, (void *)2);
+  add_read_handler("burst", read_param, (void *)2, Handler::CALM);
+  add_write_handler("burst", change_param, (void *)2);
   add_read_handler("active", read_param, (void *)3, Handler::CHECKBOX);
   add_write_handler("active", change_param, (void *)3);
   add_read_handler("count", read_param, (void *)4);
   add_write_handler("reset", change_param, (void *)5, Handler::BUTTON);
+  add_read_handler("length", read_param, (void *)6, Handler::CALM);
+  add_write_handler("length", change_param, (void *)6);
+  // deprecated
+  add_read_handler("burstsize", read_param, (void *)2, Handler::CALM);
+  add_write_handler("burstsize", change_param, (void *)2);
   add_read_handler("datasize", read_param, (void *)6, Handler::CALM);
   add_write_handler("datasize", change_param, (void *)6);
   add_task_handlers(&_task);

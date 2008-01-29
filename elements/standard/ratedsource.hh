@@ -32,9 +32,9 @@ Keyword arguments are:
 
 String. Same as the DATA argument.
 
-=item DATASIZE
+=item LENGTH
 
-Integer. If set, ensures the outgoing packet contains at least this many bytes.
+Integer. If set, the outgoing packet will have this length.
 
 =item RATE
 
@@ -69,8 +69,8 @@ Resets the number of generated packets to 0. The RatedSource will then
 generate another LIMIT packets (if it is active).
 =h data read/write
 Returns or sets the DATA parameter.
-=h datasize read/write
-Returns or sets the DATASIZE parameter.
+=h length read/write
+Returns or sets the LENGTH parameter.
 =h rate read/write
 Returns or sets the RATE parameter.
 =h limit read/write

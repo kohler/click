@@ -3,6 +3,7 @@
  * Benjie Chen, Eddie Kohler (based on udpgen.o)
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/router.hh>
+#include <click/straccum.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/glue.hh>
 CLICK_DECLS
@@ -50,7 +52,8 @@ RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 		   "RATE", cpkP, cpUnsigned, &rate,
 		   "LIMIT", cpkP, cpInteger, &limit,
 		   "ACTIVE", cpkP, cpBool, &active,
-		   "DATASIZE", 0, cpInteger, &datasize,
+		   "LENGTH", 0, cpInteger, &datasize,
+		   "DATASIZE", 0, cpInteger, &datasize, // deprecated
 		   "STOP", 0, cpBool, &stop,
 		   cpEnd) < 0)
     return -1;
@@ -141,15 +144,17 @@ RatedSource::setup_packet()
     // note: if you change `headroom', change `click-align'
     unsigned int headroom = 16+20+24;
 
-    if (_datasize != -1 && _datasize > _data.length()) {
-	// make up some data to fill extra space
-	String new_data;
-	do {
-	    new_data += _data;
-	} while (new_data.length() < _datasize);    
-	_packet = Packet::make(headroom, (unsigned char *) new_data.data(), _datasize, 0);
-    } else
+    if (_datasize < 0)
 	_packet = Packet::make(headroom, (unsigned char *) _data.data(), _data.length(), 0);
+    else if (_datasize <= _data.length())
+	_packet = Packet::make(headroom, (unsigned char *) _data.data(), _datasize, 0);
+    else {
+	// make up some data to fill extra space
+	StringAccum sa;
+	while (sa.length() < _datasize)
+	    sa << _data;
+	_packet = Packet::make(headroom, (unsigned char *) sa.data(), _datasize, 0);
+    }
 }
 
 String
@@ -230,8 +235,8 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
 
    case 6: {			// datasize
      int datasize;
-     if (!cp_integer(s, &datasize) || datasize < 1)
-       return errh->error("datasize parameter must be integer >= 1");
+     if (!cp_integer(s, &datasize))
+       return errh->error("length must be integer");
      rs->_datasize = datasize;
      rs->setup_packet();
      break;
@@ -253,6 +258,9 @@ RatedSource::add_handlers()
   add_write_handler("active", change_param, (void *)3);
   add_read_handler("count", read_param, (void *)4);
   add_write_handler("reset", change_param, (void *)5, Handler::BUTTON);
+  add_read_handler("length", read_param, (void *)6);
+  add_write_handler("length", change_param, (void *)6);
+  // deprecated
   add_read_handler("datasize", read_param, (void *)6);
   add_write_handler("datasize", change_param, (void *)6);
 

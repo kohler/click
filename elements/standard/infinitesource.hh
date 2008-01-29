@@ -31,9 +31,9 @@ Keyword arguments are:
 
 String. Same as the DATA argument.
 
-=item DATASIZE
+=item LENGTH
 
-Integer. If set, ensures the outgoing packet contains at least this many bytes.
+Integer. If set, the outgoing packet will have this length.
 
 =item LIMIT
 
@@ -75,12 +75,12 @@ Resets the number of generated packets to 0. The InfiniteSource will then
 generate another LIMIT packets (if it is active).
 =h data read/write
 Returns or sets the DATA parameter.
-=h datasize read/write
-Returns or sets the DATASIZE parameter.
+=h length read/write
+Returns or sets the LENGTH parameter.
 =h limit read/write
 Returns or sets the LIMIT parameter.
-=h burstsize read/write
-Returns or sets the BURSTSIZE parameter.
+=h burst read/write
+Returns or sets the BURST parameter.
 =h active read/write
 Makes the element active or inactive.
 
