@@ -245,9 +245,9 @@ FromNLANRDump::read_packet(ErrorHandler *errh)
   check_times:
     uint32_t usec = ntohl(cell->timestamp_usec);
     if (_format == C_TSH)
-	tv = Timestamp(ntohl(cell->timestamp_sec), usec & 0xFFFFFF);
+	tv = Timestamp::make_usec(ntohl(cell->timestamp_sec), usec & 0xFFFFFF);
     else if (_format == C_FRPLUS || _format == C_FR)
-	tv = Timestamp(ntohl(cell->timestamp_sec), usec);
+	tv = Timestamp::make_usec(ntohl(cell->timestamp_sec), usec);
     if (!_have_any_times)
 	prepare_times(tv);
     if (_have_first_time) {
