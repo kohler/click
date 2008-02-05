@@ -304,7 +304,7 @@ read_sched_param(Element *, void *thunk)
 
       case H_ITERS_PER_TIMERS:
 	for (int i = 0; i < click_master->nthreads(); i++)
-	    s += String(click_master->thread(i)->_iters_per_timers) + "\n";
+	    s += String(click_master->max_timer_stride()) + "\n";
 	break;
 	  
       case H_ITERS_PER_OS:
@@ -336,8 +336,7 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 	  if (!cp_integer(conf, &x)) 
 	      return errh->error("tasks_per_iter_timers must be unsigned\n");
 	  // change current thread priorities
-	  for (int i = 0; i < click_master->nthreads(); i++)
-	      click_master->thread(i)->_iters_per_timers = x;
+	  click_master->set_max_timer_stride(x);
 	  break;
       }
 

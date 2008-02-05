@@ -48,15 +48,15 @@ CLICK_DECLS
  allowing the main Click driver to run other tasks or even to sleep.  There is
  a tradeoff, and some elements combine a Task and a Timer to get the benefits
  of both; for example, RatedSource uses a Task at high rates and a Timer at
- low rates.
+ low rates.  The Timer::adjustment() value is useful in this context.
 
  Timers are checked and fired relatively infrequently.  Particularly at user
  level, there can be a significant delay between a Timer's nominal expiration
  time and the actual time it runs.  While we may attempt to address this
  problem in future, for now elements that desire extremely precise timings
  should combine a Timer with a Task; the Timer is set to go off a bit before
- the true expiration time, after which the Task polls the CPU until the actual
- expiration time arrives.
+ the true expiration time (see Timer::adjustment()), after which the Task
+ polls the CPU until the actual expiration time arrives.
  
  Since Click is cooperatively scheduled, any timer callback should run for
  just a short period of time.  Very long callbacks can inappropriately delay

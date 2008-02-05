@@ -39,6 +39,9 @@ class Master { public:
     
     Timestamp next_timer_expiry() const		{ return _timer_expiry; }
     void run_timers();
+    unsigned max_timer_stride() const		{ return _max_timer_stride; }
+    unsigned timer_stride() const		{ return _timer_stride; }
+    void set_max_timer_stride(unsigned timer_stride);
     
 #if CLICK_USERLEVEL
     int add_select(int fd, Element*, int mask);
@@ -103,6 +106,9 @@ class Master { public:
     void process_pending(RouterThread*);
 
     // TIMERS
+    unsigned _max_timer_stride;
+    unsigned _timer_stride;
+    unsigned _timer_count;
     Vector<Timer*> _timer_heap;
 #if CLICK_LINUXMODULE
     spinlock_t _timer_lock;

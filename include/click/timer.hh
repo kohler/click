@@ -49,6 +49,8 @@ class Timer { public:
     inline void schedule_after_ms(uint32_t delta_sec) CLICK_DEPRECATED;
     inline void reschedule_after_s(uint32_t delta_sec) CLICK_DEPRECATED;
     inline void reschedule_after_ms(uint32_t delta_sec) CLICK_DEPRECATED;
+
+    static inline Timestamp adjustment();
     
   private:
   
@@ -237,6 +239,20 @@ inline void
 Timer::reschedule_after_ms(uint32_t delta_msec)
 {
     reschedule_after_msec(delta_msec);
+}
+
+/** @brief Return an adjustment interval useful for precise timers.
+ *
+ * Due to scheduling granularity, other tasks running on the same machine, and
+ * similar effects, a Timer object can trigger some time after its nominal
+ * expiry().  Functions that require precise timers should combine a Timer and
+ * a @link Task object; the Timer is set to go off some time before the true
+ * expiry, and the Task is used to busy-wait the difference.
+ * Timer::adjustment() is an appropriate value for this time difference. */
+inline Timestamp
+Timer::adjustment()
+{
+    return Timestamp::make_usec(500);
 }
 
 CLICK_ENDDECLS

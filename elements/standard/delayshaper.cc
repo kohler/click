@@ -80,21 +80,23 @@ DelayShaper::pull(int)
     
     if (_p) {
 	Timestamp now = Timestamp::now();
-	Timestamp diff = _p->timestamp_anno() - now;
-	
-	if (diff.sec() < 0 || !diff) {
+	if (_p->timestamp_anno() <= now) {
 	    // packet ready for output
 	    Packet *p = _p;
 	    p->timestamp_anno() = now;
 	    _p = 0;
 	    return p;
-	} else if (diff.sec() == 0 && diff.subsec() < Timestamp::usec_to_subsec(100000)) {
+	}
+
+	// adjust time by a bit
+	Timestamp expiry = _p->timestamp_anno() - Timer::adjustment();
+	if (expiry <= now) {
 	    // small delta, don't go to sleep -- but mark our Signal as active,
 	    // since we have something ready.
 	    _notifier.wake();
 	} else {
 	    // large delta, go to sleep and schedule Timer
-	    _timer.schedule_at(_p->timestamp_anno());
+	    _timer.schedule_at(expiry);
 	    _notifier.sleep();
 	}
     } else if (!_upstream_signal) {

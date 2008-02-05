@@ -122,9 +122,9 @@ LinkUnqueue::run_task(Task *)
     bool worked = false;
     Timestamp now = Timestamp::now();
     Timestamp now_delayed = now + _latency;
-
+    
     // Read a new packet if there's room.  Room is measured by the latency
-    while (!_qtail || now_delayed >= _qtail->timestamp_anno()) {
+    while (!_qtail || _qtail->timestamp_anno() <= now_delayed) {
 	// try to pull a packet
 	Packet *p = input(0).pull();
 	if (!p) {
@@ -147,9 +147,9 @@ LinkUnqueue::run_task(Task *)
 	Storage::_tail++;
 	worked = _back_to_back = true;
     }
-	    
+
     // Emit packets if it's time
-    while (_qhead && now >= _qhead->timestamp_anno()) {
+    while (_qhead && _qhead->timestamp_anno() <= now) {
 	Packet *p = _qhead;
 	_qhead = p->next();
 	if (!_qhead)
@@ -160,7 +160,7 @@ LinkUnqueue::run_task(Task *)
 	Storage::_tail--;
 	worked = true;
     }
-
+    
     // Figure out when to schedule next
     //print_queue(_qhead);
     if (_qhead) {
@@ -171,7 +171,7 @@ LinkUnqueue::run_task(Task *)
 		expiry = expiry2;
 	}
 	//{ Timestamp diff = expiry - now; click_chatter("%{timestamp}: %{timestamp} > + %{timestamp}", &now, &expiry, &diff); }
-	expiry -= Timestamp(0, 5000);
+	expiry -= Timer::adjustment();
 	if (expiry <= now) {
 	    // small delay, reschedule Task
 	    //_state = S_TASK;

@@ -65,7 +65,7 @@ CLICK_CXX_UNPROTECT
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <sys/time.h>
-# ifdef CLICK_NS
+# if CLICK_NS
 extern "C" int simclick_gettimeofday(struct timeval *);
 # endif
 
@@ -217,7 +217,7 @@ typedef struct device net_device;
 # define click_jiffies()		((unsigned)ticks)
 # define CLICK_HZ			hz
 #else
-#ifndef CLICK_NS
+#if !CLICK_NS
 # define click_gettimeofday(tvp)	(gettimeofday(tvp, (struct timezone *)0))
 #else
 # define click_gettimeofday(tvp)	(simclick_gettimeofday(tvp))

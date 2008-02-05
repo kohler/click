@@ -72,21 +72,22 @@ DelayUnqueue::run_task(Task *)
   
     if (_p) {
 	Timestamp now = Timestamp::now();
-	Timestamp diff = _p->timestamp_anno() - now;
-
-	if (diff.sec() < 0 || !diff) {
+	if (_p->timestamp_anno() <= now) {
 	    // packet ready for output
 	    _p->timestamp_anno() = now;
 	    output(0).push(_p);
 	    _p = 0;
 	    worked = true;
 	    goto retry;
-	} else if (diff.sec() == 0 && diff.subsec() < Timestamp::usec_to_subsec(100000))
+	}
+
+	Timestamp expiry = _p->timestamp_anno() - Timer::adjustment();
+	if (expiry <= now)
 	    // small delta, reschedule Task
 	    /* Task rescheduled below */;
 	else {
 	    // large delta, schedule Timer
-	    _timer.schedule_at(_p->timestamp_anno());
+	    _timer.schedule_at(expiry);
 	    return false;		// without rescheduling
 	}
     } else {

@@ -85,7 +85,7 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
     else if ((_linktype = fake_pcap_parse_dlt(encap_type)) < 0)
 	return errh->error("bad encapsulation type");
 
-#ifdef CLICK_NS
+#if CLICK_NS
     if (per_node) {
 	char tmp[255];
 	int r = simclick_sim_command(router()->simnode(), SIMCLICK_GET_NODE_NAME,tmp,255);

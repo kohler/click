@@ -152,7 +152,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _timing = timing;
     _force_ip = force_ip;
 
-#ifdef CLICK_NS
+#if CLICK_NS
     if (per_node) {
 	char tmp[255];
 	int r = simclick_sim_command(router()->simnode(), SIMCLICK_GET_NODE_NAME, tmp,255);
@@ -433,9 +433,9 @@ FromDump::run_task(Task *)
     if (_packet && _timing) {
 	Timestamp now = Timestamp::now();
 	Timestamp t = _packet->timestamp_anno() + _time_offset;
-	if (t > now) {
-	    t -= Timestamp::make_msec(50);
-	    if (t > now)
+	if (now < t) {
+	    t -= Timer::adjustment();
+	    if (now < t)
 		_timer.schedule_at(t);
 	    else
 		_task.fast_reschedule();

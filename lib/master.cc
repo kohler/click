@@ -49,8 +49,18 @@ Master::Master(int nthreads)
 
     for (int tid = -2; tid < nthreads; tid++)
 	_threads.push_back(new RouterThread(this, tid));
-    
+
+    // timer information
+#if CLICK_NS
+    _max_timer_stride = 1;
+#else
+    _max_timer_stride = 32;
+#endif
+    _timer_stride = _max_timer_stride;
+    _timer_count = 0;
+
 #if CLICK_USERLEVEL
+    // select information
 # if HAVE_SYS_EVENT_H && HAVE_KQUEUE
     _kqueue = kqueue();
     _selected_callno = 0;
@@ -71,6 +81,7 @@ Master::Master(int nthreads)
     _pollfds.push_back(dummy);
     _pollfds.clear();
 
+    // signal information
     signals_pending = 0;
     _siginfo = 0;
     _signal_adding = false;
@@ -417,6 +428,14 @@ Master::timer_reheapify_from(int pos, Timer* t, bool will_delete)
 }
 
 void
+Master::set_max_timer_stride(unsigned timer_stride)
+{
+    _max_timer_stride = timer_stride;
+    if (_timer_stride > _max_timer_stride)
+	_timer_stride = _max_timer_stride;
+}
+
+void
 Master::run_timers()
 {
     if (!attempt_lock_timers())
@@ -426,15 +445,37 @@ Master::run_timers()
 	_timer_task = current;
 #endif
 	Timestamp now = Timestamp::now();
-	Timer* t;
-	while (_timer_heap.size() > 0 && !_stopper
-	       && (t = _timer_heap.at_u(0), t->_expiry <= now)) {
-	    timer_reheapify_from(0, _timer_heap.back(), true);
-	    // must reset _schedpos AFTER timer_reheapify_from
-	    t->_schedpos = -1;
-	    _timer_heap.pop_back();
-	    t->_hook(t, t->_thunk);
+	Timer *t = _timer_heap.at_u(0);
+	
+	if (t->_expiry <= now) {
+	    // potentially reduce timer stride
+	    _timer_count = 0;
+	    if (_timer_stride > 1) {
+		Timestamp adj_expiry(t->_expiry);
+		adj_expiry.set_subsec(adj_expiry.subsec()
+				      + Timestamp::usec_to_subsec(500));
+		adj_expiry.add_fix();
+		if (adj_expiry <= now)
+		    _timer_stride = (_timer_stride * 3) / 5;
+	    }
+
+	    // actually run timers
+	    do {
+		timer_reheapify_from(0, _timer_heap.back(), true);
+		// must reset _schedpos AFTER timer_reheapify_from
+		t->_schedpos = -1;
+		_timer_heap.pop_back();
+		t->_hook(t, t->_thunk);
+	    } while (_timer_heap.size() > 0 && !_stopper
+		     && (t = _timer_heap.at_u(0), t->_expiry <= now));
+	    
+	} else if (++_timer_count >= 16) {
+	    // increase timer stride
+	    _timer_count = 0;
+	    if (++_timer_stride >= _max_timer_stride)
+		_timer_stride = _max_timer_stride;
 	}
+	
 #if CLICK_LINUXMODULE
 	_timer_task = 0;
 #endif

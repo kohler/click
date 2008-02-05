@@ -89,9 +89,8 @@ RouterThread::RouterThread(Master *m, int id)
     _cur_click_share = 0;	// because we aren't yet running
 #endif
 
-#if defined(CLICK_NS)
+#if CLICK_NS
     _tasks_per_iter = 256;
-    _iters_per_timers = 1;
 #else
 #ifdef BSD_NETISRSCHED
     // Must be set low for Luigi's feedback scheduler to work properly
@@ -99,7 +98,6 @@ RouterThread::RouterThread(Master *m, int id)
 #else
     _tasks_per_iter = 128;
 #endif
-    _iters_per_timers = 32;
 #endif
 
 #if CLICK_USERLEVEL
@@ -467,7 +465,7 @@ RouterThread::driver()
 
     SET_STATE(S_RUNNING);
 
-#ifndef CLICK_NS
+#if !CLICK_NS
   driver_loop:
 #endif
 
@@ -489,13 +487,13 @@ RouterThread::driver()
 #endif
 
 #ifdef BSD_NETISRSCHED
-	if ((iter % _iters_per_timers) == 0 || _oticks != ticks) {
+	if ((iter % _master->timer_stride()) == 0 || _oticks != ticks) {
 	    _oticks = ticks;
 #else
-	if ((iter % _iters_per_timers) == 0) {
+	if ((iter % _master->timer_stride()) == 0) {
 #endif
 	    _master->run_timers();
-#ifdef CLICK_NS
+#if CLICK_NS
 	    // If there's another timer, tell the simulator to make us
 	    // run when it's due to go off.
 	    if (Timestamp next_expiry = _master->next_timer_expiry()) {

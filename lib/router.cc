@@ -35,11 +35,11 @@
 #include <click/standard/errorelement.hh>
 #include <click/standard/threadsched.hh>
 #include <stdarg.h>
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL
 # include <unistd.h>
 #endif
-#ifdef CLICK_NS
-#include "../elements/ns/fromsimdevice.hh"
+#if CLICK_NS
+# include "../elements/ns/fromsimdevice.hh"
 #endif
 
 CLICK_DECLS
@@ -1809,7 +1809,7 @@ Router::static_cleanup()
 }
 
 
-#ifdef CLICK_NS
+#if CLICK_NS
 
 simclick_node_t *
 Router::simnode() const
