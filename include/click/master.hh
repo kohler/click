@@ -114,6 +114,7 @@ class Master { public:
     spinlock_t _timer_lock;
     struct task_struct *_timer_task;
 #endif
+    inline Timestamp next_timer_expiry_adjusted() const;
     void lock_timers();
     bool attempt_lock_timers();
     void unlock_timers();
