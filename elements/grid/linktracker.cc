@@ -73,7 +73,7 @@ LinkTracker::add_stat(IPAddress dst, int sig, int qual, struct timeval when)
 {
   if (sig == 0 && qual == 0) {
     click_chatter("LinkTracker: ignoring probably bad link info from %s\n",
-		  dst.s().c_str());
+		  dst.unparse().c_str());
     return;
   }
 
@@ -162,7 +162,7 @@ LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num
 
   if (num_rx > num_expected) 
     click_chatter("LinkTracker::add_bcast_stat WARNING num_rx (%d) > num_expected (%d) for %s",
-		  num_rx, num_expected, dst.s().c_str());
+		  num_rx, num_expected, dst.unparse().c_str());
 
   double num_rx_ = num_rx;
   double num_expected_ = num_expected;
@@ -279,7 +279,7 @@ LinkTracker::read_stats(Element *xf, void *)
     snprintf(timebuf, 80, " %ld.%06ld", 
 	     (long) i.value().last_update.tv_sec, 
 	     (long) i.value().last_update.tv_usec);
-    s += i.key().s() 
+    s += i.key().unparse() 
       + String(timebuf)
       + " sig: " + String(i.value().sig_top / i.value().sig_bot) 
       + ", qual: " + String(i.value().qual_top / i.value().qual_bot) + "\n";
@@ -298,7 +298,7 @@ LinkTracker::read_bcast_stats(Element *xf, void *)
     snprintf(timebuf, 80, " %ld.%06ld", 
 	     (long) i.value().last_update.tv_sec, 
 	     (long) i.value().last_update.tv_usec);
-    s += i.key().s() 
+    s += i.key().unparse() 
       + String(timebuf)
       + " " + String(i.value().r_top / i.value().r_bot) + "\n";
   }

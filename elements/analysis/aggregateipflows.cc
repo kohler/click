@@ -189,7 +189,7 @@ AggregateIPFlows::delete_flowinfo(const HostPair &hp, FlowInfo *finfo, bool real
 	fprintf(_traceinfo_file, "<flow aggregate='%u' src='%s' sport='%d' dst='%s' dport='%d' begin='" PRITIMESTAMP "' duration='" PRITIMESTAMP "'",
 
 		sinfo->_aggregate,
-		src.s().c_str(), sport, dst.s().c_str(), dport,
+		src.unparse().c_str(), sport, dst.unparse().c_str(), dport,
 		sinfo->_first_timestamp.sec(), sinfo->_first_timestamp.subsec(),
 		duration.sec(), duration.subsec());
 	if (sinfo->_filepos)

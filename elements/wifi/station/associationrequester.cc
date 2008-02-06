@@ -92,7 +92,7 @@ AssociationRequester::send_assoc_req()
   if (!rates.size()) {
     click_chatter("%{element}: couldn't lookup rates for %s\n",
 		  this,
-		  bssid.s().c_str());
+		  bssid.unparse().c_str());
   }
   struct click_wifi *w = (struct click_wifi *) p->data();
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_ASSOC_REQ;
@@ -282,13 +282,13 @@ AssociationRequester::process_disassociation(Packet *p)
   if (_winfo && _winfo->_bssid == bssid) {
     click_chatter("%{element} disassociation from %s reason %d\n",
 		  this,
-		  bssid.s().c_str(),
+		  bssid.unparse().c_str(),
 		  reason);
     _associated = false;
   } else {
     click_chatter("%{element} BAD disassociation from %s reason %d\n",
 		  this, 
-		  bssid.s().c_str(),
+		  bssid.unparse().c_str(),
 		  reason);
   }
   return;
@@ -362,7 +362,7 @@ AssociationRequester_read_param(Element *e, void *thunk)
     case H_ASSOCIATED:
       return String(td->_associated) + "\n";
     case H_ETH:
-      return td->_eth.s() + "\n";
+      return td->_eth.unparse() + "\n";
     default:
       return String();
     }

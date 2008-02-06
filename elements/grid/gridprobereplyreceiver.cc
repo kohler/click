@@ -82,9 +82,9 @@ GridProbeReplyReceiver::simple_action(Packet *p)
   char buf[200];
   snprintf(buf, sizeof(buf),
 	   "dest=%s nonce=%u hop=%s hopcount=%u rtt=%ld.%06ld tx_time=%ld.%06ld act=%u d1=%u d2=%u",
-	   IPAddress(rr->probe_dest).s().c_str(),
+	   IPAddress(rr->probe_dest).unparse().c_str(),
 	   (unsigned int) ntohl(rr->nonce),
-	   IPAddress(gh->ip).s().c_str(),
+	   IPAddress(gh->ip).unparse().c_str(),
 	   (unsigned int) rr->reply_hop,
 	   (long) rtt.tv_sec, (long) rtt.tv_usec,
 	   (long) tx_time.tv_sec,

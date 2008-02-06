@@ -71,7 +71,7 @@ SimpleLocQuerier::push(int, Packet *p)
   grid_location *l = _locs.findp(dst_ip);
   if (l == 0) {
     click_chatter("SimpleLocQuerier %s: dropping packet for %s; there is no location information",
-		  name().c_str(), dst_ip.s().c_str());
+		  name().c_str(), dst_ip.unparse().c_str());
     wp->kill();
   }
   else {
@@ -88,7 +88,7 @@ SimpleLocQuerier::read_table(Element *e, void *)
   SimpleLocQuerier *slq = (SimpleLocQuerier *) e;
   String s;
   for (locmap::iterator i = slq->_locs.begin(); i.live(); i++)
-    s += i.key().s() + " " + i.value().s() + "\n";
+    s += i.key().unparse() + " " + i.value().s() + "\n";
   return s;
 }
 

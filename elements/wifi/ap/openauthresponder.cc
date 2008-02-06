@@ -120,7 +120,7 @@ OpenAuthResponder::push(int, Packet *p)
     click_chatter("%{element}: auth %d from %s not supported\n",
 		  this,
 		  algo,
-		  src.s().c_str());
+		  src.unparse().c_str());
     p->kill();
     return;
   }

@@ -694,7 +694,7 @@ operator/(const Timestamp &a, const Timestamp &b)
 {
     return a.doubleval() / b.doubleval();
 }
-# endif /* !CLICK_LINUXMODULE && !CLICK_BSDMODULE */
+#endif /* !CLICK_LINUXMODULE && !CLICK_BSDMODULE */
 
 StringAccum& operator<<(StringAccum&, const Timestamp&);
 

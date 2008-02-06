@@ -100,7 +100,7 @@ GridProxy::reverse_mapping(Packet *p_in) {
   IPAddress dst = IPAddress(p_in->ip_header()->ip_dst);
   DstInfo *nfo = _map.findp(dst);
   if (!nfo) {
-    //click_chatter("couldn't find a gateway for %s!\n", dst.s().c_str());
+    //click_chatter("couldn't find a gateway for %s!\n", dst.unparse().c_str());
     p_in->kill();
     return;
   }
@@ -178,8 +178,8 @@ GridProxy::print_stats()
 
   for (ProxyMap::iterator iter = _map.begin(); iter.live(); iter++) {
     DstInfo nfo = iter.value();
-    sa << nfo._ip.s().c_str() << " ";
-    sa << nfo._gw.s().c_str() << " ";
+    sa << nfo._ip.unparse().c_str() << " ";
+    sa << nfo._gw.unparse().c_str() << " ";
     sa << now - nfo._last_updated << "\n";
     
   }

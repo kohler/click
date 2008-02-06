@@ -160,8 +160,8 @@ IPsecEncap::read_handler(Element *e, void *thunk)
 {
   IPsecEncap *ipe = static_cast<IPsecEncap *>(e);
   switch ((intptr_t)thunk) {
-   case 0:	return IPAddress(ipe->_iph.ip_src).s();
-   case 1:	return IPAddress(ipe->_iph.ip_dst).s();
+   case 0:	return IPAddress(ipe->_iph.ip_src).unparse();
+   case 1:	return IPAddress(ipe->_iph.ip_dst).unparse();
    default:	return "<error>";
   }
 }

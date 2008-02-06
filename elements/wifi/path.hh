@@ -39,7 +39,7 @@ inline String path_to_string(const Path &p)
 {
   StringAccum sa;
   for(int x = 0; x < p.size(); x++) {
-    sa << p[x].s();
+    sa << p[x].unparse();
     if (x != p.size() - 1) {
       sa << " ";
     }

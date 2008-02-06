@@ -291,7 +291,7 @@ ProbeResponder_read_param(Element *e, void *thunk)
   case H_DEBUG:
     return String(td->_debug) + "\n";
   case H_BSSID:
-    return td->_bssid.s() + "\n";
+    return td->_bssid.unparse() + "\n";
   case H_SSID:
     return td->_ssid + "\n";
   case H_CHANNEL:

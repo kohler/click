@@ -342,7 +342,7 @@ public:
 	  for (int i=0; i<r.size(); i++)
 	    click_chatter(" - %d  %s (%d)\n",
 			  i,
-			  r[i].ip().s().c_str(),
+			  r[i].ip().unparse().c_str(),
 			  r[i]._metric);
 	  
 	  int i1 = route_index_of(r, _a);
@@ -352,7 +352,7 @@ public:
 	  if (i2 == -1) return false;
 	  
 	  click_chatter("link_filter: src/dst is %s/%s (%d/%d)\n", 
-			_a.s().c_str(), _b.s().c_str(), i1, i2);
+			_a.unparse().c_str(), _b.unparse().c_str(), i1, i2);
 	  
 	  /* XXX we're already assuming bidirectionality, so this abs
 	   * seems ok; really we should probably be checking the order,

@@ -136,7 +136,7 @@ WirelessInfo::read_param(Element *e, void *thunk)
   WirelessInfo *td = (WirelessInfo *)e;
     switch ((uintptr_t) thunk) {
     case H_SSID: return td->_ssid + "\n";
-    case H_BSSID: return td->_bssid.s() + "\n";
+    case H_BSSID: return td->_bssid.unparse() + "\n";
     case H_CHANNEL: return String(td->_channel) + "\n";
     case H_INTERVAL: return String(td->_interval) + "\n";
     case H_WEP: return String(td->_wep) + "\n";

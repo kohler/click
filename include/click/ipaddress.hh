@@ -57,7 +57,7 @@ class IPAddress { public:
     String unparse_with_mask(IPAddress) const;
   
     inline String s() const;
-    inline operator String() const;
+    inline operator String() const CLICK_DEPRECATED;
 
   private:
   
@@ -323,6 +323,7 @@ IPAddress::hashcode() const
 }
 
 /** @brief Unparses this address into a dotted-quad format String.
+    @deprecated The unparse() function should be preferred to this cast.
     @sa unparse */
 inline
 IPAddress::operator String() const
@@ -331,6 +332,7 @@ IPAddress::operator String() const
 }
 
 /** @brief Unparses this address into a dotted-quad format String.
+    @deprecated The unparse() function should be preferred to s().
     @sa unparse */
 inline String
 IPAddress::s() const

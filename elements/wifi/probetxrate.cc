@@ -159,7 +159,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     if (_debug) {
       click_chatter("%{element}: discarding bcast %s\n",
 		    this,
-		    dst.s().c_str());
+		    dst.unparse().c_str());
     }
     return;
   }
@@ -169,7 +169,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     if (_debug) {
           click_chatter("%{element} no rate set for %s\n",
 			this,
-			dst.s().c_str());
+			dst.unparse().c_str());
     }
     return;
   }
@@ -183,7 +183,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     if (_debug) {
           click_chatter("%{element} short success for %s\n",
 			this,
-			dst.s().c_str());
+			dst.unparse().c_str());
     }
     return;
   }
@@ -193,7 +193,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     if (_debug) {
           click_chatter("%{element} no info for %s\n",
 			this,
-			dst.s().c_str());
+			dst.unparse().c_str());
     }
     return;
   }
@@ -201,7 +201,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   if (!success && _debug) {
     click_chatter("%{element} packet failed %s retries %d rate %d alt %d\n",
 		  this,
-		  dst.s().c_str(),
+		  dst.unparse().c_str(),
 		  retries,
 		  ceh->rate,
 		  ceh->rate1);

@@ -105,8 +105,8 @@ EstimateRouterRegion::purge_old()
       if(_debug)
         click_chatter("EstimateRouterRegion %s %s: purging old entry for %s (%d %d %d)",
                       name().c_str(),
-                      _my_ip.s().c_str(),
-                      IPAddress(_entries[j]._fix.fix_id).s().c_str(),
+                      _my_ip.unparse().c_str(),
+                      IPAddress(_entries[j]._fix.fix_id).unparse().c_str(),
                       (int) _entries[j]._when.tv_sec,
                       (int) tv.tv_sec,
                       pep_purge);
@@ -224,8 +224,8 @@ EstimateRouterRegion::findEntry(unsigned id, bool create)
     if (_debug)
       click_chatter("EstimateRouterRegion %s %s: new entry for %s",
                     this->name().c_str(),
-                    _my_ip.s().c_str(),
-                    IPAddress(id).s().c_str());
+                    _my_ip.unparse().c_str(),
+                    IPAddress(id).unparse().c_str());
     i = _entries.size();
     static Entry e;
     e._fix.fix_id = id;
@@ -280,8 +280,8 @@ EstimateRouterRegion::simple_action(Packet *p)
       if(_debug && f.fix_hops != oh)
         click_chatter("EstimateRouterRegion %s %s: updating %s, seq %d -> %d, hops %d -> %d, my pos %s",
                       name().c_str(),
-                      _my_ip.s().c_str(),
-                      IPAddress(f.fix_id).s().c_str(),
+                      _my_ip.unparse().c_str(),
+                      IPAddress(f.fix_id).unparse().c_str(),
                       os,
                       f.fix_seq,
                       oh,
@@ -353,10 +353,10 @@ EstimateRouterRegion::s()
   click_gettimeofday(&now);
 
   if(_fixed){
-    s = _my_ip.s() + " " +
+    s = _my_ip.unparse() + " " +
       grid_location(_lat, _lon).s() + "\n";
   } else {
-    s = _my_ip.s() + "\n";
+    s = _my_ip.unparse() + "\n";
   }
 
   s += get_current_location().s() + "\n";
@@ -366,7 +366,7 @@ EstimateRouterRegion::s()
     pep_rgn_fix f = _entries[i]._fix;
     char buf[512];
     snprintf(buf, sizeof(buf), "%s seq=%d %s hops=%d age=%d\n",
-             IPAddress(f.fix_id).s().c_str(),
+             IPAddress(f.fix_id).unparse().c_str(),
              f.fix_seq,
              f.fix_loc.s().c_str(),
              f.fix_hops,

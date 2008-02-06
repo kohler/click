@@ -150,7 +150,7 @@ LookupLocalGridRoute2::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     // logging
 
     if (_verbose)
-      click_chatter("LookupLocalGridRoute2 %s: no route to %s, dropping", name().c_str(), dest_ip.s().c_str());
+      click_chatter("LookupLocalGridRoute2 %s: no route to %s, dropping", name().c_str(), dest_ip.unparse().c_str());
 
     notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::NoLocalRoute, 0);
 

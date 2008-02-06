@@ -138,9 +138,9 @@ WifiDecap::simple_action(Packet *p)
 	  click_chatter("%{element}: dir %d src %s dst %s bssid %s eth 0x%02x\n",
 			this,
 			dir,
-			src.s().c_str(),
-			dst.s().c_str(),
-			bssid.s().c_str(),
+			src.unparse().c_str(),
+			dst.unparse().c_str(),
+			bssid.unparse().c_str(),
 			ether_type);
   }
   

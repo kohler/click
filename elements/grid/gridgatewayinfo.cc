@@ -73,7 +73,7 @@ GridGatewayInfo::print_best_gateway(Element *f, void *)
   
   GridGenericRouteTable::RouteEntry gw;
   if (l->_rt->current_gateway(gw)) {
-    s += gw.dest_ip.s() + "\n";
+    s += gw.dest_ip.unparse() + "\n";
   } else {
     s += "none\n";
   }

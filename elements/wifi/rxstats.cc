@@ -83,7 +83,7 @@ RXStats_read_param(Element *e, void *thunk)
 	      avg_signal = Timestamp::make_msec(1000*n._sum_signal / n._packets);
 	      avg_noise = Timestamp::make_msec(1000*n._sum_noise / n._packets);
       }
-      sa << n._eth.s();
+      sa << n._eth.unparse();
       sa << " rate " << n._rate;
       sa << " signal " << n._signal;
       sa << " noise " << n._noise;

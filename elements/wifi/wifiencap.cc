@@ -151,7 +151,7 @@ WifiEncap_read_param(Element *e, void *thunk)
       case H_MODE:
 	return String(td->_mode) + "\n";
       case H_BSSID:
-	return td->_bssid.s() + "\n";
+	return td->_bssid.unparse() + "\n";
     default:
       return String();
     }

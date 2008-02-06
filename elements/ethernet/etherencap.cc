@@ -78,8 +78,8 @@ EtherEncap::read_handler(Element *e, void *thunk)
 {
   EtherEncap *ee = static_cast<EtherEncap *>(e);
   switch ((intptr_t)thunk) {
-   case 0:	return EtherAddress(ee->_ethh.ether_shost).s();
-   case 1:	return EtherAddress(ee->_ethh.ether_dhost).s();
+   case 0:	return EtherAddress(ee->_ethh.ether_shost).unparse();
+   case 1:	return EtherAddress(ee->_ethh.ether_dhost).unparse();
    case 2:	return String(ntohs(ee->_ethh.ether_type));
    default:	return "<error>";
   }

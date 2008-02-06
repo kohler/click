@@ -542,7 +542,7 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
   unsigned int next_trigger_jiff = _last_triggered_update + msec_to_jiff(_min_triggered_update_period);
 
 #if DBG
-  click_chatter("%s: XXX trigger_hoook(%s)\n", name().c_str(), ip.s().c_str());
+  click_chatter("%s: XXX trigger_hoook(%s)\n", name().c_str(), ip.unparse().c_str());
 #endif
 
   if (jiff >= next_trigger_jiff) {
@@ -674,7 +674,7 @@ DSDVRouteTable::update_metric(RTEntry &r)
   RTEntry *next_hop = _rtes.findp(r.next_hop_ip);
   if (!next_hop) {
     click_chatter("DSDVRouteTable %s: ERROR updating metric for %s; no information for next hop %s; invalidating metric",
-		  name().c_str(), r.dest_ip.s().c_str(), r.next_hop_ip.s().c_str());
+		  name().c_str(), r.dest_ip.unparse().c_str(), r.next_hop_ip.unparse().c_str());
     r.metric = _bad_metric;
     return;
   }
@@ -770,7 +770,7 @@ DSDVRouteTable::send_full_update()
       routes.push_back(r);
 #if DBG
     else
-      click_chatter("%s: XXX excluding %s\n", name().c_str(), r.dest_ip.s().c_str());
+      click_chatter("%s: XXX excluding %s\n", name().c_str(), r.dest_ip.unparse().c_str());
 #endif
   }
 
@@ -908,7 +908,7 @@ DSDVRouteTable::handle_update(RTEntry new_r, const bool was_sender, const unsign
 
 #if DBG
   click_chatter("%s: XXX dest=%s advertise_ok_jiffies=%u wst=%u jiff=%d\n", 
-		name().c_str(), new_r.dest_ip.s().c_str(),
+		name().c_str(), new_r.dest_ip.unparse().c_str(),
 		new_r.advertise_ok_jiffies, new_r.wst, jiff);
 #endif
 
@@ -919,7 +919,7 @@ DSDVRouteTable::handle_update(RTEntry new_r, const bool was_sender, const unsign
       schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
 #if DBG
       click_chatter("%s: XXX scheduled brand-new route to %s to be advertised in %d jiffies from now\n", name().c_str(),
-		    new_r.dest_ip.s().c_str(), new_r.advertise_ok_jiffies - jiff);
+		    new_r.dest_ip.unparse().c_str(), new_r.advertise_ok_jiffies - jiff);
 #endif
     }
     insert_route(new_r, was_sender ? GridGenericLogger::NEW_DEST_SENDER : GridGenericLogger::NEW_DEST);
@@ -929,7 +929,7 @@ DSDVRouteTable::handle_update(RTEntry new_r, const bool was_sender, const unsign
     dsdv_assert(new_r.good() ? old_r->good() : old_r->broken()); // same seq ==> same broken state
 #if DBG2
     click_chatter("%s: XXX checking for better route to %s from %s with same seqno %u",
-		  name().c_str(), new_r.dest_ip.s().c_str(), new_r.next_hop_ip.s().c_str(), new_r.seq_no());
+		  name().c_str(), new_r.dest_ip.unparse().c_str(), new_r.next_hop_ip.s().c_str(), new_r.seq_no());
     click_chatter("%s: XXX good=%s  preferable=%s", name().c_str(), new_r.good() ? "yes" : "no",
 		  metric_preferable(new_r, *old_r) ? "yes" : "no");
 #endif
@@ -1031,7 +1031,7 @@ DSDVRouteTable::simple_action(Packet *packet)
   unsigned num_entries = hlo->num_nbrs;
   if (num_entries > max_entries) {
     click_chatter("DSDVRouteTable %s: route ad from %s contains fewer routes than claimed; want %u, have no more than %u",
-		  name().c_str(), ipaddr.s().c_str(), num_entries, max_entries);
+		  name().c_str(), ipaddr.unparse().c_str(), num_entries, max_entries);
     num_entries = max_entries;
   }
 
@@ -1039,10 +1039,10 @@ DSDVRouteTable::simple_action(Packet *packet)
   RTEntry *r = _rtes.findp(ipaddr);
   if (!r)
     click_chatter("DSDVRouteTable %s: new 1-hop nbr %s -- %s", 
-		  name().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
+		  name().c_str(), ipaddr.unparse().c_str(), ethaddr.unparse().c_str()); 
   else if (r->dest_eth && r->dest_eth != ethaddr)
     click_chatter("DSDVRouteTable %s: ethernet address of %s changed from %s to %s", 
-		  name().c_str(), ipaddr.s().c_str(), r->dest_eth.s().c_str(), ethaddr.s().c_str());
+		  name().c_str(), ipaddr.unparse().c_str(), r->dest_eth.unparse().c_str(), ethaddr.unparse().c_str());
 
 #if SEQ_METRIC
   // track last few broadcast numbers we heard directly from this node
@@ -1079,10 +1079,10 @@ DSDVRouteTable::simple_action(Packet *packet)
 #if 0
   if (old)
     click_chatter("XXX %s %s snd_saw %s  old metric %u  old last seen %u\n",
-		  name().c_str(), ipaddr.s().c_str(), sender_saw_us ? "y" : "n", old->metric.val, old->last_seen_jiffies);
+		  name().c_str(), ipaddr.unparse().c_str(), sender_saw_us ? "y" : "n", old->metric.val, old->last_seen_jiffies);
   else 
     click_chatter("XXX %s %s snd_saw %s\n",
-		name().c_str(), ipaddr.s().c_str(), sender_saw_us ? "y" : "n");
+		name().c_str(), ipaddr.unparse().c_str(), sender_saw_us ? "y" : "n");
 #endif
   if (_use_seen && !sender_saw_us &&
       (!old || old->metric.val() == _metric_seen || (jiff - old->last_seen_jiffies) > 3*msec_to_jiff(_period))) {
@@ -1174,8 +1174,8 @@ DSDVRouteTable::print_rtes_v(Element *e, void *)
 #else
     const RTEntry &f = i.value();
 #endif
-    s += f.dest_ip.s() 
-      + " next=" + f.next_hop_ip.s() 
+    s += f.dest_ip.unparse() 
+      + " next=" + f.next_hop_ip.unparse() 
       + " hops=" + String((int) f.num_hops()) 
       + " gw=" + (f.is_gateway ? "y" : "n")
       + " loc=" + f.dest_loc.s()
@@ -1216,8 +1216,8 @@ DSDVRouteTable::print_rtes(Element *e, void *)
 #else
     const RTEntry &f = i.value();
 #endif
-    s += f.dest_ip.s() 
-      + " next=" + f.next_hop_ip.s() 
+    s += f.dest_ip.unparse() 
+      + " next=" + f.next_hop_ip.unparse() 
       + " hops=" + String((int) f.num_hops()) 
       + " gw=" + (f.is_gateway ? "y" : "n")
       + " metric=" + String(f.metric.val())
@@ -1238,8 +1238,8 @@ DSDVRouteTable::print_nbrs_v(Element *e, void *)
     // only print immediate neighbors 
     if (!i.value().dest_eth) 
       continue;
-    s += i.key().s();
-    s += " eth=" + i.value().dest_eth.s();
+    s += i.key().unparse();
+    s += " eth=" + i.value().dest_eth.unparse();
     char buf[300];
     snprintf(buf, 300, " metric_valid=%s metric=%d if=%d",
 	     i.value().metric.good() ? "yes" : "no", 
@@ -1261,8 +1261,8 @@ DSDVRouteTable::print_nbrs(Element *e, void *)
     // only print immediate neighbors 
     if (!i.value().dest_eth)
       continue;
-    s += i.key().s();
-    s += " eth=" + i.value().dest_eth.s();
+    s += i.key().unparse();
+    s += " eth=" + i.value().dest_eth.unparse();
     s += " if=" + String((int) i.value().next_hop_interface);
     s += "\n";
   }
@@ -1274,14 +1274,14 @@ String
 DSDVRouteTable::print_ip(Element *e, void *)
 {
   DSDVRouteTable *n = (DSDVRouteTable *) e;
-  return n->_ip.s();
+  return n->_ip.unparse();
 }
 
 String
 DSDVRouteTable::print_eth(Element *e, void *)
 {
   DSDVRouteTable *n = (DSDVRouteTable *) e;
-  return n->_eth.s();
+  return n->_eth.unparse();
 }
 
 String
@@ -1589,17 +1589,17 @@ DSDVRouteTable::RTEntry::dump() const
   
   StringAccum sa;
   sa << "  curr jiffies: "  << jiff << "\n"
-     << "       dest_ip: " << dest_ip.s().c_str() << "\n"
-     << "      dest_eth: " << dest_eth.s().c_str() << "\n"
-     << "   next_hop_ip: " << next_hop_ip.s().c_str() << "\n"
-     << "  next_hop_eth: " << next_hop_eth.s().c_str() << "\n"
+     << "       dest_ip: " << dest_ip.unparse() << "\n"
+     << "      dest_eth: " << dest_eth.unparse() << "\n"
+     << "   next_hop_ip: " << next_hop_ip.unparse() << "\n"
+     << "  next_hop_eth: " << next_hop_eth.unparse() << "\n"
      << "next_hop_iface: " << next_hop_interface << "\n"
      << "        seq_no: " << seq_no() << "\n"
      << "      num_hops: " << (unsigned int) num_hops() << "\n"
-     << "  last_updated: " << jiff_diff_string(last_updated_jiffies, jiff).c_str() << "\n"
-     << "  last_expired: " << jiff_diff_string(last_expired_jiffies, jiff).c_str() << "\n"
-     << "      last_seq: " << jiff_diff_string(last_seq_jiffies, jiff).c_str() << "\n"
-     << "  advertise_ok: " << jiff_diff_string(advertise_ok_jiffies, jiff).c_str() << "\n"
+     << "  last_updated: " << jiff_diff_string(last_updated_jiffies, jiff) << "\n"
+     << "  last_expired: " << jiff_diff_string(last_expired_jiffies, jiff) << "\n"
+     << "      last_seq: " << jiff_diff_string(last_seq_jiffies, jiff) << "\n"
+     << "  advertise_ok: " << jiff_diff_string(advertise_ok_jiffies, jiff) << "\n"
      << "        metric: " << metric.val() << "\n"
      << "need_metric_ad: " << need_metric_ad << "\n"
      << "   need_seq_ad: " << need_seq_ad << "\n"

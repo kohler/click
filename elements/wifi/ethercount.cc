@@ -63,7 +63,7 @@ EtherCount_read_param(Element *e, void *thunk)
     StringAccum sa;
     for (EtherCount::NIter iter = td->_neighbors.begin(); iter.live(); iter++) {
 	    EtherCount::DstInfo n = iter.value();
-	    sa << n._eth.s().c_str() << " " << n.count << "\n";
+	    sa << n._eth.unparse() << " " << n.count << "\n";
     }
     return sa.take_string();
   }

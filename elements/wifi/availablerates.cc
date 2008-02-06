@@ -137,7 +137,7 @@ AvailableRates::insert(EtherAddress eth, Vector<int> rates)
     if (_debug) {
       click_chatter("AvailableRates %s: You fool, you tried to insert %s\n",
 		    name().c_str(),
-		    eth.s().c_str());
+		    eth.unparse().c_str());
     }
     return -1;
   }
@@ -186,7 +186,7 @@ AvailableRates_read_param(Element *e, void *thunk)
     }
     for (AvailableRates::RIter iter = td->_rtable.begin(); iter.live(); iter++) {
       AvailableRates::DstInfo n = iter.value();
-      sa << n._eth.s().c_str() << " ";
+      sa << n._eth.unparse() << " ";
       for (int x = 0; x < n._rates.size(); x++) {
 	sa << " " << n._rates[x];
       }

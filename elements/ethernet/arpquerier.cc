@@ -23,6 +23,7 @@
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/bitvector.hh>
+#include <click/straccum.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -444,13 +445,12 @@ ARPQuerier::push(int port, Packet *p)
 String
 ARPQuerier::read_table(Element *e, void *)
 {
-  ARPQuerier *q = (ARPQuerier *)e;
-  String s;
-  for (int i = 0; i < NMAP; i++)
-    for (ARPEntry *e = q->_map[i]; e; e = e->next) {
-      s += e->ip.s() + " " + (e->ok ? "1" : "0") + " " + e->en.s() + "\n";
-    }
-  return s;
+    ARPQuerier *q = (ARPQuerier *)e;
+    StringAccum sa;
+    for (int i = 0; i < NMAP; i++)
+	for (ARPEntry *e = q->_map[i]; e; e = e->next)
+	    sa << e->ip << ' ' << (e->ok ? 1 : 0) << ' ' << e->en << '\n';
+    return sa.take_string();
 }
 
 String

@@ -107,7 +107,7 @@ LinkStat::send_hook()
     }
     unsigned n = count_rx(&val);
     if (n > 0xFFff) 
-      click_chatter("LinkStat %s: WARNING, overflow in number of probes received from %s", name().c_str(), val.eth.s().c_str());
+      click_chatter("LinkStat %s: WARNING, overflow in number of probes received from %s", name().c_str(), val.eth.unparse().c_str());
     link_entry le(val.eth, n & 0xFFff);
     d += le.write(d);
   }
@@ -190,7 +190,7 @@ LinkStat::simple_action(Packet *p)
 
   link_probe lp(p->data() + sizeof(click_ether));
   if (link_probe::calc_cksum(p->data() + sizeof(click_ether)) != 0) {
-    click_chatter("LinkStat %s: bad checksum from %s", name().c_str(), EtherAddress(eh->ether_shost).s().c_str());
+    click_chatter("LinkStat %s: bad checksum from %s", name().c_str(), EtherAddress(eh->ether_shost).unparse().c_str());
     p->kill();
     return 0;
   }
@@ -208,7 +208,7 @@ LinkStat::simple_action(Packet *p)
   unsigned int num_entries = lp.num_links;
   if (num_entries > max_entries) {
     click_chatter("LinkStat %s: WARNING, probe packet from %s contains fewer link entries (at most %u) than claimed (%u)", 
-		  name().c_str(), EtherAddress(eh->ether_shost).s().c_str(), max_entries, num_entries);
+		  name().c_str(), EtherAddress(eh->ether_shost).unparse().c_str(), max_entries, num_entries);
     num_entries = max_entries;
   }
 
@@ -299,7 +299,7 @@ LinkStat::add_bcast_stat(const EtherAddress &eth, const link_probe &lp)
   }
   else if (l->period != new_period) {
     click_chatter("LinkStat %s: %s has changed its link probe period from %u to %u; clearing probe info\n",
-		  name().c_str(), eth.s().c_str(), l->period, new_period);
+		  name().c_str(), eth.unparse().c_str(), l->period, new_period);
     l->probes.clear();
     l->period = new_period;
     return;

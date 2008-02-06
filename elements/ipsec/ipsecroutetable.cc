@@ -209,7 +209,7 @@ IPsecRouteTable::push(int, Packet *p)
   	   //This packet should be sent over a tunneled connection
 	   //so set proper annotations with references to Security Data to be used by IPsec modules
            if((spi == 0) || (sa_data == NULL)) {
-		  click_chatter("No Ipsec tunnel for %s. Wrong tunnel setup", p->dst_ip_anno().s().c_str());
+	       click_chatter("No Ipsec tunnel for %s. Wrong tunnel setup", p->dst_ip_anno().unparse().c_str());
 	   }
 	   SET_IPSEC_SPI_ANNO(p,(uint32_t)spi);
 	   //ISSUE: This is 32-bit architecture specific passing a pointer to next module through annotations!!
@@ -245,7 +245,7 @@ IPsecRouteTable::push(int, Packet *p)
     } else {
 	static int complained = 0;
 	if (++complained <= 5)
-	    click_chatter("IPsecRouteTable: no route for %s", p->dst_ip_anno().s().c_str());
+	    click_chatter("IPsecRouteTable: no route for %s", p->dst_ip_anno().unparse().c_str());
 	p->kill();
     }
 }

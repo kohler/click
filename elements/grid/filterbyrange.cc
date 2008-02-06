@@ -77,7 +77,7 @@ FilterByRange::push(int, Packet *p)
   double dist = grid_location::calc_range(our_loc, remote_loc);
 #if 0
   IPAddress tx(gh->tx_ip);
-  click_chatter("XXXXX range %s %f", tx.s().c_str(), dist);
+  click_chatter("XXXXX range %s %f", tx.unparse().c_str(), dist);
 #endif
   if (dist < 0) {
     click_chatter("bogus location info in grid header");

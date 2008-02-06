@@ -141,13 +141,13 @@ UpdateGridRoutes::simple_action(Packet *packet)
     // this src addr not already in map, so add it
     NbrEntry new_nbr(ethaddr, ipaddr, jiff);
     _addresses.insert(ipaddr, new_nbr);
-    click_chatter("%s: adding %s -- %s", name().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
+    click_chatter("%s: adding %s -- %s", name().c_str(), ipaddr.unparse().c_str(), ethaddr.unparse().c_str()); 
   }
   else {
     // update jiffies and MAC for existing entry
     nbr->last_updated_jiffies = jiff;
     if (nbr->eth != ethaddr) 
-      click_chatter("%s: updating %s -- %s", name().c_str(), ipaddr.s().c_str(), ethaddr.s().c_str()); 
+      click_chatter("%s: updating %s -- %s", name().c_str(), ipaddr.unparse().c_str(), ethaddr.unparse().c_str()); 
     nbr->eth = ethaddr;
   }
   
@@ -318,8 +318,8 @@ print_rtes(Element *e, void *)
   String s;
   for (UpdateGridRoutes::FarTable::iterator iter = n->_rtes.begin(); iter.live(); iter++) {
     UpdateGridRoutes::far_entry f = iter.value();
-    s += IPAddress(f.nbr.ip).s() 
-      + " next_hop=" + IPAddress(f.nbr.next_hop_ip).s() 
+    s += IPAddress(f.nbr.ip).unparse() 
+      + " next_hop=" + IPAddress(f.nbr.next_hop_ip).unparse() 
       + " num_hops=" + String((int) f.nbr.num_hops) 
       + " loc=" + f.nbr.loc.s()
       + " err=" + (f.nbr.loc_good ? "" : "-") + String(f.nbr.loc_err) // negate loc if invalid
@@ -336,8 +336,8 @@ print_nbrs(Element *e, void *)
 
   String s;
   for (UpdateGridRoutes::Table::iterator iter = n->_addresses.begin(); iter.live(); iter++) {
-    s += iter.key().s();
-    s += " eth=" + iter.value().eth.s();
+    s += iter.key().unparse();
+    s += " eth=" + iter.value().eth.unparse();
     s += "\n";
   }
   return s;
@@ -347,7 +347,7 @@ static String
 print_ip(Element *e, void *)
 {
   UpdateGridRoutes *n = (UpdateGridRoutes *) e;
-  return n->_ipaddr.s();
+  return n->_ipaddr.unparse();
 }
 
 
@@ -355,7 +355,7 @@ static String
 print_eth(Element *e, void *)
 {
   UpdateGridRoutes *n = (UpdateGridRoutes *) e;
-  return n->_ethaddr.s();
+  return n->_ethaddr.unparse();
 }
 
 
@@ -463,13 +463,13 @@ UpdateGridRoutes::expire_routes()
   // remove expired immediate nbr entries
   for (xa_t::iterator iter = expired_addresses.begin(); iter.live(); iter++) {
     click_chatter("%s: expiring address for %s",
-                  name().c_str(), iter.key().s().c_str());
+                  name().c_str(), iter.key().unparse().c_str());
     assert(_addresses.remove(iter.key()));
   }
 
   // remove expired route table entry
   for (int i = 0; i < expired_nbrs.size(); i++) {
-    click_chatter("%s: expiring route entry for %s", name().c_str(), IPAddress(expired_nbrs[i].ip).s().c_str());
+    click_chatter("%s: expiring route entry for %s", name().c_str(), IPAddress(expired_nbrs[i].ip).unparse().c_str());
     assert(_rtes.remove(expired_nbrs[i].ip));
   }
 

@@ -233,7 +233,7 @@ AssociationResponder::recv_association_request(Packet *p)
   if (_debug) {
     click_chatter("%{element}: association %s associd %d\n",
 		  this,
-		  src.s().c_str(),
+		  src.unparse().c_str(),
 		  associd);		  
   }
   send_association_response(src, WIFI_STATUS_SUCCESS, associd);

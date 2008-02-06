@@ -89,8 +89,8 @@ ARPTable::insert(IPAddress ip, EtherAddress eth)
   if (!(ip && eth)) {
     click_chatter("ARPTable %s: You fool, you tried to insert %s, %s\n",
 		  name().c_str(),
-		  ip.s().c_str(),
-		  eth.s().c_str());
+		  ip.unparse().c_str(),
+		  eth.unparse().c_str());
     return -1;
   }
   DstInfo *dst = _table.findp(ip);
@@ -122,8 +122,8 @@ ARPTable::print_mappings()
   for (ARPIter iter = _table.begin(); iter.live(); iter++) {
     DstInfo n = iter.value();
     struct timeval age = now - n._when;
-    sa << n._ip.s().c_str() << " ";
-    sa << n._eth.s().c_str() << " ";
+    sa << n._ip.unparse() << " ";
+    sa << n._eth.unparse() << " ";
     sa << "last_received: " << age << "\n";
   }
   return sa.take_string();

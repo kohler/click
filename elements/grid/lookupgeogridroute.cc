@@ -176,7 +176,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
       unsigned short *dp = (unsigned short *) (xp->data() + 22);
       unsigned short src_port = ntohs(*sp);
       unsigned short dst_port = ntohs(*dp);
-      click_chatter("IP packet info: %s:%hu -> %s:%hu", src_ip.s().c_str(), src_port, dst_ip.s().c_str(), dst_port);
+      click_chatter("IP packet info: %s:%hu -> %s:%hu", src_ip.unparse().c_str(), src_port, dst_ip.s().c_str(), dst_port);
     }
 #endif
     notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::NoCloserNode, 0);

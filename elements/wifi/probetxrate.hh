@@ -269,7 +269,7 @@ class ProbeTXRate : public Element { public:
 
       if (_rates.size() == 0) {
 	click_chatter("no rates to pick from for %s\n", 
-		      _eth.s().c_str());
+		      _eth.unparse().c_str());
 	return _rates;
       }
       

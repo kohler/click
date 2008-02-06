@@ -85,7 +85,7 @@ WifiDupeFilter::simple_action(Packet *p_in)
 				this,
 				seq,
 				frag,
-				src.s().c_str());
+				src.unparse().c_str());
 	  }
 	  nfo->_dupes++;
 	  _dupes++;

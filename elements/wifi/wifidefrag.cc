@@ -64,7 +64,7 @@ WifiDefrag::simple_action(Packet *p)
     if (_debug) {
       click_chatter("%{element}: no defrag %s seq %d frag %d\n",
 		    this,
-		    src.s().c_str(),
+		    src.unparse().c_str(),
 		    seq,
 		    frag);
     }
@@ -80,7 +80,7 @@ WifiDefrag::simple_action(Packet *p)
     if (_debug) {
       click_chatter("%{element}: unrelated frag %s seq %d frag %d\n",
 		    this,
-		    src.s().c_str(),
+		    src.unparse().c_str(),
 		    seq,
 		    frag);
       if (nfo) {
@@ -109,7 +109,7 @@ WifiDefrag::simple_action(Packet *p)
     if (_debug) {
       click_chatter("%{element}: first frag %s seq %d frag %d\n",
 		    this,
-		    src.s().c_str(),
+		    src.unparse().c_str(),
 		    seq,
 		    frag);
     }
@@ -133,7 +133,7 @@ WifiDefrag::simple_action(Packet *p)
   if (_debug) {
     click_chatter("%{element}: last frag %s seq %d frag %d\n",
 		  this,
-		  src.s().c_str(),
+		  src.unparse().c_str(),
 		  seq,
 		  frag);
   }

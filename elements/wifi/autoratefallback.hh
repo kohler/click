@@ -98,7 +98,7 @@ class AutoRateFallback : public Element { public:
     int pick_rate() {
       if (_rates.size() == 0) {
 	click_chatter("no rates to pick from for %s\n", 
-		      _eth.s().c_str());
+		      _eth.unparse().c_str());
 	return 2;
       }
 
@@ -111,7 +111,7 @@ class AutoRateFallback : public Element { public:
     int pick_alt_rate() {
       if (_rates.size() == 0) {
 	click_chatter("no rates to pick from for %s\n", 
-		      _eth.s().c_str());
+		      _eth.unparse().c_str());
 	return 2;
       }
       return _rates[max(_current_index - 1, 0)];

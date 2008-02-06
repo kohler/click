@@ -52,7 +52,7 @@ EtherAddress::unparse() const
 
 /** @brief Unparses this address into a colon-separated hex String.
 
-    Examples include "00-00-00-00-00-00" and "00-05-4E-50-3C-1A".
+    Examples include "00:00:00:00:00:00" and "00:05:4E:50:3C:1A".
 
     @note Use unparse() to create the IEEE standard dash-separated form. */
 String

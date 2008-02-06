@@ -21,6 +21,7 @@
 #include <click/etheraddress.hh>
 #include <click/ip6address.hh>
 #include <click/confparse.hh>
+#include <click/straccum.hh>
 #include <click/bitvector.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -288,13 +289,12 @@ IP6NDSolicitor::push(int port, Packet *p)
 String
 IP6NDSolicitor::read_table(Element *e, void *)
 {
-  IP6NDSolicitor *q = (IP6NDSolicitor *)e;
-  String s;
-  for (int i = 0; i < NMAP; i++)
-    for (NDEntry *e = q->_map[i]; e; e = e->next) {
-      s += e->ip6.s() + " " + (e->ok ? "1" : "0") + " " + e->en.s() + "\n";
-    }
-  return s;
+    IP6NDSolicitor *q = (IP6NDSolicitor *)e;
+    StringAccum sa;
+    for (int i = 0; i < NMAP; i++)
+	for (NDEntry *e = q->_map[i]; e; e = e->next)
+	    sa << e->ip6 << ' ' << (e->ok ? 1 : 0) << ' ' << e->en << '\n';
+    return sa.take_string();
 }
 
 static String

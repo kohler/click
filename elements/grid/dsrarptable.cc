@@ -91,8 +91,8 @@ DSRArpTable::pull(int port)
     
   if (! dst_ether) {
     click_chatter ("DSRArpTable::push:  missing ARP table entry!  src: %s/%s dst: %s/%s\n", 
-		   _me.s().c_str(), _me_ether.s().c_str(), 
-		   dst_addr.s().c_str(), dst_ether.s().c_str());
+		   _me.unparse().c_str(), _me_ether.unparse().c_str(), 
+		   dst_addr.unparse().c_str(), dst_ether.unparse().c_str());
     q->kill();
     return NULL;
   }
@@ -126,11 +126,11 @@ DSRArpTable::push(int port, Packet *p_in)
   EtherAddress e = lookup_ip(ip);
   if (!e) {
     DEBUG_CHATTER("DSRArpTable::push:  adding ARP table entry for IP: %s; MAC: %s", 
-		  ip.s().c_str(), mac.s().c_str());
+		  ip.unparse().c_str(), mac.unparse().c_str());
     add_entry(ip, mac);
   } else if (e != mac) {
     click_chatter("DSRArpTable::push:  existing entry for %s has different MAC!  %s, not %s", 
-		  ip.s().c_str(), e.s().c_str(), mac.s().c_str());
+		  ip.unparse().c_str(), e.unparse().c_str(), mac.unparse().c_str());
     delete_entry(ip);
     add_entry(ip, mac);
   }
@@ -176,7 +176,7 @@ DSRArpTable::last_hop_ip(Packet *p)
     } else {
       IPAddress last_hop = dsr_rreq->addr[num_addr-1].ip();
       DEBUG_CHATTER ("saw a route request being forwarded by %s\n",
-		     last_hop.s().c_str());
+		     last_hop.unparse().c_str());
       return (last_hop);
     }
 

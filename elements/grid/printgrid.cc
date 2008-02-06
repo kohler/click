@@ -60,12 +60,12 @@ PrintGrid::encap_to_string(const grid_nbr_encap *nb) const
 {
   String line;
   line += "hops_travelled=" + String((unsigned int) nb->hops_travelled) + " ";
-  line += "dst=" + IPAddress(nb->dst_ip).s() + " ";
+  line += "dst=" + IPAddress(nb->dst_ip).unparse() + " ";
   if (_verbose) {
 #ifndef SMALL_GRID_HEADERS
     if (nb->dst_loc_good) {
       char buf[50];
-      snprintf(buf, 50, "dst_loc=%s ", nb->dst_loc.s().c_str());
+      snprintf(buf, 50, "dst_loc=%s ", nb->dst_loc.unparse().c_str());
       line += buf;
       line += "dst_loc_err=" + String(ntohs(nb->dst_loc_err)) + " ";
     }
@@ -118,7 +118,7 @@ PrintGrid::simple_action(Packet *p)
       line << "hdr_len="  << gh->hdr_len << " ";
 
   // packet originator info
-  line << "ip=" << IPAddress(gh->ip).s() << " ";
+  line << "ip=" << IPAddress(gh->ip).unparse() << " ";
   if (_verbose) {
     if (gh->loc_good)
 	line << "loc=" << gh->loc.s() << " loc_err=" << ntohs(gh->loc_err) << ' ';
@@ -231,7 +231,7 @@ PrintGrid::print_ether_linkstat(Packet *p) const
     click_ether *eh = (click_ether *) p->data();
     char buf[100];
     snprintf(buf, sizeof(buf), "%s %s %04hx ", 
-	     EtherAddress(eh->ether_shost).s().c_str(), EtherAddress(eh->ether_dhost).s().c_str(),
+	     EtherAddress(eh->ether_shost).unparse().c_str(), EtherAddress(eh->ether_dhost).unparse().c_str(),
 	     ntohs(eh->ether_type));
     line << buf;
   }

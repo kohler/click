@@ -92,7 +92,7 @@ LocQueryResponder::simple_action(Packet *p)
 
   if (lq->dst_ip != (unsigned int) _ip) {
     click_chatter("LocQueryResponder %s: received location query for someone else (%s); is the configuration wrong?",
-		  name().c_str(), IPAddress(lq->dst_ip).s().c_str());
+		  name().c_str(), IPAddress(lq->dst_ip).unparse().c_str());
     p->kill();
     return 0;
   }
@@ -102,7 +102,7 @@ LocQueryResponder::simple_action(Packet *p)
   seq_t *old_seq = _query_seqs.findp(gh->ip);
   if (old_seq && old_seq->seq_no >= seq_no) {
 #if NOISY
-    click_chatter("LocQueryResponder %s: ignoring old query from %s (%u) ", name().c_str(), IPAddress(gh->ip).s().c_str(), seq_no);
+    click_chatter("LocQueryResponder %s: ignoring old query from %s (%u) ", name().c_str(), IPAddress(gh->ip).unparse().c_str(), seq_no);
 #endif
     p->kill();
     return 0;

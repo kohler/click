@@ -97,7 +97,7 @@ public:
     operator bool() const { return _init; }
     unsigned int hashcode() const { return *(unsigned int *)ip.data(); }
     String s() const 
-    { return eth.s() + " -- " + ip.s() + " -- " + String(last_updated_jiffies); }
+    { return eth.unparse() + " -- " + ip.unparse() + " -- " + String(last_updated_jiffies); }
   };
 
   typedef HashMap<IPAddress, NbrEntry> Table;

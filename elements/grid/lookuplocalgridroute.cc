@@ -161,9 +161,9 @@ LookupLocalGridRoute::push(int port, Packet *packet)
  	click_chatter("lr %s: got %s packet for %s; I am %s; agi=%s, is_gw = %d\n",
 		      name().c_str(),
 		      grid_hdr::type_string(gh->type).c_str(),
-		      dest_ip.s().c_str(), 
-		      _ipaddr.s().c_str(),
-		      _any_gateway_ip.s().c_str(),
+		      dest_ip.unparse().c_str(), 
+		      _ipaddr.unparse().c_str(),
+		      _any_gateway_ip.unparse().c_str(),
 		      is_gw() ? 1 : 0);
 #endif
 	// is the packet for us?
@@ -174,7 +174,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 #if NOISY
 	    click_chatter("%s: got an IP packet for us %s",
 			  name().c_str(),
-			  dest_ip.s().c_str());
+			  dest_ip.unparse().c_str());
 #endif
 	    packet->pull(sizeof(click_ether) + gh->hdr_len + sizeof(grid_nbr_encap));
 	    notify_route_cbs(packet, dest_ip, GRCB::SendToIP, 0, 0);
@@ -209,9 +209,9 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 #if NOISY
     click_chatter("lr %s: got packet for %s; I am %s; agi=%s, is_gw=%d\n",
 		  name().c_str(),
-		  dst.s().c_str(), 
-		  _ipaddr.s().c_str(),
-		  _any_gateway_ip.s().c_str(),
+		  dst.unparse().c_str(), 
+		  _ipaddr.unparse().c_str(),
+		  _any_gateway_ip.unparse().c_str(),
 		  is_gw() ? 1 : 0);
 #endif
     if (dst == _any_gateway_ip && is_gw()) {
@@ -307,7 +307,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 
   if (_rtes == 0) {
     // no GridRouteTable next-hop table in configuration
-    click_chatter("%s: can't forward packet for %s; there is no routing table, trying geographic forwarding", name().c_str(), dest_ip.s().c_str());
+    click_chatter("%s: can't forward packet for %s; there is no routing table, trying geographic forwarding", name().c_str(), dest_ip.unparse().c_str());
     notify_route_cbs(packet, dest_ip, GRCB::FallbackToGF, 0, 0);
     output(2).push(packet);
     return;
@@ -342,7 +342,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
   }
   else {
 #if NOISY
-    click_chatter("%s: unable to forward packet for %s with local routing, trying geographic routing", name().c_str(), dest_ip.s().c_str());
+    click_chatter("%s: unable to forward packet for %s with local routing, trying geographic routing", name().c_str(), dest_ip.unparse().c_str());
 #endif
     
     // logging

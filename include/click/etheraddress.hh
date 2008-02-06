@@ -27,8 +27,8 @@ class EtherAddress { public:
     String unparse() const;
     String unparse_colon() const;
 
-    inline operator String() const;
     inline String s() const;
+    inline operator String() const CLICK_DEPRECATED;
   
  private:
   
@@ -100,7 +100,8 @@ EtherAddress::sdata() const
     return _data;
 }
 
-/** @brief Unparses this address into a colon-separated hex String.
+/** @brief Unparses this address into a dash-separated hex String.
+    @deprecated The unparse() function should be preferred to this cast.
     @sa unparse */
 inline
 EtherAddress::operator String() const
@@ -108,7 +109,8 @@ EtherAddress::operator String() const
     return unparse();
 }
 
-/** @brief Unparses this address into a colon-separated hex String.
+/** @brief Unparses this address into a dash-separated hex String.
+    @deprecated The unparse() function should be preferred to s().
     @sa unparse */
 inline String
 EtherAddress::s() const

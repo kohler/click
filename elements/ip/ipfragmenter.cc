@@ -90,7 +90,7 @@ IPFragmenter::fragment(Packet *p_in)
 
     if (((ip_in->ip_off & htons(IP_DF)) && _honor_df) || first_dlen < 8) {
 	if (_verbose || _drops < 5)
-	    click_chatter("IPFragmenter(%d) DF %s %s len=%d", _mtu, IPAddress(ip_in->ip_src).s().c_str(), IPAddress(ip_in->ip_dst).s().c_str(), p_in->length());
+	    click_chatter("IPFragmenter(%d) DF %{ip_ptr} %{ip_ptr} len=%d", _mtu, &ip_in->ip_src, &ip_in->ip_dst, p_in->length());
 	_drops++;
 	checked_output_push(1, p_in);
 	return;

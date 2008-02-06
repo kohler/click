@@ -119,7 +119,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
     if (_debug) {
       click_chatter("%{element} stepping down for %s from %d to %d\n",
 		    this,
-		    nfo->_eth.s().c_str(),
+		    nfo->_eth.unparse().c_str(),
 		    nfo->_rates[nfo->_current_index],
 		    nfo->_rates[next_index]);
     }
@@ -156,7 +156,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
     if (_debug) {
       click_chatter("%{element} steping up for %s from %d to %d\n",
 		    this,
-		    nfo->_eth.s().c_str(),
+		    nfo->_eth.unparse().c_str(),
 		    nfo->_rates[nfo->_current_index],
 		    nfo->_rates[min(nfo->_rates.size() - 1, 
 				    nfo->_current_index + 1)]);
@@ -206,7 +206,7 @@ AutoRateFallback::assign_rate(Packet *p_in)
     if (_debug) {
       click_chatter("%{element} initial rate for %s is %d\n",
 		    this,
-		    nfo->_eth.s().c_str(),
+		    nfo->_eth.unparse().c_str(),
 		    nfo->_rates[nfo->_current_index]);
     }
   }

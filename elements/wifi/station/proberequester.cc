@@ -165,7 +165,7 @@ ProbeRequester_read_param(Element *e, void *thunk)
   case H_DEBUG:
     return String(td->_debug) + "\n";
   case H_ETH:
-    return td->_eth.s() + "\n";
+    return td->_eth.unparse() + "\n";
   default:
     return String();
   }

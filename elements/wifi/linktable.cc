@@ -389,7 +389,7 @@ LinkTable::print_links()
   click_gettimeofday(&now);
   for (LTIter iter = _links.begin(); iter.live(); iter++) {
     LinkInfo n = iter.value();
-    sa << n._from.s() << " " << n._to.s();
+    sa << n._from.unparse() << " " << n._to.unparse();
     sa << " " << n._metric;
     sa << " " << n._seq << " " << n.age() << "\n";
   }
@@ -474,8 +474,8 @@ LinkTable::clear_stale() {
 	click_chatter("%{element} :: %s removing link %s -> %s metric %d seq %d age %d\n",
 		      this,
 		      __func__,
-		      nfo._from.s().c_str(),
-		      nfo._to.s().c_str(),
+		      nfo._from.unparse().c_str(),
+		      nfo._to.unparse().c_str(),
 		      nfo._metric,
 		      nfo._seq, 
 		      nfo.age());
