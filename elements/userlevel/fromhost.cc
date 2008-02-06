@@ -127,7 +127,7 @@ FromHost::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *errh
 
     if (_macaddr) {
 	sprintf(tmp, "/sbin/ifconfig %s hw ether %s", _dev_name.c_str(),
-		_macaddr.s().c_str());
+		_macaddr.unparse_colon().c_str());
 	if (system(tmp) != 0) {
 	    errh->error("%s: %s", tmp, strerror(errno));
 	}

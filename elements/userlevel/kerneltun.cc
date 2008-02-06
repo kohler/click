@@ -288,7 +288,7 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     }
 #elif defined(__NetBSD__)
     if (_macaddr && _tap) {
-	String tap = "net.link.tap." + _dev_name, mac = _macaddr.unparse();
+	String tap = "net.link.tap." + _dev_name, mac = _macaddr.unparse_colon();
 	int r = sysctlbyname(tap.c_str(), (void *) 0, (size_t *) 0, (void *) mac.c_str(), mac.length());
 	if (r < 0)
 	    errh->warning("could not set interface Ethernet address: %s", strerror(errno));
