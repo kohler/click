@@ -23,6 +23,8 @@
 #ifndef CLICK_TOOL
 # include <click/element.hh>
 #endif
+#include <click/ipaddress.hh>
+#include <click/etheraddress.hh>
 #include <click/timestamp.hh>
 #include <click/hashmap.hh>
 #include <click/confparse.hh>
@@ -707,6 +709,26 @@ timestamp_error_hook(int, VA_LIST_REF_T val)
     return "(null)";
 }
 
+static String
+ip_ptr_error_hook(int, VA_LIST_REF_T val)
+{
+  const IPAddress *ipp = va_arg(VA_LIST_DEREF(val), const IPAddress *);
+  if (ipp)
+    return ipp->unparse();
+  else
+    return "(null)";
+}
+
+static String
+ether_ptr_error_hook(int, VA_LIST_REF_T val)
+{
+  const EtherAddress *ethp = va_arg(VA_LIST_DEREF(val), const EtherAddress *);
+  if (ethp)
+    return ethp->unparse();
+  else
+    return "(null)";
+}
+
 #ifndef CLICK_TOOL
 static String
 element_error_hook(int, VA_LIST_REF_T val)
@@ -729,6 +751,8 @@ ErrorHandler::static_initialize(ErrorHandler *default_handler)
 #ifndef CLICK_TOOL
   add_conversion("element", element_error_hook);
 #endif
+  add_conversion("ip_ptr", ip_ptr_error_hook);
+  add_conversion("ether_ptr", ether_ptr_error_hook);
   return the_default_handler;
 }
 
