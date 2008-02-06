@@ -398,7 +398,7 @@ Master::next_timer_expiry_adjusted() const
     if (_timer_stride >= 4)
 	e -= Timer::adjustment();
     else
-	e -= 2 * Timer::adjustment();
+	e -= Timer::adjustment() + Timer::adjustment();
     return e;
 }
 
