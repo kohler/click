@@ -625,19 +625,23 @@ CxxInfo::parse_function_definition(const String &text, int fn_start_p,
   // find return type; skip access control declarations, cut space from end
   while (1) {
     int access_p;
-    if (p >= fn_start_p + 6 && strncmp(s+fn_start_p, "public", 6) == 0)
+    if (p >= fn_start_p + 6 && memcmp(s+fn_start_p, "public", 6) == 0)
       access_p = fn_start_p + 6;
-    else if (p >= fn_start_p + 7 && strncmp(s+fn_start_p, "private", 7) == 0)
+    else if (p >= fn_start_p + 7 && memcmp(s+fn_start_p, "private", 7) == 0)
       access_p = fn_start_p + 7;
-    else if (p >= fn_start_p + 9 && strncmp(s+fn_start_p, "protected", 9) == 0)
+    else if (p >= fn_start_p + 9 && memcmp(s+fn_start_p, "protected", 9) == 0)
       access_p = fn_start_p + 9;
+    else if (p >= fn_start_p + 11 && memcmp(s+fn_start_p, "CLICK_DECLS", 11) == 0)
+      access_p = fn_start_p + 11;
+    else if (p >= fn_start_p + 14 && memcmp(s+fn_start_p, "CLICK_ENDDECLS", 14) == 0)
+      access_p = fn_start_p + 14;
     else
       break;
     while (access_p < p && isspace(s[access_p]))
       access_p++;
-    if (access_p == p || s[access_p] != ':')
-      break;
-    for (access_p++; access_p < p && isspace(s[access_p]); access_p++)
+    if (access_p < p && s[access_p] == ':')
+      access_p++;
+    for (; access_p < p && isspace(s[access_p]); access_p++)
       /* nada */;
     fn_start_p = access_p;
   }
@@ -727,8 +731,7 @@ CxxInfo::parse_class(const String &text, int p, const String &original,
     } else if (s[p] == '}') {
       //fprintf(stderr, "!!!!!!/\n");
       return p + 1;
-    }
-    else if (s[p] == '{') {
+    } else if (s[p] == '{') {
       if (p > p1 + 6 && !cxx_class
 	  && (strncmp(s+p1, "class", 5) == 0
 	      || strncmp(s+p1, "struct", 6) == 0)) {

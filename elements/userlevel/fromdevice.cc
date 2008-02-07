@@ -29,6 +29,7 @@
 #include <click/userutils.hh>
 #include <unistd.h>
 #include <fcntl.h>
+#include "fakepcap.hh"
 
 #ifndef __sun
 #include <sys/ioctl.h>
@@ -49,8 +50,6 @@
 #  include <linux/if_ether.h>
 # endif
 #endif
-
-#include "fakepcap.hh"
 
 CLICK_DECLS
 
