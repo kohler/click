@@ -1,0 +1,12 @@
+%info
+Tests ErrorHandler functionality with the ErrorTest element.
+
+%require
+click-buildtool provides ErrorTest
+
+%script
+click -qe ErrorTest
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!
