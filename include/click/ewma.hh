@@ -51,11 +51,11 @@ CLICK_DECLS
  *
  *  <dt><strong>unsigned P::stability_shift()</strong></dt>
  *  <dd>This function should return this EWMA's stability shift
- *  (see below).</dd>
+ *  (see above).</dd>
  *
  *  <dt><strong>unsigned P::scale()</strong></dt>
  *  <dd>This function should return this EWMA's scaling factor
- *  (see below).</dd>
+ *  (see above).</dd>
  *
  *  <dt><strong>unsigned P::compensation()</strong></dt>
  *  <dd>This function should return this EWMA's stability compensation,
