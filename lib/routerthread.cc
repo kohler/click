@@ -413,7 +413,7 @@ RouterThread::run_os()
       block:
 	SET_STATE(S_BLOCKED);
 	schedule();
-    } else if (Timestamp wait = _master->next_timer_expiry()) {
+    } else if (Timestamp wait = _master->next_timer_expiry_adjusted()) {
 	wait -= Timestamp::now();
 	if (!(wait.sec() > 0 || (wait.sec() == 0 && wait.subsec() > (Timestamp::NSUBSEC / CLICK_HZ))))
 	    goto short_pause;
