@@ -508,6 +508,16 @@ Specializer::output_includes(ElementTypeInfo &eti, StringAccum &out)
 	    out << "#include \"" << _etinfo[include_index].found_header_file << "\"\n";
 	    p = p2 + 1;
 	    continue;		// don't use previous #include text
+	  } else if (left + 1 < p && s[left] != '/' && eti.found_header_file) {
+	      const char *fhf_begin = eti.found_header_file.begin();
+	      const char *fhf_end = eti.found_header_file.end();
+	      while (fhf_begin < fhf_end && fhf_end[-1] != '/')
+		  fhf_end--;
+	      if (fhf_begin < fhf_end) {
+		  out << "#include \"" << eti.found_header_file.substring(fhf_begin, fhf_end) << include << "\"\n";
+		  p = p2 + 1;
+		  continue;	// don't use previous #include text
+	      }
 	  }
 	}
       }
