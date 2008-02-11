@@ -70,15 +70,16 @@ LandmarkSetT::offset_to_string(unsigned offset) const
 	std::lower_bound(_linfo.begin(), _linfo.end(), offset, li_searcher);
     if (i == _linfo.end())
 	i = _linfo.begin();
-    const String &fname = _fnames[i->filename];
-    if (fname && i->lineno)
-	return fname + ":" + String(i->lineno);
-    else if (i->lineno)
-	return "line " + String(i->lineno);
-    else if (fname)
-	return fname;
-    else
-	return String::stable_string("<unknown>", 9);
+    if (i != _linfo.end()) {
+	const String &fname = _fnames[i->filename];
+	if (fname && i->lineno)
+	    return fname + ":" + String(i->lineno);
+	else if (fname)
+	    return fname;
+	else if (i->lineno)
+	    return String::stable_string("line ", 5) + String(i->lineno);
+    }
+    return String::stable_string("<unknown>", 9);
 }
 
 String
@@ -91,14 +92,17 @@ LandmarkSetT::offset_to_decorated_string(unsigned offset1, unsigned offset2) con
     StringAccum sa;
     if (offset1 != LandmarkT::noffset)
 	sa << '\\' << '<' << offset1 << ',' << offset2 << '>';
-    const String &fname = _fnames[i->filename];
-    if (fname && i->lineno)
-	sa << fname << ':' << i->lineno;
-    else if (i->lineno)
-	sa << "line " << i->lineno;
-    else if (fname)
-	sa << fname;
-    else
+    int length = sa.length();
+    if (i != _linfo.end()) {
+	const String &fname = _fnames[i->filename];
+	if (fname && i->lineno)
+	    sa << fname << ':' << i->lineno;
+	else if (fname)
+	    sa << fname;
+	else if (i->lineno)
+	    sa << "line " << i->lineno;
+    }
+    if (sa.length() == length)
 	sa << "<unknown>";
     return sa.take_string();
 }
