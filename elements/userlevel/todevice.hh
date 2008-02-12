@@ -40,9 +40,9 @@ CLICK_DECLS
  * header prepended. This means that ARP processing,
  * for example, must already have been done.
  *
- * Under Linux, a L<FromDevice(n)> element will not receive packets sent by a
- * ToDevice element for the same device. Under other operating systems, your
- * mileage may vary.
+ * The L<FromDevice(n)> element's OUTBOUND keyword argument determines whether
+ * FromDevice receives packets sent by a ToDevice element for the same
+ * device.
  *
  * Packets that are written successfully are sent on output 0, if it exists.
  * Packets that fail to be written are pushed out output 1, if it exists.

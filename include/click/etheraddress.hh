@@ -63,7 +63,7 @@ EtherAddress::operator unspecified_bool_type() const
 /** @brief Returns true iff this address is a group address.
 
     Group addresses have the low-order bit of the first byte set to 1, as in
-    01-00-00-00-00-00. */
+    01-00-00-00-00-00 or 03-00-00-02-04-09. */
 inline bool
 EtherAddress::is_group() const
 {
