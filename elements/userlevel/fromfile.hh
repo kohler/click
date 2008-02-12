@@ -44,8 +44,8 @@ class FromFile { public:
     Packet *get_packet_from_data(const void *buf, size_t buf_size, size_t full_size, uint32_t sec, uint32_t subsec, ErrorHandler *);
     void shift_pos(int delta)		{ _pos += delta; }
 
-    int read_line(String &, ErrorHandler *);
-    int peek_line(String &, ErrorHandler *);
+    int read_line(String &str, ErrorHandler *errh, bool temporary = false);
+    int peek_line(String &str, ErrorHandler *errh, bool temporary = false);
     
     int error(ErrorHandler *, const char *format, ...) const;
     int warning(ErrorHandler *, const char *format, ...) const;
@@ -62,7 +62,7 @@ class FromFile { public:
     WritablePacket *_data_packet;
 
 #ifdef ALLOW_MMAP
-    bool _mmap : 1;
+    bool _mmap;
 #endif
 
 #ifdef ALLOW_MMAP

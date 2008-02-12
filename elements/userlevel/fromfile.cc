@@ -239,7 +239,7 @@ FromFile::read(void *vdata, uint32_t dlen, ErrorHandler *errh)
 }
 
 int
-FromFile::read_line(String &result, ErrorHandler *errh)
+FromFile::read_line(String &result, ErrorHandler *errh, bool temporary)
 {
     // first, try to read a line from the current buffer
     const unsigned char *s = _buffer + _pos;
@@ -249,7 +249,10 @@ FromFile::read_line(String &result, ErrorHandler *errh)
     if (s < e && (*s == '\n' || s + 1 < e)) {
 	s += (*s == '\r' && s[1] == '\n' ? 2 : 1);
 	int new_pos = s - _buffer;
-	result = String::stable_string((const char *) (_buffer + _pos), new_pos - _pos);
+	if (temporary)
+	    result = String::stable_string((const char *) (_buffer + _pos), new_pos - _pos);
+	else
+	    result = String((const char *) (_buffer + _pos), new_pos - _pos);
 	_pos = new_pos;
 	_lineno++;
 	return 1;
@@ -297,10 +300,10 @@ FromFile::read_line(String &result, ErrorHandler *errh)
 }
 
 int
-FromFile::peek_line(String &result, ErrorHandler *errh)
+FromFile::peek_line(String &result, ErrorHandler *errh, bool temporary)
 {
     int before_pos = _pos;
-    int retval = read_line(result, errh);
+    int retval = read_line(result, errh, temporary);
     if (retval > 0) {
 	_pos = before_pos;
 	_lineno--;

@@ -173,7 +173,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
     
     while (1) {
 
-	if (_ff.read_line(line, errh) <= 0) {
+	if (_ff.read_line(line, errh, true) <= 0) {
 	    q->kill();
 	    return 0;
 	}

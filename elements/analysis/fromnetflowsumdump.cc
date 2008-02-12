@@ -97,7 +97,7 @@ FromNetFlowSummaryDump::initialize(ErrorHandler *errh)
 	return -1;
 
     String line;
-    if (_ff.peek_line(line, errh) < 0)
+    if (_ff.peek_line(line, errh, true) < 0)
 	return -1;
     
     _format_complaint = false;
@@ -140,7 +140,7 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
     
     while (1) {
 
-	if (_ff.read_line(line, errh) <= 0) {
+	if (_ff.read_line(line, errh, true) <= 0) {
 	    q->kill();
 	    return 0;
 	}

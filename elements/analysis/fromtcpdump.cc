@@ -97,7 +97,7 @@ FromTcpdump::initialize(ErrorHandler *errh)
 
     // read a line
     String line;
-    if (_ff.peek_line(line, errh) < 0)
+    if (_ff.peek_line(line, errh, true) < 0)
 	return -1;
     else if (!line || !isdigit(line[0]))
 	errh->lwarning(_ff.print_filename(), "first line suspicious; is this a tcpdump output file?");
@@ -377,7 +377,7 @@ FromTcpdump::read_packet(ErrorHandler *errh)
     
     while (1) {
 
-	if (_ff.read_line(line, errh) <= 0) {
+	if (_ff.read_line(line, errh, true) <= 0) {
 	    q->kill();
 	    _dead = true;
 	    return 0;

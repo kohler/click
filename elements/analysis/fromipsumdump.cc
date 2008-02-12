@@ -147,7 +147,7 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     
     _minor_version = IPSummaryDump::MINOR_VERSION; // expected minor version
     String line;
-    if (_ff.peek_line(line, errh) < 0)
+    if (_ff.peek_line(line, errh, true) < 0)
 	return -1;
     else if (line.substring(0, 14) == "!IPSummaryDump") {
 	int major_version;
@@ -157,7 +157,7 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
 		_minor_version = IPSummaryDump::MINOR_VERSION;
 	    }
 	}
-	(void) _ff.read_line(line, errh); // throw away line
+	(void) _ff.read_line(line, errh, true); // throw away line
     } else {
 	// parse line again, warn if this doesn't look like a dump
 	if (line.substring(0, 8) != "!creator" && line.substring(0, 5) != "!data" && line.substring(0, 9) != "!contents") {
@@ -734,7 +734,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		return 0;
 	    } else
 		binary = (result == 1);
-	} else if (_ff.read_line(line, errh) <= 0) {
+	} else if (_ff.read_line(line, errh, true) <= 0) {
 	    q->kill();
 	    return 0;
 	}
