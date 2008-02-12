@@ -20,6 +20,10 @@
 #include "sorttest.hh"
 #include <click/glue.hh>
 #include <click/error.hh>
+#include <click/confparse.hh>
+#if CLICK_USERLEVEL
+# include "elements/userlevel/fromfile.hh"
+#endif
 CLICK_DECLS
 
 SortTest::SortTest()
@@ -546,6 +550,9 @@ static const char * const sorted_classes[] = {
 "WebGen"
 };
 
+static Vector<String> *strvec;
+static Vector<size_t> *sizevec;
+
 static int compar(const void *xa, const void *xb)
 {
     const char *a = * (const char **) xa;
@@ -553,9 +560,197 @@ static int compar(const void *xa, const void *xb)
     return strcmp(a, b);
 }
 
+static int string_compar(const void *xa, const void *xb)
+{
+    const String *a = (const String *) xa;
+    const String *b = (const String *) xb;
+    return String::compare(*a, *b);
+}
+
+static int size_t_compar(const void *xa, const void *xb)
+{
+    const size_t *a = (const size_t *) xa;
+    const size_t *b = (const size_t *) xb;
+    return (*a > *b ? 1 : (*a == *b ? 0 : -1));
+}
+
+static int string_permute_compar(const void *xa, const void *xb)
+{
+    const int *a = (const int *) xa;
+    const int *b = (const int *) xb;
+    int diff = String::compare((*strvec)[*a], (*strvec)[*b]);
+    return (diff ? diff : *a - *b);
+}
+
+static int size_t_permute_compar(const void *xa, const void *xb)
+{
+    const int *a = (const int *) xa;
+    const int *b = (const int *) xb;
+    ssize_t diff = (*sizevec)[*a] - (*sizevec)[*b];
+    return (diff < 0 ? -1 : (diff == 0 ? *a - *b : 1));
+}
+
+static int string_rev_compar(const void *xa, const void *xb)
+{
+    const String *a = (const String *) xa;
+    const String *b = (const String *) xb;
+    return String::compare(*b, *a);
+}
+
+static int size_t_rev_compar(const void *xa, const void *xb)
+{
+    const size_t *a = (const size_t *) xa;
+    const size_t *b = (const size_t *) xb;
+    return (*b > *a ? 1 : (*a == *b ? 0 : -1));
+}
+
+static int string_permute_rev_compar(const void *xa, const void *xb)
+{
+    const int *a = (const int *) xa;
+    const int *b = (const int *) xb;
+    int diff = String::compare((*strvec)[*b], (*strvec)[*a]);
+    return (diff ? diff : *a - *b);
+}
+
+static int size_t_permute_rev_compar(const void *xa, const void *xb)
+{
+    const int *a = (const int *) xa;
+    const int *b = (const int *) xb;
+    ssize_t diff = (*sizevec)[*b] - (*sizevec)[*a];
+    return (diff < 0 ? -1 : (diff == 0 ? *a - *b : 1));
+}
+
+
+int
+SortTest::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+#if CLICK_USERLEVEL
+    _output = _stdc = false;
+    String filename;
+#endif
+    bool numeric = false, permute = false;
+    _reverse = false;
+    if (cp_va_kparse_remove_keywords(conf, this, errh,
+				     "NUMERIC", 0, cpBool, &numeric,
+				     "REVERSE", 0, cpBool, &_reverse,
+				     "PERMUTE", 0, cpBool, &permute,
+#if CLICK_USERLEVEL
+				     "FILE", 0, cpFilename, &filename,
+				     "OUTPUT", 0, cpBool, &_output,
+				     "STDC", 0, cpBool, &_stdc,
+#endif
+				     cpEnd) < 0)
+	return -1;
+    
+#if CLICK_USERLEVEL
+    if (filename) {
+	FromFile ff;
+	int r, complain = 0;
+	String s;
+	size_t sz;
+	ff.filename() = filename;
+	if (ff.initialize(errh) < 0)
+	    return -1;
+	while ((r = ff.read_line(s, errh, false)) > 0) {
+	    if (!numeric)
+		_strvec.push_back(s);
+	    else if ((s = cp_uncomment(s)) && cp_integer(s, &sz))
+		_sizevec.push_back(sz);
+	    else if (s && s[0] != '#' && !complain)
+		complain = errh->lwarning(ff.landmark(), "not integer");
+	}
+    } else
+#endif
+    if (numeric) {
+	int complain = 0;
+	size_t sz;
+	for (String *sp = conf.begin(); sp != conf.end(); sp++)
+	    if (*sp && cp_integer(*sp, &sz))
+		_sizevec.push_back(sz);
+	    else if (*sp && !complain)
+		complain = errh->warning("argument not integer");
+    } else
+	for (String *sp = conf.begin(); sp != conf.end(); sp++)
+	    _strvec.push_back(cp_unquote(*sp) + "\n");
+
+    if (permute) {
+	int s = (_strvec.size() ? _strvec.size() : _sizevec.size());
+	for (int i = 0; i < s; i++)
+	    _permute.push_back(i);
+    }
+    
+    return 0;
+}
+
+int
+SortTest::initialize_vec(ErrorHandler *)
+{
+    void *begin;
+    size_t n, size;
+    if (_permute.size())
+	begin = _permute.begin(), n = _permute.size(), size = sizeof(int);
+    else if (_strvec.size())
+	begin = _strvec.begin(), n = _strvec.size(), size = sizeof(String);
+    else
+	begin = _sizevec.begin(), n = _sizevec.size(), size = sizeof(size_t);
+
+    int (*compar)(const void *, const void *);
+    if (_strvec.size()) {
+	strvec = &_strvec;
+	if (_permute.size())
+	    compar = (_reverse ? string_permute_rev_compar : string_permute_compar);
+	else
+	    compar = (_reverse ? string_rev_compar : string_compar);
+	
+#if CLICK_USERLEVEL
+	if (_stdc)
+	    qsort(begin, n, size, compar);
+	else
+#endif
+	click_qsort(begin, n, size, compar);
+
+#if CLICK_USERLEVEL
+	if (_output && _permute.size())
+	    for (int *a = _permute.begin(); a != _permute.end(); a++)
+		fwrite(_strvec[*a].data(), _strvec[*a].length(), 1, stdout);
+	else if (_output)
+	    for (String *a = _strvec.begin(); a != _strvec.end(); a++)
+		fwrite(a->data(), a->length(), 1, stdout);
+#endif
+    }
+    if (_sizevec.size()) {
+	sizevec = &_sizevec;
+	if (_permute.size())
+	    compar = (_reverse ? size_t_permute_rev_compar : size_t_permute_compar);
+	else
+	    compar = (_reverse ? size_t_rev_compar : size_t_compar);
+	
+#if CLICK_USERLEVEL
+	if (_stdc)
+	    qsort(begin, n, size, compar);
+	else
+#endif
+	click_qsort(begin, n, size, compar);
+
+#if CLICK_USERLEVEL
+	if (_output && _permute.size())
+	    for (int *a = _permute.begin(); a != _permute.end(); a++)
+		printf("%zu\n", _sizevec[*a]);
+	else if (_output)
+	    for (size_t *a = _sizevec.begin(); a != _sizevec.end(); a++)
+		printf("%zu\n", *a);
+#endif
+    }
+
+    return 0;
+}
+
 int
 SortTest::initialize(ErrorHandler *errh)
 {
+    if (_strvec.size() || _sizevec.size())
+	return initialize_vec(errh);
+    
     size_t nclasses = sizeof(classes) / sizeof(classes[0]);
 
     click_random_srandom();
