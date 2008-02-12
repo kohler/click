@@ -780,4 +780,5 @@ SortTest::initialize(ErrorHandler *errh)
 }
 
 EXPORT_ELEMENT(SortTest)
+#include <click/vector.cc>
 CLICK_ENDDECLS
