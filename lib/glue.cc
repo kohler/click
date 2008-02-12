@@ -536,6 +536,9 @@ click_qsort(void *base, size_t n, size_t size,
 	stack[2] = stack[1] - (pd - pc) / size;
 	stack[3] = stack[1];
 	stack[1] = stack[0] + (pb - pa) / size;
+	// Push stack items biggest first.  This limits the stack size to
+	// log2 MAX_SIZE_T!  Optimization in Hoare's original paper, suggested
+	// by Sedgewick in his own qsort implementation paper.
 	if (stack[3] - stack[2] > stack[1] - stack[0]) {
 	    size_t tx;
 	    tx = stack[0], stack[0] = stack[2], stack[2] = tx;
