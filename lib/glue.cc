@@ -397,120 +397,154 @@ srandom(uint32_t seed)
 
 // SORTING
 
-static int
-click_qsort_partition(void *base_v, size_t size, size_t *stack,
-		      int (*compar)(const void *, const void *, void *),
-		      void *thunk)
+// This reimplementation of click_qsort is a version of
+// Engineering a Sort Function, Jon L. Bentley and M. Douglas McIlroy,
+// Software---Practice & Experience, 23(11), 1249-1265, Nov. 1993
+
+namespace {
+
+typedef long cq_word_t;
+#define CQ_WORD_SIZE		sizeof(cq_word_t)
+#define cq_exch(a, b, t)	(t = a, a = b, b = t)
+#define cq_swap(a, b)						\
+    (swaptype ? cq_swapfunc(a, b, size, swaptype)		\
+     : (void) cq_exch(*(cq_word_t *) (a), *(cq_word_t *) (b), swaptmp))
+
+static char *
+cq_med3(char *a, char *b, char *c,
+	int (*compar)(const void *, const void *, void *), void *thunk)
 {
-    if (size >= 64) {
-#if CLICK_LINUXMODULE
-	printk("<1>click_qsort_partition: elements too large!\n");
-#elif CLICK_BSDMODULE
-	printf("click_qsort_partition: elements too large!\n");
-#endif
-	stack[1] = stack[2] = 0;
-	return -E2BIG;
-    }
-    
-    uint8_t *base = reinterpret_cast<uint8_t *>(base_v);
-    size_t left = stack[0];
-    size_t right = stack[3] - 1;
-    size_t middle;
-
-    // optimize for already-sorted case
-    while (left < right) {
-	int cmp = compar(&base[size * left], &base[size * (left + 1)], thunk);
-	if (cmp > 0)
-	    goto true_qsort;
-	left++;
-    }
-
-    stack[1] = stack[0];
-    stack[2] = stack[3];
-    return 0;
-
-  true_qsort:
-    // current invariant:
-    // base[i] <= base[left] for all left_init <= i < left
-    // base[left+1] < base[left]
-    // => swap base[left] <=> base[left+1], make base[left] the pivot
-    uint8_t pivot[64], tmp[64];
-    memcpy(&pivot[0], &base[size * left], size);
-    memcpy(&base[size * left], &base[size * (left + 1)], size);
-    memcpy(&base[size * (left + 1)], &pivot[0], size);
-    left = left + 1;
-    middle = left + 1;
-    
-    // loop invariant:
-    // base[i] <= pivot for all left_init <= i < left
-    // base[i] > pivot for all right < i <= right_init
-    // base[i] == pivot for all left <= i < middle
-    while (middle <= right) {
-	int cmp = compar(&base[size * middle], &pivot[0], thunk);
-	size_t swapper = (cmp < 0 ? left : right);
-	if (cmp != 0 && middle != swapper) {
-	    memcpy(&tmp[0], &base[size * swapper], size);
-	    memcpy(&base[size * swapper], &base[size * middle], size);
-	    memcpy(&base[size * middle], &tmp[0], size);
-	}
-	if (cmp < 0) {
-	    left++;
-	    middle++;
-	} else if (cmp > 0)
-	    right--;
-	else
-	    middle++;
-    }
-
-    // afterwards, middle == right + 1
-    // so base[i] == pivot for all left <= i <= right
-    stack[1] = left;
-    stack[2] = right + 1;
-    return 0;
+    int ab = compar(a, b, thunk);
+    int bc = compar(b, c, thunk);
+    if (ab < 0)
+	return (bc < 0 ? b : (compar(a, c, thunk) < 0 ? c : a));
+    else
+	return (bc > 0 ? b : (compar(a, c, thunk) > 0 ? c : a));
 }
 
-#define CLICK_QSORT_INITSTACK 20
+static void
+cq_swapfunc(char *a, char *b, size_t n, int swaptype)
+{
+    if (swaptype <= 1) {
+	cq_word_t t;
+	for (; n; a += CQ_WORD_SIZE, b += CQ_WORD_SIZE, n -= CQ_WORD_SIZE)
+	    cq_exch(*(cq_word_t *) a, *(cq_word_t *) b, t);
+    } else {
+	char t;
+	for (; n; ++a, ++b, --n)
+	    cq_exch(*a, *b, t);
+    }
+}
+
+}
+
+
+#define CQ_STACKSIZ	((8 * SIZEOF_SIZE_T + 1) * 2)
 
 int
-click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *, void *), void *thunk)
+click_qsort(void *base, size_t n, size_t size,
+	    int (*compar)(const void *, const void *, void *), void *thunk)
 {
-    size_t stackbuf[CLICK_QSORT_INITSTACK];
-    size_t stacksiz = CLICK_QSORT_INITSTACK;
+    int swaptype;
+    if ((((char *) base - (char *) 0) | size) % CQ_WORD_SIZE)
+	swaptype = 2;
+    else
+	swaptype = (size > CQ_WORD_SIZE ? 1 : 0);
+    cq_word_t swaptmp;
+
+    size_t stackbuf[CQ_STACKSIZ];
     size_t *stack = stackbuf;
-    size_t stackpos = 0;
-    int r = 0;
+    *stack++ = 0;
+    *stack++ = n;
 
-    stack[stackpos++] = 0;
-    stack[stackpos++] = n;
-
-    while (stackpos != 0 && r >= 0) {
-	stackpos -= 2;
-	if (stack[stackpos] + 1 >= stack[stackpos + 1])
+    while (stack != stackbuf) {
+	stack -= 2;
+	char *a = (char *) base + stack[0] * size;
+	n = stack[1] - stack[0];
+    
+	// insertion sort for tiny arrays
+	if (n < 7) {
+	    for (char *pi = a + size; pi < a + n * size; pi += size)
+		for (char *pj = pi;
+		     pj > a && compar(pj - size, pj, 0) > 0;
+		     pj -= size)
+		    cq_swap(pj, pj - size);
 	    continue;
-	
-	// grow stack if appropriate
-	if (stackpos + 4 > stacksiz) {
-	    size_t *nstack = (size_t *) CLICK_LALLOC(sizeof(size_t) * stacksiz * 2);
-	    if (!nstack) {
-		r = -ENOMEM;
-		break;
-	    }
-	    memcpy(nstack, stack, sizeof(size_t) * stacksiz);
-	    if (stack != stackbuf)
-		CLICK_LFREE(stack, sizeof(size_t) * stacksiz);
-	    stack = nstack;
-	    stacksiz *= 2;
 	}
 
+	// find a pivot
+	char *pm = a + (n / 2) * size;
+	if (n > 7) {
+	    char *p1 = a;
+	    char *p2 = a + (n - 1) * size;
+	    if (n > 40) {     /* Big arrays, pseudomedian of 9 */
+		size_t offset = (n / 8) * size;
+		p1 = cq_med3(p1, p1 + offset, p1 + 2*offset, compar, thunk);
+		pm = cq_med3(pm - offset, pm, pm + offset, compar, thunk);
+		p2 = cq_med3(p2 - 2*offset, p2 - offset, p2, compar, thunk);
+	    }
+	    pm = cq_med3(p1, pm, p2, compar, thunk);
+	}
+	cq_word_t pivottmp;
+	char *pivot;
+	if (swaptype)
+	    pivot = a, cq_swap(pivot, pm);
+	else
+	    pivot = (char *) &pivottmp, pivottmp = *(cq_word_t *) pm;
+
 	// partition
-	stack[stackpos + 3] = stack[stackpos + 1];
-	r = click_qsort_partition(base, size, stack + stackpos, compar, thunk);
-	stackpos += 4;
+	char *pa, *pb, *pc, *pd;
+	pa = pb = a;
+	pc = pd = a + (n - 1) * size;
+	int r;
+	while (1) {
+	    while (pb <= pc && (r = compar(pb, pivot, thunk)) <= 0) {
+		if (r == 0) {
+		    cq_swap(pa, pb);
+		    pa += size;
+		}
+		pb += size;
+	    }
+	    while (pc >= pb && (r = compar(pc, pivot, thunk)) >= 0) {
+		if (r == 0) {
+		    cq_swap(pc, pd);
+		    pd -= size;
+		}
+		pc -= size;
+	    }
+	    if (pb > pc)
+		break;
+	    cq_swap(pb, pc);
+	    pb += size;
+	    pc -= size;
+	}
+
+	// swap the extreme ranges, which are equal to the pivot, into the
+	// middle
+	char *pn = a + n * size;
+	size_t s = (pa - a < pb - pa ? pa - a : pb - pa);
+	if (s)
+	    cq_swapfunc(a, pb - s, s, swaptype);
+	s = ((size_t) (pd - pc) < pn - pd - size ? pd - pc : pn - pd - size);
+	if (s)
+	    cq_swapfunc(pb, pn - s, s, swaptype);
+
+	// mark subranges to sort
+	if (pb == pa && pd == pc)
+	    continue;
+	assert(stack + 4 < stackbuf + CQ_STACKSIZ);
+	stack[2] = stack[1] - (pd - pc) / size;
+	stack[3] = stack[1];
+	stack[1] = stack[0] + (pb - pa) / size;
+	if (stack[3] - stack[2] > stack[1] - stack[0]) {
+	    size_t tx;
+	    tx = stack[0], stack[0] = stack[2], stack[2] = tx;
+	    tx = stack[1], stack[1] = stack[3], stack[3] = tx;
+	}
+	stack += (stack[2] != stack[3] ? 4 : 2);
     }
 
-    if (stack != stackbuf)
-	CLICK_LFREE(stack, sizeof(size_t) * stacksiz);
-    return r;
+    return 0;
 }
 
 int
