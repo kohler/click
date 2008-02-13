@@ -466,7 +466,7 @@ click_qsort(void *base, size_t n, size_t size,
 	if (n < 7) {
 	    for (char *pi = a + size; pi < a + n * size; pi += size)
 		for (char *pj = pi;
-		     pj > a && compar(pj - size, pj, 0) > 0;
+		     pj > a && compar(pj - size, pj, thunk) > 0;
 		     pj -= size)
 		    cq_swap(pj, pj - size);
 	    continue;
