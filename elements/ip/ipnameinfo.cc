@@ -146,7 +146,7 @@ namespace {
 class ServicesNameDB : public NameDB { public:
     ServicesNameDB(uint32_t type, ServicesNameDB *other);
     ~ServicesNameDB();
-    bool query(const String &name, void *value, int vsize);
+    bool query(const String &name, void *value, size_t vsize);
   private:
     DynamicNameDB *_db;
     bool _read_db;
@@ -280,7 +280,7 @@ ServicesNameDB::read_services()
 }
 
 bool
-ServicesNameDB::query(const String &name, void *value, int vsize)
+ServicesNameDB::query(const String &name, void *value, size_t vsize)
 {
     assert(vsize == 4);
 
@@ -364,7 +364,6 @@ IPNameInfo::static_cleanup()
 {
     for (int i = 0; i < 13; i++)
 	if (dbs[i]) {
-	    NameInfo::removedb(dbs[i]);
 	    delete dbs[i];
 	    dbs[i] = 0;
 	}

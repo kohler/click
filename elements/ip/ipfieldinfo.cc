@@ -121,12 +121,10 @@ IPFieldInfo::static_initialize()
 void
 IPFieldInfo::static_cleanup()
 {
-    for (int i = 0; i < 5; i++)
-	if (dbs[i]) {
-	    NameInfo::removedb(dbs[i]);
-	    delete dbs[i];
-	    dbs[i] = 0;
-	}
+    for (int i = 0; i < 5; i++) {
+	delete dbs[i];
+	dbs[i] = 0;
+    }
 }
 
 const char *
@@ -339,8 +337,7 @@ IPField::unparse(Element *elt, bool tcpdump_rules)
 	return protstr + "[" + String(bo / 8) + ":" + String(bl / 8) + "]" + mask;
     else if (bl == 1)
 	return protstr + "{" + String(bo) + "}" + mask;
-    else
-	return protstr + "{" + String(bo) + ":" + String(bl) + "}" + mask;
+    return protstr + "{" + String(bo) + ":" + String(bl) + "}" + mask;
 }
 
 CLICK_ENDDECLS

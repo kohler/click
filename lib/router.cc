@@ -1525,6 +1525,9 @@ ThreadSched::initial_home_thread_id(Task *, bool)
     return 0;
 }
 
+/** @brief  Create (if necessary) and return the NameInfo object for this router.
+ *
+ * Users never need to call this. */
 NameInfo*
 Router::force_name_info()
 {

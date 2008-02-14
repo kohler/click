@@ -154,8 +154,6 @@ IPFilter::static_initialize()
 void
 IPFilter::static_cleanup()
 {
-    NameInfo::removedb(dbs[0]);
-    NameInfo::removedb(dbs[1]);
     delete dbs[0];
     delete dbs[1];
 }

@@ -80,13 +80,13 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
     while (db) {
 	bool frobbed = false;
 	for (int i = prefixes.size() - 1;
-	     i >= 0 && prefixes[i].length() >= db->prefix().length();
+	     i >= 0 && prefixes[i].length() >= db->context().length();
 	     i--)
-	    if (db->query(prefixes[i].substring(db->prefix().length()), &tickets[i], 4))
+	    if (db->query(prefixes[i].substring(db->context().length()), &tickets[i], 4))
 		frobbed = true;
 	    else if (frobbed)	// erase intermediate ticket settings
 		tickets[i] = Task::DEFAULT_TICKETS;
-	db = db->prefix_parent();
+	db = db->context_parent();
     }
 
     // multiply tickets

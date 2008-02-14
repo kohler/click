@@ -84,8 +84,11 @@ class Router { public:
     inline void set_thread_sched(ThreadSched* scheduler);
     inline int initial_home_thread_id(Task* task, bool scheduled) const;
 
+    /** @cond never */
+    // Needs to be public for NameInfo, but not useful outside
     inline NameInfo* name_info() const;
     NameInfo* force_name_info();
+    /** @endcond never */
 
     // UNPARSING
     inline const String& configuration_string() const;
@@ -397,13 +400,16 @@ Router::initial_home_thread_id(Task* t, bool scheduled) const
 	return _thread_sched->initial_home_thread_id(t, scheduled);
 }
 
+/** @brief  Return the NameInfo object for this router, if it exists.
+ *
+ * Users never need to call this. */
 inline NameInfo*
 Router::name_info() const
 {
     return _name_info;
 }
 
-/** @brief  Returns the Master object for this router. */
+/** @brief  Return the Master object for this router. */
 inline Master*
 Router::master() const
 {
