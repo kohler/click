@@ -25,6 +25,10 @@
 #endif
 CLICK_DECLS
 
+/** @file timestamp.hh
+ * @brief The Timestamp class represents a moment or interval in time.
+ */
+
 /** @class Timestamp
  @brief Represents a moment or interval in time.
 

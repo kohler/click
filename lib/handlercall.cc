@@ -24,6 +24,10 @@
 #include <click/error.hh>
 CLICK_DECLS
 
+/** @file handlercall.hh
+ * @brief The HandlerCall helper class for simplifying access to handlers.
+ */
+
 int
 HandlerCall::initialize(int flags, Element* context, ErrorHandler* errh)
 {

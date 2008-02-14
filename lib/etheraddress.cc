@@ -24,6 +24,10 @@
 #include <click/straccum.hh>
 CLICK_DECLS
 
+/** @file etheraddress.hh
+ * @brief The EtherAddress type for Ethernet addresses.
+ */
+
 /** @class EtherAddress
     @brief An Ethernet address.
 

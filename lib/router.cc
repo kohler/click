@@ -44,6 +44,10 @@
 
 CLICK_DECLS
 
+/** @file router.hh
+ * @brief The Router class implementing a router configuration.
+ */
+
 /** @class Router
  * @brief A router configuration.
  */

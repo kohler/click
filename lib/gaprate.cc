@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -21,6 +22,10 @@
 #include <click/gaprate.hh>
 #include <click/error.hh>
 CLICK_DECLS
+
+/** @file gaprate.hh
+ * @brief The GapRate type for implementing a consistent rate.
+ */
 
 void
 GapRate::set_rate(unsigned r, ErrorHandler *errh)

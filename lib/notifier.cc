@@ -30,6 +30,10 @@ atomic_uint32_t NotifierSignal::static_value;
 const char Notifier::EMPTY_NOTIFIER[] = "Notifier.EMPTY";
 const char Notifier::FULL_NOTIFIER[] = "Notifier.FULL";
 
+/** @file notifier.hh
+ * @brief Support for activity signals.
+ */
+
 /** @class NotifierSignal
  * @brief An activity signal.
  *

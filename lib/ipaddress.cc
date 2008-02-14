@@ -25,6 +25,10 @@
 #include <click/integers.hh>
 CLICK_DECLS
 
+/** @file ipaddress.hh
+ * @brief The IPAddress type for IPv4 addresses.
+ */
+
 /** @class IPAddress
     @brief An IPv4 address.
 

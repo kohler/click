@@ -60,6 +60,9 @@ CLICK_DECLS
 static unsigned long greedy_schedule_jiffies;
 #endif
 
+/** @file routerthread.hh
+ * @brief The RouterThread class implementing the Click driver loop.
+ */
 
 /** @class RouterThread
  * @brief A set of Tasks scheduled on the same CPU.

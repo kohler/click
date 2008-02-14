@@ -25,11 +25,14 @@
 #include <click/task.hh>
 CLICK_DECLS
 
+/** @file timer.hh
+ * @brief Support for Timer, which triggers execution at a given time.
+ */
 
 /** @class Timer
- @brief Represents a computational task that should execute at a given time.
+ @brief Triggers execution at a given time.
 
- Click Timer objects represent computational tasks that should run
+ Click Timer objects can trigger the execution of code
  periodically, or at specific times.  Ping is the classic example, although
  many elements also garbage-collect their internal state based on timers.  An
  element that needs to run occasional timed tasks should include and

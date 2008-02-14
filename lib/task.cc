@@ -25,6 +25,10 @@
 #include <click/master.hh>
 CLICK_DECLS
 
+/** @file task.hh
+ * @brief Support for Task, which triggers execution frequently.
+ */
+
 /** @class Task
  * @brief Represents a frequently-scheduled computational task.
  *
