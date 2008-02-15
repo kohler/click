@@ -38,7 +38,7 @@ ReadAnno::simple_action(Packet *p_in)
 {
 
   if (p_in) {
-    memcpy(p_in->all_user_anno(), p_in->data(), Packet::USER_ANNO_SIZE);
+    memcpy(p_in->user_anno(), p_in->data(), Packet::USER_ANNO_SIZE);
   }
   
   return p_in;

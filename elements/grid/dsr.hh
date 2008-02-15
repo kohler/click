@@ -133,15 +133,15 @@ struct click_dsr_source {
 
 #define DSR_SALVAGE_LIMIT     4
 
-#define DSR_LAST_HOP_IP_ANNO(p)		((p)->user_anno_u(1))
-#define SET_DSR_LAST_HOP_IP_ANNO(p, v)	((p)->set_user_anno_u(1, (v)))
+#define DSR_LAST_HOP_IP_ANNO(p)		((p)->user_anno_u32(1))
+#define SET_DSR_LAST_HOP_IP_ANNO(p, v)	((p)->set_user_anno_u32(1, (v)))
 
-#define DSR_LAST_HOP_ETH_ANNO1(p)		((p)->user_anno_us(9))
-#define DSR_LAST_HOP_ETH_ANNO2(p)		((p)->user_anno_us(11))
-#define DSR_LAST_HOP_ETH_ANNO3(p)		((p)->user_anno_us(13))
-#define SET_DSR_LAST_HOP_ETH_ANNO1(p, v)	((p)->set_user_anno_us( 9, (v)))
-#define SET_DSR_LAST_HOP_ETH_ANNO2(p, v)	((p)->set_user_anno_us(11, (v)))
-#define SET_DSR_LAST_HOP_ETH_ANNO3(p, v)	((p)->set_user_anno_us(13, (v)))
+#define DSR_LAST_HOP_ETH_ANNO1(p)		((p)->user_anno_u16(9))
+#define DSR_LAST_HOP_ETH_ANNO2(p)		((p)->user_anno_u16(11))
+#define DSR_LAST_HOP_ETH_ANNO3(p)		((p)->user_anno_u16(13))
+#define SET_DSR_LAST_HOP_ETH_ANNO1(p, v)	((p)->set_user_anno_u16( 9, (v)))
+#define SET_DSR_LAST_HOP_ETH_ANNO2(p, v)	((p)->set_user_anno_u16(11, (v)))
+#define SET_DSR_LAST_HOP_ETH_ANNO3(p, v)	((p)->set_user_anno_u16(13, (v)))
 
 CLICK_ENDDECLS
 

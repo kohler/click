@@ -52,7 +52,7 @@ ExtraDecap::simple_action(Packet *p)
   click_wifi_extra *ceh = (click_wifi_extra *) p->data();
 
   if (ceh->magic == WIFI_EXTRA_MAGIC) {
-    memcpy(p->all_user_anno(), p->data(), sizeof(click_wifi_extra));
+    memcpy(p->user_anno(), p->data(), sizeof(click_wifi_extra));
     p->pull(sizeof(click_wifi_extra));
   }
 

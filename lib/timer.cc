@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -55,11 +56,10 @@ CLICK_DECLS
 
  Timers are checked and fired relatively infrequently.  Particularly at user
  level, there can be a significant delay between a Timer's nominal expiration
- time and the actual time it runs.  While we may attempt to address this
- problem in future, for now elements that desire extremely precise timings
- should combine a Timer with a Task; the Timer is set to go off a bit before
- the true expiration time (see Timer::adjustment()), after which the Task
- polls the CPU until the actual expiration time arrives.
+ time and the actual time it runs.  Elements that desire extremely precise
+ timings should combine a Timer with a Task; the Timer is set to go off a bit
+ before the true expiration time (see Timer::adjustment()), after which the
+ Task polls the CPU until the actual expiration time arrives.
  
  Since Click is cooperatively scheduled, any timer callback should run for
  just a short period of time.  Very long callbacks can inappropriately delay

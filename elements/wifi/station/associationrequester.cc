@@ -216,7 +216,7 @@ AssociationRequester::process_response(Packet *p)
     }
   }
 
-  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->user_anno();
   StringAccum sa;
   sa << bssid << " ";
   int rssi = ceh->rssi;

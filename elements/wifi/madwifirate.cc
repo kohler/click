@@ -169,7 +169,7 @@ MadwifiRate::process_feedback(Packet *p_in)
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
 
-  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->user_anno();
   bool success = !(ceh->flags & WIFI_EXTRA_TX_FAIL);
   bool used_alt_rate = ceh->flags & WIFI_EXTRA_TX_USED_ALT_RATE;
 
@@ -220,7 +220,7 @@ MadwifiRate::assign_rate(Packet *p_in)
 
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
-  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->user_anno();
 
 
   if (dst.is_group()) {

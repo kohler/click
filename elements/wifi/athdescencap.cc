@@ -56,7 +56,7 @@ AthdescEncap::simple_action(Packet *p)
   if (!p_out) { return 0; }
 
   struct ar5212_desc *desc  = (struct ar5212_desc *) (p_out->data() + 8);
-  click_wifi_extra *ceh = (click_wifi_extra *) p_out->all_user_anno();
+  click_wifi_extra *ceh = (click_wifi_extra *) p_out->user_anno();
   
   memset((void *)p_out->data(), 0, ATHDESC_HEADER_SIZE);
   

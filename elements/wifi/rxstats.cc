@@ -41,7 +41,7 @@ RXStats::simple_action(Packet *p_in)
 {
   click_ether *eh = (click_ether *) p_in->data();
   EtherAddress src = EtherAddress(eh->ether_shost);
-  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->user_anno();
     
   DstInfo *nfo = _neighbors.findp(src);
   if (!nfo) {

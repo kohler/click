@@ -123,7 +123,7 @@ Print::simple_action(Packet *p)
       char *buf = sa.reserve(Packet::USER_ANNO_SIZE*2);
       int pos = 0;
       for (unsigned j = 0; j < Packet::USER_ANNO_SIZE; j++, pos += 2) 
-	  sprintf(buf + pos, "%02x", p->user_anno_c(j));
+	  sprintf(buf + pos, "%02x", p->user_anno_u8(j));
       sa.adjust_length(pos);
   }
 

@@ -53,7 +53,7 @@ AthdescDecap::simple_action(Packet *p)
 	WritablePacket *q = p->uniqueify();
 	if (q) {
 		struct ar5212_desc *desc = (struct ar5212_desc *) (q->data() + 8);
-		click_wifi_extra *eh = (click_wifi_extra *) q->all_user_anno();
+		click_wifi_extra *eh = (click_wifi_extra *) q->user_anno();
 		memset(eh, 0, sizeof(click_wifi_extra));
 		eh->magic = WIFI_EXTRA_MAGIC;
 		if (desc->frame_len == 0) {

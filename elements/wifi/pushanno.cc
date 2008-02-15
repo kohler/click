@@ -43,7 +43,7 @@ PushAnno::simple_action(Packet *p_in)
 
   p_in = p_in->push(Packet::USER_ANNO_SIZE);
   if (p_in) {
-    memcpy((void *)p_in->data(), p_in->all_user_anno(), Packet::USER_ANNO_SIZE);
+    memcpy((void *)p_in->data(), p_in->user_anno(), Packet::USER_ANNO_SIZE);
   }
   return p_in;
 }

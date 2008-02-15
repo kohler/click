@@ -53,7 +53,7 @@ SetAnnoByte::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 SetAnnoByte::simple_action(Packet *p)
 {
-  (p)->set_user_anno_c(_offset, _value);
+  (p)->set_user_anno_u8(_offset, _value);
   return p;
 }
 

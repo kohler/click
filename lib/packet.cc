@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/packet.hh" -*-
+// -*- related-file-name: "../include/click/packet.hh" -*-
 /*
  * packet.{cc,hh} -- a packet structure. In the Linux kernel, a synonym for
  * `struct sk_buff'
@@ -26,90 +26,196 @@
 #endif
 CLICK_DECLS
 
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+/** @file packet.hh
+ * @brief The Packet class models packets in Click.
+ */
 
-Packet::Packet()
-{
-  static_assert(sizeof(Anno) <= sizeof(((struct sk_buff *)0)->cb));
-  panic("Packet constructor");
-}
+/** @class Packet
+ * @brief A network packet.
+ * @nosubgrouping
+ *
+ * Click's Packet class represents network packets within a router.  Packet
+ * objects are passed from Element to Element via the Element::push() and
+ * Element::pull() functions.  The vast majority of elements handle packets.
+ *
+ * A packet consists of a <em>data buffer</em>, which stores the actual packet
+ * wire data, and a set of <em>annotations</em>, which store extra information
+ * calculated about the packet, such as the destination address to be used for
+ * routing.  Every Packet object has different annotations, but a data buffer
+ * may be shared among multiple Packet objects, saving memory and speeding up
+ * packet copies.  (See Packet::clone.)  As a result a Packet's data buffer is
+ * not writable.  To write into a packet, turn it into a nonshared
+ * WritablePacket first, using uniqueify(), push(), or put().
+ *
+ * <h3>Data Buffer</h3>
+ *
+ * A packet's data buffer is a single flat array of bytes.  The buffer may be
+ * larger than the actual packet data, leaving unused spaces called
+ * <em>headroom</em> and <em>tailroom</em> before and after the data proper.
+ * Prepending headers or appending data to a packet can be quite efficient if
+ * there is enough headroom or tailroom.
+ *
+ * The relationships among a Packet object's data buffer variables is shown
+ * here:
+ *
+ * <pre>
+ *                     data()               end_data()
+ *                        |                      |
+ *       |<- headroom() ->|<----- length() ----->|<- tailroom() ->|
+ *       |                v                      v                |
+ *       +================+======================+================+
+ *       |XXXXXXXXXXXXXXXX|   PACKET CONTENTS    |XXXXXXXXXXXXXXXX|
+ *       +================+======================+================+
+ *       ^                                                        ^
+ *       |<------------------ buffer_length() ------------------->|
+ *       |                                                        |
+ *    buffer()                                               end_buffer()
+ * </pre>
+ *
+ * Most code that manipulates packets is interested only in data() and
+ * length().
+ *
+ * To create a Packet, call one of the make() functions.  To destroy a Packet,
+ * call kill().  To clone a Packet, which creates a new Packet object that
+ * shares this packet's data, call clone().  To uniqueify a Packet, which
+ * unshares the packet data if necessary, call uniqueify().  To allocate extra
+ * space for headers or trailers, call push() and put().  To remove headers or
+ * trailers, call pull() and take().
+ *
+ * Packet objects are implemented in different ways in different drivers.  The
+ * userlevel driver has its own C++ implementation.  In the linuxmodule
+ * driver, however, Packet is an overlay on Linux's native sk_buff
+ * object: the Packet methods access underlying sk_buff data directly, with no
+ * overhead.  (For example, Packet::data() returns the sk_buff's data field.)
+ *
+ * <h3>Annotations</h3>
+ *
+ * Annotations are extra information about a packet above and beyond the
+ * packet data.  Packet supports several specific annotations, plus a <em>user
+ * annotation area</em> available for arbitrary use by elements.
+ *
+ * <ul>
+ * <li><b>Header pointers:</b> Each packet has three header pointers, designed
+ * to point to the packet's MAC header, network header, and transport header,
+ * respectively.  Convenience functions like ip_header() access these pointers
+ * cast to common header types.  The header pointers are kept up to date when
+ * operations like push() or uniqueify() change the packet's data buffer.
+ * Header pointers can be null, and they can even point to memory outside the
+ * current packet data bounds.  For example, a MAC header pointer will remain
+ * set even after pull() is used to shift the packet data past the MAC header.
+ * As a result, functions like mac_header_offset() can return negative
+ * numbers.</li>
+ * <li><b>Timestamp:</b> A timestamp associated with the packet.  Most packet
+ * sources timestamp packets when they enter the router; other elements
+ * examine or modify the timestamp.</li>
+ * <li><b>Device:</b> A pointer to the device on which the packet arrived.
+ * Only meaningful in the linuxmodule driver, but provided in every
+ * driver.</li>
+ * <li><b>Packet type:</b> A small integer indicating whether the packet is
+ * meant for this host, broadcast, multicast, or some other purpose.  Several
+ * elements manipulate this annotation; in linuxmodule, setting the annotation
+ * is required for the host network stack to process incoming packets
+ * correctly.</li>
+ * <li><b>Performance counter</b> (linuxmodule only): A 64-bit integer
+ * intended to hold a performance counter value.  Used by SetCycleCount and
+ * others.</li>
+ * <li><b>Next packet:</b> A pointer is provided to allow elements to chain
+ * packets into a singly linked list.</li>
+ * <li><b>Address:</b> Each packet has ADDR_ANNO_SIZE bytes available for a
+ * network address.  Routing elements, such as RadixIPLookup, set the address
+ * annotation to indicate the desired next hop; ARPQuerier uses this
+ * annotation to query the next hop's MAC.  All address annotations share the
+ * same space.  The most common use for the area is a destination
+ * IP address annotation.</li>
+ * <li><b>User annotations:</b> An additional USER_ANNO_SIZE bytes of space
+ * are provided for user annotations, which are uninterpreted by Linux or by
+ * Click's core.  Instead, elements agree to use portions of the user
+ * annotation area in ways that make mutual sense.  The user annotation area
+ * can be accessed as a byte array, or as an array of 16- or 32-bit integers.
+ * Macros in the <click/packet_anno.hh> header file define the user
+ * annotations used by Click's current elements.</li>
+ * </ul>
+ *
+ * New packets start wth all annotations set to zero or null.  Cloning a
+ * packet copies its annotations.
+ */
 
-Packet::~Packet()
-{
-  panic("Packet destructor");
-}
-
-WritablePacket *
-Packet::make(uint32_t headroom, const unsigned char *data,
-	     uint32_t len, uint32_t tailroom)
-{
-  int want = 1;
-  if (struct sk_buff *skb = skbmgr_allocate_skbs(headroom, len + tailroom, &want)) {
-    assert(want == 1);
-    // packet comes back from skbmgr with headroom reserved
-    __skb_put(skb, len);	// leave space for data
-    if (data) memcpy(skb->data, data, len);
-    skb->pkt_type = HOST | PACKET_CLEAN;
-    WritablePacket *q = reinterpret_cast<WritablePacket *>(skb);
-    q->clear_annotations();
-    return q;
-  } else
-    return 0;
-}
-
-#else		/* User-space or BSD kernel module */
+/** @class WritablePacket
+ * @brief A network packet believed not to be shared.
+ *
+ * The WritablePacket type represents Packet objects whose data buffers are
+ * not shared.  As a result, WritablePacket's versions of functions that
+ * access the packet data buffer, such as data(), end_buffer(), and
+ * ip_header(), return mutable pointers (<tt>char *</tt> rather than <tt>const
+ * char *</tt>).
+ *
+ * WritablePacket objects are created by Packet::make(), Packet::uniqueify(),
+ * Packet::push(), and Packet::put(), which ensure that the returned packet
+ * does not share its data buffer.
+ *
+ * WritablePacket's interface is the same as Packet's except for these type
+ * differences.  For documentation, see Packet.
+ *
+ * @warning The Packet/WritablePacket convention does not eliminate, the
+ * likelihood of error when modifying packet data.  It is possible to create a
+ * shared WritablePacket; for instance:
+ * @code
+ * Packet *p = ...;
+ * if (WritablePacket *q = p->uniqueify()) {
+ *     Packet *p2 = q->clone();
+ *     assert(p2);
+ *     q->ip_header()->ip_v = 6;   // modifies p2's data as well
+ * }
+ * @endcode
+ * Avoid writing buggy code like this!  Use WritablePacket selectively, and
+ * try to avoid calling WritablePacket::clone() when possible. */
 
 inline
 Packet::Packet()
 {
-  _use_count = 1;
-  _data_packet = 0;
-  _head = _data = _tail = _end = 0;
-#if CLICK_USERLEVEL
-  _destructor = 0;
-#elif CLICK_BSDMODULE
-  _m = 0;
+#if CLICK_LINUXMODULE
+    static_assert(sizeof(Anno) <= sizeof(((struct sk_buff *)0)->cb));
+    panic("Packet constructor");
+#else
+    _use_count = 1;
+    _data_packet = 0;
+    _head = _data = _tail = _end = 0;
+# if CLICK_USERLEVEL
+    _destructor = 0;
+# elif CLICK_BSDMODULE
+    _m = 0;
+# endif
+    clear_annotations();
 #endif
-  clear_annotations();
 }
 
 Packet::~Packet()
 {
-  if (_data_packet)
-    _data_packet->kill();
-#if CLICK_USERLEVEL
-  else if (_head && _destructor)
-    _destructor(_head, _end - _head);
-  else
-    delete[] _head;
-#elif CLICK_BSDMODULE
-  else
-    m_freem(_m);
+#if CLICK_LINUXMODULE
+    panic("Packet destructor");
+#else
+    if (_data_packet)
+	_data_packet->kill();
+# if CLICK_USERLEVEL
+    else if (_head && _destructor)
+	_destructor(_head, _end - _head);
+    else
+	delete[] _head;
+# elif CLICK_BSDMODULE
+    else
+	m_freem(_m);
+# endif
+    _head = _data = 0;
 #endif
-  _head = _data = 0;
 }
+
+#if !CLICK_LINUXMODULE
 
 inline WritablePacket *
 Packet::make(int, int, int)
 {
   return static_cast<WritablePacket *>(new Packet(6, 6, 6));
 }
-
-#ifdef CLICK_USERLEVEL
-
-WritablePacket *
-Packet::make(unsigned char *data, uint32_t len, void (*destruct)(unsigned char *, size_t))
-{
-  WritablePacket *p = new WritablePacket;
-  if (p) {
-    p->_head = p->_data = data;
-    p->_tail = p->_end = data + len;
-    p->_destructor = destruct;
-  }
-  return p;
-}
-
-#endif
 
 bool
 Packet::alloc_data(uint32_t headroom, uint32_t len, uint32_t tailroom)
@@ -152,29 +258,95 @@ Packet::alloc_data(uint32_t headroom, uint32_t len, uint32_t tailroom)
   return true;
 }
 
+#endif
+
+
+/** @brief Create and return a new packet.
+ * @param headroom headroom in new packet
+ * @param data data to be copied into the new packet
+ * @param length length of packet
+ * @param tailroom tailroom in new packet
+ * @return new packet, or null if no packet could be created
+ *
+ * The @a data is copied into the new packet.  If @a data is null, the
+ * packet's data is left uninitialized.  The resulting packet's
+ * buffer_length() will be at least MIN_BUFFER_LENGTH; if @a headroom + @a
+ * length + @a tailroom would be less, then @a tailroom is increased to make
+ * the total MIN_BUFFER_LENGTH.
+ *
+ * As with all packet creation functions, the packet's annotations are
+ * initially cleared and its header pointers are initially null. */
 WritablePacket *
-Packet::make(uint32_t headroom, const unsigned char *data, uint32_t len,
-	     uint32_t tailroom)
+Packet::make(uint32_t headroom, const unsigned char *data,
+	     uint32_t length, uint32_t tailroom)
 {
-  WritablePacket *p = new WritablePacket;
-  if (!p)
-    return 0;
-  if (!p->alloc_data(headroom, len, tailroom)) {
-    delete p;
-    return 0;
-  }
-  if (data)
-    memcpy(p->data(), data, len);
-  return p;
+#if CLICK_LINUXMODULE
+    int want = 1;
+    if (struct sk_buff *skb = skbmgr_allocate_skbs(headroom, length + tailroom, &want)) {
+	assert(want == 1);
+	// packet comes back from skbmgr with headroom reserved
+	__skb_put(skb, length);	// leave space for data
+	if (data)
+	    memcpy(skb->data, data, length);
+	skb->pkt_type = HOST | PACKET_CLEAN;
+	WritablePacket *q = reinterpret_cast<WritablePacket *>(skb);
+	q->clear_annotations();
+	return q;
+    } else
+	return 0;
+#else
+    WritablePacket *p = new WritablePacket;
+    if (!p)
+	return 0;
+    if (!p->alloc_data(headroom, length, tailroom)) {
+	delete p;
+	return 0;
+    }
+    if (data)
+	memcpy(p->data(), data, length);
+    return p;
+#endif
 }
 
-#endif /* CLICK_LINUXMODULE */
+#if CLICK_USERLEVEL
+/** @brief Create and return a new packet (userlevel).
+ * @param data data used in the new packet
+ * @param length length of packet
+ * @param destructor destructor function
+ * @return new packet, or null if no packet could be created
+ *
+ * The packet's data pointer becomes the @a data: the data is not copied into
+ * the new packet, rather the packet owns the @a data pointer.  When the
+ * packet's data is eventually destroyed, either because the packet is deleted
+ * or because of something like a push() or full(), the @a destructor will be
+ * called with arguments @a destructor(@a data, @a length).  (If @a destructor
+ * is null, the packet data will be freed by <tt>delete[] @a data</tt>.)  The
+ * packet has zero headroom and tailroom. */
+WritablePacket *
+Packet::make(unsigned char *data, uint32_t length,
+	     void (*destructor)(unsigned char *, size_t))
+{
+    WritablePacket *p = new WritablePacket;
+    if (p) {
+	p->_head = p->_data = data;
+	p->_tail = p->_end = data + length;
+	p->_destructor = destructor;
+    }
+    return p;
+}
+#endif
 
 
 //
 // UNIQUEIFICATION
 //
 
+/** @brief Create a clone of this packet.
+ * @return the cloned packet
+ *
+ * The returned clone has independent annotations, initially copied from this
+ * packet, but shares this packet's data.  shared() returns true for both the
+ * packet and its clone.  Returns null if there's no memory for the clone. */
 Packet *
 Packet::clone()
 {
@@ -340,7 +512,6 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
 
 
 #ifdef CLICK_BSDMODULE		/* BSD kernel module */
-
 struct mbuf *
 Packet::steal_m()
 {
@@ -355,7 +526,6 @@ Packet::steal_m()
   p->kill();
   return m2;
 }
-
 #endif /* CLICK_BSDMODULE */
 
 //
@@ -415,7 +585,22 @@ Packet::expensive_put(uint32_t nbytes)
     return 0;
 }
 
-
+/** @brief Shift packet data within the data buffer.
+ * @param offset amount to shift packet data
+ * @param free_on_failure if true, then delete the input packet on failure
+ * @return a packet with shifted data, or null on failure
+ *
+ * Useful to align packet data.  For example, if the packet's embedded IP
+ * header is located at pointer value 0x8CCA03, then shift_data(1) or
+ * shift_data(-3) will both align the header on a 4-byte boundary.
+ *
+ * If the packet is shared() or there isn't enough headroom or tailroom for
+ * the operation, the packet is passed to uniqueify() first.  This can fail if
+ * there isn't enough memory.  If it fails, shift_data returns null, and if @a
+ * free_on_failure is true (the default), the input packet is freed.
+ *
+ * @post new data() == old data() + @a offset (if no copy is made)
+ * @post new buffer() == old buffer() (if no copy is made) */
 Packet *
 Packet::shift_data(int offset, bool free_on_failure)
 {

@@ -37,7 +37,7 @@ PacketLogger2::simple_action(Packet *p_in)
   log_entry d;
   d.timestamp = p_in->timestamp_anno();
   d.length = p_in->length();
-  memcpy(d.anno, p_in->all_user_anno(), Packet::USER_ANNO_SIZE);
+  memcpy(d.anno, p_in->user_anno(), Packet::USER_ANNO_SIZE);
   memcpy(d.bytes, p_in->data(), _nb < d.length ? _nb : d.length);
   
   int s_pre = _p.size();

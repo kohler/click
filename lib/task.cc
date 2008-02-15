@@ -49,9 +49,42 @@ CLICK_DECLS
  * when there's work to be done.  For infrequent events, it is far more
  * efficient to use Timer objects.
  *
+ * A Task's hook function, which is called when the task fires, has bool
+ * return type.  The hook should return true if the task did useful work, and
+ * false if it was not able to do useful work (for example, because there were
+ * no packets in the configuration to return).  Adaptive algorithms may use
+ * this information to fine-tune Click's scheduling behavior.
+ *
  * Since Click tasks are cooperatively scheduled, executing a task should not
- * take a long time.  Very long tasks can inappropriately delay timers and
- * other periodic events, so keep tasks short.
+ * take a long time.  Slow tasks can inappropriately delay timers and other
+ * periodic events.
+ *
+ * This code shows how Task objects tend to be used.  For fuller examples, see
+ * InfiniteSource and similar elements.
+ *
+ * @code
+ * class InfiniteSource { ...
+ *     bool run_task(Task *t);
+ *   private:
+ *     Task _task;
+ * };
+ *
+ * InfiniteSource::InfiniteSource() : _task(this) {
+ * }
+ *
+ * int InfiniteSource::initialize(ErrorHandler *errh) {
+ *     ScheduleInfo::initialize_task(this, &_task, errh);
+ *     return 0;
+ * }
+ *
+ * bool InfiniteSource::run_task(Task *) {
+ *     Packet *p = ... generate packet ...;
+ *     output(0).push(p);
+ *     if (packets left to send)
+ *         _task.fast_reschedule();
+ *     return true;  // the task did useful work
+ * }
+ * @endcode
  */
 
 // - Changes to _thread are protected by _thread->lock.
@@ -96,6 +129,11 @@ Task::master() const
  * and is scheduled iff @a schedule is true.
  *
  * An assertion will fail if a Task is initialized twice.
+ *
+ * Most elements call ScheduleInfo::initialize_task() to initialize a Task
+ * object.  The ScheduleInfo method additionally sets the task's scheduling
+ * parameters, such as ticket count and thread preference, based on a router's
+ * ScheduleInfo.  ScheduleInfo::initialize_task() calls Task::initialize().
  */
 void
 Task::initialize(Router *router, bool schedule)

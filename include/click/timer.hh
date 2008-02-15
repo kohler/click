@@ -246,9 +246,10 @@ Timer::reschedule_after_ms(uint32_t delta_msec)
  * Due to scheduling granularity, other tasks running on the same machine, and
  * similar effects, a Timer object can trigger some time after its nominal
  * expiry().  Functions that require precise timers should combine a Timer and
- * a @link Task object; the Timer is set to go off some time before the true
- * expiry, and the Task is used to busy-wait the difference.
- * Timer::adjustment() is an appropriate value for this time difference. */
+ * a Task object.  The Timer's job is to schedule the Task; the Timer's expiry
+ * is set to go off a short interval before the true expiry, and the Task is
+ * used to busy-wait the difference.  Timer::adjustment() is an appropriate
+ * value for this time difference. */
 inline Timestamp
 Timer::adjustment()
 {

@@ -178,7 +178,7 @@ BeaconScanner::simple_action(Packet *p)
     ap->_ssid = "";
   }
 
-  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->user_anno();
   
   ap->_eth = bssid;
   if (ssid != "") {

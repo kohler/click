@@ -54,7 +54,7 @@ Prism2Decap::simple_action(Packet *p)
 
   if (ptr[0] == DIDmsg_lnxind_wlansniffrm) {
     wlan_ng_prism2_header *ph = (wlan_ng_prism2_header *) p->data();
-    struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();  
+    struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->user_anno();  
     ceh->rssi = ph->rssi.data;
     ceh->silence = ph->noise.data;
     ceh->rate = ph->rate.data;

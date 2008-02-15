@@ -29,7 +29,7 @@
 #include <click/straccum.hh>
 CLICK_DECLS
 
-#define PACKET_CHUNK(p)		(((PacketInfo *)((p)->all_user_anno_u()))->chunk)
+#define PACKET_CHUNK(p)		(((PacketInfo *)((p)->user_anno_u32()))->chunk)
 #define PACKET_DLEN(p)		((p)->transport_length())
 #define IP_BYTE_OFF(iph)	((ntohs((iph)->ip_off) & IP_OFFMASK) << 3)
 

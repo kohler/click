@@ -400,6 +400,7 @@ Router::initial_home_thread_id(Task* t, bool scheduled) const
 	return _thread_sched->initial_home_thread_id(t, scheduled);
 }
 
+/** @cond never */
 /** @brief  Return the NameInfo object for this router, if it exists.
  *
  * Users never need to call this. */
@@ -408,6 +409,7 @@ Router::name_info() const
 {
     return _name_info;
 }
+/** @endcond never */
 
 /** @brief  Return the Master object for this router. */
 inline Master*
