@@ -15,17 +15,17 @@ typedef int (*WriteHandlerHook)(const String &data, Element *element,
 class Handler { public:
 
     enum Flags {
-	OP_READ = 0x0001,	//< Handler supports read operations.
-	OP_WRITE = 0x0002,	//< Handler supports write operations.
-	READ_PARAM = 0x0004,	//< Read handler takes parameters.
-	ONE_HOOK = 0x0008,	//< Use one hook for all operations.
+	OP_READ = 0x0001,	///< Handler supports read operations.
+	OP_WRITE = 0x0002,	///< Handler supports write operations.
+	READ_PARAM = 0x0004,	///< Read handler takes parameters.
+	ONE_HOOK = 0x0008,	///< Use one hook for all operations.
 	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | ONE_HOOK,
 	EXCLUSIVE = 0x0010,
-	RAW = 0x0020,		//< Don't add newline to results.
-	CALM = 0x0040,		//< Read handler value changes rarely.
-	EXPENSIVE = 0x0080,	//< Read handler is expensive to call.
-	BUTTON = 0x0100,	//< Write handler ignores data.
-	CHECKBOX = 0x0200,	//< Read/write handlers are boolean checkboxes.
+	RAW = 0x0020,		///< Don't add newline to results.
+	CALM = 0x0040,		///< Read handler value changes rarely.
+	EXPENSIVE = 0x0080,	///< Read handler is expensive to call.
+	BUTTON = 0x0100,	///< Write handler ignores data.
+	CHECKBOX = 0x0200,	///< Read/write handlers are boolean checkboxes.
 	DRIVER_FLAG_0 = 0x0400, DRIVER_FLAG_1 = 0x0800,
 	DRIVER_FLAG_2 = 0x1000, DRIVER_FLAG_3 = 0x2000,
 	USER_FLAG_SHIFT = 14, USER_FLAG_0 = 1 << USER_FLAG_SHIFT

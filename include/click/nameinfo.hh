@@ -36,27 +36,27 @@ class NameInfo { public:
     static void static_cleanup();
 
     enum DBType {
-	T_NONE = 0,			//< Nonexistent names database
-	T_SCHEDULEINFO = 0x00000001,	//< ScheduleInfo database
-	T_SCRIPT_INSN = 0x00000002,	//< Script instruction names database
-	T_SIGNO = 0x00000003,		//< User-level signal names database
-	T_ETHERNET_ADDR = 0x01000001,	//< Ethernet address names database
-	T_IP_ADDR = 0x04000001,		//< IP address names database
-	T_IP_PREFIX = 0x04000002,	//< IP prefix names database
-	T_IP_PROTO = 0x04000003,	//< IP protocol names database
-	T_IPFILTER_TYPE = 0x04000004,	//< IPFilter instruction names database
-	T_TCP_OPT = 0x04000005,		//< TCP option names database
-	T_ICMP_TYPE = 0x04010000,	//< ICMP type names database
-	T_ICMP_CODE = 0x04010100,	//< ICMP code names database
-	T_IP_PORT = 0x04020000,		//< Starting point for IP per-protocol port names databases
-	T_TCP_PORT = 0x04020006,	//< TCP port names database
-	T_UDP_PORT = 0x04020011,	//< UDP port names database
-	T_IP_FIELDNAME = 0x04030000,	//< Starting point for IP per-protocol field names databases
-	T_ICMP_FIELDNAME = 0x04030001,	//< ICMP field names database
-	T_TCP_FIELDNAME = 0x04030006,	//< TCP field names database
-	T_UDP_FIELDNAME = 0x04030011,	//< UDP field names database
-	T_IP6_ADDR = 0x06000001,	//< IPv6 address names database
-	T_IP6_PREFIX = 0x06000002	//< IPv6 prefix names database
+	T_NONE = 0,			///< Nonexistent names database
+	T_SCHEDULEINFO = 0x00000001,	///< ScheduleInfo database
+	T_SCRIPT_INSN = 0x00000002,	///< Script instruction names database
+	T_SIGNO = 0x00000003,		///< User-level signal names database
+	T_ETHERNET_ADDR = 0x01000001,	///< Ethernet address names database
+	T_IP_ADDR = 0x04000001,		///< IP address names database
+	T_IP_PREFIX = 0x04000002,	///< IP prefix names database
+	T_IP_PROTO = 0x04000003,	///< IP protocol names database
+	T_IPFILTER_TYPE = 0x04000004,	///< IPFilter instruction names database
+	T_TCP_OPT = 0x04000005,		///< TCP option names database
+	T_ICMP_TYPE = 0x04010000,	///< ICMP type names database
+	T_ICMP_CODE = 0x04010100,	///< ICMP code names database
+	T_IP_PORT = 0x04020000,		///< Starting point for IP per-protocol port names databases
+	T_TCP_PORT = 0x04020006,	///< TCP port names database
+	T_UDP_PORT = 0x04020011,	///< UDP port names database
+	T_IP_FIELDNAME = 0x04030000,	///< Starting point for IP per-protocol field names databases
+	T_ICMP_FIELDNAME = 0x04030001,	///< ICMP field names database
+	T_TCP_FIELDNAME = 0x04030006,	///< TCP field names database
+	T_UDP_FIELDNAME = 0x04030011,	///< UDP field names database
+	T_IP6_ADDR = 0x06000001,	///< IPv6 address names database
+	T_IP6_PREFIX = 0x06000002	///< IPv6 prefix names database
     };
 
     /** @brief Find or create a name database.

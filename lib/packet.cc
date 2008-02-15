@@ -82,6 +82,17 @@ CLICK_DECLS
  * space for headers or trailers, call push() and put().  To remove headers or
  * trailers, call pull() and take().
  *
+ * <pre>
+ *                data()                          end_data()
+ *                   |                                |
+ *           push()  |  pull()                take()  |  put()
+ *          <======= | =======>              <======= | =======>
+ *                   v                                v                 
+ *       +===========+================================+===========+
+ *       |XXXXXXXXXXX|        PACKET CONTENTS         |XXXXXXXXXXX|
+ *       +===========+================================+===========+
+ * </pre>
+ *
  * Packet objects are implemented in different ways in different drivers.  The
  * userlevel driver has its own C++ implementation.  In the linuxmodule
  * driver, however, Packet is an overlay on Linux's native sk_buff
