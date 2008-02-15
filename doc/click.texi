@@ -68,7 +68,6 @@ is on the Web: @indicateurl{http://www.read.cs.ucla.edu/click/doxygen}
 @menu
 * Overview::                    
 * Helper Classes::              
-* Packets::                     
 * Tasks::                       
 * Timers::                      
 * Notification::                
@@ -85,6 +84,7 @@ Overview
 Helper Classes
 
 * ErrorHandler::                
+* Handlers::                    
 
 ErrorHandler
 
@@ -95,33 +95,6 @@ ErrorHandler
 * Basic ErrorHandlers::         
 * Error Veneers::               
 * Writing ErrorHandlers::       
-
-Packets
-
-* Packet Structure and Contents::  
-* Packet Creation::             
-* Packets and sk_buffs::        
-* Packet Sharing::              
-* Packet Buffer Manipulation::  
-* Annotations::                 
-* Packet Out-of-Memory::        
-* Handlers::                    
-
-Annotations
-
-* Header Annotations::          
-* User Annotations::            
-* Specific User Annotations::   
-* Other Annotations::           
-* Annotations In General::      
-
-Other Annotations
-
-* Destination Address Annotation::  
-* Timestamp Annotation::        
-* Device Annotation::           
-* Packet Type Annotation::      
-* Performance Counter Annotation::  
 
 Handlers
 
@@ -178,6 +151,7 @@ Coding Standards
 
 @menu
 * ErrorHandler::                
+* Handlers::                    
 @end menu
 
 
