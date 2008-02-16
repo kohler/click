@@ -122,7 +122,7 @@ void wdiagram::initialize()
 void wdiagram::display(const String &ename, bool scroll_to)
 {
     if (delt *e = _elt_map[ename])
-	if (!e->highlighted(dhlt_click))
+	if (!e->highlighted(dhlt_click) || scroll_to)
 	    highlight(e, dhlt_click, 0, scroll_to);
 }
 
