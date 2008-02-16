@@ -16,7 +16,7 @@ class NameInfo { public:
      * Users never need to call this. */
     NameInfo();
 
-    /** @brief Destroy a NameInfo element.
+    /** @brief Destroy a NameInfo object.
      *
      * Also destroys all NameDB objects installed on this NameInfo.
      *
@@ -35,6 +35,7 @@ class NameInfo { public:
      * router.  Users never need to call this. */
     static void static_cleanup();
 
+    /** @brief Known name database types. */
     enum DBType {
 	T_NONE = 0,			///< Nonexistent names database
 	T_SCHEDULEINFO = 0x00000001,	///< ScheduleInfo database
@@ -108,7 +109,7 @@ class NameInfo { public:
      */
     static void uninstalldb(NameDB *db);
 
-    /** @brief Query the installed databases for a given name.
+    /** @brief Query installed databases for @a name.
      * @param type database type
      * @param context compound element context
      * @param name name to look up
@@ -124,7 +125,7 @@ class NameInfo { public:
     static bool query(uint32_t type, const Element *context,
 		      const String &name, void *value_store, size_t value_size);
 
-    /** @brief Query the installed databases for a given name, returning a 32-bit integer value.
+    /** @brief Query installed databases for @a name, returning a 32-bit integer value.
      * @param type database type
      * @param context compound element context
      * @param name name to look up
@@ -135,6 +136,10 @@ class NameInfo { public:
      * element @a context, returning the most specific value matching @a name.
      * The value is stored in @a value_store.  The installed databases must
      * have a value size of 4.
+     *
+     * If the name lookup fails and @a name unparses into a 32-bit integer
+     * value (for example, "30"), the result is set to the corresponding
+     * integer.
      */
     static bool query_int(uint32_t type, const Element *context,
 			  const String &name, int32_t *value_store);
@@ -143,7 +148,7 @@ class NameInfo { public:
     static bool query_int(uint32_t type, const Element *context,
 			  const String &name, uint32_t *value_store);
 
-    /** @brief Query the installed databases for a given value.
+    /** @brief Query installed databases for @a value.
      * @param type database type
      * @param context compound element context
      * @param value points to value to look up
@@ -159,7 +164,7 @@ class NameInfo { public:
     static String revquery(uint32_t type, const Element *context,
 			   const void *value, size_t value_size);
 
-    /** @brief Query the installed databases for a given 32-bit integer value.
+    /** @brief Query installed databases for a 32-bit integer @a value.
      * @param type database type
      * @param context compound element context
      * @param value value to look up
@@ -174,7 +179,7 @@ class NameInfo { public:
     static inline String revquery_int(uint32_t type, const Element *context,
 				      int32_t value);
 
-    /** @brief Define a name to equal a value in the installed databases.
+    /** @brief Define @a name to equal @a value in the installed databases.
      * @param type database type
      * @param context compound element context
      * @param name name to define
@@ -194,7 +199,7 @@ class NameInfo { public:
     static inline bool define(uint32_t type, const Element *context,
 			      const String &name, const void *value, size_t value_size);
 
-    /** @brief Define a name to equal a 32-bit integer value in the installed databases.
+    /** @brief Define @a name to equal 32-bit integer @a value in the installed databases.
      * @param type database type
      * @param context compound element context
      * @param name name to define
