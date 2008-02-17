@@ -417,12 +417,12 @@ match_config(const String &pat, const String &conf,
 #define PATTERNS_OPT		306
 #define REVERSE_OPT		307
 
-static Clp_Option options[] = {
-  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
-  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+static const Clp_Option options[] = {
+  { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
+  { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
-  { "patterns", 'p', PATTERNS_OPT, Clp_ArgString, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
+  { "patterns", 'p', PATTERNS_OPT, Clp_ValString, 0 },
   { "reverse", 'r', REVERSE_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
@@ -533,7 +533,7 @@ particular purpose.\n");
       break;
       
      case PATTERNS_OPT:
-      read_pattern_file(clp->arg, errh);
+      read_pattern_file(clp->vstr, errh);
       break;
 
      case ROUTER_OPT:
@@ -542,7 +542,7 @@ particular purpose.\n");
 	errh->error("router configuration specified twice");
 	goto bad_option;
       }
-      router_file = clp->arg;
+      router_file = clp->vstr;
       file_is_expr = (opt == EXPRESSION_OPT);
       break;
       
@@ -551,7 +551,7 @@ particular purpose.\n");
 	errh->error("output file specified twice");
 	goto bad_option;
       }
-      output_file = clp->arg;
+      output_file = clp->vstr;
       break;
 
      case REVERSE_OPT:
@@ -559,15 +559,15 @@ particular purpose.\n");
       break;
       
      case Clp_NotOption:
-      if (click_maybe_define(clp->arg, errh))
+      if (click_maybe_define(clp->vstr, errh))
 	  break;
       if (num_nondash_args == 0 && router_file) {
 	errh->error("router configuration specified twice");
 	goto bad_option;
       } else if (num_nondash_args == 0)
-	router_file = clp->arg;
+	router_file = clp->vstr;
       else
-	read_pattern_file(clp->arg, errh);
+	read_pattern_file(clp->vstr, errh);
       num_nondash_args++;
       break;
 

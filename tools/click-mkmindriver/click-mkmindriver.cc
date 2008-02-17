@@ -50,20 +50,20 @@
 #define VERBOSE_OPT		314
 #define EXTRAS_OPT		315
 
-static Clp_Option options[] = {
+static const Clp_Option options[] = {
   { "align", 'A', ALIGN_OPT, 0, 0 },
   { "all", 'a', ALL_OPT, 0, Clp_Negate },
   { "check", 0, CHECK_OPT, 0, Clp_Negate },
-  { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
-  { "directory", 'd', DIRECTORY_OPT, Clp_ArgString, 0 },
-  { "elements", 'E', ELEMENT_OPT, Clp_ArgString, 0 },
-  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
+  { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
+  { "directory", 'd', DIRECTORY_OPT, Clp_ValString, 0 },
+  { "elements", 'E', ELEMENT_OPT, Clp_ValString, 0 },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
   { "extras", 0, EXTRAS_OPT, 0, Clp_Negate },
-  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+  { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, 0 }, // DEPRECATED
   { "linuxmodule", 'l', KERNEL_OPT, 0, 0 },
-  { "package", 'p', PACKAGE_OPT, Clp_ArgString, 0 },
+  { "package", 'p', PACKAGE_OPT, Clp_ValString, 0 },
   { "userlevel", 'u', USERLEVEL_OPT, 0, 0 },
   { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate }
 };
@@ -433,7 +433,7 @@ particular purpose.\n");
 	    break;
       
 	  case CLICKPATH_OPT:
-	    set_clickpath(clp->arg);
+	    set_clickpath(clp->vstr);
 	    break;
 
 	  case KERNEL_OPT:
@@ -445,11 +445,11 @@ particular purpose.\n");
 	    break;
 
 	  case PACKAGE_OPT:
-	    package_name = clp->arg;
+	    package_name = clp->vstr;
 	    break;
 
 	  case DIRECTORY_OPT:
-	    directory = clp->arg;
+	    directory = clp->vstr;
 	    if (directory.length() && directory.back() != '/')
 		directory += "/";
 	    break;
@@ -464,7 +464,7 @@ particular purpose.\n");
 	    
 	  case ELEMENT_OPT: {
 	      Vector<String> elements;
-	      cp_spacevec(clp->arg, elements);
+	      cp_spacevec(clp->vstr, elements);
 	      for (String *e = elements.begin(); e < elements.end(); e++)
 		  md.require(*e, &arg_lerrh);
 	      break;
@@ -483,16 +483,16 @@ particular purpose.\n");
 
 	  case ROUTER_OPT:
 	  router_file:
-	    router_filenames.push_back(specifier + String("f") + clp->arg);
+	    router_filenames.push_back(specifier + String("f") + clp->vstr);
 	    break;
 
 	  case Clp_NotOption:
-	    if (!click_maybe_define(clp->arg, &arg_lerrh))
+	    if (!click_maybe_define(clp->vstr, &arg_lerrh))
 		goto router_file;
 	    break;
 
 	  case EXPRESSION_OPT:
-	    router_filenames.push_back(specifier + String("e") + clp->arg);
+	    router_filenames.push_back(specifier + String("e") + clp->vstr);
 	    break;
 
 	  case Clp_BadOption:

@@ -54,18 +54,18 @@
 #define INSTRS_OPT		312
 #define REVERSE_OPT		313
 
-static Clp_Option options[] = {
-  { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
+static const Clp_Option options[] = {
+  { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
   { "config", 'c', CONFIG_OPT, 0, Clp_Negate },
-  { "devirtualize", 0, DEVIRTUALIZE_OPT, Clp_ArgString, Clp_Negate },
-  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
-  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+  { "devirtualize", 0, DEVIRTUALIZE_OPT, Clp_ValString, Clp_Negate },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
+  { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { 0, 'n', NO_DEVIRTUALIZE_OPT, Clp_ArgString, 0 },
+  { 0, 'n', NO_DEVIRTUALIZE_OPT, Clp_ValString, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate }, // DEPRECATED
   { "linuxmodule", 'l', KERNEL_OPT, 0, Clp_Negate },
-  { "instructions", 'i', INSTRS_OPT, Clp_ArgString, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "instructions", 'i', INSTRS_OPT, Clp_ValString, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
   { "reverse", 'r', REVERSE_OPT, 0, Clp_Negate },
   { "source", 's', SOURCE_OPT, 0, Clp_Negate },
   { "userlevel", 'u', USERLEVEL_OPT, 0, Clp_Negate },
@@ -264,7 +264,7 @@ particular purpose.\n");
       break;
 
      case CLICKPATH_OPT:
-      set_clickpath(clp->arg);
+      set_clickpath(clp->vstr);
       break;
       
      case ROUTER_OPT:
@@ -274,12 +274,12 @@ particular purpose.\n");
 	p_errh->error("router configuration specified twice");
 	goto bad_option;
       }
-      router_file = clp->arg;
+      router_file = clp->vstr;
       file_is_expr = (opt == EXPRESSION_OPT);
       break;
 
      case Clp_NotOption:
-      if (!click_maybe_define(clp->arg, p_errh))
+      if (!click_maybe_define(clp->vstr, p_errh))
 	  goto router_file;
       break;
 
@@ -288,7 +288,7 @@ particular purpose.\n");
 	p_errh->error("output file specified twice");
 	goto bad_option;
       }
-      output_file = clp->arg;
+      output_file = clp->vstr;
       break;
       
      case SOURCE_OPT:
@@ -308,15 +308,15 @@ particular purpose.\n");
       break;
 
      case DEVIRTUALIZE_OPT:
-      specializing.insert(clp->arg, !clp->negated);
+      specializing.insert(clp->vstr, !clp->negated);
       break;
       
      case NO_DEVIRTUALIZE_OPT:
-      specializing.insert(clp->arg, 0);
+      specializing.insert(clp->vstr, 0);
       break;
 
      case INSTRS_OPT:
-      instruction_files.push_back(clp->arg);
+      instruction_files.push_back(clp->vstr);
       break;
 
      case REVERSE_OPT:

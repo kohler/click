@@ -41,13 +41,13 @@
 #define OUTPUT_OPT		305
 #define FLATTEN_OPT		306
 
-static Clp_Option options[] = {
-    { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
-    { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
-    { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+static const Clp_Option options[] = {
+    { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
+    { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
+    { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
     { "flatten", 'F', FLATTEN_OPT, 0, Clp_Negate },
     { "help", 0, HELP_OPT, 0, 0 },
-    { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+    { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -719,7 +719,7 @@ particular purpose.\n");
 	    break;
 
 	  case CLICKPATH_OPT:
-	    set_clickpath(clp->arg);
+	    set_clickpath(clp->vstr);
 	    break;
 
 	  case ROUTER_OPT:
@@ -729,7 +729,7 @@ particular purpose.\n");
 		p_errh->error("router configuration specified twice");
 		goto bad_option;
 	    }
-	    router_file = clp->arg;
+	    router_file = clp->vstr;
 	    file_is_expr = (opt == EXPRESSION_OPT);
 	    break;
 
@@ -738,7 +738,7 @@ particular purpose.\n");
 		p_errh->error("output file specified twice");
 		goto bad_option;
 	    }
-	    output_file = clp->arg;
+	    output_file = clp->vstr;
 	    break;
 
 	  case FLATTEN_OPT:

@@ -65,24 +65,24 @@
 #define GID_OPT			314
 #define CPU_OPT			315
 
-static Clp_Option options[] = {
+static const Clp_Option options[] = {
   { "cabalistic", 0, PRIVATE_OPT, 0, Clp_Negate },
-  { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
-  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
-  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+  { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
+  { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "hot-swap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
   { "hotswap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
-  { "priority", 'n', PRIORITY_OPT, Clp_ArgInt, 0 },
+  { "priority", 'n', PRIORITY_OPT, Clp_ValInt, 0 },
 #if FOR_LINUXMODULE
   { "map", 'm', MAP_OPT, 0, 0 },
   { "private", 'p', PRIVATE_OPT, 0, Clp_Negate },
-  { "threads", 't', THREADS_OPT, Clp_ArgUnsigned, 0 },
+  { "threads", 't', THREADS_OPT, Clp_ValUnsigned, 0 },
   { "greedy", 'G', GREEDY_OPT, 0, Clp_Negate },
-  { "uid", 'U', UID_OPT, Clp_ArgString, 0 },
-  { "user", 0, UID_OPT, Clp_ArgString, 0 },
-  { "gid", 0, GID_OPT, Clp_ArgString, 0 },
-  { "cpu", 0, CPU_OPT, Clp_ArgUnsigned, 0 },
+  { "uid", 'U', UID_OPT, Clp_ValString, 0 },
+  { "user", 0, UID_OPT, Clp_ValString, 0 },
+  { "gid", 0, GID_OPT, Clp_ValString, 0 },
+  { "cpu", 0, CPU_OPT, Clp_ValUnsigned, 0 },
 #endif
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
   { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
@@ -343,7 +343,7 @@ particular purpose.\n");
       break;
 
      case CLICKPATH_OPT:
-      set_clickpath(clp->arg);
+      set_clickpath(clp->vstr);
       break;
       
      case ROUTER_OPT:
@@ -353,12 +353,12 @@ particular purpose.\n");
 	errh->error("router configuration specified twice");
 	goto bad_option;
       }
-      router_file = clp->arg;
+      router_file = clp->vstr;
       file_is_expr = (opt == EXPRESSION_OPT);
       break;
 
      case Clp_NotOption:
-      if (!click_maybe_define(clp->arg, errh))
+      if (!click_maybe_define(clp->vstr, errh))
 	  goto router_file;
       break;
 
@@ -392,9 +392,9 @@ particular purpose.\n");
 	break;
 
     case UID_OPT: {
-	const char *colon = find(clp->arg, clp->arg + strlen(clp->arg), ':');
-	if (colon > clp->arg) {
-	    String s(clp->arg, colon);
+	const char *colon = find(clp->vstr, clp->vstr + strlen(clp->vstr), ':');
+	if (colon > clp->vstr) {
+	    String s(clp->vstr, colon);
 	    if (!cp_integer(s, &uid)) {
 		errno = 0;
 		struct passwd *pwd = getpwnam(s.c_str());
@@ -407,7 +407,7 @@ particular purpose.\n");
 	    }
 	}
 	if (*colon && colon[1]) {
-	    clp->arg = colon + 1;
+	    clp->vstr = colon + 1;
 	    goto gid;
 	}
 	break;
@@ -415,13 +415,13 @@ particular purpose.\n");
 
     gid:
     case GID_OPT: {
-	if (!cp_integer(clp->arg, &gid)) {
+	if (!cp_integer(clp->vstr, &gid)) {
 	    errno = 0;
-	    struct group *grp = getgrnam(clp->arg);
+	    struct group *grp = getgrnam(clp->vstr);
 	    if (!grp && errno)
 		errh->error("group lookup: %s", strerror(errno));
 	    else if (!grp)
-		errh->error("no such group '%s'", clp->arg);
+		errh->error("no such group '%s'", clp->vstr);
 	    else
 		gid = grp->gr_gid;
 	}

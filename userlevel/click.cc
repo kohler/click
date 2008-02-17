@@ -67,21 +67,21 @@ CLICK_USING_DECLS
 #define ALLOW_RECONFIG_OPT	314
 #define EXIT_HANDLER_OPT	315
 
-static Clp_Option options[] = {
+static const Clp_Option options[] = {
   { "allow-reconfigure", 'R', ALLOW_RECONFIG_OPT, 0, Clp_Negate },
-  { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
-  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
-  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
-  { "handler", 'h', HANDLER_OPT, Clp_ArgString, 0 },
+  { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
+  { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
+  { "handler", 'h', HANDLER_OPT, Clp_ValString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
-  { "port", 'p', PORT_OPT, Clp_ArgInt, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
+  { "port", 'p', PORT_OPT, Clp_ValInt, 0 },
   { "quit", 'q', QUIT_OPT, 0, 0 },
   { "time", 't', TIME_OPT, 0, 0 },
-  { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ArgString, 0 },
+  { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ValString, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
   { "warnings", 0, WARNINGS_OPT, 0, Clp_Negate },
-  { "exit-handler", 'x', EXIT_HANDLER_OPT, Clp_ArgString, 0 },
+  { "exit-handler", 'x', EXIT_HANDLER_OPT, Clp_ValString, 0 },
   { 0, 'w', NO_WARNINGS_OPT, 0, Clp_Negate },
 };
 
@@ -336,15 +336,15 @@ main(int argc, char **argv)
 	errh->error("router configuration specified twice");
 	goto bad_option;
       }
-      router_file = clp->arg;
+      router_file = clp->vstr;
       file_is_expr = (opt == EXPRESSION_OPT);
       break;
 
      case Clp_NotOption:
-      for (const char *s = clp->arg; *s; s++)
-	  if (*s == '=' && s > clp->arg) {
-	      if (!click_lexer()->global_scope().define(String(clp->arg, s), s + 1, false))
-		  errh->error("parameter '%.*s' multiply defined", s - clp->arg, clp->arg);
+      for (const char *s = clp->vstr; *s; s++)
+	  if (*s == '=' && s > clp->vstr) {
+	      if (!click_lexer()->global_scope().define(String(clp->vstr, s), s + 1, false))
+		  errh->error("parameter '%.*s' multiply defined", s - clp->vstr, clp->vstr);
 	      goto next_argument;
 	  } else if (!isalnum((unsigned char) *s) && *s != '_')
 	      break;
@@ -355,11 +355,11 @@ main(int argc, char **argv)
 	errh->error("output file specified twice");
 	goto bad_option;
       }
-      output_file = clp->arg;
+      output_file = clp->vstr;
       break;
      
      case HANDLER_OPT:
-      handlers.push_back(clp->arg);
+      handlers.push_back(clp->vstr);
       break;
 
      case EXIT_HANDLER_OPT:
@@ -367,7 +367,7 @@ main(int argc, char **argv)
 	errh->error("--exit-handler specified twice");
 	goto bad_option;
       }
-      exit_handler = clp->arg;
+      exit_handler = clp->vstr;
       break;
       
      case PORT_OPT:
@@ -375,7 +375,7 @@ main(int argc, char **argv)
       break;
 
      case UNIX_SOCKET_OPT:
-      cs_unix_sockets.push_back(clp->arg);
+      cs_unix_sockets.push_back(clp->vstr);
       break;
 
      case ALLOW_RECONFIG_OPT:
@@ -399,7 +399,7 @@ main(int argc, char **argv)
       break;
 
      case CLICKPATH_OPT:
-      set_clickpath(clp->arg);
+      set_clickpath(clp->vstr);
       break;
       
      case HELP_OPT:

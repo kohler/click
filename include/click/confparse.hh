@@ -303,11 +303,11 @@ String cp_unparse_bandwidth(uint32_t value);
 
 /// @name Legacy Functions
 //@{
-int cp_va_parse(const Vector<String>& conf, CP_VA_PARSE_ARGS_REST);
-int cp_va_parse(const String& str, CP_VA_PARSE_ARGS_REST);
-int cp_va_space_parse(const String& str, CP_VA_PARSE_ARGS_REST);
-int cp_va_parse_keyword(const String& str, CP_VA_PARSE_ARGS_REST);
-int cp_va_parse_remove_keywords(Vector<String>& conf, int first, CP_VA_PARSE_ARGS_REST);
+int cp_va_parse(const Vector<String>& conf, CP_VA_PARSE_ARGS_REST) CLICK_DEPRECATED;
+int cp_va_parse(const String& str, CP_VA_PARSE_ARGS_REST) CLICK_DEPRECATED;
+int cp_va_space_parse(const String& str, CP_VA_PARSE_ARGS_REST) CLICK_DEPRECATED;
+int cp_va_parse_keyword(const String& str, CP_VA_PARSE_ARGS_REST) CLICK_DEPRECATED;
+int cp_va_parse_remove_keywords(Vector<String>& conf, int first, CP_VA_PARSE_ARGS_REST) CLICK_DEPRECATED;
 // Argument syntax:
 // cp_va_arg ::= cpEnd		// terminates argument list (not 0!)
 //    |   cpOptional | cpKeywords | cpIgnore...		// manipulators

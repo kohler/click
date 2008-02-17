@@ -39,7 +39,7 @@
 #define VERSION_OPT		301
 #define VERBOSE_OPT		302
 
-static Clp_Option options[] = {
+static const Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
   { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },

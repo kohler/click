@@ -46,14 +46,14 @@
 #define EXPRESSION_OPT		306
 #define CONFIG_OPT		307
 
-static Clp_Option options[] = {
+static const Clp_Option options[] = {
   { "config", 'c', CONFIG_OPT, 0, 0 },
-  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
-  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
+  { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "link", 'l', LINK_OPT, Clp_ArgString, 0 },
-  { "name", 'n', NAME_OPT, Clp_ArgString, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "link", 'l', LINK_OPT, Clp_ValString, 0 },
+  { "name", 'n', NAME_OPT, Clp_ValString, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -383,11 +383,11 @@ particular purpose.\n");
       break;
       
      case ROUTER_OPT:
-      cc_read_router(String(), next_name, next_number, clp->arg, false, errh);
+      cc_read_router(String(), next_name, next_number, clp->vstr, false, errh);
       break;
 
      case EXPRESSION_OPT:
-      cc_read_router(String(), next_name, next_number, clp->arg, true, errh);
+      cc_read_router(String(), next_name, next_number, clp->vstr, true, errh);
       break;
 
      case OUTPUT_OPT:
@@ -395,17 +395,17 @@ particular purpose.\n");
 	p_errh->error("output file specified twice");
 	goto bad_option;
       }
-      output_file = clp->arg;
+      output_file = clp->vstr;
       break;
 
      case NAME_OPT:
       if (next_name)
 	p_errh->warning("router name specified twice");
-      next_name = clp->arg;
+      next_name = clp->vstr;
       break;
 
      case LINK_OPT:
-      link_texts.push_back(clp->arg);
+      link_texts.push_back(clp->vstr);
       break;
 
      case CONFIG_OPT:
@@ -413,16 +413,16 @@ particular purpose.\n");
       break;
       
      case Clp_NotOption:
-      if (const char *s = strchr(clp->arg, ':'))
-	cc_read_router(String(clp->arg, s - clp->arg), next_name, next_number, s + 1, false, errh);
-      else if (const char *eq = strchr(clp->arg, '=')) {
-	const char *dot = strchr(clp->arg, '.');
+      if (const char *s = strchr(clp->vstr, ':'))
+	cc_read_router(String(clp->vstr, s - clp->vstr), next_name, next_number, s + 1, false, errh);
+      else if (const char *eq = strchr(clp->vstr, '=')) {
+	const char *dot = strchr(clp->vstr, '.');
 	if (!dot || dot > eq)
-	  cc_read_router(String(clp->arg, eq - clp->arg), next_name, next_number, eq + 1, false, errh);
+	  cc_read_router(String(clp->vstr, eq - clp->vstr), next_name, next_number, eq + 1, false, errh);
 	else
-	  link_texts.push_back(clp->arg);
+	  link_texts.push_back(clp->vstr);
       } else
-	cc_read_router(String(), next_name, next_number, clp->arg, false, errh);
+	cc_read_router(String(), next_name, next_number, clp->vstr, false, errh);
       break;
       
      bad_option:

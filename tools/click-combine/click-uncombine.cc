@@ -43,11 +43,11 @@
 #define OUTPUT_OPT		303
 #define NAME_OPT		304
 
-static Clp_Option options[] = {
-  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+static const Clp_Option options[] = {
+  { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "name", 'n', NAME_OPT, Clp_ArgString, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "name", 'n', NAME_OPT, Clp_ValString, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -317,7 +317,7 @@ particular purpose.\n");
 	p_errh->error("combined router specified twice");
 	goto bad_option;
       }
-      router_file = clp->arg;
+      router_file = clp->vstr;
       break;
 
      case OUTPUT_OPT:
@@ -325,7 +325,7 @@ particular purpose.\n");
 	p_errh->error("output file specified twice");
 	goto bad_option;
       }
-      output_file = clp->arg;
+      output_file = clp->vstr;
       break;
 
      case NAME_OPT:
@@ -333,7 +333,7 @@ particular purpose.\n");
 	p_errh->error("component name specified twice");
 	goto bad_option;
       }
-      component = clp->arg;
+      component = clp->vstr;
       break;
 
      case Clp_NotOption:
@@ -342,9 +342,9 @@ particular purpose.\n");
 	p_errh->error("component name specified twice");
 	goto bad_option;
       } else if (router_file)
-	component = clp->arg;
+	component = clp->vstr;
       else
-	router_file = clp->arg;
+	router_file = clp->vstr;
       break;
       
      bad_option:

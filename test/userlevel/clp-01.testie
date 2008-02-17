@@ -1,0 +1,12 @@
+%info
+Tests CLP command line parser with the CLPTest element.
+
+%require
+click-buildtool provides CLPTest
+
+%script
+click -qe CLPTest
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!

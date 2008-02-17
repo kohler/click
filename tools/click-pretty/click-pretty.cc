@@ -53,22 +53,22 @@
 #define LINUXMODULE_OPT		(1000 + Driver::LINUXMODULE)
 #define BSDMODULE_OPT		(1000 + Driver::BSDMODULE)
 
-static Clp_Option options[] = {
+static const Clp_Option options[] = {
     { "bsdmodule", 'b', BSDMODULE_OPT, 0, 0 },
-    { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
-    { "class-docs", 'u', CLASS_URLS_OPT, Clp_ArgString, 0 },
-    { "define", 'd', DEFINE_OPT, Clp_ArgString, 0 },
+    { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
+    { "class-docs", 'u', CLASS_URLS_OPT, Clp_ValString, 0 },
+    { "define", 'd', DEFINE_OPT, Clp_ValString, 0 },
     { "dot", 0, DOT_OPT, 0, 0 },
-    { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
-    { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+    { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
+    { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
     { "gml", 0, GML_OPT, 0, 0 },
     { "graphml", 0, GRAPHML_OPT, 0, 0 },
     { "help", 0, HELP_OPT, 0, 0 },
     { "kernel", 'k', LINUXMODULE_OPT, 0, 0 }, // DEPRECATED
     { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
-    { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
-    { "package-docs", 0, PACKAGE_URLS_OPT, Clp_ArgString, 0 },
-    { "template", 't', TEMPLATE_OPT, Clp_ArgString, 0 },
+    { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
+    { "package-docs", 0, PACKAGE_URLS_OPT, Clp_ValString, 0 },
+    { "template", 't', TEMPLATE_OPT, Clp_ValString, 0 },
     { "userlevel", 0, USERLEVEL_OPT, 0, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
     { "write-template", 0, WRITE_TEMPLATE_OPT, 0, 0 },
@@ -1316,15 +1316,15 @@ particular purpose.\n");
 	    break;
 
 	  case CLICKPATH_OPT:
-	    set_clickpath(clp->arg);
+	    set_clickpath(clp->vstr);
 	    break;
 
 	  case CLASS_URLS_OPT:
-	    package_hrefs.insert("x", clp->arg);
+	    package_hrefs.insert("x", clp->vstr);
 	    break;
 
 	  case PACKAGE_URLS_OPT: {
-	      String s = clp->arg;
+	      String s = clp->vstr;
 	      const char *equals = find(s, '=');
 	      if (equals == s.end()) {
 		  p_errh->error("'--package-urls' option must contain an equals sign");
@@ -1335,11 +1335,11 @@ particular purpose.\n");
 	  }
 
 	  case TEMPLATE_OPT:
-	    html_template = file_string(clp->arg, p_errh);
+	    html_template = file_string(clp->vstr, p_errh);
 	    break;
 
 	  case DEFINE_OPT: {
-	      String s = clp->arg;
+	      String s = clp->vstr;
 	      const char *equals = find(s, '=');
 	      if (equals < s.end())
 		  definitions.insert(s.substring(s.begin(), equals), s.substring(equals + 1, s.end()));
@@ -1355,12 +1355,12 @@ particular purpose.\n");
 		p_errh->error("router configuration specified twice");
 		goto bad_option;
 	    }
-	    router_file = clp->arg;
+	    router_file = clp->vstr;
 	    file_is_expr = (opt == EXPRESSION_OPT);
 	    break;
 
 	  case Clp_NotOption:
-	    if (!click_maybe_define(clp->arg, p_errh))
+	    if (!click_maybe_define(clp->vstr, p_errh))
 		goto router_file;
 	    break;
 
@@ -1369,7 +1369,7 @@ particular purpose.\n");
 		p_errh->error("output file specified twice");
 		goto bad_option;
 	    }
-	    output_file = clp->arg;
+	    output_file = clp->vstr;
 	    break;
 
 	  case USERLEVEL_OPT:

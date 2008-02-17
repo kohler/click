@@ -292,13 +292,13 @@ static ElementClassT *class_factory(const String &name)
 #define LINUXMODULE_OPT		(1000 + Driver::LINUXMODULE)
 #define BSDMODULE_OPT		(1000 + Driver::BSDMODULE)
 
-static Clp_Option options[] = {
+static const Clp_Option options[] = {
   { "bsdmodule", 'b', BSDMODULE_OPT, 0, 0 },
-  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
-  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
+  { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
   { "userlevel", 'u', USERLEVEL_OPT, 0, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
@@ -385,7 +385,7 @@ particular purpose.\n");
 	errh->error("router configuration specified twice");
 	goto bad_option;
       }
-      router_file = clp->arg;
+      router_file = clp->vstr;
       file_is_expr = (opt == EXPRESSION_OPT);
       break;
 
@@ -400,7 +400,7 @@ particular purpose.\n");
 	break;
 
      case Clp_NotOption:
-      if (!click_maybe_define(clp->arg, errh))
+      if (!click_maybe_define(clp->vstr, errh))
 	  goto router_file;
       break;
 
@@ -409,7 +409,7 @@ particular purpose.\n");
 	errh->error("output file specified twice");
 	goto bad_option;
       }
-      output_file = clp->arg;
+      output_file = clp->vstr;
       break;
       
      bad_option:
