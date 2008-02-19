@@ -15,20 +15,29 @@ typedef int (*WriteHandlerHook)(const String &data, Element *element,
 class Handler { public:
 
     enum Flags {
-	OP_READ = 0x0001,	///< Handler supports read operations.
-	OP_WRITE = 0x0002,	///< Handler supports write operations.
-	READ_PARAM = 0x0004,	///< Read handler takes parameters.
-	ONE_HOOK = 0x0008,	///< Use one hook for all operations.
+	OP_READ = 0x0001,	///< @brief Handler supports read operations.
+	OP_WRITE = 0x0002,	///< @brief Handler supports write operations.
+	READ_PARAM = 0x0004,	///< @brief Read handler takes parameters.
+	ONE_HOOK = 0x0008,	///< @brief Use one hook for all operations.
 	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | ONE_HOOK,
-	EXCLUSIVE = 0x0010,
-	RAW = 0x0020,		///< Don't add newline to results.
-	CALM = 0x0040,		///< Read handler value changes rarely.
-	EXPENSIVE = 0x0080,	///< Read handler is expensive to call.
-	BUTTON = 0x0100,	///< Write handler ignores data.
-	CHECKBOX = 0x0200,	///< Read/write handlers are boolean checkboxes.
-	DRIVER_FLAG_0 = 0x0400, DRIVER_FLAG_1 = 0x0800,
-	DRIVER_FLAG_2 = 0x1000, DRIVER_FLAG_3 = 0x2000,
-	USER_FLAG_SHIFT = 14, USER_FLAG_0 = 1 << USER_FLAG_SHIFT
+				///< @brief These flags may not be set by
+				///  Router::change_handler_flags().
+	EXCLUSIVE = 0x0010,	///< @brief Handler is exclusive.
+	RAW = 0x0020,		///< @brief Don't add newline to results.
+	CALM = 0x0040,		///< @brief Read handler value changes rarely.
+	EXPENSIVE = 0x0080,	///< @brief Read handler is expensive to call.
+	BUTTON = 0x0100,	///< @brief Write handler ignores data.
+	CHECKBOX = 0x0200,	///< @brief Read/write handler is boolean and
+				///  should be rendered as a checkbox.
+	DRIVER_FLAG_0 = 0x0400,	///< @brief Handler flag available for drivers.
+	DRIVER_FLAG_1 = 0x0800,	///< @brief Handler flag available for drivers.
+	DRIVER_FLAG_2 = 0x1000,	///< @brief Handler flag available for drivers.
+	DRIVER_FLAG_3 = 0x2000,	///< @brief Handler flag available for drivers.
+	USER_FLAG_SHIFT = 14,
+	USER_FLAG_0 = 1 << USER_FLAG_SHIFT
+				///< @brief First uninterpreted handler flag
+				///  available for element-specific use.
+				///  Equals 1 << USER_FLAG_SHIFT.
     };
 
     inline const String &name() const;
@@ -170,7 +179,7 @@ Handler::visible() const
     Exclusive means mutually exclusive with all other router processing.  In
     the Linux kernel module driver, reading or writing an exclusive handler
     using the Click filesystem will first lock all router threads and
-    handlers. */
+    handlers.  Exclusivity is set by the EXCLUSIVE flag.  */
 inline bool
 Handler::exclusive() const
 {
@@ -182,7 +191,8 @@ Handler::exclusive() const
 
     A raw handler expects and returns raw text.  Click will unquote quoted
     text before passing it to a raw handler, and (in the Linux kernel module)
-    will not add a courtesy newline to the end of a raw handler's value. */
+    will not add a courtesy newline to the end of a raw handler's value.
+    Rawness is set by the RAW flag. */
 inline bool
 Handler::raw() const
 {

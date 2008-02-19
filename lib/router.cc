@@ -1140,7 +1140,7 @@ Handler::unparse_name(Element *e, const String &hname)
 
     If @a e is an actual element, then returns "ENAME.HNAME", where ENAME is
     @a e's @link Element::name() name@endlink and HNAME is this handler's
-    name. */
+    name().  Otherwise, just returns name(). */
 String
 Handler::unparse_name(Element *e) const
 {
