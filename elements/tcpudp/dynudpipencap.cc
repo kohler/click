@@ -45,8 +45,8 @@ DynamicUDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 		   "SPORT", cpkP+cpkM, cpUDPPort, &_sport,
 		   "DST", cpkP+cpkM, cpIPAddress, &_daddr,
 		   "DPORT", cpkP+cpkM, cpUDPPort, &_dport,
-		   "CHECKSUM", 0, cpBool, &do_cksum,
-		   "INTERVAL", 0, cpUnsigned, &_interval,
+		   "CHECKSUM", cpkP, cpBool, &do_cksum,
+		   "INTERVAL", cpkP, cpUnsigned, &_interval,
 		   cpEnd) < 0)
     return -1;
   
