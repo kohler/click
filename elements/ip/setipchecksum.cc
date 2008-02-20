@@ -32,27 +32,26 @@ SetIPChecksum::~SetIPChecksum()
 Packet *
 SetIPChecksum::simple_action(Packet *p_in)
 {
-  WritablePacket *p = p_in->uniqueify();
-  click_ip *ip = p->ip_header();
-  unsigned plen = p->network_length();
-  unsigned hlen;
-  
-  if (!ip || plen < sizeof(click_ip))
-    goto bad;
+    if (WritablePacket *p = p_in->uniqueify()) {
+	click_ip *ip = p->ip_header();
+	unsigned plen = p->network_length();
+	unsigned hlen;
+	
+  	if (!ip || plen < sizeof(click_ip))
+	    goto bad;
+	hlen = ip->ip_hl << 2;
+	if (hlen < sizeof(click_ip) || hlen > plen)
+	    goto bad;
 
-  hlen = ip->ip_hl << 2;
-  if (hlen < sizeof(click_ip) || hlen > plen)
-    goto bad;
+	ip->ip_sum = 0;
+	ip->ip_sum = click_in_cksum((unsigned char *)ip, hlen);
+	return p;
 
-  p = p->uniqueify();
-  ip->ip_sum = 0;
-  ip->ip_sum = click_in_cksum((unsigned char *)ip, hlen);
-  return p;
-
- bad:
-  click_chatter("SetIPChecksum: bad lengths");
-  p->kill();
-  return(0);
+      bad:
+	click_chatter("SetIPChecksum: bad lengths");
+	p->kill();
+    }
+    return 0;
 }
 
 CLICK_ENDDECLS
