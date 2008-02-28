@@ -3,7 +3,7 @@
  * Douglas S. J. De Couto, Eddie Kohler, John Jannotti
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
- * Copyright (c) 2005 Regents of the University of California
+ * Copyright (c) 2005-2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -56,7 +56,7 @@
 CLICK_DECLS
 
 ToDevice::ToDevice()
-  : _task(this), _timer(this), _fd(-1), _my_fd(false),
+  : _task(this), _timer(&_task), _fd(-1), _my_fd(false),
     _q(0),
     _pulls(0)
 {
@@ -157,7 +157,6 @@ ToDevice::cleanup(CleanupStage)
 }
 
 
-
 /*
  * Linux select marks datagram fd's as writeable when the socket
  * buffer has enough space to do a send (sock_writeable() in
@@ -168,91 +167,70 @@ ToDevice::cleanup(CleanupStage)
  * timer if buffers are not available.  
  * --jbicket
  */
-void
-ToDevice::selected(int) 
-{
-  Packet *p;
-  if (_q) {
-    p = _q;
-    _q = 0;
-  } else {
-    p = input(0).pull();
-    _pulls++;
-  }
-  if (p) {
-    int retval;
-    const char *syscall;
-    
-#if TODEVICE_WRITE
-    retval = ((uint32_t) write(_fd, p->data(), p->length()) == p->length() ? 0 : -1);
-    syscall = "write";
-#elif TODEVICE_SEND
-    retval = send(_fd, p->data(), p->length(), 0);
-    syscall = "send";
-#else
-    retval = 0;
-#endif
-    
-    if (retval < 0) {
-      if (errno == ENOBUFS || errno == EAGAIN) {
-	assert(!_q);
-	_q = p;
-	/* we should backoff */
-	remove_select(_fd, SELECT_WRITE);
-
-	_backoff = (!_backoff) ? 1 : _backoff*2;
-	_timer.schedule_after(Timestamp::make_usec(_backoff));
-
-	if (_debug) {
-	    Timestamp now = Timestamp::now();
-	    click_chatter("%{element} backing off for %d at %{timestamp}\n",
-			  this, _backoff, &now);
-	}
-	return;
-      } else {
-	click_chatter("ToDevice(%s) %s: %s", _ifname.c_str(), syscall, strerror(errno));
-	checked_output_push(1, p);
-      }
-    } else {
-      _backoff = 0;
-      checked_output_push(0, p);
-    }
-  }
-  if (!_q && !p && !_signal) {
-    if (remove_select(_fd, SELECT_WRITE) < 0) {
-      click_chatter("%s %{element} remove_select failed %d\n", 
-		    Timestamp::now().unparse().c_str(), this, _fd);
-    }
-  }
-}
-
-void
-ToDevice::run_timer(Timer *)
-{
-  if (_debug) {
-    click_chatter("%s %{element}::%s\n",
-		  Timestamp::now().unparse().c_str(), this, __func__);
-
-  }
-
-  if (_q || _signal) {
-    if (add_select(_fd, SELECT_WRITE) < 0) {
-      click_chatter("%s %{element}::%s add_select failed %d\n", 
-		    Timestamp::now().unparse().c_str(), this, __func__, _fd);
-    }
-    selected(_fd);
-  }
-}
-
 bool
 ToDevice::run_task(Task *)
 {
-    if (add_select(_fd, SELECT_WRITE) < 0) {
-	click_chatter("%s %{element}::%s add_select failed %d\n", 
-		      Timestamp::now().unparse().c_str(), this, __func__, _fd);
+    Packet *p = _q;
+    _q = 0;
+    if (!p) {
+	p = input(0).pull();
+	_pulls++;
     }
-    selected(_fd);
-    return true;
+    
+    if (p) {
+	int retval;
+	const char *syscall;
+    
+#if TODEVICE_WRITE
+	retval = ((uint32_t) write(_fd, p->data(), p->length()) == p->length() ? 0 : -1);
+	syscall = "write";
+#elif TODEVICE_SEND
+	retval = send(_fd, p->data(), p->length(), 0);
+	syscall = "send";
+#else
+	retval = 0;
+#endif
+    
+	if (retval >= 0) {
+	    _backoff = 0;
+	    checked_output_push(0, p);
+
+	} else if (errno == ENOBUFS || errno == EAGAIN) {
+	    assert(!_q);
+	    _q = p;
+
+	    if (!_backoff) {
+		_backoff = 1;
+		add_select(_fd, SELECT_WRITE);
+	    } else {
+		_timer.schedule_after(Timestamp::make_usec(_backoff));
+		if (_backoff < 32768)
+		    _backoff *= 2;
+		if (_debug) {
+		    Timestamp now = Timestamp::now();
+		    click_chatter("%{element} backing off for %d at %{timestamp}\n", this, _backoff, &now);
+		}
+	    }
+
+	    return false;
+	    
+	} else {
+	    click_chatter("ToDevice(%s) %s: %s", _ifname.c_str(), syscall, strerror(errno));
+	    checked_output_push(1, p);
+	}
+    }
+
+    if (!p && !_signal)
+	return false;
+    _task.fast_reschedule();
+    return p != 0;
+}
+
+void
+ToDevice::selected(int) 
+{
+    _task.reschedule();
+    remove_select(_fd, SELECT_WRITE);
 }
 
 
@@ -293,6 +271,7 @@ ToDevice::write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
+
 void
 ToDevice::add_handlers()
 {

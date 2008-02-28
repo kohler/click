@@ -90,7 +90,6 @@ class ToDevice : public Element { public:
 
   bool run_task(Task *);
   void selected(int);
-  void run_timer(Timer *);
   static int write_param(const String &in_s, Element *e, void *vparam, ErrorHandler *errh);
   static String read_param(Element *e, void *thunk);
 protected:
