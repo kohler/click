@@ -70,24 +70,23 @@ ToHost::~ToHost()
 int
 ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool allow_nonexistent = false, quiet = false;
-    if (cp_va_kparse(conf, this, errh,
-		     "DEVNAME", cpkP, cpString, &_devname,
-		     "SNIFFERS", 0, cpBool, &_sniffers,
-		     "QUIET", 0, cpBool, &quiet,
-		     "ALLOW_NONEXISTENT", 0, cpBool, &allow_nonexistent,
-		     cpEnd) < 0)
+    if (AnyDevice::configure_keywords(conf, errh, false) < 0
+	|| cp_va_kparse(conf, this, errh,
+			"DEVNAME", cpkP, cpString, &_devname,
+			"SNIFFERS", 0, cpBool, &_sniffers,
+			cpEnd) < 0)
 	return -1;
-    set_device_flags(false, true, allow_nonexistent, quiet);
     return 0;
 }
 
 int
 ToHost::initialize(ErrorHandler *errh)
 {
-    // We find the device here, rather than in 'initialize', to avoid warnings
-    // about "device down" with FromHost devices -- FromHost brings up its
-    // device during initialize().
+    if (AnyDevice::initialize_keywords(errh) < 0)
+	return -1;
+    
+    // Avoid warnings about "device down" with FromHost devices -- FromHost
+    // brings up its device during initialize().
     return (_devname ? find_device(&to_host_map, errh) : 0);
 }
 

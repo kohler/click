@@ -3,6 +3,7 @@
 #define ANYDEVICE_HH
 #include <click/element.hh>
 #include <click/task.hh>
+class HandlerCall;
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -88,8 +89,10 @@ class AnyDevice : public Element { public:
 
     bool promisc() const		{ return _promisc; }
     bool timestamp() const		{ return _timestamp; }
-    inline void set_device_flags(bool promisc, bool timestamp,
-				 bool allow_nonexistent, bool quiet);
+
+    int configure_keywords(Vector<String> &conf, ErrorHandler *errh,
+			   bool is_reader);
+    int initialize_keywords(ErrorHandler *errh);
 
     int find_device(AnyDeviceMap *, ErrorHandler *);
     void set_device(net_device *, AnyDeviceMap *, bool locked = false);
@@ -108,6 +111,9 @@ class AnyDevice : public Element { public:
     bool _devname_exists : 1;
     AnyDevice *_next;
 
+    HandlerCall *_up_call;
+    HandlerCall *_down_call;
+    
     friend class AnyDeviceMap;
 
 };
@@ -175,16 +181,6 @@ class AnyDeviceMap { public:
     rwlock_t _lock;
 
 };
-
-inline void
-AnyDevice::set_device_flags(bool promisc, bool timestamp,
-			    bool allow_nonexistent, bool quiet)
-{
-    _promisc = promisc;
-    _timestamp = timestamp;
-    _allow_nonexistent = allow_nonexistent;
-    _quiet = quiet;
-}
 
 inline void
 AnyDeviceMap::lock(bool write)

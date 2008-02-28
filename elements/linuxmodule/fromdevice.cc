@@ -9,7 +9,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
- * Copyright (c) 2007 Regents of the University of California
+ * Copyright (c) 2007-2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -93,20 +93,15 @@ FromDevice::cast(const char *n)
 int
 FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool promisc = false, quiet = false, allow_nonexistent = false, timestamp = true;
     _burst = 8;
     _active = true;
-    if (cp_va_kparse(conf, this, errh,
-		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
-		     "PROMISC", cpkP, cpBool, &promisc,
-		     "BURST", cpkP, cpUnsigned, &_burst,
-		     "ACTIVE", 0, cpBool, &_active,
-		     "TIMESTAMP", 0, cpBool, &timestamp,
-		     "QUIET", 0, cpBool, &quiet,
-		     "ALLOW_NONEXISTENT", 0, cpBool, &allow_nonexistent,
-		     cpEnd) < 0)
+    if (AnyDevice::configure_keywords(conf, errh, true) < 0
+	|| cp_va_kparse(conf, this, errh,
+			"DEVNAME", cpkP+cpkM, cpString, &_devname,
+			"BURST", cpkP, cpUnsigned, &_burst,
+			"ACTIVE", 0, cpBool, &_active,
+			cpEnd) < 0)
 	return -1;
-    set_device_flags(promisc, timestamp, allow_nonexistent, quiet);
 
     // make queue look full so packets sent to us are ignored
     _head = _tail = _capacity = 0;
@@ -121,6 +116,9 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
+    if (AnyDevice::initialize_keywords(errh) < 0)
+	return -1;
+    
     // check for duplicate readers
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_reader_" + String(ifindex()));

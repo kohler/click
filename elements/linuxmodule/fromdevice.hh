@@ -57,6 +57,14 @@ an error). Later, while the router is running, if a device named DEVNAME
 appears, FromDevice will seamlessly begin outputing its packets. Default is
 false.
 
+=item UP_CALL
+
+Write handler.  If supplied, this handler is called when the device comes up.
+
+=item DOWN_CALL
+
+Write handler.  If supplied, this handler is called when the device goes down.
+
 =item ACTIVE
 
 Boolean.  If false, then FromDevice will not accept packets from the attached

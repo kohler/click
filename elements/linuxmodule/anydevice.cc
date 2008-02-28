@@ -6,7 +6,7 @@
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
- * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2004-2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -24,6 +24,7 @@
 #include "anydevice.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/handlercall.hh>
 #include <clicknet/ether.h>
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -36,7 +37,8 @@ CLICK_CXX_UNPROTECT
 
 AnyDevice::AnyDevice()
     : _dev(0), _promisc(false), _timestamp(true), _in_map(false),
-      _quiet(false), _allow_nonexistent(false), _devname_exists(false), _next(0)
+      _quiet(false), _allow_nonexistent(false), _devname_exists(false),
+      _next(0), _up_call(0), _down_call(0)
 {
 }
 
@@ -44,6 +46,46 @@ AnyDevice::~AnyDevice()
 {
     if (_in_map || _dev)
 	click_chatter("%s: bad device destructor!", name().c_str());
+    delete _up_call;
+    delete _down_call;
+}
+
+int
+AnyDevice::configure_keywords(Vector<String> &conf, ErrorHandler *errh,
+			      bool is_reader)
+{
+    bool allow_nonexistent = _allow_nonexistent;
+    bool quiet = _quiet;
+    bool promisc = _promisc;
+    bool timestamp = _timestamp;
+    
+    if (cp_va_kparse_remove_keywords(conf, this, errh,
+			"UP_CALL", 0, cpHandlerCallPtrWrite, &_up_call,
+			"DOWN_CALL", 0, cpHandlerCallPtrWrite, &_down_call,
+			"ALLOW_NONEXISTENT", 0, cpBool, &allow_nonexistent,
+			"QUIET", 0, cpBool, &quiet,
+			cpEnd) < 0)
+	return -1;
+    if (is_reader && cp_va_kparse_remove_keywords(conf, this, errh,
+			"PROMISC", 0, cpBool, &promisc,
+			"TIMESTAMP", 0, cpBool, &timestamp,
+			cpEnd) < 0)
+	return -1;
+
+    _allow_nonexistent = allow_nonexistent;
+    _quiet = quiet;
+    _promisc = promisc;
+    _timestamp = timestamp;
+    return 0;
+}
+
+int
+AnyDevice::initialize_keywords(ErrorHandler *errh)
+{
+    if ((_up_call && _up_call->initialize_write(this, errh) < 0)
+	|| (_down_call && _down_call->initialize_write(this, errh) < 0))
+	return -1;
+    return 0;
 }
 
 int
@@ -82,11 +124,14 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
 {
     if (_dev == dev)		// changing to the same device is a noop
 	return;
-    
-    if (_dev && !_quiet)
-	click_chatter("%s: device '%s' went down", declaration().c_str(), _devname.c_str());
-    if (dev && !_quiet)
-	click_chatter("%s: device '%s' came up", declaration().c_str(), _devname.c_str());
+
+    // call going-down notifiers
+    if (_dev) {
+	if (_down_call)
+	    _down_call->call_write(ErrorHandler::default_handler());
+	else if (!_quiet)
+	    click_chatter("%s: device '%s' went down", declaration().c_str(), _devname.c_str());
+    }
     
     if (_dev && _promisc)
 	dev_set_promiscuity(_dev, -1);
@@ -111,6 +156,14 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
     if (_dev && _timestamp)
 	net_enable_timestamp();
 #endif
+
+    // call going-up notifiers
+    if (_dev) {
+	if (_up_call)
+	    _up_call->call_write(ErrorHandler::default_handler());
+	else if (!_quiet)
+	    click_chatter("%s: device '%s' came up", declaration().c_str(), _devname.c_str());
+    }
 }
 
 void

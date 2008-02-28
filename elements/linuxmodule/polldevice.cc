@@ -76,18 +76,13 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 8;
     _headroom = 64;
-    bool promisc = false, allow_nonexistent = false, quiet = false, timestamp = true;
-    if (cp_va_kparse(conf, this, errh,
-		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
-		     "PROMISC", cpkP, cpBool, &promisc,
-		     "BURST", cpkP, cpUnsigned, &_burst,
-		     "TIMESTAMP", 0, cpBool, &timestamp,
-		     "QUIET", 0, cpBool, &quiet,
-		     "ALLOW_NONEXISTENT", 0, cpBool, &allow_nonexistent,
-		     "HEADROOM", 0, cpUnsigned, &_headroom,
-		     cpEnd) < 0)
+    if (AnyDevice::configure_keywords(conf, errh, true) < 0
+	|| cp_va_kparse(conf, this, errh,
+			"DEVNAME", cpkP+cpkM, cpString, &_devname,
+			"BURST", cpkP, cpUnsigned, &_burst,
+			"HEADROOM", 0, cpUnsigned, &_headroom,
+			cpEnd) < 0)
 	return -1;
-    set_device_flags(promisc, timestamp, allow_nonexistent, quiet);
     
 #if HAVE_LINUX_POLLING
     if (find_device(&poll_device_map, errh) < 0)
@@ -107,6 +102,9 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 PollDevice::initialize(ErrorHandler *errh)
 {
+    if (AnyDevice::initialize_keywords(errh) < 0)
+	return -1;
+    
 #if HAVE_LINUX_POLLING
     // check for duplicate readers
     if (ifindex() >= 0) {

@@ -120,22 +120,22 @@ int
 ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 16;
-    bool allow_nonexistent = false, quiet = false;
-    if (cp_va_kparse(conf, this, errh,
-		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
-		     "BURST", cpkP, cpUnsigned, &_burst,
-		     "QUIET", 0, cpBool, &quiet,
-		     "ALLOW_NONEXISTENT", 0, cpBool, &allow_nonexistent,
-		     "NO_PAD", 0, cpBool, &_no_pad,
-		     cpEnd) < 0)
+    if (AnyDevice::configure_keywords(conf, errh, false) < 0
+	|| cp_va_kparse(conf, this, errh,
+			"DEVNAME", cpkP+cpkM, cpString, &_devname,
+			"BURST", cpkP, cpUnsigned, &_burst,
+			"NO_PAD", 0, cpBool, &_no_pad,
+			cpEnd) < 0)
 	return -1;
-    set_device_flags(false, true, allow_nonexistent, quiet);
     return find_device(&to_device_map, errh);
 }
 
 int
 ToDevice::initialize(ErrorHandler *errh)
 {
+    if (AnyDevice::initialize_keywords(errh) < 0)
+	return -1;
+    
 #ifndef HAVE_CLICK_KERNEL
     errh->warning("not compiled for a Click kernel");
 #endif
