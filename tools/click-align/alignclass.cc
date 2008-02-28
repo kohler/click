@@ -244,10 +244,10 @@ AlignAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
 {
   int offset, chunk;
   ContextErrorHandler cerrh(errh, "While analyzing alignment for '" + e->declaration() + "':");
-  if (cp_va_parse(e->configuration(), &cerrh,
-		  cpUnsigned, "alignment modulus", &chunk,
-		  cpUnsigned, "alignment offset", &offset,
-		  cpEnd) < 0)
+  if (cp_va_kparse(e->configuration(), &cerrh,
+		   "MODULUS", cpkP+cpkM, cpUnsigned, &chunk,
+		   "OFFSET", cpkP+cpkM, cpUnsigned, &offset,
+		   cpEnd) < 0)
     return default_aligner();
   return new GeneratorAligner(Alignment(chunk, offset));
 }
