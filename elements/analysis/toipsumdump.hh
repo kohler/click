@@ -84,23 +84,32 @@ contain those fields. Valid field names, with examples, are:
    aggregate    Aggregate number (AGGREGATE_ANNO): '973'
    first_timestamp   Packet "first timestamp" (FIRST_
                 TIMESTAMP_ANNO): '996033261.451094'
+   eth_src      Ethernet source: '00-0A-95-A6-D9-BC'
+   eth_dst      Ethernet source: '00-0A-95-A6-D9-BC'
 
 If a field does not apply to a particular packet -- for example, 'C<sport>' on
 an ICMP packet -- ToIPSummaryDump prints a single dash for that value.
 
-Default CONTENTS is 'src dst'. You may also use spaces instead of underscores,
-in which case you must quote field names that contain a space -- for example,
-'C<src dst "tcp seq">'.
+Default CONTENTS is 'ip_src ip_dst'. You may also use spaces instead of
+underscores, in which case you must quote field names that contain a space --
+for example, 'C<ip_src ip_dst "tcp seq">'.
+
+=item HEADER
+
+Boolean. If true, then print any 'C<!>' header lines at the beginning
+of the dump to describe the dump contents. Default is true.
 
 =item VERBOSE
 
 Boolean. If true, then print out a couple comments at the beginning of the
-dump describing the hostname and starting time, in addition to the 'C<!data>' line describing the log contents. Default is false.
+dump describing the hostname and starting time, in addition to the 'C<!data>'
+line describing the log contents. Ignored if HEADER is false. Default is
+false.
 
 =item BANNER
 
 String. If supplied, prints a 'C<!creator "BANNER">' comment at the beginning
-of the dump.
+of the dump. Ignored if HEADER is false.
 
 =item BINARY
 
@@ -265,8 +274,8 @@ the 'C<!data>' line, as follows:
    ntimestamp	    8	 timestamp sec + nsec
    ts_sec, ts_usec  4	 timestamp sec/usec
    ts_usec1         8    timestamp in usec
-   ip_src           4    source IP address
-   ip_dst           4    destination IP address
+   ip_src           4    IP source address
+   ip_dst           4    IP destination address
    sport            2    source port
    dport            2    destination port
    ip_len           4    IP length field
@@ -278,7 +287,7 @@ the 'C<!data>' line, as follows:
                          ('F', 'f', or '.')
    ip_fragoff       2    IP fragment offset field
    ip_opt           ?    IP options
-   tcp_seq          4    TCP seqnece number
+   tcp_seq          4    TCP sequence number
    tcp_ack          4    TCP ack number
    tcp_flags        1    TCP flags
    tcp_opt          ?    TCP options
@@ -290,6 +299,8 @@ the 'C<!data>' line, as follows:
    ip_capture_len   4    IP capture length
    count            4    packet count
    first_timestamp  8    timestamp sec + usec
+   eth_src          6    Ethernet source address
+   eth_dst          6    Ethernet destination address
 
 Each field is Length bytes long. Variable-length fields have Length 'C<?>' in
 the table; in a packet record, these fields consist of a single length byte,
@@ -344,6 +355,7 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     bool _multipacket : 1;
     bool _active : 1;
     bool _binary : 1;
+    bool _header : 1;
     int32_t _binary_size;
     uint32_t _output_count;
     Task _task;

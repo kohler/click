@@ -151,6 +151,7 @@ int Field::binary_size() const
       case B_1:		return 1;
       case B_2:		return 2;
       case B_4:		return 4;
+      case B_6PTR:	return 6;
       case B_8:		return 8;
       case B_16:	return 16;
       case B_4NET:	return 4;
@@ -318,6 +319,11 @@ void outb(const PacketDesc& d, bool, int thunk)
       case B_4: {
 	  char* c = d.sa->extend(4);
 	  PUT4(c, d.v);
+	  break;
+      }
+      case B_6PTR: {
+	  char* c = d.sa->extend(6);
+	  memcpy(c, d.vptr, 6);
 	  break;
       }
       case B_8: {

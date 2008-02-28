@@ -76,18 +76,21 @@ enum { B_TYPEMASK = 0x7F000000,
        B_16 = 0x05000000,
        B_4NET = 0x06000000,
        B_SPECIAL = 0x07000000,
-       B_NOTALLOWED = 0x08000000 };
+       B_NOTALLOWED = 0x08000000,
+       B_6PTR = 0x09000000 };
 void outb(const PacketDesc&, bool ok, int);
 const uint8_t *inb(PacketDesc&, const uint8_t*, const uint8_t*, int);
 
 enum { MISSING_IP = 0,
-       MISSING_IP_TRANSPORT = 1 };
+       MISSING_IP_TRANSPORT = 1,
+       MISSING_LINK = 2 };
 bool field_missing(const PacketDesc&, int what, const char* header_name, int l);
 
 // particular parsers
 void ip_prepare(PacketDesc&);
 
 void anno_register_unparsers();
+void link_register_unparsers();
 void ip_register_unparsers();
 void tcp_register_unparsers();
 void udp_register_unparsers();

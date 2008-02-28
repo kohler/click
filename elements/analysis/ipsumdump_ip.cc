@@ -1,6 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * ipsumdump_general.{cc,hh} -- general IP summary dump unparsers
+ * ipsumdump_ip.{cc,hh} -- IP network layer IP summary dump unparsers
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
