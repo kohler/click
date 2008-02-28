@@ -52,13 +52,11 @@ BeaconTracker::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
-  if (cp_va_parse(conf, this, errh,
-		  /* not required */
-		  cpKeywords,
-		  "DEBUG", cpBool, "Debug", &_debug,
-		  "WIRELESS_INFO", cpElement, "wirleess_info", &_winfo,
-		  "TRACK", cpInteger, "track",&_track,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DEBUG", 0, cpBool, &_debug,
+		   "WIRELESS_INFO", 0, cpElement, &_winfo,
+		   "TRACK", 0, cpInteger, &_track,
+		   cpEnd) < 0)
     return -1;
 
 

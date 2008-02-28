@@ -33,17 +33,6 @@ StationTable::~StationTable()
 {
 }
 
-int
-StationTable::configure(Vector<String> &conf, ErrorHandler *errh)
-{
-  int res;
-  res = cp_va_parse(conf, this, errh,
-		    cpKeywords, 
-		    cpEnd);
-
-  return res;
-}
-
 void 
 StationTable::take_state(Element *e, ErrorHandler *)
 {

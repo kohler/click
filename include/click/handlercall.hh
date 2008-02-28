@@ -70,11 +70,10 @@ CLICK_DECLS
  *  }
  *
  *  int YourElement::configure(Vector<String> &conf, ErrorHandler *errh) {
- *      return cp_va_parse(conf, this, errh,
- *                         cpOptional,
- *                         cpHandlerCallRead, "read call", &_read_call,
- *                         cpHandlerCallWrite, "write call", &_write_call,
- *                         cpEnd);
+ *      return cp_va_kparse(conf, this, errh,
+ *                     "READ_CALL", cpkP, cpHandlerCallRead, &_read_call,
+ *                     "WRITE_CALL", cpkP, cpHandlerCallWrite, &_write_call,
+ *                     cpEnd);
  *  }
  *
  *  int YourElement::initialize(ErrorHandler *errh) {
@@ -111,11 +110,10 @@ CLICK_DECLS
  *  }
  *
  *  int YourElement::configure(Vector<String> &conf, ErrorHandler *errh) {
- *      return cp_va_parse(conf, this, errh,
- *                         cpOptional,
- *                         cpHandlerCallPtrRead, "read call", &_read_call,
- *                         cpHandlerCallPtrWrite, "write call", &_write_call,
- *                         cpEnd);
+ *      return cp_va_kparse(conf, this, errh,
+ *                     "READ_CALL", cpkP, cpHandlerCallPtrRead, &_read_call,
+ *                     "WRITE_CALL", cpkP, cpHandlerCallPtrWrite, &_write_call,
+ *                     cpEnd);
  *  }
  *
  *  int YourElement::initialize(ErrorHandler *errh) {

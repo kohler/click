@@ -53,14 +53,12 @@ ProbeRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
-  if (cp_va_parse(conf, this, errh,
-		  /* not required */
-		  cpKeywords,
-		  "DEBUG", cpBool, "Debug", &_debug,
-		  "WIRELESS_INFO", cpElement, "wirleess_info", &_winfo,
-		  "ETH", cpEthernetAddress, "bssid", &_eth,
-		  "RT", cpElement, "availablerates", &_rtable,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DEBUG", 0, cpBool, &_debug,
+		   "WIRELESS_INFO", 0, cpElement, &_winfo,
+		   "ETH", 0, cpEthernetAddress, &_eth,
+		   "RT", 0, cpElement, &_rtable,
+		   cpEnd) < 0)
     return -1;
 
   if (!_rtable || _rtable->cast("AvailableRates") == 0) 

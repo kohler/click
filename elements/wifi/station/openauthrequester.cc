@@ -45,13 +45,11 @@ OpenAuthRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
-  if (cp_va_parse(conf, this, errh,
-		  /* not required */
-		  cpKeywords,
-		  "DEBUG", cpBool, "Debug", &_debug,
-		  "ETH", cpEthernetAddress, "eth", &_eth,
-		  "WIRELESS_INFO", cpElement, "wirleess_info", &_winfo,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DEBUG", 0, cpBool, &_debug,
+		   "ETH", 0, cpEthernetAddress, &_eth,
+		   "WIRELESS_INFO", 0, cpElement, &_winfo,
+		   cpEnd) < 0)
     return -1;
 
   return 0;

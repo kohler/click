@@ -52,16 +52,14 @@ ProbeResponder::configure(Vector<String> &conf, ErrorHandler *errh)
   _channel = 0;
   _ssid = String();
   _interval_ms = 0;
-  if (cp_va_parse(conf, this, errh,
-		  /* not required */
-		  cpKeywords,
-		  "DEBUG", cpBool, "Debug", &_debug,
-		  "CHANNEL", cpInteger, "channel", &_channel,
-		  "SSID", cpString, "ssid", &_ssid,
-		  "BSSID", cpEthernetAddress, "bssid", &_bssid,
-		  "INTERVAL", cpInteger, "interval_ms", &_interval_ms,
-		  "RT", cpElement, "availablerates", &_rtable,
-		  cpEnd) < 0)
+  if (cp_va_kparse(conf, this, errh,
+		   "DEBUG", 0, cpBool, &_debug,
+		   "CHANNEL", 0, cpInteger, &_channel,
+		   "SSID", 0, cpString, &_ssid,
+		   "BSSID", 0, cpEthernetAddress, &_bssid,
+		   "INTERVAL", 0, cpInteger, &_interval_ms,
+		   "RT", 0, cpElement, &_rtable,
+		   cpEnd) < 0)
     return -1;
 
 
