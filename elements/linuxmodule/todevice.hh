@@ -51,6 +51,14 @@ Boolean. If true, don't force packets to be at least 60 bytes (the
 minimum Ethernet packet size).  This is useful because some 802.11
 cards can send shorter Ethernet format packets.  Defaults false.
 
+=item UP_CALL
+
+Write handler.  If supplied, this handler is called when the device comes up.
+
+=item DOWN_CALL
+
+Write handler.  If supplied, this handler is called when the device goes down.
+
 =back
 
 =n

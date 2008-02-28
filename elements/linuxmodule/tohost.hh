@@ -48,6 +48,16 @@
  * an error). Later, while the router is running, if a device named DEVNAME
  * appears, ToHost will seamlessly begin using it. Default is false.
  *
+ * =item UP_CALL
+ *
+ * Write handler.  If supplied, this handler is called when the device comes
+ * up.
+ *
+ * =item DOWN_CALL
+ *
+ * Write handler.  If supplied, this handler is called when the device goes
+ * down.
+ *
  * =back
  *
  * =n
