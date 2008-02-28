@@ -37,7 +37,7 @@ RandomSeed::configure(Vector<String> &conf, ErrorHandler *errh)
 	conf.clear();
     bool truly_random = (conf.size() == 0);
     uint32_t seed;
-    if (cp_va_kparse(conf, this, errh, cpOptional,
+    if (cp_va_kparse(conf, this, errh,
 		     "SEED", cpkP+cpkM, cpUnsigned, &seed,
 		     cpEnd) < 0)
 	return -1;
