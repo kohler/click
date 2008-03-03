@@ -76,10 +76,6 @@ int Element::nelements_allocated = 0;
  *  <a href='http://www.read.cs.ucla.edu/click/'>Main Click page</a>
  */
 
-/** @file element.hh
- * @brief The Element base class for Click elements.
- */
-
 /** @class Element
   @brief Base class for Click elements.
 

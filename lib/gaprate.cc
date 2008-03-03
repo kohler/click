@@ -23,10 +23,6 @@
 #include <click/error.hh>
 CLICK_DECLS
 
-/** @file gaprate.hh
- * @brief The GapRate type for implementing a consistent rate.
- */
-
 void
 GapRate::set_rate(unsigned r, ErrorHandler *errh)
 {
