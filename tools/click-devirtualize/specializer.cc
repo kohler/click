@@ -370,7 +370,10 @@ Specializer::create_connector_methods(SpecializedClass &spc)
       sa << "return ((" << input_class[r1] << " *)input(i).element())->"
 	 << input_class[r1] << "::pull(" << input_port[r1] << ");";
     }
-    sa << "\n  return input(i).pull();\n";
+    if (_ninputs[eindex])
+	sa << "\n  return input(i).pull();\n";
+    else
+	sa << "\n  assert(0);\n  return 0;\n";
     cxxc->find("input_pull")->set_body(sa.take_string());
   }
 
@@ -399,12 +402,18 @@ Specializer::create_connector_methods(SpecializedClass &spc)
 	 << output_class[r1] << "::push(" << output_port[r1]
 	 << ", p); return; }";
     }
-    sa << "\n  output(i).push(p);\n";
+    if (_noutputs[eindex])
+	sa << "\n  output(i).push(p);\n";
+    else
+	sa << "\n  assert(0);\n";
     cxxc->find("output_push")->set_body(sa.take_string());
     
     sa.clear();
-    sa << "\n  if (i < " << _noutputs[eindex] << ")\n    output_push(i, p);\n";
-    sa << "  else\n    p->kill();\n";
+    if (_noutputs[eindex])
+	sa << "\n  if (i < " << _noutputs[eindex] << ")\n"
+	   << "    output_push(i, p);\n  else\n    p->kill();\n";
+    else
+	sa << "\n  p->kill();\n";
     cxxc->find("output_push_checked")->set_body(sa.take_string());
   }
 }
