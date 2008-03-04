@@ -156,14 +156,14 @@ DynamicNameDB::find(const String &name, bool create)
 	sort();
 
     if (_sorted == 100) {
-	size_t l = 0, r = _names.size() - 1, m;
-	while (l <= r) {
-	    m = l + (r - l) / 2;
+	size_t l = 0, r = _names.size();
+	while (l < r) {
+	    size_t m = l + (r - l) / 2;
 	    int cmp = String::compare(name, _names[m]);
 	    if (cmp == 0)
 		return _values.data() + value_size() * m;
 	    else if (cmp < 0)
-		r = m - 1;
+		r = m;
 	    else
 		l = m + 1;
 	}
