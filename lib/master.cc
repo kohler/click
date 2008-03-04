@@ -87,6 +87,7 @@ Master::Master(int nthreads)
     _signal_adding = false;
 #endif
 
+    _timer_check = Timestamp::now();
 #if CLICK_LINUXMODULE
     spin_lock_init(&_master_lock);
     _master_lock_task = 0;
@@ -405,6 +406,11 @@ Master::timer_reheapify_from(int pos, Timer* t, bool will_delete)
     Timer** tend = _timer_heap.end();
     int npos;
 
+    // do not schedule timers for too far in the past
+    if (!will_delete
+	&& t->_expiry.sec() + Timer::BEHIND_SEC < _timer_check.sec())
+	t->_expiry = _timer_check;
+    
     while (pos > 0
 	   && (npos = (pos-1) >> 1, tbegin[npos]->_expiry > t->_expiry)) {
 	tbegin[pos] = tbegin[npos];
@@ -444,13 +450,13 @@ Master::run_timers()
 #if CLICK_LINUXMODULE
 	_timer_task = current;
 #endif
-	Timestamp now = Timestamp::now();
+	_timer_check = Timestamp::now();
 	Timer *t = _timer_heap.at_u(0);
 	
-	if (t->_expiry <= now) {
+	if (t->_expiry <= _timer_check) {
 	    // potentially adjust timer stride
 	    Timestamp adj_expiry = t->_expiry + Timer::adjustment();
-	    if (adj_expiry <= now) {
+	    if (adj_expiry <= _timer_check) {
 		_timer_count = 0;
 		if (_timer_stride > 1)
 		    _timer_stride = (_timer_stride * 4) / 5;
@@ -461,14 +467,41 @@ Master::run_timers()
 	    }
 	    
 	    // actually run timers
+	    int max_timers = 64;
 	    do {
 		timer_reheapify_from(0, _timer_heap.back(), true);
-		// must reset _schedpos AFTER timer_reheapify_from
+		// must reset _schedpos AFTER timer_reheapify_from()
 		t->_schedpos = -1;
 		_timer_heap.pop_back();
 		t->_hook(t, t->_thunk);
 	    } while (_timer_heap.size() > 0 && !_stopper
-		     && (t = _timer_heap.at_u(0), t->_expiry <= now));
+		     && (t = _timer_heap.at_u(0), t->_expiry <= _timer_check)
+		     && --max_timers >= 0);
+
+	    // If we ran out of timers to run, then perhaps there's an
+	    // infinite timer loop or one timer is very far behind system
+	    // time.  Eventually the system would catch up and run all timers,
+	    // but in the meantime other timers could starve.  We detect this
+	    // case and run ALL expired timers, reducing possible damage.
+	    if (max_timers < 0 && !_stopper) {
+		Vector<Timer*> v;
+		v.reserve(32);
+		do {
+		    timer_reheapify_from(0, _timer_heap.back(), true);
+		    t->_schedpos = -1;
+		    _timer_heap.pop_back();
+		    v.push_back(t);
+		} while (_timer_heap.size() > 0
+			 && (t = _timer_heap.at_u(0), t->_expiry <= _timer_check));
+
+		Vector<Timer*>::iterator i = v.begin();
+		for (; !_stopper && i != v.end(); ++i)
+		    (*i)->_hook(*i, (*i)->_thunk);
+		
+		// reschedule unrun timers if stopped early
+		for (; i != v.end(); ++i)
+		    (*i)->schedule_at((*i)->_expiry);
+	    }
 	}
 	
 #if CLICK_LINUXMODULE

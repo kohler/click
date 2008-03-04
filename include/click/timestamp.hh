@@ -76,7 +76,8 @@ class Timestamp { public:
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
     inline double doubleval() const;
 #endif
-    
+
+    static inline Timestamp make_sec(seconds_type sec);
     static inline Timestamp make_msec(uint32_t msec);
     static inline Timestamp make_usec(seconds_type sec, uint32_t usec);
     static inline Timestamp make_usec(uint32_t usec);
@@ -279,6 +280,15 @@ inline Timestamp
 Timestamp::epsilon()
 {
     return Timestamp(0, 1);
+}
+
+/** @brief Returns a timestamp representing an interval of @a sec
+    seconds.
+    @param sec number of seconds */
+inline Timestamp
+Timestamp::make_sec(seconds_type sec)
+{
+    return Timestamp(sec, 0);
 }
 
 /** @brief Returns a timestamp representing an interval of @a msec

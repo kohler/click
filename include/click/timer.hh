@@ -51,6 +51,8 @@ class Timer { public:
     inline void reschedule_after_ms(uint32_t delta_sec) CLICK_DEPRECATED;
 
     static inline Timestamp adjustment();
+
+    enum { BEHIND_SEC = 1 };
     
   private:
   
@@ -172,6 +174,9 @@ Timer::schedule_after_msec(uint32_t delta_msec)
  *
  * @param delta interval until expiration time
  *
+ * If the expiration time is too far in the past, then the new expiration time
+ * will be silently updated to the current system time.
+ *
  * @sa schedule_after */
 inline void
 Timer::reschedule_after(const Timestamp &delta)
@@ -184,7 +189,7 @@ Timer::reschedule_after(const Timestamp &delta)
  *
  * @param delta_sec interval until expiration time, in seconds
  *
- * @sa schedule_after_sec */
+ * @sa schedule_after_sec, reschedule_after */
 inline void
 Timer::reschedule_after_sec(uint32_t delta_sec)
 {
@@ -196,7 +201,7 @@ Timer::reschedule_after_sec(uint32_t delta_sec)
  *
  * @param delta_msec interval until expiration time, in milliseconds
  *
- * @sa schedule_after_msec */
+ * @sa schedule_after_msec, reschedule_after */
 inline void
 Timer::reschedule_after_msec(uint32_t delta_msec)
 {

@@ -38,6 +38,7 @@ class Master { public:
     const volatile int* stopper_ptr() const	{ return &_stopper; }
     
     Timestamp next_timer_expiry() const		{ return _timer_expiry; }
+    const Timestamp &timer_check() const	{ return _timer_check; }
     void run_timers();
     unsigned max_timer_stride() const		{ return _max_timer_stride; }
     unsigned timer_stride() const		{ return _timer_stride; }
@@ -109,6 +110,7 @@ class Master { public:
     unsigned _max_timer_stride;
     unsigned _timer_stride;
     unsigned _timer_count;
+    Timestamp _timer_check;
     Vector<Timer*> _timer_heap;
 #if CLICK_LINUXMODULE
     spinlock_t _timer_lock;
