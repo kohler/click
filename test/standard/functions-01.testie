@@ -1,0 +1,12 @@
+%info
+Tests helper functions with the FunctionTest element.
+
+%require
+click-buildtool provides FunctionTest
+
+%script
+click -qe FunctionTest
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!

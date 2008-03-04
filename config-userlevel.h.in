@@ -187,6 +187,11 @@ typedef unsigned long uintptr_t;
 # define HAVE_INT64_IS_LONG_LONG HAVE_INT64_IS_LONG_LONG_USERLEVEL
 #endif
 
+/* If 64-bit integers exist, then 64-bit divide exists. */
+#ifdef HAVE_INT64_TYPES
+# define HAVE_INT64_DIVIDE 1
+#endif
+
 /* Define HAVE_MULTITHREAD based on HAVE_USER_MULTITHREAD. */
 #ifdef HAVE_USER_MULTITHREAD
 # define HAVE_MULTITHREAD HAVE_USER_MULTITHREAD

@@ -109,28 +109,57 @@ ffs_lsb(uint64_t value)
 
 
 uint32_t
-int_sqrt(uint32_t u)
+int_sqrt(uint32_t x)
 {
-    uint32_t prev = 0x7FFFFFFF;
-    uint32_t work = u;
-    if (work > 0)
-	while (work < prev)
-	    prev = work, work = (work + (u/work))/2;
-    return work;
+    if (x + 1 <= 1)
+	return (x ? 0xFFFFU : 0);
+    
+    // Newton's algorithm.
+    uint32_t y, z;
+    // Initial overestimate.
+#if NEED_FFS_MSB_UINT32_T
+    y = (x / 2) + 1;
+#else
+    y = 1 << ((32 - ffs_msb(x)) / 2 + 1);
+#endif
+    do {
+	z = y;
+	y = (y + (x / y)) / 2;
+    } while (y < z);
+    // Executed in the integer domain Newton's algorithm may terminate with an
+    // overestimate.  Correct that.
+    while (y * y > x)
+	--y;
+    return y;
 }
 
-#if HAVE_INT64_TYPES && !CLICK_LINUXMODULE
-// linuxmodule does not support uint64_t division 
+#if HAVE_INT64_TYPES && HAVE_INT64_DIVIDE
+
 uint64_t
-int_sqrt(uint64_t u)
+int_sqrt(uint64_t x)
 {
-    uint64_t prev = ~((uint64_t)1 << 63);
-    uint64_t work = u;
-    if (work > 0)
-	while (work < prev)
-	    prev = work, work = (work + (u/work))/2;
-    return work;
+    if (x + 1 <= 1)
+	return (x ? 0xFFFFFFFFU : 0);
+
+    // Newton's algorithm.
+    uint64_t y, z;
+    // Initial overestimate.
+#if NEED_FFS_MSB_INT32_T
+    y = (x / 2) + 1;
+#else
+    y = 1 << ((64 - ffs_msb(x)) / 2 + 1);
+#endif
+    do {
+	z = y;
+	y = (y + (x / y)) / 2;
+    } while (y < z);
+    // Executed in the integer domain Newton's algorithm may terminate with an
+    // overestimate.  Correct that.
+    while (y * y > x)
+	--y;
+    return y;
 }
+
 #endif
 
 CLICK_ENDDECLS

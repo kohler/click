@@ -1045,11 +1045,17 @@ PREDEFINED             = CLICK_DECLS= \
                          CLICK_ELEMENT_PORT_COUNT_DEPRECATED= \
                          __attribute__(x)= \
                          HAVE_INT64_TYPES \
+			 HAVE_INT64_DIVIDE \
                          HAVE_STRIDE_SCHED \
                          HAVE_STRUCT_TIMESPEC \
                          HAVE_NANOTIMESTAMP \
 			 HAVE_FLOAT_TYPES \
-			 HAVE_IP6
+			 HAVE_IP6 \
+			 HAVE___BUILTIN_CLZ \
+			 HAVE___BUILTIN_CLZLL \
+			 SIZEOF_LONG_LONG=8 \
+			 HAVE___BUILTIN_FFS \
+			 HAVE___BUILTIN_FFSLL
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 

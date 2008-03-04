@@ -6,6 +6,10 @@ class Element;
 class ErrorHandler;
 class Handler;
 
+/** @file <click/handler.hh>
+ * @brief The Handler class for router handlers.
+ */
+
 typedef int (*HandlerHook)(int operation, String &data, Element *element,
 			   const Handler *handler, ErrorHandler *errh);
 typedef String (*ReadHandlerHook)(Element *handler, void *user_data);
