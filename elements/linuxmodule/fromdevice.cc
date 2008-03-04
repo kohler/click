@@ -350,7 +350,7 @@ String FromDevice::read_handler(Element *e, void *thunk)
     FromDevice *fd = static_cast<FromDevice *>(e);
     switch (reinterpret_cast<intptr_t>(thunk)) {
       case H_ACTIVE:
-	return cp_unparse_bool(fd->_active);
+	return cp_unparse_bool(fd->_dev && fd->_active);
       case H_DROPS:
 	return String(fd->_drops);
       case H_CALLS: {

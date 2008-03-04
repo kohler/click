@@ -85,6 +85,11 @@ polling-capable device, use PollDevice instead.
 Linux device drivers, and thus FromDevice, should set packets' timestamp,
 packet-type, and device annotations.
 
+=h active read/write
+
+The write handler sets the ACTIVE parameter.  The read handler returns the
+ACTIVE parameter if the device is up, or "false" if the device is down.
+
 =a PollDevice, ToDevice, FromHost, ToHost, FromDevice.u */
 
 #include "elements/linuxmodule/anydevice.hh"
