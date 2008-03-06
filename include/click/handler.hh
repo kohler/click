@@ -22,8 +22,8 @@ class Handler { public:
 	OP_READ = 0x0001,	///< @brief Handler supports read operations.
 	OP_WRITE = 0x0002,	///< @brief Handler supports write operations.
 	READ_PARAM = 0x0004,	///< @brief Read handler takes parameters.
-	ONE_HOOK = 0x0008,	///< @brief Use one hook for all operations.
-	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | ONE_HOOK,
+	UNIFORM = 0x0008,	///< @brief Use uniform hook for all operations.
+	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | UNIFORM,
 				///< @brief These flags may not be set by
 				///  Router::change_handler_flags().
 	EXCLUSIVE = 0x0010,	///< @brief Handler is exclusive.
@@ -46,8 +46,8 @@ class Handler { public:
 
     inline const String &name() const;
     inline uint32_t flags() const;
-    inline void *thunk1() const;
-    inline void *thunk2() const;
+    inline void *user_data1() const;
+    inline void *user_data2() const;
 
     inline bool readable() const;
     inline bool read_param() const;
@@ -68,7 +68,7 @@ class Handler { public:
     static String unparse_name(Element *e, const String &hname);
 
     static inline const Handler *blank_handler();
-    
+
   private:
 
     String _name;
@@ -117,14 +117,14 @@ Handler::flags() const
 
 /** @brief Returns this handler's first callback data. */
 inline void*
-Handler::thunk1() const
+Handler::user_data1() const
 {
     return _thunk1;
 }
 
 /** @brief Returns this handler's second callback data. */
 inline void*
-Handler::thunk2() const
+Handler::user_data2() const
 {
     return _thunk2;
 }

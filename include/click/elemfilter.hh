@@ -6,49 +6,59 @@ CLICK_DECLS
 
 class ElementFilter { public:
 
-    ElementFilter()			{ }
-    virtual ~ElementFilter()		{ }
+    /** @brief Construct an ElementFilter. */
+    ElementFilter() {
+    }
 
-    inline bool match_input(Element*, int port);
-    inline bool match_output(Element*, int port);
-    inline bool match_port(Element*, bool isoutput, int port);
+    /** @brief Destroy an ElementFilter. */
+    virtual ~ElementFilter() {
+    }
 
-    enum PortType { NONE = -1, INPUT = 0, OUTPUT = 1 };
-    virtual bool check_match(Element* e, int port, PortType);
+    /** @brief Determine whether an element or port matches this filter.
+     * @param e element
+     * @param isoutput true for output ports, false for input ports
+     * @param port port number, or -1 to check the element as a whole
+     *
+     * This virtual function is the core of ElementFilter's functionality.
+     * The function should return true iff the specified element or port
+     * matches the filter.  @a isoutput and @a port define the interesting
+     * port; if @a port < 0, the element should be checked as a whole.
+     *
+     * The default implementation returns false for any element.
+     */
+    virtual bool check_match(Element *e, bool isoutput, int port);
 
-    void filter(Vector<Element*>&);
+    /** @brief Remove all non-matching elements from @a es.
+     * @param es array of elements
+     *
+     * Calls check_match(e, false, -1) for each element of @a es, removing
+     * those elements that do not match (where check_match() returns false).
+     */
+    void filter(Vector<Element *> &es);
 
 };
 
 class CastElementFilter : public ElementFilter { public:
 
-    CastElementFilter(const String&);
-    bool check_match(Element*, int, PortType);
+    /** @brief Construct a CastElementFilter.
+     * @param name cast name of matching elements
+     */
+    CastElementFilter(const String &name);
+
+    /** @brief Determine whether an element matches this filter.
+     * @param e element
+     * @param isoutput ignored
+     * @param port ignored
+     * @return True iff @a e->cast(@a name) != NULL, where @a name is the
+     *   cast name passed to the constructor.
+     */
+    bool check_match(Element *e, bool isoutput, int port);
 
   private:
 
-    String _what;
+    String _name;
 
 };
-
-
-inline bool
-ElementFilter::match_input(Element* e, int port)
-{
-    return check_match(e, port, INPUT);
-}
-
-inline bool
-ElementFilter::match_output(Element* e, int port)
-{
-    return check_match(e, port, OUTPUT);
-}
-
-inline bool
-ElementFilter::match_port(Element* e, bool isoutput, int port)
-{
-    return check_match(e, port, (PortType) isoutput);
-}
 
 CLICK_ENDDECLS
 #endif

@@ -289,7 +289,7 @@ IPRouteTable::add_handlers()
     add_write_handler("remove", remove_route_handler, 0);
     add_write_handler("ctrl", ctrl_handler, 0);
     add_read_handler("table", table_handler, 0, Handler::EXPENSIVE);
-    set_handler("lookup", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, lookup_handler);
+    set_handler("lookup", Handler::OP_READ | Handler::READ_PARAM, lookup_handler);
 }
 
 CLICK_ENDDECLS

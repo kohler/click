@@ -297,7 +297,7 @@ AggregatePacketCounter::thing_read_handler(int, String& s, Element* e, const Han
 	aggregate = 0;
     else if (!cp_integer(cp_uncomment(s), &aggregate))
 	return errh->error("argument should be aggregate number");
-    FlowFunc ff = (h->thunk1() ? &Flow::undelivered : &Flow::received);
+    FlowFunc ff = (h->user_data1() ? &Flow::undelivered : &Flow::received);
     AggregatePacketCounter *apc = static_cast<AggregatePacketCounter *>(e);
     s = apc->flow_handler(aggregate, ff);
     return 0;

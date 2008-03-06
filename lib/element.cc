@@ -412,7 +412,7 @@ void BetterIPCounter3::push(int port, Packet *p) {
  *
  * @sa Element::checked_output_push() */
 
-/** @brief Constructs an Element. */
+/** @brief Construct an Element. */
 Element::Element()
     : ELEMENT_CTOR_STATS _router(0), _eindex(-1)
 {
@@ -1827,7 +1827,7 @@ write_config_handler(const String &str, Element *e, void *,
 static String
 read_ports_handler(Element *e, void *)
 {
-    return e->router()->element_ports_string(e->eindex());
+    return e->router()->element_ports_string(e);
 }
 
 static String

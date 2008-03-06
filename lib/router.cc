@@ -785,7 +785,7 @@ Router::global_port_flow(bool forward, Element* first_element, int first_port, E
 	for (int g = 0; g < nresult; g++)
 	    if (diff[g]) {
 		Hookup h = gport_hookup(!forward, g);
-		if (!stop_filter || !stop_filter->match_port(_elements[h.idx], !forward, h.port)) {
+		if (!stop_filter || !stop_filter->check_match(_elements[h.idx], !forward, h.port)) {
 		    _elements[h.idx]->port_flow(!forward, h.port, &scratch);
 		    source.or_at(scratch, _gports[forward].e2g[h.idx]);
 		}
@@ -795,23 +795,63 @@ Router::global_port_flow(bool forward, Element* first_element, int first_port, E
     return 0;
 }
 
+/** @brief Search for elements downstream from @a e.
+ * @param e element to start search
+ * @param port output port (or -1 to search all output ports)
+ * @param filter ElementFilter naming elements that stop the search
+ * @param result stores results
+ * @return 0 on success, -1 in early router configuration stages
+ *
+ * This function searches the router configuration graph, starting from @a e's
+ * output port @a port and proceeding downstream along element connections,
+ * and inside elements from port to port by Element::flow_code(). All found
+ * elements are stored in @a result.
+ *
+ * If @a filter != NULL, then each found port is passed to @a filter's
+ * ElementFilter::check_match() function to check whether to stop the search.
+ * For example, if @a filter is CastElementFilter("Storage"), then the search
+ * will stop after any Storage element.  The @a result will then include the
+ * Storage elements and any elements in between @a e and the Storage elements.
+ *
+ * @sa upstream_elements()
+ */
 int
-Router::downstream_elements(Element* first_element, int first_output, ElementFilter* stop_filter, Vector<Element*>& results)
+Router::downstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element *> &result)
 {
     Bitvector bv;
-    if (global_port_flow(true, first_element, first_output, stop_filter, bv) < 0)
+    if (global_port_flow(true, e, port, filter, bv) < 0)
 	return -1;
-    gport_list_elements(false, bv, results);
+    gport_list_elements(false, bv, result);
     return 0;
 }
 
+/** @brief Search for elements upstream from @a e.
+ * @param e element to start search
+ * @param port input port (or -1 to search all ports)
+ * @param filter ElementFilter naming elements that stop the search
+ * @param result stores results
+ * @return 0 on success, -1 in early router configuration stages
+ *
+ * This function searches the router configuration graph, starting from @a e's
+ * input port @a port and proceeding upstream along element connections,
+ * and inside elements from port to port by Element::flow_code(). All found
+ * elements are stored in @a result.
+ *
+ * If @a filter != NULL, then each found port is passed to @a filter's
+ * ElementFilter::check_match() function to check whether to stop the search.
+ * For example, if @a filter is CastElementFilter("Storage"), then the search
+ * will stop after any Storage element.  The @a result will then include the
+ * Storage elements and any elements in between @a e and the Storage elements.
+ *
+ * @sa downstream_elements()
+ */
 int
-Router::upstream_elements(Element* first_element, int first_input, ElementFilter* stop_filter, Vector<Element*>& results)
+Router::upstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element *> &result)
 {
     Bitvector bv;
-    if (global_port_flow(false, first_element, first_input, stop_filter, bv) < 0)
+    if (global_port_flow(false, e, port, filter, bv) < 0)
 	return -1;
-    gport_list_elements(true, bv, results);
+    gport_list_elements(true, bv, result);
     return 0;
 }
 
@@ -1078,7 +1118,7 @@ Handler::call_read(Element* e, const String& param, bool raw, ErrorHandler* errh
 	errh = ErrorHandler::silent_handler();
     if (param && !(_flags & READ_PARAM))
 	errh->error("read handler '%s' does not take parameters", unparse_name(e).c_str());
-    else if ((_flags & (ONE_HOOK | OP_READ)) == OP_READ)
+    else if ((_flags & (UNIFORM | OP_READ)) == OP_READ)
 	return _hook.rw.r(e, _thunk1);
     else if (_flags & OP_READ) {
 	String s(param);
@@ -1109,7 +1149,7 @@ Handler::call_write(const String& value, Element* e, bool raw, ErrorHandler* err
     String value_copy(value);
     if ((_flags & RAW) && !raw)
 	value_copy = cp_unquote(value_copy);
-    if ((_flags & (ONE_HOOK | OP_WRITE)) == OP_WRITE)
+    if ((_flags & (UNIFORM | OP_WRITE)) == OP_WRITE)
 	return _hook.rw.w(value_copy, e, _thunk2, errh);
     else if (_flags & OP_WRITE)
 	return _hook.h(OP_WRITE, value_copy, e, this, errh);
@@ -1129,7 +1169,7 @@ Handler::call_write(const String& value, Element* e, bool raw, ErrorHandler* err
 String
 Handler::unparse_name(Element *e, const String &hname)
 {
-    if (e && e != e->router()->root_element())
+    if (e && e->eindex() >= 0)
 	return e->name() + "." + hname;
     else
 	return hname;
@@ -1322,7 +1362,7 @@ Router::store_global_handler(const Handler &h)
 inline void
 Router::store_handler(const Element* e, const Handler& to_store)
 {
-    if (e)
+    if (e && e->eindex() >= 0)
 	e->router()->store_local_handler(e->eindex(), to_store);
     else
 	store_global_handler(to_store);
@@ -1331,21 +1371,48 @@ Router::store_handler(const Element* e, const Handler& to_store)
 
 // Public functions for finding handlers
 
+/** @brief Return @a router's handler with index @a hindex.
+ * @param router the router
+ * @param hindex handler index (Router::hindex())
+ * @return the Handler, or null if no such handler exists
+ *
+ * Returns the Handler object on @a router with handler index @a hindex.  If
+ * @a hindex >= FIRST_GLOBAL_HANDLER, then returns a global handler.  If @a
+ * hindex is < 0 or corresponds to no existing handler, returns null.
+ *
+ * The return Handler pointer remains valid until the named handler is changed
+ * in some way (add_read_handler(), add_write_handler(), set_handler(), or
+ * change_handler_flags()).
+ */
 const Handler*
-Router::handler(const Router* r, int hi)
+Router::handler(const Router *router, int hindex)
 {
-    if (r && hi >= 0 && hi < r->_nhandlers_bufs)
-	return r->xhandler(hi);
-    else if (hi >= FIRST_GLOBAL_HANDLER && hi < FIRST_GLOBAL_HANDLER + nglobalh)
-	return &globalh[hi - FIRST_GLOBAL_HANDLER];
+    if (router && hindex >= 0 && hindex < router->_nhandlers_bufs)
+	return router->xhandler(hindex);
+    else if (hindex >= FIRST_GLOBAL_HANDLER
+	     && hindex < FIRST_GLOBAL_HANDLER + nglobalh)
+	return &globalh[hindex - FIRST_GLOBAL_HANDLER];
     else
 	return 0;
 }
 
+/** @brief Return element @a e's handler named @a hname.
+ * @param e element, if any
+ * @param hname handler name
+ * @return the Handler, or null if no such handler exists
+ *
+ * Searches for element @a e's handler named @a hname.  Returns NULL if no
+ * such handler exists.  If @a e is NULL or equal to some root_element(), then
+ * this function searches for a global handler named @a hname.
+ *
+ * The return Handler pointer remains valid until the named handler is changed
+ * in some way (add_read_handler(), add_write_handler(), set_handler(), or
+ * change_handler_flags()).
+ */
 const Handler *
 Router::handler(const Element* e, const String& hname)
 {
-    if (e && e != e->router()->_root_element) {
+    if (e && e->eindex() >= 0) {
 	const Router *r = e->router();
 	int eh = r->find_ehandler(e->eindex(), hname, true);
 	if (eh >= 0)
@@ -1358,10 +1425,23 @@ Router::handler(const Element* e, const String& hname)
     return 0;
 }
 
+/** @brief Return the handler index for element @a e's handler named @a hname.
+ * @param e element, if any
+ * @param hname handler name
+ * @return the handler index, or -1 if no such handler exists
+ *
+ * Searches for element @a e's handler named @a hname.  Returns -1 if no
+ * such handler exists.  If @a e is NULL or equal to some root_element(), then
+ * this function searches for a global handler named @a hname.
+ *
+ * The returned integer is a handler index, which is a number that identifies
+ * the handler.  An integer >= FIRST_GLOBAL_HANDLER corresponds to a global
+ * handler.
+ */
 int
-Router::hindex(const Element* e, const String& hname)
+Router::hindex(const Element *e, const String &hname)
 {
-    if (e && e != e->router()->_root_element) {
+    if (e && e->eindex() >= 0) {
 	const Router *r = e->router();
 	int eh = r->find_ehandler(e->eindex(), hname, true);
 	if (eh >= 0)
@@ -1374,70 +1454,171 @@ Router::hindex(const Element* e, const String& hname)
     return -1;
 }
 
+/** @brief Return the handler indexes for element @a e's handlers.
+ * @param e element, if any
+ * @param result collector for handler indexes
+ *
+ * Iterates over all element @a e's handlers, and appends their handler
+ * indexes to @a result.  If @a e is NULL or equal to some root_element(),
+ * then iterates over the global handlers.
+ */
 void
-Router::element_hindexes(const Element* e, Vector<int>& hindexes)
+Router::element_hindexes(const Element *e, Vector<int> &result)
 {
-    if (e && e != e->router()->_root_element) {
+    if (e && e->eindex() >= 0) {
 	const Router *r = e->router();
 	for (int eh = r->_ehandler_first_by_element[e->eindex()];
 	     eh >= 0;
 	     eh = r->_ehandler_next[eh])
-	    hindexes.push_back(r->_ehandler_to_handler[eh]);
+	    result.push_back(r->_ehandler_to_handler[eh]);
     } else {
 	for (int i = 0; i < nglobalh; i++)
-	    hindexes.push_back(FIRST_GLOBAL_HANDLER + i);
+	    result.push_back(FIRST_GLOBAL_HANDLER + i);
     }
 }
 
 
 // Public functions for storing handlers
 
+/** @brief Add an @a e.@a hname read handler.
+ * @param e element, if any
+ * @param hname handler name
+ * @param hook read hook
+ * @param user_data user data for read hook
+ * @param flags additional flags to set (Handler::flags())
+ *
+ * Adds a read handler named @a hname for element @a e.  If @a e is NULL or
+ * equal to some root_element(), then adds a global read handler.  The
+ * handler's hook function is @a hook.  When the read handler is triggered,
+ * Click will call @a hook(@a e, @a user_data).
+ *
+ * Any previous read handler with the same name and element is replaced.  Any
+ * uniform handler function (see set_handler()) is replaced.  Any write-only
+ * handler (add_write_handler()) remains.
+ *
+ * The new handler's flags equal the old flags or'ed with @a flags.  Any
+ * special flags in @a flags are ignored.
+ *
+ * To create a read handler with parameters, you must use @a set_handler().
+ *
+ * @sa add_write_handler(), set_handler(), change_handler_flags()
+ */
 void
-Router::add_read_handler(const Element* e, const String& name, ReadHandlerHook hook, void* thunk, uint32_t flags)
+Router::add_read_handler(const Element *e, const String &hname,
+			 ReadHandlerHook hook, void *user_data, uint32_t flags)
 {
-    Handler to_add = fetch_handler(e, name);
-    if (to_add._flags & Handler::ONE_HOOK) {
+    Handler to_add = fetch_handler(e, hname);
+    if (to_add._flags & Handler::UNIFORM) {
 	to_add._hook.rw.w = 0;
 	to_add._thunk2 = 0;
 	to_add._flags &= ~Handler::SPECIAL_FLAGS;
     }
     to_add._hook.rw.r = hook;
-    to_add._thunk1 = thunk;
+    to_add._thunk1 = user_data;
     to_add._flags |= Handler::OP_READ | (flags & ~Handler::SPECIAL_FLAGS);
     store_handler(e, to_add);
 }
 
+/** @brief Add an @a e.@a hname write handler.
+ * @param e element, if any
+ * @param hname handler name
+ * @param hook read hook
+ * @param user_data user data for write hook
+ * @param flags additional flags to set (Handler::flags())
+ *
+ * Adds a write handler named @a hname for element @a e.  If @a e is NULL or
+ * equal to some root_element(), then adds a global write handler.  The
+ * handler's hook function is @a hook.  When the write handler is triggered,
+ * Click will call @a hook(data, @a e, @a user_data, errh).
+ *
+ * Any previous write handler with the same name and element is replaced.  Any
+ * uniform handler function (see set_handler()) is replaced.  Any read-only
+ * handler (add_read_handler()) remains.
+ *
+ * The new handler's flags equal the old flags or'ed with @a flags.  Any
+ * special flags in @a flags are ignored.
+ *
+ * @sa add_read_handler(), set_handler(), change_handler_flags()
+ */
 void
-Router::add_write_handler(const Element* e, const String& name, WriteHandlerHook hook, void* thunk, uint32_t flags)
+Router::add_write_handler(const Element *e, const String &hname,
+			  WriteHandlerHook hook, void *user_data, uint32_t flags)
 {
-    Handler to_add = fetch_handler(e, name);
-    if (to_add._flags & Handler::ONE_HOOK) {
+    Handler to_add = fetch_handler(e, hname);
+    if (to_add._flags & Handler::UNIFORM) {
 	to_add._hook.rw.r = 0;
 	to_add._thunk1 = 0;
 	to_add._flags &= ~Handler::SPECIAL_FLAGS;
     }
     to_add._hook.rw.w = hook;
-    to_add._thunk2 = thunk;
+    to_add._thunk2 = user_data;
     to_add._flags |= Handler::OP_WRITE | (flags & ~Handler::SPECIAL_FLAGS);
     store_handler(e, to_add);
 }
 
+/** @brief Add a uniform @a e.@a hname handler.
+ * @param e element, if any
+ * @param hname handler name
+ * @param flags flags to set (Handler::flags())
+ * @param hook uniform handler hook
+ * @param user_data1 first user data for hook
+ * @param user_data2 second user data for hook
+ *
+ * Sets a handler named @a hname for element @a e.  If @a e is NULL or equal
+ * to some root_element(), then sets a global handler.  The handler's hook
+ * function is @a hook.  The resulting handler is a read handler if @a flags
+ * contains Handler::OP_READ, and a write handler if @a flags contains
+ * Handler::OP_WRITE.  If the flags contain Handler::READ_PARAM, then any read
+ * handler will accept parameters.
+ *
+ * When the handler is triggered, Click will call @a hook(operation, data, @a
+ * e, h, errh), where:
+ *
+ * <ul>
+ * <li>"operation" is Handler::OP_READ or Handler::OP_WRITE;</li>
+ * <li>"data" is the handler data (empty for reads without parameters);</li>
+ * <li>"h" is a pointer to a Handler object; and</li>
+ * <li>"errh" is an ErrorHandler.</li>
+ * </ul>
+ *
+ * Any previous handlers with the same name and element are replaced.
+ *
+ * The new handler's flags equal @a flags or'ed with Handler::UNIFORM.
+ *
+ * @sa add_read_handler(), add_write_handler(), change_handler_flags()
+ */
 void
-Router::set_handler(const Element* e, const String& name, int flags, HandlerHook hook, void* thunk1, void* thunk2)
+Router::set_handler(const Element *e, const String &hname, uint32_t flags,
+		    HandlerHook hook, void *user_data1, void *user_data2)
 {
-    Handler to_add(name);
+    Handler to_add(hname);
     to_add._hook.h = hook;
-    to_add._thunk1 = thunk1;
-    to_add._thunk2 = thunk2;
-    to_add._flags = flags | Handler::ONE_HOOK;
+    to_add._thunk1 = user_data1;
+    to_add._thunk2 = user_data2;
+    to_add._flags = flags | Handler::UNIFORM;
     store_handler(e, to_add);
 }
 
+/** @brief Change the @a e.@a hname handler's flags.
+ * @param e element, if any
+ * @param hname handler name
+ * @param clear_flags flags to clear (Handler::flags())
+ * @param set_flags flags to set (Handler::flags())
+ * @return 0 if the handler existed, -1 otherwise
+ *
+ * Changes the handler flags for the handler named @a hname on element @a e.
+ * If @a e is NULL or equal to some root_element(), then changes a global
+ * handler.  The handler's flags are changed by clearing the @a clear_flags
+ * and setting the @a set_flags, except that the special flags
+ * (Handler::SPECIAL_FLAGS) are unchanged.
+ *
+ * @sa add_read_handler(), add_write_handler(), set_handler()
+ */
 int
-Router::change_handler_flags(const Element* e, const String& name,
+Router::change_handler_flags(const Element *e, const String &hname,
 			     uint32_t clear_flags, uint32_t set_flags)
 {
-    Handler to_add = fetch_handler(e, name);
+    Handler to_add = fetch_handler(e, hname);
     if (to_add._use_count > 0) {	// only modify existing handlers
 	clear_flags &= ~Handler::SPECIAL_FLAGS;
 	set_flags &= ~Handler::SPECIAL_FLAGS;
@@ -1545,6 +1726,9 @@ Router::force_name_info()
 
 // PRINTING
 
+/** @brief Unparse the router's requirements into @a sa.
+ *
+ * Appends at most one require() statement to @a sa. */
 void
 Router::unparse_requirements(StringAccum &sa, const String &indent) const
 {
@@ -1553,12 +1737,12 @@ Router::unparse_requirements(StringAccum &sa, const String &indent) const
 	sa << indent << "require(" << cp_unargvec(_requirements) << ");\n\n";
 }
 
-void
-Router::unparse_classes(StringAccum &, const String &) const
-{
-    // there are never any compound element classes here
-}
-
+/** @brief Unparse declarations of the router's elements into @a sa.
+ *
+ * Appends this router's elements' declarations to @a sa.  If the router is
+ * initialized, then each element's configuration string is found by
+ * Element::configuration(), which might include post-initialization changes.
+ */
 void
 Router::unparse_declarations(StringAccum &sa, const String &indent) const
 {  
@@ -1576,6 +1760,9 @@ Router::unparse_declarations(StringAccum &sa, const String &indent) const
     sa << "\n";
 }
 
+/** @brief Unparse the router's connections into @a sa.
+ *
+ * Appends this router's connections to @a sa in parseable format. */
 void
 Router::unparse_connections(StringAccum &sa, const String &indent) const
 {  
@@ -1634,23 +1821,44 @@ Router::unparse_connections(StringAccum &sa, const String &indent) const
   }
 }
 
+/** @brief Unparse this router into @a sa.
+ *
+ * Calls unparse_requirements(), unparse_declarations(), and
+ * unparse_connections(), in that order.  Each line is prefixed by @a indent.
+ */
 void
 Router::unparse(StringAccum &sa, const String &indent) const
 {
     unparse_requirements(sa, indent);
-    unparse_classes(sa, indent);
     unparse_declarations(sa, indent);
     unparse_connections(sa, indent);
 }
 
+/** @brief Return a string representing @a e's ports.
+ * @param e element
+ *
+ * The returned string is suitable for an element's <tt>ports</tt> handler.
+ * It lists the input ports, then the output ports.  For example:
+ *
+ * <pre>
+ * 1 input
+ * push~   -       InfiniteSource@@1 [0], InfiniteSource@@4 [0]
+ * 1 output
+ * push~   -       [0] Align@@3
+ * </pre>
+ *
+ * In the port lines, the first column describes the processing type (a tilde
+ * suffix represents an agnostic port); the second column lists any packet
+ * statistics available; and the third column lists other ports that are
+ * connected to this port.
+ */
 String
-Router::element_ports_string(int ei) const
+Router::element_ports_string(const Element *e) const
 {
-    if (ei < 0 || ei >= nelements())
+    if (!e || e->eindex() < 0 || e->router() != this)
 	return String();
   
     StringAccum sa;
-    Element *e = _elements[ei];
     Vector<int> pers(e->ninputs() + e->noutputs(), 0);
     int *in_pers = pers.begin();
     int *out_pers = pers.begin() + e->ninputs();
@@ -1674,7 +1882,7 @@ Router::element_ports_string(int ei) const
 	    sa << "-\t";
     
 	// connections
-	Hookup h(ei, i);
+	Hookup h(e->eindex(), i);
 	const char *sep = "";
 	for (int c = 0; c < _hookup_from.size(); c++)
 	    if (_hookup_to[c] == h) {
@@ -1703,7 +1911,7 @@ Router::element_ports_string(int ei) const
 	    sa << "-\t";
     
 	// hookup
-	Hookup h(ei, i);
+	Hookup h(e->eindex(), i);
 	const char *sep = "";
 	for (int c = 0; c < _hookup_from.size(); c++)
 	    if (_hookup_from[c] == h) {

@@ -350,7 +350,7 @@ namespace {
 
 class NotifierElementFilter : public ElementFilter { public:
     NotifierElementFilter(const char* name);
-    bool check_match(Element*, int, PortType);
+    bool check_match(Element *e, bool isoutput, int port);
     Vector<Notifier*> _notifiers;
     NotifierSignal _signal;
     bool _pass2;
@@ -365,7 +365,7 @@ NotifierElementFilter::NotifierElementFilter(const char* name)
 }
 
 bool
-NotifierElementFilter::check_match(Element* e, int port, PortType pt)
+NotifierElementFilter::check_match(Element* e, bool isoutput, int port)
 {
     if (Notifier* n = (Notifier*) (e->cast(_name))) {
 	_notifiers.push_back(n);
@@ -379,10 +379,10 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
 	} else
 	    return search_op == Notifier::SEARCH_STOP;
 	
-    } else if (pt != NONE) {
+    } else if (port >= 0) {
 	Bitvector flow;
-	if (e->port_active(pt, port) // went from pull <-> push
-	    || (e->port_flow(pt, port, &flow), flow.zero())) {
+	if (e->port_active(isoutput, port) // went from pull <-> push
+	    || (e->port_flow(isoutput, port, &flow), flow.zero())) {
 	    _signal = NotifierSignal::busy_signal();
 	    return true;
 	} else
