@@ -209,10 +209,12 @@ enum CpKparseFlags {
     cpkM = 1,		///< Argument is mandatory
     cpkP = 2,		///< Argument may be specified positionally
     cpkC = 4,		///< Argument presence should be confirmed
+    cpkD = 8,		///< Argument is deprecated
     cpkNormal = cpkN,
     cpkMandatory = cpkM,
     cpkPositional = cpkP,
-    cpkConfirm = cpkC
+    cpkConfirm = cpkC,
+    cpkDeprecated = cpkD
 };
 
 /// @brief Type of argument type names for cp_va_kparse() items.

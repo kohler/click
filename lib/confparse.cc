@@ -6,7 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000-2001 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
- * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2004-2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -3702,7 +3702,7 @@ special_argtype_for_keyword(const cp_argtype *t)
 }
 
 enum {
-    cpkSupplied = cpkConfirm * 2
+    cpkSupplied = cpkDeprecated * 2
 };
 
 static int
@@ -3743,6 +3743,8 @@ struct CpVaHelper {
   
   int parse_arguments(const char *argname  CP_CONTEXT, ErrorHandler *errh);
 
+  const char *value_name(int i);
+
   bool keywords_only;
   int nvalues;
   int nrequired;
@@ -3751,6 +3753,8 @@ struct CpVaHelper {
 
   struct cp_value *cp_values;
   int cp_values_size;
+
+  String temp_string;
   
 };
 
@@ -3898,7 +3902,7 @@ CpVaHelper::develop_kvalues(va_list val, ErrorHandler *errh)
     if (!argtype)
       return errh->error("unknown argument type '%s'!", command_name);
     v->argtype = argtype;
-    v->v.i = (flags & cpkMandatory);
+    v->v.i = (flags & (cpkMandatory | cpkDeprecated));
     
     // check for special commands
     if (argtype->internal == cpiIgnore) {
@@ -3979,13 +3983,27 @@ int
 CpVaHelper::finish_keyword_error(const char *format, const char *bad_keywords, ErrorHandler *errh)
 {
     StringAccum keywords_sa;
-    for (int i = npositional; i < nvalues; i++) {
-	if (i > npositional)
-	    keywords_sa << ", ";
-	keywords_sa << cp_values[i].keyword;
-    }
+    for (int i = 0; i < nvalues; i++)
+	if (cp_values[i].keyword) {
+	    if (keywords_sa.length())
+		keywords_sa << ", ";
+	    keywords_sa << cp_values[i].keyword;
+	}
     errh->error(format, bad_keywords, keywords_sa.c_str());
     return -EINVAL;
+}
+
+const char *
+CpVaHelper::value_name(int i)
+{
+    if (cp_values[i].keyword)
+	return cp_values[i].keyword;
+    else if (const cp_argtype *t = cp_values[i].argtype)
+	return t->description;
+    else {
+	temp_string = String("#") + String(i);
+	return temp_string.c_str();
+    }
 }
 
 int
@@ -4033,19 +4051,16 @@ CpVaHelper::assign_arguments(const Vector<String> &args, const char *argname, Er
   if (keyword_error_sa.length() && !keywords_only)
     return finish_keyword_error("bad keyword(s) %s\n(valid keywords are %s)", keyword_error_sa.c_str(), errh);
   
-  // report missing mandatory keywords
+  // report missing mandatory keywords and uses of deprecated arguments
   int nmissing = 0;
   for (int i = 0; i < nvalues; i++)
     if ((cp_values[i].v.i & (cpkMandatory | cpkSupplied)) == cpkMandatory) {
       nmissing++;
       if (keyword_error_sa.length())
 	  keyword_error_sa << ", ";
-      if (cp_values[i].keyword)
-	  keyword_error_sa << cp_values[i].keyword;
-      else if (const cp_argtype *t = cp_values[i].argtype)
-	  keyword_error_sa << t->description;
-      else
-	  keyword_error_sa << "#" << i;
+      keyword_error_sa << value_name(i);
+    } else if ((cp_values[i].v.i & (cpkDeprecated | cpkSupplied)) == (cpkDeprecated | cpkSupplied)) {
+	errh->warning("%s %s is deprecated", value_name(i), argname);
     } else if (!(cp_values[i].v.i & cpkSupplied))
 	// clear 'argtype' on unused arguments
 	cp_values[i].argtype = 0;
