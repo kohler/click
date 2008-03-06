@@ -159,6 +159,7 @@ compile_archive_packages(RouterT *r, HashMap<String, int> &packages,
 			 ErrorHandler *errh)
 {
   Vector<String> requirements = r->requirements();
+  bool tmpdir_populated = false;
 
   // go over requirements
   for (int i = 0; i < requirements.size(); i++) {
@@ -178,7 +179,7 @@ compile_archive_packages(RouterT *r, HashMap<String, int> &packages,
 
     // found source file, so compile it
     errh->message("Compiling package %s from config archive", req.c_str());
-    String result_filename = click_compile_archive_file(req, r->archive(), source_ae, COMPILETARGET, "", errh);
+    String result_filename = click_compile_archive_file(r->archive(), source_ae, req, COMPILETARGET, "", tmpdir_populated, errh);
     
     // grab object file and add to archive
     if (result_filename) {

@@ -165,7 +165,8 @@ CLICK_DECLS
 static String *click_buildtool_prog, *tmpdir;
 
 static bool
-check_tmpdir(const Vector<ArchiveElement> &archive, ErrorHandler *errh)
+check_tmpdir(const Vector<ArchiveElement> &archive, bool populate_tmpdir,
+	     bool &tmpdir_populated, ErrorHandler *errh)
 {
     // change to temporary directory
     if (!tmpdir)
@@ -173,35 +174,44 @@ check_tmpdir(const Vector<ArchiveElement> &archive, ErrorHandler *errh)
     if (!*tmpdir)
 	return *tmpdir;
 
-    // find compile program
-    if (!click_buildtool_prog)
-	click_buildtool_prog = new String(clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, errh));
-    if (!*click_buildtool_prog)
-	return *click_buildtool_prog;
-
     // store .h/.hh/.hxx files in temporary directory
-    for (int i = 0; i < archive.size(); i++)
-	if (archive[i].name.substring(-3) == ".hh"
-	    || archive[i].name.substring(-2) == ".h"
-	    || archive[i].name.substring(-4) == ".hxx") {
-	    String filename = *tmpdir + archive[i].name;
-	    FILE *f = fopen(filename.c_str(), "w");
-	    if (!f)
-		errh->warning("%s: %s", filename.c_str(), strerror(errno));
-	    else {
-		fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
-		fclose(f);
+    if (populate_tmpdir && !tmpdir_populated) {
+	tmpdir_populated = true;
+	for (int i = 0; i < archive.size(); i++) {
+	    const ArchiveElement &ae = archive[i];
+	    if (ae.name.substring(-3) == ".hh"
+		|| ae.name.substring(-2) == ".h"
+		|| ae.name.substring(-4) == ".hxx") {
+		String filename = *tmpdir + ae.name;
+		FILE *f = fopen(filename.c_str(), "w");
+		if (!f)
+		    errh->warning("%s: %s", filename.c_str(), strerror(errno));
+		else {
+		    fwrite(ae.data.data(), 1, ae.data.length(), f);
+		    fclose(f);
+		}
 	    }
 	}
+    }
 
     return *tmpdir;
 }
 
 String
-click_compile_archive_file(String package, const Vector<ArchiveElement> &archive, int ai, const String &target, const String &extra_flags, ErrorHandler *errh)
+click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
+			   String package,
+			   const String &target, const String &extra_flags,
+			   bool &tmpdir_populated, ErrorHandler *errh)
 {
-    if (!check_tmpdir(archive, errh))
+    // create and populate temporary directory
+    if (!check_tmpdir(archive, true, tmpdir_populated, errh))
 	return String();
+
+    // find compile program
+    if (!click_buildtool_prog)
+	click_buildtool_prog = new String(clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, errh));
+    if (!*click_buildtool_prog)
+	return *click_buildtool_prog;
 
     String package_file = package;
     if (target == "tool")
@@ -217,7 +227,7 @@ click_compile_archive_file(String package, const Vector<ArchiveElement> &archive
 	(errh, "While compiling package '" + package_file + "':");
 
     // write .cc file
-    const ArchiveElement &ae = archive.at(ai);
+    const ArchiveElement &ae = archive[ai];
     String filename = ae.name;
     int rightdot = filename.find_right('.');
     if (rightdot >= 0 && filename.substring(0, rightdot) == package)
@@ -290,6 +300,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
 	return;
 
     ContextErrorHandler cerrh(errh, "While loading package '" + name + "':");
+    bool tmpdir_populated = false;
 
 #ifdef CLICK_TOOL
     String suffix = ".to", cxx_suffix = ".t.cc", target = "tool";
@@ -301,7 +312,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     // check archive
     int ai = -1;
     if (archive && (ai = ArchiveElement::arindex(*archive, name + suffix)) >= 0) {
-	if (!check_tmpdir(*archive, &cerrh))
+	if (!check_tmpdir(*archive, false, tmpdir_populated, &cerrh))
 	    return;
 	package = *tmpdir + "/" + name + suffix;
 	FILE *f = fopen(package.c_str(), "wb");
@@ -314,9 +325,9 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
 	    fclose(f);
 	}
     } else if (archive && (ai = ArchiveElement::arindex(*archive, name + cxx_suffix)) >= 0)
-	package = click_compile_archive_file(name, *archive, ai, target, "-q", &cerrh);
+	package = click_compile_archive_file(*archive, ai, name, target, "-q", tmpdir_populated, &cerrh);
     else if (archive && (ai = ArchiveElement::arindex(*archive, name + ".cc")) >= 0)
-	package = click_compile_archive_file(name, *archive, ai, target, "-q", &cerrh);
+	package = click_compile_archive_file(*archive, ai, name, target, "-q", tmpdir_populated, &cerrh);
     else {
 	// search path
 	package = clickpath_find_file(name + suffix, "lib", CLICK_LIBDIR);

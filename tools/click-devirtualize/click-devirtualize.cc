@@ -478,16 +478,17 @@ particular purpose.\n");
   if (compile_user > 0 || compile_kernel > 0) {
     int source_ae = router->archive_index(package_name + suffix + ".cc");
     BailErrorHandler berrh(errh);
+    bool tmpdir_populated = false;
     
     if (compile_kernel > 0)
-	if (String fn = click_compile_archive_file(package_name, router->archive(), source_ae, "linuxmodule", "", &berrh)) {
+	if (String fn = click_compile_archive_file(router->archive(), source_ae, package_name, "linuxmodule", "", tmpdir_populated, &berrh)) {
 	    ArchiveElement ae = init_archive_element(package_name + ".ko", 0600);
 	    ae.data = file_string(fn, errh);
 	    router->add_archive(ae);
 	}
     
     if (compile_user > 0)
-	if (String fn = click_compile_archive_file(package_name, router->archive(), source_ae, "userlevel", "", &berrh)) {
+	if (String fn = click_compile_archive_file(router->archive(), source_ae, package_name, "userlevel", "", tmpdir_populated, &berrh)) {
 	    ArchiveElement ae = init_archive_element(package_name + ".uo", 0600);
 	    ae.data = file_string(fn, errh);
 	    router->add_archive(ae);
