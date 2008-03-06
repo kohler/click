@@ -1827,7 +1827,7 @@ write_config_handler(const String &str, Element *e, void *,
 static String
 read_ports_handler(Element *e, void *)
 {
-    return e->router()->element_ports_string(e->eindex());
+    return e->router()->element_ports_string(e);
 }
 
 static String

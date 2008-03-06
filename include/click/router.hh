@@ -92,11 +92,10 @@ class Router { public:
     inline const String& configuration_string() const;
     void unparse(StringAccum& sa, const String& indent = String()) const;
     void unparse_requirements(StringAccum& sa, const String& indent = String()) const;
-    void unparse_classes(StringAccum& sa, const String& indent = String()) const;
     void unparse_declarations(StringAccum& sa, const String& indent = String()) const;
     void unparse_connections(StringAccum& sa, const String& indent = String()) const;
 
-    String element_ports_string(int eindex) const;
+    String element_ports_string(const Element *e) const;
     //@}
   
     // INITIALIZATION
