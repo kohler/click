@@ -87,7 +87,6 @@ Master::Master(int nthreads)
     _signal_adding = false;
 #endif
 
-    _timer_check = Timestamp::now();
 #if CLICK_LINUXMODULE
     spin_lock_init(&_master_lock);
     _master_lock_task = 0;
@@ -95,6 +94,8 @@ Master::Master(int nthreads)
     spin_lock_init(&_timer_lock);
     _timer_task = 0;
 #endif
+    _timer_check = Timestamp::now();
+    _timer_check_reports = 0;
     
 #if CLICK_NS
     _simnode = 0;
@@ -408,8 +409,13 @@ Master::timer_reheapify_from(int pos, Timer* t, bool will_delete)
 
     // do not schedule timers for too far in the past
     if (!will_delete
-	&& t->_expiry.sec() + Timer::BEHIND_SEC < _timer_check.sec())
+	&& t->_expiry.sec() + Timer::BEHIND_SEC < _timer_check.sec()) {
+	if (_timer_check_reports < 5) {
+	    ++_timer_check_reports;
+	    click_chatter("task %p outdated expiry %{timestamp} updated to %{timestamp}", t, &t->_expiry, &_timer_check, &t->_expiry);
+	}
 	t->_expiry = _timer_check;
+    }
     
     while (pos > 0
 	   && (npos = (pos-1) >> 1, tbegin[npos]->_expiry > t->_expiry)) {

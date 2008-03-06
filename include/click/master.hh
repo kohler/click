@@ -110,12 +110,13 @@ class Master { public:
     unsigned _max_timer_stride;
     unsigned _timer_stride;
     unsigned _timer_count;
-    Timestamp _timer_check;
     Vector<Timer*> _timer_heap;
 #if CLICK_LINUXMODULE
     spinlock_t _timer_lock;
     struct task_struct *_timer_task;
 #endif
+    Timestamp _timer_check;
+    uint32_t _timer_check_reports;
     inline Timestamp next_timer_expiry_adjusted() const;
     void lock_timers();
     bool attempt_lock_timers();
