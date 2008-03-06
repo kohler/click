@@ -1066,6 +1066,14 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   return pos;
 }
 
+static int
+qsort_uint32_t(const void *ax, const void *bx)
+{
+    const uint32_t *a = reinterpret_cast<const uint32_t *>(ax);
+    const uint32_t *b = reinterpret_cast<const uint32_t *>(bx);
+    return (*a > *b ? 1 : (*a == *b ? 0 : -1));
+}
+
 int
 IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -1175,6 +1183,8 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	  _prog.push_back(_exprs[no].value.u);
 	  wanted[no]--;
       }
+      if (PERFORM_BINARY_SEARCH && (_prog[off] >> 16) >= MIN_BINARY_SEARCH)
+	  click_qsort(&_prog[off+4], _prog[off] >> 16, sizeof(_prog[0]), qsort_uint32_t);
   }
   offsets.push_back(_prog.size());
   
@@ -1242,11 +1252,27 @@ IPFilter::length_checked_push(Packet *p)
       else
 	  data = *(const uint32_t *)(neth_data + off);
       data &= pr[3];
-      for (off = pr[0] >> 16, pp = pr + 4; off; off--, pp++)
-	  if (*pp == data) {
-	      off = pr[2];
-	      goto gotit;
+      off = pr[0] >> 16;
+      pp = pr + 4;
+      if (!PERFORM_BINARY_SEARCH || off < MIN_BINARY_SEARCH) {
+	  for (; off; --off, ++pp)
+	      if (*pp == data) {
+		  off = pr[2];
+		  goto gotit;
+	      }
+      } else {
+	  const uint32_t *px = pp + off;
+	  while (pp < px) {
+	      const uint32_t *pm = pp + (px - pp) / 2;
+	      if (*pm == data) {
+		  off = pr[2];
+		  goto gotit;
+	      } else if (*pm < data)
+		  pp = pm + 1;
+	      else
+		  px = pm;
 	  }
+      }
     failure:
       off = pr[1];
     gotit:
@@ -1297,11 +1323,27 @@ IPFilter::push(int, Packet *p)
       else
 	  data = *(const uint32_t *)(neth_data + off);
       data &= pr[3];
-      for (off = pr[0] >> 16, pp = pr + 4; off; off--, pp++)
-	  if (*pp == data) {
-	      off = pr[2];
-	      goto gotit;
+      off = pr[0] >> 16;
+      pp = pr + 4;
+      if (!PERFORM_BINARY_SEARCH || off < MIN_BINARY_SEARCH) {
+	  for (; off; --off, ++pp)
+	      if (*pp == data) {
+		  off = pr[2];
+		  goto gotit;
+	      }
+      } else {
+	  const uint32_t *px = pp + off;
+	  while (pp < px) {
+	      const uint32_t *pm = pp + (px - pp) / 2;
+	      if (*pm == data) {
+		  off = pr[2];
+		  goto gotit;
+	      } else if (*pm < data)
+		  pp = pm + 1;
+	      else
+		  px = pm;
 	  }
+      }
       off = pr[1];
     gotit:
       if (off <= 0) {

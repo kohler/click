@@ -171,16 +171,27 @@ class IPFilter : public Classifier { public:
     FIELD_ICMP_TYPE = (TYPE_FIELD | (IP_PROTO_ICMP << FIELD_PROTO_SHIFT) | (0 << FIELD_OFFSET_SHIFT) | 7)
   };
 
-  enum {
-    UNKNOWN = -1000,
-    
-    SD_SRC = 1, SD_DST = 2, SD_AND = 3, SD_OR = 4,
+    enum {
+	UNKNOWN = -1000
+    };
 
-    OP_EQ = 0, OP_GT = 1, OP_LT = 2,
-    
-    // if you change this, change click-fastclassifier.cc also
-    TRANSP_FAKE_OFFSET = 64
-  };
+    enum {
+	SD_SRC = 1, SD_DST = 2, SD_AND = 3, SD_OR = 4
+    };
+
+    enum {
+	OP_EQ = 0, OP_GT = 1, OP_LT = 2
+    };
+
+    enum {
+	// if you change this, change click-fastclassifier.cc also
+	TRANSP_FAKE_OFFSET = 64
+    };
+
+    enum {
+	PERFORM_BINARY_SEARCH = 1,
+	MIN_BINARY_SEARCH = 7
+    };
 
   struct Primitive {
     
