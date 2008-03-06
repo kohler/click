@@ -785,7 +785,7 @@ Router::global_port_flow(bool forward, Element* first_element, int first_port, E
 	for (int g = 0; g < nresult; g++)
 	    if (diff[g]) {
 		Hookup h = gport_hookup(!forward, g);
-		if (!stop_filter || !stop_filter->match_port(_elements[h.idx], !forward, h.port)) {
+		if (!stop_filter || !stop_filter->check_match(_elements[h.idx], !forward, h.port)) {
 		    _elements[h.idx]->port_flow(!forward, h.port, &scratch);
 		    source.or_at(scratch, _gports[forward].e2g[h.idx]);
 		}
@@ -1078,7 +1078,7 @@ Handler::call_read(Element* e, const String& param, bool raw, ErrorHandler* errh
 	errh = ErrorHandler::silent_handler();
     if (param && !(_flags & READ_PARAM))
 	errh->error("read handler '%s' does not take parameters", unparse_name(e).c_str());
-    else if ((_flags & (ONE_HOOK | OP_READ)) == OP_READ)
+    else if ((_flags & (UNIFORM | OP_READ)) == OP_READ)
 	return _hook.rw.r(e, _thunk1);
     else if (_flags & OP_READ) {
 	String s(param);
@@ -1109,7 +1109,7 @@ Handler::call_write(const String& value, Element* e, bool raw, ErrorHandler* err
     String value_copy(value);
     if ((_flags & RAW) && !raw)
 	value_copy = cp_unquote(value_copy);
-    if ((_flags & (ONE_HOOK | OP_WRITE)) == OP_WRITE)
+    if ((_flags & (UNIFORM | OP_WRITE)) == OP_WRITE)
 	return _hook.rw.w(value_copy, e, _thunk2, errh);
     else if (_flags & OP_WRITE)
 	return _hook.h(OP_WRITE, value_copy, e, this, errh);
@@ -1322,7 +1322,7 @@ Router::store_global_handler(const Handler &h)
 inline void
 Router::store_handler(const Element* e, const Handler& to_store)
 {
-    if (e)
+    if (e && e->eindex() >= 0)
 	e->router()->store_local_handler(e->eindex(), to_store);
     else
 	store_global_handler(to_store);
@@ -1342,10 +1342,23 @@ Router::handler(const Router* r, int hi)
 	return 0;
 }
 
+/** @brief Return element @a e's handler named @a hname.
+ * @param e element, if any
+ * @param hname handler name
+ * @return the Handler, or null if no such handler exists
+ *
+ * Searches for element @a e's handler named @a hname.  Returns NULL if no
+ * such handler exists.  If @a e is NULL or equal to some root_element(), then
+ * this function searches for a global handler named @a hname.
+ *
+ * The return Handler pointer remains valid until the named handler is changed
+ * in some way (add_read_handler(), add_write_handler(), set_handler(), or
+ * change_handler_flags()).
+ */
 const Handler *
 Router::handler(const Element* e, const String& hname)
 {
-    if (e && e != e->router()->_root_element) {
+    if (e && e->eindex() >= 0) {
 	const Router *r = e->router();
 	int eh = r->find_ehandler(e->eindex(), hname, true);
 	if (eh >= 0)
@@ -1392,52 +1405,130 @@ Router::element_hindexes(const Element* e, Vector<int>& hindexes)
 
 // Public functions for storing handlers
 
+/** @brief Add an @a e.@a hname read handler.
+ * @param e element, if any
+ * @param hname handler name
+ * @param hook read hook
+ * @param user_data user data for read hook
+ * @param flags additional flags to set (Handler::flags())
+ *
+ * Adds a read handler named @a hname for element @a e.  If @a e is NULL or
+ * equal to some root_element(), then adds a global read handler.  The
+ * handler's hook function is @a hook.  When the read handler is triggered,
+ * Click will call @a hook(@a e, @a user_data).
+ *
+ * Any previous read handler with the same name and element is replaced.  Any
+ * uniform handler function (see set_handler()) is replaced.  Any write-only
+ * handler (add_write_handler()) remains.
+ *
+ * The new handler's flags equal the old flags or'ed with @a flags.  Any
+ * special flags in @a flags are ignored.
+ *
+ * To create a read handler with parameters, you must use @a set_handler().
+ *
+ * @sa add_write_handler(), set_handler(), change_handler_flags()
+ */
 void
-Router::add_read_handler(const Element* e, const String& name, ReadHandlerHook hook, void* thunk, uint32_t flags)
+Router::add_read_handler(const Element *e, const String &hname,
+			 ReadHandlerHook hook, void *user_data, uint32_t flags)
 {
-    Handler to_add = fetch_handler(e, name);
-    if (to_add._flags & Handler::ONE_HOOK) {
+    Handler to_add = fetch_handler(e, hname);
+    if (to_add._flags & Handler::UNIFORM) {
 	to_add._hook.rw.w = 0;
 	to_add._thunk2 = 0;
 	to_add._flags &= ~Handler::SPECIAL_FLAGS;
     }
     to_add._hook.rw.r = hook;
-    to_add._thunk1 = thunk;
+    to_add._thunk1 = user_data;
     to_add._flags |= Handler::OP_READ | (flags & ~Handler::SPECIAL_FLAGS);
     store_handler(e, to_add);
 }
 
+/** @brief Add an @a e.@a hname write handler.
+ * @param e element, if any
+ * @param hname handler name
+ * @param hook read hook
+ * @param user_data user data for write hook
+ * @param flags additional flags to set (Handler::flags())
+ *
+ * Adds a write handler named @a hname for element @a e.  If @a e is NULL or
+ * equal to some root_element(), then adds a global write handler.  The
+ * handler's hook function is @a hook.  When the write handler is triggered,
+ * Click will call @a hook(data, @a e, @a user_data, errh).
+ *
+ * Any previous write handler with the same name and element is replaced.  Any
+ * uniform handler function (see set_handler()) is replaced.  Any read-only
+ * handler (add_read_handler()) remains.
+ *
+ * The new handler's flags equal the old flags or'ed with @a flags.  Any
+ * special flags in @a flags are ignored.
+ *
+ * @sa add_read_handler(), set_handler(), change_handler_flags()
+ */
 void
-Router::add_write_handler(const Element* e, const String& name, WriteHandlerHook hook, void* thunk, uint32_t flags)
+Router::add_write_handler(const Element *e, const String &hname,
+			  WriteHandlerHook hook, void *user_data, uint32_t flags)
 {
-    Handler to_add = fetch_handler(e, name);
-    if (to_add._flags & Handler::ONE_HOOK) {
+    Handler to_add = fetch_handler(e, hname);
+    if (to_add._flags & Handler::UNIFORM) {
 	to_add._hook.rw.r = 0;
 	to_add._thunk1 = 0;
 	to_add._flags &= ~Handler::SPECIAL_FLAGS;
     }
     to_add._hook.rw.w = hook;
-    to_add._thunk2 = thunk;
+    to_add._thunk2 = user_data;
     to_add._flags |= Handler::OP_WRITE | (flags & ~Handler::SPECIAL_FLAGS);
     store_handler(e, to_add);
 }
 
+/** @brief Add a uniform @a e.@a hname handler.
+ * @param e element, if any
+ * @param hname handler name
+ * @param flags flags to set (Handler::flags())
+ * @param hook uniform handler hook
+ * @param user_data1 first user data for hook
+ * @param user_data2 second user data for hook
+ *
+ * Sets a handler named @a hname for element @a e.  If @a e is NULL or equal
+ * to some root_element(), then sets a global write handler.  The handler's
+ * hook function is @a hook.  The resulting handler is a read handler if @a
+ * flags contains Handler::OP_READ, and a write handler if @a flags contains
+ * Handler::OP_WRITE.  If the flags contain Handler::READ_PARAM, then any read
+ * handler will accept parameters.
+ *
+ * When the handler is triggered, Click will call @a hook(operation, data, @a
+ * e, h, errh), where:
+ *
+ * <ul>
+ * <li>"operation" is Handler::OP_READ or Handler::OP_WRITE;</li>
+ * <li>"data" is the handler data (empty for reads without parameters);</li>
+ * <li>"h" is a pointer to a Handler object; and</li>
+ * <li>"errh" is an ErrorHandler.</li>
+ * </ul>
+ *
+ * Any previous handlers with the same name and element are replaced.
+ *
+ * The new handler's flags equal @a flags or'ed with Handler::UNIFORM.
+ *
+ * @sa add_read_handler(), set_handler(), change_handler_flags()
+ */
 void
-Router::set_handler(const Element* e, const String& name, int flags, HandlerHook hook, void* thunk1, void* thunk2)
+Router::set_handler(const Element *e, const String &hname, uint32_t flags,
+		    HandlerHook hook, void *user_data1, void *user_data2)
 {
-    Handler to_add(name);
+    Handler to_add(hname);
     to_add._hook.h = hook;
-    to_add._thunk1 = thunk1;
-    to_add._thunk2 = thunk2;
-    to_add._flags = flags | Handler::ONE_HOOK;
+    to_add._thunk1 = user_data1;
+    to_add._thunk2 = user_data2;
+    to_add._flags = flags | Handler::UNIFORM;
     store_handler(e, to_add);
 }
 
 int
-Router::change_handler_flags(const Element* e, const String& name,
+Router::change_handler_flags(const Element *e, const String &hname,
 			     uint32_t clear_flags, uint32_t set_flags)
 {
-    Handler to_add = fetch_handler(e, name);
+    Handler to_add = fetch_handler(e, hname);
     if (to_add._use_count > 0) {	// only modify existing handlers
 	clear_flags &= ~Handler::SPECIAL_FLAGS;
 	set_flags &= ~Handler::SPECIAL_FLAGS;

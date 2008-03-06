@@ -553,7 +553,7 @@ Script::step_handler(int, String &str, Element *e, const Handler *h, ErrorHandle
     Script *scr = (Script *) e;
     String data = cp_uncomment(str);
     int nsteps, steptype, x;
-    int what = (uintptr_t) h->thunk1();
+    int what = (uintptr_t) h->user_data1();
 
     if (what == ST_GOTO) {
 	int step = scr->find_label(cp_uncomment(data));
@@ -614,7 +614,7 @@ Script::step_handler(int, String &str, Element *e, const Handler *h, ErrorHandle
 int
 Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorHandler *errh)
 {
-    int what = (uintptr_t) h->thunk1();
+    int what = (uintptr_t) h->user_data1();
 
     switch (what) {
 
@@ -837,23 +837,23 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
 void
 Script::add_handlers()
 {
-    set_handler("step", Handler::OP_WRITE | Handler::ONE_HOOK, step_handler, (void *) ST_STEP, 0);
-    set_handler("goto", Handler::OP_WRITE | Handler::ONE_HOOK, step_handler, (void *) ST_GOTO, 0);
-    set_handler("run", Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE | Handler::ONE_HOOK, step_handler, (void *) ST_RUN, 0);
-    set_handler("add", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_ADD, 0);
-    set_handler("sub", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_SUB, 0);
-    set_handler("mul", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_MUL, 0);
-    set_handler("div", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_DIV, 0);
-    set_handler("idiv", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_IDIV, 0);
-    set_handler("eq", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_EQ, 0);
-    set_handler("ne", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_NE, 0);
-    set_handler("gt", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_GT, 0);
-    set_handler("ge", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_GE, 0);
-    set_handler("lt", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_LT, 0);
-    set_handler("le", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_LE, 0);
-    set_handler("not", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_NOT, 0);
-    set_handler("sprintf", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_SPRINTF, 0);
-    set_handler("first", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, arithmetic_handler, (void *) AR_FIRST, 0);
+    set_handler("step", Handler::OP_WRITE, step_handler, (void *) ST_STEP, 0);
+    set_handler("goto", Handler::OP_WRITE, step_handler, (void *) ST_GOTO, 0);
+    set_handler("run", Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE, step_handler, (void *) ST_RUN, 0);
+    set_handler("add", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_ADD, 0);
+    set_handler("sub", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_SUB, 0);
+    set_handler("mul", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_MUL, 0);
+    set_handler("div", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_DIV, 0);
+    set_handler("idiv", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_IDIV, 0);
+    set_handler("eq", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_EQ, 0);
+    set_handler("ne", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_NE, 0);
+    set_handler("gt", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_GT, 0);
+    set_handler("ge", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_GE, 0);
+    set_handler("lt", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_LT, 0);
+    set_handler("le", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_LE, 0);
+    set_handler("not", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_NOT, 0);
+    set_handler("sprintf", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_SPRINTF, 0);
+    set_handler("first", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, (void *) AR_FIRST, 0);
 }
 
 EXPORT_ELEMENT(Script)

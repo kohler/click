@@ -56,7 +56,7 @@ void
 StaticIPLookup::add_handlers()
 {
     add_read_handler("table", table_handler, 0);
-    set_handler("lookup", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, lookup_handler);
+    set_handler("lookup", Handler::OP_READ | Handler::READ_PARAM, lookup_handler);
 }
 
 CLICK_ENDDECLS

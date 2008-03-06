@@ -412,7 +412,7 @@ void BetterIPCounter3::push(int port, Packet *p) {
  *
  * @sa Element::checked_output_push() */
 
-/** @brief Constructs an Element. */
+/** @brief Construct an Element. */
 Element::Element()
     : ELEMENT_CTOR_STATS _router(0), _eindex(-1)
 {

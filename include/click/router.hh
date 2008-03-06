@@ -41,10 +41,14 @@ class Router { public:
     // ELEMENTS
     inline const Vector<Element*>& elements() const;
     inline int nelements() const;
-    // eindex -1 returns root_element(), other out-of-range indexes return 0
-    inline Element* element(int eindex) const;
+    inline Element* element(int i) const;
     inline Element* root_element() const;
-    static Element* element(const Router *router, int eindex);
+    static Element* element(const Router *router, int i);
+
+    const String& ename(int i) const;
+    const String& elandmark(int i) const;
+    const String& econfiguration(int i) const;
+    void set_econfiguration(int i, const String& conf);
   
     Element* find(const String& name, ErrorHandler* errh = 0) const;
     Element* find(const String& name, String context, ErrorHandler* errh = 0) const;
@@ -53,24 +57,18 @@ class Router { public:
     int downstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
     int upstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
   
-    const String& ename(int eindex) const;
-    const String& elandmark(int eindex) const;
-    const String& econfiguration(int eindex) const;
-    void set_econfiguration(int eindex, const String& conf);
-  
     // HANDLERS
+    // 'const Handler *' results last until that element/handlername modified
+    static const Handler *handler(const Element *e, const String &hname);
+    static void add_read_handler(const Element *e, const String &hname, ReadHandlerHook hook, void *user_data, uint32_t flags = 0);
+    static void add_write_handler(const Element *e, const String &hname, WriteHandlerHook hook, void *user_data, uint32_t flags = 0);
+    static void set_handler(const Element *e, const String &hname, uint32_t flags, HandlerHook hook, void *user_data1 = 0, void *user_data2 = 0);
+    static int change_handler_flags(const Element *e, const String &hname, uint32_t clear_flags, uint32_t set_flags);
+
     enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
-    static int hindex(const Element* e, const String& hname);
-    static void element_hindexes(const Element* e, Vector<int>& result);
-
-    // 'const Handler*' results last until that element/handlername modified
-    static const Handler* handler(const Router* router, int hindex);
-    static const Handler* handler(const Element* e, const String& hname);
-
-    static void add_read_handler(const Element* e, const String& hname, ReadHandlerHook hook, void* thunk, uint32_t flags = 0);
-    static void add_write_handler(const Element* e, const String& hname, WriteHandlerHook hook, void* thunk, uint32_t flags = 0);
-    static void set_handler(const Element* e, const String& hname, int mask, HandlerHook hook, void* thunk1 = 0, void* thunk2 = 0);
-    static int change_handler_flags(const Element* e, const String& hname, uint32_t clear_flags, uint32_t set_flags);
+    static int hindex(const Element *e, const String &hname);
+    static const Handler *handler(const Router *router, int hindex);
+    static void element_hindexes(const Element *e, Vector<int> &result);
 
     // ATTACHMENTS AND REQUIREMENTS
     void* attachment(const String& aname) const;
@@ -347,22 +345,22 @@ Router::nelements() const
     return _elements.size();
 }
 
-/** @brief  Returns the element with index @a eindex.
- *  @param  eindex  element index, or -1 for root_element()
- *  @invariant  If eindex(i) isn't null, then eindex(i)->@link Element::eindex eindex@endlink() == i.
+/** @brief  Returns the element with index @a i.
+ *  @param  i  element index, or -1 for root_element()
+ *  @invariant  If element(i) isn't null, then element(i)->@link Element::eindex eindex@endlink() == i.
  *
- *  This function returns the element with index @a eindex.  If @a eindex ==
- *  -1, returns root_element().  If @a eindex is otherwise out of range,
+ *  This function returns the element with index @a i.  If @a i ==
+ *  -1, returns root_element().  If @a i is otherwise out of range,
  *  returns null. */
 inline Element*
-Router::element(int eindex) const
+Router::element(int i) const
 {
-    return element(this, eindex);
+    return element(this, i);
 }
 
 /** @brief  Returns this router's root element.
  *
- *  Every router has a root Element.  This element has Element::eindex -1 and
+ *  Every router has a root Element.  This element has Element::eindex() -1 and
  *  name "".  It is not configured or initialized, and doesn't appear in the
  *  configuration; it exists only for convenience, when other Click code needs
  *  to refer to some arbitrary element at the top level of the compound
