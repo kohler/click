@@ -3,6 +3,7 @@
  * John Jannotti, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -51,8 +52,9 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
   
   if (cp_va_kparse(conf, this, errh,
 		   "LABEL", cpkP, cpString, &label,
-		   "LENGTH", cpkP, cpInteger, &bytes,
-		   "NBYTES", 0, cpInteger, &bytes, // deprecated
+		   "MAXLENGTH", cpkP, cpInteger, &bytes,
+		   "LENGTH", cpkDeprecated, cpInteger, &bytes,
+		   "NBYTES", cpkDeprecated, cpInteger, &bytes,
 		   "CONTENTS", 0, cpWord, &contents,
 		   "TIMESTAMP", 0, cpBool, &timestamp,
 		   "PRINTANNO", 0, cpBool, &print_anno,
@@ -86,12 +88,15 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
 Packet *
 Print::simple_action(Packet *p)
 {
+    int bytes = (_contents ? _bytes : 0);
+    if (bytes < 0 || (int) p->length() < bytes)
+	bytes = p->length();
     StringAccum sa(_label.length() + 2 // label:
 		   + 6		// (processor)
 		   + 28		// timestamp:
 		   + 9		// length |
 		   + Packet::USER_ANNO_SIZE*2 + 3 // annotations |
-		   + 3 * _bytes);
+		   + 3 * bytes);
     if (sa.out_of_memory()) {
 	click_chatter("no memory for Print");
 	return p;
@@ -118,27 +123,27 @@ Print::simple_action(Packet *p)
     len = sprintf(sa.reserve(11), "%s%4d", sep, p->length());
     sa.adjust_length(len);
 
-  if (_print_anno) {
-      sa << " | ";
-      char *buf = sa.reserve(Packet::USER_ANNO_SIZE*2);
-      int pos = 0;
-      for (unsigned j = 0; j < Packet::USER_ANNO_SIZE; j++, pos += 2) 
-	  sprintf(buf + pos, "%02x", p->user_anno_u8(j));
-      sa.adjust_length(pos);
-  }
+    if (_print_anno) {
+	sa << " | ";
+	char *buf = sa.reserve(Packet::USER_ANNO_SIZE*2);
+	int pos = 0;
+	for (unsigned j = 0; j < Packet::USER_ANNO_SIZE; j++, pos += 2) 
+	    sprintf(buf + pos, "%02x", p->user_anno_u8(j));
+	sa.adjust_length(pos);
+    }
 
-    if (_contents) {
+    if (bytes) {
 	sa << " | ";
 	char *buf = sa.data() + sa.length();
 	const unsigned char *data = p->data();
 	if (_contents == 1) {
-	    for (unsigned i = 0; i < _bytes && i < p->length(); i++, data++) {
+	    for (int i = 0; i < bytes; i++, data++) {
 		sprintf(buf, "%02x", *data & 0xff);
 		buf += 2;
 		if ((i % 4) == 3) *buf++ = ' ';
 	    }
 	} else if (_contents == 2) {
-	    for (unsigned i = 0; i < _bytes && data < p->end_data(); i++, data++) {
+	    for (int i = 0; i < bytes; i++, data++) {
 		if ((i % 8) == 0)
 		    *buf++ = ' ';
 		if (*data < 32 || *data > 126)

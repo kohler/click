@@ -3,7 +3,7 @@
  * Max Poletto, Eddie Kohler
  *
  * Copyright (c) 2000 Mazu Networks, Inc.
- * Copyright (c) 2005 Regents of the University of California
+ * Copyright (c) 2005-2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -71,7 +71,8 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 		   "LABEL", cpkP, cpString, &_label,
 		   "CONTENTS", 0, cpWord, &contents,
 		   "PAYLOAD", 0, cpWord, &payload,
-		   "NBYTES", 0, cpInteger, &_bytes,
+		   "MAXLENGTH", 0, cpInteger, &_bytes,
+		   "NBYTES", 0, cpInteger, &_bytes, // deprecated
 		   "ID", 0, cpBool, &print_id,
 		   "TIMESTAMP", 0, cpBool, &print_time,
 		   "PAINT", 0, cpBool, &print_paint,
@@ -370,11 +371,6 @@ IPPrint::simple_action(Packet *p)
 
 	// print payload
 	if (_contents > 0) {
-	    int amt = 3*_bytes + (_bytes/4+1) + 3*(_bytes/24+1) + 1;
-	    
-	    char *buf = sa.reserve(amt);
-	    char *orig_buf = buf;
-	    
 	    const uint8_t *data;
 	    if (_payload) {
 		if (IP_FIRSTFRAG(iph) && iph->ip_p == IP_PROTO_TCP)
@@ -386,8 +382,16 @@ IPPrint::simple_action(Packet *p)
 	    } else
 		data = p->data();
 
+	    int bytes = _bytes;
+	    if (bytes < 0 || (int) (p->end_data() - data) < bytes)
+		bytes = p->end_data() - data;
+	    int amt = 3*bytes + (bytes/4+1) + 3*(bytes/24+1) + 1;
+	    
+	    char *buf = sa.reserve(amt);
+	    char *orig_buf = buf;
+	    
 	    if (buf && _contents == 1) {
-		for (unsigned i = 0; i < _bytes && data < p->end_data(); i++, data++) {
+		for (int i = 0; i < bytes; i++, data++) {
 		    if ((i % 24) == 0) {
 			*buf++ = '\n'; *buf++ = ' '; *buf++ = ' ';
 		    } else if ((i % 4) == 0)
@@ -396,7 +400,7 @@ IPPrint::simple_action(Packet *p)
 		    buf += 2;
 		}
 	    } else if (buf && _contents == 2) {
-		for (unsigned i = 0; i < _bytes && data < p->end_data(); i++, data++) {
+		for (int i = 0; i < bytes; i++, data++) {
 		    if ((i % 48) == 0) {
 			*buf++ = '\n'; *buf++ = ' '; *buf++ = ' ';
 		    } else if ((i % 8) == 0)

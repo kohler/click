@@ -4,6 +4,7 @@
  * based on print.{cc,hh}
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -42,8 +43,9 @@ PrintOld::configure(Vector<String> &conf, ErrorHandler* errh)
   if (cp_va_kparse(conf, this, errh,
 		   "LABEL", cpkP, cpString, &_label,
 		   "AGE", cpkP, cpInteger, &_thresh,
-		   "LENGTH", cpkP, cpInteger, &_bytes,
-		   "NBYTES", 0, cpInteger, &_bytes,
+		   "MAXLENGTH", cpkP, cpInteger, &_bytes,
+		   "LENGTH", cpkDeprecated, cpInteger, &_bytes,
+		   "NBYTES", cpkDeprecated, cpInteger, &_bytes,
 		   cpEnd) < 0)
     return -1;
   
@@ -58,7 +60,10 @@ PrintOld::simple_action(Packet *p)
     return p;
   }
 
-  StringAccum sa(3*_bytes + _label.length() + 55);
+  int bytes = _bytes;
+  if (bytes < 0 || (int) p->length() < bytes)
+      bytes = p->length();
+  StringAccum sa(3*bytes + _label.length() + 55);
   if (sa.out_of_memory()) {
     click_chatter("no memory for PrintOld");
     return p;
@@ -113,7 +118,7 @@ PrintOld::simple_action(Packet *p)
 
   char *buf = sa.data() + sa.length();
   int pos = 0;
-  for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
+  for (int i = 0; i < bytes; i++) {
     sprintf(buf + pos, "%02x", p->data()[i] & 0xff);
     pos += 2;
     if ((i % 4) == 3) buf[pos++] = ' ';

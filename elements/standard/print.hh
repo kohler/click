@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-Print([LABEL, LENGTH, I<keywords>])
+Print([LABEL, MAXLENGTH, I<keywords>])
 
 =s debugging
 
@@ -22,9 +22,10 @@ Keyword arguments are:
 
 =over 8
 
-=item LENGTH
+=item MAXLENGTH
 
-Number of bytes to print. Default is 24.
+Maximum number of content bytes to print. If negative, print entire
+packet. Default is 24.
 
 =item CONTENTS
 
@@ -68,14 +69,14 @@ class Print : public Element { public:
   
  private:
   
-  String _label;
-  unsigned _bytes;		// How many bytes of a packet to print
-  bool _timestamp : 1;
+    String _label;
+    int _bytes;		// How many bytes of a packet to print
+    bool _timestamp : 1;
 #ifdef CLICK_LINUXMODULE
-  bool _cpu : 1;
+    bool _cpu : 1;
 #endif
-  bool _print_anno;
-  uint8_t _contents;
+    bool _print_anno;
+    uint8_t _contents;
 };
 
 CLICK_ENDDECLS

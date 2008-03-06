@@ -35,10 +35,11 @@ packet data in plaintext). Default is `NONE'.
 Like CONTENTS, but prints only the packet payload, rather than the entire
 packet. Specify at most one of CONTENTS and PAYLOAD.
 
-=item NBYTES
+=item MAXLENGTH
 
-If CONTENTS is `hex' or `ascii', then NBYTES determines the number of bytes to
-dump. Default is 1500.
+If CONTENTS or PAYLOAD printing is on, then MAXLENGTH determines the maximum
+number of bytes to print. -1 means print the entire packet or payload. Default
+is 1500.
 
 =item ID
 
@@ -111,7 +112,7 @@ class IPPrint : public Element { public:
 
   bool _swap;
   String _label;
-  unsigned _bytes;		// Number of bytes to dump
+  int _bytes;			// Number of bytes to dump
   bool _print_id : 1;		// Print IP ID?
   bool _print_timestamp : 1;
   bool _print_paint : 1;

@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-PrintOld([LABEL, AGE, LENGTH])
+PrintOld([LABEL, AGE, MAXLENGTH])
 
 =s debugging
 
@@ -15,10 +15,10 @@ conditionally prints packet contents
 
 =d
 
-Prints up to LENGTH bytes of data from each packet, in hex, preceded
+Prints up to MAXLENGTH bytes of data from each packet, in hex, preceded
 by the LABEL text, if more than AGE milliseconds have elapsed since
 the packet was timestamped.  Default AGE is 5 milliseconds.
-Default LENGTH is 24.
+Default MAXLENGTH is 24.
 
 
 =a
@@ -44,7 +44,7 @@ class PrintOld : public Element { public:
  private:
   
   String _label;
-  unsigned _bytes;		// How many bytes of a packet to print
+  int _bytes;			// How many bytes of a packet to print
   int _thresh;
 };
 
