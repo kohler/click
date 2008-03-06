@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2001 Mazu Networks, Inc.
- * Copyright (c) 2005-2007 Regents of the University of California
+ * Copyright (c) 2005-2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -475,7 +475,7 @@ Script::step(int nsteps, int step_type, int njumps)
 	case INSN_EXIT:
 	insn_exit:
 	    _insn_pos--;
-	    goto done;
+	    return njumps + 1;
 	    
 	}
 
