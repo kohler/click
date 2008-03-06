@@ -305,6 +305,16 @@ hotconfig_handler(const String &text, Element *, void *, ErrorHandler *errh)
 
 // main
 
+static void
+round_timeval(struct timeval *tv, int usec_divider)
+{
+    tv->tv_usec = (tv->tv_usec + usec_divider / 2) / usec_divider;
+    if (tv->tv_usec >= 1000000 / usec_divider) {
+	tv->tv_usec = 0;
+	++tv->tv_sec;
+    }
+}
+
 int
 main(int argc, char **argv)
 {
@@ -490,11 +500,14 @@ particular purpose.\n");
   if (report_time) {
     struct timeval diff;
     timersub(&after.ru_utime, &before.ru_utime, &diff);
-    printf("%ld.%03ldu", (long)diff.tv_sec, (long)((diff.tv_usec+500)/1000));
+    round_timeval(&diff, 1000);
+    printf("%ld.%03ldu", (long)diff.tv_sec, (long)diff.tv_usec);
     timersub(&after.ru_stime, &before.ru_stime, &diff);
-    printf(" %ld.%03lds", (long)diff.tv_sec, (long)((diff.tv_usec+500)/1000));
+    round_timeval(&diff, 1000);
+    printf(" %ld.%03lds", (long)diff.tv_sec, (long)diff.tv_usec);
     timersub(&after_time, &before_time, &diff);
-    printf(" %ld:%02ld.%02ld", (long)(diff.tv_sec/60), (long)(diff.tv_sec%60), (long)((diff.tv_usec+5000)/10000));
+    round_timeval(&diff, 10000);
+    printf(" %ld:%02ld.%02ld", (long)(diff.tv_sec/60), (long)(diff.tv_sec%60), (long)diff.tv_usec);
     printf("\n");
   }
 
