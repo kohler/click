@@ -58,11 +58,13 @@ false.
 
 =item UP_CALL
 
-Write handler.  If supplied, this handler is called when the device comes up.
+Write handler.  If supplied, this handler is called when the device or link
+comes up.
 
 =item DOWN_CALL
 
-Write handler.  If supplied, this handler is called when the device goes down.
+Write handler.  If supplied, this handler is called when the device or link
+goes down.
 
 =back
 

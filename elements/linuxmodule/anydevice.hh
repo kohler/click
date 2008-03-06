@@ -109,6 +109,7 @@ class AnyDevice : public Element { public:
     bool _quiet : 1;
     bool _allow_nonexistent : 1;
     bool _devname_exists : 1;
+    bool _carrier_ok : 1;
     AnyDevice *_next;
 
     HandlerCall *_up_call;

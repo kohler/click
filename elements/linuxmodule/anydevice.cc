@@ -38,7 +38,7 @@ CLICK_CXX_UNPROTECT
 AnyDevice::AnyDevice()
     : _dev(0), _promisc(false), _timestamp(true), _in_map(false),
       _quiet(false), _allow_nonexistent(false), _devname_exists(false),
-      _next(0), _up_call(0), _down_call(0)
+      _carrier_ok(false), _next(0), _up_call(0), _down_call(0)
 {
 }
 
@@ -113,6 +113,7 @@ AnyDevice::find_device(AnyDeviceMap *adm, ErrorHandler *errh)
     if (_dev && _timestamp)
 	net_enable_timestamp();
 #endif
+    _carrier_ok = (_dev && netif_carrier_ok(_dev));
     if (adm)
 	adm->insert(this, false);
 
@@ -122,12 +123,21 @@ AnyDevice::find_device(AnyDeviceMap *adm, ErrorHandler *errh)
 void
 AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
 {
-    if (_dev == dev)		// changing to the same device is a noop
+    if (_dev == dev) {		// no device change == carrier sense only
+	bool carrier_ok = (_dev && netif_carrier_ok(_dev));
+	if (carrier_ok != _carrier_ok) {
+	    _carrier_ok = carrier_ok;
+	    if (_down_call && !_carrier_ok)
+		_down_call->call_write(ErrorHandler::default_handler());
+	    else if (_up_call && _carrier_ok)
+		_up_call->call_write(ErrorHandler::default_handler());
+	}
 	return;
+    }
 
     // call going-down notifiers
     if (_dev) {
-	if (_down_call)
+	if (_down_call && _carrier_ok)
 	    _down_call->call_write(ErrorHandler::default_handler());
 	else if (!_quiet)
 	    click_chatter("%s: device '%s' went down", declaration().c_str(), _devname.c_str());
@@ -156,10 +166,11 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
     if (_dev && _timestamp)
 	net_enable_timestamp();
 #endif
+    _carrier_ok = (_dev && netif_carrier_ok(_dev));
 
     // call going-up notifiers
     if (_dev) {
-	if (_up_call)
+	if (_up_call && _carrier_ok)
 	    _up_call->call_write(ErrorHandler::default_handler());
 	else if (!_quiet)
 	    click_chatter("%s: device '%s' came up", declaration().c_str(), _devname.c_str());
@@ -180,6 +191,7 @@ AnyDevice::clear_device(AnyDeviceMap *adm)
     if (_dev)
 	dev_put(_dev);
     _dev = 0;
+    _carrier_ok = false;
 }
 
 

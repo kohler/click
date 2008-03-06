@@ -439,7 +439,8 @@ ToDevice::queue_packet(Packet *p)
 void
 ToDevice::change_device(net_device *dev)
 {
-    _task.strong_unschedule();
+    if (dev != _dev)
+	_task.strong_unschedule();
     
     set_device(dev, &to_device_map, true);
 
@@ -455,7 +456,7 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
     if (flags == NETDEV_GOING_DOWN)
 	flags = NETDEV_DOWN;
 #endif
-    if (flags == NETDEV_DOWN || flags == NETDEV_UP) {
+    if (flags == NETDEV_DOWN || flags == NETDEV_UP || flags == NETDEV_CHANGE) {
 	bool down = (flags == NETDEV_DOWN);
 	net_device *dev = (net_device *)v;
 	Vector<AnyDevice *> es;
@@ -464,14 +465,6 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 	for (int i = 0; i < es.size(); i++)
 	    ((ToDevice *)(es[i]))->change_device(down ? 0 : dev);
 	to_device_map.unlock(true);
-    } else if (flags == NETDEV_CHANGE) {
-	net_device *dev = (net_device *)v;
-	Vector<AnyDevice *> es;
-	to_device_map.lock(false);
-	to_device_map.lookup_all(dev, true, es);
-	for (int i = 0; i < es.size(); i++)
-	    ((ToDevice *)(es[i]))->tx_wake_queue(dev);
-	to_device_map.unlock(false);
     }
     return 0;
 }

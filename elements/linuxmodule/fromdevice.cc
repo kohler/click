@@ -225,7 +225,7 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
     if (flags == NETDEV_GOING_DOWN)
 	flags = NETDEV_DOWN;
 #endif
-    if (flags == NETDEV_DOWN || flags == NETDEV_UP) {
+    if (flags == NETDEV_DOWN || flags == NETDEV_UP || flags == NETDEV_CHANGE) {
 	bool down = (flags == NETDEV_DOWN);
 	net_device* dev = (net_device*)v;
 	Vector<AnyDevice*> es;
