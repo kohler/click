@@ -45,96 +45,79 @@ CLICK_DECLS
 bool
 glob_match(const String &str, const String &pattern)
 {
-    const char *sdata = str.data();
-    const char *pdata = pattern.data();
-    int slen = str.length();
-    int plen = pattern.length();
-    int spos = 0, ppos = 0;
-    Vector<int> glob_ppos, glob_spos1, glob_spos2;
+    const char *send = str.end();
+    const char *pend = pattern.end();
+    Vector<const char *> state, nextstate;
+    state.push_back(pattern.data());
 
-    while (1) {
-	while (ppos < plen)
-	    switch (pdata[ppos]) {
-
-	      case '?':
-		if (spos >= slen)
-		    goto done;
-		spos++;
-		ppos++;
-		break;
-
-	      case '*':
-		glob_ppos.push_back(ppos + 1);
-		glob_spos1.push_back(spos);
-		glob_spos2.push_back(slen);
-		spos = slen;
-		ppos++;
-		break;
-
-	      case '[': {
-		  if (spos >= slen)
-		      goto done;
-
-		  // find end of character class
-		  int p = ppos + 1;
-		  bool negated = false;
-		  if (p < plen && pdata[p] == '^') {
-		      negated = true;
-		      p++;
-		  }
-		  int first = p;
-		  if (p < plen && pdata[p] == ']')
-		      p++;
-		  while (p < plen && pdata[p] != ']')
-		      p++;
-		  if (p >= plen) // not a character class at all
-		      goto ordinary;
-	 
-		  // parse character class
-		  bool in = false;
-		  for (int i = first; i < p && !in; i++) {
-		      int c1 = pdata[i];
-		      int c2 = c1;
-		      if (i < p - 2 && pdata[i+1] == '-') {
-			  c2 = pdata[i+2];
-			  i += 2;
-		      }
-		      if (sdata[spos] >= c1 && sdata[spos] <= c2)
-			  in = true;
-		  }
-
-		  if ((negated && in) || (!negated && !in))
-		      goto done;
-		  ppos = p + 1;
-		  spos++;
-		  break;
-	      }
-
-	      default:
-	      ordinary:
-		if (spos >= slen || sdata[spos] != pdata[ppos])
-		    goto done;
-		spos++;
-		ppos++;
-		break;
-	
-	    }
-
-      done:
-	if (spos == slen && ppos == plen)
-	    return true;
-	while (glob_ppos.size() && glob_spos1.back() == glob_spos2.back()) {
-	    glob_ppos.pop_back();
-	    glob_spos1.pop_back();
-	    glob_spos2.pop_back();
-	}
-	if (glob_ppos.size()) {
-	    glob_spos2.back()--;
-	    spos = glob_spos2.back();
-	    ppos = glob_ppos.back();
-	} else
+    // quick common-case check for suffix matches
+    while (pattern.begin() < pend && str.begin() < send
+	   && pend[-1] != '*' && pend[-1] != '?' && pend[-1] != ']'
+	   && (pattern.begin() + 1 < pend || pend[-2] != '\\'))
+	if (pend[-1] == send[-1])
+	    --pend, --send;
+	else
 	    return false;
+
+    for (const char *s = str.data(); s != send && state.size(); ++s) {
+	nextstate.clear();
+	for (const char **pp = state.begin(); pp != state.end(); ++pp)
+	    if (*pp != pend) {
+	      reswitch:
+		switch (**pp) {
+		  case '?':
+		    nextstate.push_back(*pp + 1);
+		    break;
+		  case '*':
+		    if (*pp + 1 == pend)
+			return true;
+		    nextstate.push_back(*pp);
+		    ++*pp;
+		    goto reswitch;
+		  case '\\':
+		    if (*pp + 1 != pend)
+			++*pp;
+		    goto normal_char;
+		  case '[': {
+		      const char *ec = *pp + 1;
+		      bool negated;
+		      if (ec != pend && *ec == '^') {
+			  negated = true;
+			  ++ec;
+		      } else
+			  negated = false;
+		      if (ec == pend)
+			  goto normal_char;
+
+		      bool found = false;
+		      do {
+			  if (*++ec == *s)
+			      found = true;
+		      } while (ec != pend && *ec != ']');
+		      if (ec == pend)
+			  goto normal_char;
+
+		      if (found == !negated)
+			  nextstate.push_back(ec + 1);
+		      break;
+		  }
+		  normal_char:
+		  default:
+		    if (**pp == *s)
+			nextstate.push_back(*pp + 1);
+		    break;
+		}
+	    }
+	state.swap(nextstate);
     }
+
+    for (const char **pp = state.begin(); pp != state.end(); ++pp) {
+	while (*pp != pend && **pp == '*')
+	    ++*pp;
+	if (*pp == pend)
+	    return true;
+    }
+    return false;
 }
 
 String

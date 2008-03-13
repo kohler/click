@@ -20,6 +20,9 @@
 #include "functiontest.hh"
 #include <click/confparse.hh>
 #include <click/integers.hh>
+#if CLICK_USERLEVEL
+# include <click/userutils.hh>
+#endif
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -61,6 +64,20 @@ FunctionTest::initialize(ErrorHandler *errh)
     CHECK(int_sqrt((uint64_t) 0xFFFFFFFFU) == 0xFFFF);
     CHECK(int_sqrt((uint64_t) 1 << 32) == 0x10000);
     CHECK(int_sqrt(~((uint64_t) 0)) == 0xFFFFFFFFU);
+#endif
+
+#if CLICK_USERLEVEL
+    CHECK(glob_match("", "*"));
+    CHECK(glob_match("Q", "*"));
+    CHECK(glob_match("QX", "*"));
+    CHECK(glob_match("Q", "Q*"));
+    CHECK(glob_match("QX", "Q*"));
+    CHECK(!glob_match("Q.x", "Q*.o"));
+    CHECK(glob_match("QXajdsifds.o", "Q*.o"));
+    CHECK(glob_match("x.o", "?.o"));
+    CHECK(!glob_match("x.c", "?.o"));
+    CHECK(!glob_match("xx.o", "?.o"));
+    CHECK(glob_match("x.o.d", "x*.?*.*"));
 #endif
     
     errh->message("All tests pass!");
