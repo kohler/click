@@ -1,9 +1,6 @@
 // -*- c-basic-offset: 2; related-file-name: "../../lib/string.cc" -*-
 #ifndef CLICK_STRING_HH
 #define CLICK_STRING_HH
-#ifdef HAVE_PERMSTRING
-# include "permstr.hh"
-#endif
 #include <click/algorithm.hh>
 #include <click/atomic.hh>
 CLICK_DECLS

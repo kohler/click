@@ -146,7 +146,7 @@ CLICK_DECLS
  thousands of times a second, should use a Task object rather than a Timer.
  However, Tasks essentially busy-wait, taking up all available CPU.  There is
  a tradeoff, and some elements combine a Task and a Timer to get the benefits
- of both; for example, RatedSource uses a Task at high rates and a Timer at
+ of both; for example, LinkUnqueue uses a Task at high rates and a Timer at
  low rates.  The Timer::adjustment() value is useful in this context.
 
  Particularly at user level, there can be a significant delay between a
@@ -158,8 +158,7 @@ CLICK_DECLS
  
  Since Click is cooperatively scheduled, any timer callback should run for
  just a short period of time.  Very long callbacks can inappropriately delay
- other timers and periodic events.  We may address this problem in a future
- release, but for now, keep timers short.
+ other timers and periodic events.
 
  The Click core stores timers in a heap, so most timer operations (including
  scheduling and unscheduling) take @e O(log @e n) time and Click can handle

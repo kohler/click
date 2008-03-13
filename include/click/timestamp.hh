@@ -38,6 +38,7 @@ class Timestamp { public:
 #endif
 
     inline Timestamp();
+    inline Timestamp(seconds_type sec);
     inline Timestamp(seconds_type sec, uint32_t subsec);
     inline Timestamp(const struct timeval &tv);
 #if HAVE_STRUCT_TIMESPEC
@@ -204,6 +205,14 @@ Timestamp::subsec_to_nsec(uint32_t subsec)
 inline
 Timestamp::Timestamp()
     : _sec(0), _subsec(0)
+{
+}
+
+/** @brief Create a Timestamp measuring @a sec seconds.
+    @param sec number of seconds */
+inline
+Timestamp::Timestamp(seconds_type sec)
+    : _sec(sec), _subsec(0)
 {
 }
 
