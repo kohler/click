@@ -4,6 +4,7 @@
 #include <vector>
 #include "rectangle.hh"
 #include "rectsearch.hh"
+#include "ref.hh"
 #include <clicktool/elementt.hh>
 class Bitvector;
 class ProcessingT;
@@ -11,9 +12,27 @@ namespace clicky {
 class wdiagram;
 class wmain;
 class handler_value;
-class dstyle;
 class delt;
 class dconn;
+class dcss_set;
+class delt_style;
+class dport_style;
+class dqueue_style;
+
+struct dcontext {
+    wdiagram *d;
+    cairo_t *cr;
+    PangoLayout *pl;
+    int scale_step;
+
+    operator cairo_t *() const {
+	return cr;
+    }
+    operator PangoLayout *() const {
+	return pl;
+    }
+};
+
 
 enum { dw_elt = 0, dw_conn = 1 };
 
@@ -40,7 +59,7 @@ class dwidget : public rectangle { public:
 	return a->_z_index > b->_z_index;
     }
 
-    inline void draw(wdiagram *d, cairo_t *cr, PangoLayout *pl);
+    inline void draw(dcontext &dx);
     
   private:
 
@@ -57,8 +76,8 @@ class dconn : public dwidget { public:
 	  _to_elt(te), _to_port(tp) {
     }
 
-    void layout(const dstyle &style);
-    void draw(wdiagram *d, cairo_t *cr);
+    void layout(dcss_set *dcs);
+    void draw(dcontext &dx);
 
   private:
 
@@ -70,8 +89,7 @@ class dconn : public dwidget { public:
 };
 
 
-enum { esflag_queue = 1,
-       esflag_fullness = 2 };
+enum { esflag_fullness = 1 };
 
 enum { deg_none = -1,
        deg_main = 0,
@@ -91,25 +109,52 @@ class delt : public dwidget { public:
 
     delt(delt *parent, int z_index)
 	: dwidget(dw_elt, z_index), _e(0), _parent(parent), _style(0),
-	  _visible(true), _layout(false), _expanded(true),
-	  _show_class(true), _vertical(true), _highlight(0),
+	  _visible(true), _layout(false), _expanded(true), _show_class(true),
+	  _aligned(true), _orientation(0), _highlight(0),
 	  _depth(parent ? parent->_depth + 1 : 0),
 	  _contents_width(0), _contents_height(0) {
+	_portoff[0] = _portoff[1] = 0;
     }
     ~delt();
 
+    delt *parent() const {
+	return _parent;
+    }
+    
+    int orientation() const {
+	return _orientation;
+    }
     bool vertical() const {
-	return _vertical;
+	return side_vertical(_orientation);
     }
     bool visible() const {
 	return _visible;
     }
-    void set_vertical(bool vertical) {
-	_vertical = vertical;
+    void set_orientation(int orientation) {
+	assert(orientation >= side_top && orientation <= side_left);
+	_orientation = orientation;
     }
 
+    bool root() const {
+	return !_e;
+    }
+    const String &name() const {
+	return _e->name();
+    }
+    String type_name() const {
+	return _e->type_name();
+    }
     const String &flat_name() const {
 	return _flat_name;
+    }
+    int ninputs() const {
+	return _e->ninputs();
+    }
+    int noutputs() const {
+	return _e->noutputs();
+    }
+    bool primitive() const {
+	return _elt.size() == 0;
     }
 
     double contents_width() const {
@@ -119,6 +164,14 @@ class delt : public dwidget { public:
 	return _contents_height;
     }
 
+    double min_width() const;
+    double min_height() const;
+
+    double shadow(int side) const;
+
+    int highlights() const {
+	return _highlight;
+    }
     bool highlighted(int htype) const {
 	return (_highlight & (1 << htype)) != 0;
     }
@@ -141,13 +194,12 @@ class delt : public dwidget { public:
     
     int find_gadget(wdiagram *d, double window_x, double window_y) const;
 
-    enum { lay_border = 4 };	// border around layout
     void layout_main(wdiagram *d, RouterT *router, PangoLayout *pl);
     void layout_recompute_bounds();
 
     void remove(rect_search<dwidget> &rects, rectangle &bounds);
-    void insert(rect_search<dwidget> &rects, const dstyle &style,
-		rectangle &bounds);
+    void insert(rect_search<dwidget> &rects,
+		dcss_set *dcs, rectangle &bounds);
 
     // dragging
     enum { drag_threshold = 8 };// amount after which recalculate layout
@@ -157,11 +209,11 @@ class delt : public dwidget { public:
     bool drag_canvas_changed(const rectangle &canvas) const;
 
     // drawing
-    inline point input_position(const dstyle &style, int port) const;
-    inline point output_position(const dstyle &style, int port) const;
-    void draw(wdiagram *cd, cairo_t *cr, PangoLayout *pl);
+    point input_position(int port, dport_style *dps) const;
+    point output_position(int port, dport_style *dps) const;
+    void draw(dcontext &dx);
     
-    void prepare_router(RouterT *router, ProcessingT *processing,
+    void prepare_router(wdiagram *d, RouterT *router, ProcessingT *processing,
 			HashMap<String, delt *> &collector,
 			Vector<ElementT *> &path, int &z_index);
     
@@ -171,6 +223,10 @@ class delt : public dwidget { public:
     String _processing_code;
     std::vector<delt *> _elt;
     std::vector<dconn *> _conn;
+    ref_ptr<delt_style> _des;
+    ref_ptr<dqueue_style> _dqs;
+    double *_portoff[2];
+    double _ports_length[2];
     delt *_parent;
     String _flat_name;
     String _flat_config;
@@ -180,7 +236,8 @@ class delt : public dwidget { public:
     bool _layout;
     bool _expanded;
     bool _show_class;
-    bool _vertical;
+    bool _aligned;
+    int _orientation;
     uint8_t _highlight;
     uint16_t _depth;
     int _row;
@@ -204,37 +261,34 @@ class delt : public dwidget { public:
     void gadget_fullness(wdiagram *d);
     bool expand_handlers(wmain *w);
 
-    void prepare(ElementT *e, ProcessingT *processing,
+    void prepare(wdiagram *d, ElementT *e, ProcessingT *processing,
 		 HashMap<String, delt *> &collector, Vector<ElementT *> &path,
 		 int &z_index);
 
     void layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc);
     void position_contents_scc(RouterT *);
-    void position_contents_dot(RouterT *, const dstyle &, ErrorHandler *);
-    void position_contents_first_heuristic(RouterT *, const dstyle &);
+    void position_contents_dot(RouterT *, dcss_set *dcs, ErrorHandler *);
+    void position_contents_first_heuristic(RouterT *r);
 
     void layout_contents(wdiagram *d, RouterT *router, PangoLayout *pl);
+    void layout_ports(dcss_set *dcs);
     void layout(wdiagram *d, PangoLayout *pl);
     void layout_complete(wdiagram *d, double dx, double dy);
-    void layout_compound_ports(const dstyle &es);
+    void layout_compound_ports(dcss_set *dcs);
     void union_bounds(rectangle &r, bool self) const;
 
-    static void port_offsets(const dstyle &style, int nports,
-			     double side_length,
-			     double &offset0, double &separation);
-    inline double port_position(const dstyle &style, int port, int nports,
+    inline double port_position(bool isoutput, int port,
 				double side_length) const;
-    void draw_input_port(cairo_t *cr, const dstyle &style, double x, double y,
-			 int processing);
-    void draw_output_port(cairo_t *cr, const dstyle &style, double x, double y,
-			  int processing);
-    void clip_to_border(cairo_t *cr, double shift) const;
+    double hard_port_position(bool isoutput, int port,
+			      double side_length) const;
+    void draw_port(dcontext &dx, dport_style *dps, point p, double shift,
+		   bool isoutput);
+    void clip_to_border(dcontext &dx, double shift) const;
 
-    void draw_background(wdiagram *cd, cairo_t *cr, PangoLayout *pl,
-			 double shift);
-    void draw_text(wdiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
-    void draw_ports(wdiagram *cd, cairo_t *cr, double shift);
-    void draw_outline(wdiagram *cd, cairo_t *cr, PangoLayout *pl, double shift);
+    void draw_background(dcontext &dx, double shift);
+    void draw_text(dcontext &dx, double shift);
+    void draw_ports(dcontext &dx, double shift);
+    void draw_outline(dcontext &dx, double shift);
         
 };
 
@@ -255,44 +309,25 @@ inline const dconn *dwidget::cast_conn() const {
     return (_type == dw_conn ? static_cast<const dconn *>(this) : 0);
 }
 
-inline void dwidget::draw(wdiagram *d, cairo_t *cr, PangoLayout *pl) {
+inline void dwidget::draw(dcontext &dx) {
     assert(_type == dw_elt || _type == dw_conn);
     if (_type == dw_elt)
-	static_cast<delt *>(this)->draw(d, cr, pl);
+	static_cast<delt *>(this)->draw(dx);
     else
-	static_cast<dconn *>(this)->draw(d, cr);
+	static_cast<dconn *>(this)->draw(dx);
 }
-    
-inline double delt::port_position(const dstyle &style, int port, int nports,
+
+
+inline double delt::port_position(bool isoutput, int port,
 				  double side_length) const
 {
-    if (port >= nports)
+    int nports = _e->nports(isoutput);
+    if (port < 0 || port >= nports)
 	return side_length;
-    else {
-	double offset0, separation;
-	port_offsets(style, nports, side_length, offset0, separation);
-	return offset0 + separation * port;
-    }
-}
-
-inline point delt::input_position(const dstyle &style, int port) const
-{
-    if (_vertical)
-	return point(x1() + port_position(style, port, _e->ninputs(), width()),
-		     y1() + 0.5);
+    else if (nports <= 1)
+	return side_length / 2;
     else
-	return point(x1() + 0.5,
-		     y1() + port_position(style, port, _e->ninputs(), height()));
-}
-
-inline point delt::output_position(const dstyle &style, int port) const
-{
-    if (_vertical)
-	return point(x1() + port_position(style, port, _e->noutputs(), width()),
-		     y2() + 0.5);
-    else
-	return point(x2() + 0.5,
-		     y1() + port_position(style, port, _e->noutputs(), height()));
+	return hard_port_position(isoutput, port, side_length);
 }
 
 }

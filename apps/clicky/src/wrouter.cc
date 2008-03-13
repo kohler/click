@@ -151,7 +151,7 @@ static void destroy(gpointer data) {
 }
 
 wmain::wmain()
-    : _r(0), _emap(0), _processing(0), _throbber_count(0),
+    : _r(0), _emap(0), _selected_driver(-1), _processing(0), _throbber_count(0),
       _window(create_mainw()),
       _config_clean_errors(true), _config_clean_elements(true),
       _error_hover_tag(0), _error_highlight_tag(0),
@@ -244,7 +244,7 @@ wmain::wmain()
     _diagram = new wdiagram(this);
     dialogs_connect();
     config_changed_initialize(true, false);
-    set_diagram_mode(false);
+    set_diagram_mode(true);
     
     gtk_quit_add_destroy(1, GTK_OBJECT(_window));
 }

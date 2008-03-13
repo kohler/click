@@ -8,6 +8,10 @@ style "smallbutton" {
   GtkWidget::focus-line-width = 0
   GtkWidget::focus-padding = 0
 }
+style "whitebg" {
+  bg[NORMAL] = "#ff0000"
+}
 
 widget "*.eviewbox.*.GtkExpander" style "smallexpander"
 widget "*.eview_titlebox*GtkButton" style "smallbutton"
+widget "*.diagram*" style "whitebg"

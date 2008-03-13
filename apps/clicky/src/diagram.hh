@@ -1,9 +1,9 @@
 #ifndef CLICKY_DIAGRAM_HH
 #define CLICKY_DIAGRAM_HH 1
+#include <gtk/gtk.h>
 #include <vector>
 #include "rectangle.hh"
 #include "rectsearch.hh"
-#include "dstyle.hh"
 #include <clicktool/elementt.hh>
 class Bitvector;
 namespace clicky {
@@ -11,6 +11,7 @@ class wmain;
 class handler_value;
 class dwidget;
 class delt;
+class dcss_set;
 
 class wdiagram { public:
 
@@ -30,8 +31,14 @@ class wdiagram { public:
 	return _scale;
     }
 
-    const dstyle &style() const {
-	return _style;
+    dcss_set *css_set() const {
+	return _css_set;
+    }
+    PangoAttrList *name_attrs() const {
+	return _name_attrs;
+    }
+    PangoAttrList *class_attrs() const {
+	return _class_attrs;
     }
 
     rect_search<dwidget> &rects() {
@@ -39,6 +46,10 @@ class wdiagram { public:
     }
     
     void layout();
+    
+    void notify_shadow(double shadow) {
+	_elt_expand = std::max(_elt_expand, shadow + 2);
+    }
     
     inline void redraw();
     inline void redraw(rectangle r);
@@ -63,14 +74,14 @@ class wdiagram { public:
     
   private:
 
-    enum { elt_expand = 4,	// max dimension of drawing outside width-height
-	   elt_shadow = 3 };	// shadow width on bottom and right
-
     wmain *_rw;
     GtkWidget *_widget;
     GtkAdjustment *_horiz_adjust;
     GtkAdjustment *_vert_adjust;
-    dstyle _style;
+    dcss_set *_css_set;
+    PangoAttrList *_name_attrs;
+    PangoAttrList *_class_attrs;
+    double _elt_expand;
     
     int _scale_step;
     double _scale;
@@ -121,7 +132,7 @@ inline void wdiagram::redraw()
 
 inline void wdiagram::redraw(rectangle r)
 {
-    r.expand(elt_expand);
+    r.expand(_elt_expand);
     r.scale(_scale);
     r.integer_align();
     gtk_widget_queue_draw_area(_widget, (gint) (r.x() - _horiz_adjust->value - _origin_x), (gint) (r.y() - _vert_adjust->value - _origin_y), (gint) r.width(), (gint) r.height());
@@ -129,12 +140,12 @@ inline void wdiagram::redraw(rectangle r)
 
 inline point wdiagram::window_to_canvas(double x, double y) const
 {
-    return point((x + _origin_x) / _scale, (y + _origin_y) / _scale);
+    return point((x + _origin_x + 0.5) / _scale, (y + _origin_y + 0.5) / _scale);
 }
 
 inline point wdiagram::canvas_to_window(double x, double y) const
 {
-    return point(x * _scale - _origin_x, y * _scale - _origin_y);
+    return point(x * _scale - _origin_x - 0.5, y * _scale - _origin_y - 0.5);
 }
 
 inline rectangle wdiagram::canvas_to_window(const rectangle &r) const

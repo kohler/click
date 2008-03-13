@@ -13,6 +13,7 @@
 #include "dwidget.hh"
 #include "wrouter.hh"
 #include "whandler.hh"
+#include "dstyle.hh"
 extern "C" {
 #include "support.h"
 }
@@ -38,40 +39,15 @@ wdiagram::wdiagram(wmain *rw)
     GtkScrolledWindow *sw = GTK_SCROLLED_WINDOW(_widget->parent);
     _horiz_adjust = gtk_scrolled_window_get_hadjustment(sw);
     _vert_adjust = gtk_scrolled_window_get_vadjustment(sw);
-    
-    double portscale = 1.6;
-    _style.port_offset = 4 * portscale;
-    _style.min_port_offset = 3 * portscale;
-    _style.port_separation = 3 * portscale;
-    _style.min_port_distance = 7 * portscale;
-    _style.port_layout_length = 6 * portscale;
-    _style.port_layout_width = 4 * portscale;
-    _style.port_length[0] = 7 * portscale;
-    _style.port_width[0] = 4.5 * portscale;
-    _style.port_length[1] = 6 * portscale;
-    _style.port_width[1] = 3.8 * portscale;
-    _style.agnostic_separation = 1.25 * portscale;
-    _style.port_agnostic_separation[0] = sqrt(2.) * _style.agnostic_separation;
-    _style.port_agnostic_separation[1] = _style.agnostic_separation;
-    _style.inside_dx = 7.5 * portscale;
-    _style.inside_dy = 4.5 * portscale;
-    _style.inside_contents_dy = 3 * portscale;
-    _style.min_preferred_height = 19 * portscale;
-    _style.height_increment = 4;
-    _style.element_dx = 8 * portscale;
-    _style.element_dy = 8 * portscale;
-    _style.min_dimen = MAX(_style.port_width[0], _style.port_width[1]) * 2.5;
-    _style.min_dimen = MAX(_style.min_dimen, 2 *_style.min_port_offset + MAX(_style.port_length[0], _style.port_length[1]));
-    _style.min_queue_width = 11 * portscale;
-    _style.min_queue_height = 31 * portscale;
-    _style.queue_line_sep = 8 * portscale;
 
-    _style.name_attrs = 0;
-    _style.class_attrs = pango_attr_list_new();
+    _css_set = new dcss_set(dcss_set::default_set());
+
+    _name_attrs = 0;
+    _class_attrs = pango_attr_list_new();
     PangoAttribute *a = pango_attr_scale_new(PANGO_SCALE_SMALL);
     a->start_index = 0;
     a->end_index = G_MAXUINT;
-    pango_attr_list_insert(_style.class_attrs, a);
+    pango_attr_list_insert(_class_attrs, a);
     
     g_signal_connect(G_OBJECT(_widget), "event",
 		     G_CALLBACK(on_diagram_event), this);
@@ -92,8 +68,9 @@ wdiagram::wdiagram(wmain *rw)
 
 wdiagram::~wdiagram()
 {
-    assert(!_style.name_attrs);
-    pango_attr_list_unref(_style.class_attrs);
+    assert(!_name_attrs);
+    pango_attr_list_unref(_class_attrs);
+    delete _css_set;
     delete _relt;
     _relt = 0;
     for (int i = c_main; i < ncursors; i++)
@@ -208,7 +185,7 @@ void wdiagram::router_create(bool incremental, bool always)
 	if (_rw->_r) {
 	    Vector<ElementT *> path;
 	    int z_index = 0;
-	    _relt->prepare_router(_rw->_r, _rw->_processing, _elt_map,
+	    _relt->prepare_router(this, _rw->_r, _rw->_processing, _elt_map,
 				  path, z_index);
 	}
 	if (!_cursor[0])
@@ -231,6 +208,7 @@ void wdiagram::layout()
     if (!_layout && _rw->_r) {
 	PangoLayout *pl = gtk_widget_create_pango_layout(_widget, NULL);
 	ElementMap::push_default(_rw->element_map());
+	_elt_expand = 1;
 	_relt->layout_main(this, _rw->_r, pl);
 	g_object_unref(G_OBJECT(pl));
 	scroll_recenter(point(0, 0));
@@ -250,8 +228,9 @@ void wdiagram::on_expose(const GdkRectangle *area)
 
     // background
     cairo_rectangle(cr, area->x, area->y, area->width, area->height);
-    const GdkColor &bgcolor = _widget->style->bg[GTK_STATE_NORMAL];
-    cairo_set_source_rgb(cr, bgcolor.red / 65535., bgcolor.green / 65535., bgcolor.blue / 65535.);
+    //const GdkColor &bgcolor = _widget->style->bg[GTK_STATE_NORMAL];
+    //cairo_set_source_rgb(cr, bgcolor.red / 65535., bgcolor.green / 65535., bgcolor.blue / 65535.);
+    cairo_set_source_rgb(cr, 1, 1, 1);
     cairo_fill(cr);
 
     // highlight rectangle
@@ -279,15 +258,22 @@ void wdiagram::on_expose(const GdkRectangle *area)
     rectangle r(area->x + _origin_x, area->y + _origin_y,
 		area->width, area->height);
     r.scale(1 / _scale);
-    r.expand(elt_expand);
+    r.expand(_elt_expand);
     std::vector<dwidget *> elts;
     find_rect_elts(r, elts);
 
     cairo_translate(cr, -_origin_x, -_origin_y);
     cairo_scale(cr, _scale, _scale);
+
+    dcontext dx;
+    dx.d = this;
+    dx.cr = cr;
+    dx.pl = pl;
+    dx.scale_step = _scale_step;
+    
     for (std::vector<dwidget *>::iterator eltsi = elts.begin();
 	 eltsi != elts.end(); ++eltsi)
-	(*eltsi)->draw(this, cr, pl);
+	(*eltsi)->draw(dx);
     
     g_object_unref(G_OBJECT(pl));
     cairo_destroy(cr);
@@ -413,8 +399,8 @@ void wdiagram::highlight(delt *e, uint8_t htype, rectangle *expose_rect, bool sc
 
     if (scroll_to && _layout) {
 	GtkAdjustment *ha = _horiz_adjust, *va = _vert_adjust;
-	point e_tl = canvas_to_window(e->x(), e->y());
-	point e_br = canvas_to_window(e->x2() + elt_shadow, e->y2() + elt_shadow);
+	point e_tl = canvas_to_window(e->x() - e->shadow(3), e->y() - e->shadow(0));
+	point e_br = canvas_to_window(e->x2() + e->shadow(1), e->y2() + e->shadow(2));
 	
 	if (e_br.x() >= ha->value + ha->page_size
 	    && e_tl.x() >= floor(e_br.x() - ha->page_size))
@@ -607,8 +593,8 @@ gboolean wdiagram::on_event(GdkEvent *event)
 	if (e) {
 	    rectangle bounds = *e;
 	    e->remove(_rects, bounds);
-	    e->set_vertical(!e->vertical());
-	    e->insert(_rects, _style, bounds);
+	    e->set_orientation(3 - e->orientation());
+	    e->insert(_rects, _css_set, bounds);
 	    redraw(bounds);
 	}
     }

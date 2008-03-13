@@ -49,6 +49,7 @@ struct ElementT {
     ElementT *tunnel_input() const	{ return _tunnel_input; }
     ElementT *tunnel_output() const	{ return _tunnel_output; }
 
+    int nports(bool isoutput) const	{ return isoutput ? _noutputs : _ninputs; }
     int ninputs() const			{ return _ninputs; }
     int noutputs() const		{ return _noutputs; }
     

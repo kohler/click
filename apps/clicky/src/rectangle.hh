@@ -37,11 +37,18 @@ struct point {
 };
 
 struct rectangle {
-    double _x;
+    double _x;			// order required
     double _y;
     double _width;
     double _height;
 
+    enum {
+	side_top = 0,
+	side_right = 1,
+	side_bottom = 2,
+	side_left = 3
+    };
+    
     rectangle() {
     }
     
@@ -81,6 +88,33 @@ struct rectangle {
 	return _y + _height;
     }
 
+    static bool side_horizontal(int s) {
+	assert(s >= side_top && s <= side_left);
+	return (s & side_right);
+    }
+
+    static bool side_vertical(int s) {
+	assert(s >= side_top && s <= side_left);
+	return !(s & side_right);
+    }
+    
+    static bool side_greater(int s) {
+	assert(s >= side_top && s <= side_left);
+	return (s + (s >> 1)) & 1;
+    }
+    
+    double side(int s) const {
+	double p = (&_x)[side_vertical(s)];
+	if (side_greater(s))
+	    return p + (&_width)[side_vertical(s)];
+	else
+	    return p;
+    }
+
+    double side_length(int s) const {
+	return (&_width)[side_vertical(s)];
+    }
+
     double center_x() const {
 	return _x + _width / 2;
     }
@@ -93,10 +127,10 @@ struct rectangle {
 	return point(_x, _y);
     }
     
-    typedef void (rectangle::*unspecified_bool_type)(double);
+    typedef void (rectangle::*unspecified_bool_type)(const point &);
 
     operator unspecified_bool_type() const {
-	return (_width > 0 && _height > 0 ? &rectangle::expand : 0);
+	return (_width > 0 && _height > 0 ? &rectangle::set_origin : 0);
     }
 
     void assign(double x, double y, double width, double height) {
@@ -142,6 +176,13 @@ struct rectangle {
 	_y -= d;
 	_width += 2 * d;
 	_height += 2 * d;
+    }
+
+    void expand(double dtop, double dright, double dbottom, double dleft) {
+	_x -= dleft;
+	_y -= dtop;
+	_width += dleft + dright;
+	_height += dtop + dbottom;
     }
 
     void scale(double s) {

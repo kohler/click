@@ -12,16 +12,18 @@ clicky_SOURCES = \
 	interface.c interface.h \
 	support.c support.h \
 	gathererror.cc gathererror.hh \
+	permstr.cc permstr.hh \
 	wrouter.cc wrouter.hh \
 	dialogs.cc \
 	dwidget.cc dwidget.hh \
-	dstyle.hh \
+	dstyle.cc dstyle.hh \
 	hvalues.cc hvalues.hh \
 	whandler.cc whandler.hh \
 	wdriver.cc wdriver.hh \
 	diagram.cc diagram.hh \
 	rectangle.hh \
 	rectsearch.hh \
+	ref.hh \
 	clicky.cc \
 	callbacks.h \
 	xcallbacks.c
