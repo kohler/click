@@ -19,6 +19,17 @@ extern "C" {
 }
 namespace clicky {
 
+void dcontext::set_font_description(const String &font)
+{
+    if (pl_font != font) {
+	PangoFontDescription *font_desc = pango_font_description_from_string(font.c_str());
+	pango_layout_set_font_description(pl, font_desc);
+	pango_font_description_free(font_desc);
+	pl_font = font;
+    }
+}
+
+
 delt::~delt()
 {
     while (_elt.size()) {
@@ -554,17 +565,6 @@ void delt::layout_ports(dcss_set *dcs)
     }
 }
 
-void delt::layout_text(dcontext &dcx)
-{
-    pango_layout_set_width(dcx, -1);
-    pango_layout_set_markup(dcx, _markup.data(), _markup.length());
-    PangoRectangle rect;
-    pango_layout_get_pixel_extents(dcx, NULL, &rect);
-    _markup_width = rect.width;
-    _markup_height = rect.height;
-    _pango_generation = dcx.pango_generation;
-}
-
 static void append_markup_quote(StringAccum &sa, const String &str,
 				int precision)
 {
@@ -587,20 +587,8 @@ static void append_markup_quote(StringAccum &sa, const String &str,
 	sa.append("...", 3);
 }
 
-void delt::layout(dcontext &dcx)
+void delt::restyle(dcontext &dcx)
 {
-    if (_layout)
-	return;
-    _layout = true;
-    _visible = _des->display != dedisp_none && !_e->tunnel();
-    if (!_visible) {
-	_width = _height = 0;
-	return;
-    }
-
-    _orientation = _des->orientation;
-
-    // get extents of name and data
     StringAccum sa;
     const char *last = _des->text.begin();
     for (const char *s = _des->text.begin(); s != _des->text.end(); ++s)
@@ -650,7 +638,32 @@ void delt::layout(dcontext &dcx)
     sa.append(last, _des->text.end());
     _markup = sa.take_string();
     
-    layout_text(dcx);
+    pango_layout_set_width(dcx, -1);
+    if (_des->font != dcx.pl_font)
+	dcx.set_font_description(_des->font);
+    pango_layout_set_markup(dcx, _markup.data(), _markup.length());
+    PangoRectangle rect;
+    pango_layout_get_pixel_extents(dcx, NULL, &rect);
+    _markup_width = rect.width;
+    _markup_height = rect.height;
+
+    _generation = dcx.generation;
+}
+
+void delt::layout(dcontext &dcx)
+{
+    if (_layout)
+	return;
+    _layout = true;
+    _visible = _des->display != dedisp_none && !_e->tunnel();
+    _orientation = _des->orientation;
+    if (!_visible) {
+	_width = _height = 0;
+	return;
+    }
+
+    // get text extents
+    restyle(dcx);
 
     // get contents width and height
     if (_expanded && _elt.size() && _des->display == dedisp_open)
@@ -1114,9 +1127,9 @@ void delt::draw_text(dcontext &dcx, double shift)
     cairo_set_source_rgba(dcx, color[0], color[1], color[2], color[3]);
     pango_layout_set_wrap(dcx, PANGO_WRAP_CHAR);
     pango_layout_set_alignment(dcx, PANGO_ALIGN_CENTER);
+    if (dcx.pl_font != _des->font)
+	dcx.set_font_description(_des->font);
 
-    if (dcx.pango_generation != _pango_generation)
-	layout_text(dcx);
     double space[2];
     space[0] = space[1] = 2 * _des->border_width;
     space[_orientation & 1] += 2 * _des->orientation_padding;
@@ -1222,7 +1235,15 @@ void delt::draw_outline(dcontext &dcx, double shift)
 void delt::draw(dcontext &dcx)
 {
     if (_visible) {
-	_des = dcx.d->css_set()->elt_style(this);
+	if (_highlight != _drawn_highlight || dcx.generation != _generation) {
+	    ref_ptr<delt_style> old_des = _des;
+	    _des = dcx.d->css_set()->elt_style(this);
+	    if (_des->style == destyle_queue)
+		_dqs = dcx.d->css_set()->queue_style(this);
+	    if (dcx.generation != _generation || old_des->text != _des->text)
+		restyle(dcx);
+	    _drawn_highlight = _highlight;
+	}
 	double shift = (_highlight & (1 << dhlt_pressed) ? 1 : 0);
 	draw_background(dcx, shift);
 	draw_text(dcx, shift);

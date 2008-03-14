@@ -22,7 +22,8 @@ class dqueue_style;
 struct dcontext {
     wdiagram *d;
     PangoLayout *pl;
-    unsigned pango_generation;
+    String pl_font;
+    unsigned generation;
     
     cairo_t *cr;
     int scale_step;
@@ -33,6 +34,8 @@ struct dcontext {
     operator PangoLayout *() const {
 	return pl;
     }
+
+    void set_font_description(const String &font);
 };
 
 
@@ -112,7 +115,7 @@ class delt : public dwidget { public:
     delt(delt *parent, int z_index)
 	: dwidget(dw_elt, z_index), _e(0), _parent(parent), _style(0),
 	  _visible(false), _layout(false), _expanded(true),
-	  _aligned(true), _orientation(0), _highlight(0),
+	  _aligned(true), _orientation(0), _highlight(0), _drawn_highlight(0),
 	  _depth(parent ? parent->_depth + 1 : 0),
 	  _contents_width(0), _contents_height(0) {
 	_portoff[0] = _portoff[1] = 0;
@@ -228,6 +231,7 @@ class delt : public dwidget { public:
     std::vector<dconn *> _conn;
     ref_ptr<delt_style> _des;
     ref_ptr<dqueue_style> _dqs;
+    unsigned _generation;
     double *_portoff[2];
     double _ports_length[2];
     delt *_parent;
@@ -242,6 +246,7 @@ class delt : public dwidget { public:
     bool _aligned;
     int _orientation;
     uint8_t _highlight;
+    uint8_t _drawn_highlight;
     uint16_t _depth;
     int _row;
     int _rowpos;
@@ -250,7 +255,6 @@ class delt : public dwidget { public:
 
     double _markup_width;
     double _markup_height;
-    unsigned _pango_generation;
     
     double _contents_width;
     double _contents_height;
@@ -276,7 +280,7 @@ class delt : public dwidget { public:
     void layout_contents(dcontext &dx, RouterT *router);
     void layout_ports(dcss_set *dcs);
     void layout(dcontext &dx);
-    void layout_text(dcontext &dx);
+    void restyle(dcontext &dx);
     void layout_complete(dcontext &dcx, double dx, double dy);
     void layout_compound_ports(dcss_set *dcs);
     void union_bounds(rectangle &r, bool self) const;

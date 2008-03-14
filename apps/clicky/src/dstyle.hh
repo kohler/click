@@ -72,6 +72,7 @@ struct delt_style : public enable_ref_ptr {
     int style;
     String text;
     int display;
+    String font;
 };
 
 struct dqueue_style : public enable_ref_ptr {
@@ -124,6 +125,7 @@ class dcss_selector { public:
     bool generic_elt() const {
 	return !_type && !_name && !_klasses.size();
     }
+    bool is_media() const;
 
     int specificity() const {
 	return (_name ? 40000 : 0)
@@ -312,7 +314,7 @@ class dcss { public:
 	return !_context.size() || hard_match_context(e);
     }
 
-    const char *parse(const String &str, const char *s);
+    const char *parse(const String &str, const String &media, const char *s);
 
     String unparse_selector() const;
 
@@ -351,10 +353,20 @@ class dcss { public:
 
 class dcss_set { public:
 
+    dcss_set(const String &text, const String &media);
     dcss_set(dcss_set *below);
     ~dcss_set();
 
-    void parse(const String &str);
+    const String &media() const {
+	return _media;
+    }
+    const String &text() const {
+	return _text;
+    }
+
+    dcss_set *remedia(const String &media);
+    
+    void parse(const String &text);
     void add(dcss *s);
 
     ref_ptr<delt_style> elt_style(const delt *e);
@@ -362,9 +374,13 @@ class dcss_set { public:
     ref_ptr<dqueue_style> queue_style(const delt *e);
     double vpixel(PermString name, const delt *e) const;
 
-    static dcss_set *default_set();
+    static dcss_set *default_set(const String &media);
     
   private:
+
+    String _text;
+    String _media;
+    dcss_set *_media_next;
 
     dcss_set *_below;
     unsigned _selector_index;
@@ -389,7 +405,7 @@ class dcss_set { public:
 			    bool &generic) const;
     ref_ptr<dport_style> hard_port_style(const delt *e, bool isoutput, int port,
 					 int processing);
-    
+
 };
 
 

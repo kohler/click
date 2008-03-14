@@ -39,11 +39,6 @@ class wdiagram { public:
 	return _rects;
     }
 
-    bool laid_out() const {
-	return _layout;
-    }
-    void layout();
-    
     void notify_shadow(double shadow) {
 	_elt_expand = std::max(_elt_expand, shadow + 2);
     }
@@ -78,7 +73,7 @@ class wdiagram { public:
     GtkAdjustment *_horiz_adjust;
     GtkAdjustment *_vert_adjust;
     dcss_set *_css_set;
-    PangoFontDescription *_font_desc;
+    dcss_set *_base_css_set;
     unsigned _pango_generation;
     double _elt_expand;
     
@@ -105,6 +100,7 @@ class wdiagram { public:
     int _last_cursorno;
     
     void initialize();
+    void layout();
 
     void expose(delt *e, rectangle *expose_rect);
     void unhighlight(uint8_t htype, rectangle *expose_rect);

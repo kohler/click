@@ -42,9 +42,8 @@ wdiagram::wdiagram(wmain *rw)
     _horiz_adjust = gtk_scrolled_window_get_hadjustment(sw);
     _vert_adjust = gtk_scrolled_window_get_vadjustment(sw);
 
-    _css_set = new dcss_set(dcss_set::default_set());
+    _base_css_set = _css_set = new dcss_set(dcss_set::default_set("screen"));
 
-    _font_desc = pango_font_description_from_string("Times, Nimbus Roman No9 L, Serif, 10");
 #if 0
     PangoFontMap *fm = pango_cairo_font_map_get_default();
     PangoFontFamily **fms;
@@ -75,8 +74,7 @@ wdiagram::wdiagram(wmain *rw)
 
 wdiagram::~wdiagram()
 {
-    pango_font_description_free(_font_desc);
-    delete _css_set;
+    delete _base_css_set;
     delete _relt;
     _relt = 0;
     for (int i = c_main; i < ncursors; i++)
@@ -196,9 +194,24 @@ void wdiagram::router_create(bool incremental, bool always)
 	    _relt->prepare_router(this, _rw->_r, _rw->_processing, _elt_map,
 				  path, z_index);
 	}
-	if (!_cursor[0])
-	    initialize();
     }
+    if (!_cursor[0])
+	initialize();
+    if (!_layout && _rw->_r) {
+	dcontext dcx;
+	dcx.d = this;
+	dcx.pl = gtk_widget_create_pango_layout(_widget, NULL);
+	dcx.generation = _pango_generation;
+	ElementMap::push_default(_rw->element_map());
+	_elt_expand = 1;
+	_relt->layout_main(dcx, _rw->_r);
+	g_object_unref(G_OBJECT(dcx.pl));
+	scroll_recenter(point(0, 0));
+	ElementMap::pop_default();
+	_layout = true;
+    }
+    if (!incremental)
+	redraw();
 }
 
 
@@ -208,31 +221,10 @@ void wdiagram::router_create(bool incremental, bool always)
  *
  */
 
-void wdiagram::layout()
-{
-    //fprintf(stderr, "Layout\n");
-    if (!_relt)
-	router_create(true, true);
-    if (!_layout && _rw->_r) {
-	dcontext dcx;
-	dcx.d = this;
-	dcx.pl = gtk_widget_create_pango_layout(_widget, NULL);
-	//pango_layout_set_font_description(dcx, _font_desc);
-	dcx.pango_generation = _pango_generation;
-	ElementMap::push_default(_rw->element_map());
-	_elt_expand = 1;
-	_relt->layout_main(dcx, _rw->_r);
-	g_object_unref(G_OBJECT(dcx.pl));
-	scroll_recenter(point(0, 0));
-	ElementMap::pop_default();
-	_layout = true;
-    }
-}
-
 void wdiagram::on_expose(const GdkRectangle *area)
 {
     if (!_layout)
-	layout();
+	router_create(true, true);
 
     cairo_t *cr = gdk_cairo_create(GTK_LAYOUT(_widget)->bin_window);
     cairo_rectangle(cr, area->x, area->y, area->width, area->height);
@@ -272,8 +264,7 @@ void wdiagram::on_expose(const GdkRectangle *area)
     dcx.d = this;
     dcx.cr = cr;
     dcx.pl = gtk_widget_create_pango_layout(_widget, NULL);
-    //pango_layout_set_font_description(dcx, _font_desc);
-    dcx.pango_generation = _pango_generation;
+    dcx.generation = _pango_generation;
     dcx.scale_step = _scale_step;
 
     rectangle r(area->x + _origin_x, area->y + _origin_y,
@@ -319,8 +310,10 @@ static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer user
 
 void wdiagram::export_diagram(const char *filename, bool eps)
 {
+    if (!_layout)
+	router_create(true, true);
+    
     cairo_surface_t *crs;
-    layout();
     if (eps) {
 	crs = cairo_ps_surface_create(filename, _relt->_width, _relt->_height);
 #if CAIRO_VERSION_MINOR >= 6 || (CAIRO_VERSION_MINOR == 5 && CAIRO_VERSION_MICRO >= 2)
@@ -334,9 +327,9 @@ void wdiagram::export_diagram(const char *filename, bool eps)
     dcx.cr = cairo_create(crs);
     cairo_translate(dcx, -_relt->_x, -_relt->_y);
     dcx.pl = pango_cairo_create_layout(dcx.cr);
-    pango_layout_set_font_description(dcx, _font_desc);
-    dcx.pango_generation = ++_pango_generation;
+    dcx.generation = ++_pango_generation;
     dcx.scale_step = 1;		// position precisely
+    _css_set = _base_css_set->remedia("print");
 
     rectangle r(_relt->_x, _relt->_y, _relt->_width, _relt->_height);
     std::vector<dwidget *> elts;
@@ -344,7 +337,8 @@ void wdiagram::export_diagram(const char *filename, bool eps)
     for (std::vector<dwidget *>::iterator eltsi = elts.begin();
 	 eltsi != elts.end(); ++eltsi)
 	(*eltsi)->draw(dcx);
-    
+
+    _css_set = _base_css_set;
     g_object_unref(G_OBJECT(dcx.pl));
     cairo_destroy(dcx.cr);
     cairo_surface_destroy(crs);

@@ -93,6 +93,8 @@ const char default_css[] = "~port~.input {\n\
     queue-stripe-spacing: 12px;\n\
     text: \"%n\\n<small>%c</small>\";\n\
     display: open;\n\
+    @media print { font: Times; }\n\
+    /* @media screen { font: URW Palladio L italic 20; } */\n\
 }\n\
 *.anonymous {\n\
     text: \"%n\";\n\
@@ -106,6 +108,7 @@ const char default_css[] = "~port~.input {\n\
 * * * * {\n\
     background: rgb(94%, 94%, 69%);\n\
 }\n\
+@media screen {\n\
 *:hover {\n\
     background: #fffff2;\n\
 }\n\
@@ -113,11 +116,13 @@ const char default_css[] = "~port~.input {\n\
     background: #ffffb4;\n\
     shadow: halo rgba(90%, 20%, 95%, 50%) 3px;\n\
 }\n\
+}\n\
 *Queue {\n\
     min-width: 17.6px;\n\
     min-height: 49.6px;\n\
     style: queue;\n\
 }";
+
 
 
 /*****
@@ -271,6 +276,31 @@ bool cp_color(const String &str, double *r, double *g, double *b, double *a)
 	    cl = cm + 1;
     }
     return false;
+}
+
+static const char *ccss_skip_braces(const char *s, const char *send)
+{
+    int nopen = 0;
+    for (; s != send; ++s)
+	if (*s == '/' && s + 1 != send && (s[1] == '/' || s[1] == '*'))
+	    s = cp_skip_comment_space(s, send) - 1;
+	else if (*s == '\"' || *s == '\'') {
+	    char quote = *s;
+	    for (++s; s != send && *s != quote; ++s)
+		if (*s == '\\') {
+		    if (s + 2 < send && s[1] == '\r' && s[2] == '\n')
+			s += 2;
+		    else if (s + 1 != send)
+			++s;
+		} else if (*s == '\n' || *s == '\r' || *s == '\f')
+		    break;
+	    if (s == send)
+		break;
+	} else if (*s == '}' && --nopen < 0)
+	    return s + 1;
+	else if (*s == '{')
+	    ++nopen;
+    return s;
 }
 
 
@@ -452,6 +482,10 @@ String dcss_selector::unparse() const
 	sa << '#' << _name;
     for (const String *k = _klasses.begin(); k != _klasses.end(); ++k)
 	sa << '.' << *k;
+    if (_highlight & (1<<dhlt_click))
+	sa << ":active";
+    if (_highlight & (1<<dhlt_hover))
+	sa << ":hover";
     if (!sa)
 	sa << '*';
     return sa.take_string();
@@ -621,9 +655,11 @@ bool dcss::hard_match_context(const delt *e) const
     return d == _context.begin();
 }
 
-const char *dcss::parse(const String &str, const char *s)
+const char *dcss::parse(const String &str, const String &media, const char *s)
 {
     const char *send = str.end();
+    Vector<int> mediastk;
+
     while (1) {
 	s = cp_skip_comment_space(s, send);
 	const char *n = s;
@@ -633,9 +669,26 @@ const char *dcss::parse(const String &str, const char *s)
 	    ++s;
 	const char *n_end = s;
 	s = cp_skip_comment_space(s, send);
-	if (s == send || *s == '{' || *s == '}')
+
+	// check for media
+	if (n_end - n == 6 && memcmp(n, "@media", 6) == 0 && s > n_end) {
+	    const char *z = s;
+	    while (s != send && isalnum((unsigned char) *s))
+		++s;
+	    mediastk.push_back(media.equals(z, s - z));
+	    s = cp_skip_comment_space(s, send);
+	    if (s != send && *s == '{')
+		++s;
+	    continue;
+	}
+	
+	if (s == send || *s == '{' || (*s == '}' && mediastk.size() == 0))
 	    break;
 	else if (*s == ';') {
+	    ++s;
+	    continue;
+	} else if (*s == '}') {
+	    mediastk.pop_back();
 	    ++s;
 	    continue;
 	}
@@ -673,7 +726,7 @@ const char *dcss::parse(const String &str, const char *s)
 	if (s != send && *s == ':')
 	    v_ew0 = v_ew1;
 
-	if (n == n_end || v == v_ew0)
+	if (n == n_end || v == v_ew0 || (mediastk.size() && !mediastk.back()))
 	    /* do nothing */;
 	else if (n + 6 == n_end && memcmp(n, "border", 6) == 0)
 	    parse_border(str, v, v_ew0, "border");
@@ -896,16 +949,39 @@ void dcss::assign_all(dcss_propmatch *props, dcss_propmatch **pp, int n,
  *
  */
 
-dcss_set::dcss_set(dcss_set *below)
-    : _below(below), _frozen(false)
+dcss_set::dcss_set(const String &text, const String &media)
+    : _text(), _media(media), _media_next(0), _below(0),
+      _selector_index(0), _frozen(false),
+      _all_generic_ports(true)
 {
-    if (_below)
-	_selector_index = _below->_selector_index + 100000;
-    else
-	_selector_index = 0;
     _s.push_back(0);
     _s.push_back(0);
-    _all_generic_ports = (below ? below->_all_generic_ports : true);
+    parse(text);
+}
+
+dcss_set::dcss_set(dcss_set *below)
+    : _text(), _media(below->media()), _media_next(0), _below(below),
+      _selector_index(below->_selector_index + 100000), _frozen(false),
+      _all_generic_ports(below->_all_generic_ports)
+{
+    _s.push_back(0);
+    _s.push_back(0);
+}
+
+dcss_set *dcss_set::remedia(const String &m)
+{
+    dcss_set *p = this;
+    dcss_set **pprev = &p;
+    while (*pprev && (*pprev)->media() != m)
+	pprev = &(*pprev)->_media_next;
+    if (!*pprev) {
+	if (_below) {
+	    *pprev = new dcss_set(_below->remedia(m));
+	    (*pprev)->parse(_text);
+	} else
+	    *pprev = new dcss_set(_text, m);
+    }
+    return *pprev;
 }
 
 void dcss_set::mark_change()
@@ -928,12 +1004,15 @@ dcss_set::~dcss_set()
 	    delete *s;
 	    *s = next;
 	}
+    if (_media_next)
+	delete _media_next;
     mark_change();
 }
 
 void dcss_set::parse(const String &str)
 {
     const char *s = str.begin(), *send = str.end();
+    _text += str;
     
     while (1) {
 	s = cp_skip_comment_space(s, send);
@@ -948,6 +1027,23 @@ void dcss_set::parse(const String &str)
 	    s = sel.parse(str, s);
 	    if (s == n)
 		goto skip_braces;
+	    if (nsel == 0 && s == n + 6 && memcmp(n, "@media", 6) == 0) {
+		s = cp_skip_comment_space(s, send);
+		bool right_media = send - s > _media.length()
+		    && memcmp(s, _media.data(), _media.length()) == 0
+		    && !isalnum((unsigned char) s[_media.length()]);
+		while (s != send && *s != '{')
+		    ++s;	// cp_skip_comment_space
+		if (s == send)
+		    goto skip_braces;
+		else if (!right_media) {
+		    ++s;
+		    goto skip_braces;
+		} else {
+		    s = cp_skip_comment_space(s + 1, send);
+		    continue;
+		}
+	    }
 	    if (nsel == 0)
 		cs.push_back(new dcss);
 	    else
@@ -955,8 +1051,7 @@ void dcss_set::parse(const String &str)
 	    cs.back()->_selector = sel;
 	    ++nsel;
 
-	    if (s != send && isspace((unsigned char) *s))
-		s = cp_skip_comment_space(s, send);
+	    s = cp_skip_comment_space(s, send);
 	    if (s != send && *s == ',') {
 		s = cp_skip_comment_space(s + 1, send);
 		nsel = 0;
@@ -966,10 +1061,10 @@ void dcss_set::parse(const String &str)
 
 	if (cs.size() && s != send && *s == '{') {
 	    const char *n = s + 1;
-	    s = cs[0]->parse(str, n);
+	    s = cs[0]->parse(str, _media, n);
 	    if (cs[0]->_de.size()) {
 		for (dcss **cspp = cs.begin() + 1; cspp != cs.end(); ++cspp)
-		    (*cspp)->parse(str, n);
+		    (*cspp)->parse(str, _media, n);
 		for (dcss **cspp = cs.begin(); cspp != cs.end(); ++cspp)
 		    add(*cspp);
 		cs.clear();
@@ -977,27 +1072,7 @@ void dcss_set::parse(const String &str)
 	}
 
       skip_braces:
-	while (s != send)
-	    if (*s == '/' && s + 1 != send && (s[1] == '/' || s[1] == '*'))
-		s = cp_skip_comment_space(s, send);
-	    else if (*s == '\"' || *s == '\'') {
-		char quote = *s;
-		for (++s; s != send && *s != quote; ++s)
-		    if (*s == '\\') {
-			if (s + 2 < send && s[1] == '\r' && s[2] == '\n')
-			    s += 2;
-			else if (s + 1 != send)
-			    ++s;
-		    } else if (*s == '\n' || *s == '\r' || *s == '\f')
-			break;
-		if (s != send)
-		    ++s;
-	    } else if (*s == '}') {
-		++s;
-		break;
-	    } else
-		++s;
-	
+	s = ccss_skip_braces(s, send);
 	for (dcss **cspp = cs.begin(); cspp != cs.end(); ++cspp)
 	    delete *cspp;
     }
@@ -1029,14 +1104,12 @@ void dcss_set::add(dcss *s)
 	_all_generic_ports = false;
 }
 
-dcss_set *dcss_set::default_set()
+dcss_set *dcss_set::default_set(const String &media)
 {
     static dcss_set *x;
-    if (!x) {
-	x = new dcss_set(0);
-	x->parse(default_css);
-    }
-    return x;
+    if (!x)
+	x = new dcss_set(default_css, media);
+    return x->remedia(media);
 }
 
 
@@ -1154,7 +1227,8 @@ static dcss_propmatch elt_pm[] = {
     { "margin-bottom", 0 },
     { "margin-left", 0 },
     { "text", 0 },
-    { "display", 0 }
+    { "display", 0 },
+    { "font", 0 }
 };
 
 enum {
@@ -1246,6 +1320,7 @@ ref_ptr<delt_style> dcss_set::elt_style(const delt *e)
 	    sty->display = dedisp_none;
 	else if (s.equals("closed", 6))
 	    sty->display = dedisp_closed;
+	sty->font = elt_pm[26].vstring("font");
 
 	style_cache = ref_ptr<delt_style>(sty);
 	if (generic) {
