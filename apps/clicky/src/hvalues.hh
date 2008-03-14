@@ -96,7 +96,10 @@ class handler_value { public:
 	_hvalue = hvalue;
 	_flags |= hflag_have_hvalue;
     }
-    
+
+    bool empty() const {
+	return (_flags & (hflag_r | hflag_rparam | hflag_w)) == 0;
+    }
     bool readable() const {
 	return (_flags & hflag_r) != 0;
     }
@@ -226,6 +229,12 @@ struct handler_values {
 	return _hv.find(hname).get();
     }
 
+    handler_value *find_placeholder(const String &hname) {
+	if (handler_value *hv = _hv.find(hname).get())
+	    return hv;
+	return hard_find_placeholder(hname);
+    }
+    
     handler_value *find_force(const String &hname) {
 	return _hv.find_force(hname).get();
     }
@@ -246,6 +255,7 @@ struct handler_values {
     HashMap<handler_value> _hv;
     HashMap<String, int> _class_uflags;
 
+    handler_value *hard_find_placeholder(const String &hname);
     void set_handlers(const String &hname, const String &hparam, const String &hvalue);
     
 };

@@ -51,6 +51,7 @@ void delt::prepare(wdiagram *d, ElementT *e, ProcessingT *processing,
     assert(!_e);
     _e = e;
     _processing_code = processing->decorated_processing_code(_e);
+    _driver = d->main()->driver();
     _des = d->css_set()->elt_style(this);
     if (_des->style == destyle_queue)
 	_dqs = d->css_set()->queue_style(this);
@@ -587,22 +588,26 @@ static void append_markup_quote(StringAccum &sa, const String &str,
 	sa.append("...", 3);
 }
 
-void delt::restyle(dcontext &dcx)
+bool delt::parse_markup(wmain *w)
 {
+    String old_markup = _markup;
+    _handler_markup = false;
+    
     StringAccum sa;
-    const char *last = _des->text.begin();
-    for (const char *s = _des->text.begin(); s != _des->text.end(); ++s)
-	if (*s == '%' && s + 1 != _des->text.end()) {
+    String text = _des->text;
+    const char *last = text.begin(), *send = text.end();
+    for (const char *s = text.begin(); s != send; ++s)
+	if (*s == '%' && s + 1 != send) {
 	    sa.append(last, s);
 
 	    int width = -1, precision = -1, altflag = 0;
 	    const char *pct = s; 
-	    for (++s; s != _des->text.end(); ++s)
+	    for (++s; s != send; ++s)
 		if (isdigit((unsigned char) *s)) {
 		    if (precision >= 0)
 			precision = 10 * precision + *s - '0';
 		    else
-			width = 10 * width + *s - '0';
+			width = (width >= 0 ? 10 * width : 0) + *s - '0';
 		} else if (*s == '.')
 		    precision = 0;
 		else if (*s == '#')
@@ -610,7 +615,7 @@ void delt::restyle(dcontext &dcx)
 		else
 		    break;
 
-	    if (s == _des->text.end()) {
+	    if (s == send) {
 	      invalid_format:
 		last = s = pct;
 		continue;
@@ -630,13 +635,44 @@ void delt::restyle(dcontext &dcx)
 		    append_markup_quote(sa, _e->configuration(), precision);
 		    sa << ')';
 		}
+	    } else if (*s == '{') {
+		const char *n = s + 1;
+		for (++s; s != send && *s != '}'; ++s)
+		    /* nada */;
+		if (s == send || n == s)
+		    goto invalid_format;
+		handler_value *hv = w->hvalues().find_placeholder(flat_name() + "." + text.substring(n, s));
+		if (hv) {
+		    if (!hv->notify_delt())
+			hv->set_flags(w, hv->flags() | hflag_notify_delt);
+		    if (hv->have_hvalue())
+			append_markup_quote(sa, hv->hvalue(), precision);
+		    else {
+			if (altflag && hv->refreshable())
+			    hv->set_flags(w, hv->flags() | hflag_autorefresh);
+			if (hv->refreshable())
+			    hv->refresh(w);
+			else if (hv->empty())
+			    expand_handlers(w);
+			if (width > 0)
+			    sa.append_fill('?', width);
+		    }
+		    _handler_markup = true;
+		}
 	    } else
 		goto invalid_format;
 	    
 	    last = s + 1;
 	}
-    sa.append(last, _des->text.end());
+    sa.append(last, send);
     _markup = sa.take_string();
+
+    return _markup != old_markup;
+}
+
+void delt::restyle(dcontext &dcx)
+{
+    parse_markup(dcx.d->main());
     
     pango_layout_set_width(dcx, -1);
     if (_des->font != dcx.pl_font)
@@ -1382,8 +1418,7 @@ bool delt::drag_canvas_changed(const rectangle &canvas) const
 
 bool delt::expand_handlers(wmain *w)
 {
-    handler_value *hv =
-	w->hvalues().find_force(_flat_name + ".handlers");
+    handler_value *hv = w->hvalues().find_force(_flat_name + ".handlers");
     if (!hv->have_hvalue()) {
 	hv->set_flags(w, hv->flags() | hflag_notify_delt);
 	hv->refresh(w);
@@ -1445,6 +1480,8 @@ void delt::notify_read(wdiagram *d, handler_value *hv)
     (void) hv;
     if (_style & esflag_fullness)
 	gadget_fullness(d);
+    if (_handler_markup && parse_markup(d->main()))
+	d->redraw(*this);
 }
 
 /*****

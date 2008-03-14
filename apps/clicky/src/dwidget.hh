@@ -115,7 +115,8 @@ class delt : public dwidget { public:
     delt(delt *parent, int z_index)
 	: dwidget(dw_elt, z_index), _e(0), _parent(parent), _style(0),
 	  _visible(false), _layout(false), _expanded(true),
-	  _aligned(true), _orientation(0), _highlight(0), _drawn_highlight(0),
+	  _aligned(true), _handler_markup(false), _driver(false),
+	  _orientation(0), _highlight(0), _drawn_highlight(0),
 	  _depth(parent ? parent->_depth + 1 : 0),
 	  _contents_width(0), _contents_height(0) {
 	_portoff[0] = _portoff[1] = 0;
@@ -161,6 +162,9 @@ class delt : public dwidget { public:
     }
     bool primitive() const {
 	return _elt.size() == 0;
+    }
+    bool driver() const {
+	return _driver;
     }
 
     double contents_width() const {
@@ -244,6 +248,8 @@ class delt : public dwidget { public:
     bool _layout;
     bool _expanded;
     bool _aligned;
+    bool _handler_markup;
+    bool _driver;
     int _orientation;
     uint8_t _highlight;
     uint8_t _drawn_highlight;
@@ -277,10 +283,11 @@ class delt : public dwidget { public:
     void position_contents_dot(RouterT *, dcss_set *dcs, ErrorHandler *);
     void position_contents_first_heuristic(RouterT *r);
 
-    void layout_contents(dcontext &dx, RouterT *router);
+    void layout_contents(dcontext &dcx, RouterT *router);
     void layout_ports(dcss_set *dcs);
-    void layout(dcontext &dx);
-    void restyle(dcontext &dx);
+    void layout(dcontext &dcx);
+    bool parse_markup(wmain *w);
+    void restyle(dcontext &dcx);
     void layout_complete(dcontext &dcx, double dx, double dy);
     void layout_compound_ports(dcss_set *dcs);
     void union_bounds(rectangle &r, bool self) const;

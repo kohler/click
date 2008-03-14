@@ -349,6 +349,9 @@ bool dcss_selector::match(const delt *e) const
 		|| name[type_name.length()] != '@'
 		|| memcmp(name.begin(), type_name.begin(), type_name.length()))
 		return false;
+	} else if (k->equals("driver", 6)) {
+	    if (!e->driver())
+		return false;
 	}
     if ((e->highlights() & _highlight_match) != _highlight)
 	return false;

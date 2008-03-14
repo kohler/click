@@ -225,6 +225,8 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	    handlers->_next = v;
 	}
 	v->set_driver_flags(_w, flags);
+	if (v->notify_delt())
+	    _w->diagram()->notify_read(v);
 	
 	while (s != hvalue.end() && *s != '\r' && *s != '\n')
 	    ++s;
@@ -238,6 +240,16 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	 ++hv)
 	if ((*hv)->_flags & hflag_dead)
 	    _hv.remove((*hv)->_hname);
+}
+
+handler_value *handler_values::hard_find_placeholder(const String &hname)
+{
+    int dot = hname.find_right('.');
+    if (dot < 0 || !_w->driver()
+	|| find(hname.substring(0, dot + 1) + "handlers"))
+	return 0;
+    else
+	return _hv.find_force(hname).get();
 }
 
 }
