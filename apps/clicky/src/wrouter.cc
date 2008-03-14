@@ -362,6 +362,11 @@ void wmain::set_ccss_text(const String &text)
     _diagram->set_ccss_text(text);
 }
 
+dcss_set *wmain::ccss() const
+{
+    return _diagram->css_set();
+}
+
 
 /*****
  *

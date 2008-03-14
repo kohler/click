@@ -4,6 +4,7 @@
 #include <click/hashmap.hh>
 #include <click/vector.hh>
 #include "permstr.hh"
+#include "dwidget.hh"
 #include "ref.hh"
 #include <string.h>
 namespace clicky {
@@ -82,6 +83,12 @@ struct dqueue_style : public enable_ref_ptr {
     double queue_stripe_spacing;
 };
 
+struct dhandler_style : public enable_ref_ptr {
+    int flags_mask;
+    int flags;
+    double autorefresh_period;
+};
+
 enum {
     dhlt_hover = 0,
     dhlt_click = 1,
@@ -119,10 +126,15 @@ class dcss_selector { public:
 	return true;
     }
 
+    bool match(const handler_value *hv) const;
+
     bool generic_port() const {
 	return !_name;
     }
     bool generic_elt() const {
+	return !_type && !_name && !_klasses.size();
+    }
+    bool generic_handler() const {
 	return !_type && !_name && !_klasses.size();
     }
     bool is_media() const;
@@ -257,6 +269,10 @@ struct dcss_propmatch {
 	assert(name == n);
 	return property->vstring();
     }
+    double vnumeric(const char *n) const {
+	assert(name == n);
+	return property->vnumeric();
+    }
     double vpixel(const char *n) const {
 	assert(name == n);
 	return property->vpixel();
@@ -372,6 +388,7 @@ class dcss_set { public:
     ref_ptr<delt_style> elt_style(const delt *e);
     inline ref_ptr<dport_style> port_style(const delt *e, bool isoutput, int port, int processing);
     ref_ptr<dqueue_style> queue_style(const delt *e);
+    ref_ptr<dhandler_style> handler_style(wmain *w, const handler_value *hv);
     double vpixel(PermString name, const delt *e) const;
 
     static dcss_set *default_set(const String &media);
@@ -397,12 +414,16 @@ class dcss_set { public:
 
     HashMap<String, ref_ptr<dqueue_style> > _qtable;
 
+    HashMap<String, ref_ptr<dhandler_style> > _htable;
+
     void mark_change();
     void collect_port_styles(const delt *e, bool isoutput, int port,
 			     int processing, Vector<dcss *> &result,
 			     int &generic);
     void collect_elt_styles(const delt *e, Vector<dcss *> &result,
 			    bool &generic) const;
+    void collect_handler_styles(const handler_value *hv, const delt *e,
+				Vector<dcss *> &result, bool &generic) const;
     ref_ptr<dport_style> hard_port_style(const delt *e, bool isoutput, int port,
 					 int processing);
 

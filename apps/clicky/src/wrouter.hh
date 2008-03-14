@@ -16,6 +16,7 @@ class wdriver;
 class whandler;
 class csocket_wdriver;
 class clickfs_wdriver;
+class dcss_set;
 
 typedef Vector<Pair<String, String> > messagevector;
 
@@ -53,6 +54,7 @@ class wmain { public:
     wdiagram *diagram() const {
 	return _diagram;
     }
+    dcss_set *ccss() const;
     ElementMap *element_map() const {
 	return _emap;
     }

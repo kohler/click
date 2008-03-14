@@ -37,6 +37,10 @@ class wdiagram { public:
     String ccss_text() const;
     void set_ccss_text(const String &text);
 
+    delt *elt(const String &name) const {
+	return _elt_map.find(name);
+    }
+    
     rect_search<dwidget> &rects() {
 	return _rects;
     }

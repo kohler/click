@@ -5,6 +5,7 @@
 #include "dwidget.hh"
 #include "dstyle.hh"
 #include "diagram.hh"
+#include "hvalues.hh"
 #include <click/userutils.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
@@ -393,6 +394,33 @@ bool dcss_selector::klasses_match_port(bool isoutput, int port, int processing) 
     return true;
 }
 
+bool dcss_selector::match(const handler_value *hv) const
+{
+    if (!_type.equals("~handler~", 9))
+	return false;
+    if (_name && _name != hv->handler_name())
+	if (!_name_glob || !glob_match(hv->handler_name(), _name))
+	    return false;
+    for (const String *k = _klasses.begin(); k != _klasses.end(); ++k)
+	if (k->equals("read", 4)) {
+	    if (!hv->readable())
+		return false;
+	} else if (k->equals("write", 5)) {
+	    if (!hv->writable())
+		return false;
+	} else if (k->equals("param", 5)) {
+	    if (!hv->read_param())
+		return false;
+	} else if (k->equals("calm", 4)) {
+	    if (!(hv->flags() & hflag_calm))
+		return false;
+	} else if (k->equals("expensive", 9)) {
+	    if (!(hv->flags() & hflag_expensive))
+		return false;
+	}
+    return true;
+}
+
 const char *dcss_selector::parse(const String &str, const char *s)
 {
     _type = _name = String();
@@ -435,6 +463,7 @@ const char *dcss_selector::parse(const String &str, const char *s)
 	    break;
 
 	int glob = 0;
+      retry:
 	while (s != send && !isspace((unsigned char) *s) && *s != '.'
 	       && *s != '>' && *s != '#' && *s != ':' && *s != ',' && *s != '{'
 	       && *s != '}' && *s != '[' && *s != ']'
@@ -445,7 +474,14 @@ const char *dcss_selector::parse(const String &str, const char *s)
 		++s;
 	    ++s;
 	}
-	if (s == n)
+	if (s == n && start == '#' && *s == '#' && !_name && !_type) {
+	    _type = String::stable_string("~handler~", 9);
+	    s = ++n;
+	    goto retry;
+	} else if (s == n && start) {
+	    --s;
+	    break;
+	} else if (s == n)
 	    break;
 
 	if (n + 1 == s && *n == '*') {
@@ -1371,6 +1407,93 @@ ref_ptr<dqueue_style> dcss_set::queue_style(const delt *e)
 	sty->queue_stripe_spacing = queue_pm[3].vpixel("queue-stripe-spacing", this, e);
 
 	style_cache = ref_ptr<dqueue_style>(sty);
+    }
+    
+    return style_cache;
+}
+
+
+/*****
+ *
+ */
+
+static dcss_propmatch handler_pm[] = {
+    { "autorefresh", 0 },
+    { "autorefresh-period", 0 },
+    { "display", 0 },
+    { "allow-refresh", 0 }
+};
+
+enum {
+    num_handler_pm = sizeof(handler_pm) / sizeof(handler_pm[0])
+};
+
+static dcss_propmatch *handler_pmp[num_handler_pm];
+
+void dcss_set::collect_handler_styles(const handler_value *hv, const delt *e,
+				      Vector<dcss *> &result,
+				      bool &generic) const
+{
+    for (dcss * const *sp = _s.begin() + 2; sp != _s.end(); ++sp)
+	if ((*sp)->type()[0] == '~')
+	    for (dcss *s = *sp; s; s = s->_next)
+		if (s->selector().match(hv) && s->match_context(e)) {
+		    if (!s->selector().generic_handler() || s->has_context())
+			generic = false;
+		    result.push_back(s);
+		}
+    for (dcss *s = _s[0]; s; s = s->_next)
+	if (s->selector().match(hv) && s->match_context(e)) {
+	    if (!s->selector().generic_handler() || s->has_context())
+		generic = false;
+	    result.push_back(s);
+	}
+    if (_below)
+	_below->collect_handler_styles(hv, e, result, generic);
+}
+
+ref_ptr<dhandler_style> dcss_set::handler_style(wmain *w, const handler_value *hv)
+{
+    Vector<dcss *> sv;
+    bool generic = true;
+    const delt *e = w->diagram()->elt(hv->element_name());
+    collect_handler_styles(hv, e, sv, generic);
+
+    std::sort(sv.begin(), sv.end(), dcsspp_compare);
+    StringAccum sa(sizeof(unsigned) * sv.size());
+    for (dcss **sp = sv.begin(); sp != sv.end(); ++sp)
+	*reinterpret_cast<unsigned *>(sa.extend(sizeof(unsigned))) = (*sp)->selector_index();
+    ref_ptr<dhandler_style> &style_cache = _htable.find_force(sa.take_string());
+
+    if (!style_cache) {
+	dcss::assign_all(handler_pm, handler_pmp, num_handler_pm, sv.begin(), sv.end());
+
+	dhandler_style *sty = new dhandler_style;
+	sty->autorefresh_period = handler_pm[1].vnumeric("autorefresh-period");
+	if (sty->autorefresh_period <= 0)
+	    sty->autorefresh_period = 1;
+	sty->flags_mask = hflag_autorefresh | hflag_refresh | hflag_visible
+	    | hflag_collapse;
+	sty->flags = 0;
+	String s = handler_pm[0].vstring("autorefresh");
+	if (s == "on" || s == "true" || cp_double(s, &sty->autorefresh_period))
+	    sty->flags |= hflag_autorefresh;
+	if (!s)
+	    sty->flags_mask &= ~hflag_autorefresh;
+	s = handler_pm[2].vstring("display");
+	if (s && !s.equals("none", 4))
+	    sty->flags |= hflag_visible;
+	if (s.equals("collapse", 8))
+	    sty->flags |= hflag_collapse;
+	if (!s)
+	    sty->flags_mask &= ~(hflag_visible | hflag_collapse);
+	s = handler_pm[3].vstring("allow-refresh");
+	if (s.equals("yes", 3) || s.equals("true", 4))
+	    sty->flags |= hflag_refresh;
+	if (!s)
+	    sty->flags_mask &= ~hflag_refresh;
+
+	style_cache = ref_ptr<dhandler_style>(sty);
     }
     
     return style_cache;

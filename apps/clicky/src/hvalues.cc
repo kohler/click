@@ -5,6 +5,7 @@
 #include "hvalues.hh"
 #include "wdriver.hh"
 #include "diagram.hh"
+#include "dstyle.hh"
 #include <gdk/gdkkeysyms.h>
 #include <click/confparse.hh>
 extern "C" {
@@ -97,7 +98,7 @@ void handler_value::set_flags(wmain *w, int new_flags)
 	_hvalue = (new_flags & hflag_r ? no_hvalue_string : String());
 
     _flags = new_flags;
-    _driver_mask &= ~(_flags ^ _driver_flags); 
+    _driver_mask &= ~(_flags ^ _driver_flags);
 }
 
 
@@ -223,6 +224,15 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	if (v != handlers) {
 	    v->_next = handlers->_next;
 	    handlers->_next = v;
+	}
+	bool was_empty = v->empty();
+	v->set_driver_flags(_w, flags);
+	if (was_empty) {	// first load, read style
+	    ref_ptr<dhandler_style> dhs = _w->ccss()->handler_style(_w, v);
+	    if (dhs) {
+		v->set_flags(_w, (v->flags() & ~dhs->flags_mask) | dhs->flags);
+		v->set_autorefresh_period((guint) (dhs->autorefresh_period * 1000));
+	    }
 	}
 	v->set_driver_flags(_w, flags);
 	if (v->notify_delt())
