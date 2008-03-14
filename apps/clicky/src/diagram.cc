@@ -119,6 +119,8 @@ inline void wdiagram::find_rect_elts(const rectangle &r, std::vector<dwidget *> 
 
 void wdiagram::scroll_recenter(point old_ctr)
 {
+    if (!_relt)
+	return;
     if (old_ctr.x() < -1000000)
 	old_ctr = scroll_center();
     

@@ -565,16 +565,26 @@ void delt::layout_text(dcontext &dcx)
     _pango_generation = dcx.pango_generation;
 }
 
-static void append_markup_quote(StringAccum &sa, const String &str)
+static void append_markup_quote(StringAccum &sa, const String &str,
+				int precision)
 {
-    const char *last = str.begin();
-    for (const char *s = str.begin(); s != str.end(); ++s)
+    const char *s = str.begin();
+    while (s != str.end() && isspace((unsigned char) *s))
+	++s;
+    const char *last = s;
+    for (; s != str.end() && precision != 0; ++s) {
+	if (precision > 0)
+	    // XXX UTF-8
+	    --precision;
 	if (*s == '<' || *s == '>') {
 	    sa.append(last, s);
 	    sa << (*s == '<' ? "&lt;" : "&gt;");
 	    last = s + 1;
 	}
-    sa.append(last, str.end());
+    }
+    sa.append(last, s);
+    if (s != str.end())
+	sa.append("...", 3);
 }
 
 void delt::layout(dcontext &dcx)
@@ -596,15 +606,45 @@ void delt::layout(dcontext &dcx)
     for (const char *s = _des->text.begin(); s != _des->text.end(); ++s)
 	if (*s == '%' && s + 1 != _des->text.end()) {
 	    sa.append(last, s);
-	    if (s[1] == 'n')
-		append_markup_quote(sa, name());
-	    else if (s[1] == 'c')
-		append_markup_quote(sa, type_name());
-	    else if (s[1] == 'f')
-		append_markup_quote(sa, flat_name());
-	    else
-		sa << s[1];
-	    ++s;
+
+	    int width = -1, precision = -1, altflag = 0;
+	    const char *pct = s; 
+	    for (++s; s != _des->text.end(); ++s)
+		if (isdigit((unsigned char) *s)) {
+		    if (precision >= 0)
+			precision = 10 * precision + *s - '0';
+		    else
+			width = 10 * width + *s - '0';
+		} else if (*s == '.')
+		    precision = 0;
+		else if (*s == '#')
+		    altflag = 1;
+		else
+		    break;
+
+	    if (s == _des->text.end()) {
+	      invalid_format:
+		last = s = pct;
+		continue;
+	    }
+	    
+	    if (*s == 'n')
+		append_markup_quote(sa, name(), precision);
+	    else if (*s == 'c')
+		append_markup_quote(sa, type_name(), precision);
+	    else if (*s == 'f')
+		append_markup_quote(sa, flat_name(), precision);
+	    else if (*s == 'C') {
+		if (!altflag)
+		    append_markup_quote(sa, _e->configuration(), precision);
+		else if (_e->configuration()) {
+		    sa << '(';
+		    append_markup_quote(sa, _e->configuration(), precision);
+		    sa << ')';
+		}
+	    } else
+		goto invalid_format;
+	    
 	    last = s + 1;
 	}
     sa.append(last, _des->text.end());
@@ -664,6 +704,7 @@ void delt::layout_compound_ports(dcss_set *dcs)
 	ref_ptr<dport_style> dps = dcs->port_style(this, false, 0, 0);
 	_elt[0]->_height = 10 + dps->width - 1;
 	_elt[0]->_des = dcs->elt_style(_elt[0]);
+	_elt[0]->_visible = _elt[0]->_layout = true;
 	_elt[0]->layout_ports(dcs);
     }
     if (_elt.size() > 1 && _elt[1]->_e->name() == "output") {
@@ -673,6 +714,7 @@ void delt::layout_compound_ports(dcss_set *dcs)
 	_elt[1]->_width = _width;
 	_elt[1]->_height = 10;
 	_elt[1]->_des = dcs->elt_style(_elt[1]);
+	_elt[1]->_visible = _elt[1]->_layout = true;
 	_elt[1]->layout_ports(dcs);
     }
 }
@@ -690,7 +732,7 @@ void delt::layout_complete(dcontext &dcx, double dx, double dy)
 	    (*ci)->_x = floor((*ci)->_xrect._x + dx);
 	    (*ci)->_y = floor((*ci)->_xrect._y + dy);
 	    dcx.d->rects().insert(*ci);
-	    if ((*ci)->_elt.size())
+	    if ((*ci)->_elt.size() && (*ci)->_des->display != dedisp_closed)
 		(*ci)->layout_complete(dcx, (*ci)->_xrect._x + dx,
 				       (*ci)->_xrect._y + dy);
 	}

@@ -38,7 +38,10 @@ class wdiagram { public:
     rect_search<dwidget> &rects() {
 	return _rects;
     }
-    
+
+    bool laid_out() const {
+	return _layout;
+    }
     void layout();
     
     void notify_shadow(double shadow) {
