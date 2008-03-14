@@ -9,6 +9,8 @@
 #include <clicktool/elementmap.hh>
 #include <list>
 #include <math.h>
+#include <cairo-ps.h>
+#include <cairo-pdf.h>
 #include "diagram.hh"
 #include "dwidget.hh"
 #include "wrouter.hh"
@@ -42,12 +44,17 @@ wdiagram::wdiagram(wmain *rw)
 
     _css_set = new dcss_set(dcss_set::default_set());
 
-    _name_attrs = 0;
-    _class_attrs = pango_attr_list_new();
-    PangoAttribute *a = pango_attr_scale_new(PANGO_SCALE_SMALL);
-    a->start_index = 0;
-    a->end_index = G_MAXUINT;
-    pango_attr_list_insert(_class_attrs, a);
+    _font_desc = pango_font_description_from_string("Times, Nimbus Roman No9 L, Serif, 10");
+#if 0
+    PangoFontMap *fm = pango_cairo_font_map_get_default();
+    PangoFontFamily **fms;
+    int nfms;
+    pango_font_map_list_families(fm, &fms, &nfms);
+    for (int i = 0; i < nfms; i++)
+	fprintf(stderr, "  %s\n", pango_font_family_get_name(fms[i]));
+    g_free(fms);
+#endif
+    _pango_generation = 0;
     
     g_signal_connect(G_OBJECT(_widget), "event",
 		     G_CALLBACK(on_diagram_event), this);
@@ -68,8 +75,7 @@ wdiagram::wdiagram(wmain *rw)
 
 wdiagram::~wdiagram()
 {
-    assert(!_name_attrs);
-    pango_attr_list_unref(_class_attrs);
+    pango_font_description_free(_font_desc);
     delete _css_set;
     delete _relt;
     _relt = 0;
@@ -206,11 +212,15 @@ void wdiagram::layout()
     if (!_relt)
 	router_create(true, true);
     if (!_layout && _rw->_r) {
-	PangoLayout *pl = gtk_widget_create_pango_layout(_widget, NULL);
+	dcontext dcx;
+	dcx.d = this;
+	dcx.pl = gtk_widget_create_pango_layout(_widget, NULL);
+	//pango_layout_set_font_description(dcx, _font_desc);
+	dcx.pango_generation = _pango_generation;
 	ElementMap::push_default(_rw->element_map());
 	_elt_expand = 1;
-	_relt->layout_main(this, _rw->_r, pl);
-	g_object_unref(G_OBJECT(pl));
+	_relt->layout_main(dcx, _rw->_r);
+	g_object_unref(G_OBJECT(dcx.pl));
 	scroll_recenter(point(0, 0));
 	ElementMap::pop_default();
 	_layout = true;
@@ -253,7 +263,16 @@ void wdiagram::on_expose(const GdkRectangle *area)
 	}
     }
     
-    PangoLayout *pl = gtk_widget_create_pango_layout(_widget, NULL);
+    cairo_translate(cr, -_origin_x, -_origin_y);
+    cairo_scale(cr, _scale, _scale);
+
+    dcontext dcx;
+    dcx.d = this;
+    dcx.cr = cr;
+    dcx.pl = gtk_widget_create_pango_layout(_widget, NULL);
+    //pango_layout_set_font_description(dcx, _font_desc);
+    dcx.pango_generation = _pango_generation;
+    dcx.scale_step = _scale_step;
 
     rectangle r(area->x + _origin_x, area->y + _origin_y,
 		area->width, area->height);
@@ -261,21 +280,11 @@ void wdiagram::on_expose(const GdkRectangle *area)
     r.expand(_elt_expand);
     std::vector<dwidget *> elts;
     find_rect_elts(r, elts);
-
-    cairo_translate(cr, -_origin_x, -_origin_y);
-    cairo_scale(cr, _scale, _scale);
-
-    dcontext dx;
-    dx.d = this;
-    dx.cr = cr;
-    dx.pl = pl;
-    dx.scale_step = _scale_step;
-    
     for (std::vector<dwidget *>::iterator eltsi = elts.begin();
 	 eltsi != elts.end(); ++eltsi)
-	(*eltsi)->draw(dx);
+	(*eltsi)->draw(dcx);
     
-    g_object_unref(G_OBJECT(pl));
+    g_object_unref(G_OBJECT(dcx.pl));
     cairo_destroy(cr);
 }
 
@@ -297,6 +306,47 @@ static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer user
     wdiagram *cd = reinterpret_cast<wdiagram *>(user_data);
     cd->scroll_recenter(point(-1000001, -1000001));
 }
+}
+
+
+/*****
+ *
+ * export
+ *
+ */
+
+void wdiagram::export_diagram(const char *filename, bool eps)
+{
+    cairo_surface_t *crs;
+    layout();
+    if (eps) {
+	crs = cairo_ps_surface_create(filename, _relt->_width, _relt->_height);
+#if CAIRO_VERSION_MINOR >= 6 || (CAIRO_VERSION_MINOR == 5 && CAIRO_VERSION_MICRO >= 2)
+	cairo_ps_surface_set_eps(crs, TRUE);
+#endif
+    } else
+	crs = cairo_pdf_surface_create(filename, _relt->_width, _relt->_height);
+
+    dcontext dcx;
+    dcx.d = this;
+    dcx.cr = cairo_create(crs);
+    cairo_translate(dcx, -_relt->_x, -_relt->_y);
+    dcx.pl = pango_cairo_create_layout(dcx.cr);
+    pango_layout_set_font_description(dcx, _font_desc);
+    dcx.pango_generation = ++_pango_generation;
+    dcx.scale_step = 1;		// position precisely
+
+    rectangle r(_relt->_x, _relt->_y, _relt->_width, _relt->_height);
+    std::vector<dwidget *> elts;
+    find_rect_elts(r, elts);
+    for (std::vector<dwidget *>::iterator eltsi = elts.begin();
+	 eltsi != elts.end(); ++eltsi)
+	(*eltsi)->draw(dcx);
+    
+    g_object_unref(G_OBJECT(dcx.pl));
+    cairo_destroy(dcx.cr);
+    cairo_surface_destroy(crs);
+    ++_pango_generation;
 }
 
 

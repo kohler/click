@@ -21,8 +21,10 @@ class dqueue_style;
 
 struct dcontext {
     wdiagram *d;
-    cairo_t *cr;
     PangoLayout *pl;
+    unsigned pango_generation;
+    
+    cairo_t *cr;
     int scale_step;
 
     operator cairo_t *() const {
@@ -194,7 +196,7 @@ class delt : public dwidget { public:
     
     int find_gadget(wdiagram *d, double window_x, double window_y) const;
 
-    void layout_main(wdiagram *d, RouterT *router, PangoLayout *pl);
+    void layout_main(dcontext &dx, RouterT *router);
     void layout_recompute_bounds();
 
     void remove(rect_search<dwidget> &rects, rectangle &bounds);
@@ -230,6 +232,7 @@ class delt : public dwidget { public:
     delt *_parent;
     String _flat_name;
     String _flat_config;
+    String _markup;
     int _style;
 
     bool _visible;
@@ -245,10 +248,10 @@ class delt : public dwidget { public:
 
     rectangle _xrect;
 
-    double _name_raw_width;
-    double _name_raw_height;
-    double _class_raw_width;
-    double _class_raw_height;
+    double _markup_width;
+    double _markup_height;
+    unsigned _pango_generation;
+    
     double _contents_width;
     double _contents_height;
 
@@ -270,10 +273,11 @@ class delt : public dwidget { public:
     void position_contents_dot(RouterT *, dcss_set *dcs, ErrorHandler *);
     void position_contents_first_heuristic(RouterT *r);
 
-    void layout_contents(wdiagram *d, RouterT *router, PangoLayout *pl);
+    void layout_contents(dcontext &dx, RouterT *router);
     void layout_ports(dcss_set *dcs);
-    void layout(wdiagram *d, PangoLayout *pl);
-    void layout_complete(wdiagram *d, double dx, double dy);
+    void layout(dcontext &dx);
+    void layout_text(dcontext &dx);
+    void layout_complete(dcontext &dcx, double dx, double dy);
     void layout_compound_ports(dcss_set *dcs);
     void union_bounds(rectangle &r, bool self) const;
 

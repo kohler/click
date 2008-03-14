@@ -64,6 +64,7 @@ struct delt_style : public enable_ref_ptr {
     double ports_padding;
     bool orientation;
     int style;
+    String text;
 };
 
 struct dqueue_style : public enable_ref_ptr {
@@ -167,7 +168,8 @@ struct dcss_property {
 	t_relative,
 	t_color,
 	t_border_style,
-	t_shadow_style
+	t_shadow_style,
+	t_string
     };
     int type() const {
 	return _t;

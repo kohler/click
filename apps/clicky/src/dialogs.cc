@@ -47,6 +47,11 @@ static void on_save_as_activate(GtkMenuItem *, gpointer user_data)
     reinterpret_cast<wmain *>(user_data)->on_save_file(true);
 }
 
+static void on_export_diagram_activate(GtkMenuItem *, gpointer user_data)
+{
+    reinterpret_cast<wmain *>(user_data)->on_export_diagram();
+}
+
 static void on_quit_activate(GtkMenuItem *, gpointer)
 {
     gtk_main_quit();
@@ -130,6 +135,8 @@ void wmain::dialogs_connect()
 		     G_CALLBACK(on_save_activate), this);
     g_signal_connect(lookup_widget(_window, "menu_save_as"), "activate",
 		     G_CALLBACK(on_save_as_activate), this);
+    g_signal_connect(lookup_widget(_window, "menu_export_diagram"), "activate",
+		     G_CALLBACK(on_export_diagram_activate), this);
     g_signal_connect(lookup_widget(_window, "toolbar_check"), "clicked",
 		     G_CALLBACK(on_check_activate), this);
     g_signal_connect(lookup_widget(_window, "menu_check"), "activate",
@@ -363,7 +370,7 @@ void wmain::on_save_file(bool save_as)
 				GTK_WINDOW(_window),
 				GTK_FILE_CHOOSER_ACTION_SAVE,
 				GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-				GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+				GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 				(const char *) NULL);
         gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT);
 	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
@@ -403,6 +410,28 @@ void wmain::on_save_file(bool save_as)
 	set_save_file(_savefile, true);
 
     g_free(data);
+}
+
+void wmain::on_export_diagram()
+{
+    GtkWidget *dialog = gtk_file_chooser_dialog_new("Export Diagram",
+				GTK_WINDOW(_window),
+				GTK_FILE_CHOOSER_ACTION_SAVE,
+				GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+				GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+				(const char *) NULL);
+    gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT);
+    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
+	
+    if (gtk_dialog_run(GTK_DIALOG(dialog)) != GTK_RESPONSE_ACCEPT) {
+	gtk_widget_destroy(dialog);
+	return;
+    } else {
+	char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+	_diagram->export_diagram(filename, false);
+	g_free(filename);
+	gtk_widget_destroy(dialog);
+    }
 }
 
 void wmain::config_choose_driver()

@@ -34,12 +34,6 @@ class wdiagram { public:
     dcss_set *css_set() const {
 	return _css_set;
     }
-    PangoAttrList *name_attrs() const {
-	return _name_attrs;
-    }
-    PangoAttrList *class_attrs() const {
-	return _class_attrs;
-    }
 
     rect_search<dwidget> &rects() {
 	return _rects;
@@ -70,6 +64,8 @@ class wdiagram { public:
     point canvas_to_window(double x, double y) const;
     rectangle canvas_to_window(const rectangle &r) const;
 
+    void export_diagram(const char *filename, bool eps);
+    
     enum { c_main = 0, ncursors = 9 };
     
   private:
@@ -79,8 +75,8 @@ class wdiagram { public:
     GtkAdjustment *_horiz_adjust;
     GtkAdjustment *_vert_adjust;
     dcss_set *_css_set;
-    PangoAttrList *_name_attrs;
-    PangoAttrList *_class_attrs;
+    PangoFontDescription *_font_desc;
+    unsigned _pango_generation;
     double _elt_expand;
     
     int _scale_step;

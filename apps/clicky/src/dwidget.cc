@@ -518,15 +518,15 @@ void delt::position_contents_dot(RouterT *router, dcss_set *dcs, ErrorHandler *e
 	}
 }
 
-void delt::layout_contents(wdiagram *d, RouterT *router, PangoLayout *pl)
+void delt::layout_contents(dcontext &dcx, RouterT *router)
 {
     for (std::vector<delt *>::iterator ci = _elt.begin();
 	 ci != _elt.end(); ++ci) {
-	(*ci)->layout(d, pl);
+	(*ci)->layout(dcx);
 	(*ci)->_row = -1;
     }
 
-    position_contents_dot(router, d->css_set(), d->main()->error_handler());
+    position_contents_dot(router, dcx.d->css_set(), dcx.d->main()->error_handler());
     //position_contents_scc(router);
     //position_contents_first_heuristic(router);
 
@@ -572,44 +572,70 @@ void delt::layout_ports(dcss_set *dcs)
     }
 }
 
-void delt::layout(wdiagram *d, PangoLayout *pl)
+void delt::layout_text(dcontext &dcx)
+{
+    pango_layout_set_width(dcx, -1);
+    pango_layout_set_markup(dcx, _markup.data(), _markup.length());
+    PangoRectangle rect;
+    pango_layout_get_pixel_extents(dcx, NULL, &rect);
+    _markup_width = rect.width;
+    _markup_height = rect.height;
+    _pango_generation = dcx.pango_generation;
+}
+
+static void append_markup_quote(StringAccum &sa, const String &str)
+{
+    const char *last = str.begin();
+    for (const char *s = str.begin(); s != str.end(); ++s)
+	if (*s == '<' || *s == '>') {
+	    sa.append(last, s);
+	    sa << (*s == '<' ? "&lt;" : "&gt;");
+	    last = s + 1;
+	}
+    sa.append(last, str.end());
+}
+
+void delt::layout(dcontext &dcx)
 {
     if (_layout)
 	return;
+    _orientation = _des->orientation;
 
     // get extents of name and data
-    _orientation = _des->orientation;
-    pango_layout_set_attributes(pl, d->name_attrs());
-    pango_layout_set_text(pl, _e->name().data(), _e->name().length());
-    PangoRectangle rect;
-    pango_layout_get_pixel_extents(pl, NULL, &rect);
-    _name_raw_width = rect.width;
-    _name_raw_height = rect.height;
-
-    if (_show_class) {
-	pango_layout_set_attributes(pl, d->class_attrs());
-	pango_layout_set_text(pl, _e->type_name().data(), _e->type_name().length());
-	pango_layout_get_pixel_extents(pl, NULL, &rect);
-	_class_raw_width = rect.width;
-	_class_raw_height = rect.height;
-    } else
-	_class_raw_width = _class_raw_height = 0;
+    StringAccum sa;
+    const char *last = _des->text.begin();
+    for (const char *s = _des->text.begin(); s != _des->text.end(); ++s)
+	if (*s == '%' && s + 1 != _des->text.end()) {
+	    sa.append(last, s);
+	    if (s[1] == 'n')
+		append_markup_quote(sa, name());
+	    else if (s[1] == 'c')
+		append_markup_quote(sa, type_name());
+	    else if (s[1] == 'f')
+		append_markup_quote(sa, flat_name());
+	    else
+		sa << s[1];
+	    ++s;
+	    last = s + 1;
+	}
+    sa.append(last, _des->text.end());
+    _markup = sa.take_string();
+    
+    layout_text(dcx);
 
     // get contents width and height
     if (_expanded && _elt.size())
-	layout_contents(d, _e->resolved_router(), pl);
+	layout_contents(dcx, _e->resolved_router());
     
     // get element width and height
     double xwidth, xheight;
 
     if (_des->style == destyle_queue && _contents_height == 0) {
-	xwidth = _name_raw_height + _class_raw_height;
-	xheight = MAX(_name_raw_width, _class_raw_width)
-	    + _des->padding[0] + _des->padding[2];
+	xwidth = _markup_height;
+	xheight = _markup_width + _des->padding[0] + _des->padding[2];
     } else {
-	xwidth = MAX(MAX(_name_raw_width, _contents_width), _class_raw_width);
-	xheight = _name_raw_height + _class_raw_height
-	    + _des->padding[0] + _des->padding[2];
+	xwidth = _markup_width;
+	xheight = _markup_height + _des->padding[0] + _des->padding[2];
 	if (_contents_height)
 	    xheight += _contents_height;
     }
@@ -617,7 +643,7 @@ void delt::layout(wdiagram *d, PangoLayout *pl)
     xheight = MAX(xheight, _des->min_height);
 
     // analyze port positions
-    layout_ports(d->css_set());
+    layout_ports(dcx.d->css_set());
     double xportlen = MAX(_ports_length[0], _ports_length[1]);
     
     if (_orientation == 0)
@@ -637,7 +663,7 @@ void delt::layout(wdiagram *d, PangoLayout *pl)
     _height = ceil(_height + 2 * _des->border_width);
 
     if (_des->shadow_style != dshadow_none)
-	d->notify_shadow(_des->shadow_width);
+	dcx.d->notify_shadow(_des->shadow_width);
 
     _layout = true;
 }
@@ -664,11 +690,11 @@ void delt::layout_compound_ports(dcss_set *dcs)
     }
 }
 
-void delt::layout_complete(wdiagram *d, double dx, double dy)
+void delt::layout_complete(dcontext &dcx, double dx, double dy)
 {
     if (_e) {
 	dx += _des->padding[3];
-	dy += _name_raw_height + _class_raw_height + _des->padding[0];
+	dy += _markup_height + _des->padding[0];
     }
 
     for (std::vector<delt *>::iterator ci = _elt.begin();
@@ -676,28 +702,28 @@ void delt::layout_complete(wdiagram *d, double dx, double dy)
 	if ((*ci)->_visible) {
 	    (*ci)->_x = floor((*ci)->_xrect._x + dx);
 	    (*ci)->_y = floor((*ci)->_xrect._y + dy);
-	    d->rects().insert(*ci);
+	    dcx.d->rects().insert(*ci);
 	    if ((*ci)->_elt.size())
-		(*ci)->layout_complete(d, (*ci)->_xrect._x + dx,
+		(*ci)->layout_complete(dcx, (*ci)->_xrect._x + dx,
 				       (*ci)->_xrect._y + dy);
 	}
 
     if (_e && _parent && _elt.size())
-	layout_compound_ports(d->css_set());
+	layout_compound_ports(dcx.d->css_set());
 
     for (std::vector<dconn *>::iterator ci = _conn.begin();
 	 ci != _conn.end(); ++ci) {
-	(*ci)->layout(d->css_set());
-	d->rects().insert(*ci);
+	(*ci)->layout(dcx.d->css_set());
+	dcx.d->rects().insert(*ci);
     }
 }
 
-void delt::layout_main(wdiagram *d, RouterT *router, PangoLayout *pl)
+void delt::layout_main(dcontext &dcx, RouterT *router)
 {
-    _des = d->css_set()->elt_style(this);
-    d->rects().clear();
-    layout_contents(d, router, pl);
-    layout_complete(d, _des->margin[3], _des->margin[0]);
+    _des = dcx.d->css_set()->elt_style(this);
+    dcx.d->rects().clear();
+    layout_contents(dcx, router);
+    layout_complete(dcx, _des->margin[3], _des->margin[0]);
     assign(0, 0, _contents_width + _des->margin[1] + _des->margin[3],
 	   _contents_height + _des->margin[0] + _des->margin[2]);
 }
@@ -883,11 +909,11 @@ static inline void cairo_set_border(cairo_t *cr, const double *color,
     cairo_set_line_width(cr, width);
 }
 
-void delt::draw_port(dcontext &dx, dport_style *dps, point p, double shift,
+void delt::draw_port(dcontext &dcx, dport_style *dps, point p, double shift,
 		     bool isoutput)
 {
     // align position
-    if (dx.scale_step == 0 && _aligned) {
+    if (dcx.scale_step == 0 && _aligned) {
 	double dd = (dps->shape == dpshape_triangle ? 0.5 : 0);
 	if (side_vertical(_orientation))
 	    p._x = round(p._x - dd) + dd;
@@ -896,11 +922,11 @@ void delt::draw_port(dcontext &dx, dport_style *dps, point p, double shift,
     }
 
     cairo_matrix_t original_matrix;
-    cairo_get_matrix(dx, &original_matrix);
-    cairo_translate(dx, p.x() + shift, p.y() + shift);
+    cairo_get_matrix(dcx, &original_matrix);
+    cairo_translate(dcx, p.x() + shift, p.y() + shift);
     int port_orientation = _orientation ^ (isoutput ? 2 : 0);
     if (port_orientation)
-	cairo_rotate(dx, port_orientation * M_PI_2);
+	cairo_rotate(dcx, port_orientation * M_PI_2);
 
     for (int i = 0; i < 4; i++) {
 	if ((i > 0 && dps->border_style == dborder_none)
@@ -917,7 +943,7 @@ void delt::draw_port(dcontext &dx, dport_style *dps, point p, double shift,
 	if (color[3] == 0)
 	    continue;
 
-	cairo_set_source_rgba(dx, color[0], color[1], color[2], color[3]);
+	cairo_set_source_rgba(dcx, color[0], color[1], color[2], color[3]);
 
 	double offset;
 	if (i > 1)
@@ -927,35 +953,35 @@ void delt::draw_port(dcontext &dx, dport_style *dps, point p, double shift,
 	    offset = 0;
 
 	if (i == 1)
-	    cairo_set_border(dx, 0, dps->border_style, dps->border_width);
+	    cairo_set_border(dcx, 0, dps->border_style, dps->border_width);
 	else if (i == 3)
-	    cairo_set_line_width(dx, 0.75 * dps->border_width);
+	    cairo_set_line_width(dcx, 0.75 * dps->border_width);
 
 	if (dps->shape == dpshape_triangle) {
-	    cairo_move_to(dx, -dps->length / 2 + offset, 0);
-	    cairo_line_to(dx, 0, dps->width - 1.15 * offset);
-	    cairo_line_to(dx, dps->length / 2 - offset, 0);
+	    cairo_move_to(dcx, -dps->length / 2 + offset, 0);
+	    cairo_line_to(dcx, 0, dps->width - 1.15 * offset);
+	    cairo_line_to(dcx, dps->length / 2 - offset, 0);
 	    if (i < 3)
-		cairo_close_path(dx);
+		cairo_close_path(dcx);
 	} else {
-	    cairo_move_to(dx, -dps->length / 2 + offset, 0);
-	    cairo_line_to(dx, -dps->length / 2 + offset, dps->width - offset);
-	    cairo_line_to(dx, dps->length / 2 - offset, dps->width - offset);
-	    cairo_line_to(dx, dps->length / 2 - offset, 0);
+	    cairo_move_to(dcx, -dps->length / 2 + offset, 0);
+	    cairo_line_to(dcx, -dps->length / 2 + offset, dps->width - offset);
+	    cairo_line_to(dcx, dps->length / 2 - offset, dps->width - offset);
+	    cairo_line_to(dcx, dps->length / 2 - offset, 0);
 	    if (!(i & 1))
-		cairo_close_path(dx);
+		cairo_close_path(dcx);
 	}
 	
 	if (i & 1)
-	    cairo_stroke(dx);
+	    cairo_stroke(dcx);
 	else
-	    cairo_fill(dx);
+	    cairo_fill(dcx);
     }
 
-    cairo_set_matrix(dx, &original_matrix);
+    cairo_set_matrix(dcx, &original_matrix);
 }
 
-void delt::draw_ports(dcontext &dx, double shift)
+void delt::draw_ports(dcontext &dcx, double shift)
 {
     const char *pcpos = _processing_code.begin();
     int pcode;
@@ -964,19 +990,19 @@ void delt::draw_ports(dcontext &dx, double shift)
     for (int i = 0; i < _e->ninputs(); i++) {
 	pcpos = ProcessingT::processing_code_next
 	    (pcpos, _processing_code.end(), pcode);
-	dps = dx.d->css_set()->port_style(this, false, i, pcode);
-	draw_port(dx, dps.get(), input_position(i, dps.get()), shift, false);
+	dps = dcx.d->css_set()->port_style(this, false, i, pcode);
+	draw_port(dcx, dps.get(), input_position(i, dps.get()), shift, false);
     }
     pcpos = ProcessingT::processing_code_output(_processing_code.begin(), _processing_code.end(), pcpos);
     for (int i = 0; i < _e->noutputs(); i++) {
 	pcpos = ProcessingT::processing_code_next
 	    (pcpos, _processing_code.end(), pcode);
-	dps = dx.d->css_set()->port_style(this, true, i, pcode);
-	draw_port(dx, dps.get(), output_position(i, dps.get()), shift, true);
+	dps = dcx.d->css_set()->port_style(this, true, i, pcode);
+	draw_port(dcx, dps.get(), output_position(i, dps.get()), shift, true);
     }
 }
 
-void delt::draw_background(dcontext &dx, double shift)
+void delt::draw_background(dcontext &dcx, double shift)
 {
     double pos[4];
     double bwd = floor(_des->border_width / 2);
@@ -992,33 +1018,33 @@ void delt::draw_background(dcontext &dx, double shift)
     // background
     if (_des->background_color[3]) {
 	const double *color = _des->background_color;
-	cairo_set_source_rgba(dx, color[0], color[1], color[2], color[3]);
-	cairo_move_to(dx, pos[3], pos[0]);
-	cairo_line_to(dx, pos[1], pos[0]);
-	cairo_line_to(dx, pos[1], pos[2]);
-	cairo_line_to(dx, pos[3], pos[2]);
-	cairo_close_path(dx);
-	cairo_fill(dx);
+	cairo_set_source_rgba(dcx, color[0], color[1], color[2], color[3]);
+	cairo_move_to(dcx, pos[3], pos[0]);
+	cairo_line_to(dcx, pos[1], pos[0]);
+	cairo_line_to(dcx, pos[1], pos[2]);
+	cairo_line_to(dcx, pos[3], pos[2]);
+	cairo_close_path(dcx);
+	cairo_fill(dcx);
     }
 
     // fullness
     if ((_style & esflag_fullness) && _hvalue_fullness >= 0) {
 	double xpos = pos[_orientation];
 	pos[_orientation] = fma(_hvalue_fullness, pos[_orientation] - pos[_orientation ^ 2], pos[_orientation ^ 2]);
-	cairo_set_source_rgba(dx, 0, 0, 1.0, 0.2);
-	cairo_move_to(dx, pos[1], pos[2]);
-	cairo_line_to(dx, pos[3], pos[2]);
-	cairo_line_to(dx, pos[3], pos[0]);
-	cairo_line_to(dx, pos[1], pos[0]);
-	cairo_close_path(dx);
-	cairo_fill(dx);
+	cairo_set_source_rgba(dcx, 0, 0, 1.0, 0.2);
+	cairo_move_to(dcx, pos[1], pos[2]);
+	cairo_line_to(dcx, pos[3], pos[2]);
+	cairo_line_to(dcx, pos[3], pos[0]);
+	cairo_line_to(dcx, pos[1], pos[0]);
+	cairo_close_path(dcx);
+	cairo_fill(dcx);
 	_drawn_fullness = _hvalue_fullness;
 	pos[_orientation] = xpos;
     }
 
     // queue lines
     if (_des->style == destyle_queue) {
-	cairo_set_border(dx, _dqs->queue_stripe_color, _dqs->queue_stripe_style, _dqs->queue_stripe_width);
+	cairo_set_border(dcx, _dqs->queue_stripe_color, _dqs->queue_stripe_style, _dqs->queue_stripe_width);
 	int o = _orientation;
 	double qls = _dqs->queue_stripe_spacing;
 	int num_lines = (int) ((side_length(o) - _des->padding[o]) / qls);
@@ -1027,150 +1053,121 @@ void delt::draw_background(dcontext &dx, double shift)
 	    qls = -qls, xpos -= 1;
 	for (int i = 1; i <= num_lines; ++i) {
 	    pos[(o + 2) & 3] = pos[o] = xpos + round(i * qls);
-	    cairo_move_to(dx, pos[((o + 3) & 2) + 1], pos[(o + 3) & 2]);
-	    cairo_line_to(dx, pos[((o + 1) & 2) + 1], pos[(o + 1) & 2]);
+	    cairo_move_to(dcx, pos[((o + 3) & 2) + 1], pos[(o + 3) & 2]);
+	    cairo_line_to(dcx, pos[((o + 1) & 2) + 1], pos[(o + 1) & 2]);
 	}
-	cairo_stroke(dx);
+	cairo_stroke(dcx);
     }
 }
 
-void delt::clip_to_border(dcontext &dx, double shift) const
+void delt::clip_to_border(dcontext &dcx, double shift) const
 {
     double x1 = _x + shift, y1 = _y + shift;
     double x2 = _x + _width + shift, y2 = _y + _height + shift;
-    cairo_user_to_device(dx, &x1, &y1);
-    cairo_user_to_device(dx, &x2, &y2);
+    cairo_user_to_device(dcx, &x1, &y1);
+    cairo_user_to_device(dcx, &x2, &y2);
     x1 = floor(x1);
     y1 = floor(y1);
     x2 = ceil(x2) - 1;
     y2 = ceil(y2) - 1;
-    cairo_device_to_user(dx, &x1, &y1);
-    cairo_device_to_user(dx, &x2, &y2);
-    cairo_rectangle(dx, x1, y1, x2 - x1, y2 - y1);
-    cairo_clip(dx);
+    cairo_device_to_user(dcx, &x1, &y1);
+    cairo_device_to_user(dcx, &x2, &y2);
+    cairo_rectangle(dcx, x1, y1, x2 - x1, y2 - y1);
+    cairo_clip(dcx);
 }
 
-void delt::draw_text(dcontext &dx, double shift)
+void delt::draw_text(dcontext &dcx, double shift)
 {
     // text
     const double *color = _des->color;
-    cairo_set_source_rgba(dx, color[0], color[1], color[2], color[3]);
-    pango_layout_set_wrap(dx, PANGO_WRAP_CHAR);
+    cairo_set_source_rgba(dcx, color[0], color[1], color[2], color[3]);
+    pango_layout_set_wrap(dcx, PANGO_WRAP_CHAR);
+    pango_layout_set_alignment(dcx, PANGO_ALIGN_CENTER);
 
-    double max_text_width = MAX(_name_raw_width, _class_raw_width);
+    if (dcx.pango_generation != _pango_generation)
+	layout_text(dcx);
     double space[2];
     space[0] = space[1] = 2 * _des->border_width;
     space[_orientation & 1] += 2 * _des->orientation_padding;
     bool saved = false;
 
-    if (_width - space[1] < max_text_width
-	&& _height - space[0] > max_text_width
+    if (_width - space[1] < _markup_width
+	&& _height - space[0] > _markup_width
 	&& !_elt.size()) {
 	// vertical layout
 	saved = true;
-	cairo_save(dx);
-	if (_name_raw_height + _class_raw_height > _width - 2)
-	    clip_to_border(dx, shift);
+	cairo_save(dcx);
+	if (_markup_height > _width - 2)
+	    clip_to_border(dcx, shift);
 	
-	cairo_translate(dx, _x + shift, _y + shift + _height);
-	cairo_rotate(dx, -M_PI / 2);
+	cairo_translate(dcx, _x + shift, _y + shift + _height);
+	cairo_rotate(dcx, -M_PI / 2);
 
-	pango_layout_set_width(dx, (int) ((_height - space[0]) * PANGO_SCALE));
-	pango_layout_set_attributes(dx, dx.d->name_attrs());
-	pango_layout_set_text(dx, _e->name().data(), _e->name().length());
-	double dy = MAX((_width - _name_raw_height - _class_raw_height) / 2, 0);
-	cairo_move_to(dx, MAX(_height / 2 - _name_raw_width / 2, 1), dy);
-	pango_cairo_show_layout(dx, dx);
-	
-	if (_show_class) {
-	    pango_layout_set_text(dx, _e->type_name().data(), _e->type_name().length());
-	    pango_layout_set_attributes(dx, dx.d->class_attrs());
-	    cairo_move_to(dx, MAX(_height / 2 - _class_raw_width / 2, 1), dy + _name_raw_height);
-	    pango_cairo_show_layout(dx, dx);
-	}
+	pango_layout_set_width(dcx, (int) ((_height - space[0]) * PANGO_SCALE));
+	pango_layout_set_markup(dcx, _markup.data(), _markup.length());
+	double dy = MAX((_width - _markup_height) / 2, 0);
+	cairo_move_to(dcx, space[0] / 2, dy);
+	pango_cairo_show_layout(dcx, dcx);
 
     } else {
 	// normal horizontal layout, no text wrapping
-	if (max_text_width > _width - space[1]
-	    || _name_raw_height + _class_raw_height > _height - space[0]) {
+	if (_markup_width > _width - space[1]
+	    || _markup_height > _height - space[0]) {
 	    saved = true;
-	    cairo_save(dx);
-	    clip_to_border(dx, shift);
+	    cairo_save(dcx);
+	    clip_to_border(dcx, shift);
 	}
 
-	pango_layout_set_width(dx, (int) ((_width - space[1]) * PANGO_SCALE));
-	pango_layout_set_attributes(dx, dx.d->name_attrs());
-	pango_layout_set_text(dx, _e->name().data(), _e->name().length());
+	pango_layout_set_width(dcx, (int) ((_width - space[1]) * PANGO_SCALE));
+	pango_layout_set_markup(dcx, _markup.data(), _markup.length());
 
 	double name_width, name_height;
-	if (_width - space[1] >= _name_raw_width)
-	    name_width = _name_raw_width, name_height = _name_raw_height;
+	if (_width - space[1] >= _markup_width)
+	    name_width = _markup_width, name_height = _markup_height;
 	else {
 	    PangoRectangle rect;
-	    pango_layout_get_pixel_extents(dx, NULL, &rect);
+	    pango_layout_get_pixel_extents(dcx, NULL, &rect);
 	    name_width = _width - space[1], name_height = rect.height;
 	}
 
-	double class_width, class_height;
-	if (_width - space[1] >= _class_raw_width)
-	    class_width = _class_raw_width, class_height = _class_raw_height;
-	else {
-	    pango_layout_set_attributes(dx, dx.d->class_attrs());
-	    pango_layout_set_text(dx, _e->type_name().data(), _e->type_name().length());
-	    PangoRectangle rect;
-	    pango_layout_get_pixel_extents(dx, NULL, &rect);
-	    class_width = _width - space[1], class_height = rect.height;
-	    pango_layout_set_attributes(dx, dx.d->name_attrs());
-	    pango_layout_set_text(dx, _e->name().data(), _e->name().length());
-	}
-
-	double dy = MAX((_height - name_height - class_height - _contents_height) / 2, 1);
-	cairo_move_to(dx, _x + shift + MAX(_width / 2 - name_width / 2, 1),
-		      _y + dy + shift);
-	pango_cairo_show_layout(dx, dx);
-
-	if (_show_class) {
-	    pango_layout_set_attributes(dx, dx.d->class_attrs());
-	    pango_layout_set_text(dx, _e->type_name().data(), _e->type_name().length());
-	    cairo_move_to(dx, _x + shift + MAX(_width / 2 - class_width / 2, 1),
-			  _y + shift + dy + name_height);
-	    pango_cairo_show_layout(dx, dx);
-	}
+	double dy = MAX((_height - name_height - _contents_height) / 2, 1);
+	cairo_move_to(dcx, _x + space[1] / 2 + shift, _y + dy + shift);
+	pango_cairo_show_layout(dcx, dcx);
     }
 
     if (saved)
-	cairo_restore(dx);
+	cairo_restore(dcx);
 }
 
-void delt::draw_outline(dcontext &dx, double shift)
+void delt::draw_outline(dcontext &dcx, double shift)
 {
     // shadow
     if (_des->shadow_style != dshadow_none) {
 	const double *color = _des->shadow_color;
-	cairo_set_source_rgba(dx, color[0], color[1], color[2], color[3]);
-	cairo_set_dash(dx, 0, 0, 0);
+	cairo_set_source_rgba(dcx, color[0], color[1], color[2], color[3]);
+	cairo_set_dash(dcx, 0, 0, 0);
 	double sw = _des->shadow_width;
 	if (_des->shadow_style == dshadow_drop) {
-	    cairo_set_line_width(dx, sw - shift);
-	    cairo_move_to(dx, _x + sw, _y + _height + (sw + shift) / 2);
-	    cairo_line_to(dx, _x + _width + (sw + shift) / 2, _y + _height + (sw + shift) / 2);
-	    cairo_line_to(dx, _x + _width + (sw + shift) / 2, _y + sw);
-	    cairo_stroke(dx);
+	    cairo_set_line_width(dcx, sw - shift);
+	    cairo_move_to(dcx, _x + sw, _y + _height + (sw + shift) / 2);
+	    cairo_line_to(dcx, _x + _width + (sw + shift) / 2, _y + _height + (sw + shift) / 2);
+	    cairo_line_to(dcx, _x + _width + (sw + shift) / 2, _y + sw);
+	    cairo_stroke(dcx);
 	} else {
-	    cairo_set_line_width(dx, sw);
+	    cairo_set_line_width(dcx, sw);
 	    double x = _x + shift - sw / 2, y = _y + shift - sw / 2;
-	    cairo_move_to(dx, x, y);
-	    cairo_line_to(dx, x + _width + sw, y);
-	    cairo_line_to(dx, x + _width + sw, y + _height + sw);
-	    cairo_line_to(dx, x, y + _height + sw);
-	    cairo_close_path(dx);
-	    cairo_stroke(dx);
+	    cairo_move_to(dcx, x, y);
+	    cairo_line_to(dcx, x + _width + sw, y);
+	    cairo_line_to(dcx, x + _width + sw, y + _height + sw);
+	    cairo_line_to(dcx, x, y + _height + sw);
+	    cairo_close_path(dcx);
+	    cairo_stroke(dcx);
 	}
     }
 
     // outline
     if (_des->border_style != dborder_none) {
-	cairo_set_border(dx, _des->border_color, _des->border_style,
+	cairo_set_border(dcx, _des->border_color, _des->border_style,
 			 _des->border_width);
 	double pos[4];
 	double bwd = _des->border_width / 2;
@@ -1181,41 +1178,41 @@ void delt::draw_outline(dcontext &dx, double shift)
 	int o = _orientation;
 	if (_des->style == destyle_queue)
 	    pos[o] = side(o) + shift;
-	cairo_move_to(dx, pos[((o + 3) & 2) + 1], pos[o & 2]);
-	cairo_line_to(dx, pos[((o + 2) & 2) + 1], pos[(o + 3) & 2]);
-	cairo_line_to(dx, pos[((o + 1) & 2) + 1], pos[(o + 2) & 2]);
-	cairo_line_to(dx, pos[(o & 2) + 1], pos[(o + 1) & 2]);
+	cairo_move_to(dcx, pos[((o + 3) & 2) + 1], pos[o & 2]);
+	cairo_line_to(dcx, pos[((o + 2) & 2) + 1], pos[(o + 3) & 2]);
+	cairo_line_to(dcx, pos[((o + 1) & 2) + 1], pos[(o + 2) & 2]);
+	cairo_line_to(dcx, pos[(o & 2) + 1], pos[(o + 1) & 2]);
 	if (_des->style != destyle_queue)
-	    cairo_close_path(dx);
-	cairo_stroke(dx);
+	    cairo_close_path(dcx);
+	cairo_stroke(dcx);
     }
 }
 
-void delt::draw(dcontext &dx)
+void delt::draw(dcontext &dcx)
 {
     if (_visible) {
-	_des = dx.d->css_set()->elt_style(this);
+	_des = dcx.d->css_set()->elt_style(this);
 	double shift = (_highlight & (1 << dhlt_pressed) ? 1 : 0);
-	draw_background(dx, shift);
-	draw_text(dx, shift);
-	draw_ports(dx, shift);
-	draw_outline(dx, shift);
+	draw_background(dcx, shift);
+	draw_text(dcx, shift);
+	draw_ports(dcx, shift);
+	draw_outline(dcx, shift);
     }
 }
 
-void dconn::draw(dcontext &dx)
+void dconn::draw(dcontext &dcx)
 {
-    cairo_set_source_rgb(dx, 0, 0, 0);
-    cairo_set_line_width(dx, 1);
-    cairo_set_dash(dx, 0, 0, 0);
+    cairo_set_source_rgb(dcx, 0, 0, 0);
+    cairo_set_line_width(dcx, 1);
+    cairo_set_dash(dcx, 0, 0, 0);
 
     point op = _from_elt->output_position(_from_port, false);
     point ip = _to_elt->input_position(_to_port, false);
     
     if (_from_elt->vertical())
-	cairo_move_to(dx, op.x(), op.y() - 0.5);
+	cairo_move_to(dcx, op.x(), op.y() - 0.5);
     else
-	cairo_move_to(dx, op.x() - 0.5, op.y());
+	cairo_move_to(dcx, op.x() - 0.5, op.y());
     
     if ((_from_elt->vertical() && _to_elt->vertical()
 	 && fabs(ip.x() - op.x()) <= 6)
@@ -1225,35 +1222,35 @@ void dconn::draw(dcontext &dx)
     else {
 	point curvea;
 	if (_from_elt->vertical()) {
-	    cairo_line_to(dx, op.x(), op.y() + 3);
+	    cairo_line_to(dcx, op.x(), op.y() + 3);
 	    curvea = point(op.x(), op.y() + 10);
 	} else {
-	    cairo_line_to(dx, op.x() + 3, op.y());
+	    cairo_line_to(dcx, op.x() + 3, op.y());
 	    curvea = point(op.x() + 10, op.y());
 	}
 	if (_to_elt->vertical())
-	    cairo_curve_to(dx, curvea.x(), curvea.y(),
+	    cairo_curve_to(dcx, curvea.x(), curvea.y(),
 			   ip.x(), ip.y() - 12, ip.x(), ip.y() - 7);
 	else
-	    cairo_curve_to(dx, curvea.x(), curvea.y(),
+	    cairo_curve_to(dcx, curvea.x(), curvea.y(),
 			   ip.x() - 12, ip.y(), ip.x() - 7, ip.y());
     }
-    cairo_line_to(dx, ip.x(), ip.y());
-    cairo_stroke(dx);
+    cairo_line_to(dcx, ip.x(), ip.y());
+    cairo_stroke(dcx);
 
     if (_to_elt->vertical()) {
-	cairo_move_to(dx, ip.x(), ip.y() + 0.25);
-	cairo_line_to(dx, ip.x() - 3, ip.y() - 5.75);
-	cairo_line_to(dx, ip.x(), ip.y() - 3.75);
-	cairo_line_to(dx, ip.x() + 3, ip.y() - 5.75);
+	cairo_move_to(dcx, ip.x(), ip.y() + 0.25);
+	cairo_line_to(dcx, ip.x() - 3, ip.y() - 5.75);
+	cairo_line_to(dcx, ip.x(), ip.y() - 3.75);
+	cairo_line_to(dcx, ip.x() + 3, ip.y() - 5.75);
     } else {
-	cairo_move_to(dx, ip.x() + 0.25, ip.y());
-	cairo_line_to(dx, ip.x() - 5.75, ip.y() - 3);
-	cairo_line_to(dx, ip.x() - 3.75, ip.y());
-	cairo_line_to(dx, ip.x() - 5.75, ip.y() + 3);
+	cairo_move_to(dcx, ip.x() + 0.25, ip.y());
+	cairo_line_to(dcx, ip.x() - 5.75, ip.y() - 3);
+	cairo_line_to(dcx, ip.x() - 3.75, ip.y());
+	cairo_line_to(dcx, ip.x() - 5.75, ip.y() + 3);
     }
-    cairo_close_path(dx);
-    cairo_fill(dx);
+    cairo_close_path(dcx);
+    cairo_fill(dcx);
 }
 
 /*****

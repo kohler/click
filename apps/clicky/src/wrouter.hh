@@ -107,6 +107,7 @@ class wmain { public:
     void on_open_socket();
     void on_open_kernel();
     void on_save_file(bool save_as);
+    void on_export_diagram();
     void on_config_changed();
     void config_set_driver(int driver);
     void config_check(bool install);
