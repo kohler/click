@@ -38,7 +38,8 @@ enum {
 enum {
     dedisp_none = 0,
     dedisp_open = 1,
-    dedisp_closed = 2
+    dedisp_closed = 2,
+    dedisp_vsplit = 3
 };
 
 struct dport_style : public enable_ref_ptr {

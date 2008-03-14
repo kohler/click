@@ -122,6 +122,13 @@ const char default_css[] = "~port~.input {\n\
     min-width: 17.6px;\n\
     min-height: 49.6px;\n\
     style: queue;\n\
+}\n\
+&fullness {\n\
+    style: fullness;\n\
+    length: length;\n\
+    capacity: capacity;\n\
+    color: rgba(0%, 0%, 100%, 20%);\n\
+    autorefresh: length 0.1;\n\
 }";
 
 
@@ -350,7 +357,7 @@ bool dcss_selector::match(const delt *e) const
 		|| name[type_name.length()] != '@'
 		|| memcmp(name.begin(), type_name.begin(), type_name.length()))
 		return false;
-	} else if (k->equals("driver", 6)) {
+	} else if (k->equals("live", 4)) {
 	    if (!e->driver())
 		return false;
 	}
@@ -1365,6 +1372,8 @@ ref_ptr<delt_style> dcss_set::elt_style(const delt *e)
 	    sty->display = dedisp_none;
 	else if (s.equals("closed", 6))
 	    sty->display = dedisp_closed;
+	else if (s.equals("vertical-split", 14))
+	    sty->display = dedisp_vsplit;
 	sty->font = elt_pm[26].vstring("font");
 	sty->decorations = elt_pm[27].vstring("decorations");
 

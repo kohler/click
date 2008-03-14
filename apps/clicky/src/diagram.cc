@@ -386,6 +386,12 @@ void wdiagram::expose(delt *e, rectangle *expose_rect)
 	redraw(*e);
     else if (_layout)
 	*expose_rect |= *e;
+    if (delt *o = e->visible_split()) {
+	if (_layout && !expose_rect)
+	    redraw(*o);
+	else if (_layout)
+	    *expose_rect |= *o;
+    }
 }
 
 void wdiagram::unhighlight(uint8_t htype, rectangle *expose_rect)

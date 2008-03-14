@@ -56,6 +56,10 @@ class dwidget : public rectangle { public:
     inline const delt *cast_elt() const;
     inline dconn *cast_conn();
     inline const dconn *cast_conn() const;
+
+    int z_index() const {
+	return _z_index;
+    }
     
     static bool z_index_less(const dwidget *a, const dwidget *b) {
 	return a->_z_index < b->_z_index;
@@ -114,10 +118,10 @@ class delt : public dwidget { public:
 
     delt(delt *parent, int z_index)
 	: dwidget(dw_elt, z_index), _e(0), _decor(0), _parent(parent),
-	  _style(0), _visible(false), _layout(false), _expanded(true),
+	  _split(0), _visible(false), _layout(false), _expanded(true),
 	  _aligned(true), _handler_markup(false), _driver(false),
-	  _orientation(0), _highlight(0), _drawn_highlight(0),
-	  _depth(parent ? parent->_depth + 1 : 0),
+	  _split_inputs(false), _orientation(0), _highlight(0),
+	  _drawn_highlight(0), _depth(parent ? parent->_depth + 1 : 0),
 	  _contents_width(0), _contents_height(0) {
 	_portoff[0] = _portoff[1] = 0;
 	_width = _height = 0;
@@ -140,6 +144,9 @@ class delt : public dwidget { public:
     void set_orientation(int orientation) {
 	assert(orientation >= side_top && orientation <= side_left);
 	_orientation = orientation;
+    }
+    delt *visible_split() const {
+	return _split && _split->visible() ? _split : 0;
     }
 
     bool root() const {
@@ -187,9 +194,13 @@ class delt : public dwidget { public:
     }
     void highlight(int htype) {
 	_highlight |= 1 << htype;
+	if (_split)
+	    _split->_highlight |= 1 << htype;
     }
     void unhighlight(int htype) {
 	_highlight &= ~(1 << htype);
+	if (_split)
+	    _split->_highlight &= ~(1 << htype);
     }
 
     // creating
@@ -243,10 +254,11 @@ class delt : public dwidget { public:
     double *_portoff[2];
     double _ports_length[2];
     delt *_parent;
+    delt *_split;
+    
     String _flat_name;
     String _flat_config;
     String _markup;
-    int _style;
 
     bool _visible;
     bool _layout;
@@ -254,6 +266,7 @@ class delt : public dwidget { public:
     bool _aligned;
     bool _handler_markup;
     bool _driver;
+    bool _split_inputs;
     int _orientation;
     uint8_t _highlight;
     uint8_t _drawn_highlight;
@@ -296,12 +309,14 @@ class delt : public dwidget { public:
     double hard_port_position(bool isoutput, int port,
 			      double side_length) const;
     void draw_port(dcontext &dx, dport_style *dps, point p, bool isoutput);
+    void border_path(dcontext &dx, bool closed) const;
     void clip_to_border(dcontext &dx) const;
 
     void draw_background(dcontext &dx);
     void draw_text(dcontext &dx);
     void draw_ports(dcontext &dx);
     void draw_outline(dcontext &dx);
+    void draw_drop_shadow(dcontext &dx);
         
 };
 
