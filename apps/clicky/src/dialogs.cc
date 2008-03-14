@@ -16,9 +16,10 @@ extern "C" {
 namespace clicky {
 
 extern "C" {
-static void on_new_window_activate(GtkMenuItem *, gpointer)
+static void on_new_window_activate(GtkMenuItem *, gpointer user_data)
 {
     wmain *rw = new wmain;
+    rw->set_ccss_text(reinterpret_cast<wmain *>(user_data)->ccss_text());
     rw->show();
 }
 
@@ -219,6 +220,7 @@ void wmain::on_open_file()
 	    rw->set_landmark(filename);
 	    rw->set_config(s, true);
 	    rw->set_save_file(filename, true);
+	    rw->set_ccss_text(ccss_text());
 	    rw->show();
 	}
 	g_free(filename);
@@ -335,6 +337,7 @@ void wmain::on_open_socket()
 	    rw = new wmain;
 	rw->set_landmark(String(hosts) + ":" + String(ports));
 	(void) new csocket_wdriver(rw, socket, helper.ready);
+	rw->set_ccss_text(ccss_text());
 	rw->show();
 	break;
     }
@@ -359,6 +362,7 @@ void wmain::on_open_kernel()
 	    rw = new wmain;
 	rw->set_landmark(prefix);
 	(void) new clickfs_wdriver(rw, prefix);
+	rw->set_ccss_text(ccss_text());
 	rw->show();
     }
 }

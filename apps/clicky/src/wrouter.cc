@@ -352,6 +352,16 @@ void wmain::set_save_file(const String &savefile, bool loading)
 	config_changed_initialize(false, true);
 }
 
+String wmain::ccss_text() const
+{
+    return _diagram->ccss_text();
+}
+
+void wmain::set_ccss_text(const String &text)
+{
+    _diagram->set_ccss_text(text);
+}
+
 
 /*****
  *

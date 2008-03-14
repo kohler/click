@@ -34,6 +34,8 @@ class wdiagram { public:
     dcss_set *css_set() const {
 	return _css_set;
     }
+    String ccss_text() const;
+    void set_ccss_text(const String &text);
 
     rect_search<dwidget> &rects() {
 	return _rects;

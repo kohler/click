@@ -99,6 +99,21 @@ void wdiagram::initialize()
     }
 }
 
+String wdiagram::ccss_text() const
+{
+    return _base_css_set->text();
+}
+
+void wdiagram::set_ccss_text(const String &text)
+{
+    if (_base_css_set->text() && text) {
+	delete _base_css_set;
+	_base_css_set = _css_set = new dcss_set(dcss_set::default_set("screen"));
+	++_pango_generation;
+    }
+    _base_css_set->parse(text);
+}
+
 
 void wdiagram::display(const String &ename, bool scroll_to)
 {

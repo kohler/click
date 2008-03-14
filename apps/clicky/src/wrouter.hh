@@ -31,6 +31,8 @@ class wmain { public:
     void set_landmark(const String &landmark);
     void set_save_file(const String &savefile, bool loading);
     void set_config(String conf, bool replace);
+    String ccss_text() const;
+    void set_ccss_text(const String &text);
 
     // implementation properties
     GatherErrorHandler *error_handler() const {

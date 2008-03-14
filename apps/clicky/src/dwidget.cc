@@ -672,9 +672,10 @@ void delt::layout(dcontext &dcx)
     // get element width and height
     double xwidth, xheight;
 
-    if (_des->style == destyle_queue && _contents_height == 0) {
+    if (_des->style == destyle_queue
+	&& _contents_height == 0 && side_vertical(_orientation)) {
 	xwidth = _markup_height;
-	xheight = _markup_width + _des->padding[0] + _des->padding[2];
+	xheight = _markup_width + _des->padding[0] + _des->padding[2] + _des->orientation_padding;
     } else {
 	xwidth = MAX(_markup_width, _contents_width);
 	xheight = _markup_height + _des->padding[0] + _des->padding[2];
