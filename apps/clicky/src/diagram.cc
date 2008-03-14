@@ -367,54 +367,10 @@ void wdiagram::export_diagram(const char *filename, bool eps)
  *
  */
 
-extern "C" {
-static void on_hpref_diagram_toggled(GtkToggleButton *, gpointer);
-}
-
-void wdiagram::hpref_widgets(handler_value *hv, GtkWidget *box)
-{
-    if (hv->special() || !hv->readable())
-	return;
-
-    // for now, only know how to display lengths on Queue elements
-    if (hv->handler_name() == "length") {
-	handler_value *ohv = main()->hvalues().find(hv->element_name() + ".capacity");
-	if (ohv && ohv->readable()) {
-	    GtkWidget *w = gtk_check_button_new_with_label(_("Diagram Fullness"));
-	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(w), hv->notify_delt());
-	    gtk_box_pack_start(GTK_BOX(box), w, FALSE, FALSE, 0);
-	    g_signal_connect(w, "toggled", G_CALLBACK(on_hpref_diagram_toggled), _rw->handlers());
-	}
-    }
-}
-
-void wdiagram::hpref_apply(handler_value *hv)
-{
-    if (hv->handler_name() == "length") {
-	if (!_relt)
-	    router_create(true, true);
-	if (delt *e = _elt_map[hv->element_name()])
-	    if (hv->notify_delt())
-		e->add_gadget(this, esflag_fullness);
-	    else
-		e->remove_gadget(this, esflag_fullness);
-    }
-}
-
 void wdiagram::notify_read(handler_value *hv)
 {
     if (delt *e = _elt_map[hv->element_name()])
 	e->notify_read(this, hv);
-}
-
-extern "C" {
-static void on_hpref_diagram_toggled(GtkToggleButton *button, gpointer user_data)
-{
-    whandler *wh = reinterpret_cast<whandler *>(user_data);
-    const gchar *hname = whandler::widget_hname(GTK_WIDGET(button));
-    gboolean on = gtk_toggle_button_get_active(button);
-    wh->set_hinfo_flags(hname, hflag_notify_delt, on ? hflag_notify_delt : 0);
-}
 }
 
 

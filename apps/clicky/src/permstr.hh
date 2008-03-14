@@ -38,6 +38,9 @@ class PermString { struct Doodad; public:
     inline char operator*() const {
 	return *_rep;
     }
+    inline operator String() const {
+	return String::stable_string(_rep, length());
+    }
   
     inline const char *begin() const;
     inline const char *end() const;

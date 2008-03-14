@@ -18,6 +18,7 @@ class dcss_set;
 class delt_style;
 class dport_style;
 class dqueue_style;
+class ddecor;
 
 struct dcontext {
     wdiagram *d;
@@ -94,18 +95,17 @@ class dconn : public dwidget { public:
 };
 
 
-enum { esflag_fullness = 1 };
-
-enum { deg_none = -1,
-       deg_main = 0,
-       deg_border_top = 1,
-       deg_border_bot = 2,
-       deg_border_lft = 3,
-       deg_corner_ulft = deg_border_top + deg_border_lft,
-       deg_corner_llft = deg_border_bot + deg_border_lft,
-       deg_border_rt = 6,
-       deg_corner_urt = deg_border_top + deg_border_rt,
-       deg_corner_lrt = deg_border_bot + deg_border_rt
+enum {
+    deg_none = -1,
+    deg_main = 0,
+    deg_border_top = 1,
+    deg_border_bot = 2,
+    deg_border_lft = 3,
+    deg_corner_ulft = deg_border_top + deg_border_lft,
+    deg_corner_llft = deg_border_bot + deg_border_lft,
+    deg_border_rt = 6,
+    deg_corner_urt = deg_border_top + deg_border_rt,
+    deg_corner_lrt = deg_border_bot + deg_border_rt
 };
 
 class delt : public dwidget { public:
@@ -113,8 +113,8 @@ class delt : public dwidget { public:
     class layoutelt;
 
     delt(delt *parent, int z_index)
-	: dwidget(dw_elt, z_index), _e(0), _parent(parent), _style(0),
-	  _visible(false), _layout(false), _expanded(true),
+	: dwidget(dw_elt, z_index), _e(0), _decor(0), _parent(parent),
+	  _style(0), _visible(false), _layout(false), _expanded(true),
 	  _aligned(true), _handler_markup(false), _driver(false),
 	  _orientation(0), _highlight(0), _drawn_highlight(0),
 	  _depth(parent ? parent->_depth + 1 : 0),
@@ -198,8 +198,6 @@ class delt : public dwidget { public:
 		int &z_index);
     
     // gadgets
-    void add_gadget(wdiagram *d, int gadget);
-    void remove_gadget(wdiagram *d, int gadget);
     void notify_read(wdiagram *d, handler_value *hv);
     
     int find_gadget(wdiagram *d, double window_x, double window_y) const;
@@ -222,6 +220,11 @@ class delt : public dwidget { public:
     point input_position(int port, dport_style *dps) const;
     point output_position(int port, dport_style *dps) const;
     void draw(dcontext &dx);
+
+    // handlers
+    bool expand_handlers(wmain *w);
+    handler_value *handler_interest(wmain *w, const String &hname,
+				    bool autorefresh = false, int autorefresh_period = 0);
     
     void prepare_router(wdiagram *d, RouterT *router, ProcessingT *processing,
 			HashMap<String, delt *> &collector,
@@ -235,6 +238,7 @@ class delt : public dwidget { public:
     std::vector<dconn *> _conn;
     ref_ptr<delt_style> _des;
     ref_ptr<dqueue_style> _dqs;
+    ddecor *_decor;
     unsigned _generation;
     double *_portoff[2];
     double _ports_length[2];
@@ -264,15 +268,9 @@ class delt : public dwidget { public:
     
     double _contents_width;
     double _contents_height;
-
-    double _hvalue_fullness;
-    double _drawn_fullness;
     
     delt(const delt &);
     delt &operator=(const delt &);
-
-    void gadget_fullness(wdiagram *d);
-    bool expand_handlers(wmain *w);
 
     void prepare(wdiagram *d, ElementT *e, ProcessingT *processing,
 		 HashMap<String, delt *> &collector, Vector<ElementT *> &path,
@@ -288,6 +286,7 @@ class delt : public dwidget { public:
     void layout(dcontext &dcx);
     bool parse_markup(wmain *w);
     void restyle(dcontext &dcx);
+    void redecorate(dcontext &dcx);
     void layout_complete(dcontext &dcx, double dx, double dy);
     void layout_compound_ports(dcss_set *dcs);
     void union_bounds(rectangle &r, bool self) const;
@@ -296,14 +295,13 @@ class delt : public dwidget { public:
 				double side_length) const;
     double hard_port_position(bool isoutput, int port,
 			      double side_length) const;
-    void draw_port(dcontext &dx, dport_style *dps, point p, double shift,
-		   bool isoutput);
-    void clip_to_border(dcontext &dx, double shift) const;
+    void draw_port(dcontext &dx, dport_style *dps, point p, bool isoutput);
+    void clip_to_border(dcontext &dx) const;
 
-    void draw_background(dcontext &dx, double shift);
-    void draw_text(dcontext &dx, double shift);
-    void draw_ports(dcontext &dx, double shift);
-    void draw_outline(dcontext &dx, double shift);
+    void draw_background(dcontext &dx);
+    void draw_text(dcontext &dx);
+    void draw_ports(dcontext &dx);
+    void draw_outline(dcontext &dx);
         
 };
 

@@ -421,6 +421,11 @@ bool dcss_selector::match(const handler_value *hv) const
     return true;
 }
 
+bool dcss_selector::type_glob_match(PermString str) const
+{
+    return glob_match(str, _type);
+}
+
 const char *dcss_selector::parse(const String &str, const char *s)
 {
     _type = _name = String();
@@ -1267,7 +1272,8 @@ static dcss_propmatch elt_pm[] = {
     { "margin-left", 0 },
     { "text", 0 },
     { "display", 0 },
-    { "font", 0 }
+    { "font", 0 },
+    { "decorations", 0 }
 };
 
 enum {
@@ -1360,6 +1366,7 @@ ref_ptr<delt_style> dcss_set::elt_style(const delt *e)
 	else if (s.equals("closed", 6))
 	    sty->display = dedisp_closed;
 	sty->font = elt_pm[26].vstring("font");
+	sty->decorations = elt_pm[27].vstring("decorations");
 
 	style_cache = ref_ptr<delt_style>(sty);
 	if (generic) {
@@ -1417,6 +1424,23 @@ ref_ptr<dqueue_style> dcss_set::queue_style(const delt *e)
  *
  */
 
+static int parse_autorefresh(String str, const char *medium, int *period)
+{
+    int on = 0;
+    double d;
+    while (String x = cp_pop_spacevec(str))
+	if (x.equals("on", 2) || (medium && x.equals("both", 4)))
+	    on = (medium ? 2 : 1);
+	else if (x.equals("off", 3))
+	    on = 0;
+	else if (x.equals(medium, -1))
+	    on = 1;
+	else if (cp_double(x, &d) && d >= 0)
+	    *period = (int) (d * 1000);
+    return on;
+}
+
+
 static dcss_propmatch handler_pm[] = {
     { "autorefresh", 0 },
     { "autorefresh-period", 0 },
@@ -1469,14 +1493,12 @@ ref_ptr<dhandler_style> dcss_set::handler_style(wmain *w, const handler_value *h
 	dcss::assign_all(handler_pm, handler_pmp, num_handler_pm, sv.begin(), sv.end());
 
 	dhandler_style *sty = new dhandler_style;
-	sty->autorefresh_period = handler_pm[1].vnumeric("autorefresh-period");
-	if (sty->autorefresh_period <= 0)
-	    sty->autorefresh_period = 1;
+	sty->autorefresh_period = (int) (handler_pm[1].vnumeric("autorefresh-period") * 1000);
 	sty->flags_mask = hflag_autorefresh | hflag_refresh | hflag_visible
 	    | hflag_collapse;
 	sty->flags = 0;
 	String s = handler_pm[0].vstring("autorefresh");
-	if (s == "on" || s == "true" || cp_double(s, &sty->autorefresh_period))
+	if (parse_autorefresh(s, 0, &sty->autorefresh_period))
 	    sty->flags |= hflag_autorefresh;
 	if (!s)
 	    sty->flags_mask &= ~hflag_autorefresh;
@@ -1500,6 +1522,83 @@ ref_ptr<dhandler_style> dcss_set::handler_style(wmain *w, const handler_value *h
 }
 
 
+/*****
+ *
+ *
+ *
+ */
+
+static dcss_propmatch fullness_pm[] = {
+    { "length", 0 },
+    { "capacity", 0 },
+    { "color", 0 },
+    { "autorefresh", 0 },
+    { "autorefresh-period", 0 }    
+};
+
+enum {
+    num_fullness_pm = sizeof(fullness_pm) / sizeof(fullness_pm[0])
+};
+
+static dcss_propmatch *fullness_pmp[num_fullness_pm];
+
+void dcss_set::collect_decor_styles(PermString decor, const delt *e,
+				    Vector<dcss *> &result, bool &generic) const
+{
+    for (dcss * const *sp = _s.begin() + 2; sp != _s.end(); ++sp)
+	if ((*sp)->type()[0] == decor[0])
+	    for (dcss *s = *sp; s; s = s->_next)
+		if (s->selector().match_decor(decor) && s->match_context(e)) {
+		    if (!s->selector().generic_decor() || s->has_context())
+			generic = false;
+		    result.push_back(s);
+		}
+    for (dcss *s = _s[0]; s; s = s->_next)
+	if (s->selector().match_decor(decor) && s->match_context(e)) {
+	    if (!s->selector().generic_decor() || s->has_context())
+		generic = false;
+	    result.push_back(s);
+	}
+    if (_below)
+	_below->collect_decor_styles(decor, e, result, generic);
+}
+
+ref_ptr<dfullness_style> dcss_set::fullness_style(PermString decor, const delt *e)
+{
+    Vector<dcss *> sv;
+    bool generic = true;
+    collect_decor_styles(decor, e, sv, generic);
+
+    std::sort(sv.begin(), sv.end(), dcsspp_compare);
+    StringAccum sa(sizeof(unsigned) * sv.size());
+    for (dcss **sp = sv.begin(); sp != sv.end(); ++sp)
+	*reinterpret_cast<unsigned *>(sa.extend(sizeof(unsigned))) = (*sp)->selector_index();
+    ref_ptr<dfullness_style> &style_cache = _ftable.find_force(sa.take_string());
+
+    if (!style_cache) {
+	dcss::assign_all(fullness_pm, fullness_pmp, num_fullness_pm, sv.begin(), sv.end());
+
+	dfullness_style *sty = new dfullness_style;
+	sty->length = fullness_pm[0].vstring("length");
+	sty->capacity = fullness_pm[1].vstring("capacity");
+	fullness_pm[2].vcolor(sty->color, "color");
+	sty->autorefresh_period = (int) (fullness_pm[4].vnumeric("autorefresh-period") * 1000);
+	String s = fullness_pm[3].vstring("autorefresh");
+	sty->autorefresh = parse_autorefresh(s, "length", &sty->autorefresh_period);
+
+	style_cache = ref_ptr<dfullness_style>(sty);
+    }
+    
+    return style_cache;
+}
+
+
+/*****
+ *
+ *
+ *
+ */
+
 double dcss_set::vpixel(PermString name, const delt *e) const
 {
     Vector<dcss *> sv;
@@ -1512,6 +1611,20 @@ double dcss_set::vpixel(PermString name, const delt *e) const
     dcss::assign_all(&pm, &pmp, 1, sv.begin(), sv.end());
     
     return pm.vpixel(name.c_str(), this, name, e->parent());
+}
+
+String dcss_set::vstring(PermString name, PermString decor, const delt *e) const
+{
+    Vector<dcss *> sv;
+    bool generic = true;
+    collect_decor_styles(decor, e, sv, generic);
+
+    std::sort(sv.begin(), sv.end(), dcsspp_compare);
+
+    dcss_propmatch pm = { name, 0 }, *pmp = &pm;
+    dcss::assign_all(&pm, &pmp, 1, sv.begin(), sv.end());
+    
+    return pm.vstring(name.c_str());
 }
 
 }

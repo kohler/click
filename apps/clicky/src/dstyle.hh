@@ -73,6 +73,7 @@ struct delt_style : public enable_ref_ptr {
     int style;
     String text;
     int display;
+    String decorations;
     String font;
 };
 
@@ -86,7 +87,15 @@ struct dqueue_style : public enable_ref_ptr {
 struct dhandler_style : public enable_ref_ptr {
     int flags_mask;
     int flags;
-    double autorefresh_period;
+    int autorefresh_period;
+};
+
+struct dfullness_style : public enable_ref_ptr {
+    String length;
+    String capacity;
+    double color[4];
+    int autorefresh;
+    int autorefresh_period;
 };
 
 enum {
@@ -128,6 +137,11 @@ class dcss_selector { public:
 
     bool match(const handler_value *hv) const;
 
+    bool match_decor(PermString decor) const {
+	return !_klasses.size() && !_name && _type
+	    && (_type_glob ? type_glob_match(decor) : _type == decor);
+    }
+
     bool generic_port() const {
 	return !_name;
     }
@@ -136,6 +150,9 @@ class dcss_selector { public:
     }
     bool generic_handler() const {
 	return !_type && !_name && !_klasses.size();
+    }
+    bool generic_decor() const {
+	return !_type_glob && !_name && !_klasses.size();
     }
     bool is_media() const;
 
@@ -160,6 +177,7 @@ class dcss_selector { public:
 
     bool klasses_match(const Vector<String> &klasses) const;
     bool klasses_match_port(bool isoutput, int port, int processing) const;
+    bool type_glob_match(PermString decor) const;
     
 };
 
@@ -360,7 +378,6 @@ class dcss { public:
     void parse_shadow(const String &str, const char *s, const char *send);
     void parse_background(const String &str, const char *s, const char *send);
     void parse_box(const String &str, const char *s, const char *send, const String &prefix);
-    void parse_spacing(const String &str, const char *s, const char *send);
 
     friend class dcss_set;
     
@@ -389,7 +406,10 @@ class dcss_set { public:
     inline ref_ptr<dport_style> port_style(const delt *e, bool isoutput, int port, int processing);
     ref_ptr<dqueue_style> queue_style(const delt *e);
     ref_ptr<dhandler_style> handler_style(wmain *w, const handler_value *hv);
+    ref_ptr<dfullness_style> fullness_style(PermString decor, const delt *e);
+
     double vpixel(PermString name, const delt *e) const;
+    String vstring(PermString name, PermString decor, const delt *e) const;
 
     static dcss_set *default_set(const String &media);
     
@@ -413,8 +433,8 @@ class dcss_set { public:
     ref_ptr<delt_style> _generic_elt_styles[16];
 
     HashMap<String, ref_ptr<dqueue_style> > _qtable;
-
     HashMap<String, ref_ptr<dhandler_style> > _htable;
+    HashMap<String, ref_ptr<dfullness_style> > _ftable;
 
     void mark_change();
     void collect_port_styles(const delt *e, bool isoutput, int port,
@@ -424,6 +444,8 @@ class dcss_set { public:
 			    bool &generic) const;
     void collect_handler_styles(const handler_value *hv, const delt *e,
 				Vector<dcss *> &result, bool &generic) const;
+    void collect_decor_styles(PermString decor, const delt *e,
+			      Vector<dcss *> &result, bool &generic) const;
     ref_ptr<dport_style> hard_port_style(const delt *e, bool isoutput, int port,
 					 int processing);
 

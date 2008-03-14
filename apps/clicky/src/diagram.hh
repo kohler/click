@@ -60,8 +60,6 @@ class wdiagram { public:
     gboolean on_event(GdkEvent *event);
 
     // handlers
-    void hpref_widgets(handler_value *hv, GtkWidget *box);
-    void hpref_apply(handler_value *hv);
     void notify_read(handler_value *hv);
 
     point window_to_canvas(double x, double y) const;

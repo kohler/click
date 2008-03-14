@@ -48,8 +48,11 @@ static void destroy_autorefresh(gpointer user_data) {
 
 void handler_value::refresh(wmain *w)
 {
-    int read_flags = (_flags & hflag_raw ? 0 : wdriver::dflag_nonraw);
-    w->driver()->do_read(_hname, _hparam, read_flags);
+    if (!(_flags & hflag_outstanding)) {
+	int read_flags = (_flags & hflag_raw ? 0 : wdriver::dflag_nonraw);
+	_flags |= hflag_outstanding;
+	w->driver()->do_read(_hname, _hparam, read_flags);
+    }
 }
 
 void handler_value::create_autorefresh(wmain *w)
@@ -63,10 +66,8 @@ void handler_value::create_autorefresh(wmain *w)
 gboolean handler_value::on_autorefresh(wmain *w, int period)
 {
     if ((_flags & hflag_autorefresh) != 0
-	&& (_flags & hflag_autorefresh_outstanding) == 0
 	&& readable()
 	&& w->driver()) {
-	_flags |= hflag_autorefresh_outstanding;
 	refresh(w);
 	if (period != _autorefresh_period) {
 	    create_autorefresh(w);
@@ -90,7 +91,6 @@ void handler_value::set_flags(wmain *w, int new_flags)
 	_autorefresh_source = 0;
     } else if (_autorefresh_source == 0
 	       && (new_flags & hflag_autorefresh) != 0
-	       && (new_flags & hflag_autorefresh_outstanding) == 0
 	       && (new_flags & hflag_r))
 	create_autorefresh(w);
 
@@ -132,9 +132,7 @@ handler_value *handler_values::set(const String &hname, const String &hparam, co
 	       || hvalue != hv->_hvalue);
     hv->_hparam = hparam;
     hv->_hvalue = hvalue;
-    hv->_flags |= hflag_have_hvalue;
-    if (hv->_flags & hflag_autorefresh_outstanding)
-	hv->set_flags(_w, hv->_flags & ~hflag_autorefresh_outstanding);
+    hv->_flags = (hv->_flags & ~hflag_outstanding) | hflag_have_hvalue;
     return hv;
 }
 
@@ -231,7 +229,9 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	    ref_ptr<dhandler_style> dhs = _w->ccss()->handler_style(_w, v);
 	    if (dhs) {
 		v->set_flags(_w, (v->flags() & ~dhs->flags_mask) | dhs->flags);
-		v->set_autorefresh_period((guint) (dhs->autorefresh_period * 1000));
+		if (dhs->autorefresh_period > 0
+		    && dhs->autorefresh_period < v->autorefresh_period())
+		    v->set_autorefresh_period(dhs->autorefresh_period);
 	    }
 	}
 	v->set_driver_flags(_w, flags);
@@ -252,14 +252,23 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	    _hv.remove((*hv)->_hname);
 }
 
-handler_value *handler_values::hard_find_placeholder(const String &hname)
+handler_value *handler_values::hard_find_placeholder(const String &hname,
+						     wmain *w, int flags,
+						     int autorefresh_period)
 {
     int dot = hname.find_right('.');
-    if (dot < 0 || !_w->driver()
-	|| find(hname.substring(0, dot + 1) + "handlers"))
+    if (dot < 0 || !_w->driver())
 	return 0;
-    else
-	return _hv.find_force(hname).get();
+    handler_value *hh = _hv.find_force(hname.substring(0, dot + 1) + "handlers").get();
+    if (hh->have_hvalue())
+	return 0;
+    hh->refresh(w);
+    handler_value *hv = _hv.find_force(hname).get();
+    hv->set_flags(w, hv->flags() | flags);
+    if (autorefresh_period > 10
+	&& hv->autorefresh_period() > autorefresh_period)
+	hv->set_autorefresh_period(autorefresh_period);
+    return hv;
 }
 
 }

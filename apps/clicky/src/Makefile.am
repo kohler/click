@@ -17,6 +17,7 @@ clicky_SOURCES = \
 	dialogs.cc \
 	dwidget.cc dwidget.hh \
 	dstyle.cc dstyle.hh \
+	ddecor.cc ddecor.hh \
 	hvalues.cc hvalues.hh \
 	whandler.cc whandler.hh \
 	wdriver.cc wdriver.hh \

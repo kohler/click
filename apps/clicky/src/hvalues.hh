@@ -27,12 +27,12 @@ enum {
     hflag_refresh = 1 << 13,
     
     hflag_autorefresh = 1 << 14,
-    hflag_autorefresh_outstanding = 1 << 15,
-    hflag_have_hvalue = 1 << 16,
+    hflag_have_hvalue = 1 << 15,
 
-    hflag_preferences = 1 << 17,
-    hflag_notify_whandlers = 1 << 18,
-    hflag_notify_delt = 1 << 19,
+    hflag_preferences = 1 << 16,
+    hflag_notify_whandlers = 1 << 17,
+    hflag_notify_delt = 1 << 18,
+    hflag_outstanding = 1 << 19,
 
     hflag_mandatory_driver_mask = hflag_r | hflag_w | hflag_rparam | hflag_raw
     | hflag_special | hflag_dead,
@@ -94,7 +94,7 @@ class handler_value { public:
     }
     void set_hvalue(const String &hvalue) {
 	_hvalue = hvalue;
-	_flags |= hflag_have_hvalue;
+	_flags = (_flags & ~hflag_outstanding) | hflag_have_hvalue;
     }
 
     bool empty() const {
@@ -229,10 +229,16 @@ struct handler_values {
 	return _hv.find(hname).get();
     }
 
-    handler_value *find_placeholder(const String &hname) {
-	if (handler_value *hv = _hv.find(hname).get())
+    handler_value *find_placeholder(const String &hname, wmain *w, int flags,
+				    int autorefresh_period = 0) {
+	if (handler_value *hv = _hv.find(hname).get()) {
+	    hv->_flags |= flags;
+	    if (autorefresh_period > 0
+		&& hv->autorefresh_period() > autorefresh_period)
+		hv->set_autorefresh_period(autorefresh_period);
 	    return hv;
-	return hard_find_placeholder(hname);
+	} else
+	    return hard_find_placeholder(hname, w, flags, autorefresh_period);
     }
     
     handler_value *find_force(const String &hname) {
@@ -255,7 +261,7 @@ struct handler_values {
     HashMap<handler_value> _hv;
     HashMap<String, int> _class_uflags;
 
-    handler_value *hard_find_placeholder(const String &hname);
+    handler_value *hard_find_placeholder(const String &hname, wmain *w, int flags, int autorefresh_period);
     void set_handlers(const String &hname, const String &hparam, const String &hvalue);
     
 };

@@ -155,7 +155,7 @@ int whandler::hinfo::create_preferences(whandler *wh)
     }
 
     // diagram may be interested
-    wh->main()->diagram()->hpref_widgets(hv, mainbox);
+    // wh->main()->diagram()->hpref_widgets(hv, mainbox);
 
     // return
     gtk_widget_show_all(wcontainer);
@@ -527,10 +527,7 @@ void whandler::on_preferences(int action)
 	     iter != _hinfo.end(); ++iter)
 	    if (!iter->hv->special()) {
 		iter->hv->set_autorefresh_period(iter->_old_autorefresh_period);
-		int flag_diff = iter->hv->flags() ^ iter->_old_flags;
 		iter->hv->set_flags(main(), iter->_old_flags);
-		if (flag_diff & hflag_notify_delt)
-		    main()->diagram()->hpref_apply(iter->hv);
 	    }
     
     int clear = 0, set = 0;
@@ -893,8 +890,8 @@ void whandler::set_hinfo_flags(const String &hname, int flags, int flag_values)
 {
     if (hinfo *hi = find_hinfo(hname)) {
 	hi->hv->set_flags(main(), (hi->hv->flags() & ~flags) | flag_values);
-	if (flags & hflag_notify_delt)
-	    main()->diagram()->hpref_apply(hi->hv);
+	//if (flags & hflag_notify_delt)
+	//   main()->diagram()->hpref_apply(hi->hv);
     }
 }
 
