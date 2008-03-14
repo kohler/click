@@ -57,6 +57,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   _label = "";
   _swap = false;
   _payload = false;
+  _active = true;
   bool print_id = false;
   bool print_time = true;
   bool print_paint = false;
@@ -81,6 +82,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 		   "SWAP", 0, cpBool, &_swap,
 		   "LENGTH", 0, cpBool, &print_len,
 		   "AGGREGATE", 0, cpBool, &print_aggregate,
+		   "ACTIVE", 0, cpBool, &_active,
 #if CLICK_USERLEVEL
 		   "OUTFILE", 0, cpFilename, &_outfilename,
 #endif
@@ -320,7 +322,7 @@ Packet *
 IPPrint::simple_action(Packet *p)
 {
     const click_ip *iph = p->ip_header();
-    if (!iph)
+    if (!_active || !iph)
 	return p;
 
     StringAccum sa;
@@ -428,6 +430,12 @@ IPPrint::simple_action(Packet *p)
 	_errh->message("%s", sa.c_str());
 
     return p;
+}
+
+void
+IPPrint::add_handlers()
+{
+    add_data_handlers("active", Handler::OP_READ | Handler::OP_WRITE | Handler::CHECKBOX | Handler::CALM, &_active);
 }
 
 CLICK_ENDDECLS

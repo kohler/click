@@ -165,25 +165,11 @@ IPFragmenter::push(int, Packet *p)
 	fragment(p);
 }
 
-static String
-IPFragmenter_read_drops(Element *xf, void *)
-{
-    IPFragmenter *f = (IPFragmenter *)xf;
-    return String(f->drops());
-}
-
-static String
-IPFragmenter_read_fragments(Element *xf, void *)
-{
-    IPFragmenter *f = (IPFragmenter *)xf;
-    return String(f->fragments());
-}
-
 void
 IPFragmenter::add_handlers()
 {
-    add_read_handler("drops", IPFragmenter_read_drops, 0);
-    add_read_handler("fragments", IPFragmenter_read_fragments, 0);
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
+    add_data_handlers("fragments", Handler::OP_READ, &_fragments);
 }
 
 CLICK_ENDDECLS

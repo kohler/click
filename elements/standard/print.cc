@@ -47,6 +47,7 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
   bool print_cpu = false;
 #endif
   bool print_anno = false, bcontents;
+  _active = true;
   String label, contents = "HEX";
   unsigned bytes = 24;
   
@@ -58,6 +59,7 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
 		   "CONTENTS", 0, cpWord, &contents,
 		   "TIMESTAMP", 0, cpBool, &timestamp,
 		   "PRINTANNO", 0, cpBool, &print_anno,
+		   "ACTIVE", 0, cpBool, &_active,
 #ifdef CLICK_LINUXMODULE
 		   "CPU", 0, cpBool, &print_cpu,
 #endif
@@ -88,6 +90,9 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
 Packet *
 Print::simple_action(Packet *p)
 {
+    if (!_active)
+	return false;
+    
     int bytes = (_contents ? _bytes : 0);
     if (bytes < 0 || (int) p->length() < bytes)
 	bytes = p->length();
@@ -158,6 +163,12 @@ Print::simple_action(Packet *p)
   click_chatter("%s", sa.c_str());
 
   return p;
+}
+
+void
+Print::add_handlers()
+{
+    add_data_handlers("active", Handler::OP_READ | Handler::OP_WRITE | Handler::CHECKBOX | Handler::CALM, &_active);
 }
 
 CLICK_ENDDECLS

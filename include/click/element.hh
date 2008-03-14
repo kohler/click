@@ -146,6 +146,17 @@ class Element { public:
     void set_handler(const String &name, int flags, HandlerHook hook, void *user_data1 = 0, void *user_data2 = 0);
     int set_handler_flags(const String &name, int flags);
     void add_task_handlers(Task *task, const String& prefix = String());
+    
+    void add_data_handlers(const String &name, int flags, bool *data);
+    void add_data_handlers(const String &name, int flags, int *data);
+    void add_data_handlers(const String &name, int flags, unsigned *data);
+    void add_data_handlers(const String &name, int flags, atomic_uint32_t *data);
+    void add_data_handlers(const String &name, int flags, long *data);
+    void add_data_handlers(const String &name, int flags, unsigned long *data);
+#if HAVE_LONG_LONG
+    void add_data_handlers(const String &name, int flags, long long *data);
+    void add_data_handlers(const String &name, int flags, unsigned long long *data);
+#endif
 
     static String read_positional_handler(Element*, void*);
     static String read_keyword_handler(Element*, void*);

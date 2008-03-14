@@ -181,17 +181,10 @@ IPGWOptions::simple_action(Packet *p)
   return(0);
 }
 
-static String
-IPGWOptions_read_drops(Element *xf, void *)
-{
-  IPGWOptions *f = (IPGWOptions *)xf;
-  return String(f->drops());
-}
-
 void
 IPGWOptions::add_handlers()
 {
-  add_read_handler("drops", IPGWOptions_read_drops, 0);
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
 }
 
 CLICK_ENDDECLS

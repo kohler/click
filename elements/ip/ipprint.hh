@@ -89,6 +89,10 @@ network byte order, while Linux/i386 writes them in host byte order
 String. Only available at user level. PrintV<> information to the file specified
 by OUTFILE instead of standard error.
 
+=item ACTIVE
+
+Boolean.  If false, then don't print messages.  Default is true.
+
 =back
 
 =a Print, CheckIPHeader */
@@ -105,12 +109,14 @@ class IPPrint : public Element { public:
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
+  void add_handlers();
   
   Packet *simple_action(Packet *);
 
  private:
 
   bool _swap;
+  bool _active;
   String _label;
   int _bytes;			// Number of bytes to dump
   bool _print_id : 1;		// Print IP ID?

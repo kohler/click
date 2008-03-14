@@ -309,13 +309,6 @@ RED::pull(int)
 
 // HANDLERS
 
-static String
-red_read_drops(Element *f, void *)
-{
-    RED *r = (RED *)f;
-    return String(r->drops());
-}
-
 String
 RED::read_parameter(Element *f, void *vparam)
 {
@@ -361,7 +354,7 @@ RED::read_queues(Element *e, void *)
 void
 RED::add_handlers()
 {
-    add_read_handler("drops", red_read_drops, 0);
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
     add_read_handler("stats", read_stats, 0);
     add_read_handler("queues", read_queues, 0);
     add_read_handler("min_thresh", read_parameter, (void *)0);

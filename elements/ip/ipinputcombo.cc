@@ -155,17 +155,10 @@ IPInputCombo::pull(int)
   return(p);
 }
 
-static String
-IPInputCombo_read_drops(Element *xf, void *)
-{
-  IPInputCombo *f = (IPInputCombo *)xf;
-  return String(f->drops());
-}
-
 void
 IPInputCombo::add_handlers()
 {
-  add_read_handler("drops", IPInputCombo_read_drops, 0);
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
 }
 
 CLICK_ENDDECLS

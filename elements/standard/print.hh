@@ -47,7 +47,15 @@ Boolean. Determines whether to print each packet's user annotation bytes.  Defau
 Boolean; available only in the Linux kernel module. Determines whether to
 print the current CPU ID for every packet. Default is false.
 
+=item ACTIVE
+
+Boolean. If false, don't print messages. Default is true.
+
 =back
+
+=h active read/write
+
+Returns or sets the ACTIVE parameter.
 
 =a
 
@@ -55,28 +63,31 @@ IPPrint */
 
 class Print : public Element { public:
 
-  Print();
-  ~Print();
+    Print();
+    ~Print();
   
-  const char *class_name() const		{ return "Print"; }
-  const char *port_count() const		{ return PORTS_1_1; }
-  const char *processing() const		{ return AGNOSTIC; }
+    const char *class_name() const		{ return "Print"; }
+    const char *port_count() const		{ return PORTS_1_1; }
+    const char *processing() const		{ return AGNOSTIC; }
   
-  int configure(Vector<String> &, ErrorHandler *);
-  bool can_live_reconfigure() const		{ return true; }
-  
-  Packet *simple_action(Packet *);
+    int configure(Vector<String> &, ErrorHandler *);
+    bool can_live_reconfigure() const		{ return true; }
+    void add_handlers();
+
+    Packet *simple_action(Packet *);
   
  private:
   
     String _label;
     int _bytes;		// How many bytes of a packet to print
+    bool _active;
     bool _timestamp : 1;
 #ifdef CLICK_LINUXMODULE
     bool _cpu : 1;
 #endif
     bool _print_anno;
     uint8_t _contents;
+    
 };
 
 CLICK_ENDDECLS

@@ -2005,6 +2005,164 @@ Element::add_task_handlers(Task *task, const String &prefix)
 #endif
 }
 
+enum {
+    data_handler_bool, data_handler_int, data_handler_unsigned,
+    data_handler_atomic_uint32_t, data_handler_long, data_handler_unsigned_long,
+    data_handler_long_long, data_handler_unsigned_long_long
+};
+
+static int data_handler(int operation, String &data, Element *element,
+			const Handler *handler, ErrorHandler *errh)
+{
+    void *ptr = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(element)
+			+ reinterpret_cast<uintptr_t>(handler->user_data1()));
+    uintptr_t type = (uintptr_t) handler->user_data2();
+    if (type == data_handler_bool) {
+	bool *bptr = static_cast<bool *>(ptr);
+	if (operation == Handler::OP_READ) {
+	    data = cp_unparse_bool(*bptr);
+	    return 0;
+	} else if (cp_bool(cp_uncomment(data), bptr))
+	    return 0;
+	else
+	    return errh->error("handler expects bool");
+    } else if (type == data_handler_int) {
+	int *iptr = static_cast<int *>(ptr);
+	if (operation == Handler::OP_READ) {
+	    data = String(*iptr);
+	    return 0;
+	} else if (cp_integer(cp_uncomment(data), iptr))
+	    return 0;
+	else
+	    return errh->error("handler expects int");
+    } else if (type == data_handler_unsigned) {
+	unsigned *iptr = static_cast<unsigned *>(ptr);
+	if (operation == Handler::OP_READ) {
+	    data = String(*iptr);
+	    return 0;
+	} else if (cp_integer(cp_uncomment(data), iptr))
+	    return 0;
+	else
+	    return errh->error("handler expects unsigned");
+    } else if (type == data_handler_atomic_uint32_t) {
+	atomic_uint32_t *iptr = static_cast<atomic_uint32_t *>(ptr);
+	uint32_t value;
+	if (operation == Handler::OP_READ) {
+	    data = String(iptr->value());
+	    return 0;
+	} else if (cp_integer(cp_uncomment(data), &value)) {
+	    *iptr = value;
+	    return 0;
+	} else
+	    return errh->error("handler expects unsigned");
+    } else if (type == data_handler_long) {
+	long *iptr = static_cast<long *>(ptr);
+	if (operation == Handler::OP_READ) {
+	    data = String(*iptr);
+	    return 0;
+	} else if (cp_integer(cp_uncomment(data), iptr))
+	    return 0;
+	else
+	    return errh->error("handler expects int");
+    } else if (type == data_handler_unsigned_long) {
+	unsigned long *iptr = static_cast<unsigned long *>(ptr);
+	if (operation == Handler::OP_READ) {
+	    data = String(*iptr);
+	    return 0;
+	} else if (cp_integer(cp_uncomment(data), iptr))
+	    return 0;
+	else
+	    return errh->error("handler expects unsigned int");
+#if HAVE_LONG_LONG
+    } else if (type == data_handler_long_long) {
+	long long *iptr = static_cast<long long *>(ptr);
+	if (operation == Handler::OP_READ) {
+	    data = String(*iptr);
+	    return 0;
+	} else if (cp_integer(cp_uncomment(data), iptr))
+	    return 0;
+	else
+	    return errh->error("handler expects int");
+    } else if (type == data_handler_unsigned_long_long) {
+	unsigned long long *iptr = static_cast<unsigned long long *>(ptr);
+	if (operation == Handler::OP_READ) {
+	    data = String(*iptr);
+	    return 0;
+	} else if (cp_integer(cp_uncomment(data), iptr))
+	    return 0;
+	else
+	    return errh->error("handler expects unsigned int");
+#endif
+    } else
+	return errh->error("internal error");
+}
+
+void
+Element::add_data_handlers(const String &name, int flags, bool *data)
+{
+    uintptr_t x = reinterpret_cast<uintptr_t>(data) - reinterpret_cast<uintptr_t>(this);
+    set_handler(name, flags, data_handler, reinterpret_cast<void *>(x),
+		reinterpret_cast<void *>((uintptr_t) data_handler_bool));
+}
+
+void
+Element::add_data_handlers(const String &name, int flags, int *data)
+{
+    uintptr_t x = reinterpret_cast<uintptr_t>(data) - reinterpret_cast<uintptr_t>(this);
+    set_handler(name, flags, data_handler, reinterpret_cast<void *>(x),
+		reinterpret_cast<void *>((uintptr_t) data_handler_int));
+}
+
+void
+Element::add_data_handlers(const String &name, int flags, unsigned *data)
+{
+    uintptr_t x = reinterpret_cast<uintptr_t>(data) - reinterpret_cast<uintptr_t>(this);
+    set_handler(name, flags, data_handler, reinterpret_cast<void *>(x),
+		reinterpret_cast<void *>((uintptr_t) data_handler_unsigned));
+}
+
+void
+Element::add_data_handlers(const String &name, int flags, atomic_uint32_t *data)
+{
+    uintptr_t x = reinterpret_cast<uintptr_t>(data) - reinterpret_cast<uintptr_t>(this);
+    set_handler(name, flags, data_handler, reinterpret_cast<void *>(x),
+		reinterpret_cast<void *>((uintptr_t) data_handler_atomic_uint32_t));
+}
+
+void
+Element::add_data_handlers(const String &name, int flags, long *data)
+{
+    uintptr_t x = reinterpret_cast<uintptr_t>(data) - reinterpret_cast<uintptr_t>(this);
+    set_handler(name, flags, data_handler, reinterpret_cast<void *>(x),
+		reinterpret_cast<void *>((uintptr_t) data_handler_long));
+}
+
+void
+Element::add_data_handlers(const String &name, int flags, unsigned long *data)
+{
+    uintptr_t x = reinterpret_cast<uintptr_t>(data) - reinterpret_cast<uintptr_t>(this);
+    set_handler(name, flags, data_handler, reinterpret_cast<void *>(x),
+		reinterpret_cast<void *>((uintptr_t) data_handler_unsigned_long));
+}
+
+#if HAVE_LONG_LONG
+void
+Element::add_data_handlers(const String &name, int flags, long long *data)
+{
+    uintptr_t x = reinterpret_cast<uintptr_t>(data) - reinterpret_cast<uintptr_t>(this);
+    set_handler(name, flags, data_handler, reinterpret_cast<void *>(x),
+		reinterpret_cast<void *>((uintptr_t) data_handler_long_long));
+}
+
+void
+Element::add_data_handlers(const String &name, int flags, unsigned long long *data)
+{
+    uintptr_t x = reinterpret_cast<uintptr_t>(data) - reinterpret_cast<uintptr_t>(this);
+    set_handler(name, flags, data_handler, reinterpret_cast<void *>(x),
+		reinterpret_cast<void *>((uintptr_t) data_handler_unsigned_long_long));
+}
+#endif
+
 /** @brief Standard read handler returning a positional argument.
  *
  * Use this function to define a handler that returns one of an element's

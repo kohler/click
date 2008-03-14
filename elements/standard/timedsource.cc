@@ -99,14 +99,10 @@ TimedSource::read_param(Element *e, void *vparam)
   switch ((intptr_t)vparam) {
    case 0:			// data
     return ts->_data;
-   case 1:			// limit
-    return String(ts->_limit);
    case 2:			// interval
     return cp_unparse_milliseconds(ts->_interval);
    case 3:			// active
     return cp_unparse_bool(ts->_active);
-   case 4:			// count
-    return String(ts->_count);
    default:
     return "";
   }
@@ -126,14 +122,6 @@ TimedSource::change_param(const String &in_s, Element *e, void *vparam,
 	  ts->_packet->kill();
       ts->_packet = Packet::make(ts->_data.data(), ts->_data.length());
       break;
-   
-   case 1: {			// limit
-     int limit;
-     if (!cp_integer(s, &limit))
-       return errh->error("limit parameter must be integer");
-     ts->_limit = limit;
-     break;
-   }
    
    case 2: {			// interval
      uint32_t interval;
@@ -169,13 +157,12 @@ TimedSource::add_handlers()
 {
   add_read_handler("data", read_param, (void *)0, Handler::CALM);
   add_write_handler("data", change_param, (void *)0, Handler::RAW);
-  add_read_handler("limit", read_param, (void *)1, Handler::CALM);
-  add_write_handler("limit", change_param, (void *)1);
+  add_data_handlers("limit", Handler::OP_READ | Handler::OP_WRITE | Handler::CALM, &_limit);
   add_read_handler("interval", read_param, (void *)2, Handler::CALM);
   add_write_handler("interval", change_param, (void *)2);
   add_read_handler("active", read_param, (void *)3, Handler::CALM | Handler::CHECKBOX);
   add_write_handler("active", change_param, (void *)3);
-  add_read_handler("count", read_param, (void *)4);
+  add_data_handlers("count", Handler::OP_READ, &_count);
   add_write_handler("reset", change_param, (void *)5, Handler::BUTTON);
 }
 

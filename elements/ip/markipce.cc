@@ -87,17 +87,10 @@ MarkIPCE::pull(int)
   return p;
 }
 
-String
-MarkIPCE::read_handler(Element *e, void *)
-{
-  MarkIPCE *m = (MarkIPCE *)e;
-  return String(m->_drops);
-}
-
 void
 MarkIPCE::add_handlers()
 {
-  add_read_handler("drops", read_handler, (void *)0);
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
 }
 
 CLICK_ENDDECLS

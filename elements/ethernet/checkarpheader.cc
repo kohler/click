@@ -104,31 +104,19 @@ CheckARPHeader::simple_action(Packet *p)
 }
 
 String
-CheckARPHeader::read_handler(Element *e, void *thunk)
+CheckARPHeader::read_handler(Element *e, void *)
 {
   CheckARPHeader *c = reinterpret_cast<CheckARPHeader *>(e);
-  switch ((intptr_t)thunk) {
-  
-  case 0:			// drops
-      return String(c->_drops);
-  
-  case 1: {			// drop_details
-      StringAccum sa;
-      for (int i = 0; i < NREASONS; i++)
-	  sa << c->_reason_drops[i] << '\t' << reason_texts[i] << '\n';
-      return sa.take_string();
-  }
-
-  default:
-      return String("<error>");
-    
-  }
+  StringAccum sa;
+  for (int i = 0; i < NREASONS; i++)
+      sa << c->_reason_drops[i] << '\t' << reason_texts[i] << '\n';
+  return sa.take_string();
 }   
 
 void
 CheckARPHeader::add_handlers()
 { 
-    add_read_handler("drops", read_handler, (void *)0);
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
     if (_reason_drops)
 	add_read_handler("drop_details", read_handler, (void *)1);
 }

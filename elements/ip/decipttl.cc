@@ -68,17 +68,10 @@ DecIPTTL::simple_action(Packet *p_in)
   }
 }
 
-static String
-DecIPTTL_read_drops(Element *xf, void *)
-{
-  DecIPTTL *f = (DecIPTTL *)xf;
-  return String(f->drops());
-}
-
 void
 DecIPTTL::add_handlers()
 {
-  add_read_handler("drops", DecIPTTL_read_drops, 0);
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
 }
 
 CLICK_ENDDECLS
