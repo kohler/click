@@ -44,18 +44,8 @@ void delt::prepare(wdiagram *d, ElementT *e, ProcessingT *processing,
     if (_des->style == destyle_queue)
 	_dqs = d->css_set()->queue_style(this);
 
-    if (_e->tunnel()) {
-	_visible = false;
-	_layout = true;
-	_width = _height = 0;
+    if (_e->tunnel())
 	return;
-    }
-
-    const String &name = _e->name(), &type_name = _e->type_name();
-    if (name.length() > type_name.length() + 1
-	&& name[type_name.length()] == '@'
-	&& name.substring(0, type_name.length()) == type_name)
-	_show_class = false;
 
     path.push_back(_e);
     RouterT::flatten_path(path, _flat_name, _flat_config);
@@ -66,14 +56,6 @@ void delt::prepare(wdiagram *d, ElementT *e, ProcessingT *processing,
 	prepare_router(d, r, &subprocessing, collector, path, z_index);
     }
     path.pop_back();
-
-    if (_flat_name.length() > 2
-	&& _flat_name[0] == '@' && _flat_name[1] == '@'
-	&& _e->ninputs() == 0 && _e->noutputs() == 0
-	&& _elt.size() == 0) {
-	_visible = false;
-	_width = _height = 0;
-    }
 }
 
 void delt::prepare_router(wdiagram *d, RouterT *router, ProcessingT *processing,
@@ -599,6 +581,13 @@ void delt::layout(dcontext &dcx)
 {
     if (_layout)
 	return;
+    _layout = true;
+    _visible = _des->display != dedisp_none && !_e->tunnel();
+    if (!_visible) {
+	_width = _height = 0;
+	return;
+    }
+
     _orientation = _des->orientation;
 
     // get extents of name and data
@@ -624,7 +613,7 @@ void delt::layout(dcontext &dcx)
     layout_text(dcx);
 
     // get contents width and height
-    if (_expanded && _elt.size())
+    if (_expanded && _elt.size() && _des->display == dedisp_open)
 	layout_contents(dcx, _e->resolved_router());
     
     // get element width and height
@@ -634,7 +623,7 @@ void delt::layout(dcontext &dcx)
 	xwidth = _markup_height;
 	xheight = _markup_width + _des->padding[0] + _des->padding[2];
     } else {
-	xwidth = _markup_width;
+	xwidth = MAX(_markup_width, _contents_width);
 	xheight = _markup_height + _des->padding[0] + _des->padding[2];
 	if (_contents_height)
 	    xheight += _contents_height;
@@ -664,8 +653,6 @@ void delt::layout(dcontext &dcx)
 
     if (_des->shadow_style != dshadow_none)
 	dcx.d->notify_shadow(_des->shadow_width);
-
-    _layout = true;
 }
 
 void delt::layout_compound_ports(dcss_set *dcs)
@@ -712,10 +699,9 @@ void delt::layout_complete(dcontext &dcx, double dx, double dy)
 	layout_compound_ports(dcx.d->css_set());
 
     for (std::vector<dconn *>::iterator ci = _conn.begin();
-	 ci != _conn.end(); ++ci) {
-	(*ci)->layout(dcx.d->css_set());
-	dcx.d->rects().insert(*ci);
-    }
+	 ci != _conn.end(); ++ci)
+	if ((*ci)->layout())
+	    dcx.d->rects().insert(*ci);
 }
 
 void delt::layout_main(dcontext &dcx, RouterT *router)
@@ -728,8 +714,10 @@ void delt::layout_main(dcontext &dcx, RouterT *router)
 	   _contents_height + _des->margin[0] + _des->margin[2]);
 }
 
-void dconn::layout(dcss_set *)
+bool dconn::layout()
 {
+    if (!_from_elt->visible() || !_to_elt->visible())
+	return false;
     point op = _from_elt->output_position(_from_port, 0);
     point ip = _to_elt->input_position(_to_port, 0);
     if (_from_elt->orientation() == 0 && _to_elt->orientation() == 0) {
@@ -743,6 +731,7 @@ void dconn::layout(dcss_set *)
 	_width = MAX(op.x() + 5, ip.x() + 3) - _x;
 	_height = MAX(op.y() + 5, ip.y() + 3) - _y;
     }
+    return true;
 }
 
 /*****
@@ -809,18 +798,18 @@ void delt::insert(rect_search<dwidget> &rects,
 
     Vector<int> conn;
     _e->router()->find_connections_to(_e, conn);
-    for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter) {
-	_parent->_conn[*iter]->layout(dcs);
-	bounds |= *_parent->_conn[*iter];
-	rects.insert(_parent->_conn[*iter]);
-    }
+    for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter)
+	if (_parent->_conn[*iter]->layout()) {
+	    bounds |= *_parent->_conn[*iter];
+	    rects.insert(_parent->_conn[*iter]);
+	}
 
     _e->router()->find_connections_from(_e, conn);
-    for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter) {
-	_parent->_conn[*iter]->layout(dcs);
-	bounds |= *_parent->_conn[*iter];
-	rects.insert(_parent->_conn[*iter]);
-    }
+    for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter)
+	if (_parent->_conn[*iter]->layout()) {
+	    bounds |= *_parent->_conn[*iter];
+	    rects.insert(_parent->_conn[*iter]);
+	}
 
     if (_parent && _elt.size()) {
 	layout_compound_ports(dcs);

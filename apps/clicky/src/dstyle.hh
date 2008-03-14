@@ -34,6 +34,12 @@ enum {
     destyle_queue = 1
 };
 
+enum {
+    dedisp_none = 0,
+    dedisp_open = 1,
+    dedisp_closed = 2
+};
+
 struct dport_style : public enable_ref_ptr {
     int shape;
     double length;
@@ -65,6 +71,7 @@ struct delt_style : public enable_ref_ptr {
     bool orientation;
     int style;
     String text;
+    int display;
 };
 
 struct dqueue_style : public enable_ref_ptr {

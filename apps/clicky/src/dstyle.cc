@@ -92,6 +92,7 @@ const char default_css[] = "~port~.input {\n\
     queue-stripe: 1px solid rgb(87%, 87%, 50%);\n\
     queue-stripe-spacing: 12px;\n\
     text: \"%n\\n<small>%c</small>\";\n\
+    display: open;\n\
 }\n\
 *.anonymous {\n\
     text: \"%n\";\n\
@@ -1152,7 +1153,8 @@ static dcss_propmatch elt_pm[] = {
     { "margin-right", 0 },
     { "margin-bottom", 0 },
     { "margin-left", 0 },
-    { "text", 0 }
+    { "text", 0 },
+    { "display", 0 }
 };
 
 enum {
@@ -1238,6 +1240,12 @@ ref_ptr<delt_style> dcss_set::elt_style(const delt *e)
 	sty->margin[2] = elt_pm[22].vpixel("margin-bottom", this, e) * scale;
 	sty->margin[3] = elt_pm[23].vpixel("margin-left", this, e) * scale;
 	sty->text = cp_unquote(elt_pm[24].vstring("text"));
+	s = elt_pm[25].vstring("display");
+	sty->display = dedisp_open;
+	if (s.equals("none", 4))
+	    sty->display = dedisp_none;
+	else if (s.equals("closed", 6))
+	    sty->display = dedisp_closed;
 
 	style_cache = ref_ptr<delt_style>(sty);
 	if (generic) {

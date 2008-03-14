@@ -78,8 +78,8 @@ class dconn : public dwidget { public:
 	  _to_elt(te), _to_port(tp) {
     }
 
-    void layout(dcss_set *dcs);
-    void draw(dcontext &dx);
+    bool layout();
+    void draw(dcontext &dcx);
 
   private:
 
@@ -111,11 +111,12 @@ class delt : public dwidget { public:
 
     delt(delt *parent, int z_index)
 	: dwidget(dw_elt, z_index), _e(0), _parent(parent), _style(0),
-	  _visible(true), _layout(false), _expanded(true), _show_class(true),
+	  _visible(false), _layout(false), _expanded(true),
 	  _aligned(true), _orientation(0), _highlight(0),
 	  _depth(parent ? parent->_depth + 1 : 0),
 	  _contents_width(0), _contents_height(0) {
 	_portoff[0] = _portoff[1] = 0;
+	_width = _height = 0;
     }
     ~delt();
 
@@ -238,7 +239,6 @@ class delt : public dwidget { public:
     bool _visible;
     bool _layout;
     bool _expanded;
-    bool _show_class;
     bool _aligned;
     int _orientation;
     uint8_t _highlight;
