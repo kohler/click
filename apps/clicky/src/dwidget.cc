@@ -881,8 +881,7 @@ bool dconn::layout()
 void delt::layout_recompute_bounds()
 {
     if (_elt.size()) {
-	assert(_elt[0]->visible());
-	assign(*_elt[0]);
+	assign(0, 0, 0, 0);
 	union_bounds(*this, false);
 	_contents_width = _width;
 	_contents_height = _height;
@@ -893,34 +892,40 @@ void delt::layout_recompute_bounds()
 
 void delt::union_bounds(rectangle &r, bool self) const
 {
-    if (self)
+    if (self && visible())
 	r |= *this;
     for (std::vector<delt *>::const_iterator ci = _elt.begin();
 	 ci != _elt.end(); ++ci)
-	if ((*ci)->_visible)
+	if ((*ci)->visible())
 	    (*ci)->union_bounds(r, true);
     for (std::vector<dconn *>::const_iterator ci = _conn.begin();
 	 ci != _conn.end(); ++ci)
-	r |= **ci;
+	if ((*ci)->visible())
+	    r |= **ci;
 }
 
 void delt::remove(rect_search<dwidget> &rects, rectangle &bounds)
 {
+    if (!visible())
+	return;
+    
     bounds |= *this;
     rects.remove(this);
     
     Vector<int> conn;
     _e->router()->find_connections_to(_e, conn);
-    for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter) {
-	bounds |= *_parent->_conn[*iter];
-	rects.remove(_parent->_conn[*iter]);
-    }
+    for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter)
+	if (_parent->_conn[*iter]->visible()) {
+	    bounds |= *_parent->_conn[*iter];
+	    rects.remove(_parent->_conn[*iter]);
+	}
 
     _e->router()->find_connections_from(_e, conn);
-    for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter) {
-	bounds |= *_parent->_conn[*iter];
-	rects.remove(_parent->_conn[*iter]);
-    }
+    for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter)
+	if (_parent->_conn[*iter]->visible()) {
+	    bounds |= *_parent->_conn[*iter];
+	    rects.remove(_parent->_conn[*iter]);
+	}
 
     if (_parent && _elt.size()) {
 	_elt[0]->remove(rects, bounds);
@@ -931,6 +936,9 @@ void delt::remove(rect_search<dwidget> &rects, rectangle &bounds)
 void delt::insert(rect_search<dwidget> &rects,
 		  dcss_set *dcs, rectangle &bounds)
 {
+    if (!visible())
+	return;
+    
     bounds |= *this;
     rects.insert(this);
 

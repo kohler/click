@@ -86,6 +86,8 @@ class dconn : public dwidget { public:
 	  _to_elt(te), _to_port(tp) {
     }
 
+    bool visible() const;
+    
     bool layout();
     void draw(dcontext &dcx);
 
@@ -345,6 +347,10 @@ inline void dwidget::draw(dcontext &dx) {
 	static_cast<dconn *>(this)->draw(dx);
 }
 
+
+inline bool dconn::visible() const {
+    return _from_elt->visible() && _to_elt->visible();
+}
 
 inline double delt::port_position(bool isoutput, int port,
 				  double side_length) const

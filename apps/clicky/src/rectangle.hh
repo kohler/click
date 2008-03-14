@@ -218,6 +218,8 @@ struct rectangle {
     }
     
     rectangle &operator|=(const rectangle &o) {
+	if (!*this)
+	    *this = o;
 	if (_x > o._x) {
 	    _width += _x - o._x;
 	    _x = o._x;
