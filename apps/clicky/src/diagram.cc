@@ -422,22 +422,31 @@ void wdiagram::highlight(delt *e, uint8_t htype, rectangle *expose_rect, bool sc
 
     if (scroll_to && _layout) {
 	GtkAdjustment *ha = _horiz_adjust, *va = _vert_adjust;
-	point e_tl = canvas_to_window(e->x() - e->shadow(3), e->y() - e->shadow(0));
-	point e_br = canvas_to_window(e->x2() + e->shadow(1), e->y2() + e->shadow(2));
+	rectangle ex = *e;
+	ex.expand(e->shadow(0), e->shadow(1), e->shadow(2), e->shadow(3));
+	ex = canvas_to_window(ex);
+	if (delt *es = e->visible_split()) {
+	    rectangle esx = *es;
+	    esx.expand(es->shadow(0), es->shadow(1), es->shadow(2), es->shadow(3));
+	    esx = canvas_to_window(esx);
+	    rectangle windowrect(ha->value, va->value, ha->page_size, va->page_size);
+	    if (esx.intersect(windowrect).area() > ex.intersect(windowrect).area())
+		ex = esx;
+	}
 	
-	if (e_br.x() >= ha->value + ha->page_size
-	    && e_tl.x() >= floor(e_br.x() - ha->page_size))
-	    gtk_adjustment_set_value(ha, floor(e_br.x() - ha->page_size));
-	else if (e_br.x() >= ha->value + ha->page_size
-		 || e_tl.x() < ha->value)
-	    gtk_adjustment_set_value(ha, floor(e_tl.x() - 4));
+	if (ex.x2() >= ha->value + ha->page_size
+	    && ex.x() >= floor(ex.x2() - ha->page_size))
+	    gtk_adjustment_set_value(ha, floor(ex.x2() - ha->page_size));
+	else if (ex.x2() >= ha->value + ha->page_size
+		 || ex.x() < ha->value)
+	    gtk_adjustment_set_value(ha, floor(ex.x() - 4));
 	
-	if (e_br.y() >= va->value + va->page_size
-	    && e_tl.y() >= floor(e_br.y() - va->page_size))
-	    gtk_adjustment_set_value(va, floor(e_br.y() - va->page_size));
-	else if (e_br.y() >= va->value + va->page_size
-		 || e_tl.y() < va->value)
-	    gtk_adjustment_set_value(va, floor(e_tl.y() - 4));
+	if (ex.y2() >= va->value + va->page_size
+	    && ex.y() >= floor(ex.y2() - va->page_size))
+	    gtk_adjustment_set_value(va, floor(ex.y2() - va->page_size));
+	else if (ex.y2() >= va->value + va->page_size
+		 || ex.y() < va->value)
+	    gtk_adjustment_set_value(va, floor(ex.y() - 4));
     }
 }
 

@@ -205,6 +205,18 @@ struct rectangle {
 		&& (_y + _height >= o._y && _y <= o._y + o._height));
     }
 
+    rectangle intersect(const rectangle &o) const {
+	double x1 = std::max(_x, o._x);
+	double y1 = std::max(_y, o._y);
+	double x2 = std::min(_x + _width, o._x + o._width);
+	double y2 = std::min(_y + _height, o._y + o._height);
+	return rectangle(x1, y1, std::max(x2 - x1, 0.), std::max(y2 - y1, 0.));
+    }
+
+    double area() const {
+	return _width * _height;
+    }
+    
     rectangle &operator|=(const rectangle &o) {
 	if (_x > o._x) {
 	    _width += _x - o._x;
