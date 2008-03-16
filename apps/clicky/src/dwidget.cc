@@ -678,12 +678,14 @@ bool delt::parse_markup(wmain *w)
     sa.append(last, send);
     _markup = sa.take_string();
 
-    return _markup != old_markup;
+    _markup_changed = (_markup != old_markup);
+    return _markup_changed;
 }
 
-void delt::restyle(dcontext &dcx)
+void delt::restyle(dcontext &dcx, bool do_markup)
 {
-    parse_markup(dcx.d->main());
+    if (do_markup)
+	parse_markup(dcx.d->main());
     
     pango_layout_set_width(dcx, -1);
     if (_des->font != dcx.pl_font)
@@ -1428,11 +1430,13 @@ void delt::draw(dcontext &dcx)
 	    if (_des->style == destyle_queue)
 		_dqs = dcx.d->css_set()->queue_style(this);
 	    if (dcx.generation != _generation || old_des->text != _des->text)
-		restyle(dcx);
+		restyle(dcx, true);
 	    if (old_des->decorations != _des->decorations)
 		redecorate(dcx);
 	    _drawn_highlight = _highlight;
 	}
+	if (_markup_changed)
+	    restyle(dcx, false);
 	if (_highlight & (1 << dhlt_pressed))
 	    cairo_translate(dcx, 1, 1);
 	draw_background(dcx);

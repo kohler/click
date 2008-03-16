@@ -121,8 +121,8 @@ class delt : public dwidget { public:
     delt(delt *parent, int z_index)
 	: dwidget(dw_elt, z_index), _e(0), _decor(0), _parent(parent),
 	  _split(0), _visible(false), _displayed(false), _layout(false),
-	  _aligned(true), _handler_markup(false), _driver(false),
-	  _split_inputs(false), _orientation(0), _highlight(0),
+	  _aligned(true), _handler_markup(false), _markup_changed(false),
+	  _driver(false), _split_inputs(false), _orientation(0), _highlight(0),
 	  _drawn_highlight(0), _depth(parent ? parent->_depth + 1 : 0),
 	  _contents_width(0), _contents_height(0) {
 	_portoff[0] = _portoff[1] = 0;
@@ -270,6 +270,7 @@ class delt : public dwidget { public:
     bool _layout;
     bool _aligned;
     bool _handler_markup;
+    bool _markup_changed;
     bool _driver;
     bool _split_inputs;
     int _orientation;
@@ -303,7 +304,7 @@ class delt : public dwidget { public:
     void layout_ports(dcss_set *dcs);
     void layout(dcontext &dcx);
     bool parse_markup(wmain *w);
-    void restyle(dcontext &dcx);
+    void restyle(dcontext &dcx, bool do_markup = true);
     void redecorate(dcontext &dcx);
     void layout_complete(dcontext &dcx, double dx, double dy);
     void layout_compound_ports(dcss_set *dcs);
