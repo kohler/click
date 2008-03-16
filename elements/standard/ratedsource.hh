@@ -109,8 +109,8 @@ class RatedSource : public Element { public:
   unsigned _count;
   unsigned _limit;
   int _datasize;
-  bool _active : 1;
-  bool _stop : 1;
+  bool _active;
+  bool _stop;
   Packet *_packet;
   Task _task;
   String _data;

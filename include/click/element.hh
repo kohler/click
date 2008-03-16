@@ -159,6 +159,10 @@ class Element { public:
     void add_data_handlers(const String &name, int flags, long long *data);
     void add_data_handlers(const String &name, int flags, unsigned long long *data);
 #endif
+#if HAVE_FLOAT_TYPES
+    void add_data_handlers(const String &name, int flags, double *data);
+#endif
+    void add_data_handlers(const String &name, int flags, String *data);
 
     static String read_positional_handler(Element*, void*);
     static String read_keyword_handler(Element*, void*);
@@ -246,6 +250,7 @@ class Element { public:
     int connect_port(bool isoutput, int port, Element*, int);
     
     void add_default_handlers(bool writable_config);
+    void add_data_handlers(const String &name, int flags, ReadHandlerHook read_hook, WriteHandlerHook write_hook, void *data);
 
     friend class Router;
     

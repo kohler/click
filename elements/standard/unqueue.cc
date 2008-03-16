@@ -94,44 +94,23 @@ Unqueue::run_task(Task *)
 #endif
 #endif
 
-enum { H_COUNT, H_ACTIVE };
-
-String
-Unqueue::read_param(Element *e, void *thunk)
-{
-    Unqueue *u = (Unqueue *)e;
-    switch ((uintptr_t) thunk) {
-      case H_COUNT:
-	return String(u->_count);
-      case H_ACTIVE:
-	return String(u->_active);
-      default:
-	return "<error>";
-    }
-}
-
 int 
-Unqueue::write_param(const String &conf, Element *e, void *thunk, ErrorHandler *errh)
+Unqueue::write_param(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
     Unqueue *u = (Unqueue *)e;
-    String s = cp_uncomment(conf);
-    switch ((uintptr_t) thunk) {
-      case H_ACTIVE:		// active
-	if (!cp_bool(s, &u->_active))
-	    return errh->error("active parameter must be boolean");    
-	if (u->_active && !u->_task.scheduled())
-	    u->_task.reschedule();
-	break;
-    }
+    if (!cp_bool(cp_uncomment(conf), &u->_active))
+	return errh->error("active parameter must be boolean");    
+    if (u->_active && !u->_task.scheduled())
+	u->_task.reschedule();
     return 0;
 }
 
 void
 Unqueue::add_handlers()
 {
-    add_read_handler("count", read_param, (void *)H_COUNT);
-    add_read_handler("active", read_param, (void *)H_ACTIVE, Handler::CHECKBOX);
-    add_write_handler("active", write_param, (void *)H_ACTIVE);
+    add_data_handlers("count", Handler::OP_READ, &_count);
+    add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
+    add_write_handler("active", write_param);
     add_task_handlers(&_task);
 }
 

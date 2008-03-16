@@ -341,22 +341,14 @@ ProgressBar::complete(bool is_full)
 }
 
 
-enum { H_MARK_STOPPED, H_MARK_DONE, H_BANNER, H_ACTIVE,
-       H_POSHANDLER, H_SIZEHANDLER, H_RESET, H_POS, H_SIZE };
+enum { H_MARK_STOPPED, H_MARK_DONE, H_ACTIVE,
+       H_POSHANDLER, H_SIZEHANDLER, H_RESET };
 
 String
 ProgressBar::read_handler(Element *e, void *thunk)
 {
     ProgressBar *pb = static_cast<ProgressBar *>(e);
     switch ((intptr_t)thunk) {
-    case H_BANNER:
-	return pb->_banner;
-      case H_ACTIVE:
-	return cp_unparse_bool(pb->_active);
-      case H_POS:
-	return String(pb->_last_pos);
-      case H_SIZE:
-	return String(pb->_size);
       case H_POSHANDLER:
       case H_SIZEHANDLER: {
 	  bool is_pos = ((intptr_t)thunk == H_POSHANDLER);
@@ -384,14 +376,6 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
       case H_MARK_DONE:
 	pb->complete(true);
 	return 0;
-      case H_BANNER:
-	pb->_banner = in_str;
-	return 0;
-      case H_SIZE:
-	if (cp_double(str, &pb->_size))
-	    return 0;
-	else
-	    return errh->error("'size' should be double (size value)");
       case H_POSHANDLER:
       case H_SIZEHANDLER: {
 	  Vector<String> words;
@@ -442,17 +426,15 @@ ProgressBar::add_handlers()
 {
     add_write_handler("mark_stopped", write_handler, (void *)H_MARK_STOPPED);
     add_write_handler("mark_done", write_handler, (void *)H_MARK_DONE);
-    add_read_handler("active", read_handler, (void *)H_ACTIVE, Handler::CHECKBOX);
+    add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
-    add_read_handler("banner", read_handler, (void *)H_BANNER);
-    add_write_handler("banner", write_handler, (void *)H_BANNER, Handler::RAW);
+    add_data_handlers("banner", Handler::OP_READ | Handler::OP_WRITE | Handler::RAW, &_banner);
     add_read_handler("poshandler", read_handler, (void *)H_POSHANDLER);
     add_write_handler("poshandler", write_handler, (void *)H_POSHANDLER);
     add_read_handler("sizehandler", read_handler, (void *)H_SIZEHANDLER);
     add_write_handler("sizehandler", write_handler, (void *)H_SIZEHANDLER);
-    add_read_handler("pos", read_handler, (void *)H_POS);
-    add_read_handler("size", read_handler, (void *)H_SIZE);
-    add_write_handler("size", write_handler, (void *)H_SIZE);
+    add_data_handlers("pos", Handler::OP_READ, &_last_pos);
+    add_data_handlers("size", Handler::OP_READ | Handler::OP_WRITE, &_size);
     add_write_handler("reset", write_handler, (void *)H_RESET, Handler::BUTTON);
 }
 

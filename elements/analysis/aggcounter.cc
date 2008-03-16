@@ -436,10 +436,6 @@ AggregateCounter::read_handler(Element *e, void *thunk)
 {
     AggregateCounter *ac = static_cast<AggregateCounter *>(e);
     switch ((intptr_t)thunk) {
-      case AC_FROZEN:
-	return cp_unparse_bool(ac->_frozen);
-      case AC_ACTIVE:
-	return cp_unparse_bool(ac->_active);
       case AC_BANNER:
 	return ac->_output_banner;
       case AC_AGGREGATE_CALL:
@@ -532,9 +528,9 @@ AggregateCounter::add_handlers()
     add_write_handler("write_file", write_file_handler, (void *)WR_BINARY);
     add_write_handler("write_ip_file", write_file_handler, (void *)WR_TEXT_IP);
     add_write_handler("write_pdf_file", write_file_handler, (void *)WR_TEXT_PDF);
-    add_read_handler("freeze", read_handler, (void *)AC_FROZEN, Handler::CHECKBOX);
+    add_data_handlers("freeze", Handler::OP_READ | Handler::CHECKBOX, &_frozen);
     add_write_handler("freeze", write_handler, (void *)AC_FROZEN);
-    add_read_handler("active", read_handler, (void *)AC_ACTIVE, Handler::CHECKBOX);
+    add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
     add_write_handler("active", write_handler, (void *)AC_ACTIVE);
     add_write_handler("stop", write_handler, (void *)AC_STOP, Handler::BUTTON);
     add_write_handler("reaggregate_counts", write_handler, (void *)AC_REAGGREGATE);

@@ -225,8 +225,8 @@ class AggregateCounter : public Element { public:
     bool _ip_bytes : 1;
     bool _use_packet_count : 1;
     bool _use_extra_length : 1;
-    bool _frozen : 1;
-    bool _active : 1;
+    bool _frozen;
+    bool _active;
     
     Node *_root;
     Node *_free;
