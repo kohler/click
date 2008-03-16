@@ -20,31 +20,29 @@
 #include <click/config.h>
 #include "stridesched.hh"
 #include <click/confparse.hh>
+#include <click/straccum.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
 StrideSched::StrideSched()
+    : _all(0), _list(0)
 {
-    _list = new Client;
-    _list->make_head();
 }
 
 StrideSched::~StrideSched()
 {
-    delete _list;
 }
 
 int
 StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (processing() == PULL) {
-	if (conf.size() != ninputs())
-	    return errh->error("need %d arguments, one per input port", ninputs());
-    } else {
-	if (conf.size() != noutputs())
-	    return errh->error("need %d arguments, one per output port", noutputs());
-    }
+    if (conf.size() != nclients())
+	return errh->error("need %d arguments, one per %s port", nclients(),
+			   (processing() == PULL ? "input" : "output"));
 
+    if (!_all && !(_all = new Client[nclients()]))
+	return errh->error("out of memory");
+    
     int before = errh->nerrors();
     for (int i = 0; i < conf.size(); i++) {
 	int v;
@@ -52,60 +50,59 @@ StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
 	    errh->error("argument %d should be number of tickets (integer)", i);
 	else if (v < 0)
 	    errh->error("argument %d (number of tickets) must be >= 0", i);
-	else if (v == 0)
-	    /* do not ever schedule it */;
 	else {
 	    if (v > MAX_TICKETS) {
 		errh->warning("input %d's tickets reduced to %d", i, MAX_TICKETS);
 		v = MAX_TICKETS;
 	    }
-	    _list->insert(new Client(i, v));
+	    _all[i].set_tickets(v);
 	}
     }
+
+    // insert into reverse order so they're run in forward order
+    _list = 0;
+    for (int i = nclients() - 1; i >= 0; i--)
+	if (_all[i]._tickets)
+	    _all[i].insert(&_list);
+    
     return (errh->nerrors() == before ? 0 : -1);
 }
 
 int
 StrideSched::initialize(ErrorHandler *)
 {
-    for (Client *c = _list->_next; c != _list; c = c->_next)
-	c->_signal = Notifier::upstream_empty_signal(this, c->_port, 0);
+    if (input_is_push(0))
+	for (int i = 0; i < nclients(); ++i)
+	    _all[i]._signal = Notifier::upstream_empty_signal(this, i, 0);
     return 0;
 }
 
 void
 StrideSched::cleanup(CleanupStage)
 {
-    while (_list->_next != _list) {
-	Client *c = _list->_next;
-	_list->_next->remove();
-	delete c;
-    }
+    delete[] _all;
 }
 
 Packet *
 StrideSched::pull(int)
 {
     // go over list until we find a packet, striding as we go
-    Client *stridden = _list->_next;
-    Client *c = stridden;
+    Client *stridden = _list, *c;
     Packet *p = 0;
-    while (c != _list && !p) {
+    for (c = _list; c && !p; c = c->_next) {
 	if (c->_signal)
-	    p = input(c->_port).pull();
+	    p = input(c - _all).pull();
 	c->stride();
-	c = c->_next;
     }
 
     // remove stridden portion from list
-    _list->_next = c;
-    c->_prev = _list;
+    if ((_list = c))
+	c->_pprev = &_list;
 
     // reinsert stridden portion into list
     while (stridden != c) {
 	Client *next = stridden->_next;
-	_list->insert(stridden); // 'insert' is OK even when 'stridden's next
-				// and prev pointers are garbage
+	stridden->insert(&_list);
 	stridden = next;
     }
 
@@ -115,18 +112,16 @@ StrideSched::pull(int)
 int
 StrideSched::tickets(int port) const
 {
-    for (Client *c = _list->_next; c != _list; c = c->_next)
-	if (c->_port == port)
-	    return c->_tickets;
-    if (port >= 0 && port < ninputs())
-	return 0;
-    return -1;
+    if ((unsigned) port < (unsigned) nclients())
+	return _all[port]._tickets;
+    else
+	return -1;
 }
 
 int
 StrideSched::set_tickets(int port, int tickets, ErrorHandler *errh)
 {
-    if (port < 0 || port >= ninputs())
+    if ((unsigned) port >= (unsigned) nclients())
 	return errh->error("port %d out of range", port);
     else if (tickets < 0)
 	return errh->error("number of tickets must be >= 0");
@@ -135,25 +130,15 @@ StrideSched::set_tickets(int port, int tickets, ErrorHandler *errh)
 	tickets = MAX_TICKETS;
     }
 
-    if (tickets == 0) {
-	// delete Client
-	for (Client *c = _list; c != _list; c = c->_next)
-	    if (c->_port == port) {
-		c->remove();
-		delete c;
-		return 0;
-	    }
-	return 0;
-    }
+    int old_tickets = _all[port]._tickets;
+    _all[port].set_tickets(tickets);
 
-    for (Client *c = _list->_next; c != _list; c = c->_next)
-	if (c->_port == port) {
-	    c->set_tickets(tickets);
-	    return 0;
-	}
-    Client *c = new Client(port, tickets);
-    c->_pass = _list->_next->_pass;
-    _list->insert(c);
+    if (tickets == 0 && old_tickets != 0)
+	_all[port].remove();
+    else if (tickets != 0 && old_tickets == 0) {
+	_all[port]._pass = (_list ? _list->_pass + _all[port]._stride : 0);
+	_all[port].insert(&_list);
+    }
     return 0;
 }
 
@@ -178,14 +163,27 @@ write_tickets_handler(const String &in_s, Element *e, void *thunk, ErrorHandler 
 	return ss->set_tickets(port, tickets, errh);
 }
 
+String
+StrideSched::read_handler(Element *e, void *)
+{
+    StrideSched *ss = static_cast<StrideSched *>(e);
+    StringAccum sa;
+    for (int i = 0; i < ss->nclients(); i++)
+	sa << (i ? ", " : "") << ss->_all[i]._tickets;
+    return sa.take_string();
+}
+
 void
 StrideSched::add_handlers()
 {
-    for (int i = 0; i < ninputs(); i++) {
+    // beware: StrideSwitch inherits from StrideSched
+    for (intptr_t i = 0; i < nclients(); i++) {
 	String s = "tickets" + String(i);
 	add_read_handler(s, read_tickets_handler, (void *)i);
 	add_write_handler(s, write_tickets_handler, (void *)i);
     }
+    add_read_handler("config", read_handler);
+    set_handler_flags("config", 0, Handler::CALM);
 }
 
 CLICK_ENDDECLS

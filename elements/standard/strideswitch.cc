@@ -33,17 +33,15 @@ StrideSwitch::~StrideSwitch()
 void
 StrideSwitch::push(int, Packet *p)
 {
-  // go over list until we find a packet, striding as we go
-  Client *stridden = _list->_next;
-  int o = stridden->_port;
-  stridden->stride();
-
-  // remove stridden portion from list
-  _list->_next = stridden->_next;
-  stridden->_next->_prev = _list;
-  _list->insert(stridden);
-
-  output(o).push(p);
+    if (_list) {
+	Client *stridden = _list;
+	if ((_list = stridden->_next))
+	    _list->_pprev = &_list;
+	stridden->stride();
+	stridden->insert(&_list);
+	output(stridden - _all).push(p);
+    } else
+	p->kill();
 }
 
 CLICK_ENDDECLS
