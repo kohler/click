@@ -97,7 +97,7 @@ void handler_value::set_flags(wmain *w, int new_flags)
     if ((new_flags & hflag_have_hvalue) == 0)
 	_hvalue = (new_flags & hflag_r ? no_hvalue_string : String());
 
-    _flags = new_flags;
+    _flags = new_flags & ~hflag_private_mask;
     _driver_mask &= ~(_flags ^ _driver_flags);
 }
 
@@ -234,7 +234,6 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 		    v->set_autorefresh_period(dhs->autorefresh_period);
 	    }
 	}
-	v->set_driver_flags(_w, flags);
 	if (v->notify_delt())
 	    _w->diagram()->notify_read(v);
 	

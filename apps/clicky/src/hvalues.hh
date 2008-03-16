@@ -40,7 +40,8 @@ enum {
     hflag_default_driver_mask = hflag_mandatory_driver_mask
     | hflag_calm | hflag_expensive | hflag_multiline
     | hflag_button | hflag_checkbox | hflag_collapse
-    | hflag_visible | hflag_refresh
+    | hflag_visible | hflag_refresh,
+    hflag_private_mask = hflag_outstanding
 };
 
 class handler_value { public:
@@ -273,7 +274,7 @@ struct handler_values {
 
 inline void handler_value::set_driver_flags(wmain *w, int new_driver_flags)
 {
-    _driver_flags = new_driver_flags;
+    _driver_flags = new_driver_flags & ~hflag_private_mask;
     int new_flags = (_flags & ~_driver_mask) | (_driver_flags & _driver_mask);
     if (new_flags != _flags)
 	set_flags(w, new_flags);
