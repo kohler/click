@@ -85,7 +85,7 @@ const char default_css[] = "~port~.input {\n\
     padding: 7.2px 12px;\n\
     margin: 12px;\n\
     ports-padding: 4.8px;\n\
-    shadow: drop rgba(10%, 10%, 20%, 50%) 3px;\n\
+    shadow: drop rgba(50%, 50%, 45%, 50%) 3px;\n\
     min-height: 30px;\n\
     orientation: vertical;\n\
     /* height-step: 4px; */\n\
@@ -128,7 +128,15 @@ const char default_css[] = "~port~.input {\n\
     length: length;\n\
     capacity: capacity;\n\
     color: rgba(0%, 0%, 100%, 20%);\n\
-    autorefresh: length 0.1;\n\
+    autorefresh: length 0.1s;\n\
+}\n\
+&activity {\n\
+    style: activity;\n\
+    handler: count;\n\
+    decay: 5s;\n\
+    max-value: 3;\n\
+    type: rate;\n\
+    autorefresh: 1s;\n\
 }";
 
 
@@ -574,6 +582,11 @@ bool dcss_property::hard_change_type(int t) const
       case t_relative:
 	if (cp_relative(_vstr, &_v.d))
 	    _t = t_relative;
+	break;
+
+      case t_seconds:
+	if (cp_seconds(_vstr, &_v.d))
+	    _t = t_seconds;
 	break;
 
       case t_color: {
@@ -1435,7 +1448,7 @@ ref_ptr<dqueue_style> dcss_set::queue_style(const delt *e)
 
 static int parse_autorefresh(String str, const char *medium, int *period)
 {
-    int on = 0;
+    int on = -1;
     double d;
     while (String x = cp_pop_spacevec(str))
 	if (x.equals("on", 2) || (medium && x.equals("both", 4)))
@@ -1444,9 +1457,12 @@ static int parse_autorefresh(String str, const char *medium, int *period)
 	    on = 0;
 	else if (x.equals(medium, -1))
 	    on = 1;
-	else if (cp_double(x, &d) && d >= 0)
+	else if (cp_seconds(x, &d) && d >= 0) {
+	    if (on < 0)
+		on = (medium ? 2 : 1);
 	    *period = (int) (d * 1000);
-    return on;
+	}
+    return (on < 0 ? 0 : on);
 }
 
 
@@ -1502,7 +1518,7 @@ ref_ptr<dhandler_style> dcss_set::handler_style(wmain *w, const handler_value *h
 	dcss::assign_all(handler_pm, handler_pmp, num_handler_pm, sv.begin(), sv.end());
 
 	dhandler_style *sty = new dhandler_style;
-	sty->autorefresh_period = (int) (handler_pm[1].vnumeric("autorefresh-period") * 1000);
+	sty->autorefresh_period = (int) (handler_pm[1].vseconds("autorefresh-period") * 1000);
 	sty->flags_mask = hflag_autorefresh | hflag_refresh | hflag_visible
 	    | hflag_collapse;
 	sty->flags = 0;
@@ -1591,11 +1607,77 @@ ref_ptr<dfullness_style> dcss_set::fullness_style(PermString decor, const delt *
 	sty->length = fullness_pm[0].vstring("length");
 	sty->capacity = fullness_pm[1].vstring("capacity");
 	fullness_pm[2].vcolor(sty->color, "color");
-	sty->autorefresh_period = (int) (fullness_pm[4].vnumeric("autorefresh-period") * 1000);
+	sty->autorefresh_period = (int) (fullness_pm[4].vseconds("autorefresh-period") * 1000);
 	String s = fullness_pm[3].vstring("autorefresh");
 	sty->autorefresh = parse_autorefresh(s, "length", &sty->autorefresh_period);
 
 	style_cache = ref_ptr<dfullness_style>(sty);
+    }
+    
+    return style_cache;
+}
+
+
+/*****
+ *
+ *
+ *
+ */
+
+static dcss_propmatch activity_pm[] = {
+    { "handler", 0 },
+    { "color", 0 },
+    { "autorefresh", 0 },
+    { "autorefresh-period", 0 },
+    { "type", 0 },
+    { "max-value", 0 },
+    { "decay", 0 }
+};
+
+enum {
+    num_activity_pm = sizeof(activity_pm) / sizeof(activity_pm[0])
+};
+
+static dcss_propmatch *activity_pmp[num_activity_pm];
+
+ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, const delt *e)
+{
+    Vector<dcss *> sv;
+    bool generic = true;
+    collect_decor_styles(decor, e, sv, generic);
+
+    std::sort(sv.begin(), sv.end(), dcsspp_compare);
+    StringAccum sa(sizeof(unsigned) * sv.size());
+    for (dcss **sp = sv.begin(); sp != sv.end(); ++sp)
+	*reinterpret_cast<unsigned *>(sa.extend(sizeof(unsigned))) = (*sp)->selector_index();
+    ref_ptr<dactivity_style> &style_cache = _atable.find_force(sa.take_string());
+
+    if (!style_cache) {
+	dcss::assign_all(activity_pm, activity_pmp, num_activity_pm, sv.begin(), sv.end());
+
+	dactivity_style *sty = new dactivity_style;
+	sty->handler = activity_pm[0].vstring("handler");
+	activity_pm[1].vcolor(sty->color, "color");
+	sty->autorefresh_period = (int) (activity_pm[3].vseconds("autorefresh-period") * 1000);
+	String s = activity_pm[2].vstring("autorefresh");
+	sty->autorefresh = parse_autorefresh(s, "", &sty->autorefresh_period);
+	s = activity_pm[4].vstring("type");
+	if (s.length() >= 4 && memcmp(s.data(), "rate", 4) == 0) {
+	    sty->type = dactivity_rate;
+	    s = s.substring(4);
+	    sty->rate_period = 1;
+	    (void) cp_seconds(cp_pop_spacevec(s), &sty->rate_period);
+	    sty->rate_period = std::max(sty->rate_period, 0.01);
+	} else
+	    sty->type = dactivity_absolute;
+	sty->max_value = activity_pm[5].vnumeric("max-value");
+	sty->decay = activity_pm[6].vseconds("decay");
+
+	//if (sty->type == dactivity_rate)
+	//sty->decay_begin = std::max(sty->decay_begin, 10U);
+	//sty->decay_end = std::max(sty->decay_begin, sty->decay_end);
+	
+	style_cache = ref_ptr<dactivity_style>(sty);
     }
     
     return style_cache;

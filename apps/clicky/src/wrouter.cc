@@ -564,7 +564,7 @@ void wmain::on_read(const String &hname, const String &hparam, const String &hva
 	handler_value *hv = _hvalues.set(hname, hparam, hvalue, changed);
 	if (changed && hv->notify_whandlers())
 	    _handlers->notify_read(hv);
-	if (changed && hv->notify_delt())
+	if (hv->notify_delt(changed))
 	    _diagram->notify_read(hv);
     }
     if (status == 200)
@@ -1194,6 +1194,7 @@ void wmain::set_diagram_mode(bool diagram)
 	gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_in"), TRUE);
 	gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_out"), TRUE);
 	gtk_widget_set_sensitive(lookup_widget(_window, "menu_normal_size"), TRUE);
+	gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_fit"), TRUE);
     } else {
 	g_object_set(G_OBJECT(lookup_widget(_window, "menu_view_configuration")), "active", TRUE, (const char *) NULL);
 	gtk_toggle_tool_button_set_active(GTK_TOGGLE_TOOL_BUTTON(lookup_widget(_window, "toolbar_diagram")), FALSE);
@@ -1202,6 +1203,7 @@ void wmain::set_diagram_mode(bool diagram)
 	gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_in"), FALSE);
 	gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_out"), FALSE);
 	gtk_widget_set_sensitive(lookup_widget(_window, "menu_normal_size"), FALSE);
+	gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_fit"), FALSE);
     }
 }
 

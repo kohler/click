@@ -207,7 +207,7 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	if (name == "class" || name == "name")
 	    flags |= hflag_special;
 	else if (name == "config")
-	    flags |= hflag_multiline | hflag_special;
+	    flags |= hflag_multiline | hflag_special | hflag_visible | hflag_refresh;
 	else if (name == "ports")
 	    flags |= hflag_collapse | hflag_visible;
 	else if (name == "handlers")

@@ -134,11 +134,11 @@ create_mainw (void)
   GtkWidget *menuitem1;
   GtkWidget *menuitem1_menu;
   GtkWidget *menu_new_window;
-  GtkWidget *image92;
+  GtkWidget *image99;
   GtkWidget *menu_open_file;
-  GtkWidget *image93;
+  GtkWidget *image100;
   GtkWidget *menu_open_socket;
-  GtkWidget *image94;
+  GtkWidget *image101;
   GtkWidget *menu_open_kernel;
   GtkWidget *separator5;
   GtkWidget *menu_save;
@@ -156,17 +156,18 @@ create_mainw (void)
   GtkWidget *menu_view_element;
   GtkWidget *separator3;
   GtkWidget *menu_zoom_in;
-  GtkWidget *image95;
+  GtkWidget *image102;
   GtkWidget *menu_zoom_out;
-  GtkWidget *image96;
+  GtkWidget *image103;
   GtkWidget *menu_normal_size;
-  GtkWidget *image97;
+  GtkWidget *image104;
+  GtkWidget *menu_zoom_fit;
   GtkWidget *item1;
   GtkWidget *item1_menu;
   GtkWidget *menu_check;
-  GtkWidget *image98;
+  GtkWidget *image105;
   GtkWidget *menu_install;
-  GtkWidget *image99;
+  GtkWidget *image106;
   GtkWidget *separator4;
   GtkWidget *item2;
   GtkWidget *item2_menu;
@@ -266,9 +267,9 @@ create_mainw (void)
                               GDK_n, (GdkModifierType) GDK_CONTROL_MASK,
                               GTK_ACCEL_VISIBLE);
 
-  image92 = gtk_image_new_from_stock ("gtk-new", GTK_ICON_SIZE_MENU);
-  gtk_widget_show (image92);
-  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_new_window), image92);
+  image99 = gtk_image_new_from_stock ("gtk-new", GTK_ICON_SIZE_MENU);
+  gtk_widget_show (image99);
+  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_new_window), image99);
 
   menu_open_file = gtk_image_menu_item_new_with_mnemonic (_("_Open File..."));
   gtk_widget_show (menu_open_file);
@@ -277,17 +278,17 @@ create_mainw (void)
                               GDK_o, (GdkModifierType) GDK_CONTROL_MASK,
                               GTK_ACCEL_VISIBLE);
 
-  image93 = gtk_image_new_from_stock ("gtk-open", GTK_ICON_SIZE_MENU);
-  gtk_widget_show (image93);
-  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_open_file), image93);
+  image100 = gtk_image_new_from_stock ("gtk-open", GTK_ICON_SIZE_MENU);
+  gtk_widget_show (image100);
+  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_open_file), image100);
 
   menu_open_socket = gtk_image_menu_item_new_with_mnemonic (_("Open Socke_t..."));
   gtk_widget_show (menu_open_socket);
   gtk_container_add (GTK_CONTAINER (menuitem1_menu), menu_open_socket);
 
-  image94 = gtk_image_new_from_stock ("gtk-network", GTK_ICON_SIZE_MENU);
-  gtk_widget_show (image94);
-  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_open_socket), image94);
+  image101 = gtk_image_new_from_stock ("gtk-network", GTK_ICON_SIZE_MENU);
+  gtk_widget_show (image101);
+  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_open_socket), image101);
 
   menu_open_kernel = gtk_menu_item_new_with_mnemonic (_("Open _Kernel"));
   gtk_widget_show (menu_open_kernel);
@@ -335,7 +336,6 @@ create_mainw (void)
   menu_view_diagram_group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (menu_view_diagram));
   gtk_widget_show (menu_view_diagram);
   gtk_container_add (GTK_CONTAINER (view1_menu), menu_view_diagram);
-  gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_view_diagram), TRUE);
 
   menu_view_configuration = gtk_radio_menu_item_new_with_mnemonic (menu_view_diagram_group, _("Configuration"));
   menu_view_diagram_group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (menu_view_configuration));
@@ -361,15 +361,15 @@ create_mainw (void)
   gtk_widget_show (menu_zoom_in);
   gtk_container_add (GTK_CONTAINER (view1_menu), menu_zoom_in);
   gtk_widget_add_accelerator (menu_zoom_in, "activate", accel_group,
-                              GDK_plus, (GdkModifierType) GDK_CONTROL_MASK,
-                              GTK_ACCEL_VISIBLE);
-  gtk_widget_add_accelerator (menu_zoom_in, "activate", accel_group,
                               GDK_equal, (GdkModifierType) GDK_CONTROL_MASK,
                               GTK_ACCEL_VISIBLE);
+  gtk_widget_add_accelerator (menu_zoom_in, "activate", accel_group,
+                              GDK_plus, (GdkModifierType) GDK_CONTROL_MASK,
+                              GTK_ACCEL_VISIBLE);
 
-  image95 = gtk_image_new_from_stock ("gtk-zoom-in", GTK_ICON_SIZE_MENU);
-  gtk_widget_show (image95);
-  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_zoom_in), image95);
+  image102 = gtk_image_new_from_stock ("gtk-zoom-in", GTK_ICON_SIZE_MENU);
+  gtk_widget_show (image102);
+  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_zoom_in), image102);
 
   menu_zoom_out = gtk_image_menu_item_new_with_mnemonic (_("Zoom _Out"));
   gtk_widget_show (menu_zoom_out);
@@ -378,17 +378,21 @@ create_mainw (void)
                               GDK_minus, (GdkModifierType) GDK_CONTROL_MASK,
                               GTK_ACCEL_VISIBLE);
 
-  image96 = gtk_image_new_from_stock ("gtk-zoom-out", GTK_ICON_SIZE_MENU);
-  gtk_widget_show (image96);
-  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_zoom_out), image96);
+  image103 = gtk_image_new_from_stock ("gtk-zoom-out", GTK_ICON_SIZE_MENU);
+  gtk_widget_show (image103);
+  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_zoom_out), image103);
 
   menu_normal_size = gtk_image_menu_item_new_with_mnemonic (_("Normal Size"));
   gtk_widget_show (menu_normal_size);
   gtk_container_add (GTK_CONTAINER (view1_menu), menu_normal_size);
 
-  image97 = gtk_image_new_from_stock ("gtk-zoom-100", GTK_ICON_SIZE_MENU);
-  gtk_widget_show (image97);
-  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_normal_size), image97);
+  image104 = gtk_image_new_from_stock ("gtk-zoom-100", GTK_ICON_SIZE_MENU);
+  gtk_widget_show (image104);
+  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_normal_size), image104);
+
+  menu_zoom_fit = gtk_image_menu_item_new_from_stock ("gtk-zoom-fit", accel_group);
+  gtk_widget_show (menu_zoom_fit);
+  gtk_container_add (GTK_CONTAINER (view1_menu), menu_zoom_fit);
 
   item1 = gtk_menu_item_new_with_mnemonic (_("_Configuration"));
   gtk_widget_show (item1);
@@ -404,17 +408,17 @@ create_mainw (void)
                               GDK_k, (GdkModifierType) GDK_CONTROL_MASK,
                               GTK_ACCEL_VISIBLE);
 
-  image98 = gtk_image_new_from_stock ("gtk-apply", GTK_ICON_SIZE_MENU);
-  gtk_widget_show (image98);
-  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_check), image98);
+  image105 = gtk_image_new_from_stock ("gtk-apply", GTK_ICON_SIZE_MENU);
+  gtk_widget_show (image105);
+  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_check), image105);
 
   menu_install = gtk_image_menu_item_new_with_mnemonic (_("_Install"));
   gtk_widget_show (menu_install);
   gtk_container_add (GTK_CONTAINER (item1_menu), menu_install);
 
-  image99 = gtk_image_new_from_stock ("gtk-execute", GTK_ICON_SIZE_MENU);
-  gtk_widget_show (image99);
-  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_install), image99);
+  image106 = gtk_image_new_from_stock ("gtk-execute", GTK_ICON_SIZE_MENU);
+  gtk_widget_show (image106);
+  gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_install), image106);
 
   separator4 = gtk_separator_menu_item_new ();
   gtk_widget_show (separator4);
@@ -432,19 +436,16 @@ create_mainw (void)
   menu_config_userlevel_group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (menu_config_userlevel));
   gtk_widget_show (menu_config_userlevel);
   gtk_container_add (GTK_CONTAINER (item2_menu), menu_config_userlevel);
-  gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_config_userlevel), TRUE);
 
   menu_config_linuxmodule = gtk_radio_menu_item_new_with_mnemonic (menu_config_userlevel_group, _("Linux Kernel"));
   menu_config_userlevel_group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (menu_config_linuxmodule));
   gtk_widget_show (menu_config_linuxmodule);
   gtk_container_add (GTK_CONTAINER (item2_menu), menu_config_linuxmodule);
-  gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_config_linuxmodule), TRUE);
 
   menu_config_bsdmodule = gtk_radio_menu_item_new_with_mnemonic (menu_config_userlevel_group, _("FreeBSD Kernel"));
   menu_config_userlevel_group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (menu_config_bsdmodule));
   gtk_widget_show (menu_config_bsdmodule);
   gtk_container_add (GTK_CONTAINER (item2_menu), menu_config_bsdmodule);
-  gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_config_bsdmodule), TRUE);
 
   menu_config_ns = gtk_radio_menu_item_new_with_mnemonic (menu_config_userlevel_group, _("NS Simulator"));
   menu_config_userlevel_group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (menu_config_ns));
@@ -756,11 +757,11 @@ create_mainw (void)
   GLADE_HOOKUP_OBJECT (mainw, menuitem1, "menuitem1");
   GLADE_HOOKUP_OBJECT (mainw, menuitem1_menu, "menuitem1_menu");
   GLADE_HOOKUP_OBJECT (mainw, menu_new_window, "menu_new_window");
-  GLADE_HOOKUP_OBJECT (mainw, image92, "image92");
+  GLADE_HOOKUP_OBJECT (mainw, image99, "image99");
   GLADE_HOOKUP_OBJECT (mainw, menu_open_file, "menu_open_file");
-  GLADE_HOOKUP_OBJECT (mainw, image93, "image93");
+  GLADE_HOOKUP_OBJECT (mainw, image100, "image100");
   GLADE_HOOKUP_OBJECT (mainw, menu_open_socket, "menu_open_socket");
-  GLADE_HOOKUP_OBJECT (mainw, image94, "image94");
+  GLADE_HOOKUP_OBJECT (mainw, image101, "image101");
   GLADE_HOOKUP_OBJECT (mainw, menu_open_kernel, "menu_open_kernel");
   GLADE_HOOKUP_OBJECT (mainw, separator5, "separator5");
   GLADE_HOOKUP_OBJECT (mainw, menu_save, "menu_save");
@@ -777,17 +778,18 @@ create_mainw (void)
   GLADE_HOOKUP_OBJECT (mainw, menu_view_element, "menu_view_element");
   GLADE_HOOKUP_OBJECT (mainw, separator3, "separator3");
   GLADE_HOOKUP_OBJECT (mainw, menu_zoom_in, "menu_zoom_in");
-  GLADE_HOOKUP_OBJECT (mainw, image95, "image95");
+  GLADE_HOOKUP_OBJECT (mainw, image102, "image102");
   GLADE_HOOKUP_OBJECT (mainw, menu_zoom_out, "menu_zoom_out");
-  GLADE_HOOKUP_OBJECT (mainw, image96, "image96");
+  GLADE_HOOKUP_OBJECT (mainw, image103, "image103");
   GLADE_HOOKUP_OBJECT (mainw, menu_normal_size, "menu_normal_size");
-  GLADE_HOOKUP_OBJECT (mainw, image97, "image97");
+  GLADE_HOOKUP_OBJECT (mainw, image104, "image104");
+  GLADE_HOOKUP_OBJECT (mainw, menu_zoom_fit, "menu_zoom_fit");
   GLADE_HOOKUP_OBJECT (mainw, item1, "item1");
   GLADE_HOOKUP_OBJECT (mainw, item1_menu, "item1_menu");
   GLADE_HOOKUP_OBJECT (mainw, menu_check, "menu_check");
-  GLADE_HOOKUP_OBJECT (mainw, image98, "image98");
+  GLADE_HOOKUP_OBJECT (mainw, image105, "image105");
   GLADE_HOOKUP_OBJECT (mainw, menu_install, "menu_install");
-  GLADE_HOOKUP_OBJECT (mainw, image99, "image99");
+  GLADE_HOOKUP_OBJECT (mainw, image106, "image106");
   GLADE_HOOKUP_OBJECT (mainw, separator4, "separator4");
   GLADE_HOOKUP_OBJECT (mainw, item2, "item2");
   GLADE_HOOKUP_OBJECT (mainw, item2_menu, "item2_menu");

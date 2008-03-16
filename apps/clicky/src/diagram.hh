@@ -139,12 +139,12 @@ inline void wdiagram::redraw(rectangle r)
 
 inline point wdiagram::window_to_canvas(double x, double y) const
 {
-    return point((x + _origin_x + 0.5) / _scale, (y + _origin_y + 0.5) / _scale);
+    return point((x + _origin_x) / _scale, (y + _origin_y) / _scale);
 }
 
 inline point wdiagram::canvas_to_window(double x, double y) const
 {
-    return point(x * _scale - _origin_x - 0.5, y * _scale - _origin_y - 0.5);
+    return point(x * _scale - _origin_x, y * _scale - _origin_y);
 }
 
 inline rectangle wdiagram::canvas_to_window(const rectangle &r) const

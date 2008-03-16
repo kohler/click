@@ -100,6 +100,22 @@ struct dfullness_style : public enable_ref_ptr {
 };
 
 enum {
+    dactivity_absolute = 0,
+    dactivity_rate = 1
+};
+
+struct dactivity_style : public enable_ref_ptr {
+    String handler;
+    double color[4];
+    int type;
+    double max_value;
+    double rate_period;
+    double decay;
+    int autorefresh;
+    int autorefresh_period;
+};
+
+enum {
     dhlt_hover = 0,
     dhlt_click = 1,
     dhlt_pressed = 2,
@@ -206,6 +222,7 @@ struct dcss_property {
 	t_numeric,
 	t_pixel,
 	t_relative,
+	t_seconds,
 	t_color,
 	t_border_style,
 	t_shadow_style,
@@ -241,6 +258,9 @@ struct dcss_property {
 			 const delt *e) const;
     double vrelative() const {
 	return (change_type(t_relative) ? _v.d : 0);
+    }
+    double vseconds() const {
+	return (change_type(t_seconds) ? _v.d : 0);
     }
     void vcolor(double *r, double *g, double *b, double *a) const {
 	const double *c = (change_type(t_color) ? _v.dp : transparent_color);
@@ -313,6 +333,10 @@ struct dcss_propmatch {
     double vrelative(const char *n) const {
 	assert(name == n);
 	return property->vrelative();
+    }
+    double vseconds(const char *n) const {
+	assert(name == n);
+	return property->vseconds();
     }
     void vcolor(double color[4], const char *n) const {
 	assert(name == n);
@@ -408,6 +432,7 @@ class dcss_set { public:
     ref_ptr<dqueue_style> queue_style(const delt *e);
     ref_ptr<dhandler_style> handler_style(wmain *w, const handler_value *hv);
     ref_ptr<dfullness_style> fullness_style(PermString decor, const delt *e);
+    ref_ptr<dactivity_style> activity_style(PermString decor, const delt *e);
 
     double vpixel(PermString name, const delt *e) const;
     String vstring(PermString name, PermString decor, const delt *e) const;
@@ -436,6 +461,7 @@ class dcss_set { public:
     HashMap<String, ref_ptr<dqueue_style> > _qtable;
     HashMap<String, ref_ptr<dhandler_style> > _htable;
     HashMap<String, ref_ptr<dfullness_style> > _ftable;
+    HashMap<String, ref_ptr<dactivity_style> > _atable;
 
     void mark_change();
     void collect_port_styles(const delt *e, bool isoutput, int port,

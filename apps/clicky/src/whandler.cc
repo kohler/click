@@ -482,6 +482,8 @@ void whandler::display(const String &ename, bool incremental)
 		gtk_text_view_set_editable(GTK_TEXT_VIEW(hi->wdata), edit);
 		g_object_set(hi->wdata, "can-focus", edit, (const char *) NULL);
 		g_object_set_data_full(G_OBJECT(hi->wdata), "clicky_hname", g_strdup(hi->hv->hname().c_str()), g_free);
+		hi->hv->set_flags(_rw, hi->hv->flags() | hflag_notify_whandlers);
+		hi->hv->refresh(_rw);
 	    }
 	} else {
 	    hi->create(this, hi->hv->flags() | hflag_notify_whandlers, true);

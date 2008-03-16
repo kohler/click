@@ -120,7 +120,7 @@ class delt : public dwidget { public:
 
     delt(delt *parent, int z_index)
 	: dwidget(dw_elt, z_index), _e(0), _decor(0), _parent(parent),
-	  _split(0), _visible(false), _layout(false), _expanded(true),
+	  _split(0), _visible(false), _displayed(false), _layout(false),
 	  _aligned(true), _handler_markup(false), _driver(false),
 	  _split_inputs(false), _orientation(0), _highlight(0),
 	  _drawn_highlight(0), _depth(parent ? parent->_depth + 1 : 0),
@@ -139,6 +139,9 @@ class delt : public dwidget { public:
     }
     bool vertical() const {
 	return side_vertical(_orientation);
+    }
+    bool displayed() const {
+	return _displayed;
     }
     bool visible() const {
 	return _visible;
@@ -237,7 +240,7 @@ class delt : public dwidget { public:
     // handlers
     bool expand_handlers(wmain *w);
     handler_value *handler_interest(wmain *w, const String &hname,
-				    bool autorefresh = false, int autorefresh_period = 0);
+				    bool autorefresh = false, int autorefresh_period = 0, bool always = false);
     
     void prepare_router(wdiagram *d, RouterT *router, ProcessingT *processing,
 			HashMap<String, delt *> &collector,
@@ -263,8 +266,8 @@ class delt : public dwidget { public:
     String _markup;
 
     bool _visible;
+    bool _displayed;
     bool _layout;
-    bool _expanded;
     bool _aligned;
     bool _handler_markup;
     bool _driver;
@@ -349,7 +352,7 @@ inline void dwidget::draw(dcontext &dx) {
 
 
 inline bool dconn::visible() const {
-    return _from_elt->visible() && _to_elt->visible();
+    return _from_elt->displayed() && _to_elt->displayed();
 }
 
 inline double delt::port_position(bool isoutput, int port,

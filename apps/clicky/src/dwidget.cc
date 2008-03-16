@@ -425,7 +425,7 @@ void delt::position_contents_dot(RouterT *router, dcss_set *dcs, ErrorHandler *e
     for (int i = 0; i < router->nconnections(); i++) {
 	const ConnectionT &c = router->connection(i);
 	delt *eout = _elt[c.from_eindex()], *ein = _elt[c.to_eindex()];
-	if (eout->visible() && ein->visible()) {
+	if (eout->displayed() && ein->displayed()) {
 	    sa << 'n' << c.from_eindex() << ':' << 'o' << c.from_port()
 	       << " -> n" << c.to_eindex();
 	    if (ein->_des->display == dedisp_vsplit)
@@ -513,14 +513,14 @@ void delt::position_contents_dot(RouterT *router, dcss_set *dcs, ErrorHandler *e
     double min_x = 1000000, min_y = 1000000;
     for (std::vector<delt *>::iterator n = _elt.begin();
 	 n != _elt.end(); ++n)
-	if ((*n)->_visible) {
+	if ((*n)->visible()) {
 	    min_x = MIN(min_x, (*n)->_xrect._x - (*n)->_des->margin[3]);
 	    min_y = MIN(min_y, (*n)->_xrect._y - (*n)->_des->margin[0]);
 	}
 
     for (std::vector<delt *>::iterator n = _elt.begin();
 	 n != _elt.end(); ++n)
-	if ((*n)->_visible) {
+	if ((*n)->visible()) {
 	    (*n)->_xrect._x -= min_x;
 	    (*n)->_xrect._y -= min_y;
 	}
@@ -720,6 +720,8 @@ void delt::redecorate(dcontext &dcx)
 	if (String dtype = dcs->vstring("style", dname, this)) {
 	    if (dtype == "fullness")
 		_decor = new dfullness_decor(dname, dcx.d->main(), this, _decor);
+	    else if (dtype == "activity")
+		_decor = new dactivity_decor(dname, dcx.d->main(), this, _decor);
 	}
     }
 }
@@ -735,18 +737,18 @@ void delt::layout(dcontext &dcx)
     _orientation = _des->orientation;
     if (_des->display == dedisp_none || _e->tunnel()
 	|| (_split_inputs && _des->display != dedisp_vsplit)) {
-	_visible = false;
+	_displayed = _visible = false;
 	_width = _height = 0;
 	return;
     } else
-	_visible = true;
+	_displayed = _visible = true;
 
     // get text extents
     restyle(dcx);
     redecorate(dcx);
 
     // get contents width and height
-    if (_expanded && _elt.size() && _des->display == dedisp_open)
+    if (_elt.size() && _des->display == dedisp_open)
 	layout_contents(dcx, _e->resolved_router());
     
     // get element width and height
@@ -798,7 +800,8 @@ void delt::layout_compound_ports(dcss_set *dcs)
 	ref_ptr<dport_style> dps = dcs->port_style(this, false, 0, 0);
 	_elt[0]->_height = 10 + dps->width - 1;
 	_elt[0]->_des = dcs->elt_style(_elt[0]);
-	_elt[0]->_visible = (_des->display == dedisp_open);
+	_elt[0]->_displayed = (_des->display == dedisp_open);
+	_elt[0]->_visible = false;
 	_elt[0]->_layout = true;
 	_elt[0]->layout_ports(dcs);
     }
@@ -809,7 +812,8 @@ void delt::layout_compound_ports(dcss_set *dcs)
 	_elt[1]->_width = _width;
 	_elt[1]->_height = 10;
 	_elt[1]->_des = dcs->elt_style(_elt[1]);
-	_elt[1]->_visible = (_des->display == dedisp_open);
+	_elt[1]->_displayed = (_des->display == dedisp_open);
+	_elt[1]->_visible = false;
 	_elt[1]->_layout = true;
 	_elt[1]->layout_ports(dcs);
     }
@@ -824,7 +828,7 @@ void delt::layout_complete(dcontext &dcx, double dx, double dy)
 
     for (std::vector<delt *>::iterator ci = _elt.begin();
 	 ci != _elt.end(); ++ci)
-	if ((*ci)->_visible) {
+	if ((*ci)->visible()) {
 	    (*ci)->_x = floor((*ci)->_xrect._x + dx);
 	    (*ci)->_y = floor((*ci)->_xrect._y + dy);
 	    dcx.d->rects().insert(*ci);
@@ -854,7 +858,7 @@ void delt::layout_main(dcontext &dcx, RouterT *router)
 
 bool dconn::layout()
 {
-    if (!_from_elt->visible() || !_to_elt->visible())
+    if (!visible())
 	return false;
     point op = _from_elt->output_position(_from_port, 0);
     point ip = _to_elt->input_position(_to_port, 0);
@@ -1417,7 +1421,7 @@ void delt::draw_outline(dcontext &dcx)
 
 void delt::draw(dcontext &dcx)
 {
-    if (_visible) {
+    if (visible()) {
 	if (_highlight != _drawn_highlight || dcx.generation != _generation) {
 	    ref_ptr<delt_style> old_des = _des;
 	    _des = dcx.d->css_set()->elt_style(this);
@@ -1582,11 +1586,13 @@ bool delt::expand_handlers(wmain *w)
 
 handler_value *delt::handler_interest(wmain *w, const String &hname,
 				      bool autorefresh,
-				      int autorefresh_period)
+				      int autorefresh_period,
+				      bool always)
 {
     return w->hvalues().find_placeholder
 	(_flat_name + "." + hname, w,
-	 hflag_notify_delt | (autorefresh ? hflag_autorefresh : 0),
+	 hflag_notify_delt | (autorefresh ? hflag_autorefresh : 0)
+	 | (always ? hflag_always_notify_delt : 0),
 	 autorefresh_period);
 }
 

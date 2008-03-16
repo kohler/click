@@ -101,6 +101,11 @@ static void on_normal_size_activate(GtkMenuItem *, gpointer user_data)
     reinterpret_cast<wmain *>(user_data)->diagram()->zoom(false, 0);
 }
 
+static void on_zoom_fit_activate(GtkMenuItem *, gpointer user_data)
+{
+    reinterpret_cast<wmain *>(user_data)->diagram()->zoom(false, -10000);
+}
+
 static void on_config_userlevel_activate(GtkMenuItem *, gpointer user_data)
 {
     reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::USERLEVEL);
@@ -163,9 +168,12 @@ void wmain::dialogs_connect()
 		     G_CALLBACK(on_zoom_out_activate), this);
     g_signal_connect(lookup_widget(_window, "menu_normal_size"), "activate",
 		     G_CALLBACK(on_normal_size_activate), this);
+    g_signal_connect(lookup_widget(_window, "menu_zoom_fit"), "activate",
+		     G_CALLBACK(on_zoom_fit_activate), this);
     gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_in"), FALSE);
     gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_out"), FALSE);
     gtk_widget_set_sensitive(lookup_widget(_window, "menu_normal_size"), FALSE);
+    gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_fit"), FALSE);
     g_signal_connect(lookup_widget(_window, "menu_config_userlevel"), "activate",
 		     G_CALLBACK(on_config_userlevel_activate), this);
     g_signal_connect(lookup_widget(_window, "menu_config_linuxmodule"), "activate",

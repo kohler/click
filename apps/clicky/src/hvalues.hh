@@ -32,7 +32,8 @@ enum {
     hflag_preferences = 1 << 16,
     hflag_notify_whandlers = 1 << 17,
     hflag_notify_delt = 1 << 18,
-    hflag_outstanding = 1 << 19,
+    hflag_always_notify_delt = 1 << 19,
+    hflag_outstanding = 1 << 20,
 
     hflag_mandatory_driver_mask = hflag_r | hflag_w | hflag_rparam | hflag_raw
     | hflag_special | hflag_dead,
@@ -132,6 +133,10 @@ class handler_value { public:
     }
     bool notify_delt() const {
 	return (_flags & hflag_notify_delt) != 0;
+    }
+    bool notify_delt(bool changed) const {
+	return (_flags & hflag_notify_delt) != 0
+	    && (changed || (_flags & hflag_always_notify_delt) != 0);
     }
 
     int flags() const {

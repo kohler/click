@@ -138,18 +138,18 @@ void wdiagram::scroll_recenter(point old_ctr)
 	old_ctr = scroll_center();
     
     gtk_layout_set_size(GTK_LAYOUT(_widget),
-			MAX((gint) (_relt->_width * _scale),
+			MAX((gint) (_relt->_width * _scale + 0.5),
 			    _widget->allocation.width),
-			MAX((gint) (_relt->_height * _scale),
+			MAX((gint) (_relt->_height * _scale + 0.5),
 			    _widget->allocation.height));
     
-    GtkAdjustment *ha = _horiz_adjust, *va = _vert_adjust;
+    GtkAdjustment *ha = _horiz_adjust;
     double scaled_width = ha->page_size / _scale;
     if (scaled_width >= _relt->_width) {
-	_origin_x = (int) ((_relt->center_x() - scaled_width / 2) * _scale);
+	_origin_x = (int) ((_relt->center_x() - scaled_width / 2) * _scale + 0.5);
 	gtk_adjustment_set_value(ha, 0);
     } else {
-	_origin_x = (int) (_relt->x() * _scale);
+	_origin_x = (int) (_relt->x() * _scale + 0.5);
 	if (old_ctr.x() - scaled_width / 2 < _relt->x())
 	    gtk_adjustment_set_value(ha, 0);
 	else if (old_ctr.x() + scaled_width / 2 > _relt->x2())
@@ -158,12 +158,13 @@ void wdiagram::scroll_recenter(point old_ctr)
 	    gtk_adjustment_set_value(ha, (old_ctr.x() - scaled_width / 2) * _scale - _origin_x);
     }
     
+    GtkAdjustment *va = _vert_adjust;
     double scaled_height = va->page_size / _scale;
     if (scaled_height >= _relt->_height) {
-	_origin_y = (int) ((_relt->center_y() - scaled_height / 2) * _scale);
+	_origin_y = (int) ((_relt->center_y() - scaled_height / 2) * _scale + 0.5);
 	gtk_adjustment_set_value(va, 0);
     } else {
-	_origin_y = (int) (_relt->y() * _scale);
+	_origin_y = (int) (_relt->y() * _scale + 0.5);
 	if (old_ctr.y() - scaled_height / 2 < _relt->y())
 	    gtk_adjustment_set_value(va, 0);
 	else if (old_ctr.y() + scaled_height / 2 > _relt->y2())
@@ -177,14 +178,22 @@ void wdiagram::scroll_recenter(point old_ctr)
 
 void wdiagram::zoom(bool incremental, int amount)
 {
-    _scale_step = (incremental ? _scale_step + amount : amount);
+    if (!incremental && amount <= -10000 && _relt) { // best fit
+	// window_width / 3**(scale_step/2) <= contents_width
+	// && window_height / 3**(scale_step/2) <= contents_height
+	double ssw = 3 * log2(_horiz_adjust->page_size / _relt->width());
+	double ssh = 3 * log2(_vert_adjust->page_size / _relt->height());
+	_scale_step = (int) floor(std::min(ssw, ssh));
+    } else
+	_scale_step = (incremental ? _scale_step + amount : amount);
+    double new_scale = pow(2.0, _scale_step / 3.0);
 
     if (_layout) {
 	point old_ctr = scroll_center();
-	_scale = pow(1.2, _scale_step);
+	_scale = new_scale;
 	scroll_recenter(old_ctr);
     } else
-	_scale = pow(1.2, _scale_step);	
+	_scale = new_scale;
 }
 
 void wdiagram::router_create(bool incremental, bool always)
@@ -460,7 +469,7 @@ delt *wdiagram::point_elt(const point &p) const
     for (eltsi = elts.begin(); eltsi != elts.end(); ++eltsi)
 	if ((*eltsi)->contains(p))
 	    if (delt *e = (*eltsi)->cast_elt())
-		if (e->visible())
+		if (e->displayed())
 		    return e;
     return 0;
 }

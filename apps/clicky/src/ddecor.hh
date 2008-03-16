@@ -2,8 +2,10 @@
 #define CLICKY_DDECOR_HH 1
 #include "dwidget.hh"
 #include "permstr.hh"
+#include <deque>
 namespace clicky {
 class dfullness_style;
+class dactivity_style;
 
 class ddecor { public:
 
@@ -60,6 +62,41 @@ class dfullness_decor : public ddecor { public:
     double _capacity;
     double _hvalue;
     double _drawn;
+    
+};
+
+
+class dactivity_decor : public ddecor { public:
+
+    dactivity_decor(PermString name, wmain *w, delt *e, ddecor *next);
+    ~dactivity_decor();
+
+    void draw(delt *e, double *sides, dcontext &dcx);
+    void notify(wmain *w, delt *e, handler_value *hv);
+
+    gboolean on_decay();
+    
+  private:
+
+    PermString _name;
+    wmain *_w;
+    delt *_e;
+    ref_ptr<dactivity_style> _das;
+
+    struct sample {
+	double raw;
+	double cooked;
+	double timestamp;
+	sample(double r, double c, double t)
+	    : raw(r), cooked(c), timestamp(t) {
+	}
+    };
+
+    std::deque<sample> _samples;
+    double _drawn;
+    guint _decay_source;
+
+    double clean_samples(double now, bool want_prev);
     
 };
 
