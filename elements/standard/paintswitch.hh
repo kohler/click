@@ -34,10 +34,6 @@ class PaintSwitch : public Element { public:
   const char *port_count() const		{ return "1/-"; }
   const char *processing() const		{ return PUSH; }
   
-  int configure(Vector<String> &, ErrorHandler *);
-  void configuration(Vector<String> &) const;
-  bool can_live_reconfigure() const		{ return true; }
-  
   void push(int, Packet *);
   
  private:

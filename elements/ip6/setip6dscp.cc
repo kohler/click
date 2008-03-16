@@ -76,18 +76,11 @@ SetIP6DSCP::pull(int)
   return p;
 }
 
-static String
-SetIP6DSCP_read_dscp(Element *xf, void *)
-{
-  SetIP6DSCP *f = (SetIP6DSCP *)xf;
-  return String((int)f->dscp());
-}
-
 void
 SetIP6DSCP::add_handlers()
 {
-  add_read_handler("dscp", SetIP6DSCP_read_dscp, (void *)0);
-  add_write_handler("dscp", reconfigure_positional_handler, (void *)0);
+    add_read_handler("dscp", read_keyword_handler, "0 DSCP", Handler::CALM);
+    add_write_handler("dscp", reconfigure_keyword_handler, "0 DSCP");
 }
 
 CLICK_ENDDECLS

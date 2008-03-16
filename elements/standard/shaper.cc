@@ -46,12 +46,6 @@ Shaper::configure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
-void
-Shaper::configuration(Vector<String> &conf) const
-{
-    conf.push_back(is_bandwidth() ? cp_unparse_bandwidth(_rate.rate()) : String(_rate.rate()));
-}
-
 Packet *
 Shaper::pull(int)
 {
@@ -63,11 +57,23 @@ Shaper::pull(int)
     return p;
 }
 
+String
+Shaper::read_handler(Element *e, void *)
+{
+    Shaper *s = static_cast<Shaper *>(e);
+    if (s->is_bandwidth())
+	return cp_unparse_bandwidth(s->_rate.rate());
+    else
+	return String(s->_rate.rate());
+}
+
 void
 Shaper::add_handlers()
 {
-    add_read_handler("rate", read_positional_handler, (void *)0);
-    add_write_handler("rate", reconfigure_positional_handler, (void *)0);
+    add_read_handler("rate", read_handler);
+    add_write_handler("rate", reconfigure_keyword_handler, "0 RATE");
+    add_read_handler("config", read_handler);
+    set_handler_flags("config", 0, Handler::CALM);
 }
 
 CLICK_ENDDECLS

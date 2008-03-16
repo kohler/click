@@ -5,7 +5,7 @@
  * statistics: Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
- * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2004-2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software")
@@ -1531,8 +1531,8 @@ Element::can_live_reconfigure() const
  *
  * Return >= 0 on success, < 0 on error.  On success, Click will set the
  * element's old configuration arguments to @a conf, so that later reads of
- * the "config" handler will return @a conf.  (A non-default configuration()
- * method can override this.)
+ * the "config" handler will return @a conf.  (An element can override this
+ * by defining its own "config" handler.)
  *
  * The default implementation simply calls configure(@a conf, @a errh).  This
  * is OK as long as configure() doesn't change the element's state on error.
@@ -1549,48 +1549,18 @@ Element::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 
-// used by configuration() and reconfigure_handler()
-static int store_econfiguration;
-static int was_econfiguration;
-
-/** @brief Called to fetch the element's current configuration arguments.
- *
- * @param conf vector into which the arguments are appended.  Must be empty.
- *
- * The default implementation breaks the element's stored configuration string
- * into arguments using cp_argvec().  Some elements override
- * configuration(Vector<String> &) to return a configuration as updated by
- * later events, such as handlers, by extracting the configuration from
- * current element state.
- */
-void
-Element::configuration(Vector<String> &conf) const
-{
-  // Handle configuration(void) requests specially by preserving whitespace.
-  String s = router()->econfiguration(eindex());
-  if (store_econfiguration)
-    conf.push_back(s);
-  else
-    cp_argvec(s, conf);
-  was_econfiguration = 1;
-}
-
 /** @brief Returns the element's current configuration string.
  *
- * The configuration string is obtained by fetching the current configuration
- * arguments (using configuration(Vector<String> &)) and joining them with
- * ", " (using cp_argvec()).  Cannot be overridden.
+ * The configuration string is obtained by calling the element's "config"
+ * read handler.  The default read handler calls Router::econfiguration().
  */
 String
 Element::configuration() const
 {
-  store_econfiguration = 1;
-  Vector<String> conf;
-  configuration(conf);
-  store_econfiguration = 0;
-  // cp_unargvec(conf) will return conf[0] if conf has one element, so
-  // store_econfiguration will work as expected.
-  return cp_unargvec(conf);
+    if (const Handler *h = router()->handler(this, "config"))
+	if (h->readable())
+	    return h->call_read(const_cast<Element *>(this), 0);
+    return router()->econfiguration(eindex());
 }
 
 
@@ -1702,9 +1672,15 @@ Element::remove_select(int fd, int mask)
  * @sa add_write_handler, set_handler, add_task_handlers
  */
 void
-Element::add_read_handler(const String &name, ReadHandlerHook hook, void *user_data, uint32_t flags)
+Element::add_read_handler(const String &name, ReadHandlerHook hook, const void *user_data, uint32_t flags)
 {
-    Router::add_read_handler(this, name, hook, user_data, flags);
+    Router::add_read_handler(this, name, hook, (void *) user_data, flags);
+}
+
+void
+Element::add_read_handler(const String &name, ReadHandlerHook hook, int user_data, uint32_t flags)
+{
+    Router::add_read_handler(this, name, hook, (void *) (uintptr_t) user_data, flags);
 }
 
 /** @brief Register a write handler named @a name.
@@ -1734,9 +1710,15 @@ Element::add_read_handler(const String &name, ReadHandlerHook hook, void *user_d
  * @sa add_read_handler, set_handler, add_task_handlers
  */
 void
-Element::add_write_handler(const String &name, WriteHandlerHook hook, void *user_data, uint32_t flags)
+Element::add_write_handler(const String &name, WriteHandlerHook hook, const void *user_data, uint32_t flags)
 {
-    Router::add_write_handler(this, name, hook, user_data, flags);
+    Router::add_write_handler(this, name, hook, (void *) user_data, flags);
+}
+
+void
+Element::add_write_handler(const String &name, WriteHandlerHook hook, int user_data, uint32_t flags)
+{
+    Router::add_write_handler(this, name, hook, (void *) (uintptr_t) user_data, flags);
 }
 
 /** @brief Register a comprehensive handler named @a name.
@@ -1775,9 +1757,15 @@ Element::add_write_handler(const String &name, WriteHandlerHook hook, void *user
  * name).
  */
 void
-Element::set_handler(const String& name, int flags, HandlerHook hook, void* user_data1, void* user_data2)
+Element::set_handler(const String& name, int flags, HandlerHook hook, const void *user_data1, const void *user_data2)
 {
-    Router::set_handler(this, name, flags, hook, user_data1, user_data2);
+    Router::set_handler(this, name, flags, hook, (void *) user_data1, (void *) user_data2);
+}
+
+void
+Element::set_handler(const String &name, int flags, HandlerHook hook, int user_data1, int user_data2)
+{
+    Router::set_handler(this, name, flags, hook, (void *) (uintptr_t) user_data1, (void *) (uintptr_t) user_data2);
 }
 
 /** @brief Sets flags for the handler named @a name.
@@ -1789,9 +1777,9 @@ Element::set_handler(const String& name, int flags, HandlerHook hook, void* user
  * name handler exists.
  */
 int
-Element::set_handler_flags(const String& name, int flags)
+Element::set_handler_flags(const String& name, int set_flags, int clear_flags)
 {
-    return Router::change_handler_flags(this, name, 0, flags);
+    return Router::set_handler_flags(this, name, set_flags, clear_flags);
 }
 
 static String
@@ -1809,7 +1797,7 @@ read_name_handler(Element *e, void *)
 static String
 read_config_handler(Element *e, void *)
 {
-    return e->configuration();
+    return e->router()->econfiguration(e->eindex());
 }
 
 static int
@@ -1912,7 +1900,7 @@ Element::add_default_handlers(bool allow_write_config)
 {
   add_read_handler("name", read_name_handler, 0, Handler::CALM);
   add_read_handler("class", read_class_handler, 0, Handler::CALM);
-  add_read_handler("config", read_config_handler, 0);
+  add_read_handler("config", read_config_handler, 0, Handler::CALM);
   if (allow_write_config && can_live_reconfigure())
     add_write_handler("config", write_config_handler, 0);
   add_read_handler("ports", read_ports_handler, 0, Handler::CALM);
@@ -2163,6 +2151,53 @@ Element::add_data_handlers(const String &name, int flags, unsigned long long *da
 }
 #endif
 
+
+static int
+configuration_handler(int operation, String &str, Element *e,
+		      int argno, const char *keyword, ErrorHandler *errh)
+{
+    Vector<String> conf;
+    cp_argvec(e->configuration(), conf);
+
+    if (keyword && *keyword >= '0' && *keyword <= '9' && keyword[1] == ' ') {
+	argno = *keyword - '0';
+	keyword += 2;
+    }
+
+    int gotit = 0;
+    String value, rest;
+    if (keyword)
+	gotit = cp_va_kparse_remove_keywords(conf, e, errh, keyword, 0, cpArgument, &value, cpEnd);
+    if (gotit == 0 && argno >= 0 && conf.size() > argno
+	&& (!keyword || !cp_keyword(conf[argno], &value, &rest) || !rest))
+	gotit = 2;
+
+    if (operation == Handler::OP_READ) {
+	if (gotit == 1)
+	    str = value;
+	else if (gotit == 2)
+	    str = conf[argno];
+	else
+	    str = String();
+    } else if (keyword || gotit == 2) {
+	if (gotit == 2)
+	    conf[argno] = str;
+	else
+	    conf.push_back(String(keyword) + " " + str);
+	
+	// create new configuration before calling live_reconfigure(), in case
+	// it mucks with the 'conf' array
+	String new_config = cp_unargvec(conf);
+  
+	if (e->live_reconfigure(conf, errh) < 0)
+	    return -EINVAL;
+	e->router()->set_econfiguration(e->eindex(), new_config);
+    } else
+	return errh->error("missing mandatory arguments");
+
+    return 0;
+}
+
 /** @brief Standard read handler returning a positional argument.
  *
  * Use this function to define a handler that returns one of an element's
@@ -2177,25 +2212,20 @@ Element::add_data_handlers(const String &name, int flags, unsigned long long *da
  * add_read_handler("third", read_positional_handler, (void *) 2);
  * @endcode
  *
- * Returns the empty string if there aren't enough arguments.  Also adds a
- * trailing newline to the returned string if it doesn't end in a newline
- * already.
+ * Returns the empty string if there aren't enough arguments.
  *
- * Use read_positional_handler() only for mandatory positional arguments.
- * Optional positional arguments might be polluted by keywords.
+ * @warning
+ * Prefer read_keyword_handler() to read_positional_handler().
  *
  * @sa configuration: used to obtain the element's current configuration.
  * @sa read_keyword_handler, reconfigure_positional_handler, add_read_handler
  */
 String
-Element::read_positional_handler(Element *element, void *thunk)
+Element::read_positional_handler(Element *element, void *user_data)
 {
-  Vector<String> conf;
-  element->configuration(conf);
-  uintptr_t no = (uintptr_t) thunk;
-  if (no >= (uintptr_t) conf.size())
-    return String();
-  return conf[no];
+    String str;
+    (void) configuration_handler(Handler::OP_READ, str, element, (uintptr_t) user_data, 0, ErrorHandler::silent_handler());
+    return str;
 }
 
 /** @brief Standard read handler returning a keyword argument.
@@ -2210,58 +2240,27 @@ Element::read_positional_handler(Element *element, void *thunk)
  * @endcode
  *
  * Returns the empty string if the configuration doesn't have the specified
- * keyword.  Adds a trailing newline to the returned string if it doesn't end
- * in a newline already.
+ * keyword.
+ *
+ * The keyword might have been passed as a mandatory positional argument.
+ * Click will find it anyway if you prefix the keyword name with the
+ * mandatory position.  For example, this tells reconfigure_keyword_handler to
+ * use the first positional argument for "DATA" if the keyword itself is
+ * missing:
+ *
+ * @code
+ * add_write_handler("data", reconfigure_keyword_handler, "0 DATA");
+ * @endcode
  *
  * @sa configuration: used to obtain the element's current configuration.
  * @sa read_positional_handler, reconfigure_keyword_handler, add_read_handler
  */
 String
-Element::read_keyword_handler(Element *element, void *thunk)
+Element::read_keyword_handler(Element *element, void *user_data)
 {
-  Vector<String> conf;
-  element->configuration(conf);
-  const char *kw = (const char *)thunk;
-  String s;
-  for (int i = conf.size() - 1; i >= 0; i--)
-    if (cp_va_kparse_keyword(conf[i], element, ErrorHandler::silent_handler(),
-			     kw, 0, cpArgument, &s, cpEnd) > 0)
-      break;
-  return s;
-}
-
-static int
-reconfigure_handler(const String &arg, Element *e,
-		    int argno, const char *keyword, ErrorHandler *errh)
-{
-  Vector<String> conf;
-  was_econfiguration = 0;
-  e->configuration(conf);
-
-  if (keyword) {
-    if (was_econfiguration)
-      return errh->error("can't use reconfigure_keyword_handler with default configuration() method");
-    conf.push_back(String(keyword) + " " + arg);
-  } else {
-    while (conf.size() <= argno)
-      conf.push_back(String());
-    conf[argno] = cp_uncomment(arg);
-  }
-
-  // create new configuration before calling live_reconfigure(), in case it
-  // mucks with the 'conf' array
-  String new_config;
-  if (keyword)
-    new_config = String::stable_string("/* dynamically reconfigured */");
-  else
-    new_config = cp_unargvec(conf);
-  
-  if (e->live_reconfigure(conf, errh) < 0)
-    return -EINVAL;
-  else {
-    e->router()->set_econfiguration(e->eindex(), new_config);
-    return 0;
-  }
+    String str;
+    (void) configuration_handler(Handler::OP_READ, str, element, -1, (const char *) user_data, ErrorHandler::silent_handler());
+    return str;
 }
 
 /** @brief Standard write handler for reconfiguring an element by changing one
@@ -2285,8 +2284,8 @@ reconfigure_handler(const String &arg, Element *e,
  * change the relevant argument, and call live_reconfigure() to reconfigure
  * the element.
  *
- * Use reconfigure_positional_handler() only for mandatory positional
- * arguments.  Optional positional arguments might be polluted by keywords.
+ * @warning
+ * Prefer reconfigure_keyword_handler() to reconfigure_positional_handler().
  *
  * @sa configuration: used to obtain the element's current configuration.
  * @sa live_reconfigure: used to reconfigure the element.
@@ -2294,9 +2293,10 @@ reconfigure_handler(const String &arg, Element *e,
  */
 int
 Element::reconfigure_positional_handler(const String &arg, Element *e,
-					void *thunk, ErrorHandler *errh)
+					void *user_data, ErrorHandler *errh)
 {
-  return reconfigure_handler(arg, e, (intptr_t)thunk, 0, errh);
+    String str = arg;
+    return configuration_handler(Handler::OP_WRITE, str, e, (uintptr_t) user_data, 0, errh);
 }
 
 /** @brief Standard write handler for reconfiguring an element by changing one
@@ -2309,17 +2309,23 @@ Element::reconfigure_positional_handler(const String &arg, Element *e,
  * element's "DATA" configuration argument:
  *
  * @code
- * add_write_handler("data", reconfigure_keyword_handler, (void *) "DATA");
+ * add_write_handler("data", reconfigure_keyword_handler, "DATA");
  * @endcode
  *
- * When this handler is written, Click will call the element's configuration()
- * method to obtain the element's current configuration, add the keyword
- * argument to the end (which will generally override any previous
- * occurrences), and call live_reconfigure() to reconfigure the element.
+ * When this handler is written, Click will obtain the element's current
+ * configuration, remove any previous occurrences of the keyword, add the new
+ * keyword argument to the end, and call live_reconfigure() to reconfigure the
+ * element.
  *
- * reconfigure_keyword_handler() requires the element to provide its own
- * configuration() function, rather than relying on the default.  Otherwise,
- * all writes to your handler will fail.
+ * The keyword might have been passed as a mandatory positional argument.
+ * Click will find it anyway if you prefix the keyword name with the
+ * mandatory position.  For example, this tells reconfigure_keyword_handler to
+ * use the first positional argument for "DATA" if the keyword itself is
+ * missing:
+ *
+ * @code
+ * add_write_handler("data", reconfigure_keyword_handler, "0 DATA");
+ * @endcode
  *
  * @sa configuration: used to obtain the element's current configuration.
  * @sa live_reconfigure: used to reconfigure the element.
@@ -2327,9 +2333,10 @@ Element::reconfigure_positional_handler(const String &arg, Element *e,
  */
 int
 Element::reconfigure_keyword_handler(const String &arg, Element *e,
-				     void *thunk, ErrorHandler *errh)
+				     void *user_data, ErrorHandler *errh)
 {
-  return reconfigure_handler(arg, e, -1, (const char *)thunk, errh);
+    String str = arg;
+    return configuration_handler(Handler::OP_WRITE, str, e, -1, (const char *) user_data, errh);
 }
 
 /** @brief Called to handle a low-level remote procedure call.

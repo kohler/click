@@ -28,7 +28,7 @@ class NotifierSignal { public:
 
     NotifierSignal& operator+=(const NotifierSignal& a);
 
-    String unparse() const;
+    String unparse(Router *router) const;
     
     static void static_initialize();
     

@@ -44,7 +44,6 @@ class PullSwitch : public Element { public:
   const char *processing() const		{ return PULL; }
 
   int configure(Vector<String> &, ErrorHandler *);
-  void configuration(Vector<String> &) const;
   bool can_live_reconfigure() const		{ return true; }
   void add_handlers();  
   

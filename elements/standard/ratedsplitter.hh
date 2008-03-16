@@ -50,7 +50,6 @@ class RatedSplitter : public Element { public:
  
     int configure(Vector<String> &, ErrorHandler *);
     bool can_live_reconfigure() const	{ return true; }
-    void configuration(Vector<String> &) const;
     void add_handlers();
   
     void push(int port, Packet *);
@@ -58,6 +57,8 @@ class RatedSplitter : public Element { public:
  protected:
 
     GapRate _rate;
+
+    static String read_handler(Element *, void *);
 
 };
 

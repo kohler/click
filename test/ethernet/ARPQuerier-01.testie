@@ -7,7 +7,7 @@ sort < TABLE > SORTEDTABLE2
 %file CONFIG
 FromIPSummaryDump(IN, STOP true)
 	-> arpq::ARPQuerier(1.0.0.1/24, 2:1:1:1:1:1)
-	-> Print(NBYTES 32) -> Discard;
+	-> Print(MAXLENGTH 32) -> Discard;
 arpq[1] -> ARPResponder(2.0/16 2:1:1:1:1:0, 2.1/16 2:1:1:1:1:1,
 	   	2.2/16 2:1:1:1:1:2, 2.3/16 2:1:1:1:1:3,
 	   	2.4/16 2:1:1:1:1:4, 2.5/16 2:1:1:1:1:5,
@@ -22,7 +22,7 @@ DriverManager(pause, print >TABLE arpq.table)
 %file CONFIG2
 FromIPSummaryDump(IN, STOP true)
 	-> arpq::ARPQuerier(1.0.0.1/24, 2:1:1:1:1:1, CAPACITY 10)
-	-> Print(NBYTES 32) -> Discard;
+	-> Print(MAXLENGTH 32) -> Discard;
 arpq[1] -> SetTimestamp -> Queue -> DelayUnqueue(.1s)
 	-> ARPResponder(2.0/16 2:1:1:1:1:0, 2.1/16 2:1:1:1:1:1,
 	   	2.2/16 2:1:1:1:1:2, 2.3/16 2:1:1:1:1:3,

@@ -226,7 +226,7 @@ typedef const char *CpVaParseCmd;
 extern const CpVaParseCmd
     cpEnd,		///< Use as argument name.  Ends cp_va argument list.
     cpIgnoreRest,	///< Use as argument name.  No result storage; causes cp_va_kparse to ignore unparsed arguments and any remaining items.
-    cpIgnore,		///< No result storage (this argument is ignored).
+    cpIgnore,		///< No result storage, ignores this argument.
     cpArgument,		///< Result storage String*, accepts any argument.
     cpArguments,	///< Result storage Vector<String>*, accepts any number of arguments with the same keyword.
     cpString,		///< Result storage String*, parsed by cp_string().

@@ -240,9 +240,9 @@ init_module()
     Router::add_read_handler(0, "meminfo", read_meminfo, 0);
     Router::add_read_handler(0, "cycles", read_cycles, 0);
     Router::add_read_handler(0, "errors", read_errors, 0);
-    Router::change_handler_flags(0, "errors", 0, HANDLER_REREAD);
+    Router::set_handler_flags(0, "errors", HANDLER_REREAD);
     Router::add_read_handler(0, "messages", read_errors, (void *)1);
-    Router::change_handler_flags(0, "messages", 0, HANDLER_REREAD);
+    Router::set_handler_flags(0, "messages", HANDLER_REREAD);
 #if HAVE_KERNEL_ASSERT
     Router::add_read_handler(0, "assert_stop", read_assert_stop, 0);
     Router::add_write_handler(0, "assert_stop", write_assert_stop, 0);

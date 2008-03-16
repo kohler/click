@@ -3065,11 +3065,11 @@ cp_register_argtype(const char *name, const char *desc, int flags,
 }
 
 
-static int type_mismatch(ErrorHandler *errh, cp_value *v, const char *argname, const String &arg, const char *type_description = 0)
+static int type_mismatch(ErrorHandler *errh, cp_value *v, const char *argname, const String &, const char *type_description = 0)
 {
     if (!type_description)
 	type_description = v->argtype->description;
-    return errh->error("type mismatch: %s requires %s (got %s)", argname, type_description, arg.c_str());
+    return errh->error("type mismatch: %s requires %s", argname, type_description);
 }
 
 static void
@@ -3964,10 +3964,6 @@ CpVaHelper::assign_keyword_argument(const String &arg)
   // extract keyword
   if (!cp_keyword(arg, &keyword, &rest))
     return kwNoKeyword;
-  // doesn't count as a keyword if there was no accompanying data
-  // (XXX is this a great idea?)
-  if (!rest)
-    return kwNoKeyword;
   // look for keyword value
   for (int i = 0; i < nvalues; i++)
     if (cp_values[i].keyword && keyword == cp_values[i].keyword) {
@@ -4409,7 +4405,7 @@ cp_va_kparse_keyword(const String &str,
  * @param  context  element context
  * @param  errh  error handler
  * @param  ...  zero or more parameter items, terminated by ::cpEnd
- * @return  The number of parameters successfully assigned (0 or 1), or negative on error.
+ * @return  The number of parameters successfully assigned, or negative on error.
  *
  * The arguments in @a conf are parsed according to the items.  At least one
  * argument must correspond to each mandatory item, but extra arguments are

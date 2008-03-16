@@ -149,13 +149,13 @@ String UDPIPEncap::read_handler(Element *e, void *thunk)
 void UDPIPEncap::add_handlers()
 {
     add_read_handler("src", read_handler, (void *) 0);
-    add_write_handler("src", reconfigure_positional_handler, (void *) 0);
+    add_write_handler("src", reconfigure_keyword_handler, "0 SRC");
     add_read_handler("sport", read_handler, (void *) 1);
-    add_write_handler("sport", reconfigure_positional_handler, (void *) 1);
+    add_write_handler("sport", reconfigure_keyword_handler, "1 SPORT");
     add_read_handler("dst", read_handler, (void *) 2);
-    add_write_handler("dst", reconfigure_positional_handler, (void *) 2);
+    add_write_handler("dst", reconfigure_keyword_handler, "2 DST");
     add_read_handler("dport", read_handler, (void *) 3);
-    add_write_handler("dport", reconfigure_positional_handler, (void *) 3);
+    add_write_handler("dport", reconfigure_keyword_handler, "3 DPORT");
 }
 
 CLICK_ENDDECLS

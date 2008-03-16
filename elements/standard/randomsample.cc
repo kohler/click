@@ -20,6 +20,7 @@
 #include <click/config.h>
 #include "randomsample.hh"
 #include <click/confparse.hh>
+#include <click/straccum.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -54,13 +55,6 @@ RandomSample::configure(Vector<String> &conf, ErrorHandler *errh)
     _active = active;
 
     return 0;
-}
-
-void
-RandomSample::configuration(Vector<String> &conf) const
-{
-    conf.push_back("SAMPLE " + cp_unparse_real2(_sampling_prob, SAMPLING_SHIFT));
-    conf.push_back("ACTIVE " + cp_unparse_bool(_active));
 }
 
 int
@@ -109,6 +103,12 @@ RandomSample::read_handler(Element *e, void *thunk)
 	return String(rs->_drops);
       case 3:
 	return cp_unparse_real2((1 << SAMPLING_SHIFT) - rs->_sampling_prob, SAMPLING_SHIFT);
+      case 4: {
+	  StringAccum sa;
+	  sa << "SAMPLE " << cp_unparse_real2(rs->_sampling_prob, SAMPLING_SHIFT)
+	     << ", ACTIVE " << rs->_active;
+	  return sa.take_string();
+      }
       default:
 	return "<error>";
     }
@@ -117,13 +117,15 @@ RandomSample::read_handler(Element *e, void *thunk)
 void
 RandomSample::add_handlers()
 {
-    add_read_handler("sampling_prob", read_handler, (void *)0);
+    add_read_handler("sampling_prob", read_handler, 0);
     add_write_handler("sampling_prob", reconfigure_keyword_handler, (void *)"SAMPLE");
-    add_read_handler("active", read_handler, (void *)1);
+    add_read_handler("active", read_handler, 1);
     add_write_handler("active", reconfigure_keyword_handler, (void *)"ACTIVE");
-    add_read_handler("drops", read_handler, (void *)2);
-    add_read_handler("drop_prob", read_handler, (void *)3);
+    add_read_handler("drops", read_handler, 2);
+    add_read_handler("drop_prob", read_handler, 3);
     add_write_handler("drop_prob", reconfigure_keyword_handler, (void *)"DROP");
+    add_read_handler("config", read_handler, 4);
+    set_handler_flags("config", 0, Handler::CALM);
 }
 
 CLICK_ENDDECLS

@@ -82,18 +82,11 @@ SetIPDSCP::pull(int)
   return p;
 }
 
-static String
-SetIPDSCP_read_dscp(Element *xf, void *)
-{
-  SetIPDSCP *f = (SetIPDSCP *)xf;
-  return String((int)f->dscp());
-}
-
 void
 SetIPDSCP::add_handlers()
 {
-  add_read_handler("dscp", SetIPDSCP_read_dscp, (void *)0, Handler::CALM);
-  add_write_handler("dscp", reconfigure_positional_handler, (void *)0);
+    add_read_handler("dscp", read_keyword_handler, "0 DSCP", Handler::CALM);
+    add_write_handler("dscp", reconfigure_keyword_handler, "0 DSCP");
 }
 
 CLICK_ENDDECLS

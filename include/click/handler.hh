@@ -25,7 +25,7 @@ class Handler { public:
 	UNIFORM = 0x0008,	///< @brief Use uniform hook for all operations.
 	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | UNIFORM,
 				///< @brief These flags may not be set by
-				///  Router::change_handler_flags().
+				///  Router::set_handler_flags().
 	EXCLUSIVE = 0x0010,	///< @brief Handler is exclusive.
 	RAW = 0x0020,		///< @brief Don't add newline to results.
 	CALM = 0x0040,		///< @brief Read handler value changes rarely.

@@ -63,7 +63,7 @@ class Router { public:
     static void add_read_handler(const Element *e, const String &hname, ReadHandlerHook hook, void *user_data, uint32_t flags = 0);
     static void add_write_handler(const Element *e, const String &hname, WriteHandlerHook hook, void *user_data, uint32_t flags = 0);
     static void set_handler(const Element *e, const String &hname, uint32_t flags, HandlerHook hook, void *user_data1 = 0, void *user_data2 = 0);
-    static int change_handler_flags(const Element *e, const String &hname, uint32_t clear_flags, uint32_t set_flags);
+    static int set_handler_flags(const Element *e, const String &hname, uint32_t set_flags, uint32_t clear_flags = 0);
 
     enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
     static int hindex(const Element *e, const String &hname);
@@ -126,6 +126,7 @@ class Router { public:
     inline void activate(ErrorHandler* errh);
 
     int new_notifier_signal(NotifierSignal& signal);
+    int notifier_signal_id(const atomic_uint32_t *signal);
     //@}
 
     /** @cond never */

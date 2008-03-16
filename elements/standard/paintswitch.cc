@@ -30,17 +30,6 @@ PaintSwitch::~PaintSwitch()
 {
 }
 
-int
-PaintSwitch::configure(Vector<String> &, ErrorHandler *)
-{
-  return 0;
-}
-
-void
-PaintSwitch::configuration(Vector<String> &) const
-{
-}
-
 void
 PaintSwitch::push(int, Packet *p)
 {

@@ -49,8 +49,6 @@ ProgressBar::configure(Vector<String> &, ErrorHandler *)
 int
 ProgressBar::initialize(ErrorHandler *errh)
 {
-    Vector<String> conf;
-    configuration(conf);
     _interval = 250;
     _delay_ms = 0;
     _active = true;
@@ -58,7 +56,7 @@ ProgressBar::initialize(ErrorHandler *errh)
     String position_str, size_str;
     bool check_stdout = false, have_size = false;
 
-    if (cp_va_kparse(conf, this, errh,
+    if (cp_va_kparse(configuration(), this, errh,
 		     "POSHANDLER", cpkP+cpkM, cpArgument, &position_str,
 		     "SIZEHANDLER", cpkP, cpArgument, &size_str,
 		     "UPDATE", 0, cpSecondsAsMilli, &_interval,

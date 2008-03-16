@@ -22,6 +22,7 @@
 #include <click/router.hh>
 #include <click/element.hh>
 #include <click/elemfilter.hh>
+#include <click/straccum.hh>
 #include <click/bitvector.hh>
 CLICK_DECLS
 
@@ -138,14 +139,31 @@ NotifierSignal::operator+=(const NotifierSignal& a)
 }
 
 /** @brief Return a human-readable representation of the signal.
+ * @param router the relevant router or null
  *
  * Only useful for signal debugging.
  */
 String
-NotifierSignal::unparse() const
+NotifierSignal::unparse(Router *router) const
 {
-    char buf[40];
-    sprintf(buf, "%p/%x:%x", _value, _mask, (*_value) & _mask);
+    char buf[80];
+    int pos, i;
+    if (_value == &static_value) {
+	if (_mask == TRUE_MASK)
+	    return "busy*";
+	else if (_mask == FALSE_MASK)
+	    return "idle";
+	else if (_mask == OVERDERIVED_MASK)
+	    return "overderived*";
+	else if (_mask == UNINITIALIZED_MASK)
+	    return "uninitialized";
+	else
+	    pos = sprintf(buf, "internal/");
+    } else if (router && (i = router->notifier_signal_id(_value)) >= 0)
+	pos = sprintf(buf, "sig%d/", i);
+    else
+	pos = sprintf(buf, "@%p/", _value);
+    sprintf(buf + pos, active() ? "%x:%x*" : "%x:%x", _mask, (*_value) & _mask);
     return String(buf);
 }
 

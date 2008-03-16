@@ -40,7 +40,8 @@ StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("need %d arguments, one per %s port", nclients(),
 			   (processing() == PULL ? "input" : "output"));
 
-    if (!_all && !(_all = new Client[nclients()]))
+    bool first = !_all;
+    if (first && !(_all = new Client[nclients()]))
 	return errh->error("out of memory");
     
     int before = errh->nerrors();
@@ -56,10 +57,12 @@ StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
 		v = MAX_TICKETS;
 	    }
 	    _all[i].set_tickets(v);
+	    if (first)
+		_all[i].stride();
 	}
     }
 
-    // insert into reverse order so they're run in forward order
+    // insert into reverse order so they're run in forward order on ties
     _list = 0;
     for (int i = nclients() - 1; i >= 0; i--)
 	if (_all[i]._tickets)

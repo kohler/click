@@ -32,7 +32,6 @@ class RatedUnqueue : public Element { public:
     bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
   
     int configure(Vector<String> &, ErrorHandler *);
-    void configuration(Vector<String> &) const;
     bool can_live_reconfigure() const	{ return true; }
     int initialize(ErrorHandler *);
     void add_handlers();
@@ -44,7 +43,9 @@ class RatedUnqueue : public Element { public:
     GapRate _rate;
     Task _task;
     NotifierSignal _signal;
-  
+
+    static String read_handler(Element *, void *);
+    
 };
 
 CLICK_ENDDECLS

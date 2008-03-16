@@ -124,7 +124,6 @@ class RED : public Element { public:
     int check_params(unsigned, unsigned, unsigned, unsigned, ErrorHandler *) const;
     int initialize(ErrorHandler *);
     void take_state(Element *, ErrorHandler *);
-    void configuration(Vector<String> &) const;
     bool can_live_reconfigure() const		{ return true; }
     int live_reconfigure(Vector<String> &, ErrorHandler *);
     void add_handlers();
@@ -158,9 +157,7 @@ class RED : public Element { public:
 
     void set_C1_and_C2();
 
-    static String read_stats(Element *, void *);
-    static String read_queues(Element *, void *);
-    static String read_parameter(Element *, void *);
+    static String read_handler(Element *, void *);
 
     int finish_configure(unsigned min_thresh, unsigned max_thresh, unsigned max_p, unsigned stability, const String &queues, ErrorHandler *errh);
     

@@ -46,7 +46,6 @@ class Shaper : public Element { public:
     bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
     
     int configure(Vector<String> &, ErrorHandler *);
-    void configuration(Vector<String> &) const;
     bool can_live_reconfigure() const	{ return true; }
     void add_handlers();
 
@@ -55,6 +54,8 @@ class Shaper : public Element { public:
   protected:
 
     GapRate _rate;
+
+    static String read_handler(Element *, void *);
 
 };
 

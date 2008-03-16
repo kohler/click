@@ -46,7 +46,6 @@ class Switch : public Element { public:
   void add_handlers();
   
   int configure(Vector<String> &, ErrorHandler *);
-  void configuration(Vector<String> &) const;
   bool can_live_reconfigure() const		{ return true; }
   
   void push(int, Packet *);

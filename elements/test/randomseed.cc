@@ -51,7 +51,8 @@ RandomSeed::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 RandomSeed::add_handlers()
 {
-    add_write_handler("seed", Element::reconfigure_positional_handler, (void*)0);
+    add_read_handler("seed", read_keyword_handler, "0 SEED", Handler::CALM);
+    add_write_handler("seed", reconfigure_keyword_handler, "0 SEED");
 }
 
 CLICK_ENDDECLS

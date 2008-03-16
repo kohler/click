@@ -190,23 +190,6 @@ PI::take_state(Element *e, ErrorHandler *)
     _size = r->_size;
 }
 
-void
-PI::configuration(Vector<String> &conf) const
-{
-    conf.push_back(String(_a));
-    conf.push_back(String(_b));
-    conf.push_back(String(_w));
-    conf.push_back(String(_target_q));
-
-    StringAccum sa;
-    sa << "QUEUES";
-    for (int i = 0; i < _queue_elements.size(); i++)
-	sa << ' ' << _queue_elements[i]->name();
-    conf.push_back(sa.take_string());
-
-    conf.push_back("STABILITY " + String(_size.stability_shift()));
-}
-
 int
 PI::queue_size() const
 {
@@ -283,57 +266,45 @@ String
 PI::read_parameter(Element *f, void *vparam)
 {
     PI *pi = (PI *)f;
+    StringAccum sa;
     switch ((int)vparam) {
-      case 0:			// w 
-	return String(pi->_w);
-      case 1:			// a 
-	return String(pi->_a);
-      case 2:			// b 
-	return String(pi->_b);
       case 3:			// _target_q 
 	return String(pi->_target_q);
-      default:
-	return "";
-    }
-}
-
-String
-PI::read_stats(Element *f, void *)
-{
-    PI *r = (PI *)f;
-    return
-	String(r->queue_size()) + " current queue\n" +
-	r->_size.unparse() + " avg queue\n" +
-	String(r->drops()) + " drops\n"
+      case 4:			// stats
+	sa << red->queue_size() << " current queue\n"
+	   << red->_size.unparse() << " avg queue\n"
+	   << red->drops() << " drops\n"
 #if CLICK_STATS >= 1
-	+ String(r->output(0).npackets()) + " packets\n"
+	   << red->output(0).npackets() << " packets\n"
 #endif
-	;
-}
-
-String
-PI::read_queues(Element *e, void *)
-{
-    PI *r = (PI *)e;
-    String s;
-    for (int i = 0; i < r->_queue_elements.size(); i++)
-	s += r->_queue_elements[i]->name() + "\n";
-    return s;
+	    ;
+	return sa.take_string();
+      case 5:			// queues
+	for (int i = 0; i < red->_queue_elements.size(); i++)
+	    sa << red->_queue_elements[i]->name() + "\n";
+	return sa.take_string();
+      default:
+	sa << _a << ", " << _b << ", " << _w << ", " << _target_q
+	   << ", QUEUES";
+	for (int i = 0; i < _queue_elements.size(); i++)
+	    sa << ' ' << _queue_elements[i]->name();
+	sa << ", STABILITY " << _size.stability_shift();
+	return sa.take_string();
+    }
 }
 
 void
 PI::add_handlers()
 {
     add_read_handler("drops", pi_read_drops, 0);
-    add_read_handler("stats", read_stats, 0);
-    add_read_handler("queues", read_queues, 0);
-    add_read_handler("min_thresh", read_parameter, (void *)0);
-    add_write_handler("min_thresh", reconfigure_positional_handler_2, (void *)0);
-    add_read_handler("max_thresh", read_parameter, (void *)1);
-    add_write_handler("max_thresh", reconfigure_positional_handler_2, (void *)1);
-    add_read_handler("max_p", read_parameter, (void *)2);
-    add_write_handler("max_p", reconfigure_positional_handler_2, (void *)2);
-    add_read_handler("avg_queue_size", read_parameter, (void *)3);
+    set_handler("w", Handler::OP_READ | Handler::OP_WRITE, configuration_keyword_handler, "W", (void *) (uintptr_t) 1);
+    set_handler("a", Handler::OP_READ | Handler::OP_WRITE, configuration_keyword_handler, "A", (void *) (uintptr_t) 2);
+    set_handler("b", Handler::OP_READ | Handler::OP_WRITE, configuration_keyword_handler, "B", (void *) (uintptr_t) 3);
+    add_read_handler("avg_queue_size", read_parameter, 3);
+    add_read_handler("stats", read_parameter, 4);
+    add_read_handler("queues", read_parameter, 5);
+    add_read_handler("config", read_parameter, 6);
+    set_handler_flags("config", 0, Handler::CALM);
 }
 
 CLICK_ENDDECLS

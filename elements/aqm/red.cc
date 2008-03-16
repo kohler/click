@@ -181,22 +181,6 @@ RED::take_state(Element *e, ErrorHandler *)
     _size = r->_size;
 }
 
-void
-RED::configuration(Vector<String> &conf) const
-{
-    conf.push_back(String(_min_thresh));
-    conf.push_back(String(_max_thresh));
-    conf.push_back(cp_unparse_real2(_max_p, 16));
-
-    StringAccum sa;
-    sa << "QUEUES";
-    for (int i = 0; i < _queue_elements.size(); i++)
-	sa << ' ' << _queue_elements[i]->name();
-    conf.push_back(sa.take_string());
-
-    conf.push_back("STABILITY " + String(_size.stability_shift()));
-}
-
 int
 RED::queue_size() const
 {
@@ -310,60 +294,51 @@ RED::pull(int)
 // HANDLERS
 
 String
-RED::read_parameter(Element *f, void *vparam)
+RED::read_handler(Element *f, void *vparam)
 {
     RED *red = (RED *)f;
+    StringAccum sa;
     switch ((intptr_t)vparam) {
-      case 0:			// min_thresh
-	return String(red->_min_thresh);
-      case 1:			// max_thresh
-	return String(red->_max_thresh);
-      case 2:			// max_p
-	return cp_unparse_real2(red->_max_p, 16);
       case 3:			// avg_queue_size
 	return red->_size.unparse();
-      default:
-	return "";
-    }
-}
-
-String
-RED::read_stats(Element *f, void *)
-{
-    RED *r = (RED *)f;
-    return
-	String(r->queue_size()) + " current queue\n" +
-	r->_size.unparse() + " avg queue\n" +
-	String(r->drops()) + " drops\n"
+      case 4:			// stats
+	sa << red->queue_size() << " current queue\n"
+	   << red->_size.unparse() << " avg queue\n"
+	   << red->drops() << " drops\n"
 #if CLICK_STATS >= 1
-	+ String(r->output(0).npackets()) + " packets\n"
+	   << red->output(0).npackets() << " packets\n"
 #endif
-	;
-}
-
-String
-RED::read_queues(Element *e, void *)
-{
-    RED *r = (RED *)e;
-    String s;
-    for (int i = 0; i < r->_queue_elements.size(); i++)
-	s += r->_queue_elements[i]->name() + "\n";
-    return s;
+	    ;
+	return sa.take_string();
+      case 5:			// queues
+	for (int i = 0; i < red->_queue_elements.size(); i++)
+	    sa << red->_queue_elements[i]->name() + "\n";
+	return sa.take_string();
+      default:			// config
+	sa << red->_min_thresh << ", " << red->_max_thresh << ", "
+	   << cp_unparse_real2(red->_max_p, 16) << ", QUEUES";
+	for (int i = 0; i < red->_queue_elements.size(); i++)
+	    sa << ' ' << red->_queue_elements[i]->name();
+	sa << ", STABILITY " << red->_size.stability_shift();
+	return sa.take_string();
+    }
 }
 
 void
 RED::add_handlers()
 {
     add_data_handlers("drops", Handler::OP_READ, &_drops);
-    add_read_handler("stats", read_stats, 0);
-    add_read_handler("queues", read_queues, 0);
-    add_read_handler("min_thresh", read_parameter, (void *)0);
-    add_write_handler("min_thresh", reconfigure_positional_handler, (void *)0);
-    add_read_handler("max_thresh", read_parameter, (void *)1);
-    add_write_handler("max_thresh", reconfigure_positional_handler, (void *)1);
-    add_read_handler("max_p", read_parameter, (void *)2);
-    add_write_handler("max_p", reconfigure_positional_handler, (void *)2);
-    add_read_handler("avg_queue_size", read_parameter, (void *)3);
+    add_read_handler("min_thresh", read_keyword_handler, "0 MIN_THRESH");
+    add_write_handler("min_thresh", reconfigure_keyword_handler, "0 MIN_THRESH");
+    add_read_handler("max_thresh", read_keyword_handler, "1 MAX_THRESH");
+    add_write_handler("max_thresh", reconfigure_keyword_handler, "1 MAX_THRESH");
+    add_read_handler("max_p", read_keyword_handler, "2 MAX_P");
+    add_write_handler("max_p", reconfigure_keyword_handler, "2 MAX_P");
+    add_read_handler("avg_queue_size", read_handler, 3);
+    add_read_handler("stats", read_handler, 4);
+    add_read_handler("queues", read_handler, 5);
+    add_read_handler("config", read_handler, 6);
+    set_handler_flags("config", 0, Handler::CALM);
 }
 
 CLICK_ENDDECLS

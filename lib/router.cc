@@ -1382,7 +1382,7 @@ Router::store_handler(const Element* e, const Handler& to_store)
  *
  * The return Handler pointer remains valid until the named handler is changed
  * in some way (add_read_handler(), add_write_handler(), set_handler(), or
- * change_handler_flags()).
+ * set_handler_flags()).
  */
 const Handler*
 Router::handler(const Router *router, int hindex)
@@ -1407,7 +1407,7 @@ Router::handler(const Router *router, int hindex)
  *
  * The return Handler pointer remains valid until the named handler is changed
  * in some way (add_read_handler(), add_write_handler(), set_handler(), or
- * change_handler_flags()).
+ * set_handler_flags()).
  */
 const Handler *
 Router::handler(const Element* e, const String& hname)
@@ -1501,7 +1501,7 @@ Router::element_hindexes(const Element *e, Vector<int> &result)
  *
  * To create a read handler with parameters, you must use @a set_handler().
  *
- * @sa add_write_handler(), set_handler(), change_handler_flags()
+ * @sa add_write_handler(), set_handler(), set_handler_flags()
  */
 void
 Router::add_read_handler(const Element *e, const String &hname,
@@ -1538,7 +1538,7 @@ Router::add_read_handler(const Element *e, const String &hname,
  * The new handler's flags equal the old flags or'ed with @a flags.  Any
  * special flags in @a flags are ignored.
  *
- * @sa add_read_handler(), set_handler(), change_handler_flags()
+ * @sa add_read_handler(), set_handler(), set_handler_flags()
  */
 void
 Router::add_write_handler(const Element *e, const String &hname,
@@ -1585,7 +1585,7 @@ Router::add_write_handler(const Element *e, const String &hname,
  *
  * The new handler's flags equal @a flags or'ed with Handler::UNIFORM.
  *
- * @sa add_read_handler(), add_write_handler(), change_handler_flags()
+ * @sa add_read_handler(), add_write_handler(), set_handler_flags()
  */
 void
 Router::set_handler(const Element *e, const String &hname, uint32_t flags,
@@ -1602,21 +1602,21 @@ Router::set_handler(const Element *e, const String &hname, uint32_t flags,
 /** @brief Change the @a e.@a hname handler's flags.
  * @param e element, if any
  * @param hname handler name
- * @param clear_flags flags to clear (Handler::flags())
  * @param set_flags flags to set (Handler::flags())
+ * @param clear_flags flags to clear (Handler::flags())
  * @return 0 if the handler existed, -1 otherwise
  *
  * Changes the handler flags for the handler named @a hname on element @a e.
  * If @a e is NULL or equal to some root_element(), then changes a global
  * handler.  The handler's flags are changed by clearing the @a clear_flags
- * and setting the @a set_flags, except that the special flags
+ * and then setting the @a set_flags, except that the special flags
  * (Handler::SPECIAL_FLAGS) are unchanged.
  *
  * @sa add_read_handler(), add_write_handler(), set_handler()
  */
 int
-Router::change_handler_flags(const Element *e, const String &hname,
-			     uint32_t clear_flags, uint32_t set_flags)
+Router::set_handler_flags(const Element *e, const String &hname,
+			  uint32_t set_flags, uint32_t clear_flags)
 {
     Handler to_add = fetch_handler(e, hname);
     if (to_add._use_count > 0) {	// only modify existing handlers
@@ -1702,6 +1702,16 @@ Router::new_notifier_signal(NotifierSignal &signal)
 	_n_notifier_signals++;
 	return 0;
     }
+}
+
+int
+Router::notifier_signal_id(const atomic_uint32_t *signal)
+{
+    if (_notifier_signals && signal >= _notifier_signals
+	&& signal < _notifier_signals + (NOTIFIER_SIGNALS_CAPACITY / 32))
+	return signal - _notifier_signals;
+    else
+	return -1;
 }
 
 int

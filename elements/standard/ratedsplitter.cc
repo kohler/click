@@ -44,12 +44,6 @@ RatedSplitter::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-RatedSplitter::configuration(Vector<String> &conf) const
-{
-    conf.push_back(is_bandwidth() ? cp_unparse_bandwidth(_rate.rate()) : String(_rate.rate()));
-}
-
-void
 RatedSplitter::push(int, Packet *p)
 {
     if (_rate.need_update(Timestamp::now())) {
@@ -62,11 +56,23 @@ RatedSplitter::push(int, Packet *p)
 
 // HANDLERS
 
+String
+RatedSplitter::read_handler(Element *e, void *)
+{
+    RatedSplitter *rs = static_cast<RatedSplitter *>(e);
+    if (rs->is_bandwidth())
+	return cp_unparse_bandwidth(rs->_rate.rate());
+    else
+	return String(rs->_rate.rate());
+}
+
 void
 RatedSplitter::add_handlers()
 {
-    add_read_handler("rate", read_positional_handler, (void *)0);
-    add_write_handler("rate", reconfigure_positional_handler, (void *)0);
+    add_read_handler("rate", read_handler, 0);
+    add_write_handler("rate", reconfigure_keyword_handler, "0 RATE");
+    add_read_handler("config", read_handler, 0);
+    set_handler_flags("config", 0, Handler::CALM);
 }
 
 CLICK_ENDDECLS

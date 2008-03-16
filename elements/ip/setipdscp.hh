@@ -17,11 +17,7 @@ CLICK_DECLS
  * The DSCP is the upper 6 bits of the IP TOS field.
  */
 
-class SetIPDSCP : public Element {
-
-  unsigned char _dscp;
-  
- public:
+class SetIPDSCP : public Element { public:
   
   SetIPDSCP();
   ~SetIPDSCP();
@@ -29,8 +25,6 @@ class SetIPDSCP : public Element {
   const char *class_name() const		{ return "SetIPDSCP"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-
-  unsigned char dscp() const			{ return _dscp; }
   
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
@@ -39,7 +33,11 @@ class SetIPDSCP : public Element {
   inline Packet *smaction(Packet *);
   void push(int, Packet *p);
   Packet *pull(int);
-  
+
+  private:
+    
+    unsigned char _dscp;
+
 };
 
 CLICK_ENDDECLS

@@ -29,7 +29,6 @@ class PI : public Element { public:
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
     void take_state(Element *, ErrorHandler *);
-    void configuration(Vector<String> &) const;
     bool can_live_reconfigure() const		{ return true; }
     int live_reconfigure(Vector<String> &, ErrorHandler *);
     void add_handlers();
@@ -58,8 +57,6 @@ class PI : public Element { public:
 
     Vector<Element *> _queue_elements;
 
-    static String read_stats(Element *, void *);
-    static String read_queues(Element *, void *);
     static String read_parameter(Element *, void *);
 
     static const int MAX_RAND=2147483647;

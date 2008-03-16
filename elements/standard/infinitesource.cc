@@ -177,6 +177,8 @@ InfiniteSource::read_param(Element *e, void *vparam)
     return String(is->_count);
    case 6:			// datasize
     return String(is->_datasize);
+    //case 7:
+    //  return is->_nonfull_signal.unparse(is->router());
    default:
     return "";
   }
@@ -268,6 +270,7 @@ InfiniteSource::add_handlers()
   add_write_handler("burstsize", change_param, (void *)2);
   add_read_handler("datasize", read_param, (void *)6, Handler::CALM);
   add_write_handler("datasize", change_param, (void *)6);
+  //add_read_handler("notifier", read_param, (void *)7);
   add_task_handlers(&_task);
 }
 

@@ -45,12 +45,6 @@ RatedUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
-void
-RatedUnqueue::configuration(Vector<String> &conf) const
-{
-    conf.push_back(is_bandwidth() ? cp_unparse_bandwidth(_rate.rate()) : String(_rate.rate()));
-}
-
 int
 RatedUnqueue::initialize(ErrorHandler *errh)
 {
@@ -94,12 +88,24 @@ RatedUnqueue::run_task(Task *)
 
 // HANDLERS
 
+String
+RatedUnqueue::read_handler(Element *e, void *)
+{
+    RatedUnqueue *rs = static_cast<RatedUnqueue *>(e);
+    if (rs->is_bandwidth())
+	return cp_unparse_bandwidth(rs->_rate.rate());
+    else
+	return String(rs->_rate.rate());
+}
+
 void
 RatedUnqueue::add_handlers()
 {
-    add_read_handler("rate", read_positional_handler, 0);
-    add_write_handler("rate", reconfigure_positional_handler, 0);
+    add_read_handler("rate", read_handler, 0);
+    add_write_handler("rate", reconfigure_keyword_handler, "0 RATE");
     add_task_handlers(&_task);
+    add_read_handler("config", read_handler, 0);
+    set_handler_flags("config", 0, Handler::CALM);
 }
 
 CLICK_ENDDECLS

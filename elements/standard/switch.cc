@@ -44,12 +44,6 @@ Switch::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-Switch::configuration(Vector<String> &conf) const
-{
-  conf.push_back(String(_output));
-}
-
-void
 Switch::push(int, Packet *p)
 {
   checked_output_push(_output, p);
@@ -77,8 +71,10 @@ Switch::write_param(const String &in_s, Element *e, void *, ErrorHandler *errh)
 void
 Switch::add_handlers()
 {
-  add_read_handler("switch", read_param, (void *)0);
-  add_write_handler("switch", write_param, (void *)0);
+    add_read_handler("switch", read_param, (void *)0);
+    add_write_handler("switch", write_param, (void *)0);
+    add_read_handler("config", read_param, (void *)0);
+    set_handler_flags("config", 0, Handler::CALM);
 }
 
 int

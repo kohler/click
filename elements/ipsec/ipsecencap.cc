@@ -169,10 +169,6 @@ IPsecEncap::read_handler(Element *e, void *thunk)
 void
 IPsecEncap::add_handlers()
 {
-  add_read_handler("src", read_handler, (void *)0);  
-  add_write_handler("src", reconfigure_positional_handler, (void *)1);
-  add_read_handler("dst", read_handler, (void *)1);  
-  add_write_handler("dst", reconfigure_positional_handler, (void *)2);
 }
 
 CLICK_ENDDECLS
