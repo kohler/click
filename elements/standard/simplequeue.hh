@@ -75,6 +75,7 @@ class SimpleQueue : public Element, public Storage { public:
 
     // to be used with care
     Packet* packet(int i) const			{ return _q[i]; }
+    void reset();				// NB: does not do notification
     
     template <typename Filter> Packet* yank1(Filter);
     template <typename Filter> Packet* yank1_peek(Filter);

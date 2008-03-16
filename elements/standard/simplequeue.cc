@@ -72,7 +72,8 @@ SimpleQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
     // change the maximum queue length at runtime
     int old_capacity = _capacity;
-    if (configure(conf, errh) < 0)
+    // NB: do not call children!
+    if (SimpleQueue::configure(conf, errh) < 0)
 	return -1;
     if (_capacity == old_capacity)
 	return 0;
@@ -84,11 +85,8 @@ SimpleQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("out of memory");
   
     int i, j;
-    for (i = _head, j = 0; i != _tail; i = next_i(i)) {
+    for (i = _head, j = 0; i != _tail && j != new_capacity; i = next_i(i))
 	new_q[j++] = _q[i];
-	if (j == new_capacity)
-	    break;
-    }
     for (; i != _tail; i = next_i(i))
 	_q[i]->kill();
   
@@ -218,6 +216,16 @@ SimpleQueue::read_handler(Element *e, void *thunk)
     }
 }
 
+void
+SimpleQueue::reset()
+{
+    while (_head != _tail) {
+	int i = _head;
+	_head = next_i(_head);
+	checked_output_push(1, _q[i]);
+    }
+}
+
 int
 SimpleQueue::write_handler(const String &, Element *e, void *thunk, ErrorHandler *errh)
 {
@@ -229,11 +237,7 @@ SimpleQueue::write_handler(const String &, Element *e, void *thunk, ErrorHandler
 	q->_highwater_length = 0;
 	return 0;
       case 1:
-	while (q->_head != q->_tail) {
-	    int i = q->_head;
-	    q->_head = q->next_i(q->_head);
-	    q->checked_output_push(1, q->_q[i]);
-	}
+	q->reset();
 	return 0;
       default:
 	return errh->error("internal error");

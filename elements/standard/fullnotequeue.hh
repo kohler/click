@@ -71,7 +71,11 @@ class FullNoteQueue : public NotifierQueue { public:
     const char *class_name() const		{ return "Queue"; }
     void *cast(const char *);
 
+    inline void reset();			// NB: does notification
+    
     int configure(Vector<String> &conf, ErrorHandler *);
+    void add_handlers();
+    int live_reconfigure(Vector<String> &conf, ErrorHandler *errh);
     
     void push(int port, Packet *);
     Packet *pull(int port);
@@ -80,7 +84,16 @@ class FullNoteQueue : public NotifierQueue { public:
 
     ActiveNotifier _full_note;
 
+    static int write_handler(const String&, Element*, void*, ErrorHandler*);
+    
 };
+
+inline void
+FullNoteQueue::reset()
+{
+    NotifierQueue::reset();
+    _full_note.wake();
+}
 
 CLICK_ENDDECLS
 #endif

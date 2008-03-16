@@ -47,6 +47,15 @@ FullNoteQueue::configure(Vector<String> &conf, ErrorHandler *errh)
     return NotifierQueue::configure(conf, errh);
 }
 
+int
+FullNoteQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
+{
+    int r = NotifierQueue::live_reconfigure(conf, errh);
+    if (r >= 0 && size() < capacity())
+	_full_note.wake();
+    return r;
+}
+
 void
 FullNoteQueue::push(int, Packet *p)
 {
@@ -112,6 +121,21 @@ FullNoteQueue::pull(int)
     }
 
     return 0;
+}
+
+int
+FullNoteQueue::write_handler(const String &, Element *e, void *, ErrorHandler *)
+{
+    FullNoteQueue *q = static_cast<FullNoteQueue *>(e);
+    q->reset();
+    return 0;
+}
+
+void
+FullNoteQueue::add_handlers()
+{
+    NotifierQueue::add_handlers();
+    add_write_handler("reset", write_handler);
 }
 
 CLICK_ENDDECLS
