@@ -1,0 +1,18 @@
+%info
+Tests FullNoteQueue nonfull notifications and capacity changing.
+
+%script
+click -e '
+i :: InfiniteSource -> q :: Queue -> Idle;
+DriverManager(wait 0.02s, print i.count, write q.capacity 10, print q.config,
+   wait 0.02s, print i.count, write q.capacity 1000, print q.config,
+   wait 0.02s, print i.count, wait 0.02s, print i.count)
+' >OUT
+
+%expect OUT
+1000
+CAPACITY 10
+1000
+CAPACITY 1000
+1990
+1990
