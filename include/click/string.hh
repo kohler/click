@@ -34,7 +34,7 @@ class String { public:
   explicit String(int64_t q);
   explicit String(uint64_t q);
 #endif
-#ifdef CLICK_USERLEVEL
+#if HAVE_FLOAT_TYPES
   explicit String(double d);
 #endif
   inline ~String();

@@ -1895,6 +1895,34 @@ bool cp_seconds_as_micro(const String &str, uint32_t *result)
     return cp_seconds_as(str, 6, result);
 }
 
+#if HAVE_FLOAT_TYPES
+/** @brief Parse an amount of time from @a str.
+ * @param  str  string
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an amount of time, measured in seconds, from @a str.  As in
+ * cp_seconds_as(), the input string is a real number followed by an optional
+ * unit suffix which defaults to seconds.
+ *
+ * If the string fully parses, then the resulting value is stored in *@a
+ * result and the function returns true.  Otherwise, *@a result remains
+ * unchanged and the function returns false.
+ */
+bool cp_seconds(const String &str, double *result)
+{
+  int power = 0, factor = 1;
+  const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
+  if (!cp_double(str.substring(str.begin(), after_unit), result))
+    return false;
+  if (power < 0)
+      *result = (*result * factor) / exp10val[-power];
+  else
+      *result = (*result * factor) * exp10val[power];
+  return true;
+}
+#endif
+
 /** @brief Parse a timestamp from @a str.
  * @param  str  string
  * @param[out]  result  stores parsed result

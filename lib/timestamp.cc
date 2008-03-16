@@ -3,7 +3,7 @@
  * timestamp.{cc,hh} -- timestamps
  * Eddie Kohler
  *
- * Copyright (c) 2004-2005 Regents of the University of California
+ * Copyright (c) 2004-2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),

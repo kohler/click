@@ -44,7 +44,7 @@ class Timestamp { public:
 #if HAVE_STRUCT_TIMESPEC
     inline Timestamp(const struct timespec &ts);
 #endif
-#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+#if HAVE_FLOAT_TYPES
     inline Timestamp(double);
 #endif
 
@@ -74,7 +74,7 @@ class Timestamp { public:
     inline struct timespec timespec() const;
 # endif
 #endif
-#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+#if HAVE_FLOAT_TYPES
     inline double doubleval() const;
 #endif
 
@@ -633,7 +633,7 @@ operator-(const Timestamp &a)
 	return Timestamp(-a._sec, 0);
 }
 
-#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+#if HAVE_FLOAT_TYPES
 /** @brief Returns this timestamp's value, converted to a real number. */
 inline double
 Timestamp::doubleval() const
@@ -713,7 +713,7 @@ operator/(const Timestamp &a, const Timestamp &b)
 {
     return a.doubleval() / b.doubleval();
 }
-#endif /* !CLICK_LINUXMODULE && !CLICK_BSDMODULE */
+#endif /* HAVE_FLOAT_TYPES */
 
 StringAccum& operator<<(StringAccum&, const Timestamp&);
 

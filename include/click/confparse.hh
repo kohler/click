@@ -141,6 +141,9 @@ bool cp_double(const String& str, double* result);
 bool cp_seconds_as(const String& str, int frac_digits, uint32_t* result);
 bool cp_seconds_as_milli(const String& str, uint32_t* result);
 bool cp_seconds_as_micro(const String& str, uint32_t* result);
+#ifdef HAVE_FLOAT_TYPES
+bool cp_seconds(const String& str, double* result);
+#endif
 bool cp_time(const String& str, Timestamp* result);
 bool cp_time(const String& str, struct timeval* result);
 

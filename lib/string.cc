@@ -185,8 +185,7 @@ String::String(uint64_t q)
 }
 #endif
 
-#ifdef CLICK_USERLEVEL
-
+#if HAVE_FLOAT_TYPES
 /** @brief Create a String containing the ASCII base-10 representation of @a d.
  * @note This function is only available at user level.
  */
@@ -196,7 +195,6 @@ String::String(double d)
   int len = sprintf(buf, "%.12g", d);
   assign(buf, len);
 }
-
 #endif
 
 String

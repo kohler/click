@@ -71,6 +71,15 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(cp_seconds_as("60m", 0, &u32) == true && u32 == 3600);
     CHECK(cp_seconds_as("1 hr", 0, &u32) == true && u32 == 3600);
 
+#if HAVE_FLOAT_TYPES
+    double d;
+    CHECK(cp_seconds("3600", &d) == true && d == 3600);
+    CHECK(cp_seconds("3600s", &d) == true && d == 3600);
+    CHECK(cp_seconds("3.6e6 msec", &d) == true && d == 3600);
+    CHECK(cp_seconds("60m", &d) == true && d == 3600);
+    CHECK(cp_seconds("1 hr", &d) == true && d == 3600);
+#endif
+
 #if CLICK_IP6
     {
 	IP6Address a;
