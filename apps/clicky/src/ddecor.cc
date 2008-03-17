@@ -192,8 +192,30 @@ void dactivity_decor::draw(delt *, double *sides, dcontext &dcx)
 	_drawn = (_samples.size() ? _samples.back().cooked : 0);
     else
 	_drawn = clean_samples(now, false);
-    if (_drawn * _das->color[3]) {
-	cairo_set_source_rgba(dcx, _das->color[0], _das->color[1], _das->color[2], _drawn * _das->color[3]);
+    if (_drawn <= 1/128. && !_das->colors[4])
+	return;
+
+    int p;
+    if (_das->colors.size() == 10)
+	p = 0;
+    else
+	for (p = 0;
+	     p < _das->colors.size() - 5 && _drawn >= _das->colors[p + 5];
+	     p += 5)
+	    /* nada */;
+
+    double *color, colorbuf[4];
+    if (fabs(_drawn - _das->colors[p]) < 1 / 128.)
+	color = &_das->colors[p+1];
+    else {
+	color = colorbuf;
+	double m = (_drawn - _das->colors[p]) / (_das->colors[p+5] - _das->colors[p]);
+	for (int i = 1; i < 5; i++)
+	    color[i-1] = _das->colors[p+i]*(1-m) + _das->colors[p+5+i]*m;
+    }
+
+    if (color[3]) {
+	cairo_set_source_rgba(dcx, color[0], color[1], color[2], color[3]);
 	cairo_move_to(dcx, sides[1], sides[2]);
 	cairo_line_to(dcx, sides[3], sides[2]);
 	cairo_line_to(dcx, sides[3], sides[0]);
@@ -218,13 +240,15 @@ void dactivity_decor::notify(wmain *w, delt *e, handler_value *hv)
 	double cooked;
 	if (_das->type == dactivity_absolute || _samples.size() == 0) {
 	    _samples.clear();
-	    cooked = std::min(new_value / _das->max_value, 1.);
+	    cooked = new_value;
 	} else {
 	    double prev_value = clean_samples(now, true);
-	    cooked = std::min(std::max(new_value - prev_value, 0.) / _das->max_value, 1.);
+	    cooked = std::max(new_value - prev_value, 0.);
 	}
+	double range = _das->max_value - _das->min_value;
+	cooked = std::min(std::max(cooked - _das->min_value, 0.) / range, 1.);
 	_samples.push_back(sample(new_value, cooked, now));
-	if (128 * fabs(cooked - _drawn) > _das->max_value)
+	if (128 * fabs(cooked - _drawn) > range)
 	    w->diagram()->redraw(*e);
     }
 }

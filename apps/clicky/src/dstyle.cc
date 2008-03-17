@@ -38,6 +38,7 @@ static const colordef colordefs[] = {
     { "lime", 4, 0x00FF00 },
     { "maroon", 6, 0x800000 },
     { "navy", 4, 0x000080 },
+    { "none", 4, 0xFF000000 },
     { "olive", 5, 0x808000 },
     { "orange", 6, 0xFFA500 },
     { "purple", 6, 0x800080 },
@@ -220,12 +221,11 @@ bool cp_color(const String &str, double *r, double *g, double *b, double *a)
     if (s + 5 < send && (memcmp(s, "rgb(", 4) == 0
 			 || memcmp(s, "rgba(", 5) == 0)) {
 	double x[4];
-	int maxi = 3;
 	if (s[3] == 'a')
-	    ++s, ++maxi;
+	    ++s;
 	s += 4;
 	x[3] = 1;
-	for (int i = 0; i < maxi; ++i) {
+	for (int i = 0; i < 4; ++i) {
 	    s = cp_skip_comment_space(s, send);
 	    const char *n = s;
 	    while (s != send && (isdigit((unsigned char) *s) || *s == '.'
@@ -243,12 +243,15 @@ bool cp_color(const String &str, double *r, double *g, double *b, double *a)
 		x[i] = 0;
 	    else if (x[i] > 1)
 		x[i] = 1;
-	    if (i < maxi - 1) {
-		if (*s != ',')
+	    if (i < 3) {
+		if (s != send && *s != ',')
 		    s = cp_skip_comment_space(s, send);
-		if (*s != ',')
+		if (s != send && *s == ')' && i >= 2)
+		    break;
+		else if (s != send && *s == ',')
+		    ++s;
+		else if (s != send)
 		    return false;
-		++s;
 	    }
 	}
 	s = cp_skip_comment_space(s, send);
@@ -269,11 +272,11 @@ bool cp_color(const String &str, double *r, double *g, double *b, double *a)
 	const colordef *cm = cl + (cr - cl) / 2;
 	if (*s == cm->name[0] && s + cm->length == send
 	    && memcmp(s, cm->name, cm->length) == 0) {
-	    *r = (cm->value >> 16) / 255.;
+	    *r = ((cm->value >> 16) & 0xFF) / 255.;
 	    *g = ((cm->value >> 8) & 0xFF) / 255.;
 	    *b = (cm->value & 0xFF) / 255.;
 	    if (a)
-		*a = 1;
+		*a = (255 - (cm->value >> 24)) / 255.;
 	    return true;
 	}
 	int cmp;
@@ -317,6 +320,33 @@ static const char *ccss_skip_braces(const char *s, const char *send)
 	else if (*s == '{')
 	    ++nopen;
     return s;
+}
+
+static String ccss_pop_commavec(String &str)
+{
+    const char *s = str.begin(), *send = str.end();
+    int parens = 0, quotes = 0;
+    const char *sarg = cp_skip_comment_space(s, send);
+    const char *last_nonsp = sarg - 1;
+    for (; s != send; ++s) {
+	if (*s == ',' && !parens && !quotes)
+	    break;
+	if (!isspace((unsigned char) *s))
+	    last_nonsp = s;
+	if (*s == '\"')
+	    quotes = !quotes;
+	else if (*s == '\\' && s + 1 != send)
+	    ++s;
+	else if (*s == '(' && !quotes)
+	    ++parens;
+	else if (*s == ')' && !quotes && parens)
+	    --parens;
+    }
+    String arg = str.substring(sarg, last_nonsp + 1);
+    if (s != send)
+	s = cp_skip_comment_space(s + 1, send);
+    str = str.substring(s, send);
+    return arg;
 }
 
 
@@ -1631,6 +1661,7 @@ static dcss_propmatch activity_pm[] = {
     { "autorefresh-period", 0 },
     { "type", 0 },
     { "max-value", 0 },
+    { "min-value", 0 },
     { "decay", 0 }
 };
 
@@ -1657,7 +1688,6 @@ ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, const delt *
 
 	dactivity_style *sty = new dactivity_style;
 	sty->handler = activity_pm[0].vstring("handler");
-	activity_pm[1].vcolor(sty->color, "color");
 	sty->autorefresh_period = (int) (activity_pm[3].vseconds("autorefresh-period") * 1000);
 	String s = activity_pm[2].vstring("autorefresh");
 	sty->autorefresh = parse_autorefresh(s, "", &sty->autorefresh_period);
@@ -1671,8 +1701,46 @@ ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, const delt *
 	} else
 	    sty->type = dactivity_absolute;
 	sty->max_value = activity_pm[5].vnumeric("max-value");
-	sty->decay = activity_pm[6].vseconds("decay");
+	sty->min_value = activity_pm[6].vnumeric("min-value");
+	sty->max_value = std::max(sty->min_value, sty->max_value);
+	sty->decay = activity_pm[7].vseconds("decay");
 
+	// parse color series
+	Vector<String> vs;
+	s = activity_pm[1].vstring("color");
+	while (String sx = ccss_pop_commavec(s))
+	    vs.push_back(sx);
+	if (vs.size() == 0)
+	    vs.push_back("none");
+	if (vs.size() == 1) {
+	    vs.push_back(vs[0]);
+	    vs[0] = "none";
+	}
+	for (String *vsp = vs.begin(); vsp != vs.end(); ++vsp) {
+	    int x = sty->colors.size();
+	    sty->colors.resize(sty->colors.size() + 5);
+	    sty->colors[x] = -1;	    
+	    if (*vsp && isdigit((unsigned char) (*vsp)[0])) {
+		if (!cp_relative(cp_pop_spacevec(*vsp), &sty->colors[x])
+		    || sty->colors[x] < 0 || sty->colors[x] > 1)
+		    sty->colors[x] = -1;
+	    }
+	    if (!cp_color(*vsp, &sty->colors[x+1], &sty->colors[x+2], &sty->colors[x+3], &sty->colors[x+4]))
+		memcpy(&sty->colors[x+1], dcss_property::transparent_color, sizeof(double) * 4);
+	}
+	sty->colors[0] = 0.;
+	sty->colors[sty->colors.size() - 5] = 1.;
+	for (int i = 5; i < sty->colors.size(); i += 5) {
+	    if (sty->colors[i] < 0) {
+		int n;
+		for (n = 2; sty->colors[i + 5*(n-1)] < 0; ++n)
+		    /* nada */;
+		sty->colors[i] =
+		    (sty->colors[i-5] * (n - 1) + sty->colors[i + 5*(n-1)]) / n;
+	    } else if (sty->colors[i] < sty->colors[i - 5])
+		sty->colors[i] = sty->colors[i - 5] + 0.001;
+	}
+	
 	//if (sty->type == dactivity_rate)
 	//sty->decay_begin = std::max(sty->decay_begin, 10U);
 	//sty->decay_end = std::max(sty->decay_begin, sty->decay_end);

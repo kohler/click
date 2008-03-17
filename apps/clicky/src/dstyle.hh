@@ -106,8 +106,9 @@ enum {
 
 struct dactivity_style : public enable_ref_ptr {
     String handler;
-    double color[4];
+    Vector<double> colors;
     int type;
+    double min_value;
     double max_value;
     double rate_period;
     double decay;
@@ -282,6 +283,7 @@ struct dcss_property {
     }
 
     static const dcss_property null_property;
+    static const double transparent_color[4];
     
   private:
     
@@ -296,7 +298,6 @@ struct dcss_property {
 
     bool hard_change_type(int t) const;
     bool hard_change_relative_pixel() const;
-    static const double transparent_color[4];
     
 };
 
