@@ -25,22 +25,23 @@ enum {
     hflag_collapse = 1 << 11,
     hflag_visible = 1 << 12,
     hflag_refresh = 1 << 13,
+    hflag_deprecated = 1 << 14,
     
-    hflag_autorefresh = 1 << 14,
-    hflag_have_hvalue = 1 << 15,
+    hflag_autorefresh = 1 << 15,
+    hflag_have_hvalue = 1 << 16,
 
-    hflag_preferences = 1 << 16,
-    hflag_notify_whandlers = 1 << 17,
-    hflag_notify_delt = 1 << 18,
-    hflag_always_notify_delt = 1 << 19,
-    hflag_outstanding = 1 << 20,
+    hflag_preferences = 1 << 17,
+    hflag_notify_whandlers = 1 << 18,
+    hflag_notify_delt = 1 << 19,
+    hflag_always_notify_delt = 1 << 20,
+    hflag_outstanding = 1 << 21,
 
     hflag_mandatory_driver_mask = hflag_r | hflag_w | hflag_rparam | hflag_raw
     | hflag_special | hflag_dead,
     hflag_default_driver_mask = hflag_mandatory_driver_mask
     | hflag_calm | hflag_expensive | hflag_multiline
     | hflag_button | hflag_checkbox | hflag_collapse
-    | hflag_visible | hflag_refresh,
+    | hflag_visible | hflag_refresh | hflag_deprecated,
     hflag_private_mask = hflag_outstanding
 };
 

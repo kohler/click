@@ -168,12 +168,6 @@ RatedSource::read_param(Element *e, void *vparam)
     return String(rs->_rate.rate());
    case 2:			// limit
     return (rs->_limit != NO_LIMIT ? String(rs->_limit) : String("-1"));
-   case 3:			// active
-    return cp_unparse_bool(rs->_active);
-   case 4:			// count
-    return String(rs->_count);
-  case 6:			// datasize
-    return String(rs->_datasize);
    default:
     return "";
   }
@@ -254,14 +248,14 @@ RatedSource::add_handlers()
   add_write_handler("rate", change_param, (void *)1);
   add_read_handler("limit", read_param, (void *)2, Handler::CALM);
   add_write_handler("limit", change_param, (void *)2);
-  add_read_handler("active", read_param, (void *)3, Handler::CHECKBOX);
+  add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
   add_write_handler("active", change_param, (void *)3);
-  add_read_handler("count", read_param, (void *)4);
+  add_data_handlers("count", Handler::OP_READ, &_count);
   add_write_handler("reset", change_param, (void *)5, Handler::BUTTON);
-  add_read_handler("length", read_param, (void *)6);
+  add_data_handlers("length", Handler::OP_READ, &_datasize);
   add_write_handler("length", change_param, (void *)6);
   // deprecated
-  add_read_handler("datasize", read_param, (void *)6);
+  add_data_handlers("datasize", Handler::OP_READ | Handler::DEPRECATED, &_datasize);
   add_write_handler("datasize", change_param, (void *)6);
 
   if (output_is_push(0)) 

@@ -416,8 +416,6 @@ FromDAGDump::read_handler(Element *e, void *thunk)
     switch ((intptr_t)thunk) {
       case H_SAMPLING_PROB:
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT);
-      case H_ACTIVE:
-	return cp_unparse_bool(fd->_active);
       case H_ENCAP:
 	return String(fake_pcap_unparse_dlt(fd->_linktype));
       default:
@@ -462,7 +460,7 @@ void
 FromDAGDump::add_handlers()
 {
     add_read_handler("sampling_prob", read_handler, (void *)H_SAMPLING_PROB);
-    add_read_handler("active", read_handler, (void *)H_ACTIVE, Handler::CHECKBOX);
+    add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
     add_read_handler("encap", read_handler, (void *)H_ENCAP);
     add_write_handler("stop", write_handler, (void *)H_STOP);

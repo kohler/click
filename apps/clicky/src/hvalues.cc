@@ -195,6 +195,9 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	      case 'c':
 		flags |= hflag_checkbox;
 		break;
+	      case 'X':
+		flags |= hflag_deprecated;
+		break;
 	    }
 	if (!(flags & hflag_r))
 	    flags &= ~hflag_rparam;
@@ -212,7 +215,7 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	    flags |= hflag_collapse | hflag_visible;
 	else if (name == "handlers")
 	    flags |= hflag_collapse;
-	else
+	else if (!(flags & hflag_deprecated))
 	    flags |= hflag_visible;
 	if (handler_value::default_refreshable(flags))
 	    flags |= hflag_refresh;

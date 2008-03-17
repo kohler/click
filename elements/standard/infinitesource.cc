@@ -167,16 +167,6 @@ InfiniteSource::read_param(Element *e, void *vparam)
   switch ((intptr_t)vparam) {
    case 0:			// data
     return is->_data;
-   case 1:			// limit
-    return String(is->_limit);
-   case 2:			// burstsize
-    return String(is->_burstsize);
-   case 3:			// active
-    return cp_unparse_bool(is->_active);
-   case 4:			// count
-    return String(is->_count);
-   case 6:			// datasize
-    return String(is->_datasize);
     //case 7:
     //  return is->_nonfull_signal.unparse(is->router());
    default:
@@ -255,20 +245,20 @@ InfiniteSource::add_handlers()
 {
   add_read_handler("data", read_param, (void *)0, Handler::CALM);
   add_write_handler("data", change_param, (void *)0, Handler::RAW);
-  add_read_handler("limit", read_param, (void *)1, Handler::CALM);
+  add_data_handlers("limit", Handler::OP_READ | Handler::CALM, &_limit);
   add_write_handler("limit", change_param, (void *)1);
-  add_read_handler("burst", read_param, (void *)2, Handler::CALM);
+  add_data_handlers("burst", Handler::OP_READ | Handler::CALM, &_burstsize);
   add_write_handler("burst", change_param, (void *)2);
-  add_read_handler("active", read_param, (void *)3, Handler::CHECKBOX);
+  add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
   add_write_handler("active", change_param, (void *)3);
-  add_read_handler("count", read_param, (void *)4);
+  add_data_handlers("count", Handler::OP_READ, &_count);
   add_write_handler("reset", change_param, (void *)5, Handler::BUTTON);
-  add_read_handler("length", read_param, (void *)6, Handler::CALM);
+  add_data_handlers("length", Handler::OP_READ | Handler::CALM, &_datasize);
   add_write_handler("length", change_param, (void *)6);
   // deprecated
-  add_read_handler("burstsize", read_param, (void *)2, Handler::CALM);
+  add_data_handlers("burstsize", Handler::OP_READ | Handler::CALM | Handler::DEPRECATED, &_burstsize);
   add_write_handler("burstsize", change_param, (void *)2);
-  add_read_handler("datasize", read_param, (void *)6, Handler::CALM);
+  add_data_handlers("datasize", Handler::OP_READ | Handler::CALM | Handler::DEPRECATED, &_datasize);
   add_write_handler("datasize", change_param, (void *)6);
   //add_read_handler("notifier", read_param, (void *)7);
   add_task_handlers(&_task);

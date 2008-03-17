@@ -512,14 +512,8 @@ FromDump::read_handler(Element *e, void *thunk)
     switch ((intptr_t)thunk) {
     case H_SAMPLING_PROB:
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT);
-    case H_ACTIVE:
-	return cp_unparse_bool(fd->_active);
     case H_ENCAP:
 	return String(fake_pcap_unparse_dlt(fd->_linktype));
-    case H_PACKET_FILEPOS:
-	return String(fd->_packet_filepos);
-    case H_COUNT:
-	return String(fd->_count);
     default:
 	return "<error>";
     }
@@ -571,13 +565,13 @@ FromDump::add_handlers()
 {
     _ff.add_handlers(this, true);
     add_read_handler("sampling_prob", read_handler, (void *)H_SAMPLING_PROB);
-    add_read_handler("active", read_handler, (void *)H_ACTIVE, Handler::CHECKBOX);
+    add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
     add_read_handler("encap", read_handler, (void *)H_ENCAP);
     add_write_handler("stop", write_handler, (void *)H_STOP, Handler::BUTTON);
-    add_read_handler("packet_filepos", read_handler, (void *)H_PACKET_FILEPOS);
+    add_data_handlers("packet_filepos", Handler::OP_READ, &_packet_filepos);
     add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
-    add_read_handler("count", read_handler, (void *)H_COUNT);
+    add_data_handlers("count", Handler::OP_READ, &_count);
     add_write_handler("reset_counts", write_handler, (void *)H_RESET_COUNTS, Handler::BUTTON);
     add_write_handler("reset_timing", write_handler, (void *)H_RESET_TIMING, Handler::BUTTON);
     if (output_is_push(0))

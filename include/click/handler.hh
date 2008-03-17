@@ -33,11 +33,13 @@ class Handler { public:
 	BUTTON = 0x0100,	///< @brief Write handler ignores data.
 	CHECKBOX = 0x0200,	///< @brief Read/write handler is boolean and
 				///  should be rendered as a checkbox.
-	DRIVER_FLAG_0 = 0x0400,	///< @brief Handler flag available for drivers.
-	DRIVER_FLAG_1 = 0x0800,	///< @brief Handler flag available for drivers.
-	DRIVER_FLAG_2 = 0x1000,	///< @brief Handler flag available for drivers.
-	DRIVER_FLAG_3 = 0x2000,	///< @brief Handler flag available for drivers.
-	USER_FLAG_SHIFT = 14,
+	DEPRECATED = 0x0400,	///< @brief Handler is deprecated and available
+				///  only for compatibility.
+	DRIVER_FLAG_0 = 0x1000,	///< @brief Handler flag available for drivers.
+	DRIVER_FLAG_1 = 0x2000,	///< @brief Handler flag available for drivers.
+	DRIVER_FLAG_2 = 0x4000,	///< @brief Handler flag available for drivers.
+	DRIVER_FLAG_3 = 0x8000,	///< @brief Handler flag available for drivers.
+	USER_FLAG_SHIFT = 16,
 	USER_FLAG_0 = 1 << USER_FLAG_SHIFT
 				///< @brief First uninterpreted handler flag
 				///  available for element-specific use.

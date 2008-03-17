@@ -97,10 +97,6 @@ RandomSample::read_handler(Element *e, void *thunk)
     switch ((intptr_t)thunk) {
       case 0:
 	return cp_unparse_real2(rs->_sampling_prob, SAMPLING_SHIFT);
-      case 1:
-	return cp_unparse_bool(rs->_active);
-      case 2:
-	return String(rs->_drops);
       case 3:
 	return cp_unparse_real2((1 << SAMPLING_SHIFT) - rs->_sampling_prob, SAMPLING_SHIFT);
       case 4: {
@@ -119,11 +115,11 @@ RandomSample::add_handlers()
 {
     add_read_handler("sampling_prob", read_handler, 0);
     add_write_handler("sampling_prob", reconfigure_keyword_handler, (void *)"SAMPLE");
-    add_read_handler("active", read_handler, 1);
-    add_write_handler("active", reconfigure_keyword_handler, (void *)"ACTIVE");
-    add_read_handler("drops", read_handler, 2);
+    add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
+    add_write_handler("active", reconfigure_keyword_handler, "ACTIVE");
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
     add_read_handler("drop_prob", read_handler, 3);
-    add_write_handler("drop_prob", reconfigure_keyword_handler, (void *)"DROP");
+    add_write_handler("drop_prob", reconfigure_keyword_handler, "DROP");
     add_read_handler("config", read_handler, 4);
     set_handler_flags("config", 0, Handler::CALM);
 }

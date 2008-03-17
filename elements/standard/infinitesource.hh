@@ -117,8 +117,8 @@ class InfiniteSource : public Element, public ActiveNotifier { public:
   int _limit;
   int _count;
   int _datasize;
-  bool _active : 1;
-  bool _stop : 1;
+  bool _active;
+  bool _stop;
   Task _task;
   String _data;
   NotifierSignal _nonfull_signal;
