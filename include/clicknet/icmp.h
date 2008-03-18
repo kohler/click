@@ -23,7 +23,7 @@ struct click_icmp {
 };
 
 /* header for types with sequence numbers: ICMP_ECHO, ICMP_ECHOREPLY,
-   ICMP_INFOREQ, ICMP_INFOREQREPLY */
+   ICMP_IREQ, ICMP_IREQREPLY */
 struct click_icmp_sequenced {
     uint8_t	icmp_type;		/* 0     ICMP type (see below)	     */
     uint8_t	icmp_code;		/* 1     ICMP code (see below)	     */

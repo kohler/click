@@ -52,6 +52,7 @@ contain those fields. Valid field names, with examples, are:
    ip_len       IP length: '132'
    ip_proto     IP protocol: '10', or 'I' for ICMP, 'T' for
                 TCP, 'U' for UDP
+   ip_hl        IP header length in bytes: '20'
    ip_id        IP ID: '48759'
    ip_tos       IP type of service: '29'
    ip_ttl       IP time-to-live: '254'
@@ -69,6 +70,16 @@ contain those fields. Valid field names, with examples, are:
    tcp_window   TCP receive window: '480'
    tcp_urp      TCP urgent pointer: '0'
    udp_len      UDP length: '34'
+   icmp_type    ICMP type: '0'
+   icmp_code    ICMP code: '2'
+   icmp_type_name  ICMP type, named if available: 'echo',
+                '200'
+   icmp_code_name  ICMP code, named if available:
+                'sourcequench', '0'
+   icmp_flowid  ICMP flow identifier, in network order: '256'
+   icmp_seq     ICMP sequence number, in network order: '0'
+   icmp_nextmtu  ICMP next-hop MTU (unreach.needfrag only):
+                '256'
    payload      Payload (not including IP/TCP/UDP headers,
                 for this fragment), in a string
    payload_len  Payload length: '34'

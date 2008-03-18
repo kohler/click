@@ -47,6 +47,7 @@ ToIPSummaryDump::static_initialize()
     IPSummaryDump::ip_register_unparsers();
     IPSummaryDump::tcp_register_unparsers();
     IPSummaryDump::udp_register_unparsers();
+    IPSummaryDump::icmp_register_unparsers();
 }
 
 void
@@ -196,7 +197,7 @@ ToIPSummaryDump::cleanup(CleanupStage)
 bool
 ToIPSummaryDump::summary(Packet* p, StringAccum& sa, StringAccum* bad_sa, bool force_extra_length) const
 {
-    IPSummaryDump::PacketDesc d(p, &sa, bad_sa, _careful_trunc, force_extra_length);
+    IPSummaryDump::PacketDesc d(this, p, &sa, bad_sa, _careful_trunc, force_extra_length);
 
     for (int i = 0; i < _prepare_fields.size(); i++)
 	_prepare_fields[i]->prepare(d);

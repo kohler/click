@@ -4,7 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
- * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2004-2008 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +31,7 @@ CLICK_DECLS
 
 enum { T_IP_SRC, T_IP_DST, T_IP_TOS, T_IP_TTL, T_IP_FRAG, T_IP_FRAGOFF,
        T_IP_ID, T_IP_SUM, T_IP_PROTO, T_IP_OPT, T_IP_LEN, T_IP_CAPTURE_LEN,
-       T_SPORT, T_DPORT, T_PAYLOAD_LEN, T_PAYLOAD, T_PAYLOAD_MD5 };
+       T_SPORT, T_DPORT, T_PAYLOAD_LEN, T_PAYLOAD, T_PAYLOAD_MD5, T_IP_HL };
 
 namespace IPSummaryDump {
 
@@ -41,6 +41,7 @@ void ip_prepare(PacketDesc& d)
     d.iph = p->ip_header();
     d.tcph = p->tcp_header();
     d.udph = p->udp_header();
+    d.icmph = p->icmp_header();
     
 #define BAD(msg, hdr) do { if (d.bad_sa && !*d.bad_sa) *d.bad_sa << "!bad " << msg << '\n'; hdr = 0; } while (0)
 #define BAD2(msg, val, hdr) do { if (d.bad_sa && !*d.bad_sa) *d.bad_sa << "!bad " << msg << val << '\n'; hdr = 0; } while (0)
@@ -84,6 +85,13 @@ void ip_prepare(PacketDesc& d)
 	|| d.iph->ip_p != IP_PROTO_UDP
 	|| !IP_FIRSTFRAG(d.iph))
 	d.udph = 0;
+
+    // check ICMP header
+    if (!d.iph || !d.icmph
+	|| p->network_length() <= (int)(d.iph->ip_hl << 2)
+	|| d.iph->ip_p != IP_PROTO_ICMP
+	|| !IP_FIRSTFRAG(d.iph))
+	d.icmph = 0;
 #undef BAD
 #undef BAD2
 
@@ -105,7 +113,7 @@ static bool ip_extract(PacketDesc& d, int thunk)
     switch (thunk & ~B_TYPEMASK) {
 
 	// IP header properties
-#define CHECK(l) do { if (!d.iph || network_length < (l)) return field_missing(d, MISSING_IP, "IP", (l)); } while (0)	
+#define CHECK(l) do { if (!d.iph || network_length < (l)) return field_missing(d, MISSING_IP, (l)); } while (0)	
       case T_IP_SRC:
 	CHECK(16);
 	d.v = d.iph->ip_src.s_addr;
@@ -144,7 +152,7 @@ static bool ip_extract(PacketDesc& d, int thunk)
 	return true;
       case T_IP_OPT:
 	if (!d.iph || (d.iph->ip_hl > 5 && network_length < (int)(d.iph->ip_hl << 2)))
-	    return field_missing(d, MISSING_IP, "IP", (d.iph ? d.iph->ip_hl << 2 : 20));
+	    return field_missing(d, MISSING_IP, (d.iph ? d.iph->ip_hl << 2 : 20));
 	if (d.iph->ip_hl <= 5)
 	    d.vptr = 0, d.v2 = 0;
 	else {
@@ -157,6 +165,10 @@ static bool ip_extract(PacketDesc& d, int thunk)
 	    d.v = ntohs(d.iph->ip_len) + (d.force_extra_length ? EXTRA_LENGTH_ANNO(d.p) : 0);
 	else
 	    d.v = d.p->length() + EXTRA_LENGTH_ANNO(d.p);
+	return true;
+      case T_IP_HL:
+	CHECK(1);
+	d.v = d.iph->ip_hl << 2;
 	return true;
       case T_IP_CAPTURE_LEN: {
 	  uint32_t allow_len = (d.iph ? network_length : d.p->length());
@@ -230,7 +242,7 @@ static bool transport_extract(PacketDesc& d, int thunk)
     switch (thunk & ~B_TYPEMASK) {
 	
 	// TCP/UDP header properties
-#define CHECK(l) do { if ((!d.tcph && !d.udph) || p->transport_length() < (l)) return field_missing(d, MISSING_IP_TRANSPORT, "transport", (l)); } while (0)
+#define CHECK(l) do { if ((!d.tcph && !d.udph) || p->transport_length() < (l)) return field_missing(d, IP_PROTO_TCP_OR_UDP, (l)); } while (0)
       case T_SPORT:
 	CHECK(2);
 	d.v = ntohs(p->udp_header()->uh_sport);
@@ -556,6 +568,7 @@ void ip_register_unparsers()
     register_unparser("ip_id", T_IP_ID | B_2, ip_prepare, ip_extract, num_outa, outb, inb);
     register_unparser("ip_sum", T_IP_SUM | B_2, ip_prepare, ip_extract, num_outa, outb, inb);
     register_unparser("ip_proto", T_IP_PROTO | B_1, ip_prepare, ip_extract, ip_outa, outb, inb);
+    register_unparser("ip_hl", T_IP_HL | B_1, ip_prepare, ip_extract, num_outa, outb, inb);
     register_unparser("ip_len", T_IP_LEN | B_4, ip_prepare, ip_extract, num_outa, outb, inb);
     register_unparser("ip_capture_len", T_IP_CAPTURE_LEN | B_4, ip_prepare, ip_extract, num_outa, outb, inb);
     register_unparser("ip_opt", T_IP_OPT | B_SPECIAL, ip_prepare, ip_extract, ip_outa, ip_outb, ip_inb);

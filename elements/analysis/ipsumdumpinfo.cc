@@ -257,24 +257,45 @@ int register_synonym(const char* name, const char* synonym)
     }
 }
 
-bool field_missing(const PacketDesc& d, int what, const char* header_name, int l)
+static const char *field_missing_proto_name(int proto)
+{
+    switch (proto) {
+      case IP_PROTO_TCP:
+	return "TCP";
+      case IP_PROTO_UDP:
+	return "UDP";
+      case IP_PROTO_ICMP:
+	return "ICMP";
+      case IP_PROTO_TCP_OR_UDP:
+	return "TCP/UDP";
+      default:
+	return "?";
+    }
+}
+
+bool hard_field_missing(const PacketDesc &d, int proto, int l)
 {
     if (d.bad_sa && !*d.bad_sa) {
-	*d.bad_sa << "!bad ";
-	if (what == MISSING_IP || what == MISSING_IP_TRANSPORT) {
-	    if (!d.iph)
-		*d.bad_sa << "no IP header";
-	    else if (what == MISSING_IP)
-		*d.bad_sa << "truncated IP header capture";
-	    else if ((int) (d.p->transport_length() + EXTRA_LENGTH_ANNO(d.p)) >= l)
-		*d.bad_sa << "truncated " << header_name << " header capture";
-	    else if (IP_ISFRAG(d.iph))
-		*d.bad_sa << "fragmented " << header_name << " header";
-	    else
-		*d.bad_sa << "truncated " << header_name << " header";
-	} else
-	    *d.bad_sa << header_name << " header";
-	*d.bad_sa << '\n';
+	if (proto == MISSING_ETHERNET)
+	    *d.bad_sa << "!bad Ethernet header\n";
+	else if (!d.iph)
+	    *d.bad_sa << "!bad no IP header\n";
+	else if (proto == MISSING_IP)
+	    *d.bad_sa << "!bad truncated IP header capture\n";
+	else if (d.p->network_length() > (int) offsetof(click_ip, ip_p)
+		 && ((proto > MISSING_IP && proto < 256
+		      && d.iph->ip_p != proto)
+		     || (proto == IP_PROTO_TCP_OR_UDP
+			 && d.iph->ip_p != IP_PROTO_TCP
+			 && d.iph->ip_p != IP_PROTO_UDP)))
+	    // wrong protocol is a silent error, not a bad packet
+	    return false;
+	else if (!IP_FIRSTFRAG(d.iph))
+	    *d.bad_sa << "!bad fragmented " << field_missing_proto_name(proto) << " header\n";
+	else if ((int) (d.p->transport_length() + EXTRA_LENGTH_ANNO(d.p)) >= l)
+	    *d.bad_sa << "!bad truncated " << field_missing_proto_name(proto) << " header capture\n";
+	else
+	    *d.bad_sa << "!bad truncated " << field_missing_proto_name(proto) << " header\n";
     }
     return false;
 }

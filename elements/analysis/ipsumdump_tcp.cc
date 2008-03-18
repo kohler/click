@@ -21,9 +21,11 @@
 
 #include "ipsumdumpinfo.hh"
 #include <click/packet.hh>
+#include <click/nameinfo.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
+#include <clicknet/icmp.h>
 CLICK_DECLS
 
 enum { T_TCP_SEQ, T_TCP_ACK, T_TCP_FLAGS, T_TCP_WINDOW, T_TCP_URP, T_TCP_OPT,
@@ -36,7 +38,7 @@ static bool tcp_extract(PacketDesc& d, int thunk)
     int transport_length = d.p->transport_length();
     switch (thunk & ~B_TYPEMASK) {
 	
-#define CHECK(l) do { if (!d.tcph || transport_length < (l)) return field_missing(d, MISSING_IP_TRANSPORT, "TCP", (l)); } while (0)
+#define CHECK(l) do { if (!d.tcph || transport_length < (l)) return field_missing(d, IP_PROTO_TCP, (l)); } while (0)
 	
       case T_TCP_SEQ:
 	CHECK(8);
@@ -91,7 +93,7 @@ static bool tcp_extract(PacketDesc& d, int thunk)
       default:
 	return false;
       no_tcp_opt:
-	return field_missing(d, MISSING_IP_TRANSPORT, "TCP", transport_length + 1);
+	return field_missing(d, IP_PROTO_TCP, transport_length + 1);
     }
 }
 
@@ -356,7 +358,7 @@ static bool udp_extract(PacketDesc& d, int thunk)
     int transport_length = d.p->transport_length();
     switch (thunk & ~B_TYPEMASK) {
 	
-#define CHECK(l) do { if (!d.udph || transport_length < (l)) return field_missing(d, MISSING_IP_TRANSPORT, "UDP", (l)); } while (0)
+#define CHECK(l) do { if (!d.udph || transport_length < (l)) return field_missing(d, IP_PROTO_UDP, (l)); } while (0)
 	
       case T_UDP_LEN:
 	CHECK(6);
@@ -373,6 +375,98 @@ static bool udp_extract(PacketDesc& d, int thunk)
 void udp_register_unparsers()
 {
     register_unparser("udp_len", T_UDP_LEN | B_4, ip_prepare, udp_extract, num_outa, outb, inb);
+}
+
+
+enum { T_ICMP_TYPE, T_ICMP_TYPE_NAME, T_ICMP_CODE, T_ICMP_CODE_NAME,
+       T_ICMP_FLOWID, T_ICMP_SEQ, T_ICMP_NEXTMTU };
+
+enum {
+    ICMP_TYPE_HAVE_FLOW = ((1U << ICMP_ECHO) | (1U << ICMP_ECHOREPLY)
+			   | (1U << ICMP_IREQ) | (1U << ICMP_IREQREPLY)
+			   | (1U << ICMP_TSTAMP) | (1U << ICMP_TSTAMPREPLY))
+};
+
+static bool icmp_extract(PacketDesc& d, int thunk)
+{
+    int transport_length = d.p->transport_length();
+    switch (thunk & ~B_TYPEMASK) {
+	
+#define CHECK(l) do { if (!d.icmph || transport_length < (l)) return field_missing(d, IP_PROTO_ICMP, (l)); } while (0)
+
+      case T_ICMP_TYPE:
+      case T_ICMP_TYPE_NAME:
+	CHECK(1);
+	d.v = d.icmph->icmp_type;
+	return true;
+
+      case T_ICMP_CODE:
+      case T_ICMP_CODE_NAME:
+	CHECK(2);
+	d.v = d.icmph->icmp_code;
+	return true;
+
+      case T_ICMP_FLOWID:
+	CHECK(1);
+	if (d.icmph->icmp_type >= 32
+	    || (ICMP_TYPE_HAVE_FLOW & (1 << d.icmph->icmp_type)) == 0)
+	    return false;
+	CHECK(6);
+	d.v = ntohs(reinterpret_cast<const click_icmp_sequenced *>(d.icmph)->icmp_identifier);
+	return true;
+
+      case T_ICMP_SEQ:
+	CHECK(1);
+	if (d.icmph->icmp_type >= 32
+	    || (ICMP_TYPE_HAVE_FLOW & (1 << d.icmph->icmp_type)) == 0)
+	    return false;
+	CHECK(8);
+	d.v = ntohs(reinterpret_cast<const click_icmp_sequenced *>(d.icmph)->icmp_sequence);
+	return true;
+	
+      case T_ICMP_NEXTMTU:
+	CHECK(2);
+	if (d.icmph->icmp_type != ICMP_UNREACH
+	    || d.icmph->icmp_code != ICMP_UNREACH_NEEDFRAG)
+	    return false;
+	CHECK(8);
+	d.v = ntohs(reinterpret_cast<const click_icmp_needfrag *>(d.icmph)->icmp_nextmtu);
+	return true;
+	
+#undef CHECK
+
+      default:
+	return false;
+    }
+}
+
+static void icmp_outa(const PacketDesc &d, int thunk)
+{
+    switch (thunk & ~B_TYPEMASK) {
+      case T_ICMP_TYPE_NAME:
+	if (String s = NameInfo::revquery_int(NameInfo::T_ICMP_TYPE, d.e, d.v))
+	    *d.sa << s;
+	else
+	    *d.sa << d.v;
+	break;
+      case T_ICMP_CODE_NAME:
+	if (String s = NameInfo::revquery_int(NameInfo::T_ICMP_CODE + d.icmph->icmp_type, d.e, d.v))
+	    *d.sa << s;
+	else
+	    *d.sa << d.v;
+	break;
+    }
+}
+
+void icmp_register_unparsers()
+{
+    register_unparser("icmp_type", T_ICMP_TYPE | B_1, ip_prepare, icmp_extract, num_outa, outb, inb);
+    register_unparser("icmp_code", T_ICMP_CODE | B_1, ip_prepare, icmp_extract, num_outa, outb, inb);
+    register_unparser("icmp_type_name", T_ICMP_TYPE_NAME | B_1, ip_prepare, icmp_extract, icmp_outa, outb, inb);
+    register_unparser("icmp_code_name", T_ICMP_CODE_NAME | B_1, ip_prepare, icmp_extract, icmp_outa, outb, inb);
+    register_unparser("icmp_flowid", T_ICMP_FLOWID | B_2, ip_prepare, icmp_extract, num_outa, outb, inb);
+    register_unparser("icmp_seq", T_ICMP_SEQ | B_2, ip_prepare, icmp_extract, num_outa, outb, inb);
+    register_unparser("icmp_nextmtu", T_ICMP_NEXTMTU | B_2, ip_prepare, icmp_extract, num_outa, outb, inb);
 }
 
 }

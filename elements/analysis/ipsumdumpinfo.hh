@@ -3,11 +3,13 @@
 #define CLICK_IPSUMDUMPINFO_HH
 #include <click/string.hh>
 #include <click/straccum.hh>
-class Packet;
 struct click_ip;
 struct click_udp;
 struct click_tcp;
+struct click_icmp;
 CLICK_DECLS
+class Element;
+class Packet;
 
 namespace IPSummaryDump {
 
@@ -22,6 +24,7 @@ struct PacketDesc {
     const click_ip* iph;
     const click_udp* udph;
     const click_tcp* tcph;
+    const click_icmp *icmph;
 
     union {
 	uint32_t v;
@@ -36,8 +39,9 @@ struct PacketDesc {
     StringAccum* bad_sa;
     bool careful_trunc;
     bool force_extra_length;
+    const Element *e;
     
-    inline PacketDesc(Packet*, StringAccum* sa, StringAccum* bad_sa, bool careful_trunc, bool force_extra_length);
+    inline PacketDesc(const Element *e, Packet *p, StringAccum* sa, StringAccum* bad_sa, bool careful_trunc, bool force_extra_length);
     void clear_values()			{ v = v2 = 0; }
 };
 
@@ -82,9 +86,9 @@ void outb(const PacketDesc&, bool ok, int);
 const uint8_t *inb(PacketDesc&, const uint8_t*, const uint8_t*, int);
 
 enum { MISSING_IP = 0,
-       MISSING_IP_TRANSPORT = 1,
-       MISSING_LINK = 2 };
-bool field_missing(const PacketDesc&, int what, const char* header_name, int l);
+       MISSING_ETHERNET = 260 };
+inline bool field_missing(const PacketDesc &d, int proto, int l);
+bool hard_field_missing(const PacketDesc &d, int proto, int l);
 
 // particular parsers
 void ip_prepare(PacketDesc&);
@@ -94,6 +98,7 @@ void link_register_unparsers();
 void ip_register_unparsers();
 void tcp_register_unparsers();
 void udp_register_unparsers();
+void icmp_register_unparsers();
 
 enum { DO_IPOPT_PADDING = 1,
        DO_IPOPT_ROUTE = 2,
@@ -123,10 +128,16 @@ void unparse_tcp_opt(StringAccum&, const click_tcp*, int mask);
 void unparse_tcp_opt_binary(StringAccum&, const uint8_t*, int olen, int mask);
 void unparse_tcp_opt_binary(StringAccum&, const click_tcp*, int mask);
 
-inline PacketDesc::PacketDesc(Packet* p_, StringAccum* sa_, StringAccum* bad_sa_, bool careful_trunc_, bool force_extra_length_)
+inline PacketDesc::PacketDesc(const Element *e_, Packet* p_, StringAccum* sa_, StringAccum* bad_sa_, bool careful_trunc_, bool force_extra_length_)
     : p(p_), iph(0), udph(0), tcph(0), sa(sa_), bad_sa(bad_sa_),
-      careful_trunc(careful_trunc_), force_extra_length(force_extra_length_)
+      careful_trunc(careful_trunc_), force_extra_length(force_extra_length_),
+      e(e_)
 {
+}
+
+inline bool field_missing(const PacketDesc &d, int proto, int l)
+{
+    return (d.bad_sa ? hard_field_missing(d, proto, l) : false);
 }
 
 }

@@ -40,7 +40,7 @@ static bool link_extract(PacketDesc& d, int thunk)
     switch (thunk & ~B_TYPEMASK) {
 
 	// IP header properties
-#define CHECK() do { if (!mac || mac + 14 != network) return field_missing(d, MISSING_LINK, "Ethernet", 0); } while (0)	
+#define CHECK() do { if (!mac || mac + 14 != network) return field_missing(d, MISSING_ETHERNET, 0); } while (0)	
       case T_ETH_SRC:
 	CHECK();
 	d.vptr = mac + 6;
