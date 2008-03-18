@@ -31,7 +31,7 @@ class wdiagram { public:
 	return _scale;
     }
 
-    dcss_set *css_set() const {
+    dcss_set *ccss() const {
 	return _css_set;
     }
     String ccss_text() const;

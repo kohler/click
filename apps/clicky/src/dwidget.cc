@@ -54,9 +54,9 @@ void delt::prepare(wdiagram *d, ElementT *e, ProcessingT *processing,
     _e = e;
     _processing_code = processing->decorated_processing_code(_e);
     _driver = d->main()->driver();
-    // _des = d->css_set()->elt_style(this);
+    // _des = d->ccss()->elt_style(d->main(), this);
     // if (_des->style == destyle_queue)
-    //	_dqs = d->css_set()->queue_style(this);
+    //	_dqs = d->ccss()->queue_style(d->main(), this);
 
     if (_e->tunnel())
 	return;
@@ -393,9 +393,9 @@ void delt::position_contents_first_heuristic(RouterT *router)
     }
 }
 
-void delt::position_contents_dot(RouterT *router, dcss_set *dcs, ErrorHandler *errh)
+void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *errh)
 {
-    ref_ptr<delt_style> gdes = dcs->elt_style(this);
+    ref_ptr<delt_style> gdes = d->ccss()->elt_style(d, this);
     double gxsep = std::max(gdes->margin[1], gdes->margin[3]);
     double gysep = std::max(gdes->margin[0], gdes->margin[2]);
     double txsep = gdes->margin[1] + gdes->margin[3];
@@ -534,7 +534,7 @@ void delt::layout_contents(dcontext &dcx, RouterT *router)
 	(*ci)->_row = -1;
     }
 
-    position_contents_dot(router, dcx.d->css_set(), dcx.d->main()->error_handler());
+    position_contents_dot(router, dcx.d, dcx.d->main()->error_handler());
     //position_contents_scc(router);
     //position_contents_first_heuristic(router);
 
@@ -547,23 +547,24 @@ void delt::layout_contents(dcontext &dcx, RouterT *router)
 	}
 }
 
-void delt::layout_ports(dcss_set *dcs)
+void delt::layout_ports(wdiagram *d)
 {
     delete[] _portoff[0];
     delete[] _portoff[1];
     _portoff[0] = _portoff[1] = 0;
+    dcss_set *dcs = d->ccss();
     
     for (int isoutput = 0; isoutput < 2; ++isoutput) {
 	_ports_length[isoutput] = 2 * _des->ports_padding;
 	if (!_e->nports(isoutput))
 	    continue;
-	ref_ptr<dport_style> dps = dcs->port_style(this, isoutput, 0, 0);
+	ref_ptr<dport_style> dps = dcs->port_style(d, this, isoutput, 0, 0);
 	if (_e->nports(isoutput) > 1)
 	    _portoff[isoutput] = new double[_e->nports(isoutput) + 1];
 	double tm = 0;
 	for (int p = 0; p < _e->nports(isoutput); ++p) {
 	    if (!dps->uniform_style && p)
-		dps = dcs->port_style(this, isoutput, p, 0);
+		dps = dcs->port_style(d, this, isoutput, p, 0);
 	    if (dps->shape == dpshape_triangle)
 		_ports_length[isoutput] += dps->length - 2;
 	    else
@@ -714,16 +715,16 @@ void delt::restyle(dcontext &dcx, bool do_markup)
 void delt::redecorate(dcontext &dcx)
 {
     ddecor::free_list(_decor);
-    dcss_set *dcs = dcx.d->css_set();
+    dcss_set *dcs = dcx.d->ccss();
 
     String s = _des->decorations;
     while (String dname = cp_pop_spacevec(s)) {
 	dname = "&" + dname;
-	if (String dtype = dcs->vstring("style", dname, this)) {
+	if (String dtype = dcs->vstring("style", dname, dcx.d, this)) {
 	    if (dtype == "fullness")
-		_decor = new dfullness_decor(dname, dcx.d->main(), this, _decor);
+		_decor = new dfullness_decor(dname, dcx.d, this, _decor);
 	    else if (dtype == "activity")
-		_decor = new dactivity_decor(dname, dcx.d->main(), this, _decor);
+		_decor = new dactivity_decor(dname, dcx.d, this, _decor);
 	}
     }
 }
@@ -733,9 +734,9 @@ void delt::layout(dcontext &dcx)
     if (_layout)
 	return;
     _layout = true;
-    _des = dcx.d->css_set()->elt_style(this);
+    _des = dcx.d->ccss()->elt_style(dcx.d, this);
     if (_des->style == destyle_queue)
-	_dqs = dcx.d->css_set()->queue_style(this);
+	_dqs = dcx.d->ccss()->queue_style(dcx.d, this);
     _orientation = _des->orientation;
     if (_des->display == dedisp_none || _e->tunnel()
 	|| (_split_inputs && _des->display != dedisp_vsplit)) {
@@ -770,7 +771,7 @@ void delt::layout(dcontext &dcx)
     xheight = MAX(xheight, _des->min_height);
 
     // analyze port positions
-    layout_ports(dcx.d->css_set());
+    layout_ports(dcx.d);
     double xportlen = MAX(_ports_length[0], _ports_length[1]);
     
     if (_orientation == 0)
@@ -793,31 +794,31 @@ void delt::layout(dcontext &dcx)
 	dcx.d->notify_shadow(_des->shadow_width);
 }
 
-void delt::layout_compound_ports(dcss_set *dcs)
+void delt::layout_compound_ports(wdiagram *d)
 {
     if (_elt.size() > 0 && _elt[0]->_e->name() == "input") {
 	_elt[0]->_x = _x;
 	_elt[0]->_y = _y - 10;
 	_elt[0]->_width = _width;
-	ref_ptr<dport_style> dps = dcs->port_style(this, false, 0, 0);
+	ref_ptr<dport_style> dps = d->ccss()->port_style(d, this, false, 0, 0);
 	_elt[0]->_height = 10 + dps->width - 1;
-	_elt[0]->_des = dcs->elt_style(_elt[0]);
+	_elt[0]->_des = d->ccss()->elt_style(d, _elt[0]);
 	_elt[0]->_displayed = (_des->display == dedisp_open);
 	_elt[0]->_visible = false;
 	_elt[0]->_layout = true;
-	_elt[0]->layout_ports(dcs);
+	_elt[0]->layout_ports(d);
     }
     if (_elt.size() > 1 && _elt[1]->_e->name() == "output") {
 	_elt[1]->_x = _x;
-	ref_ptr<dport_style> dps = dcs->port_style(this, true, 0, 0);
+	ref_ptr<dport_style> dps = d->ccss()->port_style(d, this, true, 0, 0);
 	_elt[1]->_y = _y + _height - dps->width + 1;
 	_elt[1]->_width = _width;
 	_elt[1]->_height = 10;
-	_elt[1]->_des = dcs->elt_style(_elt[1]);
+	_elt[1]->_des = d->ccss()->elt_style(d, _elt[1]);
 	_elt[1]->_displayed = (_des->display == dedisp_open);
 	_elt[1]->_visible = false;
 	_elt[1]->_layout = true;
-	_elt[1]->layout_ports(dcs);
+	_elt[1]->layout_ports(d);
     }
 }
 
@@ -840,7 +841,7 @@ void delt::layout_complete(dcontext &dcx, double dx, double dy)
 	}
 
     if (_e && _parent && _elt.size())
-	layout_compound_ports(dcx.d->css_set());
+	layout_compound_ports(dcx.d);
 
     for (std::vector<dconn *>::iterator ci = _conn.begin();
 	 ci != _conn.end(); ++ci)
@@ -850,7 +851,7 @@ void delt::layout_complete(dcontext &dcx, double dx, double dy)
 
 void delt::layout_main(dcontext &dcx, RouterT *router)
 {
-    _des = dcx.d->css_set()->elt_style(this);
+    _des = dcx.d->ccss()->elt_style(dcx.d, this);
     dcx.d->rects().clear();
     layout_contents(dcx, router);
     layout_complete(dcx, _des->margin[3], _des->margin[0]);
@@ -940,7 +941,7 @@ void delt::remove(rect_search<dwidget> &rects, rectangle &bounds)
 }
 
 void delt::insert(rect_search<dwidget> &rects,
-		  dcss_set *dcs, rectangle &bounds)
+		  wdiagram *d, rectangle &bounds)
 {
     if (!visible())
 	return;
@@ -964,9 +965,9 @@ void delt::insert(rect_search<dwidget> &rects,
 	}
 
     if (_parent && _elt.size()) {
-	layout_compound_ports(dcs);
-	_elt[0]->insert(rects, dcs, bounds);
-	_elt[1]->insert(rects, dcs, bounds);
+	layout_compound_ports(d);
+	_elt[0]->insert(rects, d, bounds);
+	_elt[1]->insert(rects, d, bounds);
     }
 }
 
@@ -1138,14 +1139,14 @@ void delt::draw_ports(dcontext &dcx)
     for (int i = 0; i < _e->ninputs(); i++) {
 	pcpos = ProcessingT::processing_code_next
 	    (pcpos, _processing_code.end(), pcode);
-	dps = dcx.d->css_set()->port_style(this, false, i, pcode);
+	dps = dcx.d->ccss()->port_style(dcx.d, this, false, i, pcode);
 	draw_port(dcx, dps.get(), input_position(i, dps.get()), false);
     }
     pcpos = ProcessingT::processing_code_output(_processing_code.begin(), _processing_code.end(), pcpos);
     for (int i = 0; i < _e->noutputs(); i++) {
 	pcpos = ProcessingT::processing_code_next
 	    (pcpos, _processing_code.end(), pcode);
-	dps = dcx.d->css_set()->port_style(this, true, i, pcode);
+	dps = dcx.d->ccss()->port_style(dcx.d, this, true, i, pcode);
 	draw_port(dcx, dps.get(), output_position(i, dps.get()), true);
     }
 }
@@ -1426,9 +1427,9 @@ void delt::draw(dcontext &dcx)
     if (visible()) {
 	if (_highlight != _drawn_highlight || dcx.generation != _generation) {
 	    ref_ptr<delt_style> old_des = _des;
-	    _des = dcx.d->css_set()->elt_style(this);
+	    _des = dcx.d->ccss()->elt_style(dcx.d, this);
 	    if (_des->style == destyle_queue)
-		_dqs = dcx.d->css_set()->queue_style(this);
+		_dqs = dcx.d->ccss()->queue_style(dcx.d, this);
 	    if (dcx.generation != _generation || old_des->text != _des->text)
 		restyle(dcx, true);
 	    if (old_des->decorations != _des->decorations)
@@ -1523,7 +1524,7 @@ void delt::drag_shift(wdiagram *d, const point &delta)
     remove(d->rects(), bounds);
     _x = _xrect._x + delta.x();
     _y = _xrect._y + delta.y();
-    insert(d->rects(), d->css_set(), bounds);
+    insert(d->rects(), d, bounds);
     d->redraw(bounds);
     for (std::vector<delt *>::iterator ei = _elt.begin();
 	 ei != _elt.end(); ++ei)
@@ -1555,7 +1556,7 @@ void delt::drag_size(wdiagram *d, const point &delta, int direction)
 	_width = _xrect._width + delta.x();
 
     _aligned = false;
-    insert(d->rects(), d->css_set(), bounds);
+    insert(d->rects(), d, bounds);
     d->redraw(bounds);
 }
 
@@ -1577,24 +1578,13 @@ bool delt::drag_canvas_changed(const rectangle &canvas) const
  *
  */
 
-bool delt::expand_handlers(wmain *w)
-{
-    handler_value *hv = w->hvalues().find_force(_flat_name + ".handlers");
-    if (!hv->have_hvalue()) {
-	hv->set_flags(w, hv->flags() | hflag_notify_delt);
-	hv->refresh(w);
-	return true;
-    } else
-	return false;
-}
-
-handler_value *delt::handler_interest(wmain *w, const String &hname,
+handler_value *delt::handler_interest(wdiagram *d, const String &hname,
 				      bool autorefresh,
 				      int autorefresh_period,
 				      bool always)
 {
-    return w->hvalues().find_placeholder
-	(_flat_name + "." + hname, w,
+    return d->main()->hvalues().find_placeholder
+	(_flat_name + "." + hname, d->main(),
 	 hflag_notify_delt | (autorefresh ? hflag_autorefresh : 0)
 	 | (always ? hflag_always_notify_delt : 0),
 	 autorefresh_period);
@@ -1603,6 +1593,15 @@ handler_value *delt::handler_interest(wmain *w, const String &hname,
 void delt::notify_read(wdiagram *d, handler_value *hv)
 {
     ddecor::notify_list(_decor, d->main(), this, hv);
+    if (_handler_style) {
+	ref_ptr<delt_style> old_des = _des;
+	_des = d->ccss()->elt_style(d, this);
+	if (old_des != _des) {
+	    d->redraw(*this);
+	    if (_split && _split->visible())
+		d->redraw(*_split);
+	}
+    }
     if (_handler_markup && parse_markup(d->main())) {
 	d->redraw(*this);
 	if (_split && _split->visible())

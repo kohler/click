@@ -1118,7 +1118,7 @@ Handler::call_read(Element* e, const String& param, bool raw, ErrorHandler* errh
 	errh = ErrorHandler::silent_handler();
     if (param && !(_flags & READ_PARAM))
 	errh->error("read handler '%s' does not take parameters", unparse_name(e).c_str());
-    else if ((_flags & (UNIFORM | OP_READ)) == OP_READ)
+    else if ((_flags & (COMPREHENSIVE | OP_READ)) == OP_READ)
 	return _hook.rw.r(e, _thunk1);
     else if (_flags & OP_READ) {
 	String s(param);
@@ -1149,7 +1149,7 @@ Handler::call_write(const String& value, Element* e, bool raw, ErrorHandler* err
     String value_copy(value);
     if ((_flags & RAW) && !raw)
 	value_copy = cp_unquote(value_copy);
-    if ((_flags & (UNIFORM | OP_WRITE)) == OP_WRITE)
+    if ((_flags & (COMPREHENSIVE | OP_WRITE)) == OP_WRITE)
 	return _hook.rw.w(value_copy, e, _thunk2, errh);
     else if (_flags & OP_WRITE)
 	return _hook.h(OP_WRITE, value_copy, e, this, errh);
@@ -1508,7 +1508,7 @@ Router::add_read_handler(const Element *e, const String &hname,
 			 ReadHandlerHook hook, void *user_data, uint32_t flags)
 {
     Handler to_add = fetch_handler(e, hname);
-    if (to_add._flags & Handler::UNIFORM) {
+    if (to_add._flags & Handler::COMPREHENSIVE) {
 	to_add._hook.rw.w = 0;
 	to_add._thunk2 = 0;
 	to_add._flags &= ~Handler::SPECIAL_FLAGS;
@@ -1545,7 +1545,7 @@ Router::add_write_handler(const Element *e, const String &hname,
 			  WriteHandlerHook hook, void *user_data, uint32_t flags)
 {
     Handler to_add = fetch_handler(e, hname);
-    if (to_add._flags & Handler::UNIFORM) {
+    if (to_add._flags & Handler::COMPREHENSIVE) {
 	to_add._hook.rw.r = 0;
 	to_add._thunk1 = 0;
 	to_add._flags &= ~Handler::SPECIAL_FLAGS;
@@ -1583,7 +1583,7 @@ Router::add_write_handler(const Element *e, const String &hname,
  *
  * Any previous handlers with the same name and element are replaced.
  *
- * The new handler's flags equal @a flags or'ed with Handler::UNIFORM.
+ * The new handler's flags equal @a flags or'ed with Handler::COMPREHENSIVE.
  *
  * @sa add_read_handler(), add_write_handler(), set_handler_flags()
  */
@@ -1595,7 +1595,7 @@ Router::set_handler(const Element *e, const String &hname, uint32_t flags,
     to_add._hook.h = hook;
     to_add._thunk1 = user_data1;
     to_add._thunk2 = user_data2;
-    to_add._flags = flags | Handler::UNIFORM;
+    to_add._flags = flags | Handler::COMPREHENSIVE;
     store_handler(e, to_add);
 }
 

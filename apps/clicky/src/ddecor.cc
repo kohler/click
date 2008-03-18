@@ -30,16 +30,16 @@ void ddecor::notify(wmain *, delt *, handler_value *)
  *
  */
 
-dfullness_decor::dfullness_decor(PermString name, wmain *w, delt *e,
+dfullness_decor::dfullness_decor(PermString name, wdiagram *d, delt *e,
 				 ddecor *next)
     : ddecor(next), _name(name),
-      _dfs(w->ccss()->fullness_style(_name, e)),
+      _dfs(d->ccss()->fullness_style(_name, d, e)),
       _capacity(-1), _hvalue(-1), _drawn(-1)
 {
     if (_dfs->length)
-	e->handler_interest(w, _dfs->length, _dfs->autorefresh > 0, _dfs->autorefresh_period);
+	e->handler_interest(d, _dfs->length, _dfs->autorefresh > 0, _dfs->autorefresh_period);
     if (_dfs->capacity && !cp_double(_dfs->capacity, &_capacity))
-	e->handler_interest(w, _dfs->capacity, _dfs->autorefresh > 1, _dfs->autorefresh_period);
+	e->handler_interest(d, _dfs->capacity, _dfs->autorefresh > 1, _dfs->autorefresh_period);
 }
 
 
@@ -109,14 +109,14 @@ void dfullness_decor::notify(wmain *w, delt *e, handler_value *hv)
 #define ALPHA 0.875
 #define LOG_ALPHA -.13353139262452262314
 
-dactivity_decor::dactivity_decor(PermString name, wmain *w, delt *e,
+dactivity_decor::dactivity_decor(PermString name, wdiagram *d, delt *e,
 				 ddecor *next)
-    : ddecor(next), _name(name), _w(w), _e(e),
-      _das(w->ccss()->activity_style(_name, e)),
+    : ddecor(next), _name(name), _w(d->main()), _e(e),
+      _das(d->ccss()->activity_style(_name, d, e)),
       _drawn(0), _decay_source(0)
 {
     if (_das->handler)
-	e->handler_interest(w, _das->handler, _das->autorefresh > 0, _das->autorefresh_period, true);
+	e->handler_interest(d, _das->handler, _das->autorefresh > 0, _das->autorefresh_period, true);
 }
 
 dactivity_decor::~dactivity_decor()
@@ -182,6 +182,19 @@ double dactivity_decor::clean_samples(double now, bool want_prev)
     return want_prev ? prev_sample : max;
 }
 
+void color_interpolate(double *c, const double *c1, double m, const double *c2)
+{
+    if (c1[3] == 0) {
+	memcpy(c, c2, sizeof(double) * 3);
+	c[3] = c2[3]*m;
+    } else if (c2[3] == 0) {
+	memcpy(c, c1, sizeof(double) * 3);
+	c[3] = c1[3]*(1-m);
+    } else
+	for (int i = 0; i < 4; i++)
+	    c[i] = c1[i]*(1-m) + c2[i]*m;
+}
+
 void dactivity_decor::draw(delt *, double *sides, dcontext &dcx)
 {
     if (!sides)
@@ -210,8 +223,7 @@ void dactivity_decor::draw(delt *, double *sides, dcontext &dcx)
     else {
 	color = colorbuf;
 	double m = (_drawn - _das->colors[p]) / (_das->colors[p+5] - _das->colors[p]);
-	for (int i = 1; i < 5; i++)
-	    color[i-1] = _das->colors[p+i]*(1-m) + _das->colors[p+5+i]*m;
+	color_interpolate(color, &_das->colors[p+1], m, &_das->colors[p+6]);
     }
 
     if (color[3]) {
@@ -244,6 +256,9 @@ void dactivity_decor::notify(wmain *w, delt *e, handler_value *hv)
 	} else {
 	    double prev_value = clean_samples(now, true);
 	    cooked = std::max(new_value - prev_value, 0.);
+	    //static double first; if (!first) first = now;
+	    //if (_e->name() == "c1")
+	    //    fprintf(stderr, "@%g: %g -> %g : %g\n", now-first, prev_value, new_value, cooked);
 	}
 	double range = _das->max_value - _das->min_value;
 	cooked = std::min(std::max(cooked - _das->min_value, 0.) / range, 1.);

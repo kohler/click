@@ -1858,12 +1858,14 @@ read_handlers_handler(Element *e, void *)
 		sa << '.';
 	    if (h->flags() & Handler::EXPENSIVE)
 		sa << '$';
+	    if (h->flags() & Handler::UNCOMMON)
+		sa << 'U';
+	    if (h->flags() & Handler::DEPRECATED)
+		sa << 'D';
 	    if (h->flags() & Handler::BUTTON)
 		sa << 'b';
 	    if (h->flags() & Handler::CHECKBOX)
 		sa << 'c';
-	    if (h->flags() & Handler::DEPRECATED)
-		sa << 'X';
 	    sa << '\n';
 	}
     }

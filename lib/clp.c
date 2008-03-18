@@ -150,7 +150,7 @@ typedef struct {
     unsigned iprefmatch : 1;
     unsigned lmmpos_short : 1;
     unsigned lmmneg_short : 1;
-    uint8_t ilongoff;
+    unsigned char ilongoff;
     int lmmpos;
     int lmmneg;
 } Clp_InternOption;

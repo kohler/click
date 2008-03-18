@@ -144,7 +144,7 @@ class dcss_selector { public:
 
     String unparse() const;
 
-    bool match(const delt *e) const;
+    bool match(wdiagram *d, const delt *e) const;
 
     bool match_port(bool isoutput, int port, int processing) const {
 	if ((_klasses.size() || _name)
@@ -255,8 +255,7 @@ struct dcss_property {
 	else
 	    return 0;
     }
-    inline double vpixel(const dcss_set *dcs, PermString relative_to,
-			 const delt *e) const;
+    double vpixel(wdiagram *d, PermString relative_to, const delt *e) const;
     double vrelative() const {
 	return (change_type(t_relative) ? _v.d : 0);
     }
@@ -321,15 +320,14 @@ struct dcss_propmatch {
 	assert(name == n);
 	return property->vpixel(relative_to);
     }
-    double vpixel(const char *n, const dcss_set *dcs,
-		  const delt *relative_elt) const {
+    double vpixel(const char *n, wdiagram *d, const delt *relative_elt) const {
 	assert(name == n);
-	return property->vpixel(dcs, name, relative_elt->parent());
+	return property->vpixel(d, name, relative_elt->parent());
     }
-    double vpixel(const char *n, const dcss_set *dcs, PermString relative_name,
+    double vpixel(const char *n, wdiagram *d, PermString relative_name,
 		  const delt *relative_elt) const {
 	assert(name == n);
-	return property->vpixel(dcs, relative_name, relative_elt);
+	return property->vpixel(d, relative_name, relative_elt);
     }
     double vrelative(const char *n) const {
 	assert(name == n);
@@ -370,8 +368,8 @@ class dcss { public:
     bool has_context() const {
 	return _context.size() > 0;
     }
-    bool match_context(const delt *e) const {
-	return !_context.size() || hard_match_context(e);
+    bool match_context(wdiagram *d, const delt *e) const {
+	return !_context.size() || hard_match_context(d, e);
     }
 
     const char *parse(const String &str, const String &media, const char *s);
@@ -399,7 +397,7 @@ class dcss { public:
     const dcss_property *find(PermString name) const;
     inline dcss_property *find(PermString name);
     void add(PermString name, const String &value);
-    bool hard_match_context(const delt *e) const;
+    bool hard_match_context(wdiagram *d, const delt *e) const;
     void parse_border(const String &str, const char *s, const char *send, const String &prefix);
     void parse_shadow(const String &str, const char *s, const char *send);
     void parse_background(const String &str, const char *s, const char *send);
@@ -428,15 +426,15 @@ class dcss_set { public:
     void parse(const String &text);
     void add(dcss *s);
 
-    ref_ptr<delt_style> elt_style(const delt *e);
-    inline ref_ptr<dport_style> port_style(const delt *e, bool isoutput, int port, int processing);
-    ref_ptr<dqueue_style> queue_style(const delt *e);
-    ref_ptr<dhandler_style> handler_style(wmain *w, const handler_value *hv);
-    ref_ptr<dfullness_style> fullness_style(PermString decor, const delt *e);
-    ref_ptr<dactivity_style> activity_style(PermString decor, const delt *e);
+    ref_ptr<delt_style> elt_style(wdiagram *d, const delt *e);
+    inline ref_ptr<dport_style> port_style(wdiagram *d, const delt *e, bool isoutput, int port, int processing);
+    ref_ptr<dqueue_style> queue_style(wdiagram *d, const delt *e);
+    ref_ptr<dhandler_style> handler_style(wdiagram *d, const handler_value *hv);
+    ref_ptr<dfullness_style> fullness_style(PermString decor, wdiagram *d, const delt *e);
+    ref_ptr<dactivity_style> activity_style(PermString decor, wdiagram *d, const delt *e);
 
-    double vpixel(PermString name, const delt *e) const;
-    String vstring(PermString name, PermString decor, const delt *e) const;
+    double vpixel(PermString name, wdiagram *d, const delt *e) const;
+    String vstring(PermString name, PermString decor, wdiagram *d, const delt *e) const;
 
     static dcss_set *default_set(const String &media);
     
@@ -465,16 +463,18 @@ class dcss_set { public:
     HashMap<String, ref_ptr<dactivity_style> > _atable;
 
     void mark_change();
-    void collect_port_styles(const delt *e, bool isoutput, int port,
-			     int processing, Vector<dcss *> &result,
+    void collect_port_styles(wdiagram *d, const delt *e, bool isoutput,
+			     int port, int processing, Vector<dcss *> &result,
 			     int &generic);
-    void collect_elt_styles(const delt *e, Vector<dcss *> &result,
+    void collect_elt_styles(wdiagram *d, const delt *e, Vector<dcss *> &result,
 			    bool &generic) const;
-    void collect_handler_styles(const handler_value *hv, const delt *e,
-				Vector<dcss *> &result, bool &generic) const;
-    void collect_decor_styles(PermString decor, const delt *e,
+    void collect_handler_styles(wdiagram *d, const handler_value *hv,
+				const delt *e, Vector<dcss *> &result,
+				bool &generic) const;
+    void collect_decor_styles(PermString decor, wdiagram *d, const delt *e,
 			      Vector<dcss *> &result, bool &generic) const;
-    ref_ptr<dport_style> hard_port_style(const delt *e, bool isoutput, int port,
+    ref_ptr<dport_style> hard_port_style(wdiagram *d, const delt *e,
+					 bool isoutput, int port,
 					 int processing);
 
 };
@@ -489,30 +489,19 @@ inline dcss_property *dcss::find(PermString name)
     return const_cast<dcss_property *>(ds->find(name));
 }
 
-inline ref_ptr<dport_style> dcss_set::port_style(const delt *e, bool isoutput,
+inline ref_ptr<dport_style> dcss_set::port_style(wdiagram *d, const delt *e,
+						 bool isoutput,
 						 int port, int processing)
 {
     if (_all_generic_ports && _generic_port_styles[7*isoutput + processing])
 	return _generic_port_styles[7*isoutput + processing];
-    return hard_port_style(e, isoutput, port, processing);
+    return hard_port_style(d, e, isoutput, port, processing);
 }
 
 inline bool operator<(const dcss &a, const dcss &b)
 {
     int as = a.selector().specificity(), bs = b.selector().specificity();
     return (as < bs || (as == bs && a.selector_index() < b.selector_index()));
-}
-
-inline double dcss_property::vpixel(const dcss_set *dcs, PermString relative_to,
-				    const delt *e) const
-{
-    change_relative_pixel();
-    if (_t == t_pixel)
-	return _v.d;
-    else if (_t == t_relative)
-	return _v.d * dcs->vpixel(relative_to, e);
-    else
-	return 0;
 }
 
 }

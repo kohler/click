@@ -22,19 +22,22 @@ class Handler { public:
 	OP_READ = 0x0001,	///< @brief Handler supports read operations.
 	OP_WRITE = 0x0002,	///< @brief Handler supports write operations.
 	READ_PARAM = 0x0004,	///< @brief Read handler takes parameters.
-	UNIFORM = 0x0008,	///< @brief Use uniform hook for all operations.
-	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | UNIFORM,
+	COMPREHENSIVE = 0x0008,	///< @brief Use comprehensive hook for all
+				///  operations.
+	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | COMPREHENSIVE,
 				///< @brief These flags may not be set by
 				///  Router::set_handler_flags().
 	EXCLUSIVE = 0x0010,	///< @brief Handler is exclusive.
 	RAW = 0x0020,		///< @brief Don't add newline to results.
-	CALM = 0x0040,		///< @brief Read handler value changes rarely.
-	EXPENSIVE = 0x0080,	///< @brief Read handler is expensive to call.
-	BUTTON = 0x0100,	///< @brief Write handler ignores data.
-	CHECKBOX = 0x0200,	///< @brief Read/write handler is boolean and
-				///  should be rendered as a checkbox.
-	DEPRECATED = 0x0400,	///< @brief Handler is deprecated and available
+	DEPRECATED = 0x0040,	///< @brief Handler is deprecated and available
 				///  only for compatibility.
+	UNCOMMON = 0x0080,	///< @brief User interfaces should not display
+				///  handler by default.
+	CALM = 0x0100,		///< @brief Read handler value changes rarely.
+	EXPENSIVE = 0x0200,	///< @brief Read handler is expensive to call.
+	BUTTON = 0x0400,	///< @brief Write handler ignores data.
+	CHECKBOX = 0x0800,	///< @brief Read/write handler is boolean and
+				///  should be rendered as a checkbox.
 	DRIVER_FLAG_0 = 0x1000,	///< @brief Handler flag available for drivers.
 	DRIVER_FLAG_1 = 0x2000,	///< @brief Handler flag available for drivers.
 	DRIVER_FLAG_2 = 0x4000,	///< @brief Handler flag available for drivers.

@@ -635,7 +635,7 @@ gboolean wdiagram::on_event(GdkEvent *event)
 	    rectangle bounds = *e;
 	    e->remove(_rects, bounds);
 	    e->set_orientation(3 - e->orientation());
-	    e->insert(_rects, _css_set, bounds);
+	    e->insert(_rects, this, bounds);
 	    redraw(bounds);
 	}
     }

@@ -195,7 +195,10 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	      case 'c':
 		flags |= hflag_checkbox;
 		break;
-	      case 'X':
+	      case 'U':
+		flags |= hflag_uncommon;
+		break;
+	      case 'D':
 		flags |= hflag_deprecated;
 		break;
 	    }
@@ -215,7 +218,7 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	    flags |= hflag_collapse | hflag_visible;
 	else if (name == "handlers")
 	    flags |= hflag_collapse;
-	else if (!(flags & hflag_deprecated))
+	else if (!(flags & (hflag_uncommon | hflag_deprecated)))
 	    flags |= hflag_visible;
 	if (handler_value::default_refreshable(flags))
 	    flags |= hflag_refresh;
@@ -229,7 +232,7 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	bool was_empty = v->empty();
 	v->set_driver_flags(_w, flags);
 	if (was_empty) {	// first load, read style
-	    ref_ptr<dhandler_style> dhs = _w->ccss()->handler_style(_w, v);
+	    ref_ptr<dhandler_style> dhs = _w->ccss()->handler_style(_w->diagram(), v);
 	    if (dhs) {
 		v->set_flags(_w, (v->flags() & ~dhs->flags_mask) | dhs->flags);
 		if (dhs->autorefresh_period > 0

@@ -121,9 +121,10 @@ class delt : public dwidget { public:
     delt(delt *parent, int z_index)
 	: dwidget(dw_elt, z_index), _e(0), _decor(0), _parent(parent),
 	  _split(0), _visible(false), _displayed(false), _layout(false),
-	  _aligned(true), _handler_markup(false), _markup_changed(false),
-	  _driver(false), _split_inputs(false), _orientation(0), _highlight(0),
-	  _drawn_highlight(0), _depth(parent ? parent->_depth + 1 : 0),
+	  _aligned(true), _driver(false), _split_inputs(false),
+	  _handler_style(false), _handler_markup(false), _markup_changed(false),
+	  _orientation(0), _highlight(0), _drawn_highlight(0),
+	  _depth(parent ? parent->_depth + 1 : 0),
 	  _contents_width(0), _contents_height(0) {
 	_portoff[0] = _portoff[1] = 0;
 	_width = _height = 0;
@@ -152,6 +153,9 @@ class delt : public dwidget { public:
     }
     delt *visible_split() const {
 	return _split && _split->visible() ? _split : 0;
+    }
+    void set_handler_style() const {
+	_handler_style = true;
     }
 
     bool root() const {
@@ -222,8 +226,7 @@ class delt : public dwidget { public:
     void layout_recompute_bounds();
 
     void remove(rect_search<dwidget> &rects, rectangle &bounds);
-    void insert(rect_search<dwidget> &rects,
-		dcss_set *dcs, rectangle &bounds);
+    void insert(rect_search<dwidget> &rects, wdiagram *d, rectangle &bounds);
 
     // dragging
     enum { drag_threshold = 8 };// amount after which recalculate layout
@@ -238,8 +241,7 @@ class delt : public dwidget { public:
     void draw(dcontext &dx);
 
     // handlers
-    bool expand_handlers(wmain *w);
-    handler_value *handler_interest(wmain *w, const String &hname,
+    handler_value *handler_interest(wdiagram *d, const String &hname,
 				    bool autorefresh = false, int autorefresh_period = 0, bool always = false);
     
     void prepare_router(wdiagram *d, RouterT *router, ProcessingT *processing,
@@ -267,12 +269,13 @@ class delt : public dwidget { public:
 
     bool _visible;
     bool _displayed;
-    bool _layout;
-    bool _aligned;
+    bool _layout : 1;
+    bool _aligned : 1;
+    bool _driver : 1;
+    bool _split_inputs;
+    mutable bool _handler_style;
     bool _handler_markup;
     bool _markup_changed;
-    bool _driver;
-    bool _split_inputs;
     int _orientation;
     uint8_t _highlight;
     uint8_t _drawn_highlight;
@@ -297,17 +300,17 @@ class delt : public dwidget { public:
 
     void layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc);
     void position_contents_scc(RouterT *);
-    void position_contents_dot(RouterT *, dcss_set *dcs, ErrorHandler *);
+    void position_contents_dot(RouterT *, wdiagram *d, ErrorHandler *);
     void position_contents_first_heuristic(RouterT *r);
 
     void layout_contents(dcontext &dcx, RouterT *router);
-    void layout_ports(dcss_set *dcs);
+    void layout_ports(wdiagram *d);
     void layout(dcontext &dcx);
     bool parse_markup(wmain *w);
     void restyle(dcontext &dcx, bool do_markup = true);
     void redecorate(dcontext &dcx);
     void layout_complete(dcontext &dcx, double dx, double dy);
-    void layout_compound_ports(dcss_set *dcs);
+    void layout_compound_ports(wdiagram *d);
     void union_bounds(rectangle &r, bool self) const;
 
     inline double port_position(bool isoutput, int port,

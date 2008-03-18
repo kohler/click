@@ -50,7 +50,7 @@ class ddecor { public:
 
 class dfullness_decor : public ddecor { public:
 
-    dfullness_decor(PermString name, wmain *w, delt *e, ddecor *next);
+    dfullness_decor(PermString name, wdiagram *d, delt *e, ddecor *next);
 
     void draw(delt *e, double *sides, dcontext &dcx);
     void notify(wmain *w, delt *e, handler_value *hv);
@@ -68,7 +68,7 @@ class dfullness_decor : public ddecor { public:
 
 class dactivity_decor : public ddecor { public:
 
-    dactivity_decor(PermString name, wmain *w, delt *e, ddecor *next);
+    dactivity_decor(PermString name, wdiagram *d, delt *e, ddecor *next);
     ~dactivity_decor();
 
     void draw(delt *e, double *sides, dcontext &dcx);
