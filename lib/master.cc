@@ -58,6 +58,11 @@ Master::Master(int nthreads)
 #endif
     _timer_stride = _max_timer_stride;
     _timer_count = 0;
+#if CLICK_LINUXMODULE
+    _timer_check_reports = 5;
+#else
+    _timer_check_reports = 0;
+#endif
 
 #if CLICK_USERLEVEL
     // select information
@@ -410,9 +415,9 @@ Master::timer_reheapify_from(int pos, Timer* t, bool will_delete)
     // do not schedule timers for too far in the past
     if (!will_delete
 	&& t->_expiry.sec() + Timer::BEHIND_SEC < _timer_check.sec()) {
-	if (_timer_check_reports < 5) {
-	    ++_timer_check_reports;
-	    click_chatter("task %p outdated expiry %{timestamp} updated to %{timestamp}", t, &t->_expiry, &_timer_check, &t->_expiry);
+	if (_timer_check_reports > 0) {
+	    --_timer_check_reports;
+	    click_chatter("timer %p outdated expiry %{timestamp} updated to %{timestamp}", t, &t->_expiry, &_timer_check, &t->_expiry);
 	}
 	t->_expiry = _timer_check;
     }
