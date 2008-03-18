@@ -56,7 +56,7 @@ AggregateIP::configure(Vector<String> &conf, ErrorHandler *errh)
     if ((_f.bit_offset() / 32) != (right / 32))
 	return errh->error("field specification does not fit within a single word");
     if (_f.bit_length() > 32)
-	return errh->error("too many aggregates: field length too large, max 32");
+	return errh->error("field length too large, max 32");
     else if (_f.bit_length() == 32 && _incremental)
 	return errh->error("'INCREMENTAL' is incompatible with field length 32");
     if (_f.bit_length() == 32)
