@@ -54,35 +54,35 @@ struct dport_style : public enable_ref_ptr {
     bool uniform_style;
 };
 
+struct delt_size_style : public enable_ref_ptr {
+    double border_width;
+    double padding[4];
+    double margin[4];
+    double orientation_padding;
+    double ports_padding;
+    double min_width;
+    double min_height;
+    double height_step;
+};
+
 struct delt_style : public enable_ref_ptr {
     double color[4];
     double background_color[4];
     int border_style;
-    double border_width;
     double border_color[4];
     int shadow_style;
     double shadow_width;
     double shadow_color[4];
-    double padding[4];
-    double margin[4];
-    double orientation_padding;
-    double min_width;
-    double min_height;
-    double height_step;
-    double ports_padding;
     bool orientation;
+    double queue_stripe_color[4];
+    int queue_stripe_style;
+    double queue_stripe_width;
+    double queue_stripe_spacing;
     int style;
     String text;
     int display;
     String decorations;
     String font;
-};
-
-struct dqueue_style : public enable_ref_ptr {
-    double queue_stripe_color[4];
-    int queue_stripe_style;
-    double queue_stripe_width;
-    double queue_stripe_spacing;
 };
 
 struct dhandler_style : public enable_ref_ptr {
@@ -123,6 +123,12 @@ enum {
     dhlt_rect_click = 3
 };
 
+enum {
+    dsense_highlight = 1,
+    dsense_handler = 2,
+    dsense_always = 4
+};
+
 class dcss_selector { public:
 
     dcss_selector()
@@ -144,14 +150,9 @@ class dcss_selector { public:
 
     String unparse() const;
 
-    bool match(wdiagram *d, const delt *e) const;
+    bool match(wdiagram *d, const delt *e, int *sensitivity = 0) const;
 
-    bool match_port(bool isoutput, int port, int processing) const {
-	if ((_klasses.size() || _name)
-	    && !klasses_match_port(isoutput, port, processing))
-	    return false;
-	return true;
-    }
+    bool match_port(bool isoutput, int port, int processing) const;
 
     bool match(const handler_value *hv) const;
 
@@ -193,8 +194,6 @@ class dcss_selector { public:
     char _highlight;
     char _highlight_match;
 
-    bool klasses_match(const Vector<String> &klasses) const;
-    bool klasses_match_port(bool isoutput, int port, int processing) const;
     bool type_glob_match(PermString decor) const;
     
 };
@@ -368,8 +367,11 @@ class dcss { public:
     bool has_context() const {
 	return _context.size() > 0;
     }
-    bool match_context(wdiagram *d, const delt *e) const {
-	return !_context.size() || hard_match_context(d, e);
+    bool match_context(wdiagram *d, const delt *e, int *sensitivity = 0) const {
+	return !_context.size() || hard_match_context(d, e, sensitivity);
+    }
+    unsigned pflags() const {
+	return _pflags;
     }
 
     const char *parse(const String &str, const String &media, const char *s);
@@ -389,6 +391,7 @@ class dcss { public:
     dcss_selector _selector;
     Vector<dcss_selector> _context;
     unsigned _selector_index;
+    unsigned _pflags;
     mutable Vector<dcss_property> _de;
     mutable bool _sorted;
     dcss *_next;
@@ -397,7 +400,7 @@ class dcss { public:
     const dcss_property *find(PermString name) const;
     inline dcss_property *find(PermString name);
     void add(PermString name, const String &value);
-    bool hard_match_context(wdiagram *d, const delt *e) const;
+    bool hard_match_context(wdiagram *d, const delt *e, int *sensitivity) const;
     void parse_border(const String &str, const char *s, const char *send, const String &prefix);
     void parse_shadow(const String &str, const char *s, const char *send);
     void parse_background(const String &str, const char *s, const char *send);
@@ -426,9 +429,9 @@ class dcss_set { public:
     void parse(const String &text);
     void add(dcss *s);
 
-    ref_ptr<delt_style> elt_style(wdiagram *d, const delt *e);
-    inline ref_ptr<dport_style> port_style(wdiagram *d, const delt *e, bool isoutput, int port, int processing);
-    ref_ptr<dqueue_style> queue_style(wdiagram *d, const delt *e);
+    ref_ptr<delt_style> elt_style(wdiagram *d, const delt *e, int *sensitivity = 0);
+    ref_ptr<delt_size_style> elt_size_style(wdiagram *d, const delt *e, int *sensitivity = 0);
+    ref_ptr<dport_style> port_style(wdiagram *d, const delt *e, bool isoutput, int port, int processing);
     ref_ptr<dhandler_style> handler_style(wdiagram *d, const handler_value *hv);
     ref_ptr<dfullness_style> fullness_style(PermString decor, wdiagram *d, const delt *e);
     ref_ptr<dactivity_style> activity_style(PermString decor, wdiagram *d, const delt *e);
@@ -450,32 +453,25 @@ class dcss_set { public:
     
     bool _frozen;
 
-    ref_ptr<dport_style> _generic_port_styles[14];
-    bool _all_generic_ports;
-
     // XXX cache eviction
+    HashMap<String, ref_ptr<dport_style> > _ptable;
+    HashMap<String, ref_ptr<delt_size_style> > _estable;
     HashMap<String, ref_ptr<delt_style> > _etable;
-    ref_ptr<delt_style> _generic_elt_styles[16];
-
-    HashMap<String, ref_ptr<dqueue_style> > _qtable;
     HashMap<String, ref_ptr<dhandler_style> > _htable;
     HashMap<String, ref_ptr<dfullness_style> > _ftable;
     HashMap<String, ref_ptr<dactivity_style> > _atable;
 
     void mark_change();
+    dcss *ccss_list(const String &str) const;
     void collect_port_styles(wdiagram *d, const delt *e, bool isoutput,
-			     int port, int processing, Vector<dcss *> &result,
-			     int &generic);
-    void collect_elt_styles(wdiagram *d, const delt *e, Vector<dcss *> &result,
-			    bool &generic) const;
+			     int port, int processing, Vector<dcss *> &result);
+    void collect_elt_styles(wdiagram *d, const delt *e, int pflag,
+			    Vector<dcss *> &result, int *sensitivity) const;
     void collect_handler_styles(wdiagram *d, const handler_value *hv,
 				const delt *e, Vector<dcss *> &result,
 				bool &generic) const;
     void collect_decor_styles(PermString decor, wdiagram *d, const delt *e,
 			      Vector<dcss *> &result, bool &generic) const;
-    ref_ptr<dport_style> hard_port_style(wdiagram *d, const delt *e,
-					 bool isoutput, int port,
-					 int processing);
 
 };
 
@@ -487,15 +483,6 @@ inline dcss_property *dcss::find(PermString name)
 {
     const dcss *ds = this;
     return const_cast<dcss_property *>(ds->find(name));
-}
-
-inline ref_ptr<dport_style> dcss_set::port_style(wdiagram *d, const delt *e,
-						 bool isoutput,
-						 int port, int processing)
-{
-    if (_all_generic_ports && _generic_port_styles[7*isoutput + processing])
-	return _generic_port_styles[7*isoutput + processing];
-    return hard_port_style(d, e, isoutput, port, processing);
 }
 
 inline bool operator<(const dcss &a, const dcss &b)

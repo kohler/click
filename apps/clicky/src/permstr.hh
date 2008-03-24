@@ -47,10 +47,10 @@ class PermString { struct Doodad; public:
 
     friend inline bool operator==(PermString a, PermString b);
     friend inline bool operator!=(PermString a, PermString b);
-  
+
     inline Capsule capsule() const;
     inline static PermString decapsule(Capsule c);
-  
+
   private:
   
     struct Doodad {

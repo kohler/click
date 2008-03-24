@@ -48,11 +48,16 @@ static void destroy_autorefresh(gpointer user_data) {
 
 void handler_value::refresh(wmain *w)
 {
-    if (!(_flags & hflag_outstanding)) {
+    if (empty() && handler_name().equals("handlers", 8))
+	_flags |= hflag_r;
+    if (_flags & hflag_outstanding)
+	/* nothing to do */;
+    else if (_flags & (hflag_r | hflag_rparam)) {
 	int read_flags = (_flags & hflag_raw ? 0 : wdriver::dflag_nonraw);
 	_flags |= hflag_outstanding;
 	w->driver()->do_read(_hname, _hparam, read_flags);
-    }
+    } else if (empty())
+	_flags |= hflag_outstanding;
 }
 
 void handler_value::create_autorefresh(wmain *w)
@@ -238,6 +243,11 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 		if (dhs->autorefresh_period > 0
 		    && dhs->autorefresh_period < v->autorefresh_period())
 		    v->set_autorefresh_period(dhs->autorefresh_period);
+	    }
+	    if (v->_flags & hflag_outstanding) {
+		v->_flags &= ~hflag_outstanding;
+		if (flags & hflag_refresh)
+		    v->refresh(_w);
 	    }
 	}
 	if (v->notify_delt())

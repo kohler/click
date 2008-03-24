@@ -630,14 +630,14 @@ gboolean wdiagram::on_event(GdkEvent *event)
 	}
 	
     } else if (event->type == GDK_BUTTON_RELEASE && event->button.button == 3) {
-	delt *e = point_elt(window_to_canvas(event->button.x, event->button.y));
+	/*delt *e = point_elt(window_to_canvas(event->button.x, event->button.y));
 	if (e) {
 	    rectangle bounds = *e;
 	    e->remove(_rects, bounds);
 	    e->set_orientation(3 - e->orientation());
 	    e->insert(_rects, this, bounds);
 	    redraw(bounds);
-	}
+	    }*/
     }
     
     return FALSE;

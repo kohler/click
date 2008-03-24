@@ -125,4 +125,16 @@ template <typename T> class ref_ptr { public:
 
 };
 
+template <typename T, typename U>
+inline bool operator==(const ref_ptr<T> &a, const ref_ptr<U> &b)
+{
+    return a.get() == b.get();
+}
+
+template <typename T, typename U>
+inline bool operator!=(const ref_ptr<T> &a, const ref_ptr<U> &b)
+{
+    return a.get() != b.get();
+}
+
 #endif /* TAMER_FD_HH */

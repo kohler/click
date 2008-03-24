@@ -16,6 +16,7 @@ class delt;
 class dconn;
 class dcss_set;
 class delt_style;
+class delt_size_style;
 class dport_style;
 class dqueue_style;
 class ddecor;
@@ -121,10 +122,12 @@ class delt : public dwidget { public:
     delt(delt *parent, int z_index)
 	: dwidget(dw_elt, z_index), _e(0), _decor(0), _parent(parent),
 	  _split(0), _visible(false), _displayed(false), _layout(false),
-	  _aligned(true), _driver(false), _split_inputs(false),
-	  _handler_style(false), _handler_markup(false), _markup_changed(false),
-	  _orientation(0), _highlight(0), _drawn_highlight(0),
+	  _aligned(true), _split_inputs(false),
+	  _des_sensitivity(0), _dess_sensitivity(0), _dps_sensitivity(0),
+	  _markup_sensitivity(0),
+	  _highlight(0), _drawn_highlight(0),
 	  _depth(parent ? parent->_depth + 1 : 0),
+	  _markup_width(-1024), _markup_height(-1024),
 	  _contents_width(0), _contents_height(0) {
 	_portoff[0] = _portoff[1] = 0;
 	_width = _height = 0;
@@ -135,37 +138,29 @@ class delt : public dwidget { public:
 	return _parent;
     }
     
-    int orientation() const {
-	return _orientation;
-    }
-    bool vertical() const {
-	return side_vertical(_orientation);
-    }
+    int orientation() const;
+    bool vertical() const;
     bool displayed() const {
 	return _displayed;
     }
     bool visible() const {
 	return _visible;
     }
-    void set_orientation(int orientation) {
-	assert(orientation >= side_top && orientation <= side_left);
-	_orientation = orientation;
-    }
     delt *visible_split() const {
 	return _split && _split->visible() ? _split : 0;
     }
-    void set_handler_style() const {
-	_handler_style = true;
-    }
 
     bool root() const {
+	return !_parent;
+    }
+    bool fake() const {
 	return !_e;
     }
     const String &name() const {
-	return _e->name();
+	return (_e ? _e->name() : String::empty_string());
     }
     String type_name() const {
-	return _e->type_name();
+	return (_e ? _e->type_name() : String::empty_string());
     }
     const String &flat_name() const {
 	return _flat_name;
@@ -178,9 +173,6 @@ class delt : public dwidget { public:
     }
     bool primitive() const {
 	return _elt.size() == 0;
-    }
-    bool driver() const {
-	return _driver;
     }
 
     double contents_width() const {
@@ -211,6 +203,8 @@ class delt : public dwidget { public:
 	if (_split)
 	    _split->_highlight &= ~(1 << htype);
     }
+
+    void redraw(wdiagram *d) const;
 
     // creating
     void create(RouterT *router, ProcessingT *processing,
@@ -255,7 +249,7 @@ class delt : public dwidget { public:
     std::vector<delt *> _elt;
     std::vector<dconn *> _conn;
     ref_ptr<delt_style> _des;
-    ref_ptr<dqueue_style> _dqs;
+    ref_ptr<delt_size_style> _dess;
     ddecor *_decor;
     unsigned _generation;
     double *_portoff[2];
@@ -271,12 +265,11 @@ class delt : public dwidget { public:
     bool _displayed;
     bool _layout : 1;
     bool _aligned : 1;
-    bool _driver : 1;
     bool _split_inputs;
-    mutable bool _handler_style;
-    bool _handler_markup;
-    bool _markup_changed;
-    int _orientation;
+    unsigned _des_sensitivity : 2;
+    unsigned _dess_sensitivity : 2;
+    unsigned _dps_sensitivity : 2;
+    unsigned _markup_sensitivity : 2;
     uint8_t _highlight;
     uint8_t _drawn_highlight;
     uint16_t _depth;
@@ -303,11 +296,12 @@ class delt : public dwidget { public:
     void position_contents_dot(RouterT *, wdiagram *d, ErrorHandler *);
     void position_contents_first_heuristic(RouterT *r);
 
+    bool reccss(wdiagram *d, int change);
     void layout_contents(dcontext &dcx, RouterT *router);
     void layout_ports(wdiagram *d);
     void layout(dcontext &dcx);
-    bool parse_markup(wmain *w);
-    void restyle(dcontext &dcx, bool do_markup = true);
+    void parse_markup(wdiagram *d);
+    void dimension_markup(dcontext &dcx);
     void redecorate(dcontext &dcx);
     void layout_complete(dcontext &dcx, double dx, double dy);
     void layout_compound_ports(wdiagram *d);

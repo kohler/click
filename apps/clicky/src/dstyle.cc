@@ -51,32 +51,32 @@ static const colordef colordefs[] = {
 
 const double white_color[4] = { 1, 1, 1, 1 };
 
-const char default_css[] = "~port~.input {\n\
-    shape: triangle;\n\
-    length: 11px;\n\
-    width: 7px;\n\
-    margin: 100%;\n\
+const char default_css[] = "port.input {\n\
+    port-shape: triangle;\n\
+    port-length: 11px;\n\
+    port-width: 7px;\n\
+    port-margin: 100%;\n\
 }\n\
-~port~.output {\n\
-    shape: rectangle;\n\
-    length: 9px;\n\
-    width: 5.5px;\n\
-    margin: 100%;\n\
+port.output {\n\
+    port-shape: rectangle;\n\
+    port-length: 9px;\n\
+    port-width: 5.5px;\n\
+    port-margin: 100%;\n\
 }\n\
-~port~.push, ~port~.push.agnostic {\n\
-    color: black;\n\
+port.push, port.push.agnostic {\n\
+    port-color: black;\n\
 }\n\
-~port~.pull, ~port~.pull.agnostic {\n\
-    color: white;\n\
+port.pull, port.pull.agnostic {\n\
+    port-color: white;\n\
 }\n\
-~port~.agnostic {\n\
-    color: gray;\n\
+port.agnostic {\n\
+    port-color: gray;\n\
 }\n\
-~port~.push, ~port~.pull {\n\
-    border: black 1px solid;\n\
+port.push, port.pull {\n\
+    port-border: black 1px solid;\n\
 }\n\
-~port~.agnostic, ~port~.push.agnostic, ~port~.pull.agnostic {\n\
-    border: black 1px inset;\n\
+port.agnostic, port.push.agnostic, port.pull.agnostic {\n\
+    port-border: black 1px inset;\n\
 }\n\
 * {\n\
     background: rgb(100%, 100%, 87%);\n\
@@ -84,7 +84,7 @@ const char default_css[] = "~port~.input {\n\
     border: 1px solid black;\n\
     orientation-padding: 5.4px;\n\
     padding: 7.2px 12px;\n\
-    margin: 12px;\n\
+    margin: 6px 12px;\n\
     ports-padding: 4.8px;\n\
     shadow: drop rgba(50%, 50%, 45%, 50%) 3px;\n\
     min-height: 30px;\n\
@@ -124,14 +124,14 @@ const char default_css[] = "~port~.input {\n\
     min-height: 49.6px;\n\
     style: queue;\n\
 }\n\
-&fullness {\n\
+fullness {\n\
     style: fullness;\n\
     length: length;\n\
     capacity: capacity;\n\
     color: rgba(0%, 0%, 100%, 20%);\n\
     autorefresh: length 0.1s;\n\
 }\n\
-&activity {\n\
+activity {\n\
     style: activity;\n\
     handler: count;\n\
     decay: 5s;\n\
@@ -140,6 +140,111 @@ const char default_css[] = "~port~.input {\n\
     autorefresh: 1s;\n\
 }";
 
+
+/*****
+ * property definitions
+ */
+
+static PermString::Initializer permstring_initializer;
+static HashMap<PermString, int> property_map;
+
+static dcss_propmatch port_pm[] = {
+    { "port-shape", 0 },
+    { "port-length", 0 },
+    { "port-width", 0 },
+    { "port-color", 0 },
+    { "port-border-style", 0 },
+    { "port-border-width", 0 },
+    { "port-border-color", 0 },
+    { "port-margin-top", 0 },
+    { "port-margin-right", 0 },
+    { "port-margin-bottom", 0 },
+    { "port-margin-left", 0 }
+};
+
+static dcss_propmatch elt_pm[] = {
+    { "color", 0 },
+    { "background-color", 0 },
+    { "border-style", 0 },
+    { "border-color", 0 },
+    { "shadow-style", 0 },
+    { "shadow-width", 0 },
+    { "shadow-color", 0 },
+    { "orientation", 0 },
+    { "style", 0 },
+    { "text", 0 },
+    { "display", 0 },
+    { "font", 0 },
+    { "decorations", 0 },
+    { "queue-stripe-style", 0 },
+    { "queue-stripe-width", 0 },
+    { "queue-stripe-color", 0 },
+    { "queue-stripe-spacing", 0 }
+};
+
+static dcss_propmatch elt_size_pm[] = {
+    { "border-width", 0 },
+    { "padding-top", 0 },
+    { "padding-right", 0 },
+    { "padding-bottom", 0 },
+    { "padding-left", 0 },
+    { "orientation-padding", 0 },
+    { "ports-padding", 0 },
+    { "min-width", 0 },
+    { "min-height", 0 },
+    { "height-step", 0 },
+    { "margin-top", 0 },
+    { "margin-right", 0 },
+    { "margin-bottom", 0 },
+    { "margin-left", 0 },
+    { "scale", 0 }
+};
+
+static dcss_propmatch handler_pm[] = {
+    { "autorefresh", 0 },
+    { "autorefresh-period", 0 },
+    { "display", 0 },
+    { "allow-refresh", 0 }
+};
+
+static dcss_propmatch fullness_pm[] = {
+    { "length", 0 },
+    { "capacity", 0 },
+    { "color", 0 },
+    { "autorefresh", 0 },
+    { "autorefresh-period", 0 }    
+};
+
+static dcss_propmatch activity_pm[] = {
+    { "handler", 0 },
+    { "color", 0 },
+    { "autorefresh", 0 },
+    { "autorefresh-period", 0 },
+    { "type", 0 },
+    { "max-value", 0 },
+    { "min-value", 0 },
+    { "decay", 0 }
+};
+
+enum {
+    num_port_pm = sizeof(port_pm) / sizeof(port_pm[0]),
+    pflag_port = 1,
+    
+    num_elt_pm = sizeof(elt_pm) / sizeof(elt_pm[0]),
+    pflag_elt = 2,
+
+    num_elt_size_pm = sizeof(elt_size_pm) / sizeof(elt_size_pm[0]),
+    pflag_elt_size = 4,
+
+    num_handler_pm = sizeof(handler_pm) / sizeof(handler_pm[0]),
+    pflag_handler = 8,
+
+    num_fullness_pm = sizeof(fullness_pm) / sizeof(fullness_pm[0]),
+    pflag_fullness = 16,
+
+    num_activity_pm = sizeof(activity_pm) / sizeof(activity_pm[0]),
+    pflag_activity = 32
+};
 
 
 /*****
@@ -364,33 +469,39 @@ inline bool int_match_string(const char *begin, const char *end, int i)
     }
 }
 
-bool dcss_selector::match(wdiagram *d, const delt *e) const
+bool dcss_selector::match(wdiagram *d, const delt *e, int *sensitivity) const
 {
+    bool answer = true;
+    int senses = 0;
+
     if (e->root())
-	return !_type && !_name && !_klasses.size() && !_highlight_match;
+	return false;
+
     if (_type && _type != e->type_name())
 	if (!_type_glob || !glob_match(e->type_name(), _type))
 	    return false;
+
     if (_name && _name != e->name())
 	if (!_name_glob || !glob_match(e->name(), _name))
 	    return false;
-    if ((e->highlights() & _highlight_match) != _highlight)
-	return false;
+
     const char *s;
     for (const String *k = _klasses.begin(); k != _klasses.end(); ++k)
 	if (k->length() > 3 && (*k)[0] == 'i' && (*k)[1] == 'n'
 	    && (*k)[2] == '=') {
-	    if (!int_match_string(k->begin() + 3, k->end(), e->ninputs()))
+	    if (e->fake()
+		|| !int_match_string(k->begin() + 3, k->end(), e->ninputs()))
 		return false;
 	} else if (k->length() > 4 && (*k)[0] == 'o' && (*k)[1] == 'u'
 		   && (*k)[2] == 't' && (*k)[3] == '=') {
-	    if (!int_match_string(k->begin() + 4, k->end(), e->noutputs()))
+	    if (e->fake()
+		|| !int_match_string(k->begin() + 4, k->end(), e->noutputs()))
 		return false;
 	} else if (k->equals("primitive", 9)) {
-	    if (!e->primitive())
+	    if (e->fake() || !e->primitive())
 		return false;
 	} else if (k->equals("compound", 8)) {
-	    if (e->primitive())
+	    if (e->fake() || e->primitive())
 		return false;
 	} else if (k->equals("anonymous", 9)) {
 	    const String &name = e->name(), &type_name = e->type_name();
@@ -399,29 +510,43 @@ bool dcss_selector::match(wdiagram *d, const delt *e) const
 		|| memcmp(name.begin(), type_name.begin(), type_name.length()))
 		return false;
 	} else if (k->equals("live", 4)) {
-	    if (!e->driver())
+	    if (!d->main()->driver())
 		return false;
 	} else if ((s = find(*k, '=')) != k->end()) {
-	    handler_value *hv = d->main()->hvalues().find(e->flat_name() + "." + k->substring(k->begin(), s));
-	    e->set_handler_style();
-	    if (hv)
-		hv->set_flags(d->main(), hv->flags() | hflag_notify_delt);
-	    if (!hv || !hv->have_hvalue() || hv->hvalue() != k->substring(s + 1, k->end()))
+	    wmain *w = d->main();
+	    if (!w->driver() || !e->flat_name())
 		return false;
-	}
-    return true;
-}
-
-bool dcss_selector::klasses_match(const Vector<String> &klasses) const
-{
-    for (const String *k = _klasses.begin(); k != _klasses.end(); ++k)
-	if (std::find(klasses.begin(), klasses.end(), *k) == klasses.end())
+	    handler_value *hv = w->hvalues().find_placeholder(e->flat_name() + "." + k->substring(k->begin(), s), w, hflag_notify_delt);
+	    if (!hv)
+		return false;
+	    // XXX fix this
+	    if (!hv->have_hvalue()) {
+		hv->refresh(w);
+		answer = false;
+	    } else if (hv->hvalue() != k->substring(s + 1, k->end()))
+		answer = false;
+	    senses |= dsense_handler;
+	} else
+	    // generic class match would go here
 	    return false;
-    return true;
+
+    if (_highlight_match) {
+	senses |= dsense_highlight;
+	if ((e->highlights() & _highlight_match) != _highlight)
+	    answer = false;
+    }
+    
+    if (sensitivity)
+	*sensitivity |= senses;
+    return answer;
 }
 
-bool dcss_selector::klasses_match_port(bool isoutput, int port, int processing) const
+bool dcss_selector::match_port(bool isoutput, int port, int processing) const
 {
+    if (_type && !_type.equals("port", 4))
+	if (!_type_glob || !glob_match(_type, "port"))
+	    return false;
+    
     for (const String *k = _klasses.begin(); k != _klasses.end(); ++k)
 	if (k->equals("input", 5)) {
 	    if (isoutput)
@@ -441,9 +566,11 @@ bool dcss_selector::klasses_match_port(bool isoutput, int port, int processing) 
 		return false;
 	} else
 	    return false;
+    
     if (_name && port >= 0
 	&& !int_match_string(_name.begin(), _name.end(), port))
 	return false;
+    
     return true;
 }
 
@@ -594,7 +721,7 @@ String dcss_selector::unparse() const
  */
 
 const dcss_property dcss_property::null_property("", "");
-const double dcss_property::transparent_color[4] = { 0, 0, 0, 1 };
+const double dcss_property::transparent_color[4] = { 0, 0, 0, 0 };
 
 bool dcss_property::hard_change_type(int t) const
 {
@@ -714,7 +841,7 @@ double dcss_property::vpixel(wdiagram *d, PermString relative_to,
  */
 
 dcss::dcss()
-    : _sorted(false), _next(0)
+    : _pflags(0), _sorted(false), _next(0)
 {
 }
 
@@ -755,18 +882,39 @@ void dcss::add(PermString name, const String &value)
 	*dx = dcss_property(name, value);
     else {
 	_sorted = false;
+	_pflags |= property_map[name];
 	_de.push_back(dcss_property(name, value));
     }
 }
 
-bool dcss::hard_match_context(wdiagram *d, const delt *e) const
+bool dcss::hard_match_context(wdiagram *d, const delt *e, int *sensitivity) const
 {
-    const dcss_selector *sel = _context.end();
-    if (e)
-	for (; sel != _context.begin() && e->parent(); e = e->parent())
-	    if (sel[-1].match(d, e))
-		--sel;
-    return sel == _context.begin();
+    if (!e)
+	return _context.begin() == _context.end();
+
+    int sense = 0;
+    const dcss_selector *sel_precise = _context.end();
+    const dcss_selector *sel_approx = _context.end();
+
+    while (!e->root() && sel_approx != _context.begin()) {
+	if (sel_precise != sel_approx && sel_precise != _context.begin()
+	    && sel_precise[-1].match(d, e, 0))
+	    --sel_precise;
+
+	int ts = 0;
+	bool m = sel_approx[-1].match(d, e, &ts);
+	if (m && sel_precise == sel_approx)
+	    --sel_precise;
+	if (m || ts)
+	    --sel_approx;
+	sense |= ts;
+
+	e = e->parent();
+    }
+
+    if (sel_approx == _context.begin() && sensitivity)
+	*sensitivity |= sense;
+    return sel_precise == _context.begin();
 }
 
 const char *dcss::parse(const String &str, const String &media, const char *s)
@@ -844,6 +992,8 @@ const char *dcss::parse(const String &str, const String &media, const char *s)
 	    /* do nothing */;
 	else if (n + 6 == n_end && memcmp(n, "border", 6) == 0)
 	    parse_border(str, v, v_ew0, "border");
+	else if (n + 11 == n_end && memcmp(n, "port-border", 11) == 0)
+	    parse_border(str, v, v_ew0, "port-border");
 	else if (n + 12 == n_end && memcmp(n, "queue-stripe", 12) == 0)
 	    parse_border(str, v, v_ew0, "queue-stripe");
 	else if (n + 6 == n_end && memcmp(n, "shadow", 6) == 0)
@@ -852,6 +1002,8 @@ const char *dcss::parse(const String &str, const String &media, const char *s)
 	    parse_background(str, v, v_ew0);
 	else if (n + 6 == n_end && memcmp(n, "margin", 6) == 0)
 	    parse_box(str, v, v_ew0, "margin");
+	else if (n + 11 == n_end && memcmp(n, "port-margin", 11) == 0)
+	    parse_box(str, v, v_ew0, "port-margin");
 	else if (n + 7 == n_end && memcmp(n, "padding", 7) == 0)
 	    parse_box(str, v, v_ew0, "padding");
 	else
@@ -919,12 +1071,12 @@ void dcss::parse_shadow(const String &str, const char *s, const char *send)
 	if ((n + 4 == s && memcmp(n, "none", 4) == 0)
 	    || (n + 4 == s && memcmp(n, "drop", 4) == 0)
 	    || (n + 4 == s && memcmp(n, "halo", 4) == 0))
-	    add(String::stable_string("shadow-style"), str.substring(n, s));
+	    add("shadow-style", str.substring(n, s));
 	else if (n < s && (isdigit((unsigned char) *n) || *n == '+' || *n == '.')
 		 && cp_pixel(str.substring(n, s), &d))
-	    add(String::stable_string("shadow-width"), str.substring(n, s));
+	    add("shadow-width", str.substring(n, s));
 	else if (cp_color(str.substring(n, s), &d, &d, &d, &d))
-	    add(String::stable_string("shadow-color"), str.substring(n, s));
+	    add("shadow-color", str.substring(n, s));
     }
 }
 
@@ -946,7 +1098,7 @@ void dcss::parse_background(const String &str, const char *s, const char *send)
 		++s;
 
 	if (cp_color(str.substring(n, s), &d, &d, &d, &d))
-	    add(String::stable_string("background-color"), str.substring(n, s));
+	    add("background-color", str.substring(n, s));
     }
 }
 
@@ -1065,18 +1217,32 @@ void dcss::assign_all(dcss_propmatch *props, dcss_propmatch **pp, int n,
 
 dcss_set::dcss_set(const String &text, const String &media)
     : _text(), _media(media), _media_next(0), _below(0),
-      _selector_index(0), _frozen(false),
-      _all_generic_ports(true)
+      _selector_index(0), _frozen(false)
 {
     _s.push_back(0);
     _s.push_back(0);
+
+    if (!property_map.size()) {
+	for (const dcss_propmatch *pm = port_pm; pm != port_pm + num_port_pm; ++pm)
+	    property_map.find_force(pm->name) |= pflag_port;
+	for (const dcss_propmatch *pm = elt_pm; pm != elt_pm + num_elt_pm; ++pm)
+	    property_map.find_force(pm->name) |= pflag_elt;
+	for (const dcss_propmatch *pm = elt_size_pm; pm != elt_size_pm + num_elt_size_pm; ++pm)
+	    property_map.find_force(pm->name) |= pflag_elt_size;
+	for (const dcss_propmatch *pm = handler_pm; pm != handler_pm + num_handler_pm; ++pm)
+	    property_map.find_force(pm->name) |= pflag_handler;
+	for (const dcss_propmatch *pm = fullness_pm; pm != fullness_pm + num_fullness_pm; ++pm)
+	    property_map.find_force(pm->name) |= pflag_fullness;
+	for (const dcss_propmatch *pm = activity_pm; pm != activity_pm + num_activity_pm; ++pm)
+	    property_map.find_force(pm->name) |= pflag_activity;
+    }
+    
     parse(text);
 }
 
 dcss_set::dcss_set(dcss_set *below)
     : _text(), _media(below->media()), _media_next(0), _below(below),
-      _selector_index(below->_selector_index + 100000), _frozen(false),
-      _all_generic_ports(below->_all_generic_ports)
+      _selector_index(below->_selector_index + 100000), _frozen(false)
 {
     _s.push_back(0);
     _s.push_back(0);
@@ -1101,10 +1267,6 @@ dcss_set *dcss_set::remedia(const String &m)
 void dcss_set::mark_change()
 {
     if (_frozen) {
-	for (int i = 0; i < 14; ++i)
-	    _generic_port_styles[i] = ref_ptr<dport_style>();
-	for (int i = 0; i < 16; ++i)
-	    _generic_elt_styles[i] = ref_ptr<delt_style>();
 	_etable.clear();
 	_frozen = false;
     }
@@ -1201,8 +1363,6 @@ void dcss_set::add(dcss *s)
     if (!s->type() || s->type()[0] == '*' || s->type()[0] == '?'
 	|| s->type()[0] == '[' || s->type()[0] == '\\')
 	si = 0;
-    else if (s->type().equals("~port~", 6))
-	si = 1;
     else
 	for (si = 2; si < _s.size(); ++si)
 	    if (_s[si]->type()[0] == s->type()[0])
@@ -1214,8 +1374,6 @@ void dcss_set::add(dcss *s)
 
     if (_frozen)
 	mark_change();
-    if (si == 1 && (!s->selector().generic_port() || s->has_context()))
-	_all_generic_ports = false;
 }
 
 dcss_set *dcss_set::default_set(const String &media)
@@ -1227,88 +1385,76 @@ dcss_set *dcss_set::default_set(const String &media)
 }
 
 
-static PermString::Initializer initializer;
-
-static dcss_propmatch port_pm[] = {
-    { "shape", 0 },
-    { "length", 0 },
-    { "width", 0 },
-    { "color", 0 },
-    { "border-style", 0 },
-    { "border-width", 0 },
-    { "border-color", 0 },
-    { "margin-top", 0 },
-    { "margin-right", 0 },
-    { "margin-bottom", 0 },
-    { "margin-left", 0 }
-};
-
-enum {
-    num_port_pm = sizeof(port_pm) / sizeof(port_pm[0])
-};
+/*****
+ *
+ */
 
 static dcss_propmatch *port_pmp[num_port_pm];
 
-void dcss_set::collect_port_styles(wdiagram *d, const delt *e, bool isoutput,
-				   int port, int processing,
-				   Vector<dcss *> &result, int &generic)
+dcss *dcss_set::ccss_list(const String &str) const
 {
-    for (dcss *s = _s[1]; s; s = s->_next) {
-	if (!s->match_context(d, e))
-	    continue;
-	if (s->selector().match_port(isoutput, port, processing)) {
-	    if (!s->selector().generic_port())
-		generic = 0;
-	    else if (s->has_context() && generic >= 1)
-		generic = 1;
-	    result.push_back(s);
-	} else if (!s->selector().generic_port() && generic >= 2
-		   && s->selector().match_port(isoutput, -1, processing))
-	    generic = 1;
-    }
-    if (_below)
-	_below->collect_port_styles(d, e, isoutput, port, processing,
-				    result, generic);
+    if (str)
+	for (dcss * const *sp = _s.begin() + 2; sp != _s.end(); ++sp)
+	    if ((*sp)->type()[0] == str[0])
+		return *sp;
+    return 0;
 }
 
-ref_ptr<dport_style> dcss_set::hard_port_style(wdiagram *d, const delt *e,
-					       bool isoutput,
-					       int port, int processing)
+void dcss_set::collect_port_styles(wdiagram *d, const delt *e, bool isoutput,
+				   int port, int processing,
+				   Vector<dcss *> &result)
+{
+    assert(!e->root());
+    for (dcss *s = ccss_list("port"); s; s = s->_next)
+	if ((s->pflags() & pflag_port)
+	    && s->selector().match_port(isoutput, port, processing)
+	    && s->match_context(d, e))
+	    result.push_back(s);
+    for (dcss *s = _s[0]; s; s = s->_next)
+	if ((s->pflags() & pflag_port)
+	    && s->selector().match_port(isoutput, port, processing)
+	    && s->match_context(d, e))
+	    result.push_back(s);
+    if (_below)
+	_below->collect_port_styles(d, e, isoutput, port, processing, result);
+}
+
+ref_ptr<dport_style> dcss_set::port_style(wdiagram *d, const delt *e,
+					  bool isoutput, int port, int processing)
 {
     Vector<dcss *> sv;
-    int generic = 2;
-    collect_port_styles(d, e, isoutput, port, processing, sv, generic);
-
-    if (generic >= 2 && _generic_port_styles[7*isoutput + processing])
-	return _generic_port_styles[7*isoutput + processing];
-
-    dport_style *sty = new dport_style;
+    collect_port_styles(d, e, isoutput, port, processing, sv);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
-    dcss::assign_all(port_pm, port_pmp, num_port_pm, sv.begin(), sv.end());
-    
-    String s = port_pm[0].vstring("shape");
-    sty->shape = (s.equals("triangle", 8) ? dpshape_triangle : dpshape_rectangle);
-    sty->length = port_pm[1].vpixel("length");
-    sty->width = port_pm[2].vpixel("width");
-    port_pm[3].vcolor(sty->color, "color");
-    sty->border_style = port_pm[4].vborder_style("border-style");
-    sty->border_width = port_pm[5].vpixel("border-width");
-    port_pm[6].vcolor(sty->border_color, "border-color");
-    if (sty->border_color[3] == 0 || sty->border_width <= 0)
-	sty->border_style = dborder_none;
-    sty->margin[0] = port_pm[7].vrelative("margin-top");
-    sty->margin[1] = port_pm[8].vrelative("margin-right");
-    sty->margin[2] = port_pm[9].vrelative("margin-bottom");
-    sty->margin[3] = port_pm[10].vrelative("margin-left");
-    sty->uniform_style = generic >= 1;
+    StringAccum sa(sizeof(unsigned) * sv.size());
+    for (dcss **sp = sv.begin(); sp != sv.end(); ++sp)
+	*reinterpret_cast<unsigned *>(sa.extend(sizeof(unsigned))) = (*sp)->selector_index();
+    ref_ptr<dport_style> &style_cache = _ptable.find_force(sa.take_string());
 
-    if (generic >= 2) {
-	_frozen = true;
-	_generic_port_styles[7*isoutput + processing] = ref_ptr<dport_style>(sty);
-	return _generic_port_styles[7*isoutput + processing];
-    } else
-	return ref_ptr<dport_style>(sty);
+    if (!style_cache) {
+	dcss::assign_all(port_pm, port_pmp, num_port_pm, sv.begin(), sv.end());
+
+	dport_style *sty = new dport_style;
+	String s = port_pm[0].vstring("port-shape");
+	sty->shape = (s.equals("triangle", 8) ? dpshape_triangle : dpshape_rectangle);
+	sty->length = port_pm[1].vpixel("port-length");
+	sty->width = port_pm[2].vpixel("port-width");
+	port_pm[3].vcolor(sty->color, "port-color");
+	sty->border_style = port_pm[4].vborder_style("port-border-style");
+	sty->border_width = port_pm[5].vpixel("port-border-width");
+	port_pm[6].vcolor(sty->border_color, "port-border-color");
+	if (sty->border_color[3] == 0 || sty->border_width <= 0)
+	    sty->border_style = dborder_none;
+	sty->margin[0] = port_pm[7].vrelative("port-margin-top");
+	sty->margin[1] = port_pm[8].vrelative("port-margin-right");
+	sty->margin[2] = port_pm[9].vrelative("port-margin-bottom");
+	sty->margin[3] = port_pm[10].vrelative("port-margin-left");
+	sty->uniform_style = false;
+
+	style_cache = ref_ptr<dport_style>(sty);
+    }
+
+    return style_cache;
 }
 
 
@@ -1316,74 +1462,32 @@ ref_ptr<dport_style> dcss_set::hard_port_style(wdiagram *d, const delt *e,
  *
  */
 
-static dcss_propmatch elt_pm[] = {
-    { "color", 0 },
-    { "background-color", 0 },
-    { "border-style", 0 },
-    { "border-width", 0 },
-    { "border-color", 0 },
-    { "shadow-style", 0 },
-    { "shadow-width", 0 },
-    { "shadow-color", 0 },
-    { "padding-top", 0 },
-    { "padding-right", 0 },
-    { "padding-bottom", 0 },
-    { "padding-left", 0 },
-    { "orientation-padding", 0 },
-    { "ports-padding", 0 },
-    { "min-width", 0 },
-    { "min-height", 0 },
-    { "height-step", 0 },
-    { "orientation", 0 },
-    { "style", 0 },
-    { "scale", 0 },
-    { "margin-top", 0 },
-    { "margin-right", 0 },
-    { "margin-bottom", 0 },
-    { "margin-left", 0 },
-    { "text", 0 },
-    { "display", 0 },
-    { "font", 0 },
-    { "decorations", 0 }
-};
-
-enum {
-    num_elt_pm = sizeof(elt_pm) / sizeof(elt_pm[0])
-};
-
 static dcss_propmatch *elt_pmp[num_elt_pm];
 
-void dcss_set::collect_elt_styles(wdiagram *d, const delt *e,
-				  Vector<dcss *> &result, bool &generic) const
+void dcss_set::collect_elt_styles(wdiagram *d, const delt *e, int pflag,
+				  Vector<dcss *> &result, int *sensitivity) const
 {
-    if (!e->root()) {
-	for (dcss * const *sp = _s.begin() + 2; sp != _s.end(); ++sp)
-	    if ((*sp)->type()[0] == e->type_name()[0])
-		for (dcss *s = *sp; s; s = s->_next)
-		    if (s->selector().match(d, e)
-			&& s->match_context(d, e->parent())) {
-			generic = false;
-			result.push_back(s);
-		    }
-    }
-    for (dcss *s = _s[0]; s; s = s->_next)
-	if (s->selector().match(d, e) && s->match_context(d, e->parent())) {
-	    if (!s->selector().generic_elt() || s->has_context())
-		generic = false;
+    assert(!e->root());
+    for (dcss *s = ccss_list(e->type_name()); s; s = s->_next)
+	if ((s->pflags() & pflag)
+	    && s->selector().match(d, e, sensitivity)
+	    && s->match_context(d, e, sensitivity))
 	    result.push_back(s);
-	}
+    for (dcss *s = _s[0]; s; s = s->_next)
+	if ((s->pflags() & pflag)
+	    && s->selector().match(d, e, sensitivity)
+	    && s->match_context(d, e, sensitivity))
+	    result.push_back(s);
     if (_below)
-	_below->collect_elt_styles(d, e, result, generic);
+	_below->collect_elt_styles(d, e, pflag, result, sensitivity);
 }
 
-ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e)
+ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e, int *sensitivity)
 {
+    if (sensitivity)
+	*sensitivity = 0;
     Vector<dcss *> sv;
-    bool generic = true;
-    collect_elt_styles(d, e, sv, generic);
-
-    if (generic && _generic_elt_styles[e->highlights() & 7])
-	return _generic_elt_styles[e->highlights() & 7];
+    collect_elt_styles(d, e, pflag_elt, sv, sensitivity);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
     StringAccum sa(sizeof(unsigned) * sv.size());
@@ -1394,44 +1498,28 @@ ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e)
     if (!style_cache) {
 	dcss::assign_all(elt_pm, elt_pmp, num_elt_pm, sv.begin(), sv.end());
 
-	double scale = elt_pm[19].vrelative("scale");
-
 	delt_style *sty = new delt_style;
 	elt_pm[0].vcolor(sty->color, "color");
 	elt_pm[1].vcolor(sty->background_color, "background-color");
 	sty->border_style = elt_pm[2].vborder_style("border-style");
-	sty->border_width = elt_pm[3].vpixel("border-width", d, e) * scale;
-	elt_pm[4].vcolor(sty->border_color, "border-color");
-	if (sty->border_color[3] == 0 || sty->border_width <= 0)
+	elt_pm[3].vcolor(sty->border_color, "border-color");
+	if (sty->border_color[3] == 0)
 	    sty->border_style = dborder_none;
-	sty->shadow_style = elt_pm[5].vshadow_style("shadow-style");
-	sty->shadow_width = elt_pm[6].vpixel("shadow-width", d, e) * scale;
-	elt_pm[7].vcolor(sty->shadow_color, "shadow-color");
+	sty->shadow_style = elt_pm[4].vshadow_style("shadow-style");
+	sty->shadow_width = elt_pm[5].vpixel("shadow-width", d, e);
+	elt_pm[6].vcolor(sty->shadow_color, "shadow-color");
 	if (sty->shadow_color[3] == 0 || sty->shadow_width <= 0)
 	    sty->shadow_style = dshadow_none;
-	sty->padding[0] = elt_pm[8].vpixel("padding-top", d, e) * scale;
-	sty->padding[1] = elt_pm[9].vpixel("padding-right", d, e) * scale;
-	sty->padding[2] = elt_pm[10].vpixel("padding-bottom", d, e) * scale;
-	sty->padding[3] = elt_pm[11].vpixel("padding-left", d, e) * scale;
-	sty->orientation_padding = elt_pm[12].vpixel("orientation-padding", d, e) * scale;
-	sty->ports_padding = elt_pm[13].vpixel("ports-padding", d, e) * scale;
-	sty->min_width = elt_pm[14].vpixel("min-width", d, e) * scale;
-	sty->min_height = elt_pm[15].vpixel("min-height", d, e) * scale;
-	sty->height_step = elt_pm[16].vpixel("height-step", d, e) * scale;
-	String s = elt_pm[17].vstring("orientation");
+	String s = elt_pm[7].vstring("orientation");
 	sty->orientation = 0;
 	if (s.find_left("horizontal") >= 0)
 	    sty->orientation = (sty->orientation + 3) & 3;
 	if (s.find_left("reverse") >= 0)
 	    sty->orientation ^= 2;
-	s = elt_pm[18].vstring("style");
+	s = elt_pm[8].vstring("style");
 	sty->style = (s.equals("queue", 5) ? destyle_queue : destyle_normal);
-	sty->margin[0] = elt_pm[20].vpixel("margin-top", d, e) * scale;
-	sty->margin[1] = elt_pm[21].vpixel("margin-right", d, e) * scale;
-	sty->margin[2] = elt_pm[22].vpixel("margin-bottom", d, e) * scale;
-	sty->margin[3] = elt_pm[23].vpixel("margin-left", d, e) * scale;
-	sty->text = cp_unquote(elt_pm[24].vstring("text"));
-	s = elt_pm[25].vstring("display");
+	sty->text = cp_unquote(elt_pm[9].vstring("text"));
+	s = elt_pm[10].vstring("display");
 	sty->display = dedisp_open;
 	if (s.equals("none", 4))
 	    sty->display = dedisp_none;
@@ -1439,55 +1527,57 @@ ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e)
 	    sty->display = dedisp_closed;
 	else if (s.equals("vertical-split", 14))
 	    sty->display = dedisp_vsplit;
-	sty->font = elt_pm[26].vstring("font");
-	sty->decorations = elt_pm[27].vstring("decorations");
+	sty->font = elt_pm[11].vstring("font");
+	sty->decorations = elt_pm[12].vstring("decorations");
+	sty->queue_stripe_style = elt_pm[13].vborder_style("queue-stripe-style");
+	sty->queue_stripe_width = elt_pm[14].vpixel("queue-stripe-width", d, e);
+	elt_pm[15].vcolor(sty->queue_stripe_color, "queue-stripe-color");
+	sty->queue_stripe_spacing = elt_pm[16].vpixel("queue-stripe-spacing", d, e);
 
 	style_cache = ref_ptr<delt_style>(sty);
-	if (generic) {
-	    _frozen = true;
-	    _generic_elt_styles[e->highlights() & 7] = style_cache;
-	}
     }
     
     return style_cache;
 }
 
 
-static dcss_propmatch queue_pm[] = {
-    { "queue-stripe-style", 0 },
-    { "queue-stripe-width", 0 },
-    { "queue-stripe-color", 0 },
-    { "queue-stripe-spacing", 0 }
-};
+static dcss_propmatch *elt_size_pmp[num_elt_size_pm];
 
-enum {
-    num_queue_pm = sizeof(queue_pm) / sizeof(queue_pm[0])
-};
-
-static dcss_propmatch *queue_pmp[num_queue_pm];
-
-ref_ptr<dqueue_style> dcss_set::queue_style(wdiagram *d, const delt *e)
+ref_ptr<delt_size_style> dcss_set::elt_size_style(wdiagram *d, const delt *e, int *sensitivity)
 {
+    if (sensitivity)
+	*sensitivity = 0;
     Vector<dcss *> sv;
-    bool generic = true;
-    collect_elt_styles(d, e, sv, generic);
+    collect_elt_styles(d, e, pflag_elt_size, sv, sensitivity);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
     StringAccum sa(sizeof(unsigned) * sv.size());
     for (dcss **sp = sv.begin(); sp != sv.end(); ++sp)
 	*reinterpret_cast<unsigned *>(sa.extend(sizeof(unsigned))) = (*sp)->selector_index();
-    ref_ptr<dqueue_style> &style_cache = _qtable.find_force(sa.take_string());
+    ref_ptr<delt_size_style> &style_cache = _estable.find_force(sa.take_string());
 
     if (!style_cache) {
-	dcss::assign_all(queue_pm, queue_pmp, num_queue_pm, sv.begin(), sv.end());
+	dcss::assign_all(elt_size_pm, elt_size_pmp, num_elt_size_pm, sv.begin(), sv.end());
 
-	dqueue_style *sty = new dqueue_style;
-	sty->queue_stripe_style = queue_pm[0].vborder_style("queue-stripe-style");
-	sty->queue_stripe_width = queue_pm[1].vpixel("queue-stripe-width", d, e);
-	queue_pm[2].vcolor(sty->queue_stripe_color, "queue-stripe-color");
-	sty->queue_stripe_spacing = queue_pm[3].vpixel("queue-stripe-spacing", d, e);
+	double scale = elt_size_pm[14].vrelative("scale");
 
-	style_cache = ref_ptr<dqueue_style>(sty);
+	delt_size_style *sty = new delt_size_style;
+	sty->border_width = elt_size_pm[0].vpixel("border-width", d, e) * scale;
+	sty->padding[0] = elt_size_pm[1].vpixel("padding-top", d, e) * scale;
+	sty->padding[1] = elt_size_pm[2].vpixel("padding-right", d, e) * scale;
+	sty->padding[2] = elt_size_pm[3].vpixel("padding-bottom", d, e) * scale;
+	sty->padding[3] = elt_size_pm[4].vpixel("padding-left", d, e) * scale;
+	sty->orientation_padding = elt_size_pm[5].vpixel("orientation-padding", d, e) * scale;
+	sty->ports_padding = elt_size_pm[6].vpixel("ports-padding", d, e) * scale;
+	sty->min_width = elt_size_pm[7].vpixel("min-width", d, e) * scale;
+	sty->min_height = elt_size_pm[8].vpixel("min-height", d, e) * scale;
+	sty->height_step = elt_size_pm[9].vpixel("height-step", d, e) * scale;
+	sty->margin[0] = elt_size_pm[10].vpixel("margin-top", d, e) * scale;
+	sty->margin[1] = elt_size_pm[11].vpixel("margin-right", d, e) * scale;
+	sty->margin[2] = elt_size_pm[12].vpixel("margin-bottom", d, e) * scale;
+	sty->margin[3] = elt_size_pm[13].vpixel("margin-left", d, e) * scale;
+
+	style_cache = ref_ptr<delt_size_style>(sty);
     }
     
     return style_cache;
@@ -1517,17 +1607,6 @@ static int parse_autorefresh(String str, const char *medium, int *period)
     return (on < 0 ? 0 : on);
 }
 
-
-static dcss_propmatch handler_pm[] = {
-    { "autorefresh", 0 },
-    { "autorefresh-period", 0 },
-    { "display", 0 },
-    { "allow-refresh", 0 }
-};
-
-enum {
-    num_handler_pm = sizeof(handler_pm) / sizeof(handler_pm[0])
-};
 
 static dcss_propmatch *handler_pmp[num_handler_pm];
 
@@ -1605,18 +1684,6 @@ ref_ptr<dhandler_style> dcss_set::handler_style(wdiagram *d, const handler_value
  *
  */
 
-static dcss_propmatch fullness_pm[] = {
-    { "length", 0 },
-    { "capacity", 0 },
-    { "color", 0 },
-    { "autorefresh", 0 },
-    { "autorefresh-period", 0 }    
-};
-
-enum {
-    num_fullness_pm = sizeof(fullness_pm) / sizeof(fullness_pm[0])
-};
-
 static dcss_propmatch *fullness_pmp[num_fullness_pm];
 
 void dcss_set::collect_decor_styles(PermString decor, wdiagram *d, const delt *e,
@@ -1675,21 +1742,6 @@ ref_ptr<dfullness_style> dcss_set::fullness_style(PermString decor, wdiagram *d,
  *
  *
  */
-
-static dcss_propmatch activity_pm[] = {
-    { "handler", 0 },
-    { "color", 0 },
-    { "autorefresh", 0 },
-    { "autorefresh-period", 0 },
-    { "type", 0 },
-    { "max-value", 0 },
-    { "min-value", 0 },
-    { "decay", 0 }
-};
-
-enum {
-    num_activity_pm = sizeof(activity_pm) / sizeof(activity_pm[0])
-};
 
 static dcss_propmatch *activity_pmp[num_activity_pm];
 
@@ -1783,8 +1835,7 @@ ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, wdiagram *d,
 double dcss_set::vpixel(PermString name, wdiagram *d, const delt *e) const
 {
     Vector<dcss *> sv;
-    bool generic = true;
-    collect_elt_styles(d, e, sv, generic);
+    collect_elt_styles(d, e, pflag_elt | pflag_elt_size, sv, 0);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
 
@@ -1811,3 +1862,18 @@ String dcss_set::vstring(PermString name, PermString decor, wdiagram *d, const d
 }
 
 #include <click/vector.cc>
+
+// What do I want to do here.
+// match_initial: collect set of potentially matching CSS styles
+//    filter by what type of thing you want
+//    explode
+//    die
+//    explode AND die
+//
+// The point is to avoid re-fetching styles that have not changed.
+// Handler values might cause a style to change.
+// Everything else can be handled externally by comparing ref_ptrs.
+//
+// 1. Collect all styles that match_initial.
+// 2. Compare match_final.
+// 3. If don't match_final
