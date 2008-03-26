@@ -74,7 +74,7 @@ Aligner::want_flow(Vector<Alignment>::iterator ain, int nin, Vector<Alignment>::
 	Alignment a;
 	for (int j = 0; j < nout; ++j)
 	    if (b[j])
-		a &= aout[i];
+		a &= aout[j];
 	*ain = a;
     }
 
