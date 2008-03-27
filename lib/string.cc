@@ -74,7 +74,7 @@ const char String::oom_string_data = 0;
 /** @cond never */
 inline
 String::Memo::Memo()
-  : _capacity(0), _real_data("")
+    : _capacity(0), _real_data(const_cast<char *>(""))
 {
     _refcount = 0;
     _dirty = 0;

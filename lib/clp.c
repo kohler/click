@@ -279,14 +279,17 @@ decode_utf8(const char *s, char **cp)
     int c;
     if ((unsigned char) *s <= 0x7F)
 	c = *s++;
-    else if ((*s & 0xE0) == 0xC0 && (s[1] & 0x80)) {
+    else if ((*s & 0xE0) == 0xC0 && (s[1] & 0xC0) == 0x80) {
 	c = (*s++ & 0x1F) << 6;
+	if (c < 128)
+	    goto replacement;
 	goto char1;
-    } else if ((*s & 0xF0) == 0xE0 && (s[1] & 0x80) && (s[2] & 0x80)) {
+    } else if ((*s & 0xF0) == 0xE0 && (s[1] & 0xC0) == 0x80
+	       && (s[2] & 0x80) == 0x80) {
 	c = (*s++ & 0x0F) << 12;
 	goto char2;
-    } else if ((*s & 0xF8) == 0xF0 && (s[1] & 0x80) && (s[2] & 0x80)
-	       && (s[3] & 0x80)) {
+    } else if ((*s & 0xF8) == 0xF0 && (s[1] & 0xC0) == 0x80
+	       && (s[2] & 0xC0) == 0x80 && (s[3] & 0xC0) == 0x80) {
 	c = (*s++ & 0x07) << 18;
 	c += (*s++ & 0x3F) << 12;
       char2:
@@ -294,6 +297,7 @@ decode_utf8(const char *s, char **cp)
       char1:
 	c += (*s++ & 0x3F);
     } else {
+      replacement:
 	c = U_REPLACEMENT;
 	s++;
     }

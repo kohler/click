@@ -15,8 +15,8 @@ prints packet contents
 
 =d
 
-Prints up to LENGTH bytes of data from each packet, in hex, preceded by the
-LABEL text. Default LENGTH is 24.
+Prints up to MAXLENGTH bytes of data from each packet, in hex, preceded by the
+LABEL text. Default MAXLENGTH is 24.
 
 Keyword arguments are:
 
