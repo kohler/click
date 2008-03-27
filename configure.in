@@ -119,7 +119,7 @@ dnl
 dnl How to build linuxmodule driver?
 dnl
 
-AC_ARG_WITH(linux, [[  --with-linux[=DIR]      Linux source code is in DIR]],
+AC_ARG_WITH(linux, [[  --with-linux[=PATH]     Linux source code is in PATH]],
     [linuxdir=$withval], [linuxdir=NONE])
 test -z "$linuxdir" -o "$linuxdir" = yes && linuxdir=yes
 
@@ -151,6 +151,22 @@ Can't find $linuxdir, so I can't compile the linuxmodule driver!
     fi
 fi
 
+dnl allow linuxdir to be a path
+linuxpath=`echo "$linuxdir" | sed 's/^[[^:]]*:*//'`
+linuxdir=`echo "$linuxdir" | sed 's/^\([[^:]]*\).*/\1/'`
+find_linuxdir () {
+    path="$linuxdir:$linuxpath"
+    while test -n "$path"; do
+	l=`echo "$path" | sed 's/^\([[^:]]*\).*/\1/'`
+	path=`echo "$path" | sed 's/^[[^:]]*:*//'`
+	if test -n "$l" -a -f "$l/$1"; then
+	    echo "$l/$1"
+	    return
+	fi
+    done
+    echo "/nonexistent_file"
+}
+
 if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != xyes; then
     ac_have_linux_kernel=n
     linuxdir=NONE
@@ -162,7 +178,7 @@ The --with-linux directory $linuxdir is relative.
 You must supply an absolute path starting with /.
 
 =========================================])
-elif test -r $linuxdir/include/linux/skbuff.h; then
+elif test -r `find_linuxdir include/linux/skbuff.h`; then
     ac_have_linux_kernel=y
 else
     AC_MSG_ERROR([
@@ -466,7 +482,7 @@ if test $ac_have_linux_kernel = y; then
 dnl Look for System.map
 
 if test "$linux_system_map" = NONE; then
-    linux_system_map=$linuxdir/System.map
+    linux_system_map=`find_linuxdir System.map`
     if test "x$linux_system_map_boot" != xno -a ! -f "$linux_system_map"; then
 	linux_system_map=/boot/System.map-"$linux_system_map_boot"
     fi
@@ -501,7 +517,7 @@ dnl Check for Linux 2.6
 if test $ac_have_linux_kernel = y; then
 
 AC_CACHE_CHECK([for Linux 2.6], [ac_cv_linux26],
-    [if grep '^PATCHLEVEL[ 	]*=[ 	]*6' $linuxdir/Makefile >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi])
+    [if grep '^PATCHLEVEL[ 	]*=[ 	]*6' `find_linuxdir Makefile` >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi])
 LINUXMODULE_2_6=$ac_cv_linux26
 AC_SUBST(LINUXMODULE_2_6)
 if test $LINUXMODULE_2_6 = 1; then
@@ -549,7 +565,7 @@ if test $ac_cv_linux_tulip_intr_hook = yes; then
 fi
 
 AC_CACHE_CHECK(for device polling kernel extension, ac_cv_linux_poll_extension,
-[if grep polling $linuxdir/include/linux/netdevice.h >/dev/null 2>&1; then
+[if grep polling `find_linuxdir include/linux/netdevice.h` >/dev/null 2>&1; then
   ac_cv_linux_poll_extension=yes
 else ac_cv_linux_poll_extension=no; fi])
 if test $ac_cv_linux_poll_extension = yes; then
@@ -557,7 +573,7 @@ if test $ac_cv_linux_poll_extension = yes; then
 fi
 
 AC_CACHE_CHECK(for atomic_set_mask, ac_cv_linux_atomic_set_mask,
-[if grep atomic_set_mask $linuxdir/include/asm/atomic.h >/dev/null 2>&1; then
+[if grep atomic_set_mask `find_linuxdir include/asm/atomic.h` >/dev/null 2>&1; then
   ac_cv_linux_atomic_set_mask=yes
 else ac_cv_linux_atomic_set_mask=no; fi])
 if test $ac_cv_linux_atomic_set_mask = yes; then
@@ -565,7 +581,7 @@ if test $ac_cv_linux_atomic_set_mask = yes; then
 fi
 
 AC_CACHE_CHECK(for SMP, ac_cv_smp,
-[if grep "#define CONFIG_SMP 1" $linuxdir/include/linux/autoconf.h >/dev/null 2>&1; then
+[if grep "#define CONFIG_SMP 1" `find_linuxdir include/linux/autoconf.h` >/dev/null 2>&1; then
   ac_cv_smp=yes
 else ac_cv_smp=no; fi])
 if test $ac_cv_smp = yes; then
@@ -574,7 +590,7 @@ if test $ac_cv_smp = yes; then
 fi
 
 AC_CACHE_CHECK(for <asm/alternative.h>, ac_cv_linux_asm_alternative_h,
-[if test -r $linuxdir/include/asm/alternative.h >/dev/null 2>&1; then
+[if test -r `find_linuxdir include/asm/alternative.h` >/dev/null 2>&1; then
   ac_cv_linux_asm_alternative_h=yes
 else ac_cv_linux_asm_alternative_h=no; fi])
 if test $ac_cv_linux_asm_alternative_h = yes; then

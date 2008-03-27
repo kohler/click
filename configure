@@ -1369,7 +1369,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-linux[=DIR]      Linux source code is in DIR
+  --with-linux[=PATH]     Linux source code is in PATH
   --with-linux-map[=FILE] filename for Linux System.map [LINUXDIR/System.map]
   --with-freebsd[=SRC,INC] FreeBSD source code is in SRC [/usr/src/sys],
                           include directory is INC [/usr/include]
@@ -4824,6 +4824,21 @@ Can't find $linuxdir, so I can't compile the linuxmodule driver!
     fi
 fi
 
+linuxpath=`echo "$linuxdir" | sed 's/^[^:]*:*//'`
+linuxdir=`echo "$linuxdir" | sed 's/^\([^:]*\).*/\1/'`
+find_linuxdir () {
+    path="$linuxdir:$linuxpath"
+    while test -n "$path"; do
+	l=`echo "$path" | sed 's/^\([^:]*\).*/\1/'`
+	path=`echo "$path" | sed 's/^[^:]*:*//'`
+	if test -n "$l" -a -f "$l/$1"; then
+	    echo "$l/$1"
+	    return
+	fi
+    done
+    echo "/nonexistent_file"
+}
+
 if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != xyes; then
     ac_have_linux_kernel=n
     linuxdir=NONE
@@ -4843,7 +4858,7 @@ You must supply an absolute path starting with /.
 
 =========================================" >&2;}
    { (exit 1); exit 1; }; }
-elif test -r $linuxdir/include/linux/skbuff.h; then
+elif test -r `find_linuxdir include/linux/skbuff.h`; then
     ac_have_linux_kernel=y
 else
     { { echo "$as_me:$LINENO: error:
@@ -9093,7 +9108,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 9096 "configure"
+#line 9111 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -13041,7 +13056,7 @@ if test $ac_have_linux_kernel = y; then
 
 
 if test "$linux_system_map" = NONE; then
-    linux_system_map=$linuxdir/System.map
+    linux_system_map=`find_linuxdir System.map`
     if test "x$linux_system_map_boot" != xno -a ! -f "$linux_system_map"; then
 	linux_system_map=/boot/System.map-"$linux_system_map_boot"
     fi
@@ -13095,7 +13110,7 @@ echo $ECHO_N "checking for Linux 2.6... $ECHO_C" >&6; }
 if test "${ac_cv_linux26+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if grep '^PATCHLEVEL 	*= 	*6' $linuxdir/Makefile >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi
+  if grep '^PATCHLEVEL 	*= 	*6' `find_linuxdir Makefile` >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi
 fi
 { echo "$as_me:$LINENO: result: $ac_cv_linux26" >&5
 echo "${ECHO_T}$ac_cv_linux26" >&6; }
@@ -13204,7 +13219,7 @@ echo $ECHO_N "checking for device polling kernel extension... $ECHO_C" >&6; }
 if test "${ac_cv_linux_poll_extension+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if grep polling $linuxdir/include/linux/netdevice.h >/dev/null 2>&1; then
+  if grep polling `find_linuxdir include/linux/netdevice.h` >/dev/null 2>&1; then
   ac_cv_linux_poll_extension=yes
 else ac_cv_linux_poll_extension=no; fi
 fi
@@ -13222,7 +13237,7 @@ echo $ECHO_N "checking for atomic_set_mask... $ECHO_C" >&6; }
 if test "${ac_cv_linux_atomic_set_mask+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if grep atomic_set_mask $linuxdir/include/asm/atomic.h >/dev/null 2>&1; then
+  if grep atomic_set_mask `find_linuxdir include/asm/atomic.h` >/dev/null 2>&1; then
   ac_cv_linux_atomic_set_mask=yes
 else ac_cv_linux_atomic_set_mask=no; fi
 fi
@@ -13240,7 +13255,7 @@ echo $ECHO_N "checking for SMP... $ECHO_C" >&6; }
 if test "${ac_cv_smp+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if grep "#define CONFIG_SMP 1" $linuxdir/include/linux/autoconf.h >/dev/null 2>&1; then
+  if grep "#define CONFIG_SMP 1" `find_linuxdir include/linux/autoconf.h` >/dev/null 2>&1; then
   ac_cv_smp=yes
 else ac_cv_smp=no; fi
 fi
@@ -13259,7 +13274,7 @@ echo $ECHO_N "checking for <asm/alternative.h>... $ECHO_C" >&6; }
 if test "${ac_cv_linux_asm_alternative_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if test -r $linuxdir/include/asm/alternative.h >/dev/null 2>&1; then
+  if test -r `find_linuxdir include/asm/alternative.h` >/dev/null 2>&1; then
   ac_cv_linux_asm_alternative_h=yes
 else ac_cv_linux_asm_alternative_h=no; fi
 fi
