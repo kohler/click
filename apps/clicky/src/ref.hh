@@ -109,10 +109,10 @@ template <typename T> class ref_ptr { public:
 	return _t;
     }
 
-    typedef T *ref_ptr::*unspecified_bool_type;
+    typedef T *(ref_ptr::*unspecified_bool_type)() const;
 
     operator unspecified_bool_type() const {
-	return _t ? &ref_ptr::_t : 0;
+	return _t ? &ref_ptr::get : 0;
     }
     
     bool operator!() const {
@@ -137,4 +137,4 @@ inline bool operator!=(const ref_ptr<T> &a, const ref_ptr<U> &b)
     return a.get() != b.get();
 }
 
-#endif /* TAMER_FD_HH */
+#endif /* TAMER_REF_HH */
