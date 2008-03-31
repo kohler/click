@@ -79,7 +79,7 @@ WifiDupeFilter::simple_action(Packet *p_in)
 
   if (w->i_fc[1] & WIFI_FC1_RETRY && seq == nfo->seq && 
       (!is_frag || frag <= nfo->frag)) {
-	  /* duplicate dectected */
+	  /* duplicate detected */
 	  if (_debug) {
 		  click_chatter("%{element}: dup seq %d frag %d src %s\n",
 				this,

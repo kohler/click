@@ -80,8 +80,7 @@ void
 ProbeTXRate::assign_rate(Packet *p_in) {
 
   if (!p_in) {
-    click_chatter("%{element} ah, !p_in\n",
-		  this);
+    click_chatter("%{element} ah, !p_in\n", this);
     return;
   }
 
@@ -98,6 +97,7 @@ ProbeTXRate::assign_rate(Packet *p_in) {
     }
     return;
   }
+
   DstInfo *nfo = _neighbors.findp(dst);
   if (!nfo || !nfo->_rates.size()) {
     _neighbors.insert(dst, DstInfo(dst, _rtable->lookup(dst)));

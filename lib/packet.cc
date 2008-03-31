@@ -21,8 +21,8 @@
 #include <click/config.h>
 #include <click/packet.hh>
 #include <click/glue.hh>
-#ifdef CLICK_USERLEVEL
-#include <unistd.h>
+#if CLICK_USERLEVEL
+# include <unistd.h>
 #endif
 CLICK_DECLS
 

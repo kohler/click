@@ -427,6 +427,10 @@ testie_failed () {
     test $exitval = 0 || (echo; echo testie_failure:$exitval) >&2
     exit $exitval
 }
+testie_subtest () {
+    echo testie_subtest "$@"
+    echo testie_subtest "$@" >&2
+}
 trap testie_failed EXIT
 EOD;
     }
@@ -524,8 +528,14 @@ sub output_error ($$$$) {
     1;
 }
 
-sub _output_expectation_error ($$$$$) {
-    my($fp, $efn, $lineno, $wanted, $got) = @_;
+sub _output_expectation_error ($$$$$$) {
+    my($fp, $efn, $lineno, $wanted, $got, $subtest) = @_;
+
+    # fix subtest description
+    if (defined($subtest)) {
+	$fp =~ s/: \Z/ /;
+	$fp .= "subtest $subtest: ";
+    }
     
     # output message
     if ($efn eq 'stdout') {
@@ -552,7 +562,7 @@ sub _output_expectation_error ($$$$$) {
 sub _check_one_expect ($$$) {
     my($tt, $fileref_subr, $efn) = @_;
     my($fp) = $tt->{'errprefix'};
-    my($xtp, $xtl, $xel);
+    my($xtp, $xtl, $xel, $xsubtest);
 
     # read file text
     if (!open(IN, $fileref_subr->($efn))) {
@@ -606,7 +616,7 @@ sub _check_one_expect ($$$) {
 	# line-by-line comparison
 	my(@tl) = (split(/\n/, $text), "\376");
 	my(@el) = (split(/\n/, $exp), "\376");
-	my($tp, $ep) = (0, 0);
+	my($tp, $ep, $subtest) = (0, 0, undef);
 	while ($tp < @tl && $ep < @el) {
 	    
 	    # a single blank line in $exp matches multiple blank lines
@@ -618,6 +628,13 @@ sub _check_one_expect ($$$) {
 
 	    # skip ignored lines
 	    $tp++ while $tl[$tp] eq "\377";
+
+	    # process testie_subtest
+	    if (length($tl[$tp]) > 15 && substr($tl[$tp], 0, 15) eq "testie_subtest ") {
+		$subtest = substr($tl[$tp], 15);
+		$tp++;
+		next;
+	    }
 
 	    # compare lines
 	    if ($mode == 2) {
@@ -638,12 +655,12 @@ sub _check_one_expect ($$$) {
 	}
 	return 0 if $tp >= @tl || $ep >= @el;
 
-	($xtp, $xel, $xtl) = ($tp + 1, $el[$ep], $tl[$tp])
+	($xtp, $xel, $xtl, $xsubtest) = ($tp + 1, $el[$ep], $tl[$tp], $subtest)
 	    if !defined($xtp) || $tp + 1 > $xtp;
     }
 
     # if we get here, none of the attempts matched
-    _output_expectation_error($fp, $efn, $xtp, $xel, $xtl);
+    _output_expectation_error($fp, $efn, $xtp, $xel, $xtl, $xsubtest);
 }
     
 
@@ -1080,8 +1097,14 @@ mentioned in %file or %expect* are placed in that directory.
 
 The shell script (in sh syntax) that controls the test. Testie will run
 each command in sequence. Every command in the script must succeed, with
-exit status 0, or the test will fail. The script's inputs and outputs are
-defined with the %file and %expect* sections.
+exit status 0, or the test will fail. Use %file sections to define script
+input files and %expect* sections to check script output files for expected
+values.
+
+The %script section can contain multiple subtests. To start a new subtest,
+execute a command like "testie_subtest SECTIONNAME". Testie will report the
+offending SECTIONNAME when standard output or error doesn't match an
+expected value.
 
 =item %require [-q]
 

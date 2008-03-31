@@ -32,10 +32,10 @@ CLICK_DECLS
 #define max(x,y)      ((x)>(y) ? (x) : (y))
 
 PrintWifi::PrintWifi()
-  : _print_anno(false),
-    _print_checksum(false)
+    : _print_anno(false),
+      _print_checksum(false)
 {
-  _label = "";
+    _label = "";
 }
 
 PrintWifi::~PrintWifi()
@@ -497,7 +497,6 @@ PrintWifi::simple_action(Packet *p)
 
     click_chatter("%s\n", sa.c_str());
     return p;
-    
   }
 
 

@@ -75,11 +75,16 @@ class DirectEWMAX : public P { public:
 
     typedef typename P::value_type value_type;
     
-    /** @brief  Create a EWMA with initial value 0. */
+    /** @brief  Create a EWMA with initial average 0. */
     DirectEWMAX()
 	: _avg(0) {
     }
 
+    /** @brief  Create a EWMA with initial scaled average @a scaled_value. */
+    DirectEWMAX(value_type scaled_value)
+	: _avg(scaled_value) {
+    }
+    
     /** @brief  Return the current scaled moving average.
      *  @note   The returned value has scale() bits of fraction. */
     value_type scaled_average() const {

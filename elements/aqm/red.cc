@@ -312,7 +312,7 @@ RED::read_handler(Element *f, void *vparam)
 	return sa.take_string();
       case 5:			// queues
 	for (int i = 0; i < red->_queue_elements.size(); i++)
-	    sa << red->_queue_elements[i]->name() + "\n";
+	    sa << red->_queue_elements[i]->name() << "\n";
 	return sa.take_string();
       default:			// config
 	sa << red->_min_thresh << ", " << red->_max_thresh << ", "

@@ -1,8 +1,7 @@
 /*
- * hashmap.{cc,hh} -- a simple, stupid hash table template
+ * hashmap.{cc,hh} -- a hash table template
  * Eddie Kohler
  *
- * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2003 International Computer Science Institute
  *

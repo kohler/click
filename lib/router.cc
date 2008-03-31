@@ -258,9 +258,9 @@ Router::ename(int eindex) const
  *
  *  @note econfiguration() returns the element's most recently specified
  *  static configuration string, which might differ from the element's active
- *  configuration string.  For the active configuration, call the virtual
- *  function Element::configuration(), which defaults to returning
- *  econfiguration(). */
+ *  configuration string.  For the active configuration, call
+ *  Element::configuration(), which might include post-initialization
+ *  changes. */
 const String &
 Router::econfiguration(int eindex) const
 {

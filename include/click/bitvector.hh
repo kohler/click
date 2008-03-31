@@ -22,7 +22,9 @@ class Bitvector { public:
     bool zero() const;
     
     typedef bool (Bitvector::*unspecified_bool_type)() const;
-    operator bool() const	{ return !zero() ? &Bitvector::zero : 0; }
+    operator unspecified_bool_type() const {
+	return !zero() ? &Bitvector::zero : 0;
+    }
 
     Bit operator[](int);
     bool operator[](int) const;

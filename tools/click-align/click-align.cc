@@ -612,16 +612,18 @@ particular purpose.\n");
 	for (RouterT::type_iterator x = router->begin_elements(aligninfo_class);
 	     x != router->end_elements(); ++x)
 	    x->full_kill();
-	int old_num_aligns_added;
+	bool again;
 	do {
-	    old_num_aligns_added = num_aligns_added;
+	    again = false;
 	    for (RouterT::type_iterator x = router->begin_elements(align_class);
 		 x != router->end_elements(); ++x)
 		if (x->ninputs() == 0 || x->noutputs() == 0) {
+		    if (x->landmark() == "<click-align>")
+			num_aligns_added--;
+		    again = true;
 		    x->full_kill();
-		    num_aligns_added--;
 		}
-	} while (old_num_aligns_added != num_aligns_added);
+	} while (again);
 	router->remove_dead_elements();
     }
     
