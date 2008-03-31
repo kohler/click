@@ -30,6 +30,8 @@ struct dcontext {
     cairo_t *cr;
     int scale_step;
 
+    dcontext(wdiagram *d, PangoLayout *pl, cairo_t *cr);
+
     operator cairo_t *() const {
 	return cr;
     }

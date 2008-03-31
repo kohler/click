@@ -20,6 +20,11 @@ extern "C" {
 }
 namespace clicky {
 
+dcontext::dcontext(wdiagram *d_, PangoLayout *pl_, cairo_t *cr_)
+    : d(d_), pl(pl_), cr(cr_)
+{
+}
+
 void dcontext::set_font_description(const String &font)
 {
     if (pl_font != font) {
@@ -638,15 +643,15 @@ void delt::layout_ports(wdiagram *d)
     dcss_set *dcs = d->ccss();
     
     for (int isoutput = 0; isoutput < 2; ++isoutput) {
-	_ports_length[isoutput] = 2 * _dess->ports_padding;
+	ref_ptr<dport_style> dps = dcs->port_style(d, this, isoutput, 0, 0);
+	_ports_length[isoutput] = 2 * dps->edge_padding;
 	if (!_e->nports(isoutput))
 	    continue;
-	ref_ptr<dport_style> dps = dcs->port_style(d, this, isoutput, 0, 0);
 	if (_e->nports(isoutput) > 1)
 	    _portoff[isoutput] = new double[_e->nports(isoutput) + 1];
-	double tm = 0;
+	double tm = dps->edge_padding;
 	for (int p = 0; p < _e->nports(isoutput); ++p) {
-	    if (!dps->uniform_style && p)
+	    if (p)
 		dps = dcs->port_style(d, this, isoutput, p, 0);
 	    if (dps->shape == dpshape_triangle)
 		_ports_length[isoutput] += dps->length - 2;
@@ -661,7 +666,7 @@ void delt::layout_ports(wdiagram *d)
 		tm = old_tm + 0.1;
 	}
 	if (_e->nports(isoutput) > 1)
-	    _portoff[isoutput][_e->nports(isoutput)] = tm;
+	    _portoff[isoutput][_e->nports(isoutput)] = tm + dps->edge_padding;
     }
 }
 
@@ -772,8 +777,8 @@ void delt::dimension_markup(dcontext &dcx)
     pango_layout_set_markup(dcx, _markup.data(), _markup.length());
     PangoRectangle rect;
     pango_layout_get_pixel_extents(dcx, NULL, &rect);
-    _markup_width = rect.width;
-    _markup_height = rect.height;
+    _markup_width = rect.width * _dess->scale;
+    _markup_height = rect.height * _dess->scale;
 }
 
 void delt::layout(dcontext &dcx)
@@ -800,7 +805,7 @@ void delt::layout(dcontext &dcx)
     if (_des->style == destyle_queue
 	&& _contents_height == 0 && side_vertical(_des->orientation)) {
 	xwidth = _markup_height;
-	xheight = _markup_width + _dess->padding[0] + _dess->padding[2] + _dess->orientation_padding;
+	xheight = _markup_width + _dess->padding[0] + _dess->padding[2];
     } else {
 	xwidth = MAX(_markup_width, _contents_width);
 	xheight = _markup_height + _dess->padding[0] + _dess->padding[2];
@@ -812,7 +817,7 @@ void delt::layout(dcontext &dcx)
 
     // analyze port positions
     layout_ports(dcx.d);
-    double xportlen = MAX(_ports_length[0], _ports_length[1]);
+    double xportlen = MAX(_ports_length[0], _ports_length[1]) * _dess->scale;
     
     if (_des->orientation == 0)
 	_width = ceil(MAX(xwidth + _dess->padding[1] + _dess->padding[3],
@@ -1026,14 +1031,7 @@ double delt::hard_port_position(bool isoutput, int port,
 {
     assert(_e->nports(isoutput) > 1);
     
-    double offset0 = _dess->ports_padding;
-    if (2 * offset0 > side_length) {
-	offset0 = side_length / 2;
-	side_length = 0;
-    } else
-	side_length -= 2 * offset0;
-
-    return offset0 + side_length * _portoff[isoutput][port]
+    return side_length * _portoff[isoutput][port]
 		 / _portoff[isoutput][_e->nports(isoutput)];
 }
 
@@ -1121,6 +1119,9 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p, bool isoutput)
     if (port_orientation)
 	cairo_rotate(dcx, port_orientation * M_PI_2);
 
+    double l = dps->length * _dess->scale;
+    double w = dps->width * _dess->scale;
+
     for (int i = 0; i < 4; i++) {
 	if ((i > 0 && dps->border_style == dborder_none)
 	    || (i > 1 && dps->border_style != dborder_inset))
@@ -1145,22 +1146,25 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p, bool isoutput)
 	else
 	    offset = 0;
 
+	if (offset > l / 2)
+	    continue;
+
 	if (i == 1)
 	    cairo_set_border(dcx, 0, dps->border_style, dps->border_width);
 	else if (i == 3)
 	    cairo_set_line_width(dcx, 0.75 * dps->border_width);
 
 	if (dps->shape == dpshape_triangle) {
-	    cairo_move_to(dcx, -dps->length / 2 + offset, 0);
-	    cairo_line_to(dcx, 0, dps->width - 1.15 * offset);
-	    cairo_line_to(dcx, dps->length / 2 - offset, 0);
+	    cairo_move_to(dcx, -l / 2 + offset, 0);
+	    cairo_line_to(dcx, 0, w - 1.15 * offset);
+	    cairo_line_to(dcx, l / 2 - offset, 0);
 	    if (i < 3)
 		cairo_close_path(dcx);
 	} else {
-	    cairo_move_to(dcx, -dps->length / 2 + offset, 0);
-	    cairo_line_to(dcx, -dps->length / 2 + offset, dps->width - offset);
-	    cairo_line_to(dcx, dps->length / 2 - offset, dps->width - offset);
-	    cairo_line_to(dcx, dps->length / 2 - offset, 0);
+	    cairo_move_to(dcx, -l / 2 + offset, 0);
+	    cairo_line_to(dcx, -l / 2 + offset, w - offset);
+	    cairo_line_to(dcx, l / 2 - offset, w - offset);
+	    cairo_line_to(dcx, l / 2 - offset, 0);
 	    if (!(i & 1))
 		cairo_close_path(dcx);
 	}
@@ -1184,14 +1188,16 @@ void delt::draw_ports(dcontext &dcx)
 	pcpos = ProcessingT::processing_code_next
 	    (pcpos, _processing_code.end(), pcode);
 	dps = dcx.d->ccss()->port_style(dcx.d, this, false, i, pcode);
-	draw_port(dcx, dps.get(), input_position(i, dps.get()), false);
+	if (dps->display & dpdisp_inputs)
+	    draw_port(dcx, dps.get(), input_position(i, dps.get()), false);
     }
     pcpos = ProcessingT::processing_code_output(_processing_code.begin(), _processing_code.end(), pcpos);
     for (int i = 0; i < _e->noutputs(); i++) {
 	pcpos = ProcessingT::processing_code_next
 	    (pcpos, _processing_code.end(), pcode);
 	dps = dcx.d->ccss()->port_style(dcx.d, this, true, i, pcode);
-	draw_port(dcx, dps.get(), output_position(i, dps.get()), true);
+	if (dps->display & dpdisp_outputs)
+	    draw_port(dcx, dps.get(), output_position(i, dps.get()), true);
     }
 }
 
@@ -1251,7 +1257,7 @@ void delt::draw_background(dcontext &dcx)
     if (_des->style == destyle_queue) {
 	cairo_set_border(dcx, _des->queue_stripe_color, _des->queue_stripe_style, _des->queue_stripe_width);
 	int o = _des->orientation;
-	double qls = _des->queue_stripe_spacing;
+	double qls = _dess->queue_stripe_spacing;
 	int num_lines = (int) ((side_length(o) - _dess->padding[o]) / qls);
 	double xpos = pos[(o + 2) & 3] + 0.5;
 	if (!side_greater(o))
@@ -1295,7 +1301,6 @@ void delt::draw_text(dcontext &dcx)
 
     double space[2];
     space[0] = space[1] = 2 * _dess->border_width;
-    space[_des->orientation & 1] += 2 * _dess->orientation_padding;
     bool saved = false;
 
     if (_width - space[1] < _markup_width
@@ -1307,13 +1312,14 @@ void delt::draw_text(dcontext &dcx)
 	if (_markup_height > _width - 2)
 	    clip_to_border(dcx);
 	
-	cairo_translate(dcx, _x, _y + _height);
-	cairo_rotate(dcx, -M_PI / 2);
-
-	pango_layout_set_width(dcx, (int) ((_height - space[0]) * PANGO_SCALE));
-	pango_layout_set_markup(dcx, _markup.data(), _markup.length());
 	double dy = MAX((_width - _markup_height) / 2, 0);
-	cairo_move_to(dcx, space[0] / 2, dy);
+	cairo_translate(dcx, _x + dy, _y + _height - space[0] / 2);
+	cairo_rotate(dcx, -M_PI / 2);
+	cairo_move_to(dcx, 0, 0);
+	cairo_scale(dcx, _dess->scale, _dess->scale);
+
+	pango_layout_set_width(dcx, (int) ((_height - space[0]) / _dess->scale * PANGO_SCALE));
+	pango_layout_set_markup(dcx, _markup.data(), _markup.length());
 	pango_cairo_show_layout(dcx, dcx);
 
     } else {
@@ -1323,22 +1329,32 @@ void delt::draw_text(dcontext &dcx)
 	    saved = true;
 	    cairo_save(dcx);
 	    clip_to_border(dcx);
+	} else if (_dess->scale != 1) {
+	    saved = true;
+	    cairo_save(dcx);
 	}
 
-	pango_layout_set_width(dcx, (int) ((_width - space[1]) * PANGO_SCALE));
+	pango_layout_set_width(dcx, (int) ((_width - space[1]) / _dess->scale * PANGO_SCALE));
 	pango_layout_set_markup(dcx, _markup.data(), _markup.length());
 
 	double name_width, name_height;
 	if (_width - space[1] >= _markup_width)
 	    name_width = _markup_width, name_height = _markup_height;
 	else {
+	    name_width = _width - space[1];
 	    PangoRectangle rect;
 	    pango_layout_get_pixel_extents(dcx, NULL, &rect);
-	    name_width = _width - space[1], name_height = rect.height;
+	    name_height = rect.height * _dess->scale;
 	}
 
 	double dy = MAX((_height - name_height - _contents_height) / 2, 1);
-	cairo_move_to(dcx, _x + space[1] / 2, _y + dy);
+	if (_dess->scale == 1)
+	    cairo_move_to(dcx, _x + space[1] / 2, _y + dy);
+	else {
+	    cairo_translate(dcx, _x + space[1] / 2, _y + dy);
+	    cairo_move_to(dcx, 0, 0);
+	    cairo_scale(dcx, _dess->scale, _dess->scale);
+	}
 	pango_cairo_show_layout(dcx, dcx);
     }
 

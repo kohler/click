@@ -56,12 +56,14 @@ const char default_css[] = "port.input {\n\
     port-length: 11px;\n\
     port-width: 7px;\n\
     port-margin: 100%;\n\
+    port-edge-padding: 4.8px;\n\
 }\n\
 port.output {\n\
     port-shape: rectangle;\n\
     port-length: 9px;\n\
     port-width: 5.5px;\n\
     port-margin: 100%;\n\
+    port-edge-padding: 4.8px;\n\
 }\n\
 port.push, port.push.agnostic {\n\
     port-color: black;\n\
@@ -82,19 +84,18 @@ port.agnostic, port.push.agnostic, port.pull.agnostic {\n\
     background: rgb(100%, 100%, 87%);\n\
     color: black;\n\
     border: 1px solid black;\n\
-    orientation-padding: 5.4px;\n\
-    padding: 7.2px 12px;\n\
+    padding: 8px 12px;\n\
     margin: 6px 12px;\n\
-    ports-padding: 4.8px;\n\
     shadow: drop rgba(50%, 50%, 45%, 50%) 3px;\n\
-    min-height: 30px;\n\
     orientation: vertical;\n\
+    /* min-height: 30px; */\n\
     /* height-step: 4px; */\n\
     scale: 100%;\n\
     queue-stripe: 1px solid rgb(87%, 87%, 50%);\n\
     queue-stripe-spacing: 12px;\n\
     text: \"%n\\n<small>%c</small>\";\n\
     display: open;\n\
+    port-display: both;\n\
     @media print { font: Times; }\n\
     /* @media screen { font: URW Palladio L italic 20; } */\n\
 }\n\
@@ -159,7 +160,9 @@ static dcss_propmatch port_pm[] = {
     { "port-margin-top", 0 },
     { "port-margin-right", 0 },
     { "port-margin-bottom", 0 },
-    { "port-margin-left", 0 }
+    { "port-margin-left", 0 },
+    { "port-edge-padding", 0 },
+    { "port-display", 0 }
 };
 
 static dcss_propmatch elt_pm[] = {
@@ -178,8 +181,7 @@ static dcss_propmatch elt_pm[] = {
     { "decorations", 0 },
     { "queue-stripe-style", 0 },
     { "queue-stripe-width", 0 },
-    { "queue-stripe-color", 0 },
-    { "queue-stripe-spacing", 0 }
+    { "queue-stripe-color", 0 }
 };
 
 static dcss_propmatch elt_size_pm[] = {
@@ -188,8 +190,6 @@ static dcss_propmatch elt_size_pm[] = {
     { "padding-right", 0 },
     { "padding-bottom", 0 },
     { "padding-left", 0 },
-    { "orientation-padding", 0 },
-    { "ports-padding", 0 },
     { "min-width", 0 },
     { "min-height", 0 },
     { "height-step", 0 },
@@ -197,6 +197,7 @@ static dcss_propmatch elt_size_pm[] = {
     { "margin-right", 0 },
     { "margin-bottom", 0 },
     { "margin-left", 0 },
+    { "queue-stripe-spacing", 0 },
     { "scale", 0 }
 };
 
@@ -243,7 +244,9 @@ enum {
     pflag_fullness = 16,
 
     num_activity_pm = sizeof(activity_pm) / sizeof(activity_pm[0]),
-    pflag_activity = 32
+    pflag_activity = 32,
+
+    pflag_no_below = 64
 };
 
 
@@ -1415,6 +1418,7 @@ void dcss_set::collect_port_styles(wdiagram *d, const delt *e, bool isoutput,
 	    && s->selector().match_port(isoutput, port, processing)
 	    && s->match_context(d, e))
 	    result.push_back(s);
+    collect_elt_styles(d, e, pflag_port | pflag_no_below, result, 0);
     if (_below)
 	_below->collect_port_styles(d, e, isoutput, port, processing, result);
 }
@@ -1449,7 +1453,16 @@ ref_ptr<dport_style> dcss_set::port_style(wdiagram *d, const delt *e,
 	sty->margin[1] = port_pm[8].vrelative("port-margin-right");
 	sty->margin[2] = port_pm[9].vrelative("port-margin-bottom");
 	sty->margin[3] = port_pm[10].vrelative("port-margin-left");
-	sty->uniform_style = false;
+	sty->edge_padding = port_pm[11].vrelative("port-edge-padding");
+	s = port_pm[12].vstring("port-display");
+	if (s.equals("none", 4))
+	    sty->display = dpdisp_none;
+	else if (s.equals("inputs", 6))
+	    sty->display = dpdisp_inputs;
+	else if (s.equals("outputs", 7))
+	    sty->display = dpdisp_outputs;
+	else
+	    sty->display = dpdisp_both;
 
 	style_cache = ref_ptr<dport_style>(sty);
     }
@@ -1478,7 +1491,9 @@ void dcss_set::collect_elt_styles(wdiagram *d, const delt *e, int pflag,
 	    && s->selector().match(d, e, sensitivity)
 	    && s->match_context(d, e, sensitivity))
 	    result.push_back(s);
-    if (_below)
+    if (e->parent() && !e->parent()->root())
+	collect_elt_styles(d, e->parent(), pflag | pflag_no_below, result, sensitivity);
+    if (_below && !(pflag & pflag_no_below))
 	_below->collect_elt_styles(d, e, pflag, result, sensitivity);
 }
 
@@ -1532,7 +1547,6 @@ ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e, int *sensiti
 	sty->queue_stripe_style = elt_pm[13].vborder_style("queue-stripe-style");
 	sty->queue_stripe_width = elt_pm[14].vpixel("queue-stripe-width", d, e);
 	elt_pm[15].vcolor(sty->queue_stripe_color, "queue-stripe-color");
-	sty->queue_stripe_spacing = elt_pm[16].vpixel("queue-stripe-spacing", d, e);
 
 	style_cache = ref_ptr<delt_style>(sty);
     }
@@ -1559,23 +1573,25 @@ ref_ptr<delt_size_style> dcss_set::elt_size_style(wdiagram *d, const delt *e, in
     if (!style_cache) {
 	dcss::assign_all(elt_size_pm, elt_size_pmp, num_elt_size_pm, sv.begin(), sv.end());
 
-	double scale = elt_size_pm[14].vrelative("scale");
+	double scale = elt_size_pm[13].vrelative("scale");
+	if (scale <= 0)
+	    scale = 1;
 
 	delt_size_style *sty = new delt_size_style;
-	sty->border_width = elt_size_pm[0].vpixel("border-width", d, e) * scale;
+	sty->scale = scale;
+	sty->border_width = elt_size_pm[0].vpixel("border-width", d, e);
 	sty->padding[0] = elt_size_pm[1].vpixel("padding-top", d, e) * scale;
 	sty->padding[1] = elt_size_pm[2].vpixel("padding-right", d, e) * scale;
 	sty->padding[2] = elt_size_pm[3].vpixel("padding-bottom", d, e) * scale;
 	sty->padding[3] = elt_size_pm[4].vpixel("padding-left", d, e) * scale;
-	sty->orientation_padding = elt_size_pm[5].vpixel("orientation-padding", d, e) * scale;
-	sty->ports_padding = elt_size_pm[6].vpixel("ports-padding", d, e) * scale;
-	sty->min_width = elt_size_pm[7].vpixel("min-width", d, e) * scale;
-	sty->min_height = elt_size_pm[8].vpixel("min-height", d, e) * scale;
-	sty->height_step = elt_size_pm[9].vpixel("height-step", d, e) * scale;
-	sty->margin[0] = elt_size_pm[10].vpixel("margin-top", d, e) * scale;
-	sty->margin[1] = elt_size_pm[11].vpixel("margin-right", d, e) * scale;
-	sty->margin[2] = elt_size_pm[12].vpixel("margin-bottom", d, e) * scale;
-	sty->margin[3] = elt_size_pm[13].vpixel("margin-left", d, e) * scale;
+	sty->min_width = elt_size_pm[5].vpixel("min-width", d, e) * scale;
+	sty->min_height = elt_size_pm[6].vpixel("min-height", d, e) * scale;
+	sty->height_step = elt_size_pm[7].vpixel("height-step", d, e) * scale;
+	sty->margin[0] = elt_size_pm[8].vpixel("margin-top", d, e) * scale;
+	sty->margin[1] = elt_size_pm[9].vpixel("margin-right", d, e) * scale;
+	sty->margin[2] = elt_size_pm[10].vpixel("margin-bottom", d, e) * scale;
+	sty->margin[3] = elt_size_pm[11].vpixel("margin-left", d, e) * scale;
+	sty->queue_stripe_spacing = elt_size_pm[12].vpixel("queue-stripe-spacing", d, e) * scale;
 
 	style_cache = ref_ptr<delt_size_style>(sty);
     }
@@ -1862,18 +1878,3 @@ String dcss_set::vstring(PermString name, PermString decor, wdiagram *d, const d
 }
 
 #include <click/vector.cc>
-
-// What do I want to do here.
-// match_initial: collect set of potentially matching CSS styles
-//    filter by what type of thing you want
-//    explode
-//    die
-//    explode AND die
-//
-// The point is to avoid re-fetching styles that have not changed.
-// Handler values might cause a style to change.
-// Everything else can be handled externally by comparing ref_ptrs.
-//
-// 1. Collect all styles that match_initial.
-// 2. Compare match_final.
-// 3. If don't match_final

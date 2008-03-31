@@ -222,9 +222,7 @@ void wdiagram::router_create(bool incremental, bool always)
     if (!_cursor[0])
 	initialize();
     if (!_layout && _rw->_r) {
-	dcontext dcx;
-	dcx.d = this;
-	dcx.pl = gtk_widget_create_pango_layout(_widget, NULL);
+	dcontext dcx(this, gtk_widget_create_pango_layout(_widget, NULL), 0);
 	dcx.generation = _pango_generation;
 	ElementMap::push_default(_rw->element_map());
 	_elt_expand = 1;
@@ -284,10 +282,7 @@ void wdiagram::on_expose(const GdkRectangle *area)
     cairo_translate(cr, -_origin_x, -_origin_y);
     cairo_scale(cr, _scale, _scale);
 
-    dcontext dcx;
-    dcx.d = this;
-    dcx.cr = cr;
-    dcx.pl = gtk_widget_create_pango_layout(_widget, NULL);
+    dcontext dcx(this, gtk_widget_create_pango_layout(_widget, NULL), cr);
     dcx.generation = _pango_generation;
     dcx.scale_step = _scale_step;
 
@@ -346,11 +341,9 @@ void wdiagram::export_diagram(const char *filename, bool eps)
     } else
 	crs = cairo_pdf_surface_create(filename, _relt->_width, _relt->_height);
 
-    dcontext dcx;
-    dcx.d = this;
-    dcx.cr = cairo_create(crs);
-    cairo_translate(dcx, -_relt->_x, -_relt->_y);
-    dcx.pl = pango_cairo_create_layout(dcx.cr);
+    cairo_t *cr = cairo_create(crs);
+    cairo_translate(cr, -_relt->_x, -_relt->_y);
+    dcontext dcx(this, pango_cairo_create_layout(cr), cr);
     dcx.generation = ++_pango_generation;
     dcx.scale_step = 1;		// position precisely
     _css_set = _base_css_set->remedia("print");

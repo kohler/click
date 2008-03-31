@@ -42,7 +42,15 @@ enum {
     dedisp_vsplit = 3
 };
 
+enum {
+    dpdisp_none = 0,
+    dpdisp_inputs = 1,
+    dpdisp_outputs = 2,
+    dpdisp_both = 3
+};
+
 struct dport_style : public enable_ref_ptr {
+    int display;
     int shape;
     double length;
     double width;
@@ -51,18 +59,18 @@ struct dport_style : public enable_ref_ptr {
     double border_width;
     double border_color[4];
     double margin[4];
-    bool uniform_style;
+    double edge_padding;
 };
 
 struct delt_size_style : public enable_ref_ptr {
     double border_width;
     double padding[4];
     double margin[4];
-    double orientation_padding;
-    double ports_padding;
     double min_width;
     double min_height;
     double height_step;
+    double scale;
+    double queue_stripe_spacing;
 };
 
 struct delt_style : public enable_ref_ptr {
@@ -77,7 +85,6 @@ struct delt_style : public enable_ref_ptr {
     double queue_stripe_color[4];
     int queue_stripe_style;
     double queue_stripe_width;
-    double queue_stripe_spacing;
     int style;
     String text;
     int display;
