@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
 =c
 
-ICMPPingSource(SADDR, DADDR [, I<keywords> INTERVAL, IDENTIFIER, LIMIT, DATA, ACTIVE])
+ICMPPingSource(SRC, DST [, I<keywords> INTERVAL, IDENTIFIER, LIMIT, DATA, ACTIVE])
 
 =s icmp
 

@@ -60,7 +60,7 @@ FunctionTest::initialize(ErrorHandler *errh)
     CHECK(int_sqrt(0xFFFFFFFEU) == 0xFFFF);
     CHECK(int_sqrt(0xFFFFFFFFU) == 0xFFFF);
 
-#if HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES && HAVE_INT64_DIVIDE
     CHECK(int_sqrt((uint64_t) 0xFFFFFFFFU) == 0xFFFF);
     CHECK(int_sqrt((uint64_t) 1 << 32) == 0x10000);
     CHECK(int_sqrt(~((uint64_t) 0)) == 0xFFFFFFFFU);

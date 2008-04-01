@@ -787,15 +787,28 @@ sub execute_test ($$$) {
 
     # echo files
     foreach $f (@show) {
-	if (-r out_script_fn_to_fn($f)) {
-	    print "$fn: $f\n", "=" x 79, "\n";
+	$efn = $f->[0];
+	if (-r out_script_fn_to_fn($efn)) {
+	    print "$fn: ", $efn, "\n", "=" x 79, "\n";
 	    local($/) = undef;
-	    open(X, out_script_fn_to_fn($f));
-	    $_ = <X>;
+	    open(X, out_script_fn_to_fn($efn));
+	    my($text) = <X>;
 	    close(X);
-	    print $_, "=" x 79, "\n";
+	    if ($f->[1]) {
+		my($ignores) = '';
+		$ignores .= join("\n", @{$tt->{"i:$efn"}}) . "\n" if exists($tt->{"i:$efn"});
+		$ignores .= join("\n", @{$tt->{"i:all"}}) . "\n" if exists($tt->{"i:all"});
+		# ignore testie messages
+		$ignores .= "testie_lineno:.*\ntestie_error:.*\n" if $efn eq 'stderr';
+		if ($ignores ne '') {
+		    $ignores =~ s/([!\#<>])/\\$1/g;
+		    $ignores =~ s{^([ \t]*\S[^\n]*)}{\$text =~ s<^$1\[ \\t\]*\$\n?><>mg;\n}mg;
+		    eval $ignores;
+		}
+	    }
+	    print $text, "=" x 79, "\n";
 	} else {
-	    print "$fn: $f does not exist\n";
+	    print "$fn: $efn does not exist\n";
 	}
     }
 
@@ -874,6 +887,7 @@ Options:
   -V, --verbose              Print information for successful tests.
   -VV, --superverbose        Print %desc information for all tests.
   -s, --show TESTIEFILE      Show contents of TESTIEFILE on completion.
+  -S, --show-all TESTIEFILE  Like --show, but include ignored lines.
   --preserve-temporaries     Preserve temporary files.
   -e, --expand               Expand test files into current directory.  
   -v, --version              Print version information and exit.
@@ -972,11 +986,18 @@ while (@ARGV) {
 	$preserve_temporaries = 1;
     } elsif (/^-s$/ || argcmp($_, '--show', 2)) {
 	usage if @ARGV == 0;
-	push @show, (shift @ARGV);
+	push @show, [(shift @ARGV), 1];
     } elsif (/^-s(.+)$/) {
-	push @show, $1;
+	push @show, [$1, 1];
     } elsif (argcmp($_, '--show', 2, $arg)) {
-	push @show, $arg;
+	push @show, [$arg, 1];
+    } elsif (/^-S$/ || argcmp($_, '--show-all', 5)) {
+	usage if @ARGV == 0;
+	push @show, [(shift @ARGV), 0];
+    } elsif (/^-S(.+)$/) {
+	push @show, [$1, 0];
+    } elsif (argcmp($_, '--show-all', 5, $arg)) {
+	push @show, [$arg, 0];
     } else {
 	usage;
     }
@@ -991,8 +1012,8 @@ mkdir $dir || die "cannot create $dir directory: $!\n";
 
 # check @show for stdout/stderr
 foreach my $s (@show) {
-    $show_stdout = 1 if $s eq 'stdout';
-    $show_stderr = 1 if $s eq 'stderr';
+    $show_stdout = 1 if $s->[0] eq 'stdout';
+    $show_stderr = 1 if $s->[0] eq 'stderr';
 }
 
 push @tests, '-' if !@tests;
@@ -1074,6 +1095,11 @@ Preserve the temporary directory created for the test.
 
 Echo the contents of FILE on completion. FILE should be one of the
 filenames specified by %file or %expect*, or 'stdout' or 'stderr'.
+Leaves out any ignored lines.
+
+=item -S, --show-all FILE
+
+Like --show, but includes any ignored lines.
 
 =item -e, --expand
 
