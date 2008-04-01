@@ -1,0 +1,67 @@
+%info
+
+This test checks several ToHost properties: that a ToHost without a device
+will accept packets with a device annotation, and drop packets without such
+an annotation; and that ToHost(DEVICE) sets the device annotation
+appropriately; and that ToHost(SNIFFERS true) sends packets to sniffers.
+XXX It doesn't test whether SNIFFERS true sends packets to the kernel.
+
+%require
+[ `whoami` = root ]
+
+%script
+click-install KERNELCONFIG
+tcpdump -n -i fake0 >FAKE0 2>&1 &
+usleep 500000
+dump1=$!
+ping -n -i 1 -c 1 1.0.0.2 | grep transmitted | sed 's/^\([0-9]*\).*/\1/' >PING1
+echo 1 > /click/sw/switch
+ping -n -i 1 -c 1 1.0.0.3 | grep transmitted | sed 's/^\([0-9]*\).*/\1/' >>PING1
+kill $dump1
+cat /click/th0/drops /click/th1/drops >DROPS
+cat /click/c/count >COUNT
+click-uninstall
+
+%file KERNELCONFIG
+fh1 :: FromHost(fake0, 1.0.0.1/24, TYPE IP);
+th0 :: ToHost(SNIFFERS true, TYPE IP);
+th1 :: ToHost(fake0, TYPE IP);
+
+fh1 -> IPPrint(a) -> ICMPPingResponder -> IPPrint(b) -> c::Counter -> sw :: Switch;
+sw[0] -> th0;
+sw[1] -> th1;
+
+ICMPSendPings(2.0.0.2, 1.0.0.1, LIMIT 1) -> th0;
+ICMPSendPings(2.0.0.3, 1.0.0.1, LIMIT 1) -> th1;
+
+%ignorex -i FAKE0
+.*listening on.*
+.*packet.*received by.*
+.*packet.*dropped by.*
+.*packet.*captured.*
+.*arp.*
+.*verbose output.*
+.*end of file.*
+.*icmp6.*
+.*\.mdns >.*
+.*igmp.*
+
+%expectx -i FAKE0
+.* 1.0.0.1 > 1.0.0.2: icmp.* echo request.*
+.* 1.0.0.2 > 1.0.0.1: icmp.* echo reply.*
+.* 2.0.0.3 > 1.0.0.1: icmp.* echo request.*
+.* 1.0.0.1 > 1.0.0.3: icmp.* echo request.*
+.* 1.0.0.3 > 1.0.0.1: icmp.* echo reply.*
+
+%expect PING1
+1
+1
+
+%expect DROPS
+1
+0
+
+%expect COUNT
+2
+
+%expect stderr

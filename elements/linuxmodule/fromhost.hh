@@ -17,9 +17,11 @@ reads packets from Linux
 
 =d
 
-Captures packets orginating from the Linux kernel and pushes them on output
-0. Output packets have Ethernet headers; only the protocol field is
-interesting.
+Captures packets orginating from the Linux kernel and pushes them on output 0.
+The type of packet depends on the TYPE keyword argument.  For TYPE ETHER,
+output packets have Ethernet headers; only the protocol field is interesting.
+For TYPE IP, output packets are IP packets.  TYPE ETHER is the default,
+although TYPE IP is probably more useful.
 
 Installs a fake interface called DEVNAME, and changes the routing table so
 that every packet destined for PREFIX = ADDR/MASK is sent through that
@@ -38,22 +40,33 @@ Keyword arguments are:
 
 =over 8
 
+=item TYPE
+
+Specifies the device type.  Valid options are C<ETHER> and C<IP>.  Currently
+defaults to C<ETHER> with a warning.
+
 =item ETHER
 
 Ethernet address. Specifies the fake device's Ethernet address. Default is
-00:01:02:03:04:05.
+00-01-02-03-04-05.
 
 =back
 
 =n
 
-Linux will send ARP queries to the fake device. You must respond to these
-queries in order to receive any IP packets, but you can obviously respond
-with any Ethernet address you'd like. Here is one common idiom:
+If TYPE is IP, Click will set the packet's IP header and destination IP
+address annotations.  Packets with bad IP version or header length are dropped
+or emitted on output 1 if it exists.  Note that Click doesn't check IP
+checksums or full packet lengths.
 
-  FromHost(fake0, 192.0.0.1/8)
+If TYPE is ETHER, Linux will send ARP queries to the fake device. You must
+respond to these queries in order to receive any IP packets, but you can
+obviously respond with any Ethernet address you'd like. Here is one common
+idiom:
+
+  FromHost(fake0, 192.0.0.1/8, TYPE ETHER)
     -> fromhost_cl :: Classifier(12/0806, 12/0800);
-  fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> ToHost;
+  fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1-1-1-1-1-1) -> ToHost;
   fromhost_cl[1] -> ... // IP packets
 
 =e
@@ -80,7 +93,7 @@ class FromHost : public AnyDevice { public:
     static void static_initialize();
     
     const char *class_name() const	{ return "FromHost"; }
-    const char *port_count() const	{ return PORTS_0_1; }
+    const char *port_count() const	{ return "0/1-2"; }
     const char *processing() const	{ return PUSH; }
 
     net_device_stats *stats()		{ return &_stats; }
@@ -107,7 +120,7 @@ class FromHost : public AnyDevice { public:
     Packet *_queue;		// to prevent race conditions
     NotifierSignal _nonfull_signal;
 
-    static net_device *new_device(const char *);
+    net_device *new_device(const char *);
     static int fl_tx(struct sk_buff *, net_device *);
     
 };

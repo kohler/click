@@ -31,6 +31,7 @@ CLICK_CXX_PROTECT
 #include <asm/uaccess.h>
 #include <linux/ip.h>
 #include <linux/inetdevice.h>
+#include <linux/if_arp.h>
 #include <net/route.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
@@ -66,14 +67,28 @@ FromHost::~FromHost()
 {
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+extern "C" {
+static void fromhost_inet_setup(struct net_device *dev)
+{
+    dev->type = ARPHRD_NONE;
+    dev->hard_header_len = 0;
+    dev->addr_len = 0;
+    dev->mtu = 1500;
+    dev->flags = IFF_POINTOPOINT | IFF_NOARP | IFF_MULTICAST;
+}
+}
+#endif
+
 net_device *
 FromHost::new_device(const char *name)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     read_lock(&dev_base_lock);
 #endif
+    void (*setup)(struct net_device *) = (_macaddr ? ether_setup : fromhost_inet_setup);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    net_device *dev = alloc_netdev(0, name, ether_setup);
+    net_device *dev = alloc_netdev(0, name, setup);
 #else
     int errcode;
     net_device *dev = dev_alloc(name, &errcode);
@@ -92,7 +107,7 @@ FromHost::new_device(const char *name)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-    ether_setup(dev);
+    setup(dev);
 #endif
     dev->open = fl_open;
     dev->stop = fl_close;
@@ -104,16 +119,18 @@ FromHost::new_device(const char *name)
 int
 FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    String type;
     if (cp_va_kparse(conf, this, errh,
 		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
 		     "PREFIX", cpkP+cpkM, cpIPPrefix, &_destaddr, &_destmask,
+		     "TYPE", 0, cpWord, &type,
 		     "ETHER", 0, cpEthernetAddress, &_macaddr,
 		     cpEnd) < 0)
 	return -1;
+    
+    // check for duplicate element
     if (_devname.length() > IFNAMSIZ - 1)
 	return errh->error("device name '%s' too long", _devname.c_str());
-
-    // check for duplicate element
     void *&used = router()->force_attachment("FromHost_" + _devname);
     if (used)
 	return errh->error("duplicate FromHost for device '%s'", _devname.c_str());
@@ -132,6 +149,12 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 	}
     }
 
+    // set type
+    if (type == "IP")
+	_macaddr = EtherAddress();
+    else if (type != "ETHER" && type != "")
+	return errh->error("bad TYPE");
+    
     // if not found, create new device
     int res;
     _dev = new_device(_devname.c_str());
@@ -164,7 +187,7 @@ dev_locks(int up)
 int
 FromHost::set_device_addresses(ErrorHandler *errh)
 {
-    int res;
+    int res = 0;
     struct ifreq ifr;
     strncpy(ifr.ifr_name, _dev->name, IFNAMSIZ);
     struct sockaddr_in *sin = (struct sockaddr_in *)&ifr.ifr_addr;
@@ -172,10 +195,12 @@ FromHost::set_device_addresses(ErrorHandler *errh)
     mm_segment_t oldfs = get_fs();
     set_fs(get_ds());
 
-    ifr.ifr_hwaddr.sa_family = _dev->type;
-    memcpy(ifr.ifr_hwaddr.sa_data, _macaddr.data(), 6);
-    if ((res = dev_ioctl(SIOCSIFHWADDR, &ifr)) < 0)
-	errh->error("error %d setting hardware address for device '%s'", res, _devname.c_str());
+    if (_macaddr) {
+	ifr.ifr_hwaddr.sa_family = _dev->type;
+	memcpy(ifr.ifr_hwaddr.sa_data, _macaddr.data(), 6);
+	if ((res = dev_ioctl(SIOCSIFHWADDR, &ifr)) < 0)
+	    errh->error("error %d setting hardware address for device '%s'", res, _devname.c_str());
+    }
 
     sin->sin_family = AF_INET;
     sin->sin_addr = _destaddr;
@@ -334,7 +359,31 @@ FromHost::run_task(Task *)
     else if (Packet *p = _queue) {
 	_queue = 0;
 	netif_wake_queue(_dev);
+
+	// Convenience for TYPE IP: set the IP header and destination address.
+	if (_dev->type == ARPHRD_NONE && p->length() >= 1) {
+	    const click_ip *iph = (const click_ip *) p->data();
+	    if (iph->ip_v == 4) {
+		if (iph->ip_hl >= 5
+		    && reinterpret_cast<const uint8_t *>(iph) + (iph->ip_hl << 2) <= p->end_data()) {
+		    p->set_ip_header(iph, iph->ip_hl << 2);
+		    p->set_dst_ip_anno(iph->ip_dst);
+		} else
+		    goto bad;
+	    } else if (iph->ip_v == 6) {
+		if (reinterpret_cast<const uint8_t *>(iph) + sizeof(click_ip6) <= p->end_data())
+		    p->set_ip6_header(reinterpret_cast<const click_ip6 *>(iph));
+		else
+		    goto bad;
+	    } else
+		goto bad;
+	}
+
 	output(0).push(p);
+	return true;
+
+      bad:
+	checked_output_push(1, p);
 	return true;
     } else
 	return false;

@@ -5,19 +5,21 @@
 
 /*
  * =c
- * ToHostSniffers([DEVNAME, I<keywords> SNIFFERS, QUIET, ALLOW_NONEXISTENT])
+ * ToHostSniffers([DEVNAME, I<keywords>])
  * =s comm
  * sends packets to Linux packet sniffers
  * =d
  *
  * Hands packets to any packet sniffers registered with Linux, such as packet
  * sockets. Packets are not passed to the ordinary Linux networking stack.
- * Expects packets with Ethernet headers.
  *
  * If DEVNAME is present, each packet is marked to appear as if it originated
  * from that network device. As with ToDevice, DEVNAME can be an Ethernet
  * address.
  * 
+ * If TYPE is ETHER, then expects packets with Ethernet headers; this is the
+ * default.  If TYPE is IP, then expects packets with raw IP headers.
+ *
  * This element is only available in the Linux kernel module.
  *
  * =n

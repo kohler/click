@@ -27,6 +27,7 @@ CLICK_CXX_PROTECT
 #include <net/dst.h>
 #include <linux/smp_lock.h>
 #include <linux/if_ether.h>
+#include <linux/if_arp.h>
 #include <linux/etherdevice.h>
 #include <linux/netdevice.h>
 #if LINUX_VERSION_CODE >= 0x020400 && LINUX_VERSION_CODE < 0x020600
@@ -70,12 +71,20 @@ ToHost::~ToHost()
 int
 ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    String type;
     if (AnyDevice::configure_keywords(conf, errh, false) < 0
 	|| cp_va_kparse(conf, this, errh,
 			"DEVNAME", cpkP, cpString, &_devname,
 			"SNIFFERS", 0, cpBool, &_sniffers,
+			"TYPE", 0, cpWord, &type,
 			cpEnd) < 0)
 	return -1;
+    if (type == "ETHER" || type == "")
+	_type = ARPHRD_ETHER;
+    else if (type == "IP")
+	_type = ARPHRD_NONE;
+    else
+	return errh->error("bad TYPE");
     return 0;
 }
 
@@ -87,7 +96,10 @@ ToHost::initialize(ErrorHandler *errh)
     
     // Avoid warnings about "device down" with FromHost devices -- FromHost
     // brings up its device during initialize().
-    return (_devname ? find_device(&to_host_map, errh) : 0);
+    int r;
+    if (_devname && (r = find_device(&to_host_map, errh)) < 0)
+	return r;
+    return 0;
 }
 
 void
@@ -138,22 +150,29 @@ ToHost::push(int port, Packet *p)
     // remove PACKET_CLEAN bit -- packet is becoming dirty
     skb->pkt_type &= PACKET_TYPE_MASK;
 
-    // do not call eth_type_trans; it changes pkt_type! Instead, do its work
-    // directly.
+    // MAC header is the data pointer
     skb->mac.raw = skb->data;
-    skb_pull(skb, 14);
+    
+    // set skb->protocol
+    if (_type == ARPHRD_NONE)
+	skb->protocol = __constant_htons(ETH_P_IP);
+    else {
+	// do not call eth_type_trans; it changes pkt_type! Instead, do its
+	// work directly.
+	skb_pull(skb, 14);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    const ethhdr *eth = eth_hdr(skb);
+	const ethhdr *eth = eth_hdr(skb);
 #else
-    const ethhdr *eth = skb->mac.ethernet;
+	const ethhdr *eth = skb->mac.ethernet;
 #endif
-    if (ntohs(eth->h_proto) >= 1536)
-	skb->protocol = eth->h_proto;
-    else {
-	const unsigned short *crap = (const unsigned short *)skb->data;
-	// "magic hack to spot IPX packets"
-	skb->protocol = (*crap == 0xFFFF ? htons(ETH_P_802_3) : htons(ETH_P_802_2));
+	if (ntohs(eth->h_proto) >= 1536)
+	    skb->protocol = eth->h_proto;
+	else {
+	    const unsigned short *crap = (const unsigned short *)skb->data;
+	    // "magic hack to spot IPX packets"
+	    skb->protocol = (*crap == 0xFFFF ? htons(ETH_P_802_3) : htons(ETH_P_802_2));
+	}
     }
 
     // skb->dst may be set if the packet came from Linux originally. In this
@@ -172,7 +191,7 @@ ToHost::push(int port, Packet *p)
     local_bh_disable();
     dev_hold(dev);
 # if HAVE___NETIF_RECEIVE_SKB
-    __netif_receive_skb(skb, protocol, -1);
+    int ret = __netif_receive_skb(skb, protocol, -1);
 # else
     netif_receive_skb(skb, protocol, -1);
 # endif

@@ -6,7 +6,7 @@
 /*
  * =c
  *
- * ToHost([DEVNAME, I<keywords> SNIFFERS, QUIET, ALLOW_NONEXISTENT])
+ * ToHost([DEVNAME, I<keywords>])
  *
  * =s comm
  *
@@ -15,8 +15,6 @@
  * =d
  *
  * Hands packets to the ordinary Linux protocol stack.
- * Expects packets with Ethernet headers.
- * 
  * You should probably give Linux IP packets addressed to
  * the local machine (including broadcasts), and a copy
  * of each ARP reply.
@@ -24,6 +22,9 @@
  * If DEVNAME is present, each packet is marked to appear as if it originated
  * from that network device -- that is, its device annotation is set to that
  * device. As with ToDevice, DEVNAME can be an Ethernet address.
+ *
+ * If TYPE is ETHER, then expects packets with Ethernet headers; this is the
+ * default.  If TYPE is IP, then expects packets with raw IP headers.
  *
  * This element is only available in the Linux kernel module.
  *
@@ -36,6 +37,10 @@
  * Boolean. If true, then ToHost will send packets to the kernel so that only
  * tcpdump(1), and other sniffer programs on the host, will receive them.
  * Default is false.
+ *
+ * =item TYPE
+ *
+ * Type of interface.  Choices are ETHER and IP.  Default is ETHER.
  *
  * =item QUIET
  *
@@ -117,6 +122,7 @@ class ToHost : public AnyDevice { public:
 
     bool _sniffers;
     int _drops;
+    int _type;
 
     static String read_handler(Element *, void *);
 
