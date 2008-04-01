@@ -21,6 +21,7 @@
 
 #include <click/router.hh>
 #include <click/master.hh>
+#include <click/straccum.hh>
 #include <click/llrpc.h>
 #include <click/ino.hh>
 
@@ -552,6 +553,37 @@ unlock_threads()
 }
 
 
+namespace {
+class ClickfsHandlerErrorHandler : public BaseErrorHandler { public:
+    ClickfsHandlerErrorHandler(const Handler *h, Element *e, bool write)
+	: _h(h), _e(e), _context(write) {
+    }
+    String decorate_text(Seriousness seriousness, const String &landmark, const String &text) {
+	String t;
+	if (_context >= 0) {
+	    StringAccum sa;
+	    sa << "In " << (_context > 0 ? "write" : "read")
+	       << " handler '" << _h->name() << '\'';
+	    if (_e)
+		sa << " for '" << _e->declaration() << "\':\n";
+	    _context = -1;
+	    t = BaseErrorHandler::decorate_text(ERR_MESSAGE, landmark, sa.take_string());
+	}
+	return t + BaseErrorHandler::decorate_text(ERR_MESSAGE, landmark, prepend_lines("  ", text));
+    }
+    void handle_text(Seriousness, const String &s) {
+	_sa << s;
+	if (s && s.back() != '\n')
+	    _sa << '\n';
+    }
+    const Handler *_h;
+    Element *_e;
+    int _context;
+    StringAccum _sa;
+};
+}
+
+
 extern "C" {
 
 static int
@@ -651,6 +683,7 @@ handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store
     String &s = handler_strings[stringno];
     int old_length = s.length();
 
+    handler_strings_info[stringno].flags &= ~HANDLER_WRITE_DONE;
 #ifdef LARGEST_HANDLER_WRITE
     if (f_pos + count > LARGEST_HANDLER_WRITE
 	&& !(handler_strings_info[stringno].flags & HANDLER_WRITE_UNLIMITED))
@@ -681,6 +714,62 @@ handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store
 }
 
 static int
+handler_do_write(struct file *filp, void *address_ptr)
+{
+    int stringno = FILP_WRITE_STRINGNO(filp);
+    struct inode *inode = filp->f_dentry->d_inode;
+    const Handler *h;
+    int retval = 0;
+    
+    if (inode_out_of_date(inode)
+	|| !(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino)))
+	|| !h->write_visible())
+	retval = -EIO;
+    else if (handler_strings[stringno].out_of_memory())
+	retval = -ENOMEM;
+    else {
+	int eindex = INO_ELEMENTNO(inode->i_ino);
+	Element *e = Router::element(click_router, eindex);
+	
+	ClickfsHandlerErrorHandler cerrh(h, e, true);
+	if (h->exclusive()) {
+	    lock_threads();
+	    retval = h->call_write(handler_strings[stringno], e, true, &cerrh);
+	    unlock_threads();
+	} else
+	    retval = h->call_write(handler_strings[stringno], e, true, &cerrh);
+	
+	handler_strings_info[stringno].flags |= HANDLER_WRITE_DONE;
+
+	if (cerrh._sa && !address_ptr)
+	    click_logged_errh->message("%s", cerrh._sa.c_str());
+	if (address_ptr) {
+	    click_llrpc_call_handler_st chs;
+	    int r;
+	    if ((r = CLICK_LLRPC_GET_DATA(&chs, address_ptr, sizeof(chs))) < 0) {
+		retval = r;
+		goto exit;
+	    }
+	    size_t s = cerrh._sa.length();
+	    if (s > chs.errorlen)
+		s = chs.errorlen;
+	    chs.errorlen = cerrh._sa.length();
+	    if ((r = CLICK_LLRPC_PUT_DATA(chs.errorbuf, cerrh._sa.data(), s)) < 0) {
+		retval = r;
+		goto exit;
+	    }
+	    if ((r = CLICK_LLRPC_PUT_DATA(address_ptr, &chs, sizeof(chs))) < 0) {
+		retval = r;
+		goto exit;
+	    }
+	}
+    }
+    
+  exit:
+    return retval;
+}
+
+static int
 handler_flush(struct file *filp
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
 	      , struct files_struct *files
@@ -698,33 +787,10 @@ handler_flush(struct file *filp
 #endif
     
     if (writing && f_count == 1
-	&& stringno >= 0 && stringno < handler_strings_cap) {
+	&& stringno >= 0 && stringno < handler_strings_cap
+	&& !(handler_strings_info[stringno].flags & HANDLER_WRITE_DONE)) {
 	LOCK_CONFIG_WRITE();
-	
-	struct inode *inode = filp->f_dentry->d_inode;
-	const Handler *h;
-	
-	if (inode_out_of_date(inode)
-	    || !(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino)))
-	    || !h->write_visible())
-	    retval = -EIO;
-	else if (handler_strings[stringno].out_of_memory())
-	    retval = -ENOMEM;
-	else {
-	    int eindex = INO_ELEMENTNO(inode->i_ino);
-	    Element *e = Router::element(click_router, eindex);
-	    String context_string = "In write handler '" + h->name() + "'";
-	    if (e)
-		context_string += String(" for '") + e->declaration() + "'";
-	    ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
-	    if (h->exclusive()) {
-		lock_threads();
-		retval = h->call_write(handler_strings[stringno], e, true, &cerrh);
-		unlock_threads();
-	    } else
-		retval = h->call_write(handler_strings[stringno], e, true, &cerrh);
-	}
-	
+	retval = handler_do_write(filp, 0);
 	UNLOCK_CONFIG_WRITE();
     }
 
@@ -760,6 +826,8 @@ handler_ioctl(struct inode *inode, struct file *filp,
     else if (INO_ELEMENTNO(inode->i_ino) < 0
 	     || !(e = click_router->element(INO_ELEMENTNO(inode->i_ino))))
 	retval = -EIO;
+    else if (command == CLICK_LLRPC_CALL_HANDLER)
+	retval = handler_do_write(filp, reinterpret_cast<void *>(address));
     else {
 	union {
 	    char buf[128];

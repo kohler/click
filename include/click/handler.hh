@@ -42,7 +42,8 @@ class Handler { public:
 	DRIVER_FLAG_1 = 0x2000,	///< @brief Handler flag available for drivers.
 	DRIVER_FLAG_2 = 0x4000,	///< @brief Handler flag available for drivers.
 	DRIVER_FLAG_3 = 0x8000,	///< @brief Handler flag available for drivers.
-	USER_FLAG_SHIFT = 16,
+	DRIVER_FLAG_4 = 0x10000,///< @brief Handler flag available for drivers.
+	USER_FLAG_SHIFT = 17,
 	USER_FLAG_0 = 1 << USER_FLAG_SHIFT
 				///< @brief First uninterpreted handler flag
 				///  available for element-specific use.

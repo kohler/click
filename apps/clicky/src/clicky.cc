@@ -144,6 +144,11 @@ particular purpose.\n");
 	    wtypes.push_back(3);
 	    break;
 
+	  case KERNEL_OPT:
+	    wfiles.push_back("<kernel>");
+	    wtypes.push_back(4);
+	    break;
+
 	  case HELP_OPT:
 	    usage();
 	    exit(0);
@@ -175,7 +180,7 @@ particular purpose.\n");
     uint16_t port;
     for (int i = 0; i < wfiles.size(); i++) {
 	clicky::wmain *rw = new clicky::wmain;
-	rw->set_landmark(wtypes[i] == 1 ? "<expr>" : wfiles[i]);
+	rw->set_landmark(wtypes[i] == 1 ? "<config>" : wfiles[i]);
 	rw->set_ccss_text(css_text);
 	if (wtypes[i] == 1)
 	    rw->set_config(wfiles[i], true);
@@ -191,6 +196,8 @@ particular purpose.\n");
 		if (channel)
 		    (void) new clicky::csocket_wdriver(rw, channel, ready);
 	    }
+	} else if (wtypes[i] == 4) {
+	    (void) new clicky::clickfs_wdriver(rw, "/click/");
 	} else {
 	    String s = file_string(wfiles[i], rw->error_handler());
 	    if (!s && rw->error_handler()->nerrors())

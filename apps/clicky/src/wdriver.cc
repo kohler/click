@@ -5,6 +5,7 @@
 #include "wdriver.hh"
 #include <click/confparse.hh>
 #include <click/vector.cc>
+#include <click/llrpc.h>
 #include <clicktool/etraits.hh>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -607,6 +608,15 @@ void clickfs_wdriver::do_write(const String &fullname, const String &hvalue, int
 		s += amt;
 	}
 
+#if CLICK_LLRPC_CALL_HANDLER
+	char buf[2048];
+	click_llrpc_call_handler_st chs;
+	chs.errorbuf = buf;
+	chs.errorlen = sizeof(buf);
+	if (ioctl(fd, CLICK_LLRPC_CALL_HANDLER, &chs) >= 0)
+	    status = 200;
+	messages.push_back(make_pair(String(), String(buf, std::min(chs.errorlen, sizeof(buf)))));
+#else
 	if (close(fd) >= 0) {
 	    messages.push_back(make_pair(String(), "Write handler '" + fullname + "' OK"));
 	    status = 200;
@@ -616,6 +626,7 @@ void clickfs_wdriver::do_write(const String &fullname, const String &hvalue, int
 	    messages.push_back(make_pair(String(), String(strerror(errno_val))));
 	    messages.push_back(make_pair(String(), "(Check " + _prefix + "errors for details.)"));
 	}
+#endif
     } else
 	complain(fullname, ename, hname, errno, messages);
 

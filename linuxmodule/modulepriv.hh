@@ -29,6 +29,7 @@ CLICK_CXX_UNPROTECT
 #define HANDLER_NEED_READ		(Handler::DRIVER_FLAG_1)
 #define HANDLER_SPECIAL_INODE		(Handler::DRIVER_FLAG_2)
 #define HANDLER_WRITE_UNLIMITED		(Handler::DRIVER_FLAG_3)
+#define HANDLER_WRITE_DONE		(Handler::DRIVER_FLAG_4)
 
 
 class KernelErrorHandler : public BaseErrorHandler { public:
