@@ -64,6 +64,32 @@ ConfParseTest::initialize(ErrorHandler *errh)
 
     int32_t i32;
     uint32_t u32;
+    u32 = 97;
+    CHECK(cp_integer("0", &i32) == true && i32 == 0);
+    CHECK(cp_integer("-0", &i32) == true && i32 == 0);
+    CHECK(u32 == 97);
+    CHECK(cp_integer("0", &u32) == true && u32 == 0);
+    CHECK(cp_integer("-0", &u32) == false);
+    CHECK(cp_integer("4294967294", &u32) == true && u32 == 4294967294U);
+    CHECK(cp_integer("0xFFFFFFFE", &u32) == true && u32 == 4294967294U);
+    CHECK(cp_integer("4294967296", &u32) == true && u32 == 4294967295U && cp_errno == CPE_OVERFLOW);
+    CHECK(cp_integer("42949672961939", &u32) == true && u32 == 4294967295U && cp_errno == CPE_OVERFLOW);
+    CHECK(cp_integer("0xFFFFFFFFF", &u32) == true && u32 == 4294967295U && cp_errno == CPE_OVERFLOW);
+    CHECK(cp_integer("4294967296", &i32) == true && i32 == 2147483647 && cp_errno == CPE_OVERFLOW);
+    CHECK(cp_integer("2147483647", &i32) == true && i32 == 2147483647 && cp_errno == CPE_OK);
+    CHECK(cp_integer("-2147483648", &i32) == true && i32 == -2147483647 - 1 && cp_errno == CPE_OK);
+    CHECK(cp_integer("-4294967296", &i32) == true && i32 == -2147483647 - 1 && cp_errno == CPE_OVERFLOW);
+    const char *s = "-127 ";
+    CHECK(cp_integer(s, s + strlen(s) - 1, 10, &i32) == s + 4 && i32 == -127);
+
+#if HAVE_LONG_LONG && SIZEOF_LONG_LONG == 8
+    long long ll;
+    unsigned long long ull;
+    CHECK(cp_integer("9223372036854775807", &ll) == true && ll == 0x7FFFFFFFFFFFFFFFULL);
+    CHECK(cp_integer("-9223372036854775808", &ll) == true && ll == (long long) 0x8000000000000000ULL);
+    CHECK(cp_integer("18446744073709551616", &ull) == true && ull == 0xFFFFFFFFFFFFFFFFULL && cp_errno == CPE_OVERFLOW);
+#endif
+    
     CHECK(cp_real2("-0.5", 1, &i32) == true && i32 == -1);
     CHECK(cp_seconds_as("3600", 0, &u32) == true && u32 == 3600);
     CHECK(cp_seconds_as("3600s", 0, &u32) == true && u32 == 3600);

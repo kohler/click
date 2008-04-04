@@ -1039,294 +1039,132 @@ cp_bool(const String &str, bool *result)
   return true;
 }
 
-/** @brief  Parse an integer from [@a begin, @a end) in base @a base.
- * @param  begin  first character in string
- * @param  end    one past last character in string
- * @param  base   base of integer: 0 or 2-36
- * @param[out]  result  stores parsed result
- * @return  pointer to first unparsed character in string; equals @a begin
- * 	     if the string didn't start with a valid integer
- *
- * This function parses an integer from the initial characters of a string.
- * The resulting integer is stored in *@a result.
- *
- * The integer format consists of an optional initial sign <tt>+/-</tt>,
- * followed by one or more digits.  A negative sign is only accepted if @a
- * result has a signed type.  Digits may be separated by underscores (to make
- * numbers easier to read), but the first and last characters in the integer
- * cannot be underscores, and two underscores can't appear in a row.  Some
- * examples:
- *
- * @code
- * 0
- * 0x100
- * -1_000_023
- * @endcode
- *
- * Digits are numbered from 0-9, then A-Z/a-z.  @a base determines which
- * digits are legal.  If @a base is 0, then a leading <tt>0x</tt> or
- * <tt>0X</tt> may precede the digits, indicating base 16; a leading
- * <tt>0</tt> indicates base 8; anything else is base 10.
- *
- * Returns the first character that can't be parsed as part of the integer.
- * If there is no valid integer at the beginning of the string, then returns
- * @a begin; *@a result is unchanged.
- *
- * This function checks for overflow.  If an integer is too large for @a
- * result, then the maximum possible value is stored in @a result and the
- * cp_errno variable is set to CPE_OVERFLOW.  Otherwise, cp_errno is set to
- * CPE_FORMAT (for no valid integer) or CPE_OK (if all was well).
- *
- * Overloaded versions of this function are available for int, unsigned int,
- * long, unsigned long, and (depending on configuration) long and unsigned
- * long long @a result values.
- */
-const char *
-cp_integer(const char *begin, const char *end, int base, int *result)
-{
-  const char *s = begin;
-  bool negative = false;
-  if (s + 1 < end && *s == '-' && s[1] != '+') {
-    negative = true;
-    s++;
-  }
 
-  uint32_t value;
-  if ((end = cp_integer(s, end, base, &value)) == s)
-    return begin;
 
-  uint32_t max = (negative ? 0x80000000U : 0x7FFFFFFFU);
-  if (value > max) {
-    cp_errno = CPE_OVERFLOW;
-    value = max;
-  }
+/* Integer parsing helper functions */
 
-  *result = (negative ? -value : value);
-  return end;
-}
+#define LARGEBITS		(sizeof(String::uint_large_t) * 8)
+#define LARGEMSVBITS		6
+#define LARGETHRESHSHIFT	(LARGEBITS - LARGEMSVBITS)
+#define LARGETHRESH		((String::uint_large_t) 1 << LARGETHRESHSHIFT)
 
 const char *
-cp_integer(const char *begin, const char *end, int base, unsigned *result)
+cp_basic_integer(const char *begin, const char *end, int flags, int size,
+		 void *result)
 {
-  const char *s = begin;
-  if (s < end && *s == '+')
-    s++;
+    const char *s = begin;
+    bool negative = false;
+    if (s < end && size < 0 && *s == '-') {
+	negative = true;
+	++s;
+    } else if (s < end && *s == '+')
+	++s;
 
-  if ((base == 0 || base == 16) && s + 1 < end && *s == '0'
-      && (s[1] == 'x' || s[1] == 'X')) {
-    s += 2;
-    base = 16;
-  } else if (base == 0 && s < end && *s == '0')
-    base = 8;
-  else if (base == 0)
-    base = 10;
-  else if (base < 2 || base > 36) {
-    cp_errno = CPE_INVALID;
-    return begin;
-  }
+    int base = flags & 63;
+    if ((base == 0 || base == 16) && s + 1 < end && *s == '0'
+	&& (s[1] == 'x' || s[1] == 'X')) {
+	s += 2;
+	base = 16;
+    } else if (base == 0 && s < end && *s == '0')
+	base = 8;
+    else if (base == 0)
+	base = 10;
+    else if (base < 2 || base > 36) {
+	cp_errno = CPE_INVALID;
+	return begin;
+    }
 
-  if (s >= end || *s == '_')	// no digits or initial underscore
-    return begin;
+    cp_errno = CPE_FORMAT;
 
-  uint32_t overflow_val = 0xFFFFFFFFU / base;
-  int32_t overflow_digit = 0xFFFFFFFFU - (overflow_val * base);
+    if (s >= end || *s == '_')	// no digits or initial underscore
+	return begin;
+
+    String::uint_large_t val = 0;
   
-  uint32_t val = 0;
-  cp_errno = CPE_FORMAT;
-  
-  while (s < end) {
-    // find digit
-    int digit;
-    if (*s >= '0' && *s <= '9')
-      digit = *s - '0';
-    else if (base > 10 && *s >= 'A' && *s <= 'Z')
-      digit = *s - 'A' + 10;
-    else if (base > 10 && *s >= 'a' && *s <= 'z')
-      digit = *s - 'a' + 10;
-    else if (*s == '_' && s + 1 < end && s[1] != '_')
-      // skip underscores between digits
-      goto next_digit;
-    else
-      digit = 36;
-    if (digit >= base)
-      break;
-    else if (val == 0 && cp_errno == CPE_FORMAT)
-      cp_errno = CPE_OK;
-    // check for overflow
-    if (val > overflow_val || (val == overflow_val && digit > overflow_digit))
-      cp_errno = CPE_OVERFLOW;
-    // assign new value
-    val = val * base + digit;
-   next_digit:
-    s++;
-  }
+    do {
+	// find digit
+	int digit;
+	if (*s >= '0' && *s <= '9')
+	    digit = *s - '0';
+	else if (base > 10 && *s >= 'A' && *s <= 'Z')
+	    digit = *s - 'A' + 10;
+	else if (base > 10 && *s >= 'a' && *s <= 'z')
+	    digit = *s - 'a' + 10;
+	else if (*s == '_' && s + 1 < end && s[1] != '_')
+	    // skip underscores between digits
+	    goto next_digit;
+	else
+	    digit = 36;
+	if (digit >= base)
+	    break;
+	else if (val == 0 && cp_errno == CPE_FORMAT)
+	    cp_errno = CPE_OK;
+	// check for overflow without divide
+	if (val <= LARGETHRESH)
+	    val = val * base + digit;
+	else {
+	    String::uint_large_t msv = (val >> LARGETHRESHSHIFT) * base;
+	    String::uint_large_t lsv = (val & (LARGETHRESH - 1)) * base + digit;
+	    if (lsv >= LARGETHRESH) {
+		msv += lsv >> LARGETHRESHSHIFT;
+		lsv &= LARGETHRESH - 1;
+	    }
+	    if (msv >= (1 << LARGEMSVBITS))
+		cp_errno = CPE_OVERFLOW;
+	    else
+		val = (msv << LARGETHRESHSHIFT) + lsv;
+	}
+      next_digit:
+	s++;
+    } while (s < end);
 
-  if (cp_errno == CPE_FORMAT)
-    return begin;
-  else {
-    *result = (cp_errno ? 0xFFFFFFFFU : val);
-    return (s > begin && s[-1] == '_' ? s - 1 : s);
-  }
-}
+    if (cp_errno == CPE_FORMAT)
+	return begin;
+    else if ((flags & cp_basic_integer_whole) && s != end) {
+	cp_errno = CPE_FORMAT;
+	return begin;
+    }
 
-/** @brief  Parse an integer from @a str in base @a base.
- * @param  str   string
- * @param  base  base of integer: 0 or 2-36
- * @param[out]  result  stores parsed result
- * @return  True if @a str parsed correctly, false otherwise.
- *
- * Parses an integer from an input string.  If the string correctly parses as
- * an integer, then the resulting value is stored in *@a result and the
- * function returns true.  Otherwise, *@a result remains unchanged and the
- * function returns false.
- *
- * Overloaded versions are available for int, unsigned int, long, unsigned
- * long, and (depending on configuration) long and unsigned long long @a
- * result values.
- *
- * @sa cp_integer(const char *, const char *, int, int *) for the rules on
- * parsing integers.
- */
-bool cp_integer(const String &str, int base, int *result)
-{
-  int32_t i;
-  const char *s = cp_integer(str.begin(), str.end(), base, &i);
-  if (s == str.end() && str.length()) {
-    *result = i;
-    return true;
-  } else
-    return false;
-}
+    // check maximum value
+    if (size < (int) sizeof(String::uint_large_t)) {
+	String::uint_large_t maxval;
+	if (size < 0) {
+	    size = -size;
+	    maxval = ((String::uint_large_t) 1) << (size * 8 - 1);
+	    if (!negative)
+		--maxval;
+	} else
+	    maxval = (((String::uint_large_t) 1) << (size * 8)) - 1;
+	if (cp_errno || val > maxval) {
+	    val = maxval;
+	    cp_errno = CPE_OVERFLOW;
+	} else if (negative)
+	    val = -val;
+    } else if (cp_errno)
+	val = -(String::uint_large_t) 1;
 
-bool cp_integer(const String &str, int base, unsigned *result)
-{
-  uint32_t u;
-  const char *s = cp_integer(str.begin(), str.end(), base, &u);
-  if (s == str.end() && str.length()) {
-    *result = u;
-    return true;
-  } else
-    return false;
-}
-
-
-#ifdef HAVE_INT64_TYPES
-
-static uint64_t unsigned64_overflow_vals[] = { 0, 0, 9223372036854775807ULL, 6148914691236517205ULL, 4611686018427387903ULL, 3689348814741910323ULL, 3074457345618258602ULL, 2635249153387078802ULL, 2305843009213693951ULL, 2049638230412172401ULL, 1844674407370955161ULL, 1676976733973595601ULL, 1537228672809129301ULL, 1418980313362273201ULL, 1317624576693539401ULL, 1229782938247303441ULL, 1152921504606846975ULL, 1085102592571150095ULL, 1024819115206086200ULL, 970881267037344821ULL, 922337203685477580ULL, 878416384462359600ULL, 838488366986797800ULL, 802032351030850070ULL, 768614336404564650ULL, 737869762948382064ULL, 709490156681136600ULL, 683212743470724133ULL, 658812288346769700ULL, 636094623231363848ULL, 614891469123651720ULL, 595056260442243600ULL, 576460752303423487ULL, 558992244657865200ULL, 542551296285575047ULL, 527049830677415760ULL };
-
-const char *
-cp_integer(const char *begin, const char *end, int base, uint64_t *result)
-{
-  const char *s = begin;
-  if (s < end && *s == '+')
-    s++;
-
-  if ((base == 0 || base == 16) && s + 1 < end && *s == '0'
-      && (s[1] == 'x' || s[1] == 'X')) {
-    s += 2;
-    base = 16;
-  } else if (base == 0 && *s == '0')
-    base = 8;
-  else if (base == 0)
-    base = 10;
-  else if (base < 2 || base > 36) {
-    cp_errno = CPE_INVALID;
-    return begin;
-  }
-
-  if (s >= end || *s == '_')	// no digits or initial underscore
-    return begin;
-
-  uint64_t overflow_val = unsigned64_overflow_vals[base];
-  int64_t overflow_digit = 0xFFFFFFFFFFFFFFFFULL - (overflow_val * base);
-
-  uint64_t val = 0;
-  cp_errno = CPE_FORMAT;
-  
-  while (s < end) {
-    // find digit
-    int digit;
-    if (*s >= '0' && *s <= '9')
-      digit = *s - '0';
-    else if (*s >= 'A' && *s <= 'Z')
-      digit = *s - 'A' + 10;
-    else if (*s >= 'a' && *s <= 'z')
-      digit = *s - 'a' + 10;
-    else if (*s == '_' && s + 1 < end && s[1] != '_')
-      // skip underscores between digits
-      goto next_digit;
-    else
-      digit = 36;
-    if (digit >= base)
-      break;
-    else if (val == 0 && cp_errno == CPE_FORMAT)
-      cp_errno = CPE_OK;
-    // check for overflow
-    if (val > overflow_val || (val == overflow_val && digit > overflow_digit))
-      cp_errno = CPE_OVERFLOW;
-    // assign new value
-    val = val * base + digit;
-   next_digit:
-    s++;
-  }
-
-  if (cp_errno == CPE_FORMAT)
-    return begin;
-  else {
-    *result = (cp_errno ? 0xFFFFFFFFFFFFFFFFULL : val);
-    return (s > begin && s[-1] == '_' ? s - 1 : s);
-  }
-}
-
-bool
-cp_integer(const String &str, int base, uint64_t *result)
-{
-  uint64_t q;
-  const char *s = cp_integer(str.begin(), str.end(), base, &q);
-  if (s == str.end() && str.length()) {
-    *result = q;
-    return true;
-  } else
-    return false;
-}
-
-const char *
-cp_integer(const char *begin, const char *end, int base, int64_t *result)
-{
-  const char *s = begin;
-  bool negative = false;
-  if (s + 1 < end && *s == '-' && s[1] != '+') {
-    negative = true;
-    s++;
-  }
-
-  uint64_t value;
-  if ((end = cp_integer(s, end, base, &value)) == s)
-    return begin;
-
-  uint64_t max = (negative ? 0x8000000000000000ULL : 0x7FFFFFFFFFFFFFFFULL);
-  if (value > max) {
-    cp_errno = CPE_OVERFLOW;
-    value = max;
-  }
-
-  *result = (negative ? -value : value);
-  return end;
-}
-
-bool
-cp_integer(const String &str, int base, int64_t *result)
-{
-  int64_t q;
-  const char *s = cp_integer(str.begin(), str.end(), base, &q);
-  if (s == str.end() && str.length()) {
-    *result = q;
-    return true;
-  } else
-    return false;
-}
-
+    // assign
+    if (size == 1)
+	*static_cast<unsigned char *>(result) = val;
+    else if (size == sizeof(short))
+	*static_cast<unsigned short *>(result) = val;
+    else if (size == sizeof(int))
+	*static_cast<unsigned int *>(result) = val;
+    else if (size == sizeof(long))
+	*static_cast<unsigned long *>(result) = val;
+#if HAVE_LONG_LONG
+    else if (size == sizeof(long long))
+	*static_cast<unsigned long long *>(result) = val;
+#elif HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
+    else if (size == sizeof(int64_t))
+	*static_cast<uint64_t *>(result) = val;
 #endif
+    else
+	assert(0);
+
+    return (s > begin && s[-1] == '_' ? s - 1 : s);
+}
+
 
 #ifdef CLICK_USERLEVEL
 

@@ -77,51 +77,56 @@ bool cp_string(const String& str, String* result, String *rest = 0);
 bool cp_word(const String& str, String* result, String *rest = 0);
 bool cp_keyword(const String& str, String* result, String *rest = 0);
 
-// numbers
 bool cp_bool(const String& str, bool* result);
 
-const char *cp_integer(const char* begin, const char* end, int base, int* result);
-const char *cp_integer(const char* begin, const char* end, int base, unsigned int* result);
+// numbers
+enum { cp_basic_integer_whole = 64 };
+const char *cp_basic_integer(const char *begin, const char *end, int flags, int size, void *result);
+
+inline const char *cp_integer(const char *begin, const char *end, int base, int *result);
+inline const char *cp_integer(const char *begin, const char *end, int base, unsigned *result);
+inline const char *cp_integer(const char *begin, const char *end, int base, long *result);
+inline const char *cp_integer(const char *begin, const char *end, int base, unsigned long *result);
 /// @cond never
-inline const unsigned char *cp_integer(const unsigned char* begin, const unsigned char* end, int base, unsigned int* result);
+inline const unsigned char *cp_integer(const unsigned char *begin, const unsigned char *end, int base, unsigned *result);
+inline const unsigned char *cp_integer(const unsigned char *begin, const unsigned char *end, int base, unsigned long *result);
 /// @endcond
-
-#if SIZEOF_LONG == SIZEOF_INT
-// may be needed to simplify overloading 
-inline const char *cp_integer(const char* begin, const char* end, int base, long* result);
-inline const char *cp_integer(const char* begin, const char* end, int base, unsigned long* result);
-#elif SIZEOF_LONG != 8
-# error "long has an odd size"
-#endif
-
-#if HAVE_INT64_TYPES
-const char *cp_integer(const char* begin, const char* end, int base, int64_t* result);
-const char *cp_integer(const char* begin, const char* end, int base, uint64_t* result);
+#if HAVE_LONG_LONG
+inline const char *cp_integer(const char *begin, const char *end, int base, long long *result);
+inline const char *cp_integer(const char *begin, const char *end, int base, unsigned long long *result);
 /// @cond never
-inline const unsigned char *cp_integer(const unsigned char* begin, const unsigned char* end, int base, uint64_t* result);
+inline const unsigned char *cp_integer(const unsigned char *begin, const unsigned char *end, int base, unsigned long long *result);
+/// @endcond
+#elif HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
+inline const char *cp_integer(const char *begin, const char *end, int base, int64_t *result);
+inline const char *cp_integer(const char *begin, const char *end, int base, uint64_t *result);
+/// @cond never
+inline const unsigned char *cp_integer(const unsigned char *begin, const unsigned char *end, int base, uint64_t *result);
 /// @endcond
 #endif
 
-bool cp_integer(const String& str, int base, int* result);
-bool cp_integer(const String& str, int base, unsigned int* result);
-#if SIZEOF_LONG == SIZEOF_INT
-inline bool cp_integer(const String& str, int base, long* result);
-inline bool cp_integer(const String& str, int base, unsigned long* result);
-#endif
-#ifdef HAVE_INT64_TYPES
-bool cp_integer(const String& str, int base, int64_t* result);
-bool cp_integer(const String& str, int base, uint64_t* result);
+inline bool cp_integer(const String &str, int base, int *result);
+inline bool cp_integer(const String &str, int base, unsigned int *result);
+inline bool cp_integer(const String &str, int base, long *result);
+inline bool cp_integer(const String &str, int base, unsigned long *result);
+#if HAVE_LONG_LONG
+inline bool cp_integer(const String &str, int base, long long *result);
+inline bool cp_integer(const String &str, int base, unsigned long long *result);
+#elif HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
+inline bool cp_integer(const String &str, int base, int64_t *result);
+inline bool cp_integer(const String &str, int base, uint64_t *result);
 #endif
 
-inline bool cp_integer(const String& str, int* result);
-inline bool cp_integer(const String& str, unsigned int* result);
-#if SIZEOF_LONG == SIZEOF_INT
-inline bool cp_integer(const String& str, long* result);
-inline bool cp_integer(const String& str, unsigned long* result);
-#endif
-#ifdef HAVE_INT64_TYPES
-inline bool cp_integer(const String& str, int64_t* result);
-inline bool cp_integer(const String& str, uint64_t* result);
+inline bool cp_integer(const String &str, int *result);
+inline bool cp_integer(const String &str, unsigned int *result);
+inline bool cp_integer(const String &str, long *result);
+inline bool cp_integer(const String &str, unsigned long *result);
+#if HAVE_LONG_LONG
+inline bool cp_integer(const String &str, long long *result);
+inline bool cp_integer(const String &str, unsigned long long *result);
+#elif HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
+inline bool cp_integer(const String &str, int64_t *result);
+inline bool cp_integer(const String &str, uint64_t *result);
 #endif
 
 #ifdef CLICK_USERLEVEL
@@ -422,75 +427,238 @@ inline bool cp_is_space(const String& str)
     return cp_skip_space(str.begin(), str.end()) == str.end();
 }
 
+/** @brief  Parse an integer from [@a begin, @a end) in base @a base.
+ * @param  begin  first character in string
+ * @param  end    one past last character in string
+ * @param  base   base of integer: 0 or 2-36
+ * @param[out]  result  stores parsed result
+ * @return  pointer to first unparsed character in string; equals @a begin
+ * 	     if the string didn't start with a valid integer
+ *
+ * This function parses an integer from the initial characters of a string.
+ * The resulting integer is stored in *@a result.
+ *
+ * The integer format consists of an optional initial sign <tt>+/-</tt>,
+ * followed by one or more digits.  A negative sign is only accepted if @a
+ * result has a signed type.  Digits may be separated by underscores (to make
+ * numbers easier to read), but the first and last characters in the integer
+ * cannot be underscores, and two underscores can't appear in a row.  Some
+ * examples:
+ *
+ * @code
+ * 0
+ * 0x100
+ * -1_000_023
+ * @endcode
+ *
+ * Digits are numbered from 0-9, then A-Z/a-z.  @a base determines which
+ * digits are legal.  If @a base is 0, then a leading <tt>0x</tt> or
+ * <tt>0X</tt> may precede the digits, indicating base 16; a leading
+ * <tt>0</tt> indicates base 8; anything else is base 10.
+ *
+ * Returns the first character that can't be parsed as part of the integer.
+ * If there is no valid integer at the beginning of the string, then returns
+ * @a begin; *@a result is unchanged.
+ *
+ * This function checks for overflow.  If an integer is too large for @a
+ * result, then the maximum possible value is stored in @a result and the
+ * cp_errno variable is set to CPE_OVERFLOW.  Otherwise, cp_errno is set to
+ * CPE_FORMAT (for no valid integer) or CPE_OK (if all was well).
+ *
+ * Overloaded versions of this function are available for int, unsigned int,
+ * long, unsigned long, and (depending on configuration) long long and
+ * unsigned long long @a result values.
+ */
+inline const char *cp_integer(const char *begin, const char *end, int base, int *result)
+{
+    return cp_basic_integer(begin, end, base, -sizeof(*result), result);
+}
+
+/** @brief  Parse an integer from @a str in base @a base.
+ * @param  str   string
+ * @param  base  base of integer: 0 or 2-36
+ * @param[out]  result  stores parsed result
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses an integer from an input string.  If the string correctly parses as
+ * an integer, then the resulting value is stored in *@a result and the
+ * function returns true.  Otherwise, *@a result remains unchanged and the
+ * function returns false.
+ *
+ * Overloaded versions are available for int, unsigned int, long, unsigned
+ * long, and (depending on configuration) long long and unsigned long long @a
+ * result values.
+ *
+ * @sa cp_integer(const char *, const char *, int, int *) for the rules on
+ * parsing integers.
+ */
+inline bool cp_integer(const String &str, int base, int *result)
+{
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
+}
+
+
+inline const char *cp_integer(const char *begin, const char *end, int base, unsigned *result)
+{
+    return cp_basic_integer(begin, end, base, sizeof(*result), result);
+}
+
+/// @cond never
+inline const unsigned char *cp_integer(const unsigned char *begin, const unsigned char *end, int base, unsigned *result)
+{
+    return reinterpret_cast<const unsigned char *>(cp_integer(reinterpret_cast<const char *>(begin), reinterpret_cast<const char *>(end), base, result));
+}
+/// @endcond
+
+
+inline const char *cp_integer(const char *begin, const char *end, int base, long *result)
+{
+    return cp_basic_integer(begin, end, base, -sizeof(*result), result);
+}
+
+inline const char *cp_integer(const char *begin, const char *end, int base, unsigned long *result)
+{
+    return cp_basic_integer(begin, end, base, sizeof(*result), result);
+}
+
+/// @cond never
+inline const unsigned char *cp_integer(const unsigned char *begin, const unsigned char *end, int base, unsigned long *result)
+{
+    return reinterpret_cast<const unsigned char *>(cp_integer(reinterpret_cast<const char *>(begin), reinterpret_cast<const char *>(end), base, result));
+}
+/// @endcond
+
+
+#if HAVE_LONG_LONG
+
+inline const char *cp_integer(const char *begin, const char *end, int base, long long *result)
+{
+    return cp_basic_integer(begin, end, base, -sizeof(*result), result);
+}
+
+inline const char *cp_integer(const char *begin, const char *end, int base, unsigned long long *result)
+{
+    return cp_basic_integer(begin, end, base, sizeof(*result), result);
+}
+
+/// @cond never
+inline const unsigned char *cp_integer(const unsigned char *begin, const unsigned char *end, int base, unsigned long long *result)
+{
+    return reinterpret_cast<const unsigned char *>(cp_integer(reinterpret_cast<const char *>(begin), reinterpret_cast<const char *>(end), base, result));
+}
+/// @endcond
+
+#elif HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
+
+inline const char *cp_integer(const char *begin, const char *end, int base, int64_t *result)
+{
+    return cp_basic_integer(begin, end, base, -sizeof(*result), result);
+}
+
+inline const char *cp_integer(const char *begin, const char *end, int base, uint64_t *result)
+{
+    return cp_basic_integer(begin, end, base, sizeof(*result), result);
+}
+
+/// @cond never
+inline const unsigned char *cp_integer(const unsigned char *begin, const unsigned char *end, int base, uint64_t *result)
+{
+    return reinterpret_cast<const unsigned char *>(cp_integer(reinterpret_cast<const char *>(begin), reinterpret_cast<const char *>(end), base, result));
+}
+/// @endcond
+
+#endif
+
+inline bool cp_integer(const String &str, int base, int *result);
+
+inline bool cp_integer(const String &str, int base, unsigned int *result)
+{
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, sizeof(*result), result) != str.begin();
+}
+
+inline bool cp_integer(const String &str, int base, long *result)
+{
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
+}
+
+inline bool cp_integer(const String &str, int base, unsigned long *result)
+{
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, sizeof(*result), result) != str.begin();
+}
+
+#if HAVE_LONG_LONG
+
+inline bool cp_integer(const String &str, int base, long long *result)
+{
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
+}
+
+inline bool cp_integer(const String &str, int base, unsigned long long *result)
+{
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, sizeof(*result), result) != str.begin();
+}
+
+#elif HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
+
+inline bool cp_integer(const String &str, int base, int64_t *result)
+{
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
+}
+
+inline bool cp_integer(const String &str, int base, uint64_t *result)
+{
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, sizeof(*result), result) != str.begin();
+}
+
+#endif
+
 /** @brief  Parse an integer from @a str in base 0.
  *
  *  Same as cp_integer(str, 0, result). */
-inline bool cp_integer(const String& str, int* result)
+inline bool cp_integer(const String &str, int *result)
 {
-    return cp_integer(str, 0, result);
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
 }
 
-inline bool cp_integer(const String& str, unsigned int* result)
+inline bool cp_integer(const String &str, unsigned int *result)
 {
-    return cp_integer(str, 0, result);
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, sizeof(*result), result) != str.begin();
 }
 
-/// @cond never
-inline const unsigned char *cp_integer(const unsigned char *begin, const unsigned char *end, int base, unsigned int* result)
+inline bool cp_integer(const String &str, long *result)
 {
-    return (const unsigned char *) cp_integer((const char *) begin, (const char *) end, base, result);
-}
-/// @endcond
-
-#ifdef HAVE_INT64_TYPES
-/// @cond never
-inline const unsigned char *cp_integer(const unsigned char *begin, const unsigned char *end, int base, uint64_t* result)
-{
-    return (const unsigned char *) cp_integer((const char *) begin, (const char *) end, base, result);
-}
-/// @endcond
-
-inline bool cp_integer(const String& str, uint64_t* result)
-{
-    return cp_integer(str, 0, result);
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
 }
 
-inline bool cp_integer(const String& str, int64_t* result)
+inline bool cp_integer(const String &str, unsigned long *result)
 {
-    return cp_integer(str, 0, result);
-}
-#endif
-
-#if SIZEOF_LONG == SIZEOF_INT
-inline const char* cp_integer(const char* begin, const char* end, int base, long* result)
-{
-    return cp_integer(begin, end, base, reinterpret_cast<int*>(result));
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, sizeof(*result), result) != str.begin();
 }
 
-inline bool cp_integer(const String& str, int base, long* result)
+#if HAVE_LONG_LONG
+
+inline bool cp_integer(const String &str, long long *result)
 {
-    return cp_integer(str, base, reinterpret_cast<int*>(result));
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
 }
 
-inline bool cp_integer(const String& str, long* result)
+inline bool cp_integer(const String &str, unsigned long long *result)
 {
-    return cp_integer(str, reinterpret_cast<int*>(result));
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, sizeof(*result), result) != str.begin();
 }
 
-inline const char* cp_integer(const char* begin, const char* end, int base, unsigned long* result)
+#elif HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
+
+inline bool cp_integer(const String &str, int64_t *result)
 {
-    return cp_integer(begin, end, base, reinterpret_cast<unsigned int*>(result));
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
 }
 
-inline bool cp_integer(const String& str, int base, unsigned long* result)
+inline bool cp_integer(const String &str, uint64_t *result)
 {
-    return cp_integer(str, base, reinterpret_cast<unsigned int*>(result));
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, sizeof(*result), result) != str.begin();
 }
 
-inline bool cp_integer(const String& str, unsigned long* result)
-{
-    return cp_integer(str, reinterpret_cast<unsigned int*>(result));
-}
 #endif
 
 inline bool cp_ip_address(const String& str, struct in_addr* ina  CP_CONTEXT)
