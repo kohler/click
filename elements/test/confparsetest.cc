@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2007 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -81,6 +82,7 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(cp_integer("-4294967296", &i32) == true && i32 == -2147483647 - 1 && cp_errno == CPE_OVERFLOW);
     const char *s = "-127 ";
     CHECK(cp_integer(s, s + strlen(s) - 1, 10, &i32) == s + 4 && i32 == -127);
+    CHECK(cp_integer(String(s), &i32) == false && cp_errno == CPE_FORMAT);
 
 #if HAVE_LONG_LONG && SIZEOF_LONG_LONG == 8
     long long ll;

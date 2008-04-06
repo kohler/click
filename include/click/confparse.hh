@@ -471,7 +471,7 @@ inline bool cp_is_space(const String& str)
  */
 inline const char *cp_integer(const char *begin, const char *end, int base, int *result)
 {
-    return cp_basic_integer(begin, end, base, -sizeof(*result), result);
+    return cp_basic_integer(begin, end, base, -(int) sizeof(*result), result);
 }
 
 /** @brief  Parse an integer from @a str in base @a base.
@@ -494,13 +494,13 @@ inline const char *cp_integer(const char *begin, const char *end, int base, int 
  */
 inline bool cp_integer(const String &str, int base, int *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, -(int) sizeof(*result), result) != str.begin();
 }
 
 
 inline const char *cp_integer(const char *begin, const char *end, int base, unsigned *result)
 {
-    return cp_basic_integer(begin, end, base, sizeof(*result), result);
+    return cp_basic_integer(begin, end, base, (int) sizeof(*result), result);
 }
 
 /// @cond never
@@ -513,12 +513,12 @@ inline const unsigned char *cp_integer(const unsigned char *begin, const unsigne
 
 inline const char *cp_integer(const char *begin, const char *end, int base, long *result)
 {
-    return cp_basic_integer(begin, end, base, -sizeof(*result), result);
+    return cp_basic_integer(begin, end, base, -(int) sizeof(*result), result);
 }
 
 inline const char *cp_integer(const char *begin, const char *end, int base, unsigned long *result)
 {
-    return cp_basic_integer(begin, end, base, sizeof(*result), result);
+    return cp_basic_integer(begin, end, base, (int) sizeof(*result), result);
 }
 
 /// @cond never
@@ -533,12 +533,12 @@ inline const unsigned char *cp_integer(const unsigned char *begin, const unsigne
 
 inline const char *cp_integer(const char *begin, const char *end, int base, long long *result)
 {
-    return cp_basic_integer(begin, end, base, -sizeof(*result), result);
+    return cp_basic_integer(begin, end, base, -(int) sizeof(*result), result);
 }
 
 inline const char *cp_integer(const char *begin, const char *end, int base, unsigned long long *result)
 {
-    return cp_basic_integer(begin, end, base, sizeof(*result), result);
+    return cp_basic_integer(begin, end, base, (int) sizeof(*result), result);
 }
 
 /// @cond never
@@ -552,12 +552,12 @@ inline const unsigned char *cp_integer(const unsigned char *begin, const unsigne
 
 inline const char *cp_integer(const char *begin, const char *end, int base, int64_t *result)
 {
-    return cp_basic_integer(begin, end, base, -sizeof(*result), result);
+    return cp_basic_integer(begin, end, base, -(int) sizeof(*result), result);
 }
 
 inline const char *cp_integer(const char *begin, const char *end, int base, uint64_t *result)
 {
-    return cp_basic_integer(begin, end, base, sizeof(*result), result);
+    return cp_basic_integer(begin, end, base, (int) sizeof(*result), result);
 }
 
 /// @cond never
@@ -573,41 +573,41 @@ inline bool cp_integer(const String &str, int base, int *result);
 
 inline bool cp_integer(const String &str, int base, unsigned int *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, (int) sizeof(*result), result) != str.begin();
 }
 
 inline bool cp_integer(const String &str, int base, long *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, -(int) sizeof(*result), result) != str.begin();
 }
 
 inline bool cp_integer(const String &str, int base, unsigned long *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, (int) sizeof(*result), result) != str.begin();
 }
 
 #if HAVE_LONG_LONG
 
 inline bool cp_integer(const String &str, int base, long long *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, -(int) sizeof(*result), result) != str.begin();
 }
 
 inline bool cp_integer(const String &str, int base, unsigned long long *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, (int) sizeof(*result), result) != str.begin();
 }
 
 #elif HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
 
 inline bool cp_integer(const String &str, int base, int64_t *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, -(int) sizeof(*result), result) != str.begin();
 }
 
 inline bool cp_integer(const String &str, int base, uint64_t *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), base + cp_basic_integer_whole, (int) sizeof(*result), result) != str.begin();
 }
 
 #endif
@@ -617,46 +617,46 @@ inline bool cp_integer(const String &str, int base, uint64_t *result)
  *  Same as cp_integer(str, 0, result). */
 inline bool cp_integer(const String &str, int *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, -(int) sizeof(*result), result) != str.begin();
 }
 
 inline bool cp_integer(const String &str, unsigned int *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, (int) sizeof(*result), result) != str.begin();
 }
 
 inline bool cp_integer(const String &str, long *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, -(int) sizeof(*result), result) != str.begin();
 }
 
 inline bool cp_integer(const String &str, unsigned long *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, (int) sizeof(*result), result) != str.begin();
 }
 
 #if HAVE_LONG_LONG
 
 inline bool cp_integer(const String &str, long long *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, -(int) sizeof(*result), result) != str.begin();
 }
 
 inline bool cp_integer(const String &str, unsigned long long *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, (int) sizeof(*result), result) != str.begin();
 }
 
 #elif HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
 
 inline bool cp_integer(const String &str, int64_t *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, -sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, -(int) sizeof(*result), result) != str.begin();
 }
 
 inline bool cp_integer(const String &str, uint64_t *result)
 {
-    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, sizeof(*result), result) != str.begin();
+    return cp_basic_integer(str.begin(), str.end(), cp_basic_integer_whole, (int) sizeof(*result), result) != str.begin();
 }
 
 #endif
