@@ -83,13 +83,13 @@ enddef;
 %%
 
 vardef _make_element_ports(suffix $, port, side)(expr n, length, isout) =
-  save i, sc; pair sc.adj;
-  sc.sep = (length - 2*port_offset - n*port_length + port_sep) / n;
-  sc.delta = port_length + sc.sep;
-  sc = length/2 - port_offset - (sc.sep - port_sep)/2 - 0.5port_length;
-  sc.adj = if isout: 1/2$.flowvector else: -1/2$.flowvector fi;
-  for i = 0 upto n-1:
-    $.port[i] = $.side + $.sidevector * (sc - sc.delta*i) + sc.adj;
+  save _i_, _sc; pair _sc.adj;
+  _sc.sep = (length - 2*port_offset - n*port_length + port_sep) / n;
+  _sc.delta = port_length + _sc.sep;
+  _sc = length/2 - port_offset - (_sc.sep - port_sep)/2 - 0.5port_length;
+  _sc.adj = if isout: 1/2$.flowvector else: -1/2$.flowvector fi;
+  for _i_ = 0 upto n-1:
+    $.port[_i_] = $.side + $.sidevector * (_sc - _sc.delta*_i_) + _sc.adj;
   endfor;
 enddef;
 
@@ -128,6 +128,7 @@ vardef _elementit@#(expr label_str, ninputs, noutputs, personality, down_var, re
   picture _label_; numeric _x_, _y_;
   
   if picture label_str: _label_ = label_str
+  elseif label_str = "": _label_ = nullpicture
   else: _label_ = label_str infont defaultelementfont scaled defaultscale
   fi;
   
@@ -196,20 +197,20 @@ enddef;
 %% change
 
 vardef killinput(suffix $)(expr p) =
-  if (p >= 0) and (p < $.nin): save i;
-    for i = p upto $.nin-2:
-      $.in[i] := $.in[i+1];
-      $.inpers[i] := $.inpers[i+1];
+  if (p >= 0) and (p < $.nin): save _i_;
+    for _i_ = p upto $.nin-2:
+      $.in[_i_] := $.in[_i_+1];
+      $.inpers[_i_] := $.inpers[_i_+1];
     endfor;
     $.nin := $.nin - 1
   fi
 enddef;
 
 vardef killoutput(suffix $)(expr p) =
-  if (p >= 0) and (p < $.nout): save i;
-    for i = p upto $.nout-2:
-      $.out[i] := $.out[i+1];
-      $.outpers[i] := $.outpers[i+1];
+  if (p >= 0) and (p < $.nout): save _i_;
+    for _i_ = p upto $.nout-2:
+      $.out[_i_] := $.out[_i_+1];
+      $.outpers[_i_] := $.outpers[_i_+1];
     endfor;
     $.nout := $.nout - 1
   fi
@@ -354,13 +355,15 @@ vardef draw_element_inputs(suffix $) =
   _ag_ := _agnostic_input scaled $.portscale;
   if $.down: _p_ := _p_ rotated -90; _ag_ := _ag_ rotated -90; fi;
   if $.rev: _p_ := _p_ rotated 180; _ag_ := _ag_ rotated 180; fi;
-  for i = 0 upto $.nin - 1:
-    fill _p_ shifted $.in[i] withcolor personalitycolor[$.inpers[i]];
-    draw _p_ shifted $.in[i];
-    if $.inpers[i] >= agnostic:
-      fill _ag_ shifted $.in[i] withcolor agnosticcolor[$.inpers[i]];
-      draw _ag_ shifted $.in[i]; fi;
-  endfor;
+  for _i_ = 0 upto $.nin - 1:
+    if $.inpers[_i_] >= 0:
+      fill _p_ shifted $.in[_i_] withcolor personalitycolor[$.inpers[_i_]];
+      draw _p_ shifted $.in[_i_];
+      if $.inpers[_i_] >= agnostic:
+	fill _ag_ shifted $.in[_i_] withcolor agnosticcolor[$.inpers[_i_]];
+	draw _ag_ shifted $.in[_i_]; fi
+    fi;
+  endfor
 enddef;
 
 vardef draw_element_outputs(suffix $) =
@@ -369,13 +372,15 @@ vardef draw_element_outputs(suffix $) =
   _ag_ := _agnostic_output scaled $.portscale;
   if $.down: _p_ := _p_ rotated -90; _ag_ := _ag_ rotated -90; fi;
   if $.rev: _p_ := _p_ rotated 180; _ag_ := _ag_ rotated 180; fi;
-  for i = 0 upto $.nout - 1:
-    fill _p_ shifted $.out[i] withcolor personalitycolor[$.outpers[i]];
-    draw _p_ shifted $.out[i];
-    if $.outpers[i] >= agnostic:
-      fill _ag_ shifted $.out[i] withcolor agnosticcolor[$.outpers[i]];
-      draw _ag_ shifted $.out[i]; fi;
-  endfor;
+  for _i_ = 0 upto $.nout - 1:
+    if $.outpers[_i_] >= 0:
+      fill _p_ shifted $.out[_i_] withcolor personalitycolor[$.outpers[_i_]];
+      draw _p_ shifted $.out[_i_];
+      if $.outpers[_i_] >= agnostic:
+	fill _ag_ shifted $.out[_i_] withcolor agnosticcolor[$.outpers[_i_]];
+	draw _ag_ shifted $.out[_i_]; fi
+    fi;
+  endfor
 enddef;
 
 vardef drawelement(text elements) text rest =
