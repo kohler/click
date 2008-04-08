@@ -40,7 +40,7 @@ static const Clp_Option options[] = {
     { "style-expr", 0, STYLE_EXPR_OPT, Clp_ValString, 0 },
     { "file", 'f', FILE_OPT, Clp_ValString, 0 },
     { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
-    { "port", 'p', PORT_OPT, Clp_ValUnsigned, 0 },
+    { "port", 'p', PORT_OPT, Clp_ValString, 0 },
     { "kernel", 'k', KERNEL_OPT, 0, 0 },
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
     { "help", 0, HELP_OPT, 0, 0 }
@@ -58,7 +58,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 Options:\n\
   -f, --file FILE              Read router configuration from FILE.\n\
   -e, --expression EXPR        Use EXPR as router configuration.\n\
-  -p, --port PORT              Connect to localhost:PORT for configuration.\n\
+  -p, --port [HOST:]PORT       Connect to HOST:PORT for configuration.\n\
   -k, --kernel                 Read configuration from kernel.\n\
   -s, --style FILE             Add CCSS style information from FILE.\n\
       --style-expr STYLE       Add STYLE as CCSS style information.\n\
@@ -135,7 +135,10 @@ particular purpose.\n");
 	    break;
 
 	  case PORT_OPT:
-	    wfiles.push_back("localhost:" + String(clp->val.u));
+	    if (strchr(clp->vstr, ':'))
+		wfiles.push_back(clp->vstr);
+	    else
+		wfiles.push_back("localhost:" + String(clp->vstr));
 	    wtypes.push_back(2);
 	    break;
 

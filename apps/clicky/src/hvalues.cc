@@ -87,8 +87,6 @@ gboolean handler_value::on_autorefresh(wmain *w, int period)
 
 void handler_value::set_flags(wmain *w, int new_flags)
 {
-    assert((new_flags & hflag_mandatory_driver_mask) == (_driver_flags & hflag_mandatory_driver_mask));
-    
     if (_autorefresh_source
 	&& ((new_flags & hflag_autorefresh) == 0
 	    || (new_flags & hflag_r) == 0)) {
