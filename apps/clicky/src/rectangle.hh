@@ -1,5 +1,6 @@
 #ifndef CLICKY_RECTANGLE_HH
 #define CLICKY_RECTANGLE_HH 1
+#include <algorithm>
 #include <math.h>
 
 struct point {
@@ -21,6 +22,18 @@ struct point {
 	return _y;
     }
 
+    double length() const {
+	return sqrt(_x*_x + _y*_y);
+    }
+
+    double squared_length() const {
+	return _x*_x + _y*_y;
+    }
+    
+    double angle() const {
+	return atan2(_y, _x);
+    }
+    
     void shift(double dx, double dy) {
 	_x += dx;
 	_y += dy;
@@ -34,6 +47,8 @@ struct point {
 	_x *= s;
 	_y *= s;
     }
+
+    static inline bool close(const point &a, const point &b, double d);
 };
 
 struct rectangle {
@@ -235,6 +250,27 @@ struct rectangle {
 	return *this;
     }
 
+    rectangle &operator|=(const point &p) {
+	if (!*this) {
+	    _x = p.x();
+	    _y = p.y();
+	    _width = _height = 0;
+	}
+	if (_x > p.x()) {
+	    _width += _x - p.x();
+	    _x = p.x();
+	}
+	if (_y > p.y()) {
+	    _height += _y - p.y();
+	    _y = p.y();
+	}
+	if (_x + _width < p.x())
+	    _width = p.x() - _x;
+	if (_y + _height < p.y())
+	    _height = p.y() - _y;
+	return *this;
+    }
+
     void integer_align() {
 	double x2_ = x2(), y2_ = y2();
 	_x = floor(_x);
@@ -244,12 +280,44 @@ struct rectangle {
     }
 };
 
+inline bool operator==(const point &a, const point &b) {
+    return a.x() == b.x() && a.y() == b.y();
+}
+
+inline bool operator!=(const point &a, const point &b) {
+    return a.x() != b.x() || a.y() != b.y();
+}
+
 inline point operator+(const point &a, const point &b) {
     return point(a.x() + b.x(), a.y() + b.y());
 }
 
 inline point operator-(const point &a, const point &b) {
     return point(a.x() - b.x(), a.y() - b.y());
+}
+
+inline point operator*(const point &a, double b) {
+    return point(a.x() * b, a.y() * b);
+}
+
+inline point operator*(double a, const point &b) {
+    return point(a * b.x(), a * b.y());
+}
+
+inline point operator*(const point &a, const point &b) {
+    return point(a.x() * b.x(), a.y() * b.y());
+}
+
+inline point operator/(const point &a, double b) {
+    return point(a.x() / b, a.y() / b);
+}
+
+inline point operator/(const point &a, const point &b) {
+    return point(a.x() / b.x(), a.y() / b.y());
+}
+
+inline bool point::close(const point &a, const point &b, double d) {
+    return (a - b).length() <= d;
 }
 
 #endif

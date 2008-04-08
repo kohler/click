@@ -24,6 +24,7 @@ clicky_SOURCES = \
 	diagram.cc diagram.hh \
 	rectangle.hh \
 	rectsearch.hh \
+	transform.cc transform.hh \
 	ref.hh \
 	clicky.cc \
 	callbacks.h \

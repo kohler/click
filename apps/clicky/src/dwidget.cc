@@ -15,10 +15,16 @@
 #include <math.h>
 #include "wrouter.hh"
 #include "whandler.hh"
+#include "transform.hh"
 extern "C" {
 #include "support.h"
 }
 namespace clicky {
+
+static inline void cairo_curve_to_points(cairo_t *cr, const point &p0, const point &p1, const point &p2)
+{
+    cairo_curve_to(cr, p0.x(), p0.y(), p1.x(), p1.y(), p2.x(), p2.y());
+}
 
 dcontext::dcontext(wdiagram *d_, PangoLayout *pl_, cairo_t *cr_)
     : d(d_), pl(pl_), cr(cr_)
@@ -404,6 +410,125 @@ void delt::position_contents_first_heuristic(RouterT *router)
     }
 }
 
+const char *cp_double(const char *begin, const char *end, double *result)
+{
+    const char *s = begin;
+    if (s != end && (*s == '+' || *s == '-'))
+	++s;
+    if (s == end
+	|| (*s == '.' && (s + 1 == end || !isdigit((unsigned char) s[1])))
+	|| (*s != '.' && !isdigit((unsigned char) *s)))
+	return begin;
+    while (s != end && isdigit((unsigned char) *s))
+	++s;
+    if (s != end && *s == '.')
+	++s;
+    while (s != end && isdigit((unsigned char) *s))
+	++s;
+    if (s != end && (*s == 'e' || *s == 'E')) {
+	const char *t = s + 1;
+	if (t != end && (*t == '+' || *t == '-'))
+	    ++t;
+	while (t != end && isdigit((unsigned char) *t))
+	    ++t;
+	if (t != s + 1
+	    && (t != s + 2 || isdigit((unsigned char) s[1])))
+	    s = t;
+    }
+    *result = strtod(begin, 0);
+    return s;
+}
+
+const char *delt::parse_connection_dot(int eindex, int esplit, const char *s, const char *end)
+{
+    int eport, oeindex, oesplit = 0, oeport;
+    Vector<point> route;
+    (void) esplit, (void) oesplit;
+
+    if (s + 2 >= end || s[0] != ':' || s[1] != 'o' || !isdigit((unsigned char) s[2]))
+	return s;
+    s = cp_integer(s + 2, end, 10, &eport);
+    s = cp_skip_space(s, end);
+    if (s + 1 >= end || s[0] != '-' || s[1] != '>')
+	return s;
+    s = cp_skip_space(s + 2, end);
+    if (s + 1 >= end || s[0] != 'n' || !isdigit((unsigned char) s[1]))
+	return s;
+    s = cp_integer(s + 1, end, 10, &oeindex);
+    if (s < end && s[0] == 's')
+	oesplit = 1, ++s;
+    if (oeindex < 0 || (std::vector<delt*>::size_type)oeindex >= _elt.size())
+	return s;
+    if (s + 2 >= end || s[0] != ':' || s[1] != 'i' || !isdigit((unsigned char) s[2]))
+	return s;
+    s = cp_integer(s + 2, end, 10, &oeport);
+    s = cp_skip_space(s, end);
+    if (s >= end || s[0] != '[')
+	return s;
+
+  skip_to_p:
+    while (s != end && *s != 'p' && *s != ';') {
+	for (int quote = 0; s != end && (quote || (*s != ',' && *s != ']' && *s != ';')); ++s)
+	    if (*s == '\"')
+		quote = !quote;
+	if (s != end)
+	    s = cp_skip_space(s + 1, end);
+    }
+    if (s == end || *s == ';')
+	return s;
+    if (s + 2 >= end || s[1] != 'o' || s[2] != 's') {
+	++s;
+	goto skip_to_p;
+    }
+    s = cp_skip_space(s + 3, end);
+    if (s == end || *s != '=')
+	return s;
+    s = cp_skip_space(s + 1, end);
+    if (s != end && *s == '"')
+	++s;
+    s = cp_skip_space(s, end);
+    
+    delt *e1 = _elt[eindex];
+    delt *e2 = _elt[oeindex];
+    
+    const char *t;
+    point origin(0, 0);
+    int count = 0;
+    while (s != end && *s != '"') {
+	double x, y;
+	int e = 0;
+	if (s + 1 < end && *s == 'e' && s[1] == ',')
+	    e = 1, s += 2;
+	if ((t = cp_double(s, end, &x)) == s || t == end || *t != ',')
+	    return t;
+	s = t + 1;
+	if ((t = cp_double(s, end, &y)) == s)
+	    return t;
+	s = cp_skip_space(t, end);
+	point p(x * 100. / 72, -y * 100. / 72);
+	if (e)
+	    /* nada */;
+	else if (++count <= 1)
+	    origin = p;
+	else
+	    route.push_back(p - origin);
+    }
+
+    if (route.size() > 0 && (route.size() % 3) == 0) {
+	for (std::vector<dconn *>::iterator ci = _conn.begin();
+	     ci != _conn.end(); ++ci)
+	    if ((*ci)->_from_elt == e1 && (*ci)->_to_elt == e2
+		&& (*ci)->_from_port == eport && (*ci)->_to_port == oeport) {
+		(*ci)->_route.swap(route);
+		break;
+	    }
+	if (route.size() != 0)
+	    fprintf(stderr, "couldn't find connection %s[%d] -> [%d]%s\n", e1->name().c_str(), eport, oeport, e2->name().c_str());
+    }
+
+    return s;
+}
+
 void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *errh)
 {
     delt fake_child(this, 0);
@@ -433,6 +558,7 @@ void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *err
 	for (int p = 0; p < e->_e->noutputs(); p++)
 	    sa << (p ? "|<o" : "<o") << p << ">";
 	sa << "}}\"];\n";
+	e->_xrect._x = e->_xrect._y = 0;
     }
     for (int i = 0; i < router->nconnections(); i++) {
 	const ConnectionT &c = router->connection(i);
@@ -442,12 +568,15 @@ void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *err
 	       << " -> n" << c.to_eindex();
 	    if (ein->_des->display == dedisp_vsplit)
 		sa << 's';
-	    sa << ':' << 'i' << c.to_port() << ';' << '\n';
+	    sa << ':' << 'i' << c.to_port() << " [arrowsize=0.2];\n";
+	    // << " [sametail=o" << c.from_port() << ",samehead=i" << c.to_port()
 	}
     }
     sa << "}\n";
 
     String result = shell_command_output_string("dot", sa.take_string(), errh);
+    //    fprintf(stderr, "%s\n", result.c_str());
+    //shell_command_output_string("dot -Tps > /tmp/x.ps", result, errh);
 
     const char *end = result.end();
     for (const char *s = result.begin(); s != end; ) {
@@ -470,16 +599,21 @@ void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *err
 	if (eindex < 0 || (std::vector<delt*>::size_type)eindex >= _elt.size())
 	    goto skip_to_semicolon;
 	
-	if (s == end || *s != '[')
+	if (s == end)
+	    goto skip_to_semicolon;
+	else if (*s == ':') {
+	    s = parse_connection_dot(eindex, esplit, s, end);
+	    goto skip_to_semicolon;
+	} else if (*s != '[')
 	    goto skip_to_semicolon;
 
       skip_to_p:
 	while (s != end && *s != 'p' && *s != ';') {
-	    if (*s == '\"') {
-		for (++s; s != end && *s != '\"'; ++s)
-		    /* nada */;
-	    }
-	    ++s;
+	    for (int quote = 0; s != end && (quote || (*s != ',' && *s != ']' && *s != ';')); ++s)
+		if (*s == '\"')
+		    quote = !quote;
+	    if (s != end)
+		s = cp_skip_space(s + 1, end);
 	}
 	if (s == end || *s == ';')
 	    goto skip_to_semicolon;
@@ -494,21 +628,15 @@ void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *err
 	if (s != end && *s == '"')
 	    ++s;
 	s = cp_skip_space(s, end);
-	const char *t = s;
-	while (t != end && (isdigit((unsigned char) *t) || *t == '.' || *t == '+' || *t == 'e' || *t == 'E' || *t == '-'))
-	    ++t;
-	if (t == s)
-	    goto skip_to_semicolon;
 	double x, y;
-	if (!cp_double(result.substring(s, t), &x))
+	const char *t;
+	if ((t = cp_double(s, end, &x)) == s)
 	    goto skip_to_semicolon;
 	s = cp_skip_space(t, end);
 	if (s == end || *s != ',')
 	    goto skip_to_semicolon;
-	s = t = cp_skip_space(s + 1, end);
-	while (t != end && (isdigit((unsigned char) *t) || *t == '.' || *t == '+' || *t == 'e' || *t == 'E' || *t == '-'))
-	    ++t;
-	if (!cp_double(result.substring(s, t), &y))
+	s = cp_skip_space(s + 1, end);
+	if ((t = cp_double(s, end, &y)) == s)
 	    goto skip_to_semicolon;
 	delt *e = _elt[eindex];
 	if (esplit)
@@ -924,6 +1052,11 @@ bool dconn::layout()
 	_y = MIN(op.y() - 2, ip.y() - 12);
 	_width = MAX(op.x() + 5, ip.x() + 3) - _x;
 	_height = MAX(op.y() + 5, ip.y() + 3) - _y;
+    }
+    if (_route.size()) {
+	affine t = affine::mapping(point(0, 0), op, _route.back(), ip);
+	for (const point *pp = _route.begin(); pp != _route.end(); ++pp)
+	    *this |= t * *pp;
     }
     return true;
 }
@@ -1526,9 +1659,18 @@ void dconn::draw(dcontext &dcx)
     if ((_from_elt->vertical() && _to_elt->vertical()
 	 && fabs(ip.x() - op.x()) <= 6)
 	|| (!_from_elt->vertical() && !_to_elt->vertical()
-	    && fabs(ip.y() - op.y()) <= 6))
-	/* no curves */;
-    else {
+	    && fabs(ip.y() - op.y()) <= 6)) {
+	/* no curves */
+	cairo_line_to(dcx, ip.x(), ip.y());
+	
+    } else if (_route.size()) {
+	const point *r = _route.begin();
+	assert((_route.size() % 3) == 0);
+	affine t = affine::mapping(point(0, 0), op, _route.back(), ip);
+	for (; r != _route.end(); r += 3)
+	    cairo_curve_to_points(dcx, t * r[0], t * r[1], t * r[2]);
+	
+    } else {
 	point curvea;
 	if (_from_elt->vertical()) {
 	    cairo_line_to(dcx, op.x(), op.y() + 3);
@@ -1543,8 +1685,9 @@ void dconn::draw(dcontext &dcx)
 	else
 	    cairo_curve_to(dcx, curvea.x(), curvea.y(),
 			   ip.x() - 12, ip.y(), ip.x() - 7, ip.y());
+	cairo_line_to(dcx, ip.x(), ip.y());
     }
-    cairo_line_to(dcx, ip.x(), ip.y());
+    
     cairo_stroke(dcx);
 
     if (_to_elt->vertical()) {
@@ -1695,3 +1838,5 @@ int delt::find_gadget(wdiagram *d, double window_x, double window_y) const
 }
 
 }
+
+#include <click/vector.cc>

@@ -100,6 +100,9 @@ class dconn : public dwidget { public:
     int _from_port;
     delt *_to_elt;
     int _to_port;
+    Vector<point> _route;
+
+    friend class delt;
 
 };
 
@@ -296,6 +299,7 @@ class delt : public dwidget { public:
     void layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc);
     void position_contents_scc(RouterT *);
     void position_contents_dot(RouterT *, wdiagram *d, ErrorHandler *);
+    const char *parse_connection_dot(int eindex, int esplit, const char *s, const char *end);
     void position_contents_first_heuristic(RouterT *r);
 
     bool reccss(wdiagram *d, int change);

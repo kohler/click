@@ -117,9 +117,12 @@ void wdiagram::set_ccss_text(const String &text)
 
 void wdiagram::display(const String &ename, bool scroll_to)
 {
-    if (delt *e = _elt_map[ename])
-	if (!e->highlighted(dhlt_click) || scroll_to)
+    if (delt *e = _elt_map[ename]) {
+	while (!e->root() && !e->displayed())
+	    e = e->parent();
+	if (!e->root() && (!e->highlighted(dhlt_click) || scroll_to))
 	    highlight(e, dhlt_click, 0, scroll_to);
+    }
 }
 
 inline void wdiagram::find_rect_elts(const rectangle &r, std::vector<dwidget *> &result) const
