@@ -4,6 +4,8 @@
  * Eddie Kohler
  *
  * Copyright (c) 2002-2003 International Computer Science Institute
+ * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * This source code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -517,7 +519,7 @@ next_handler_string(const Handler *h)
     int hs = handler_strings_free;
     if (hs >= 0) {
 	handler_strings_free = handler_strings_info[hs].next;
-	handler_strings_info[hs].flags = h->flags() | HANDLER_NEED_READ;
+	handler_strings_info[hs].flags = h->flags();
     }
     SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
     return hs;
@@ -555,30 +557,13 @@ unlock_threads()
 
 namespace {
 class ClickfsHandlerErrorHandler : public BaseErrorHandler { public:
-    ClickfsHandlerErrorHandler(const Handler *h, Element *e, bool write)
-	: _h(h), _e(e), _context(write) {
-    }
-    String decorate_text(Seriousness seriousness, const String &landmark, const String &text) {
-	String t;
-	if (_context >= 0) {
-	    StringAccum sa;
-	    sa << "In " << (_context > 0 ? "write" : "read")
-	       << " handler '" << _h->name() << '\'';
-	    if (_e)
-		sa << " for '" << _e->declaration() << "\':\n";
-	    _context = -1;
-	    t = BaseErrorHandler::decorate_text(ERR_MESSAGE, landmark, sa.take_string());
-	}
-	return t + BaseErrorHandler::decorate_text(ERR_MESSAGE, landmark, prepend_lines("  ", text));
+    ClickfsHandlerErrorHandler() {
     }
     void handle_text(Seriousness, const String &s) {
 	_sa << s;
 	if (s && s.back() != '\n')
 	    _sa << '\n';
     }
-    const Handler *_h;
-    Element *_e;
-    int _context;
     StringAccum _sa;
 };
 }
@@ -635,7 +620,7 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	return -EIO;
 
     // (re)read handler if necessary
-    if (handler_strings_info[stringno].flags & (HANDLER_REREAD | HANDLER_NEED_READ)) {
+    if ((handler_strings_info[stringno].flags & (HANDLER_REREAD | HANDLER_DONE)) != HANDLER_DONE) {
 	LOCK_CONFIG_READ();
 	int retval;
 	const Handler *h;
@@ -654,14 +639,17 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 		unlock_threads();
 	    } else
 		handler_strings[stringno] = h->call_read(e);
-	    if (!h->raw() && handler_strings[stringno] && handler_strings[stringno].back() != '\n')
+	    if (!h->raw()
+		&& !(handler_strings_info[stringno].flags & HANDLER_RAW)
+		&& handler_strings[stringno]
+		&& handler_strings[stringno].back() != '\n')
 		handler_strings[stringno] += '\n';
 	    retval = (handler_strings[stringno].out_of_memory() ? -ENOMEM : 0);
 	}
 	UNLOCK_CONFIG_READ();
 	if (retval < 0)
 	    return retval;
-	handler_strings_info[stringno].flags &= ~HANDLER_NEED_READ;
+	handler_strings_info[stringno].flags |= HANDLER_DONE;
     }
 
     const String &s = handler_strings[stringno];
@@ -683,7 +671,7 @@ handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store
     String &s = handler_strings[stringno];
     int old_length = s.length();
 
-    handler_strings_info[stringno].flags &= ~HANDLER_WRITE_DONE;
+    handler_strings_info[stringno].flags &= ~HANDLER_DONE;
 #ifdef LARGEST_HANDLER_WRITE
     if (f_pos + count > LARGEST_HANDLER_WRITE
 	&& !(handler_strings_info[stringno].flags & HANDLER_WRITE_UNLIMITED))
@@ -730,31 +718,48 @@ handler_do_write(struct file *filp, void *address_ptr)
     else {
 	int eindex = INO_ELEMENTNO(inode->i_ino);
 	Element *e = Router::element(click_router, eindex);
+	click_llrpc_call_handler_st chs;
+	chs.flags = 0;
+	int r;
+
+	if (address_ptr
+	    && (r = CLICK_LLRPC_GET_DATA(&chs, address_ptr, sizeof(chs))) < 0) {
+	    retval = r;
+	    goto exit;
+	}
 	
-	ClickfsHandlerErrorHandler cerrh(h, e, true);
+	String data = handler_strings[stringno];
+	if (!h->raw()
+	    && !(handler_strings_info[stringno].flags & HANDLER_RAW)
+	    && (!address_ptr || !(chs.flags & CLICK_LLRPC_CALL_HANDLER_FLAG_RAW))
+	    && data
+	    && data.back() == '\n')
+	    data = data.substring(data.begin(), data.end() - 1);
+	
+	ClickfsHandlerErrorHandler cerrh;
 	if (h->exclusive()) {
 	    lock_threads();
-	    retval = h->call_write(handler_strings[stringno], e, true, &cerrh);
+	    retval = h->call_write(data, e, true, &cerrh);
 	    unlock_threads();
 	} else
-	    retval = h->call_write(handler_strings[stringno], e, true, &cerrh);
+	    retval = h->call_write(data, e, true, &cerrh);
 	
-	handler_strings_info[stringno].flags |= HANDLER_WRITE_DONE;
+	handler_strings_info[stringno].flags |= HANDLER_DONE;
 
-	if (cerrh._sa && !address_ptr)
-	    click_logged_errh->message("%s", cerrh._sa.c_str());
-	if (address_ptr) {
-	    click_llrpc_call_handler_st chs;
-	    int r;
-	    if ((r = CLICK_LLRPC_GET_DATA(&chs, address_ptr, sizeof(chs))) < 0) {
-		retval = r;
-		goto exit;
-	    }
+	if (cerrh._sa && !address_ptr) {
+	    String imsg = ErrorHandler::prepend_lines("  ", cerrh._sa.take_string());
+	    if (e)
+		click_logged_errh->message("In write handler '%s' for '%s':\n%s", h->name().c_str(), e->declaration().c_str(), imsg.c_str());
+	    else
+		click_logged_errh->message("In write handler '%s':\n%s", h->name().c_str(), imsg.c_str());
+	}
+	if (address_ptr && chs.errorlen > 0) {
 	    size_t s = cerrh._sa.length();
 	    if (s > chs.errorlen)
 		s = chs.errorlen;
 	    chs.errorlen = cerrh._sa.length();
-	    if ((r = CLICK_LLRPC_PUT_DATA(chs.errorbuf, cerrh._sa.data(), s)) < 0) {
+	    if (chs.errorlen > 0
+		&& (r = CLICK_LLRPC_PUT_DATA(chs.errorbuf, cerrh._sa.data(), s)) < 0) {
 		retval = r;
 		goto exit;
 	    }
@@ -785,10 +790,10 @@ handler_flush(struct file *filp
 #else
     int f_count = atomic_read(&filp->f_count);
 #endif
-    
+
     if (writing && f_count == 1
 	&& stringno >= 0 && stringno < handler_strings_cap
-	&& !(handler_strings_info[stringno].flags & HANDLER_WRITE_DONE)) {
+	&& !(handler_strings_info[stringno].flags & HANDLER_DONE)) {
 	LOCK_CONFIG_WRITE();
 	retval = handler_do_write(filp, 0);
 	UNLOCK_CONFIG_WRITE();
@@ -823,11 +828,20 @@ handler_ioctl(struct inode *inode, struct file *filp,
 	retval = -EIO;
     else if (!click_router)
 	retval = -EINVAL;
-    else if (INO_ELEMENTNO(inode->i_ino) < 0
-	     || !(e = click_router->element(INO_ELEMENTNO(inode->i_ino))))
-	retval = -EIO;
     else if (command == CLICK_LLRPC_CALL_HANDLER)
 	retval = handler_do_write(filp, reinterpret_cast<void *>(address));
+    else if (command == CLICK_LLRPC_ABANDON_HANDLER) {
+	int stringno = FILP_STRINGNO(filp);
+	handler_strings_info[stringno].flags |= HANDLER_DONE;
+	handler_strings[stringno] = String();
+	retval = 0;
+    } else if (command == CLICK_LLRPC_RAW_HANDLER) {
+	int stringno = FILP_STRINGNO(filp);
+	handler_strings_info[stringno].flags |= HANDLER_RAW;
+	retval = 0;
+    } else if (INO_ELEMENTNO(inode->i_ino) < 0
+	     || !(e = click_router->element(INO_ELEMENTNO(inode->i_ino))))
+	retval = -EIO;
     else {
 	union {
 	    char buf[128];
@@ -921,6 +935,7 @@ init_clickfs()
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo));
 #endif
+    static_assert(HANDLER_REREAD + HANDLER_DONE + HANDLER_RAW + HANDLER_SPECIAL_INODE + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0);
 
     spin_lock_init(&handler_strings_lock);
     spin_lock_init(&clickfs_lock);

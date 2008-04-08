@@ -24,9 +24,9 @@ CLICK_CXX_UNPROTECT
 #include <click/error.hh>
 
 #define HANDLER_REREAD                  (Handler::DRIVER_FLAG_0)
-#define HANDLER_NEED_READ               (Handler::DRIVER_FLAG_1)
-#define HANDLER_SPECIAL_INODE           (Handler::DRIVER_FLAG_2)
-#define HANDLER_WRITE_UNLIMITED         (Handler::DRIVER_FLAG_3)
+#define HANDLER_NEED_READ               (Handler::DRIVER_FLAG_0 << 1)
+#define HANDLER_SPECIAL_INODE           (Handler::DRIVER_FLAG_0 << 2)
+#define HANDLER_WRITE_UNLIMITED         (Handler::DRIVER_FLAG_0 << 3)
 
 CLICK_DECLS
 

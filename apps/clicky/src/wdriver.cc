@@ -551,6 +551,9 @@ void clickfs_wdriver::do_read(const String &fullname, const String &hparam, int 
     int fd = open(fn.c_str(), O_RDONLY);
     StringAccum results;
     if (fd >= 0) {
+#if CLICK_LLRPC_RAW_HANDLER
+	ioctl(fd, CLICK_LLRPC_RAW_HANDLER);
+#endif
 	while (1) {
 	    ssize_t amt = read(fd, results.reserve(4096), 4096);
 	    if (amt == -1 && errno != EINTR) {
@@ -611,6 +614,9 @@ void clickfs_wdriver::do_write(const String &fullname, const String &hvalue, int
 #if CLICK_LLRPC_CALL_HANDLER
 	char buf[2048];
 	click_llrpc_call_handler_st chs;
+# if CLICK_LLRPC_CALL_HANDLER_FLAG_RAW
+	chs.flags = CLICK_LLRPC_CALL_HANDLER_FLAG_RAW;
+# endif
 	chs.errorbuf = buf;
 	chs.errorlen = sizeof(buf);
 	if (ioctl(fd, CLICK_LLRPC_CALL_HANDLER, &chs) >= 0)

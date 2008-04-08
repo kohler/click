@@ -74,7 +74,9 @@
 #define CLICK_LLRPC_IPRATEMON_SET_ANNO_LEVEL	_CLICK_IO(13)
 #define CLICK_IOC_TOUSERDEVICE_GET_MULTI	_CLICK_IOS(15)
 #define CLICK_IOC_TOUSERDEVICE_SET_MULTI	_CLICK_IOS(16)
-#define CLICK_LLRPC_CALL_HANDLER		_CLICK_IO(17)
+#define CLICK_LLRPC_RAW_HANDLER			_CLICK_IOS(17)
+#define CLICK_LLRPC_ABANDON_HANDLER		_CLICK_IOS(18)
+#define CLICK_LLRPC_CALL_HANDLER		_CLICK_IO(19)
 
 struct click_llrpc_proxy_st {
     void* proxied_handler;	/* const Router::Handler* */
@@ -89,7 +91,9 @@ struct click_llrpc_counts_st {
     uint32_t values[CLICK_LLRPC_COUNTS_SIZE];
 };
 
+#define CLICK_LLRPC_CALL_HANDLER_FLAG_RAW 1
 struct click_llrpc_call_handler_st {
+    int flags;
     size_t errorlen;
     void *errorbuf;
 };

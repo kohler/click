@@ -38,11 +38,11 @@ class Handler { public:
 	BUTTON = 0x0400,	///< @brief Write handler ignores data.
 	CHECKBOX = 0x0800,	///< @brief Read/write handler is boolean and
 				///  should be rendered as a checkbox.
-	DRIVER_FLAG_0 = 0x1000,	///< @brief Handler flag available for drivers.
-	DRIVER_FLAG_1 = 0x2000,	///< @brief Handler flag available for drivers.
-	DRIVER_FLAG_2 = 0x4000,	///< @brief Handler flag available for drivers.
-	DRIVER_FLAG_3 = 0x8000,	///< @brief Handler flag available for drivers.
-	DRIVER_FLAG_4 = 0x10000,///< @brief Handler flag available for drivers.
+	DRIVER_FLAG_SHIFT = 12,
+	DRIVER_FLAG_0 = 1 << DRIVER_FLAG_SHIFT,
+				///< @brief First uninterpreted handler flag
+				///  available for drivers.  Equals 1 <<
+				///  DRIVER_FLAG_SHIFT.
 	USER_FLAG_SHIFT = 17,
 	USER_FLAG_0 = 1 << USER_FLAG_SHIFT
 				///< @brief First uninterpreted handler flag
