@@ -109,15 +109,14 @@ TimedSource::read_param(Element *e, void *vparam)
 }
 
 int
-TimedSource::change_param(const String &in_s, Element *e, void *vparam,
+TimedSource::change_param(const String &s, Element *e, void *vparam,
 			  ErrorHandler *errh)
 {
   TimedSource *ts = (TimedSource *)e;
-  String s = cp_uncomment(in_s);
   switch ((intptr_t)vparam) {
 
   case 0:			// data
-      ts->_data = in_s;
+      ts->_data = s;
       if (ts->_packet)
 	  ts->_packet->kill();
       ts->_packet = Packet::make(ts->_data.data(), ts->_data.length());

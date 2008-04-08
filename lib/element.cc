@@ -1949,7 +1949,7 @@ write_task_tickets(const String &s, Element *e, void *thunk, ErrorHandler *errh)
 {
   Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
   int tix;
-  if (!cp_integer(cp_uncomment(s), &tix))
+  if (!cp_integer(s, &tix))
     return errh->error("'tickets' takes an integer between 1 and %d", Task::MAX_TICKETS);
   if (tix < 1) {
     errh->warning("tickets pinned at 1");
@@ -2027,7 +2027,7 @@ static int
 bool_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
 {
     bool *ptr  = reinterpret_cast<bool *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
-    if (cp_bool(cp_uncomment(str), ptr))
+    if (cp_bool(str, ptr))
 	return 0;
     else
 	return errh->error("expected boolean");
@@ -2044,7 +2044,7 @@ template <typename T> static int
 integer_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
 {
     T *ptr  = reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
-    if (cp_integer(cp_uncomment(str), ptr))
+    if (cp_integer(str, ptr))
 	return 0;
     else
 	return errh->error("expected integer");
@@ -2062,7 +2062,7 @@ atomic_uint32_t_write_data_handler(const String &str, Element *element, void *us
 {
     atomic_uint32_t *ptr  = reinterpret_cast<atomic_uint32_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
     uint32_t value;
-    if (cp_integer(cp_uncomment(str), &value)) {
+    if (cp_integer(str, &value)) {
 	*ptr = value;
 	return 0;
     } else
@@ -2081,7 +2081,7 @@ static int
 double_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
 {
     double *ptr  = reinterpret_cast<double *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
-    if (cp_double(cp_uncomment(str), ptr))
+    if (cp_double(str, ptr))
 	return 0;
     else
 	return errh->error("expected real number");
@@ -2126,8 +2126,7 @@ Element::add_data_handlers(const String &name, int flags, ReadHandlerHook read_h
  * the data stored at @a *data, which might, for example, be an element
  * instance variable.  This data is unparsed and/or parsed using the expected
  * functions; for example, the <tt>bool</tt> version uses cp_unparse_bool()
- * and cp_bool(), and leading and trailing whitespace is removed with
- * cp_uncomment().
+ * and cp_bool().
  *
  * Overloaded versions of this function are available for many fundamental
  * data types.

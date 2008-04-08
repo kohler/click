@@ -210,7 +210,7 @@ static int
 write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 {
   int priority;
-  if (!cp_integer(cp_uncomment(conf), &priority))
+  if (!cp_integer(conf, &priority))
     return errh->error("priority must be an integer");
 
   priority = NICE2PRIO(priority);
@@ -274,7 +274,7 @@ write_cpu_share(const String &conf, Element *, void *thunk, ErrorHandler *errh)
   const char *name = (thunk ? "max_" : "min_");
   
   int32_t frac;
-  if (!cp_real10(cp_uncomment(conf), 3, &frac) || frac < 1 || frac > 999)
+  if (!cp_real10(conf, 3, &frac) || frac < 1 || frac > 999)
     return errh->error("%scpu_share must be a real number between 0.001 and 0.999", name);
 
   (thunk ? max_click_frac : min_click_frac) = frac;

@@ -175,11 +175,10 @@ InfiniteSource::read_param(Element *e, void *vparam)
 }
 
 int
-InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
+InfiniteSource::change_param(const String &s, Element *e, void *vparam,
 			     ErrorHandler *errh)
 {
   InfiniteSource *is = (InfiniteSource *)e;
-  String s = cp_uncomment(in_s);
   switch ((intptr_t)vparam) {
 
    case 0: {			// data

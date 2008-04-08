@@ -112,7 +112,7 @@ static int
 write_assert_stop(const String &s, Element *, void *, ErrorHandler *errh)
 {
     bool stop;
-    if (!cp_bool(cp_uncomment(s), &stop))
+    if (!cp_bool(s, &stop))
 	return errh->error("assert_stop must be a boolean");
     else {
 	assert_stops_router = stop;

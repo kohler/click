@@ -476,7 +476,7 @@ ARPQuerier::write_handler(const String &s, Element *e, void *thunk, ErrorHandler
     ARPQuerier *q = static_cast<ARPQuerier *>(e);
     if ((uintptr_t) thunk == 4) {
 	IPAddress x;
-	if (!cp_ip_address(cp_uncomment(s), &x))
+	if (!cp_ip_address(s, &x))
 	    return errh->error("'ipaddr' expects IP address");
 	q->_my_ip = x;
 	return 0;

@@ -269,7 +269,7 @@ IPRouteTable::lookup_handler(int, String& s, Element* e, const Handler*, ErrorHa
 {
     IPRouteTable *table = static_cast<IPRouteTable*>(e);
     IPAddress a;
-    if (cp_ip_address(cp_uncomment(s), &a, table)) {
+    if (cp_ip_address(s, &a, table)) {
 	IPAddress gw;
 	int port = table->lookup_route(a, gw);
 	if (gw)

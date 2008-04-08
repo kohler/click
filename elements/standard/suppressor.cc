@@ -81,12 +81,12 @@ read_active(Element *e, void *thunk)
 }
 
 static int
-write_active(const String &in_s, Element *e, void *thunk, ErrorHandler *errh)
+write_active(const String &s, Element *e, void *thunk, ErrorHandler *errh)
 {
   Suppressor *sup = static_cast<Suppressor *>(e);
   int port = (int) reinterpret_cast<long>(thunk);
   bool active;
-  if (!cp_bool(cp_uncomment(in_s), &active))
+  if (!cp_bool(s, &active))
     return errh->error("active value must be boolean");
   else {
     sup->set(port, active);

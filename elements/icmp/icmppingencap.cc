@@ -125,7 +125,7 @@ int ICMPPingEncap::write_handler(const String &str, Element *e, void *thunk, Err
 {
     ICMPPingEncap *i = static_cast<ICMPPingEncap *>(e);
     IPAddress a;
-    if (!cp_ip_address(cp_uncomment(str), &a))
+    if (!cp_ip_address(str, &a))
 	return errh->error("expected IP address");
     if (thunk)
 	i->_dst = a;

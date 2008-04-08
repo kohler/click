@@ -174,15 +174,14 @@ RatedSource::read_param(Element *e, void *vparam)
 }
 
 int
-RatedSource::change_param(const String &in_s, Element *e, void *vparam,
+RatedSource::change_param(const String &s, Element *e, void *vparam,
 			  ErrorHandler *errh)
 {
   RatedSource *rs = (RatedSource *)e;
-  String s = cp_uncomment(in_s);
   switch ((intptr_t)vparam) {
 
   case 0:			// data
-      rs->_data = in_s;
+      rs->_data = s;
       if (rs->_packet)
 	  rs->_packet->kill();
       rs->_packet = Packet::make(rs->_data.data(), rs->_data.length());

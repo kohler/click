@@ -239,10 +239,9 @@ FastUDPSource_reset_write_handler
 
 static int
 FastUDPSource_limit_write_handler
-(const String &in_s, Element *e, void *, ErrorHandler *errh)
+(const String &s, Element *e, void *, ErrorHandler *errh)
 {
     FastUDPSource *c = (FastUDPSource *)e;
-    String s = cp_uncomment(in_s);
     unsigned limit;
     if (!cp_integer(s, &limit))
 	return errh->error("limit parameter must be integer >= 0");
@@ -252,10 +251,9 @@ FastUDPSource_limit_write_handler
 
 static int
 FastUDPSource_rate_write_handler
-(const String &in_s, Element *e, void *, ErrorHandler *errh)
+(const String &s, Element *e, void *, ErrorHandler *errh)
 {
     FastUDPSource *c = (FastUDPSource *)e;
-    String s = cp_uncomment(in_s);
     unsigned rate;
     if (!cp_integer(s, &rate))
 	return errh->error("rate parameter must be integer >= 0");
@@ -267,10 +265,9 @@ FastUDPSource_rate_write_handler
 
 static int
 FastUDPSource_active_write_handler
-(const String &in_s, Element *e, void *, ErrorHandler *errh)
+(const String &s, Element *e, void *, ErrorHandler *errh)
 {
     FastUDPSource *c = (FastUDPSource *)e;
-    String s = cp_uncomment(in_s);
     bool active;
     if (!cp_bool(s, &active)) 
 	return errh->error("active parameter must be boolean");

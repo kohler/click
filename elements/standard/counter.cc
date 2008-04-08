@@ -146,7 +146,7 @@ int
 Counter::write_handler(const String &in_str, Element *e, void *thunk, ErrorHandler *errh)
 {
     Counter *c = (Counter *)e;
-    String str = cp_uncomment(in_str);
+    String str = in_str;
     switch ((intptr_t)thunk) {
       case H_COUNT_CALL:
 	if (!cp_integer(cp_pop_spacevec(str), &c->_count_trigger))

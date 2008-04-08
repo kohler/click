@@ -124,7 +124,7 @@ int
 DelayShaper::write_param(const String &s, Element *e, void *, ErrorHandler *errh)
 {
     DelayShaper *u = (DelayShaper *)e;
-    if (!cp_time(cp_uncomment(s), &u->_delay))
+    if (!cp_time(s, &u->_delay))
 	return errh->error("delay must be a timestamp");
     return 0;
 }

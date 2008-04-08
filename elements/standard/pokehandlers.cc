@@ -142,18 +142,10 @@ PokeHandlers::read_param(Element *e, void *)
 }
 
 int
-PokeHandlers::write_param(const String &in_s, Element *e, void *v,
-                          ErrorHandler *)
+PokeHandlers::write_param(const String &, Element *e, void *, ErrorHandler *)
 {
     PokeHandlers *p = (PokeHandlers *)e;
-    String s = cp_uncomment(in_s);
-    switch ((intptr_t) v) {
-    case 0: 
-	p->unpause();
-	break;
-    default:
-	;
-    }
+    p->unpause();
     return 0;
 }
 

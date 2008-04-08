@@ -2004,7 +2004,7 @@ stop_global_handler(const String &s, Element *e, void *, ErrorHandler *errh)
 {
     if (e) {
 	int n = 1;
-	(void) cp_integer(cp_uncomment(s), &n);
+	(void) cp_integer(s, &n);
 	e->router()->adjust_runcount(-n);
     } else
 	errh->message("no router to stop");

@@ -60,10 +60,9 @@ PullSwitch::read_param(Element *e, void *)
 }
 
 int
-PullSwitch::write_param(const String &in_s, Element *e, void *, ErrorHandler *errh)
+PullSwitch::write_param(const String &s, Element *e, void *, ErrorHandler *errh)
 {
   PullSwitch *sw = (PullSwitch *)e;
-  String s = cp_uncomment(in_s);
   if (!cp_integer(s, &sw->_input))
     return errh->error("PullSwitch input must be integer");
   if (sw->_input >= sw->ninputs())

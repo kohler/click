@@ -734,7 +734,7 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
 
     case AR_NOT: {
 	bool x;
-	if (!cp_bool(cp_uncomment(str), &x))
+	if (!cp_bool(str, &x))
 	    return errh->error("syntax error");
 	str = cp_unparse_bool(!x);
 	return 0;

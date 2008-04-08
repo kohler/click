@@ -263,9 +263,8 @@ ICMPPingSource::read_handler(Element *e, void *thunk)
 }
 
 int
-ICMPPingSource::write_handler(const String &str_in, Element *e, void *thunk, ErrorHandler *errh)
+ICMPPingSource::write_handler(const String &s, Element *e, void *thunk, ErrorHandler *errh)
 {
-    String s = cp_uncomment(str_in);
     ICMPPingSource *ps = static_cast<ICMPPingSource *>(e);
     switch ((uintptr_t)thunk) {
       case H_ACTIVE:

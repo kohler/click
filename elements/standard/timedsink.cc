@@ -72,11 +72,10 @@ TimedSink::read_handler(Element *e, void *vparam)
 }
 
 int
-TimedSink::write_handler(const String &str, Element *e, void *vparam,
+TimedSink::write_handler(const String &s, Element *e, void *vparam,
 			 ErrorHandler *errh)
 {
     TimedSink *ts = static_cast<TimedSink *>(e);
-    String s = cp_uncomment(str);
     switch ((intptr_t)vparam) {
       case H_INTERVAL: {	// interval
 	  uint32_t interval;

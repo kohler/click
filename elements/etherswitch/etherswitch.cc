@@ -109,7 +109,7 @@ int
 EtherSwitch::writer(const String &s, Element *e, void *, ErrorHandler *errh)
 {
     EtherSwitch *sw = (EtherSwitch *) e;
-    if (!cp_seconds_as(cp_uncomment(s), 0, &sw->_timeout))
+    if (!cp_seconds_as(s, 0, &sw->_timeout))
 	return errh->error("expected timeout (integer)");
     return 0;
 }
