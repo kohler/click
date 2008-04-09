@@ -199,7 +199,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     int read_binary(String &, ErrorHandler *);
     
     void bang_data(const String &, ErrorHandler *);
-    void bang_flowid(const String &, click_ip *, ErrorHandler *);
+    void bang_flowid(const String &, ErrorHandler *);
     void bang_aggregate(const String &, ErrorHandler *);
     void bang_binary(const String &, ErrorHandler *);
     void check_defaults();

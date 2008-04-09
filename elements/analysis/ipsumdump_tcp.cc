@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2002 International Computer Science Institute
  * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,7 +30,7 @@
 CLICK_DECLS
 
 enum { T_TCP_SEQ, T_TCP_ACK, T_TCP_FLAGS, T_TCP_WINDOW, T_TCP_URP, T_TCP_OPT,
-       T_TCP_NTOPT, T_TCP_SACK };
+       T_TCP_NTOPT, T_TCP_SACK, T_TCP_OFF };
 
 namespace IPSummaryDump {
 
@@ -51,6 +52,10 @@ static bool tcp_extract(PacketDesc& d, int thunk)
       case T_TCP_FLAGS:
 	CHECK(14);
 	d.v = d.tcph->th_flags | (d.tcph->th_flags2 << 8);
+	return true;
+      case T_TCP_OFF:
+	CHECK(13);
+	d.v = d.tcph->th_off << 2;
 	return true;
       case T_TCP_WINDOW:
 	CHECK(16);
@@ -338,6 +343,7 @@ void tcp_register_unparsers()
 {
     register_unparser("tcp_seq", T_TCP_SEQ | B_4, ip_prepare, tcp_extract, num_outa, outb, inb);
     register_unparser("tcp_ack", T_TCP_ACK | B_4, ip_prepare, tcp_extract, num_outa, outb, inb);
+    register_unparser("tcp_off", T_TCP_OFF | B_1, ip_prepare, tcp_extract, num_outa, outb, inb);
     register_unparser("tcp_flags", T_TCP_FLAGS | B_1, ip_prepare, tcp_extract, tcp_outa, outb, inb);
     register_unparser("tcp_window", T_TCP_WINDOW | B_2, ip_prepare, tcp_extract, num_outa, outb, inb);
     register_unparser("tcp_urp", T_TCP_URP | B_2, ip_prepare, tcp_extract, num_outa, outb, inb);

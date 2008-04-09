@@ -174,7 +174,7 @@ IPPrint::tcp_line(StringAccum &sa, const Packet *p, int transport_length) const
 	goto truncated_tcp;
 
     ip_len = ntohs(iph->ip_len);
-    seqlen = ip_len - (tcph->th_off << 2);
+    seqlen = ip_len - (iph->ip_hl << 2) - (tcph->th_off << 2);
     if (tcph->th_flags & TH_SYN)
 	sa << 'S', seqlen++;
     if (tcph->th_flags & TH_FIN)

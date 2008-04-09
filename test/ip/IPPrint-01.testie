@@ -1,0 +1,18 @@
+%script
+click -e "FromIPSummaryDump(IN, STOP true) -> IPPrint -> ToIPSummaryDump(OUT, DATA timestamp src dst sport dport proto ip_len ip_hl tcp_off tcp_flags)"
+
+%file IN
+!data timestamp src dst sport dport proto ip_len ip_hl tcp_off tcp_flags
+1.00002 1.0.0.1 1.0.0.2 10 20 T 1500 40 20 A
+1.00003 1.0.0.2 1.0.0.3 20 30 T 1000 20 20 SA
+1.00004 1.0.0.3 1.0.0.4 30 40 T 1000 20 40 SF
+1.00005 1.0.0.4 1.0.0.5 40 50 T 1000 32 40 A
+
+%expect stderr
+1.000020: 1.0.0.1.10 > 1.0.0.2.20: . 0:1440(1440,60,1500) ack 0 win 0
+1.000030: 1.0.0.2.20 > 1.0.0.3.30: S 0:961(961,40,1000) ack 0 win 0
+1.000040: 1.0.0.3.30 > 1.0.0.4.40: SF 0:942(942,60,1000) win 0
+1.000050: 1.0.0.4.40 > 1.0.0.5.50: . 0:928(928,72,1000) ack 0 win 0
+
+%ignore
+expensive{{.*}}

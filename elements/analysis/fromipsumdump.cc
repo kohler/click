@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -104,7 +105,7 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     if (default_contents)
 	bang_data(default_contents, errh);
     if (default_flowid)
-	bang_flowid(default_flowid, 0, errh);
+	bang_flowid(default_flowid, errh);
     return 0;
 }
 
@@ -236,8 +237,7 @@ FromIPSummaryDump::check_defaults()
 }
 
 void
-FromIPSummaryDump::bang_flowid(const String &line, click_ip *iph,
-			       ErrorHandler *errh)
+FromIPSummaryDump::bang_flowid(const String &line, ErrorHandler *errh)
 {
     Vector<String> words;
     cp_spacevec(line, words);
@@ -268,8 +268,6 @@ FromIPSummaryDump::bang_flowid(const String &line, click_ip *iph,
 	_given_flowid = IPFlowID(src, htons(sport), dst, htons(dport));
 	_have_flowid = true;
 	check_defaults();
-	if (iph)
-	    iph->ip_p = _default_proto;
     }
 }
 
@@ -704,6 +702,50 @@ set_checksums(WritablePacket *q, click_ip *iph)
 Packet *
 FromIPSummaryDump::read_packet(ErrorHandler *errh)
 {
+    // read non-packet lines
+    bool binary;
+    String line;
+    const unsigned char *data;
+    const unsigned char *end;
+    
+    while (1) {
+	if ((binary = _binary)) {
+	    int result = read_binary(line, errh);
+	    if (result <= 0)
+		goto eof;
+	    else
+		binary = (result == 1);
+	} else if (_ff.read_line(line, errh, true) <= 0) {
+	  eof:
+	    _ff.cleanup();
+	    return 0;
+	}
+
+	data = (const unsigned char *) line.begin();
+	end = (const unsigned char *) line.end();
+
+	if (data == end)
+	    /* do nothing */;
+	else if (binary || (data[0] != '!' && data[0] != '#'))
+	    /* real packet */
+	    break;
+
+	// parse bang lines
+	if (data[0] == '!') {
+	    if (data + 6 <= end && memcmp(data, "!data", 5) == 0 && isspace(data[5]))
+		bang_data(line, errh);
+	    else if (data + 8 <= end && memcmp(data, "!flowid", 7) == 0 && isspace(data[7]))
+		bang_flowid(line, errh);
+	    else if (data + 11 <= end && memcmp(data, "!aggregate", 10) == 0 && isspace(data[10]))
+		bang_aggregate(line, errh);
+	    else if (data + 8 <= end && memcmp(data, "!binary", 7) == 0 && isspace(data[7]))
+		bang_binary(line, errh);
+	    else if (data + 10 <= end && memcmp(data, "!contents", 9) == 0 && isspace(data[9]))
+		bang_data(line, errh);
+	}
+    }
+
+    // read packet data
     WritablePacket *q = Packet::make(0, (const unsigned char *)0, sizeof(click_ip) + sizeof(click_tcp), 8);
     if (!q) {
 	_ff.error(errh, strerror(ENOMEM));
@@ -718,589 +760,560 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     iph->ip_p = _default_proto;
     iph->ip_off = 0;
     
-    String line;
     StringAccum payload;
     String ip_opt;
     String tcp_opt;
 
-    while (1) {
+    int ok = (binary ? 1 : 0);
+    int ip_ok = 0;
+    uint8_t ip_hl = 0;
+    uint8_t tcp_off = 0;
+    uint32_t byte_count = 0;
+    uint32_t payload_len = 0;
+    bool have_payload_len = false;
+    bool have_payload = false;
+    
+    for (int i = 0; data < end && i < _contents.size(); i++) {
+	const unsigned char *original_data = data;
+	const unsigned char *next;
+	uint32_t u1 = 0, u2 = 0;
 
-	bool binary = _binary;
-
+	// check binary case
 	if (binary) {
-	    int result = read_binary(line, errh);
-	    if (result <= 0)
-		goto eof;
-	    else
-		binary = (result == 1);
-	} else if (_ff.read_line(line, errh, true) <= 0) {
-	  eof:
-	    _ff.cleanup();
-	    q->kill();
-	    return 0;
-	}
-
-	const unsigned char *data = (const unsigned char *) line.begin();
-	const unsigned char *end = (const unsigned char *) line.end();
-
-	if (data == end)
-	    continue;
-	else if (!binary && data[0] == '!') {
-	    if (data + 6 <= end && memcmp(data, "!data", 5) == 0 && isspace(data[5]))
-		bang_data(line, errh);
-	    else if (data + 8 <= end && memcmp(data, "!flowid", 7) == 0 && isspace(data[7]))
-		bang_flowid(line, iph, errh);
-	    else if (data + 11 <= end && memcmp(data, "!aggregate", 10) == 0 && isspace(data[10]))
-		bang_aggregate(line, errh);
-	    else if (data + 8 <= end && memcmp(data, "!binary", 7) == 0 && isspace(data[7]))
-		bang_binary(line, errh);
-	    else if (data + 10 <= end && memcmp(data, "!contents", 9) == 0 && isspace(data[9]))
-		bang_data(line, errh);
-	    continue;
-	} else if (!binary && data[0] == '#')
-	    continue;
-
-	int ok = (binary ? 1 : 0);
-	int ip_ok = 0;
-	uint32_t byte_count = 0;
-	uint32_t payload_len = 0;
-	bool have_payload_len = false;
-	bool have_payload = false;
-	bool have_ip_opt = false;
-	bool have_tcp_opt = false;
-	
-	for (int i = 0; data < end && i < _contents.size(); i++) {
-	    const unsigned char *original_data = data;
-	    const unsigned char *next;
-	    uint32_t u1 = 0, u2 = 0;
-
-	    // check binary case
-	    if (binary) {
-		switch (_contents[i]) {
-		  case W_NONE:
-		    break;
-		  case W_TIMESTAMP:
-		  case W_FIRST_TIMESTAMP:
-		    u1 = GET4(data);
-		    u2 = GET4(data + 4) * 1000;
-		    data += 8;
-		    break;
-		  case W_NTIMESTAMP:
-		  case W_FIRST_NTIMESTAMP:
-		    u1 = GET4(data);
-		    u2 = GET4(data + 4);
-		    data += 8;
-		    break;
-		  case W_TIMESTAMP_USEC1:
-		    u1 = GET4(data);
-		    u2 = GET4(data + 4);
-		    data += 8;
-		    break;
-		  case W_TIMESTAMP_SEC:
-		  case W_TIMESTAMP_USEC:
-		  case W_IP_LEN:
-		  case W_PAYLOAD_LEN:
-		  case W_IP_CAPTURE_LEN:
-		  case W_TCP_SEQ:
-		  case W_TCP_ACK:
-		  case W_COUNT:
-		  case W_AGGREGATE:
-		  case W_IP_SRC:
-		  case W_IP_DST:
-		    u1 = GET4(data);
-		    data += 4;
-		    break;
-		  case W_IP_ID:
-		  case W_SPORT:
-		  case W_DPORT:
-		  case W_IP_FRAGOFF:
-		  case W_TCP_WINDOW:
-		  case W_TCP_URP:
-		    u1 = GET2(data);
-		    data += 2;
-		    break;
-		  case W_IP_PROTO:
-		  case W_TCP_FLAGS:
-		  case W_LINK:
-		  case W_IP_TOS:
-		  case W_IP_TTL:
-		    u1 = GET1(data);
-		    data++;
-		    break;
-		  case W_IP_FRAG:
-		    // XXX less checking here
-		    if (*data == 'F')
-			u1 = htons(IP_MF);
-		    else if (*data == 'f')
-			u1 = htons(100); // random number
-		    data++;	// u1 already 0
-		    break;
-		  case W_IP_OPT: {
-		      const unsigned char *endopt = data + 1 + *data;
-		      if (endopt <= end) {
-			  ip_opt = line.substring((const char *) data + 1, (const char *) endopt);
-			  have_ip_opt = true;
-			  data = endopt;
-		      }
-		      break;
-		  }
-		  case W_TCP_OPT:
-		  case W_TCP_NTOPT:
-		  case W_TCP_SACK: {
-		      const unsigned char *endopt = data + 1 + *data;
-		      if (endopt <= end) {
-			  tcp_opt = line.substring((const char *) data + 1, (const char *) endopt);
-			  have_tcp_opt = true;
-			  data = endopt;
-		      }
-		      break;
-		  }
-		  case W_PAYLOAD_MD5: // ignore contents
-		    data += 16;
-		    break;
-		}
-		goto store_contents;
-	    }
-
-	    // otherwise, ascii
-	    // first, parse contents
 	    switch (_contents[i]) {
-
 	      case W_NONE:
-		while (data < end && !isspace(*data))
-		    data++;
 		break;
-
 	      case W_TIMESTAMP:
-	      case W_NTIMESTAMP:
 	      case W_FIRST_TIMESTAMP:
-	      case W_FIRST_NTIMESTAMP:
-		next = cp_integer(data, end, 10, &u1);
-		if (next > data) {
-		    data = next;
-		    if (data + 1 < end && *data == '.') {
-			int digit = 0;
-			for (data++; digit < 9 && data < end && isdigit(*data); digit++, data++)
-			    u2 = (u2 * 10) + *data - '0';
-			for (; digit < 9; digit++)
-			    u2 = (u2 * 10);
-			for (; data < end && isdigit(*data); data++)
-			    /* nada */;
-		    }
-		}
+		u1 = GET4(data);
+		u2 = GET4(data + 4) * 1000;
+		data += 8;
 		break;
-		
+	      case W_NTIMESTAMP:
+	      case W_FIRST_NTIMESTAMP:
+		u1 = GET4(data);
+		u2 = GET4(data + 4);
+		data += 8;
+		break;
+	      case W_TIMESTAMP_USEC1:
+		u1 = GET4(data);
+		u2 = GET4(data + 4);
+		data += 8;
+		break;
 	      case W_TIMESTAMP_SEC:
 	      case W_TIMESTAMP_USEC:
 	      case W_IP_LEN:
 	      case W_PAYLOAD_LEN:
 	      case W_IP_CAPTURE_LEN:
-	      case W_IP_ID:
-	      case W_SPORT:
-	      case W_DPORT:
 	      case W_TCP_SEQ:
 	      case W_TCP_ACK:
 	      case W_COUNT:
 	      case W_AGGREGATE:
+	      case W_IP_SRC:
+	      case W_IP_DST:
+		u1 = GET4(data);
+		data += 4;
+		break;
+	      case W_IP_ID:
+	      case W_SPORT:
+	      case W_DPORT:
+	      case W_IP_FRAGOFF:
 	      case W_TCP_WINDOW:
 	      case W_TCP_URP:
+		u1 = GET2(data);
+		data += 2;
+		break;
+	      case W_IP_PROTO:
+	      case W_TCP_FLAGS:
+	      case W_LINK:
 	      case W_IP_TOS:
 	      case W_IP_TTL:
-		data = cp_integer(data, end, 0, &u1);
+	      case W_IP_HL:
+	      case W_TCP_OFF:
+		u1 = GET1(data);
+		data++;
 		break;
-
-	      case W_TIMESTAMP_USEC1: {
-#if HAVE_INT64_TYPES
-		  uint64_t uu;
-		  data = cp_integer(data, end, 0, &uu);
-		  u1 = (uint32_t)(uu >> 32);
-		  u2 = (uint32_t) uu;
-#else
-		  // silently truncate large numbers
-		  data = cp_integer(data, end, 0, &u2);
-#endif
+	      case W_IP_FRAG:
+		// XXX less checking here
+		if (*data == 'F')
+		    u1 = htons(IP_MF);
+		else if (*data == 'f')
+		    u1 = htons(100); // random number
+		data++;	// u1 already 0
+		break;
+	      case W_IP_OPT: {
+		  const unsigned char *endopt = data + 1 + *data;
+		  if (endopt <= end) {
+		      ip_opt = line.substring((const char *) data + 1, (const char *) endopt);
+		      data = endopt;
+		  }
 		  break;
 	      }
-		
-	      case W_IP_SRC:
-	      case W_IP_DST:
-		for (int j = 0; j < 4; j++) {
-		    const unsigned char *first = data;
-		    int x = 0;
-		    while (data < end && isdigit(*data) && x < 256)
-			(x = (x * 10) + *data - '0'), data++;
-		    if (x >= 256 || data == first || (j < 3 && (data >= end || *data != '.'))) {
-			data = original_data;
-			break;
-		    }
-		    u1 = (u1 << 8) + x;
-		    if (j < 3)
-			data++;
-		}
-		break;
-
-	      case W_IP_PROTO:
-		if (*data == 'T') {
-		    u1 = IP_PROTO_TCP;
-		    data++;
-		} else if (*data == 'U') {
-		    u1 = IP_PROTO_UDP;
-		    data++;
-		} else if (*data == 'I') {
-		    u1 = IP_PROTO_ICMP;
-		    data++;
-		} else
-		    data = cp_integer(data, end, 0, &u1);
-		break;
-
-	      case W_IP_FRAG:
-		if (*data == 'F') {
-		    u1 = htons(IP_MF);
-		    data++;
-		} else if (*data == 'f') {
-		    u1 = htons(100);	// random number
-		    data++;
-		} else if (*data == '.')
-		    data++;	// u1 already 0
-		break;
-
-	      case W_IP_FRAGOFF:
-		next = cp_integer(data, end, 0, &u1);
-		if (_minor_version == 0) // old-style file
-		    u1 <<= 3;
-		if (next > data && (u1 & 7) == 0 && u1 < 65536) {
-		    u1 >>= 3;
-		    data = next;
-		    if (data < end && *data == '+') {
-			u1 |= IP_MF;
-			data++;
-		    }
-		}
-		break;
-
-	      case W_TCP_FLAGS:
-		if (isdigit(*data))
-		    data = cp_integer(data, end, 0, &u1);
-		else if (*data == '.')
-		    data++;
-		else
-		    while (data < end && IPSummaryDump::tcp_flag_mapping[*data]) {
-			u1 |= 1 << (IPSummaryDump::tcp_flag_mapping[*data] - 1);
-			data++;
-		    }
-		break;
-
-	      case W_IP_OPT:
-		if (*data == '.')
-		    data++;
-		else if (*data != '-') {
-		    have_ip_opt = true;
-		    data = parse_ip_opt_ascii(data, end, &ip_opt, DO_IPOPT_ALL);
-		}
-		break;
-
-	      case W_TCP_SACK:
-		if (*data == '.')
-		    data++;
-		else if (*data != '-') {
-		    have_tcp_opt = true;
-		    data = parse_tcp_opt_ascii(data, end, &tcp_opt, DO_TCPOPT_SACK);
-		}
-		break;
-		
-	      case W_TCP_NTOPT:
-		if (*data == '.')
-		    data++;
-		else if (*data != '-') {
-		    have_tcp_opt = true;
-		    data = parse_tcp_opt_ascii(data, end, &tcp_opt, DO_TCPOPT_NTALL);
-		}
-		break;
-		
 	      case W_TCP_OPT:
-		if (*data == '.')
-		    data++;
-		else if (*data != '-') {
-		    have_tcp_opt = true;
-		    data = parse_tcp_opt_ascii(data, end, &tcp_opt, DO_TCPOPT_ALL);
-		}
+	      case W_TCP_NTOPT:
+	      case W_TCP_SACK: {
+		  const unsigned char *endopt = data + 1 + *data;
+		  if (endopt <= end) {
+		      tcp_opt = line.substring((const char *) data + 1, (const char *) endopt);
+		      data = endopt;
+		  }
+		  break;
+	      }
+	      case W_PAYLOAD_MD5: // ignore contents
+		data += 16;
 		break;
-		
-	      case W_LINK:
-		if (*data == '>' || *data == 'L') {
-		    u1 = 0;
-		    data++;
-		} else if (*data == '<' || *data == 'X' || *data == 'R') {
-		    u1 = 1;
-		    data++;
-		} else
-		    data = cp_integer(data, end, 0, &u1);
-		break;
-
-	      case W_PAYLOAD:
-		if (*data == '\"') {
-		    payload.clear();
-		    const unsigned char *fdata = data + 1;
-		    for (data++; data < end && *data != '\"'; data++)
-			if (*data == '\\' && data < end - 1) {
-			    payload.append((const char *) fdata, (const char *) data);
-			    fdata = (const unsigned char *) cp_process_backslash((const char *) data, (const char *) end, payload);
-			    data = fdata - 1; // account for loop increment
-			}
-		    payload.append((const char *) fdata, (const char *) data);
-		    // bag payload if it didn't parse correctly
-		    if (data >= end || *data != '\"')
-			data = original_data;
-		    else {
-			have_payload = have_payload_len = true;
-			payload_len = payload.length();
-		    }
-		}
-		break;
-
 	    }
-
-	    // check whether we correctly parsed something
-	    {
-		bool this_ok = (data > original_data && (data >= end || isspace(*data)));
-		while (data < end && !isspace(*data))
-		    data++;
-		while (data < end && isspace(*data))
-		    data++;
-		if (!this_ok)
-		    continue;
-	    }
-
-	    // store contents
-	  store_contents:
-	    switch (_contents[i]) {
-
-	      case W_TIMESTAMP:
-	      case W_NTIMESTAMP:
-		if (u2 < 1000000000)
-		    q->timestamp_anno().set_nsec(u1, u2), ok++;
-		break;
-
-	      case W_TIMESTAMP_SEC:
-		q->timestamp_anno().set_sec(u1), ok++;
-		break;
-
-	      case W_TIMESTAMP_USEC:
-		if (u1 < 1000000)
-		    q->timestamp_anno().set_subsec(Timestamp::usec_to_subsec(u1)), ok++;
-		break;
-
-	      case W_TIMESTAMP_USEC1:
-		if (u1 == 0 && u2 < 1000000)
-		    q->timestamp_anno().set_usec(0, u2), ok++;
-		else if (u1 == 0)
-		    q->timestamp_anno().set_usec(u2/1000000, u2%1000000), ok++;
-#if HAVE_INT64_TYPES
-		else {
-		    uint64_t uu = ((uint64_t)u1 << 32) | u2;
-		    q->timestamp_anno().set_usec(uu/1000000, uu%1000000), ok++;
-		}
-#endif
-		break;
-		
-	      case W_IP_SRC:
-		iph->ip_src.s_addr = htonl(u1), ip_ok++;
-		break;
-
-	      case W_IP_DST:
-		iph->ip_dst.s_addr = htonl(u1), ip_ok++;
-		break;
-		
-	      case W_IP_LEN:
-		if (u1 <= 0xFFFF)
-		    byte_count = u1, ok++;
-		break;
-		
-	      case W_PAYLOAD_LEN:
-		if (u1 <= 0xFFFF)
-		    payload_len = u1, have_payload_len = true, ok++;
-		break;
-
-	      case W_IP_CAPTURE_LEN:
-		/* XXX do nothing with this for now */
-		ok++;
-		break;
-		
-	      case W_IP_PROTO:
-		if (u1 <= 255)
-		    iph->ip_p = u1, ip_ok++;
-		break;
-
-	      case W_IP_TOS:
-		if (u1 <= 255)
-		    iph->ip_tos = u1, ip_ok++;
-		break;
-
-	      case W_IP_TTL:
-		if (u1 <= 255)
-		    iph->ip_ttl = u1, ip_ok++;
-		break;
-
-	      case W_IP_ID:
-		if (u1 <= 0xFFFF)
-		    iph->ip_id = htons(u1), ip_ok++;
-		break;
-
-	      case W_IP_FRAG:
-		iph->ip_off = u1, ip_ok++;
-		break;
-
-	      case W_IP_FRAGOFF:
-		if ((u1 & ~IP_MF) <= IP_OFFMASK)
-		    iph->ip_off = htons(u1), ip_ok++;
-		break;
-
-	      case W_SPORT:
-		if (u1 <= 0xFFFF)
-		    q->udp_header()->uh_sport = htons(u1), ip_ok++;
-		break;
-
-	      case W_DPORT:
-		if (u1 <= 0xFFFF)
-		    q->udp_header()->uh_dport = htons(u1), ip_ok++;
-		break;
-
-	      case W_TCP_SEQ:
-		q->tcp_header()->th_seq = htonl(u1), ip_ok++;
-		break;
-
-	      case W_TCP_ACK:
-		q->tcp_header()->th_ack = htonl(u1), ip_ok++;
-		break;
-
-	      case W_TCP_FLAGS:
-		if (u1 <= 0xFF)
-		    q->tcp_header()->th_flags = u1, ip_ok++;
-		else if (u1 <= 0xFFF)
-		    // th_off will be set later
-		    *reinterpret_cast<uint16_t *>(q->transport_header() + 12) = htons(u1), ip_ok++;
-		break;
-
-	      case W_TCP_WINDOW:
-		if (u1 <= 0xFFFF)
-		    q->tcp_header()->th_win = htons(u1), ip_ok++;
-		break;
-		
-	      case W_TCP_URP:
-		if (u1 <= 0xFFFF)
-		    q->tcp_header()->th_urp = htons(u1), ip_ok++;
-		break;
-		
-	      case W_COUNT:
-		if (u1)
-		    SET_EXTRA_PACKETS_ANNO(q, u1 - 1), ok++;
-		break;
-
-	      case W_LINK:
-		SET_PAINT_ANNO(q, u1), ok++;
-		break;
-
-	      case W_AGGREGATE:
-		SET_AGGREGATE_ANNO(q, u1), ok++;
-		break;
-
-	      case W_FIRST_TIMESTAMP:
-	      case W_FIRST_NTIMESTAMP:
-		if (u2 < 1000000000) {
-		    SET_FIRST_TIMESTAMP_ANNO(q, Timestamp::make_nsec(u1, u2));
-		    ok++;
-		}
-		break;
-
-	    }
+	    goto store_contents;
 	}
 
-	if (!ok && !ip_ok)
+	// otherwise, ascii
+	// first, parse contents
+	switch (_contents[i]) {
+
+	  case W_NONE:
+	    while (data < end && !isspace(*data))
+		data++;
 	    break;
 
-	// append IP options if any
-	if (have_ip_opt && ip_opt) {
-	    if (!(q = handle_ip_opt(q, ip_opt)))
-		return 0;
-	    else		// iph may have changed!! (don't use tcph etc.)
-		iph = q->ip_header();
-	}
-	
-	// set TCP offset to a reasonable value; possibly reduce packet length
-	if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)) {
-	    if (!have_tcp_opt || !tcp_opt)
-		q->tcp_header()->th_off = sizeof(click_tcp) >> 2;
-	    else if (!(q = handle_tcp_opt(q, tcp_opt)))
-		return 0;
-	    else		// iph may have changed!!
-		iph = q->ip_header();
-	} else if (iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph))
-	    q->take(sizeof(click_tcp) - sizeof(click_udp));
-	else
-	    q->take(sizeof(click_tcp));
-
-	// set IP length
-	if (have_payload) {	// XXX what if byte_count indicates IP options?
-	    int old_length = q->length();
-	    iph->ip_len = ntohs(old_length + payload.length());
-	    if ((q = q->put(payload.length()))) {
-		memcpy(q->data() + old_length, payload.data(), payload.length());
-		// iph may have changed!!
-		iph = q->ip_header();
+	  case W_TIMESTAMP:
+	  case W_NTIMESTAMP:
+	  case W_FIRST_TIMESTAMP:
+	  case W_FIRST_NTIMESTAMP:
+	    next = cp_integer(data, end, 10, &u1);
+	    if (next > data) {
+		data = next;
+		if (data + 1 < end && *data == '.') {
+		    int digit = 0;
+		    for (data++; digit < 9 && data < end && isdigit(*data); digit++, data++)
+			u2 = (u2 * 10) + *data - '0';
+		    for (; digit < 9; digit++)
+			u2 = (u2 * 10);
+		    for (; data < end && isdigit(*data); data++)
+			/* nada */;
+		}
 	    }
-	} else if (byte_count) {
-	    iph->ip_len = ntohs(byte_count);
-	    SET_EXTRA_LENGTH_ANNO(q, byte_count - q->length());
-	} else if (have_payload_len) {
-	    iph->ip_len = ntohs(q->length() + payload_len);
-	    SET_EXTRA_LENGTH_ANNO(q, payload_len);
-	} else
-	    iph->ip_len = ntohs(q->length());
+	    break;
+	    
+	  case W_TIMESTAMP_SEC:
+	  case W_TIMESTAMP_USEC:
+	  case W_IP_LEN:
+	  case W_PAYLOAD_LEN:
+	  case W_IP_CAPTURE_LEN:
+	  case W_IP_ID:
+	  case W_SPORT:
+	  case W_DPORT:
+	  case W_TCP_SEQ:
+	  case W_TCP_ACK:
+	  case W_COUNT:
+	  case W_AGGREGATE:
+	  case W_TCP_WINDOW:
+	  case W_TCP_URP:
+	  case W_IP_TOS:
+	  case W_IP_TTL:
+	  case W_IP_HL:
+	  case W_TCP_OFF:
+	    data = cp_integer(data, end, 0, &u1);
+	    break;
 
-	// set UDP length (after IP length is available)
-	if (iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph))
-	    q->udp_header()->uh_ulen = htons(ntohs(iph->ip_len) - (iph->ip_hl << 2));
-	
-	// set data from flow ID
-	if (_use_flowid) {
-	    IPFlowID flowid = (PAINT_ANNO(q) & 1 ? _flowid.rev() : _flowid);
-	    if (flowid.saddr())
-		iph->ip_src = flowid.saddr();
-	    if (flowid.daddr())
-		iph->ip_dst = flowid.daddr();
-	    if (flowid.sport() && IP_FIRSTFRAG(iph))
-		q->tcp_header()->th_sport = flowid.sport();
-	    if (flowid.dport() && IP_FIRSTFRAG(iph))
-		q->tcp_header()->th_dport = flowid.dport();
-	    if (_use_aggregate)
-		SET_AGGREGATE_ANNO(q, _aggregate);
-	} else if (!ip_ok)
-	    q->set_network_header(0, 0);
+	  case W_TIMESTAMP_USEC1: {
+#if HAVE_INT64_TYPES
+	      uint64_t uu;
+	      data = cp_integer(data, end, 0, &uu);
+	      u1 = (uint32_t)(uu >> 32);
+	      u2 = (uint32_t) uu;
+#else
+	      // silently truncate large numbers
+	      data = cp_integer(data, end, 0, &u2);
+#endif
+	      break;
+	  }
+	    
+	  case W_IP_SRC:
+	  case W_IP_DST:
+	    for (int j = 0; j < 4; j++) {
+		const unsigned char *first = data;
+		int x = 0;
+		while (data < end && isdigit(*data) && x < 256)
+		    (x = (x * 10) + *data - '0'), data++;
+		if (x >= 256 || data == first || (j < 3 && (data >= end || *data != '.'))) {
+		    data = original_data;
+		    break;
+		}
+		u1 = (u1 << 8) + x;
+		if (j < 3)
+		    data++;
+	    }
+	    break;
 
-	// set destination IP address annotation
-	q->set_dst_ip_anno(iph->ip_dst);
+	  case W_IP_PROTO:
+	    if (*data == 'T') {
+		u1 = IP_PROTO_TCP;
+		data++;
+	    } else if (*data == 'U') {
+		u1 = IP_PROTO_UDP;
+		data++;
+	    } else if (*data == 'I') {
+		u1 = IP_PROTO_ICMP;
+		data++;
+	    } else
+		data = cp_integer(data, end, 0, &u1);
+	    break;
 
-	// set checksum
-	if (_checksum && ip_ok)
-	    set_checksums(q, iph);
-	
-	return q;
-    }
+	  case W_IP_FRAG:
+	    if (*data == 'F') {
+		u1 = htons(IP_MF);
+		data++;
+	    } else if (*data == 'f') {
+		u1 = htons(100);	// random number
+		data++;
+	    } else if (*data == '.')
+		data++;	// u1 already 0
+	    break;
 
-    // bad format if we get here
-    if (!_format_complaint) {
-	// don't complain if the line was all blank
-	if ((int) strspn(line.data(), " \t\n\r") != line.length()) {
-	    if (_contents.size() == 0)
-		_ff.error(errh, "no '!data' provided");
+	  case W_IP_FRAGOFF:
+	    next = cp_integer(data, end, 0, &u1);
+	    if (_minor_version == 0) // old-style file
+		u1 <<= 3;
+	    if (next > data && (u1 & 7) == 0 && u1 < 65536) {
+		u1 >>= 3;
+		data = next;
+		if (data < end && *data == '+') {
+		    u1 |= IP_MF;
+		    data++;
+		}
+	    }
+	    break;
+
+	  case W_TCP_FLAGS:
+	    if (isdigit(*data))
+		data = cp_integer(data, end, 0, &u1);
+	    else if (*data == '.')
+		data++;
 	    else
-		_ff.error(errh, "packet parse error");
-	    _format_complaint = true;
+		while (data < end && IPSummaryDump::tcp_flag_mapping[*data]) {
+		    u1 |= 1 << (IPSummaryDump::tcp_flag_mapping[*data] - 1);
+		    data++;
+		}
+	    break;
+
+	  case W_IP_OPT:
+	    if (*data == '.')
+		data++;
+	    else if (*data != '-')
+		data = parse_ip_opt_ascii(data, end, &ip_opt, DO_IPOPT_ALL);
+	    break;
+
+	  case W_TCP_SACK:
+	    if (*data == '.')
+		data++;
+	    else if (*data != '-')
+		data = parse_tcp_opt_ascii(data, end, &tcp_opt, DO_TCPOPT_SACK);
+	    break;
+	    
+	  case W_TCP_NTOPT:
+	    if (*data == '.')
+		data++;
+	    else if (*data != '-')
+		data = parse_tcp_opt_ascii(data, end, &tcp_opt, DO_TCPOPT_NTALL);
+	    break;
+	    
+	  case W_TCP_OPT:
+	    if (*data == '.')
+		data++;
+	    else if (*data != '-')
+		data = parse_tcp_opt_ascii(data, end, &tcp_opt, DO_TCPOPT_ALL);
+	    break;
+	    
+	  case W_LINK:
+	    if (*data == '>' || *data == 'L') {
+		u1 = 0;
+		data++;
+	    } else if (*data == '<' || *data == 'X' || *data == 'R') {
+		u1 = 1;
+		data++;
+	    } else
+		data = cp_integer(data, end, 0, &u1);
+	    break;
+
+	  case W_PAYLOAD:
+	    if (*data == '\"') {
+		payload.clear();
+		const unsigned char *fdata = data + 1;
+		for (data++; data < end && *data != '\"'; data++)
+		    if (*data == '\\' && data < end - 1) {
+			payload.append((const char *) fdata, (const char *) data);
+			fdata = (const unsigned char *) cp_process_backslash((const char *) data, (const char *) end, payload);
+			data = fdata - 1; // account for loop increment
+		    }
+		payload.append((const char *) fdata, (const char *) data);
+		// bag payload if it didn't parse correctly
+		if (data >= end || *data != '\"')
+		    data = original_data;
+		else {
+		    have_payload = have_payload_len = true;
+		    payload_len = payload.length();
+		}
+	    }
+	    break;
+
+	}
+
+	// check whether we correctly parsed something
+	{
+	    bool this_ok = (data > original_data && (data >= end || isspace(*data)));
+	    while (data < end && !isspace(*data))
+		data++;
+	    while (data < end && isspace(*data))
+		data++;
+	    if (!this_ok)
+		continue;
+	}
+
+	// store contents
+      store_contents:
+	switch (_contents[i]) {
+
+	  case W_TIMESTAMP:
+	  case W_NTIMESTAMP:
+	    if (u2 < 1000000000)
+		q->timestamp_anno().set_nsec(u1, u2), ok++;
+	    break;
+
+	  case W_TIMESTAMP_SEC:
+	    q->timestamp_anno().set_sec(u1), ok++;
+	    break;
+
+	  case W_TIMESTAMP_USEC:
+	    if (u1 < 1000000)
+		q->timestamp_anno().set_subsec(Timestamp::usec_to_subsec(u1)), ok++;
+	    break;
+
+	  case W_TIMESTAMP_USEC1:
+	    if (u1 == 0 && u2 < 1000000)
+		q->timestamp_anno().set_usec(0, u2), ok++;
+	    else if (u1 == 0)
+		q->timestamp_anno().set_usec(u2/1000000, u2%1000000), ok++;
+#if HAVE_INT64_TYPES
+	    else {
+		uint64_t uu = ((uint64_t)u1 << 32) | u2;
+		q->timestamp_anno().set_usec(uu/1000000, uu%1000000), ok++;
+	    }
+#endif
+	    break;
+	    
+	  case W_IP_SRC:
+	    iph->ip_src.s_addr = htonl(u1), ip_ok++;
+	    break;
+
+	  case W_IP_DST:
+	    iph->ip_dst.s_addr = htonl(u1), ip_ok++;
+	    break;
+
+	  case W_IP_HL:
+	    if (u1 >= sizeof(click_ip) && u1 <= 60 && (u1 & 3) == 0)
+		ip_hl = u1, ip_ok++;
+	    break;
+	    
+	  case W_IP_LEN:
+	    if (u1 <= 0xFFFF)
+		byte_count = u1, ok++;
+	    break;
+	    
+	  case W_PAYLOAD_LEN:
+	    if (u1 <= 0xFFFF)
+		payload_len = u1, have_payload_len = true, ok++;
+	    break;
+
+	  case W_IP_CAPTURE_LEN:
+	    /* XXX do nothing with this for now */
+	    ok++;
+	    break;
+	    
+	  case W_IP_PROTO:
+	    if (u1 <= 255)
+		iph->ip_p = u1, ip_ok++;
+	    break;
+
+	  case W_IP_TOS:
+	    if (u1 <= 255)
+		iph->ip_tos = u1, ip_ok++;
+	    break;
+
+	  case W_IP_TTL:
+	    if (u1 <= 255)
+		iph->ip_ttl = u1, ip_ok++;
+	    break;
+
+	  case W_IP_ID:
+	    if (u1 <= 0xFFFF)
+		iph->ip_id = htons(u1), ip_ok++;
+	    break;
+
+	  case W_IP_FRAG:
+	    iph->ip_off = u1, ip_ok++;
+	    break;
+
+	  case W_IP_FRAGOFF:
+	    if ((u1 & ~IP_MF) <= IP_OFFMASK)
+		iph->ip_off = htons(u1), ip_ok++;
+	    break;
+
+	  case W_SPORT:
+	    if (u1 <= 0xFFFF)
+		q->udp_header()->uh_sport = htons(u1), ip_ok++;
+	    break;
+
+	  case W_DPORT:
+	    if (u1 <= 0xFFFF)
+		q->udp_header()->uh_dport = htons(u1), ip_ok++;
+	    break;
+
+	  case W_TCP_SEQ:
+	    q->tcp_header()->th_seq = htonl(u1), ip_ok++;
+	    break;
+
+	  case W_TCP_ACK:
+	    q->tcp_header()->th_ack = htonl(u1), ip_ok++;
+	    break;
+
+	  case W_TCP_FLAGS:
+	    if (u1 <= 0xFF)
+		q->tcp_header()->th_flags = u1, ip_ok++;
+	    else if (u1 <= 0xFFF)
+		// th_off will be set later
+		*reinterpret_cast<uint16_t *>(q->transport_header() + 12) = htons(u1), ip_ok++;
+	    break;
+
+	  case W_TCP_OFF:
+	    if (u1 >= sizeof(click_tcp) && u1 <= 60 && (u1 & 3) == 0)
+		tcp_off = u1, ip_ok++;
+	    break;
+
+	  case W_TCP_WINDOW:
+	    if (u1 <= 0xFFFF)
+		q->tcp_header()->th_win = htons(u1), ip_ok++;
+	    break;
+	    
+	  case W_TCP_URP:
+	    if (u1 <= 0xFFFF)
+		q->tcp_header()->th_urp = htons(u1), ip_ok++;
+	    break;
+	    
+	  case W_COUNT:
+	    if (u1)
+		SET_EXTRA_PACKETS_ANNO(q, u1 - 1), ok++;
+	    break;
+
+	  case W_LINK:
+	    SET_PAINT_ANNO(q, u1), ok++;
+	    break;
+
+	  case W_AGGREGATE:
+	    SET_AGGREGATE_ANNO(q, u1), ok++;
+	    break;
+
+	  case W_FIRST_TIMESTAMP:
+	  case W_FIRST_NTIMESTAMP:
+	    if (u2 < 1000000000) {
+		SET_FIRST_TIMESTAMP_ANNO(q, Timestamp::make_nsec(u1, u2));
+		ok++;
+	    }
+	    break;
+
 	}
     }
-    if (q)
-	q->kill();
-    return 0;
+
+    if (!ok && !ip_ok) {	// bad format
+	if (!_format_complaint) {
+	    // don't complain if the line was all blank
+	    if (binary || (int) strspn(line.data(), " \t\n\r") != line.length()) {
+		if (_contents.size() == 0)
+		    _ff.error(errh, "no '!data' provided");
+		else
+		    _ff.error(errh, "packet parse error");
+		_format_complaint = true;
+	    }
+	}
+	if (q)
+	    q->kill();
+	return 0;
+    }
+
+    // append EOL IP options to fill out ip_hl
+    if (sizeof(click_ip) + ip_opt.length() < ip_hl)
+	ip_opt.append_fill(IPOPT_EOL, ip_hl - ip_opt.length() - sizeof(click_ip));
+
+    // append IP options if any
+    if (ip_opt) {
+	if (!(q = handle_ip_opt(q, ip_opt)))
+	    return 0;
+	else		       // iph may have changed!! (don't use tcph etc.)
+	    iph = q->ip_header();
+    }
+    
+    // append EOL TCP options to fill out tcp_off
+    if (sizeof(click_tcp) + tcp_opt.length() < tcp_off)
+	tcp_opt.append_fill(TCPOPT_EOL, tcp_off - tcp_opt.length() - sizeof(click_tcp));
+
+    // set TCP offset to a reasonable value; possibly reduce packet length
+    if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)) {
+	if (!tcp_opt)
+	    q->tcp_header()->th_off = sizeof(click_tcp) >> 2;
+	else if (!(q = handle_tcp_opt(q, tcp_opt)))
+	    return 0;
+	else			// iph may have changed!!
+	    iph = q->ip_header();
+    } else if (iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph))
+	q->take(sizeof(click_tcp) - sizeof(click_udp));
+    else
+	q->take(sizeof(click_tcp));
+
+    // set IP length
+    if (have_payload) {	// XXX what if byte_count indicates IP options?
+	int old_length = q->length();
+	iph->ip_len = ntohs(old_length + payload.length());
+	if ((q = q->put(payload.length()))) {
+	    memcpy(q->data() + old_length, payload.data(), payload.length());
+	    // iph may have changed!!
+	    iph = q->ip_header();
+	}
+    } else if (byte_count) {
+	iph->ip_len = ntohs(byte_count);
+	SET_EXTRA_LENGTH_ANNO(q, byte_count - q->length());
+    } else if (have_payload_len) {
+	iph->ip_len = ntohs(q->length() + payload_len);
+	SET_EXTRA_LENGTH_ANNO(q, payload_len);
+    } else
+	iph->ip_len = ntohs(q->length());
+
+    // set UDP length (after IP length is available)
+    if (iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph))
+	q->udp_header()->uh_ulen = htons(ntohs(iph->ip_len) - (iph->ip_hl << 2));
+    
+    // set data from flow ID
+    if (_use_flowid) {
+	IPFlowID flowid = (PAINT_ANNO(q) & 1 ? _flowid.rev() : _flowid);
+	if (flowid.saddr())
+	    iph->ip_src = flowid.saddr();
+	if (flowid.daddr())
+	    iph->ip_dst = flowid.daddr();
+	if (flowid.sport() && IP_FIRSTFRAG(iph))
+	    q->tcp_header()->th_sport = flowid.sport();
+	if (flowid.dport() && IP_FIRSTFRAG(iph))
+	    q->tcp_header()->th_dport = flowid.dport();
+	if (_use_aggregate)
+	    SET_AGGREGATE_ANNO(q, _aggregate);
+    } else if (!ip_ok)
+	q->set_network_header(0, 0);
+
+    // set destination IP address annotation
+    q->set_dst_ip_anno(iph->ip_dst);
+
+    // set checksum
+    if (_checksum && ip_ok)
+	set_checksums(q, iph);
+    
+    return q;
 }
 
 inline Packet *

@@ -62,6 +62,7 @@ contain those fields. Valid field names, with examples, are:
    dport        TCP/UDP destination port: '2943'
    tcp_seq      TCP sequence number: '93167339'
    tcp_ack      TCP acknowledgement number: '93178192'
+   tcp_off      TCP offset in bytes: '20'
    tcp_flags    TCP flags: 'SA', '.'
    tcp_opt      TCP options (see below)
    tcp_ntopt    TCP options except NOP, EOL and timestamp

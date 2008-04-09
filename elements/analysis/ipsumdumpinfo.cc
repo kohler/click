@@ -97,6 +97,10 @@ IPSummaryDumpInfo::parse_content(const String &word)
 	return W_NONE;
     else if (word == "tcp_urp")
 	return W_TCP_URP;
+    else if (word == "ip_hl")
+	return W_IP_HL;
+    else if (word == "tcp_off")
+	return W_TCP_OFF;
     else if (find(word, ' ') != word.end()) {
 	const char *space = find(word, ' ');
 	return parse_content(word.substring(word.begin(), space) + "_" + word.substring(space + 1, word.end()));
@@ -114,8 +118,9 @@ static int content_binary_sizes[] = {
 			// W_FIRST_TIMESTAMP
     2, 4, 1, 1, 8,	// W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL,
 			// W_TIMESTAMP_USEC1
-    4, 2, 8, 8, 16	// W_IP_CAPTURE_LEN, W_TCP_URP, W_NTIMESTAMP,
+    4, 2, 8, 8, 16,	// W_IP_CAPTURE_LEN, W_TCP_URP, W_NTIMESTAMP,
 			// W_FIRST_NTIMESTAMP, W_PAYLOAD_MD5
+    1, 1		// W_IP_HL, W_TCP_OFF
 };
 
 int
