@@ -729,12 +729,13 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 
 	if (binary) {
 	    int result = read_binary(line, errh);
-	    if (result <= 0) {
-		q->kill();
-		return 0;
-	    } else
+	    if (result <= 0)
+		goto eof;
+	    else
 		binary = (result == 1);
 	} else if (_ff.read_line(line, errh, true) <= 0) {
+	  eof:
+	    _ff.cleanup();
 	    q->kill();
 	    return 0;
 	}
@@ -1381,11 +1382,12 @@ FromIPSummaryDump::run_task(Task *)
 
     while (1) {
 	p = (_work_packet ? _work_packet : read_packet(0));
-	if (!p) {
+	if (!p && !_ff.initialized()) {
 	    if (_stop)
 		router()->please_stop_driver();
 	    return false;
-	}
+	} else if (!p)
+	    break;
 	if (_multipacket)
 	    p = handle_multipacket(p);
 	// check sampling probability
@@ -1411,7 +1413,7 @@ FromIPSummaryDump::pull(int)
 
     while (1) {
 	p = (_work_packet ? _work_packet : read_packet(0));
-	if (!p) {
+	if (!p && !_ff.initialized()) {
 	    if (_stop)
 		router()->please_stop_driver();
 	    _notifier.sleep();
