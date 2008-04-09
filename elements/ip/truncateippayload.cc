@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
 #include <clicknet/icmp.h>
@@ -37,14 +38,16 @@ TruncateIPPayload::~TruncateIPPayload()
 int
 TruncateIPPayload::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    _nbytes = 0;
+    unsigned short nbytes = 0;
     bool transport = true;
+    bool extra_length = true;
     if (cp_va_kparse(conf, this, errh,
-		     "LENGTH", cpkP, cpUnsigned, &_nbytes,
+		     "LENGTH", cpkP, cpUnsignedShort, &nbytes,
 		     "TRANSPORT", cpkP, cpBool, &transport,
+		     "EXTRA_LENGTH", 0, cpBool, &extra_length,
 		     cpEnd) < 0)
 	return -1;
-    _nbytes = _nbytes * 2 + transport;
+    _nbytes = (nbytes << 2) + transport + (extra_length << 1);
     return 0;
 }
 
@@ -52,15 +55,14 @@ Packet *
 TruncateIPPayload::simple_action(Packet *p)
 {
     const click_ip *iph = p->ip_header();
-    unsigned nbytes = _nbytes >> 1;
+    unsigned nbytes = _nbytes >> 2;
 
     if (!iph) {
-	if (p->length() > nbytes)
-	    p->take(p->length() - _nbytes);
-	return p;
-    }
-
-    if (iph->ip_hl < (sizeof(click_ip) >> 2))
+	if (p->length() <= nbytes)
+	    return p;
+	nbytes = p->length() - _nbytes;
+	goto take;
+    } else if (iph->ip_hl < (sizeof(click_ip) >> 2))
 	// broken IP header
 	nbytes += sizeof(click_ip);
     else {
@@ -84,8 +86,14 @@ TruncateIPPayload::simple_action(Packet *p)
 	    }
     }
 	
-    if (p->network_length() > (int) nbytes)
-        p->take(p->network_length() - nbytes);
+    if (p->network_length() <= (int) nbytes)
+	return p;
+    nbytes = p->network_length() - nbytes;
+
+  take:
+    if (_nbytes & 2)
+	SET_EXTRA_LENGTH_ANNO(p, EXTRA_LENGTH_ANNO(p) + nbytes);
+    p->take(nbytes);
     return p;
 }
 

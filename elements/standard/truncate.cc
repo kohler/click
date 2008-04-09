@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 CLICK_DECLS
 
 Truncate::Truncate()
@@ -34,16 +35,26 @@ Truncate::~Truncate()
 int
 Truncate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"LENGTH", cpkP+cpkM, cpUnsigned, &_nbytes,
-			cpEnd);
+    unsigned short nbytes;
+    bool extra_length = true;
+    if (cp_va_kparse(conf, this, errh,
+		     "LENGTH", cpkP+cpkM, cpUnsignedShort, &nbytes,
+		     "EXTRA_LENGTH", 0, cpBool, &extra_length,
+		     cpEnd) < 0)
+	return -1;
+    _nbytes = (nbytes << 1) + extra_length;
+    return 0;
 }
 
 Packet *
 Truncate::simple_action(Packet *p)
 {
-    if (p->length() > _nbytes) {
-        p->take(p->length() - _nbytes);
+    unsigned nbytes = _nbytes >> 1;
+    if (p->length() > nbytes) {
+	nbytes = p->length() - _nbytes;
+	if (_nbytes & 1)
+	    SET_EXTRA_LENGTH_ANNO(p, EXTRA_LENGTH_ANNO(p) + nbytes);
+        p->take(nbytes);
     }
     return p;
 }

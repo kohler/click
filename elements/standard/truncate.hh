@@ -11,6 +11,9 @@ CLICK_DECLS
  * limit packet length.
  * =d
  * Shorten packets to at most LENGTH bytes.
+ *
+ * The EXTRA_LENGTH keyword argument determines whether packets' extra length
+ * annotations are updated to account for any dropped bytes.  Default is true.
  * =a Strip
  */
 

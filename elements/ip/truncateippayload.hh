@@ -21,6 +21,9 @@ understands TCP, UDP, and ICMP headers).  If TRANSPORT is false, "payload"
 begins at the end of the IP header.  Non-IP packets are truncated to at most
 LENGTH bytes.  Default LENGTH is 0.
 
+The EXTRA_LENGTH keyword argument determines whether packets' extra length
+annotations are updated to account for any dropped bytes.  Default is true.
+
 =a Truncate
 */
 
