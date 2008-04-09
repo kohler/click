@@ -41,6 +41,7 @@ static const StaticNameDB::Entry instruction_entries[] = {
     { "loop", Script::INSN_LOOP_PSEUDO },
     { "pause", Script::INSN_WAIT_STEP },
     { "print", Script::INSN_PRINT },
+    { "printn", Script::INSN_PRINTN },
     { "read", Script::INSN_READ },
     { "readq", Script::INSN_READQ },
     { "return", Script::INSN_RETURN },
@@ -210,6 +211,7 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	case INSN_READ:
 	case INSN_READQ:
 	case INSN_PRINT:
+	case INSN_PRINTN:
 	case INSN_GOTO:
 	    add_insn(insn, 0, 0, conf[i]);
 	    break;
@@ -377,7 +379,8 @@ Script::step(int nsteps, int step_type, int njumps)
 	    }
 	    break;
 
-	case INSN_PRINT: {
+	case INSN_PRINT:
+	case INSN_PRINTN: {
 	    String text = _args3[ipos];
 	    
 #if CLICK_USERLEVEL || CLICK_TOOL
@@ -401,7 +404,9 @@ Script::step(int nsteps, int step_type, int njumps)
 		result = HandlerCall::call_read(result, this, &cerrh);
 	    } else
 		result = cp_unquote(cp_expand(text, expander, true));
-	    if (cerrh.nerrors() == before && (!result || result.back() != '\n'))
+	    if (cerrh.nerrors() == before
+		&& (!result || result.back() != '\n')
+		&& insn != INSN_PRINTN)
 		result += "\n";
 	    
 #if CLICK_USERLEVEL || CLICK_TOOL

@@ -62,6 +62,10 @@ returns "0":
    print $x          => c.count
    print $($x)       => 0
 
+=item 'C<printn> [>FILE | >>FILE] [TEXT | HANDLER]'
+
+Like C<print>, but does not append a newline.
+
 =item 'C<read> HANDLER [ARG...]'
 
 Call a read handler and print the handler name and result to standard error.  (In the kernel, the result is printed to the system log.)  For example, the
@@ -286,9 +290,9 @@ class Script : public Element { public:
 
     enum Insn {
 	INSN_INITIAL, INSN_WAIT_STEP, INSN_WAIT_TIME, // order required
-	INSN_PRINT, INSN_READ, INSN_READQ, INSN_WRITE, INSN_WRITEQ, INSN_SET,
-	INSN_INIT, INSN_SAVE, INSN_APPEND, INSN_STOP, INSN_END, INSN_EXIT,
-	INSN_LABEL, INSN_GOTO, INSN_RETURN,
+	INSN_PRINT, INSN_PRINTN, INSN_READ, INSN_READQ, INSN_WRITE, INSN_WRITEQ,
+	INSN_SET, INSN_INIT, INSN_SAVE, INSN_APPEND, INSN_STOP, INSN_END,
+	INSN_EXIT, INSN_LABEL, INSN_GOTO, INSN_RETURN,
 	INSN_WAIT_PSEUDO, INSN_LOOP_PSEUDO
     };
 
