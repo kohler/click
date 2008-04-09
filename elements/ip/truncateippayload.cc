@@ -40,7 +40,7 @@ TruncateIPPayload::configure(Vector<String> &conf, ErrorHandler *errh)
     _nbytes = 0;
     bool transport = true;
     if (cp_va_kparse(conf, this, errh,
-		     "LENGTH", cpkP+cpkM, cpUnsigned, &_nbytes,
+		     "LENGTH", cpkP, cpUnsigned, &_nbytes,
 		     "TRANSPORT", cpkP, cpBool, &transport,
 		     cpEnd) < 0)
 	return -1;
