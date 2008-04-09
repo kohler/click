@@ -234,7 +234,7 @@ SimpleQueue::write_handler(const String &, Element *e, void *thunk, ErrorHandler
     switch (which) {
       case 0:
 	q->_drops = 0;
-	q->_highwater_length = 0;
+	q->_highwater_length = q->size();
 	return 0;
       case 1:
 	q->reset();
