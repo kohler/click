@@ -29,7 +29,9 @@
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
 #include <clicknet/tcp.h>
+#include <clicknet/icmp.h>
 #include <click/packet_anno.hh>
+#include <click/nameinfo.hh>
 #include <click/userutils.hh>
 #include <unistd.h>
 #include <sys/types.h>
@@ -746,7 +748,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     }
 
     // read packet data
-    WritablePacket *q = Packet::make(0, (const unsigned char *)0, sizeof(click_ip) + sizeof(click_tcp), 8);
+    WritablePacket *q = Packet::make(0, (const unsigned char *)0, sizeof(click_ip) + sizeof(click_tcp), 32);
     if (!q) {
 	_ff.error(errh, strerror(ENOMEM));
 	return 0;
@@ -768,6 +770,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     int ip_ok = 0;
     uint8_t ip_hl = 0;
     uint8_t tcp_off = 0;
+    int16_t icmp_type = -1;
     uint32_t byte_count = 0;
     uint32_t payload_len = 0;
     bool have_payload_len = false;
@@ -830,6 +833,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_IP_TTL:
 	      case W_IP_HL:
 	      case W_TCP_OFF:
+	      case W_ICMP_TYPE:
+	      case W_ICMP_CODE:
 		u1 = GET1(data);
 		data++;
 		break;
@@ -913,6 +918,32 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	  case W_IP_HL:
 	  case W_TCP_OFF:
 	    data = cp_integer(data, end, 0, &u1);
+	    break;
+
+	  case W_ICMP_TYPE:
+	    if (data != end && isdigit((unsigned char) *data))
+		data = cp_integer(data, end, 0, &u1);
+	    else {
+		const unsigned char *first = data;
+		while (data != end && !isspace((unsigned char) *data))
+		    ++data;
+		if (!NameInfo::query_int(NameInfo::T_ICMP_TYPE, this,
+					 line.substring((const char *) first, (const char *) data), &u1))
+		    data = first;
+	    }
+	    break;
+
+	  case W_ICMP_CODE:
+	    if (data != end && isdigit((unsigned char) *data))
+		data = cp_integer(data, end, 0, &u1);
+	    else if (icmp_type >= 0) {
+		const unsigned char *first = data;
+		while (data != end && !isspace((unsigned char) *data))
+		    ++data;
+		if (!NameInfo::query_int(NameInfo::T_ICMP_CODE + icmp_type, this,
+					 line.substring((const char *) first, (const char *) data), &u1))
+		    data = first;
+	    }
 	    break;
 
 	  case W_TIMESTAMP_USEC1: {
@@ -1198,7 +1229,17 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    if (u1 <= 0xFFFF)
 		q->tcp_header()->th_urp = htons(u1), ip_ok++;
 	    break;
-	    
+
+	  case W_ICMP_TYPE:
+	    if (u1 <= 255)
+		q->icmp_header()->icmp_type = icmp_type = u1, ip_ok++;
+	    break;
+
+	  case W_ICMP_CODE:
+	    if (u1 <= 255)
+		q->icmp_header()->icmp_code = u1, ip_ok++;
+	    break;
+
 	  case W_COUNT:
 	    if (u1)
 		SET_EXTRA_PACKETS_ANNO(q, u1 - 1), ok++;
@@ -1265,6 +1306,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    iph = q->ip_header();
     } else if (iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph))
 	q->take(sizeof(click_tcp) - sizeof(click_udp));
+    else if (iph->ip_p == IP_PROTO_ICMP && IP_FIRSTFRAG(iph))
+	q->take(sizeof(click_tcp) - click_icmp_hl(q->icmp_header()->icmp_type));
     else
 	q->take(sizeof(click_tcp));
 

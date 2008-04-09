@@ -121,4 +121,13 @@ struct click_icmp_needfrag {
 #define	ICMP_MASKREQ		17		/* address mask request	     */
 #define	ICMP_MASKREQREPLY	18		/* address mask reply	     */
 
+static inline size_t
+click_icmp_hl(uint8_t icmp_type)
+{
+    if (icmp_type == ICMP_TSTAMP || icmp_type == ICMP_TSTAMPREPLY)
+	return sizeof(click_icmp_tstamp);
+    else
+	return sizeof(click_icmp);
+}
+
 #endif

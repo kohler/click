@@ -266,20 +266,21 @@ IPPrint::icmp_line(StringAccum &sa, const Packet *p, int transport_length) const
 	}
 	
       case ICMP_UNREACH: {
+	  String code = NameInfo::revquery_int(NameInfo::T_ICMP_CODE + icmph->icmp_type, this, icmph->icmp_code);
+	  if (!code)
+	      code = "code " + String((int) icmph->icmp_code);
+	  
 	  const click_ip *eiph = reinterpret_cast<const click_ip *>(icmph + 1);
 	  int eiph_len = transport_length - sizeof(click_icmp);
 	  if (eiph_len < (int) sizeof(click_ip)) {
-	      sa << "icmp unreachable ";
+	      sa << "icmp unreachable " << code << ' ';
 	      goto truncated_icmp;
 	  }
+	  
 	  const click_udp *eudph = reinterpret_cast<const click_udp *>(reinterpret_cast<const uint8_t *>(eiph) + (eiph->ip_hl << 2));
 	  int eudph_len = eiph_len - (eiph->ip_hl << 2);
 
-	  sa << "icmp " << IPAddress(eiph->ip_dst) << " unreachable ";
-	  if (String s = NameInfo::revquery_int(NameInfo::T_ICMP_CODE + icmph->icmp_type, this, icmph->icmp_code))
-	      sa << s;
-	  else if (icmph->icmp_code)
-	      sa << "code " << (int)icmph->icmp_code;
+	  sa << "icmp " << IPAddress(eiph->ip_dst) << " unreachable " << code;
 	  switch (icmph->icmp_code) {
 	    case ICMP_UNREACH_PROTOCOL:
 	      sa << ' ' << unparse_proto(eiph->ip_p, false);
