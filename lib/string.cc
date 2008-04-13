@@ -679,6 +679,96 @@ String::quoted_hex() const
     return sa.take_string();
 }
 
+/* @brief Returns a 32-bit hash function of the characters in [begin, end).
+ *
+ * Uses Paul Hsieh's "SuperFastHash" algorithm, described at
+ * http://www.azillionmonkeys.com/qed/hash.html
+ * This hash function uses all characters in the string.
+ *
+ * @invariant If end1 - begin1 == end2 - begin2 and memcmp(begin1, begin2,
+ * end1 - begin1) == 0, then hashcode(begin1, end1) == hashcode(begin2, end2).
+ */
+uint32_t
+String::hashcode(const char *begin, const char *end)
+{
+    if (end <= begin)
+	return 0;
+
+    uint32_t hash = end - begin;
+    int rem = hash & 3;
+    end -= rem;
+    uint32_t last16;
+
+#if !HAVE_INDIFFERENT_ALIGNMENT
+    if (!(reinterpret_cast<uintptr_t>(begin) & 1)) {
+#endif
+#define get16(p) (*reinterpret_cast<const uint16_t *>((p)))
+	for (; begin != end; begin += 4) {
+	    hash += get16(begin);
+	    uint32_t tmp = (get16(begin + 2) << 11) ^ hash;
+	    hash = (hash << 16) ^ tmp;
+	    hash += hash >> 11;
+	}
+	if (rem >= 2) {
+	    last16 = get16(begin);
+	    goto rem2;
+	}
+#undef get16
+#if !HAVE_INDIFFERENT_ALIGNMENT
+    } else {
+# if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+#  define get16(p) (((unsigned char) (p)[0] << 8) + (unsigned char) (p)[1])
+# else
+#  define get16(p) ((unsigned char) (p)[0] + ((unsigned char) (p)[1] << 8))
+# endif
+	// should be exactly the same as the code above
+	for (; begin != end; begin += 4) {
+	    hash += get16(begin);
+	    uint32_t tmp = (get16(begin + 2) << 11) ^ hash;
+	    hash = (hash << 16) ^ tmp;
+	    hash += hash >> 11;
+	}
+	if (rem >= 2) {
+	    last16 = get16(begin);
+	    goto rem2;
+	}
+# undef get16
+    }
+#endif
+
+    /* Handle end cases */
+    if (0) {			// weird organization avoids uninitialized
+      rem2:			// variable warnings
+	if (rem == 3) {
+	    hash += last16;
+	    hash ^= hash << 16;
+	    hash ^= ((unsigned char) begin[2]) << 18;
+	    hash += hash >> 11;
+	} else {
+	    hash += last16;
+	    hash ^= hash << 11;
+	    hash += hash >> 17;
+	}
+    } else if (rem == 1) {
+	hash += (unsigned char) *begin;
+	hash ^= hash << 10;
+	hash += hash >> 1;
+    }
+
+    /* Force "avalanching" of final 127 bits */
+    hash ^= hash << 3;
+    hash += hash >> 5;
+    hash ^= hash << 4;
+    hash += hash >> 17;
+    hash ^= hash << 25;
+    hash += hash >> 6;
+
+    return hash;
+}
+
+#if 0
+// 11.Apr.2008 -- This old hash function was swapped out in favor of
+// SuperFastHash, above.
 /** @brief Hash function.
  * @return The hash value of this String.
  *
@@ -699,6 +789,7 @@ String::hashcode() const
 	return d[0] + (d[1] << 8) + (d[2] << 16) + (d[3] << 24)
 	    + (l << 12) + (d[l-1] << 10);
 }
+#endif
 
 /** @brief Return true iff this string is equal to the data in @a s.
  * @param s string data to compare to

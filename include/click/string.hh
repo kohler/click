@@ -76,7 +76,10 @@ class String { public:
   
   const char *c_str() const;		// pointer returned is semi-transient
 
-  size_t hashcode() const;
+  static uint32_t hashcode(const char *begin, const char *end);
+  static inline uint32_t hashcode(const unsigned char *begin,
+				  const unsigned char *end);
+  inline uint32_t hashcode() const;
   
   bool equals(const char *s, int len) const;
   // bool operator==(const String &, const String &);
@@ -571,6 +574,26 @@ inline bool
 operator>=(const String &a, const String &b)
 {
   return a.compare(b.data(), b.length()) >= 0;
+}
+
+/** @overload */
+inline uint32_t
+String::hashcode(const unsigned char *begin, const unsigned char *end)
+{
+  return hashcode(reinterpret_cast<const char *>(begin),
+		  reinterpret_cast<const char *>(end));
+}
+
+/** @brief Returns a 32-bit hash function of this string's characters.
+ *
+ * Equivalent to String::hashcode(begin(), end()).  Uses Paul Hsieh's
+ * "SuperFastHash."
+ *
+ * @invariant  If s1 == s2, then s1.hashcode() == s2.hashcode(). */
+inline uint32_t
+String::hashcode() const
+{
+  return length() ? hashcode(begin(), end()) : 0;
 }
 
 /** @brief Makes this string a copy of @a str. */
