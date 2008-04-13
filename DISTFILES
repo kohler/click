@@ -337,9 +337,12 @@ gaprate.hh
 glue.hh
 handler.hh
 handlercall.hh
+hashallocator.hh
 hashcode.hh
+hashcontainer.hh
 hashmap.cc
 hashmap.hh
+hashtable.hh
 ino.hh
 integers.hh
 ip6address.hh

@@ -45,9 +45,12 @@ include/click/gaprate.hh
 include/click/glue.hh
 include/click/handler.hh
 include/click/handlercall.hh
+include/click/hashallocator.hh
 include/click/hashcode.hh
+include/click/hashcontainer.hh
 include/click/hashmap.cc
 include/click/hashmap.hh
+include/click/hashtable.hh
 include/click/integers.hh
 include/click/ipaddress.hh
 include/click/ip6address.hh
