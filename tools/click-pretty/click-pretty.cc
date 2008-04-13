@@ -76,7 +76,7 @@ static const Clp_Option options[] = {
 
 static String::Initializer string_initializer;
 static const char *program_name;
-static HashMap<String, String> definitions;
+static HashTable<String, String> definitions;
 static int specified_driver = -1;
 
 static const char *default_template = "\
@@ -192,21 +192,21 @@ TABLE.conntable TR TD {\n\
 
 // list of classes
 
-static HashMap<ElementClassT *, int> class2cid(-1);
+static HashTable<ElementClassT *, int> class2cid(-1);
 static Vector<ElementClassT *> cid2class;
 static Vector<String> cid_hrefs;
-static HashMap<String, String> package_hrefs;
+static HashTable<String, String> package_hrefs;
 
 static int
 cid(ElementClassT *type)
 {
-    int *cidp = class2cid.findp_force(type, -1);
-    if (*cidp < 0) {
-	*cidp = cid2class.size();
+    HashTable<ElementClassT *, int>::iterator it = class2cid.find_insert(type, -1);
+    if (it.value() < 0) {
+	it.value() = cid2class.size();
 	cid2class.push_back(type);
 	cid_hrefs.push_back(String());
     }
-    return *cidp;
+    return it.value();
 }
 
 static void
@@ -225,7 +225,7 @@ class_href(ElementClassT *type)
 	add_class_href(type, href);
 	return href;
     } else if (String doc_name = type->documentation_name()) {
-	String package_href = package_hrefs["x" + type->package()];
+	String package_href = package_hrefs.get("x" + type->package());
 	if (!package_href)
 	    package_href = package_hrefs["x"];
 	String href = percent_substitute(package_href, 's', doc_name.c_str(), 0);
@@ -691,7 +691,7 @@ static String type_landmark = "$fake_type$";
 
 class ElementsOutput { public:
 
-    ElementsOutput(RouterT *, const ProcessingT &, const HashMap<String, String> &);
+    ElementsOutput(RouterT *, const ProcessingT &, const HashTable<String, String> &);
     ~ElementsOutput();
 
     void run(ElementT *, FILE *);
@@ -701,7 +701,7 @@ class ElementsOutput { public:
 
     RouterT *_router;
     const ProcessingT &_processing;
-    const HashMap<String, String> &_main_attrs;
+    const HashTable<String, String> &_main_attrs;
     Vector<ElementT *> _entries;
     Vector<ElementT *> _elements;
 
@@ -714,14 +714,14 @@ class ElementsOutput { public:
 };
 
 
-ElementsOutput::ElementsOutput(RouterT *r, const ProcessingT &processing, const HashMap<String, String> &main_attrs)
+ElementsOutput::ElementsOutput(RouterT *r, const ProcessingT &processing, const HashTable<String, String> &main_attrs)
     : _router(r), _processing(processing), _main_attrs(main_attrs)
 {
     bool do_elements = main_attrs["entry"];
     bool do_types = main_attrs["typeentry"];
 
     // get list of elements and/or types
-    HashMap<ElementClassT *, int> done_types(-1);
+    HashTable<ElementClassT *, int> done_types(-1);
     for (RouterT::iterator x = r->begin_elements(); x; x++) {
 	_elements.push_back(x);
 	if (do_elements)
@@ -729,7 +729,7 @@ ElementsOutput::ElementsOutput(RouterT *r, const ProcessingT &processing, const 
 	if (do_types && done_types[x->type()] < 0) {
 	    ElementT *fake = new ElementT(x->type_name(), x->type(), "", LandmarkT(type_landmark));
 	    _entries.push_back(fake);
-	    done_types.insert(x->type(), 1);
+	    done_types.replace(x->type(), 1);
 	}
     }
 
@@ -754,7 +754,7 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
     bool is_type = (e->landmark() == type_landmark);
     
     String tag;
-    HashMap<String, String> attrs;
+    HashTable<String, String> attrs;
     const char *templ = templ_str.c_str();
 
     while (templ) {
@@ -909,18 +909,18 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
 	} else if (tag == "if") {
 	    String s = expand(attrs["test"], e, port, is_output);
 	    bool result;
-	    if (attrs["eq"])
-		result = (expand(attrs["eq"], e, port, is_output) == s);
-	    else if (attrs["ne"])
-		result = (expand(attrs["ne"], e, port, is_output) != s);
-	    else if (attrs["gt"])
-		result = (click_strcmp(s, expand(attrs["gt"], e, port, is_output)) > 0);
-	    else if (attrs["lt"])
-		result = (click_strcmp(s, expand(attrs["lt"], e, port, is_output)) < 0);
-	    else if (attrs["ge"])
-		result = (click_strcmp(s, expand(attrs["ge"], e, port, is_output)) >= 0);
-	    else if (attrs["le"])
-		result = (click_strcmp(s, expand(attrs["le"], e, port, is_output)) <= 0);
+	    if (String v = attrs.get("eq"))
+		result = (expand(v, e, port, is_output) == s);
+	    else if (String v = attrs.get("ne"))
+		result = (expand(v, e, port, is_output) != s);
+	    else if (String v = attrs.get("gt"))
+		result = (click_strcmp(s, expand(v, e, port, is_output)) > 0);
+	    else if (String v = attrs.get("lt"))
+		result = (click_strcmp(s, expand(v, e, port, is_output)) < 0);
+	    else if (String v = attrs.get("ge"))
+		result = (click_strcmp(s, expand(v, e, port, is_output)) >= 0);
+	    else if (String v = attrs.get("le"))
+		result = (click_strcmp(s, expand(v, e, port, is_output)) <= 0);
 	    else
 		result = (s.length() > 0);
 
@@ -989,7 +989,7 @@ run_template(const char *templ, RouterT *r, const String &r_config,
 	     const ElementMap &emap, const ProcessingT &processing, FILE *outf)
 {
     String tag;
-    HashMap<String, String> attrs;
+    HashTable<String, String> attrs;
 
     while (templ) {
 	templ = output_template_until_tag(templ, outf, tag, attrs, false);
@@ -999,10 +999,8 @@ run_template(const char *templ, RouterT *r, const String &r_config,
 	else if (tag == "elements") {
 	    ElementsOutput eo(r, processing, attrs);
 	    eo.run(outf);
-	} else if (definitions[tag]) {
-	    String text = definitions[tag];
+	} else if (String text = definitions.get(tag))
 	    run_template(text.c_str(), r, r_config, emap, processing, outf);
-	}
     }
 }
 
@@ -1320,7 +1318,7 @@ particular purpose.\n");
 	    break;
 
 	  case CLASS_URLS_OPT:
-	    package_hrefs.insert("x", clp->vstr);
+	    package_hrefs.replace("x", clp->vstr);
 	    break;
 
 	  case PACKAGE_URLS_OPT: {
@@ -1330,7 +1328,7 @@ particular purpose.\n");
 		  p_errh->error("'--package-urls' option must contain an equals sign");
 		  goto bad_option;
 	      }
-	      package_hrefs.insert("x" + s.substring(s.begin(), equals), s.substring(equals + 1, s.end()));
+	      package_hrefs.replace("x" + s.substring(s.begin(), equals), s.substring(equals + 1, s.end()));
 	      break;
 	  }
 
@@ -1342,9 +1340,9 @@ particular purpose.\n");
 	      String s = clp->vstr;
 	      const char *equals = find(s, '=');
 	      if (equals < s.end())
-		  definitions.insert(s.substring(s.begin(), equals), s.substring(equals + 1, s.end()));
+		  definitions.replace(s.substring(s.begin(), equals), s.substring(equals + 1, s.end()));
 	      else
-		  definitions.insert(s, "");
+		  definitions.replace(s, "");
 	      break;
 	  }
 
@@ -1424,4 +1422,3 @@ particular purpose.\n");
 }
 
 #include <click/vector.cc>
-#include <click/hashmap.cc>

@@ -21,7 +21,7 @@ CLICK_DECLS
 
 class IPRewriterPatterns : public Element {
 
-  HashMap<String, int> _name_map;
+  HashTable<String, int> _name_map;
   Vector<IPRw::Pattern *> _patterns;
 
  public:

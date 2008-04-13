@@ -38,7 +38,7 @@ class wdiagram { public:
     void set_ccss_text(const String &text);
 
     delt *elt(const String &name) const {
-	return _elt_map.find(name);
+	return _elt_map[name];
     }
     
     rect_search<dwidget> &rects() {
@@ -88,7 +88,7 @@ class wdiagram { public:
 
     delt *_relt;
     rect_search<dwidget> _rects;
-    HashMap<String, delt *> _elt_map;
+    HashTable<String, delt *> _elt_map;
     bool _layout;
 
     std::list<delt *> _highlight[3];

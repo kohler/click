@@ -698,7 +698,7 @@ LinkTable_write_param(const String &in_s, Element *e, void *vparam,
     IPAddress m;
     if (!cp_ip_address(s, &m)) 
       return errh->error("blacklist_add parameter must be ipaddress");
-    f->_blacklist.remove(m);
+    f->_blacklist.erase(m);
     break;
   }
   case H_CLEAR: f->clear(); break;

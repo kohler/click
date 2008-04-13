@@ -108,7 +108,7 @@ AggregateIPAddrPair::reap()
 	}
 
 	for (uint32_t *u = to_free.begin(); u < to_free.end(); u += 2)
-	    _map.remove(*(const HostPair *)u);
+	    _map.erase(*(const HostPair *)u);
     }
     _gc_sec = _active_sec + _gc_interval;
 }
@@ -122,7 +122,7 @@ AggregateIPAddrPair::simple_action(Packet *p)
     
     if (iph) {
 	HostPair hosts(iph->ip_src.s_addr, iph->ip_dst.s_addr);
-	FlowInfo *finfo = _map.findp_force(hosts);
+	FlowInfo *finfo = &_map[hosts];
 
 	if (_timeout > 0) {
 	    // assign timestamp if no timestamp given

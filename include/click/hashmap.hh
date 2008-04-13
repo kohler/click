@@ -43,6 +43,7 @@ class HashMap { public:
   inline const V &find(const K &, const V &) const;
   inline const V &find(const K &) const;
   inline const V &operator[](const K &) const;
+  inline V &operator[](const K &);
 
   Pair *find_pair_force(const K &, const V &);
   Pair *find_pair_force(const K &k) { return find_pair_force(k, _default_value); }
@@ -52,7 +53,10 @@ class HashMap { public:
   V &find_force(const K &k)	{ return *findp_force(k, _default_value); }
   
   bool insert(const K &, const V &);
-  bool remove(const K &);
+  bool erase(const K &);
+  bool remove(const K &key) {
+    return erase(key);
+  }
   void clear();
 
   void swap(HashMap<K, V> &);
@@ -213,6 +217,13 @@ HashMap<K, V>::operator[](const K &key) const
 }
 
 template <class K, class V>
+inline V &
+HashMap<K, V>::operator[](const K &key)
+{
+  return find_force(key);
+}
+
+template <class K, class V>
 inline
 _HashMap_const_iterator<K, V>::operator unspecified_bool_type() const
 {
@@ -252,7 +263,10 @@ class HashMap<K, void *> { public:
   void *&find_force(const K &k)  { return *findp_force(k, _default_value); }
   
   bool insert(const K &, void *);
-  bool remove(const K &);
+  bool erase(const K &);
+  bool remove(const K &key) {
+    return erase(key);
+  }
   void clear();
 
   void swap(HashMap<K, void *> &);
@@ -454,6 +468,7 @@ class HashMap<K, T *> : public HashMap<K, void *> { public:
   T *&find_force(const K &k) { return *reinterpret_cast<T **>(inherited::findp_force(k)); }
   
   bool insert(const K &k, T *v)		{ return inherited::insert(k, v); }
+  // bool erase(const K &)		inherited
   // bool remove(const K &)		inherited
   // void clear()			inherited
 

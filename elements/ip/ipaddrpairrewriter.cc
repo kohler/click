@@ -96,10 +96,6 @@ IPAddrPairRewriter::initialize(ErrorHandler *)
 {
     _timer.initialize(this);
     _timer.schedule_after_msec(GC_INTERVAL_SEC * 1000);
-
-    // release memory to system on cleanup
-    _map.set_arena(router()->arena_factory());
-  
     return 0;
 }
 
@@ -146,8 +142,8 @@ IPAddrPairRewriter::apply_pattern(Pattern *pattern, int,
 	    goto failure;
 
 	IPFlowID reverse_flow = forward->flow_id().rev();
-	_map.insert(flow, forward);
-	_map.insert(reverse_flow, reverse);
+	_map.replace(flow, forward);
+	_map.replace(reverse_flow, reverse);
 	return forward;
     }
 
@@ -164,7 +160,7 @@ IPAddrPairRewriter::push(int port, Packet *p_in)
     click_ip *iph = p->ip_header();
   
     IPFlowID flow(iph->ip_src, 0, iph->ip_dst, 0);
-    IPAddrPairMapping *m = static_cast<IPAddrPairMapping *>(_map.find(flow));
+    IPAddrPairMapping *m = static_cast<IPAddrPairMapping *>(_map.get(flow));
 
     if (!m) {			// create new mapping
 	const InputSpec &is = _input_specs[port];

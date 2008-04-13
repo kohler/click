@@ -443,11 +443,12 @@ particular purpose.\n");
     p_errh->fatal("no routers specified");
   
   // check that routers are named differently
-  HashMap<String, int> name_map(-1);
+  HashTable<String, int> name_map(-1);
   for (int i = 0; i < routers.size(); i++) {
-    if (name_map[router_names[i]] >= 0)
-      p_errh->fatal("two routers named '%s'", router_names[i].c_str());
-    name_map.insert(router_names[i], i);
+      int &mapval = name_map[router_names[i]];
+      if (mapval >= 0)
+	  p_errh->fatal("two routers named '%s'", router_names[i].c_str());
+      mapval = i;
   }
 
   // define links

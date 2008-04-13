@@ -26,7 +26,6 @@
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
 #include <click/timestamp.hh>
-#include <click/hashmap.hh>
 #include <click/confparse.hh>
 CLICK_DECLS
 

@@ -2,7 +2,7 @@
 #define CLICK_SPINLOCKINFO_HH
 #include <click/element.hh>
 #include <click/vector.hh>
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 #include <click/sync.hh>
 CLICK_DECLS
 
@@ -20,7 +20,7 @@ CLICK_DECLS
 
 class SpinlockInfo : public Element {
 
-  HashMap<String, int> _map;
+  HashTable<String, int> _map;
   Vector<Spinlock *> _spinlocks;
 
   int add_spinlock(const Vector<String> &, const String &, ErrorHandler *);

@@ -3,7 +3,7 @@
 #include <deque>
 #include <click/string.hh>
 #include <gtk/gtk.h>
-#include "hashmap1.hh"
+#include <click/hashtable.hh>
 #include "wrouter.hh"
 #include "hvalues.hh"
 namespace clicky {

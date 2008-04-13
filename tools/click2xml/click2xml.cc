@@ -79,7 +79,7 @@ open_output_file(const char *outfile, ErrorHandler *errh)
     return outf;
 }
 
-static HashMap<ElementClassT *, int> generated_types(0);
+static HashTable<ElementClassT *, int> generated_types(0);
 
 static void
 space_until(String &s, int last_col, int want_col)
@@ -137,9 +137,9 @@ static void generate_router(RouterT *, FILE *, String, bool, ErrorHandler *);
 static void
 generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 {
-    if (!c || c->primitive() || generated_types[c] || c->tunnel())
+    if (!c || c->primitive() || generated_types.get(c) || c->tunnel())
 	return;
-    generated_types.insert(c, 1);
+    generated_types.replace(c, 1);
 
     if (ElementClassT *older = c->overload_type())
 	generate_type(older, f, indent, errh);

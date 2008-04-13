@@ -104,10 +104,10 @@ RouterT::check() const
     // note that nt_found might not equal nt, because of anonymous classes
     
     // check element types
-    HashMap<ElementClassT *, int> type_map(-1);
+    HashTable<ElementClassT *, int> type_map(-1);
     for (int i = 0; i < nt; i++) {
 	assert(type_map[_declared_types[i].type] < 0);
-	type_map.insert(_declared_types[i].type, i);
+	type_map.replace(_declared_types[i].type, i);
     }
     
     // check element names
@@ -229,12 +229,12 @@ ElementT *
 RouterT::get_element(const String &name, ElementClassT *type,
 		     const String &config, const LandmarkT &landmark)
 {
-    int i = _element_name_map[name];
+    int &i = _element_name_map[name];
     if (i >= 0)
 	return _elements[i];
     else {
 	ElementT *e = add_element(ElementT(name, type, config, landmark));
-	_element_name_map.insert(name, e->eindex());
+	i = e->eindex();
 	return e;
     }
 }
@@ -256,9 +256,9 @@ RouterT::change_ename(int ei, const String &new_name)
     ElementT &e = *_elements[ei];
     if (e.live()) {
 	if (eindex(e.name()) == ei)
-	    _element_name_map.insert(e.name(), -1);
+	    _element_name_map.replace(e.name(), -1);
 	e._name = new_name;
-	_element_name_map.insert(new_name, ei);
+	_element_name_map.replace(new_name, ei);
     }
 }
 
@@ -322,16 +322,16 @@ RouterT::add_declared_type(ElementClassT *ec, bool anonymous)
 	if (prev >= 0)		// increment scope_cookie if redefining class
 	    _scope_cookie++;
 	_declared_types.push_back(ElementType(ec, _scope_cookie, prev));
-	_declared_type_map.insert(ec->name(), _declared_types.size() - 1);
+	_declared_type_map.replace(ec->name(), _declared_types.size() - 1);
     }
 }
 
 void
-RouterT::collect_types(HashMap<ElementClassT *, int> &m) const
+RouterT::collect_types(HashTable<ElementClassT *, int> &m) const
 {
-    int *collected = m.findp_force(const_cast<RouterT *>(this), 0);
-    if (*collected == 0) {
-	*collected = 1;
+    HashTable<ElementClassT *, int>::iterator it = m.find_insert(const_cast<RouterT *>(this), 0);
+    if (it.value() == 0) {
+	it.value() = 1;
 	for (int i = 0; i < _declared_types.size(); i++)
 	    _declared_types[i].type->collect_types(m);
 	for (int i = 0; i < _elements.size(); i++)
@@ -892,11 +892,11 @@ RouterT::remove_requirement(const String &s)
 void
 RouterT::add_archive(const ArchiveElement &ae)
 {
-    int i = _archive_map[ae.name];
+    int &i = _archive_map[ae.name];
     if (i >= 0)
 	_archive[i] = ae;
     else {
-	_archive_map.insert(ae.name, _archive.size());
+	i = _archive.size();
 	_archive.push_back(ae);
     }
 }
@@ -958,10 +958,10 @@ RouterT::remove_dead_elements(ErrorHandler *errh)
     for (int i = 0; i < nelements; i++) {
 	j = new_eindex[i];
 	if (j < 0) {
-	    _element_name_map.insert(_elements[i]->name(), -1);
+	    _element_name_map.replace(_elements[i]->name(), -1);
 	    delete _elements[i];
 	} else if (j != i) {
-	    _element_name_map.insert(_elements[i]->name(), j);
+	    _element_name_map.replace(_elements[i]->name(), j);
 	    _elements[j] = _elements[i];
 	    _elements[j]->_eindex = j;
 	    _first_conn[j] = _first_conn[i];
@@ -1004,7 +1004,7 @@ RouterT::free_element(ElementT *e)
 
     // finally, free the element itself
     if (_element_name_map[e->name()] == ei)
-	_element_name_map.insert(e->name(), -1);
+	_element_name_map.replace(e->name(), -1);
     e->simple_kill();
     e->_tunnel_input = _free_element;
     _free_element = e;
@@ -1036,7 +1036,7 @@ RouterT::free_dead_elements()
 	if (new_eindex[i] < 0) {
 	    ElementT *e = _elements[i];
 	    if (_element_name_map[e->name()] == i)
-		_element_name_map.insert(e->name(), -1);
+		_element_name_map.replace(e->name(), -1);
 	    assert(e->dead());
 	    e->_tunnel_input = _free_element;
 	    _free_element = e;

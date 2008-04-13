@@ -51,7 +51,7 @@ read_package_string(const String &text, StringMap &packages)
     const char *start = begin;
     while (begin < end && !isspace(*begin))
       begin++;
-    packages.insert(text.substring(start, begin), 0);
+    packages.replace(text.substring(start, begin), 0);
     begin = find(begin, end, '\n') + 1;
   }
 }
@@ -168,8 +168,8 @@ unload_click(ErrorHandler *errh)
     return -1;
 
   // find current packages
-  HashMap<String, int> active_modules(-1);
-  HashMap<String, int> packages(-1);
+  HashTable<String, int> active_modules(-1);
+  HashTable<String, int> packages(-1);
   read_active_modules(active_modules, errh);
   read_package_file(clickfs_prefix + String("/packages"), packages, errh);
 

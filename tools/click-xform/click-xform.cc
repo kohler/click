@@ -31,7 +31,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-bool match_config(const String &, const String &, HashMap<String, String> &);
+bool match_config(const String &, const String &, HashTable<String, String> &);
 // TODO: allow some special pports to be unconnected
 
 class Matcher { public:
@@ -61,7 +61,7 @@ class Matcher { public:
   
   Vector<ElementT *> _match;
   Vector<ElementT *> _back_match;
-  HashMap<String, String> _defs;
+  HashTable<String, String> _defs;
 
   Vector<PortT> _to_pp_from;
   Vector<PortT> _to_pp_to;
@@ -250,10 +250,10 @@ static String
 uniqueify_prefix(const String &base_prefix, RouterT *r)
 {
   // speed up uniqueification on the same prefix
-  static HashMap<String, int> *last_uniqueifier;
+  static HashTable<String, int> *last_uniqueifier;
   if (!last_uniqueifier)
-    last_uniqueifier = new HashMap<String, int>(1);
-  int count = (*last_uniqueifier)[base_prefix];
+    last_uniqueifier = new HashTable<String, int>(1);
+  int count = last_uniqueifier->get(base_prefix);
   
   while (1) {
     String prefix = base_prefix + "@" + String(count);
@@ -268,7 +268,7 @@ uniqueify_prefix(const String &base_prefix, RouterT *r)
 	goto failed;
     }
 
-    last_uniqueifier->insert(base_prefix, count);
+    last_uniqueifier->replace(base_prefix, count);
     return prefix;
 
    failed: ;
@@ -285,8 +285,8 @@ Matcher::replace_config(ElementT *e) const
   for (int i = 0; i < confvec.size(); i++) {
     if (confvec[i].length() <= 1 || confvec[i][0] != '$')
       continue;
-    if (String *vp = _defs.findp(confvec[i])) {
-      confvec[i] = *vp;
+    if (HashTable<String, String>::const_iterator it = _defs.find(confvec[i])) {
+      confvec[i] = it.value();
       changed = true;
     }
   }
@@ -368,10 +368,10 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
 // match configuration strings
 bool
 match_config(const String &pat, const String &conf,
-	     HashMap<String, String> &defs)
+	     HashTable<String, String> &defs)
 {
   Vector<String> patvec, confvec;
-  HashMap<String, String> my_defs;
+  HashTable<String, String> my_defs;
 
   // separate into vectors
   cp_argvec(pat, patvec);
@@ -391,19 +391,19 @@ match_config(const String &pat, const String &conf,
     for (int j = 1; j < p.length(); j++)
       if (!isalnum(p[j]) && p[j] != '_')
 	return false;
-    if (String *dp = defs.findp(p)) {
-      if (*dp != confvec[i])
+    if (HashTable<String, String>::iterator it = defs.find(p)) {
+      if (it.value() != confvec[i])
 	return false;
-    } else if (String *mp = my_defs.findp(p)) {
-      if (*mp != confvec[i])
+    } else if (HashTable<String, String>::iterator it = my_defs.find(p)) {
+      if (it.value() != confvec[i])
 	return false;
     } else
-      my_defs.insert(p, confvec[i]);
+      my_defs.replace(p, confvec[i]);
   }
 
   // insert my defs into defs
-  for (HashMap<String, String>::iterator iter = my_defs.begin(); iter.live(); iter++)
-    defs.insert(iter.key(), iter.value());
+  for (HashTable<String, String>::iterator iter = my_defs.begin(); iter.live(); iter++)
+    defs.replace(iter.key(), iter.value());
   
   return true;
 }

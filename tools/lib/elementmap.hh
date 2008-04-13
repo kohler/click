@@ -2,7 +2,6 @@
 #ifndef CLICK_ELEMENTMAP_HH
 #define CLICK_ELEMENTMAP_HH
 #include "etraits.hh"
-#include <click/hashmap.hh>
 class RouterT;
 
 class ElementMap { public:
@@ -72,7 +71,7 @@ class ElementMap { public:
     };
     
     Vector<Traits> _e;
-    HashMap<String, int> _name_map;
+    HashTable<String, int> _name_map;
 
     Vector<Globals> _def;
 

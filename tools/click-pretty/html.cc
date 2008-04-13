@@ -25,7 +25,7 @@
 #include <ctype.h>
 
 static String::Initializer string_initializer;
-static HashMap<String, String> html_entities;
+static HashTable<String, String> html_entities;
 
 
 // quoting
@@ -91,11 +91,11 @@ html_quote_text(const String &what)
 String
 html_unquote(const char *x, const char *end)
 {
-    if (!html_entities["&amp"]) {
-	html_entities.insert("&amp", "&");
-	html_entities.insert("&quot", "\"");
-	html_entities.insert("&lt", "<");
-	html_entities.insert("&gt", ">");
+    if (!html_entities.get("&amp")) {
+	html_entities.replace("&amp", "&");
+	html_entities.replace("&quot", "\"");
+	html_entities.replace("&lt", "<");
+	html_entities.replace("&gt", ">");
     }
     
     StringAccum sa;
@@ -113,7 +113,7 @@ html_unquote(const char *x, const char *end)
 		for (x++; x < end && isalnum(*x); x++)
 		    /* nada */;
 		String entity_name = String(start, x - start);
-		String entity_value = html_entities[entity_name];
+		String entity_value = html_entities.get(entity_name);
 		sa << (entity_value ? entity_value : entity_name);
 		if (x < end && *x == ';' && entity_value)
 		    x++;
@@ -128,7 +128,7 @@ html_unquote(const char *x, const char *end)
 // tag processing
 
 const char *
-process_tag(const char *x, String &tag, HashMap<String, String> &attrs,
+process_tag(const char *x, String &tag, HashTable<String, String> &attrs,
 	    bool &ended, bool unquote_value)
 {
     // process tag
@@ -166,7 +166,7 @@ process_tag(const char *x, String &tag, HashMap<String, String> &attrs,
 	while (isspace(*x))
 	    x++;
 	if (*x != '=') {
-	    attrs.insert(attr_name, attr_name);
+	    attrs.replace(attr_name, attr_name);
 	    continue;
 	}
 
@@ -194,9 +194,9 @@ process_tag(const char *x, String &tag, HashMap<String, String> &attrs,
 	}
 
 	if (unquote_value)
-	    attrs.insert(attr_name, html_unquote(value_start, x));
+	    attrs.replace(attr_name, html_unquote(value_start, x));
 	else
-	    attrs.insert(attr_name, String(value_start, x - value_start));
+	    attrs.replace(attr_name, String(value_start, x - value_start));
 
 	if (bump && *x)
 	    x++;
@@ -205,7 +205,7 @@ process_tag(const char *x, String &tag, HashMap<String, String> &attrs,
 
 const char *
 output_template_until_tag(const char *templ, StringAccum &sa,
-			  String &tag, HashMap<String, String> &attrs,
+			  String &tag, HashTable<String, String> &attrs,
 			  bool unquote, String *sep)
 {
     // skip to next directive
@@ -236,7 +236,7 @@ output_template_until_tag(const char *templ, StringAccum &sa,
 
 const char *
 output_template_until_tag(const char *templ, FILE *outf,
-			  String &tag, HashMap<String, String> &attrs,
+			  String &tag, HashTable<String, String> &attrs,
 			  bool unquote, String *sep)
 {
     StringAccum sa;

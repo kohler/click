@@ -116,7 +116,7 @@ ElementMap::add(const Traits &e)
     if (e.name) {
 	ElementClassT *c = ElementClassT::base_type(e.name);
 	my_e.name_next = _name_map[c->name()];
-	_name_map.insert(c->name(), i);
+	_name_map.replace(c->name(), i);
     }
 
     incr_version();
@@ -132,12 +132,12 @@ ElementMap::remove_at(int i)
 
     Traits &e = _e[i];
     int p = -1;
-    for (int t = _name_map[e.name]; t > 0; p = t, t = _e[t].name_next)
+    for (int t = _name_map.get(e.name); t > 0; p = t, t = _e[t].name_next)
 	/* nada */;
     if (p >= 0)
 	_e[p].name_next = e.name_next;
     else if (e.name)
-	_name_map.insert(e.name, e.name_next);
+	_name_map.replace(e.name, e.name_next);
 
     e.name = e.cxx = String();
     incr_version();
@@ -146,7 +146,7 @@ ElementMap::remove_at(int i)
 static const char *
 parse_attribute_value(String *result,
 		      const char *s, const char *ends,
-		      const HashMap<String, String> &entities,
+		      const HashTable<String, String> &entities,
 		      ErrorHandler *errh)
 {
     while (s < ends && isspace(*s))
@@ -209,9 +209,9 @@ parse_attribute_value(String *result,
 }
 
 static const char *
-parse_xml_attrs(HashMap<String, String> &attrs,
+parse_xml_attrs(HashTable<String, String> &attrs,
 		const char *s, const char *ends, bool *closed,
-		const HashMap<String, String> &entities,
+		const HashTable<String, String> &entities,
 		ErrorHandler *errh)
 {
     while (s < ends) {
@@ -248,7 +248,7 @@ parse_xml_attrs(HashMap<String, String> &attrs,
 	// get attribute value
 	String attrvalue;
 	s = parse_attribute_value(&attrvalue, s, ends, entities, errh);
-	attrs.insert(attrname, attrvalue);
+	attrs.replace(attrname, attrvalue);
     }
     return s;
 }
@@ -260,12 +260,12 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 	errh = ErrorHandler::silent_handler();
 
     // prepare entities
-    HashMap<String, String> entities;
-    entities.insert("lt", "<");
-    entities.insert("amp", "&");
-    entities.insert("gt", ">");
-    entities.insert("quot", "\"");
-    entities.insert("apos", "'");
+    HashTable<String, String> entities;
+    entities.replace("lt", "<");
+    entities.replace("amp", "&");
+    entities.replace("gt", ">");
+    entities.replace("quot", "\"");
+    entities.replace("apos", "'");
     
     const char *s = str.data();
     const char *ends = s + str.length();
@@ -291,7 +291,7 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 	    if (!closed) {
 		if (in_elementmap)
 		    errh->error("XML elementmap parse error: nested <elementmap> tags");
-		HashMap<String, String> attrs;
+		HashTable<String, String> attrs;
 		s = parse_xml_attrs(attrs, s + 10, ends, &closed, entities, errh);
 		Globals g;
 		g.package = (attrs["package"] ? attrs["package"] : package_name);
@@ -318,10 +318,10 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 		   && (isspace(s[5]) || s[5] == '>' || s[5] == '/')
 		   && !closed && in_elementmap) {
 	    // parse entry tag
-	    HashMap<String, String> attrs;
+	    HashTable<String, String> attrs;
 	    s = parse_xml_attrs(attrs, s + 5, ends, &closed, entities, errh);
 	    Traits elt;
-	    for (HashMap<String, String>::iterator i = attrs.begin(); i.live(); i++)
+	    for (HashTable<String, String>::iterator i = attrs.begin(); i.live(); i++)
 		if (String *sp = elt.component(i.key()))
 		    *sp = i.value();
 	    if (elt.provisions || elt.name) {
@@ -341,7 +341,7 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 		s++;
 	    String name(name_start, s - name_start), value;
 	    s = parse_attribute_value(&value, s, ends, entities, errh);
-	    entities.insert(name, value);
+	    entities.replace(name, value);
 	    
 	} else if (s + 8 < ends && memcmp(s, "![CDATA[", 8) == 0) {
 	    // skip CDATA section
@@ -508,9 +508,9 @@ ElementMap::collect_indexes(const RouterT *router, Vector<int> &indexes,
 			    ErrorHandler *errh) const
 {
     indexes.clear();
-    HashMap<ElementClassT *, int> types(-1);
+    HashTable<ElementClassT *, int> types(-1);
     router->collect_types(types);
-    for (HashMap<ElementClassT *, int>::iterator i = types.begin(); i.live(); i++)
+    for (HashTable<ElementClassT *, int>::iterator i = types.begin(); i.live(); i++)
 	if (i.key()->primitive()) {
 	    int t = _name_map[i.key()->name()];
 	    if (t > 0)

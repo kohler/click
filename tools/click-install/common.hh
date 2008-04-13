@@ -3,7 +3,7 @@
 #define CLICK_INSTALL_COMMON_HH
 #include <click/pathvars.h>	// defines HAVE_X_DRIVER symbols
 #include <click/string.hh>
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 #include <click/error.hh>
 #include "routert.hh"		// for StringMap
 

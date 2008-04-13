@@ -502,7 +502,7 @@ AggregateIPFlows::handle_packet(Packet *p)
     HostPair hosts(iph->ip_src.s_addr, iph->ip_dst.s_addr);
     if (hosts.a != iph->ip_src.s_addr)
 	paint ^= 1;
-    HostPairInfo *hpinfo = m.findp_force(hosts);
+    HostPairInfo *hpinfo = &m[hosts];
 
     // find relevant FlowInfo, if any
     FlowInfo *finfo;

@@ -1,7 +1,7 @@
 #ifndef CLICKY_DSTYLE_HH
 #define CLICKY_DSTYLE_HH 1
 #include <gtk/gtk.h>
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 #include <click/vector.hh>
 #include "permstr.hh"
 #include "dwidget.hh"
@@ -461,12 +461,12 @@ class dcss_set { public:
     bool _frozen;
 
     // XXX cache eviction
-    HashMap<String, ref_ptr<dport_style> > _ptable;
-    HashMap<String, ref_ptr<delt_size_style> > _estable;
-    HashMap<String, ref_ptr<delt_style> > _etable;
-    HashMap<String, ref_ptr<dhandler_style> > _htable;
-    HashMap<String, ref_ptr<dfullness_style> > _ftable;
-    HashMap<String, ref_ptr<dactivity_style> > _atable;
+    HashTable<String, ref_ptr<dport_style> > _ptable;
+    HashTable<String, ref_ptr<delt_size_style> > _estable;
+    HashTable<String, ref_ptr<delt_style> > _etable;
+    HashTable<String, ref_ptr<dhandler_style> > _htable;
+    HashTable<String, ref_ptr<dfullness_style> > _ftable;
+    HashTable<String, ref_ptr<dactivity_style> > _atable;
 
     void mark_change();
     dcss *ccss_list(const String &str) const;

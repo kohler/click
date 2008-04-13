@@ -218,7 +218,7 @@ AvailableRates_write_param(const String &in_s, Element *e, void *vparam,
     EtherAddress e;
     if (!cp_ethernet_address(s, &e)) 
       return errh->error("remove parameter must be ethernet address");
-    f->_rtable.remove(e);
+    f->_rtable.erase(e);
     break;
   }
 

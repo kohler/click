@@ -49,10 +49,10 @@ SpinlockInfo::add_spinlock(const Vector<String> &conf,
       errh->error("expected 'NAME'");
     else {
       String name = prefix + parts[0];
-      if (_map[name] < 0) {
-	Spinlock *l = new Spinlock();
-	_map.insert(name, _spinlocks.size());
-	_spinlocks.push_back(l);
+      int &mapval = _map[name];
+      if (mapval < 0) {
+	mapval = _spinlocks.size();
+	_spinlocks.push_back(new Spinlock);
       }
     }
   }

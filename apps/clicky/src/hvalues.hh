@@ -1,7 +1,7 @@
 #ifndef CLICKY_HVALUES_HH
 #define CLICKY_HVALUES_HH 1
 #include <click/string.hh>
-#include "hashmap1.hh"
+#include <click/hashtable.hh>
 #include <gtk/gtk.h>
 namespace clicky {
 class handler_value;
@@ -250,7 +250,7 @@ struct handler_values {
     }
     
     handler_value *find_force(const String &hname) {
-	return _hv.find_force(hname).get();
+	return _hv.find_insert(hname).get();
     }
 
     inline bool empty() const {
@@ -266,8 +266,8 @@ struct handler_values {
   private:
     
     wmain *_w;
-    HashMap<handler_value> _hv;
-    HashMap<String, int> _class_uflags;
+    HashTable<handler_value> _hv;
+    HashTable<String, int> _class_uflags;
 
     handler_value *hard_find_placeholder(const String &hname, wmain *w, int flags, int autorefresh_period);
     void set_handlers(const String &hname, const String &hparam, const String &hvalue);

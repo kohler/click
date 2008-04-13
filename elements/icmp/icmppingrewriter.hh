@@ -3,7 +3,7 @@
 #define CLICK_ICMPPINGREWRITER_HH
 #include <click/element.hh>
 #include <click/timer.hh>
-#include <click/bighashmap.hh>
+#include <click/hashtable.hh>
 #include <click/ipflowid.hh>
 #include <clicknet/ip.h>
 CLICK_DECLS
@@ -119,7 +119,7 @@ class ICMPPingRewriter : public Element { public:
   
  protected:
 
-  typedef HashMap<IPFlowID, Mapping *> Map;
+  typedef HashTable<IPFlowID, Mapping *> Map;
 
   Map _request_map;
   Map _reply_map;

@@ -170,10 +170,10 @@ RouterUnparseT::apply_relation(ElementClassT *a, ElementClassT *b, int new_relat
 void
 RouterUnparseT::collect_types()
 {
-    HashMap<int, ElementClassT *> class_map;
+    HashTable<int, ElementClassT *> class_map;
     collect_types(class_map);
-    for (HashMap<int, ElementClassT *>::iterator i = class_map.begin(); i; i++) {
-	_tuid_map.insert(k.key(), _types.size());
+    for (HashTable<int, ElementClassT *>::iterator i = class_map.begin(); i; i++) {
+	_tuid_map.replace(k.key(), _types.size());
 	_types.push_back(k.value());
     }
 }
@@ -202,13 +202,13 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 
     // type_to_scope[] maps each type name to the latest scope in which it is
     // good.
-    HashMap<ElementClassT *, int> type_to_scope(-2);
+    HashTable<ElementClassT *, int> type_to_scope(-2);
     for (int i = 0; i < ntypes; i++) {
 	const ElementType &t = _declared_types[i];
-	type_to_scope.insert(t.type, _scope_cookie);
+	type_to_scope.replace(t.type, _scope_cookie);
 	if (t.prev_name >= 0) {
 	    const ElementType &pt = _declared_types[t.prev_name];
-	    type_to_scope.insert(pt.type, pt.scope_cookie);
+	    type_to_scope.replace(pt.type, pt.scope_cookie);
 	}
     }
     // XXX FIXME
@@ -232,7 +232,7 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 
 	for (const_iterator e = begin_elements(); e; e++) {
 	    if (e->dead() || e->tunnel()
-		|| type_to_scope[e->type()] != scope)
+		|| type_to_scope.get(e->type()) != scope)
 		continue;
 	    if (print_state == 1)
 		sa << "\n";

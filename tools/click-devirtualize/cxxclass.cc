@@ -241,7 +241,7 @@ CxxClass::defun(const CxxFunction &fn)
 {
   int which = _functions.size();
   _functions.push_back(fn);
-  _fn_map.insert(fn.name(), which);
+  _fn_map.replace(fn.name(), which);
   _functions.back().unkill();
   return _functions.back();
 }
@@ -290,7 +290,7 @@ CxxClass::reach(int findex, Vector<int> &reached)
     else {
       // XXX class-qualified?
       String name = clean_body.substring(start_word_p, end_word_p - start_word_p);
-      int findex2 = _fn_map[name];
+      int findex2 = _fn_map.get(name);
       if (findex2 >= 0 && reach(findex2, reached))
 	should_rewrite = true;
     }
@@ -326,7 +326,7 @@ CxxClass::find_should_rewrite()
   _has_pull.assign(nfunctions(), 0);
   _should_rewrite.assign(nfunctions(), 0);
   
-  if (_fn_map["never_devirtualize"] >= 0)
+  if (_fn_map.get("never_devirtualize") >= 0)
     return false;
 
   static String::Initializer initializer;
@@ -342,17 +342,17 @@ CxxClass::find_should_rewrite()
   }
 
   Vector<int> reached(nfunctions(), 0);
-  bool any = reach(_fn_map["push"], reached);
-  any |= reach(_fn_map["pull"], reached);
-  any |= reach(_fn_map["run_task"], reached);
-  any |= reach(_fn_map["run_timer"], reached);
-  any |= reach(_fn_map["selected"], reached);
-  int simple_action = _fn_map["simple_action"];
+  bool any = reach(_fn_map.get("push"), reached);
+  any |= reach(_fn_map.get("pull"), reached);
+  any |= reach(_fn_map.get("run_task"), reached);
+  any |= reach(_fn_map.get("run_timer"), reached);
+  any |= reach(_fn_map.get("selected"), reached);
+  int simple_action = _fn_map.get("simple_action");
   if (simple_action >= 0) {
     reach(simple_action, reached);
     _should_rewrite[simple_action] = any = true;
   }
-  if (_fn_map["devirtualize_all"] >= 0) {
+  if (_fn_map.get("devirtualize_all") >= 0) {
     for (int i = 0; i < nfunctions(); i++) {
       const String &n = _functions[i].name();
       if (n != _name && n[0] != '~')
@@ -419,12 +419,10 @@ CxxInfo::~CxxInfo()
 CxxClass *
 CxxInfo::make_class(const String &name)
 {
-  int which = _class_map[name];
+  int &which = _class_map[name];
   if (which < 0) {
-    CxxClass *nclass = new CxxClass(name);
     which = _classes.size();
-    _classes.push_back(nclass);
-    _class_map.insert(name, which);
+    _classes.push_back(new CxxClass(name));
   }
   return _classes[which];
 }

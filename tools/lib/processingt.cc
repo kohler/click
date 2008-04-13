@@ -166,7 +166,7 @@ ProcessingT::initial_processing_for(int ei, const String &compound_pcode, ErrorH
     else
 	pc = etype->traits().processing_code;
     if (!pc) {
-	int &class_warning = _class_warnings.find_force(etype);
+	int &class_warning = _class_warnings[etype];
 	if (!e->tunnel() && !(class_warning & classwarn_unknown)) {
 	    class_warning |= classwarn_unknown;
 	    errh->lwarning(e->decorated_landmark(), "unknown element class '%s'", etype->printable_name_c_str());
@@ -184,7 +184,7 @@ ProcessingT::initial_processing_for(int ei, const String &compound_pcode, ErrorH
     for (int i = 0; i < e->ninputs(); i++) {
 	pcpos = processing_code_next(pcpos, pc.end(), val);
 	if (val < 0) {
-	    int &cwarn = _class_warnings.find_force(etype);
+	    int &cwarn = _class_warnings[etype];
 	    if (!(cwarn & classwarn_pcode)) {
 		// "String(pc).c_str()" so pcpos remains valid
 		errh->lerror(e->landmark(), "syntax error in processing code '%s' for '%s'", String(pc).c_str(), etype->printable_name_c_str());
@@ -200,7 +200,7 @@ ProcessingT::initial_processing_for(int ei, const String &compound_pcode, ErrorH
     for (int i = 0; i < e->noutputs(); i++) {
 	pcpos = processing_code_next(pcpos, pc.end(), val);
 	if (val < 0) {
-	    int &cwarn = _class_warnings.find_force(etype);
+	    int &cwarn = _class_warnings[etype];
 	    if (!(cwarn & classwarn_pcode)) {
 		// "String(pc).c_str()" so pcpos remains valid
 		errh->lerror(e->landmark(), "syntax error in processing code '%s' for '%s'", String(pc).c_str(), etype->printable_name_c_str());

@@ -5,7 +5,7 @@
 #include <click/task.hh>
 #include <click/notifier.hh>
 #include <click/ipflowid.hh>
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 #include <clicknet/tcp.h>
 #include "elements/userlevel/fromfile.hh"
 #include "ipsumdumpinfo.hh"
@@ -150,7 +150,7 @@ class FromTcpdump : public Element { public:
 	tcp_seq_t last_seq[2];
 	inline FlowRecord() { init_seq[0] = init_seq[1] = 0; }
     };
-    HashMap<IPFlowID, FlowRecord> _tcp_map;
+    HashTable<IPFlowID, FlowRecord> _tcp_map;
     int _absolute_seq;
 
     Task _task;

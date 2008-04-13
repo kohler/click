@@ -104,7 +104,7 @@ enum CxState { CX_NONE, CX_CONFIGURATION, CX_ELEMENTCLASS, CX_COMPOUND,
 	       CX_IN_EMPTY, CX_ERROR };
 static Vector<CxState> xstates;
 static Vector<CxConfig *> xstack;
-static HashMap<String, int> class_id_map(-1);
+static HashTable<String, int> class_id_map(-1);
 static Vector<CxConfig *> classes;
 
 
@@ -247,7 +247,7 @@ do_start_elementclass(XML_Parser parser, const XML_Char **attrs, ErrorHandler *e
     if (!nc->_id)
 	errh->lerror(landmark, "element class declared without an ID");
     else
-	class_id_map.insert(nc->_id, classes.size());
+	class_id_map.replace(nc->_id, classes.size());
     classes.push_back(nc);
     
     xstack.push_back(nc);
@@ -441,7 +441,7 @@ static ElementClassT *
 complete_elementclass(const String &id, const String &xml_landmark, ErrorHandler *errh)
 {
     assert(id);
-    int which = class_id_map[id];
+    int which = class_id_map.get(id);
     if (which < 0) {
 	errh->lerror(xml_landmark, "no such element class '%s'", id.c_str());
 	return 0;
@@ -495,7 +495,7 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
     _router->set_overload_type(prev_class);
 
     // handle formals
-    HashMap<String, int> formal_map(-1);
+    HashTable<String, int> formal_map(-1);
     int formal_state = 0;
     for (int i = 0; i < _formals.size(); i++)
 	if (!_formals[i])

@@ -3,7 +3,7 @@
 #define CLICK_AGGREGATEIPFLOWS_HH
 #include <click/element.hh>
 #include <click/ipflowid.hh>
-#include <click/bighashmap.hh>
+#include <click/hashtable.hh>
 #include "aggregatenotifier.hh"
 CLICK_DECLS
 class HandlerCall;
@@ -208,7 +208,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
 	FlowInfo *find_force(uint32_t ports);
     };
 
-    typedef HashMap<HostPair, HostPairInfo> Map;
+    typedef HashTable<HostPair, HostPairInfo> Map;
     Map _tcp_map;
     Map _udp_map;
     

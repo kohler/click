@@ -179,37 +179,37 @@ ElementTraits::component(int what)
     }
 }
 
-static HashMap<String, int> components(ElementTraits::D_NONE);
+static HashTable<String, int> components(ElementTraits::D_NONE);
 static bool components_initialized = false;
 
 int
 ElementTraits::parse_component(const String &s)
 {
     if (!components_initialized) {
-	components.insert("name", D_CLASS);
-	components.insert("cxxclass", D_CXX_CLASS);
-	components.insert("headerfile", D_HEADER_FILE);
-	components.insert("sourcefile", D_SOURCE_FILE);
-	components.insert("portcount", D_PORT_COUNT);
-	components.insert("processing", D_PROCESSING);
-	components.insert("flowcode", D_FLOW_CODE);
-	components.insert("methods", D_METHODS);
-	components.insert("requires", D_REQUIREMENTS);
-	components.insert("provides", D_PROVISIONS);
-	components.insert("libs", D_LIBS);
-	components.insert("docname", D_DOC_NAME);
-	components.insert("flags", D_FLAGS);
+	components.replace("name", D_CLASS);
+	components.replace("cxxclass", D_CXX_CLASS);
+	components.replace("headerfile", D_HEADER_FILE);
+	components.replace("sourcefile", D_SOURCE_FILE);
+	components.replace("portcount", D_PORT_COUNT);
+	components.replace("processing", D_PROCESSING);
+	components.replace("flowcode", D_FLOW_CODE);
+	components.replace("methods", D_METHODS);
+	components.replace("requires", D_REQUIREMENTS);
+	components.replace("provides", D_PROVISIONS);
+	components.replace("libs", D_LIBS);
+	components.replace("docname", D_DOC_NAME);
+	components.replace("flags", D_FLAGS);
 	// for compatibility
-	components.insert("class", D_CLASS);
-	components.insert("cxx_class", D_CXX_CLASS);
-	components.insert("header_file", D_HEADER_FILE);
-	components.insert("source_file", D_SOURCE_FILE);
-	components.insert("requirements", D_REQUIREMENTS);
-	components.insert("provisions", D_PROVISIONS);
-	components.insert("doc_name", D_DOC_NAME);
+	components.replace("class", D_CLASS);
+	components.replace("cxx_class", D_CXX_CLASS);
+	components.replace("header_file", D_HEADER_FILE);
+	components.replace("source_file", D_SOURCE_FILE);
+	components.replace("requirements", D_REQUIREMENTS);
+	components.replace("provisions", D_PROVISIONS);
+	components.replace("doc_name", D_DOC_NAME);
     }
 
-    return components[s];
+    return components.get(s);
 }
 
 ElementTraits

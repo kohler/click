@@ -40,17 +40,17 @@ ListenEtherSwitch::push(int source, Packet *p)
 
     // 0 timeout means dumb switch
     if (_timeout != 0) {
-	_table.insert(EtherAddress(e->ether_shost), AddrInfo(source, p->timestamp_anno()));
+	_table.replace(EtherAddress(e->ether_shost), AddrInfo(source, p->timestamp_anno()));
   
 	// Set outport if dst is unicast, we have info about it, and the
 	// info is still valid.
 	EtherAddress dst(e->ether_dhost);
 	if (!dst.is_group()) {
-	    if (AddrInfo *dst_info = _table.findp(dst)) {
-		if (p->timestamp_anno() < dst_info->stamp + Timestamp(_timeout, 0))
-		    outport = dst_info->port;
+	    if (Table::iterator dst_info = _table.find(dst)) {
+		if (p->timestamp_anno() < dst_info.value().stamp + Timestamp(_timeout, 0))
+		    outport = dst_info.value().port;
 		else
-		    _table.remove(dst);
+		    _table.erase(dst_info);
 	    }
 	}
     }
@@ -68,7 +68,4 @@ ListenEtherSwitch::push(int source, Packet *p)
 ELEMENT_REQUIRES(EtherSwitch)
 EXPORT_ELEMENT(ListenEtherSwitch)
 #include <click/hashmap.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<EtherAddress, ListenEtherSwitch::AddrInfo*>;
-#endif
 CLICK_ENDDECLS

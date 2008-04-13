@@ -210,9 +210,9 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
 	rev = (tcph->th_sport < tcph->th_dport
 	       || (tcph->th_sport == tcph->th_dport && iph->ip_src.s_addr < iph->ip_dst.s_addr));
 	if (rev)
-	    record = _tcp_map.findp_force(IPFlowID(iph->ip_src, tcph->th_sport, iph->ip_dst, tcph->th_dport));
+	    record = &_tcp_map[IPFlowID(iph->ip_src, tcph->th_sport, iph->ip_dst, tcph->th_dport)];
 	else
-	    record = _tcp_map.findp_force(IPFlowID(iph->ip_dst, tcph->th_dport, iph->ip_src, tcph->th_sport));
+	    record = &_tcp_map[IPFlowID(iph->ip_dst, tcph->th_dport, iph->ip_src, tcph->th_sport)];
 	// use tcpdump's heuristic for deciding when this is a new flow
 	if ((!record->init_seq[0] && !record->init_seq[1]) || (tcph->th_flags & TH_SYN)) {
 	    record->init_seq[rev] = seq;

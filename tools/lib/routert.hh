@@ -4,10 +4,10 @@
 #include "elementt.hh"
 #include "eclasst.hh"
 #include <click/error.hh>
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 #include <click/archive.hh>
 #include <click/variableenv.hh>
-typedef HashMap<String, int> StringMap;
+typedef HashTable<String, int> StringMap;
 
 class RouterT : public ElementClassT { public:
 
@@ -58,7 +58,7 @@ class RouterT : public ElementClassT { public:
     inline ElementClassT *declared_type(const String &) const;
     void add_declared_type(ElementClassT *, bool anonymous);
 
-    void collect_types(HashMap<ElementClassT *, int> &) const;
+    void collect_types(HashTable<ElementClassT *, int> &) const;
     void collect_locally_declared_types(Vector<ElementClassT *> &) const;
     void collect_overloads(Vector<ElementClassT *> &) const;
 
@@ -433,7 +433,7 @@ RouterT::element(const String &s) const
 inline ElementT *
 RouterT::element(const String &s)
 {
-    int i = _element_name_map[s];
+    int i = _element_name_map.get(s);
     return (i >= 0 ? _elements[i] : 0);
 }
 
@@ -520,7 +520,7 @@ RouterT::redefine(const VariableEnvironment &ve)
 inline ArchiveElement &
 RouterT::archive(const String &name)
 {
-    return _archive[_archive_map[name]];
+    return _archive[_archive_map.get(name)];
 }
 
 inline const ArchiveElement &

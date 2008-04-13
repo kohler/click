@@ -232,10 +232,10 @@ particular purpose.\n");
    }
 
    case CLASSES_OPT: {
-     HashMap<ElementClassT *, int> m(-1);
+     HashTable<ElementClassT *, int> m(-1);
      router->collect_types(m);
      Vector<String> classes;
-     for (HashMap<ElementClassT *, int>::iterator iter = m.begin(); iter.live(); iter++)
+     for (HashTable<ElementClassT *, int>::iterator iter = m.begin(); iter.live(); iter++)
        if (iter.key()->primitive())
 	 classes.push_back(iter.key()->name());
      output_sorted_one_per_line(classes, out);

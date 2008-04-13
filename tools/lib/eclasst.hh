@@ -4,7 +4,7 @@
 #include <click/string.hh>
 #include <stddef.h>
 #include <click/vector.hh>
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 #include "etraits.hh"
 class ErrorHandler;
 class StringAccum;
@@ -53,7 +53,7 @@ class ElementClassT { public:
     virtual RouterT *declaration_scope() const;
     virtual ElementClassT *overload_type() const;
     
-    virtual void collect_types(HashMap<ElementClassT *, int> &) const;
+    virtual void collect_types(HashTable<ElementClassT *, int> &) const;
     virtual void collect_overloads(Vector<ElementClassT *> &) const;
 
     static ElementT *expand_element(ElementT *, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
@@ -99,7 +99,7 @@ class SynonymElementClassT : public ElementClassT { public:
     ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const LandmarkT &);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
     
-    void collect_types(HashMap<ElementClassT *, int> &) const;
+    void collect_types(HashTable<ElementClassT *, int> &) const;
     void collect_overloads(Vector<ElementClassT *> &) const;
 
     void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);

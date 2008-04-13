@@ -58,8 +58,8 @@ delt::~delt()
 }
 
 void delt::prepare(wdiagram *d, ElementT *e, ProcessingT *processing,
-		   HashMap<String, delt *> &collector, Vector<ElementT *> &path,
-		   int &z_index)
+		   HashTable<String, delt *> &collector,
+		   Vector<ElementT *> &path, int &z_index)
 {
     assert(!_e);
     _e = e;
@@ -80,7 +80,7 @@ void delt::prepare(wdiagram *d, ElementT *e, ProcessingT *processing,
 }
 
 void delt::prepare_router(wdiagram *d, RouterT *router, ProcessingT *processing,
-			  HashMap<String, delt *> &collector,
+			  HashTable<String, delt *> &collector,
 			  Vector<ElementT *> &path, int &z_index)
 {
     for (RouterT::iterator i = router->begin_elements();

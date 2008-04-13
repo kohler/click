@@ -27,7 +27,6 @@
 
 #include <click/driver.hh>
 #include <click/package.hh>
-#include <click/hashmap.hh>
 #include <click/error.hh>
 #include <click/confparse.hh>
 

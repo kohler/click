@@ -2,7 +2,7 @@
 #ifndef CLICK_AGGREGATEIPADDRPAIR_HH
 #define CLICK_AGGREGATEIPADDRPAIR_HH
 #include <click/element.hh>
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 #include "aggregatenotifier.hh"
 CLICK_DECLS
 
@@ -93,7 +93,7 @@ class AggregateIPAddrPair : public Element, public AggregateNotifier { public:
 	FlowInfo()		: aggregate(0) { }
     };
     
-    typedef HashMap<HostPair, FlowInfo> Map;
+    typedef HashTable<HostPair, FlowInfo> Map;
     Map _map;
 
     unsigned _active_sec;

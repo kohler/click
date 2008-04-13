@@ -37,10 +37,11 @@
 # include <click/handlercall.hh>
 # include <click/nameinfo.hh>
 # include <click/standard/addressinfo.hh>
+# include <click/hashtable.hh>
 # define CP_CONTEXT , Element *context
 # define CP_PASS_CONTEXT , context
 #else
-# include <click/hashmap.hh>
+# include <click/hashtable.hh>
 # include <click/timestamp.hh>
 # if HAVE_NETDB_H
 #  include <netdb.h>
@@ -3476,11 +3477,11 @@ stringlist_parsefunc(cp_value *v, const String &arg,
     (void) context;
 #endif
 
-    if (HashMap<String, int> *m = reinterpret_cast<HashMap<String, int> *>(argtype->user_data)) {
+    if (HashTable<String, int> *m = reinterpret_cast<HashTable<String, int> *>(argtype->user_data)) {
 	String word;
 	if (cp_word(arg, &word))
-	    if (int *valp = m->findp(word)) {
-		v->v.i = *valp;
+	    if (HashTable<String, int>::iterator it = m->find(word)) {
+		v->v.i = it.value();
 		return;
 	    }
     }
@@ -3506,9 +3507,9 @@ cp_extend_stringlist_argtype(const char *name, ...)
     cp_argtype *t = const_cast<cp_argtype *>(cp_find_argtype(name));
     if (!t || t->parse != stringlist_parsefunc)
 	return -ENOENT;
-    HashMap<String, int> *m = reinterpret_cast<HashMap<String, int> *>(t->user_data);
+    HashTable<String, int> *m = reinterpret_cast<HashTable<String, int> *>(t->user_data);
     if (!m)
-	t->user_data = m = new HashMap<String, int>();
+	t->user_data = m = new HashTable<String, int>();
     if (!m)
 	return -ENOMEM;
   
@@ -3519,7 +3520,7 @@ cp_extend_stringlist_argtype(const char *name, ...)
     while ((s = va_arg(val, const char *))) {
 	int value = va_arg(val, int);
 	if (cp_is_word(s))
-	    m->insert(String(s), value);
+	    m->replace(String(s), value);
 	else
 	    retval = -1;
     }
@@ -3541,7 +3542,7 @@ cp_unregister_argtype(const char *name)
 	trav->use_count--;
 	if (trav->use_count <= 0) {
 	    if (trav->parse == stringlist_parsefunc)
-		delete reinterpret_cast<HashMap<String, int> *>(trav->user_data);
+		delete reinterpret_cast<HashTable<String, int> *>(trav->user_data);
 	    *prev = trav->next;
 	    delete trav;
 	}

@@ -69,11 +69,6 @@ ICMPPingRewriter::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
   _timer.schedule_after_msec(GC_INTERVAL_SEC * 1000);
-
-  // release memory to system on cleanup
-  _request_map.set_arena(router()->arena_factory());
-  _reply_map.set_arena(router()->arena_factory());
-  
   return 0;
 }
 
@@ -222,8 +217,8 @@ ICMPPingRewriter::run_timer(Timer *)
   }
   
   for (int i = 0; i < to_free.size(); i++) {
-    _request_map.remove(to_free[i]->reverse()->flow_id().rev());
-    _reply_map.remove(to_free[i]->flow_id().rev());
+    _request_map.erase(to_free[i]->reverse()->flow_id().rev());
+    _reply_map.erase(to_free[i]->flow_id().rev());
     delete to_free[i]->reverse();
     delete to_free[i];
   }
@@ -246,8 +241,8 @@ ICMPPingRewriter::apply_pattern(const IPFlowID &flow)
     Mapping::make_pair(flow, new_flow, forward, reverse);
     _identifier++;
 
-    _request_map.insert(flow, forward);
-    _reply_map.insert(new_flow.rev(), reverse);
+    _request_map.replace(flow, forward);
+    _reply_map.replace(new_flow.rev(), reverse);
     return forward;
   }
 
@@ -260,7 +255,7 @@ ICMPPingRewriter::Mapping *
 ICMPPingRewriter::get_mapping(bool is_request, const IPFlowID &flow) const
 {
   const Map *map = (is_request ? &_request_map : &_reply_map);
-  return map->find(flow);
+  return (*map)[flow];
 }
 
 void
@@ -284,7 +279,7 @@ ICMPPingRewriter::push(int port, Packet *p_in)
   }
   
   IPFlowID flow(iph->ip_src, icmph->icmp_identifier, iph->ip_dst, icmph->icmp_identifier);
-  Mapping *m = map->find(flow);
+  Mapping *m = map->get(flow);
   if (!m) {
     if (port == 0 && icmph->icmp_type == ICMP_ECHO) {
       // create new mapping

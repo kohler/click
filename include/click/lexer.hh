@@ -1,7 +1,7 @@
 // -*- c-basic-offset: 4; related-file-name: "../../lib/lexer.cc" -*-
 #ifndef CLICK_LEXER_HH
 #define CLICK_LEXER_HH
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 #include <click/router.hh>
 #include <click/glue.hh>
 #include <click/variableenv.hh>
@@ -138,7 +138,7 @@ class Lexer { public:
 	String name;
 	int next;
     };
-    HashMap<String, int> _element_type_map;
+    HashTable<String, int> _element_type_map;
     Vector<ElementType> _element_types;
     enum { ET_SCOPED = 0x80000000, ET_TMASK = 0x7FFFFFFF, ET_NULL = 0x7FFFFFFF };
     int _last_element_type;
@@ -146,7 +146,7 @@ class Lexer { public:
     VariableEnvironment _global_scope;
 
     // elements
-    HashMap<String, int> _element_map;
+    HashTable<String, int> _element_map;
     Compound *_c;
   
     TunnelEnd *_definputs;

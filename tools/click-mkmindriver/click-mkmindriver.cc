@@ -72,7 +72,7 @@ static const char *program_name;
 static String::Initializer string_initializer;
 
 static int driver = -1;
-static HashMap<String, int> initial_requirements(-1);
+static HashTable<String, int> initial_requirements(-1);
 static bool verbose = false;
 
 void
@@ -130,9 +130,9 @@ class Mindriver { public:
     bool resolve_requirement(const String& requirement, const ElementMap& emap, ErrorHandler* errh, bool complain = true);
     void print_elements_conf(FILE*, String package, const ElementMap&, const String &top_srcdir);
     
-    HashMap<String, int> _provisions;
-    HashMap<String, int> _requirements;
-    HashMap<String, int> _source_files;
+    HashTable<String, int> _provisions;
+    HashTable<String, int> _requirements;
+    HashTable<String, int> _source_files;
     int _nrequirements;
     
 };
@@ -147,16 +147,16 @@ Mindriver::provide(const String& req, ErrorHandler* errh)
 {
     if (verbose && _provisions[req] < 0)
 	errh->message("providing '%s'", req.c_str());
-    _provisions.insert(req, 1);
+    _provisions[req] = 1;
 }
 
 void
 Mindriver::require(const String& req, ErrorHandler* errh)
 {
-    if (_provisions[req] < 0) {
+    if (_provisions.get(req) < 0) {
 	if (verbose && _requirements[req] < 0)
 	    errh->message("requiring '%s'", req.c_str());
-	_requirements.insert(req, 1);
+	_requirements[req] = 1;
 	_nrequirements++;
     }
 }
@@ -166,7 +166,7 @@ Mindriver::add_source_file(const String& fn, ErrorHandler* errh)
 {
     if (verbose && _source_files[fn] < 0)
 	errh->message("adding source file '%s'", fn.c_str());
-    _source_files.insert(fn, 1);
+    _source_files[fn] = 1;
 }
 
 void
@@ -186,9 +186,9 @@ Mindriver::add_router_requirements(RouterT* router, const ElementMap& default_ma
     StringAccum missing_sa;
     int nmissing = 0;
 
-    HashMap<ElementClassT*, int> primitives(-1);
+    HashTable<ElementClassT*, int> primitives(-1);
     router->collect_types(primitives);
-    for (HashMap<ElementClassT*, int>::iterator i = primitives.begin(); i.live(); i++) {
+    for (HashTable<ElementClassT*, int>::iterator i = primitives.begin(); i.live(); i++) {
 	if (!i.key()->primitive())
 	    continue;
 	String tname = i.key()->name();
@@ -261,7 +261,7 @@ Mindriver::resolve_requirement(const String& requirement, const ElementMap& emap
 {
     LandmarkErrorHandler lerrh(errh, "resolving " + requirement);
     
-    if (_provisions[requirement] > 0)
+    if (_provisions.get(requirement) > 0)
 	return true;
 
     int try_name_emapi = emap.traits_index(requirement);
@@ -293,7 +293,7 @@ void
 Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, const String &top_srcdir)
 {
     Vector<String> sourcevec;
-    for (HashMap<String, int>::iterator iter = _source_files.begin();
+    for (HashTable<String, int>::iterator iter = _source_files.begin();
 	 iter.live();
 	 iter++) {
 	iter.value() = sourcevec.size();
@@ -302,12 +302,12 @@ Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, 
 
     Vector<String> headervec(sourcevec.size(), String());
     Vector<String> classvec(sourcevec.size(), String());
-    HashMap<String, int> statichash(0);
+    HashTable<String, int> statichash(0);
 
     // collect header file and C++ element class definitions from emap
     for (int i = 1; i < emap.size(); i++) {
 	const Traits &elt = emap.traits_at(i);
-	int sourcei = _source_files[elt.source_file];
+	int sourcei = _source_files.get(elt.source_file);
 	if (sourcei >= 0) {
 	    // track ELEMENT_LIBS
 	    // ah, if only I had regular expressions
@@ -335,7 +335,7 @@ Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, 
 		classvec[sourcei] += " " + elt.cxx + "-" + elt.name;
 	    // remember static methods
 	    if (elt.methods && !statichash[elt.cxx]) {
-		statichash.insert(elt.cxx, 1);
+		statichash[elt.cxx] = 1;
 		Vector<String> ms;
 		cp_spacevec(elt.methods, ms);
 		for (String *m = ms.begin(); m != ms.end(); m++)
@@ -547,10 +547,10 @@ particular purpose.\n");
 
     // now, loop over requirements until closure
     while (1) {
-	HashMap<String, int> old_reqs(-1);
+	HashTable<String, int> old_reqs(-1);
 	old_reqs.swap(md._requirements);
 
-	for (HashMap<String, int>::iterator iter = old_reqs.begin(); iter.live(); iter++)
+	for (HashTable<String, int>::iterator iter = old_reqs.begin(); iter.live(); iter++)
 	    md.resolve_requirement(iter.key(), default_emap, errh);
 
 	if (!md._requirements.size())

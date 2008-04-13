@@ -214,17 +214,17 @@ remove_toplevel_component(String component, RouterT *r, const char *filename,
 			  ErrorHandler *errh, const String &component_prefix)
 {
   // find component names
-  HashMap<String, int> component_map(-1);
+  HashTable<String, int> component_map(-1);
   Vector<String> component_names;
   if (r->archive_index("componentmap") >= 0) {
     ArchiveElement &ae = r->archive("componentmap");
     cp_spacevec(ae.data, component_names);
     for (int i = 0; i < component_names.size(); i++)
-      component_map.insert(component_names[i], 0);
+      component_map.replace(component_names[i], 0);
   }
 
   // check if component exists
-  if (component_map[component] < 0) {
+  if (component_map.get(component) < 0) {
     String g = component_prefix + component;
     errh->fatal("%s: no '%s' component", filename, g.c_str());
   }

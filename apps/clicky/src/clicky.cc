@@ -17,6 +17,7 @@
 #include <clicktool/lexertinfo.hh>
 #include "wrouter.hh"
 #include "wdriver.hh"
+#include <click/hashtable.hh>
 #include <netdb.h>
 
 extern "C" {

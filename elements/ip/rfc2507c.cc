@@ -226,7 +226,7 @@ RFC2507c::simple_action(Packet *p)
     struct tcpip ti;
     ti._ip = *ipp;
     ti._tcp = *tcpp;
-    if(_map.findp(key) && (cid = _map[key])){
+    if((cid = _map.get(key))){
       q = make_compressed(cid, p);
       _ccbs[cid]._context = ti;
     } else {
@@ -235,11 +235,12 @@ RFC2507c::simple_action(Packet *p)
 
       /* delete the old key */
       IPFlowID okey(_ccbs[cid]._context);
-      if(_map.findp(okey) && _map[okey]){
-        _map.insert(okey, 0);
+      HashTable<IPFlowID, int>::iterator it = _map.find(okey);
+      if(it != _map.end() && it.value()){
+	it.value() = 0;
       }
 
-      _map.insert(key, cid);
+      _map.replace(key, cid);
       click_chatter("sport %d dport %d added cid %d",
                   ntohs(key.sport()),
                   ntohs(key.dport()),
@@ -255,9 +256,4 @@ RFC2507c::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(RFC2507c)
-    
-#include <click/hashmap.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<IPFlowID, int>;
-#endif
 CLICK_ENDDECLS

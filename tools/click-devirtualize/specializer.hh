@@ -67,10 +67,10 @@ class Specializer { public:
   Vector<int> _noutputs;
   Vector<int> _specialize;
 
-  HashMap<String, int> _etinfo_map;
+  HashTable<String, int> _etinfo_map;
   Vector<ElementTypeInfo> _etinfo;
-  HashMap<String, int> _header_file_map;
-  HashMap<String, int> _parsed_sources;
+  HashTable<String, int> _header_file_map;
+  HashTable<String, int> _parsed_sources;
 
   Vector<SpecializedClass> _specials;
 
@@ -98,13 +98,13 @@ ElementTypeInfo::ElementTypeInfo()
 inline ElementTypeInfo &
 Specializer::type_info(const String &name)
 {
-  return _etinfo[_etinfo_map[name]];
+    return _etinfo[_etinfo_map.get(name)];
 }
 
 inline const ElementTypeInfo &
 Specializer::type_info(const String &name) const
 {
-  return _etinfo[_etinfo_map[name]];
+    return _etinfo[_etinfo_map.get(name)];
 }
 
 #endif

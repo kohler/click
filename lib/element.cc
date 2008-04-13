@@ -1787,9 +1787,9 @@ Element::set_handler(const String &name, int flags, HandlerHook hook, int user_d
 }
 
 /** @brief Sets flags for the handler named @a name.
- *
  * @param name handler name
- * @param flags handler flags to set
+ * @param set_flags handler flags to set
+ * @param clear_flags handler flags to clear
  *
  * Sets flags for any handlers named @a name for this element.  Fails if no @a
  * name handler exists.

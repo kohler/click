@@ -118,7 +118,7 @@ handler_values::handler_values(wmain *w)
 
 handler_values::iterator handler_values::begin(const String &ename)
 {
-    HashMap<handler_value>::iterator iter = _hv.find(ename + ".handlers");
+    HashTable<handler_value>::iterator iter = _hv.find(ename + ".handlers");
     if (iter && (iter->_driver_flags & hflag_dead) == 0)
 	return iterator(iter.operator->());
     else
@@ -130,7 +130,7 @@ handler_value *handler_values::set(const String &hname, const String &hparam, co
     if (hname.length() > 9 && memcmp(hname.end() - 9, ".handlers", 9) == 0)
 	set_handlers(hname, hparam, hvalue);
     
-    handler_value *hv = _hv.find_force(hname).get();
+    handler_value *hv = _hv.find_insert(hname).get();
     changed = (!hv->have_hvalue() || hparam != hv->_hparam
 	       || hvalue != hv->_hvalue);
     hv->_hparam = hparam;
@@ -143,7 +143,7 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 {
     assert(hname.length() > 9 && memcmp(hname.end() - 9, ".handlers", 9) == 0);
 
-    handler_value *handlers = _hv.find_force(hname).get();
+    handler_value *handlers = _hv.find_insert(hname).get();
     if (handlers && handlers->hvalue() == hvalue)
 	return;
 
@@ -227,7 +227,7 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	    flags |= hflag_refresh;
 	
 	String full_name = hname.substring(0, hname.length() - 8) + name;
-	handler_value *v = _hv.find_force(full_name).get();
+	handler_value *v = _hv.find_insert(full_name).get();
 	if (v != handlers) {
 	    v->_next = handlers->_next;
 	    handlers->_next = v;
@@ -272,11 +272,11 @@ handler_value *handler_values::hard_find_placeholder(const String &hname,
     int dot = hname.find_right('.');
     if (dot < 0 || !_w->driver())
 	return 0;
-    handler_value *hh = _hv.find_force(hname.substring(0, dot + 1) + "handlers").get();
+    handler_value *hh = _hv.find_insert(hname.substring(0, dot + 1) + "handlers").get();
     if (hh->have_hvalue())
 	return 0;
     hh->refresh(w);
-    handler_value *hv = _hv.find_force(hname).get();
+    handler_value *hv = _hv.find_insert(hname).get();
     hv->set_flags(w, hv->flags() | flags);
     if (autorefresh_period > 10
 	&& hv->autorefresh_period() > autorefresh_period)

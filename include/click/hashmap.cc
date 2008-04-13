@@ -242,7 +242,7 @@ HashMap<K, V>::insert(const K &key, const V &value)
 
 template <class K, class V>
 bool
-HashMap<K, V>::remove(const K &key)
+HashMap<K, V>::erase(const K &key)
 {
   size_t b = bucket(key);
   Elt *prev = 0;
@@ -606,7 +606,7 @@ HashMap<K, void *>::insert(const K &key, void *value)
 
 template <class K>
 bool
-HashMap<K, void *>::remove(const K &key)
+HashMap<K, void *>::erase(const K &key)
 {
   size_t b = bucket(key);
   Elt *prev = 0;

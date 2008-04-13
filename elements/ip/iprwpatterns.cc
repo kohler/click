@@ -47,7 +47,7 @@ IPRewriterPatterns::configure(Vector<String> &conf, ErrorHandler *errh)
       continue;
     cp_eat_space(rest);
 
-    if (_name_map[word] >= 0) {
+    if (_name_map.get(word) >= 0) {
       errh->error("pattern name `%s' has already been defined", word.c_str());
       continue;
     }
@@ -55,7 +55,7 @@ IPRewriterPatterns::configure(Vector<String> &conf, ErrorHandler *errh)
     IPRw::Pattern *p;
     if (IPRw::Pattern::parse(rest, &p, this, errh) >= 0) {
       p->use();
-      _name_map.insert(word, _patterns.size());
+      _name_map.replace(word, _patterns.size());
       _patterns.push_back(p);
     }
   }
@@ -75,7 +75,7 @@ IPRewriterPatterns::find(Element *e, const String &name, ErrorHandler *errh)
   const Vector<Element *> &ev = e->router()->elements();
   for (int i = 0; i < ev.size(); i++)
     if (IPRewriterPatterns *rwp = (IPRewriterPatterns *)ev[i]->cast("IPRewriterPatterns")) {
-      int x = rwp->_name_map[name];
+      int x = rwp->_name_map.get(name);
       if (x >= 0)
 	return rwp->_patterns[x];
       break;

@@ -287,7 +287,7 @@ struct FastClassifier_Cid {
   void (*push_body)(const Classifier_Program &, StringAccum &);
 };
 
-static HashMap<String, int> cid_name_map(-1);
+static HashTable<String, int> cid_name_map(-1);
 static Vector<FastClassifier_Cid *> cids;
 static Vector<String> interesting_handler_names;
 
@@ -306,7 +306,7 @@ add_classifier_type(const String &name, int guaranteed_packet_length,
   cid->unchecked_body = unchecked_body;
   cid->push_body = push_body;
   cids.push_back(cid);
-  cid_name_map.insert(cid->name, cids.size() - 1);
+  cid_name_map.replace(cid->name, cids.size() - 1);
   return cids.size() - 1;
 }
 
@@ -399,10 +399,10 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
 		    ErrorHandler *errh)
 {
   // get classifiers
-  HashMap<String, int> classifier_map(-1);
+  HashTable<String, int> classifier_map(-1);
   Vector<Classifier_Program> iprograms;
   for (int i = 0; i < classifiers.size(); i++) {
-    classifier_map.insert(classifiers[i]->name(), i);
+    classifier_map.replace(classifiers[i]->name(), i);
     iprograms.push_back(Classifier_Program());
   }
 
@@ -469,7 +469,7 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
 	/* nada */;
 
       // assign value to program if appropriate
-      int prog_index = (ok ? classifier_map[ename] : -1);
+      int prog_index = (ok ? classifier_map.get(ename) : -1);
       if (prog_index >= 0) {
 	iprograms[prog_index].handler_names.push_back(hname);
 	iprograms[prog_index].handler_values.push_back(hvalue);
@@ -490,7 +490,7 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
     // yes: valid handler; now parse program
     Classifier_Program &prog = iprograms[ci];
     String classifier_tname = c->type_name();
-    prog.type = cid_name_map[classifier_tname];
+    prog.type = cid_name_map.get(classifier_tname);
     assert(prog.type >= 0);
     
     prog.safe_length = prog.output_everything = prog.align_offset = -1;
@@ -742,14 +742,14 @@ reverse_transformation(RouterT *r, ErrorHandler *)
 		     &configurations, (void *)0);
 
   // prepare type_map : type -> configuration #
-  HashMap<ElementClassT *, int> type_map(-1);
+  HashTable<ElementClassT *, int> type_map(-1);
   for (int i = 0; i < click_names.size(); i++)
-    type_map.insert(ElementClassT::base_type(click_names[i]), i);
+    type_map.replace(ElementClassT::base_type(click_names[i]), i);
 
   // change configuration
   for (int i = 0; i < r->nelements(); i++) {
     ElementT *e = r->element(i);
-    int x = type_map[e->type()];
+    int x = type_map.get(e->type());
     if (x >= 0) {
       e->set_configuration(configurations[x]);
       e->set_type(ElementClassT::base_type(old_type_names[x]));
@@ -934,7 +934,7 @@ particular purpose.\n");
   // find Classifiers
   Vector<ElementT *> classifiers;
   for (RouterT::iterator x = r->begin_elements(); x; x++)
-    if (cid_name_map[x->type_name()] >= 0)
+    if (cid_name_map.get(x->type_name()) >= 0)
       classifiers.push_back(x);
 
   // quit early if no Classifiers

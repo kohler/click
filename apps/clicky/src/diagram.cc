@@ -30,7 +30,7 @@ static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer);
 
 wdiagram::wdiagram(wmain *rw)
     : _rw(rw), _scale_step(0), _scale(1), _origin_x(0), _origin_y(0), _relt(0),
-      _drag_state(drag_none)
+      _layout(false), _drag_state(drag_none)
 {
     _widget = lookup_widget(_rw->_window, "diagram");
     gtk_widget_realize(_widget);

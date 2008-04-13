@@ -31,11 +31,4 @@ template class Vector<unsigned int>;
 template class Vector<String>;
 template class Vector<IPAddress>;
 
-#include <click/hashmap.cc>
-template class HashMap<String, int>;
-template class _HashMap_iterator<String, int>;
-template class _HashMap_const_iterator<String, int>;
-template class HashMap<IPAddress, unsigned>;
-template class HashMap<IPFlowID, bool>;
-
 CLICK_ENDDECLS

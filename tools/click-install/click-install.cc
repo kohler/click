@@ -155,7 +155,7 @@ prepare_tmpdir(ErrorHandler *errh)
 }
 
 static void
-compile_archive_packages(RouterT *r, HashMap<String, int> &packages,
+compile_archive_packages(RouterT *r, HashTable<String, int> &packages,
 			 ErrorHandler *errh)
 {
   Vector<String> requirements = r->requirements();
@@ -214,8 +214,8 @@ install_module(const String &filename, const String &options,
 }
 
 static void
-install_required_packages(RouterT *r, HashMap<String, int> &packages,
-			  HashMap<String, int> &active_modules,
+install_required_packages(RouterT *r, HashTable<String, int> &packages,
+			  HashTable<String, int> &active_modules,
 			  ErrorHandler *errh)
 {
   // check for uncompiled archive packages and try to compile them
@@ -253,8 +253,8 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
       install_module(tmpnam, String(), errh);
       
       // cleanup
-      packages.insert(req, 1);
-      active_modules.insert(insmod_name, 1);
+      packages.replace(req, 1);
+      active_modules.replace(insmod_name, 1);
 
     } else if (packages[req] < 0) {
       // install required package from CLICKPATH
@@ -273,8 +273,8 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
 
       install_module(pathname, String(), errh);
 
-      packages.insert(req, 1);
-      active_modules.insert(filename, 1);
+      packages.replace(req, 1);
+      active_modules.replace(filename, 1);
       
     } else {
       // package already loaded; note in 'active_modules' that we still need
@@ -288,7 +288,7 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
       if (active_modules[filename] < 0)
 	filename = req + ".o";
       if (active_modules[filename] == 0)
-	active_modules.insert(filename, 1);
+	active_modules.replace(filename, 1);
     }
   }
 }
@@ -560,8 +560,8 @@ particular purpose.\n");
   }
 
   // find current packages
-  HashMap<String, int> active_modules(-1);
-  HashMap<String, int> packages(-1);
+  HashTable<String, int> active_modules(-1);
+  HashTable<String, int> packages(-1);
   read_active_modules(active_modules, errh);
   read_package_file(clickfs_packages, packages, errh);
 

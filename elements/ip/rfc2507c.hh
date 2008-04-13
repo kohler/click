@@ -1,7 +1,7 @@
 #ifndef CLICK_RFC2507C_HH
 #define CLICK_RFC2507C_HH
 #include <click/element.hh>
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 #include <click/glue.hh>
 #include <click/ipflowid.hh>
 #include <clicknet/ip.h>
@@ -64,7 +64,7 @@ private:
   struct ccb _ccbs[TCP_SPACE];
 
   /* map packet header ID fields to CID */
-  HashMap<IPFlowID, int> _map;
+  HashTable<IPFlowID, int> _map;
 
   void make_key(const struct tcpip &from, struct tcpip &to);
   WritablePacket *make_other(Packet *p);

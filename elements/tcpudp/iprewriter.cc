@@ -111,10 +111,6 @@ IPRewriter::initialize(ErrorHandler *)
   _udp_gc_timer.schedule_after_sec(_udp_gc_interval);
   _tcp_done_gc_timer.schedule_after_sec(_tcp_done_gc_interval);
 
-  // release memory to system on cleanup
-  _tcp_map.set_arena(router()->arena_factory());
-  _udp_map.set_arena(router()->arena_factory());
-  
   return 0;
 }
 
@@ -259,8 +255,8 @@ IPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
     else if (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse, map))
       goto failure;
 
-    map.insert(flow, forward);
-    map.insert(forward->flow_id().rev(), reverse);
+    map.replace(flow, forward);
+    map.replace(forward->flow_id().rev(), reverse);
     return forward;
   }
 
@@ -300,7 +296,7 @@ IPRewriter::push(int port, Packet *p_in)
   _spinlock.acquire();
 #endif
   IPFlowID flow(p);
-  Mapping *m = (ip_p == IP_PROTO_TCP ? _tcp_map.find(flow) : _udp_map.find(flow));
+  Mapping *m = (ip_p == IP_PROTO_TCP ? _tcp_map.get(flow) : _udp_map.get(flow));
 
 #if IPRW_RWLOCKS
   _rwlock.release_read();

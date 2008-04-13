@@ -30,7 +30,7 @@
 #include <stdlib.h>
 
 static String::Initializer string_initializer;
-static HashMap<String, int> base_type_map(-1);
+static HashTable<String, int> base_type_map(-1);
 static Vector<ElementClassT *> base_types;
 
 typedef ElementTraits Traits;
@@ -102,13 +102,12 @@ ElementClassT::base_type(const String &name)
 {
     if (!name)
 	return 0;
-    int i = base_type_map[name];
+    int &i = base_type_map[name];
     if (i < 0) {
+	i = base_types.size();
 	ElementClassT *t = base_type_factory(name);
 	assert(t && t->name() == name);
 	t->use();
-	i = base_types.size();
-	base_type_map.insert(name, i);
 	base_types.push_back(t);
     }
     return base_types[i];
@@ -333,17 +332,17 @@ ElementClassT::unparse_signature() const
 
 
 void
-ElementClassT::collect_types(HashMap<ElementClassT *, int> &m) const
+ElementClassT::collect_types(HashTable<ElementClassT *, int> &m) const
 {
-    m.insert(const_cast<ElementClassT *>(this), 1);
+    m.replace(const_cast<ElementClassT *>(this), 1);
 }
 
 void
-SynonymElementClassT::collect_types(HashMap<ElementClassT *, int> &m) const
+SynonymElementClassT::collect_types(HashTable<ElementClassT *, int> &m) const
 {
-    HashMap<ElementClassT *, int>::Pair *p = m.find_pair_force(const_cast<SynonymElementClassT *>(this), 0);
-    if (p && p->value == 0) {
-	p->value = 1;
+    HashTable<ElementClassT *, int>::iterator it = m.find_insert(const_cast<SynonymElementClassT *>(this), 0);
+    if (it != m.end() && it.value() == 0) {
+	it.value() = 1;
 	_eclass->collect_types(m);
     }
 }
@@ -360,6 +359,3 @@ SynonymElementClassT::collect_overloads(Vector<ElementClassT *> &v) const
 {
     _eclass->collect_overloads(v);
 }
-
-
-#include <click/hashmap.cc>

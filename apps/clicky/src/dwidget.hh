@@ -125,9 +125,9 @@ class delt : public dwidget { public:
     class layoutelt;
 
     delt(delt *parent, int z_index)
-	: dwidget(dw_elt, z_index), _e(0), _decor(0), _parent(parent),
-	  _split(0), _visible(false), _displayed(false), _layout(false),
-	  _aligned(true), _split_inputs(false),
+	: dwidget(dw_elt, z_index), _e(0), _decor(0), _generation(0),
+	  _parent(parent), _split(0), _visible(false), _displayed(false),
+	  _layout(false), _aligned(true), _split_inputs(false),
 	  _des_sensitivity(0), _dess_sensitivity(0), _dps_sensitivity(0),
 	  _markup_sensitivity(0),
 	  _highlight(0), _drawn_highlight(0),
@@ -213,7 +213,7 @@ class delt : public dwidget { public:
 
     // creating
     void create(RouterT *router, ProcessingT *processing,
-		HashMap<String, delt *> &collector, Vector<ElementT *> &epath,
+		HashTable<String, delt *> &collector, Vector<ElementT *> &epath,
 		int &z_index);
     
     // gadgets
@@ -244,7 +244,7 @@ class delt : public dwidget { public:
 				    bool autorefresh = false, int autorefresh_period = 0, bool always = false);
     
     void prepare_router(wdiagram *d, RouterT *router, ProcessingT *processing,
-			HashMap<String, delt *> &collector,
+			HashTable<String, delt *> &collector,
 			Vector<ElementT *> &path, int &z_index);
     
   private:
@@ -293,7 +293,7 @@ class delt : public dwidget { public:
     delt &operator=(const delt &);
 
     void prepare(wdiagram *d, ElementT *e, ProcessingT *processing,
-		 HashMap<String, delt *> &collector, Vector<ElementT *> &path,
+		 HashTable<String, delt *> &collector, Vector<ElementT *> &path,
 		 int &z_index);
 
     void layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc);

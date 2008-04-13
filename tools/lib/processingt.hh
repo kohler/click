@@ -84,7 +84,7 @@ class ProcessingT { public:
     Vector<PortT> _connected_output;
 
     enum { classwarn_unknown = 1, classwarn_pcode = 2 };
-    HashMap<ElementClassT *, int> _class_warnings;
+    HashTable<ElementClassT *, int> _class_warnings;
 
     void create_pidx(ErrorHandler *);
 

@@ -253,9 +253,6 @@ TCPRewriter::initialize(ErrorHandler *)
   _tcp_done_gc_timer.initialize(this);
   _tcp_done_gc_timer.schedule_after_sec(_tcp_done_gc_interval);
 
-  // release memory to system on cleanup
-  _tcp_map.set_arena(router()->arena_factory());
-  
   _nmapping_failures = 0;
   return 0;
 }
@@ -339,8 +336,8 @@ TCPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
       goto failure;
     
     IPFlowID reverse_flow = forward->flow_id().rev();
-    _tcp_map.insert(flow, forward);
-    _tcp_map.insert(reverse_flow, reverse);
+    _tcp_map.replace(flow, forward);
+    _tcp_map.replace(reverse_flow, reverse);
     return forward;
   }
 
@@ -369,7 +366,7 @@ TCPRewriter::push(int port, Packet *p_in)
     return;
   }
 
-  TCPMapping *m = static_cast<TCPMapping *>(_tcp_map.find(flow));
+  TCPMapping *m = static_cast<TCPMapping *>(_tcp_map.get(flow));
   
   if (!m) {			// create new mapping
     const InputSpec &is = _input_specs[port];

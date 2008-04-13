@@ -71,11 +71,11 @@ Specializer::add_type_info(const String &click_name, const String &cxx_name,
   _etinfo.push_back(eti);
 
   int i = _etinfo.size() - 1;
-  _etinfo_map.insert(click_name, i);
+  _etinfo_map.replace(click_name, i);
 
   if (header_file) {
     int slash = header_file.find_right('/');
-    _header_file_map.insert(header_file.substring(slash < 0 ? 0 : slash + 1),
+    _header_file_map.replace(header_file.substring(slash < 0 ? 0 : slash + 1),
 			    i);
   }
 }
@@ -104,7 +104,7 @@ Specializer::parse_source_file(ElementTypeInfo &etinfo,
     fn = etinfo.header_file.substring(0, -3) + ".cc";
   
   // don't parse a source file twice
-  if (_parsed_sources[fn] < 0) {
+  if (_parsed_sources.get(fn) < 0) {
     String text;
     if (!etinfo.source_directory && _router->archive_index(fn) >= 0) {
       text = _router->archive(fn).data;
@@ -116,7 +116,7 @@ Specializer::parse_source_file(ElementTypeInfo &etinfo,
 	etinfo.found_header_file = found;
     }
     _cxxinfo.parse_file(text, do_header, includes);
-    _parsed_sources.insert(fn, 1);
+    _parsed_sources.replace(fn, 1);
   }
 }
 
@@ -510,7 +510,7 @@ Specializer::output_includes(ElementTypeInfo &eti, StringAccum &out)
 	  for (p++; p < p2 && s[p] != '\"'; p++)
 	    /* nada */;
 	  String include = includes.substring(left, p - left);
-	  int include_index = _header_file_map[include];
+	  int include_index = _header_file_map.get(include);
 	  if (include_index >= 0) {
 	    if (!_etinfo[include_index].found_header_file)
 	      _etinfo[include_index].locate_header_file(_router, ErrorHandler::default_handler());

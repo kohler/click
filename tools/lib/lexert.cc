@@ -530,12 +530,12 @@ LexerT::force_element_type(const Lexeme &t)
     String name = t.string();
     ElementClassT *type = _router->declared_type(name);
     if (!type)
-	type = _base_type_map[name];
+	type = _base_type_map.get(name);
     if (!type) {
 	if (_router->eindex(name) >= 0)
 	    lerror(t, "'%s' was previously used as an element name", name.c_str());
 	type = ElementClassT::base_type(name);
-	_base_type_map.insert(name, type);
+	_base_type_map.replace(name, type);
     }
     _lexinfo->notify_class_reference(type, t.pos1(), t.pos2());
     return type;
@@ -740,7 +740,7 @@ LexerT::ydeclaration(const Lexeme &first_element)
 	String name = decls[i].string();
 	if (ElementT *old_e = _router->element(name))
 	    ElementT::redeclaration_error(_errh, "element", name, landmark(), old_e->landmark());
-	else if (_router->declared_type(name) || _base_type_map[name])
+	else if (_router->declared_type(name) || _base_type_map.get(name))
 	    lerror(decls[i], "class '%s' used as element name", name.c_str());
 	else
 	    make_element(name, decls[i], decl_pos2, etype, configuration.string());
@@ -1146,4 +1146,3 @@ LexerT::finish(const VariableEnvironment &global_scope)
 }
 
 #include <click/vector.cc>
-#include <click/hashmap.cc>

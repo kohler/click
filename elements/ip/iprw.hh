@@ -3,7 +3,7 @@
 #define CLICK_IPRW_HH
 #include <click/element.hh>
 #include <click/timer.hh>
-#include <click/bighashmap.hh>
+#include <click/hashtable.hh>
 #include <click/ipflowid.hh>
 #include <clicknet/ip.h>
 CLICK_DECLS
@@ -13,7 +13,7 @@ class IPRw : public Element { public:
 
     class Pattern;
     class Mapping;
-    typedef HashMap<IPFlowID, Mapping*> Map;
+    typedef HashTable<IPFlowID, Mapping*> Map;
     enum InputSpecName {
 	INPUT_SPEC_NOCHANGE, INPUT_SPEC_KEEP, INPUT_SPEC_DROP,
 	INPUT_SPEC_PATTERN, INPUT_SPEC_MAPPER

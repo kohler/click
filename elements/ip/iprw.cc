@@ -360,7 +360,7 @@ IPRw::Pattern::create_mapping(int ip_p, const IPFlowID& in,
 		    lookup.set_dport(htons(base + val));
 		else
 		    lookup.set_daddr(htonl(base + val));
-		if (!rev_map.findp(lookup)) {
+		if (!rev_map.find(lookup)) {
 		    if (_is_napt)
 			out.set_sport(lookup.dport());
 		    else
@@ -540,8 +540,8 @@ IPRw::Mapping::free_from_list(Map &map, bool notify)
     Mapping *next = _free_next;
     if (notify && _pat)
 	_pat->mapping_freed(primary());
-    map.remove(reverse()->flow_id().rev());
-    map.remove(flow_id().rev());
+    map.erase(reverse()->flow_id().rev());
+    map.erase(flow_id().rev());
     delete reverse();
     delete this;
     return next;
@@ -702,8 +702,6 @@ ELEMENT_PROVIDES(IPRw)
 #include <click/hashmap.cc>
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<IPFlowID, IPRw::Mapping *>;
-template class HashMapIterator<IPFlowID, IPRw::Mapping *>;
 template class Vector<IPRw::InputSpec>;
 #endif
 CLICK_ENDDECLS

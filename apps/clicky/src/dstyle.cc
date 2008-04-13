@@ -147,7 +147,7 @@ activity {\n\
  */
 
 static PermString::Initializer permstring_initializer;
-static HashMap<PermString, int> property_map;
+static HashTable<PermString, int> property_map;
 
 static dcss_propmatch port_pm[] = {
     { "port-shape", 0 },
@@ -1227,17 +1227,17 @@ dcss_set::dcss_set(const String &text, const String &media)
 
     if (!property_map.size()) {
 	for (const dcss_propmatch *pm = port_pm; pm != port_pm + num_port_pm; ++pm)
-	    property_map.find_force(pm->name) |= pflag_port;
+	    property_map[pm->name] |= pflag_port;
 	for (const dcss_propmatch *pm = elt_pm; pm != elt_pm + num_elt_pm; ++pm)
-	    property_map.find_force(pm->name) |= pflag_elt;
+	    property_map[pm->name] |= pflag_elt;
 	for (const dcss_propmatch *pm = elt_size_pm; pm != elt_size_pm + num_elt_size_pm; ++pm)
-	    property_map.find_force(pm->name) |= pflag_elt_size;
+	    property_map[pm->name] |= pflag_elt_size;
 	for (const dcss_propmatch *pm = handler_pm; pm != handler_pm + num_handler_pm; ++pm)
-	    property_map.find_force(pm->name) |= pflag_handler;
+	    property_map[pm->name] |= pflag_handler;
 	for (const dcss_propmatch *pm = fullness_pm; pm != fullness_pm + num_fullness_pm; ++pm)
-	    property_map.find_force(pm->name) |= pflag_fullness;
+	    property_map[pm->name] |= pflag_fullness;
 	for (const dcss_propmatch *pm = activity_pm; pm != activity_pm + num_activity_pm; ++pm)
-	    property_map.find_force(pm->name) |= pflag_activity;
+	    property_map[pm->name] |= pflag_activity;
     }
     
     parse(text);
@@ -1433,7 +1433,7 @@ ref_ptr<dport_style> dcss_set::port_style(wdiagram *d, const delt *e,
     StringAccum sa(sizeof(unsigned) * sv.size());
     for (dcss **sp = sv.begin(); sp != sv.end(); ++sp)
 	*reinterpret_cast<unsigned *>(sa.extend(sizeof(unsigned))) = (*sp)->selector_index();
-    ref_ptr<dport_style> &style_cache = _ptable.find_force(sa.take_string());
+    ref_ptr<dport_style> &style_cache = _ptable[sa.take_string()];
 
     if (!style_cache) {
 	dcss::assign_all(port_pm, port_pmp, num_port_pm, sv.begin(), sv.end());
@@ -1508,7 +1508,7 @@ ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e, int *sensiti
     StringAccum sa(sizeof(unsigned) * sv.size());
     for (dcss **sp = sv.begin(); sp != sv.end(); ++sp)
 	*reinterpret_cast<unsigned *>(sa.extend(sizeof(unsigned))) = (*sp)->selector_index();
-    ref_ptr<delt_style> &style_cache = _etable.find_force(sa.take_string());
+    ref_ptr<delt_style> &style_cache = _etable[sa.take_string()];
 
     if (!style_cache) {
 	dcss::assign_all(elt_pm, elt_pmp, num_elt_pm, sv.begin(), sv.end());
@@ -1568,7 +1568,7 @@ ref_ptr<delt_size_style> dcss_set::elt_size_style(wdiagram *d, const delt *e, in
     StringAccum sa(sizeof(unsigned) * sv.size());
     for (dcss **sp = sv.begin(); sp != sv.end(); ++sp)
 	*reinterpret_cast<unsigned *>(sa.extend(sizeof(unsigned))) = (*sp)->selector_index();
-    ref_ptr<delt_size_style> &style_cache = _estable.find_force(sa.take_string());
+    ref_ptr<delt_size_style> &style_cache = _estable[sa.take_string()];
 
     if (!style_cache) {
 	dcss::assign_all(elt_size_pm, elt_size_pmp, num_elt_size_pm, sv.begin(), sv.end());
@@ -1659,7 +1659,7 @@ ref_ptr<dhandler_style> dcss_set::handler_style(wdiagram *d, const handler_value
     StringAccum sa(sizeof(unsigned) * sv.size());
     for (dcss **sp = sv.begin(); sp != sv.end(); ++sp)
 	*reinterpret_cast<unsigned *>(sa.extend(sizeof(unsigned))) = (*sp)->selector_index();
-    ref_ptr<dhandler_style> &style_cache = _htable.find_force(sa.take_string());
+    ref_ptr<dhandler_style> &style_cache = _htable[sa.take_string()];
 
     if (!style_cache) {
 	dcss::assign_all(handler_pm, handler_pmp, num_handler_pm, sv.begin(), sv.end());
@@ -1733,7 +1733,7 @@ ref_ptr<dfullness_style> dcss_set::fullness_style(PermString decor, wdiagram *d,
     StringAccum sa(sizeof(unsigned) * sv.size());
     for (dcss **sp = sv.begin(); sp != sv.end(); ++sp)
 	*reinterpret_cast<unsigned *>(sa.extend(sizeof(unsigned))) = (*sp)->selector_index();
-    ref_ptr<dfullness_style> &style_cache = _ftable.find_force(sa.take_string());
+    ref_ptr<dfullness_style> &style_cache = _ftable[sa.take_string()];
 
     if (!style_cache) {
 	dcss::assign_all(fullness_pm, fullness_pmp, num_fullness_pm, sv.begin(), sv.end());
@@ -1771,7 +1771,7 @@ ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, wdiagram *d,
     StringAccum sa(sizeof(unsigned) * sv.size());
     for (dcss **sp = sv.begin(); sp != sv.end(); ++sp)
 	*reinterpret_cast<unsigned *>(sa.extend(sizeof(unsigned))) = (*sp)->selector_index();
-    ref_ptr<dactivity_style> &style_cache = _atable.find_force(sa.take_string());
+    ref_ptr<dactivity_style> &style_cache = _atable[sa.take_string()];
 
     if (!style_cache) {
 	dcss::assign_all(activity_pm, activity_pmp, num_activity_pm, sv.begin(), sv.end());

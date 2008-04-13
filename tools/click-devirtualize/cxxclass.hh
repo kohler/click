@@ -2,7 +2,7 @@
 #define CXXCLASS_HH
 #include <click/string.hh>
 #include <click/vector.hh>
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 class StringAccum;
 
 String compile_pattern(const String &);
@@ -51,7 +51,7 @@ class CxxClass {
   String _name;
   Vector<CxxClass *> _parents;
 
-  HashMap<String, int> _fn_map;
+  HashTable<String, int> _fn_map;
   Vector<CxxFunction> _functions;
   Vector<int> _has_push;
   Vector<int> _has_pull;
@@ -94,7 +94,7 @@ class CxxInfo { public:
     
  private:
 
-  HashMap<String, int> _class_map;
+  HashTable<String, int> _class_map;
   Vector<CxxClass *> _classes;
 
   CxxInfo(const CxxInfo &);
@@ -113,15 +113,15 @@ class CxxInfo { public:
 inline CxxFunction *
 CxxClass::find(const String &name)
 {
-  int which = _fn_map[name];
-  return (which >= 0 ? &_functions[which] : 0);
+    int which = _fn_map.get(name);
+    return (which >= 0 ? &_functions[which] : 0);
 }
 
 inline CxxClass *
 CxxInfo::find_class(const String &name) const
 {
-  int which = _class_map[name];
-  return (which >= 0 ? _classes[which] : 0);
+    int which = _class_map.get(name);
+    return (which >= 0 ? _classes[which] : 0);
 }
 
 #endif

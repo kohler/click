@@ -2,7 +2,7 @@
 #ifndef CLICK_LEXERT_HH
 #define CLICK_LEXERT_HH
 #include <click/error.hh>
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 #include <click/archive.hh>
 #include "landmarkt.hh"
 #include <stdio.h>
@@ -122,7 +122,7 @@ class LexerT { public:
     int _anonymous_class_count;
   
     // what names represent types? (builds up linearly)
-    HashMap<String, ElementClassT *> _base_type_map;
+    HashTable<String, ElementClassT *> _base_type_map;
 
     // errors
     LexerTInfo *_lexinfo;

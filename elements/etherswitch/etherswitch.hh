@@ -2,7 +2,7 @@
 #define CLICK_ETHERSWITCH_HH
 #include <click/element.hh>
 #include <click/etheraddress.hh>
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 CLICK_DECLS
 
 /*
@@ -82,7 +82,7 @@ class EtherSwitch : public Element { public:
 
   private:
 
-    typedef HashMap<EtherAddress, AddrInfo> Table;
+    typedef HashTable<EtherAddress, AddrInfo> Table;
     Table _table;
     uint32_t _timeout;
   

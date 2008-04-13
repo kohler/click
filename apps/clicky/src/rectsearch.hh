@@ -3,8 +3,7 @@
 #include <list>
 #include <vector>
 #include <algorithm>
-#include <click/hashmap.hh>
-#include <click/hashmap.cc>
+#include <click/hashtable.hh>
 #include <math.h>
 
 template <typename T, int CHUNK = 256>
@@ -20,7 +19,7 @@ class rect_search { public:
 
   private:
 
-    typedef HashMap<int, std::list<T *> > rectmap;
+    typedef HashTable<int, std::list<T *> > rectmap;
     rectmap _stuff;
     std::list<T *> _big_stuff;
 
@@ -55,8 +54,8 @@ void rect_search<T, CHUNK>::insert(T *v)
 	for (int i = 0; x1 + i * CHUNK < x2; ++i)
 	    for (int j = 0; y1 + j * CHUNK < y2; ++j) {
 		int nnn = (((xi1 + i) & 0xFFF) << 12) + ((yi1 + j) & 0xFFF);
-		std::list<T *> &l = _stuff.find_force(nnn);
-		l.push_front(v);
+		typename rectmap::iterator it = _stuff.find_insert(nnn);
+		it.value().push_front(v);
 	    }
     }
 }
@@ -76,8 +75,8 @@ void rect_search<T, CHUNK>::remove(T *v)
 	for (int i = 0; x1 + i * CHUNK < x2; ++i)
 	    for (int j = 0; y1 + j * CHUNK < y2; ++j) {
 		int nnn = (((xi1 + i) & 0xFFF) << 12) + ((yi1 + j) & 0xFFF);
-		std::list<T *> &l = _stuff.find_force(nnn);
-		std::remove(l.begin(), l.end(), v);
+		typename rectmap::iterator it = _stuff.find_insert(nnn);
+		std::remove(it.value().begin(), it.value().end(), v);
 	    }
     }
 }
@@ -106,8 +105,8 @@ void rect_search<T, CHUNK>::find_all(double x, double y, std::vector<T *> &resul
     int i = (int) floor(x / CHUNK);
     int j = (int) floor(y / CHUNK);
     int nnn = ((i & 0xFFF) << 12) + (j & 0xFFF);
-    if (std::list<T *> *l = _stuff.findp(nnn))
-	find_some(*l, x, y, result);
+    if (typename rectmap::const_iterator it = _stuff.find(nnn))
+	find_some(it.value(), x, y, result);
     find_some(_big_stuff, x, y, result);
 }
 
@@ -127,8 +126,8 @@ void rect_search<T, CHUNK>::find_all(const rectangle &r, std::vector<T *> &resul
 	for (int i = 0; x1 + i * CHUNK < r.x2(); ++i)
 	    for (int j = 0; y1 + j * CHUNK < r.y2(); ++j) {
 		int nnn = (((xi1 + i) & 0xFFF) << 12) + ((yi1 + j) & 0xFFF);
-		if (std::list<T *> *l = _stuff.findp(nnn))
-		    find_some(*l, r, result);
+		if (typename rectmap::const_iterator it = _stuff.find(nnn))
+		    find_some(it.value(), r, result);
 	    }
     }
     find_some(_big_stuff, r, result);

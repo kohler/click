@@ -149,17 +149,17 @@ reverse_transformation(RouterT *r, ErrorHandler *)
   parse_tabbed_lines(fc_ae.data, &new_click_names, &old_click_names, (void *)0);
 
   // prepare type_index_map : type -> configuration #
-  HashMap<ElementClassT *, int> new_type_map(-1);
+  HashTable<ElementClassT *, int> new_type_map(-1);
   Vector<ElementClassT *> old_class;
   for (int i = 0; i < new_click_names.size(); i++) {
-    new_type_map.insert(ElementClassT::base_type(new_click_names[i]), old_class.size());
+    new_type_map.replace(ElementClassT::base_type(new_click_names[i]), old_class.size());
     old_class.push_back(ElementClassT::base_type(old_click_names[i]));
   }
 
   // change configuration
   for (int i = 0; i < r->nelements(); i++) {
     ElementT *e = r->element(i);
-    int nnm = new_type_map[e->type()];
+    int nnm = new_type_map.get(e->type());
     if (nnm >= 0)
       e->set_type(old_class[nnm]);
   }
@@ -241,7 +241,7 @@ main(int argc, char **argv)
   int compile_user = 0;
   int reverse = 0;
   Vector<const char *> instruction_files;
-  HashMap<String, int> specializing;
+  HashTable<String, int> specializing;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -308,11 +308,11 @@ particular purpose.\n");
       break;
 
      case DEVIRTUALIZE_OPT:
-      specializing.insert(clp->vstr, !clp->negated);
+      specializing.replace(clp->vstr, !clp->negated);
       break;
       
      case NO_DEVIRTUALIZE_OPT:
-      specializing.insert(clp->vstr, 0);
+      specializing.replace(clp->vstr, 0);
       break;
 
      case INSTRS_OPT:
