@@ -60,7 +60,7 @@ TruncateIPPayload::simple_action(Packet *p)
     if (!iph) {
 	if (p->length() <= nbytes)
 	    return p;
-	nbytes = p->length() - _nbytes;
+	nbytes = p->length() - nbytes;
 	goto take;
     } else if (iph->ip_hl < (sizeof(click_ip) >> 2))
 	// broken IP header

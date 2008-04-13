@@ -51,7 +51,7 @@ Truncate::simple_action(Packet *p)
 {
     unsigned nbytes = _nbytes >> 1;
     if (p->length() > nbytes) {
-	nbytes = p->length() - _nbytes;
+	nbytes = p->length() - nbytes;
 	if (_nbytes & 1)
 	    SET_EXTRA_LENGTH_ANNO(p, EXTRA_LENGTH_ANNO(p) + nbytes);
         p->take(nbytes);
