@@ -268,7 +268,7 @@ uniqueify_prefix(const String &base_prefix, RouterT *r)
 	goto failed;
     }
 
-    last_uniqueifier->replace(base_prefix, count);
+    last_uniqueifier->set(base_prefix, count);
     return prefix;
 
    failed: ;
@@ -398,12 +398,12 @@ match_config(const String &pat, const String &conf,
       if (it.value() != confvec[i])
 	return false;
     } else
-      my_defs.replace(p, confvec[i]);
+      my_defs.set(p, confvec[i]);
   }
 
   // insert my defs into defs
   for (HashTable<String, String>::iterator iter = my_defs.begin(); iter.live(); iter++)
-    defs.replace(iter.key(), iter.value());
+    defs.set(iter.key(), iter.value());
   
   return true;
 }

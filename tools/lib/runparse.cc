@@ -173,7 +173,7 @@ RouterUnparseT::collect_types()
     HashTable<int, ElementClassT *> class_map;
     collect_types(class_map);
     for (HashTable<int, ElementClassT *>::iterator i = class_map.begin(); i; i++) {
-	_tuid_map.replace(k.key(), _types.size());
+	_tuid_map.set(k.key(), _types.size());
 	_types.push_back(k.value());
     }
 }
@@ -205,10 +205,10 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
     HashTable<ElementClassT *, int> type_to_scope(-2);
     for (int i = 0; i < ntypes; i++) {
 	const ElementType &t = _declared_types[i];
-	type_to_scope.replace(t.type, _scope_cookie);
+	type_to_scope.set(t.type, _scope_cookie);
 	if (t.prev_name >= 0) {
 	    const ElementType &pt = _declared_types[t.prev_name];
-	    type_to_scope.replace(pt.type, pt.scope_cookie);
+	    type_to_scope.set(pt.type, pt.scope_cookie);
 	}
     }
     // XXX FIXME

@@ -139,7 +139,7 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 {
     if (!c || c->primitive() || generated_types.get(c) || c->tunnel())
 	return;
-    generated_types.replace(c, 1);
+    generated_types.set(c, 1);
 
     if (ElementClassT *older = c->overload_type())
 	generate_type(older, f, indent, errh);

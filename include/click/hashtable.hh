@@ -219,7 +219,7 @@ class HashTable<T> {
      * already exists in the table, then it is replaced, and the function
      * returns false.  Otherwise, a copy of @a value is added, and the
      * function returns true. */
-    bool replace(const value_type &value);
+    bool set(const value_type &value);
 
     /** @brief Remove the element indicated by @a it.
      * @return An iterator pointing at the next element remaining, or end()
@@ -276,16 +276,17 @@ class HashTable_const_iterator { public:
     HashTable_const_iterator() {
     }
 
-    /** @brief Return a pointer to the element.
-     * @pre *this != end() */
+    /** @brief Return a pointer to the element, null if *this == end(). */
     const T *get() const {
-	return &_rep.get()->v;
+	if (_rep)
+	    return &_rep.get()->v;
+	else
+	    return 0;
     }
 
-    /** @brief Return a pointer to the element.
-     * @pre *this != end() */
+    /** @brief Return a pointer to the element, null if *this == end(). */
     const T *operator->() const {
-	return &_rep.get()->v;
+	return get();
     }
 
     /** @brief Return a reference to the element.
@@ -356,14 +357,12 @@ class HashTable_iterator : public HashTable_const_iterator<T> { public:
     HashTable_iterator() {
     }
     
-    /** @brief Return a pointer to the element.
-     * @pre *this != end() */
+    /** @brief Return a pointer to the element, null if *this == end(). */
     T *get() const {
 	return const_cast<T *>(inherited::get());
     }
     
-    /** @brief Return a pointer to the element.
-     * @pre *this != end() */
+    /** @brief Return a pointer to the element, null if *this == end(). */
     inline T *operator->() const {
 	return const_cast<T *>(inherited::operator->());
     }
@@ -393,14 +392,15 @@ class HashTable_const_iterator<Pair<K, V> > { public:
     HashTable_const_iterator() {
     }
 
-    /** @brief Return a pointer to the element.
-     * @pre *this != end() */
+    /** @brief Return a pointer to the element, null if *this == end(). */
     const Pair<K, V> *get() const {
-	return &_rep.get()->v;
+	if (_rep)
+	    return &_rep.get()->v;
+	else
+	    return 0;
     }
     
-    /** @brief Return a pointer to the element.
-     * @pre *this != end() */
+    /** @brief Return a pointer to the element, null if *this == end(). */
     const Pair<K, V> *operator->() const {
 	return get();
     }
@@ -408,7 +408,7 @@ class HashTable_const_iterator<Pair<K, V> > { public:
     /** @brief Return a reference to the element.
      * @pre *this != end() */
     const Pair<K, V> &operator*() const {
-	return *get();
+	return _rep.get()->v;
     }
 
     /** @brief Return a reference to the element's key.
@@ -468,14 +468,12 @@ class HashTable_iterator<Pair<K, V> > : public HashTable_const_iterator<Pair<K, 
     HashTable_iterator() {
     }
     
-    /** @brief Return a pointer to the element.
-     * @pre *this != end() */
+    /** @brief Return a pointer to the element, null if *this == end(). */
     Pair<K, V> *get() const {
 	return const_cast<Pair<K, V> *>(inherited::get());
     }
     
-    /** @brief Return a pointer to the element.
-     * @pre *this != end() */
+    /** @brief Return a pointer to the element, null if *this == end(). */
     inline Pair<K, V> *operator->() const {
 	return get();
     }
@@ -483,7 +481,7 @@ class HashTable_iterator<Pair<K, V> > : public HashTable_const_iterator<Pair<K, 
     /** @brief Return a reference to the element.
      * @pre *this != end() */
     inline Pair<K, V> &operator*() const {
-	return *get();
+	return const_cast<Pair<K, V> &>(inherited::operator*());
     }
 
     /** @brief Return a mutable reference to the element's value.
@@ -636,6 +634,24 @@ class HashTable {
 	    return _default_value;
     }
 
+    /** @brief Return a pointer to the value for @a key.
+     *
+     * If no element for @a key currently exists (find(@a key) == end()),
+     * returns null. */
+    mapped_type *get_pointer(const key_type &key) {
+	if (iterator i = find(key))
+	    return &i.value();
+	else
+	    return 0;
+    }
+    /** @overload */
+    const mapped_type *get_pointer(const key_type &key) const {
+	if (const_iterator i = find(key))
+	    return &i.value();
+	else
+	    return 0;
+    }
+
     /** @brief Return the value for @a key.
      *
      * If no element for @a key currently exists (find(@a key) == end()),
@@ -659,7 +675,11 @@ class HashTable {
      *
      * @note Inserting an element into a HashTable invalidates all existing
      * iterators. */
+#if CLICK_HASHMAP_UPGRADE_WARNINGS
+    inline mapped_type &operator[](const key_type &key) CLICK_DEPRECATED;
+#else
     inline mapped_type &operator[](const key_type &key);
+#endif
 
 
     /** @brief Ensure an element with key @a key and return its iterator.
@@ -689,16 +709,25 @@ class HashTable {
     }
 
 
-    /** @brief Add @a value to the table for key @a key, replacing any existing element.
+    /** @brief Set the mapping for @a key to @a value.
      *
-     * Inserts the @a key/@a value pair into the table.  If an element with @a
-     * key already exists in the table, then it is replaced, and the function
-     * returns false.  Otherwise, an element for @a key is added with value @a
-     * value, and the function returns true.
+     * If an element for @a key already exists in the table, then its value is
+     * assigned to @a value and the function returns false.  Otherwise, a new
+     * element mapping @a key to @a value is added and the function returns
+     * true.
+     *
+     * The behavior is basically the same as "(*this)[@a key] = @a value".
      *
      * @note Inserting an element into a HashTable invalidates all existing
      * iterators. */
-    bool replace(const key_type &key, const mapped_type &value);
+    bool set(const key_type &key, const mapped_type &value);
+
+    /** @brief Set the mapping for @a key to @a value.
+     *
+     * This is a deprecated synonym for set().
+     *
+     * @deprecated Use set(). */
+    bool replace(const key_type &key, const mapped_type &value) CLICK_DEPRECATED;
 
     /** @brief Remove the element indicated by @a it.
      * @return A valid iterator pointing at the next element remaining, or
@@ -816,7 +845,7 @@ void HashTable<T>::insert_balance(typename rep_type::iterator &i, elt *e)
 	_rep.rehash(_rep.bucket_count() + 1);
 	i = _rep.find(e->hashkey());
     }
-    _rep.replace(i, e);
+    _rep.set(i, e);
 }
 
 template <typename T>
@@ -844,7 +873,7 @@ HashTable_iterator<T> HashTable<T>::find_insert(const value_type &v)
 }
 
 template <typename T>
-bool HashTable<T>::replace(const value_type &value)
+bool HashTable<T>::set(const value_type &value)
 {
     typename rep_type::iterator i = _rep.find(hashkey(value));
     if (i)
@@ -858,7 +887,7 @@ bool HashTable<T>::replace(const value_type &value)
 }
 
 template <typename K, typename V>
-bool HashTable<K, V>::replace(const key_type &key, const mapped_type &value)
+bool HashTable<K, V>::set(const key_type &key, const mapped_type &value)
 {
     typename rep_type::rep_type::iterator i = _rep._rep.find(key);
     if (i)
@@ -949,6 +978,12 @@ template <typename K, typename V>
 inline typename HashTable<K, V>::mapped_type &HashTable<K, V>::operator[](const key_type &key)
 {
     return find_insert(key).value();
+}
+
+template <typename K, typename V>
+bool HashTable<K, V>::replace(const key_type &key, const mapped_type &value)
+{
+    return set(key, value);
 }
 
 

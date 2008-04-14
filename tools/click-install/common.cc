@@ -51,7 +51,7 @@ read_package_string(const String &text, StringMap &packages)
     const char *start = begin;
     while (begin < end && !isspace(*begin))
       begin++;
-    packages.replace(text.substring(start, begin), 0);
+    packages.set(text.substring(start, begin), 0);
     begin = find(begin, end, '\n') + 1;
   }
 }

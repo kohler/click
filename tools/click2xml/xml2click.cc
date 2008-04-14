@@ -247,7 +247,7 @@ do_start_elementclass(XML_Parser parser, const XML_Char **attrs, ErrorHandler *e
     if (!nc->_id)
 	errh->lerror(landmark, "element class declared without an ID");
     else
-	class_id_map.replace(nc->_id, classes.size());
+	class_id_map.set(nc->_id, classes.size());
     classes.push_back(nc);
     
     xstack.push_back(nc);

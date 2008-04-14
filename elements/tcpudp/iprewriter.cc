@@ -255,8 +255,8 @@ IPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
     else if (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse, map))
       goto failure;
 
-    map.replace(flow, forward);
-    map.replace(forward->flow_id().rev(), reverse);
+    map.set(flow, forward);
+    map.set(forward->flow_id().rev(), reverse);
     return forward;
   }
 

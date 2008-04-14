@@ -111,8 +111,8 @@ static void
 save_element_nports(RouterT *r)
 {
   for (RouterT::iterator x = r->begin_elements(); x; x++) {
-    element_ninputs.replace(x->name(), x->ninputs());
-    element_noutputs.replace(x->name(), x->noutputs());
+    element_ninputs.set(x->name(), x->ninputs());
+    element_noutputs.set(x->name(), x->noutputs());
   }
 }
 
@@ -312,7 +312,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
     }
 
     // save number of inputs so we don't attach new Idles
-    element_ninputs.replace(x->name(), hprev.size());
+    element_ninputs.set(x->name(), hprev.size());
   }
 
   return changed;
@@ -364,7 +364,7 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
     }
 
     // save number of outputs so we don't attach new Idles
-    element_noutputs.replace(x->name(), hnext.size());
+    element_noutputs.set(x->name(), hnext.size());
     x->set_configuration(String(hnext.size()));
   }
 

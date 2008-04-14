@@ -45,13 +45,13 @@ HashTableTest::~HashTableTest()
 # define MAP_S2I HashTable<String, int>
 # define MAP_VALUE(m, k) (m)[(k)]
 # define IT_VALUE(it) (it)->second
-# define MAP_INSERT(m, k, v) (m).replace((k), (v))
+# define MAP_INSERT(m, k, v) (m).set((k), (v))
 # define MAP_FIND_VALUE(m, k) ({ MAP_S2I::iterator it = (m).find((k)); it ? it->second : 0; })
 #else
 # define MAP_S2I HashTable<Pair<String, int> >
 # define MAP_VALUE(m, k) (m).find((k))->second
 # define IT_VALUE(it) (it)->second
-# define MAP_INSERT(m, k, v) (m).replace(make_pair((k), (v)))
+# define MAP_INSERT(m, k, v) (m).set(make_pair((k), (v)))
 # define MAP_FIND_VALUE(m, k) ({ MAP_S2I::iterator it = (m).find((k)); it ? it->second : 0; })
 #endif
 
@@ -530,9 +530,16 @@ HashTableTest::initialize(ErrorHandler *errh)
 	CHECK(a == c);
 	CHECK(a == d);
     }
+
+    {
+	HashTable<String, bool> htx;
+	htx["Hello"] = 1;
+	if (!htx["Goodbye"])
+	    htx["Goodbye"] = 2;
+	CHECK(htx["Hello"] == 1);
+	CHECK(htx["Goodbye"] == 2);
+    }
     
-    HashTable<String, int>::iterator it;
-    HashTable<String, int>::iterator it2(it);
     errh->message("All tests pass!");
     return 0;
 }

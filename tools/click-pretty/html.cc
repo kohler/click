@@ -92,10 +92,10 @@ String
 html_unquote(const char *x, const char *end)
 {
     if (!html_entities.get("&amp")) {
-	html_entities.replace("&amp", "&");
-	html_entities.replace("&quot", "\"");
-	html_entities.replace("&lt", "<");
-	html_entities.replace("&gt", ">");
+	html_entities.set("&amp", "&");
+	html_entities.set("&quot", "\"");
+	html_entities.set("&lt", "<");
+	html_entities.set("&gt", ">");
     }
     
     StringAccum sa;
@@ -166,7 +166,7 @@ process_tag(const char *x, String &tag, HashTable<String, String> &attrs,
 	while (isspace(*x))
 	    x++;
 	if (*x != '=') {
-	    attrs.replace(attr_name, attr_name);
+	    attrs.set(attr_name, attr_name);
 	    continue;
 	}
 
@@ -194,9 +194,9 @@ process_tag(const char *x, String &tag, HashTable<String, String> &attrs,
 	}
 
 	if (unquote_value)
-	    attrs.replace(attr_name, html_unquote(value_start, x));
+	    attrs.set(attr_name, html_unquote(value_start, x));
 	else
-	    attrs.replace(attr_name, String(value_start, x - value_start));
+	    attrs.set(attr_name, String(value_start, x - value_start));
 
 	if (bump && *x)
 	    x++;

@@ -116,7 +116,7 @@ ElementMap::add(const Traits &e)
     if (e.name) {
 	ElementClassT *c = ElementClassT::base_type(e.name);
 	my_e.name_next = _name_map[c->name()];
-	_name_map.replace(c->name(), i);
+	_name_map.set(c->name(), i);
     }
 
     incr_version();
@@ -137,7 +137,7 @@ ElementMap::remove_at(int i)
     if (p >= 0)
 	_e[p].name_next = e.name_next;
     else if (e.name)
-	_name_map.replace(e.name, e.name_next);
+	_name_map.set(e.name, e.name_next);
 
     e.name = e.cxx = String();
     incr_version();
@@ -248,7 +248,7 @@ parse_xml_attrs(HashTable<String, String> &attrs,
 	// get attribute value
 	String attrvalue;
 	s = parse_attribute_value(&attrvalue, s, ends, entities, errh);
-	attrs.replace(attrname, attrvalue);
+	attrs.set(attrname, attrvalue);
     }
     return s;
 }
@@ -261,11 +261,11 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 
     // prepare entities
     HashTable<String, String> entities;
-    entities.replace("lt", "<");
-    entities.replace("amp", "&");
-    entities.replace("gt", ">");
-    entities.replace("quot", "\"");
-    entities.replace("apos", "'");
+    entities.set("lt", "<");
+    entities.set("amp", "&");
+    entities.set("gt", ">");
+    entities.set("quot", "\"");
+    entities.set("apos", "'");
     
     const char *s = str.data();
     const char *ends = s + str.length();
@@ -341,7 +341,7 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 		s++;
 	    String name(name_start, s - name_start), value;
 	    s = parse_attribute_value(&value, s, ends, entities, errh);
-	    entities.replace(name, value);
+	    entities.set(name, value);
 	    
 	} else if (s + 8 < ends && memcmp(s, "![CDATA[", 8) == 0) {
 	    // skip CDATA section

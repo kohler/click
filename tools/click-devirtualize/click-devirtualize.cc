@@ -152,7 +152,7 @@ reverse_transformation(RouterT *r, ErrorHandler *)
   HashTable<ElementClassT *, int> new_type_map(-1);
   Vector<ElementClassT *> old_class;
   for (int i = 0; i < new_click_names.size(); i++) {
-    new_type_map.replace(ElementClassT::base_type(new_click_names[i]), old_class.size());
+    new_type_map.set(ElementClassT::base_type(new_click_names[i]), old_class.size());
     old_class.push_back(ElementClassT::base_type(old_click_names[i]));
   }
 
@@ -308,11 +308,11 @@ particular purpose.\n");
       break;
 
      case DEVIRTUALIZE_OPT:
-      specializing.replace(clp->vstr, !clp->negated);
+      specializing.set(clp->vstr, !clp->negated);
       break;
       
      case NO_DEVIRTUALIZE_OPT:
-      specializing.replace(clp->vstr, 0);
+      specializing.set(clp->vstr, 0);
       break;
 
      case INSTRS_OPT:

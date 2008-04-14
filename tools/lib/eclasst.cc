@@ -334,7 +334,7 @@ ElementClassT::unparse_signature() const
 void
 ElementClassT::collect_types(HashTable<ElementClassT *, int> &m) const
 {
-    m.replace(const_cast<ElementClassT *>(this), 1);
+    m.set(const_cast<ElementClassT *>(this), 1);
 }
 
 void

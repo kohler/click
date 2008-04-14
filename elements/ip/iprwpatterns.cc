@@ -55,7 +55,7 @@ IPRewriterPatterns::configure(Vector<String> &conf, ErrorHandler *errh)
     IPRw::Pattern *p;
     if (IPRw::Pattern::parse(rest, &p, this, errh) >= 0) {
       p->use();
-      _name_map.replace(word, _patterns.size());
+      _name_map.set(word, _patterns.size());
       _patterns.push_back(p);
     }
   }

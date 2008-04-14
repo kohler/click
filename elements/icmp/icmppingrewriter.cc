@@ -241,8 +241,8 @@ ICMPPingRewriter::apply_pattern(const IPFlowID &flow)
     Mapping::make_pair(flow, new_flow, forward, reverse);
     _identifier++;
 
-    _request_map.replace(flow, forward);
-    _reply_map.replace(new_flow.rev(), reverse);
+    _request_map.set(flow, forward);
+    _reply_map.set(new_flow.rev(), reverse);
     return forward;
   }
 

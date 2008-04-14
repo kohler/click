@@ -241,7 +241,7 @@ CxxClass::defun(const CxxFunction &fn)
 {
   int which = _functions.size();
   _functions.push_back(fn);
-  _fn_map.replace(fn.name(), which);
+  _fn_map.set(fn.name(), which);
   _functions.back().unkill();
   return _functions.back();
 }

@@ -142,8 +142,8 @@ IPAddrPairRewriter::apply_pattern(Pattern *pattern, int,
 	    goto failure;
 
 	IPFlowID reverse_flow = forward->flow_id().rev();
-	_map.replace(flow, forward);
-	_map.replace(reverse_flow, reverse);
+	_map.set(flow, forward);
+	_map.set(reverse_flow, reverse);
 	return forward;
     }
 

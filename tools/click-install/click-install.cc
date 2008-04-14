@@ -253,8 +253,8 @@ install_required_packages(RouterT *r, HashTable<String, int> &packages,
       install_module(tmpnam, String(), errh);
       
       // cleanup
-      packages.replace(req, 1);
-      active_modules.replace(insmod_name, 1);
+      packages.set(req, 1);
+      active_modules.set(insmod_name, 1);
 
     } else if (packages[req] < 0) {
       // install required package from CLICKPATH
@@ -273,8 +273,8 @@ install_required_packages(RouterT *r, HashTable<String, int> &packages,
 
       install_module(pathname, String(), errh);
 
-      packages.replace(req, 1);
-      active_modules.replace(filename, 1);
+      packages.set(req, 1);
+      active_modules.set(filename, 1);
       
     } else {
       // package already loaded; note in 'active_modules' that we still need
@@ -288,7 +288,7 @@ install_required_packages(RouterT *r, HashTable<String, int> &packages,
       if (active_modules[filename] < 0)
 	filename = req + ".o";
       if (active_modules[filename] == 0)
-	active_modules.replace(filename, 1);
+	active_modules.set(filename, 1);
     }
   }
 }

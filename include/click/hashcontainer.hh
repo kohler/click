@@ -161,7 +161,7 @@ class HashContainer { public:
      * iterator that compares equal to end().  However, this iterator is
      * special, and can also be used to efficiently insert an element with key
      * @a key.  In particular, the return value of find() always has
-     * can_insert(), and can thus be passed to insert_at() or replace().  (It
+     * can_insert(), and can thus be passed to insert_at() or set().  (It
      * will insert elements at the head of the relevant bucket.) */
     inline iterator find(const key_type &key);
     /** @overload */
@@ -209,7 +209,7 @@ class HashContainer { public:
      * As a side effect, @a it is advanced to point at the newly inserted @a
      * element.  If @a element is null, then @a it is advanced to point at the
      * next element as by ++@a it. */
-    inline T *replace(iterator &it, T *element);
+    inline T *set(iterator &it, T *element);
 
     /** @brief Replace the element with @a element->hashkey() with @a element.
      * @param element element
@@ -219,7 +219,7 @@ class HashContainer { public:
      * Finds an element with the same hashkey as @a element, removes it from
      * the HashContainer, and replaces it with @a element.  If there is no
      * former element then @a element is inserted. */
-    inline T *replace(T *element);
+    inline T *set(T *element);
 
     /** @brief Remove the element at position @a it.
      * @param it iterator
@@ -388,7 +388,7 @@ class HashContainer_iterator : public HashContainer_const_iterator<T, A> { publi
     /** @brief Return true iff elements can be inserted here.
      *
      * Specifically, returns true iff this iterator is valid to pass to
-     * HashContainer::insert_at() or HashContainer::replace().  All live()
+     * HashContainer::insert_at() or HashContainer::set().  All live()
      * iterators can_insert(), but some !live() iterators can_insert() as
      * well. */
     bool can_insert() const {
@@ -526,7 +526,7 @@ HashContainer<T, A>::find_prefer(const key_type &key)
 
 template <typename T, typename A>
 inline T *
-HashContainer<T, A>::replace(iterator &it, T *element)
+HashContainer<T, A>::set(iterator &it, T *element)
 {
     click_hash_assert(it._hc == this && it._bucket < _rep.nbuckets);
     click_hash_assert(bucket(_rep.hashkey(element)) == it._bucket);
@@ -565,24 +565,24 @@ HashContainer<T, A>::insert_at(iterator &it, T *element)
 }
 
 template <typename T, typename A>
-inline T *HashContainer<T, A>::replace(T *element)
+inline T *HashContainer<T, A>::set(T *element)
 {
     iterator it = find(_rep.hashkey(element));
-    return replace(it, element);
+    return set(it, element);
 }
 
 template <typename T, typename A>
 inline T *HashContainer<T, A>::erase(iterator &it)
 {
     click_hash_assert(it._hc == this);
-    return replace(it, 0);
+    return set(it, 0);
 }
 
 template <typename T, typename A>
 inline T *HashContainer<T, A>::erase(const key_type &key)
 {
     iterator it = find(key);
-    return replace(it, 0);
+    return set(it, 0);
 }
 
 template <typename T, typename A>

@@ -729,7 +729,7 @@ ElementsOutput::ElementsOutput(RouterT *r, const ProcessingT &processing, const 
 	if (do_types && done_types[x->type()] < 0) {
 	    ElementT *fake = new ElementT(x->type_name(), x->type(), "", LandmarkT(type_landmark));
 	    _entries.push_back(fake);
-	    done_types.replace(x->type(), 1);
+	    done_types.set(x->type(), 1);
 	}
     }
 
@@ -1318,7 +1318,7 @@ particular purpose.\n");
 	    break;
 
 	  case CLASS_URLS_OPT:
-	    package_hrefs.replace("x", clp->vstr);
+	    package_hrefs.set("x", clp->vstr);
 	    break;
 
 	  case PACKAGE_URLS_OPT: {
@@ -1328,7 +1328,7 @@ particular purpose.\n");
 		  p_errh->error("'--package-urls' option must contain an equals sign");
 		  goto bad_option;
 	      }
-	      package_hrefs.replace("x" + s.substring(s.begin(), equals), s.substring(equals + 1, s.end()));
+	      package_hrefs.set("x" + s.substring(s.begin(), equals), s.substring(equals + 1, s.end()));
 	      break;
 	  }
 
@@ -1340,9 +1340,9 @@ particular purpose.\n");
 	      String s = clp->vstr;
 	      const char *equals = find(s, '=');
 	      if (equals < s.end())
-		  definitions.replace(s.substring(s.begin(), equals), s.substring(equals + 1, s.end()));
+		  definitions.set(s.substring(s.begin(), equals), s.substring(equals + 1, s.end()));
 	      else
-		  definitions.replace(s, "");
+		  definitions.set(s, "");
 	      break;
 	  }
 

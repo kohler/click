@@ -107,7 +107,7 @@ RouterT::check() const
     HashTable<ElementClassT *, int> type_map(-1);
     for (int i = 0; i < nt; i++) {
 	assert(type_map[_declared_types[i].type] < 0);
-	type_map.replace(_declared_types[i].type, i);
+	type_map.set(_declared_types[i].type, i);
     }
     
     // check element names
@@ -256,9 +256,9 @@ RouterT::change_ename(int ei, const String &new_name)
     ElementT &e = *_elements[ei];
     if (e.live()) {
 	if (eindex(e.name()) == ei)
-	    _element_name_map.replace(e.name(), -1);
+	    _element_name_map.set(e.name(), -1);
 	e._name = new_name;
-	_element_name_map.replace(new_name, ei);
+	_element_name_map.set(new_name, ei);
     }
 }
 
@@ -322,7 +322,7 @@ RouterT::add_declared_type(ElementClassT *ec, bool anonymous)
 	if (prev >= 0)		// increment scope_cookie if redefining class
 	    _scope_cookie++;
 	_declared_types.push_back(ElementType(ec, _scope_cookie, prev));
-	_declared_type_map.replace(ec->name(), _declared_types.size() - 1);
+	_declared_type_map.set(ec->name(), _declared_types.size() - 1);
     }
 }
 
@@ -958,10 +958,10 @@ RouterT::remove_dead_elements(ErrorHandler *errh)
     for (int i = 0; i < nelements; i++) {
 	j = new_eindex[i];
 	if (j < 0) {
-	    _element_name_map.replace(_elements[i]->name(), -1);
+	    _element_name_map.set(_elements[i]->name(), -1);
 	    delete _elements[i];
 	} else if (j != i) {
-	    _element_name_map.replace(_elements[i]->name(), j);
+	    _element_name_map.set(_elements[i]->name(), j);
 	    _elements[j] = _elements[i];
 	    _elements[j]->_eindex = j;
 	    _first_conn[j] = _first_conn[i];
@@ -1004,7 +1004,7 @@ RouterT::free_element(ElementT *e)
 
     // finally, free the element itself
     if (_element_name_map[e->name()] == ei)
-	_element_name_map.replace(e->name(), -1);
+	_element_name_map.set(e->name(), -1);
     e->simple_kill();
     e->_tunnel_input = _free_element;
     _free_element = e;
@@ -1036,7 +1036,7 @@ RouterT::free_dead_elements()
 	if (new_eindex[i] < 0) {
 	    ElementT *e = _elements[i];
 	    if (_element_name_map[e->name()] == i)
-		_element_name_map.replace(e->name(), -1);
+		_element_name_map.set(e->name(), -1);
 	    assert(e->dead());
 	    e->_tunnel_input = _free_element;
 	    _free_element = e;

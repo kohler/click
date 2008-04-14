@@ -306,7 +306,7 @@ add_classifier_type(const String &name, int guaranteed_packet_length,
   cid->unchecked_body = unchecked_body;
   cid->push_body = push_body;
   cids.push_back(cid);
-  cid_name_map.replace(cid->name, cids.size() - 1);
+  cid_name_map.set(cid->name, cids.size() - 1);
   return cids.size() - 1;
 }
 
@@ -402,7 +402,7 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
   HashTable<String, int> classifier_map(-1);
   Vector<Classifier_Program> iprograms;
   for (int i = 0; i < classifiers.size(); i++) {
-    classifier_map.replace(classifiers[i]->name(), i);
+    classifier_map.set(classifiers[i]->name(), i);
     iprograms.push_back(Classifier_Program());
   }
 
@@ -744,7 +744,7 @@ reverse_transformation(RouterT *r, ErrorHandler *)
   // prepare type_map : type -> configuration #
   HashTable<ElementClassT *, int> type_map(-1);
   for (int i = 0; i < click_names.size(); i++)
-    type_map.replace(ElementClassT::base_type(click_names[i]), i);
+    type_map.set(ElementClassT::base_type(click_names[i]), i);
 
   // change configuration
   for (int i = 0; i < r->nelements(); i++) {

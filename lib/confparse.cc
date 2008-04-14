@@ -3520,7 +3520,7 @@ cp_extend_stringlist_argtype(const char *name, ...)
     while ((s = va_arg(val, const char *))) {
 	int value = va_arg(val, int);
 	if (cp_is_word(s))
-	    m->replace(String(s), value);
+	    m->set(String(s), value);
 	else
 	    retval = -1;
     }

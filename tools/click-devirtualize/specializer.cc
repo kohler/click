@@ -71,12 +71,12 @@ Specializer::add_type_info(const String &click_name, const String &cxx_name,
   _etinfo.push_back(eti);
 
   int i = _etinfo.size() - 1;
-  _etinfo_map.replace(click_name, i);
+  _etinfo_map.set(click_name, i);
 
   if (header_file) {
     int slash = header_file.find_right('/');
-    _header_file_map.replace(header_file.substring(slash < 0 ? 0 : slash + 1),
-			    i);
+    _header_file_map.set(header_file.substring(slash < 0 ? 0 : slash + 1),
+			 i);
   }
 }
 
@@ -116,7 +116,7 @@ Specializer::parse_source_file(ElementTypeInfo &etinfo,
 	etinfo.found_header_file = found;
     }
     _cxxinfo.parse_file(text, do_header, includes);
-    _parsed_sources.replace(fn, 1);
+    _parsed_sources.set(fn, 1);
   }
 }
 

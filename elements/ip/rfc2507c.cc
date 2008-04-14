@@ -240,7 +240,7 @@ RFC2507c::simple_action(Packet *p)
 	it.value() = 0;
       }
 
-      _map.replace(key, cid);
+      _map.set(key, cid);
       click_chatter("sport %d dport %d added cid %d",
                   ntohs(key.sport()),
                   ntohs(key.dport()),

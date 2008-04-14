@@ -40,7 +40,7 @@ ListenEtherSwitch::push(int source, Packet *p)
 
     // 0 timeout means dumb switch
     if (_timeout != 0) {
-	_table.replace(EtherAddress(e->ether_shost), AddrInfo(source, p->timestamp_anno()));
+	_table.set(EtherAddress(e->ether_shost), AddrInfo(source, p->timestamp_anno()));
   
 	// Set outport if dst is unicast, we have info about it, and the
 	// info is still valid.

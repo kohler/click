@@ -857,7 +857,7 @@ Lexer::add_element_type(const String &name, ElementFactory factory, uintptr_t th
   _element_types[tid].name = name;
   _element_types[tid].next = _last_element_type | (scoped ? (int)ET_SCOPED : 0);
   if (name)
-    _element_type_map.replace(name, tid);
+    _element_type_map.set(name, tid);
   _last_element_type = tid;
   return tid;
 }
@@ -924,7 +924,7 @@ Lexer::remove_element_type(int removed, int *prev_hint)
 	 trav != ET_NULL && _element_types[trav].name != name;
 	 trav = _element_types[trav].next & ET_TMASK)
       /* nada */;
-    _element_type_map.replace(name, (trav == ET_NULL ? -1 : trav));
+    _element_type_map.set(name, (trav == ET_NULL ? -1 : trav));
   }
 
   // remove stuff
@@ -993,7 +993,7 @@ Lexer::get_element(String name, int etype, const String &conf, const String &lm)
     return _element_map[name];
 
   int eid = _c->_elements.size();
-  _element_map.replace(name, eid);
+  _element_map.set(name, eid);
   
   // check 'name' for validity
   for (int i = 0; i < name.length(); i++) {
@@ -1038,7 +1038,7 @@ Lexer::deanonymize_element_name(const String &ename, int eidx)
       name = prefix + String(anonymizer);
     } while (_element_map[name] >= 0);
   }
-  _element_map.replace(name, eidx);
+  _element_map.set(name, eidx);
   return name;
 }
 

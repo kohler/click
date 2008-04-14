@@ -336,8 +336,8 @@ TCPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
       goto failure;
     
     IPFlowID reverse_flow = forward->flow_id().rev();
-    _tcp_map.replace(flow, forward);
-    _tcp_map.replace(reverse_flow, reverse);
+    _tcp_map.set(flow, forward);
+    _tcp_map.set(reverse_flow, reverse);
     return forward;
   }
 

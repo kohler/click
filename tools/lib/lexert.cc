@@ -535,7 +535,7 @@ LexerT::force_element_type(const Lexeme &t)
 	if (_router->eindex(name) >= 0)
 	    lerror(t, "'%s' was previously used as an element name", name.c_str());
 	type = ElementClassT::base_type(name);
-	_base_type_map.replace(name, type);
+	_base_type_map.set(name, type);
     }
     _lexinfo->notify_class_reference(type, t.pos1(), t.pos2());
     return type;

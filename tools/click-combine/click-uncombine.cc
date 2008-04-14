@@ -220,7 +220,7 @@ remove_toplevel_component(String component, RouterT *r, const char *filename,
     ArchiveElement &ae = r->archive("componentmap");
     cp_spacevec(ae.data, component_names);
     for (int i = 0; i < component_names.size(); i++)
-      component_map.replace(component_names[i], 0);
+      component_map.set(component_names[i], 0);
   }
 
   // check if component exists
