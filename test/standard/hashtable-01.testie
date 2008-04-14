@@ -1,0 +1,15 @@
+%info
+Tests hash table functionality with the HashTableTest element.
+
+%require
+click-buildtool provides HashTableTest
+
+%script
+click -qe 'HashTableTest'
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!
+
+%ignore stderr
+  Time: {{.*}}
