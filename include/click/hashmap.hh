@@ -43,7 +43,6 @@ class HashMap { public:
   inline const V &find(const K &, const V &) const;
   inline const V &find(const K &) const;
   inline const V &operator[](const K &) const;
-  inline V &operator[](const K &);
 
   Pair *find_pair_force(const K &, const V &);
   Pair *find_pair_force(const K &k) { return find_pair_force(k, _default_value); }
@@ -214,13 +213,6 @@ inline const V &
 HashMap<K, V>::operator[](const K &key) const
 {
   return find(key);
-}
-
-template <class K, class V>
-inline V &
-HashMap<K, V>::operator[](const K &key)
-{
-  return find_force(key);
 }
 
 template <class K, class V>
