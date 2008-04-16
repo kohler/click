@@ -97,7 +97,7 @@ ElementT::name_ok(const String &name, bool allow_anon_names)
     if (len > 0 && data[pos] == ';' && allow_anon_names) {
 	pos++;
 	int epos = len - 1;
-	while (epos > 1 && isdigit(data[epos]))
+	while (epos > 1 && isdigit((unsigned char) data[epos]))
 	    epos--;
 	if (epos == len - 1 || data[epos] != '@')
 	    return false;
@@ -107,13 +107,13 @@ ElementT::name_ok(const String &name, bool allow_anon_names)
     if (pos >= len || data[pos] == '/')
 	return false;
     while (1) {
-	if (isdigit(data[pos])) { // check for all-digit component
-	    while (pos < len && isdigit(data[pos]))
+	if (isdigit((unsigned char) data[pos])) { // all-digit component?
+	    while (pos < len && isdigit((unsigned char) data[pos]))
 		pos++;
 	    if (pos >= len || data[pos] == '/')
 		return false;
 	}
-	while (pos < len && (isalnum(data[pos]) || data[pos] == '_' || data[pos] == '@'))
+	while (pos < len && (isalnum((unsigned char) data[pos]) || data[pos] == '_' || data[pos] == '@'))
 	    pos++;
 	if (pos == len)
 	    return true;

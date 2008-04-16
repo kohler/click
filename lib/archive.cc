@@ -59,7 +59,7 @@ read_uint(const char *data, int max_len,
   int result = strtol(buf, &end, base);
   if (end == buf)
     result = -1;
-  if (*end && !isspace(*end))
+  if (*end && !isspace((unsigned char) *end))
     errh->warning("bad %s in archive", type);
   return result;
 }
@@ -89,7 +89,7 @@ ArchiveElement::parse(const String &s, Vector<ArchiveElement> &v,
     
     int size;
     
-    if (data[p+0] == '/' && data[p+1] == '/' && isspace(data[p+2])) {
+    if (data[p+0] == '/' && data[p+1] == '/' && isspace((unsigned char) data[p+2])) {
       // GNUlike long name section
       if (longname_ae.data)
 	errh->error("two long name sections in archive");
@@ -114,7 +114,7 @@ ArchiveElement::parse(const String &s, Vector<ArchiveElement> &v,
 	else {
 	  const char *ndata = longname_ae.data.data();
 	  int nlen = longname_ae.data.length();
-	  for (j = offset; j < nlen && ndata[j] != '/' && !isspace(ndata[j]);
+	  for (j = offset; j < nlen && ndata[j] != '/' && !isspace((unsigned char) ndata[j]);
 	       j++)
 	    /* nada */;
 	  ae.name = longname_ae.data.substring(offset, j - offset);
@@ -123,7 +123,7 @@ ArchiveElement::parse(const String &s, Vector<ArchiveElement> &v,
 		 && data[p+3] >= '0' && data[p+3] <= '9') {
 	bsd_longname = read_uint(data+p+3, 13, "long name", errh);
       } else {
-	for (j = 0; j < 16 && data[p+j] != '/' && !isspace(data[p+j]); j++)
+	for (j = 0; j < 16 && data[p+j] != '/' && !isspace((unsigned char) data[p+j]); j++)
 	  /* nada */;
 	ae.name = s.substring(p, j);
       }
@@ -184,7 +184,7 @@ ArchiveElement::unparse(const Vector<ArchiveElement> &v, ErrorHandler *errh)
 	errh->error("archive element name `%s' contains slash", ae.name.c_str());
 	nlen = i;
 	break;
-      } else if (isspace(ndata[i]))
+      } else if (isspace((unsigned char) ndata[i]))
 	must_longname = true;
 
     // write name, or nameish thing

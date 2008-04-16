@@ -628,7 +628,7 @@ const char *dcss_selector::parse(const String &str, const char *s)
 	    sa.clear();
 	    for (; s != send && *s != '\n' && *s != '\r' && *s != '\f'
 		     && *s != ']'; ++s)
-		if (isspace(*s)) {
+		if (isspace((unsigned char) *s)) {
 		    sa.append(last, s);
 		    last = s + 1;
 		}

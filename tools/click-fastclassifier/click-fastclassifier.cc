@@ -428,7 +428,7 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
     while (pos < len) {
       // read element name
       int pos1 = pos;
-      while (pos1 < len && s[pos1] != '.' && !isspace(s[pos1]))
+      while (pos1 < len && s[pos1] != '.' && !isspace((unsigned char) s[pos1]))
 	pos1++;
       ename = handler_text.substring(pos, pos1 - pos);
       bool ok = false;
@@ -436,7 +436,7 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
       // read handler name
       if (pos1 < len && s[pos1] == '.') {
 	pos1 = pos = pos1 + 1;
-	while (pos1 < len && s[pos1] != ':' && !isspace(s[pos1]))
+	while (pos1 < len && s[pos1] != ':' && !isspace((unsigned char) s[pos1]))
 	  pos1++;
 	hname = handler_text.substring(pos, pos1 - pos);
 	
@@ -465,7 +465,7 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
       hvalue = handler_text.substring(pos, pos1 - pos);
 
       // skip remaining whitespace
-      for (pos = pos1; pos < len && isspace(s[pos]); pos++)
+      for (pos = pos1; pos < len && isspace((unsigned char) s[pos]); pos++)
 	/* nada */;
 
       // assign value to program if appropriate
@@ -500,7 +500,7 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
       String step = program.substring(program.begin(), find(program, '\n'));
       program = program.substring(step.end() + 1, program.end());
       // check for many things
-      if (isdigit(step[0]) || isspace(step[0])) {
+      if (isdigit((unsigned char) step[0]) || isspace((unsigned char) step[0])) {
 	// real step
 	Classifier_Insn e;
 	int crap, pos;

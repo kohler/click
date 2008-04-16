@@ -149,7 +149,7 @@ parse_attribute_value(String *result,
 		      const HashTable<String, String> &entities,
 		      ErrorHandler *errh)
 {
-    while (s < ends && isspace(*s))
+    while (s < ends && isspace((unsigned char) *s))
 	s++;
     if (s >= ends || (*s != '\'' && *s != '\"')) {
 	errh->error("XML parse error: missing attribute value");
@@ -167,16 +167,16 @@ parse_attribute_value(String *result,
 	    if (s + 3 < ends && s[1] == '#' && s[2] == 'x') {
 		// hex character reference
 		int c = 0;
-		for (s += 3; isxdigit(*s); s++)
-		    if (isdigit(*s))
+		for (s += 3; isxdigit((unsigned char) *s); s++)
+		    if (isdigit((unsigned char) *s))
 			c = (c * 16) + *s - '0';
 		    else
-			c = (c * 16) + tolower(*s) - 'a' + 10;
+			c = (c * 16) + tolower((unsigned char) *s) - 'a' + 10;
 		sa << (char)c;
 	    } else if (s + 2 < ends && s[1] == '#') {
 		// decimal character reference
 		int c = 0;
-		for (s += 2; isdigit(*s); s++)
+		for (s += 2; isdigit((unsigned char) *s); s++)
 		    c = (c * 10) + *s - '0';
 		sa << (char)c;
 	    } else {
@@ -215,7 +215,7 @@ parse_xml_attrs(HashTable<String, String> &attrs,
 		ErrorHandler *errh)
 {
     while (s < ends) {
-	while (s < ends && isspace(*s))
+	while (s < ends && isspace((unsigned char) *s))
 	    s++;
 	
 	if (s >= ends)
@@ -228,7 +228,7 @@ parse_xml_attrs(HashTable<String, String> &attrs,
 
 	// get attribute name
 	const char *attrstart = s;
-	while (s < ends && !isspace(*s) && *s != '=')
+	while (s < ends && !isspace((unsigned char) *s) && *s != '=')
 	    s++;
 	if (s == attrstart) {
 	    errh->error("XML parse error: missing attribute name");
@@ -237,7 +237,7 @@ parse_xml_attrs(HashTable<String, String> &attrs,
 	String attrname(attrstart, s - attrstart);
 
 	// skip whitespace and equals sign
-	while (s < ends && isspace(*s))
+	while (s < ends && isspace((unsigned char) *s))
 	    s++;
 	if (s >= ends || *s != '=') {
 	    errh->error("XML parse error: missing '='");
@@ -275,18 +275,18 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 	// skip to '<'
 	while (s < ends && *s != '<')
 	    s++;
-	for (s++; s < ends && isspace(*s); s++)
+	for (s++; s < ends && isspace((unsigned char) *s); s++)
 	    /* nada */;
 	bool closed = false;
 	if (s < ends && *s == '/') {
 	    closed = true;
-	    for (s++; s < ends && isspace(*s); s++)
+	    for (s++; s < ends && isspace((unsigned char) *s); s++)
 		/* nada */;
 	}
 
 	// which tag
 	if (s + 10 < ends && memcmp(s, "elementmap", 10) == 0
-	    && (isspace(s[10]) || s[10] == '>' || s[10] == '/')) {
+	    && (isspace((unsigned char) s[10]) || s[10] == '>' || s[10] == '/')) {
 	    // parse elementmap tag
 	    if (!closed) {
 		if (in_elementmap)
@@ -315,7 +315,7 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 		in_elementmap = false;
 	    
 	} else if (s + 5 < ends && memcmp(s, "entry", 5) == 0
-		   && (isspace(s[5]) || s[5] == '>' || s[5] == '/')
+		   && (isspace((unsigned char) s[5]) || s[5] == '>' || s[5] == '/')
 		   && !closed && in_elementmap) {
 	    // parse entry tag
 	    HashTable<String, String> attrs;
@@ -330,14 +330,14 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 	    }
 
 	} else if (s + 7 < ends && memcmp(s, "!ENTITY", 7) == 0
-		 && (isspace(s[7]) || s[7] == '>' || s[7] == '/')) {
+		 && (isspace((unsigned char) s[7]) || s[7] == '>' || s[7] == '/')) {
 	    // parse entity declaration
-	    for (s += 7; s < ends && isspace(*s); s++)
+	    for (s += 7; s < ends && isspace((unsigned char) *s); s++)
 		/* nada */;
 	    if (s >= ends || *s == '%') // skip DTD entities
 		break;
 	    const char *name_start = s;
-	    while (s < ends && !isspace(*s))
+	    while (s < ends && !isspace((unsigned char) *s))
 		s++;
 	    String name(name_start, s - name_start), value;
 	    s = parse_attribute_value(&value, s, ends, entities, errh);

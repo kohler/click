@@ -112,16 +112,16 @@ xokReader::configure(Vector<String> &conf, ErrorHandler *errh)
 
     int i=0;
     while (i < classifier_s_len) {
-      while (i < classifier_s_len && isspace(classifier_s[i]))
+      while (i < classifier_s_len && isspace((unsigned char) classifier_s[i]))
 	i++;
       if (i >= classifier_s_len) break;
-      if (!isdigit(classifier_s[i])) {
+      if (!isdigit((unsigned char) classifier_s[i])) {
 	errh->error("expected a digit");
 	return -1;
       }
       
       int offset = 0;
-      while (i < classifier_s_len && isdigit(classifier_s[i])) {
+      while (i < classifier_s_len && isdigit((unsigned char) classifier_s[i])) {
 	offset *= 10;
 	offset += classifier_s[i] - '0';
 	i++;

@@ -223,9 +223,9 @@ ServicesNameDB::read_services()
 
 	// first word: main name
 	const char *bn, *en;
-	for (bn = s; bn < eol && isspace(*bn); bn++)
+	for (bn = s; bn < eol && isspace((unsigned char) *bn); bn++)
 	    /* nada */;
-	for (en = bn; en < eol && !isspace(*en); en++)
+	for (en = bn; en < eol && !isspace((unsigned char) *en); en++)
 	    /* nada */;
 
 	// second word: protocol type
@@ -233,16 +233,16 @@ ServicesNameDB::read_services()
 	uint32_t pnum = 0;
 	uint32_t ptype;
 	ServicesNameDB *db;
-	for (bt = en; bt < eol && isspace(*bt); bt++)
+	for (bt = en; bt < eol && isspace((unsigned char) *bt); bt++)
 	    /* nada */;
-	for (et = bt; et < eol && isdigit(*et) && pnum < 65536; et++)
+	for (et = bt; et < eol && isdigit((unsigned char) *et) && pnum < 65536; et++)
 	    pnum = 10*pnum + *et - '0';
 	if (et == bt || pnum >= 65536 || et >= eol || (*et != '/' && *et != ','))
 	    goto skip_to_eol;
 	if (proto)
 	    ptype = NameInfo::T_IP_PROTO;
 	else {
-	    for (bt = et = et + 1; et < eol && !isspace(*et); et++)
+	    for (bt = et = et + 1; et < eol && !isspace((unsigned char) *et); et++)
 		/* nada */;
 	    if (!NameInfo::query_int(NameInfo::T_IP_PROTO, 0, text.substring(bt, et), &ptype))
 		goto skip_to_eol;
@@ -262,9 +262,9 @@ ServicesNameDB::read_services()
 	    db->_db = new DynamicNameDB(ptype, "", 4);
 	do {
 	    db->_db->define(text.substring(bn, en), &pnum, 4);
-	    for (bn = et; bn < eol && isspace(*bn); bn++)
+	    for (bn = et; bn < eol && isspace((unsigned char) *bn); bn++)
 		/* nada */;
-	    for (en = bn; en < eol && !isspace(*en); en++)
+	    for (en = bn; en < eol && !isspace((unsigned char) *en); en++)
 		/* nada */;
 	    et = en;
 	} while (bn != en);

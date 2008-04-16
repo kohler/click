@@ -183,7 +183,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	uint32_t u1, u2;
 
 	if (data + 3 >= end || data[0] == '!' || data[0] == '#'
-	    || !isspace(data[3]))
+	    || !isspace((unsigned char) data[3]))
 	    continue;
 
 	if ((data[0] != 'D' || data[1] != 'A' || data[2] != 'T')
@@ -218,11 +218,11 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	u2 = 0;
 	if (data + 1 < end && *data == '.') {
 	    int digit = 0;
-	    for (data++; digit < 6 && data < end && isdigit(*data); digit++, data++)
+	    for (data++; digit < 6 && data < end && isdigit((unsigned char) *data); digit++, data++)
 		u2 = (u2 * 10) + *data - '0';
 	    for (; digit < 6; digit++)
 		u2 = (u2 * 10);
-	    for (; data < end && isdigit(*data); data++)
+	    for (; data < end && isdigit((unsigned char) *data); data++)
 		/* nada */;
 	}
 	q->set_timestamp_anno(Timestamp(u1, u2));
@@ -283,7 +283,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	    while (data < end && *data == ':') {
 		next = cp_integer(data + 1, end, 10, &u1);
 		if (next != data + 1 && next + 1 < end && next[0] == '-'
-		    && isdigit(next[1])) {
+		    && isdigit((unsigned char) next[1])) {
 		    data = cp_integer(next + 1, end, 10, &u2);
 		    *(reinterpret_cast<uint32_t *>(opt)) = htonl(packno2seqno(u1));
 		    *(reinterpret_cast<uint32_t *>(opt + 4)) = htonl(packno2seqno(u2 + 1));

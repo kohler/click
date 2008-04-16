@@ -113,10 +113,10 @@ cp_expand(const String &config, VariableExpander &ve, bool expand_quote)
 		else
 		    vname = config.substring(cstart, s - 1);
 		
-	    } else if (isalnum(s[1]) || s[1] == '_') {
+	    } else if (isalnum((unsigned char) s[1]) || s[1] == '_') {
 		vtype = 'a';
 		s++;
-		for (cstart = s; s < end && (isalnum(*s) || *s == '_'); s++)
+		for (cstart = s; s < end && (isalnum((unsigned char) *s) || *s == '_'); s++)
 		    /* nada */;
 		vname = config.substring(cstart, s);
 

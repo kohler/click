@@ -260,7 +260,7 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
 	    ss = el + 1;
 
 	// eat end-of-line space
-	while (eb < el && isspace(el[-1]))
+	while (eb < el && isspace((unsigned char) el[-1]))
 	    el--;
 
 	// check for click-compile

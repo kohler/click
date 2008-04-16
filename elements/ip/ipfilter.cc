@@ -696,7 +696,7 @@ separate_text(const String &text, Vector<String> &words)
   int len = text.length();
   int pos = 0;
   while (pos < len) {
-    while (pos < len && isspace(s[pos]))
+    while (pos < len && isspace((unsigned char) s[pos]))
       pos++;
     switch (s[pos]) {
 
@@ -724,7 +724,7 @@ separate_text(const String &text, Vector<String> &words)
 
      default: {
 	int first = pos;
-	while (pos < len && (isalnum(s[pos]) || s[pos] == '-' || s[pos] == '.' || s[pos] == '/' || s[pos] == '@' || s[pos] == '_' || s[pos] == ':'))
+	while (pos < len && (isalnum((unsigned char) s[pos]) || s[pos] == '-' || s[pos] == '.' || s[pos] == '/' || s[pos] == '@' || s[pos] == '_' || s[pos] == ':'))
 	  pos++;
 	if (pos == first)
 	  pos++;

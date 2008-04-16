@@ -93,8 +93,8 @@ requirement_contains(const String &req, const String &n)
     while ((pos = req.find_left(n, pos)) >= 0) {
 	int rpos = pos + n.length();
 	// XXX should be more careful about '|' bars
-	if ((pos == 0 || isspace(req[pos - 1]) || req[pos - 1] == '|')
-	    && (rpos == req.length() || isspace(req[rpos]) || req[rpos] == '|'))
+	if ((pos == 0 || isspace((unsigned char) req[pos - 1]) || req[pos - 1] == '|')
+	    && (rpos == req.length() || isspace((unsigned char) req[rpos]) || req[rpos] == '|'))
 	    return true;
 	pos = rpos;
     }

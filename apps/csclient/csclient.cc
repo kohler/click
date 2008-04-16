@@ -160,7 +160,7 @@ int
 ControlSocketClient::get_data_len(string line)
 {
   unsigned int i;
-  for (i = 0; i < line.size() && !isdigit(line[i]); i++)
+  for (i = 0; i < line.size() && !isdigit((unsigned char) line[i]); i++)
     ; // scan string
   if (i == line.size())
     return -1;
@@ -383,22 +383,22 @@ ControlSocketClient::get_el_handlers(string el, vector<handler_info_t> &handlers
   for (vector<string>::iterator i = vh.begin(); i != vh.end(); i++) {
     string &s = *i;
     size_t j;
-    for (j = 0; j < s.size() && !isspace(s[j]); j++)
+    for (j = 0; j < s.size() && !isspace((unsigned char) s[j]); j++)
       ; /* find record split -- don't use s.find because could be any whitespace */
     if (j == s.size())
       return click_err;
     handler_info_t hi;
     hi.element_name = el;
     hi.handler_name = trim(s.substr(0, j));
-    while (j < s.size() && isspace(s[j]))
+    while (j < s.size() && isspace((unsigned char) s[j]))
       j++;
     for ( ; j < s.size(); j++) {
-      if (tolower(s[j] == 'r'))
-	hi.can_read = true;
-      else if (tolower(s[j] == 'w'))
-	hi.can_write = true;
-      else if (isspace(s[j]))
-	break;
+	if (tolower((unsigned char) s[j]) == 'r')
+	    hi.can_read = true;
+	else if (tolower((unsigned char) s[j]) == 'w')
+	    hi.can_write = true;
+	else if (isspace((unsigned char) s[j]))
+	    break;
     }
     v.push_back(hi);
   }
@@ -492,9 +492,9 @@ string
 ControlSocketClient::trim(string s)
 {
   size_t start, end;
-  for (start = 0; start < s.size() && isspace(s[start]); start++)
+  for (start = 0; start < s.size() && isspace((unsigned char) s[start]); start++)
     ; /* */
-  for (end = s.size(); end > 0 && isspace(s[end - 1]); end--)
+  for (end = s.size(); end > 0 && isspace((unsigned char) s[end - 1]); end--)
     ; /* */
 
   if (start >= end)

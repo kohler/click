@@ -424,7 +424,7 @@ Lexer::begin_parse(const String &data, const String &filename,
 
   if (!filename)
     _filename = "config:";
-  else if (filename.back() != ':' && !isspace(filename.back()))
+  else if (filename.back() != ':' && !isspace((unsigned char) filename.back()))
     _filename = filename + ":";
   else
     _filename = filename;
@@ -575,14 +575,14 @@ Lexer::process_line_directive(const char *s)
     for (s += 5; s < _end && (*s == ' ' || *s == '\t'); s++)
       /* nada */;
   }
-  if (s >= _end || !isdigit(*s)) {
+  if (s >= _end || !isdigit((unsigned char) *s)) {
     // complain about bad directive
     lerror("unknown preprocessor directive");
     return skip_line(s);
   }
   
   // parse line number
-  for (_lineno = 0; s < _end && isdigit(*s); s++)
+  for (_lineno = 0; s < _end && isdigit((unsigned char) *s); s++)
     _lineno = _lineno * 10 + *s - '0';
   _lineno--;			// account for extra line
   
@@ -613,7 +613,7 @@ Lexer::next_lexeme()
 {
   const char *s = _pos;
   while (true) {
-    while (s < _end && isspace(*s)) {
+    while (s < _end && isspace((unsigned char) *s)) {
       if (*s == '\n')
 	_lineno++;
       else if (*s == '\r') {
@@ -642,12 +642,12 @@ Lexer::next_lexeme()
   const char *word_pos = s;
   
   // find length of current word
-  if (isalnum(*s) || *s == '_' || *s == '@') {
+  if (isalnum((unsigned char) *s) || *s == '_' || *s == '@') {
    more_word_characters:
     s++;
-    while (s < _end && (isalnum(*s) || *s == '_' || *s == '@'))
+    while (s < _end && (isalnum((unsigned char) *s) || *s == '_' || *s == '@'))
       s++;
-    if (s + 1 < _end && *s == '/' && (isalnum(s[1]) || s[1] == '_' || s[1] == '@'))
+    if (s + 1 < _end && *s == '/' && (isalnum((unsigned char) s[1]) || s[1] == '_' || s[1] == '@'))
       goto more_word_characters;
     _pos = s;
     String word = _big_string.substring(word_pos, s);
@@ -999,7 +999,7 @@ Lexer::get_element(String name, int etype, const String &conf, const String &lm)
   for (int i = 0; i < name.length(); i++) {
     bool ok = false;
     for (; i < name.length() && name[i] != '/'; i++)
-      if (!isdigit(name[i]))
+      if (!isdigit((unsigned char) name[i]))
 	ok = true;
     if (!ok) {
       lerror("element name '%s' has all-digit component", name.c_str());

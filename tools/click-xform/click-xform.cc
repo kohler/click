@@ -389,7 +389,7 @@ match_config(const String &pat, const String &conf,
       return false;
     const String &p = patvec[i];
     for (int j = 1; j < p.length(); j++)
-      if (!isalnum(p[j]) && p[j] != '_')
+      if (!isalnum((unsigned char) p[j]) && p[j] != '_')
 	return false;
     if (HashTable<String, String>::iterator it = defs.find(p)) {
       if (it.value() != confvec[i])

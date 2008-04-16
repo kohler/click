@@ -45,23 +45,23 @@ compile_pattern(const String &pattern0)
   const char *s = pattern0.data();
   const char *end_s = s + pattern0.length();
 
-  while (s < end_s && isspace(*s)) // skip leading space
+  while (s < end_s && isspace((unsigned char) *s)) // skip leading space
     s++;
 
   // XXX not all constraints on patterns are expressed here
   while (s < end_s) {
-    if (isspace(*s)) {
+    if (isspace((unsigned char) *s)) {
       sa << ' ';
-      while (s < end_s && isspace(*s))
+      while (s < end_s && isspace((unsigned char) *s))
 	s++;
       
-    } else if (isalnum(*s) || *s == '_') {
-      while (s < end_s && (isalnum(*s) || *s == '_'))
+    } else if (isalnum((unsigned char) *s) || *s == '_') {
+      while (s < end_s && (isalnum((unsigned char) *s) || *s == '_'))
 	sa << *s++;
       sa << ' ';
       
     } else if (*s == '#') {
-      assert(s < end_s - 1 && isdigit(s[1]));
+      assert(s < end_s - 1 && isdigit((unsigned char) s[1]));
       sa << s[0] << s[1];
       s += 2;
       
@@ -110,11 +110,11 @@ CxxFunction::find_expr(const String &pattern, int *pos1, int *pos2,
 
     while (tpos < tlen && ppos < plen) {
 
-      if (isspace(ps[ppos])) {
-	if (ppos > 0 && (isalnum(ps[ppos-1]) || ps[ppos-1] == '_')
-	    && (isalnum(ts[tpos]) || ts[tpos] == '_'))
+      if (isspace((unsigned char) ps[ppos])) {
+	if (ppos > 0 && (isalnum((unsigned char) ps[ppos-1]) || ps[ppos-1] == '_')
+	    && (isalnum((unsigned char) ts[tpos]) || ts[tpos] == '_'))
 	  break;
-	while (tpos < tlen && isspace(ts[tpos]))
+	while (tpos < tlen && isspace((unsigned char) ts[tpos]))
 	  tpos++;
 	ppos++;
 
@@ -155,7 +155,7 @@ CxxFunction::find_expr(const String &pattern, int *pos1, int *pos2,
       // check that this pattern match didn't occur after some evil qualifier,
       // namely '.', '::', or '->'
       int p = tpos1 - 1;
-      while (p >= 0 && isspace(ts[p]))
+      while (p >= 0 && isspace((unsigned char) ts[p]))
 	p--;
       if (p < 0
 	  || (ts[p] != '.'
@@ -195,7 +195,7 @@ CxxFunction::replace_expr(const String &pattern, const String &replacement)
   const char *end_s = s + replacement.length();
   while (s < end_s) {
     if (*s == '#') {
-      assert(s < end_s - 1 && isdigit(s[1]));
+      assert(s < end_s - 1 && isdigit((unsigned char) s[1]));
       int which = s[1] - '0';
       sa << _body.substring(match_pos[which], match_len[which]);
       clean_sa << _clean_body.substring(match_pos[which], match_len[which]);
@@ -271,17 +271,17 @@ CxxClass::reach(int findex, Vector<int> &reached)
       break;
 
     int paren_p = p;
-    for (p--; p >= 0 && isspace(s[p]); p--)
+    for (p--; p >= 0 && isspace((unsigned char) s[p]); p--)
       /* nada */;
-    if (p < 0 || (!isalnum(s[p]) && s[p] != '_')) {
+    if (p < 0 || (!isalnum((unsigned char) s[p]) && s[p] != '_')) {
       p = paren_p + 1;
       continue;
     }
     int end_word_p = p + 1;
-    while (p >= 0 && (isalnum(s[p]) || s[p] == '_'))
+    while (p >= 0 && (isalnum((unsigned char) s[p]) || s[p] == '_'))
       p--;
     int start_word_p = p + 1;
-    while (p >= 0 && isspace(s[p]))
+    while (p >= 0 && isspace((unsigned char) s[p]))
       p--;
 
     // have found word; check that it is a direct call
@@ -308,8 +308,8 @@ CxxClass::reach(int findex, Vector<int> &reached)
     for (int p = 0; p < len - 6; p++)
       if (s[p+0] == 'i' && s[p+1] == 'n' && s[p+2] == 'l'
 	  && s[p+3] == 'i' && s[p+4] == 'n' && s[p+5] == 'e'
-	  && (p == 0 || isspace(s[p-1]))
-	  && (p == len-6 || isspace(s[p+6]))) {
+	  && (p == 0 || isspace((unsigned char) s[p-1]))
+	  && (p == len-6 || isspace((unsigned char) s[p+6]))) {
 	should_rewrite = true;
 	break;
       }
@@ -445,7 +445,7 @@ remove_crap(const String &original_text)
     // read one line
 
     // skip spaces at beginning of line
-    while (s < end_s && isspace(*s))
+    while (s < end_s && isspace((unsigned char) *s))
       *o++ = *s++;
 
     if (s >= end_s)		// end of data
@@ -464,7 +464,7 @@ remove_crap(const String &original_text)
       }
       // check for '#if 0 .. #endif'
       const char *ss = first_s + 1;
-      while (ss < s && isspace(*ss))
+      while (ss < s && isspace((unsigned char) *ss))
 	ss++;
       if (ss < s - 5 && ss[0] == 'e' && ss[1] == 'n' && ss[2] == 'd'
 	  && ss[3] == 'i' && ss[4] == 'f') {
@@ -473,7 +473,7 @@ remove_crap(const String &original_text)
 	    *if0_o_ptr++ = ' ';
 	if0_o_ptr = 0;
       } else if (ss < s - 3 && ss[0] == 'i' && ss[1] == 'f') {
-	for (ss += 2; ss < s && isspace(*ss); ss++) ;
+	for (ss += 2; ss < s && isspace((unsigned char) *ss); ss++) ;
 	if (ss < s && ss[0] == '0')
 	  if0_o_ptr = o;
       }
@@ -583,10 +583,10 @@ CxxInfo::parse_function_definition(const String &text, int fn_start_p,
   int p = skip_balanced_parens(text, paren_p);
   const char *s = text.data();
   int len = text.length();
-  while (p < len && isspace(s[p]))
+  while (p < len && isspace((unsigned char) s[p]))
     p++;
   if (p < len - 5 && strncmp(s+p, "const", 5) == 0) {
-    for (p += 5; p < len && isspace(s[p]); p++)
+    for (p += 5; p < len && isspace((unsigned char) s[p]); p++)
       /* nada */;
   }
   // if open brace is not there, a function declaration or something similar;
@@ -599,21 +599,21 @@ CxxInfo::parse_function_definition(const String &text, int fn_start_p,
   int close_brace_p = skip_balanced_braces(text, open_brace_p);
 
   // find arguments; cut space from end
-  for (p = open_brace_p - 1; p >= paren_p && isspace(s[p]); p--)
+  for (p = open_brace_p - 1; p >= paren_p && isspace((unsigned char) s[p]); p--)
     /* nada */;
   String args = original.substring(paren_p, p + 1 - paren_p);
 
   // find function name and class name
-  for (p = paren_p - 1; p > fn_start_p && isspace(s[p]); p--)
+  for (p = paren_p - 1; p > fn_start_p && isspace((unsigned char) s[p]); p--)
     /* nada */;
   int end_fn_name_p = p + 1;
-  while (p >= fn_start_p && (isalnum(s[p]) || s[p] == '_' || s[p] == '~'))
+  while (p >= fn_start_p && (isalnum((unsigned char) s[p]) || s[p] == '_' || s[p] == '~'))
     p--;
   String fn_name = original.substring(p + 1, end_fn_name_p - (p + 1));
   String class_name;
   if (p >= fn_start_p + 2 && s[p] == ':' && s[p-1] == ':') {
     int end_class_name_p = p - 1;
-    for (p -= 2; p >= fn_start_p && (isalnum(s[p]) || s[p] == '_' || s[p] == '~'); p--)
+    for (p -= 2; p >= fn_start_p && (isalnum((unsigned char) s[p]) || s[p] == '_' || s[p] == '~'); p--)
       /* nada */;
     if (p > fn_start_p && s[p] == ':') // nested class fns uninteresting
       return close_brace_p;
@@ -635,15 +635,15 @@ CxxInfo::parse_function_definition(const String &text, int fn_start_p,
       access_p = fn_start_p + 14;
     else
       break;
-    while (access_p < p && isspace(s[access_p]))
+    while (access_p < p && isspace((unsigned char) s[access_p]))
       access_p++;
     if (access_p < p && s[access_p] == ':')
       access_p++;
-    for (; access_p < p && isspace(s[access_p]); access_p++)
+    for (; access_p < p && isspace((unsigned char) s[access_p]); access_p++)
       /* nada */;
     fn_start_p = access_p;
   }
-  while (p >= fn_start_p && isspace(s[p]))
+  while (p >= fn_start_p && isspace((unsigned char) s[p]))
     p--;
   String ret_type = original.substring(fn_start_p, p + 1 - fn_start_p);
 
@@ -675,20 +675,20 @@ CxxInfo::parse_class_definition(const String &text, int p,
   // find class name
   const char *s = text.data();
   int len = text.length();
-  while (p < len && isspace(s[p]))
+  while (p < len && isspace((unsigned char) s[p]))
     p++;
   int name_start_p = p;
-  while (p < len && (isalnum(s[p]) || s[p] == '_'))
+  while (p < len && (isalnum((unsigned char) s[p]) || s[p] == '_'))
     p++;
   String class_name = original.substring(name_start_p, p - name_start_p);
   CxxClass *cxxc = make_class(class_name);
 
   // parse superclasses
   while (p < len && s[p] != '{') {
-    while (p < len && s[p] != '{' && !isalnum(s[p]) && s[p] != '_')
+    while (p < len && s[p] != '{' && !isalnum((unsigned char) s[p]) && s[p] != '_')
       p++;
     int p1 = p;
-    while (p < len && (isalnum(s[p]) || s[p] == '_'))
+    while (p < len && (isalnum((unsigned char) s[p]) || s[p] == '_'))
       p++;
     if (p > p1 && (p != p1 + 6 || strncmp(s+p1, "public", 6) != 0)) {
       // XXX private or protected inheritance?
@@ -712,7 +712,7 @@ CxxInfo::parse_class(const String &text, int p, const String &original,
   while (1) {
 
     // find first batch
-    while (p < len && isspace(s[p]))
+    while (p < len && isspace((unsigned char) s[p]))
       p++;
     int p1 = p;
     while (p < len && s[p] != ';' && s[p] != '(' && s[p] != '{' &&
@@ -760,7 +760,7 @@ CxxInfo::parse_file(const String &original_text, bool header,
     int p = 0;
     int len = clean_text.length();
     while (1) {
-      while (p < len && isspace(s[p]))
+      while (p < len && isspace((unsigned char) s[p]))
 	p++;
 
       if (p < len && s[p] == ';') {
@@ -768,29 +768,29 @@ CxxInfo::parse_file(const String &original_text, bool header,
 	p++;
 	
       } else if (p + 7 < len && memcmp(s + p, "extern", 6) == 0
-		 && isspace(s[p+6])) {
+		 && isspace((unsigned char) s[p+6])) {
 	// include 'extern ["C"] { -HEADERS- }'
 	int p1 = p + 6;
-	while (p1 < len && (isspace(s[p1]) || s[p1] == '$'))
+	while (p1 < len && (isspace((unsigned char) s[p1]) || s[p1] == '$'))
 	  p1++;
 	if (p1 >= len || s[p1] != '{')
 	  break;
-	for (p1++; p1 < len && isspace(s[p1]); p1++)
+	for (p1++; p1 < len && isspace((unsigned char) s[p1]); p1++)
 	  /* nada */;
 	if (p1 >= len || s[p1] != '}')
 	  break;
 	p = p1 + 1;
 	
       } else if (p + 5 < len && memcmp(s + p, "enum", 4) == 0
-		 && isspace(s[p+4])) {
+		 && isspace((unsigned char) s[p+4])) {
 	// include 'enum [IDENTIFIER] { ... }'
 	int p1 = p + 5;
-	while (p1 < len && isspace(s[p1]))
+	while (p1 < len && isspace((unsigned char) s[p1]))
 	  p1++;
-	if (p1 < len && (isalnum(s[p1]) || s[p1] == '_')) {
-	  while (p1 < len && (isalnum(s[p1]) || s[p1] == '_'))
+	if (p1 < len && (isalnum((unsigned char) s[p1]) || s[p1] == '_')) {
+	  while (p1 < len && (isalnum((unsigned char) s[p1]) || s[p1] == '_'))
 	    p1++;
-	  while (p1 < len && isspace(s[p1]))
+	  while (p1 < len && isspace((unsigned char) s[p1]))
 	    p1++;
 	}
 	if (p1 >= len || s[p1] != '{')
@@ -802,14 +802,14 @@ CxxInfo::parse_file(const String &original_text, bool header,
 	p = p1 + 1;
 	
       } else if (p + 8 < len && memcmp(s + p, "typedef", 7) == 0
-		 && isspace(s[p+7])) {
+		 && isspace((unsigned char) s[p+7])) {
 	// include typedefs
 	for (p += 8; p < len && s[p] != ';'; p++)
 	  /* nada */;
 	
       } else if (p + 9 < len && memcmp(s + p, "CLICK_CXX", 9) == 0) {
 	// include 'CLICK_CXX' (used in <click/cxxprotect.h>)
-	for (p += 9; p < len && (isalnum(s[p]) || s[p] == '_'); p++)
+	for (p += 9; p < len && (isalnum((unsigned char) s[p]) || s[p] == '_'); p++)
 	  /* nada */;
 	
       } else

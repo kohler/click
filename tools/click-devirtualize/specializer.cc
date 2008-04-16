@@ -469,7 +469,7 @@ Specializer::output_includes(ElementTypeInfo &eti, StringAccum &out)
 
   // skip past '#ifndef X\n#define X' (sort of)
   int p = 0;
-  while (p < len && isspace(s[p]))
+  while (p < len && isspace((unsigned char) s[p]))
     p++;
   if (p + 7 < len && strncmp(s + p, "#ifndef", 7) == 0) {
     int next = p + 7;
@@ -487,21 +487,21 @@ Specializer::output_includes(ElementTypeInfo &eti, StringAccum &out)
     int p2 = p;
     while (p2 < len && s[p2] != '\n' && s[p2] != '\r')
       p2++;
-    while (p < p2 && isspace(s[p]))
+    while (p < p2 && isspace((unsigned char) s[p]))
       p++;
 
     if (p < p2 && s[p] == '#') {
       // we have a preprocessing directive!
       
       // skip space after '#'
-      for (p++; p < p2 && isspace(s[p]); p++)
+      for (p++; p < p2 && isspace((unsigned char) s[p]); p++)
 	/* nada */;
 
       // check for '#include'
       if (p + 7 < p2 && strncmp(s+p, "include", 7) == 0) {
 	
 	// find what is "#include"d
-	for (p += 7; p < p2 && isspace(s[p]); p++)
+	for (p += 7; p < p2 && isspace((unsigned char) s[p]); p++)
 	  /* nada */;
 
 	// interested in "user includes", not <system includes>

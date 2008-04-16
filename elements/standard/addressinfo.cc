@@ -141,7 +141,7 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
 	    const char *nl = find(begin, end, '\n');
 	    if (colon > begin && colon < nl) {
 		const char *word = colon;
-		while (word > begin && !isspace(word[-1]))
+		while (word > begin && !isspace((unsigned char) word[-1]))
 		    word--;
 		if ((size_t) (colon - word) < sizeof(ifr.ifr_name)) {
 		    // based on patch from Jose Vasconcellos

@@ -850,7 +850,7 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
     
     while (i < len) {
       
-      while (i < len && isspace(s[i]))
+      while (i < len && isspace((unsigned char) s[i]))
 	i++;
       if (i >= len) break;
 
@@ -861,16 +861,16 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
       if (s[i] == '!') {
 	negated = true;
 	i++;
-	while (i < len && isspace(s[i]))
+	while (i < len && isspace((unsigned char) s[i]))
 	  i++;
       }
       
-      if (i >= len || !isdigit(s[i]))
+      if (i >= len || !isdigit((unsigned char) s[i]))
 	return errh->error("pattern %d: expected a digit", slot);
 
       // read offset
       int offset = 0;
-      while (i < len && isdigit(s[i])) {
+      while (i < len && isdigit((unsigned char) s[i])) {
 	offset *= 10;
 	offset += s[i] - '0';
 	i++;
@@ -882,7 +882,7 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
 
       // scan past value
       int value_pos = i;
-      while (i < len && (isxdigit(s[i]) || s[i] == '?'))
+      while (i < len && (isxdigit((unsigned char) s[i]) || s[i] == '?'))
 	i++;
       int value_end = i;
 
@@ -892,7 +892,7 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
       if (i < len && s[i] == '%') {
 	i++;
 	mask_pos = i;
-	while (i < len && (isxdigit(s[i]) || s[i] == '?'))
+	while (i < len && (isxdigit((unsigned char) s[i]) || s[i] == '?'))
 	  i++;
 	mask_end = i;
       }

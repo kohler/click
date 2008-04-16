@@ -118,7 +118,7 @@ KernelHandlerProxy::check_handler_name(const String &hname, ErrorHandler *errh)
 
   // check characters for validity -- don't want to screw stuff up
   for (const char *s = hname.begin(); s < dot; s++)
-    if (!isalnum(*s) && *s != '_' && *s != '/' && *s != '@')
+    if (!isalnum((unsigned char) *s) && *s != '_' && *s != '/' && *s != '@')
       return complain(errh, hname, CSERR_SYNTAX, "Bad character in element name '" + hname.substring(hname.begin(), dot).printable() + "'");
   for (const char *s = dot + 1; s < hname.end(); s++)
     if (*s < 32 || *s >= 127 || *s == '/')

@@ -103,14 +103,14 @@ html_unquote(const char *x, const char *end)
 	if (*x == '&') {
 	    if (x < end - 2 && x[1] == '#') {
 		int val = 0;
-		for (x += 2; x < end && isdigit(*x); x++)
+		for (x += 2; x < end && isdigit((unsigned char) *x); x++)
 		    val = (val * 10) + *x - '0';
 		sa << (char)val;
 		if (x < end && *x == ';')
 		    x++;
 	    } else {
 		const char *start = x;
-		for (x++; x < end && isalnum(*x); x++)
+		for (x++; x < end && isalnum((unsigned char) *x); x++)
 		    /* nada */;
 		String entity_name = String(start, x - start);
 		String entity_value = html_entities.get(entity_name);
@@ -132,17 +132,17 @@ process_tag(const char *x, String &tag, HashTable<String, String> &attrs,
 	    bool &ended, bool unquote_value)
 {
     // process tag
-    while (isspace(*x))
+    while (isspace((unsigned char) *x))
 	x++;
     const char *tag_start = x;
-    while (*x && *x != '>' && !isspace(*x))
+    while (*x && *x != '>' && !isspace((unsigned char) *x))
 	x++;
     tag = String(tag_start, x - tag_start).lower();
     ended = false;
     
     // process attributes
     while (1) {
-	while (isspace(*x))
+	while (isspace((unsigned char) *x))
 	    x++;
 	if (*x == 0)
 	    return x;
@@ -158,12 +158,12 @@ process_tag(const char *x, String &tag, HashTable<String, String> &attrs,
 
 	// calculate attribute start
 	const char *attr_start = x;
-	while (*x && *x != '>' && !isspace(*x) && *x != '=')
+	while (*x && *x != '>' && !isspace((unsigned char) *x) && *x != '=')
 	    x++;
 	String attr_name = html_unquote(attr_start, x).lower();
 
 	// look for '=' if any
-	while (isspace(*x))
+	while (isspace((unsigned char) *x))
 	    x++;
 	if (*x != '=') {
 	    attrs.set(attr_name, attr_name);
@@ -171,7 +171,7 @@ process_tag(const char *x, String &tag, HashTable<String, String> &attrs,
 	}
 
 	// attribute value
-	for (x++; isspace(*x); x++)
+	for (x++; isspace((unsigned char) *x); x++)
 	    /* nada */;
 	const char *value_start;
 	bool bump;
@@ -188,7 +188,7 @@ process_tag(const char *x, String &tag, HashTable<String, String> &attrs,
 	    bump = true;
 	} else {
 	    value_start = x;
-	    for (; *x && !isspace(*x) && *x != '>'; x++)
+	    for (; *x && !isspace((unsigned char) *x) && *x != '>'; x++)
 		/* nada */;
 	    bump = false;
 	}

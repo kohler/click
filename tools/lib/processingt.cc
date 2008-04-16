@@ -319,13 +319,13 @@ notify_nports_pair(const char *&s, const char *ends, int &lo, int &hi)
 {
     if (s == ends || *s == '-')
 	lo = 0;
-    else if (isdigit(*s))
+    else if (isdigit((unsigned char) *s))
 	s = cp_integer(s, ends, 10, &lo);
     else
 	return -1;
     if (s < ends && *s == '-') {
 	s++;
-	if (s < ends && isdigit(*s))
+	if (s < ends && isdigit((unsigned char) *s))
 	    s = cp_integer(s, ends, 10, &hi);
 	else
 	    hi = INT_MAX;

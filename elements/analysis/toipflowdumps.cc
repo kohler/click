@@ -713,14 +713,14 @@ ToIPFlowDumps::expand_filename(const Packet *pkt, ErrorHandler *errh) const
 	    int precision = -1;
 	    if (p < len && data[p] == '0')
 		zero_pad = true, p++;
-	    if (p < len && isdigit(data[p])) {
+	    if (p < len && isdigit((unsigned char) data[p])) {
 		field_width = data[p] - '0';
-		for (p++; p < len && isdigit(data[p]); p++)
+		for (p++; p < len && isdigit((unsigned char) data[p]); p++)
 		    field_width = (field_width * 10) + data[p] - '0';
 	    }
 	    if (p < len && data[p] == '.') {
 		precision = 0;
-		for (p++; p < len && isdigit(data[p]); p++)
+		for (p++; p < len && isdigit((unsigned char) data[p]); p++)
 		    precision = (precision * 10) + data[p] - '0';
 	    }
 	    

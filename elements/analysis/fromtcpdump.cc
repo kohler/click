@@ -99,7 +99,7 @@ FromTcpdump::initialize(ErrorHandler *errh)
     String line;
     if (_ff.peek_line(line, errh, true) < 0)
 	return -1;
-    else if (!line || !isdigit(line[0]))
+    else if (!line || !isdigit((unsigned char) line[0]))
 	errh->lwarning(_ff.print_filename(), "first line suspicious; is this a tcpdump output file?");
     
     _format_complaint = false;
@@ -182,7 +182,7 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
 	if (eend_seq == eseq + 1 || eend_seq >= end || *eend_seq != '(')
 	    return s;
 	// skip parenthesized length
-	for (s = eend_seq + 1; s < end && isdigit(*s); s++)
+	for (s = eend_seq + 1; s < end && isdigit((unsigned char) *s); s++)
 	    /* nada */;
 	if (s >= end || *s != ')')
 	    return s;
@@ -194,7 +194,7 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
     *data_len = end_seq - seq;
 
     // check for 'ack'
-    if (s + 4 < end && s[0] == 'a' && s[1] == 'c' && s[2] == 'k' && s[3] == ' ' && isdigit(s[4])) {
+    if (s + 4 < end && s[0] == 'a' && s[1] == 'c' && s[2] == 'k' && s[3] == ' ' && isdigit((unsigned char) s[4])) {
 	tcph->th_flags |= TH_ACK;
 	s = cp_integer(s + 4, end, 0, &ack_seq);
 	if (s < end && *s == ' ')
@@ -239,7 +239,7 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
     
     // check for 'win'
     uint32_t u;
-    if (s + 4 < end && s[0] == 'w' && s[1] == 'i' && s[2] == 'n' && s[3] == ' ' && isdigit(s[4])) {
+    if (s + 4 < end && s[0] == 'w' && s[1] == 'i' && s[2] == 'n' && s[3] == ' ' && isdigit((unsigned char) s[4])) {
 	s = cp_integer(s + 4, end, 0, &u); // XXX check u <= 65535
 	tcph->th_win = htons(u);
 	if (s < end && *s == ' ')
@@ -247,7 +247,7 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
     }
 
     // check for 'urg'
-    if (s + 4 < end && s[0] == 'u' && s[1] == 'r' && s[2] == 'g' && s[3] == ' ' && isdigit(s[4])) {
+    if (s + 4 < end && s[0] == 'u' && s[1] == 'r' && s[2] == 'g' && s[3] == ' ' && isdigit((unsigned char) s[4])) {
 	s = cp_integer(s + 4, end, 0, &u); // XXX check u <= 65535
 	tcph->th_urp = htons(u);
 	if (s < end && *s != ' ')
@@ -265,33 +265,33 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
 	    } else if (s + 3 <= end && s[0] == 'e' && s[1] == 'o' && s[2] == 'l') {
 		opt << (char)TCPOPT_EOL;
 		s += 3;
-	    } else if (s + 4 < end && s[0] == 'm' && s[1] == 's' && s[2] == 's' && s[3] == ' ' && isdigit(s[4])) {
+	    } else if (s + 4 < end && s[0] == 'm' && s[1] == 's' && s[2] == 's' && s[3] == ' ' && isdigit((unsigned char) s[4])) {
 		s = cp_integer(s + 4, end, 0, &u); // XXX check u <= 65535
 		opt << (char)TCPOPT_MAXSEG << (char)TCPOLEN_MAXSEG << (char)((u >> 8) & 255) << (char)(u & 255);
-	    } else if (s + 7 < end && memcmp(s, "wscale ", 7) == 0 && isdigit(s[7])) {
+	    } else if (s + 7 < end && memcmp(s, "wscale ", 7) == 0 && isdigit((unsigned char) s[7])) {
 		s = cp_integer(s + 7, end, 0, &u); // XXX check u <= 255
 		opt << (char)TCPOPT_WSCALE << (char)TCPOLEN_WSCALE << (char)u;
 	    } else if (s + 6 <= end && memcmp(s, "sackOK", 6) == 0) {
 		opt << (char)TCPOPT_SACK_PERMITTED << (char)TCPOLEN_SACK_PERMITTED;
 		s += 6;
-	    } else if (s + 10 < end && memcmp(s, "timestamp ", 10) == 0 && isdigit(s[10])) {
+	    } else if (s + 10 < end && memcmp(s, "timestamp ", 10) == 0 && isdigit((unsigned char) s[10])) {
 		s = cp_integer(s + 10, end, 0, &u);
-		if (s + 1 < end && *s == ' ' && isdigit(s[1])) {
+		if (s + 1 < end && *s == ' ' && isdigit((unsigned char) s[1])) {
 		    uint32_t u2;
 		    s = cp_integer(s + 1, end, 0, &u2);
 		    opt << (char)TCPOPT_TIMESTAMP << (char)TCPOLEN_TIMESTAMP;
 		    append_net_uint32_t(opt, u);
 		    append_net_uint32_t(opt, u2);
 		}
-	    } else if (s + 10 < end && memcmp(s, "sack sack ", 10) == 0 && isdigit(s[10])) {
+	    } else if (s + 10 < end && memcmp(s, "sack sack ", 10) == 0 && isdigit((unsigned char) s[10])) {
 		uint32_t nsack, u2;
 		s = cp_integer(s + 10, end, 0, &nsack);
 		opt << (char)TCPOPT_SACK << (char)(nsack * 8 + 2);
 		while (s < end && *s == ' ')
 		    s++;
-		while (s + 1 < end && *s == '{' && isdigit(s[1])) {
+		while (s + 1 < end && *s == '{' && isdigit((unsigned char) s[1])) {
 		    s = cp_integer(s + 1, end, 0, &u);
-		    if (s + 1 < end && *s == ':' && isdigit(s[1])) {
+		    if (s + 1 < end && *s == ':' && isdigit((unsigned char) s[1])) {
 			s = cp_integer(s + 1, end, 0, &u2);
 			if (s < end && *s == '}') {
 			    s++;
@@ -341,7 +341,7 @@ FromTcpdump::read_udp_line(WritablePacket *&, const char *s, const char *end, in
 	s = s2 + 2;
 
     // then check for 'udp LENGTH'
-    if (s + 4 < end && s[0] == 'u' && s[1] == 'd' && s[2] == 'p' && s[3] == ' ' && isdigit(s[4])) {
+    if (s + 4 < end && s[0] == 'u' && s[1] == 'd' && s[2] == 'p' && s[3] == ' ' && isdigit((unsigned char) s[4])) {
 	uint32_t dl;
 	s = cp_integer(s + 4, end, 0, &dl);
 	*data_len = dl;
@@ -387,7 +387,7 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 	const char *end = line.end();
 	if (s >= end || s[0] == '#')
 	    continue;
-	else if (!isdigit(s[0]))
+	else if (!isdigit((unsigned char) s[0]))
 	    break;
 
 	// first, read timestamp
@@ -458,7 +458,7 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 	// TTL and ID
 	s2 = end - 1;
 	while (s2 > s) {
-	    while (s2 > s && isspace(*s2))
+	    while (s2 > s && isspace((unsigned char) *s2))
 		s2--;
 	    if (s2 <= s || (*s2 != ')' && *s2 != ']'))
 		break;
@@ -485,26 +485,26 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 		    } else if (close - item >= 2 && item[0] == 'D' && item[1] == 'F') {
 			iph->ip_off |= htons(IP_DF);
 			item += 2;
-		    } else if (close - item >= 10 && memcmp(item, "frag ", 5) == 0 && isdigit(item[5])) {
+		    } else if (close - item >= 10 && memcmp(item, "frag ", 5) == 0 && isdigit((unsigned char) item[5])) {
 			item = cp_integer(item + 5, close, 0, &u);
 			iph->ip_id = htons(u);
-			if (item > close - 2 || *item != ':' || !isdigit(item[1]))
+			if (item > close - 2 || *item != ':' || !isdigit((unsigned char) item[1]))
 			    break;
 			item = cp_integer(item + 1, close, 0, &u);
 			data_len = u;
-			if (item > close - 2 || *item != '@' || !isdigit(item[1]))
+			if (item > close - 2 || *item != '@' || !isdigit((unsigned char) item[1]))
 			    break;
 			item = cp_integer(item + 1, close, 0, &u);
 			iph->ip_off = (iph->ip_off & htons(~IP_OFFMASK)) | htons(u);
 			if (item < close && *item == '+')
 			    iph->ip_off |= htons(IP_MF), item++;
-		    } else if (close - item >= 5 && memcmp(item, "ttl ", 4) == 0 && isdigit(item[4])) {
+		    } else if (close - item >= 5 && memcmp(item, "ttl ", 4) == 0 && isdigit((unsigned char) item[4])) {
 			item = cp_integer(item + 4, close, 0, &u);
 			iph->ip_ttl = u;
-		    } else if (close - item >= 4 && memcmp(item, "id ", 3) == 0 && isdigit(item[3])) {
+		    } else if (close - item >= 4 && memcmp(item, "id ", 3) == 0 && isdigit((unsigned char) item[3])) {
 			item = cp_integer(item + 3, close, 0, &u);
 			iph->ip_id = htons(u);
-		    } else if (close - item >= 5 && memcmp(item, "len ", 4) == 0 && isdigit(item[4])) {
+		    } else if (close - item >= 5 && memcmp(item, "len ", 4) == 0 && isdigit((unsigned char) item[4])) {
 			item = cp_integer(item + 4, close, 0, &u);
 			if (data_len < 0 || u == q->length() + data_len)
 			    data_len = u - q->length();
@@ -518,7 +518,7 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 			}
 		    } else
 			break;
-		    while (item < close && (*item == ',' || isspace(*item)))
+		    while (item < close && (*item == ',' || isspace((unsigned char) *item)))
 			item++;
 		}
 	    }

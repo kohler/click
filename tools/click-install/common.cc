@@ -49,7 +49,7 @@ read_package_string(const String &text, StringMap &packages)
   const char *end = text.end();
   while (begin < end) {
     const char *start = begin;
-    while (begin < end && !isspace(*begin))
+    while (begin < end && !isspace((unsigned char) *begin))
       begin++;
     packages.set(text.substring(start, begin), 0);
     begin = find(begin, end, '\n') + 1;

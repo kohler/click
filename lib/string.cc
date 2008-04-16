@@ -570,7 +570,7 @@ hard_lower(const String &s, int pos)
     char *x = const_cast<char *>(new_s.data()); // know it's mutable
     int len = s.length();
     for (; pos < len; pos++)
-	x[pos] = tolower(x[pos]);
+	x[pos] = tolower((unsigned char) x[pos]);
     return new_s;
 }
 
@@ -595,7 +595,7 @@ hard_upper(const String &s, int pos)
     char *x = const_cast<char *>(new_s.data()); // know it's mutable
     int len = s.length();
     for (; pos < len; pos++)
-	x[pos] = toupper(x[pos]);
+	x[pos] = toupper((unsigned char) x[pos]);
     return new_s;
 }
 
@@ -651,7 +651,7 @@ String
 String::trim_space() const
 {
     for (int i = _length - 1; i >= 0; i--)
-	if (!isspace(_data[i]))
+	if (!isspace((unsigned char) _data[i]))
 	    return substring(0, i + 1);
     // return out-of-memory string if input is out-of-memory string
     return (_length ? String() : *this);

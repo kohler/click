@@ -204,7 +204,7 @@ LexerT::process_line_directive(const char *s)
     for (s += 5; s < _end && (*s == ' ' || *s == '\t'); s++)
       /* nada */;
   }
-  if (s >= _end || !isdigit(*s)) {
+  if (s >= _end || !isdigit((unsigned char) *s)) {
     // complain about bad directive
     lerror(first_pos, s, "unknown preprocessor directive");
     return skip_line(s);
@@ -212,7 +212,7 @@ LexerT::process_line_directive(const char *s)
     return skip_line(s);
   
   // parse line number
-  for (_lineno = 0; s < _end && isdigit(*s); s++)
+  for (_lineno = 0; s < _end && isdigit((unsigned char) *s); s++)
     _lineno = _lineno * 10 + *s - '0';
   _lineno--;			// account for extra line
   
@@ -243,7 +243,7 @@ LexerT::next_lexeme()
 {
   const char *s = _pos;
   while (true) {
-    while (s < _end && isspace(*s)) {
+    while (s < _end && isspace((unsigned char) *s)) {
       if (*s == '\n') {
 	_lineno++;
 	_lset->new_line(s + 1 - _big_string.begin(), _filename, _lineno);
@@ -277,12 +277,12 @@ LexerT::next_lexeme()
   const char *word_pos = s;
   
   // find length of current word
-  if (isalnum(*s) || *s == '_' || *s == '@') {
+  if (isalnum((unsigned char) *s) || *s == '_' || *s == '@') {
    more_word_characters:
     s++;
-    while (s < _end && (isalnum(*s) || *s == '_' || *s == '@'))
+    while (s < _end && (isalnum((unsigned char) *s) || *s == '_' || *s == '@'))
       s++;
-    if (s + 1 < _end && *s == '/' && (isalnum(s[1]) || s[1] == '_' || s[1] == '@'))
+    if (s + 1 < _end && *s == '/' && (isalnum((unsigned char) s[1]) || s[1] == '_' || s[1] == '@'))
       goto more_word_characters;
     _pos = s;
     String word = _big_string.substring(word_pos, s);
@@ -305,7 +305,7 @@ LexerT::next_lexeme()
   // check for variable
   if (*s == '$') {
     s++;
-    while (s < _end && (isalnum(*s) || *s == '_'))
+    while (s < _end && (isalnum((unsigned char) *s) || *s == '_'))
       s++;
     if (s > word_pos + 1) {
       _pos = s;
@@ -559,7 +559,7 @@ LexerT::make_element(String name, const Lexeme &location, const char *decl_pos2,
     for (int i = 0; i < name.length(); i++) {
 	bool ok = false;
 	for (; i < name.length() && name[i] != '/'; i++)
-	    if (!isdigit(name[i]))
+	    if (!isdigit((unsigned char) name[i]))
 		ok = true;
 	if (!ok) {
 	    lerror(location, "element name '%s' has all-digit component", name.c_str());
@@ -609,7 +609,7 @@ LexerT::yport(int &port, const char *&pos1, const char *&pos2)
     if (tword.is(lexIdent)) {
 	String p = tword.string();
 	const char *ps = p.c_str();
-	if (isdigit(ps[0]) || ps[0] == '-')
+	if (isdigit((unsigned char) ps[0]) || ps[0] == '-')
 	    port = strtol(ps, (char **)&ps, 0);
 	if (*ps != 0) {
 	    lerror(tword, "syntax error: port number should be integer");

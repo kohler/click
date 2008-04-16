@@ -399,7 +399,7 @@ Script::step(int nsteps, int step_type, int njumps)
 
 	    int before = cerrh.nerrors();
 	    String result;
-	    if (text && (isalpha(text[0]) || text[0] == '@' || text[0] == '_')) {
+	    if (text && (isalpha((unsigned char) text[0]) || text[0] == '@' || text[0] == '_')) {
 		result = cp_expand(text, expander);
 		result = HandlerCall::call_read(result, this, &cerrh);
 	    } else

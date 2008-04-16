@@ -315,10 +315,10 @@ Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, 
 		StringAccum sa;
 		sa << " -!lib";
 		for (const char *x = elt.libs.begin(); x != elt.libs.end(); x++)
-		    if (isspace(*x)) {
+		    if (isspace((unsigned char) *x)) {
 			sa << ';';
 		    skipspace:
-			while (x + 1 != elt.libs.end() && isspace(x[1]))
+			while (x + 1 != elt.libs.end() && isspace((unsigned char) x[1]))
 			    x++;
 		    } else if (x + 1 != elt.libs.end() && *x == '-' && x[1] == 'L') {
 			sa << '-' << 'L';
