@@ -794,7 +794,7 @@ sub execute_test ($$$) {
 	    open(X, out_script_fn_to_fn($efn));
 	    my($text) = <X>;
 	    close(X);
-	    if ($f->[1]) {
+	    if ($f->[1] && defined($text)) {
 		my($ignores) = '';
 		$ignores .= join("\n", @{$tt->{"i:$efn"}}) . "\n" if exists($tt->{"i:$efn"});
 		$ignores .= join("\n", @{$tt->{"i:all"}}) . "\n" if exists($tt->{"i:all"});
@@ -806,7 +806,8 @@ sub execute_test ($$$) {
 		    eval $ignores;
 		}
 	    }
-	    print $text, "=" x 79, "\n";
+	    print $text if defined $text;
+	    print "=" x 79, "\n";
 	} else {
 	    print "$fn: $efn does not exist\n";
 	}
