@@ -9,7 +9,7 @@ FTPPortMapper and TCPRewriter.
 
 %script
 click-install KERNELCONFIG
-(usleep 50000; echo Hopefully this worked.; usleep 40000) | nc -l -p 3000 >NETCAT2 &
+(usleep 50000; echo Hopefully this worked.; usleep 40000) | nc -l 3000 >NETCAT2 &
 usleep 5000
 (echo PORT 200,200,200,200,200,200; usleep 20000; echo money; usleep 20000) | nc 1.0.0.2 3000 >NETCAT3
 cat /click/c1/c/count >COUNTERS
