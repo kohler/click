@@ -20,56 +20,58 @@
 #include <click/vector.hh>
 CLICK_DECLS
 
-Vector<void*>::Vector(const Vector<void*> &o)
-  : _l(0), _n(0), _capacity(0)
+Vector<void*>::Vector(const Vector<void*> &x)
+    : _l(0), _n(0), _capacity(0)
 {
-  *this = o;
+#ifdef VALGRIND_CREATE_MEMPOOL
+    VALGRIND_CREATE_MEMPOOL(this, 0, 0);
+#endif
+    *this = x;
 }
 
 Vector<void*>::~Vector()
 {
-  delete[] _l;
+#ifdef VALGRIND_MEMPOOL_FREE
+    if (_l)
+	VALGRIND_MEMPOOL_FREE(this, _l);
+#endif
+    CLICK_LFREE(_l, sizeof(void *) * _capacity);
+#ifdef VALGRIND_DESTROY_MEMPOOL
+    VALGRIND_DESTROY_MEMPOOL(this);
+#endif
 }
 
 Vector<void*> &
 Vector<void*>::operator=(const Vector<void*> &o)
 {
-  if (&o != this) {
-    _n = 0;
-    if (reserve(o._n)) {
-      _n = o._n;
-      memcpy(_l, o._l, sizeof(void *) * _n);
+    if (&o != this) {
+#ifdef VALGRIND_MAKE_MEM_NOACCESS
+	if (_l && _n)
+	    VALGRIND_MAKE_MEM_NOACCESS(_l, _n * sizeof(void *));
+#endif
+	_n = 0;
+	if (reserve(o._n)) {
+	    _n = o._n;
+#ifdef VALGRIND_MAKE_MEM_UNDEFINED
+	    if (_l && _n)
+		VALGRIND_MAKE_MEM_UNDEFINED(_l, _n * sizeof(void *));
+#endif
+	    memcpy(_l, o._l, sizeof(void *) * _n);
+	}
     }
-  }
-  return *this;
+    return *this;
 }
 
 Vector<void*> &
 Vector<void*>::assign(size_type n, void* e)
 {
+#ifdef VALGRIND_MAKE_MEM_NOACCESS
+  if (_l && _n)
+    VALGRIND_MAKE_MEM_NOACCESS(_l, _n * sizeof(void *));
+#endif
   _n = 0;
   resize(n, e);
   return *this;
-}
-
-bool
-Vector<void*>::reserve(size_type want)
-{
-  if (want < 0)
-    want = (_capacity > 0 ? _capacity * 2 : 4);
-  if (want <= _capacity)
-    return true;
-  
-  void** new_l = new void*[want];
-  if (!new_l)
-    return false;
-  
-  memcpy(new_l, _l, sizeof(void*) * _n);
-  delete[] _l;
-  
-  _l = new_l;
-  _capacity = want;
-  return true;
 }
 
 Vector<void*>::iterator
@@ -78,6 +80,9 @@ Vector<void*>::insert(iterator i, void* e)
   assert(i >= begin() && i <= end());
   size_type pos = i - begin();
   if (_n < _capacity || reserve(RESERVE_GROW)) {
+#ifdef VALGRIND_MAKE_MEM_UNDEFINED
+    VALGRIND_MAKE_MEM_UNDEFINED(_l + _n, sizeof(void*));
+#endif
     i = begin() + pos;
     memmove(i + 1, i, (end() - i) * sizeof(void*));
     *i = e;
@@ -93,15 +98,52 @@ Vector<void*>::erase(iterator a, iterator b)
     assert(a >= begin() && b <= end());
     memmove(a, b, (end() - b) * sizeof(void*));
     _n -= b - a;
+#ifdef VALGRIND_MAKE_MEM_NOACCESS
+    VALGRIND_MAKE_MEM_NOACCESS(_l + _n, (b - a) * sizeof(void *));
+#endif
     return a;
   } else
     return b;
+}
+
+bool
+Vector<void*>::reserve(size_type want)
+{
+  if (want < 0)
+    want = (_capacity > 0 ? _capacity * 2 : 4);
+  if (want <= _capacity)
+    return true;
+  
+  void** new_l = (void **) CLICK_LALLOC(sizeof(void *) * want);
+  if (!new_l)
+    return false;
+#ifdef VALGRIND_MEMPOOL_ALLOC
+  VALGRIND_MEMPOOL_ALLOC(this, new_l, want * sizeof(void *));
+  VALGRIND_MAKE_MEM_NOACCESS(new_l + _n, (want - _n) * sizeof(void *));
+#endif
+  
+  memcpy(new_l, _l, sizeof(void*) * _n);
+#ifdef VALGRIND_MEMPOOL_FREE
+  if (_l)
+      VALGRIND_MEMPOOL_FREE(this, _l);
+#endif
+  CLICK_LFREE(_l, sizeof(void *) * _capacity);
+  
+  _l = new_l;
+  _capacity = want;
+  return true;
 }
 
 void
 Vector<void*>::resize(size_type nn, void* e)
 {
   if (nn <= _capacity || reserve(nn)) {
+#ifdef VALGRIND_MAKE_MEM_NOACCESS
+    if (nn < _n)
+	VALGRIND_MAKE_MEM_NOACCESS(_l + nn, (_n - nn) * sizeof(void *));
+    if (_n < nn)
+	VALGRIND_MAKE_MEM_UNDEFINED(_l + _n, (nn - _n) * sizeof(void *));
+#endif
     for (size_type i = _n; i < nn; i++)
       _l[i] = e;
     _n = nn;
@@ -109,17 +151,25 @@ Vector<void*>::resize(size_type nn, void* e)
 }
 
 void
-Vector<void*>::swap(Vector<void*>& o)
+Vector<void*>::swap(Vector<void*> &x)
 {
-  void **l = _l;
-  size_type n = _n;
-  size_type cap = _capacity;
-  _l = o._l;
-  _n = o._n;
-  _capacity = o._capacity;
-  o._l = l;
-  o._n = n;
-  o._capacity = cap;
+    void **l = _l;
+    _l = x._l;
+    x._l = l;
+    
+    size_type n = _n;
+    _n = x._n;
+    x._n = n;
+    
+    size_type cap = _capacity;
+    _capacity = x._capacity;
+    x._capacity = cap;
+
+#ifdef VALGRIND_MOVE_MEMPOOL
+    VALGRIND_MOVE_MEMPOOL(this, reinterpret_cast<Vector<void *> *>(100));
+    VALGRIND_MOVE_MEMPOOL(&x, this);
+    VALGRIND_MOVE_MEMPOOL(reinterpret_cast<Vector<void *> *>(100), &x);
+#endif
 }
 
 CLICK_ENDDECLS

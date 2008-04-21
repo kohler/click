@@ -661,6 +661,26 @@ fi
 
 
 dnl
+dnl valgrind debugging support
+dnl
+
+AC_ARG_ENABLE(valgrind, [  --enable-valgrind       extra support for debugging with valgrind], :, enable_valgrind=no)
+if test $enable_valgrind = yes; then
+    AC_CHECK_HEADERS(valgrind/memcheck.h, ac_found_valgrind_memcheck_h=yes, ac_found_valgrind_memcheck_h=no)
+    if test $ac_found_valgrind_memcheck_h = no; then
+	AC_MSG_ERROR([
+=========================================
+
+Can't find Valgrind header file 'valgrind/memcheck.h'.
+Try again without '--enable-valgrind'.
+
+=========================================])
+    fi
+    AC_DEFINE(HAVE_VALGRIND)
+fi
+
+
+dnl
 dnl use Intel-specific machine instructions
 dnl
 

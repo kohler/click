@@ -25,34 +25,52 @@ CLICK_ENDDECLS
 CLICK_DECLS
 
 template <class T>
-Vector<T>::Vector(const Vector<T> &o)
-  : _l(0), _n(0), _capacity(0)
+Vector<T>::Vector(const Vector<T> &x)
+    : _l(0), _n(0), _capacity(0)
 {
-  *this = o;
+#ifdef VALGRIND_CREATE_MEMPOOL
+    VALGRIND_CREATE_MEMPOOL(this, 0, 0);
+#endif
+    *this = x;
 }
 
 template <class T>
 Vector<T>::~Vector()
 {
-  for (size_type i = 0; i < _n; i++)
-    _l[i].~T();
-  delete[] (unsigned char *)_l;
+    for (size_type i = 0; i < _n; i++)
+	_l[i].~T();
+#ifdef VALGRIND_MEMPOOL_FREE
+    if (_l)
+	VALGRIND_MEMPOOL_FREE(this, _l);
+#endif
+    CLICK_LFREE(_l, sizeof(T) * _capacity);
+#ifdef VALGRIND_DESTROY_MEMPOOL
+    VALGRIND_DESTROY_MEMPOOL(this);
+#endif
 }
 
 template <class T> Vector<T> &
 Vector<T>::operator=(const Vector<T> &o)
 {
-  if (&o != this) {
-    for (size_type i = 0; i < _n; i++)
-      _l[i].~T();
-    _n = 0;
-    if (reserve(o._n)) {
-      _n = o._n;
-      for (size_type i = 0; i < _n; i++)
-        new(velt(i)) T(o._l[i]);
+    if (&o != this) {
+	for (size_type i = 0; i < _n; i++)
+	    _l[i].~T();
+#ifdef VALGRIND_MAKE_MEM_NOACCESS
+	if (_l && _n)
+	    VALGRIND_MAKE_MEM_NOACCESS(_l, _n * sizeof(T));
+#endif
+	_n = 0;
+	if (reserve(o._n)) {
+	    _n = o._n;
+#ifdef VALGRIND_MAKE_MEM_UNDEFINED
+	    if (_l && _n)
+		VALGRIND_MAKE_MEM_UNDEFINED(_l, _n * sizeof(T));
+#endif
+	    for (size_type i = 0; i < _n; i++)
+		new(velt(i)) T(o._l[i]);
+	}
     }
-  }
-  return *this;
+    return *this;
 }
 
 template <class T> Vector<T> &
@@ -69,9 +87,15 @@ Vector<T>::insert(iterator i, const T& e)
   assert(i >= begin() && i <= end());
   size_type pos = i - begin();
   if (_n < _capacity || reserve(RESERVE_GROW)) {
+#ifdef VALGRIND_MAKE_MEM_UNDEFINED
+    VALGRIND_MAKE_MEM_UNDEFINED(velt(_n), sizeof(T));
+#endif
     for (iterator j = end() - 1; j >= begin() + pos; j--) {
       new((void*) (j+1)) T(*j);
       j->~T();
+#ifdef VALGRIND_MAKE_MEM_UNDEFINED
+      VALGRIND_MAKE_MEM_UNDEFINED(j, sizeof(T));
+#endif
     }
     new(velt(pos)) T(e);
     _n++;
@@ -87,11 +111,17 @@ Vector<T>::erase(iterator a, iterator b)
     iterator i = a, j = b;
     for (; j < end(); i++, j++) {
       i->~T();
+#ifdef VALGRIND_MAKE_MEM_UNDEFINED
+      VALGRIND_MAKE_MEM_UNDEFINED(i, sizeof(T));
+#endif
       new((void*) i) T(*j);
     }
     for (; i < end(); i++)
       i->~T();
     _n -= b - a;
+#ifdef VALGRIND_MAKE_MEM_NOACCESS
+    VALGRIND_MAKE_MEM_NOACCESS(_l + _n, (b - a) * sizeof(T));
+#endif
     return a;
   } else
     return b;
@@ -105,15 +135,23 @@ Vector<T>::reserve(size_type want)
   if (want <= _capacity)
     return true;
   
-  T *new_l = (T *)new unsigned char[sizeof(T) * want];
+  T *new_l = (T *) CLICK_LALLOC(sizeof(T) * want);
   if (!new_l)
     return false;
+#ifdef VALGRIND_MEMPOOL_ALLOC
+  VALGRIND_MEMPOOL_ALLOC(this, new_l, want * sizeof(T));
+  VALGRIND_MAKE_MEM_NOACCESS(new_l + _n, (want - _n) * sizeof(T));
+#endif
   
   for (size_type i = 0; i < _n; i++) {
     new(velt(new_l, i)) T(_l[i]);
     _l[i].~T();
   }
-  delete[] (unsigned char *)_l;
+#ifdef VALGRIND_MEMPOOL_FREE
+  if (_l)
+      VALGRIND_MEMPOOL_FREE(this, _l);
+#endif
+  CLICK_LFREE(_l, sizeof(T) * _capacity);
   
   _l = new_l;
   _capacity = want;
@@ -126,6 +164,12 @@ Vector<T>::resize(size_type nn, const T &e)
   if (nn <= _capacity || reserve(nn)) {
     for (size_type i = nn; i < _n; i++)
       _l[i].~T();
+#ifdef VALGRIND_MAKE_MEM_NOACCESS
+    if (nn < _n)
+	VALGRIND_MAKE_MEM_NOACCESS(_l + nn, (_n - nn) * sizeof(T));
+    if (_n < nn)
+	VALGRIND_MAKE_MEM_UNDEFINED(_l + _n, (nn - _n) * sizeof(T));
+#endif
     for (size_type i = _n; i < nn; i++)
       new(velt(i)) T(e);
     _n = nn;
@@ -133,17 +177,25 @@ Vector<T>::resize(size_type nn, const T &e)
 }
 
 template <class T> void
-Vector<T>::swap(Vector<T> &o)
+Vector<T>::swap(Vector<T> &x)
 {
-  T *l = _l;
-  size_type n = _n;
-  size_type cap = _capacity;
-  _l = o._l;
-  _n = o._n;
-  _capacity = o._capacity;
-  o._l = l;
-  o._n = n;
-  o._capacity = cap;
+    T *l = _l;
+    _l = x._l;
+    x._l = l;
+
+    size_type n = _n;
+    _n = x._n;
+    x._n = n;
+
+    size_type cap = _capacity;
+    _capacity = x._capacity;
+    x._capacity = cap;
+
+#ifdef VALGRIND_MOVE_MEMPOOL
+    VALGRIND_MOVE_MEMPOOL(this, reinterpret_cast<Vector<T> *>(100));
+    VALGRIND_MOVE_MEMPOOL(&x, this);
+    VALGRIND_MOVE_MEMPOOL(reinterpret_cast<Vector<T> *>(100), &x);
+#endif
 }
 
 #endif

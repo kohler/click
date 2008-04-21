@@ -255,7 +255,7 @@ class HashTable<T> {
   private:
     
     rep_type _rep;
-    hashallocator<sizeof(elt)> _alloc;
+    HashAllocator<sizeof(elt)> _alloc;
     
     void clone_elements(const HashTable<T> &);
     void copy_elements(const HashTable<T> &);

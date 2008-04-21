@@ -58,7 +58,7 @@ class HashContainer_adapter { public:
 
   <ul>
   <li>Define a "key_type" type that supports equality.</li>
-  <li>Contain a member "T *_hashnext" accessible to HashContainer.</li>
+  <li>Contain a member "T *_hashnext" accessible to HashContainer_adapter<T>.</li>
   <li>Define a "hashkey()" member function that returns the relevant hash key.</li>
   </ul>
 
@@ -167,11 +167,17 @@ class HashContainer { public:
     /** @overload */
     inline const_iterator find(const key_type &key) const;
 
-    /** @brief Return an iterator for the element with key @a key, if any.
+    /** @brief Return an iterator for an element with key @a key, if any.
      *
      * Like find(), but additionally moves any found element to the head of
      * its bucket, possibly speeding up future lookups. */
     inline iterator find_prefer(const key_type &key);
+
+    /** @brief Return an element for @a key, if any.
+     *
+     * Returns null if no element for @a key currently exists.  Equivalent
+     * to find(key).get(). */
+    inline T *get(const key_type &key) const;
 
     /** @brief Insert an element at position @a it.
      * @param it iterator
@@ -273,18 +279,18 @@ class HashContainer_const_iterator { public:
     }
 
     /** @brief Return a pointer to the element, null if *this == end(). */
-    const T *get() const {
+    T *get() const {
 	return _element;
     }
     
     /** @brief Return a pointer to the element, null if *this == end(). */
-    const T *operator->() const {
+    T *operator->() const {
 	return _element;
     }
     
     /** @brief Return a reference to the element.
      * @pre *this != end() */
-    const T &operator*() const {
+    T &operator*() const {
 	return *_element;
     }
 
@@ -293,7 +299,7 @@ class HashContainer_const_iterator { public:
 	return _element;
     }
     
-    typedef const T *(HashContainer_const_iterator::*unspecified_bool_type)() const;
+    typedef T *(HashContainer_const_iterator::*unspecified_bool_type)() const;
     /** @brief Return true iff *this != end(). */
     inline operator unspecified_bool_type() const {
 	return _element ? &HashContainer_const_iterator::get : 0;
@@ -367,22 +373,6 @@ class HashContainer_iterator : public HashContainer_const_iterator<T, A> { publi
 
     /** @brief Construct an uninitialized iterator. */
     HashContainer_iterator() {
-    }
-    
-    /** @brief Return a pointer to the element, null if *this == end(). */
-    T *get() const {
-	return const_cast<T *>(inherited::get());
-    }
-    
-    /** @brief Return a pointer to the element, null if *this == end(). */
-    inline T *operator->() const {
-	return const_cast<T *>(inherited::operator->());
-    }
-    
-    /** @brief Return a reference to the element.
-     * @pre *this != end() */
-    inline T &operator*() const {
-	return const_cast<T &>(inherited::operator*());
     }
 
     /** @brief Return true iff elements can be inserted here.
@@ -525,8 +515,13 @@ HashContainer<T, A>::find_prefer(const key_type &key)
 }
 
 template <typename T, typename A>
-inline T *
-HashContainer<T, A>::set(iterator &it, T *element)
+inline T *HashContainer<T, A>::get(const key_type &key) const
+{
+    return find(key).get();
+}
+
+template <typename T, typename A>
+inline T *HashContainer<T, A>::set(iterator &it, T *element)
 {
     click_hash_assert(it._hc == this && it._bucket < _rep.nbuckets);
     click_hash_assert(bucket(_rep.hashkey(element)) == it._bucket);
@@ -552,8 +547,7 @@ HashContainer<T, A>::set(iterator &it, T *element)
 }
 
 template <typename T, typename A>
-inline void
-HashContainer<T, A>::insert_at(iterator &it, T *element)
+inline void HashContainer<T, A>::insert_at(iterator &it, T *element)
 {
     click_hash_assert(it._hc == this && it._bucket < _rep.nbuckets);
     click_hash_assert(bucket(_rep.hashkey(element)) == it._bucket);
@@ -586,8 +580,7 @@ inline T *HashContainer<T, A>::erase(const key_type &key)
 }
 
 template <typename T, typename A>
-inline void
-HashContainer<T, A>::clear()
+inline void HashContainer<T, A>::clear()
 {
     for (size_type b = 0; b < _rep.nbuckets; ++b)
 	_rep.buckets[b] = 0;
@@ -603,8 +596,7 @@ inline void HashContainer<T, A>::swap(HashContainer<T, A> &o)
 }
 
 template <typename T, typename A>
-void
-HashContainer<T, A>::rehash(size_type n)
+void HashContainer<T, A>::rehash(size_type n)
 {
     size_type new_nbuckets = 1;
     while (new_nbuckets < n && new_nbuckets < max_bucket_count)

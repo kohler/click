@@ -1,6 +1,9 @@
 #ifndef CLICK_VECTOR_HH
 #define CLICK_VECTOR_HH
 #include <click/algorithm.hh>
+#if HAVE_VALGRIND && HAVE_VALGRIND_MEMCHECK_H
+# include <valgrind/memcheck.h>
+#endif
 CLICK_DECLS
 
 template <class T>
@@ -18,11 +21,22 @@ class Vector { public:
   typedef T* iterator;
   typedef const T* const_iterator;
   
-  explicit Vector()		: _l(0), _n(0), _capacity(0) { }
-  explicit Vector(size_type n, const T &e) : _l(0), _n(0), _capacity(0) { resize(n, e); }
-  // template <class In> ...
-  Vector(const Vector<T> &);
-  ~Vector();
+    explicit Vector()
+	: _l(0), _n(0), _capacity(0) {
+#ifdef VALGRIND_CREATE_MEMPOOL
+	VALGRIND_CREATE_MEMPOOL(this, 0, 0);
+#endif
+    }
+    explicit Vector(size_type n, const T &e)
+	: _l(0), _n(0), _capacity(0) {
+#ifdef VALGRIND_CREATE_MEMPOOL
+	VALGRIND_CREATE_MEMPOOL(this, 0, 0);
+#endif
+	resize(n, e);
+    }
+    // template <class In> ...
+    Vector(const Vector<T> &x);
+    ~Vector();
 
   Vector<T>& operator=(const Vector<T>&);
   Vector<T>& assign(size_type n, const T& e = T());
@@ -79,6 +93,9 @@ template <class T> inline void
 Vector<T>::push_back(const T& e)
 {
   if (_n < _capacity || reserve(RESERVE_GROW)) {
+#ifdef VALGRIND_MAKE_MEM_UNDEFINED
+    VALGRIND_MAKE_MEM_UNDEFINED(velt(_n), sizeof(T));
+#endif
     new(velt(_n)) T(e);
     _n++;
   }
@@ -90,6 +107,9 @@ Vector<T>::pop_back()
   assert(_n > 0);
   --_n;
   _l[_n].~T();
+#ifdef VALGRIND_MAKE_MEM_NOACCESS
+  VALGRIND_MAKE_MEM_NOACCESS(&_l[_n], sizeof(T));
+#endif
 }
 
 template <class T> inline typename Vector<T>::iterator
@@ -126,10 +146,21 @@ class Vector<void*> { public:
   typedef void** iterator;
   typedef void* const* const_iterator;
 
-  explicit Vector()			: _l(0), _n(0), _capacity(0) { }
-  explicit Vector(size_type n, void* e)	: _l(0), _n(0), _capacity(0) { resize(n, e); }
-  Vector(const Vector<void*> &);
-  ~Vector();
+    explicit Vector()
+	: _l(0), _n(0), _capacity(0) {
+#ifdef VALGRIND_CREATE_MEMPOOL
+	VALGRIND_CREATE_MEMPOOL(this, 0, 0);
+#endif
+    }
+    explicit Vector(size_type n, void* e)
+	: _l(0), _n(0), _capacity(0) {
+#ifdef VALGRIND_CREATE_MEMPOOL
+	VALGRIND_CREATE_MEMPOOL(this, 0, 0);
+#endif
+	resize(n, e);
+    }
+    Vector(const Vector<void*> &);
+    ~Vector();
   
   Vector<void*> &operator=(const Vector<void*> &);
   Vector<void*> &assign(size_type n, void* e = 0);
@@ -182,6 +213,9 @@ inline void
 Vector<void*>::push_back(void *e)
 {
   if (_n < _capacity || reserve(RESERVE_GROW)) {
+#ifdef VALGRIND_MAKE_MEM_UNDEFINED
+    VALGRIND_MAKE_MEM_UNDEFINED(&_l[_n], sizeof(void *));
+#endif
     _l[_n] = e;
     _n++;
   }
@@ -192,6 +226,9 @@ Vector<void*>::pop_back()
 {
   assert(_n > 0);
   --_n;
+#ifdef VALGRIND_MAKE_MEM_NOACCESS
+  VALGRIND_MAKE_MEM_NOACCESS(&_l[_n], sizeof(void *));
+#endif
 }
 
 inline Vector<void*>::iterator 

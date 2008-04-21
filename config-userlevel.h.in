@@ -146,6 +146,12 @@
 /* Define if a Click user-level driver might run multiple threads. */
 #undef HAVE_USER_MULTITHREAD
 
+/* Define if Click should use Valgrind client requests. */
+#undef HAVE_VALGRIND
+
+/* Define if you have the <valgrind/memcheck.h> header file. */
+#undef HAVE_VALGRIND_MEMCHECK_H
+
 /* Define if you have the vsnprintf function. */
 #undef HAVE_VSNPRINTF
 
