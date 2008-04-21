@@ -21,41 +21,36 @@ CLICK_DECLS
  *
  */
 class IPPair {
-public:
+  public:
 
-  IPAddress _to;
-  IPAddress _from;
+    IPAddress _to;
+    IPAddress _from;
 
-  IPPair() : _to(), _from() { }
+    IPPair()
+	: _to(), _from() {
+    }
 
-  IPPair(IPAddress from, IPAddress to) {
-      _to = to;
-      _from = from;
-  }
+    IPPair(IPAddress from, IPAddress to)
+	: _to(to), _from(from) {
+    }
 
-  bool contains(IPAddress foo) {
-    return ((foo == _to) || (foo == _from));
-  }
-  bool other(IPAddress foo) { return ((_to == foo) ? _from : _to); }
+    bool contains(IPAddress foo) const {
+	return (foo == _to) || (foo == _from);
+    }
 
-    inline size_t hashcode() const;
+    bool other(IPAddress foo) const {
+	return (_to == foo) ? _from : _to;
+    }
 
+    inline size_t hashcode() const {
+	return CLICK_NAME(hashcode)(_to) + CLICK_NAME(hashcode)(_from);
+    }
 
-  inline bool
-  operator==(IPPair other)
-  {
-    return (other._to == _to && other._from == _from);
-  }
+    inline bool operator==(IPPair other) const {
+	return (other._to == _to && other._from == _from);
+    }
 
 };
-
-inline size_t IPPair::hashcode() const
-{
-    return CLICK_NAME(hashcode)(_to) + CLICK_NAME(hashcode)(_from);
-}
-
-
-
 
 
 class LinkTable: public Element{
@@ -252,7 +247,3 @@ private:
 
 CLICK_ENDDECLS
 #endif /* CLICK_LINKTABLE_HH */
-
-
-
-
