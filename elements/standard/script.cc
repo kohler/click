@@ -411,7 +411,9 @@ Script::step(int nsteps, int step_type, int njumps)
 	    
 #if CLICK_USERLEVEL || CLICK_TOOL
 	    fwrite(result.data(), 1, result.length(), f);
-	    if (f != stdout)
+	    if (f == stdout)
+		fflush(f);
+	    else
 		fclose(f);
 #else
 	    errh->message("%s", result.c_str());
