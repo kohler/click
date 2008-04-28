@@ -67,6 +67,7 @@ include/click/notifier.hh
 include/click/package.hh
 include/click/packet.hh
 include/click/packet_anno.hh
+include/click/pair.hh
 include/click/perfctr-i586.hh
 include/click/router.hh
 include/click/routerthread.hh
