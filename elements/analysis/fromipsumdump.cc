@@ -771,7 +771,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     uint8_t ip_hl = 0;
     uint8_t tcp_off = 0;
     int16_t icmp_type = -1;
-    uint32_t byte_count = 0;
+    uint32_t ip_len = 0;
     uint32_t payload_len = 0;
     bool have_payload_len = false;
     bool have_payload = false;
@@ -1146,13 +1146,11 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    break;
 	    
 	  case W_IP_LEN:
-	    if (u1 <= 0xFFFF)
-		byte_count = u1, ok++;
+	    ip_len = u1, ok++;
 	    break;
 	    
 	  case W_PAYLOAD_LEN:
-	    if (u1 <= 0xFFFF)
-		payload_len = u1, have_payload_len = true, ok++;
+	    payload_len = u1, have_payload_len = true, ok++;
 	    break;
 
 	  case W_IP_CAPTURE_LEN:
@@ -1312,7 +1310,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	q->take(sizeof(click_tcp));
 
     // set IP length
-    if (have_payload) {	// XXX what if byte_count indicates IP options?
+    if (have_payload) {	// XXX what if ip_len indicates IP options?
 	int old_length = q->length();
 	iph->ip_len = ntohs(old_length + payload.length());
 	if ((q = q->put(payload.length()))) {
@@ -1320,11 +1318,17 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    // iph may have changed!!
 	    iph = q->ip_header();
 	}
-    } else if (byte_count) {
-	iph->ip_len = ntohs(byte_count);
-	SET_EXTRA_LENGTH_ANNO(q, byte_count - q->length());
+    } else if (ip_len) {
+	if (ip_len <= 0xFFFF)
+	    iph->ip_len = ntohs(ip_len);
+	else
+	    iph->ip_len = ntohs(0xFFFF);
+	SET_EXTRA_LENGTH_ANNO(q, ip_len - q->length());
     } else if (have_payload_len) {
-	iph->ip_len = ntohs(q->length() + payload_len);
+	if (q->length() + payload_len <= 0xFFFF)
+	    iph->ip_len = ntohs(q->length() + payload_len);
+	else
+	    iph->ip_len = ntohs(0xFFFF);
 	SET_EXTRA_LENGTH_ANNO(q, payload_len);
     } else
 	iph->ip_len = ntohs(q->length());
