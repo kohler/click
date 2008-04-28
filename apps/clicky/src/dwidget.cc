@@ -70,7 +70,7 @@ void delt::prepare(wdiagram *d, ElementT *e, ProcessingT *processing,
 
     path.push_back(_e);
     RouterT::flatten_path(path, _flat_name, _flat_config);
-    collector.insert(_flat_name, this);
+    collector[_flat_name] = this;
     if (RouterT *r = _e->resolved_router()) {
 	ProcessingT subprocessing(r, processing->element_map());
 	subprocessing.create(_processing_code, true);

@@ -262,7 +262,7 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
     for (handler_value **hv = old_handlers.begin(); hv != old_handlers.end();
 	 ++hv)
 	if ((*hv)->_flags & hflag_dead)
-	    _hv.remove((*hv)->_hname);
+	    _hv.erase((*hv)->_hname);
 }
 
 handler_value *handler_values::hard_find_placeholder(const String &hname,

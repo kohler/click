@@ -2,6 +2,7 @@
 #ifndef CLICK_ELEMENTMAP_HH
 #define CLICK_ELEMENTMAP_HH
 #include "etraits.hh"
+#include <click/hashtable.hh>
 class RouterT;
 
 class ElementMap { public:
