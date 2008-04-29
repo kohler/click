@@ -211,7 +211,7 @@ class delt : public dwidget { public:
     double min_width() const;
     double min_height() const;
 
-    double shadow(int side) const;
+    double shadow(wdiagram *d, int side) const;
 
     int highlights() const {
 	return _highlight;

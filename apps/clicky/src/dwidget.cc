@@ -302,11 +302,13 @@ bool delt::vertical() const
     return side_vertical(_des->orientation);
 }
 
-double delt::shadow(int side) const
+double delt::shadow(wdiagram *d, int side) const
 {
-    if (_des->shadow_style == 0
-	|| (_des->shadow_style == 1 && (side == 0 || side == 3)))
+    if (_des->shadow_style == dshadow_none
+	|| (_des->shadow_style == dshadow_drop && (side == 0 || side == 3)))
 	return 0;
+    else if (_des->shadow_style == dshadow_unscaled_outline)
+	return _des->shadow_width / d->scale();
     else
 	return _des->shadow_width;
 }
@@ -1000,9 +1002,6 @@ void delt::layout(dcontext &dcx)
     // adjust by border width and fix to integer boundaries
     _width = ceil(_width + 2 * _dess->border_width);
     _height = ceil(_height + 2 * _dess->border_width);
-
-    if (_des->shadow_style != dshadow_none)
-	dcx.d->notify_shadow(_des->shadow_width);
 }
 
 void delt::layout_compound_ports(wdiagram *d)
@@ -1579,6 +1578,7 @@ void delt::draw_drop_shadow(dcontext &dcx)
 	    spo = (spo + 2) & 3;
     }
     double sw = _des->shadow_width;
+    dcx.d->notify_shadow(sw);
     if (spo != 1 && spo != 2) {
 	double x0 = _x + sw, y0 = _y + _height + (sw + shift) / 2;
 	double x1 = _x + _width + (sw + shift) / 2, y1 = _y + sw;
@@ -1640,6 +1640,9 @@ void delt::draw_outline(dcontext &dcx)
 	    draw_drop_shadow(dcx);
 	else {
 	    double sw = _des->shadow_width;
+	    if (_des->shadow_style == dshadow_unscaled_outline)
+		sw /= dcx.d->scale();
+	    dcx.d->notify_shadow(sw);
 	    cairo_set_line_width(dcx, sw);
 	    double x = _x - sw / 2, y = _y - sw / 2;
 	    cairo_move_to(dcx, x, y);

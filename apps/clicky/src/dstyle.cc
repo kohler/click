@@ -116,8 +116,8 @@ port.agnostic, port.push.agnostic, port.pull.agnostic {\n\
     background: #fffff2;\n\
 }\n\
 *:active, *:active:hover {\n\
-    background: #ffffb4;\n\
-    shadow: halo rgba(90%, 20%, 95%, 50%) 3px;\n\
+    background: #ffff94;\n\
+    shadow: unscaled-outline rgba(90%, 20%, 95%, 50%) 3px;\n\
 }\n\
 }\n\
 *Queue {\n\
@@ -515,6 +515,9 @@ bool dcss_selector::match(wdiagram *d, const delt *e, int *sensitivity) const
 	} else if (k->equals("live", 4)) {
 	    if (!d->main()->driver())
 		return false;
+	} else if (k->length() >= 6 && memcmp(k->data(), "name*=", 6)) {
+	    if (e->name().find_left(k->substring(6)) < 0)
+		return false;
 	} else if ((s = find(*k, '=')) != k->end()) {
 	    wmain *w = d->main();
 	    if (!w->driver() || !e->flat_name())
@@ -793,8 +796,11 @@ bool dcss_property::hard_change_type(int t) const
 	} else if (_vstr.equals("drop", 4)) {
 	    _v.i = dshadow_drop;
 	    _t = t_shadow_style;
-	} else if (_vstr.equals("halo", 4)) {
-	    _v.i = dshadow_halo;
+	} else if (_vstr.equals("outline", 7) || _vstr.equals("halo", 4)) {
+	    _v.i = dshadow_outline;
+	    _t = t_shadow_style;
+	} else if (_vstr.equals("unscaled-outline", 16)) {
+	    _v.i = dshadow_unscaled_outline;
 	    _t = t_shadow_style;
 	}
 	break;
@@ -1073,7 +1079,9 @@ void dcss::parse_shadow(const String &str, const char *s, const char *send)
 
 	if ((n + 4 == s && memcmp(n, "none", 4) == 0)
 	    || (n + 4 == s && memcmp(n, "drop", 4) == 0)
-	    || (n + 4 == s && memcmp(n, "halo", 4) == 0))
+	    || (n + 4 == s && memcmp(n, "halo", 4) == 0)
+	    || (n + 7 == s && memcmp(n, "outline", 7) == 0)
+	    || (n + 16 == s && memcmp(n, "unscaled-outline", 16) == 0))
 	    add("shadow-style", str.substring(n, s));
 	else if (n < s && (isdigit((unsigned char) *n) || *n == '+' || *n == '.')
 		 && cp_pixel(str.substring(n, s), &d))

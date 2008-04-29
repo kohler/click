@@ -27,7 +27,8 @@ enum {
 enum {
     dshadow_none = 0,
     dshadow_drop = 1,
-    dshadow_halo = 2
+    dshadow_outline = 2,
+    dshadow_unscaled_outline = 3
 };
 
 enum {

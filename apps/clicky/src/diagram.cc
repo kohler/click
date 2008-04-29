@@ -194,6 +194,7 @@ void wdiagram::zoom(bool incremental, int amount)
     if (_layout) {
 	point old_ctr = scroll_center();
 	_scale = new_scale;
+	_elt_expand = 2;
 	scroll_recenter(old_ctr);
     } else
 	_scale = new_scale;
@@ -414,11 +415,13 @@ void wdiagram::highlight(delt *e, uint8_t htype, rectangle *expose_rect, bool sc
     if (scroll_to && _layout) {
 	GtkAdjustment *ha = _horiz_adjust, *va = _vert_adjust;
 	rectangle ex = *e;
-	ex.expand(e->shadow(0), e->shadow(1), e->shadow(2), e->shadow(3));
+	ex.expand(e->shadow(this, 0), e->shadow(this, 1),
+		  e->shadow(this, 2), e->shadow(this, 3));
 	ex = canvas_to_window(ex);
 	for (delt *o = e->visible_split(); o && o != e; o = o->split()) {
 	    rectangle ox = *o;
-	    ox.expand(o->shadow(0), o->shadow(1), o->shadow(2), o->shadow(3));
+	    ox.expand(o->shadow(this, 0), o->shadow(this, 1),
+		      o->shadow(this, 2), o->shadow(this, 3));
 	    ox = canvas_to_window(ox);
 	    rectangle windowrect(ha->value, va->value, ha->page_size, va->page_size);
 	    if (ox.intersect(windowrect).area() > ox.intersect(windowrect).area())
