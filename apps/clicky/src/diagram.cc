@@ -385,20 +385,6 @@ void wdiagram::notify_read(handler_value *hv)
  *
  */
 
-void wdiagram::expose(delt *e, rectangle *expose_rect)
-{
-    if (_layout && !expose_rect)
-	redraw(*e);
-    else if (_layout)
-	*expose_rect |= *e;
-    if (delt *o = e->visible_split()) {
-	if (_layout && !expose_rect)
-	    redraw(*o);
-	else if (_layout)
-	    *expose_rect |= *o;
-    }
-}
-
 void wdiagram::unhighlight(uint8_t htype, rectangle *expose_rect)
 {
     assert(htype <= dhlt_pressed);
@@ -406,7 +392,7 @@ void wdiagram::unhighlight(uint8_t htype, rectangle *expose_rect)
 	delt *e = _highlight[htype].front();
 	_highlight[htype].pop_front();
 	e->unhighlight(htype);
-	expose(e, expose_rect);
+	e->expose(this, expose_rect);
     }
 }
 
@@ -422,7 +408,7 @@ void wdiagram::highlight(delt *e, uint8_t htype, rectangle *expose_rect, bool sc
 	unhighlight(htype, expose_rect);
 	_highlight[htype].push_front(e);
 	e->highlight(htype);
-	expose(e, expose_rect);
+	e->expose(this, expose_rect);
     }
 
     if (scroll_to && _layout) {
@@ -430,13 +416,13 @@ void wdiagram::highlight(delt *e, uint8_t htype, rectangle *expose_rect, bool sc
 	rectangle ex = *e;
 	ex.expand(e->shadow(0), e->shadow(1), e->shadow(2), e->shadow(3));
 	ex = canvas_to_window(ex);
-	if (delt *es = e->visible_split()) {
-	    rectangle esx = *es;
-	    esx.expand(es->shadow(0), es->shadow(1), es->shadow(2), es->shadow(3));
-	    esx = canvas_to_window(esx);
+	for (delt *o = e->visible_split(); o && o != e; o = o->split()) {
+	    rectangle ox = *o;
+	    ox.expand(o->shadow(0), o->shadow(1), o->shadow(2), o->shadow(3));
+	    ox = canvas_to_window(ox);
 	    rectangle windowrect(ha->value, va->value, ha->page_size, va->page_size);
-	    if (esx.intersect(windowrect).area() > ex.intersect(windowrect).area())
-		ex = esx;
+	    if (ox.intersect(windowrect).area() > ox.intersect(windowrect).area())
+		ex = ox;
 	}
 	
 	if (ex.x2() >= ha->value + ha->page_size

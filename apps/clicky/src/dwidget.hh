@@ -127,7 +127,7 @@ class delt : public dwidget { public:
     delt(delt *parent, int z_index)
 	: dwidget(dw_elt, z_index), _e(0), _decor(0), _generation(0),
 	  _parent(parent), _split(0), _visible(false), _displayed(false),
-	  _layout(false), _aligned(true), _split_inputs(false),
+	  _layout(false), _aligned(true), _split_type(0),
 	  _des_sensitivity(0), _dess_sensitivity(0), _dps_sensitivity(0),
 	  _markup_sensitivity(0),
 	  _highlight(0), _drawn_highlight(0),
@@ -151,8 +151,29 @@ class delt : public dwidget { public:
     bool visible() const {
 	return _visible;
     }
+    delt *split() const {
+	return _split;
+    }
     delt *visible_split() const {
 	return _split && _split->visible() ? _split : 0;
+    }
+    delt *find_split(int split_type) {
+	delt *d = this;
+	do {
+	    if (d->_split_type == split_type)
+		return d;
+	    d = d->_split;
+	} while (d && d != this);
+	return 0;
+    }
+    const delt *find_split(int split_type) const {
+	const delt *d = this;
+	do {
+	    if (d->_split_type == split_type)
+		return d;
+	    d = d->_split;
+	} while (d && d != this);
+	return 0;
     }
 
     bool root() const {
@@ -200,16 +221,17 @@ class delt : public dwidget { public:
     }
     void highlight(int htype) {
 	_highlight |= 1 << htype;
-	if (_split)
-	    _split->_highlight |= 1 << htype;
+	for (delt *e = _split; e && e != this; e = e->_split)
+	    e->_highlight |= 1 << htype;
     }
     void unhighlight(int htype) {
 	_highlight &= ~(1 << htype);
-	if (_split)
-	    _split->_highlight &= ~(1 << htype);
+	for (delt *e = _split; e && e != this; e = e->_split)
+	    e->_highlight &= ~(1 << htype);
     }
 
     void redraw(wdiagram *d) const;
+    void expose(wdiagram *d, rectangle *expose_rect) const;
 
     // creating
     void create(RouterT *router, ProcessingT *processing,
@@ -235,8 +257,8 @@ class delt : public dwidget { public:
     bool drag_canvas_changed(const rectangle &canvas) const;
 
     // drawing
-    point input_position(int port, dport_style *dps) const;
-    point output_position(int port, dport_style *dps) const;
+    point input_position(int port, dport_style *dps, bool here = false) const;
+    point output_position(int port, dport_style *dps, bool here = false) const;
     void draw(dcontext &dx);
 
     // handlers
@@ -248,6 +270,10 @@ class delt : public dwidget { public:
 			Vector<ElementT *> &path, int &z_index);
     
   private:
+
+    enum {
+	desplit_inputs = 1
+    };
     
     ElementT *_e;
     String _processing_code;
@@ -270,7 +296,7 @@ class delt : public dwidget { public:
     bool _displayed;
     bool _layout : 1;
     bool _aligned : 1;
-    bool _split_inputs;
+    int8_t _split_type;
     unsigned _des_sensitivity : 2;
     unsigned _dess_sensitivity : 2;
     unsigned _dps_sensitivity : 2;
@@ -317,7 +343,8 @@ class delt : public dwidget { public:
 				double side_length) const;
     double hard_port_position(bool isoutput, int port,
 			      double side_length) const;
-    void draw_port(dcontext &dx, dport_style *dps, point p, bool isoutput);
+    void draw_port(dcontext &dx, dport_style *dps, point p, bool isoutput,
+		   double opacity);
     void border_path(dcontext &dx, bool closed) const;
     void clip_to_border(dcontext &dx) const;
 

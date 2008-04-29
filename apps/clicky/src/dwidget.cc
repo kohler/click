@@ -456,7 +456,7 @@ const char *delt::parse_connection_dot(int eindex, int esplit, const char *s, co
 	return s;
     s = cp_integer(s + 1, end, 10, &oeindex);
     if (s < end && s[0] == 's')
-	oesplit = 1, ++s;
+	s = cp_integer(s + 1, end, 10, &oesplit);
     if (oeindex < 0 || (std::vector<delt*>::size_type)oeindex >= _elt.size())
 	return s;
     if (s + 2 >= end || s[0] != ':' || s[1] != 'i' || !isdigit((unsigned char) s[2]))
@@ -529,6 +529,17 @@ const char *delt::parse_connection_dot(int eindex, int esplit, const char *s, co
     return s;
 }
 
+char flow_split_char(const String &str, int port, bool isoutput)
+{
+    const char *s = str.begin(), *end = str.end(), *slash = find(s, end, '/');
+    assert(s < slash && slash < end);
+    if (isoutput)
+	s = slash + 1;
+    else
+	end = slash;
+    return s[std::min(port, end - s - 1)];
+}
+
 void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *errh)
 {
     delt fake_child(this, 0);
@@ -549,8 +560,10 @@ void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *err
 	    continue;
 	double w = e->width() + (e->_dess->margin[1] + e->_dess->margin[3] - txsep);
 	double h = e->height() + (e->_dess->margin[0] + e->_dess->margin[2] - tysep);
-	sa << "n" << e->_e->eindex() << (e->_split_inputs ? "s" : "")
-	   << " [width=" << (w/100) << ",height=" << (h/100)
+	sa << "n" << e->_e->eindex();
+	if (e->_split_type)
+	    sa << "s" << e->_split_type;
+	sa << " [width=" << (w/100) << ",height=" << (h/100)
 	   << ",fixedsize=true,label=\"{{";
 	for (int p = 0; p < e->_e->ninputs(); p++)
 	    sa << (p ? "|<i" : "<i") << p << ">";
@@ -564,18 +577,24 @@ void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *err
 	const ConnectionT &c = router->connection(i);
 	delt *eout = _elt[c.from_eindex()], *ein = _elt[c.to_eindex()];
 	if (eout->displayed() && ein->displayed()) {
-	    sa << 'n' << c.from_eindex() << ':' << 'o' << c.from_port()
+	    sa << 'n' << c.from_eindex();
+	    if (eout->_des->display == dedisp_fsplit)
+		sa << 's' << (int) flow_split_char(eout->_des->flow_split, c.from_port(), true);
+	    sa << ':' << 'o' << c.from_port()
 	       << " -> n" << c.to_eindex();
 	    if (ein->_des->display == dedisp_vsplit)
-		sa << 's';
+		sa << 's' << desplit_inputs;
+	    else if (ein->_des->display == dedisp_fsplit)
+		sa << 's' << (int) flow_split_char(ein->_des->flow_split, c.to_port(), false);
 	    sa << ':' << 'i' << c.to_port() << " [arrowsize=0.2];\n";
 	    // << " [sametail=o" << c.from_port() << ",samehead=i" << c.to_port()
 	}
     }
     sa << "}\n";
 
+    //fprintf(stderr, "%s\n\n\n", sa.c_str());
     String result = shell_command_output_string("dot", sa.take_string(), errh);
-    //    fprintf(stderr, "%s\n", result.c_str());
+    //fprintf(stderr, "%s\n", result.c_str());
     //shell_command_output_string("dot -Tps > /tmp/x.ps", result, errh);
 
     const char *end = result.end();
@@ -593,7 +612,7 @@ void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *err
 	int eindex = 0, esplit = 0;
 	s = cp_integer(s + 1, end, 10, &eindex);
 	if (s != end && *s == 's')
-	    esplit = 1, ++s;
+	    s = cp_integer(s + 1, end, 10, &esplit);
 	while (s != end && isspace((unsigned char) *s))
 	    ++s;
 	if (eindex < 0 || (std::vector<delt*>::size_type)eindex >= _elt.size())
@@ -640,7 +659,7 @@ void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *err
 	    goto skip_to_semicolon;
 	delt *e = _elt[eindex];
 	if (esplit)
-	    e = e->_split;
+	    e = e->find_split(esplit);
 	e->_xrect._x = x * 100. / 72 - e->_width / 2;
 	if (e->_dess->margin[1] != e->_dess->margin[3])
 	    e->_xrect._x -= e->_dess->margin[1] - e->_dess->margin[3];
@@ -668,10 +687,9 @@ void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *err
 
 void delt::layout_contents(dcontext &dcx, RouterT *router)
 {
-    for (std::vector<delt *>::iterator ci = _elt.begin();
-	 ci != _elt.end(); ++ci) {
-	(*ci)->layout(dcx);
-	(*ci)->_row = -1;
+    for (size_t i = 0; i != _elt.size(); ++i) {
+	_elt[i]->layout(dcx);
+	_elt[i]->_row = -1;
     }
 
     position_contents_dot(router, dcx.d, dcx.d->main()->error_handler());
@@ -728,7 +746,7 @@ bool delt::reccss(wdiagram *d, int change)
     
     if ((change & dsense_always) || _des != old_des) {
 	if (_des->display == dedisp_none || _e->tunnel()
-	    || (_split_inputs && _des->display != dedisp_vsplit))
+	    || (_split_type == desplit_inputs && _des->display != dedisp_vsplit))
 	    _displayed = _visible = false;
 	else
 	    _displayed = _visible = true;
@@ -753,10 +771,30 @@ bool delt::reccss(wdiagram *d, int change)
 	_split->_e = _e;
 	_split->_processing_code = _processing_code;
 	_split->_split = this;
-	_split->_split_inputs = true;
+	_split->_split_type = desplit_inputs;
 	_split->_flat_name = _flat_name;
 	_split->_flat_config = _flat_config;
 	_parent->_elt.push_back(_split);
+    } else if (_des->display == dedisp_fsplit && !_split) {
+	Bitvector map(256);
+	for (const char *s = _des->flow_split.begin(); s != _des->flow_split.end(); ++s)
+	    if (*s != '/' && !map[(unsigned char) *s]) {
+		map[(unsigned char) *s] = true;
+		if (!_split) {
+		    _split = this;
+		    _split_type = (unsigned char) *s;
+		} else {
+		    delt *se = new delt(_parent, z_index());
+		    se->_e = _e;
+		    se->_processing_code = _processing_code;
+		    se->_split = _split;
+		    se->_split_type = (unsigned char) *s;
+		    se->_flat_name = _flat_name;
+		    se->_flat_config = _flat_config;
+		    _split = se;
+		    _parent->_elt.push_back(se);
+		}
+	    }
     }
 
     return redraw;
@@ -1067,6 +1105,20 @@ bool dconn::layout()
  *
  */
 
+void delt::expose(wdiagram *d, rectangle *expose_rect) const
+{
+    if (!expose_rect)
+	d->redraw(*this);
+    else
+	*expose_rect |= *this;
+    for (delt *o = visible_split(); o && o != this; o = o->_split) {
+	if (!expose_rect)
+	    d->redraw(*o);
+	else
+	    *expose_rect |= *o;
+    }
+}
+
 void delt::layout_recompute_bounds()
 {
     if (_elt.size()) {
@@ -1168,11 +1220,16 @@ double delt::hard_port_position(bool isoutput, int port,
 		 / _portoff[isoutput][_e->nports(isoutput)];
 }
 
-point delt::input_position(int port, dport_style *dps) const
+point delt::input_position(int port, dport_style *dps, bool here) const
 {
     if (_des->display == dedisp_vsplit && _split && _split->visible()
-	&& !_split_inputs)
-	return _split->input_position(port, 0);
+	&& _split_type != desplit_inputs && !here)
+	return _split->input_position(port, 0, true);
+    if (_des->display == dedisp_fsplit && _split && !here) {
+	int c = flow_split_char(_des->flow_split, port, false);
+	if (_split_type != c)
+	    return find_split(c)->input_position(port, dps, true);
+    }
     
     double off = port_position(false, port, side_length(_des->orientation ^ 1));
 
@@ -1190,11 +1247,16 @@ point delt::input_position(int port, dport_style *dps) const
 	return point(_x + off, pos);
 }
 
-point delt::output_position(int port, dport_style *dps) const
+point delt::output_position(int port, dport_style *dps, bool here) const
 {
     if (_des->display == dedisp_vsplit && _split && _split->visible()
-	&& _split_inputs)
-	return _split->output_position(port, 0);
+	&& _split_type == desplit_inputs && !here)
+	return _split->output_position(port, 0, true);
+    if (_des->display == dedisp_fsplit && _split && !here) {
+	int c = flow_split_char(_des->flow_split, port, true);
+	if (_split_type != c)
+	    return find_split(c)->output_position(port, dps, true);
+    }
     
     double off = port_position(true, port, side_length(_des->orientation ^ 1));
     
@@ -1234,7 +1296,8 @@ static inline void cairo_set_border(cairo_t *cr, const double *color,
     cairo_set_line_width(cr, width);
 }
 
-void delt::draw_port(dcontext &dcx, dport_style *dps, point p, bool isoutput)
+void delt::draw_port(dcontext &dcx, dport_style *dps, point p, bool isoutput,
+		     double opacity)
 {
     // align position
     if (dcx.scale_step == 0 && _aligned) {
@@ -1270,7 +1333,8 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p, bool isoutput)
 	if (color[3] == 0)
 	    continue;
 
-	cairo_set_source_rgba(dcx, color[0], color[1], color[2], color[3]);
+	cairo_set_source_rgba(dcx, color[0], color[1], color[2],
+			      color[3] * opacity);
 
 	double offset;
 	if (i > 1)
@@ -1316,22 +1380,30 @@ void delt::draw_ports(dcontext &dcx)
     const char *pcpos = _processing_code.begin();
     int pcode;
     ref_ptr<dport_style> dps;
-    
-    for (int i = 0; i < _e->ninputs(); i++) {
-	pcpos = ProcessingT::processing_code_next
-	    (pcpos, _processing_code.end(), pcode);
-	dps = dcx.d->ccss()->port_style(dcx.d, this, false, i, pcode);
-	if (dps->display & dpdisp_inputs)
-	    draw_port(dcx, dps.get(), input_position(i, dps.get()), false);
-    }
+
+    if (_des->display != dedisp_vsplit || _split_type == desplit_inputs)
+	for (int i = 0; i < _e->ninputs(); i++) {
+	    pcpos = ProcessingT::processing_code_next
+		(pcpos, _processing_code.end(), pcode);
+	    dps = dcx.d->ccss()->port_style(dcx.d, this, false, i, pcode);
+	    if (dps->display & dpdisp_inputs) {
+		double opacity = (_des->display == dedisp_fsplit && flow_split_char(_des->flow_split, i, false) != _split_type ? 0.25 : 1);
+		draw_port(dcx, dps.get(), input_position(i, dps.get(), true),
+			  false, opacity);
+	    }
+	}
     pcpos = ProcessingT::processing_code_output(_processing_code.begin(), _processing_code.end(), pcpos);
-    for (int i = 0; i < _e->noutputs(); i++) {
-	pcpos = ProcessingT::processing_code_next
-	    (pcpos, _processing_code.end(), pcode);
-	dps = dcx.d->ccss()->port_style(dcx.d, this, true, i, pcode);
-	if (dps->display & dpdisp_outputs)
-	    draw_port(dcx, dps.get(), output_position(i, dps.get()), true);
-    }
+    if (_des->display != dedisp_vsplit || _split_type != desplit_inputs)
+	for (int i = 0; i < _e->noutputs(); i++) {
+	    pcpos = ProcessingT::processing_code_next
+		(pcpos, _processing_code.end(), pcode);
+	    dps = dcx.d->ccss()->port_style(dcx.d, this, true, i, pcode);
+	    if (dps->display & dpdisp_outputs) {
+		double opacity = (_des->display == dedisp_fsplit && flow_split_char(_des->flow_split, i, true) != _split_type ? 0.25 : 1);
+		draw_port(dcx, dps.get(), output_position(i, dps.get(), true),
+			  true, opacity);
+	    }
+	}
 }
 
 static void cairo_jagged_edge(cairo_t *cr, double x0, double y0,
@@ -1371,7 +1443,9 @@ void delt::draw_background(dcontext &dcx)
 	    cairo_line_to(dcx, pos[1], pos[2]);
 	    cairo_line_to(dcx, pos[3], pos[2]);
 	} else {
-	    int spo = (_des->orientation + (_split_inputs ? 2 : 0)) & 3;
+	    int spo = _des->orientation;
+	    if (_split_type == desplit_inputs)
+		spo = (spo + 2) & 3;
 	    cairo_move_to(dcx, pos[((spo + 3) & 2) + 1], pos[spo & 2]);
 	    cairo_line_to(dcx, pos[((spo + 2) & 2) + 1], pos[(spo + 3) & 2]);
 	    cairo_line_to(dcx, pos[((spo + 1) & 2) + 1], pos[(spo + 2) & 2]);
@@ -1499,8 +1573,11 @@ void delt::draw_drop_shadow(dcontext &dcx)
 {
     double shift = (_highlight & (1 << dhlt_pressed)) ? 1 : 0;
     int spo = -1;
-    if (_des->display == dedisp_vsplit)
-	spo = (_des->orientation + (_split_inputs ? 2 : 0)) & 3;
+    if (_des->display == dedisp_vsplit) {
+	spo = _des->orientation;
+	if (_split_type == desplit_inputs)
+	    spo = (spo + 2) & 3;
+    }
     double sw = _des->shadow_width;
     if (spo != 1 && spo != 2) {
 	double x0 = _x + sw, y0 = _y + _height + (sw + shift) / 2;
@@ -1586,8 +1663,8 @@ void delt::draw_outline(dcontext &dcx)
 	pos[2] = _y + _height - bwd;
 	int o = _des->orientation, open = (_des->style == destyle_queue);
 	if (_des->display == dedisp_vsplit) {
-	    open = (open && _split_inputs ? 2 : 1);
-	    o = (_split_inputs ? (o + 2) & 3 : o);
+	    open = (open && _split_type == desplit_inputs ? 2 : 1);
+	    o = (_split_type == desplit_inputs ? (o + 2) & 3 : o);
 	}
 	if (open)
 	    pos[o] = side(o);

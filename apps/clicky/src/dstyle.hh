@@ -39,7 +39,8 @@ enum {
     dedisp_none = 0,
     dedisp_open = 1,
     dedisp_closed = 2,
-    dedisp_vsplit = 3
+    dedisp_vsplit = 3,
+    dedisp_fsplit = 4
 };
 
 enum {
@@ -88,6 +89,7 @@ struct delt_style : public enable_ref_ptr {
     int style;
     String text;
     int display;
+    String flow_split;
     String decorations;
     String font;
 };

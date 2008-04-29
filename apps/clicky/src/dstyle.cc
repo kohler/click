@@ -1497,6 +1497,29 @@ void dcss_set::collect_elt_styles(wdiagram *d, const delt *e, int pflag,
 	_below->collect_elt_styles(d, e, pflag, result, sensitivity);
 }
 
+static String parse_flow_split(const char *begin, const char *end)
+{
+    StringAccum sa;
+    bool output = false;
+    
+    for (begin = cp_skip_space(begin, end); begin < end; ++begin)
+	if (*begin == '/') {
+	    if (output || !sa.length())
+		return String();
+	    output = true;
+	    sa << '/';
+	} else if (isalpha((unsigned char) *begin))
+	    sa << *begin;
+	else
+	    break;
+
+    begin = cp_skip_space(begin, end);
+    if (begin != end || !sa.length() || !output || sa.back() == '/')
+	return String();
+    else
+	return sa.take_string();
+}
+
 ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e, int *sensitivity)
 {
     if (sensitivity)
@@ -1542,6 +1565,11 @@ ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e, int *sensiti
 	    sty->display = dedisp_closed;
 	else if (s.equals("vertical-split", 14))
 	    sty->display = dedisp_vsplit;
+	else if (s.length() > 11 && memcmp(s.data(), "flow-split(", 11) == 0
+		 && s.back() == ')') {
+	    if ((sty->flow_split = parse_flow_split(s.begin() + 11, s.end() - 1)))
+		sty->display = dedisp_fsplit;
+	}
 	sty->font = elt_pm[11].vstring("font");
 	sty->decorations = elt_pm[12].vstring("decorations");
 	sty->queue_stripe_style = elt_pm[13].vborder_style("queue-stripe-style");
