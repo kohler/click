@@ -68,7 +68,7 @@ class wdiagram { public:
 
     void export_diagram(const char *filename, bool eps);
     
-    enum { c_main = 0, ncursors = 9 };
+    enum { c_element = 0, c_main = 9, c_hand = 10, ncursors = 11 };
     
   private:
 
@@ -93,13 +93,20 @@ class wdiagram { public:
 
     std::list<delt *> _highlight[3];
 
-    enum { drag_none, drag_start, drag_dragging, drag_rect_start,
-	   drag_rect_dragging };
+    enum {
+	drag_none,
+	drag_start,
+	drag_dragging,
+	drag_rect_start,
+	drag_rect_dragging,
+	drag_hand_start,
+	drag_hand_dragging
+    };
     
     rectangle _dragr;
     int _drag_state;
 
-    GdkCursor *_cursor[9];
+    GdkCursor *_cursor[ncursors];
 
     int _last_cursorno;
     
@@ -111,11 +118,12 @@ class wdiagram { public:
     void highlight(delt *e, uint8_t htype, rectangle *expose_rect, bool incremental);
 
     delt *point_elt(const point &p) const;
-    void set_cursor(delt *e, double x, double y);
+    void set_cursor(delt *e, double x, double y, int state);
     point scroll_center() const;
     inline void find_rect_elts(const rectangle &r, std::vector<dwidget *> &result) const;
     void on_drag_motion(const point &p);
     void on_drag_rect_motion(const point &p);
+    void on_drag_hand_motion(double x_root, double y_root);
     void on_drag_complete();
     void on_drag_rect_complete();
     

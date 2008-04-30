@@ -109,7 +109,7 @@ class dconn : public dwidget { public:
 
 enum {
     deg_none = -1,
-    deg_main = 0,
+    deg_element = 0,
     deg_border_top = 1,
     deg_border_bot = 2,
     deg_border_lft = 3,

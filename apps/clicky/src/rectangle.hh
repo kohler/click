@@ -182,10 +182,10 @@ struct rectangle {
 	return point(_x, _y);
     }
     
-    typedef void (rectangle::*unspecified_bool_type)(const point &);
+    typedef point (rectangle::*unspecified_bool_type)() const;
 
     operator unspecified_bool_type() const {
-	return (_width > 0 && _height > 0 ? &rectangle::set_origin : 0);
+	return (_width > 0 && _height > 0 ? &rectangle::origin : 0);
     }
 
     void assign(double x, double y, double width, double height) {
@@ -215,6 +215,16 @@ struct rectangle {
     void set_origin(const point &p) {
 	_x = p.x();
 	_y = p.y();
+    }
+
+    void set_origin(double x, double y) {
+	_x = x;
+	_y = y;
+    }
+
+    void set_size(double width, double height) {
+	_width = width;
+	_height = height;
     }
     
     void shift(double dx, double dy) {

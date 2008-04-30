@@ -66,7 +66,8 @@ wdiagram::wdiagram(wmain *rw)
 
     for (int i = 0; i < 3; i++)
 	_highlight[i].clear();
-    static_assert(ncursors == deg_corner_lrt + 1);
+    static_assert((int) ncursors > (int) deg_corner_lrt
+		  && (int) c_element == (int) deg_element);
     for (int i = c_main; i < ncursors; i++)
 	_cursor[i] = 0;
     _last_cursorno = c_main;
@@ -86,6 +87,7 @@ void wdiagram::initialize()
 {
     if (!_cursor[c_main]) {
 	_cursor[c_main] = _rw->_normal_cursor;
+	_cursor[deg_element] = gdk_cursor_new(GDK_HAND1);
 	_cursor[deg_corner_ulft] = gdk_cursor_new(GDK_TOP_LEFT_CORNER);
 	_cursor[deg_border_top] = gdk_cursor_new(GDK_TOP_SIDE);
 	_cursor[deg_corner_urt] = gdk_cursor_new(GDK_TOP_RIGHT_CORNER);
@@ -94,6 +96,7 @@ void wdiagram::initialize()
 	_cursor[deg_border_bot] = gdk_cursor_new(GDK_BOTTOM_SIDE);
 	_cursor[deg_corner_llft] = gdk_cursor_new(GDK_BOTTOM_LEFT_CORNER);
 	_cursor[deg_border_lft] = gdk_cursor_new(GDK_LEFT_SIDE);
+	_cursor[c_hand] = gdk_cursor_new(GDK_FLEUR);
 	for (int i = c_main; i < ncursors; i++)
 	    gdk_cursor_ref(_cursor[i]);
     }
@@ -472,7 +475,7 @@ void wdiagram::on_drag_motion(const point &p)
 	_drag_state = drag_dragging;
     }
     
-    if (_drag_state == drag_dragging && _last_cursorno == c_main) {
+    if (_drag_state == drag_dragging && _last_cursorno == deg_element) {
 	for (std::list<delt *>::iterator iter = _highlight[dhlt_click].begin();
 	     iter != _highlight[dhlt_click].end(); ++iter)
 	    (*iter)->drag_shift(this, delta);
@@ -547,10 +550,35 @@ void wdiagram::on_drag_rect_complete()
     redraw(_dragr.normalize());
 }
 
-void wdiagram::set_cursor(delt *h, double x, double y)
+void wdiagram::on_drag_hand_motion(double x_root, double y_root)
 {
-    int gnum = (h ? h->find_gadget(this, x, y) : deg_none);
-    int cnum = (gnum >= c_main && gnum < ncursors ? gnum : c_main);
+    if (_drag_state == drag_hand_start
+	&& (fabs(x_root - _dragr.x()) >= 3
+	    || fabs(y_root - _dragr.y()) >= 3)) {
+	_dragr.set_size(gtk_adjustment_get_value(_horiz_adjust),
+			gtk_adjustment_get_value(_vert_adjust));
+	_drag_state = drag_hand_dragging;
+    }
+
+    if (_drag_state == drag_hand_dragging) {
+	double dx = _dragr.x() - x_root;
+	double dy = _dragr.y() - y_root;
+	gtk_adjustment_set_value(_horiz_adjust, _dragr.width() + dx);
+	gtk_adjustment_set_value(_vert_adjust, _dragr.height() + dy);
+    }
+}
+
+void wdiagram::set_cursor(delt *h, double x, double y, int state)
+{
+    int cnum;
+    if (h) {
+	int gnum = h->find_gadget(this, x, y);
+	cnum = (gnum >= deg_element && gnum < ncursors ? gnum : c_main);
+    } else if ((state & GDK_SHIFT_MASK)
+	       || (_drag_state != drag_hand_start && _drag_state != drag_hand_dragging))
+	cnum = c_main;
+    else
+	cnum = c_hand;
     if (_last_cursorno != cnum) {
 	_last_cursorno = cnum;
 	gdk_window_set_cursor(_widget->window, _cursor[_last_cursorno]);
@@ -564,11 +592,13 @@ gboolean wdiagram::on_event(GdkEvent *event)
 	if (!(event->motion.state & GDK_BUTTON1_MASK)) {
 	    delt *e = point_elt(p);
 	    highlight(e, dhlt_hover, 0, false);
-	    set_cursor(e, event->motion.x, event->motion.y);
+	    set_cursor(e, event->motion.x, event->motion.y, event->motion.state);
 	} else if (_drag_state == drag_start || _drag_state == drag_dragging)
 	    on_drag_motion(p);
 	else if (_drag_state == drag_rect_start || _drag_state == drag_rect_dragging)
 	    on_drag_rect_motion(p);
+	else if (_drag_state == drag_hand_start || _drag_state == drag_hand_dragging)
+	    on_drag_hand_motion(event->motion.x_root, event->motion.y_root);
 
 	// Getting pointer position tells GTK to give us more motion events
 	GdkModifierType mod;
@@ -576,12 +606,21 @@ gboolean wdiagram::on_event(GdkEvent *event)
 	(void) gdk_window_get_pointer(_widget->window, &mx, &my, &mod);
 
     } else if (event->type == GDK_BUTTON_PRESS && event->button.button == 1) {
-	_dragr.set_origin(window_to_canvas(event->button.x, event->button.y));
-	delt *e = point_elt(_dragr.origin());
-	_drag_state = (e ? drag_start : drag_rect_start);
+	point p = window_to_canvas(event->button.x, event->button.y);
+	delt *e = point_elt(p);
+	if (e) {
+	    _drag_state = drag_start;
+	    _dragr.set_origin(p);
+	} else if (event->button.state & GDK_SHIFT_MASK) {
+	    _drag_state = drag_rect_start;
+	    _dragr.set_origin(p);
+	} else {
+	    _drag_state = drag_hand_start;
+	    _dragr.set_origin(event->button.x_root, event->button.y_root);
+	}
 
 	if (!(event->button.state & GDK_SHIFT_MASK)) {
-	    if (!e || !e->highlighted(dhlt_click))
+	    if (e && !e->highlighted(dhlt_click))
 		highlight(e, dhlt_click, 0, false);
 	    if (e)
 		_rw->element_show(e->flat_name(), 0, true);
@@ -596,6 +635,7 @@ gboolean wdiagram::on_event(GdkEvent *event)
 	}
 
 	highlight(e, dhlt_pressed, 0, false);
+	set_cursor(e, event->button.x, event->button.y, event->button.state);
 	
     } else if ((event->type == GDK_BUTTON_RELEASE && event->button.button == 1)
 	       || (event->type == GDK_FOCUS_CHANGE && !event->focus_change.in)) {

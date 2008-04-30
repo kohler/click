@@ -119,6 +119,9 @@ port.agnostic, port.push.agnostic, port.pull.agnostic {\n\
     background: #ffff94;\n\
     shadow: unscaled-outline rgba(90%, 20%, 95%, 50%) 3px;\n\
 }\n\
+*:pressed, *:active:pressed {\n\
+    shadow: drop rgba(50%, 50%, 45%, 50%) 3px;\n\
+}\n\
 }\n\
 *Queue {\n\
     min-width: 17.6px;\n\
@@ -691,6 +694,8 @@ const char *dcss_selector::parse(const String &str, const char *s)
 		_highlight |= (1<<dhlt_hover), _highlight_match |= (1<<dhlt_hover);
 	    else if (x.equals("active", 6))
 		_highlight |= (1<<dhlt_click), _highlight_match |= (1<<dhlt_click);
+	    else if (x.equals("pressed", 7))
+		_highlight |= (1<<dhlt_pressed), _highlight_match |= (1<<dhlt_pressed);
 	    else
 		_klasses.push_back(x);
 	} else {

@@ -1286,6 +1286,7 @@ void delt::insert(rect_search<dwidget> &rects,
     for (std::vector<dconn *>::iterator it = _parent->_conn.begin();
 	 it != _parent->_conn.end(); ++it)
 	if ((*it)->_from_elt->_e == _e || (*it)->_to_elt->_e == _e) {
+	    (*it)->layout();
 	    bounds |= **it;
 	    rects.insert(*it);
 	}
@@ -1674,8 +1675,8 @@ void delt::draw_drop_shadow(dcontext &dcx)
     double sw = _des->shadow_width;
     dcx.d->notify_shadow(sw);
     if (spo != 1 && spo != 2) {
-	double x0 = _x + sw, y0 = _y + _height + (sw + shift) / 2;
-	double x1 = _x + _width + (sw + shift) / 2, y1 = _y + sw;
+	double x0 = _x + sw - shift, y0 = _y + _height + (sw - shift) / 2;
+	double x1 = _x + _width + (sw - shift) / 2, y1 = _y + sw - shift;
 	cairo_set_line_width(dcx, sw - shift);
 	cairo_move_to(dcx, x0, y0);
 	cairo_line_to(dcx, x1, y0);
@@ -1999,7 +2000,7 @@ int delt::find_gadget(wdiagram *d, double window_x, double window_y) const
 	    || window_y - r.y1() < attach
 	    || r.x2() - window_x - 1 < attach
 	    || r.y2() - window_y - 1 < attach)) {
-	int gnum = deg_main;
+	int gnum = deg_element;
 	if (window_x - r.x1() < 10)
 	    gnum += deg_border_lft;
 	else if (r.x2() - window_x < 10)
@@ -2011,7 +2012,7 @@ int delt::find_gadget(wdiagram *d, double window_x, double window_y) const
 	return gnum;
     }
 
-    return deg_main;
+    return deg_element;
 }
 
 }
