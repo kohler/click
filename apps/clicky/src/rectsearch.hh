@@ -64,7 +64,7 @@ template <typename T, int CHUNK>
 void rect_search<T, CHUNK>::remove(T *v)
 {
     if (v->width() * v->height() >= 50 * CHUNK * CHUNK)
-	std::remove(_big_stuff.begin(), _big_stuff.end(), v);
+	_big_stuff.remove(v);
     else {
 	int xi1 = (int) floor(v->x() / CHUNK);
 	int yi1 = (int) floor(v->y() / CHUNK);
@@ -76,7 +76,7 @@ void rect_search<T, CHUNK>::remove(T *v)
 	    for (int j = 0; y1 + j * CHUNK < y2; ++j) {
 		int nnn = (((xi1 + i) & 0xFFF) << 12) + ((yi1 + j) & 0xFFF);
 		typename rectmap::iterator it = _stuff.find_insert(nnn);
-		std::remove(it.value().begin(), it.value().end(), v);
+		it.value().remove(v);
 	    }
     }
 }
@@ -132,5 +132,16 @@ void rect_search<T, CHUNK>::find_all(const rectangle &r, std::vector<T *> &resul
     }
     find_some(_big_stuff, r, result);
 }
+
+#if 0
+template <typename T, int CHUNK>
+void rect_search<T, CHUNK>::print_sizes()
+{
+    for (typename rectmap::const_iterator hiter = _stuff.begin();
+	 hiter != _stuff.end(); ++hiter)
+	fprintf(stderr, "%d ", hiter->second.size());
+    fprintf(stderr, "%d\n", _big_stuff.size());
+}
+#endif
 
 #endif

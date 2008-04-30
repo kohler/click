@@ -230,7 +230,7 @@ void wdiagram::router_create(bool incremental, bool always)
 	dcx.generation = _pango_generation;
 	ElementMap::push_default(_rw->element_map());
 	_elt_expand = 1;
-	_relt->layout_main(dcx, _rw->_r);
+	_relt->layout_main(dcx);
 	g_object_unref(G_OBJECT(dcx.pl));
 	scroll_recenter(point(0, 0));
 	ElementMap::pop_default();

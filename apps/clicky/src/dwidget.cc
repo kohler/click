@@ -228,8 +228,6 @@ void delt::layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, cons
 	    layinfo[*iter].posrel = g2;
 	}
 
-    //
-    
     // 
     // print SCCs
 #if 0
@@ -502,6 +500,8 @@ const char *delt::parse_connection_dot(int eindex, int esplit, const char *s, co
     if (s + 2 >= end || s[0] != ':' || s[1] != 'o' || !isdigit((unsigned char) s[2]))
 	return s;
     s = cp_integer(s + 2, end, 10, &eport);
+    if (s + 2 < end && s[0] == ':' && (s[1] == 's' || s[1] == 'e'))
+	s += 2;
     s = cp_skip_space(s, end);
     if (s + 1 >= end || s[0] != '-' || s[1] != '>')
 	return s;
@@ -516,6 +516,8 @@ const char *delt::parse_connection_dot(int eindex, int esplit, const char *s, co
     if (s + 2 >= end || s[0] != ':' || s[1] != 'i' || !isdigit((unsigned char) s[2]))
 	return s;
     s = cp_integer(s + 2, end, 10, &oeport);
+    if (s + 2 < end && s[0] == ':' && (s[1] == 'n' || s[1] == 'w'))
+	s += 2;
     s = cp_skip_space(s, end);
     if (s >= end || s[0] != '[')
 	return s;
@@ -596,21 +598,11 @@ char flow_split_char(const String &str, int port, bool isoutput)
 
 static void ports_dot(StringAccum &sa, int nports, char c)
 {
-    if (nports == 1)
-	sa << "<" << c << "x0>|<" << c << "x1>|<" << c << "0>|<"
-	   << c << "x2>|<" << c << "x3>";
-    else if (nports == 2)
-	sa << "<" << c << "x0>|<" << c << "0>|<" << c << "x1>|<"
-	   << c << "1>|<" << c << "x2>";
-    else if (nports == 3)
-	sa << "<" << c << "0>|<" << c << "x0>|<" << c << "1>|<"
-	   << c << "x1>|<" << c << "2>";
-    else if (nports > 3)
-	for (int p = 0; p < nports; ++p)
-	    sa << (p ? "|<" : "<") << c << p << ">";
+    for (int p = 0; p < nports; ++p)
+	 sa << (p ? "|<" : "<") << c << p << ">";
 }
 
-void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *errh)
+void delt::position_contents_dot(wdiagram *d, ErrorHandler *errh)
 {
     delt fake_child(this, 0);
     ref_ptr<delt_size_style> gdess = d->ccss()->elt_size_style(d, &fake_child);
@@ -647,13 +639,16 @@ void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *err
 	    sa << 'n' << eout->eindex();
 	    if (eout->_des->display == dedisp_fsplit)
 		sa << 's' << (int) flow_split_char(eout->_des->flow_split, (*ci)->_from_port, true);
-	    sa << ':' << 'o' << (*ci)->_from_port
+	    sa << ':' << 'o' << (*ci)->_from_port << ':'
+	       << (eout->vertical() ? 's' : 'e')
 	       << " -> n" << ein->eindex();
 	    if (ein->_des->display == dedisp_vsplit)
 		sa << 's' << desplit_inputs;
 	    else if (ein->_des->display == dedisp_fsplit)
 		sa << 's' << (int) flow_split_char(ein->_des->flow_split, (*ci)->_to_port, false);
-	    sa << ':' << 'i' << (*ci)->_to_port << " [arrowsize=0.2];\n";
+	    sa << ':' << 'i' << (*ci)->_to_port << ':'
+	       << (ein->vertical() ? 'n' : 'w')
+	       << " [arrowsize=0.2,headclip=true,tailclip=true];\n";
 	    // << " [sametail=o" << (*ci)->_from_port << ",samehead=i" << (*ci)->_to_port
 	}
     }
@@ -863,12 +858,12 @@ bool delt::reccss(wdiagram *d, int change)
  *
  */
 
-void delt::layout_contents(dcontext &dcx, RouterT *router)
+void delt::layout_contents(dcontext &dcx)
 {
     for (size_t i = 0; i != _elt.size(); ++i)
 	_elt[i]->layout(dcx);
 
-    position_contents_dot(router, dcx.d, dcx.d->main()->error_handler());
+    position_contents_dot(dcx.d, dcx.d->main()->error_handler());
     //position_contents_scc(router);
     //position_contents_first_heuristic(router);
 
@@ -1042,7 +1037,7 @@ void delt::layout(dcontext &dcx)
 
     // get contents width and height
     if (_elt.size() && _des->display == dedisp_open)
-	layout_contents(dcx, _e->resolved_router());
+	layout_contents(dcx);
     
     // get element width and height
     double xwidth, xheight;
@@ -1135,13 +1130,13 @@ void delt::layout_complete(dcontext &dcx, double dx, double dy)
 	    dcx.d->rects().insert(*ci);
 }
 
-void delt::layout_main(dcontext &dcx, RouterT *router)
+void delt::layout_main(dcontext &dcx)
 {
     delt fake_child(this, 0);
     _des = dcx.d->ccss()->elt_style(dcx.d, &fake_child);
     _dess = dcx.d->ccss()->elt_size_style(dcx.d, &fake_child);
     dcx.d->rects().clear();
-    layout_contents(dcx, router);
+    layout_contents(dcx);
     layout_complete(dcx, _dess->margin[3], _dess->margin[0]);
     assign(0, 0, _contents_width + _dess->margin[1] + _dess->margin[3],
 	   _contents_height + _dess->margin[0] + _dess->margin[2]);
@@ -1232,7 +1227,8 @@ void delt::remove(rect_search<dwidget> &rects, rectangle &bounds)
     
     bounds |= *this;
     rects.remove(this);
-    
+
+#if 0
     Vector<int> conn;
     _e->router()->find_connections_to(_e, conn);
     for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter)
@@ -1247,6 +1243,14 @@ void delt::remove(rect_search<dwidget> &rects, rectangle &bounds)
 	    bounds |= *_parent->_conn[*iter];
 	    rects.remove(_parent->_conn[*iter]);
 	}
+#else
+    for (std::vector<dconn *>::iterator it = _parent->_conn.begin();
+	 it != _parent->_conn.end(); ++it)
+	if ((*it)->_from_elt->_e == _e || (*it)->_to_elt->_e == _e) {
+	    bounds |= **it;
+	    rects.remove(*it);
+	}
+#endif
 
     if (_parent && _elt.size()) {
 	_elt[0]->remove(rects, bounds);
@@ -1263,6 +1267,7 @@ void delt::insert(rect_search<dwidget> &rects,
     bounds |= *this;
     rects.insert(this);
 
+#if 0
     Vector<int> conn;
     _e->router()->find_connections_to(_e, conn);
     for (Vector<int>::iterator iter = conn.begin(); iter != conn.end(); ++iter)
@@ -1277,6 +1282,14 @@ void delt::insert(rect_search<dwidget> &rects,
 	    bounds |= *_parent->_conn[*iter];
 	    rects.insert(_parent->_conn[*iter]);
 	}
+#else
+    for (std::vector<dconn *>::iterator it = _parent->_conn.begin();
+	 it != _parent->_conn.end(); ++it)
+	if ((*it)->_from_elt->_e == _e || (*it)->_to_elt->_e == _e) {
+	    bounds |= **it;
+	    rects.insert(*it);
+	}
+#endif
 
     if (_parent && _elt.size()) {
 	layout_compound_ports(d);

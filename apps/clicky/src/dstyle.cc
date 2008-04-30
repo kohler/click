@@ -85,7 +85,7 @@ port.agnostic, port.push.agnostic, port.pull.agnostic {\n\
     color: black;\n\
     border: 1px solid black;\n\
     padding: 8px 12px;\n\
-    margin: 6px 12px;\n\
+    margin: 10px 14px;\n\
     shadow: drop rgba(50%, 50%, 45%, 50%) 3px;\n\
     orientation: vertical;\n\
     /* min-height: 30px; */\n\
