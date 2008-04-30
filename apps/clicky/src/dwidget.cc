@@ -542,6 +542,22 @@ char flow_split_char(const String &str, int port, bool isoutput)
     return s[std::min(port, end - s - 1)];
 }
 
+static void ports_dot(StringAccum &sa, int nports, char c)
+{
+    if (nports == 1)
+	sa << "<" << c << "x0>|<" << c << "x1>|<" << c << "0>|<"
+	   << c << "x2>|<" << c << "x3>";
+    else if (nports == 2)
+	sa << "<" << c << "x0>|<" << c << "0>|<" << c << "x1>|<"
+	   << c << "1>|<" << c << "x2>";
+    else if (nports == 3)
+	sa << "<" << c << "0>|<" << c << "x0>|<" << c << "1>|<"
+	   << c << "x1>|<" << c << "2>";
+    else if (nports > 3)
+	for (int p = 0; p < nports; ++p)
+	    sa << (p ? "|<" : "<") << c << p << ">";
+}
+
 void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *errh)
 {
     delt fake_child(this, 0);
@@ -567,11 +583,9 @@ void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *err
 	    sa << "s" << e->_split_type;
 	sa << " [width=" << (w/100) << ",height=" << (h/100)
 	   << ",fixedsize=true,label=\"{{";
-	for (int p = 0; p < e->_e->ninputs(); p++)
-	    sa << (p ? "|<i" : "<i") << p << ">";
+	ports_dot(sa, e->_e->ninputs(), 'i');
 	sa << "}|" << e->_e->name() << "|{";
-	for (int p = 0; p < e->_e->noutputs(); p++)
-	    sa << (p ? "|<o" : "<o") << p << ">";
+	ports_dot(sa, e->_e->noutputs(), 'o');
 	sa << "}}\"];\n";
 	e->_xrect._x = e->_xrect._y = 0;
     }
@@ -595,7 +609,22 @@ void delt::position_contents_dot(RouterT *router, wdiagram *d, ErrorHandler *err
     sa << "}\n";
 
     //fprintf(stderr, "%s\n\n\n", sa.c_str());
-    String result = shell_command_output_string("dot", sa.take_string(), errh);
+    String result;
+    {
+	StringAccum outsa(shell_command_output_string("dot", sa.take_string(), errh));
+	char *outs = outsa.begin(), *outend = outsa.end();
+	for (char *s = outsa.begin(); s != outend; )
+	    if (*s == '\\' && s + 1 < outend && s[1] == '\n')
+		s += 2;
+	    else if (*s == '\\' && s + 2 < outend && s[1] == '\r' && s[1] == '\n')
+		s += 3;
+	    else if (*s == '\\' && s + 1 < outend && s[1] == '\r')
+		s += 2;
+	    else
+		*outs++ = *s++;
+	outsa.adjust_length(outs - outsa.end());
+	result = outsa.take_string();
+    }
     //fprintf(stderr, "%s\n", result.c_str());
     //shell_command_output_string("dot -Tps > /tmp/x.ps", result, errh);
 
