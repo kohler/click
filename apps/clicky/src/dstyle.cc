@@ -1577,7 +1577,8 @@ ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e, int *sensiti
 		 && s.back() == ')') {
 	    if ((sty->flow_split = parse_flow_split(s.begin() + 11, s.end() - 1)))
 		sty->display = dedisp_fsplit;
-	}
+	} else if (s.equals("passthrough", 11))
+	    sty->display = dedisp_passthrough;
 	sty->font = elt_pm[11].vstring("font");
 	sty->decorations = elt_pm[12].vstring("decorations");
 	sty->queue_stripe_style = elt_pm[13].vborder_style("queue-stripe-style");

@@ -118,7 +118,7 @@ void wdiagram::set_ccss_text(const String &text)
 void wdiagram::display(const String &ename, bool scroll_to)
 {
     if (delt *e = _elt_map[ename]) {
-	while (!e->root() && !e->displayed())
+	while (!e->root() && e->displayed() <= 0)
 	    e = e->parent();
 	if (!e->root() && (!e->highlighted(dhlt_click) || scroll_to))
 	    highlight(e, dhlt_click, 0, scroll_to);
@@ -215,12 +215,12 @@ void wdiagram::router_create(bool incremental, bool always)
     if (!always && !GTK_WIDGET_VISIBLE(_widget))
 	return;
     if (!_relt) {
-	_relt = new delt(0, 0);
+	_relt = new delt;
 	if (_rw->_r) {
 	    Vector<ElementT *> path;
 	    int z_index = 0;
-	    _relt->prepare_router(this, _rw->_r, _rw->_processing, _elt_map,
-				  path, z_index);
+	    _relt->create_elements(this, _rw->_r, _rw->_processing, _elt_map,
+				   path, z_index);
 	}
     }
     if (!_cursor[0])
@@ -454,7 +454,7 @@ delt *wdiagram::point_elt(const point &p) const
     for (eltsi = elts.begin(); eltsi != elts.end(); ++eltsi)
 	if ((*eltsi)->contains(p))
 	    if (delt *e = (*eltsi)->cast_elt())
-		if (e->displayed())
+		if (e->displayed() > 0)
 		    return e;
     return 0;
 }

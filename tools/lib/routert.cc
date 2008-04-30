@@ -674,12 +674,13 @@ RouterT::find_connection_id_from(const PortT &h) const
 }
 
 void
-RouterT::find_connections_from(const PortT &h, Vector<PortT> &v) const
+RouterT::find_connections_from(const PortT &output, Vector<PortT> &v, bool clear) const
 {
-    assert(h.router() == this);
-    int c = _first_conn[h.eindex()].from;
-    int p = h.port;
-    v.clear();
+    assert(output.router() == this);
+    int c = _first_conn[output.eindex()].from;
+    int p = output.port;
+    if (clear)
+	v.clear();
     while (c >= 0) {
 	if (_conn[c].from().port == p)
 	    v.push_back(_conn[c].to());

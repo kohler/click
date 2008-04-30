@@ -41,7 +41,8 @@ enum {
     dedisp_open = 1,
     dedisp_closed = 2,
     dedisp_vsplit = 3,
-    dedisp_fsplit = 4
+    dedisp_fsplit = 4,
+    dedisp_passthrough = 5
 };
 
 enum {

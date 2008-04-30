@@ -124,10 +124,10 @@ class delt : public dwidget { public:
 
     class layoutelt;
 
-    delt(delt *parent, int z_index)
+    delt(delt *parent = 0, int z_index = 0)
 	: dwidget(dw_elt, z_index), _e(0), _decor(0), _generation(0),
-	  _parent(parent), _split(0), _visible(false), _displayed(false),
-	  _layout(false), _aligned(true), _split_type(0),
+	  _parent(parent), _split(0), _visible(false), _displayed(0),
+	  _aligned(true), _split_type(0),
 	  _des_sensitivity(0), _dess_sensitivity(0), _dps_sensitivity(0),
 	  _markup_sensitivity(0),
 	  _highlight(0), _drawn_highlight(0),
@@ -145,7 +145,7 @@ class delt : public dwidget { public:
     
     int orientation() const;
     bool vertical() const;
-    bool displayed() const {
+    int8_t displayed() const {
 	return _displayed;
     }
     bool visible() const {
@@ -197,6 +197,9 @@ class delt : public dwidget { public:
     int noutputs() const {
 	return _e->noutputs();
     }
+    int eindex() const {
+	return _e->eindex();
+    }
     bool primitive() const {
 	return _elt.size() == 0;
     }
@@ -243,7 +246,7 @@ class delt : public dwidget { public:
     
     int find_gadget(wdiagram *d, double window_x, double window_y) const;
 
-    void layout_main(dcontext &dx, RouterT *router);
+    void layout_main(dcontext &dcx, RouterT *router);
     void layout_recompute_bounds();
 
     void remove(rect_search<dwidget> &rects, rectangle &bounds);
@@ -264,10 +267,10 @@ class delt : public dwidget { public:
     // handlers
     handler_value *handler_interest(wdiagram *d, const String &hname,
 				    bool autorefresh = false, int autorefresh_period = 0, bool always = false);
-    
-    void prepare_router(wdiagram *d, RouterT *router, ProcessingT *processing,
-			HashTable<String, delt *> &collector,
-			Vector<ElementT *> &path, int &z_index);
+
+    void create_elements(wdiagram *d, RouterT *router, ProcessingT *processing,
+			 HashTable<String, delt *> &collector,
+			 Vector<ElementT *> &path, int &z_index);
     
   private:
 
@@ -293,8 +296,7 @@ class delt : public dwidget { public:
     String _markup;
 
     bool _visible;
-    bool _displayed;
-    bool _layout : 1;
+    int8_t _displayed;
     bool _aligned : 1;
     int8_t _split_type;
     unsigned _des_sensitivity : 2;
@@ -304,8 +306,6 @@ class delt : public dwidget { public:
     uint8_t _highlight;
     uint8_t _drawn_highlight;
     uint16_t _depth;
-    int _row;
-    int _rowpos;
 
     rectangle _xrect;
 
@@ -318,9 +318,11 @@ class delt : public dwidget { public:
     delt(const delt &);
     delt &operator=(const delt &);
 
-    void prepare(wdiagram *d, ElementT *e, ProcessingT *processing,
-		 HashTable<String, delt *> &collector, Vector<ElementT *> &path,
-		 int &z_index);
+    static delt *create(ElementT *e, delt *parent,
+			wdiagram *d, ProcessingT *processing,
+			HashTable<String, delt *> &collector,
+			Vector<ElementT *> &path, int &z_index);
+    delt *create_split(int split_type);
 
     void layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc);
     void position_contents_scc(RouterT *);
@@ -383,7 +385,7 @@ inline void dwidget::draw(dcontext &dx) {
 
 
 inline bool dconn::visible() const {
-    return _from_elt->displayed() && _to_elt->displayed();
+    return _from_elt->displayed() > 0 && _to_elt->displayed() > 0;
 }
 
 inline double delt::port_position(bool isoutput, int port,
