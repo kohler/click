@@ -18,12 +18,31 @@ CLICK_DECLS
 
 class StringAccum { public:
 
-    /** @brief Create an empty StringAccum (with length 0). */
+    /** @brief Construct an empty StringAccum (with length 0). */
     StringAccum()
 	: _s(0), _len(0), _cap(0) {
     }
     
-    explicit inline StringAccum(int);
+    /** @brief Construct a StringAccum with room for at least @a capacity characters.
+	@param  capacity  initial capacity
+
+	If @a capacity <= 0, the StringAccum is created empty.  If @a capacity
+	is too large (so that @a capacity bytes of memory can't be allocated),
+	the StringAccum is created as out-of-memory. */
+    explicit inline StringAccum(int capacity);
+
+    /** @brief Construct a StringAccum containing the characters in @a str.
+     	@param  str  string */
+    StringAccum(const String &str)
+	: _s(0), _len(0), _cap(0) {
+	append(str.begin(), str.end());
+    }
+
+    /** @brief Construct a StringAccum containing a copy of @a a. */
+    StringAccum(const StringAccum &x)
+	: _s(0), _len(0), _cap(0) {
+	append(x.data(), x.length());
+    }
 
     /** @brief Destroy a StringAccum, freeing its memory. */
     ~StringAccum() {
@@ -171,6 +190,17 @@ class StringAccum { public:
 
     void swap(StringAccum &o);
 
+    /** @brief Assign this StringAccum to @a x. */
+    StringAccum &operator=(const StringAccum &x) {
+	if (&x != this) {
+	    if (out_of_memory())
+		_s = 0, _cap = 0;
+	    _len = 0;
+	    append(x.data(), x.length());
+	}
+	return *this;
+    }
+
     // see also operator<< declarations below
   
     void forward(int delta) CLICK_DEPRECATED;
@@ -184,9 +214,6 @@ class StringAccum { public:
     void make_out_of_memory();
     inline void safe_append(const char *, int);
     bool grow(int);
-
-    StringAccum(const StringAccum &);
-    StringAccum &operator=(const StringAccum &);
 
     friend StringAccum &operator<<(StringAccum &, const char *);
   
@@ -223,12 +250,6 @@ StringAccum &operator<<(StringAccum &, double);
 StringAccum &operator<<(StringAccum &, void *);
 
 
-/** @brief Create a StringAccum with room for at least @a capacity characters.
-    @param  capacity  initial capacity.
-
-    If @a capacity <= 0, the StringAccum is created empty.  If @a capacity is
-    too large (so that @a capacity bytes of memory can't be allocated), the
-    StringAccum is created as out-of-memory. */
 inline
 StringAccum::StringAccum(int capacity)
     : _len(0)
