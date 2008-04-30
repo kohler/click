@@ -48,6 +48,46 @@ struct point {
 	_y *= s;
     }
 
+    void rotate(double angle) {
+	if (angle == 0)
+	    /* do nothing */;
+	else if (angle == M_PI_2) {
+	    double t = _x;
+	    _x = -_y;
+	    _y = t;
+	} else if (angle == M_PI) {
+	    _x = -_x;
+	    _y = -_y;
+	} else if (angle == -M_PI_2) {
+	    double t = _x;
+	    _x = _y;
+	    _y = -t;
+	} else {
+	    double r = length();
+	    double theta = this->angle() + angle;
+	    _x = r * cos(theta);
+	    _y = r * sin(theta);
+	}
+    }
+
+    point shifted(const point &p) const {
+	point x(*this);
+	x.shift(p);
+	return x;
+    }
+
+    point scaled(double s) const {
+	point x(*this);
+	x.scale(s);
+	return x;
+    }
+
+    point rotated(double angle) const {
+	point x(*this);
+	x.rotate(angle);
+	return x;
+    }
+    
     static inline bool close(const point &a, const point &b, double d);
 };
 

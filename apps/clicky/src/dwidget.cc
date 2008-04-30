@@ -21,6 +21,11 @@ extern "C" {
 }
 namespace clicky {
 
+static inline void cairo_rel_line_to_point(cairo_t *cr, const point &p)
+{
+    cairo_rel_line_to(cr, p.x(), p.y());
+}
+
 static inline void cairo_curve_to_points(cairo_t *cr, const point &p0, const point &p1, const point &p2)
 {
     cairo_curve_to(cr, p0.x(), p0.y(), p1.x(), p1.y(), p2.x(), p2.y());
@@ -1759,6 +1764,7 @@ void dconn::draw(dcontext &dcx)
 
     point op = _from_elt->output_position(_from_port, 0);
     point ip = _to_elt->input_position(_to_port, 0);
+    point next_to_last;
     
     if (_from_elt->vertical())
 	cairo_move_to(dcx, op.x(), op.y() - 0.5);
@@ -1771,6 +1777,7 @@ void dconn::draw(dcontext &dcx)
 	    && fabs(ip.y() - op.y()) <= 6)) {
 	/* no curves */
 	cairo_line_to(dcx, ip.x(), ip.y());
+	next_to_last = op;
 	
     } else if (_route.size()) {
 	const point *r = _route.begin();
@@ -1778,6 +1785,7 @@ void dconn::draw(dcontext &dcx)
 	affine t = affine::mapping(point(0, 0), op, _route.back(), ip);
 	for (; r != _route.end(); r += 3)
 	    cairo_curve_to_points(dcx, t * r[0], t * r[1], t * r[2]);
+	next_to_last = t * _route[_route.size() - 2];
 	
     } else {
 	point curvea;
@@ -1788,28 +1796,28 @@ void dconn::draw(dcontext &dcx)
 	    cairo_line_to(dcx, op.x() + 3, op.y());
 	    curvea = point(op.x() + 10, op.y());
 	}
-	if (_to_elt->vertical())
+	if (_to_elt->vertical()) {
 	    cairo_curve_to(dcx, curvea.x(), curvea.y(),
 			   ip.x(), ip.y() - 12, ip.x(), ip.y() - 7);
-	else
+	    next_to_last = point(ip.x(), ip.y() - 7);
+	} else {
 	    cairo_curve_to(dcx, curvea.x(), curvea.y(),
 			   ip.x() - 12, ip.y(), ip.x() - 7, ip.y());
+	    next_to_last = point(ip.x() - 7, ip.y());
+	}
 	cairo_line_to(dcx, ip.x(), ip.y());
+	
     }
     
     cairo_stroke(dcx);
 
-    if (_to_elt->vertical()) {
-	cairo_move_to(dcx, ip.x(), ip.y() + 0.25);
-	cairo_line_to(dcx, ip.x() - 3, ip.y() - 5.75);
-	cairo_line_to(dcx, ip.x(), ip.y() - 3.75);
-	cairo_line_to(dcx, ip.x() + 3, ip.y() - 5.75);
-    } else {
-	cairo_move_to(dcx, ip.x() + 0.25, ip.y());
-	cairo_line_to(dcx, ip.x() - 5.75, ip.y() - 3);
-	cairo_line_to(dcx, ip.x() - 3.75, ip.y());
-	cairo_line_to(dcx, ip.x() - 5.75, ip.y() + 3);
-    }
+    double epx = ip.x(), epy = ip.y();
+    (_to_elt->vertical() ? epy : epx) += 0.25;
+    double angle = (ip - next_to_last).angle();
+    cairo_move_to(dcx, epx, epy);
+    cairo_rel_line_to_point(dcx, point(-5.75, -3).rotated(angle));
+    cairo_rel_line_to_point(dcx, point(+2.00, +3).rotated(angle));
+    cairo_rel_line_to_point(dcx, point(-2.00, +3).rotated(angle));
     cairo_close_path(dcx);
     cairo_fill(dcx);
 }
