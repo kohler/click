@@ -54,6 +54,7 @@ wdiagram::wdiagram(wmain *rw)
     g_free(fms);
 #endif
     _pango_generation = 0;
+    _elt_expand = 2;
     
     g_signal_connect(G_OBJECT(_widget), "event",
 		     G_CALLBACK(on_diagram_event), this);
@@ -68,7 +69,7 @@ wdiagram::wdiagram(wmain *rw)
 	_highlight[i].clear();
     static_assert((int) ncursors > (int) deg_corner_lrt
 		  && (int) c_element == (int) deg_element);
-    for (int i = c_main; i < ncursors; i++)
+    for (int i = 0; i < ncursors; i++)
 	_cursor[i] = 0;
     _last_cursorno = c_main;
 }

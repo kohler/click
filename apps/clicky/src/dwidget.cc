@@ -63,6 +63,13 @@ delt *delt::create(ElementT *e, delt *parent,
 	path.push_back(e);
 	RouterT::flatten_path(path, de->_flat_name, de->_flat_config);
 	collector[de->_flat_name] = de;
+
+	int x;
+	de->_dess = d->ccss()->elt_size_style(d, de, &x);
+	de->_dess_sensitivity = x;
+	de->_des = d->ccss()->elt_style(d, de, &x);
+	de->_des_sensitivity = x;
+
 	if (RouterT *r = e->resolved_router()) {
 	    ProcessingT subprocessing(r, processing->element_map());
 	    subprocessing.create(de->_processing_code, true);
@@ -803,14 +810,18 @@ bool delt::reccss(wdiagram *d, int change)
     
     if ((change & dsense_always) || _des != old_des) {
 	if (_des->display == dedisp_none
-	    || _e->tunnel()
-	    || (_split_type == desplit_inputs && _des->display != dedisp_vsplit))
+	    || (_split_type == desplit_inputs && _des->display != dedisp_vsplit)
+	    || _e->tunnel())
 	    _displayed = 0;
 	else if (_des->display == dedisp_passthrough)
 	    _displayed = -1;
 	else
 	    _displayed = 1;
-	_visible = _displayed > 0;
+	if (_displayed > 0
+	    && (_parent->root() || _parent->_des->display == dedisp_open))
+	    _visible = true;
+	else
+	    _visible = false;
     }
 
     if (((change & dsense_always)
@@ -1252,7 +1263,7 @@ void delt::remove(rect_search<dwidget> &rects, rectangle &bounds)
 	}
 #endif
 
-    if (_parent && _elt.size()) {
+    if (_parent && _elt.size() && _des->display == dedisp_open) {
 	_elt[0]->remove(rects, bounds);
 	_elt[1]->remove(rects, bounds);
     }
@@ -1292,7 +1303,7 @@ void delt::insert(rect_search<dwidget> &rects,
 	}
 #endif
 
-    if (_parent && _elt.size()) {
+    if (_parent && _elt.size() && _des->display == dedisp_open) {
 	layout_compound_ports(d);
 	_elt[0]->insert(rects, d, bounds);
 	_elt[1]->insert(rects, d, bounds);
@@ -1891,23 +1902,27 @@ void dconn::draw(dcontext &dcx)
 
 void delt::drag_prepare()
 {
-    _xrect = *this;
-    for (std::vector<delt *>::iterator ei = _elt.begin();
-	 ei != _elt.end(); ++ei)
-	(*ei)->drag_prepare();
+    if (_visible) {
+	_xrect = *this;
+	for (std::vector<delt *>::iterator ei = _elt.begin();
+	     ei != _elt.end(); ++ei)
+	    (*ei)->drag_prepare();
+    }
 }
 
 void delt::drag_shift(wdiagram *d, const point &delta)
 {
-    rectangle bounds = *this;
-    remove(d->rects(), bounds);
-    _x = _xrect._x + delta.x();
-    _y = _xrect._y + delta.y();
-    insert(d->rects(), d, bounds);
-    d->redraw(bounds);
-    for (std::vector<delt *>::iterator ei = _elt.begin();
-	 ei != _elt.end(); ++ei)
-	(*ei)->drag_shift(d, delta);
+    if (_visible) {
+	rectangle bounds = *this;
+	remove(d->rects(), bounds);
+	_x = _xrect._x + delta.x();
+	_y = _xrect._y + delta.y();
+	insert(d->rects(), d, bounds);
+	d->redraw(bounds);
+	for (std::vector<delt *>::iterator ei = _elt.begin();
+	     ei != _elt.end(); ++ei)
+	    (*ei)->drag_shift(d, delta);
+    }
 }
 
 void delt::drag_size(wdiagram *d, const point &delta, int direction)
