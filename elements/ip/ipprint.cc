@@ -345,8 +345,8 @@ IPPrint::simple_action(Packet *p)
 	int ip_len = ntohs(iph->ip_len);
 	int payload_len = ip_len - (iph->ip_hl << 2);
 	int transport_length = p->transport_length();
-	if (p->end_data() > p->network_header() + ip_len)
-	    transport_length = p->end_data() - (p->network_header() + ip_len);
+	if (transport_length > payload_len)
+	    transport_length = payload_len;
 
 	if (_print_id)
 	    sa << "id " << ntohs(iph->ip_id) << ' ';
