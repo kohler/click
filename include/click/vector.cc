@@ -28,9 +28,6 @@ template <class T>
 Vector<T>::Vector(const Vector<T> &x)
     : _l(0), _n(0), _capacity(0)
 {
-#ifdef VALGRIND_CREATE_MEMPOOL
-    VALGRIND_CREATE_MEMPOOL(this, 0, 0);
-#endif
     *this = x;
 }
 
@@ -39,14 +36,7 @@ Vector<T>::~Vector()
 {
     for (size_type i = 0; i < _n; i++)
 	_l[i].~T();
-#ifdef VALGRIND_MEMPOOL_FREE
-    if (_l)
-	VALGRIND_MEMPOOL_FREE(this, _l);
-#endif
     CLICK_LFREE(_l, sizeof(T) * _capacity);
-#ifdef VALGRIND_DESTROY_MEMPOOL
-    VALGRIND_DESTROY_MEMPOOL(this);
-#endif
 }
 
 template <class T> Vector<T> &
@@ -138,8 +128,7 @@ Vector<T>::reserve(size_type want)
   T *new_l = (T *) CLICK_LALLOC(sizeof(T) * want);
   if (!new_l)
     return false;
-#ifdef VALGRIND_MEMPOOL_ALLOC
-  VALGRIND_MEMPOOL_ALLOC(this, new_l, want * sizeof(T));
+#ifdef VALGRIND_MAKE_MEM_NOACCESS
   VALGRIND_MAKE_MEM_NOACCESS(new_l + _n, (want - _n) * sizeof(T));
 #endif
   
@@ -147,10 +136,6 @@ Vector<T>::reserve(size_type want)
     new(velt(new_l, i)) T(_l[i]);
     _l[i].~T();
   }
-#ifdef VALGRIND_MEMPOOL_FREE
-  if (_l)
-      VALGRIND_MEMPOOL_FREE(this, _l);
-#endif
   CLICK_LFREE(_l, sizeof(T) * _capacity);
   
   _l = new_l;
@@ -190,12 +175,6 @@ Vector<T>::swap(Vector<T> &x)
     size_type cap = _capacity;
     _capacity = x._capacity;
     x._capacity = cap;
-
-#ifdef VALGRIND_MOVE_MEMPOOL
-    VALGRIND_MOVE_MEMPOOL(this, reinterpret_cast<Vector<T> *>(100));
-    VALGRIND_MOVE_MEMPOOL(&x, this);
-    VALGRIND_MOVE_MEMPOOL(reinterpret_cast<Vector<T> *>(100), &x);
-#endif
 }
 
 #endif

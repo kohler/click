@@ -23,15 +23,9 @@ class Vector { public:
   
     explicit Vector()
 	: _l(0), _n(0), _capacity(0) {
-#ifdef VALGRIND_CREATE_MEMPOOL
-	VALGRIND_CREATE_MEMPOOL(this, 0, 0);
-#endif
     }
     explicit Vector(size_type n, const T &e)
 	: _l(0), _n(0), _capacity(0) {
-#ifdef VALGRIND_CREATE_MEMPOOL
-	VALGRIND_CREATE_MEMPOOL(this, 0, 0);
-#endif
 	resize(n, e);
     }
     // template <class In> ...
@@ -148,15 +142,9 @@ class Vector<void*> { public:
 
     explicit Vector()
 	: _l(0), _n(0), _capacity(0) {
-#ifdef VALGRIND_CREATE_MEMPOOL
-	VALGRIND_CREATE_MEMPOOL(this, 0, 0);
-#endif
     }
     explicit Vector(size_type n, void* e)
 	: _l(0), _n(0), _capacity(0) {
-#ifdef VALGRIND_CREATE_MEMPOOL
-	VALGRIND_CREATE_MEMPOOL(this, 0, 0);
-#endif
 	resize(n, e);
     }
     Vector(const Vector<void*> &);
