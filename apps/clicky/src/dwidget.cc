@@ -801,7 +801,7 @@ bool delt::reccss(wdiagram *d, int change)
 
     if ((change & (_markup_sensitivity | dsense_always))
 	|| (_des != old_des && _des->text != old_des->text)) {
-	_markup = parse_markup(_des->text, d, &x);
+	_markup = parse_markup(_des->text, d, -1, &x);
 	_markup_sensitivity = x;
     }
 
@@ -919,7 +919,7 @@ void delt::layout_ports(dcontext &dcx)
 	    else
 		l = dps->length + 4;
 	    if (dps->text) {
-		String markup = parse_markup(dps->text, dcx.d);
+		String markup = parse_markup(dps->text, dcx.d, p, 0);
 		if (dcx.pl_font != dps->font)
 		    dcx.set_font_description(dps->font);
 		pango_layout_set_width(dcx, -1);
@@ -971,7 +971,8 @@ static void append_markup_quote(StringAccum &sa, const String &str,
 	sa.append("...", 3);
 }
 
-String delt::parse_markup(const String &text, wdiagram *d, int *sensitivity)
+String delt::parse_markup(const String &text, wdiagram *d,
+			  int port, int *sensitivity)
 {
     wmain *w = d->main();
     if (sensitivity)
@@ -983,16 +984,21 @@ String delt::parse_markup(const String &text, wdiagram *d, int *sensitivity)
 	if (*s == '%' && s + 1 != send) {
 	    sa.append(last, s);
 
-	    int width = -1, precision = -1, altflag = 0;
+	    enum { pm_width = 0, pm_precision = 1, pm_specifier = 2 };
+	    int vals[3], altflag = 0, which = 0;
+	    vals[0] = vals[1] = vals[2] = -1;
 	    const char *pct = s; 
 	    for (++s; s != send; ++s)
-		if (isdigit((unsigned char) *s)) {
-		    if (precision >= 0)
-			precision = 10 * precision + *s - '0';
-		    else
-			width = (width >= 0 ? 10 * width : 0) + *s - '0';
+		if (isdigit((unsigned char) *s))
+		    vals[which] = (vals[which] >= 0 ? 10 * vals[which] : 0)
+			+ *s - '0';
+		else if (*s == '*') {
+		    if (which == pm_specifier)
+			vals[which] = port;
 		} else if (*s == '.')
-		    precision = 0;
+		    which = pm_precision;
+		else if (*s == ':')
+		    which = pm_specifier;
 		else if (*s == '#')
 		    altflag = 1;
 		else
@@ -1005,17 +1011,26 @@ String delt::parse_markup(const String &text, wdiagram *d, int *sensitivity)
 	    }
 	    
 	    if (*s == 'n')
-		append_markup_quote(sa, name(), precision);
+		append_markup_quote(sa, name(), vals[pm_precision]);
 	    else if (*s == 'c')
-		append_markup_quote(sa, type_name(), precision);
+		append_markup_quote(sa, type_name(), vals[pm_precision]);
 	    else if (*s == 'f')
-		append_markup_quote(sa, flat_name(), precision);
+		append_markup_quote(sa, flat_name(), vals[pm_precision]);
 	    else if (*s == 'C') {
+		String c = _e->configuration();
+		if (vals[pm_specifier] >= 0) {
+		    Vector<String> conf;
+		    cp_argvec(c, conf);
+		    if (conf.size() > vals[pm_specifier])
+			c = conf[vals[pm_specifier]];
+		    else
+			c = String();
+		}
 		if (!altflag)
-		    append_markup_quote(sa, _e->configuration(), precision);
-		else if (_e->configuration()) {
+		    append_markup_quote(sa, c, vals[pm_precision]);
+		else if (c) {
 		    sa << '(';
-		    append_markup_quote(sa, _e->configuration(), precision);
+		    append_markup_quote(sa, c, vals[pm_precision]);
 		    sa << ')';
 		}
 	    } else if (*s == '{') {
@@ -1027,14 +1042,14 @@ String delt::parse_markup(const String &text, wdiagram *d, int *sensitivity)
 		handler_value *hv = w->hvalues().find_placeholder(flat_name() + "." + text.substring(n, s), w, hflag_notify_delt);
 		if (hv) {
 		    if (hv->have_hvalue())
-			append_markup_quote(sa, hv->hvalue(), precision);
+			append_markup_quote(sa, hv->hvalue(), vals[pm_precision]);
 		    else {
 			if (altflag && hv->refreshable())
 			    hv->set_flags(w, hv->flags() | hflag_autorefresh);
 			if (hv->refreshable())
 			    hv->refresh(w);
-			if (width > 0)
-			    sa.append_fill('?', width);
+			if (vals[pm_width] > 0)
+			    sa.append_fill('?', vals[pm_width]);
 		    }
 		    if (sensitivity)
 			*sensitivity |= dsense_handler;
@@ -1446,8 +1461,8 @@ static inline void cairo_set_border(cairo_t *cr, const double *color,
     cairo_set_line_width(cr, width);
 }
 
-void delt::draw_port(dcontext &dcx, dport_style *dps, point p, bool isoutput,
-		     double opacity)
+void delt::draw_port(dcontext &dcx, dport_style *dps, point p,
+		     int port, bool isoutput, double opacity)
 {
     // align position
     if (dcx.scale_step == 0 && _aligned) {
@@ -1526,7 +1541,7 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p, bool isoutput,
     }
 
     if (dps->text) {
-	String markup = parse_markup(dps->text, dcx.d);
+	String markup = parse_markup(dps->text, dcx.d, port, 0);
 	if (dcx.pl_font != dps->font)
 	    dcx.set_font_description(dps->font);
 	pango_layout_set_alignment(dcx, PANGO_ALIGN_CENTER);
@@ -1555,7 +1570,7 @@ void delt::draw_ports(dcontext &dcx)
 	    if (dps->display & dpdisp_inputs) {
 		double opacity = (_des->display == dedisp_fsplit && flow_split_char(_des->flow_split, i, false) != _split_type ? 0.25 : 1);
 		draw_port(dcx, dps.get(), input_position(i, dps.get(), true),
-			  false, opacity);
+			  i, false, opacity);
 	    }
 	}
     pcpos = ProcessingT::processing_code_output(_processing_code.begin(), _processing_code.end(), pcpos);
@@ -1567,7 +1582,7 @@ void delt::draw_ports(dcontext &dcx)
 	    if (dps->display & dpdisp_outputs) {
 		double opacity = (_des->display == dedisp_fsplit && flow_split_char(_des->flow_split, i, true) != _split_type ? 0.25 : 1);
 		draw_port(dcx, dps.get(), output_position(i, dps.get(), true),
-			  true, opacity);
+			  i, true, opacity);
 	    }
 	}
 }

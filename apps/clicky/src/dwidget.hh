@@ -339,7 +339,7 @@ class delt : public dwidget { public:
     void layout_contents(dcontext &dcx);
     void layout_ports(dcontext &dcx);
     void layout(dcontext &dcx);
-    String parse_markup(const String &text, wdiagram *d, int *sensitivity = 0);
+    String parse_markup(const String &text, wdiagram *d, int port, int *sensitivity);
     void dimension_markup(dcontext &dcx);
     void redecorate(dcontext &dcx);
     void layout_complete(dcontext &dcx, double dx, double dy);
@@ -351,8 +351,8 @@ class delt : public dwidget { public:
 				double side_length) const;
     double hard_port_position(bool isoutput, int port,
 			      double side_length) const;
-    void draw_port(dcontext &dx, dport_style *dps, point p, bool isoutput,
-		   double opacity);
+    void draw_port(dcontext &dx, dport_style *dps, point p,
+		   int port, bool isoutput, double opacity);
     void border_path(dcontext &dx, bool closed) const;
     void clip_to_border(dcontext &dx) const;
 
