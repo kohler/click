@@ -564,8 +564,8 @@ void wdiagram::on_drag_hand_motion(double x_root, double y_root)
     if (_drag_state == drag_hand_dragging) {
 	double dx = _dragr.x() - x_root;
 	double dy = _dragr.y() - y_root;
-	gtk_adjustment_set_value(_horiz_adjust, _dragr.width() + dx);
-	gtk_adjustment_set_value(_vert_adjust, _dragr.height() + dy);
+	gtk_adjustment_set_value(_horiz_adjust, std::min(_dragr.width() + dx, _horiz_adjust->upper - _horiz_adjust->page_size));
+	gtk_adjustment_set_value(_vert_adjust, std::min(_dragr.height() + dy, _vert_adjust->upper - _vert_adjust->page_size));
     }
 }
 
