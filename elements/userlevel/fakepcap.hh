@@ -24,6 +24,7 @@ CLICK_DECLS
 #define FAKE_DLT_PRISM_HEADER		119	/* 802.11+Prism II monitor code */
 #define FAKE_DLT_AIRONET_HEADER	        120     /* Aironet wireless header */
 #define FAKE_DLT_SUNATM			123	/* Full Frontal ATM: ATM header + ATM_RFC1483 */
+#define FAKE_DLT_IEEE802_11_RADIO	127	/* 802.11 plus radiotap radio header */
 
 /* Host data link types */
 #define FAKE_DLT_HOST_RAW		12	/* raw IP */

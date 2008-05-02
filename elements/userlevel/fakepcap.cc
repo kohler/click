@@ -42,6 +42,8 @@ static const struct dlt_name {
     { "ATM_RFC1483", FAKE_DLT_ATM_RFC1483 },
     { "802_11", FAKE_DLT_IEEE802_11 },
     { "802.11", FAKE_DLT_IEEE802_11 },
+    { "802_11_RADIO", FAKE_DLT_IEEE802_11_RADIO },
+    { "802.11_RADIO", FAKE_DLT_IEEE802_11_RADIO },
     { "SLL", FAKE_DLT_LINUX_SLL },
     { "AIRONET", FAKE_DLT_AIRONET_HEADER },
     { "HDLC", FAKE_DLT_C_HDLC },
@@ -86,7 +88,7 @@ fake_pcap_dlt_force_ipable(int dlt)
 	    || dlt == FAKE_DLT_LINUX_SLL || dlt == FAKE_DLT_C_HDLC
 	    || dlt == FAKE_DLT_IEEE802_11 || dlt == FAKE_DLT_PRISM_HEADER
 	    || dlt == FAKE_DLT_PPP_HDLC || dlt == FAKE_DLT_PPP
-	    || dlt == FAKE_DLT_NULL);
+	    || dlt == FAKE_DLT_NULL || dlt == FAKE_DLT_IEEE802_11_RADIO);
 }
 
 int
@@ -118,9 +120,9 @@ unaligned_net_short(const void *v)
 bool
 fake_pcap_force_ip(Packet *&p, int dlt)
 {
-    const click_ip* iph = 0;
-    const uint8_t* data = p->data();
-    const uint8_t* end_data = p->end_data();
+    const click_ip *iph = 0;
+    const uint8_t *data = p->data();
+    const uint8_t *end_data = p->end_data();
     
     switch (dlt) {
 
@@ -264,6 +266,16 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	}
 	break;
 
+      case FAKE_DLT_IEEE802_11_RADIO: {
+	  uint16_t len;
+	  if (data + 4 <= end_data
+	      && (len = (data[3] << 8) | (data[2])) >= 8) {
+	      data += len;
+	      goto ieee802_11;
+	  }
+	  break;
+      }
+	
       case FAKE_DLT_NULL: {
 	  if (data + 4 > end_data)
 	      break;
