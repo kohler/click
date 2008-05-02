@@ -63,6 +63,8 @@ struct dport_style : public enable_ref_ptr {
     double border_color[4];
     double margin[4];
     double edge_padding;
+    String text;
+    String font;
 };
 
 struct delt_size_style : public enable_ref_ptr {
@@ -90,10 +92,10 @@ struct delt_style : public enable_ref_ptr {
     double queue_stripe_width;
     int style;
     String text;
+    String font;
     int display;
     String flow_split;
     String decorations;
-    String font;
 };
 
 struct dhandler_style : public enable_ref_ptr {

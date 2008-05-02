@@ -55,15 +55,15 @@ const char default_css[] = "port.input {\n\
     port-shape: triangle;\n\
     port-length: 11px;\n\
     port-width: 7px;\n\
-    port-margin: 100%;\n\
-    port-edge-padding: 4.8px;\n\
+    port-margin: 1px;\n\
+    port-edge-padding: 2px;\n\
 }\n\
 port.output {\n\
     port-shape: rectangle;\n\
     port-length: 9px;\n\
     port-width: 5.5px;\n\
-    port-margin: 100%;\n\
-    port-edge-padding: 4.8px;\n\
+    port-margin: 1px;\n\
+    port-edge-padding: 2px;\n\
 }\n\
 port.push, port.push.agnostic {\n\
     port-color: black;\n\
@@ -96,6 +96,7 @@ port.agnostic, port.push.agnostic, port.pull.agnostic {\n\
     text: \"%n\\n<small>%c</small>\";\n\
     display: open;\n\
     port-display: both;\n\
+    port-font: 6;\n\
     @media print { font: Times; }\n\
     /* @media screen { font: URW Palladio L italic 20; } */\n\
 }\n\
@@ -165,7 +166,9 @@ static dcss_propmatch port_pm[] = {
     { "port-margin-bottom", 0 },
     { "port-margin-left", 0 },
     { "port-edge-padding", 0 },
-    { "port-display", 0 }
+    { "port-display", 0 },
+    { "port-text", 0 },
+    { "port-font", 0 }
 };
 
 static dcss_propmatch elt_pm[] = {
@@ -508,6 +511,9 @@ bool dcss_selector::match(wdiagram *d, const delt *e, int *sensitivity) const
 		return false;
 	} else if (k->equals("compound", 8)) {
 	    if (e->fake() || e->primitive())
+		return false;
+	} else if (k->equals("passthrough", 11)) {
+	    if (e->fake() || e->primitive() || !e->passthrough())
 		return false;
 	} else if (k->equals("anonymous", 9)) {
 	    const String &name = e->name(), &type_name = e->type_name();
@@ -1462,11 +1468,11 @@ ref_ptr<dport_style> dcss_set::port_style(wdiagram *d, const delt *e,
 	port_pm[6].vcolor(sty->border_color, "port-border-color");
 	if (sty->border_color[3] == 0 || sty->border_width <= 0)
 	    sty->border_style = dborder_none;
-	sty->margin[0] = port_pm[7].vrelative("port-margin-top");
-	sty->margin[1] = port_pm[8].vrelative("port-margin-right");
-	sty->margin[2] = port_pm[9].vrelative("port-margin-bottom");
-	sty->margin[3] = port_pm[10].vrelative("port-margin-left");
-	sty->edge_padding = port_pm[11].vrelative("port-edge-padding");
+	sty->margin[0] = port_pm[7].vpixel("port-margin-top");
+	sty->margin[1] = port_pm[8].vpixel("port-margin-right");
+	sty->margin[2] = port_pm[9].vpixel("port-margin-bottom");
+	sty->margin[3] = port_pm[10].vpixel("port-margin-left");
+	sty->edge_padding = port_pm[11].vpixel("port-edge-padding");
 	s = port_pm[12].vstring("port-display");
 	if (s.equals("none", 4))
 	    sty->display = dpdisp_none;
@@ -1476,6 +1482,8 @@ ref_ptr<dport_style> dcss_set::port_style(wdiagram *d, const delt *e,
 	    sty->display = dpdisp_outputs;
 	else
 	    sty->display = dpdisp_both;
+	sty->text = cp_unquote(port_pm[13].vstring("port-text"));
+	sty->font = cp_unquote(port_pm[14].vstring("port-font"));
 
 	style_cache = ref_ptr<dport_style>(sty);
     }

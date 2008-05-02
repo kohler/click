@@ -113,6 +113,7 @@ delt::~delt()
     }
     delete[] _portoff[0];
     delete[] _portoff[1];
+    delete[] _port_text_offsets;
 }
 
 
@@ -799,8 +800,10 @@ bool delt::reccss(wdiagram *d, int change)
     }
 
     if ((change & (_markup_sensitivity | dsense_always))
-	|| (_des != old_des && _des->text != old_des->text))
-	parse_markup(d);
+	|| (_des != old_des && _des->text != old_des->text)) {
+	_markup = parse_markup(_des->text, d, &x);
+	_markup_sensitivity = x;
+    }
 
     if ((change & dsense_always) || _des->font != old_des->font
 	|| _markup != old_markup) {
@@ -887,39 +890,62 @@ void delt::layout_contents(dcontext &dcx)
 	}
 }
 
-void delt::layout_ports(wdiagram *d)
+void delt::layout_ports(dcontext &dcx)
 {
     // XXX layout_ports
     delete[] _portoff[0];
     delete[] _portoff[1];
+    delete[] _port_text_offsets;
     _portoff[0] = _portoff[1] = 0;
-    dcss_set *dcs = d->ccss();
+    _port_text_offsets = 0;
+    dcss_set *dcs = dcx.d->ccss();
+    int poff = 0;
     
     for (int isoutput = 0; isoutput < 2; ++isoutput) {
-	ref_ptr<dport_style> dps = dcs->port_style(d, this, isoutput, 0, 0);
+	ref_ptr<dport_style> dps = dcs->port_style(dcx.d, this, isoutput, 0, 0);
 	_ports_length[isoutput] = 2 * dps->edge_padding;
 	if (!_e->nports(isoutput))
 	    continue;
 	if (_e->nports(isoutput) > 1)
 	    _portoff[isoutput] = new double[_e->nports(isoutput) + 1];
+	double text_offset = 0;
 	double tm = dps->edge_padding;
-	for (int p = 0; p < _e->nports(isoutput); ++p) {
+	for (int p = 0; p < _e->nports(isoutput); ++p, ++poff) {
 	    if (p)
-		dps = dcs->port_style(d, this, isoutput, p, 0);
+		dps = dcs->port_style(dcx.d, this, isoutput, p, 0);
+	    double l;
 	    if (dps->shape == dpshape_triangle)
-		_ports_length[isoutput] += dps->length - 2;
+		l = dps->length - 2;
 	    else
-		_ports_length[isoutput] += dps->length + 4;
+		l = dps->length + 4;
+	    if (dps->text) {
+		String markup = parse_markup(dps->text, dcx.d);
+		if (dcx.pl_font != dps->font)
+		    dcx.set_font_description(dps->font);
+		pango_layout_set_width(dcx, -1);
+		pango_layout_set_markup(dcx, markup.data(), markup.length());
+		PangoRectangle rect;
+		pango_layout_get_pixel_extents(dcx, NULL, &rect);
+		l = std::max(l, (double) rect.width + 2);
+		text_offset = std::max(text_offset, (double) rect.height + 1);
+	    }
+	    _ports_length[isoutput] += l;
 	    double old_tm = tm;
-	    tm += dps->margin[_des->orientation];
+	    tm += dps->margin[_des->orientation] + l / 2;
 	    if (_e->nports(isoutput) > 1)
 		_portoff[isoutput][p] = tm;
-	    tm += dps->margin[_des->orientation ^ 2];
+	    tm += dps->margin[_des->orientation ^ 2] + l / 2;
 	    if (old_tm + 0.1 > tm)
 		tm = old_tm + 0.1;
 	}
 	if (_e->nports(isoutput) > 1)
 	    _portoff[isoutput][_e->nports(isoutput)] = tm + dps->edge_padding;
+	if (text_offset && !_port_text_offsets) {
+	    _port_text_offsets = new double[2];
+	    _port_text_offsets[0] = _port_text_offsets[1] = 0;
+	}
+	if (text_offset)
+	    _port_text_offsets[isoutput] = text_offset;
     }
 }
 
@@ -945,14 +971,13 @@ static void append_markup_quote(StringAccum &sa, const String &str,
 	sa.append("...", 3);
 }
 
-void delt::parse_markup(wdiagram *d)
+String delt::parse_markup(const String &text, wdiagram *d, int *sensitivity)
 {
-    String old_markup = _markup;
     wmain *w = d->main();
-    _markup_sensitivity = 0;
+    if (sensitivity)
+	*sensitivity = 0;
     
     StringAccum sa;
-    String text = _des->text;
     const char *last = text.begin(), *send = text.end();
     for (const char *s = text.begin(); s != send; ++s)
 	if (*s == '%' && s + 1 != send) {
@@ -1011,7 +1036,8 @@ void delt::parse_markup(wdiagram *d)
 			if (width > 0)
 			    sa.append_fill('?', width);
 		    }
-		    _markup_sensitivity |= dsense_handler;
+		    if (sensitivity)
+			*sensitivity |= dsense_handler;
 		}
 	    } else
 		goto invalid_format;
@@ -1019,7 +1045,7 @@ void delt::parse_markup(wdiagram *d)
 	    last = s + 1;
 	}
     sa.append(last, send);
-    _markup = sa.take_string();
+    return sa.take_string();
 }
 
 void delt::dimension_markup(dcontext &dcx)
@@ -1044,7 +1070,7 @@ void delt::layout(dcontext &dcx)
     // get text extents
     dimension_markup(dcx);
     // get port position
-    layout_ports(dcx.d);
+    layout_ports(dcx);
 
     // get contents width and height
     if (_elt.size() && _des->display == dedisp_open)
@@ -1063,6 +1089,10 @@ void delt::layout(dcontext &dcx)
 	if (_contents_height)
 	    xheight += _contents_height;
     }
+    if (_port_text_offsets && side_vertical(_des->orientation))
+	xheight += _port_text_offsets[0] + _port_text_offsets[1];
+    else if (_port_text_offsets)
+	xwidth += _port_text_offsets[0] + _port_text_offsets[1];
     xwidth = MAX(xwidth, _dess->min_width);
     xheight = MAX(xheight, _dess->min_height);
 
@@ -1086,6 +1116,21 @@ void delt::layout(dcontext &dcx)
     _height = ceil(_height + 2 * _dess->border_width);
 }
 
+
+void delt::layout_compound_ports_copy(delt *compound, bool isoutput)
+{
+    // XXX layout_ports
+    delete[] _portoff[!isoutput];
+    _portoff[!isoutput] = 0;
+    _ports_length[!isoutput] = compound->_ports_length[isoutput];
+    if (compound->_portoff[isoutput]) {
+	assert(_e->nports(!isoutput) == compound->_e->nports(isoutput));
+	int n = _e->nports(!isoutput);
+	_portoff[!isoutput] = new double[n + 1];
+	memcpy(_portoff[!isoutput], compound->_portoff[isoutput], (n + 1) * sizeof(double));
+    }
+}
+
 void delt::layout_compound_ports(wdiagram *d)
 {
     if (_elt.size() > 0 && _elt[0]->_e->name() == "input") {
@@ -1098,7 +1143,7 @@ void delt::layout_compound_ports(wdiagram *d)
 	_elt[0]->_dess = d->ccss()->elt_size_style(d, _elt[0]);
 	_elt[0]->_displayed = (_des->display == dedisp_open);
 	_elt[0]->_visible = false;
-	_elt[0]->layout_ports(d);
+	_elt[0]->layout_compound_ports_copy(this, false);
     }
     if (_elt.size() > 1 && _elt[1]->_e->name() == "output") {
 	_elt[1]->_x = _x;
@@ -1110,7 +1155,7 @@ void delt::layout_compound_ports(wdiagram *d)
 	_elt[1]->_dess = d->ccss()->elt_size_style(d, _elt[1]);
 	_elt[1]->_displayed = (_des->display == dedisp_open);
 	_elt[1]->_visible = false;
-	_elt[1]->layout_ports(d);
+	_elt[1]->layout_compound_ports_copy(this, true);
     }
 }
 
@@ -1417,11 +1462,13 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p, bool isoutput,
     cairo_get_matrix(dcx, &original_matrix);
     cairo_translate(dcx, p.x(), p.y());
     int port_orientation = _des->orientation ^ (isoutput ? 2 : 0);
-    if (port_orientation)
+    if (port_orientation & 1)
 	cairo_rotate(dcx, port_orientation * M_PI_2);
 
     double l = dps->length * _dess->scale;
     double w = dps->width * _dess->scale;
+    if (port_orientation & 2)
+	l = -l, w = -w;
 
     for (int i = 0; i < 4; i++) {
 	if ((i > 0 && dps->border_style == dborder_none)
@@ -1447,9 +1494,10 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p, bool isoutput,
 		* dps->border_width;
 	else
 	    offset = 0;
-
-	if (offset > l / 2)
+	if (offset > fabs(l / 2))
 	    continue;
+	if (port_orientation & 2)
+	    offset = -offset;
 
 	if (i == 1)
 	    cairo_set_border(dcx, 0, dps->border_style, dps->border_width);
@@ -1477,6 +1525,19 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p, bool isoutput,
 	    cairo_fill(dcx);
     }
 
+    if (dps->text) {
+	String markup = parse_markup(dps->text, dcx.d);
+	if (dcx.pl_font != dps->font)
+	    dcx.set_font_description(dps->font);
+	pango_layout_set_alignment(dcx, PANGO_ALIGN_CENTER);
+	pango_layout_set_width(dcx, -1);
+	pango_layout_set_markup(dcx, markup.data(), markup.length());
+	PangoRectangle rect;
+	pango_layout_get_pixel_extents(dcx, NULL, &rect);
+	cairo_move_to(dcx, -rect.width / 2, w + (port_orientation & 2 ? -rect.height - 1 : rect.height + 1));
+	pango_cairo_show_layout(dcx, dcx);
+    }
+    
     cairo_set_matrix(dcx, &original_matrix);
 }
 
@@ -1611,12 +1672,18 @@ void delt::draw_text(dcontext &dcx)
     if (_markup_width <= -1024)
 	dimension_markup(dcx);
 
-    double space[2];
-    space[0] = space[1] = 2 * _dess->border_width;
+    double space[4];
+    space[0] = space[1] = space[2] = space[3] = _dess->border_width;
+    if (_port_text_offsets) {
+	space[_des->orientation] += _port_text_offsets[0];
+	space[_des->orientation ^ 2] += _port_text_offsets[1];
+    }
     bool saved = false;
+    double awidth = _width - space[1] - space[3];
+    double aheight = _height - space[0] - space[2];
 
-    if (_width - space[1] < _markup_width
-	&& _height - space[0] > _markup_width
+    if (awidth < _markup_width
+	&& aheight > _markup_width
 	&& !_elt.size()) {
 	// vertical layout
 	saved = true;
@@ -1624,20 +1691,20 @@ void delt::draw_text(dcontext &dcx)
 	if (_markup_height > _width - 2)
 	    clip_to_border(dcx);
 	
-	double dy = MAX((_width - _markup_height) / 2, 0);
-	cairo_translate(dcx, _x + dy, _y + _height - space[0] / 2);
+	double dy = MAX((awidth - _markup_height) / 2, 0);
+	cairo_translate(dcx, _x + space[3] + dy, _y + _height - space[2]);
 	cairo_rotate(dcx, -M_PI / 2);
 	cairo_move_to(dcx, 0, 0);
 	cairo_scale(dcx, _dess->scale, _dess->scale);
 
-	pango_layout_set_width(dcx, (int) ((_height - space[0]) / _dess->scale * PANGO_SCALE));
+	pango_layout_set_width(dcx, (int) (aheight / _dess->scale * PANGO_SCALE));
 	pango_layout_set_markup(dcx, _markup.data(), _markup.length());
 	pango_cairo_show_layout(dcx, dcx);
 
     } else {
 	// normal horizontal layout, no text wrapping
-	if (_markup_width > _width - space[1]
-	    || _markup_height > _height - space[0]) {
+	if (_markup_width > awidth
+	    || _markup_height > aheight) {
 	    saved = true;
 	    cairo_save(dcx);
 	    clip_to_border(dcx);
@@ -1646,24 +1713,24 @@ void delt::draw_text(dcontext &dcx)
 	    cairo_save(dcx);
 	}
 
-	pango_layout_set_width(dcx, (int) ((_width - space[1]) / _dess->scale * PANGO_SCALE));
+	pango_layout_set_width(dcx, (int) (awidth / _dess->scale * PANGO_SCALE));
 	pango_layout_set_markup(dcx, _markup.data(), _markup.length());
 
 	double name_width, name_height;
-	if (_width - space[1] >= _markup_width)
+	if (awidth >= _markup_width)
 	    name_width = _markup_width, name_height = _markup_height;
 	else {
-	    name_width = _width - space[1];
+	    name_width = awidth;
 	    PangoRectangle rect;
 	    pango_layout_get_pixel_extents(dcx, NULL, &rect);
 	    name_height = rect.height * _dess->scale;
 	}
 
-	double dy = MAX((_height - name_height - _contents_height) / 2, 1);
+	double dy = MAX((aheight - name_height - _contents_height) / 2, 1);
 	if (_dess->scale == 1)
-	    cairo_move_to(dcx, _x + space[1] / 2, _y + dy);
+	    cairo_move_to(dcx, _x + space[3], _y + dy + space[0]);
 	else {
-	    cairo_translate(dcx, _x + space[1] / 2, _y + dy);
+	    cairo_translate(dcx, _x + space[3], _y + dy + space[0]);
 	    cairo_move_to(dcx, 0, 0);
 	    cairo_scale(dcx, _dess->scale, _dess->scale);
 	}

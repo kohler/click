@@ -126,7 +126,8 @@ class delt : public dwidget { public:
 
     delt(delt *parent = 0, int z_index = 0)
 	: dwidget(dw_elt, z_index), _e(0), _decor(0), _generation(0),
-	  _parent(parent), _split(0), _visible(false), _displayed(0),
+	  _port_text_offsets(0), _parent(parent), _split(0),
+	  _visible(false), _displayed(0),
 	  _aligned(true), _split_type(0),
 	  _des_sensitivity(0), _dess_sensitivity(0), _dps_sensitivity(0),
 	  _markup_sensitivity(0),
@@ -202,6 +203,9 @@ class delt : public dwidget { public:
     }
     bool primitive() const {
 	return _elt.size() == 0;
+    }
+    bool passthrough() const {
+	return _elt.size() == 2;
     }
 
     double contents_width() const {
@@ -288,6 +292,7 @@ class delt : public dwidget { public:
     unsigned _generation;
     double *_portoff[2];
     double _ports_length[2];
+    double *_port_text_offsets;
     delt *_parent;
     delt *_split;
     
@@ -332,12 +337,13 @@ class delt : public dwidget { public:
 
     bool reccss(wdiagram *d, int change);
     void layout_contents(dcontext &dcx);
-    void layout_ports(wdiagram *d);
+    void layout_ports(dcontext &dcx);
     void layout(dcontext &dcx);
-    void parse_markup(wdiagram *d);
+    String parse_markup(const String &text, wdiagram *d, int *sensitivity = 0);
     void dimension_markup(dcontext &dcx);
     void redecorate(dcontext &dcx);
     void layout_complete(dcontext &dcx, double dx, double dy);
+    void layout_compound_ports_copy(delt *e, bool isoutput);
     void layout_compound_ports(wdiagram *d);
     void union_bounds(rectangle &r, bool self) const;
 
