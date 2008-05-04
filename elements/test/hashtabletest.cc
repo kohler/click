@@ -532,10 +532,11 @@ HashTableTest::initialize(ErrorHandler *errh)
     }
 
     {
-	HashTable<String, bool> htx;
+	HashTable<String, int> htx;
 	htx["Hello"] = 1;
 	if (!htx["Goodbye"])
 	    htx["Goodbye"] = 2;
+	CHECK(htx["NOT IN TABLE"] == 0);
 	CHECK(htx["Hello"] == 1);
 	CHECK(htx["Goodbye"] == 2);
     }
