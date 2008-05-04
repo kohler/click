@@ -412,9 +412,9 @@ static void parse_port(const String &str, String &name, int &port)
 	while (t != s && (isdigit((unsigned char) t[-1])
 			  || isspace((unsigned char) t[-1])))
 	    --t;
-	if (*t == '[') {
-	    parse_port(t, end, port);
-	    for (end = t; end != s && isspace((unsigned char) end[-1]); --end)
+	if (t != s && t[-1] == '[') {
+	    parse_port(t - 1, end, port);
+	    for (end = t - 1; end != s && isspace((unsigned char) end[-1]); --end)
 		/* nada */;
 	}
     }
