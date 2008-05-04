@@ -53,7 +53,7 @@ Aligner::have_flow(Vector<Alignment>::const_iterator ain, int nin, Vector<Alignm
 {
     Bitvector b;
     for (int j = 0; j < nout; ++j, ++aout) {
-	ProcessingT::backward_flow(flow_code, j, nin, &b);
+	ProcessingT::backward_flow(flow_code, j, &b, nin);
 	Alignment a;
 	for (int i = 0; i < nin; ++i)
 	    if (b[i])
@@ -70,7 +70,7 @@ Aligner::want_flow(Vector<Alignment>::iterator ain, int nin, Vector<Alignment>::
 {
     Bitvector b;
     for (int i = 0; i < nin; ++i, ++ain) {
-	ProcessingT::forward_flow(flow_code, i, nout, &b);
+	ProcessingT::forward_flow(flow_code, i, &b, nout);
 	Alignment a;
 	for (int j = 0; j < nout; ++j)
 	    if (b[j])

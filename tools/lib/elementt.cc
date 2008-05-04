@@ -220,37 +220,36 @@ PortT::sort(Vector<PortT> &v)
 }
 
 String
-PortT::unparse_input() const
+PortT::unparse(bool isoutput) const
 {
-    if (element)
-	return "[" + String(port) + "]" + element->name();
-    else
-	return "<>";
-}
-
-String
-PortT::unparse_output() const
-{
-    if (element)
+    if (!element)
+	return String::stable_string("<>");
+    else if (isoutput)
 	return element->name() + "[" + String(port) + "]";
     else
-	return "<>";
+	return "[" + String(port) + "]" + element->name();
 }
 
 
 ConnectionT::ConnectionT(const PortT &from, const PortT &to, const LandmarkT &lm)
-    : _from(from), _to(to), _landmark(lm), _next_from(-1), _next_to(-1)
+    : _landmark(lm)
 {
+    _end[end_to] = to;
+    _end[end_from] = from;
+    _next[0] = _next[1] = -1;
 }
 
 ConnectionT::ConnectionT(const PortT &from, const PortT &to, const LandmarkT &lm, int next_from, int next_to)
-    : _from(from), _to(to), _landmark(lm),
-      _next_from(next_from), _next_to(next_to)
+    : _landmark(lm)
 {
+    _end[end_to] = to;
+    _end[end_from] = from;
+    _next[end_to] = next_to;
+    _next[end_from] = next_from;
 }
 
 String
 ConnectionT::unparse() const
 {
-    return _from.unparse_output() + " -> " + _to.unparse_input();
+    return from().unparse_output() + " -> " + to().unparse_input();
 }

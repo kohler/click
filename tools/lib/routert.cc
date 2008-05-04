@@ -145,7 +145,7 @@ RouterT::check() const
 	    int ninputs = 0, noutputs = 0;
 	    const ElementT *e = element(i);
 	    
-	    int j = _first_conn[i].from;
+	    int j = _first_conn[i][end_from];
 	    while (j >= 0) {
 		assert(j < _conn.size());
 		assert(_conn[j].from_element() == e);
@@ -154,7 +154,7 @@ RouterT::check() const
 		j = _conn[j].next_from();
 	    }
 	    
-	    j = _first_conn[i].to;
+	    j = _first_conn[i][end_to];
 	    while (j >= 0) {
 		assert(j < _conn.size());
 		assert(_conn[j].to_element() == e && connection_live(j));
@@ -365,18 +365,17 @@ void
 RouterT::update_noutputs(int e)
 {
     int n = 0;
-    for (int i = _first_conn[e].from; i >= 0; i = _conn[i].next_from())
+    for (int i = _first_conn[e][end_from]; i >= 0; i = _conn[i].next_from())
 	if (_conn[i].from().port >= n)
 	    n = _conn[i].from().port + 1;
-    _elements[e]->_noutputs = n;
-    _elements[e]->unresolve_type();
+    _elements[e]->set_noutputs(n);
 }
 
 void
 RouterT::update_ninputs(int e)
 {
     int n = 0;
-    for (int i = _first_conn[e].to; i >= 0; i = _conn[i].next_to())
+    for (int i = _first_conn[e][end_to]; i >= 0; i = _conn[i].next_to())
 	if (_conn[i].to().port >= n)
 	    n = _conn[i].to().port + 1;
     _elements[e]->set_ninputs(n);
@@ -396,13 +395,13 @@ RouterT::add_connection(const PortT &hfrom, const PortT &hto,
     if (_free_conn >= 0) {
 	i = _free_conn;
 	_free_conn = _conn[i].next_from();
-	_conn[i] = ConnectionT(hfrom, hto, landmark, first_from.from, first_to.to);
+	_conn[i] = ConnectionT(hfrom, hto, landmark, first_from[end_from], first_to[end_to]);
     } else {
 	i = _conn.size();
-	_conn.push_back(ConnectionT(hfrom, hto, landmark, first_from.from, first_to.to));
+	_conn.push_back(ConnectionT(hfrom, hto, landmark, first_from[end_from], first_to[end_to]));
     }
     
-    first_from.from = first_to.to = i;
+    first_from[end_from] = first_to[end_to] = i;
 
     // maintain port counts
     if (hfrom.port >= hfrom.element->noutputs())
@@ -439,19 +438,19 @@ RouterT::compact_connections()
     _conn.resize(last);
     for (int i = 0; i < last; i++) {
 	ConnectionT &c = _conn[i];
-	if (c._next_from >= 0)
-	    c._next_from = new_numbers[c._next_from];
-	if (c._next_to >= 0)
-	    c._next_to = new_numbers[c._next_to];
+	if (c._next[end_from] >= 0)
+	    c._next[end_from] = new_numbers[c._next[end_from]];
+	if (c._next[end_to] >= 0)
+	    c._next[end_to] = new_numbers[c._next[end_to]];
     }
 
     int ne = nelements();
     for (int i = 0; i < ne; i++) {
 	Pair &n = _first_conn[i];
-	if (n.from >= 0)
-	    n.from = new_numbers[n.from];
-	if (n.to >= 0)
-	    n.to = new_numbers[n.to];
+	if (n[end_from] >= 0)
+	    n[end_from] = new_numbers[n[end_from]];
+	if (n[end_to] >= 0)
+	    n[end_to] = new_numbers[n[end_to]];
     }
 
     _free_conn = -1;
@@ -465,7 +464,7 @@ RouterT::unlink_connection_from(int c)
 
     // find previous connection
     int prev = -1;
-    int trav = _first_conn[e].from;
+    int trav = _first_conn[e][end_from];
     while (trav >= 0 && trav != c) {
 	prev = trav;
 	trav = _conn[trav].next_from();
@@ -474,9 +473,9 @@ RouterT::unlink_connection_from(int c)
 
     // unlink this connection
     if (prev < 0)
-	_first_conn[e].from = _conn[trav].next_from();
+	_first_conn[e][end_from] = _conn[trav].next_from();
     else
-	_conn[prev]._next_from = _conn[trav].next_from();
+	_conn[prev]._next[end_from] = _conn[trav].next_from();
 
     // update port count
     if (_elements[e]->_noutputs == port + 1)
@@ -491,7 +490,7 @@ RouterT::unlink_connection_to(int c)
 
     // find previous connection
     int prev = -1;
-    int trav = _first_conn[e].to;
+    int trav = _first_conn[e][end_to];
     while (trav >= 0 && trav != c) {
 	prev = trav;
 	trav = _conn[trav].next_to();
@@ -500,9 +499,9 @@ RouterT::unlink_connection_to(int c)
 
     // unlink this connection
     if (prev < 0)
-	_first_conn[e].to = _conn[trav].next_to();
+	_first_conn[e][end_to] = _conn[trav].next_to();
     else
-	_conn[prev]._next_to = _conn[trav].next_to();
+	_conn[prev]._next[end_to] = _conn[trav].next_to();
 
     // update port count
     if (_elements[e]->_ninputs == port + 1)
@@ -512,8 +511,8 @@ RouterT::unlink_connection_to(int c)
 void
 RouterT::free_connection(int c)
 {
-    _conn[c]._from.element = 0;	// kill();
-    _conn[c]._next_from = _free_conn;
+    _conn[c]._end[end_from].element = 0;	// kill();
+    _conn[c]._next[end_from] = _free_conn;
     _free_conn = c;
 }
 
@@ -545,13 +544,13 @@ RouterT::change_connection_from(int c, PortT h)
     assert(h.router() == this);
     unlink_connection_from(c);
 
-    _conn[c]._from = h;
+    _conn[c]._end[end_from] = h;
     if (h.port >= h.element->_noutputs)
 	h.element->_noutputs = h.port + 1;
 
     int ei = h.eindex();
-    _conn[c]._next_from = _first_conn[ei].from;
-    _first_conn[ei].from = c;
+    _conn[c]._next[end_from] = _first_conn[ei][end_from];
+    _first_conn[ei][end_from] = c;
 }
 
 void
@@ -560,50 +559,27 @@ RouterT::change_connection_to(int c, PortT h)
     assert(h.router() == this);
     unlink_connection_to(c);
 
-    _conn[c]._to = h;
+    _conn[c]._end[end_to] = h;
     if (h.port >= h.element->ninputs())
 	h.element->set_ninputs(h.port + 1);
 
     int ei = h.eindex();
-    _conn[c]._next_to = _first_conn[ei].to;
-    _first_conn[ei].to = c;
-}
-
-
-RouterT::conn_iterator
-RouterT::begin_connections_from(const PortT &port) const
-{
-    assert(port.router() == this);
-    int c = _first_conn[port.eindex()].from;
-    while (c >= 0 && _conn[c].from_port() != port.port)
-	c = _conn[c].next_from();
-    return (c >= 0 ? conn_iterator(&_conn[c], port.port + 2) : conn_iterator());
+    _conn[c]._next[end_to] = _first_conn[ei][end_to];
+    _first_conn[ei][end_to] = c;
 }
 
 RouterT::conn_iterator
-RouterT::begin_connections_from(ElementT *element) const
+RouterT::begin_connections_touching(int eindex, int port, bool isoutput) const
 {
-    assert(element->router() == this);
-    int c = _first_conn[element->eindex()].from;
-    return (c >= 0 ? conn_iterator(&_conn[c], 1) : conn_iterator());
-}
-
-RouterT::conn_iterator
-RouterT::begin_connections_to(const PortT &port) const
-{
-    assert(port.router() == this);
-    int c = _first_conn[port.eindex()].to;
-    while (c >= 0 && _conn[c].to_port() != port.port)
-	c = _conn[c].next_to();
-    return (c >= 0 ? conn_iterator(&_conn[c], -port.port - 2) : conn_iterator());
-}
-
-RouterT::conn_iterator
-RouterT::begin_connections_to(ElementT *element) const
-{
-    assert(element->router() == this);
-    int c = _first_conn[element->eindex()].to;
-    return (c >= 0 ? conn_iterator(&_conn[c], -1) : conn_iterator());
+    assert(eindex >= 0 && eindex < nelements());
+    int c = _first_conn[eindex][isoutput];
+    if (port >= 0) {
+	while (c >= 0 && _conn[c].port(isoutput) != port)
+	    c = _conn[c].next(isoutput);
+	port = (isoutput ? port + 2 : -port - 2);
+    } else
+	port = (isoutput ? 1 : -1);
+    return (c >= 0 ? conn_iterator(&_conn[c], port) : conn_iterator());
 }
 
 void
@@ -616,11 +592,11 @@ RouterT::conn_iterator::complex_step(const RouterT *router)
     else if (_by >= 1) {
 	c = _conn->next_from();
 	while (c >= 0 && _by > 1 && router->_conn[c].from_port() != _by - 2)
-	    c = _conn->next_from();
+	    c = router->_conn[c].next_from();
     } else {
 	c = _conn->next_to();
 	while (c >= 0 && _by < -1 && router->_conn[c].to_port() != -_by - 2)
-	    c = _conn->next_to();
+	    c = router->_conn[c].next_to();
     }
     if (c == router->_conn.size() || c < 0)
 	_conn = 0;
@@ -633,7 +609,7 @@ int
 RouterT::find_connection(const PortT &hfrom, const PortT &hto) const
 {
     assert(hfrom.router() == this && hto.router() == this);
-    int c = _first_conn[hfrom.eindex()].from;
+    int c = _first_conn[hfrom.eindex()][end_from];
     while (c >= 0) {
 	if (_conn[c].from() == hfrom && _conn[c].to() == hto)
 	    break;
@@ -643,157 +619,80 @@ RouterT::find_connection(const PortT &hfrom, const PortT &hto) const
 }
 
 void
-RouterT::find_connections_from(ElementT *e, Vector<int> &v) const
+RouterT::find_connections_touching(ElementT *e, bool isoutput, Vector<int> &v) const
 {
     assert(e->router() == this);
-    int c = _first_conn[e->eindex()].from;
+    int c = _first_conn[e->eindex()][isoutput];
     v.clear();
     while (c >= 0) {
 	v.push_back(c);
-	c = _conn[c].next_from();
+	c = _conn[c].next(isoutput);
     }
 }
 
 int
-RouterT::find_connection_id_from(const PortT &h) const
+RouterT::find_connection_id_touching(const PortT &port, bool isoutput) const
 {
-    assert(h.router() == this);
-    int c = _first_conn[h.eindex()].from;
-    int p = h.port;
+    assert(port.router() == this);
+    int c = _first_conn[port.eindex()][isoutput];
+    int p = port.port;
     int result = -1;
     while (c >= 0) {
-	if (_conn[c].from_port() == p) {
+	if (_conn[c].port(isoutput) == p) {
 	    if (result == -1)
 		result = c;
 	    else
 		return -2;
 	}
-	c = _conn[c].next_from();
+	c = _conn[c].next(isoutput);
     }
     return result;
 }
 
 void
-RouterT::find_connections_from(const PortT &output, Vector<PortT> &v, bool clear) const
+RouterT::find_connections_touching(const PortT &port, bool isoutput, Vector<PortT> &v, bool clear) const
 {
-    assert(output.router() == this);
-    int c = _first_conn[output.eindex()].from;
-    int p = output.port;
+    assert(port.router() == this);
+    int c = _first_conn[port.eindex()][isoutput];
+    int p = port.port;
     if (clear)
 	v.clear();
     while (c >= 0) {
-	if (_conn[c].from().port == p)
-	    v.push_back(_conn[c].to());
-	c = _conn[c].next_from();
+	if (_conn[c].port(isoutput) == p)
+	    v.push_back(_conn[c].end(!isoutput));
+	c = _conn[c].next(isoutput);
     }
 }
 
 void
-RouterT::find_connections_from(const PortT &h, Vector<int> &v) const
+RouterT::find_connections_touching(const PortT &port, bool isoutput, Vector<int> &v) const
 {
-    assert(h.router() == this);
-    int c = _first_conn[h.eindex()].from;
-    int p = h.port;
+    assert(port.router() == this);
+    int c = _first_conn[port.eindex()][isoutput];
+    int p = port.port;
     v.clear();
     while (c >= 0) {
-	if (_conn[c].from().port == p)
+	if (_conn[c].port(isoutput) == p)
 	    v.push_back(c);
-	c = _conn[c].next_from();
+	c = _conn[c].next(isoutput);
     }
 }
 
 void
-RouterT::find_connections_to(ElementT *e, Vector<int> &v) const
-{
-    assert(e->router() == this);
-    int c = _first_conn[e->eindex()].to;
-    v.clear();
-    while (c >= 0) {
-	v.push_back(c);
-	c = _conn[c].next_to();
-    }
-}
-
-void
-RouterT::find_connections_to(const PortT &h, Vector<PortT> &v) const
-{
-    assert(h.router() == this);
-    int c = _first_conn[h.eindex()].to;
-    int p = h.port;
-    v.clear();
-    while (c >= 0) {
-	if (_conn[c].to().port == p)
-	    v.push_back(_conn[c].from());
-	c = _conn[c].next_to();
-    }
-}
-
-void
-RouterT::find_connections_to(const PortT &h, Vector<int> &v) const
-{
-    assert(h.router() == this);
-    int c = _first_conn[h.eindex()].to;
-    int p = h.port;
-    v.clear();
-    while (c >= 0) {
-	if (_conn[c].to().port == p)
-	    v.push_back(c);
-	c = _conn[c].next_to();
-    }
-}
-
-int
-RouterT::find_connection_id_to(const PortT &h) const
-{
-    assert(h.router() == this);
-    int c = _first_conn[h.eindex()].to;
-    int p = h.port;
-    int result = -1;
-    while (c >= 0) {
-	if (_conn[c].to_port() == p) {
-	    if (result == -1)
-		result = c;
-	    else
-		return -2;
-	}
-	c = _conn[c].next_to();
-    }
-    return result;
-}
-
-void
-RouterT::find_connection_vector_from(ElementT *e, Vector<int> &v) const
+RouterT::find_connection_vector_touching(ElementT *e, bool isoutput, Vector<int> &v) const
 {
     assert(e->router() == this);
     v.clear();
-    int c = _first_conn[e->eindex()].from;
+    int c = _first_conn[e->eindex()][isoutput];
     while (c >= 0) {
-	int p = _conn[c].from().port;
+	int p = _conn[c].port(isoutput);
 	if (p >= v.size())
 	    v.resize(p + 1, -1);
 	if (v[p] >= 0)
 	    v[p] = -2;
 	else
 	    v[p] = c;
-	c = _conn[c].next_from();
-    }
-}
-
-void
-RouterT::find_connection_vector_to(ElementT *e, Vector<int> &v) const
-{
-    assert(e->router() == this);
-    v.clear();
-    int c = _first_conn[e->eindex()].to;
-    while (c >= 0) {
-	int p = _conn[c].to().port;
-	if (p >= v.size())
-	    v.resize(p + 1, -1);
-	if (v[p] >= 0)
-	    v[p] = -2;
-	else
-	    v[p] = c;
-	c = _conn[c].next_to();
+	c = _conn[c].next(isoutput);
     }
 }
 
@@ -803,7 +702,7 @@ RouterT::insert_before(const PortT &inserter, const PortT &h)
     if (!add_connection(inserter, h))
 	return false;
 
-    int i = _first_conn[h.eindex()].to;
+    int i = _first_conn[h.eindex()][end_to];
     while (i >= 0) {
 	int next = _conn[i].next_to();
 	if (_conn[i].to() == h && connection_live(i)
@@ -820,7 +719,7 @@ RouterT::insert_after(const PortT &inserter, const PortT &h)
     if (!add_connection(h, inserter))
 	return false;
 
-    int i = _first_conn[h.eindex()].from;
+    int i = _first_conn[h.eindex()][end_from];
     while (i >= 0) {
 	int next = _conn[i].next_from();
 	if (_conn[i].from() == h && _conn[i].to() != inserter)
@@ -914,10 +813,10 @@ RouterT::remove_duplicate_connections()
     Vector<int> removers;
 
     for (int i = 0; i < nelem; i++) {
-	int trav = _first_conn[i].from;
+	int trav = _first_conn[i][end_from];
 	int next = 0;		// initialize here to avoid gcc warnings
 	while (trav >= 0) {
-	    int prev = _first_conn[i].from;
+	    int prev = _first_conn[i][end_from];
 	    int trav_port = _conn[trav].from().port;
 	    next = _conn[trav].next_from();
 	    while (prev >= 0 && prev != trav) {
@@ -984,19 +883,19 @@ RouterT::free_element(ElementT *e)
     
     // first, remove bad connections from other elements' connection lists
     Vector<int> bad_from, bad_to;
-    for (int c = _first_conn[ei].from; c >= 0; c = _conn[c].next_from())
+    for (int c = _first_conn[ei][end_from]; c >= 0; c = _conn[c].next_from())
 	unlink_connection_to(c);
-    for (int c = _first_conn[ei].to; c >= 0; c = _conn[c].next_to())
+    for (int c = _first_conn[ei][end_to]; c >= 0; c = _conn[c].next_to())
 	unlink_connection_from(c);
 
     // now, free all of this element's connections
-    for (int c = _first_conn[ei].from; c >= 0; ) {
+    for (int c = _first_conn[ei][end_from]; c >= 0; ) {
 	int next = _conn[c].next_from();
 	if (_conn[c].to_eindex() != ei)
 	    free_connection(c);
 	c = next;
     }
-    for (int c = _first_conn[ei].to; c >= 0; ) {
+    for (int c = _first_conn[ei][end_to]; c >= 0; ) {
 	int next = _conn[c].next_to();
 	free_connection(c);
 	c = next;
@@ -1340,15 +1239,13 @@ RouterT::const_type_iterator::step(const RouterT *r, int eindex)
 //
 
 const ElementTraits *
-RouterT::find_traits() const
+RouterT::find_traits(ElementMap *emap) const
 {
-    if (ElementMap::default_map()) {
-	ProcessingT pt(this, ElementMap::default_map());
-	pt.check();
-	*(_traits.component(Traits::D_PORT_COUNT)) = pt.compound_port_count_code();
-	*(_traits.component(Traits::D_PROCESSING)) = pt.compound_processing_code();
-	*(_traits.component(Traits::D_FLOW_CODE)) = pt.compound_flow_code();
-    }
+    ProcessingT pt(this, emap);
+    pt.check();
+    *(_traits.component(Traits::D_PORT_COUNT)) = pt.compound_port_count_code();
+    *(_traits.component(Traits::D_PROCESSING)) = pt.compound_processing_code();
+    *(_traits.component(Traits::D_FLOW_CODE)) = pt.compound_flow_code();
     return &_traits;
 }
 

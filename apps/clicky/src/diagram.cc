@@ -386,6 +386,173 @@ void wdiagram::notify_read(handler_value *hv)
 
 /*****
  *
+ * reachability
+ *
+ */
+
+static const char *parse_port(const char *s, const char *end, int &port)
+{
+    if (s != end && *s == '[') {
+	s = cp_integer(cp_skip_space(s + 1, end), end, 10, &port);
+	s = cp_skip_space(s, end);
+	if (s != end && *s == ']')
+	    s = cp_skip_space(s + 1, end);
+    }
+    return s;
+}
+
+static void parse_port(const String &str, String &name, int &port)
+{
+    const char *s = str.begin(), *end = str.end();
+    
+    port = -1;
+    s = parse_port(s, end, port);
+    if (s != end && end[-1] == ']') {
+	const char *t = end - 1;
+	while (t != s && (isdigit((unsigned char) t[-1])
+			  || isspace((unsigned char) t[-1])))
+	    --t;
+	if (*t == '[') {
+	    parse_port(t, end, port);
+	    for (end = t; end != s && isspace((unsigned char) end[-1]); --end)
+		/* nada */;
+	}
+    }
+    
+    name = str.substring(s, end);
+}
+
+
+wdiagram::reachable_match_t::reachable_match_t(const String &name, int port,
+					       bool forward, RouterT *router,
+					       ProcessingT *processing)
+    : _name(name), _port(port), _forward(forward),
+      _router(router), _router_name(), _processing(processing)
+{
+}
+
+wdiagram::reachable_match_t::reachable_match_t(const reachable_match_t &m,
+					       ElementT *e)
+    : _name(m._name), _port(m._port), _forward(m._forward),
+      _router(e->resolved_router()), _router_name(m._router_name),
+      _processing(new ProcessingT(_router, m._processing->element_map()))
+{
+    _processing->create(m._processing->decorated_processing_code(e), true);
+    if (_router_name)
+	_router_name += '/';
+    _router_name += e->name();
+}
+
+wdiagram::reachable_match_t::~reachable_match_t()
+{
+    if (_router_name)
+	delete _processing;
+}
+
+bool
+wdiagram::reachable_match_t::get_seed(int eindex, int port) const
+{
+    if (!_seed.size())
+	return false;
+    else
+	return _seed[_processing->pidx(eindex, port, !_forward)];
+}
+
+void
+wdiagram::reachable_match_t::set_seed(const ConnectionT &conn)
+{
+    if (!_seed.size())
+	_seed.assign(_processing->npidx(!_forward), false);
+    _seed[_processing->pidx(conn, !_forward)] = true;
+}
+
+void
+wdiagram::reachable_match_t::set_seed_connections(ElementT *e, int port)
+{
+    assert(port >= -1 && port < e->nports(_forward));
+    for (RouterT::conn_iterator cit = _router->begin_connections_touching(PortT(e, port), _forward);
+	 cit != _router->end_connections(); ++cit)
+	set_seed(*cit);
+}
+
+bool
+wdiagram::reachable_match_t::add_matches(reachable_t &reach)
+{
+    for (RouterT::iterator it = _router->begin_elements();
+	 it != _router->end_elements(); ++it)
+	if (glob_match(it->name(), _name)
+	    || glob_match(it->type_name(), _name)
+	    || (_name && _name[0] == '#' && glob_match(it->name(), _name.substring(1))))
+	    set_seed_connections(it, _port);
+	else if (it->resolved_compound()) {
+	    reachable_match_t sub_match(*this, it);
+	    RouterT *sub_router = sub_match._router;
+	    if (sub_match.add_matches(reach)) {
+		assert(!reach.compound.get_pointer(sub_match._router_name));
+		sub_match.export_matches(reach);
+		assert(sub_router->element(0)->name() == "input"
+		       && sub_router->element(1)->name() == "output");
+		for (int p = 0; p < sub_router->element(_forward)->nports(!_forward); ++p)
+		    if (sub_match.get_seed(_forward, p))
+			set_seed_connections(it, p);
+	    }
+	}
+    if (_seed.size()) {
+	_processing->follow_reachable(_seed, !_forward, _forward);
+	return true;
+    } else
+	return false;
+}
+
+void
+wdiagram::reachable_match_t::export_matches(reachable_t &reach)
+{
+    Bitvector &x = (_router_name ? reach.compound[_router_name] : reach.main);
+    if (!x.size())
+	x.assign(_router->nelements(), false);
+    assert(x.size() == _router->nelements());
+    if (!_seed.size())
+	return;
+
+    for (RouterT::iterator it = _router->begin_elements();
+	 it != _router->end_elements(); ++it) {
+	if (it->tunnel())
+	    continue;
+	int pidx = _processing->pidx(it->eindex(), 0, !_forward);
+	bool any = false;
+	for (int p = 0; p < it->nports(!_forward); ++p)
+	    if (_seed[pidx + p]) {
+		x[it->eindex()] = any = true;
+		break;
+	    }
+	if (any && it->resolved_compound()) {
+	    // spread matches from inputs through the compound
+	    reachable_match_t sub_match(*this, it);
+	    RouterT *sub_router = sub_match._router;
+	    for (int p = 0; p < it->nports(!_forward); ++p)
+		if (_seed[pidx + p])
+		    sub_match.set_seed_connections(sub_router->element(!_forward), p);
+	    if (sub_match._seed.size()) {
+		sub_match._processing->follow_reachable(sub_match._seed, !_forward, _forward);
+		sub_match.export_matches(reach);
+	    }
+	}
+    }
+}
+
+void wdiagram::calculate_reachable(const String &str, bool forward, reachable_t &reach)
+{
+    String ename;
+    int port;
+    parse_port(str, ename, port);
+
+    reachable_match_t match(ename, port, forward, _rw->_r, _rw->_processing);
+    match.add_matches(reach);
+    match.export_matches(reach);
+}
+
+/*****
+ *
  * motion exposure
  *
  */

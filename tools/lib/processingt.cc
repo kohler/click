@@ -27,6 +27,7 @@
 #include <click/confparse.hh>
 #include "elementmap.hh"
 #include <string.h>
+#include <algorithm>
 
 const char ProcessingT::processing_letters[] = "ahlXahlX";
 const char ProcessingT::decorated_processing_letters[] = "ahlXaHLX";
@@ -78,30 +79,30 @@ void
 ProcessingT::create_pidx(ErrorHandler *errh)
 {
     int ne = _router->nelements();
-    _input_pidx.assign(ne, 0);
-    _output_pidx.assign(ne, 0);
+    _pidx[end_to].assign(ne, 0);
+    _pidx[end_from].assign(ne, 0);
 
     // count used input and output ports for each element
     int ci = 0, co = 0;
     for (int i = 0; i < ne; i++) {
-	_input_pidx[i] = ci;
-	_output_pidx[i] = co;
+	_pidx[end_to][i] = ci;
+	_pidx[end_from][i] = co;
 	ci += _router->element(i)->ninputs();
 	co += _router->element(i)->noutputs();
     }
-    _input_pidx.push_back(ci);
-    _output_pidx.push_back(co);
+    _pidx[end_to].push_back(ci);
+    _pidx[end_from].push_back(co);
 
     // create eidxes
-    _input_elt.clear();
-    _output_elt.clear();
+    _elt[end_to].clear();
+    _elt[end_from].clear();
     ci = 0, co = 0;
     for (int i = 1; i <= ne; i++) {
 	const ElementT *e = _router->element(i - 1);
-	for (; ci < _input_pidx[i]; ci++)
-	    _input_elt.push_back(e);
-	for (; co < _output_pidx[i]; co++)
-	    _output_elt.push_back(e);
+	for (; ci < _pidx[end_to][i]; ci++)
+	    _elt[end_to].push_back(e);
+	for (; co < _pidx[end_from][i]; co++)
+	    _elt[end_from].push_back(e);
     }
 
     // complain about dead elements with live connections
@@ -177,8 +178,8 @@ ProcessingT::initial_processing_for(int ei, const String &compound_pcode, ErrorH
     // parse processing code
     const char *pcpos = pc.begin();
 
-    int start_in = _input_pidx[ei];
-    int start_out = _output_pidx[ei];
+    int start_in = _pidx[end_to][ei];
+    int start_out = _pidx[end_from][ei];
 
     int val;
     for (int i = 0; i < e->ninputs(); i++) {
@@ -249,13 +250,13 @@ ProcessingT::check_processing(ErrorHandler *errh)
     Bitvector bv;
     for (int i = 0; i < ninput_pidx(); i++)
 	if (_input_processing[i] == VAGNOSTIC) {
-	    ElementT *e = const_cast<ElementT *>(_input_elt[i]);
+	    ElementT *e = const_cast<ElementT *>(_elt[end_to][i]);
 	    int ei = e->eindex();
-	    int port = i - _input_pidx[ei];
-	    int opidx = _output_pidx[ei];
-	    int noutputs = _output_pidx[ei+1] - opidx;
+	    int port = i - _pidx[end_to][ei];
+	    int opidx = _pidx[end_from][ei];
+	    int noutputs = _pidx[end_from][ei+1] - opidx;
 	    forward_flow(e->type()->traits().flow_code,
-			 port, noutputs, &bv, errh);
+			 port, &bv, noutputs, errh);
 	    for (int j = 0; j < noutputs; j++)
 		if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC)
 		    conn.push_back(ConnectionT(PortT(e, j), PortT(e, port), agnostic_landmark));
@@ -445,7 +446,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	const ElementT *e = _router->element(ei);
 	if (e->dead())
 	    continue;
-	int ipdx = _input_pidx[ei], opdx = _output_pidx[ei];
+	int ipdx = _pidx[end_to][ei], opdx = _pidx[end_from][ei];
 	check_nports(e, input_used.begin() + ipdx, output_used.begin() + opdx, errh);
 	for (int i = 0; i < e->ninputs(); i++)
 	    if (input_used[ipdx + i] < 0)
@@ -485,10 +486,10 @@ ProcessingT::resolve_agnostics()
 bool
 ProcessingT::same_processing(int a, int b) const
 {
-    int ai = _input_pidx[a], bi = _input_pidx[b];
-    int ao = _output_pidx[a], bo = _output_pidx[b];
-    int ani = _input_pidx[a+1] - ai, bni = _input_pidx[b+1] - bi;
-    int ano = _output_pidx[a+1] - ao, bno = _output_pidx[b+1] - bo;
+    int ai = _pidx[end_to][a], bi = _pidx[end_to][b];
+    int ao = _pidx[end_from][a], bo = _pidx[end_from][b];
+    int ani = _pidx[end_to][a+1] - ai, bni = _pidx[end_to][b+1] - bi;
+    int ano = _pidx[end_from][a+1] - ao, bno = _pidx[end_from][b+1] - bo;
     if (ani != bni || ano != bno)
 	return false;
     if (ani && memcmp(&_input_processing[ai], &_input_processing[bi], sizeof(int) * ani) != 0)
@@ -504,10 +505,10 @@ ProcessingT::processing_code(const ElementT *e) const
     assert(e->router() == _router);
     int ei = e->eindex();
     StringAccum sa;
-    for (int i = _input_pidx[ei]; i < _input_pidx[ei+1]; i++)
+    for (int i = _pidx[end_to][ei]; i < _pidx[end_to][ei+1]; i++)
 	sa << processing_letters[_input_processing[i]];
     sa << '/';
-    for (int i = _output_pidx[ei]; i < _output_pidx[ei+1]; i++)
+    for (int i = _pidx[end_from][ei]; i < _pidx[end_from][ei+1]; i++)
 	sa << processing_letters[_output_processing[i]];
     return sa.take_string();
 }
@@ -517,8 +518,8 @@ ProcessingT::decorated_processing_code(const ElementT *e) const
 {
     assert(e->router() == _router);
     int ei = e->eindex();
-    int ipb = _input_pidx[ei], ipe = _input_pidx[ei+1];
-    int opb = _output_pidx[ei], ope = _output_pidx[ei+1];
+    int ipb = _pidx[end_to][ei], ipe = _pidx[end_to][ei+1];
+    int opb = _pidx[end_from][ei], ope = _pidx[end_from][ei+1];
 
     // avoid memory allocation by returning an existing string
     // (premature optimization?)
@@ -617,71 +618,40 @@ next_flow_code(const char *&p, const char *last,
 }
 
 int
-ProcessingT::forward_flow(const String &flow_code, int input_port,
-			  int noutputs, Bitvector *bv, ErrorHandler *errh)
+ProcessingT::code_flow(const String &flow_code, int port, bool isoutput,
+		       Bitvector *bv, int size, ErrorHandler *errh)
 {
-    if (input_port < 0) {
-	bv->assign(noutputs, false);
+    if (port < 0) {
+	bv->assign(size, false);
 	return 0;
-    } else if (!flow_code || (flow_code.length() == 3 && flow_code == "x/x")) {
-	bv->assign(noutputs, true);
+    } else if (!flow_code || flow_code.equals("x/x", 3)) {
+	bv->assign(size, true);
 	return 0;
+    } else
+	bv->assign(size, false);
+
+    const char *fbegin[2], *fend[2], *slash = find(flow_code, '/');
+    fbegin[end_to] = flow_code.begin();
+    if (slash == flow_code.end()) {
+	fbegin[end_from] = fbegin[end_to];
+	fend[end_to] = fend[end_from] = flow_code.end();
+    } else if (slash + 1 == flow_code.end() || slash[1] == '/')
+	return (errh ? errh->error("flow code: bad '/'") : -1);
+    else {
+	fend[end_to] = slash;
+	fbegin[end_from] = slash + 1;
+	fend[end_from] = flow_code.end();
     }
 
-    bv->assign(noutputs, false);
+    Bitvector source_code, sink_code;
 
-    const char *f_in = flow_code.begin();
-    const char *f_out = find(flow_code, '/');
-    const char *f_last = flow_code.end();
-    f_out = (f_out == f_last ? f_in : f_out + 1);
-    if (f_out == f_last || *f_out == '/')
-	return (errh ? errh->error("flow code: missing or bad '/'") : -1);
+    for (int i = 0; i < port; ++i)
+	skip_flow_code(fbegin[isoutput], fend[isoutput]);
+    next_flow_code(fbegin[isoutput], fend[isoutput], port, source_code, errh);
 
-    Bitvector in_code;
-    for (int i = 0; i < input_port; i++)
-	skip_flow_code(f_in, f_last);
-    next_flow_code(f_in, f_last, input_port, in_code, errh);
-
-    Bitvector out_code;
-    for (int i = 0; i < noutputs; i++) {
-	next_flow_code(f_out, f_last, i, out_code, errh);
-	if (in_code.nonzero_intersection(out_code))
-	    (*bv)[i] = true;
-    }
-
-    return 0;
-}
-
-int
-ProcessingT::backward_flow(const String &flow_code, int output_port,
-			   int ninputs, Bitvector *bv, ErrorHandler *errh)
-{
-    if (output_port < 0) {
-	bv->assign(ninputs, false);
-	return 0;
-    } else if (!flow_code || (flow_code.length() == 3 && flow_code == "x/x")) {
-	bv->assign(ninputs, true);
-	return 0;
-    }
-
-    bv->assign(ninputs, false);
-
-    const char *f_in = flow_code.begin();
-    const char *f_out = find(flow_code, '/');
-    const char *f_last = flow_code.end();
-    f_out = (f_out == f_last ? f_in : f_out + 1);
-    if (f_out == f_last || *f_out == '/')
-	return (errh ? errh->error("flow code: missing or bad '/'") : -1);
-
-    Bitvector out_code;
-    for (int i = 0; i < output_port; i++)
-	skip_flow_code(f_out, f_last);
-    next_flow_code(f_out, f_last, output_port, out_code, errh);
-
-    Bitvector in_code;
-    for (int i = 0; i < ninputs; i++) {
-	next_flow_code(f_in, f_last, i, in_code, errh);
-	if (in_code.nonzero_intersection(out_code))
+    for (int i = 0; i < size; i++) {
+	next_flow_code(fbegin[!isoutput], fend[!isoutput], i, sink_code, errh);
+	if (source_code.nonzero_intersection(sink_code))
 	    (*bv)[i] = true;
     }
 
@@ -689,93 +659,65 @@ ProcessingT::backward_flow(const String &flow_code, int output_port,
 }
 
 void
-ProcessingT::set_connected_inputs(const Bitvector &outputs, Bitvector &inputs) const
+ProcessingT::follow_connections(const Bitvector &source, bool source_isoutput,
+				Bitvector &sink) const
 {
-    assert(outputs.size() == noutput_pidx() && inputs.size() == ninput_pidx());
-    const Vector<ConnectionT> &conn = _router->connections();
-    for (int i = 0; i < conn.size(); i++)
-	if (outputs[output_pidx(conn[i])])
-	    inputs[input_pidx(conn[i])] = true;
+    assert(source.size() == npidx(source_isoutput)
+	   && sink.size() == npidx(!source_isoutput));
+    for (RouterT::conn_iterator it = _router->begin_connections();
+	 it != _router->end_connections(); ++it)
+	if (source[pidx(*it, source_isoutput)])
+	    sink[pidx(*it, !source_isoutput)] = true;
 }
 
 void
-ProcessingT::set_connected_outputs(const Bitvector &inputs, Bitvector &outputs) const
+ProcessingT::follow_connections(const PortT &source, bool source_isoutput,
+				Bitvector &sink) const
 {
-    assert(outputs.size() == noutput_pidx() && inputs.size() == ninput_pidx());
-    const Vector<ConnectionT> &conn = _router->connections();
-    for (int i = 0; i < conn.size(); i++)
-	if (inputs[input_pidx(conn[i])])
-	    outputs[output_pidx(conn[i])] = true;
+    assert(sink.size() == npidx(!source_isoutput));
+    for (RouterT::conn_iterator it = _router->begin_connections_touching(source, source_isoutput);
+	 it != _router->end_connections(); ++it)
+	sink[pidx(*it, !source_isoutput)] = true;
 }
 
 void
-ProcessingT::set_connected_inputs(const PortT &port, Bitvector &inputs) const
+ProcessingT::follow_flow(const Bitvector &source, bool source_isoutput,
+			 Bitvector &sink, ErrorHandler *errh) const
 {
-    assert(port.router() == _router && inputs.size() == ninput_pidx());
-    const Vector<ConnectionT> &conn = _router->connections();
-    for (int i = 0; i < conn.size(); i++)
-	if (conn[i].from() == port)
-	    inputs[input_pidx(conn[i])] = true;
-}
-
-void
-ProcessingT::set_connected_outputs(const PortT &port, Bitvector &outputs) const
-{
-    assert(port.router() == _router && outputs.size() == noutput_pidx());
-    const Vector<ConnectionT> &conn = _router->connections();
-    for (int i = 0; i < conn.size(); i++)
-	if (conn[i].to() == port)
-	    outputs[output_pidx(conn[i])] = true;
-}
-
-void
-ProcessingT::set_flowed_inputs(const Bitvector &outputs, Bitvector &inputs, ErrorHandler *errh) const
-{
-    assert(outputs.size() == noutput_pidx() && inputs.size() == ninput_pidx());
+    assert(source.size() == npidx(source_isoutput)
+	   && sink.size() == npidx(!source_isoutput));
     Bitvector bv;
     // for speed with sparse Bitvectors, look into the Bitvector implementation
-    const uint32_t *output_udata = outputs.data_words();
-    for (int i = 0; i <= outputs.max_word(); i++)
-	if (output_udata[i]) {
-	    int m = (i*8 + 8 > outputs.size() ? outputs.size() : i*8 + 8);
-	    for (int j = i*8; j < m; j++)
-		if (outputs[j]) {
-		    PortT p = output_port(j);
-		    (void) backward_flow(p, &bv, errh);
-		    inputs.or_at(bv, _input_pidx[p.element->eindex()]);
+    const uint32_t *source_words = source.data_words();
+    const int wb = Bitvector::data_word_bits;
+    for (int w = 0; w <= source.max_word(); ++w)
+	if (source_words[w]) {
+	    int m = std::min(source.size(), (w + 1) * wb);
+	    for (int pidx = w * wb; pidx < m; ++pidx)
+		if (source[pidx]) {
+		    PortT p = port(pidx, source_isoutput);
+		    (void) port_flow(p, source_isoutput, &bv, errh);
+		    sink.or_at(bv, _pidx[!source_isoutput][p.eindex()]);
 		}
 	}
 }
 
 void
-ProcessingT::set_flowed_outputs(const Bitvector &inputs, Bitvector &outputs, ErrorHandler *errh) const
+ProcessingT::follow_reachable(Bitvector &ports, bool isoutput, bool forward, ErrorHandler *errh) const
 {
-    assert(outputs.size() == noutput_pidx() && inputs.size() == ninput_pidx());
-    Bitvector bv;
-    // for speed with sparse Bitvectors, look into the Bitvector implementation
-    const uint32_t *input_udata = inputs.data_words();
-    for (int i = 0; i <= inputs.max_word(); i++)
-	if (input_udata[i]) {
-	    int m = (i*8 + 8 > inputs.size() ? inputs.size() : i*8 + 8);
-	    for (int j = i*8; j < m; j++)
-		if (inputs[j]) {
-		    PortT p = input_port(j);
-		    (void) forward_flow(p, &bv, errh);
-		    outputs.or_at(bv, _output_pidx[p.element->eindex()]);
-		}
-	}
-}
-
-void
-ProcessingT::forward_reachable_inputs(Bitvector &inputs, ErrorHandler *errh) const
-{
-    assert(inputs.size() == ninput_pidx());
-    Bitvector outputs(noutput_pidx(), false);
-    Bitvector new_inputs(ninput_pidx(), false), diff(inputs);
+    assert(ports.size() == npidx(isoutput));
+    Bitvector other_ports(npidx(!isoutput), false);
+    Bitvector new_ports(npidx(isoutput), false);
+    Bitvector diff(ports);
     while (1) {
-	set_flowed_outputs(diff, outputs, errh);
-	set_connected_inputs(outputs, new_inputs);
-	inputs.or_with_difference(new_inputs, diff);
+	if (isoutput != forward) {
+	    follow_flow(diff, isoutput, other_ports, errh);
+	    follow_connections(other_ports, !isoutput, new_ports);
+	} else {
+	    follow_connections(diff, isoutput, other_ports);
+	    follow_flow(other_ports, !isoutput, new_ports, errh);
+	}
+	ports.or_with_difference(new_ports, diff);
 	if (!diff)
 	    return;
     }
@@ -796,7 +738,7 @@ ProcessingT::compound_port_count_code() const
 String
 ProcessingT::compound_processing_code() const
 {
-    assert(_input_elt.size());
+    assert(_elt[end_to].size());
     ElementT *input = const_cast<ElementT *>(_router->element("input"));
     ElementT *output = const_cast<ElementT *>(_router->element("output"));
     assert(input && output && input->tunnel() && output->tunnel());
@@ -829,7 +771,7 @@ ProcessingT::compound_processing_code() const
 String
 ProcessingT::compound_flow_code(ErrorHandler *errh) const
 {
-    assert(_input_elt.size());
+    assert(_elt[end_to].size());
     ElementT *input = const_cast<ElementT *>(_router->element("input"));
     ElementT *output = const_cast<ElementT *>(_router->element("output"));
     assert(input && output && input->tunnel() && output->tunnel());
@@ -848,8 +790,8 @@ ProcessingT::compound_flow_code(ErrorHandler *errh) const
     for (int i = 0; i < ninputs; i++) {
 	if (i)
 	    input_vec.clear();
-	set_connected_inputs(PortT(input, i), input_vec);
-	forward_reachable_inputs(input_vec, errh);
+	follow_connections(PortT(input, i), true, input_vec);
+	follow_reachable(input_vec, false, true, errh);
 	for (int p = 0; p < noutputs; p++)
 	    if (input_vec[opidx + p])
 		codes[p][i] = true;

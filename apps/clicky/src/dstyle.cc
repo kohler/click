@@ -85,7 +85,7 @@ port.agnostic, port.push.agnostic, port.pull.agnostic {\n\
     color: black;\n\
     border: 1px solid black;\n\
     padding: 8px 12px;\n\
-    margin: 10px 14px;\n\
+    margin: 20px 14px;\n\
     shadow: drop rgba(50%, 50%, 45%, 50%) 3px;\n\
     orientation: vertical;\n\
     /* min-height: 30px; */\n\
@@ -524,8 +524,48 @@ bool dcss_selector::match(wdiagram *d, const delt *e, int *sensitivity) const
 	} else if (k->equals("live", 4)) {
 	    if (!d->main()->driver())
 		return false;
-	} else if (k->length() >= 6 && memcmp(k->data(), "name*=", 6)) {
+	} else if (k->length() >= 6 && memcmp(k->data(), "name*=", 6) == 0) {
 	    if (e->name().find_left(k->substring(6)) < 0)
+		return false;
+	} else if (k->length() >= 11 && memcmp(k->data(), "downstream=", 11) == 0) {
+	    if (e->fake())
+		return false;
+	    const wdiagram::reachable_t &ex = d->downstream(k->substring(11));
+	    if (!ex(e->parent()->flat_name(), e->eindex()))
+		return false;
+	} else if (k->length() >= 12 && memcmp(k->data(), "downstream!=", 12) == 0) {
+	    if (e->fake())
+		return false;
+	    const wdiagram::reachable_t &ex = d->downstream(k->substring(12));
+	    if (ex(e->parent()->flat_name(), e->eindex()))
+		return false;
+	} else if (k->length() >= 9 && memcmp(k->data(), "upstream=", 9) == 0) {
+	    if (e->fake())
+		return false;
+	    const wdiagram::reachable_t &ex = d->upstream(k->substring(9));
+	    if (!ex(e->parent()->flat_name(), e->eindex()))
+		return false;
+	} else if (k->length() >= 10 && memcmp(k->data(), "upstream!=", 10) == 0) {
+	    if (e->fake())
+		return false;
+	    const wdiagram::reachable_t &ex = d->upstream(k->substring(10));
+	    if (ex(e->parent()->flat_name(), e->eindex()))
+		return false;
+	} else if (k->length() >= 10 && memcmp(k->data(), "reachable=", 10) == 0) {
+	    if (e->fake())
+		return false;
+	    const wdiagram::reachable_t &ex1 = d->downstream(k->substring(10));
+	    const wdiagram::reachable_t &ex2 = d->upstream(k->substring(10));
+	    if (!ex1(e->parent()->flat_name(), e->eindex())
+		&& !ex2(e->parent()->flat_name(), e->eindex()))
+		return false;
+	} else if (k->length() >= 11 && memcmp(k->data(), "reachable!=", 11) == 0) {
+	    if (e->fake())
+		return false;
+	    const wdiagram::reachable_t &ex1 = d->downstream(k->substring(11));
+	    const wdiagram::reachable_t &ex2 = d->upstream(k->substring(11));
+	    if (ex1(e->parent()->flat_name(), e->eindex())
+		|| ex2(e->parent()->flat_name(), e->eindex()))
 		return false;
 	} else if ((s = find(*k, '=')) != k->end()) {
 	    wmain *w = d->main();
@@ -638,12 +678,28 @@ const char *dcss_selector::parse(const String &str, const char *s)
 	    s = ++n;
 	    const char *last = s;
 	    sa.clear();
+	    int nest = 0, equals = 0;
 	    for (; s != send && *s != '\n' && *s != '\r' && *s != '\f'
-		     && *s != ']'; ++s)
+		     && (*s != ']' || nest); ++s)
 		if (isspace((unsigned char) *s)) {
 		    sa.append(last, s);
-		    last = s + 1;
-		}
+		    for (++s; s != send && isspace((unsigned char) *s); ++s)
+			/* nada */;
+		    if (!sa || s == send)
+			/* nada */;
+		    else if (*s == '=' && !equals) {
+			sa << '=';
+			++equals;
+			for (++s; s != send && isspace((unsigned char) *s); ++s)
+			    /* nada */;
+		    } else
+			sa << ' ';
+		    last = s;
+		    --s;
+		} else if (*s == '[')
+		    ++nest;
+		else if (*s == ']')
+		    --nest;
 	    if (sa) {
 		sa.append(last, s);
 		_klasses.push_back(sa.take_string());
@@ -1512,8 +1568,8 @@ void dcss_set::collect_elt_styles(wdiagram *d, const delt *e, int pflag,
 	    && s->selector().match(d, e, sensitivity)
 	    && s->match_context(d, e, sensitivity))
 	    result.push_back(s);
-    if (e->parent() && !e->parent()->root())
-	collect_elt_styles(d, e->parent(), pflag | pflag_no_below, result, sensitivity);
+    //if (e->parent() && !e->parent()->root())
+    //	collect_elt_styles(d, e->parent(), pflag | pflag_no_below, result, sensitivity);
     if (_below && !(pflag & pflag_no_below))
 	_below->collect_elt_styles(d, e, pflag, result, sensitivity);
 }

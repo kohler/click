@@ -36,6 +36,7 @@ static gboolean on_error_view_event(GtkWidget *, GdkEvent *, gpointer);
 
 static String::Initializer initializer;
 String wmain::last_savefile;
+static int num_main_windows = 0;
 
 String g_click_to_utf8(const String &str)
 {
@@ -247,6 +248,7 @@ wmain::wmain()
     set_diagram_mode(true);
     
     gtk_quit_add_destroy(1, GTK_OBJECT(_window));
+    ++num_main_windows;
 }
 
 wmain::~wmain()
@@ -261,6 +263,9 @@ wmain::~wmain()
     pango_attr_list_unref(_small_bold_attr);
     delete _diagram;
     delete _handlers;
+
+    if (!--num_main_windows)
+	gtk_main_quit();
 }
 
 bool wmain::empty() const
@@ -472,6 +477,7 @@ void wmain::set_config(String conf, bool replace)
     while (lexer.ystatement())
 	/* nada */;
     RouterT *r = lexer.finish(global_scope);
+    r->check();
 
     // if router, read element map
     ElementMap *emap = new ElementMap;

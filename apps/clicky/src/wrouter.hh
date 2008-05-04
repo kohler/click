@@ -106,6 +106,11 @@ class wmain { public:
     
     void errors_fill(bool initial);
 
+    // router
+    RouterT *router() const {
+	return _r;
+    }
+    
     // not really public
     void on_open_file();
     void on_open_socket();

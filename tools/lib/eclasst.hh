@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <click/vector.hh>
 #include <click/hashtable.hh>
-#include "etraits.hh"
+#include "elementmap.hh"
 class ErrorHandler;
 class StringAccum;
 class RouterT;
@@ -37,14 +37,16 @@ class ElementClassT { public:
     virtual bool primitive() const	{ return true; }
     bool tunnel() const			{ return this == tunnel_type(); }
     
-    const ElementTraits &traits() const;
-    virtual const ElementTraits *find_traits() const;
+    inline const ElementTraits &traits() const;
+    inline const ElementTraits &traits(ElementMap *emap) const;
+    virtual const ElementTraits *find_traits(ElementMap *emap) const;
 
-    const String &port_count_code() const;
-    const String &processing_code() const;
-    const String &flow_code() const;
-    bool requires(const String &) const;
-    bool provides(const String &) const;
+    inline const String &port_count_code() const;
+    inline const String &processing_code() const;
+    inline const String &flow_code() const;
+    inline const String &flow_code(ElementMap *emap) const;
+    inline bool requires(const String &) const;
+    inline bool provides(const String &) const;
     const String &package() const;
     const String &documentation_name() const;
     String documentation_url() const;
@@ -105,7 +107,7 @@ class SynonymElementClassT : public ElementClassT { public:
     void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);
 
     bool primitive() const		{ return false; }
-    const ElementTraits *find_traits() const;
+    const ElementTraits *find_traits(ElementMap *emap) const;
     
     RouterT *declaration_scope() const;
     ElementClassT *overload_type() const { return _eclass; }
@@ -121,8 +123,6 @@ class SynonymElementClassT : public ElementClassT { public:
 };
 
 
-extern int32_t default_element_map_version;
-
 inline ElementClassT *
 ElementClassT::tunnel_type()
 {
@@ -131,13 +131,19 @@ ElementClassT::tunnel_type()
 }
 
 inline const ElementTraits &
-ElementClassT::traits() const
+ElementClassT::traits(ElementMap *emap) const
 {
-    if (_traits_version != default_element_map_version) {
-	_traits_version = default_element_map_version;
-	_traits = find_traits();
+    if (_traits_version != emap->version()) {
+	_traits = find_traits(emap);
+	_traits_version = emap->version();
     }
     return *_traits;
+}
+
+inline const ElementTraits &
+ElementClassT::traits() const
+{
+    return traits(ElementMap::default_map());
 }
 
 inline const String &
@@ -162,6 +168,12 @@ inline const String &
 ElementClassT::flow_code() const
 {
     return traits().flow_code;
+}
+
+inline const String &
+ElementClassT::flow_code(ElementMap *emap) const
+{
+    return traits(emap).flow_code;
 }
 
 inline bool

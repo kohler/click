@@ -68,13 +68,19 @@ class RouterT : public ElementClassT { public:
     const ConnectionT &connection(int c) const	{ return _conn[c]; }
     bool connection_live(int c) const		{ return _conn[c].live(); }
 
+    enum { end_to = ConnectionT::end_to, end_from = ConnectionT::end_from };
+    
     class conn_iterator;
     inline conn_iterator begin_connections() const;
     inline conn_iterator end_connections() const;
-    conn_iterator begin_connections_from(const PortT &port) const;
-    conn_iterator begin_connections_from(ElementT *e) const;
-    conn_iterator begin_connections_to(const PortT &port) const;
-    conn_iterator begin_connections_to(ElementT *e) const;
+    conn_iterator begin_connections_touching(int eindex, int port, bool isoutput) const;
+    inline conn_iterator begin_connections_touching(const PortT &port, bool isoutput) const;
+    inline conn_iterator begin_connections_touching(ElementT *e, bool isoutput) const;
+    
+    inline conn_iterator begin_connections_from(const PortT &port) const;
+    inline conn_iterator begin_connections_from(ElementT *e) const;
+    inline conn_iterator begin_connections_to(const PortT &port) const;
+    inline conn_iterator begin_connections_to(ElementT *e) const;
     inline conn_iterator find_connection(int ci) const;
     
     void add_tunnel(const String &namein, const String &nameout, const LandmarkT &, ErrorHandler *);
@@ -85,22 +91,50 @@ class RouterT : public ElementClassT { public:
     void kill_bad_connections();
     void compact_connections();
 
-    inline bool has_connection(const PortT &, const PortT &) const;
-    int find_connection(const PortT &, const PortT &) const;
     void change_connection_to(int, PortT);
     void change_connection_from(int, PortT);
-    int find_connection_id_from(const PortT &) const;
+
+    inline bool has_connection(const PortT &from, const PortT &to) const;
+    int find_connection(const PortT &from, const PortT &to) const;
+    void find_connections_touching(ElementT *e, bool isoutput, Vector<int> &v) const;
+    int find_connection_id_touching(const PortT &port, bool isoutput) const;
+    void find_connections_touching(const PortT &port, bool isoutput, Vector<PortT> &v, bool clear = true) const;
+    void find_connections_touching(const PortT &port, bool isoutput, Vector<int> &v) const;
+    void find_connection_vector_touching(ElementT *e, bool isoutput, Vector<int> &v) const;
+    
+    inline int find_connection_id_from(const PortT &port) const {
+	return find_connection_id_touching(port, end_from);
+    }
     inline const PortT &find_connection_from(const PortT &) const;
-    void find_connections_from(ElementT *, Vector<int> &) const;
-    void find_connections_from(const PortT &output, Vector<PortT> &v, bool clear = true) const;
-    void find_connections_from(const PortT &output, Vector<int> &v) const;
-    int find_connection_id_to(const PortT &) const;
+    inline void find_connections_from(ElementT *e, Vector<int> &v) const {
+	find_connections_touching(e, end_from, v);
+    }
+    inline void find_connections_from(const PortT &output, Vector<PortT> &v, bool clear = true) const {
+	find_connections_touching(output, end_from, v, clear);
+    }
+    void find_connections_from(const PortT &output, Vector<int> &v) const {
+	find_connections_touching(output, end_from, v);
+    }
+    void find_connection_vector_from(ElementT *e, Vector<int> &v) const {
+	find_connection_vector_touching(e, end_from, v);
+    }
+    
+    inline int find_connection_id_to(const PortT &port) const {
+	return find_connection_id_touching(port, end_to);
+    }
     inline const PortT &find_connection_to(const PortT &) const;
-    void find_connections_to(ElementT *, Vector<int> &) const;
-    void find_connections_to(const PortT &, Vector<PortT> &) const;
-    void find_connections_to(const PortT &, Vector<int> &) const;
-    void find_connection_vector_from(ElementT *, Vector<int> &) const;
-    void find_connection_vector_to(ElementT *, Vector<int> &) const;
+    void find_connections_to(ElementT *e, Vector<int> &v) const {
+	find_connections_touching(e, end_to, v);
+    }
+    void find_connections_to(const PortT &input, Vector<PortT> &v) const {
+	find_connections_touching(input, end_to, v);
+    }
+    void find_connections_to(const PortT &input, Vector<int> &v) const {
+	find_connections_touching(input, end_to, v);
+    }
+    void find_connection_vector_to(ElementT *e, Vector<int> &v) const {
+	find_connection_vector_touching(e, end_to, v);
+    }
 
     bool insert_before(const PortT &, const PortT &);
     bool insert_after(const PortT &, const PortT &);
@@ -150,7 +184,7 @@ class RouterT : public ElementClassT { public:
     String landmark() const		{ return _type_landmark.str(); }
     String decorated_landmark() const	{ return _type_landmark.decorated_str(); }
     void set_landmarkt(const LandmarkT &l) { _type_landmark = l; }
-    const ElementTraits *find_traits() const;
+    const ElementTraits *find_traits(ElementMap *emap) const;
     
     bool primitive() const		{ return false; }
     
@@ -179,10 +213,11 @@ class RouterT : public ElementClassT { public:
   private:
   
     struct Pair {
-	int from;
-	int to;
-	Pair() : from(-1), to(-1) { }
-	Pair(int f, int t) : from(f), to(t) { }
+	int end[2];
+	Pair() { end[0] = end[1] = -1; }
+	Pair(int from, int to) { end[end_from] = from; end[end_to] = to; }
+	int &operator[](int i) { assert(i >= 0 && i <= 1); return end[i]; }
+	int operator[](int i) const { assert(i >= 0 && i <= 1); return end[i]; }
     };
 
     struct ElementType {
@@ -251,10 +286,11 @@ class RouterT : public ElementClassT { public:
 class RouterT::const_iterator { public:
     operator bool() const		{ return _e; }
     int eindex() const			{ return _e->eindex(); }
-    void operator++(int)		{ if (_e) step(_e->router(), eindex()+1);}
-    void operator++()			{ (*this)++; }
+    void operator++()			{ if (_e) step(_e->router(), eindex()+1);}
+    void operator++(int)		{ ++(*this); }
     operator const ElementT *() const	{ return _e; }
     const ElementT *operator->() const	{ return _e; }
+    const ElementT *get() const		{ return _e; }
     const ElementT &operator*() const	{ return *_e; }
   private:
     const ElementT *_e;
@@ -268,6 +304,7 @@ class RouterT::const_iterator { public:
 class RouterT::iterator : public RouterT::const_iterator { public:
     operator ElementT *() const		{ return const_cast<ElementT *>(_e); }
     ElementT *operator->() const	{ return const_cast<ElementT *>(_e); }
+    ElementT *get() const		{ return const_cast<ElementT *>(_e); }
     ElementT &operator*() const		{ return const_cast<ElementT &>(*_e); }
   private:
     iterator()				: const_iterator() { }
@@ -278,10 +315,11 @@ class RouterT::iterator : public RouterT::const_iterator { public:
 class RouterT::const_type_iterator { public:
     operator bool() const		{ return _e; }
     int eindex() const			{ return _e->eindex(); }
-    inline void operator++(int);
     inline void operator++();
+    inline void operator++(int);
     operator const ElementT *() const	{ return _e; }
     const ElementT *operator->() const	{ return _e; }
+    const ElementT *get() const		{ return _e; }
     const ElementT &operator*() const	{ return *_e; }
   private:
     const ElementT *_e;
@@ -305,8 +343,8 @@ class RouterT::type_iterator : public RouterT::const_type_iterator { public:
 
 class RouterT::conn_iterator { public:
     inline conn_iterator()			: _conn(0), _by(0) { }
-    inline void operator++(int);
     inline void operator++();
+    inline void operator++(int);
     operator const ConnectionT &() const	{ return *_conn; }
     const ConnectionT *operator->() const	{ return _conn; }
     const ConnectionT &operator*() const	{ return *_conn; }
@@ -356,16 +394,16 @@ RouterT::end_elements()
 }
 
 inline void
-RouterT::const_type_iterator::operator++(int)
+RouterT::const_type_iterator::operator++()
 {
     if (_e)
 	step(_e->router(), _e->eindex() + 1);
 }
 
 inline void
-RouterT::const_type_iterator::operator++()
+RouterT::const_type_iterator::operator++(int)
 {
-    (*this)++;
+    ++(*this);
 }
 
 inline
@@ -391,6 +429,38 @@ RouterT::end_connections() const
     return conn_iterator();
 }
 
+inline RouterT::conn_iterator RouterT::begin_connections_touching(const PortT &port, bool isoutput) const
+{
+    assert(port.router() == this);
+    return begin_connections_touching(port.eindex(), port.port, isoutput);
+}
+
+inline RouterT::conn_iterator RouterT::begin_connections_touching(ElementT *e, bool isoutput) const
+{
+    assert(e->router() == this);
+    return begin_connections_touching(e->eindex(), -1, isoutput);
+}
+
+inline RouterT::conn_iterator RouterT::begin_connections_from(const PortT &port) const
+{
+    return begin_connections_touching(port, end_from);
+}
+
+inline RouterT::conn_iterator RouterT::begin_connections_from(ElementT *e) const
+{
+    return begin_connections_touching(e, end_from);
+}
+
+inline RouterT::conn_iterator RouterT::begin_connections_to(const PortT &port) const
+{
+    return begin_connections_touching(port, end_to);
+}
+
+inline RouterT::conn_iterator RouterT::begin_connections_to(ElementT *e) const
+{
+    return begin_connections_touching(e, end_to);
+}
+
 inline RouterT::conn_iterator
 RouterT::find_connection(int c) const
 {
@@ -401,7 +471,7 @@ RouterT::find_connection(int c) const
 }
 
 inline void
-RouterT::conn_iterator::operator++(int)
+RouterT::conn_iterator::operator++()
 {
     if (_conn) {
 	const RouterT *r = _conn->router();
@@ -412,15 +482,15 @@ RouterT::conn_iterator::operator++(int)
 	    complex_step(r);
 	if (_conn == r->_conn.end())
 	    _conn = 0;
-	else if (!_conn->live())
+	else if (_conn && !_conn->live())
 	    goto again;
     }
 }
 
 inline void
-RouterT::conn_iterator::operator++()
+RouterT::conn_iterator::operator++(int)
 {
-    (*this)++;
+    ++(*this);
 }
 
 inline const ElementT *

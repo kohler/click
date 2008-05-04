@@ -55,9 +55,12 @@ class Bitvector { public:
     bool nonzero_intersection(const Bitvector &) const;
 
     // expose the implementation
+    enum { data_word_bits = 32 };
     int max_word() const		{ return (_max < 0 ? -1 : _max>>5); }
     uint32_t *data_words()		{ return _data; }
-    const uint32_t *data_words() const	{ return _data; } 
+    const uint32_t *data_words() const	{ return _data; }
+
+    void swap(Bitvector &x);
 
   private:
     

@@ -213,4 +213,24 @@ Bitvector::nonzero_intersection(const Bitvector &o) const
     return false;
 }
 
+void
+Bitvector::swap(Bitvector &x)
+{
+    uint32_t u = _f0;
+    _f0 = x._f0;
+    x._f0 = u;
+
+    u = _f1;
+    _f1 = x._f1;
+    x._f1 = u;
+
+    int m = _max;
+    _max = x._max;
+    x._max = m;
+
+    uint32_t *d = _data;
+    _data = (x._data == &x._f0 ? &_f0 : x._data);
+    x._data = (d == &_f0 ? &x._f0 : d);
+}
+
 CLICK_ENDDECLS

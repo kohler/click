@@ -4,6 +4,7 @@
 #include "etraits.hh"
 #include <click/hashtable.hh>
 class RouterT;
+class ErrorHandler;
 
 class ElementMap { public:
 
@@ -20,6 +21,7 @@ class ElementMap { public:
     
     int size() const				{ return _e.size(); }
     bool empty() const				{ return _e.size() == 1; }
+    int32_t version() const			{ return _version; }
 
     const Traits& traits(const String&) const;
     const Traits& traits_at(int i) const	{ return _e[i]; }
@@ -79,19 +81,18 @@ class ElementMap { public:
     int _use_count;
     int _driver_mask;
     int _provided_driver_mask;
+    mutable int32_t _version;
 
     int get_driver_mask(const String&);
     int driver_elt_index(int) const;
 
     void collect_indexes(const RouterT*, Vector<int>&, ErrorHandler*) const;
 
+    static int32_t version_counter;
     static ElementMap* the_element_map;
-    static void bump_version();
     void incr_version() const;
 
 };
-
-extern int32_t default_element_map_version;
 
 
 class ElementMap::TraitsIterator { public:
@@ -159,18 +160,9 @@ ElementMap::package(const String& name) const
 }
 
 inline void
-ElementMap::bump_version()
-{
-    // ensure it stays positive
-    default_element_map_version =
-	(default_element_map_version + 1) & 0x7FFFFFFF;
-}
-
-inline void
 ElementMap::incr_version() const
 {
-    if (this == (const ElementMap *)the_element_map)
-	bump_version();
+    _version = version_counter = (version_counter + 1) & 0x7FFFFFFF;
 }
 
 inline bool

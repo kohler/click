@@ -201,6 +201,9 @@ class delt : public dwidget { public:
     int eindex() const {
 	return _e->eindex();
     }
+    RouterT *router() const {
+	return _e->router();
+    }
     bool primitive() const {
 	return _elt.size() == 0;
     }
@@ -331,9 +334,8 @@ class delt : public dwidget { public:
 
     void layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc);
     void position_contents_scc(RouterT *);
-    void position_contents_dot(wdiagram *d, ErrorHandler *);
+    void position_contents_dot(wdiagram *d, ErrorHandler *errh);
     const char *parse_connection_dot(int eindex, int esplit, const char *s, const char *end);
-    void position_contents_first_heuristic(RouterT *r);
 
     bool reccss(wdiagram *d, int change);
     void layout_contents(dcontext &dcx);

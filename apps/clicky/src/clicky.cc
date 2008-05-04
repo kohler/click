@@ -215,4 +215,3 @@ particular purpose.\n");
     gtk_main();
     return 0;
 }
-

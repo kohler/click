@@ -127,8 +127,13 @@ struct PortT {
     int index_in(const Vector<PortT> &, int start = 0) const;
     int force_index_in(Vector<PortT> &, int start = 0) const;
 
-    String unparse_input() const;
-    String unparse_output() const;
+    String unparse(bool isoutput) const;
+    String unparse_input() const {
+	return unparse(false);
+    }
+    String unparse_output() const {
+	return unparse(false);
+    }
     
     static void sort(Vector<PortT> &);
 
@@ -143,34 +148,54 @@ class ConnectionT { public:
     typedef PortT::unspecified_bool_type unspecified_bool_type;
     inline operator unspecified_bool_type() const;
 
-    bool live() const			{ return _from.live(); }
-    bool dead() const			{ return _from.dead(); }
+    enum { end_to = 0, end_from = 1 };
 
-    RouterT *router() const		{ return _to.router(); }
-    const PortT &from() const		{ return _from; }
-    const PortT &to() const		{ return _to; }
-    ElementT *from_element() const	{ return _from.element; }
-    int from_eindex() const		{ return _from.eindex(); }
-    int from_port() const		{ return _from.port; }
-    ElementT *to_element() const	{ return _to.element; }
-    int to_eindex() const		{ return _to.eindex(); }
-    int to_port() const			{ return _to.port; }
+    bool live() const			{ return _end[end_from].live(); }
+    bool dead() const			{ return _end[end_from].dead(); }
+
+    RouterT *router() const		{ return _end[end_to].router(); }
+
+    const PortT &end(bool isoutput) const {
+	return _end[isoutput];
+    }
+    ElementT *element(bool isoutput) const {
+	return _end[isoutput].element;
+    }
+    int eindex(bool isoutput) const {
+	return _end[isoutput].eindex();
+    }
+    int port(bool isoutput) const {
+	return _end[isoutput].port;
+    }
+    
+    const PortT &from() const		{ return end(end_from); }
+    const PortT &to() const		{ return end(end_to); }
+    ElementT *from_element() const	{ return element(end_from); }
+    int from_eindex() const		{ return eindex(end_from); }
+    int from_port() const		{ return port(end_from); }
+    ElementT *to_element() const	{ return element(end_to); }
+    int to_eindex() const		{ return eindex(end_to); }
+    int to_port() const			{ return port(end_to); }
     String landmark() const		{ return _landmark.str(); }
     String decorated_landmark() const	{ return _landmark.decorated_str(); }
     const LandmarkT &landmarkt() const	{ return _landmark; }
 
-    int next_from() const		{ return _next_from; }
-    int next_to() const			{ return _next_to; }
+    int next(bool isoutput) const {
+	return _next[isoutput];
+    }
+    int next_from() const		{ return next(end_from); }
+    int next_to() const			{ return next(end_to); }
     
     String unparse() const;
+    String unparse_end(bool isoutput) const {
+	return end(isoutput).unparse(isoutput);
+    }
 
   private:
 
-    PortT _from;
-    PortT _to;
+    PortT _end[2];
     LandmarkT _landmark;
-    int _next_from;
-    int _next_to;
+    int _next[2];
 
     friend class RouterT;
     
@@ -290,14 +315,15 @@ operator>=(const PortT &h1, const PortT &h2)
 
 inline
 ConnectionT::ConnectionT()
-    : _from(), _to(), _landmark(), _next_from(-1), _next_to(-1)
+    : _landmark()
 {
+    _next[0] = _next[1] = -1;
 }
 
 inline
 ConnectionT::operator unspecified_bool_type() const
 {
-    return (unspecified_bool_type) _from;
+    return (unspecified_bool_type) _end[end_from];
 }
 
 #endif

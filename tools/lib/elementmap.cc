@@ -28,11 +28,10 @@
 #include "toolutils.hh"
 #include <click/confparse.hh>
 
-int32_t default_element_map_version = 0;
+int32_t ElementMap::version_counter = 0;
 static ElementMap main_element_map;
 ElementMap *ElementMap::the_element_map = &main_element_map;
 static Vector<ElementMap *> element_map_stack;
-
 
 ElementMap::ElementMap()
     : _name_map(0), _use_count(0), _driver_mask(Driver::ALLMASK),
@@ -41,6 +40,7 @@ ElementMap::ElementMap()
     String::static_initialize();
     _e.push_back(Traits());
     _def.push_back(Globals());
+    incr_version();
 }
 
 ElementMap::ElementMap(const String& str, ErrorHandler* errh)
@@ -50,6 +50,7 @@ ElementMap::ElementMap(const String& str, ErrorHandler* errh)
     _e.push_back(Traits());
     _def.push_back(Globals());
     parse(str, errh);
+    incr_version();
 }
 
 ElementMap::~ElementMap()
@@ -62,8 +63,6 @@ void
 ElementMap::push_default(ElementMap *em)
 {
     em->use();
-    if (em != the_element_map)
-	bump_version();
     element_map_stack.push_back(the_element_map);
     the_element_map = em;
 }
@@ -78,8 +77,6 @@ ElementMap::pop_default()
     } else
 	the_element_map = &main_element_map;
     old->unuse();
-    if (old != the_element_map)
-	bump_version();
 }
 
 

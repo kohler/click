@@ -4,6 +4,7 @@
 #include <vector>
 #include "rectangle.hh"
 #include "rectsearch.hh"
+#include <click/bitvector.hh>
 #include <clicktool/elementt.hh>
 class Bitvector;
 namespace clicky {
@@ -67,6 +68,19 @@ class wdiagram { public:
     rectangle canvas_to_window(const rectangle &r) const;
 
     void export_diagram(const char *filename, bool eps);
+
+    struct reachable_t {
+	Bitvector main;
+	HashTable<String, Bitvector> compound;
+	bool operator()(const String &s, int eindex) const {
+	    if (!s)
+		return main.size() && main[eindex];
+	    const Bitvector *v = compound.get_pointer(s);
+	    return v && v->size() && (*v)[eindex];
+	}
+    };
+    const reachable_t &downstream(const String &str);
+    const reachable_t &upstream(const String &str);
     
     enum { c_element = 0, c_main = 9, c_hand = 10, ncursors = 11 };
     
@@ -109,6 +123,9 @@ class wdiagram { public:
     GdkCursor *_cursor[ncursors];
 
     int _last_cursorno;
+
+    HashTable<String, reachable_t> _downstreams;
+    HashTable<String, reachable_t> _upstreams;
     
     void initialize();
     void layout();
@@ -126,6 +143,28 @@ class wdiagram { public:
     void on_drag_hand_motion(double x_root, double y_root);
     void on_drag_complete();
     void on_drag_rect_complete();
+
+    struct reachable_match_t {
+	String _name;
+	int _port;
+	bool _forward;
+	RouterT *_router;
+	String _router_name;
+	ProcessingT *_processing;
+	Bitvector _seed;
+
+	reachable_match_t(const String &name, int port,
+			  bool forward, RouterT *router,
+			  ProcessingT *processing);
+	reachable_match_t(const reachable_match_t &m, ElementT *subelement);
+	~reachable_match_t();
+	inline bool get_seed(int eindex, int port) const;
+	inline void set_seed(const ConnectionT &conn);
+	inline void set_seed_connections(ElementT *element, int port);
+	bool add_matches(reachable_t &reach);
+	void export_matches(reachable_t &reach);
+    };
+    void calculate_reachable(const String &str, bool forward, reachable_t &reach);
     
     friend class delt;
     
@@ -165,6 +204,22 @@ inline point wdiagram::scroll_center() const
 {
     return window_to_canvas(_horiz_adjust->value + _horiz_adjust->page_size / 2,
 			    _vert_adjust->value + _vert_adjust->page_size / 2);
+}
+
+inline const wdiagram::reachable_t &wdiagram::upstream(const String &str)
+{
+    reachable_t &r = _upstreams[str];
+    if (!r.main.size())
+	calculate_reachable(str, false, r);
+    return r;
+}
+
+inline const wdiagram::reachable_t &wdiagram::downstream(const String &str)
+{
+    reachable_t &r = _downstreams[str];
+    if (!r.main.size())
+	calculate_reachable(str, true, r);
+    return r;
 }
 
 }

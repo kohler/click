@@ -59,24 +59,22 @@ delt *delt::create(ElementT *e, delt *parent,
     de->_e = e;
     de->_processing_code = processing->decorated_processing_code(e);
 
-    if (!e->tunnel()) {
-	path.push_back(e);
-	RouterT::flatten_path(path, de->_flat_name, de->_flat_config);
-	collector[de->_flat_name] = de;
+    path.push_back(e);
+    RouterT::flatten_path(path, de->_flat_name, de->_flat_config);
+    collector[de->_flat_name] = de;
 
-	int x;
-	de->_dess = d->ccss()->elt_size_style(d, de, &x);
-	de->_dess_sensitivity = x;
-	de->_des = d->ccss()->elt_style(d, de, &x);
-	de->_des_sensitivity = x;
+    int x;
+    de->_dess = d->ccss()->elt_size_style(d, de, &x);
+    de->_dess_sensitivity = x;
+    de->_des = d->ccss()->elt_style(d, de, &x);
+    de->_des_sensitivity = x;
 
-	if (RouterT *r = e->resolved_router()) {
-	    ProcessingT subprocessing(r, processing->element_map());
-	    subprocessing.create(de->_processing_code, true);
-	    de->create_elements(d, r, &subprocessing, collector, path, z_index);
-	}
-	path.pop_back();
+    if (RouterT *r = e->resolved_router()) {
+	ProcessingT subprocessing(r, processing->element_map());
+	subprocessing.create(de->_processing_code, true);
+	de->create_elements(d, r, &subprocessing, collector, path, z_index);
     }
+    path.pop_back();
 
     return de;
 }
@@ -149,7 +147,7 @@ void delt::create_elements(wdiagram *d, RouterT *router,
 		_conn.push_back(new dconn(_elt[i->from_eindex()], i->from_port(), _elt[cp.eindex()], cp.port, z_index));
 		z_index++;
 	    } else if (_elt[cp.eindex()]->displayed() < 0) { // passthrough
-		ProcessingT::forward_flow(cp, &bv);
+		processing->forward_flow(cp, &bv);
 		for (int o = 0; o < cp.element->noutputs(); o++)
 		    if (bv[o])
 			router->find_connections_from(PortT(cp.element, o), cq, false);
@@ -379,97 +377,6 @@ double delt::min_height() const
     return 18;			// XXX
 }
 
-#if 0
-void delt::position_contents_first_heuristic(RouterT *router)
-{
-    // lay out into rows
-    std::vector<int> row_counts;
-    std::vector<double> row_height, col_width;
-    int input_eindex = router->eindex("input");
-    std::list<int> remains;
-    for (size_t i = 0; i < _elt.size(); i++)
-	remains.push_back(i);
-    Vector<PortT> conn;
-
-    // lay out by row
-    while (remains.size()) {
-	std::list<int>::iterator best = remains.begin();
-	int best_nin_missing = -1, best_nin_present = -1, best_lowest_row = -1;
-
-	// find nonsense
-	for (std::list<int>::iterator ri = best; ri != remains.end(); ++ri) {
-	    int nin_missing = 0, nin_present = 0, lowest_row = -1;
-	    ElementT *elt = _elt[*ri]->_e;
-	    for (int i = 0; i < elt->ninputs(); i++) {
-		router->find_connections_to(PortT(elt, i), conn);
-		for (Vector<PortT>::iterator x = conn.begin(); x != conn.end(); ++x)
-		    if (_elt[x->eindex()]->_row < 0)
-			nin_missing++;
-		    else {
-			nin_present++;
-			if (_elt[x->eindex()]->_row > lowest_row)
-			    lowest_row = _elt[x->eindex()]->_row;
-			//			fprintf(stderr, "  %s [%d] -> [%d] %s (%d)\n", x->element->name().c_str(), x->port, i, elt->name().c_str(), _elt[x->eindex()]->_row);
-		    }
-	    }
-	    if (best == ri
-		|| (nin_missing == 0 && best_nin_missing > 0)
-		|| (nin_present > best_nin_present)) {
-		//|| (nin_present == best_nin_present && nin_missing < best_nin_missing)
-		//|| (nin_present == best_nin_present && nin_missing == best_nin_missing && lowest_row < best_lowest_row)) {
-		best = ri;
-		best_nin_missing = nin_missing;
-		best_nin_present = nin_present;
-		best_lowest_row = lowest_row;
-	    }
-	}
-
-	assert(_elt[*best]->_row < 0);
-	assert(best_lowest_row >= -1);
-	
-	// lay that one out
-	unsigned row;
-	if (*best == input_eindex)
-	    row = 0;
-	else if (best_lowest_row < 0)
-	    row = (input_eindex < 0 ? 0 : 1);
-	else
-	    row = best_lowest_row + 1;
-
-	while (row >= row_counts.size()) {
-	    row_counts.push_back(0);
-	    row_height.push_back(0);
-	}
-	unsigned col = row_counts[row];
-	if (col == col_width.size())
-	    col_width.push_back(0);
-	
-	_elt[*best]->_row = row;
-	_elt[*best]->_rowpos = col;
-	row_height[row] = MAX(row_height[row], _elt[*best]->_height);
-	row_counts[row]++;
-	col_width[col] = MAX(col_width[col], _elt[*best]->_width);
-
-	// remove and continue
-	remains.erase(best);
-    }
-
-    for (std::vector<double>::iterator i = row_height.begin(); i + 1 < row_height.end(); ++i)
-	i[1] += i[0] + std::max(_dess->margin[0], _dess->margin[2]);
-    col_width[0] = col_width[0] / 2;
-    for (std::vector<double>::iterator i = col_width.begin(); i + 1 < col_width.end(); ++i)
-	i[1] += i[0] + std::max(_dess->margin[1], _dess->margin[3]);
-
-    for (std::vector<delt *>::iterator ei = _elt.begin(); ei != _elt.end(); ++ei) {
-	(*ei)->_xrect._x = col_width[(*ei)->_rowpos] - (*ei)->_width / 2;
-	if ((*ei)->_row > 0)
-	    (*ei)->_xrect._y = row_height[(*ei)->_row - 1] + std::max((*ei)->_dess->margin[0], (*ei)->_dess->margin[2]);
-	else
-	    (*ei)->_xrect._y = 0;
-    }
-}
-#endif
-
 const char *cp_double(const char *begin, const char *end, double *result)
 {
     const char *s = begin;
@@ -529,6 +436,7 @@ const char *delt::parse_connection_dot(int eindex, int esplit, const char *s, co
     s = cp_skip_space(s, end);
     if (s >= end || s[0] != '[')
 	return s;
+    ++s;
 
   skip_to_p:
     while (s != end && *s != 'p' && *s != ';') {
@@ -584,6 +492,7 @@ const char *delt::parse_connection_dot(int eindex, int esplit, const char *s, co
 	    if ((*ci)->_from_elt == e1 && (*ci)->_to_elt == e2
 		&& (*ci)->_from_port == eport && (*ci)->_to_port == oeport) {
 		(*ci)->_route.swap(route);
+		route.clear();
 		break;
 	    }
 	if (route.size() != 0)
@@ -623,7 +532,42 @@ void delt::position_contents_dot(wdiagram *d, ErrorHandler *errh)
     sa << "digraph {\n"
        << "nodesep=" << (gxsep / 100) << ";\n"
        << "ranksep=" << (gysep / 100) << ";\n"
-       << "node [shape=record]\n";
+       << "node [shape=record];\n"
+       << "edge [arrowsize=0.2,headclip=true,tailclip=true];\n";
+    if (_contents_width)
+	sa << "size=\"" << (_contents_width / 100) << "," << (_contents_height / 100) << "\";\n"
+	   << "ratio=compress;\n";
+
+    if (!root()) {
+	assert(_elt.size() >= 2 && _elt[0]->name() == "input"
+	       && _elt[1]->name() == "output" && !_elt[0]->visible()
+	       && !_elt[1]->visible());
+	if (_e->ninputs()) {
+	    sa << "{ rank=source; n0 [";
+	    if (_contents_width) {
+		if (vertical())
+		    sa << "width=" << (_contents_width / 100) << ",height=0,fixedsize=true,";
+		else
+		    sa << "height=" << (_contents_height / 100) << ",width=0,fixedsize=true,";
+	    }
+	    sa << "label=\"{{}|{";
+	    ports_dot(sa, _e->ninputs(), 'o');
+	    sa << "}}\"]; }\n";
+	}
+	if (_e->noutputs()) {
+	    sa << "{ rank=sink; n1 [";
+	    if (_contents_width) {
+		if (vertical())
+		    sa << "width=" << (_contents_width / 100) << ",height=0,fixedsize=true,";
+		else
+		    sa << "height=" << (_contents_height / 100) << ",width=0,fixedsize=true,";
+	    }
+	    sa << "label=\"{{";
+	    ports_dot(sa, _e->noutputs(), 'i');
+	    sa << "}|{}}\"]; }\n";
+	}
+    }
+    
     for (std::vector<delt *>::size_type i = 0; i < _elt.size(); ++i) {
 	delt *e = _elt[i];
 	if (!e->visible())
@@ -643,22 +587,18 @@ void delt::position_contents_dot(wdiagram *d, ErrorHandler *errh)
     }
     for (std::vector<dconn *>::iterator ci = _conn.begin(); ci != _conn.end(); ++ci) {
 	delt *eout = (*ci)->_from_elt, *ein = (*ci)->_to_elt;
-	if (eout->displayed() && ein->displayed()) {
-	    sa << 'n' << eout->eindex();
-	    if (eout->_des->display == dedisp_fsplit)
-		sa << 's' << (int) flow_split_char(eout->_des->flow_split, (*ci)->_from_port, true);
-	    sa << ':' << 'o' << (*ci)->_from_port << ':'
-	       << (eout->vertical() ? 's' : 'e')
-	       << " -> n" << ein->eindex();
-	    if (ein->_des->display == dedisp_vsplit)
-		sa << 's' << desplit_inputs;
-	    else if (ein->_des->display == dedisp_fsplit)
-		sa << 's' << (int) flow_split_char(ein->_des->flow_split, (*ci)->_to_port, false);
-	    sa << ':' << 'i' << (*ci)->_to_port << ':'
-	       << (ein->vertical() ? 'n' : 'w')
-	       << " [arrowsize=0.2,headclip=true,tailclip=true];\n";
-	    // << " [sametail=o" << (*ci)->_from_port << ",samehead=i" << (*ci)->_to_port
-	}
+	sa << 'n' << eout->eindex();
+	if (eout->_des->display == dedisp_fsplit)
+	    sa << 's' << (int) flow_split_char(eout->_des->flow_split, (*ci)->_from_port, true);
+	sa << ':' << 'o' << (*ci)->_from_port << ':'
+	   << (eout->vertical() ? 's' : 'e')
+	   << " -> n" << ein->eindex();
+	if (ein->_des->display == dedisp_vsplit)
+	    sa << 's' << desplit_inputs;
+	else if (ein->_des->display == dedisp_fsplit)
+	    sa << 's' << (int) flow_split_char(ein->_des->flow_split, (*ci)->_to_port, false);
+	sa << ':' << 'i' << (*ci)->_to_port << ':'
+	   << (ein->vertical() ? 'n' : 'w') << ";\n";
     }
     sa << "}\n";
 
@@ -686,6 +626,10 @@ void delt::position_contents_dot(wdiagram *d, ErrorHandler *errh)
     for (const char *s = result.begin(); s != end; ) {
 	s = cp_skip_space(s, end);
 	if (s + 1 >= end || *s != 'n' || !isdigit((unsigned char) s[1])) {
+	    if (s != end && (*s == '{' || *s == '}')) {
+		++s;
+		continue;
+	    }
 	  skip_to_semicolon:
 	    while (s != end && *s != ';')
 		++s;
@@ -754,20 +698,44 @@ void delt::position_contents_dot(wdiagram *d, ErrorHandler *errh)
 	goto skip_to_semicolon;
     }
 
-    double min_x = 1000000, min_y = 1000000;
+    bool first_time = _contents_width == 0;
+
+    double bbox[4], mbbox[4];
+    bbox[0] = mbbox[0] = bbox[3] = mbbox[3] = 1000000;
+    bbox[1] = mbbox[1] = bbox[2] = mbbox[2] = -1000000;
     for (std::vector<delt *>::iterator n = _elt.begin();
 	 n != _elt.end(); ++n)
-	if ((*n)->visible()) {
-	    min_x = MIN(min_x, (*n)->_xrect._x - (*n)->_dess->margin[3]);
-	    min_y = MIN(min_y, (*n)->_xrect._y - (*n)->_dess->margin[0]);
+	if ((*n)->visible() || (!root() && first_time && n < _elt.begin() + 2)) {
+	    const rectangle &r = (*n)->_xrect;
+	    const double *m = (*n)->_dess->margin;
+	    bbox[0] = std::min(bbox[0], r._y);
+	    bbox[1] = std::max(bbox[1], r._x + (*n)->_width);
+	    bbox[2] = std::max(bbox[2], r._y + (*n)->_height);
+	    bbox[3] = std::min(bbox[3], r._x);
+	    mbbox[0] = std::min(mbbox[0], r._y - m[0]);
+	    mbbox[1] = std::max(mbbox[1], r._x + (*n)->_width + m[1]);
+	    mbbox[2] = std::max(mbbox[2], r._y + (*n)->_height + m[2]);
+	    mbbox[3] = std::min(mbbox[3], r._x - m[3]);
+	}
+    
+    if (!root() && !first_time)
+	for (int i = 0; i < 4; ++i) {
+	    double delta = fabs(bbox[i] - mbbox[i]) - _dess->padding[i];
+	    if (delta > 0)
+		bbox[i] += (rectangle::side_greater(i) ? delta : -delta);
 	}
 
+    _contents_width = bbox[1] - bbox[3];
+    _contents_height = bbox[2] - bbox[0];
     for (std::vector<delt *>::iterator n = _elt.begin();
 	 n != _elt.end(); ++n)
 	if ((*n)->visible()) {
-	    (*n)->_xrect._x -= min_x;
-	    (*n)->_xrect._y -= min_y;
+	    (*n)->_xrect._x -= bbox[3];
+	    (*n)->_xrect._y -= bbox[0];
 	}
+
+    if (!root() && first_time)
+	position_contents_dot(d, errh);
 }
 
 
@@ -825,6 +793,12 @@ bool delt::reccss(wdiagram *d, int change)
 	    _visible = true;
 	else
 	    _visible = false;
+	// "input" and "output" are always displayed
+	if (_e->tunnel() && !_parent->root()
+	    && (this == _parent->_elt[0] || this == _parent->_elt[1])) {
+	    assert(!_visible);
+	    _displayed = 1;
+	}
     }
 
     if (((change & dsense_always)
@@ -860,7 +834,7 @@ bool delt::reccss(wdiagram *d, int change)
 		}
 	    }
     }
-
+    
     return redraw;
 }
 
@@ -880,14 +854,6 @@ void delt::layout_contents(dcontext &dcx)
     position_contents_dot(dcx.d, dcx.d->main()->error_handler());
     //position_contents_scc(router);
     //position_contents_first_heuristic(router);
-
-    _contents_width = _contents_height = 0;
-    for (std::vector<delt *>::iterator ci = _elt.begin();
-	 ci != _elt.end(); ++ci)
-	if ((*ci)->visible()) {
-	    _contents_width = MAX(_contents_width, (*ci)->_xrect._x + (*ci)->_width + (*ci)->_dess->margin[1]);
-	    _contents_height = MAX(_contents_height, (*ci)->_xrect._y + (*ci)->_height + (*ci)->_dess->margin[2]);
-	}
 }
 
 void delt::layout_ports(dcontext &dcx)
@@ -904,7 +870,8 @@ void delt::layout_ports(dcontext &dcx)
     for (int isoutput = 0; isoutput < 2; ++isoutput) {
 	ref_ptr<dport_style> dps = dcs->port_style(dcx.d, this, isoutput, 0, 0);
 	_ports_length[isoutput] = 2 * dps->edge_padding;
-	if (!_e->nports(isoutput))
+	if (!_e->nports(isoutput)
+	    || (_des->display == dedisp_vsplit && isoutput == (_split_type != 0)))
 	    continue;
 	if (_e->nports(isoutput) > 1)
 	    _portoff[isoutput] = new double[_e->nports(isoutput) + 1];
@@ -1148,30 +1115,21 @@ void delt::layout_compound_ports_copy(delt *compound, bool isoutput)
 
 void delt::layout_compound_ports(wdiagram *d)
 {
-    if (_elt.size() > 0 && _elt[0]->_e->name() == "input") {
-	_elt[0]->_x = _x;
-	_elt[0]->_y = _y - 10;
-	_elt[0]->_width = _width;
-	ref_ptr<dport_style> dps = d->ccss()->port_style(d, this, false, 0, 0);
-	_elt[0]->_height = 10 + dps->width - 1;
-	_elt[0]->_des = d->ccss()->elt_style(d, _elt[0]);
-	_elt[0]->_dess = d->ccss()->elt_size_style(d, _elt[0]);
-	_elt[0]->_displayed = (_des->display == dedisp_open);
-	_elt[0]->_visible = false;
-	_elt[0]->layout_compound_ports_copy(this, false);
-    }
-    if (_elt.size() > 1 && _elt[1]->_e->name() == "output") {
-	_elt[1]->_x = _x;
-	ref_ptr<dport_style> dps = d->ccss()->port_style(d, this, true, 0, 0);
-	_elt[1]->_y = _y + _height - dps->width + 1;
-	_elt[1]->_width = _width;
-	_elt[1]->_height = 10;
-	_elt[1]->_des = d->ccss()->elt_style(d, _elt[1]);
-	_elt[1]->_dess = d->ccss()->elt_size_style(d, _elt[1]);
-	_elt[1]->_displayed = (_des->display == dedisp_open);
-	_elt[1]->_visible = false;
-	_elt[1]->layout_compound_ports_copy(this, true);
-    }
+    assert(_elt.size() >= 2 && _elt[0]->name() == "input" && _elt[1]->name() == "output" && !_elt[0]->visible() && !_elt[1]->visible());
+
+    _elt[0]->_x = _x;
+    _elt[0]->_y = _y - 10;
+    _elt[0]->_width = _width;
+    ref_ptr<dport_style> dps = d->ccss()->port_style(d, this, false, 0, 0);
+    _elt[0]->_height = 10 + dps->width;
+    _elt[0]->layout_compound_ports_copy(this, false);
+
+    _elt[1]->_x = _x;
+    dps = d->ccss()->port_style(d, this, true, 0, 0);
+    _elt[1]->_y = _y + _height - dps->width;
+    _elt[1]->_width = _width;
+    _elt[1]->_height = 10;
+    _elt[1]->layout_compound_ports_copy(this, true);
 }
 
 void delt::layout_complete(dcontext &dcx, double dx, double dy)

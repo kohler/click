@@ -40,7 +40,7 @@ namespace {
 class TraitsElementClassT : public ElementClassT { public:
     TraitsElementClassT(const String &, int component, ...);
     bool primitive() const		{ return false; }
-    const ElementTraits *find_traits() const;
+    const ElementTraits *find_traits(ElementMap *emap) const;
   private:
     ElementTraits _the_traits;
 };
@@ -62,7 +62,7 @@ TraitsElementClassT::TraitsElementClassT(const String &name, int component, ...)
 }
 
 const ElementTraits *
-TraitsElementClassT::find_traits() const
+TraitsElementClassT::find_traits(ElementMap *) const
 {
     return &_the_traits;
 }
@@ -115,11 +115,9 @@ ElementClassT::base_type(const String &name)
 
 
 const ElementTraits *
-ElementClassT::find_traits() const
+ElementClassT::find_traits(ElementMap *emap) const
 {
-    ElementMap *em = ElementMap::default_map();
-    assert(em);
-    return &em->traits(_name);
+    return &emap->traits(_name);
 }
 
 const String &
@@ -292,9 +290,9 @@ SynonymElementClassT::complex_expand_element(
 }
 
 const ElementTraits *
-SynonymElementClassT::find_traits() const
+SynonymElementClassT::find_traits(ElementMap *emap) const
 {
-    return _eclass->find_traits();
+    return _eclass->find_traits(emap);
 }
 
 RouterT *
