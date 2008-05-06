@@ -39,9 +39,33 @@ static String dpcode_apush("H");
 static String dpcode_apull("L");
 static String dpcode_push_to_pull("h/l");
 
-ProcessingT::ProcessingT(const RouterT *router, ElementMap *emap)
-    : _router(router), _element_map(emap), _scope(0)
+ProcessingT::ProcessingT(RouterT *router, ElementMap *emap,
+			 ErrorHandler *errh)
+    : _router(router), _element_map(emap), _scope(router->scope())
 {
+    create("", errh);
+}
+
+ProcessingT::ProcessingT(const ProcessingT &processing, ElementT *element,
+			 ErrorHandler *errh)
+    : _element_map(processing._element_map), _scope(processing._scope)
+{
+    assert(element->router() == processing._router);
+    ElementClassT *t = element->resolve(processing._scope, &_scope, errh);
+    _router = t->cast_router();
+    assert(_router);
+    if (!processing._router_name)
+	_router_name = element->name();
+    else
+	_router_name = processing._router_name + "/" + element->name();
+
+    String prefix = _router_name + "/";
+    for (HashTable<String, String>::const_iterator it = processing._flow_overrides.begin();
+	 it != processing._flow_overrides.end(); ++it)
+	if (it.key().starts_with(prefix))
+	    _flow_overrides.set(it.key().substring(prefix.length()), it.value());
+
+    create(processing.decorated_processing_code(element), errh);
 }
 
 void
@@ -51,14 +75,13 @@ ProcessingT::check_types(ErrorHandler *errh)
     _router->collect_locally_declared_types(types);
     for (Vector<ElementClassT *>::iterator ti = types.begin(); ti != types.end(); ++ti)
 	if (RouterT *rx = (*ti)->cast_router()) {
-	    ProcessingT subp(rx, _element_map);
+	    ProcessingT subp(rx, _element_map, errh);
 	    subp.check_types(errh);
-	    subp.check(errh);
 	}
 }
 
 void
-ProcessingT::create(const String &compound_pcode, bool flatten, ErrorHandler *errh)
+ProcessingT::create(const String &compound_pcode, ErrorHandler *errh)
 {
     LocalErrorHandler lerrh(errh);
     ElementMap::push_default(_element_map);
@@ -67,12 +90,24 @@ ProcessingT::create(const String &compound_pcode, bool flatten, ErrorHandler *er
     create_pidx(&lerrh);
     initial_processing(compound_pcode, &lerrh);
     check_processing(&lerrh);
-    // 'flat' configurations have no agnostic ports; change them to push
-    if (flatten)
-	resolve_agnostics();
+    // change remaining agnostic ports to agnostic-push
+    resolve_agnostics();
     check_connections(&lerrh);
 
     ElementMap::pop_default();
+}
+
+void
+ProcessingT::parse_flow_info(ElementT *e, ErrorHandler *)
+{
+    Vector<String> conf;
+    cp_argvec(cp_expand(e->configuration(), _scope), conf);
+    for (String *it = conf.begin(); it != conf.end(); ++it) {
+	String name = cp_pop_spacevec(*it);
+	String value = cp_pop_spacevec(*it);
+	if (name && value && !*it)
+	    _flow_overrides.set(name, value);
+    }
 }
 
 void
@@ -81,14 +116,18 @@ ProcessingT::create_pidx(ErrorHandler *errh)
     int ne = _router->nelements();
     _pidx[end_to].assign(ne, 0);
     _pidx[end_from].assign(ne, 0);
+    ElementClassT *flow_info = ElementClassT::base_type("FlowInfo");
 
     // count used input and output ports for each element
     int ci = 0, co = 0;
     for (int i = 0; i < ne; i++) {
 	_pidx[end_to][i] = ci;
 	_pidx[end_from][i] = co;
-	ci += _router->element(i)->ninputs();
-	co += _router->element(i)->noutputs();
+	ElementT *e = _router->element(i);
+	ci += e->ninputs();
+	co += e->noutputs();
+	if (e->resolved_type(_scope) == flow_info)
+	    parse_flow_info(e, errh);
     }
     _pidx[end_to].push_back(ci);
     _pidx[end_from].push_back(co);
@@ -121,15 +160,15 @@ ProcessingT::processing_code_next(const char *code, const char *end_code, int &p
 	processing = -1;
 	return code;
     } else if (*code == 'h')
-	processing = VPUSH;
+	processing = ppush;
     else if (*code == 'l')
-	processing = VPULL;
+	processing = ppull;
     else if (*code == 'a')
-	processing = VAGNOSTIC;
+	processing = pagnostic;
     else if (*code == 'H')
-	processing = VPUSH + VAFLAG;
+	processing = ppush + pagnostic;
     else if (*code == 'L')
-	processing = VPULL + VAFLAG;
+	processing = ppull + pagnostic;
     else {
 	processing = -1;
 	return code;
@@ -191,9 +230,9 @@ ProcessingT::initial_processing_for(int ei, const String &compound_pcode, ErrorH
 		errh->lerror(e->landmark(), "syntax error in processing code '%s' for '%s'", String(pc).c_str(), etype->printable_name_c_str());
 		cwarn |= classwarn_pcode;
 	    }
-	    val = VAGNOSTIC;
+	    val = pagnostic;
 	}
-	_input_processing[start_in + i] = (val & 3);
+	_input_processing[start_in + i] = (val & pagnostic ? pagnostic : val);
     }
 
     pcpos = processing_code_output(pc.begin(), pc.end(), pcpos);
@@ -207,17 +246,17 @@ ProcessingT::initial_processing_for(int ei, const String &compound_pcode, ErrorH
 		errh->lerror(e->landmark(), "syntax error in processing code '%s' for '%s'", String(pc).c_str(), etype->printable_name_c_str());
 		cwarn |= classwarn_pcode;
 	    }
-	    val = VAGNOSTIC;
+	    val = pagnostic;
 	}
-	_output_processing[start_out + i] = (val & 3);
+	_output_processing[start_out + i] = (val & pagnostic ? pagnostic : val);
     }
 }
 
 void
 ProcessingT::initial_processing(const String &compound_pcode, ErrorHandler *errh)
 {
-    _input_processing.assign(ninput_pidx(), VAGNOSTIC);
-    _output_processing.assign(noutput_pidx(), VAGNOSTIC);
+    _input_processing.assign(ninput_pidx(), pagnostic);
+    _output_processing.assign(noutput_pidx(), pagnostic);
     String reversed_pcode = processing_code_reverse(compound_pcode);
     for (int i = 0; i < nelements(); i++)
 	initial_processing_for(i, reversed_pcode, errh);
@@ -227,8 +266,8 @@ void
 ProcessingT::processing_error(const ConnectionT &conn, int processing_from,
 			      ErrorHandler *errh)
 {
-  const char *type1 = (processing_from & VPUSH ? "push" : "pull");
-  const char *type2 = (processing_from & VPUSH ? "pull" : "push");
+  const char *type1 = (processing_from & ppush ? "push" : "pull");
+  const char *type2 = (processing_from & ppush ? "pull" : "push");
   if (conn.landmark() == "<agnostic>")
     errh->lerror(conn.from_element()->decorated_landmark(),
 		 "agnostic '%s' in mixed context: %s input %d, %s output %d",
@@ -249,16 +288,15 @@ ProcessingT::check_processing(ErrorHandler *errh)
     Vector<ConnectionT> conn = _router->connections();
     Bitvector bv;
     for (int i = 0; i < ninput_pidx(); i++)
-	if (_input_processing[i] == VAGNOSTIC) {
+	if (_input_processing[i] == pagnostic) {
 	    ElementT *e = const_cast<ElementT *>(_elt[end_to][i]);
 	    int ei = e->eindex();
 	    int port = i - _pidx[end_to][ei];
 	    int opidx = _pidx[end_from][ei];
 	    int noutputs = _pidx[end_from][ei+1] - opidx;
-	    forward_flow(e->type()->traits().flow_code,
-			 port, &bv, noutputs, errh);
+	    forward_flow(flow_code(e), port, &bv, noutputs, errh);
 	    for (int j = 0; j < noutputs; j++)
-		if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC)
+		if (bv[j] && _output_processing[opidx + j] == pagnostic)
 		    conn.push_back(ConnectionT(PortT(e, j), PortT(e, port), agnostic_landmark));
 	}
 
@@ -274,25 +312,30 @@ ProcessingT::check_processing(ErrorHandler *errh)
 	    int pf = _output_processing[offf];
 	    int pt = _input_processing[offt];
 
-	    switch (pt & 3) {
+	    switch (pt) {
 	
-	      case VAGNOSTIC:
-		if (pf != VAGNOSTIC) {
-		    _input_processing[offt] = VAFLAG | (pf & 3);
+	      case pagnostic:
+		if (pf != pagnostic) {
+		    _input_processing[offt] = pagnostic | (pf & 3);
 		    changed = true;
 		}
 		break;
 	
-	      case VPUSH:
-	      case VPULL:
-		if (pf == VAGNOSTIC) {
-		    _output_processing[offf] = VAFLAG | (pt & 3);
+	      case ppush:
+	      case ppull:
+	      case ppush + pagnostic:
+	      case ppull + pagnostic:
+		if (pf == pagnostic) {
+		    _output_processing[offf] = pagnostic | (pt & 3);
 		    changed = true;
 		} else if (((pf ^ pt) & 3) != 0) {
 		    processing_error(conn[c], pf, errh);
 		    conn[c] = ConnectionT();
 		}
 		break;
+
+	      default:
+		assert(0);
 	
 	    }
 	}
@@ -305,11 +348,11 @@ ProcessingT::check_processing(ErrorHandler *errh)
 static const char *
 processing_name(int p)
 {
-    if (p == ProcessingT::VAGNOSTIC)
+    if (p == ProcessingT::pagnostic)
 	return "agnostic";
-    else if (p & ProcessingT::VPUSH)
+    else if (p & ProcessingT::ppush)
 	return "push";
-    else if (p & ProcessingT::VPULL)
+    else if (p & ProcessingT::ppull)
 	return "pull";
     else
 	return "?";
@@ -420,7 +463,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	const PortT &hf = conn[c].from(), &ht = conn[c].to();
 	int fp = output_pidx(hf), tp = input_pidx(ht);
 
-	if ((_output_processing[fp] & VPUSH) && output_used[fp] >= 0) {
+	if ((_output_processing[fp] & ppush) && output_used[fp] >= 0) {
 	    errh->lerror(conn[c].decorated_landmark(),
 			 "illegal reuse of '%s' push output %d",
 			 hf.element->name_c_str(), hf.port);
@@ -430,7 +473,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	} else
 	    output_used[fp] = c;
 
-	if ((_input_processing[tp] & VPULL) && input_used[tp] >= 0) {
+	if ((_input_processing[tp] & ppull) && input_used[tp] >= 0) {
 	    errh->lerror(conn[c].decorated_landmark(),
 			 "illegal reuse of '%s' pull input %d",
 			 ht.element->name_c_str(), ht.port);
@@ -441,7 +484,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	    input_used[tp] = c;
     }
 
-    // Check for unused inputs and outputs, set _connected_* properly.
+    // Check for unused inputs and outputs.
     for (int ei = 0; ei < _router->nelements(); ei++) {
 	const ElementT *e = _router->element(ei);
 	if (e->dead())
@@ -459,28 +502,17 @@ ProcessingT::check_connections(ErrorHandler *errh)
 			     "'%s' %s output %d not connected",
 			     e->name_c_str(), processing_name(_output_processing[opdx + i]), i);
     }
-
-    // Set _connected_* properly.
-    PortT crap(0, -1);
-    _connected_input.assign(ninput_pidx(), crap);
-    _connected_output.assign(noutput_pidx(), crap);
-    for (int i = 0; i < ninput_pidx(); i++)
-	if ((_input_processing[i] & VPULL) && input_used[i] >= 0)
-	    _connected_input[i] = conn[ input_used[i] ].from();
-    for (int i = 0; i < noutput_pidx(); i++)
-	if ((_output_processing[i] & VPUSH) && output_used[i] >= 0)
-	    _connected_output[i] = conn[ output_used[i] ].to();
 }
 
 void
 ProcessingT::resolve_agnostics()
 {
     for (int i = 0; i < _input_processing.size(); i++)
-	if (_input_processing[i] == VAGNOSTIC)
-	    _input_processing[i] = VPUSH | VAFLAG;
+	if (_input_processing[i] == pagnostic)
+	    _input_processing[i] += ppush;
     for (int i = 0; i < _output_processing.size(); i++)
-	if (_output_processing[i] == VAGNOSTIC)
-	    _output_processing[i] = VPUSH | VAFLAG;
+	if (_output_processing[i] == pagnostic)
+	    _output_processing[i] += ppush;
 }
 
 bool
@@ -529,15 +561,15 @@ ProcessingT::decorated_processing_code(const ElementT *e) const
     for (int i = opb; i < ope; i++)
 	allout &= 1 << _output_processing[i];
     if (allin && allout) {
-	if ((allin & (1 << VPUSH)) && (allout & (1 << VPUSH)))
+	if ((allin & (1 << ppush)) && (allout & (1 << ppush)))
 	    return dpcode_push;
-	if ((allin & (1 << VPULL)) && (allout & (1 << VPULL)))
+	if ((allin & (1 << ppull)) && (allout & (1 << ppull)))
 	    return dpcode_pull;
-	if ((allin & (1 << (VPUSH + VAFLAG))) && (allout & (1 << (VPUSH + VAFLAG))))
+	if ((allin & (1 << (ppush + pagnostic))) && (allout & (1 << (ppush + pagnostic))))
 	    return dpcode_apush;
-	if ((allin & (1 << (VPULL + VAFLAG))) && (allout & (1 << (VPULL + VAFLAG))))
+	if ((allin & (1 << (ppull + pagnostic))) && (allout & (1 << (ppull + pagnostic))))
 	    return dpcode_apull;
-	if ((allin & (1 << VPUSH)) && (allout & (1 << VPULL)))
+	if ((allin & (1 << ppush)) && (allout & (1 << ppull)))
 	    return dpcode_push_to_pull;
     }
     
@@ -726,8 +758,8 @@ ProcessingT::follow_reachable(Bitvector &ports, bool isoutput, bool forward, Err
 String
 ProcessingT::compound_port_count_code() const
 {
-    ElementT *input = const_cast<ElementT *>(_router->element("input"));
-    ElementT *output = const_cast<ElementT *>(_router->element("output"));
+    ElementT *input = _router->element("input");
+    ElementT *output = _router->element("output");
     assert(input && output && input->tunnel() && output->tunnel());
     if (input->noutputs() == 0 && output->ninputs() == 0)
 	return String::stable_string("0/0", 3);
@@ -739,8 +771,8 @@ String
 ProcessingT::compound_processing_code() const
 {
     assert(_elt[end_to].size());
-    ElementT *input = const_cast<ElementT *>(_router->element("input"));
-    ElementT *output = const_cast<ElementT *>(_router->element("output"));
+    ElementT *input = _router->element("input");
+    ElementT *output = _router->element("output");
     assert(input && output && input->tunnel() && output->tunnel());
     
     // read input and output codes
@@ -772,8 +804,8 @@ String
 ProcessingT::compound_flow_code(ErrorHandler *errh) const
 {
     assert(_elt[end_to].size());
-    ElementT *input = const_cast<ElementT *>(_router->element("input"));
-    ElementT *output = const_cast<ElementT *>(_router->element("output"));
+    ElementT *input = _router->element("input");
+    ElementT *output = _router->element("output");
     assert(input && output && input->tunnel() && output->tunnel());
 
     // skip calculation in common case

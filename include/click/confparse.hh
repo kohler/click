@@ -206,7 +206,7 @@ int cp_va_space_kparse(const String& str, CP_VA_PARSE_ARGS_REST) CP_SENTINEL;
 int cp_va_kparse_keyword(const String& str, CP_VA_PARSE_ARGS_REST) CP_SENTINEL;
 int cp_va_kparse_remove_keywords(Vector<String>& conf, CP_VA_PARSE_ARGS_REST) CP_SENTINEL;
 
-int cp_assign_arguments(const Vector<String>& argv, const String *keys_begin, const String *keys_end, Vector<String>* values = 0);
+int cp_assign_arguments(const Vector<String> &argv, const String *param_begin, const String *param_end, Vector<String>* values = 0);
 
 void cp_va_static_initialize();
 void cp_va_static_cleanup();

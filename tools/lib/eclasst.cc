@@ -145,10 +145,15 @@ ElementClassT::resolve(int, int, Vector<String> &, ErrorHandler *, const Landmar
     return this;
 }
 
+void
+ElementClassT::update_scope(const Vector<String> &, const VariableEnvironment &, VariableEnvironment *)
+{
+}
+
 ElementT *
 ElementClassT::direct_expand_element(
 	ElementT *e, RouterT *tor, const String &prefix,
-	VariableEnvironment &env, ErrorHandler *errh)
+	const VariableEnvironment &env, ErrorHandler *errh)
 {
     assert(!prefix || prefix.back() == '/');
     RouterT *fromr = e->router();
@@ -192,7 +197,7 @@ ElementClassT::direct_expand_element(
 ElementT *
 ElementClassT::expand_element(
 	ElementT *e, RouterT *tor, const String &prefix,
-	VariableEnvironment &env, ErrorHandler *errh)
+	const VariableEnvironment &env, ErrorHandler *errh)
 {
     ElementClassT *c = e->type();
     if (c->primitive())
@@ -214,16 +219,14 @@ ElementClassT::expand_element(
 	return 0;
     }
 
-    return found_c->complex_expand_element
-	(e, new_configuration, args,
-	 tor, prefix, env, errh);
+    return found_c->complex_expand_element(e, args, tor, prefix, env, errh);
 }
 
 ElementT *
 ElementClassT::complex_expand_element(
-	ElementT *e, const String &, Vector<String> &,
+	ElementT *e, const Vector<String> &,
 	RouterT *tor, const String &prefix,
-	VariableEnvironment &env, ErrorHandler *errh)
+	const VariableEnvironment &env, ErrorHandler *errh)
 {
     return direct_expand_element(e, tor, prefix, env, errh);
 }
@@ -280,10 +283,16 @@ SynonymElementClassT::resolve(int ninputs, int noutputs, Vector<String> &args, E
     return _eclass->resolve(ninputs, noutputs, args, errh, landmark);
 }
 
+void
+SynonymElementClassT::update_scope(const Vector<String> &, const VariableEnvironment &, VariableEnvironment *)
+{
+    assert(0);
+}
+
 ElementT *
 SynonymElementClassT::complex_expand_element(
-	ElementT *, const String &, Vector<String> &,
-	RouterT *, const String &, VariableEnvironment &, ErrorHandler *)
+	ElementT *, const Vector<String> &,
+	RouterT *, const String &, const VariableEnvironment &, ErrorHandler *)
 {
     assert(0);
     return 0;

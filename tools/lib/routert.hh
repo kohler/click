@@ -44,8 +44,8 @@ class RouterT : public ElementClassT { public:
     inline ElementClassT *etype(int) const;
     inline String etype_name(int) const;
     
-    ElementT *get_element(const String &name, ElementClassT *, const String &configuration, const LandmarkT &landmark);
-    ElementT *add_anon_element(ElementClassT *, const String &configuration = String(), const LandmarkT &landmark = LandmarkT::empty_landmark());
+    ElementT *get_element(const String &name, ElementClassT *eclass, const String &configuration, const LandmarkT &landmark);
+    ElementT *add_anon_element(ElementClassT *eclass, const String &configuration = String(), const LandmarkT &landmark = LandmarkT::empty_landmark());
     void change_ename(int, const String &);
     void deanonymize_elements();
     void free_element(ElementT *);
@@ -102,10 +102,10 @@ class RouterT : public ElementClassT { public:
     void find_connections_touching(const PortT &port, bool isoutput, Vector<int> &v) const;
     void find_connection_vector_touching(ElementT *e, bool isoutput, Vector<int> &v) const;
     
-    inline int find_connection_id_from(const PortT &port) const {
-	return find_connection_id_touching(port, end_from);
+    inline int find_connection_id_from(const PortT &output) const {
+	return find_connection_id_touching(output, end_from);
     }
-    inline const PortT &find_connection_from(const PortT &) const;
+    inline const PortT &find_connection_from(const PortT &output) const;
     inline void find_connections_from(ElementT *e, Vector<int> &v) const {
 	find_connections_touching(e, end_from, v);
     }
@@ -119,10 +119,10 @@ class RouterT : public ElementClassT { public:
 	find_connection_vector_touching(e, end_from, v);
     }
     
-    inline int find_connection_id_to(const PortT &port) const {
-	return find_connection_id_touching(port, end_to);
+    inline int find_connection_id_to(const PortT &input) const {
+	return find_connection_id_touching(input, end_to);
     }
-    inline const PortT &find_connection_to(const PortT &) const;
+    inline const PortT &find_connection_to(const PortT &input) const;
     void find_connections_to(ElementT *e, Vector<int> &v) const {
 	find_connections_touching(e, end_to, v);
     }
@@ -167,8 +167,8 @@ class RouterT : public ElementClassT { public:
     void remove_compound_elements(ErrorHandler *, bool expand_vars);
     void remove_tunnels(ErrorHandler * = 0);
 
-    void expand_into(RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
-    void flatten(ErrorHandler *, bool expand_vars = false);
+    void expand_into(RouterT *dest, const String &prefix, VariableEnvironment &env, ErrorHandler *errh);
+    void flatten(ErrorHandler *errh, bool expand_vars = false);
 
     static void flatten_path(const Vector<ElementT *> &path, String &name, String &config);
 
@@ -187,6 +187,7 @@ class RouterT : public ElementClassT { public:
     const ElementTraits *find_traits(ElementMap *emap) const;
     
     bool primitive() const		{ return false; }
+    bool overloaded() const;
     
     int nformals() const		{ return _nformals; }
     const VariableEnvironment &scope() const { return _scope; }
@@ -203,7 +204,8 @@ class RouterT : public ElementClassT { public:
     
     bool need_resolve() const;
     ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const LandmarkT &landmark);
-    ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
+    void update_scope(const Vector<String> &args, const VariableEnvironment &env, VariableEnvironment *dest_env);
+    ElementT *complex_expand_element(ElementT *, const Vector<String> &, RouterT *, const String &prefix, const VariableEnvironment &, ErrorHandler *);
 
     String unparse_signature() const;
     void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);    
@@ -258,11 +260,11 @@ class RouterT : public ElementClassT { public:
     int _nformals;
     int _ninputs;
     int _noutputs;
-    bool _scope_order_error : 1;
+    bool _scope_order_error;
+    bool _circularity_flag;
     ElementClassT *_overload_type;
     LandmarkT _type_landmark;
     mutable ElementTraits _traits;
-    bool _circularity_flag;
     
     RouterT(const RouterT &);
     RouterT &operator=(const RouterT &);

@@ -132,7 +132,7 @@ print_landmark_attributes(FILE *f, const String &landmark)
 	fprintf(f, " file=\"%s\" line=\"%s\"", xml_quote(landmark.substring(landmark.begin(), colon)).c_str(), landmark.substring(colon + 1, landmark.end()).c_str());
 }
 
-static void generate_router(RouterT *, FILE *, String, bool, ErrorHandler *);
+static void generate_router(RouterT *, FILE *, String, ErrorHandler *);
 
 static void
 generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
@@ -172,7 +172,7 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 		fprintf(f, "key=\"%s\" ", compound->scope().value(i).c_str());
 	    fprintf(f, "/>\n");
 	}
-	generate_router(compound->cast_router(), f, new_indent, false, errh);
+	generate_router(compound->cast_router(), f, new_indent, errh);
 	
 	fprintf(f, "%s  </compound>\n", indent.c_str());
     }
@@ -181,10 +181,9 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 }
 
 static void
-generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh)
+generate_router(RouterT *r, FILE *f, String indent, ErrorHandler *errh)
 {
-    ProcessingT processing(r, ElementMap::default_map());
-    processing.create("", top, errh);
+    ProcessingT processing(r, ElementMap::default_map(), errh);
 
     Vector<ElementClassT *> declared_types;
     r->collect_locally_declared_types(declared_types);
@@ -264,7 +263,7 @@ process(const char *infile, bool file_is_expr, bool flatten,
     fprintf(outf, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n\
 <!DOCTYPE configuration SYSTEM \"http://www.pdos.lcs.mit.edu/click/clickconfig.dtd\">\n\
 <configuration xmlns=\"http://www.lcdf.org/click/xml/\">\n");
-    generate_router(r, outf, "", true, errh);
+    generate_router(r, outf, "", errh);
     fprintf(outf, "</configuration>\n");
     
     ElementMap::pop_default();

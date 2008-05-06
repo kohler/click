@@ -142,7 +142,7 @@ RouterAlign::have_output()
       Traits t = element_map.traits(_router->etype_name(i));
       _aligners[i]->have_flow(_ialign.begin() + _ioffset[i], _icount[i],
 			      _oalign.begin() + _ooffset[i], _ocount[i],
-			      t.flow_code);
+			      _router->element(i)->flow_code());
   }
 }
 
@@ -178,7 +178,7 @@ RouterAlign::want_input()
       Traits t = element_map.traits(_router->etype_name(i));
       _aligners[i]->want_flow(_ialign.begin() + _ioffset[i], _icount[i],
 			      _oalign.begin() + _ooffset[i], _ocount[i],
-			      t.flow_code);
+			      _router->element(i)->flow_code());
   }
 }
 

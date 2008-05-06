@@ -25,15 +25,23 @@ struct ElementT {
     bool anonymous() const		{ return _name && _name[0] == ';'; }
     
     ElementClassT *type() const		{ return _type; }
+    ElementClassT *resolve(const VariableEnvironment &env,
+			   VariableEnvironment *new_env,
+			   ErrorHandler *errh = 0) const;
+    ElementClassT *resolved_type(const VariableEnvironment &env, ErrorHandler *errh = 0) const;
     ElementClassT *resolved_type() const;
-    ElementClassT *resolved_type(VariableEnvironment &ve, ErrorHandler *errh = 0) const;
+    
     String type_name() const		{ return _type->name(); }
     String printable_type_name() const	{ return _type->printable_name(); }
     const char *type_name_c_str() const	{ return _type->printable_name_c_str(); }
+    
     void set_type(ElementClassT *);
-    inline bool compound() const;
     inline bool resolved_compound() const;
-    RouterT *resolved_router() const;
+    inline RouterT *resolved_router(const VariableEnvironment &env, ErrorHandler *errh = 0) const;
+    inline RouterT *resolved_router() const;
+
+    inline const String &flow_code(ElementMap *emap) const;
+    inline const String &flow_code() const;
 
     const String &config() const	{ return _configuration; }
     const String &configuration() const	{ return _configuration; }
@@ -69,7 +77,7 @@ struct ElementT {
     String _name;
     ElementClassT *_type;
     mutable ElementClassT *_resolved_type;
-    enum { resolved_type_expand = 1, resolved_type_error = 2 };
+    enum { resolved_type_error = 1, resolved_type_fragile = 2 };
     mutable int _resolved_type_status;
     String _configuration;
     LandmarkT _landmark;
@@ -83,6 +91,12 @@ struct ElementT {
     ElementT(const ElementT &);
     ElementT &operator=(const ElementT &);
 
+    inline void semiresolve_type() const {
+	if (!_resolved_type && _type && _type->primitive()) {
+	    _resolved_type = _type;
+	    _resolved_type->use();
+	}
+    }
     inline void unresolve_type() {
 	if (_resolved_type) {
 	    _resolved_type->unuse();
@@ -211,28 +225,20 @@ ElementT::simple_kill()
     unresolve_type();
 }
 
-inline void
-ElementT::set_type(ElementClassT *t)
-{
-    assert(t);
-    t->use();
-    if (_type)
-	_type->unuse();
-    unresolve_type();
-    _type = t;
-}
-
-inline bool
-ElementT::compound() const
-{
-    return _type && _type->cast_router();
-}
-
 inline bool
 ElementT::resolved_compound() const
 {
     ElementClassT *t = resolved_type();
     return t && t->cast_router();
+}
+
+inline RouterT *
+ElementT::resolved_router(const VariableEnvironment &env, ErrorHandler *errh) const
+{
+    if (ElementClassT *t = resolved_type(env, errh))
+	return t->cast_router();
+    else
+	return 0;
 }
 
 inline RouterT *
@@ -247,8 +253,8 @@ ElementT::resolved_router() const
 inline void
 ElementT::set_configuration(const String &configuration)
 {
-    unresolve_type();
     _configuration = configuration;
+    unresolve_type();
 }
 
 inline String
@@ -275,6 +281,20 @@ inline bool
 ElementT::tunnel_connected() const
 {
     return _tunnel_input || _tunnel_output;
+}
+
+inline const String &
+ElementT::flow_code(ElementMap *emap) const
+{
+    semiresolve_type();
+    return _resolved_type->traits(emap).flow_code;
+}
+
+inline const String &
+ElementT::flow_code() const
+{
+    semiresolve_type();
+    return _resolved_type->traits(ElementMap::default_map()).flow_code;
 }
 
 inline bool

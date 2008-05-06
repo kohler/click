@@ -990,7 +990,9 @@ Element::port_flow(bool isoutput, int p, Bitvector* travels) const
 {
     // Another version of this function is in tools/lib/processingt.cc.
     // Make sure you keep them in sync.
-    const char *f = flow_code();
+    const char *f = _router->flow_code_override(eindex());
+    if (!f)
+	f = flow_code();
     int nother = nports(!isoutput);
     if (p < 0 || p >= nports(isoutput)) {
 	travels->assign(nother, false);

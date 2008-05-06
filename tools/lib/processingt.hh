@@ -7,17 +7,24 @@ class Bitvector;
 
 class ProcessingT { public:
 
-    enum ProcessingCode { VAGNOSTIC = 0, VPUSH = 1, VPULL = 2, VAFLAG = 4 };
+    enum ProcessingCode { ppush = 1, ppull = 2, pagnostic = 4 };
     static const char processing_letters[];
     static const char decorated_processing_letters[];
 
-    ProcessingT(const RouterT *, ElementMap *);
+    ProcessingT(RouterT *router, ElementMap *emap,
+		ErrorHandler *errh = 0);
+    ProcessingT(const ProcessingT &processing, ElementT *element,
+		ErrorHandler *errh = 0);
     void check_types(ErrorHandler *errh = 0);
-    inline void check(ErrorHandler *errh = 0);
-    void create(const String &compound_pcode, bool agnostic_to_push, ErrorHandler *errh = 0);
 
     enum { end_to = ConnectionT::end_to, end_from = ConnectionT::end_from };
-    
+
+    RouterT *router() const {
+	return _router;
+    }
+    const VariableEnvironment &scope() const {
+	return _scope;
+    }
     int nelements() const {
 	return _pidx[end_to].size() - 1;
     }
@@ -76,21 +83,26 @@ class ProcessingT { public:
 	return port(pidx, end_from);
     }
 
-    int input_processing(const PortT &) const;
-    int output_processing(const PortT &) const;
-    char decorated_input_processing_letter(const PortT &) const;
-    char decorated_output_processing_letter(const PortT &) const;
-    int input_processing(int ei, int p) const;
-    int output_processing(int ei, int p) const;
-    bool input_is_pull(int ei, int p) const;
-    bool output_is_push(int ei, int p) const;
-    const PortT &input_connection(int ei, int p) const;
-    const PortT &output_connection(int ei, int p) const;
+    const String &flow_code(ElementT *e) const {
+	if (_flow_overrides.size())
+	    if (const String &fc = _flow_overrides.get(e->name()))
+		return fc;
+	return e->flow_code(_element_map);
+    }
 
-    bool same_processing(int, int) const;
+    int input_processing(const PortT &port) const;
+    int output_processing(const PortT &port) const;
+    char decorated_input_processing_letter(const PortT &port) const;
+    char decorated_output_processing_letter(const PortT &port) const;
+    int input_processing(int eindex, int port) const;
+    int output_processing(int eindex, int port) const;
+    bool input_is_pull(int eindex, int port) const;
+    bool output_is_push(int eindex, int port) const;
 
-    String processing_code(const ElementT *) const;
-    String decorated_processing_code(const ElementT *) const;
+    bool same_processing(int a_eindex, int b_eindex) const;
+
+    String processing_code(const ElementT *element) const;
+    String decorated_processing_code(const ElementT *element) const;
 
     static const char *processing_code_next(const char *pos, const char *end_code, int &processing);
     static const char *processing_code_output(const char *code, const char *end_code, const char *pos = 0);
@@ -113,8 +125,7 @@ class ProcessingT { public:
      */
     static int code_flow(const String &code, int port, bool isoutput, Bitvector *x, int size, ErrorHandler *errh = 0);
     int port_flow(const PortT &port, bool isoutput, Bitvector *x, ErrorHandler *errh = 0) const {
-	return code_flow(port.element->type()->flow_code(_element_map),
-			 port.port, isoutput,
+	return code_flow(flow_code(port.element), port.port, isoutput,
 			 x, port.element->nports(!isoutput), errh);
     }
     
@@ -147,21 +158,23 @@ class ProcessingT { public:
     
   private:
 
-    const RouterT *_router;
+    RouterT *_router;
+    String _router_name;
     ElementMap *_element_map;
     VariableEnvironment _scope;
+    HashTable<String, String> _flow_overrides;
 
     Vector<int> _pidx[2];
     Vector<const ElementT *> _elt[2];
     Vector<int> _input_processing;
     Vector<int> _output_processing;
-    Vector<PortT> _connected_input;
-    Vector<PortT> _connected_output;
 
     enum { classwarn_unknown = 1, classwarn_pcode = 2 };
     HashTable<ElementClassT *, int> _class_warnings;
 
-    void create_pidx(ErrorHandler *);
+    void parse_flow_info(ElementT *e, ErrorHandler *errh);
+    void create_pidx(ErrorHandler *errh);
+    void create(const String &compound_pcode, ErrorHandler *errh = 0);
 
     void initial_processing_for(int, const String &compound_pcode, ErrorHandler *);
     void initial_processing(const String &compound_pcode, ErrorHandler *);
@@ -213,25 +226,13 @@ ProcessingT::output_processing(int i, int p) const
 inline bool
 ProcessingT::input_is_pull(int i, int p) const
 {
-    return _input_processing[input_pidx(i, p)] & VPULL;
+    return _input_processing[input_pidx(i, p)] & ppull;
 }
 
 inline bool
 ProcessingT::output_is_push(int i, int p) const
 {
-    return _output_processing[output_pidx(i, p)] & VPUSH;
-}
-
-inline const PortT &
-ProcessingT::input_connection(int i, int p) const
-{
-    return _connected_input[input_pidx(i, p)];
-}
-
-inline const PortT &
-ProcessingT::output_connection(int i, int p) const
-{
-    return _connected_output[output_pidx(i, p)];
+    return _output_processing[output_pidx(i, p)] & ppush;
 }
 
 inline const char *
@@ -242,12 +243,6 @@ ProcessingT::processing_code_output(const char *code, const char *end_code, cons
     while (pos < end_code && *pos != '/')
 	pos++;
     return (pos == end_code ? code : pos + 1);
-}
-
-inline void
-ProcessingT::check(ErrorHandler *errh)
-{
-    create("", false, errh);
 }
 
 #endif

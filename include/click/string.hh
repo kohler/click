@@ -82,6 +82,8 @@ class String { public:
   inline uint32_t hashcode() const;
   
   bool equals(const char *s, int len) const;
+  inline bool starts_with(const String &str) const;
+  bool starts_with(const char *s, int len) const;
   // bool operator==(const String &, const String &);
   // bool operator==(const String &, const char *);
   // bool operator==(const char *, const String &);
@@ -473,6 +475,16 @@ inline int
 String::compare(const String &str) const
 {
   return compare(str._data, str._length);
+}
+
+/** @brief Return true iff this string begins with the data in @a str.
+ * @param str string data to compare to
+ * 
+ * Same as String::starts_with(@a str.data(), @a str.length()). */
+inline bool
+String::starts_with(const String &str) const
+{
+  return starts_with(str._data, str._length);
 }
 
 /** @relates String

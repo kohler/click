@@ -35,6 +35,7 @@ class ElementClassT { public:
 
     // 'primitive' means 'not tunnel, not compound, not synonym'.
     virtual bool primitive() const	{ return true; }
+    virtual bool overloaded() const	{ return false; }
     bool tunnel() const			{ return this == tunnel_type(); }
     
     inline const ElementTraits &traits() const;
@@ -43,8 +44,6 @@ class ElementClassT { public:
 
     inline const String &port_count_code() const;
     inline const String &processing_code() const;
-    inline const String &flow_code() const;
-    inline const String &flow_code(ElementMap *emap) const;
     inline bool requires(const String &) const;
     inline bool provides(const String &) const;
     const String &package() const;
@@ -58,11 +57,35 @@ class ElementClassT { public:
     virtual void collect_types(HashTable<ElementClassT *, int> &) const;
     virtual void collect_overloads(Vector<ElementClassT *> &) const;
 
-    static ElementT *expand_element(ElementT *, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
+    static ElementT *expand_element(ElementT *element, RouterT *dest,
+				    const String &prefix,
+				    const VariableEnvironment &env,
+				    ErrorHandler *errh);
 
     virtual bool need_resolve() const;
-    virtual ElementClassT *resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *, const LandmarkT &landmark);
-    virtual ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
+
+    /** @brief Resolve an element declaration.
+     * @param ninputs number of inputs used
+     * @param noutputs number of outputs used
+     * @param[in,out] args configuration arguments
+     * @param errh error handler
+     * @param landmark landmark for errors
+     */
+    virtual ElementClassT *resolve(int ninputs, int noutputs,
+				   Vector<String> &args,
+				   ErrorHandler *errh,
+				   const LandmarkT &landmark);
+
+    virtual void update_scope(const Vector<String> &args,
+			      const VariableEnvironment &env,
+			      VariableEnvironment *dest);
+    
+    virtual ElementT *complex_expand_element(ElementT *element,
+					     const Vector<String> &conf,
+					     RouterT *dest,
+					     const String &prefix,
+					     const VariableEnvironment &env,
+					     ErrorHandler *errh);
 
     enum UnparseKind { UNPARSE_NAMED, UNPARSE_ANONYMOUS, UNPARSE_OVERLOAD };
     virtual void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *stop);
@@ -87,7 +110,10 @@ class ElementClassT { public:
     ElementClassT(const ElementClassT &);
     ElementClassT &operator=(const ElementClassT &);
 
-    ElementT *direct_expand_element(ElementT *, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
+    ElementT *direct_expand_element(ElementT *element, RouterT *dest,
+				    const String &prefix,
+				    const VariableEnvironment &env,
+				    ErrorHandler *errh);
 
 };
 
@@ -99,7 +125,8 @@ class SynonymElementClassT : public ElementClassT { public:
 
     bool need_resolve() const;
     ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const LandmarkT &);
-    ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const String &prefix, VariableEnvironment &, ErrorHandler *);
+    void update_scope(const Vector<String> &, const VariableEnvironment &, VariableEnvironment *);
+    ElementT *complex_expand_element(ElementT *, const Vector<String> &, RouterT *, const String &prefix, const VariableEnvironment &, ErrorHandler *);
     
     void collect_types(HashTable<ElementClassT *, int> &) const;
     void collect_overloads(Vector<ElementClassT *> &) const;
@@ -107,6 +134,7 @@ class SynonymElementClassT : public ElementClassT { public:
     void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);
 
     bool primitive() const		{ return false; }
+    bool overloaded() const		{ return _eclass->overloaded(); }
     const ElementTraits *find_traits(ElementMap *emap) const;
     
     RouterT *declaration_scope() const;
@@ -162,18 +190,6 @@ inline const String &
 ElementClassT::processing_code() const
 {
     return traits().processing_code;
-}
-
-inline const String &
-ElementClassT::flow_code() const
-{
-    return traits().flow_code;
-}
-
-inline const String &
-ElementClassT::flow_code(ElementMap *emap) const
-{
-    return traits(emap).flow_code;
 }
 
 inline bool

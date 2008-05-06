@@ -434,10 +434,10 @@ wdiagram::reachable_match_t::reachable_match_t(const String &name, int port,
 wdiagram::reachable_match_t::reachable_match_t(const reachable_match_t &m,
 					       ElementT *e)
     : _name(m._name), _port(m._port), _forward(m._forward),
-      _router(e->resolved_router()), _router_name(m._router_name),
-      _processing(new ProcessingT(_router, m._processing->element_map()))
+      _router_name(m._router_name),
+      _processing(new ProcessingT(*m._processing, e))
 {
-    _processing->create(m._processing->decorated_processing_code(e), true);
+    _router = _processing->router();
     if (_router_name)
 	_router_name += '/';
     _router_name += e->name();
@@ -484,7 +484,7 @@ wdiagram::reachable_match_t::add_matches(reachable_t &reach)
 	    || glob_match(it->type_name(), _name)
 	    || (_name && _name[0] == '#' && glob_match(it->name(), _name.substring(1))))
 	    set_seed_connections(it, _port);
-	else if (it->resolved_compound()) {
+	else if (it->resolved_router(_processing->scope())) {
 	    reachable_match_t sub_match(*this, it);
 	    RouterT *sub_router = sub_match._router;
 	    if (sub_match.add_matches(reach)) {
@@ -525,7 +525,7 @@ wdiagram::reachable_match_t::export_matches(reachable_t &reach)
 		x[it->eindex()] = any = true;
 		break;
 	    }
-	if (any && it->resolved_compound()) {
+	if (any && it->resolved_router(_processing->scope())) {
 	    // spread matches from inputs through the compound
 	    reachable_match_t sub_match(*this, it);
 	    RouterT *sub_router = sub_match._router;

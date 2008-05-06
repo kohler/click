@@ -803,12 +803,36 @@ bool
 String::equals(const char *s, int len) const
 {
     // It'd be nice to make "out-of-memory" strings compare unequal to
-    // anything, even themseleves, but this would be a bad idea for Strings
+    // anything, even themselves, but this would be a bad idea for Strings
     // used as (for example) keys in hashtables. Instead, "out-of-memory"
     // strings compare unequal to other null strings, but equal to each other.
     if (len < 0)
 	len = strlen(s);
     if (_length != len)
+	return false;
+    else if (_data == s)
+	return true;
+    else if (len == 0)
+	return (s != &oom_string_data && _memo != oom_memo);
+    else
+	return memcmp(_data, s, len) == 0;
+}
+
+/** @brief Return true iff this string begins with the data in @a s.
+ * @param s string data to compare to
+ * @param len length of @a s
+ * 
+ * Same as String::equals(substring(0, len), String(s, len)) == 0.  If @a len
+ * @< 0, then treats @a s as a null-terminated C string.
+ *
+ * @sa String::compare(const String &a, const String &b) */
+bool
+String::starts_with(const char *s, int len) const
+{
+    // See note on equals() re: "out-of-memory" strings.
+    if (len < 0)
+	len = strlen(s);
+    if (_length < len)
 	return false;
     else if (_data == s)
 	return true;

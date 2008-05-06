@@ -49,14 +49,17 @@ class Router { public:
     const String& elandmark(int i) const;
     const String& econfiguration(int i) const;
     void set_econfiguration(int i, const String& conf);
-  
+    
     Element* find(const String& name, ErrorHandler* errh = 0) const;
     Element* find(const String& name, String context, ErrorHandler* errh = 0) const;
     Element* find(const String& name, Element* context, ErrorHandler* errh = 0) const;
 
     int downstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
     int upstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
-  
+
+    inline const char *flow_code_override(int eindex) const;
+    void set_flow_code_override(int eindex, const String &flow_code);
+    
     // HANDLERS
     // 'const Handler *' results last until that element/handlername modified
     static const Handler *handler(const Element *e, const String &hname);
@@ -224,6 +227,8 @@ class Router { public:
     Router* _hotswap_router;
     ThreadSched* _thread_sched;
     mutable NameInfo* _name_info;
+    Vector<int> _flow_code_override_eindex;
+    Vector<String> _flow_code_override;
 
     Router* _next_router;
 
@@ -239,7 +244,8 @@ class Router { public:
     int check_hookup_elements(ErrorHandler*);
     int check_hookup_range(ErrorHandler*);
     int check_hookup_completeness(ErrorHandler*);
-  
+
+    const char *hard_flow_code_override(int e) const;
     int processing_error(const Hookup&, const Hookup&, bool, int, ErrorHandler*);
     int check_push_and_pull(ErrorHandler*);
     
@@ -445,6 +451,18 @@ inline const String&
 Router::configuration_string() const
 {
     return _configuration;
+}
+
+/** @brief Returns the overriding flow code for element @a e, if any.
+ *  @param eindex element index
+ *  @return The flow code, or null if none has been set. */
+inline const char *
+Router::flow_code_override(int eindex) const
+{
+    if (_flow_code_override.size())
+	return hard_flow_code_override(eindex);
+    else
+	return 0;
 }
 
 inline void

@@ -25,7 +25,7 @@
 CLICK_DECLS
 
 String
-cp_expand(const String &config, VariableExpander &ve, bool expand_quote)
+cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 {
     if (!config || find(config, '$') == config.end())
 	return config;
@@ -171,9 +171,9 @@ VariableEnvironment::VariableEnvironment(VariableEnvironment *parent)
 }
 
 VariableEnvironment *
-VariableEnvironment::parent_of(int depth)
+VariableEnvironment::parent_of(int depth) const
 {
-    VariableEnvironment *v = this;
+    VariableEnvironment *v = const_cast<VariableEnvironment *>(this);
     while (v && v->_depth >= depth)
 	v = v->_parent;
     return v;
@@ -211,7 +211,7 @@ VariableEnvironment::value(const String &formal, bool &found) const
 
 bool
 VariableEnvironment::expand(const String &var, int vartype, int quote,
-			    StringAccum &output)
+			    StringAccum &output) const
 {
     String v(var);
     const char *minus = 0;

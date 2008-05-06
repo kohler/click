@@ -510,7 +510,7 @@ Script::run_timer(Timer *)
 }
 
 bool
-Script::Expander::expand(const String &vname, int vartype, int quote, StringAccum &sa)
+Script::Expander::expand(const String &vname, int vartype, int quote, StringAccum &sa) const
 {
     int x = script->find_variable(vname);
     if (x < script->_vars.size()) {

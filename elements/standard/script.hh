@@ -329,7 +329,7 @@ class Script : public Element { public:
     struct Expander : public VariableExpander {
 	Script *script;
 	ErrorHandler *errh;
-	bool expand(const String &, int vartype, int quote, StringAccum &);
+	bool expand(const String &, int vartype, int quote, StringAccum &) const;
     };
     
     void add_insn(int, int, int = 0, const String & = String());

@@ -69,10 +69,10 @@ delt *delt::create(ElementT *e, delt *parent,
     de->_des = d->ccss()->elt_style(d, de, &x);
     de->_des_sensitivity = x;
 
-    if (RouterT *r = e->resolved_router()) {
-	ProcessingT subprocessing(r, processing->element_map());
-	subprocessing.create(de->_processing_code, true);
-	de->create_elements(d, r, &subprocessing, collector, path, z_index);
+    if (e->resolved_router(processing->scope())) {
+	ProcessingT subprocessing(*processing, e);
+	de->create_elements(d, subprocessing.router(), &subprocessing,
+			    collector, path, z_index);
     }
     path.pop_back();
 

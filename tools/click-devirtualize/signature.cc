@@ -60,7 +60,7 @@ Signatures::create_phase_0(const ProcessingT &pt)
 void
 Signatures::check_port_numbers(int eid, const ProcessingT &pt)
 {
-  const ElementT *e = _router->element(eid);
+  ElementT *e = const_cast<ElementT *>(_router->element(eid));
   int old_sigid = _sigid[eid];
   if (old_sigid == SIG_NOT_SPECIAL)
     return;
@@ -68,16 +68,18 @@ Signatures::check_port_numbers(int eid, const ProcessingT &pt)
   // create new ports array
   Vector<int> new_ports;
   int ni = e->ninputs(), no = e->noutputs();
-  for (int i = 0; i < ni; i++) {
-    const PortT &h = pt.input_connection(eid, i);
-    if (h.element)
-      new_ports.push_back(h.port);
-  }
-  for (int i = 0; i < no; i++) {
-    const PortT &h = pt.output_connection(eid, i);
-    if (h.element)
-      new_ports.push_back(h.port);
-  }
+  for (int i = 0; i < ni; i++)
+      if (pt.input_is_pull(eid, i)) {
+	  const PortT &h = _router->find_connection_to(PortT(e, i));
+	  if (h.element)
+	      new_ports.push_back(h.port);
+      }
+  for (int i = 0; i < no; i++)
+      if (pt.output_is_push(eid, i)) {
+	  const PortT &h = _router->find_connection_from(PortT(e, i));
+	  if (h.element)
+	      new_ports.push_back(h.port);
+      }
 
   // check for no interesting connections
   if (new_ports.size() == 0)
@@ -114,7 +116,7 @@ bool
 Signatures::next_phase(int phase, int eid, Vector<int> &new_sigid,
 		       const ProcessingT &pt)
 {
-  const ElementT *e = _router->element(eid);
+  ElementT *e = const_cast<ElementT *>(_router->element(eid));
   int old_sigid = _sigid[eid];
   if (old_sigid == SIG_NOT_SPECIAL
       || _sigs[old_sigid]._connections.size() == 0) {
@@ -125,16 +127,18 @@ Signatures::next_phase(int phase, int eid, Vector<int> &new_sigid,
   // create new connections
   Vector<int> new_connections;
   int ni = e->ninputs(), no = e->noutputs();
-  for (int i = 0; i < ni; i++) {
-    const PortT &h = pt.input_connection(eid, i);
-    if (h.element)
-      new_connections.push_back(_sigid[h.eindex()]);
-  }
-  for (int i = 0; i < no; i++) {
-    const PortT &h = pt.output_connection(eid, i);
-    if (h.element)
-      new_connections.push_back(_sigid[h.eindex()]);
-  }
+  for (int i = 0; i < ni; i++)
+      if (pt.input_is_pull(eid, i)) {
+	  const PortT &h = _router->find_connection_to(PortT(e, i));
+	  if (h.element)
+	      new_connections.push_back(_sigid[h.eindex()]);
+      }
+  for (int i = 0; i < no; i++)
+      if (pt.output_is_push(eid, i)) {
+	  const PortT &h = _router->find_connection_from(PortT(e, i));
+	  if (h.element)
+	      new_connections.push_back(_sigid[h.eindex()]);
+      }
 
   // add new node to list
   if (_sigs[old_sigid]._phase != phase) {
@@ -189,8 +193,7 @@ void
 Signatures::analyze(ElementMap &em)
 {
   int ne = _router->nelements();
-  ProcessingT pt(_router, &em);
-  pt.create("", true, 0);	// true -> AGNOSTIC becomes PUSH
+  ProcessingT pt(const_cast<RouterT *>(_router), &em);
   
   create_phase_0(pt);
 

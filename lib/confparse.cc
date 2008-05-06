@@ -4290,12 +4290,40 @@ cp_va_kparse_remove_keywords(Vector<String> &conf,
 }
 
 
+/** @brief Assign arguments from @a argv to @a values.
+ * @param argv argument array
+ * @param param_begin start iterator for parameter list
+ * @param param_end end iterator for parameter list
+ * @param values value storage (may equal null or &@a argv)
+ * @return >= 0 on success, negative on failure
+ *
+ * This function is used to resolve an argument array.  The range [@a
+ * param_begin, @a param_end) defines the parameter names.  This range begins
+ * with zero or more empty strings, which define mandatory positional
+ * arguments.  It continues with zero or more nonempty strings, which define
+ * optional keyword arguments with the corresponding names.  It may optionally
+ * conclude with "__REST__", which says that the last value should collect all
+ * unassigned arguments.
+ *
+ * cp_assign_arguments attempts to assign the arguments in @a argv to the
+ * corresponding parameters.  This succeeds if all mandatory positional
+ * arguments are present and all other arguments are accounted for, either by
+ * keywords or by "__REST__".  On success, returns >= 0.  On failure because
+ * the argument list is invalid, returns -EINVAL.  On other failure cases,
+ * such as out of memory, returns another negative error code.
+ *
+ * On success, cp_assign_arguments also optionally assigns *@a values to the
+ * resulting value list.  *@a values is resized to size (@a param_end - @a
+ * param_begin), and *@a values[@em i] is set to the argument corresponding to
+ * @a param_begin[@em i].  If @a values is null this step is skipped and the
+ * function has no side effects.  It is safe to set @a values to &@a argv.
+ */
 int
-cp_assign_arguments(const Vector<String> &argv, const String *keys_begin, const String *keys_end, Vector<String> *values)
+cp_assign_arguments(const Vector<String> &argv, const String *param_begin, const String *param_end, Vector<String> *values)
 {
   // check common case
-  if (keys_begin == keys_end || !keys_end[-1]) {
-    if (argv.size() != keys_end - keys_begin)
+  if (param_begin == param_end || !param_end[-1]) {
+    if (argv.size() != param_end - param_begin)
       return -EINVAL;
     else {
       if (values)
@@ -4304,20 +4332,20 @@ cp_assign_arguments(const Vector<String> &argv, const String *keys_begin, const 
     }
   }
 
-  if (!cp_values || !cp_parameter_used || keys_end - keys_begin > CP_VALUES_SIZE)
+  if (!cp_values || !cp_parameter_used || param_end - param_begin > CP_VALUES_SIZE)
     return -ENOMEM; /*errh->error("out of memory in cp_va_parse");*/
 
   CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
-  if (keys_begin != keys_end && keys_end[-1] == "__REST__") {
+  if (param_begin != param_end && param_end[-1] == "__REST__") {
     cpva.ignore_rest = true;
-    cpva.nvalues = (keys_end - keys_begin) - 1;
+    cpva.nvalues = (param_end - param_begin) - 1;
   } else {
     cpva.ignore_rest = false;
-    cpva.nvalues = keys_end - keys_begin;
+    cpva.nvalues = param_end - param_begin;
   }
   
   int arg;
-  for (arg = 0; arg < cpva.nvalues && keys_begin[arg] == ""; arg++) {
+  for (arg = 0; arg < cpva.nvalues && param_begin[arg] == ""; arg++) {
     cp_values[arg].argtype = 0;
     cp_values[arg].keyword = 0;
     cp_values[arg].v.i = cpkMandatory;
@@ -4325,7 +4353,7 @@ cp_assign_arguments(const Vector<String> &argv, const String *keys_begin, const 
   cpva.nrequired = cpva.npositional = arg;
   for (; arg < cpva.nvalues; arg++) {
     cp_values[arg].argtype = 0;
-    cp_values[arg].keyword = keys_begin[arg].c_str();
+    cp_values[arg].keyword = param_begin[arg].c_str();
     cp_values[arg].v.i = cpkMandatory;	// mandatory keyword
   }
 
@@ -4343,8 +4371,8 @@ cp_assign_arguments(const Vector<String> &argv, const String *keys_begin, const 
 	}
       cp_values[cpva.nvalues].v_string = sa.take_string();
     }
-    values->resize(keys_end - keys_begin);
-    for (arg = 0; arg < keys_end - keys_begin; arg++)
+    values->resize(param_end - param_begin);
+    for (arg = 0; arg < param_end - param_begin; arg++)
       (*values)[arg] = cp_values[arg].v_string;
   }
   return retval;

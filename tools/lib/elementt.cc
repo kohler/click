@@ -71,6 +71,17 @@ ElementT::~ElementT()
 }
 
 void
+ElementT::set_type(ElementClassT *t)
+{
+    assert(t);
+    t->use();
+    if (_type)
+	_type->unuse();
+    _type = t;
+    unresolve_type();
+}
+
+void
 ElementT::full_kill()
 {
     if (_type) {
@@ -135,48 +146,66 @@ ElementT::redeclaration_error(ErrorHandler *errh, const char *what, String name,
 }
 
 ElementClassT *
-ElementT::resolved_type() const
+ElementT::resolve(const VariableEnvironment &env,
+		  VariableEnvironment *new_env, ErrorHandler *errh) const
 {
-    VariableEnvironment crapve(0);
-    return resolved_type(crapve);
+    if (!_type)
+	return 0;
+
+    // primitives get no scope, no point in expanding
+    if (_type->primitive())
+	return _type;
+
+    // expand configuration and do full resolve
+    Vector<String> conf;
+    cp_argvec(cp_expand(_configuration, env), conf);
+    ElementClassT *t = _type->resolve(_ninputs, _noutputs, conf, errh ? errh : ErrorHandler::silent_handler(), _landmark);
+    if (!t)
+	t = _type;
+    if (new_env)
+	t->update_scope(conf, env, new_env);
+    return t;
 }
 
 ElementClassT *
-ElementT::resolved_type(VariableEnvironment &ve, ErrorHandler *errh) const
+ElementT::resolved_type(const VariableEnvironment &env, ErrorHandler *errh) const
 {
     if (!_type)
 	return 0;
     if (_resolved_type
-	&& (!(_resolved_type_status & resolved_type_expand) || (!ve.depth() && !ve.size()))
+	&& !(_resolved_type_status & resolved_type_fragile)
 	&& (!(_resolved_type_status & resolved_type_error) || !errh))
 	return _resolved_type;
 
     _resolved_type_status = 0;
     if (!_type->need_resolve()) {
+	assert(!_resolved_type);
 	_resolved_type = _type;
 	_resolved_type->use();
 	return _resolved_type;
     }
 
-    if (!errh)
-	errh = ErrorHandler::silent_handler();
-    if (find(_configuration, '$') != _configuration.end())
-	_resolved_type_status += resolved_type_expand;
-    Vector<String> conf;
-    cp_argvec(cp_expand(_configuration, ve), conf);
+    errh = (errh ? errh : ErrorHandler::silent_handler());
     int before = errh->nerrors();
-    ElementClassT *t = _type->resolve(_ninputs, _noutputs, conf, errh, _landmark);
+    ElementClassT *t = resolve(env, 0, errh);
     if (errh->nerrors() != before)
-	_resolved_type_status += resolved_type_error;
-    if (!t)
-	t = _type;
-    if (!(_resolved_type_status & resolved_type_expand) || (!ve.depth() && !ve.size())) {
-	_resolved_type = t;
-	_resolved_type->use();
-    }
+	_resolved_type_status |= resolved_type_error;
+
+    if (_type->overloaded())
+	_resolved_type_status |= resolved_type_fragile;
+    if (_resolved_type)
+	_resolved_type->unuse();
+    _resolved_type = t;
+    _resolved_type->use();
     return t;
 }
 
+ElementClassT *
+ElementT::resolved_type() const
+{
+    return resolved_type(VariableEnvironment(0));
+}
+    
 
 const PortT PortT::null_port;
 

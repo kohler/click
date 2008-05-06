@@ -894,18 +894,18 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
 	} else if (tag == "processing" && port >= 0) {
 	    int p = (is_output ? _processing.output_processing(PortT(e, port))
 		     : _processing.input_processing(PortT(e, port)));
-	    if (p == ProcessingT::VAGNOSTIC)
+	    if (p == ProcessingT::pagnostic)
 		_sa << _sep << "agnostic";
-	    else if (p == ProcessingT::VPUSH)
+	    else if (p & ProcessingT::ppush)
 		_sa << _sep << "push";
-	    else if (p == ProcessingT::VPULL)
+	    else if (p & ProcessingT::ppull)
 		_sa << _sep << "pull";
 	    else
 		_sa << _sep << "??";
 	} else if (tag == "processingcode") {
 	    _sa << _sep << t->processing_code();
 	} else if (tag == "flowcode") {
-	    _sa << _sep << t->flow_code();
+	    _sa << _sep << e->flow_code();
 	} else if (tag == "if") {
 	    String s = expand(attrs["test"], e, port, is_output);
 	    bool result;
@@ -1036,9 +1036,8 @@ pretty_process(const char *infile, bool file_is_expr, const char *outfile,
     ElementMap emap;
     emap.parse_all_files(r, CLICK_DATADIR, errh);
     emap.set_driver(emap.pick_driver(specified_driver, r, errh));
-    ProcessingT processing(r, &emap);
+    ProcessingT processing(r, &emap, errh);
     processing.check_types(errh);
-    processing.check(errh);
 
     ElementMap::push_default(&emap);
     
@@ -1193,9 +1192,8 @@ pretty_process_graphml(const char *infile, bool file_is_expr, const char *outfil
     ElementMap emap;
     emap.parse_all_files(r, CLICK_DATADIR, errh);
     emap.set_driver(emap.pick_driver(specified_driver, r, errh));
-    ProcessingT processing(r, &emap);
+    ProcessingT processing(r, &emap, errh);
     processing.check_types(errh);
-    processing.check(errh);
 
     // open output file
     FILE *outf = open_output_file(outfile, errh);

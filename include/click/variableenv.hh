@@ -11,7 +11,7 @@ class VariableExpander { public:
     VariableExpander()			{ }
     virtual ~VariableExpander()		{ }
 
-    virtual bool expand(const String &var, int vartype, int quote, StringAccum &) = 0;
+    virtual bool expand(const String &var, int vartype, int quote, StringAccum &sa) const = 0;
 
 };
 
@@ -23,15 +23,15 @@ class VariableEnvironment : public VariableExpander { public:
     int size() const			{ return _names.size(); }
 
     const String &name(int i) const	{ return _names[i]; }
-    const Vector<String> &values() const	{ return _values; }
+    const Vector<String> &values() const { return _values; }
     const String &value(int i) const	{ return _values[i]; }
     const String &value(const String &name, bool &found) const;
 
     void clear()			{ _names.clear(); _values.clear(); }
-    
-    VariableEnvironment *parent_of(int depth);
+
+    VariableEnvironment *parent_of(int depth) const;
     bool define(const String &name, const String &value, bool override);
-    bool expand(const String &var, int vartype, int quote, StringAccum &);
+    bool expand(const String &var, int vartype, int quote, StringAccum &sa) const;
 
   private:
 
@@ -42,8 +42,8 @@ class VariableEnvironment : public VariableExpander { public:
 
 };
 
-String cp_expand(const String &, VariableExpander &, bool expand_quote = false);
-String cp_expand_in_quotes(const String &, int quote);
+String cp_expand(const String &str, const VariableExpander &env, bool expand_quote = false);
+String cp_expand_in_quotes(const String &str, int quote);
 
 CLICK_ENDDECLS
 #endif

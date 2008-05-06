@@ -385,8 +385,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
   full_elementmap.set_driver(driver);
 
   // get processing
-  ProcessingT processing(r, &full_elementmap);
-  processing.create("", true, errh);
+  ProcessingT processing(r, &full_elementmap, errh);
   // ... it will report errors as required
 
   Bitvector sources(r->nelements(), false);

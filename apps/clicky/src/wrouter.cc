@@ -490,9 +490,8 @@ void wmain::set_config(String conf, bool replace)
 	    int driver = emap->pick_driver(_selected_driver, r, 0);
 	    emap->set_driver_mask(1 << driver);
 	}
-	processing = new ProcessingT(r, emap);
+	processing = new ProcessingT(r, emap, &_gerrh);
 	processing->check_types(&_gerrh);
-	processing->create("", true, &_gerrh);
     }
 
     // apply errors to buffer
@@ -672,7 +671,7 @@ void wmain::element_show(String ename, int expand, bool incremental)
 	n = lookup_widget(_window, "eview_classinfo_processing");
 	gtk_label_set_text(GTK_LABEL(n), eclass->processing_code().c_str());
 	n = lookup_widget(_window, "eview_classinfo_flow");
-	gtk_label_set_text(GTK_LABEL(n), eclass->flow_code().c_str());
+	gtk_label_set_text(GTK_LABEL(n), epath.back()->flow_code().c_str());
 	ElementMap::pop_default();
 	
 	// clear handlers
@@ -780,6 +779,7 @@ void wmain::fill_elements(RouterT *r, const String &compound, int compound_state
 	if (i->tunnel())
 	    continue;
 	String n = (compound ? compound + i->name() : i->name());
+	// XXX this is not the right way to do this
 	bool is_compound = i->resolved_compound();
 	if (compound_state <= 1 || !is_compound)
 	    v.push_back(make_pair(n, i.operator->()));

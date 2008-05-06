@@ -524,34 +524,34 @@ bool dcss_selector::match(wdiagram *d, const delt *e, int *sensitivity) const
 	} else if (k->equals("live", 4)) {
 	    if (!d->main()->driver())
 		return false;
-	} else if (k->length() >= 6 && memcmp(k->data(), "name*=", 6) == 0) {
+	} else if (k->starts_with("name*=", 6)) {
 	    if (e->name().find_left(k->substring(6)) < 0)
 		return false;
-	} else if (k->length() >= 11 && memcmp(k->data(), "downstream=", 11) == 0) {
+	} else if (k->starts_with("downstream=", 11)) {
 	    if (e->fake())
 		return false;
 	    const wdiagram::reachable_t &ex = d->downstream(k->substring(11));
 	    if (!ex(e->parent()->flat_name(), e->eindex()))
 		return false;
-	} else if (k->length() >= 12 && memcmp(k->data(), "downstream!=", 12) == 0) {
+	} else if (k->starts_with("downstream!=", 12)) {
 	    if (e->fake())
 		return false;
 	    const wdiagram::reachable_t &ex = d->downstream(k->substring(12));
 	    if (ex(e->parent()->flat_name(), e->eindex()))
 		return false;
-	} else if (k->length() >= 9 && memcmp(k->data(), "upstream=", 9) == 0) {
+	} else if (k->starts_with("upstream=", 9)) {
 	    if (e->fake())
 		return false;
 	    const wdiagram::reachable_t &ex = d->upstream(k->substring(9));
 	    if (!ex(e->parent()->flat_name(), e->eindex()))
 		return false;
-	} else if (k->length() >= 10 && memcmp(k->data(), "upstream!=", 10) == 0) {
+	} else if (k->starts_with("upstream!=", 10)) {
 	    if (e->fake())
 		return false;
 	    const wdiagram::reachable_t &ex = d->upstream(k->substring(10));
 	    if (ex(e->parent()->flat_name(), e->eindex()))
 		return false;
-	} else if (k->length() >= 10 && memcmp(k->data(), "reachable=", 10) == 0) {
+	} else if (k->starts_with("reachable=", 10)) {
 	    if (e->fake())
 		return false;
 	    const wdiagram::reachable_t &ex1 = d->downstream(k->substring(10));
@@ -559,7 +559,7 @@ bool dcss_selector::match(wdiagram *d, const delt *e, int *sensitivity) const
 	    if (!ex1(e->parent()->flat_name(), e->eindex())
 		&& !ex2(e->parent()->flat_name(), e->eindex()))
 		return false;
-	} else if (k->length() >= 11 && memcmp(k->data(), "reachable!=", 11) == 0) {
+	} else if (k->starts_with("reachable!=", 11)) {
 	    if (e->fake())
 		return false;
 	    const wdiagram::reachable_t &ex1 = d->downstream(k->substring(11));
@@ -610,14 +610,13 @@ bool dcss_selector::match_port(bool isoutput, int port, int processing) const
 	    if (!isoutput)
 		return false;
 	} else if (k->equals("push", 4)) {
-	    if ((processing & ~ProcessingT::VAFLAG) != ProcessingT::VPUSH)
+	    if ((processing & ~ProcessingT::pagnostic) != ProcessingT::ppush)
 		return false;
 	} else if (k->equals("pull", 4)) {
-	    if ((processing & ~ProcessingT::VAFLAG) != ProcessingT::VPULL)
+	    if ((processing & ~ProcessingT::pagnostic) != ProcessingT::ppull)
 		return false;
 	} else if (k->equals("agnostic", 8)) {
-	    if (processing != ProcessingT::VAGNOSTIC
-		&& (processing & ProcessingT::VAFLAG) == 0)
+	    if ((processing & ProcessingT::pagnostic) == 0)
 		return false;
 	} else
 	    return false;
@@ -1642,8 +1641,7 @@ ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e, int *sensiti
 	    sty->display = dedisp_closed;
 	else if (s.equals("vertical-split", 14))
 	    sty->display = dedisp_vsplit;
-	else if (s.length() > 11 && memcmp(s.data(), "flow-split(", 11) == 0
-		 && s.back() == ')') {
+	else if (s.starts_with("flow-split(", 11) && s.back() == ')') {
 	    if ((sty->flow_split = parse_flow_split(s.begin() + 11, s.end() - 1)))
 		sty->display = dedisp_fsplit;
 	} else if (s.equals("passthrough", 11))
@@ -1888,7 +1886,7 @@ ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, wdiagram *d,
 	String s = activity_pm[2].vstring("autorefresh");
 	sty->autorefresh = parse_autorefresh(s, "", &sty->autorefresh_period);
 	s = activity_pm[4].vstring("type");
-	if (s.length() >= 4 && memcmp(s.data(), "rate", 4) == 0) {
+	if (s.starts_with("rate", 4)) {
 	    sty->type = dactivity_rate;
 	    s = s.substring(4);
 	    sty->rate_period = 1;

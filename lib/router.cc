@@ -747,6 +747,22 @@ Router::adjust_runcount(int32_t delta)
 
 // FLOWS
 
+const char *
+Router::hard_flow_code_override(int eindex) const
+{
+    for (int i = _flow_code_override.size() - 1; i >= 0; --i)
+	if (_flow_code_override_eindex[i] == eindex)
+	    return _flow_code_override[i].c_str();
+    return 0;
+}
+
+void
+Router::set_flow_code_override(int eindex, const String &flow_code)
+{
+    _flow_code_override_eindex.push_back(eindex);
+    _flow_code_override.push_back(flow_code);
+}
+
 int
 Router::global_port_flow(bool forward, Element* first_element, int first_port, ElementFilter* stop_filter, Bitvector& results)
 {

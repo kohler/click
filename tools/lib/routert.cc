@@ -41,7 +41,7 @@ RouterT::RouterT()
       _declaration_scope(0), _scope_cookie(0),
       _scope(0),
       _nformals(0), _ninputs(0), _noutputs(0), _scope_order_error(false),
-      _overload_type(0), _circularity_flag(false)
+      _circularity_flag(false), _overload_type(0)
 {
 }
 
@@ -55,7 +55,7 @@ RouterT::RouterT(const String &name, const LandmarkT &landmark, RouterT *declara
       _declaration_scope(declaration_scope), _scope_cookie(0),
       _scope(declaration_scope ? &declaration_scope->_scope : 0),
       _nformals(0), _ninputs(0), _noutputs(0), _scope_order_error(false),
-      _overload_type(0), _type_landmark(landmark), _circularity_flag(false)
+      _circularity_flag(false), _overload_type(0), _type_landmark(landmark)
 {
     // borrow definitions from 'declaration'
     if (_declaration_scope) {
@@ -1241,8 +1241,7 @@ RouterT::const_type_iterator::step(const RouterT *r, int eindex)
 const ElementTraits *
 RouterT::find_traits(ElementMap *emap) const
 {
-    ProcessingT pt(this, emap);
-    pt.check();
+    ProcessingT pt(const_cast<RouterT *>(this), emap);
     *(_traits.component(Traits::D_PORT_COUNT)) = pt.compound_port_count_code();
     *(_traits.component(Traits::D_PROCESSING)) = pt.compound_processing_code();
     *(_traits.component(Traits::D_FLOW_CODE)) = pt.compound_flow_code();
@@ -1313,6 +1312,12 @@ RouterT::need_resolve() const
     return true;		// always resolve compound b/c of arguments
 }
 
+bool
+RouterT::overloaded() const
+{
+    return _overload_type != 0;
+}
+
 ElementClassT *
 RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *errh, const LandmarkT &landmark)
 {
@@ -1352,11 +1357,25 @@ RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *
     return closest;
 }
 
+void
+RouterT::update_scope(const Vector<String> &args,
+		      const VariableEnvironment &env,
+		      VariableEnvironment *new_env)
+{
+    *new_env = VariableEnvironment(env.parent_of(_scope.depth()));
+    for (int i = 0; i < _nformals && i < args.size(); i++)
+	new_env->define(_scope.name(i), args[i], true);
+    for (int i = args.size(); i < _nformals; i++)
+	new_env->define(_scope.name(i), String(), true);
+    for (int i = _nformals; i < _scope.size(); i++)
+	new_env->define(_scope.name(i), cp_expand(_scope.value(i), env), true);
+}
+
 ElementT *
 RouterT::complex_expand_element(
-	ElementT *compound, const String &, Vector<String> &args,
+	ElementT *compound, const Vector<String> &args,
 	RouterT *tor, const String &prefix,
-	VariableEnvironment &env, ErrorHandler *errh)
+	const VariableEnvironment &env, ErrorHandler *errh)
 {
     RouterT *fromr = compound->router();
     assert(fromr != this && tor != this);
@@ -1378,17 +1397,12 @@ RouterT::complex_expand_element(
 	    errh->lerror(compound->landmark(),
 			 "too %s arguments to compound element '%s(%s)'",
 			 whoops, printable_name_c_str(), signature.c_str());
-	for (int i = args.size(); i < nargs; i++)
-	    args.push_back("");
     }
 
     // create prefix
     assert(compound->name());
-    VariableEnvironment new_env(env.parent_of(_scope.depth()));
-    for (int i = 0; i < _nformals; i++)
-	new_env.define(_scope.name(i), args[i], true);
-    for (int i = _nformals; i < _scope.size(); i++)
-	new_env.define(_scope.name(i), cp_expand(_scope.value(i), new_env), true);
+    VariableEnvironment new_env(0);
+    update_scope(args, env, &new_env);
     String new_prefix = prefix + compound->name(); // includes previous prefix
     if (new_prefix.back() != '/')
 	new_prefix += '/';
