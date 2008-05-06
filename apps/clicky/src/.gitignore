@@ -1,5 +1,7 @@
-.deps
 *.bak
+.deps
+Makefile
+Makefile.in
+callbacks.c
 clicky
 main.c
-callbacks.c
