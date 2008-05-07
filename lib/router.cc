@@ -71,7 +71,7 @@ Router::Router(const String &configuration, Master *master)
       _handler_bufs(0), _nhandlers_bufs(0), _free_handler(-1),
       _root_element(0),
       _configuration(configuration),
-      _notifier_signals(0), _n_notifier_signals(0),
+      _notifier_signals(0),
       _arena_factory(new HashMap_ArenaFactory),
       _hotswap_router(0), _thread_sched(0), _name_info(0), _next_router(0)
 {
@@ -135,6 +135,10 @@ Router::~Router()
     for (int i = 0; i < _nhandlers_bufs; i += HANDLER_BUFSIZ)
 	delete[] _handler_bufs[i / HANDLER_BUFSIZ];
     delete[] _handler_bufs;
+    while (notifier_signals_t *ns = _notifier_signals) {
+	_notifier_signals = ns->next;
+	delete ns;
+    }
     delete[] _notifier_signals;
     delete _name_info;
     if (_master)
@@ -1694,7 +1698,8 @@ Router::chatter_channel(const String &name) const
 }
 
 /** @brief Create a new basic signal.
- * @param[out] signal the new signal
+ * @param name signal name
+ * @param[out] signal set to new signal
  *
  * Creates a new basic NotifierSignal and stores it in @a signal.  The signal
  * is initially active.
@@ -1706,28 +1711,41 @@ Router::chatter_channel(const String &name) const
  * @sa NotifierSignal
  */
 int
-Router::new_notifier_signal(NotifierSignal &signal)
+Router::new_notifier_signal(const char *name, NotifierSignal &signal)
 {
-    if (!_notifier_signals)
-	_notifier_signals = new atomic_uint32_t[NOTIFIER_SIGNALS_CAPACITY / 32];
-    if (_n_notifier_signals >= NOTIFIER_SIGNALS_CAPACITY)
-	return -1;
-    else {
-	signal = NotifierSignal(&_notifier_signals[_n_notifier_signals / 32], 1 << (_n_notifier_signals % 32));
-	signal.set_active(true);
-	_n_notifier_signals++;
-	return 0;
+    notifier_signals_t *ns;
+    for (ns = _notifier_signals; ns && (ns->name != name || ns->nsig == ns->capacity); ns = ns->next)
+	/* nada */;
+    if (!ns) {
+	if (!(ns = new notifier_signals_t(name, _notifier_signals)))
+	    return -1;
+	_notifier_signals = ns;
     }
+    signal = NotifierSignal(&ns->sig[ns->nsig / 32], 1 << (ns->nsig % 32));
+    signal.set_active(true);
+    ++ns->nsig;
+    return 0;
 }
 
-int
-Router::notifier_signal_id(const atomic_uint32_t *signal)
+String
+Router::notifier_signal_name(const atomic_uint32_t *signal) const
 {
-    if (_notifier_signals && signal >= _notifier_signals
-	&& signal < _notifier_signals + (NOTIFIER_SIGNALS_CAPACITY / 32))
-	return signal - _notifier_signals;
-    else
-	return -1;
+    notifier_signals_t *ns;
+    for (ns = _notifier_signals; ns; ns = ns->next)
+	if (signal >= ns->sig && signal < ns->sig + (ns->capacity / 32))
+	    break;
+    if (!ns)
+	return String();
+    int which = 0;
+    for (notifier_signals_t *ns2 = ns->next; ns2; ns2 = ns2->next)
+	if (ns2->name == ns->name)
+	    ++which;
+    StringAccum sa;
+    sa << ns->name;
+    if (which)
+	sa << (which + 1);
+    sa << '.' << (signal - ns->sig);
+    return sa.take_string();
 }
 
 int

@@ -26,7 +26,7 @@ class NotifierSignal { public:
 
     inline void set_active(bool active);
 
-    NotifierSignal& operator+=(const NotifierSignal& a);
+    NotifierSignal& operator+=(const NotifierSignal& x);
 
     String unparse(Router *router) const;
     
@@ -37,8 +37,10 @@ class NotifierSignal { public:
     atomic_uint32_t* _value;
     uint32_t _mask;
 
-    enum { TRUE_MASK = 1, FALSE_MASK = 2, OVERDERIVED_MASK = 4,
-	   UNINITIALIZED_MASK = 8 };
+    enum {
+	TRUE_MASK = 1, FALSE_MASK = 2, OVERDERIVED_MASK = 4,
+	UNINITIALIZED_MASK = 8
+    };
     static atomic_uint32_t static_value;
     friend bool operator==(const NotifierSignal&, const NotifierSignal&);
     friend bool operator!=(const NotifierSignal&, const NotifierSignal&);
@@ -50,11 +52,11 @@ class Notifier { public:
 
     enum SearchOp { SEARCH_STOP = 0, SEARCH_CONTINUE, SEARCH_CONTINUE_WAKE };
     
-    inline Notifier(SearchOp = SEARCH_STOP);
-    inline Notifier(const NotifierSignal &, SearchOp = SEARCH_STOP);
+    inline Notifier(SearchOp op = SEARCH_STOP);
+    inline Notifier(const NotifierSignal &signal, SearchOp op = SEARCH_STOP);
     virtual ~Notifier();
 
-    int initialize(Router *);
+    int initialize(const char *name, Router *router);
     
     inline const NotifierSignal &signal() const;
     inline SearchOp search_op() const;
@@ -65,9 +67,9 @@ class Notifier { public:
     inline void wake();
     inline void sleep();
     
-    virtual int add_listener(Task*);
-    virtual void remove_listener(Task*);
-    virtual int add_dependent_signal(NotifierSignal*);
+    virtual int add_listener(Task *task);
+    virtual void remove_listener(Task *task);
+    virtual int add_dependent_signal(NotifierSignal *signal);
 
     static const char EMPTY_NOTIFIER[];
     static const char FULL_NOTIFIER[];
@@ -84,13 +86,13 @@ class Notifier { public:
 
 class ActiveNotifier : public Notifier { public:
 
-    ActiveNotifier(SearchOp = SEARCH_STOP);
+    ActiveNotifier(SearchOp op = SEARCH_STOP);
     ~ActiveNotifier();
 
-    int add_listener(Task*);		// complains on out of memory
-    void remove_listener(Task*);
-    int add_dependent_signal(NotifierSignal*);
-    void listeners(Vector<Task*>&) const;
+    int add_listener(Task *task);	// complains on out of memory
+    void remove_listener(Task *task);
+    int add_dependent_signal(NotifierSignal *signal);
+    void listeners(Vector<Task*> &v) const;
 
     inline void set_active(bool active, bool schedule = true);
     inline void wake();
@@ -308,13 +310,13 @@ operator+(NotifierSignal a, const NotifierSignal& b)
 }
 
 /** @brief Constructs a Notifier.
- * @param search_op controls notifier path search
+ * @param op controls notifier path search
  *
  * This function constructs a Notifier object.  The Notifier's associated
  * NotifierSignal is initially idle; it becomes associated with a signal after
  * initialize() is called.
  *
- * The @a search_op argument controls path search.  The rest of this entry
+ * The @a op argument controls path search.  The rest of this entry
  * describes it further.
  *
  * Elements interested in notification generally search for Notifier objects
@@ -324,7 +326,7 @@ operator+(NotifierSignal a, const NotifierSignal& b)
  * however, it makes more sense to continue searching for more Notifiers.  The
  * correct behavior is Notifier-specific, and is controlled by this method.
  * When the search encounters a Notifier, it consults the Notifier's @a
- * search_op variable supplied to the constructor.  It should equal one of
+ * op variable supplied to the constructor.  It should equal one of
  * three SearchOp constants, which correspond to the following behavior:
  *
  * <dl>
@@ -347,24 +349,24 @@ operator+(NotifierSignal a, const NotifierSignal& b)
  * </dl>
  */
 inline
-Notifier::Notifier(SearchOp search_op)
-    : _signal(NotifierSignal::uninitialized_signal()), _search_op(search_op)
+Notifier::Notifier(SearchOp op)
+    : _signal(NotifierSignal::uninitialized_signal()), _search_op(op)
 {
 }
 
 /** @brief Constructs a Notifier associated with a given signal.
  * @param signal the associated NotifierSignal
- * @param search_op controls notifier path search
+ * @param op controls notifier path search
  *
  * This function constructs a Notifier object associated with a specific
  * NotifierSignal, such as NotifierSignal::idle_signal().  Calling
  * initialize() on this Notifier will not change the associated
- * NotifierSignal.  The @a search_op argument is as in
+ * NotifierSignal.  The @a op argument is as in
  * Notifier::Notifier(SearchOp), above.
  */
 inline
-Notifier::Notifier(const NotifierSignal &signal, SearchOp search_op)
-    : _signal(signal), _search_op(search_op)
+Notifier::Notifier(const NotifierSignal &signal, SearchOp op)
+    : _signal(signal), _search_op(op)
 {
 }
 

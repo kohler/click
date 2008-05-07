@@ -128,8 +128,8 @@ class Router { public:
     void activate(bool foreground, ErrorHandler* errh);
     inline void activate(ErrorHandler* errh);
 
-    int new_notifier_signal(NotifierSignal& signal);
-    int notifier_signal_id(const atomic_uint32_t *signal);
+    int new_notifier_signal(const char *name, NotifierSignal &signal);
+    String notifier_signal_name(const atomic_uint32_t *signal) const;
     //@}
 
     /** @cond never */
@@ -220,9 +220,17 @@ class Router { public:
     Element* _root_element;
     String _configuration;
 
-    enum { NOTIFIER_SIGNALS_CAPACITY = 4096 };
-    atomic_uint32_t* _notifier_signals;
-    int _n_notifier_signals;
+    struct notifier_signals_t {
+	enum { capacity = 4096 };
+	String name;
+	int nsig;
+	atomic_uint32_t sig[capacity / 32];
+	notifier_signals_t *next;
+	notifier_signals_t(const String &n, notifier_signals_t *nx)
+	    : name(n), nsig(0), next(nx) {
+	}
+    };
+    notifier_signals_t *_notifier_signals;
     HashMap_ArenaFactory* _arena_factory;
     Router* _hotswap_router;
     ThreadSched* _thread_sched;

@@ -28,8 +28,8 @@ CLICK_DECLS
 
 // should be const, but we need to explicitly initialize it
 atomic_uint32_t NotifierSignal::static_value;
-const char Notifier::EMPTY_NOTIFIER[] = "Notifier.EMPTY";
-const char Notifier::FULL_NOTIFIER[] = "Notifier.FULL";
+const char Notifier::EMPTY_NOTIFIER[] = "empty";
+const char Notifier::FULL_NOTIFIER[] = "full";
 
 /** @file notifier.hh
  * @brief Support for activity signals.
@@ -110,28 +110,28 @@ NotifierSignal::static_initialize()
     static_value = TRUE_MASK | OVERDERIVED_MASK;
 }
 
-/** @brief Make this signal derived by adding information from @a a.
- * @param a the signal to add
+/** @brief Make this signal derived by adding information from @a x.
+ * @param x the signal to add
  *
  * Creates a derived signal that combines information from this signal and @a
- * a.  Equivalent to "*this = (*this + @a a)".
+ * x.  Equivalent to "*this = (*this + @a x)".
  *
  * @sa operator+(NotifierSignal, const NotifierSignal&)
  */
-NotifierSignal&
-NotifierSignal::operator+=(const NotifierSignal& a)
+NotifierSignal &
+NotifierSignal::operator+=(const NotifierSignal &x)
 {
     if (!_mask)
-	_value = a._value;
+	_value = x._value;
 
     // preserve busy_signal(); adding other incompatible signals
     // leads to overderived_signal()
     if (*this == busy_signal())
 	/* do nothing */;
-    else if (a == busy_signal())
-	*this = a;
-    else if (_value == a._value || !a._mask)
-	_mask |= a._mask;
+    else if (x == busy_signal())
+	*this = x;
+    else if (_value == x._value || !x._mask)
+	_mask |= x._mask;
     else
 	*this = overderived_signal();
     
@@ -141,13 +141,14 @@ NotifierSignal::operator+=(const NotifierSignal& a)
 /** @brief Return a human-readable representation of the signal.
  * @param router the relevant router or null
  *
- * Only useful for signal debugging.
+ * Useful for signal debugging.
  */
 String
 NotifierSignal::unparse(Router *router) const
 {
     char buf[80];
     int pos, i;
+    String s;
     if (_value == &static_value) {
 	if (_mask == TRUE_MASK)
 	    return "busy*";
@@ -159,9 +160,9 @@ NotifierSignal::unparse(Router *router) const
 	    return "uninitialized";
 	else
 	    pos = sprintf(buf, "internal/");
-    } else if (router && (i = router->notifier_signal_id(_value)) >= 0)
-	pos = sprintf(buf, "sig%d/", i);
-    else
+    } else if (router && (s = router->notifier_signal_name(_value)) >= 0) {
+	pos = sprintf(buf, "%.52s/", s.c_str());
+    } else
 	pos = sprintf(buf, "@%p/", _value);
     sprintf(buf + pos, active() ? "%x:%x*" : "%x:%x", _mask, (*_value) & _mask);
     return String(buf);
@@ -223,24 +224,24 @@ Notifier::add_dependent_signal(NotifierSignal* signal)
  * signal.  Does nothing if the signal is already initialized.
  */
 int
-Notifier::initialize(Router* r)
+Notifier::initialize(const char *name, Router *r)
 {
     if (!_signal.initialized())
-	return r->new_notifier_signal(_signal);
+	return r->new_notifier_signal(name, _signal);
     else
 	return 0;
 }
 
 
 /** @brief Construct an ActiveNotifier.
- * @param search_op controls notifier path search
+ * @param op controls notifier path search
  *
  * Constructs an ActiveNotifier object, analogous to the
  * Notifier::Notifier(SearchOp) constructor.  (See that constructor for more
- * informaiton on @a search_op.)
+ * information on @a op.)
  */
-ActiveNotifier::ActiveNotifier(SearchOp search_op)
-    : Notifier(search_op), _listener1(0), _listeners(0)
+ActiveNotifier::ActiveNotifier(SearchOp op)
+    : Notifier(op), _listener1(0), _listeners(0)
 {
 }
 
@@ -388,7 +389,7 @@ NotifierElementFilter::check_match(Element* e, bool isoutput, int port)
     if (Notifier* n = (Notifier*) (e->cast(_name))) {
 	_notifiers.push_back(n);
 	if (!n->signal().initialized())
-	    n->initialize(e->router());
+	    n->initialize(_name, e->router());
 	_signal += n->signal();
 	Notifier::SearchOp search_op = n->search_op();
 	if (search_op == Notifier::SEARCH_CONTINUE_WAKE && !_pass2) {

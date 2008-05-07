@@ -42,7 +42,7 @@ FullNoteQueue::cast(const char *n)
 int
 FullNoteQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    _full_note.initialize(router());
+    _full_note.initialize(Notifier::FULL_NOTIFIER, router());
     _full_note.set_active(true, false);
     return NotifierQueue::configure(conf, errh);
 }

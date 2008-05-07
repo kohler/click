@@ -61,10 +61,9 @@ FromIPSummaryDump::~FromIPSummaryDump()
 void *
 FromIPSummaryDump::cast(const char *n)
 {
-    if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0 && !output_is_push(0)) {
-	_notifier.initialize(router());
+    if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0 && !output_is_push(0))
 	return static_cast<Notifier *>(&_notifier);
-    } else
+    else
 	return Element::cast(n);
 }
 
@@ -143,7 +142,7 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
 {
     // make sure notifier is initialized
     if (!output_is_push(0))
-	_notifier.initialize(router());
+	_notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
     
     if (_ff.initialize(errh) < 0)
 	return -1;

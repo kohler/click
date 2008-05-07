@@ -59,10 +59,9 @@ FromDump::~FromDump()
 void *
 FromDump::cast(const char *n)
 {
-    if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0 && !output_is_push(0)) {
-	_notifier.initialize(router());
+    if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0 && !output_is_push(0))
 	return static_cast<Notifier *>(&_notifier);
-    } else
+    else
 	return Element::cast(n);
 }
 
@@ -201,7 +200,7 @@ FromDump::initialize(ErrorHandler *errh)
 {
     // make sure notifier is initialized
     if (!output_is_push(0))
-	_notifier.initialize(router());
+	_notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
     
     // check handler call, initialize Task
     if (_end_h && _end_h->initialize_write(this, errh) < 0)

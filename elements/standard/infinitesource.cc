@@ -50,7 +50,7 @@ InfiniteSource::cast(const char *n)
 int
 InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  ActiveNotifier::initialize(router());
+    ActiveNotifier::initialize(Notifier::EMPTY_NOTIFIER, router());
   String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
   int limit = -1;
   int burstsize = 1;

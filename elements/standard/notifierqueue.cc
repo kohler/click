@@ -44,7 +44,7 @@ NotifierQueue::cast(const char *n)
 int
 NotifierQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    _empty_note.initialize(router());
+    _empty_note.initialize(Notifier::EMPTY_NOTIFIER, router());
     return SimpleQueue::configure(conf, errh);
 }
 

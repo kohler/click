@@ -69,16 +69,14 @@ Unqueue::run_task(Task *)
 	if (Packet *p = input(0).pull()) {
 	    worked++;
 	    output(0).push(p);
-	} else {
-	    if (!_signal) {
-		_count += worked;
-		return worked > 0;
-	    }
+	} else if (!_signal)
+	    goto out;
+	else
 	    break;
-	}
     }
     
     _task.fast_reschedule();
+  out:
     _count += worked;
     return worked > 0;
 }

@@ -44,7 +44,7 @@ DRRSched::cast(const char *n)
 int
 DRRSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    _notifier.initialize(router());
+    _notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
     return Element::configure(conf, errh);
 }
 

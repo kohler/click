@@ -45,7 +45,7 @@ TimeSortedSched::cast(const char *n)
 int
 TimeSortedSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    _notifier.initialize(router());
+    _notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
     _stop = false;
     return cp_va_kparse(conf, this, errh,
 			"STOP", 0, cpBool, &_stop,
