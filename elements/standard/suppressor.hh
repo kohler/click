@@ -1,6 +1,7 @@
 #ifndef CLICK_SUPPRESSOR_HH
 #define CLICK_SUPPRESSOR_HH
 #include <click/element.hh>
+#include <click/bitvector.hh>
 CLICK_DECLS
 
 /*
@@ -23,11 +24,7 @@ CLICK_DECLS
  * =h reset write-only
  * Resets every port to active. */
 
-class Suppressor : public Element {
-  
-  fd_set _suppressed;
-  
- public:
+class Suppressor : public Element { public:
   
   Suppressor();
   ~Suppressor();
@@ -36,20 +33,23 @@ class Suppressor : public Element {
   const char *port_count() const		{ return "-/="; }
   const char *processing() const		{ return AGNOSTIC; }
   const char *flow_code() const			{ return "#/#"; }
-  
-  int initialize(ErrorHandler *);
+
+  int configure(Vector<String> &conf, ErrorHandler *errh);
   void add_handlers();
   
   void push(int port, Packet *p);
   Packet *pull(int port);
   
-  bool suppressed(int output) const { return FD_ISSET(output, &_suppressed); }
-  void suppress(int output) { FD_SET(output, &_suppressed); }
-  void allow(int output)    { FD_CLR(output, &_suppressed); }
-  void allow_all()          { FD_ZERO(&_suppressed); }
+  bool suppressed(int output) const { return _suppressed[output]; }
+  void suppress(int output) { _suppressed[output] = true; }
+  void allow(int output)    { _suppressed[output] = false; }
+  void allow_all()          { _suppressed.clear(); }
+  void set(int output, bool suppressed) { _suppressed[output] = suppressed; }
 
-  bool set(int output, bool suppressed);
+  private:
 
+    Bitvector _suppressed;
+    
 };
 
 CLICK_ENDDECLS

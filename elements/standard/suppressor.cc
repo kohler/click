@@ -30,87 +30,70 @@ Suppressor::~Suppressor()
 {
 }
 
-bool
-Suppressor::set(int output, bool sup)
-{
-  // Need to change anything?
-  if (sup == suppressed(output))
-    return false;
-  
-  if (sup)
-    suppress(output);
-  else
-    allow(output);
-  
-  return true;
-}
-
 int
-Suppressor::initialize(ErrorHandler *)
+Suppressor::configure(Vector<String> &, ErrorHandler *)
 {
-  allow_all();
-  return 0;
+    _suppressed.assign(noutputs(), false);
+    return 0;
 }
 
 void
 Suppressor::push(int source, Packet *p)
 {
-  if (suppressed(source)) {
-    p->kill();
-  } else {			// forward	
-    output(source).push(p);
-  }
+    if (suppressed(source))
+	p->kill();
+    else			// forward	
+	output(source).push(p);
 }
 
 Packet *
 Suppressor::pull(int source)
 {
-  if (suppressed(source)) {
-    return 0;
-  } else {
-    return input(source).pull();
-  }
+    if (suppressed(source))
+	return 0;
+    else
+	return input(source).pull();
 }
 
 static String
 read_active(Element *e, void *thunk)
 {
-  Suppressor *sup = static_cast<Suppressor *>(e);
-  int port = (int) reinterpret_cast<long>(thunk);
-  return (sup->suppressed(port) ? "false\n" : "true\n");
+    Suppressor *sup = static_cast<Suppressor *>(e);
+    int port = (int) reinterpret_cast<intptr_t>(thunk);
+    return (sup->suppressed(port) ? "false" : "true");
 }
 
 static int
 write_active(const String &s, Element *e, void *thunk, ErrorHandler *errh)
 {
-  Suppressor *sup = static_cast<Suppressor *>(e);
-  int port = (int) reinterpret_cast<long>(thunk);
-  bool active;
-  if (!cp_bool(s, &active))
-    return errh->error("active value must be boolean");
-  else {
-    sup->set(port, active);
-    return 0;
-  }
+    Suppressor *sup = static_cast<Suppressor *>(e);
+    int port = (int) reinterpret_cast<intptr_t>(thunk);
+    bool active;
+    if (!cp_bool(s, &active))
+	return errh->error("active value must be boolean");
+    else {
+	sup->set(port, !active);
+	return 0;
+    }
 }
 
 static int
 write_reset(const String &, Element *e, void *, ErrorHandler *)
 {
-  Suppressor *sup = static_cast<Suppressor *>(e);
-  sup->allow_all();
-  return 0;
+    Suppressor *sup = static_cast<Suppressor *>(e);
+    sup->allow_all();
+    return 0;
 }
 
 void
 Suppressor::add_handlers()
 {
-  for (int i = 0; i < ninputs(); i++) {
-    String s = "active" + String(i);
-    add_read_handler(s, read_active, (void *)i, Handler::CHECKBOX);
-    add_write_handler(s, write_active, (void *)i);
-  }
-  add_write_handler("reset", write_reset, 0, Handler::BUTTON);
+    for (int i = 0; i < ninputs(); i++) {
+	String s = "active" + String(i);
+	add_read_handler(s, read_active, i, Handler::CHECKBOX);
+	add_write_handler(s, write_active, i);
+    }
+    add_write_handler("reset", write_reset, 0, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS
