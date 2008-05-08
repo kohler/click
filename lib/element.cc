@@ -1882,7 +1882,7 @@ read_icounts_handler(Element *f, void *)
 {
   StringAccum sa;
   for (int i = 0; i < f->ninputs(); i++)
-    if (f->input(i).allowed() || CLICK_STATS >= 2)
+    if (f->input(i).active() || CLICK_STATS >= 2)
       sa << f->input(i).npackets() << "\n";
     else
       sa << "??\n";
@@ -1894,7 +1894,7 @@ read_ocounts_handler(Element *f, void *)
 {
   StringAccum sa;
   for (int i = 0; i < f->noutputs(); i++)
-    if (f->output(i).allowed() || CLICK_STATS >= 2)
+    if (f->output(i).active() || CLICK_STATS >= 2)
       sa << f->output(i).npackets() << "\n";
     else
       sa << "??\n";
