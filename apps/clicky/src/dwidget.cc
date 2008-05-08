@@ -583,7 +583,7 @@ void delt::position_contents_dot(wdiagram *d, ErrorHandler *errh)
 	sa << "}|" << e->_e->name() << "|{";
 	ports_dot(sa, e->_e->noutputs(), 'o');
 	sa << "}}\"];\n";
-	e->_xrect._x = e->_xrect._y = 0;
+	e->_x = e->_y = 0;
     }
     for (std::vector<dconn *>::iterator ci = _conn.begin(); ci != _conn.end(); ++ci) {
 	delt *eout = (*ci)->_from_elt, *ein = (*ci)->_to_elt;
@@ -689,12 +689,12 @@ void delt::position_contents_dot(wdiagram *d, ErrorHandler *errh)
 	delt *e = _elt[eindex];
 	if (esplit)
 	    e = e->find_split(esplit);
-	e->_xrect._x = x * 100. / 72 - e->_width / 2;
+	e->_x = x * 100. / 72 - e->_width / 2;
 	if (e->_dess->margin[1] != e->_dess->margin[3])
-	    e->_xrect._x -= e->_dess->margin[1] - e->_dess->margin[3];
-	e->_xrect._y = -y * 100. / 72 - e->_height / 2;
+	    e->_x -= e->_dess->margin[1] - e->_dess->margin[3];
+	e->_y = -y * 100. / 72 - e->_height / 2;
 	if (e->_dess->margin[0] != e->_dess->margin[2])
-	    e->_xrect._y -= e->_dess->margin[2] - e->_dess->margin[0];
+	    e->_y -= e->_dess->margin[2] - e->_dess->margin[0];
 	goto skip_to_semicolon;
     }
 
@@ -706,16 +706,15 @@ void delt::position_contents_dot(wdiagram *d, ErrorHandler *errh)
     for (std::vector<delt *>::iterator n = _elt.begin();
 	 n != _elt.end(); ++n)
 	if ((*n)->visible() || (!root() && first_time && n < _elt.begin() + 2)) {
-	    const rectangle &r = (*n)->_xrect;
 	    const double *m = (*n)->_dess->margin;
-	    bbox[0] = std::min(bbox[0], r._y);
-	    bbox[1] = std::max(bbox[1], r._x + (*n)->_width);
-	    bbox[2] = std::max(bbox[2], r._y + (*n)->_height);
-	    bbox[3] = std::min(bbox[3], r._x);
-	    mbbox[0] = std::min(mbbox[0], r._y - m[0]);
-	    mbbox[1] = std::max(mbbox[1], r._x + (*n)->_width + m[1]);
-	    mbbox[2] = std::max(mbbox[2], r._y + (*n)->_height + m[2]);
-	    mbbox[3] = std::min(mbbox[3], r._x - m[3]);
+	    bbox[0] = std::min(bbox[0], (*n)->_y);
+	    bbox[1] = std::max(bbox[1], (*n)->_x + (*n)->_width);
+	    bbox[2] = std::max(bbox[2], (*n)->_y + (*n)->_height);
+	    bbox[3] = std::min(bbox[3], (*n)->_x);
+	    mbbox[0] = std::min(mbbox[0], (*n)->_y - m[0]);
+	    mbbox[1] = std::max(mbbox[1], (*n)->_x + (*n)->_width + m[1]);
+	    mbbox[2] = std::max(mbbox[2], (*n)->_y + (*n)->_height + m[2]);
+	    mbbox[3] = std::min(mbbox[3], (*n)->_x - m[3]);
 	}
     
     if (!root() && !first_time)
@@ -725,13 +724,29 @@ void delt::position_contents_dot(wdiagram *d, ErrorHandler *errh)
 		bbox[i] += (rectangle::side_greater(i) ? delta : -delta);
 	}
 
+    // when laying out the root, consider connections as well as elements
+    // to calculate the bounding box
+    if (root())
+	for (std::vector<dconn *>::iterator it = _conn.begin();
+	     it != _conn.end(); ++it)
+	    if ((*it)->layout()) {
+		bbox[0] = std::min(bbox[0], (*it)->_y);
+		bbox[1] = std::max(bbox[1], (*it)->_x + (*it)->_width);
+		bbox[2] = std::max(bbox[2], (*it)->_y + (*it)->_height);
+		bbox[3] = std::min(bbox[3], (*it)->_x);
+		mbbox[0] = std::min(mbbox[0], (*it)->_y);
+		mbbox[1] = std::max(mbbox[1], (*it)->_x + (*it)->_width);
+		mbbox[2] = std::max(mbbox[2], (*it)->_y + (*it)->_height);
+		mbbox[3] = std::min(mbbox[3], (*it)->_x);
+	    }
+
     _contents_width = bbox[1] - bbox[3];
     _contents_height = bbox[2] - bbox[0];
     for (std::vector<delt *>::iterator n = _elt.begin();
 	 n != _elt.end(); ++n)
 	if ((*n)->visible()) {
-	    (*n)->_xrect._x -= bbox[3];
-	    (*n)->_xrect._y -= bbox[0];
+	    (*n)->_x -= bbox[3];
+	    (*n)->_y -= bbox[0];
 	}
 
     if (!root() && first_time)
@@ -1142,12 +1157,13 @@ void delt::layout_complete(dcontext &dcx, double dx, double dy)
     for (std::vector<delt *>::iterator ci = _elt.begin();
 	 ci != _elt.end(); ++ci)
 	if ((*ci)->visible()) {
-	    (*ci)->_x = floor((*ci)->_xrect._x + dx);
-	    (*ci)->_y = floor((*ci)->_xrect._y + dy);
+	    double unadjusted_x = (*ci)->_x + dx;
+	    double unadjusted_y = (*ci)->_y + dy;
+	    (*ci)->_x = floor(unadjusted_x);
+	    (*ci)->_y = floor(unadjusted_y);
 	    dcx.d->rects().insert(*ci);
 	    if ((*ci)->_elt.size() && (*ci)->_des->display == dedisp_open)
-		(*ci)->layout_complete(dcx, (*ci)->_xrect._x + dx,
-				       (*ci)->_xrect._y + dy);
+		(*ci)->layout_complete(dcx, unadjusted_x, unadjusted_y);
 	}
 
     if (_e && _parent && _elt.size())

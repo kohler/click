@@ -155,8 +155,14 @@ class delt : public dwidget { public:
     delt *split() const {
 	return _split;
     }
+    char split_type() const {
+	return _split_type;
+    }
     delt *visible_split() const {
 	return _split && _split->visible() ? _split : 0;
+    }
+    delt *next_split(delt *base) const {
+	return _split && _split->visible() && _split != base ? _split : 0;
     }
     delt *find_split(int split_type) {
 	delt *d = this;
@@ -231,13 +237,9 @@ class delt : public dwidget { public:
     }
     void highlight(int htype) {
 	_highlight |= 1 << htype;
-	for (delt *e = _split; e && e != this; e = e->_split)
-	    e->_highlight |= 1 << htype;
     }
     void unhighlight(int htype) {
 	_highlight &= ~(1 << htype);
-	for (delt *e = _split; e && e != this; e = e->_split)
-	    e->_highlight &= ~(1 << htype);
     }
 
     void redraw(wdiagram *d) const;

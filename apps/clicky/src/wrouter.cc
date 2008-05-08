@@ -704,9 +704,8 @@ void wmain::element_show(String ename, int expand, bool incremental)
 	}
     }
 
-    // display in handlers and diagram
+    // display in handlers
     _handlers->display(_eview_name, incremental);
-    _diagram->display(_eview_name, expand > 0);
 
     // highlight config
     if (_element_highlight && expand >= 0) {
@@ -731,6 +730,7 @@ static void on_elementtree_row_activated(GtkTreeView *treeview, GtkTreePath *pat
     if (gtk_tree_model_get_iter(model, &iter, path)) {
 	gtk_tree_model_get(model, &iter, 1, &ename, -1);
 	rw->element_show(ename, 1, true);
+	rw->diagram()->element_show(ename, true);
 	g_free(ename);
     }
 }
@@ -744,6 +744,7 @@ static void on_elementtree_select(GtkTreeSelection *selection, gpointer user_dat
     if (gtk_tree_selection_get_selected(selection, &model, &iter)) {
 	gtk_tree_model_get(model, &iter, 1, &ename, -1);
 	rw->element_show(ename, 0, true);
+	rw->diagram()->element_show(ename, false);
 	g_free(ename);
     }
 }
@@ -880,6 +881,7 @@ void wmain::etree_fill() {
 	fill_elements_tree_store(_elist_store, _r, 0, "");
 
     element_show(_eview_name, 0, false);
+    diagram()->element_show(_eview_name, false);
 }
 
 

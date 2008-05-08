@@ -53,7 +53,7 @@ class wdiagram { public:
     inline void redraw();
     inline void redraw(rectangle r);
 
-    void display(const String &ename, bool scroll_to);
+    void element_show(const String &ename, bool scroll_to);
     void zoom(bool incremental, int amount);
     void scroll_recenter(point p);
 
@@ -131,8 +131,8 @@ class wdiagram { public:
     void layout();
 
     void expose(delt *e, rectangle *expose_rect);
-    void unhighlight(uint8_t htype, rectangle *expose_rect);
-    void highlight(delt *e, uint8_t htype, rectangle *expose_rect, bool incremental);
+    void highlight(delt *e, uint8_t htype, rectangle *expose_rect = 0,
+		   bool scroll_to = false, bool all_splits = false);
 
     delt *point_elt(const point &p) const;
     void set_cursor(delt *e, double x, double y, int state);
