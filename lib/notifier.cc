@@ -147,7 +147,7 @@ String
 NotifierSignal::unparse(Router *router) const
 {
     char buf[80];
-    int pos, i;
+    int pos;
     String s;
     if (_value == &static_value) {
 	if (_mask == TRUE_MASK)
