@@ -28,10 +28,11 @@ class HashContainer_rep : public A {
 template <typename T>
 class HashContainer_adapter { public:
     typedef typename T::key_type key_type;
+    typedef typename T::key_const_reference key_const_reference;
     static T *&hashnext(T *e) {
 	return e->_hashnext;
     }
-    static const key_type &hashkey(const T *e) {
+    static key_const_reference hashkey(const T *e) {
 	return e->hashkey();
     }
     static bool hashkeyeq(const key_type &a, const key_type &b) {
@@ -58,8 +59,10 @@ class HashContainer_adapter { public:
 
   <ul>
   <li>Define a "key_type" type that supports equality.</li>
+  <li>Define a "key_const_reference" type, usually the same as "key_type."</li>
   <li>Contain a member "T *_hashnext" accessible to HashContainer_adapter<T>.</li>
-  <li>Define a "hashkey()" member function that returns the relevant hash key.</li>
+  <li>Define a "hashkey()" member function that returns the relevant hash key.
+  This function must have return type "key_const_reference."</li>
   </ul>
 
   These requirements can be changed by supplying a different A, or adapter,

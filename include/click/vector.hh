@@ -14,6 +14,7 @@ class Vector { public:
   typedef const T& const_reference;
   typedef T* pointer;
   typedef const T* const_pointer;
+  typedef const T& const_access_type;
   
   typedef int size_type;
   enum { RESERVE_GROW = (size_type) -1 };
@@ -133,6 +134,7 @@ class Vector<void*> { public:
   typedef void* const& const_reference;
   typedef void** pointer;
   typedef void* const* const_pointer;
+  typedef void* const_access_type;
 
   typedef int size_type;
   enum { RESERVE_GROW = (size_type) -1 };
@@ -250,6 +252,7 @@ class Vector<T*>: private Vector<void*> {
   typedef T* const& const_reference;
   typedef T** pointer;
   typedef T* const* const_pointer;
+  typedef T* const_access_type;
 
   typedef int size_type;
   enum { RESERVE_GROW = Base::RESERVE_GROW };

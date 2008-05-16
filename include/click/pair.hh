@@ -10,6 +10,7 @@ struct Pair {
     typedef T first_type;
     typedef U second_type;
     typedef T key_type;
+    typedef const T &key_const_reference;
     
     T first;
     U second;

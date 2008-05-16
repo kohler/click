@@ -38,10 +38,11 @@ template <typename T> class HashTable_const_iterator;
 
   Used with two template parameters, as HashTable<K, V>, the table maps keys K
   to values V.  Used with one template parameter, as HashTable<T>, HashTable
-  is a hash set.  The type T must declare a key_type typedef and hashkey()
-  member function; an object's hashkey() defines its key.
+  is a hash set.  The type T must declare types named key_type and
+  key_const_reference.  It also must declare a hashkey() member function
+  returning type key_const_reference.  An object's hashkey() defines its key.
 
-  HashTable is a home-built chained hash table.  (Open coding is not
+  HashTable is a chained hash table.  (Open coding is not
   appropriate in the kernel, where large contiguous memory allocations are
   essentially impossible.)  When run through Google's sparse_hash_table tests
   (April 2008, sparsehash-1.1), HashTable appears to perform slightly better
@@ -50,7 +51,7 @@ template <typename T> class HashTable_const_iterator;
 
   HashTable is faster than Click's prior HashMap class and has fewer potential
   race conditions in multithreaded use.  HashMap remains for backward
-  compatibility but should not be used.
+  compatibility but should not be used in new code.
 
   @warning HashMap users should beware of HashTable's operator[].  HashMap's
   operator[] returned a non-assignable const reference; it would never add an
@@ -104,7 +105,8 @@ class HashTable<T> {
 	    : v(v_) {
 	}
 	typedef typename T::key_type key_type;
-	const key_type &hashkey() const {
+	typedef typename T::key_const_reference key_const_reference;
+	key_const_reference hashkey() const {
 	    return v.hashkey();
 	}
     };
@@ -115,6 +117,9 @@ class HashTable<T> {
 
     /** @brief Key type. */
     typedef typename T::key_type key_type;
+
+    /** @brief Const reference to key type. */
+    typedef typename T::key_const_reference key_const_reference;
 
     /** @brief Value type.  Must define a key_type. */
     typedef T value_type;
@@ -188,22 +193,22 @@ class HashTable<T> {
     /** @brief Return an iterator for the element with key @a key, if any.
      *
      * Returns end() if no such element exists. */
-    inline iterator find(const key_type &key);
+    inline iterator find(key_const_reference key);
     /** @overload */
-    inline const_iterator find(const key_type &key) const;
+    inline const_iterator find(key_const_reference key) const;
 
     /** @brief Return an iterator for the element with key @a key, if any.
      *
      * Like find(), but additionally moves the found element to the head of
      * its bucket, possibly speeding up future lookups. */
-    inline iterator find_prefer(const key_type &key);
+    inline iterator find_prefer(key_const_reference key);
 
     /** @brief Ensure an element with key @a key and return its iterator.
      *
      * If an element with @a key already exists in the table, then find(@a
      * key) and find_insert(@a key) are equivalent.  Otherwise, find_insert
      * adds a new value T(@a key) to the table and returns its iterator. */
-    inline iterator find_insert(const key_type &key);
+    inline iterator find_insert(key_const_reference key);
 
     /** @brief Ensure an element with key @a value.hashkey() and return its iterator.
      *
@@ -510,6 +515,9 @@ class HashTable {
 
     /** @brief Key type. */
     typedef K key_type;
+
+    /** @brief Const reference to key type. */
+    typedef const K &key_const_reference;
 
     /** @brief Value type. */
     typedef V mapped_type;
@@ -821,19 +829,19 @@ inline typename HashTable<T>::iterator HashTable<T>::end()
 
 
 template <typename T>
-inline HashTable_const_iterator<T> HashTable<T>::find(const key_type &key) const
+inline HashTable_const_iterator<T> HashTable<T>::find(key_const_reference key) const
 {
     return HashTable_const_iterator<T>(_rep.find(key));
 }
 
 template <typename T>
-inline HashTable_iterator<T> HashTable<T>::find(const key_type &key)
+inline HashTable_iterator<T> HashTable<T>::find(key_const_reference key)
 {
     return HashTable_iterator<T>(_rep.find(key));
 }
 
 template <typename T>
-inline HashTable_iterator<T> HashTable<T>::find_prefer(const key_type &key)
+inline HashTable_iterator<T> HashTable<T>::find_prefer(key_const_reference key)
 {
     return HashTable_iterator<T>(_rep.find_prefer(key));
 }
@@ -849,7 +857,7 @@ void HashTable<T>::insert_balance(typename rep_type::iterator &i, elt *e)
 }
 
 template <typename T>
-HashTable_iterator<T> HashTable<T>::find_insert(const key_type &key)
+HashTable_iterator<T> HashTable<T>::find_insert(key_const_reference key)
 {
     typename rep_type::iterator i = _rep.find(key);
     if (!i)
