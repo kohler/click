@@ -2,10 +2,11 @@
 #  include <config.h>
 #endif
 #include <click/config.h>
-#include "wrouter.hh"
-#include "diagram.hh"
+#include "crouter.hh"
+#include "wdiagram.hh"
 #include "whandler.hh"
-#include "wdriver.hh"
+#include "cdriver.hh"
+#include "dstyle.hh"
 #include <clicktool/routert.hh>
 #include <clicktool/lexert.hh>
 #include <clicktool/lexertinfo.hh>
@@ -38,113 +39,6 @@ static String::Initializer initializer;
 String wmain::last_savefile;
 static int num_main_windows = 0;
 
-String g_click_to_utf8(const String &str)
-{
-    for (const char *s = str.begin(); s != str.end(); ++s)
-	if (((unsigned char) *s) > 126 || *s == '\0') {
-	    gsize bytes_read, bytes_written;
-	    GError *err = NULL;
-	    char *x = g_convert(str.data(), str.length(), "UTF-8", "ISO-8859-1", &bytes_read, &bytes_written, &err);
-	    String new_str(x, bytes_written);
-	    g_free(x);
-	    return new_str;
-	}
-    return str;
-}
-
-// xxx
-class ClickyLexerTInfo : public LexerTInfo { public:
-
-    ClickyLexerTInfo(GtkTextBuffer *buffer, const String &config, GatherErrorHandler *gerrh)
-	: _buffer(buffer), _tt(gtk_text_buffer_get_tag_table(buffer)),
-	  _comment_tag(0), _keyword_tag(0), _error_tag(0),
-	  _config(config), _gerrh(gerrh) {
-    }
-
-    void apply_tag(const char *pos1, const char *pos2, GtkTextTag *tag) {
-	GtkTextIter i1, i2;
-	gtk_text_buffer_get_iter_at_offset(_buffer, &i1, pos1 - _config.begin());
-	gtk_text_buffer_get_iter_at_offset(_buffer, &i2, pos2 - _config.begin());
-	gtk_text_buffer_apply_tag(_buffer, tag, &i1, &i2);
-    }
-    
-    void notify_comment(const char *pos1, const char *pos2) {
-	if (!_comment_tag)
-	    _comment_tag = gtk_text_tag_table_lookup(_tt, "comment");
-	apply_tag(pos1, pos2, _comment_tag);
-    }
-    
-    void notify_keyword(const String &, const char *pos1, const char *pos2) {
-	if (!_keyword_tag)
-	    _keyword_tag = gtk_text_tag_table_lookup(_tt, "keyword");
-	apply_tag(pos1, pos2, _keyword_tag);
-    }
-
-    void notify_error(const String &, const char *pos1, const char *pos2) {
-	if (_gerrh)
-	    _gerrh->set_next_errpos(pos1 - _config.begin(), pos2 - _config.begin());
-	else {
-	    if (!_error_tag)
-		_error_tag = gtk_text_tag_table_lookup(_tt, "error");
-	    apply_tag(pos1, pos2, _error_tag);
-	}
-    }
-    
-#if 0
-    void add_item(const char *pos1, const String &s1, const char *pos2, const String &s2) {
-	::add_item(pos1 - _config.begin(), s1, pos2 - _config.begin(), s2);
-    }
-    void add_item(const char *pos1, ElementT *e1, const char *pos2, const String &s2) {
-	::add_item(pos1 - _config.begin(), e1, pos2 - _config.begin(), s2);
-    }
-    void add_item(const char *pos1, ElementClassT *e1, const char *pos2, const String &s2) {
-	::add_item(pos1 - _config.begin(), e1, pos2 - _config.begin(), s2);
-    }
-    void notify_comment(const char *pos1, const char *pos2) {
-	add_item(pos1, "<span class='c-cmt'>", pos2, "</span>");
-    }
-    void notify_error(const String &what, const char *pos1, const char *pos2) {
-	add_item(pos1, "<span class='c-err' title='" + html_quote_attr(what) + "'>", pos2, "</span>");
-    }
-    void notify_keyword(const String &, const char *pos1, const char *pos2) {
-	add_item(pos1, "<span class='c-kw'>", pos2, "</span>");
-    }
-    void notify_config_string(const char *pos1, const char *pos2) {
-	add_item(pos1, "<span class='c-cfg'>", pos2, "</span>");
-    }
-    void notify_class_declaration(ElementClassT *ec, bool anonymous, const char *decl_pos1, const char *name_pos1, const char *) {
-	if (!anonymous)
-	    add_item(name_pos1, "<a name='" + link_class_decl(ec) + "'><span class='c-cd'>", name_pos1 + ec->name().length(), "</span></a>");
-	else
-	    add_item(decl_pos1, "<a name='" + link_class_decl(ec) + "'>", decl_pos1 + 1, "</a>");
-	add_class_href(ec, "#" + link_class_decl(ec));
-    }
-    void notify_class_extension(ElementClassT *ec, const char *pos1, const char *pos2) {
-	add_item(pos1, ec, pos2, "");
-    }
-    void notify_class_reference(ElementClassT *ec, const char *pos1, const char *pos2) {
-	add_item(pos1, ec, pos2, "");
-    }
-    void notify_element_declaration(ElementT *e, const char *pos1, const char *pos2, const char *decl_pos2) {
-	add_item(pos1, "<a name='" + link_element_decl(e) + "'>", pos2, "</a>");
-	add_item(pos1, "<span class='c-ed'>", decl_pos2, "</span>");
-	notify_element_reference(e, pos1, decl_pos2);
-    }
-    void notify_element_reference(ElementT *e, const char *pos1, const char *pos2) {
-	add_item(pos1, e, pos2, "</span>");
-    }
-#endif
-
-    GtkTextBuffer *_buffer;
-    GtkTextTagTable *_tt;
-    GtkTextTag *_comment_tag;
-    GtkTextTag *_keyword_tag;
-    GtkTextTag *_error_tag;
-    String _config;
-    GatherErrorHandler *_gerrh;
-
-};
-
 extern "C" {
 static void destroy(gpointer data) {
     delete reinterpret_cast<wmain *>(data);
@@ -152,8 +46,7 @@ static void destroy(gpointer data) {
 }
 
 wmain::wmain()
-    : _r(0), _emap(0), _selected_driver(-1), _processing(0), _throbber_count(0),
-      _window(create_mainw()),
+    : _window(create_mainw()),
       _config_clean_errors(true), _config_clean_elements(true),
       _error_hover_tag(0), _error_highlight_tag(0),
       _error_endpos(0), _error_hover_index(-1),
@@ -161,8 +54,7 @@ wmain::wmain()
       _error_highlight_x(-1), _error_highlight_y(-1), _error_scroller(0),
       _elist_view(0), _elist_store(0), _elist_sort(elist_sort_none),
       _config_element_highlight_tag(0), _element_highlight(0),
-      _config_changed_signal(0), _binary_tag(0),
-      _hvalues(this), _driver(0), _driver_active(false)
+      _config_changed_signal(0), _binary_tag(0)
 {
     g_object_set_data_full(G_OBJECT(_window), "wmain", this, destroy);
 
@@ -268,50 +160,106 @@ wmain::~wmain()
 	gtk_main_quit();
 }
 
-bool wmain::empty() const
-{
-    return (!_r && !_conf && (!_driver || !_driver->active()));
-}
+// xxx
+class ClickyLexerTInfo : public LexerTInfo { public:
 
-bool wmain::element_exists(const String &ename) const
-{
-    Vector<ElementT *> path;
-    return (_r && _r->element_path(ename, path));
-}
+    ClickyLexerTInfo(GtkTextBuffer *buffer, const String &config, GatherErrorHandler *gerrh)
+	: _buffer(buffer), _tt(gtk_text_buffer_get_tag_table(buffer)),
+	  _comment_tag(0), _keyword_tag(0), _error_tag(0),
+	  _config(config), _gerrh(gerrh) {
+    }
 
-ElementClassT *wmain::element_type(const String &ename) const
-{
-    Vector<ElementT *> path;
-    if (_r && _r->element_path(ename, path))
-	return path.back()->type();
-    else
-	return 0;
-}
+    void apply_tag(const char *pos1, const char *pos2, GtkTextTag *tag) {
+	GtkTextIter i1, i2;
+	gtk_text_buffer_get_iter_at_offset(_buffer, &i1, pos1 - _config.begin());
+	gtk_text_buffer_get_iter_at_offset(_buffer, &i2, pos2 - _config.begin());
+	gtk_text_buffer_apply_tag(_buffer, tag, &i1, &i2);
+    }
+    
+    void notify_comment(const char *pos1, const char *pos2) {
+	if (!_comment_tag)
+	    _comment_tag = gtk_text_tag_table_lookup(_tt, "comment");
+	apply_tag(pos1, pos2, _comment_tag);
+    }
+    
+    void notify_keyword(const String &, const char *pos1, const char *pos2) {
+	if (!_keyword_tag)
+	    _keyword_tag = gtk_text_tag_table_lookup(_tt, "keyword");
+	apply_tag(pos1, pos2, _keyword_tag);
+    }
+
+    void notify_error(const String &, const char *pos1, const char *pos2) {
+	if (_gerrh)
+	    _gerrh->set_next_errpos(pos1 - _config.begin(), pos2 - _config.begin());
+	else {
+	    if (!_error_tag)
+		_error_tag = gtk_text_tag_table_lookup(_tt, "error");
+	    apply_tag(pos1, pos2, _error_tag);
+	}
+    }
+    
+#if 0
+    void add_item(const char *pos1, const String &s1, const char *pos2, const String &s2) {
+	::add_item(pos1 - _config.begin(), s1, pos2 - _config.begin(), s2);
+    }
+    void add_item(const char *pos1, ElementT *e1, const char *pos2, const String &s2) {
+	::add_item(pos1 - _config.begin(), e1, pos2 - _config.begin(), s2);
+    }
+    void add_item(const char *pos1, ElementClassT *e1, const char *pos2, const String &s2) {
+	::add_item(pos1 - _config.begin(), e1, pos2 - _config.begin(), s2);
+    }
+    void notify_comment(const char *pos1, const char *pos2) {
+	add_item(pos1, "<span class='c-cmt'>", pos2, "</span>");
+    }
+    void notify_error(const String &what, const char *pos1, const char *pos2) {
+	add_item(pos1, "<span class='c-err' title='" + html_quote_attr(what) + "'>", pos2, "</span>");
+    }
+    void notify_keyword(const String &, const char *pos1, const char *pos2) {
+	add_item(pos1, "<span class='c-kw'>", pos2, "</span>");
+    }
+    void notify_config_string(const char *pos1, const char *pos2) {
+	add_item(pos1, "<span class='c-cfg'>", pos2, "</span>");
+    }
+    void notify_class_declaration(ElementClassT *ec, bool anonymous, const char *decl_pos1, const char *name_pos1, const char *) {
+	if (!anonymous)
+	    add_item(name_pos1, "<a name='" + link_class_decl(ec) + "'><span class='c-cd'>", name_pos1 + ec->name().length(), "</span></a>");
+	else
+	    add_item(decl_pos1, "<a name='" + link_class_decl(ec) + "'>", decl_pos1 + 1, "</a>");
+	add_class_href(ec, "#" + link_class_decl(ec));
+    }
+    void notify_class_extension(ElementClassT *ec, const char *pos1, const char *pos2) {
+	add_item(pos1, ec, pos2, "");
+    }
+    void notify_class_reference(ElementClassT *ec, const char *pos1, const char *pos2) {
+	add_item(pos1, ec, pos2, "");
+    }
+    void notify_element_declaration(ElementT *e, const char *pos1, const char *pos2, const char *decl_pos2) {
+	add_item(pos1, "<a name='" + link_element_decl(e) + "'>", pos2, "</a>");
+	add_item(pos1, "<span class='c-ed'>", decl_pos2, "</span>");
+	notify_element_reference(e, pos1, decl_pos2);
+    }
+    void notify_element_reference(ElementT *e, const char *pos1, const char *pos2) {
+	add_item(pos1, e, pos2, "</span>");
+    }
+#endif
+
+    GtkTextBuffer *_buffer;
+    GtkTextTagTable *_tt;
+    GtkTextTag *_comment_tag;
+    GtkTextTag *_keyword_tag;
+    GtkTextTag *_error_tag;
+    String _config;
+    GatherErrorHandler *_gerrh;
+
+};
 
 void wmain::clear(bool alive)
 {
-    delete _r;
-    delete _emap;
-    delete _processing;
-    _r = 0;
-    _emap = 0;
-    _selected_driver = -1;
-    _processing = 0;
-    _gerrh.clear();
+    crouter::clear(alive);
+    
     _error_endpos = 0;
-    _conf = _landmark = _savefile = String();
+    _savefile = String();
     _config_clean_errors = _config_clean_elements = true;
-
-    // kill throbber before removing csocket messages, so if destroying window
-    // while callbacks are outstanding, won't touch throbber widget
-    while (alive && _throbber_count)
-	throbber_hide();
-    _throbber_count = 0;
-
-    if (_driver)
-	delete _driver;
-    _driver = 0;
-    _driver_active = false;
 
     _error_hover_index = -1;
     _error_highlight_index = -1;
@@ -336,18 +284,61 @@ void wmain::clear(bool alive)
 	gtk_text_buffer_set_text(_config_buffer, "", 0);
 	element_show(String(), 0, false);
 	etree_fill();
-	errors_fill(true);
+	on_error(true, String());
     }
 }
 
-void wmain::set_landmark(const String &landmark)
+
+void wmain::on_landmark_changed()
 {
-    _landmark = landmark;
-    if (_landmark) {
-	String title = "Clicky: " + _landmark;
+    if (landmark()) {
+	String title = "Clicky: " + landmark();
 	gtk_window_set_title(GTK_WINDOW(_window), title.c_str());
     } else
 	gtk_window_set_title(GTK_WINDOW(_window), "Clicky");
+}
+
+void wmain::on_ccss_changed()
+{
+    _diagram->on_ccss_changed();
+}
+
+LexerTInfo *wmain::on_config_changed_prepare()
+{
+    _error_endpos = 0;
+    gtk_text_buffer_set_text(_error_buffer, "", 0);
+
+    error_unhighlight();
+    element_unhighlight();
+    String conf = config();
+    gtk_text_buffer_set_text(_config_buffer, conf.data(), conf.length());
+    config_changed_initialize(true, false);
+    _config_clean_errors = true;
+
+    return new ClickyLexerTInfo(_config_buffer, conf, error_handler());
+}
+
+void wmain::on_config_changed(bool replace, LexerTInfo *linfo)
+{
+    String conf = config();
+    GatherErrorHandler *gerrh = error_handler();
+
+    ClickyLexerTInfo *cinfo = dynamic_cast<ClickyLexerTInfo *>(linfo);
+    const char *conf_begin = conf.begin();
+    GtkTextTag *error_tag = gtk_text_tag_table_lookup(gtk_text_buffer_get_tag_table(_config_buffer), "error");
+    for (GatherErrorHandler::iterator gi = gerrh->begin();
+	 gi != gerrh->end(); ++gi)
+	if (gi->errpos1 < gi->errpos2 && gi->seriousness >= ErrorHandler::ERR_MIN_ERROR)
+	    cinfo->apply_tag(conf_begin + gi->errpos1, conf_begin + gi->errpos2, error_tag);
+
+    _diagram->router_create(false, false);
+    _config_clean_elements = true;
+    config_choose_driver();
+    
+    if (router() && replace)
+	etree_fill();
+    if (gerrh->nerrors() || gerrh->nwarnings())
+	on_error(true, String());
 }
 
 void wmain::set_save_file(const String &savefile, bool loading)
@@ -357,21 +348,6 @@ void wmain::set_save_file(const String &savefile, bool loading)
 	config_changed_initialize(false, true);
 }
 
-String wmain::ccss_text() const
-{
-    return _diagram->ccss_text();
-}
-
-void wmain::set_ccss_text(const String &text)
-{
-    _diagram->set_ccss_text(text);
-}
-
-dcss_set *wmain::ccss() const
-{
-    return _diagram->ccss();
-}
-
 
 /*****
  *
@@ -379,12 +355,13 @@ dcss_set *wmain::ccss() const
  *
  */
 
-static GdkPixbufAnimation *throbber = 0;
+static GdkPixbufAnimation *throbber_img = 0;
 static bool throbber_loaded = false;
 
-void wmain::throbber_show()
+void wmain::on_throbber_changed(bool show)
 {
-    if (++_throbber_count == 1) {
+    GtkWidget *throbberw = lookup_widget(_window, "throbber");
+    if (show) {
 	if (!throbber_loaded) {
 	    throbber_loaded = true;
 	    String throbber_file = clickpath_find_file("throbber.gif", "share/" PACKAGE, PACKAGE_DATA_DIR "/" PACKAGE);
@@ -392,46 +369,16 @@ void wmain::throbber_show()
 	    if (!throbber_file && g_file_test("src/clicky", G_FILE_TEST_EXISTS))
 		throbber_file = clickpath_find_file("throbber.gif", "", "./images");
 	    if (throbber_file)
-		throbber = gdk_pixbuf_animation_new_from_file(throbber_file.c_str(), NULL);
+		throbber_img = gdk_pixbuf_animation_new_from_file(throbber_file.c_str(), NULL);
 	}
-	GtkWidget *throbberw = lookup_widget(_window, "throbber");
-	if (throbber)
-	    gtk_image_set_from_animation(GTK_IMAGE(throbberw), throbber);
+	if (throbber_img)
+	    gtk_image_set_from_animation(GTK_IMAGE(throbberw), throbber_img);
 	else
 	    gtk_image_set_from_stock(GTK_IMAGE(throbberw), GTK_STOCK_NETWORK, GTK_ICON_SIZE_LARGE_TOOLBAR);
 	gtk_widget_show(throbberw);
-    }
-}
-
-void wmain::throbber_hide()
-{
-    if (_throbber_count > 0 && --_throbber_count == 0) {
-	GtkWidget *throbberw = lookup_widget(_window, "throbber");
+    } else {
 	gtk_image_clear(GTK_IMAGE(throbberw));
     }
-}
-
-extern "C" {
-static gboolean throb_after_timeout(gpointer user_data)
-{
-    wmain::throb_after *ta = reinterpret_cast<wmain::throb_after *>(user_data);
-    ta->_timeout = 0;
-    ta->_rw->throbber_show();
-    return FALSE;
-}
-}
-
-wmain::throb_after::throb_after(wmain *rw, int timeout)
-    : _rw(rw), _timeout(g_timeout_add(timeout, throb_after_timeout, this))
-{
-}
-
-wmain::throb_after::~throb_after()
-{
-    if (_timeout)
-	g_source_remove(_timeout);
-    else
-	_rw->throbber_hide();
 }
 
 
@@ -440,88 +387,6 @@ wmain::throb_after::~throb_after()
  * initializing configuration
  *
  */
-
-void wmain::set_config(String conf, bool replace)
-{
-    _gerrh.clear();
-    _error_endpos = 0;
-    gtk_text_buffer_set_text(_error_buffer, "", 0);
-    
-    // check for archive
-    Vector<ArchiveElement> archive;
-    if (conf.length() && conf[0] == '!'
-	&& ArchiveElement::parse(conf, archive, &_gerrh) >= 0) {
-	int found = ArchiveElement::arindex(archive, "config");
-	if (found >= 0)
-	    conf = archive[found].data;
-	else {
-	    _gerrh.error("archive has no 'config' section");
-	    conf = String();
-	}
-    }
-
-    // set configuration text
-    error_unhighlight();
-    element_unhighlight();
-    gtk_text_buffer_set_text(_config_buffer, conf.data(), conf.length());
-    config_changed_initialize(true, false);
-    _config_clean_errors = true;
-
-    // read router
-    if (!conf.length())
-	_gerrh.warning("empty configuration");
-    LexerT lexer(&_gerrh, false);
-    ClickyLexerTInfo cinfo(_config_buffer, conf, &_gerrh);
-    lexer.reset(conf, archive, (_driver ? "config" : _landmark));
-    lexer.set_lexinfo(&cinfo);
-    while (lexer.ystatement())
-	/* nada */;
-    RouterT *r = lexer.finish(global_scope);
-    r->check();
-
-    // if router, read element map
-    ElementMap *emap = new ElementMap;
-    ProcessingT *processing = 0;
-    if (r) {
-	emap->parse_all_files(r, CLICK_DATADIR, &_gerrh);
-	if (_driver)
-	    emap->set_driver_mask(_driver->driver_mask());
-	else {
-	    int driver = emap->pick_driver(_selected_driver, r, 0);
-	    emap->set_driver_mask(1 << driver);
-	}
-	processing = new ProcessingT(r, emap, &_gerrh);
-	processing->check_types(&_gerrh);
-    }
-
-    // apply errors to buffer
-    const char *conf_begin = conf.begin();
-    GtkTextTag *error_tag = gtk_text_tag_table_lookup(gtk_text_buffer_get_tag_table(_config_buffer), "error");
-    for (GatherErrorHandler::iterator gi = _gerrh.begin(); gi != _gerrh.end(); ++gi)
-	if (gi->errpos1 < gi->errpos2 && gi->seriousness >= ErrorHandler::ERR_MIN_ERROR)
-	    cinfo.apply_tag(conf_begin + gi->errpos1, conf_begin + gi->errpos2, error_tag);
-
-    // potentially save results
-    _conf = conf;
-    if (replace) {
-	_r = r;
-	_emap = emap;
-	_processing = processing;
-	_diagram->router_create(false, false);
-	_config_clean_elements = true;
-	config_choose_driver();
-    } else {
-	delete r;
-	delete emap;
-	delete processing;
-    }
-
-    // expand
-    if (r && replace)
-	etree_fill();
-    if (_gerrh.nerrors() || _gerrh.nwarnings())
-	errors_fill(true);
-}
 
 void wmain::show()
 {
@@ -535,18 +400,27 @@ void wmain::show()
  *
  */
 
-void wmain::on_driver(wdriver *driver, bool active)
+void wmain::on_handler_create(handler_value *hv, bool was_empty)
 {
-    assert(driver && (!_driver || driver == _driver));
-    _driver = driver;
-    _driver_active = active;
+    if (was_empty) {	// first load, read style
+	ref_ptr<dhandler_style> dhs = ccss()->handler_style(_diagram, hv);
+	if (dhs) {
+	    hv->set_flags(this, (hv->flags() & ~dhs->flags_mask) | dhs->flags);
+	    if (dhs->autorefresh_period > 0
+		&& dhs->autorefresh_period < hv->autorefresh_period())
+		    hv->set_autorefresh_period(dhs->autorefresh_period);
+	}
+    }
+    if (hv->notify_delt())
+	_diagram->notify_read(hv);
+    crouter::on_handler_create(hv, was_empty);
 }
 
-void wmain::on_read(const String &hname, const String &hparam, const String &hvalue, int status, messagevector &messages)
+void wmain::on_handler_read(const String &hname, const String &hparam,
+			    const String &hvalue,
+			    int status, messagevector &messages)
 {
-    if (hname == "config")
-	set_config(hvalue, true);
-    else if (hname == "list") {
+    if (hname == "list") {
 	_handlers->clear();
 	const char *s = hvalue.begin();
 	int line = 0, nelements = 0;
@@ -564,36 +438,35 @@ void wmain::on_read(const String &hname, const String &hparam, const String &hva
 	    for (s = x; s != hvalue.end() && isspace((unsigned char) *s); )
 		++s;
 	}
-    } else {
-	bool changed;
-	handler_value *hv = _hvalues.set(hname, hparam, hvalue, changed);
-	if (changed && hv->notify_whandlers())
-	    _handlers->notify_read(hv);
-	if (hv->notify_delt(changed))
-	    _diagram->notify_read(hv);
     }
-    if (status == 200)
-	messages.clear();
+    crouter::on_handler_read(hname, hparam, hvalue, status, messages);
 }
 
-void wmain::on_write(const String &hname, const String &hvalue, int status, messagevector &messages)
+void wmain::on_handler_read(handler_value *hv, bool changed)
+{
+    if (changed && hv->notify_whandlers())
+	_handlers->notify_read(hv);
+    if (hv->notify_delt(changed))
+	_diagram->notify_read(hv);
+    crouter::on_handler_read(hv, changed);
+}
+
+void wmain::on_handler_write(const String &hname, const String &hvalue,
+			     int status, messagevector &messages)
 {
     _handlers->notify_write(hname, hvalue, status);
-    if (hname == "hotconfig") {
-	if (status < 300)
-	    messages.erase(messages.begin());
-    } else if (status == 200)
-	messages.clear();
+    crouter::on_handler_write(hname, hvalue, status, messages);
 }
 
-void wmain::on_check_write(const String &hname, int status, messagevector &messages)
+void wmain::on_handler_check_write(const String &hname,
+				   int status, messagevector &messages)
 {
     if (hname == "hotconfig" && status < 300) {
 	// allow install handlers from now on
 	gtk_widget_set_sensitive(lookup_widget(_window, "toolbar_install"), TRUE);
 	gtk_widget_set_sensitive(lookup_widget(_window, "menu_install"), TRUE);
     }
-    messages.clear();
+    crouter::on_handler_check_write(hname, status, messages);
 }
 
 
@@ -617,15 +490,16 @@ void wmain::element_unhighlight()
 void wmain::element_show(String ename, int expand, bool incremental)
 {
     // check if element exists
+    RouterT *r = router();
     Vector<ElementT *> epath;
-    if (_r && ename && !_r->element_path(ename, epath))
+    if (r && ename && !r->element_path(ename, epath))
 	ename = String();
 
     if (_eview_name == ename && incremental)
 	/* do not change existing widgets, but continue to potentially
 	   expand pane below */;
     
-    else if (!_r || !ename) {
+    else if (!r || !ename) {
 	element_unhighlight();
 	_eview_name = String();
 	
@@ -664,7 +538,7 @@ void wmain::element_show(String ename, int expand, bool incremental)
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(n));
 	gtk_text_buffer_set_text(buffer, config.data(), config.length());
 
-	ElementMap::push_default(_emap);
+	ElementMap::push_default(element_map());
 	ElementClassT *eclass = epath.back()->type();
 	n = lookup_widget(_window, "eview_classinfo_ports");
 	gtk_label_set_text(GTK_LABEL(n), eclass->port_count_code().c_str());
@@ -676,7 +550,7 @@ void wmain::element_show(String ename, int expand, bool incremental)
 	
 	// clear handlers
 	n = lookup_widget(_window, "eview_refresh");
-	if (_driver_active)
+	if (driver())
 	    gtk_widget_show(n);
 	else
 	    gtk_widget_hide(n);
@@ -842,7 +716,7 @@ void wmain::element_tree_sort(int state)
 	gtk_button_set_label(b, "Sort: Class");
 
     gtk_tree_store_clear(_elist_store);
-    fill_elements_tree_store(_elist_store, _r, 0, "");
+    fill_elements_tree_store(_elist_store, router(), 0, "");
 }
 
 void wmain::etree_fill() {
@@ -877,8 +751,8 @@ void wmain::etree_fill() {
     } else
 	gtk_tree_store_clear(_elist_store);
     
-    if (_r)
-	fill_elements_tree_store(_elist_store, _r, 0, "");
+    if (router())
+	fill_elements_tree_store(_elist_store, router(), 0, "");
 
     element_show(_eview_name, 0, false);
     diagram()->element_show(_eview_name, false);
@@ -894,7 +768,8 @@ void wmain::etree_fill() {
 void wmain::error_unhighlight()
 {
     if (_error_highlight_index >= 0) {
-	GatherErrorHandler::iterator gi = _gerrh.begin() + _error_highlight_index;
+	GatherErrorHandler *gerrh = error_handler();
+	GatherErrorHandler::iterator gi = gerrh->begin() + _error_highlight_index;
 	GtkTextIter i1, i2;
 	if (gi->errpos1 < gi->errpos2) {
 	    gtk_text_buffer_get_start_iter(_config_buffer, &i1);
@@ -912,8 +787,9 @@ bool wmain::error_view_motion_offsets(int off1, int off2, int eindex)
 {
     if (eindex != _error_hover_index) {
 	GtkTextIter i1, i2;
+	GatherErrorHandler *gerrh = error_handler();
 	if (_error_hover_index >= 0) {
-	    GatherErrorHandler::iterator gi = _gerrh.begin() + _error_hover_index;
+	    GatherErrorHandler::iterator gi = gerrh->begin() + _error_hover_index;
 	    gtk_text_buffer_get_iter_at_offset(_error_buffer, &i1, gi->offset1);
 	    gtk_text_buffer_get_iter_at_offset(_error_buffer, &i2, gi->offset2());
 	    gtk_text_buffer_remove_tag(_error_buffer, _error_hover_tag, &i1, &i2);
@@ -937,12 +813,13 @@ bool wmain::error_view_motion_position(gint x, gint y)
     
     GtkTextIter i;
     gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(_error_view), &i, x, y);
-    GatherErrorHandler::iterator message = _gerrh.find_offset(gtk_text_iter_get_offset(&i));
+    GatherErrorHandler *gerrh = error_handler();
+    GatherErrorHandler::iterator message = gerrh->find_offset(gtk_text_iter_get_offset(&i));
 
     // get buffer positions
-    if (message != _gerrh.end() && !_config_clean_errors)
+    if (message != gerrh->end() && !_config_clean_errors)
 	message->errpos1 = message->errpos2 = 0;
-    if (message != _gerrh.end() && message->errpos1 == 0 && message->errpos2 == 0) {
+    if (message != gerrh->end() && message->errpos1 == 0 && message->errpos2 == 0) {
 	const char *next;
 	unsigned lineno; 
 	if (message->message.length() > 8
@@ -961,10 +838,10 @@ bool wmain::error_view_motion_position(gint x, gint y)
 
     // scroll to named position
     bool result;
-    if (message == _gerrh.end() || message->errpos1 >= message->errpos2)
+    if (message == gerrh->end() || message->errpos1 >= message->errpos2)
 	result = error_view_motion_offsets(0, 0, -1);
     else
-	result = error_view_motion_offsets(message->offset1, message->offset2(), message - _gerrh.begin());
+	result = error_view_motion_offsets(message->offset1, message->offset2(), message - gerrh->begin());
 
     // get more motion events
     GdkModifierType mod;   
@@ -991,10 +868,11 @@ gboolean wmain::error_view_event(GdkEvent *event)
 	     && _error_hover_index >= 0
 	     && fabs(event->button.x - _error_highlight_x) <= 10
 	     && fabs(event->button.y - _error_highlight_y) <= 10) {
-	GatherErrorHandler::iterator gi = _gerrh.begin() + _error_hover_index;
+	GatherErrorHandler *gerrh = error_handler();
+	GatherErrorHandler::iterator gi = gerrh->begin() + _error_hover_index;
 	if (gi->errpos1 < gi->errpos2) {
 	    _error_highlight_index = _error_hover_index;
-	    GatherErrorHandler::iterator gi = _gerrh.begin() + _error_highlight_index;
+	    GatherErrorHandler::iterator gi = gerrh->begin() + _error_highlight_index;
 	    GtkTextIter i1, i2;
 	    gtk_text_buffer_get_iter_at_offset(_config_buffer, &i1, gi->errpos1);
 	    gtk_text_buffer_get_iter_at_offset(_config_buffer, &i2, gi->errpos2);
@@ -1023,8 +901,10 @@ static gboolean on_error_scroll_timeout(gpointer user_data)
 }
 }
 
-void wmain::errors_fill(bool initial) {
-    if (!_gerrh.size()) {
+void wmain::on_error(bool replace, const String &dialog)
+{
+    GatherErrorHandler *gerrh = error_handler();
+    if (!gerrh->size()) {
 	gtk_widget_hide(lookup_widget(_window, "errorviewbox"));
 	gtk_widget_show(lookup_widget(_window, "elementtreelabel"));
 	gtk_widget_hide(lookup_widget(_window, "elementtreeexpander"));
@@ -1042,34 +922,48 @@ void wmain::errors_fill(bool initial) {
     gtk_widget_show(treeexpander);
     GtkPaned *pane = GTK_PANED(lookup_widget(_window, "errorpane"));
     GtkWidget *treewindow = lookup_widget(_window, "elementtreewindow");
-    if (_gerrh.nerrors() && initial) {
+    if (gerrh->nerrors() && replace) {
 	gtk_widget_hide(treewindow);
 	gtk_widget_hide(lookup_widget(_window, "elementtreesort"));
 	gtk_paned_set_position(pane, 2147483647);
     }
     gtk_expander_set_expanded(GTK_EXPANDER(treeexpander), GTK_WIDGET_VISIBLE(treewindow));
-    if ((!_gerrh.nerrors() || !initial) && GTK_WIDGET_VISIBLE(treewindow))
+    if ((!gerrh->nerrors() || !replace) && GTK_WIDGET_VISIBLE(treewindow))
 	gtk_paned_set_position(pane, GTK_WIDGET(pane)->allocation.height / 3);
     
     // strip filename errors from error list
-    if (initial) {
+    if (replace) {
 	_error_endpos = 0;
 	gtk_text_buffer_set_text(_error_buffer, "", 0);
     }
-    _gerrh.translate_prefix(_landmark + ": ", "", _error_endpos);
+    gerrh->translate_prefix(landmark() + ": ", "", _error_endpos);
     StringAccum sa;
-    for (GatherErrorHandler::iterator gi = _gerrh.begin() + _error_endpos;
-	 gi != _gerrh.end(); ++gi)
+    for (GatherErrorHandler::iterator gi = gerrh->begin() + _error_endpos;
+	 gi != gerrh->end(); ++gi)
 	sa << gi->message;
     if (sa.length()) {
 	GtkTextIter iter;
 	gtk_text_buffer_get_end_iter(_error_buffer, &iter);
 	gtk_text_buffer_insert(_error_buffer, &iter, sa.data(), sa.length());
     }
-    _error_endpos = _gerrh.size();
+    _error_endpos = gerrh->size();
 
     if (_error_scroller)
 	g_source_remove(_error_scroller);
+
+    // show the error dialog
+    if (dialog) {
+	gtk_widget_show(_window);
+	GtkWidget *dwidget = gtk_message_dialog_new(GTK_WINDOW(_window),
+				    GTK_DIALOG_DESTROY_WITH_PARENT,
+				    GTK_MESSAGE_ERROR,
+				    GTK_BUTTONS_CLOSE,
+				    "%s",
+				    dialog.c_str());
+	gtk_dialog_run(GTK_DIALOG(dwidget));
+	gtk_widget_destroy(dwidget);
+    }
+
     _error_scroller = g_timeout_add(20, clicky::on_error_scroll_timeout, this);
 }
 
@@ -1167,8 +1061,9 @@ void wmain::config_check(bool install)
     gchar *str = gtk_text_buffer_get_text(_config_buffer, &i1, &i2, FALSE);
 
     String config;
-    if (_r && _r->narchive()) {
-	Vector<ArchiveElement> ar(_r->archive());
+    RouterT *r = router();
+    if (r && r->narchive()) {
+	Vector<ArchiveElement> ar(r->archive());
 	ArchiveElement ae = init_archive_element("config", 0600);
 	ae.data = String(str);
 	ar.push_back(ae);
@@ -1178,13 +1073,16 @@ void wmain::config_check(bool install)
 
     g_free(str);
 
-    if (_driver_active && install) {
-	_driver->do_write("hotconfig", config, wdriver::dflag_clear);
-	_driver->do_read("list", String(), 0);
-    }
-    _landmark = "config";
-    set_config(config, install || !_driver_active);
+    if (install)
+	if (cdriver *cd = driver()) {
+	    cd->do_write("hotconfig", config, cdriver::dflag_clear);
+	    cd->do_read("list", String(), 0);
+	}
+
+    set_landmark("config");
+    set_config(config, install || !driver());
 }
+
 
 /*****
  *
@@ -1215,5 +1113,16 @@ void wmain::set_diagram_mode(bool diagram)
     }
 }
 
+void wmain::repaint(const rectangle &rect)
+{
+    if (_diagram->visible())
+	_diagram->redraw(rect);
 }
 
+void wmain::repaint_if_visible(const rectangle &rect, double dimen)
+{
+    if (_diagram->visible() && fabs(dimen * _diagram->scale()) > 0.5)
+	_diagram->redraw(rect);
+}
+
+}

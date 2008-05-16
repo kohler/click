@@ -17,7 +17,7 @@ class ddecor { public:
     }
 
     virtual void draw(delt *e, double *sides, dcontext &dcx);
-    virtual void notify(wmain *w, delt *e, handler_value *hv);
+    virtual void notify(crouter *cr, delt *e, handler_value *hv);
 
     static void draw_list(ddecor *dd, delt *e, double *sides, dcontext &dcx) {
 	while (dd) {
@@ -26,9 +26,9 @@ class ddecor { public:
 	}
     }
 
-    static void notify_list(ddecor *dd, wmain *w, delt *e, handler_value *hv) {
+    static void notify_list(ddecor *dd, crouter *cr, delt *e, handler_value *hv) {
 	while (dd) {
-	    dd->notify(w, e, hv);
+	    dd->notify(cr, e, hv);
 	    dd = dd->_next;
 	}
     }
@@ -50,10 +50,10 @@ class ddecor { public:
 
 class dfullness_decor : public ddecor { public:
 
-    dfullness_decor(PermString name, wdiagram *d, delt *e, ddecor *next);
+    dfullness_decor(PermString name, crouter *cr, delt *e, ddecor *next);
 
     void draw(delt *e, double *sides, dcontext &dcx);
-    void notify(wmain *w, delt *e, handler_value *hv);
+    void notify(crouter *cr, delt *e, handler_value *hv);
 
   private:
 
@@ -68,18 +68,18 @@ class dfullness_decor : public ddecor { public:
 
 class dactivity_decor : public ddecor { public:
 
-    dactivity_decor(PermString name, wdiagram *d, delt *e, ddecor *next);
+    dactivity_decor(PermString name, crouter *cr, delt *e, ddecor *next);
     ~dactivity_decor();
 
     void draw(delt *e, double *sides, dcontext &dcx);
-    void notify(wmain *w, delt *e, handler_value *hv);
+    void notify(crouter *cr, delt *e, handler_value *hv);
 
     gboolean on_decay();
     
   private:
 
     PermString _name;
-    wmain *_w;
+    crouter *_cr;
     delt *_e;
     ref_ptr<dactivity_style> _das;
 

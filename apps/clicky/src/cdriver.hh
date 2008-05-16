@@ -1,11 +1,11 @@
-#ifndef CLICKY_WDRIVER_HH
-#define CLICKY_WDRIVER_HH 1
-#include "wrouter.hh"
+#ifndef CLICKY_CDRIVER_HH
+#define CLICKY_CDRIVER_HH 1
+#include "crouter.hh"
 namespace clicky {
 
-class wdriver { public:
+class cdriver { public:
 
-    virtual ~wdriver() { }
+    virtual ~cdriver() { }
     
     enum { dflag_background = 1, dflag_clear = 2, dflag_nonraw = 4 };
 
@@ -17,15 +17,15 @@ class wdriver { public:
     virtual void do_check_write(const String &hname, int flags) = 0;
 
     static int check_handler_name(const String &inname, String &ename, String &hname, ErrorHandler *errh);
-    static void transfer_messages(wmain *rw, int status, const messagevector &messages);
+    static void transfer_messages(crouter *rw, int status, const messagevector &messages);
     
 };
 
 
-class csocket_wdriver : public wdriver { public:
+class csocket_cdriver : public cdriver { public:
 
-    csocket_wdriver(wmain *rw, GIOChannel *socket, bool ready);
-    ~csocket_wdriver();
+    csocket_cdriver(crouter *rw, GIOChannel *socket, bool ready);
+    ~csocket_cdriver();
 
     static GIOChannel *start_connect(IPAddress addr, uint16_t port, bool *ready, ErrorHandler *errh);
 
@@ -46,7 +46,7 @@ class csocket_wdriver : public wdriver { public:
     enum { dtype_read = 1, dtype_write = 2, dtype_check_write = 3 };
 
     struct msg {
-	wmain::throb_after tnotify;
+	crouter::throb_after tnotify;
 	int type;
 	int flags;
 	String hname;
@@ -60,15 +60,15 @@ class csocket_wdriver : public wdriver { public:
 	size_t rdatalen;
 	bool ignore_newline;
 	
-	msg(wmain *rw_, const String &hname_, const String &command_, int command_datalen_, int type_, int flags_)
-	    : tnotify(rw_, 400), type(type_), flags(flags_), hname(hname_),
+	msg(crouter *cr_, const String &hname_, const String &command_, int command_datalen_, int type_, int flags_)
+	    : tnotify(cr_, 400), type(type_), flags(flags_), hname(hname_),
 	      command(command_), command_datalen(command_datalen_),
 	      wpos(0), rlinepos(0), rendmsgpos((size_t) -1),
 	      rdatapos((size_t) -1), rdatalen(0), ignore_newline(false) {
 	}
     };
 
-    wmain *_rw;
+    crouter *_cr;
     GIOChannel *_csocket;
     guint _csocket_watch;
     int _csocket_state;
@@ -82,9 +82,9 @@ class csocket_wdriver : public wdriver { public:
 };
 
 
-class clickfs_wdriver : public wdriver { public:
+class clickfs_cdriver : public cdriver { public:
 
-    clickfs_wdriver(wmain *rw, const String &prefix);
+    clickfs_cdriver(crouter *cr, const String &prefix);
 
     bool active() const;
     int driver_mask() const;
@@ -95,7 +95,7 @@ class clickfs_wdriver : public wdriver { public:
 
   private:
     
-    wmain *_rw;
+    crouter *_cr;
     String _prefix;
     bool _active;
 

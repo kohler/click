@@ -20,6 +20,7 @@ class delt_size_style;
 class dport_style;
 class dqueue_style;
 class ddecor;
+class crouter;
 
 struct dcontext {
     wdiagram *d;
@@ -274,10 +275,10 @@ class delt : public dwidget { public:
     void draw(dcontext &dx);
 
     // handlers
-    handler_value *handler_interest(wdiagram *d, const String &hname,
+    handler_value *handler_interest(crouter *cr, const String &hname,
 				    bool autorefresh = false, int autorefresh_period = 0, bool always = false);
 
-    void create_elements(wdiagram *d, RouterT *router, ProcessingT *processing,
+    void create_elements(crouter *cr, RouterT *router, ProcessingT *processing,
 			 HashTable<String, delt *> &collector,
 			 Vector<ElementT *> &path, int &z_index);
     
@@ -329,26 +330,26 @@ class delt : public dwidget { public:
     delt &operator=(const delt &);
 
     static delt *create(ElementT *e, delt *parent,
-			wdiagram *d, ProcessingT *processing,
+			crouter *cr, ProcessingT *processing,
 			HashTable<String, delt *> &collector,
 			Vector<ElementT *> &path, int &z_index);
     delt *create_split(int split_type);
 
     void layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc);
     void position_contents_scc(RouterT *);
-    void position_contents_dot(wdiagram *d, ErrorHandler *errh);
+    void position_contents_dot(crouter *cr, ErrorHandler *errh);
     const char *parse_connection_dot(int eindex, int esplit, const char *s, const char *end);
 
-    bool reccss(wdiagram *d, int change);
+    bool reccss(crouter *cr, int change);
     void layout_contents(dcontext &dcx);
     void layout_ports(dcontext &dcx);
     void layout(dcontext &dcx);
-    String parse_markup(const String &text, wdiagram *d, int port, int *sensitivity);
+    String parse_markup(const String &text, crouter *cr, int port, int *sensitivity);
     void dimension_markup(dcontext &dcx);
     void redecorate(dcontext &dcx);
     void layout_complete(dcontext &dcx, double dx, double dy);
     void layout_compound_ports_copy(delt *e, bool isoutput);
-    void layout_compound_ports(wdiagram *d);
+    void layout_compound_ports(crouter *cr);
     void union_bounds(rectangle &r, bool self) const;
 
     inline double port_position(bool isoutput, int port,

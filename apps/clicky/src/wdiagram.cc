@@ -11,9 +11,9 @@
 #include <math.h>
 #include <cairo-ps.h>
 #include <cairo-pdf.h>
-#include "diagram.hh"
+#include "wdiagram.hh"
 #include "dwidget.hh"
-#include "wrouter.hh"
+#include "crouter.hh"
 #include "whandler.hh"
 #include "dstyle.hh"
 extern "C" {
@@ -41,8 +41,6 @@ wdiagram::wdiagram(wmain *rw)
     GtkScrolledWindow *sw = GTK_SCROLLED_WINDOW(_widget->parent);
     _horiz_adjust = gtk_scrolled_window_get_hadjustment(sw);
     _vert_adjust = gtk_scrolled_window_get_vadjustment(sw);
-
-    _base_css_set = _css_set = new dcss_set(dcss_set::default_set("screen"));
 
 #if 0
     PangoFontMap *fm = pango_cairo_font_map_get_default();
@@ -76,7 +74,6 @@ wdiagram::wdiagram(wmain *rw)
 
 wdiagram::~wdiagram()
 {
-    delete _base_css_set;
     delete _relt;
     _relt = 0;
     for (int i = c_main; i < ncursors; i++)
@@ -101,21 +98,6 @@ void wdiagram::initialize()
 	for (int i = c_main; i < ncursors; i++)
 	    gdk_cursor_ref(_cursor[i]);
     }
-}
-
-String wdiagram::ccss_text() const
-{
-    return _base_css_set->text();
-}
-
-void wdiagram::set_ccss_text(const String &text)
-{
-    if (_base_css_set->text() && text) {
-	delete _base_css_set;
-	_base_css_set = _css_set = new dcss_set(dcss_set::default_set("screen"));
-	++_pango_generation;
-    }
-    _base_css_set->parse(text);
 }
 
 
@@ -220,16 +202,16 @@ void wdiagram::router_create(bool incremental, bool always)
 	return;
     if (!_relt) {
 	_relt = new delt;
-	if (_rw->_r) {
+	if (_rw->router()) {
 	    Vector<ElementT *> path;
 	    int z_index = 0;
-	    _relt->create_elements(this, _rw->_r, _rw->_processing, _elt_map,
-				   path, z_index);
+	    _relt->create_elements(_rw, _rw->router(), _rw->processing(),
+				   _elt_map, path, z_index);
 	}
     }
     if (!_cursor[0])
 	initialize();
-    if (!_layout && _rw->_r) {
+    if (!_layout && _rw->router()) {
 	dcontext dcx(this, gtk_widget_create_pango_layout(_widget, NULL), 0);
 	dcx.generation = _pango_generation;
 	ElementMap::push_default(_rw->element_map());
@@ -354,7 +336,7 @@ void wdiagram::export_diagram(const char *filename, bool eps)
     dcontext dcx(this, pango_cairo_create_layout(cr), cr);
     dcx.generation = ++_pango_generation;
     dcx.scale_step = 1;		// position precisely
-    _css_set = _base_css_set->remedia("print");
+    main()->set_ccss_media("print");
 
     rectangle r(_relt->_x, _relt->_y, _relt->_width, _relt->_height);
     std::vector<dwidget *> elts;
@@ -363,7 +345,7 @@ void wdiagram::export_diagram(const char *filename, bool eps)
 	 eltsi != elts.end(); ++eltsi)
 	(*eltsi)->draw(dcx);
 
-    _css_set = _base_css_set;
+    main()->set_ccss_media("screen");
     g_object_unref(G_OBJECT(dcx.pl));
     cairo_destroy(dcx.cr);
     cairo_surface_destroy(crs);
@@ -383,173 +365,6 @@ void wdiagram::notify_read(handler_value *hv)
 	e->notify_read(this, hv);
 }
 
-
-/*****
- *
- * reachability
- *
- */
-
-static const char *parse_port(const char *s, const char *end, int &port)
-{
-    if (s != end && *s == '[') {
-	s = cp_integer(cp_skip_space(s + 1, end), end, 10, &port);
-	s = cp_skip_space(s, end);
-	if (s != end && *s == ']')
-	    s = cp_skip_space(s + 1, end);
-    }
-    return s;
-}
-
-static void parse_port(const String &str, String &name, int &port)
-{
-    const char *s = str.begin(), *end = str.end();
-    
-    port = -1;
-    s = parse_port(s, end, port);
-    if (s != end && end[-1] == ']') {
-	const char *t = end - 1;
-	while (t != s && (isdigit((unsigned char) t[-1])
-			  || isspace((unsigned char) t[-1])))
-	    --t;
-	if (t != s && t[-1] == '[') {
-	    parse_port(t - 1, end, port);
-	    for (end = t - 1; end != s && isspace((unsigned char) end[-1]); --end)
-		/* nada */;
-	}
-    }
-    
-    name = str.substring(s, end);
-}
-
-
-wdiagram::reachable_match_t::reachable_match_t(const String &name, int port,
-					       bool forward, RouterT *router,
-					       ProcessingT *processing)
-    : _name(name), _port(port), _forward(forward),
-      _router(router), _router_name(), _processing(processing)
-{
-}
-
-wdiagram::reachable_match_t::reachable_match_t(const reachable_match_t &m,
-					       ElementT *e)
-    : _name(m._name), _port(m._port), _forward(m._forward),
-      _router_name(m._router_name),
-      _processing(new ProcessingT(*m._processing, e))
-{
-    _router = _processing->router();
-    if (_router_name)
-	_router_name += '/';
-    _router_name += e->name();
-}
-
-wdiagram::reachable_match_t::~reachable_match_t()
-{
-    if (_router_name)
-	delete _processing;
-}
-
-bool
-wdiagram::reachable_match_t::get_seed(int eindex, int port) const
-{
-    if (!_seed.size())
-	return false;
-    else
-	return _seed[_processing->pidx(eindex, port, !_forward)];
-}
-
-void
-wdiagram::reachable_match_t::set_seed(const ConnectionT &conn)
-{
-    if (!_seed.size())
-	_seed.assign(_processing->npidx(!_forward), false);
-    _seed[_processing->pidx(conn, !_forward)] = true;
-}
-
-void
-wdiagram::reachable_match_t::set_seed_connections(ElementT *e, int port)
-{
-    assert(port >= -1 && port < e->nports(_forward));
-    for (RouterT::conn_iterator cit = _router->begin_connections_touching(PortT(e, port), _forward);
-	 cit != _router->end_connections(); ++cit)
-	set_seed(*cit);
-}
-
-bool
-wdiagram::reachable_match_t::add_matches(reachable_t &reach)
-{
-    for (RouterT::iterator it = _router->begin_elements();
-	 it != _router->end_elements(); ++it)
-	if (glob_match(it->name(), _name)
-	    || glob_match(it->type_name(), _name)
-	    || (_name && _name[0] == '#' && glob_match(it->name(), _name.substring(1))))
-	    set_seed_connections(it, _port);
-	else if (it->resolved_router(_processing->scope())) {
-	    reachable_match_t sub_match(*this, it);
-	    RouterT *sub_router = sub_match._router;
-	    if (sub_match.add_matches(reach)) {
-		assert(!reach.compound.get_pointer(sub_match._router_name));
-		sub_match.export_matches(reach);
-		assert(sub_router->element(0)->name() == "input"
-		       && sub_router->element(1)->name() == "output");
-		for (int p = 0; p < sub_router->element(_forward)->nports(!_forward); ++p)
-		    if (sub_match.get_seed(_forward, p))
-			set_seed_connections(it, p);
-	    }
-	}
-    if (_seed.size()) {
-	_processing->follow_reachable(_seed, !_forward, _forward);
-	return true;
-    } else
-	return false;
-}
-
-void
-wdiagram::reachable_match_t::export_matches(reachable_t &reach)
-{
-    Bitvector &x = (_router_name ? reach.compound[_router_name] : reach.main);
-    if (!x.size())
-	x.assign(_router->nelements(), false);
-    assert(x.size() == _router->nelements());
-    if (!_seed.size())
-	return;
-
-    for (RouterT::iterator it = _router->begin_elements();
-	 it != _router->end_elements(); ++it) {
-	if (it->tunnel())
-	    continue;
-	int pidx = _processing->pidx(it->eindex(), 0, !_forward);
-	bool any = false;
-	for (int p = 0; p < it->nports(!_forward); ++p)
-	    if (_seed[pidx + p]) {
-		x[it->eindex()] = any = true;
-		break;
-	    }
-	if (any && it->resolved_router(_processing->scope())) {
-	    // spread matches from inputs through the compound
-	    reachable_match_t sub_match(*this, it);
-	    RouterT *sub_router = sub_match._router;
-	    for (int p = 0; p < it->nports(!_forward); ++p)
-		if (_seed[pidx + p])
-		    sub_match.set_seed_connections(sub_router->element(!_forward), p);
-	    if (sub_match._seed.size()) {
-		sub_match._processing->follow_reachable(sub_match._seed, !_forward, _forward);
-		sub_match.export_matches(reach);
-	    }
-	}
-    }
-}
-
-void wdiagram::calculate_reachable(const String &str, bool forward, reachable_t &reach)
-{
-    String ename;
-    int port;
-    parse_port(str, ename, port);
-
-    reachable_match_t match(ename, port, forward, _rw->_r, _rw->_processing);
-    match.add_matches(reach);
-    match.export_matches(reach);
-}
 
 /*****
  *

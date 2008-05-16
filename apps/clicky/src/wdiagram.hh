@@ -1,5 +1,5 @@
-#ifndef CLICKY_DIAGRAM_HH
-#define CLICKY_DIAGRAM_HH 1
+#ifndef CLICKY_WDIAGRAM_HH
+#define CLICKY_WDIAGRAM_HH 1
 #include <gtk/gtk.h>
 #include <vector>
 #include "rectangle.hh"
@@ -32,11 +32,9 @@ class wdiagram { public:
 	return _scale;
     }
 
-    dcss_set *ccss() const {
-	return _css_set;
+    bool visible() const {
+	return GTK_WIDGET_VISIBLE(_widget);
     }
-    String ccss_text() const;
-    void set_ccss_text(const String &text);
 
     delt *elt(const String &name) const {
 	return _elt_map[name];
@@ -59,6 +57,9 @@ class wdiagram { public:
 
     void on_expose(const GdkRectangle *r);
     gboolean on_event(GdkEvent *event);
+    void on_ccss_changed() {
+	++_pango_generation;
+    }
 
     // handlers
     void notify_read(handler_value *hv);
@@ -90,8 +91,6 @@ class wdiagram { public:
     GtkWidget *_widget;
     GtkAdjustment *_horiz_adjust;
     GtkAdjustment *_vert_adjust;
-    dcss_set *_css_set;
-    dcss_set *_base_css_set;
     unsigned _pango_generation;
     double _elt_expand;
     
@@ -124,9 +123,6 @@ class wdiagram { public:
 
     int _last_cursorno;
 
-    HashTable<String, reachable_t> _downstreams;
-    HashTable<String, reachable_t> _upstreams;
-    
     void initialize();
     void layout();
 
@@ -143,28 +139,6 @@ class wdiagram { public:
     void on_drag_hand_motion(double x_root, double y_root);
     void on_drag_complete();
     void on_drag_rect_complete();
-
-    struct reachable_match_t {
-	String _name;
-	int _port;
-	bool _forward;
-	RouterT *_router;
-	String _router_name;
-	ProcessingT *_processing;
-	Bitvector _seed;
-
-	reachable_match_t(const String &name, int port,
-			  bool forward, RouterT *router,
-			  ProcessingT *processing);
-	reachable_match_t(const reachable_match_t &m, ElementT *subelement);
-	~reachable_match_t();
-	inline bool get_seed(int eindex, int port) const;
-	inline void set_seed(const ConnectionT &conn);
-	inline void set_seed_connections(ElementT *element, int port);
-	bool add_matches(reachable_t &reach);
-	void export_matches(reachable_t &reach);
-    };
-    void calculate_reachable(const String &str, bool forward, reachable_t &reach);
     
     friend class delt;
     
@@ -204,22 +178,6 @@ inline point wdiagram::scroll_center() const
 {
     return window_to_canvas(_horiz_adjust->value + _horiz_adjust->page_size / 2,
 			    _vert_adjust->value + _vert_adjust->page_size / 2);
-}
-
-inline const wdiagram::reachable_t &wdiagram::upstream(const String &str)
-{
-    reachable_t &r = _upstreams[str];
-    if (!r.main.size())
-	calculate_reachable(str, false, r);
-    return r;
-}
-
-inline const wdiagram::reachable_t &wdiagram::downstream(const String &str)
-{
-    reachable_t &r = _downstreams[str];
-    if (!r.main.size())
-	calculate_reachable(str, true, r);
-    return r;
 }
 
 }

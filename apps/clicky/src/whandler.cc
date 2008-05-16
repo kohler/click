@@ -3,8 +3,7 @@
 #endif
 #include <click/config.h>
 #include "whandler.hh"
-#include "wdriver.hh"
-#include "diagram.hh"
+#include "cdriver.hh"
 #include <gdk/gdkkeysyms.h>
 #include <click/confparse.hh>
 extern "C" {

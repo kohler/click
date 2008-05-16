@@ -10,6 +10,7 @@
 namespace clicky {
 class dcss_set;
 class delt;
+class crouter;
 
 enum {
     dpshape_rectangle = 0,
@@ -163,7 +164,7 @@ class dcss_selector { public:
 
     String unparse() const;
 
-    bool match(wdiagram *d, const delt *e, int *sensitivity = 0) const;
+    bool match(crouter *cr, const delt *e, int *sensitivity = 0) const;
 
     bool match_port(bool isoutput, int port, int processing) const;
 
@@ -267,7 +268,7 @@ struct dcss_property {
 	else
 	    return 0;
     }
-    double vpixel(wdiagram *d, PermString relative_to, const delt *e) const;
+    double vpixel(crouter *cr, PermString relative_to, const delt *e) const;
     double vrelative() const {
 	return (change_type(t_relative) ? _v.d : 0);
     }
@@ -332,14 +333,14 @@ struct dcss_propmatch {
 	assert(name == n);
 	return property->vpixel(relative_to);
     }
-    double vpixel(const char *n, wdiagram *d, const delt *relative_elt) const {
+    double vpixel(const char *n, crouter *cr, const delt *relative_elt) const {
 	assert(name == n);
-	return property->vpixel(d, name, relative_elt->parent());
+	return property->vpixel(cr, name, relative_elt->parent());
     }
-    double vpixel(const char *n, wdiagram *d, PermString relative_name,
+    double vpixel(const char *n, crouter *cr, PermString relative_name,
 		  const delt *relative_elt) const {
 	assert(name == n);
-	return property->vpixel(d, relative_name, relative_elt);
+	return property->vpixel(cr, relative_name, relative_elt);
     }
     double vrelative(const char *n) const {
 	assert(name == n);
@@ -380,8 +381,8 @@ class dcss { public:
     bool has_context() const {
 	return _context.size() > 0;
     }
-    bool match_context(wdiagram *d, const delt *e, int *sensitivity = 0) const {
-	return !_context.size() || hard_match_context(d, e, sensitivity);
+    bool match_context(crouter *cr, const delt *e, int *sensitivity = 0) const {
+	return !_context.size() || hard_match_context(cr, e, sensitivity);
     }
     unsigned pflags() const {
 	return _pflags;
@@ -413,7 +414,7 @@ class dcss { public:
     const dcss_property *find(PermString name) const;
     inline dcss_property *find(PermString name);
     void add(PermString name, const String &value);
-    bool hard_match_context(wdiagram *d, const delt *e, int *sensitivity) const;
+    bool hard_match_context(crouter *cr, const delt *e, int *sensitivity) const;
     void parse_border(const String &str, const char *s, const char *send, const String &prefix);
     void parse_shadow(const String &str, const char *s, const char *send);
     void parse_background(const String &str, const char *s, const char *send);
@@ -442,15 +443,15 @@ class dcss_set { public:
     void parse(const String &text);
     void add(dcss *s);
 
-    ref_ptr<delt_style> elt_style(wdiagram *d, const delt *e, int *sensitivity = 0);
-    ref_ptr<delt_size_style> elt_size_style(wdiagram *d, const delt *e, int *sensitivity = 0);
-    ref_ptr<dport_style> port_style(wdiagram *d, const delt *e, bool isoutput, int port, int processing);
+    ref_ptr<delt_style> elt_style(crouter *cr, const delt *e, int *sensitivity = 0);
+    ref_ptr<delt_size_style> elt_size_style(crouter *cr, const delt *e, int *sensitivity = 0);
+    ref_ptr<dport_style> port_style(crouter *cr, const delt *e, bool isoutput, int port, int processing);
     ref_ptr<dhandler_style> handler_style(wdiagram *d, const handler_value *hv);
-    ref_ptr<dfullness_style> fullness_style(PermString decor, wdiagram *d, const delt *e);
-    ref_ptr<dactivity_style> activity_style(PermString decor, wdiagram *d, const delt *e);
+    ref_ptr<dfullness_style> fullness_style(PermString decor, crouter *cr, const delt *e);
+    ref_ptr<dactivity_style> activity_style(PermString decor, crouter *cr, const delt *e);
 
-    double vpixel(PermString name, wdiagram *d, const delt *e) const;
-    String vstring(PermString name, PermString decor, wdiagram *d, const delt *e) const;
+    double vpixel(PermString name, crouter *cr, const delt *e) const;
+    String vstring(PermString name, PermString decor, crouter *cr, const delt *e) const;
 
     static dcss_set *default_set(const String &media);
     
@@ -476,14 +477,14 @@ class dcss_set { public:
 
     void mark_change();
     dcss *ccss_list(const String &str) const;
-    void collect_port_styles(wdiagram *d, const delt *e, bool isoutput,
+    void collect_port_styles(crouter *cr, const delt *e, bool isoutput,
 			     int port, int processing, Vector<dcss *> &result);
-    void collect_elt_styles(wdiagram *d, const delt *e, int pflag,
+    void collect_elt_styles(crouter *cr, const delt *e, int pflag,
 			    Vector<dcss *> &result, int *sensitivity) const;
-    void collect_handler_styles(wdiagram *d, const handler_value *hv,
+    void collect_handler_styles(crouter *cr, const handler_value *hv,
 				const delt *e, Vector<dcss *> &result,
 				bool &generic) const;
-    void collect_decor_styles(PermString decor, wdiagram *d, const delt *e,
+    void collect_decor_styles(PermString decor, crouter *cr, const delt *e,
 			      Vector<dcss *> &result, bool &generic) const;
 
 };

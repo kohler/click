@@ -7,7 +7,7 @@ namespace clicky {
 class handler_value;
 class handler_values;
 class handler_value_iterator;
-class wmain;
+class crouter;
 
 enum {
     hflag_r = 1 << 0,
@@ -49,6 +49,7 @@ enum {
 class handler_value { public:
 
     typedef String key_type;
+    typedef const String &key_const_reference;
 
     handler_value(const String &hname)
 	: _hname(hname), _flags(0), _driver_flags(0),
@@ -152,13 +153,13 @@ class handler_value { public:
 	_autorefresh_period = p;
     }
 
-    void refresh(wmain *w);
+    void refresh(crouter *cr, bool clear_outstanding = false);
     
-    gboolean on_autorefresh(wmain *w, int period);
+    gboolean on_autorefresh(crouter *cr, int period);
 
-    void set_driver_flags(wmain *w, int new_flags);
+    void set_driver_flags(crouter *cr, int new_flags);
 
-    void set_flags(wmain *w, int new_flags);
+    void set_flags(crouter *cr, int new_flags);
 
     static const String no_hvalue_string;
     
@@ -178,7 +179,7 @@ class handler_value { public:
     friend class handler_values;
     friend class handler_value_iterator;
 
-    void create_autorefresh(wmain *w);
+    void create_autorefresh(crouter *cr);
     
 };
 
@@ -223,7 +224,7 @@ inline bool operator!=(handler_value_iterator a, handler_value_iterator b) {
 
 struct handler_values {
     
-    handler_values(wmain *w);
+    handler_values(crouter *cr);
 
     typedef handler_value_iterator iterator;
     
@@ -237,7 +238,7 @@ struct handler_values {
 	return _hv.find(hname).get();
     }
 
-    handler_value *find_placeholder(const String &hname, wmain *w, int flags,
+    handler_value *find_placeholder(const String &hname, int flags,
 				    int autorefresh_period = 0) {
 	if (handler_value *hv = _hv.find(hname).get()) {
 	    hv->_flags |= flags;
@@ -246,7 +247,7 @@ struct handler_values {
 		hv->set_autorefresh_period(autorefresh_period);
 	    return hv;
 	} else
-	    return hard_find_placeholder(hname, w, flags, autorefresh_period);
+	    return hard_find_placeholder(hname, flags, autorefresh_period);
     }
     
     handler_value *find_force(const String &hname) {
@@ -265,21 +266,21 @@ struct handler_values {
     
   private:
     
-    wmain *_w;
+    crouter *_cr;
     HashTable<handler_value> _hv;
     HashTable<String, int> _class_uflags;
 
-    handler_value *hard_find_placeholder(const String &hname, wmain *w, int flags, int autorefresh_period);
+    handler_value *hard_find_placeholder(const String &hname, int flags, int autorefresh_period);
     void set_handlers(const String &hname, const String &hparam, const String &hvalue);
     
 };
 
-inline void handler_value::set_driver_flags(wmain *w, int new_driver_flags)
+inline void handler_value::set_driver_flags(crouter *cr, int new_driver_flags)
 {
     _driver_flags = new_driver_flags & ~hflag_private_mask;
     int new_flags = (_flags & ~_driver_mask) | (_driver_flags & _driver_mask);
     if (new_flags != _flags)
-	set_flags(w, new_flags);
+	set_flags(cr, new_flags);
 }
 
 }

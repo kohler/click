@@ -13,15 +13,16 @@ clicky_SOURCES = \
 	support.c support.h \
 	gathererror.cc gathererror.hh \
 	permstr.cc permstr.hh \
-	wrouter.cc wrouter.hh \
+	crouter.cc crouter.hh \
+	cdriver.cc cdriver.hh \
+	hvalues.cc hvalues.hh \
+	dstyle.cc dstyle.hh \
+	wmain.cc wmain.hh \
 	dialogs.cc \
 	dwidget.cc dwidget.hh \
-	dstyle.cc dstyle.hh \
 	ddecor.cc ddecor.hh \
-	hvalues.cc hvalues.hh \
 	whandler.cc whandler.hh \
-	wdriver.cc wdriver.hh \
-	diagram.cc diagram.hh \
+	wdiagram.cc wdiagram.hh \
 	rectangle.hh \
 	rectsearch.hh \
 	transform.cc transform.hh \

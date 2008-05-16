@@ -3,9 +3,7 @@
 #endif
 #include <click/config.h>
 #include "hvalues.hh"
-#include "wdriver.hh"
-#include "diagram.hh"
-#include "dstyle.hh"
+#include "cdriver.hh"
 #include <gdk/gdkkeysyms.h>
 #include <click/confparse.hh>
 extern "C" {
@@ -26,10 +24,10 @@ const String handler_value::no_hvalue_string = String::stable_string("???", 3);
 namespace {
 struct autorefresher {
     handler_value *hv;
-    wmain *w;
+    crouter *cr;
     int period;
-    autorefresher(handler_value *hv_, wmain *w_, int period_)
-	: hv(hv_), w(w_), period(period_) {
+    autorefresher(handler_value *hv_, crouter *cr_, int period_)
+	: hv(hv_), cr(cr_), period(period_) {
     }
 };
 
@@ -37,7 +35,7 @@ extern "C" {
 static gboolean on_autorefresh(gpointer user_data)
 {
     autorefresher *wa = reinterpret_cast<autorefresher *>(user_data);
-    return wa->hv->on_autorefresh(wa->w, wa->period);
+    return wa->hv->on_autorefresh(wa->cr, wa->period);
 }
 
 static void destroy_autorefresh(gpointer user_data) {
@@ -46,36 +44,40 @@ static void destroy_autorefresh(gpointer user_data) {
 }
 }}
 
-void handler_value::refresh(wmain *w)
+void handler_value::refresh(crouter *cr, bool clear_outstanding)
 {
     if (empty() && handler_name().equals("handlers", 8))
 	_flags |= hflag_r;
-    if (_flags & hflag_outstanding)
-	/* nothing to do */;
-    else if (_flags & (hflag_r | hflag_rparam)) {
-	int read_flags = (_flags & hflag_raw ? 0 : wdriver::dflag_nonraw);
+
+    if (clear_outstanding)
+	_flags &= ~hflag_outstanding;
+    else if (_flags & hflag_outstanding)
+	return;			// nothing to do
+
+    if (_flags & (hflag_r | hflag_rparam)) {
+	int read_flags = (_flags & hflag_raw ? 0 : cdriver::dflag_nonraw);
 	_flags |= hflag_outstanding;
-	w->driver()->do_read(_hname, _hparam, read_flags);
+	cr->driver()->do_read(_hname, _hparam, read_flags);
     } else if (empty())
 	_flags |= hflag_outstanding;
 }
 
-void handler_value::create_autorefresh(wmain *w)
+void handler_value::create_autorefresh(crouter *cr)
 {
-    autorefresher *a = new autorefresher(this, w, _autorefresh_period);
+    autorefresher *a = new autorefresher(this, cr, _autorefresh_period);
     _autorefresh_source = g_timeout_add_full
 	(G_PRIORITY_DEFAULT, _autorefresh_period,
 	 clicky::on_autorefresh, a, destroy_autorefresh);
 }
 
-gboolean handler_value::on_autorefresh(wmain *w, int period)
+gboolean handler_value::on_autorefresh(crouter *cr, int period)
 {
     if ((_flags & hflag_autorefresh) != 0
 	&& readable()
-	&& w->driver()) {
-	refresh(w);
+	&& cr->driver()) {
+	refresh(cr);
 	if (period != _autorefresh_period) {
-	    create_autorefresh(w);
+	    create_autorefresh(cr);
 	    return FALSE;
 	} else
 	    return TRUE;
@@ -85,7 +87,7 @@ gboolean handler_value::on_autorefresh(wmain *w, int period)
     }
 }
 
-void handler_value::set_flags(wmain *w, int new_flags)
+void handler_value::set_flags(crouter *cr, int new_flags)
 {
     if (_autorefresh_source
 	&& ((new_flags & hflag_autorefresh) == 0
@@ -95,7 +97,7 @@ void handler_value::set_flags(wmain *w, int new_flags)
     } else if (_autorefresh_source == 0
 	       && (new_flags & hflag_autorefresh) != 0
 	       && (new_flags & hflag_r))
-	create_autorefresh(w);
+	create_autorefresh(cr);
 
     if ((new_flags & hflag_have_hvalue) == 0)
 	_hvalue = (new_flags & hflag_r ? no_hvalue_string : String());
@@ -111,8 +113,8 @@ void handler_value::set_flags(wmain *w, int new_flags)
  *
  */
 
-handler_values::handler_values(wmain *w)
-    : _w(w)
+handler_values::handler_values(crouter *cr)
+    : _cr(cr)
 {
 }
 
@@ -233,23 +235,14 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	    handlers->_next = v;
 	}
 	bool was_empty = v->empty();
-	v->set_driver_flags(_w, flags);
-	if (was_empty) {	// first load, read style
-	    ref_ptr<dhandler_style> dhs = _w->ccss()->handler_style(_w->diagram(), v);
-	    if (dhs) {
-		v->set_flags(_w, (v->flags() & ~dhs->flags_mask) | dhs->flags);
-		if (dhs->autorefresh_period > 0
-		    && dhs->autorefresh_period < v->autorefresh_period())
-		    v->set_autorefresh_period(dhs->autorefresh_period);
-	    }
-	    if (v->_flags & hflag_outstanding) {
-		v->_flags &= ~hflag_outstanding;
-		if (flags & hflag_refresh)
-		    v->refresh(_w);
-	    }
+	v->set_driver_flags(_cr, flags);
+	if (was_empty || v->notify_delt())
+	    _cr->on_handler_create(v, was_empty);
+	if (was_empty && (v->_flags & hflag_outstanding)) {
+	    v->_flags &= ~hflag_outstanding;
+	    if (flags & hflag_refresh)
+		v->refresh(_cr);
 	}
-	if (v->notify_delt())
-	    _w->diagram()->notify_read(v);
 	
 	while (s != hvalue.end() && *s != '\r' && *s != '\n')
 	    ++s;
@@ -266,18 +259,18 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 }
 
 handler_value *handler_values::hard_find_placeholder(const String &hname,
-						     wmain *w, int flags,
+						     int flags,
 						     int autorefresh_period)
 {
     int dot = hname.find_right('.');
-    if (dot < 0 || !_w->driver())
+    if (dot < 0 || !_cr->driver())
 	return 0;
     handler_value *hh = _hv.find_insert(hname.substring(0, dot + 1) + "handlers").get();
     if (hh->have_hvalue())
 	return 0;
-    hh->refresh(w);
+    hh->refresh(_cr);
     handler_value *hv = _hv.find_insert(hname).get();
-    hv->set_flags(w, hv->flags() | flags);
+    hv->set_flags(_cr, hv->flags() | flags);
     if (autorefresh_period > 10
 	&& hv->autorefresh_period() > autorefresh_period)
 	hv->set_autorefresh_period(autorefresh_period);

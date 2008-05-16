@@ -4,7 +4,7 @@
 #include <click/config.h>
 #include "dwidget.hh"
 #include "dstyle.hh"
-#include "diagram.hh"
+#include "wdiagram.hh"
 #include "ddecor.hh"
 #include <click/userutils.hh>
 #include <click/confparse.hh>
@@ -13,7 +13,7 @@
 #include <clicktool/elementmap.hh>
 #include <list>
 #include <math.h>
-#include "wrouter.hh"
+#include "crouter.hh"
 #include "whandler.hh"
 #include "transform.hh"
 extern "C" {
@@ -48,7 +48,7 @@ void dcontext::set_font_description(const String &font)
 
 
 delt *delt::create(ElementT *e, delt *parent,
-		   wdiagram *d, ProcessingT *processing,
+		   crouter *cr, ProcessingT *processing,
 		   HashTable<String, delt *> &collector,
 		   Vector<ElementT *> &path, int &z_index)
 {
@@ -64,14 +64,14 @@ delt *delt::create(ElementT *e, delt *parent,
     collector[de->_flat_name] = de;
 
     int x;
-    de->_dess = d->ccss()->elt_size_style(d, de, &x);
+    de->_dess = cr->ccss()->elt_size_style(cr, de, &x);
     de->_dess_sensitivity = x;
-    de->_des = d->ccss()->elt_style(d, de, &x);
+    de->_des = cr->ccss()->elt_style(cr, de, &x);
     de->_des_sensitivity = x;
 
     if (e->resolved_router(processing->scope())) {
 	ProcessingT subprocessing(*processing, e);
-	de->create_elements(d, subprocessing.router(), &subprocessing,
+	de->create_elements(cr, subprocessing.router(), &subprocessing,
 			    collector, path, z_index);
     }
     path.pop_back();
@@ -115,7 +115,7 @@ delt::~delt()
 }
 
 
-void delt::create_elements(wdiagram *d, RouterT *router,
+void delt::create_elements(crouter *cr, RouterT *router,
 			   ProcessingT *processing,
 			   HashTable<String, delt *> &collector,
 			   Vector<ElementT *> &path, int &z_index)
@@ -124,11 +124,11 @@ void delt::create_elements(wdiagram *d, RouterT *router,
     for (RouterT::iterator i = router->begin_elements();
 	 i != router->end_elements(); ++i)
 	_elt.push_back(delt::create(i.operator->(), this,
-				    d, processing, collector, path, z_index));
+				    cr, processing, collector, path, z_index));
 
     // set styles for all elements (this adds new elements for splits)
     for (int i = 0; i < router->nelements(); ++i)
-	_elt[i]->reccss(d, dsense_always);	
+	_elt[i]->reccss(cr, dsense_always);	
 
     // XXX would like to change the connection complement as styles change
     Vector<PortT> cq;
@@ -519,10 +519,10 @@ static void ports_dot(StringAccum &sa, int nports, char c)
 	 sa << (p ? "|<" : "<") << c << p << ">";
 }
 
-void delt::position_contents_dot(wdiagram *d, ErrorHandler *errh)
+void delt::position_contents_dot(crouter *cr, ErrorHandler *errh)
 {
     delt fake_child(this, 0);
-    ref_ptr<delt_size_style> gdess = d->ccss()->elt_size_style(d, &fake_child);
+    ref_ptr<delt_size_style> gdess = cr->ccss()->elt_size_style(cr, &fake_child);
     double gxsep = std::max(gdess->margin[1], gdess->margin[3]);
     double gysep = std::max(gdess->margin[0], gdess->margin[2]);
     double txsep = gdess->margin[1] + gdess->margin[3];
@@ -750,7 +750,7 @@ void delt::position_contents_dot(wdiagram *d, ErrorHandler *errh)
 	}
 
     if (!root() && first_time)
-	position_contents_dot(d, errh);
+	position_contents_dot(cr, errh);
 }
 
 
@@ -760,7 +760,7 @@ void delt::position_contents_dot(wdiagram *d, ErrorHandler *errh)
  *
  */
 
-bool delt::reccss(wdiagram *d, int change)
+bool delt::reccss(crouter *cr, int change)
 {
     int x;
     bool redraw = false;
@@ -769,14 +769,14 @@ bool delt::reccss(wdiagram *d, int change)
     String old_markup = _markup;
 
     if (change & (_dess_sensitivity | dsense_always)) {
-	_dess = d->ccss()->elt_size_style(d, this, &x);
+	_dess = cr->ccss()->elt_size_style(cr, this, &x);
 	_dess_sensitivity = x;
 	if (old_dess != _dess)
 	    redraw = true;
     }
 
     if (change & (_des_sensitivity | dsense_always)) {
-	_des = d->ccss()->elt_style(d, this, &x);
+	_des = cr->ccss()->elt_style(cr, this, &x);
 	_des_sensitivity = x;
 	if (old_des != _des)
 	    redraw = true;
@@ -784,7 +784,7 @@ bool delt::reccss(wdiagram *d, int change)
 
     if ((change & (_markup_sensitivity | dsense_always))
 	|| (_des != old_des && _des->text != old_des->text)) {
-	_markup = parse_markup(_des->text, d, -1, &x);
+	_markup = parse_markup(_des->text, cr, -1, &x);
 	_markup_sensitivity = x;
     }
 
@@ -822,17 +822,17 @@ bool delt::reccss(wdiagram *d, int change)
 	ddecor::free_list(_decor);
 	String s = _des->decorations;
 	while (String dname = cp_pop_spacevec(s))
-	    if (String dtype = d->ccss()->vstring("style", dname, d, this)) {
+	    if (String dtype = cr->ccss()->vstring("style", dname, cr, this)) {
 		if (dtype == "fullness")
-		    _decor = new dfullness_decor(dname, d, this, _decor);
+		    _decor = new dfullness_decor(dname, cr, this, _decor);
 		else if (dtype == "activity")
-		    _decor = new dactivity_decor(dname, d, this, _decor);
+		    _decor = new dactivity_decor(dname, cr, this, _decor);
 	    }
     }
     
     if (_des->display == dedisp_vsplit && !_split) {
 	delt *se = create_split(desplit_inputs);
-	se->reccss(d, dsense_always);
+	se->reccss(cr, dsense_always);
 	redraw = true;
     } else if (_des->display == dedisp_fsplit && !_split) {
 	Bitvector map(256);
@@ -844,7 +844,7 @@ bool delt::reccss(wdiagram *d, int change)
 		    _split_type = (unsigned char) *s;
 		else {
 		    delt *se = create_split((unsigned char) *s);
-		    se->reccss(d, dsense_always);
+		    se->reccss(cr, dsense_always);
 		    redraw = true;
 		}
 	    }
@@ -866,7 +866,7 @@ void delt::layout_contents(dcontext &dcx)
     for (size_t i = 0; i != _elt.size(); ++i)
 	_elt[i]->layout(dcx);
 
-    position_contents_dot(dcx.d, dcx.d->main()->error_handler());
+    position_contents_dot(dcx.d->main(), dcx.d->main()->error_handler());
     //position_contents_scc(router);
     //position_contents_first_heuristic(router);
 }
@@ -879,11 +879,12 @@ void delt::layout_ports(dcontext &dcx)
     delete[] _port_text_offsets;
     _portoff[0] = _portoff[1] = 0;
     _port_text_offsets = 0;
-    dcss_set *dcs = dcx.d->ccss();
+    crouter *cr = dcx.d->main();
+    dcss_set *dcs = cr->ccss();
     int poff = 0;
     
     for (int isoutput = 0; isoutput < 2; ++isoutput) {
-	ref_ptr<dport_style> dps = dcs->port_style(dcx.d, this, isoutput, 0, 0);
+	ref_ptr<dport_style> dps = dcs->port_style(cr, this, isoutput, 0, 0);
 	_ports_length[isoutput] = 2 * dps->edge_padding;
 	if (!_e->nports(isoutput)
 	    || (_des->display == dedisp_vsplit && isoutput == (_split_type != 0)))
@@ -894,14 +895,14 @@ void delt::layout_ports(dcontext &dcx)
 	double tm = dps->edge_padding;
 	for (int p = 0; p < _e->nports(isoutput); ++p, ++poff) {
 	    if (p)
-		dps = dcs->port_style(dcx.d, this, isoutput, p, 0);
+		dps = dcs->port_style(cr, this, isoutput, p, 0);
 	    double l;
 	    if (dps->shape == dpshape_triangle)
 		l = dps->length - 2;
 	    else
 		l = dps->length + 4;
 	    if (dps->text) {
-		String markup = parse_markup(dps->text, dcx.d, p, 0);
+		String markup = parse_markup(dps->text, dcx.d->main(), p, 0);
 		if (dcx.pl_font != dps->font)
 		    dcx.set_font_description(dps->font);
 		pango_layout_set_width(dcx, -1);
@@ -953,10 +954,9 @@ static void append_markup_quote(StringAccum &sa, const String &str,
 	sa.append("...", 3);
 }
 
-String delt::parse_markup(const String &text, wdiagram *d,
+String delt::parse_markup(const String &text, crouter *cr,
 			  int port, int *sensitivity)
 {
-    wmain *w = d->main();
     if (sensitivity)
 	*sensitivity = 0;
     
@@ -1021,15 +1021,15 @@ String delt::parse_markup(const String &text, wdiagram *d,
 		    /* nada */;
 		if (s == send || n == s)
 		    goto invalid_format;
-		handler_value *hv = w->hvalues().find_placeholder(flat_name() + "." + text.substring(n, s), w, hflag_notify_delt);
+		handler_value *hv = cr->hvalues().find_placeholder(flat_name() + "." + text.substring(n, s), hflag_notify_delt);
 		if (hv) {
 		    if (hv->have_hvalue())
 			append_markup_quote(sa, hv->hvalue(), vals[pm_precision]);
 		    else {
 			if (altflag && hv->refreshable())
-			    hv->set_flags(w, hv->flags() | hflag_autorefresh);
+			    hv->set_flags(cr, hv->flags() | hflag_autorefresh);
 			if (hv->refreshable())
-			    hv->refresh(w);
+			    hv->refresh(cr);
 			if (vals[pm_width] > 0)
 			    sa.append_fill('?', vals[pm_width]);
 		    }
@@ -1128,19 +1128,19 @@ void delt::layout_compound_ports_copy(delt *compound, bool isoutput)
     }
 }
 
-void delt::layout_compound_ports(wdiagram *d)
+void delt::layout_compound_ports(crouter *cr)
 {
     assert(_elt.size() >= 2 && _elt[0]->name() == "input" && _elt[1]->name() == "output" && !_elt[0]->visible() && !_elt[1]->visible());
 
     _elt[0]->_x = _x;
     _elt[0]->_y = _y - 10;
     _elt[0]->_width = _width;
-    ref_ptr<dport_style> dps = d->ccss()->port_style(d, this, false, 0, 0);
+    ref_ptr<dport_style> dps = cr->ccss()->port_style(cr, this, false, 0, 0);
     _elt[0]->_height = 10 + dps->width;
     _elt[0]->layout_compound_ports_copy(this, false);
 
     _elt[1]->_x = _x;
-    dps = d->ccss()->port_style(d, this, true, 0, 0);
+    dps = cr->ccss()->port_style(cr, this, true, 0, 0);
     _elt[1]->_y = _y + _height - dps->width;
     _elt[1]->_width = _width;
     _elt[1]->_height = 10;
@@ -1167,7 +1167,7 @@ void delt::layout_complete(dcontext &dcx, double dx, double dy)
 	}
 
     if (_e && _parent && _elt.size())
-	layout_compound_ports(dcx.d);
+	layout_compound_ports(dcx.d->main());
 
     for (std::vector<dconn *>::iterator ci = _conn.begin();
 	 ci != _conn.end(); ++ci)
@@ -1178,8 +1178,9 @@ void delt::layout_complete(dcontext &dcx, double dx, double dy)
 void delt::layout_main(dcontext &dcx)
 {
     delt fake_child(this, 0);
-    _des = dcx.d->ccss()->elt_style(dcx.d, &fake_child);
-    _dess = dcx.d->ccss()->elt_size_style(dcx.d, &fake_child);
+    crouter *cr = dcx.d->main();
+    _des = cr->ccss()->elt_style(cr, &fake_child);
+    _dess = cr->ccss()->elt_size_style(cr, &fake_child);
     dcx.d->rects().clear();
     layout_contents(dcx);
     layout_complete(dcx, _dess->margin[3], _dess->margin[0]);
@@ -1338,7 +1339,7 @@ void delt::insert(rect_search<dwidget> &rects,
 #endif
 
     if (_parent && _elt.size() && _des->display == dedisp_open) {
-	layout_compound_ports(d);
+	layout_compound_ports(d->main());
 	_elt[0]->insert(rects, d, bounds);
 	_elt[1]->insert(rects, d, bounds);
     }
@@ -1515,7 +1516,7 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p,
     }
 
     if (dps->text) {
-	String markup = parse_markup(dps->text, dcx.d, port, 0);
+	String markup = parse_markup(dps->text, dcx.d->main(), port, 0);
 	if (dcx.pl_font != dps->font)
 	    dcx.set_font_description(dps->font);
 	pango_layout_set_alignment(dcx, PANGO_ALIGN_CENTER);
@@ -1535,12 +1536,13 @@ void delt::draw_ports(dcontext &dcx)
     const char *pcpos = _processing_code.begin();
     int pcode;
     ref_ptr<dport_style> dps;
+    crouter *cr = dcx.d->main();
 
     if (_des->display != dedisp_vsplit || _split_type == desplit_inputs)
 	for (int i = 0; i < _e->ninputs(); i++) {
 	    pcpos = ProcessingT::processing_code_next
 		(pcpos, _processing_code.end(), pcode);
-	    dps = dcx.d->ccss()->port_style(dcx.d, this, false, i, pcode);
+	    dps = cr->ccss()->port_style(cr, this, false, i, pcode);
 	    if (dps->display & dpdisp_inputs) {
 		double opacity = (_des->display == dedisp_fsplit && flow_split_char(_des->flow_split, i, false) != _split_type ? 0.25 : 1);
 		draw_port(dcx, dps.get(), input_position(i, dps.get(), true),
@@ -1552,7 +1554,7 @@ void delt::draw_ports(dcontext &dcx)
 	for (int i = 0; i < _e->noutputs(); i++) {
 	    pcpos = ProcessingT::processing_code_next
 		(pcpos, _processing_code.end(), pcode);
-	    dps = dcx.d->ccss()->port_style(dcx.d, this, true, i, pcode);
+	    dps = cr->ccss()->port_style(cr, this, true, i, pcode);
 	    if (dps->display & dpdisp_outputs) {
 		double opacity = (_des->display == dedisp_fsplit && flow_split_char(_des->flow_split, i, true) != _split_type ? 0.25 : 1);
 		draw_port(dcx, dps.get(), output_position(i, dps.get(), true),
@@ -1867,7 +1869,7 @@ void delt::draw(dcontext &dcx)
 	    change |= dsense_highlight;
 	if (dcx.generation != _generation)
 	    change |= dsense_always;
-	reccss(dcx.d, change);
+	reccss(dcx.d->main(), change);
 	_drawn_highlight = _highlight;
 	_generation = dcx.generation;
 
@@ -2028,13 +2030,13 @@ bool delt::drag_canvas_changed(const rectangle &canvas) const
  *
  */
 
-handler_value *delt::handler_interest(wdiagram *d, const String &hname,
+handler_value *delt::handler_interest(crouter *cr, const String &hname,
 				      bool autorefresh,
 				      int autorefresh_period,
 				      bool always)
 {
-    return d->main()->hvalues().find_placeholder
-	(_flat_name + "." + hname, d->main(),
+    return cr->hvalues().find_placeholder
+	(_flat_name + "." + hname,
 	 hflag_notify_delt | (autorefresh ? hflag_autorefresh : 0)
 	 | (always ? hflag_always_notify_delt : 0),
 	 autorefresh_period);
@@ -2043,7 +2045,7 @@ handler_value *delt::handler_interest(wdiagram *d, const String &hname,
 void delt::notify_read(wdiagram *d, handler_value *hv)
 {
     ddecor::notify_list(_decor, d->main(), this, hv);
-    if (reccss(d, dsense_handler)) {
+    if (reccss(d->main(), dsense_handler)) {
 	d->redraw(*this);
 	if (_split && _split->visible())
 	    d->redraw(*_split);

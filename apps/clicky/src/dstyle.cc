@@ -4,7 +4,7 @@
 #include <click/config.h>
 #include "dwidget.hh"
 #include "dstyle.hh"
-#include "diagram.hh"
+#include "wdiagram.hh"
 #include "hvalues.hh"
 #include <click/userutils.hh>
 #include <click/confparse.hh>
@@ -15,7 +15,7 @@
 #include <list>
 #include <math.h>
 #include <string.h>
-#include "wrouter.hh"
+#include "crouter.hh"
 #include "whandler.hh"
 extern "C" {
 #include "support.h"
@@ -478,7 +478,7 @@ inline bool int_match_string(const char *begin, const char *end, int i)
     }
 }
 
-bool dcss_selector::match(wdiagram *d, const delt *e, int *sensitivity) const
+bool dcss_selector::match(crouter *cr, const delt *e, int *sensitivity) const
 {
     bool answer = true;
     int senses = 0;
@@ -522,7 +522,7 @@ bool dcss_selector::match(wdiagram *d, const delt *e, int *sensitivity) const
 		|| memcmp(name.begin(), type_name.begin(), type_name.length()))
 		return false;
 	} else if (k->equals("live", 4)) {
-	    if (!d->main()->driver())
+	    if (!cr->driver())
 		return false;
 	} else if (k->starts_with("name*=", 6)) {
 	    if (e->name().find_left(k->substring(6)) < 0)
@@ -530,53 +530,52 @@ bool dcss_selector::match(wdiagram *d, const delt *e, int *sensitivity) const
 	} else if (k->starts_with("downstream=", 11)) {
 	    if (e->fake())
 		return false;
-	    const wdiagram::reachable_t &ex = d->downstream(k->substring(11));
+	    const crouter::reachable_t &ex = cr->downstream(k->substring(11));
 	    if (!ex(e->parent()->flat_name(), e->eindex()))
 		return false;
 	} else if (k->starts_with("downstream!=", 12)) {
 	    if (e->fake())
 		return false;
-	    const wdiagram::reachable_t &ex = d->downstream(k->substring(12));
+	    const crouter::reachable_t &ex = cr->downstream(k->substring(12));
 	    if (ex(e->parent()->flat_name(), e->eindex()))
 		return false;
 	} else if (k->starts_with("upstream=", 9)) {
 	    if (e->fake())
 		return false;
-	    const wdiagram::reachable_t &ex = d->upstream(k->substring(9));
+	    const crouter::reachable_t &ex = cr->upstream(k->substring(9));
 	    if (!ex(e->parent()->flat_name(), e->eindex()))
 		return false;
 	} else if (k->starts_with("upstream!=", 10)) {
 	    if (e->fake())
 		return false;
-	    const wdiagram::reachable_t &ex = d->upstream(k->substring(10));
+	    const crouter::reachable_t &ex = cr->upstream(k->substring(10));
 	    if (ex(e->parent()->flat_name(), e->eindex()))
 		return false;
 	} else if (k->starts_with("reachable=", 10)) {
 	    if (e->fake())
 		return false;
-	    const wdiagram::reachable_t &ex1 = d->downstream(k->substring(10));
-	    const wdiagram::reachable_t &ex2 = d->upstream(k->substring(10));
+	    const crouter::reachable_t &ex1 = cr->downstream(k->substring(10));
+	    const crouter::reachable_t &ex2 = cr->upstream(k->substring(10));
 	    if (!ex1(e->parent()->flat_name(), e->eindex())
 		&& !ex2(e->parent()->flat_name(), e->eindex()))
 		return false;
 	} else if (k->starts_with("reachable!=", 11)) {
 	    if (e->fake())
 		return false;
-	    const wdiagram::reachable_t &ex1 = d->downstream(k->substring(11));
-	    const wdiagram::reachable_t &ex2 = d->upstream(k->substring(11));
+	    const crouter::reachable_t &ex1 = cr->downstream(k->substring(11));
+	    const crouter::reachable_t &ex2 = cr->upstream(k->substring(11));
 	    if (ex1(e->parent()->flat_name(), e->eindex())
 		|| ex2(e->parent()->flat_name(), e->eindex()))
 		return false;
 	} else if ((s = find(*k, '=')) != k->end()) {
-	    wmain *w = d->main();
-	    if (!w->driver() || !e->flat_name())
+	    if (!cr->driver() || !e->flat_name())
 		return false;
-	    handler_value *hv = w->hvalues().find_placeholder(e->flat_name() + "." + k->substring(k->begin(), s), w, hflag_notify_delt);
+	    handler_value *hv = cr->hvalues().find_placeholder(e->flat_name() + "." + k->substring(k->begin(), s), hflag_notify_delt);
 	    if (!hv)
 		return false;
 	    // XXX fix this
 	    if (!hv->have_hvalue()) {
-		hv->refresh(w);
+		hv->refresh(cr);
 		answer = false;
 	    } else if (hv->hvalue() != k->substring(s + 1, k->end()))
 		answer = false;
@@ -898,14 +897,14 @@ bool dcss_property::hard_change_relative_pixel() const
 	return false;
 }
 
-double dcss_property::vpixel(wdiagram *d, PermString relative_to,
+double dcss_property::vpixel(crouter *cr, PermString relative_to,
 			     const delt *e) const
 {
     change_relative_pixel();
     if (_t == t_pixel)
 	return _v.d;
     else if (_t == t_relative)
-	return _v.d * d->ccss()->vpixel(relative_to, d, e);
+	return _v.d * cr->ccss()->vpixel(relative_to, cr, e);
     else
 	return 0;
 }
@@ -962,7 +961,7 @@ void dcss::add(PermString name, const String &value)
     }
 }
 
-bool dcss::hard_match_context(wdiagram *d, const delt *e, int *sensitivity) const
+bool dcss::hard_match_context(crouter *cr, const delt *e, int *sensitivity) const
 {
     if (!e)
 	return _context.begin() == _context.end();
@@ -973,11 +972,11 @@ bool dcss::hard_match_context(wdiagram *d, const delt *e, int *sensitivity) cons
 
     while (!e->root() && sel_approx != _context.begin()) {
 	if (sel_precise != sel_approx && sel_precise != _context.begin()
-	    && sel_precise[-1].match(d, e, 0))
+	    && sel_precise[-1].match(cr, e, 0))
 	    --sel_precise;
 
 	int ts = 0;
-	bool m = sel_approx[-1].match(d, e, &ts);
+	bool m = sel_approx[-1].match(cr, e, &ts);
 	if (m && sel_precise == sel_approx)
 	    --sel_precise;
 	if (m || ts)
@@ -1477,7 +1476,7 @@ dcss *dcss_set::ccss_list(const String &str) const
     return 0;
 }
 
-void dcss_set::collect_port_styles(wdiagram *d, const delt *e, bool isoutput,
+void dcss_set::collect_port_styles(crouter *cr, const delt *e, bool isoutput,
 				   int port, int processing,
 				   Vector<dcss *> &result)
 {
@@ -1485,23 +1484,23 @@ void dcss_set::collect_port_styles(wdiagram *d, const delt *e, bool isoutput,
     for (dcss *s = ccss_list("port"); s; s = s->_next)
 	if ((s->pflags() & pflag_port)
 	    && s->selector().match_port(isoutput, port, processing)
-	    && s->match_context(d, e))
+	    && s->match_context(cr, e))
 	    result.push_back(s);
     for (dcss *s = _s[0]; s; s = s->_next)
 	if ((s->pflags() & pflag_port)
 	    && s->selector().match_port(isoutput, port, processing)
-	    && s->match_context(d, e))
+	    && s->match_context(cr, e))
 	    result.push_back(s);
-    collect_elt_styles(d, e, pflag_port | pflag_no_below, result, 0);
+    collect_elt_styles(cr, e, pflag_port | pflag_no_below, result, 0);
     if (_below)
-	_below->collect_port_styles(d, e, isoutput, port, processing, result);
+	_below->collect_port_styles(cr, e, isoutput, port, processing, result);
 }
 
-ref_ptr<dport_style> dcss_set::port_style(wdiagram *d, const delt *e,
+ref_ptr<dport_style> dcss_set::port_style(crouter *cr, const delt *e,
 					  bool isoutput, int port, int processing)
 {
     Vector<dcss *> sv;
-    collect_port_styles(d, e, isoutput, port, processing, sv);
+    collect_port_styles(cr, e, isoutput, port, processing, sv);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
     StringAccum sa(sizeof(unsigned) * sv.size());
@@ -1553,24 +1552,24 @@ ref_ptr<dport_style> dcss_set::port_style(wdiagram *d, const delt *e,
 
 static dcss_propmatch *elt_pmp[num_elt_pm];
 
-void dcss_set::collect_elt_styles(wdiagram *d, const delt *e, int pflag,
+void dcss_set::collect_elt_styles(crouter *cr, const delt *e, int pflag,
 				  Vector<dcss *> &result, int *sensitivity) const
 {
     assert(!e->root());
     for (dcss *s = ccss_list(e->type_name()); s; s = s->_next)
 	if ((s->pflags() & pflag)
-	    && s->selector().match(d, e, sensitivity)
-	    && s->match_context(d, e, sensitivity))
+	    && s->selector().match(cr, e, sensitivity)
+	    && s->match_context(cr, e, sensitivity))
 	    result.push_back(s);
     for (dcss *s = _s[0]; s; s = s->_next)
 	if ((s->pflags() & pflag)
-	    && s->selector().match(d, e, sensitivity)
-	    && s->match_context(d, e, sensitivity))
+	    && s->selector().match(cr, e, sensitivity)
+	    && s->match_context(cr, e, sensitivity))
 	    result.push_back(s);
     //if (e->parent() && !e->parent()->root())
-    //	collect_elt_styles(d, e->parent(), pflag | pflag_no_below, result, sensitivity);
+    //	collect_elt_styles(cr, e->parent(), pflag | pflag_no_below, result, sensitivity);
     if (_below && !(pflag & pflag_no_below))
-	_below->collect_elt_styles(d, e, pflag, result, sensitivity);
+	_below->collect_elt_styles(cr, e, pflag, result, sensitivity);
 }
 
 static String parse_flow_split(const char *begin, const char *end)
@@ -1596,12 +1595,12 @@ static String parse_flow_split(const char *begin, const char *end)
 	return sa.take_string();
 }
 
-ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e, int *sensitivity)
+ref_ptr<delt_style> dcss_set::elt_style(crouter *cr, const delt *e, int *sensitivity)
 {
     if (sensitivity)
 	*sensitivity = 0;
     Vector<dcss *> sv;
-    collect_elt_styles(d, e, pflag_elt, sv, sensitivity);
+    collect_elt_styles(cr, e, pflag_elt, sv, sensitivity);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
     StringAccum sa(sizeof(unsigned) * sv.size());
@@ -1620,7 +1619,7 @@ ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e, int *sensiti
 	if (sty->border_color[3] == 0)
 	    sty->border_style = dborder_none;
 	sty->shadow_style = elt_pm[4].vshadow_style("shadow-style");
-	sty->shadow_width = elt_pm[5].vpixel("shadow-width", d, e);
+	sty->shadow_width = elt_pm[5].vpixel("shadow-width", cr, e);
 	elt_pm[6].vcolor(sty->shadow_color, "shadow-color");
 	if (sty->shadow_color[3] == 0 || sty->shadow_width <= 0)
 	    sty->shadow_style = dshadow_none;
@@ -1649,7 +1648,7 @@ ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e, int *sensiti
 	sty->font = elt_pm[11].vstring("font");
 	sty->decorations = elt_pm[12].vstring("decorations");
 	sty->queue_stripe_style = elt_pm[13].vborder_style("queue-stripe-style");
-	sty->queue_stripe_width = elt_pm[14].vpixel("queue-stripe-width", d, e);
+	sty->queue_stripe_width = elt_pm[14].vpixel("queue-stripe-width", cr, e);
 	elt_pm[15].vcolor(sty->queue_stripe_color, "queue-stripe-color");
 
 	style_cache = ref_ptr<delt_style>(sty);
@@ -1661,12 +1660,12 @@ ref_ptr<delt_style> dcss_set::elt_style(wdiagram *d, const delt *e, int *sensiti
 
 static dcss_propmatch *elt_size_pmp[num_elt_size_pm];
 
-ref_ptr<delt_size_style> dcss_set::elt_size_style(wdiagram *d, const delt *e, int *sensitivity)
+ref_ptr<delt_size_style> dcss_set::elt_size_style(crouter *cr, const delt *e, int *sensitivity)
 {
     if (sensitivity)
 	*sensitivity = 0;
     Vector<dcss *> sv;
-    collect_elt_styles(d, e, pflag_elt_size, sv, sensitivity);
+    collect_elt_styles(cr, e, pflag_elt_size, sv, sensitivity);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
     StringAccum sa(sizeof(unsigned) * sv.size());
@@ -1683,19 +1682,19 @@ ref_ptr<delt_size_style> dcss_set::elt_size_style(wdiagram *d, const delt *e, in
 
 	delt_size_style *sty = new delt_size_style;
 	sty->scale = scale;
-	sty->border_width = elt_size_pm[0].vpixel("border-width", d, e);
-	sty->padding[0] = elt_size_pm[1].vpixel("padding-top", d, e) * scale;
-	sty->padding[1] = elt_size_pm[2].vpixel("padding-right", d, e) * scale;
-	sty->padding[2] = elt_size_pm[3].vpixel("padding-bottom", d, e) * scale;
-	sty->padding[3] = elt_size_pm[4].vpixel("padding-left", d, e) * scale;
-	sty->min_width = elt_size_pm[5].vpixel("min-width", d, e) * scale;
-	sty->min_height = elt_size_pm[6].vpixel("min-height", d, e) * scale;
-	sty->height_step = elt_size_pm[7].vpixel("height-step", d, e) * scale;
-	sty->margin[0] = elt_size_pm[8].vpixel("margin-top", d, e) * scale;
-	sty->margin[1] = elt_size_pm[9].vpixel("margin-right", d, e) * scale;
-	sty->margin[2] = elt_size_pm[10].vpixel("margin-bottom", d, e) * scale;
-	sty->margin[3] = elt_size_pm[11].vpixel("margin-left", d, e) * scale;
-	sty->queue_stripe_spacing = elt_size_pm[12].vpixel("queue-stripe-spacing", d, e) * scale;
+	sty->border_width = elt_size_pm[0].vpixel("border-width", cr, e);
+	sty->padding[0] = elt_size_pm[1].vpixel("padding-top", cr, e) * scale;
+	sty->padding[1] = elt_size_pm[2].vpixel("padding-right", cr, e) * scale;
+	sty->padding[2] = elt_size_pm[3].vpixel("padding-bottom", cr, e) * scale;
+	sty->padding[3] = elt_size_pm[4].vpixel("padding-left", cr, e) * scale;
+	sty->min_width = elt_size_pm[5].vpixel("min-width", cr, e) * scale;
+	sty->min_height = elt_size_pm[6].vpixel("min-height", cr, e) * scale;
+	sty->height_step = elt_size_pm[7].vpixel("height-step", cr, e) * scale;
+	sty->margin[0] = elt_size_pm[8].vpixel("margin-top", cr, e) * scale;
+	sty->margin[1] = elt_size_pm[9].vpixel("margin-right", cr, e) * scale;
+	sty->margin[2] = elt_size_pm[10].vpixel("margin-bottom", cr, e) * scale;
+	sty->margin[3] = elt_size_pm[11].vpixel("margin-left", cr, e) * scale;
+	sty->queue_stripe_spacing = elt_size_pm[12].vpixel("queue-stripe-spacing", cr, e) * scale;
 
 	style_cache = ref_ptr<delt_size_style>(sty);
     }
@@ -1730,26 +1729,26 @@ static int parse_autorefresh(String str, const char *medium, int *period)
 
 static dcss_propmatch *handler_pmp[num_handler_pm];
 
-void dcss_set::collect_handler_styles(wdiagram *d, const handler_value *hv,
+void dcss_set::collect_handler_styles(crouter *cr, const handler_value *hv,
 				      const delt *e, Vector<dcss *> &result,
 				      bool &generic) const
 {
     for (dcss * const *sp = _s.begin() + 2; sp != _s.end(); ++sp)
 	if ((*sp)->type()[0] == '~')
 	    for (dcss *s = *sp; s; s = s->_next)
-		if (s->selector().match(hv) && s->match_context(d, e)) {
+		if (s->selector().match(hv) && s->match_context(cr, e)) {
 		    if (!s->selector().generic_handler() || s->has_context())
 			generic = false;
 		    result.push_back(s);
 		}
     for (dcss *s = _s[0]; s; s = s->_next)
-	if (s->selector().match(hv) && s->match_context(d, e)) {
+	if (s->selector().match(hv) && s->match_context(cr, e)) {
 	    if (!s->selector().generic_handler() || s->has_context())
 		generic = false;
 	    result.push_back(s);
 	}
     if (_below)
-	_below->collect_handler_styles(d, hv, e, result, generic);
+	_below->collect_handler_styles(cr, hv, e, result, generic);
 }
 
 ref_ptr<dhandler_style> dcss_set::handler_style(wdiagram *d, const handler_value *hv)
@@ -1757,7 +1756,7 @@ ref_ptr<dhandler_style> dcss_set::handler_style(wdiagram *d, const handler_value
     Vector<dcss *> sv;
     bool generic = true;
     const delt *e = d->elt(hv->element_name());
-    collect_handler_styles(d, hv, e, sv, generic);
+    collect_handler_styles(d->main(), hv, e, sv, generic);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
     StringAccum sa(sizeof(unsigned) * sv.size());
@@ -1806,32 +1805,32 @@ ref_ptr<dhandler_style> dcss_set::handler_style(wdiagram *d, const handler_value
 
 static dcss_propmatch *fullness_pmp[num_fullness_pm];
 
-void dcss_set::collect_decor_styles(PermString decor, wdiagram *d, const delt *e,
+void dcss_set::collect_decor_styles(PermString decor, crouter *cr, const delt *e,
 				    Vector<dcss *> &result, bool &generic) const
 {
     for (dcss * const *sp = _s.begin() + 2; sp != _s.end(); ++sp)
 	if ((*sp)->type()[0] == decor[0])
 	    for (dcss *s = *sp; s; s = s->_next)
-		if (s->selector().match_decor(decor) && s->match_context(d, e)) {
+		if (s->selector().match_decor(decor) && s->match_context(cr, e)) {
 		    if (!s->selector().generic_decor() || s->has_context())
 			generic = false;
 		    result.push_back(s);
 		}
     for (dcss *s = _s[0]; s; s = s->_next)
-	if (s->selector().match_decor(decor) && s->match_context(d, e)) {
+	if (s->selector().match_decor(decor) && s->match_context(cr, e)) {
 	    if (!s->selector().generic_decor() || s->has_context())
 		generic = false;
 	    result.push_back(s);
 	}
     if (_below)
-	_below->collect_decor_styles(decor, d, e, result, generic);
+	_below->collect_decor_styles(decor, cr, e, result, generic);
 }
 
-ref_ptr<dfullness_style> dcss_set::fullness_style(PermString decor, wdiagram *d, const delt *e)
+ref_ptr<dfullness_style> dcss_set::fullness_style(PermString decor, crouter *cr, const delt *e)
 {
     Vector<dcss *> sv;
     bool generic = true;
-    collect_decor_styles(decor, d, e, sv, generic);
+    collect_decor_styles(decor, cr, e, sv, generic);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
     StringAccum sa(sizeof(unsigned) * sv.size());
@@ -1865,11 +1864,11 @@ ref_ptr<dfullness_style> dcss_set::fullness_style(PermString decor, wdiagram *d,
 
 static dcss_propmatch *activity_pmp[num_activity_pm];
 
-ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, wdiagram *d, const delt *e)
+ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, crouter *cr, const delt *e)
 {
     Vector<dcss *> sv;
     bool generic = true;
-    collect_decor_styles(decor, d, e, sv, generic);
+    collect_decor_styles(decor, cr, e, sv, generic);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
     StringAccum sa(sizeof(unsigned) * sv.size());
@@ -1952,24 +1951,24 @@ ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, wdiagram *d,
  *
  */
 
-double dcss_set::vpixel(PermString name, wdiagram *d, const delt *e) const
+double dcss_set::vpixel(PermString name, crouter *cr, const delt *e) const
 {
     Vector<dcss *> sv;
-    collect_elt_styles(d, e, pflag_elt | pflag_elt_size, sv, 0);
+    collect_elt_styles(cr, e, pflag_elt | pflag_elt_size, sv, 0);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
 
     dcss_propmatch pm = { name, 0 }, *pmp = &pm;
     dcss::assign_all(&pm, &pmp, 1, sv.begin(), sv.end());
     
-    return pm.vpixel(name.c_str(), d, name, e->parent());
+    return pm.vpixel(name.c_str(), cr, name, e->parent());
 }
 
-String dcss_set::vstring(PermString name, PermString decor, wdiagram *d, const delt *e) const
+String dcss_set::vstring(PermString name, PermString decor, crouter *cr, const delt *e) const
 {
     Vector<dcss *> sv;
     bool generic = true;
-    collect_decor_styles(decor, d, e, sv, generic);
+    collect_decor_styles(decor, cr, e, sv, generic);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
 

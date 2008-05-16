@@ -1,69 +1,26 @@
-#ifndef CLICKY_WROUTER_HH
-#define CLICKY_WROUTER_HH 1
-#include "gathererror.hh"
-#include <click/ipaddress.hh>
-#include <click/straccum.hh>
-#include <deque>
-#include "hvalues.hh"
-class ElementT;
-class ElementClassT;
-class RouterT;
-class ElementMap;
-class ProcessingT;
+#ifndef CLICKY_WMAIN_HH
+#define CLICKY_WMAIN_HH 1
+#include "crouter.hh"
 namespace clicky {
-class wdiagram;
-class wdriver;
 class whandler;
-class csocket_wdriver;
-class clickfs_wdriver;
-class dcss_set;
+class wdiagram;
 
-typedef Vector<Pair<String, String> > messagevector;
-
-class wmain { public:
+class wmain : public crouter { public:
     
     wmain();
     ~wmain();
 
-    bool empty() const;
     void clear(bool alive);
     void show();
 
-    void set_landmark(const String &landmark);
     void set_save_file(const String &savefile, bool loading);
-    void set_config(String conf, bool replace);
-    String ccss_text() const;
-    void set_ccss_text(const String &text);
 
-    // implementation properties
-    GatherErrorHandler *error_handler() const {
-	return &_gerrh;
-    }
-    handler_values &hvalues() {
-	return _hvalues;
-    }
-    const handler_values &hvalues() const {
-	return _hvalues;
-    }
-    wdriver *driver() const {
-	return _driver_active ? _driver : 0;
+    wdiagram *diagram() const {
+	return _diagram;
     }
     whandler *handlers() const {
 	return _handlers;
     }
-    wdiagram *diagram() const {
-	return _diagram;
-    }
-    dcss_set *ccss() const;
-    ElementMap *element_map() const {
-	return _emap;
-    }
-    ProcessingT *processing() const {
-	return _processing;
-    }
-
-    bool element_exists(const String &ename) const;
-    ElementClassT *element_type(const String &ename) const;
 
     // GTK properties
     GtkWindow *window() const {
@@ -85,33 +42,24 @@ class wmain { public:
 	return _binary_tag;
     }
 
-    // throbber
-    void throbber_show();
-    void throbber_hide();
-    class throb_after { public:
-	throb_after(wmain *w, int timeout);
-	~throb_after();
-	// actually private:
-	wmain *_rw;
-	guint _timeout;
-    };
-    
-    // driver
-    void set_csocket(GIOChannel *socket, bool ready);
-
-    void on_driver(wdriver *driver, bool active);
-    void on_read(const String &hname, const String &hparam, const String &hvalue, int status, messagevector &messages);
-    void on_write(const String &hname, const String &hvalue, int status, messagevector &messages);
-    void on_check_write(const String &hname, int status, messagevector &messages);
-    
-    void errors_fill(bool initial);
-
-    // router
-    RouterT *router() const {
-	return _r;
-    }
-    
     // not really public
+    void on_landmark_changed();
+    void on_ccss_changed();
+    LexerTInfo *on_config_changed_prepare();
+    void on_config_changed(bool replace, LexerTInfo *linfo);
+    void on_throbber_changed(bool show);
+    void on_error(bool replace, const String &dialog);
+    
+    void on_handler_create(handler_value *hv, bool was_empty);
+    void on_handler_read(const String &hname, const String &hparam,
+			 const String &hvalue,
+			 int status, messagevector &messages);
+    void on_handler_read(handler_value *hv, bool changed);
+    void on_handler_write(const String &hname, const String &hvalue,
+			  int status, messagevector &messages);
+    void on_handler_check_write(const String &hname,
+				int status, messagevector &messages);
+
     void on_open_file();
     void on_open_socket();
     void on_open_kernel();
@@ -132,6 +80,9 @@ class wmain { public:
     gboolean error_tag_event(GtkTextTag *tag, GObject *event_object,
 			     GdkEvent *event, GtkTextIter *pos);
     void on_error_scroll_timeout();
+
+    void repaint(const rectangle &rect);
+    void repaint_if_visible(const rectangle &rect, double dimen);
     
     void element_tree_sort(int state);
     
@@ -147,18 +98,9 @@ class wmain { public:
   private:
 
     // router
-    String _landmark;
     String _savefile;
     static String last_savefile;
-    String _conf;
-    RouterT *_r;
-    ElementMap *_emap;
-    int _selected_driver;
-    ProcessingT *_processing;
-    mutable GatherErrorHandler _gerrh;
 
-    int _throbber_count;
-    
     // UI features
     GtkWidget *_window;
 
@@ -201,10 +143,7 @@ class wmain { public:
     GdkCursor *_link_cursor;
 
     // subsystems
-    handler_values _hvalues;
     whandler *_handlers;
-    wdriver *_driver;
-    bool _driver_active;
     wdiagram *_diagram;
     
     void dialogs_connect();
@@ -226,9 +165,6 @@ class wmain { public:
     friend class wdiagram;
     
 };
-
-bool cp_host_port(const String &hosts, const String &ports, IPAddress *result_addr, uint16_t *result_port, ErrorHandler *errh);
-int do_fd_connected(int fd, ErrorHandler *errh);
 
 }
 #endif

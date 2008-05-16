@@ -15,8 +15,9 @@
 #include <clicktool/routert.hh>
 #include <clicktool/lexert.hh>
 #include <clicktool/lexertinfo.hh>
-#include "wrouter.hh"
-#include "wdriver.hh"
+#include "crouter.hh"
+#include "cdriver.hh"
+#include "wmain.hh"
 #include <click/hashtable.hh>
 #include <netdb.h>
 
@@ -34,6 +35,7 @@ extern "C" {
 #define FILE_OPT 306
 #define KERNEL_OPT 307
 #define STYLE_EXPR_OPT 308
+#define PDF_OPT 309
 
 static const Clp_Option options[] = {
     { "version", 0, VERSION_OPT, 0, 0 },
@@ -44,6 +46,7 @@ static const Clp_Option options[] = {
     { "port", 'p', PORT_OPT, Clp_ValString, 0 },
     { "kernel", 'k', KERNEL_OPT, 0, 0 },
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
+    { "pdf", 0, PDF_OPT, Clp_ValString, Clp_Optional },
     { "help", 0, HELP_OPT, 0, 0 }
 };
 
@@ -63,6 +66,7 @@ Options:\n\
   -k, --kernel                 Read configuration from kernel.\n\
   -s, --style FILE             Add CCSS style information from FILE.\n\
       --style-expr STYLE       Add STYLE as CCSS style information.\n\
+      --pdf[=FILE]             Output diagram to FILE (default stdout).\n\
   -C, --clickpath PATH         Use PATH for CLICKPATH.\n\
       --help                   Print this message and exit.\n\
   -v, --version                Print version number and exit.\n\
@@ -90,7 +94,7 @@ main(int argc, char *argv[])
 	gtk_rc_add_default_file(gtkrc_file.c_str());
     
     gtk_set_locale();
-    gtk_init(&argc, &argv);
+    bool have_gui = gtk_init_check(&argc, &argv);
     add_pixmap_directory(PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");
 
     // read command line arguments
@@ -101,6 +105,8 @@ main(int argc, char *argv[])
     String css_text;
     Vector<String> wfiles;
     Vector<int> wtypes;
+    bool do_pdf = false;
+    String pdf_file;
     
     while (1) {
 	int opt = Clp_Next(clp);
@@ -153,6 +159,11 @@ particular purpose.\n");
 	    wtypes.push_back(4);
 	    break;
 
+	  case PDF_OPT:
+	    do_pdf = true;
+	    pdf_file = clp->vstr;
+	    break;
+
 	  case HELP_OPT:
 	    usage();
 	    exit(0);
@@ -174,6 +185,17 @@ particular purpose.\n");
     }
   
   done:
+    // check exit conditions
+    if (!do_pdf && !have_gui) {
+	fprintf(stderr, "can't initialize GUI\n");
+	exit(1);
+    }
+    if (do_pdf && wfiles.size() != 1) {
+	fprintf(stderr, wfiles.size() ? "too many files\n" : "file missing\n");
+	exit(1);
+    }
+
+    // create GUIs
     if (wfiles.size() == 0) {
 	clicky::wmain *rw = new clicky::wmain;
 	rw->set_ccss_text(css_text);
@@ -184,7 +206,7 @@ particular purpose.\n");
     uint16_t port;
     for (int i = 0; i < wfiles.size(); i++) {
 	clicky::wmain *rw = new clicky::wmain;
-	rw->set_landmark(wtypes[i] == 1 ? "<config>" : wfiles[i]);
+	rw->set_landmark(wtypes[i] == 1 ? "config" : wfiles[i]);
 	rw->set_ccss_text(css_text);
 	if (wtypes[i] == 1)
 	    rw->set_config(wfiles[i], true);
@@ -194,14 +216,14 @@ particular purpose.\n");
 	    IPAddress addr;
 	    if (clicky::cp_host_port(wfiles[i].substring(0, colon), wfiles[i].substring(colon + 1), &addr, &port, rw->error_handler())) {
 		bool ready = false;
-		GIOChannel *channel = clicky::csocket_wdriver::start_connect(addr, port, &ready, rw->error_handler());
+		GIOChannel *channel = clicky::csocket_cdriver::start_connect(addr, port, &ready, rw->error_handler());
 		if (rw->error_handler()->size())
 		    rw->error_handler()->run_dialog(rw->window());
 		if (channel)
-		    (void) new clicky::csocket_wdriver(rw, channel, ready);
+		    (void) new clicky::csocket_cdriver(rw, channel, ready);
 	    }
 	} else if (wtypes[i] == 4) {
-	    (void) new clicky::clickfs_wdriver(rw, "/click/");
+	    (void) new clicky::clickfs_cdriver(rw, "/click/");
 	} else {
 	    String s = file_string(wfiles[i], rw->error_handler());
 	    if (!s && rw->error_handler()->nerrors())

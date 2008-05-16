@@ -2,7 +2,7 @@
 #  include <config.h>
 #endif
 #include <click/config.h>
-#include "wdriver.hh"
+#include "cdriver.hh"
 #include <click/confparse.hh>
 #include <click/vector.cc>
 #include <click/llrpc.h>
@@ -14,7 +14,7 @@
 #include <errno.h>
 namespace clicky {
 
-int wdriver::check_handler_name(const String &inname, String &ename, String &hname, ErrorHandler *errh)
+int cdriver::check_handler_name(const String &inname, String &ename, String &hname, ErrorHandler *errh)
 {
     const char *dot = find(inname, '.');
     if (dot == inname.end()) {
@@ -44,7 +44,7 @@ int wdriver::check_handler_name(const String &inname, String &ename, String &hna
     return errh->error("Bad handler name '%#s'", inname.printable().c_str());
 }
 
-void wdriver::transfer_messages(wmain *rw, int status, const messagevector &messages)
+void cdriver::transfer_messages(crouter *cr, int status, const messagevector &messages)
 {
     if (messages.size()) {
 	ErrorHandler::Seriousness seriousness;
@@ -55,8 +55,8 @@ void wdriver::transfer_messages(wmain *rw, int status, const messagevector &mess
 	else
 	    seriousness = ErrorHandler::ERR_ERROR;
 	for (messagevector::const_iterator i = messages.begin(); i != messages.end(); ++i)
-	    rw->error_handler()->verror_text(seriousness, i->first, i->second);
-	rw->errors_fill(false);
+	    cr->error_handler()->verror_text(seriousness, i->first, i->second);
+	cr->on_error(false, String());
     }
 }
 
@@ -70,12 +70,12 @@ void wdriver::transfer_messages(wmain *rw, int status, const messagevector &mess
 extern "C" {
 static gboolean csocket_watch(GIOChannel *, GIOCondition condition, gpointer user_data)
 {
-    csocket_wdriver *wd = reinterpret_cast<csocket_wdriver *>(user_data);
+    csocket_cdriver *wd = reinterpret_cast<csocket_cdriver *>(user_data);
     return wd->csocket_event(condition);
 }
 }
 
-GIOChannel *csocket_wdriver::start_connect(IPAddress addr, uint16_t port, bool *ready, ErrorHandler *errh)
+GIOChannel *csocket_cdriver::start_connect(IPAddress addr, uint16_t port, bool *ready, ErrorHandler *errh)
 {
     // open socket, set options
     int fd = socket(PF_INET, SOCK_STREAM, 0);
@@ -121,10 +121,10 @@ GIOChannel *csocket_wdriver::start_connect(IPAddress addr, uint16_t port, bool *
     return socket;
 }
 
-csocket_wdriver::csocket_wdriver(wmain *rw, GIOChannel *socket, bool ready)
-    : _rw(rw), _csocket(socket), _csocket_watch(0)
+csocket_cdriver::csocket_cdriver(crouter *cr, GIOChannel *socket, bool ready)
+    : _cr(cr), _csocket(socket), _csocket_watch(0)
 {
-    _rw->on_driver(this, true);
+    _cr->set_driver(this, true);
     if (ready) {
 	_csocket_state = csocket_initial;
 	(void) csocket_event(G_IO_IN);
@@ -134,7 +134,7 @@ csocket_wdriver::csocket_wdriver(wmain *rw, GIOChannel *socket, bool ready)
     }
 }
 
-csocket_wdriver::~csocket_wdriver()
+csocket_cdriver::~csocket_cdriver()
 {
     if (_csocket) {
 	g_io_channel_shutdown(_csocket, FALSE, 0);
@@ -151,19 +151,19 @@ csocket_wdriver::~csocket_wdriver()
     _csocket_state = csocket_failed;
 }
 
-bool csocket_wdriver::active() const
+bool csocket_cdriver::active() const
 {
     return _csocket_state != csocket_failed;
 }
 
-int csocket_wdriver::driver_mask() const
+int csocket_cdriver::driver_mask() const
 {
     return 1 << Driver::USERLEVEL;
 }
 
-gboolean csocket_wdriver::kill_with_dialog(GatherErrorHandler *gerrh, int begin_pos, const char *format, ...)
+gboolean csocket_cdriver::kill_with_dialog(GatherErrorHandler *gerrh, int begin_pos, const char *format, ...)
 {
-    _rw->on_driver(this, false);
+    _cr->set_driver(this, false);
     _csocket_state = csocket_failed;
     if (format) {
 	va_list val;
@@ -171,16 +171,21 @@ gboolean csocket_wdriver::kill_with_dialog(GatherErrorHandler *gerrh, int begin_
 	gerrh->verror(ErrorHandler::ERR_ERROR, String(), format, val);
 	va_end(val);
     }
-    gerrh->run_dialog(_rw->window(), begin_pos);
-    _rw->errors_fill(true);
+
+    StringAccum sa;
+    for (GatherErrorHandler::iterator it = gerrh->begin() + begin_pos;
+	 it != gerrh->end(); ++it)
+	sa << it->message;
+
+    _cr->on_error(true, sa.take_string());
     return FALSE;
 }
 
-gboolean csocket_wdriver::csocket_event(GIOCondition)
+gboolean csocket_cdriver::csocket_event(GIOCondition)
 {
     int fd = (_csocket ? g_io_channel_unix_get_fd(_csocket) : -1);
     _csocket_watch = (guint) -1;
-    GatherErrorHandler *gerrh = _rw->error_handler();
+    GatherErrorHandler *gerrh = _cr->error_handler();
     int gerrh_pos = gerrh->size();
     
     if (_csocket_state == csocket_connecting) {
@@ -283,7 +288,7 @@ gboolean csocket_wdriver::csocket_event(GIOCondition)
     return FALSE;
 }
 
-bool csocket_wdriver::msg_parse(msg *m, GatherErrorHandler *gerrh, int gerrh_pos)
+bool csocket_cdriver::msg_parse(msg *m, GatherErrorHandler *gerrh, int gerrh_pos)
 {
     const char *ends = m->sa.data() + m->sa.length(); // beware!
 
@@ -401,24 +406,24 @@ bool csocket_wdriver::msg_parse(msg *m, GatherErrorHandler *gerrh, int gerrh_pos
 	hparam = m->command.substring(m->command.length() + m->command_datalen - 2, m->command_datalen - 2);
     String hvalue = response.substring(m->rdatapos);
     if (m->type == dtype_read)
-	_rw->on_read(m->hname, hparam, hvalue, status, messages);
+	_cr->on_handler_read(m->hname, hparam, hvalue, status, messages);
     else if (m->type == dtype_write)
-	_rw->on_write(m->hname, hparam, status, messages);
+	_cr->on_handler_write(m->hname, hparam, status, messages);
     else if (m->type == dtype_check_write)
-	_rw->on_check_write(m->hname, status, messages);
+	_cr->on_handler_check_write(m->hname, status, messages);
 
-    transfer_messages(_rw, status, messages);
+    transfer_messages(_cr, status, messages);
     
     delete m;
     _csocket_msgq.pop_front();
     return true;
 }
 
-void csocket_wdriver::add_msg(const String &hname, const String &command, int command_datalen, int type, int flags)
+void csocket_cdriver::add_msg(const String &hname, const String &command, int command_datalen, int type, int flags)
 {
     if (_csocket && _csocket_state == csocket_connected) {
 	//fprintf(stderr, "%s", command.c_str());
-	msg *csm = new msg(_rw, hname, command, command_datalen, type, flags);
+	msg *csm = new msg(_cr, hname, command, command_datalen, type, flags);
 
 	if ((flags & (dflag_background | dflag_clear)) == dflag_background)
 	    _csocket_msgq.push_back(csm);
@@ -438,7 +443,7 @@ void csocket_wdriver::add_msg(const String &hname, const String &command, int co
 }
 
 
-void csocket_wdriver::do_read(const String &hname, const String &hparam, int flags)
+void csocket_cdriver::do_read(const String &hname, const String &hparam, int flags)
 {
     StringAccum sa;
     int hparam_len = hparam.length();
@@ -454,21 +459,21 @@ void csocket_wdriver::do_read(const String &hname, const String &hparam, int fla
 	messagevector messages;
 	messages.push_back(make_pair(String(), String("Read handler '") + hname + "' error:"));
 	messages.push_back(make_pair(String(), String("  Connection does not support read handlers with parameters")));
-	_rw->on_read(hname, hparam, String(), 500, messages);
-	transfer_messages(_rw, 500, messages);
+	_cr->on_handler_read(hname, hparam, String(), 500, messages);
+	transfer_messages(_cr, 500, messages);
 	return;
     }
     add_msg(hname, sa.take_string(), hparam_len, dtype_read, flags);
 }
 
-void csocket_wdriver::do_write(const String &hname, const String &hvalue, int flags)
+void csocket_cdriver::do_write(const String &hname, const String &hvalue, int flags)
 {
     StringAccum sa;
     sa << "WRITEDATA " << hname << " " << hvalue.length() << "\r\n" << hvalue;
     add_msg(hname, sa.take_string(), hvalue.length(), dtype_write, flags);
 }
 
-void csocket_wdriver::do_check_write(const String &hname, int flags)
+void csocket_cdriver::do_check_write(const String &hname, int flags)
 {
     add_msg(hname, "CHECKWRITE " + hname + "\r\n", 0, dtype_check_write, flags);
 }
@@ -480,34 +485,34 @@ void csocket_wdriver::do_check_write(const String &hname, int flags)
  *
  */
 
-clickfs_wdriver::clickfs_wdriver(wmain *rw, const String &prefix)
-    : _rw(rw), _prefix(prefix), _active(true)
+clickfs_cdriver::clickfs_cdriver(crouter *cr, const String &prefix)
+    : _cr(cr), _prefix(prefix), _active(true)
 {
+    _cr->set_driver(this, true);
     assert(_prefix.length());
     if (_prefix.back() != '/')
 	_prefix += '/';
-    _rw->on_driver(this, true);
     do_read("config", String(), 0);
     do_check_write("hotconfig", 0);
     do_read("list", String(), 0);
 }
 
-bool clickfs_wdriver::active() const
+bool clickfs_cdriver::active() const
 {
     return _active;
 }
 
-int clickfs_wdriver::driver_mask() const
+int clickfs_cdriver::driver_mask() const
 {
     return 1 << Driver::LINUXMODULE;
 }
 
-void clickfs_wdriver::complain(const String &fullname, const String &ename, const String &, int errno_val, messagevector &messages)
+void clickfs_cdriver::complain(const String &fullname, const String &ename, const String &, int errno_val, messagevector &messages)
 {
     if (errno_val == ENOENT) {
 	if (access(_prefix.c_str(), F_OK) < 0) {
 	    messages.push_back(make_pair(String(), String("No router installed")));
-	    _rw->on_driver(this, false);
+	    _cr->set_driver(this, false);
 	    _active = false;
 	} else if (ename && access((_prefix + ename).c_str(), F_OK) < 0)
 	    messages.push_back(make_pair(String(), "No element named '" + ename + "'"));
@@ -519,7 +524,7 @@ void clickfs_wdriver::complain(const String &fullname, const String &ename, cons
 	messages.push_back(make_pair(String(), "Handler error: " + String(strerror(errno_val))));
 }
 
-String clickfs_wdriver::filename(const String &ename, const String &hname) const
+String clickfs_cdriver::filename(const String &ename, const String &hname) const
 {
     StringAccum sa;
     sa << _prefix << ename;
@@ -529,11 +534,11 @@ String clickfs_wdriver::filename(const String &ename, const String &hname) const
     return sa.take_string();
 }
 
-void clickfs_wdriver::do_read(const String &fullname, const String &hparam, int flags)
+void clickfs_cdriver::do_read(const String &fullname, const String &hparam, int flags)
 {
     String ename, hname;
     if (!_active
-	|| check_handler_name(fullname, ename, hname, _rw->error_handler()) < 0)
+	|| check_handler_name(fullname, ename, hname, _cr->error_handler()) < 0)
 	return;
 
     messagevector messages;
@@ -542,8 +547,8 @@ void clickfs_wdriver::do_read(const String &fullname, const String &hparam, int 
     if (hparam) {
 	messages.push_back(make_pair(String(), "Read handler '" + fullname + "' error:"));
 	messages.push_back(make_pair(String(), "  Kernel configurations do not support read handler parameters"));
-	_rw->on_read(fullname, hparam, String(), 500, messages);
-	transfer_messages(_rw, 500, messages);
+	_cr->on_handler_read(fullname, hparam, String(), 500, messages);
+	transfer_messages(_cr, 500, messages);
 	return;
     }
     
@@ -582,15 +587,15 @@ void clickfs_wdriver::do_read(const String &fullname, const String &hparam, int 
     if ((flags & dflag_nonraw) && results.length() && results.back() == '\n'
 	&& find(results.begin(), results.end() - 1, '\n') == results.end() - 1)
 	results.pop_back();
-    _rw->on_read(fullname, hparam, results.take_string(), status, messages);
-    transfer_messages(_rw, status, messages);
+    _cr->on_handler_read(fullname, hparam, results.take_string(), status, messages);
+    transfer_messages(_cr, status, messages);
 }
 
-void clickfs_wdriver::do_write(const String &fullname, const String &hvalue, int)
+void clickfs_cdriver::do_write(const String &fullname, const String &hvalue, int)
 {
     String ename, hname;
     if (!_active
-	|| check_handler_name(fullname, ename, hname, _rw->error_handler()) < 0)
+	|| check_handler_name(fullname, ename, hname, _cr->error_handler()) < 0)
 	return;
 
     messagevector messages;
@@ -637,15 +642,15 @@ void clickfs_wdriver::do_write(const String &fullname, const String &hvalue, int
 	complain(fullname, ename, hname, errno, messages);
 
   done:
-    _rw->on_write(fullname, hvalue, status, messages);
-    transfer_messages(_rw, status, messages);
+    _cr->on_handler_write(fullname, hvalue, status, messages);
+    transfer_messages(_cr, status, messages);
 }
 
-void clickfs_wdriver::do_check_write(const String &fullname, int)
+void clickfs_cdriver::do_check_write(const String &fullname, int)
 {
     String ename, hname;
     if (!_active
-	|| check_handler_name(fullname, ename, hname, _rw->error_handler()) < 0)
+	|| check_handler_name(fullname, ename, hname, _cr->error_handler()) < 0)
 	return;
 
     messagevector messages;
@@ -664,8 +669,8 @@ void clickfs_wdriver::do_check_write(const String &fullname, int)
     } else
 	complain(fullname, ename, hname, errno, messages);
 
-    _rw->on_check_write(fullname, status, messages);
-    transfer_messages(_rw, status, messages);
+    _cr->on_handler_check_write(fullname, status, messages);
+    transfer_messages(_cr, status, messages);
 }
 
 }

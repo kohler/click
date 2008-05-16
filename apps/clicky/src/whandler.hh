@@ -4,7 +4,8 @@
 #include <click/string.hh>
 #include <gtk/gtk.h>
 #include <click/hashtable.hh>
-#include "wrouter.hh"
+#include "crouter.hh"
+#include "wmain.hh"
 #include "hvalues.hh"
 namespace clicky {
 

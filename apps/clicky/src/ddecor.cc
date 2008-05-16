@@ -4,9 +4,8 @@
 #include <click/config.h>
 #include "ddecor.hh"
 #include "dstyle.hh"
-#include "diagram.hh"
 #include "ddecor.hh"
-#include "wrouter.hh"
+#include "crouter.hh"
 #include <click/confparse.hh>
 #include <click/timestamp.hh>
 #include <math.h>
@@ -19,7 +18,7 @@ void ddecor::draw(delt *, double *, dcontext &)
 {
 }
 
-void ddecor::notify(wmain *, delt *, handler_value *)
+void ddecor::notify(crouter *, delt *, handler_value *)
 {
 }
 
@@ -30,16 +29,16 @@ void ddecor::notify(wmain *, delt *, handler_value *)
  *
  */
 
-dfullness_decor::dfullness_decor(PermString name, wdiagram *d, delt *e,
+dfullness_decor::dfullness_decor(PermString name, crouter *cr, delt *e,
 				 ddecor *next)
     : ddecor(next), _name(name),
-      _dfs(d->ccss()->fullness_style(_name, d, e)),
+      _dfs(cr->ccss()->fullness_style(_name, cr, e)),
       _capacity(-1), _hvalue(-1), _drawn(-1)
 {
     if (_dfs->length)
-	e->handler_interest(d, _dfs->length, _dfs->autorefresh > 0, _dfs->autorefresh_period);
+	e->handler_interest(cr, _dfs->length, _dfs->autorefresh > 0, _dfs->autorefresh_period);
     if (_dfs->capacity && !cp_double(_dfs->capacity, &_capacity))
-	e->handler_interest(d, _dfs->capacity, _dfs->autorefresh > 1, _dfs->autorefresh_period);
+	e->handler_interest(cr, _dfs->capacity, _dfs->autorefresh > 1, _dfs->autorefresh_period);
 }
 
 
@@ -62,7 +61,7 @@ void dfullness_decor::draw(delt *e, double *sides, dcontext &dcx)
     }
 }
 
-void dfullness_decor::notify(wmain *w, delt *e, handler_value *hv)
+void dfullness_decor::notify(crouter *cr, delt *e, handler_value *hv)
 {
     handler_value *lv = 0, *cv = 0;
     if (hv->handler_name() == _dfs->length)
@@ -73,14 +72,14 @@ void dfullness_decor::notify(wmain *w, delt *e, handler_value *hv)
 	return;
 
     if (!lv)
-	lv = w->hvalues().find(e->flat_name() + ".length");
+	lv = cr->hvalues().find(e->flat_name() + ".length");
     if (!cv && _dfs->capacity && _capacity < 0)
-	cv = w->hvalues().find(e->flat_name() + ".capacity");
+	cv = cr->hvalues().find(e->flat_name() + ".capacity");
     
     if (lv && !lv->have_hvalue())
-	lv->refresh(w);
+	lv->refresh(cr);
     if (cv && !cv->have_hvalue())
-	cv->refresh(w);
+	cv->refresh(cr);
 
     double l, c;
     _hvalue = -1;
@@ -93,10 +92,11 @@ void dfullness_decor::notify(wmain *w, delt *e, handler_value *hv)
 	    _hvalue = l / c;
     }
 
-    if ((_drawn < 0) != (_hvalue < 0)
-	|| (fabs(_drawn - _hvalue) * e->side_length(e->orientation())
-	    * w->diagram()->scale()) > 0.5)
-	w->diagram()->redraw(*e);
+    if ((_drawn < 0) != (_hvalue < 0))
+	cr->repaint(*e);
+    else
+	cr->repaint_if_visible(*e,
+		(_drawn - _hvalue) * e->side_length(e->orientation()));
 }
 
 
@@ -109,14 +109,14 @@ void dfullness_decor::notify(wmain *w, delt *e, handler_value *hv)
 #define ALPHA 0.875
 #define LOG_ALPHA -.13353139262452262314
 
-dactivity_decor::dactivity_decor(PermString name, wdiagram *d, delt *e,
+dactivity_decor::dactivity_decor(PermString name, crouter *cr, delt *e,
 				 ddecor *next)
-    : ddecor(next), _name(name), _w(d->main()), _e(e),
-      _das(d->ccss()->activity_style(_name, d, e)),
+    : ddecor(next), _name(name), _cr(cr), _e(e),
+      _das(cr->ccss()->activity_style(_name, cr, e)),
       _drawn(0), _decay_source(0)
 {
     if (_das->handler)
-	e->handler_interest(d, _das->handler, _das->autorefresh > 0, _das->autorefresh_period, true);
+	e->handler_interest(cr, _das->handler, _das->autorefresh > 0, _das->autorefresh_period, true);
 }
 
 dactivity_decor::~dactivity_decor()
@@ -135,7 +135,7 @@ static gboolean on_activity_decay(gpointer user_data)
 
 gboolean dactivity_decor::on_decay()
 {
-    _w->diagram()->redraw(*_e);
+    _cr->repaint(*_e);
     return FALSE;
 }
 
@@ -241,7 +241,7 @@ void dactivity_decor::draw(delt *, double *sides, dcontext &dcx)
     }
 }
 
-void dactivity_decor::notify(wmain *w, delt *e, handler_value *hv)
+void dactivity_decor::notify(crouter *cr, delt *e, handler_value *hv)
 {
     if (hv->handler_name() != _das->handler)
 	return;
@@ -264,7 +264,7 @@ void dactivity_decor::notify(wmain *w, delt *e, handler_value *hv)
 	cooked = std::min(std::max(cooked - _das->min_value, 0.) / range, 1.);
 	_samples.push_back(sample(new_value, cooked, now));
 	if (128 * fabs(cooked - _drawn) > range)
-	    w->diagram()->redraw(*e);
+	    cr->repaint(*e);
     }
 }
 

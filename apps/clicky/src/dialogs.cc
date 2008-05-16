@@ -5,9 +5,10 @@
 #include <click/userutils.hh>
 #include <click/confparse.hh>
 #include <clicktool/elementmap.hh>
-#include "wrouter.hh"
-#include "wdriver.hh"
-#include "diagram.hh"
+#include "crouter.hh"
+#include "cdriver.hh"
+#include "wmain.hh"
+#include "wdiagram.hh"
 #include <netdb.h>
 extern "C" {
 #include "interface.h"
@@ -311,7 +312,7 @@ void wmain::on_open_socket()
 	}
 
 	open_socket_helper helper = { NULL, false };
-	GIOChannel *socket = csocket_wdriver::start_connect(addr, port, &helper.ready, &gerrh);
+	GIOChannel *socket = csocket_cdriver::start_connect(addr, port, &helper.ready, &gerrh);
 	if (!socket) {
 	    gerrh.run_dialog(GTK_WINDOW(dialog));
 	    continue;
@@ -344,7 +345,7 @@ void wmain::on_open_socket()
 	} else
 	    rw = new wmain;
 	rw->set_landmark(String(hosts) + ":" + String(ports));
-	(void) new csocket_wdriver(rw, socket, helper.ready);
+	(void) new csocket_cdriver(rw, socket, helper.ready);
 	rw->set_ccss_text(ccss_text());
 	rw->show();
 	break;
@@ -358,9 +359,10 @@ void wmain::on_open_kernel()
     String prefix = "/click/";
     String config_name = prefix + "config";
     if (access(config_name.c_str(), R_OK) < 0) {
-	int gerrh_pos = _gerrh.size();
-	_gerrh.error("No kernel configuration installed: %s", strerror(errno));
-	_gerrh.run_dialog(GTK_WINDOW(_window), gerrh_pos);
+	GatherErrorHandler *gerrh = error_handler();
+	int gerrh_pos = gerrh->size();
+	gerrh->error("No kernel configuration installed: %s", strerror(errno));
+	gerrh->run_dialog(GTK_WINDOW(_window), gerrh_pos);
     } else {
 	wmain *rw;
 	if (empty()) {
@@ -369,7 +371,7 @@ void wmain::on_open_kernel()
 	} else
 	    rw = new wmain;
 	rw->set_landmark(prefix);
-	(void) new clickfs_wdriver(rw, prefix);
+	(void) new clickfs_cdriver(rw, prefix);
 	rw->set_ccss_text(ccss_text());
 	rw->show();
     }
@@ -399,7 +401,7 @@ void wmain::on_save_file(bool save_as)
 	    return;
 	} else {
 	    char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-	    if (!_driver)
+	    if (!driver())
 		set_landmark(filename);
 	    set_save_file(filename, false);
 	    g_free(filename);
@@ -448,19 +450,21 @@ void wmain::on_export_diagram()
 
 void wmain::config_choose_driver()
 {
-    int driver_mask = (_driver ? _driver->driver_mask() : _emap->provided_driver_mask());
+    cdriver *cd = driver();
+    ElementMap *emap = element_map();
+    int driver_mask = (cd ? cd->driver_mask() : emap->provided_driver_mask());
     for (int d = 0; d < Driver::COUNT; ++d) {
 	String name = String("menu_config_") + Driver::name(d);
 	GtkWidget *w = lookup_widget(_window, name.c_str());
 	gtk_widget_set_sensitive(w, (driver_mask & (1 << d)) != 0);
-	if ((1 << d) & _emap->driver_mask())
+	if ((1 << d) & emap->driver_mask())
 	    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w), TRUE);
     }
 }
 
 void wmain::config_set_driver(int driver)
 {
-    _selected_driver = driver;
+    select_driver(driver);
     on_config_changed();
 }
 
