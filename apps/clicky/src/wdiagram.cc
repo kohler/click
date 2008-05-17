@@ -31,17 +31,17 @@ static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer);
 cdiagram::cdiagram(crouter *cr, PangoLayout *pl, unsigned generation)
     : _relt(new delt)
 {
-    assert(cr->router());
+    if (cr->router()) {
+	Vector<ElementT *> path;
+	int z_index = 0;
+	_relt->create_elements(cr, cr->router(), cr->processing(),
+			       _elt_map, path, z_index);
 
-    Vector<ElementT *> path;
-    int z_index = 0;
-    _relt->create_elements(cr, cr->router(), cr->processing(),
-			   _elt_map, path, z_index);
-
-    dcontext dcx(cr, pl, 0, generation, 0, 1);
-    ElementMap::push_default(cr->element_map());
-    _relt->layout_main(dcx);
-    ElementMap::pop_default();
+	dcontext dcx(cr, pl, 0, generation, 0, 1);
+	ElementMap::push_default(cr->element_map());
+	_relt->layout_main(dcx);
+	ElementMap::pop_default();
+    }
     
     _relt->insert_all(_rects);
     
