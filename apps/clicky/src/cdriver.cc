@@ -172,12 +172,8 @@ gboolean csocket_cdriver::kill_with_dialog(GatherErrorHandler *gerrh, int begin_
 	va_end(val);
     }
 
-    StringAccum sa;
-    for (GatherErrorHandler::iterator it = gerrh->begin() + begin_pos;
-	 it != gerrh->end(); ++it)
-	sa << it->message;
-
-    _cr->on_error(true, sa.take_string());
+    _cr->on_error(true, gerrh->message_string(gerrh->begin() + begin_pos, gerrh->end()));
+    
     return FALSE;
 }
 

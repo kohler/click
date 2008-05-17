@@ -2,7 +2,7 @@
 #  include <config.h>
 #endif
 #include <click/config.h>
-#include "crouter.hh"
+#include "wmain.hh"
 #include "wdiagram.hh"
 #include "whandler.hh"
 #include "cdriver.hh"
@@ -403,7 +403,8 @@ void wmain::show()
 void wmain::on_handler_create(handler_value *hv, bool was_empty)
 {
     if (was_empty) {	// first load, read style
-	ref_ptr<dhandler_style> dhs = ccss()->handler_style(_diagram, hv);
+	const delt *e = _diagram->elt(hv->element_name());
+	ref_ptr<dhandler_style> dhs = ccss()->handler_style(this, e, hv);
 	if (dhs) {
 	    hv->set_flags(this, (hv->flags() & ~dhs->flags_mask) | dhs->flags);
 	    if (dhs->autorefresh_period > 0

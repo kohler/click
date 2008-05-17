@@ -18,6 +18,7 @@ namespace clicky {
 class cdriver;
 class csocket_cdriver;
 class clickfs_cdriver;
+class cdiagram;
 class dcss_set;
 
 typedef Vector<Pair<String, String> > messagevector;
@@ -139,7 +140,9 @@ class crouter { public:
     virtual void on_handler_check_write(const String &hname,
 					int status, messagevector &messages);
 
-    //
+    // diagram
+    void export_diagram(const char *filename, bool eps, cdiagram *cd);
+    
     virtual void repaint(const rectangle &rect) {
 	(void) rect;
     }

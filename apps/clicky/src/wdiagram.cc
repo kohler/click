@@ -28,9 +28,160 @@ static gboolean diagram_expose(GtkWidget *, GdkEventExpose *, gpointer);
 static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer);
 }
 
+cdiagram::cdiagram(crouter *cr, PangoLayout *pl, unsigned generation)
+    : _relt(new delt)
+{
+    assert(cr->router());
+
+    Vector<ElementT *> path;
+    int z_index = 0;
+    _relt->create_elements(cr, cr->router(), cr->processing(),
+			   _elt_map, path, z_index);
+
+    dcontext dcx(cr, pl, 0, generation, 0, 1);
+    ElementMap::push_default(cr->element_map());
+    _relt->layout_main(dcx);
+    ElementMap::pop_default();
+    
+    _relt->insert_all(_rects);
+    
+    assign(*_relt);
+}
+
+cdiagram::~cdiagram()
+{
+    delete _relt;
+}
+
+void cdiagram::layout_recompute_bounds()
+{
+    _relt->layout_recompute_bounds();
+    assign(*_relt);
+}
+
+void cdiagram::find_rect_elts(const rectangle &r,
+			      std::vector<dwidget *> &result) const
+{
+    _rects.find_all(r, result);
+    std::sort(result.begin(), result.end(), dwidget::z_index_less);
+    std::vector<dwidget *>::iterator eltsi = std::unique(result.begin(), result.end());
+    result.erase(eltsi, result.end());
+}
+
+delt *cdiagram::point_elt(const point &p) const
+{
+    std::vector<dwidget *> elts;
+    _rects.find_all(p.x(), p.y(), elts);
+    std::sort(elts.begin(), elts.end(), dwidget::z_index_greater);
+    std::vector<dwidget *>::iterator eltsi = std::unique(elts.begin(), elts.end());
+    elts.erase(eltsi, elts.end());
+    for (eltsi = elts.begin(); eltsi != elts.end(); ++eltsi)
+	if ((*eltsi)->contains(p))
+	    if (delt *e = (*eltsi)->cast_elt())
+		if (e->displayed() > 0)
+		    return e;
+    return 0;
+}
+
+extern "C" {
+static cairo_status_t cairo_surface_ignore_write(void *, const unsigned char *, unsigned)
+{
+    return CAIRO_STATUS_SUCCESS;
+}
+
+static cairo_status_t cairo_surface_stdout_write(void *, const unsigned char *str, unsigned len)
+{
+    fwrite(str, 1, len, stdout);
+    return CAIRO_STATUS_SUCCESS;
+}
+}
+
+void cdiagram::export_pdf(const char *filename, crouter *cr,
+			  point page_size, point margin, double scale,
+			  bool multipage)
+{
+    cr->set_ccss_media("print");
+    cairo_surface_t *crs = cairo_pdf_surface_create_for_stream(cairo_surface_ignore_write, 0, 612, 792);
+    cairo_t *cairo = cairo_create(crs);
+    PangoLayout *pl = pango_cairo_create_layout(cairo);
+    unsigned generation = dcontext::step_generation();
+
+    cdiagram *cd = new cdiagram(cr, pl, generation);
+
+    g_object_unref(G_OBJECT(pl));
+    cairo_destroy(cairo);
+    cairo_surface_destroy(crs);
+
+    cd->export_pdf(filename, false, cr, generation, page_size, margin, scale, multipage);
+
+    delete cd;
+}
+
+void cdiagram::export_pdf(const char *filename, bool eps,
+			  crouter *cr, unsigned generation,
+			  point page_size, point margin, double scale,
+			  bool multipage)
+{
+    if (eps || !page_size)
+	page_size = point(width() / scale + 2 * margin.x(),
+			  height() / scale + 2 * margin.y());
+    
+    cairo_surface_t *crs;
+    if (eps) {
+	crs = cairo_ps_surface_create(filename, page_size.x(), page_size.y());
+#if CAIRO_VERSION_MINOR >= 6 || (CAIRO_VERSION_MINOR == 5 && CAIRO_VERSION_MICRO >= 2)
+	cairo_ps_surface_set_eps(crs, TRUE);
+#endif
+    } else if (!filename || strcmp(filename, "") == 0 || strcmp(filename, "-") == 0)
+	crs = cairo_pdf_surface_create_for_stream(cairo_surface_stdout_write, 0, page_size.x(), page_size.y());
+    else
+	crs = cairo_pdf_surface_create(filename, page_size.x(), page_size.y());
+
+    cairo_t *cairo = cairo_create(crs);
+    dcontext dcx(cr, pango_cairo_create_layout(cairo), cairo,
+		 generation, 1 /* position precisely */, 1);
+    cr->set_ccss_media("print");
+
+    point visible_area = point(page_size.x() - 2 * margin.x(),
+			       page_size.y() - 2 * margin.y());
+    for (int jj = 0; scale * jj * visible_area.y() < height(); ++jj)
+	for (int ii = 0; scale * ii * visible_area.x() < width(); ++ii) {
+	    cairo_save(cairo);
+	    cairo_translate(cairo, -x() - ii * visible_area.x() + margin.x(),
+			    -y() - jj * visible_area.y() + margin.y());
+	    cairo_rectangle(cairo, x() + ii * visible_area.x() - 5,
+			    y() + jj * visible_area.y() - 5,
+			    visible_area.x() + 10, visible_area.y() + 10);
+	    cairo_scale(cairo, 1./scale, 1./scale);
+	    cairo_clip(cairo);
+	    
+	    rectangle rect(-x() + scale * ii * visible_area.x() - scale * 5,
+			   -y() + scale * jj * visible_area.y() - scale * 5,
+			   scale * visible_area.x() + scale * 10,
+			   scale * visible_area.y() + scale * 10);
+	    std::vector<dwidget *> elts;
+	    find_rect_elts(rect, elts);
+	    
+	    for (std::vector<dwidget *>::iterator eltsi = elts.begin();
+		 eltsi != elts.end(); ++eltsi)
+		(*eltsi)->draw(dcx);
+
+	    cairo_restore(cairo);
+	    if (multipage)
+		cairo_show_page(cairo);
+	}
+
+    cr->set_ccss_media("screen");
+    g_object_unref(G_OBJECT(dcx.pl));
+    cairo_destroy(dcx.cairo);
+    cairo_surface_destroy(crs);
+}
+
+
 wdiagram::wdiagram(wmain *rw)
-    : _rw(rw), _scale_step(0), _scale(1), _origin_x(0), _origin_y(0), _relt(0),
-      _layout(false), _drag_state(drag_none)
+    : _rw(rw), _cdiagram(0), _generation(dcontext::step_generation()),
+      _scale_step(0), _scale(1), _penumbra(2), _origin_x(0), _origin_y(0),
+      _drag_state(drag_none)
 {
     _widget = lookup_widget(_rw->_window, "diagram");
     gtk_widget_realize(_widget);
@@ -51,8 +202,6 @@ wdiagram::wdiagram(wmain *rw)
 	fprintf(stderr, "  %s\n", pango_font_family_get_name(fms[i]));
     g_free(fms);
 #endif
-    _pango_generation = 0;
-    _elt_expand = 2;
     
     g_signal_connect(G_OBJECT(_widget), "event",
 		     G_CALLBACK(on_diagram_event), this);
@@ -74,8 +223,7 @@ wdiagram::wdiagram(wmain *rw)
 
 wdiagram::~wdiagram()
 {
-    delete _relt;
-    _relt = 0;
+    delete _cdiagram;
     for (int i = c_main; i < ncursors; i++)
 	if (_cursor[i])
 	    gdk_cursor_unref(_cursor[i]);
@@ -100,66 +248,63 @@ void wdiagram::initialize()
     }
 }
 
+void wdiagram::on_ccss_changed()
+{
+    _generation = dcontext::step_generation();
+}
 
 void wdiagram::element_show(const String &ename, bool scroll_to)
 {
-    if (delt *e = _elt_map[ename]) {
-	while (!e->root() && !e->visible())
-	    e = e->parent();
-	if (!e->root() && (!e->highlighted(dhlt_click) || scroll_to))
-	    highlight(e, dhlt_click, 0, scroll_to, true);
-    }
-}
-
-inline void wdiagram::find_rect_elts(const rectangle &r, std::vector<dwidget *> &result) const
-{
-    _rects.find_all(r, result);
-    std::sort(result.begin(), result.end(), dwidget::z_index_less);
-    std::vector<dwidget *>::iterator eltsi = std::unique(result.begin(), result.end());
-    result.erase(eltsi, result.end());
+    if (_cdiagram)
+	if (delt *e = _cdiagram->elt(ename)) {
+	    while (!e->root() && !e->visible())
+		e = e->parent();
+	    if (!e->root() && (!e->highlighted(dhlt_click) || scroll_to))
+		highlight(e, dhlt_click, 0, scroll_to, true);
+	}
 }
 
 void wdiagram::scroll_recenter(point old_ctr)
 {
-    if (!_relt)
+    if (!_cdiagram)
 	return;
     if (old_ctr.x() < -1000000)
 	old_ctr = scroll_center();
     
     gtk_layout_set_size(GTK_LAYOUT(_widget),
-			MAX((gint) (_relt->_width * _scale + 0.5),
+			MAX((gint) (_cdiagram->width() * scale() + 0.5),
 			    _widget->allocation.width),
-			MAX((gint) (_relt->_height * _scale + 0.5),
+			MAX((gint) (_cdiagram->height() * scale() + 0.5),
 			    _widget->allocation.height));
     
     GtkAdjustment *ha = _horiz_adjust;
-    double scaled_width = ha->page_size / _scale;
-    if (scaled_width >= _relt->_width) {
-	_origin_x = (int) ((_relt->center_x() - scaled_width / 2) * _scale + 0.5);
+    double scaled_width = ha->page_size / scale();
+    if (scaled_width >= _cdiagram->width()) {
+	_origin_x = (int) ((_cdiagram->center_x() - scaled_width / 2) * scale() + 0.5);
 	gtk_adjustment_set_value(ha, 0);
     } else {
-	_origin_x = (int) (_relt->x() * _scale + 0.5);
-	if (old_ctr.x() - scaled_width / 2 < _relt->x())
+	_origin_x = (int) (_cdiagram->x() * scale() + 0.5);
+	if (old_ctr.x() - scaled_width / 2 < _cdiagram->x())
 	    gtk_adjustment_set_value(ha, 0);
-	else if (old_ctr.x() + scaled_width / 2 > _relt->x2())
-	    gtk_adjustment_set_value(ha, _relt->width() * _scale - ha->page_size);
+	else if (old_ctr.x() + scaled_width / 2 > _cdiagram->x2())
+	    gtk_adjustment_set_value(ha, _cdiagram->width() * scale() - ha->page_size);
 	else
-	    gtk_adjustment_set_value(ha, (old_ctr.x() - scaled_width / 2) * _scale - _origin_x);
+	    gtk_adjustment_set_value(ha, (old_ctr.x() - scaled_width / 2) * scale() - _origin_x);
     }
     
     GtkAdjustment *va = _vert_adjust;
-    double scaled_height = va->page_size / _scale;
-    if (scaled_height >= _relt->_height) {
-	_origin_y = (int) ((_relt->center_y() - scaled_height / 2) * _scale + 0.5);
+    double scaled_height = va->page_size / scale();
+    if (scaled_height >= _cdiagram->height()) {
+	_origin_y = (int) ((_cdiagram->center_y() - scaled_height / 2) * scale() + 0.5);
 	gtk_adjustment_set_value(va, 0);
     } else {
-	_origin_y = (int) (_relt->y() * _scale + 0.5);
-	if (old_ctr.y() - scaled_height / 2 < _relt->y())
+	_origin_y = (int) (_cdiagram->y() * scale() + 0.5);
+	if (old_ctr.y() - scaled_height / 2 < _cdiagram->y())
 	    gtk_adjustment_set_value(va, 0);
-	else if (old_ctr.y() + scaled_height / 2 > _relt->y2())
-	    gtk_adjustment_set_value(va, _relt->height() * _scale - va->page_size);
+	else if (old_ctr.y() + scaled_height / 2 > _cdiagram->y2())
+	    gtk_adjustment_set_value(va, _cdiagram->height() * scale() - va->page_size);
 	else
-	    gtk_adjustment_set_value(va, (old_ctr.y() - scaled_height / 2) * _scale - _origin_y);
+	    gtk_adjustment_set_value(va, (old_ctr.y() - scaled_height / 2) * scale() - _origin_y);
     }
 
     redraw();
@@ -167,20 +312,20 @@ void wdiagram::scroll_recenter(point old_ctr)
 
 void wdiagram::zoom(bool incremental, int amount)
 {
-    if (!incremental && amount <= -10000 && _relt) { // best fit
+    if (!incremental && amount <= -10000 && _cdiagram) { // best fit
 	// window_width / 3**(scale_step/2) <= contents_width
 	// && window_height / 3**(scale_step/2) <= contents_height
-	double ssw = 3 * log2(_horiz_adjust->page_size / _relt->width());
-	double ssh = 3 * log2(_vert_adjust->page_size / _relt->height());
+	double ssw = 3 * log2(_horiz_adjust->page_size / _cdiagram->width());
+	double ssh = 3 * log2(_vert_adjust->page_size / _cdiagram->height());
 	_scale_step = (int) floor(std::min(ssw, ssh));
     } else
 	_scale_step = (incremental ? _scale_step + amount : amount);
     double new_scale = pow(2.0, _scale_step / 3.0);
 
-    if (_layout) {
+    if (_cdiagram) {
 	point old_ctr = scroll_center();
 	_scale = new_scale;
-	_elt_expand = 2;
+	_penumbra = 2;
 	scroll_recenter(old_ctr);
     } else
 	_scale = new_scale;
@@ -191,36 +336,19 @@ void wdiagram::router_create(bool incremental, bool always)
     if (!incremental) {
 	for (int i = 0; i < 3; ++i)
 	    highlight(0, i, 0);
-	delete _relt;
-	_relt = 0;
-	_rects.clear();
-	_layout = false;
-	_elt_map.clear();
+	delete _cdiagram;
+	_cdiagram = 0;
     }
     // don't bother creating if widget not mapped
     if (!always && !GTK_WIDGET_VISIBLE(_widget))
 	return;
-    if (!_relt) {
-	_relt = new delt;
-	if (_rw->router()) {
-	    Vector<ElementT *> path;
-	    int z_index = 0;
-	    _relt->create_elements(_rw, _rw->router(), _rw->processing(),
-				   _elt_map, path, z_index);
-	}
-    }
     if (!_cursor[0])
 	initialize();
-    if (!_layout && _rw->router()) {
-	dcontext dcx(this, gtk_widget_create_pango_layout(_widget, NULL), 0);
-	dcx.generation = _pango_generation;
-	ElementMap::push_default(_rw->element_map());
-	_elt_expand = 1;
-	_relt->layout_main(dcx);
-	g_object_unref(G_OBJECT(dcx.pl));
+    if (!_cdiagram) {
+	PangoLayout *pl = gtk_widget_create_pango_layout(_widget, NULL);
+	_cdiagram = new cdiagram(_rw, pl, _generation);
+	g_object_unref(G_OBJECT(pl));
 	scroll_recenter(point(0, 0));
-	ElementMap::pop_default();
-	_layout = true;
     }
     if (!incremental)
 	redraw();
@@ -235,7 +363,7 @@ void wdiagram::router_create(bool incremental, bool always)
 
 void wdiagram::on_expose(const GdkRectangle *area)
 {
-    if (!_layout)
+    if (!_cdiagram)
 	router_create(true, true);
 
     cairo_t *cr = gdk_cairo_create(GTK_LAYOUT(_widget)->bin_window);
@@ -270,23 +398,24 @@ void wdiagram::on_expose(const GdkRectangle *area)
     }
     
     cairo_translate(cr, -_origin_x, -_origin_y);
-    cairo_scale(cr, _scale, _scale);
+    cairo_scale(cr, scale(), scale());
 
-    dcontext dcx(this, gtk_widget_create_pango_layout(_widget, NULL), cr);
-    dcx.generation = _pango_generation;
-    dcx.scale_step = _scale_step;
+    dcontext dcx(main(), gtk_widget_create_pango_layout(_widget, NULL), cr,
+		 _generation, _scale_step, _scale);
 
     rectangle r(area->x + _origin_x, area->y + _origin_y,
 		area->width, area->height);
-    r.scale(1 / _scale);
-    r.expand(_elt_expand);
+    r.scale(1 / scale());
+    r.expand(_penumbra);
+    
     std::vector<dwidget *> elts;
-    find_rect_elts(r, elts);
+    _cdiagram->find_rect_elts(r, elts);
     for (std::vector<dwidget *>::iterator eltsi = elts.begin();
 	 eltsi != elts.end(); ++eltsi)
 	(*eltsi)->draw(dcx);
     
     g_object_unref(G_OBJECT(dcx.pl));
+    _penumbra = std::max(_penumbra, dcx.penumbra);
     cairo_destroy(cr);
 }
 
@@ -319,37 +448,10 @@ static void on_diagram_size_allocate(GtkWidget *, GtkAllocation *, gpointer user
 
 void wdiagram::export_diagram(const char *filename, bool eps)
 {
-    if (!_layout)
+    if (!_cdiagram)
 	router_create(true, true);
-    
-    cairo_surface_t *crs;
-    if (eps) {
-	crs = cairo_ps_surface_create(filename, _relt->_width, _relt->_height);
-#if CAIRO_VERSION_MINOR >= 6 || (CAIRO_VERSION_MINOR == 5 && CAIRO_VERSION_MICRO >= 2)
-	cairo_ps_surface_set_eps(crs, TRUE);
-#endif
-    } else
-	crs = cairo_pdf_surface_create(filename, _relt->_width, _relt->_height);
-
-    cairo_t *cr = cairo_create(crs);
-    cairo_translate(cr, -_relt->_x, -_relt->_y);
-    dcontext dcx(this, pango_cairo_create_layout(cr), cr);
-    dcx.generation = ++_pango_generation;
-    dcx.scale_step = 1;		// position precisely
-    main()->set_ccss_media("print");
-
-    rectangle r(_relt->_x, _relt->_y, _relt->_width, _relt->_height);
-    std::vector<dwidget *> elts;
-    find_rect_elts(r, elts);
-    for (std::vector<dwidget *>::iterator eltsi = elts.begin();
-	 eltsi != elts.end(); ++eltsi)
-	(*eltsi)->draw(dcx);
-
-    main()->set_ccss_media("screen");
-    g_object_unref(G_OBJECT(dcx.pl));
-    cairo_destroy(dcx.cr);
-    cairo_surface_destroy(crs);
-    ++_pango_generation;
+    _cdiagram->export_pdf(filename, eps, main(), dcontext::step_generation(),
+			  point(0, 0), point(0, 0), 1, false);
 }
 
 
@@ -361,7 +463,7 @@ void wdiagram::export_diagram(const char *filename, bool eps)
 
 void wdiagram::notify_read(handler_value *hv)
 {
-    if (delt *e = _elt_map[hv->element_name()])
+    if (delt *e = elt(hv->element_name()))
 	e->notify_read(this, hv);
 }
 
@@ -371,6 +473,22 @@ void wdiagram::notify_read(handler_value *hv)
  * motion exposure
  *
  */
+
+void wdiagram::expose(const delt *e, rectangle *expose_rect)
+{
+    if (!expose_rect)
+	redraw(*e);
+    else
+	*expose_rect |= *e;
+#if 0
+    for (delt *o = visible_split(); o && o != this; o = o->_split) {
+	if (!expose_rect)
+	    d->redraw(*o);
+	else
+	    *expose_rect |= *o;
+    }
+#endif
+}
 
 void wdiagram::highlight(delt *e, uint8_t htype, rectangle *expose_rect,
 			 bool scroll_to, bool all_split)
@@ -382,7 +500,7 @@ void wdiagram::highlight(delt *e, uint8_t htype, rectangle *expose_rect,
 	    delt *e = _highlight[htype].front();
 	    _highlight[htype].pop_front();
 	    e->unhighlight(htype);
-	    e->expose(this, expose_rect);
+	    expose(e, expose_rect);
 	}
 	return;
     }
@@ -394,20 +512,20 @@ void wdiagram::highlight(delt *e, uint8_t htype, rectangle *expose_rect,
 	do {
 	    _highlight[htype].push_front(ee);
 	    ee->highlight(htype);
-	    ee->expose(this, expose_rect);
+	    expose(ee, expose_rect);
 	} while (all_split ? (ee = ee->next_split(e)) : 0);
     }
 
-    if (scroll_to && _layout) {
+    if (scroll_to && _cdiagram) {
 	GtkAdjustment *ha = _horiz_adjust, *va = _vert_adjust;
 	rectangle ex = *e;
-	ex.expand(e->shadow(this, 0), e->shadow(this, 1),
-		  e->shadow(this, 2), e->shadow(this, 3));
+	ex.expand(e->shadow(scale(), 0), e->shadow(scale(), 1),
+		  e->shadow(scale(), 2), e->shadow(scale(), 3));
 	ex = canvas_to_window(ex);
 	for (delt *o = e->visible_split(); all_split && o && o != e; o = o->split()) {
 	    rectangle ox = *o;
-	    ox.expand(o->shadow(this, 0), o->shadow(this, 1),
-		      o->shadow(this, 2), o->shadow(this, 3));
+	    ox.expand(o->shadow(scale(), 0), o->shadow(scale(), 1),
+		      o->shadow(scale(), 2), o->shadow(scale(), 3));
 	    ox = canvas_to_window(ox);
 	    rectangle windowrect(ha->value, va->value, ha->page_size, va->page_size);
 	    if (ox.intersect(windowrect).area() > ex.intersect(windowrect).area())
@@ -430,28 +548,13 @@ void wdiagram::highlight(delt *e, uint8_t htype, rectangle *expose_rect,
     }
 }
 
-delt *wdiagram::point_elt(const point &p) const
-{
-    std::vector<dwidget *> elts;
-    _rects.find_all(p.x(), p.y(), elts);
-    std::sort(elts.begin(), elts.end(), dwidget::z_index_greater);
-    std::vector<dwidget *>::iterator eltsi = std::unique(elts.begin(), elts.end());
-    elts.erase(eltsi, elts.end());
-    for (eltsi = elts.begin(); eltsi != elts.end(); ++eltsi)
-	if ((*eltsi)->contains(p))
-	    if (delt *e = (*eltsi)->cast_elt())
-		if (e->displayed() > 0)
-		    return e;
-    return 0;
-}
-
 void wdiagram::on_drag_motion(const point &p)
 {
     point delta = p - _dragr.origin();
 
     if (_drag_state == drag_start
-	&& (fabs(delta.x()) * _scale >= 3
-	    || fabs(delta.y()) * _scale >= 3)) {
+	&& (fabs(delta.x()) * scale() >= 3
+	    || fabs(delta.y()) * scale() >= 3)) {
 	for (std::list<delt *>::iterator iter = _highlight[dhlt_click].begin();
 	     iter != _highlight[dhlt_click].end(); ++iter)
 	    (*iter)->drag_prepare();
@@ -471,8 +574,8 @@ void wdiagram::on_drag_motion(const point &p)
 void wdiagram::on_drag_rect_motion(const point &p)
 {
     if (_drag_state == drag_rect_start
-	&& (fabs(p.x() - _dragr.x()) * _scale >= 3
-	    || fabs(p.y() - _dragr.y()) * _scale >= 3))
+	&& (fabs(p.x() - _dragr.x()) * scale() >= 3
+	    || fabs(p.y() - _dragr.y()) * scale() >= 3))
 	_drag_state = drag_rect_dragging;
 
     if (_drag_state == drag_rect_dragging) {
@@ -492,7 +595,7 @@ void wdiagram::on_drag_rect_motion(const point &p)
 	_dragr._height = p.y() - _dragr.y();
 
 	std::vector<dwidget *> elts;
-	find_rect_elts(_dragr.normalize(), elts);
+	_cdiagram->find_rect_elts(_dragr.normalize(), elts);
 	for (std::vector<dwidget *>::iterator iter = elts.begin();
 	     iter != elts.end(); ++iter)
 	    if (delt *e = (*iter)->cast_elt())
@@ -513,11 +616,11 @@ void wdiagram::on_drag_complete()
     bool changed = false;
     for (std::list<delt *>::iterator iter = _highlight[dhlt_click].begin();
 	 iter != _highlight[dhlt_click].end() && !changed; ++iter)
-	changed = (*iter)->drag_canvas_changed(*_relt);
+	changed = (*iter)->drag_canvas_changed(*_cdiagram);
 
     if (changed) {
 	point old_ctr = scroll_center();
-	_relt->layout_recompute_bounds();
+	_cdiagram->layout_recompute_bounds();
 	scroll_recenter(old_ctr);
     }
 }
@@ -525,7 +628,7 @@ void wdiagram::on_drag_complete()
 void wdiagram::on_drag_rect_complete()
 {
     std::vector<dwidget *> elts;
-    find_rect_elts(_dragr, elts);
+    _cdiagram->find_rect_elts(_dragr, elts);
     for (std::vector<dwidget *>::iterator iter = elts.begin();
 	 iter != elts.end(); ++iter)
 	if (delt *e = (*iter)->cast_elt())
@@ -573,7 +676,7 @@ gboolean wdiagram::on_event(GdkEvent *event)
     if (event->type == GDK_MOTION_NOTIFY) {
 	point p = window_to_canvas(event->motion.x, event->motion.y);
 	if (!(event->motion.state & GDK_BUTTON1_MASK)) {
-	    delt *e = point_elt(p);
+	    delt *e = _cdiagram->point_elt(p);
 	    highlight(e, dhlt_hover, 0, false, true);
 	    set_cursor(e, event->motion.x, event->motion.y, event->motion.state);
 	} else if (_drag_state == drag_start || _drag_state == drag_dragging)
@@ -590,7 +693,7 @@ gboolean wdiagram::on_event(GdkEvent *event)
 
     } else if (event->type == GDK_BUTTON_PRESS && event->button.button == 1) {
 	point p = window_to_canvas(event->button.x, event->button.y);
-	delt *e = point_elt(p);
+	delt *e = _cdiagram->point_elt(p);
 	if (e) {
 	    _drag_state = drag_start;
 	    _dragr.set_origin(p);
@@ -630,7 +733,7 @@ gboolean wdiagram::on_event(GdkEvent *event)
 	highlight(0, dhlt_pressed, 0, false, false);
 	
     } else if (event->type == GDK_2BUTTON_PRESS && event->button.button == 1) {
-	delt *e = point_elt(window_to_canvas(event->button.x, event->button.y));
+	delt *e = _cdiagram->point_elt(window_to_canvas(event->button.x, event->button.y));
 	highlight(e, dhlt_click, 0, true, false);
 	if (e) {
 	    _rw->element_show(e->flat_name(), 1, true);
@@ -638,7 +741,7 @@ gboolean wdiagram::on_event(GdkEvent *event)
 	}
 	
     } else if (event->type == GDK_BUTTON_RELEASE && event->button.button == 3) {
-	/*delt *e = point_elt(window_to_canvas(event->button.x, event->button.y));
+	/*delt *e = _cdiagram->point_elt(window_to_canvas(event->button.x, event->button.y));
 	if (e) {
 	    rectangle bounds = *e;
 	    e->remove(_rects, bounds);

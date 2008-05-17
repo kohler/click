@@ -23,24 +23,32 @@ class ddecor;
 class crouter;
 
 struct dcontext {
-    wdiagram *d;
-    PangoLayout *pl;
-    String pl_font;
-    unsigned generation;
     
-    cairo_t *cr;
-    int scale_step;
+    crouter *cr;
+    PangoLayout *pl;
+    cairo_t *cairo;
 
-    dcontext(wdiagram *d, PangoLayout *pl, cairo_t *cr);
+    unsigned generation;    
+    int scale_step;
+    double scale;
+
+    String pl_font;
+    double penumbra;
+
+    dcontext(crouter *cr, PangoLayout *pl, cairo_t *cairo,
+	     unsigned generation, int scale_step, double scale);
+
+    static unsigned step_generation();
 
     operator cairo_t *() const {
-	return cr;
+	return cairo;
     }
     operator PangoLayout *() const {
 	return pl;
     }
 
     void set_font_description(const String &font);
+    
 };
 
 
@@ -56,6 +64,8 @@ class dwidget : public rectangle { public:
 	return _type;
     }
 
+    String unparse() const;
+    
     inline delt *cast_elt();
     inline const delt *cast_elt() const;
     inline dconn *cast_conn();
@@ -73,7 +83,7 @@ class dwidget : public rectangle { public:
 	return a->_z_index > b->_z_index;
     }
 
-    inline void draw(dcontext &dx);
+    inline void draw(dcontext &dcx);
     
   private:
 
@@ -88,6 +98,19 @@ class dconn : public dwidget { public:
     dconn(delt *fe, int fp, delt *te, int tp, int z_index)
 	: dwidget(dw_conn, z_index), _from_elt(fe), _from_port(fp),
 	  _to_elt(te), _to_port(tp) {
+    }
+
+    delt *from_elt() const {
+	return _from_elt;
+    }
+    int from_port() const {
+	return _from_port;
+    }
+    delt *to_elt() const {
+	return _to_elt;
+    }
+    int to_port() const {
+	return _to_port;
     }
 
     bool visible() const;
@@ -228,7 +251,7 @@ class delt : public dwidget { public:
     double min_width() const;
     double min_height() const;
 
-    double shadow(wdiagram *d, int side) const;
+    double shadow(double scale, int side) const;
 
     int highlights() const {
 	return _highlight;
@@ -242,9 +265,6 @@ class delt : public dwidget { public:
     void unhighlight(int htype) {
 	_highlight &= ~(1 << htype);
     }
-
-    void redraw(wdiagram *d) const;
-    void expose(wdiagram *d, rectangle *expose_rect) const;
 
     // creating
     void create(RouterT *router, ProcessingT *processing,
@@ -260,7 +280,8 @@ class delt : public dwidget { public:
     void layout_recompute_bounds();
 
     void remove(rect_search<dwidget> &rects, rectangle &bounds);
-    void insert(rect_search<dwidget> &rects, wdiagram *d, rectangle &bounds);
+    void insert(rect_search<dwidget> &rects, crouter *cr, rectangle &bounds);
+    void insert_all(rect_search<dwidget> &rects);
 
     // dragging
     enum { drag_threshold = 8 };// amount after which recalculate layout
@@ -272,7 +293,7 @@ class delt : public dwidget { public:
     // drawing
     point input_position(int port, dport_style *dps, bool here = false) const;
     point output_position(int port, dport_style *dps, bool here = false) const;
-    void draw(dcontext &dx);
+    void draw(dcontext &dcx);
 
     // handlers
     handler_value *handler_interest(crouter *cr, const String &hname,
@@ -356,16 +377,16 @@ class delt : public dwidget { public:
 				double side_length) const;
     double hard_port_position(bool isoutput, int port,
 			      double side_length) const;
-    void draw_port(dcontext &dx, dport_style *dps, point p,
+    void draw_port(dcontext &dcx, dport_style *dps, point p,
 		   int port, bool isoutput, double opacity);
-    void border_path(dcontext &dx, bool closed) const;
-    void clip_to_border(dcontext &dx) const;
+    void border_path(dcontext &dcx, bool closed) const;
+    void clip_to_border(dcontext &dcx) const;
 
-    void draw_background(dcontext &dx);
-    void draw_text(dcontext &dx);
-    void draw_ports(dcontext &dx);
-    void draw_outline(dcontext &dx);
-    void draw_drop_shadow(dcontext &dx);
+    void draw_background(dcontext &dcx);
+    void draw_text(dcontext &dcx);
+    void draw_ports(dcontext &dcx);
+    void draw_outline(dcontext &dcx);
+    void draw_drop_shadow(dcontext &dcx);
         
 };
 
@@ -386,12 +407,12 @@ inline const dconn *dwidget::cast_conn() const {
     return (_type == dw_conn ? static_cast<const dconn *>(this) : 0);
 }
 
-inline void dwidget::draw(dcontext &dx) {
+inline void dwidget::draw(dcontext &dcx) {
     assert(_type == dw_elt || _type == dw_conn);
     if (_type == dw_elt)
-	static_cast<delt *>(this)->draw(dx);
+	static_cast<delt *>(this)->draw(dcx);
     else
-	static_cast<dconn *>(this)->draw(dx);
+	static_cast<dconn *>(this)->draw(dcx);
 }
 
 

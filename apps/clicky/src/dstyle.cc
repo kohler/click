@@ -97,7 +97,10 @@ port.agnostic, port.push.agnostic, port.pull.agnostic {\n\
     display: open;\n\
     port-display: both;\n\
     port-font: 6;\n\
-    @media print { font: Times; }\n\
+    @media print {\n\
+	font: Times;\n\
+	port-font: Times 6;\n\
+    }\n\
     /* @media screen { font: URW Palladio L italic 20; } */\n\
 }\n\
 *.anonymous {\n\
@@ -496,13 +499,11 @@ bool dcss_selector::match(crouter *cr, const delt *e, int *sensitivity) const
 
     const char *s;
     for (const String *k = _klasses.begin(); k != _klasses.end(); ++k)
-	if (k->length() > 3 && (*k)[0] == 'i' && (*k)[1] == 'n'
-	    && (*k)[2] == '=') {
+	if (k->starts_with("in=", 3)) {
 	    if (e->fake()
 		|| !int_match_string(k->begin() + 3, k->end(), e->ninputs()))
 		return false;
-	} else if (k->length() > 4 && (*k)[0] == 'o' && (*k)[1] == 'u'
-		   && (*k)[2] == 't' && (*k)[3] == '=') {
+	} else if (k->starts_with("out=", 4)) {
 	    if (e->fake()
 		|| !int_match_string(k->begin() + 4, k->end(), e->noutputs()))
 		return false;
@@ -1751,12 +1752,11 @@ void dcss_set::collect_handler_styles(crouter *cr, const handler_value *hv,
 	_below->collect_handler_styles(cr, hv, e, result, generic);
 }
 
-ref_ptr<dhandler_style> dcss_set::handler_style(wdiagram *d, const handler_value *hv)
+ref_ptr<dhandler_style> dcss_set::handler_style(crouter *cr, const delt *e, const handler_value *hv)
 {
     Vector<dcss *> sv;
     bool generic = true;
-    const delt *e = d->elt(hv->element_name());
-    collect_handler_styles(d->main(), hv, e, sv, generic);
+    collect_handler_styles(cr, hv, e, sv, generic);
 
     std::sort(sv.begin(), sv.end(), dcsspp_compare);
     StringAccum sa(sizeof(unsigned) * sv.size());

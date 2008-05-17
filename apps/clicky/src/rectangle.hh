@@ -14,6 +14,16 @@ struct point {
 	: _x(x), _y(y) {
     }
 
+    typedef double (point::*unspecified_bool_type)() const;
+
+    operator unspecified_bool_type() const {
+	return (_x || _y ? &point::x : 0);
+    }
+
+    bool operator!() const {
+	return !_x && !_y;
+    }
+    
     double x() const {
 	return _x;
     }

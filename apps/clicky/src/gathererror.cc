@@ -149,4 +149,12 @@ GatherErrorHandler::const_iterator GatherErrorHandler::find_offset(int offset) c
     return std::lower_bound(_v.begin(), _v.end(), offset, geh_offset_search);
 }
 
+String GatherErrorHandler::message_string(const_iterator begin, const_iterator end)
+{
+    StringAccum sa;
+    for (; begin != end; ++begin)
+	sa << begin->message;
+    return sa.take_string();
+}
+
 #include <click/vector.cc>

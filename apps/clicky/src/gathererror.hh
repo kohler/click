@@ -10,7 +10,7 @@ class GatherErrorHandler : public BaseErrorHandler { public:
     GatherErrorHandler();
 
     struct Message {
-	int seriousness;
+	ErrorHandler::Seriousness seriousness;
 	String message;
 
 	int offset1;
@@ -18,7 +18,8 @@ class GatherErrorHandler : public BaseErrorHandler { public:
 	int errpos1;
 	int errpos2;
 
-	Message(int s, const String &m, int off, int ep1, int ep2)
+	Message(ErrorHandler::Seriousness s, const String &m, int off,
+		int ep1, int ep2)
 	    : seriousness(s), message(m), offset1(off), errpos1(ep1),
 	      errpos2(ep2) {
 	}
@@ -60,6 +61,8 @@ class GatherErrorHandler : public BaseErrorHandler { public:
     void translate_prefix(const String &from, const String &to, int beginpos = 0);
     void run_dialog(GtkWindow *w, int beginpos = 0);
 
+    static String message_string(const_iterator begin, const_iterator end);
+    
   private:
     
     Vector<Message> _v;

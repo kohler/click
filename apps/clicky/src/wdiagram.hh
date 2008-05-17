@@ -13,6 +13,40 @@ class handler_value;
 class dwidget;
 class delt;
 class dcss_set;
+class crouter;
+
+class cdiagram : public rectangle { public:
+
+    cdiagram(crouter *cr, PangoLayout *pl, unsigned generation);
+    ~cdiagram();
+
+    delt *elt(const String &ename) const {
+	return _elt_map[ename];
+    }
+    rect_search<dwidget> &rects() {
+	return _rects;
+    }
+
+    void layout_recompute_bounds();
+    delt *point_elt(const point &p) const;
+    void find_rect_elts(const rectangle &r, std::vector<dwidget *> &result) const;
+
+    static void export_pdf(const char *filename, crouter *cr,
+			   point page_size, point margin, double scale,
+			   bool multipage);
+    
+    void export_pdf(const char *filename, bool eps,
+		    crouter *cr, unsigned generation,
+		    point page_size, point margin, double scale,
+		    bool multipage);
+    
+  private:
+    
+    delt *_relt;
+    rect_search<dwidget> _rects;
+    HashTable<String, delt *> _elt_map;
+
+};
 
 class wdiagram { public:
 
@@ -23,7 +57,12 @@ class wdiagram { public:
 	return _rw;
     }
     
-    void router_create(bool incremental, bool always);
+    delt *elt(const String &ename) const {
+	return (_cdiagram ? _cdiagram->elt(ename) : 0);
+    }
+    rect_search<dwidget> &rects() {
+	return _cdiagram->rects();
+    }
 
     int scale_step() const {
 	return _scale_step;
@@ -32,20 +71,10 @@ class wdiagram { public:
 	return _scale;
     }
 
+    void router_create(bool incremental, bool always);
+
     bool visible() const {
 	return GTK_WIDGET_VISIBLE(_widget);
-    }
-
-    delt *elt(const String &name) const {
-	return _elt_map[name];
-    }
-    
-    rect_search<dwidget> &rects() {
-	return _rects;
-    }
-
-    void notify_shadow(double shadow) {
-	_elt_expand = std::max(_elt_expand, shadow + 2);
     }
     
     inline void redraw();
@@ -57,9 +86,7 @@ class wdiagram { public:
 
     void on_expose(const GdkRectangle *r);
     gboolean on_event(GdkEvent *event);
-    void on_ccss_changed() {
-	++_pango_generation;
-    }
+    void on_ccss_changed();
 
     // handlers
     void notify_read(handler_value *hv);
@@ -69,19 +96,6 @@ class wdiagram { public:
     rectangle canvas_to_window(const rectangle &r) const;
 
     void export_diagram(const char *filename, bool eps);
-
-    struct reachable_t {
-	Bitvector main;
-	HashTable<String, Bitvector> compound;
-	bool operator()(const String &s, int eindex) const {
-	    if (!s)
-		return main.size() && main[eindex];
-	    const Bitvector *v = compound.get_pointer(s);
-	    return v && v->size() && (*v)[eindex];
-	}
-    };
-    const reachable_t &downstream(const String &str);
-    const reachable_t &upstream(const String &str);
     
     enum { c_element = 0, c_main = 9, c_hand = 10, ncursors = 11 };
     
@@ -91,18 +105,15 @@ class wdiagram { public:
     GtkWidget *_widget;
     GtkAdjustment *_horiz_adjust;
     GtkAdjustment *_vert_adjust;
-    unsigned _pango_generation;
-    double _elt_expand;
-    
+
+    cdiagram *_cdiagram;
+    unsigned _generation;
     int _scale_step;
     double _scale;
+    double _penumbra;
+    
     int _origin_x;
     int _origin_y;
-
-    delt *_relt;
-    rect_search<dwidget> _rects;
-    HashTable<String, delt *> _elt_map;
-    bool _layout;
 
     std::list<delt *> _highlight[3];
 
@@ -126,14 +137,12 @@ class wdiagram { public:
     void initialize();
     void layout();
 
-    void expose(delt *e, rectangle *expose_rect);
+    void expose(const delt *e, rectangle *expose_rect);
     void highlight(delt *e, uint8_t htype, rectangle *expose_rect = 0,
 		   bool scroll_to = false, bool all_splits = false);
 
-    delt *point_elt(const point &p) const;
     void set_cursor(delt *e, double x, double y, int state);
     point scroll_center() const;
-    inline void find_rect_elts(const rectangle &r, std::vector<dwidget *> &result) const;
     void on_drag_motion(const point &p);
     void on_drag_rect_motion(const point &p);
     void on_drag_hand_motion(double x_root, double y_root);
@@ -152,7 +161,7 @@ inline void wdiagram::redraw()
 
 inline void wdiagram::redraw(rectangle r)
 {
-    r.expand(_elt_expand);
+    r.expand(_penumbra);
     r.scale(_scale);
     r.integer_align();
     gtk_widget_queue_draw_area(_widget, (gint) (r.x() - _horiz_adjust->value - _origin_x), (gint) (r.y() - _vert_adjust->value - _origin_y), (gint) r.width(), (gint) r.height());

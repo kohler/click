@@ -112,7 +112,6 @@ void crouter::set_ccss_text(const String &str)
 	String media = _ccss->media();
 	delete _ccss;
 	_ccss = new dcss_set(dcss_set::default_set(media));
-	// XXX ++_pango_generation;
 	_ccss->parse(str);
 	on_ccss_changed();
     }

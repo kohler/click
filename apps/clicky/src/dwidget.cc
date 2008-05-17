@@ -31,9 +31,17 @@ static inline void cairo_curve_to_points(cairo_t *cr, const point &p0, const poi
     cairo_curve_to(cr, p0.x(), p0.y(), p1.x(), p1.y(), p2.x(), p2.y());
 }
 
-dcontext::dcontext(wdiagram *d_, PangoLayout *pl_, cairo_t *cr_)
-    : d(d_), pl(pl_), cr(cr_)
+dcontext::dcontext(crouter *cr_, PangoLayout *pl_, cairo_t *cairo_,
+		   unsigned generation_, int scale_step_, double scale_)
+    : cr(cr_), pl(pl_), cairo(cairo_), generation(generation_),
+      scale_step(scale_step_), scale(scale_), penumbra(1)
 {
+}
+
+unsigned dcontext::step_generation()
+{
+    static unsigned the_generation;
+    return ++the_generation;
 }
 
 void dcontext::set_font_description(const String &font)
@@ -43,6 +51,20 @@ void dcontext::set_font_description(const String &font)
 	pango_layout_set_font_description(pl, font_desc);
 	pango_font_description_free(font_desc);
 	pl_font = font;
+    }
+}
+
+
+String dwidget::unparse() const
+{
+    if (_type == dw_elt)
+	return static_cast<const delt *>(this)->flat_name();
+    else {
+	const dconn *c = static_cast<const dconn *>(this);
+	StringAccum sa;
+	sa << c->from_elt()->flat_name() << '[' << c->from_port()
+	   << "]->[" << c->to_port() << ']' << c->to_elt()->flat_name();
+	return sa.take_string();
     }
 }
 
@@ -356,13 +378,13 @@ bool delt::vertical() const
     return side_vertical(_des->orientation);
 }
 
-double delt::shadow(wdiagram *d, int side) const
+double delt::shadow(double scale, int side) const
 {
     if (_des->shadow_style == dshadow_none
 	|| (_des->shadow_style == dshadow_drop && (side == 0 || side == 3)))
 	return 0;
     else if (_des->shadow_style == dshadow_unscaled_outline)
-	return _des->shadow_width / d->scale();
+	return _des->shadow_width / scale;
     else
 	return _des->shadow_width;
 }
@@ -866,7 +888,7 @@ void delt::layout_contents(dcontext &dcx)
     for (size_t i = 0; i != _elt.size(); ++i)
 	_elt[i]->layout(dcx);
 
-    position_contents_dot(dcx.d->main(), dcx.d->main()->error_handler());
+    position_contents_dot(dcx.cr, dcx.cr->error_handler());
     //position_contents_scc(router);
     //position_contents_first_heuristic(router);
 }
@@ -879,12 +901,11 @@ void delt::layout_ports(dcontext &dcx)
     delete[] _port_text_offsets;
     _portoff[0] = _portoff[1] = 0;
     _port_text_offsets = 0;
-    crouter *cr = dcx.d->main();
-    dcss_set *dcs = cr->ccss();
+    dcss_set *dcs = dcx.cr->ccss();
     int poff = 0;
     
     for (int isoutput = 0; isoutput < 2; ++isoutput) {
-	ref_ptr<dport_style> dps = dcs->port_style(cr, this, isoutput, 0, 0);
+	ref_ptr<dport_style> dps = dcs->port_style(dcx.cr, this, isoutput, 0, 0);
 	_ports_length[isoutput] = 2 * dps->edge_padding;
 	if (!_e->nports(isoutput)
 	    || (_des->display == dedisp_vsplit && isoutput == (_split_type != 0)))
@@ -895,14 +916,14 @@ void delt::layout_ports(dcontext &dcx)
 	double tm = dps->edge_padding;
 	for (int p = 0; p < _e->nports(isoutput); ++p, ++poff) {
 	    if (p)
-		dps = dcs->port_style(cr, this, isoutput, p, 0);
+		dps = dcs->port_style(dcx.cr, this, isoutput, p, 0);
 	    double l;
 	    if (dps->shape == dpshape_triangle)
 		l = dps->length - 2;
 	    else
 		l = dps->length + 4;
 	    if (dps->text) {
-		String markup = parse_markup(dps->text, dcx.d->main(), p, 0);
+		String markup = parse_markup(dps->text, dcx.cr, p, 0);
 		if (dcx.pl_font != dps->font)
 		    dcx.set_font_description(dps->font);
 		pango_layout_set_width(dcx, -1);
@@ -1161,31 +1182,45 @@ void delt::layout_complete(dcontext &dcx, double dx, double dy)
 	    double unadjusted_y = (*ci)->_y + dy;
 	    (*ci)->_x = floor(unadjusted_x);
 	    (*ci)->_y = floor(unadjusted_y);
-	    dcx.d->rects().insert(*ci);
 	    if ((*ci)->_elt.size() && (*ci)->_des->display == dedisp_open)
 		(*ci)->layout_complete(dcx, unadjusted_x, unadjusted_y);
 	}
 
     if (_e && _parent && _elt.size())
-	layout_compound_ports(dcx.d->main());
+	layout_compound_ports(dcx.cr);
 
-    for (std::vector<dconn *>::iterator ci = _conn.begin();
-	 ci != _conn.end(); ++ci)
-	if ((*ci)->layout())
-	    dcx.d->rects().insert(*ci);
+    if (!_e || _des->display == dedisp_open)
+	for (std::vector<dconn *>::iterator it = _conn.begin();
+	     it != _conn.end(); ++it)
+	    (*it)->layout();
 }
 
 void delt::layout_main(dcontext &dcx)
 {
     delt fake_child(this, 0);
-    crouter *cr = dcx.d->main();
-    _des = cr->ccss()->elt_style(cr, &fake_child);
-    _dess = cr->ccss()->elt_size_style(cr, &fake_child);
-    dcx.d->rects().clear();
+    _des = dcx.cr->ccss()->elt_style(dcx.cr, &fake_child);
+    _dess = dcx.cr->ccss()->elt_size_style(dcx.cr, &fake_child);
     layout_contents(dcx);
     layout_complete(dcx, _dess->margin[3], _dess->margin[0]);
     assign(0, 0, _contents_width + _dess->margin[1] + _dess->margin[3],
 	   _contents_height + _dess->margin[0] + _dess->margin[2]);
+}
+
+void delt::insert_all(rect_search<dwidget> &rects)
+{
+    if (!visible() && !root())
+	return;
+    if (!root())
+	rects.insert(this);
+    for (std::vector<delt *>::iterator ci = _elt.begin();
+	 ci != _elt.end(); ++ci)
+	if ((*ci)->visible())
+	    (*ci)->insert_all(rects);
+    if (!_e || _des->display == dedisp_open)
+	for (std::vector<dconn *>::iterator ci = _conn.begin();
+	     ci != _conn.end(); ++ci)
+	    if ((*ci)->visible())
+		rects.insert(*ci);
 }
 
 
@@ -1225,20 +1260,6 @@ bool dconn::layout()
  * recalculating bounds
  *
  */
-
-void delt::expose(wdiagram *d, rectangle *expose_rect) const
-{
-    if (!expose_rect)
-	d->redraw(*this);
-    else
-	*expose_rect |= *this;
-    for (delt *o = visible_split(); o && o != this; o = o->_split) {
-	if (!expose_rect)
-	    d->redraw(*o);
-	else
-	    *expose_rect |= *o;
-    }
-}
 
 void delt::layout_recompute_bounds()
 {
@@ -1304,8 +1325,8 @@ void delt::remove(rect_search<dwidget> &rects, rectangle &bounds)
     }
 }
 
-void delt::insert(rect_search<dwidget> &rects,
-		  wdiagram *d, rectangle &bounds)
+void delt::insert(rect_search<dwidget> &rects, crouter *cr,
+		  rectangle &bounds)
 {
     if (!visible())
 	return;
@@ -1339,9 +1360,9 @@ void delt::insert(rect_search<dwidget> &rects,
 #endif
 
     if (_parent && _elt.size() && _des->display == dedisp_open) {
-	layout_compound_ports(d->main());
-	_elt[0]->insert(rects, d, bounds);
-	_elt[1]->insert(rects, d, bounds);
+	layout_compound_ports(cr);
+	_elt[0]->insert(rects, cr, bounds);
+	_elt[1]->insert(rects, cr, bounds);
     }
 }
 
@@ -1516,7 +1537,7 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p,
     }
 
     if (dps->text) {
-	String markup = parse_markup(dps->text, dcx.d->main(), port, 0);
+	String markup = parse_markup(dps->text, dcx.cr, port, 0);
 	if (dcx.pl_font != dps->font)
 	    dcx.set_font_description(dps->font);
 	pango_layout_set_alignment(dcx, PANGO_ALIGN_CENTER);
@@ -1536,13 +1557,12 @@ void delt::draw_ports(dcontext &dcx)
     const char *pcpos = _processing_code.begin();
     int pcode;
     ref_ptr<dport_style> dps;
-    crouter *cr = dcx.d->main();
 
     if (_des->display != dedisp_vsplit || _split_type == desplit_inputs)
 	for (int i = 0; i < _e->ninputs(); i++) {
 	    pcpos = ProcessingT::processing_code_next
 		(pcpos, _processing_code.end(), pcode);
-	    dps = cr->ccss()->port_style(cr, this, false, i, pcode);
+	    dps = dcx.cr->ccss()->port_style(dcx.cr, this, false, i, pcode);
 	    if (dps->display & dpdisp_inputs) {
 		double opacity = (_des->display == dedisp_fsplit && flow_split_char(_des->flow_split, i, false) != _split_type ? 0.25 : 1);
 		draw_port(dcx, dps.get(), input_position(i, dps.get(), true),
@@ -1554,7 +1574,7 @@ void delt::draw_ports(dcontext &dcx)
 	for (int i = 0; i < _e->noutputs(); i++) {
 	    pcpos = ProcessingT::processing_code_next
 		(pcpos, _processing_code.end(), pcode);
-	    dps = cr->ccss()->port_style(cr, this, true, i, pcode);
+	    dps = dcx.cr->ccss()->port_style(dcx.cr, this, true, i, pcode);
 	    if (dps->display & dpdisp_outputs) {
 		double opacity = (_des->display == dedisp_fsplit && flow_split_char(_des->flow_split, i, true) != _split_type ? 0.25 : 1);
 		draw_port(dcx, dps.get(), output_position(i, dps.get(), true),
@@ -1742,7 +1762,7 @@ void delt::draw_drop_shadow(dcontext &dcx)
 	    spo = (spo + 2) & 3;
     }
     double sw = _des->shadow_width;
-    dcx.d->notify_shadow(sw);
+    dcx.penumbra = std::max(dcx.penumbra, sw);
     if (spo != 1 && spo != 2) {
 	double x0 = _x + sw - shift, y0 = _y + _height + (sw - shift) / 2;
 	double x1 = _x + _width + (sw - shift) / 2, y1 = _y + sw - shift;
@@ -1805,8 +1825,8 @@ void delt::draw_outline(dcontext &dcx)
 	else {
 	    double sw = _des->shadow_width;
 	    if (_des->shadow_style == dshadow_unscaled_outline)
-		sw /= dcx.d->scale();
-	    dcx.d->notify_shadow(sw);
+		sw /= dcx.scale;
+	    dcx.penumbra = std::max(dcx.penumbra, sw);
 	    cairo_set_line_width(dcx, sw);
 	    double x = _x - sw / 2, y = _y - sw / 2;
 	    cairo_move_to(dcx, x, y);
@@ -1869,7 +1889,7 @@ void delt::draw(dcontext &dcx)
 	    change |= dsense_highlight;
 	if (dcx.generation != _generation)
 	    change |= dsense_always;
-	reccss(dcx.d->main(), change);
+	reccss(dcx.cr, change);
 	_drawn_highlight = _highlight;
 	_generation = dcx.generation;
 
@@ -1975,7 +1995,7 @@ void delt::drag_shift(wdiagram *d, const point &delta)
 	remove(d->rects(), bounds);
 	_x = _xrect._x + delta.x();
 	_y = _xrect._y + delta.y();
-	insert(d->rects(), d, bounds);
+	insert(d->rects(), d->main(), bounds);
 	d->redraw(bounds);
 	for (std::vector<delt *>::iterator ei = _elt.begin();
 	     ei != _elt.end(); ++ei)
@@ -2008,7 +2028,7 @@ void delt::drag_size(wdiagram *d, const point &delta, int direction)
 	_width = _xrect._width + delta.x();
 
     _aligned = false;
-    insert(d->rects(), d, bounds);
+    insert(d->rects(), d->main(), bounds);
     d->redraw(bounds);
 }
 

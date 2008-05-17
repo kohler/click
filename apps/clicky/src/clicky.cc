@@ -18,6 +18,8 @@
 #include "crouter.hh"
 #include "cdriver.hh"
 #include "wmain.hh"
+#include "tmain.hh"
+#include "wdiagram.hh"
 #include <click/hashtable.hh>
 #include <netdb.h>
 
@@ -36,6 +38,8 @@ extern "C" {
 #define KERNEL_OPT 307
 #define STYLE_EXPR_OPT 308
 #define PDF_OPT 309
+#define PDF_SCALE_OPT 310
+#define PDF_MULTIPAGE_OPT 311
 
 static const Clp_Option options[] = {
     { "version", 0, VERSION_OPT, 0, 0 },
@@ -47,6 +51,8 @@ static const Clp_Option options[] = {
     { "kernel", 'k', KERNEL_OPT, 0, 0 },
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
     { "pdf", 0, PDF_OPT, Clp_ValString, Clp_Optional },
+    { "pdf-scale", 0, PDF_SCALE_OPT, Clp_ValDouble, 0 },
+    { "pdf-multipage", 0, PDF_MULTIPAGE_OPT, 0, Clp_Negate },
     { "help", 0, HELP_OPT, 0, 0 }
 };
 
@@ -67,6 +73,8 @@ Options:\n\
   -s, --style FILE             Add CCSS style information from FILE.\n\
       --style-expr STYLE       Add STYLE as CCSS style information.\n\
       --pdf[=FILE]             Output diagram to FILE (default stdout).\n\
+      --pdf-multipage          Output diagram on multiple letter pages.\n\
+      --pdf-scale=SCALE        Scale output diagram by SCALE (default 1).\n\
   -C, --clickpath PATH         Use PATH for CLICKPATH.\n\
       --help                   Print this message and exit.\n\
   -v, --version                Print version number and exit.\n\
@@ -106,7 +114,9 @@ main(int argc, char *argv[])
     Vector<String> wfiles;
     Vector<int> wtypes;
     bool do_pdf = false;
-    String pdf_file;
+    String pdf_file = "-";
+    double pdf_scale = 2.5;
+    bool pdf_multipage = false;
     
     while (1) {
 	int opt = Clp_Next(clp);
@@ -164,6 +174,14 @@ particular purpose.\n");
 	    pdf_file = clp->vstr;
 	    break;
 
+	  case PDF_SCALE_OPT:
+	    pdf_scale = 2.5 / clp->val.d;
+	    break;
+
+	  case PDF_MULTIPAGE_OPT:
+	    pdf_multipage = !clp->negated;
+	    break;
+
 	  case HELP_OPT:
 	    usage();
 	    exit(0);
@@ -204,34 +222,56 @@ particular purpose.\n");
 
     int colon;
     uint16_t port;
+    clicky::crouter *cr = 0;
+    clicky::wmain *wm = 0;
+    
     for (int i = 0; i < wfiles.size(); i++) {
-	clicky::wmain *rw = new clicky::wmain;
-	rw->set_landmark(wtypes[i] == 1 ? "config" : wfiles[i]);
-	rw->set_ccss_text(css_text);
+	if (!do_pdf)
+	    cr = wm = new clicky::wmain;
+	else {
+	    cr = new clicky::tmain;
+	    wm = 0;
+	}
+
+	GatherErrorHandler *gerrh = cr->error_handler();
+	cr->set_landmark(wtypes[i] == 1 ? "config" : wfiles[i]);
+	cr->set_ccss_text(css_text);
+	
 	if (wtypes[i] == 1)
-	    rw->set_config(wfiles[i], true);
+	    cr->set_config(wfiles[i], true);
 	else if (wtypes[i] == 2
 		 && (colon = wfiles[i].find_right(':')) >= 0
 		 && cp_tcpudp_port(wfiles[i].substring(colon + 1), IP_PROTO_TCP, &port)) {
 	    IPAddress addr;
-	    if (clicky::cp_host_port(wfiles[i].substring(0, colon), wfiles[i].substring(colon + 1), &addr, &port, rw->error_handler())) {
+	    if (clicky::cp_host_port(wfiles[i].substring(0, colon), wfiles[i].substring(colon + 1), &addr, &port, cr->error_handler())) {
 		bool ready = false;
-		GIOChannel *channel = clicky::csocket_cdriver::start_connect(addr, port, &ready, rw->error_handler());
-		if (rw->error_handler()->size())
-		    rw->error_handler()->run_dialog(rw->window());
+		GIOChannel *channel = clicky::csocket_cdriver::start_connect(addr, port, &ready, gerrh);
+		if (gerrh->size())
+		    cr->on_error(true, gerrh->message_string(gerrh->begin(), gerrh->end()));
 		if (channel)
-		    (void) new clicky::csocket_cdriver(rw, channel, ready);
+		    (void) new clicky::csocket_cdriver(cr, channel, ready);
 	    }
 	} else if (wtypes[i] == 4) {
-	    (void) new clicky::clickfs_cdriver(rw, "/click/");
+	    (void) new clicky::clickfs_cdriver(cr, "/click/");
 	} else {
-	    String s = file_string(wfiles[i], rw->error_handler());
-	    if (!s && rw->error_handler()->nerrors())
-		rw->error_handler()->run_dialog(rw->window());
-	    rw->set_config(s, true);
-	    rw->set_save_file(wfiles[i], (bool) s);
+	    String s = file_string(wfiles[i], cr->error_handler());
+	    if (!s && gerrh->nerrors())
+		cr->on_error(true, gerrh->message_string(gerrh->begin(), gerrh->end()));
+	    cr->set_config(s, true);
+	    if (wm)
+		wm->set_save_file(wfiles[i], (bool) s);
 	}
-	rw->show();
+	
+	if (wm)
+	    wm->show();
+    }
+
+    if (do_pdf) {
+	if (pdf_multipage)
+	    clicky::cdiagram::export_pdf(pdf_file.c_str(), cr, point(612, 792), point(24, 24), pdf_scale, true);
+	else
+	    clicky::cdiagram::export_pdf(pdf_file.c_str(), cr, point(0, 0), point(24, 24), pdf_scale, false);
+	exit(0);
     }
 
     gtk_main();

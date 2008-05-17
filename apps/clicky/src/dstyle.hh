@@ -446,7 +446,7 @@ class dcss_set { public:
     ref_ptr<delt_style> elt_style(crouter *cr, const delt *e, int *sensitivity = 0);
     ref_ptr<delt_size_style> elt_size_style(crouter *cr, const delt *e, int *sensitivity = 0);
     ref_ptr<dport_style> port_style(crouter *cr, const delt *e, bool isoutput, int port, int processing);
-    ref_ptr<dhandler_style> handler_style(wdiagram *d, const handler_value *hv);
+    ref_ptr<dhandler_style> handler_style(crouter *cr, const delt *e, const handler_value *hv);
     ref_ptr<dfullness_style> fullness_style(PermString decor, crouter *cr, const delt *e);
     ref_ptr<dactivity_style> activity_style(PermString decor, crouter *cr, const delt *e);
 

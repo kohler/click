@@ -23,6 +23,7 @@ clicky_SOURCES = \
 	ddecor.cc ddecor.hh \
 	whandler.cc whandler.hh \
 	wdiagram.cc wdiagram.hh \
+	tmain.cc tmain.hh \
 	rectangle.hh \
 	rectsearch.hh \
 	transform.cc transform.hh \
