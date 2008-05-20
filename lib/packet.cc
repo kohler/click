@@ -285,8 +285,8 @@ Packet::alloc_data(uint32_t headroom, uint32_t len, uint32_t tailroom)
  * length + @a tailroom would be less, then @a tailroom is increased to make
  * the total MIN_BUFFER_LENGTH.
  *
- * As with all packet creation functions, the packet's annotations are
- * initially cleared and its header pointers are initially null. */
+ * The new packet's annotations are cleared and its header pointers are
+ * null. */
 WritablePacket *
 Packet::make(uint32_t headroom, const unsigned char *data,
 	     uint32_t length, uint32_t tailroom)

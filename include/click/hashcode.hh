@@ -71,7 +71,7 @@ inline size_t hashcode(T *v) {
 }
 
 template <typename T>
-inline typename T::key_type
+inline typename T::key_const_reference
 hashkey(const T &x)
 {
     return x.hashkey();

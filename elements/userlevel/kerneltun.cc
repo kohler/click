@@ -541,8 +541,9 @@ KernelTun::push(int, Packet *p)
 	} else if (_type == LINUX_ETHERTAP) {
 	    // 2-byte padding, then Ethernet header
 	    p = p->push(2);
-	} else
+	} else {
 	    /* existing packet is OK */;
+	}
     } else if (_type == LINUX_UNIVERSAL) {
 	// 2-byte padding followed by an Ethernet type
 	uint32_t ethertype = (iph->ip_v == 4 ? htonl(ETHERTYPE_IP) : htonl(ETHERTYPE_IP6));
@@ -562,8 +563,9 @@ KernelTun::push(int, Packet *p)
 	    memcpy(q->data(), "\x00\x00\xFE\xFD\x00\x00\x00\x00\xFE\xFD\x00\x00\x00\x00", 14);
 	    *(uint16_t *)(q->data() + 14) = ethertype;
 	}
-    } else
+    } else {
 	/* existing packet is OK */;
+    }
 
     if (p) {
 	int w = write(_fd, p->data(), p->length());

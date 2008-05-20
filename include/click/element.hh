@@ -19,7 +19,9 @@ class Bitvector;
  * @brief Click's Element class.
  */
 
-#define CLICK_ELEMENT_PORT_COUNT_DEPRECATED CLICK_DEPRECATED
+#ifndef CLICK_ELEMENT_DEPRECATED
+# define CLICK_ELEMENT_DEPRECATED CLICK_DEPRECATED
+#endif
 
 class Element { public:
     
@@ -212,15 +214,15 @@ class Element { public:
     };
 
     // DEPRECATED
-    String id() const CLICK_DEPRECATED;
+    String id() const CLICK_ELEMENT_DEPRECATED;
 
-    inline void set_ninputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
-    inline void set_noutputs(int) CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
-    inline void add_input() CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
-    inline void add_output() CLICK_ELEMENT_PORT_COUNT_DEPRECATED;
+    inline void set_ninputs(int) CLICK_ELEMENT_DEPRECATED;
+    inline void set_noutputs(int) CLICK_ELEMENT_DEPRECATED;
+    inline void add_input() CLICK_ELEMENT_DEPRECATED;
+    inline void add_output() CLICK_ELEMENT_DEPRECATED;
     
-    virtual bool run_task() CLICK_DEPRECATED;
-    virtual void run_timer() CLICK_DEPRECATED;
+    virtual bool run_task() CLICK_ELEMENT_DEPRECATED;
+    virtual void run_timer() CLICK_ELEMENT_DEPRECATED;
     
   private:
 

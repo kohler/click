@@ -19,6 +19,7 @@
  */
 
 #include <click/config.h>
+#define CLICK_ELEMENT_DEPRECATED /* Avoid warnings in this file */
 
 #include <click/glue.hh>
 #include <click/element.hh>

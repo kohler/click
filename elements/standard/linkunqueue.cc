@@ -184,8 +184,9 @@ LinkUnqueue::run_task(Task *)
     } else if (_signal) {
 	//_state = S_TASK;
 	_task.fast_reschedule();
-    } else
-	/*_state = S_ASLEEP*/;
+    } else {
+	//_state = S_ASLEEP;
+    }
 
     return worked;
 }

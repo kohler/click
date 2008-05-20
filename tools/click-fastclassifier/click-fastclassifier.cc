@@ -532,8 +532,9 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
 	/* nada */;
       else if (sscanf(step.c_str(), "safe length %d", &prog.safe_length))
 	/* nada */;
-      else if (sscanf(step.c_str(), "alignment offset %d", &prog.align_offset))
+      else if (sscanf(step.c_str(), "alignment offset %d", &prog.align_offset)) {
 	/* nada */;
+      }
     }
 
     // search for an existing fast classifier with the same program

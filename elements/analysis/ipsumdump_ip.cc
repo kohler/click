@@ -258,7 +258,7 @@ static bool transport_extract(PacketDesc& d, int thunk)
 	    d.v = ntohs(d.iph->ip_len);
 	    int32_t off = p->network_header_length();
 	    if (d.tcph && p->transport_length() >= 13
-		&& off + (d.tcph->th_off << 2) <= d.v)
+		&& off + (d.tcph->th_off << 2) <= (int32_t) d.v)
 		off += (d.tcph->th_off << 2);
 	    else if (d.udph)
 		off += sizeof(click_udp);
@@ -284,7 +284,7 @@ static void payload_info(const PacketDesc &d, int32_t &off, uint32_t &len)
 	len = ntohs(d.iph->ip_len);
 	off = d.p->transport_header_offset();
 	if (d.tcph && d.p->transport_length() >= 13
-	    && off + (d.tcph->th_off << 2) <= len)
+	    && off + (d.tcph->th_off << 2) <= (int32_t) len)
 	    off += (d.tcph->th_off << 2);
 	else if (d.udph)
 	    off += sizeof(click_udp);

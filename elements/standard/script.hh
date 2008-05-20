@@ -84,7 +84,7 @@ instructions as the '$?' variable.
 
 =item 'C<readq> HANDLER [ARG...]', 'C<writeq> HANDLER [ARG...]'
 
-Same as C<read> and C<write>, but removes one layer of quoting from the ARGs
+Same as C<read> and C<write>, but remove one layer of quoting from the ARGs
 before calling the handler.
 
 =back
@@ -253,10 +253,10 @@ integer division.
 
 =h eq, ne, lt, gt, le, ge "read with parameters"
 
-Compares two parameters and return the result.  For example, 'C<eq 10
-0xA>' returns "C<true>", but 'C<le 9 8>' returns "C<false>".  If either
-parameter cannot be interpreted as a number, performs a string comparison.
-For example, 'C<eq 10x 10x>' return "C<true>".
+Compares two parameters and returns the result.  For example, 'C<eq 10 0xA>'
+returns "C<true>", and 'C<le 9 8>' returns "C<false>".  If either parameter
+cannot be interpreted as a number, performs a string comparison in bytewise
+lexicographic order.  For example, 'C<eq 10x 10x>' return "C<true>".
 
 =h not "read with parameters"
 

@@ -182,7 +182,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 #define PID_RFC2684_ETH_NOFCS	0x0007	/* Ethernet, without FCS */
 #define PID_RFC2684_FDDI_FCS	0x0004	/* FDDI, with FCS */
 #define PID_RFC2684_FDDI_NOFCS	0x000a	/* FDDI, without FCS */
-	      uint32_t orgcode = rh->orgcode[0]<<16 + rh->orgcode[1]<<8 + rh->orgcode[2];
+	      uint32_t orgcode = (rh->orgcode[0]<<16) + (rh->orgcode[1]<<8) + rh->orgcode[2];
 	      if (orgcode == OUI_ENCAP_ETHER || orgcode == OUI_CISCO_90) {
 		  data = reinterpret_cast<const uint8_t*>(&rh->ether_type) - 12;
 		  goto ethernet;

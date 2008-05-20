@@ -36,7 +36,7 @@ inline uint32_t
 DirectIPLookup::Table::prefix_hash(uint32_t prefix, uint32_t len)
 {
     // An arbitrary hash function - it'd better be good...
-    uint32_t hash = prefix ^ (len << 5) ^ (prefix >> (len >> 2)) - len;
+    uint32_t hash = prefix ^ (len << 5) ^ ((prefix >> (len >> 2)) - len);
     hash ^= (hash >> 23) ^ ((hash >> 15) * len) ^ ((prefix >> 17) * 53);
     hash -= (prefix >> 3) ^ ((hash >> len) * 7) ^ ((hash >> 11) * 103);
     hash =  (hash ^ (hash >> 17)) & (PREF_HASHSIZE - 1);

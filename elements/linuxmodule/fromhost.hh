@@ -54,9 +54,9 @@ Ethernet address. Specifies the fake device's Ethernet address. Default is
 
 =n
 
-If TYPE is IP, Click will set the packet's IP header and destination IP
+If TYPE is IP, FromHost will set the packet's IP header and destination IP
 address annotations.  Packets with bad IP version or header length are dropped
-or emitted on output 1 if it exists.  Note that Click doesn't check IP
+or emitted on output 1 if it exists.  Note that FromHost doesn't check IP
 checksums or full packet lengths.
 
 If TYPE is ETHER, Linux will send ARP queries to the fake device. You must

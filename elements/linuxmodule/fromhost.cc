@@ -159,7 +159,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     int res;
     _dev = new_device(_devname.c_str());
     if (!_dev)
-	return errh->error("out of memory!", res, _devname.c_str());
+	return errh->error("out of memory! registering device '%s'", _devname.c_str());
     else if ((res = register_netdev(_dev)) < 0) {
 	kfree(_dev);
 	_dev = 0;
