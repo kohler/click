@@ -9,7 +9,7 @@ CLICK_DECLS
 UpstreamNotifier([SIGNAL])
 
 =s test
-passes packets unchanged. Has an upstream notifier. Genereally used
+passes packets unchanged. Has an upstream notifier. Generally used
 for testing upstream notification.
 
 =d

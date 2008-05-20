@@ -1,0 +1,215 @@
+%info
+Tests multi-Notifier functionality.
+
+%script
+click CONFIG > OUT
+
+click CONFIG2 > OUT2
+
+%file CONFIG
+q00 :: NotifierQueue(5);
+q01 :: NotifierQueue(5);
+q02 :: NotifierQueue(5);
+q03 :: NotifierQueue(5);
+q04 :: NotifierQueue(5);
+q05 :: NotifierQueue(5);
+q06 :: NotifierQueue(5);
+q07 :: NotifierQueue(5);
+q08 :: NotifierQueue(5);
+q09 :: NotifierQueue(5);
+q10 :: NotifierQueue(5);
+q11 :: NotifierQueue(5);
+q12 :: NotifierQueue(5);
+q13 :: NotifierQueue(5);
+q14 :: NotifierQueue(5);
+q15 :: NotifierQueue(5);
+q16 :: NotifierQueue(5);
+q17 :: NotifierQueue(5);
+q18 :: NotifierQueue(5);
+q19 :: NotifierQueue(5);
+q20 :: NotifierQueue(5);
+q21 :: NotifierQueue(5);
+q22 :: NotifierQueue(5);
+q23 :: NotifierQueue(5);
+q24 :: NotifierQueue(5);
+q25 :: NotifierQueue(5);
+q26 :: NotifierQueue(5);
+q27 :: NotifierQueue(5);
+q28 :: NotifierQueue(5);
+q29 :: NotifierQueue(5);
+q30 :: NotifierQueue(5);
+q31 :: NotifierQueue(5);
+q32 :: NotifierQueue(5);
+q33 :: NotifierQueue(5);
+q34 :: NotifierQueue(5);
+q35 :: NotifierQueue(5);
+q36 :: NotifierQueue(5);
+q37 :: NotifierQueue(5);
+q38 :: NotifierQueue(5);
+q39 :: NotifierQueue(5);
+q40 :: NotifierQueue(5);
+q41 :: NotifierQueue(5);
+
+i :: InfiniteSource(ACTIVE false)
+  -> q00
+  -> s :: RoundRobinSched
+  -> n :: NotifierDebug
+  -> sw :: PullSwitch(0)
+  -> d :: Discard;
+x :: Idle -> q01 -> [1] s;
+x [1] -> q02 -> [2] s;
+x [2] -> q03 -> [3] s;
+x [3] -> q04 -> [4] s;
+x [4] -> q05 -> [5] s;
+x [5] -> q06 -> [6] s;
+x [6] -> q07 -> [7] s;
+x [7] -> q08 -> [8] s;
+x [8] -> q09 -> [9] s;
+x [9] -> q10 -> [10] s;
+x [10] -> q11 -> [11] s;
+x [11] -> q12 -> [12] s;
+x [12] -> q13 -> [13] s;
+x [13] -> q14 -> [14] s;
+x [14] -> q15 -> [15] s;
+x [15] -> q16 -> [16] s;
+x [16] -> q17 -> [17] s;
+x [17] -> q18 -> [18] s;
+x [18] -> q19 -> [19] s;
+x [19] -> q20 -> [20] s;
+x [20] -> q21 -> [21] s;
+x [21] -> q22 -> [22] s;
+x [22] -> q23 -> [23] s;
+x [23] -> q24 -> [24] s;
+x [24] -> q25 -> [25] s;
+x [25] -> q26 -> [26] s;
+x [26] -> q27 -> [27] s;
+x [27] -> q28 -> [28] s;
+x [28] -> q29 -> [29] s;
+x [29] -> q30 -> [30] s;
+x [30] -> q31 -> [31] s;
+x [31] -> q32 -> [32] s;
+x [32] -> q33 -> [33] s;
+x [33] -> q34 -> [34] s;
+x [34] -> q35 -> [35] s;
+x [35] -> q36 -> [36] s;
+x [36] -> q37 -> [37] s;
+x [37] -> q38 -> [38] s;
+x [38] -> q39 -> [39] s;
+x [39] -> q40 -> [40] s;
+x [40] -> q41 -> [41] s;
+DriverManager(wait 0.1s, print n.signal, print d.scheduled,
+	write i.active true, wait 0.1s, print n.signal, print d.scheduled,
+	write i.active false, wait 0.1s, print n.signal, print d.scheduled,
+	stop)
+
+%expect OUT
+empty.0/{{.*}}:0+empty.1/{{.*}}:0
+false
+empty.0/{{.*}}:{{.*}}*+empty.1/{{.*}}:0
+true
+empty.0/{{.*}}:0+empty.1/{{.*}}:0
+false
+
+%file CONFIG2
+q41 :: NotifierQueue(5);
+q40 :: NotifierQueue(5);
+q39 :: NotifierQueue(5);
+q38 :: NotifierQueue(5);
+q37 :: NotifierQueue(5);
+q36 :: NotifierQueue(5);
+q35 :: NotifierQueue(5);
+q34 :: NotifierQueue(5);
+q33 :: NotifierQueue(5);
+q32 :: NotifierQueue(5);
+q31 :: NotifierQueue(5);
+q30 :: NotifierQueue(5);
+q29 :: NotifierQueue(5);
+q28 :: NotifierQueue(5);
+q27 :: NotifierQueue(5);
+q26 :: NotifierQueue(5);
+q25 :: NotifierQueue(5);
+q24 :: NotifierQueue(5);
+q23 :: NotifierQueue(5);
+q22 :: NotifierQueue(5);
+q21 :: NotifierQueue(5);
+q20 :: NotifierQueue(5);
+q19 :: NotifierQueue(5);
+q18 :: NotifierQueue(5);
+q17 :: NotifierQueue(5);
+q16 :: NotifierQueue(5);
+q15 :: NotifierQueue(5);
+q14 :: NotifierQueue(5);
+q13 :: NotifierQueue(5);
+q12 :: NotifierQueue(5);
+q11 :: NotifierQueue(5);
+q10 :: NotifierQueue(5);
+q09 :: NotifierQueue(5);
+q08 :: NotifierQueue(5);
+q07 :: NotifierQueue(5);
+q06 :: NotifierQueue(5);
+q05 :: NotifierQueue(5);
+q04 :: NotifierQueue(5);
+q03 :: NotifierQueue(5);
+q02 :: NotifierQueue(5);
+q01 :: NotifierQueue(5);
+q00 :: NotifierQueue(5);
+
+i :: InfiniteSource(ACTIVE false)
+  -> q00
+  -> s :: RoundRobinSched
+  -> n :: NotifierDebug
+  -> sw :: PullSwitch(0)
+  -> d :: Discard;
+x :: Idle -> q01 -> [1] s;
+x [1] -> q02 -> [2] s;
+x [2] -> q03 -> [3] s;
+x [3] -> q04 -> [4] s;
+x [4] -> q05 -> [5] s;
+x [5] -> q06 -> [6] s;
+x [6] -> q07 -> [7] s;
+x [7] -> q08 -> [8] s;
+x [8] -> q09 -> [9] s;
+x [9] -> q10 -> [10] s;
+x [10] -> q11 -> [11] s;
+x [11] -> q12 -> [12] s;
+x [12] -> q13 -> [13] s;
+x [13] -> q14 -> [14] s;
+x [14] -> q15 -> [15] s;
+x [15] -> q16 -> [16] s;
+x [16] -> q17 -> [17] s;
+x [17] -> q18 -> [18] s;
+x [18] -> q19 -> [19] s;
+x [19] -> q20 -> [20] s;
+x [20] -> q21 -> [21] s;
+x [21] -> q22 -> [22] s;
+x [22] -> q23 -> [23] s;
+x [23] -> q24 -> [24] s;
+x [24] -> q25 -> [25] s;
+x [25] -> q26 -> [26] s;
+x [26] -> q27 -> [27] s;
+x [27] -> q28 -> [28] s;
+x [28] -> q29 -> [29] s;
+x [29] -> q30 -> [30] s;
+x [30] -> q31 -> [31] s;
+x [31] -> q32 -> [32] s;
+x [32] -> q33 -> [33] s;
+x [33] -> q34 -> [34] s;
+x [34] -> q35 -> [35] s;
+x [35] -> q36 -> [36] s;
+x [36] -> q37 -> [37] s;
+x [37] -> q38 -> [38] s;
+x [38] -> q39 -> [39] s;
+x [39] -> q40 -> [40] s;
+x [40] -> q41 -> [41] s;
+DriverManager(wait 0.1s, print n.signal, print d.scheduled,
+	write i.active true, wait 0.1s, print n.signal, print d.scheduled,
+	write i.active false, wait 0.1s, print n.signal, print d.scheduled,
+	stop)
+
+%expect OUT2
+empty.0/{{.*}}:0+empty.1/{{.*}}:0
+false
+empty.0/{{.*}}:0+empty.1/{{.*}}:{{.*}}*
+true
+empty.0/{{.*}}:0+empty.1/{{.*}}:0
+false

@@ -107,64 +107,124 @@ const char Notifier::FULL_NOTIFIER[] = "full";
 void
 NotifierSignal::static_initialize()
 {
-    static_value = TRUE_MASK | OVERDERIVED_MASK;
+    static_value = true_mask | overderived_mask;
 }
 
-/** @brief Make this signal derived by adding information from @a x.
- * @param x the signal to add
- *
- * Creates a derived signal that combines information from this signal and @a
- * x.  Equivalent to "*this = (*this + @a x)".
- *
- * @sa operator+(NotifierSignal, const NotifierSignal&)
- */
 NotifierSignal &
 NotifierSignal::operator+=(const NotifierSignal &x)
 {
-    if (!_mask)
-	_value = x._value;
-
     // preserve busy_signal(); adding other incompatible signals
     // leads to overderived_signal()
-    if (*this == busy_signal())
+    if (busy() || x.idle())
 	/* do nothing */;
-    else if (x == busy_signal())
+    else if (idle() || x.busy())
 	*this = x;
-    else if (_value == x._value || !x._mask)
+    else if (_mask && x._mask && _v.v1 == x._v.v1)
 	_mask |= x._mask;
-    else
-	*this = overderived_signal();
+    else if (x._mask)
+	hard_derive_one(x._v.v1, x._mask);
+    else if (this != &x)
+	for (vmpair *vm = x._v.vm; vm->mask; ++vm)
+	    hard_derive_one(vm->value, vm->mask);
     
     return *this;
 }
 
-/** @brief Return a human-readable representation of the signal.
- * @param router the relevant router or null
- *
- * Useful for signal debugging.
- */
+void
+NotifierSignal::hard_assign_vm(const NotifierSignal &x)
+{
+    size_t n = 0;
+    for (vmpair *vm = x._v.vm; vm->mask; ++vm)
+	++n;
+    if (likely((_v.vm = new vmpair[n + 1])))
+	memcpy(_v.vm, x._v.vm, sizeof(vmpair) * (n + 1));
+    else
+	*this = overderived_signal();
+}
+
+void
+NotifierSignal::hard_derive_one(atomic_uint32_t *value, uint32_t mask)
+{
+    if (unlikely(_mask)) {
+	if (busy())
+	    return;
+	if (_v.v1 == value) {
+	    _mask |= mask;
+	    return;
+	}
+	vmpair *vmp;
+	if (unlikely(!(vmp = new vmpair[2]))) {
+	    *this = overderived_signal();
+	    return;
+	}
+	vmp[0].value = _v.v1;
+	vmp[0].mask = _mask;
+	vmp[1].mask = 0;
+	_v.vm = vmp;
+	_mask = 0;
+    }
+
+    size_t n, i;
+    vmpair *vmp;
+    for (i = 0, vmp = _v.vm; vmp->mask && vmp->value < value; ++i, ++vmp)
+	/* do nothing */;
+    if (vmp->mask && vmp->value == value) {
+	vmp->mask |= mask;
+	return;
+    }
+    for (n = i; vmp->mask; ++n, ++vmp)
+	/* do nothing */;
+
+    if (unlikely(!(vmp = new vmpair[n + 2]))) {
+	*this = overderived_signal();
+	return;
+    }
+    memcpy(vmp, _v.vm, sizeof(vmpair) * i);
+    memcpy(vmp + i + 1, _v.vm + i, sizeof(vmpair) * (n + 1 - i));
+    vmp[i].value = value;
+    vmp[i].mask = mask;
+    delete[] _v.vm;
+    _v.vm = vmp;
+}
+
+bool
+NotifierSignal::hard_equals(const vmpair *a, const vmpair *b)
+{
+    while (a->mask && a->mask == b->mask && a->value == b->value)
+	++a, ++b;
+    return !a->mask && a->mask == b->mask;
+}
+
 String
 NotifierSignal::unparse(Router *router) const
 {
+    if (!_mask) {
+	StringAccum sa;
+	for (vmpair *vm = _v.vm; vm->mask; ++vm)
+	    sa << (vm == _v.vm ? "" : "+")
+	       << NotifierSignal(vm->value, vm->mask).unparse(router);
+	return sa.take_string();
+    }
+    
     char buf[80];
     int pos;
     String s;
-    if (_value == &static_value) {
-	if (_mask == TRUE_MASK)
+    if (_v.v1 == &static_value) {
+	if (_mask == true_mask)
 	    return "busy*";
-	else if (_mask == FALSE_MASK)
+	else if (_mask == false_mask)
 	    return "idle";
-	else if (_mask == OVERDERIVED_MASK)
+	else if (_mask == overderived_mask)
 	    return "overderived*";
-	else if (_mask == UNINITIALIZED_MASK)
+	else if (_mask == uninitialized_mask)
 	    return "uninitialized";
 	else
 	    pos = sprintf(buf, "internal/");
-    } else if (router && (s = router->notifier_signal_name(_value)) >= 0) {
+    } else if (router && (s = router->notifier_signal_name(_v.v1)) >= 0) {
 	pos = sprintf(buf, "%.52s/", s.c_str());
     } else
-	pos = sprintf(buf, "@%p/", _value);
-    sprintf(buf + pos, active() ? "%x:%x*" : "%x:%x", _mask, (*_value) & _mask);
+	pos = sprintf(buf, "@%p/", _v.v1);
+    sprintf(buf + pos, active() ? "%x:%x*" : "%x:%x", _mask, (*_v.v1) & _mask);
     return String(buf);
 }
 
