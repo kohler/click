@@ -564,17 +564,17 @@ click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const
 
 #if CLICK_USERLEVEL
 
-# if CLICK_HZ != 100
-#  error "CLICK_HZ must be 100"
+# if CLICK_HZ != 1000
+#  error "CLICK_HZ must be 1000"
 # endif
 CLICK_DECLS
 
-unsigned
+click_jiffies_type
 click_jiffies()
 {
-  struct timeval tv;
-  click_gettimeofday(&tv);
-  return (tv.tv_sec * 100) + (tv.tv_usec / 10000);
+    struct timeval tv;
+    click_gettimeofday(&tv);
+    return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
 }
 
 CLICK_ENDDECLS

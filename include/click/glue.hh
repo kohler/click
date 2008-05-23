@@ -209,23 +209,29 @@ typedef struct device net_device;
 // TIMEVALS AND JIFFIES
 
 #if CLICK_LINUXMODULE
+typedef unsigned long click_jiffies_type;
+typedef long click_jiffies_difference_type;
 # define click_gettimeofday(tvp)	(do_gettimeofday(tvp))
-# define click_jiffies()		((unsigned)jiffies)
+# define click_jiffies()		(jiffies)
 # define CLICK_HZ			HZ
 #elif CLICK_BSDMODULE
+typedef int click_jiffies_type;
+typedef int click_jiffies_difference_type;
 # define click_gettimeofday(tvp)	(getmicrotime(tvp))
 # define click_jiffies()		((unsigned)ticks)
 # define CLICK_HZ			hz
 #else
+typedef unsigned click_jiffies_type;
+typedef int click_jiffies_difference_type;
 #if !CLICK_NS
 # define click_gettimeofday(tvp)	(gettimeofday(tvp, (struct timezone *)0))
 #else
 # define click_gettimeofday(tvp)	(simclick_gettimeofday(tvp))
 #endif
 CLICK_DECLS
-unsigned click_jiffies();
+click_jiffies_type click_jiffies();
 CLICK_ENDDECLS
-# define CLICK_HZ			100
+# define CLICK_HZ			1000
 #endif
 
 
