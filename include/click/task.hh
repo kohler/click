@@ -97,7 +97,8 @@ class Task { public:
     Task* _prev;
     Task* _next;
 #endif
-    unsigned _should_be_scheduled;
+    bool _should_be_scheduled;
+    bool _should_be_strong_unscheduled;
     
 #if HAVE_STRIDE_SCHED
     unsigned _pass;
@@ -177,7 +178,7 @@ Task::Task(TaskHook hook, void* thunk)
 #else
     : _prev(0), _next(0),
 #endif
-      _should_be_scheduled(false),
+      _should_be_scheduled(false), _should_be_strong_unscheduled(false),
 #if HAVE_STRIDE_SCHED
       _pass(0), _stride(0), _tickets(-1),
 #endif
@@ -211,7 +212,7 @@ Task::Task(Element* e)
 #else
     : _prev(0), _next(0),
 #endif
-      _should_be_scheduled(false),
+      _should_be_scheduled(false), _should_be_strong_unscheduled(false),
 #if HAVE_STRIDE_SCHED
       _pass(0), _stride(0), _tickets(-1),
 #endif

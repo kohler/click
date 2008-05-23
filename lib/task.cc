@@ -175,6 +175,12 @@ Task::initialize(Element *e, bool schedule)
 void
 Task::cleanup()
 {
+#if CLICK_LINUXMODULE
+    assert(!in_interrupt());
+#endif
+#if CLICK_BSDMODULE
+    GIANT_REQUIRED;
+#endif
     if (initialized()) {
 	strong_unschedule();
 
@@ -265,17 +271,28 @@ Task::unschedule()
     // that the task is not scheduled any more, no way, no how. Possible
     // problem: calling unschedule() from run_task() will hang!
     // 2005: It shouldn't hang.
-#if CLICK_LINUXMODULE
-    assert(!in_interrupt());
-#endif
+    // 2008: Allow unschedule() in interrupt context.
+    bool done = false;
+    _should_be_scheduled = false;
 #if CLICK_BSDMODULE
     GIANT_REQUIRED;
 #endif
-    if (_thread) {
-	lock_tasks();
+    if (unlikely(_thread == 0))
+	done = true;
+#if CLICK_LINUXMODULE
+    else if (in_interrupt())
+	goto pending;
+#endif
+    else if (attempt_lock_tasks()) {
 	fast_unschedule(false);
 	_thread->unlock_tasks();
+	done = true;
     }
+#if CLICK_LINUXMODULE
+  pending:
+#endif
+    if (!done)
+	add_pending();
 }
 
 #if HAVE_TASK_HEAP
@@ -313,12 +330,12 @@ Task::true_reschedule()
 {
     bool done = false;
     _should_be_scheduled = true;
-#if CLICK_LINUXMODULE
-    if (in_interrupt())
-	goto skip_lock;
-#endif
     if (unlikely(_thread == 0))
-	_should_be_scheduled = done = true;
+	done = true;
+#if CLICK_LINUXMODULE
+    else if (in_interrupt())
+	goto pending;
+#endif
     else if (attempt_lock_tasks()) {
 	if (_router->_running >= Router::RUNNING_BACKGROUND) {
 	    if (!scheduled() && _should_be_scheduled) {
@@ -330,7 +347,7 @@ Task::true_reschedule()
 	_thread->unlock_tasks();
     }
 #if CLICK_LINUXMODULE
-  skip_lock:
+  pending:
 #endif
     if (!done)
 	add_pending();
@@ -349,21 +366,32 @@ Task::true_reschedule()
 void
 Task::strong_unschedule()
 {
-#if CLICK_LINUXMODULE
-    assert(!in_interrupt());
-#endif
+    bool done = false;
+    _should_be_scheduled = false;
+    _should_be_strong_unscheduled = true;
 #if CLICK_BSDMODULE
     GIANT_REQUIRED;
 #endif
     // unschedule() and move to a quiescent thread, so that subsequent
     // reschedule()s won't have any effect
-    if (likely(_thread != 0)) {
-	lock_tasks();
+    if (unlikely(_thread == 0))
+	done = true;
+#if CLICK_LINUXMODULE
+    else if (in_interrupt())
+	goto pending;
+#endif
+    else if (attempt_lock_tasks()) {
 	fast_unschedule(false);
 	RouterThread *old_thread = _thread;
 	_thread = _router->master()->thread(RouterThread::THREAD_STRONG_UNSCHEDULE);
 	old_thread->unlock_tasks();
+	done = true;
     }
+#if CLICK_LINUXMODULE
+  pending:
+#endif
+    if (!done)
+	add_pending();
 }
 
 /** @brief Reschedules the Task, moving it from the "dead" thread to its home
@@ -379,30 +407,39 @@ Task::strong_unschedule()
 void
 Task::strong_reschedule()
 {
-#if CLICK_LINUXMODULE
-    assert(!in_interrupt());
-#endif
+    bool done = false;
+    _should_be_scheduled = true;
+    _should_be_strong_unscheduled = false;
 #if CLICK_BSDMODULE
     GIANT_REQUIRED;
 #endif
-    if (unlikely(_thread == 0)) {
-	_should_be_scheduled = true;
-	return;
+    if (unlikely(_thread == 0))
+	done = true;
+#if CLICK_LINUXMODULE
+    else if (in_interrupt())
+	goto pending;
+#endif
+    else if (attempt_lock_tasks()) {
+	RouterThread *old_thread = _thread;
+	if (old_thread->thread_id() == RouterThread::THREAD_STRONG_UNSCHEDULE) {
+	    fast_unschedule(true);
+	    _thread = _router->master()->thread(_home_thread_id);
+	} else if (old_thread->thread_id() == _home_thread_id) {
+	    _should_be_scheduled = true;
+	    fast_reschedule();
+	    done = true;
+	} else {
+	    // This task must already be on the pending list so it can be moved.
+	    _should_be_scheduled = true;
+	    done = true;
+	}
+	old_thread->unlock_tasks();
     }
-    lock_tasks();
-    RouterThread *old_thread = _thread;
-    if (old_thread->thread_id() == RouterThread::THREAD_STRONG_UNSCHEDULE) {
-	fast_unschedule(true);
-	_thread = _router->master()->thread(_home_thread_id);
+#if CLICK_LINUXMODULE
+  pending:
+#endif
+    if (!done)
 	add_pending();
-    } else if (old_thread->thread_id() == _home_thread_id) {
-	_should_be_scheduled = true;
-	fast_reschedule();
-    } else {
-	// This task must already be on the pending list so it can be moved.
-	_should_be_scheduled = true;
-    }
-    old_thread->unlock_tasks();
 }
 
 /** @brief Move the Task to a new home thread.
@@ -415,9 +452,7 @@ Task::strong_reschedule()
 void
 Task::move_thread(int thread_id)
 {
-#if CLICK_LINUXMODULE
-    assert(!in_interrupt());
-#endif
+    bool done = false;
 #if CLICK_BSDMODULE
     GIANT_REQUIRED;
 #endif
@@ -426,11 +461,16 @@ Task::move_thread(int thread_id)
     _home_thread_id = thread_id;
 
     if (unlikely(_thread == 0))
-	/* do nothing */;
+	done = true;
+#if CLICK_LINUXMODULE
+    else if (in_interrupt())
+	goto pending;
+#endif
     else if (attempt_lock_tasks()) {
 	RouterThread *old_thread = _thread;
 	if (old_thread->thread_id() != _home_thread_id
-	    && old_thread->thread_id() != RouterThread::THREAD_STRONG_UNSCHEDULE) {
+	    && old_thread->thread_id() != RouterThread::THREAD_STRONG_UNSCHEDULE
+	    && !_should_be_strong_unscheduled) {
 	    if (scheduled())
 		fast_unschedule(true);
 	    _thread = _router->master()->thread(_home_thread_id);
@@ -439,7 +479,12 @@ Task::move_thread(int thread_id)
 		add_pending();
 	} else
 	    old_thread->unlock_tasks();
-    } else
+	done = true;
+    }
+#if CLICK_LINUXMODULE
+  pending:
+#endif
+    if (!done)
 	add_pending();
 }
 
@@ -458,11 +503,16 @@ Task::process_pending(RouterThread *thread)
     if (_thread == thread) {
 	// we know the thread is locked.
 	// see also move_thread() above
-	if (_thread->thread_id() != _home_thread_id
-	    && _thread->thread_id() != RouterThread::THREAD_STRONG_UNSCHEDULE) {
+	int want_thread_id;
+	if (_should_be_strong_unscheduled)
+	    want_thread_id = RouterThread::THREAD_STRONG_UNSCHEDULE;
+	else
+	    want_thread_id = _home_thread_id;
+
+	if (_thread->thread_id() != want_thread_id) {
 	    if (scheduled())
 		fast_unschedule(true);
-	    _thread = _router->master()->thread(_home_thread_id);
+	    _thread = _router->master()->thread(want_thread_id);
 	    if (_should_be_scheduled)
 		add_pending();
 	} else if (_should_be_scheduled && _router->running()) {

@@ -344,6 +344,11 @@ RouterThread::run_tasks(int ntasks)
     while ((t = task_begin()), t != this && ntasks >= 0) {
 #endif
 
+	// 22.May.2008: If pending changes on this task, break early to
+	// take care of them.
+	if (t->_pending_nextptr)
+	    break;
+
 #if __MTCLICK__
 	int runs = t->cycle_runs();
 	if (runs > PROFILE_ELEMENT)
@@ -386,7 +391,7 @@ RouterThread::run_tasks(int ntasks)
 	}
 #endif
 
-	ntasks--;
+	--ntasks;
     }
 }
 
