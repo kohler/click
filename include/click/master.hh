@@ -66,7 +66,7 @@ class Master { public:
 #endif
 
 #if CLICK_USERLEVEL
-    static sig_atomic_t signals_pending;
+    static volatile sig_atomic_t signals_pending;
 #endif
     
   private:

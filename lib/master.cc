@@ -36,8 +36,8 @@ enum { POLLIN = Element::SELECT_READ, POLLOUT = Element::SELECT_WRITE };
 #endif
 
 #if CLICK_USERLEVEL
-sig_atomic_t Master::signals_pending;
-static sig_atomic_t signal_pending[NSIG];
+volatile sig_atomic_t Master::signals_pending;
+static volatile sig_atomic_t signal_pending[NSIG];
 #endif
 
 Master::Master(int nthreads)
