@@ -4,6 +4,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2005 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,11 +33,8 @@ CLICK_DECLS
 ARPQuerier::ARPQuerier()
     : _age_head(0), _age_tail(0), _expire_timer(expire_hook, this)
 {
-    // input 0: IP packets
-    // input 1: ARP responses
-    // output 0: ether/IP and ether/ARP queries
-  for (int i = 0; i < NMAP; i++)
-    _map[i] = 0;
+    for (int i = 0; i < NMAP; i++)
+	_map[i] = 0;
 }
 
 ARPQuerier::~ARPQuerier()
@@ -47,12 +45,12 @@ int
 ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _capacity = 2048;
-    _bcast_addr = IPAddress();
+    _my_bcast_ip = IPAddress();
     IPAddress bcast_mask;
     bool confirm_bcast = false;
     if (cp_va_kparse_remove_keywords(conf, this, errh,
 				     "CAPACITY", 0, cpUnsigned, &_capacity,
-				     "BROADCAST", cpkC, &confirm_bcast, cpIPAddress, &_bcast_addr,
+				     "BROADCAST", cpkC, &confirm_bcast, cpIPAddress, &_my_bcast_ip,
 				     cpEnd) < 0)
 	return -1;
     if (conf.size() == 1)
@@ -62,10 +60,11 @@ ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "ETH", cpkP+cpkM, cpEthernetAddress, &_my_en,
 		     cpEnd) < 0)
 	return -1;
-    if (!_bcast_addr)
-	_bcast_addr = _my_ip | ~bcast_mask;
-    if (_bcast_addr == _my_ip)
-	_bcast_addr = 0xFFFFFFFFU;
+    if (!confirm_bcast) {
+	_my_bcast_ip = _my_ip | ~bcast_mask;
+	if (_my_bcast_ip == _my_ip)
+	    _my_bcast_ip = 0xFFFFFFFFU;
+    }
     return 0;
 }
 
@@ -124,13 +123,15 @@ ARPQuerier::clear_map()
     _map[i] = 0;
   }
   _cache_size = 0;
+  _age_head = _age_tail = 0;
 }
 
 void
 ARPQuerier::take_state(Element *e, ErrorHandler *errh)
 {
     ARPQuerier *arpq = (ARPQuerier *)e->cast("ARPQuerier");
-    if (!arpq || _my_ip != arpq->_my_ip || _my_en != arpq->_my_en)
+    if (!arpq || _my_ip != arpq->_my_ip || _my_en != arpq->_my_en
+	|| _my_bcast_ip != arpq->_my_bcast_ip)
 	return;
     if (_arp_queries > 0) {
 	errh->error("late take_state");
@@ -170,10 +171,12 @@ ARPQuerier::expire_hook(Timer *timer, void *thunk)
     ARPEntry *ae;
 
     // Delete old entries.
-    while ((ae = arpq->_age_head) && (jiff - ae->last_response_jiffies) > 300*CLICK_HZ) {
+    while ((ae = arpq->_age_head)
+	   && (jiff - ae->last_response_jiffies) > 300*CLICK_HZ) {
 	if ((*ae->pprev = ae->next))
 	    ae->next->pprev = ae->pprev;
 
+	assert(ae->age_pprev == &arpq->_age_head);
 	if ((arpq->_age_head = ae->age_next))
 	    arpq->_age_head->age_pprev = &arpq->_age_head;
 	else
@@ -299,7 +302,7 @@ ARPQuerier::handle_ip(Packet *p)
 	_drops++;
 	p->kill();
 	return;
-    } else if (ipa.addr() == 0xFFFFFFFFU || ipa == _bcast_addr) {
+    } else if (ipa.addr() == 0xFFFFFFFFU || ipa == _my_bcast_ip) {
 	if (WritablePacket *q = p->push_mac_header(sizeof(click_ether))) {
 	    click_ether *e = q->ether_header();
 	    memcpy(e->ether_shost, _my_en.data(), 6);
@@ -361,8 +364,8 @@ ARPQuerier::handle_ip(Packet *p)
     }
     
     // Send a query for any given address at most 10 times a second.
-    int jiff = click_jiffies();
-    if ((int) (jiff - ae->last_response_jiffies) >= CLICK_HZ / 10) {
+    click_jiffies_type jiff = click_jiffies();
+    if ((jiff - ae->last_response_jiffies) >= CLICK_HZ / 10) {
 	ae->last_response_jiffies = jiff;
 	_lock.release_write();
 	send_query_for(ipa);

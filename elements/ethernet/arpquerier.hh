@@ -140,8 +140,8 @@ class ARPQuerier : public Element { public:
     struct ARPEntry {		// This structure is now larger than I'd like
 	IPAddress ip;		// (40B) but probably still fine.
 	EtherAddress en;	// Deleting head and pprev could get it down to
-	unsigned ok: 1;		// 32B, with some time cost.
-	unsigned polling: 1;	// It used to be 24B... :|
+	bool ok;		// 32B, with some time cost.
+	bool polling;		// It used to be 24B... :|
 	int last_response_jiffies;
 	Packet *head;
 	Packet *tail;
@@ -161,11 +161,10 @@ class ARPQuerier : public Element { public:
     ARPEntry *_age_tail;
     EtherAddress _my_en;
     IPAddress _my_ip;
+    IPAddress _my_bcast_ip;
     Timer _expire_timer;
     uint32_t _capacity;
     
-    IPAddress _bcast_addr;
-  
     // statistics
     atomic_uint32_t _cache_size;
     atomic_uint32_t _arp_queries;
