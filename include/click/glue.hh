@@ -209,27 +209,27 @@ typedef struct device net_device;
 // TIMEVALS AND JIFFIES
 
 #if CLICK_LINUXMODULE
-typedef unsigned long click_jiffies_type;
-typedef long click_jiffies_difference_type;
+typedef unsigned long click_jiffies_t;
+typedef long click_jiffies_difference_t;
 # define click_gettimeofday(tvp)	(do_gettimeofday(tvp))
 # define click_jiffies()		(jiffies)
 # define CLICK_HZ			HZ
 #elif CLICK_BSDMODULE
-typedef int click_jiffies_type;
-typedef int click_jiffies_difference_type;
+typedef int click_jiffies_t;
+typedef int click_jiffies_difference_t;
 # define click_gettimeofday(tvp)	(getmicrotime(tvp))
 # define click_jiffies()		((unsigned)ticks)
 # define CLICK_HZ			hz
 #else
-typedef unsigned click_jiffies_type;
-typedef int click_jiffies_difference_type;
+typedef unsigned click_jiffies_t;
+typedef int click_jiffies_difference_t;
 #if !CLICK_NS
 # define click_gettimeofday(tvp)	(gettimeofday(tvp, (struct timezone *)0))
 #else
 # define click_gettimeofday(tvp)	(simclick_gettimeofday(tvp))
 #endif
 CLICK_DECLS
-click_jiffies_type click_jiffies();
+click_jiffies_t click_jiffies();
 CLICK_ENDDECLS
 # define CLICK_HZ			1000
 #endif
@@ -412,7 +412,7 @@ click_get_cycles()
 #elif CLICK_LINUXMODULE && __i386__
     uint32_t xlo, xhi;
     __asm__ __volatile__ ("rdtsc" : "=a" (xlo), "=d" (xhi));
-    return xhi ? 0xFFFFFFFF : xlo;
+    return xlo;
 #elif CLICK_BSDMODULE
     return rdtsc();
 #else

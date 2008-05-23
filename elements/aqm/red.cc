@@ -207,9 +207,9 @@ RED::should_drop()
     } else {
 	// do timing stuff for when the queue was empty
 #if CLICK_HZ < 50
-	int j = click_jiffies();
+	click_jiffies_t j = click_jiffies();
 #else
-	int j = click_jiffies() / (CLICK_HZ / 50);
+	click_jiffies_t j = click_jiffies() / (CLICK_HZ / 50);
 #endif
 	_size.update_n(0, _last_jiffies ? j - _last_jiffies : 1);
 	_last_jiffies = j;

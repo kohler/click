@@ -215,7 +215,7 @@ BalancedThreadSched::run_timer(Timer *)
 #if DEBUG > 1
     if (high >= 500) {
 	print = 1;
-	unsigned now = click_jiffies();
+	click_jiffies_t now = click_jiffies();
 	for(int i=0; i<sorted.size(); i++) {
 	    Element *e = sorted[i]->element();
 	    if (e)
@@ -254,7 +254,7 @@ BalancedThreadSched::run_timer(Timer *)
   
 #if DEBUG > 1
     if (print) {
-	unsigned now = click_jiffies();
+	click_jiffies_t now = click_jiffies();
 	for(int i=0; i<sorted.size(); i++) {
 	    Element *e = sorted[i]->element();
 	    if (e) 

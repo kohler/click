@@ -142,7 +142,7 @@ class ARPQuerier : public Element { public:
 	EtherAddress en;	// Deleting head and pprev could get it down to
 	bool ok;		// 32B, with some time cost.
 	bool polling;		// It used to be 24B... :|
-	int last_response_jiffies;
+	click_jiffies_t last_response_jiffies;
 	Packet *head;
 	Packet *tail;
 	ARPEntry *next;

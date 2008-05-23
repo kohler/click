@@ -63,13 +63,14 @@ AverageCounter::initialize(ErrorHandler *)
 Packet *
 AverageCounter::simple_action(Packet *p)
 {
-  _first.compare_and_swap(0, click_jiffies());
-  if (click_jiffies() - _first >= _ignore) {
-    _count++;
-    _byte_count += p->length();
-  }
-  _last = click_jiffies();
-  return p;
+    uint32_t jpart = click_jiffies();
+    _first.compare_and_swap(0, jpart);
+    if (jpart - _first >= _ignore) {
+	_count++;
+	_byte_count += p->length();
+    }
+    _last = jpart;
+    return p;
 }
 
 static String

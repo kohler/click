@@ -150,7 +150,7 @@ class RED : public Element { public:
     unsigned _G2;
     int _count;
     int _random_value;
-    int _last_jiffies;
+    click_jiffies_t _last_jiffies;
 
     int _drops;
     Vector<Element *> _queue_elements;

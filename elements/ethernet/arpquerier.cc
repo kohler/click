@@ -167,7 +167,7 @@ ARPQuerier::expire_hook(Timer *timer, void *thunk)
     // packet.
     ARPQuerier *arpq = (ARPQuerier *)thunk;
     arpq->_lock.acquire_write();
-    int jiff = click_jiffies();
+    click_jiffies_t jiff = click_jiffies();
     ARPEntry *ae;
 
     // Delete old entries.
@@ -364,7 +364,7 @@ ARPQuerier::handle_ip(Packet *p)
     }
     
     // Send a query for any given address at most 10 times a second.
-    click_jiffies_type jiff = click_jiffies();
+    click_jiffies_t jiff = click_jiffies();
     if ((jiff - ae->last_response_jiffies) >= CLICK_HZ / 10) {
 	ae->last_response_jiffies = jiff;
 	_lock.release_write();

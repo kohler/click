@@ -72,8 +72,8 @@ class FastUDPSourceIP6 : public Element {
   bool _cksum;
   WritablePacket *_packet;
   struct sk_buff *_skb;
-  unsigned long _first; // jiffies
-  unsigned long _last;
+  click_jiffies_t _first;
+  click_jiffies_t _last;
 
   void incr_ports();
 
@@ -101,8 +101,8 @@ class FastUDPSourceIP6 : public Element {
   void add_handlers();
   void reset();
   unsigned count() { return _count; }
-  unsigned long first() { return _first; }
-  unsigned long last() { return _last; }
+  click_jiffies_t first() { return _first; }
+  click_jiffies_t last() { return _last; }
 
 #if 0
   friend int FastUDPSourceIP6_limit_write_handler 

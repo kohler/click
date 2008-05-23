@@ -60,7 +60,7 @@ ThreadMonitor::run_timer(Timer *)
 {
     Master *m = router()->master();
     StringAccum sa;
-    unsigned now_jiffies = click_jiffies();
+    click_jiffies_t now_jiffies = click_jiffies();
 
     // report currently scheduled tasks (ignore pending list)
     for (int tid = 0; tid < m->nthreads(); tid++) {

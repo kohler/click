@@ -75,7 +75,7 @@ class IP6NDSolicitor : public Element {
    struct NDEntry {
     IP6Address ip6;
     EtherAddress en;
-    int last_response_jiffies;
+    click_jiffies_t last_response_jiffies;
     unsigned ok: 1;
     unsigned polling: 1;
     Packet *p;

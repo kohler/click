@@ -71,8 +71,8 @@ class FastUDPSource : public Element {
   unsigned int _interval;
   bool _cksum;
   struct mbuf *_m;
-  unsigned long _first; // jiffies
-  unsigned long _last;
+  click_jiffies_t _first;
+  click_jiffies_t _last;
 
   void incr_ports();
 
@@ -101,8 +101,8 @@ class FastUDPSource : public Element {
   void add_handlers();
   void reset();
   unsigned count() { return _count; }
-  unsigned long first() { return _first; }
-  unsigned long last() { return _last; }
+  click_jiffies_t first() { return _first; }
+  click_jiffies_t last() { return _last; }
 
 #if 0
   friend int FastUDPSource_limit_write_handler 

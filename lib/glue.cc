@@ -569,7 +569,7 @@ click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const
 # endif
 CLICK_DECLS
 
-click_jiffies_type
+click_jiffies_t
 click_jiffies()
 {
     struct timeval tv;

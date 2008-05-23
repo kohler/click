@@ -92,7 +92,7 @@ void
 IP6NDSolicitor::expire_hook(Timer *, void *thunk)
 {
   IP6NDSolicitor *arpq = (IP6NDSolicitor *)thunk;
-  int jiff = click_jiffies();
+  click_jiffies_t jiff = click_jiffies();
   for (int i = 0; i < NMAP; i++) {
     NDEntry *prev = 0;
     while (1) {
