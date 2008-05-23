@@ -246,14 +246,14 @@ Timestamp::Timestamp(const struct timespec& ts)
 }
 #endif
 
-/** @brief Returns true iff this timestamp is not zero-valued. */
+/** @brief Return true iff this timestamp is not zero-valued. */
 inline
 Timestamp::operator unspecified_bool_type() const
 {
     return _sec || _subsec ? &Timestamp::sec : 0;
 }
 
-/** @brief Sets this timestamp to the current time.
+/** @brief Set this timestamp to the current time.
 
  The current time is measured in seconds since January 1, 1970 GMT.
  @sa now() */
@@ -282,7 +282,7 @@ Timestamp::now()
     return t;
 }
 
-/** @brief Returns the smallest nonzero timestamp.
+/** @brief Return the smallest nonzero timestamp.
 
  Same as Timestamp(0, 1). */
 inline Timestamp
@@ -291,7 +291,7 @@ Timestamp::epsilon()
     return Timestamp(0, 1);
 }
 
-/** @brief Returns a timestamp representing an interval of @a sec
+/** @brief Return a timestamp representing an interval of @a sec
     seconds.
     @param sec number of seconds */
 inline Timestamp
@@ -300,7 +300,7 @@ Timestamp::make_sec(seconds_type sec)
     return Timestamp(sec, 0);
 }
 
-/** @brief Returns a timestamp representing an interval of @a msec
+/** @brief Return a timestamp representing an interval of @a msec
     milliseconds.
     @param msec number of milliseconds (may be greater than 1000) */
 inline Timestamp
@@ -309,7 +309,7 @@ Timestamp::make_msec(uint32_t msec)
     return Timestamp(msec / 1000, msec_to_subsec(msec % 1000));
 }
 
-/** @brief Returns a timestamp representing @a sec seconds plus @a usec
+/** @brief Return a timestamp representing @a sec seconds plus @a usec
     microseconds.
     @param sec number of seconds
     @param usec number of microseconds (less than 1000000) */
@@ -319,7 +319,7 @@ Timestamp::make_usec(seconds_type sec, uint32_t usec)
     return Timestamp(sec, usec_to_subsec(usec));
 }
 
-/** @brief Returns a timestamp representing an interval of @a usec
+/** @brief Return a timestamp representing an interval of @a usec
     microseconds.
     @param usec number of microseconds (may be greater than 1000000) */
 inline Timestamp
@@ -328,7 +328,7 @@ Timestamp::make_usec(uint32_t usec)
     return Timestamp(usec / 1000000, usec_to_subsec(usec % 1000000));
 }
 
-/** @brief Returns a timestamp representing @a sec seconds plus @a nsec
+/** @brief Return a timestamp representing @a sec seconds plus @a nsec
     nanoseconds.
     @param sec number of seconds
     @param nsec number of nanoseconds (less than 1000000000) */
@@ -338,7 +338,7 @@ Timestamp::make_nsec(seconds_type sec, uint32_t nsec)
     return Timestamp(sec, nsec_to_subsec(nsec));
 }
 
-/** @brief Sets this timestamp's components.
+/** @brief Set this timestamp's components.
     @param sec number of seconds
     @param subsec number of subseconds */
 inline void
@@ -348,7 +348,7 @@ Timestamp::set(seconds_type sec, uint32_t subsec)
     _subsec = subsec;
 }
 
-/** @brief Sets this timestamp's seconds component.
+/** @brief Set this timestamp's seconds component.
     @param sec number of seconds
     
     The subseconds component is left unchanged. */
@@ -358,7 +358,7 @@ Timestamp::set_sec(seconds_type sec)
     _sec = sec;
 }
 
-/** @brief Sets this timestamp's subseconds component.
+/** @brief Set this timestamp's subseconds component.
     @param subsec number of subseconds
     
     The seconds component is left unchanged. */
@@ -368,7 +368,7 @@ Timestamp::set_subsec(uint32_t subsec)
     _subsec = subsec;
 }
 
-/** @brief Sets this timestamp to a seconds-and-microseconds value.
+/** @brief Set this timestamp to a seconds-and-microseconds value.
     @param sec number of seconds
     @param usec number of microseconds (must be less than 1000000)
     @sa make_usec() */
@@ -379,7 +379,7 @@ Timestamp::set_usec(seconds_type sec, uint32_t usec)
     _subsec = usec_to_subsec(usec);
 }
 
-/** @brief Sets this timestamp to a seconds-and-nanoseconds value.
+/** @brief Set this timestamp to a seconds-and-nanoseconds value.
     @param sec number of seconds
     @param nsec number of nanoseconds (must be less than 1000000000)
     @sa make_nsec() */
@@ -390,21 +390,21 @@ Timestamp::set_nsec(seconds_type sec, uint32_t nsec)
     _subsec = nsec_to_subsec(nsec);
 }
 
-/** @brief Returns this timestamp's seconds component. */
+/** @brief Return this timestamp's seconds component. */
 inline Timestamp::seconds_type
 Timestamp::sec() const
 {
     return _sec;
 }
 
-/** @brief Returns this timestamp's subseconds component. */
+/** @brief Return this timestamp's subseconds component. */
 inline uint32_t
 Timestamp::subsec() const
 {
     return _subsec;
 }
 
-/** @brief Returns this timestamp's subseconds component, converted to
+/** @brief Return this timestamp's subseconds component, converted to
     milliseconds. */
 inline uint32_t
 Timestamp::msec() const
@@ -412,7 +412,7 @@ Timestamp::msec() const
     return subsec_to_msec(_subsec);
 }
 
-/** @brief Returns this timestamp's subseconds component, converted to
+/** @brief Return this timestamp's subseconds component, converted to
     microseconds. */
 inline uint32_t
 Timestamp::usec() const
@@ -420,7 +420,7 @@ Timestamp::usec() const
     return subsec_to_usec(_subsec);
 }
 
-/** @brief Returns this timestamp's subseconds component, converted to
+/** @brief Return this timestamp's subseconds component, converted to
     nanoseconds. */
 inline uint32_t
 Timestamp::nsec() const
@@ -428,7 +428,7 @@ Timestamp::nsec() const
     return subsec_to_nsec(_subsec);
 }
 
-/** @brief Returns this timestamp's interval length, converted to
+/** @brief Return this timestamp's interval length, converted to
     milliseconds.
 
     Will overflow on intervals of more than 2147483.647 seconds. */
@@ -438,7 +438,7 @@ Timestamp::msec1() const
     return _sec * 1000 + subsec_to_msec(_subsec);
 }
 
-/** @brief Returns this timestamp's interval length, converted to
+/** @brief Return this timestamp's interval length, converted to
     microseconds.
 
     Will overflow on intervals of more than 2147.483647 seconds. */
@@ -448,7 +448,7 @@ Timestamp::usec1() const
     return _sec * 1000000 + subsec_to_usec(_subsec);
 }
 
-/** @brief Returns this timestamp's interval length, converted to
+/** @brief Return this timestamp's interval length, converted to
     nanoseconds.
 
     Will overflow on intervals of more than 2.147483647 seconds. */
@@ -465,7 +465,7 @@ Timestamp::timeval() const
     return *(const struct timeval*) this;
 }
 #else
-/** @brief Returns a struct timeval with the same value as this timestamp.
+/** @brief Return a struct timeval with the same value as this timestamp.
 
     If Timestamp and struct timeval have the same size and representation,
     then this operation returns a "const struct timeval &" whose address is
@@ -488,7 +488,7 @@ Timestamp::timespec() const
     return *(const struct timespec*) this;
 }
 # else
-/** @brief Returns a struct timespec with the same value as this timestamp.
+/** @brief Return a struct timespec with the same value as this timestamp.
 
     If Timestamp and struct timespec have the same size and representation,
     then this operation returns a "const struct timespec &" whose address is
@@ -505,7 +505,7 @@ Timestamp::timespec() const
 #endif
 
 /** @relates Timestamp
-    @brief Compares two timestamps for equality.
+    @brief Compare two timestamps for equality.
 
     Returns true iff the two operands have the same seconds and subseconds
     components. */
@@ -516,7 +516,7 @@ operator==(const Timestamp &a, const Timestamp &b)
 }
 
 /** @relates Timestamp
-    @brief Compares two timestamps for inequality.
+    @brief Compare two timestamps for inequality.
 
     Returns true iff !(@a a == @a b). */
 inline bool
@@ -526,7 +526,7 @@ operator!=(const Timestamp &a, const Timestamp &b)
 }
 
 /** @relates Timestamp
-    @brief Compares two timestamps.
+    @brief Compare two timestamps.
 
     Returns true iff @a a represents a shorter interval than @a b, or
     considered as absolute time, @a a happened before @a b.  */
@@ -537,7 +537,7 @@ operator<(const Timestamp &a, const Timestamp &b)
 }
 
 /** @relates Timestamp
-    @brief Compares two timestamps.
+    @brief Compare two timestamps.
 
     Returns true iff @a a measures an interval no larger than @a b, or
     considered as absolute time, @a a happened at or before @a b.  */
@@ -548,7 +548,7 @@ operator<=(const Timestamp &a, const Timestamp &b)
 }
 
 /** @relates Timestamp
-    @brief Compares two timestamps.
+    @brief Compare two timestamps.
 
     Returns true iff @a a measures an interval no shorter than @a b, or
     considered as absolute time, @a a happened at or after @a b.  */
@@ -559,7 +559,7 @@ operator>=(const Timestamp &a, const Timestamp &b)
 }
 
 /** @relates Timestamp
-    @brief Compares two timestamps.
+    @brief Compare two timestamps.
 
     Returns true iff @a a measures a longer interval than @a b, or considered
     as absolute time, @a a happened after @a b.  */
@@ -583,7 +583,7 @@ Timestamp::sub_fix()
 	_sec--, _subsec += NSUBSEC;
 }
 
-/** @brief Adds @a b to @a a.
+/** @brief Add @a b to @a a.
 
     Returns the result (the new value of @a a). */
 inline Timestamp &
@@ -595,7 +595,7 @@ operator+=(Timestamp &a, const Timestamp &b)
     return a;
 }
 
-/** @brief Subtracts @a b from @a a.
+/** @brief Subtract @a b from @a a.
 
     Returns the result (the new value of @a a). */
 inline Timestamp &
@@ -607,7 +607,7 @@ operator-=(Timestamp &a, const Timestamp &b)
     return a;
 }
 
-/** @brief Adds the two operands and returns the result. */
+/** @brief Add the two operands and return the result. */
 inline Timestamp
 operator+(Timestamp a, const Timestamp &b)
 {
@@ -615,7 +615,7 @@ operator+(Timestamp a, const Timestamp &b)
     return a;
 }
 
-/** @brief Subtracts @a b from @a a and returns the result. */
+/** @brief Subtract @a b from @a a and return the result. */
 inline Timestamp
 operator-(Timestamp a, const Timestamp &b)
 {
@@ -623,7 +623,7 @@ operator-(Timestamp a, const Timestamp &b)
     return a;
 }
 
-/** @brief Negates @a a and returns the result. */
+/** @brief Negate @a a and return the result. */
 inline Timestamp
 operator-(const Timestamp &a)
 {
@@ -634,7 +634,7 @@ operator-(const Timestamp &a)
 }
 
 #if HAVE_FLOAT_TYPES
-/** @brief Returns this timestamp's value, converted to a real number. */
+/** @brief Return this timestamp's value, converted to a real number. */
 inline double
 Timestamp::doubleval() const
 {
@@ -651,7 +651,7 @@ Timestamp::Timestamp(double d)
     add_fix();
 }
 
-/** @brief Scales @a a by a factor of @a b and returns the result. */
+/** @brief Scale @a a by a factor of @a b and return the result. */
 inline Timestamp
 operator*(const Timestamp &a, double b)
 {
@@ -688,7 +688,7 @@ operator*(unsigned a, const Timestamp &b)
     return Timestamp(b.doubleval() * a);
 }
 
-/** @brief Scales @a a down by a factor of @a b and returns the result. */
+/** @brief Scale @a a down by a factor of @a b and return the result. */
 inline Timestamp
 operator/(const Timestamp &a, double b)
 {
@@ -707,7 +707,7 @@ operator/(const Timestamp &a, unsigned b)
     return Timestamp(a.doubleval() / b);
 }
 
-/** @brief Divides @a a by @a b and returns the result. */
+/** @brief Divide @a a by @a b and return the result. */
 inline double
 operator/(const Timestamp &a, const Timestamp &b)
 {

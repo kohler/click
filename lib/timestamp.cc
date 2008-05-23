@@ -56,7 +56,7 @@ CLICK_DECLS
  */
 
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
-/** @brief Sets this timestamp to a timeval obtained by calling ioctl.
+/** @brief Set this timestamp to a timeval obtained by calling ioctl.
     @param fd file descriptor
     @param ioctl_selector ioctl number
 
@@ -98,7 +98,7 @@ operator<<(StringAccum &sa, const struct timeval &tv)
 }
 
 /** @relates Timestamp
-    @brief Appends the unparsed representation of @a ts to @a sa.
+    @brief Append the unparsed representation of @a ts to @a sa.
 
     Same as @a sa @<@< @a ts.unparse(). */
 StringAccum &
@@ -129,7 +129,7 @@ operator<<(StringAccum &sa, const Timestamp& ts)
     return sa;
 }
 
-/** @brief Unparses this timestamp into a String.
+/** @brief Unparse this timestamp into a String.
 
     Returns a string formatted like "10.000000", with at least six subsecond
     digits.  (Nanosecond-precision timestamps where the number of nanoseconds

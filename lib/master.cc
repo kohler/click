@@ -414,7 +414,7 @@ Master::timer_reheapify_from(int pos, Timer* t, bool will_delete)
 
     // do not schedule timers for too far in the past
     if (!will_delete
-	&& t->_expiry.sec() + Timer::BEHIND_SEC < _timer_check.sec()) {
+	&& t->_expiry.sec() + Timer::behind_sec < _timer_check.sec()) {
 	if (_timer_check_reports > 0) {
 	    --_timer_check_reports;
 	    click_chatter("timer %p outdated expiry %{timestamp} updated to %{timestamp}", t, &t->_expiry, &_timer_check, &t->_expiry);

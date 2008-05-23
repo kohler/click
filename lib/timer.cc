@@ -191,81 +191,44 @@ task_hook(Timer *, void *thunk)
 }
 
 
-/** @brief Create a Timer that will do nothing when fired.
- */
 Timer::Timer()
     : _schedpos(-1), _hook(empty_hook), _thunk(0), _router(0)
 {
 }
 
-/** @brief Create a Timer that will call @a hook(this, @a thunk) when fired.
- *
- * @param hook the callback function
- * @param thunk argument for the callback function
- */
-Timer::Timer(TimerHook hook, void* thunk)
-    : _schedpos(-1), _hook(hook), _thunk(thunk), _router(0)
+Timer::Timer(TimerHook f, void *user_data)
+    : _schedpos(-1), _hook(f), _thunk(user_data), _router(0)
 {
 }
 
-/** @brief Create a Timer that will call @a element ->@link
- * Element::run_timer() run_timer@endlink(this) when fired.
- *
- * @param element the element
- */
 Timer::Timer(Element* element)
     : _schedpos(-1), _hook(element_hook), _thunk(element), _router(0)
 {
 }
 
-/** @brief Create a Timer that will schedule @a task when fired.
- *
- * @param task the task
- */
 Timer::Timer(Task* task)
     : _schedpos(-1), _hook(task_hook), _thunk(task), _router(0)
 {
 }
 
-/** @brief Change the Timer to call @a hook(this, @a thunk) when fired.
- *
- * @param hook the callback function
- * @param thunk argument for the callback function
- */
-void Timer::set_hook(TimerHook hook, void* thunk)
+void Timer::assign(TimerHook f, void *user_data)
 {
-    _hook = hook;
-    _thunk = thunk;
+    _hook = f;
+    _thunk = user_data;
 }
 
-/** @brief Change the Timer to call @a element ->@link
- * Element::run_timer() run_timer@endlink(this) when fired.
- *
- * @param element the element
- */
-void Timer::set_hook(Element* element)
+void Timer::assign(Element* element)
 {
     _hook = element_hook;
     _thunk = element;
 }
 
-/** @brief Change the Timer to schedule @a task when fired.
-
- * @param task the task
- */
-void Timer::set_hook(Task* task)
+void Timer::assign(Task* task)
 {
     _hook = task_hook;
     _thunk = task;
 }
 
-/** @brief Schedule the timer to fire at @a when.
- *
- * @param when expiration time
- *
- * If @a when is more than 2 seconds behind system time, then the expiration
- * time is silently updated to the current system time.
- */
 void
 Timer::schedule_at(const Timestamp& when)
 {
@@ -292,26 +255,12 @@ Timer::schedule_at(const Timestamp& when)
     master->unlock_timers();
 }
 
-/** @brief Schedule the timer to fire @a delta time in the future.
- *
- * @param delta interval until expiration time
- *
- * The schedule_after methods schedule the timer relative to the current
- * system time, Timestamp::now().  When called from a timer's expiration hook,
- * this will usually be slightly after the timer's nominal expiration time.
- * To schedule a timer at a strict interval, compensating for small amounts of
- * drift, use the reschedule_after methods.
- */
 void
 Timer::schedule_after(const Timestamp &delta)
 {
     schedule_at(Timestamp::now() + delta);
 }
 
-/** @brief Unschedule the timer.
- *
- * The timer's expiration time is not modified.
- */
 void
 Timer::unschedule()
 {

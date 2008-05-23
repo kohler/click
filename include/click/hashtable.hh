@@ -74,7 +74,7 @@ template <typename T> class HashTable_const_iterator;
   has a different result:
   @code
   HashTable<String, int> h(0);
-  h.insert("A", 1);
+  h["A"] = 1;
   if (!h["B"])      // Nota bene
       printf("B wasn't in table, but it is now\n");
   for (HashMap<String, int>::iterator it = h.begin(); it; ++it)
@@ -725,6 +725,8 @@ class HashTable {
      * true.
      *
      * The behavior is basically the same as "(*this)[@a key] = @a value".
+     * (The difference is that if (*this)[@a key] is not already in the hash
+     * table, the new @a value is constructed rather than assigned.)
      *
      * @note Inserting an element into a HashTable invalidates all existing
      * iterators. */

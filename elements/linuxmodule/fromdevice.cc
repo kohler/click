@@ -386,11 +386,11 @@ void
 FromDevice::add_handlers()
 {
     add_task_handlers(&_task);
-    add_read_handler("active", read_handler, (void *) H_ACTIVE, Handler::CHECKBOX);
-    add_read_handler("drops", read_handler, (void *) H_DROPS);
-    add_read_handler("calls", read_handler, (void *) H_CALLS);
-    add_write_handler("active", write_handler, (void *) H_ACTIVE);
-    add_write_handler("reset_counts", write_handler, (void *) H_RESET_COUNTS, Handler::BUTTON);
+    add_read_handler("active", read_handler, H_ACTIVE, Handler::CHECKBOX);
+    add_read_handler("drops", read_handler, H_DROPS);
+    add_read_handler("calls", read_handler, H_CALLS);
+    add_write_handler("active", write_handler, H_ACTIVE);
+    add_write_handler("reset_counts", write_handler, H_RESET_COUNTS, Handler::BUTTON);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)
