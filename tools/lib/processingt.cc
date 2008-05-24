@@ -71,7 +71,7 @@ ProcessingT::ProcessingT(const ProcessingT &processing, ElementT *element,
 	if (it.key().starts_with(prefix))
 	    _flow_overrides.set(it.key().substring(prefix.length()), it.value());
 
-    create(processing.decorated_processing_code(element), true, errh);
+    create(processing.processing_code(element), true, errh);
 }
 
 void
