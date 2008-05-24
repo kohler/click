@@ -235,7 +235,7 @@
 	(b)=ROTATE((b),30);
 
 
-char *SHA1_version = "SHA1 part of SSLeay 0.8.2b 08-Jan-1998";
+const char SHA1_version[] = "SHA1 part of SSLeay 0.8.2b 08-Jan-1998";
 
 /* Implemented from SHA-1 document - The Secure Hash Algorithm
  */

@@ -51,7 +51,7 @@ AggregatePaint::simple_action(Packet *p)
     uint32_t agg = PAINT_ANNO(p) & ((1 << _bits) - 1);
 
     if (_incremental)
-	SET_AGGREGATE_ANNO(p, AGGREGATE_ANNO(p) << _bits + agg);
+	SET_AGGREGATE_ANNO(p, (AGGREGATE_ANNO(p) << _bits) + agg);
     else
 	SET_AGGREGATE_ANNO(p, agg);
 
