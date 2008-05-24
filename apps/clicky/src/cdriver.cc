@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <errno.h>
+#include <unistd.h>
 namespace clicky {
 
 int cdriver::check_handler_name(const String &inname, String &ename, String &hname, ErrorHandler *errh)

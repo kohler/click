@@ -118,6 +118,9 @@ class crouter { public:
     void select_driver(int driver) {
 	_selected_driver = driver;
     }
+    int selected_driver() const {
+	return _selected_driver;
+    }
     
     handler_values &hvalues() {
 	return _hvalues;

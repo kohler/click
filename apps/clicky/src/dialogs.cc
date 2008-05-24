@@ -10,6 +10,7 @@
 #include "wmain.hh"
 #include "wdiagram.hh"
 #include <netdb.h>
+#include <unistd.h>
 extern "C" {
 #include "interface.h"
 #include "support.h"
@@ -107,24 +108,28 @@ static void on_zoom_fit_activate(GtkMenuItem *, gpointer user_data)
     reinterpret_cast<wmain *>(user_data)->diagram()->zoom(false, -10000);
 }
 
-static void on_config_userlevel_activate(GtkMenuItem *, gpointer user_data)
+static void on_config_userlevel_activate(GtkMenuItem *m, gpointer user_data)
 {
-    reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::USERLEVEL);
+    if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(m)))
+	reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::USERLEVEL);
 }
 
-static void on_config_linuxmodule_activate(GtkMenuItem *, gpointer user_data)
+static void on_config_linuxmodule_activate(GtkMenuItem *m, gpointer user_data)
 {
-    reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::LINUXMODULE);
+    if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(m)))
+	reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::LINUXMODULE);
 }
 
-static void on_config_bsdmodule_activate(GtkMenuItem *, gpointer user_data)
+static void on_config_bsdmodule_activate(GtkMenuItem *m, gpointer user_data)
 {
-    reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::BSDMODULE);
+    if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(m)))
+	reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::BSDMODULE);
 }
 
-static void on_config_ns_activate(GtkMenuItem *, gpointer user_data)
+static void on_config_ns_activate(GtkMenuItem *m, gpointer user_data)
 {
-    reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::NSMODULE);
+    if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(m)))
+	reinterpret_cast<wmain *>(user_data)->config_set_driver(Driver::NSMODULE);
 }
 }
 
@@ -453,19 +458,28 @@ void wmain::config_choose_driver()
     cdriver *cd = driver();
     ElementMap *emap = element_map();
     int driver_mask = (cd ? cd->driver_mask() : emap->provided_driver_mask());
+    // first choose a driver
+    for (int d = 0; d < Driver::COUNT; ++d)
+	if ((1 << d) & driver_mask) {
+	    select_driver(d);
+	    break;
+	}
+    // then set menu items accordingly
     for (int d = 0; d < Driver::COUNT; ++d) {
 	String name = String("menu_config_") + Driver::name(d);
 	GtkWidget *w = lookup_widget(_window, name.c_str());
 	gtk_widget_set_sensitive(w, (driver_mask & (1 << d)) != 0);
-	if ((1 << d) & emap->driver_mask())
+	if (d == selected_driver())
 	    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w), TRUE);
     }
 }
 
 void wmain::config_set_driver(int driver)
 {
-    select_driver(driver);
-    on_config_changed();
+    if (driver != selected_driver()) {
+	select_driver(driver);
+	on_config_changed();
+    }
 }
 
 }

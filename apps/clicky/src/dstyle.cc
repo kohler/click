@@ -1979,5 +1979,3 @@ String dcss_set::vstring(PermString name, PermString decor, crouter *cr, const d
 }
 
 }
-
-#include <click/vector.cc>

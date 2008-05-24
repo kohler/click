@@ -3,6 +3,7 @@
 #include <gtk/gtk.h>
 #include <click/hashtable.hh>
 #include <click/vector.hh>
+#include <click/vector.cc>
 #include "permstr.hh"
 #include "dwidget.hh"
 #include "ref.hh"
