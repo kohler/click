@@ -29,18 +29,30 @@ sequentially.
 
 =head2 Handler Instructions
 
-In all cases, text arguments are subject to substitutions; see below.
+In all cases, text arguments are subject to substitutions; see below.  Many
+instructions come in two forms, as in C<set> and C<setq>, C<read> and
+C<readq>, and C<write> and C<writeq>.  The non-C<q> forms perform
+substitutions on the text, but do not remove any quotes from the result, while
+the C<q> forms perform substitutions and then remove a layer of quoting.  For
+example, assuming the 'c.count' read handler returns 0:
+
+   set x $(c.count)
+   print $x             => 0
+   set x "$(c.count)"
+   print $x             => "0"
+   setq x "$(c.count)"
+   print $x             => 0
 
 =over 8
 
-=item 'C<set> VAR TEXT'
+=item 'C<set> VAR TEXT', 'C<setq> VAR TEXT'
 
 Sets the script variable $VAR to TEXT.
 
-=item 'C<init> VAR TEXT'
+=item 'C<init> VAR TEXT', 'C<initq> VAR TEXT'
 
-Initializes the script variable $VAR to TEXT.  This assignment happens exactly
-once, when the Script element is initialized; later the instruction has no
+Initializes the script variable $VAR to TEXT.  The assignment happens exactly
+once, when the Script element is initialized.  Later the instruction has no
 effect.
 
 =item 'C<print> [>FILE | >>FILE] [TEXT | HANDLER]'
@@ -51,9 +63,8 @@ argument begins with > or >>, then the text is written or appended to the
 specified FILE.  In the kernel, the text is written to the system log.
 
 If C<print>'s argument starts with a letter, '@', or '_', then it is treated
-as a read handler.  Otherwise, it is treated as quoted text; Script prints the
-unquoted version.  For example, assuming the 'c.count' read handler
-returns "0":
+as a read handler.  Otherwise, a layer of quotes is removed and the result is
+printed.  For example, assuming the 'c.count' read handler returns "0":
 
    print c.count     => 0
    print "c.count"   => c.count
@@ -66,7 +77,7 @@ returns "0":
 
 Like C<print>, but does not append a newline.
 
-=item 'C<read> HANDLER [ARG...]'
+=item 'C<read> HANDLER [ARGS]', 'C<readq> HANDLER [ARGS]'
 
 Call a read handler and print the handler name and result to standard error.  (In the kernel, the result is printed to the system log.)  For example, the
 configuration 'Idle -> c::Counter -> Idle; Script(read c.count)' would print
@@ -77,15 +88,10 @@ print this to standard error:
 
 Contrast the 'C<print>' instruction.
 
-=item 'C<write> HANDLER [ARG...]'
+=item 'C<write> HANDLER [ARGS]', 'C<writeq> HANDLER [ARGS]'
 
 Call a write handler.  The handler's return status is available in following
 instructions as the '$?' variable.
-
-=item 'C<readq> HANDLER [ARG...]', 'C<writeq> HANDLER [ARG...]'
-
-Same as C<read> and C<write>, but remove one layer of quoting from the ARGs
-before calling the handler.
 
 =back
 
@@ -120,25 +126,34 @@ element's script appears to be looping (it executes 1000 goto instructions
 without blocking), the script is disabled.  If CONDITION is supplied, then the
 branch executes only when CONDITION is true.
 
-Also, 'C<goto exit [CONDITION]>' and 'C<goto end [CONDITION]>'
-end execution of the script, like 'C<exit>' and 'C<end>' respectively, and
-'C<goto begin [CONDITION]>' transfers control to the first instruction, like
-'C<loop>'.
+Also, 'C<goto exit [CONDITION]>' and 'C<goto end [CONDITION]>' end execution
+of the script, like 'C<exit>' and 'C<end>' respectively.  'C<goto begin
+[CONDITION]>' transfers control to the first instruction, like 'C<loop>'.
+'C<goto error [CONDITION]>' ends execution of the script with an error, like
+'C<error>'.
 
 =item 'C<loop>'
 
 Transfers control to the first instruction.
 
-=item 'C<return> [VALUE]'
+=item 'C<exit>'
 
-End execution of this script, returning VALUE.  This instruction is most
-useful for passive scripts; VALUE will be returned as the value of the C<run>
-handler.
+End execution of this script.
 
-=item 'C<exit>', 'C<end>'
+=item 'C<end>'
 
-End execution of this script.  For signal scripts, the 'C<exit>' instruction
-I<does not> reinstall the script, whereas the 'C<end>' instruction does.
+End execution of this script.  In signal scripts, 'C<end>' causes the script
+to be reinstalled as a signal handler.
+
+=item 'C<return> [VALUE]', 'C<returnq> [VALUE]'
+
+End execution of this script.  For passive scripts, VALUE is returned as the
+value of the C<run> handler.
+
+=item 'C<error> [MSG]', 'C<errorq> [MSG]'
+
+End execution of the script and indicate an error.  The optional error message
+MSG is reported if given.
 
 =back
 
@@ -169,9 +184,10 @@ of two Counter handlers.
    s :: Script(TYPE PASSIVE,
           return $(add $(c1.count) $(c2.count)))
 
-Within the script, the C<run> handler's arguments, if any, are available
-via the C<$args> variable.  The first, second, and so forth space-separated
-portions of C<$args> are available via the C<$1>, C<$2>, ... variables.
+Within the script, the C<$args> variable equals the C<run> handler's
+arguments.  C<$1>, C<$2>, etc. equal the first, second, etc. space-separated
+portions of C<$args>, and C<$#> equals the number of space-separated
+arguments.
 	  
 =item C<DRIVER>
 
@@ -291,8 +307,9 @@ class Script : public Element { public:
     enum Insn {
 	INSN_INITIAL, INSN_WAIT_STEP, INSN_WAIT_TIME, // order required
 	INSN_PRINT, INSN_PRINTN, INSN_READ, INSN_READQ, INSN_WRITE, INSN_WRITEQ,
-	INSN_SET, INSN_INIT, INSN_SAVE, INSN_APPEND, INSN_STOP, INSN_END,
-	INSN_EXIT, INSN_LABEL, INSN_GOTO, INSN_RETURN,
+	INSN_SET, insn_setq, INSN_INIT, insn_initq, INSN_SAVE, INSN_APPEND,
+	INSN_STOP, INSN_END, INSN_EXIT, INSN_LABEL, INSN_GOTO, INSN_RETURN,
+	insn_returnq, insn_error, insn_errorq,
 	INSN_WAIT_PSEUDO, INSN_LOOP_PSEUDO
     };
 
@@ -303,8 +320,8 @@ class Script : public Element { public:
     };
 
     enum {
-	MAX_JUMPS = 1000, STEP_NORMAL = 0, STEP_ROUTER, STEP_TIMER, STEP_JUMP,
-	LABEL_EXIT = -1, LABEL_END = -2, LABEL_BEGIN = 0
+	max_jumps = 1000, STEP_NORMAL = 0, STEP_ROUTER, STEP_TIMER, STEP_JUMP,
+	LABEL_EXIT = -1, LABEL_END = -2, label_error = -3, LABEL_BEGIN = 0
     };
 
     Vector<int> _insns;
@@ -333,7 +350,8 @@ class Script : public Element { public:
     };
     
     void add_insn(int, int, int = 0, const String & = String());
-    int step(int nsteps, int step_type, int njumps);
+    int step(int nsteps, int step_type, int njumps, ErrorHandler *errh);
+    int complete_step(String *retval);
     int find_label(const String &) const;
     int find_variable(const String &) const;
 

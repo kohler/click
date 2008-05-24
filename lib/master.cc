@@ -20,6 +20,7 @@
 #include <click/master.hh>
 #include <click/element.hh>
 #include <click/router.hh>
+#include <click/error.hh>
 #include <click/handlercall.hh>
 #if CLICK_USERLEVEL && HAVE_SYS_EVENT_H && HAVE_KQUEUE
 # include <sys/event.h>
@@ -344,7 +345,7 @@ Master::check_driver()
 	    Element *dm = (Element *)(r->attachment("Script"));
 	    if (dm) {
 		int max = 1000;
-		while (HandlerCall::call_write(dm, "step", "router") == 0
+		while (HandlerCall::call_write(dm, "step", "router", ErrorHandler::default_handler()) == 0
 		       && r->runcount() <= 0 && --max >= 0)
 		    /* do nothing */;
 	    }

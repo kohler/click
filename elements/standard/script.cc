@@ -6,6 +6,7 @@
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2001 Mazu Networks, Inc.
  * Copyright (c) 2005-2008 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -34,9 +35,12 @@ CLICK_DECLS
 
 static const StaticNameDB::Entry instruction_entries[] = {
     { "end", Script::INSN_END },
+    { "error", Script::insn_error },
+    { "errorq", Script::insn_errorq },
     { "exit", Script::INSN_EXIT },
     { "goto", Script::INSN_GOTO },
     { "init", Script::INSN_INIT },
+    { "initq", Script::insn_initq },
     { "label", Script::INSN_LABEL },
     { "loop", Script::INSN_LOOP_PSEUDO },
     { "pause", Script::INSN_WAIT_STEP },
@@ -45,7 +49,9 @@ static const StaticNameDB::Entry instruction_entries[] = {
     { "read", Script::INSN_READ },
     { "readq", Script::INSN_READQ },
     { "return", Script::INSN_RETURN },
+    { "returnq", Script::insn_returnq },
     { "set", Script::INSN_SET },
+    { "setq", Script::insn_setq },
     { "stop", Script::INSN_STOP },
     { "wait", Script::INSN_WAIT_PSEUDO },
     { "wait_for", Script::INSN_WAIT_TIME },
@@ -120,12 +126,14 @@ Script::find_label(const String &label) const
     for (int i = 0; i < _insns.size(); i++)
 	if (_insns[i] == INSN_LABEL && _args3[i] == label)
 	    return i;
-    if (label.length() == 4 && memcmp(label.data(), "exit", 4) == 0)
+    if (label.equals("exit", 4))
 	return LABEL_EXIT;
-    if (label.length() == 3 && memcmp(label.data(), "end", 3) == 0)
+    if (label.equals("end", 3))
 	return LABEL_END;
-    if (label.length() == 5 && memcmp(label.data(), "begin", 5) == 0)
+    if (label.equals("begin", 5))
 	return LABEL_BEGIN;
+    if (label.equals("error", 5))
+	return label_error;
     return _insns.size();
 }
 
@@ -217,12 +225,16 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	    break;
 
 	case INSN_RETURN:
+	case insn_returnq:
 	    conf[i] = "_ " + conf[i];
 	    /* fall through */
 	case INSN_INIT:
-	case INSN_SET: {
+	case insn_initq:
+	case INSN_SET:
+	case insn_setq: {
 	    String word = cp_pop_spacevec(conf[i]);
-	    if (!word || (insn == INSN_SET && !conf[i]))
+	    if (!word
+		|| ((insn == INSN_SET || insn == insn_setq) && !conf[i]))
 		goto syntax_error;
 	    int x = find_variable(word);
 	    if (x == _vars.size()) {
@@ -257,9 +269,11 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	case INSN_END:
 	case INSN_EXIT:
 	case INSN_STOP:
-	    if (conf[i])
+	case insn_error:
+	case insn_errorq:
+	    if (conf[i] && insn != insn_error && insn != insn_errorq)
 		goto syntax_error;
-	    add_insn(insn, 0);
+	    add_insn(insn, 0, 0, conf[i]);
 	    break;
 
 	default:
@@ -298,6 +312,8 @@ Script::initialize(ErrorHandler *errh)
     for (int i = 0; i < _insns.size(); i++)
 	if (_insns[i] == INSN_INIT)
 	    _vars[_args[i] + 1] = cp_expand(_args3[i], expander);
+	else if (_insns[i] == insn_initq)
+	    _vars[_args[i] + 1] = cp_unquote(cp_expand(_args3[i], expander));
 
     int insn = _insns[_insn_pos];
     assert(insn <= INSN_WAIT_TIME);
@@ -324,17 +340,15 @@ Script::initialize(ErrorHandler *errh)
 }
 
 int
-Script::step(int nsteps, int step_type, int njumps)
+Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 {
-    ErrorHandler *errh = ErrorHandler::default_handler();
-    ContextErrorHandler cerrh(errh, "While executing '" + declaration() + "':");
     Expander expander;
     expander.script = this;
-    expander.errh = &cerrh;
+    expander.errh = errh;
 
     nsteps += _step_count;
     while ((nsteps - _step_count) >= 0 && _insn_pos < _insns.size()
-	   && njumps < MAX_JUMPS) {
+	   && njumps < max_jumps) {
 
 	// process current instruction
 	// increment instruction pointer now, in case we call 'goto' directly
@@ -397,14 +411,14 @@ Script::step(int nsteps, int step_type, int njumps)
 	    }
 #endif
 
-	    int before = cerrh.nerrors();
+	    int before = errh->nerrors();
 	    String result;
 	    if (text && (isalpha((unsigned char) text[0]) || text[0] == '@' || text[0] == '_')) {
 		result = cp_expand(text, expander);
-		result = HandlerCall::call_read(result, this, &cerrh);
+		result = HandlerCall::call_read(result, this, errh);
 	    } else
 		result = cp_unquote(cp_expand(text, expander, true));
-	    if (cerrh.nerrors() == before
+	    if (errh->nerrors() == before
 		&& (!result || result.back() != '\n')
 		&& insn != INSN_PRINTN)
 		result += "\n";
@@ -416,7 +430,7 @@ Script::step(int nsteps, int step_type, int njumps)
 	    else
 		fclose(f);
 #else
-	    errh->message("%s", result.c_str());
+	    click_chatter("%s", result.c_str());
 #endif
 	    break;
 	}
@@ -425,7 +439,7 @@ Script::step(int nsteps, int step_type, int njumps)
 	case INSN_READQ: {
 	    String arg = (insn == INSN_READ ? _args3[ipos] : cp_unquote(_args3[ipos]));
 	    HandlerCall hc(cp_expand(arg, expander));
-	    if (hc.initialize_read(this, &cerrh) >= 0) {
+	    if (hc.initialize_read(this, errh) >= 0) {
 		String result = hc.call_read(errh);
 		errh->message("%s:\n%s\n", hc.handler()->unparse_name(hc.element()).c_str(), result.c_str());
 	    }
@@ -436,16 +450,21 @@ Script::step(int nsteps, int step_type, int njumps)
 	case INSN_WRITEQ: {
 	    String arg = (insn == INSN_WRITE ? _args3[ipos] : cp_unquote(_args3[ipos]));
 	    HandlerCall hc(cp_expand(arg, expander));
-	    if (hc.initialize_write(this, &cerrh) >= 0)
-		_write_status = hc.call_write(&cerrh);
+	    if (hc.initialize_write(this, errh) >= 0)
+		_write_status = hc.call_write(errh);
 	    break;
 	}
 
 	case INSN_RETURN:
-	case INSN_SET: {
+	case insn_returnq:
+	case INSN_SET:
+	case insn_setq: {
 	    expander.errh = errh;
 	    _vars[_args[ipos] + 1] = cp_expand(_args3[ipos], expander);
-	    if (insn == INSN_RETURN && _insn_pos == ipos + 1) {
+	    if (insn == insn_setq || insn == insn_returnq)
+		_vars[_args[ipos] + 1] = cp_unquote(_vars[_args[ipos] + 1]);
+	    if ((insn == INSN_RETURN || insn == insn_returnq)
+		&& _insn_pos == ipos + 1) {
 		_insn_pos--;
 		goto done;
 	    }
@@ -457,12 +476,10 @@ Script::step(int nsteps, int step_type, int njumps)
 	    String cond_text = cp_expand(_args3[ipos], expander);
 	    bool cond;
 	    if (cond_text && !cp_bool(cond_text, &cond))
-		cerrh.error("bad condition '%s'", cond_text.c_str());
+		errh->error("bad condition '%s'", cond_text.c_str());
 	    else if (!cond_text || cond) {
-		if (_args[ipos] == LABEL_END)
-		    goto insn_end;
-		if (_args[ipos] == LABEL_EXIT)
-		    goto insn_exit;
+		if (_args[ipos] < 0)
+		    goto insn_finish;
 		for (int i = _args[ipos]; i < ipos; i++)
 		    if (_insns[i] == INSN_WAIT_STEP)
 			_args2[i] = 0;
@@ -471,19 +488,21 @@ Script::step(int nsteps, int step_type, int njumps)
 	    break;
 	}
 
-	case INSN_END:
-	insn_end:
-#if CLICK_USERLEVEL
-	    if (_type == TYPE_SIGNAL)
-		for (int i = 0; i < _signos.size(); i++)
-		    master()->add_signal_handler(_signos[i], router(), name() + ".run");
-#endif
+	case insn_error:
+	case insn_errorq: {
+	    String msg = cp_expand(_args3[ipos], expander);
+	    if (insn == insn_errorq)
+		msg = cp_unquote(msg);
+	    if (msg)
+		errh->error("%s", msg.c_str());
 	    /* fallthru */
+	}
+	case INSN_END:
 	case INSN_EXIT:
-	insn_exit:
+	insn_finish:
 	    _insn_pos--;
 	    return njumps + 1;
-	    
+
 	}
 
 	if (_insn_pos != ipos + 1)
@@ -491,7 +510,7 @@ Script::step(int nsteps, int step_type, int njumps)
     }
 
   done:
-    if (njumps >= MAX_JUMPS) {
+    if (njumps >= max_jumps) {
 	ErrorHandler::default_handler()->error("%{element}: too many jumps, giving up", this);
 	_insn_pos = _insns.size();
 	_timer.unschedule();
@@ -501,12 +520,55 @@ Script::step(int nsteps, int step_type, int njumps)
     return njumps + 1;
 }
 
+int
+Script::complete_step(String *retval)
+{
+    int last_insn;
+    if (_insn_pos < 0 || _insn_pos >= _insns.size())
+	last_insn = -1;
+    else {
+	last_insn = _insns[_insn_pos];
+	if (last_insn == INSN_GOTO) {
+	    if (_args[_insn_pos] == LABEL_EXIT)
+		last_insn = INSN_EXIT;
+	    else if (_args[_insn_pos] == LABEL_END)
+		last_insn = INSN_END;
+	    else if (_args[_insn_pos] == label_error)
+		last_insn = insn_error;
+	}
+    }
+
+#if CLICK_USERLEVEL
+    if (last_insn == INSN_END && _type == TYPE_SIGNAL)
+	for (int i = 0; i < _signos.size(); i++)
+	    master()->add_signal_handler(_signos[i], router(), name() + ".run");
+#endif
+
+    if (retval) {
+	int x;
+	*retval = String();
+	if (last_insn == INSN_RETURN || last_insn == insn_returnq)
+	    if ((x = find_variable("_")) < _vars.size())
+		*retval = _vars[x + 1];
+    }
+
+    if (last_insn == insn_error || last_insn == insn_errorq)
+	return -1;
+    else if (last_insn == INSN_STOP)
+	return 1;
+    else
+	return 0;
+}
+
 void
 Script::run_timer(Timer *)
 {
     // called when a timer expires
     assert(_insns[_insn_pos] == INSN_WAIT_TIME || _insns[_insn_pos] == INSN_INITIAL);
-    step(1, STEP_TIMER, 0);
+    ErrorHandler *errh = ErrorHandler::default_handler();
+    ContextErrorHandler cerrh(errh, "While executing '" + declaration() + "':");
+    step(1, STEP_TIMER, 0, &cerrh);
+    complete_step(0);
 }
 
 bool
@@ -528,11 +590,20 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
 	return true;
     }
 
-    if (vname[0] >= '1' && vname[0] <= '9' && cp_integer(vname, &x)) {
+    if (vname.length() > 0 && vname[0] >= '1' && vname[0] <= '9'
+	&& cp_integer(vname, &x)) {
 	String arg, run_args = script->_run_args;
 	for (; x > 0; --x)
 	    arg = cp_pop_spacevec(run_args);
 	sa << cp_expand_in_quotes(arg, quote);
+	return true;
+    }
+
+    if (vname.length() == 1 && vname[0] == '#') {
+	String run_args = script->_run_args;
+	for (x = 0; cp_pop_spacevec(run_args); )
+	    ++x;
+	sa << cp_expand_in_quotes(String(x), quote);
 	return true;
     }
     
@@ -559,7 +630,7 @@ Script::step_handler(int, String &str, Element *e, const Handler *h, ErrorHandle
 {
     Script *scr = (Script *) e;
     String data = cp_uncomment(str);
-    int nsteps, steptype, x;
+    int nsteps, steptype;
     int what = (uintptr_t) h->user_data1();
 
     if (what == ST_GOTO) {
@@ -591,21 +662,14 @@ Script::step_handler(int, String &str, Element *e, const Handler *h, ErrorHandle
 	scr->_cur_steps = &cur_steps;
 	while ((nsteps = cur_steps) >= 0) {
 	    cur_steps = -1;
-	    njumps = scr->step(nsteps, steptype, njumps);
+	    njumps = scr->step(nsteps, steptype, njumps, errh);
 	    steptype = ST_STEP;
 	}
 	scr->_cur_steps = 0;
     } else if (what == ST_STEP)
 	*scr->_cur_steps += nsteps;
 
-    int last_insn = (scr->_insn_pos < scr->_insns.size() ? scr->_insns[scr->_insn_pos] : -1);
-    
-    str = String();
-    if (last_insn == INSN_RETURN)
-	if ((x = scr->find_variable("_")) < scr->_vars.size())
-	    str = scr->_vars[x + 1];
-    
-    return (last_insn == INSN_STOP);
+    return scr->complete_step(&str);
 }
 
 #if HAVE_INT64_TYPES

@@ -120,7 +120,7 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 		    /* nada */;
 		vname = config.substring(cstart, s);
 
-	    } else if (s[1] == '?') {
+	    } else if (s[1] == '?' || s[1] == '#') {
 		vtype = 'a';
 		s++;
 		vname = config.substring(s, s + 1);

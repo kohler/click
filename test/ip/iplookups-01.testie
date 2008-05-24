@@ -90,14 +90,11 @@ done
 -1
 
 %expect stderr
-While{{.*}}:
-  conflict with existing route '18.16.0.0/12 4.0.0.4 0'
-While{{.*}}:
-  conflict with existing route '18.16.0.0/12 4.0.0.4 0'
-While{{.*}}:
-  conflict with existing route '18.16.0.0/12 4.0.0.4 0'
-While{{.*}}:
-  conflict with existing route '18.16.0.0/12 4.0.0.4 0'
+{{ *}}conflict with existing route '18.16.0.0/12 4.0.0.4 0'
+{{ *}}conflict with existing route '18.16.0.0/12 4.0.0.4 0'
+{{ *}}conflict with existing route '18.16.0.0/12 4.0.0.4 0'
+{{ *}}conflict with existing route '18.16.0.0/12 4.0.0.4 0'
 
 %ignorex
 !.*
+While{{.*}}:
