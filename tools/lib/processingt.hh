@@ -7,12 +7,15 @@ class Bitvector;
 
 class ProcessingT { public:
 
-    enum ProcessingCode { ppush = 1, ppull = 2, pagnostic = 4 };
+    enum ProcessingCode {
+	ppush = 1, ppull = 2, pagnostic = 4
+    };
     static const char processing_letters[];
     static const char decorated_processing_letters[];
 
-    ProcessingT(RouterT *router, ElementMap *emap,
+    ProcessingT(bool resolve_agnostics, RouterT *router, ElementMap *emap,
 		ErrorHandler *errh = 0);
+    ProcessingT(RouterT *router, ElementMap *emap, ErrorHandler *errh = 0);
     ProcessingT(const ProcessingT &processing, ElementT *element,
 		ErrorHandler *errh = 0);
     void check_types(ErrorHandler *errh = 0);
@@ -174,7 +177,7 @@ class ProcessingT { public:
 
     void parse_flow_info(ElementT *e, ErrorHandler *errh);
     void create_pidx(ErrorHandler *errh);
-    void create(const String &compound_pcode, ErrorHandler *errh = 0);
+    void create(const String &compound_pcode, bool resolve_agnostics, ErrorHandler *errh);
 
     void initial_processing_for(int, const String &compound_pcode, ErrorHandler *);
     void initial_processing(const String &compound_pcode, ErrorHandler *);

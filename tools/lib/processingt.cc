@@ -39,11 +39,17 @@ static String dpcode_apush("H");
 static String dpcode_apull("L");
 static String dpcode_push_to_pull("h/l");
 
-ProcessingT::ProcessingT(RouterT *router, ElementMap *emap,
-			 ErrorHandler *errh)
+ProcessingT::ProcessingT(bool resolve_agnostics, RouterT *router,
+			 ElementMap *emap, ErrorHandler *errh)
     : _router(router), _element_map(emap), _scope(router->scope())
 {
-    create("", errh);
+    create("", resolve_agnostics, errh);
+}
+
+ProcessingT::ProcessingT(RouterT *router, ElementMap *emap, ErrorHandler *errh)
+    : _router(router), _element_map(emap), _scope(router->scope())
+{
+    create("", true, errh);
 }
 
 ProcessingT::ProcessingT(const ProcessingT &processing, ElementT *element,
@@ -65,7 +71,7 @@ ProcessingT::ProcessingT(const ProcessingT &processing, ElementT *element,
 	if (it.key().starts_with(prefix))
 	    _flow_overrides.set(it.key().substring(prefix.length()), it.value());
 
-    create(processing.decorated_processing_code(element), errh);
+    create(processing.decorated_processing_code(element), true, errh);
 }
 
 void
@@ -81,7 +87,8 @@ ProcessingT::check_types(ErrorHandler *errh)
 }
 
 void
-ProcessingT::create(const String &compound_pcode, ErrorHandler *errh)
+ProcessingT::create(const String &compound_pcode, bool resolve_agnostics,
+		    ErrorHandler *errh)
 {
     LocalErrorHandler lerrh(errh);
     ElementMap::push_default(_element_map);
@@ -91,7 +98,8 @@ ProcessingT::create(const String &compound_pcode, ErrorHandler *errh)
     initial_processing(compound_pcode, &lerrh);
     check_processing(&lerrh);
     // change remaining agnostic ports to agnostic-push
-    resolve_agnostics();
+    if (resolve_agnostics)
+	this->resolve_agnostics();
     check_connections(&lerrh);
 
     ElementMap::pop_default();
@@ -518,6 +526,7 @@ ProcessingT::resolve_agnostics()
 bool
 ProcessingT::same_processing(int a, int b) const
 {
+    // NB ppush != pagnostic+ppush; this is ok
     int ai = _pidx[end_to][a], bi = _pidx[end_to][b];
     int ao = _pidx[end_from][a], bo = _pidx[end_from][b];
     int ani = _pidx[end_to][a+1] - ai, bni = _pidx[end_to][b+1] - bi;

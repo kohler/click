@@ -1241,7 +1241,8 @@ RouterT::const_type_iterator::step(const RouterT *r, int eindex)
 const ElementTraits *
 RouterT::find_traits(ElementMap *emap) const
 {
-    ProcessingT pt(const_cast<RouterT *>(this), emap);
+    // Do not resolve agnostics to push, or the flow code will be wrong.
+    ProcessingT pt(false, const_cast<RouterT *>(this), emap);
     *(_traits.component(Traits::D_PORT_COUNT)) = pt.compound_port_count_code();
     *(_traits.component(Traits::D_PROCESSING)) = pt.compound_processing_code();
     *(_traits.component(Traits::D_FLOW_CODE)) = pt.compound_flow_code();
