@@ -151,6 +151,7 @@ class Element { public:
     int set_handler_flags(const String &name, int set_flags, int clear_flags = 0);
     void add_task_handlers(Task *task, const String& prefix = String());
     
+    void add_data_handlers(const String &name, int flags, uint8_t *data);
     void add_data_handlers(const String &name, int flags, bool *data);
     void add_data_handlers(const String &name, int flags, int *data);
     void add_data_handlers(const String &name, int flags, unsigned *data);
@@ -165,6 +166,7 @@ class Element { public:
     void add_data_handlers(const String &name, int flags, double *data);
 #endif
     void add_data_handlers(const String &name, int flags, String *data);
+    void add_data_handlers(const String &name, int flags, IPAddress *data);
 
     static String read_positional_handler(Element*, void*);
     static String read_keyword_handler(Element*, void*);
@@ -214,13 +216,8 @@ class Element { public:
     };
 
     // DEPRECATED
-    String id() const CLICK_ELEMENT_DEPRECATED;
+    String id() const CLICK_DEPRECATED;
 
-    inline void set_ninputs(int) CLICK_ELEMENT_DEPRECATED;
-    inline void set_noutputs(int) CLICK_ELEMENT_DEPRECATED;
-    inline void add_input() CLICK_ELEMENT_DEPRECATED;
-    inline void add_output() CLICK_ELEMENT_DEPRECATED;
-    
     virtual bool run_task() CLICK_ELEMENT_DEPRECATED;
     virtual void run_timer() CLICK_ELEMENT_DEPRECATED;
     
@@ -362,70 +359,6 @@ inline int
 Element::noutputs() const
 {
     return _nports[1];
-}
-
-/** @brief Sets the element's number of input ports (deprecated).
- *
- * @param ninputs number of input ports
- *
- * @deprecated The set_ninputs() function is deprecated.  Elements should
- * instead use port_count() to define an acceptable range of input port
- * counts.  Elements that called set_ninputs() from configure(), setting the
- * number of input ports based on configuration arguments, should compare the
- * desired number of ports to ninputs() and signal an error if they disagree.
- *
- * This function can be called from the constructor, notify_ninputs(),
- * notify_noutputs(), or configure(), but not from initialize() or later.  */
-inline void
-Element::set_ninputs(int ninputs)
-{
-    set_nports(ninputs, _nports[1]);
-}
-
-/** @brief Sets the element's number of output ports (deprecated).
- *
- * @param noutputs number of output ports
- *
- * @deprecated The set_noutputs() function is deprecated.  Elements should
- * instead use port_count() to define an acceptable range of output port
- * counts.  Elements that called set_noutputs() from configure(), setting the
- * number of output ports based on configuration arguments, should compare the
- * desired number of ports to noutputs() and signal an error if they disagree.
- *
- * This function can be called from the constructor, notify_ninputs(),
- * notify_noutputs(), or configure(), but not from initialize() or later.  */
-inline void
-Element::set_noutputs(int noutputs)
-{
-    set_nports(_nports[0], noutputs);
-}
-
-/** @brief Adds an input port (deprecated).
- *
- * @deprecated See the deprecation note at set_ninputs().
- *
- * An abbreviation for set_ninputs(ninputs() + 1).  Subject to the same
- * restrictions as set_ninputs().
- *
- * @sa set_ninputs */
-inline void
-Element::add_input()
-{
-    set_nports(_nports[0] + 1, _nports[1]);
-}
-
-/** @brief Adds an output port (deprecated).
- *
- * @deprecated See the deprecation note at set_noutputs().
- *
- * An abbreviation for set_noutputs(noutputs() + 1).  Subject to the same
- * restrictions as set_noutputs().
- *
- * @sa set_noutputs */
-inline void
-Element::add_output()
-{
-    set_nports(_nports[0], _nports[1] + 1);
 }
 
 /** @brief Return one of the element's ports.

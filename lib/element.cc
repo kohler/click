@@ -2018,6 +2018,24 @@ Element::add_task_handlers(Task *task, const String &prefix)
 #endif
 }
 
+static String
+uint8_t_read_data_handler(Element *element, void *user_data)
+{
+    uint8_t *ptr = reinterpret_cast<uint8_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    return String((int) *ptr);
+}
+
+static int
+uint8_t_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
+{
+    uint8_t *ptr = reinterpret_cast<uint8_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    int x;
+    if (cp_integer(str, &x) && x >= 0 && x < 256) {
+	*ptr = x;
+	return 0;
+    } else
+	return errh->error("expected uint8_t");
+} 
 
 static String
 bool_read_data_handler(Element *element, void *user_data)
@@ -2106,6 +2124,25 @@ string_write_data_handler(const String &str, Element *element, void *user_data, 
     return 0;
 }
 
+static String
+ip_address_read_data_handler(Element *element, void *user_data)
+{
+    IPAddress *ptr  = reinterpret_cast<IPAddress *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    return ptr->unparse();
+}
+
+static int
+ip_address_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
+{
+    IPAddress *ptr  = reinterpret_cast<IPAddress *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    IPAddress value;
+    if (cp_ip_address(str, &value)) {
+	*ptr = value;
+	return 0;
+    } else
+	return errh->error("expected IP address");
+}
+
 void
 Element::add_data_handlers(const String &name, int flags, ReadHandlerHook read_hook, WriteHandlerHook write_hook, void *data)
 {
@@ -2134,6 +2171,13 @@ Element::add_data_handlers(const String &name, int flags, ReadHandlerHook read_h
  * Overloaded versions of this function are available for many fundamental
  * data types.
  */
+void
+Element::add_data_handlers(const String &name, int flags, uint8_t *data)
+{
+    add_data_handlers(name, flags, uint8_t_read_data_handler, uint8_t_write_data_handler, data);
+}
+
+/** @overload */
 void
 Element::add_data_handlers(const String &name, int flags, bool *data)
 {
@@ -2200,7 +2244,6 @@ Element::add_data_handlers(const String &name, int flags, double *data)
 }
 #endif
 
-
 /** @brief Register read and/or write handlers accessing @a data.
  *
  * This function's read handler returns *@a data unchanged, and its write
@@ -2211,6 +2254,13 @@ void
 Element::add_data_handlers(const String &name, int flags, String *data)
 {
     add_data_handlers(name, flags, string_read_data_handler, string_write_data_handler, data);
+}
+
+/** @overload */
+void
+Element::add_data_handlers(const String &name, int flags, IPAddress *data)
+{
+    add_data_handlers(name, flags, ip_address_read_data_handler, ip_address_write_data_handler, data);
 }
 
 
