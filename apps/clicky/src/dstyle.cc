@@ -80,6 +80,18 @@ port.push, port.pull {\n\
 port.agnostic, port.push.agnostic, port.pull.agnostic {\n\
     port-border: black 1px inset;\n\
 }\n\
+port.push.error, port.push.agnostic.error {\n\
+    port-color: red;\n\
+}\n\
+port.pull.error, port.pull.agnostic.error {\n\
+    port-color: rgb(100%, 75%, 75%);\n\
+}\n\
+port.push.error, port.pull.error {\n\
+    port-border: red 1px solid;\n\
+}\n\
+port.agnostic.error, port.push.agnostic.error, port.pull.agnostic.error {\n\
+    port-border: red 1px inset;\n\
+}\n\
 * {\n\
     background: rgb(100%, 100%, 87%);\n\
     color: black;\n\
@@ -610,13 +622,16 @@ bool dcss_selector::match_port(bool isoutput, int port, int processing) const
 	    if (!isoutput)
 		return false;
 	} else if (k->equals("push", 4)) {
-	    if ((processing & ~ProcessingT::pagnostic) != ProcessingT::ppush)
+	    if ((processing & ProcessingT::ppush) == 0)
 		return false;
 	} else if (k->equals("pull", 4)) {
-	    if ((processing & ~ProcessingT::pagnostic) != ProcessingT::ppull)
+	    if ((processing & ProcessingT::ppull) == 0)
 		return false;
 	} else if (k->equals("agnostic", 8)) {
 	    if ((processing & ProcessingT::pagnostic) == 0)
+		return false;
+	} else if (k->equals("error", 5)) {
+	    if ((processing & ProcessingT::perror) == 0)
 		return false;
 	} else
 	    return false;

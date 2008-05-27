@@ -7,8 +7,13 @@ class Bitvector;
 
 class ProcessingT { public:
 
+    enum {
+	end_to = ConnectionT::end_to,
+	end_from = ConnectionT::end_from
+    };
+
     enum ProcessingCode {
-	ppush = 1, ppull = 2, pagnostic = 4
+	ppush = 1, ppull = 2, pagnostic = 4, perror = 8
     };
     static const char processing_letters[];
     static const char decorated_processing_letters[];
@@ -19,8 +24,6 @@ class ProcessingT { public:
     ProcessingT(const ProcessingT &processing, ElementT *element,
 		ErrorHandler *errh = 0);
     void check_types(ErrorHandler *errh = 0);
-
-    enum { end_to = ConnectionT::end_to, end_from = ConnectionT::end_from };
 
     RouterT *router() const {
 	return _router;
@@ -99,8 +102,13 @@ class ProcessingT { public:
     char decorated_output_processing_letter(const PortT &port) const;
     int input_processing(int eindex, int port) const;
     int output_processing(int eindex, int port) const;
+    
     bool input_is_pull(int eindex, int port) const;
     bool output_is_push(int eindex, int port) const;
+
+    bool processing_error(int pidx, bool isoutput) const {
+	return _processing[isoutput][pidx] & perror;
+    }
 
     bool same_processing(int a_eindex, int b_eindex) const;
 
@@ -169,8 +177,7 @@ class ProcessingT { public:
 
     Vector<int> _pidx[2];
     Vector<const ElementT *> _elt[2];
-    Vector<int> _input_processing;
-    Vector<int> _output_processing;
+    Vector<int> _processing[2];
 
     enum { classwarn_unknown = 1, classwarn_pcode = 2 };
     HashTable<ElementClassT *, int> _class_warnings;
@@ -193,49 +200,49 @@ class ProcessingT { public:
 inline int
 ProcessingT::input_processing(const PortT &h) const
 {
-    return _input_processing[input_pidx(h)] & 3;
+    return _processing[end_to][input_pidx(h)] & 3;
 }
 
 inline int
 ProcessingT::output_processing(const PortT &h) const
 {
-    return _output_processing[output_pidx(h)] & 3;
+    return _processing[end_from][output_pidx(h)] & 3;
 }
 
 inline char
 ProcessingT::decorated_input_processing_letter(const PortT &h) const
 {
-    return decorated_processing_letters[_input_processing[input_pidx(h)]];
+    return decorated_processing_letters[_processing[end_to][input_pidx(h)] & 7];
 }
 
 inline char
 ProcessingT::decorated_output_processing_letter(const PortT &h) const
 {
-    return decorated_processing_letters[_output_processing[output_pidx(h)]];
+    return decorated_processing_letters[_processing[end_from][output_pidx(h)] & 7];
 }
 
 inline int
 ProcessingT::input_processing(int i, int p) const
 {
-    return _input_processing[input_pidx(i, p)] & 3;
+    return _processing[end_to][input_pidx(i, p)] & 3;
 }
 
 inline int
 ProcessingT::output_processing(int i, int p) const
 {
-    return _output_processing[output_pidx(i, p)] & 3;
+    return _processing[end_from][output_pidx(i, p)] & 3;
 }
 
 inline bool
 ProcessingT::input_is_pull(int i, int p) const
 {
-    return _input_processing[input_pidx(i, p)] & ppull;
+    return _processing[end_to][input_pidx(i, p)] & ppull;
 }
 
 inline bool
 ProcessingT::output_is_push(int i, int p) const
 {
-    return _output_processing[output_pidx(i, p)] & ppush;
+    return _processing[end_from][output_pidx(i, p)] & ppush;
 }
 
 inline const char *

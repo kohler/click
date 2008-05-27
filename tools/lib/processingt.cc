@@ -6,6 +6,7 @@
  * Copyright (c) 2000 Massachusetts Institute of Technology
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2007 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,6 +36,7 @@ const char ProcessingT::decorated_processing_letters[] = "ahlXaHLX";
 static String::Initializer initializer;
 static String dpcode_push("h");
 static String dpcode_pull("l");
+static String dpcode_agnostic("a");
 static String dpcode_apush("H");
 static String dpcode_apull("L");
 static String dpcode_push_to_pull("h/l");
@@ -181,10 +183,15 @@ ProcessingT::processing_code_next(const char *code, const char *end_code, int &p
 	processing = -1;
 	return code;
     }
-    if (code + 1 == end_code || code[1] == '/')
+    const char *nc = code + 1;
+    if (nc != end_code && *nc == '@') {
+	processing += perror;
+	++nc;
+    }
+    if (nc == end_code || *nc == '/')
 	return code;
     else
-	return code + 1;
+	return nc;
 }
 
 String
@@ -240,7 +247,7 @@ ProcessingT::initial_processing_for(int ei, const String &compound_pcode, ErrorH
 	    }
 	    val = pagnostic;
 	}
-	_input_processing[start_in + i] = (val & pagnostic ? pagnostic : val);
+	_processing[end_to][start_in + i] = (val & pagnostic ? pagnostic : val);
     }
 
     pcpos = processing_code_output(pc.begin(), pc.end(), pcpos);
@@ -256,15 +263,15 @@ ProcessingT::initial_processing_for(int ei, const String &compound_pcode, ErrorH
 	    }
 	    val = pagnostic;
 	}
-	_output_processing[start_out + i] = (val & pagnostic ? pagnostic : val);
+	_processing[end_from][start_out + i] = (val & pagnostic ? pagnostic : val);
     }
 }
 
 void
 ProcessingT::initial_processing(const String &compound_pcode, ErrorHandler *errh)
 {
-    _input_processing.assign(ninput_pidx(), pagnostic);
-    _output_processing.assign(noutput_pidx(), pagnostic);
+    _processing[end_to].assign(ninput_pidx(), pagnostic);
+    _processing[end_from].assign(noutput_pidx(), pagnostic);
     String reversed_pcode = processing_code_reverse(compound_pcode);
     for (int i = 0; i < nelements(); i++)
 	initial_processing_for(i, reversed_pcode, errh);
@@ -286,6 +293,8 @@ ProcessingT::processing_error(const ConnectionT &conn, int processing_from,
 		 "'%s' %s output %d connected to '%s' %s input %d",
 		 conn.from_element()->name_c_str(), type1, conn.from_port(),
 		 conn.to_element()->name_c_str(), type2, conn.to_port());
+  _processing[end_to][input_pidx(conn)] |= perror;
+  _processing[end_from][output_pidx(conn)] |= perror;
 }
 
 void
@@ -296,7 +305,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
     Vector<ConnectionT> conn = _router->connections();
     Bitvector bv;
     for (int i = 0; i < ninput_pidx(); i++)
-	if (_input_processing[i] == pagnostic) {
+	if (_processing[end_to][i] == pagnostic) {
 	    ElementT *e = const_cast<ElementT *>(_elt[end_to][i]);
 	    int ei = e->eindex();
 	    int port = i - _pidx[end_to][ei];
@@ -304,7 +313,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 	    int noutputs = _pidx[end_from][ei+1] - opidx;
 	    forward_flow(flow_code(e), port, &bv, noutputs, errh);
 	    for (int j = 0; j < noutputs; j++)
-		if (bv[j] && _output_processing[opidx + j] == pagnostic)
+		if (bv[j] && _processing[end_from][opidx + j] == pagnostic)
 		    conn.push_back(ConnectionT(PortT(e, j), PortT(e, port), agnostic_landmark));
 	}
 
@@ -317,14 +326,14 @@ ProcessingT::check_processing(ErrorHandler *errh)
 
 	    int offf = output_pidx(conn[c].from());
 	    int offt = input_pidx(conn[c].to());
-	    int pf = _output_processing[offf];
-	    int pt = _input_processing[offt];
+	    int pf = _processing[end_from][offf];
+	    int pt = _processing[end_to][offt];
 
-	    switch (pt) {
+	    switch (pt & 7) {
 	
 	      case pagnostic:
 		if (pf != pagnostic) {
-		    _input_processing[offt] = pagnostic | (pf & 3);
+		    _processing[end_to][offt] = pagnostic | (pf & 3);
 		    changed = true;
 		}
 		break;
@@ -334,7 +343,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 	      case ppush + pagnostic:
 	      case ppull + pagnostic:
 		if (pf == pagnostic) {
-		    _output_processing[offf] = pagnostic | (pt & 3);
+		    _processing[end_from][offf] = pagnostic | (pt & 3);
 		    changed = true;
 		} else if (((pf ^ pt) & 3) != 0) {
 		    processing_error(conn[c], pf, errh);
@@ -356,6 +365,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 static const char *
 processing_name(int p)
 {
+    p &= 7;
     if (p == ProcessingT::pagnostic)
 	return "agnostic";
     else if (p & ProcessingT::ppush)
@@ -471,23 +481,25 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	const PortT &hf = conn[c].from(), &ht = conn[c].to();
 	int fp = output_pidx(hf), tp = input_pidx(ht);
 
-	if ((_output_processing[fp] & ppush) && output_used[fp] >= 0) {
+	if ((_processing[end_from][fp] & ppush) && output_used[fp] >= 0) {
 	    errh->lerror(conn[c].decorated_landmark(),
 			 "illegal reuse of '%s' push output %d",
 			 hf.element->name_c_str(), hf.port);
 	    errh->lmessage(conn[output_used[fp]].decorated_landmark(),
 			   "  '%s' output %d previously used here",
 			   hf.element->name_c_str(), hf.port);
+	    _processing[end_from][fp] |= perror;
 	} else
 	    output_used[fp] = c;
 
-	if ((_input_processing[tp] & ppull) && input_used[tp] >= 0) {
+	if ((_processing[end_to][tp] & ppull) && input_used[tp] >= 0) {
 	    errh->lerror(conn[c].decorated_landmark(),
 			 "illegal reuse of '%s' pull input %d",
 			 ht.element->name_c_str(), ht.port);
 	    errh->lmessage(conn[input_used[tp]].decorated_landmark(),
 			   "  '%s' input %d previously used here",
 			   ht.element->name_c_str(), ht.port);
+	    _processing[end_to][tp] |= perror;
 	} else
 	    input_used[tp] = c;
     }
@@ -500,27 +512,29 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	int ipdx = _pidx[end_to][ei], opdx = _pidx[end_from][ei];
 	check_nports(e, input_used.begin() + ipdx, output_used.begin() + opdx, errh);
 	for (int i = 0; i < e->ninputs(); i++)
-	    if (input_used[ipdx + i] < 0)
+	    if (input_used[ipdx + i] < 0) {
 		errh->lerror(e->decorated_landmark(),
 			     "'%s' %s input %d not connected",
-			     e->name_c_str(), processing_name(_input_processing[ipdx + i]), i);
+			     e->name_c_str(), processing_name(_processing[end_to][ipdx + i]), i);
+		_processing[end_to][ipdx + i] |= perror;
+	    }
 	for (int i = 0; i < e->noutputs(); i++)
-	    if (output_used[opdx + i] < 0)
+	    if (output_used[opdx + i] < 0) {
 		errh->lerror(e->decorated_landmark(),
 			     "'%s' %s output %d not connected",
-			     e->name_c_str(), processing_name(_output_processing[opdx + i]), i);
+			     e->name_c_str(), processing_name(_processing[end_from][opdx + i]), i);
+		_processing[end_from][opdx + i] |= perror;
+	    }
     }
 }
 
 void
 ProcessingT::resolve_agnostics()
 {
-    for (int i = 0; i < _input_processing.size(); i++)
-	if (_input_processing[i] == pagnostic)
-	    _input_processing[i] += ppush;
-    for (int i = 0; i < _output_processing.size(); i++)
-	if (_output_processing[i] == pagnostic)
-	    _output_processing[i] += ppush;
+    for (int p = 0; p < 2; ++p)
+	for (int *it = _processing[p].begin(); it != _processing[p].end(); ++it)
+	    if ((*it & 7) == pagnostic)
+		*it += ppush;
 }
 
 bool
@@ -533,9 +547,9 @@ ProcessingT::same_processing(int a, int b) const
     int ano = _pidx[end_from][a+1] - ao, bno = _pidx[end_from][b+1] - bo;
     if (ani != bni || ano != bno)
 	return false;
-    if (ani && memcmp(&_input_processing[ai], &_input_processing[bi], sizeof(int) * ani) != 0)
+    if (ani && memcmp(&_processing[end_to][ai], &_processing[end_to][bi], sizeof(int) * ani) != 0)
 	return false;
-    if (ano && memcmp(&_output_processing[ao], &_output_processing[bo], sizeof(int) * ano) != 0)
+    if (ano && memcmp(&_processing[end_from][ao], &_processing[end_from][bo], sizeof(int) * ano) != 0)
 	return false;
     return true;
 }
@@ -547,10 +561,10 @@ ProcessingT::processing_code(const ElementT *e) const
     int ei = e->eindex();
     StringAccum sa;
     for (int i = _pidx[end_to][ei]; i < _pidx[end_to][ei+1]; i++)
-	sa << processing_letters[_input_processing[i]];
+	sa << processing_letters[_processing[end_to][i] & 7];
     sa << '/';
     for (int i = _pidx[end_from][ei]; i < _pidx[end_from][ei+1]; i++)
-	sa << processing_letters[_output_processing[i]];
+	sa << processing_letters[_processing[end_from][i] & 7];
     return sa.take_string();
 }
 
@@ -564,31 +578,45 @@ ProcessingT::decorated_processing_code(const ElementT *e) const
 
     // avoid memory allocation by returning an existing string
     // (premature optimization?)
-    uint32_t allin = 255, allout = 255;
-    for (int i = ipb; i < ipe; i++)
-	allin &= 1 << _input_processing[i];
-    for (int i = opb; i < ope; i++)
-	allout &= 1 << _output_processing[i];
-    if (allin && allout) {
-	if ((allin & (1 << ppush)) && (allout & (1 << ppush)))
+    int pin = (ipb == ipe ? ppush : _processing[end_to][ipb]);
+    int pout = (opb == ope ? ppush : _processing[end_from][opb]);
+    for (int i = ipb + 1; i < ipe; ++i)
+	if (_processing[end_to][i] != pin)
+	    goto create_code;
+    for (int i = opb + 1; i < ope; ++i)
+	if (_processing[end_from][i] != pout)
+	    goto create_code;
+    if ((pin & perror) == 0 && (pout & perror) == 0) {
+	if (pin == ppush && pout == ppush)
 	    return dpcode_push;
-	if ((allin & (1 << ppull)) && (allout & (1 << ppull)))
+	else if (pin == ppull && pout == ppull)
 	    return dpcode_pull;
-	if ((allin & (1 << (ppush + pagnostic))) && (allout & (1 << (ppush + pagnostic))))
+	else if (pin == pagnostic && pout == pagnostic)
+	    return dpcode_agnostic;
+	else if (pin == ppush + pagnostic && pout == ppush + pagnostic)
 	    return dpcode_apush;
-	if ((allin & (1 << (ppull + pagnostic))) && (allout & (1 << (ppull + pagnostic))))
+	else if (pin == ppull + pagnostic && pout == ppull + pagnostic)
 	    return dpcode_apull;
-	if ((allin & (1 << ppush)) && (allout & (1 << ppull)))
+	else if (pin == ppush && pout == ppull)
 	    return dpcode_push_to_pull;
     }
     
     // no optimization possible; just return the whole code
+  create_code:
     StringAccum sa;
-    for (int i = ipb; i < ipe; i++)
-	sa << decorated_processing_letters[_input_processing[i]];
+    for (const int *it = _processing[end_to].begin() + ipb;
+	 it != _processing[end_to].begin() + ipe; ++it) {
+	sa << decorated_processing_letters[*it & 7];
+	if (*it & perror)
+	    sa << '@';
+    }
     sa << '/';
-    for (int i = opb; i < ope; i++)
-	sa << decorated_processing_letters[_output_processing[i]];
+    for (const int *it = _processing[end_from].begin() + opb;
+	 it != _processing[end_from].begin() + ope; ++it) {
+	sa << decorated_processing_letters[*it & 7];
+	if (*it & perror)
+	    sa << '@';
+    }
     return sa.take_string();
 }
 

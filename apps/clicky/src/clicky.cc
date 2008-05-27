@@ -85,6 +85,8 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 int
 main(int argc, char *argv[])
 {
+    // disable bug-buddy
+    setenv("GNOME_DISABLE_CRASH_DIALOG", "1", 0);
     click_static_initialize();
 
 #ifdef ENABLE_NLS
